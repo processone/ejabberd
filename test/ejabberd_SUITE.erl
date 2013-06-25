@@ -660,7 +660,8 @@ stats(Config) ->
     disconnect(Config).
 
 pubsub(Config) ->
-    true = is_feature_advertised(Config, ?NS_PUBSUB),
+    Features = get_features(Config, pubsub_jid(Config)),
+    true = lists:member(?NS_PUBSUB, Features),
     %% Publish <presence/> element within node "presence"
     ItemID = randoms:get_string(),
     Node = <<"presence">>,
@@ -684,7 +685,7 @@ pubsub(Config) ->
        #message{sub_els = [#pubsub_event{}, #delay{}]},
        #iq{type = result, id = I1}),
     %% Get subscriptions
-    true = is_feature_advertised(Config, ?PUBSUB("retrieve-subscriptions")),
+    true = lists:member(?PUBSUB("retrieve-subscriptions"), Features),
     #iq{type = result,
         sub_els =
             [#pubsub{subscriptions =
@@ -692,7 +693,7 @@ pubsub(Config) ->
         send_recv(Config, #iq{type = get, to = pubsub_jid(Config),
                               sub_els = [#pubsub{subscriptions = {none, []}}]}),
     %% Get affiliations
-    true = is_feature_advertised(Config, ?PUBSUB("retrieve-affiliations")),
+    true = lists:member(?PUBSUB("retrieve-affiliations"), Features),
     #iq{type = result,
         sub_els = [#pubsub{
                       affiliations =
@@ -700,7 +701,7 @@ pubsub(Config) ->
         send_recv(Config, #iq{type = get, to = pubsub_jid(Config),
                               sub_els = [#pubsub{affiliations = []}]}),
     %% Get subscription options
-    true = is_feature_advertised(Config, ?PUBSUB("subscription-options")),
+    true = lists:member(?PUBSUB("subscription-options"), Features),
     #iq{type = result, sub_els = [#pubsub{options = #pubsub_options{
                                             node = Node}}]} =
         send_recv(Config,
@@ -717,7 +718,7 @@ pubsub(Config) ->
                   #iq{type = get, to = pubsub_jid(Config),
                       sub_els = [#pubsub{items = #pubsub_items{node = Node}}]}),
     %% Deleting the item from the node
-    true = is_feature_advertised(Config, ?PUBSUB("delete-items")),
+    true = lists:member(?PUBSUB("delete-items"), Features),
     I2 = send(Config,
               #iq{type = set, to = pubsub_jid(Config),
                   sub_els = [#pubsub{retract = #pubsub_retract{
@@ -1227,13 +1228,19 @@ id(undefined) ->
 id(ID) ->
     ID.
 
+get_features(Config) ->
+    get_features(Config, server_jid(Config)).
+
+get_features(Config, To) ->
+    #iq{type = result, sub_els = [#disco_info{features = Features}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#disco_info{}], to = To}),
+    Features.
+
 is_feature_advertised(Config, Feature) ->
     is_feature_advertised(Config, Feature, server_jid(Config)).
 
 is_feature_advertised(Config, Feature, To) ->
-    ID = send(Config, #iq{type = get, sub_els = [#disco_info{}], to = To}),
-    #iq{type = result, id = ID,
-        sub_els = [#disco_info{feature = Features}]} = recv(),
+    Features = get_features(Config, To),
     lists:member(Feature, Features).
 
 bookmark_conference() ->

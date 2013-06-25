@@ -337,8 +337,8 @@
                  retract :: #pubsub_retract{}}).
 
 -record(disco_info, {node :: binary(),
-                     identity = [] :: [#identity{}],
-                     feature = [] :: [binary()],
+                     identities = [] :: [#identity{}],
+                     features = [] :: [binary()],
                      xdata = [] :: [#xdata{}]}).
 
 -record(sasl_mechanisms, {list = [] :: [binary()]}).

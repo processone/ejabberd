@@ -196,12 +196,12 @@
 {disco_info,
  #elem{name = <<"query">>,
        xmlns = <<"http://jabber.org/protocol/disco#info">>,
-       result = {disco_info, '$node', '$identity', '$feature', '$xdata'},
+       result = {disco_info, '$node', '$identities', '$features', '$xdata'},
        attrs = [#attr{name = <<"node">>}],
        refs = [#ref{name = disco_identity,
-                    label = '$identity'},
+                    label = '$identities'},
                #ref{name = disco_feature,
-                    label = '$feature'},
+                    label = '$features'},
                #ref{name = xdata,
                     label = '$xdata'}]}}.
 

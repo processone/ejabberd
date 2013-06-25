@@ -1038,7 +1038,8 @@ pp(block, 1) -> [items];
 pp(unblock, 1) -> [items];
 pp(block_list, 0) -> [];
 pp(identity, 4) -> [category, type, lang, name];
-pp(disco_info, 4) -> [node, identity, feature, xdata];
+pp(disco_info, 4) ->
+    [node, identities, features, xdata];
 pp(disco_item, 3) -> [jid, name, node];
 pp(disco_items, 2) -> [node, items];
 pp(private, 1) -> [sub_els];
@@ -12856,54 +12857,56 @@ encode_disco_item_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
 decode_disco_info({xmlel, <<"query">>, _attrs, _els}) ->
-    {Xdata, Feature, Identity} = decode_disco_info_els(_els,
-						       [], [], []),
+    {Xdata, Features, Identities} =
+	decode_disco_info_els(_els, [], [], []),
     Node = decode_disco_info_attrs(_attrs, undefined),
-    {disco_info, Node, Identity, Feature, Xdata}.
+    {disco_info, Node, Identities, Features, Xdata}.
 
-decode_disco_info_els([], Xdata, Feature, Identity) ->
-    {lists:reverse(Xdata), lists:reverse(Feature),
-     lists:reverse(Identity)};
+decode_disco_info_els([], Xdata, Features,
+		      Identities) ->
+    {lists:reverse(Xdata), lists:reverse(Features),
+     lists:reverse(Identities)};
 decode_disco_info_els([{xmlel, <<"identity">>, _attrs,
 			_} =
 			   _el
 		       | _els],
-		      Xdata, Feature, Identity) ->
+		      Xdata, Features, Identities) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/disco#info">> ->
-	   decode_disco_info_els(_els, Xdata, Feature,
-				 [decode_disco_identity(_el) | Identity]);
+	   decode_disco_info_els(_els, Xdata, Features,
+				 [decode_disco_identity(_el) | Identities]);
        true ->
-	   decode_disco_info_els(_els, Xdata, Feature, Identity)
+	   decode_disco_info_els(_els, Xdata, Features, Identities)
     end;
 decode_disco_info_els([{xmlel, <<"feature">>, _attrs,
 			_} =
 			   _el
 		       | _els],
-		      Xdata, Feature, Identity) ->
+		      Xdata, Features, Identities) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/disco#info">> ->
 	   decode_disco_info_els(_els, Xdata,
-				 [decode_disco_feature(_el) | Feature],
-				 Identity);
+				 [decode_disco_feature(_el) | Features],
+				 Identities);
        true ->
-	   decode_disco_info_els(_els, Xdata, Feature, Identity)
+	   decode_disco_info_els(_els, Xdata, Features, Identities)
     end;
 decode_disco_info_els([{xmlel, <<"x">>, _attrs, _} = _el
 		       | _els],
-		      Xdata, Feature, Identity) ->
+		      Xdata, Features, Identities) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<"jabber:x:data">> ->
 	   decode_disco_info_els(_els, [decode_xdata(_el) | Xdata],
-				 Feature, Identity);
+				 Features, Identities);
        true ->
-	   decode_disco_info_els(_els, Xdata, Feature, Identity)
+	   decode_disco_info_els(_els, Xdata, Features, Identities)
     end;
-decode_disco_info_els([_ | _els], Xdata, Feature,
-		      Identity) ->
-    decode_disco_info_els(_els, Xdata, Feature, Identity).
+decode_disco_info_els([_ | _els], Xdata, Features,
+		      Identities) ->
+    decode_disco_info_els(_els, Xdata, Features,
+			  Identities).
 
 decode_disco_info_attrs([{<<"node">>, _val} | _attrs],
 			_Node) ->
@@ -12913,13 +12916,13 @@ decode_disco_info_attrs([_ | _attrs], Node) ->
 decode_disco_info_attrs([], Node) ->
     decode_disco_info_attr_node(Node).
 
-encode_disco_info({disco_info, Node, Identity, Feature,
-		   Xdata},
+encode_disco_info({disco_info, Node, Identities,
+		   Features, Xdata},
 		  _xmlns_attrs) ->
-    _els = 'encode_disco_info_$identity'(Identity,
-					 'encode_disco_info_$feature'(Feature,
-								      'encode_disco_info_$xdata'(Xdata,
-												 []))),
+    _els = 'encode_disco_info_$identities'(Identities,
+					   'encode_disco_info_$features'(Features,
+									 'encode_disco_info_$xdata'(Xdata,
+												    []))),
     _attrs = encode_disco_info_attr_node(Node,
 					 _xmlns_attrs),
     {xmlel, <<"query">>, _attrs, _els}.
@@ -12932,16 +12935,18 @@ encode_disco_info({disco_info, Node, Identity, Feature,
 					       <<"jabber:x:data">>}])
 				| _acc]).
 
-'encode_disco_info_$feature'([], _acc) -> _acc;
-'encode_disco_info_$feature'([Feature | _els], _acc) ->
-    'encode_disco_info_$feature'(_els,
-				 [encode_disco_feature(Feature, []) | _acc]).
-
-'encode_disco_info_$identity'([], _acc) -> _acc;
-'encode_disco_info_$identity'([Identity | _els],
+'encode_disco_info_$features'([], _acc) -> _acc;
+'encode_disco_info_$features'([Features | _els],
 			      _acc) ->
-    'encode_disco_info_$identity'(_els,
-				  [encode_disco_identity(Identity, []) | _acc]).
+    'encode_disco_info_$features'(_els,
+				  [encode_disco_feature(Features, []) | _acc]).
+
+'encode_disco_info_$identities'([], _acc) -> _acc;
+'encode_disco_info_$identities'([Identities | _els],
+				_acc) ->
+    'encode_disco_info_$identities'(_els,
+				    [encode_disco_identity(Identities, [])
+				     | _acc]).
 
 decode_disco_info_attr_node(undefined) -> undefined;
 decode_disco_info_attr_node(_val) -> _val.
