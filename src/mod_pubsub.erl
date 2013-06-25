@@ -1671,7 +1671,7 @@ node_disco_info(Host, Node, From, Identity, Features) ->
 %	Other -> Other
 %    end.
     Action = fun (#pubsub_node{type = Type, id = NodeId}) ->
-		     I = Types = case tree_call(Host, get_subnodes,
+		     Types = case tree_call(Host, get_subnodes,
 						      [Host, Node, From])
 					   of
 					 [] -> [<<"leaf">>];
@@ -1687,7 +1687,7 @@ node_disco_info(Host, Node, From, Identity, Features) ->
 					       _ -> []
 					     end
 				       end,
-			       lists:map(fun (T) ->
+		    I = lists:map(fun (T) ->
 						 #xmlel{name = <<"identity">>,
 							attrs =
 							    [{<<"category">>,
