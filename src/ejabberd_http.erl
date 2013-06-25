@@ -824,9 +824,9 @@ normalize_path(Path) ->
     normalize_path(Path, []).
 
 normalize_path([], Norm) -> lists:reverse(Norm);
-normalize_path([".."|Path], Norm) ->
+normalize_path([<<"..">>|Path], Norm) ->
     normalize_path(Path, Norm);
-normalize_path([_Parent, ".."|Path], Norm) ->
+normalize_path([_Parent, <<"..">>|Path], Norm) ->
     normalize_path(Path, Norm);
 normalize_path([Part | Path], Norm) ->
     normalize_path(Path, [Part|Norm]).
