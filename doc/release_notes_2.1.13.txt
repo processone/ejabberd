@@ -1,0 +1,29 @@
+
+                              Release Notes
+                             ejabberd 2.1.12
+
+  ejabberd 2.1.13 includes just a few bugfixes.
+
+  Read more details about the changes in:
+    http://redir.process-one.net/ejabberd-2.1.13
+
+  Download the source code and installers from:
+    http://www.process-one.net/en/ejabberd/
+
+
+  The changes are:
+
+- Compilation: Detect correctly newer Darwin versions (EJAB-1594)
+- Guide: ejabberd_service expects a shaper_rule, not a shaper
+- MUC: Handle multiple < and > in mod_muc_log plaintext mode (EJAB-1640)
+- MUC: Handle ~ control sequence in text of mod_muc_log (EJAB-1639)
+- MUC: list_to_integer/2 only works in OTP R14 and newer
+- Pubsub: access_createnode acl also applies to auto created nodes
+- Web: Normalize HTTP path
+- WebAdmin: Fix bug when displaying offline messages in WebAdmin
+
+
+  Bug reports
+
+  You can officially report bugs on ProcessOne support site:
+  http://support.process-one.net/
