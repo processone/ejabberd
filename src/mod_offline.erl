@@ -833,7 +833,7 @@ get_queue_length(LUser, LServer, odbc) ->
 get_messages_subset(User, Host, MsgsAll, DBType) ->
     Access = gen_mod:get_module_opt(Host, ?MODULE, access_max_user_messages,
 				    max_user_offline_messages),
-    MaxOfflineMsgs = case get_max_user_messages(Access, User, Host) of
+    MaxOfflineMsgs = case get_max_user_messages(Access, {User, Host}, Host) of
 			 Number when is_integer(Number) -> Number;
 			 _ -> 100
 		     end,
