@@ -243,6 +243,10 @@ db_tests() ->
       [roster_remove_master,
        roster_remove_slave]}].
 
+%% db_tests() ->
+%%     [{single_user, [sequence],
+%%       [test_register, pubsub]}].
+
 ldap_tests() ->
     [{ldap_tests, [sequence],
       [test_auth,
@@ -254,6 +258,9 @@ groups() ->
      {mnesia, [sequence], db_tests()},
      {mysql, [sequence], db_tests()},
      {pgsql, [sequence], db_tests()}].
+
+%% all() ->
+%%     [{group, mnesia}].
 
 all() ->
     [{group, ldap},
@@ -659,18 +666,23 @@ pubsub(Config) ->
     Node = <<"presence">>,
     Item = #pubsub_item{id = ItemID, sub_els = [#presence{}]},
     #iq{type = result,
-        sub_els = [#pubsub{publish = {<<"presence">>,
-                                      [#pubsub_item{id = ItemID}]}}]} =
+        sub_els = [#pubsub{publish = #pubsub_publish{
+                             node = Node,
+                             items = [#pubsub_item{id = ItemID}]}}]} =
         send_recv(Config,
                   #iq{type = set, to = pubsub_jid(Config),
-                      sub_els = [#pubsub{publish = {Node, [Item]}}]}),
+                      sub_els = [#pubsub{publish = #pubsub_publish{
+                                           node = Node,
+                                           items = [Item]}}]}),
     %% Subscribe to node "presence"
-    I = send(Config,
+    I1 = send(Config,
              #iq{type = set, to = pubsub_jid(Config),
-                 sub_els = [#pubsub{subscribe = {Node, my_jid(Config)}}]}),
+                 sub_els = [#pubsub{subscribe = #pubsub_subscribe{
+                                      node = Node,
+                                      jid = my_jid(Config)}}]}),
     ?recv2(
        #message{sub_els = [#pubsub_event{}, #delay{}]},
-       #iq{type = result, id = I}),
+       #iq{type = result, id = I1}),
     %% Get subscriptions
     true = is_feature_advertised(Config, ?PUBSUB("retrieve-subscriptions")),
     #iq{type = result,
@@ -687,6 +699,44 @@ pubsub(Config) ->
                           [#pubsub_affiliation{node = Node, type = owner}]}]} =
         send_recv(Config, #iq{type = get, to = pubsub_jid(Config),
                               sub_els = [#pubsub{affiliations = []}]}),
+    %% Get subscription options
+    true = is_feature_advertised(Config, ?PUBSUB("subscription-options")),
+    #iq{type = result, sub_els = [#pubsub{options = #pubsub_options{
+                                            node = Node}}]} =
+        send_recv(Config,
+                  #iq{type = get, to = pubsub_jid(Config),
+                      sub_els = [#pubsub{options = #pubsub_options{
+                                           node = Node,
+                                           jid = my_jid(Config)}}]}),
+    %% Fetching published items from node "presence"
+    #iq{type = result,
+        sub_els = [#pubsub{items = #pubsub_items{
+                             node = Node,
+                             items = [Item]}}]} =
+        send_recv(Config,
+                  #iq{type = get, to = pubsub_jid(Config),
+                      sub_els = [#pubsub{items = #pubsub_items{node = Node}}]}),
+    %% Deleting the item from the node
+    true = is_feature_advertised(Config, ?PUBSUB("delete-items")),
+    I2 = send(Config,
+              #iq{type = set, to = pubsub_jid(Config),
+                  sub_els = [#pubsub{retract = #pubsub_retract{
+                                       node = Node,
+                                       items = [#pubsub_item{id = ItemID}]}}]}),
+    ?recv2(
+       #iq{type = result, id = I2, sub_els = []},
+       #message{sub_els = [#pubsub_event{
+                              items = [#pubsub_event_items{
+                                          node = Node,
+                                          retract = [ItemID]}]},
+                           #shim{headers = [{<<"Collection">>, Node}]}]}),
+    %% Unsubscribe from node "presence"
+    #iq{type = result, sub_els = []} =
+        send_recv(Config,
+                  #iq{type = set, to = pubsub_jid(Config),
+                      sub_els = [#pubsub{unsubscribe = #pubsub_unsubscribe{
+                                           node = Node,
+                                           jid = my_jid(Config)}}]}),
     disconnect(Config).
 
 auth_md5(Config) ->

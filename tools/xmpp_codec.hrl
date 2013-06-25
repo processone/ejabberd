@@ -9,6 +9,10 @@
                      host :: binary(),
                      port = 1080 :: non_neg_integer()}).
 
+-record(pubsub_unsubscribe, {node :: binary(),
+                             jid :: any(),
+                             subid :: binary()}).
+
 -record(ping, {}).
 
 -record(delay, {stamp :: any(),
@@ -41,6 +45,9 @@
 -record(pubsub_item, {id :: binary(),
                       sub_els = [] :: [any()]}).
 
+-record(pubsub_publish, {node :: binary(),
+                         items = [] :: [#pubsub_item{}]}).
+
 -record(roster_item, {jid :: any(),
                       name :: binary(),
                       groups = [] :: [binary()],
@@ -60,7 +67,7 @@
 -record(stat, {name :: binary(),
                units :: binary(),
                value :: binary(),
-               error = [] :: [{integer(),binary()}]}).
+               error = [] :: [{integer(),'undefined' | binary()}]}).
 
 -record('see-other-host', {host :: binary()}).
 
@@ -80,6 +87,9 @@
 -record(redirect, {uri :: binary()}).
 
 -record(sasl_response, {text :: any()}).
+
+-record(pubsub_subscribe, {node :: binary(),
+                           jid :: any()}).
 
 -record(sasl_auth, {mechanism :: binary(),
                     text :: any()}).
@@ -116,6 +126,8 @@
                               subid :: binary(),
                               type :: 'none' | 'pending' | 'subscribed' | 'unconfigured'}).
 
+-record(shim, {headers = [] :: [{binary(),'undefined' | binary()}]}).
+
 -record(caps, {hash :: binary(),
                node :: binary(),
                ver :: any()}).
@@ -126,11 +138,6 @@
 -record(stream_features, {sub_els = [] :: [any()]}).
 
 -record(stats, {stat = [] :: [#stat{}]}).
-
--record(pubsub, {subscriptions :: {binary(),[#pubsub_subscription{}]},
-                 affiliations :: [#pubsub_affiliation{}],
-                 publish :: {binary(),[#pubsub_item{}]},
-                 subscribe :: {binary(),_}}).
 
 -record(pubsub_items, {node :: binary(),
                        max_items :: non_neg_integer(),
@@ -149,6 +156,10 @@
                       pref = false :: boolean(),
                       x400 = false :: boolean(),
                       userid :: binary()}).
+
+-record(pubsub_retract, {node :: binary(),
+                         notify = false :: any(),
+                         items = [] :: [#pubsub_item{}]}).
 
 -record(text, {lang :: binary(),
                data :: binary()}).
@@ -171,9 +182,9 @@
                       values = [] :: [binary()],
                       options = [] :: [binary()]}).
 
--record(version, {version_name :: binary(),
-                  version_ver :: binary(),
-                  version_os :: binary()}).
+-record(version, {name :: binary(),
+                  ver :: binary(),
+                  os :: binary()}).
 
 -record(muc_invite, {reason :: binary(),
                      from :: any(),
@@ -233,6 +244,7 @@
 
 -record(identity, {category :: binary(),
                    type :: binary(),
+                   lang :: binary(),
                    name :: binary()}).
 
 -record(bookmark_conference, {name :: binary(),
@@ -244,23 +256,23 @@
 -record(register, {registered = false :: boolean(),
                    remove = false :: boolean(),
                    instructions :: binary(),
-                   username :: binary(),
-                   nick :: binary(),
-                   password :: binary(),
-                   name :: binary(),
-                   first :: binary(),
-                   last :: binary(),
-                   email :: binary(),
-                   address :: binary(),
-                   city :: binary(),
-                   state :: binary(),
-                   zip :: binary(),
-                   phone :: binary(),
-                   url :: binary(),
-                   date :: binary(),
-                   misc :: binary(),
-                   text :: binary(),
-                   key :: binary()}).
+                   username :: 'none' | binary(),
+                   nick :: 'none' | binary(),
+                   password :: 'none' | binary(),
+                   name :: 'none' | binary(),
+                   first :: 'none' | binary(),
+                   last :: 'none' | binary(),
+                   email :: 'none' | binary(),
+                   address :: 'none' | binary(),
+                   city :: 'none' | binary(),
+                   state :: 'none' | binary(),
+                   zip :: 'none' | binary(),
+                   phone :: 'none' | binary(),
+                   url :: 'none' | binary(),
+                   date :: 'none' | binary(),
+                   misc :: 'none' | binary(),
+                   text :: 'none' | binary(),
+                   key :: 'none' | binary()}).
 
 -record(bookmark_url, {name :: binary(),
                        url :: binary()}).
@@ -309,6 +321,20 @@
 
 -record(muc_owner, {destroy :: #muc_owner_destroy{},
                     config :: #xdata{}}).
+
+-record(pubsub_options, {node :: binary(),
+                         jid :: any(),
+                         subid :: binary(),
+                         xdata :: #xdata{}}).
+
+-record(pubsub, {subscriptions :: {'none' | binary(),[#pubsub_subscription{}]},
+                 affiliations :: [#pubsub_affiliation{}],
+                 publish :: #pubsub_publish{},
+                 subscribe :: #pubsub_subscribe{},
+                 unsubscribe :: #pubsub_unsubscribe{},
+                 options :: #pubsub_options{},
+                 items :: #pubsub_items{},
+                 retract :: #pubsub_retract{}}).
 
 -record(disco_info, {node :: binary(),
                      identity = [] :: [#identity{}],
@@ -362,8 +388,8 @@
                        items = [] :: [#privacy_item{}]}).
 
 -record(privacy, {lists = [] :: [#privacy_list{}],
-                  default :: binary(),
-                  active :: binary()}).
+                  default :: 'none' | binary(),
+                  active :: 'none' | binary()}).
 
 -record(stream_error, {reason :: atom() | #'see-other-host'{},
                        text :: #text{}}).

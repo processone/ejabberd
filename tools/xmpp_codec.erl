@@ -65,12 +65,26 @@ decode({xmlel, _name, _attrs, _} = _el) ->
 	  decode_legacy_delay(_el);
       {<<"delay">>, <<"urn:xmpp:delay">>} ->
 	  decode_delay(_el);
+      {<<"headers">>,
+       <<"http://jabber.org/protocol/shim">>} ->
+	  decode_shim_headers(_el);
+      {<<"header">>, <<"http://jabber.org/protocol/shim">>} ->
+	  decode_shim_header(_el);
       {<<"pubsub">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub(_el);
+      {<<"retract">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  decode_pubsub_retract(_el);
+      {<<"options">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  decode_pubsub_options(_el);
       {<<"publish">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_publish(_el);
+      {<<"unsubscribe">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  decode_pubsub_unsubscribe(_el);
       {<<"subscribe">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_subscribe(_el);
@@ -721,10 +735,33 @@ encode({legacy_delay, _, _} = X) ->
 encode({delay, _, _} = Delay) ->
     encode_delay(Delay,
 		 [{<<"xmlns">>, <<"urn:xmpp:delay">>}]);
-encode({pubsub, _, _, _, _} = Pubsub) ->
+encode({shim, _} = Headers) ->
+    encode_shim_headers(Headers,
+			[{<<"xmlns">>, <<"http://jabber.org/protocol/shim">>}]);
+encode({pubsub, _, _, _, _, _, _, _, _} = Pubsub) ->
     encode_pubsub(Pubsub,
 		  [{<<"xmlns">>,
 		    <<"http://jabber.org/protocol/pubsub">>}]);
+encode({pubsub_retract, _, _, _} = Retract) ->
+    encode_pubsub_retract(Retract,
+			  [{<<"xmlns">>,
+			    <<"http://jabber.org/protocol/pubsub">>}]);
+encode({pubsub_options, _, _, _, _} = Options) ->
+    encode_pubsub_options(Options,
+			  [{<<"xmlns">>,
+			    <<"http://jabber.org/protocol/pubsub">>}]);
+encode({pubsub_publish, _, _} = Publish) ->
+    encode_pubsub_publish(Publish,
+			  [{<<"xmlns">>,
+			    <<"http://jabber.org/protocol/pubsub">>}]);
+encode({pubsub_unsubscribe, _, _, _} = Unsubscribe) ->
+    encode_pubsub_unsubscribe(Unsubscribe,
+			      [{<<"xmlns">>,
+				<<"http://jabber.org/protocol/pubsub">>}]);
+encode({pubsub_subscribe, _, _} = Subscribe) ->
+    encode_pubsub_subscribe(Subscribe,
+			    [{<<"xmlns">>,
+			      <<"http://jabber.org/protocol/pubsub">>}]);
 encode({pubsub_event, _} = Event) ->
     encode_pubsub_event(Event,
 			[{<<"xmlns">>,
@@ -951,7 +988,7 @@ encode({disco_info, _, _, _, _} = Query) ->
     encode_disco_info(Query,
 		      [{<<"xmlns">>,
 			<<"http://jabber.org/protocol/disco#info">>}]);
-encode({identity, _, _, _} = Identity) ->
+encode({identity, _, _, _, _} = Identity) ->
     encode_disco_identity(Identity,
 			  [{<<"xmlns">>,
 			    <<"http://jabber.org/protocol/disco#info">>}]);
@@ -989,8 +1026,7 @@ encode({last, _, _} = Query) ->
 pp(Term) -> io_lib_pretty:print(Term, fun pp/2).
 
 pp(last, 2) -> [seconds, text];
-pp(version, 3) ->
-    [version_name, version_ver, version_os];
+pp(version, 3) -> [name, ver, os];
 pp(roster_item, 5) ->
     [jid, name, groups, subscription, ask];
 pp(roster, 2) -> [items, ver];
@@ -1001,7 +1037,7 @@ pp(privacy, 3) -> [lists, default, active];
 pp(block, 1) -> [items];
 pp(unblock, 1) -> [items];
 pp(block_list, 0) -> [];
-pp(identity, 3) -> [category, type, name];
+pp(identity, 4) -> [category, type, lang, name];
 pp(disco_info, 4) -> [node, identity, feature, xdata];
 pp(disco_item, 3) -> [jid, name, node];
 pp(disco_items, 2) -> [node, items];
@@ -1087,8 +1123,15 @@ pp(pubsub_items, 4) -> [node, max_items, subid, items];
 pp(pubsub_event_item, 3) -> [id, node, publisher];
 pp(pubsub_event_items, 3) -> [node, retract, items];
 pp(pubsub_event, 1) -> [items];
-pp(pubsub, 4) ->
-    [subscriptions, affiliations, publish, subscribe];
+pp(pubsub_subscribe, 2) -> [node, jid];
+pp(pubsub_unsubscribe, 3) -> [node, jid, subid];
+pp(pubsub_publish, 2) -> [node, items];
+pp(pubsub_options, 4) -> [node, jid, subid, xdata];
+pp(pubsub_retract, 3) -> [node, notify, items];
+pp(pubsub, 8) ->
+    [subscriptions, affiliations, publish, subscribe,
+     unsubscribe, options, items, retract];
+pp(shim, 1) -> [headers];
 pp(delay, 2) -> [stamp, from];
 pp(legacy_delay, 2) -> [stamp, from];
 pp(streamhost, 3) -> [jid, host, port];
@@ -1420,11 +1463,8 @@ decode_muc_user_els([{xmlel, <<"invite">>, _attrs, _} =
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_els(_els, Status_codes, Items,
-			       case decode_muc_user_invite(_el) of
-				 undefined -> Invites;
-				 _new_el -> [_new_el | Invites]
-			       end,
-			       Decline, Destroy);
+			       [decode_muc_user_invite(_el) | Invites], Decline,
+			       Destroy);
        true ->
 	   decode_muc_user_els(_els, Status_codes, Items, Invites,
 			       Decline, Destroy)
@@ -1437,11 +1477,8 @@ decode_muc_user_els([{xmlel, <<"item">>, _attrs, _} =
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_els(_els, Status_codes,
-			       case decode_muc_user_item(_el) of
-				 undefined -> Items;
-				 _new_el -> [_new_el | Items]
-			       end,
-			       Invites, Decline, Destroy);
+			       [decode_muc_user_item(_el) | Items], Invites,
+			       Decline, Destroy);
        true ->
 	   decode_muc_user_els(_els, Status_codes, Items, Invites,
 			       Decline, Destroy)
@@ -2169,10 +2206,7 @@ decode_bytestreams_els([{xmlel, <<"streamhost">>,
        _xmlns ==
 	 <<"http://jabber.org/protocol/bytestreams">> ->
 	   decode_bytestreams_els(_els,
-				  case decode_bytestreams_streamhost(_el) of
-				    undefined -> Hosts;
-				    _new_el -> [_new_el | Hosts]
-				  end,
+				  [decode_bytestreams_streamhost(_el) | Hosts],
 				  Used, Activate);
        true ->
 	   decode_bytestreams_els(_els, Hosts, Used, Activate)
@@ -2538,86 +2572,259 @@ encode_delay_attr_from(undefined, _acc) -> _acc;
 encode_delay_attr_from(_val, _acc) ->
     [{<<"from">>, enc_jid(_val)} | _acc].
 
+decode_shim_headers({xmlel, <<"headers">>, _attrs,
+		     _els}) ->
+    Headers = decode_shim_headers_els(_els, []),
+    {shim, Headers}.
+
+decode_shim_headers_els([], Headers) ->
+    lists:reverse(Headers);
+decode_shim_headers_els([{xmlel, <<"header">>, _attrs,
+			  _} =
+			     _el
+			 | _els],
+			Headers) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/shim">> ->
+	   decode_shim_headers_els(_els,
+				   [decode_shim_header(_el) | Headers]);
+       true -> decode_shim_headers_els(_els, Headers)
+    end;
+decode_shim_headers_els([_ | _els], Headers) ->
+    decode_shim_headers_els(_els, Headers).
+
+encode_shim_headers({shim, Headers}, _xmlns_attrs) ->
+    _els = 'encode_shim_headers_$headers'(Headers, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"headers">>, _attrs, _els}.
+
+'encode_shim_headers_$headers'([], _acc) -> _acc;
+'encode_shim_headers_$headers'([Headers | _els],
+			       _acc) ->
+    'encode_shim_headers_$headers'(_els,
+				   [encode_shim_header(Headers, []) | _acc]).
+
+decode_shim_header({xmlel, <<"header">>, _attrs,
+		    _els}) ->
+    Cdata = decode_shim_header_els(_els, <<>>),
+    Name = decode_shim_header_attrs(_attrs, undefined),
+    {Name, Cdata}.
+
+decode_shim_header_els([], Cdata) ->
+    decode_shim_header_cdata(Cdata);
+decode_shim_header_els([{xmlcdata, _data} | _els],
+		       Cdata) ->
+    decode_shim_header_els(_els,
+			   <<Cdata/binary, _data/binary>>);
+decode_shim_header_els([_ | _els], Cdata) ->
+    decode_shim_header_els(_els, Cdata).
+
+decode_shim_header_attrs([{<<"name">>, _val} | _attrs],
+			 _Name) ->
+    decode_shim_header_attrs(_attrs, _val);
+decode_shim_header_attrs([_ | _attrs], Name) ->
+    decode_shim_header_attrs(_attrs, Name);
+decode_shim_header_attrs([], Name) ->
+    decode_shim_header_attr_name(Name).
+
+encode_shim_header({Name, Cdata}, _xmlns_attrs) ->
+    _els = encode_shim_header_cdata(Cdata, []),
+    _attrs = encode_shim_header_attr_name(Name,
+					  _xmlns_attrs),
+    {xmlel, <<"header">>, _attrs, _els}.
+
+decode_shim_header_attr_name(undefined) ->
+    erlang:error({missing_attr, <<"name">>, <<"header">>,
+		  <<"http://jabber.org/protocol/shim">>});
+decode_shim_header_attr_name(_val) -> _val.
+
+encode_shim_header_attr_name(_val, _acc) ->
+    [{<<"name">>, _val} | _acc].
+
+decode_shim_header_cdata(<<>>) -> undefined;
+decode_shim_header_cdata(_val) -> _val.
+
+encode_shim_header_cdata(undefined, _acc) -> _acc;
+encode_shim_header_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
 decode_pubsub({xmlel, <<"pubsub">>, _attrs, _els}) ->
-    {Affiliations, Subscriptions, Subscribe, Publish} =
+    {Items, Options, Affiliations, Subscriptions, Retract,
+     Unsubscribe, Subscribe, Publish} =
 	decode_pubsub_els(_els, undefined, undefined, undefined,
+			  undefined, undefined, undefined, undefined,
 			  undefined),
     {pubsub, Subscriptions, Affiliations, Publish,
-     Subscribe}.
+     Subscribe, Unsubscribe, Options, Items, Retract}.
 
-decode_pubsub_els([], Affiliations, Subscriptions,
-		  Subscribe, Publish) ->
-    {Affiliations, Subscriptions, Subscribe, Publish};
+decode_pubsub_els([], Items, Options, Affiliations,
+		  Subscriptions, Retract, Unsubscribe, Subscribe,
+		  Publish) ->
+    {Items, Options, Affiliations, Subscriptions, Retract,
+     Unsubscribe, Subscribe, Publish};
 decode_pubsub_els([{xmlel, <<"subscriptions">>, _attrs,
 		    _} =
 		       _el
 		   | _els],
-		  Affiliations, Subscriptions, Subscribe, Publish) ->
+		  Items, Options, Affiliations, Subscriptions, Retract,
+		  Unsubscribe, Subscribe, Publish) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
-	   decode_pubsub_els(_els, Affiliations,
-			     decode_pubsub_subscriptions(_el), Subscribe,
-			     Publish);
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     decode_pubsub_subscriptions(_el), Retract,
+			     Unsubscribe, Subscribe, Publish);
        true ->
-	   decode_pubsub_els(_els, Affiliations, Subscriptions,
-			     Subscribe, Publish)
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, Retract, Unsubscribe, Subscribe,
+			     Publish)
     end;
 decode_pubsub_els([{xmlel, <<"affiliations">>, _attrs,
 		    _} =
 		       _el
 		   | _els],
-		  Affiliations, Subscriptions, Subscribe, Publish) ->
+		  Items, Options, Affiliations, Subscriptions, Retract,
+		  Unsubscribe, Subscribe, Publish) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
-	   decode_pubsub_els(_els, decode_pubsub_affiliations(_el),
-			     Subscriptions, Subscribe, Publish);
+	   decode_pubsub_els(_els, Items, Options,
+			     decode_pubsub_affiliations(_el), Subscriptions,
+			     Retract, Unsubscribe, Subscribe, Publish);
        true ->
-	   decode_pubsub_els(_els, Affiliations, Subscriptions,
-			     Subscribe, Publish)
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, Retract, Unsubscribe, Subscribe,
+			     Publish)
     end;
 decode_pubsub_els([{xmlel, <<"subscribe">>, _attrs, _} =
 		       _el
 		   | _els],
-		  Affiliations, Subscriptions, Subscribe, Publish) ->
+		  Items, Options, Affiliations, Subscriptions, Retract,
+		  Unsubscribe, Subscribe, Publish) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
-	   decode_pubsub_els(_els, Affiliations, Subscriptions,
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, Retract, Unsubscribe,
 			     decode_pubsub_subscribe(_el), Publish);
        true ->
-	   decode_pubsub_els(_els, Affiliations, Subscriptions,
-			     Subscribe, Publish)
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, Retract, Unsubscribe, Subscribe,
+			     Publish)
+    end;
+decode_pubsub_els([{xmlel, <<"unsubscribe">>, _attrs,
+		    _} =
+		       _el
+		   | _els],
+		  Items, Options, Affiliations, Subscriptions, Retract,
+		  Unsubscribe, Subscribe, Publish) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, Retract,
+			     decode_pubsub_unsubscribe(_el), Subscribe,
+			     Publish);
+       true ->
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, Retract, Unsubscribe, Subscribe,
+			     Publish)
+    end;
+decode_pubsub_els([{xmlel, <<"options">>, _attrs, _} =
+		       _el
+		   | _els],
+		  Items, Options, Affiliations, Subscriptions, Retract,
+		  Unsubscribe, Subscribe, Publish) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
+	   decode_pubsub_els(_els, Items,
+			     decode_pubsub_options(_el), Affiliations,
+			     Subscriptions, Retract, Unsubscribe, Subscribe,
+			     Publish);
+       true ->
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, Retract, Unsubscribe, Subscribe,
+			     Publish)
+    end;
+decode_pubsub_els([{xmlel, <<"items">>, _attrs, _} = _el
+		   | _els],
+		  Items, Options, Affiliations, Subscriptions, Retract,
+		  Unsubscribe, Subscribe, Publish) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
+	   decode_pubsub_els(_els, decode_pubsub_items(_el),
+			     Options, Affiliations, Subscriptions, Retract,
+			     Unsubscribe, Subscribe, Publish);
+       true ->
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, Retract, Unsubscribe, Subscribe,
+			     Publish)
+    end;
+decode_pubsub_els([{xmlel, <<"retract">>, _attrs, _} =
+		       _el
+		   | _els],
+		  Items, Options, Affiliations, Subscriptions, Retract,
+		  Unsubscribe, Subscribe, Publish) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, decode_pubsub_retract(_el),
+			     Unsubscribe, Subscribe, Publish);
+       true ->
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, Retract, Unsubscribe, Subscribe,
+			     Publish)
     end;
 decode_pubsub_els([{xmlel, <<"publish">>, _attrs, _} =
 		       _el
 		   | _els],
-		  Affiliations, Subscriptions, Subscribe, Publish) ->
+		  Items, Options, Affiliations, Subscriptions, Retract,
+		  Unsubscribe, Subscribe, Publish) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
-	   decode_pubsub_els(_els, Affiliations, Subscriptions,
-			     Subscribe, decode_pubsub_publish(_el));
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, Retract, Unsubscribe, Subscribe,
+			     decode_pubsub_publish(_el));
        true ->
-	   decode_pubsub_els(_els, Affiliations, Subscriptions,
-			     Subscribe, Publish)
+	   decode_pubsub_els(_els, Items, Options, Affiliations,
+			     Subscriptions, Retract, Unsubscribe, Subscribe,
+			     Publish)
     end;
-decode_pubsub_els([_ | _els], Affiliations,
-		  Subscriptions, Subscribe, Publish) ->
-    decode_pubsub_els(_els, Affiliations, Subscriptions,
-		      Subscribe, Publish).
+decode_pubsub_els([_ | _els], Items, Options,
+		  Affiliations, Subscriptions, Retract, Unsubscribe,
+		  Subscribe, Publish) ->
+    decode_pubsub_els(_els, Items, Options, Affiliations,
+		      Subscriptions, Retract, Unsubscribe, Subscribe,
+		      Publish).
 
 encode_pubsub({pubsub, Subscriptions, Affiliations,
-	       Publish, Subscribe},
+	       Publish, Subscribe, Unsubscribe, Options, Items,
+	       Retract},
 	      _xmlns_attrs) ->
     _els = 'encode_pubsub_$publish'(Publish,
 				    'encode_pubsub_$subscribe'(Subscribe,
-							       'encode_pubsub_$subscriptions'(Subscriptions,
-											      'encode_pubsub_$affiliations'(Affiliations,
-															    [])))),
+							       'encode_pubsub_$unsubscribe'(Unsubscribe,
+											    'encode_pubsub_$retract'(Retract,
+														     'encode_pubsub_$subscriptions'(Subscriptions,
+																		    'encode_pubsub_$affiliations'(Affiliations,
+																						  'encode_pubsub_$options'(Options,
+																									   'encode_pubsub_$items'(Items,
+																												  [])))))))),
     _attrs = _xmlns_attrs,
     {xmlel, <<"pubsub">>, _attrs, _els}.
+
+'encode_pubsub_$items'(undefined, _acc) -> _acc;
+'encode_pubsub_$items'(Items, _acc) ->
+    [encode_pubsub_items(Items, []) | _acc].
+
+'encode_pubsub_$options'(undefined, _acc) -> _acc;
+'encode_pubsub_$options'(Options, _acc) ->
+    [encode_pubsub_options(Options, []) | _acc].
 
 'encode_pubsub_$affiliations'(undefined, _acc) -> _acc;
 'encode_pubsub_$affiliations'(Affiliations, _acc) ->
@@ -2627,6 +2834,14 @@ encode_pubsub({pubsub, Subscriptions, Affiliations,
 'encode_pubsub_$subscriptions'(Subscriptions, _acc) ->
     [encode_pubsub_subscriptions(Subscriptions, []) | _acc].
 
+'encode_pubsub_$retract'(undefined, _acc) -> _acc;
+'encode_pubsub_$retract'(Retract, _acc) ->
+    [encode_pubsub_retract(Retract, []) | _acc].
+
+'encode_pubsub_$unsubscribe'(undefined, _acc) -> _acc;
+'encode_pubsub_$unsubscribe'(Unsubscribe, _acc) ->
+    [encode_pubsub_unsubscribe(Unsubscribe, []) | _acc].
+
 'encode_pubsub_$subscribe'(undefined, _acc) -> _acc;
 'encode_pubsub_$subscribe'(Subscribe, _acc) ->
     [encode_pubsub_subscribe(Subscribe, []) | _acc].
@@ -2635,11 +2850,174 @@ encode_pubsub({pubsub, Subscriptions, Affiliations,
 'encode_pubsub_$publish'(Publish, _acc) ->
     [encode_pubsub_publish(Publish, []) | _acc].
 
+decode_pubsub_retract({xmlel, <<"retract">>, _attrs,
+		       _els}) ->
+    Items = decode_pubsub_retract_els(_els, []),
+    {Node, Notify} = decode_pubsub_retract_attrs(_attrs,
+						 undefined, undefined),
+    {pubsub_retract, Node, Notify, Items}.
+
+decode_pubsub_retract_els([], Items) ->
+    lists:reverse(Items);
+decode_pubsub_retract_els([{xmlel, <<"item">>, _attrs,
+			    _} =
+			       _el
+			   | _els],
+			  Items) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
+	   decode_pubsub_retract_els(_els,
+				     [decode_pubsub_item(_el) | Items]);
+       true -> decode_pubsub_retract_els(_els, Items)
+    end;
+decode_pubsub_retract_els([_ | _els], Items) ->
+    decode_pubsub_retract_els(_els, Items).
+
+decode_pubsub_retract_attrs([{<<"node">>, _val}
+			     | _attrs],
+			    _Node, Notify) ->
+    decode_pubsub_retract_attrs(_attrs, _val, Notify);
+decode_pubsub_retract_attrs([{<<"notify">>, _val}
+			     | _attrs],
+			    Node, _Notify) ->
+    decode_pubsub_retract_attrs(_attrs, Node, _val);
+decode_pubsub_retract_attrs([_ | _attrs], Node,
+			    Notify) ->
+    decode_pubsub_retract_attrs(_attrs, Node, Notify);
+decode_pubsub_retract_attrs([], Node, Notify) ->
+    {decode_pubsub_retract_attr_node(Node),
+     decode_pubsub_retract_attr_notify(Notify)}.
+
+encode_pubsub_retract({pubsub_retract, Node, Notify,
+		       Items},
+		      _xmlns_attrs) ->
+    _els = 'encode_pubsub_retract_$items'(Items, []),
+    _attrs = encode_pubsub_retract_attr_notify(Notify,
+					       encode_pubsub_retract_attr_node(Node,
+									       _xmlns_attrs)),
+    {xmlel, <<"retract">>, _attrs, _els}.
+
+'encode_pubsub_retract_$items'([], _acc) -> _acc;
+'encode_pubsub_retract_$items'([Items | _els], _acc) ->
+    'encode_pubsub_retract_$items'(_els,
+				   [encode_pubsub_item(Items, []) | _acc]).
+
+decode_pubsub_retract_attr_node(undefined) ->
+    erlang:error({missing_attr, <<"node">>, <<"retract">>,
+		  <<"http://jabber.org/protocol/pubsub">>});
+decode_pubsub_retract_attr_node(_val) -> _val.
+
+encode_pubsub_retract_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
+
+decode_pubsub_retract_attr_notify(undefined) -> false;
+decode_pubsub_retract_attr_notify(_val) ->
+    case catch dec_bool(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"notify">>,
+			<<"retract">>,
+			<<"http://jabber.org/protocol/pubsub">>});
+      _res -> _res
+    end.
+
+encode_pubsub_retract_attr_notify(false, _acc) -> _acc;
+encode_pubsub_retract_attr_notify(_val, _acc) ->
+    [{<<"notify">>, enc_bool(_val)} | _acc].
+
+decode_pubsub_options({xmlel, <<"options">>, _attrs,
+		       _els}) ->
+    Xdata = decode_pubsub_options_els(_els, undefined),
+    {Node, Subid, Jid} = decode_pubsub_options_attrs(_attrs,
+						     undefined, undefined,
+						     undefined),
+    {pubsub_options, Node, Jid, Subid, Xdata}.
+
+decode_pubsub_options_els([], Xdata) -> Xdata;
+decode_pubsub_options_els([{xmlel, <<"x">>, _attrs, _} =
+			       _el
+			   | _els],
+			  Xdata) ->
+    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    if _xmlns == <<"jabber:x:data">> ->
+	   decode_pubsub_options_els(_els, decode_xdata(_el));
+       true -> decode_pubsub_options_els(_els, Xdata)
+    end;
+decode_pubsub_options_els([_ | _els], Xdata) ->
+    decode_pubsub_options_els(_els, Xdata).
+
+decode_pubsub_options_attrs([{<<"node">>, _val}
+			     | _attrs],
+			    _Node, Subid, Jid) ->
+    decode_pubsub_options_attrs(_attrs, _val, Subid, Jid);
+decode_pubsub_options_attrs([{<<"subid">>, _val}
+			     | _attrs],
+			    Node, _Subid, Jid) ->
+    decode_pubsub_options_attrs(_attrs, Node, _val, Jid);
+decode_pubsub_options_attrs([{<<"jid">>, _val}
+			     | _attrs],
+			    Node, Subid, _Jid) ->
+    decode_pubsub_options_attrs(_attrs, Node, Subid, _val);
+decode_pubsub_options_attrs([_ | _attrs], Node, Subid,
+			    Jid) ->
+    decode_pubsub_options_attrs(_attrs, Node, Subid, Jid);
+decode_pubsub_options_attrs([], Node, Subid, Jid) ->
+    {decode_pubsub_options_attr_node(Node),
+     decode_pubsub_options_attr_subid(Subid),
+     decode_pubsub_options_attr_jid(Jid)}.
+
+encode_pubsub_options({pubsub_options, Node, Jid, Subid,
+		       Xdata},
+		      _xmlns_attrs) ->
+    _els = 'encode_pubsub_options_$xdata'(Xdata, []),
+    _attrs = encode_pubsub_options_attr_jid(Jid,
+					    encode_pubsub_options_attr_subid(Subid,
+									     encode_pubsub_options_attr_node(Node,
+													     _xmlns_attrs))),
+    {xmlel, <<"options">>, _attrs, _els}.
+
+'encode_pubsub_options_$xdata'(undefined, _acc) -> _acc;
+'encode_pubsub_options_$xdata'(Xdata, _acc) ->
+    [encode_xdata(Xdata,
+		  [{<<"xmlns">>, <<"jabber:x:data">>}])
+     | _acc].
+
+decode_pubsub_options_attr_node(undefined) -> undefined;
+decode_pubsub_options_attr_node(_val) -> _val.
+
+encode_pubsub_options_attr_node(undefined, _acc) ->
+    _acc;
+encode_pubsub_options_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
+
+decode_pubsub_options_attr_subid(undefined) ->
+    undefined;
+decode_pubsub_options_attr_subid(_val) -> _val.
+
+encode_pubsub_options_attr_subid(undefined, _acc) ->
+    _acc;
+encode_pubsub_options_attr_subid(_val, _acc) ->
+    [{<<"subid">>, _val} | _acc].
+
+decode_pubsub_options_attr_jid(undefined) ->
+    erlang:error({missing_attr, <<"jid">>, <<"options">>,
+		  <<"http://jabber.org/protocol/pubsub">>});
+decode_pubsub_options_attr_jid(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"jid">>, <<"options">>,
+			<<"http://jabber.org/protocol/pubsub">>});
+      _res -> _res
+    end.
+
+encode_pubsub_options_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
 decode_pubsub_publish({xmlel, <<"publish">>, _attrs,
 		       _els}) ->
     Items = decode_pubsub_publish_els(_els, []),
     Node = decode_pubsub_publish_attrs(_attrs, undefined),
-    {Node, Items}.
+    {pubsub_publish, Node, Items}.
 
 decode_pubsub_publish_els([], Items) ->
     lists:reverse(Items);
@@ -2652,10 +3030,7 @@ decode_pubsub_publish_els([{xmlel, <<"item">>, _attrs,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_publish_els(_els,
-				     case decode_pubsub_item(_el) of
-				       undefined -> Items;
-				       _new_el -> [_new_el | Items]
-				     end);
+				     [decode_pubsub_item(_el) | Items]);
        true -> decode_pubsub_publish_els(_els, Items)
     end;
 decode_pubsub_publish_els([_ | _els], Items) ->
@@ -2670,7 +3045,8 @@ decode_pubsub_publish_attrs([_ | _attrs], Node) ->
 decode_pubsub_publish_attrs([], Node) ->
     decode_pubsub_publish_attr_node(Node).
 
-encode_pubsub_publish({Node, Items}, _xmlns_attrs) ->
+encode_pubsub_publish({pubsub_publish, Node, Items},
+		      _xmlns_attrs) ->
     _els = 'encode_pubsub_publish_$items'(Items, []),
     _attrs = encode_pubsub_publish_attr_node(Node,
 					     _xmlns_attrs),
@@ -2689,11 +3065,86 @@ decode_pubsub_publish_attr_node(_val) -> _val.
 encode_pubsub_publish_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
+decode_pubsub_unsubscribe({xmlel, <<"unsubscribe">>,
+			   _attrs, _els}) ->
+    {Node, Subid, Jid} =
+	decode_pubsub_unsubscribe_attrs(_attrs, undefined,
+					undefined, undefined),
+    {pubsub_unsubscribe, Node, Jid, Subid}.
+
+decode_pubsub_unsubscribe_attrs([{<<"node">>, _val}
+				 | _attrs],
+				_Node, Subid, Jid) ->
+    decode_pubsub_unsubscribe_attrs(_attrs, _val, Subid,
+				    Jid);
+decode_pubsub_unsubscribe_attrs([{<<"subid">>, _val}
+				 | _attrs],
+				Node, _Subid, Jid) ->
+    decode_pubsub_unsubscribe_attrs(_attrs, Node, _val,
+				    Jid);
+decode_pubsub_unsubscribe_attrs([{<<"jid">>, _val}
+				 | _attrs],
+				Node, Subid, _Jid) ->
+    decode_pubsub_unsubscribe_attrs(_attrs, Node, Subid,
+				    _val);
+decode_pubsub_unsubscribe_attrs([_ | _attrs], Node,
+				Subid, Jid) ->
+    decode_pubsub_unsubscribe_attrs(_attrs, Node, Subid,
+				    Jid);
+decode_pubsub_unsubscribe_attrs([], Node, Subid, Jid) ->
+    {decode_pubsub_unsubscribe_attr_node(Node),
+     decode_pubsub_unsubscribe_attr_subid(Subid),
+     decode_pubsub_unsubscribe_attr_jid(Jid)}.
+
+encode_pubsub_unsubscribe({pubsub_unsubscribe, Node,
+			   Jid, Subid},
+			  _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_pubsub_unsubscribe_attr_jid(Jid,
+						encode_pubsub_unsubscribe_attr_subid(Subid,
+										     encode_pubsub_unsubscribe_attr_node(Node,
+															 _xmlns_attrs))),
+    {xmlel, <<"unsubscribe">>, _attrs, _els}.
+
+decode_pubsub_unsubscribe_attr_node(undefined) ->
+    undefined;
+decode_pubsub_unsubscribe_attr_node(_val) -> _val.
+
+encode_pubsub_unsubscribe_attr_node(undefined, _acc) ->
+    _acc;
+encode_pubsub_unsubscribe_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
+
+decode_pubsub_unsubscribe_attr_subid(undefined) ->
+    undefined;
+decode_pubsub_unsubscribe_attr_subid(_val) -> _val.
+
+encode_pubsub_unsubscribe_attr_subid(undefined, _acc) ->
+    _acc;
+encode_pubsub_unsubscribe_attr_subid(_val, _acc) ->
+    [{<<"subid">>, _val} | _acc].
+
+decode_pubsub_unsubscribe_attr_jid(undefined) ->
+    erlang:error({missing_attr, <<"jid">>,
+		  <<"unsubscribe">>,
+		  <<"http://jabber.org/protocol/pubsub">>});
+decode_pubsub_unsubscribe_attr_jid(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({bad_attr_value, <<"jid">>,
+			<<"unsubscribe">>,
+			<<"http://jabber.org/protocol/pubsub">>});
+      _res -> _res
+    end.
+
+encode_pubsub_unsubscribe_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
 decode_pubsub_subscribe({xmlel, <<"subscribe">>, _attrs,
 			 _els}) ->
     {Node, Jid} = decode_pubsub_subscribe_attrs(_attrs,
 						undefined, undefined),
-    {Node, Jid}.
+    {pubsub_subscribe, Node, Jid}.
 
 decode_pubsub_subscribe_attrs([{<<"node">>, _val}
 			       | _attrs],
@@ -2710,7 +3161,8 @@ decode_pubsub_subscribe_attrs([], Node, Jid) ->
     {decode_pubsub_subscribe_attr_node(Node),
      decode_pubsub_subscribe_attr_jid(Jid)}.
 
-encode_pubsub_subscribe({Node, Jid}, _xmlns_attrs) ->
+encode_pubsub_subscribe({pubsub_subscribe, Node, Jid},
+			_xmlns_attrs) ->
     _els = [],
     _attrs = encode_pubsub_subscribe_attr_jid(Jid,
 					      encode_pubsub_subscribe_attr_node(Node,
@@ -2757,10 +3209,8 @@ decode_pubsub_affiliations_els([{xmlel,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_affiliations_els(_els,
-					  case decode_pubsub_affiliation(_el) of
-					    undefined -> Affiliations;
-					    _new_el -> [_new_el | Affiliations]
-					  end);
+					  [decode_pubsub_affiliation(_el)
+					   | Affiliations]);
        true ->
 	   decode_pubsub_affiliations_els(_els, Affiliations)
     end;
@@ -2805,12 +3255,8 @@ decode_pubsub_subscriptions_els([{xmlel,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_subscriptions_els(_els,
-					   case decode_pubsub_subscription(_el)
-					       of
-					     undefined -> Subscriptions;
-					     _new_el ->
-						 [_new_el | Subscriptions]
-					   end);
+					   [decode_pubsub_subscription(_el)
+					    | Subscriptions]);
        true ->
 	   decode_pubsub_subscriptions_els(_els, Subscriptions)
     end;
@@ -2873,10 +3319,7 @@ decode_pubsub_event_els([{xmlel, <<"items">>, _attrs,
        _xmlns ==
 	 <<"http://jabber.org/protocol/pubsub#event">> ->
 	   decode_pubsub_event_els(_els,
-				   case decode_pubsub_event_items(_el) of
-				     undefined -> Items;
-				     _new_el -> [_new_el | Items]
-				   end);
+				   [decode_pubsub_event_items(_el) | Items]);
        true -> decode_pubsub_event_els(_els, Items)
     end;
 decode_pubsub_event_els([_ | _els], Items) ->
@@ -2913,11 +3356,8 @@ decode_pubsub_event_items_els([{xmlel, <<"retract">>,
        _xmlns ==
 	 <<"http://jabber.org/protocol/pubsub#event">> ->
 	   decode_pubsub_event_items_els(_els, Items,
-					 case decode_pubsub_event_retract(_el)
-					     of
-					   undefined -> Retract;
-					   _new_el -> [_new_el | Retract]
-					 end);
+					 [decode_pubsub_event_retract(_el)
+					  | Retract]);
        true ->
 	   decode_pubsub_event_items_els(_els, Items, Retract)
     end;
@@ -2931,10 +3371,8 @@ decode_pubsub_event_items_els([{xmlel, <<"item">>,
        _xmlns ==
 	 <<"http://jabber.org/protocol/pubsub#event">> ->
 	   decode_pubsub_event_items_els(_els,
-					 case decode_pubsub_event_item(_el) of
-					   undefined -> Items;
-					   _new_el -> [_new_el | Items]
-					 end,
+					 [decode_pubsub_event_item(_el)
+					  | Items],
 					 Retract);
        true ->
 	   decode_pubsub_event_items_els(_els, Items, Retract)
@@ -3103,10 +3541,7 @@ decode_pubsub_items_els([{xmlel, <<"item">>, _attrs,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_items_els(_els,
-				   case decode_pubsub_item(_el) of
-				     undefined -> Items;
-				     _new_el -> [_new_el | Items]
-				   end);
+				   [decode_pubsub_item(_el) | Items]);
        true -> decode_pubsub_items_els(_els, Items)
     end;
 decode_pubsub_items_els([_ | _els], Items) ->
@@ -3438,11 +3873,8 @@ decode_xdata_els([{xmlel, <<"item">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_els(_els, Fields,
-			    case decode_xdata_item(_el) of
-			      undefined -> Items;
-			      _new_el -> [_new_el | Items]
-			    end,
-			    Instructions, Reported, Title);
+			    [decode_xdata_item(_el) | Items], Instructions,
+			    Reported, Title);
        true ->
 	   decode_xdata_els(_els, Fields, Items, Instructions,
 			    Reported, Title)
@@ -3453,11 +3885,8 @@ decode_xdata_els([{xmlel, <<"field">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_els(_els,
-			    case decode_xdata_field(_el) of
-			      undefined -> Fields;
-			      _new_el -> [_new_el | Fields]
-			    end,
-			    Items, Instructions, Reported, Title);
+			    [decode_xdata_field(_el) | Fields], Items,
+			    Instructions, Reported, Title);
        true ->
 	   decode_xdata_els(_els, Fields, Items, Instructions,
 			    Reported, Title)
@@ -3540,10 +3969,7 @@ decode_xdata_item_els([{xmlel, <<"field">>, _attrs, _} =
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_item_els(_els,
-				 case decode_xdata_field(_el) of
-				   undefined -> Fields;
-				   _new_el -> [_new_el | Fields]
-				 end);
+				 [decode_xdata_field(_el) | Fields]);
        true -> decode_xdata_item_els(_els, Fields)
     end;
 decode_xdata_item_els([_ | _els], Fields) ->
@@ -3573,10 +3999,7 @@ decode_xdata_reported_els([{xmlel, <<"field">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_reported_els(_els,
-				     case decode_xdata_field(_el) of
-				       undefined -> Fields;
-				       _new_el -> [_new_el | Fields]
-				     end);
+				     [decode_xdata_field(_el) | Fields]);
        true -> decode_xdata_reported_els(_els, Fields)
     end;
 decode_xdata_reported_els([_ | _els], Fields) ->
@@ -3948,14 +4371,11 @@ decode_vcard_els([{xmlel, <<"ADR">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer,
-			    case decode_vcard_ADR(_el) of
-			      undefined -> Adr;
-			      _new_el -> [_new_el | Adr]
-			    end,
-			    Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo);
+			    [decode_vcard_ADR(_el) | Adr], Class, Categories,
+			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
+			    Title, Nickname, Rev, Sort_string, Org, Bday, Key,
+			    Tz, Url, Email, Tel, Label, Fn, Version, N, Photo,
+			    Logo, Geo);
        true ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -3975,11 +4395,8 @@ decode_vcard_els([{xmlel, <<"LABEL">>, _attrs, _} = _el
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
 			    Title, Nickname, Rev, Sort_string, Org, Bday, Key,
 			    Tz, Url, Email, Tel,
-			    case decode_vcard_LABEL(_el) of
-			      undefined -> Label;
-			      _new_el -> [_new_el | Label]
-			    end,
-			    Fn, Version, N, Photo, Logo, Geo);
+			    [decode_vcard_LABEL(_el) | Label], Fn, Version, N,
+			    Photo, Logo, Geo);
        true ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -3998,11 +4415,7 @@ decode_vcard_els([{xmlel, <<"TEL">>, _attrs, _} = _el
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
 			    Title, Nickname, Rev, Sort_string, Org, Bday, Key,
-			    Tz, Url, Email,
-			    case decode_vcard_TEL(_el) of
-			      undefined -> Tel;
-			      _new_el -> [_new_el | Tel]
-			    end,
+			    Tz, Url, Email, [decode_vcard_TEL(_el) | Tel],
 			    Label, Fn, Version, N, Photo, Logo, Geo);
        true ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
@@ -4022,12 +4435,8 @@ decode_vcard_els([{xmlel, <<"EMAIL">>, _attrs, _} = _el
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
 			    Title, Nickname, Rev, Sort_string, Org, Bday, Key,
-			    Tz, Url,
-			    case decode_vcard_EMAIL(_el) of
-			      undefined -> Email;
-			      _new_el -> [_new_el | Email]
-			    end,
-			    Tel, Label, Fn, Version, N, Photo, Logo, Geo);
+			    Tz, Url, [decode_vcard_EMAIL(_el) | Email], Tel,
+			    Label, Fn, Version, N, Photo, Logo, Geo);
        true ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -9774,10 +10183,7 @@ decode_sasl_failure_els([{xmlel, <<"text">>, _attrs,
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els,
-				   case decode_sasl_failure_text(_el) of
-				     undefined -> Text;
-				     _new_el -> [_new_el | Text]
-				   end,
+				   [decode_sasl_failure_text(_el) | Text],
 				   Reason);
        true -> decode_sasl_failure_els(_els, Text, Reason)
     end;
@@ -11208,11 +11614,8 @@ decode_presence_els([{xmlel, <<"status">>, _attrs, _} =
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_presence_els(_els, Error,
-			       case decode_presence_status(_el) of
-				 undefined -> Status;
-				 _new_el -> [_new_el | Status]
-			       end,
-			       Show, Priority, __Els);
+			       [decode_presence_status(_el) | Status], Show,
+			       Priority, __Els);
        true ->
 	   decode_presence_els(_els, Error, Status, Show, Priority,
 			       __Els)
@@ -11502,11 +11905,8 @@ decode_message_els([{xmlel, <<"subject">>, _attrs, _} =
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_message_els(_els, Error, Thread,
-			      case decode_message_subject(_el) of
-				undefined -> Subject;
-				_new_el -> [_new_el | Subject]
-			      end,
-			      Body, __Els);
+			      [decode_message_subject(_el) | Subject], Body,
+			      __Els);
        true ->
 	   decode_message_els(_els, Error, Thread, Subject, Body,
 			      __Els)
@@ -11529,11 +11929,7 @@ decode_message_els([{xmlel, <<"body">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_message_els(_els, Error, Thread, Subject,
-			      case decode_message_body(_el) of
-				undefined -> Body;
-				_new_el -> [_new_el | Body]
-			      end,
-			      __Els);
+			      [decode_message_body(_el) | Body], __Els);
        true ->
 	   decode_message_els(_els, Error, Thread, Subject, Body,
 			      __Els)
@@ -11914,11 +12310,7 @@ decode_stats_els([{xmlel, <<"stat">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/stats">> ->
-	   decode_stats_els(_els,
-			    case decode_stat(_el) of
-			      undefined -> Stat;
-			      _new_el -> [_new_el | Stat]
-			    end);
+	   decode_stats_els(_els, [decode_stat(_el) | Stat]);
        true -> decode_stats_els(_els, Stat)
     end;
 decode_stats_els([_ | _els], Stat) ->
@@ -11947,11 +12339,7 @@ decode_stat_els([{xmlel, <<"error">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/stats">> ->
-	   decode_stat_els(_els,
-			   case decode_stat_error(_el) of
-			     undefined -> Error;
-			     _new_el -> [_new_el | Error]
-			   end);
+	   decode_stat_els(_els, [decode_stat_error(_el) | Error]);
        true -> decode_stat_els(_els, Error)
     end;
 decode_stat_els([_ | _els], Error) ->
@@ -12074,10 +12462,8 @@ decode_bookmarks_storage_els([{xmlel, <<"conference">>,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"storage:bookmarks">> ->
 	   decode_bookmarks_storage_els(_els,
-					case decode_bookmark_conference(_el) of
-					  undefined -> Conference;
-					  _new_el -> [_new_el | Conference]
-					end,
+					[decode_bookmark_conference(_el)
+					 | Conference],
 					Url);
        true ->
 	   decode_bookmarks_storage_els(_els, Conference, Url)
@@ -12090,10 +12476,7 @@ decode_bookmarks_storage_els([{xmlel, <<"url">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"storage:bookmarks">> ->
 	   decode_bookmarks_storage_els(_els, Conference,
-					case decode_bookmark_url(_el) of
-					  undefined -> Url;
-					  _new_el -> [_new_el | Url]
-					end);
+					[decode_bookmark_url(_el) | Url]);
        true ->
 	   decode_bookmarks_storage_els(_els, Conference, Url)
     end;
@@ -12379,10 +12762,7 @@ decode_disco_items_els([{xmlel, <<"item">>, _attrs, _} =
        _xmlns ==
 	 <<"http://jabber.org/protocol/disco#items">> ->
 	   decode_disco_items_els(_els,
-				  case decode_disco_item(_el) of
-				    undefined -> Items;
-				    _new_el -> [_new_el | Items]
-				  end);
+				  [decode_disco_item(_el) | Items]);
        true -> decode_disco_items_els(_els, Items)
     end;
 decode_disco_items_els([_ | _els], Items) ->
@@ -12493,10 +12873,7 @@ decode_disco_info_els([{xmlel, <<"identity">>, _attrs,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/disco#info">> ->
 	   decode_disco_info_els(_els, Xdata, Feature,
-				 case decode_disco_identity(_el) of
-				   undefined -> Identity;
-				   _new_el -> [_new_el | Identity]
-				 end);
+				 [decode_disco_identity(_el) | Identity]);
        true ->
 	   decode_disco_info_els(_els, Xdata, Feature, Identity)
     end;
@@ -12509,10 +12886,7 @@ decode_disco_info_els([{xmlel, <<"feature">>, _attrs,
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/disco#info">> ->
 	   decode_disco_info_els(_els, Xdata,
-				 case decode_disco_feature(_el) of
-				   undefined -> Feature;
-				   _new_el -> [_new_el | Feature]
-				 end,
+				 [decode_disco_feature(_el) | Feature],
 				 Identity);
        true ->
 	   decode_disco_info_els(_els, Xdata, Feature, Identity)
@@ -12522,11 +12896,7 @@ decode_disco_info_els([{xmlel, <<"x">>, _attrs, _} = _el
 		      Xdata, Feature, Identity) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<"jabber:x:data">> ->
-	   decode_disco_info_els(_els,
-				 case decode_xdata(_el) of
-				   undefined -> Xdata;
-				   _new_el -> [_new_el | Xdata]
-				 end,
+	   decode_disco_info_els(_els, [decode_xdata(_el) | Xdata],
 				 Feature, Identity);
        true ->
 	   decode_disco_info_els(_els, Xdata, Feature, Identity)
@@ -12609,41 +12979,51 @@ encode_disco_feature_attr_var(_val, _acc) ->
 
 decode_disco_identity({xmlel, <<"identity">>, _attrs,
 		       _els}) ->
-    {Category, Type, Name} =
+    {Category, Type, Lang, Name} =
 	decode_disco_identity_attrs(_attrs, undefined,
-				    undefined, undefined),
-    {identity, Category, Type, Name}.
+				    undefined, undefined, undefined),
+    {identity, Category, Type, Lang, Name}.
 
 decode_disco_identity_attrs([{<<"category">>, _val}
 			     | _attrs],
-			    _Category, Type, Name) ->
-    decode_disco_identity_attrs(_attrs, _val, Type, Name);
+			    _Category, Type, Lang, Name) ->
+    decode_disco_identity_attrs(_attrs, _val, Type, Lang,
+				Name);
 decode_disco_identity_attrs([{<<"type">>, _val}
 			     | _attrs],
-			    Category, _Type, Name) ->
+			    Category, _Type, Lang, Name) ->
     decode_disco_identity_attrs(_attrs, Category, _val,
-				Name);
+				Lang, Name);
+decode_disco_identity_attrs([{<<"xml:lang">>, _val}
+			     | _attrs],
+			    Category, Type, _Lang, Name) ->
+    decode_disco_identity_attrs(_attrs, Category, Type,
+				_val, Name);
 decode_disco_identity_attrs([{<<"name">>, _val}
 			     | _attrs],
-			    Category, Type, _Name) ->
+			    Category, Type, Lang, _Name) ->
     decode_disco_identity_attrs(_attrs, Category, Type,
-				_val);
+				Lang, _val);
 decode_disco_identity_attrs([_ | _attrs], Category,
-			    Type, Name) ->
+			    Type, Lang, Name) ->
     decode_disco_identity_attrs(_attrs, Category, Type,
-				Name);
-decode_disco_identity_attrs([], Category, Type, Name) ->
+				Lang, Name);
+decode_disco_identity_attrs([], Category, Type, Lang,
+			    Name) ->
     {decode_disco_identity_attr_category(Category),
      decode_disco_identity_attr_type(Type),
+     'decode_disco_identity_attr_xml:lang'(Lang),
      decode_disco_identity_attr_name(Name)}.
 
-encode_disco_identity({identity, Category, Type, Name},
+encode_disco_identity({identity, Category, Type, Lang,
+		       Name},
 		      _xmlns_attrs) ->
     _els = [],
     _attrs = encode_disco_identity_attr_name(Name,
-					     encode_disco_identity_attr_type(Type,
-									     encode_disco_identity_attr_category(Category,
-														 _xmlns_attrs))),
+					     'encode_disco_identity_attr_xml:lang'(Lang,
+										   encode_disco_identity_attr_type(Type,
+														   encode_disco_identity_attr_category(Category,
+																		       _xmlns_attrs)))),
     {xmlel, <<"identity">>, _attrs, _els}.
 
 decode_disco_identity_attr_category(undefined) ->
@@ -12662,6 +13042,16 @@ decode_disco_identity_attr_type(_val) -> _val.
 
 encode_disco_identity_attr_type(_val, _acc) ->
     [{<<"type">>, _val} | _acc].
+
+'decode_disco_identity_attr_xml:lang'(undefined) ->
+    undefined;
+'decode_disco_identity_attr_xml:lang'(_val) -> _val.
+
+'encode_disco_identity_attr_xml:lang'(undefined,
+				      _acc) ->
+    _acc;
+'encode_disco_identity_attr_xml:lang'(_val, _acc) ->
+    [{<<"xml:lang">>, _val} | _acc].
 
 decode_disco_identity_attr_name(undefined) -> undefined;
 decode_disco_identity_attr_name(_val) -> _val.
@@ -12781,11 +13171,8 @@ decode_privacy_els([{xmlel, <<"list">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_els(_els,
-			      case decode_privacy_list(_el) of
-				undefined -> Lists;
-				_new_el -> [_new_el | Lists]
-			      end,
-			      Default, Active);
+			      [decode_privacy_list(_el) | Lists], Default,
+			      Active);
        true -> decode_privacy_els(_els, Lists, Default, Active)
     end;
 decode_privacy_els([{xmlel, <<"default">>, _attrs, _} =
@@ -12909,10 +13296,7 @@ decode_privacy_list_els([{xmlel, <<"item">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_list_els(_els,
-				   case decode_privacy_item(_el) of
-				     undefined -> Items;
-				     _new_el -> [_new_el | Items]
-				   end);
+				   [decode_privacy_item(_el) | Items]);
        true -> decode_privacy_list_els(_els, Items)
     end;
 decode_privacy_list_els([_ | _els], Items) ->
@@ -13160,10 +13544,7 @@ decode_roster_els([{xmlel, <<"item">>, _attrs, _} = _el
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:roster">> ->
 	   decode_roster_els(_els,
-			     case decode_roster_item(_el) of
-			       undefined -> Items;
-			       _new_el -> [_new_el | Items]
-			     end);
+			     [decode_roster_item(_el) | Items]);
        true -> decode_roster_els(_els, Items)
     end;
 decode_roster_els([_ | _els], Items) ->
@@ -13211,10 +13592,7 @@ decode_roster_item_els([{xmlel, <<"group">>, _attrs,
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:roster">> ->
 	   decode_roster_item_els(_els,
-				  case decode_roster_group(_el) of
-				    undefined -> Groups;
-				    _new_el -> [_new_el | Groups]
-				  end);
+				  [decode_roster_group(_el) | Groups]);
        true -> decode_roster_item_els(_els, Groups)
     end;
 decode_roster_item_els([_ | _els], Groups) ->
@@ -13340,74 +13718,63 @@ encode_roster_group_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
 decode_version({xmlel, <<"query">>, _attrs, _els}) ->
-    {Version_ver, Version_os, Version_name} =
-	decode_version_els(_els, undefined, undefined,
-			   undefined),
-    {version, Version_name, Version_ver, Version_os}.
+    {Ver, Os, Name} = decode_version_els(_els, undefined,
+					 undefined, undefined),
+    {version, Name, Ver, Os}.
 
-decode_version_els([], Version_ver, Version_os,
-		   Version_name) ->
-    {Version_ver, Version_os, Version_name};
+decode_version_els([], Ver, Os, Name) ->
+    {Ver, Os, Name};
 decode_version_els([{xmlel, <<"name">>, _attrs, _} = _el
 		    | _els],
-		   Version_ver, Version_os, Version_name) ->
+		   Ver, Os, Name) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:version">> ->
-	   decode_version_els(_els, Version_ver, Version_os,
+	   decode_version_els(_els, Ver, Os,
 			      decode_version_name(_el));
-       true ->
-	   decode_version_els(_els, Version_ver, Version_os,
-			      Version_name)
+       true -> decode_version_els(_els, Ver, Os, Name)
     end;
 decode_version_els([{xmlel, <<"version">>, _attrs, _} =
 			_el
 		    | _els],
-		   Version_ver, Version_os, Version_name) ->
+		   Ver, Os, Name) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:version">> ->
-	   decode_version_els(_els, decode_version_ver(_el),
-			      Version_os, Version_name);
-       true ->
-	   decode_version_els(_els, Version_ver, Version_os,
-			      Version_name)
+	   decode_version_els(_els, decode_version_ver(_el), Os,
+			      Name);
+       true -> decode_version_els(_els, Ver, Os, Name)
     end;
 decode_version_els([{xmlel, <<"os">>, _attrs, _} = _el
 		    | _els],
-		   Version_ver, Version_os, Version_name) ->
+		   Ver, Os, Name) ->
     _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:version">> ->
-	   decode_version_els(_els, Version_ver,
-			      decode_version_os(_el), Version_name);
-       true ->
-	   decode_version_els(_els, Version_ver, Version_os,
-			      Version_name)
+	   decode_version_els(_els, Ver, decode_version_os(_el),
+			      Name);
+       true -> decode_version_els(_els, Ver, Os, Name)
     end;
-decode_version_els([_ | _els], Version_ver, Version_os,
-		   Version_name) ->
-    decode_version_els(_els, Version_ver, Version_os,
-		       Version_name).
+decode_version_els([_ | _els], Ver, Os, Name) ->
+    decode_version_els(_els, Ver, Os, Name).
 
-encode_version({version, Version_name, Version_ver,
-		Version_os},
+encode_version({version, Name, Ver, Os},
 	       _xmlns_attrs) ->
-    _els = 'encode_version_$version_name'(Version_name,
-					  'encode_version_$version_os'(Version_os,
-								       'encode_version_$version_ver'(Version_ver,
-												     []))),
+    _els = 'encode_version_$name'(Name,
+				  'encode_version_$os'(Os,
+						       'encode_version_$ver'(Ver,
+									     []))),
     _attrs = _xmlns_attrs,
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_version_$version_ver'(undefined, _acc) -> _acc;
-'encode_version_$version_ver'(Version_ver, _acc) ->
-    [encode_version_ver(Version_ver, []) | _acc].
+'encode_version_$ver'(undefined, _acc) -> _acc;
+'encode_version_$ver'(Ver, _acc) ->
+    [encode_version_ver(Ver, []) | _acc].
 
-'encode_version_$version_os'(undefined, _acc) -> _acc;
-'encode_version_$version_os'(Version_os, _acc) ->
-    [encode_version_os(Version_os, []) | _acc].
+'encode_version_$os'(undefined, _acc) -> _acc;
+'encode_version_$os'(Os, _acc) ->
+    [encode_version_os(Os, []) | _acc].
 
-'encode_version_$version_name'(undefined, _acc) -> _acc;
-'encode_version_$version_name'(Version_name, _acc) ->
-    [encode_version_name(Version_name, []) | _acc].
+'encode_version_$name'(undefined, _acc) -> _acc;
+'encode_version_$name'(Name, _acc) ->
+    [encode_version_name(Name, []) | _acc].
 
 decode_version_os({xmlel, <<"os">>, _attrs, _els}) ->
     Cdata = decode_version_os_els(_els, <<>>), Cdata.
