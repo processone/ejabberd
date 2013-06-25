@@ -91,6 +91,7 @@ init_per_suite(Config) ->
     application:set_env(ejabberd, log_path, LogPath),
     application:set_env(sasl, sasl_error_logger, {file, SASLPath}),
     application:set_env(mnesia, dir, MnesiaDir),
+    {ok, _} = ldap_srv:start(LDIFFile),
     ok = application:start(ejabberd),
     [{server_port, 5222},
      {server_host, "localhost"},
@@ -134,7 +135,6 @@ init_per_group(pgsql, Config) ->
             {skip, {pgsql_not_available, Err}}
     end;
 init_per_group(ldap, Config) ->
-    {ok, _} = ldap_srv:start(?config(ldif_file, Config)),
     set_opt(server, ?LDAP_VHOST, Config);
 init_per_group(_GroupName, Config) ->
     Pid = start_event_relay(),
