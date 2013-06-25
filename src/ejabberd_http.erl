@@ -366,7 +366,7 @@ process_request(#state{request_method = Method,
 	{'EXIT', _} ->
 	    make_bad_request(State);
 	{NPath, Query} ->
-	    LPath = [path_decode(NPE) || NPE <- str:tokens(NPath, <<"/">>)],
+	    LPath = normalize_path([NPE || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
 	    LQuery = case (catch parse_urlencoded(Query)) of
 			 {'EXIT', _Reason} ->
 			     [];
@@ -435,7 +435,7 @@ process_request(#state{request_method = Method,
 	{'EXIT', _} ->
             make_bad_request(State);
 	{NPath, _Query} ->
-	    LPath = [path_decode(NPE) || NPE <- str:tokens(NPath, <<"/">>)],
+	    LPath = normalize_path([NPE || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
 	    LQuery = case (catch parse_urlencoded(Data)) of
 			 {'EXIT', _Reason} ->
 			     [];
@@ -820,5 +820,13 @@ old_integer_to_hex(I) when I >= 16 ->
     N = trunc(I / 16),
     old_integer_to_hex(N) ++ old_integer_to_hex(I rem 16).
 
-%% strip_spaces(String, left) ->
-%%     drop_spaces(String);
+normalize_path(Path) ->
+    normalize_path(Path, []).
+
+normalize_path([], Norm) -> lists:reverse(Norm);
+normalize_path([".."|Path], Norm) ->
+    normalize_path(Path, Norm);
+normalize_path([_Parent, ".."|Path], Norm) ->
+    normalize_path(Path, Norm);
+normalize_path([Part | Path], Norm) ->
+    normalize_path(Path, [Part|Norm]).
