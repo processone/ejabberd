@@ -6,7 +6,7 @@
  
  
 
- ejabberd 2.1.12 
+ ejabberd 2.1.13 
  
  Installation and Operation Guide
  
@@ -76,7 +76,7 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 <HR SIZE=2><BR>
 <BR>
 
-<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 2.1.12 </B></FONT></TD></TR>
+<TABLE CELLSPACING=6 CELLPADDING=0><TR><TD ALIGN=right NOWRAP> <FONT SIZE=6><B>ejabberd 2.1.13 </B></FONT></TD></TR>
 <TR><TD ALIGN=right NOWRAP>&nbsp;</TD></TR>
 <TR><TD ALIGN=right NOWRAP> <FONT SIZE=6>Installation and Operation Guide</FONT></TD></TR>
 </TABLE><BR>
@@ -688,7 +688,7 @@ Handles incoming s2s connections.<BR>
 Interacts with an <A HREF="http://www.ejabberd.im/tutorials-transports">external component</A>
 (as defined in the Jabber Component Protocol (<A HREF="http://xmpp.org/extensions/xep-0114.html">XEP-0114</A>).<BR>
  Options: <TT>access</TT>, <TT>hosts</TT>, <TT>max_fsm_queue</TT>,
-<TT>service_check_from</TT>, <TT>shaper</TT>
+<TT>service_check_from</TT>, <TT>shaper_rule</TT>
 </DD><DT CLASS="dt-description"><B><TT>ejabberd_stun</TT></B></DT><DD CLASS="dd-description">
 Handles STUN Binding requests as defined in
 <A HREF="http://tools.ietf.org/html/rfc5389">RFC 5389</A>.<BR>
@@ -792,6 +792,9 @@ The default value is <TT>true</TT>, to be compliant with <A HREF="http://xmpp.or
 </DD><DT CLASS="dt-description"><B><TT>{shaper, none|ShaperName}</TT></B></DT><DD CLASS="dd-description"> This option defines a
 shaper for the port (see section&#XA0;<A HREF="#shapers">3.1.6</A>). The default value
 is <TT>none</TT>.
+</DD><DT CLASS="dt-description"><B><TT>{shaper_rule, none|ShaperRule}</TT></B></DT><DD CLASS="dd-description"> This option defines a
+shaper rule for the <TT>ejabberd_service</TT> (see section&#XA0;<A HREF="#shapers">3.1.6</A>). The recommended value
+is <TT>fast</TT>.
 </DD><DT CLASS="dt-description"><B><TT>starttls</TT></B></DT><DD CLASS="dd-description"> This option
 specifies that STARTTLS encryption is available on connections to the port.
 You should also set the <TT>certfile</TT> option.
