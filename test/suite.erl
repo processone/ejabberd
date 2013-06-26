@@ -223,9 +223,6 @@ sasl_new(<<"DIGEST-MD5">>, User, Server, Password) ->
 		   MyResponse = response(User, Password, Nonce, AuthzId,
 					 Realm, CNonce, DigestURI, NC, QOP,
 					 <<"AUTHENTICATE">>),
-		   ServerResponse = response(User, Password, Nonce,
-					     AuthzId, Realm, CNonce, DigestURI,
-					     NC, QOP, <<"">>),
 		   Resp = <<"username=\"", User/binary, "\",realm=\"",
 			    Realm/binary, "\",nonce=\"", Nonce/binary,
 			    "\",cnonce=\"", CNonce/binary, "\",nc=", NC/binary,
@@ -236,18 +233,12 @@ sasl_new(<<"DIGEST-MD5">>, User, Server, Password) ->
 		    fun (ServerIn2) ->
 			    case cyrsasl_digest:parse(ServerIn2) of
 			      bad -> {error, <<"Invalid SASL challenge">>};
-			      KeyVals2 ->
-				  RspAuth = xml:get_attr_s(<<"rspauth">>,
-							   KeyVals2),
-				  if RspAuth == ServerResponse ->
-					 {<<"">>,
-					  fun (_) ->
-						  {error,
-						   <<"Invalid SASL challenge">>}
-					  end};
-				     true ->
-					 {error, <<"Invalid SASL challenge">>}
-				  end
+			      _KeyVals2 ->
+                                    {<<"">>,
+                                     fun (_) ->
+                                             {error,
+                                              <<"Invalid SASL challenge">>}
+                                     end}
 			    end
 		    end}
 	     end
