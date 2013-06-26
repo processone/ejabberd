@@ -70,6 +70,7 @@
 -define(MYSQL_VHOST, <<"mysql.localhost">>).
 -define(PGSQL_VHOST, <<"pgsql.localhost">>).
 -define(LDAP_VHOST, <<"ldap.localhost">>).
+-define(EXTAUTH_VHOST, <<"extauth.localhost">>).
 
 suite() ->
     [{timetrap, {seconds,10}}].
@@ -85,8 +86,10 @@ init_per_suite(Config) ->
     MnesiaDir = filename:join([PrivDir, "mnesia"]),
     CertFile = filename:join([DataDir, "cert.pem"]),
     LDIFFile = filename:join([DataDir, "ejabberd.ldif"]),
+    ExtAuthScript = filename:join([DataDir, "extauth.py"]),
     {ok, CWD} = file:get_cwd(),
     {ok, _} = file:copy(CertFile, filename:join([CWD, "cert.pem"])),
+    {ok, _} = file:copy(ExtAuthScript, filename:join([CWD, "extauth.py"])),
     application:set_env(ejabberd, config, ConfigPath),
     application:set_env(ejabberd, log_path, LogPath),
     application:set_env(sasl, sasl_error_logger, {file, SASLPath}),
@@ -136,6 +139,8 @@ init_per_group(pgsql, Config) ->
     end;
 init_per_group(ldap, Config) ->
     set_opt(server, ?LDAP_VHOST, Config);
+init_per_group(extauth, Config) ->
+    set_opt(server, ?EXTAUTH_VHOST, Config);
 init_per_group(_GroupName, Config) ->
     Pid = start_event_relay(),
     set_opt(event_relay, Pid, Config).
@@ -149,6 +154,8 @@ end_per_group(pgsql, _Config) ->
 end_per_group(no_db, _Config) ->
     ok;
 end_per_group(ldap, _Config) ->
+    ok;
+end_per_group(extauth, _Config) ->
     ok;
 end_per_group(_GroupName, Config) ->
     stop_event_relay(Config),
@@ -252,8 +259,14 @@ ldap_tests() ->
       [test_auth,
        vcard_get]}].
 
+extauth_tests() ->
+    [{extauth_tests, [sequence],
+      [test_auth,
+       test_unregister]}].
+
 groups() ->
     [{ldap, [sequence], ldap_tests()},
+     {extauth, [sequence], extauth_tests()},
      {no_db, [sequence], no_db_tests()},
      {mnesia, [sequence], db_tests()},
      {mysql, [sequence], db_tests()},
@@ -268,6 +281,7 @@ all() ->
      {group, mnesia},
      {group, mysql},
      {group, pgsql},
+     {group, extauth},
      stop_ejabberd].
 
 stop_ejabberd(Config) ->

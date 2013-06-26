@@ -70,28 +70,28 @@ get_process_name(Host, Integer) ->
 			    eauth).
 
 check_password(User, Server, Password) ->
-    call_port(Server, ["auth", User, Server, Password]).
+    call_port(Server, [<<"auth">>, User, Server, Password]).
 
 is_user_exists(User, Server) ->
-    call_port(Server, ["isuser", User, Server]).
+    call_port(Server, [<<"isuser">>, User, Server]).
 
 set_password(User, Server, Password) ->
-    call_port(Server, ["setpass", User, Server, Password]).
+    call_port(Server, [<<"setpass">>, User, Server, Password]).
 
 try_register(User, Server, Password) ->
     case call_port(Server,
-		   ["tryregister", User, Server, Password])
+		   [<<"tryregister">>, User, Server, Password])
 	of
       true -> {atomic, ok};
       false -> {error, not_allowed}
     end.
 
 remove_user(User, Server) ->
-    call_port(Server, ["removeuser", User, Server]).
+    call_port(Server, [<<"removeuser">>, User, Server]).
 
 remove_user(User, Server, Password) ->
     call_port(Server,
-	      ["removeuser3", User, Server, Password]).
+	      [<<"removeuser3">>, User, Server, Password]).
 
 call_port(Server, Msg) ->
     LServer = jlib:nameprep(Server),
@@ -154,13 +154,7 @@ flush_buffer_and_forward_messages(Pid) ->
       after 0 -> true
     end.
 
-join(List, Sep) ->
-    lists:foldl(fun (A, "") -> A;
-		    (A, Acc) -> Acc ++ Sep ++ A
-		end,
-		"", List).
-
-encode(L) -> join(L, ":").
+encode(L) -> str:join(L, <<":">>).
 
 decode([0, 0]) -> false;
 decode([0, 1]) -> true.
