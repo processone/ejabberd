@@ -10,111 +10,38 @@
 
 -compile(export_all).
 
--include_lib("common_test/include/ct.hrl").
--include("xml.hrl").
--include("ns.hrl").
--include("ejabberd.hrl").
--include("mod_proxy65.hrl").
--include("xmpp_codec.hrl").
+-import(suite, [init_config/1, connect/1, disconnect/1,
+                recv/0, send/2, send_recv/2, my_jid/1, server_jid/1,
+                pubsub_jid/1, proxy_jid/1, muc_jid/1,
+                muc_room_jid/1, get_features/2, re_register/1,
+                is_feature_advertised/2, subscribe_to_events/1,
+                is_feature_advertised/3, set_opt/3, auth_SASL/2,
+                wait_for_master/1, wait_for_slave/1,
+                make_iq_result/1, start_event_relay/0,
+                stop_event_relay/1, put_event/2, get_event/1,
+                bind/1, auth/1, open_session/1, zlib/1, starttls/1]).
 
--define(STREAM_HEADER,
-	<<"<?xml version='1.0'?><stream:stream "
-	  "xmlns:stream='http://etherx.jabber.org/stream"
-	  "s' xmlns='jabber:client' to='~s' version='1.0"
-	  "'>">>).
-
--define(STREAM_TRAILER, <<"</stream:stream>">>).
-
--define(PUBSUB(Node), <<(?NS_PUBSUB)/binary, "#", Node>>).
-
--define(recv2(P1, P2),
-        (fun() ->
-                 case {R1 = recv(), R2 = recv()} of
-                     {P1, P2} -> {R1, R2};
-                     {P2, P1} -> {R2, R1}
-                 end
-         end)()).
-
--define(recv3(P1, P2, P3),
-        (fun() ->
-                 case R3 = recv() of
-                     P1 -> insert(R3, 1, ?recv2(P2, P3));
-                     P2 -> insert(R3, 2, ?recv2(P1, P3));
-                     P3 -> insert(R3, 3, ?recv2(P1, P2))
-                 end
-         end)()).
-
--define(recv4(P1, P2, P3, P4),
-        (fun() ->
-                 case R4 = recv() of
-                     P1 -> insert(R4, 1, ?recv3(P2, P3, P4));
-                     P2 -> insert(R4, 2, ?recv3(P1, P3, P4));
-                     P3 -> insert(R4, 3, ?recv3(P1, P2, P4));
-                     P4 -> insert(R4, 4, ?recv3(P1, P2, P3))
-                 end
-         end)()).
-
--define(recv5(P1, P2, P3, P4, P5),
-        (fun() ->
-                 case R5 = recv() of
-                     P1 -> insert(R5, 1, ?recv4(P2, P3, P4, P5));
-                     P2 -> insert(R5, 2, ?recv4(P1, P3, P4, P5));
-                     P3 -> insert(R5, 3, ?recv4(P1, P2, P4, P5));
-                     P4 -> insert(R5, 4, ?recv4(P1, P2, P3, P5));
-                     P5 -> insert(R5, 5, ?recv4(P1, P2, P3, P4))
-                 end
-         end)()).
-
--define(COMMON_VHOST, <<"localhost">>).
--define(MNESIA_VHOST, <<"mnesia.localhost">>).
--define(MYSQL_VHOST, <<"mysql.localhost">>).
--define(PGSQL_VHOST, <<"pgsql.localhost">>).
--define(LDAP_VHOST, <<"ldap.localhost">>).
--define(EXTAUTH_VHOST, <<"extauth.localhost">>).
+-include("suite.hrl").
 
 suite() ->
     [{timetrap, {seconds,10}}].
 
 init_per_suite(Config) ->
-    DataDir = proplists:get_value(data_dir, Config),
-    PrivDir = proplists:get_value(priv_dir, Config),
-    [_, _|Tail] = lists:reverse(filename:split(DataDir)),
-    BaseDir = filename:join(lists:reverse(Tail)),
-    ConfigPath = filename:join([DataDir, "ejabberd.cfg"]),
-    LogPath = filename:join([PrivDir, "ejabberd.log"]),
-    SASLPath = filename:join([PrivDir, "sasl.log"]),
-    MnesiaDir = filename:join([PrivDir, "mnesia"]),
-    CertFile = filename:join([DataDir, "cert.pem"]),
-    LDIFFile = filename:join([DataDir, "ejabberd.ldif"]),
-    ExtAuthScript = filename:join([DataDir, "extauth.py"]),
+    NewConfig = init_config(Config),
+    DataDir = proplists:get_value(data_dir, NewConfig),
     {ok, CWD} = file:get_cwd(),
-    {ok, _} = file:copy(CertFile, filename:join([CWD, "cert.pem"])),
+    ExtAuthScript = filename:join([DataDir, "extauth.py"]),
+    LDIFFile = filename:join([DataDir, "ejabberd.ldif"]),
     {ok, _} = file:copy(ExtAuthScript, filename:join([CWD, "extauth.py"])),
-    application:set_env(ejabberd, config, ConfigPath),
-    application:set_env(ejabberd, log_path, LogPath),
-    application:set_env(sasl, sasl_error_logger, {file, SASLPath}),
-    application:set_env(mnesia, dir, MnesiaDir),
     {ok, _} = ldap_srv:start(LDIFFile),
     ok = application:start(ejabberd),
-    [{server_port, 5222},
-     {server_host, "localhost"},
-     {server, ?COMMON_VHOST},
-     {user, <<"test_single">>},
-     {certfile, CertFile},
-     {base_dir, BaseDir},
-     {ldif_file, LDIFFile},
-     {resource, <<"resource">>},
-     {password, <<"password">>}
-     |Config].
+    NewConfig.
 
 end_per_suite(_Config) ->
     ok.
 
 init_per_group(no_db, Config) ->
-    User = ?config(user, Config),
-    Server = ?config(server, Config),
-    Password = ?config(password, Config),
-    {atomic, ok} = ejabberd_auth:try_register(User, Server, Password),
+    re_register(Config),
     Config;
 init_per_group(mnesia, Config) ->
     mod_muc:shutdown_rooms(?MNESIA_VHOST),
@@ -293,44 +220,6 @@ stop_ejabberd(Config) ->
 test_connect(Config) ->
     disconnect(connect(Config)).
 
-connect(Config) ->
-    {ok, Sock} = ejabberd_socket:connect(
-                   ?config(server_host, Config),
-                   ?config(server_port, Config),
-                   [binary, {packet, 0}, {active, false}]),
-    init_stream(set_opt(socket, Sock, Config)).
-
-init_stream(Config) ->
-    ok = send_text(Config, io_lib:format(?STREAM_HEADER,
-                                          [?config(server, Config)])),
-    {xmlstreamstart, <<"stream:stream">>, Attrs} = recv(),
-    <<"jabber:client">> = xml:get_attr_s(<<"xmlns">>, Attrs),
-    <<"1.0">> = xml:get_attr_s(<<"version">>, Attrs),
-    #stream_features{sub_els = Fs} = recv(),
-    Mechs = lists:flatmap(
-              fun(#sasl_mechanisms{list = Ms}) ->
-                      Ms;
-                 (_) ->
-                      []
-              end, Fs),
-    lists:foldl(
-      fun(#feature_register{}, Acc) ->
-              set_opt(register, true, Acc);
-         (#starttls{}, Acc) ->
-              set_opt(starttls, true, Acc);
-         (#compression{methods = Ms}, Acc) ->
-              set_opt(compression, Ms, Acc);
-         (_, Acc) ->
-              Acc
-      end, set_opt(mechs, Mechs, Config), Fs).
-
-disconnect(Config) ->
-    Socket = ?config(socket, Config),
-    ok = ejabberd_socket:send(Socket, ?STREAM_TRAILER),
-    {xmlstreamend, <<"stream:stream">>} = recv(),
-    ejabberd_socket:close(Socket),
-    Config.
-
 test_starttls(Config) ->
     case ?config(starttls, Config) of
         true ->
@@ -338,15 +227,6 @@ test_starttls(Config) ->
         _ ->
             {skipped, 'starttls_not_available'}
     end.
-
-starttls(Config) ->
-    send(Config, #starttls{}),
-    #starttls_proceed{} = recv(),
-    TLSSocket = ejabberd_socket:starttls(
-                  ?config(socket, Config),
-                  [{certfile, ?config(certfile, Config)},
-                   connect]),
-    init_stream(set_opt(socket, TLSSocket, Config)).
 
 test_zlib(Config) ->
     case ?config(compression, Config) of
@@ -360,12 +240,6 @@ test_zlib(Config) ->
         _ ->
             {skipped, 'compression_not_available'}
     end.
-
-zlib(Config) ->
-    send(Config, #compress{methods = [<<"zlib">>]}),
-    #compressed{} = recv(),
-    ZlibSocket = ejabberd_socket:compress(?config(socket, Config)),
-    init_stream(set_opt(socket, ZlibSocket, Config)).
 
 test_register(Config) ->
     case ?config(register, Config) of
@@ -407,39 +281,34 @@ try_unregister(Config) ->
     #stream_error{reason = conflict} = recv(),
     Config.
 
+auth_md5(Config) ->
+    Mechs = ?config(mechs, Config),
+    case lists:member(<<"DIGEST-MD5">>, Mechs) of
+        true ->
+            disconnect(auth_SASL(<<"DIGEST-MD5">>, Config));
+        false ->
+            disconnect(Config),
+            {skipped, 'DIGEST-MD5_not_available'}
+    end.
+
+auth_plain(Config) ->
+    Mechs = ?config(mechs, Config),
+    case lists:member(<<"PLAIN">>, Mechs) of
+        true ->
+            disconnect(auth_SASL(<<"PLAIN">>, Config));
+        false ->
+            disconnect(Config),
+            {skipped, 'PLAIN_not_available'}
+    end.
+
 test_auth(Config) ->
     disconnect(auth(Config)).
-
-auth(Config) ->
-    Mechs = ?config(mechs, Config),
-    HaveMD5 = lists:member(<<"DIGEST-MD5">>, Mechs),
-    HavePLAIN = lists:member(<<"PLAIN">>, Mechs),
-    if HavePLAIN ->
-            auth_SASL(<<"PLAIN">>, Config);
-       HaveMD5 ->
-            auth_SASL(<<"DIGEST-MD5">>, Config);
-       true ->
-            ct:fail(no_sasl_mechanisms_available)
-    end.
 
 test_bind(Config) ->
     disconnect(bind(Config)).
 
-bind(Config) ->
-    #iq{type = result, sub_els = [#bind{}]} =
-        send_recv(
-          Config,
-          #iq{type = set,
-              sub_els = [#bind{resource = ?config(resource, Config)}]}),
-    Config.
-
 test_open_session(Config) ->
     disconnect(open_session(Config)).
-
-open_session(Config) ->
-    #iq{type = result, sub_els = []} =
-        send_recv(Config, #iq{type = set, sub_els = [#session{}]}),
-    Config.
 
 roster_get(Config) ->
     #iq{type = result, sub_els = [#roster{items = []}]} =
@@ -754,26 +623,6 @@ pubsub(Config) ->
                                            jid = my_jid(Config)}}]}),
     disconnect(Config).
 
-auth_md5(Config) ->
-    Mechs = ?config(mechs, Config),
-    case lists:member(<<"DIGEST-MD5">>, Mechs) of
-        true ->
-            disconnect(auth_SASL(<<"DIGEST-MD5">>, Config));
-        false ->
-            disconnect(Config),
-            {skipped, 'DIGEST-MD5_not_available'}
-    end.
-
-auth_plain(Config) ->
-    Mechs = ?config(mechs, Config),
-    case lists:member(<<"PLAIN">>, Mechs) of
-        true ->
-            disconnect(auth_SASL(<<"PLAIN">>, Config));
-        false ->
-            disconnect(Config),
-            {skipped, 'PLAIN_not_available'}
-    end.
-
 roster_subscribe_master(Config) ->
     send(Config, #presence{}),
     #presence{} = recv(),
@@ -1046,217 +895,9 @@ offline_slave(Config) ->
       end, SubEls),
     disconnect(Config).
 
-auth_SASL(Mech, Config) ->
-    {Response, SASL} = sasl_new(Mech,
-                                ?config(user, Config),
-                                ?config(server, Config),
-                                ?config(password, Config)),
-    send(Config, #sasl_auth{mechanism = Mech, text = Response}),
-    wait_auth_SASL_result(set_opt(sasl, SASL, Config)).
-
-wait_auth_SASL_result(Config) ->
-    case recv() of
-        #sasl_success{} ->
-            ejabberd_socket:reset_stream(?config(socket, Config)),
-            send_text(Config,
-                      io_lib:format(?STREAM_HEADER,
-                                    [?config(server, Config)])),
-            {xmlstreamstart, <<"stream:stream">>, Attrs} = recv(),
-            <<"jabber:client">> = xml:get_attr_s(<<"xmlns">>, Attrs),
-            <<"1.0">> = xml:get_attr_s(<<"version">>, Attrs),
-            #stream_features{} = recv(),
-            Config;
-        #sasl_challenge{text = ClientIn} ->
-            {Response, SASL} = (?config(sasl, Config))(ClientIn),
-            send(Config, #sasl_response{text = Response}),
-            wait_auth_SASL_result(set_opt(sasl, SASL, Config));
-        #sasl_failure{} ->
-            ct:fail(sasl_auth_failed)
-    end.
-
 %%%===================================================================
 %%% Aux functions
 %%%===================================================================
-re_register(Config) ->
-    User = ?config(user, Config),
-    Server = ?config(server, Config),
-    Pass = ?config(password, Config),
-    {atomic, ok} = ejabberd_auth:try_register(User, Server, Pass),
-    ok.
-
-recv() ->
-    receive
-        {'$gen_event', {xmlstreamelement, El}} ->
-            Pkt = xmpp_codec:decode(fix_ns(El)),
-            ct:pal("recv: ~p ->~n~s", [El, xmpp_codec:pp(Pkt)]),
-            Pkt;
-        {'$gen_event', Event} ->
-            Event
-    end.
-
-fix_ns(#xmlel{name = Tag, attrs = Attrs} = El)
-  when Tag == <<"stream:features">>; Tag == <<"stream:error">> ->
-    NewAttrs = [{<<"xmlns">>, <<"http://etherx.jabber.org/streams">>}
-                |lists:keydelete(<<"xmlns">>, 1, Attrs)],
-    El#xmlel{attrs = NewAttrs};
-fix_ns(#xmlel{name = Tag, attrs = Attrs} = El)
-  when Tag == <<"message">>; Tag == <<"iq">>; Tag == <<"presence">> ->
-    NewAttrs = [{<<"xmlns">>, <<"jabber:client">>}
-                |lists:keydelete(<<"xmlns">>, 1, Attrs)],
-    El#xmlel{attrs = NewAttrs};
-fix_ns(El) ->
-    El.
-
-send_text(Config, Text) ->
-    ejabberd_socket:send(?config(socket, Config), Text).
-
-send(State, Pkt) ->
-    {NewID, NewPkt} = case Pkt of
-                          #message{id = I} ->
-                              ID = id(I),
-                              {ID, Pkt#message{id = ID}};
-                          #presence{id = I} ->
-                              ID = id(I),
-                              {ID, Pkt#presence{id = ID}};
-                          #iq{id = I} ->
-                              ID = id(I),
-                              {ID, Pkt#iq{id = ID}};
-                          _ ->
-                              {undefined, Pkt}
-                      end,
-    El = xmpp_codec:encode(NewPkt),
-    ct:pal("sent: ~p <-~n~s", [El, xmpp_codec:pp(NewPkt)]),
-    ok = send_text(State, xml:element_to_binary(El)),
-    NewID.
-
-send_recv(State, IQ) ->
-    ID = send(State, IQ),
-    #iq{id = ID} = recv().
-
-sasl_new(<<"PLAIN">>, User, Server, Password) ->
-    {<<User/binary, $@, Server/binary, 0, User/binary, 0, Password/binary>>,
-     fun (_) -> {error, <<"Invalid SASL challenge">>} end};
-sasl_new(<<"DIGEST-MD5">>, User, Server, Password) ->
-    {<<"">>,
-     fun (ServerIn) ->
-	     case cyrsasl_digest:parse(ServerIn) of
-	       bad -> {error, <<"Invalid SASL challenge">>};
-	       KeyVals ->
-		   Nonce = xml:get_attr_s(<<"nonce">>, KeyVals),
-		   CNonce = id(),
-		   DigestURI = <<"xmpp/", Server/binary>>,
-		   Realm = Server,
-		   NC = <<"00000001">>,
-		   QOP = <<"auth">>,
-		   AuthzId = <<"">>,
-		   MyResponse = response(User, Password, Nonce, AuthzId,
-					 Realm, CNonce, DigestURI, NC, QOP,
-					 <<"AUTHENTICATE">>),
-		   ServerResponse = response(User, Password, Nonce,
-					     AuthzId, Realm, CNonce, DigestURI,
-					     NC, QOP, <<"">>),
-		   Resp = <<"username=\"", User/binary, "\",realm=\"",
-			    Realm/binary, "\",nonce=\"", Nonce/binary,
-			    "\",cnonce=\"", CNonce/binary, "\",nc=", NC/binary,
-			    ",qop=", QOP/binary, ",digest-uri=\"",
-			    DigestURI/binary, "\",response=\"",
-			    MyResponse/binary, "\"">>,
-		   {Resp,
-		    fun (ServerIn2) ->
-			    case cyrsasl_digest:parse(ServerIn2) of
-			      bad -> {error, <<"Invalid SASL challenge">>};
-			      KeyVals2 ->
-				  RspAuth = xml:get_attr_s(<<"rspauth">>,
-							   KeyVals2),
-				  if RspAuth == ServerResponse ->
-					 {<<"">>,
-					  fun (_) ->
-						  {error,
-						   <<"Invalid SASL challenge">>}
-					  end};
-				     true ->
-					 {error, <<"Invalid SASL challenge">>}
-				  end
-			    end
-		    end}
-	     end
-     end}.
-
-hex(S) ->
-    p1_sha:to_hexlist(S).
-
-response(User, Passwd, Nonce, AuthzId, Realm, CNonce,
-	 DigestURI, NC, QOP, A2Prefix) ->
-    A1 = case AuthzId of
-	   <<"">> ->
-	       <<((crypto:md5(<<User/binary, ":", Realm/binary, ":",
-				Passwd/binary>>)))/binary,
-		 ":", Nonce/binary, ":", CNonce/binary>>;
-	   _ ->
-	       <<((crypto:md5(<<User/binary, ":", Realm/binary, ":",
-				Passwd/binary>>)))/binary,
-		 ":", Nonce/binary, ":", CNonce/binary, ":",
-		 AuthzId/binary>>
-	 end,
-    A2 = case QOP of
-	   <<"auth">> ->
-	       <<A2Prefix/binary, ":", DigestURI/binary>>;
-	   _ ->
-	       <<A2Prefix/binary, ":", DigestURI/binary,
-		 ":00000000000000000000000000000000">>
-	 end,
-    T = <<(hex((crypto:md5(A1))))/binary, ":", Nonce/binary,
-	  ":", NC/binary, ":", CNonce/binary, ":", QOP/binary,
-	  ":", (hex((crypto:md5(A2))))/binary>>,
-    hex((crypto:md5(T))).
-
-my_jid(Config) ->
-    jlib:make_jid(?config(user, Config),
-                  ?config(server, Config),
-                  ?config(resource, Config)).
-
-server_jid(Config) ->
-    jlib:make_jid(<<>>, ?config(server, Config), <<>>).
-
-pubsub_jid(Config) ->
-    Server = ?config(server, Config),
-    jlib:make_jid(<<>>, <<"pubsub.", Server/binary>>, <<>>).
-
-proxy_jid(Config) ->
-    Server = ?config(server, Config),
-    jlib:make_jid(<<>>, <<"proxy.", Server/binary>>, <<>>).
-
-muc_jid(Config) ->
-    Server = ?config(server, Config),
-    jlib:make_jid(<<>>, <<"conference.", Server/binary>>, <<>>).
-
-muc_room_jid(Config) ->
-    Server = ?config(server, Config),
-    jlib:make_jid(<<"test">>, <<"conference.", Server/binary>>, <<>>).
-
-id() ->
-    id(undefined).
-
-id(undefined) ->
-    randoms:get_string();
-id(ID) ->
-    ID.
-
-get_features(Config) ->
-    get_features(Config, server_jid(Config)).
-
-get_features(Config, To) ->
-    #iq{type = result, sub_els = [#disco_info{features = Features}]} =
-        send_recv(Config, #iq{type = get, sub_els = [#disco_info{}], to = To}),
-    Features.
-
-is_feature_advertised(Config, Feature) ->
-    is_feature_advertised(Config, Feature, server_jid(Config)).
-
-is_feature_advertised(Config, Feature, To) ->
-    Features = get_features(Config, To),
-    lists:member(Feature, Features).
-
 bookmark_conference() ->
     #bookmark_conference{name = <<"Some name">>,
                          autojoin = true,
@@ -1264,20 +905,6 @@ bookmark_conference() ->
                                  <<"some">>,
                                  <<"some.conference.org">>,
                                  <<>>)}.
-
-set_opt(Opt, Val, Config) ->
-    [{Opt, Val}|lists:keydelete(Opt, 1, Config)].
-
-wait_for_master(Config) ->
-    put_event(Config, slave_ready),
-    master_ready = get_event(Config).
-
-wait_for_slave(Config) ->
-    put_event(Config, master_ready),
-    slave_ready = get_event(Config).
-
-make_iq_result(#iq{from = From} = IQ) ->
-    IQ#iq{type = result, to = From, from = undefined, sub_els = []}.
 
 socks5_connect(#streamhost{host = Host, port = Port},
                {SID, JID1, JID2}) ->
@@ -1301,66 +928,6 @@ socks5_send(Sock, Data) ->
 
 socks5_recv(Sock, Data) ->
     {ok, Data} = gen_tcp:recv(Sock, size(Data)).
-
-%%%===================================================================
-%%% Clients puts and gets events via this relay.
-%%%===================================================================
-start_event_relay() ->
-    spawn(fun event_relay/0).
-
-stop_event_relay(Config) ->
-    Pid = ?config(event_relay, Config),
-    exit(Pid, normal).
-
-event_relay() ->
-    event_relay([], []).
-
-event_relay(Events, Subscribers) ->
-    receive
-        {subscribe, From} ->
-            From ! {ok, self()},
-            lists:foreach(
-              fun(Event) -> From ! {event, Event, self()}
-              end, Events),
-            event_relay(Events, [From|Subscribers]);
-        {put, Event, From} ->
-            From ! {ok, self()},
-            lists:foreach(
-              fun(Pid) when Pid /= From ->
-                      Pid ! {event, Event, self()};
-                 (_) ->
-                      ok
-              end, Subscribers),
-            event_relay([Event|Events], Subscribers)
-    end.
-
-subscribe_to_events(Config) ->
-    Relay = ?config(event_relay, Config),
-    Relay ! {subscribe, self()},
-    receive
-        {ok, Relay} ->
-            ok
-    end.
-
-put_event(Config, Event) ->
-    Relay = ?config(event_relay, Config),
-    Relay ! {put, Event, self()},
-    receive
-        {ok, Relay} ->
-            ok
-    end.
-
-get_event(Config) ->
-    Relay = ?config(event_relay, Config),
-    receive
-        {event, Event, Relay} ->
-            Event
-    end.
-
-insert(Val, N, Tuple) ->
-    L = tuple_to_list(Tuple),
-    {H, T} = lists:split(N-1, L),
-    list_to_tuple(H ++ [Val|T]).
 
 %%%===================================================================
 %%% SQL stuff
