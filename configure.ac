@@ -114,10 +114,10 @@ AC_ARG_ENABLE(tools,
 esac],[tools=false])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-stun --enable-json --enable-iconv --enable-debug --enable-http (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-stun --enable-json --enable-iconv --enable-debug --enable-http --enable-lager (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true stun=true json=true iconv=true debug=true http=true ;;
-  no) nif=false odbc=false mysql=false pgsql=false pam=false zlib=false stun=false json=false iconv=false debug=false http=false ;;
+  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true stun=true json=true iconv=true debug=true http=true lager=true ;;
+  no) nif=false odbc=false mysql=false pgsql=false pam=false zlib=false stun=false json=false iconv=false debug=false http=false lager=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -210,12 +210,12 @@ AC_ARG_ENABLE(http,
 esac],[if test "x$http" = "x"; then http=false; fi])
 
 AC_ARG_ENABLE(lager,
-[AC_HELP_STRING([--enable-lager], [enable lager support (default: no)])],
+[AC_HELP_STRING([--enable-lager], [enable lager support (default: yes)])],
 [case "${enableval}" in
   yes) lager=true ;;
   no)  lager=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-lager) ;;
-esac],[if test "x$lager" = "x"; then lager=false; fi])
+esac],[if test "x$lager" = "x"; then lager=true; fi])
 
 AC_CONFIG_FILES([Makefile
 		 vars.config
