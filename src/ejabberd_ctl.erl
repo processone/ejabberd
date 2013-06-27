@@ -135,7 +135,7 @@ process(["status"]) ->
 	   [node(), InternalStatus, ProvidedStatus]),
     case lists:keysearch(ejabberd, 1, application:which_applications()) of
         false ->
-            EjabberdLogPath = ejabberd_app:get_log_path(),
+            EjabberdLogPath = ejabberd_logger:get_log_path(),
             ?PRINT("ejabberd is not running in that node~n"
 		   "Check for error messages: ~s~n"
 		   "or other files in that directory.~n", [EjabberdLogPath]),

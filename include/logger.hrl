@@ -41,17 +41,17 @@
 -else.
 
 -define(DEBUG(Format, Args),
-	ejabberd_logger:debug_msg(?MODULE, ?LINE, Format, Args)).
+	p1_logger:debug_msg(?MODULE, ?LINE, Format, Args)).
 
 -define(INFO_MSG(Format, Args),
-	ejabberd_logger:info_msg(?MODULE, ?LINE, Format, Args)).
+	p1_logger:info_msg(?MODULE, ?LINE, Format, Args)).
 
 -define(WARNING_MSG(Format, Args),
-	ejabberd_logger:warning_msg(?MODULE, ?LINE, Format, Args)).
+	p1_logger:warning_msg(?MODULE, ?LINE, Format, Args)).
 
 -define(ERROR_MSG(Format, Args),
-	ejabberd_logger:error_msg(?MODULE, ?LINE, Format, Args)).
+	p1_logger:error_msg(?MODULE, ?LINE, Format, Args)).
 
 -define(CRITICAL_MSG(Format, Args),
-	ejabberd_logger:critical_msg(?MODULE, ?LINE, Format, Args)).
+	p1_logger:critical_msg(?MODULE, ?LINE, Format, Args)).
 -endif.

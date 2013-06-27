@@ -29,7 +29,7 @@
 
 -behaviour(application).
 
--export([start_modules/0,start/2, get_log_path/0, prep_stop/1, stop/1, init/0]).
+-export([start_modules/0,start/2, prep_stop/1, stop/1, init/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -39,8 +39,7 @@
 %%%
 
 start(normal, _Args) ->
-    maybe_start_lager(),
-    ejabberd_logger:set(4),
+    ejabberd_logger:start(),
     write_pid_file(),
     start_apps(),
     randoms:start(),
@@ -98,10 +97,6 @@ start() ->
 
 init() ->
     register(ejabberd, self()),
-    %erlang:system_flag(fullsweep_after, 0),
-    %error_logger:logfile({open, ?LOG_PATH}),
-    LogPath = get_log_path(),
-    ejabberd_logger:set_logfile(LogPath),
     loop().
 
 loop() ->
@@ -167,26 +162,6 @@ connect_nodes() ->
                           net_kernel:connect_node(Node)
                   end, Nodes).
 
-%% @spec () -> string()
-%% @doc Returns the full path to the ejabberd log file.
-%% It first checks for application configuration parameter 'log_path'.
-%% If not defined it checks the environment variable EJABBERD_LOG_PATH.
-%% And if that one is neither defined, returns the default value:
-%% "ejabberd.log" in current directory.
-get_log_path() ->
-    case application:get_env(log_path) of
-	{ok, Path} ->
-	    Path;
-	undefined ->
-	    case os:getenv("EJABBERD_LOG_PATH") of
-		false ->
-		    ?LOG_PATH;
-		Path ->
-		    Path
-	    end
-    end.
-
-
 %% If ejabberd is running on some Windows machine, get nameservers and add to Erlang
 maybe_add_nameservers() ->
     case os:type() of
@@ -236,20 +211,6 @@ delete_pid_file() ->
 	PidFilename ->
 	    file:delete(PidFilename)
     end.
-
-
--ifdef(LAGER).
-
-maybe_start_lager() ->
-    lager:start().
-
--else.
-
-maybe_start_lager() ->
-    ok.
-
--endif.
-
 
 start_apps() ->
     ejabberd:start_app(sasl),
