@@ -37,7 +37,7 @@
 -spec get_log_path() -> string().
 -spec reopen_log() -> ok.
 -spec get() -> {loglevel(), atom(), string()}.
--spec set(loglevel()) -> {module, module()}.
+-spec set(loglevel() | {loglevel(), list()}) -> {module, module()}.
 
 %%%===================================================================
 %%% API
@@ -97,7 +97,7 @@ get() ->
         debug -> {5, debug, "Debug"}
     end.
 
-set(LogLevel) ->
+set(LogLevel) when is_integer(LogLevel) ->
     LagerLogLevel = case LogLevel of
                         0 -> none;
                         1 -> critical;
@@ -120,6 +120,9 @@ set(LogLevel) ->
                       ok
               end, gen_event:which_handlers(lager_event))
     end,
+    {module, lager};
+set({_LogLevel, _}) ->
+    error_logger:error_msg("custom loglevels are not supported for 'lager'"),
     {module, lager}.
 
 -else.
