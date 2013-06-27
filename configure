@@ -658,8 +658,8 @@ enable_roster_gateway_workaround
 enable_transient_supervisors
 enable_full_xml
 enable_mssql
-enable_tools
 enable_all
+enable_tools
 enable_nif
 enable_odbc
 enable_mysql
@@ -1305,13 +1305,13 @@ Optional Features:
                           (default: no, requires XML compliant clients)
   --enable-mssql          use Microsoft SQL Server database (default: no,
                           requires --enable-odbc)
-  --enable-tools          build development tools (currently the ejabberd
-                          profiler only, default: no)
   --enable-all            same as --enable-nif --enable-odbc --enable-mysql
                           --enable-pgsql --enable-pam --enable-zlib
-                          --enable-stun --enable-json --enable-iconv
-                          --enable-debug --enable-http --enable-lager (useful
-                          for Dialyzer checks, default: no)
+                          --enable-stun --enable-riak --enable-json
+                          --enable-iconv --enable-debug --enable-http
+                          --enable-lager --enable-tools (useful for Dialyzer
+                          checks, default: no)
+  --enable-tools          build development tools (default: no)
   --enable-nif            replace some functions with C equivalents. Requires
                           Erlang R13B04 or higher (default: no)
   --enable-odbc           enable pure ODBC support (default: no)
@@ -2855,6 +2855,16 @@ else
 fi
 
 
+# Check whether --enable-all was given.
+if test "${enable_all+set}" = set; then :
+  enableval=$enable_all; case "${enableval}" in
+  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true stun=true riak=true json=true iconv=true debug=true http=true lager=true tools=true ;;
+  no) nif=false odbc=false mysql=false pgsql=false pam=false zlib=false stun=false riak=false json=false iconv=false debug=false http=false lager=false tools=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-all" "$LINENO" 5  ;;
+esac
+fi
+
+
 # Check whether --enable-tools was given.
 if test "${enable_tools+set}" = set; then :
   enableval=$enable_tools; case "${enableval}" in
@@ -2863,17 +2873,7 @@ if test "${enable_tools+set}" = set; then :
   *) as_fn_error $? "bad value ${enableval} for --enable-tools" "$LINENO" 5  ;;
 esac
 else
-  tools=false
-fi
-
-
-# Check whether --enable-all was given.
-if test "${enable_all+set}" = set; then :
-  enableval=$enable_all; case "${enableval}" in
-  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true stun=true json=true iconv=true debug=true http=true lager=true ;;
-  no) nif=false odbc=false mysql=false pgsql=false pam=false zlib=false stun=false json=false iconv=false debug=false http=false lager=false ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-all" "$LINENO" 5  ;;
-esac
+  if test "x$tools" = "x"; then tools=false; fi
 fi
 
 
