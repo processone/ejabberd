@@ -215,6 +215,7 @@ uninstall-all: uninstall-binary
 clean:
 	rm -rf deps/.got
 	rm -rf deps/.built
+	rm -rf test/*.beam
 	$(REBAR) clean
 
 clean-rel:
