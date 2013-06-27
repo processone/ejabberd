@@ -943,9 +943,14 @@ process_groupchat_message(From,
 					Packet)
 			      end,
 			      ?DICT:to_list(StateData#state.users)),
-		       NewStateData2 = add_message_to_history(FromNick, From,
+		       NewStateData2 = case has_body_or_subject(Packet) of
+			   true ->
+				add_message_to_history(FromNick, From,
 							      Packet,
-							      NewStateData1),
+							      NewStateData1);
+			   false ->
+				NewStateData1
+			 end,
 		       {next_state, normal_state, NewStateData2};
 		   _ ->
 		       Err = case
@@ -4462,3 +4467,13 @@ tab_count_user(JID) ->
 
 element_size(El) ->
     byte_size(xml:element_to_binary(El)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Detect messange stanzas that don't have meaninful content
+
+has_body_or_subject(Packet) ->
+    [] /= lists:dropwhile(fun
+	(#xmlel{name = <<"body">>}) -> false;
+	(#xmlel{name = <<"subject">>}) -> false;
+	(_) -> true
+    end, Packet#xmlel.children).
