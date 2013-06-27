@@ -28,10 +28,13 @@
 
 -author('alexey@process-one.net').
 
-%%-compile(export_all).
 -export([domain_utf8_to_ascii/1,
 	 domain_ucs2_to_ascii/1,
          utf8_to_ucs2/1]).
+
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
 
 -spec domain_utf8_to_ascii(binary()) -> false | binary().
 
@@ -39,7 +42,7 @@ domain_utf8_to_ascii(Domain) ->
     domain_ucs2_to_ascii(utf8_to_ucs2(Domain)).
 
 utf8_to_ucs2(S) ->
-    list_to_binary(utf8_to_ucs2(binary_to_list(S), "")).
+    utf8_to_ucs2(binary_to_list(S), "").
 
 utf8_to_ucs2([], R) -> lists:reverse(R);
 utf8_to_ucs2([C | S], R) when C < 128 ->
@@ -51,10 +54,10 @@ utf8_to_ucs2([C1, C2, C3 | S], R) when C1 < 240 ->
 		 [C1 band 15 bsl 12 bor (C2 band 63 bsl 6) bor C3 band 63
 		  | R]).
 
--spec domain_ucs2_to_ascii(binary()) -> false | binary().
+-spec domain_ucs2_to_ascii(list()) -> false | binary().
 
 domain_ucs2_to_ascii(Domain) ->
-    case catch domain_ucs2_to_ascii1(binary_to_list(Domain)) of
+    case catch domain_ucs2_to_ascii1(Domain) of
       {'EXIT', _Reason} -> false;
       Res -> iolist_to_binary(Res)
     end.
@@ -204,3 +207,19 @@ codepoint(C) ->
     if (0 =< C) and (C =< 25) -> C + 97;
        (26 =< C) and (C =< 35) -> C + 22
     end.
+
+%%%===================================================================
+%%% Unit tests
+%%%===================================================================
+-ifdef(TEST).
+
+acsii_test() ->
+    ?assertEqual(<<"test.org">>, domain_utf8_to_ascii(<<"test.org">>)).
+
+utf8_test() ->
+    ?assertEqual(
+       <<"xn--d1acufc.xn--p1ai">>,
+       domain_utf8_to_ascii(
+         <<208,180,208,190,208,188,208,181,208,189,46,209,128,209,132>>)).
+
+-endif.
