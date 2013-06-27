@@ -105,21 +105,21 @@ AC_ARG_ENABLE(mssql,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
 esac],[db_type=generic])
 
+AC_ARG_ENABLE(all,
+[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-stun --enable-riak --enable-json --enable-iconv --enable-debug --enable-http --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
+[case "${enableval}" in
+  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true stun=true riak=true json=true iconv=true debug=true http=true lager=true tools=true ;;
+  no) nif=false odbc=false mysql=false pgsql=false pam=false zlib=false stun=false riak=false json=false iconv=false debug=false http=false lager=true tools=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
+esac],[])
+
 AC_ARG_ENABLE(tools,
-[AC_HELP_STRING([--enable-tools], [build development tools (currently the ejabberd profiler only, default: no)])],
+[AC_HELP_STRING([--enable-tools], [build development tools (default: no)])],
 [case "${enableval}" in
   yes) tools=true ;;
   no)  tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-tools) ;;
-esac],[tools=false])
-
-AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-stun --enable-json --enable-iconv --enable-debug --enable-http --enable-lager (useful for Dialyzer checks, default: no)])],
-[case "${enableval}" in
-  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true stun=true json=true iconv=true debug=true http=true lager=true ;;
-  no) nif=false odbc=false mysql=false pgsql=false pam=false zlib=false stun=false json=false iconv=false debug=false http=false lager=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
-esac],[])
+esac],[if test "x$tools" = "x"; then tools=false; fi])
 
 AC_ARG_ENABLE(nif,
 [AC_HELP_STRING([--enable-nif], [replace some functions with C equivalents. Requires Erlang R13B04 or higher (default: no)])],
