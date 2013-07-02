@@ -3,10 +3,14 @@
 
 -module(xmpp_codec).
 
--export([pp/1, decode/1, encode/1]).
+-compile({nowarn_unused_function,
+	  [{dec_int, 3}, {dec_int, 1}, {dec_enum, 2},
+	   {enc_int, 1}, {enc_enum, 1}]}).
+
+-export([pp/1, format_error/1, decode/1, encode/1]).
 
 decode({xmlel, _name, _attrs, _} = _el) ->
-    case {_name, xml:get_attr_s(<<"xmlns">>, _attrs)} of
+    case {_name, get_attr(<<"xmlns">>, _attrs)} of
       {<<"x">>, <<"http://jabber.org/protocol/muc">>} ->
 	  decode_muc(_el);
       {<<"query">>,
@@ -680,7 +684,7 @@ decode({xmlel, _name, _attrs, _} = _el) ->
 	  decode_version_name(_el);
       {<<"query">>, <<"jabber:iq:last">>} -> decode_last(_el);
       {_name, _xmlns} ->
-	  erlang:error({unknown_tag, _name, _xmlns})
+	  erlang:error({xmpp_codec, {unknown_tag, _name, _xmlns}})
     end.
 
 encode({muc, _, _} = X) ->
@@ -1023,6 +1027,51 @@ encode({last, _, _} = Query) ->
     encode_last(Query,
 		[{<<"xmlns">>, <<"jabber:iq:last">>}]).
 
+dec_int(Val) -> dec_int(Val, infinity, infinity).
+
+dec_int(Val, Min, Max) ->
+    case erlang:binary_to_integer(Val) of
+      Int when Int =< Max, Min == infinity -> Int;
+      Int when Int =< Max, Int >= Min -> Int
+    end.
+
+enc_int(Int) -> erlang:integer_to_binary(Int).
+
+dec_enum(Val, Enums) ->
+    AtomVal = erlang:binary_to_existing_atom(Val, utf8),
+    case lists:member(AtomVal, Enums) of
+      true -> AtomVal
+    end.
+
+enc_enum(Atom) -> erlang:atom_to_binary(Atom, utf8).
+
+format_error({bad_attr_value, Attr, Tag, XMLNS}) ->
+    <<"Bad value of attribute '", Attr/binary, "' in tag <",
+      Tag/binary, "/> qualified by namespace '", XMLNS/binary,
+      "'">>;
+format_error({bad_cdata_value, <<>>, Tag, XMLNS}) ->
+    <<"Bad value of cdata in tag <", Tag/binary,
+      "/> qualified by namespace '", XMLNS/binary, "'">>;
+format_error({missing_tag, Tag, XMLNS}) ->
+    <<"Missing tag <", Tag/binary,
+      "/> qualified by namespace '", XMLNS/binary, "'">>;
+format_error({missing_attr, Attr, Tag, XMLNS}) ->
+    <<"Missing attribute '", Attr/binary, "' in tag <",
+      Tag/binary, "/> qualified by namespace '", XMLNS/binary,
+      "'">>;
+format_error({missing_cdata, <<>>, Tag, XMLNS}) ->
+    <<"Missing cdata in tag <", Tag/binary,
+      "/> qualified by namespace '", XMLNS/binary, "'">>;
+format_error({unknown_tag, Tag, XMLNS}) ->
+    <<"Unknown tag <", Tag/binary,
+      "/> qualified by namespace '", XMLNS/binary, "'">>.
+
+get_attr(Attr, Attrs) ->
+    case lists:keyfind(Attr, 1, Attrs) of
+      {_, Val} -> Val;
+      false -> <<>>
+    end.
+
 pp(Term) -> io_lib_pretty:print(Term, fun pp/2).
 
 pp(last, 2) -> [seconds, text];
@@ -1201,7 +1250,7 @@ decode_muc_els([], History) -> History;
 decode_muc_els([{xmlel, <<"history">>, _attrs, _} = _el
 		| _els],
 	       History) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc">> ->
 	   decode_muc_els(_els, decode_muc_history(_el));
@@ -1247,7 +1296,7 @@ decode_muc_owner_els([{xmlel, <<"destroy">>, _attrs,
 			  _el
 		      | _els],
 		     Config, Destroy) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#owner">> ->
 	   decode_muc_owner_els(_els, Config,
@@ -1257,7 +1306,7 @@ decode_muc_owner_els([{xmlel, <<"destroy">>, _attrs,
 decode_muc_owner_els([{xmlel, <<"x">>, _attrs, _} = _el
 		      | _els],
 		     Config, Destroy) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<"jabber:x:data">> ->
 	   decode_muc_owner_els(_els, decode_xdata(_el), Destroy);
        true -> decode_muc_owner_els(_els, Config, Destroy)
@@ -1296,7 +1345,7 @@ decode_muc_owner_destroy_els([{xmlel, <<"password">>,
 				  _el
 			      | _els],
 			     Password, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#owner">> ->
 	   decode_muc_owner_destroy_els(_els,
@@ -1309,7 +1358,7 @@ decode_muc_owner_destroy_els([{xmlel, <<"reason">>,
 				  _el
 			      | _els],
 			     Password, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#owner">> ->
 	   decode_muc_owner_destroy_els(_els, Password,
@@ -1355,8 +1404,9 @@ decode_muc_owner_destroy_attr_jid(undefined) ->
 decode_muc_owner_destroy_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>, <<"destroy">>,
-			<<"http://jabber.org/protocol/muc#owner">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"destroy">>,
+			 <<"http://jabber.org/protocol/muc#owner">>}});
       _res -> _res
     end.
 
@@ -1434,7 +1484,7 @@ decode_muc_user_els([{xmlel, <<"decline">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Status_codes, Items, Invites, Decline, Destroy) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_els(_els, Status_codes, Items, Invites,
@@ -1447,7 +1497,7 @@ decode_muc_user_els([{xmlel, <<"destroy">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Status_codes, Items, Invites, Decline, Destroy) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_els(_els, Status_codes, Items, Invites,
@@ -1460,7 +1510,7 @@ decode_muc_user_els([{xmlel, <<"invite">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Status_codes, Items, Invites, Decline, Destroy) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_els(_els, Status_codes, Items,
@@ -1474,7 +1524,7 @@ decode_muc_user_els([{xmlel, <<"item">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Status_codes, Items, Invites, Decline, Destroy) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_els(_els, Status_codes,
@@ -1488,7 +1538,7 @@ decode_muc_user_els([{xmlel, <<"status">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Status_codes, Items, Invites, Decline, Destroy) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_els(_els,
@@ -1577,7 +1627,7 @@ decode_muc_user_item_els([{xmlel, <<"actor">>, _attrs,
 			      _el
 			  | _els],
 			 Actor, Continue, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_item_els(_els,
@@ -1591,7 +1641,7 @@ decode_muc_user_item_els([{xmlel, <<"continue">>,
 			      _el
 			  | _els],
 			 Actor, Continue, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_item_els(_els, Actor,
@@ -1604,7 +1654,7 @@ decode_muc_user_item_els([{xmlel, <<"reason">>, _attrs,
 			      _el
 			  | _els],
 			 Actor, Continue, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_item_els(_els, Actor, Continue,
@@ -1676,12 +1726,13 @@ encode_muc_user_item({muc_item, Actor, Continue, Reason,
 decode_muc_user_item_attr_affiliation(undefined) ->
     undefined;
 decode_muc_user_item_attr_affiliation(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[admin, member, none, outcast, owner])
+    case catch dec_enum(_val,
+			[admin, member, none, outcast, owner])
 	of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"affiliation">>,
-			<<"item">>, <<"http://jabber.org/protocol/muc#user">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"affiliation">>, <<"item">>,
+			 <<"http://jabber.org/protocol/muc#user">>}});
       _res -> _res
     end.
 
@@ -1689,29 +1740,31 @@ encode_muc_user_item_attr_affiliation(undefined,
 				      _acc) ->
     _acc;
 encode_muc_user_item_attr_affiliation(_val, _acc) ->
-    [{<<"affiliation">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"affiliation">>, enc_enum(_val)} | _acc].
 
 decode_muc_user_item_attr_role(undefined) -> undefined;
 decode_muc_user_item_attr_role(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[moderator, none, participant, visitor])
+    case catch dec_enum(_val,
+			[moderator, none, participant, visitor])
 	of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"role">>, <<"item">>,
-			<<"http://jabber.org/protocol/muc#user">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"role">>, <<"item">>,
+			 <<"http://jabber.org/protocol/muc#user">>}});
       _res -> _res
     end.
 
 encode_muc_user_item_attr_role(undefined, _acc) -> _acc;
 encode_muc_user_item_attr_role(_val, _acc) ->
-    [{<<"role">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"role">>, enc_enum(_val)} | _acc].
 
 decode_muc_user_item_attr_jid(undefined) -> undefined;
 decode_muc_user_item_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>, <<"item">>,
-			<<"http://jabber.org/protocol/muc#user">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"item">>,
+			 <<"http://jabber.org/protocol/muc#user">>}});
       _res -> _res
     end.
 
@@ -1749,17 +1802,18 @@ encode_muc_user_status(Code, _xmlns_attrs) ->
 decode_muc_user_status_attr_code(undefined) ->
     undefined;
 decode_muc_user_status_attr_code(_val) ->
-    case catch xml_gen:dec_int(_val, 100, 999) of
+    case catch dec_int(_val, 100, 999) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"code">>, <<"status">>,
-			<<"http://jabber.org/protocol/muc#user">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"code">>, <<"status">>,
+			 <<"http://jabber.org/protocol/muc#user">>}});
       _res -> _res
     end.
 
 encode_muc_user_status_attr_code(undefined, _acc) ->
     _acc;
 encode_muc_user_status_attr_code(_val, _acc) ->
-    [{<<"code">>, xml_gen:enc_int(_val)} | _acc].
+    [{<<"code">>, enc_int(_val)} | _acc].
 
 decode_muc_user_continue({xmlel, <<"continue">>, _attrs,
 			  _els}) ->
@@ -1823,8 +1877,9 @@ decode_muc_user_actor_attr_jid(undefined) -> undefined;
 decode_muc_user_actor_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>, <<"actor">>,
-			<<"http://jabber.org/protocol/muc#user">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"actor">>,
+			 <<"http://jabber.org/protocol/muc#user">>}});
       _res -> _res
     end.
 
@@ -1853,7 +1908,7 @@ decode_muc_user_invite_els([{xmlel, <<"reason">>,
 				_el
 			    | _els],
 			   Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_invite_els(_els,
@@ -1894,8 +1949,9 @@ decode_muc_user_invite_attr_to(undefined) -> undefined;
 decode_muc_user_invite_attr_to(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"to">>, <<"invite">>,
-			<<"http://jabber.org/protocol/muc#user">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"to">>, <<"invite">>,
+			 <<"http://jabber.org/protocol/muc#user">>}});
       _res -> _res
     end.
 
@@ -1908,8 +1964,9 @@ decode_muc_user_invite_attr_from(undefined) ->
 decode_muc_user_invite_attr_from(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"from">>, <<"invite">>,
-			<<"http://jabber.org/protocol/muc#user">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"from">>, <<"invite">>,
+			 <<"http://jabber.org/protocol/muc#user">>}});
       _res -> _res
     end.
 
@@ -1930,7 +1987,7 @@ decode_muc_user_destroy_els([{xmlel, <<"reason">>,
 				 _el
 			     | _els],
 			    Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_destroy_els(_els,
@@ -1966,8 +2023,9 @@ decode_muc_user_destroy_attr_jid(undefined) ->
 decode_muc_user_destroy_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>, <<"destroy">>,
-			<<"http://jabber.org/protocol/muc#user">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"destroy">>,
+			 <<"http://jabber.org/protocol/muc#user">>}});
       _res -> _res
     end.
 
@@ -1989,7 +2047,7 @@ decode_muc_user_decline_els([{xmlel, <<"reason">>,
 				 _el
 			     | _els],
 			    Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/muc#user">> ->
 	   decode_muc_user_decline_els(_els,
@@ -2030,8 +2088,9 @@ decode_muc_user_decline_attr_to(undefined) -> undefined;
 decode_muc_user_decline_attr_to(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"to">>, <<"decline">>,
-			<<"http://jabber.org/protocol/muc#user">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"to">>, <<"decline">>,
+			 <<"http://jabber.org/protocol/muc#user">>}});
       _res -> _res
     end.
 
@@ -2045,8 +2104,9 @@ decode_muc_user_decline_attr_from(undefined) ->
 decode_muc_user_decline_attr_from(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"from">>, <<"decline">>,
-			<<"http://jabber.org/protocol/muc#user">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"from">>, <<"decline">>,
+			 <<"http://jabber.org/protocol/muc#user">>}});
       _res -> _res
     end.
 
@@ -2131,53 +2191,57 @@ encode_muc_history({muc_history, Maxchars, Maxstanzas,
 decode_muc_history_attr_maxchars(undefined) ->
     undefined;
 decode_muc_history_attr_maxchars(_val) ->
-    case catch xml_gen:dec_int(_val, 0, infinity) of
+    case catch dec_int(_val, 0, infinity) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"maxchars">>,
-			<<"history">>, <<"http://jabber.org/protocol/muc">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"maxchars">>, <<"history">>,
+			 <<"http://jabber.org/protocol/muc">>}});
       _res -> _res
     end.
 
 encode_muc_history_attr_maxchars(undefined, _acc) ->
     _acc;
 encode_muc_history_attr_maxchars(_val, _acc) ->
-    [{<<"maxchars">>, xml_gen:enc_int(_val)} | _acc].
+    [{<<"maxchars">>, enc_int(_val)} | _acc].
 
 decode_muc_history_attr_maxstanzas(undefined) ->
     undefined;
 decode_muc_history_attr_maxstanzas(_val) ->
-    case catch xml_gen:dec_int(_val, 0, infinity) of
+    case catch dec_int(_val, 0, infinity) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"maxstanzas">>,
-			<<"history">>, <<"http://jabber.org/protocol/muc">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"maxstanzas">>, <<"history">>,
+			 <<"http://jabber.org/protocol/muc">>}});
       _res -> _res
     end.
 
 encode_muc_history_attr_maxstanzas(undefined, _acc) ->
     _acc;
 encode_muc_history_attr_maxstanzas(_val, _acc) ->
-    [{<<"maxstanzas">>, xml_gen:enc_int(_val)} | _acc].
+    [{<<"maxstanzas">>, enc_int(_val)} | _acc].
 
 decode_muc_history_attr_seconds(undefined) -> undefined;
 decode_muc_history_attr_seconds(_val) ->
-    case catch xml_gen:dec_int(_val, 0, infinity) of
+    case catch dec_int(_val, 0, infinity) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"seconds">>,
-			<<"history">>, <<"http://jabber.org/protocol/muc">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"seconds">>, <<"history">>,
+			 <<"http://jabber.org/protocol/muc">>}});
       _res -> _res
     end.
 
 encode_muc_history_attr_seconds(undefined, _acc) ->
     _acc;
 encode_muc_history_attr_seconds(_val, _acc) ->
-    [{<<"seconds">>, xml_gen:enc_int(_val)} | _acc].
+    [{<<"seconds">>, enc_int(_val)} | _acc].
 
 decode_muc_history_attr_since(undefined) -> undefined;
 decode_muc_history_attr_since(_val) ->
     case catch dec_utc(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"since">>,
-			<<"history">>, <<"http://jabber.org/protocol/muc">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"since">>, <<"history">>,
+			 <<"http://jabber.org/protocol/muc">>}});
       _res -> _res
     end.
 
@@ -2202,7 +2266,7 @@ decode_bytestreams_els([{xmlel, <<"streamhost">>,
 			    _el
 			| _els],
 		       Hosts, Used, Activate) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns ==
 	 <<"http://jabber.org/protocol/bytestreams">> ->
@@ -2217,7 +2281,7 @@ decode_bytestreams_els([{xmlel, <<"streamhost-used">>,
 			    _el
 			| _els],
 		       Hosts, Used, Activate) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns ==
 	 <<"http://jabber.org/protocol/bytestreams">> ->
@@ -2232,7 +2296,7 @@ decode_bytestreams_els([{xmlel, <<"activate">>, _attrs,
 			    _el
 			| _els],
 		       Hosts, Used, Activate) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns ==
 	 <<"http://jabber.org/protocol/bytestreams">> ->
@@ -2307,16 +2371,17 @@ encode_bytestreams_attr_sid(_val, _acc) ->
 
 decode_bytestreams_attr_mode(undefined) -> tcp;
 decode_bytestreams_attr_mode(_val) ->
-    case catch xml_gen:dec_enum(_val, [tcp, udp]) of
+    case catch dec_enum(_val, [tcp, udp]) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"mode">>, <<"query">>,
-			<<"http://jabber.org/protocol/bytestreams">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"mode">>, <<"query">>,
+			 <<"http://jabber.org/protocol/bytestreams">>}});
       _res -> _res
     end.
 
 encode_bytestreams_attr_mode(tcp, _acc) -> _acc;
 encode_bytestreams_attr_mode(_val, _acc) ->
-    [{<<"mode">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"mode">>, enc_enum(_val)} | _acc].
 
 decode_bytestreams_activate({xmlel, <<"activate">>,
 			     _attrs, _els}) ->
@@ -2342,8 +2407,9 @@ decode_bytestreams_activate_cdata(<<>>) -> undefined;
 decode_bytestreams_activate_cdata(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"activate">>,
-			<<"http://jabber.org/protocol/bytestreams">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"activate">>,
+			 <<"http://jabber.org/protocol/bytestreams">>}});
       _res -> _res
     end.
 
@@ -2377,15 +2443,15 @@ encode_bytestreams_streamhost_used(Jid, _xmlns_attrs) ->
     {xmlel, <<"streamhost-used">>, _attrs, _els}.
 
 decode_bytestreams_streamhost_used_attr_jid(undefined) ->
-    erlang:error({missing_attr, <<"jid">>,
-		  <<"streamhost-used">>,
-		  <<"http://jabber.org/protocol/bytestreams">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"streamhost-used">>,
+		   <<"http://jabber.org/protocol/bytestreams">>}});
 decode_bytestreams_streamhost_used_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>,
-			<<"streamhost-used">>,
-			<<"http://jabber.org/protocol/bytestreams">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"streamhost-used">>,
+			 <<"http://jabber.org/protocol/bytestreams">>}});
       _res -> _res
     end.
 
@@ -2436,14 +2502,15 @@ encode_bytestreams_streamhost({streamhost, Jid, Host,
     {xmlel, <<"streamhost">>, _attrs, _els}.
 
 decode_bytestreams_streamhost_attr_jid(undefined) ->
-    erlang:error({missing_attr, <<"jid">>, <<"streamhost">>,
-		  <<"http://jabber.org/protocol/bytestreams">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"streamhost">>,
+		   <<"http://jabber.org/protocol/bytestreams">>}});
 decode_bytestreams_streamhost_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>,
-			<<"streamhost">>,
-			<<"http://jabber.org/protocol/bytestreams">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"streamhost">>,
+			 <<"http://jabber.org/protocol/bytestreams">>}});
       _res -> _res
     end.
 
@@ -2451,9 +2518,9 @@ encode_bytestreams_streamhost_attr_jid(_val, _acc) ->
     [{<<"jid">>, enc_jid(_val)} | _acc].
 
 decode_bytestreams_streamhost_attr_host(undefined) ->
-    erlang:error({missing_attr, <<"host">>,
-		  <<"streamhost">>,
-		  <<"http://jabber.org/protocol/bytestreams">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"host">>, <<"streamhost">>,
+		   <<"http://jabber.org/protocol/bytestreams">>}});
 decode_bytestreams_streamhost_attr_host(_val) -> _val.
 
 encode_bytestreams_streamhost_attr_host(_val, _acc) ->
@@ -2462,18 +2529,18 @@ encode_bytestreams_streamhost_attr_host(_val, _acc) ->
 decode_bytestreams_streamhost_attr_port(undefined) ->
     1080;
 decode_bytestreams_streamhost_attr_port(_val) ->
-    case catch xml_gen:dec_int(_val, 0, 65535) of
+    case catch dec_int(_val, 0, 65535) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"port">>,
-			<<"streamhost">>,
-			<<"http://jabber.org/protocol/bytestreams">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"port">>, <<"streamhost">>,
+			 <<"http://jabber.org/protocol/bytestreams">>}});
       _res -> _res
     end.
 
 encode_bytestreams_streamhost_attr_port(1080, _acc) ->
     _acc;
 encode_bytestreams_streamhost_attr_port(_val, _acc) ->
-    [{<<"port">>, xml_gen:enc_int(_val)} | _acc].
+    [{<<"port">>, enc_int(_val)} | _acc].
 
 decode_legacy_delay({xmlel, <<"x">>, _attrs, _els}) ->
     {Stamp, From} = decode_legacy_delay_attrs(_attrs,
@@ -2502,8 +2569,9 @@ encode_legacy_delay({legacy_delay, Stamp, From},
     {xmlel, <<"x">>, _attrs, _els}.
 
 decode_legacy_delay_attr_stamp(undefined) ->
-    erlang:error({missing_attr, <<"stamp">>, <<"x">>,
-		  <<"jabber:x:delay">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"stamp">>, <<"x">>,
+		   <<"jabber:x:delay">>}});
 decode_legacy_delay_attr_stamp(_val) -> _val.
 
 encode_legacy_delay_attr_stamp(_val, _acc) ->
@@ -2513,8 +2581,9 @@ decode_legacy_delay_attr_from(undefined) -> undefined;
 decode_legacy_delay_attr_from(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"from">>, <<"x">>,
-			<<"jabber:x:delay">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"from">>, <<"x">>,
+			 <<"jabber:x:delay">>}});
       _res -> _res
     end.
 
@@ -2547,13 +2616,15 @@ encode_delay({delay, Stamp, From}, _xmlns_attrs) ->
     {xmlel, <<"delay">>, _attrs, _els}.
 
 decode_delay_attr_stamp(undefined) ->
-    erlang:error({missing_attr, <<"stamp">>, <<"delay">>,
-		  <<"urn:xmpp:delay">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"stamp">>, <<"delay">>,
+		   <<"urn:xmpp:delay">>}});
 decode_delay_attr_stamp(_val) ->
     case catch dec_utc(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"stamp">>, <<"delay">>,
-			<<"urn:xmpp:delay">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"stamp">>, <<"delay">>,
+			 <<"urn:xmpp:delay">>}});
       _res -> _res
     end.
 
@@ -2564,8 +2635,9 @@ decode_delay_attr_from(undefined) -> undefined;
 decode_delay_attr_from(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"from">>, <<"delay">>,
-			<<"urn:xmpp:delay">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"from">>, <<"delay">>,
+			 <<"urn:xmpp:delay">>}});
       _res -> _res
     end.
 
@@ -2585,7 +2657,7 @@ decode_shim_headers_els([{xmlel, <<"header">>, _attrs,
 			     _el
 			 | _els],
 			Headers) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/shim">> ->
 	   decode_shim_headers_els(_els,
@@ -2636,8 +2708,9 @@ encode_shim_header({Name, Cdata}, _xmlns_attrs) ->
     {xmlel, <<"header">>, _attrs, _els}.
 
 decode_shim_header_attr_name(undefined) ->
-    erlang:error({missing_attr, <<"name">>, <<"header">>,
-		  <<"http://jabber.org/protocol/shim">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"name">>, <<"header">>,
+		   <<"http://jabber.org/protocol/shim">>}});
 decode_shim_header_attr_name(_val) -> _val.
 
 encode_shim_header_attr_name(_val, _acc) ->
@@ -2670,7 +2743,7 @@ decode_pubsub_els([{xmlel, <<"subscriptions">>, _attrs,
 		   | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_els(_els, Items, Options, Affiliations,
@@ -2687,7 +2760,7 @@ decode_pubsub_els([{xmlel, <<"affiliations">>, _attrs,
 		   | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_els(_els, Items, Options,
@@ -2703,7 +2776,7 @@ decode_pubsub_els([{xmlel, <<"subscribe">>, _attrs, _} =
 		   | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_els(_els, Items, Options, Affiliations,
@@ -2720,7 +2793,7 @@ decode_pubsub_els([{xmlel, <<"unsubscribe">>, _attrs,
 		   | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_els(_els, Items, Options, Affiliations,
@@ -2737,7 +2810,7 @@ decode_pubsub_els([{xmlel, <<"options">>, _attrs, _} =
 		   | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_els(_els, Items,
@@ -2753,7 +2826,7 @@ decode_pubsub_els([{xmlel, <<"items">>, _attrs, _} = _el
 		   | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_els(_els, decode_pubsub_items(_el),
@@ -2769,7 +2842,7 @@ decode_pubsub_els([{xmlel, <<"retract">>, _attrs, _} =
 		   | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_els(_els, Items, Options, Affiliations,
@@ -2785,7 +2858,7 @@ decode_pubsub_els([{xmlel, <<"publish">>, _attrs, _} =
 		   | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_els(_els, Items, Options, Affiliations,
@@ -2865,7 +2938,7 @@ decode_pubsub_retract_els([{xmlel, <<"item">>, _attrs,
 			       _el
 			   | _els],
 			  Items) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_retract_els(_els,
@@ -2905,8 +2978,9 @@ encode_pubsub_retract({pubsub_retract, Node, Notify,
 				   [encode_pubsub_item(Items, []) | _acc]).
 
 decode_pubsub_retract_attr_node(undefined) ->
-    erlang:error({missing_attr, <<"node">>, <<"retract">>,
-		  <<"http://jabber.org/protocol/pubsub">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"node">>, <<"retract">>,
+		   <<"http://jabber.org/protocol/pubsub">>}});
 decode_pubsub_retract_attr_node(_val) -> _val.
 
 encode_pubsub_retract_attr_node(_val, _acc) ->
@@ -2916,9 +2990,9 @@ decode_pubsub_retract_attr_notify(undefined) -> false;
 decode_pubsub_retract_attr_notify(_val) ->
     case catch dec_bool(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"notify">>,
-			<<"retract">>,
-			<<"http://jabber.org/protocol/pubsub">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"notify">>, <<"retract">>,
+			 <<"http://jabber.org/protocol/pubsub">>}});
       _res -> _res
     end.
 
@@ -2939,7 +3013,7 @@ decode_pubsub_options_els([{xmlel, <<"x">>, _attrs, _} =
 			       _el
 			   | _els],
 			  Xdata) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<"jabber:x:data">> ->
 	   decode_pubsub_options_els(_els, decode_xdata(_el));
        true -> decode_pubsub_options_els(_els, Xdata)
@@ -3001,13 +3075,15 @@ encode_pubsub_options_attr_subid(_val, _acc) ->
     [{<<"subid">>, _val} | _acc].
 
 decode_pubsub_options_attr_jid(undefined) ->
-    erlang:error({missing_attr, <<"jid">>, <<"options">>,
-		  <<"http://jabber.org/protocol/pubsub">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"options">>,
+		   <<"http://jabber.org/protocol/pubsub">>}});
 decode_pubsub_options_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>, <<"options">>,
-			<<"http://jabber.org/protocol/pubsub">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"options">>,
+			 <<"http://jabber.org/protocol/pubsub">>}});
       _res -> _res
     end.
 
@@ -3027,7 +3103,7 @@ decode_pubsub_publish_els([{xmlel, <<"item">>, _attrs,
 			       _el
 			   | _els],
 			  Items) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_publish_els(_els,
@@ -3059,8 +3135,9 @@ encode_pubsub_publish({pubsub_publish, Node, Items},
 				   [encode_pubsub_item(Items, []) | _acc]).
 
 decode_pubsub_publish_attr_node(undefined) ->
-    erlang:error({missing_attr, <<"node">>, <<"publish">>,
-		  <<"http://jabber.org/protocol/pubsub">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"node">>, <<"publish">>,
+		   <<"http://jabber.org/protocol/pubsub">>}});
 decode_pubsub_publish_attr_node(_val) -> _val.
 
 encode_pubsub_publish_attr_node(_val, _acc) ->
@@ -3126,15 +3203,15 @@ encode_pubsub_unsubscribe_attr_subid(_val, _acc) ->
     [{<<"subid">>, _val} | _acc].
 
 decode_pubsub_unsubscribe_attr_jid(undefined) ->
-    erlang:error({missing_attr, <<"jid">>,
-		  <<"unsubscribe">>,
-		  <<"http://jabber.org/protocol/pubsub">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"unsubscribe">>,
+		   <<"http://jabber.org/protocol/pubsub">>}});
 decode_pubsub_unsubscribe_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>,
-			<<"unsubscribe">>,
-			<<"http://jabber.org/protocol/pubsub">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"unsubscribe">>,
+			 <<"http://jabber.org/protocol/pubsub">>}});
       _res -> _res
     end.
 
@@ -3180,14 +3257,15 @@ encode_pubsub_subscribe_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
 decode_pubsub_subscribe_attr_jid(undefined) ->
-    erlang:error({missing_attr, <<"jid">>, <<"subscribe">>,
-		  <<"http://jabber.org/protocol/pubsub">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"subscribe">>,
+		   <<"http://jabber.org/protocol/pubsub">>}});
 decode_pubsub_subscribe_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>,
-			<<"subscribe">>,
-			<<"http://jabber.org/protocol/pubsub">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"subscribe">>,
+			 <<"http://jabber.org/protocol/pubsub">>}});
       _res -> _res
     end.
 
@@ -3206,7 +3284,7 @@ decode_pubsub_affiliations_els([{xmlel,
 				    _el
 				| _els],
 			       Affiliations) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_affiliations_els(_els,
@@ -3252,7 +3330,7 @@ decode_pubsub_subscriptions_els([{xmlel,
 				     _el
 				 | _els],
 				Subscriptions) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_subscriptions_els(_els,
@@ -3315,7 +3393,7 @@ decode_pubsub_event_els([{xmlel, <<"items">>, _attrs,
 			     _el
 			 | _els],
 			Items) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns ==
 	 <<"http://jabber.org/protocol/pubsub#event">> ->
@@ -3352,7 +3430,7 @@ decode_pubsub_event_items_els([{xmlel, <<"retract">>,
 				   _el
 			       | _els],
 			      Items, Retract) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns ==
 	 <<"http://jabber.org/protocol/pubsub#event">> ->
@@ -3367,7 +3445,7 @@ decode_pubsub_event_items_els([{xmlel, <<"item">>,
 				   _el
 			       | _els],
 			      Items, Retract) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns ==
 	 <<"http://jabber.org/protocol/pubsub#event">> ->
@@ -3417,8 +3495,9 @@ encode_pubsub_event_items({pubsub_event_items, Node,
 					  | _acc]).
 
 decode_pubsub_event_items_attr_node(undefined) ->
-    erlang:error({missing_attr, <<"node">>, <<"items">>,
-		  <<"http://jabber.org/protocol/pubsub#event">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"node">>, <<"items">>,
+		   <<"http://jabber.org/protocol/pubsub#event">>}});
 decode_pubsub_event_items_attr_node(_val) -> _val.
 
 encode_pubsub_event_items_attr_node(_val, _acc) ->
@@ -3516,8 +3595,9 @@ encode_pubsub_event_retract(Id, _xmlns_attrs) ->
     {xmlel, <<"retract">>, _attrs, _els}.
 
 decode_pubsub_event_retract_attr_id(undefined) ->
-    erlang:error({missing_attr, <<"id">>, <<"retract">>,
-		  <<"http://jabber.org/protocol/pubsub#event">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"id">>, <<"retract">>,
+		   <<"http://jabber.org/protocol/pubsub#event">>}});
 decode_pubsub_event_retract_attr_id(_val) -> _val.
 
 encode_pubsub_event_retract_attr_id(_val, _acc) ->
@@ -3538,7 +3618,7 @@ decode_pubsub_items_els([{xmlel, <<"item">>, _attrs,
 			     _el
 			 | _els],
 			Items) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/pubsub">> ->
 	   decode_pubsub_items_els(_els,
@@ -3588,21 +3668,23 @@ encode_pubsub_items({pubsub_items, Node, Max_items,
 decode_pubsub_items_attr_max_items(undefined) ->
     undefined;
 decode_pubsub_items_attr_max_items(_val) ->
-    case catch xml_gen:dec_int(_val, 0, infinity) of
+    case catch dec_int(_val, 0, infinity) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"max_items">>,
-			<<"items">>, <<"http://jabber.org/protocol/pubsub">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"max_items">>, <<"items">>,
+			 <<"http://jabber.org/protocol/pubsub">>}});
       _res -> _res
     end.
 
 encode_pubsub_items_attr_max_items(undefined, _acc) ->
     _acc;
 encode_pubsub_items_attr_max_items(_val, _acc) ->
-    [{<<"max_items">>, xml_gen:enc_int(_val)} | _acc].
+    [{<<"max_items">>, enc_int(_val)} | _acc].
 
 decode_pubsub_items_attr_node(undefined) ->
-    erlang:error({missing_attr, <<"node">>, <<"items">>,
-		  <<"http://jabber.org/protocol/pubsub">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"node">>, <<"items">>,
+		   <<"http://jabber.org/protocol/pubsub">>}});
 decode_pubsub_items_attr_node(_val) -> _val.
 
 encode_pubsub_items_attr_node(_val, _acc) ->
@@ -3682,33 +3764,33 @@ encode_pubsub_affiliation({pubsub_affiliation, Node,
     {xmlel, <<"affiliation">>, _attrs, _els}.
 
 decode_pubsub_affiliation_attr_node(undefined) ->
-    erlang:error({missing_attr, <<"node">>,
-		  <<"affiliation">>,
-		  <<"http://jabber.org/protocol/pubsub">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"node">>, <<"affiliation">>,
+		   <<"http://jabber.org/protocol/pubsub">>}});
 decode_pubsub_affiliation_attr_node(_val) -> _val.
 
 encode_pubsub_affiliation_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
 decode_pubsub_affiliation_attr_affiliation(undefined) ->
-    erlang:error({missing_attr, <<"affiliation">>,
-		  <<"affiliation">>,
-		  <<"http://jabber.org/protocol/pubsub">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"affiliation">>, <<"affiliation">>,
+		   <<"http://jabber.org/protocol/pubsub">>}});
 decode_pubsub_affiliation_attr_affiliation(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[member, none, outcast, owner, publisher,
-				 'publish-only'])
+    case catch dec_enum(_val,
+			[member, none, outcast, owner, publisher,
+			 'publish-only'])
 	of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"affiliation">>,
-			<<"affiliation">>,
-			<<"http://jabber.org/protocol/pubsub">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"affiliation">>, <<"affiliation">>,
+			 <<"http://jabber.org/protocol/pubsub">>}});
       _res -> _res
     end.
 
 encode_pubsub_affiliation_attr_affiliation(_val,
 					   _acc) ->
-    [{<<"affiliation">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"affiliation">>, enc_enum(_val)} | _acc].
 
 decode_pubsub_subscription({xmlel, <<"subscription">>,
 			    _attrs, _els}) ->
@@ -3762,15 +3844,15 @@ encode_pubsub_subscription({pubsub_subscription, Jid,
     {xmlel, <<"subscription">>, _attrs, _els}.
 
 decode_pubsub_subscription_attr_jid(undefined) ->
-    erlang:error({missing_attr, <<"jid">>,
-		  <<"subscription">>,
-		  <<"http://jabber.org/protocol/pubsub">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"subscription">>,
+		   <<"http://jabber.org/protocol/pubsub">>}});
 decode_pubsub_subscription_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>,
-			<<"subscription">>,
-			<<"http://jabber.org/protocol/pubsub">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"subscription">>,
+			 <<"http://jabber.org/protocol/pubsub">>}});
       _res -> _res
     end.
 
@@ -3799,13 +3881,13 @@ encode_pubsub_subscription_attr_subid(_val, _acc) ->
 decode_pubsub_subscription_attr_subscription(undefined) ->
     undefined;
 decode_pubsub_subscription_attr_subscription(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[none, pending, subscribed, unconfigured])
+    case catch dec_enum(_val,
+			[none, pending, subscribed, unconfigured])
 	of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"subscription">>,
-			<<"subscription">>,
-			<<"http://jabber.org/protocol/pubsub">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"subscription">>, <<"subscription">>,
+			 <<"http://jabber.org/protocol/pubsub">>}});
       _res -> _res
     end.
 
@@ -3814,7 +3896,7 @@ encode_pubsub_subscription_attr_subscription(undefined,
     _acc;
 encode_pubsub_subscription_attr_subscription(_val,
 					     _acc) ->
-    [{<<"subscription">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"subscription">>, enc_enum(_val)} | _acc].
 
 decode_xdata({xmlel, <<"x">>, _attrs, _els}) ->
     {Fields, Items, Instructions, Reported, Title} =
@@ -3833,7 +3915,7 @@ decode_xdata_els([{xmlel, <<"instructions">>, _attrs,
 		      _el
 		  | _els],
 		 Fields, Items, Instructions, Reported, Title) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_els(_els, Fields, Items,
 			    case decode_xdata_instructions(_el) of
@@ -3848,7 +3930,7 @@ decode_xdata_els([{xmlel, <<"instructions">>, _attrs,
 decode_xdata_els([{xmlel, <<"title">>, _attrs, _} = _el
 		  | _els],
 		 Fields, Items, Instructions, Reported, Title) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_els(_els, Fields, Items, Instructions,
 			    Reported, decode_xdata_title(_el));
@@ -3860,7 +3942,7 @@ decode_xdata_els([{xmlel, <<"reported">>, _attrs, _} =
 		      _el
 		  | _els],
 		 Fields, Items, Instructions, Reported, Title) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_els(_els, Fields, Items, Instructions,
 			    decode_xdata_reported(_el), Title);
@@ -3871,7 +3953,7 @@ decode_xdata_els([{xmlel, <<"reported">>, _attrs, _} =
 decode_xdata_els([{xmlel, <<"item">>, _attrs, _} = _el
 		  | _els],
 		 Fields, Items, Instructions, Reported, Title) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_els(_els, Fields,
 			    [decode_xdata_item(_el) | Items], Instructions,
@@ -3883,7 +3965,7 @@ decode_xdata_els([{xmlel, <<"item">>, _attrs, _} = _el
 decode_xdata_els([{xmlel, <<"field">>, _attrs, _} = _el
 		  | _els],
 		 Fields, Items, Instructions, Reported, Title) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_els(_els,
 			    [decode_xdata_field(_el) | Fields], Items,
@@ -3943,20 +4025,22 @@ encode_xdata({xdata, Type, Instructions, Title,
     [encode_xdata_title(Title, []) | _acc].
 
 decode_xdata_attr_type(undefined) ->
-    erlang:error({missing_attr, <<"type">>, <<"x">>,
-		  <<"jabber:x:data">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"type">>, <<"x">>,
+		   <<"jabber:x:data">>}});
 decode_xdata_attr_type(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[cancel, form, result, submit])
+    case catch dec_enum(_val,
+			[cancel, form, result, submit])
 	of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"type">>, <<"x">>,
-			<<"jabber:x:data">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"type">>, <<"x">>,
+			 <<"jabber:x:data">>}});
       _res -> _res
     end.
 
 encode_xdata_attr_type(_val, _acc) ->
-    [{<<"type">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"type">>, enc_enum(_val)} | _acc].
 
 decode_xdata_item({xmlel, <<"item">>, _attrs, _els}) ->
     Fields = decode_xdata_item_els(_els, []), Fields.
@@ -3967,7 +4051,7 @@ decode_xdata_item_els([{xmlel, <<"field">>, _attrs, _} =
 			   _el
 		       | _els],
 		      Fields) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_item_els(_els,
 				 [decode_xdata_field(_el) | Fields]);
@@ -3997,7 +4081,7 @@ decode_xdata_reported_els([{xmlel, <<"field">>, _attrs,
 			       _el
 			   | _els],
 			  Fields) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_reported_els(_els,
 				     [decode_xdata_field(_el) | Fields]);
@@ -4089,7 +4173,7 @@ decode_xdata_field_els([{xmlel, <<"required">>, _attrs,
 			    _el
 			| _els],
 		       Options, Values, Desc, Required) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_field_els(_els, Options, Values, Desc,
 				  decode_xdata_field_required(_el));
@@ -4101,7 +4185,7 @@ decode_xdata_field_els([{xmlel, <<"desc">>, _attrs, _} =
 			    _el
 			| _els],
 		       Options, Values, Desc, Required) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_field_els(_els, Options, Values,
 				  decode_xdata_field_desc(_el), Required);
@@ -4114,7 +4198,7 @@ decode_xdata_field_els([{xmlel, <<"value">>, _attrs,
 			    _el
 			| _els],
 		       Options, Values, Desc, Required) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_field_els(_els, Options,
 				  case decode_xdata_field_value(_el) of
@@ -4131,7 +4215,7 @@ decode_xdata_field_els([{xmlel, <<"option">>, _attrs,
 			    _el
 			| _els],
 		       Options, Values, Desc, Required) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_field_els(_els,
 				  case decode_xdata_field_option(_el) of
@@ -4207,20 +4291,21 @@ encode_xdata_field_attr_label(_val, _acc) ->
 
 decode_xdata_field_attr_type(undefined) -> undefined;
 decode_xdata_field_attr_type(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[boolean, fixed, hidden, 'jid-multi',
-				 'jid-single', 'list-multi', 'list-single',
-				 'text-multi', 'text-private', 'text-single'])
+    case catch dec_enum(_val,
+			[boolean, fixed, hidden, 'jid-multi', 'jid-single',
+			 'list-multi', 'list-single', 'text-multi',
+			 'text-private', 'text-single'])
 	of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"type">>, <<"field">>,
-			<<"jabber:x:data">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"type">>, <<"field">>,
+			 <<"jabber:x:data">>}});
       _res -> _res
     end.
 
 encode_xdata_field_attr_type(undefined, _acc) -> _acc;
 encode_xdata_field_attr_type(_val, _acc) ->
-    [{<<"type">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"type">>, enc_enum(_val)} | _acc].
 
 decode_xdata_field_attr_var(undefined) -> undefined;
 decode_xdata_field_attr_var(_val) -> _val.
@@ -4231,21 +4316,26 @@ encode_xdata_field_attr_var(_val, _acc) ->
 
 decode_xdata_field_option({xmlel, <<"option">>, _attrs,
 			   _els}) ->
-    Value = decode_xdata_field_option_els(_els, []), Value.
+    Value = decode_xdata_field_option_els(_els, error),
+    Value.
 
-decode_xdata_field_option_els([], [Value]) -> Value;
+decode_xdata_field_option_els([], Value) ->
+    case Value of
+      error ->
+	  erlang:error({xmpp_codec,
+			{missing_tag, <<"value">>, <<"jabber:x:data">>}});
+      {value, Value1} -> Value1
+    end;
 decode_xdata_field_option_els([{xmlel, <<"value">>,
 				_attrs, _} =
 				   _el
 			       | _els],
 			      Value) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:x:data">> ->
 	   decode_xdata_field_option_els(_els,
-					 case decode_xdata_field_value(_el) of
-					   undefined -> Value;
-					   _new_el -> [_new_el | Value]
-					 end);
+					 {value,
+					  decode_xdata_field_value(_el)});
        true -> decode_xdata_field_option_els(_els, Value)
     end;
 decode_xdata_field_option_els([_ | _els], Value) ->
@@ -4349,7 +4439,7 @@ decode_vcard_els([{xmlel, <<"N">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4369,7 +4459,7 @@ decode_vcard_els([{xmlel, <<"ADR">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer,
 			    [decode_vcard_ADR(_el) | Adr], Class, Categories,
@@ -4390,7 +4480,7 @@ decode_vcard_els([{xmlel, <<"LABEL">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4411,7 +4501,7 @@ decode_vcard_els([{xmlel, <<"TEL">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4431,7 +4521,7 @@ decode_vcard_els([{xmlel, <<"EMAIL">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4451,7 +4541,7 @@ decode_vcard_els([{xmlel, <<"GEO">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4471,7 +4561,7 @@ decode_vcard_els([{xmlel, <<"LOGO">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4491,7 +4581,7 @@ decode_vcard_els([{xmlel, <<"PHOTO">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4511,7 +4601,7 @@ decode_vcard_els([{xmlel, <<"ORG">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4531,7 +4621,7 @@ decode_vcard_els([{xmlel, <<"SOUND">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid,
@@ -4552,7 +4642,7 @@ decode_vcard_els([{xmlel, <<"KEY">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4573,7 +4663,7 @@ decode_vcard_els([{xmlel, <<"VERSION">>, _attrs, _} =
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4593,7 +4683,7 @@ decode_vcard_els([{xmlel, <<"FN">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4614,7 +4704,7 @@ decode_vcard_els([{xmlel, <<"NICKNAME">>, _attrs, _} =
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4634,7 +4724,7 @@ decode_vcard_els([{xmlel, <<"BDAY">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4655,7 +4745,7 @@ decode_vcard_els([{xmlel, <<"JABBERID">>, _attrs, _} =
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, decode_vcard_JABBERID(_el),
@@ -4675,7 +4765,7 @@ decode_vcard_els([{xmlel, <<"MAILER">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, decode_vcard_MAILER(_el), Adr,
 			    Class, Categories, Desc, Uid, Prodid, Jabberid,
@@ -4695,7 +4785,7 @@ decode_vcard_els([{xmlel, <<"TZ">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4715,7 +4805,7 @@ decode_vcard_els([{xmlel, <<"TITLE">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4735,7 +4825,7 @@ decode_vcard_els([{xmlel, <<"ROLE">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note,
@@ -4755,7 +4845,7 @@ decode_vcard_els([{xmlel, <<"NOTE">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound,
@@ -4775,7 +4865,7 @@ decode_vcard_els([{xmlel, <<"PRODID">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, decode_vcard_PRODID(_el), Jabberid,
@@ -4795,7 +4885,7 @@ decode_vcard_els([{xmlel, <<"REV">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4817,7 +4907,7 @@ decode_vcard_els([{xmlel, <<"SORT-STRING">>, _attrs,
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4837,7 +4927,7 @@ decode_vcard_els([{xmlel, <<"UID">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, decode_vcard_UID(_el), Prodid, Jabberid,
@@ -4857,7 +4947,7 @@ decode_vcard_els([{xmlel, <<"URL">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
@@ -4877,7 +4967,7 @@ decode_vcard_els([{xmlel, <<"DESC">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class, Categories,
 			    decode_vcard_DESC(_el), Uid, Prodid, Jabberid,
@@ -4898,7 +4988,7 @@ decode_vcard_els([{xmlel, <<"CATEGORIES">>, _attrs, _} =
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr, Class,
 			    decode_vcard_CATEGORIES(_el), Desc, Uid, Prodid,
@@ -4918,7 +5008,7 @@ decode_vcard_els([{xmlel, <<"CLASS">>, _attrs, _} = _el
 		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
 		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
 		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_els(_els, Mailer, Adr,
 			    decode_vcard_CLASS(_el), Categories, Desc, Uid,
@@ -5111,7 +5201,7 @@ decode_vcard_CLASS_els([{xmlel, <<"PUBLIC">>, _attrs,
 			    _el
 			| _els],
 		       Class) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_CLASS_els(_els, decode_vcard_PUBLIC(_el));
        true -> decode_vcard_CLASS_els(_els, Class)
@@ -5121,7 +5211,7 @@ decode_vcard_CLASS_els([{xmlel, <<"PRIVATE">>, _attrs,
 			    _el
 			| _els],
 		       Class) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_CLASS_els(_els, decode_vcard_PRIVATE(_el));
        true -> decode_vcard_CLASS_els(_els, Class)
@@ -5131,7 +5221,7 @@ decode_vcard_CLASS_els([{xmlel, <<"CONFIDENTIAL">>,
 			    _el
 			| _els],
 		       Class) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_CLASS_els(_els,
 				  decode_vcard_CONFIDENTIAL(_el));
@@ -5166,7 +5256,7 @@ decode_vcard_CATEGORIES_els([{xmlel, <<"KEYWORD">>,
 				 _el
 			     | _els],
 			    Keywords) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_CATEGORIES_els(_els,
 				       case decode_vcard_KEYWORD(_el) of
@@ -5201,7 +5291,7 @@ decode_vcard_KEY_els([{xmlel, <<"TYPE">>, _attrs, _} =
 			  _el
 		      | _els],
 		     Cred, Type) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_KEY_els(_els, Cred,
 				decode_vcard_TYPE(_el));
@@ -5211,7 +5301,7 @@ decode_vcard_KEY_els([{xmlel, <<"CRED">>, _attrs, _} =
 			  _el
 		      | _els],
 		     Cred, Type) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_KEY_els(_els, decode_vcard_CRED(_el),
 				Type);
@@ -5249,7 +5339,7 @@ decode_vcard_SOUND_els([{xmlel, <<"BINVAL">>, _attrs,
 			    _el
 			| _els],
 		       Phonetic, Extval, Binval) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_SOUND_els(_els, Phonetic, Extval,
 				  decode_vcard_BINVAL(_el));
@@ -5261,7 +5351,7 @@ decode_vcard_SOUND_els([{xmlel, <<"EXTVAL">>, _attrs,
 			    _el
 			| _els],
 		       Phonetic, Extval, Binval) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_SOUND_els(_els, Phonetic,
 				  decode_vcard_EXTVAL(_el), Binval);
@@ -5273,7 +5363,7 @@ decode_vcard_SOUND_els([{xmlel, <<"PHONETIC">>, _attrs,
 			    _el
 			| _els],
 		       Phonetic, Extval, Binval) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_SOUND_els(_els, decode_vcard_PHONETIC(_el),
 				  Extval, Binval);
@@ -5318,7 +5408,7 @@ decode_vcard_ORG_els([{xmlel, <<"ORGNAME">>, _attrs,
 			  _el
 		      | _els],
 		     Units, Name) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ORG_els(_els, Units,
 				decode_vcard_ORGNAME(_el));
@@ -5329,7 +5419,7 @@ decode_vcard_ORG_els([{xmlel, <<"ORGUNIT">>, _attrs,
 			  _el
 		      | _els],
 		     Units, Name) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ORG_els(_els,
 				case decode_vcard_ORGUNIT(_el) of
@@ -5371,7 +5461,7 @@ decode_vcard_PHOTO_els([{xmlel, <<"TYPE">>, _attrs, _} =
 			    _el
 			| _els],
 		       Type, Extval, Binval) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_PHOTO_els(_els, decode_vcard_TYPE(_el),
 				  Extval, Binval);
@@ -5383,7 +5473,7 @@ decode_vcard_PHOTO_els([{xmlel, <<"BINVAL">>, _attrs,
 			    _el
 			| _els],
 		       Type, Extval, Binval) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_PHOTO_els(_els, Type, Extval,
 				  decode_vcard_BINVAL(_el));
@@ -5395,7 +5485,7 @@ decode_vcard_PHOTO_els([{xmlel, <<"EXTVAL">>, _attrs,
 			    _el
 			| _els],
 		       Type, Extval, Binval) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_PHOTO_els(_els, Type,
 				  decode_vcard_EXTVAL(_el), Binval);
@@ -5439,7 +5529,7 @@ decode_vcard_LOGO_els([{xmlel, <<"TYPE">>, _attrs, _} =
 			   _el
 		       | _els],
 		      Type, Extval, Binval) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LOGO_els(_els, decode_vcard_TYPE(_el),
 				 Extval, Binval);
@@ -5451,7 +5541,7 @@ decode_vcard_LOGO_els([{xmlel, <<"BINVAL">>, _attrs,
 			   _el
 		       | _els],
 		      Type, Extval, Binval) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LOGO_els(_els, Type, Extval,
 				 decode_vcard_BINVAL(_el));
@@ -5463,7 +5553,7 @@ decode_vcard_LOGO_els([{xmlel, <<"EXTVAL">>, _attrs,
 			   _el
 		       | _els],
 		      Type, Extval, Binval) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LOGO_els(_els, Type,
 				 decode_vcard_EXTVAL(_el), Binval);
@@ -5517,8 +5607,9 @@ decode_vcard_BINVAL_cdata(<<>>) -> undefined;
 decode_vcard_BINVAL_cdata(_val) ->
     case catch base64:decode(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"BINVAL">>,
-			<<"vcard-temp">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"BINVAL">>,
+			 <<"vcard-temp">>}});
       _res -> _res
     end.
 
@@ -5536,7 +5627,7 @@ decode_vcard_GEO_els([{xmlel, <<"LAT">>, _attrs, _} =
 			  _el
 		      | _els],
 		     Lat, Lon) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_GEO_els(_els, decode_vcard_LAT(_el), Lon);
        true -> decode_vcard_GEO_els(_els, Lat, Lon)
@@ -5545,7 +5636,7 @@ decode_vcard_GEO_els([{xmlel, <<"LON">>, _attrs, _} =
 			  _el
 		      | _els],
 		     Lat, Lon) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_GEO_els(_els, Lat, decode_vcard_LON(_el));
        true -> decode_vcard_GEO_els(_els, Lat, Lon)
@@ -5581,7 +5672,7 @@ decode_vcard_EMAIL_els([{xmlel, <<"HOME">>, _attrs, _} =
 			    _el
 			| _els],
 		       X400, Userid, Internet, Home, Pref, Work) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_EMAIL_els(_els, X400, Userid, Internet,
 				  decode_vcard_HOME(_el), Pref, Work);
@@ -5593,7 +5684,7 @@ decode_vcard_EMAIL_els([{xmlel, <<"WORK">>, _attrs, _} =
 			    _el
 			| _els],
 		       X400, Userid, Internet, Home, Pref, Work) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_EMAIL_els(_els, X400, Userid, Internet,
 				  Home, Pref, decode_vcard_WORK(_el));
@@ -5606,7 +5697,7 @@ decode_vcard_EMAIL_els([{xmlel, <<"INTERNET">>, _attrs,
 			    _el
 			| _els],
 		       X400, Userid, Internet, Home, Pref, Work) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_EMAIL_els(_els, X400, Userid,
 				  decode_vcard_INTERNET(_el), Home, Pref, Work);
@@ -5618,7 +5709,7 @@ decode_vcard_EMAIL_els([{xmlel, <<"PREF">>, _attrs, _} =
 			    _el
 			| _els],
 		       X400, Userid, Internet, Home, Pref, Work) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_EMAIL_els(_els, X400, Userid, Internet,
 				  Home, decode_vcard_PREF(_el), Work);
@@ -5630,7 +5721,7 @@ decode_vcard_EMAIL_els([{xmlel, <<"X400">>, _attrs, _} =
 			    _el
 			| _els],
 		       X400, Userid, Internet, Home, Pref, Work) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_EMAIL_els(_els, decode_vcard_X400(_el),
 				  Userid, Internet, Home, Pref, Work);
@@ -5643,7 +5734,7 @@ decode_vcard_EMAIL_els([{xmlel, <<"USERID">>, _attrs,
 			    _el
 			| _els],
 		       X400, Userid, Internet, Home, Pref, Work) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_EMAIL_els(_els, X400,
 				  decode_vcard_USERID(_el), Internet, Home,
@@ -5712,7 +5803,7 @@ decode_vcard_TEL_els([{xmlel, <<"HOME">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs, Bbs,
 				Voice, decode_vcard_HOME(_el), Pref, Msg, Fax,
@@ -5727,7 +5818,7 @@ decode_vcard_TEL_els([{xmlel, <<"WORK">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs, Bbs,
 				Voice, Home, Pref, Msg, Fax,
@@ -5743,7 +5834,7 @@ decode_vcard_TEL_els([{xmlel, <<"VOICE">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs, Bbs,
 				decode_vcard_VOICE(_el), Home, Pref, Msg, Fax,
@@ -5758,7 +5849,7 @@ decode_vcard_TEL_els([{xmlel, <<"FAX">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs, Bbs,
 				Voice, Home, Pref, Msg, decode_vcard_FAX(_el),
@@ -5773,7 +5864,7 @@ decode_vcard_TEL_els([{xmlel, <<"PAGER">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number,
 				decode_vcard_PAGER(_el), Pcs, Bbs, Voice, Home,
@@ -5788,7 +5879,7 @@ decode_vcard_TEL_els([{xmlel, <<"MSG">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs, Bbs,
 				Voice, Home, Pref, decode_vcard_MSG(_el), Fax,
@@ -5803,7 +5894,7 @@ decode_vcard_TEL_els([{xmlel, <<"CELL">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs, Bbs,
 				Voice, Home, Pref, Msg, Fax, Work,
@@ -5818,7 +5909,7 @@ decode_vcard_TEL_els([{xmlel, <<"VIDEO">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs, Bbs,
 				Voice, Home, Pref, Msg, Fax, Work, Cell, Modem,
@@ -5833,7 +5924,7 @@ decode_vcard_TEL_els([{xmlel, <<"BBS">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs,
 				decode_vcard_BBS(_el), Voice, Home, Pref, Msg,
@@ -5848,7 +5939,7 @@ decode_vcard_TEL_els([{xmlel, <<"MODEM">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs, Bbs,
 				Voice, Home, Pref, Msg, Fax, Work, Cell,
@@ -5863,7 +5954,7 @@ decode_vcard_TEL_els([{xmlel, <<"ISDN">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs, Bbs,
 				Voice, Home, Pref, Msg, Fax, Work, Cell, Modem,
@@ -5878,7 +5969,7 @@ decode_vcard_TEL_els([{xmlel, <<"PCS">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager,
 				decode_vcard_PCS(_el), Bbs, Voice, Home, Pref,
@@ -5893,7 +5984,7 @@ decode_vcard_TEL_els([{xmlel, <<"PREF">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, Number, Pager, Pcs, Bbs,
 				Voice, Home, decode_vcard_PREF(_el), Msg, Fax,
@@ -5908,7 +5999,7 @@ decode_vcard_TEL_els([{xmlel, <<"NUMBER">>, _attrs, _} =
 		      | _els],
 		     Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
 		     Work, Cell, Modem, Isdn, Video) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_TEL_els(_els, decode_vcard_NUMBER(_el),
 				Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
@@ -6019,7 +6110,7 @@ decode_vcard_LABEL_els([{xmlel, <<"HOME">>, _attrs, _} =
 			    _el
 			| _els],
 		       Line, Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LABEL_els(_els, Line,
 				  decode_vcard_HOME(_el), Pref, Work, Intl,
@@ -6032,7 +6123,7 @@ decode_vcard_LABEL_els([{xmlel, <<"WORK">>, _attrs, _} =
 			    _el
 			| _els],
 		       Line, Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LABEL_els(_els, Line, Home, Pref,
 				  decode_vcard_WORK(_el), Intl, Parcel, Postal,
@@ -6046,7 +6137,7 @@ decode_vcard_LABEL_els([{xmlel, <<"POSTAL">>, _attrs,
 			    _el
 			| _els],
 		       Line, Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LABEL_els(_els, Line, Home, Pref, Work,
 				  Intl, Parcel, decode_vcard_POSTAL(_el), Dom);
@@ -6059,7 +6150,7 @@ decode_vcard_LABEL_els([{xmlel, <<"PARCEL">>, _attrs,
 			    _el
 			| _els],
 		       Line, Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LABEL_els(_els, Line, Home, Pref, Work,
 				  Intl, decode_vcard_PARCEL(_el), Postal, Dom);
@@ -6071,7 +6162,7 @@ decode_vcard_LABEL_els([{xmlel, <<"DOM">>, _attrs, _} =
 			    _el
 			| _els],
 		       Line, Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LABEL_els(_els, Line, Home, Pref, Work,
 				  Intl, Parcel, Postal, decode_vcard_DOM(_el));
@@ -6083,7 +6174,7 @@ decode_vcard_LABEL_els([{xmlel, <<"INTL">>, _attrs, _} =
 			    _el
 			| _els],
 		       Line, Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LABEL_els(_els, Line, Home, Pref, Work,
 				  decode_vcard_INTL(_el), Parcel, Postal, Dom);
@@ -6095,7 +6186,7 @@ decode_vcard_LABEL_els([{xmlel, <<"PREF">>, _attrs, _} =
 			    _el
 			| _els],
 		       Line, Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LABEL_els(_els, Line, Home,
 				  decode_vcard_PREF(_el), Work, Intl, Parcel,
@@ -6108,7 +6199,7 @@ decode_vcard_LABEL_els([{xmlel, <<"LINE">>, _attrs, _} =
 			    _el
 			| _els],
 		       Line, Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_LABEL_els(_els,
 				  case decode_vcard_LINE(_el) of
@@ -6193,7 +6284,7 @@ decode_vcard_ADR_els([{xmlel, <<"HOME">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd, Pcode,
 				decode_vcard_HOME(_el), Pref, Pobox, Ctry,
@@ -6209,7 +6300,7 @@ decode_vcard_ADR_els([{xmlel, <<"WORK">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd, Pcode, Home,
 				Pref, Pobox, Ctry, Locality,
@@ -6225,7 +6316,7 @@ decode_vcard_ADR_els([{xmlel, <<"POSTAL">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd, Pcode, Home,
 				Pref, Pobox, Ctry, Locality, Work, Intl, Parcel,
@@ -6240,7 +6331,7 @@ decode_vcard_ADR_els([{xmlel, <<"PARCEL">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd, Pcode, Home,
 				Pref, Pobox, Ctry, Locality, Work, Intl,
@@ -6255,7 +6346,7 @@ decode_vcard_ADR_els([{xmlel, <<"DOM">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd, Pcode, Home,
 				Pref, Pobox, Ctry, Locality, Work, Intl, Parcel,
@@ -6270,7 +6361,7 @@ decode_vcard_ADR_els([{xmlel, <<"INTL">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd, Pcode, Home,
 				Pref, Pobox, Ctry, Locality, Work,
@@ -6286,7 +6377,7 @@ decode_vcard_ADR_els([{xmlel, <<"PREF">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd, Pcode, Home,
 				decode_vcard_PREF(_el), Pobox, Ctry, Locality,
@@ -6301,7 +6392,7 @@ decode_vcard_ADR_els([{xmlel, <<"POBOX">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd, Pcode, Home,
 				Pref, decode_vcard_POBOX(_el), Ctry, Locality,
@@ -6316,7 +6407,7 @@ decode_vcard_ADR_els([{xmlel, <<"EXTADD">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street,
 				decode_vcard_EXTADD(_el), Pcode, Home, Pref,
@@ -6332,7 +6423,7 @@ decode_vcard_ADR_els([{xmlel, <<"STREET">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, decode_vcard_STREET(_el),
 				Extadd, Pcode, Home, Pref, Pobox, Ctry,
@@ -6349,7 +6440,7 @@ decode_vcard_ADR_els([{xmlel, <<"LOCALITY">>, _attrs,
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd, Pcode, Home,
 				Pref, Pobox, Ctry, decode_vcard_LOCALITY(_el),
@@ -6364,7 +6455,7 @@ decode_vcard_ADR_els([{xmlel, <<"REGION">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd, Pcode, Home,
 				Pref, Pobox, Ctry, Locality, Work, Intl, Parcel,
@@ -6379,7 +6470,7 @@ decode_vcard_ADR_els([{xmlel, <<"PCODE">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd,
 				decode_vcard_PCODE(_el), Home, Pref, Pobox,
@@ -6395,7 +6486,7 @@ decode_vcard_ADR_els([{xmlel, <<"CTRY">>, _attrs, _} =
 		      | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_ADR_els(_els, Street, Extadd, Pcode, Home,
 				Pref, Pobox, decode_vcard_CTRY(_el), Locality,
@@ -6503,7 +6594,7 @@ decode_vcard_N_els([{xmlel, <<"FAMILY">>, _attrs, _} =
 			_el
 		    | _els],
 		   Middle, Suffix, Prefix, Family, Given) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_N_els(_els, Middle, Suffix, Prefix,
 			      decode_vcard_FAMILY(_el), Given);
@@ -6515,7 +6606,7 @@ decode_vcard_N_els([{xmlel, <<"GIVEN">>, _attrs, _} =
 			_el
 		    | _els],
 		   Middle, Suffix, Prefix, Family, Given) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_N_els(_els, Middle, Suffix, Prefix, Family,
 			      decode_vcard_GIVEN(_el));
@@ -6527,7 +6618,7 @@ decode_vcard_N_els([{xmlel, <<"MIDDLE">>, _attrs, _} =
 			_el
 		    | _els],
 		   Middle, Suffix, Prefix, Family, Given) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_N_els(_els, decode_vcard_MIDDLE(_el),
 			      Suffix, Prefix, Family, Given);
@@ -6539,7 +6630,7 @@ decode_vcard_N_els([{xmlel, <<"PREFIX">>, _attrs, _} =
 			_el
 		    | _els],
 		   Middle, Suffix, Prefix, Family, Given) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_N_els(_els, Middle, Suffix,
 			      decode_vcard_PREFIX(_el), Family, Given);
@@ -6551,7 +6642,7 @@ decode_vcard_N_els([{xmlel, <<"SUFFIX">>, _attrs, _} =
 			_el
 		    | _els],
 		   Middle, Suffix, Prefix, Family, Given) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"vcard-temp">> ->
 	   decode_vcard_N_els(_els, Middle,
 			      decode_vcard_SUFFIX(_el), Prefix, Family, Given);
@@ -7780,7 +7871,7 @@ decode_stream_error_els([{xmlel, <<"text">>, _attrs,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els,
@@ -7792,7 +7883,7 @@ decode_stream_error_els([{xmlel, <<"bad-format">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7804,7 +7895,7 @@ decode_stream_error_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7816,7 +7907,7 @@ decode_stream_error_els([{xmlel, <<"conflict">>, _attrs,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7828,7 +7919,7 @@ decode_stream_error_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7840,7 +7931,7 @@ decode_stream_error_els([{xmlel, <<"host-gone">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7852,7 +7943,7 @@ decode_stream_error_els([{xmlel, <<"host-unknown">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7864,7 +7955,7 @@ decode_stream_error_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7876,7 +7967,7 @@ decode_stream_error_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7888,7 +7979,7 @@ decode_stream_error_els([{xmlel, <<"invalid-from">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7900,7 +7991,7 @@ decode_stream_error_els([{xmlel, <<"invalid-id">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7912,7 +8003,7 @@ decode_stream_error_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7924,7 +8015,7 @@ decode_stream_error_els([{xmlel, <<"invalid-xml">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7936,7 +8027,7 @@ decode_stream_error_els([{xmlel, <<"not-authorized">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7948,7 +8039,7 @@ decode_stream_error_els([{xmlel, <<"not-well-formed">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7960,7 +8051,7 @@ decode_stream_error_els([{xmlel, <<"policy-violation">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7972,7 +8063,7 @@ decode_stream_error_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7984,7 +8075,7 @@ decode_stream_error_els([{xmlel, <<"reset">>, _attrs,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -7996,7 +8087,7 @@ decode_stream_error_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -8008,7 +8099,7 @@ decode_stream_error_els([{xmlel, <<"restricted-xml">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -8020,7 +8111,7 @@ decode_stream_error_els([{xmlel, <<"see-other-host">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -8032,7 +8123,7 @@ decode_stream_error_els([{xmlel, <<"system-shutdown">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -8044,7 +8135,7 @@ decode_stream_error_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -8056,7 +8147,7 @@ decode_stream_error_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -8068,7 +8159,7 @@ decode_stream_error_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -8080,7 +8171,7 @@ decode_stream_error_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
 	   decode_stream_error_els(_els, Text,
@@ -8351,8 +8442,9 @@ encode_stream_error_see_other_host({'see-other-host',
     {xmlel, <<"see-other-host">>, _attrs, _els}.
 
 decode_stream_error_see_other_host_cdata(<<>>) ->
-    erlang:error({missing_cdata, <<>>, <<"see-other-host">>,
-		  <<"urn:ietf:params:xml:ns:xmpp-streams">>});
+    erlang:error({xmpp_codec,
+		  {missing_cdata, <<>>, <<"see-other-host">>,
+		   <<"urn:ietf:params:xml:ns:xmpp-streams">>}});
 decode_stream_error_see_other_host_cdata(_val) -> _val.
 
 encode_stream_error_see_other_host_cdata(_val, _acc) ->
@@ -8611,7 +8703,7 @@ decode_time_els([], Utc, Tzo) -> {Utc, Tzo};
 decode_time_els([{xmlel, <<"tzo">>, _attrs, _} = _el
 		 | _els],
 		Utc, Tzo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"urn:xmpp:time">> ->
 	   decode_time_els(_els, Utc, decode_time_tzo(_el));
        true -> decode_time_els(_els, Utc, Tzo)
@@ -8619,7 +8711,7 @@ decode_time_els([{xmlel, <<"tzo">>, _attrs, _} = _el
 decode_time_els([{xmlel, <<"utc">>, _attrs, _} = _el
 		 | _els],
 		Utc, Tzo) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"urn:xmpp:time">> ->
 	   decode_time_els(_els, decode_time_utc(_el), Tzo);
        true -> decode_time_els(_els, Utc, Tzo)
@@ -8662,8 +8754,9 @@ decode_time_tzo_cdata(<<>>) -> undefined;
 decode_time_tzo_cdata(_val) ->
     case catch dec_tzo(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"tzo">>,
-			<<"urn:xmpp:time">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"tzo">>,
+			 <<"urn:xmpp:time">>}});
       _res -> _res
     end.
 
@@ -8692,8 +8785,9 @@ decode_time_utc_cdata(<<>>) -> undefined;
 decode_time_utc_cdata(_val) ->
     case catch dec_utc(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"utc">>,
-			<<"urn:xmpp:time">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"utc">>,
+			 <<"urn:xmpp:time">>}});
       _res -> _res
     end.
 
@@ -8744,7 +8838,7 @@ decode_register_els([{xmlel, <<"registered">>, _attrs,
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -8763,7 +8857,7 @@ decode_register_els([{xmlel, <<"remove">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -8783,7 +8877,7 @@ decode_register_els([{xmlel, <<"instructions">>, _attrs,
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       decode_register_instructions(_el), Text, Last,
@@ -8803,7 +8897,7 @@ decode_register_els([{xmlel, <<"username">>, _attrs,
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -8822,7 +8916,7 @@ decode_register_els([{xmlel, <<"nick">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -8842,7 +8936,7 @@ decode_register_els([{xmlel, <<"password">>, _attrs,
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First,
@@ -8861,7 +8955,7 @@ decode_register_els([{xmlel, <<"name">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -8880,7 +8974,7 @@ decode_register_els([{xmlel, <<"first">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last,
@@ -8899,7 +8993,7 @@ decode_register_els([{xmlel, <<"last">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, decode_register_last(_el),
@@ -8918,7 +9012,7 @@ decode_register_els([{xmlel, <<"email">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -8937,7 +9031,7 @@ decode_register_els([{xmlel, <<"address">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc,
 			       decode_register_address(_el), Instructions, Text,
@@ -8956,7 +9050,7 @@ decode_register_els([{xmlel, <<"city">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -8975,7 +9069,7 @@ decode_register_els([{xmlel, <<"state">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -8993,7 +9087,7 @@ decode_register_els([{xmlel, <<"zip">>, _attrs, _} = _el
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, decode_register_zip(_el),
 			       Misc, Address, Instructions, Text, Last, First,
@@ -9011,7 +9105,7 @@ decode_register_els([{xmlel, <<"phone">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -9029,7 +9123,7 @@ decode_register_els([{xmlel, <<"url">>, _attrs, _} = _el
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -9048,7 +9142,7 @@ decode_register_els([{xmlel, <<"date">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -9067,7 +9161,7 @@ decode_register_els([{xmlel, <<"misc">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip,
 			       decode_register_misc(_el), Address, Instructions,
@@ -9086,7 +9180,7 @@ decode_register_els([{xmlel, <<"text">>, _attrs, _} =
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, decode_register_text(_el), Last,
@@ -9104,7 +9198,7 @@ decode_register_els([{xmlel, <<"key">>, _attrs, _} = _el
 		    Zip, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:register">> ->
 	   decode_register_els(_els, Zip, Misc, Address,
 			       Instructions, Text, Last, First, Password,
@@ -9760,8 +9854,9 @@ decode_caps_attr_ver(undefined) -> undefined;
 decode_caps_attr_ver(_val) ->
     case catch base64:decode(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"ver">>, <<"c">>,
-			<<"http://jabber.org/protocol/caps">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"ver">>, <<"c">>,
+			 <<"http://jabber.org/protocol/caps">>}});
       _res -> _res
     end.
 
@@ -9825,7 +9920,7 @@ decode_compression_els([{xmlel, <<"method">>, _attrs,
 			    _el
 			| _els],
 		       Methods) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/features/compress">> ->
 	   decode_compression_els(_els,
@@ -9898,7 +9993,7 @@ decode_compress_els([{xmlel, <<"method">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Methods) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/compress">> ->
 	   decode_compress_els(_els,
@@ -9957,7 +10052,7 @@ decode_compress_failure_els([{xmlel, <<"setup-failed">>,
 				 _el
 			     | _els],
 			    Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/compress">> ->
 	   decode_compress_failure_els(_els,
@@ -9969,7 +10064,7 @@ decode_compress_failure_els([{xmlel,
 				 _el
 			     | _els],
 			    Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/compress">> ->
 	   decode_compress_failure_els(_els,
@@ -9981,7 +10076,7 @@ decode_compress_failure_els([{xmlel,
 				 _el
 			     | _els],
 			    Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/compress">> ->
 	   decode_compress_failure_els(_els,
@@ -10078,7 +10173,7 @@ decode_starttls_els([{xmlel, <<"required">>, _attrs,
 			 _el
 		     | _els],
 		    Required) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-tls">> ->
 	   decode_starttls_els(_els,
@@ -10118,7 +10213,7 @@ decode_sasl_mechanisms_els([{xmlel, <<"mechanism">>,
 				_el
 			    | _els],
 			   List) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_mechanisms_els(_els,
@@ -10180,7 +10275,7 @@ decode_sasl_failure_els([{xmlel, <<"text">>, _attrs,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els,
@@ -10193,7 +10288,7 @@ decode_sasl_failure_els([{xmlel, <<"aborted">>, _attrs,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els, Text,
@@ -10205,7 +10300,7 @@ decode_sasl_failure_els([{xmlel, <<"account-disabled">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els, Text,
@@ -10217,7 +10312,7 @@ decode_sasl_failure_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els, Text,
@@ -10229,7 +10324,7 @@ decode_sasl_failure_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els, Text,
@@ -10241,7 +10336,7 @@ decode_sasl_failure_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els, Text,
@@ -10253,7 +10348,7 @@ decode_sasl_failure_els([{xmlel, <<"invalid-authzid">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els, Text,
@@ -10265,7 +10360,7 @@ decode_sasl_failure_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els, Text,
@@ -10277,7 +10372,7 @@ decode_sasl_failure_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els, Text,
@@ -10289,7 +10384,7 @@ decode_sasl_failure_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els, Text,
@@ -10301,7 +10396,7 @@ decode_sasl_failure_els([{xmlel, <<"not-authorized">>,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els, Text,
@@ -10313,7 +10408,7 @@ decode_sasl_failure_els([{xmlel,
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	   decode_sasl_failure_els(_els, Text,
@@ -10576,8 +10671,9 @@ decode_sasl_success_cdata(<<>>) -> undefined;
 decode_sasl_success_cdata(_val) ->
     case catch base64:decode(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"success">>,
-			<<"urn:ietf:params:xml:ns:xmpp-sasl">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"success">>,
+			 <<"urn:ietf:params:xml:ns:xmpp-sasl">>}});
       _res -> _res
     end.
 
@@ -10609,8 +10705,9 @@ decode_sasl_response_cdata(<<>>) -> undefined;
 decode_sasl_response_cdata(_val) ->
     case catch base64:decode(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"response">>,
-			<<"urn:ietf:params:xml:ns:xmpp-sasl">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"response">>,
+			 <<"urn:ietf:params:xml:ns:xmpp-sasl">>}});
       _res -> _res
     end.
 
@@ -10642,8 +10739,9 @@ decode_sasl_challenge_cdata(<<>>) -> undefined;
 decode_sasl_challenge_cdata(_val) ->
     case catch base64:decode(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"challenge">>,
-			<<"urn:ietf:params:xml:ns:xmpp-sasl">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"challenge">>,
+			 <<"urn:ietf:params:xml:ns:xmpp-sasl">>}});
       _res -> _res
     end.
 
@@ -10690,8 +10788,9 @@ encode_sasl_auth({sasl_auth, Mechanism, Text},
     {xmlel, <<"auth">>, _attrs, _els}.
 
 decode_sasl_auth_attr_mechanism(undefined) ->
-    erlang:error({missing_attr, <<"mechanism">>, <<"auth">>,
-		  <<"urn:ietf:params:xml:ns:xmpp-sasl">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"mechanism">>, <<"auth">>,
+		   <<"urn:ietf:params:xml:ns:xmpp-sasl">>}});
 decode_sasl_auth_attr_mechanism(_val) -> _val.
 
 encode_sasl_auth_attr_mechanism(_val, _acc) ->
@@ -10701,8 +10800,9 @@ decode_sasl_auth_cdata(<<>>) -> undefined;
 decode_sasl_auth_cdata(_val) ->
     case catch base64:decode(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"auth">>,
-			<<"urn:ietf:params:xml:ns:xmpp-sasl">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"auth">>,
+			 <<"urn:ietf:params:xml:ns:xmpp-sasl">>}});
       _res -> _res
     end.
 
@@ -10719,7 +10819,7 @@ decode_bind_els([], Jid, Resource) -> {Jid, Resource};
 decode_bind_els([{xmlel, <<"jid">>, _attrs, _} = _el
 		 | _els],
 		Jid, Resource) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-bind">> ->
 	   decode_bind_els(_els, decode_bind_jid(_el), Resource);
@@ -10729,7 +10829,7 @@ decode_bind_els([{xmlel, <<"resource">>, _attrs, _} =
 		     _el
 		 | _els],
 		Jid, Resource) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"urn:ietf:params:xml:ns:xmpp-bind">> ->
 	   decode_bind_els(_els, Jid, decode_bind_resource(_el));
@@ -10774,8 +10874,9 @@ decode_bind_resource_cdata(<<>>) -> undefined;
 decode_bind_resource_cdata(_val) ->
     case catch resourceprep(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"resource">>,
-			<<"urn:ietf:params:xml:ns:xmpp-bind">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"resource">>,
+			 <<"urn:ietf:params:xml:ns:xmpp-bind">>}});
       _res -> _res
     end.
 
@@ -10804,8 +10905,9 @@ decode_bind_jid_cdata(<<>>) -> undefined;
 decode_bind_jid_cdata(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"jid">>,
-			<<"urn:ietf:params:xml:ns:xmpp-bind">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"jid">>,
+			 <<"urn:ietf:params:xml:ns:xmpp-bind">>}});
       _res -> _res
     end.
 
@@ -10824,7 +10926,7 @@ decode_error_els([], Text, Reason) -> {Text, Reason};
 decode_error_els([{xmlel, <<"text">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, decode_error_text(_el), Reason);
@@ -10835,7 +10937,7 @@ decode_error_els([{xmlel, <<"bad-request">>, _attrs,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10846,7 +10948,7 @@ decode_error_els([{xmlel, <<"conflict">>, _attrs, _} =
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10858,7 +10960,7 @@ decode_error_els([{xmlel, <<"feature-not-implemented">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10869,7 +10971,7 @@ decode_error_els([{xmlel, <<"forbidden">>, _attrs, _} =
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10879,7 +10981,7 @@ decode_error_els([{xmlel, <<"forbidden">>, _attrs, _} =
 decode_error_els([{xmlel, <<"gone">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text, decode_error_gone(_el));
@@ -10890,7 +10992,7 @@ decode_error_els([{xmlel, <<"internal-server-error">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10902,7 +11004,7 @@ decode_error_els([{xmlel, <<"item-not-found">>, _attrs,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10914,7 +11016,7 @@ decode_error_els([{xmlel, <<"jid-malformed">>, _attrs,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10926,7 +11028,7 @@ decode_error_els([{xmlel, <<"not-acceptable">>, _attrs,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10938,7 +11040,7 @@ decode_error_els([{xmlel, <<"not-allowed">>, _attrs,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10950,7 +11052,7 @@ decode_error_els([{xmlel, <<"not-authorized">>, _attrs,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10962,7 +11064,7 @@ decode_error_els([{xmlel, <<"policy-violation">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10974,7 +11076,7 @@ decode_error_els([{xmlel, <<"recipient-unavailable">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10985,7 +11087,7 @@ decode_error_els([{xmlel, <<"redirect">>, _attrs, _} =
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -10997,7 +11099,7 @@ decode_error_els([{xmlel, <<"registration-required">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -11009,7 +11111,7 @@ decode_error_els([{xmlel, <<"remote-server-not-found">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -11021,7 +11123,7 @@ decode_error_els([{xmlel, <<"remote-server-timeout">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -11033,7 +11135,7 @@ decode_error_els([{xmlel, <<"resource-constraint">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -11045,7 +11147,7 @@ decode_error_els([{xmlel, <<"service-unavailable">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -11057,7 +11159,7 @@ decode_error_els([{xmlel, <<"subscription-required">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -11069,7 +11171,7 @@ decode_error_els([{xmlel, <<"undefined-condition">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -11081,7 +11183,7 @@ decode_error_els([{xmlel, <<"unexpected-request">>,
 		      _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns ==
 	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	   decode_error_els(_els, Text,
@@ -11249,20 +11351,22 @@ encode_error({error, Type, By, Reason, Text},
      | _acc].
 
 decode_error_attr_type(undefined) ->
-    erlang:error({missing_attr, <<"type">>, <<"error">>,
-		  <<"jabber:client">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"type">>, <<"error">>,
+		   <<"jabber:client">>}});
 decode_error_attr_type(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[auth, cancel, continue, modify, wait])
+    case catch dec_enum(_val,
+			[auth, cancel, continue, modify, wait])
 	of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"type">>, <<"error">>,
-			<<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"type">>, <<"error">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
 encode_error_attr_type(_val, _acc) ->
-    [{<<"type">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"type">>, enc_enum(_val)} | _acc].
 
 decode_error_attr_by(undefined) -> undefined;
 decode_error_attr_by(_val) -> _val.
@@ -11588,7 +11692,7 @@ decode_presence_els([{xmlel, <<"error">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Error, Status, Show, Priority, __Els) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_presence_els(_els, decode_error(_el), Status,
 			       Show, Priority, __Els);
@@ -11600,7 +11704,7 @@ decode_presence_els([{xmlel, <<"show">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Error, Status, Show, Priority, __Els) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_presence_els(_els, Error, Status,
 			       decode_presence_show(_el), Priority, __Els);
@@ -11612,7 +11716,7 @@ decode_presence_els([{xmlel, <<"status">>, _attrs, _} =
 			 _el
 		     | _els],
 		    Error, Status, Show, Priority, __Els) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_presence_els(_els, Error,
 			       [decode_presence_status(_el) | Status], Show,
@@ -11626,7 +11730,7 @@ decode_presence_els([{xmlel, <<"priority">>, _attrs,
 			 _el
 		     | _els],
 		    Error, Status, Show, Priority, __Els) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_presence_els(_els, Error, Status, Show,
 			       decode_presence_priority(_el), __Els);
@@ -11714,26 +11818,28 @@ encode_presence_attr_id(_val, _acc) ->
 
 decode_presence_attr_type(undefined) -> undefined;
 decode_presence_attr_type(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[unavailable, subscribe, subscribed,
-				 unsubscribe, unsubscribed, probe, error])
+    case catch dec_enum(_val,
+			[unavailable, subscribe, subscribed, unsubscribe,
+			 unsubscribed, probe, error])
 	of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"type">>,
-			<<"presence">>, <<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"type">>, <<"presence">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
 encode_presence_attr_type(undefined, _acc) -> _acc;
 encode_presence_attr_type(_val, _acc) ->
-    [{<<"type">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"type">>, enc_enum(_val)} | _acc].
 
 decode_presence_attr_from(undefined) -> undefined;
 decode_presence_attr_from(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"from">>,
-			<<"presence">>, <<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"from">>, <<"presence">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
@@ -11745,8 +11851,9 @@ decode_presence_attr_to(undefined) -> undefined;
 decode_presence_attr_to(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"to">>, <<"presence">>,
-			<<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"to">>, <<"presence">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
@@ -11782,16 +11889,17 @@ encode_presence_priority(Cdata, _xmlns_attrs) ->
 
 decode_presence_priority_cdata(<<>>) -> undefined;
 decode_presence_priority_cdata(_val) ->
-    case catch xml_gen:dec_int(_val) of
+    case catch dec_int(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"priority">>,
-			<<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"priority">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
 encode_presence_priority_cdata(undefined, _acc) -> _acc;
 encode_presence_priority_cdata(_val, _acc) ->
-    [{xmlcdata, xml_gen:enc_int(_val)} | _acc].
+    [{xmlcdata, enc_int(_val)} | _acc].
 
 decode_presence_status({xmlel, <<"status">>, _attrs,
 			_els}) ->
@@ -11861,17 +11969,17 @@ encode_presence_show(Cdata, _xmlns_attrs) ->
 
 decode_presence_show_cdata(<<>>) -> undefined;
 decode_presence_show_cdata(_val) ->
-    case catch xml_gen:dec_enum(_val, [away, chat, dnd, xa])
-	of
+    case catch dec_enum(_val, [away, chat, dnd, xa]) of
       {'EXIT', _} ->
-	  erlang:error({bad_cdata_value, <<>>, <<"show">>,
-			<<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"show">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
 encode_presence_show_cdata(undefined, _acc) -> _acc;
 encode_presence_show_cdata(_val, _acc) ->
-    [{xmlcdata, xml_gen:enc_enum(_val)} | _acc].
+    [{xmlcdata, enc_enum(_val)} | _acc].
 
 decode_message({xmlel, <<"message">>, _attrs, _els}) ->
     {Error, Thread, Subject, Body, __Els} =
@@ -11891,7 +11999,7 @@ decode_message_els([{xmlel, <<"error">>, _attrs, _} =
 			_el
 		    | _els],
 		   Error, Thread, Subject, Body, __Els) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_message_els(_els, decode_error(_el), Thread,
 			      Subject, Body, __Els);
@@ -11903,7 +12011,7 @@ decode_message_els([{xmlel, <<"subject">>, _attrs, _} =
 			_el
 		    | _els],
 		   Error, Thread, Subject, Body, __Els) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_message_els(_els, Error, Thread,
 			      [decode_message_subject(_el) | Subject], Body,
@@ -11916,7 +12024,7 @@ decode_message_els([{xmlel, <<"thread">>, _attrs, _} =
 			_el
 		    | _els],
 		   Error, Thread, Subject, Body, __Els) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_message_els(_els, Error,
 			      decode_message_thread(_el), Subject, Body, __Els);
@@ -11927,7 +12035,7 @@ decode_message_els([{xmlel, <<"thread">>, _attrs, _} =
 decode_message_els([{xmlel, <<"body">>, _attrs, _} = _el
 		    | _els],
 		   Error, Thread, Subject, Body, __Els) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_message_els(_els, Error, Thread, Subject,
 			      [decode_message_body(_el) | Body], __Els);
@@ -12016,25 +12124,27 @@ encode_message_attr_id(_val, _acc) ->
 
 decode_message_attr_type(undefined) -> normal;
 decode_message_attr_type(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[chat, normal, groupchat, headline, error])
+    case catch dec_enum(_val,
+			[chat, normal, groupchat, headline, error])
 	of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"type">>, <<"message">>,
-			<<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"type">>, <<"message">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
 encode_message_attr_type(normal, _acc) -> _acc;
 encode_message_attr_type(_val, _acc) ->
-    [{<<"type">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"type">>, enc_enum(_val)} | _acc].
 
 decode_message_attr_from(undefined) -> undefined;
 decode_message_attr_from(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"from">>, <<"message">>,
-			<<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"from">>, <<"message">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
@@ -12046,8 +12156,9 @@ decode_message_attr_to(undefined) -> undefined;
 decode_message_attr_to(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"to">>, <<"message">>,
-			<<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"to">>, <<"message">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
@@ -12194,7 +12305,7 @@ decode_iq_els([], Error, __Els) ->
 decode_iq_els([{xmlel, <<"error">>, _attrs, _} = _el
 	       | _els],
 	      Error, __Els) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:client">> ->
 	   decode_iq_els(_els, decode_error(_el), __Els);
        true -> decode_iq_els(_els, Error, __Els)
@@ -12245,35 +12356,37 @@ encode_iq({iq, Id, Type, Lang, From, To, Error, __Els},
     [encode_error(Error, []) | _acc].
 
 decode_iq_attr_id(undefined) ->
-    erlang:error({missing_attr, <<"id">>, <<"iq">>,
-		  <<"jabber:client">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"id">>, <<"iq">>,
+		   <<"jabber:client">>}});
 decode_iq_attr_id(_val) -> _val.
 
 encode_iq_attr_id(_val, _acc) ->
     [{<<"id">>, _val} | _acc].
 
 decode_iq_attr_type(undefined) ->
-    erlang:error({missing_attr, <<"type">>, <<"iq">>,
-		  <<"jabber:client">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"type">>, <<"iq">>,
+		   <<"jabber:client">>}});
 decode_iq_attr_type(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[get, set, result, error])
-	of
+    case catch dec_enum(_val, [get, set, result, error]) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"type">>, <<"iq">>,
-			<<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"type">>, <<"iq">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
 encode_iq_attr_type(_val, _acc) ->
-    [{<<"type">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"type">>, enc_enum(_val)} | _acc].
 
 decode_iq_attr_from(undefined) -> undefined;
 decode_iq_attr_from(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"from">>, <<"iq">>,
-			<<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"from">>, <<"iq">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
@@ -12285,8 +12398,9 @@ decode_iq_attr_to(undefined) -> undefined;
 decode_iq_attr_to(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"to">>, <<"iq">>,
-			<<"jabber:client">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"to">>, <<"iq">>,
+			 <<"jabber:client">>}});
       _res -> _res
     end.
 
@@ -12308,7 +12422,7 @@ decode_stats_els([], Stat) -> lists:reverse(Stat);
 decode_stats_els([{xmlel, <<"stat">>, _attrs, _} = _el
 		  | _els],
 		 Stat) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/stats">> ->
 	   decode_stats_els(_els, [decode_stat(_el) | Stat]);
@@ -12337,7 +12451,7 @@ decode_stat_els([], Error) -> lists:reverse(Error);
 decode_stat_els([{xmlel, <<"error">>, _attrs, _} = _el
 		 | _els],
 		Error) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/stats">> ->
 	   decode_stat_els(_els, [decode_stat_error(_el) | Error]);
@@ -12377,8 +12491,9 @@ encode_stat({stat, Name, Units, Value, Error},
 			 [encode_stat_error(Error, []) | _acc]).
 
 decode_stat_attr_name(undefined) ->
-    erlang:error({missing_attr, <<"name">>, <<"stat">>,
-		  <<"http://jabber.org/protocol/stats">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"name">>, <<"stat">>,
+		   <<"http://jabber.org/protocol/stats">>}});
 decode_stat_attr_name(_val) -> _val.
 
 encode_stat_attr_name(_val, _acc) ->
@@ -12427,18 +12542,20 @@ encode_stat_error({Code, Cdata}, _xmlns_attrs) ->
     {xmlel, <<"error">>, _attrs, _els}.
 
 decode_stat_error_attr_code(undefined) ->
-    erlang:error({missing_attr, <<"code">>, <<"error">>,
-		  <<"http://jabber.org/protocol/stats">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"code">>, <<"error">>,
+		   <<"http://jabber.org/protocol/stats">>}});
 decode_stat_error_attr_code(_val) ->
-    case catch xml_gen:dec_int(_val) of
+    case catch dec_int(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"code">>, <<"error">>,
-			<<"http://jabber.org/protocol/stats">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"code">>, <<"error">>,
+			 <<"http://jabber.org/protocol/stats">>}});
       _res -> _res
     end.
 
 encode_stat_error_attr_code(_val, _acc) ->
-    [{<<"code">>, xml_gen:enc_int(_val)} | _acc].
+    [{<<"code">>, enc_int(_val)} | _acc].
 
 decode_stat_error_cdata(<<>>) -> undefined;
 decode_stat_error_cdata(_val) -> _val.
@@ -12460,7 +12577,7 @@ decode_bookmarks_storage_els([{xmlel, <<"conference">>,
 				  _el
 			      | _els],
 			     Conference, Url) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"storage:bookmarks">> ->
 	   decode_bookmarks_storage_els(_els,
 					[decode_bookmark_conference(_el)
@@ -12474,7 +12591,7 @@ decode_bookmarks_storage_els([{xmlel, <<"url">>, _attrs,
 				  _el
 			      | _els],
 			     Conference, Url) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"storage:bookmarks">> ->
 	   decode_bookmarks_storage_els(_els, Conference,
 					[decode_bookmark_url(_el) | Url]);
@@ -12535,16 +12652,18 @@ encode_bookmark_url({bookmark_url, Name, Url},
     {xmlel, <<"url">>, _attrs, _els}.
 
 decode_bookmark_url_attr_name(undefined) ->
-    erlang:error({missing_attr, <<"name">>, <<"url">>,
-		  <<"storage:bookmarks">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"name">>, <<"url">>,
+		   <<"storage:bookmarks">>}});
 decode_bookmark_url_attr_name(_val) -> _val.
 
 encode_bookmark_url_attr_name(_val, _acc) ->
     [{<<"name">>, _val} | _acc].
 
 decode_bookmark_url_attr_url(undefined) ->
-    erlang:error({missing_attr, <<"url">>, <<"url">>,
-		  <<"storage:bookmarks">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"url">>, <<"url">>,
+		   <<"storage:bookmarks">>}});
 decode_bookmark_url_attr_url(_val) -> _val.
 
 encode_bookmark_url_attr_url(_val, _acc) ->
@@ -12567,7 +12686,7 @@ decode_bookmark_conference_els([{xmlel, <<"nick">>,
 				    _el
 				| _els],
 			       Password, Nick) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"storage:bookmarks">> ->
 	   decode_bookmark_conference_els(_els, Password,
 					  decode_conference_nick(_el));
@@ -12579,7 +12698,7 @@ decode_bookmark_conference_els([{xmlel, <<"password">>,
 				    _el
 				| _els],
 			       Password, Nick) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"storage:bookmarks">> ->
 	   decode_bookmark_conference_els(_els,
 					  decode_conference_password(_el),
@@ -12642,21 +12761,24 @@ encode_bookmark_conference({bookmark_conference, Name,
     [encode_conference_nick(Nick, []) | _acc].
 
 decode_bookmark_conference_attr_name(undefined) ->
-    erlang:error({missing_attr, <<"name">>,
-		  <<"conference">>, <<"storage:bookmarks">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"name">>, <<"conference">>,
+		   <<"storage:bookmarks">>}});
 decode_bookmark_conference_attr_name(_val) -> _val.
 
 encode_bookmark_conference_attr_name(_val, _acc) ->
     [{<<"name">>, _val} | _acc].
 
 decode_bookmark_conference_attr_jid(undefined) ->
-    erlang:error({missing_attr, <<"jid">>, <<"conference">>,
-		  <<"storage:bookmarks">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"conference">>,
+		   <<"storage:bookmarks">>}});
 decode_bookmark_conference_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>,
-			<<"conference">>, <<"storage:bookmarks">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"conference">>,
+			 <<"storage:bookmarks">>}});
       _res -> _res
     end.
 
@@ -12668,8 +12790,9 @@ decode_bookmark_conference_attr_autojoin(undefined) ->
 decode_bookmark_conference_attr_autojoin(_val) ->
     case catch dec_bool(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"autojoin">>,
-			<<"conference">>, <<"storage:bookmarks">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"autojoin">>, <<"conference">>,
+			 <<"storage:bookmarks">>}});
       _res -> _res
     end.
 
@@ -12758,7 +12881,7 @@ decode_disco_items_els([{xmlel, <<"item">>, _attrs, _} =
 			    _el
 			| _els],
 		       Items) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns ==
 	 <<"http://jabber.org/protocol/disco#items">> ->
@@ -12829,13 +12952,15 @@ encode_disco_item({disco_item, Jid, Name, Node},
     {xmlel, <<"item">>, _attrs, _els}.
 
 decode_disco_item_attr_jid(undefined) ->
-    erlang:error({missing_attr, <<"jid">>, <<"item">>,
-		  <<"http://jabber.org/protocol/disco#items">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"item">>,
+		   <<"http://jabber.org/protocol/disco#items">>}});
 decode_disco_item_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>, <<"item">>,
-			<<"http://jabber.org/protocol/disco#items">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"item">>,
+			 <<"http://jabber.org/protocol/disco#items">>}});
       _res -> _res
     end.
 
@@ -12871,7 +12996,7 @@ decode_disco_info_els([{xmlel, <<"identity">>, _attrs,
 			   _el
 		       | _els],
 		      Xdata, Features, Identities) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/disco#info">> ->
 	   decode_disco_info_els(_els, Xdata, Features,
@@ -12884,7 +13009,7 @@ decode_disco_info_els([{xmlel, <<"feature">>, _attrs,
 			   _el
 		       | _els],
 		      Xdata, Features, Identities) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>;
        _xmlns == <<"http://jabber.org/protocol/disco#info">> ->
 	   decode_disco_info_els(_els, Xdata,
@@ -12896,7 +13021,7 @@ decode_disco_info_els([{xmlel, <<"feature">>, _attrs,
 decode_disco_info_els([{xmlel, <<"x">>, _attrs, _} = _el
 		       | _els],
 		      Xdata, Features, Identities) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<"jabber:x:data">> ->
 	   decode_disco_info_els(_els, [decode_xdata(_el) | Xdata],
 				 Features, Identities);
@@ -12975,8 +13100,9 @@ encode_disco_feature(Var, _xmlns_attrs) ->
     {xmlel, <<"feature">>, _attrs, _els}.
 
 decode_disco_feature_attr_var(undefined) ->
-    erlang:error({missing_attr, <<"var">>, <<"feature">>,
-		  <<"http://jabber.org/protocol/disco#info">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"var">>, <<"feature">>,
+		   <<"http://jabber.org/protocol/disco#info">>}});
 decode_disco_feature_attr_var(_val) -> _val.
 
 encode_disco_feature_attr_var(_val, _acc) ->
@@ -13032,17 +13158,18 @@ encode_disco_identity({identity, Category, Type, Lang,
     {xmlel, <<"identity">>, _attrs, _els}.
 
 decode_disco_identity_attr_category(undefined) ->
-    erlang:error({missing_attr, <<"category">>,
-		  <<"identity">>,
-		  <<"http://jabber.org/protocol/disco#info">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"category">>, <<"identity">>,
+		   <<"http://jabber.org/protocol/disco#info">>}});
 decode_disco_identity_attr_category(_val) -> _val.
 
 encode_disco_identity_attr_category(_val, _acc) ->
     [{<<"category">>, _val} | _acc].
 
 decode_disco_identity_attr_type(undefined) ->
-    erlang:error({missing_attr, <<"type">>, <<"identity">>,
-		  <<"http://jabber.org/protocol/disco#info">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"type">>, <<"identity">>,
+		   <<"http://jabber.org/protocol/disco#info">>}});
 decode_disco_identity_attr_type(_val) -> _val.
 
 encode_disco_identity_attr_type(_val, _acc) ->
@@ -13082,7 +13209,7 @@ decode_unblock_els([], Items) -> lists:reverse(Items);
 decode_unblock_els([{xmlel, <<"item">>, _attrs, _} = _el
 		    | _els],
 		   Items) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"urn:xmpp:blocking">> ->
 	   decode_unblock_els(_els,
 			      case decode_block_item(_el) of
@@ -13111,7 +13238,7 @@ decode_block_els([], Items) -> lists:reverse(Items);
 decode_block_els([{xmlel, <<"item">>, _attrs, _} = _el
 		  | _els],
 		 Items) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"urn:xmpp:blocking">> ->
 	   decode_block_els(_els,
 			    case decode_block_item(_el) of
@@ -13150,13 +13277,15 @@ encode_block_item(Jid, _xmlns_attrs) ->
     {xmlel, <<"item">>, _attrs, _els}.
 
 decode_block_item_attr_jid(undefined) ->
-    erlang:error({missing_attr, <<"jid">>, <<"item">>,
-		  <<"urn:xmpp:blocking">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"item">>,
+		   <<"urn:xmpp:blocking">>}});
 decode_block_item_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>, <<"item">>,
-			<<"urn:xmpp:blocking">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"item">>,
+			 <<"urn:xmpp:blocking">>}});
       _res -> _res
     end.
 
@@ -13173,7 +13302,7 @@ decode_privacy_els([], Lists, Default, Active) ->
 decode_privacy_els([{xmlel, <<"list">>, _attrs, _} = _el
 		    | _els],
 		   Lists, Default, Active) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_els(_els,
 			      [decode_privacy_list(_el) | Lists], Default,
@@ -13184,7 +13313,7 @@ decode_privacy_els([{xmlel, <<"default">>, _attrs, _} =
 			_el
 		    | _els],
 		   Lists, Default, Active) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_els(_els, Lists,
 			      decode_privacy_default_list(_el), Active);
@@ -13194,7 +13323,7 @@ decode_privacy_els([{xmlel, <<"active">>, _attrs, _} =
 			_el
 		    | _els],
 		   Lists, Default, Active) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_els(_els, Lists, Default,
 			      decode_privacy_active_list(_el));
@@ -13298,7 +13427,7 @@ decode_privacy_list_els([{xmlel, <<"item">>, _attrs,
 			     _el
 			 | _els],
 			Items) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_list_els(_els,
 				   [decode_privacy_item(_el) | Items]);
@@ -13328,8 +13457,9 @@ encode_privacy_list({privacy_list, Name, Items},
 				 [encode_privacy_item(Items, []) | _acc]).
 
 decode_privacy_list_attr_name(undefined) ->
-    erlang:error({missing_attr, <<"name">>, <<"list">>,
-		  <<"jabber:iq:privacy">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"name">>, <<"list">>,
+		   <<"jabber:iq:privacy">>}});
 decode_privacy_list_attr_name(_val) -> _val.
 
 encode_privacy_list_attr_name(_val, _acc) ->
@@ -13350,7 +13480,7 @@ decode_privacy_item_els([{xmlel, <<"message">>, _attrs,
 			     _el
 			 | _els],
 			Kinds) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_item_els(_els, Kinds);
        true -> decode_privacy_item_els(_els, Kinds)
@@ -13359,7 +13489,7 @@ decode_privacy_item_els([{xmlel, <<"iq">>, _attrs, _} =
 			     _el
 			 | _els],
 			Kinds) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_item_els(_els, Kinds);
        true -> decode_privacy_item_els(_els, Kinds)
@@ -13369,7 +13499,7 @@ decode_privacy_item_els([{xmlel, <<"presence-in">>,
 			     _el
 			 | _els],
 			Kinds) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_item_els(_els, Kinds);
        true -> decode_privacy_item_els(_els, Kinds)
@@ -13379,7 +13509,7 @@ decode_privacy_item_els([{xmlel, <<"presence-out">>,
 			     _el
 			 | _els],
 			Kinds) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:privacy">> ->
 	   decode_privacy_item_els(_els, Kinds);
        true -> decode_privacy_item_els(_els, Kinds)
@@ -13451,47 +13581,50 @@ encode_privacy_item({privacy_item, Order, Action, Type,
 				  | _acc]).
 
 decode_privacy_item_attr_action(undefined) ->
-    erlang:error({missing_attr, <<"action">>, <<"item">>,
-		  <<"jabber:iq:privacy">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"action">>, <<"item">>,
+		   <<"jabber:iq:privacy">>}});
 decode_privacy_item_attr_action(_val) ->
-    case catch xml_gen:dec_enum(_val, [allow, deny]) of
+    case catch dec_enum(_val, [allow, deny]) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"action">>, <<"item">>,
-			<<"jabber:iq:privacy">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"action">>, <<"item">>,
+			 <<"jabber:iq:privacy">>}});
       _res -> _res
     end.
 
 encode_privacy_item_attr_action(_val, _acc) ->
-    [{<<"action">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"action">>, enc_enum(_val)} | _acc].
 
 decode_privacy_item_attr_order(undefined) ->
-    erlang:error({missing_attr, <<"order">>, <<"item">>,
-		  <<"jabber:iq:privacy">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"order">>, <<"item">>,
+		   <<"jabber:iq:privacy">>}});
 decode_privacy_item_attr_order(_val) ->
-    case catch xml_gen:dec_int(_val, 0, infinity) of
+    case catch dec_int(_val, 0, infinity) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"order">>, <<"item">>,
-			<<"jabber:iq:privacy">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"order">>, <<"item">>,
+			 <<"jabber:iq:privacy">>}});
       _res -> _res
     end.
 
 encode_privacy_item_attr_order(_val, _acc) ->
-    [{<<"order">>, xml_gen:enc_int(_val)} | _acc].
+    [{<<"order">>, enc_int(_val)} | _acc].
 
 decode_privacy_item_attr_type(undefined) -> undefined;
 decode_privacy_item_attr_type(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[group, jid, subscription])
-	of
+    case catch dec_enum(_val, [group, jid, subscription]) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"type">>, <<"item">>,
-			<<"jabber:iq:privacy">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"type">>, <<"item">>,
+			 <<"jabber:iq:privacy">>}});
       _res -> _res
     end.
 
 encode_privacy_item_attr_type(undefined, _acc) -> _acc;
 encode_privacy_item_attr_type(_val, _acc) ->
-    [{<<"type">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"type">>, enc_enum(_val)} | _acc].
 
 decode_privacy_item_attr_value(undefined) -> undefined;
 decode_privacy_item_attr_value(_val) -> _val.
@@ -13546,7 +13679,7 @@ decode_roster_els([], Items) -> lists:reverse(Items);
 decode_roster_els([{xmlel, <<"item">>, _attrs, _} = _el
 		   | _els],
 		  Items) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:roster">> ->
 	   decode_roster_els(_els,
 			     [decode_roster_item(_el) | Items]);
@@ -13594,7 +13727,7 @@ decode_roster_item_els([{xmlel, <<"group">>, _attrs,
 			    _el
 			| _els],
 		       Groups) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:roster">> ->
 	   decode_roster_item_els(_els,
 				  [decode_roster_group(_el) | Groups]);
@@ -13647,13 +13780,15 @@ encode_roster_item({roster_item, Jid, Name, Groups,
 				 [encode_roster_group(Groups, []) | _acc]).
 
 decode_roster_item_attr_jid(undefined) ->
-    erlang:error({missing_attr, <<"jid">>, <<"item">>,
-		  <<"jabber:iq:roster">>});
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"item">>,
+		   <<"jabber:iq:roster">>}});
 decode_roster_item_attr_jid(_val) ->
     case catch dec_jid(_val) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"jid">>, <<"item">>,
-			<<"jabber:iq:roster">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"item">>,
+			 <<"jabber:iq:roster">>}});
       _res -> _res
     end.
 
@@ -13669,32 +13804,34 @@ encode_roster_item_attr_name(_val, _acc) ->
 
 decode_roster_item_attr_subscription(undefined) -> none;
 decode_roster_item_attr_subscription(_val) ->
-    case catch xml_gen:dec_enum(_val,
-				[none, to, from, both, remove])
+    case catch dec_enum(_val,
+			[none, to, from, both, remove])
 	of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"subscription">>,
-			<<"item">>, <<"jabber:iq:roster">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"subscription">>, <<"item">>,
+			 <<"jabber:iq:roster">>}});
       _res -> _res
     end.
 
 encode_roster_item_attr_subscription(none, _acc) ->
     _acc;
 encode_roster_item_attr_subscription(_val, _acc) ->
-    [{<<"subscription">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"subscription">>, enc_enum(_val)} | _acc].
 
 decode_roster_item_attr_ask(undefined) -> undefined;
 decode_roster_item_attr_ask(_val) ->
-    case catch xml_gen:dec_enum(_val, [subscribe]) of
+    case catch dec_enum(_val, [subscribe]) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"ask">>, <<"item">>,
-			<<"jabber:iq:roster">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"ask">>, <<"item">>,
+			 <<"jabber:iq:roster">>}});
       _res -> _res
     end.
 
 encode_roster_item_attr_ask(undefined, _acc) -> _acc;
 encode_roster_item_attr_ask(_val, _acc) ->
-    [{<<"ask">>, xml_gen:enc_enum(_val)} | _acc].
+    [{<<"ask">>, enc_enum(_val)} | _acc].
 
 decode_roster_group({xmlel, <<"group">>, _attrs,
 		     _els}) ->
@@ -13715,8 +13852,9 @@ encode_roster_group(Cdata, _xmlns_attrs) ->
     {xmlel, <<"group">>, _attrs, _els}.
 
 decode_roster_group_cdata(<<>>) ->
-    erlang:error({missing_cdata, <<>>, <<"group">>,
-		  <<"jabber:iq:roster">>});
+    erlang:error({xmpp_codec,
+		  {missing_cdata, <<>>, <<"group">>,
+		   <<"jabber:iq:roster">>}});
 decode_roster_group_cdata(_val) -> _val.
 
 encode_roster_group_cdata(_val, _acc) ->
@@ -13732,7 +13870,7 @@ decode_version_els([], Ver, Os, Name) ->
 decode_version_els([{xmlel, <<"name">>, _attrs, _} = _el
 		    | _els],
 		   Ver, Os, Name) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:version">> ->
 	   decode_version_els(_els, Ver, Os,
 			      decode_version_name(_el));
@@ -13742,7 +13880,7 @@ decode_version_els([{xmlel, <<"version">>, _attrs, _} =
 			_el
 		    | _els],
 		   Ver, Os, Name) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:version">> ->
 	   decode_version_els(_els, decode_version_ver(_el), Os,
 			      Name);
@@ -13751,7 +13889,7 @@ decode_version_els([{xmlel, <<"version">>, _attrs, _} =
 decode_version_els([{xmlel, <<"os">>, _attrs, _} = _el
 		    | _els],
 		   Ver, Os, Name) ->
-    _xmlns = xml:get_attr_s(<<"xmlns">>, _attrs),
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
     if _xmlns == <<>>; _xmlns == <<"jabber:iq:version">> ->
 	   decode_version_els(_els, Ver, decode_version_os(_el),
 			      Name);
@@ -13799,8 +13937,9 @@ encode_version_os(Cdata, _xmlns_attrs) ->
     {xmlel, <<"os">>, _attrs, _els}.
 
 decode_version_os_cdata(<<>>) ->
-    erlang:error({missing_cdata, <<>>, <<"os">>,
-		  <<"jabber:iq:version">>});
+    erlang:error({xmpp_codec,
+		  {missing_cdata, <<>>, <<"os">>,
+		   <<"jabber:iq:version">>}});
 decode_version_os_cdata(_val) -> _val.
 
 encode_version_os_cdata(_val, _acc) ->
@@ -13825,8 +13964,9 @@ encode_version_ver(Cdata, _xmlns_attrs) ->
     {xmlel, <<"version">>, _attrs, _els}.
 
 decode_version_ver_cdata(<<>>) ->
-    erlang:error({missing_cdata, <<>>, <<"version">>,
-		  <<"jabber:iq:version">>});
+    erlang:error({xmpp_codec,
+		  {missing_cdata, <<>>, <<"version">>,
+		   <<"jabber:iq:version">>}});
 decode_version_ver_cdata(_val) -> _val.
 
 encode_version_ver_cdata(_val, _acc) ->
@@ -13851,8 +13991,9 @@ encode_version_name(Cdata, _xmlns_attrs) ->
     {xmlel, <<"name">>, _attrs, _els}.
 
 decode_version_name_cdata(<<>>) ->
-    erlang:error({missing_cdata, <<>>, <<"name">>,
-		  <<"jabber:iq:version">>});
+    erlang:error({xmpp_codec,
+		  {missing_cdata, <<>>, <<"name">>,
+		   <<"jabber:iq:version">>}});
 decode_version_name_cdata(_val) -> _val.
 
 encode_version_name_cdata(_val, _acc) ->
@@ -13885,16 +14026,17 @@ encode_last({last, Seconds, Text}, _xmlns_attrs) ->
 
 decode_last_attr_seconds(undefined) -> undefined;
 decode_last_attr_seconds(_val) ->
-    case catch xml_gen:dec_int(_val, 0, infinity) of
+    case catch dec_int(_val, 0, infinity) of
       {'EXIT', _} ->
-	  erlang:error({bad_attr_value, <<"seconds">>,
-			<<"query">>, <<"jabber:iq:last">>});
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"seconds">>, <<"query">>,
+			 <<"jabber:iq:last">>}});
       _res -> _res
     end.
 
 encode_last_attr_seconds(undefined, _acc) -> _acc;
 encode_last_attr_seconds(_val, _acc) ->
-    [{<<"seconds">>, xml_gen:enc_int(_val)} | _acc].
+    [{<<"seconds">>, enc_int(_val)} | _acc].
 
 decode_last_cdata(<<>>) -> undefined;
 decode_last_cdata(_val) -> _val.
