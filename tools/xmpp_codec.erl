@@ -7,7 +7,8 @@
 	  [{dec_int, 3}, {dec_int, 1}, {dec_enum, 2},
 	   {enc_int, 1}, {enc_enum, 1}]}).
 
--export([pp/1, format_error/1, decode/1, encode/1]).
+-export([pp/1, format_error/1, decode/1, is_known_tag/1,
+	 encode/1]).
 
 decode({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
@@ -687,6 +688,555 @@ decode({xmlel, _name, _attrs, _} = _el) ->
 	  erlang:error({xmpp_codec, {unknown_tag, _name, _xmlns}})
     end.
 
+is_known_tag({xmlel, _name, _attrs, _} = _el) ->
+    case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"x">>, <<"http://jabber.org/protocol/muc">>} -> true;
+      {<<"query">>,
+       <<"http://jabber.org/protocol/muc#owner">>} ->
+	  true;
+      {<<"destroy">>,
+       <<"http://jabber.org/protocol/muc#owner">>} ->
+	  true;
+      {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#owner">>} ->
+	  true;
+      {<<"password">>,
+       <<"http://jabber.org/protocol/muc#owner">>} ->
+	  true;
+      {<<"x">>, <<"http://jabber.org/protocol/muc#user">>} ->
+	  true;
+      {<<"item">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  true;
+      {<<"status">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  true;
+      {<<"continue">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  true;
+      {<<"actor">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  true;
+      {<<"invite">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  true;
+      {<<"destroy">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  true;
+      {<<"decline">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  true;
+      {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  true;
+      {<<"history">>, <<"http://jabber.org/protocol/muc">>} ->
+	  true;
+      {<<"query">>,
+       <<"http://jabber.org/protocol/bytestreams">>} ->
+	  true;
+      {<<"activate">>,
+       <<"http://jabber.org/protocol/bytestreams">>} ->
+	  true;
+      {<<"streamhost-used">>,
+       <<"http://jabber.org/protocol/bytestreams">>} ->
+	  true;
+      {<<"streamhost">>,
+       <<"http://jabber.org/protocol/bytestreams">>} ->
+	  true;
+      {<<"x">>, <<"jabber:x:delay">>} -> true;
+      {<<"delay">>, <<"urn:xmpp:delay">>} -> true;
+      {<<"headers">>,
+       <<"http://jabber.org/protocol/shim">>} ->
+	  true;
+      {<<"header">>, <<"http://jabber.org/protocol/shim">>} ->
+	  true;
+      {<<"pubsub">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"retract">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"options">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"publish">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"unsubscribe">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"subscribe">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"affiliations">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"subscriptions">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"event">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  true;
+      {<<"items">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  true;
+      {<<"item">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  true;
+      {<<"retract">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  true;
+      {<<"items">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"item">>, <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"affiliation">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"subscription">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"x">>, <<"jabber:x:data">>} -> true;
+      {<<"item">>, <<"jabber:x:data">>} -> true;
+      {<<"reported">>, <<"jabber:x:data">>} -> true;
+      {<<"title">>, <<"jabber:x:data">>} -> true;
+      {<<"instructions">>, <<"jabber:x:data">>} -> true;
+      {<<"field">>, <<"jabber:x:data">>} -> true;
+      {<<"option">>, <<"jabber:x:data">>} -> true;
+      {<<"value">>, <<"jabber:x:data">>} -> true;
+      {<<"desc">>, <<"jabber:x:data">>} -> true;
+      {<<"required">>, <<"jabber:x:data">>} -> true;
+      {<<"vCard">>, <<"vcard-temp">>} -> true;
+      {<<"CLASS">>, <<"vcard-temp">>} -> true;
+      {<<"CATEGORIES">>, <<"vcard-temp">>} -> true;
+      {<<"KEY">>, <<"vcard-temp">>} -> true;
+      {<<"SOUND">>, <<"vcard-temp">>} -> true;
+      {<<"ORG">>, <<"vcard-temp">>} -> true;
+      {<<"PHOTO">>, <<"vcard-temp">>} -> true;
+      {<<"LOGO">>, <<"vcard-temp">>} -> true;
+      {<<"BINVAL">>, <<"vcard-temp">>} -> true;
+      {<<"GEO">>, <<"vcard-temp">>} -> true;
+      {<<"EMAIL">>, <<"vcard-temp">>} -> true;
+      {<<"TEL">>, <<"vcard-temp">>} -> true;
+      {<<"LABEL">>, <<"vcard-temp">>} -> true;
+      {<<"ADR">>, <<"vcard-temp">>} -> true;
+      {<<"N">>, <<"vcard-temp">>} -> true;
+      {<<"CONFIDENTIAL">>, <<"vcard-temp">>} -> true;
+      {<<"PRIVATE">>, <<"vcard-temp">>} -> true;
+      {<<"PUBLIC">>, <<"vcard-temp">>} -> true;
+      {<<"EXTVAL">>, <<"vcard-temp">>} -> true;
+      {<<"TYPE">>, <<"vcard-temp">>} -> true;
+      {<<"DESC">>, <<"vcard-temp">>} -> true;
+      {<<"URL">>, <<"vcard-temp">>} -> true;
+      {<<"UID">>, <<"vcard-temp">>} -> true;
+      {<<"SORT-STRING">>, <<"vcard-temp">>} -> true;
+      {<<"REV">>, <<"vcard-temp">>} -> true;
+      {<<"PRODID">>, <<"vcard-temp">>} -> true;
+      {<<"NOTE">>, <<"vcard-temp">>} -> true;
+      {<<"KEYWORD">>, <<"vcard-temp">>} -> true;
+      {<<"ROLE">>, <<"vcard-temp">>} -> true;
+      {<<"TITLE">>, <<"vcard-temp">>} -> true;
+      {<<"TZ">>, <<"vcard-temp">>} -> true;
+      {<<"MAILER">>, <<"vcard-temp">>} -> true;
+      {<<"JABBERID">>, <<"vcard-temp">>} -> true;
+      {<<"BDAY">>, <<"vcard-temp">>} -> true;
+      {<<"NICKNAME">>, <<"vcard-temp">>} -> true;
+      {<<"FN">>, <<"vcard-temp">>} -> true;
+      {<<"VERSION">>, <<"vcard-temp">>} -> true;
+      {<<"CRED">>, <<"vcard-temp">>} -> true;
+      {<<"PHONETIC">>, <<"vcard-temp">>} -> true;
+      {<<"ORGUNIT">>, <<"vcard-temp">>} -> true;
+      {<<"ORGNAME">>, <<"vcard-temp">>} -> true;
+      {<<"LON">>, <<"vcard-temp">>} -> true;
+      {<<"LAT">>, <<"vcard-temp">>} -> true;
+      {<<"USERID">>, <<"vcard-temp">>} -> true;
+      {<<"NUMBER">>, <<"vcard-temp">>} -> true;
+      {<<"LINE">>, <<"vcard-temp">>} -> true;
+      {<<"CTRY">>, <<"vcard-temp">>} -> true;
+      {<<"PCODE">>, <<"vcard-temp">>} -> true;
+      {<<"REGION">>, <<"vcard-temp">>} -> true;
+      {<<"LOCALITY">>, <<"vcard-temp">>} -> true;
+      {<<"STREET">>, <<"vcard-temp">>} -> true;
+      {<<"EXTADD">>, <<"vcard-temp">>} -> true;
+      {<<"POBOX">>, <<"vcard-temp">>} -> true;
+      {<<"SUFFIX">>, <<"vcard-temp">>} -> true;
+      {<<"PREFIX">>, <<"vcard-temp">>} -> true;
+      {<<"MIDDLE">>, <<"vcard-temp">>} -> true;
+      {<<"GIVEN">>, <<"vcard-temp">>} -> true;
+      {<<"FAMILY">>, <<"vcard-temp">>} -> true;
+      {<<"X400">>, <<"vcard-temp">>} -> true;
+      {<<"INTERNET">>, <<"vcard-temp">>} -> true;
+      {<<"PREF">>, <<"vcard-temp">>} -> true;
+      {<<"INTL">>, <<"vcard-temp">>} -> true;
+      {<<"DOM">>, <<"vcard-temp">>} -> true;
+      {<<"PARCEL">>, <<"vcard-temp">>} -> true;
+      {<<"POSTAL">>, <<"vcard-temp">>} -> true;
+      {<<"PCS">>, <<"vcard-temp">>} -> true;
+      {<<"ISDN">>, <<"vcard-temp">>} -> true;
+      {<<"MODEM">>, <<"vcard-temp">>} -> true;
+      {<<"BBS">>, <<"vcard-temp">>} -> true;
+      {<<"VIDEO">>, <<"vcard-temp">>} -> true;
+      {<<"CELL">>, <<"vcard-temp">>} -> true;
+      {<<"MSG">>, <<"vcard-temp">>} -> true;
+      {<<"PAGER">>, <<"vcard-temp">>} -> true;
+      {<<"FAX">>, <<"vcard-temp">>} -> true;
+      {<<"VOICE">>, <<"vcard-temp">>} -> true;
+      {<<"WORK">>, <<"vcard-temp">>} -> true;
+      {<<"HOME">>, <<"vcard-temp">>} -> true;
+      {<<"stream:error">>,
+       <<"http://etherx.jabber.org/streams">>} ->
+	  true;
+      {<<"unsupported-version">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"unsupported-stanza-type">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"unsupported-encoding">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"undefined-condition">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"system-shutdown">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"see-other-host">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"restricted-xml">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"resource-constraint">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"reset">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"remote-connection-failed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"policy-violation">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"not-well-formed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"not-authorized">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"invalid-xml">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"invalid-namespace">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"invalid-id">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"invalid-from">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"internal-server-error">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"improper-addressing">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"host-unknown">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"host-gone">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"connection-timeout">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"conflict">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"bad-namespace-prefix">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"bad-format">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"text">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
+	  true;
+      {<<"time">>, <<"urn:xmpp:time">>} -> true;
+      {<<"tzo">>, <<"urn:xmpp:time">>} -> true;
+      {<<"utc">>, <<"urn:xmpp:time">>} -> true;
+      {<<"ping">>, <<"urn:xmpp:ping">>} -> true;
+      {<<"session">>,
+       <<"urn:ietf:params:xml:ns:xmpp-session">>} ->
+	  true;
+      {<<"query">>, <<"jabber:iq:register">>} -> true;
+      {<<"key">>, <<"jabber:iq:register">>} -> true;
+      {<<"text">>, <<"jabber:iq:register">>} -> true;
+      {<<"misc">>, <<"jabber:iq:register">>} -> true;
+      {<<"date">>, <<"jabber:iq:register">>} -> true;
+      {<<"url">>, <<"jabber:iq:register">>} -> true;
+      {<<"phone">>, <<"jabber:iq:register">>} -> true;
+      {<<"zip">>, <<"jabber:iq:register">>} -> true;
+      {<<"state">>, <<"jabber:iq:register">>} -> true;
+      {<<"city">>, <<"jabber:iq:register">>} -> true;
+      {<<"address">>, <<"jabber:iq:register">>} -> true;
+      {<<"email">>, <<"jabber:iq:register">>} -> true;
+      {<<"last">>, <<"jabber:iq:register">>} -> true;
+      {<<"first">>, <<"jabber:iq:register">>} -> true;
+      {<<"name">>, <<"jabber:iq:register">>} -> true;
+      {<<"password">>, <<"jabber:iq:register">>} -> true;
+      {<<"nick">>, <<"jabber:iq:register">>} -> true;
+      {<<"username">>, <<"jabber:iq:register">>} -> true;
+      {<<"instructions">>, <<"jabber:iq:register">>} -> true;
+      {<<"remove">>, <<"jabber:iq:register">>} -> true;
+      {<<"registered">>, <<"jabber:iq:register">>} -> true;
+      {<<"register">>,
+       <<"http://jabber.org/features/iq-register">>} ->
+	  true;
+      {<<"c">>, <<"http://jabber.org/protocol/caps">>} ->
+	  true;
+      {<<"ack">>, <<"p1:ack">>} -> true;
+      {<<"rebind">>, <<"p1:rebind">>} -> true;
+      {<<"push">>, <<"p1:push">>} -> true;
+      {<<"stream:features">>,
+       <<"http://etherx.jabber.org/streams">>} ->
+	  true;
+      {<<"compression">>,
+       <<"http://jabber.org/features/compress">>} ->
+	  true;
+      {<<"method">>,
+       <<"http://jabber.org/features/compress">>} ->
+	  true;
+      {<<"compressed">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  true;
+      {<<"compress">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  true;
+      {<<"method">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  true;
+      {<<"failure">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  true;
+      {<<"unsupported-method">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  true;
+      {<<"processing-failed">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  true;
+      {<<"setup-failed">>,
+       <<"http://jabber.org/protocol/compress">>} ->
+	  true;
+      {<<"failure">>,
+       <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
+	  true;
+      {<<"proceed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
+	  true;
+      {<<"starttls">>,
+       <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
+	  true;
+      {<<"required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
+	  true;
+      {<<"mechanisms">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"mechanism">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"failure">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"temporary-auth-failure">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"not-authorized">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"mechanism-too-weak">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"malformed-request">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"invalid-mechanism">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"invalid-authzid">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"incorrect-encoding">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"encryption-required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"credentials-expired">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"account-disabled">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"aborted">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"text">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"success">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"response">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"challenge">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"abort">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"auth">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"bind">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
+	  true;
+      {<<"resource">>,
+       <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
+	  true;
+      {<<"jid">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
+	  true;
+      {<<"error">>, <<"jabber:client">>} -> true;
+      {<<"text">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"unexpected-request">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"undefined-condition">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"subscription-required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"service-unavailable">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"resource-constraint">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"remote-server-timeout">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"remote-server-not-found">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"registration-required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"redirect">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"recipient-unavailable">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"policy-violation">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"not-authorized">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"not-allowed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"not-acceptable">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"jid-malformed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"item-not-found">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"internal-server-error">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"gone">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"forbidden">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"feature-not-implemented">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"conflict">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"bad-request">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
+	  true;
+      {<<"presence">>, <<"jabber:client">>} -> true;
+      {<<"priority">>, <<"jabber:client">>} -> true;
+      {<<"status">>, <<"jabber:client">>} -> true;
+      {<<"show">>, <<"jabber:client">>} -> true;
+      {<<"message">>, <<"jabber:client">>} -> true;
+      {<<"thread">>, <<"jabber:client">>} -> true;
+      {<<"body">>, <<"jabber:client">>} -> true;
+      {<<"subject">>, <<"jabber:client">>} -> true;
+      {<<"iq">>, <<"jabber:client">>} -> true;
+      {<<"query">>, <<"http://jabber.org/protocol/stats">>} ->
+	  true;
+      {<<"stat">>, <<"http://jabber.org/protocol/stats">>} ->
+	  true;
+      {<<"error">>, <<"http://jabber.org/protocol/stats">>} ->
+	  true;
+      {<<"storage">>, <<"storage:bookmarks">>} -> true;
+      {<<"url">>, <<"storage:bookmarks">>} -> true;
+      {<<"conference">>, <<"storage:bookmarks">>} -> true;
+      {<<"password">>, <<"storage:bookmarks">>} -> true;
+      {<<"nick">>, <<"storage:bookmarks">>} -> true;
+      {<<"query">>, <<"jabber:iq:private">>} -> true;
+      {<<"query">>,
+       <<"http://jabber.org/protocol/disco#items">>} ->
+	  true;
+      {<<"item">>,
+       <<"http://jabber.org/protocol/disco#items">>} ->
+	  true;
+      {<<"query">>,
+       <<"http://jabber.org/protocol/disco#info">>} ->
+	  true;
+      {<<"feature">>,
+       <<"http://jabber.org/protocol/disco#info">>} ->
+	  true;
+      {<<"identity">>,
+       <<"http://jabber.org/protocol/disco#info">>} ->
+	  true;
+      {<<"blocklist">>, <<"urn:xmpp:blocking">>} -> true;
+      {<<"unblock">>, <<"urn:xmpp:blocking">>} -> true;
+      {<<"block">>, <<"urn:xmpp:blocking">>} -> true;
+      {<<"item">>, <<"urn:xmpp:blocking">>} -> true;
+      {<<"query">>, <<"jabber:iq:privacy">>} -> true;
+      {<<"active">>, <<"jabber:iq:privacy">>} -> true;
+      {<<"default">>, <<"jabber:iq:privacy">>} -> true;
+      {<<"list">>, <<"jabber:iq:privacy">>} -> true;
+      {<<"item">>, <<"jabber:iq:privacy">>} -> true;
+      {<<"presence-out">>, <<"jabber:iq:privacy">>} -> true;
+      {<<"presence-in">>, <<"jabber:iq:privacy">>} -> true;
+      {<<"iq">>, <<"jabber:iq:privacy">>} -> true;
+      {<<"message">>, <<"jabber:iq:privacy">>} -> true;
+      {<<"query">>, <<"jabber:iq:roster">>} -> true;
+      {<<"item">>, <<"jabber:iq:roster">>} -> true;
+      {<<"group">>, <<"jabber:iq:roster">>} -> true;
+      {<<"query">>, <<"jabber:iq:version">>} -> true;
+      {<<"os">>, <<"jabber:iq:version">>} -> true;
+      {<<"version">>, <<"jabber:iq:version">>} -> true;
+      {<<"name">>, <<"jabber:iq:version">>} -> true;
+      {<<"query">>, <<"jabber:iq:last">>} -> true;
+      _ -> false
+    end.
+
 encode({muc, _, _} = X) ->
     encode_muc(X,
 	       [{<<"xmlns">>, <<"http://jabber.org/protocol/muc">>}]);
@@ -1091,7 +1641,7 @@ pp(disco_info, 4) ->
     [node, identities, features, xdata];
 pp(disco_item, 3) -> [jid, name, node];
 pp(disco_items, 2) -> [node, items];
-pp(private, 1) -> [sub_els];
+pp(private, 1) -> [xml_els];
 pp(bookmark_conference, 5) ->
     [name, jid, autojoin, nick, password];
 pp(bookmark_url, 2) -> [name, url];
@@ -1168,7 +1718,7 @@ pp(xdata, 6) ->
     [type, instructions, title, reported, items, fields];
 pp(pubsub_subscription, 4) -> [jid, node, subid, type];
 pp(pubsub_affiliation, 2) -> [node, type];
-pp(pubsub_item, 2) -> [id, sub_els];
+pp(pubsub_item, 2) -> [id, xml_els];
 pp(pubsub_items, 4) -> [node, max_items, subid, items];
 pp(pubsub_event_item, 3) -> [id, node, publisher];
 pp(pubsub_event_items, 3) -> [node, retract, items];
@@ -3698,17 +4248,17 @@ encode_pubsub_items_attr_subid(_val, _acc) ->
     [{<<"subid">>, _val} | _acc].
 
 decode_pubsub_item({xmlel, <<"item">>, _attrs, _els}) ->
-    __Els = decode_pubsub_item_els(_els, []),
+    __Xmls = decode_pubsub_item_els(_els, []),
     Id = decode_pubsub_item_attrs(_attrs, undefined),
-    {pubsub_item, Id, __Els}.
+    {pubsub_item, Id, __Xmls}.
 
-decode_pubsub_item_els([], __Els) ->
-    lists:reverse(__Els);
+decode_pubsub_item_els([], __Xmls) ->
+    lists:reverse(__Xmls);
 decode_pubsub_item_els([{xmlel, _, _, _} = _el | _els],
-		       __Els) ->
-    decode_pubsub_item_els(_els, [decode(_el) | __Els]);
-decode_pubsub_item_els([_ | _els], __Els) ->
-    decode_pubsub_item_els(_els, __Els).
+		       __Xmls) ->
+    decode_pubsub_item_els(_els, [_el | __Xmls]);
+decode_pubsub_item_els([_ | _els], __Xmls) ->
+    decode_pubsub_item_els(_els, __Xmls).
 
 decode_pubsub_item_attrs([{<<"id">>, _val} | _attrs],
 			 _Id) ->
@@ -3718,9 +4268,9 @@ decode_pubsub_item_attrs([_ | _attrs], Id) ->
 decode_pubsub_item_attrs([], Id) ->
     decode_pubsub_item_attr_id(Id).
 
-encode_pubsub_item({pubsub_item, Id, __Els},
+encode_pubsub_item({pubsub_item, Id, __Xmls},
 		   _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els],
+    _els = __Xmls,
     _attrs = encode_pubsub_item_attr_id(Id, _xmlns_attrs),
     {xmlel, <<"item">>, _attrs, _els}.
 
@@ -9898,7 +10448,11 @@ decode_stream_features_els([], __Els) ->
 decode_stream_features_els([{xmlel, _, _, _} = _el
 			    | _els],
 			   __Els) ->
-    decode_stream_features_els(_els, [decode(_el) | __Els]);
+    case is_known_tag(_el) of
+      true ->
+	  decode_stream_features_els(_els, [decode(_el) | __Els]);
+      false -> decode_stream_features_els(_els, __Els)
+    end;
 decode_stream_features_els([_ | _els], __Els) ->
     decode_stream_features_els(_els, __Els).
 
@@ -11740,8 +12294,14 @@ decode_presence_els([{xmlel, <<"priority">>, _attrs,
     end;
 decode_presence_els([{xmlel, _, _, _} = _el | _els],
 		    Error, Status, Show, Priority, __Els) ->
-    decode_presence_els(_els, Error, Status, Show, Priority,
-			[decode(_el) | __Els]);
+    case is_known_tag(_el) of
+      true ->
+	  decode_presence_els(_els, Error, Status, Show, Priority,
+			      [decode(_el) | __Els]);
+      false ->
+	  decode_presence_els(_els, Error, Status, Show, Priority,
+			      __Els)
+    end;
 decode_presence_els([_ | _els], Error, Status, Show,
 		    Priority, __Els) ->
     decode_presence_els(_els, Error, Status, Show, Priority,
@@ -12045,8 +12605,14 @@ decode_message_els([{xmlel, <<"body">>, _attrs, _} = _el
     end;
 decode_message_els([{xmlel, _, _, _} = _el | _els],
 		   Error, Thread, Subject, Body, __Els) ->
-    decode_message_els(_els, Error, Thread, Subject, Body,
-		       [decode(_el) | __Els]);
+    case is_known_tag(_el) of
+      true ->
+	  decode_message_els(_els, Error, Thread, Subject, Body,
+			     [decode(_el) | __Els]);
+      false ->
+	  decode_message_els(_els, Error, Thread, Subject, Body,
+			     __Els)
+    end;
 decode_message_els([_ | _els], Error, Thread, Subject,
 		   Body, __Els) ->
     decode_message_els(_els, Error, Thread, Subject, Body,
@@ -12312,7 +12878,11 @@ decode_iq_els([{xmlel, <<"error">>, _attrs, _} = _el
     end;
 decode_iq_els([{xmlel, _, _, _} = _el | _els], Error,
 	      __Els) ->
-    decode_iq_els(_els, Error, [decode(_el) | __Els]);
+    case is_known_tag(_el) of
+      true ->
+	  decode_iq_els(_els, Error, [decode(_el) | __Els]);
+      false -> decode_iq_els(_els, Error, __Els)
+    end;
 decode_iq_els([_ | _els], Error, __Els) ->
     decode_iq_els(_els, Error, __Els).
 
@@ -12855,17 +13425,18 @@ encode_conference_nick_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
 decode_private({xmlel, <<"query">>, _attrs, _els}) ->
-    __Els = decode_private_els(_els, []), {private, __Els}.
+    __Xmls = decode_private_els(_els, []),
+    {private, __Xmls}.
 
-decode_private_els([], __Els) -> lists:reverse(__Els);
+decode_private_els([], __Xmls) -> lists:reverse(__Xmls);
 decode_private_els([{xmlel, _, _, _} = _el | _els],
-		   __Els) ->
-    decode_private_els(_els, [decode(_el) | __Els]);
-decode_private_els([_ | _els], __Els) ->
-    decode_private_els(_els, __Els).
+		   __Xmls) ->
+    decode_private_els(_els, [_el | __Xmls]);
+decode_private_els([_ | _els], __Xmls) ->
+    decode_private_els(_els, __Xmls).
 
-encode_private({private, __Els}, _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els],
+encode_private({private, __Xmls}, _xmlns_attrs) ->
+    _els = __Xmls,
     _attrs = _xmlns_attrs,
     {xmlel, <<"query">>, _attrs, _els}.
 

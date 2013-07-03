@@ -226,7 +226,7 @@
 -xml(private,
      #elem{name = <<"query">>,
            xmlns = <<"jabber:iq:private">>,
-           result = {private, '$_els'}}).
+           result = {private, '$_xmls'}}).
 
 -xml(conference_nick,
      #elem{name = <<"nick">>,
@@ -1608,7 +1608,7 @@
 -xml(pubsub_item,
      #elem{name = <<"item">>,
            xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = {pubsub_item, '$id', '$_els'},
+           result = {pubsub_item, '$id', '$_xmls'},
            attrs = [#attr{name = <<"id">>}]}).
 
 -xml(pubsub_items,

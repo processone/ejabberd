@@ -376,19 +376,22 @@ private(Config) ->
                                               <<"some.conference.org">>,
                                               <<>>)},
     Storage = #bookmark_storage{conference = [Conference]},
+    StorageXMLOut = xmpp_codec:encode(Storage),
     #iq{type = error} =
         send_recv(Config, #iq{type = get, sub_els = [#private{}],
                               to = server_jid(Config)}),
     #iq{type = result, sub_els = []} =
         send_recv(
           Config, #iq{type = set,
-                      sub_els = [#private{sub_els = [Storage]}]}),
+                      sub_els = [#private{xml_els = [StorageXMLOut]}]}),
     #iq{type = result,
-        sub_els = [#private{sub_els = [Storage]}]} =
+        sub_els = [#private{xml_els = [StorageXMLIn]}]} =
         send_recv(
           Config,
           #iq{type = get,
-              sub_els = [#private{sub_els = [#bookmark_storage{}]}]}),
+              sub_els = [#private{xml_els = [xmpp_codec:encode(
+                                               #bookmark_storage{})]}]}),
+    Storage = xmpp_codec:decode(StorageXMLIn),
     disconnect(Config).
 
 last(Config) ->
@@ -548,7 +551,8 @@ pubsub(Config) ->
     %% Publish <presence/> element within node "presence"
     ItemID = randoms:get_string(),
     Node = <<"presence">>,
-    Item = #pubsub_item{id = ItemID, sub_els = [#presence{}]},
+    Item = #pubsub_item{id = ItemID,
+                        xml_els = [xmpp_codec:encode(#presence{})]},
     #iq{type = result,
         sub_els = [#pubsub{publish = #pubsub_publish{
                              node = Node,

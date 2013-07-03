@@ -38,12 +38,12 @@
 
 -record(gone, {uri :: binary()}).
 
--record(private, {sub_els = [] :: [any()]}).
+-record(private, {xml_els = [] :: [any()]}).
 
 -record(p1_ack, {}).
 
 -record(pubsub_item, {id :: binary(),
-                      sub_els = [] :: [any()]}).
+                      xml_els = [] :: [any()]}).
 
 -record(pubsub_publish, {node :: binary(),
                          items = [] :: [#pubsub_item{}]}).
