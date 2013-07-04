@@ -1253,7 +1253,7 @@ get_items(NodeId, From, none) ->
 get_items(NodeId, _From,
 	  #rsm_in{max = M, direction = Direction, id = I,
 		  index = IncIndex}) ->
-    Max = (?PUBSUB):escape(i2l(M)),
+    Max = (?PUBSUB):escape(jlib:i2l(M)),
     {Way, Order} = case Direction of
 		     aft -> {<<"<">>, <<"desc">>};
 		     before when I == <<>> -> {<<"is not">>, <<"asc">>};
@@ -1271,7 +1271,7 @@ get_items(NodeId, _From,
 							     NodeId,
 							     <<"' and modification > pi.modification "
 							       "having count1 = ">>,
-							     (?PUBSUB):escape(i2l(IncIndex)),
+							     (?PUBSUB):escape(jlib:i2l(IncIndex)),
 							     <<" );">>])
 			       of
 			     {selected, [_], [[O]]} ->
@@ -1281,7 +1281,7 @@ get_items(NodeId, _From,
 		       undefined -> [<<"modification">>, <<"null">>];
 		       <<>> -> [<<"modification">>, <<"null">>];
 		       I ->
-			   [A, B] = str:tokens((?PUBSUB):escape(i2l(I)),
+			   [A, B] = str:tokens((?PUBSUB):escape(jlib:i2l(I)),
 					       <<"@">>),
 			   [A, <<"'", B/binary, "'">>]
 		     end,
@@ -1300,7 +1300,7 @@ get_items(NodeId, _From,
 				      NodeId, <<"' and ">>, AttrName, <<" ">>,
 				      Way, <<" ">>, Id, <<" order by ">>,
 				      AttrName, <<" ">>, Order, <<" limit ">>,
-				      i2l(Max), <<" ;">>])
+				      jlib:i2l(Max), <<" ;">>])
 	of
       {selected,
        [<<"itemid">>, <<"publisher">>, <<"creation">>,
@@ -1322,7 +1322,7 @@ get_items(NodeId, _From,
 		[_, _, _, L, _] = lists:last(RItems),
 		RsmOut = #rsm_out{count = Count, index = Index,
 				  first = <<"modification@", F/binary>>,
-				  last = <<"modification@", (i2l(L))/binary>>},
+				  last = <<"modification@", (jlib:i2l(L))/binary>>},
 		{result, {[raw_to_item(NodeId, RItem) || RItem <- RItems], RsmOut}};
 	    0 -> {result, {[], #rsm_out{count = Count}}}
 	  end;
@@ -1377,7 +1377,7 @@ get_last_items(NodeId, _From, Count) ->
 					"where nodeid='">>,
 				      NodeId,
 				      <<"' order by modification desc limit ">>,
-				      i2l(Count), <<";">>])
+				      jlib:i2l(Count), <<";">>])
 	of
       {selected,
        [<<"itemid">>, <<"publisher">>, <<"creation">>,
@@ -1459,7 +1459,7 @@ set_item(Item) ->
     Payload = Item#pubsub_item.payload,
     XML = (?PUBSUB):escape(str:join([xml:element_to_binary(X) || X<-Payload], <<>>)),
     S = fun ({T1, T2, T3}) ->
-		str:join([i2l(T1, 6), i2l(T2, 6), i2l(T3, 6)], <<":">>)
+		str:join([jlib:i2l(T1, 6), jlib:i2l(T2, 6), jlib:i2l(T3, 6)], <<":">>)
 	end,
     case catch
 	   ejabberd_odbc:sql_query_t([<<"update pubsub_item set publisher='">>,
@@ -1666,7 +1666,7 @@ raw_to_item(NodeId,
     JID = decode_jid(SJID),
     ToTime = fun (Str) ->
 		     [T1, T2, T3] = str:tokens(Str, <<":">>),
-		     {l2i(T1), l2i(T2), l2i(T3)}
+		     {jlib:l2i(T1), jlib:l2i(T2), jlib:l2i(T3)}
 	     end,
     Payload = case xml_stream:parse_element(XML) of
 		{error, _Reason} -> [];
@@ -1676,18 +1676,3 @@ raw_to_item(NodeId,
 		 creation = {ToTime(Creation), JID},
 		 modification = {ToTime(Modification), JID},
 		 payload = Payload}.
-
-l2i(I) when is_integer(I) -> I;
-l2i(L) when is_binary(L) -> jlib:binary_to_integer(L).
-
-i2l(I) when is_integer(I) ->
-    iolist_to_binary(integer_to_list(I));
-i2l(L) when is_binary(L) -> L.
-
-i2l(I, N) when is_integer(I) -> i2l(i2l(I), N);
-i2l(L, N) when is_binary(L) ->
-    case str:len(L) of
-      N -> L;
-      C when C > N -> L;
-      _ -> i2l(<<$0, L/binary>>, N)
-    end.
