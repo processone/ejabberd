@@ -383,7 +383,7 @@ unsubscribe_node(NodeId, Sender, Subscriber, SubId) ->
     {Affiliation, Subscriptions} =
 	select_affiliation_subscriptions(NodeId, SubKey),
     SubIdExists = case SubId of
-		    [] -> false;
+		    <<>> -> false;
 		    List when is_binary(List) -> true;
 		    _ -> false
 		  end,
