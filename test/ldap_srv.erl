@@ -22,8 +22,10 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--include("logger.hrl").
 -include("ELDAPv3.hrl").
+
+-define(INFO_MSG(Fmt, Args), error_logger:info_msg(Fmt, Args)).
+-define(ERROR_MSG(Fmt, Args), error_logger:error_msg(Fmt, Args)).
 
 -define(TCP_SEND_TIMEOUT, 32000).
 -define(SERVER, ?MODULE). 
@@ -75,8 +77,8 @@ handle_cast(_Msg, State) ->
 
 handle_info({'DOWN', MRef, _Type, _Object, Info},
             #state{listener = MRef} = State) ->
-    ?CRITICAL_MSG("listener died with reason ~p, terminating",
-                  [Info]),
+    ?ERROR_MSG("listener died with reason ~p, terminating",
+               [Info]),
     {stop, normal, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -111,7 +113,7 @@ process(Socket, Tree) ->
                       fun(ReplyOp) ->
                               Reply = #'LDAPMessage'{messageID = Id,
                                                      protocolOp = ReplyOp},
-                              ?DEBUG("sent:~n~p", [Reply]),
+                              %%?DEBUG("sent:~n~p", [Reply]),
                               {ok, Bytes} = asn1rt:encode(
                                               'ELDAPv3', 'LDAPMessage', Reply),
                               gen_tcp:send(Socket, Bytes)
@@ -125,8 +127,8 @@ process(Socket, Tree) ->
             Err
     end.
 
-process_msg(#'LDAPMessage'{protocolOp = Op} = Msg, TopTree) ->
-    ?DEBUG("got:~n~p", [Msg]),
+process_msg(#'LDAPMessage'{protocolOp = Op} = _Msg, TopTree) ->
+    %%?DEBUG("got:~n~p", [Msg]),
     case Op of
         {bindRequest,
          #'BindRequest'{name = DN}} ->
