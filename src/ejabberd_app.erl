@@ -42,6 +42,7 @@ start(normal, _Args) ->
     ejabberd_logger:start(),
     write_pid_file(),
     start_apps(),
+    ejabberd:check_app(ejabberd),
     randoms:start(),
     db_init(),
     start(),
@@ -52,7 +53,6 @@ start(normal, _Args) ->
     ejabberd_admin:start(),
     gen_mod:start(),
     ejabberd_config:start(),
-    ejabberd_check:config(),
     connect_nodes(),
     Sup = ejabberd_sup:start_link(),
     ejabberd_rdbms:start(),
@@ -112,7 +112,7 @@ db_init() ->
 	_ ->
 	    ok
     end,
-    application:start(mnesia, permanent),
+    ejabberd:start_app(mnesia, permanent),
     mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity).
 
 %% Start all the modules in all the hosts

@@ -34,7 +34,8 @@
 -include("logger.hrl").
 
 start() ->
-    case lists:any(fun needs_odbc/1, ?MYHOSTS) of
+    case lists:any(fun(H) -> needs_odbc(H) /= false end,
+                   ?MYHOSTS) of
         true ->
             start_hosts();
         false ->
@@ -45,14 +46,15 @@ start() ->
 start_hosts() ->
     lists:foreach(fun (Host) ->
 			  case needs_odbc(Host) of
-			    true -> start_odbc(Host);
+			    {true, App} -> start_odbc(Host, App);
 			    false -> ok
 			  end
 		  end,
 		  ?MYHOSTS).
 
 %% Start the ODBC module on the given host
-start_odbc(Host) ->
+start_odbc(Host, App) ->
+    ejabberd:start_app(App),
     Supervisor_name = gen_mod:get_module_proc(Host,
 					      ejabberd_odbc_sup),
     ChildSpec = {Supervisor_name,
@@ -64,11 +66,21 @@ start_odbc(Host) ->
 	  ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying."
 		     "..~n",
 		     [Supervisor_name, _Error]),
-	  start_odbc(Host)
+	  start_odbc(Host, App)
     end.
 
-%% Returns true if we have configured odbc_server for the given host
+%% Returns {true, App} if we have configured odbc_server for the given host
 needs_odbc(Host) ->
     LHost = jlib:nameprep(Host),
-    ejabberd_config:get_local_option(
-      {odbc_server, LHost}, fun(_) -> true end, false).
+    case ejabberd_config:get_local_option(
+           {odbc_server, LHost}, fun(Res) -> Res end) of
+        {mysql, _, _, _, _} -> {true, p1_mysql};
+        {pgsql, _, _, _, _} -> {true, p1_pgsql};
+        {mysql, _, _, _, _, _} -> {true, p1_mysql};
+        {pgsql, _, _, _, _, _} -> {true, p1_pgsql};
+        S ->
+            case catch iolist_to_binary(S) of
+                {'EXIT', _} -> false;
+                _ -> true
+            end
+    end.
