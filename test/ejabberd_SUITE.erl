@@ -177,10 +177,6 @@ db_tests() ->
       [roster_remove_master,
        roster_remove_slave]}].
 
-%% db_tests() ->
-%%     [{single_user, [sequence],
-%%       [test_register, pubsub]}].
-
 ldap_tests() ->
     [{ldap_tests, [sequence],
       [test_auth,
@@ -198,9 +194,6 @@ groups() ->
      {mnesia, [sequence], db_tests()},
      {mysql, [sequence], db_tests()},
      {pgsql, [sequence], db_tests()}].
-
-%% all() ->
-%%     [{group, mnesia}].
 
 all() ->
     [{group, ldap},
@@ -893,10 +886,8 @@ offline_slave(Config) ->
                #message{from = Peer,
                         body = [#text{data = <<"body">>}],
                         subject = [#text{data = <<"subject">>}]}),
-    lists:foreach(
-      fun(#legacy_delay{}) -> ok;
-         (#delay{}) -> ok
-      end, SubEls),
+    true = lists:keymember(delay, 1, SubEls),
+    true = lists:keymember(legacy_delay, 1, SubEls),
     disconnect(Config).
 
 %%%===================================================================
