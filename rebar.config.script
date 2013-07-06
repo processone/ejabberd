@@ -52,8 +52,7 @@ SrcDirs = lists:foldl(
                     Acc
             end, [], Cfg),
 
-Deps = [{p1_logger, ".*", {git, "git://github.com/processone/p1_logger"}},
-        {p1_cache_tab, ".*", {git, "git://github.com/processone/cache_tab"}},
+Deps = [{p1_cache_tab, ".*", {git, "git://github.com/processone/cache_tab"}},
         {p1_tls, ".*", {git, "git://github.com/processone/tls"}},
         {p1_stringprep, ".*", {git, "git://github.com/processone/stringprep"}},
         {p1_xml, ".*", {git, "git://github.com/processone/xml"}},
@@ -98,6 +97,8 @@ CfgDeps = lists:flatmap(
                      {lhttpc, ".*", {git, "git://github.com/esl/lhttpc"}}];
                ({lager, true}) ->
                     [{lager, ".*", {git, "git://github.com/basho/lager"}}];
+               ({lager, false}) ->
+                    [{p1_logger, ".*", {git, "git://github.com/processone/p1_logger"}}];
                (_) ->
                     []
             end, Cfg),
