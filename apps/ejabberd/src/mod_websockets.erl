@@ -60,19 +60,19 @@ socket_type() ->
     independent.
 
 % -spec start_listener(list())
-start_listener({Port, _IP, ws}, Opts) ->
+start_listener({Port, IP, ws}, Opts) ->
     Dispatch = get_dispatch(Opts),
     NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 100),
-    start_ws(NumAcceptors, Port, Dispatch);
+    start_ws(NumAcceptors, Port, IP, Dispatch);
 
-start_listener({Port, _IP, wss}, Opts) ->
+start_listener({Port, IP, wss}, Opts) ->
     Dispatch = get_dispatch(Opts),
     NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 100),
-    SSLPort = gen_mod:get_opt(ssl_port, Opts, undefined),
+    SSLPort = gen_mod:get_opt(ssl_port, Opts, Port),
     SSLCert = gen_mod:get_opt(cert, Opts, undefined),
     SSLKey = gen_mod:get_opt(key, Opts, undefined),
     SSLKeyPass = gen_mod:get_opt(key_pass, Opts, undefined),
-    start_wss(NumAcceptors, Port, SSLCert, SSLKey, SSLKeyPass, Dispatch).
+    start_wss(NumAcceptors, SSLPort, IP, SSLCert, SSLKey, SSLKeyPass, Dispatch).
 
 %%--------------------------------------------------------------------
 %% gen_mod callbacks
@@ -81,19 +81,21 @@ start_listener({Port, _IP, wss}, Opts) ->
 start(_Host, Opts) ->
     NumAcceptors = gen_mod:get_opt(num_acceptors, Opts, 100),
     Port = gen_mod:get_opt(port, Opts, undefined),
+    IP = gen_mod:get_opt(ip, Opts, {0,0,0,0}),
     SSLPort = gen_mod:get_opt(ssl_port, Opts, undefined),
     SSLCert = gen_mod:get_opt(cert, Opts, undefined),
     SSLKey = gen_mod:get_opt(key, Opts, undefined),
     SSLKeyPass = gen_mod:get_opt(key_pass, Opts, undefined),
     Dispatch = get_dispatch(Opts),
-    {ok, _} = start_ws(NumAcceptors, Port, Dispatch),
-    {ok, _} = start_wss(NumAcceptors, SSLPort, SSLCert, SSLKey, SSLKeyPass, Dispatch).
+    {ok, _} = start_ws(NumAcceptors, Port, IP, Dispatch),
+    {ok, _} = start_wss(NumAcceptors, SSLPort, IP, SSLCert, SSLKey,
+                        SSLKeyPass, Dispatch).
 
-start_ws(_, undefined, _) ->
+start_ws(_, undefined, _, _) ->
     {ok, not_started};
-start_ws(NumAcceptors, Port, Dispatch) ->
+start_ws(NumAcceptors, Port, IP, Dispatch) ->
     case cowboy:start_http(?LISTENER, NumAcceptors,
-                                [{port, Port}],
+                                [{port, Port}, {ip, IP}],
                                 [{env, [{dispatch, Dispatch}]}]) of
         {error, {already_started, Pid}} ->
             {ok, Pid};
@@ -103,14 +105,15 @@ start_ws(NumAcceptors, Port, Dispatch) ->
             {error, Reason}
     end.
 
-start_wss(_, _, undefined, undefined, undefined, _) ->
+start_wss(_, _, _, undefined, undefined, undefined, _) ->
     {ok, not_started};
-start_wss(NumAcceptors, Port, Cert, Key, Pass, Dispatch) ->
+start_wss(NumAcceptors, Port, IP, Cert, Key, Pass, Dispatch) ->
     case cowboy:start_https({?LISTENER, secure}, NumAcceptors,
                                 [
                                     {certfile, Cert},
                                     {keyfile, Key},
                                     {password, Pass},
+                                    {ip, IP},
                                     {port, Port}
                                 ],
                                 [{env, [{dispatch, Dispatch}]}]) of

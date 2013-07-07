@@ -93,8 +93,11 @@ stop(_Host) ->
 socket_type() ->
     independent.
 
-start_listener({Port, _InetAddr, tcp}, Opts) ->
-    OptsWPort = lists:keystore(port, 1, Opts, {port, Port}),
+%% @doc Start the module.
+%% Called from `ejabberd_listener'.
+%% If the option `ip' is undefined, then `InetAddr' is `{0,0,0,0}'.
+start_listener({Port, InetAddr, tcp}, Opts) ->
+    OptsWPort = lists:keystore(port, 1, [{ip,InetAddr}|Opts], {port, Port}),
     gen_mod:start_module(?MYNAME, ?MODULE, OptsWPort).
 
 %%--------------------------------------------------------------------
@@ -173,9 +176,9 @@ start_cowboy(Port, Opts) ->
     Prefix = proplists:get_value(prefix, Opts, "/http-bind"),
     NumAcceptors = proplists:get_value(num_acceptors, Opts, 100),
     Dispatch = cowboy_router:compile([{Host, [{Prefix, ?MODULE, Opts}] }]),
-    case cowboy:start_http(?LISTENER, NumAcceptors,
-                           [{port, Port}],
-                           [{env, [{dispatch, Dispatch}]}]) of
+    TransOpts = [{port, Port}|get_option_pair(ip, Opts)],
+    ProtoOpts = [{env, [{dispatch, Dispatch}]}],
+    case cowboy:start_http(?LISTENER, NumAcceptors, TransOpts, ProtoOpts) of
         {error, {already_started, _Pid}} ->
             ok;
         {ok, _Pid} ->
@@ -364,3 +367,9 @@ ac_all(Origin) ->
      ac_allow_methods(),
      ac_allow_headers(),
      ac_max_age()].
+
+get_option_pair(Key, Opts) ->
+    case proplists:get_value(Key, Opts) of
+        undefined -> [];
+        Value     -> [{Key, Value}]
+    end.
