@@ -33,7 +33,7 @@
 %% API
 -export([start_link/3, add_iq_handler/6,
 	 remove_iq_handler/3, stop_iq_handler/3, handle/7,
-	 process_iq/6]).
+	 process_iq/6, check_type/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -44,6 +44,10 @@
 -include("jlib.hrl").
 
 -record(state, {host, module, function}).
+
+-type component() :: ejabberd_sm | ejabberd_local.
+-type type() :: no_queue | one_queue | {queues, pos_integer()} | parallel.
+-type opts() :: no_queue | {one_queue, pid()} | {queues, [pid()]} | parallel.
 
 %%====================================================================
 %% API
@@ -121,6 +125,13 @@ process_iq(_Host, Module, Function, From, To, IQ) ->
 	     true -> ok
 	  end
     end.
+
+-spec check_type(type()) -> type().
+
+check_type(no_queue) -> no_queue;
+check_type(one_queue) -> one_queue;
+check_type({queues, N}) when is_integer(N), N>0 -> {queues, N};
+check_type(parallel) -> parallel.
 
 %%====================================================================
 %% gen_server callbacks
