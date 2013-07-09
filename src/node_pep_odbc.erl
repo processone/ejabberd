@@ -156,7 +156,7 @@ create_node(NodeIdx, Owner) ->
 ).
 delete_node(Removed) ->
     case node_hometree_odbc:delete_node(Removed) of
-      {result, {_, _, Removed}} -> {result, {[], Removed}};
+      {result, {_, _, Result}} -> {result, {[], Result}};
       Error -> Error
     end.
 

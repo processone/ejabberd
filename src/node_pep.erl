@@ -144,12 +144,10 @@ create_node(NodeIdx, Owner) ->
 ).
 
 delete_node(Removed) ->
-    {result, {_, _, Removed}} = node_hometree:delete_node(Removed),
-    {result, {[], Removed}}.
-%    case node_hometree:delete_node(Removed) of
-%      {result, {_, _, Removed}} -> {result, {[], Removed}};
-%      Error -> Error
-%    end.
+    case node_hometree:delete_node(Removed) of
+      {result, {_, _, Result}} -> {result, {[], Result}};
+      Error -> Error
+    end.
 
 -spec(subscribe_node/8 ::
 (
