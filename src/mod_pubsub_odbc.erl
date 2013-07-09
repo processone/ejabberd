@@ -3301,26 +3301,33 @@ get_options_helper(JID, Lang, Node, NodeID, SubID, Type) ->
 	  {error,
 	   extended_error(?ERR_NOT_ACCEPTABLE, <<"subid-required">>)};
       {_, _} ->
-	  read_sub(Subscriber, Node, NodeID, SubID, Lang)
+	  ValidSubId = lists:member(SubID, SubIDs),
+	  if ValidSubId ->
+		 read_sub(Subscriber, Node, NodeID, SubID, Lang);
+	     true ->
+		 {error,
+		  extended_error(?ERR_NOT_ACCEPTABLE, <<"invalid-subid">>)}
+	   end
     end.
 
 read_sub(Subscriber, Node, NodeID, SubID, Lang) ->
-    case pubsub_subscription_odbc:get_subscription(Subscriber, NodeID, SubID) of
+    Children = case pubsub_subscription_odbc:get_subscription(Subscriber, NodeID, SubID) of
 	{error, notfound} ->
-	    {error, extended_error(?ERR_NOT_ACCEPTABLE, <<"invalid-subid">>)};
+	    [];
 	{result, #pubsub_subscription{options = Options}} ->
 	    {result, XdataEl} = pubsub_subscription_odbc:get_options_xform(Lang, Options),
-	    OptionsEl = #xmlel{name = <<"options">>,
-			       attrs =
-				 [{<<"jid">>, jlib:jid_to_string(Subscriber)},
-				  {<<"subid">>, SubID}
-				  | nodeAttr(Node)],
-			     children = [XdataEl]},
-	    PubsubEl = #xmlel{name = <<"pubsub">>,
-			      attrs = [{<<"xmlns">>, ?NS_PUBSUB}],
-			      children = [OptionsEl]},
-            {result, PubsubEl}
-    end.
+	    [XdataEl]
+	end,
+    OptionsEl = #xmlel{name = <<"options">>,
+			attrs =
+			    [{<<"jid">>, jlib:jid_to_string(Subscriber)},
+			    {<<"subid">>, SubID}
+			    | nodeAttr(Node)],
+			children = Children},
+    PubsubEl = #xmlel{name = <<"pubsub">>,
+			attrs = [{<<"xmlns">>, ?NS_PUBSUB}],
+			children = [OptionsEl]},
+    {result, PubsubEl}.
 
 set_options(Host, Node, JID, SubID, Configuration) ->
     Action = fun (#pubsub_node{type = Type, id = NodeID}) ->
