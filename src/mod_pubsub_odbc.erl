@@ -443,7 +443,7 @@ send_loop(State) ->
 	  LJID = jlib:jid_tolower(JID),
 	  BJID = jlib:jid_remove_resource(LJID),
 	  lists:foreach(fun (PType) ->
-				{result, Subscriptions} = case catch node_action(Host,
+				Subscriptions = case catch node_action(Host,
 								      PType,
 								      get_entity_subscriptions_for_send_last,
 								      [Host, JID]) of
