@@ -2505,7 +2505,8 @@ process_iq_admin(From, get, Lang, SubEl, StateData) ->
 			{'EXIT', _} -> {error, ?ERR_BAD_REQUEST};
 			SAffiliation ->
 			    if (FAffiliation == owner) or
-				 (FAffiliation == admin) ->
+				 (FAffiliation == admin) or
+				 ((FAffiliation == member) and (SAffiliation == member)) ->
 				   Items = items_with_affiliation(SAffiliation,
 								  StateData),
 				   {result, Items, StateData};
