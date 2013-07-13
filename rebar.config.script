@@ -30,9 +30,9 @@ Macros = lists:flatmap(
 
 DebugInfo = case lists:keysearch(debug, 1, Cfg) of
                 {value, {debug, true}} ->
-                    [debug_info];
+                    [];
                 _ ->
-                    []
+                    [no_debug_info]
             end,
 
 HiPE = case lists:keysearch(hipe, 1, Cfg) of
