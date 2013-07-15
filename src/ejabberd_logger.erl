@@ -67,11 +67,13 @@ start() ->
     ConsoleLog = get_log_path(),
     Dir = filename:dirname(ConsoleLog),
     ErrorLog = filename:join([Dir, "error.log"]),
+    CrashLog = filename:join([Dir, "crash.log"]),
     application:set_env(
       lager, handlers,
       [{lager_console_backend, info},
        {lager_file_backend, [{file, ConsoleLog}, {level, info}, {count, 1}]},
        {lager_file_backend, [{file, ErrorLog}, {level, error}, {count, 1}]}]),
+    application:set_env(lager, crash_log, CrashLog),
     ejabberd:start_app(lager),
     ok.
 
