@@ -24,7 +24,7 @@
 -include("suite.hrl").
 
 suite() ->
-    [{timetrap, {seconds,10}}].
+    [{timetrap, {seconds,20}}].
 
 init_per_suite(Config) ->
     NewConfig = init_config(Config),
