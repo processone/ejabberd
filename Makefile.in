@@ -77,7 +77,7 @@ deps/.got:
 	rm -rf deps/.built
 	$(REBAR) get-deps && :> deps/.got
 
-deps/.built:
+deps/.built: deps/.got
 	$(REBAR) compile && :> deps/.built
 
 src: deps/.built
