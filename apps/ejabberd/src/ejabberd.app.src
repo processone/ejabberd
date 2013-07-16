@@ -6,7 +6,7 @@
   {modules, []},
   {registered, [
                ]},
-  {applications, [kernel, stdlib, sasl, mnesia, public_key, ssl, crypto, stringprep, inets, lager, exml, ranch, cowboy]},
+  {applications, [kernel, stdlib, sasl, mnesia, public_key, ssl, crypto, stringprep, inets, exml, ranch, cowboy]},
   {env, []},
   {mod, {ejabberd_app, []}}]}.
 
