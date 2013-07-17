@@ -829,10 +829,10 @@ The available modules, their purpose and the options allowed by each one are:
     Options: \texttt{access}, \texttt{certfile}, \texttt{max\_fsm\_queue},
     \texttt{max\_stanza\_size}, \texttt{shaper},
     \texttt{starttls}, \texttt{starttls\_required}, \texttt{tls},
-    \texttt{zlib}
+    \texttt{zlib}, \texttt{tls\_compression}
   \titem{\texttt{ejabberd\_s2s\_in}}
     Handles incoming s2s connections.\\
-    Options: \texttt{max\_stanza\_size}, \texttt{shaper}
+    Options: \texttt{max\_stanza\_size}, \texttt{shaper}, \texttt{tls\_compression}
   \titem{\texttt{ejabberd\_service}}
     Interacts with an \footahref{http://www.ejabberd.im/tutorials-transports}{external component}
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
@@ -845,7 +845,7 @@ The available modules, their purpose and the options allowed by each one are:
   \titem{\texttt{ejabberd\_http}}
     Handles incoming HTTP connections.\\
     Options: \texttt{captcha}, \texttt{certfile}, \texttt{default\_host}, \texttt{http\_bind}, \texttt{http\_poll},
-    \texttt{request\_handlers}, \texttt{tls}, \texttt{trusted\_proxies}, \texttt{web\_admin}\\
+    \texttt{request\_handlers}, \texttt{tls}, \texttt{tls\_compression}, \texttt{trusted\_proxies}, \texttt{web\_admin}\\
 \end{description}
 
 
@@ -975,6 +975,8 @@ This is a detailed description of each option allowed by the listening modules:
     which can be enabled in \ejabberd{} with the option \term{starttls}.
     If this option is set, you should also set the \option{certfile} option.
     The option \term{tls} can also be used in \term{ejabberd\_http} to support HTTPS.
+  \titem{\{tls\_compression, true|false\}}
+  Whether to enable or disable TLS compression. The default value is \term{true}.
   \titem{\{trusted\_proxies, all | [IpString]\}} \ind{options!trusted\_proxies}
     Specify what proxies are trusted when an HTTP request contains the header \term{X-Forwarded-For}
     You can specify \term{all} to allow all proxies, or specify a list of IPs in string format.
@@ -1019,6 +1021,9 @@ There are some additional global options that can be specified in the ejabberd c
   \titem{\{s2s\_max\_retry\_delay, Seconds\}} \ind{options!s2s\_max\_retry\_delay}
   The maximum allowed delay for retry to connect after a failed connection attempt.
   Specified in seconds. The default value is 300 seconds (5 minutes).
+  \titem{\{s2s\_tls\_compression, true|false\}}
+  Whether to enable or disable TLS compression for s2s connections.
+  The default value is \term{true}.
   \titem{\{max\_fsm\_queue, Size\}}
     This option specifies the maximum number of elements in the queue of the FSM
     (Finite State Machine).

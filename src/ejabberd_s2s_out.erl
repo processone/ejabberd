@@ -183,13 +183,21 @@ init([From, Server, Type]) ->
 			       {true, true}
 			 end,
     UseV10 = TLS,
-    TLSOpts = case
+    TLSOpts1 = case
 		ejabberd_config:get_local_option(
                   s2s_certfile, fun iolist_to_binary/1)
 		  of
 		undefined -> [connect];
 		CertFile -> [{certfile, CertFile}, connect]
 	      end,
+    TLSOpts = case ejabberd_config:get_local_option(
+                     {s2s_tls_compression, From},
+                     fun(true) -> true;
+                        (false) -> false
+                     end, true) of
+                  false -> [compression_none | TLSOpts1];
+                  true -> TLSOpts1
+              end,
     {New, Verify} = case Type of
 		      {new, Key} -> {Key, false};
 		      {verify, Pid, Key, SID} ->

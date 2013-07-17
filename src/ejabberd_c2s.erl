@@ -244,7 +244,11 @@ init([{SockMod, Socket}, Opts]) ->
 				(_) -> false
 			    end,
 			    Opts),
-    TLSOpts = [verify_none | TLSOpts1],
+    TLSOpts2 = case proplists:get_bool(tls_compression, Opts) of
+                   false -> [compression_none | TLSOpts1];
+                   true -> TLSOpts1
+               end,
+    TLSOpts = [verify_none | TLSOpts2],
     IP = peerip(SockMod, Socket),
     %% Check if IP is blacklisted:
     case is_ip_blacklisted(IP) of
