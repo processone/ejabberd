@@ -30,8 +30,8 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_sm_iq/3,
-	 remove_user/2, get_data/2, export/1]).
+-export([start/2, stop/1, process_sm_iq/3, import/3,
+	 remove_user/2, get_data/2, export/1, import/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -277,3 +277,16 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
+import(LServer) ->
+    [{<<"select username, namespace, data from private_storage;">>,
+      fun([LUser, XMLNS, XML]) ->
+              El = #xmlel{} = xml_stream:parse_element(XML),
+              #private_storage{usns = {LUser, LServer, XMLNS},
+                               xml = El}
+      end}].
+
+import(_LServer, mnesia, #private_storage{} = PS) ->
+    mnesia:dirty_write(PS);
+import(_, _, _) ->
+    pass.

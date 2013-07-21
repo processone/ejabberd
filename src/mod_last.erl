@@ -31,7 +31,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_local_iq/3, export/1,
-	 process_sm_iq/3, on_presence_update/4,
+	 process_sm_iq/3, on_presence_update/4, import/1, import/3,
 	 store_last_info/4, get_last_info/2, remove_user/2]).
 
 -include("ejabberd.hrl").
@@ -305,3 +305,17 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
+import(LServer) ->
+    [{<<"select username, seconds, state from last">>,
+      fun([LUser, TimeStamp, State]) ->
+              #last_activity{us = {LUser, LServer},
+                             timestamp = jlib:binary_to_integer(
+                                           TimeStamp),
+                             status = State}
+      end}].
+
+import(_LServer, mnesia, #last_activity{} = LA) ->
+    mnesia:dirty_write(LA);
+import(_, _, _) ->
+    pass.

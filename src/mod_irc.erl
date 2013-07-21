@@ -33,8 +33,8 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2, start/2, stop/1, export/1,
-	 closed_connection/3, get_connection_params/3]).
+-export([start_link/2, start/2, stop/1, export/1, import/1,
+	 import/3, closed_connection/3, get_connection_params/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -1288,3 +1288,17 @@ export(_Server) ->
                       []
               end
       end}].
+
+import(_LServer) ->
+    [{<<"select jid, host, data from irc_custom;">>,
+      fun([SJID, IRCHost, SData]) ->
+              #jid{luser = U, lserver = S} = jlib:string_to_jid(SJID),
+              Data = ejabberd_odbc:decode_term(SData),
+              #irc_custom{us_host = {{U, S}, IRCHost},
+                          data = Data}
+      end}].
+
+import(_LServer, mnesia, #irc_custom{} = R) ->
+    mnesia:dirty_write(R);
+import(_, _, _) ->
+    pass.

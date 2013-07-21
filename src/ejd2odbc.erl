@@ -28,9 +28,13 @@
 
 -author('alexey@process-one.net').
 
--export([export/2, export/3]).
+-include("logger.hrl").
+
+-export([export/2, export/3, import_file/2, import/2, import/3]).
 
 -define(MAX_RECORDS_PER_TRANSACTION, 100).
+
+-record(dump, {fd, cont = start}).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -42,21 +46,24 @@
 %%% - Output can be either odbc to export to the configured relational
 %%%   database or "Filename" to export to text file.
 
+modules() ->
+    [ejabberd_auth,
+     mod_announce,
+     mod_caps,
+     mod_irc,
+     mod_last,
+     mod_muc,
+     mod_offline,
+     mod_privacy,
+     mod_private,
+     mod_roster,
+     mod_shared_roster,
+     mod_vcard,
+     mod_vcard_xupdate].
+
 export(Server, Output) ->
     LServer = jlib:nameprep(iolist_to_binary(Server)),
-    Modules = [ejabberd_auth,
-               mod_announce,
-               mod_caps,
-               mod_irc,
-               mod_last,
-               mod_muc,
-               mod_offline,
-               mod_privacy,
-               mod_private,
-               mod_roster,
-               mod_shared_roster,
-               mod_vcard,
-               mod_vcard_xupdate],
+    Modules = modules(),
     IO = prepare_output(Output),
     lists:foreach(
       fun(Module) ->
@@ -71,6 +78,47 @@ export(Server, Output, Module) ->
       fun({Table, ConvertFun}) ->
               export(LServer, Table, IO, ConvertFun)
       end, Module:export(Server)),
+    close_output(Output, IO).
+
+import_file(Server, FileName) when is_binary(FileName) ->
+    import(Server, binary_to_list(FileName));
+import_file(Server, FileName) ->
+    case disk_log:open([{name, make_ref()},
+                        {file, FileName},
+                        {mode, read_only}]) of
+        {ok, Fd} ->
+            LServer = jlib:nameprep(Server),
+            Mods = [{Mod, gen_mod:db_type(LServer, Mod)}
+                    || Mod <- modules(), gen_mod:is_loaded(LServer, Mod)],
+            AuthMods = case lists:member(ejabberd_auth_internal,
+                                         ejabberd_auth:auth_modules(LServer)) of
+                           true ->
+                               [{ejabberd_auth, mnesia}];
+                           false ->
+                               []
+                       end,
+            import_dump(LServer, AuthMods ++ Mods, #dump{fd = Fd});
+        Err ->
+            exit(Err)
+    end.
+
+import(Server, Output) ->
+    LServer = jlib:nameprep(iolist_to_binary(Server)),
+    Modules = modules(),
+    IO = prepare_output(Output, disk_log),
+    lists:foreach(
+      fun(Module) ->
+              import(LServer, IO, Module)
+      end, Modules),
+    close_output(Output, IO).
+
+import(Server, Output, Module) ->
+    LServer = jlib:nameprep(iolist_to_binary(Server)),
+    IO = prepare_output(Output, disk_log),
+    lists:foreach(
+      fun({SelectQuery, ConvertFun}) ->
+              import(LServer, SelectQuery, IO, ConvertFun)
+      end, Module:import(Server)),
     close_output(Output, IO).
 
 %%%----------------------------------------------------------------------
@@ -109,18 +157,97 @@ output(_LServer, Table, Fd, SQLs) ->
     file:write(Fd, ["-- \n-- Mnesia table: ", atom_to_list(Table),
                     "\n--\n", SQLs]).
 
-prepare_output(FileName) when is_list(FileName); is_binary(FileName) ->
+import(LServer, SelectQuery, IO, ConvertFun) ->
+    F = fun() ->
+                ejabberd_odbc:sql_query_t(
+                  iolist_to_binary(
+                    [<<"declare c cursor for ">>, SelectQuery])),
+                fetch(IO, ConvertFun)
+        end,
+    ejabberd_odbc:sql_transaction(LServer, F).
+
+fetch(IO, ConvertFun) ->
+    fetch(IO, ConvertFun, undefined).
+
+fetch(IO, ConvertFun, PrevRow) ->
+    case ejabberd_odbc:sql_query_t([<<"fetch c;">>]) of
+        {selected, _, [Row]} when Row == PrevRow ->
+            %% Avoid calling ConvertFun with the same input
+            fetch(IO, ConvertFun, Row);
+        {selected, _, [Row]} ->
+            case catch ConvertFun(Row) of
+                {'EXIT', _} = Err ->
+                    ?ERROR_MSG("failed to convert ~p: ~p",
+                               [Row, Err]);
+                Term ->
+                    ok = disk_log:log(IO#dump.fd, Term)
+            end,
+            fetch(IO, ConvertFun, Row);
+        {selected, _, []} ->
+            ok;
+        Err ->
+            erlang:error(Err)
+    end.
+
+import_dump(LServer, Mods, #dump{fd = Fd, cont = Cont}) ->
+    case disk_log:chunk(Fd, Cont) of
+        {NewCont, Terms} ->
+            import_terms(LServer, Mods, Terms),
+            import_dump(LServer, Mods, #dump{fd = Fd, cont = NewCont});
+        eof ->
+            ok;
+        Err ->
+            exit(Err)
+    end.
+
+import_terms(LServer, Mods, [Term|Terms]) ->
+    import_term(LServer, Mods, Term),
+    import_terms(LServer, Mods, Terms);
+import_terms(_LServer, _Mods, []) ->
+    ok.
+
+import_term(LServer, [{Mod, DBType}|Mods], Term) ->
+    case catch Mod:import(LServer, DBType, Term) of
+        pass -> import_term(LServer, Mods, Term);
+        ok -> ok;
+        Err ->
+            ?ERROR_MSG("failed to import ~p for module ~p: ~p",
+                       [Term, Mod, Err])
+    end;
+import_term(_LServer, [], _Term) ->
+    ok.
+
+prepare_output(FileName) ->
+    prepare_output(FileName, normal).
+
+prepare_output(FileName, Type) when is_binary(FileName) ->
+    prepare_output(binary_to_list(FileName), Type);
+prepare_output(FileName, normal) when is_list(FileName) ->
     case file:open(FileName, [write, raw]) of
         {ok, Fd} ->
             Fd;
         Err ->
             exit(Err)
     end;
-prepare_output(Output) ->
+prepare_output(FileName, disk_log) when is_list(FileName) ->
+    case disk_log:open([{name, make_ref()},
+                        {repair, truncate},
+			{file, FileName}]) of
+        {ok, Fd} ->
+            #dump{fd = Fd};
+        Err ->
+            exit(Err)
+    end;
+prepare_output(Output, _Type) ->
     Output.
 
 close_output(FileName, Fd) when FileName /= Fd ->
-    file:close(Fd),
+    case Fd of
+        #dump{} ->
+            disk_log:close(Fd#dump.fd);
+        _ ->
+            file:close(Fd)
+    end,
     ok;
 close_output(_, _) ->
     ok.

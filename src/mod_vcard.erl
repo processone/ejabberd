@@ -32,7 +32,7 @@
 
 -export([start/2, init/3, stop/1, get_sm_features/5,
 	 process_local_iq/3, process_sm_iq/3, reindex_vcards/0,
-	 remove_user/2, export/1]).
+	 remove_user/2, export/1, import/1, import/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1006,3 +1006,39 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
+import(LServer) ->
+    [{<<"select username, vcard from vcard;">>,
+      fun([LUser, SVCard]) ->
+              #xmlel{} = VCARD = xml_stream:parse_element(SVCard),
+              #vcard{us = {LUser, LServer}, vcard = VCARD}
+      end},
+     {<<"select username, lusername, fn, lfn, family, lfamily, "
+        "given, lgiven, middle, lmiddle, nickname, lnickname, "
+        "bday, lbday, ctry, lctry, locality, llocality, email, "
+        "lemail, orgname, lorgname, orgunit, lorgunit from vcard_search;">>,
+      fun([User, LUser, FN, LFN,
+           Family, LFamily, Given, LGiven,
+           Middle, LMiddle, Nickname, LNickname,
+           BDay, LBDay, CTRY, LCTRY, Locality, LLocality,
+           EMail, LEMail, OrgName, LOrgName, OrgUnit, LOrgUnit]) ->
+              #vcard_search{us = {LUser, LServer},
+                            user = {User, LServer}, luser = LUser,
+                            fn = FN, lfn = LFN, family = Family,
+                            lfamily = LFamily, given = Given,
+                            lgiven = LGiven, middle = Middle,
+                            lmiddle = LMiddle, nickname = Nickname,
+                            lnickname = LNickname, bday = BDay,
+                            lbday = LBDay, ctry = CTRY, lctry = LCTRY,
+                            locality = Locality, llocality = LLocality,
+                            email = EMail, lemail = LEMail,
+                            orgname = OrgName, lorgname = LOrgName,
+                            orgunit = OrgUnit, lorgunit = LOrgUnit}
+      end}].
+
+import(_LServer, mnesia, #vcard{} = VCard) ->
+    mnesia:dirty_write(VCard);
+import(_LServer, mnesia, #vcard_search{} = S) ->
+    mnesia:dirty_write(S);
+import(_, _, _) ->
+    pass.

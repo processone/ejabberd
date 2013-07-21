@@ -39,8 +39,8 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_iq/3, export/1,
-	 process_local_iq/3, get_user_roster/2,
+-export([start/2, stop/1, process_iq/3, export/1, import/1,
+	 process_local_iq/3, get_user_roster/2, import/3,
 	 get_subscription_lists/3, get_roster/2,
 	 get_in_pending_subscriptions/3, in_subscription/6,
 	 out_subscription/4, set_items/3, remove_user/2,
@@ -1569,3 +1569,29 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
+import(LServer) ->
+    [{<<"select username, jid, nick, subscription, "
+        "ask, askmessage, server, subscribe, type from rosterusers;">>,
+      fun([LUser, JID|_] = Row) ->
+              Item = raw_to_record(LServer, Row),
+              Username = ejabberd_odbc:escape(LUser),
+              SJID = ejabberd_odbc:escape(JID),
+              {selected, _, Rows} =
+                  ejabberd_odbc:sql_query_t(
+                    [<<"select grp from rostergroups where username='">>,
+                     Username, <<"' and jid='">>, SJID, <<"'">>]),
+              Groups = [Grp || [Grp] <- Rows],
+              Item#roster{groups = Groups}
+      end},
+     {<<"select username, version from roster_version;">>,
+      fun([LUser, Ver]) ->
+              #roster_version{us = {LUser, LServer}, version = Ver}
+      end}].
+
+import(_LServer, mnesia, #roster{} = R) ->
+    mnesia:dirty_write(R);
+import(_LServer, mnesia, #roster_version{} = RV) ->
+    mnesia:dirty_write(RV);
+import(_, _, _) ->
+    ok.

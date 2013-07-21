@@ -30,11 +30,11 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_iq/3, export/1,
+-export([start/2, stop/1, process_iq/3, export/1, import/1,
 	 process_iq_set/4, process_iq_get/5, get_user_list/3,
 	 check_packet/6, remove_user/2, item_to_raw/1,
 	 raw_to_item/1, is_list_needdb/1, updated_list/3,
-         item_to_xml/1, get_user_lists/2]).
+         item_to_xml/1, get_user_lists/2, import/3]).
 
 %% For mod_blocking
 -export([sql_add_privacy_list/2,
@@ -965,6 +965,11 @@ sql_get_privacy_list_data(LUser, LServer, Name) ->
     odbc_queries:get_privacy_list_data(LServer, Username,
 				       SName).
 
+sql_get_privacy_list_data_t(LUser, Name) ->
+    Username = ejabberd_odbc:escape(LUser),
+    SName = ejabberd_odbc:escape(Name),
+    odbc_queries:get_privacy_list_data_t(Username, SName).
+
 sql_get_privacy_list_data_by_id(ID, LServer) ->
     odbc_queries:get_privacy_list_data_by_id(LServer, ID).
 
@@ -1098,3 +1103,37 @@ get_id() ->
     ID = get(id),
     put(id, ID + 1),
     ID + 1.
+
+import(LServer) ->
+    [{<<"select username from privacy_list;">>,
+      fun([LUser]) ->
+              Default = case sql_get_default_privacy_list_t(LUser) of
+                            {selected, [<<"name">>], []} ->
+                                none;
+                            {selected, [<<"name">>], [[DefName]]} ->
+                                DefName;
+                            _ ->
+                                none
+                        end,
+              {selected, [<<"name">>], Names} =
+                  sql_get_privacy_list_names_t(LUser),
+              Lists = lists:flatmap(
+                        fun([Name]) ->
+                                case sql_get_privacy_list_data_t(LUser, Name) of
+                                    {selected, _, RItems} ->
+                                        [{Name,
+                                          lists:map(fun raw_to_item/1,
+                                                    RItems)}];
+                                    _ ->
+                                        []
+                                end
+                        end, Names),
+              #privacy{default = Default,
+                       us = {LUser, LServer},
+                       lists = Lists}
+      end}].
+
+import(_LServer, mnesia, #privacy{} = P) ->
+    mnesia:dirty_write(P);
+import(_, _, _) ->
+    pass.

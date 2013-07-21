@@ -515,6 +515,9 @@ pgsql_to_odbc({ok, PGSQLResult}) ->
 pgsql_item_to_odbc({<<"SELECT", _/binary>>, Rows,
 		    Recs}) ->
     {selected, [element(1, Row) || Row <- Rows], Recs};
+pgsql_item_to_odbc({<<"FETCH", _/binary>>, Rows,
+		    Recs}) ->
+    {selected, [element(1, Row) || Row <- Rows], Recs};
 pgsql_item_to_odbc(<<"INSERT ", OIDN/binary>>) ->
     [_OID, N] = str:tokens(OIDN, <<" ">>),
     {updated, jlib:binary_to_integer(N)};

@@ -44,6 +44,9 @@
          shutdown_rooms/1,
 	 process_iq_disco_items/4,
 	 broadcast_service_message/2,
+         export/1,
+         import/1,
+         import/3,
 	 can_use_nick/4]).
 
 %% gen_server callbacks
@@ -1141,3 +1144,64 @@ update_muc_registered_table(_Host) ->
 	  ?INFO_MSG("Recreating muc_registered table", []),
 	  mnesia:transform_table(muc_registered, ignore, Fields)
     end.
+
+export(_Server) ->
+    [{muc_room,
+      fun(Host, #muc_room{name_host = {Name, RoomHost}, opts = Opts}) ->
+              case str:suffix(Host, RoomHost) of
+                  true ->
+                      SName = ejabberd_odbc:escape(Name),
+                      SRoomHost = ejabberd_odbc:escape(RoomHost),
+                      SOpts = ejabberd_odbc:encode_term(Opts),
+                      [[<<"delete from muc_room where name='">>, SName,
+                        <<"' and host='">>, SRoomHost, <<"';">>],
+                       [<<"insert into muc_room(name, host, opts) ",
+                          "values (">>,
+                        <<"'">>, SName, <<"', '">>, SRoomHost,
+                        <<"', '">>, SOpts, <<"');">>]];
+                  false ->
+                      []
+              end
+      end},
+     {muc_registered,
+      fun(Host, #muc_registered{us_host = {{U, S}, RoomHost},
+                                nick = Nick}) ->
+              case str:suffix(Host, RoomHost) of
+                  true ->
+                      SJID = ejabberd_odbc:escape(
+                               jlib:jid_to_string(
+                                 jlib:make_jid(U, S, <<"">>))),
+                      SNick = ejabberd_odbc:escape(Nick),
+                      SRoomHost = ejabberd_odbc:escape(RoomHost),
+                      [[<<"delete from muc_registered where jid='">>,
+                        SJID, <<"' and host='">>, SRoomHost, <<"';">>],
+                       [<<"insert into muc_registered(jid, host, "
+                          "nick) values ('">>,
+                        SJID, <<"', '">>, SRoomHost, <<"', '">>, SNick,
+                        <<"');">>]];
+                  false ->
+                      []
+              end
+      end}].
+
+import(_LServer) ->
+    [{<<"select name, host, opts from muc_room;">>,
+      fun([Name, RoomHost, SOpts]) ->
+              Opts = opts_to_binary(ejabberd_odbc:decode_term(SOpts)),
+              #muc_room{name_host = {Name, RoomHost},
+                        opts = Opts}
+      end},
+     {<<"select jid, host, nick from muc_registered;">>,
+      fun([J, RoomHost, Nick]) ->
+              #jid{user = U, server = S} =
+                  jlib:string_to_jid(J),
+              #muc_registered{us_host = {{U, S}, RoomHost},
+                              nick = Nick}
+      end}].
+
+import(_LServer, mnesia, #muc_room{} = R) ->
+    mnesia:dirty_write(R);
+import(_LServer, mnesia, #muc_registered{} = R) ->
+    mnesia:dirty_write(R);
+import(_, _, _) ->
+    pass.

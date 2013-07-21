@@ -13,7 +13,7 @@
 -export([start/2, stop/1]).
 
 %% hooks
--export([update_presence/3, vcard_set/3, export/1]).
+-export([update_presence/3, vcard_set/3, export/1, import/1, import/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -203,3 +203,14 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
+import(LServer) ->
+    [{<<"select username, hash from vcard_xupdate;">>,
+      fun([LUser, Hash]) ->
+              #vcard_xupdate{us = {LUser, LServer}, hash = Hash}
+      end}].
+
+import(_LServer, mnesia, #vcard_xupdate{} = R) ->
+    mnesia:dirty_write(R);
+import(_, _, _) ->
+    pass.
