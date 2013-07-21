@@ -1594,4 +1594,4 @@ import(_LServer, mnesia, #roster{} = R) ->
 import(_LServer, mnesia, #roster_version{} = RV) ->
     mnesia:dirty_write(RV);
 import(_, _, _) ->
-    ok.
+    pass.
