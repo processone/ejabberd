@@ -1073,5 +1073,7 @@ import(LServer) ->
 
 import(_LServer, mnesia, #offline_msg{} = Msg) ->
     mnesia:dirty_write(Msg);
+import(_LServer, riak, #offline_msg{us = US, timestamp = TS} = M) ->
+    ejabberd_riak:put(M, [{i, TS}, {'2i', [{<<"us">>, US}]}]);
 import(_, _, _) ->
     pass.

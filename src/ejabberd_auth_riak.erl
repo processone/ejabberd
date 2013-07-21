@@ -38,7 +38,7 @@
 	 get_vh_registered_users_number/1,
 	 get_vh_registered_users_number/2, get_password/2,
 	 get_password_s/2, is_user_exists/2, remove_user/2,
-	 remove_user/3, store_type/0, export/1,
+	 remove_user/3, store_type/0, export/1, import/3,
 	 plain_password_required/0]).
 
 -include("ejabberd.hrl").
@@ -283,3 +283,8 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
+import(LServer, riak, #passwd{} = Passwd) ->
+    ejabberd_riak:put(Passwd, [{'2i', [{<<"host">>, LServer}]}]);
+import(_, _, _) ->
+    pass.

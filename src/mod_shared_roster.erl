@@ -1441,5 +1441,12 @@ import(_LServer, mnesia, #sr_group{} = G) ->
     mnesia:dirty_write(G);
 import(_LServer, mnesia, #sr_user{} = U) ->
     mnesia:dirty_write(U);
+import(_LServer, riak, #sr_group{group_host = {_, Host}} = G) ->
+    ejabberd_riak:put(G, [{'2i', [{<<"host">>, Host}]}]);
+import(_LServer, riak, #sr_user{us = US, group_host = {Group, Host}} = User) ->
+    ejabberd_riak:put(User,
+                      [{i, {US, {Group, Host}}},
+                       {'2i', [{<<"us">>, US},
+                               {<<"group_host">>, {Group, Host}}]}]);
 import(_, _, _) ->
     pass.

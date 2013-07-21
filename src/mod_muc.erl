@@ -1268,5 +1268,10 @@ import(_LServer, mnesia, #muc_room{} = R) ->
     mnesia:dirty_write(R);
 import(_LServer, mnesia, #muc_registered{} = R) ->
     mnesia:dirty_write(R);
+import(_LServer, riak, #muc_room{} = R) ->
+    ejabberd_riak:put(R);
+import(_LServer, riak,
+       #muc_registered{us_host = {_, Host}, nick = Nick} = R) ->
+    ejabberd_riak:put(R, [{'2i', [{<<"nick_host">>, {Nick, Host}}]}]);
 import(_, _, _) ->
     pass.

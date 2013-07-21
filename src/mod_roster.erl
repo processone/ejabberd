@@ -1748,6 +1748,10 @@ import(_LServer, mnesia, #roster{} = R) ->
     mnesia:dirty_write(R);
 import(_LServer, mnesia, #roster_version{} = RV) ->
     mnesia:dirty_write(RV);
+import(_LServer, riak, #roster{us = {LUser, LServer}} = R) ->
+    ejabberd_riak:put(R, [{'2i', [{<<"us">>, {LUser, LServer}}]}]);
+import(_LServer, riak, #roster_version{} = RV) ->
+    ejabberd_riak:put(RV);
 import(_, _, _) ->
     pass.
 

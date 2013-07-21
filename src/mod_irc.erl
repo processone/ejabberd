@@ -1337,5 +1337,7 @@ import(_LServer) ->
 
 import(_LServer, mnesia, #irc_custom{} = R) ->
     mnesia:dirty_write(R);
+import(_LServer, riak, #irc_custom{} = R) ->
+    ejabberd_riak:put(R);
 import(_, _, _) ->
     pass.

@@ -222,5 +222,7 @@ import(LServer) ->
 
 import(_LServer, mnesia, #vcard_xupdate{} = R) ->
     mnesia:dirty_write(R);
+import(_LServer, riak, #vcard_xupdate{} = R) ->
+    ejabberd_riak:put(R);
 import(_, _, _) ->
     pass.

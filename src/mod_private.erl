@@ -307,5 +307,7 @@ import(LServer) ->
 
 import(_LServer, mnesia, #private_storage{} = PS) ->
     mnesia:dirty_write(PS);
+import(_LServer, riak, #private_storage{usns = {LUser, LServer, _}} = PS) ->
+    ejabberd_riak:put(PS, [{'2i', [{<<"us">>, {LUser, LServer}}]}]);
 import(_, _, _) ->
     pass.

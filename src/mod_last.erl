@@ -330,6 +330,8 @@ import(LServer) ->
 
 import(_LServer, mnesia, #last_activity{} = LA) ->
     mnesia:dirty_write(LA);
+import(_LServer, riak, #last_activity{} = LA) ->
+    ejabberd_riak:put(LA);
 import(_, _, _) ->
     pass.
 

@@ -622,3 +622,81 @@ is_valid_node(Node) ->
         _ ->
             false
     end.
+
+update_table() ->
+    Fields = record_info(fields, caps_features),
+    case mnesia:table_info(caps_features, attributes) of
+        Fields ->
+            ejabberd_config:convert_table_to_binary(
+              caps_features, Fields, set,
+              fun(#caps_features{node_pair = {N, _}}) -> N end,
+              fun(#caps_features{node_pair = {N, P},
+                                 features = Fs} = R) ->
+                      NewFs = if is_integer(Fs) ->
+                                      Fs;
+                                 true ->
+                                      [iolist_to_binary(F) || F <- Fs]
+                              end,
+                      R#caps_features{node_pair = {iolist_to_binary(N),
+                                                   iolist_to_binary(P)},
+                                      features = NewFs}
+              end);
+        _ ->
+            ?INFO_MSG("Recreating caps_features table", []),
+            mnesia:transform_table(caps_features, ignore, Fields)
+    end.
+
+sql_write_features_t({Node, SubNode}, Features) ->
+    SNode = ejabberd_odbc:escape(Node),
+    SSubNode = ejabberd_odbc:escape(SubNode),
+    NewFeatures = if is_integer(Features) ->
+                          [jlib:integer_to_binary(Features)];
+                     true ->
+                          Features
+                  end,
+    [[<<"delete from caps_features where node='">>,
+      SNode, <<"' and subnode='">>, SSubNode, <<"';">>]|
+     [[<<"insert into caps_features(node, subnode, feature) ">>,
+       <<"values ('">>, SNode, <<"', '">>, SSubNode, <<"', '">>,
+       ejabberd_odbc:escape(F), <<"');">>] || F <- NewFeatures]].
+
+export(_Server) ->
+    [{caps_features,
+      fun(_Host, #caps_features{node_pair = NodePair,
+                                features = Features}) ->
+              sql_write_features_t(NodePair, Features);
+         (_Host, _R) ->
+              []
+      end}].
+
+import(_LServer) ->
+    [{<<"select node, subnode from caps_features;">>,
+      fun([Node, SubNode]) ->
+              SNode = ejabberd_odbc:escape(Node),
+              SSubNode = ejabberd_odbc:escape(SubNode),
+              {selected, _, Rows} =
+                  ejabberd_odbc:sql_query_t(
+                    [<<"select feature from caps_features "
+                       "where node='">>, SNode,
+                     <<"' and subnode='">>, SSubNode, <<"';">>]),
+              Features = case Rows of
+                             [[Stamp]] ->
+                                 case catch jlib:binary_to_integer(Stamp) of
+                                     Int when is_integer(Int), Int>=0 ->
+                                         Int;
+                                     _ ->
+                                         [Stamp]
+                                 end;
+                             _ ->
+                                 [Feature || [Feature] <- Rows]
+                         end,
+              #caps_features{node_pair = {Node, SubNode},
+                             features = Features}
+      end}].
+
+import(_LServer, mnesia, #caps_features{} = Caps) ->
+    mnesia:dirty_write(Caps);
+import(_LServer, riak, #caps_features{} = Caps) ->
+    ejabberd_riak:put(Caps);
+import(_, _, _) ->
+    pass.

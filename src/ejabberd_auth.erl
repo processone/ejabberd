@@ -445,5 +445,7 @@ import(Server) ->
 
 import(Server, mnesia, Passwd) ->
     ejabberd_auth_internal:import(Server, mnesia, Passwd);
+import(Server, riak, Passwd) ->
+    ejabberd_auth_riak:import(Server, riak, Passwd);
 import(_, _, _) ->
     pass.

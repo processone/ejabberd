@@ -1137,5 +1137,9 @@ import(_LServer, mnesia, #motd{} = Motd) ->
     mnesia:dirty_write(Motd);
 import(_LServer, mnesia, #motd_users{} = Users) ->
     mnesia:dirty_write(Users);
+import(_LServer, riak, #motd{} = Motd) ->
+    ejabberd_riak:put(Motd);
+import(_LServer, riak, #motd_users{us = {_, S}} = Users) ->
+    ejabberd_riak:put(Users, [{'2i', [{<<"server">>, S}]}]);
 import(_, _, _) ->
     pass.
