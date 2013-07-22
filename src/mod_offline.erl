@@ -916,9 +916,9 @@ import(LServer) ->
       fun([LUser, XML]) ->
               El = #xmlel{} = xml_stream:parse_element(XML),
               From = #jid{} = jlib:string_to_jid(
-                                xml:get_attr_s(<<"from">>, El)),
+                                xml:get_attr_s(<<"from">>, El#xmlel.attrs)),
               To = #jid{} = jlib:string_to_jid(
-                              xml:get_attr_s(<<"to">>, El)),
+                              xml:get_attr_s(<<"to">>, El#xmlel.attrs)),
               Stamp = xml:get_path_s(El, [{elem, <<"delay">>},
                                           {elem, <<"stamp">>},
                                           cdata]),

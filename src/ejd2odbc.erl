@@ -175,8 +175,8 @@ import(LServer, SelectQuery, IO, ConvertFun, Opts) ->
             false ->
                 fun() ->
                         ejabberd_odbc:sql_query_t(
-                          iolist_to_binary(
-                            [<<"declare c cursor for ">>, SelectQuery])),
+                          [iolist_to_binary(
+                             [<<"declare c cursor for ">>, SelectQuery])]),
                         fetch(IO, ConvertFun, undefined)
                 end
         end,
