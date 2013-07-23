@@ -920,9 +920,13 @@ import(LServer) ->
               To = #jid{} = jlib:string_to_jid(
                               xml:get_attr_s(<<"to">>, El#xmlel.attrs)),
               Stamp = xml:get_path_s(El, [{elem, <<"delay">>},
-                                          {elem, <<"stamp">>},
-                                          cdata]),
-              {_, _, _} = TS = jlib:datetime_string_to_timestamp(Stamp),
+                                          {attr, <<"stamp">>}]),
+              TS = case jlib:datetime_string_to_timestamp(Stamp) of
+                       {_, _, _} = Now ->
+                           Now;
+                       undefined ->
+                           now()
+                   end,
               Expire = find_x_expire(TS, El#xmlel.children),
               #offline_msg{us = {LUser, LServer},
                            from = From, to = To,
