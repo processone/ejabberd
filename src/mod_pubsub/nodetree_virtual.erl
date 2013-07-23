@@ -125,8 +125,8 @@ get_parentnodes(_Host, _Node, _From) ->
 %%     Node = mod_pubsub:pubsubNode()
 %%     From = mod_pubsub:jid()
 %% @doc <p>Virtual node tree does not handle parent/child. Child list is empty.</p>
-get_parentnodes_tree(_Host, _Node, _From) ->
-    [].
+get_parentnodes_tree(Host, Node, From) ->
+    [{0, [get_node(Host, Node, From)]}].
 
 %% @spec (Host, Node, From) -> [pubsubNode()]
 %%     Host = mod_pubsub:host()
