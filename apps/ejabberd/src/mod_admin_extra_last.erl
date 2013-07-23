@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% File    : mod_admin_extra.erl
+%%% File    : mod_admin_extra_last.erl
 %%% Author  : Badlop <badlop@process-one.net>, Piotr Nosek <piotr.nosek@erlang-solutions.com>
 %%% Purpose : Contributed administrative functions and commands
 %%% Created : 10 Aug 2008 by Badlop <badlop@process-one.net>
@@ -24,30 +24,41 @@
 %%%
 %%%-------------------------------------------------------------------
 
--module(mod_admin_extra).
+-module(mod_admin_extra_last).
 -author('badlop@process-one.net').
 
--behaviour(gen_mod).
+-export([
+    commands/0,
+	 
+    set_last/4
+	]).
 
--export([start/2, stop/1]).
-
--define(SUBMODS, [node, accounts, sessions, vcard, roster, last,
-                  private, srg, stanza, stats]).
+-include("ejabberd.hrl").
+-include("ejabberd_commands.hrl").
+-include("mod_roster.hrl").
+-include("jlib.hrl").
+-include_lib("exml/include/exml.hrl").
 
 %%%
-%%% gen_mod
+%%% Register commands
 %%%
 
-start(_Host, _Opts) ->
-    lists:foreach(fun(Submod) ->
-                ejabberd_commands:register_commands((mod_name(Submod)):commands())
-        end, ?SUBMODS).
+commands() ->
+    [
+     #ejabberd_commands{name = set_last, tags = [last],
+			desc = "Set last activity information",
+			longdesc = "Timestamp is the seconds since"
+			"1970-01-01 00:00:00 UTC, for example: date +%s",
+			module = ?MODULE, function = set_last,
+			args = [{user, string}, {host, string}, {timestamp, integer}, {status, string}],
+			result = {res, rescode}}
+    ].
 
-stop(_Host) ->
-    lists:foreach(fun(Submod) ->
-                ejabberd_commands:unregister_commands((mod_name(Submod)):commands())
-        end, ?SUBMODS).
+%%%
+%%% Last Activity
+%%%
 
-mod_name(ModAtom) ->
-    list_to_existing_atom(atom_to_list(?MODULE) ++ "_" ++ atom_to_list(ModAtom)).
+set_last(User, Server, Timestamp, Status) ->
+    Mod = mod_admin_extra_common:get_lastactivity_module(Server),
+    Mod:store_last_info(User, Server, Timestamp, Status).
 

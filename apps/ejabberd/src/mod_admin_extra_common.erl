@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% File    : mod_admin_extra.erl
+%%% File    : mod_admin_extra_common.erl
 %%% Author  : Badlop <badlop@process-one.net>, Piotr Nosek <piotr.nosek@erlang-solutions.com>
 %%% Purpose : Contributed administrative functions and commands
 %%% Created : 10 Aug 2008 by Badlop <badlop@process-one.net>
@@ -24,30 +24,42 @@
 %%%
 %%%-------------------------------------------------------------------
 
--module(mod_admin_extra).
+-module(mod_admin_extra_common).
 -author('badlop@process-one.net').
 
--behaviour(gen_mod).
+-export([
+    get_lastactivity_module/1,
+    kick_session/4,
+    prepare_reason/1
+    ]).
 
--export([start/2, stop/1]).
+-include("ejabberd.hrl").
+-include("ejabberd_commands.hrl").
+-include("mod_roster.hrl").
+-include("jlib.hrl").
+-include_lib("exml/include/exml.hrl").
 
--define(SUBMODS, [node, accounts, sessions, vcard, roster, last,
-                  private, srg, stanza, stats]).
+get_lastactivity_module(Server) ->
+    case lists:member(mod_last, gen_mod:loaded_modules(Server)) of
+        true -> mod_last;
+        _ -> mod_last_odbc
+    end.
 
-%%%
-%%% gen_mod
-%%%
+kick_session(User, Server, Resource, ReasonText) ->
+    kick_this_session(list_to_binary(User), list_to_binary(Server), list_to_binary(Resource), prepare_reason(ReasonText)),
+    ok.
 
-start(_Host, _Opts) ->
-    lists:foreach(fun(Submod) ->
-                ejabberd_commands:register_commands((mod_name(Submod)):commands())
-        end, ?SUBMODS).
+kick_this_session(User, Server, Resource, Reason) ->
+    ejabberd_router:route(
+        jlib:make_jid(<<"">>, <<"">>, <<"">>),
+        jlib:make_jid(User, Server, Resource),
+        #xmlel{name = <<"broadcast">>, children=[{exit, Reason}]}).
 
-stop(_Host) ->
-    lists:foreach(fun(Submod) ->
-                ejabberd_commands:unregister_commands((mod_name(Submod)):commands())
-        end, ?SUBMODS).
-
-mod_name(ModAtom) ->
-    list_to_existing_atom(atom_to_list(?MODULE) ++ "_" ++ atom_to_list(ModAtom)).
-
+prepare_reason([]) ->
+        <<"Kicked by administrator">>;
+prepare_reason([Reason]) ->
+        prepare_reason(Reason);
+prepare_reason(Reason) when is_list(Reason) ->
+        list_to_binary(Reason);
+prepare_reason(StringList) ->
+        prepare_reason(string:join(StringList, "_")).

@@ -325,7 +325,9 @@ format_arg("", string) ->
 format_arg(Arg, string) ->
     NumChars = integer_to_list(string:len(Arg)),
     Parse = "~" ++ NumChars ++ "c",
-    format_arg2(Arg, Parse).
+    format_arg2(Arg, Parse);
+format_arg(Arg, binary) ->
+    list_to_binary(format_arg(Arg, string)).
 
 format_arg2(Arg, Parse)->
     {ok, [Arg2], _RemainingArguments} = io_lib:fread(Parse, Arg),
