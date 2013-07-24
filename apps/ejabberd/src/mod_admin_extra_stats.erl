@@ -36,8 +36,6 @@
 
 -include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
--include("jlib.hrl").
--include_lib("exml/include/exml.hrl").
 
 %%%
 %%% Register commands
@@ -48,12 +46,12 @@ commands() ->
         #ejabberd_commands{name = stats, tags = [stats],
                            desc = "Get statistical value: registeredusers onlineusers onlineusersnode uptimeseconds",
                            module = ?MODULE, function = stats,
-                           args = [{name, string}],
+                           args = [{name, binary}],
                            result = {stat, integer}},
         #ejabberd_commands{name = stats_host, tags = [stats],
                            desc = "Get statistical value for this host: registeredusers onlineusers",
                            module = ?MODULE, function = stats,
-                           args = [{name, string}, {host, string}],
+                           args = [{name, binary}, {host, binary}],
                            result = {stat, integer}}
         ].
 
@@ -63,16 +61,18 @@ commands() ->
 
 stats(Name) ->
     case Name of
-        "uptimeseconds" -> trunc(element(1, erlang:statistics(wall_clock))/1000);
-        "registeredusers" -> length(ejabberd_auth:dirty_get_registered_users());
-        "onlineusersnode" -> ejabberd_sm:get_node_sessions_number();
-        "onlineusers" -> ejabberd_sm:get_total_sessions_number()
+        <<"uptimeseconds">> -> trunc(element(1, erlang:statistics(wall_clock))/1000);
+        <<"registeredusers">> -> lists:sum([
+                    ejabberd_auth:get_vh_registered_users_number(Server)
+                    || Server <- ejabberd_config:get_global_option(hosts) ]);
+        <<"onlineusersnode">> -> ejabberd_sm:get_node_sessions_number();
+        <<"onlineusers">> -> ejabberd_sm:get_total_sessions_number()
     end.
 
 stats(Name, Host) ->
     case Name of
-        "registeredusers" -> length(ejabberd_auth:get_vh_registered_users(Host));
-        "onlineusers" -> length(ejabberd_sm:get_vh_session_list(Host))
+        <<"registeredusers">> -> ejabberd_auth:get_vh_registered_users_number(Host);
+        <<"onlineusers">> -> ejabberd_sm:get_vh_session_number(Host)
     end.
 
 
