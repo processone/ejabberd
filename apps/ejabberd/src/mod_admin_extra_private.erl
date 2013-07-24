@@ -48,12 +48,12 @@ commands() ->
         #ejabberd_commands{name = private_get, tags = [private],
                            desc = "Get some information from a user private storage",
                            module = ?MODULE, function = private_get,
-                           args = [{user, string}, {host, string}, {element, string}, {ns, string}],
+                           args = [{user, binary}, {host, binary}, {element, binary}, {ns, binary}],
                            result = {res, string}},
         #ejabberd_commands{name = private_set, tags = [private],
                            desc = "Set to the user private storage",
                            module = ?MODULE, function = private_set,
-                           args = [{user, string}, {host, string}, {element, string}],
+                           args = [{user, binary}, {host, binary}, {element, binary}],
                            result = {res, rescode}}
         ].
 
@@ -67,35 +67,42 @@ commands() ->
 %% <aa xmlns='bb'>Cluth</aa>
 
 private_get(Username, Host, Element, Ns) ->
-    From = jlib:make_jid(Username, Host, ""),
-    To = jlib:make_jid(Username, Host, ""),
-    IQ = {iq, "", get, ?NS_PRIVATE, "",
+    M = get_private_module(Host),
+    From = jlib:make_jid(Username, Host, <<"">>),
+    To = jlib:make_jid(Username, Host, <<"">>),
+    IQ = {iq, <<"">>, get, ?NS_PRIVATE, <<"">>,
           #xmlel{ name = <<"query">>,
                  attrs = [{<<"xmlns">>,?NS_PRIVATE}],
                  children = [#xmlel{ name = Element, attrs = [{<<"xmlns">>, Ns}]}] } },
-    ResIq = mod_private:process_sm_iq(From, To, IQ),
+    ResIq = M:process_sm_iq(From, To, IQ),
     [#xmlel{ name = <<"query">>,
             attrs = [{<<"xmlns">>,<<"jabber:iq:private">>}],
             children = [SubEl] }] = ResIq#iq.sub_el,
-    xml:element_to_string(SubEl).
+    exml:to_binary(SubEl).
 
 private_set(Username, Host, ElementString) ->
-    case xml_stream:parse_element(ElementString) of
+    case exml:parse(ElementString) of
         {error, Error} ->
             io:format("Error found parsing the element:~n  ~p~nError: ~p~n",
                       [ElementString, Error]),
             error;
-        Xml ->
+        {ok, Xml} ->
             private_set2(Username, Host, Xml)
     end.
 
 private_set2(Username, Host, Xml) ->
-    From = jlib:make_jid(Username, Host, ""),
-    To = jlib:make_jid(Username, Host, ""),
-    IQ = {iq, "", set, ?NS_PRIVATE, "",
+    M = get_private_module(Host),
+    From = jlib:make_jid(Username, Host, <<"">>),
+    To = jlib:make_jid(Username, Host, <<"">>),
+    IQ = {iq, <<"">>, set, ?NS_PRIVATE, <<"">>,
           #xmlel{ name = <<"query">>,
                  attrs = [{<<"xmlns">>,?NS_PRIVATE}],
                  children = [Xml]}},
-    mod_private:process_sm_iq(From, To, IQ),
+    M:process_sm_iq(From, To, IQ),
     ok.
 
+get_private_module(Server) ->
+    case lists:member(mod_private, gen_mod:loaded_modules(Server)) of
+        true -> mod_private;
+        _ -> mod_private_odbc
+    end.
