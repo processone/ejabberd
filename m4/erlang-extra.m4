@@ -50,6 +50,10 @@ parse(Version) ->
 
 less_or_equal([[]], [[]]) ->
     true;
+less_or_equal([[]], _Any) ->
+    true;
+less_or_equal(_Any, [[]]) ->
+    false;
 less_or_equal([[Left| Rl]], [[Right| Rr]]) ->
     case {Left < Right, Left == Right} of
         {true, _}  ->
