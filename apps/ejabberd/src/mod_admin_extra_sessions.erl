@@ -27,7 +27,6 @@
 -module(mod_admin_extra_sessions).
 -author('badlop@process-one.net').
 
-
 -export([
     commands/0,
 
@@ -37,7 +36,7 @@
     status_num/2, status_num/1,
     status_list/2, status_list/1,
     connected_users_info/0,
-    connected_users_vhost/1,
+    connected_users_info/1,
     set_presence/7,
     user_sessions_info/2
     ]).
@@ -47,41 +46,55 @@
 -include("jlib.hrl").
 -include_lib("exml/include/exml.hrl").
 
+-define(GEN_FSM, p1_fsm).
+
 %%%
 %%% Register commands
 %%%
 
 commands() ->
+    SessionDisplay = {list,
+                      {sessions, {tuple,
+                                  [{jid, string},
+                                   {connection, string},
+                                   {ip, string},
+                                   {port, integer},
+                                   {priority, integer},
+                                   {node, string},
+                                   {uptime, integer}
+                                  ]}}
+                     },
+
     [
         #ejabberd_commands{name = num_resources, tags = [session],
                            desc = "Get the number of resources of a user",
                            module = ?MODULE, function = num_resources,
-                           args = [{user, string}, {host, string}],
+                           args = [{user, binary}, {host, binary}],
                            result = {resources, integer}},
         #ejabberd_commands{name = resource_num, tags = [session],
                            desc = "Resource string of a session number",
                            module = ?MODULE, function = resource_num,
-                           args = [{user, string}, {host, string}, {num, integer}],
-                           result = {resource, string}},
+                           args = [{user, binary}, {host, binary}, {num, integer}],
+                           result = {resource, binary}},
         #ejabberd_commands{name = kick_session, tags = [session],
                            desc = "Kick a user session",
                            module = ?MODULE, function = kick_session,
-                           args = [{user, string}, {host, string}, {resource, string}, {reason, string}],
+                           args = [{user, binary}, {host, binary}, {resource, binary}, {reason, binary}],
                            result = {res, rescode}},
         #ejabberd_commands{name = status_num_host, tags = [session, stats],
                            desc = "Number of logged users with this status in host",
                            module = ?MODULE, function = status_num,
-                           args = [{host, string}, {status, string}],
+                           args = [{host, binary}, {status, binary}],
                            result = {users, integer}},
         #ejabberd_commands{name = status_num, tags = [session, stats],
                            desc = "Number of logged users with this status",
                            module = ?MODULE, function = status_num,
-                           args = [{status, string}],
+                           args = [{status, binary}],
                            result = {users, integer}},
         #ejabberd_commands{name = status_list_host, tags = [session],
                            desc = "List of users logged in host with their statuses",
                            module = ?MODULE, function = status_list,
-                           args = [{host, string}, {status, string}],
+                           args = [{host, binary}, {status, binary}],
                            result = {users, {list,
                                              {userstatus, {tuple, [
                                 {user, string},
@@ -94,7 +107,7 @@ commands() ->
         #ejabberd_commands{name = status_list, tags = [session],
                            desc = "List of logged users with this status",
                            module = ?MODULE, function = status_list,
-                           args = [{status, string}],
+                           args = [{status, binary}],
                            result = {users, {list,
                                              {userstatus, {tuple, [
                                 {user, string},
@@ -109,52 +122,28 @@ commands() ->
                            desc = "List all established sessions and their information",
                            module = ?MODULE, function = connected_users_info,
                            args = [],
-                           result = {connected_users_info,
-                                     {list,
-                                      {sessions, {tuple,
-                                                  [{jid, string},
-                                                   {connection, string},
-                                                   {ip, string},
-                                                   {port, integer},
-                                                   {priority, integer},
-                                                   {node, string},
-                                                   {uptime, integer}
-                                                  ]}}
-                                     }}},
+                           result = {connected_users_info, SessionDisplay}},
         #ejabberd_commands{name = connected_users_vhost,
                            tags = [session],
                            desc = "Get the list of established sessions in a vhost",
-                           module = ?MODULE, function = connected_users_vhost,
-                           args = [{host, string}],
-                           result = {connected_users_vhost, {list, {sessions, string}}}},
+                           module = ?MODULE, function = connected_users_info,
+                           args = [{host, binary}],
+                           result = {connected_users_vhost, SessionDisplay}},
         #ejabberd_commands{name = user_sessions_info,
                            tags = [session],
                            desc = "Get information about all sessions of a user",
                            module = ?MODULE, function = user_sessions_info,
-                           args = [{user, string}, {host, string}],
-                           result = {sessions_info,
-                                     {list,
-                                      {session, {tuple,
-                                                 [{connection, string},
-                                                  {ip, string},
-                                                  {port, integer},
-                                                  {priority, integer},
-                                                  {node, string},
-                                                  {uptime, integer},
-                                                  {status, string},
-                                                  {resource, string},
-                                                  {statustext, string}
-                                                 ]}}
-                                     }}},
+                           args = [{user, binary}, {host, binary}],
+                           result = {user_sessions_info, SessionDisplay}},
 
         #ejabberd_commands{name = set_presence,
                            tags = [session],
                            desc = "Set presence of a session",
                            module = ?MODULE, function = set_presence,
-                           args = [{user, string}, {host, string},
-                                   {resource, string}, {type, string},
-                                   {show, string}, {status, string},
-                                   {priority, string}],
+                           args = [{user, binary}, {host, binary},
+                                   {resource, binary}, {type, binary},
+                                   {show, binary}, {status, binary},
+                                   {priority, binary}],
                            result = {res, rescode}}
         ].
 
@@ -189,86 +178,61 @@ status_list(Status) ->
 
 
 get_status_list(Host, StatusRequired) ->
-    %% Get list of all logged users
-    Sessions = ejabberd_sm:dirty_get_my_sessions_list(),
-    %% Reformat the list
-    Sessions2 = [ {Session#session.usr, Session#session.sid, Session#session.priority} || Session <- Sessions],
-    Fhost = case Host of
-        all ->
-            %% All hosts are requested, so dont filter at all
-            fun(_, _) -> true end;
-        _ ->
-            %% Filter the list, only Host is interesting
-            fun(A, B) -> A == B end
+    Sessions0 = case Host of
+        all -> ejabberd_sm:get_full_session_list();
+        _ -> ejabberd_sm:get_vh_session_list(Host)
     end,
-    Sessions3 = [ {Pid, Server, Priority} || {{_User, Server, _Resource}, {_, Pid}, Priority} <- Sessions2, apply(Fhost, [Server, Host])],
-    %% For each Pid, get its presence
-    Sessions4 = [ {ejabberd_c2s:get_presence(Pid), Server, Priority} || {Pid, Server, Priority} <- Sessions3],
+    Sessions = [ {ejabberd_c2s:get_presence(Pid), Server, Priority}
+                 || {{_, Server, _}, {_, Pid}, Priority, _} <- Sessions0 ],
+
     %% Filter by status
     Fstatus = case StatusRequired of
-        all ->
-            fun(_, _) -> true end;
-        _ ->
-            fun(A, B) -> A == B end
+        all -> fun(_, _) -> true end;
+        _ -> fun(A, B) -> A == B end
     end,
     [{User, Server, Resource, Priority, StatusText}
-     || {{User, Resource, Status, StatusText}, Server, Priority} <- Sessions4,
+     || {{User, Resource, Status, StatusText}, Server, Priority} <- Sessions,
         apply(Fstatus, [Status, StatusRequired])].
 
 connected_users_info() ->
-    USRIs = ejabberd_sm:get_full_session_list(),
-    CurrentSec = calendar:datetime_to_gregorian_seconds({date(), time()}),
-    lists:map(
-        fun({{U, S, R}, {Now, Pid}, Priority, Info}) ->
-                Conn = proplists:get_value(conn, Info),
-                {Ip, Port} = proplists:get_value(ip, Info),
-                IPS = inet_parse:ntoa(Ip),
-                NodeS = atom_to_list(node(Pid)),
-                Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
-                        calendar:now_to_local_time(Now)),
-                {[U, $@, S, $/, R], atom_to_list(Conn), IPS, Port, Priority, NodeS, Uptime}
-        end,
-        USRIs).
+    connected_users_info(all).
 
-connected_users_vhost(Host) ->
-    USRs = ejabberd_sm:get_vh_session_list(list_to_binary(Host)),
-    [ [U, $@, S, $/, R] || {U, S, R} <- USRs].
+connected_users_info(Host) ->
+    USRIs = case Host of
+        all -> ejabberd_sm:get_full_session_list();
+        _ -> ejabberd_sm:get_vh_session_list(Host)
+    end,
+    lists:map(fun format_user_info/1, USRIs).
 
 set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
     Pid = ejabberd_sm:get_session_pid(User, Host, Resource),
-    USR = User ++ "@" ++ Host ++ "/" ++ Resource,
-    US = User ++ "@" ++ Host,
-    Message = {route_xmlstreamelement,
-               #xmlel{ name = "presence",
-                      attrs = [{"from", USR}, {"to", US}, {"type", Type}],
-                      children = [#xmlel{ name = "show", children = [#xmlcdata{content = Show}]},
-                                  #xmlel{ name = "status", children = [#xmlcdata{content = Status}]},
-                                  #xmlel{ name = "priority", children = [#xmlcdata{content = Priority}]}]}},
-    Pid ! Message.
+    USR = <<User/binary, $@, Host/binary, $/, Resource/binary>>,
+    US = <<User/binary, $@, Host/binary>>, 
+    Message = {xmlstreamelement,
+               #xmlel{ name = <<"presence">>,
+                      attrs = [{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
+                      children = [#xmlel{ name = <<"show">>, children = [#xmlcdata{content = Show}]},
+                                  #xmlel{ name = <<"status">>, children = [#xmlcdata{content = Status}]},
+                                  #xmlel{ name = <<"priority">>, children = [#xmlcdata{content = Priority}]}]}},
+    ?GEN_FSM:send_event(Pid, Message).
 
 user_sessions_info(User, Host) ->
-    CurrentSec = calendar:datetime_to_gregorian_seconds({date(), time()}),
-    US = {User, Host},
-    Sessions = case catch mnesia:dirty_index_read(session, US, #session.us) of
-        {'EXIT', _Reason} ->
-            [];
-        Ss ->
-            Ss
-    end,
-    lists:map(
-        fun(Session) ->
-                {_U, _S, Resource} = Session#session.usr,
-                {Now, Pid} = Session#session.sid,
-                {_U, _Resource, Status, StatusText} = ejabberd_c2s:get_presence(Pid),
-                Info = Session#session.info,
-                Priority = Session#session.priority,
-                Conn = proplists:get_value(conn, Info),
-                {Ip, Port} = proplists:get_value(ip, Info),
-                IPS = inet_parse:ntoa(Ip),
-                NodeS = atom_to_list(node(Pid)),
-                Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
-                        calendar:now_to_local_time(Now)),
-                {atom_to_list(Conn), IPS, Port, Priority, NodeS, Uptime, Status, Resource, StatusText}
-        end,
-        Sessions).
+    Resources = ejabberd_sm:get_user_resources(User, Host),
+    lists:foldl(fun(Res, Acc) ->
+                case ejabberd_sm:get_session(User, Host, Res) of
+                    offline -> Acc;
+                    Session -> [format_user_info(Session)|Acc]
+                end
+        end, [], Resources).
 
+format_user_info(Usr) ->
+    format_user_info(Usr, calendar:datetime_to_gregorian_seconds({date(), time()})).
+
+format_user_info({{U, S, R}, {Now, Pid}, Priority, Info}, CurrentSec) ->
+    Conn = proplists:get_value(conn, Info),
+    {Ip, Port} = proplists:get_value(ip, Info),
+    IPS = inet_parse:ntoa(Ip),
+    NodeS = atom_to_list(node(Pid)),
+    Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
+            calendar:now_to_local_time(Now)),
+    {[U, $@, S, $/, R], atom_to_list(Conn), IPS, Port, Priority, NodeS, Uptime}.

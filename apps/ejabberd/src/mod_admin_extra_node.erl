@@ -30,7 +30,6 @@
 -export([
      commands/0,
 
-	 compile/1,
 	 load_config/1,
 	 get_cookie/0,
 	 remove_node/1
@@ -45,11 +44,6 @@
 
 commands() ->
     [
-        #ejabberd_commands{name = compile, tags = [erlang],
-                           desc = "Recompile and reload Erlang source code file",
-                           module = ?MODULE, function = compile,
-                           args = [{file, string}],
-                           result = {res, rescode}},
         #ejabberd_commands{name = load_config, tags = [server],
                            desc = "Load ejabberd configuration file",
                            module = ?MODULE, function = load_config,
@@ -71,12 +65,6 @@ commands() ->
 %%%
 %%% Node
 %%%
-
-compile(File) ->
-    case compile:file(File) of
-        ok -> ok;
-        _ -> error
-    end.
 
 load_config(Path) ->
     ok = ejabberd_config:load_file(Path).

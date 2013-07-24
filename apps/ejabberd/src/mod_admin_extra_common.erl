@@ -46,7 +46,7 @@ get_lastactivity_module(Server) ->
     end.
 
 kick_session(User, Server, Resource, ReasonText) ->
-    kick_this_session(list_to_binary(User), list_to_binary(Server), list_to_binary(Resource), prepare_reason(ReasonText)),
+    kick_this_session(User, Server, Resource, prepare_reason(ReasonText)),
     ok.
 
 kick_this_session(User, Server, Resource, Reason) ->
@@ -56,10 +56,12 @@ kick_this_session(User, Server, Resource, Reason) ->
         #xmlel{name = <<"broadcast">>, children=[{exit, Reason}]}).
 
 prepare_reason([]) ->
-        <<"Kicked by administrator">>;
+    <<"Kicked by administrator">>;
 prepare_reason([Reason]) ->
-        prepare_reason(Reason);
+    prepare_reason(Reason);
 prepare_reason(Reason) when is_list(Reason) ->
-        list_to_binary(Reason);
+    list_to_binary(Reason);
+prepare_reason(Reason) when is_binary(Reason) ->
+    Reason;
 prepare_reason(StringList) ->
-        prepare_reason(string:join(StringList, "_")).
+    prepare_reason(string:join(StringList, "_")).
