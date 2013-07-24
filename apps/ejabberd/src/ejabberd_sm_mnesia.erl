@@ -45,11 +45,12 @@ get_sessions() ->
 
 -spec get_sessions(binary()) -> list(tuple()).
 get_sessions(Server) ->
-    mnesia:dirty_select(
+    Sessions = mnesia:dirty_select(
         session,
-        [{#session{usr = '$1', _ = '_' },
+          [{#session{usr = '$1', sid='$2', priority='$3', info='$4', _ = '_' },
           [{'==', {element, 2, '$1'}, Server}],
-          ['$1']}]).
+          ['$$']}]),
+    [ {USR, SID, Pri, Info} || [USR, SID, Pri, Info] <- Sessions ].
 
 -spec get_sessions(binary(), binary()) -> list(#session{}).
 get_sessions(User, Server) ->

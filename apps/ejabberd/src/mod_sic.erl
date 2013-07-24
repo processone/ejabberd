@@ -73,7 +73,7 @@ process_sm_iq(_From, _To, #iq{type = 'set', sub_el = SubEl} = IQ) ->
 
 get_ip({User, Server, Resource},
        #iq{sub_el = #xmlel{} = SubEl} = IQ) ->
-    case ejabberd_sm:get_user_ip(User, Server, Resource) of
+    case ejabberd_sm:get_session_ip(User, Server, Resource) of
 	{IP, _} when is_tuple(IP) ->
 	    IQ#iq{
 	      type = 'result',

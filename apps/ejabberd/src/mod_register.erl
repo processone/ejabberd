@@ -523,7 +523,7 @@ parse_ip_netmask(S) ->
 check_ip_access(_Source, []) ->
     allow;
 check_ip_access({User, Server, Resource}, IPAccess) ->
-    case ejabberd_sm:get_user_ip(User, Server, Resource) of
+    case ejabberd_sm:get_session_ip(User, Server, Resource) of
 	{IPAddress, _PortNumber} -> check_ip_access(IPAddress, IPAccess);
 	_ -> true
     end;

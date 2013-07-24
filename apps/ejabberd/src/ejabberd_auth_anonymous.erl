@@ -217,7 +217,7 @@ dirty_get_registered_users() ->
     [].
 
 get_vh_registered_users(Server) ->
-    [{U, S} || {U, S, _R} <- ejabberd_sm:get_vh_session_list(Server)].
+    [{U, S} || {{U, S, _R}, _, _, _} <- ejabberd_sm:get_vh_session_list(Server)].
 
 
 %% Return password of permanent user or false for anonymous users

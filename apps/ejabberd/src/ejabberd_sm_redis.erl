@@ -49,7 +49,11 @@ get_sessions(Server) ->
     Res = lists:map(fun(K) ->
                 Sessions = ejabberd_redis:cmd(["SMEMBERS", K]),
                 lists:map(fun(S) ->
-                            (binary_to_term(S))#session.usr
+                            Session = binary_to_term(S),
+                            {Session#session.usr,
+                             Session#session.sid,
+                             Session#session.priority,
+                             Session#session.info}
                           end,
                 Sessions)
           end, Keys),
