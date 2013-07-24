@@ -54,10 +54,10 @@ commands() ->
         #ejabberd_commands{name = add_rosteritem, tags = [roster],
                            desc = "Add an item to a user's roster (supports ODBC)",
                            module = ?MODULE, function = add_rosteritem,
-                           args = [{localuser, string}, {localserver, string},
-                                   {user, string}, {server, string},
-                                   {nick, string}, {group, string},
-                                   {subs, string}],
+                           args = [{localuser, binary}, {localserver, binary},
+                                   {user, binary}, {server, binary},
+                                   {nick, binary}, {group, binary},
+                                   {subs, binary}],
                            result = {res, rescode}},
         %%{"", "subs= none, from, to or both"},
         %%{"", "example: add-roster peter localhost mike server.com MiKe Employees both"},
@@ -65,8 +65,8 @@ commands() ->
         #ejabberd_commands{name = delete_rosteritem, tags = [roster],
                            desc = "Delete an item from a user's roster (supports ODBC)",
                            module = ?MODULE, function = delete_rosteritem,
-                           args = [{localuser, string}, {localserver, string},
-                                   {user, string}, {server, string}],
+                           args = [{localuser, binary}, {localserver, binary},
+                                   {user, binary}, {server, binary}],
                            result = {res, rescode}},
         #ejabberd_commands{name = process_rosteritems, tags = [roster],
                            desc = "List or delete rosteritems that match filtering options",
@@ -87,7 +87,7 @@ commands() ->
                            "  USERS = JID[:JID]* | any\n"
                            "  CONTACTS = JID[:JID]* | any\n"
                            "  JID = characters valid in a JID, and can use the "
-                           "globs: *, ?, ! and [...]\n"
+                           "Regular expression syntax: http://www.erlang.org/doc/man/re.html#id212737\n"
                            "\n"
                            "This example will list roster items with subscription "
                            "'none', 'from' or 'to' that have any ask property, of "
@@ -104,28 +104,28 @@ commands() ->
         #ejabberd_commands{name = get_roster, tags = [roster],
                            desc = "Get roster of a local user",
                            module = ?MODULE, function = get_roster,
-                           args = [{user, string}, {host, string}],
+                           args = [{user, binary}, {host, binary}],
                            result = {contacts, {list, {contact, {tuple, [
-                                {jid, string},
-                                {nick, string},
-                                {subscription, string},
-                                {ask, string},
-                                {group, string}
+                                {jid, binary},
+                                {nick, binary},
+                                {subscription, binary},
+                                {ask, binary},
+                                {group, binary}
                                 ]}}}}},
         #ejabberd_commands{name = push_roster, tags = [roster],
                            desc = "Push template roster from file to a user",
                            module = ?MODULE, function = push_roster,
-                           args = [{file, string}, {user, string}, {host, string}],
+                           args = [{file, string}, {user, binary}, {host, binary}],
                            result = {res, rescode}},
         #ejabberd_commands{name = push_roster_all, tags = [roster],
                            desc = "Push template roster from file to all those users",
                            module = ?MODULE, function = push_roster_all,
                            args = [{file, string}],
                            result = {res, rescode}},
-        #ejabberd_commands{name = push_alltoall, tags = [roster],
+        #ejabberd_commands{name = push_roster_alltoall, tags = [roster],
                            desc = "Add all the users to all the users of Host in Group",
                            module = ?MODULE, function = push_alltoall,
-                           args = [{host, string}, {group, string}],
+                           args = [{host, string}, {group, binary}],
                            result = {res, rescode}}
         ].
 
@@ -134,7 +134,7 @@ commands() ->
 %%%
 
 add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs) ->
-    case add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, list_to_atom(Subs), []) of
+    case subscribe(LocalUser, LocalServer, User, Server, Nick, Group, Subs, []) of
         {atomic, ok} ->
             push_roster_item(LocalUser, LocalServer, User, Server, {add, Nick, Subs, Group}),
             ok;
@@ -142,14 +142,7 @@ add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs) ->
             error
     end.
 
-add_rosteritem(LU, LS, User, Server, Nick, Group, Subscription, Xattrs) ->
-    subscribe(LU, LS, User, Server, Nick, Group, Subscription, Xattrs).
-
-subscribe(LU, LS, User, Server, Nick, Group, Subscription, _Xattrs) ->
-    SubscriptionS = case is_atom(Subscription) of
-        true -> atom_to_list(Subscription);
-        false -> Subscription
-    end,
+subscribe(LU, LS, User, Server, Nick, Group, SubscriptionS, _Xattrs) ->
     ItemEl = build_roster_item(User, Server, {add, Nick, SubscriptionS, Group}),
     {ok, M} = loaded_module(LS,[mod_roster_odbc,mod_roster]),
     M:set_items(
@@ -198,7 +191,7 @@ get_roster(User, Server) ->
 make_roster_xmlrpc(Roster) ->
     lists:foldl(
         fun(Item, Res) ->
-                JIDS = jlib:jid_to_string(Item#roster.jid),
+                JIDS = jlib:jid_to_binary(Item#roster.jid),
                 Nick = Item#roster.name,
                 Subs = atom_to_list(Item#roster.subscription),
                 Ask = atom_to_list(Item#roster.ask),
@@ -220,11 +213,18 @@ make_roster_xmlrpc(Roster) ->
 
 push_roster(File, User, Server) ->
     {ok, [Roster]} = file:consult(File),
-    subscribe_roster({User, Server, "", User}, Roster).
+    subscribe_roster({User, Server, "", User}, roster_list_to_binary(Roster)).
 
 push_roster_all(File) ->
     {ok, [Roster]} = file:consult(File),
-    subscribe_all(Roster).
+    subscribe_all(roster_list_to_binary(Roster)).
+
+roster_list_to_binary(Roster) ->
+    [ {
+            list_to_binary(Usr),
+            list_to_binary(Srv),
+            list_to_binary(Grp),
+            list_to_binary(Nick) } || {Usr, Srv, Grp, Nick} <- Roster ].
 
 subscribe_all(Roster) ->
     subscribe_all(Roster, Roster).
@@ -241,7 +241,7 @@ subscribe_roster({Name, Server, Group, Nick}, [{Name, Server, _, _} | Roster]) -
     subscribe_roster({Name, Server, Group, Nick}, Roster);
 %% Subscribe Name2 to Name1
 subscribe_roster({Name1, Server1, Group1, Nick1}, [{Name2, Server2, Group2, Nick2} | Roster]) ->
-    subscribe(Name1, Server1, Name2, Server2, Nick2, Group2, both, []),
+    subscribe(Name1, Server1, Name2, Server2, Nick2, Group2, <<"both">>, []),
     subscribe_roster({Name1, Server1, Group1, Nick1}, Roster).
 
 push_alltoall(S, G) ->
@@ -274,14 +274,14 @@ push_roster_item(LU, LS, R, U, S, Action) ->
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
     #xmlel{ name = <<"item">>,
-           attrs = [{<<"jid">>, jlib:jid_to_string(jlib:make_jid(U, S, ""))},
+           attrs = [{<<"jid">>, jlib:jid_to_binary(jlib:make_jid(U, S, <<"">>))},
                     {<<"name">>, Nick},
                     {<<"subscription">>, Subs}],
            children = [#xmlel{ name = <<"group">>, children = [#xmlcdata{content = Group}]}]
           };
 build_roster_item(U, S, remove) ->
     #xmlel{ name = <<"item">>,
-           attrs = [{<<"jid">>, jlib:jid_to_string(jlib:make_jid(U, S, ""))},
+           attrs = [{<<"jid">>, jlib:jid_to_binary(jlib:make_jid(U, S, <<"">>))},
                     {<<"subscription">>, <<"remove">>}]}.
 
 build_iq_roster_push(Item) ->
@@ -290,10 +290,10 @@ build_iq_roster_push(Item) ->
            children = [#xmlel{ name = <<"query">>, attrs = [{<<"xmlns">>, ?NS_ROSTER}], children = [Item]}] }.
 
 build_broadcast(U, S, {add, _Nick, Subs, _Group}) ->
-    build_broadcast(U, S, list_to_atom(Subs));
+    build_broadcast(U, S, binary_to_list(list_to_existing_atom(Subs)));
 build_broadcast(U, S, remove) ->
     build_broadcast(U, S, none);
-%% @spec (U::string(), S::string(), Subs::atom()) -> any()
+%% @spec (U::binary(), S::binary(), Subs::atom()) -> any()
 %% Subs = both | from | to | none
 build_broadcast(U, S, SubsAtom) when is_atom(SubsAtom) ->
     #xmlel{ name = <<"broadcast">>, children = [{item, {U, S, ""}, SubsAtom}] }.
@@ -325,19 +325,19 @@ process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
             ),
 
     Users = lists:foldl(
-            fun("any", _) -> ["*", "*@*"];
+            fun(<<"any">>, _) -> [<<".*">>, <<".*@.*">>];
                 (U, Us) -> [U | Us]
             end,
             [],
-            [S || S <- string:tokens(UsersS, ":")]
+            [list_to_binary(S) || S <- string:tokens(UsersS, ":")]
             ),
 
     Contacts = lists:foldl(
-            fun("any", _) -> ["*", "*@*"];
+            fun(<<"any">>, _) -> [<<".*">>, <<".*@.*">>];
                 (U, Us) -> [U | Us]
             end,
             [],
-            [S || S <- string:tokens(ContactsS, ":")]
+            [list_to_binary(S) || S <- string:tokens(ContactsS, ":")]
             ),
 
     case rosteritem_purge({Action, Subs, Asks, Users, Contacts}) of
@@ -351,7 +351,7 @@ process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
             error
     end.
 
-%% @spec ({Action::atom(), Subs::[atom()], Asks::[atom()], User::string(), Contact::string()}) -> {atomic, ok}
+%% @spec ({Action::atom(), Subs::[atom()], Asks::[atom()], User::binary(), Contact::binary()}) -> {atomic, ok}
 rosteritem_purge(Options) ->
     Num_rosteritems = mnesia:table_info(roster, size),
     io:format("There are ~p roster items in total.~n", [Num_rosteritems]),
@@ -406,41 +406,34 @@ decide_rip(Key, {_Action, Subs, Asks, User, Contact}) ->
     end.
 
 %% Returns true if the server of the JID is included in the servers
-decide_rip_jid({UName, UServer, _UResource}, Match_list) ->
-    decide_rip_jid({UName, UServer}, Match_list);
-decide_rip_jid({UName, UServer}, Match_list) ->
+decide_rip_jid({UName, UServer, _UResource}, MatchList) ->
+    decide_rip_jid({UName, UServer}, MatchList);
+decide_rip_jid({UName, UServer}, MatchList) ->
     lists:any(
-        fun(Match_string) ->
-                MJID = jlib:string_to_jid(Match_string),
+        fun(MatchString) ->
+                MJID = jlib:binary_to_jid(MatchString),
                 MName = MJID#jid.luser,
                 MServer = MJID#jid.lserver,
-                Is_server = is_glob_match(UServer, MServer),
+                IsServer = is_regexp_match(UServer, MServer),
                 case MName of
                     [] when UName == [] ->
-                        Is_server;
+                        IsServer;
                     [] ->
                         false;
                     _ ->
-                        Is_server
-                        andalso is_glob_match(UName, MName)
+                        IsServer
+                        andalso is_regexp_match(UName, MName)
                 end
         end,
-        Match_list).
+        MatchList).
 
-%% Copied from ejabberd-2.0.0/src/acl.erl
 is_regexp_match(String, RegExp) ->
-    case ejabberd_regexp:run(String, RegExp) of
+    case re:run(String, RegExp) of
         nomatch ->
             false;
-        match ->
+        {match, _} ->
             true;
         {error, ErrDesc} ->
-            io:format(
-                "Wrong regexp ~p in ACL: ~p",
-                [RegExp, ErrDesc]),
+            io:format("Wrong regexp ~p: ~p", [RegExp, ErrDesc]),
             false
     end.
-is_glob_match(String, [$! | Glob]) ->
-    not is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob));
-is_glob_match(String, Glob) ->
-    is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
