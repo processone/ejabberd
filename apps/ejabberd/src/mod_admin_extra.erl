@@ -32,7 +32,9 @@
 -export([start/2, stop/1]).
 
 -define(SUBMODS, [node, accounts, sessions, vcard, roster, last,
-                  private, srg, stanza, stats]).
+                  private, stanza, stats
+                  %,srg %% Disabled until we add mod_shared_roster
+                 ]).
 
 %%%
 %%% gen_mod
