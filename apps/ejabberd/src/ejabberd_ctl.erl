@@ -327,7 +327,9 @@ format_arg(Arg, string) ->
     Parse = "~" ++ NumChars ++ "c",
     format_arg2(Arg, Parse);
 format_arg(Arg, binary) ->
-    list_to_binary(format_arg(Arg, string)).
+    list_to_binary(format_arg(Arg, string));
+format_arg(Arg, {list, Type}) ->
+    [format_arg(Token, Type) || Token <- string:tokens(Arg, ";")].
 
 format_arg2(Arg, Parse)->
     {ok, [Arg2], _RemainingArguments} = io_lib:fread(Parse, Arg),
