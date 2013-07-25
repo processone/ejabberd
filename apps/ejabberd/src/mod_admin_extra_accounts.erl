@@ -121,7 +121,7 @@ get_sha(AccountPass) ->
                    || X <- binary_to_list(crypto:sha(AccountPass))]).
 
 num_active_users(Host, Days) ->
-    Mod = mod_admin_extra_common:get_lastactivity_module(Host),
+    Mod = mod_admin_extra_last:get_lastactivity_module(Host),
     {MegaSecs, Secs, _MicroSecs} = now(),
     TimeStamp = MegaSecs * 1000000 + Secs,
     TS = TimeStamp - Days * 86400,
@@ -202,7 +202,7 @@ get_lastactivity_module(Server) ->
     end.
 
 ban_account(User, Host, ReasonText) ->
-    Reason = mod_admin_extra_common:prepare_reason(ReasonText),
+    Reason = mod_admin_extra_sessions:prepare_reason(ReasonText),
     kick_sessions(User, Host, Reason),
     set_random_password(User, Host, Reason),
     ok.
@@ -212,7 +212,7 @@ kick_sessions(User1, Server1, Reason) ->
     Server = list_to_binary(Server1),
     lists:map(
         fun(Resource) ->
-                mod_admin_extra_common:kick_this_session(User, Server, Resource, Reason)
+                mod_admin_extra_sessions:kick_this_session(User, Server, Resource, Reason)
         end,
         ejabberd_sm:get_user_resources(User, Server)).
 

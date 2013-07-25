@@ -33,6 +33,8 @@
     num_resources/2,
     resource_num/3,
     kick_session/4,
+    kick_this_session/4,
+    prepare_reason/1, 
     status_num/2, status_num/1,
     status_list/2, status_list/1,
     connected_users_info/0,
@@ -164,7 +166,25 @@ resource_num(User, Host, Num) ->
     end.
 
 kick_session(User, Server, Resource, ReasonText) ->
-    mod_admin_extra_common:kick_session(User, Server, Resource, ReasonText).
+    kick_this_session(User, Server, Resource, prepare_reason(ReasonText)),
+    ok.
+
+kick_this_session(User, Server, Resource, Reason) ->
+    ejabberd_router:route(
+        jlib:make_jid(<<"">>, <<"">>, <<"">>),
+        jlib:make_jid(User, Server, Resource),
+        #xmlel{name = <<"broadcast">>, children=[{exit, Reason}]}).
+
+prepare_reason([]) ->
+    <<"Kicked by administrator">>;
+prepare_reason([Reason]) ->
+    prepare_reason(Reason);
+prepare_reason(Reason) when is_list(Reason) ->
+    list_to_binary(Reason);
+prepare_reason(Reason) when is_binary(Reason) ->
+    Reason;
+prepare_reason(StringList) ->
+    prepare_reason(string:join(StringList, "_")).
 
 status_num(Host, Status) ->
     length(get_status_list(Host, Status)).

@@ -30,7 +30,8 @@
 -export([
     commands/0,
 	 
-    set_last/4
+    set_last/4,
+    get_lastactivity_module/1
 	]).
 
 -include("ejabberd.hrl").
@@ -59,6 +60,11 @@ commands() ->
 %%%
 
 set_last(User, Server, Timestamp, Status) ->
-    Mod = mod_admin_extra_common:get_lastactivity_module(Server),
+    Mod = get_lastactivity_module(Server),
     Mod:store_last_info(User, Server, Timestamp, Status).
 
+get_lastactivity_module(Server) ->
+    case lists:member(mod_last, gen_mod:loaded_modules(Server)) of
+        true -> mod_last;
+        _ -> mod_last_odbc
+    end.
