@@ -132,6 +132,6 @@ build_packet(message_headline, [Subject, Body]) ->
 
 send_stanza_c2s(Username, Host, Resource, Stanza) ->
     C2sPid = ejabberd_sm:get_session_pid(Username, Host, Resource),
-    XmlEl = xml_stream:parse_element(Stanza),
+    {ok, XmlEl} = exml:parse(Stanza),
     p1_fsm:send_event(C2sPid, {xmlstreamelement, XmlEl}).
 

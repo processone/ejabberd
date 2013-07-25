@@ -30,6 +30,7 @@
 -export([get_db_type/0,
 	 sql_transaction/2,
 	 get_last/2,
+     select_last/3,
 	 set_last_t/4,
 	 del_last/2,
 	 get_password/2,
@@ -156,6 +157,12 @@ get_last(LServer, Username) ->
       LServer,
       ["select seconds, state from last "
        "where username='", Username, "'"]).
+
+select_last(LServer, TStamp, Comparator) ->
+    ejabberd_odbc:sql_query(
+        LServer,
+        ["select username, seconds, state from last "
+         "where seconds ", Comparator, " ", integer_to_list(TStamp), ";"]).
 
 set_last_t(LServer, Username, Seconds, State) ->
     update(LServer, "last", ["username", "seconds", "state"],

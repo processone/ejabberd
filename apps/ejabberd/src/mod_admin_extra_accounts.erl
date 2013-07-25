@@ -121,40 +121,15 @@ get_sha(AccountPass) ->
                    || X <- binary_to_list(crypto:sha(AccountPass))]).
 
 num_active_users(Host, Days) ->
+    Mod = mod_admin_extra_common:get_lastactivity_module(Host),
     {MegaSecs, Secs, _MicroSecs} = now(),
     TimeStamp = MegaSecs * 1000000 + Secs,
     TS = TimeStamp - Days * 86400,
-    case catch mnesia:dirty_select(
-            last_activity, [{{last_activity, {'_', Host}, '$1', '_'},
-                             [{'>', '$1', TS}],
-                             [{'trunc', {'/',
-                                         {'-', TimeStamp, '$1'},
-                                         86400}}]}]) of
+    case catch Mod:select(Host, TS, '>') of
         {'EXIT', _Reason} ->
-            [];
-        Vals ->
-            Hist = histogram(Vals),
-            if
-                Hist == [] ->
-                    0;
-                true ->
-                    Left = Days - length(Hist),
-                    Tail = lists:duplicate(Left, lists:last(Hist)),
-                    lists:nth(Days, Hist ++ Tail)
-            end
-    end.
-histogram(Values) ->
-    histogram(lists:sort(Values), 0, 0, []).
-histogram([H | T], Current, Count, Hist) when Current == H ->
-    histogram(T, Current, Count + 1, Hist);
-histogram([H | _] = Values, Current, Count, Hist) when Current < H ->
-    histogram(Values, Current + 1, Count, [Count | Hist]);
-histogram([], _Current, Count, Hist) ->
-    if
-        Count > 0 ->
-            lists:reverse([Count | Hist]);
-        true ->
-            lists:reverse(Hist)
+            0;
+        Vals0 ->
+            length(Vals0)           
     end.
 
 delete_old_users(Days) ->

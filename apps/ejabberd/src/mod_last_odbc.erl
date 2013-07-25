@@ -36,6 +36,7 @@
          on_presence_update/4,
          store_last_info/4,
          get_last_info/2,
+         select/3,
          remove_user/2]).
 
 -include("ejabberd.hrl").
@@ -193,6 +194,15 @@ get_last_info(LUser, LServer) ->
         Res ->
             Res
     end.
+
+select(LServer, TStamp, Comparator) ->
+    case catch odbc_queries:select_last(LServer, TStamp, atom_to_list(Comparator)) of
+        {selected, ["username", "seconds","state"], Vals} ->
+            [ list_to_integer(binary_to_list(UserTS)) || {_, UserTS, _} <- Vals ];
+        Reason ->
+            {error, {invalid_result, Reason}}
+    end.
+
 
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
