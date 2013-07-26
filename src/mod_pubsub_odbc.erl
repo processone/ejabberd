@@ -4,13 +4,13 @@
 %%% compliance with the License. You should have received a copy of the
 %%% Erlang Public License along with this software. If not, it can be
 %%% retrieved via the world wide web at http://www.erlang.org/.
-%%% 
+%%%
 %%%
 %%% Software distributed under the License is distributed on an "AS IS"
 %%% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
 %%% the License for the specific language governing rights and limitations
 %%% under the License.
-%%% 
+%%%
 %%%
 %%% The Initial Developer of the Original Code is ProcessOne.
 %%% Portions created by ProcessOne are Copyright 2006-2013, ProcessOne
@@ -3938,7 +3938,7 @@ broadcast_purge_node(Host, Node, NodeId, Type, NodeOptions) ->
 		    broadcast_stanza(Host, Node, NodeId, Type,
 				     NodeOptions, SubsByDepth, nodes, Stanza, false),
 		    {result, true};
-		_ -> 
+		_ ->
 		    {result, false}
 	    end;
 	_ ->
@@ -4059,7 +4059,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
     broadcast_stanza({LUser, LServer, LResource}, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
     SenderResource = case LResource of
-	[] -> 
+	[] ->
 	    case user_resources(LUser, LServer) of
 		[Resource|_] -> Resource;
 		_ -> ""
@@ -4763,9 +4763,9 @@ tree_action(Host, Function, Args) ->
     ?DEBUG("tree_action ~p ~p ~p", [Host, Function, Args]),
     Fun = fun () -> tree_call(Host, Function, Args) end,
     case catch ejabberd_odbc:sql_bloc(odbc_conn(Host), Fun) of
-    {atomic, Result} -> 
+    {atomic, Result} ->
 	Result;
-    {aborted, Reason} -> 
+    {aborted, Reason} ->
 	?ERROR_MSG("transaction return internal error: ~p~n",[{aborted, Reason}]),
 	{error, ?ERR_INTERNAL_SERVER_ERROR}
     end.

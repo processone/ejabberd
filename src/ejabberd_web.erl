@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_web.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Purpose :
 %%% Created : 28 Feb 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%

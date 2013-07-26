@@ -25,12 +25,12 @@ prepare_dirs ()
 	MSGS_DIR=$EJA_DIR/priv/msgs
 
 	if !([[ -n $EJA_DIR ]])
-	then 
+	then
 	echo "ejabberd dir does not exist: $EJA_DIR"
 	fi
 
 	if !([[ -x $EXTRACT_BEAM ]])
-	then 
+	then
 	sh -c "cd $EXTRACT_DIR; $ERL -compile $EXTRACT_ERL"
 	fi
 }
@@ -48,7 +48,7 @@ extract_lang ()
 	cd $SRC_DIR
 	$ERL -pa $EXTRACT_DIR -noinput -noshell -s extract_translations -s init stop -extra . $MSGS_PATH >$MSGS_PATH.new
 	sed -e 's/^% \.\//% /g;' $MSGS_PATH.new > $MSGS_PATH.new2
-	mv $MSGS_PATH.new2 $MSGS_PATH.new 
+	mv $MSGS_PATH.new2 $MSGS_PATH.new
 
 	echo -n " old..."
 	$ERL -pa $EXTRACT_DIR -noinput -noshell -s extract_translations -s init stop -extra -unused . $MSGS_PATH >$MSGS_PATH.unused
@@ -126,7 +126,7 @@ find_unused_full ()
 
 	cp $DELFILE2 $DELFILE1
 	STRING=`head -1 $DELFILE1`
-	until [[ $STRING == ENDFILEMARK ]]; do 
+	until [[ $STRING == ENDFILEMARK ]]; do
 		cp $DELFILE2 $DELFILE1
 		cp $DATFILE2 $DATFILE1
 
@@ -202,7 +202,7 @@ extract_lang_popot2po ()
 	POT_PATH=$MSGS_DIR/$PROJECT.pot
 
 	msgmerge $PO_PATH $POT_PATH >$PO_PATH.translate 2>/dev/null
-	mv $PO_PATH.translate $PO_PATH 
+	mv $PO_PATH.translate $PO_PATH
 }
 
 extract_lang_po2msg ()
@@ -240,7 +240,7 @@ extract_lang_po2msg ()
 extract_lang_updateall ()
 {
 	echo "Generating POT"
-	extract_lang_src2pot 
+	extract_lang_src2pot
 
 	cd $MSGS_DIR
 	echo ""
@@ -335,7 +335,7 @@ while [ $# -ne 0 ] ; do
 		;;
 	-src2pot)
 		prepare_dirs
-		extract_lang_src2pot 
+		extract_lang_src2pot
 		;;
 	-po2msg)
 		LANG_CODE=$1

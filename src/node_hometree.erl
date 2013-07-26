@@ -4,13 +4,13 @@
 %%% compliance with the License. You should have received a copy of the
 %%% Erlang Public License along with this software. If not, it can be
 %%% retrieved via the world wide web at http://www.erlang.org/.
-%%% 
+%%%
 %%%
 %%% Software distributed under the License is distributed on an "AS IS"
 %%% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
 %%% the License for the specific language governing rights and limitations
 %%% under the License.
-%%% 
+%%%
 %%%
 %%% The Initial Developer of the Original Code is ProcessOne.
 %%% Portions created by ProcessOne are Copyright 2006-2013, ProcessOne
@@ -198,11 +198,11 @@ create_node_permission(Host, ServerHost, NodeId, _ParentNodeId, Owner, Access) -
 	      end,
     {result, Allowed}.
 
-%% @spec (NodeIdx, Owner) -> {result, {default, broadcast}} 
+%% @spec (NodeIdx, Owner) -> {result, {default, broadcast}}
 %%	 NodeIdx = mod_pubsub:nodeIdx()
 %%	 Owner   = mod_pubsub:jid()
 %% @doc <p></p>
--spec(create_node/2 :: 
+-spec(create_node/2 ::
 (
   NodeIdx :: mod_pubsub:nodeIdx(),
   Owner   :: jid())
@@ -954,7 +954,7 @@ unsub_with_subid(NodeIdx, SubId, #pubsub_state{stateid = {Entity, _}} = SubState
     end.
 
 %% TODO : doc
-%% @spec (Host, Owner) -> {result, Reply} | {error, Reason} 
+%% @spec (Host, Owner) -> {result, Reply} | {error, Reason}
 %%	 Host  = mod_pubsub:hostPubsub()
 %%   Owner = mod_pubsub:jid()
 %%   Reply = [] | [mod_pubsub:nodeId()]
@@ -1001,7 +1001,7 @@ get_pending_nodes(Host, Owner) ->
   Pubsub_State :: mod_pubsub:pubsubState())
     -> {value, NodeId::mod_pubsub:nodeId()}
      | false
-    
+
 ).
 get_nodes_helper(NodeTree, #pubsub_state{stateid = {_, N}, subscriptions = Subs}) ->
     HasPending = fun ({pending, _}) -> true;

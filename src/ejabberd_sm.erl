@@ -426,8 +426,8 @@ set_session(SID, User, Server, Resource, Priority, Info) ->
 	end,
     mnesia:sync_dirty(F).
 
-%% Recalculates alive sessions when Node goes down 
-%% and updates session and session_counter tables 
+%% Recalculates alive sessions when Node goes down
+%% and updates session and session_counter tables
 recount_session_table(Node) ->
     F = fun() ->
 		Es = mnesia:select(
@@ -447,7 +447,7 @@ recount_session_table(Node) ->
 				    [{'==', {element, 2, '$1'}, LServer}],
 				    ['$1']}]),
 				mnesia:write(
-				    #session_counter{vhost = LServer, 
+				    #session_counter{vhost = LServer,
 						     count = length(Hs)})
 			      end, ?MYHOSTS)
 	end,

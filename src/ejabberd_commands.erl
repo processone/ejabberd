@@ -297,7 +297,7 @@ execute_command(Name, Arguments) ->
     execute_command([], noauth, Name, Arguments).
 
 %% @spec (AccessCommands, Auth, Name::atom(), Arguments) -> ResultTerm | {error, Error}
-%% where 
+%% where
 %%       AccessCommands = [{Access, CommandNames, Arguments}]
 %%       Auth = {User::string(), Server::string(), Password::string()} | noauth
 %%       Method = atom()
@@ -356,7 +356,7 @@ get_tags_commands() ->
 %% -----------------------------
 
 %% @spec (AccessCommands, Auth, Method, Command, Arguments) -> ok
-%% where 
+%% where
 %%       AccessCommands =  [ {Access, CommandNames, Arguments} ]
 %%       Auth = {User::string(), Server::string(), Password::string()} | noauth
 %%       Method = atom()
@@ -426,8 +426,8 @@ check_access_arguments(Command, ArgumentRestrictions, Arguments) ->
 
 tag_arguments(ArgsDefs, Args) ->
     lists:zipwith(
-      fun({ArgName, _ArgType}, ArgValue) -> 
+      fun({ArgName, _ArgType}, ArgValue) ->
 	      {ArgName, ArgValue}
-      end, 
+      end,
       ArgsDefs,
       Args).

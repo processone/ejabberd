@@ -160,33 +160,33 @@ build_script(Dir, UpdatedBeams) ->
     {Script, LowLevelScript, Check1}.
 
 %% Copied from Erlang/OTP file: lib/sasl/src/systools.hrl
--record(application, 
+-record(application,
 	{name,			%% Name of the application, atom().
          type = permanent,	%% Application start type, atom().
 	 vsn = "",         	%% Version of the application, string().
 	 id = "",		%% Id of the application, string().
 	 description = "",	%% Description of application, string().
-	 modules = [],		%% [Module | {Module,Vsn}] of modules 
-				%% incorporated in the application, 
+	 modules = [],		%% [Module | {Module,Vsn}] of modules
+				%% incorporated in the application,
 				%% Module = atom(), Vsn = string().
 	 uses = [],		%% [Application] list of applications required
 	 			%% by the application, Application = atom().
 	 includes = [],		%% [Application] list of applications included
 	 			%% by the application, Application = atom().
-	 regs = [],		%% [RegNames] a list of registered process 
+	 regs = [],		%% [RegNames] a list of registered process
 				%% names used by the application, RegNames =
 				%% atom().
-	 env = [],		%% [{Key,Value}] environment variable of 
+	 env = [],		%% [{Key,Value}] environment variable of
 	 			%% application, Key = Value = term().
-	 maxT = infinity,	%% Max time an application may exist, 
+	 maxT = infinity,	%% Max time an application may exist,
 				%% integer() | infinity.
 	 maxP = infinity,  	%% Max number of processes in an application,
 	 			%% integer() | infinity.
-	 mod = [],		%% [] | {Mod, StartArgs}, Mod= atom(), 
+	 mod = [],		%% [] | {Mod, StartArgs}, Mod= atom(),
 				%% StartArgs = list().
 	 start_phases = [],	%% [] | {Phase, PhaseArgs}, Phase = atom(),
 				%% PhaseArgs = list().
-         dir = ""		%% The directory where the .app file was 
+         dir = ""		%% The directory where the .app file was
 				%% found (internal use).
 	}).
 

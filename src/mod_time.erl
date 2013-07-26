@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_time.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Purpose :
 %%% Created : 18 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%

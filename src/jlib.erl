@@ -785,7 +785,7 @@ check_list(List) ->
 decode_base64(S) ->
     decode_base64_bin(S, <<>>).
 
-take_without_spaces(Bin, Count) -> 
+take_without_spaces(Bin, Count) ->
     take_without_spaces(Bin, Count, <<>>).
 
 take_without_spaces(Bin, 0, Acc) ->

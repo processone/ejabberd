@@ -53,7 +53,7 @@
 -define(TABLE, carboncopy).
 
 -type matchspec_atom() :: '_' | '$1' | '$2' | '$3'.
--record(carboncopy,{us :: {binary(), binary()} | matchspec_atom(), 
+-record(carboncopy,{us :: {binary(), binary()} | matchspec_atom(),
 		    resource :: binary() | matchspec_atom(),
 		    version :: binary() | matchspec_atom()}).
 
@@ -79,8 +79,8 @@ start(Host, Opts) ->
     catch _:_Error -> ok  %%probably table don't exist
     end,
     mnesia:create_table(?TABLE,
-	[{ram_copies, [node()]}, 
-	 {attributes, record_info(fields, ?TABLE)}, 
+	[{ram_copies, [node()]},
+	 {attributes, record_info(fields, ?TABLE)},
 	 {type, bag}]),
     mnesia:add_table_copy(?TABLE, node(), ram_copies),
     ejabberd_hooks:add(unset_presence_hook,Host, ?MODULE, remove_connection, 10),
@@ -116,7 +116,7 @@ iq_handler(From, _To,  #iq{type=set, sub_el = #xmlel{name = Operation, children 
 	    ?INFO_MSG("carbons disabled for user ~s@~s/~s", [U,S,R]),
             disable(S, U, R)
     end,
-    case Result of 
+    case Result of
         ok ->
 	    ?INFO_MSG("carbons IQ result: ok", []),
             IQ#iq{type=result, sub_el=[]};
@@ -131,21 +131,21 @@ iq_handler(_From, _To, IQ, _CC)->
 user_send_packet(From, _To, Packet) ->
     check_and_forward(From, Packet, sent).
 
-%% Only make carbon copies if the original destination was not a bare jid. 
+%% Only make carbon copies if the original destination was not a bare jid.
 %% If the original destination was a bare jid, the message is going to be delivered to all
 %% connected resources anyway. Avoid duplicate delivery. "XEP-0280 : 3.5 Receiving Messages"
 user_receive_packet(JID, _From, #jid{resource=Resource} = _To, Packet) when Resource /= <<>> ->
     check_and_forward(JID, Packet, received);
 user_receive_packet(_JID, _From, _To, _Packet) ->
 	ok.
-    
+
 % verifier si le trafic est local
-% Modified from original version: 
+% Modified from original version:
 %    - registered to the user_send_packet hook, to be called only once even for multicast
 %    - do not support "private" message mode, and do not modify the original packet in any way
 %    - we also replicate "read" notifications
 check_and_forward(JID, #xmlel{name = <<"message">>, attrs = Attrs} = Packet, Direction)->
-    case xml:get_attr_s(<<"type">>, Attrs) of 
+    case xml:get_attr_s(<<"type">>, Attrs) of
       <<"chat">> ->
 	case xml:get_subtag(Packet, <<"private">>) of
 	    false ->
@@ -162,13 +162,13 @@ check_and_forward(JID, #xmlel{name = <<"message">>, attrs = Attrs} = Packet, Dir
     _ ->
 	ok
     end;
- 
+
 check_and_forward(_JID, _Packet, _)-> ok.
 
 remove_connection(User, Server, Resource, _Status)->
     disable(Server, User, Resource),
     ok.
-    
+
 
 %%% Internal
 %% Direction = received | sent <received xmlns='urn:xmpp:carbons:1'/>
@@ -192,31 +192,31 @@ send_copies(JID, Packet, Direction)->
     ok.
 
 build_forward_packet(JID, Packet, Sender, Dest, Direction, ?NS_CC_2) ->
-    #xmlel{name = <<"message">>, 
+    #xmlel{name = <<"message">>,
 	   attrs = [{<<"xmlns">>, <<"jabber:client">>},
 		    {<<"type">>, <<"chat">>},
 		    {<<"from">>, jlib:jid_to_string(Sender)},
 		    {<<"to">>, jlib:jid_to_string(Dest)}],
-	   children = [	
-		#xmlel{name = list_to_binary(atom_to_list(Direction)), 
+	   children = [
+		#xmlel{name = list_to_binary(atom_to_list(Direction)),
 		       attrs = [{<<"xmlns">>, ?NS_CC_2}],
 		       children = [
-			#xmlel{name = <<"forwarded">>, 
+			#xmlel{name = <<"forwarded">>,
 			       attrs = [{<<"xmlns">>, ?NS_FORWARD}],
 			       children = [
 				complete_packet(JID, Packet, Direction)]}
 		]}
 	   ]};
 build_forward_packet(JID, Packet, Sender, Dest, Direction, ?NS_CC_1) ->
-    #xmlel{name = <<"message">>, 
+    #xmlel{name = <<"message">>,
 	   attrs = [{<<"xmlns">>, <<"jabber:client">>},
 		    {<<"type">>, <<"chat">>},
 		    {<<"from">>, jlib:jid_to_string(Sender)},
 		    {<<"to">>, jlib:jid_to_string(Dest)}],
-	   children = [	
-		#xmlel{name = list_to_binary(atom_to_list(Direction)), 
+	   children = [
+		#xmlel{name = list_to_binary(atom_to_list(Direction)),
 			attrs = [{<<"xmlns">>, ?NS_CC_1}]},
-		#xmlel{name = <<"forwarded">>, 
+		#xmlel{name = <<"forwarded">>,
 		       attrs = [{<<"xmlns">>, ?NS_FORWARD}],
 		       children = [complete_packet(JID, Packet, Direction)]}
 		]}.
@@ -227,7 +227,7 @@ enable(Host, U, R, CC)->
      try mnesia:dirty_write(#carboncopy{us = {U, Host}, resource=R, version = CC}) of
 	ok -> ok
      catch _:Error -> {error, Error}
-     end.	
+     end.
 
 disable(Host, U, R)->
     ?DEBUG("disabling for ~p", [U]),
