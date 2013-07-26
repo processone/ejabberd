@@ -126,7 +126,7 @@ init([Host, Opts]) ->
     OutDir = gen_mod:get_opt(outdir, Opts,
                              fun iolist_to_binary/1,
                              <<"www/muc">>),
-    DirType = gen_mod:get_opt(dirtype, Opts, 
+    DirType = gen_mod:get_opt(dirtype, Opts,
                               fun(subdirs) -> subdirs;
                                  (plain) -> plain
                               end, subdirs),

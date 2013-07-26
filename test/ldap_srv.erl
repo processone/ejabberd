@@ -28,7 +28,7 @@
 -define(ERROR_MSG(Fmt, Args), error_logger:error_msg(Fmt, Args)).
 
 -define(TCP_SEND_TIMEOUT, 32000).
--define(SERVER, ?MODULE). 
+-define(SERVER, ?MODULE).
 
 -record(state, {listener = make_ref() :: reference()}).
 

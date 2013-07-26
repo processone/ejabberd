@@ -200,7 +200,7 @@ get_human_html_xmlel() ->
 %% Returns: {ok, StateName, StateData}          |
 %%          {ok, StateName, StateData, Timeout} |
 %%          ignore                              |
-%%          {stop, StopReason}                   
+%%          {stop, StopReason}
 %%----------------------------------------------------------------------
 init([ID, Key, IP]) ->
     ?INFO_MSG("started: ~p", [{ID, Key, IP}]),
@@ -221,7 +221,7 @@ init([ID, Key, IP]) ->
 %% Func: StateName/2
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 
@@ -232,7 +232,7 @@ init([ID, Key, IP]) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 %state_name(Event, From, StateData) ->
@@ -243,7 +243,7 @@ init([ID, Key, IP]) ->
 %% Func: handle_event/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event({activate, From}, StateName, StateData) ->
     case StateData#state.input of
@@ -268,7 +268,7 @@ handle_event(_Event, StateName, StateData) ->
 %%          {reply, Reply, NextStateName, NextStateData}          |
 %%          {reply, Reply, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
+%%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event({send, Packet}, _From, StateName,
 		  StateData) ->
@@ -332,7 +332,7 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %% Func: handle_info/3
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_info({timeout, Timer, _}, _StateName,
 	    #state{timer = Timer} = StateData) ->

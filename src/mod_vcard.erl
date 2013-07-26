@@ -931,7 +931,7 @@ update_vcard_search_table() ->
 	  mnesia:transform_table(vcard_search, ignore, Fields)
     end.
 
-export(_Server) ->   
+export(_Server) ->
     [{vcard,
       fun(Host, #vcard{us = {LUser, LServer}, vcard = VCARD})
             when LServer == Host ->

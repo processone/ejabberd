@@ -151,12 +151,12 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %% replace the argument 'disabled' with 'enabled' in the call to the
 %% function do_client_version.
 
-%% ejabberd provides a method to receive XMPP packets using Erlang's 
-%% message passing mechanism. 
+%% ejabberd provides a method to receive XMPP packets using Erlang's
+%% message passing mechanism.
 %%
 %% The packets received by ejabberd are sent
 %% to the local destination process by sending an Erlang message.
-%% This means that you can receive XMPP stanzas in an Erlang process 
+%% This means that you can receive XMPP stanzas in an Erlang process
 %% using Erlang's Receive, as long as this process is registered in
 %% ejabberd as the process which handles the destination JID.
 %%

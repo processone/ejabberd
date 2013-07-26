@@ -128,7 +128,7 @@ parse_form(Dir, File, Form, Used) ->
 	_ ->
 	    ok
     end.
-	    
+
 process_string(_Dir, _File, _Line, "", _Used) ->
     ok;
 

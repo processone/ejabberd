@@ -4,13 +4,13 @@
 %%% compliance with the License. You should have received a copy of the
 %%% Erlang Public License along with this software. If not, it can be
 %%% retrieved via the world wide web at http://www.erlang.org/.
-%%% 
+%%%
 %%%
 %%% Software distributed under the License is distributed on an "AS IS"
 %%% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
 %%% the License for the specific language governing rights and limitations
 %%% under the License.
-%%% 
+%%%
 %%%
 %%% The Initial Developer of the Original Code is ProcessOne.
 %%% Portions created by ProcessOne are Copyright 2006-2013, ProcessOne
@@ -254,7 +254,7 @@ get_subnodes_tree(Host, Node) ->
 (
   Host    :: mod_pubsub:host(),
   NodeId  :: mod_pubsub:nodeId(),
-  Type    :: binary(), 
+  Type    :: binary(),
   Owner   :: jid(),
   Options :: mod_pubsub:nodeOptions(),
   Parents :: [mod_pubsub:nodeId()])

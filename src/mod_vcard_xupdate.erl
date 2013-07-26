@@ -184,7 +184,7 @@ update_table() ->
                                             iolist_to_binary(S)},
                                       hash = iolist_to_binary(Hash)}
               end);
-        _ ->            
+        _ ->
             ?INFO_MSG("Recreating vcard_xupdate table", []),
             mnesia:transform_table(vcard_xupdate, ignore, Fields)
     end.

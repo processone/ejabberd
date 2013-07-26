@@ -16,7 +16,7 @@ fi
 
 
 echo '2. install crypt_drv.so'
-    
+
 if [ ! -d    /usr/pkg/lib/erlang/lib/crypto-1.1.2.1/priv/lib ] ; then
     mkdir -p /usr/pkg/lib/erlang/lib/crypto-1.1.2.1/priv/lib
 fi
@@ -41,7 +41,7 @@ cc -shared \
 cp ../priv/obj/i386--netbsdelf/elibcrypto.so \
            /usr/pkg/lib/erlang/lib/crypto-1.1.2.1/priv/lib
 fi
-    
+
 
 echo '4. compile and install ssl_esock'
 
@@ -49,10 +49,10 @@ if [ ! -f  /usr/pkg/lib/erlang/lib/ssl-2.3.5/priv/bin/ssl_esock ]; then
     cd     /usr/pkg/lib/erlang/lib/ssl-2.3.5/priv/obj/
     make
 fi
-    
+
 
 echo '5. initial ejabberd configuration'
-    
+
 cd /usr/pkg/jabber/ejabberd/src
 ./configure
 

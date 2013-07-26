@@ -445,10 +445,10 @@ sql_query_internal(Query) ->
 	    pgsql ->
 		pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query));
 	    mysql ->
-		?DEBUG("MySQL, Send query~n~p~n", [Query]),  
+		?DEBUG("MySQL, Send query~n~p~n", [Query]),
 		%%squery to be able to specify result_type = binary
 		%%[Query] because mysql_conn expect query to be a list (elements can be binaries, or iolist)
-		%%        but doesn't accept just a binary 
+		%%        but doesn't accept just a binary
 		R = mysql_to_odbc(mysql_conn:squery(State#state.db_ref,
 						   [Query], self(),
 						   [{timeout, (?TRANSACTION_TIMEOUT) - 1000},

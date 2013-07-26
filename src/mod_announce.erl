@@ -508,10 +508,10 @@ vvaluel(Val) ->
 
 generate_adhoc_form(Lang, Node, ServerHost) ->
     LNode = tokenize(Node),
-    {OldSubject, OldBody} = if (LNode == ?NS_ADMINL("edit-motd")) 
+    {OldSubject, OldBody} = if (LNode == ?NS_ADMINL("edit-motd"))
 			       or (LNode == ?NS_ADMINL("edit-motd-allhosts")) ->
 				    get_stored_motd(ServerHost);
-			       true -> 
+			       true ->
 				    {<<>>, <<>>}
 			    end,
     #xmlel{
@@ -641,25 +641,25 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	{?NS_ADMIN_ANNOUNCE, _} ->
 	    Proc ! {announce_online, From, To, Packet},
 	    adhoc:produce_response(Response);
-	{?NS_ADMIN_ANNOUNCE_ALLHOSTS, _} ->	    
+	{?NS_ADMIN_ANNOUNCE_ALLHOSTS, _} ->
 	    Proc ! {announce_all_hosts_online, From, To, Packet},
 	    adhoc:produce_response(Response);
 	{?NS_ADMIN_ANNOUNCE_ALL, _} ->
 	    Proc ! {announce_all, From, To, Packet},
 	    adhoc:produce_response(Response);
-	{?NS_ADMIN_ANNOUNCE_ALL_ALLHOSTS, _} ->	    
+	{?NS_ADMIN_ANNOUNCE_ALL_ALLHOSTS, _} ->
 	    Proc ! {announce_all_hosts_all, From, To, Packet},
 	    adhoc:produce_response(Response);
 	{?NS_ADMIN_SET_MOTD, _} ->
 	    Proc ! {announce_motd, From, To, Packet},
 	    adhoc:produce_response(Response);
-	{?NS_ADMIN_SET_MOTD_ALLHOSTS, _} ->	    
+	{?NS_ADMIN_SET_MOTD_ALLHOSTS, _} ->
 	    Proc ! {announce_all_hosts_motd, From, To, Packet},
 	    adhoc:produce_response(Response);
 	{?NS_ADMIN_EDIT_MOTD, _} ->
 	    Proc ! {announce_motd_update, From, To, Packet},
 	    adhoc:produce_response(Response);
-	{?NS_ADMIN_EDIT_MOTD_ALLHOSTS, _} ->	    
+	{?NS_ADMIN_EDIT_MOTD_ALLHOSTS, _} ->
 	    Proc ! {announce_all_hosts_motd_update, From, To, Packet},
 	    adhoc:produce_response(Response);
 	_ ->
