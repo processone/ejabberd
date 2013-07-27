@@ -30,7 +30,8 @@
 -export([start/0, load_file/1,
 	 add_global_option/2, add_local_option/2,
 	 get_global_option/2, get_local_option/2,
-         get_global_option/3, get_local_option/3]).
+         get_global_option/3, get_local_option/3,
+         get_option/2, get_option/3, add_option/2]).
 -export([get_vh_by_auth_method/1]).
 -export([is_file_readable/1]).
 -export([get_version/0, get_myhosts/0, get_mylang/0]).
@@ -52,10 +53,6 @@
 
 
 start() ->
-    mnesia:create_table(config,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, config)}]),
-    mnesia:add_table_copy(config, node(), ram_copies),
     mnesia:create_table(local_config,
 			[{disc_copies, [node()]},
 			 {local_content, true},
@@ -64,7 +61,7 @@ start() ->
     Config = get_ejabberd_config_path(),
     load_file(Config),
     %% This start time is used by mod_last:
-    add_local_option(node_start, now()),
+    add_option(node_start, now()),
     ok.
 
 %% @doc Get the filename of the ejabberd configuration file.
@@ -371,21 +368,6 @@ process_term(Term, State) ->
 	    State#state{override_local = true};
 	override_acls ->
 	    State#state{override_acls = true};
-	{acl, _ACLName, _ACLData} ->
-	    process_host_term(Term, global, State);
-	{access, _RuleName, _Rules} ->
-	    process_host_term(Term, global, State);
-	{shaper, _Name, _Data} ->
-	    %%lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
-	    %%    	State, State#state.hosts);
-	    process_host_term(Term, global, State);
-	{host, _Host} ->
-	    State;
-	{hosts, _Hosts} ->
-	    State;
-	{fqdn, HostFQDN} ->
-	    ?DEBUG("FQDN set to: ~p", [HostFQDN]),
-	    add_option(fqdn, HostFQDN, State);
 	{host_config, Host, Terms} ->
 	    lists:foldl(fun(T, S) -> process_host_term(T, Host, S) end,
 			State, Terms);
@@ -399,16 +381,6 @@ process_term(Term, State) ->
 		  end,
 		  Listeners),
 	    add_option(listen, Listeners2, State);
-	{language, Val} ->
-	    add_option(language, Val, State);
-	{outgoing_s2s_port, Port} ->
-	    add_option(outgoing_s2s_port, Port, State);
-	{outgoing_s2s_options, Methods, Timeout} ->
-	    add_option(outgoing_s2s_options, {Methods, Timeout}, State);
-        {s2s_dns_options, PropList} ->
-            add_option(s2s_dns_options, PropList, State);
-	{s2s_use_starttls, Port} ->
-	    add_option(s2s_use_starttls, Port, State);
 	{s2s_certfile, CertFile} ->
             CertFileS = binary_to_list(CertFile),
 	    case ejabberd_config:is_file_readable(CertFileS) of
@@ -427,36 +399,12 @@ process_term(Term, State) ->
 			"the specified file is not readable: ",
 		    throw({error, ErrorText ++ CertFileS})
 	    end;
-	{node_type, NodeType} ->
-	    add_option(node_type, NodeType, State);
-	{cluster_nodes, Nodes} ->
-	    add_option(cluster_nodes, Nodes, State);
-	{domain_balancing, Domain, Balancing} ->
-	    add_option({domain_balancing, Domain}, Balancing, State);
-	{domain_balancing_component_number, Domain, N} ->
-	    add_option({domain_balancing_component_number, Domain}, N, State);
-	{watchdog_admins, Admins} ->
-	    add_option(watchdog_admins, Admins, State);
-	{watchdog_large_heap, LH} ->
-	    add_option(watchdog_large_heap, LH, State);
-	{registration_timeout, Timeout} ->
-	    add_option(registration_timeout, Timeout, State);
-	{captcha_cmd, Cmd} ->
-	    add_option(captcha_cmd, Cmd, State);
-	{captcha_host, Host} ->
-	    add_option(captcha_host, Host, State);
-        {captcha_limit, Limit} ->
-            add_option(captcha_limit, Limit, State);
-	{ejabberdctl_access_commands, ACs} ->
-	    add_option(ejabberdctl_access_commands, ACs, State);
 	{loglevel, Loglevel} ->
 	    ejabberd_logger:set(Loglevel),
 	    State;
-	{max_fsm_queue, N} ->
-	    add_option(max_fsm_queue, N, State);
-	{_Opt, _Val} ->
+	_ ->
 	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
-			State, State#state.hosts)
+			State, [global|State#state.hosts])
     end.
 
 process_host_term(Term, Host, State) ->
@@ -465,47 +413,29 @@ process_host_term(Term, Host, State) ->
 	    State#state{opts =
 			[acl:to_record(Host, ACLName, ACLData) | State#state.opts]};
 	{access, RuleName, Rules} ->
-	    State#state{opts = [#config{key = {access, RuleName, Host},
-					value = Rules} |
-				State#state.opts]};
+            add_option({access, RuleName, Host}, Rules, State);
 	{shaper, Name, Data} ->
-	    State#state{opts = [#config{key = {shaper, Name, Host},
-					value = Data} |
-				State#state.opts]};
-	{host, Host} ->
-	    State;
-	{hosts, _Hosts} ->
-	    State;
-	{odbc_server, ODBC_server} ->
-	    add_option({odbc_server, Host}, ODBC_server, State);
+            add_option({shaper, Name, Host}, Data, State);
         {modules, Modules} ->
             add_option({modules, Host}, replace_modules(Modules), State);
+        {host, _} ->
+            State;
+        {hosts, _} ->
+            State;
 	{Opt, Val} ->
 	    add_option({Opt, Host}, Val, State)
     end.
 
+add_option(Opt, Val, State) when is_atom(Opt) ->
+    add_option({Opt, global}, Val, State);
 add_option(Opt, Val, State) ->
-    Table = case Opt of
-		hosts ->
-		    config;
-		language ->
-		    config;
-		_ ->
-		    local_config
-	    end,
-    case Table of
-	config ->
-	    State#state{opts = [#config{key = Opt, value = Val} |
-				State#state.opts]};
-	local_config ->
-	    case Opt of
-		{{add, OptName}, Host} ->
-		    State#state{opts = compact({OptName, Host}, Val,
-					       State#state.opts, [])};
-		_ ->
-		    State#state{opts = [#local_config{key = Opt, value = Val} |
-					State#state.opts]}
-	    end
+    case Opt of
+        {{add, OptName}, Host} ->
+            State#state{opts = compact({OptName, Host}, Val,
+                                       State#state.opts, [])};
+        _ ->
+            State#state{opts = [#local_config{key = Opt, value = Val} |
+                                State#state.opts]}
     end.
 
 compact({OptName, Host} = Opt, Val, [], Os) ->
@@ -529,15 +459,6 @@ compact(Opt, Val, [O | Os1], Os2) ->
 set_opts(State) ->
     Opts = lists:reverse(State#state.opts),
     F = fun() ->
-		if
-		    State#state.override_global ->
-			Ksg = mnesia:all_keys(config),
-			lists:foreach(fun(K) ->
-					      mnesia:delete({config, K})
-				      end, Ksg);
-		    true ->
-			ok
-		end,
 		if
 		    State#state.override_local ->
 			Ksl = mnesia:all_keys(local_config),
@@ -576,12 +497,14 @@ set_opts(State) ->
     end.
 
 add_global_option(Opt, Val) ->
-    mnesia:transaction(fun() ->
-			       mnesia:write(#config{key = Opt,
-						    value = Val})
-		       end).
+    add_option(Opt, Val).
 
 add_local_option(Opt, Val) ->
+    add_option(Opt, Val).
+
+add_option(Opt, Val) when is_atom(Opt) ->
+    add_option({Opt, global}, Val);
+add_option(Opt, Val) ->
     mnesia:transaction(fun() ->
 			       mnesia:write(#local_config{key = Opt,
 							  value = Val})
@@ -615,26 +538,33 @@ prepare_opt_val(Opt, Val, F, Default) ->
 -spec get_global_option(any(), check_fun()) -> any().
 
 get_global_option(Opt, F) ->
-    get_global_option(Opt, F, undefined).
+    get_option(Opt, F, undefined).
 
 -spec get_global_option(any(), check_fun(), any()) -> any().
 
 get_global_option(Opt, F, Default) ->
-    case ets:lookup(config, Opt) of
-	[#config{value = Val}] ->
-	    prepare_opt_val(Opt, Val, F, Default);
-	_ ->
-            Default
-    end.
+    get_option(Opt, F, Default).
 
 -spec get_local_option(any(), check_fun()) -> any().
 
 get_local_option(Opt, F) ->
-    get_local_option(Opt, F, undefined).
+    get_option(Opt, F, undefined).
 
 -spec get_local_option(any(), check_fun(), any()) -> any().
 
 get_local_option(Opt, F, Default) ->
+    get_option(Opt, F, Default).
+
+-spec get_option(any(), check_fun()) -> any().
+
+get_option(Opt, F) ->
+    get_option(Opt, F, undefined).
+
+-spec get_option(any(), check_fun(), any()) -> any().
+
+get_option(Opt, F, Default) when is_atom(Opt) ->
+    get_option({Opt, global}, F, Default);
+get_option(Opt, F, Default) ->
     case ets:lookup(local_config, Opt) of
 	[#local_config{value = Val}] ->
 	    prepare_opt_val(Opt, Val, F, Default);
@@ -669,12 +599,12 @@ get_version() ->
 -spec get_myhosts() -> [binary()].
 
 get_myhosts() ->
-    ejabberd_config:get_global_option(hosts, fun(V) -> V end).
+    get_option(hosts, fun(V) -> V end).
 
 -spec get_mylang() -> binary().
 
 get_mylang() ->
-    ejabberd_config:get_global_option(
+    get_option(
       language,
       fun iolist_to_binary/1,
       <<"en">>).
