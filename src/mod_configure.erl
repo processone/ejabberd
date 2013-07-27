@@ -1365,8 +1365,8 @@ get_form(Host, [<<"config">>, <<"access">>], Lang) ->
 							  [{xmlcdata, S}]}
 				       end,
 				       str:tokens(iolist_to_binary(io_lib:format("~p.",
-										 [ets:select(config,
-											     [{{config,
+										 [ets:select(local_config,
+											     [{{local_config,
 												{access,
 												 '$1',
 												 '$2'},
@@ -1770,8 +1770,8 @@ set_form(_From, Host, [<<"config">>, <<"access">>],
 	 _Lang, XData) ->
     SetAccess = fun (Rs) ->
 			mnesia:transaction(fun () ->
-						   Os = mnesia:select(config,
-								      [{{config,
+						   Os = mnesia:select(local_config,
+								      [{{local_config,
 									 {access,
 									  '$1',
 									  '$2'},
@@ -1787,7 +1787,7 @@ set_form(_From, Host, [<<"config">>, <<"access">>],
 						   lists:foreach(fun ({access,
 								       Name,
 								       Rules}) ->
-									 mnesia:write({config,
+									 mnesia:write({local_config,
 										       {access,
 											Name,
 											Host},

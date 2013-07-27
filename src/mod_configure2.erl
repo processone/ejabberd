@@ -167,8 +167,8 @@ process_get(#xmlel{name = <<"acls">>, attrs = Attrs}) ->
 process_get(#xmlel{name = <<"access">>,
 		   attrs = Attrs}) ->
     Str = iolist_to_binary(io_lib:format("~p.",
-					 [ets:select(config,
-						     [{{config, {access, '$1'},
+					 [ets:select(local_config,
+						     [{{local_config, {access, '$1'},
 							'$2'},
 						       [],
 						       [{{access, '$1',
