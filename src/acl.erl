@@ -29,6 +29,7 @@
 -author('alexey@process-one.net').
 
 -export([start/0, to_record/3, add/3, add_list/3,
+         add_local/3, add_list_local/3,
 	 match_rule/3, match_acl/3]).
 
 -include("ejabberd.hrl").
@@ -66,6 +67,7 @@
 start() ->
     mnesia:create_table(acl,
 			[{disc_copies, [node()]}, {type, bag},
+                         {local_content, true},
 			 {attributes, record_info(fields, acl)}]),
     mnesia:add_table_copy(acl, node(), ram_copies),
     update_table(),
@@ -77,18 +79,49 @@ to_record(Host, ACLName, ACLSpec) ->
     #acl{aclname = {ACLName, Host},
 	 aclspec = normalize_spec(ACLSpec)}.
 
--spec add(binary(), aclname(), aclspec()) -> {atomic, ok} | {aborted, any()}.
+-spec add(binary(), aclname(), aclspec()) -> ok | {error, any()}.
 
 add(Host, ACLName, ACLSpec) ->
+    {ResL, BadNodes} = rpc:multicall(ejabberd_cluster:get_nodes(),
+                                     ?MODULE, add_local,
+                                     [Host, ACLName, ACLSpec]),
+    case lists:keyfind(aborted, 1, ResL) of
+        false when BadNodes == [] ->
+            ok;
+        false ->
+            {error, {failed_nodes, BadNodes}};
+        Err ->
+            {error, Err}
+    end.
+
+add_local(Host, ACLName, ACLSpec) ->
     F = fun () ->
 		mnesia:write(#acl{aclname = {ACLName, Host},
 				  aclspec = normalize_spec(ACLSpec)})
 	end,
-    mnesia:transaction(F).
+    case mnesia:transaction(F) of
+        {atomic, ok} ->
+            ok;
+        Err ->
+            Err
+    end.
 
--spec add_list(binary(), [acl()], boolean()) -> false | ok.
+-spec add_list(binary(), [acl()], boolean()) -> ok | {error, any()}.
 
 add_list(Host, ACLs, Clear) ->
+    {ResL, BadNodes} = rpc:multicall(ejabberd_cluster:get_nodes(),
+                                     ?MODULE, add_list_local,
+                                     [Host, ACLs, Clear]),
+    case lists:keyfind(aborted, 1, ResL) of
+        false when BadNodes == [] ->
+            ok;
+        false ->
+            {error, {failed_nodes, BadNodes}};
+        Err ->
+            {error, Err}
+    end.
+
+add_list_local(Host, ACLs, Clear) ->
     F = fun () ->
 		if Clear ->
 		       Ks = mnesia:select(acl,
@@ -112,10 +145,7 @@ add_list(Host, ACLs, Clear) ->
 			      end,
 			      ACLs)
 	end,
-    case mnesia:transaction(F) of
-      {atomic, _} -> ok;
-      _ -> false
-    end.
+    mnesia:transaction(F).
 
 normalize(A) -> jlib:nodeprep(iolist_to_binary(A)).
 
