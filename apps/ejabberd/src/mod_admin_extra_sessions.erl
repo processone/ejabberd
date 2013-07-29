@@ -175,7 +175,7 @@ kick_this_session(User, Server, Resource, Reason) ->
         jlib:make_jid(User, Server, Resource),
         #xmlel{name = <<"broadcast">>, children=[{exit, Reason}]}).
 
-prepare_reason([]) ->
+prepare_reason(<<>>) ->
     <<"Kicked by administrator">>;
 prepare_reason([Reason]) ->
     prepare_reason(Reason);

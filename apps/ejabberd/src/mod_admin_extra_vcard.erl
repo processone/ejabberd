@@ -172,7 +172,7 @@ set_vcard_content(User, Server, Data, ContentList) ->
         [A1] ->
             {_, _, _, A2} = A1,
             update_vcard_els(Data, ContentList, A2);
-        [] ->
+        _ ->
             update_vcard_els(Data, ContentList, [])
     end,
 

@@ -61,7 +61,8 @@ commands() ->
 
 set_last(User, Server, Timestamp, Status) ->
     Mod = get_lastactivity_module(Server),
-    Mod:store_last_info(User, Server, Timestamp, Status).
+    Mod:store_last_info(User, Server, Timestamp, Status),
+    ok.
 
 get_lastactivity_module(Server) ->
     case lists:member(mod_last, gen_mod:loaded_modules(Server)) of

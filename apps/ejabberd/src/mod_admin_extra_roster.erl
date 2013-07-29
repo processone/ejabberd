@@ -290,7 +290,7 @@ build_iq_roster_push(Item) ->
            children = [#xmlel{ name = <<"query">>, attrs = [{<<"xmlns">>, ?NS_ROSTER}], children = [Item]}] }.
 
 build_broadcast(U, S, {add, _Nick, Subs, _Group}) ->
-    build_broadcast(U, S, binary_to_list(list_to_existing_atom(Subs)));
+    build_broadcast(U, S, list_to_existing_atom(binary_to_list(Subs)));
 build_broadcast(U, S, remove) ->
     build_broadcast(U, S, none);
 %% @spec (U::binary(), S::binary(), Subs::atom()) -> any()

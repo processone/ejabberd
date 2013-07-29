@@ -207,9 +207,7 @@ ban_account(User, Host, ReasonText) ->
     set_random_password(User, Host, Reason),
     ok.
 
-kick_sessions(User1, Server1, Reason) ->
-    User = list_to_binary(User1),
-    Server = list_to_binary(Server1),
+kick_sessions(User, Server, Reason) ->
     lists:map(
         fun(Resource) ->
                 mod_admin_extra_sessions:kick_this_session(User, Server, Resource, Reason)
