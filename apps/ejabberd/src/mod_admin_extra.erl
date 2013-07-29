@@ -40,10 +40,11 @@
 %%% gen_mod
 %%%
 
-start(_Host, _Opts) ->
+start(_Host, Opts) ->
+    Submods = gen_mod:get_opt(submods, Opts, ?SUBMODS),
     lists:foreach(fun(Submod) ->
                 ejabberd_commands:register_commands((mod_name(Submod)):commands())
-        end, ?SUBMODS).
+        end, Submods).
 
 stop(_Host) ->
     lists:foreach(fun(Submod) ->
