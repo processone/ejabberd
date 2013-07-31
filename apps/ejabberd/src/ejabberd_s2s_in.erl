@@ -221,7 +221,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 		       end,
 	    case SASL of
 		{error_cert_verif, CertVerifyResult, Certificate} ->
-		    CertError = tls:get_cert_verify_string(CertVerifyResult, Certificate),
+		    CertError = ejabberd_tls:get_cert_verify_string(CertVerifyResult, Certificate),
 		    RemoteServer = xml:get_attr_s(<<"from">>, Attrs),
 		    ?INFO_MSG("Closing s2s connection: ~s <--> ~s (~s)", [StateData#state.server, RemoteServer, CertError]),
 		    send_text(StateData, xml:element_to_string(?SERRT_POLICY_VIOLATION(<<"en">>, CertError))),

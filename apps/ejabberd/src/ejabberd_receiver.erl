@@ -142,7 +142,7 @@ handle_call({starttls, TLSSocket}, _From,
     NewState = State#state{socket = TLSSocket,
 			   sock_mod = tls,
 			   xml_stream_state = NewXMLStreamState},
-    case tls:recv_data(TLSSocket, "") of
+    case ejabberd_tls:recv_data(TLSSocket, "") of
 	{ok, TLSData} ->
 	    {reply, ok, process_data(TLSData, NewState), ?HIBERNATE_TIMEOUT};
 	{error, _Reason} ->
@@ -209,7 +209,7 @@ handle_info({Tag, _TCPSocket, Data},
   when (Tag == tcp) or (Tag == ssl) or (Tag == ejabberd_xml) ->
     case SockMod of
 	tls ->
-	    case tls:recv_data(Socket, Data) of
+	    case ejabberd_tls:recv_data(Socket, Data) of
 		{ok, TLSData} ->
 		    {noreply, process_data(TLSData, State),
 		     ?HIBERNATE_TIMEOUT};
