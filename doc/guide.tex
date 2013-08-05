@@ -254,6 +254,11 @@ give it write access to the directories \term{database/} and \term{logs/}, and s
 the script will start the server with that user.
 Then you can call \term{/etc/inid.d/ejabberd start} as root to start the server.
 
+When ejabberd is started, the processes that are started in the system
+are \term{beam} or \term{beam.smp}, and also \term{epmd}.
+In Microsoft Windows, the processes are \term{erl.exe} and \term{epmd.exe}.
+For more information regarding \term{epmd} consult the section \ref{epmd}.
+
 If \term{ejabberd} doesn't start correctly in Windows,
 try to start it using the shortcut in desktop or start menu.
 If the window shows error 14001, the solution is to install:
