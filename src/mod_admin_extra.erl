@@ -69,6 +69,7 @@
 	 push_roster_all/1,
 	 push_alltoall/2,
 	 %% mod_last
+	 get_last/2,
 	 set_last/4,
 	 %% mod_private
 	 private_get/4,
@@ -436,6 +437,13 @@ commands() ->
 			args = [{host, string}, {group, string}],
 			result = {res, rescode}},
 
+     #ejabberd_commands{name = get_last, tags = [last],
+			desc = "Get last activity information",
+			longdesc = "Timestamp is the seconds since"
+			"1970-01-01 00:00:00 UTC, for example: date +%s",
+			module = ?MODULE, function = get_last,
+			args = [{user, string}, {host, string}],
+			result = {last_activity, string}},
      #ejabberd_commands{name = set_last, tags = [last],
 			desc = "Set last activity information",
 			longdesc = "Timestamp is the seconds since"
@@ -1232,6 +1240,28 @@ build_broadcast(U, S, SubsAtom) when is_atom(SubsAtom) ->
 %%%
 %%% Last Activity
 %%%
+
+get_last(User, Server) ->
+    Mod = get_lastactivity_module(Server),
+    case ejabberd_sm:get_user_resources(User, Server) of
+        [] ->
+            case Mod:get_last_info(User, Server) of
+                not_found ->
+                    "Never";
+                {ok, Shift, _Status} ->
+                    TimeStamp = {Shift div 1000000,
+                        Shift rem 1000000,
+                        0},
+                    {{Year, Month, Day}, {Hour, Minute, Second}} =
+                        calendar:now_to_local_time(TimeStamp),
+                    lists:flatten(
+                        io_lib:format(
+                            "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+                            [Year, Month, Day, Hour, Minute, Second]))
+            end;
+        _ ->
+            "Online"
+    end.
 
 set_last(User, Server, Timestamp, Status) ->
     Mod = get_lastactivity_module(Server),
