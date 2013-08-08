@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : tls.erl
+%%% File    : ejabberd_tls.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : Interface to openssl
 %%% Created : 24 Jul 2004 by Alexey Shchepin <alexey@process-one.net>
@@ -24,7 +24,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(tls).
+-module(ejabberd_tls).
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
