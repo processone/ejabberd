@@ -57,6 +57,7 @@ How to build
 
     or
 
+        $ ./rebar get-deps
         $ ./rebar compile
 
     To generate ejabberd release:
