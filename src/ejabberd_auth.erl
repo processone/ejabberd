@@ -423,7 +423,7 @@ auth_modules() ->
 %% Return the list of authenticated modules for a given host
 auth_modules(Server) ->
     LServer = jlib:nameprep(Server),
-    Methods = ejabberd_config:get_local_option(
+    Methods = ejabberd_config:get_option(
                 {auth_method, LServer},
                 fun(V) when is_list(V) ->
                         true = lists:all(fun is_atom/1, V),

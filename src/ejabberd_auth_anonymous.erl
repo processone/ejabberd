@@ -104,7 +104,7 @@ is_login_anonymous_enabled(Host) ->
 %% Return the anonymous protocol to use: sasl_anon|login_anon|both
 %% defaults to login_anon
 anonymous_protocol(Host) ->
-    ejabberd_config:get_local_option(
+    ejabberd_config:get_option(
       {anonymous_protocol, Host},
       fun(sasl_anon) -> sasl_anon;
          (login_anon) -> login_anon;
@@ -115,7 +115,7 @@ anonymous_protocol(Host) ->
 %% Return true if multiple connections have been allowed in the config file
 %% defaults to false
 allow_multiple_connections(Host) ->
-    ejabberd_config:get_local_option(
+    ejabberd_config:get_option(
       {allow_multiple_connections, Host},
       fun(V) when is_boolean(V) -> V end,
       false).

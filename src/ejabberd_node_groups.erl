@@ -84,7 +84,12 @@ get_closest_node(Name) ->
 %%--------------------------------------------------------------------
 init([]) ->
     {FE, BE} =
-	case ejabberd_config:get_local_option(node_type, fun(N) -> N end) of
+	case ejabberd_config:get_option(
+               node_type,
+               fun(frontend) -> frontend;
+                  (backend) -> backend;
+                  (generic) -> generic
+               end, generic) of
 	    frontend ->
 		{true, false};
 	    backend ->

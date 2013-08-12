@@ -164,6 +164,12 @@ commands() ->
                         module = ejd2odbc, function = export,
                         args = [{host, string}, {file, string}], result = {res, rescode}},
 
+     #ejabberd_commands{name = convert_to_yaml, tags = [config],
+                        desc = "Convert the input file from Erlang to YAML format",
+                        module = ejabberd_config, function = convert_to_yaml,
+                        args = [{in, string}, {out, string}],
+                        result = {res, rescode}},
+
      #ejabberd_commands{name = delete_expired_messages, tags = [purge],
 			desc = "Delete expired offline messages from database",
 			module = ?MODULE, function = delete_expired_messages,

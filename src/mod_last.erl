@@ -32,7 +32,8 @@
 
 -export([start/2, stop/1, process_local_iq/3, export/1,
 	 process_sm_iq/3, on_presence_update/4, import/1, import/3,
-	 store_last_info/4, get_last_info/2, remove_user/2]).
+	 store_last_info/4, get_last_info/2, remove_user/2,
+         transform_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -101,18 +102,13 @@ process_local_iq(_From, _To,
 %% @doc Get the uptime of the ejabberd node, expressed in seconds.
 %% When ejabberd is starting, ejabberd_config:start/0 stores the datetime.
 get_node_uptime() ->
-    case ejabberd_config:get_local_option(
+    case ejabberd_config:get_option(
            node_start,
-           fun({MegaSecs, Secs, MicroSecs} = Now)
-                 when is_integer(MegaSecs), MegaSecs >= 0,
-                      is_integer(Secs), Secs >= 0,
-                      is_integer(MicroSecs), MicroSecs >= 0 ->
-                   Now
-           end) of
+           fun(S) when is_integer(S), S >= 0 -> S end) of
         undefined ->
             trunc(element(1, erlang:statistics(wall_clock)) / 1000);
-        StartNow ->
-            now_to_seconds(now()) - now_to_seconds(StartNow)
+        Now ->
+            now_to_seconds(now()) - Now
     end.
 
 now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
@@ -319,3 +315,13 @@ import(_LServer, mnesia, #last_activity{} = LA) ->
     mnesia:dirty_write(LA);
 import(_, _, _) ->
     pass.
+
+transform_options(Opts) ->
+    lists:foldl(fun transform_options/2, [], Opts).
+
+transform_options({node_start, {_, _, _} = Now}, Opts) ->
+    ?WARNING_MSG("Old 'node_start' format detected. This is still supported "
+                 "but it is better to fix your config.", []),
+    [{node_start, now_to_seconds(Now)}|Opts];
+transform_options(Opt, Opts) ->
+    [Opt|Opts].

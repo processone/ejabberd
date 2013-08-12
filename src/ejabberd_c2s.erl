@@ -47,7 +47,8 @@
 	 del_aux_field/2,
 	 get_subscription/2,
 	 broadcast/4,
-	 get_subscribed/1]).
+	 get_subscribed/1,
+         transform_listen_option/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -233,11 +234,10 @@ init([{SockMod, Socket}, Opts]) ->
 		  {value, {_, XS}} -> XS;
 		  _ -> false
 		end,
-    Zlib = lists:member(zlib, Opts),
-    StartTLS = lists:member(starttls, Opts),
-    StartTLSRequired = lists:member(starttls_required,
-				    Opts),
-    TLSEnabled = lists:member(tls, Opts),
+    Zlib = proplists:get_bool(zlib, Opts),
+    StartTLS = proplists:get_bool(starttls, Opts),
+    StartTLSRequired = proplists:get_bool(starttls_required, Opts),
+    TLSEnabled = proplists:get_bool(tls, Opts),
     TLS = StartTLS orelse
 	    StartTLSRequired orelse TLSEnabled,
     TLSOpts1 = lists:filter(fun ({certfile, _}) -> true;
@@ -682,7 +682,7 @@ wait_for_feature_request({xmlstreamelement, El},
 	  when TLS == true, TLSEnabled == false,
 	       SockMod == gen_tcp ->
 	  TLSOpts = case
-		      ejabberd_config:get_local_option(
+		      ejabberd_config:get_option(
                         {domain_certfile, StateData#state.server},
                         fun iolist_to_binary/1)
 			of
@@ -876,7 +876,7 @@ resource_conflict_action(U, S, R) ->
 						      R)
 		    of
 		  true ->
-		      ejabberd_config:get_local_option(
+		      ejabberd_config:get_option(
                         {resource_conflict, S},
                         fun(setresource) -> setresource;
                            (closeold) -> closeold;
@@ -2279,7 +2279,7 @@ fsm_limit_opts(Opts) ->
     case lists:keysearch(max_fsm_queue, 1, Opts) of
       {value, {_, N}} when is_integer(N) -> [{max_queue, N}];
       _ ->
-	  case ejabberd_config:get_local_option(
+	  case ejabberd_config:get_option(
                  max_fsm_queue,
                  fun(I) when is_integer(I), I > 0 -> I end) of
             undefined -> [];
@@ -2377,3 +2377,6 @@ pack_string(String, Pack) ->
       {value, PackedString} -> {PackedString, Pack};
       none -> {String, gb_trees:insert(String, String, Pack)}
     end.
+
+transform_listen_option(Opt, Opts) ->
+    [Opt|Opts].

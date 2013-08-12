@@ -28,7 +28,8 @@
 
 -author('alexey@process-one.net').
 
--export([new/1, new1/1, update/2]).
+-export([start/0, new/1, new1/1, update/2,
+         transform_options/1, load_from_config/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -37,32 +38,66 @@
                   lastrate = 0.0 :: float(),
                   lasttime = 0   :: integer()}).
 
--type maxrate() :: none | #maxrate{}.
+-record(shaper, {name    :: {atom(), global},
+                 maxrate :: integer()}).
 
--type shaper() :: maxrate() | {maxrate(), integer()}.
+-type shaper() :: none | #maxrate{}.
 
 -export_type([shaper/0]).
 
--spec new(atom()) -> maxrate().
+-spec start() -> ok.
 
+start() ->
+    mnesia:create_table(shaper,
+                        [{ram_copies, [node()]},
+                         {local_content, true},
+			 {attributes, record_info(fields, shaper)}]),
+    mnesia:add_table_copy(shaper, node(), ram_copies),
+    load_from_config(),
+    ok.
+
+-spec load_from_config() -> ok | {error, any()}.
+
+load_from_config() ->
+    Shapers = ejabberd_config:get_option(
+                shaper, fun(V) -> V end, []),
+    case mnesia:transaction(
+           fun() ->
+                   lists:foreach(
+                     fun({Name, MaxRate}) ->
+                             mnesia:write(#shaper{name = {Name, global},
+                                                  maxrate = MaxRate})
+                     end, Shapers)
+           end) of
+        {atomic, ok} ->
+            ok;
+        Err ->
+            {error, Err}
+    end.
+
+-spec new(atom()) -> shaper().
+
+new(none) ->
+    none;
 new(Name) ->
-    Data = ejabberd_config:get_global_option(
-             {shaper, Name, global},
-             fun({maxrate, R}) when is_integer(R), R>0 ->
-                     {maxrate, R};
-                (none) ->
-                     none
-             end, none),
-    new1(Data).
+    MaxRate = case ets:lookup(shaper, {Name, global}) of
+                  [#shaper{maxrate = R}] ->
+                      R;
+                  [] ->
+                      ?WARNING_MSG("Attempt to initialize an "
+                                   "unspecified shaper '~s'", [Name]),
+                      none
+              end,
+    new1(MaxRate).
 
--spec new1(none | {maxrate, integer()}) -> maxrate().
+-spec new1(none | integer()) -> shaper().
 
 new1(none) -> none;
-new1({maxrate, MaxRate}) ->
+new1(MaxRate) ->
     #maxrate{maxrate = MaxRate, lastrate = 0.0,
 	     lasttime = now_to_usec(now())}.
 
--spec update(maxrate(), integer()) -> {maxrate(), integer()}.
+-spec update(shaper(), integer()) -> {shaper(), integer()}.
 
 update(none, _Size) -> {none, 0};
 update(#maxrate{} = State, Size) ->
@@ -83,6 +118,16 @@ update(#maxrate{} = State, Size) ->
 			 / 2,
 		   lasttime = NextNow},
      Pause}.
+
+transform_options(Opts) ->
+    lists:foldl(fun transform_options/2, [], Opts).
+
+transform_options({shaper, Name, {maxrate, N}}, Opts) ->
+    [{shaper, [{Name, N}]}|Opts];
+transform_options({shaper, Name, none}, Opts) ->
+    [{shaper, [{Name, none}]}|Opts];
+transform_options(Opt, Opts) ->
+    [Opt|Opts].
 
 now_to_usec({MSec, Sec, USec}) ->
     (MSec * 1000000 + Sec) * 1000000 + USec.

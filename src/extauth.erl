@@ -106,7 +106,7 @@ random_instance(MaxNum) ->
     random:uniform(MaxNum) - 1.
 
 get_instances(Server) ->
-    ejabberd_config:get_local_option(
+    ejabberd_config:get_option(
       {extauth_instances, Server},
       fun(V) when is_integer(V), V > 0 ->
               V

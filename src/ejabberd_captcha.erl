@@ -504,7 +504,7 @@ do_create_image(Key) ->
     end.
 
 get_prog_name() ->
-    case ejabberd_config:get_local_option(
+    case ejabberd_config:get_option(
            captcha_cmd,
            fun(FileName) ->
                    F = iolist_to_binary(FileName),
@@ -521,7 +521,7 @@ get_prog_name() ->
     end.
 
 get_url(Str) ->
-    CaptchaHost = ejabberd_config:get_local_option(
+    CaptchaHost = ejabberd_config:get_option(
                     captcha_host,
                     fun iolist_to_binary/1,
                     <<"">>),
@@ -549,7 +549,7 @@ get_transfer_protocol(PortString) ->
     get_captcha_transfer_protocol(PortListeners).
 
 get_port_listeners(PortNumber) ->
-    AllListeners = ejabberd_config:get_local_option(listen, fun(V) -> V end),
+    AllListeners = ejabberd_config:get_option(listen, fun(V) -> V end),
     lists:filter(fun ({{Port, _Ip, _Netp}, _Module1,
 		       _Opts1})
 			 when Port == PortNumber ->
@@ -579,7 +579,7 @@ get_captcha_transfer_protocol([_ | Listeners]) ->
 
 is_limited(undefined) -> false;
 is_limited(Limiter) ->
-    case ejabberd_config:get_local_option(
+    case ejabberd_config:get_option(
            captcha_limit,
            fun(I) when is_integer(I), I > 0 -> I end) of
       undefined -> false;

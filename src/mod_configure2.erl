@@ -129,7 +129,7 @@ process_get(#xmlel{name = <<"info">>}) ->
 	    children = []}};
 process_get(#xmlel{name = <<"welcome-message">>,
 		   attrs = Attrs}) ->
-    {Subj, Body} = ejabberd_config:get_local_option(
+    {Subj, Body} = ejabberd_config:get_option(
                      welcome_message,
                      fun({Subj, Body}) ->
                              {iolist_to_binary(Subj),
@@ -145,7 +145,7 @@ process_get(#xmlel{name = <<"welcome-message">>,
 			children = [{xmlcdata, Body}]}]}};
 process_get(#xmlel{name = <<"registration-watchers">>,
 		   attrs = Attrs}) ->
-    SubEls = ejabberd_config:get_local_option(
+    SubEls = ejabberd_config:get_option(
                registration_watchers,
                fun(JIDs) when is_list(JIDs) ->
                        lists:map(

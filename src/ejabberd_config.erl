@@ -27,16 +27,16 @@
 -module(ejabberd_config).
 -author('alexey@process-one.net').
 
--export([start/0, load_file/1,
+-export([start/0, load_file/1, read_file/1,
 	 add_global_option/2, add_local_option/2,
 	 get_global_option/2, get_local_option/2,
          get_global_option/3, get_local_option/3,
-         get_option/2, get_option/3, add_option/2]).
--export([get_vh_by_auth_method/1]).
--export([is_file_readable/1]).
--export([get_version/0, get_myhosts/0, get_mylang/0]).
--export([prepare_opt_val/4]).
--export([convert_table_to_binary/5]).
+         get_option/2, get_option/3, add_option/2,
+         get_vh_by_auth_method/1, is_file_readable/1,
+         get_version/0, get_myhosts/0, get_mylang/0,
+         prepare_opt_val/4, convert_table_to_binary/5,
+         transform_options/1, collect_options/1,
+         convert_to_yaml/1, convert_to_yaml/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -53,21 +53,29 @@
 
 
 start() ->
+    case catch mnesia:table_info(local_config, storage_type) of
+        disc_copies ->
+            mnesia:delete_table(local_config);
+        _ ->
+            ok
+    end,
     mnesia:create_table(local_config,
-			[{disc_copies, [node()]},
+			[{ram_copies, [node()]},
 			 {local_content, true},
 			 {attributes, record_info(fields, local_config)}]),
     mnesia:add_table_copy(local_config, node(), ram_copies),
     Config = get_ejabberd_config_path(),
-    load_file(Config),
+    State = read_file(Config),
     %% This start time is used by mod_last:
-    add_option(node_start, now()),
-    ok.
+    {MegaSecs, Secs, _} = now(),
+    UnixTime = MegaSecs*1000000 + Secs,
+    State1 = set_option({node_start, global}, UnixTime, State),
+    set_opts(State1).
 
 %% @doc Get the filename of the ejabberd configuration file.
-%% The filename can be specified with: erl -config "/path/to/ejabberd.cfg".
+%% The filename can be specified with: erl -config "/path/to/ejabberd.yml".
 %% It can also be specified with the environtment variable EJABBERD_CONFIG_PATH.
-%% If not specified, the default value 'ejabberd.cfg' is assumed.
+%% If not specified, the default value 'ejabberd.yml' is assumed.
 %% @spec () -> string()
 get_ejabberd_config_path() ->
     case application:get_env(config) of
@@ -81,16 +89,59 @@ get_ejabberd_config_path() ->
 	    end
     end.
 
-%% @doc Load the ejabberd configuration file.
+%% @doc Read the ejabberd configuration file.
 %% It also includes additional configuration files and replaces macros.
 %% This function will crash if finds some error in the configuration file.
-%% @spec (File::string()) -> ok
-load_file(File) ->
-    Terms = get_plain_terms_file(File),
+%% @spec (File::string()) -> #state{}.
+read_file(File) ->
+    read_file(File, [{replace_macros, true},
+                     {include_files, true}]).
+
+read_file(File, Opts) ->
+    Terms1 = get_plain_terms_file(File, Opts),
+    Terms_macros = case proplists:get_bool(replace_macros, Opts) of
+                       true -> replace_macros(Terms1);
+                       false -> Terms1
+                   end,
+    Terms = transform_terms(Terms_macros),
     State = lists:foldl(fun search_hosts/2, #state{}, Terms),
-    Terms_macros = replace_macros(Terms),
-    Res = lists:foldl(fun process_term/2, State, Terms_macros),
-    set_opts(Res).
+    {Head, Tail} = lists:partition(
+                     fun({host_config, _}) -> false;
+                        ({append_host_config, _}) -> false;
+                        (_) -> true
+                     end, Terms),
+    State1 = lists:foldl(fun process_term/2, State, Head ++ Tail),
+    State1#state{opts = compact(State1#state.opts)}.
+
+-spec load_file(string()) -> ok.
+
+load_file(File) ->
+    State = read_file(File),
+    set_opts(State).
+
+-spec convert_to_yaml(file:filename()) -> ok | {error, any()}.
+
+convert_to_yaml(File) ->
+    convert_to_yaml(File, stdout).
+
+-spec convert_to_yaml(file:filename(),
+                      stdout | file:filename()) -> ok | {error, any()}.
+
+convert_to_yaml(File, Output) ->
+    State = read_file(File, [{include_files, false}]),
+    Opts = [{K, V} || #local_config{key = K, value = V} <- State#state.opts],
+    {GOpts, HOpts} = split_by_hosts(Opts),
+    NewOpts = GOpts ++ lists:map(
+                         fun({Host, Opts1}) ->
+                                 {host_config, [{Host, Opts1}]}
+                         end, HOpts),
+    Data = p1_yaml:encode(lists:reverse(NewOpts)),
+    case Output of
+        stdout ->
+            io:format("~s~n", [Data]);
+        FileName ->
+            file:write_file(FileName, Data)
+    end.
 
 %% @doc Read an ejabberd configuration file and return the terms.
 %% Input is an absolute or relative path to an ejabberd config file.
@@ -99,22 +150,47 @@ load_file(File) ->
 %% and the terms in those files were included.
 %% @spec(string()) -> [term()]
 %% @spec(iolist()) -> [term()]
-get_plain_terms_file(File) when is_binary(File) ->
-    get_plain_terms_file(binary_to_list(File));
-get_plain_terms_file(File1) ->
+get_plain_terms_file(File) ->
+    get_plain_terms_file(File, [{include_files, true}]).
+
+get_plain_terms_file(File, Opts) when is_binary(File) ->
+    get_plain_terms_file(binary_to_list(File), Opts);
+get_plain_terms_file(File1, Opts) ->
     File = get_absolute_path(File1),
-    case file:consult(File) of
+    case consult(File) of
 	{ok, Terms} ->
             BinTerms = strings_to_binary(Terms),
-	    include_config_files(BinTerms);
-	{error, {LineNumber, erl_parse, _ParseMessage} = Reason} ->
-	    ExitText = describe_config_problem(File, Reason, LineNumber),
-	    ?ERROR_MSG(ExitText, []),
-	    exit_or_halt(ExitText);
+            case proplists:get_bool(include_files, Opts) of
+                true ->
+                    include_config_files(BinTerms);
+                false ->
+                    BinTerms
+            end;
 	{error, Reason} ->
-	    ExitText = describe_config_problem(File, Reason),
-	    ?ERROR_MSG(ExitText, []),
-	    exit_or_halt(ExitText)
+	    ?ERROR_MSG(Reason, []),
+	    exit_or_halt(Reason)
+    end.
+
+consult(File) ->
+    case filename:extension(File) of
+        ".yml" ->
+            case p1_yaml:decode_from_file(File, [plain_as_atom]) of
+                {ok, []} ->
+                    {ok, []};
+                {ok, [Document|_]} ->
+                    {ok, Document};
+                {error, Err} ->
+                    {error, p1_yaml:format_error(Err)}
+            end;
+        _ ->
+            case file:consult(File) of
+                {ok, Terms} ->
+                    {ok, Terms};
+                {error, {LineNumber, erl_parse, _ParseMessage} = Reason} ->
+                    {error, describe_config_problem(File, Reason, LineNumber)};
+                {error, Reason} ->
+                    {error, describe_config_problem(File, Reason)}
+            end
     end.
 
 %% @doc Convert configuration filename to absolute path.
@@ -158,7 +234,7 @@ search_hosts(Term, State) ->
 
 add_hosts_to_option(Hosts, State) ->
     PrepHosts = normalize_hosts(Hosts),
-    add_option(hosts, PrepHosts, State#state{hosts = PrepHosts}).
+    set_option({hosts, global}, PrepHosts, State#state{hosts = PrepHosts}).
 
 normalize_hosts(Hosts) ->
     normalize_hosts(Hosts,[]).
@@ -232,21 +308,37 @@ exit_or_halt(ExitText) ->
 %% @doc Include additional configuration files in the list of terms.
 %% @spec ([term()]) -> [term()]
 include_config_files(Terms) ->
-    include_config_files(Terms, []).
+    {FileOpts, Terms1} =
+        lists:mapfoldl(
+          fun({include_config_file, _} = T, Ts) ->
+                  {[transform_include_option(T)], Ts};
+             ({include_config_file, _, _} = T, Ts) ->
+                  {[transform_include_option(T)], Ts};
+             (T, Ts) ->
+                  {[], [T|Ts]}
+          end, [], Terms),
+    Terms2 = lists:flatmap(
+               fun({File, Opts}) ->
+                       include_config_file(File, Opts)
+               end, lists:flatten(FileOpts)),
+    Terms1 ++ Terms2.
 
-include_config_files([], Res) ->
-    Res;
-include_config_files([{include_config_file, Filename} | Terms], Res) ->
-    include_config_files([{include_config_file, Filename, []} | Terms], Res);
-include_config_files([{include_config_file, Filename, Options} | Terms], Res) ->
+transform_include_option({include_config_file, File}) when is_list(File) ->
+    case is_string(File) of
+        true -> {File, []};
+        false -> File
+    end;
+transform_include_option({include_config_file, Filename}) ->
+    {Filename, []};
+transform_include_option({include_config_file, Filename, Options}) ->
+    {Filename, Options}.
+
+include_config_file(Filename, Options) ->
     Included_terms = get_plain_terms_file(Filename),
     Disallow = proplists:get_value(disallow, Options, []),
     Included_terms2 = delete_disallowed(Disallow, Included_terms),
     Allow_only = proplists:get_value(allow_only, Options, all),
-    Included_terms3 = keep_only_allowed(Allow_only, Included_terms2),
-    include_config_files(Terms, Res ++ Included_terms3);
-include_config_files([Term | Terms], Res) ->
-    include_config_files(Terms, Res ++ [Term]).
+    keep_only_allowed(Allow_only, Included_terms2).
 
 %% @doc Filter from the list of terms the disallowed.
 %% Returns a sublist of Terms without the ones which first element is
@@ -308,18 +400,30 @@ split_terms_macros(Terms) ->
       fun(Term, {TOs, Ms}) ->
 	      case Term of
 		  {define_macro, Key, Value} -> 
-		      case is_atom(Key) and is_all_uppercase(Key) of
+		      case is_correct_macro({Key, Value}) of
 			  true -> 
 			      {TOs, Ms++[{Key, Value}]};
 			  false -> 
 			      exit({macro_not_properly_defined, Term})
 		      end;
+                  {define_macro, KeyVals} ->
+                      case lists:all(fun is_correct_macro/1, KeyVals) of
+                          true ->
+                              {TOs, Ms ++ KeyVals};
+                          false ->
+                              exit({macros_not_properly_defined, Term})
+                      end;
 		  Term ->
 		      {TOs ++ [Term], Ms}
 	      end
       end,
       {[], []},
       Terms).
+
+is_correct_macro({Key, _Val}) ->
+    is_atom(Key) and is_all_uppercase(Key);
+is_correct_macro(_) ->
+    false.
 
 %% @doc Recursively replace in Terms macro usages with the defined value.
 %% @spec (Terms, Macros) -> Terms
@@ -328,7 +432,9 @@ split_terms_macros(Terms) ->
 replace([], _) ->
     [];
 replace([Term|Terms], Macros) ->
-    [replace_term(Term, Macros) | replace(Terms, Macros)].
+    [replace_term(Term, Macros) | replace(Terms, Macros)];
+replace(Term, Macros) ->
+    replace_term(Term, Macros).
 
 replace_term(Key, Macros) when is_atom(Key) ->
     case is_all_uppercase(Key) of
@@ -362,121 +468,65 @@ is_all_uppercase(Atom) ->
 
 process_term(Term, State) ->
     case Term of
-	override_global ->
-	    State#state{override_global = true};
-	override_local ->
-	    State#state{override_local = true};
-	override_acls ->
-	    State#state{override_acls = true};
-	{host_config, Host, Terms} ->
-	    lists:foldl(fun(T, S) -> process_host_term(T, Host, S) end,
-			State, Terms);
-	{listen, Listeners} ->
-	    Listeners2 =
-		lists:map(
-		  fun({PortIP, Module, Opts}) ->
-			  {Port, IPT, _, _, Proto, OptsClean} =
-			      ejabberd_listener:parse_listener_portip(PortIP, Opts),
-			  {{Port, IPT, Proto}, Module, OptsClean}
-		  end,
-		  Listeners),
-	    add_option(listen, Listeners2, State);
-	{s2s_certfile, CertFile} ->
-            CertFileS = binary_to_list(CertFile),
-	    case ejabberd_config:is_file_readable(CertFileS) of
-		true -> add_option(s2s_certfile, CertFile, State);
-		false ->
-		    ErrorText = "There is a problem in the configuration: "
-			"the specified file is not readable: ",
-		    throw({error, ErrorText ++ CertFileS})
-	    end;
-	{domain_certfile, Domain, CertFile} ->
-            CertFileS = binary_to_list(CertFile),
-	    case ejabberd_config:is_file_readable(CertFileS) of
-		true -> add_option({domain_certfile, Domain}, CertFile, State);
-		false ->
-		    ErrorText = "There is a problem in the configuration: "
-			"the specified file is not readable: ",
-		    throw({error, ErrorText ++ CertFileS})
-	    end;
-	{loglevel, Loglevel} ->
-	    ejabberd_logger:set(Loglevel),
-	    State;
+	{host_config, HostTerms} ->
+            lists:foldl(
+              fun({Host, Terms}, AccState) ->
+                      lists:foldl(fun(T, S) ->
+                                          process_host_term(T, Host, S, set)
+                                  end, AccState, Terms)
+              end, State, HostTerms);
+        {append_host_config, HostTerms} ->
+            lists:foldl(
+              fun({Host, Terms}, AccState) ->
+                      lists:foldl(fun(T, S) ->
+                                          process_host_term(T, Host, S, append)
+                                  end, AccState, Terms)
+              end, State, HostTerms);
 	_ ->
-	    lists:foldl(fun(Host, S) -> process_host_term(Term, Host, S) end,
-			State, [global|State#state.hosts])
+            process_host_term(Term, global, State, set)
     end.
 
-process_host_term(Term, Host, State) ->
+process_host_term(Term, Host, State, Action) ->
     case Term of
-	{acl, ACLName, ACLData} ->
-	    State#state{opts =
-			[acl:to_record(Host, ACLName, ACLData) | State#state.opts]};
-	{access, RuleName, Rules} ->
-            add_option({access, RuleName, Host}, Rules, State);
-	{shaper, Name, Data} ->
-            add_option({shaper, Name, Host}, Data, State);
-        {modules, Modules} ->
-            add_option({modules, Host}, replace_modules(Modules), State);
+        {modules, Modules} when Action == set ->
+            set_option({modules, Host}, replace_modules(Modules), State);
+        {modules, Modules} when Action == append ->
+            append_option({modules, Host}, replace_modules(Modules), State);
         {host, _} ->
             State;
         {hosts, _} ->
             State;
-	{Opt, Val} ->
-	    add_option({Opt, Host}, Val, State)
+	{Opt, Val} when Action == set ->
+	    set_option({Opt, Host}, Val, State);
+        {Opt, Val} when Action == append ->
+            append_option({Opt, Host}, Val, State);
+        Opt ->
+            ?WARNING_MSG("Ignore invalid (outdated?) option ~p", [Opt]),
+            State
     end.
 
-add_option(Opt, Val, State) when is_atom(Opt) ->
-    add_option({Opt, global}, Val, State);
-add_option(Opt, Val, State) ->
-    case Opt of
-        {{add, OptName}, Host} ->
-            State#state{opts = compact({OptName, Host}, Val,
-                                       State#state.opts, [])};
-        _ ->
-            State#state{opts = [#local_config{key = Opt, value = Val} |
-                                State#state.opts]}
-    end.
+set_option(Opt, Val, State) ->
+    State#state{opts = [#local_config{key = Opt, value = Val} |
+                        State#state.opts]}.
 
-compact({OptName, Host} = Opt, Val, [], Os) ->
-    ?WARNING_MSG("The option '~p' is defined for the host ~p using host_config "
-    "before the global '~p' option. This host_config option may get overwritten.", [OptName, Host, OptName]),
-    [#local_config{key = Opt, value = Val}] ++ Os;
-%% Traverse the list of the options already parsed
-compact(Opt, Val, [O | Os1], Os2) ->
-    case catch O#local_config.key of
-	%% If the key of a local_config matches the Opt that wants to be added
-	Opt ->
-	    %% Then prepend the new value to the list of old values
-	    Os2 ++ [#local_config{key = Opt,
-				  value = Val++O#local_config.value}
-		   ] ++ Os1;
-	_ ->
-	    compact(Opt, Val, Os1, Os2++[O])
-    end.
-
+append_option({Opt, Host}, Val, State) ->
+    GlobalVals = lists:flatmap(
+                   fun(#local_config{key = {O, global}, value = V})
+                         when O == Opt ->
+                           if is_list(V) -> V;
+                              true -> [V]
+                           end;
+                      (_) ->
+                           []
+                   end, State#state.opts),
+    NewVal = if is_list(Val) -> Val ++ GlobalVals;
+                true -> [Val|GlobalVals]
+             end,
+    set_option({Opt, Host}, NewVal, State).
 
 set_opts(State) ->
-    Opts = lists:reverse(State#state.opts),
+    Opts = State#state.opts,
     F = fun() ->
-		if
-		    State#state.override_local ->
-			Ksl = mnesia:all_keys(local_config),
-			lists:foreach(fun(K) ->
-					      mnesia:delete({local_config, K})
-				      end, Ksl);
-		    true ->
-			ok
-		end,
-		if
-		    State#state.override_acls ->
-			Ksa = mnesia:all_keys(acl),
-			lists:foreach(fun(K) ->
-					      mnesia:delete({acl, K})
-				      end, Ksa);
-		    true ->
-			ok
-		end,
 		lists:foreach(fun(R) ->
 				      mnesia:write(R)
 			      end, Opts)
@@ -565,11 +615,22 @@ get_option(Opt, F) ->
 get_option(Opt, F, Default) when is_atom(Opt) ->
     get_option({Opt, global}, F, Default);
 get_option(Opt, F, Default) ->
+    case Opt of
+        {O, global} when is_atom(O) -> ok;
+        {O, H} when is_atom(O), is_binary(H) -> ok;
+        _ -> ?WARNING_MSG("Option ~p has invalid (outdated?) format. "
+                          "This is likely a bug", [Opt])
+    end,
     case ets:lookup(local_config, Opt) of
 	[#local_config{value = Val}] ->
 	    prepare_opt_val(Opt, Val, F, Default);
-	_ ->
-	    Default
+        _ ->
+            case Opt of
+                {Key, Host} when Host /= global ->
+                    get_option({Key, global}, F, Default);
+                _ ->
+                    Default
+            end
     end.
 
 -spec get_vh_by_auth_method(atom()) -> [binary()].
@@ -632,14 +693,14 @@ replace_modules(Modules) ->
                       emit_deprecation_warning(Module, NewModule, DBType),
                       NewOpts = [{db_type, DBType} |
                                  lists:keydelete(db_type, 1, Opts)],
-                      {NewModule, NewOpts};
+                      {NewModule, transform_module_options(Module, NewOpts)};
                   NewModule ->
                       if Module /= NewModule ->
                               emit_deprecation_warning(Module, NewModule);
                          true ->
                               ok
                       end,
-                      {NewModule, Opts}
+                      {NewModule, transform_module_options(Module, Opts)}
               end
       end, Modules).
 
@@ -694,6 +755,142 @@ format_term(S) when is_list(S), S /= [] ->
     end;
 format_term(T) ->
     io_lib:format("~p", [binary_to_strings(T)]).
+
+transform_terms(Terms) ->
+    %% We could check all ejabberd beams, but this
+    %% slows down start-up procedure :(
+    Mods = [mod_register,
+            mod_last,
+            ejabberd_s2s,
+            ejabberd_listener,
+            ejabberd_odbc_sup,
+            shaper,
+            ejabberd_s2s_out,
+            acl,
+            ejabberd_config],
+    collect_options(transform_terms(Mods, Terms)).
+
+transform_terms([Mod|Mods], Terms) ->
+    case catch Mod:transform_options(Terms) of
+        {'EXIT', _} = Err ->
+            ?ERROR_MSG("Failed to transform terms by ~p: ~p", [Mod, Err]),
+            transform_terms(Mods, Terms);
+        NewTerms ->
+            transform_terms(Mods, NewTerms)
+    end;
+transform_terms([], NewTerms) ->
+    NewTerms.
+
+transform_module_options(Module, Opts) ->
+    Opts1 = gen_iq_handler:transform_module_options(Opts),
+    try
+        Module:transform_module_options(Opts1)
+    catch error:undef ->
+            Opts1
+    end.
+
+compact(Cfg) ->
+    Opts = [{K, V} || #local_config{key = K, value = V} <- Cfg],
+    {GOpts, HOpts} = split_by_hosts(Opts),
+    [#local_config{key = {O, global}, value = V} || {O, V} <- GOpts] ++
+        lists:flatmap(
+          fun({Host, OptVal}) ->
+                  case lists:member(OptVal, GOpts) of
+                      true ->
+                          [];
+                      false ->
+                          [#local_config{key = {Opt, Host}, value = Val}
+                           || {Opt, Val} <- OptVal]
+                  end
+          end, lists:flatten(HOpts)).
+
+split_by_hosts(Opts) ->
+    Opts1 = orddict:to_list(
+              lists:foldl(
+                fun({{Opt, Host}, Val}, D) ->
+                        orddict:append(Host, {Opt, Val}, D)
+                end, orddict:new(), Opts)),
+    case lists:keytake(global, 1, Opts1) of
+        {value, {global, GlobalOpts}, HostOpts} ->
+            {GlobalOpts, HostOpts};
+        _ ->
+            {[], Opts1}
+    end.
+
+collect_options(Opts) ->
+    {D, InvalidOpts} =
+        lists:foldl(
+          fun({K, V}, {D, Os}) when is_list(V) ->
+                  {orddict:append_list(K, V, D), Os};
+             ({K, V}, {D, Os}) ->
+                  {orddict:store(K, V, D), Os};
+             (Opt, {D, Os}) ->
+                  {D, [Opt|Os]}
+          end, {orddict:new(), []}, Opts),
+    InvalidOpts ++ orddict:to_list(D).
+
+transform_options(Opts) ->
+    Opts1 = lists:foldl(fun transform_options/2, [], Opts),
+    {HOpts, Opts2} = lists:mapfoldl(
+                       fun({host_config, O}, Os) ->
+                               {[O], Os};
+                          (O, Os) ->
+                               {[], [O|Os]}
+                       end, [], Opts1),
+    {AHOpts, Opts3} = lists:mapfoldl(
+                        fun({append_host_config, O}, Os) ->
+                                {[O], Os};
+                           (O, Os) ->
+                                {[], [O|Os]}
+                        end, [], Opts2),
+    HOpts1 = case collect_options(lists:flatten(HOpts)) of
+                 [] ->
+                     [];
+                 HOs ->
+                     [{host_config,
+                       [{H, transform_terms(O)} || {H, O} <- HOs]}]
+             end,
+    AHOpts1 = case collect_options(lists:flatten(AHOpts)) of
+                  [] ->
+                      [];
+                  AHOs ->
+                      [{append_host_config,
+                        [{H, transform_terms(O)} || {H, O} <- AHOs]}]
+              end,
+    HOpts1 ++ AHOpts1 ++ Opts3.
+
+transform_options({domain_certfile, Domain, CertFile}, Opts) ->
+    ?WARNING_MSG("Option 'domain_certfile' now should be defined "
+                 "per virtual host or globally. The old format is "
+                 "still supported but it is better to fix your config", []),
+    [{host_config, [{Domain, [{domain_certfile, CertFile}]}]}|Opts];
+transform_options(Opt, Opts) when Opt == override_global;
+                                  Opt == override_local;
+                                  Opt == override_acls ->
+    ?WARNING_MSG("Ignoring '~s' option which has no effect anymore", [Opt]),
+    Opts;
+transform_options({host_config, Host, HOpts}, Opts) ->
+    {AddOpts, HOpts1} =
+        lists:mapfoldl(
+          fun({{add, Opt}, Val}, Os) ->
+                  ?WARNING_MSG("Option 'add' is deprecated. "
+                               "The option is still supported "
+                               "but it is better to fix your config: "
+                               "use 'append_host_config' instead.", []),
+                  {[{Opt, Val}], Os};
+             (O, Os) ->
+                  {[], [O|Os]}
+          end, [], HOpts),
+    [{append_host_config, [{Host, lists:flatten(AddOpts)}]},
+     {host_config, [{Host, HOpts1}]}|Opts];
+transform_options({define_macro, Macro, Val}, Opts) ->
+    [{define_macro, [{Macro, Val}]}|Opts];
+transform_options({include_config_file, _} = Opt, Opts) ->
+    [{include_config_file, [transform_include_option(Opt)]} | Opts];
+transform_options({include_config_file, _, _} = Opt, Opts) ->
+    [{include_config_file, [transform_include_option(Opt)]} | Opts];
+transform_options(Opt, Opts) ->
+    [Opt|Opts].
 
 -spec convert_table_to_binary(atom(), [atom()], atom(),
                               fun(), fun()) -> ok.

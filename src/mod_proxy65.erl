@@ -33,7 +33,7 @@
 -behaviour(supervisor).
 
 %% gen_mod callbacks.
--export([start/2, stop/1]).
+-export([start/2, stop/1, transform_module_options/1]).
 
 %% supervisor callbacks.
 -export([init/1]).
@@ -63,6 +63,9 @@ start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     supervisor:start_link({local, Proc}, ?MODULE,
 			  [Host, Opts]).
+
+transform_module_options(Opts) ->
+    mod_proxy65_service:transform_module_options(Opts).
 
 init([Host, Opts]) ->
     Service = {mod_proxy65_service,

@@ -204,11 +204,11 @@ get_local_fqdn() ->
       Str when is_binary(Str) -> Str;
       _ ->
 	  <<"unknown-fqdn, please configure fqdn "
-	    "option in ejabberd.cfg!">>
+	    "option in ejabberd.yml!">>
     end.
 
 get_local_fqdn2() ->
-    case ejabberd_config:get_local_option(
+    case ejabberd_config:get_option(
            fqdn, fun iolist_to_binary/1) of
         ConfiguredFqdn when is_binary(ConfiguredFqdn) ->
             ConfiguredFqdn;

@@ -48,7 +48,7 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Host) ->
-    Cmd = ejabberd_config:get_local_option(
+    Cmd = ejabberd_config:get_option(
             {extauth_program, Host},
             fun(V) ->
                     binary_to_list(iolist_to_binary(V))
@@ -171,7 +171,7 @@ remove_user(User, Server, Password) ->
 
 %% @spec (Host::string()) -> false | {true, CacheTime::integer()}
 get_cache_option(Host) ->
-    case ejabberd_config:get_local_option(
+    case ejabberd_config:get_option(
            {extauth_cache, Host},
            fun(I) when is_integer(I), I > 0 -> I end) of
         undefined -> false;

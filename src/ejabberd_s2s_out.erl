@@ -35,7 +35,8 @@
 	 start_link/3,
 	 start_connection/1,
 	 terminate_if_waiting_delay/2,
-	 stop_connection/1]).
+	 stop_connection/1,
+         transform_options/1]).
 
 %% p1_fsm callbacks (same as gen_fsm)
 -export([init/1,
@@ -161,7 +162,7 @@ init([From, Server, Type]) ->
     process_flag(trap_exit, true),
     ?DEBUG("started: ~p", [{From, Server, Type}]),
     {TLS, TLSRequired} = case
-			   ejabberd_config:get_local_option(
+			   ejabberd_config:get_option(
                              s2s_use_starttls,
                              fun(true) -> true;
                                 (false) -> false;
@@ -184,13 +185,13 @@ init([From, Server, Type]) ->
 			 end,
     UseV10 = TLS,
     TLSOpts1 = case
-		ejabberd_config:get_local_option(
+		ejabberd_config:get_option(
                   s2s_certfile, fun iolist_to_binary/1)
 		  of
 		undefined -> [connect];
 		CertFile -> [{certfile, CertFile}, connect]
 	      end,
-    TLSOpts = case ejabberd_config:get_local_option(
+    TLSOpts = case ejabberd_config:get_option(
                      {s2s_tls_compression, From},
                      fun(true) -> true;
                         (false) -> false
@@ -702,7 +703,7 @@ wait_for_starttls_proceed({xmlstreamelement, El},
 		       [{StateData#state.myname, StateData#state.server}]),
 		Socket = StateData#state.socket,
 		TLSOpts = case
-			    ejabberd_config:get_local_option(
+			    ejabberd_config:get_option(
                               {domain_certfile, StateData#state.myname},
                               fun iolist_to_binary/1)
 			      of
@@ -1142,16 +1143,15 @@ get_addr_port(Server) ->
     end.
 
 srv_lookup(Server) ->
-    Options = case
-		ejabberd_config:get_local_option(
-                  s2s_dns_options, fun(L) when is_list(L) -> L end)
-		  of
-                undefined -> [];
-                L -> L
-	      end,
-    TimeoutMs = timer:seconds(proplists:get_value(timeout,
-						  Options, 10)),
-    Retries = proplists:get_value(retries, Options, 2),
+    TimeoutMs = timer:seconds(
+                  ejabberd_config:get_option(
+                    s2s_dns_timeout,
+                    fun(I) when is_integer(I), I>=0 -> I end,
+                    10)),
+    Retries = ejabberd_config:get_option(
+                s2s_dns_retries,
+                fun(I) when is_integer(I), I>=0 -> I end,
+                2),
     srv_lookup(binary_to_list(Server), TimeoutMs, Retries).
 
 %% XXX - this behaviour is suboptimal in the case that the domain
@@ -1211,15 +1211,15 @@ get_addrs(Host, Family) ->
     end.
 
 outgoing_s2s_port() ->
-    ejabberd_config:get_local_option(
+    ejabberd_config:get_option(
       outgoing_s2s_port,
       fun(I) when is_integer(I), I > 0, I =< 65536 -> I end,
       5269).
 
 outgoing_s2s_families() ->
-    ejabberd_config:get_local_option(
-      outgoing_s2s_options,
-      fun({Families, _}) ->
+    ejabberd_config:get_option(
+      outgoing_s2s_families,
+      fun(Families) ->
               true = lists:all(
                        fun(ipv4) -> true;
                           (ipv6) -> true
@@ -1228,13 +1228,42 @@ outgoing_s2s_families() ->
       end, [ipv4, ipv6]).
 
 outgoing_s2s_timeout() ->
-    ejabberd_config:get_local_option(
-      outgoing_s2s_options,
-      fun({_, TimeOut}) when is_integer(TimeOut), TimeOut > 0 ->
+    ejabberd_config:get_option(
+      outgoing_s2s_timeout,
+      fun(TimeOut) when is_integer(TimeOut), TimeOut > 0 ->
               TimeOut;
-         ({_, infinity}) ->
+         (infinity) ->
               infinity
       end, 10000).
+
+transform_options(Opts) ->
+    lists:foldl(fun transform_options/2, [], Opts).
+
+transform_options({outgoing_s2s_options, Families, Timeout}, Opts) ->
+    ?WARNING_MSG("Option 'outgoing_s2s_options' is deprecated. "
+                 "The option is still supported "
+                 "but it is better to fix your config: "
+                 "use 'outgoing_s2s_timeout' and "
+                 "'outgoing_s2s_families' instead.", []),
+    [{outgoing_s2s_families, Families},
+     {outgoing_s2s_timeout, Timeout}
+     | Opts];
+transform_options({s2s_dns_options, S2SDNSOpts}, AllOpts) ->
+    ?WARNING_MSG("Option 's2s_dns_options' is deprecated. "
+                 "The option is still supported "
+                 "but it is better to fix your config: "
+                 "use 's2s_dns_timeout' and "
+                 "'s2s_dns_retries' instead", []),
+    lists:foldr(
+      fun({timeout, T}, AccOpts) ->
+              [{s2s_dns_timeout, T}|AccOpts];
+         ({retries, R}, AccOpts) ->
+              [{s2s_dns_retries, R}|AccOpts];
+         (_, AccOpts) ->
+              AccOpts
+      end, AllOpts, S2SDNSOpts);
+transform_options(Opt, Opts) ->
+    [Opt|Opts].
 
 %% Human readable S2S logging: Log only new outgoing connections as INFO
 %% Do not log dialback
@@ -1278,7 +1307,7 @@ wait_before_reconnect(StateData) ->
 		     queue = queue:new()}}.
 
 get_max_retry_delay() ->
-    case ejabberd_config:get_local_option(
+    case ejabberd_config:get_option(
            s2s_max_retry_delay,
            fun(I) when is_integer(I), I > 0 -> I end) of
         undefined -> ?MAX_RETRY_DELAY;
@@ -1295,7 +1324,7 @@ terminate_if_waiting_delay(From, To) ->
 		  Pids).
 
 fsm_limit_opts() ->
-    case ejabberd_config:get_local_option(
+    case ejabberd_config:get_option(
            max_fsm_queue,
            fun(I) when is_integer(I), I > 0 -> I end) of
         undefined -> [];

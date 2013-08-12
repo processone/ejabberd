@@ -387,14 +387,10 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
     end.
 
 get_component_number(LDomain) ->
-    case
-      ejabberd_config:get_local_option({domain_balancing_component_number,
-					LDomain}, fun(D) -> D end)
-	of
-      N when is_integer(N), N > 1 -> N;
-      _ -> undefined
-    end.
-
+    ejabberd_config:get_option(
+      {domain_balancing_component_number, LDomain},
+      fun(N) when is_integer(N), N > 1 -> N end,
+      undefined).
 
 update_tables() ->
     case catch mnesia:table_info(route, attributes) of

@@ -47,12 +47,14 @@ start(normal, _Args) ->
     db_init(),
     start(),
     translate:start(),
-    acl:start(),
     ejabberd_ctl:init(),
     ejabberd_commands:init(),
     ejabberd_admin:start(),
     gen_mod:start(),
     ejabberd_config:start(),
+    set_loglevel_from_config(),
+    acl:start(),
+    shaper:start(),
     connect_nodes(),
     Sup = ejabberd_sup:start_link(),
     ejabberd_rdbms:start(),
@@ -119,7 +121,7 @@ db_init() ->
 start_modules() ->
     lists:foreach(
       fun(Host) ->
-              Modules = ejabberd_config:get_local_option(
+              Modules = ejabberd_config:get_option(
                           {modules, Host},
                           fun(Mods) ->
                                   lists:map(
@@ -137,7 +139,7 @@ start_modules() ->
 stop_modules() ->
     lists:foreach(
       fun(Host) ->
-              Modules = ejabberd_config:get_local_option(
+              Modules = ejabberd_config:get_option(
                           {modules, Host},
                           fun(Mods) ->
                                   lists:map(
@@ -152,7 +154,7 @@ stop_modules() ->
       end, ?MYHOSTS).
 
 connect_nodes() ->
-    Nodes = ejabberd_config:get_local_option(
+    Nodes = ejabberd_config:get_option(
               cluster_nodes,
               fun(Ns) ->
                       true = lists:all(fun is_atom/1, Ns),
@@ -212,9 +214,17 @@ delete_pid_file() ->
 	    file:delete(PidFilename)
     end.
 
+set_loglevel_from_config() ->
+    Level = ejabberd_config:get_option(
+              loglevel,
+              fun(P) when P>=0, P=<5 -> P end,
+              4),
+    ejabberd_logger:set(Level).
+
 start_apps() ->
     ejabberd:start_app(sasl),
     ejabberd:start_app(ssl),
+    ejabberd:start_app(p1_yaml),
     ejabberd:start_app(p1_tls),
     ejabberd:start_app(p1_xml),
     ejabberd:start_app(p1_stringprep),

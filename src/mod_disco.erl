@@ -36,7 +36,8 @@
 	 process_sm_iq_items/3, process_sm_iq_info/3,
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
 	 get_info/5, register_feature/2, unregister_feature/2,
-	 register_extra_domain/2, unregister_extra_domain/2]).
+	 register_extra_domain/2, unregister_extra_domain/2,
+         transform_module_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -440,6 +441,22 @@ get_user_resources(User, Server) ->
 	      end,
 	      lists:sort(Rs)).
 
+transform_module_options(Opts) ->
+    lists:map(
+      fun({server_info, Infos}) ->
+              NewInfos = lists:map(
+                           fun({Modules, Name, URLs}) ->
+                                   [[{modules, Modules},
+                                     {name, Name},
+                                     {urls, URLs}]];
+                              (Opt) ->
+                                   Opt
+                           end, Infos),
+              {server_info, NewInfos};
+         (Opt) ->
+              Opt
+      end, Opts).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% Support for: XEP-0157 Contact Addresses for XMPP Services
@@ -465,9 +482,17 @@ get_info(_A, Host, Mod, Node, _Lang) when Node == <<>> ->
 get_info(Acc, _, _, _Node, _) -> Acc.
 
 get_fields_xml(Host, Module) ->
-    Fields = gen_mod:get_module_opt(Host, ?MODULE, server_info,
-                                    fun(L) when is_list(L) -> L end,
-                                    []),
+    Fields = gen_mod:get_module_opt(
+               Host, ?MODULE, server_info,
+               fun(L) ->
+                       lists:map(
+                         fun(Opts) ->
+                                 Mods = proplists:get_value(modules, Opts, all),
+                                 Name = proplists:get_value(names, Opts, <<>>),
+                                 URLs = proplists:get_value(urls, Opts, []),
+                                 {Mods, Name, URLs}
+                         end, lists:flatmap(L))
+               end, []),
     Fields_good = lists:filter(fun ({Modules, _, _}) ->
 				       case Modules of
 					 all -> true;

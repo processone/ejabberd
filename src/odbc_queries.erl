@@ -219,13 +219,15 @@ list_users(LServer,
                                  [Prefix, Limit, Offset]))]).
 
 users_number(LServer) ->
-    case element(1,
-		 ejabberd_config:get_local_option(
-                   {odbc_server, LServer}, fun(V) -> V end))
-	of
+    Type = ejabberd_config:get_option({odbc_type, LServer},
+                                      fun(pgsql) -> pgsql;
+                                         (mysql) -> mysql;
+                                         (odbc) -> odbc
+                                      end, odbc),
+    case Type of
       pgsql ->
 	  case
-	    ejabberd_config:get_local_option(
+	    ejabberd_config:get_option(
               {pgsql_users_number_estimate, LServer},
               fun(V) when is_boolean(V) -> V end,
               false)

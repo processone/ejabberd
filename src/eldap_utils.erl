@@ -182,7 +182,7 @@ get_opt({Key, Host}, Opts, F) ->
 get_opt({Key, Host}, Opts, F, Default) ->
     case gen_mod:get_opt(Key, Opts, F, undefined) of
         undefined ->
-            ejabberd_config:get_local_option(
+            ejabberd_config:get_option(
               {Key, Host}, F, Default);
         Val ->
             Val

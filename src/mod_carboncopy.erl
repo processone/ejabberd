@@ -3,7 +3,7 @@
 %%% Author  : Eric Cestari <ecestari@process-one.net>
 %%% Purpose : Message Carbons XEP-0280 0.8
 %%% Created : 5 May 2008 by Mickael Remond <mremond@process-one.net>
-%%% Usage   : Add the following line in modules section of ejabberd.cfg:
+%%% Usage   : Add the following line in modules section of ejabberd.yml:
 %%%              {mod_carboncopy, []}
 %%%
 %%%

@@ -53,7 +53,7 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link() ->
-    LH = ejabberd_config:get_local_option(
+    LH = ejabberd_config:get_option(
            watchdog_large_heap,
            fun(I) when is_integer(I), I > 0 -> I end,
 	   1000000),
@@ -200,7 +200,7 @@ send_message(From, To, Body) ->
 						 [{xmlcdata, Body}]}]}).
 
 get_admin_jids() ->
-    ejabberd_config:get_local_option(
+    ejabberd_config:get_option(
       watchdog_admins,
       fun(JIDs) ->
               [jlib:jid_tolower(

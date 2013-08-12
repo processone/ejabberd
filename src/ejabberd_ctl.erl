@@ -237,7 +237,7 @@ process2(Args, Auth, AccessCommands) ->
     end.
 
 get_accesscommands() ->
-    ejabberd_config:get_local_option(ejabberdctl_access_commands,
+    ejabberd_config:get_option(ejabberdctl_access_commands,
                                      fun(V) when is_list(V) -> V end, []).
 
 %%-----------------------------

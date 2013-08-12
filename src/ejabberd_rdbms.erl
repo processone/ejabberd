@@ -69,18 +69,16 @@ start_odbc(Host, App) ->
 	  start_odbc(Host, App)
     end.
 
-%% Returns {true, App} if we have configured odbc_server for the given host
+%% Returns {true, App} if we have configured odbc for the given host
 needs_odbc(Host) ->
     LHost = jlib:nameprep(Host),
-    case ejabberd_config:get_local_option(
-           {odbc_server, LHost}, fun(Res) -> Res end) of
-        {mysql, _, _, _, _} -> {true, p1_mysql};
-        {pgsql, _, _, _, _} -> {true, p1_pgsql};
-        {mysql, _, _, _, _, _} -> {true, p1_mysql};
-        {pgsql, _, _, _, _, _} -> {true, p1_pgsql};
-        S ->
-            case catch iolist_to_binary(S) of
-                {'EXIT', _} -> false;
-                _ -> true
-            end
+    case ejabberd_config:get_option({odbc_type, LHost},
+                                    fun(mysql) -> mysql;
+                                       (pgsql) -> pgsql;
+                                       (odbc) -> odbc
+                                    end, undefined) of
+        mysql -> {true, p1_mysql};
+        pgsql -> {true, p1_pgsql};
+        odbc -> {true, odbc};
+        undefined -> false
     end.

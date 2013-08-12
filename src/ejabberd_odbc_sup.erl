@@ -30,10 +30,14 @@
 
 %% API
 -export([start_link/1, init/1, add_pid/2, remove_pid/2,
-	 get_pids/1, get_random_pid/1]).
+	 get_pids/1, get_random_pid/1, transform_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+
+-define(PGSQL_PORT, 5432).
+
+-define(MYSQL_PORT, 3306).
 
 -define(DEFAULT_POOL_SIZE, 10).
 
@@ -56,11 +60,11 @@ start_link(Host) ->
 			  ?MODULE, [Host]).
 
 init([Host]) ->
-    PoolSize = ejabberd_config:get_local_option(
+    PoolSize = ejabberd_config:get_option(
                  {odbc_pool_size, Host},
                  fun(I) when is_integer(I), I>0 -> I end,
                  ?DEFAULT_POOL_SIZE),
-    StartInterval = ejabberd_config:get_local_option(
+    StartInterval = ejabberd_config:get_option(
                       {odbc_start_interval, Host},
                       fun(I) when is_integer(I), I>0 -> I end,
                       ?DEFAULT_ODBC_START_INTERVAL),
@@ -93,3 +97,20 @@ remove_pid(Host, Pid) ->
 		mnesia:delete_object(#sql_pool{host = Host, pid = Pid})
 	end,
     mnesia:ets(F).
+
+transform_options(Opts) ->
+    lists:foldl(fun transform_options/2, [], Opts).
+
+transform_options({odbc_server, {Type, Server, Port, DB, User, Pass}}, Opts) ->
+    [{odbc_type, Type},
+     {odbc_server, Server},
+     {odbc_port, Port},
+     {odbc_database, DB},
+     {odbc_username, User},
+     {odbc_password, Pass}|Opts];
+transform_options({odbc_server, {mysql, Server, DB, User, Pass}}, Opts) ->
+    transform_options({odbc_server, {mysql, Server, ?MYSQL_PORT, DB, User, Pass}}, Opts);
+transform_options({odbc_server, {pgsql, Server, DB, User, Pass}}, Opts) ->
+    transform_options({odbc_server, {pgsql, Server, ?PGSQL_PORT, DB, User, Pass}}, Opts);
+transform_options(Opt, Opts) ->
+    [Opt|Opts].

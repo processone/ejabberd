@@ -71,11 +71,11 @@
 
 -define(TOP_LEVEL_TXN, 0).
 
--define(MAX_TRANSACTION_RESTARTS, 10).
-
 -define(PGSQL_PORT, 5432).
 
 -define(MYSQL_PORT, 3306).
+
+-define(MAX_TRANSACTION_RESTARTS, 10).
 
 -define(TRANSACTION_TIMEOUT, 60000).
 
@@ -201,8 +201,8 @@ decode_term(Bin) ->
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
 init([Host, StartInterval]) ->
-    case ejabberd_config:get_local_option(
-           {odbc_keepalive_interval, Host},
+    case ejabberd_config:get_option(
+           {keepalive_interval, Host},
            fun(I) when is_integer(I), I>0 -> I end) of
         undefined ->
             ok;
@@ -573,39 +573,39 @@ log(Level, Format, Args) ->
     end.
 
 db_opts(Host) ->
-    case ejabberd_config:get_local_option(
-           {odbc_server, Host},
-           fun({Type, Server, DB, User, Pass}) ->
-                   {Type,
-                    iolist_to_binary(Server),
-                    case Type of
-                        mysql -> ?MYSQL_PORT;
-                        pgsql -> ?PGSQL_PORT
-                    end,
-                    iolist_to_binary(DB),
-                    iolist_to_binary(User),
-                    iolist_to_binary(Pass)};
-              ({Type, Server, Port, DB, User, Pass})
-                 when ((Type == mysql) or (Type == pgsql))
-                      and (is_integer(Port) and ((Port > 0)
-                                                 and (Port < 65536))) ->
-                   {Type,
-                    iolist_to_binary(Server),
-                    Port,
-                    iolist_to_binary(DB),
-                    iolist_to_binary(User),
-                    iolist_to_binary(Pass)};
-              (S) ->
-                   iolist_to_binary(S)
-           end, <<"localhost">>) of
-        {Type, Server, Port, DB, User, Pass} ->
-            [Type, Server, Port, DB, User, Pass];
-        SQLServer ->
-            [odbc, SQLServer]
+    Type = ejabberd_config:get_option({odbc_type, Host},
+                                      fun(mysql) -> mysql;
+                                         (pgsql) -> pgsql;
+                                         (odbc) -> odbc
+                                      end, odbc),
+    Server = ejabberd_config:get_option({odbc_server, Host},
+                                        fun iolist_to_binary/1,
+                                        <<"localhost">>),
+    case Type of
+        odbc ->
+            [odbc, Server];
+        _ ->
+            Port = ejabberd_config:get_option(
+                     {port, Host},
+                     fun(P) when is_integer(P), P > 0, P < 65536 -> P end,
+                     case Type of
+                         mysql -> ?MYSQL_PORT;
+                         pgsql -> ?PGSQL_PORT
+                     end),
+            DB = ejabberd_config:get_option({odbc_database, Host},
+                                            fun iolist_to_binary/1,
+                                            <<"ejabberd">>),
+            User = ejabberd_config:get_option({odbc_username, Host},
+                                              fun iolist_to_binary/1,
+                                              <<"ejabberd">>),
+            Pass = ejabberd_config:get_option({odbc_password, Host},
+                                              fun iolist_to_binary/1,
+                                              <<"">>),
+            [Type, Server, Port, DB, User, Pass]
     end.
 
 max_fsm_queue() ->
-    ejabberd_config:get_local_option(
+    ejabberd_config:get_option(
       max_fsm_queue,
       fun(N) when is_integer(N), N > 0 -> N end).
 

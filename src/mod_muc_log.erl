@@ -33,7 +33,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2, start/2, stop/1,
+-export([start_link/2, start/2, stop/1, transform_module_options/1,
 	 check_access_log/2, add_to_log/5]).
 
 %% gen_server callbacks
@@ -111,6 +111,14 @@ check_access_log(Host, From) ->
       Res -> Res
     end.
 
+transform_module_options(Opts) ->
+    lists:map(
+      fun({top_link, {S1, S2}}) ->
+              {top_link, [{S1, S2}]};
+         (Opt) ->
+              Opt
+      end, Opts).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -152,14 +160,14 @@ init([Host, Opts]) ->
                                   (universal) -> universal
                                end, local),
     Top_link = gen_mod:get_opt(top_link, Opts,
-                               fun({S1, S2}) ->
+                               fun([{S1, S2}]) ->
                                        {iolist_to_binary(S1),
                                         iolist_to_binary(S2)}
                                end, {<<"/">>, <<"Home">>}),
     NoFollow = gen_mod:get_opt(spam_prevention, Opts,
                                fun(B) when is_boolean(B) -> B end,
                                true),
-    Lang = ejabberd_config:get_local_option(
+    Lang = ejabberd_config:get_option(
              {language, Host},
              fun iolist_to_binary/1,
              ?MYLANG),

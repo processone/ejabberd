@@ -35,7 +35,7 @@
 	 handle_cast/2, terminate/2, code_change/3]).
 
 %% API.
--export([start_link/2, add_listener/2,
+-export([start_link/2, add_listener/2, transform_module_options/1,
 	 delete_listener/1]).
 
 -include("ejabberd.hrl").
@@ -261,22 +261,31 @@ parse_options(ServerHost, Opts) ->
     Name = gen_mod:get_opt(name, Opts, fun iolist_to_binary/1,
 			   <<"SOCKS5 Bytestreams">>),
     IP = gen_mod:get_opt(ip, Opts,
-                         fun(Addr) ->
-                                 jlib:ip_to_list(Addr),
+                         fun(S) ->
+                                 {ok, Addr} = inet_parse:address(
+                                                binary_to_list(
+                                                  iolist_to_binary(S))),
                                  Addr
                          end, get_my_ip()),
     HostName = gen_mod:get_opt(hostname, Opts,
-                               fun(Addr) when is_tuple(Addr) ->
-                                       jlib:ip_to_list(Addr);
-                                  (S) ->
-                                       iolist_to_binary(S)
-                               end, jlib:ip_to_list(IP)),
+                               fun iolist_to_binary/1,
+                               jlib:ip_to_list(IP)),
     StreamAddr = [{<<"jid">>, MyHost},
 		  {<<"host">>, HostName},
 		  {<<"port">>, jlib:integer_to_binary(Port)}],
     #state{myhost = MyHost, serverhost = ServerHost,
 	   name = Name, port = Port, ip = IP,
 	   stream_addr = StreamAddr, acl = ACL}.
+
+transform_module_options(Opts) ->
+    lists:map(
+      fun({ip, IP}) when is_tuple(IP) ->
+              {ip, jlib:ip_to_list(IP)};
+         ({hostname, IP}) when is_tuple(IP) ->
+              {hostname, jlib:ip_to_list(IP)};
+         (Opt) ->
+              Opt
+      end, Opts).
 
 get_my_ip() ->
     {ok, MyHostName} = inet:gethostname(),

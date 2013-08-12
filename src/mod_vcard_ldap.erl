@@ -38,7 +38,7 @@
 
 -export([start/2, start_link/2, stop/1,
 	 get_sm_features/5, process_local_iq/3, process_sm_iq/3,
-	 remove_user/1, route/4]).
+	 remove_user/1, route/4, transform_module_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -767,7 +767,7 @@ parse_options(Host, Opts) ->
     VCardMap = gen_mod:get_opt(ldap_vcard_map, Opts,
                                fun(Ls) ->
                                        lists:map(
-                                         fun({S, P, L}) ->
+                                         fun({S, [{P, L}]}) ->
                                                  {iolist_to_binary(S),
                                                   iolist_to_binary(P),
                                                   [iolist_to_binary(E)
@@ -822,6 +822,20 @@ parse_options(Host, Opts) ->
 	   search_reported = SearchReported,
 	   search_reported_attrs = SearchReportedAttrs,
 	   matches = Matches}.
+
+transform_module_options(Opts) ->
+    lists:map(
+      fun({ldap_vcard_map, Map}) ->
+              NewMap = lists:map(
+                         fun({Field, Pattern, Attrs}) ->
+                                 {Field, [{Pattern, Attrs}]};
+                            (Opt) ->
+                                 Opt
+                         end, Map),
+              {ldap_vcard_map, NewMap};
+         (Opt) ->
+              Opt
+      end, Opts).
 
 check_filter(F) ->
     NewF = iolist_to_binary(F),

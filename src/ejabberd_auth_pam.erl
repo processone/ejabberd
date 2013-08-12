@@ -107,13 +107,13 @@ store_type() -> external.
 %% Internal functions
 %%====================================================================
 get_pam_service(Host) ->
-    ejabberd_config:get_local_option(
+    ejabberd_config:get_option(
       {pam_service, Host},
       fun iolist_to_binary/1,
       <<"ejabberd">>).
 
 get_pam_userinfotype(Host) ->
-    ejabberd_config:get_local_option(
+    ejabberd_config:get_option(
       {pam_userinfotype, Host},
       fun(username) -> username;
          (jid) -> jid

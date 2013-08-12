@@ -28,7 +28,7 @@ ConfiguredOTPApps = lists:flatmap(
 
 OTPApps = RequiredOTPApps ++ ConfiguredOTPApps,
 
-DepRequiredApps = [p1_cache_tab, p1_tls, p1_stringprep, p1_xml, xmlrpc],
+DepRequiredApps = [p1_cache_tab, p1_tls, p1_stringprep, p1_xml, p1_yaml, xmlrpc],
 
 DepConfiguredApps = lists:flatmap(
                       fun({mysql, true}) -> [p1_mysql];
@@ -39,7 +39,7 @@ DepConfiguredApps = lists:flatmap(
                          ({json, true}) -> [jiffy];
                          ({iconv, true}) -> [p1_iconv];
                          ({http, true}) -> [ibrowse, lhttpc];
-                         ({lager, true}) -> [lager];
+                         ({lager, true}) -> [lager, goldrush];
                          ({lager, false}) -> [p1_logger];
                          (_) -> []
                       end, Vars),
@@ -89,7 +89,7 @@ Overlay = [
            {template, "files/erl", "\{\{erts_vsn\}\}/bin/erl"},
            {template, "../ejabberdctl.template", "bin/ejabberdctl"},
            {copy, "../ejabberdctl.cfg.example", "etc/ejabberd/ejabberdctl.cfg"},
-           {copy, "../ejabberd.cfg.example", "etc/ejabberd/ejabberd.cfg"},
+           {copy, "../ejabberd.yml.example", "etc/ejabberd/ejabberd.yml"},
            {copy, "../inetrc", "etc/ejabberd/inetrc"},
            {copy, "files/install_upgrade.escript", "bin/install_upgrade.escript"}
           ],

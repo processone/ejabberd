@@ -34,7 +34,7 @@
 %% Get first c2s configuration limitations to apply it to other c2s
 %% connectors.
 get_c2s_limits() ->
-    case ejabberd_config:get_local_option(listen, fun(V) -> V end) of
+    case ejabberd_config:get_option(listen, fun(V) -> V end) of
       undefined -> [];
       C2SFirstListen ->
 	  case lists:keysearch(ejabberd_c2s, 2, C2SFirstListen) of

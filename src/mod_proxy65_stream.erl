@@ -279,10 +279,14 @@ select_auth_method(anonymous, AuthMethods) ->
 
 %% Obviously, we must use shaper with maximum rate.
 find_maxrate(Shaper, JID1, JID2, Host) ->
-    MaxRate1 = shaper:new(acl:match_rule(Host, Shaper,
-					 JID1)),
-    MaxRate2 = shaper:new(acl:match_rule(Host, Shaper,
-					 JID2)),
+    MaxRate1 = case acl:match_rule(Host, Shaper, JID1) of
+                   deny -> none;
+                   R1 -> shaper:new(R1)
+               end,
+    MaxRate2 = case acl:match_rule(Host, Shaper, JID2) of
+                   deny -> none;
+                   R2 -> shaper:new(R2)
+               end,
     if MaxRate1 == none; MaxRate2 == none -> none;
        true -> lists:max([MaxRate1, MaxRate2])
     end.

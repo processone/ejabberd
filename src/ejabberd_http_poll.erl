@@ -205,7 +205,7 @@ get_human_html_xmlel() ->
 init([ID, Key, IP]) ->
     ?INFO_MSG("started: ~p", [{ID, Key, IP}]),
     Opts = ejabberd_c2s_config:get_c2s_limits(),
-    HTTPPollTimeout = ejabberd_config:get_local_option(
+    HTTPPollTimeout = ejabberd_config:get_option(
                         {http_poll_timeout, ?MYNAME},
                         fun(I) when is_integer(I), I>0 -> I end,
                         ?HTTP_POLL_TIMEOUT) * 1000,

@@ -109,9 +109,9 @@ install: all
 	#
 	# Configuration files
 	$(INSTALL) -d -m 750 $(G_USER) $(ETCDIR)
-	[ -f $(ETCDIR)/ejabberd.cfg ] \
-		&& $(INSTALL) -b -m 640 $(G_USER) ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg-new \
-		|| $(INSTALL) -b -m 640 $(G_USER) ejabberd.cfg.example $(ETCDIR)/ejabberd.cfg
+	[ -f $(ETCDIR)/ejabberd.yml ] \
+		&& $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(ETCDIR)/ejabberd.yml-new \
+		|| $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(ETCDIR)/ejabberd.yml
 	$(SED) -e "s*{{rootdir}}*@prefix@*" \
 		-e "s*{{installuser}}*@INSTALLUSER@*" \
 		-e "s*{{libdir}}*@libdir@*" \
@@ -120,9 +120,9 @@ install: all
 		-e "s*{{docdir}}*@docdir@*" \
 		-e "s*{{erl}}*@ERL@*" ejabberdctl.template \
 		> ejabberdctl.example
-	[ -f $(ETCDIR)/ejabberdctl.cfg ] \
-		&& $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new \
-		|| $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
+	[ -f $(ETCDIR)/ejabberdctl.yml ] \
+		&& $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.yml.example $(ETCDIR)/ejabberdctl.yml-new \
+		|| $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.yml.example $(ETCDIR)/ejabberdctl.yml
 	$(INSTALL) -b -m 644 $(G_USER) inetrc $(ETCDIR)/inetrc
 	#
 	# Administration script

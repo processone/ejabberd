@@ -406,7 +406,7 @@ is_scrammed() ->
 
 is_option_scram() ->
     scram ==
-      ejabberd_config:get_local_option({auth_password_format, ?MYNAME},
+      ejabberd_config:get_option({auth_password_format, ?MYNAME},
                                        fun(V) -> V end).
 
 maybe_alert_password_scrammed_without_option() ->

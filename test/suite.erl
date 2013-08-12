@@ -21,7 +21,7 @@ init_config(Config) ->
     PrivDir = proplists:get_value(priv_dir, Config),
     [_, _|Tail] = lists:reverse(filename:split(DataDir)),
     BaseDir = filename:join(lists:reverse(Tail)),
-    ConfigPath = filename:join([DataDir, "ejabberd.cfg"]),
+    ConfigPath = filename:join([DataDir, "ejabberd.yml"]),
     LogPath = filename:join([PrivDir, "ejabberd.log"]),
     SASLPath = filename:join([PrivDir, "sasl.log"]),
     MnesiaDir = filename:join([PrivDir, "mnesia"]),

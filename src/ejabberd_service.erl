@@ -34,7 +34,7 @@
 
 %% External exports
 -export([start/2, start_link/2, send_text/2,
-	 send_element/2, socket_type/0]).
+	 send_element/2, socket_type/0, transform_listen_option/2]).
 
 %% gen_fsm callbacks
 -export([init/1, wait_for_stream/2,
@@ -124,29 +124,18 @@ init([{SockMod, Socket}, Opts]) ->
 	       {value, {_, A}} -> A;
 	       _ -> all
 	     end,
-    {Hosts, Password} = case lists:keysearch(hosts, 1, Opts)
-			    of
-			  {value, {_, Hs, HOpts}} ->
-			      case lists:keysearch(password, 1, HOpts) of
-				{value, {_, P}} -> {Hs, P};
-				_ ->
-				    % TODO: generate error
-				    false
-			      end;
-			  _ ->
-			      case lists:keysearch(host, 1, Opts) of
-				{value, {_, H, HOpts}} ->
-				    case lists:keysearch(password, 1, HOpts) of
-				      {value, {_, P}} -> {[H], P};
-				      _ ->
-					  % TODO: generate error
-					  false
-				    end;
-				_ ->
-				    % TODO: generate error
-				    false
-			      end
-			end,
+    %% This should be improved probably
+    {Hosts, HostOpts} = case lists:keyfind(hosts, 1, Opts) of
+                            {_, HOpts} ->
+                                {[H || {H, _} <- HOpts],
+                                 lists:flatten(
+                                   [O || {_, O} <- HOpts])};
+                            _ ->
+                                {[], []}
+                        end,
+    Password = gen_mod:get_opt(password, HostOpts,
+                               fun iolist_to_binary/1,
+                               p1_sha:sha(crypto:rand_bytes(20))),
     Shaper = case lists:keysearch(shaper_rule, 1, Opts) of
 	       {value, {_, S}} -> S;
 	       _ -> none
@@ -384,12 +373,30 @@ send_element(StateData, El) ->
 
 new_id() -> randoms:get_string().
 
+transform_listen_option({hosts, Hosts, O}, Opts) ->
+    case lists:keyfind(hosts, 1, Opts) of
+        {_, PrevHostOpts} ->
+            NewHostOpts =
+                lists:foldl(
+                  fun(H, Acc) ->
+                          dict:append_list(H, O, Acc)
+                  end, dict:from_list(PrevHostOpts), Hosts),
+            [{hosts, dict:to_list(NewHostOpts)}|
+             lists:keydelete(hosts, 1, Opts)];
+        _ ->
+            [{hosts, [{H, O} || H <- Hosts]}|Opts]
+    end;
+transform_listen_option({host, Host, Os}, Opts) ->
+    transform_listen_option({hosts, [Host], Os}, Opts);
+transform_listen_option(Opt, Opts) ->
+    [Opt|Opts].
+
 fsm_limit_opts(Opts) ->
     case lists:keysearch(max_fsm_queue, 1, Opts) of
         {value, {_, N}} when is_integer(N) ->
             [{max_queue, N}];
         _ ->
-            case ejabberd_config:get_local_option(
+            case ejabberd_config:get_option(
                    max_fsm_queue,
                    fun(I) when is_integer(I), I > 0 -> I end) of
                 undefined -> [];

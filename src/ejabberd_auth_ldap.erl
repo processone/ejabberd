@@ -369,8 +369,10 @@ parse_options(Host) ->
                                    {iolist_to_binary(U),
                                     iolist_to_binary(P)};
                               ({U}) ->
+                                   {iolist_to_binary(U)};
+                              (U) ->
                                    {iolist_to_binary(U)}
-                           end, Us)
+                           end, lists:flatten(Us))
                  end, [{<<"uid">>, <<"%u">>}]),
     UIDs = eldap_utils:uids_domain_subst(Host, UIDsTemp),
     SubFilter =	eldap_utils:generate_subfilter(UIDs),

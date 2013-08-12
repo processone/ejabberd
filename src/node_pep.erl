@@ -490,13 +490,11 @@ path_to_node(Path) -> node_flat:path_to_node(Path).
 %% Check that the mod_caps module is enabled in that Jabber Host
 %% If not, show a warning message in the ejabberd log file.
 complain_if_modcaps_disabled(ServerHost) ->
-    Modules = ejabberd_config:get_local_option({modules, ServerHost}, fun(Ms) when is_list(Ms) -> Ms end),
-    ModCaps = [mod_caps_enabled || {mod_caps, _Opts} <- Modules],
-    case ModCaps of
-      [] ->
+    case gen_mod:is_loaded(ServerHost, mod_caps) of
+      false ->
 	  ?WARNING_MSG("The PEP plugin is enabled in mod_pubsub "
 		       "of host ~p. This plugin requires mod_caps "
 		       "to be enabled, but it isn't.",
 		       [ServerHost]);
-      _ -> ok
+      true -> ok
     end.

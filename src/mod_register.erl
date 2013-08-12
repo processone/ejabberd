@@ -32,7 +32,8 @@
 
 -export([start/2, stop/1, stream_feature_register/2,
 	 unauthenticated_iq_register/4, try_register/5,
-	 process_iq/3, send_registration_notifications/3]).
+	 process_iq/3, send_registration_notifications/3,
+         transform_options/1, transform_module_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -418,7 +419,11 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 send_welcome_message(JID) ->
     Host = JID#jid.lserver,
     case gen_mod:get_module_opt(Host, ?MODULE, welcome_message,
-                                fun({S, B}) ->
+                                fun(Opts) ->
+                                        S = proplists:get_value(
+                                              subject, Opts, <<>>),
+                                        B = proplists:get_value(
+                                              body, Opts, <<>>),
                                         {iolist_to_binary(S),
                                          iolist_to_binary(B)}
                                 end, {<<"">>, <<"">>})
@@ -483,7 +488,7 @@ check_from(JID, Server) ->
 
 check_timeout(undefined) -> true;
 check_timeout(Source) ->
-    Timeout = ejabberd_config:get_local_option(
+    Timeout = ejabberd_config:get_option(
                 registration_timeout,
                 fun(TO) when is_integer(TO), TO > 0 ->
                         TO;
@@ -537,7 +542,7 @@ clean_treap(Treap, CleanPriority) ->
 
 remove_timeout(undefined) -> true;
 remove_timeout(Source) ->
-    Timeout = ejabberd_config:get_local_option(
+    Timeout = ejabberd_config:get_option(
                 registration_timeout,
                 fun(TO) when is_integer(TO), TO > 0 ->
                         TO;
@@ -604,6 +609,54 @@ is_strong_password(Server, Password) ->
             ejabberd_auth:entropy(Password) >= Entropy
     end.
 
+transform_options(Opts) ->
+    Opts1 = transform_ip_access(Opts),
+    transform_module_options(Opts1).
+
+transform_ip_access(Opts) ->
+    try
+        {value, {modules, ModOpts}, Opts1} = lists:keytake(modules, 1, Opts),
+        {value, {?MODULE, RegOpts}, ModOpts1} = lists:keytake(?MODULE, 1, ModOpts),
+        {value, {ip_access, L}, RegOpts1} = lists:keytake(ip_access, 1, RegOpts),
+        true = is_list(L),
+        ?WARNING_MSG("Old 'ip_access' format detected. "
+                     "The old format is still supported "
+                     "but it is better to fix your config: "
+                     "use access rules instead.", []),
+        ACLs = lists:flatmap(
+                 fun({Action, S}) ->
+                         ACLName = jlib:binary_to_atom(
+                                     iolist_to_binary(
+                                       ["ip_", S])),
+                         [{Action, ACLName},
+                          {acl, ACLName, {ip, S}}]
+                 end, L),
+        Access = {access, mod_register_networks,
+                  [{Action, ACLName} || {Action, ACLName} <- ACLs]},
+        [ACL || {acl, _, _} = ACL <- ACLs] ++
+            [Access,
+             {modules,
+              [{mod_register,
+                [{ip_access, mod_register_networks}|RegOpts1]}
+               | ModOpts1]}|Opts1]
+    catch error:{badmatch, false} ->
+            Opts
+    end.
+
+transform_module_options(Opts) ->
+    lists:flatmap(
+      fun({welcome_message, {Subj, Body}}) ->
+              ?WARNING_MSG("Old 'welcome_message' format detected. "
+                           "The old format is still supported "
+                           "but it is better to fix your config: "
+                           "change it to {welcome_message, "
+                           "[{subject, Subject}, {body, Body}]}",
+                           []),
+              [{welcome_message, [{subject, Subj}, {body, Body}]}];
+         (Opt) ->
+              [Opt]
+      end, Opts).
+
 %%%
 %%% ip_access management
 %%%
@@ -614,75 +667,15 @@ may_remove_resource(From) -> From.
 
 get_ip_access(Host) ->
     gen_mod:get_module_opt(Host, ?MODULE, ip_access,
-                           fun(IPAccess) ->
-                                   lists:flatmap(
-                                     fun({Access, S}) ->
-                                             {ok, IP, Mask} =
-                                                 parse_ip_netmask(
-                                                   iolist_to_binary(S)),
-                                             [{Access, IP, Mask}]
-                                     end, IPAccess)
-                           end, []).
+                           fun(A) when is_atom(A) -> A end,
+                           all).
 
-parse_ip_netmask(S) ->
-    case str:tokens(S, <<"/">>) of
-      [IPStr] ->
-	  case inet_parse:address(binary_to_list(IPStr)) of
-	    {ok, {_, _, _, _} = IP} -> {ok, IP, 32};
-	    {ok, {_, _, _, _, _, _, _, _} = IP} -> {ok, IP, 128};
-	    _ -> error
-	  end;
-      [IPStr, MaskStr] ->
-	  case catch jlib:binary_to_integer(MaskStr) of
-	    Mask when is_integer(Mask), Mask >= 0 ->
-		case inet_parse:address(binary_to_list(IPStr)) of
-		  {ok, {_, _, _, _} = IP} when Mask =< 32 ->
-		      {ok, IP, Mask};
-		  {ok, {_, _, _, _, _, _, _, _} = IP} when Mask =< 128 ->
-		      {ok, IP, Mask};
-		  _ -> error
-		end;
-	    _ -> error
-	  end;
-      _ -> error
-    end.
-
-check_ip_access(_Source, []) -> allow;
 check_ip_access({User, Server, Resource}, IPAccess) ->
     case ejabberd_sm:get_user_ip(User, Server, Resource) of
-      {IPAddress, _PortNumber} ->
-	  check_ip_access(IPAddress, IPAccess);
-      _ -> true
+        {IPAddress, _PortNumber} ->
+            check_ip_access(IPAddress, IPAccess);
+        _ ->
+            deny
     end;
-check_ip_access({_, _, _, _} = IP,
-		[{Access, {_, _, _, _} = Net, Mask} | IPAccess]) ->
-    IPInt = ip_to_integer(IP),
-    NetInt = ip_to_integer(Net),
-    M = bnot (1 bsl (32 - Mask) - 1),
-    if IPInt band M =:= NetInt band M -> Access;
-       true -> check_ip_access(IP, IPAccess)
-    end;
-check_ip_access({_, _, _, _, _, _, _, _} = IP,
-		[{Access, {_, _, _, _, _, _, _, _} = Net, Mask}
-		 | IPAccess]) ->
-    IPInt = ip_to_integer(IP),
-    NetInt = ip_to_integer(Net),
-    M = bnot (1 bsl (128 - Mask) - 1),
-    if IPInt band M =:= NetInt band M -> Access;
-       true -> check_ip_access(IP, IPAccess)
-    end;
-check_ip_access(IP, [_ | IPAccess]) ->
-    check_ip_access(IP, IPAccess).
-
-ip_to_integer({IP1, IP2, IP3, IP4}) ->
-    IP1 bsl 8 bor IP2 bsl 8 bor IP3 bsl 8 bor IP4;
-ip_to_integer({IP1, IP2, IP3, IP4, IP5, IP6, IP7,
-	       IP8}) ->
-    IP1 bsl 16 bor IP2 bsl 16 bor IP3 bsl 16 bor IP4 bsl 16
-      bor IP5
-      bsl 16
-      bor IP6
-      bsl 16
-      bor IP7
-      bsl 16
-      bor IP8.
+check_ip_access(IPAddress, IPAccess) ->
+    acl:match_rule(global, IPAccess, IPAddress).

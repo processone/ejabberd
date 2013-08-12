@@ -45,7 +45,7 @@
 	 handle_info/2, terminate/2, code_change/3]).
 
 %% ejabberd API
--export([get_info_s2s_connections/1]).
+-export([get_info_s2s_connections/1, transform_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -461,12 +461,12 @@ needed_connections_number(Ls, MaxS2SConnectionsNumber,
 %% --------------------------------------------------------------------
 is_service(From, To) ->
     LFromDomain = From#jid.lserver,
-    case ejabberd_config:get_local_option(
+    case ejabberd_config:get_option(
            {route_subdomains, LFromDomain},
-           fun(s2s) -> s2s end) of
+           fun(s2s) -> s2s; (local) -> local end, local) of
       s2s -> % bypass RFC 3920 10.3
 	  false;
-      undefined ->
+      local ->
 	  Hosts = (?MYHOSTS),
 	  P = fun (ParentDomain) ->
 		      lists:member(ParentDomain, Hosts)
@@ -548,34 +548,50 @@ allow_host2(MyServer, S2SHost) ->
     end.
 
 allow_host1(MyHost, S2SHost) ->
-    case ejabberd_config:get_local_option(
-           {{s2s_host, S2SHost}, MyHost},
-           fun(deny) -> deny; (allow) -> allow end)
-	of
-      deny -> false;
-      allow -> true;
-      undefined ->
-	  case ejabberd_config:get_local_option(
-                 {s2s_default_policy, MyHost},
-                 fun(deny) -> deny; (allow) -> allow end)
-	      of
-	    deny -> false;
-	    _ ->
-		case ejabberd_hooks:run_fold(s2s_allow_host, MyHost,
-					     allow, [MyHost, S2SHost])
-		    of
-		  deny -> false;
-		  allow -> true;
-		  _ -> true
-		end
-	  end
+    Rule = ejabberd_config:get_option(
+             s2s_access,
+             fun(A) when is_atom(A) -> A end,
+             all),
+    JID = jlib:make_jid(<<"">>, S2SHost, <<"">>),
+    case acl:match_rule(MyHost, Rule, JID) of
+        deny -> false;
+        allow ->
+            case ejabberd_hooks:run_fold(s2s_allow_host, MyHost,
+                                         allow, [MyHost, S2SHost]) of
+                deny -> false;
+                allow -> true;
+                _ -> true
+            end
     end.
+
+transform_options(Opts) ->
+    lists:foldl(fun transform_options/2, [], Opts).
+
+transform_options({{s2s_host, Host}, Action}, Opts) ->
+    ?WARNING_MSG("Option 's2s_host' is deprecated. "
+                 "The option is still supported but it is better to "
+                 "fix your config: use access rules instead.", []),
+    ACLName = jlib:binary_to_atom(
+                iolist_to_binary(["s2s_access_", Host])),
+    [{acl, ACLName, {server, Host}},
+     {access, s2s, [{Action, ACLName}]},
+     {s2s_access, s2s} |
+     Opts];
+transform_options({s2s_default_policy, Action}, Opts) ->
+    ?WARNING_MSG("Option 's2s_default_policy' is deprecated. "
+                 "The option is still supported but it is better to "
+                 "fix your config: "
+                 "use 's2s_access' with an access rule.", []),
+    [{access, s2s, [{Action, all}]},
+     {s2s_access, s2s} |
+     Opts];
+transform_options(Opt, Opts) ->
+    [Opt|Opts].
 
 %% Get information about S2S connections of the specified type.
 %% @spec (Type) -> [Info]
 %% where Type = in | out
 %%       Info = [{InfoName::atom(), InfoValue::any()}]
-
 get_info_s2s_connections(Type) ->
     ChildType = case Type of
 		  in -> ejabberd_s2s_in_sup;

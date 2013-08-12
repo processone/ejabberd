@@ -30,7 +30,8 @@
 
 %% External exports
 -export([start/2, start_link/2, become_controller/1,
-	 socket_type/0, receive_headers/1, url_encode/1]).
+	 socket_type/0, receive_headers/1, url_encode/1,
+         transform_listen_option/2]).
 
 %% Callbacks
 -export([init/2]).
@@ -91,7 +92,7 @@ start_link(SockData, Opts) ->
 			 [SockData, Opts])}.
 
 init({SockMod, Socket}, Opts) ->
-    TLSEnabled = lists:member(tls, Opts),
+    TLSEnabled = proplists:get_bool(tls, Opts),
     TLSOpts1 = lists:filter(fun ({certfile, _}) -> true;
 				(_) -> false
 			    end,
@@ -133,12 +134,13 @@ init({SockMod, Socket}, Opts) ->
              true -> [{[<<"http-poll">>], ejabberd_http_poll}];
              false -> []
            end,
-    DefinedHandlers = case lists:keysearch(request_handlers,
-					   1, Opts)
-			  of
-			{value, {request_handlers, H}} -> H;
-			false -> []
-		      end,
+    DefinedHandlers = gen_mod:get_opt(
+                        request_handlers, Opts,
+                        fun(Hs) ->
+                                [{str:tokens(
+                                    iolist_to_binary(Path), <<"/">>),
+                                  Mod} || {Path, Mod} <- Hs]
+                        end, []),
     RequestHandlers = DefinedHandlers ++ Captcha ++ Register ++
         Admin ++ Bind ++ Poll,
     ?DEBUG("S: ~p~n", [RequestHandlers]),
@@ -484,7 +486,7 @@ analyze_ip_xff(IP, [], _Host) -> IP;
 analyze_ip_xff({IPLast, Port}, XFF, Host) ->
     [ClientIP | ProxiesIPs] = str:tokens(XFF, <<", ">>) ++
 				[jlib:ip_to_list(IPLast)],
-    TrustedProxies = ejabberd_config:get_local_option(
+    TrustedProxies = ejabberd_config:get_option(
                        {trusted_proxies, Host},
                        fun(TPs) ->
                                [iolist_to_binary(TP) || TP <- TPs]
@@ -834,3 +836,25 @@ normalize_path([_Parent, <<"..">>|Path], Norm) ->
     normalize_path(Path, Norm);
 normalize_path([Part | Path], Norm) ->
     normalize_path(Path, [Part|Norm]).
+
+transform_listen_option(captcha, Opts) ->
+    [{captcha, true}|Opts];
+transform_listen_option(register, Opts) ->
+    [{register, true}|Opts];
+transform_listen_option(web_admin, Opts) ->
+    [{web_admin, true}|Opts];
+transform_listen_option(http_bind, Opts) ->
+    [{http_bind, true}|Opts];
+transform_listen_option(http_poll, Opts) ->
+    [{http_poll, true}|Opts];
+transform_listen_option({request_handlers, Hs}, Opts) ->
+    Hs1 = lists:map(
+            fun({PList, Mod}) when is_list(PList) ->
+                    Path = iolist_to_binary([[$/, P] || P <- PList]),
+                    {Path, Mod};
+               (Opt) ->
+                    Opt
+            end, Hs),
+    [{request_handlers, Hs1} | Opts];
+transform_listen_option(Opt, Opts) ->
+    [Opt|Opts].

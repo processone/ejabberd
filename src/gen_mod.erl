@@ -64,13 +64,11 @@ start() ->
 -spec start_module(binary(), atom(), opts()) -> any().
 
 start_module(Host, Module, Opts) ->
-    set_module_opts_mnesia(Host, Module, Opts),
     ets:insert(ejabberd_modules,
 	       #ejabberd_module{module_host = {Module, Host},
 				opts = Opts}),
     try Module:start(Host, Opts) catch
       Class:Reason ->
-	  del_module_mnesia(Host, Module),
 	  ets:delete(ejabberd_modules, {Module, Host}),
 	  ErrorText =
 	      io_lib:format("Problem starting the module ~p for host "
@@ -101,7 +99,7 @@ is_app_running(AppName) ->
 stop_module(Host, Module) ->
     case stop_module_keep_config(Host, Module) of
       error -> error;
-      ok -> del_module_mnesia(Host, Module)
+      ok -> ok
     end.
 
 %% @doc Stop the module in a host, but keep its configuration.
@@ -231,25 +229,6 @@ loaded_modules_with_opts(Host) ->
 	       [{#ejabberd_module{_ = '_', module_host = {'$1', Host},
 				  opts = '$2'},
 		 [], [{{'$1', '$2'}}]}]).
-
-set_module_opts_mnesia(Host, Module, Opts) ->
-    Modules = ejabberd_config:get_local_option(
-                {modules, Host},
-                fun(Ls) when is_list(Ls) -> Ls end,
-                []),
-    Modules1 = lists:keydelete(Module, 1, Modules),
-    Modules2 = [{Module, Opts} | Modules1],
-    ejabberd_config:add_local_option({modules, Host},
-				     Modules2).
-
-del_module_mnesia(Host, Module) ->
-    Modules = ejabberd_config:get_local_option(
-                {modules, Host},
-                fun(Ls) when is_list(Ls) -> Ls end,
-                []),
-    Modules1 = lists:keydelete(Module, 1, Modules),
-    ejabberd_config:add_local_option({modules, Host},
-				     Modules1).
 
 -spec get_hosts(opts(), binary()) -> [binary()].
 

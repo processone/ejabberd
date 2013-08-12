@@ -827,14 +827,14 @@ process_admin(Host,
 	    {value, {_, String}} ->
 		case parse_access_rule(String) of
 		  {ok, Rs} ->
-		      ejabberd_config:add_global_option({access, Name, Host},
+		      ejabberd_config:add_option({access, Name, Host},
 							Rs),
 		      ok;
 		  _ -> error
 		end;
 	    _ -> nothing
 	  end,
-    Rules = case ejabberd_config:get_global_option(
+    Rules = case ejabberd_config:get_option(
                    {access, Name, Host}, fun(V) -> V end)
 		of
 	      undefined -> [];
@@ -1198,7 +1198,7 @@ access_parse_addnew(_AccessRules, Host, Query) ->
     case lists:keysearch(<<"namenew">>, 1, Query) of
       {value, {_, String}} when String /= <<"">> ->
 	  Name = jlib:binary_to_atom(String),
-	  ejabberd_config:add_global_option({access, Name, Host},
+	  ejabberd_config:add_option({access, Name, Host},
 					    []),
 	  ok
     end.
