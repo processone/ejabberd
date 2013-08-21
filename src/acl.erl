@@ -265,9 +265,6 @@ match_rule(Host, Access, JID) ->
               end,
     case GAccess ++ LAccess of
         [] ->
-            ?WARNING_MSG("Attempt to match against unspecified "
-                         "access rule '~s' (scope: ~s)",
-                         [Access, Host]),
             deny;
         AccessList ->
             Rules = lists:flatmap(

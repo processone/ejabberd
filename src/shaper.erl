@@ -84,8 +84,6 @@ new(Name) ->
                   [#shaper{maxrate = R}] ->
                       R;
                   [] ->
-                      ?WARNING_MSG("Attempt to initialize an "
-                                   "unspecified shaper '~s'", [Name]),
                       none
               end,
     new1(MaxRate).
