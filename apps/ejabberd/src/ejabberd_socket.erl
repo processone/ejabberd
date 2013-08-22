@@ -137,13 +137,13 @@ connect(Addr, Port, Opts, Timeout) ->
 starttls(SocketData, TLSOpts) ->
     {ok, TLSSocket} = ejabberd_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
     ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
-    SocketData#socket_state{socket = TLSSocket, sockmod = tls}.
+    SocketData#socket_state{socket = TLSSocket, sockmod = ejabberd_tls}.
 
 starttls(SocketData, TLSOpts, Data) ->
     {ok, TLSSocket} = ejabberd_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
     ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
     send(SocketData, Data),
-    SocketData#socket_state{socket = TLSSocket, sockmod = tls}.
+    SocketData#socket_state{socket = TLSSocket, sockmod = ejabberd_tls}.
 
 compress(SocketData) ->
     {ok, ZlibSocket} = ejabberd_zlib:enable_zlib(
@@ -166,7 +166,7 @@ reset_stream(SocketData) when is_atom(SocketData#socket_state.receiver) ->
     (SocketData#socket_state.receiver):reset_stream(
       SocketData#socket_state.socket).
 
-%% sockmod=gen_tcp|tls|ejabberd_zlib
+%% sockmod=gen_tcp|ejabberd_tls|ejabberd_zlib
 send(SocketData, Data) ->
     case catch (SocketData#socket_state.sockmod):send(
 	     SocketData#socket_state.socket, Data) of
