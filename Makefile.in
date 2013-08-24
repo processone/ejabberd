@@ -120,9 +120,9 @@ install: all
 		-e "s*{{docdir}}*@docdir@*" \
 		-e "s*{{erl}}*@ERL@*" ejabberdctl.template \
 		> ejabberdctl.example
-	[ -f $(ETCDIR)/ejabberdctl.yml ] \
-		&& $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.yml.example $(ETCDIR)/ejabberdctl.yml-new \
-		|| $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.yml.example $(ETCDIR)/ejabberdctl.yml
+	[ -f $(ETCDIR)/ejabberdctl.cfg ] \
+		&& $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new \
+		|| $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg
 	$(INSTALL) -b -m 644 $(G_USER) inetrc $(ETCDIR)/inetrc
 	#
 	# Administration script
