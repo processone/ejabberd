@@ -35,8 +35,6 @@ host_config:
           - "pep"
       mod_roster: 
         db_type: odbc
-      mod_mam: 
-        db_type: odbc
       mod_vcard: 
         db_type: odbc
       mod_adhoc: []
@@ -88,8 +86,6 @@ Welcome to this XMPP server."
           - "pep"
       mod_roster: 
         db_type: odbc
-      mod_mam: 
-        db_type: odbc
       mod_vcard: 
         db_type: odbc
       mod_adhoc: []
@@ -133,8 +129,6 @@ Welcome to this XMPP server."
           - "hometree"
           - "pep"
       mod_roster: 
-        db_type: internal
-      mod_mam: 
         db_type: internal
       mod_vcard: 
         db_type: internal
