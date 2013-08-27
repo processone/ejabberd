@@ -4062,7 +4062,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 	[] -> 
 	    case user_resources(LUser, LServer) of
 		[Resource|_] -> Resource;
-		_ -> ""
+		_ -> <<>>
 	    end;
 	_ ->
 	    LResource
