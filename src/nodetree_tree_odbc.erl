@@ -362,9 +362,13 @@ raw_to_node(Host, [Node, Parent, Type, NodeIdx]) ->
 				StdOpts, DbOpts);
 		_ -> []
 	      end,
+    Parents = case Parent of
+		  <<>> -> [];
+		  _ -> [Parent]
+	      end,
     #pubsub_node{nodeid =
 		     {Host, Node},
-		 parents = [Parent],
+		 parents = Parents,
 		 id = NodeIdx, type = Type, options = Options}.
 
 % @spec (NodeRecord) -> ok | {error, Reason}
