@@ -788,15 +788,8 @@ get_entity_subscriptions(Host, Owner) ->
 				      case decode_subscriptions(S) of
 					[] -> [{Node, none, Jid} | Acc];
 					Subs ->
-					    lists:foldl(fun ({Sub, SubId},
-							     Acc2) ->
-								[{Node, Sub,
-								  SubId, Jid}
-								 | Acc2];
-							    (Sub, Acc2) ->
-								[{Node, Sub,
-								  Jid}
-								 | Acc2]
+					    lists:foldl(fun ({Sub, SubId}, Acc2) ->
+								[{Node, Sub, SubId, Jid} | Acc2]
 							end,
 							Acc, Subs)
 				      end
