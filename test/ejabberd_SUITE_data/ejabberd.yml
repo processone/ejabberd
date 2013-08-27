@@ -52,7 +52,6 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-host_config: 
   "mysql.localhost": 
     odbc_username: "ejabberd_test"
     odbc_type: mysql
@@ -106,7 +105,6 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-host_config: 
   "mnesia.localhost": 
     auth_method: internal
     modules: 
@@ -153,10 +151,8 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-host_config: 
   "localhost": 
     auth_method: internal
-host_config: 
   "ldap.localhost": 
     ldap_servers: 
       - "localhost"
@@ -180,7 +176,6 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-host_config: 
   "extauth.localhost": 
     extauth_program: "python extauth.py"
     auth_method: external
