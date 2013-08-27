@@ -155,12 +155,21 @@ reopen_sasl_log() ->
     case application:get_env(sasl,sasl_error_logger) of
 	{ok, {file, SASLfile}} ->
 	    error_logger:delete_report_handler(sasl_report_file_h),
-	    p1_logger_h:rotate_log(SASLfile),
+            rotate_sasl_log(SASLfile),
 	    error_logger:add_report_handler(sasl_report_file_h,
 	        {SASLfile, get_sasl_error_logger_type()});
 	_ -> false
 	end,
     ok.
+
+rotate_sasl_log(Filename) ->
+    case file:read_file_info(Filename) of
+        {ok, _FileInfo} ->
+            file:rename(Filename, [Filename, ".0"]),
+            ok;
+        {error, _Reason} ->
+            ok
+    end.
 
 %% Function copied from Erlang/OTP lib/sasl/src/sasl.erl which doesn't export it
 get_sasl_error_logger_type () ->
