@@ -212,8 +212,7 @@ access:
     all: fast
 acl: 
   local: 
-    user_regexp: 
-      - []
+    user_regexp: ""
 define_macro: 
   CERTFILE: "cert.pem"
 language: "en"
