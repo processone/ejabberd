@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.53)
-AC_INIT(ejabberd, community, [ejabberd@process-one.net], [ejabberd])
+AC_INIT(ejabberd, community m4_esyscmd([git describe --tags | tr -d '\n']), [ejabberd@process-one.net], [ejabberd])
 REQUIRE_ERLANG_MIN="5.9.1 (Erlang/OTP R15B01)"
 REQUIRE_ERLANG_MAX="9.0.0 (No Max)"
 
@@ -35,7 +35,7 @@ AC_ERLANG_NEED_ERLC
 AC_ARG_ENABLE(erlang-version-check,
 [AC_HELP_STRING([--enable-erlang-version-check],
 	[Check Erlang/OTP version @<:@default=yes@:>@])])
-	case "$enable_erlang_version_check" in
+case "$enable_erlang_version_check" in
 	yes|'')
 		ERLANG_VERSION_CHECK([$REQUIRE_ERLANG_MIN],[$REQUIRE_ERLANG_MAX])
 		;;
