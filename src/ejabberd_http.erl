@@ -201,8 +201,8 @@ parse_headers(#state{request_method = Method,
 		     trail = Data} =
 		  State) ->
     PktType = case Method of
-                  undefined -> http;
-                  _ -> httph
+                  undefined -> http_bin;
+                  _ -> httph_bin
               end,
     case erlang:decode_packet(PktType, Data, []) of
         {ok, Pkt, Rest} ->
