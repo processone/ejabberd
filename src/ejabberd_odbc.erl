@@ -325,7 +325,7 @@ handle_info(Info, StateName, State) ->
 terminate(_Reason, _StateName, State) ->
     ejabberd_odbc_sup:remove_pid(State#state.host, self()),
     case State#state.db_type of
-      mysql -> catch mysql_conn:stop(State#state.db_ref);
+      mysql -> catch p1_mysql_conn:stop(State#state.db_ref);
       _ -> ok
     end,
     ok.
@@ -447,9 +447,9 @@ sql_query_internal(Query) ->
 	    mysql ->
 		?DEBUG("MySQL, Send query~n~p~n", [Query]),  
 		%%squery to be able to specify result_type = binary
-		%%[Query] because mysql_conn expect query to be a list (elements can be binaries, or iolist)
+		%%[Query] because p1_mysql_conn expect query to be a list (elements can be binaries, or iolist)
 		%%        but doesn't accept just a binary 
-		R = mysql_to_odbc(mysql_conn:squery(State#state.db_ref,
+		R = mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
 						   [Query], self(),
 						   [{timeout, (?TRANSACTION_TIMEOUT) - 1000},
 						    {result_type, binary}])),
@@ -533,12 +533,12 @@ pgsql_item_to_odbc(_) -> {updated, undefined}.
 %% part of init/1
 %% Open a database connection to MySQL
 mysql_connect(Server, Port, DB, Username, Password) ->
-    case mysql_conn:start(binary_to_list(Server), Port,
+    case p1_mysql_conn:start(binary_to_list(Server), Port,
                           binary_to_list(Username), binary_to_list(Password),
 			  binary_to_list(DB), fun log/3)
 	of
       {ok, Ref} ->
-	  mysql_conn:fetch(Ref, [<<"set names 'utf8';">>],
+	  p1_mysql_conn:fetch(Ref, [<<"set names 'utf8';">>],
 			   self()),
 	  {ok, Ref};
       Err -> Err
@@ -546,15 +546,15 @@ mysql_connect(Server, Port, DB, Username, Password) ->
 
 %% Convert MySQL query result to Erlang ODBC result formalism
 mysql_to_odbc({updated, MySQLRes}) ->
-    {updated, mysql:get_result_affected_rows(MySQLRes)};
+    {updated, p1_mysql:get_result_affected_rows(MySQLRes)};
 mysql_to_odbc({data, MySQLRes}) ->
-    mysql_item_to_odbc(mysql:get_result_field_info(MySQLRes),
-		       mysql:get_result_rows(MySQLRes));
+    mysql_item_to_odbc(p1_mysql:get_result_field_info(MySQLRes),
+		       p1_mysql:get_result_rows(MySQLRes));
 mysql_to_odbc({error, MySQLRes})
     when is_binary(MySQLRes) ->
     {error, MySQLRes};
 mysql_to_odbc({error, MySQLRes}) ->
-    {error, mysql:get_result_reason(MySQLRes)}.
+    {error, p1_mysql:get_result_reason(MySQLRes)}.
 
 %% When tabular data is returned, convert it to the ODBC formalism
 mysql_item_to_odbc(Columns, Recs) ->
