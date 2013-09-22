@@ -114,23 +114,23 @@ init({SockMod, Socket}, Opts) ->
 	  inet:setopts(Socket1, [{packet, http_bin}, {recbuf, 8192}]);
       _ -> ok
     end,
-    Captcha = case lists:member(captcha, Opts) of
+    Captcha = case proplists:get_bool(captcha, Opts) of
                   true -> [{[<<"captcha">>], ejabberd_captcha}];
                   false -> []
               end,
-    Register = case lists:member(register, Opts) of
+    Register = case proplists:get_bool(register, Opts) of
                  true -> [{[<<"register">>], mod_register_web}];
                  false -> []
                end,
-    Admin = case lists:member(web_admin, Opts) of
+    Admin = case proplists:get_bool(web_admin, Opts) of
               true -> [{[<<"admin">>], ejabberd_web_admin}];
               false -> []
             end,
-    Bind = case lists:member(http_bind, Opts) of
+    Bind = case proplists:get_bool(http_bind, Opts) of
              true -> [{[<<"http-bind">>], mod_http_bind}];
              false -> []
            end,
-    Poll = case lists:member(http_poll, Opts) of
+    Poll = case proplists:get_bool(http_poll, Opts) of
              true -> [{[<<"http-poll">>], ejabberd_http_poll}];
              false -> []
            end,
