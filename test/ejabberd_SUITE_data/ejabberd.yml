@@ -33,7 +33,9 @@ host_config:
           - "flat"
           - "hometree"
           - "pep"
-      mod_roster: 
+      mod_roster:
+        versioning: true
+        store_current_id: true
         db_type: odbc
       mod_vcard: 
         db_type: odbc
@@ -85,6 +87,8 @@ Welcome to this XMPP server."
           - "hometree"
           - "pep"
       mod_roster: 
+        versioning: true
+        store_current_id: true
         db_type: odbc
       mod_vcard: 
         db_type: odbc
@@ -129,6 +133,8 @@ Welcome to this XMPP server."
           - "hometree"
           - "pep"
       mod_roster: 
+        versioning: true
+        store_current_id: true
         db_type: internal
       mod_vcard: 
         db_type: internal

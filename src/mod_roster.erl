@@ -196,7 +196,7 @@ read_roster_version(LUser, LServer, mnesia) ->
       [#roster_version{version = V}] -> V;
       [] -> error
     end;
-read_roster_version(LServer, LUser, odbc) ->
+read_roster_version(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case odbc_queries:get_roster_version(LServer, Username)
 	of

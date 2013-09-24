@@ -161,6 +161,7 @@ db_tests() ->
        presence_broadcast,
        last,
        roster_get,
+       roster_ver,
        private,
        privacy,
        blocking,
@@ -306,6 +307,29 @@ test_open_session(Config) ->
 roster_get(Config) ->
     #iq{type = result, sub_els = [#roster{items = []}]} =
         send_recv(Config, #iq{type = get, sub_els = [#roster{}]}),
+    disconnect(Config).
+
+roster_ver(Config) ->
+    %% Get initial "ver"
+    #iq{type = result, sub_els = [#roster{ver = Ver1, items = []}]} =
+        send_recv(Config, #iq{type = get,
+                              sub_els = [#roster{ver = <<"">>}]}),
+    %% Should receive empty IQ-result
+    #iq{type = result, sub_els = []} =
+        send_recv(Config, #iq{type = get,
+                              sub_els = [#roster{ver = Ver1}]}),
+    %% Attempting to subscribe to server's JID
+    send(Config, #presence{type = subscribe, to = server_jid(Config)}),
+    %% Receive a single roster push with the new "ver"
+    #iq{type = set, sub_els = [#roster{ver = Ver2}]} = recv(),
+    %% Requesting roster with the previous "ver". Should receive Ver2 again
+    #iq{type = result, sub_els = [#roster{ver = Ver2}]} =
+        send_recv(Config, #iq{type = get,
+                              sub_els = [#roster{ver = Ver1}]}),
+    %% Now requesting roster with the newest "ver". Should receive empty IQ.
+    #iq{type = result, sub_els = []} =
+        send_recv(Config, #iq{type = get,
+                              sub_els = [#roster{ver = Ver2}]}),
     disconnect(Config).
 
 presence(Config) ->
