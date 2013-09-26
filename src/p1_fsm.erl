@@ -792,7 +792,7 @@ get_msg(Msg) -> Msg.
 %% Status information
 %%-----------------------------------------------------------------
 format_status(Opt, StatusData) ->
-    [PDict, SysState, Parent, Debug, [Name, StateName, StateData, Mod, _Time]] =
+    [PDict, SysState, Parent, Debug, [Name, StateName, StateData, Mod, _Time, _Limits, _Queue, _QueueLen]] =
 	StatusData,
     NameTag = if is_pid(Name) ->
 		      pid_to_list(Name);
