@@ -293,7 +293,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 							  [Server])}),
 	  {next_state, stream_established, StateData};
       {<<"jabber:server">>, <<"jabber:server:dialback">>,
-       _Server, _} ->
+       _Server, _} when
+	      (StateData#state.tls_required and StateData#state.tls_enabled)
+	      or (not StateData#state.tls_required) ->
 	  send_text(StateData, ?STREAM_HEADER(<<"">>)),
 	  {next_state, stream_established, StateData};
       _ ->
