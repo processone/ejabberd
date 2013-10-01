@@ -1004,24 +1004,24 @@ acls_to_xhtml(ACLs) ->
 			    [?INPUT(<<"text">>, <<"namenew">>, <<"">>)])]
 			 ++ acl_spec_to_xhtml(<<"new">>, {user, <<"">>})))]))]).
 
+acl_spec_to_text({user, {U, S}}) ->
+    {user, <<U/binary, "@", S/binary>>};
 acl_spec_to_text({user, U}) -> {user, U};
 acl_spec_to_text({server, S}) -> {server, S};
-acl_spec_to_text({user, U, S}) ->
-    {user, <<U/binary, "@", S/binary>>};
+acl_spec_to_text({user_regexp, {RU, S}}) ->
+    {user_regexp, <<RU/binary, "@", S/binary>>};
 acl_spec_to_text({user_regexp, RU}) ->
     {user_regexp, RU};
-acl_spec_to_text({user_regexp, RU, S}) ->
-    {user_regexp, <<RU/binary, "@", S/binary>>};
 acl_spec_to_text({server_regexp, RS}) ->
     {server_regexp, RS};
-acl_spec_to_text({node_regexp, RU, RS}) ->
+acl_spec_to_text({node_regexp, {RU, RS}}) ->
     {node_regexp, <<RU/binary, "@", RS/binary>>};
-acl_spec_to_text({user_glob, RU}) -> {user_glob, RU};
-acl_spec_to_text({user_glob, RU, S}) ->
+acl_spec_to_text({user_glob, {RU, S}}) ->
     {user_glob, <<RU/binary, "@", S/binary>>};
+acl_spec_to_text({user_glob, RU}) -> {user_glob, RU};
 acl_spec_to_text({server_glob, RS}) ->
     {server_glob, RS};
-acl_spec_to_text({node_glob, RU, RS}) ->
+acl_spec_to_text({node_glob, {RU, RS}}) ->
     {node_glob, <<RU/binary, "@", RS/binary>>};
 acl_spec_to_text(all) -> {all, <<"">>};
 acl_spec_to_text(Spec) -> {raw, term_to_string(Spec)}.
