@@ -691,7 +691,7 @@ Note that both styles are used in this document.
 In previous \ejabberd{} version the configuration file should be written
 in Erlang terms. The format is still supported, but it is highly recommended
 to convert it to the new YAML format using \term{convert\_to\_yaml} command
-from \term{ejabberdctl} (see~\ref{ejabberdctl} for details).
+from \term{ejabberdctl} (see~\ref{ejabberdctl} and \ref{list-eja-commands} for details).
 
 \makesubsection{hostnames}{Host Names}
 \ind{options!hosts}\ind{host names}
@@ -5129,6 +5129,8 @@ The most interesting ones are:
 \titem{reopen\_log} Reopen the log files after they were renamed.
   If the old files were not renamed before calling this command,
   they are automatically renamed to \term{"*-old.log"}. See section \ref{logfiles}.
+\titem {convert\_to\_yaml /etc/ejabberd/ejabberd.cfg /etc/ejabberd/ejabberd-converted.yml}
+  Convert an old ejabberd.cfg file to the YAML syntax in a new file.
 \titem {backup ejabberd.backup}
   Store internal Mnesia database to a binary backup file.
 \titem {restore ejabberd.backup}
