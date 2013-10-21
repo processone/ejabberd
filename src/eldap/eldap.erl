@@ -107,6 +107,8 @@
 -define(SUPPORTEDEXTENSIONSYNTAX, "1.3.6.1.4.1.1466.115.121.1.38").
 -define(STARTTLS, "1.3.6.1.4.1.1466.20037").
 
+-define(BASE_SOCK_OPTS, [{packet, asn1}, {active, true}, {keepalive, true}, binary]).
+
 -record(eldap, {version = ?LDAP_VERSION,
 		hosts,         % Possible hosts running LDAP servers
 		host = null,   % Connected Host LDAP server
@@ -114,6 +116,7 @@
 		sockmod,       % SockMod (gen_tcp|tls)
 		tls = none,    % LDAP/LDAPS (none|tls)
 		tls_options = [],
+        socket_options = [],
 		fd = null,     % Socket filedescriptor.
 		rootdn = "",   % Name of the entry to bind as
 		passwd,        % Password for (above) entry
@@ -464,6 +467,7 @@ init({Hosts, Port, Rootdn, Passwd, Opts}) ->
                         [{depth, Depth}];
                     _ -> []
                 end,
+
     Verify = proplists:get_value(tls_verify, Opts),
     TLSOpts = if (Verify == hard orelse Verify == soft)
                  andalso CacertOpts == [] ->
@@ -478,12 +482,21 @@ init({Hosts, Port, Rootdn, Passwd, Opts}) ->
                  true ->
                       []
               end,
+    IPv6 = case proplists:get_value(inet6, Opts) of
+		       true -> [inet6];
+               _ -> []
+	       end,
+    SockOpts = case Encrypt == tls of
+	               true -> [];
+                   false -> [{send_timeout, ?SEND_TIMEOUT}]
+               end ++ IPv6 ++ ?BASE_SOCK_OPTS,
     {ok, connecting, #eldap{hosts = Hosts,
 			    port = PortTemp,
 			    rootdn = Rootdn,
 			    passwd = Passwd,
 			    tls = Encrypt,
 			    tls_options = TLSOpts,
+			    socket_options = SockOpts,
 			    id = 0,
 			    dict = dict:new(),
 			    req_q = queue:new()}, 0}.
@@ -974,22 +987,17 @@ polish([], Res, Ref) ->
 connect_bind(S) ->
     Host = next_host(S#eldap.host, S#eldap.hosts),
     ?INFO_MSG("LDAP connection on ~s:~p", [Host, S#eldap.port]),
-    Opts = if S#eldap.tls == tls ->
-                   [{packet, asn1}, {active, true}, {keepalive, true},
-                    binary | S#eldap.tls_options];
-              true ->
-                   [{packet, asn1}, {active, true}, {keepalive, true},
-                    {send_timeout, ?SEND_TIMEOUT}, binary]
-           end,
     SocketData = case S#eldap.tls of
-		     tls ->
-			 SockMod = ssl,
-			 ssl:connect(Host, S#eldap.port, Opts);
-		     %% starttls -> %% TODO: Implement STARTTLS;
-		     _ ->
-			 SockMod = gen_tcp,
-			 gen_tcp:connect(Host, S#eldap.port, Opts)
-		 end,
+		             tls ->
+			             SockMod = ssl,
+			             ssl:connect(Host, S#eldap.port,
+				         S#eldap.socket_options);
+		             %% starttls -> %% TODO: Implement STARTTLS;
+		             _ ->
+			            SockMod = gen_tcp,
+			            gen_tcp:connect(Host, S#eldap.port,
+					                    S#eldap.socket_options)
+		         end,
     case SocketData of
 	{ok, Socket} ->
 	    case bind_request(Socket, S#eldap{sockmod = SockMod}) of
@@ -1010,7 +1018,7 @@ connect_bind(S) ->
                        "** Server: ~s:~p~n"
                        "** Reason: ~p~n"
                        "** Socket options: ~p",
-		       [Host, S#eldap.port, Reason, Opts]),
+		       [Host, S#eldap.port, Reason, S#eldap.socket_options]),
 	    NewS = close_and_retry(S),
 	    {ok, connecting, NewS#eldap{host = Host}}
     end.
