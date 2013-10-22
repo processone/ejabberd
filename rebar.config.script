@@ -76,6 +76,7 @@ XMLFlags = lists:foldl(
 
 PostHooks = [ConfigureCmd("p1_tls", ""),
              ConfigureCmd("p1_stringprep", ""),
+             ConfigureCmd("p1_yaml", ""),
              ConfigureCmd("p1_xml", XMLFlags)],
 
 CfgDeps = lists:flatmap(
