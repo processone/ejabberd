@@ -624,14 +624,14 @@ get_rooms(LServer, Host, odbc) ->
 				       [<<"select name, opts from muc_room ">>,
 					<<"where host='">>, SHost, <<"';">>])
 	of
-      {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]), [];
       {selected, [<<"name">>, <<"opts">>], RoomOpts} ->
 	  lists:map(fun ([Room, Opts]) ->
 			    #muc_room{name_host = {Room, Host},
 				      opts = opts_to_binary(
                                                ejabberd_odbc:decode_term(Opts))}
 		    end,
-		    RoomOpts)
+		    RoomOpts);
+      Err -> ?ERROR_MSG("failed to get rooms: ~p", [Err]), []
     end.
 
 load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
