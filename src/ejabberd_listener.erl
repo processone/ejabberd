@@ -341,6 +341,7 @@ start_listener2(Port, Module, Opts) ->
     %% It is only required to start the supervisor in some cases.
     %% But it doesn't hurt to attempt to start it for any listener.
     %% So, it's normal (and harmless) that in most cases this call returns: {error, {already_started, pid()}}
+    maybe_start_stun(Module),
     start_module_sup(Port, Module),
     start_listener_sup(Port, Module, Opts).
 
@@ -455,6 +456,12 @@ is_frontend(_) -> false.
 strip_frontend({frontend, Module}) -> Module;
 strip_frontend(Module) when is_atom(Module) -> Module.
 
+-spec maybe_start_stun(module()) -> any().
+
+maybe_start_stun(ejabberd_stun) ->
+    ejabberd:start_app(p1_stun);
+maybe_start_stun(_) ->
+    ok.
 
 %%%
 %%% Check options
@@ -636,7 +643,6 @@ prepare_ip(IP) when is_binary(IP) ->
 prepare_mod(ejabberd_stun) ->
     prepare_mod(stun);
 prepare_mod(stun) ->
-    ejabberd:start_app(p1_stun),
     stun;
 prepare_mod(Mod) when is_atom(Mod) ->
     Mod.
