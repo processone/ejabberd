@@ -49,7 +49,7 @@
 -export_type([poll_socket/0]).
 
 -record(state,
-	{id, key, socket, output = <<"">>, input = <<"">>,
+	{id, key, socket, output = [], input = <<"">>,
 	 waiting_input = false, last_receiver, http_poll_timeout,
 	 timer}).
 
@@ -253,7 +253,7 @@ handle_event({activate, From}, StateName, StateData) ->
       Input ->
 	  Receiver = From,
 	  Receiver !
-	    {tcp, StateData#state.socket, iolist_to_binary(Input)},
+	    {tcp, StateData#state.socket, Input},
 	  {next_state, StateName,
 	   StateData#state{input = <<"">>, waiting_input = false,
 			   last_receiver = Receiver}}
@@ -272,11 +272,8 @@ handle_event(_Event, StateName, StateData) ->
 %%----------------------------------------------------------------------
 handle_sync_event({send, Packet}, _From, StateName,
 		  StateData) ->
-    Packet2 = if is_binary(Packet) -> (Packet);
-		 true -> Packet
-	      end,
-    Output = StateData#state.output ++
-	       [lists:flatten(Packet2)],
+    Packet2 = iolist_to_binary(Packet),
+    Output = StateData#state.output ++ [Packet2],
     Reply = ok,
     {reply, Reply, StateName,
      StateData#state{output = Output}};
@@ -295,7 +292,7 @@ handle_sync_event({http_put, Key, NewKey, Packet},
     if Allow ->
 	   case StateData#state.waiting_input of
 	     false ->
-		 Input = [StateData#state.input | Packet],
+		 Input = <<(StateData#state.input)/binary, Packet/binary>>,
 		 Reply = ok,
 		 {reply, Reply, StateName,
 		  StateData#state{input = Input, key = NewKey}};
@@ -320,7 +317,7 @@ handle_sync_event(http_get, _From, StateName,
 		  StateData) ->
     Reply = {ok, StateData#state.output},
     {reply, Reply, StateName,
-     StateData#state{output = <<"">>}};
+     StateData#state{output = []}};
 handle_sync_event(_Event, _From, StateName,
 		  StateData) ->
     Reply = ok, {reply, Reply, StateName, StateData}.
