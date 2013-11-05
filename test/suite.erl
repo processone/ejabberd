@@ -254,11 +254,11 @@ response(User, Passwd, Nonce, AuthzId, Realm, CNonce,
 	 DigestURI, NC, QOP, A2Prefix) ->
     A1 = case AuthzId of
 	   <<"">> ->
-	       <<((crypto:md5(<<User/binary, ":", Realm/binary, ":",
+	       <<((erlang:md5(<<User/binary, ":", Realm/binary, ":",
 				Passwd/binary>>)))/binary,
 		 ":", Nonce/binary, ":", CNonce/binary>>;
 	   _ ->
-	       <<((crypto:md5(<<User/binary, ":", Realm/binary, ":",
+	       <<((erlang:md5(<<User/binary, ":", Realm/binary, ":",
 				Passwd/binary>>)))/binary,
 		 ":", Nonce/binary, ":", CNonce/binary, ":",
 		 AuthzId/binary>>
@@ -270,10 +270,10 @@ response(User, Passwd, Nonce, AuthzId, Realm, CNonce,
 	       <<A2Prefix/binary, ":", DigestURI/binary,
 		 ":00000000000000000000000000000000">>
 	 end,
-    T = <<(hex((crypto:md5(A1))))/binary, ":", Nonce/binary,
+    T = <<(hex((erlang:md5(A1))))/binary, ":", Nonce/binary,
 	  ":", NC/binary, ":", CNonce/binary, ":", QOP/binary,
-	  ":", (hex((crypto:md5(A2))))/binary>>,
-    hex((crypto:md5(T))).
+	  ":", (hex((erlang:md5(A2))))/binary>>,
+    hex((erlang:md5(T))).
 
 my_jid(Config) ->
     jlib:make_jid(?config(user, Config),

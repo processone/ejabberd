@@ -467,8 +467,8 @@ make_disco_hash(DiscoEls, Algo) ->
     Concat = list_to_binary([concat_identities(DiscoEls),
                              concat_features(DiscoEls), concat_info(DiscoEls)]),
     jlib:encode_base64(case Algo of
-                           md5 -> crypto:md5(Concat);
-                           sha1 -> crypto:sha(Concat);
+                           md5 -> erlang:md5(Concat);
+                           sha1 -> p1_sha:sha1(Concat);
                            sha224 -> p1_sha:sha224(Concat);
                            sha256 -> p1_sha:sha256(Concat);
                            sha384 -> p1_sha:sha384(Concat);

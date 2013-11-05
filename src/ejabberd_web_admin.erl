@@ -2447,7 +2447,7 @@ get_port_data(PortIP, Opts) ->
                                  io_lib:format("~.16b", [N])
                          end,
                          binary_to_list(
-                           crypto:md5(
+                           erlang:md5(
                              [SPort, IPS, atom_to_list(NetProt)])))),
     {Port, SPort, IPT, IPS, SSPort, NetProt, OptsClean}.
 

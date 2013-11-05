@@ -237,7 +237,7 @@ response(KeyVals, User, Passwd, Nonce, AuthzId,
     DigestURI = proplists_get_bin_value(<<"digest-uri">>, KeyVals, <<>>),
     NC = proplists_get_bin_value(<<"nc">>, KeyVals, <<>>),
     QOP = proplists_get_bin_value(<<"qop">>, KeyVals, <<>>),
-    MD5Hash = crypto:md5(<<User/binary, ":", Realm/binary, ":",
+    MD5Hash = erlang:md5(<<User/binary, ":", Realm/binary, ":",
                            Passwd/binary>>),
     A1 = case AuthzId of
 	   <<"">> ->
@@ -253,7 +253,7 @@ response(KeyVals, User, Passwd, Nonce, AuthzId,
 	       <<A2Prefix/binary, ":", DigestURI/binary,
 		 ":00000000000000000000000000000000">>
 	 end,
-    T = <<(hex((crypto:md5(A1))))/binary, ":", Nonce/binary,
+    T = <<(hex((erlang:md5(A1))))/binary, ":", Nonce/binary,
 	  ":", NC/binary, ":", CNonce/binary, ":", QOP/binary,
-	  ":", (hex((crypto:md5(A2))))/binary>>,
-    hex((crypto:md5(T))).
+	  ":", (hex((erlang:md5(A2))))/binary>>,
+    hex((erlang:md5(T))).

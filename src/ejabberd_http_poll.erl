@@ -284,7 +284,7 @@ handle_sync_event({http_put, Key, NewKey, Packet},
     Allow = case StateData#state.key of
 	      <<"">> -> true;
 	      OldKey ->
-		  NextKey = jlib:encode_base64((crypto:sha(Key))),
+		  NextKey = jlib:encode_base64((p1_sha:sha1(Key))),
 		  if OldKey == NextKey -> true;
 		     true -> false
 		  end
