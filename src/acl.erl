@@ -455,22 +455,22 @@ transform_options({acl, Name, Type}, Opts) ->
     T = case Type of
             all -> all;
             none -> none;
-            {user, U} -> {user, [U]};
-            {user, U, S} -> {user, [[{U, S}]]};
-            {shared_group, G} -> {shared_group, [G]};
-            {shared_group, G, H} -> {shared_group, [[{G, H}]]};
-            {user_regexp, UR} -> {user_regexp, [UR]};
-            {user_regexp, UR, S} -> {user_regexp, [[{UR, S}]]};
-            {node_regexp, UR, SR} -> {node_regexp, [[{UR, SR}]]};
-            {user_glob, UR} -> {user_glob, [UR]};
-            {user_glob, UR, S} -> {user_glob, [[{UR, S}]]};
-            {node_glob, UR, SR} -> {node_glob, [[{UR, SR}]]};
-            {server, S} -> {server, [S]};
-            {resource, R} -> {resource, [R]};
-            {server_regexp, SR} -> {server_regexp, [SR]};
-            {server_glob, S} -> {server_glob, [S]};
-            {ip, S} -> {ip, [S]};
-            {resource_glob, R} -> {resource_glob, [R]}
+            {user, U} -> {user, [b(U)]};
+            {user, U, S} -> {user, [[{b(U), b(S)}]]};
+            {shared_group, G} -> {shared_group, [b(G)]};
+            {shared_group, G, H} -> {shared_group, [[{b(G), b(H)}]]};
+            {user_regexp, UR} -> {user_regexp, [b(UR)]};
+            {user_regexp, UR, S} -> {user_regexp, [[{b(UR), b(S)}]]};
+            {node_regexp, UR, SR} -> {node_regexp, [[{b(UR), b(SR)}]]};
+            {user_glob, UR} -> {user_glob, [b(UR)]};
+            {user_glob, UR, S} -> {user_glob, [[{b(UR), b(S)}]]};
+            {node_glob, UR, SR} -> {node_glob, [[{b(UR), b(SR)}]]};
+            {server, S} -> {server, [b(S)]};
+            {resource, R} -> {resource, [b(R)]};
+            {server_regexp, SR} -> {server_regexp, [b(SR)]};
+            {server_glob, S} -> {server_glob, [b(S)]};
+            {ip, S} -> {ip, [b(S)]};
+            {resource_glob, R} -> {resource_glob, [b(R)]}
         end,
     [{acl, [{Name, [T]}]}|Opts];
 transform_options({access, Name, Rules}, Opts) ->
