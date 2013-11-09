@@ -251,7 +251,7 @@ process_list_get(LUser, LServer, Name, odbc) ->
 	      <<"match_all">>, <<"match_iq">>, <<"match_message">>,
 	      <<"match_presence_in">>, <<"match_presence_out">>],
 	     RItems} ->
-		lists:map(fun raw_to_item/1, RItems);
+		lists:flatmap(fun raw_to_item/1, RItems);
 	    _ -> error
 	  end;
       _ -> error
@@ -482,7 +482,7 @@ process_active_set(LUser, LServer, Name, odbc) ->
 	      <<"match_all">>, <<"match_iq">>, <<"match_message">>,
 	      <<"match_presence_in">>, <<"match_presence_out">>],
 	     RItems} ->
-		lists:map(fun raw_to_item/1, RItems);
+		lists:flatmap(fun raw_to_item/1, RItems);
 	    _ -> error
 	  end;
       _ -> error
@@ -766,7 +766,7 @@ get_user_list(_, LUser, LServer, odbc) ->
 	      <<"match_all">>, <<"match_iq">>, <<"match_message">>,
 	      <<"match_presence_in">>, <<"match_presence_out">>],
 	     RItems} ->
-		{Default, lists:map(fun raw_to_item/1, RItems)};
+		{Default, lists:flatmap(fun raw_to_item/1, RItems)};
 	    _ -> {none, []}
 	  end;
       _ -> {none, []}
@@ -813,7 +813,7 @@ get_user_lists(LUser, LServer, odbc) ->
                                 <<"match_message">>, <<"match_presence_in">>,
                                 <<"match_presence_out">>],
                                RItems} ->
-                                  [{Name, lists:map(fun raw_to_item/1, RItems)}];
+                                  [{Name, lists:flatmap(fun raw_to_item/1, RItems)}];
                               _ ->
                                   []
                           end
@@ -967,39 +967,43 @@ updated_list(_, #userlist{name = OldName} = Old,
 
 raw_to_item([SType, SValue, SAction, SOrder, SMatchAll,
 	     SMatchIQ, SMatchMessage, SMatchPresenceIn,
-	     SMatchPresenceOut]) ->
-    {Type, Value} = case SType of
-		      <<"n">> -> {none, none};
-		      <<"j">> ->
-			  case jlib:string_to_jid(SValue) of
-			    #jid{} = JID -> {jid, jlib:jid_tolower(JID)}
-			  end;
-		      <<"g">> -> {group, SValue};
-		      <<"s">> ->
-			  case SValue of
-			    <<"none">> -> {subscription, none};
-			    <<"both">> -> {subscription, both};
-			    <<"from">> -> {subscription, from};
-			    <<"to">> -> {subscription, to}
-			  end
-		    end,
-    Action = case SAction of
-	       <<"a">> -> allow;
-	       <<"d">> -> deny
-	     end,
-    Order = jlib:binary_to_integer(SOrder),
-    MatchAll = ejabberd_odbc:to_bool(SMatchAll),
-    MatchIQ = ejabberd_odbc:to_bool(SMatchIQ),
-    MatchMessage = ejabberd_odbc:to_bool(SMatchMessage),
-    MatchPresenceIn =
-	ejabberd_odbc:to_bool(SMatchPresenceIn),
-    MatchPresenceOut =
-	ejabberd_odbc:to_bool(SMatchPresenceOut),
-    #listitem{type = Type, value = Value, action = Action,
-	      order = Order, match_all = MatchAll, match_iq = MatchIQ,
-	      match_message = MatchMessage,
-	      match_presence_in = MatchPresenceIn,
-	      match_presence_out = MatchPresenceOut}.
+	     SMatchPresenceOut] = Row) ->
+    try
+        {Type, Value} = case SType of
+                            <<"n">> -> {none, none};
+                            <<"j">> ->
+                                case jlib:string_to_jid(SValue) of
+                                    #jid{} = JID ->
+                                        {jid, jlib:jid_tolower(JID)}
+                                end;
+                            <<"g">> -> {group, SValue};
+                            <<"s">> ->
+                                case SValue of
+                                    <<"none">> -> {subscription, none};
+                                    <<"both">> -> {subscription, both};
+                                    <<"from">> -> {subscription, from};
+                                    <<"to">> -> {subscription, to}
+                                end
+                        end,
+        Action = case SAction of
+                     <<"a">> -> allow;
+                     <<"d">> -> deny
+                 end,
+        Order = jlib:binary_to_integer(SOrder),
+        MatchAll = ejabberd_odbc:to_bool(SMatchAll),
+        MatchIQ = ejabberd_odbc:to_bool(SMatchIQ),
+        MatchMessage = ejabberd_odbc:to_bool(SMatchMessage),
+        MatchPresenceIn = ejabberd_odbc:to_bool(SMatchPresenceIn),
+        MatchPresenceOut = ejabberd_odbc:to_bool(SMatchPresenceOut),
+        [#listitem{type = Type, value = Value, action = Action,
+                   order = Order, match_all = MatchAll, match_iq = MatchIQ,
+                   match_message = MatchMessage,
+                   match_presence_in = MatchPresenceIn,
+                   match_presence_out = MatchPresenceOut}]
+    catch _:_ ->
+            ?WARNING_MSG("failed to parse row: ~p", [Row]),
+            []
+    end.
 
 item_to_raw(#listitem{type = Type, value = Value,
 		      action = Action, order = Order, match_all = MatchAll,

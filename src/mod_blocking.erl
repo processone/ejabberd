@@ -236,7 +236,7 @@ process_blocklist_block(LUser, LServer, Filter, odbc) ->
 		    <<"match_all">>, <<"match_iq">>, <<"match_message">>,
 		    <<"match_presence_in">>, <<"match_presence_out">>],
 		   RItems = [_ | _]} ->
-		      List = lists:map(fun mod_privacy:raw_to_item/1, RItems);
+		      List = lists:flatmap(fun mod_privacy:raw_to_item/1, RItems);
 		  _ -> List = []
 		end,
 		NewList = Filter(List),
@@ -432,8 +432,8 @@ process_blocklist_unblock(LUser, LServer, Filter,
 			  <<"match_all">>, <<"match_iq">>, <<"match_message">>,
 			  <<"match_presence_in">>, <<"match_presence_out">>],
 			 RItems = [_ | _]} ->
-			    List = lists:map(fun mod_privacy:raw_to_item/1,
-					     RItems),
+			    List = lists:flatmap(fun mod_privacy:raw_to_item/1,
+                                                 RItems),
 			    NewList = Filter(List),
 			    NewRItems = lists:map(fun mod_privacy:item_to_raw/1,
 						  NewList),
@@ -521,7 +521,7 @@ process_blocklist_get(LUser, LServer, odbc) ->
 	      <<"match_all">>, <<"match_iq">>, <<"match_message">>,
 	      <<"match_presence_in">>, <<"match_presence_out">>],
 	     RItems} ->
-		lists:map(fun mod_privacy:raw_to_item/1, RItems);
+		lists:flatmap(fun mod_privacy:raw_to_item/1, RItems);
 	    {'EXIT', _} -> error
 	  end;
       {'EXIT', _} -> error
