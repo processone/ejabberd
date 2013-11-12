@@ -6015,10 +6015,11 @@ The syntax is:
 
 \makesection{logfiles}{Log Files}
 
-An \ejabberd{} node writes two log files:
+An \ejabberd{} node writes three log files:
 \begin{description}
 	\titem{ejabberd.log} is the ejabberd service log, with the messages reported by \ejabberd{} code
-	\titem{erlang.log} is the Erlang/OTP system log, with the messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
+        \titem{error.log} is the file accumulating error messages from \term{ejabberd.log}
+	\titem{crash.log} is the Erlang/OTP log, with the crash messages reported by Erlang/OTP using SASL (System Architecture Support Libraries)
 \end{description}
 
 The option \term{loglevel} modifies the verbosity of the file ejabberd.log. The syntax:
@@ -6040,13 +6041,33 @@ For example, the default configuration is:
 loglevel: 4
 \end{verbatim}
 
-The log files grow continually, so it is recommended to rotate them periodically.
-To rotate the log files, rename the files and then reopen them.
+Option \term{log\_rate\_limit} is useful if you want to protect the logging
+mechanism from being overloaded by excessive amount of log messages.
+The syntax is:
+\begin{description}
+  \titem{log\_rate\_limit: N} Where N is a maximum number of log messages per second.
+  The default value is 100.
+\end{description}
+When the limit is reached the similar warning message is logged:
+\begin{verbatim}
+lager_error_logger_h dropped 800 messages in the last second that exceeded the limit of 100 messages/sec
+\end{verbatim}
+
+By default \ejabberd{} rotates the log files when they get grown above a certain size.
+The exact value is controlled by \term{log\_rotate\_size} option.
+The syntax is:
+\begin{description}
+  \titem{log\_rotate\_size: N} Where N is the maximum size of a log file in bytes.
+  The default value is 104857600 (10Mb).
+\end{description}
+
+However, you can rotate the log files manually.
+For doing this, set \term{log\_rotate\_size} option to some absurdly high value, then,
+when you need to rotate the files, rename and then reopen them.
 The ejabberdctl command \term{reopen-log} 
 (please refer to section \ref{ectl-commands})
 reopens the log files,
 and also renames the old ones if you didn't rename them.
-
 
 \makesection{debugconsole}{Debug Console}
 
