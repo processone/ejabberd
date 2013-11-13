@@ -187,17 +187,24 @@ get_rosteritem_name([], _, _) -> <<"">>;
 get_rosteritem_name([ModVcard], U, S) ->
     From = jlib:make_jid(<<"">>, S, jlib:atom_to_binary(?MODULE)),
     To = jlib:make_jid(U, S, <<"">>),
-    IQ = {iq, <<"">>, get, <<"vcard-temp">>, <<"">>,
-	  #xmlel{name = <<"vCard">>,
-		 attrs = [{<<"xmlns">>, <<"vcard-temp">>}],
-		 children = []}},
-    IQ_Vcard = ModVcard:process_sm_iq(From, To, IQ),
-    try get_rosteritem_name_vcard(IQ_Vcard#iq.sub_el) catch
-      E1:E2 ->
-	  ?ERROR_MSG("Error ~p found when trying to get the "
-		     "vCard of ~s@~s in ~p:~n ~p",
-		     [E1, U, S, ModVcard, E2]),
-	  <<"">>
+    case lists:member(To#jid.lserver, ?MYHOSTS) of
+        true ->
+            IQ = {iq, <<"">>, get, <<"vcard-temp">>, <<"">>,
+                  #xmlel{name = <<"vCard">>,
+                         attrs = [{<<"xmlns">>, <<"vcard-temp">>}],
+                         children = []}},
+            IQ_Vcard = ModVcard:process_sm_iq(From, To, IQ),
+            case catch get_rosteritem_name_vcard(IQ_Vcard#iq.sub_el) of
+                {'EXIT', Err} ->
+                    ?ERROR_MSG("Error found when trying to get the "
+                               "vCard of ~s@~s in ~p:~n ~p",
+                               [U, S, ModVcard, Err]),
+                    <<"">>;
+                NickName ->
+                    NickName
+            end;
+        false ->
+            <<"">>
     end.
 
 get_rosteritem_name_vcard([]) -> <<"">>;
