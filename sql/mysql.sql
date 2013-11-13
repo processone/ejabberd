@@ -77,7 +77,7 @@ CREATE INDEX i_sr_user_grp ON sr_user(grp);
 
 CREATE TABLE spool (
     username varchar(250) NOT NULL,
-    xml text NOT NULL,
+    xml BLOB NOT NULL,
     seq BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB CHARACTER SET utf8;
