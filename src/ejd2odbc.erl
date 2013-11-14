@@ -56,6 +56,7 @@ modules() ->
      mod_offline,
      mod_privacy,
      mod_private,
+     mod_pubsub,
      mod_roster,
      mod_shared_roster,
      mod_vcard,

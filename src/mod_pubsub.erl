@@ -111,6 +111,8 @@
 %% calls for parallel sending of last items
 -export([send_loop/1]).
 
+-export([export/1]).
+
 -define(PROCNAME, ejabberd_mod_pubsub).
 
 -define(LOOPNAME, ejabberd_mod_pubsub_loop).
@@ -5376,3 +5378,96 @@ purge_offline({User, Server, _} = LJID) ->
 			lists:usort(lists:flatten(Affiliations)));
       {Error, _} -> ?DEBUG("on_user_offline ~p", [Error])
     end.
+
+
+%% REVIEW:
+%% * this code takes NODEID from Itemid2, and forgets about Nodeidx
+%% * this code assumes Payload only contains one xmlelement()
+%% * PUBLISHER is taken from Creation
+export(_Server) ->
+    [{pubsub_item,
+      fun(_Host, #pubsub_item{itemid = {Itemid1, Itemid2},
+                              %nodeidx = _Nodeidx,
+                              creation = {{C1, C2, C3}, Cusr},
+                              modification = {{M1, M2, M3}, _Musr},
+                              payload = Payload}) ->
+              ITEMID = ejabberd_odbc:escape(Itemid1),
+              NODEID = integer_to_list(Itemid2),
+              CREATION = ejabberd_odbc:escape(
+                string:join([string:right(integer_to_list(I),6,$0)||I<-[C1,C2,C3]],":")),
+              MODIFICATION = ejabberd_odbc:escape(
+                string:join([string:right(integer_to_list(I),6,$0)||I<-[M1,M2,M3]],":")),
+              PUBLISHER = ejabberd_odbc:escape(jlib:jid_to_string(Cusr)),
+              [PayloadEl] = [El || {xmlelement,_,_,_} = El <- Payload],
+              PAYLOAD = ejabberd_odbc:escape(xml:element_to_binary(PayloadEl)),
+              ["delete from pubsub_item where itemid='", ITEMID, "';\n"
+               "insert into pubsub_item(itemid,nodeid,creation,modification,publisher,payload) \n"
+               " values ('", ITEMID, "', ", NODEID, ", '", CREATION, "', '",
+                 MODIFICATION, "', '", PUBLISHER, "', '", PAYLOAD, "');\n"];
+         (_Host, _R) ->
+              []
+      end},
+%% REVIEW:
+%% * From the mnesia table, the #pubsub_state.items is not used in ODBC
+%% * Right now AFFILIATION is the first letter of Affiliation
+%% * Right now SUBSCRIPTIONS expects only one Subscription
+%% * Right now SUBSCRIPTIONS letter is the first letter of Subscription
+      {pubsub_state,
+      fun(_Host, #pubsub_state{stateid = {Jid, Stateid},
+                               %nodeidx = Nodeidx,
+                               items = _Items,
+                               affiliation = Affiliation,
+                               subscriptions = Subscriptions}) ->
+              STATEID = integer_to_list(Stateid),
+              JID = ejabberd_odbc:escape(jlib:jid_to_string(Jid)),
+              NODEID = "unknown", %% TODO: integer_to_list(Nodeidx),
+              AFFILIATION = string:substr(atom_to_list(Affiliation),1,1),
+              SUBSCRIPTIONS = parse_subscriptions(Subscriptions),
+              ["delete from pubsub_state where stateid='", STATEID, "';\n"
+               "insert into pubsub_state(stateid,jid,nodeid,affiliation,subscriptions) \n"
+               " values (", STATEID, ", '", JID, "', ", NODEID, ", '",
+                AFFILIATION, "', '", SUBSCRIPTIONS, "');\n"];
+         (_Host, _R) ->
+              []
+      end},
+
+%% REVIEW:
+%% * Parents is not migrated to PARENTs
+%% * Probably some option VALs are not correctly represented in mysql
+      {pubsub_node,
+      fun(_Host, #pubsub_node{nodeid = {Hostid, Nodeid},
+                              id = Id,
+                              parents = _Parents,
+                              type = Type,
+                              owners = Owners,
+                              options = Options}) ->
+              HOST = case Hostid of
+                    {U,S,R} -> ejabberd_odbc:escape(jlib:jid_to_string({U,S,R}));
+                    _ -> ejabberd_odbc:escape(Hostid)
+                    end,
+              NODE = ejabberd_odbc:escape(Nodeid),
+              NODEID = integer_to_list(Id),
+              PARENT = "",
+              TYPE = ejabberd_odbc:escape(Type++"_odbc"),
+              ["delete from pubsub_node where nodeid='", NODEID, "';\n"
+               "insert into pubsub_node(host,node,nodeid,parent,type) \n"
+               " values ('", HOST, "', '", NODE, "', ", NODEID, ", '", PARENT, "', '", TYPE, "');\n"
+               "delete from pubsub_node_option where nodeid='", NODEID, "';\n",
+               [["insert into pubsub_node_option(nodeid,name,val)\n"
+                 " values (", NODEID, ", '", atom_to_list(Name), "', '",
+                           io_lib:format("~p", [Val]), "');\n"] || {Name,Val} <- Options],
+               "delete from pubsub_node_owner where nodeid='", NODEID, "';\n",
+               [["insert into pubsub_node_owner(nodeid,owner)\n"
+                 " values (", NODEID, ", '", jlib:jid_to_string(Usr), "');\n"] || Usr <- Owners],"\n"];
+         (_Host, _R) ->
+              []
+      end}].
+
+parse_subscriptions([]) ->
+    "";
+parse_subscriptions([{State, Item}]) ->
+    STATE = case State of
+        subscribed -> "s"
+    end,
+    string:join([STATE, Item],":").
+
