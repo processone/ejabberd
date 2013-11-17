@@ -235,31 +235,6 @@ if test "$ENABLEUSER" != ""; then
   AC_SUBST([INSTALLUSER], [$ENABLEUSER])
 fi
 
-AC_ERLANG_CHECK_LIB([sasl], [],
-    [AC_MSG_ERROR([Erlang application 'sasl' was not found])])
-AC_ERLANG_CHECK_LIB([crypto], [],
-    [AC_MSG_ERROR([Erlang application 'crypto' was not found])])
-AC_ERLANG_CHECK_LIB([public_key], [],
-    [AC_MSG_ERROR([Erlang application 'public_key' was not found])])
-AC_ERLANG_CHECK_LIB([ssl], [],
-    [AC_MSG_ERROR([Erlang application 'ssl' was not found])])
-AC_ERLANG_CHECK_LIB([mnesia], [],
-    [AC_MSG_ERROR([Erlang application 'mnesia' was not found])])
-AC_ERLANG_CHECK_LIB([inets], [],
-    [AC_MSG_ERROR([Erlang application 'inets' was not found])])
-AC_ERLANG_CHECK_LIB([compiler], [],
-    [AC_MSG_ERROR([Erlang application 'compiler' was not found])])
-if test "x$odbc" = "xtrue"; then
-   AC_ERLANG_CHECK_LIB([odbc], [],
-      [AC_MSG_ERROR([Erlang application 'odbc' was not found])])
-fi
-if test "x$tools" = "xtrue"; then
-   AC_ERLANG_CHECK_LIB([tools], [],
-      [AC_MSG_ERROR([Erlang application 'tools' was not found])])
-   AC_ERLANG_CHECK_LIB([runtime_tools], [],
-      [AC_MSG_ERROR([Erlang application 'runtime_tools' was not found])])
-fi
-
 AC_SUBST(hipe)
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(transient_supervisors)
