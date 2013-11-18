@@ -83,20 +83,24 @@ start() ->
     ErrorLog = filename:join([Dir, "error.log"]),
     CrashLog = filename:join([Dir, "crash.log"]),
     LogRotateSize = get_pos_integer_env(log_rotate_size, 10*1024*1024),
+    LogRotateCount = get_pos_integer_env(log_rotate_count, 1),
     LogRateLimit = get_pos_integer_env(log_rate_limit, 100),
     application:set_env(lager, error_logger_hwm, LogRateLimit),
     application:set_env(
       lager, handlers,
       [{lager_console_backend, info},
        {lager_file_backend, [{file, ConsoleLog}, {level, info},
-                             {count, 1}, {size, LogRotateSize}]},
+                             {count, LogRotateCount}, {size, LogRotateSize}]},
        {lager_file_backend, [{file, ErrorLog}, {level, error},
-                             {count, 1}, {size, LogRotateSize}]}]),
+                             {count, LogRotateCount}, {size, LogRotateSize}]}]),
     application:set_env(lager, crash_log, CrashLog),
+    application:set_env(lager, crash_log_size, LogRotateSize),
+    application:set_env(lager, crash_log_count, LogRotateCount),
     ejabberd:start_app(lager),
     ok.
 
 reopen_log() ->
+    lager_crash_log ! rotate,
     lists:foreach(
       fun({lager_file_backend, File}) ->
               whereis(lager_event) ! {rotate, File};

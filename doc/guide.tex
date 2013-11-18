@@ -6069,6 +6069,15 @@ The ejabberdctl command \term{reopen-log}
 reopens the log files,
 and also renames the old ones if you didn't rename them.
 
+The option \term{log\_rotate\_count} defines the number of rotated files to keep
+by \term{reopen-log} command.
+Every such file has a numeric suffix. The exact format is:
+\begin{description}
+  \titem{log\_rotate\_count: N} The default value is 1,
+  which means only \term{ejabberd.log.0}, \term{error.log.0}
+  and \term{crash.log.0} will be kept.
+\end{description}
+
 \makesection{debugconsole}{Debug Console}
 
 The Debug Console is an Erlang shell attached to an already running \ejabberd{} server.
