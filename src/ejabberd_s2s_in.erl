@@ -177,9 +177,14 @@ init([{SockMod, Socket}, Opts]) ->
                   undefined -> [];
                   CertFile -> [{certfile, CertFile}]
 	      end,
+    TLSOpts2 = case ejabberd_config:get_option(
+                      s2s_ciphers, fun iolist_to_binary/1) of
+                   undefined -> TLSOpts1;
+                   Ciphers -> [{ciphers, Ciphers} | TLSOpts1]
+               end,
     TLSOpts = case proplists:get_bool(tls_compression, Opts) of
-                  false -> [compression_none | TLSOpts1];
-                  true -> TLSOpts1
+                  false -> [compression_none | TLSOpts2];
+                  true -> TLSOpts2
               end,
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     {ok, wait_for_stream,

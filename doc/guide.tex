@@ -869,7 +869,8 @@ The available modules, their purpose and the options allowed by each one are:
 \begin{description}
   \titem{\texttt{ejabberd\_c2s}}
     Handles c2s connections.\\
-    Options: \texttt{access}, \texttt{certfile}, \texttt{max\_fsm\_queue},
+    Options: \texttt{access}, \texttt{certfile}, \texttt{ciphers},
+    \texttt{max\_fsm\_queue},
     \texttt{max\_stanza\_size}, \texttt{shaper},
     \texttt{starttls}, \texttt{starttls\_required}, \texttt{tls},
     \texttt{zlib}, \texttt{tls\_compression}
@@ -908,6 +909,8 @@ This is a detailed description of each option allowed by the listening modules:
     Simple web page that allows a user to fill a CAPTCHA challenge (see section \ref{captcha}).
   \titem{certfile: Path} Full path to a file containing the default SSL certificate.
     To define a certificate file specific for a given domain, use the global option \term{domain\_certfile}.
+  \titem{ciphers: Ciphers} OpenSSL ciphers list in the same format accepted by
+  `\verb|openssl ciphers|' command.
   \titem{default\_host: undefined|HostName\}}
     If the HTTP request received by ejabberd contains the HTTP header \term{Host}
     with an ambiguous virtual host that doesn't match any one defined in ejabberd (see \ref{hostnames}),
@@ -1054,6 +1057,8 @@ There are some additional global options that can be specified in the ejabberd c
   file containing a SSL certificate.
   \titem{domain\_certfile: Path} \ind{options!domain\_certfile}
   Full path to the file containing the SSL certificate for a specific domain.
+  \titem{s2s\_ciphers: Ciphers} \ind{options!s2s\_ciphers} OpenSSL ciphers list
+  in the same format accepted by `\verb|openssl ciphers|' command.
   \titem{outgoing\_s2s\_families: [Family, ...]} \ind{options!outgoing\_s2s\_families}
   Specify which address families to try, in what order.
   By default it first tries connecting with IPv4, if that fails it tries using IPv6.
