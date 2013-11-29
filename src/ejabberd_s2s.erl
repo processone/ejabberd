@@ -433,19 +433,34 @@ new_connection(MyServer, Server, From, FromTo,
     TRes.
 
 max_s2s_connections_number({From, To}) ->
-    case acl:match_rule(From, max_s2s_connections,
-			jlib:make_jid(<<"">>, To, <<"">>))
-	of
-      Max when is_integer(Max) -> Max;
-      _ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER
+    AccessList = ejabberd_config:get_option(
+           {access, From}, fun(V) -> V end, []),
+
+    case lists:keysearch(max_s2s_connections, 1, AccessList) of
+        {value, {max_s2s_connections, _}} ->
+            case acl:match_rule(From, max_s2s_connections,
+                                jlib:make_jid(<<"">>, To, <<"">>))
+            of
+                Max when is_integer(Max) -> Max;
+                _ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER
+            end;
+        false -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER
     end.
 
+
 max_s2s_connections_number_per_node({From, To}) ->
-    case acl:match_rule(From, max_s2s_connections_per_node,
-			jlib:make_jid(<<"">>, To, <<"">>))
-	of
-      Max when is_integer(Max) -> Max;
-      _ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE
+    AccessList = ejabberd_config:get_option(
+                   {access, From}, fun(V) -> V end, []),
+
+    case lists:keysearch(mmax_s2s_connections_per_node, 1, AccessList) of
+        {value, {max_s2s_connections_per_node, _}} ->
+            case acl:match_rule(From, max_s2s_connections_per_node,
+                                jlib:make_jid(<<"">>, To, <<"">>))
+            of
+                Max when is_integer(Max) -> Max;
+                _ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE
+            end;
+        false -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE
     end.
 
 needed_connections_number(Ls, MaxS2SConnectionsNumber,
