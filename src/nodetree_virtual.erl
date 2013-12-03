@@ -119,7 +119,11 @@ get_nodes(_Host) -> [].
 
 get_parentnodes(_Host, _Node, _From) -> [].
 
-get_parentnodes_tree(_Host, _Node, _From) -> [].
+get_parentnodes_tree(_Host, _Node, _From) ->
+    case get_node(Host, NodeId, From) of
+      Node when is_record(Node, pubsub_node) -> [{0, [Node]}];
+      _Error -> []
+    end.
 
 get_subnodes(Host, Node, _From) ->
     get_subnodes(Host, Node).
