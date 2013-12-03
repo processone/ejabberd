@@ -119,7 +119,14 @@ get_nodes(_Host) -> [].
 
 get_parentnodes(_Host, _Node, _From) -> [].
 
-get_parentnodes_tree(_Host, _Node, _From) ->
+-spec(get_parentnodes_tree/3 ::
+(
+  Host   :: mod_pubsub:host(),
+  NodeId :: mod_pubsub:nodeId(),
+  From   :: jid())
+    -> [{0, [mod_pubsub:pubsubNode(),...]}]
+).
+get_parentnodes_tree(Host, NodeId, From) ->
     case get_node(Host, NodeId, From) of
       Node when is_record(Node, pubsub_node) -> [{0, [Node]}];
       _Error -> []
