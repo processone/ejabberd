@@ -142,7 +142,7 @@ process_iq(From, To, IQ) ->
 
 process_local_iq(From, To, #iq{type = Type} = IQ) ->
     case Type of
-      set -> process_iq_set(From, To, IQ);
+      set -> try_process_iq_set(From, To, IQ);
       get -> process_iq_get(From, To, IQ)
     end.
 
@@ -453,6 +453,16 @@ get_roster_by_jid_t(LUser, LServer, LJID, odbc) ->
 		R#roster{usj = {LUser, LServer, LJID},
 			 us = {LUser, LServer}, jid = LJID, name = <<"">>}
 	  end
+    end.
+
+try_process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
+    #jid{server = Server} = From,
+    Access = gen_mod:get_module_opt(Server, ?MODULE, access, fun(A) when is_atom(A) -> A end, all),
+    case acl:match_rule(Server, Access, From) of
+	deny ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	allow ->
+	    process_iq_set(From, To, IQ)
     end.
 
 process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
@@ -1508,7 +1518,7 @@ user_roster_item_parse_query(User, Server, Items,
 				  {value, _} ->
 				      UJID = jlib:make_jid(User, Server,
 							   <<"">>),
-				      process_iq(UJID, UJID,
+				      process_iq_set(UJID, UJID,
 						 #iq{type = set,
 						     sub_el =
 							 #xmlel{name =

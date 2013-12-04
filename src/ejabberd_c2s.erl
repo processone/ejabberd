@@ -1879,10 +1879,7 @@ presence_track(From, To, Packet, StateData) ->
 	  A = remove_element(LTo, StateData#state.pres_a),
 	  StateData#state{pres_a = A};
       <<"subscribe">> ->
-	  ejabberd_hooks:run(roster_out_subscription, Server,
-			     [User, Server, To, subscribe]),
-	  check_privacy_route(From, StateData,
-			      jlib:jid_remove_resource(From), To, Packet),
+	  try_roster_subscribe(subscribe, User, Server, From, To, Packet, StateData),
 	  StateData;
       <<"subscribed">> ->
 	  ejabberd_hooks:run(roster_out_subscription, Server,
@@ -1891,10 +1888,7 @@ presence_track(From, To, Packet, StateData) ->
 			      jlib:jid_remove_resource(From), To, Packet),
 	  StateData;
       <<"unsubscribe">> ->
-	  ejabberd_hooks:run(roster_out_subscription, Server,
-			     [User, Server, To, unsubscribe]),
-	  check_privacy_route(From, StateData,
-			      jlib:jid_remove_resource(From), To, Packet),
+	  try_roster_subscribe(unsubscribe, User, Server, From, To, Packet, StateData),
 	  StateData;
       <<"unsubscribed">> ->
 	  ejabberd_hooks:run(roster_out_subscription, Server,
@@ -1942,6 +1936,22 @@ privacy_check_packet(StateData, From, To, Packet,
 is_privacy_allow(StateData, From, To, Packet, Dir) ->
     allow ==
       privacy_check_packet(StateData, From, To, Packet, Dir).
+
+%%% Check ACL before allowing to send a subscription stanza
+try_roster_subscribe(Type, User, Server, From, To, Packet, StateData) ->
+    JID1 = jlib:make_jid(User, Server, <<"">>),
+    Access = gen_mod:get_module_opt(Server, mod_roster, access, fun(A) when is_atom(A) -> A end, all),
+    case acl:match_rule(Server, Access, JID1) of
+	deny ->
+	    %% Silently drop this (un)subscription request
+	    ok;
+	allow ->
+	    ejabberd_hooks:run(roster_out_subscription,
+			       Server,
+			       [User, Server, To, Type]),
+	    check_privacy_route(From, StateData, jlib:jid_remove_resource(From),
+				To, Packet)
+    end.
 
 %% Send presence when disconnecting
 presence_broadcast(StateData, From, JIDSet, Packet) ->

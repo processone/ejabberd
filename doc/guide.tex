@@ -4039,6 +4039,13 @@ Options:
   This option is disabled by default.
   Important: if you use \modsharedroster{} or \modsharedrosterldap{},
   you must disable this option.
+ \titem{access} \ind{options!access}
+   This option can be configured to specify rules to restrict roster management.
+   If a rule returns `deny' on the requested user name,
+   that user cannot modify his personal roster:
+   not add/remove/modify contacts,
+   or subscribe/unsubscribe presence.
+   By default there aren't restrictions.
 \end{description}
 
 This example configuration enables Roster Versioning with storage of current id:
@@ -4048,6 +4055,24 @@ modules:
   mod_roster:
     versioning: true
     store_current_id: true
+  ...
+\end{verbatim}
+
+With this example configuration, only admins can manage their rosters;
+everybody else cannot modify the roster:
+\begin{verbatim}
+acl:
+  admin:
+    user:
+      - "sarah": "example.org"
+access:
+  roster:
+    admin: allow
+
+modules:
+  ...
+  mod_roster:
+    access: roster
   ...
 \end{verbatim}
 
