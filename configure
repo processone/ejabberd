@@ -552,7 +552,7 @@ MAKEFLAGS=
 # Identity of this package.
 PACKAGE_NAME='ejabberd'
 PACKAGE_TARNAME='ejabberd'
-PACKAGE_VERSION='community'
+PACKAGE_VERSION='community 13.10'
 PACKAGE_STRING='ejabberd community'
 PACKAGE_BUGREPORT='ejabberd@process-one.net'
 PACKAGE_URL=''
