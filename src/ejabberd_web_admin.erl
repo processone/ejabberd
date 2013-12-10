@@ -646,10 +646,7 @@ process_admin(Host,
 		  {ok, Tokens, _} ->
 		      case erl_parse:parse_term(Tokens) of
 			{ok, NewACLs} ->
-			    case acl:add_list(Host, NewACLs, true) of
-			      ok -> ok;
-			      _ -> error
-			    end;
+                            acl:add_list(Host, NewACLs, true);
 			_ -> error
 		      end;
 		  _ -> error
@@ -689,10 +686,7 @@ process_admin(Host,
 		  {'EXIT', _} -> error;
 		  NewACLs ->
 		      ?INFO_MSG("NewACLs at ~s: ~p", [Host, NewACLs]),
-		      case acl:add_list(Host, NewACLs, true) of
-			ok -> ?INFO_MSG("NewACLs: ok", []), ok;
-			_ -> error
-		      end
+		      acl:add_list(Host, NewACLs, true)
 		end;
 	    _ -> nothing
 	  end,

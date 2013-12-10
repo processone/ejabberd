@@ -677,5 +677,7 @@ check_ip_access({User, Server, Resource}, IPAccess) ->
         _ ->
             deny
     end;
+check_ip_access(undefined, _IPAccess) ->
+    deny;
 check_ip_access(IPAddress, IPAccess) ->
     acl:match_rule(global, IPAccess, IPAddress).

@@ -1756,10 +1756,8 @@ set_form(_From, Host, [<<"config">>, <<"acls">>], _Lang,
 	    {ok, Tokens, _} ->
 		case erl_parse:parse_term(Tokens) of
 		  {ok, ACLs} ->
-		      case acl:add_list(Host, ACLs, true) of
-			ok -> {result, []};
-			_ -> {error, ?ERR_BAD_REQUEST}
-		      end;
+		      acl:add_list(Host, ACLs, true),
+                      {result, []};
 		  _ -> {error, ?ERR_BAD_REQUEST}
 		end;
 	    _ -> {error, ?ERR_BAD_REQUEST}

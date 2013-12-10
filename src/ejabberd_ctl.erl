@@ -84,7 +84,7 @@ start() ->
 	    Node = list_to_atom(SNode1),
 	    Status = case rpc:call(Node, ?MODULE, process, [Args]) of
 			 {badrpc, Reason} ->
-			     ?PRINT("Failed RPC connection to the node ~p: ~p~n",
+			     print("Failed RPC connection to the node ~p: ~p~n",
 				    [Node, Reason]),
 			     %% TODO: show minimal start help
 			     ?STATUS_BADRPC;
@@ -131,17 +131,17 @@ unregister_commands(CmdDescs, Module, Function) ->
 %% they are usable even if ejabberd is completely stopped.
 process(["status"]) ->
     {InternalStatus, ProvidedStatus} = init:get_status(),
-    ?PRINT("The node ~p is ~p with status: ~p~n",
+    print("The node ~p is ~p with status: ~p~n",
 	   [node(), InternalStatus, ProvidedStatus]),
     case lists:keysearch(ejabberd, 1, application:which_applications()) of
         false ->
             EjabberdLogPath = ejabberd_logger:get_log_path(),
-            ?PRINT("ejabberd is not running in that node~n"
+            print("ejabberd is not running in that node~n"
 		   "Check for error messages: ~s~n"
 		   "or other files in that directory.~n", [EjabberdLogPath]),
             ?STATUS_ERROR;
         {value, {_, _, Version}} ->
-            ?PRINT("ejabberd ~s is running in that node~n", [Version]),
+            print("ejabberd ~s is running in that node~n", [Version]),
             ?STATUS_SUCCESS
     end;
 
@@ -155,7 +155,7 @@ process(["restart"]) ->
     ?STATUS_SUCCESS;
 
 process(["mnesia"]) ->
-    ?PRINT("~p~n", [mnesia:system_info(all)]),
+    print("~p~n", [mnesia:system_info(all)]),
     ?STATUS_SUCCESS;
 
 process(["mnesia", "info"]) ->
@@ -164,8 +164,8 @@ process(["mnesia", "info"]) ->
 
 process(["mnesia", Arg]) ->
     case catch mnesia:system_info(list_to_atom(Arg)) of
-	{'EXIT', Error} -> ?PRINT("Error: ~p~n", [Error]);
-	Return -> ?PRINT("~p~n", [Return])
+	{'EXIT', Error} -> print("Error: ~p~n", [Error]);
+	Return -> print("~p~n", [Return])
     end,
     ?STATUS_SUCCESS;
 
@@ -261,7 +261,7 @@ try_run_ctp(Args, Auth, AccessCommands) ->
 	Error:Why ->
             %% In this case probably ejabberd is not started, so let's show Status
             process(["status"]),
-            ?PRINT("~n", []),
+            print("~n", []),
 	    {io_lib:format("Error in ejabberd ctl process: '~p' ~p", [Error, Why]), ?STATUS_USAGE}
     end.
 
@@ -457,14 +457,14 @@ print_usage(HelpMode, MaxC, ShCode) ->
 	get_list_commands() ++
 	get_list_ctls(),
 
-    ?PRINT(
+    print(
        ["Usage: ", ?B("ejabberdctl"), " [--node ", ?U("nodename"), "] [--auth ",
 	?U("user"), " ", ?U("host"), " ", ?U("password"), "] ",
 	?U("command"), " [", ?U("options"), "]\n"
 	"\n"
 	"Available commands in this ejabberd node:\n"], []),
     print_usage_commands(HelpMode, MaxC, ShCode, AllCommands),
-    ?PRINT(
+    print(
        ["\n"
 	"Examples:\n"
 	"  ejabberdctl restart\n"
@@ -498,7 +498,7 @@ print_usage_commands(HelpMode, MaxC, ShCode, Commands) ->
     %% Convert its definition to a line
     FmtCmdDescs = format_command_lines(CmdArgsLenDescsSorted, MaxCmdLen, MaxC, ShCode, HelpMode),
 
-    ?PRINT([FmtCmdDescs], []).
+    print([FmtCmdDescs], []).
 
 
 %% Get some info about the shell:
@@ -584,20 +584,20 @@ format_command_lines(CALD, _MaxCmdLen, MaxC, ShCode, long) ->
 %%-----------------------------
 
 print_usage_tags(MaxC, ShCode) ->
-    ?PRINT("Available tags and commands:", []),
+    print("Available tags and commands:", []),
     TagsCommands = ejabberd_commands:get_tags_commands(),
     lists:foreach(
       fun({Tag, Commands} = _TagCommands) ->
-	      ?PRINT(["\n\n  ", ?B(Tag), "\n     "], []),
+	      print(["\n\n  ", ?B(Tag), "\n     "], []),
 	      Words = lists:sort(Commands),
 	      Desc = prepare_long_line(5, MaxC, Words),
-	      ?PRINT(Desc, [])
+	      print(Desc, [])
       end,
       TagsCommands),
-    ?PRINT("\n\n", []).
+    print("\n\n", []).
 
 print_usage_tags(Tag, MaxC, ShCode) ->
-    ?PRINT(["Available commands with tag ", ?B(Tag), ":", "\n"], []),
+    print(["Available commands with tag ", ?B(Tag), ":", "\n"], []),
     HelpMode = long,
     TagsCommands = ejabberd_commands:get_tags_commands(),
     CommandsNames = case lists:keysearch(Tag, 1, TagsCommands) of
@@ -615,7 +615,7 @@ print_usage_tags(Tag, MaxC, ShCode) ->
 		     end,
 		     CommandsNames),
     print_usage_commands(HelpMode, MaxC, ShCode, CommandsList),
-    ?PRINT("\n", []).
+    print("\n", []).
 
 
 %%-----------------------------
@@ -673,7 +673,7 @@ print_usage_commands2(Cmds, MaxC, ShCode) ->
       fun(Cmd, Remaining) ->
 	      print_usage_command(Cmd, MaxC, ShCode),
 	      case Remaining > 1 of
-		  true -> ?PRINT([" ", lists:duplicate(MaxC, 126), " \n"], []);
+		  true -> print([" ", lists:duplicate(MaxC, 126), " \n"], []);
 		  false -> ok
 	      end,
 	      {ok, Remaining-1}
@@ -749,7 +749,7 @@ print_usage_command(Cmd, C, MaxC, ShCode) ->
 			  false -> ["  ", ?B("Note:"), " This command cannot be executed using ejabberdctl. Try ejabberd_xmlrpc.\n\n"]
 		      end,
 
-    ?PRINT(["\n", NameFmt, "\n", ArgsFmt, "\n", ReturnsFmt, "\n\n", XmlrpcFmt, TagsFmt, "\n\n", DescFmt, "\n\n", LongDescFmt, NoteEjabberdctl], []).
+    print(["\n", NameFmt, "\n", ArgsFmt, "\n", ReturnsFmt, "\n\n", XmlrpcFmt, TagsFmt, "\n\n", DescFmt, "\n\n", LongDescFmt, NoteEjabberdctl], []).
 
 format_usage_ctype(Type, _Indentation)
   when (Type==atom) or (Type==integer) or (Type==string) or (Type==binary) or (Type==rescode) or (Type==restuple)->
@@ -780,6 +780,8 @@ format_usage_tuple([ElementDef | ElementsDef], Indentation) ->
     MarginString = lists:duplicate(Indentation, $\s), % Put spaces
     [ElementFmt, ",\n", MarginString, format_usage_tuple(ElementsDef, Indentation)].
 
+print(Format, Args) ->
+    io:format(lists:flatten(Format), Args).
 
 %%-----------------------------
 %% Command managment

@@ -122,9 +122,9 @@ update(#maxrate{} = State, Size) ->
 transform_options(Opts) ->
     lists:foldl(fun transform_options/2, [], Opts).
 
-transform_options({shaper, Name, {maxrate, N}}, Opts) ->
+transform_options({OptName, Name, {maxrate, N}}, Opts) when OptName == shaper ->
     [{shaper, [{Name, N}]}|Opts];
-transform_options({shaper, Name, none}, Opts) ->
+transform_options({OptName, Name, none}, Opts) when OptName == shaper ->
     [{shaper, [{Name, none}]}|Opts];
 transform_options(Opt, Opts) ->
     [Opt|Opts].

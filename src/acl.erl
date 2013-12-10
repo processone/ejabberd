@@ -37,7 +37,7 @@
 -include("jlib.hrl").
 
 -record(acl, {aclname, aclspec}).
--record(access, {name       :: access_name(),
+-record(access, {name       :: aclname(),
                  rules = [] :: [access_rule()]}).
 
 -type regexp() :: binary().
