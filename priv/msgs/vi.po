@@ -761,7 +761,7 @@ msgstr "Quá giới hạn tỷ lệ lưu lượng truyền tải"
 
 #: mod_muc/mod_muc_room.erl:246
 msgid ""
-"This participant is kicked from the room because he sent an error message"
+"This participant is kicked from the room because they sent an error message"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:255
@@ -790,7 +790,7 @@ msgstr "Loại thư không phù hợp"
 
 #: mod_muc/mod_muc_room.erl:518
 msgid ""
-"This participant is kicked from the room because he sent an error message to "
+"This participant is kicked from the room because they sent an error message to "
 "another participant"
 msgstr ""
 
@@ -842,7 +842,7 @@ msgstr "Người ghé thăm không được phép gửi thư đến tất cả c
 
 #: mod_muc/mod_muc_room.erl:1021
 msgid ""
-"This participant is kicked from the room because he sent an error presence"
+"This participant is kicked from the room because they sent an error presence"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:1040

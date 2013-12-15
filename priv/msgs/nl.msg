@@ -360,9 +360,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Dit is niet hoofdlettergevoelig: macbeth is hetzelfde als MacBeth en Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Deze pagina maakt het mogelijk een Jabber-account te registreren op deze server. Uw JID (Jabber IDentiteit) zal er als volg uit zien: gebruikersnaam@server. Lees de instructies zorgvuldig teneinde de velden correct in te vullen."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Deze pagina maakt het mogelijk een Jabber-account op deze server op te heffen."}.
-{"This participant is kicked from the room because he sent an error message","Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmeldingsbericht"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmeldingsbericht aan een andere deelnemer"}.
-{"This participant is kicked from the room because he sent an error presence","Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmelding-aanwezigheid"}.
+{"This participant is kicked from the room because they sent an error message","Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmeldingsbericht"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmeldingsbericht aan een andere deelnemer"}.
+{"This participant is kicked from the room because they sent an error presence","Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmelding-aanwezigheid"}.
 {"This room is not anonymous","Deze chatruimte is niet anoniem"}.
 {"Thursday","Donderdag"}.
 {"Time delay","Vertraging"}.

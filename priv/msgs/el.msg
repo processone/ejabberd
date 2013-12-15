@@ -360,9 +360,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Ανεξαρτήτως με πεζά ή κεφαλαία: 'μιαλεξη' είναι το ίδιο με 'ΜιαΛέξη' και 'Μιαλέξη'."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Αυτή η σελίδα σας επιτρέπει να δημιουργήσετε ένα λογαριασμό Jabber σε αυτόν το διακομιστή Jabber. JID σας (Jabber Identifier) θα είναι της μορφής: όνομα_χρήστη@διακομιστής_Jabber. Παρακαλώ διαβάστε προσεκτικά τις οδηγίες για να συμπληρώσετε σωστά τα πεδία."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Η σελίδα αυτή δίνει τη δυνατότητα να καταργήσετε την καταχώρηση ενός λογαριασμό Jabber σε αυτόν το διακομιστή Jabber."}.
-{"This participant is kicked from the room because he sent an error message to another participant","Αυτός ο συμμετέχων αποβλήθηκε από την αίθουσα, επειδή έστειλε ένα μήνυμα σφάλματος σε άλλον συμμετέχων"}.
-{"This participant is kicked from the room because he sent an error message","Αυτός ο συμμετέχων αποβλήθηκε από την αίθουσα, επειδή έστειλε ένα μήνυμα σφάλματος"}.
-{"This participant is kicked from the room because he sent an error presence","Αυτός ο συμμετέχων αποβλήθηκε από την αίθουσα, επειδή έστειλε σφάλμα παρουσίας "}.
+{"This participant is kicked from the room because they sent an error message to another participant","Αυτός ο συμμετέχων αποβλήθηκε από την αίθουσα, επειδή έστειλε ένα μήνυμα σφάλματος σε άλλον συμμετέχων"}.
+{"This participant is kicked from the room because they sent an error message","Αυτός ο συμμετέχων αποβλήθηκε από την αίθουσα, επειδή έστειλε ένα μήνυμα σφάλματος"}.
+{"This participant is kicked from the room because they sent an error presence","Αυτός ο συμμετέχων αποβλήθηκε από την αίθουσα, επειδή έστειλε σφάλμα παρουσίας "}.
 {"This room is not anonymous","Η αίθουσα αυτή δεν είναι ανώνυμη"}.
 {"Thursday","Πέμπτη"}.
 {"Time delay","Χρόνος καθυστέρησης"}.

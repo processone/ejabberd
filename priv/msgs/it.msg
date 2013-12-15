@@ -360,9 +360,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Non fa differenza fra minuscolo e maiuscolo: macbeth, MacBeth e Macbeth si equivalgono."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Questa pagina consente di creare un account Jabber in questo server Jabber. Il tuo JID (Jabber IDentifier) avrà la forma: nome_utente@server. Leggi attentamente le istruzioni per compilare i campi correttamente."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Questa pagina consente di eliminare un account Jabber da questo server Jabber."}.
-{"This participant is kicked from the room because he sent an error message","Partecipante espulso dalla stanza perché ha inviato un messaggio non valido"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Partecipante espulso dalla stanza perché ha inviato un messaggio non valido a un altro partecipante"}.
-{"This participant is kicked from the room because he sent an error presence","Partecipante espulso dalla stanza perché ha inviato una presenza non valido"}.
+{"This participant is kicked from the room because they sent an error message","Partecipante espulso dalla stanza perché ha inviato un messaggio non valido"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Partecipante espulso dalla stanza perché ha inviato un messaggio non valido a un altro partecipante"}.
+{"This participant is kicked from the room because they sent an error presence","Partecipante espulso dalla stanza perché ha inviato una presenza non valido"}.
 {"This room is not anonymous","Questa stanza non è anonima"}.
 {"Thursday","Giovedì"}.
 {"Time delay","Ritardo"}.

@@ -348,9 +348,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Não é 'case insensitive': macbeth é o mesmo que MacBeth e ainda Macbeth. "}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Esta pagina aceita criações de novas contas Jabber neste servidor. A sua JID (Identificador Jabber) será da seguinte forma: 'usuário@servidor'. Por favor, leia cuidadosamente as instruções para preencher corretamente os campos."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Esta página aceita para deletar uma conta Jabber neste servidor."}.
-{"This participant is kicked from the room because he sent an error message","Este participante foi desconectado da sala de chat por ter enviado uma mensagem de erro."}.
-{"This participant is kicked from the room because he sent an error message to another participant","Este participante foi desconectado da sala de chat por ter enviado uma mensagem de erro para outro usuário."}.
-{"This participant is kicked from the room because he sent an error presence","Este participante foi desconectado da sala de chat por ter enviado uma notificação errônea de presença."}.
+{"This participant is kicked from the room because they sent an error message","Este participante foi desconectado da sala de chat por ter enviado uma mensagem de erro."}.
+{"This participant is kicked from the room because they sent an error message to another participant","Este participante foi desconectado da sala de chat por ter enviado uma mensagem de erro para outro usuário."}.
+{"This participant is kicked from the room because they sent an error presence","Este participante foi desconectado da sala de chat por ter enviado uma notificação errônea de presença."}.
 {"This room is not anonymous","Essa sala não é anônima"}.
 {"Thursday","Quinta"}.
 {"Time delay","Intervalo (Tempo)"}.

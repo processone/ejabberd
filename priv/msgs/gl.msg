@@ -322,9 +322,9 @@
 {"The CAPTCHA is valid.","O CAPTCHA é válido."}.
 {"The collections with which a node is affiliated","As coleccións coas que un nodo está afiliado"}.
 {"the password is","a contrasinal é"}.
-{"This participant is kicked from the room because he sent an error message","Este participante é expulsado da sala, xa que enviou unha mensaxe de erro"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Este participante é expulsado da sala, porque el enviou unha mensaxe de erro a outro participante"}.
-{"This participant is kicked from the room because he sent an error presence","Este participante é expulsado da sala, porque el enviou un erro de presenza"}.
+{"This participant is kicked from the room because they sent an error message","Este participante é expulsado da sala, xa que enviou unha mensaxe de erro"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Este participante é expulsado da sala, porque el enviou unha mensaxe de erro a outro participante"}.
+{"This participant is kicked from the room because they sent an error presence","Este participante é expulsado da sala, porque el enviou un erro de presenza"}.
 {"This room is not anonymous","Sala non anónima"}.
 {"Thursday","Xoves"}.
 {"Time","Data"}.

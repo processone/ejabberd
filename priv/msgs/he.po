@@ -767,7 +767,7 @@ msgstr "מגבלת שיעור תעבורה נחצתה"
 
 #: mod_muc/mod_muc_room.erl:242
 msgid ""
-"This participant is kicked from the room because he sent an error message"
+"This participant is kicked from the room because they sent an error message"
 msgstr "משתתף זה נבעט מן החדר משום שהוא שלח הודעת שגיאה"
 
 #: mod_muc/mod_muc_room.erl:251
@@ -798,7 +798,7 @@ msgstr "טיפוס הודעה לא מתאים"
 
 #: mod_muc/mod_muc_room.erl:514
 msgid ""
-"This participant is kicked from the room because he sent an error message to "
+"This participant is kicked from the room because they sent an error message to "
 "another participant"
 msgstr "משתתף זה נבעט מן החדר משום שהוא שלח הודעת שגיאה אל משתתף אחר"
 
@@ -846,7 +846,7 @@ msgstr "מבקרים אינם מורשים לשלוח הודעות אל כל ה�
 # שגיאת נוכחות
 #: mod_muc/mod_muc_room.erl:1016
 msgid ""
-"This participant is kicked from the room because he sent an error presence"
+"This participant is kicked from the room because they sent an error presence"
 msgstr "משתתף זה נבעט מן החדר משום שהוא שלח נוכחות שגויה"
 
 #: mod_muc/mod_muc_room.erl:1035

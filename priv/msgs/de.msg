@@ -360,9 +360,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Groß/Klein-Schreibung spielt hierbei keine Rolle: macbeth ist gleich MacBeth und Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Diese Seite erlaubt das anlegen eines Jabber Kontos auf diesem Jabber Server. Ihre JID (Jabber IDentifier) setzt sich folgend zusammen: benutzername@server. Bitte lesen sie die Hinweise genau durch, um die Felder korrekt auszufüllen."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Diese Seite erlaubt es, ein Jabber Konto von diesem Server zu entfernen."}.
-{"This participant is kicked from the room because he sent an error message","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine fehlerhafte Nachricht gesendet hat"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine fehlerhafte Nachricht an einen anderen Teilnehmer gesendet hat"}.
-{"This participant is kicked from the room because he sent an error presence","Dieser Teilnehmer wurde aus dem Raum gekickt, da er einen fehlerhaften Status gesendet hat"}.
+{"This participant is kicked from the room because they sent an error message","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine fehlerhafte Nachricht gesendet hat"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine fehlerhafte Nachricht an einen anderen Teilnehmer gesendet hat"}.
+{"This participant is kicked from the room because they sent an error presence","Dieser Teilnehmer wurde aus dem Raum gekickt, da er einen fehlerhaften Status gesendet hat"}.
 {"This room is not anonymous","Dieser Raum ist nicht anonym"}.
 {"Thursday","Donnerstag"}.
 {"Time delay","Zeitverzögerung"}.

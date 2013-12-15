@@ -359,9 +359,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Uskleco ne signifas: macbeth estas la sama ol MacBeth kaj Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Jena paĝo ebligas kreadon de Ĵabber-konto je ĉi-Ĵabber-servilo. Via JID (Ĵabber-IDentigilo) estos ĉi-tiel: uzantnomo@servilo. Bonvolu legu bone la instrukciojn por korekta enmetigo de la kampoj. "}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Jena pagxo ebligas malregistri Jxabber-konton je ĉi-servilo."}.
-{"This participant is kicked from the room because he sent an error message","Ĉi tiu partoprenanta estas forpelata de la babilejo pro sendado de erar-mesaĝo"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Ĉi tiu partoprenanto estas forpelata de la babilejo pro sendo de erar-mesaĝo al alia partoprenanto"}.
-{"This participant is kicked from the room because he sent an error presence","Ĉi tiu partoprenanto estas forpelata de la babilejo pro sendo de erar-ĉeesto"}.
+{"This participant is kicked from the room because they sent an error message","Ĉi tiu partoprenanta estas forpelata de la babilejo pro sendado de erar-mesaĝo"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Ĉi tiu partoprenanto estas forpelata de la babilejo pro sendo de erar-mesaĝo al alia partoprenanto"}.
+{"This participant is kicked from the room because they sent an error presence","Ĉi tiu partoprenanto estas forpelata de la babilejo pro sendo de erar-ĉeesto"}.
 {"This room is not anonymous","Ĉi tiu babilejo ne estas anonima"}.
 {"Thursday","Ĵaŭdo"}.
 {"Time delay","Prokrasto"}.

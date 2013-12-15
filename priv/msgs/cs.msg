@@ -360,9 +360,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Zde nezáleží na velikosti písmen: macbeth je stejný jako MacBeth a Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Na této stránce si můžete vytvořit účet na tomto serveru Jabberu. Vaše JID (Jabber IDentifikátor) bude mít tvar: uživatelskéjméno@server. Přečtěte si prosím pozorně instrukce pro vyplnění údajů."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Zde můžete zrušit registraci účtu na tomto serveru Jabberu."}.
-{"This participant is kicked from the room because he sent an error message","Tento účastník byl vyhozen, protože odeslal chybovou zprávu"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Tento účastník byl vyhozen, protože odeslal chybovou zprávu jinému účastníkovi"}.
-{"This participant is kicked from the room because he sent an error presence","Tento účastník byl vyhozen, protože odeslal chybový status"}.
+{"This participant is kicked from the room because they sent an error message","Tento účastník byl vyhozen, protože odeslal chybovou zprávu"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Tento účastník byl vyhozen, protože odeslal chybovou zprávu jinému účastníkovi"}.
+{"This participant is kicked from the room because they sent an error presence","Tento účastník byl vyhozen, protože odeslal chybový status"}.
 {"This room is not anonymous","Tato místnost není anonymní"}.
 {"Thursday","Čtvrtek"}.
 {"Time","Čas"}.

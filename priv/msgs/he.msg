@@ -251,9 +251,9 @@
 {"That nickname is already in use by another occupant","כינוי זה כבר מצוי בשימוש על ידי נוכח אחר"}.
 {"That nickname is registered by another person","כינוי זה הינו רשום על ידי מישהו אחר"}.
 {"the password is","הסיסמה היא"}.
-{"This participant is kicked from the room because he sent an error message to another participant","משתתף זה נבעט מן החדר משום שהוא שלח הודעת שגיאה אל משתתף אחר"}.
-{"This participant is kicked from the room because he sent an error message","משתתף זה נבעט מן החדר משום שהוא שלח הודעת שגיאה"}.
-{"This participant is kicked from the room because he sent an error presence","משתתף זה נבעט מן החדר משום שהוא שלח נוכחות שגויה"}.
+{"This participant is kicked from the room because they sent an error message to another participant","משתתף זה נבעט מן החדר משום שהוא שלח הודעת שגיאה אל משתתף אחר"}.
+{"This participant is kicked from the room because they sent an error message","משתתף זה נבעט מן החדר משום שהוא שלח הודעת שגיאה"}.
+{"This participant is kicked from the room because they sent an error presence","משתתף זה נבעט מן החדר משום שהוא שלח נוכחות שגויה"}.
 {"This room is not anonymous","חדר זה אינו אנונימי"}.
 {"Thursday","יום חמישי"}.
 {"Time","זמן"}.

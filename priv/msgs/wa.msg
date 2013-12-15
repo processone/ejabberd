@@ -279,9 +279,9 @@
 {"Subscription","Abounmimnt"}.
 {"Sunday","dimegne"}.
 {"the password is","li scret est"}.
-{"This participant is kicked from the room because he sent an error message","Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî on messaedje d' aroke"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî on messaedje d' aroke a èn ôte pårticipant"}.
-{"This participant is kicked from the room because he sent an error presence","Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî ene aroke di prezince"}.
+{"This participant is kicked from the room because they sent an error message","Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî on messaedje d' aroke"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî on messaedje d' aroke a èn ôte pårticipant"}.
+{"This participant is kicked from the room because they sent an error presence","Ci pårticipant ci a stî pité evoye del såle cåze k' il a-st evoyî ene aroke di prezince"}.
 {"This room is not anonymous","Cisse såle ci n' est nén anonime"}.
 {"Thursday","djudi"}.
 {"Time","Date"}.

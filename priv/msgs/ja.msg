@@ -360,9 +360,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","大文字と小文字は区別しません: macbeth は MacBeth や Macbeth と同じです。"}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","ここはこの Jabber サーバーにアカウントを作成するページです。あなたの JID (JabberID) は username@server のような形式になります。注意事項どおり、正しく項目を記入してください。"}.
 {"This page allows to unregister a Jabber account in this Jabber server.","ここはこの Jabber サーバーのアカウントを削除するページです。"}.
-{"This participant is kicked from the room because he sent an error message to another participant","他の参加者にエラーメッセージを送信したため、この参加者はキックされました"}.
-{"This participant is kicked from the room because he sent an error message","エラーメッセージを送信したため、この参加者はキックされました"}.
-{"This participant is kicked from the room because he sent an error presence","エラープレゼンスを送信したため、この参加者はキックされました"}.
+{"This participant is kicked from the room because they sent an error message to another participant","他の参加者にエラーメッセージを送信したため、この参加者はキックされました"}.
+{"This participant is kicked from the room because they sent an error message","エラーメッセージを送信したため、この参加者はキックされました"}.
+{"This participant is kicked from the room because they sent an error presence","エラープレゼンスを送信したため、この参加者はキックされました"}.
 {"This room is not anonymous","この談話室は非匿名です"}.
 {"Thursday","木曜日"}.
 {"Time delay","遅延時間"}.
