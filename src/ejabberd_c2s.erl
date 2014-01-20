@@ -291,7 +291,12 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     DefaultLang = ?MYLANG,
     case xml:get_attr_s(<<"xmlns:stream">>, Attrs) of
 	?NS_STREAM ->
-	    Server = jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs)),
+            Server =
+                case StateData#state.server of
+                    undefined ->
+                        jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs));
+                    S -> S
+                end,
 	    case lists:member(Server, ?MYHOSTS) of
 		true ->
 		    Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
