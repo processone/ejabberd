@@ -652,6 +652,7 @@ wait_for_feature_request({xmlstreamelement, El},
 				StateData#state{streamid = new_id(),
 						authenticated = true,
 						auth_module = AuthModule,
+                                                sasl_state = undefined,
 						user = U});
 	    {continue, ServerOut, NewSASLState} ->
 		send_element(StateData,
@@ -809,6 +810,7 @@ wait_for_sasl_response({xmlstreamelement, El},
 				StateData#state{streamid = new_id(),
 						authenticated = true,
 						auth_module = AuthModule,
+                                                sasl_state = undefined,
 						user = U});
 	    {ok, Props, ServerOut} ->
 		(StateData#state.sockmod):reset_stream(StateData#state.socket),
@@ -829,6 +831,7 @@ wait_for_sasl_response({xmlstreamelement, El},
 				StateData#state{streamid = new_id(),
 						authenticated = true,
 						auth_module = AuthModule,
+                                                sasl_state = undefined,
 						user = U});
 	    {continue, ServerOut, NewSASLState} ->
 		send_element(StateData,
