@@ -94,7 +94,7 @@
 		tls_options = [],
 		authenticated = false,
 		jid,
-		user = "", server = ?MYNAME, resource = <<"">>,
+		user = "", server = <<"">>, resource = <<"">>,
 		sid,
 		pres_t = ?SETS:new(),
 		pres_f = ?SETS:new(),
@@ -293,7 +293,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	?NS_STREAM ->
             Server =
                 case StateData#state.server of
-                    undefined ->
+                    <<"">> ->
                         jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs));
                     S -> S
                 end,
