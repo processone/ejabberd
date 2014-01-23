@@ -657,7 +657,7 @@ load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
 start_new_room(Host, ServerHost, Access, Room,
 	       HistorySize, RoomShaper, From,
 	       Nick, DefRoomOpts) ->
-    case restore_room(ServerHost, Room, Host) of
+    case restore_room(ServerHost, Host, Room) of
         error ->
 	    ?DEBUG("MUC: open new room '~s'~n", [Room]),
 	    mod_muc_room:start(Host, ServerHost, Access,
