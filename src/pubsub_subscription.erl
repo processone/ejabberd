@@ -71,7 +71,8 @@
 
 -define(EXPIRE_LABEL,
 	<<"The DateTime at which a leased subscription "
-	  "will end or has ended">>).
+	  "will end or has ended, or presence for a "
+    "presence-based subscription").
 
 -define(INCLUDE_BODY_LABEL,
 	<<"Whether an entity wants to receive an "
