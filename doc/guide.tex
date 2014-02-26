@@ -4052,15 +4052,28 @@ Options:
    not add/remove/modify contacts,
    or subscribe/unsubscribe presence.
    By default there aren't restrictions.
+ \titem{managers} \ind{options!managers}
+   List of remote entities that can manage users rosters using Remote Roster Management
+   (\xepref{0321}).
+   The protocol sections implemented are:
+   \term{4.2. The remote entity requests current user's roster}.
+   \term{4.3. The user updates roster}.
+   \term{4.4. The remote entity updates the user's roster}.
+   A remote entity cab only get or modify roster items that have the same domain as the entity.
+   Default value is: \term{[]}.
 \end{description}
 
-This example configuration enables Roster Versioning with storage of current id:
+This example configuration enables Roster Versioning with storage of current id.
+The ICQ and MSN transports can get ICQ and MSN contacts, add them, or remove them for any local account:
 \begin{verbatim}
 modules:
   ...
   mod_roster:
     versioning: true
     store_current_id: true
+    managers:
+     - "icq.example.org"
+     - "msn.example.org"
   ...
 \end{verbatim}
 

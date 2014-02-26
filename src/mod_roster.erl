@@ -130,6 +130,9 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_ROSTER).
 
+process_iq(From, To, IQ) when ((From#jid.luser == <<"">>) andalso (From#jid.resource == <<"">>)) ->
+    process_iq_manager(From, To, IQ);
+
 process_iq(From, To, IQ) ->
     #iq{sub_el = SubEl} = IQ,
     #jid{lserver = LServer} = From,
@@ -465,15 +468,16 @@ try_process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
 	    process_iq_set(From, To, IQ)
     end.
 
-process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
+process_iq_set(From, To, #iq{sub_el = SubEl, id = Id} = IQ) ->
     #xmlel{children = Els} = SubEl,
-    lists:foreach(fun (El) -> process_item_set(From, To, El)
+    Managed = is_managed_from_id(Id),
+    lists:foreach(fun (El) -> process_item_set(From, To, El, Managed)
 		  end,
 		  Els),
     IQ#iq{type = result, sub_el = []}.
 
 process_item_set(From, To,
-		 #xmlel{attrs = Attrs, children = Els}) ->
+		 #xmlel{attrs = Attrs, children = Els}, Managed) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s(<<"jid">>,
 					     Attrs)),
     #jid{user = User, luser = LUser, lserver = LServer} =
@@ -484,12 +488,13 @@ process_item_set(From, To,
 	  LJID = jlib:jid_tolower(JID1),
 	  F = fun () ->
 		      Item = get_roster_by_jid_t(LUser, LServer, LJID),
-		      Item1 = process_item_attrs(Item, Attrs),
+		      Item1 = process_item_attrs_managed(Item, Attrs, Managed),
 		      Item2 = process_item_els(Item1, Els),
 		      case Item2#roster.subscription of
 			remove -> del_roster_t(LUser, LServer, LJID);
 			_ -> update_roster_t(LUser, LServer, LJID, Item2)
 		      end,
+                      send_itemset_to_managers(From, Item2, Managed),
 		      Item3 = ejabberd_hooks:run_fold(roster_process_item,
 						      LServer, Item2,
 						      [LServer]),
@@ -511,7 +516,7 @@ process_item_set(From, To,
 		?DEBUG("ROSTER: roster item set error: ~p~n", [E]), ok
 	  end
     end;
-process_item_set(_From, _To, _) -> ok.
+process_item_set(_From, _To, _, _Managed) -> ok.
 
 process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
     case Attr of
@@ -1553,6 +1558,91 @@ us_to_list({User, Server}) ->
 webadmin_user(Acc, _User, _Server, Lang) ->
     Acc ++
       [?XE(<<"h3">>, [?ACT(<<"roster/">>, <<"Roster">>)])].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Implement XEP-0321 Remote Roster Management
+
+process_iq_manager(From, To, IQ) ->
+    %% Check what access is allowed for From to To
+    MatchDomain = From#jid.lserver,
+    case is_domain_managed(MatchDomain, To#jid.lserver) of
+	true ->
+	    process_iq_manager2(MatchDomain, To, IQ);
+	false ->
+	    #iq{sub_el = SubEl} = IQ,
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+    end.
+
+process_iq_manager2(MatchDomain, To, IQ) ->
+    %% If IQ is SET, filter the input IQ
+    IQFiltered = maybe_filter_request(MatchDomain, IQ),
+    %% Call the standard function with reversed JIDs
+    IdInitial = IQFiltered#iq.id,
+    ResIQ = process_iq(To, To, IQFiltered#iq{id = <<"roster-remotely-managed">>}),
+    %% Filter the output IQ
+    filter_stanza(MatchDomain, ResIQ#iq{id = IdInitial}).
+
+is_domain_managed(ContactHost, UserHost) ->
+    Managers = gen_mod:get_module_opt(UserHost, ?MODULE, managers,
+						fun(B) when is_list(B) -> B end,
+						[]),
+    lists:member(ContactHost, Managers).
+
+maybe_filter_request(MatchDomain, IQ) when IQ#iq.type == set ->
+    filter_stanza(MatchDomain, IQ);
+maybe_filter_request(_MatchDomain, IQ) ->
+    IQ.
+
+filter_stanza(_MatchDomain, #iq{sub_el = []} = IQ) ->
+    IQ;
+filter_stanza(MatchDomain, #iq{sub_el = [SubEl | _]} = IQ) ->
+    #iq{sub_el = SubElFiltered} = IQRes =
+	filter_stanza(MatchDomain, IQ#iq{sub_el = SubEl}),
+    IQRes#iq{sub_el = [SubElFiltered]};
+filter_stanza(MatchDomain, #iq{sub_el = SubEl} = IQ) ->
+    #xmlel{name = Type, attrs = Attrs, children = Items} = SubEl,
+    ItemsFiltered = lists:filter(
+		      fun(Item) ->
+			      is_item_of_domain(MatchDomain, Item) end, Items),
+    SubElFiltered = #xmlel{name=Type, attrs = Attrs, children = ItemsFiltered},
+    IQ#iq{sub_el = SubElFiltered}.
+
+is_item_of_domain(MatchDomain, #xmlel{} = El) ->
+    lists:any(fun(Attr) -> is_jid_of_domain(MatchDomain, Attr) end, El#xmlel.attrs);
+is_item_of_domain(_MatchDomain, {xmlcdata, _}) ->
+    false.
+
+is_jid_of_domain(MatchDomain, {<<"jid">>, JIDString}) ->
+    case jlib:string_to_jid(JIDString) of
+	JID when JID#jid.lserver == MatchDomain -> true;
+	_ -> false
+    end;
+is_jid_of_domain(_, _) ->
+    false.
+
+process_item_attrs_managed(Item, Attrs, true) ->
+    process_item_attrs_ws(Item, Attrs);
+process_item_attrs_managed(Item, _Attrs, false) ->
+    process_item_attrs(Item, _Attrs).
+
+send_itemset_to_managers(_From, _Item, true) ->
+    ok;
+send_itemset_to_managers(From, Item, false) ->
+    {_, UserHost} = Item#roster.us,
+    {_ContactUser, ContactHost, _ContactResource} = Item#roster.jid,
+    %% Check if the component is an allowed manager
+    IsManager = is_domain_managed(ContactHost, UserHost),
+    case IsManager of
+	true -> push_item(<<"">>, ContactHost, <<"">>, From, Item);
+	false -> ok
+    end.
+
+is_managed_from_id(<<"roster-remotely-managed">>) ->
+    true;
+is_managed_from_id(_Id) ->
+    false.
+
 
 export(_Server) ->
     [{roster,
