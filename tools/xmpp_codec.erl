@@ -5,7 +5,7 @@
 
 -compile({nowarn_unused_function,
 	  [{dec_int, 3}, {dec_int, 1}, {dec_enum, 2},
-	   {enc_int, 1}, {enc_enum, 1}]}).
+	   {enc_int, 1}, {get_attr, 2}, {enc_enum, 1}]}).
 
 -export([pp/1, format_error/1, decode/1, is_known_tag/1,
 	 encode/1]).
@@ -1580,12 +1580,12 @@ encode({last, _, _} = Query) ->
 dec_int(Val) -> dec_int(Val, infinity, infinity).
 
 dec_int(Val, Min, Max) ->
-    case erlang:binary_to_integer(Val) of
+    case list_to_integer(binary_to_list(Val)) of
       Int when Int =< Max, Min == infinity -> Int;
       Int when Int =< Max, Int >= Min -> Int
     end.
 
-enc_int(Int) -> erlang:integer_to_binary(Int).
+enc_int(Int) -> list_to_binary(integer_to_list(Int)).
 
 dec_enum(Val, Enums) ->
     AtomVal = erlang:binary_to_existing_atom(Val, utf8),
@@ -1787,8 +1787,8 @@ enc_tzo({H, M}) ->
 
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),
-    H = erlang:binary_to_integer(H1),
-    M = erlang:binary_to_integer(M1),
+    H = jlib:binary_to_integer(H1),
+    M = jlib:binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
 
 decode_muc({xmlel, <<"x">>, _attrs, _els}) ->

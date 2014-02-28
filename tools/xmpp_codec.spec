@@ -1986,8 +1986,8 @@
 
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),
-    H = erlang:binary_to_integer(H1),
-    M = erlang:binary_to_integer(M1),
+    H = jlib:binary_to_integer(H1),
+    M = jlib:binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60  ->
             {H, M}
     end.
