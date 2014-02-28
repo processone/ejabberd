@@ -599,12 +599,11 @@ modules:
 ##
 ## Enable modules with custom options in a specific virtual host
 ##
-## host_config:
+## append_host_config:
 ##   "localhost":
-##     add:
-##       modules:
-##         mod_echo:
-##           host: "mirror.localhost"
+##     modules:
+##       mod_echo:
+##         host: "mirror.localhost"
 
 ### Local Variables:
 ### mode: yaml

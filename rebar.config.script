@@ -16,7 +16,7 @@ Cfg = case file:consult("vars.config") of
 Macros = lists:flatmap(
            fun({roster_gateway_workaround, true}) ->
                    [{d, 'ROSTER_GATEWAY_WORKAROUND'}];
-              ({transient_supervisors, true}) ->
+              ({transient_supervisors, false}) ->
                    [{d, 'NO_TRANSIENT_SUPERVISORS'}];
               ({nif, true}) ->
                    [{d, 'NIF'}];

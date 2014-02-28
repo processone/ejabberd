@@ -890,6 +890,12 @@ The available modules, their purpose and the options allowed by each one are:
     Handles incoming HTTP connections.\\
     Options: \texttt{captcha}, \texttt{certfile}, \texttt{default\_host}, \texttt{http\_bind}, \texttt{http\_poll},
     \texttt{request\_handlers}, \texttt{tls}, \texttt{tls\_compression}, \texttt{trusted\_proxies}, \texttt{web\_admin}\\
+  \titem{\texttt{ejabberd\_xmlrpc}}
+    Handles XML-RPC requests to execute ejabberd commands (\ref{eja-commands}).\\
+    Options: \texttt{access\_commands}, \texttt{maxsessions}, \texttt{timeout}.\\
+    You can find option explanations, example configuration in old and new format,
+    and example calls in several languages in the old
+    \footahref{https://raw.github.com/processone/ejabberd-contrib/master/ejabberd\_xmlrpc/README.txt}{ejabberd\_xmlrpc README.txt}
 \end{description}
 
 
@@ -4046,15 +4052,28 @@ Options:
    not add/remove/modify contacts,
    or subscribe/unsubscribe presence.
    By default there aren't restrictions.
+ \titem{managers} \ind{options!managers}
+   List of remote entities that can manage users rosters using Remote Roster Management
+   (\xepref{0321}).
+   The protocol sections implemented are:
+   \term{4.2. The remote entity requests current user's roster}.
+   \term{4.3. The user updates roster}.
+   \term{4.4. The remote entity updates the user's roster}.
+   A remote entity cab only get or modify roster items that have the same domain as the entity.
+   Default value is: \term{[]}.
 \end{description}
 
-This example configuration enables Roster Versioning with storage of current id:
+This example configuration enables Roster Versioning with storage of current id.
+The ICQ and MSN transports can get ICQ and MSN contacts, add them, or remove them for any local account:
 \begin{verbatim}
 modules:
   ...
   mod_roster:
     versioning: true
     store_current_id: true
+    managers:
+     - "icq.example.org"
+     - "msn.example.org"
   ...
 \end{verbatim}
 
@@ -5130,9 +5149,9 @@ with a defined number and type of calling arguments and type of result
 that is registered in the \term{ejabberd\_commands} service.
 Those commands can be defined in any Erlang module and executed using any valid frontend.
 
-\ejabberd{} includes a frontend to execute \term{ejabberd commands}: the script \term{ejabberdctl}.
+\ejabberd{} includes two frontends to execute \term{ejabberd commands}: the script \term{ejabberdctl} (\ref{ejabberdctl})
+and the \term{ejabberd\_xmlrpc} listener (\ref{listened-module}).
 Other known frontends that can be installed to execute ejabberd commands in different ways are:
-\term{ejabberd\_xmlrpc} (XML-RPC service),
 \term{mod\_rest} (HTTP POST service),
 \term{mod\_shcommands} (ejabberd WebAdmin page).
 

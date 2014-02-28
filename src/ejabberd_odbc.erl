@@ -484,7 +484,7 @@ abort_on_driver_error(Reply, From) ->
 %% Open an ODBC database connection
 odbc_connect(SQLServer) ->
     ejabberd:start_app(odbc),
-    odbc:connect(SQLServer, [{scrollable_cursors, off}]).
+    odbc:connect(binary_to_list(SQLServer), [{scrollable_cursors, off}]).
 
 %% == Native PostgreSQL code
 

@@ -94,7 +94,7 @@
 		tls_options = [],
 		authenticated = false,
 		jid,
-		user = "", server = ?MYNAME, resource = <<"">>,
+		user = "", server = <<"">>, resource = <<"">>,
 		sid,
 		pres_t = ?SETS:new(),
 		pres_f = ?SETS:new(),
@@ -291,7 +291,12 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     DefaultLang = ?MYLANG,
     case xml:get_attr_s(<<"xmlns:stream">>, Attrs) of
 	?NS_STREAM ->
-	    Server = jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs)),
+            Server =
+                case StateData#state.server of
+                    <<"">> ->
+                        jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs));
+                    S -> S
+                end,
 	    case lists:member(Server, ?MYHOSTS) of
 		true ->
 		    Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
@@ -647,6 +652,7 @@ wait_for_feature_request({xmlstreamelement, El},
 				StateData#state{streamid = new_id(),
 						authenticated = true,
 						auth_module = AuthModule,
+                                                sasl_state = undefined,
 						user = U});
 	    {continue, ServerOut, NewSASLState} ->
 		send_element(StateData,
@@ -804,6 +810,7 @@ wait_for_sasl_response({xmlstreamelement, El},
 				StateData#state{streamid = new_id(),
 						authenticated = true,
 						auth_module = AuthModule,
+                                                sasl_state = undefined,
 						user = U});
 	    {ok, Props, ServerOut} ->
 		(StateData#state.sockmod):reset_stream(StateData#state.socket),
@@ -824,6 +831,7 @@ wait_for_sasl_response({xmlstreamelement, El},
 				StateData#state{streamid = new_id(),
 						authenticated = true,
 						auth_module = AuthModule,
+                                                sasl_state = undefined,
 						user = U});
 	    {continue, ServerOut, NewSASLState} ->
 		send_element(StateData,
