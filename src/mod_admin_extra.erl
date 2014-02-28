@@ -1316,7 +1316,7 @@ private_set2(Username, Host, Xml) ->
 srg_create(Group, Host, Name, Description, Display) ->
     DisplayList = case Display of
 	[] -> [];
-	_ -> ejabberd_regexp:split(Display, "\\\\n")
+	_ -> ejabberd_regexp:split(list_to_binary(Display), <<"\\\\n">>)
     end,
     Opts = [{name, Name},
 	    {displayed_groups, DisplayList},
