@@ -473,38 +473,38 @@ commands() ->
 			"  ejabberdctl srg_create group3 localhost "
 			"name desc \\\"group1\\\\ngroup2\\\"",
 			module = ?MODULE, function = srg_create,
-			args = [{group, string}, {host, string},
-				{name, string}, {description, string}, {display, string}],
+			args = [{group, binary}, {host, binary},
+				{name, binary}, {description, binary}, {display, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = srg_delete, tags = [shared_roster_group],
 			desc = "Delete a Shared Roster Group",
 			module = ?MODULE, function = srg_delete,
-			args = [{group, string}, {host, string}],
+			args = [{group, binary}, {host, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = srg_list, tags = [shared_roster_group],
 			desc = "List the Shared Roster Groups in Host",
 			module = ?MODULE, function = srg_list,
-			args = [{host, string}],
+			args = [{host, binary}],
 			result = {groups, {list, {id, string}}}},
      #ejabberd_commands{name = srg_get_info, tags = [shared_roster_group],
 			desc = "Get info of a Shared Roster Group",
 			module = ?MODULE, function = srg_get_info,
-			args = [{group, string}, {host, string}],
+			args = [{group, binary}, {host, binary}],
 			result = {informations, {list, {information, {tuple, [{key, string}, {value, string}]}}}}},
      #ejabberd_commands{name = srg_get_members, tags = [shared_roster_group],
 			desc = "Get members of a Shared Roster Group",
 			module = ?MODULE, function = srg_get_members,
-			args = [{group, string}, {host, string}],
+			args = [{group, binary}, {host, binary}],
 			result = {members, {list, {member, string}}}},
      #ejabberd_commands{name = srg_user_add, tags = [shared_roster_group],
 			desc = "Add the JID user@host to the Shared Roster Group",
 			module = ?MODULE, function = srg_user_add,
-			args = [{user, string}, {host, string}, {group, string}, {grouphost, string}],
+			args = [{user, binary}, {host, binary}, {group, binary}, {grouphost, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = srg_user_del, tags = [shared_roster_group],
 			desc = "Delete this JID user@host from the Shared Roster Group",
 			module = ?MODULE, function = srg_user_del,
-			args = [{user, string}, {host, string}, {group, string}, {grouphost, string}],
+			args = [{user, binary}, {host, binary}, {group, binary}, {grouphost, binary}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = send_message_chat, tags = [stanza],
@@ -1316,7 +1316,7 @@ private_set2(Username, Host, Xml) ->
 srg_create(Group, Host, Name, Description, Display) ->
     DisplayList = case Display of
 	[] -> [];
-	_ -> ejabberd_regexp:split(list_to_binary(Display), <<"\\\\n">>)
+	_ -> ejabberd_regexp:split(Display, <<"\\\\n">>)
     end,
     Opts = [{name, Name},
 	    {displayed_groups, DisplayList},
@@ -1338,7 +1338,7 @@ srg_get_info(Group, Host) ->
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),
-    [jlib:jid_to_string(jlib:make_jid(MUser, MServer, ""))
+    [jlib:jid_to_string(jlib:make_jid(MUser, MServer, <<"">>))
      || {MUser, MServer} <- Members].
 
 srg_user_add(User, Host, Group, GroupHost) ->
