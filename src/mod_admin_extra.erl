@@ -1332,7 +1332,10 @@ srg_list(Host) ->
     lists:sort(mod_shared_roster:list_groups(Host)).
 
 srg_get_info(Group, Host) ->
-    Opts = mod_shared_roster:get_group_opts(Host,Group),
+    Opts = case mod_shared_roster:get_group_opts(Host,Group) of
+	Os when is_list(Os) -> Os;
+	error -> []
+    end,
     [{io_lib:format("~p", [Title]),
       io_lib:format("~p", [Value])} || {Title, Value} <- Opts].
 
