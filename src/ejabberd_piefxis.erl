@@ -570,7 +570,7 @@ build_password_string({StoredKey, ServerKey, Salt, IterationCount}) ->
 		   base64:encode_to_string(Salt),
 		   IterationCount]);
 build_password_string(Password) when is_list(Password) ->
-    io_lib:format("password-format='plaintext' password='~s'>", [Password]).
+    io_lib:format("password-format='plaintext' password='~s'>", [exmpp_xml:escape_using_entities(Password)]).
 
 %% @spec (InfoName::atom(), Username::string(), Host::string()) -> string()
 extract_user_info(roster, Username, Host) ->
