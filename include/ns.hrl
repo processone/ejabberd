@@ -144,3 +144,5 @@
 -define(NS_MEDIA, <<"urn:xmpp:media-element">>).
 -define(NS_BOB, <<"urn:xmpp:bob">>).
 -define(NS_PING, <<"urn:xmpp:ping">>).
+-define(NS_STREAM_MGMT_2,  <<"urn:xmpp:sm:2">>).
+-define(NS_STREAM_MGMT_3,  <<"urn:xmpp:sm:3">>).

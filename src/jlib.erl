@@ -51,7 +51,7 @@
 	 binary_to_integer/1, binary_to_integer/2,
 	 integer_to_binary/1, integer_to_binary/2,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
-	 l2i/1, i2l/1, i2l/2]).
+	 l2i/1, i2l/1, i2l/2, queue_drop_while/2]).
 
 %% TODO: Remove once XEP-0091 is Obsolete
 %% TODO: Remove once XEP-0091 is Obsolete
@@ -893,4 +893,19 @@ i2l(L, N) when is_binary(L) ->
       N -> L;
       C when C > N -> L;
       _ -> i2l(<<$0, L/binary>>, N)
+    end.
+
+-spec queue_drop_while(fun((term()) -> boolean()), queue()) -> queue().
+
+queue_drop_while(F, Q) ->
+    case queue:peek(Q) of
+      {value, Item} ->
+	  case F(Item) of
+	    true ->
+		queue_drop_while(F, queue:drop(Q));
+	    _ ->
+		Q
+	  end;
+      empty ->
+	  Q
     end.

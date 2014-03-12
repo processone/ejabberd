@@ -870,9 +870,10 @@ The available modules, their purpose and the options allowed by each one are:
   \titem{\texttt{ejabberd\_c2s}}
     Handles c2s connections.\\
     Options: \texttt{access}, \texttt{certfile}, \texttt{ciphers},
-    \texttt{max\_fsm\_queue},
+    \texttt{max\_ack\_queue}, \texttt{max\_fsm\_queue},
     \texttt{max\_stanza\_size}, \texttt{shaper},
-    \texttt{starttls}, \texttt{starttls\_required}, \texttt{tls},
+    \texttt{starttls}, \texttt{starttls\_required},
+    \texttt{stream\_management}, \texttt{tls},
     \texttt{zlib}, \texttt{tls\_compression}
   \titem{\texttt{ejabberd\_s2s\_in}}
     Handles incoming s2s connections.\\
@@ -962,6 +963,13 @@ This is a detailed description of each option allowed by the listening modules:
     \term{http\_poll\_timeout}. The default value is five minutes.
     The option can be defined in \term{ejabberd.yml}, expressing the time
     in seconds: \verb|{http_poll_timeout, 300}.|
+  \titem{max\_ack\_queue: Size}
+    This option specifies the maximum number of unacknowledged stanzas
+    queued for possible retransmission if \term{stream\_management} is
+    enabled. When the limit is reached, the first stanza is dropped from
+    the queue before adding the next one. This option can be specified
+    for \term{ejabberd\_c2s} listeners. The allowed values are positive
+    integers and \term{infinity}. Default value: \term{500}.
   \titem{max\_fsm\_queue: Size}
     This option specifies the maximum number of elements in the queue of the FSM
     (Finite State Machine).
@@ -1022,6 +1030,10 @@ request_handlers:
     No unencrypted connections will be allowed.
     You should also set the \option{certfile} option.
     You can define a certificate file for a specific domain using the global option \option{domain\_certfile}.
+  \titem{stream\_management: true|false}
+    Setting this option to \term{false} disables ejabberd's support for
+    \ind{protocols!XEP-0198: Stream Management}. It can be specified for
+    \term{ejabberd\_c2s} listeners. The default value is \term{true}.
   \titem{timeout: Integer} \ind{options!timeout}
     Timeout of the connections, expressed in milliseconds.
     Default: 5000
