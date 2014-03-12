@@ -230,7 +230,8 @@ extract_lang_po2msg ()
 	msgattrib $PO_PATH --translated --no-fuzzy --no-obsolete --no-location --no-wrap | grep "^msg" | tail --lines=+3 >$MS_PATH
 	grep "^msgid" $PO_PATH.ms | sed 's/^msgid //g' >$MSGID_PATH
 	grep "^msgstr" $PO_PATH.ms | sed 's/^msgstr //g' >$MSGSTR_PATH
-	paste $MSGID_PATH $MSGSTR_PATH --delimiter=, | awk '{print "{" $0 "}."}' | sort -g >$MSGS_PATH
+	echo "%% -*- coding: latin-1 -*-" >$MSGS_PATH
+	paste $MSGID_PATH $MSGSTR_PATH --delimiter=, | awk '{print "{" $0 "}."}' | sort -g >>$MSGS_PATH
 
 	rm $MS_PATH
 	rm $MSGID_PATH
