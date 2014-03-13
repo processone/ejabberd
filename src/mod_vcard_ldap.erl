@@ -5,7 +5,7 @@
 %%% Created :  2 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -221,7 +221,7 @@ process_local_iq(_From, _To,
 					    [{xmlcdata,
 					      <<(translate:translate(Lang,
 								     <<"Erlang Jabber Server">>))/binary,
-						"\nCopyright (c) 2002-2013 ProcessOne">>}]},
+						"\nCopyright (c) 2002-2014 ProcessOne">>}]},
 				 #xmlel{name = <<"BDAY">>, attrs = [],
 					children =
 					    [{xmlcdata, <<"2002-11-16">>}]}]}]}
@@ -582,7 +582,7 @@ iq_get_vcard(Lang) ->
 		[{xmlcdata,
 		  <<(translate:translate(Lang,
 					 <<"ejabberd vCard module">>))/binary,
-		    "\nCopyright (c) 2003-2013 ProcessOne">>}]}].
+		    "\nCopyright (c) 2003-2014 ProcessOne">>}]}].
 
 -define(LFIELD(Label, Var),
 	#xmlel{name = <<"field">>,

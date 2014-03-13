@@ -5,7 +5,7 @@
 %%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -341,7 +341,7 @@ make_xhtml(Els, Host, Node, Lang, JID) ->
 		      ?XAE(<<"div">>, [{<<"id">>, <<"copyrightouter">>}],
 			   [?XAE(<<"div">>, [{<<"id">>, <<"copyright">>}],
 				 [?XC(<<"p">>,
-				      <<"ejabberd (c) 2002-2013 ProcessOne">>)])])])]}}.
+				      <<"ejabberd (c) 2002-2014 ProcessOne">>)])])])]}}.
 
 get_base_path(global, cluster) -> <<"/admin/">>;
 get_base_path(Host, cluster) ->
