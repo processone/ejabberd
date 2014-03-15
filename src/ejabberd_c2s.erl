@@ -2261,11 +2261,6 @@ resend_offline_messages(StateData) ->
 				       end,
 				if Pass ->
 				       ejabberd_router:route(From, To, Packet);
-				   %% send_element(StateData, FixedPacket),
-				   %% ejabberd_hooks:run(user_receive_packet,
-				   %%			 StateData#state.server,
-				   %%			 [StateData#state.jid,
-				   %%			  From, To, FixedPacket]);
 				   true -> ok
 				end
 			end,
