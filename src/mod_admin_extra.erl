@@ -198,7 +198,7 @@ commands() ->
      #ejabberd_commands{name = change_password, tags = [accounts],
 			desc = "Change the password of an account",
 			module = ?MODULE, function = set_password,
-			args = [{user, string}, {host, string}, {newpass, string}],
+			args = [{user, binary}, {host, binary}, {newpass, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = ban_account, tags = [accounts],
 			desc = "Ban an account: kick sessions and set random password",
