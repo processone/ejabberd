@@ -871,8 +871,8 @@ The available modules, their purpose and the options allowed by each one are:
     Handles c2s connections.\\
     Options: \texttt{access}, \texttt{certfile}, \texttt{ciphers},
     \texttt{max\_ack\_queue}, \texttt{max\_fsm\_queue},
-    \texttt{max\_stanza\_size}, \texttt{shaper},
-    \texttt{starttls}, \texttt{starttls\_required},
+    \texttt{max\_stanza\_size}, \texttt{resume\_timeout},
+    \texttt{shaper}, \texttt{starttls}, \texttt{starttls\_required},
     \texttt{stream\_management}, \texttt{tls},
     \texttt{zlib}, \texttt{tls\_compression}
   \titem{\texttt{ejabberd\_s2s\_in}}
@@ -1007,6 +1007,13 @@ request_handlers:
   /"a"/"b": mod_foo
   /"http-bind": mod_http_bind
 \end{verbatim}
+  \titem{resume\_timeout: Seconds}
+    This option configures the number of seconds until a session times
+    out if the connection is lost. During this period of time, a client
+    may resume the session if \term{stream\_management} is enabled. This
+    option can be specified for \term{ejabberd\_c2s} listeners. Setting
+    it to \term{0} effectively disables session resumption. The default
+    value is \term{300}.
   \titem{service\_check\_from: true|false}
     \ind{options!service\_check\_from}
     This option can be used with \term{ejabberd\_service} only.
