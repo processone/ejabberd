@@ -320,38 +320,38 @@ commands() ->
 			desc = "Get content from a vCard field",
 			longdesc = Vcard1FieldsString ++ "\n" ++ Vcard2FieldsString ++ "\n\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard,
-			args = [{user, string}, {host, string}, {name, string}],
+			args = [{user, binary}, {host, binary}, {name, binary}],
 			result = {content, string}},
      #ejabberd_commands{name = get_vcard2, tags = [vcard],
 			desc = "Get content from a vCard field",
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard,
-			args = [{user, string}, {host, string}, {name, string}, {subname, string}],
+			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}],
 			result = {content, string}},
      #ejabberd_commands{name = get_vcard2_multi, tags = [vcard],
 			desc = "Get multiple contents from a vCard field (requires exmpp installed)",
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard_multi,
-			args = [{user, string}, {host, string}, {name, string}, {subname, string}],
+			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}],
 			result = {contents, {list, string}}},
 
      #ejabberd_commands{name = set_vcard, tags = [vcard],
 			desc = "Set content in a vCard field",
 			longdesc = Vcard1FieldsString ++ "\n" ++ Vcard2FieldsString ++ "\n\n" ++ VcardXEP,
 			module = ?MODULE, function = set_vcard,
-			args = [{user, string}, {host, string}, {name, string}, {content, string}],
+			args = [{user, binary}, {host, binary}, {name, binary}, {content, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = set_vcard2, tags = [vcard],
 			desc = "Set content in a vCard subfield",
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = set_vcard,
-			args = [{user, string}, {host, string}, {name, string}, {subname, string}, {content, string}],
+			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}, {content, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = set_vcard2_multi, tags = [vcard],
 			desc = "Set multiple contents in a vCard subfield",
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = set_vcard,
-			args = [{user, string}, {host, string}, {name, string}, {subname, string}, {contents, {list, string}}],
+			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}, {contents, {list, binary}}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = add_rosteritem, tags = [roster],
@@ -966,8 +966,8 @@ set_vcard(User, Host, Name, Subname, SomeContent) ->
 %% Internal vcard
 
 get_module_resource(Server) ->
-    case gen_mod:get_module_opt(Server, ?MODULE, module_resource, none) of
-	none -> atom_to_list(?MODULE);
+    case gen_mod:get_module_opt(Server, ?MODULE, module_resource, fun(A) -> A end, none) of
+	none -> list_to_binary(atom_to_list(?MODULE));
 	R when is_list(R) -> R
     end.
 
@@ -1013,8 +1013,8 @@ get_subtag_exmpp(Xmlelement, Name) ->
 
 set_vcard_content(User, Server, Data, SomeContent) ->
     ContentList = case SomeContent of
-	[Char | _] when not is_list(Char) -> [SomeContent];
-	[Char | _] when is_list(Char) -> SomeContent
+	[Bin | _] when is_binary(Bin) -> SomeContent;
+	Bin when is_binary(Bin) -> [SomeContent]
     end,
     [{_, Module, Function, _Opts}] = ets:lookup(sm_iqtable, {?NS_VCARD, Server}),
     JID = jlib:make_jid(User, Server, get_module_resource(Server)),
@@ -1031,7 +1031,7 @@ set_vcard_content(User, Server, Data, SomeContent) ->
 	 end,
 
     %% Build new vcard
-    SubEl = {xmlelement, "vCard", [{"xmlns","vcard-temp"}], A4},
+    SubEl = {xmlel, <<"vCard">>, [{<<"xmlns">>,<<"vcard-temp">>}], A4},
     IQ2 = #iq{type=set, sub_el = SubEl},
 
     Module:Function(JID, JID, IQ2),
@@ -1042,18 +1042,18 @@ update_vcard_els(Data, ContentList, Els1) ->
     [Data1 | Data2] = Data,
     NewEls = case Data2 of
 		[] ->
-		    [{xmlelement, Data1, [], [{xmlcdata,Content}]} || Content <- ContentList];
+		    [{xmlel, Data1, [], [{xmlcdata,Content}]} || Content <- ContentList];
 		[D2] ->
 		    OldEl = case lists:keysearch(Data1, 2, Els2) of
 				{value, A} -> A;
 				false -> {xmlelement, Data1, [], []}
 			    end,
-		    {xmlelement, _, _, ContentOld1} = OldEl,
-		    Content2 = [{xmlelement, D2, [], [{xmlcdata,Content}]} || Content <- ContentList],
+		    {xmlel, _, _, ContentOld1} = OldEl,
+		    Content2 = [{xmlel, D2, [], [{xmlcdata,Content}]} || Content <- ContentList],
 		    ContentOld2 = [A || {_, X, _, _} = A <- ContentOld1, X/=D2],
 		    ContentOld3 = lists:keysort(2, ContentOld2),
 		    ContentNew = lists:keymerge(2, Content2, ContentOld3),
-		    [{xmlelement, Data1, [], ContentNew}]
+		    [{xmlel, Data1, [], ContentNew}]
 	    end,
     Els3 = lists:keydelete(Data1, 2, Els2),
     lists:keymerge(2, NewEls, Els3).
