@@ -237,6 +237,8 @@ normalize_spec(Spec) ->
         {server_regexp, SR} -> {server_regexp, b(SR)};
         {server_glob, S} -> {server_glob, b(S)};
         {resource_glob, R} -> {resource_glob, b(R)};
+        {ip, {Net, Mask}} ->
+            {ip, {Net, Mask}};
         {ip, S} ->
             case parse_ip_netmask(b(S)) of
                 {ok, Net, Mask} ->

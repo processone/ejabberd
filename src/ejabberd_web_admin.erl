@@ -1138,7 +1138,7 @@ string_to_spec2(ACLName, Val) ->
 	jlib:string_to_jid(Val),
     case U of
       <<"">> -> {ACLName, S};
-      _ -> {ACLName, U, S}
+      _ -> {ACLName, {U, S}}
     end.
 
 acl_parse_delete(ACLs, Query) ->
