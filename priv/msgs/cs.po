@@ -740,7 +740,7 @@ msgstr "Byl překročen limit"
 
 #: mod_muc/mod_muc_room.erl:246
 msgid ""
-"This participant is kicked from the room because he sent an error message"
+"This participant is kicked from the room because they sent an error message"
 msgstr "Tento účastník byl vyhozen, protože odeslal chybovou zprávu"
 
 #: mod_muc/mod_muc_room.erl:255
@@ -769,7 +769,7 @@ msgstr "Nesprávný typ zprávy"
 
 #: mod_muc/mod_muc_room.erl:518
 msgid ""
-"This participant is kicked from the room because he sent an error message to "
+"This participant is kicked from the room because they sent an error message to "
 "another participant"
 msgstr ""
 "Tento účastník byl vyhozen, protože odeslal chybovou zprávu jinému "
@@ -817,7 +817,7 @@ msgstr "Návštevníci nemají povoleno zasílat zprávy všem účastníkům ko
 
 #: mod_muc/mod_muc_room.erl:1021
 msgid ""
-"This participant is kicked from the room because he sent an error presence"
+"This participant is kicked from the room because they sent an error presence"
 msgstr "Tento účastník byl vyhozen, protože odeslal chybový status"
 
 #: mod_muc/mod_muc_room.erl:1040

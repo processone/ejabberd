@@ -314,9 +314,9 @@
 {"That nickname is registered by another person","Smeknamnet är reserverat"}.
 {"The CAPTCHA is valid.","Din CAPTCHA är godkänd."}.
 {"the password is","Lösenordet är"}.
-{"This participant is kicked from the room because he sent an error message","Deltagaren har blivit kickad fran rummet p.g.a att han skickade ett errormeddelande"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Deltagaren har blivit kickad från rummet p.g.a att han skickade ett errormeddelande till en annan deltagare"}.
-{"This participant is kicked from the room because he sent an error presence","Denna deltagaren är kickad från rummet p.g.a att han skickade en errorstatus"}.
+{"This participant is kicked from the room because they sent an error message","Deltagaren har blivit kickad fran rummet p.g.a att han skickade ett errormeddelande"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Deltagaren har blivit kickad från rummet p.g.a att han skickade ett errormeddelande till en annan deltagare"}.
+{"This participant is kicked from the room because they sent an error presence","Denna deltagaren är kickad från rummet p.g.a att han skickade en errorstatus"}.
 {"This room is not anonymous","Detta rum är inte anonymt"}.
 {"Thursday","Torsdag"}.
 {"Time delay","Tidsförsening"}.

@@ -758,7 +758,7 @@ msgstr "El llímit de tràfic ha sigut sobrepassat"
 
 #: mod_muc/mod_muc_room.erl:246
 msgid ""
-"This participant is kicked from the room because he sent an error message"
+"This participant is kicked from the room because they sent an error message"
 msgstr ""
 "Aquest participant ha sigut expulsat de la sala perque ha enviat un missatge "
 "d'error"
@@ -789,7 +789,7 @@ msgstr "Tipus de missatge incorrecte"
 
 #: mod_muc/mod_muc_room.erl:518
 msgid ""
-"This participant is kicked from the room because he sent an error message to "
+"This participant is kicked from the room because they sent an error message to "
 "another participant"
 msgstr ""
 "Aquest participant ha sigut expulsat de la sala perque ha enviat un missatge "
@@ -838,7 +838,7 @@ msgstr "Els visitants no poden enviar missatges a tots els ocupants"
 
 #: mod_muc/mod_muc_room.erl:1021
 msgid ""
-"This participant is kicked from the room because he sent an error presence"
+"This participant is kicked from the room because they sent an error presence"
 msgstr ""
 "Aquest participant ha sigut expulsat de la sala perque ha enviat un error de "
 "presencia"

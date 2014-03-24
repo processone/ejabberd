@@ -750,7 +750,7 @@ msgstr "อัตราของปริมาณการเข้าใช้
 
 #: mod_muc/mod_muc_room.erl:246
 msgid ""
-"This participant is kicked from the room because he sent an error message"
+"This participant is kicked from the room because they sent an error message"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:255
@@ -779,7 +779,7 @@ msgstr "ประเภทข้อความไม่เหมาะสม"
 
 #: mod_muc/mod_muc_room.erl:518
 msgid ""
-"This participant is kicked from the room because he sent an error message to "
+"This participant is kicked from the room because they sent an error message to "
 "another participant"
 msgstr ""
 
@@ -827,7 +827,7 @@ msgstr "ผู้เยี่ยมเยือนไม่ได้รับอ
 
 #: mod_muc/mod_muc_room.erl:1021
 msgid ""
-"This participant is kicked from the room because he sent an error presence"
+"This participant is kicked from the room because they sent an error presence"
 msgstr ""
 
 #: mod_muc/mod_muc_room.erl:1040

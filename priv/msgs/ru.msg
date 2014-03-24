@@ -360,9 +360,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регистр не имеет значения: \"маша\" и \"МАША\" будет считаться одним и тем же именем."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Здесь Вы можете создать Jabber-аккаунт на этом Jabber-сервере. Ваш JID (Jabber-идентификатор) будет в виде: \"пользователь@сервер\". Пожалуйста, внимательно читайте инструкции для правильного заполнения полей."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Здесь Вы можете удалить Jabber-аккаунт с этого сервера."}.
-{"This participant is kicked from the room because he sent an error message to another participant","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке другому участнику"}.
-{"This participant is kicked from the room because he sent an error message","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке"}.
-{"This participant is kicked from the room because he sent an error presence","Этого участника выгнали из комнаты за то, что он послал присутствие с ошибкой"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке другому участнику"}.
+{"This participant is kicked from the room because they sent an error message","Этого участника выгнали из комнаты за то, что он послал сообщение об ошибке"}.
+{"This participant is kicked from the room because they sent an error presence","Этого участника выгнали из комнаты за то, что он послал присутствие с ошибкой"}.
 {"This room is not anonymous","Эта комната не анонимная"}.
 {"Thursday","Четверг"}.
 {"Time delay","По истечение"}.

@@ -351,9 +351,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регістр не має значення: \"МАША\" та \"маша\" буде сприйматися як одне й те саме ім'я."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Тут ви можете зареєструвати обліковий запис Jabber на цьому сервері. Ваш JID (ідентифікатор Jabber) матиме вигляд \"користувач@сервер\". Щоб вірно заповнити поля нижче, будь ласка, уважно читайте інструкції до них."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Ця сторінка дозволяє видалити свій акаунт з Jabber-сервера."}.
-{"This participant is kicked from the room because he sent an error message to another participant","Цього учасника було відключено від кімнати через те, що він надіслав помилкове повідомлення іншому учаснику"}.
-{"This participant is kicked from the room because he sent an error message","Цього учасника було відключено від кімнати через те, що він надіслав помилкове повідомлення"}.
-{"This participant is kicked from the room because he sent an error presence","Цього учасника було відключено від кімнати через те, що він надіслав помилковий статус присутності"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Цього учасника було відключено від кімнати через те, що він надіслав помилкове повідомлення іншому учаснику"}.
+{"This participant is kicked from the room because they sent an error message","Цього учасника було відключено від кімнати через те, що він надіслав помилкове повідомлення"}.
+{"This participant is kicked from the room because they sent an error presence","Цього учасника було відключено від кімнати через те, що він надіслав помилковий статус присутності"}.
 {"This room is not anonymous","Ця кімната не анонімна"}.
 {"Thursday","Четвер"}.
 {"Time delay","Час затримки"}.

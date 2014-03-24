@@ -360,9 +360,9 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Denne er ufølsom for små og store bokstaver: macbeth er det samme som MacBeth og Macbeth. "}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Denne siden lar deg lage en Jabber konto på denne Jabber serveren. Din JID (Jabber ID) vil være i formatet: brukernavn@server. Vennligst les instruksjonene nøye slik at du fyller ut skjemaet riktig."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Denne siden lar deg avregistrere en Jabber konto på denne Jabber serveren."}.
-{"This participant is kicked from the room because he sent an error message","Denne deltakeren er kastet ut av rommet fordi han sendte en feilmelding"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Denne deltakeren er kastet ut av rommet fordi han sendte en feilmelding til en annen deltaker"}.
-{"This participant is kicked from the room because he sent an error presence","Denne deltakeren er kastet ut av rommet fordi han sendte feil tilstederværelse"}.
+{"This participant is kicked from the room because they sent an error message","Denne deltakeren er kastet ut av rommet fordi han sendte en feilmelding"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Denne deltakeren er kastet ut av rommet fordi han sendte en feilmelding til en annen deltaker"}.
+{"This participant is kicked from the room because they sent an error presence","Denne deltakeren er kastet ut av rommet fordi han sendte feil tilstederværelse"}.
 {"This room is not anonymous","Dette rommet er ikke anonymt"}.
 {"Thursday","torsdag"}.
 {"Time delay","Tids forsinkelse"}.

@@ -328,9 +328,9 @@
 {"The CAPTCHA is valid.","Platná CAPTCHA."}.
 {"The collections with which a node is affiliated","Kolekcie asociované s uzlom"}.
 {"the password is","heslo je"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Účastník bol vyhodený z miestnosti, pretože poslal chybovú správu inému účastníkovi"}.
-{"This participant is kicked from the room because he sent an error message","Účastník bol vyhodený z miestnosti, pretože poslal chybovú správu"}.
-{"This participant is kicked from the room because he sent an error presence","Účastník bol vyhodený z miestnosti, pretože poslal chybovú správu o stave"}.
+{"This participant is kicked from the room because they sent an error message to another participant","Účastník bol vyhodený z miestnosti, pretože poslal chybovú správu inému účastníkovi"}.
+{"This participant is kicked from the room because they sent an error message","Účastník bol vyhodený z miestnosti, pretože poslal chybovú správu"}.
+{"This participant is kicked from the room because they sent an error presence","Účastník bol vyhodený z miestnosti, pretože poslal chybovú správu o stave"}.
 {"This room is not anonymous","Táto miestnosť nie je anonymná"}.
 {"Thursday","Štvrtok"}.
 {"Time","Čas"}.
