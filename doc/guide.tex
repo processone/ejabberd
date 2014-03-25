@@ -871,8 +871,9 @@ The available modules, their purpose and the options allowed by each one are:
     Handles c2s connections.\\
     Options: \texttt{access}, \texttt{certfile}, \texttt{ciphers},
     \texttt{max\_ack\_queue}, \texttt{max\_fsm\_queue},
-    \texttt{max\_stanza\_size}, \texttt{resume\_timeout},
-    \texttt{shaper}, \texttt{starttls}, \texttt{starttls\_required},
+    \texttt{max\_stanza\_size}, \texttt{resend\_on\_timeout},
+    \texttt{resume\_timeout}, \texttt{shaper},
+    \texttt{starttls}, \texttt{starttls\_required},
     \texttt{stream\_management}, \texttt{tls},
     \texttt{zlib}, \texttt{tls\_compression}
   \titem{\texttt{ejabberd\_s2s\_in}}
@@ -1007,6 +1008,16 @@ request_handlers:
   /"a"/"b": mod_foo
   /"http-bind": mod_http_bind
 \end{verbatim}
+  \titem{resend\_on\_timeout: true|false}
+    If \term{stream\_management} is enabled and this option is set to
+    \term{true}, any stanzas that weren't acknowledged by the client
+    will be resent on session timeout. This behavior might often be
+    desired, but could have unexpected results under certain
+    circumstances. For example, a message that was sent to two resources
+    might get resent to one of them if the other one timed out.
+    Therefore, the default value for this option is \term{false}, which
+    tells ejabberd to generate an error message instead. The option can
+    be specified for \term{ejabberd\_c2s} listeners.
   \titem{resume\_timeout: Seconds}
     This option configures the number of seconds until a session times
     out if the connection is lost. During this period of time, a client
