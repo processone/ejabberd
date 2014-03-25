@@ -357,9 +357,9 @@ commands() ->
      #ejabberd_commands{name = add_rosteritem, tags = [roster],
 			desc = "Add an item to a user's roster (supports ODBC)",
 			module = ?MODULE, function = add_rosteritem,
-			args = [{localuser, string}, {localserver, string},
-				{user, string}, {server, string},
-				{nick, string}, {group, string},
+			args = [{localuser, binary}, {localserver, binary},
+				{user, binary}, {server, binary},
+				{nick, binary}, {group, binary},
 				{subs, string}],
 			result = {res, rescode}},
      %%{"", "subs= none, from, to or both"},
@@ -368,8 +368,8 @@ commands() ->
      #ejabberd_commands{name = delete_rosteritem, tags = [roster],
 			desc = "Delete an item from a user's roster (supports ODBC)",
 			module = ?MODULE, function = delete_rosteritem,
-			args = [{localuser, string}, {localserver, string},
-				{user, string}, {server, string}],
+			args = [{localuser, binary}, {localserver, binary},
+				{user, binary}, {server, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = process_rosteritems, tags = [roster],
 			desc = "List or delete rosteritems that match filtering options",
@@ -413,7 +413,7 @@ commands() ->
      #ejabberd_commands{name = get_roster, tags = [roster],
 			desc = "Get roster of a local user",
 			module = ?MODULE, function = get_roster,
-			args = [{user, string}, {host, string}],
+			args = [{user, binary}, {host, binary}],
 			result = {contacts, {list, {contact, {tuple, [
 								      {jid, string},
 								      {nick, string},
@@ -1084,8 +1084,8 @@ subscribe(LU, LS, User, Server, Nick, Group, Subscription, _Xattrs) ->
     {ok, M} = loaded_module(LS,[mod_roster_odbc,mod_roster]),
     M:set_items(
 	LU, LS,
-	{xmlelement,"query",
-            [{"xmlns","jabber:iq:roster"}],
+	{xmlel, <<"query">>,
+            [{<<"xmlns">>, <<"jabber:iq:roster">>}],
             [ItemEl]}).
 
 delete_rosteritem(LocalUser, LocalServer, User, Server) ->
@@ -1102,8 +1102,8 @@ unsubscribe(LU, LS, User, Server) ->
     {ok, M} = loaded_module(LS,[mod_roster_odbc,mod_roster]),
     M:set_items(
 	LU, LS,
-	{xmlelement,"query",
-            [{"xmlns","jabber:iq:roster"}],
+	{xmlel, <<"query">>,
+            [{<<"xmlns">>, <<"jabber:iq:roster">>}],
             [ItemEl]}).
 
 loaded_module(Domain,Options) ->
@@ -1136,8 +1136,7 @@ make_roster_xmlrpc(Roster) ->
 			   [] -> [""];
 			   Gs -> Gs
 		       end,
-	      ItemsX = [{JIDS, Nick, Subs, Ask, Group}
-			|| Group <- Groups],
+	      ItemsX = [{JIDS, Nick, Subs, Ask, Group} || Group <- Groups],
 	      ItemsX ++ Res
       end,
       [],
@@ -1203,16 +1202,16 @@ push_roster_item(LU, LS, R, U, S, Action) ->
     ejabberd_router:route(LJID, LJID, ResIQ).
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
-    {xmlelement, "item",
-     [{"jid", jlib:jid_to_string(jlib:make_jid(U, S, ""))},
-      {"name", Nick},
-      {"subscription", Subs}],
-     [{xmlelement, "group", [], [{xmlcdata, Group}]}]
+    {xmlel, <<"item">>,
+     [{<<"jid">>, jlib:jid_to_string(jlib:make_jid(U, S, <<>>))},
+      {<<"name">>, Nick},
+      {<<"subscription">>, Subs}],
+     [{xmlel, <<"group">>, [], [{xmlcdata, Group}]}]
     };
 build_roster_item(U, S, remove) ->
-    {xmlelement, "item",
-     [{"jid", jlib:jid_to_string(jlib:make_jid(U, S, ""))},
-      {"subscription", "remove"}],
+    {xmlel, <<"item">>,
+     [{<<"jid">>, jlib:jid_to_string(jlib:make_jid(U, S, <<>>))},
+      {<<"subscription">>, <<"remove">>}],
      []
     }.
 
