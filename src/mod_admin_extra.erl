@@ -968,7 +968,7 @@ set_vcard(User, Host, Name, Subname, SomeContent) ->
 get_module_resource(Server) ->
     case gen_mod:get_module_opt(Server, ?MODULE, module_resource, fun(A) -> A end, none) of
 	none -> list_to_binary(atom_to_list(?MODULE));
-	R when is_list(R) -> R
+	R when is_binary(R) -> R
     end.
 
 get_vcard_content(User, Server, Data) ->
