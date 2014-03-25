@@ -488,10 +488,10 @@ get_fields_xml(Host, Module) ->
                        lists:map(
                          fun(Opts) ->
                                  Mods = proplists:get_value(modules, Opts, all),
-                                 Name = proplists:get_value(names, Opts, <<>>),
+                                 Name = proplists:get_value(name, Opts, <<>>),
                                  URLs = proplists:get_value(urls, Opts, []),
                                  {Mods, Name, URLs}
-                         end, lists:flatten(L))
+                         end, L)
                end, []),
     Fields_good = lists:filter(fun ({Modules, _, _}) ->
 				       case Modules of
