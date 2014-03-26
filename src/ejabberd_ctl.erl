@@ -565,7 +565,7 @@ format_command_lines(CALD, MaxCmdLen, MaxC, ShCode, dual) ->
     lists:map(
       fun({Cmd, Args, CmdArgsL, Desc}) ->
 	      DescFmt = prepare_description(MaxCmdLen+4, MaxC, Desc),
-	      ["  ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args],
+	      ["   ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args],
                string:chars($\s, MaxCmdLen - CmdArgsL + 1),
 	       DescFmt, "\n"]
       end, CALD);
@@ -574,7 +574,7 @@ format_command_lines(CALD, _MaxCmdLen, MaxC, ShCode, long) ->
     lists:map(
       fun({Cmd, Args, _CmdArgsL, Desc}) ->
 	      DescFmt = prepare_description(8, MaxC, Desc),
-	      ["\n  ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args], "\n", "        ",
+	      ["\n   ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args], "\n", "        ",
 	       DescFmt, "\n"]
       end, CALD).
 
