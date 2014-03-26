@@ -1217,14 +1217,15 @@ handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
     ejabberd_hooks:run(c2s_loop_debug, [Text]),
     fsm_next_state(StateName, StateData);
-handle_info(replaced, _StateName, StateData) ->
+handle_info(replaced, StateName, StateData) ->
     Lang = StateData#state.lang,
-    send_element(StateData,
-		 ?SERRT_CONFLICT(Lang,
-				 <<"Replaced by new connection">>)),
+    Xmlelement = ?SERRT_CONFLICT(Lang, <<"Replaced by new connection">>),
+    handle_info({kick, replaced, Xmlelement}, StateName, StateData);
+handle_info({kick, Reason, Xmlelement}, _StateName, StateData) ->
+    send_element(StateData, Xmlelement),
     send_trailer(StateData),
     {stop, normal,
-     StateData#state{authenticated = replaced}};
+     StateData#state{authenticated = Reason}};
 handle_info({route, _From, _To, {broadcast, Data}},
             StateName, StateData) ->
     ?DEBUG("broadcast~n~p~n", [Data]),
