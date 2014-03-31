@@ -106,10 +106,10 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-stun --enable-riak --enable-json --enable-iconv --enable-debug --enable-http --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-stun --enable-riak --enable-json --enable-mongodb --enable-iconv --enable-debug --enable-http --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true stun=true riak=true json=true iconv=true debug=true http=true lager=true tools=true ;;
-  no) nif=false odbc=false mysql=false pgsql=false pam=false zlib=false stun=false riak=false json=false iconv=false debug=false http=false lager=false tools=false ;;
+  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true stun=true riak=true json=true mongodb=true iconv=true debug=true http=true lager=true tools=true ;;
+  no) nif=false odbc=false mysql=false pgsql=false pam=false zlib=false stun=false riak=false json=false mongodb=false iconv=false debug=false http=false lager=false tools=false  ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -184,6 +184,14 @@ AC_ARG_ENABLE(json,
   no)  json=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-json) ;;
 esac],[if test "x$json" = "x"; then json=false; fi])
+
+AC_ARG_ENABLE(mongodb,
+[AC_HELP_STRING([--enable-mongodb], [enable MongoDB support for mod_mam (default: no)])],
+[case "${enableval}" in
+  yes) mongodb=true ;;
+  no)  mongodb=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-mongodb) ;;
+esac],[if test "x$mongodb" = "x"; then mongodb=false; fi])
 
 AC_ARG_ENABLE(iconv,
 [AC_HELP_STRING([--enable-iconv], [enable iconv support (default: yes)])],
@@ -273,6 +281,7 @@ AC_SUBST(pam)
 AC_SUBST(zlib)
 AC_SUBST(stun)
 AC_SUBST(json)
+AC_SUBST(mongodb)
 AC_SUBST(iconv)
 AC_SUBST(debug)
 AC_SUBST(http)

@@ -26,6 +26,7 @@
 {zlib, @zlib@}.
 {stun, @stun@}.
 {json, @json@}.
+{mongodb, @mongodb@}.
 {http, @http@}.
 {lager, @lager@}.
 {iconv, @iconv@}.
