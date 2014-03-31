@@ -800,7 +800,7 @@ commands() ->
 			tags = [session],
 			desc = "List user's connected resources",
 			module = ?MODULE, function = user_resources,
-			args = [{user, string}, {host, string}],
+			args = [{user, binary}, {host, binary}],
 			result = {resources, {list, {resource, string}}}}].
 
 -spec connected_users() -> [binary()].

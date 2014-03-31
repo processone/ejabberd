@@ -345,13 +345,17 @@ build_fault_response(Code, ParseString, ParseArgs) ->
 do_command(AccessCommands, Auth, Command, AttrL, ArgsF,
 	   ResultF) ->
     ArgsFormatted = format_args(AttrL, ArgsF),
-    {UserT, ServerT, PasswordT} = Auth,
-    AuthBin = {list_to_binary(UserT), list_to_binary(ServerT), list_to_binary(PasswordT)},
+    AuthBin = convert_auth(Auth),
     Result =
 	ejabberd_commands:execute_command(AccessCommands, AuthBin,
 					  Command, ArgsFormatted),
     ResultFormatted = format_result(Result, ResultF),
     {command_result, ResultFormatted}.
+
+convert_auth(noauth) ->
+    noauth;
+convert_auth({UserT, ServerT, PasswordT}) ->
+    {list_to_binary(UserT), list_to_binary(ServerT), list_to_binary(PasswordT)}.
 
 %%-----------------------------
 %% Format arguments
