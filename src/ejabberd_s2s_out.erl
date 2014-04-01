@@ -196,13 +196,18 @@ init([From, Server, Type]) ->
                    undefined -> TLSOpts1;
                    Ciphers -> [{ciphers, Ciphers} | TLSOpts1]
                end,
+    TLSOpts3 = case ejabberd_config:get_option(
+                      s2s_protocol_options, fun iolist_to_binary/1) of
+                   undefined -> TLSOpts2;
+                   ProtocolOpts -> [{protocol_options, ProtocolOpts} | TLSOpts2]
+               end,
     TLSOpts = case ejabberd_config:get_option(
                      {s2s_tls_compression, From},
                      fun(true) -> true;
                         (false) -> false
                      end, true) of
-                  false -> [compression_none | TLSOpts2];
-                  true -> TLSOpts2
+                  false -> [compression_none | TLSOpts3];
+                  true -> TLSOpts3
               end,
     {New, Verify} = case Type of
 		      {new, Key} -> {Key, false};
