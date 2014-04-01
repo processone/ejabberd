@@ -182,9 +182,17 @@ init([{SockMod, Socket}, Opts]) ->
                    undefined -> TLSOpts1;
                    Ciphers -> [{ciphers, Ciphers} | TLSOpts1]
                end,
+    TLSOpts3 = case ejabberd_config:get_option(
+                      s2s_sslv3_disable,
+                      fun(true) -> true;
+                         (false) -> false
+                      end, false) of
+                   true -> [sslv3_disable | TLSOpts2];
+                   false -> TLSOpts2
+               end,
     TLSOpts = case proplists:get_bool(tls_compression, Opts) of
-                  false -> [compression_none | TLSOpts2];
-                  true -> TLSOpts2
+                  false -> [compression_none | TLSOpts3];
+                  true -> TLSOpts3
               end,
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     {ok, wait_for_stream,
