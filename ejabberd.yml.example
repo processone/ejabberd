@@ -86,6 +86,12 @@ listen:
     ##
     ## certfile: "/path/to/ssl.pem"
     ## starttls: true
+    ##
+    ## Custom OpenSSL options
+    ##
+    ## protocol_options:
+    ##   - "no_sslv3"
+    ##   - "no_tlsv1"
     max_stanza_size: 65536
     shaper: c2s_shaper
     access: c2s
@@ -143,6 +149,12 @@ listen:
 ## s2s_certfile: Specify a certificate file.
 ##
 ## s2s_certfile: "/path/to/ssl.pem"
+
+## Custom OpenSSL options
+##
+## s2s_protocol_options:
+##   - "no_sslv3"
+##   - "no_tlsv1"
 
 ##
 ## domain_certfile: Specify a different certificate for each served hostname.

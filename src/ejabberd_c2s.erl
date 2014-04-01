@@ -245,11 +245,20 @@ init([{SockMod, Socket}, Opts]) ->
 				(_) -> false
 			    end,
 			    Opts),
-    TLSOpts2 = case proplists:get_bool(tls_compression, Opts) of
-                   false -> [compression_none | TLSOpts1];
-                   true -> TLSOpts1
+    TLSOpts2 = case lists:keysearch(protocol_options, 1, Opts) of
+                   {value, {_, O}} ->
+                       [_|ProtocolOptions] = lists:foldl(
+                                    fun(X, Acc) -> X ++ Acc end, [],
+                                    [["|" | binary_to_list(Opt)] || Opt <- O, is_binary(Opt)]
+                                   ),
+                        [{protocol_options, iolist_to_binary(ProtocolOptions)} | TLSOpts1];
+                   _ -> TLSOpts1
                end,
-    TLSOpts = [verify_none | TLSOpts2],
+    TLSOpts3 = case proplists:get_bool(tls_compression, Opts) of
+                   false -> [compression_none | TLSOpts2];
+                   true -> TLSOpts2
+               end,
+    TLSOpts = [verify_none | TLSOpts3],
     IP = peerip(SockMod, Socket),
     %% Check if IP is blacklisted:
     case is_ip_blacklisted(IP) of
