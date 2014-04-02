@@ -332,7 +332,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \makesubsection{download}{Download Source Code}
 \ind{install!download}
 
-Released versions of \ejabberd{} are available in the ProcessOne \ejabberd{} downloads page:
+Released versions of \ejabberd{} are available in the ProcessOne \ejabberd{} downloads page:
 \ahrefurl{http://www.process-one.net/en/ejabberd/downloads}
 
 \ind{Git repository}
@@ -917,7 +917,7 @@ This is a detailed description of each option allowed by the listening modules:
     To define a certificate file specific for a given domain, use the global option \term{domain\_certfile}.
   \titem{ciphers: Ciphers} OpenSSL ciphers list in the same format accepted by
   `\verb|openssl ciphers|' command.
-  \titem{protocol\_options: ProtocolOpts} \ind{options!s2s\_protocol\_options}
+  \titem{protocol\_options: ProtocolOpts} \ind{options!protocol\_options}
   Pipe separated list of general options relating to SSL/TLS. These map to \verb|<a href="https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html">OpenSSL's set_options()</a>|.
   For a full list of options available in ejabberd, \verb|<a href="https://github.com/processone/tls/blob/protocol_options/c_src/options.h">see the source</a>|.
   Example: \verb|"no_sslv2|$|$\verb|no_sslv3|$|$\verb|no_tlsv1|" The default value is: \verb|"no_sslv2"|
