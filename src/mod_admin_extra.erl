@@ -219,22 +219,22 @@ commands() ->
      #ejabberd_commands{name = kick_session, tags = [session],
 			desc = "Kick a user session",
 			module = ?MODULE, function = kick_session,
-			args = [{user, string}, {host, string}, {resource, string}, {reason, string}],
+			args = [{user, binary}, {host, binary}, {resource, binary}, {reason, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = status_num_host, tags = [session, stats],
 			desc = "Number of logged users with this status in host",
 			module = ?MODULE, function = status_num,
-			args = [{host, string}, {status, string}],
+			args = [{host, binary}, {status, binary}],
 			result = {users, integer}},
      #ejabberd_commands{name = status_num, tags = [session, stats],
 			desc = "Number of logged users with this status",
 			module = ?MODULE, function = status_num,
-			args = [{status, string}],
+			args = [{status, binary}],
 			result = {users, integer}},
      #ejabberd_commands{name = status_list_host, tags = [session],
 			desc = "List of users logged in host with their statuses",
 			module = ?MODULE, function = status_list,
-			args = [{host, string}, {status, string}],
+			args = [{host, binary}, {status, binary}],
 			result = {users, {list,
 					  {userstatus, {tuple, [
 								{user, string},
@@ -247,7 +247,7 @@ commands() ->
      #ejabberd_commands{name = status_list, tags = [session],
 			desc = "List of logged users with this status",
 			module = ?MODULE, function = status_list,
-			args = [{status, string}],
+			args = [{status, binary}],
 			result = {users, {list,
 					  {userstatus, {tuple, [
 								{user, string},
@@ -809,20 +809,20 @@ kick_session(User, Server, Resource, ReasonText) ->
 
 kick_this_session(User, Server, Resource, Reason) ->
     ejabberd_router:route(
-      jlib:make_jid("", "", ""),
+      jlib:make_jid(<<>>, <<>>, <<>>),
       jlib:make_jid(User, Server, Resource),
-      {xmlelement, "broadcast", [], [{exit, Reason}]}).
+      {xmlel, <<"broadcast">>, [], [{exit, Reason}]}).
 
 
 status_num(Host, Status) ->
     length(get_status_list(Host, Status)).
 status_num(Status) ->
-    status_num("all", Status).
+    status_num(<<"all">>, Status).
 status_list(Host, Status) ->
     Res = get_status_list(Host, Status),
     [{U, S, R, P, St} || {U, S, R, P, St} <- Res].
 status_list(Status) ->
-    status_list("all", Status).
+    status_list(<<"all">>, Status).
 
 
 get_status_list(Host, Status_required) ->
@@ -831,7 +831,7 @@ get_status_list(Host, Status_required) ->
     %% Reformat the list
     Sessions2 = [ {Session#session.usr, Session#session.sid, Session#session.priority} || Session <- Sessions],
     Fhost = case Host of
-		"all" ->
+		<<"all">> ->
 		    %% All hosts are requested, so dont filter at all
 		    fun(_, _) -> true end;
 		_ ->
@@ -843,7 +843,7 @@ get_status_list(Host, Status_required) ->
     Sessions4 = [ {ejabberd_c2s:get_presence(Pid), Server, Priority} || {Pid, Server, Priority} <- Sessions3],
     %% Filter by status
     Fstatus = case Status_required of
-		  "all" ->
+		  <<"all">> ->
 		      fun(_, _) -> true end;
 		  _ ->
 		      fun(A, B) -> A == B end
@@ -882,18 +882,18 @@ dirty_get_sessions_list2() ->
 %% Make string more print-friendly
 stringize(String) ->
     %% Replace newline characters with other code
-    ejabberd_regexp:greplace(String, "\n", "\\n").
+    ejabberd_regexp:greplace(String, <<"\n">>, <<"\\n">>).
 
 set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
     Pid = ejabberd_sm:get_session_pid(User, Host, Resource),
     USR = User ++ "@" ++ Host ++ "/" ++ Resource,
     US = User ++ "@" ++ Host,
     Message = {route_xmlstreamelement,
-	       {xmlelement, "presence",
-		[{"from", USR}, {"to", US}, {"type", Type}],
-		[{xmlelement, "show", [], [{xmlcdata, Show}]},
-		 {xmlelement, "status", [], [{xmlcdata, Status}]},
-		 {xmlelement, "priority", [], [{xmlcdata, Priority}]}]}},
+	       {xmlel, <<"presence">>,
+		[{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
+		[{xmlel, <<"show">>, [], [{xmlcdata, Show}]},
+		 {xmlel, <<"status">>, [], [{xmlcdata, Status}]},
+		 {xmlel, <<"priority">>, [], [{xmlcdata, Priority}]}]}},
     Pid ! Message.
 
 user_sessions_info(User, Host) ->
@@ -929,14 +929,14 @@ user_sessions_info(User, Host) ->
 
 set_nickname(User, Host, Nickname) ->
     R = mod_vcard:process_sm_iq(
-	  {jid, User, Host, "", User, Host, ""},
-	  {jid, User, Host, "", User, Host, ""},
-	  {iq, "", set, "", "en",
-	   {xmlelement, "vCard",
-	    [{"xmlns", "vcard-temp"}], [
-					{xmlelement, "NICKNAME", [], [{xmlcdata, Nickname}]}
-				       ]
-	   }}),
+	  {jid, User, Host, <<>>, User, Host, <<>>},
+	  {jid, User, Host, <<>>, User, Host, <<>>},
+	  {iq, <<>>, set, <<>>, <<"en">>,
+	   {xmlel, <<"vCard">>, [
+	     {<<"xmlns">>, <<"vcard-temp">>}], [
+		{xmlel, <<"NICKNAME">>, [], [{xmlcdata, Nickname}]}
+            ]
+	  }}),
     case R of
 	{iq, [], result, [], _L, []} ->
 	    ok;
@@ -1046,7 +1046,7 @@ update_vcard_els(Data, ContentList, Els1) ->
 		[D2] ->
 		    OldEl = case lists:keysearch(Data1, 2, Els2) of
 				{value, A} -> A;
-				false -> {xmlelement, Data1, [], []}
+				false -> {xmlel, Data1, [], []}
 			    end,
 		    {xmlel, _, _, ContentOld1} = OldEl,
 		    Content2 = [{xmlel, D2, [], [{xmlcdata,Content}]} || Content <- ContentList],
@@ -1118,7 +1118,7 @@ make_roster_xmlrpc(Roster) ->
 	      Subs = atom_to_list(Item#roster.subscription),
 	      Ask = atom_to_list(Item#roster.ask),
 	      Groups = case Item#roster.groups of
-			   [] -> [""];
+			   [] -> [<<>>];
 			   Gs -> Gs
 		       end,
 	      ItemsX = [{JIDS, Nick, Subs, Ask, Group} || Group <- Groups],
@@ -1134,7 +1134,7 @@ make_roster_xmlrpc(Roster) ->
 
 push_roster(File, User, Server) ->
     {ok, [Roster]} = file:consult(File),
-    subscribe_roster({User, Server, "", User}, Roster).
+    subscribe_roster({User, Server, <<>>, User}, Roster).
 
 push_roster_all(File) ->
     {ok, [Roster]} = file:consult(File),
@@ -1202,7 +1202,7 @@ build_roster_item(U, S, remove) ->
 
 build_iq_roster_push(Item) ->
     {xmlel, <<"iq">>,
-     [{<<"type">>, <<"set">>}, {<<"id">>, <<"pushaaa">>}],
+     [{<<"type">>, <<"set">>}, {<<"id">>, <<"push">>}],
      [{xmlel, <<"query">>,
        [{<<"xmlns">>, ?NS_ROSTER}],
        [Item]
@@ -1214,11 +1214,10 @@ build_broadcast(U, S, {add, _Nick, Subs, _Group}) ->
     build_broadcast(U, S, list_to_atom(binary_to_list(Subs)));
 build_broadcast(U, S, remove) ->
     build_broadcast(U, S, none);
-%% @spec (U::string(), S::string(), Subs::atom()) -> any()
+%% @spec (U::binary(), S::binary(), Subs::atom()) -> any()
 %% Subs = both | from | to | none
 build_broadcast(U, S, SubsAtom) when is_atom(SubsAtom) ->
-    {broadcast, {item, {U, S, <<>>}, SubsAtom}
-    }.
+    {broadcast, {item, {U, S, <<>>}, SubsAtom}}.
 
 %%%
 %%% Last Activity
@@ -1260,15 +1259,15 @@ set_last(User, Server, Timestamp, Status) ->
 %% <aa xmlns='bb'>Cluth</aa>
 
 private_get(Username, Host, Element, Ns) ->
-    From = jlib:make_jid(Username, Host, ""),
-    To = jlib:make_jid(Username, Host, ""),
-    IQ = {iq, "", get, ?NS_PRIVATE, "",
-	  {xmlelement,"query",
-	   [{"xmlns",?NS_PRIVATE}],
-	   [{xmlelement, Element, [{"xmlns", Ns}], []}]}},
+    From = jlib:make_jid(Username, Host, <<>>),
+    To = jlib:make_jid(Username, Host, <<>>),
+    IQ = {iq, <<>>, get, ?NS_PRIVATE, <<>>,
+	  {xmlel, <<"query">>,
+	   [{<<"xmlns">>,?NS_PRIVATE}],
+	   [{xmlel, Element, [{<<"xmlns">>, Ns}], []}]}},
     ResIq = mod_private:process_sm_iq(From, To, IQ),
-    [{xmlelement,"query",
-      [{"xmlns","jabber:iq:private"}],
+    [{xmlel, <<"query">>,
+      [{<<"xmlns">>, <<"jabber:iq:private">>}],
       [SubEl]}] = ResIq#iq.sub_el,
     xml:element_to_string(SubEl).
 
@@ -1283,11 +1282,11 @@ private_set(Username, Host, ElementString) ->
     end.
 
 private_set2(Username, Host, Xml) ->
-    From = jlib:make_jid(Username, Host, ""),
-    To = jlib:make_jid(Username, Host, ""),
-    IQ = {iq, "", set, ?NS_PRIVATE, "",
-	  {xmlelement,"query",
-	   [{"xmlns",?NS_PRIVATE}],
+    From = jlib:make_jid(Username, Host, <<>>),
+    To = jlib:make_jid(Username, Host, <<>>),
+    IQ = {iq, <<>>, set, ?NS_PRIVATE, <<>>,
+	  {xmlel, <<"query">>,
+	   [{<<"xmlns">>, ?NS_PRIVATE}],
 	   [Xml]}},
     mod_private:process_sm_iq(From, To, IQ),
     ok.
@@ -1324,7 +1323,7 @@ srg_get_info(Group, Host) ->
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),
-    [jlib:jid_to_string(jlib:make_jid(MUser, MServer, <<"">>))
+    [jlib:jid_to_string(jlib:make_jid(MUser, MServer, <<>>))
      || {MUser, MServer} <- Members].
 
 srg_user_add(User, Host, Group, GroupHost) ->
@@ -1366,7 +1365,7 @@ send_packet_all_resources(FromJIDString, ToJIDString, Packet) ->
     ToUser = ToJID#jid.user,
     ToServer = ToJID#jid.server,
     case ToJID#jid.resource of
-	"" ->
+	<<>> ->
 	    send_packet_all_resources(FromJID, ToUser, ToServer, Packet);
 	Res ->
 	    send_packet_all_resources(FromJID, ToUser, ToServer, Res, Packet)
@@ -1375,7 +1374,7 @@ send_packet_all_resources(FromJIDString, ToJIDString, Packet) ->
 send_packet_all_resources(FromJID, ToUser, ToServer, Packet) ->
     case ejabberd_sm:get_user_resources(ToUser, ToServer) of
 	[] ->
-	    send_packet_all_resources(FromJID, ToUser, ToServer, "", Packet);
+	    send_packet_all_resources(FromJID, ToUser, ToServer, <<>>, Packet);
 	ToResources ->
 	    lists:foreach(
 	      fun(ToResource) ->
@@ -1391,15 +1390,15 @@ send_packet_all_resources(FromJID, ToU, ToS, ToR, Packet) ->
 
 
 build_packet(message_chat, [Body]) ->
-    {xmlelement, "message",
-     [{"type", "chat"}, {"id", randoms:get_string()}],
-     [{xmlelement, "body", [], [{xmlcdata, Body}]}]
+    {xmlel, <<"message">>,
+     [{<<"type">>, <<"chat">>}, {<<"id">>, randoms:get_string()}],
+     [{xmlel, <<"body">>, [], [{xmlcdata, Body}]}]
     };
 build_packet(message_headline, [Subject, Body]) ->
-    {xmlelement, "message",
-     [{"type", "headline"}, {"id", randoms:get_string()}],
-     [{xmlelement, "subject", [], [{xmlcdata, Subject}]},
-      {xmlelement, "body", [], [{xmlcdata, Body}]}
+    {xmlel, <<"message">>,
+     [{<<"type">>, <<"headline">>}, {<<"id">>, randoms:get_string()}],
+     [{xmlel, <<"subject">>, [], [{xmlcdata, Subject}]},
+      {xmlel, <<"body">>, [], [{xmlcdata, Body}]}
      ]
     }.
 
@@ -1412,7 +1411,7 @@ privacy_set(Username, Host, QueryS) ->
     From = jlib:string_to_jid(Username ++ "@" ++ Host),
     To = jlib:string_to_jid(Host),
     QueryEl = xml_stream:parse_element(QueryS),
-    StanzaEl = {xmlelement, "iq", [{"type", "set"}], [QueryEl]},
+    StanzaEl = {xmlel, <<"iq">>, [{<<"type">>, <<"set">>}], [QueryEl]},
     IQ = jlib:iq_query_info(StanzaEl),
     ejabberd_hooks:run_fold(
 		     privacy_iq_set,
