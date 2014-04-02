@@ -360,7 +360,7 @@ commands() ->
 			args = [{localuser, binary}, {localserver, binary},
 				{user, binary}, {server, binary},
 				{nick, binary}, {group, binary},
-				{subs, string}],
+				{subs, binary}],
 			result = {res, rescode}},
      %%{"", "subs= none, from, to or both"},
      %%{"", "example: add-roster peter localhost mike server.com MiKe Employees both"},
@@ -1064,7 +1064,7 @@ update_vcard_els(Data, ContentList, Els1) ->
 %%%
 
 add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs) ->
-    case add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, list_to_atom(Subs), []) of
+    case add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs, []) of
 	{atomic, ok} ->
 	    push_roster_item(LocalUser, LocalServer, User, Server, {add, Nick, Subs, Group}),
 	    ok;
@@ -1076,13 +1076,8 @@ add_rosteritem(LU, LS, User, Server, Nick, Group, Subscription, Xattrs) ->
     subscribe(LU, LS, User, Server, Nick, Group, Subscription, Xattrs).
 
 subscribe(LU, LS, User, Server, Nick, Group, Subscription, _Xattrs) ->
-    SubscriptionS = case is_atom(Subscription) of
-	true -> atom_to_list(Subscription);
-	false -> Subscription
-    end,
-    ItemEl = build_roster_item(User, Server, {add, Nick, SubscriptionS, Group}),
-    {ok, M} = loaded_module(LS,[mod_roster_odbc,mod_roster]),
-    M:set_items(
+    ItemEl = build_roster_item(User, Server, {add, Nick, Subscription, Group}),
+    mod_roster:set_items(
 	LU, LS,
 	{xmlel, <<"query">>,
             [{<<"xmlns">>, <<"jabber:iq:roster">>}],
@@ -1099,21 +1094,11 @@ delete_rosteritem(LocalUser, LocalServer, User, Server) ->
 
 unsubscribe(LU, LS, User, Server) ->
     ItemEl = build_roster_item(User, Server, remove),
-    {ok, M} = loaded_module(LS,[mod_roster_odbc,mod_roster]),
-    M:set_items(
+    mod_roster:set_items(
 	LU, LS,
 	{xmlel, <<"query">>,
             [{<<"xmlns">>, <<"jabber:iq:roster">>}],
             [ItemEl]}).
-
-loaded_module(Domain,Options) ->
-    LoadedModules = gen_mod:loaded_modules(Domain),
-    case lists:filter(fun(Module) ->
-                              lists:member(Module, LoadedModules)
-                      end, Options) of
-        [M|_] -> {ok, M};
-        [] -> {error,not_found}
-    end.
 
 %% -----------------------------
 %% Get Roster
@@ -1170,7 +1155,7 @@ subscribe_roster({Name, Server, Group, Nick}, [{Name, Server, _, _} | Roster]) -
     subscribe_roster({Name, Server, Group, Nick}, Roster);
 %% Subscribe Name2 to Name1
 subscribe_roster({Name1, Server1, Group1, Nick1}, [{Name2, Server2, Group2, Nick2} | Roster]) ->
-    subscribe(Name1, Server1, Name2, Server2, Nick2, Group2, both, []),
+    subscribe(Name1, Server1, Name2, Server2, Nick2, Group2, <<"both">>, []),
     subscribe_roster({Name1, Server1, Group1, Nick1}, Roster).
 
 push_alltoall(S, G) ->
@@ -1216,24 +1201,23 @@ build_roster_item(U, S, remove) ->
     }.
 
 build_iq_roster_push(Item) ->
-    {xmlelement, "iq",
-     [{"type", "set"}, {"id", "push"}],
-     [{xmlelement, "query",
-       [{"xmlns", ?NS_ROSTER}],
+    {xmlel, <<"iq">>,
+     [{<<"type">>, <<"set">>}, {<<"id">>, <<"pushaaa">>}],
+     [{xmlel, <<"query">>,
+       [{<<"xmlns">>, ?NS_ROSTER}],
        [Item]
       }
      ]
     }.
 
 build_broadcast(U, S, {add, _Nick, Subs, _Group}) ->
-    build_broadcast(U, S, list_to_atom(Subs));
+    build_broadcast(U, S, list_to_atom(binary_to_list(Subs)));
 build_broadcast(U, S, remove) ->
     build_broadcast(U, S, none);
 %% @spec (U::string(), S::string(), Subs::atom()) -> any()
 %% Subs = both | from | to | none
 build_broadcast(U, S, SubsAtom) when is_atom(SubsAtom) ->
-    {xmlelement, "broadcast", [],
-     [{item, {U, S, ""}, SubsAtom}]
+    {broadcast, {item, {U, S, <<>>}, SubsAtom}
     }.
 
 %%%
