@@ -197,7 +197,14 @@ init([From, Server, Type]) ->
                    Ciphers -> [{ciphers, Ciphers} | TLSOpts1]
                end,
     TLSOpts3 = case ejabberd_config:get_option(
-                      s2s_protocol_options, fun iolist_to_binary/1) of
+                      s2s_protocol_options,
+                      fun (Options) ->
+                              [_|Opts] = lists:foldl(
+                                           fun(X, Acc) -> X ++ Acc end, [],
+                                           [["|" | Opt] || Opt <- Options, is_list(Opt)]
+                                          ),
+                              iolist_to_binary(Opts)
+                      end) of
                    undefined -> TLSOpts2;
                    ProtocolOpts -> [{protocol_options, ProtocolOpts} | TLSOpts2]
                end,
