@@ -26,6 +26,8 @@
 /doc/version.tex
 /ebin/*.beam
 /ebin/ejabberd.app
+/ejabberd.init
+/ejabberdctl.example
 /include/XmppAddr.hrl
 /src/XmppAddr.asn1db
 /src/XmppAddr.erl
