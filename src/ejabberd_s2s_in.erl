@@ -187,7 +187,7 @@ init([{SockMod, Socket}, Opts]) ->
                       fun (Options) ->
                               [_|Opts] = lists:foldl(
                                            fun(X, Acc) -> X ++ Acc end, [],
-                                           [["|" | Opt] || Opt <- Options, is_list(Opt)]
+                                           [["|" | Opt] || Opt <- Options, is_binary(Opt)]
                                           ),
                               iolist_to_binary(Opts)
                       end) of
@@ -198,6 +198,7 @@ init([{SockMod, Socket}, Opts]) ->
                   false -> [compression_none | TLSOpts3];
                   true -> TLSOpts2
               end,
+    ?CRITICAL_MSG("~p", TLSOpts),
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     {ok, wait_for_stream,
      #state{socket = Socket, sockmod = SockMod,

@@ -254,7 +254,6 @@ init([{SockMod, Socket}, Opts]) ->
                         [{protocol_options, iolist_to_binary(ProtocolOptions)} | TLSOpts1];
                    _ -> TLSOpts1
                end,
-    ?CRITICAL_MSG("~p", TLSOpts2),
     TLSOpts3 = case proplists:get_bool(tls_compression, Opts) of
                    false -> [compression_none | TLSOpts2];
                    true -> TLSOpts2

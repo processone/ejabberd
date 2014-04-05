@@ -918,9 +918,9 @@ This is a detailed description of each option allowed by the listening modules:
   \titem{ciphers: Ciphers} OpenSSL ciphers list in the same format accepted by
   `\verb|openssl ciphers|' command.
   \titem{protocol\_options: ProtocolOpts} \ind{options!protocol\_options}
-  Pipe separated list of general options relating to SSL/TLS. These map to \verb|<a href="https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html">OpenSSL's set_options()</a>|.
+  List of general options relating to SSL/TLS. These map to \verb|<a href="https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html">OpenSSL's set_options()</a>|.
   For a full list of options available in ejabberd, \verb|<a href="https://github.com/processone/tls/blob/protocol_options/c_src/options.h">see the source</a>|.
-  Example: \verb|"no_sslv2|$|$\verb|no_sslv3|$|$\verb|no_tlsv1|" The default value is: \verb|"no_sslv2"|
+  The default entry is: \verb|"no_sslv2"|
   \titem{default\_host: undefined|HostName\}}
     If the HTTP request received by ejabberd contains the HTTP header \term{Host}
     with an ambiguous virtual host that doesn't match any one defined in ejabberd (see \ref{hostnames}),
@@ -1070,9 +1070,9 @@ There are some additional global options that can be specified in the ejabberd c
   \titem{s2s\_ciphers: Ciphers} \ind{options!s2s\_ciphers} OpenSSL ciphers list
   in the same format accepted by `\verb|openssl ciphers|' command.
   \titem{s2s\_protocol\_options: ProtocolOpts} \ind{options!s2s\_protocol\_options}
-  Pipe separated list of general options relating to SSL/TLS. These map to \verb|<a href="https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html">OpenSSL's set_options()</a>|.
+  List of general options relating to SSL/TLS. These map to \verb|<a href="https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html">OpenSSL's set_options()</a>|.
   For a full list of options available in ejabberd, \verb|<a href="https://github.com/processone/tls/blob/protocol_options/c_src/options.h">see the source</a>|.
-  Example: \verb|"no_sslv2|$|$\verb|no_sslv3|$|$\verb|no_tlsv1|" The default value is: \verb|"no_sslv2"|
+  The default enitry is: \verb|"no_sslv2"|
   \titem{outgoing\_s2s\_families: [Family, ...]} \ind{options!outgoing\_s2s\_families}
   Specify which address families to try, in what order.
   By default it first tries connecting with IPv4, if that fails it tries using IPv6.

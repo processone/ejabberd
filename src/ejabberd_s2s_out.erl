@@ -201,7 +201,7 @@ init([From, Server, Type]) ->
                       fun (Options) ->
                               [_|Opts] = lists:foldl(
                                            fun(X, Acc) -> X ++ Acc end, [],
-                                           [["|" | Opt] || Opt <- Options, is_list(Opt)]
+                                           [["|" | Opt] || Opt <- Options, is_binary(Opt)]
                                           ),
                               iolist_to_binary(Opts)
                       end) of
