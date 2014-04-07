@@ -51,7 +51,7 @@
 		request_auth,
 		request_keepalive,
 		request_content_length,
-		request_lang = "en",
+		request_lang = <<"en">>,
 		%% XXX bard: request handlers are configured in
 		%% ejabberd.cfg under the HTTP service.	 For example,
 		%% to have the module test_web handle requests with
