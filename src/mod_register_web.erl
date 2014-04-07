@@ -485,9 +485,15 @@ form_del_get(Host, Lang) ->
 %%                                    {error, not_allowed} |
 %%                                    {error, invalid_jid}
 register_account(Username, Host, Password) ->
-    case jlib:make_jid(Username, Host, <<"">>) of
-      error -> {error, invalid_jid};
-      _ -> register_account2(Username, Host, Password)
+    Access = gen_mod:get_module_opt(Host, mod_register, access,
+                                    fun(A) when is_atom(A) -> A end,
+                                    all),
+    JID = jlib:make_jid(Username, Host, <<"">>),
+    Match = acl:match_rule(Host, Access, JID),
+    case {JID, Match} of
+      {error, _} -> {error, invalid_jid};
+      {_, deny} -> {error, not_allowed};
+      {_, allow} -> register_account2(Username, Host, Password)
     end.
 
 register_account2(Username, Host, Password) ->
