@@ -2183,7 +2183,7 @@ get_node(global, Node, [<<"update">>], Query, Lang) ->
 	       ?XCT(<<"h3">>, <<"Update script">>), FmtScript,
 	       ?XCT(<<"h3">>, <<"Low level update script">>),
 	       FmtLowLevelScript, ?XCT(<<"h3">>, <<"Script check">>),
-	       ?XC(<<"pre">>, (iolist_to_binary(Check))),
+	       ?XC(<<"pre">>, (jlib:atom_to_binary(Check))),
 	       ?BR,
 	       ?INPUTT(<<"submit">>, <<"update">>, <<"Update">>)])];
 get_node(Host, Node, NPath, Query, Lang) ->
