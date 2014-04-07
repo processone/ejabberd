@@ -2808,18 +2808,62 @@ handle_unacked_stanzas(_StateData, _F) ->
 
 handle_unacked_stanzas(StateData) when StateData#state.sm_state == active;
 				       StateData#state.sm_state == pending ->
-    F = case StateData#state.resend_on_timeout of
-	  true ->
-	      fun ejabberd_router:route/3;
-	  false ->
-	      fun(From, To, El) ->
-		      Err = jlib:make_error_reply(El, ?ERR_SERVICE_UNAVAILABLE),
-		      ejabberd_router:route(To, From, Err)
-	      end
+    ReRoute = case StateData#state.resend_on_timeout of
+		true ->
+		    fun ejabberd_router:route/3;
+		false ->
+		    fun(From, To, El) ->
+			    Err =
+				jlib:make_error_reply(El,
+						      ?ERR_SERVICE_UNAVAILABLE),
+			    ejabberd_router:route(To, From, Err)
+		    end
+	      end,
+    F = fun(From, To, El) ->
+		%% We'll drop the stanza if it was <forwarded/> by some
+		%% encapsulating protocol as per XEP-0297.  One such protocol is
+		%% XEP-0280, which says: "When a receiving server attempts to
+		%% deliver a forked message, and that message bounces with an
+		%% error for any reason, the receiving server MUST NOT forward
+		%% that error back to the original sender."  Resending such a
+		%% stanza could easily lead to unexpected results as well.
+		case is_encapsulated_forward(El) of
+		  true ->
+		      ?DEBUG("Dropping forwarded stanza from ~s",
+			     [xml:get_attr_s(<<"from">>, El#xmlel.attrs)]);
+		  false ->
+		      ReRoute(From, To, El)
+		end
 	end,
     handle_unacked_stanzas(StateData, F);
 handle_unacked_stanzas(_StateData) ->
     ok.
+
+is_encapsulated_forward(#xmlel{name = <<"message">>} = El) ->
+    SubTag = case {xml:get_subtag(El, <<"sent">>),
+		   xml:get_subtag(El, <<"received">>),
+		   xml:get_subtag(El, <<"result">>)} of
+	       {false, false, false} ->
+		   false;
+	       {Tag, false, false} ->
+		   Tag;
+	       {false, Tag, false} ->
+		   Tag;
+	       {_, _, Tag} ->
+		   Tag
+	    end,
+    if SubTag == false ->
+	   false;
+       true ->
+	   case xml:get_subtag(SubTag, <<"forwarded">>) of
+	     false ->
+		 false;
+	     _ ->
+		 true
+	   end
+    end;
+is_encapsulated_forward(_El) ->
+    false.
 
 inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
     case jlib:base64_to_term(ResumeID) of
