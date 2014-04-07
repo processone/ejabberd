@@ -128,23 +128,18 @@ iq_handler(From, _To,  #iq{type=set, sub_el = #xmlel{name = Operation, children 
 iq_handler(_From, _To, IQ, _CC)->
     IQ#iq{type=error, sub_el = [?ERR_NOT_ALLOWED]}.
 
-user_send_packet(From, _To, Packet) ->
-    check_and_forward(From, Packet, sent).
+user_send_packet(From, To, Packet) ->
+    check_and_forward(From, To, Packet, sent).
 
-%% Only make carbon copies if the original destination was not a bare jid. 
-%% If the original destination was a bare jid, the message is going to be delivered to all
-%% connected resources anyway. Avoid duplicate delivery. "XEP-0280 : 3.5 Receiving Messages"
-user_receive_packet(JID, _From, #jid{resource=Resource} = _To, Packet) when Resource /= <<>> ->
-    check_and_forward(JID, Packet, received);
-user_receive_packet(_JID, _From, _To, _Packet) ->
-	ok.
+user_receive_packet(JID, _From, To, Packet) ->
+    check_and_forward(JID, To, Packet, received).
     
 % verifier si le trafic est local
 % Modified from original version: 
 %    - registered to the user_send_packet hook, to be called only once even for multicast
 %    - do not support "private" message mode, and do not modify the original packet in any way
 %    - we also replicate "read" notifications
-check_and_forward(JID, #xmlel{name = <<"message">>, attrs = Attrs} = Packet, Direction)->
+check_and_forward(JID, To, #xmlel{name = <<"message">>, attrs = Attrs} = Packet, Direction)->
     case xml:get_attr_s(<<"type">>, Attrs) of 
       <<"chat">> ->
 	case xml:get_subtag(Packet, <<"private">>) of
@@ -155,11 +150,11 @@ check_and_forward(JID, #xmlel{name = <<"message">>, attrs = Attrs} = Packet, Dir
                     	%% receiving message back to original sender.
                     	SubTag = xml:get_subtag(Packet,<<"sent">>),
                     	if SubTag == false ->
-                            send_copies(JID, Packet, Direction);
+                            send_copies(JID, To, Packet, Direction);
                        	   true ->
                             case xml:get_subtag(SubTag,<<"forwarded">>) of
                                 false->
-                                    send_copies(JID, Packet, Direction);
+                                    send_copies(JID, To, Packet, Direction);
                                 _ ->
                                     stop
                             end
@@ -175,7 +170,7 @@ check_and_forward(JID, #xmlel{name = <<"message">>, attrs = Attrs} = Packet, Dir
 	ok
     end;
  
-check_and_forward(_JID, _Packet, _)-> ok.
+check_and_forward(_JID, _To, _Packet, _)-> ok.
 
 remove_connection(User, Server, Resource, _Status)->
     disable(Server, User, Resource),
@@ -184,14 +179,26 @@ remove_connection(User, Server, Resource, _Status)->
 
 %%% Internal
 %% Direction = received | sent <received xmlns='urn:xmpp:carbons:1'/>
-send_copies(JID, Packet, Direction)->
+send_copies(JID, To, Packet, Direction)->
     {U, S, R} = jlib:jid_tolower(JID),
 
     %% list of JIDs that should receive a carbon copy of this message (excluding the
-    %% receiver of the original message
-    TargetJIDs = [ {jlib:make_jid({U, S, CCRes}), CC_Version} || {CCRes, CC_Version} <- list(U, S), CCRes /= R ],
-    %TargetJIDs = lists:delete(JID, [ jlib:make_jid({U, S, CCRes}) || CCRes <- list(U, S) ]),
-
+    %% receiver(s) of the original message
+    TargetJIDs = case {Direction, To} of
+	{received, #jid{resource = <<>>}} ->
+	    PrioRes = ejabberd_sm:get_user_present_resources(U, S),
+	    MaxPrio = case catch lists:max(PrioRes) of
+		{Prio, _Res} -> Prio;
+		_ -> 0
+	    end,
+	    OrigTo = fun(Res) -> lists:member({MaxPrio, Res}, PrioRes) end,
+	    [ {jlib:make_jid({U, S, CCRes}), CC_Version}
+	     || {CCRes, CC_Version} <- list(U, S), not OrigTo(CCRes) ];
+	_ ->
+	    [ {jlib:make_jid({U, S, CCRes}), CC_Version}
+	     || {CCRes, CC_Version} <- list(U, S), CCRes /= R ]
+	    %TargetJIDs = lists:delete(JID, [ jlib:make_jid({U, S, CCRes}) || CCRes <- list(U, S) ]),
+    end,
 
     lists:map(fun({Dest,Version}) ->
 		    {_, _, Resource} = jlib:jid_tolower(Dest),
