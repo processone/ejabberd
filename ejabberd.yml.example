@@ -514,6 +514,7 @@ modules:
     access: announce
   mod_blocking: {} # requires mod_privacy
   mod_caps: {}
+  mod_carboncopy: {}
   mod_configure: {} # requires mod_adhoc
   mod_disco: {}
   ## mod_echo: {}
