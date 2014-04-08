@@ -181,12 +181,21 @@ remove_connection(User, Server, Resource, _Status)->
 %% Direction = received | sent <received xmlns='urn:xmpp:carbons:1'/>
 send_copies(JID, To, Packet, Direction)->
     {U, S, R} = jlib:jid_tolower(JID),
+    PrioRes = ejabberd_sm:get_user_present_resources(U, S),
 
+    IsBareTo = case {Direction, To} of
+	{received, #jid{lresource = <<>>}} -> true;
+	{received, #jid{lresource = LRes}} ->
+	    %% unavailable resources are handled like bare JIDs
+	    case lists:keyfind(LRes, 2, PrioRes) of
+		false -> true;
+		_ -> false
+	    end;
+	_ -> false
+    end,
     %% list of JIDs that should receive a carbon copy of this message (excluding the
     %% receiver(s) of the original message
-    TargetJIDs = case {Direction, To} of
-	{received, #jid{resource = <<>>}} ->
-	    PrioRes = ejabberd_sm:get_user_present_resources(U, S),
+    TargetJIDs = if IsBareTo ->
 	    MaxPrio = case catch lists:max(PrioRes) of
 		{Prio, _Res} -> Prio;
 		_ -> 0
@@ -194,7 +203,7 @@ send_copies(JID, To, Packet, Direction)->
 	    OrigTo = fun(Res) -> lists:member({MaxPrio, Res}, PrioRes) end,
 	    [ {jlib:make_jid({U, S, CCRes}), CC_Version}
 	     || {CCRes, CC_Version} <- list(U, S), not OrigTo(CCRes) ];
-	_ ->
+	true ->
 	    [ {jlib:make_jid({U, S, CCRes}), CC_Version}
 	     || {CCRes, CC_Version} <- list(U, S), CCRes /= R ]
 	    %TargetJIDs = lists:delete(JID, [ jlib:make_jid({U, S, CCRes}) || CCRes <- list(U, S) ]),
