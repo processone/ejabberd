@@ -285,9 +285,10 @@ accept(ListenSocket, Module, Opts) ->
     case gen_tcp:accept(ListenSocket) of
 	{ok, Socket} ->
 	    case {inet:sockname(Socket), inet:peername(Socket)} of
-		{{ok, Addr}, {ok, PAddr}} ->
-		    ?INFO_MSG("(~w) Accepted connection ~w -> ~w",
-			      [Socket, PAddr, Addr]);
+		{{ok, {Addr, Port}}, {ok, {PAddr, PPort}}} ->
+		    ?INFO_MSG("(~w) Accepted connection ~s:~p -> ~s:~p",
+			      [Socket, inet_parse:ntoa(PAddr), PPort,
+			       inet_parse:ntoa(Addr), Port]);
 		_ ->
 		    ok
 	    end,
