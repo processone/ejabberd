@@ -76,33 +76,54 @@ load_dir(Dir) ->
     end.
 
 load_file(Lang, File) ->
-    case file:consult(File) of
-      {ok, Terms} ->
-	  lists:foreach(fun ({Orig, Trans}) ->
-				Trans1 = case Trans of
-					   <<"">> -> Orig;
-					   _ -> Trans
-					 end,
-				ets:insert(translations,
-                                           {{Lang, iolist_to_binary(Orig)},
-                                            iolist_to_binary(Trans1)})
-			end,
-			Terms);
-      %% Code copied from ejabberd_config.erl
-      {error,
-       {_LineNumber, erl_parse, _ParseMessage} = Reason} ->
-          ExitText = iolist_to_binary([File,
-                                       " approximately in the line ",
-                                       file:format_error(Reason)]),
-	  ?ERROR_MSG("Problem loading translation file ~n~s",
-		     [ExitText]),
-	  exit(ExitText);
-      {error, Reason} ->
-	  ExitText = iolist_to_binary([File, ": ",
-                                       file:format_error(Reason)]),
-	  ?ERROR_MSG("Problem loading translation file ~n~s",
-		     [ExitText]),
-	  exit(ExitText)
+    case file:open(File, [read]) of
+        {ok, Fd} ->
+            epp:set_encoding(Fd, latin1),
+            load_file_loop(Fd, 1, File, Lang),
+            file:close(Fd);
+        Error ->
+            ExitText = iolist_to_binary([File, ": ",
+                                         file:format_error(Error)]),
+            ?ERROR_MSG("Problem loading translation file ~n~s",
+                       [ExitText]),
+            exit(ExitText)
+    end.
+
+load_file_loop(Fd, Line, File, Lang) ->
+    case io:read(Fd, '', Line) of
+        {ok,{Orig, Trans}, NextLine} ->
+            Trans1 = case Trans of
+                         <<"">> -> Orig;
+                         _ -> Trans
+                     end,
+            ets:insert(translations,
+                       {{Lang, iolist_to_binary(Orig)},
+                        iolist_to_binary(Trans1)}),
+
+            load_file_loop(Fd, NextLine, File, Lang);
+        {ok,_, _NextLine} ->
+            ExitText = iolist_to_binary([File,
+                                         " approximately in the line ",
+                                         Line]),
+            ?ERROR_MSG("Problem loading translation file ~n~s",
+                       [ExitText]),
+            exit(ExitText);
+        {error,
+         {_LineNumber, erl_parse, _ParseMessage} = Reason} ->
+            ExitText = iolist_to_binary([File,
+                                         " approximately in the line ",
+                                         file:format_error(Reason)]),
+            ?ERROR_MSG("Problem loading translation file ~n~s",
+                       [ExitText]),
+            exit(ExitText);
+        {error, Reason} ->
+            ExitText = iolist_to_binary([File, ": ",
+                                         file:format_error(Reason)]),
+            ?ERROR_MSG("Problem loading translation file ~n~s",
+                       [ExitText]),
+            exit(ExitText);
+        {eof,_Line} ->
+            ok
     end.
 
 -spec translate(binary(), binary()) -> binary().
