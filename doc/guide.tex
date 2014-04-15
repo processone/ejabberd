@@ -333,7 +333,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \makesubsection{download}{Download Source Code}
 \ind{install!download}
 
-Released versions of \ejabberd{} are available in the ProcessOne \ejabberd{} downloads page:
+Released versions of \ejabberd{} are available in the ProcessOne \ejabberd{} downloads page:
 \ahrefurl{http://www.process-one.net/en/ejabberd/downloads}
 
 \ind{Git repository}
@@ -870,7 +870,7 @@ The available modules, their purpose and the options allowed by each one are:
 \begin{description}
   \titem{\texttt{ejabberd\_c2s}}
     Handles c2s connections.\\
-    Options: \texttt{access}, \texttt{certfile}, \texttt{ciphers},
+    Options: \texttt{access}, \texttt{certfile}, \texttt{ciphers}, \texttt{protocol\_options}
     \texttt{max\_fsm\_queue},
     \texttt{max\_stanza\_size}, \texttt{shaper},
     \texttt{starttls}, \texttt{starttls\_required}, \texttt{tls},
@@ -918,6 +918,10 @@ This is a detailed description of each option allowed by the listening modules:
     To define a certificate file specific for a given domain, use the global option \term{domain\_certfile}.
   \titem{ciphers: Ciphers} OpenSSL ciphers list in the same format accepted by
   `\verb|openssl ciphers|' command.
+  \titem{protocol\_options: ProtocolOpts} \ind{options!protocol\_options}
+  List of general options relating to SSL/TLS. These map to \verb|<a href="https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html">OpenSSL's set_options()</a>|.
+  For a full list of options available in ejabberd, \verb|<a href="https://github.com/processone/tls/blob/protocol_options/c_src/options.h">see the source</a>|.
+  The default entry is: \verb|"no_sslv2"|
   \titem{default\_host: undefined|HostName\}}
     If the HTTP request received by ejabberd contains the HTTP header \term{Host}
     with an ambiguous virtual host that doesn't match any one defined in ejabberd (see \ref{hostnames}),
@@ -1066,6 +1070,10 @@ There are some additional global options that can be specified in the ejabberd c
   Full path to the file containing the SSL certificate for a specific domain.
   \titem{s2s\_ciphers: Ciphers} \ind{options!s2s\_ciphers} OpenSSL ciphers list
   in the same format accepted by `\verb|openssl ciphers|' command.
+  \titem{s2s\_protocol\_options: ProtocolOpts} \ind{options!s2s\_protocol\_options}
+  List of general options relating to SSL/TLS. These map to \verb|<a href="https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html">OpenSSL's set_options()</a>|.
+  For a full list of options available in ejabberd, \verb|<a href="https://github.com/processone/tls/blob/protocol_options/c_src/options.h">see the source</a>|.
+  The default enitry is: \verb|"no_sslv2"|
   \titem{outgoing\_s2s\_families: [Family, ...]} \ind{options!outgoing\_s2s\_families}
   Specify which address families to try, in what order.
   By default it first tries connecting with IPv4, if that fails it tries using IPv6.
