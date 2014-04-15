@@ -78,7 +78,7 @@ load_dir(Dir) ->
 load_file(Lang, File) ->
     case file:open(File, [read]) of
         {ok, Fd} ->
-            epp:set_encoding(Fd, latin1),
+            io:setopts(Fd, [{encoding,latin1}]),
             load_file_loop(Fd, 1, File, Lang),
             file:close(Fd);
         Error ->
