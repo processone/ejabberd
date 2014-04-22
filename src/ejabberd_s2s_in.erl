@@ -749,7 +749,7 @@ get_cert_domains(Cert) ->
 			  case 'OTP-PUB-KEY':decode('X520CommonName', Val) of
 			    {ok, {_, D1}} ->
 				D = if is_binary(D1) -> D1;
-				       is_binary(D1) -> (D1);
+				       is_list(D1) -> list_to_binary(D1);
 				       true -> error
 				    end,
 				if D /= error ->
@@ -770,8 +770,7 @@ get_cert_domains(Cert) ->
       lists:flatmap(fun (#'Extension'{extnID =
 					  ?'id-ce-subjectAltName',
 				      extnValue = Val}) ->
-			    BVal = if is_binary(Val) -> iolist_to_binary(Val);
-				      is_binary(Val) -> Val;
+			    BVal = if is_list(Val) -> list_to_binary(Val);
 				      true -> Val
 				   end,
 			    case 'OTP-PUB-KEY':decode('SubjectAltName', BVal)
@@ -811,9 +810,9 @@ get_cert_domains(Cert) ->
 							  _ -> []
 							end;
 						    ({dNSName, D})
-							when is_binary(D) ->
+							when is_list(D) ->
 							case
-							  jlib:string_to_jid(D)
+							  jlib:string_to_jid(list_to_binary(D))
 							    of
 							  #jid{luser = <<"">>,
 							       lserver = LD,
