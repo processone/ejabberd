@@ -37,6 +37,7 @@
 	 bounce_offline_message/3,
 	 disconnect_removed_user/2,
 	 get_user_resources/2,
+	 get_user_present_resources/2,
 	 set_presence/7,
 	 unset_presence/6,
 	 close_session_unset_presence/5,
@@ -164,6 +165,20 @@ get_user_resources(User, Server) ->
 	    [];
 	Ss ->
 	    [element(3, S#session.usr) || S <- clean_session_list(Ss)]
+    end.
+
+-spec get_user_present_resources(binary(), binary()) -> [tuple()].
+
+get_user_present_resources(LUser, LServer) ->
+    US = {LUser, LServer},
+    case catch mnesia:dirty_index_read(session, US,
+				       #session.us)
+	of
+      {'EXIT', _Reason} -> [];
+      Ss ->
+	  [{S#session.priority, element(3, S#session.usr)}
+	   || S <- clean_session_list(Ss),
+	      is_integer(S#session.priority)]
     end.
 
 -spec get_user_ip(binary(), binary(), binary()) -> ip().
@@ -665,20 +680,6 @@ clean_session_list([S1, S2 | Rest], Res) ->
 	      true -> clean_session_list([S2 | Rest], Res)
 	   end;
        true -> clean_session_list([S2 | Rest], [S1 | Res])
-    end.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-get_user_present_resources(LUser, LServer) ->
-    US = {LUser, LServer},
-    case catch mnesia:dirty_index_read(session, US,
-				       #session.us)
-	of
-      {'EXIT', _Reason} -> [];
-      Ss ->
-	  [{S#session.priority, element(3, S#session.usr)}
-	   || S <- clean_session_list(Ss),
-	      is_integer(S#session.priority)]
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
