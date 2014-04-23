@@ -570,8 +570,10 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 	  if not SASLEXT and not StartTLS and
 	       StateData#state.authenticated ->
 		 send_queue(StateData, StateData#state.queue),
-		 ?INFO_MSG("Connection established: ~s -> ~s",
-			   [StateData#state.myname, StateData#state.server]),
+		 ?INFO_MSG("Connection established: ~s -> ~s with "
+			   "SASL EXTERNAL and TLS=~p",
+			   [StateData#state.myname, StateData#state.server,
+			    StateData#state.tls_enabled]),
 		 ejabberd_hooks:run(s2s_connect_hook,
 				    [StateData#state.myname,
 				     StateData#state.server]),
