@@ -224,34 +224,55 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 		 not StateData#state.authenticated ->
 	  send_text(StateData,
 		    ?STREAM_HEADER(<<" version='1.0'">>)),
-	  SASL = if StateData#state.tls_enabled ->
-			case
-			  (StateData#state.sockmod):get_peer_certificate(StateData#state.socket)
-			    of
-			  {ok, Cert} ->
+	  Auth = if StateData#state.tls_enabled ->
+			case jlib:nameprep(xml:get_attr_s(<<"from">>, Attrs)) of
+			  From when From /= <<"">>, From /= error ->
 			      case
-				(StateData#state.sockmod):get_verify_result(StateData#state.socket)
+				(StateData#state.sockmod):get_peer_certificate(StateData#state.socket)
 				  of
-				0 ->
-				    [#xmlel{name = <<"mechanisms">>,
-					    attrs = [{<<"xmlns">>, ?NS_SASL}],
-					    children =
-						[#xmlel{name = <<"mechanism">>,
-							attrs = [],
-							children =
-							    [{xmlcdata,
-							      <<"EXTERNAL">>}]}]}];
-				CertVerifyRes ->
-				    case StateData#state.tls_certverify of
-				      true ->
-					  {error_cert_verif, CertVerifyRes,
-					   Cert};
-				      false -> []
-				    end
+				{ok, Cert} ->
+				    case
+				      (StateData#state.sockmod):get_verify_result(StateData#state.socket)
+					of
+				      0 ->
+					  case
+					    idna:domain_utf8_to_ascii(From)
+					      of
+					    false ->
+						{error, From,
+						 <<"Cannot decode 'from' attribute">>};
+					    PCAuthDomain ->
+						case
+						  lists:any(fun (D) ->
+								    match_domain(PCAuthDomain,
+										 D)
+							    end,
+							    get_cert_domains(Cert))
+						    of
+						  true ->
+						      {ok, From,
+						       <<"Success">>};
+						  false ->
+						      {error, From,
+						       <<"Certificate host name mismatch">>}
+						end
+					  end;
+				      CertVerifyRes ->
+					  {error, From,
+					   p1_tls:get_cert_verify_string(CertVerifyRes,
+									 Cert)}
+				    end;
+				error ->
+				    {error, From,
+				     <<"Cannot get peer certificate">>}
 			      end;
-			  error -> []
+			  _ ->
+			      {error, <<"(unknown)">>,
+			       <<"Got no valid 'from' attribute">>}
 			end;
-		    true -> []
+		    true ->
+			{no_verify, <<"(unknown)">>,
+			 <<"TLS not (yet) enabled">>}
 		 end,
 	  StartTLS = if StateData#state.tls_enabled -> [];
 			not StateData#state.tls_enabled and
@@ -267,11 +288,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 					[#xmlel{name = <<"required">>,
 						attrs = [], children = []}]}]
 		     end,
-	  case SASL of
-	    {error_cert_verif, CertVerifyResult, Certificate} ->
-		CertError = p1_tls:get_cert_verify_string(CertVerifyResult,
-						       Certificate),
-		RemoteServer = xml:get_attr_s(<<"from">>, Attrs),
+	  case Auth of
+	    {error, RemoteServer, CertError}
+		when StateData#state.tls_certverify ->
 		?INFO_MSG("Closing s2s connection: ~s <--> ~s (~s)",
 			  [StateData#state.server, RemoteServer, CertError]),
 		send_text(StateData,
@@ -285,8 +304,26 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 							       <<"">>)),
 		ejabberd_s2s_out:stop_connection(Pid),
 		{stop, normal, StateData};
-	    _ ->
-		send_element(StateData,
+	    {VerifyResult, RemoteServer, Msg} ->
+		{SASL, NewStateData} = case VerifyResult of
+					 ok ->
+					     {[#xmlel{name = <<"mechanisms">>,
+						      attrs = [{<<"xmlns">>, ?NS_SASL}],
+						      children =
+							  [#xmlel{name = <<"mechanism">>,
+								  attrs = [],
+								  children =
+								      [{xmlcdata,
+									<<"EXTERNAL">>}]}]}],
+					      StateData#state{auth_domain = RemoteServer}};
+					 error ->
+					     ?DEBUG("Won't accept certificate of ~s: ~s",
+						    [RemoteServer, Msg]),
+					     {[], StateData};
+					 no_verify ->
+					     {[], StateData}
+				       end,
+		send_element(NewStateData,
 			     #xmlel{name = <<"stream:features">>, attrs = [],
 				    children =
 					SASL ++
@@ -295,7 +332,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 								    Server, [],
 								    [Server])}),
 		{next_state, wait_for_feature_request,
-		 StateData#state{server = Server}}
+		 NewStateData#state{server = Server}}
 	  end;
       {<<"jabber:server">>, _, Server, true}
 	  when StateData#state.authenticated ->
@@ -330,7 +367,7 @@ wait_for_stream(closed, StateData) ->
 
 wait_for_feature_request({xmlstreamelement, El},
 			 StateData) ->
-    #xmlel{name = Name, attrs = Attrs, children = Els} = El,
+    #xmlel{name = Name, attrs = Attrs} = El,
     TLS = StateData#state.tls,
     TLSEnabled = StateData#state.tls_enabled,
     SockMod =
@@ -376,39 +413,11 @@ wait_for_feature_request({xmlstreamelement, El},
       {?NS_SASL, <<"auth">>} when TLSEnabled ->
 	  Mech = xml:get_attr_s(<<"mechanism">>, Attrs),
 	  case Mech of
-	    <<"EXTERNAL">> ->
-		Auth = jlib:decode_base64(xml:get_cdata(Els)),
-		AuthDomain = jlib:nameprep(Auth),
-		AuthRes = case
-			    (StateData#state.sockmod):get_peer_certificate(StateData#state.socket)
-			      of
-			    {ok, Cert} ->
-				case
-				  (StateData#state.sockmod):get_verify_result(StateData#state.socket)
-				    of
-				  0 ->
-				      case AuthDomain of
-					error -> false;
-					_ ->
-					    case
-					      idna:domain_utf8_to_ascii(AuthDomain)
-						of
-					      false -> false;
-					      PCAuthDomain ->
-						  lists:any(fun (D) ->
-								    match_domain(PCAuthDomain,
-										 D)
-							    end,
-							    get_cert_domains(Cert))
-					    end
-				      end;
-				  _ -> false
-				end;
-			    error -> false
-			  end,
+	    <<"EXTERNAL">> when StateData#state.auth_domain /= <<"">> ->
+		AuthDomain = StateData#state.auth_domain,
 		AllowRemoteHost = ejabberd_s2s:allow_host(<<"">>,
 							  AuthDomain),
-		if AuthRes andalso AllowRemoteHost ->
+		if AllowRemoteHost ->
 		       (StateData#state.sockmod):reset_stream(StateData#state.socket),
 		       send_element(StateData,
 				    #xmlel{name = <<"success">>,
@@ -420,8 +429,7 @@ wait_for_feature_request({xmlstreamelement, El},
 				     jlib:make_jid(<<"">>, AuthDomain, <<"">>)),
 		       {next_state, wait_for_stream,
 			StateData#state{streamid = new_id(),
-					authenticated = true,
-					auth_domain = AuthDomain}};
+					authenticated = true}};
 		   true ->
 		       send_element(StateData,
 				    #xmlel{name = <<"failure">>,
@@ -749,7 +757,7 @@ get_cert_domains(Cert) ->
 			  case 'OTP-PUB-KEY':decode('X520CommonName', Val) of
 			    {ok, {_, D1}} ->
 				D = if is_binary(D1) -> D1;
-				       is_binary(D1) -> (D1);
+				       is_list(D1) -> list_to_binary(D1);
 				       true -> error
 				    end,
 				if D /= error ->
@@ -770,8 +778,7 @@ get_cert_domains(Cert) ->
       lists:flatmap(fun (#'Extension'{extnID =
 					  ?'id-ce-subjectAltName',
 				      extnValue = Val}) ->
-			    BVal = if is_binary(Val) -> iolist_to_binary(Val);
-				      is_binary(Val) -> Val;
+			    BVal = if is_list(Val) -> list_to_binary(Val);
 				      true -> Val
 				   end,
 			    case 'OTP-PUB-KEY':decode('SubjectAltName', BVal)
@@ -811,9 +818,9 @@ get_cert_domains(Cert) ->
 							  _ -> []
 							end;
 						    ({dNSName, D})
-							when is_binary(D) ->
+							when is_list(D) ->
 							case
-							  jlib:string_to_jid(D)
+							  jlib:string_to_jid(list_to_binary(D))
 							    of
 							  #jid{luser = <<"">>,
 							       lserver = LD,
