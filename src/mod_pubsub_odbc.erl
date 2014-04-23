@@ -885,10 +885,10 @@ unsubscribe_user(Entity, Owner) ->
     Host = host(element(2, BJID)),
     spawn(fun () ->
 		  lists:foreach(fun (PType) ->
-					{result, Subscriptions} =
-					    node_action(Host, PType,
+					case node_action(Host, PType,
 							get_entity_subscriptions,
-							[Host, Entity]),
+							[Host, Entity]) of
+						{result, Subscriptions} ->
 					lists:foreach(fun ({#pubsub_node{options
 									     =
 									     Options,
@@ -922,7 +922,10 @@ unsubscribe_user(Entity, Owner) ->
 							      end;
 							  (_) -> ok
 						      end,
-						      Subscriptions)
+						      Subscriptions);
+					Error ->
+					    ?DEBUG("Error at node_action: ~p", [Error])
+					end
 				end,
 				plugins(Host))
 	  end).
