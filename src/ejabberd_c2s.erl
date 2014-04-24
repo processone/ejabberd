@@ -550,8 +550,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				[StateData#state.socket,
 				 jlib:jid_to_string(JID), AuthModule]),
 			SID = {now(), self()},
-			Conn = (StateData#state.sockmod):get_conn_type(
-				    StateData#state.socket),
+			Conn = get_conn_type(StateData),
 			Info = [{ip, StateData#state.ip}, {conn, Conn},
 				    {auth_module, AuthModule}],
                         Res = jlib:make_result_iq_reply(
