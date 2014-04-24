@@ -158,6 +158,7 @@ CREATE TABLE privacy_list_data (
     match_presence_in boolean NOT NULL,
     match_presence_out boolean NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8;
+CREATE INDEX i_privacy_list_data_id ON privacy_list_data(id);
 
 CREATE TABLE private_storage (
     username varchar(250) NOT NULL,
