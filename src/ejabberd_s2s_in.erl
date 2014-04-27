@@ -297,13 +297,6 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 			  <<(xml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
 									   CertError)))/binary,
 			    (?STREAM_TRAILER)/binary>>),
-		{atomic, Pid} =
-		    ejabberd_s2s:find_connection(jlib:make_jid(<<"">>,
-							       Server, <<"">>),
-						 jlib:make_jid(<<"">>,
-							       RemoteServer,
-							       <<"">>)),
-		ejabberd_s2s_out:stop_connection(Pid),
 		{stop, normal, StateData};
 	    {VerifyResult, RemoteServer, Msg} ->
 		{SASL, NewStateData} = case VerifyResult of
