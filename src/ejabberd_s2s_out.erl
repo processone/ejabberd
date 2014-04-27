@@ -69,6 +69,7 @@
          use_v10 = true                   :: boolean(),
          tls = false                      :: boolean(),
 	 tls_required = false             :: boolean(),
+	 tls_certverify = false           :: boolean(),
          tls_enabled = false              :: boolean(),
 	 tls_options = [connect]          :: list(),
          authenticated = false            :: boolean(),
@@ -160,28 +161,27 @@ stop_connection(Pid) -> p1_fsm:send_event(Pid, closed).
 init([From, Server, Type]) ->
     process_flag(trap_exit, true),
     ?DEBUG("started: ~p", [{From, Server, Type}]),
-    {TLS, TLSRequired} = case
-			   ejabberd_config:get_option(
-                             s2s_use_starttls,
-                             fun(true) -> true;
-                                (false) -> false;
-                                (optional) -> optional;
-                                (required) -> required;
-                                (required_trusted) -> required_trusted
-                             end)
-			     of
-			   UseTls
-			       when (UseTls == undefined) or
-				      (UseTls == false) ->
-			       {false, false};
-			   UseTls
-			       when (UseTls == true) or (UseTls == optional) ->
-			       {true, false};
-			   UseTls
-			       when (UseTls == required) or
-				      (UseTls == required_trusted) ->
-			       {true, true}
-			 end,
+    {TLS, TLSRequired, TLSCertverify} =
+	case ejabberd_config:get_option(
+	       s2s_use_starttls,
+	       fun(true) -> true;
+		  (false) -> false;
+		  (optional) -> optional;
+		  (required) -> required;
+		  (required_trusted) -> required_trusted
+	       end)
+	    of
+	  UseTls
+	      when (UseTls == undefined) or (UseTls == false) ->
+	      {false, false, false};
+	  UseTls
+	      when (UseTls == true) or (UseTls == optional) ->
+	      {true, false, false};
+	  required ->
+	      {true, true, false};
+	  required_trusted ->
+	      {true, true, true}
+	end,
     UseV10 = TLS,
     TLSOpts1 = case
 		ejabberd_config:get_option(
@@ -223,9 +223,9 @@ init([From, Server, Type]) ->
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     {ok, open_socket,
      #state{use_v10 = UseV10, tls = TLS,
-	    tls_required = TLSRequired, tls_options = TLSOpts,
-	    queue = queue:new(), myname = From, server = Server,
-	    new = New, verify = Verify, timer = Timer}}.
+	    tls_required = TLSRequired, tls_certverify = TLSCertverify,
+	    tls_options = TLSOpts, queue = queue:new(), myname = From,
+	    server = Server, new = New, verify = Verify, timer = Timer}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -345,35 +345,57 @@ open_socket2(Type, Addr, Port) ->
 
 wait_for_stream({xmlstreamstart, _Name, Attrs},
 		StateData) ->
+    {CertCheckRes, CertCheckMsg, NewStateData} =
+	if StateData#state.tls_certverify, StateData#state.tls_enabled ->
+	       {Res, Msg} =
+		   ejabberd_s2s:check_peer_certificate(ejabberd_socket,
+						       StateData#state.socket,
+						       StateData#state.server),
+	       ?DEBUG("Certificate verification result for ~s: ~s",
+		      [StateData#state.server, Msg]),
+	       {Res, Msg, StateData#state{tls_certverify = false}};
+	   true ->
+	       {no_verify, <<"Not verified">>, StateData}
+	end,
     case {xml:get_attr_s(<<"xmlns">>, Attrs),
 	  xml:get_attr_s(<<"xmlns:db">>, Attrs),
 	  xml:get_attr_s(<<"version">>, Attrs) == <<"1.0">>}
 	of
+      _ when CertCheckRes == error ->
+	  send_text(NewStateData,
+		    <<(xml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
+								     CertCheckMsg)))/binary,
+		      (?STREAM_TRAILER)/binary>>),
+	  ?INFO_MSG("Closing s2s connection: ~s -> ~s (~s)",
+		    [NewStateData#state.myname,
+		     NewStateData#state.server,
+		     CertCheckMsg]),
+	  {stop, normal, NewStateData};
       {<<"jabber:server">>, <<"jabber:server:dialback">>,
        false} ->
-	  send_db_request(StateData);
+	  send_db_request(NewStateData);
       {<<"jabber:server">>, <<"jabber:server:dialback">>,
        true}
-	  when StateData#state.use_v10 ->
-	  {next_state, wait_for_features, StateData, ?FSMTIMEOUT};
+	  when NewStateData#state.use_v10 ->
+	  {next_state, wait_for_features, NewStateData, ?FSMTIMEOUT};
       %% Clause added to handle Tigase's workaround for an old ejabberd bug:
       {<<"jabber:server">>, <<"jabber:server:dialback">>,
        true}
-	  when not StateData#state.use_v10 ->
-	  send_db_request(StateData);
+	  when not NewStateData#state.use_v10 ->
+	  send_db_request(NewStateData);
       {<<"jabber:server">>, <<"">>, true}
-	  when StateData#state.use_v10 ->
+	  when NewStateData#state.use_v10 ->
 	  {next_state, wait_for_features,
-	   StateData#state{db_enabled = false}, ?FSMTIMEOUT};
+	   NewStateData#state{db_enabled = false}, ?FSMTIMEOUT};
       {NSProvided, DB, _} ->
-	  send_text(StateData, ?INVALID_NAMESPACE_ERR),
+	  send_text(NewStateData, ?INVALID_NAMESPACE_ERR),
 	  ?INFO_MSG("Closing s2s connection: ~s -> ~s (invalid "
 		    "namespace).~nNamespace provided: ~p~nNamespac"
 		    "e expected: \"jabber:server\"~nxmlns:db "
 		    "provided: ~p~nAll attributes: ~p",
-		    [StateData#state.myname, StateData#state.server,
+		    [NewStateData#state.myname, NewStateData#state.server,
 		     NSProvided, DB, Attrs]),
-	  {stop, normal, StateData}
+	  {stop, normal, NewStateData}
     end;
 wait_for_stream({xmlstreamerror, _}, StateData) ->
     send_text(StateData,
@@ -736,8 +758,8 @@ wait_for_starttls_proceed({xmlstreamelement, El},
 					       tls_options = TLSOpts},
 		send_text(NewStateData,
 			  io_lib:format(?STREAM_HEADER,
-					[StateData#state.myname,
-					 StateData#state.server,
+					[NewStateData#state.myname,
+					 NewStateData#state.server,
 					 <<" version='1.0'">>])),
 		{next_state, wait_for_stream, NewStateData,
 		 ?FSMTIMEOUT};

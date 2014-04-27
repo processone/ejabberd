@@ -30,8 +30,7 @@
 -behaviour(p1_fsm).
 
 %% External exports
--export([start/2, start_link/2, match_domain/2,
-	 socket_type/0]).
+-export([start/2, start_link/2, socket_type/0]).
 
 %% gen_fsm callbacks
 -export([init/1, wait_for_stream/2,
@@ -43,14 +42,6 @@
 -include("logger.hrl").
 
 -include("jlib.hrl").
-
--include_lib("public_key/include/public_key.hrl").
-
--define(PKIXEXPLICIT, 'OTP-PUB-KEY').
-
--define(PKIXIMPLICIT, 'OTP-PUB-KEY').
-
--include("XmppAddr.hrl").
 
 -define(DICT, dict).
 
@@ -227,45 +218,11 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 	  Auth = if StateData#state.tls_enabled ->
 			case jlib:nameprep(xml:get_attr_s(<<"from">>, Attrs)) of
 			  From when From /= <<"">>, From /= error ->
-			      case
-				(StateData#state.sockmod):get_peer_certificate(StateData#state.socket)
-				  of
-				{ok, Cert} ->
-				    case
-				      (StateData#state.sockmod):get_verify_result(StateData#state.socket)
-					of
-				      0 ->
-					  case
-					    idna:domain_utf8_to_ascii(From)
-					      of
-					    false ->
-						{error, From,
-						 <<"Cannot decode 'from' attribute">>};
-					    PCAuthDomain ->
-						case
-						  lists:any(fun (D) ->
-								    match_domain(PCAuthDomain,
-										 D)
-							    end,
-							    get_cert_domains(Cert))
-						    of
-						  true ->
-						      {ok, From,
-						       <<"Success">>};
-						  false ->
-						      {error, From,
-						       <<"Certificate host name mismatch">>}
-						end
-					  end;
-				      CertVerifyRes ->
-					  {error, From,
-					   p1_tls:get_cert_verify_string(CertVerifyRes,
-									 Cert)}
-				    end;
-				error ->
-				    {error, From,
-				     <<"Cannot get peer certificate">>}
-			      end;
+			      {Result, Message} =
+				  ejabberd_s2s:check_peer_certificate(StateData#state.sockmod,
+								      StateData#state.socket,
+								      From),
+			      {Result, From, Message};
 			  _ ->
 			      {error, <<"(unknown)">>,
 			       <<"Got no valid 'from' attribute">>}
@@ -745,124 +702,6 @@ is_key_packet(#xmlel{name = Name, attrs = Attrs,
      xml:get_attr_s(<<"from">>, Attrs),
      xml:get_attr_s(<<"id">>, Attrs), xml:get_cdata(Els)};
 is_key_packet(_) -> false.
-
-get_cert_domains(Cert) ->
-    {rdnSequence, Subject} =
-	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.subject,
-    Extensions =
-	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.extensions,
-    lists:flatmap(fun (#'AttributeTypeAndValue'{type =
-						    ?'id-at-commonName',
-						value = Val}) ->
-			  case 'OTP-PUB-KEY':decode('X520CommonName', Val) of
-			    {ok, {_, D1}} ->
-				D = if is_binary(D1) -> D1;
-				       is_list(D1) -> list_to_binary(D1);
-				       true -> error
-				    end,
-				if D /= error ->
-				       case jlib:string_to_jid(D) of
-					 #jid{luser = <<"">>, lserver = LD,
-					      lresource = <<"">>} ->
-					     [LD];
-					 _ -> []
-				       end;
-				   true -> []
-				end;
-			    _ -> []
-			  end;
-		      (_) -> []
-		  end,
-		  lists:flatten(Subject))
-      ++
-      lists:flatmap(fun (#'Extension'{extnID =
-					  ?'id-ce-subjectAltName',
-				      extnValue = Val}) ->
-			    BVal = if is_list(Val) -> list_to_binary(Val);
-				      true -> Val
-				   end,
-			    case 'OTP-PUB-KEY':decode('SubjectAltName', BVal)
-				of
-			      {ok, SANs} ->
-				  lists:flatmap(fun ({otherName,
-						      #'AnotherName'{'type-id' =
-									 ?'id-on-xmppAddr',
-								     value =
-									 XmppAddr}}) ->
-							case
-							  'XmppAddr':decode('XmppAddr',
-									    XmppAddr)
-							    of
-							  {ok, D}
-							      when
-								is_binary(D) ->
-							      case
-								jlib:string_to_jid((D))
-								  of
-								#jid{luser =
-									 <<"">>,
-								     lserver =
-									 LD,
-								     lresource =
-									 <<"">>} ->
-								    case
-								      idna:domain_utf8_to_ascii(LD)
-									of
-								      false ->
-									  [];
-								      PCLD ->
-									  [PCLD]
-								    end;
-								_ -> []
-							      end;
-							  _ -> []
-							end;
-						    ({dNSName, D})
-							when is_list(D) ->
-							case
-							  jlib:string_to_jid(list_to_binary(D))
-							    of
-							  #jid{luser = <<"">>,
-							       lserver = LD,
-							       lresource =
-								   <<"">>} ->
-							      [LD];
-							  _ -> []
-							end;
-						    (_) -> []
-						end,
-						SANs);
-			      _ -> []
-			    end;
-			(_) -> []
-		    end,
-		    Extensions).
-
-match_domain(Domain, Domain) -> true;
-match_domain(Domain, Pattern) ->
-    DLabels = str:tokens(Domain, <<".">>),
-    PLabels = str:tokens(Pattern, <<".">>),
-    match_labels(DLabels, PLabels).
-
-match_labels([], []) -> true;
-match_labels([], [_ | _]) -> false;
-match_labels([_ | _], []) -> false;
-match_labels([DL | DLabels], [PL | PLabels]) ->
-    case lists:all(fun (C) ->
-			   $a =< C andalso C =< $z orelse
-			     $0 =< C andalso C =< $9 orelse
-			       C == $- orelse C == $*
-		   end,
-		   binary_to_list(PL))
-	of
-      true ->
-	  Regexp = ejabberd_regexp:sh_to_awk(PL),
-	  case ejabberd_regexp:run(DL, Regexp) of
-	    match -> match_labels(DLabels, PLabels);
-	    nomatch -> false
-	  end;
-      false -> false
-    end.
 
 fsm_limit_opts(Opts) ->
     case lists:keysearch(max_fsm_queue, 1, Opts) of
