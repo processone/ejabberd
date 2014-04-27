@@ -1277,7 +1277,7 @@ wait_for_resume(closed, StateData) ->
     ?DEBUG("Ignoring 'closed' event while waiting for resumption", []),
     fsm_next_state(wait_for_resume, StateData);
 wait_for_resume(Event, StateData) ->
-    ?WARNING_MSG("Ignoring event while waiting for resumption: ~p", [Event]),
+    ?INFO_MSG("Ignoring event while waiting for resumption: ~p", [Event]),
     fsm_next_state(wait_for_resume, StateData).
 
 %%----------------------------------------------------------------------
@@ -2727,8 +2727,8 @@ handle_resume(StateData, Attrs) ->
 	  {ok, NewState};
       {error, El, Msg} ->
 	  send_element(StateData, El),
-	  ?WARNING_MSG("Cannot resume session for ~s@~s: ~s",
-		       [StateData#state.user, StateData#state.server, Msg]),
+	  ?INFO_MSG("Cannot resume session for ~s@~s: ~s",
+		    [StateData#state.user, StateData#state.server, Msg]),
 	  error
     end.
 
