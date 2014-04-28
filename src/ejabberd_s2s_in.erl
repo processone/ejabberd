@@ -294,15 +294,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 		?INFO_MSG("Closing s2s connection: ~s <--> ~s (~s)",
 			  [StateData#state.server, RemoteServer, CertError]),
 		send_text(StateData,
-			  xml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
-									CertError))),
-		{atomic, Pid} =
-		    ejabberd_s2s:find_connection(jlib:make_jid(<<"">>,
-							       Server, <<"">>),
-						 jlib:make_jid(<<"">>,
-							       RemoteServer,
-							       <<"">>)),
-		ejabberd_s2s_out:stop_connection(Pid),
+			  <<(xml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
+									   CertError)))/binary,
+			    (?STREAM_TRAILER)/binary>>),
 		{stop, normal, StateData};
 	    {VerifyResult, RemoteServer, Msg} ->
 		{SASL, NewStateData} = case VerifyResult of
