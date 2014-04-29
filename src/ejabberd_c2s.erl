@@ -107,7 +107,7 @@
 		auth_module = unknown,
 		ip,
 		aux_fields = [],
-		lang}).
+		lang = <<"">>}).
 
 %-define(DBGFSM, true).
 
