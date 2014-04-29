@@ -82,8 +82,10 @@ get_pids(Host) ->
     [R#sql_pool.pid || R <- Rs].
 
 get_random_pid(Host) ->
-    Pids = get_pids(Host),
-    lists:nth(erlang:phash(now(), length(Pids)), Pids).
+    case get_pids(Host) of
+      [] -> none;
+      Pids -> lists:nth(erlang:phash(now(), length(Pids)), Pids)
+    end.
 
 add_pid(Host, Pid) ->
     F = fun () ->
