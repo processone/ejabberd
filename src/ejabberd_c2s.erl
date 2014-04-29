@@ -107,7 +107,7 @@
 		auth_module = unknown,
 		ip,
 		aux_fields = [],
-		lang}).
+		lang = <<"">>}).
 
 %-define(DBGFSM, true).
 
@@ -1229,6 +1229,10 @@ handle_info(replaced, StateName, StateData) ->
     Lang = StateData#state.lang,
     Xmlelement = ?SERRT_CONFLICT(Lang, <<"Replaced by new connection">>),
     handle_info({kick, replaced, Xmlelement}, StateName, StateData);
+handle_info(disconnect, StateName, StateData) ->
+    Lang = StateData#state.lang,
+    Xmlelement = ?SERRT_POLICY_VIOLATION(Lang, <<"has been kicked">>),
+    handle_info({kick, kicked_by_admin, Xmlelement}, StateName, StateData);
 handle_info({kick, Reason, Xmlelement}, _StateName, StateData) ->
     send_element(StateData, Xmlelement),
     send_trailer(StateData),
