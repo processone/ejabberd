@@ -487,12 +487,13 @@ register_account(Username, Host, Password) ->
     Access = gen_mod:get_module_opt(Host, mod_register, access,
                                     fun(A) when is_atom(A) -> A end,
                                     all),
-    JID = jlib:make_jid(Username, Host, <<"">>),
-    Match = acl:match_rule(Host, Access, JID),
-    case {JID, Match} of
-      {error, _} -> {error, invalid_jid};
-      {_, deny} -> {error, not_allowed};
-      {_, allow} -> register_account2(Username, Host, Password)
+    case jlib:make_jid(Username, Host, <<"">>) of
+      error -> {error, invalid_jid};
+      JID ->
+        case acl:match_rule(Host, Access, JID) of
+          deny -> {error, not_allowed};
+          allow -> register_account2(Username, Host, Password)
+        end
     end.
 
 register_account2(Username, Host, Password) ->
