@@ -600,7 +600,9 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 		 {next_state, stream_established,
 		  StateData#state{queue = queue:new()}};
 	     SASLEXT and StateData#state.try_auth and
-	       (StateData#state.new /= false) ->
+	       (StateData#state.new /= false) and
+		 (StateData#state.tls_enabled or
+		   not StateData#state.tls_required) ->
 		 send_element(StateData,
 			      #xmlel{name = <<"auth">>,
 				     attrs =
