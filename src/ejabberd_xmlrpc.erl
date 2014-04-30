@@ -431,8 +431,8 @@ format_arg(Arg, binary) when is_binary(Arg) -> Arg;
 format_arg(Arg, string) when is_list(Arg) -> list_to_binary(Arg);
 format_arg(Arg, string) when is_binary(Arg) -> Arg;
 format_arg(Arg, Format) ->
-    ?ERROR_MSG("don't know how to format Arg ~p for format ~p , [Arg, Format]")
-    error.
+    ?ERROR_MSG("don't know how to format Arg ~p for format ~p", [Arg, Format]),
+    throw({error_formatting_argument, Arg, Format}).
 
 %% -----------------------------
 %% Result
