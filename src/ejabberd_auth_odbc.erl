@@ -212,6 +212,7 @@ is_user_exists(User, Server) ->
 		true; %% Account exists
 	    {selected, [<<"password">>], []} ->
 		false; %% Account does not exist
+	    {error, unknownhost} -> false;
 	    {error, Error} -> {error, Error}
 	  catch
 	    _:B -> {error, B}
