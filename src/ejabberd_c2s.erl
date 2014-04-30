@@ -314,11 +314,11 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					  end,
 					  fun(U, P) ->
 						  ejabberd_auth:check_password_with_authmodule(
-						    U, Server, P)
+						    U, Server, P, StateData#state.ip)
 					  end,
 					  fun(U, P, D, DG) ->
 						  ejabberd_auth:check_password_with_authmodule(
-						    U, Server, P, D, DG)
+						    U, Server, P, D, DG, StateData#state.ip)
 					  end),
 				    Mechs = lists:map(
 					      fun(S) ->
@@ -512,7 +512,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
                     DGen = fun(PW) ->
                              sha:sha(StateData#state.streamid ++ PW) end,
 		    case ejabberd_auth:check_password_with_authmodule(
-			   U, StateData#state.server, P, D, DGen) of
+			   U, StateData#state.server, P, D, DGen, StateData#state.ip) of
 			{true, AuthModule} ->
 			    ?INFO_MSG(
 			       "(~w) Accepted legacy authentication for ~s by ~p",
@@ -522,6 +522,14 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    Conn = get_conn_type(StateData),
 			    Info = [{ip, StateData#state.ip}, {conn, Conn},
 				    {auth_module, AuthModule}],
+
+				case ejabberd_hooks:run_fold(pre_open_session, true, [U, StateData#state.server, R, Info]) of
+				false ->
+					?INFO_MSG("(~w) Pre open session check failed ~s", [StateData#state.socket, jlib:jid_to_string(JID)]),
+					Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
+					send_element(StateData, Err),
+					{stop, normal, StateData};
+				true ->
 			    Res1 = jlib:make_result_iq_reply(El),
 			    Res = setelement(4, Res1, []),
 			    send_element(StateData, Res),
@@ -554,7 +562,8 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 					     pres_t = ?SETS:from_list(Ts1),
 					     privacy_list = PrivList},
 			    fsm_next_state_pack(session_established,
-                                                NewStateData);
+                                                NewStateData)
+				end;
 			_ ->
 			    IP = peerip(StateData#state.sockmod, StateData#state.socket),
 			    ?INFO_MSG(
@@ -961,6 +970,14 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    Conn = get_conn_type(StateData),
 		    Info = [{ip, StateData#state.ip}, {conn, Conn},
 			    {auth_module, StateData#state.auth_module}],
+			case ejabberd_hooks:run_fold(pre_open_session, true, [U, StateData#state.server, R, Info]) of
+			false ->
+				ejabberd_hooks:run(forbidden_session_hook, StateData#state.server, [JID]),
+				?INFO_MSG("(~w) Pre open session check failed ~s", [StateData#state.socket, jlib:jid_to_string(JID)]),
+				Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
+				send_element(StateData, Err),
+				{stop, normal, StateData};
+			true ->
 		    ejabberd_sm:open_session(
 		      SID, U, StateData#state.server, R, Info),
                     NewStateData =
@@ -971,7 +988,8 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 				     pres_t = ?SETS:from_list(Ts1),
 				     privacy_list = PrivList},
 		    fsm_next_state_pack(session_established,
-                                        NewStateData);
+                                        NewStateData)
+			end;
 		_ ->
 		    ejabberd_hooks:run(forbidden_session_hook,
 				       StateData#state.server, [JID]),

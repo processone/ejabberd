@@ -34,8 +34,8 @@
 	 set_password/3,
 	 check_password/3,
 	 check_password/5,
-	 check_password_with_authmodule/3,
-	 check_password_with_authmodule/5,
+	 check_password_with_authmodule/4,
+	 check_password_with_authmodule/6,
 	 try_register/3,
 	 dirty_get_registered_users/0,
 	 get_vh_registered_users/1,
@@ -129,15 +129,32 @@ check_password_with_authmodule(User, Server, Password, Digest, DigestGen) ->
     check_password_loop(auth_modules(Server), [User, Server, Password,
 					       Digest, DigestGen]).
 
+check_password_with_authmodule(User, Server, Password, IP) ->
+    check_password_loop(auth_modules(Server), [User, Server, Password, IP]).
+
+check_password_with_authmodule(User, Server, Password, Digest, DigestGen, IP) ->
+    check_password_loop(auth_modules(Server), [User, Server, Password,
+					       Digest, DigestGen, IP]).
+
 check_password_loop([], _Args) ->
     false;
 check_password_loop([AuthModule | AuthModules], Args) ->
-    case apply(AuthModule, check_password, Args) of
-	true ->
-	    {true, AuthModule};
-	false ->
-	    check_password_loop(AuthModules, Args)
-    end.
+	case lists:member({check_password,length(Args)}, apply(AuthModule, module_info, [exports])) of
+		true ->
+			case apply(AuthModule, check_password, Args) of
+				true ->
+					{true, AuthModule};
+				false ->
+					check_password_loop(AuthModules, Args)
+			end;
+		false ->
+			case apply(AuthModule, check_password, lists:sublist(Args, length(Args) - 1)) of
+				true ->
+					{true, AuthModule};
+				false ->
+					check_password_loop(AuthModules, Args)
+			end
+	 end.
 
 
 %% @spec (User::string(), Server::string(), Password::string()) ->
