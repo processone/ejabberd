@@ -140,7 +140,10 @@ process([<<"change_password">>],
                 list_to_binary([?T(<<"There was an error changing the password: ">>),
                                 ?T(get_error_text(Error))]),
 	  {404, [], ErrorText}
-    end.
+    end;
+
+process(Path, _Request) ->
+    {404, [], "Not Found"}.
 
 %%%----------------------------------------------------------------------
 %%% CSS
