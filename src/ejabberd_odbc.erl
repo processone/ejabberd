@@ -141,7 +141,7 @@ sql_call(Host, Msg) ->
     case get(?STATE_KEY) of
       undefined ->
         case ejabberd_odbc_sup:get_random_pid(Host) of
-          none -> ?WARNING_MSG("SQL calling unknown host: ~p~n", [Host]);
+          none -> {error, unknownhost};
           Pid ->
             (?GEN_FSM):sync_send_event(Pid,{sql_cmd, Msg, now()},
                                        ?TRANSACTION_TIMEOUT)
