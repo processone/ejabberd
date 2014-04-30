@@ -151,6 +151,19 @@ init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 	{ok, Socket} ->
 	    %% Inform my parent that this port was opened succesfully
 	    proc_lib:init_ack({ok, self()}),
+	    case erlang:function_exported(Module, udp_init, 2) of
+		true ->
+		    case catch Module:udp_init(Socket, Opts) of
+			{'EXIT', _} = Err ->
+			    ?ERROR_MSG("failed to process callback function "
+				       "~p:~s(~p, ~p): ~p",
+				       [Module, udp_init, Socket, Opts, Err]);
+			_ ->
+			    ok
+		    end;
+		false ->
+		    ok
+	    end,
 	    udp_recv(Socket, Module, Opts);
 	{error, Reason} ->
 	    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
@@ -160,6 +173,19 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
     %% Inform my parent that this port was opened succesfully
     proc_lib:init_ack({ok, self()}),
+    case erlang:function_exported(Module, tcp_init, 2) of
+	true ->
+	    case catch Module:tcp_init(ListenSocket, Opts) of
+		{'EXIT', _} = Err ->
+		    ?ERROR_MSG("failed to process callback function "
+			       "~p:~s(~p, ~p): ~p",
+			       [Module, tcp_init, ListenSocket, Opts, Err]);
+		_ ->
+		    ok
+	    end;
+	false ->
+	    ok
+    end,
     %% And now start accepting connection attempts
     accept(ListenSocket, Module, Opts).
 
@@ -342,6 +368,7 @@ start_listener2(Port, Module, Opts) ->
     %% But it doesn't hurt to attempt to start it for any listener.
     %% So, it's normal (and harmless) that in most cases this call returns: {error, {already_started, pid()}}
     maybe_start_stun(Module),
+    maybe_start_sip(Module),
     start_module_sup(Port, Module),
     start_listener_sup(Port, Module, Opts).
 
@@ -461,6 +488,11 @@ strip_frontend(Module) when is_atom(Module) -> Module.
 maybe_start_stun(ejabberd_stun) ->
     ejabberd:start_app(p1_stun);
 maybe_start_stun(_) ->
+    ok.
+
+maybe_start_sip(esip_socket) ->
+    ejabberd:start_app(esip);
+maybe_start_sip(_) ->
     ok.
 
 %%%
@@ -642,7 +674,11 @@ prepare_ip(IP) when is_binary(IP) ->
 
 prepare_mod(ejabberd_stun) ->
     prepare_mod(stun);
+prepare_mod(ejabberd_sip) ->
+    prepare_mod(sip);
 prepare_mod(stun) ->
     stun;
+prepare_mod(sip) ->
+    esip_socket;
 prepare_mod(Mod) when is_atom(Mod) ->
     Mod.

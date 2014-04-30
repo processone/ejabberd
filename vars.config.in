@@ -28,6 +28,7 @@
 {json, @json@}.
 {http, @http@}.
 {lager, @lager@}.
+{sip, @sip@}.
 {iconv, @iconv@}.
 
 %% Version

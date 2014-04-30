@@ -93,6 +93,7 @@
 \newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
 \newcommand{\modsharedrosterldap}{\module{mod\_shared\_roster\_ldap}}
 \newcommand{\modsic}{\module{mod\_sic}}
+\newcommand{\modsip}{\module{mod\_sip}}
 \newcommand{\modstats}{\module{mod\_stats}}
 \newcommand{\modtime}{\module{mod\_time}}
 \newcommand{\modvcard}{\module{mod\_vcard}}
@@ -395,6 +396,9 @@ Some options that you may be interested in modifying:
 
         \titem{--enable-zlib}
         Enable Stream Compression (XEP-0138) using zlib.
+
+        \titem{--enable-sip}
+        Enable SIP support (see section \ref{sip}).
 
         \titem{--enable-stun}
         Enable STUN support (see section \ref{stun}).
@@ -883,6 +887,10 @@ The available modules, their purpose and the options allowed by each one are:
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
     Options: \texttt{access}, \texttt{hosts}, \texttt{max\_fsm\_queue},
     \texttt{service\_check\_from}, \texttt{shaper\_rule}
+  \titem{\texttt{ejabberd\_sip}}
+    Handles SIP requests as defined in
+    \footahref{http://tools.ietf.org/html/rfc3261}{RFC 3261}.\\
+    Options: \texttt{certfile}, \texttt{tls}
   \titem{\texttt{ejabberd\_stun}}
     Handles STUN Binding requests as defined in
     \footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}.\\
@@ -1961,7 +1969,7 @@ listen:
 
 \ejabberd{} is able to act as a stand-alone STUN server
 (\footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}). Currently only Binding usage
-is supported. In that role \ejabberd{} helps clients with Jingle ICE (\xepref{0176}) support to discover their external addresses and ports.
+is supported. In that role \ejabberd{} helps clients with ICE (\footahref{http://tools.ietf.org/html/rfc5245}{RFC 5245}) or Jingle ICE (\xepref{0176}) support to discover their external addresses and ports.
 
 You should configure \term{ejabberd\_stun} listening module as described in \ref{listened} section.
 If \option{certfile} option is defined, \ejabberd{} multiplexes TCP and
@@ -1999,6 +2007,61 @@ Example DNS SRV configuration:
 _stun._udp   IN SRV  0 0 3478 stun.example.com.
 _stun._tcp   IN SRV  0 0 3478 stun.example.com.
 _stuns._tcp  IN SRV  0 0 5349 stun.example.com.
+\end{verbatim}
+
+\makesubsection{sip}{SIP}
+\ind{options!sip}\ind{sip}
+
+\ejabberd{} has built-in SIP support. In order to activate it you need to add
+listeners for it, configure DNS properly and enable \modsip{} for
+the desired virtual host.
+
+To add a listener you should configure \term{ejabberd\_sip} listening module as
+described in \ref{listened} section. If option \option{tls} is specified, option
+\option{certfile} must be specified as well, otherwise incoming TLS connections would fail.
+
+Example configuration with standard ports
+(as per \footahref{http://tools.ietf.org/html/rfc3261}{RFC 3261}):
+\begin{verbatim}
+listen:
+  ...
+  - 
+    port: 5060
+    transport: udp
+    module: ejabberd_sip
+  - 
+    port: 5060
+    module: ejabberd_sip
+  -
+    port: 5061
+    module: ejabberd_sip
+    tls: true
+    certfile: "/etc/ejabberd/server.pem"
+  ...
+\end{verbatim}
+
+Note that there is no StartTLS support in SIP and \footahref{http://en.wikipedia.org/wiki/Server\_Name\_Indication}{SNI} support is somewhat tricky, so for TLS you have to configure
+different virtual hosts on different ports if you have different certificate files for them.
+
+Next you need to configure DNS SIP records for your virtual domains.
+Refer to \footahref{http://tools.ietf.org/html/rfc3263}{RFC 3263} for the detailed explanation.
+Simply put, you should add NAPTR and SRV records for your domains.
+Skip NAPTR configuration if your DNS provider doesn't support this type of records.
+It's not fatal, however, highly recommended.
+
+Example configuration of NAPTR records:
+\begin{verbatim}
+example.com IN NAPTR 10  0 "s" "SIPS+D2T" "" _sips._tcp.example.com.
+example.com IN NAPTR 20  0 "s" "SIP+D2T" "" _sip._tcp.example.com.
+example.com IN NAPTR 30  0 "s" "SIP+D2U" "" _sip._udp.example.com.
+\end{verbatim}
+
+Example configuration of SRV records with standard ports
+(as per \footahref{http://tools.ietf.org/html/rfc3261}{RFC 3261}):
+\begin{verbatim}
+_sip._udp   IN SRV  0 0 5060 sip.example.com.
+_sip._tcp   IN SRV  0 0 5060 sip.example.com.
+_sips._tcp  IN SRV  0 0 5061 sip.example.com.
 \end{verbatim}
 
 \makesubsection{includeconfigfile}{Include Additional Configuration Files}
@@ -2578,6 +2641,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} \\
     \hline \ahrefloc{modsharedrosterldap}{\modsharedrosterldap{}} & LDAP Shared roster management & \modroster{} \\
     \hline \ahrefloc{modsic}{\modsic{}} & Server IP Check (\xepref{0279}) &  \\
+    \hline \ahrefloc{modsip}{\modsip{}} & SIP Registrar/Proxy (\footahref{http://tools.ietf.org/html/rfc3261}{RFC 3261}) & \term{ejabberd\_sip} \\
     \hline \ahrefloc{modstats}{\modstats{}} & Statistics Gathering (\xepref{0039}) &  \\
     \hline \ahrefloc{modtime}{\modtime{}} & Entity Time (\xepref{0202}) &  \\
     \hline \ahrefloc{modvcard}{\modvcard{}} & vcard-temp (\xepref{0054}) &  \\
@@ -4616,6 +4680,49 @@ enables a client to discover its external IP address.
 Options:
 \begin{description}
 \iqdiscitem{\ns{urn:xmpp:sic:0}}
+\end{description}
+
+\makesubsection{modsip}{\modsip{}}
+\ind{modules!\modsip{}}
+This module adds SIP proxy/registrar support for the corresponding virtual host.
+Note that it is not enough to just load this module only. You should also configure
+listeners and DNS records properly. See section \ref{sip} for the full explanation.
+
+Example configuration:
+\begin{verbatim}
+modules:
+  ...
+  mod_sip: {}
+  ...
+\end{verbatim}
+
+Options:
+\begin{description}
+\titem{via: [\{type: Type, host: Host, port: Port\}]}\ind{options!via}With
+this option for every \term{Type} you can specify \term{Host} and \term{Port}
+to set in \term{Via} header of outgoing SIP messages, where \term{Type} can be
+\term{udp}, \term{tcp} or \term{tls}. \term{Host} is a string and \term{Port} is 
+a non negative integer. This is useful if you're running your server in a non-standard
+network topology. Example configuration:
+\begin{verbatim}
+modules:
+  ...
+  mod_sip:
+    via:
+      - 
+        type: tls
+        host: "sip-tls.example.com"
+        port: 5061
+      - 
+        type: tcp
+        host: "sip-tcp.example.com"
+        port: 5060
+      - 
+        type: udp
+        host: "sip-udp.example.com"
+        port: 5060
+  ...
+\end{verbatim}
 \end{description}
 
 \makesubsection{modstats}{\modstats{}}
