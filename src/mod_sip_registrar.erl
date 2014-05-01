@@ -79,7 +79,7 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
 			    end, Contacts),
 	    Expires1 = lists:max(ExpiresList),
 	    Contact = {<<"">>, #uri{user = LUser, host = LServer},
-		       [{<<"expires">>, erlang:integer_to_binary(Expires1)}]},
+		       [{<<"expires">>, jlib:integer_to_binary(Expires1)}]},
 	    MinExpires = min_expires(),
             if Expires1 >= MinExpires ->
 		    case register_session(US, SIPSock, CallID, CSeq, Expires1) of
@@ -128,7 +128,7 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
 			    Contact = {<<"">>,
 				       #uri{user = LUser, host = LServer},
 				       [{<<"expires">>,
-					 erlang:integer_to_binary(Expires1)}]},
+					 jlib:integer_to_binary(Expires1)}]},
 			    mod_sip:make_response(
 			      Req, #sip{type = response, status = 200,
 					hdrs = [{'contact', [Contact]}]});
