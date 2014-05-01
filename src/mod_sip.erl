@@ -131,6 +131,20 @@ request(Req, SIPSock, TrID, Action) ->
 locate(_SIPMsg) ->
     ok.
 
+find(#uri{user = User, host = Host}) ->
+    LUser = jlib:nodeprep(User),
+    LServer = jlib:nameprep(Host),
+    if LUser == <<"">> ->
+	    to_me;
+       true ->
+	    case mod_sip_registrar:find_sockets(LUser, LServer) of
+		[] ->
+		    not_found;
+		[_|_] ->
+		    {relay, LServer}
+	    end
+    end.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -177,13 +191,7 @@ action(#sip{method = Method, hdrs = Hdrs, type = request} = Req, SIPSock) ->
                                 true ->
 				    case at_my_host(ToURI) of
 					true ->
-					    case ToURI#uri.user of
-						<<"">> ->
-						    to_me;
-						_ ->
-						    LServer = jlib:nameprep(ToURI#uri.host),
-						    {relay, LServer}
-					    end;
+					    find(ToURI);
 					false ->
 					    LServer = jlib:nameprep(FromURI#uri.host),
 					    {relay, LServer}
@@ -194,13 +202,7 @@ action(#sip{method = Method, hdrs = Hdrs, type = request} = Req, SIPSock) ->
 			false ->
 			    case at_my_host(ToURI) of
 				true ->
-				    case ToURI#uri.user of
-					<<"">> ->
-					    to_me;
-					_ ->
-					    LServer = jlib:nameprep(ToURI#uri.host),
-					    {relay, LServer}
-				    end;
+				    find(ToURI);
 				false ->
 				    deny
 			    end
