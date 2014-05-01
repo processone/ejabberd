@@ -168,24 +168,7 @@ handle_info({delete, US, SIPSocket, CallID, CSeq}, State) ->
     delete_session(US, SIPSocket, CallID, CSeq),
     {noreply, State};
 handle_info({timeout, TRef, US}, State) ->
-    case mnesia:dirty_read(sip_session, US) of
-	[#sip_session{bindings = Bindings}] ->
-	    case lists:filter(
-		   fun(#binding{tref = TRef1}) when TRef1 == TRef ->
-			   false;
-		      (_) ->
-			   true
-		   end, Bindings) of
-		[] ->
-		    mnesia:dirty_delete(sip_session, US);
-		NewBindings ->
-		    mnesia:dirty_write(sip_session,
-				       #sip_session{us = US,
-						    bindings = NewBindings})
-	    end;
-	[] ->
-	    ok
-    end,
+    delete_expired_session(US, TRef),
     {noreply, State};
 handle_info(_Info, State) ->
     ?ERROR_MSG("got unexpected info: ~p", [_Info]),
@@ -262,6 +245,26 @@ delete_session(US, SIPSocket, CallID, CSeq) ->
 	    end;
 	[] ->
 	    {error, notfound}
+    end.
+
+delete_expired_session(US, TRef) ->
+    case mnesia:dirty_read(sip_session, US) of
+	[#sip_session{bindings = Bindings}] ->
+	    case lists:filter(
+		   fun(#binding{tref = TRef1}) when TRef1 == TRef ->
+			   false;
+		      (_) ->
+			   true
+		   end, Bindings) of
+		[] ->
+		    mnesia:dirty_delete(sip_session, US);
+		NewBindings ->
+		    mnesia:dirty_write(sip_session,
+				       #sip_session{us = US,
+						    bindings = NewBindings})
+	    end;
+	[] ->
+	    ok
     end.
 
 min_expires() ->
