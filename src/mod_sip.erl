@@ -13,7 +13,7 @@
 
 %% API
 -export([start/2, stop/1, prepare_request/1, make_response/2,
-	 add_certfile/2, add_via/3]).
+	 add_via/3, at_my_host/1]).
 
 %% esip_callbacks
 -export([data_in/2, data_out/2, message_in/2, message_out/2,
@@ -22,12 +22,6 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("esip.hrl").
-
--record(sip_session, {us = {<<"">>, <<"">>} :: {binary(), binary()},
-		      socket = #sip_socket{},
-		      timestamp = now() :: erlang:timestamp(),
-		      tref = make_ref() :: reference(),
-		      expires = 0 :: non_neg_integer()}).
 
 %%%===================================================================
 %%% API
@@ -70,7 +64,7 @@ data_out(Data, #sip_socket{type = Transport,
 message_in(#sip{type = request, method = M} = Req, SIPSock)
   when M /= <<"ACK">>, M /= <<"CANCEL">> ->
     case action(Req, SIPSock) of
-        {relay, _LServer, _Opts} ->
+        {relay, _LServer} ->
             ok;
         Action ->
             request(Req, SIPSock, undefined, Action)
@@ -83,66 +77,26 @@ message_out(_, _) ->
 
 response(Resp, SIPSock) ->
     case action(Resp, SIPSock) of
-        {relay, LServer, Opts} ->
+        {relay, LServer} ->
             case esip:split_hdrs('via', Resp#sip.hdrs) of
                 {[_], _} ->
                     ok;
                 {[_MyVia|Vias], TailHdrs} ->
 		    %% TODO: check if MyVia is really my Via
 		    NewResp = Resp#sip{hdrs = [{'via', Vias}|TailHdrs]},
-		    case proplists:get_value(socket, Opts) of
-			undefined ->
-			    case esip:connect(NewResp,
-					      add_certfile(LServer, Opts)) of
-				{ok, SIPSockOut} ->
-				    esip:send(SIPSockOut, NewResp);
-				{error, _} ->
-				    ok
-			    end;
-			SIPSockOut ->
-			    esip:send(SIPSockOut, NewResp)
+		    case esip:connect(NewResp, add_certfile(LServer, [])) of
+			{ok, SIPSockOut} ->
+			    esip:send(SIPSockOut, NewResp);
+			{error, _} ->
+			    ok
 		    end
             end;
         _ ->
             ok
     end.
 
-request(#sip{method = <<"ACK">>} = Req, SIPSock) ->
-    case action(Req, SIPSock) of
-        {relay, LServer, Opts} ->
-	    Req1 = prepare_request(Req),
-	    case esip:connect(Req1, add_certfile(LServer, Opts)) of
-		{ok, SIPSockOut} ->
-		    Req2 = add_via(SIPSockOut, LServer, Req1),
-		    esip:send(SIPSockOut, Req2);
-		{error, _} = Err ->
-		    Err
-	    end;
-        _ ->
-            pass
-    end;
-request(#sip{method = <<"CANCEL">>} = Req, SIPSock) ->
-    case action(Req, SIPSock) of
-        loop ->
-            make_response(Req, #sip{status = 483, type = response});
-        {unsupported, Require} ->
-            make_response(Req, #sip{status = 420,
-                                    type = response,
-                                    hdrs = [{'unsupported',
-                                             Require}]});
-        {relay, LServer, Opts} ->
-	    Req1 = prepare_request(Req),
-	    case esip:connect(Req1, add_certfile(LServer, Opts)) of
-		{ok, SIPSockOut} ->
-		    Req2 = add_via(SIPSockOut, LServer, Req1),
-		    esip:send(SIPSockOut, Req2);
-		{error, _} = Err ->
-		    Err
-	    end,
-            pass;
-        _ ->
-            pass
-    end.
+request(_Req, _SIPSock) ->
+    error.
 
 request(Req, SIPSock, TrID) ->
     request(Req, SIPSock, TrID, action(Req, SIPSock)).
@@ -160,8 +114,8 @@ request(Req, SIPSock, TrID, Action) ->
                                     type = response,
                                     hdrs = [{'unsupported',
                                              Require}]});
-        {relay, LServer, Opts} ->
-            case mod_sip_proxy:start(LServer, Opts) of
+        {relay, LServer} ->
+            case mod_sip_proxy:start(LServer, add_certfile(LServer, [])) of
                 {ok, Pid} ->
                     mod_sip_proxy:route(Req, SIPSock, TrID, Pid),
                     {mod_sip_proxy, route, [Pid]};
@@ -194,17 +148,6 @@ request(Req, SIPSock, TrID, Action) ->
 locate(_SIPMsg) ->
     ok.
 
-find(#uri{user = User, host = Host}) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Host),
-    case mod_sip_registrar:find_session(
-	   LUser, LServer) of
-	{ok, #sip_session{socket = Sock}} ->
-	    {relay, LServer, [{socket, Sock}]};
-	error ->
-	    not_found
-    end.
-
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -215,15 +158,24 @@ action(#sip{type = response, hdrs = Hdrs}, _SIPSock) ->
 	true ->
 	    case at_my_host(ToURI) of
 		true ->
-		    find(ToURI);
+		    case ToURI#uri.user of
+			<<"">> ->
+			    to_me;
+			_ ->
+			    {relay, jlib:nameprep(ToURI#uri.host)}
+		    end;
 		false ->
-		    LServer = jlib:nameprep(FromURI#uri.host),
-		    {relay, LServer, []}
+		    {relay, jlib:nameprep(FromURI#uri.host)}
 	    end;
 	false ->
 	    case at_my_host(ToURI) of
 		true ->
-		    find(ToURI);
+		    case ToURI#uri.user of
+			<<"">> ->
+			    to_me;
+			_ ->
+			    {relay, jlib:nameprep(ToURI#uri.host)}
+		    end;
 		false ->
 		    pass
 	    end
@@ -271,10 +223,16 @@ action(#sip{method = Method, hdrs = Hdrs, type = request} = Req, SIPSock) ->
                                 true ->
 				    case at_my_host(ToURI) of
 					true ->
-					    find(ToURI);
+					    case ToURI#uri.user of
+						<<"">> ->
+						    to_me;
+						_ ->
+						    LServer = jlib:nameprep(ToURI#uri.host),
+						    {relay, LServer}
+					    end;
 					false ->
 					    LServer = jlib:nameprep(FromURI#uri.host),
-					    {relay, LServer, []}
+					    {relay, LServer}
 				    end;
                                 false ->
                                     {proxy_auth, FromURI#uri.host}
@@ -282,7 +240,13 @@ action(#sip{method = Method, hdrs = Hdrs, type = request} = Req, SIPSock) ->
 			false ->
 			    case at_my_host(ToURI) of
 				true ->
-				    find(ToURI);
+				    case ToURI#uri.user of
+					<<"">> ->
+					    to_me;
+					_ ->
+					    LServer = jlib:nameprep(ToURI#uri.host),
+					    {relay, LServer}
+				    end;
 				false ->
 				    deny
 			    end

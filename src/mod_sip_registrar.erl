@@ -12,7 +12,7 @@
 -behaviour(?GEN_SERVER).
 
 %% API
--export([start_link/0, request/2, find_session/2]).
+-export([start_link/0, request/2, find_socket/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -97,10 +97,10 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
             mod_sip:make_response(Req, #sip{type = response, status = 400})
     end.
 
-find_session(U, S) ->
+find_socket(U, S) ->
     case mnesia:dirty_read(sip_session, {U, S}) of
-	[Session] ->
-	    {ok, Session};
+	[#sip_session{socket = SIPSocket}] ->
+	    {ok, SIPSocket};
 	[] ->
 	    error
     end.

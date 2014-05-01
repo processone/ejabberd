@@ -23,8 +23,6 @@
 -include("logger.hrl").
 -include("esip.hrl").
 
--define(MAX_REDIRECTS, 5).
-
 -record(state, {host = <<"">> :: binary(),
 		opts = []     :: [{certfile, binary()}],
 		orig_trid,
@@ -54,7 +52,7 @@ init([Host, Opts]) ->
     {ok, wait_for_request, #state{opts = Opts, host = Host}}.
 
 wait_for_request({#sip{type = request} = Req, TrID}, State) ->
-    Opts = mod_sip:add_certfile(State#state.host, State#state.opts),
+    Opts = State#state.opts,
     Req1 = mod_sip:prepare_request(Req),
     case connect(Req1, Opts) of
 	{ok, SIPSocket} ->
@@ -73,6 +71,12 @@ wait_for_request({#sip{type = request} = Req, TrID}, State) ->
 						 reason = Reason})),
 		    {stop, normal, State}
 	    end;
+	{error, notfound} ->
+	    esip:reply(TrID, mod_sip:make_response(
+			       Req, #sip{type = response,
+					 status = 480,
+					 reason = esip:reason(480)})),
+	    {stop, normal, State};
 	Err ->
 	    {Status, Reason} = esip:error_status(Err),
 	    esip:reply(TrID, mod_sip:make_response(
@@ -143,10 +147,18 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-connect(Req, Opts) ->
-    case proplists:get_value(socket, Opts) of
-	undefined ->
-	    esip:connect(Req, Opts);
-	#sip_socket{} = SIPSock ->
-	    {ok, SIPSock}
+connect(#sip{hdrs = Hdrs} = Req, Opts) ->
+    {_, ToURI, _} = esip:get_hdr('to', Hdrs),
+    case mod_sip:at_my_host(ToURI) of
+	true ->
+	    LUser = jlib:nodeprep(ToURI#uri.user),
+	    LServer = jlib:nameprep(ToURI#uri.host),
+	    case mod_sip_registrar:find_socket(LUser, LServer) of
+		{ok, SIPSock} ->
+		    {ok, SIPSock};
+		error ->
+		    {error, notfound}
+	    end;
+	false ->
+	    esip:connect(Req, Opts)
     end.
