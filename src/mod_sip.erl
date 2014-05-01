@@ -75,25 +75,8 @@ message_in(_, _) ->
 message_out(_, _) ->
     ok.
 
-response(Resp, SIPSock) ->
-    case action(Resp, SIPSock) of
-        {relay, LServer} ->
-            case esip:split_hdrs('via', Resp#sip.hdrs) of
-                {[_], _} ->
-                    ok;
-                {[_MyVia|Vias], TailHdrs} ->
-		    %% TODO: check if MyVia is really my Via
-		    NewResp = Resp#sip{hdrs = [{'via', Vias}|TailHdrs]},
-		    case esip:connect(NewResp, add_certfile(LServer, [])) of
-			{ok, SIPSockOut} ->
-			    esip:send(SIPSockOut, NewResp);
-			{error, _} ->
-			    ok
-		    end
-            end;
-        _ ->
-            ok
-    end.
+response(_Resp, _SIPSock) ->
+    ok.
 
 request(_Req, _SIPSock) ->
     error.
@@ -151,35 +134,6 @@ locate(_SIPMsg) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-action(#sip{type = response, hdrs = Hdrs}, _SIPSock) ->
-    {_, ToURI, _} = esip:get_hdr('to', Hdrs),
-    {_, FromURI, _} = esip:get_hdr('from', Hdrs),
-    case at_my_host(FromURI) of
-	true ->
-	    case at_my_host(ToURI) of
-		true ->
-		    case ToURI#uri.user of
-			<<"">> ->
-			    to_me;
-			_ ->
-			    {relay, jlib:nameprep(ToURI#uri.host)}
-		    end;
-		false ->
-		    {relay, jlib:nameprep(FromURI#uri.host)}
-	    end;
-	false ->
-	    case at_my_host(ToURI) of
-		true ->
-		    case ToURI#uri.user of
-			<<"">> ->
-			    to_me;
-			_ ->
-			    {relay, jlib:nameprep(ToURI#uri.host)}
-		    end;
-		false ->
-		    pass
-	    end
-    end;
 action(#sip{method = <<"REGISTER">>, type = request, hdrs = Hdrs,
             uri = #uri{user = <<"">>} = URI} = Req, SIPSock) ->
     case at_my_host(URI) of
