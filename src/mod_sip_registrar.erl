@@ -198,7 +198,7 @@ unregister_session(US, SIPSocket, CallID, CSeq) ->
     Msg = {delete, US, SIPSocket, CallID, CSeq},
     call(Msg).
 
-write_session(#sip_session{us = US,
+write_session(#sip_session{us = {U, S} = US,
 			   bindings = [#binding{socket = SIPSocket,
 						call_id = CallID,
 						expires = Expires,
@@ -216,10 +216,15 @@ write_session(#sip_session{us = US,
 		    mnesia:dirty_write(
 		      #sip_session{us = US, bindings = NewBindings});
 		{error, notfound} ->
-		    NewTRef = erlang:start_timer(Expires * 1000, self(), US),
-		    NewBindings = [Binding#binding{tref = NewTRef}|Bindings],
-		    mnesia:dirty_write(
-		      #sip_session{us = US, bindings = NewBindings})
+		    MaxSessions = ejabberd_sm:get_max_user_sessions(U, S),
+		    if length(Bindings) < MaxSessions ->
+			    NewTRef = erlang:start_timer(Expires * 1000, self(), US),
+			    NewBindings = [Binding#binding{tref = NewTRef}|Bindings],
+			    mnesia:dirty_write(
+			      #sip_session{us = US, bindings = NewBindings});
+		       true ->
+			    {error, too_many_sessions}
+		    end
 	    end;
 	[] ->
 	    NewTRef = erlang:start_timer(Expires * 1000, self(), US),
@@ -307,5 +312,7 @@ make_status(cseq_out_of_order) ->
     {500, <<"CSeq is Out of Order">>};
 make_status(timeout) ->
     {408, esip:reason(408)};
+make_status(too_many_sessions) ->
+    {503, <<"Too Many Registered Sessions">>};
 make_status(_) ->
     {500, esip:reason(500)}.

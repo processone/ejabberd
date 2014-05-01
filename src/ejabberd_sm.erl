@@ -56,6 +56,7 @@
 	 get_session_pid/3,
 	 get_user_info/3,
 	 get_user_ip/3,
+	 get_max_user_sessions/2,
 	 is_existing_resource/3
 	]).
 
