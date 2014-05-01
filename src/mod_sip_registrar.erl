@@ -22,6 +22,8 @@
 -include("logger.hrl").
 -include("esip.hrl").
 
+-define(CALL_TIMEOUT, timer:seconds(30)).
+
 -record(binding, {socket = #sip_socket{},
 		  call_id = <<"">> :: binary(),
 		  cseq = 0 :: non_neg_integer(),
@@ -190,11 +192,11 @@ register_session(US, SIPSocket, CallID, CSeq, Expires) ->
 						cseq = CSeq,
 						timestamp = now(),
 						expires = Expires}]},
-    gen_server:call(?MODULE, {write, Session}).
+    call({write, Session}).
 
 unregister_session(US, SIPSocket, CallID, CSeq) ->
     Msg = {delete, US, SIPSocket, CallID, CSeq},
-    gen_server:call(?MODULE, Msg).
+    call(Msg).
 
 write_session(#sip_session{us = US,
 			   bindings = [#binding{socket = SIPSocket,
@@ -289,9 +291,21 @@ pop_previous_binding(#sip_socket{peer = Peer}, Bindings) ->
 	    {error, notfound}
     end.
 
+call(Msg) ->
+    case catch ?GEN_SERVER:call(?MODULE, Msg, ?CALL_TIMEOUT) of
+	{'EXIT', {timeout, _}} ->
+	    {error, timeout};
+	{'EXIT', Why} ->
+	    {error, Why};
+	Reply ->
+	    Reply
+    end.
+
 make_status(notfound) ->
     {404, esip:reason(404)};
 make_status(cseq_out_of_order) ->
     {500, <<"CSeq is Out of Order">>};
+make_status(timeout) ->
+    {408, esip:reason(408)};
 make_status(_) ->
     {500, esip:reason(500)}.
