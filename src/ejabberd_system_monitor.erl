@@ -244,9 +244,8 @@ s2s_out_info(Pid) ->
     [<<"Process type: s2s_out">>,
      case FromTo of
        [{From, To}] ->
-	   <<"\n",
-	     (io_lib:format("S2S connection: from ~s to ~s",
-			    [From, To]))/binary>>;
+	     list_to_binary(io_lib:format("\nS2S connection: from ~s to ~s",
+			    [From, To]));
        _ -> <<"">>
      end,
      check_send_queue(Pid), <<"\n">>,
