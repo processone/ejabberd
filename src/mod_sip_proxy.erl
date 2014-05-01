@@ -153,10 +153,10 @@ connect(#sip{hdrs = Hdrs} = Req, Opts) ->
 	true ->
 	    LUser = jlib:nodeprep(ToURI#uri.user),
 	    LServer = jlib:nameprep(ToURI#uri.host),
-	    case mod_sip_registrar:find_socket(LUser, LServer) of
-		{ok, SIPSock} ->
+	    case mod_sip_registrar:find_sockets(LUser, LServer) of
+		[SIPSock|_] ->
 		    {ok, SIPSock};
-		error ->
+		[] ->
 		    {error, notfound}
 	    end;
 	false ->

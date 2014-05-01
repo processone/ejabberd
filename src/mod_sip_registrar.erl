@@ -12,7 +12,7 @@
 -behaviour(?GEN_SERVER).
 
 %% API
--export([start_link/0, request/2, find_socket/2]).
+-export([start_link/0, request/2, find_sockets/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -22,11 +22,15 @@
 -include("logger.hrl").
 -include("esip.hrl").
 
+-record(binding, {socket = #sip_socket{},
+		  call_id = <<"">> :: binary(),
+		  cseq = 0 :: non_neg_integer(),
+		  timestamp = now() :: erlang:timestamp(),
+		  tref = make_ref() :: reference(),
+		  expires = 0 :: non_neg_integer()}).
+
 -record(sip_session, {us = {<<"">>, <<"">>} :: {binary(), binary()},
-		      socket = #sip_socket{},
-		      timestamp = now() :: erlang:timestamp(),
-		      tref = make_ref() :: reference(),
-		      expires = 0 :: non_neg_integer()}).
+		      bindings = [] :: [#binding{}]}).
 
 -record(state, {}).
 
@@ -42,13 +46,24 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
     LServer = jlib:nameprep(S),
     {PeerIP, _} = SIPSock#sip_socket.peer,
     US = {LUser, LServer},
+    CallID = esip:get_hdr('call-id', Hdrs),
+    CSeq = esip:get_hdr('cseq', Hdrs),
     Expires = esip:get_hdr('expires', Hdrs, 0),
     case esip:get_hdrs('contact', Hdrs) of
         [<<"*">>] when Expires == 0 ->
-	    ?INFO_MSG("unregister SIP session for user ~s@~s from ~s",
-		      [LUser, LServer, inet_parse:ntoa(PeerIP)]),
-            unregister_session(US),
-            mod_sip:make_response(Req, #sip{type = response, status = 200});
+            case unregister_session(US, SIPSock, CallID, CSeq) of
+		ok ->
+		    ?INFO_MSG("unregister SIP session for user ~s@~s from ~s",
+			      [LUser, LServer, inet_parse:ntoa(PeerIP)]),
+		    mod_sip:make_response(
+		      Req, #sip{type = response, status = 200});
+		{error, Why} ->
+		    {Status, Reason} = make_status(Why),
+		    mod_sip:make_response(
+		      Req, #sip{type = response,
+				status = Status,
+				reason = Reason})
+	    end;
         [{_, _URI, _Params}|_] = Contacts ->
             ContactsWithExpires =
 		lists:map(
@@ -69,40 +84,58 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
 	    [{Expires1, _}|_] = lists:keysort(1, ContactsWithExpires),
 	    MinExpires = min_expires(),
             if Expires1 >= MinExpires ->
-		    ?INFO_MSG("register SIP session for user ~s@~s from ~s",
-			      [LUser, LServer, inet_parse:ntoa(PeerIP)]),
-		    register_session(US, SIPSock, Expires1),
-                    mod_sip:make_response(
-		      Req,
-		      #sip{type = response,
-			   status = 200,
-			   hdrs = [{'contact',
-				    [C || {_, C} <- ContactsWithExpires]}]});
+		    case register_session(US, SIPSock, CallID, CSeq, Expires1) of
+			ok ->
+			    ?INFO_MSG("register SIP session for user ~s@~s from ~s",
+				      [LUser, LServer, inet_parse:ntoa(PeerIP)]),
+			    mod_sip:make_response(
+			      Req,
+			      #sip{type = response,
+				   status = 200,
+				   hdrs = [{'contact',
+					    [C || {_, C} <- ContactsWithExpires]}]});
+			{error, Why} ->
+			    {Status, Reason} = make_status(Why),
+			    mod_sip:make_response(
+			      Req, #sip{type = response,
+					status = Status,
+					reason = Reason})
+		    end;
                Expires1 > 0, Expires1 < MinExpires ->
                     mod_sip:make_response(
 		      Req, #sip{type = response,
 				status = 423,
 				hdrs = [{'min-expires', MinExpires}]});
                true ->
-		    ?INFO_MSG("unregister SIP session for user ~s@~s from ~s",
-			      [LUser, LServer, inet_parse:ntoa(PeerIP)]),
-                    unregister_session(US),
-                    mod_sip:make_response(
-		      Req,
-		      #sip{type = response, status = 200,
-			   hdrs = [{'contact',
-				    [C || {_, C} <- ContactsWithExpires]}]})
+                    case unregister_session(US, SIPSock, CallID, CSeq) of
+			ok ->
+			    ?INFO_MSG("unregister SIP session for user ~s@~s from ~s",
+				      [LUser, LServer, inet_parse:ntoa(PeerIP)]),
+			    mod_sip:make_response(
+			      Req,
+			      #sip{type = response, status = 200,
+				   hdrs = [{'contact',
+					    [C || {_, C} <- ContactsWithExpires]}]});
+			{error, Why} ->
+			    {Status, Reason} = make_status(Why),
+			    mod_sip:make_response(
+			      Req, #sip{type = response,
+					status = Status,
+					reason = Reason})
+		    end
             end;
+	[] ->
+	    mod_sip:make_response(Req, #sip{type = response, status = 200});
         _ ->
             mod_sip:make_response(Req, #sip{type = response, status = 400})
     end.
 
-find_socket(U, S) ->
+find_sockets(U, S) ->
     case mnesia:dirty_read(sip_session, {U, S}) of
-	[#sip_session{socket = SIPSocket}] ->
-	    {ok, SIPSocket};
+	[#sip_session{bindings = Bindings}] ->
+	    [Binding#binding.socket || Binding <- Bindings];
 	[] ->
-	    error
+	    []
     end.
 
 %%%===================================================================
@@ -118,8 +151,8 @@ init([]) ->
 handle_call({write, Session}, _From, State) ->
     Res = write_session(Session),
     {reply, Res, State};
-handle_call({delete, US}, _From, State) ->
-    Res = delete_session(US),
+handle_call({delete, US, SIPSocket, CallID, CSeq}, _From, State) ->
+    Res = delete_session(US, SIPSocket, CallID, CSeq),
     {reply, Res, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -131,13 +164,25 @@ handle_cast(_Msg, State) ->
 handle_info({write, Session}, State) ->
     write_session(Session),
     {noreply, State};
-handle_info({delete, US}, State) ->
-    delete_session(US),
+handle_info({delete, US, SIPSocket, CallID, CSeq}, State) ->
+    delete_session(US, SIPSocket, CallID, CSeq),
     {noreply, State};
 handle_info({timeout, TRef, US}, State) ->
     case mnesia:dirty_read(sip_session, US) of
-	[#sip_session{tref = TRef}] ->
-	    mnesia:dirty_delete(sip_session, US);
+	[#sip_session{bindings = Bindings}] ->
+	    case lists:filter(
+		   fun(#binding{tref = TRef1}) when TRef1 == TRef ->
+			   false;
+		      (_) ->
+			   true
+		   end, Bindings) of
+		[] ->
+		    mnesia:dirty_delete(sip_session, US);
+		NewBindings ->
+		    mnesia:dirty_write(sip_session,
+				       #sip_session{us = US,
+						    bindings = NewBindings})
+	    end;
 	[] ->
 	    ok
     end,
@@ -155,33 +200,68 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-register_session(US, SIPSocket, Expires) ->
+register_session(US, SIPSocket, CallID, CSeq, Expires) ->
     Session = #sip_session{us = US,
-			   socket = SIPSocket,
-			   timestamp = now(),
-			   expires = Expires},
+			   bindings = [#binding{socket = SIPSocket,
+						call_id = CallID,
+						cseq = CSeq,
+						timestamp = now(),
+						expires = Expires}]},
     gen_server:call(?MODULE, {write, Session}).
 
-unregister_session(US) ->
-    gen_server:call(?MODULE, {delete, US}).
+unregister_session(US, SIPSocket, CallID, CSeq) ->
+    Msg = {delete, US, SIPSocket, CallID, CSeq},
+    gen_server:call(?MODULE, Msg).
 
-write_session(#sip_session{us = US, expires = Expires} = Session) ->
+write_session(#sip_session{us = US,
+			   bindings = [#binding{socket = SIPSocket,
+						call_id = CallID,
+						expires = Expires,
+						cseq = CSeq} = Binding]}) ->
     case mnesia:dirty_read(sip_session, US) of
-	[#sip_session{tref = TRef}] ->
-	    erlang:cancel_timer(TRef);
+	[#sip_session{bindings = Bindings}] ->
+	    case pop_previous_binding(SIPSocket, Bindings) of
+		{ok, #binding{call_id = CallID, cseq = PrevCSeq}, _}
+		  when PrevCSeq >= CSeq ->
+		    {error, cseq_out_of_order};
+		{ok, #binding{tref = Tref}, Bindings1} ->
+		    erlang:cancel_timer(Tref),
+		    NewTRef = erlang:start_timer(Expires * 1000, self(), US),
+		    NewBindings = [Binding#binding{tref = NewTRef}|Bindings1],
+		    mnesia:dirty_write(
+		      #sip_session{us = US, bindings = NewBindings});
+		{error, notfound} ->
+		    NewTRef = erlang:start_timer(Expires * 1000, self(), US),
+		    NewBindings = [Binding#binding{tref = NewTRef}|Bindings],
+		    mnesia:dirty_write(
+		      #sip_session{us = US, bindings = NewBindings})
+	    end;
 	[] ->
-	    ok
-    end,
-    NewTRef = erlang:start_timer(Expires * 1000, self(), US),
-    mnesia:dirty_write(Session#sip_session{tref = NewTRef}).
+	    NewTRef = erlang:start_timer(Expires * 1000, self(), US),
+	    NewBindings = [Binding#binding{tref = NewTRef}],
+	    mnesia:dirty_write(#sip_session{us = US, bindings = NewBindings})
+    end.
 
-delete_session(US) ->
+delete_session(US, SIPSocket, CallID, CSeq) ->
     case mnesia:dirty_read(sip_session, US) of
-	[#sip_session{tref = TRef}] ->
-	    erlang:cancel_timer(TRef),
-	    mnesia:dirty_delete(sip_session, US);
+	[#sip_session{bindings = Bindings}] ->
+	    case pop_previous_binding(SIPSocket, Bindings) of
+		{ok, #binding{call_id = CallID, cseq = PrevCSeq}, _}
+		  when PrevCSeq >= CSeq ->
+		    {error, cseq_out_of_order};
+		{ok, #binding{tref = TRef}, []} ->
+		    erlang:cancel_timer(TRef),
+		    mnesia:dirty_delete(sip_session, US);
+		{ok, #binding{tref = TRef}, NewBindings} ->
+		    erlang:cancel_timer(TRef),
+		    mnesia:dirty_write(sip_session,
+				       #sip_session{us = US,
+						    bindings = NewBindings});
+		{error, notfound} ->
+		    {error, notfound}
+	    end;
 	[] ->
-	    ok
+	    {error, notfound}
     end.
 
 min_expires() ->
@@ -194,3 +274,21 @@ to_integer(Bin, Min, Max) ->
         _ ->
             error
     end.
+
+pop_previous_binding(#sip_socket{peer = Peer}, Bindings) ->
+    case lists:partition(
+	   fun(#binding{socket = #sip_socket{peer = Peer1}}) ->
+		   Peer1 == Peer
+	   end, Bindings) of
+	{[Binding], RestBindings} ->
+	    {ok, Binding, RestBindings};
+	_ ->
+	    {error, notfound}
+    end.
+
+make_status(notfound) ->
+    {404, esip:reason(404)};
+make_status(cseq_out_of_order) ->
+    {500, <<"CSeq is Out of Order">>};
+make_status(_) ->
+    {500, esip:reason(500)}.
