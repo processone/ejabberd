@@ -225,7 +225,7 @@ write_session(#sip_session{us = {U, S} = US,
 	[#sip_session{bindings = Bindings}] ->
 	    case pop_previous_binding(SIPSocket, Bindings) of
 		{ok, #binding{call_id = CallID, cseq = PrevCSeq}, _}
-		  when PrevCSeq >= CSeq ->
+		  when PrevCSeq > CSeq ->
 		    {error, cseq_out_of_order};
 		{ok, #binding{tref = Tref}, Bindings1} ->
 		    erlang:cancel_timer(Tref),
@@ -255,7 +255,7 @@ delete_session(US, SIPSocket, CallID, CSeq) ->
 	[#sip_session{bindings = Bindings}] ->
 	    case pop_previous_binding(SIPSocket, Bindings) of
 		{ok, #binding{call_id = CallID, cseq = PrevCSeq}, _}
-		  when PrevCSeq >= CSeq ->
+		  when PrevCSeq > CSeq ->
 		    {error, cseq_out_of_order};
 		{ok, #binding{tref = TRef}, []} ->
 		    erlang:cancel_timer(TRef),
