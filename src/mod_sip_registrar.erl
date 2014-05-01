@@ -67,23 +67,19 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
 				reason = Reason})
 	    end;
         [{_, _URI, _Params}|_] = Contacts ->
-            ContactsWithExpires =
-		lists:map(
-		  fun({Name, URI, Params}) ->
-			  Exp = case to_integer(
-				       esip:get_param(
-					 <<"expires">>, Params),
-				       0, (1 bsl 32)-1) of
-				    {ok, E} -> E;
-				    _ -> Expires
-				end,
-			  NewParams = esip:set_param(
-					<<"expires">>,
-					erlang:integer_to_binary(Exp),
-					Params),
-			  {Exp, {Name, URI, NewParams}}
-		  end, Contacts),
-	    [{Expires1, _}|_] = lists:keysort(1, ContactsWithExpires),
+            ExpiresList = lists:map(
+			    fun({_, _, Params}) ->
+				    case to_integer(
+					   esip:get_param(
+					     <<"expires">>, Params),
+					   0, (1 bsl 32)-1) of
+					{ok, E} -> E;
+					_ -> Expires
+				    end
+			    end, Contacts),
+	    Expires1 = lists:max(ExpiresList),
+	    Contact = {<<"">>, #uri{user = LUser, host = LServer},
+		       [{<<"expires">>, erlang:integer_to_binary(Expires1)}]},
 	    MinExpires = min_expires(),
             if Expires1 >= MinExpires ->
 		    case register_session(US, SIPSock, CallID, CSeq, Expires1) of
@@ -94,8 +90,7 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
 			      Req,
 			      #sip{type = response,
 				   status = 200,
-				   hdrs = [{'contact',
-					    [C || {_, C} <- ContactsWithExpires]}]});
+				   hdrs = [{'contact', [Contact]}]});
 			{error, Why} ->
 			    {Status, Reason} = make_status(Why),
 			    mod_sip:make_response(
@@ -116,8 +111,7 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
 			    mod_sip:make_response(
 			      Req,
 			      #sip{type = response, status = 200,
-				   hdrs = [{'contact',
-					    [C || {_, C} <- ContactsWithExpires]}]});
+				   hdrs = [{'contact', [Contact]}]});
 			{error, Why} ->
 			    {Status, Reason} = make_status(Why),
 			    mod_sip:make_response(
@@ -127,7 +121,31 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
 		    end
             end;
 	[] ->
-	    mod_sip:make_response(Req, #sip{type = response, status = 200});
+	    case mnesia:dirty_read(sip_session, US) of
+		[#sip_session{bindings = Bindings}] ->
+		    case pop_previous_binding(SIPSock, Bindings) of
+			{ok, #binding{expires = Expires1}, _} ->
+			    Contact = {<<"">>,
+				       #uri{user = LUser, host = LServer},
+				       [{<<"expires">>,
+					 erlang:integer_to_binary(Expires1)}]},
+			    mod_sip:make_response(
+			      Req, #sip{type = response, status = 200,
+					hdrs = [{'contact', [Contact]}]});
+			{error, notfound} ->
+			    {Status, Reason} = make_status(notfound),
+			    mod_sip:make_response(
+			      Req, #sip{type = response,
+					status = Status,
+					reason = Reason})
+		    end;
+		[] ->
+		    {Status, Reason} = make_status(notfound),
+		    mod_sip:make_response(
+		      Req, #sip{type = response,
+				status = Status,
+				reason = Reason})
+	    end;
         _ ->
             mod_sip:make_response(Req, #sip{type = response, status = 400})
     end.
