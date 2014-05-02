@@ -12,8 +12,7 @@
 -behaviour(esip).
 
 %% API
--export([start/2, stop/1, prepare_request/1, make_response/2,
-	 add_via/3, at_my_host/1]).
+-export([start/2, stop/1, prepare_request/1, make_response/2, at_my_host/1]).
 
 %% esip_callbacks
 -export([data_in/2, data_out/2, message_in/2, message_out/2,
@@ -98,7 +97,7 @@ request(Req, SIPSock, TrID, Action) ->
                                     hdrs = [{'unsupported',
                                              Require}]});
         {relay, LServer} ->
-            case mod_sip_proxy:start(LServer, add_certfile(LServer, [])) of
+            case mod_sip_proxy:start(LServer, []) of
                 {ok, Pid} ->
                     mod_sip_proxy:route(Req, SIPSock, TrID, Pid),
                     {mod_sip_proxy, route, [Pid]};
@@ -279,46 +278,3 @@ at_my_host(#uri{host = Host}) ->
 
 is_my_host(LServer) ->
     gen_mod:is_loaded(LServer, ?MODULE).
-
-add_certfile(LServer, Opts) ->
-    case ejabberd_config:get_option({domain_certfile, LServer},
-				    fun iolist_to_binary/1) of
-	CertFile when is_binary(CertFile), CertFile /= <<"">> ->
-	    [{certfile, CertFile}|Opts];
-	_ ->
-	    Opts
-    end.
-
-add_via(#sip_socket{type = Transport}, LServer, #sip{hdrs = Hdrs} = Req) ->
-    ConfiguredVias = get_configured_vias(LServer),
-    {ViaHost, ViaPort} = proplists:get_value(
-			   Transport, ConfiguredVias, {LServer, undefined}),
-    ViaTransport = case Transport of
-		       tls -> <<"TLS">>;
-		       tcp -> <<"TCP">>;
-		       udp -> <<"UDP">>
-		   end,
-    Via = #via{transport = ViaTransport,
-	       host = ViaHost,
-	       port = ViaPort,
-	       params = [{<<"branch">>, esip:make_branch()},
-			 {<<"rport">>, <<"">>}]},
-    Req#sip{hdrs = [{'via', [Via]}|Hdrs]}.
-
-get_configured_vias(LServer) ->
-    gen_mod:get_module_opt(
-      LServer, ?MODULE, via,
-      fun(L) ->
-	      lists:map(
-		fun(Opts) ->
-			Type = proplists:get_value(type, Opts),
-			Host = proplists:get_value(host, Opts),
-			Port = proplists:get_value(port, Opts),
-			true = (Type == tcp) or (Type == tls) or (Type == udp),
-			true = is_binary(Host) and (Host /= <<"">>),
-			true = (is_integer(Port)
-				and (Port > 0) and (Port < 65536))
-			    or (Port == undefined),
-			{Type, {Host, Port}}
-		end, L)
-      end, []).

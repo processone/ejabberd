@@ -49,14 +49,15 @@ route(SIPMsg, _SIPSock, TrID, Pid) ->
 %%% gen_fsm callbacks
 %%%===================================================================
 init([Host, Opts]) ->
-    {ok, wait_for_request, #state{opts = Opts, host = Host}}.
+    Opts1 = add_certfile(Host, Opts),
+    {ok, wait_for_request, #state{opts = Opts1, host = Host}}.
 
 wait_for_request({#sip{type = request} = Req, TrID}, State) ->
     Opts = State#state.opts,
     Req1 = mod_sip:prepare_request(Req),
     case connect(Req1, Opts) of
 	{ok, SIPSocket} ->
-	    Req2 = mod_sip:add_via(SIPSocket, State#state.host, Req1),
+	    Req2 = add_via(SIPSocket, State#state.host, Req1),
 	    case esip:request(SIPSocket, Req2, {?MODULE, route, [self()]}) of
 		{ok, ClientTrID} ->
 		    {next_state, wait_for_response,
@@ -162,3 +163,46 @@ connect(#sip{hdrs = Hdrs} = Req, Opts) ->
 	false ->
 	    esip:connect(Req, Opts)
     end.
+
+add_certfile(LServer, Opts) ->
+    case ejabberd_config:get_option({domain_certfile, LServer},
+				    fun iolist_to_binary/1) of
+	CertFile when is_binary(CertFile), CertFile /= <<"">> ->
+	    [{certfile, CertFile}|Opts];
+	_ ->
+	    Opts
+    end.
+
+add_via(#sip_socket{type = Transport}, LServer, #sip{hdrs = Hdrs} = Req) ->
+    ConfiguredVias = get_configured_vias(LServer),
+    {ViaHost, ViaPort} = proplists:get_value(
+			   Transport, ConfiguredVias, {LServer, undefined}),
+    ViaTransport = case Transport of
+		       tls -> <<"TLS">>;
+		       tcp -> <<"TCP">>;
+		       udp -> <<"UDP">>
+		   end,
+    Via = #via{transport = ViaTransport,
+	       host = ViaHost,
+	       port = ViaPort,
+	       params = [{<<"branch">>, esip:make_branch()},
+			 {<<"rport">>, <<"">>}]},
+    Req#sip{hdrs = [{'via', [Via]}|Hdrs]}.
+
+get_configured_vias(LServer) ->
+    gen_mod:get_module_opt(
+      LServer, ?MODULE, via,
+      fun(L) ->
+	      lists:map(
+		fun(Opts) ->
+			Type = proplists:get_value(type, Opts),
+			Host = proplists:get_value(host, Opts),
+			Port = proplists:get_value(port, Opts),
+			true = (Type == tcp) or (Type == tls) or (Type == udp),
+			true = is_binary(Host) and (Host /= <<"">>),
+			true = (is_integer(Port)
+				and (Port > 0) and (Port < 65536))
+			    or (Port == undefined),
+			{Type, {Host, Port}}
+		end, L)
+      end, []).
