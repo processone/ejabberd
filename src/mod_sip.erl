@@ -212,7 +212,6 @@ action(#sip{method = Method, hdrs = Hdrs, type = request} = Req, SIPSock) ->
 check_auth(#sip{method = <<"CANCEL">>}, _, _SIPSock) ->
     true;
 check_auth(#sip{method = Method, hdrs = Hdrs, body = Body}, AuthHdr, _SIPSock) ->
-    
     Issuer = case AuthHdr of
                  'authorization' ->
                      to;
