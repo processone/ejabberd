@@ -12,7 +12,7 @@
 -behaviour(?GEN_FSM).
 
 %% API
--export([start/2, start_link/2, route/4, route/5]).
+-export([start/2, start_link/2, route/4]).
 
 %% gen_fsm callbacks
 -export([init/1, wait_for_request/2, wait_for_response/2,
@@ -39,12 +39,8 @@ start(LServer, Opts) ->
 start_link(LServer, Opts) ->
     ?GEN_FSM:start_link(?MODULE, [LServer, Opts], []).
 
-route(Resp, Req, _SIPSock, TrID, Pid) ->
-    ?GEN_FSM:send_event(Pid, {Resp, Req, TrID}).
-
 route(SIPMsg, _SIPSock, TrID, Pid) ->
-    ?GEN_FSM:send_event(Pid, {SIPMsg, TrID}),
-    wait.
+    ?GEN_FSM:send_event(Pid, {SIPMsg, TrID}).
 
 %%%===================================================================
 %%% gen_fsm callbacks
