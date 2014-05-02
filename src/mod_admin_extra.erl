@@ -510,23 +510,23 @@ commands() ->
      #ejabberd_commands{name = send_message_chat, tags = [stanza],
 			desc = "Send a chat message to a local or remote bare of full JID",
 			module = ?MODULE, function = send_message_chat,
-			args = [{from, string}, {to, string}, {body, string}],
+			args = [{from, binary}, {to, binary}, {body, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = send_message_headline, tags = [stanza],
 			desc = "Send a headline message to a local or remote bare of full JID",
 			module = ?MODULE, function = send_message_headline,
-			args = [{from, string}, {to, string},
-				{subject, string}, {body, string}],
+			args = [{from, binary}, {to, binary},
+				{subject, binary}, {body, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = send_stanza_c2s, tags = [stanza],
 			desc = "Send a stanza as if sent from a c2s session",
 			module = ?MODULE, function = send_stanza_c2s,
-			args = [{user, string}, {host, string}, {resource, string}, {stanza, string}],
+			args = [{user, binary}, {host, binary}, {resource, binary}, {stanza, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = privacy_set, tags = [stanza],
 			desc = "Send a IQ set privacy stanza for a local account",
 			module = ?MODULE, function = privacy_set,
-			args = [{user, string}, {host, string}, {xmlquery, string}],
+			args = [{user, binary}, {host, binary}, {xmlquery, binary}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = stats, tags = [stats],
@@ -1340,13 +1340,13 @@ srg_user_del(User, Host, Group, GroupHost) ->
 %%%
 
 %% @doc Send a chat message to a Jabber account.
-%% @spec (From::string(), To::string(), Body::string()) -> ok
+%% @spec (From::binary(), To::binary(), Body::binary()) -> ok
 send_message_chat(From, To, Body) ->
     Packet = build_packet(message_chat, [Body]),
     send_packet_all_resources(From, To, Packet).
 
 %% @doc Send a headline message to a Jabber account.
-%% @spec (From::string(), To::string(), Subject::string(), Body::string()) -> ok
+%% @spec (From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
 send_message_headline(From, To, Subject, Body) ->
     Packet = build_packet(message_headline, [Subject, Body]),
     send_packet_all_resources(From, To, Packet).
@@ -1427,16 +1427,16 @@ privacy_set(Username, Host, QueryS) ->
 
 stats(Name) ->
     case Name of
-	"uptimeseconds" -> trunc(element(1, erlang:statistics(wall_clock))/1000);
-	"registeredusers" -> length(ejabberd_auth:dirty_get_registered_users());
-	"onlineusersnode" -> length(ejabberd_sm:dirty_get_my_sessions_list());
-	"onlineusers" -> length(ejabberd_sm:dirty_get_sessions_list())
+	<<"uptimeseconds">> -> trunc(element(1, erlang:statistics(wall_clock))/1000);
+	<<"registeredusers">> -> length(ejabberd_auth:dirty_get_registered_users());
+	<<"onlineusersnode">> -> length(ejabberd_sm:dirty_get_my_sessions_list());
+	<<"onlineusers">> -> length(ejabberd_sm:dirty_get_sessions_list())
     end.
 
 stats(Name, Host) ->
     case Name of
-	"registeredusers" -> length(ejabberd_auth:get_vh_registered_users(Host));
-	"onlineusers" -> length(ejabberd_sm:get_vh_session_list(Host))
+	<<"registeredusers">> -> length(ejabberd_auth:get_vh_registered_users(Host));
+	<<"onlineusers">> -> length(ejabberd_sm:get_vh_session_list(Host))
     end.
 
 
