@@ -23,11 +23,12 @@
 -include("logger.hrl").
 -include("esip.hrl").
 
--record(state, {host = <<"">> :: binary(),
-		opts = []     :: [{certfile, binary()}],
+-record(state, {host = <<"">>  :: binary(),
+		opts = []      :: [{certfile, binary()}],
 		orig_trid,
-		orig_req      :: #sip{},
-		client_trid}).
+		responses = [] :: [#sip{}],
+		tr_ids = []    :: list(),
+		orig_req       :: #sip{}}).
 
 %%%===================================================================
 %%% API
@@ -56,21 +57,34 @@ wait_for_request({#sip{type = request} = Req, TrID}, State) ->
     Opts = State#state.opts,
     Req1 = mod_sip:prepare_request(Req),
     case connect(Req1, Opts) of
-	{ok, SIPSocket} ->
-	    Req2 = add_via(SIPSocket, State#state.host, Req1),
-	    case esip:request(SIPSocket, Req2, {?MODULE, route, [self()]}) of
-		{ok, ClientTrID} ->
-		    {next_state, wait_for_response,
-		     State#state{orig_trid = TrID,
-				 orig_req = Req,
-				 client_trid = ClientTrID}};
-		Err ->
+	{ok, SIPSockets} ->
+	    NewState =
+		lists:foldl(
+		  fun(_SIPSocket, {error, _} = Err) ->
+			  Err;
+		     (SIPSocket, #state{tr_ids = TrIDs} = AccState) ->
+			  Req2 = add_via(SIPSocket, State#state.host, Req1),
+			  case esip:request(SIPSocket, Req2,
+					    {?MODULE, route, [self()]}) of
+			      {ok, ClientTrID} ->
+				  NewTrIDs = [ClientTrID|TrIDs],
+				  AccState#state{tr_ids = NewTrIDs};
+			      Err ->
+				  cancel_pending_transactions(AccState),
+				  Err
+			  end
+		  end, State, SIPSockets),
+	    case NewState of
+		{error, _} = Err ->
 		    {Status, Reason} = esip:error_status(Err),
 		    esip:reply(TrID, mod_sip:make_response(
 				       Req, #sip{type = response,
 						 status = Status,
 						 reason = Reason})),
-		    {stop, normal, State}
+		    {stop, normal, State};
+		_ ->
+		    {next_state, wait_for_response,
+		     NewState#state{orig_req = Req, orig_trid = TrID}}
 	    end;
 	{error, notfound} ->
 	    esip:reply(TrID, mod_sip:make_response(
@@ -90,41 +104,68 @@ wait_for_request(_Event, State) ->
     {next_state, wait_for_request, State}.
 
 wait_for_response({#sip{method = <<"CANCEL">>, type = request}, _TrID}, State) ->
-    esip:cancel(State#state.client_trid),
+    cancel_pending_transactions(State),
     {next_state, wait_for_response, State};
-wait_for_response({Resp, _TrID}, State) ->
+wait_for_response({Resp, TrID},
+		  #state{orig_req = #sip{method = Method} = Req} = State) ->
     case Resp of
-        {error, _} ->
-	    Req = State#state.orig_req,
-            {Status, Reason} = esip:error_status(Resp),
-            case Status of
-                408 when Req#sip.method /= <<"INVITE">> ->
-                    %% Absorb useless 408. See RFC4320
-                    esip:stop_transaction(State#state.orig_trid);
-                _ ->
-                    ErrResp = mod_sip:make_response(
-				Req,
-				#sip{type = response,
-				     status = Status,
-				     reason = Reason}),
-		    esip:reply(State#state.orig_trid, ErrResp)
-            end,
-            {stop, normal, State};
+	{error, timeout} when Method /= <<"INVITE">> ->
+	    %% Absorb useless 408. See RFC4320
+	    choose_best_response(State),
+	    esip:stop_transaction(State#state.orig_trid),
+	    {stop, normal, State};
+	{error, _} ->
+	    {Status, Reason} = esip:error_status(Resp),
+	    State1 = mark_transaction_as_complete(TrID, State),
+	    SIPResp = mod_sip:make_response(Req,
+					    #sip{type = response,
+						 status = Status,
+						 reason = Reason}),
+	    State2 = collect_response(SIPResp, State1),
+	    case State2#state.tr_ids of
+		[] ->
+		    choose_best_response(State2),
+		    {stop, normal, State2};
+		_ ->
+		    {next_state, wait_for_response, State2}
+	    end;
         #sip{status = 100} ->
             {next_state, wait_for_response, State};
         #sip{status = Status} ->
-            case esip:split_hdrs('via', Resp#sip.hdrs) of
-                {[_], _} ->
-                    {stop, normal, State};
-                {[_|Vias], NewHdrs} ->
-                    esip:reply(State#state.orig_trid,
-                               Resp#sip{hdrs = [{'via', Vias}|NewHdrs]}),
-                    if Status < 200 ->
-                            {next_state, wait_for_response, State};
-                       true ->
-                            {stop, normal, State}
-                    end
-            end
+            {[_|Vias], NewHdrs} = esip:split_hdrs('via', Resp#sip.hdrs),
+	    NewResp = case Vias of
+			  [] ->
+			      Resp#sip{hdrs = NewHdrs};
+			  _ ->
+			      Resp#sip{hdrs = [{'via', Vias}|NewHdrs]}
+		      end,
+	    if Status < 300 ->
+		    esip:reply(State#state.orig_trid, NewResp);
+	       true ->
+		    ok
+	    end,
+	    State1 = if Status >= 200 ->
+			     mark_transaction_as_complete(TrID, State);
+			true ->
+			     State
+		     end,
+	    State2 = if Status >= 300 ->
+			     collect_response(NewResp, State1);
+			true ->
+			     State1
+		     end,
+	    if Status >= 600 ->
+		    cancel_pending_transactions(State2);
+	       true ->
+		    ok
+	    end,
+	    case State2#state.tr_ids of
+		[] ->
+		    choose_best_response(State2),
+		    {stop, normal, State2};
+		_ ->
+		    {next_state, wait_for_response, State2}
+	    end
     end;
 wait_for_response(_Event, State) ->
     {next_state, wait_for_response, State}.
@@ -155,14 +196,22 @@ connect(#sip{hdrs = Hdrs} = Req, Opts) ->
 	    LUser = jlib:nodeprep(ToURI#uri.user),
 	    LServer = jlib:nameprep(ToURI#uri.host),
 	    case mod_sip_registrar:find_sockets(LUser, LServer) of
-		[SIPSock|_] ->
-		    {ok, SIPSock};
+		[_|_] = SIPSocks ->
+		    {ok, SIPSocks};
 		[] ->
 		    {error, notfound}
 	    end;
 	false ->
-	    esip:connect(Req, Opts)
+	    case esip:connect(Req, Opts) of
+		{ok, SIPSock} ->
+		    {ok, [SIPSock]};
+		{error, _} = Err ->
+		    Err
+	    end
     end.
+
+cancel_pending_transactions(State) ->
+    lists:foreach(fun esip:cancel/1, State#state.tr_ids).
 
 add_certfile(LServer, Opts) ->
     case ejabberd_config:get_option({domain_certfile, LServer},
@@ -206,3 +255,27 @@ get_configured_vias(LServer) ->
 			{Type, {Host, Port}}
 		end, L)
       end, []).
+
+mark_transaction_as_complete(TrID, State) ->
+    NewTrIDs = lists:delete(TrID, State#state.tr_ids),
+    State#state{tr_ids = NewTrIDs}.
+
+collect_response(Resp, #state{responses = Resps} = State) ->
+    State#state{responses = [Resp|Resps]}.
+
+choose_best_response(#state{responses = Responses} = State) ->
+    SortedResponses = lists:keysort(#sip.status, Responses),
+    case lists:filter(
+	   fun(#sip{status = Status}) ->
+		   Status >= 600
+	   end, SortedResponses) of
+	[Resp|_] ->
+	    esip:reply(State#state.orig_trid, Resp);
+	[] ->
+	    case SortedResponses of
+		[Resp|_] ->
+		    esip:reply(State#state.orig_trid, Resp);
+		[] ->
+		    ok
+	    end
+    end.
