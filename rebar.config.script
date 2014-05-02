@@ -43,13 +43,8 @@ HiPE = case lists:keysearch(hipe, 1, Cfg) of
        end,
 
 Includes = [{i, "include"},
-            {i, filename:join(["deps", "p1_xml", "include"])}|
-	    lists:flatmap(
-	      fun({sip, true}) ->
-		      [{i, filename:join(["deps", "esip", "include"])}];
-		 (_) ->
-		      []
-	      end, Cfg)],
+	    {i, filename:join(["deps", "esip", "include"])},
+            {i, filename:join(["deps", "p1_xml", "include"])}],
 
 SrcDirs = lists:foldl(
             fun({tools, true}, Acc) ->
@@ -62,6 +57,7 @@ Deps = [{p1_cache_tab, ".*", {git, "git://github.com/processone/cache_tab"}},
         {p1_tls, ".*", {git, "git://github.com/processone/tls"}},
         {p1_stringprep, ".*", {git, "git://github.com/processone/stringprep"}},
         {p1_xml, ".*", {git, "git://github.com/processone/xml"}},
+	{esip, ".*", {git, "git://github.com/processone/p1_sip"}},
         {p1_yaml, ".*", {git, "git://github.com/processone/p1_yaml"}},
         {xmlrpc, ".*", {git, "git://github.com/rds13/xmlrpc"}}],
 
@@ -83,6 +79,7 @@ XMLFlags = lists:foldl(
 PostHooks = [ConfigureCmd("p1_tls", ""),
              ConfigureCmd("p1_stringprep", ""),
              ConfigureCmd("p1_yaml", ""),
+	     ConfigureCmd("esip", ""),
              ConfigureCmd("p1_xml", XMLFlags)],
 
 CfgDeps = lists:flatmap(
@@ -103,8 +100,6 @@ CfgDeps = lists:flatmap(
                ({http, true}) ->
                     [{ibrowse, ".*", {git, "git://github.com/cmullaparthi/ibrowse"}},
                      {lhttpc, ".*", {git, "git://github.com/esl/lhttpc"}}];
-	       ({sip, true}) ->
-		    [{esip, ".*", {git, "git://github.com/processone/p1_sip"}}];
                ({lager, true}) ->
                     [{lager, ".*", {git, "git://github.com/basho/lager"}}];
                ({lager, false}) ->
@@ -120,8 +115,6 @@ CfgPostHooks = lists:flatmap(
                          [ConfigureCmd("p1_zlib", "")];
                     ({iconv, true}) ->
                          [ConfigureCmd("p1_iconv", "")];
-		    ({sip, true}) ->
-			 [ConfigureCmd("esip", "")];
                     (_) ->
                          []
                  end, Cfg),
