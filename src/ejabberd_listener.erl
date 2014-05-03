@@ -152,19 +152,19 @@ init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 	    %% Inform my parent that this port was opened succesfully
 	    proc_lib:init_ack({ok, self()}),
 	    case erlang:function_exported(Module, udp_init, 2) of
+		false ->
+		    udp_recv(Socket, Module, Opts);
 		true ->
 		    case catch Module:udp_init(Socket, Opts) of
 			{'EXIT', _} = Err ->
 			    ?ERROR_MSG("failed to process callback function "
 				       "~p:~s(~p, ~p): ~p",
-				       [Module, udp_init, Socket, Opts, Err]);
-			_ ->
-			    ok
-		    end;
-		false ->
-		    ok
-	    end,
-	    udp_recv(Socket, Module, Opts);
+				       [Module, udp_init, Socket, Opts, Err]),
+			    udp_recv(Socket, Module, Opts);
+			NewOpts ->
+			    udp_recv(Socket, Module, NewOpts)
+		    end
+	    end;
 	{error, Reason} ->
 	    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
     end.
@@ -174,20 +174,19 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     %% Inform my parent that this port was opened succesfully
     proc_lib:init_ack({ok, self()}),
     case erlang:function_exported(Module, tcp_init, 2) of
+	false ->
+	    accept(ListenSocket, Module, Opts);
 	true ->
 	    case catch Module:tcp_init(ListenSocket, Opts) of
 		{'EXIT', _} = Err ->
 		    ?ERROR_MSG("failed to process callback function "
 			       "~p:~s(~p, ~p): ~p",
-			       [Module, tcp_init, ListenSocket, Opts, Err]);
-		_ ->
-		    ok
-	    end;
-	false ->
-	    ok
-    end,
-    %% And now start accepting connection attempts
-    accept(ListenSocket, Module, Opts).
+			       [Module, tcp_init, ListenSocket, Opts, Err]),
+		    accept(ListenSocket, Module, Opts);
+		NewOpts ->
+		    accept(ListenSocket, Module, NewOpts)
+	    end
+    end.
 
 listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
     case ets:lookup(listen_sockets, PortIP) of
