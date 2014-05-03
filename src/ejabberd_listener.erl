@@ -336,11 +336,11 @@ udp_recv(Socket, Module, Opts) ->
 		    ?ERROR_MSG("failed to process UDP packet:~n"
 			       "** Source: {~p, ~p}~n"
 			       "** Reason: ~p~n** Packet: ~p",
-			       [Addr, Port, Reason, Packet]);
-		_ ->
-		    ok
-	    end,
-	    udp_recv(Socket, Module, Opts);
+			       [Addr, Port, Reason, Packet]),
+		    udp_recv(Socket, Module, Opts);
+		NewOpts ->
+		    udp_recv(Socket, Module, NewOpts)
+	    end;
 	{error, Reason} ->
 	    ?ERROR_MSG("unexpected UDP error: ~s", [format_error(Reason)]),
 	    throw({error, Reason})
