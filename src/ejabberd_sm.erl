@@ -843,6 +843,7 @@ update_tables() ->
       [ur, user, node] -> mnesia:delete_table(session);
       [ur, user, pid] -> mnesia:delete_table(session);
       [usr, us, pid] -> mnesia:delete_table(session);
+      [usr, us, sid, priority, info] -> mnesia:delete_table(session);
       [sid, usr, us, priority] ->
 	  mnesia:delete_table(session);
       [sid, usr, us, priority, info] -> ok;

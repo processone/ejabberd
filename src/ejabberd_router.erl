@@ -396,6 +396,7 @@ update_tables() ->
       [domain, node, pid] -> mnesia:delete_table(route);
       [domain, pid] -> mnesia:delete_table(route);
       [domain, pid, local_hint] -> ok;
+      [domain, pid, local_hint|_] -> mnesia:delete_table(route);
       {'EXIT', _} -> ok
     end,
     case lists:member(local_route,
