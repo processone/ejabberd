@@ -1270,15 +1270,15 @@ session_established2(El, StateData) ->
 		       [{xmlstreamelement, El}]),
     fsm_next_state(session_established, NewState).
 
+wait_for_resume({xmlstreamelement, _El} = Event, StateData) ->
+    session_established(Event, StateData),
+    fsm_next_state(wait_for_resume, StateData);
 wait_for_resume(timeout, StateData) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
 	   [jlib:jid_to_string(StateData#state.jid)]),
     {stop, normal, StateData};
-wait_for_resume(closed, StateData) ->
-    ?DEBUG("Ignoring 'closed' event while waiting for resumption", []),
-    fsm_next_state(wait_for_resume, StateData);
 wait_for_resume(Event, StateData) ->
-    ?INFO_MSG("Ignoring event while waiting for resumption: ~p", [Event]),
+    ?DEBUG("Ignoring event while waiting for resumption: ~p", [Event]),
     fsm_next_state(wait_for_resume, StateData).
 
 %%----------------------------------------------------------------------
@@ -1873,6 +1873,9 @@ send_header(StateData, Server, Version, Lang) ->
 			    LangStr]),
     send_text(StateData, iolist_to_binary(Header)).
 
+send_trailer(StateData)
+    when StateData#state.sm_state == pending ->
+    ?DEBUG("Cannot send stream trailer while waiting for resumption", []);
 send_trailer(StateData)
     when StateData#state.xml_socket ->
     (StateData#state.sockmod):send_xml(StateData#state.socket,
@@ -2558,7 +2561,8 @@ stream_mgmt_enabled(#state{sm_state = disabled}) ->
 stream_mgmt_enabled(_StateData) ->
     true.
 
-dispatch_stream_mgmt(El, #state{sm_state = active} = StateData) ->
+dispatch_stream_mgmt(El, StateData) when StateData#state.sm_state == active;
+					 StateData#state.sm_state == pending ->
     perform_stream_mgmt(El, StateData);
 dispatch_stream_mgmt(El, StateData) ->
     negotiate_stream_mgmt(El, StateData).
