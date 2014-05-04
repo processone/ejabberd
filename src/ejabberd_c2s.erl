@@ -2672,10 +2672,6 @@ handle_r(StateData) ->
 
 handle_a(#state{jid = JID, n_stanzas_out = NumStanzasOut} = StateData, Attrs) ->
     case catch jlib:binary_to_integer(xml:get_attr_s(<<"h">>, Attrs)) of
-      H when is_integer(H), H > NumStanzasOut ->
-	  ?WARNING_MSG("~s acknowledged ~B stanzas, but only ~B were sent",
-		       [jlib:jid_to_string(JID), H, NumStanzasOut]),
-	  ack_queue_drop(StateData, NumStanzasOut);
       H when is_integer(H), H >= 0 ->
 	  ?DEBUG("~s acknowledged ~B of ~B stanzas",
 		 [jlib:jid_to_string(JID), H, NumStanzasOut]),
