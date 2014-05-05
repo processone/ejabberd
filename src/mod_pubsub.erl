@@ -4156,7 +4156,7 @@ presence_can_deliver({User, Server, Resource}, true) ->
 		       ({session, _, _ , _, undefined, _}, _Acc) -> false;
 		       ({session, _, {_, _, R}, _, _Priority, _}, _Acc) ->
 			   case Resource of
-			       [] -> true;
+			       <<>> -> true;
 			       R -> true;
 			       _ -> false
 			   end
