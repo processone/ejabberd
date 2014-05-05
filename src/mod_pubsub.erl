@@ -827,7 +827,7 @@ send_loop(State) ->
 						      end;
 						  (_) -> ok
 					      end,
-					      Subscriptions)
+					      lists:usort(Subscriptions))
 			end,
 			State#state.plugins),
 	  if not State#state.ignore_pep_from_offline ->
@@ -1166,22 +1166,21 @@ disco_items(Host, Node, From) ->
 %% presence hooks handling functions
 %%
 
-caps_update(#jid{luser = U, lserver = S, lresource = R} = From, To, _Features) ->
-    Pid = ejabberd_sm:get_session_pid(U, S, R),
-    presence_probe(From, To, Pid).
+caps_update(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = Host} = JID, _Features)
+	when Host =/= S ->
+    presence(Host, {presence, U, S, [R], JID});
+caps_update(From, To, _Feature) ->
+    ok.
 
-presence_probe(#jid{luser = User, lserver = Server, lresource = Resource} = JID,
-  JID, Pid) ->
-    presence(Server, {presence, JID, Pid}),
-    presence(Server, {presence, User, Server, [Resource], JID});
-presence_probe(#jid{luser = User, lserver = Server},
-  #jid{luser = User, lserver = Server}, _Pid) ->
-    %% ignore presence_probe from other ressources for the current user
-    %% this way, we do not send duplicated last items if user already connected with other clients
+presence_probe(#jid{luser = U, lserver = S, lresource = R} = JID, JID, Pid) ->
+    presence(S, {presence, JID, Pid}),
+    presence(S, {presence, U, S, [R], JID});
+presence_probe(#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}, _Pid) ->
+    %% ignore presence_probe from my other ressources
+    %% to not get duplicated last items
     ok;
-presence_probe(#jid{luser = User, lserver = Server, lresource = Resource},
-  #jid{lserver = Host} = JID, _Pid) ->
-    presence(Host, {presence, User, Server, [Resource], JID}).
+presence_probe(#jid{luser = U, lserver = S, lresource = R} = From, #jid{lserver = Host} = JID, _Pid) ->
+    presence(Host, {presence, U, S, [R], JID}).
 
 presence(ServerHost, Presence) ->
     SendLoop = case
