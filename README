@@ -12,6 +12,7 @@ To compile ejabberd you need:
 
  - GNU Make
  - GCC
+ - pkg-config
  - Libexpat 1.95 or higher
  - Libyaml 1.4 or higher
  - Erlang/OTP R15B or higher.
