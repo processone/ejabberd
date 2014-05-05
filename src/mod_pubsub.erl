@@ -3356,6 +3356,8 @@ send_items(Host, Node, NodeId, Type, {U, S, R} = LJID,
 	       _ -> []
 	     end,
     Stanza = case ToSend of
+	       [] ->
+		   undefined;
 	       [LastItem] ->
 		   {ModifNow, ModifUSR} =
 		       LastItem#pubsub_item.modification,
@@ -3369,11 +3371,13 @@ send_items(Host, Node, NodeId, Type, {U, S, R} = LJID,
 					attrs = nodeAttr(Node),
 					children = itemsEls(ToSend)}])
 	     end,
-    case is_tuple(Host) of
-      false ->
+    case {is_tuple(Host), Stanza} of
+      {_, undefined} ->
+	  ok;
+      {false, _} ->
 	  ejabberd_router:route(service_jid(Host),
 				jlib:make_jid(LJID), Stanza);
-      true ->
+      {true, _} ->
 	  case ejabberd_sm:get_session_pid(U, S, R) of
 	    C2SPid when is_pid(C2SPid) ->
 		ejabberd_c2s:broadcast(C2SPid,
