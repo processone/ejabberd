@@ -2952,10 +2952,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
 		     PublishModel = get_option(Options, publish_model),
 		     DeliverPayloads = get_option(Options, deliver_payloads),
 		     PersistItems = get_option(Options, persist_items),
-		     MaxItems = case PersistItems of
-				  false -> 0;
-				  true -> max_items(Host, Options)
-				end,
+		     MaxItems = max_items(Host, Options),
 		     PayloadCount = payload_xmlelements(Payload),
 		     PayloadSize = byte_size(term_to_binary(Payload)) - 2,
 		     PayloadMaxSize = get_option(Options, max_payload_size),
