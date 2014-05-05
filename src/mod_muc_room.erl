@@ -245,7 +245,7 @@ normal_state({route, From, <<"">>,
 		      NewState = expulse_participant(Packet, From, StateData,
 						     translate:translate(Lang,
 									 ErrorText)),
-		      {next_state, normal_state, NewState};
+		      close_room_if_temporary_and_empty(NewState);
 		  _ -> {next_state, normal_state, StateData}
 		end;
 	    <<"chat">> ->
@@ -1126,14 +1126,17 @@ process_presence(From, Nick,
 		       end;
 		   _ -> StateData
 		 end,
+    close_room_if_temporary_and_empty(StateData1).
+
+close_room_if_temporary_and_empty(StateData1) ->
     case not (StateData1#state.config)#config.persistent
 	   andalso (?DICT):to_list(StateData1#state.users) == []
 	of
       true ->
 	  ?INFO_MSG("Destroyed MUC room ~s because it's temporary "
 		    "and empty",
-		    [jlib:jid_to_string(StateData#state.jid)]),
-	  add_to_log(room_existence, destroyed, StateData),
+		    [jlib:jid_to_string(StateData1#state.jid)]),
+	  add_to_log(room_existence, destroyed, StateData1),
 	  {stop, normal, StateData1};
       _ -> {next_state, normal_state, StateData1}
     end.
