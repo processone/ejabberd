@@ -820,7 +820,7 @@ disco_items(Host, Node, From) ->
 caps_update(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = Host} = JID, _Features)
 	when Host =/= S ->
     presence(Host, {presence, U, S, [R], JID});
-caps_update(From, To, _Feature) ->
+caps_update(_From, _To, _Feature) ->
     ok.
 
 presence_probe(#jid{luser = U, lserver = S, lresource = R} = JID, JID, Pid) ->
@@ -830,7 +830,7 @@ presence_probe(#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}, _Pid)
     %% ignore presence_probe from my other ressources
     %% to not get duplicated last items
     ok;
-presence_probe(#jid{luser = U, lserver = S, lresource = R} = From, #jid{lserver = Host} = JID, _Pid) ->
+presence_probe(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = Host} = JID, _Pid) ->
     presence(Host, {presence, U, S, [R], JID}).
 
 presence(ServerHost, Presence) ->
@@ -1272,7 +1272,7 @@ command_disco_info(_Host, ?NS_PUBSUB_GET_PENDING,
 node_disco_info(Host, Node, From) ->
     node_disco_info(Host, Node, From, true, true).
 
-node_disco_info(Host, Node, From, Identity, Features) ->
+node_disco_info(Host, Node, From, _Identity, _Features) ->
 %    Action =
 %	fun(#pubsub_node{type = Type, id = NodeId}) ->
 %		I = case Identity of
@@ -3251,8 +3251,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
       error -> {error, ?ERR_BAD_REQUEST};
       _ ->
 	  Action = fun (#pubsub_node{type = Type,
-				     id = NodeId} =
-			    N) ->
+				     id = NodeId}) ->
 			   Owners = node_owners_call(Type, NodeId),
 			   case lists:member(Owner, Owners) of
 			     true ->
