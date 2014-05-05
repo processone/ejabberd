@@ -173,7 +173,7 @@ get_cache_option(Host) ->
     case ejabberd_config:get_option(
            {extauth_cache, Host},
            fun(false) -> undefined;
-              (I) when is_integer(I), I > 0 -> I
+              (I) when is_integer(I), I >= 0 -> I
            end) of
         undefined -> false;
         CacheTime -> {true, CacheTime}
