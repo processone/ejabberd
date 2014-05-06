@@ -5,7 +5,7 @@
 %%% Created :  4 May 2008 by Badlop <badlop@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +17,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -141,7 +140,10 @@ process([<<"change_password">>],
                 list_to_binary([?T(<<"There was an error changing the password: ">>),
                                 ?T(get_error_text(Error))]),
 	  {404, [], ErrorText}
-    end.
+    end;
+
+process(Path, _Request) ->
+    {404, [], "Not Found"}.
 
 %%%----------------------------------------------------------------------
 %%% CSS
@@ -485,9 +487,16 @@ form_del_get(Host, Lang) ->
 %%                                    {error, not_allowed} |
 %%                                    {error, invalid_jid}
 register_account(Username, Host, Password) ->
+    Access = gen_mod:get_module_opt(Host, mod_register, access,
+                                    fun(A) when is_atom(A) -> A end,
+                                    all),
     case jlib:make_jid(Username, Host, <<"">>) of
       error -> {error, invalid_jid};
-      _ -> register_account2(Username, Host, Password)
+      JID ->
+        case acl:match_rule(Host, Access, JID) of
+          deny -> {error, not_allowed};
+          allow -> register_account2(Username, Host, Password)
+        end
     end.
 
 register_account2(Username, Host, Password) ->

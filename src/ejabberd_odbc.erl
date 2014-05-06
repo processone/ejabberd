@@ -5,7 +5,7 @@
 %%% Created :  8 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +17,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -141,9 +140,12 @@ sql_bloc(Host, F) -> sql_call(Host, {sql_bloc, F}).
 sql_call(Host, Msg) ->
     case get(?STATE_KEY) of
       undefined ->
-	  (?GEN_FSM):sync_send_event(ejabberd_odbc_sup:get_random_pid(Host),
-				     {sql_cmd, Msg, now()},
-				     ?TRANSACTION_TIMEOUT);
+        case ejabberd_odbc_sup:get_random_pid(Host) of
+          none -> {error, unknownhost};
+          Pid ->
+            (?GEN_FSM):sync_send_event(Pid,{sql_cmd, Msg, now()},
+                                       ?TRANSACTION_TIMEOUT)
+          end;
       _State -> nested_op(Msg)
     end.
 

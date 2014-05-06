@@ -5,7 +5,7 @@
 %%% Created :  7 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +17,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -38,7 +37,8 @@
 	 incoming_s2s_number/0, outgoing_s2s_number/0,
 	 clean_temporarily_blocked_table/0,
 	 list_temporarily_blocked_hosts/0,
-	 external_host_overloaded/1, is_temporarly_blocked/1]).
+	 external_host_overloaded/1, is_temporarly_blocked/1,
+	 check_peer_certificate/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -53,6 +53,14 @@
 -include("jlib.hrl").
 
 -include("ejabberd_commands.hrl").
+
+-include_lib("public_key/include/public_key.hrl").
+
+-define(PKIXEXPLICIT, 'OTP-PUB-KEY').
+
+-define(PKIXIMPLICIT, 'OTP-PUB-KEY').
+
+-include("XmppAddr.hrl").
 
 -define(DEFAULT_MAX_S2S_CONNECTIONS_NUMBER, 1).
 
@@ -207,6 +215,31 @@ try_register(FromTo) ->
 
 dirty_get_connections() ->
     mnesia:dirty_all_keys(s2s).
+
+check_peer_certificate(SockMod, Sock, Peer) ->
+    case SockMod:get_peer_certificate(Sock) of
+      {ok, Cert} ->
+	  case SockMod:get_verify_result(Sock) of
+	    0 ->
+		case idna:domain_utf8_to_ascii(Peer) of
+		  false ->
+		      {error, <<"Cannot decode remote server name">>};
+		  AsciiPeer ->
+		      case
+			lists:any(fun(D) -> match_domain(AsciiPeer, D) end,
+				  get_cert_domains(Cert)) of
+			true ->
+			    {ok, <<"Verification successful">>};
+			false ->
+			    {error, <<"Certificate host name mismatch">>}
+		      end
+		end;
+	    VerifyRes ->
+		{error, p1_tls:get_cert_verify_string(VerifyRes, Cert)}
+	  end;
+      error ->
+	  {error, <<"Cannot get peer certificate">>}
+    end.
 
 %%====================================================================
 %% gen_server callbacks
@@ -620,3 +653,121 @@ get_s2s_state(S2sPid) ->
 	      {badrpc, _} -> [{status, error}]
 	    end,
     [{s2s_pid, S2sPid} | Infos].
+
+get_cert_domains(Cert) ->
+    {rdnSequence, Subject} =
+	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.subject,
+    Extensions =
+	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.extensions,
+    lists:flatmap(fun (#'AttributeTypeAndValue'{type =
+						    ?'id-at-commonName',
+						value = Val}) ->
+			  case 'OTP-PUB-KEY':decode('X520CommonName', Val) of
+			    {ok, {_, D1}} ->
+				D = if is_binary(D1) -> D1;
+				       is_list(D1) -> list_to_binary(D1);
+				       true -> error
+				    end,
+				if D /= error ->
+				       case jlib:string_to_jid(D) of
+					 #jid{luser = <<"">>, lserver = LD,
+					      lresource = <<"">>} ->
+					     [LD];
+					 _ -> []
+				       end;
+				   true -> []
+				end;
+			    _ -> []
+			  end;
+		      (_) -> []
+		  end,
+		  lists:flatten(Subject))
+      ++
+      lists:flatmap(fun (#'Extension'{extnID =
+					  ?'id-ce-subjectAltName',
+				      extnValue = Val}) ->
+			    BVal = if is_list(Val) -> list_to_binary(Val);
+				      true -> Val
+				   end,
+			    case 'OTP-PUB-KEY':decode('SubjectAltName', BVal)
+				of
+			      {ok, SANs} ->
+				  lists:flatmap(fun ({otherName,
+						      #'AnotherName'{'type-id' =
+									 ?'id-on-xmppAddr',
+								     value =
+									 XmppAddr}}) ->
+							case
+							  'XmppAddr':decode('XmppAddr',
+									    XmppAddr)
+							    of
+							  {ok, D}
+							      when
+								is_binary(D) ->
+							      case
+								jlib:string_to_jid((D))
+								  of
+								#jid{luser =
+									 <<"">>,
+								     lserver =
+									 LD,
+								     lresource =
+									 <<"">>} ->
+								    case
+								      idna:domain_utf8_to_ascii(LD)
+									of
+								      false ->
+									  [];
+								      PCLD ->
+									  [PCLD]
+								    end;
+								_ -> []
+							      end;
+							  _ -> []
+							end;
+						    ({dNSName, D})
+							when is_list(D) ->
+							case
+							  jlib:string_to_jid(list_to_binary(D))
+							    of
+							  #jid{luser = <<"">>,
+							       lserver = LD,
+							       lresource =
+								   <<"">>} ->
+							      [LD];
+							  _ -> []
+							end;
+						    (_) -> []
+						end,
+						SANs);
+			      _ -> []
+			    end;
+			(_) -> []
+		    end,
+		    Extensions).
+
+match_domain(Domain, Domain) -> true;
+match_domain(Domain, Pattern) ->
+    DLabels = str:tokens(Domain, <<".">>),
+    PLabels = str:tokens(Pattern, <<".">>),
+    match_labels(DLabels, PLabels).
+
+match_labels([], []) -> true;
+match_labels([], [_ | _]) -> false;
+match_labels([_ | _], []) -> false;
+match_labels([DL | DLabels], [PL | PLabels]) ->
+    case lists:all(fun (C) ->
+			   $a =< C andalso C =< $z orelse
+			     $0 =< C andalso C =< $9 orelse
+			       C == $- orelse C == $*
+		   end,
+		   binary_to_list(PL))
+	of
+      true ->
+	  Regexp = ejabberd_regexp:sh_to_awk(PL),
+	  case ejabberd_regexp:run(DL, Regexp) of
+	    match -> match_labels(DLabels, PLabels);
+	    nomatch -> false
+	  end;
+      false -> false
+    end.

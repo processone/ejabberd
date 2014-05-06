@@ -4,7 +4,7 @@ msgstr ""
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
 "Last-Translator: Isratine Citizen <genghiskhan@gmx.ca>\n"
-"Language-Team: Rahut <genghiskhan@gmx.ca>\n"
+"Language-Team: Rahut <http://sourceforge.net/projects/rahut/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -13,7 +13,7 @@ msgstr ""
 "X-Poedit-Language: Hebrew (עברית)\n"
 "X-Generator: Poedit 1.5.4\n"
 
-#: ejabberd_c2s.erl:424 ejabberd_c2s.erl:729
+#: ejabberd_c2s.erl:424 ejabberd_c2s.erl:727
 msgid "Use of STARTTLS required"
 msgstr "נדרש שימוש של STARTTLS"
 
@@ -21,15 +21,16 @@ msgstr "נדרש שימוש של STARTTLS"
 msgid "No resource provided"
 msgstr "לא סופק משאב"
 
-#: ejabberd_c2s.erl:1200
+#: ejabberd_c2s.erl:1197
 msgid "Replaced by new connection"
 msgstr "הוחלף בחיבור חדש"
 
-#: ejabberd_c2s.erl:1888
+#: ejabberd_c2s.erl:1885
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr "רשימת הפרטיות הפעילה שלך אסרה את הניתוב של סטנזה זו."
 
 # תמליל
+# כפי שעינייך רואות
 #: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
 msgid "Enter the text you see"
 msgstr "הזן את הטקסט אותו הינך רואה"
@@ -37,7 +38,7 @@ msgstr "הזן את הטקסט אותו הינך רואה"
 # כדי שלא לחסומן
 #: ejabberd_captcha.erl:101
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr "הודעותייך אל ~s הינן חסומות. כדי למנוע את חסימתן, נא לבקר אצל ~s"
+msgstr "ההודעות שלך לערוץ ~s הינן חסומות. כדי למנוע את חסימתן, בקר בכתובת ~s"
 
 # בקר את עמוד
 #: ejabberd_captcha.erl:134
@@ -64,65 +65,68 @@ msgstr "פינג"
 msgid "Pong"
 msgstr "פונג"
 
-#: mod_announce.erl:516
+#: mod_announce.erl:507 mod_announce_odbc.erl:499
 msgid "Really delete message of the day?"
 msgstr "באמת למחוק את הודעת היום?"
 
-#: mod_announce.erl:524 mod_configure.erl:1083 mod_configure.erl:1128
+#: mod_announce.erl:515 mod_announce_odbc.erl:507 mod_configure.erl:1083
+#: mod_configure.erl:1128
 msgid "Subject"
 msgstr "נושא"
 
-#: mod_announce.erl:529 mod_configure.erl:1088 mod_configure.erl:1133
+#: mod_announce.erl:520 mod_announce_odbc.erl:512 mod_configure.erl:1088
+#: mod_configure.erl:1133
 msgid "Message body"
 msgstr "גוף הודעה"
 
-#: mod_announce.erl:609
+#: mod_announce.erl:600 mod_announce_odbc.erl:592
 #, fuzzy
 msgid "No body provided for announce message"
 msgstr "לא סופק גוף עבור announce message"
 
-#: mod_announce.erl:644
+#: mod_announce.erl:635 mod_announce_odbc.erl:627
 msgid "Announcements"
 msgstr "מודעות"
 
-#: mod_announce.erl:646
+#: mod_announce.erl:637 mod_announce_odbc.erl:629
 msgid "Send announcement to all users"
 msgstr "שלח מודעות אל כל המשתמשים"
 
 # אצל כל
-#: mod_announce.erl:648
+#: mod_announce.erl:639 mod_announce_odbc.erl:631
 msgid "Send announcement to all users on all hosts"
 msgstr "שלח מודעות אל כל המשתמשים בכל המארחים"
 
-#: mod_announce.erl:650
+#: mod_announce.erl:641 mod_announce_odbc.erl:633
 msgid "Send announcement to all online users"
 msgstr "שלח מודעות אל כל המשתמשים המקוונים"
 
-#: mod_announce.erl:652 mod_configure.erl:1078 mod_configure.erl:1123
+#: mod_announce.erl:643 mod_announce_odbc.erl:635 mod_configure.erl:1078
+#: mod_configure.erl:1123
 msgid "Send announcement to all online users on all hosts"
 msgstr "שלח מודעות אל כל המשתמשים המקוונים בכל המארחים"
 
-#: mod_announce.erl:654
+#: mod_announce.erl:645 mod_announce_odbc.erl:637
 msgid "Set message of the day and send to online users"
 msgstr "קבע הודעת היום ושלח אל משתמשים מקוונים"
 
-#: mod_announce.erl:656
+#: mod_announce.erl:647 mod_announce_odbc.erl:639
 msgid "Set message of the day on all hosts and send to online users"
 msgstr "קבע הודעת היום בכל המארחים ושלח אל משתמשים מקוונים"
 
-#: mod_announce.erl:658
+#: mod_announce.erl:649 mod_announce_odbc.erl:641
 msgid "Update message of the day (don't send)"
 msgstr "עדכן הודעת היום (אל תשלח)"
 
-#: mod_announce.erl:660
+#: mod_announce.erl:651 mod_announce_odbc.erl:643
 msgid "Update message of the day on all hosts (don't send)"
 msgstr "עדכן הודעת היום בכל המארחים (אל תשלח)"
 
-#: mod_announce.erl:662
+#: mod_announce.erl:653 mod_announce_odbc.erl:645
 msgid "Delete message of the day"
 msgstr "מחק הודעת היום"
 
-#: mod_announce.erl:664
+#: mod_announce.erl:655 mod_announce_odbc.erl:647
 msgid "Delete message of the day on all hosts"
 msgstr "מחק הודעת היום בכל המארחים"
 
@@ -131,7 +135,7 @@ msgstr "מחק הודעת היום בכל המארחים"
 msgid "Configuration"
 msgstr "תצורה"
 
-#: mod_configure.erl:125 mod_configure.erl:576 web/ejabberd_web_admin.erl:1929
+#: mod_configure.erl:125 mod_configure.erl:576 web/ejabberd_web_admin.erl:1936
 msgid "Database"
 msgstr "מסד נתונים"
 
@@ -144,7 +148,7 @@ msgid "Stop Modules"
 msgstr "הפסק מודולים"
 
 # גיבוי
-#: mod_configure.erl:131 mod_configure.erl:604 web/ejabberd_web_admin.erl:1930
+#: mod_configure.erl:131 mod_configure.erl:604 web/ejabberd_web_admin.erl:1937
 msgid "Backup"
 msgstr "גבה"
 
@@ -197,9 +201,10 @@ msgstr "השג סיסמת משתמש"
 msgid "Change User Password"
 msgstr "שנה סיסמת משתמש"
 
+# התחברות
 #: mod_configure.erl:155 mod_configure.erl:523 mod_configure.erl:1272
 msgid "Get User Last Login Time"
-msgstr "השג זמן התחברות אחרון של משתמש"
+msgstr "השג זמן כניסה אחרון של משתמש"
 
 #: mod_configure.erl:157 mod_configure.erl:524 mod_configure.erl:1284
 msgid "Get User Statistics"
@@ -243,15 +248,15 @@ msgstr "כל המשתמשים"
 msgid "Outgoing s2s Connections"
 msgstr "חיבורי s2s יוצאים"
 
-#: mod_configure.erl:503 web/ejabberd_web_admin.erl:1900
+#: mod_configure.erl:503 web/ejabberd_web_admin.erl:1907
 msgid "Running Nodes"
 msgstr "ממסרים שמורצים כעת"
 
-#: mod_configure.erl:504 web/ejabberd_web_admin.erl:1902
+#: mod_configure.erl:504 web/ejabberd_web_admin.erl:1909
 msgid "Stopped Nodes"
 msgstr "ממסרים שנפסקו"
 
-#: mod_configure.erl:577 mod_configure.erl:587 web/ejabberd_web_admin.erl:1946
+#: mod_configure.erl:577 mod_configure.erl:587 web/ejabberd_web_admin.erl:1953
 msgid "Modules"
 msgstr "מודולים"
 
@@ -262,7 +267,7 @@ msgstr "ניהול גיבוי"
 # help is needed with spool
 #: mod_configure.erl:579
 msgid "Import Users From jabberd14 Spool Files"
-msgstr "ייבוא משתמשים מן קבצי סליל (Spool Files) של jabberd14"
+msgstr "ייבוא משתמשים מתוך קבצי סליל (Spool Files) של jabberd14"
 
 #: mod_configure.erl:699
 msgid "To ~s"
@@ -336,7 +341,7 @@ msgstr "נתיב אל קובץ"
 
 #: mod_configure.erl:997
 msgid "Restore Backup from File at "
-msgstr "שחזר גיבוי מן קובץ אצל "
+msgstr "שחזר גיבוי מתוך קובץ אצל "
 
 #: mod_configure.erl:1011
 msgid "Dump Backup to Text File at "
@@ -348,7 +353,7 @@ msgstr "הזן נתיב אל קובץ טקסט"
 
 #: mod_configure.erl:1025
 msgid "Import User from File at "
-msgstr "ייבוא משתמש מן קובץ אצל "
+msgstr "ייבוא משתמש מתוך קובץ אצל "
 
 #: mod_configure.erl:1029
 msgid "Enter path to jabberd14 spool file"
@@ -356,7 +361,7 @@ msgstr "הזן נתיב אל קובץ סליל (spool file) של jabberd14"
 
 #: mod_configure.erl:1039
 msgid "Import Users from Dir at "
-msgstr "ייבוא משתמשים מן מדור אצל "
+msgstr "ייבוא משתמשים מתוך מדור אצל "
 
 #: mod_configure.erl:1043
 msgid "Enter path to jabberd14 spool dir"
@@ -388,17 +393,16 @@ msgstr "תצורת גישה"
 msgid "Access rules"
 msgstr "כללי גישה"
 
-# מזהה Jabber
 #: mod_configure.erl:1200 mod_configure.erl:1222 mod_configure.erl:1234
 #: mod_configure.erl:1246 mod_configure.erl:1258 mod_configure.erl:1275
 #: mod_configure.erl:1287 mod_configure.erl:1650 mod_configure.erl:1700
-#: mod_configure.erl:1721 mod_roster.erl:1345 mod_vcard.erl:543
-#: mod_vcard_ldap.erl:554
+#: mod_configure.erl:1721 mod_roster.erl:943 mod_roster_odbc.erl:1060
+#: mod_vcard.erl:472 mod_vcard_ldap.erl:554 mod_vcard_odbc.erl:448
 msgid "Jabber ID"
-msgstr "‫JID"
+msgstr "מזהה Jabber"
 
 #: mod_configure.erl:1205 mod_configure.erl:1263 mod_configure.erl:1651
-#: mod_configure.erl:1861 mod_muc/mod_muc_room.erl:3218 mod_register.erl:235
+#: mod_configure.erl:1863 mod_muc/mod_muc_room.erl:3224 mod_register.erl:235
 #: web/ejabberd_web_admin.erl:1520
 msgid "Password"
 msgstr "סיסמה"
@@ -415,19 +419,19 @@ msgstr "מספר של משתמשים רשומים"
 msgid "Number of online users"
 msgstr "מספר של משתמשים מקוונים"
 
-#: mod_configure.erl:1682 web/ejabberd_web_admin.erl:1587
-#: web/ejabberd_web_admin.erl:1736
+#: mod_configure.erl:1682 web/ejabberd_web_admin.erl:1588
+#: web/ejabberd_web_admin.erl:1743
 msgid "Never"
 msgstr "אף פעם"
 
-#: mod_configure.erl:1696 web/ejabberd_web_admin.erl:1600
-#: web/ejabberd_web_admin.erl:1749
+#: mod_configure.erl:1696 web/ejabberd_web_admin.erl:1601
+#: web/ejabberd_web_admin.erl:1756
 msgid "Online"
 msgstr "מקוון"
 
 #: mod_configure.erl:1701
 msgid "Last login"
-msgstr "התחברות אחרונה"
+msgstr "כניסה אחרונה"
 
 #: mod_configure.erl:1722
 msgid "Roster size"
@@ -441,56 +445,56 @@ msgstr "כתובות IP"
 msgid "Resources"
 msgstr "משאבים"
 
-#: mod_configure.erl:1848
+#: mod_configure.erl:1850
 msgid "Administration of "
 msgstr "ניהול של "
 
-#: mod_configure.erl:1851
+#: mod_configure.erl:1853
 msgid "Action on user"
 msgstr "פעולה על משתמש"
 
-#: mod_configure.erl:1855
+#: mod_configure.erl:1857
 msgid "Edit Properties"
 msgstr "ערוך מאפיינים"
 
-#: mod_configure.erl:1858 web/ejabberd_web_admin.erl:1762
+#: mod_configure.erl:1860 web/ejabberd_web_admin.erl:1769
 msgid "Remove User"
 msgstr "הסר משתמש"
 
-#: mod_irc/mod_irc.erl:207 mod_muc/mod_muc.erl:406
+#: mod_irc/mod_irc.erl:201 mod_irc/mod_irc_odbc.erl:196
+#: mod_muc/mod_muc.erl:336 mod_muc/mod_muc_odbc.erl:342
 msgid "Access denied by service policy"
 msgstr "גישה נדחתה על ידי פוליסת שירות"
 
-#: mod_irc/mod_irc.erl:409
+#: mod_irc/mod_irc.erl:401 mod_irc/mod_irc_odbc.erl:398
 msgid "IRC Transport"
 msgstr "מוביל IRC"
 
-#: mod_irc/mod_irc.erl:436
+#: mod_irc/mod_irc.erl:428 mod_irc/mod_irc_odbc.erl:425
 msgid "ejabberd IRC module"
 msgstr "מודול IRC של ejabberd"
 
-#: mod_irc/mod_irc.erl:600
+#: mod_irc/mod_irc.erl:559 mod_irc/mod_irc_odbc.erl:568
 msgid "You need an x:data capable client to configure mod_irc settings"
-msgstr ""
-"עליך לעשות שימוש בלקוח שביכולתו להבין x:data בכדי להגדיר הגדרות של mod_irc"
+msgstr "עליך להשתמש בלקוח אשר מסוגל להבין x:data בכדי להגדיר הגדרות של mod_irc"
 
-#: mod_irc/mod_irc.erl:607
+#: mod_irc/mod_irc.erl:566 mod_irc/mod_irc_odbc.erl:575
 msgid "Registration in mod_irc for "
 msgstr "רישום בתוך mod_irc עבור "
 
-#: mod_irc/mod_irc.erl:612
+#: mod_irc/mod_irc.erl:571 mod_irc/mod_irc_odbc.erl:580
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"הזן שם משתמש, קידודים, פורטים וסיסמאות בהם ברצונך להשתמש עבור התחברות אל "
+"הזן שם משתמש, קידודים, פורטים וסיסמאות בהם ברצונך להשתמש לשם התחברות אל "
 "שרתים של IRC"
 
-#: mod_irc/mod_irc.erl:617
+#: mod_irc/mod_irc.erl:576 mod_irc/mod_irc_odbc.erl:585
 msgid "IRC Username"
 msgstr "שם משתמש IRC"
 
-#: mod_irc/mod_irc.erl:627
+#: mod_irc/mod_irc.erl:586 mod_irc/mod_irc_odbc.erl:595
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
@@ -501,7 +505,7 @@ msgstr ""
 "רשימה זו עם ערכים בפורמט '{\"irc server\", \"encoding\", port, \"password"
 "\"}'.  באופן משתמט שירות זה משתמש בקידוד \"~s\", פורט ~p, סיסמה ריקה."
 
-#: mod_irc/mod_irc.erl:639
+#: mod_irc/mod_irc.erl:598 mod_irc/mod_irc_odbc.erl:607
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
@@ -510,112 +514,115 @@ msgstr ""
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
 # פרמטרי חיבור
-#: mod_irc/mod_irc.erl:644
+#: mod_irc/mod_irc.erl:603 mod_irc/mod_irc_odbc.erl:612
 msgid "Connections parameters"
 msgstr "פרמטרים של חיבור"
 
-#: mod_irc/mod_irc.erl:787
+#: mod_irc/mod_irc.erl:728 mod_irc/mod_irc_odbc.erl:757
 msgid "Join IRC channel"
 msgstr "הצטרף אל ערוץ IRC"
 
 # לא לשים סימן # ראשון
 # לא לשים את סימן # הראשון
-#: mod_irc/mod_irc.erl:791
+#: mod_irc/mod_irc.erl:732 mod_irc/mod_irc_odbc.erl:761
 msgid "IRC channel (don't put the first #)"
 msgstr "ערוץ IRC (אל תשים סימן # ראשון)"
 
-#: mod_irc/mod_irc.erl:796
+#: mod_irc/mod_irc.erl:737 mod_irc/mod_irc_odbc.erl:766
 msgid "IRC server"
 msgstr "שרת IRC"
 
-#: mod_irc/mod_irc.erl:829 mod_irc/mod_irc.erl:833
+#: mod_irc/mod_irc.erl:770 mod_irc/mod_irc.erl:774
+#: mod_irc/mod_irc_odbc.erl:799 mod_irc/mod_irc_odbc.erl:803
 msgid "Join the IRC channel here."
 msgstr "הצטרף אל ערוץ IRC כאן."
 
-#: mod_irc/mod_irc.erl:837
+#: mod_irc/mod_irc.erl:778 mod_irc/mod_irc_odbc.erl:807
 msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr "הצטרף אל ערוץ IRC בכתובת JID זו: ~s"
+msgstr "הצטרף אל ערוץ IRC במזהה Jabber זה: ~s"
 
-#: mod_irc/mod_irc.erl:915
+#: mod_irc/mod_irc.erl:863 mod_irc/mod_irc_odbc.erl:904
 msgid "IRC settings"
 msgstr "הגדרות IRC"
 
 # השלם
-#: mod_irc/mod_irc.erl:920
+#: mod_irc/mod_irc.erl:868 mod_irc/mod_irc_odbc.erl:909
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
 "settings."
 msgstr ""
-"הזן שם משתמש וקידודים בהם ברצונך להשתמש עבור התחברות אל שרתים של IRC.  לחץ "
+"הזן שם משתמש וקידודים בהם ברצונך להשתמש לשם התחברות אל שרתים של IRC.  לחץ "
 "'הבא' כדי להשיג עוד שדות למילוי.  לחץ 'סיים' כדי לשמור הגדרות."
 
-#: mod_irc/mod_irc.erl:926
+#: mod_irc/mod_irc.erl:874 mod_irc/mod_irc_odbc.erl:915
 msgid "IRC username"
 msgstr "שם משתמש IRC"
 
-#: mod_irc/mod_irc.erl:975
+#: mod_irc/mod_irc.erl:923 mod_irc/mod_irc_odbc.erl:964
 msgid "Password ~b"
 msgstr "סיסמה ~b"
 
-#: mod_irc/mod_irc.erl:980
+#: mod_irc/mod_irc.erl:928 mod_irc/mod_irc_odbc.erl:969
 msgid "Port ~b"
 msgstr "פורט ~b"
 
-#: mod_irc/mod_irc.erl:985
+#: mod_irc/mod_irc.erl:933 mod_irc/mod_irc_odbc.erl:974
 msgid "Encoding for server ~b"
 msgstr "קידוד עבור שרת ~b"
 
-#: mod_irc/mod_irc.erl:994
+#: mod_irc/mod_irc.erl:942 mod_irc/mod_irc_odbc.erl:983
 msgid "Server ~b"
 msgstr "שרת ~b"
 
-#: mod_muc/mod_muc.erl:520
+#: mod_muc/mod_muc.erl:449 mod_muc/mod_muc_odbc.erl:456
 msgid "Only service administrators are allowed to send service messages"
 msgstr "רק מנהלי שירות רשאים לשלוח הודעות שירות"
 
-#: mod_muc/mod_muc.erl:564
+#: mod_muc/mod_muc.erl:493 mod_muc/mod_muc_odbc.erl:500
 msgid "Room creation is denied by service policy"
 msgstr "יצירת חדר נדחתה על ידי פוליסת שירות"
 
-#: mod_muc/mod_muc.erl:571
+#: mod_muc/mod_muc.erl:500 mod_muc/mod_muc_odbc.erl:507
 msgid "Conference room does not exist"
 msgstr "חדר ועידה לא קיים"
 
-#: mod_muc/mod_muc.erl:673
+#: mod_muc/mod_muc.erl:582 mod_muc/mod_muc_odbc.erl:595
 msgid "Chatrooms"
 msgstr "חדרי שיחה"
 
 # to register nickname
-#: mod_muc/mod_muc.erl:829
+#: mod_muc/mod_muc.erl:712 mod_muc/mod_muc_odbc.erl:729
 msgid "You need a client that supports x:data to register the nickname"
-msgstr "עליך לעשות שימוש בלקוח שתומך x:data בכדי לרשום את שם הכינוי"
+msgstr "עליך להשתמש בלקוח אשר תומך x:data בכדי לרשום את שם הכינוי"
 
-#: mod_muc/mod_muc.erl:835
+#: mod_muc/mod_muc.erl:718 mod_muc/mod_muc_odbc.erl:735
 msgid "Nickname Registration at "
 msgstr "רישום שם כינוי אצל "
 
 # אותו ברצונך לרשום
-#: mod_muc/mod_muc.erl:839
+#: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_odbc.erl:739
 msgid "Enter nickname you want to register"
-msgstr "הזן שם כינוי שברצונך לרושמו"
+msgstr "הזן שם כינוי אשר ברצונך לרושמו"
 
-#: mod_muc/mod_muc.erl:840 mod_muc/mod_muc_room.erl:3804 mod_roster.erl:1346
-#: mod_vcard.erl:435 mod_vcard.erl:548
+#: mod_muc/mod_muc.erl:723 mod_muc/mod_muc_odbc.erl:740
+#: mod_muc/mod_muc_room.erl:3810 mod_roster.erl:944 mod_roster_odbc.erl:1061
+#: mod_vcard.erl:364 mod_vcard.erl:477 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:453
 msgid "Nickname"
 msgstr "שם כינוי"
 
 # note: another person > someone else
-#: mod_muc/mod_muc.erl:924 mod_muc/mod_muc_room.erl:1059
-#: mod_muc/mod_muc_room.erl:1783
+#: mod_muc/mod_muc.erl:762 mod_muc/mod_muc_odbc.erl:784
+#: mod_muc/mod_muc_room.erl:1064 mod_muc/mod_muc_room.erl:1787
 msgid "That nickname is registered by another person"
 msgstr "שם כינוי זה הינו רשום על ידי מישהו אחר"
 
-#: mod_muc/mod_muc.erl:951
+#: mod_muc/mod_muc.erl:788 mod_muc/mod_muc_odbc.erl:811
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "עליך למלא את השדה \"שם כינוי\" בתוך התבנית"
 
-#: mod_muc/mod_muc.erl:971
+#: mod_muc/mod_muc.erl:808 mod_muc/mod_muc_odbc.erl:831
 msgid "ejabberd MUC module"
 msgstr "מודול MUC של ejabberd"
 
@@ -656,7 +663,7 @@ msgid "is now known as"
 msgstr "ידועה כעת בכינוי"
 
 #: mod_muc/mod_muc_log.erl:417 mod_muc/mod_muc_log.erl:688
-#: mod_muc/mod_muc_room.erl:2389
+#: mod_muc/mod_muc_room.erl:2393
 msgid " has set the subject to: "
 msgstr " הגדיר/ה את הנושא אל: "
 
@@ -761,365 +768,368 @@ msgid "Room Occupants"
 msgstr "נוכחי חדר"
 
 # נעברה
-#: mod_muc/mod_muc_room.erl:170
+#: mod_muc/mod_muc_room.erl:174
 msgid "Traffic rate limit is exceeded"
 msgstr "מגבלת שיעור תעבורה נחצתה"
 
-#: mod_muc/mod_muc_room.erl:242
+#: mod_muc/mod_muc_room.erl:246
 msgid ""
 "This participant is kicked from the room because he sent an error message"
-msgstr "משתתף זה נבעט מן החדר משום שהוא שלח הודעת שגיאה"
+msgstr "משתתף זה נבעט מתוך החדר מכיוון שהוא שלח הודעת שגיאה"
 
-#: mod_muc/mod_muc_room.erl:251
+#: mod_muc/mod_muc_room.erl:255
 msgid "It is not allowed to send private messages to the conference"
 msgstr "אין זה מותר לשלוח הודעות פרטיות אל הועידה"
 
-#: mod_muc/mod_muc_room.erl:328
+#: mod_muc/mod_muc_room.erl:332
 msgid "Please, wait for a while before sending new voice request"
 msgstr "אנא, המתן לזמן מה לפני שליחת בקשת ביטוי חדשה"
 
-#: mod_muc/mod_muc_room.erl:343
+#: mod_muc/mod_muc_room.erl:347
 msgid "Voice requests are disabled in this conference"
 msgstr "בקשות ביטוי מנוטרלות בועידה זו"
 
-# לחלץ
-#: mod_muc/mod_muc_room.erl:360
+#: mod_muc/mod_muc_room.erl:364
 msgid "Failed to extract JID from your voice request approval"
-msgstr "נכשל לחלץ JID מן אישור בקשת הביטוי שלך"
+msgstr "נכשל לחלץ JID מתוך אישור בקשת הביטוי שלך"
 
-#: mod_muc/mod_muc_room.erl:389
+#: mod_muc/mod_muc_room.erl:393
 msgid "Only moderators can approve voice requests"
 msgstr "רק אחראים יכולים לאשר בקשות ביטוי"
 
 # הולם
-#: mod_muc/mod_muc_room.erl:404
+#: mod_muc/mod_muc_room.erl:408
 msgid "Improper message type"
 msgstr "טיפוס הודעה לא מתאים"
 
-#: mod_muc/mod_muc_room.erl:514
+#: mod_muc/mod_muc_room.erl:518
 msgid ""
 "This participant is kicked from the room because he sent an error message to "
 "another participant"
-msgstr "משתתף זה נבעט מן החדר משום שהוא שלח הודעת שגיאה אל משתתף אחר"
+msgstr "משתתף זה נבעט מתוך החדר משום שהוא שלח הודעת שגיאה אל משתתף אחר"
 
-#: mod_muc/mod_muc_room.erl:527
+#: mod_muc/mod_muc_room.erl:531
 msgid "It is not allowed to send private messages of type \"groupchat\""
 msgstr "אין זה מותר לשלוח הודעות פרטיות מן טיפוס \"groupchat\""
 
-#: mod_muc/mod_muc_room.erl:539 mod_muc/mod_muc_room.erl:607
+#: mod_muc/mod_muc_room.erl:543 mod_muc/mod_muc_room.erl:611
 msgid "Recipient is not in the conference room"
 msgstr "מקבל אינו מצוי בחדר הועידה"
 
 # אסור
-#: mod_muc/mod_muc_room.erl:560 mod_muc/mod_muc_room.erl:581
+#: mod_muc/mod_muc_room.erl:564 mod_muc/mod_muc_room.erl:585
 msgid "It is not allowed to send private messages"
 msgstr "אין זה מותר לשלוח הודעות פרטיות"
 
-#: mod_muc/mod_muc_room.erl:572 mod_muc/mod_muc_room.erl:951
-#: mod_muc/mod_muc_room.erl:4034
+#: mod_muc/mod_muc_room.erl:576 mod_muc/mod_muc_room.erl:956
+#: mod_muc/mod_muc_room.erl:4040
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "רק נוכחים רשאים לשלוח הודעות אל הועידה"
 
-#: mod_muc/mod_muc_room.erl:630
+#: mod_muc/mod_muc_room.erl:634
 msgid "Only occupants are allowed to send queries to the conference"
 msgstr "רק נוכחים רשאים לשלוח שאילתות אל הועידה"
 
-#: mod_muc/mod_muc_room.erl:642
+#: mod_muc/mod_muc_room.erl:646
 msgid "Queries to the conference members are not allowed in this room"
 msgstr "שאילתות אל חברי הועידה אינן מותרות בחדר זה"
 
-#: mod_muc/mod_muc_room.erl:927
+#: mod_muc/mod_muc_room.erl:932
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr "רק אחראים ומשתתפים רשאים לשנות את הנושא בחדר זה"
 
-#: mod_muc/mod_muc_room.erl:932
+#: mod_muc/mod_muc_room.erl:937
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "רק אחראים רשאים לשנות את הנושא בחדר זה"
 
 # רשאים
-#: mod_muc/mod_muc_room.erl:942
+#: mod_muc/mod_muc_room.erl:947
 msgid "Visitors are not allowed to send messages to all occupants"
 msgstr "מבקרים אינם מורשים לשלוח הודעות אל כל הנוכחים"
 
 # שגיאת נוכחות
-#: mod_muc/mod_muc_room.erl:1016
+# נוכחות שגויה
+#: mod_muc/mod_muc_room.erl:1021
 msgid ""
 "This participant is kicked from the room because he sent an error presence"
-msgstr "משתתף זה נבעט מן החדר משום שהוא שלח נוכחות שגויה"
+msgstr "משתתף זה נבעט מתוך החדר משום שהוא שלח נוכחות שגיאה"
 
-#: mod_muc/mod_muc_room.erl:1035
+#: mod_muc/mod_muc_room.erl:1040
 msgid "Visitors are not allowed to change their nicknames in this room"
-msgstr "מבקרים אינם מורשים לשנות את שמות כינוים בחדר זה"
+msgstr "מבקרים אינם מורשים לשנות את שמות הכינויים שלהם בחדר זה"
 
-#: mod_muc/mod_muc_room.erl:1048 mod_muc/mod_muc_room.erl:1775
+#: mod_muc/mod_muc_room.erl:1053 mod_muc/mod_muc_room.erl:1779
 msgid "That nickname is already in use by another occupant"
 msgstr "שם כינוי זה כבר מצוי בשימוש על ידי נוכח אחר"
 
-#: mod_muc/mod_muc_room.erl:1764
+#: mod_muc/mod_muc_room.erl:1768
 msgid "You have been banned from this room"
 msgstr "נאסרת מן חדר זה"
 
-#: mod_muc/mod_muc_room.erl:1767
+#: mod_muc/mod_muc_room.erl:1771
 msgid "Membership is required to enter this room"
 msgstr "נדרשת חברות כדי להיכנס אל חדר זה"
 
-#: mod_muc/mod_muc_room.erl:1803
+#: mod_muc/mod_muc_room.erl:1807
 msgid "This room is not anonymous"
 msgstr "חדר זה אינו אנונימי"
 
 # מילת־מעבר
-#: mod_muc/mod_muc_room.erl:1829
+#: mod_muc/mod_muc_room.erl:1833
 msgid "A password is required to enter this room"
 msgstr "נדרשת סיסמה כדי להיכנס אל חדר זה"
 
-#: mod_muc/mod_muc_room.erl:1851 mod_register.erl:246
+#: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
 msgstr "יותר מדי בקשות CAPTCHA"
 
-# לחולל
-#: mod_muc/mod_muc_room.erl:1860 mod_register.erl:251
+#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
 msgid "Unable to generate a CAPTCHA"
-msgstr "לא ניתן להלחין CAPTCHA"
+msgstr "אין אפשרות לחולל CAPTCHA"
 
-#: mod_muc/mod_muc_room.erl:1870
+#: mod_muc/mod_muc_room.erl:1874
 msgid "Incorrect password"
 msgstr "מילת מעבר שגויה"
 
-#: mod_muc/mod_muc_room.erl:2444
+#: mod_muc/mod_muc_room.erl:2448
 msgid "Administrator privileges required"
 msgstr "נדרשות הרשאות מנהל"
 
-#: mod_muc/mod_muc_room.erl:2459
+#: mod_muc/mod_muc_room.erl:2463
 msgid "Moderator privileges required"
 msgstr "נדרשות הרשאות אחראי"
 
-#: mod_muc/mod_muc_room.erl:2615
+#: mod_muc/mod_muc_room.erl:2619
 msgid "Jabber ID ~s is invalid"
-msgstr "כתובת JID ‫~s הינה שגויה"
+msgstr "מזהה Jabber ‏~s הינו שגוי"
 
-#: mod_muc/mod_muc_room.erl:2629
+#: mod_muc/mod_muc_room.erl:2633
 msgid "Nickname ~s does not exist in the room"
 msgstr "שם כינוי ~s לא קיים בחדר"
 
-#: mod_muc/mod_muc_room.erl:2655 mod_muc/mod_muc_room.erl:3045
+#: mod_muc/mod_muc_room.erl:2659 mod_muc/mod_muc_room.erl:3049
 msgid "Invalid affiliation: ~s"
 msgstr "סינוף שגוי: ~s"
 
-#: mod_muc/mod_muc_room.erl:2709
+#: mod_muc/mod_muc_room.erl:2713
 msgid "Invalid role: ~s"
 msgstr "תפקיד שגוי: ~s"
 
-#: mod_muc/mod_muc_room.erl:3022 mod_muc/mod_muc_room.erl:3058
+#: mod_muc/mod_muc_room.erl:3026 mod_muc/mod_muc_room.erl:3062
 msgid "Owner privileges required"
 msgstr "נדרשות הרשאות בעלים"
 
 # תצורה של חדר
-#: mod_muc/mod_muc_room.erl:3189
+#: mod_muc/mod_muc_room.erl:3195
 msgid "Configuration of room ~s"
 msgstr "תצורת חדר ~s"
 
-#: mod_muc/mod_muc_room.erl:3194
+#: mod_muc/mod_muc_room.erl:3200
 msgid "Room title"
 msgstr "כותרת חדר"
 
-#: mod_muc/mod_muc_room.erl:3197 mod_muc/mod_muc_room.erl:3686
+#: mod_muc/mod_muc_room.erl:3203 mod_muc/mod_muc_room.erl:3692
 msgid "Room description"
 msgstr "תיאור חדר"
 
-#: mod_muc/mod_muc_room.erl:3204
+#: mod_muc/mod_muc_room.erl:3210
 msgid "Make room persistent"
 msgstr "הפוך חדר אל קבוע"
 
-#: mod_muc/mod_muc_room.erl:3209
+#: mod_muc/mod_muc_room.erl:3215
 msgid "Make room public searchable"
-msgstr "הפוך חדר אל בר־חיפוש פומבי"
+msgstr "הפוך חדר אל בר חיפוש פומבי"
 
-#: mod_muc/mod_muc_room.erl:3212
+#: mod_muc/mod_muc_room.erl:3218
 msgid "Make participants list public"
 msgstr "הפוך רשימת משתתפים אל פומבית"
 
-#: mod_muc/mod_muc_room.erl:3215
+#: mod_muc/mod_muc_room.erl:3221
 msgid "Make room password protected"
 msgstr "הפוך חדר אל מוגן במילת מעבר"
 
-#: mod_muc/mod_muc_room.erl:3226
+#: mod_muc/mod_muc_room.erl:3232
 msgid "Maximum Number of Occupants"
 msgstr "מספר מרבי של נוכחים"
 
-#: mod_muc/mod_muc_room.erl:3233
+#: mod_muc/mod_muc_room.erl:3239
 msgid "No limit"
 msgstr "ללא הגבלה"
 
 # הצג כתובות JID ממשיות ל
-#: mod_muc/mod_muc_room.erl:3244
+#: mod_muc/mod_muc_room.erl:3250
 msgid "Present real Jabber IDs to"
 msgstr "הצג כתובות JID ממשיות"
 
-#: mod_muc/mod_muc_room.erl:3252 mod_muc/mod_muc_room.erl:3286
+#: mod_muc/mod_muc_room.erl:3258 mod_muc/mod_muc_room.erl:3292
 msgid "moderators only"
 msgstr "לאחראים בלבד"
 
-#: mod_muc/mod_muc_room.erl:3254 mod_muc/mod_muc_room.erl:3288
+#: mod_muc/mod_muc_room.erl:3260 mod_muc/mod_muc_room.erl:3294
 msgid "anyone"
 msgstr "לכל אחד"
 
-#: mod_muc/mod_muc_room.erl:3256
+#: mod_muc/mod_muc_room.erl:3262
 msgid "Make room members-only"
 msgstr "הפוך חדר אל חברים-בלבד"
 
 # חדר מבוקר חדר תחת ביקורת
-#: mod_muc/mod_muc_room.erl:3259
+#: mod_muc/mod_muc_room.erl:3265
 msgid "Make room moderated"
 msgstr "הפוך חדר אל מבוקר"
 
-#: mod_muc/mod_muc_room.erl:3262
+#: mod_muc/mod_muc_room.erl:3268
 msgid "Default users as participants"
 msgstr "משתמשים משתמטים כמשתתפים"
 
 # התרה
-#: mod_muc/mod_muc_room.erl:3265
+#: mod_muc/mod_muc_room.erl:3271
 msgid "Allow users to change the subject"
 msgstr "התר למשתמשים לשנות את הנושא"
 
-#: mod_muc/mod_muc_room.erl:3268
+#: mod_muc/mod_muc_room.erl:3274
 msgid "Allow users to send private messages"
 msgstr "התר למשתמשים לשלוח הודעות פרטיות"
 
-#: mod_muc/mod_muc_room.erl:3273
+#: mod_muc/mod_muc_room.erl:3279
 msgid "Allow visitors to send private messages to"
 msgstr "התר למבקרים לשלוח הודעות פרטיות אל"
 
-#: mod_muc/mod_muc_room.erl:3284
+#: mod_muc/mod_muc_room.erl:3290
 msgid "nobody"
 msgstr "אף אחד"
 
-#: mod_muc/mod_muc_room.erl:3290
+#: mod_muc/mod_muc_room.erl:3296
 msgid "Allow users to query other users"
 msgstr "התר למשתמשים לתשאל משתמשים אחרים"
 
-#: mod_muc/mod_muc_room.erl:3293
+#: mod_muc/mod_muc_room.erl:3299
 msgid "Allow users to send invites"
 msgstr "התר למשתמשים לשלוח הזמנות"
 
-#: mod_muc/mod_muc_room.erl:3296
+#: mod_muc/mod_muc_room.erl:3302
 msgid "Allow visitors to send status text in presence updates"
 msgstr "התר למבקרים לשלוח טקסט מצב בעדכוני נוכחות"
 
-#: mod_muc/mod_muc_room.erl:3299
+#: mod_muc/mod_muc_room.erl:3305
 msgid "Allow visitors to change nickname"
 msgstr "התר למבקרים לשנות שם כינוי"
 
-#: mod_muc/mod_muc_room.erl:3302
+#: mod_muc/mod_muc_room.erl:3308
 msgid "Allow visitors to send voice requests"
 msgstr "התר למבקרים לשלוח בקשות ביטוי"
 
-#: mod_muc/mod_muc_room.erl:3305
+#: mod_muc/mod_muc_room.erl:3311
 msgid "Minimum interval between voice requests (in seconds)"
 msgstr "תדירות מינימלית בין בקשות ביטוי (בשניות)"
 
-#: mod_muc/mod_muc_room.erl:3311
+#: mod_muc/mod_muc_room.erl:3317
 msgid "Make room CAPTCHA protected"
 msgstr "הפוך חדר אל מוגן CAPTCHA"
 
 # זהויות
-#: mod_muc/mod_muc_room.erl:3316
+#: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr "הוצא כתובות של Jabber מן אתגר CAPTCHA"
+msgstr "הוצא כתובות של Jabber מתוך אתגר CAPTCHA"
 
-#: mod_muc/mod_muc_room.erl:3323
+#: mod_muc/mod_muc_room.erl:3329
 msgid "Enable logging"
 msgstr "אפשור רישום פעילות"
 
-#: mod_muc/mod_muc_room.erl:3331
+#: mod_muc/mod_muc_room.erl:3337
 msgid "You need an x:data capable client to configure room"
-msgstr "עליך לעשות שימוש בלקוח שביכולתו להבין x:data בכדי להגדיר חדר"
+msgstr "עליך להשתמש בלקוח אשר מסוגל להבין x:data בכדי להגדיר חדר"
 
-#: mod_muc/mod_muc_room.erl:3688
+#: mod_muc/mod_muc_room.erl:3694
 msgid "Number of occupants"
 msgstr "מספר של נוכחים"
 
 # private what? (fe/male)
-#: mod_muc/mod_muc_room.erl:3744
+#: mod_muc/mod_muc_room.erl:3750
 #, fuzzy
 msgid "private, "
 msgstr "פרטי, "
 
-#: mod_muc/mod_muc_room.erl:3793
+#: mod_muc/mod_muc_room.erl:3799
 msgid "Voice request"
 msgstr "בקשת ביטוי"
 
-#: mod_muc/mod_muc_room.erl:3797
+# אשר או דחה
+#: mod_muc/mod_muc_room.erl:3803
 msgid "Either approve or decline the voice request."
 msgstr "או שתאשר או שתדחה את בקשת הביטוי."
 
-#: mod_muc/mod_muc_room.erl:3803
+#: mod_muc/mod_muc_room.erl:3809
 msgid "User JID"
 msgstr "‏JID משתמש"
 
-#: mod_muc/mod_muc_room.erl:3805
+#: mod_muc/mod_muc_room.erl:3811
 msgid "Grant voice to this person?"
 msgstr "להעניק ביטוי לאישיות זו?"
 
-#: mod_muc/mod_muc_room.erl:3954
+#: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
 msgstr "‫~s מזמינך אל החדר ~s"
 
-#: mod_muc/mod_muc_room.erl:3963
+#: mod_muc/mod_muc_room.erl:3969
 msgid "the password is"
 msgstr "הסיסמה היא"
 
 # תור הודעות לא מקוונות של הקשר שלך הינו
-#: mod_offline.erl:623
+#: mod_offline.erl:510 mod_offline_odbc.erl:352
 msgid ""
 "Your contact offline message queue is full. The message has been discarded."
 msgstr "תור הודעות קשר לא מקוונות הינו מלא. ההודעה סולקה."
 
-#: mod_offline.erl:713
+#: mod_offline.erl:560 mod_offline_odbc.erl:408
 msgid "~s's Offline Messages Queue"
 msgstr "תור הודעות לא מקוונות של ~s"
 
-#: mod_offline.erl:716 mod_roster.erl:1389 mod_shared_roster.erl:1060
-#: mod_shared_roster.erl:1169 web/ejabberd_web_admin.erl:833
+#: mod_offline.erl:563 mod_offline_odbc.erl:411 mod_roster.erl:987
+#: mod_roster_odbc.erl:1104 mod_shared_roster.erl:901
+#: mod_shared_roster.erl:1010 mod_shared_roster_odbc.erl:930
+#: mod_shared_roster_odbc.erl:1039 web/ejabberd_web_admin.erl:833
 #: web/ejabberd_web_admin.erl:874 web/ejabberd_web_admin.erl:942
 #: web/ejabberd_web_admin.erl:978 web/ejabberd_web_admin.erl:1019
-#: web/ejabberd_web_admin.erl:1508 web/ejabberd_web_admin.erl:1753
-#: web/ejabberd_web_admin.erl:1924 web/ejabberd_web_admin.erl:1956
-#: web/ejabberd_web_admin.erl:2024 web/ejabberd_web_admin.erl:2128
-#: web/ejabberd_web_admin.erl:2153 web/ejabberd_web_admin.erl:2241
+#: web/ejabberd_web_admin.erl:1508 web/ejabberd_web_admin.erl:1760
+#: web/ejabberd_web_admin.erl:1931 web/ejabberd_web_admin.erl:1963
+#: web/ejabberd_web_admin.erl:2031 web/ejabberd_web_admin.erl:2135
+#: web/ejabberd_web_admin.erl:2160 web/ejabberd_web_admin.erl:2248
 msgid "Submitted"
 msgstr ""
 
-#: mod_offline.erl:724
+#: mod_offline.erl:571
 msgid "Time"
 msgstr "זמן"
 
 # מאת
-#: mod_offline.erl:725
+#: mod_offline.erl:572
 msgid "From"
 msgstr "מן"
 
-#: mod_offline.erl:726
+#: mod_offline.erl:573
 msgid "To"
 msgstr "אל"
 
-#: mod_offline.erl:727
+#: mod_offline.erl:574 mod_offline_odbc.erl:419
 #, fuzzy
 msgid "Packet"
 msgstr "חבילת מידע"
 
 # נבחרים
-#: mod_offline.erl:740 mod_shared_roster.erl:1067
-#: web/ejabberd_web_admin.erl:882 web/ejabberd_web_admin.erl:986
+#: mod_offline.erl:587 mod_offline_odbc.erl:432 mod_shared_roster.erl:908
+#: mod_shared_roster_odbc.erl:937 web/ejabberd_web_admin.erl:882
+#: web/ejabberd_web_admin.erl:986
 msgid "Delete Selected"
 msgstr "מחק נבחרות"
 
-#: mod_offline.erl:864
+#: mod_offline.erl:645 mod_offline_odbc.erl:519
 msgid "Offline Messages:"
 msgstr "הודעות לא מקוונות:"
 
-#: mod_offline.erl:864
+#: mod_offline.erl:645 mod_offline_odbc.erl:519
 msgid "Remove All Offline Messages"
 msgstr "הסר את כל ההודעות הלא מקוונות"
 
@@ -1175,7 +1185,7 @@ msgstr "הודע מנויים כאשר הממסר נמחק"
 
 #: mod_pubsub/mod_pubsub.erl:3478 mod_pubsub/mod_pubsub_odbc.erl:3291
 msgid "Notify subscribers when items are removed from the node"
-msgstr "הודע מנויים כאשר פריטים מוסרים מן הממסר"
+msgstr "הודע מנויים כאשר פריטים מוסרים מתוך הממסר"
 
 # Typo: store
 #: mod_pubsub/mod_pubsub.erl:3479 mod_pubsub/mod_pubsub_odbc.erl:3292
@@ -1243,14 +1253,14 @@ msgstr "אימות CAPTCHA נכשל"
 
 #: mod_register.erl:220
 msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr "עליך לעשות שימוש בלקוח שתומך x:data וגם CAPTCHA בכדי להירשם"
+msgstr "עליך להשתמש בלקוח אשר תומך x:data וגם CAPTCHA בכדי להירשם"
 
 #: mod_register.erl:226 mod_register.erl:265
 msgid "Choose a username and password to register with this server"
 msgstr "בחר שם משתמש וסיסמה להירשם עם שרת זה"
 
-#: mod_register.erl:230 mod_vcard.erl:435 web/ejabberd_web_admin.erl:1515
-#: web/ejabberd_web_admin.erl:1571
+#: mod_register.erl:230 mod_vcard.erl:364 mod_vcard_odbc.erl:342
+#: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
 msgid "User"
 msgstr "משתמש"
 
@@ -1263,122 +1273,131 @@ msgstr "הסיסמה חלשה מדי"
 msgid "Users are not allowed to register accounts so quickly"
 msgstr "משתמשים אינם מורשים לרשום חשבונות כל כך במהירות"
 
-#: mod_roster.erl:1340 web/ejabberd_web_admin.erl:1695
-#: web/ejabberd_web_admin.erl:1879 web/ejabberd_web_admin.erl:1890
-#: web/ejabberd_web_admin.erl:2212
+#: mod_roster.erl:938 mod_roster_odbc.erl:1055 web/ejabberd_web_admin.erl:1701
+#: web/ejabberd_web_admin.erl:1886 web/ejabberd_web_admin.erl:1897
+#: web/ejabberd_web_admin.erl:2219
 #, fuzzy
 msgid "None"
 msgstr "ללא"
 
-#: mod_roster.erl:1347
+#: mod_roster.erl:945 mod_roster_odbc.erl:1062
 msgid "Subscription"
 msgstr "מִנּוּי"
 
 # ממתינות
-#: mod_roster.erl:1348
+#: mod_roster.erl:946 mod_roster_odbc.erl:1063
 #, fuzzy
 msgid "Pending"
 msgstr "ממתינים"
 
-#: mod_roster.erl:1349
+#: mod_roster.erl:947 mod_roster_odbc.erl:1064
 msgid "Groups"
 msgstr "קבוצות"
 
-#: mod_roster.erl:1376
+#: mod_roster.erl:974 mod_roster_odbc.erl:1091
 msgid "Validate"
 msgstr "הענק תוקף"
 
-#: mod_roster.erl:1384
+#: mod_roster.erl:982 mod_roster_odbc.erl:1099
 msgid "Remove"
 msgstr "הסר"
 
-#: mod_roster.erl:1387
+#: mod_roster.erl:985 mod_roster_odbc.erl:1102
 msgid "Roster of "
 msgstr "רשימה של "
 
 # פגום
-#: mod_roster.erl:1390 mod_shared_roster.erl:1061 mod_shared_roster.erl:1170
-#: web/ejabberd_web_admin.erl:834 web/ejabberd_web_admin.erl:875
-#: web/ejabberd_web_admin.erl:943 web/ejabberd_web_admin.erl:979
-#: web/ejabberd_web_admin.erl:1020 web/ejabberd_web_admin.erl:1509
-#: web/ejabberd_web_admin.erl:1754 web/ejabberd_web_admin.erl:1925
-#: web/ejabberd_web_admin.erl:2129 web/ejabberd_web_admin.erl:2154
+#: mod_roster.erl:988 mod_roster_odbc.erl:1105 mod_shared_roster.erl:902
+#: mod_shared_roster.erl:1011 mod_shared_roster_odbc.erl:931
+#: mod_shared_roster_odbc.erl:1040 web/ejabberd_web_admin.erl:834
+#: web/ejabberd_web_admin.erl:875 web/ejabberd_web_admin.erl:943
+#: web/ejabberd_web_admin.erl:979 web/ejabberd_web_admin.erl:1020
+#: web/ejabberd_web_admin.erl:1509 web/ejabberd_web_admin.erl:1761
+#: web/ejabberd_web_admin.erl:1932 web/ejabberd_web_admin.erl:2136
+#: web/ejabberd_web_admin.erl:2161
 msgid "Bad format"
 msgstr "פורמט רע"
 
-#: mod_roster.erl:1397
+#: mod_roster.erl:995 mod_roster_odbc.erl:1112
 msgid "Add Jabber ID"
 msgstr "הוסף JID"
 
-#: mod_roster.erl:1496
+#: mod_roster.erl:1094 mod_roster_odbc.erl:1211
 msgid "Roster"
 msgstr "רשימה"
 
-#: mod_shared_roster.erl:1016 mod_shared_roster.erl:1058
-#: mod_shared_roster.erl:1166
+#: mod_shared_roster.erl:857 mod_shared_roster.erl:899
+#: mod_shared_roster.erl:1007 mod_shared_roster_odbc.erl:886
+#: mod_shared_roster_odbc.erl:928 mod_shared_roster_odbc.erl:1036
 msgid "Shared Roster Groups"
 msgstr "קבוצות רשימה משותפות"
 
-#: mod_shared_roster.erl:1054 web/ejabberd_web_admin.erl:1365
-#: web/ejabberd_web_admin.erl:2454
+#: mod_shared_roster.erl:895 mod_shared_roster_odbc.erl:924
+#: web/ejabberd_web_admin.erl:1365 web/ejabberd_web_admin.erl:2461
 msgid "Add New"
 msgstr "הוסף חדש"
 
-#: mod_shared_roster.erl:1137
+#: mod_shared_roster.erl:978 mod_shared_roster_odbc.erl:1007
 msgid "Name:"
 msgstr "שם:"
 
-#: mod_shared_roster.erl:1142
+#: mod_shared_roster.erl:983 mod_shared_roster_odbc.erl:1012
 msgid "Description:"
 msgstr "תיאור:"
 
-#: mod_shared_roster.erl:1150
+#: mod_shared_roster.erl:991 mod_shared_roster_odbc.erl:1020
 msgid "Members:"
 msgstr "חברים:"
 
-#: mod_shared_roster.erl:1158
+#: mod_shared_roster.erl:999 mod_shared_roster_odbc.erl:1028
 msgid "Displayed Groups:"
 msgstr "קבוצות מוצגות:"
 
-#: mod_shared_roster.erl:1167
+#: mod_shared_roster.erl:1008 mod_shared_roster_odbc.erl:1037
 msgid "Group "
 msgstr "קבוצה "
 
-#: mod_shared_roster.erl:1176 web/ejabberd_web_admin.erl:840
-#: web/ejabberd_web_admin.erl:884 web/ejabberd_web_admin.erl:949
-#: web/ejabberd_web_admin.erl:1026 web/ejabberd_web_admin.erl:2010
+#: mod_shared_roster.erl:1017 mod_shared_roster_odbc.erl:1046
+#: web/ejabberd_web_admin.erl:840 web/ejabberd_web_admin.erl:884
+#: web/ejabberd_web_admin.erl:949 web/ejabberd_web_admin.erl:1026
+#: web/ejabberd_web_admin.erl:2017
 msgid "Submit"
 msgstr "שליחה"
 
-#: mod_vcard.erl:172 mod_vcard_ldap.erl:238
+#: mod_vcard.erl:165 mod_vcard_ldap.erl:238 mod_vcard_odbc.erl:129
 #, fuzzy
 msgid "Erlang Jabber Server"
 msgstr "שרת ג׳אבּר Erlang"
 
-#: mod_vcard.erl:435 mod_vcard.erl:549
+#: mod_vcard.erl:364 mod_vcard.erl:478 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:454
 msgid "Birthday"
 msgstr "יום הולדת"
 
-#: mod_vcard.erl:435 mod_vcard.erl:551
+#: mod_vcard.erl:364 mod_vcard.erl:480 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:456
 msgid "City"
 msgstr "עיר"
 
-#: mod_vcard.erl:435 mod_vcard.erl:550
+#: mod_vcard.erl:364 mod_vcard.erl:479 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:455
 msgid "Country"
 msgstr "ארץ"
 
-#: mod_vcard.erl:435 mod_vcard.erl:552
+#: mod_vcard.erl:364 mod_vcard.erl:481 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:457
 msgid "Email"
 msgstr "דוא״ל"
 
-#: mod_vcard.erl:435 mod_vcard.erl:547
+#: mod_vcard.erl:364 mod_vcard.erl:476 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:452
 msgid "Family Name"
 msgstr "שם משפחה"
 
 # נא למלא
 # שקול לתאום
 # note: matching > wanted
-#: mod_vcard.erl:435
+#: mod_vcard.erl:364 mod_vcard_odbc.erl:342
 msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
@@ -1386,44 +1405,49 @@ msgstr ""
 "מלא את התבניות כדי לחפש עבור כל משתמש Jabber מבוקש (באפשרותך להוסיף * בסוף "
 "שדה כדי להתאים אל מחרוזת-משנה)"
 
-#: mod_vcard.erl:435 mod_vcard.erl:544
+#: mod_vcard.erl:364 mod_vcard.erl:473 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:449
 msgid "Full Name"
 msgstr "שם מלא"
 
-#: mod_vcard.erl:435 mod_vcard.erl:546
+#: mod_vcard.erl:364 mod_vcard.erl:475 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:451
 msgid "Middle Name"
 msgstr "שם אמצעי"
 
-#: mod_vcard.erl:435 mod_vcard.erl:545 web/ejabberd_web_admin.erl:1999
+#: mod_vcard.erl:364 mod_vcard.erl:474 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:450 web/ejabberd_web_admin.erl:2006
 msgid "Name"
 msgstr "שם"
 
-#: mod_vcard.erl:435 mod_vcard.erl:553
+#: mod_vcard.erl:364 mod_vcard.erl:482 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:458
 msgid "Organization Name"
 msgstr "שם ארגון"
 
-#: mod_vcard.erl:435 mod_vcard.erl:554
+#: mod_vcard.erl:364 mod_vcard.erl:483 mod_vcard_odbc.erl:342
+#: mod_vcard_odbc.erl:459
 msgid "Organization Unit"
 msgstr "יחידת איגוד"
 
 # בקרב
-#: mod_vcard.erl:435 mod_vcard_ldap.erl:462
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "Search users in "
 msgstr "חיפוש משתמשים אצל "
 
-#: mod_vcard.erl:435 mod_vcard_ldap.erl:462
+#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
 msgid "You need an x:data capable client to search"
-msgstr "עליך לעשות שימוש בלקוח שביכולתו להבין x:data בכדי לחפש"
+msgstr "עליך להשתמש בלקוח אשר מסוגל להבין x:data בכדי לחפש"
 
-#: mod_vcard.erl:460 mod_vcard_ldap.erl:487
+#: mod_vcard.erl:389 mod_vcard_ldap.erl:487 mod_vcard_odbc.erl:367
 msgid "vCard User Search"
 msgstr "חיפוש משתמש vCard"
 
-#: mod_vcard.erl:516 mod_vcard_ldap.erl:541
+#: mod_vcard.erl:445 mod_vcard_ldap.erl:541 mod_vcard_odbc.erl:421
 msgid "ejabberd vCard module"
 msgstr "מודול vCard של ejabberd"
 
-#: mod_vcard.erl:540 mod_vcard_ldap.erl:551
+#: mod_vcard.erl:469 mod_vcard_ldap.erl:551 mod_vcard_odbc.erl:445
 msgid "Search Results for "
 msgstr "תוצאות חיפוש עבור "
 
@@ -1490,7 +1514,7 @@ msgstr "הצג טבלה רגילה"
 msgid "Show Integral Table"
 msgstr "הצג טבלה אינטגרלית"
 
-#: web/ejabberd_web_admin.erl:1105 web/ejabberd_web_admin.erl:1932
+#: web/ejabberd_web_admin.erl:1105 web/ejabberd_web_admin.erl:1939
 msgid "Statistics"
 msgstr "סטטיסטיקה"
 
@@ -1510,262 +1534,264 @@ msgstr "מארח"
 msgid "Registered Users"
 msgstr "משתמשים רשומים"
 
-#: web/ejabberd_web_admin.erl:1572
+#: web/ejabberd_web_admin.erl:1573
 msgid "Offline Messages"
 msgstr "הודעות לא מקוונות"
 
-#: web/ejabberd_web_admin.erl:1573 web/ejabberd_web_admin.erl:1760
+#: web/ejabberd_web_admin.erl:1574 web/ejabberd_web_admin.erl:1767
 msgid "Last Activity"
 msgstr "פעילות אחרונה"
 
-#: web/ejabberd_web_admin.erl:1653 web/ejabberd_web_admin.erl:1669
+#: web/ejabberd_web_admin.erl:1659 web/ejabberd_web_admin.erl:1675
 msgid "Registered Users:"
 msgstr "משתמשים רשומים:"
 
-#: web/ejabberd_web_admin.erl:1655 web/ejabberd_web_admin.erl:1671
-#: web/ejabberd_web_admin.erl:2185
+#: web/ejabberd_web_admin.erl:1661 web/ejabberd_web_admin.erl:1677
+#: web/ejabberd_web_admin.erl:2192
 msgid "Online Users:"
 msgstr "משתמשים מקוונים:"
 
-#: web/ejabberd_web_admin.erl:1657
+#: web/ejabberd_web_admin.erl:1663
 msgid "Outgoing s2s Connections:"
 msgstr "חיבורי s2s יוצאים:"
 
-#: web/ejabberd_web_admin.erl:1659
+#: web/ejabberd_web_admin.erl:1665
 msgid "Outgoing s2s Servers:"
 msgstr "שרתי s2s יוצאים:"
 
-#: web/ejabberd_web_admin.erl:1728 web/mod_register_web.erl:175
+#: web/ejabberd_web_admin.erl:1734 web/mod_register_web.erl:175
 #: web/mod_register_web.erl:372 web/mod_register_web.erl:381
 #: web/mod_register_web.erl:411
 msgid "Change Password"
 msgstr "שנה סיסמה"
 
-#: web/ejabberd_web_admin.erl:1751
-msgid "User "
-msgstr "משתמש"
-
 #: web/ejabberd_web_admin.erl:1758
+msgid "User "
+msgstr "משתמש "
+
+#: web/ejabberd_web_admin.erl:1765
 msgid "Connected Resources:"
 msgstr "משאבים מחוברים:"
 
-#: web/ejabberd_web_admin.erl:1759 web/mod_register_web.erl:227
+#: web/ejabberd_web_admin.erl:1766 web/mod_register_web.erl:227
 #: web/mod_register_web.erl:519
 msgid "Password:"
 msgstr "סיסמה:"
 
-#: web/ejabberd_web_admin.erl:1821
+#: web/ejabberd_web_admin.erl:1828
 msgid "No Data"
 msgstr "אין מידע"
 
-#: web/ejabberd_web_admin.erl:1899
+#: web/ejabberd_web_admin.erl:1906
 msgid "Nodes"
 msgstr "ממסרים"
 
-#: web/ejabberd_web_admin.erl:1922 web/ejabberd_web_admin.erl:1944
+#: web/ejabberd_web_admin.erl:1929 web/ejabberd_web_admin.erl:1951
 msgid "Node "
 msgstr "ממסר"
 
-#: web/ejabberd_web_admin.erl:1931
+#: web/ejabberd_web_admin.erl:1938
 #, fuzzy
 msgid "Listened Ports"
 msgstr "פורטים מואזנים"
 
-#: web/ejabberd_web_admin.erl:1933 web/ejabberd_web_admin.erl:2253
-#: web/ejabberd_web_admin.erl:2441
+#: web/ejabberd_web_admin.erl:1940 web/ejabberd_web_admin.erl:2260
+#: web/ejabberd_web_admin.erl:2448
 msgid "Update"
 msgstr "עדכן"
 
-#: web/ejabberd_web_admin.erl:1936 web/ejabberd_web_admin.erl:2562
+#: web/ejabberd_web_admin.erl:1943 web/ejabberd_web_admin.erl:2569
 msgid "Restart"
 msgstr "אתחל"
 
-#: web/ejabberd_web_admin.erl:1938 web/ejabberd_web_admin.erl:2564
+#: web/ejabberd_web_admin.erl:1945 web/ejabberd_web_admin.erl:2571
 msgid "Stop"
 msgstr "הפסק"
 
-#: web/ejabberd_web_admin.erl:1952
+#: web/ejabberd_web_admin.erl:1959
 msgid "RPC Call Error"
 msgstr "שגיאת קריאת RPC"
 
-#: web/ejabberd_web_admin.erl:1993
+#: web/ejabberd_web_admin.erl:2000
 msgid "Database Tables at "
 msgstr "טבלאות מסד נתונים אצל "
 
-#: web/ejabberd_web_admin.erl:2000
+#: web/ejabberd_web_admin.erl:2007
 msgid "Storage Type"
 msgstr "טיפוס אחסון"
 
-#: web/ejabberd_web_admin.erl:2001
+#: web/ejabberd_web_admin.erl:2008
 msgid "Elements"
 msgstr "אלמנטים"
 
-#: web/ejabberd_web_admin.erl:2002
+#: web/ejabberd_web_admin.erl:2009
 msgid "Memory"
 msgstr "זיכרון"
 
-#: web/ejabberd_web_admin.erl:2025 web/ejabberd_web_admin.erl:2130
+#: web/ejabberd_web_admin.erl:2032 web/ejabberd_web_admin.erl:2137
 msgid "Error"
 msgstr "שגיאה"
 
-#: web/ejabberd_web_admin.erl:2027
+#: web/ejabberd_web_admin.erl:2034
 msgid "Backup of "
 msgstr "גיבוי של "
 
-# האינטגרלי בנפרד
-#: web/ejabberd_web_admin.erl:2029
+# האינטגרלי לחוד
+#: web/ejabberd_web_admin.erl:2036
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
 "separately."
 msgstr ""
-"נא לשים לב שלאפשרויות אלו יגבו את מסד הנתונים המובנה Mnesia בלבד. אם הינך "
-"עושה שימוש במודול ODBC, עליך גם לגבות את מסד הנתונים SQL שברשותך לחוד."
+"נא לשים לב כי אפשרויות אלו יגבו את מסד הנתונים המובנה Mnesia בלבד. אם הינך "
+"עושה שימוש במודול ODBC, עליך גם לגבות את מסד הנתונים SQL אשר מצוי ברשותך "
+"בנפרד."
 
-#: web/ejabberd_web_admin.erl:2034
+#: web/ejabberd_web_admin.erl:2041
 msgid "Store binary backup:"
 msgstr "אחסן גיבוי בינארי:"
 
-#: web/ejabberd_web_admin.erl:2038 web/ejabberd_web_admin.erl:2045
-#: web/ejabberd_web_admin.erl:2053 web/ejabberd_web_admin.erl:2060
-#: web/ejabberd_web_admin.erl:2067 web/ejabberd_web_admin.erl:2074
-#: web/ejabberd_web_admin.erl:2081 web/ejabberd_web_admin.erl:2089
-#: web/ejabberd_web_admin.erl:2096 web/ejabberd_web_admin.erl:2103
+#: web/ejabberd_web_admin.erl:2045 web/ejabberd_web_admin.erl:2052
+#: web/ejabberd_web_admin.erl:2060 web/ejabberd_web_admin.erl:2067
+#: web/ejabberd_web_admin.erl:2074 web/ejabberd_web_admin.erl:2081
+#: web/ejabberd_web_admin.erl:2088 web/ejabberd_web_admin.erl:2096
+#: web/ejabberd_web_admin.erl:2103 web/ejabberd_web_admin.erl:2110
 msgid "OK"
 msgstr "אישור"
 
 # ללא דיחוי
-#: web/ejabberd_web_admin.erl:2041
+#: web/ejabberd_web_admin.erl:2048
 msgid "Restore binary backup immediately:"
 msgstr "שחזר גיבוי בינארי לאלתר:"
 
 # לאחר אתחול בא של
-#: web/ejabberd_web_admin.erl:2049
+#: web/ejabberd_web_admin.erl:2056
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr "שחזר גיבוי בינארי לאחר האתחול הבא של ejabberd (מצריך פחות זיכרון):"
 
 # תמליל ברור
-#: web/ejabberd_web_admin.erl:2056
+#: web/ejabberd_web_admin.erl:2063
 msgid "Store plain text backup:"
 msgstr "אחסן גיבוי טקסט גלוי (plain text):"
 
-#: web/ejabberd_web_admin.erl:2063
+#: web/ejabberd_web_admin.erl:2070
 msgid "Restore plain text backup immediately:"
 msgstr "שחזר גיבוי טקסט גלוי (plain text) לאלתר:"
 
-#: web/ejabberd_web_admin.erl:2070
-msgid "Import users data from a PIEFXIS file (XEP-0227):"
-msgstr "ייבוא מידע משתמשים מן קובץ PIEFXIS (‫XEP-0227):"
-
 #: web/ejabberd_web_admin.erl:2077
-msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
-msgstr "ייצוא מידע של כל המשתמשים שבשרת אל קבצי PIEFXIS (‫XEP-0227):"
+msgid "Import users data from a PIEFXIS file (XEP-0227):"
+msgstr "ייבוא מידע משתמשים מתוך קובץ PIEFXIS ‏(XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2084
-msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
-msgstr "ייצוא מידע של כל המשתמשים אצל מארח אל קבצי PIEFXIS (‫XEP-0227):"
+msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
+msgstr ""
+"ייצוא מידע של כל המשתמשים אשר מצויים בשרת זה אל קבצי PIEFXIS (‫XEP-0227):"
 
-#: web/ejabberd_web_admin.erl:2092
-msgid "Import user data from jabberd14 spool file:"
-msgstr "ייבוא נתוני משתמש מן קובץ סליל (spool file) של jabberd14:"
+#: web/ejabberd_web_admin.erl:2091
+msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
+msgstr "ייצוא מידע של כל המשתמשים בתוך מארח אל קבצי PIEFXIS (‫XEP-0227):"
 
 #: web/ejabberd_web_admin.erl:2099
-msgid "Import users data from jabberd14 spool directory:"
-msgstr "ייבוא נתוני משתמשים מן מדור סליל (spool directory) של jabberd14:"
+msgid "Import user data from jabberd14 spool file:"
+msgstr "ייבוא נתוני משתמש מתוך קובץ סליל (spool file) של jabberd14:"
 
-#: web/ejabberd_web_admin.erl:2125
+#: web/ejabberd_web_admin.erl:2106
+msgid "Import users data from jabberd14 spool directory:"
+msgstr "ייבוא נתוני משתמשים מתוך מדור סליל (spool directory) של jabberd14:"
+
+#: web/ejabberd_web_admin.erl:2132
 #, fuzzy
 msgid "Listened Ports at "
 msgstr "פורטים מואזנים אצל "
 
-#: web/ejabberd_web_admin.erl:2150
+#: web/ejabberd_web_admin.erl:2157
 msgid "Modules at "
 msgstr "מודולים אצל "
 
-#: web/ejabberd_web_admin.erl:2176
+#: web/ejabberd_web_admin.erl:2183
 msgid "Statistics of ~p"
 msgstr "סטטיסטיקות עבור ~p"
 
-#: web/ejabberd_web_admin.erl:2179
+#: web/ejabberd_web_admin.erl:2186
 msgid "Uptime:"
 msgstr "זמן פעילות:"
 
-#: web/ejabberd_web_admin.erl:2182
+#: web/ejabberd_web_admin.erl:2189
 msgid "CPU Time:"
 msgstr "זמן מחשב (CPU):"
 
 # זיכרון דברים (דיני חוזים)
-#: web/ejabberd_web_admin.erl:2188
+#: web/ejabberd_web_admin.erl:2195
 msgid "Transactions Committed:"
 msgstr "טרנזקציות בוצעו:"
 
-#: web/ejabberd_web_admin.erl:2191
+#: web/ejabberd_web_admin.erl:2198
 msgid "Transactions Aborted:"
 msgstr "טרנזקציות בוטלו:"
 
-#: web/ejabberd_web_admin.erl:2194
+#: web/ejabberd_web_admin.erl:2201
 msgid "Transactions Restarted:"
 msgstr "טרנזקציות הותחלו מחדש:"
 
-#: web/ejabberd_web_admin.erl:2197
+#: web/ejabberd_web_admin.erl:2204
 msgid "Transactions Logged:"
 msgstr "טרנזקציות נרשמו:"
 
-#: web/ejabberd_web_admin.erl:2239
+#: web/ejabberd_web_admin.erl:2246
 msgid "Update "
 msgstr ""
 
-#: web/ejabberd_web_admin.erl:2247
+#: web/ejabberd_web_admin.erl:2254
 msgid "Update plan"
 msgstr ""
 
 # adjusted
-#: web/ejabberd_web_admin.erl:2248
+#: web/ejabberd_web_admin.erl:2255
 msgid "Modified modules"
 msgstr "מודולים שהותאמו"
 
 # תסריט עדכון
-#: web/ejabberd_web_admin.erl:2249
+#: web/ejabberd_web_admin.erl:2256
 #, fuzzy
 msgid "Update script"
 msgstr "עדכן תסריט"
 
-#: web/ejabberd_web_admin.erl:2250
+#: web/ejabberd_web_admin.erl:2257
 #, fuzzy
 msgid "Low level update script"
 msgstr "תסריט עדכון Low level"
 
-#: web/ejabberd_web_admin.erl:2251
+#: web/ejabberd_web_admin.erl:2258
 #, fuzzy
 msgid "Script check"
 msgstr "תסריט בדיקה"
 
-#: web/ejabberd_web_admin.erl:2419
+#: web/ejabberd_web_admin.erl:2426
 msgid "Port"
 msgstr "פורט"
 
-#: web/ejabberd_web_admin.erl:2420
+#: web/ejabberd_web_admin.erl:2427
 msgid "IP"
 msgstr "‫IP"
 
-#: web/ejabberd_web_admin.erl:2421
+#: web/ejabberd_web_admin.erl:2428
 msgid "Protocol"
 msgstr "פרוטוקול"
 
-#: web/ejabberd_web_admin.erl:2422 web/ejabberd_web_admin.erl:2549
+#: web/ejabberd_web_admin.erl:2429 web/ejabberd_web_admin.erl:2556
 msgid "Module"
 msgstr "מודול"
 
-#: web/ejabberd_web_admin.erl:2423 web/ejabberd_web_admin.erl:2550
+#: web/ejabberd_web_admin.erl:2430 web/ejabberd_web_admin.erl:2557
 msgid "Options"
 msgstr "אפשרויות"
 
-#: web/ejabberd_web_admin.erl:2443
+#: web/ejabberd_web_admin.erl:2450
 msgid "Delete"
 msgstr "מחק"
 
-#: web/ejabberd_web_admin.erl:2572
+#: web/ejabberd_web_admin.erl:2579
 msgid "Start"
 msgstr "התחל"
 
@@ -1775,7 +1801,7 @@ msgstr "חשבון Jabber נוצר בהצלחה."
 
 #: web/mod_register_web.erl:107
 msgid "There was an error creating the account: "
-msgstr "ארעה שגיאה ביצירת החשבון: "
+msgstr "אירעה שגיאה ביצירת החשבון: "
 
 #: web/mod_register_web.erl:115
 msgid "Your Jabber account was successfully deleted."
@@ -1783,7 +1809,7 @@ msgstr "חשבון Jabber נמחק בהצלחה."
 
 #: web/mod_register_web.erl:118
 msgid "There was an error deleting the account: "
-msgstr "ארעה שגיאה במחיקת החשבון: "
+msgstr "אירעה שגיאה במחיקת החשבון: "
 
 #: web/mod_register_web.erl:128
 msgid "The password of your Jabber account was successfully changed."
@@ -1791,7 +1817,7 @@ msgstr "סיסמת חשבון Jabber שונתה בהצלחה."
 
 #: web/mod_register_web.erl:131
 msgid "There was an error changing the password: "
-msgstr "ארעה שגיאה בשנוי הסיסמה: "
+msgstr "אירעה שגיאה בשינוי הסיסמה: "
 
 #: web/mod_register_web.erl:163 web/mod_register_web.erl:172
 msgid "Jabber Account Registration"
@@ -1815,7 +1841,7 @@ msgid ""
 "carefully the instructions to fill correctly the fields."
 msgstr ""
 "עמוד זה מתיר ליצור חשבון Jabber בשרת Jabber זה. כתובת JID ‏(Jabber "
-"IDentifier) תגובש באופן של: username@server. נא לקרוא את בזהירות את ההוראות "
+"IDentifier) תגובש באופן של: username@server. נא לקרוא בזהירות את ההוראות "
 "למילוי השדות באופן נכון."
 
 #: web/mod_register_web.erl:212 web/mod_register_web.erl:386
@@ -1838,16 +1864,16 @@ msgstr "תווים לא מורשים:"
 msgid "Server:"
 msgstr "שרת:"
 
-# אל נא לומר את סיסמתך
+# אל נא לומר
 #: web/mod_register_web.erl:232
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
-msgstr "אל תאמר את סיסמתך לאף אחד, אפילו לא למנהלים של שרת Jabber"
+msgstr "אל תגלה את הסיסמה שלך לאף אחד, אפילו לא למנהלים של שרת Jabber"
 
 #: web/mod_register_web.erl:234
 msgid "You can later change your password using a Jabber client."
-msgstr "ביכולתך לשנות את סיסמתך מאוחר יותר באמצעות לקוח Jabber."
+msgstr "ביכולתך לשנות את הסיסמה שלך מאוחר יותר באמצעות לקוח Jabber."
 
 # בוטח
 # trust that your
@@ -1856,8 +1882,8 @@ msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
-"לקוחות Jabber מסוימים יכולים לאחסן את סיסמתך במחשבך. השתמש בתכונה זו רק אם "
-"אתה סמוך שמחשבך הינו מוגן."
+"לקוחות Jabber מסוימים יכולים לאחסן את הסיסמה שלך על המחשב שלך. השתמש בתכונה "
+"זו רק אם אתה סמוך כי המחשב שלך הינו מוגן."
 
 # תישכח
 #: web/mod_register_web.erl:237
@@ -1866,8 +1892,8 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
-"שנן את סיסמתך, או רשום אותה בנייר שמור במקום בטוח. אצל Jabber אין דרך "
-"אוטומטית לשחזר את סיסמתך במידה וזו תישמט מן זכרונך."
+"שנן את הסיסמה שלך, או רשום אותה בנייר שמור במקום בטוח. אצל Jabber אין דרך "
+"אוטומטית לשחזר את הסיסמה שלך במידה וזו תישמט מתוך זיכרונך."
 
 #: web/mod_register_web.erl:242 web/mod_register_web.erl:406
 msgid "Password Verification:"

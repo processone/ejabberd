@@ -5,7 +5,7 @@
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +17,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -31,8 +30,7 @@
 -behaviour(p1_fsm).
 
 %% External exports
--export([start/2, start_link/2, match_domain/2,
-	 socket_type/0]).
+-export([start/2, start_link/2, socket_type/0]).
 
 %% gen_fsm callbacks
 -export([init/1, wait_for_stream/2,
@@ -44,14 +42,6 @@
 -include("logger.hrl").
 
 -include("jlib.hrl").
-
--include_lib("public_key/include/public_key.hrl").
-
--define(PKIXEXPLICIT, 'OTP-PUB-KEY').
-
--define(PKIXIMPLICIT, 'OTP-PUB-KEY').
-
--include("XmppAddr.hrl").
 
 -define(DICT, dict).
 
@@ -182,9 +172,21 @@ init([{SockMod, Socket}, Opts]) ->
                    undefined -> TLSOpts1;
                    Ciphers -> [{ciphers, Ciphers} | TLSOpts1]
                end,
+    TLSOpts3 = case ejabberd_config:get_option(
+                      s2s_protocol_options,
+                      fun (Options) ->
+                              [_|O] = lists:foldl(
+                                           fun(X, Acc) -> X ++ Acc end, [],
+                                           [["|" | binary_to_list(Opt)] || Opt <- Options, is_binary(Opt)]
+                                          ),
+                              iolist_to_binary(O)
+                      end) of
+                   undefined -> TLSOpts2;
+                   ProtocolOpts -> [{protocol_options, ProtocolOpts} | TLSOpts2]
+               end,
     TLSOpts = case proplists:get_bool(tls_compression, Opts) of
-                  false -> [compression_none | TLSOpts2];
-                  true -> TLSOpts2
+                  false -> [compression_none | TLSOpts3];
+                  true -> TLSOpts3
               end,
     Timer = erlang:start_timer(?S2STIMEOUT, self(), []),
     {ok, wait_for_stream,
@@ -213,34 +215,21 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 		 not StateData#state.authenticated ->
 	  send_text(StateData,
 		    ?STREAM_HEADER(<<" version='1.0'">>)),
-	  SASL = if StateData#state.tls_enabled ->
-			case
-			  (StateData#state.sockmod):get_peer_certificate(StateData#state.socket)
-			    of
-			  {ok, Cert} ->
-			      case
-				(StateData#state.sockmod):get_verify_result(StateData#state.socket)
-				  of
-				0 ->
-				    [#xmlel{name = <<"mechanisms">>,
-					    attrs = [{<<"xmlns">>, ?NS_SASL}],
-					    children =
-						[#xmlel{name = <<"mechanism">>,
-							attrs = [],
-							children =
-							    [{xmlcdata,
-							      <<"EXTERNAL">>}]}]}];
-				CertVerifyRes ->
-				    case StateData#state.tls_certverify of
-				      true ->
-					  {error_cert_verif, CertVerifyRes,
-					   Cert};
-				      false -> []
-				    end
-			      end;
-			  error -> []
+	  Auth = if StateData#state.tls_enabled ->
+			case jlib:nameprep(xml:get_attr_s(<<"from">>, Attrs)) of
+			  From when From /= <<"">>, From /= error ->
+			      {Result, Message} =
+				  ejabberd_s2s:check_peer_certificate(StateData#state.sockmod,
+								      StateData#state.socket,
+								      From),
+			      {Result, From, Message};
+			  _ ->
+			      {error, <<"(unknown)">>,
+			       <<"Got no valid 'from' attribute">>}
 			end;
-		    true -> []
+		    true ->
+			{no_verify, <<"(unknown)">>,
+			 <<"TLS not (yet) enabled">>}
 		 end,
 	  StartTLS = if StateData#state.tls_enabled -> [];
 			not StateData#state.tls_enabled and
@@ -256,26 +245,36 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 					[#xmlel{name = <<"required">>,
 						attrs = [], children = []}]}]
 		     end,
-	  case SASL of
-	    {error_cert_verif, CertVerifyResult, Certificate} ->
-		CertError = p1_tls:get_cert_verify_string(CertVerifyResult,
-						       Certificate),
-		RemoteServer = xml:get_attr_s(<<"from">>, Attrs),
+	  case Auth of
+	    {error, RemoteServer, CertError}
+		when StateData#state.tls_certverify ->
 		?INFO_MSG("Closing s2s connection: ~s <--> ~s (~s)",
 			  [StateData#state.server, RemoteServer, CertError]),
 		send_text(StateData,
-			  xml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
-									CertError))),
-		{atomic, Pid} =
-		    ejabberd_s2s:find_connection(jlib:make_jid(<<"">>,
-							       Server, <<"">>),
-						 jlib:make_jid(<<"">>,
-							       RemoteServer,
-							       <<"">>)),
-		ejabberd_s2s_out:stop_connection(Pid),
+			  <<(xml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
+									   CertError)))/binary,
+			    (?STREAM_TRAILER)/binary>>),
 		{stop, normal, StateData};
-	    _ ->
-		send_element(StateData,
+	    {VerifyResult, RemoteServer, Msg} ->
+		{SASL, NewStateData} = case VerifyResult of
+					 ok ->
+					     {[#xmlel{name = <<"mechanisms">>,
+						      attrs = [{<<"xmlns">>, ?NS_SASL}],
+						      children =
+							  [#xmlel{name = <<"mechanism">>,
+								  attrs = [],
+								  children =
+								      [{xmlcdata,
+									<<"EXTERNAL">>}]}]}],
+					      StateData#state{auth_domain = RemoteServer}};
+					 error ->
+					     ?DEBUG("Won't accept certificate of ~s: ~s",
+						    [RemoteServer, Msg]),
+					     {[], StateData};
+					 no_verify ->
+					     {[], StateData}
+				       end,
+		send_element(NewStateData,
 			     #xmlel{name = <<"stream:features">>, attrs = [],
 				    children =
 					SASL ++
@@ -284,7 +283,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 								    Server, [],
 								    [Server])}),
 		{next_state, wait_for_feature_request,
-		 StateData#state{server = Server}}
+		 NewStateData#state{server = Server}}
 	  end;
       {<<"jabber:server">>, _, Server, true}
 	  when StateData#state.authenticated ->
@@ -319,7 +318,7 @@ wait_for_stream(closed, StateData) ->
 
 wait_for_feature_request({xmlstreamelement, El},
 			 StateData) ->
-    #xmlel{name = Name, attrs = Attrs, children = Els} = El,
+    #xmlel{name = Name, attrs = Attrs} = El,
     TLS = StateData#state.tls,
     TLSEnabled = StateData#state.tls_enabled,
     SockMod =
@@ -365,39 +364,11 @@ wait_for_feature_request({xmlstreamelement, El},
       {?NS_SASL, <<"auth">>} when TLSEnabled ->
 	  Mech = xml:get_attr_s(<<"mechanism">>, Attrs),
 	  case Mech of
-	    <<"EXTERNAL">> ->
-		Auth = jlib:decode_base64(xml:get_cdata(Els)),
-		AuthDomain = jlib:nameprep(Auth),
-		AuthRes = case
-			    (StateData#state.sockmod):get_peer_certificate(StateData#state.socket)
-			      of
-			    {ok, Cert} ->
-				case
-				  (StateData#state.sockmod):get_verify_result(StateData#state.socket)
-				    of
-				  0 ->
-				      case AuthDomain of
-					error -> false;
-					_ ->
-					    case
-					      idna:domain_utf8_to_ascii(AuthDomain)
-						of
-					      false -> false;
-					      PCAuthDomain ->
-						  lists:any(fun (D) ->
-								    match_domain(PCAuthDomain,
-										 D)
-							    end,
-							    get_cert_domains(Cert))
-					    end
-				      end;
-				  _ -> false
-				end;
-			    error -> false
-			  end,
+	    <<"EXTERNAL">> when StateData#state.auth_domain /= <<"">> ->
+		AuthDomain = StateData#state.auth_domain,
 		AllowRemoteHost = ejabberd_s2s:allow_host(<<"">>,
 							  AuthDomain),
-		if AuthRes andalso AllowRemoteHost ->
+		if AllowRemoteHost ->
 		       (StateData#state.sockmod):reset_stream(StateData#state.socket),
 		       send_element(StateData,
 				    #xmlel{name = <<"success">>,
@@ -409,8 +380,7 @@ wait_for_feature_request({xmlstreamelement, El},
 				     jlib:make_jid(<<"">>, AuthDomain, <<"">>)),
 		       {next_state, wait_for_stream,
 			StateData#state{streamid = new_id(),
-					authenticated = true,
-					auth_domain = AuthDomain}};
+					authenticated = true}};
 		   true ->
 		       send_element(StateData,
 				    #xmlel{name = <<"failure">>,
@@ -726,125 +696,6 @@ is_key_packet(#xmlel{name = Name, attrs = Attrs,
      xml:get_attr_s(<<"from">>, Attrs),
      xml:get_attr_s(<<"id">>, Attrs), xml:get_cdata(Els)};
 is_key_packet(_) -> false.
-
-get_cert_domains(Cert) ->
-    {rdnSequence, Subject} =
-	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.subject,
-    Extensions =
-	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.extensions,
-    lists:flatmap(fun (#'AttributeTypeAndValue'{type =
-						    ?'id-at-commonName',
-						value = Val}) ->
-			  case 'OTP-PUB-KEY':decode('X520CommonName', Val) of
-			    {ok, {_, D1}} ->
-				D = if is_binary(D1) -> D1;
-				       is_binary(D1) -> (D1);
-				       true -> error
-				    end,
-				if D /= error ->
-				       case jlib:string_to_jid(D) of
-					 #jid{luser = <<"">>, lserver = LD,
-					      lresource = <<"">>} ->
-					     [LD];
-					 _ -> []
-				       end;
-				   true -> []
-				end;
-			    _ -> []
-			  end;
-		      (_) -> []
-		  end,
-		  lists:flatten(Subject))
-      ++
-      lists:flatmap(fun (#'Extension'{extnID =
-					  ?'id-ce-subjectAltName',
-				      extnValue = Val}) ->
-			    BVal = if is_binary(Val) -> iolist_to_binary(Val);
-				      is_binary(Val) -> Val;
-				      true -> Val
-				   end,
-			    case 'OTP-PUB-KEY':decode('SubjectAltName', BVal)
-				of
-			      {ok, SANs} ->
-				  lists:flatmap(fun ({otherName,
-						      #'AnotherName'{'type-id' =
-									 ?'id-on-xmppAddr',
-								     value =
-									 XmppAddr}}) ->
-							case
-							  'XmppAddr':decode('XmppAddr',
-									    XmppAddr)
-							    of
-							  {ok, D}
-							      when
-								is_binary(D) ->
-							      case
-								jlib:string_to_jid((D))
-								  of
-								#jid{luser =
-									 <<"">>,
-								     lserver =
-									 LD,
-								     lresource =
-									 <<"">>} ->
-								    case
-								      idna:domain_utf8_to_ascii(LD)
-									of
-								      false ->
-									  [];
-								      PCLD ->
-									  [PCLD]
-								    end;
-								_ -> []
-							      end;
-							  _ -> []
-							end;
-						    ({dNSName, D})
-							when is_binary(D) ->
-							case
-							  jlib:string_to_jid(D)
-							    of
-							  #jid{luser = <<"">>,
-							       lserver = LD,
-							       lresource =
-								   <<"">>} ->
-							      [LD];
-							  _ -> []
-							end;
-						    (_) -> []
-						end,
-						SANs);
-			      _ -> []
-			    end;
-			(_) -> []
-		    end,
-		    Extensions).
-
-match_domain(Domain, Domain) -> true;
-match_domain(Domain, Pattern) ->
-    DLabels = str:tokens(Domain, <<".">>),
-    PLabels = str:tokens(Pattern, <<".">>),
-    match_labels(DLabels, PLabels).
-
-match_labels([], []) -> true;
-match_labels([], [_ | _]) -> false;
-match_labels([_ | _], []) -> false;
-match_labels([DL | DLabels], [PL | PLabels]) ->
-    case lists:all(fun (C) ->
-			   $a =< C andalso C =< $z orelse
-			     $0 =< C andalso C =< $9 orelse
-			       C == $- orelse C == $*
-		   end,
-		   binary_to_list(PL))
-	of
-      true ->
-	  Regexp = ejabberd_regexp:sh_to_awk(PL),
-	  case ejabberd_regexp:run(DL, Regexp) of
-	    match -> match_labels(DLabels, PLabels);
-	    nomatch -> false
-	  end;
-      false -> false
-    end.
 
 fsm_limit_opts(Opts) ->
     case lists:keysearch(max_fsm_queue, 1, Opts) of

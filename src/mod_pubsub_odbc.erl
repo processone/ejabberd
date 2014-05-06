@@ -13,11 +13,11 @@
 %%% 
 %%%
 %%% The Initial Developer of the Original Code is ProcessOne.
-%%% Portions created by ProcessOne are Copyright 2006-2013, ProcessOne
+%%% Portions created by ProcessOne are Copyright 2006-2014, ProcessOne
 %%% All Rights Reserved.''
-%%% This software is copyright 2006-2013, ProcessOne.
+%%% This software is copyright 2006-2014, ProcessOne.
 %%%
-%%% @copyright 2006-2013 ProcessOne
+%%% @copyright 2006-2014 ProcessOne
 %%% @author Christophe Romain <christophe.romain@process-one.net>
 %%%   [http://www.process-one.net/]
 %%% @version {@vsn}, {@date} {@time}
@@ -475,7 +475,7 @@ send_loop(State) ->
 						      end;
 						  (_) -> ok
 					      end,
-					      Subscriptions)
+					      lists:usort(Subscriptions))
 			end,
 			State#state.plugins),
 	  if not State#state.ignore_pep_from_offline ->
@@ -817,22 +817,21 @@ disco_items(Host, Node, From) ->
 %% presence hooks handling functions
 %%
 
-caps_update(#jid{luser = U, lserver = S, lresource = R} = From, To, _Features) ->
-    Pid = ejabberd_sm:get_session_pid(U, S, R),
-    presence_probe(From, To, Pid).
+caps_update(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = Host} = JID, _Features)
+	when Host =/= S ->
+    presence(Host, {presence, U, S, [R], JID});
+caps_update(_From, _To, _Feature) ->
+    ok.
 
-presence_probe(#jid{luser = User, lserver = Server, lresource = Resource} = JID,
-  JID, Pid) ->
-    presence(Server, {presence, JID, Pid}),
-    presence(Server, {presence, User, Server, [Resource], JID});
-presence_probe(#jid{luser = User, lserver = Server},
-  #jid{luser = User, lserver = Server}, _Pid) ->
-    %% ignore presence_probe from other ressources for the current user
-    %% this way, we do not send duplicated last items if user already connected with other clients
+presence_probe(#jid{luser = U, lserver = S, lresource = R} = JID, JID, Pid) ->
+    presence(S, {presence, JID, Pid}),
+    presence(S, {presence, U, S, [R], JID});
+presence_probe(#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}, _Pid) ->
+    %% ignore presence_probe from my other ressources
+    %% to not get duplicated last items
     ok;
-presence_probe(#jid{luser = User, lserver = Server, lresource = Resource},
-  #jid{lserver = Host} = JID, _Pid) ->
-    presence(Host, {presence, User, Server, [Resource], JID}).
+presence_probe(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = Host} = JID, _Pid) ->
+    presence(Host, {presence, U, S, [R], JID}).
 
 presence(ServerHost, Presence) ->
     SendLoop = case
@@ -885,10 +884,10 @@ unsubscribe_user(Entity, Owner) ->
     Host = host(element(2, BJID)),
     spawn(fun () ->
 		  lists:foreach(fun (PType) ->
-					{result, Subscriptions} =
-					    node_action(Host, PType,
+					case node_action(Host, PType,
 							get_entity_subscriptions,
-							[Host, Entity]),
+							[Host, Entity]) of
+						{result, Subscriptions} ->
 					lists:foreach(fun ({#pubsub_node{options
 									     =
 									     Options,
@@ -922,7 +921,10 @@ unsubscribe_user(Entity, Owner) ->
 							      end;
 							  (_) -> ok
 						      end,
-						      Subscriptions)
+						      Subscriptions);
+					Error ->
+					    ?DEBUG("Error at node_action: ~p", [Error])
+					end
 				end,
 				plugins(Host))
 	  end).
@@ -1270,7 +1272,7 @@ command_disco_info(_Host, ?NS_PUBSUB_GET_PENDING,
 node_disco_info(Host, Node, From) ->
     node_disco_info(Host, Node, From, true, true).
 
-node_disco_info(Host, Node, From, Identity, Features) ->
+node_disco_info(Host, Node, From, _Identity, _Features) ->
 %    Action =
 %	fun(#pubsub_node{type = Type, id = NodeId}) ->
 %		I = case Identity of
@@ -1569,7 +1571,7 @@ iq_get_vcard(Lang) ->
 		[{xmlcdata,
 		  <<(translate:translate(Lang,
 					 <<"ejabberd Publish-Subscribe module">>))/binary,
-		    "\nCopyright (c) 2004-2013 ProcessOne">>}]}].
+		    "\nCopyright (c) 2004-2014 ProcessOne">>}]}].
 
 -spec(iq_pubsub/6 ::
 (
@@ -2615,9 +2617,9 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
 		     Features = features(Type),
 		     PublishFeature = lists:member(<<"publish">>, Features),
 		     PublishModel = get_option(Options, publish_model),
-		     MaxItems = max_items(Host, Options),
 		     DeliverPayloads = get_option(Options, deliver_payloads),
 		     PersistItems = get_option(Options, persist_items),
+		     MaxItems = max_items(Host, Options),
 		     PayloadCount = payload_xmlelements(Payload),
 		     PayloadSize = byte_size(term_to_binary(Payload)) - 2,
 		     PayloadMaxSize = get_option(Options, max_payload_size),
@@ -3010,7 +3012,7 @@ send_items(Host, Node, NodeId, Type, LJID, last) ->
 					   ModifNow, ModifUSR)
     end,
     ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza);
-send_items(Host, Node, NodeId, Type, LJID, Number) ->
+send_items(Host, Node, NodeId, Type, {U, S, R} = LJID, Number) ->
     ToSend = case node_action(Host, Type, get_items,
 			      [NodeId, LJID])
 		 of
@@ -3023,6 +3025,8 @@ send_items(Host, Node, NodeId, Type, LJID, Number) ->
 	       _ -> []
 	     end,
     Stanza = case ToSend of
+	       [] ->
+		   undefined;
 	       [LastItem] ->
 		   {ModifNow, ModifUSR} =
 		       LastItem#pubsub_item.modification,
@@ -3036,7 +3040,22 @@ send_items(Host, Node, NodeId, Type, LJID, Number) ->
 					attrs = nodeAttr(Node),
 					children = itemsEls(ToSend)}])
 	     end,
-    ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza).
+    case {is_tuple(Host), Stanza} of
+      {_, undefined} ->
+	  ok;
+      {false, _} ->
+	  ejabberd_router:route(service_jid(Host),
+				jlib:make_jid(LJID), Stanza);
+      {true, _} ->
+	  case ejabberd_sm:get_session_pid(U, S, R) of
+	    C2SPid when is_pid(C2SPid) ->
+		ejabberd_c2s:broadcast(C2SPid,
+				       {pep_message,
+					<<((Node))/binary, "+notify">>},
+				       _Sender = service_jid(Host), Stanza);
+	    _ -> ok
+	  end
+    end.
 
 %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
 %%	 Host = host()
@@ -3232,8 +3251,7 @@ set_affiliations(Host, Node, From, EntitiesEls) ->
       error -> {error, ?ERR_BAD_REQUEST};
       _ ->
 	  Action = fun (#pubsub_node{type = Type,
-				     id = NodeId} =
-			    N) ->
+				     id = NodeId}) ->
 			   Owners = node_owners_call(Type, NodeId),
 			   case lists:member(Owner, Owners) of
 			     true ->
@@ -4059,15 +4077,7 @@ broadcast_stanza(Host, _Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTy
 broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza({LUser, LServer, LResource}, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
-    SenderResource = case LResource of
-	[] -> 
-	    case user_resources(LUser, LServer) of
-		[Resource|_] -> Resource;
-		_ -> <<>>
-	    end;
-	_ ->
-	    LResource
-    end,
+    SenderResource = user_resource(LUser, LServer, LResource),
     case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
 	C2SPid when is_pid(C2SPid) ->
 	    Stanza = case get_option(NodeOptions, notification_type, headline) of
@@ -4078,8 +4088,8 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 	    %% Also, add "replyto" if entity has presence subscription to the account owner
 	    %% See XEP-0163 1.1 section 4.3.1
 	    ejabberd_c2s:broadcast(C2SPid,
-	        {pep_message, binary_to_list(Node)++"+notify"},
-	        _Sender = jlib:make_jid(LUser, LServer, ""),
+	        {pep_message, <<((Node))/binary, "+notify">>},
+	        _Sender = jlib:make_jid(LUser, LServer, <<"">>),
 	        _StanzaToSend = add_extended_headers(Stanza,
 	            _ReplyTo = extended_headers([jlib:jid_to_string(Publisher)])));
 	_ ->
@@ -4143,6 +4153,13 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
 
 user_resources(User, Server) ->
     ejabberd_sm:get_user_resources(User, Server).
+
+user_resource(User, Server, <<>>) ->
+    case user_resources(User, Server) of
+	[R | _] -> R;
+	_ -> <<>>
+    end;
+user_resource(_, _, Resource) -> Resource.
 
 %%%%%%% Configuration handling
 

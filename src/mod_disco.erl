@@ -5,7 +5,7 @@
 %%% Created :  1 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +17,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -488,10 +487,10 @@ get_fields_xml(Host, Module) ->
                        lists:map(
                          fun(Opts) ->
                                  Mods = proplists:get_value(modules, Opts, all),
-                                 Name = proplists:get_value(names, Opts, <<>>),
+                                 Name = proplists:get_value(name, Opts, <<>>),
                                  URLs = proplists:get_value(urls, Opts, []),
                                  {Mods, Name, URLs}
-                         end, lists:flatten(L))
+                         end, L)
                end, []),
     Fields_good = lists:filter(fun ({Modules, _, _}) ->
 				       case Modules of

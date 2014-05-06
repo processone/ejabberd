@@ -12,6 +12,6 @@ template1=# CREATE DATABASE ejabberd_test;
 template1=# GRANT ALL PRIVILEGES ON DATABASE ejabberd_test TO ejabberd_test;
 
 $ mysql
-mysql> CREATE USER ejabberd_test IDENTIFIED BY 'ejabberd_test';
+mysql> CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';
 mysql> CREATE DATABASE ejabberd_test;
-mysql> GRANT ALL ON ejabberd_test.* TO ejabberd_test;
+mysql> GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';

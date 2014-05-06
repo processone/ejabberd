@@ -1,0 +1,99 @@
+#
+# bash completion for ejabberdctl
+#
+get_help()
+{
+    local COMMANDCACHE=/var/log/ejabberd/bash_completion_$RANDOM
+    ejabberdctl $CTLARGS help >$COMMANDCACHE
+    if [[ $? == 2 ]] ; then
+        ISRUNNING=1
+        runningcommands=`cat $COMMANDCACHE | grep "^   [a-z]" | awk '{print $1}' | xargs`
+    fi
+    rm $COMMANDCACHE
+}
+
+_ejabberdctl()
+{
+    local cur prev
+    local ISRUNNING=0
+    local runningcommands
+
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    local startcoms="start debug live"
+    local startpars="--config-dir --config --ctl-config --logs --spool"
+
+    local i=1
+    local CTLARGS=""
+    while [ $i -lt $COMP_CWORD ] ; do
+        local PARAM="${COMP_WORDS[i]}"
+        i=$((i+1))
+        case $PARAM in
+            --*)
+                CTLARGS="--node ${COMP_WORDS[i]}"
+                i=$((i+1)) ;;
+            *) break ;;
+        esac
+    done
+
+    case "${prev##*/}" in
+        ejabberdctl)
+            # This clause matches even when calling `/sbin/ejabberdctl` thanks to the ##*/ in the case
+            get_help
+            COMPREPLY=($(compgen -W "--node --auth ${startpars} ${startcoms} ${runningcommands}" -- $cur))
+            return 0
+            ;;
+        start|live)
+            COMPREPLY=($(compgen -W "--node ${startpars}" -- $cur))
+            return 0
+            ;;
+        debug)
+            COMPREPLY=($(compgen -W "--node" -- $cur))
+            return 0
+            ;;
+        help)
+            get_help
+            COMPREPLY=($(compgen -W "${runningcommands}" -- $cur))
+            return 0
+            ;;
+        --node)
+            RUNNINGNODES=`epmd -names | grep name | awk '{print $2"@localhost"}' | xargs`
+            COMPREPLY=($(compgen -W "$RUNNINGNODES" -- $cur))
+            return 0
+            ;;
+        --config|--ctl-config)
+            _filedir '?(u)cfg'
+            return 0
+            ;;
+        --config-dir|--logs|--spool)
+            _filedir
+            return 0
+            ;;
+        *)
+            prev2="${COMP_WORDS[COMP_CWORD-2]}"
+            get_help
+            if [[ "$prev2" == --* ]]; then
+                COMPREPLY=($(compgen -W "--node --auth ${startpars} ${startcoms} ${runningcommands}" -- $cur))
+            else
+                if [[ $ISRUNNING == 1 ]]; then
+                    echo ""
+                    ejabberdctl $CTLARGS help ${PARAM}
+                    echo -n "${COMP_LINE}"
+                fi
+            fi
+            return 0
+            ;;
+    esac
+}
+
+complete -F _ejabberdctl ejabberdctl
+
+# Local variables:
+# mode: shell-script
+# sh-basic-offset: 4
+# sh-indent-comment: t
+# indent-tabs-mode: nil
+# End:
+# ex: ts=4 sw=4 et filetype=sh

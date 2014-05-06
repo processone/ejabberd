@@ -5,7 +5,7 @@
 %%% Created : 16 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +17,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -152,7 +151,20 @@ init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 	{ok, Socket} ->
 	    %% Inform my parent that this port was opened succesfully
 	    proc_lib:init_ack({ok, self()}),
-	    udp_recv(Socket, Module, Opts);
+	    case erlang:function_exported(Module, udp_init, 2) of
+		false ->
+		    udp_recv(Socket, Module, Opts);
+		true ->
+		    case catch Module:udp_init(Socket, Opts) of
+			{'EXIT', _} = Err ->
+			    ?ERROR_MSG("failed to process callback function "
+				       "~p:~s(~p, ~p): ~p",
+				       [Module, udp_init, Socket, Opts, Err]),
+			    udp_recv(Socket, Module, Opts);
+			NewOpts ->
+			    udp_recv(Socket, Module, NewOpts)
+		    end
+	    end;
 	{error, Reason} ->
 	    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
     end.
@@ -161,8 +173,20 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
     %% Inform my parent that this port was opened succesfully
     proc_lib:init_ack({ok, self()}),
-    %% And now start accepting connection attempts
-    accept(ListenSocket, Module, Opts).
+    case erlang:function_exported(Module, tcp_init, 2) of
+	false ->
+	    accept(ListenSocket, Module, Opts);
+	true ->
+	    case catch Module:tcp_init(ListenSocket, Opts) of
+		{'EXIT', _} = Err ->
+		    ?ERROR_MSG("failed to process callback function "
+			       "~p:~s(~p, ~p): ~p",
+			       [Module, tcp_init, ListenSocket, Opts, Err]),
+		    accept(ListenSocket, Module, Opts);
+		NewOpts ->
+		    accept(ListenSocket, Module, NewOpts)
+	    end
+    end.
 
 listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
     case ets:lookup(listen_sockets, PortIP) of
@@ -285,9 +309,10 @@ accept(ListenSocket, Module, Opts) ->
     case gen_tcp:accept(ListenSocket) of
 	{ok, Socket} ->
 	    case {inet:sockname(Socket), inet:peername(Socket)} of
-		{{ok, Addr}, {ok, PAddr}} ->
-		    ?INFO_MSG("(~w) Accepted connection ~w -> ~w",
-			      [Socket, PAddr, Addr]);
+		{{ok, {Addr, Port}}, {ok, {PAddr, PPort}}} ->
+		    ?INFO_MSG("(~w) Accepted connection ~s:~p -> ~s:~p",
+			      [Socket, inet_parse:ntoa(PAddr), PPort,
+			       inet_parse:ntoa(Addr), Port]);
 		_ ->
 		    ok
 	    end,
@@ -311,11 +336,11 @@ udp_recv(Socket, Module, Opts) ->
 		    ?ERROR_MSG("failed to process UDP packet:~n"
 			       "** Source: {~p, ~p}~n"
 			       "** Reason: ~p~n** Packet: ~p",
-			       [Addr, Port, Reason, Packet]);
-		_ ->
-		    ok
-	    end,
-	    udp_recv(Socket, Module, Opts);
+			       [Addr, Port, Reason, Packet]),
+		    udp_recv(Socket, Module, Opts);
+		NewOpts ->
+		    udp_recv(Socket, Module, NewOpts)
+	    end;
 	{error, Reason} ->
 	    ?ERROR_MSG("unexpected UDP error: ~s", [format_error(Reason)]),
 	    throw({error, Reason})
@@ -342,6 +367,7 @@ start_listener2(Port, Module, Opts) ->
     %% But it doesn't hurt to attempt to start it for any listener.
     %% So, it's normal (and harmless) that in most cases this call returns: {error, {already_started, pid()}}
     maybe_start_stun(Module),
+    maybe_start_sip(Module),
     start_module_sup(Port, Module),
     start_listener_sup(Port, Module, Opts).
 
@@ -461,6 +487,11 @@ strip_frontend(Module) when is_atom(Module) -> Module.
 maybe_start_stun(ejabberd_stun) ->
     ejabberd:start_app(p1_stun);
 maybe_start_stun(_) ->
+    ok.
+
+maybe_start_sip(esip_socket) ->
+    ejabberd:start_app(esip);
+maybe_start_sip(_) ->
     ok.
 
 %%%
@@ -642,7 +673,11 @@ prepare_ip(IP) when is_binary(IP) ->
 
 prepare_mod(ejabberd_stun) ->
     prepare_mod(stun);
+prepare_mod(ejabberd_sip) ->
+    prepare_mod(sip);
 prepare_mod(stun) ->
     stun;
+prepare_mod(sip) ->
+    esip_socket;
 prepare_mod(Mod) when is_atom(Mod) ->
     Mod.

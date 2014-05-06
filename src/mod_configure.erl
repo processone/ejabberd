@@ -5,7 +5,7 @@
 %%% Created : 19 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +17,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -1846,13 +1845,14 @@ set_form(From, Host, ?NS_ADMINL(<<"delete-user">>),
      || {User, Server} <- ASL2],
     {result, []};
 set_form(From, Host, ?NS_ADMINL(<<"end-user-session">>),
-	 _Lang, XData) ->
+	 Lang, XData) ->
     AccountString = get_value(<<"accountjid">>, XData),
     JID = jlib:string_to_jid(AccountString),
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
     true = LServer == Host orelse
 	     get_permission_level(From) == global,
+    Xmlelement = ?SERRT_POLICY_VIOLATION(Lang, <<"has been kicked">>),
     case JID#jid.lresource of
       <<>> ->
 	  SIDs = mnesia:dirty_select(session,
@@ -1860,14 +1860,14 @@ set_form(From, Host, ?NS_ADMINL(<<"end-user-session">>),
 						usr = {LUser, LServer, '_'},
 						_ = '_'},
 				       [], ['$1']}]),
-	  [Pid ! replaced || {_, Pid} <- SIDs];
+	  [Pid ! {kick, kicked_by_admin, Xmlelement} || {_, Pid} <- SIDs];
       R ->
 	  [{_, Pid}] = mnesia:dirty_select(session,
 					   [{#session{sid = '$1',
 						      usr = {LUser, LServer, R},
 						      _ = '_'},
 					     [], ['$1']}]),
-	  Pid ! replaced
+	  Pid ! {kick, kicked_by_admin, Xmlelement}
     end,
     {result, []};
 set_form(From, Host,

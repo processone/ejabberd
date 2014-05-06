@@ -68,6 +68,7 @@
 \newcommand{\modannounce}{\module{mod\_announce}}
 \newcommand{\modblocking}{\module{mod\_blocking}}
 \newcommand{\modcaps}{\module{mod\_caps}}
+\newcommand{\modcarboncopy}{\module{mod\_carboncopy}}
 \newcommand{\modconfigure}{\module{mod\_configure}}
 \newcommand{\moddisco}{\module{mod\_disco}}
 \newcommand{\modecho}{\module{mod\_echo}}
@@ -92,6 +93,7 @@
 \newcommand{\modsharedroster}{\module{mod\_shared\_roster}}
 \newcommand{\modsharedrosterldap}{\module{mod\_shared\_roster\_ldap}}
 \newcommand{\modsic}{\module{mod\_sic}}
+\newcommand{\modsip}{\module{mod\_sip}}
 \newcommand{\modstats}{\module{mod\_stats}}
 \newcommand{\modtime}{\module{mod\_time}}
 \newcommand{\modvcard}{\module{mod\_vcard}}
@@ -318,6 +320,7 @@ To compile \ejabberd{} on a `Unix-like' operating system, you need:
 \begin{itemize}
 \item GNU Make
 \item GCC
+\item pkg-config
 \item Libexpat 1.95 or higher
 \item Erlang/OTP R15B or higher.
 \item Libyaml 1.4 or higher
@@ -869,7 +872,7 @@ The available modules, their purpose and the options allowed by each one are:
 \begin{description}
   \titem{\texttt{ejabberd\_c2s}}
     Handles c2s connections.\\
-    Options: \texttt{access}, \texttt{certfile}, \texttt{ciphers},
+    Options: \texttt{access}, \texttt{certfile}, \texttt{ciphers}, \texttt{protocol\_options}
     \texttt{max\_ack\_queue}, \texttt{max\_fsm\_queue},
     \texttt{max\_stanza\_size}, \texttt{resend\_on\_timeout},
     \texttt{resume\_timeout}, \texttt{shaper},
@@ -884,6 +887,10 @@ The available modules, their purpose and the options allowed by each one are:
     (as defined in the Jabber Component Protocol (\xepref{0114}).\\
     Options: \texttt{access}, \texttt{hosts}, \texttt{max\_fsm\_queue},
     \texttt{service\_check\_from}, \texttt{shaper\_rule}
+  \titem{\texttt{ejabberd\_sip}}
+    Handles SIP requests as defined in
+    \footahref{http://tools.ietf.org/html/rfc3261}{RFC 3261}.\\
+    Options: \texttt{certfile}, \texttt{tls}
   \titem{\texttt{ejabberd\_stun}}
     Handles STUN Binding requests as defined in
     \footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}.\\
@@ -919,6 +926,10 @@ This is a detailed description of each option allowed by the listening modules:
     To define a certificate file specific for a given domain, use the global option \term{domain\_certfile}.
   \titem{ciphers: Ciphers} OpenSSL ciphers list in the same format accepted by
   `\verb|openssl ciphers|' command.
+  \titem{protocol\_options: ProtocolOpts} \ind{options!protocol\_options}
+  List of general options relating to SSL/TLS. These map to \verb|<a href="https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html">OpenSSL's set_options()</a>|.
+  For a full list of options available in ejabberd, \verb|<a href="https://github.com/processone/tls/blob/master/c_src/options.h">see the source</a>|.
+  The default entry is: \verb|"no_sslv2"|
   \titem{default\_host: undefined|HostName\}}
     If the HTTP request received by ejabberd contains the HTTP header \term{Host}
     with an ambiguous virtual host that doesn't match any one defined in ejabberd (see \ref{hostnames}),
@@ -1095,6 +1106,10 @@ There are some additional global options that can be specified in the ejabberd c
   Full path to the file containing the SSL certificate for a specific domain.
   \titem{s2s\_ciphers: Ciphers} \ind{options!s2s\_ciphers} OpenSSL ciphers list
   in the same format accepted by `\verb|openssl ciphers|' command.
+  \titem{s2s\_protocol\_options: ProtocolOpts} \ind{options!s2s\_protocol\_options}
+  List of general options relating to SSL/TLS. These map to \verb|<a href="https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html">OpenSSL's set_options()</a>|.
+  For a full list of options available in ejabberd, \verb|<a href="https://github.com/processone/tls/blob/protocol_options/c_src/options.h">see the source</a>|.
+  The default entry is: \verb|"no_sslv2"|
   \titem{outgoing\_s2s\_families: [Family, ...]} \ind{options!outgoing\_s2s\_families}
   Specify which address families to try, in what order.
   By default it first tries connecting with IPv4, if that fails it tries using IPv6.
@@ -1814,7 +1829,7 @@ The syntax is:
 
 When a JID is checked to have access to \term{Accessname}, the server
 sequentially checks if that JID matches any of the ACLs that are named in the
-second elements of the tuples in the list. If it matches, the first element of
+first elements of the tuples in the list. If it matches, the second element of
 the first matched tuple is returned, otherwise the value `\term{deny}' is
 returned.
 
@@ -1982,7 +1997,7 @@ listen:
 
 \ejabberd{} is able to act as a stand-alone STUN server
 (\footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}). Currently only Binding usage
-is supported. In that role \ejabberd{} helps clients with Jingle ICE (\xepref{0176}) support to discover their external addresses and ports.
+is supported. In that role \ejabberd{} helps clients with ICE (\footahref{http://tools.ietf.org/html/rfc5245}{RFC 5245}) or Jingle ICE (\xepref{0176}) support to discover their external addresses and ports.
 
 You should configure \term{ejabberd\_stun} listening module as described in \ref{listened} section.
 If \option{certfile} option is defined, \ejabberd{} multiplexes TCP and
@@ -2020,6 +2035,61 @@ Example DNS SRV configuration:
 _stun._udp   IN SRV  0 0 3478 stun.example.com.
 _stun._tcp   IN SRV  0 0 3478 stun.example.com.
 _stuns._tcp  IN SRV  0 0 5349 stun.example.com.
+\end{verbatim}
+
+\makesubsection{sip}{SIP}
+\ind{options!sip}\ind{sip}
+
+\ejabberd{} has built-in SIP support. In order to activate it you need to add
+listeners for it, configure DNS properly and enable \modsip{} for
+the desired virtual host.
+
+To add a listener you should configure \term{ejabberd\_sip} listening module as
+described in \ref{listened} section. If option \option{tls} is specified, option
+\option{certfile} must be specified as well, otherwise incoming TLS connections would fail.
+
+Example configuration with standard ports
+(as per \footahref{http://tools.ietf.org/html/rfc3261}{RFC 3261}):
+\begin{verbatim}
+listen:
+  ...
+  - 
+    port: 5060
+    transport: udp
+    module: ejabberd_sip
+  - 
+    port: 5060
+    module: ejabberd_sip
+  -
+    port: 5061
+    module: ejabberd_sip
+    tls: true
+    certfile: "/etc/ejabberd/server.pem"
+  ...
+\end{verbatim}
+
+Note that there is no StartTLS support in SIP and \footahref{http://en.wikipedia.org/wiki/Server\_Name\_Indication}{SNI} support is somewhat tricky, so for TLS you have to configure
+different virtual hosts on different ports if you have different certificate files for them.
+
+Next you need to configure DNS SIP records for your virtual domains.
+Refer to \footahref{http://tools.ietf.org/html/rfc3263}{RFC 3263} for the detailed explanation.
+Simply put, you should add NAPTR and SRV records for your domains.
+Skip NAPTR configuration if your DNS provider doesn't support this type of records.
+It's not fatal, however, highly recommended.
+
+Example configuration of NAPTR records:
+\begin{verbatim}
+example.com IN NAPTR 10  0 "s" "SIPS+D2T" "" _sips._tcp.example.com.
+example.com IN NAPTR 20  0 "s" "SIP+D2T" "" _sip._tcp.example.com.
+example.com IN NAPTR 30  0 "s" "SIP+D2U" "" _sip._udp.example.com.
+\end{verbatim}
+
+Example configuration of SRV records with standard ports
+(as per \footahref{http://tools.ietf.org/html/rfc3261}{RFC 3261}):
+\begin{verbatim}
+_sip._udp   IN SRV  0 0 5060 sip.example.com.
+_sip._tcp   IN SRV  0 0 5060 sip.example.com.
+_sips._tcp  IN SRV  0 0 5061 sip.example.com.
 \end{verbatim}
 
 \makesubsection{includeconfigfile}{Include Additional Configuration Files}
@@ -2551,8 +2621,7 @@ modules:
   mod_echo: {}
 \end{verbatim}
 \item In the second example the modules \modecho{}, \modtime{}, and
-  \modversion{} are loaded without options. Remark that, besides the last entry,
-  all entries end with a comma:
+  \modversion{} are loaded without options.
 \begin{verbatim}
 modules:
   mod_echo:      {}
@@ -2575,6 +2644,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modannounce}{\modannounce{}} & Manage announcements & recommends \modadhoc{} \\
     \hline \modblocking{} & Simple Communications Blocking (\xepref{0191}) & \modprivacy{} \\
     \hline \modcaps{} &  Entity Capabilities (\xepref{0115}) & \\
+    \hline \modcarboncopy{} & Message Carbons (\xepref{0280}) & \\
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\
     \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) &  \\
     \hline \ahrefloc{modecho}{\modecho{}} & Echoes XMPP stanzas &  \\
@@ -2599,6 +2669,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \ahrefloc{modsharedroster}{\modsharedroster{}} & Shared roster management & \modroster{} \\
     \hline \ahrefloc{modsharedrosterldap}{\modsharedrosterldap{}} & LDAP Shared roster management & \modroster{} \\
     \hline \ahrefloc{modsic}{\modsic{}} & Server IP Check (\xepref{0279}) &  \\
+    \hline \ahrefloc{modsip}{\modsip{}} & SIP Registrar/Proxy (\footahref{http://tools.ietf.org/html/rfc3261}{RFC 3261}) & \term{ejabberd\_sip} \\
     \hline \ahrefloc{modstats}{\modstats{}} & Statistics Gathering (\xepref{0039}) &  \\
     \hline \ahrefloc{modtime}{\modtime{}} & Entity Time (\xepref{0202}) &  \\
     \hline \ahrefloc{modvcard}{\modvcard{}} & vcard-temp (\xepref{0054}) &  \\
@@ -4639,6 +4710,49 @@ Options:
 \iqdiscitem{\ns{urn:xmpp:sic:0}}
 \end{description}
 
+\makesubsection{modsip}{\modsip{}}
+\ind{modules!\modsip{}}
+This module adds SIP proxy/registrar support for the corresponding virtual host.
+Note that it is not enough to just load this module only. You should also configure
+listeners and DNS records properly. See section \ref{sip} for the full explanation.
+
+Example configuration:
+\begin{verbatim}
+modules:
+  ...
+  mod_sip: {}
+  ...
+\end{verbatim}
+
+Options:
+\begin{description}
+\titem{via: [\{type: Type, host: Host, port: Port\}]}\ind{options!via}With
+this option for every \term{Type} you can specify \term{Host} and \term{Port}
+to set in \term{Via} header of outgoing SIP messages, where \term{Type} can be
+\term{udp}, \term{tcp} or \term{tls}. \term{Host} is a string and \term{Port} is 
+a non negative integer. This is useful if you're running your server in a non-standard
+network topology. Example configuration:
+\begin{verbatim}
+modules:
+  ...
+  mod_sip:
+    via:
+      - 
+        type: tls
+        host: "sip-tls.example.com"
+        port: 5061
+      - 
+        type: tcp
+        host: "sip-tcp.example.com"
+        port: 5060
+      - 
+        type: udp
+        host: "sip-udp.example.com"
+        port: 5060
+  ...
+\end{verbatim}
+\end{description}
+
 \makesubsection{modstats}{\modstats{}}
 \ind{modules!\modstats{}}\ind{protocols!XEP-0039: Statistics Gathering}\ind{statistics}
 
@@ -5030,6 +5144,9 @@ and other codes may be used for specific results.
 This can be used by other scripts to determine automatically
 if a command succeeded or failed,
 for example using: \term{echo \$?}
+
+If you use Bash, you can get Bash completion by copying the file \term{tools/ejabberdctl.bc}
+to the directory \term{/etc/bash\_completion.d/} (in Debian, Ubuntu, Fedora and maybe others).
 
 \makesubsection{ectl-commands}{ejabberdctl Commands}
 
@@ -5992,7 +6109,7 @@ Thanks to all people who contributed to this guide:
 \makechapter{copyright}{Copyright Information}
 
 Ejabberd Installation and Operation Guide.\\
-Copyright \copyright{} 2003 --- 2013 ProcessOne
+Copyright \copyright{} 2003 --- 2014 ProcessOne
 
 This document is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

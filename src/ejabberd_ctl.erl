@@ -5,7 +5,7 @@
 %%% Created : 11 Jan 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +17,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -419,6 +418,7 @@ is_supported_args(Args) ->
       fun({_Name, Format}) ->
 	      (Format == integer)
 		  or (Format == string)
+		      or (Format == binary)
       end,
       Args).
 
@@ -565,7 +565,7 @@ format_command_lines(CALD, MaxCmdLen, MaxC, ShCode, dual) ->
     lists:map(
       fun({Cmd, Args, CmdArgsL, Desc}) ->
 	      DescFmt = prepare_description(MaxCmdLen+4, MaxC, Desc),
-	      ["  ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args],
+	      ["   ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args],
                string:chars($\s, MaxCmdLen - CmdArgsL + 1),
 	       DescFmt, "\n"]
       end, CALD);
@@ -574,7 +574,7 @@ format_command_lines(CALD, _MaxCmdLen, MaxC, ShCode, long) ->
     lists:map(
       fun({Cmd, Args, _CmdArgsL, Desc}) ->
 	      DescFmt = prepare_description(8, MaxC, Desc),
-	      ["\n  ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args], "\n", "        ",
+	      ["\n   ", ?B(Cmd), " ", [[?U(Arg), " "] || Arg <- Args], "\n", "        ",
 	       DescFmt, "\n"]
       end, CALD).
 

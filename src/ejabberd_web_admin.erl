@@ -5,7 +5,7 @@
 %%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +17,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -341,7 +340,7 @@ make_xhtml(Els, Host, Node, Lang, JID) ->
 		      ?XAE(<<"div">>, [{<<"id">>, <<"copyrightouter">>}],
 			   [?XAE(<<"div">>, [{<<"id">>, <<"copyright">>}],
 				 [?XC(<<"p">>,
-				      <<"ejabberd (c) 2002-2013 ProcessOne">>)])])])]}}.
+				      <<"ejabberd (c) 2002-2014 ProcessOne">>)])])])]}}.
 
 get_base_path(global, cluster) -> <<"/admin/">>;
 get_base_path(Host, cluster) ->
@@ -1138,7 +1137,7 @@ string_to_spec2(ACLName, Val) ->
 	jlib:string_to_jid(Val),
     case U of
       <<"">> -> {ACLName, S};
-      _ -> {ACLName, U, S}
+      _ -> {ACLName, {U, S}}
     end.
 
 acl_parse_delete(ACLs, Query) ->
@@ -2183,7 +2182,7 @@ get_node(global, Node, [<<"update">>], Query, Lang) ->
 	       ?XCT(<<"h3">>, <<"Update script">>), FmtScript,
 	       ?XCT(<<"h3">>, <<"Low level update script">>),
 	       FmtLowLevelScript, ?XCT(<<"h3">>, <<"Script check">>),
-	       ?XC(<<"pre">>, (iolist_to_binary(Check))),
+	       ?XC(<<"pre">>, (jlib:atom_to_binary(Check))),
 	       ?BR,
 	       ?INPUTT(<<"submit">>, <<"update">>, <<"Update">>)])];
 get_node(Host, Node, NPath, Query, Lang) ->

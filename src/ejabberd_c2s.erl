@@ -5,7 +5,7 @@
 %%% Created : 16 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +17,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -118,7 +117,7 @@
 		mgmt_resend,
 		mgmt_stanzas_in = 0,
 		mgmt_stanzas_out = 0,
-		lang}).
+		lang = <<"">>}).
 
 %-define(DBGFSM, true).
 
@@ -288,11 +287,20 @@ init([{SockMod, Socket}, Opts]) ->
 				(_) -> false
 			    end,
 			    Opts),
-    TLSOpts2 = case proplists:get_bool(tls_compression, Opts) of
-                   false -> [compression_none | TLSOpts1];
-                   true -> TLSOpts1
+    TLSOpts2 = case lists:keysearch(protocol_options, 1, Opts) of
+                   {value, {_, O}} ->
+                       [_|ProtocolOptions] = lists:foldl(
+                                    fun(X, Acc) -> X ++ Acc end, [],
+                                    [["|" | binary_to_list(Opt)] || Opt <- O, is_binary(Opt)]
+                                   ),
+                        [{protocol_options, iolist_to_binary(ProtocolOptions)} | TLSOpts1];
+                   _ -> TLSOpts1
                end,
-    TLSOpts = [verify_none | TLSOpts2],
+    TLSOpts3 = case proplists:get_bool(tls_compression, Opts) of
+                   false -> [compression_none | TLSOpts2];
+                   true -> TLSOpts2
+               end,
+    TLSOpts = [verify_none | TLSOpts3],
     StreamMgmtEnabled = proplists:get_value(stream_management, Opts, true),
     StreamMgmtState = if StreamMgmtEnabled -> inactive;
 			 true -> disabled
@@ -617,8 +625,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			?INFO_MSG("(~w) Accepted legacy authentication for ~s by ~p",
 				[StateData#state.socket,
 				 jlib:jid_to_string(JID), AuthModule]),
-			Conn = (StateData#state.sockmod):get_conn_type(
-				    StateData#state.socket),
+			Conn = get_conn_type(StateData),
 			Info = [{ip, StateData#state.ip}, {conn, Conn},
 				    {auth_module, AuthModule}],
                         Res = jlib:make_result_iq_reply(
@@ -1353,14 +1360,19 @@ handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
     ejabberd_hooks:run(c2s_loop_debug, [Text]),
     fsm_next_state(StateName, StateData);
-handle_info(replaced, _StateName, StateData) ->
+handle_info(replaced, StateName, StateData) ->
     Lang = StateData#state.lang,
-    send_element(StateData,
-		 ?SERRT_CONFLICT(Lang,
-				 <<"Replaced by new connection">>)),
+    Xmlelement = ?SERRT_CONFLICT(Lang, <<"Replaced by new connection">>),
+    handle_info({kick, replaced, Xmlelement}, StateName, StateData);
+handle_info(disconnect, StateName, StateData) ->
+    Lang = StateData#state.lang,
+    Xmlelement = ?SERRT_POLICY_VIOLATION(Lang, <<"has been kicked">>),
+    handle_info({kick, kicked_by_admin, Xmlelement}, StateName, StateData);
+handle_info({kick, Reason, Xmlelement}, _StateName, StateData) ->
+    send_element(StateData, Xmlelement),
     send_trailer(StateData),
     {stop, normal,
-     StateData#state{authenticated = replaced}};
+     StateData#state{authenticated = Reason}};
 handle_info({route, _From, _To, {broadcast, Data}},
             StateName, StateData) ->
     ?DEBUG("broadcast~n~p~n", [Data]),

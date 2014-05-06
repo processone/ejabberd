@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2013   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -17,10 +17,9 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
 
@@ -246,7 +245,7 @@ normal_state({route, From, <<"">>,
 		      NewState = expulse_participant(Packet, From, StateData,
 						     translate:translate(Lang,
 									 ErrorText)),
-		      {next_state, normal_state, NewState};
+		      close_room_if_temporary_and_empty(NewState);
 		  _ -> {next_state, normal_state, StateData}
 		end;
 	    <<"chat">> ->
@@ -419,12 +418,13 @@ normal_state({route, From, <<"">>,
 	     StateData) ->
     case jlib:iq_query_info(Packet) of
       #iq{type = Type, xmlns = XMLNS, lang = Lang,
-	  sub_el = SubEl} =
+	  sub_el = #xmlel{name = SubElName} = SubEl} =
 	  IQ
 	  when (XMLNS == (?NS_MUC_ADMIN)) or
 		 (XMLNS == (?NS_MUC_OWNER))
 		 or (XMLNS == (?NS_DISCO_INFO))
 		 or (XMLNS == (?NS_DISCO_ITEMS))
+	         or (XMLNS == (?NS_VCARD))
 		 or (XMLNS == (?NS_CAPTCHA)) ->
 	  Res1 = case XMLNS of
 		   ?NS_MUC_ADMIN ->
@@ -435,6 +435,8 @@ normal_state({route, From, <<"">>,
 		       process_iq_disco_info(From, Type, Lang, StateData);
 		   ?NS_DISCO_ITEMS ->
 		       process_iq_disco_items(From, Type, Lang, StateData);
+		   ?NS_VCARD ->
+		       process_iq_vcard(From, Type, Lang, SubEl, StateData);
 		   ?NS_CAPTCHA ->
 		       process_iq_captcha(From, Type, Lang, SubEl, StateData)
 		 end,
@@ -442,7 +444,7 @@ normal_state({route, From, <<"">>,
 				    {result, Res, SD} ->
 					{IQ#iq{type = result,
 					       sub_el =
-						   [#xmlel{name = <<"query">>,
+						   [#xmlel{name = SubElName,
 							   attrs =
 							       [{<<"xmlns">>,
 								 XMLNS}],
@@ -1124,14 +1126,17 @@ process_presence(From, Nick,
 		       end;
 		   _ -> StateData
 		 end,
+    close_room_if_temporary_and_empty(StateData1).
+
+close_room_if_temporary_and_empty(StateData1) ->
     case not (StateData1#state.config)#config.persistent
 	   andalso (?DICT):to_list(StateData1#state.users) == []
 	of
       true ->
 	  ?INFO_MSG("Destroyed MUC room ~s because it's temporary "
 		    "and empty",
-		    [jlib:jid_to_string(StateData#state.jid)]),
-	  add_to_log(room_existence, destroyed, StateData),
+		    [jlib:jid_to_string(StateData1#state.jid)]),
+	  add_to_log(room_existence, destroyed, StateData1),
 	  {stop, normal, StateData1};
       _ -> {next_state, normal_state, StateData1}
     end.
@@ -3895,6 +3900,10 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 		StateData#state{config =
 				    (StateData#state.config)#config{max_users =
 									MaxUsers}};
+	    vcard ->
+		StateData#state{config =
+				    (StateData#state.config)#config{vcard =
+									Val}};
 	    affiliations ->
 		StateData#state{affiliations = (?DICT):from_list(Val)};
 	    subject -> StateData#state{subject = Val};
@@ -3927,6 +3936,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(logging), ?MAKE_CONFIG_OPT(max_users),
      ?MAKE_CONFIG_OPT(allow_voice_requests),
      ?MAKE_CONFIG_OPT(voice_request_min_interval),
+     ?MAKE_CONFIG_OPT(vcard),
      {captcha_whitelist,
       (?SETS):to_list((StateData#state.config)#config.captcha_whitelist)},
      {affiliations,
@@ -3992,6 +4002,8 @@ process_iq_disco_info(_From, get, Lang, StateData) ->
 		  {<<"type">>, <<"text">>},
 		  {<<"name">>, get_title(StateData)}],
 	     children = []},
+      #xmlel{name = <<"feature">>,
+	     attrs = [{<<"var">>, ?NS_VCARD}], children = []},
       #xmlel{name = <<"feature">>,
 	     attrs = [{<<"var">>, ?NS_MUC}], children = []},
       ?CONFIG_OPT_TO_FEATURE((Config#config.public),
@@ -4063,6 +4075,26 @@ process_iq_captcha(_From, set, _Lang, SubEl,
     case ejabberd_captcha:process_reply(SubEl) of
       ok -> {result, [], StateData};
       _ -> {error, ?ERR_NOT_ACCEPTABLE}
+    end.
+
+process_iq_vcard(_From, get, _Lang, _SubEl, StateData) ->
+    #state{config = #config{vcard = VCardRaw}} = StateData,
+    case xml_stream:parse_element(VCardRaw) of
+	#xmlel{children = VCardEls} ->
+	    {result, VCardEls, StateData};
+	{error, _} ->
+	    {result, [], StateData}
+    end;
+process_iq_vcard(From, set, Lang, SubEl, StateData) ->
+    case get_affiliation(From, StateData) of
+	owner ->
+	    VCardRaw = xml:element_to_binary(SubEl),
+	    Config = StateData#state.config,
+	    NewConfig = Config#config{vcard = VCardRaw},
+	    change_config(NewConfig, StateData);
+	_ ->
+	    ErrText = <<"Owner privileges required">>,
+	    {error, ?ERRT_FORBIDDEN(Lang, ErrText)}
     end.
 
 get_title(StateData) ->
