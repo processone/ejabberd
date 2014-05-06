@@ -4442,15 +4442,7 @@ broadcast_stanza(Host, _Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTy
 broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza({LUser, LServer, LResource}, Node, NodeId, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
-    SenderResource = case LResource of
-	[] -> 
-	    case user_resources(LUser, LServer) of
-		[Resource|_] -> Resource;
-		_ -> <<>>
-	    end;
-	_ ->
-	    LResource
-    end,
+    SenderResource = user_resource(LUser, LServer, LResource),
     case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
 	C2SPid when is_pid(C2SPid) ->
 	    Stanza = case get_option(NodeOptions, notification_type, headline) of
@@ -4461,8 +4453,8 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
 	    %% Also, add "replyto" if entity has presence subscription to the account owner
 	    %% See XEP-0163 1.1 section 4.3.1
 	    ejabberd_c2s:broadcast(C2SPid,
-	        {pep_message, binary_to_list(Node)++"+notify"},
-	        _Sender = jlib:make_jid(LUser, LServer, ""),
+	        {pep_message, <<((Node))/binary, "+notify">>},
+	        _Sender = jlib:make_jid(LUser, LServer, <<"">>),
 	        _StanzaToSend = add_extended_headers(Stanza,
 	            _ReplyTo = extended_headers([jlib:jid_to_string(Publisher)])));
 	_ ->
@@ -4526,6 +4518,13 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
 
 user_resources(User, Server) ->
     ejabberd_sm:get_user_resources(User, Server).
+
+user_resource(User, Server, <<>>) ->
+    case user_resources(User, Server) of
+	[R | _] -> R;
+	_ -> <<>>
+    end;
+user_resource(_, _, Resource) -> Resource.
 
 %%%%%%% Configuration handling
 
