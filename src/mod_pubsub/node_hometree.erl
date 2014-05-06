@@ -171,6 +171,7 @@ features() ->
      "outcast-affiliation",
      "persistent-items",
      "publish",
+     "publish-only-affiliation",
      "purge-nodes",
      "retract-items",
      "retrieve-affiliations",
@@ -494,7 +495,7 @@ publish_item(NodeIdx, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
     if
 	not ((PublishModel == open)
 	     or ((PublishModel == publishers)
-		 and ((Affiliation == owner) or (Affiliation == publisher)))
+		 and ((Affiliation == owner) or (Affiliation == publisher) or (Affiliation == publish_only)))
 	     or (Subscribed == true)) ->
 	    %% Entity does not have sufficient privileges to publish to node
 	    {error, ?ERR_FORBIDDEN};
@@ -932,7 +933,7 @@ get_items(NodeIdx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) 
 	%%InvalidSubId ->
 	    %% Entity is subscribed but specifies an invalid subscription ID
 	    %{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
-	GenState#pubsub_state.affiliation == outcast ->
+	(GenState#pubsub_state.affiliation == outcast) or (GenState#pubsub_state.affiliation == publish_only) ->
 	    %% Requesting entity is blocked
 	    {error, ?ERR_FORBIDDEN};
 	(AccessModel == presence) and (not PresenceSubscription) ->
@@ -992,7 +993,7 @@ get_item(NodeIdx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _
 	%%InvalidSubId ->
 	    %% Entity is subscribed but specifies an invalid subscription ID
 	    %{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
-	GenState#pubsub_state.affiliation == outcast ->
+	(GenState#pubsub_state.affiliation == outcast) or (GenState#pubsub_state.affiliation == publish_only) ->
 	    %% Requesting entity is blocked
 	    {error, ?ERR_FORBIDDEN};
 	(AccessModel == presence) and (not PresenceSubscription) ->
@@ -1057,6 +1058,7 @@ path_to_node(Path) ->
 can_fetch_item(owner,        _)             -> true;
 can_fetch_item(member,       _)             -> true;
 can_fetch_item(publisher,    _)             -> true;
+can_fetch_item(publish_only,      _)             -> false;
 can_fetch_item(outcast,      _)             -> false;
 can_fetch_item(none, Subscriptions) -> is_subscribed(Subscriptions);
 can_fetch_item(_Affiliation, _Subscription) -> false.
