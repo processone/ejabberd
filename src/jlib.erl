@@ -45,12 +45,13 @@
 	 timestamp_to_iso/2, timestamp_to_xml/4,
 	 timestamp_to_xml/1, now_to_utc_string/1,
 	 now_to_local_string/1, datetime_string_to_timestamp/1,
+	 term_to_base64/1, base64_to_term/1,
 	 decode_base64/1, encode_base64/1, ip_to_list/1,
 	 rsm_encode/1, rsm_encode/2, rsm_decode/1,
 	 binary_to_integer/1, binary_to_integer/2,
 	 integer_to_binary/1, integer_to_binary/2,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
-	 l2i/1, i2l/1, i2l/2]).
+	 l2i/1, i2l/1, i2l/2, queue_drop_while/2]).
 
 %% TODO: Remove once XEP-0091 is Obsolete
 %% TODO: Remove once XEP-0091 is Obsolete
@@ -779,6 +780,21 @@ check_list(List) ->
 % Base64 stuff (based on httpd_util.erl)
 %
 
+-spec term_to_base64(term()) -> binary().
+
+term_to_base64(Term) ->
+    encode_base64(term_to_binary(Term)).
+
+-spec base64_to_term(binary()) -> {term, term()} | error.
+
+base64_to_term(Base64) ->
+    case catch binary_to_term(decode_base64(Base64), [safe]) of
+      {'EXIT', _} ->
+	  error;
+      Term ->
+	  {term, Term}
+    end.
+
 -spec decode_base64(binary()) -> binary().
 
 decode_base64(S) ->
@@ -892,4 +908,19 @@ i2l(L, N) when is_binary(L) ->
       N -> L;
       C when C > N -> L;
       _ -> i2l(<<$0, L/binary>>, N)
+    end.
+
+-spec queue_drop_while(fun((term()) -> boolean()), queue()) -> queue().
+
+queue_drop_while(F, Q) ->
+    case queue:peek(Q) of
+      {value, Item} ->
+	  case F(Item) of
+	    true ->
+		queue_drop_while(F, queue:drop(Q));
+	    _ ->
+		Q
+	  end;
+      empty ->
+	  Q
     end.

@@ -873,9 +873,11 @@ The available modules, their purpose and the options allowed by each one are:
   \titem{\texttt{ejabberd\_c2s}}
     Handles c2s connections.\\
     Options: \texttt{access}, \texttt{certfile}, \texttt{ciphers}, \texttt{protocol\_options}
-    \texttt{max\_fsm\_queue},
-    \texttt{max\_stanza\_size}, \texttt{shaper},
-    \texttt{starttls}, \texttt{starttls\_required}, \texttt{tls},
+    \texttt{max\_ack\_queue}, \texttt{max\_fsm\_queue},
+    \texttt{max\_stanza\_size}, \texttt{resend\_on\_timeout},
+    \texttt{resume\_timeout}, \texttt{shaper},
+    \texttt{starttls}, \texttt{starttls\_required},
+    \texttt{stream\_management}, \texttt{tls},
     \texttt{zlib}, \texttt{tls\_compression}
   \titem{\texttt{ejabberd\_s2s\_in}}
     Handles incoming s2s connections.\\
@@ -973,6 +975,13 @@ This is a detailed description of each option allowed by the listening modules:
     \term{http\_poll\_timeout}. The default value is five minutes.
     The option can be defined in \term{ejabberd.yml}, expressing the time
     in seconds: \verb|{http_poll_timeout, 300}.|
+  \titem{max\_ack\_queue: Size}
+    This option specifies the maximum number of unacknowledged stanzas
+    queued for possible retransmission if \term{stream\_management} is
+    enabled. When the limit is reached, the first stanza is dropped from
+    the queue before adding the next one. This option can be specified
+    for \term{ejabberd\_c2s} listeners. The allowed values are positive
+    integers and \term{infinity}. Default value: \term{500}.
   \titem{max\_fsm\_queue: Size}
     This option specifies the maximum number of elements in the queue of the FSM
     (Finite State Machine).
@@ -1010,6 +1019,23 @@ request_handlers:
   /"a"/"b": mod_foo
   /"http-bind": mod_http_bind
 \end{verbatim}
+  \titem{resend\_on\_timeout: true|false}
+    If \term{stream\_management} is enabled and this option is set to
+    \term{true}, any stanzas that weren't acknowledged by the client
+    will be resent on session timeout. This behavior might often be
+    desired, but could have unexpected results under certain
+    circumstances. For example, a message that was sent to two resources
+    might get resent to one of them if the other one timed out.
+    Therefore, the default value for this option is \term{false}, which
+    tells ejabberd to generate an error message instead. The option can
+    be specified for \term{ejabberd\_c2s} listeners.
+  \titem{resume\_timeout: Seconds}
+    This option configures the number of seconds until a session times
+    out if the connection is lost. During this period of time, a client
+    may resume the session if \term{stream\_management} is enabled. This
+    option can be specified for \term{ejabberd\_c2s} listeners. Setting
+    it to \term{0} effectively disables session resumption. The default
+    value is \term{300}.
   \titem{service\_check\_from: true|false}
     \ind{options!service\_check\_from}
     This option can be used with \term{ejabberd\_service} only.
@@ -1033,6 +1059,10 @@ request_handlers:
     No unencrypted connections will be allowed.
     You should also set the \option{certfile} option.
     You can define a certificate file for a specific domain using the global option \option{domain\_certfile}.
+  \titem{stream\_management: true|false}
+    Setting this option to \term{false} disables ejabberd's support for
+    \ind{protocols!XEP-0198: Stream Management}. It can be specified for
+    \term{ejabberd\_c2s} listeners. The default value is \term{true}.
   \titem{timeout: Integer} \ind{options!timeout}
     Timeout of the connections, expressed in milliseconds.
     Default: 5000
