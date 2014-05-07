@@ -870,7 +870,7 @@ count_offline_messages(LUser, LServer) ->
     case catch odbc_queries:count_records_where(
 		 LServer, "spool",
                  <<"where username='", Username/binary, "'">>) of
-        {selected, [_], [{Res}]} ->
+        {selected, [_], [[Res]]} ->
             jlib:binary_to_integer(Res);
         _ ->
             0
