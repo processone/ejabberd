@@ -54,10 +54,8 @@ start(Host) ->
             end,
             "extauth"),
     extauth:start(Host, Cmd),
-    case check_cache_last_options(Host) of
-      cache -> ok = ejabberd_auth_internal:start(Host);
-      no_cache -> ok
-    end.
+    check_cache_last_options(Host),
+    ejabberd_auth_internal:start(Host).
 
 check_cache_last_options(Server) ->
     case get_cache_option(Server) of
