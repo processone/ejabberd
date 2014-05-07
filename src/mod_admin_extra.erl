@@ -778,14 +778,11 @@ set_password_auth(User, Server, Password) ->
     ok = ejabberd_auth:set_password(User, Server, Password).
 
 prepare_reason([]) ->
-    "Kicked by administrator";
+    <<"Kicked by administrator">>;
 prepare_reason([Reason]) ->
     Reason;
-prepare_reason(Reason) when is_list(Reason) ->
-    Reason;
-prepare_reason(StringList) ->
-    string:join(StringList, "_").
-
+prepare_reason(Reason) when is_binary(Reason) ->
+    Reason.
 
 %%%
 %%% Sessions
@@ -811,7 +808,7 @@ kick_this_session(User, Server, Resource, Reason) ->
     ejabberd_router:route(
       jlib:make_jid(<<>>, <<>>, <<>>),
       jlib:make_jid(User, Server, Resource),
-      {xmlel, <<"broadcast">>, [], [{exit, Reason}]}).
+      {broadcast, {exit, Reason}}).
 
 
 status_num(Host, Status) ->
