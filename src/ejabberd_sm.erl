@@ -59,6 +59,7 @@
 	 get_user_info/3,
 	 get_user_ip/3,
 	 get_max_user_sessions/2,
+	 get_all_pids/0,
 	 is_existing_resource/3
 	]).
 
@@ -283,13 +284,23 @@ dirty_get_my_sessions_list() ->
 	[{'==', {node, '$1'}, node()}],
 	['$_']}]).
 
+-spec get_vh_session_list(binary()) -> [ljid()].
+
 get_vh_session_list(Server) ->
     LServer = jlib:nameprep(Server),
     mnesia:dirty_select(session,
 			[{#session{usr = '$1', _ = '_'},
 			  [{'==', {element, 2, '$1'}, LServer}], ['$1']}]).
 
--spec get_vh_session_list(binary()) -> [ljid()].
+-spec get_all_pids() -> [pid()].
+
+get_all_pids() ->
+    mnesia:dirty_select(
+      session,
+      ets:fun2ms(
+        fun(#session{sid = {_, Pid}}) ->
+		Pid
+        end)).
 
 get_vh_session_number(Server) ->
     LServer = jlib:nameprep(Server),

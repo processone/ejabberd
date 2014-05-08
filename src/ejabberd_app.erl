@@ -177,10 +177,12 @@ add_windows_nameservers() ->
 
 
 broadcast_c2s_shutdown() ->
-    Children = supervisor:which_children(ejabberd_c2s_sup),
+    Children = ejabberd_sm:get_all_pids(),
     lists:foreach(
-      fun({_, C2SPid, _, _}) ->
-	      C2SPid ! system_shutdown
+      fun(C2SPid) when node(C2SPid) == node() ->
+	      C2SPid ! system_shutdown;
+	 (_) ->
+	      ok
       end, Children).
 
 %%%
