@@ -73,7 +73,7 @@
 -include("jlib.hrl").
 
 -include("ejabberd_commands.hrl").
-
+-include_lib("stdlib/include/ms_transform.hrl").
 -include("mod_privacy.hrl").
 
 -record(session, {sid, usr, us, priority, info}).
