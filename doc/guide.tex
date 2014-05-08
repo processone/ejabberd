@@ -398,7 +398,7 @@ Some options that you may be interested in modifying:
         Enable Stream Compression (XEP-0138) using zlib.
 
         \titem{--enable-stun}
-        Enable STUN support (see section \ref{stun}).
+        Enable STUN/TURN support (see section \ref{stun}).
 
         \titem{--enable-iconv}
         Enable iconv support. This is needed for \term{mod\_irc} (see seciont \ref{modirc}).
@@ -891,9 +891,13 @@ The available modules, their purpose and the options allowed by each one are:
     \footahref{http://tools.ietf.org/html/rfc3261}{RFC 3261}.\\
     Options: \texttt{certfile}, \texttt{tls}
   \titem{\texttt{ejabberd\_stun}}
-    Handles STUN Binding requests as defined in
-    \footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}.\\
-    Options: \texttt{certfile}
+    Handles STUN/TURN requests as defined in
+    \footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389} and
+    \footahref{http://tools.ietf.org/html/rfc5766}{RFC 5766}.\\
+    Options: \texttt{certfile}, \texttt{tls}, \texttt{use\_turn}, \texttt{turn\_ip},
+    \texttt{turn\_port\_range}, \texttt{turn\_max\_allocations},
+    \texttt{turn\_max\_permissions}, \texttt{shaper}, \texttt{server\_name},
+    \texttt{auth\_realm}, \texttt{auth\_type}
   \titem{\texttt{ejabberd\_http}}
     Handles incoming HTTP connections.\\
     Options: \texttt{captcha}, \texttt{certfile}, \texttt{default\_host}, \texttt{http\_bind}, \texttt{http\_poll},
@@ -1991,22 +1995,57 @@ listen:
   ...
 \end{verbatim}
 
-\makesubsection{stun}{STUN}
+\makesubsection{stun}{STUN and TURN}
 \ind{options!stun}\ind{stun}
 
-\ejabberd{} is able to act as a stand-alone STUN server
-(\footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}). Currently only Binding usage
-is supported. In that role \ejabberd{} helps clients with ICE (\footahref{http://tools.ietf.org/html/rfc5245}{RFC 5245}) or Jingle ICE (\xepref{0176}) support to discover their external addresses and ports.
+\ejabberd{} is able to act as a stand-alone STUN/TURN server
+(\footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389}/\footahref{http://tools.ietf.org/html/rfc5766}{RFC 5766}). In that role \ejabberd{} helps clients with ICE (\footahref{http://tools.ietf.org/html/rfc5245}{RFC 5245}) or Jingle ICE (\xepref{0176}) support to discover their external addresses and ports and to relay media traffic when it is impossible to establish direct
+peer-to-peer connection.
 
 You should configure \term{ejabberd\_stun} listening module as described in \ref{listened} section.
-If \option{certfile} option is defined, \ejabberd{} multiplexes TCP and
-TLS over TCP connections on the same port. Obviously, \option{certfile} option
-is defined for \term{tcp} only. Note however that TCP or TLS over TCP
-support is not required for Binding usage and is reserved for
-\footahref{http://tools.ietf.org/html/draft-ietf-behave-turn-16}{TURN}
-functionality. Feel free to configure \term{udp} transport only.
+The specific configurable options are:
+\begin{description}
+  \titem{tls: true|false}
+  If enabled, \option{certfile} option must be set, otherwise \ejabberd{}
+  will not be able to accept TLS connections. Obviously, this option
+  makes sense for \term{tcp} transport only. The default is \term{false}.
+  \titem{certfile: Path}
+  Path to the certificate file. Only makes sense when \option{tls} is set.
+  \titem{use\_turn: true|false}
+  Enables/disables TURN (media relay) functionality. The default is \term{false}.
+  \titem{turn\_ip: String}
+  The IPv4 address advertised by your TURN server. The address should not be NAT'ed
+  or firewalled. There is not default, so you should set this option explicitly.
+  Implies \term{use\_turn}.
+  \titem{turn\_min\_port: Integer}
+  Together with \option{turn\_max\_port} forms port range to allocate from.
+  The default is 49152. Implies \term{use\_turn}.
+  \titem{turn\_max\_port: Integer}
+  Together with \option{turn\_min\_port} forms port range to allocate from.
+  The default is 65535. Implies \term{use\_turn}.
+  \titem{turn\_max\_allocations: Integer|unlimited}
+  Maximum number of TURN allocations available from the particular IP address.
+  The default value is 10. Implies \term{use\_turn}.
+  \titem{turn\_max\_permissions: Integer|unlimited}
+  Maximum number of TURN permissions available from the particular IP address.
+  The default value is 10. Implies \term{use\_turn}.
+  \titem{auth\_type: user|anonymous}
+  Which authentication type to use for TURN allocation requests. When type \term{user}
+  is set, ejabberd authentication backend is used. For \term{anonymous} type
+  no authentication is performed (not recommended for public services).
+  The default is \term{user}. Implies \term{use\_turn}.
+  \titem{auth\_realm: String}
+  When \option{auth\_type} is set to \term{user} and you have several virtual
+  hosts configured you should set this option explicitly to the virtual host
+  you want to serve on this particular listening port. Implies \term{use\_turn}.
+  \titem{shaper: Atom}
+  For \term{tcp} transports defines shaper to use. The default is \term{none}.
+  \titem{server\_name: String}
+  Defines software version to return with every response. The default is the
+  STUN library version.
+\end{description}
 
-Example configuration:
+Example configuration with disabled TURN functionality (STUN only):
 \begin{verbatim}
 listen:
   ...
@@ -2024,16 +2063,39 @@ listen:
   ...
 \end{verbatim}
 
-You also need to configure DNS SRV records properly so clients can easily discover a
-STUN server serving your XMPP domain. Refer to section
-\footahref{http://tools.ietf.org/html/rfc5389\#section-9}{DNS Discovery of a Server}
-of \footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389} for details.
+Example configuration with TURN functionality. Note that STUN is always
+enabled if TURN is enabled. Here, only UDP section is shown:
+\begin{verbatim}
+listen:
+  ...
+  - 
+    port: 3478
+    transport: udp
+    use_turn: true
+    turn_ip: 10.20.30.1
+    module: ejabberd_stun
+  ...
+\end{verbatim}
 
-Example DNS SRV configuration:
+You also need to configure DNS SRV records properly so clients can easily discover a
+STUN/TURN server serving your XMPP domain. Refer to section
+\footahref{http://tools.ietf.org/html/rfc5389\#section-9}{DNS Discovery of a Server}
+of \footahref{http://tools.ietf.org/html/rfc5389}{RFC 5389} and section
+\footahref{http://tools.ietf.org/html/rfc5766\#section-6}{Creating an Allocation}
+of \footahref{http://tools.ietf.org/html/rfc5766}{RFC 5766} for details.
+
+Example DNS SRV configuration for STUN only:
 \begin{verbatim}
 _stun._udp   IN SRV  0 0 3478 stun.example.com.
 _stun._tcp   IN SRV  0 0 3478 stun.example.com.
 _stuns._tcp  IN SRV  0 0 5349 stun.example.com.
+\end{verbatim}
+
+And you should also add these in the case if TURN is enabled:
+\begin{verbatim}
+_turn._udp   IN SRV  0 0 3478 turn.example.com.
+_turn._tcp   IN SRV  0 0 3478 turn.example.com.
+_turns._tcp  IN SRV  0 0 5349 turn.example.com.
 \end{verbatim}
 
 \makesubsection{sip}{SIP}
