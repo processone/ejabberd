@@ -84,7 +84,7 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 <hr style="height:2"><br>
 <br>
 
-<table style="border-spacing:6px;border-collapse:separate;" class="cellpading0"><tr><td style="text-align:right;white-space:nowrap" > <span style="font-size:xx-large"><span style="font-weight:bold">ejabberd community 13.12-119-g47a39ce </span></span> </td></tr>
+<table style="border-spacing:6px;border-collapse:separate;" class="cellpading0"><tr><td style="text-align:right;white-space:nowrap" > <span style="font-size:xx-large"><span style="font-weight:bold">ejabberd community</span></span> </td></tr>
 <tr><td style="text-align:right;white-space:nowrap" >&nbsp;</td></tr>
 <tr><td style="text-align:right;white-space:nowrap" > <span style="font-size:xx-large">Installation and Operation Guide</span>
 </td></tr>
@@ -134,7 +134,7 @@ BLOCKQUOTE.figure DIV.center DIV.center HR{display:none;}
 </li><li class="li-toc"><a href="#sec42">3.1.7&#XA0;&#XA0;Shapers</a>
 </li><li class="li-toc"><a href="#sec43">3.1.8&#XA0;&#XA0;Default Language</a>
 </li><li class="li-toc"><a href="#sec44">3.1.9&#XA0;&#XA0;CAPTCHA</a>
-</li><li class="li-toc"><a href="#sec45">3.1.10&#XA0;&#XA0;STUN</a>
+</li><li class="li-toc"><a href="#sec45">3.1.10&#XA0;&#XA0;STUN and TURN</a>
 </li><li class="li-toc"><a href="#sec46">3.1.11&#XA0;&#XA0;SIP</a>
 </li><li class="li-toc"><a href="#sec47">3.1.12&#XA0;&#XA0;Include Additional Configuration Files</a>
 </li><li class="li-toc"><a href="#sec48">3.1.13&#XA0;&#XA0;Option Macros in Configuration File</a>
@@ -369,7 +369,6 @@ as long as your system have all the dependencies.</p><p> <a id="installreq"></a>
 </p><ul class="itemize"><li class="li-itemize">
 GNU Make
 </li><li class="li-itemize">GCC
-</li><li class="li-itemize">pkg-config
 </li><li class="li-itemize">Libexpat 1.95 or higher
 </li><li class="li-itemize">Erlang/OTP R15B or higher.
 </li><li class="li-itemize">Libyaml 1.4 or higher
@@ -418,7 +417,7 @@ Enable the use of development tools.</dd><dt class="dt-description"><span style=
 Enable MySQL support (see section <a href="#odbc">3.2.1</a>).</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">--enable-pgsql</span></span></dt><dd class="dd-description">
 Enable PostgreSQL support (see section <a href="#odbc">3.2.1</a>).</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">--enable-zlib</span></span></dt><dd class="dd-description">
 Enable Stream Compression (XEP-0138) using zlib.</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">--enable-stun</span></span></dt><dd class="dd-description">
-Enable STUN support (see section <a href="#stun">3.1.10</a>).</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">--enable-iconv</span></span></dt><dd class="dd-description">
+Enable STUN/TURN support (see section <a href="#stun">3.1.10</a>).</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">--enable-iconv</span></span></dt><dd class="dd-description">
 Enable iconv support. This is needed for <span style="font-family:monospace">mod_irc</span> (see seciont <a href="#modirc">3.3.8</a>).</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">--enable-debug</span></span></dt><dd class="dd-description">
 Compile with <span style="font-family:monospace">+debug_info</span> enabled.<p>	</p></dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">--enable-full-xml</span></span></dt><dd class="dd-description">
 	Enable the use of XML based optimisations.
@@ -764,9 +763,11 @@ The available modules, their purpose and the options allowed by each one are:
 <span style="font-weight:bold"><span style="font-family:monospace">ejabberd_c2s</span></span></dt><dd class="dd-description">
 Handles c2s connections.<br>
  Options: <span style="font-family:monospace">access</span>, <span style="font-family:monospace">certfile</span>, <span style="font-family:monospace">ciphers</span>, <span style="font-family:monospace">protocol_options</span>
-<span style="font-family:monospace">max_fsm_queue</span>,
-<span style="font-family:monospace">max_stanza_size</span>, <span style="font-family:monospace">shaper</span>,
-<span style="font-family:monospace">starttls</span>, <span style="font-family:monospace">starttls_required</span>, <span style="font-family:monospace">tls</span>,
+<span style="font-family:monospace">max_ack_queue</span>, <span style="font-family:monospace">max_fsm_queue</span>,
+<span style="font-family:monospace">max_stanza_size</span>, <span style="font-family:monospace">resend_on_timeout</span>,
+<span style="font-family:monospace">resume_timeout</span>, <span style="font-family:monospace">shaper</span>,
+<span style="font-family:monospace">starttls</span>, <span style="font-family:monospace">starttls_required</span>,
+<span style="font-family:monospace">stream_management</span>, <span style="font-family:monospace">tls</span>,
 <span style="font-family:monospace">zlib</span>, <span style="font-family:monospace">tls_compression</span>
 </dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">ejabberd_s2s_in</span></span></dt><dd class="dd-description">
 Handles incoming s2s connections.<br>
@@ -781,9 +782,13 @@ Handles SIP requests as defined in
 <a href="http://tools.ietf.org/html/rfc3261">RFC 3261</a>.<br>
  Options: <span style="font-family:monospace">certfile</span>, <span style="font-family:monospace">tls</span>
 </dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">ejabberd_stun</span></span></dt><dd class="dd-description">
-Handles STUN Binding requests as defined in
-<a href="http://tools.ietf.org/html/rfc5389">RFC 5389</a>.<br>
- Options: <span style="font-family:monospace">certfile</span>
+Handles STUN/TURN requests as defined in
+<a href="http://tools.ietf.org/html/rfc5389">RFC 5389</a> and
+<a href="http://tools.ietf.org/html/rfc5766">RFC 5766</a>.<br>
+ Options: <span style="font-family:monospace">certfile</span>, <span style="font-family:monospace">tls</span>, <span style="font-family:monospace">use_turn</span>, <span style="font-family:monospace">turn_ip</span>,
+<span style="font-family:monospace">turn_port_range</span>, <span style="font-family:monospace">turn_max_allocations</span>,
+<span style="font-family:monospace">turn_max_permissions</span>, <span style="font-family:monospace">shaper</span>, <span style="font-family:monospace">server_name</span>,
+<span style="font-family:monospace">auth_realm</span>, <span style="font-family:monospace">auth_type</span>
 </dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">ejabberd_http</span></span></dt><dd class="dd-description">
 Handles incoming HTTP connections.<br>
  Options: <span style="font-family:monospace">captcha</span>, <span style="font-family:monospace">certfile</span>, <span style="font-family:monospace">default_host</span>, <span style="font-family:monospace">http_bind</span>, <span style="font-family:monospace">http_poll</span>,
@@ -853,7 +858,14 @@ an incoming POST request can be configured with the global option
 <span style="font-family:monospace">http_poll_timeout</span>. The default value is five minutes.
 The option can be defined in <span style="font-family:monospace">ejabberd.yml</span>, expressing the time
 in seconds: <code>{http_poll_timeout, 300}.</code>
-</p></dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">max_fsm_queue: Size</span></span></dt><dd class="dd-description">
+</p></dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">max_ack_queue: Size</span></span></dt><dd class="dd-description">
+This option specifies the maximum number of unacknowledged stanzas
+queued for possible retransmission if <span style="font-family:monospace">stream_management</span> is
+enabled. When the limit is reached, the first stanza is dropped from
+the queue before adding the next one. This option can be specified
+for <span style="font-family:monospace">ejabberd_c2s</span> listeners. The allowed values are positive
+integers and <span style="font-family:monospace">infinity</span>. Default value: <span style="font-family:monospace">500</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">max_fsm_queue: Size</span></span></dt><dd class="dd-description">
 This option specifies the maximum number of elements in the queue of the FSM
 (Finite State Machine).
 Roughly speaking, each message in such queues represents one XML
@@ -888,7 +900,24 @@ use this option:
 <pre class="verbatim">request_handlers:
   /"a"/"b": mod_foo
   /"http-bind": mod_http_bind
-</pre></dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">service_check_from: true|false</span></span></dt><dd class="dd-description">
+</pre></dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">resend_on_timeout: true|false</span></span></dt><dd class="dd-description">
+If <span style="font-family:monospace">stream_management</span> is enabled and this option is set to
+<span style="font-family:monospace">true</span>, any stanzas that weren&#X2019;t acknowledged by the client
+will be resent on session timeout. This behavior might often be
+desired, but could have unexpected results under certain
+circumstances. For example, a message that was sent to two resources
+might get resent to one of them if the other one timed out.
+Therefore, the default value for this option is <span style="font-family:monospace">false</span>, which
+tells ejabberd to generate an error message instead. The option can
+be specified for <span style="font-family:monospace">ejabberd_c2s</span> listeners.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">resume_timeout: Seconds</span></span></dt><dd class="dd-description">
+This option configures the number of seconds until a session times
+out if the connection is lost. During this period of time, a client
+may resume the session if <span style="font-family:monospace">stream_management</span> is enabled. This
+option can be specified for <span style="font-family:monospace">ejabberd_c2s</span> listeners. Setting
+it to <span style="font-family:monospace">0</span> effectively disables session resumption. The default
+value is <span style="font-family:monospace">300</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">service_check_from: true|false</span></span></dt><dd class="dd-description">
 
 This option can be used with <span style="font-family:monospace">ejabberd_service</span> only.
 <a href="http://xmpp.org/extensions/xep-0114.html">XEP-0114</a> requires that the domain must match the hostname of the component.
@@ -911,6 +940,10 @@ specifies that STARTTLS encryption is required on connections to the port.
 No unencrypted connections will be allowed.
 You should also set the <span style="font-family:monospace">certfile</span> option.
 You can define a certificate file for a specific domain using the global option <span style="font-family:monospace">domain_certfile</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">stream_management: true|false</span></span></dt><dd class="dd-description">
+Setting this option to <span style="font-family:monospace">false</span> disables ejabberd&#X2019;s support for
+. It can be specified for
+<span style="font-family:monospace">ejabberd_c2s</span> listeners. The default value is <span style="font-family:monospace">true</span>.
 </dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">timeout: Integer</span></span></dt><dd class="dd-description"> 
 Timeout of the connections, expressed in milliseconds.
 Default: 5000
@@ -1657,17 +1690,52 @@ listen:
     captcha: true
   ...
 </pre><p> <a id="stun"></a> </p>
-<!--TOC subsection id="sec45" STUN-->
-<h3 id="sec45" class="subsection">3.1.10&#XA0;&#XA0;<a href="#stun">STUN</a></h3><!--SEC END --><p> <a id="stun"></a> 
-</p><p><span style="font-family:monospace">ejabberd</span> is able to act as a stand-alone STUN server
-(<a href="http://tools.ietf.org/html/rfc5389">RFC 5389</a>). Currently only Binding usage
-is supported. In that role <span style="font-family:monospace">ejabberd</span> helps clients with ICE (<a href="http://tools.ietf.org/html/rfc5245">RFC 5245</a>) or Jingle ICE (<a href="http://xmpp.org/extensions/xep-0176.html">XEP-0176</a>) support to discover their external addresses and ports.</p><p>You should configure <span style="font-family:monospace">ejabberd_stun</span> listening module as described in <a href="#listened">3.1.4</a> section.
-If <span style="font-family:monospace">certfile</span> option is defined, <span style="font-family:monospace">ejabberd</span> multiplexes TCP and
-TLS over TCP connections on the same port. Obviously, <span style="font-family:monospace">certfile</span> option
-is defined for <span style="font-family:monospace">tcp</span> only. Note however that TCP or TLS over TCP
-support is not required for Binding usage and is reserved for
-<a href="http://tools.ietf.org/html/draft-ietf-behave-turn-16">TURN</a>
-functionality. Feel free to configure <span style="font-family:monospace">udp</span> transport only.</p><p>Example configuration:
+<!--TOC subsection id="sec45" STUN and TURN-->
+<h3 id="sec45" class="subsection">3.1.10&#XA0;&#XA0;<a href="#stun">STUN and TURN</a></h3><!--SEC END --><p> <a id="stun"></a> 
+</p><p><span style="font-family:monospace">ejabberd</span> is able to act as a stand-alone STUN/TURN server
+(<a href="http://tools.ietf.org/html/rfc5389">RFC 5389</a>/<a href="http://tools.ietf.org/html/rfc5766">RFC 5766</a>). In that role <span style="font-family:monospace">ejabberd</span> helps clients with ICE (<a href="http://tools.ietf.org/html/rfc5245">RFC 5245</a>) or Jingle ICE (<a href="http://xmpp.org/extensions/xep-0176.html">XEP-0176</a>) support to discover their external addresses and ports and to relay media traffic when it is impossible to establish direct
+peer-to-peer connection.</p><p>You should configure <span style="font-family:monospace">ejabberd_stun</span> listening module as described in <a href="#listened">3.1.4</a> section.
+The specific configurable options are:
+</p><dl class="description"><dt class="dt-description">
+<span style="font-weight:bold"><span style="font-family:monospace">tls: true|false</span></span></dt><dd class="dd-description">
+If enabled, <span style="font-family:monospace">certfile</span> option must be set, otherwise <span style="font-family:monospace">ejabberd</span>
+will not be able to accept TLS connections. Obviously, this option
+makes sense for <span style="font-family:monospace">tcp</span> transport only. The default is <span style="font-family:monospace">false</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">certfile: Path</span></span></dt><dd class="dd-description">
+Path to the certificate file. Only makes sense when <span style="font-family:monospace">tls</span> is set.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">use_turn: true|false</span></span></dt><dd class="dd-description">
+Enables/disables TURN (media relay) functionality. The default is <span style="font-family:monospace">false</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">turn_ip: String</span></span></dt><dd class="dd-description">
+The IPv4 address advertised by your TURN server. The address should not be NAT&#X2019;ed
+or firewalled. There is not default, so you should set this option explicitly.
+Implies <span style="font-family:monospace">use_turn</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">turn_min_port: Integer</span></span></dt><dd class="dd-description">
+Together with <span style="font-family:monospace">turn_max_port</span> forms port range to allocate from.
+The default is 49152. Implies <span style="font-family:monospace">use_turn</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">turn_max_port: Integer</span></span></dt><dd class="dd-description">
+Together with <span style="font-family:monospace">turn_min_port</span> forms port range to allocate from.
+The default is 65535. Implies <span style="font-family:monospace">use_turn</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">turn_max_allocations: Integer|unlimited</span></span></dt><dd class="dd-description">
+Maximum number of TURN allocations available from the particular IP address.
+The default value is 10. Implies <span style="font-family:monospace">use_turn</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">turn_max_permissions: Integer|unlimited</span></span></dt><dd class="dd-description">
+Maximum number of TURN permissions available from the particular IP address.
+The default value is 10. Implies <span style="font-family:monospace">use_turn</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">auth_type: user|anonymous</span></span></dt><dd class="dd-description">
+Which authentication type to use for TURN allocation requests. When type <span style="font-family:monospace">user</span>
+is set, ejabberd authentication backend is used. For <span style="font-family:monospace">anonymous</span> type
+no authentication is performed (not recommended for public services).
+The default is <span style="font-family:monospace">user</span>. Implies <span style="font-family:monospace">use_turn</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">auth_realm: String</span></span></dt><dd class="dd-description">
+When <span style="font-family:monospace">auth_type</span> is set to <span style="font-family:monospace">user</span> and you have several virtual
+hosts configured you should set this option explicitly to the virtual host
+you want to serve on this particular listening port. Implies <span style="font-family:monospace">use_turn</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">shaper: Atom</span></span></dt><dd class="dd-description">
+For <span style="font-family:monospace">tcp</span> transports defines shaper to use. The default is <span style="font-family:monospace">none</span>.
+</dd><dt class="dt-description"><span style="font-weight:bold"><span style="font-family:monospace">server_name: String</span></span></dt><dd class="dd-description">
+Defines software version to return with every response. The default is the
+STUN library version.
+</dd></dl><p>Example configuration with disabled TURN functionality (STUN only):
 </p><pre class="verbatim">listen:
   ...
   - 
@@ -1682,13 +1750,30 @@ functionality. Feel free to configure <span style="font-family:monospace">udp</s
     module: ejabberd_stun
     certfile: "/etc/ejabberd/server.pem"
   ...
+</pre><p>Example configuration with TURN functionality. Note that STUN is always
+enabled if TURN is enabled. Here, only UDP section is shown:
+</p><pre class="verbatim">listen:
+  ...
+  - 
+    port: 3478
+    transport: udp
+    use_turn: true
+    turn_ip: 10.20.30.1
+    module: ejabberd_stun
+  ...
 </pre><p>You also need to configure DNS SRV records properly so clients can easily discover a
-STUN server serving your XMPP domain. Refer to section
+STUN/TURN server serving your XMPP domain. Refer to section
 <a href="http://tools.ietf.org/html/rfc5389#section-9">DNS Discovery of a Server</a>
-of <a href="http://tools.ietf.org/html/rfc5389">RFC 5389</a> for details.</p><p>Example DNS SRV configuration:
+of <a href="http://tools.ietf.org/html/rfc5389">RFC 5389</a> and section
+<a href="http://tools.ietf.org/html/rfc5766#section-6">Creating an Allocation</a>
+of <a href="http://tools.ietf.org/html/rfc5766">RFC 5766</a> for details.</p><p>Example DNS SRV configuration for STUN only:
 </p><pre class="verbatim">_stun._udp   IN SRV  0 0 3478 stun.example.com.
 _stun._tcp   IN SRV  0 0 3478 stun.example.com.
 _stuns._tcp  IN SRV  0 0 5349 stun.example.com.
+</pre><p>And you should also add these in the case if TURN is enabled:
+</p><pre class="verbatim">_turn._udp   IN SRV  0 0 3478 turn.example.com.
+_turn._tcp   IN SRV  0 0 3478 turn.example.com.
+_turns._tcp  IN SRV  0 0 5349 turn.example.com.
 </pre><p> <a id="sip"></a> </p>
 <!--TOC subsection id="sec46" SIP-->
 <h3 id="sec46" class="subsection">3.1.11&#XA0;&#XA0;<a href="#sip">SIP</a></h3><!--SEC END --><p> <a id="sip"></a> 
