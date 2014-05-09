@@ -2707,7 +2707,7 @@ handle_resume(StateData, Attrs) ->
 		    case {xml:get_attr(<<"previd">>, Attrs),
 			  catch jlib:binary_to_integer(xml:get_attr_s(<<"h">>, Attrs))}
 			of
-		      {{value, PrevID}, H} when is_integer(H) ->
+		      {{value, PrevID}, H} when is_integer(H), H >= 0 ->
 			  case inherit_session_state(StateData, PrevID) of
 			    {ok, InheritedState} ->
 				{ok, InheritedState, H};
