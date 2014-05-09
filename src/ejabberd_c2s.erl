@@ -2694,8 +2694,8 @@ handle_a(#state{jid = JID, mgmt_stanzas_out = NumStanzasOut} = StateData,
 		 [jlib:jid_to_string(JID), H, NumStanzasOut]),
 	  mgmt_queue_drop(StateData, H);
       _ ->
-	  ?WARNING_MSG("Ignoring invalid ACK element from ~s",
-		       [jlib:jid_to_string(JID)]),
+	  ?DEBUG("Ignoring invalid ACK element from ~s",
+		 [jlib:jid_to_string(JID)]),
 	  StateData
     end.
 
