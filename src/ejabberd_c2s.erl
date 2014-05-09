@@ -2686,16 +2686,13 @@ handle_r(StateData) ->
     send_element(StateData, Res),
     StateData.
 
-handle_a(#state{jid = JID, mgmt_stanzas_out = NumStanzasOut} = StateData,
-	 Attrs) ->
+handle_a(StateData, Attrs) ->
     case catch jlib:binary_to_integer(xml:get_attr_s(<<"h">>, Attrs)) of
       H when is_integer(H), H >= 0 ->
-	  ?DEBUG("~s acknowledged ~B of ~B stanzas",
-		 [jlib:jid_to_string(JID), H, NumStanzasOut]),
-	  mgmt_queue_drop(StateData, H);
+	  check_h_attribute(StateData, H);
       _ ->
 	  ?DEBUG("Ignoring invalid ACK element from ~s",
-		 [jlib:jid_to_string(JID)]),
+		 [jlib:jid_to_string(StateData#state.jid)]),
 	  StateData
     end.
 
@@ -2728,7 +2725,7 @@ handle_resume(StateData, Attrs) ->
 	end,
     case R of
       {ok, ResumedState, NumHandled} ->
-	  NewState = mgmt_queue_drop(ResumedState, NumHandled),
+	  NewState = check_h_attribute(ResumedState, NumHandled),
 	  AttrXmlns = NewState#state.mgmt_xmlns,
 	  AttrId = make_resume_id(NewState),
 	  AttrH = jlib:integer_to_binary(NewState#state.mgmt_stanzas_in),
@@ -2753,6 +2750,16 @@ handle_resume(StateData, Attrs) ->
 		    [StateData#state.user, StateData#state.server, Msg]),
 	  error
     end.
+
+check_h_attribute(#state{mgmt_stanzas_out = NumStanzasOut} = StateData, H)
+    when H > NumStanzasOut ->
+    ?DEBUG("~s acknowledged ~B stanzas, but only ~B were sent",
+	   [jlib:jid_to_string(StateData#state.jid), H, NumStanzasOut]),
+    mgmt_queue_drop(StateData#state{mgmt_stanzas_out = H}, NumStanzasOut);
+check_h_attribute(#state{mgmt_stanzas_out = NumStanzasOut} = StateData, H) ->
+    ?DEBUG("~s acknowledged ~B of ~B stanzas",
+	   [jlib:jid_to_string(StateData#state.jid), H, NumStanzasOut]),
+    mgmt_queue_drop(StateData, H).
 
 update_num_stanzas_in(#state{mgmt_state = active} = StateData, El) ->
     NewNum = case {is_stanza(El), StateData#state.mgmt_stanzas_in} of
