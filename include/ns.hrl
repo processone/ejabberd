@@ -42,6 +42,7 @@
 -define(NS_IQDATA, <<"jabber:iq:data">>).
 -define(NS_DELAY91, <<"jabber:x:delay">>).
 -define(NS_DELAY, <<"urn:xmpp:delay">>).
+-define(NS_HINTS, <<"urn:xmpp:hints">>).
 -define(NS_EXPIRE, <<"jabber:x:expire">>).
 -define(NS_EVENT, <<"jabber:x:event">>).
 -define(NS_CHATSTATES,
