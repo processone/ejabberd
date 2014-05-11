@@ -233,16 +233,22 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%% Internal functions
 %%--------------------------------------------------------------------
 add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
-    case {xml:get_subtag(Packet, <<"subject">>),
-	  xml:get_subtag(Packet, <<"body">>)}
+    case {xml:get_subtag(Packet, <<"no-store">>),
+	  xml:get_subtag(Packet, <<"no-permanent-store">>)}
 	of
-      {false, false} -> ok;
-      {false, SubEl} ->
-	  Message = {body, xml:get_tag_cdata(SubEl)},
-	  add_message_to_log(Nick, Message, Room, Opts, State);
-      {SubEl, _} ->
-	  Message = {subject, xml:get_tag_cdata(SubEl)},
-	  add_message_to_log(Nick, Message, Room, Opts, State)
+      {false, false} ->
+	  case {xml:get_subtag(Packet, <<"subject">>),
+		xml:get_subtag(Packet, <<"body">>)}
+	      of
+	    {false, false} -> ok;
+	    {false, SubEl} ->
+		Message = {body, xml:get_tag_cdata(SubEl)},
+		add_message_to_log(Nick, Message, Room, Opts, State);
+	    {SubEl, _} ->
+		Message = {subject, xml:get_tag_cdata(SubEl)},
+		add_message_to_log(Nick, Message, Room, Opts, State)
+	  end;
+      {_, _} -> ok
     end;
 add_to_log2(roomconfig_change, _Occupants, Room, Opts,
 	    State) ->
