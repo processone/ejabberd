@@ -237,20 +237,37 @@ store_packet(From, To, Packet) ->
     Type = xml:get_tag_attr_s(<<"type">>, Packet),
     if (Type /= <<"error">>) and (Type /= <<"groupchat">>)
 	 and (Type /= <<"headline">>) ->
-	   case check_event(From, To, Packet) of
-	     true ->
-		 #jid{luser = LUser, lserver = LServer} = To,
-		 TimeStamp = now(),
-		 #xmlel{children = Els} = Packet,
-		 Expire = find_x_expire(TimeStamp, Els),
-		 gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
-		   #offline_msg{us = {LUser, LServer},
-				timestamp = TimeStamp, expire = Expire,
-				from = From, to = To, packet = Packet},
-		 stop;
+	   case has_no_storage_hint(Packet) of
+	     false ->
+		 case check_event(From, To, Packet) of
+		   true ->
+		       #jid{luser = LUser, lserver = LServer} = To,
+		       TimeStamp = now(),
+		       #xmlel{children = Els} = Packet,
+		       Expire = find_x_expire(TimeStamp, Els),
+		       gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
+			 #offline_msg{us = {LUser, LServer},
+				      timestamp = TimeStamp, expire = Expire,
+				      from = From, to = To, packet = Packet},
+		       stop;
+		   _ -> ok
+		 end;
 	     _ -> ok
 	   end;
        true -> ok
+    end.
+
+has_no_storage_hint(Packet) ->
+    case xml:get_subtag(Packet, <<"no-store">>) of
+      #xmlel{attrs = Attrs} ->
+	  case xml:get_attr_s(<<"xmlns">>, Attrs) of
+	    ?NS_HINTS ->
+		true;
+	    _ ->
+		false
+	  end;
+      _ ->
+	  false
     end.
 
 %% Check if the packet has any content about XEP-0022 or XEP-0085
