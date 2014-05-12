@@ -54,7 +54,7 @@
 	 connected_users/0,
 	 connected_users_number/0,
 	 user_resources/2,
-	 disconnect_user/2,
+	 kick_user/2,
 	 get_session_pid/3,
 	 get_user_info/3,
 	 get_user_ip/3,
@@ -822,10 +822,10 @@ commands() ->
 			module = ?MODULE, function = user_resources,
 			args = [{user, binary}, {host, binary}],
 			result = {resources, {list, {resource, string}}}},
-     #ejabberd_commands{name = disconnect_user,
+     #ejabberd_commands{name = kick_user,
 			tags = [session],
 			desc = "Disconnect user's active sessions",
-			module = ?MODULE, function = disconnect_user,
+			module = ?MODULE, function = kick_user,
 			args = [{user, binary}, {host, binary}],
 			result = {num_resources, integer}}].
 
@@ -844,7 +844,7 @@ user_resources(User, Server) ->
     Resources = get_user_resources(User, Server),
     lists:sort(Resources).
 
-disconnect_user(User, Server) ->
+kick_user(User, Server) ->
     Resources = get_user_resources(User, Server),
     lists:foreach(
 	fun(Resource) ->
