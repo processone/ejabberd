@@ -20,7 +20,7 @@ before_script:
 
 script:
   - ./autogen.sh
-  - ./configure --enable-transient_supervisors --enable-all --disable-http --disable-odbc
+  - ./configure --enable-all --disable-http --disable-odbc
   - make
   - make test
   - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log
