@@ -1246,5 +1246,6 @@ calc_hour_offset(TimeHere) ->
 	  3600,
     TimeHereHour - TimeZeroHour.
 
+fjoin([]) -> <<"/">>;
 fjoin(FileList) ->
     list_to_binary(filename:join([binary_to_list(File) || File <- FileList])).
