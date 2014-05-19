@@ -1016,7 +1016,9 @@ htmlize2(S1, NoFollow) ->
 				  <<"\\&nbsp;\\&nbsp;">>),
     S7 = ejabberd_regexp:greplace(S6, <<"\\t">>,
 				  <<"\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;">>),
-    ejabberd_regexp:greplace(S7, <<226, 128, 174>>,
+    S8 = ejabberd_regexp:greplace(S7, <<"~">>,
+				  <<"~~~~">>),
+    ejabberd_regexp:greplace(S8, <<226, 128, 174>>,
 			     <<"[RLO]">>).
 
 link_regexp(false) -> <<"<a href=\"&\">&</a>">>;
