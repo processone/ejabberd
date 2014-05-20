@@ -2358,11 +2358,7 @@ get_showtag(Presence) ->
 
 get_statustag(undefined) -> <<"">>;
 get_statustag(Presence) ->
-    case xml:get_path_s(Presence,
-			[{elem, <<"status">>}, cdata])
-	of
-      ShowTag -> ShowTag
-    end.
+    xml:get_path_s(Presence, [{elem, <<"status">>}, cdata]).
 
 process_unauthenticated_stanza(StateData, El) ->
     NewEl = case xml:get_tag_attr_s(<<"xml:lang">>, El) of
