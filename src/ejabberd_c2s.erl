@@ -788,18 +788,11 @@ wait_for_feature_request({xmlstreamelement, El},
 								  StateData#state.tls_options)]
 		    end,
 	  Socket = StateData#state.socket,
+	  BProceed = xml:element_to_binary(#xmlel{name = <<"proceed">>,
+						  attrs = [{<<"xmlns">>, ?NS_TLS}]}),
 	  TLSSocket = (StateData#state.sockmod):starttls(Socket,
 							 TLSOpts,
-							 xml:element_to_binary(#xmlel{name
-											  =
-											  <<"proceed">>,
-										      attrs
-											  =
-											  [{<<"xmlns">>,
-											    ?NS_TLS}],
-										      children
-											  =
-											  []})),
+							 BProceed),
 	  fsm_next_state(wait_for_stream,
 			 StateData#state{socket = TLSSocket,
 					 streamid = new_id(),
@@ -820,17 +813,10 @@ wait_for_feature_request({xmlstreamelement, El},
 		case xml:get_tag_cdata(Method) of
 		  <<"zlib">> ->
 		      Socket = StateData#state.socket,
+		      BCompressed = xml:element_to_binary(#xmlel{name = <<"compressed">>,
+								 attrs = [{<<"xmlns">>, ?NS_COMPRESS}]}),
 		      ZlibSocket = (StateData#state.sockmod):compress(Socket,
-								      xml:element_to_binary(#xmlel{name
-												       =
-												       <<"compressed">>,
-												   attrs
-												       =
-												       [{<<"xmlns">>,
-													 ?NS_COMPRESS}],
-												   children
-												       =
-												       []})),
+								      BCompressed),
 		      fsm_next_state(wait_for_stream,
 				     StateData#state{socket = ZlibSocket,
 						     streamid = new_id()});
