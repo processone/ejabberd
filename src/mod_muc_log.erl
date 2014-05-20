@@ -779,7 +779,7 @@ fw(F, S, O, FileFormat) ->
 		 S1y = ejabberd_regexp:greplace(S1x, ?PLAINTEXT_IN, <<"<">>),
 		 ejabberd_regexp:greplace(S1y, ?PLAINTEXT_OUT, <<">">>)
 	 end,
-    io:format(F, S2, []).
+    file:write(F, S2).
 
 put_header(_, _, _, _, _, _, _, _, _, plaintext) -> ok;
 put_header(F, Room, Date, CSSFile, Lang, Hour_offset,
@@ -1017,7 +1017,7 @@ htmlize2(S1, NoFollow) ->
     S7 = ejabberd_regexp:greplace(S6, <<"\\t">>,
 				  <<"\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;">>),
     S8 = ejabberd_regexp:greplace(S7, <<"~">>,
-				  <<"~~~~">>),
+				  <<"~~">>),
     ejabberd_regexp:greplace(S8, <<226, 128, 174>>,
 			     <<"[RLO]">>).
 
