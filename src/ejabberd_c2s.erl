@@ -2458,23 +2458,27 @@ is_ip_blacklisted({IP, _Port}) ->
 %% returns invalid-from|NewElement
 check_from(El, FromJID) ->
     case xml:get_tag_attr(<<"from">>, El) of
-      false -> El;
-      {value, SJID} ->
-	  JID = jlib:string_to_jid(SJID),
-	  case JID of
-	    error -> 'invalid-from';
-	    #jid{} ->
-		if (JID#jid.luser == FromJID#jid.luser) and
-		     (JID#jid.lserver == FromJID#jid.lserver)
-		     and (JID#jid.lresource == FromJID#jid.lresource) ->
-		       El;
-		   (JID#jid.luser == FromJID#jid.luser) and
-		     (JID#jid.lserver == FromJID#jid.lserver)
-		     and (JID#jid.lresource == <<"">>) ->
-		       El;
-		   true -> 'invalid-from'
-		end
-	  end
+	false ->
+	    El;
+	{value, SJID} ->
+	    JID = jlib:string_to_jid(SJID),
+	    case JID of
+		error ->
+		    'invalid-from';
+		#jid{} ->
+		    if
+			(JID#jid.luser == FromJID#jid.luser) and
+			(JID#jid.lserver == FromJID#jid.lserver) and
+			(JID#jid.lresource == FromJID#jid.lresource) ->
+			    El;
+			(JID#jid.luser == FromJID#jid.luser) and
+			(JID#jid.lserver == FromJID#jid.lserver) and
+			(JID#jid.lresource == <<"">>) ->
+			    El;
+			true ->
+			    'invalid-from'
+		    end
+	    end
     end.
 
 fsm_limit_opts(Opts) ->
