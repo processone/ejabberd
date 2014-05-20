@@ -186,6 +186,8 @@ check_password_extauth(User, Server, Password) ->
 try_register_extauth(User, Server, Password) ->
     extauth:try_register(User, Server, Password).
 
+check_password_cache(User, Server, Password, 0) ->
+    check_password_external_cache(User, Server, Password);
 check_password_cache(User, Server, Password,
 		     CacheTime) ->
     case get_last_access(User, Server) of
