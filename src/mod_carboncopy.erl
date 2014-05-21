@@ -143,24 +143,29 @@ check_and_forward(JID, To, #xmlel{name = <<"message">>, attrs = Attrs} = Packet,
       <<"chat">> ->
 	case xml:get_subtag(Packet, <<"private">>) of
 	    false ->
-		case xml:get_subtag(Packet,<<"received">>) of
+		case xml:get_subtag(Packet, <<"no-copy">>) of
 		    false ->
-		    	%% We must check if a packet contains "<sent><forwarded></sent></forwarded>" tags in order to avoid
-                    	%% receiving message back to original sender.
-                    	SubTag = xml:get_subtag(Packet,<<"sent">>),
-                    	if SubTag == false ->
-                            send_copies(JID, To, Packet, Direction);
-                       	   true ->
-                            case xml:get_subtag(SubTag,<<"forwarded">>) of
-                                false->
-                                    send_copies(JID, To, Packet, Direction);
-                                _ ->
-                                    stop
-                            end
-                    	end; 
+			case xml:get_subtag(Packet,<<"received">>) of
+			    false ->
+				%% We must check if a packet contains "<sent><forwarded></sent></forwarded>"
+				%% tags in order to avoid receiving message back to original sender.
+				SubTag = xml:get_subtag(Packet,<<"sent">>),
+				if SubTag == false ->
+				    send_copies(JID, To, Packet, Direction);
+				   true ->
+				    case xml:get_subtag(SubTag,<<"forwarded">>) of
+					false->
+					    send_copies(JID, To, Packet, Direction);
+					_ ->
+					    stop
+				    end
+				end;
+			    _ ->
+				%% stop the hook chain, we don't want mod_logdb to register this message (duplicate)
+				stop
+			end;
 		    _ ->
-			%% stop the hook chain, we don't want mod_logdb to register this message (duplicate)
-			stop
+			ok
 		end;
 	    _ ->
 		ok
