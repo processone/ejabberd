@@ -788,18 +788,11 @@ wait_for_feature_request({xmlstreamelement, El},
 								  StateData#state.tls_options)]
 		    end,
 	  Socket = StateData#state.socket,
+	  BProceed = xml:element_to_binary(#xmlel{name = <<"proceed">>,
+						  attrs = [{<<"xmlns">>, ?NS_TLS}]}),
 	  TLSSocket = (StateData#state.sockmod):starttls(Socket,
 							 TLSOpts,
-							 xml:element_to_binary(#xmlel{name
-											  =
-											  <<"proceed">>,
-										      attrs
-											  =
-											  [{<<"xmlns">>,
-											    ?NS_TLS}],
-										      children
-											  =
-											  []})),
+							 BProceed),
 	  fsm_next_state(wait_for_stream,
 			 StateData#state{socket = TLSSocket,
 					 streamid = new_id(),
@@ -820,17 +813,10 @@ wait_for_feature_request({xmlstreamelement, El},
 		case xml:get_tag_cdata(Method) of
 		  <<"zlib">> ->
 		      Socket = StateData#state.socket,
+		      BCompressed = xml:element_to_binary(#xmlel{name = <<"compressed">>,
+								 attrs = [{<<"xmlns">>, ?NS_COMPRESS}]}),
 		      ZlibSocket = (StateData#state.sockmod):compress(Socket,
-								      xml:element_to_binary(#xmlel{name
-												       =
-												       <<"compressed">>,
-												   attrs
-												       =
-												       [{<<"xmlns">>,
-													 ?NS_COMPRESS}],
-												   children
-												       =
-												       []})),
+								      BCompressed),
 		      fsm_next_state(wait_for_stream,
 				     StateData#state{socket = ZlibSocket,
 						     streamid = new_id()});
@@ -973,9 +959,7 @@ wait_for_sasl_response(closed, StateData) ->
     {stop, normal, StateData}.
 
 resource_conflict_action(U, S, R) ->
-    OptionRaw = case ejabberd_sm:is_existing_resource(U, S,
-						      R)
-		    of
+    OptionRaw = case ejabberd_sm:is_existing_resource(U, S, R) of
 		  true ->
 		      ejabberd_config:get_option(
                         {resource_conflict, S},
@@ -1096,7 +1080,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    ?INFO_MSG("(~w) Opened session for ~s",
 			      [NewStateData#state.socket,
 			       jlib:jid_to_string(JID)]),
-                    Res = jlib:make_result_iq_reply(El#xmlel{children = []}),
+		    Res = jlib:make_result_iq_reply(El#xmlel{children = []}),
 		    NewState = send_stanza(NewStateData, Res),
 		    change_shaper(NewState, JID),
 		    {Fs, Ts} = ejabberd_hooks:run_fold(
@@ -1902,12 +1886,11 @@ new_id() -> randoms:get_string().
 
 is_auth_packet(El) ->
     case jlib:iq_query_info(El) of
-      #iq{id = ID, type = Type, xmlns = ?NS_AUTH,
-	  sub_el = SubEl} ->
-	  #xmlel{children = Els} = SubEl,
-	  {auth, ID, Type,
-	   get_auth_tags(Els, <<"">>, <<"">>, <<"">>, <<"">>)};
-      _ -> false
+	#iq{id = ID, type = Type, xmlns = ?NS_AUTH, sub_el = SubEl} ->
+	    #xmlel{children = Els} = SubEl,
+	    {auth, ID, Type,
+	     get_auth_tags(Els, <<"">>, <<"">>, <<"">>, <<"">>)};
+	_ -> false
     end.
 
 is_stanza(#xmlel{name = Name, attrs = Attrs}) when Name == <<"message">>;
@@ -2230,18 +2213,16 @@ remove_element(E, Set) ->
 
 roster_change(IJID, ISubscription, StateData) ->
     LIJID = jlib:jid_tolower(IJID),
-    IsFrom = (ISubscription == both) or
-	       (ISubscription == from),
+    IsFrom = (ISubscription == both) or (ISubscription == from),
     IsTo = (ISubscription == both) or (ISubscription == to),
-    OldIsFrom = (?SETS):is_element(LIJID,
-				   StateData#state.pres_f),
-    FSet = if IsFrom ->
-		  (?SETS):add_element(LIJID, StateData#state.pres_f);
-	      true -> remove_element(LIJID, StateData#state.pres_f)
+    OldIsFrom = (?SETS):is_element(LIJID, StateData#state.pres_f),
+    FSet = if
+	       IsFrom -> (?SETS):add_element(LIJID, StateData#state.pres_f);
+	       not IsFrom -> remove_element(LIJID, StateData#state.pres_f)
 	   end,
-    TSet = if IsTo ->
-		  (?SETS):add_element(LIJID, StateData#state.pres_t);
-	      true -> remove_element(LIJID, StateData#state.pres_t)
+    TSet = if
+	       IsTo -> (?SETS):add_element(LIJID, StateData#state.pres_t);
+	       not IsTo -> remove_element(LIJID, StateData#state.pres_t)
 	   end,
     case StateData#state.pres_last of
       undefined ->
@@ -2335,11 +2316,10 @@ process_privacy_iq(From, To,
     NewStateData.
 
 resend_offline_messages(StateData) ->
-    case
-      ejabberd_hooks:run_fold(resend_offline_messages_hook,
-			      StateData#state.server, [],
-			      [StateData#state.user, StateData#state.server])
-	of
+    case ejabberd_hooks:run_fold(resend_offline_messages_hook,
+				 StateData#state.server, [],
+				 [StateData#state.user, StateData#state.server])
+    of
       Rs -> %%when is_list(Rs) ->
 	  lists:foreach(fun ({route, From, To,
 			      #xmlel{} = Packet}) ->
@@ -2359,8 +2339,7 @@ resend_offline_messages(StateData) ->
     end.
 
 resend_subscription_requests(#state{user = User,
-				    server = Server} =
-				 StateData) ->
+				    server = Server} = StateData) ->
     PendingSubscriptions =
 	ejabberd_hooks:run_fold(resend_subscription_requests_hook,
 				Server, [], [User, Server]),
@@ -2372,20 +2351,14 @@ resend_subscription_requests(#state{user = User,
 
 get_showtag(undefined) -> <<"unavailable">>;
 get_showtag(Presence) ->
-    case xml:get_path_s(Presence,
-			[{elem, <<"show">>}, cdata])
-	of
-      <<"">> -> <<"available">>;
-      ShowTag -> ShowTag
+    case xml:get_path_s(Presence, [{elem, <<"show">>}, cdata]) of
+	<<"">> -> <<"available">>;
+	ShowTag -> ShowTag
     end.
 
 get_statustag(undefined) -> <<"">>;
 get_statustag(Presence) ->
-    case xml:get_path_s(Presence,
-			[{elem, <<"status">>}, cdata])
-	of
-      ShowTag -> ShowTag
-    end.
+    xml:get_path_s(Presence, [{elem, <<"status">>}, cdata]).
 
 process_unauthenticated_stanza(StateData, El) ->
     NewEl = case xml:get_tag_attr_s(<<"xml:lang">>, El) of
@@ -2485,23 +2458,27 @@ is_ip_blacklisted({IP, _Port}) ->
 %% returns invalid-from|NewElement
 check_from(El, FromJID) ->
     case xml:get_tag_attr(<<"from">>, El) of
-      false -> El;
-      {value, SJID} ->
-	  JID = jlib:string_to_jid(SJID),
-	  case JID of
-	    error -> 'invalid-from';
-	    #jid{} ->
-		if (JID#jid.luser == FromJID#jid.luser) and
-		     (JID#jid.lserver == FromJID#jid.lserver)
-		     and (JID#jid.lresource == FromJID#jid.lresource) ->
-		       El;
-		   (JID#jid.luser == FromJID#jid.luser) and
-		     (JID#jid.lserver == FromJID#jid.lserver)
-		     and (JID#jid.lresource == <<"">>) ->
-		       El;
-		   true -> 'invalid-from'
-		end
-	  end
+	false ->
+	    El;
+	{value, SJID} ->
+	    JID = jlib:string_to_jid(SJID),
+	    case JID of
+		error ->
+		    'invalid-from';
+		#jid{} ->
+		    if
+			(JID#jid.luser == FromJID#jid.luser) and
+			(JID#jid.lserver == FromJID#jid.lserver) and
+			(JID#jid.lresource == FromJID#jid.lresource) ->
+			    El;
+			(JID#jid.luser == FromJID#jid.luser) and
+			(JID#jid.lserver == FromJID#jid.lserver) and
+			(JID#jid.lresource == <<"">>) ->
+			    El;
+			true ->
+			    'invalid-from'
+		    end
+	    end
     end.
 
 fsm_limit_opts(Opts) ->
