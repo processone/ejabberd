@@ -1312,8 +1312,8 @@ handle_sync_event(get_subscribed, _From, StateName,
 		  StateData) ->
     Subscribed = (?SETS):to_list(StateData#state.pres_f),
     {reply, Subscribed, StateName, StateData};
-handle_sync_event(resume_session, _From, _StateName,
-		  StateData) ->
+handle_sync_event({resume_session, Time}, _From, _StateName,
+		  StateData) when element(1, StateData#state.sid) == Time ->
     %% The old session should be closed before the new one is opened, so we do
     %% this here instead of leaving it to the terminate callback
     ejabberd_sm:close_session(StateData#state.sid,
@@ -1321,6 +1321,9 @@ handle_sync_event(resume_session, _From, _StateName,
 			      StateData#state.server,
 			      StateData#state.resource),
     {stop, normal, {ok, StateData}, StateData#state{mgmt_state = resumed}};
+handle_sync_event({resume_session, _Time}, _From, StateName,
+		  StateData) ->
+    {reply, {error, <<"Previous session not found">>}, StateName, StateData};
 handle_sync_event(_Event, _From, StateName,
 		  StateData) ->
     Reply = ok, fsm_reply(Reply, StateName, StateData).
@@ -2894,8 +2897,8 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 		{error, <<"Previous session PID not found">>};
 	    OldPID ->
 		OldSID = {Time, OldPID},
-		case catch resume_session(OldPID) of
-		  {ok, #state{sid = OldSID} = OldStateData} ->
+		case catch resume_session(OldSID) of
+		  {ok, OldStateData} ->
 		      NewSID = {Time, self()}, % Old time, new PID
 		      Priority = case OldStateData#state.pres_last of
 				   undefined ->
@@ -2927,6 +2930,8 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 					   mgmt_stanzas_in = OldStateData#state.mgmt_stanzas_in,
 					   mgmt_stanzas_out = OldStateData#state.mgmt_stanzas_out,
 					   mgmt_state = active}};
+		  {error, Msg} ->
+		      {error, Msg};
 		  _ ->
 		      {error, <<"Cannot grab session state">>}
 		end
@@ -2935,8 +2940,8 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 	  {error, <<"Invalid 'previd' value">>}
     end.
 
-resume_session(FsmRef) ->
-    (?GEN_FSM):sync_send_all_state_event(FsmRef, resume_session, 3000).
+resume_session({Time, PID}) ->
+    (?GEN_FSM):sync_send_all_state_event(PID, {resume_session, Time}, 3000).
 
 make_resume_id(StateData) ->
     {Time, _} = StateData#state.sid,
