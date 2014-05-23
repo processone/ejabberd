@@ -12,7 +12,7 @@
 -behaviour(esip).
 
 %% API
--export([start/2, stop/1, prepare_request/1, make_response/2, at_my_host/1]).
+-export([start/2, stop/1, make_response/2, is_my_host/1, at_my_host/1]).
 
 %% esip_callbacks
 -export([data_in/2, data_out/2, message_in/2, message_out/2,
@@ -77,6 +77,13 @@ message_out(_, _) ->
 response(_Resp, _SIPSock) ->
     ok.
 
+request(#sip{method = <<"ACK">>} = Req, SIPSock) ->
+    case action(Req, SIPSock) of
+	{relay, LServer} ->
+	    mod_sip_proxy:route(Req, LServer, []);
+	_ ->
+	    error
+    end;
 request(_Req, _SIPSock) ->
     error.
 
@@ -250,18 +257,6 @@ process(#sip{method = <<"REGISTER">>} = Req, _) ->
 process(Req, _) ->
     make_response(Req, #sip{type = response, status = 405,
 			    hdrs = [{'allow', allow()}]}).
-
-prepare_request(#sip{hdrs = Hdrs1} = Req) ->
-    MF = esip:get_hdr('max-forwards', Hdrs1),
-    Hdrs2 = esip:set_hdr('max-forwards', MF-1, Hdrs1),
-    Hdrs3 = lists:filter(
-              fun({'proxy-authorization', {_, Params}}) ->
-                      Realm = esip:unquote(esip:get_param(<<"realm">>, Params)),
-		      not is_my_host(jlib:nameprep(Realm));
-                 (_) ->
-                      true
-              end, Hdrs2),
-    Req#sip{hdrs = Hdrs3}.
 
 make_auth_hdr(LServer) ->
     Realm = jlib:nameprep(LServer),
