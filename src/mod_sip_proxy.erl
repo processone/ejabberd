@@ -12,7 +12,7 @@
 -behaviour(?GEN_FSM).
 
 %% API
--export([start/2, start_link/2, route/4]).
+-export([start/2, start_link/2, route/3, route/4]).
 
 %% gen_fsm callbacks
 -export([init/1, wait_for_request/2, wait_for_response/2,
@@ -42,6 +42,19 @@ start_link(LServer, Opts) ->
 route(SIPMsg, _SIPSock, TrID, Pid) ->
     ?GEN_FSM:send_event(Pid, {SIPMsg, TrID}).
 
+route(Req, LServer, Opts) ->
+    Req1 = prepare_request(LServer, Req),
+    case connect(Req1, add_certfile(LServer, Opts)) of
+	{ok, SIPSockets} ->
+	    lists:foreach(
+	      fun(SIPSocket) ->
+		      Req2 = add_via(SIPSocket, LServer, Req1),
+		      esip:send(SIPSocket, Req2)
+	      end, SIPSockets);
+	_ ->
+	    error
+    end.
+
 %%%===================================================================
 %%% gen_fsm callbacks
 %%%===================================================================
@@ -51,7 +64,7 @@ init([Host, Opts]) ->
 
 wait_for_request({#sip{type = request} = Req, TrID}, State) ->
     Opts = State#state.opts,
-    Req1 = mod_sip:prepare_request(Req),
+    Req1 = prepare_request(State#state.host, Req),
     case connect(Req1, Opts) of
 	{ok, SIPSockets} ->
 	    NewState =
@@ -59,8 +72,9 @@ wait_for_request({#sip{type = request} = Req, TrID}, State) ->
 		  fun(_SIPSocket, {error, _} = Err) ->
 			  Err;
 		     (SIPSocket, #state{tr_ids = TrIDs} = AccState) ->
-			  Req2 = add_via(SIPSocket, State#state.host, Req1),
-			  case esip:request(SIPSocket, Req2,
+			  Req2 = add_record_route(SIPSocket, State#state.host, Req1),
+			  Req3 = add_via(SIPSocket, State#state.host, Req2),
+			  case esip:request(SIPSocket, Req3,
 					    {?MODULE, route, [self()]}) of
 			      {ok, ClientTrID} ->
 				  NewTrIDs = [ClientTrID|TrIDs],
@@ -234,6 +248,11 @@ add_via(#sip_socket{type = Transport}, LServer, #sip{hdrs = Hdrs} = Req) ->
 			 {<<"rport">>, <<"">>}]},
     Req#sip{hdrs = [{'via', [Via]}|Hdrs]}.
 
+add_record_route(_SIPSocket, LServer, #sip{hdrs = Hdrs} = Req) ->
+    URI = #uri{host = LServer, params = [{<<"lr">>, <<"">>}]},
+    Hdrs1 = [{'record-route', [{<<>>, URI, []}]}|Hdrs],
+    Req#sip{hdrs = Hdrs1}.
+
 get_configured_vias(LServer) ->
     gen_mod:get_module_opt(
       LServer, ?MODULE, via,
@@ -275,3 +294,30 @@ choose_best_response(#state{responses = Responses} = State) ->
 		    ok
 	    end
     end.
+
+prepare_request(Host, #sip{hdrs = Hdrs} = Req) ->
+    Hdrs1 = lists:flatmap(
+	      fun({Hdr, HdrList}) when Hdr == 'route';
+				       Hdr == 'record-route' ->
+		      case lists:filter(
+			     fun({_, #uri{user = <<"">>, host = Host1}, _}) ->
+				     Host1 /= Host
+			     end, HdrList) of
+			  [] ->
+			      [];
+			  HdrList1 ->
+			      [{Hdr, HdrList1}]
+		      end;
+		 (Hdr) ->
+		      [Hdr]
+	      end, Hdrs),
+    MF = esip:get_hdr('max-forwards', Hdrs1),
+    Hdrs2 = esip:set_hdr('max-forwards', MF-1, Hdrs1),
+    Hdrs3 = lists:filter(
+              fun({'proxy-authorization', {_, Params}}) ->
+                      Realm = esip:unquote(esip:get_param(<<"realm">>, Params)),
+		      not mod_sip:is_my_host(jlib:nameprep(Realm));
+                 (_) ->
+                      true
+              end, Hdrs2),
+    Req#sip{hdrs = Hdrs3}.
