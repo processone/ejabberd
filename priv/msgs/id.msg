@@ -120,7 +120,7 @@
 {"has been kicked because of a system shutdown","telah dikick karena sistem shutdown"}.
 {"has been kicked because the room has been changed to members-only","telah dikick karena ruangan telah diubah menjadi hanya untuk member"}.
 {"has been kicked","telah dikick"}.
-{" has set the subject to: ","telah menetapkan topik yaitu:"}.
+{" has set the subject to: "," telah menetapkan topik yaitu: "}.
 {"Host","Host"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Jika Anda tidak melihat gambar CAPTCHA disini, silahkan kunjungi halaman web."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Jika Anda ingin menentukan port yang berbeda, sandi, pengkodean untuk layanan IRC, isi daftar ini dengan nilai-nilai dalam format '{\"server irc \", \"encoding \", port, \"sandi \"}'. Secara default ini menggunakan layanan \"~s \" pengkodean, port ~p, kata sandi kosong."}.
