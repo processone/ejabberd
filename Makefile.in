@@ -151,6 +151,8 @@ install: all
 	# Binary C programs
 	$(INSTALL) -d $(PBINDIR)
 	$(INSTALL) -m 750 $(O_USER) tools/captcha.sh $(PBINDIR)
+	[ -f deps/p1_pam/priv/bin/epam ] \
+		&& $(INSTALL) -m 750 $(O_USER) deps/p1_pam/priv/bin/epam $(PBINDIR)
 	#
 	# Binary system libraries
 	$(INSTALL) -d $(SODIR)
