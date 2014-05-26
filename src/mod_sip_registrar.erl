@@ -57,8 +57,13 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
 		ok ->
 		    ?INFO_MSG("unregister SIP session for user ~s@~s from ~s",
 			      [LUser, LServer, inet_parse:ntoa(PeerIP)]),
+		    Contact = {<<"">>, #uri{user = LUser, host = LServer},
+			       [{<<"expires">>, <<"0">>}]},
 		    mod_sip:make_response(
-		      Req, #sip{type = response, status = 200});
+		      Req,
+		      #sip{type = response,
+			   status = 200,
+			   hdrs = [{'contact', [Contact]}]});
 		{error, Why} ->
 		    {Status, Reason} = make_status(Why),
 		    mod_sip:make_response(
