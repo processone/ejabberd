@@ -1171,8 +1171,7 @@ session_established({xmlstreamerror, _}, StateData) ->
 session_established(closed, StateData)
     when StateData#state.mgmt_timeout > 0,
 	 StateData#state.mgmt_state == active ->
-    log_pending_state(StateData),
-    fsm_next_state(wait_for_resume, StateData#state{mgmt_state = pending});
+    fsm_next_state(wait_for_resume, StateData);
 session_established(closed, StateData) ->
     {stop, normal, StateData}.
 
@@ -1658,9 +1657,7 @@ handle_info({'DOWN', Monitor, _Type, _Object, _Info},
     if StateData#state.mgmt_timeout > 0,
        StateData#state.mgmt_state == active orelse
        StateData#state.mgmt_state == pending ->
-	   log_pending_state(StateData),
-	   fsm_next_state(wait_for_resume,
-			  StateData#state{mgmt_state = pending});
+	   fsm_next_state(wait_for_resume, StateData);
        true ->
 	   {stop, normal, StateData}
     end;
@@ -2436,10 +2433,12 @@ fsm_next_state_gc(StateName, PackedStateData) ->
 fsm_next_state(session_established, StateData) ->
     {next_state, session_established, StateData,
      ?C2S_HIBERNATE_TIMEOUT};
-fsm_next_state(wait_for_resume, #state{mgmt_pending_since = undefined} =
-	       StateData) ->
+fsm_next_state(wait_for_resume, StateData)
+    when StateData#state.mgmt_state /= pending ->
+    ?INFO_MSG("Waiting for resumption of stream for ~s",
+	      [jlib:jid_to_string(StateData#state.jid)]),
     {next_state, wait_for_resume,
-     StateData#state{mgmt_pending_since = os:timestamp()},
+     StateData#state{mgmt_state = pending, mgmt_pending_since = os:timestamp()},
      StateData#state.mgmt_timeout};
 fsm_next_state(wait_for_resume, StateData) ->
     Diff = timer:now_diff(os:timestamp(), StateData#state.mgmt_pending_since),
@@ -2805,12 +2804,6 @@ limit_queue_length(#state{jid = JID,
       false ->
 	  StateData
     end.
-
-log_pending_state(StateData) when StateData#state.mgmt_state /= pending ->
-    ?INFO_MSG("Waiting for resumption of stream for ~s",
-	      [jlib:jid_to_string(StateData#state.jid)]);
-log_pending_state(_StateData) ->
-    ok.
 
 handle_unacked_stanzas(StateData, F)
     when StateData#state.mgmt_state == active;
