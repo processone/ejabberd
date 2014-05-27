@@ -588,7 +588,7 @@ db_opts(Host) ->
             [odbc, Server];
         _ ->
             Port = ejabberd_config:get_option(
-                     {port, Host},
+                     {odbc_port, Host},
                      fun(P) when is_integer(P), P > 0, P < 65536 -> P end,
                      case Type of
                          mysql -> ?MYSQL_PORT;
