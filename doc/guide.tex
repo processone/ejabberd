@@ -983,10 +983,10 @@ This is a detailed description of each option allowed by the listening modules:
   \titem{max\_ack\_queue: Size}
     This option specifies the maximum number of unacknowledged stanzas
     queued for possible retransmission if \term{stream\_management} is
-    enabled. When the limit is reached, the first stanza is dropped from
-    the queue before adding the next one. This option can be specified
-    for \term{ejabberd\_c2s} listeners. The allowed values are positive
-    integers and \term{infinity}. Default value: \term{500}.
+    enabled. When the limit is exceeded, the client session is
+    terminated. This option can be specified for \term{ejabberd\_c2s}
+    listeners. The allowed values are positive integers and
+    \term{infinity}. Default value: \term{500}.
   \titem{max\_fsm\_queue: Size}
     This option specifies the maximum number of elements in the queue of the FSM
     (Finite State Machine).
