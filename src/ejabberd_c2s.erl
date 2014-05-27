@@ -763,8 +763,7 @@ wait_for_feature_request({xmlstreamelement, El},
 				    children =
 					[#xmlel{name = Error, attrs = [],
 						children = []}]}),
-		{next_state, wait_for_feature_request, StateData,
-		 ?C2S_OPEN_TIMEOUT};
+		fsm_next_state(wait_for_feature_request, StateData);
 	    {error, Error} ->
 		send_element(StateData,
 			     #xmlel{name = <<"failure">>,
@@ -1692,7 +1691,7 @@ handle_info({force_update_presence, LUser}, StateName,
 			 StateData2;
 		     _ -> StateData
 		   end,
-    {next_state, StateName, NewStateData};
+    fsm_next_state(StateName, NewStateData);
 handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
     Recipients = ejabberd_hooks:run_fold(
 		   c2s_broadcast_recipients, StateData#state.server,
