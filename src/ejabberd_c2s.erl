@@ -1373,7 +1373,6 @@ handle_info({route, _From, _To, {broadcast, Data}},
                     fsm_next_state(StateName, StateData);
                 NewPL ->
                     PrivPushIQ = #iq{type = set,
-                                     xmlns = ?NS_PRIVACY,
                                      id = <<"push",
                                             (randoms:get_string())/binary>>,
                                      sub_el =
@@ -2541,8 +2540,7 @@ route_blocking(What, StateData) ->
 		  #xmlel{name = <<"unblock">>,
 			 attrs = [{<<"xmlns">>, ?NS_BLOCKING}], children = []}
 	    end,
-    PrivPushIQ = #iq{type = set, xmlns = ?NS_BLOCKING,
-		     id = <<"push">>, sub_el = [SubEl]},
+    PrivPushIQ = #iq{type = set, id = <<"push">>, sub_el = [SubEl]},
     PrivPushEl =
 	jlib:replace_from_to(jlib:jid_remove_resource(StateData#state.jid),
 			     StateData#state.jid, jlib:iq_to_xml(PrivPushIQ)),
