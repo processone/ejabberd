@@ -1284,6 +1284,10 @@ wait_for_resume(Event, StateData) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
+handle_event({abort, Xmlelement}, _StateName, StateData) ->
+    send_element(StateData, Xmlelement),
+    send_trailer(StateData),
+    {stop, normal, StateData};
 handle_event(_Event, StateName, StateData) ->
     fsm_next_state(StateName, StateData).
 
@@ -2779,27 +2783,30 @@ mgmt_queue_add(StateData, El) ->
 	       Num ->
 		   Num + 1
 	     end,
-    NewState = limit_queue_length(StateData),
-    NewQueue = queue:in({NewNum, El}, NewState#state.mgmt_queue),
-    NewState#state{mgmt_queue = NewQueue, mgmt_stanzas_out = NewNum}.
+    NewQueue = queue:in({NewNum, El}, StateData#state.mgmt_queue),
+    NewState = StateData#state{mgmt_queue = NewQueue,
+			       mgmt_stanzas_out = NewNum},
+    check_queue_length(NewState).
 
 mgmt_queue_drop(StateData, NumHandled) ->
     NewQueue = jlib:queue_drop_while(fun({N, _Stanza}) -> N =< NumHandled end,
 				     StateData#state.mgmt_queue),
     StateData#state{mgmt_queue = NewQueue}.
 
-limit_queue_length(#state{mgmt_max_queue = Limit} = StateData)
+check_queue_length(#state{mgmt_max_queue = Limit} = StateData)
     when Limit == infinity;
 	 Limit == unlimited ->
     StateData;
-limit_queue_length(#state{jid = JID,
-			  mgmt_queue = Queue,
+check_queue_length(#state{mgmt_queue = Queue,
 			  mgmt_max_queue = Limit} = StateData) ->
-    case queue:len(Queue) >= Limit of
+    case queue:len(Queue) > Limit of
       true ->
-	  ?WARNING_MSG("Dropping stanza from too long ACK queue for ~s",
-		       [jlib:jid_to_string(JID)]),
-	  limit_queue_length(StateData#state{mgmt_queue = queue:drop(Queue)});
+	  ?WARNING_MSG("ACK queue too long, terminating session for ~s",
+		       [jlib:jid_to_string(StateData#state.jid)]),
+	  Lang = StateData#state.lang,
+	  Err = ?SERRT_POLICY_VIOLATION(Lang, <<"Too many unacked stanzas">>),
+	  (?GEN_FSM):send_all_state_event(self(), {abort, Err}),
+	  StateData#state{mgmt_resend = false}; % Don't resend the flood!
       false ->
 	  StateData
     end.
