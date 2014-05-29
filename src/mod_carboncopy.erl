@@ -105,7 +105,7 @@ iq_handler1(From, To, IQ) ->
 	iq_handler(From, To, IQ, ?NS_CC_1).
 
 iq_handler(From, _To,  #iq{type=set, sub_el = #xmlel{name = Operation, children = []}} = IQ, CC)->
-    ?INFO_MSG("carbons IQ received: ~p", [IQ]),
+    ?DEBUG("carbons IQ received: ~p", [IQ]),
     {U, S, R} = jlib:jid_tolower(From),
     Result = case Operation of
         <<"enable">>->
@@ -117,10 +117,10 @@ iq_handler(From, _To,  #iq{type=set, sub_el = #xmlel{name = Operation, children 
     end,
     case Result of 
         ok ->
-	    ?INFO_MSG("carbons IQ result: ok", []),
+	    ?DEBUG("carbons IQ result: ok", []),
             IQ#iq{type=result, sub_el=[]};
 	{error,_Error} ->
-	    ?INFO_MSG("Error enabling / disabling carbons: ~p", [Result]),
+	    ?WARNING_MSG("Error enabling / disabling carbons: ~p", [Result]),
             IQ#iq{type=error,sub_el = [?ERR_BAD_REQUEST]}
     end;
 
