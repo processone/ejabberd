@@ -143,44 +143,20 @@ user_receive_packet(JID, _From, To, Packet) ->
 %    - do not support "private" message mode, and do not modify the original packet in any way
 %    - we also replicate "read" notifications
 check_and_forward(JID, To, #xmlel{name = <<"message">>, attrs = Attrs} = Packet, Direction)->
-    case xml:get_attr_s(<<"type">>, Attrs) of 
-      <<"chat">> ->
-	case xml:get_subtag(Packet, <<"private">>) of
-	    false ->
-		case xml:get_subtag(Packet, <<"no-copy">>) of
-		    false ->
-			case xml:get_subtag(Packet,<<"received">>) of
-			    false ->
-				%% We must check if a packet contains "<sent><forwarded></sent></forwarded>"
-				%% tags in order to avoid receiving message back to original sender.
-				SubTag = xml:get_subtag(Packet,<<"sent">>),
-				if SubTag == false ->
-				    send_copies(JID, To, Packet, Direction);
-				   true ->
-				    case xml:get_subtag(Packet,<<"forwarded">>) of
-					false->
-					    case xml:get_subtag(SubTag,<<"forwarded">>) of
-						false ->
-						    send_copies(JID, To, Packet, Direction);
-						_ ->
-						    stop
-					    end;
-					_ ->
-					    stop
-				    end
-				end;
-			    _ ->
-				%% stop the hook chain, we don't want mod_logdb to register this message (duplicate)
-				stop
-			end;
-		    _ ->
-			ok
-		end;
-	    _ ->
-		ok
-	end;
-    _ ->
-	ok
+    case xml:get_attr_s(<<"type">>, Attrs) == <<"chat">> andalso
+	     xml:get_subtag(Packet, <<"private">>) == false andalso
+		 xml:get_subtag(Packet, <<"no-copy">>) == false of
+	true ->
+	    case is_carbon_copy(Packet) of
+		false ->
+		    send_copies(JID, To, Packet, Direction);
+		true ->
+		    %% stop the hook chain, we don't want mod_logdb to register
+		    %% this message (duplicate)
+		    stop
+	    end;
+        _ ->
+	    ok
     end;
  
 check_and_forward(_JID, _To, _Packet, _)-> ok.
