@@ -153,9 +153,14 @@ check_and_forward(JID, To, #xmlel{name = <<"message">>, attrs = Attrs} = Packet,
 				if SubTag == false ->
 				    send_copies(JID, To, Packet, Direction);
 				   true ->
-				    case xml:get_subtag(SubTag,<<"forwarded">>) of
+				    case xml:get_subtag(Packet,<<"forwarded">>) of
 					false->
-					    send_copies(JID, To, Packet, Direction);
+					    case xml:get_subtag(SubTag,<<"forwarded">>) of
+						false ->
+						    send_copies(JID, To, Packet, Direction);
+						_ ->
+						    stop
+					    end;
 					_ ->
 					    stop
 				    end
