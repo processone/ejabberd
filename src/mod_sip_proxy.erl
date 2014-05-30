@@ -45,12 +45,12 @@ route(SIPMsg, _SIPSock, TrID, Pid) ->
 route(Req, LServer, Opts) ->
     Req1 = prepare_request(LServer, Req),
     case connect(Req1, add_certfile(LServer, Opts)) of
-	{ok, SIPSockets} ->
+	{ok, SIPSocketsWithURIs} ->
 	    lists:foreach(
-	      fun(SIPSocket) ->
+	      fun({SIPSocket, URI}) ->
 		      Req2 = add_via(SIPSocket, LServer, Req1),
-		      esip:send(SIPSocket, Req2)
-	      end, SIPSockets);
+		      esip:send(SIPSocket, Req2#sip{uri = URI})
+	      end, SIPSocketsWithURIs);
 	_ ->
 	    error
     end.
