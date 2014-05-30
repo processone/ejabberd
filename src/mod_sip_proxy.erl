@@ -66,15 +66,15 @@ wait_for_request({#sip{type = request} = Req, TrID}, State) ->
     Opts = State#state.opts,
     Req1 = prepare_request(State#state.host, Req),
     case connect(Req1, Opts) of
-	{ok, SIPSockets} ->
+	{ok, SIPSocketsWithURIs} ->
 	    NewState =
 		lists:foldl(
-		  fun(_SIPSocket, {error, _} = Err) ->
+		  fun(_SIPSocketWithURI, {error, _} = Err) ->
 			  Err;
-		     (SIPSocket, #state{tr_ids = TrIDs} = AccState) ->
+		     ({SIPSocket, URI}, #state{tr_ids = TrIDs} = AccState) ->
 			  Req2 = add_record_route(SIPSocket, State#state.host, Req1),
 			  Req3 = add_via(SIPSocket, State#state.host, Req2),
-			  case esip:request(SIPSocket, Req3,
+			  case esip:request(SIPSocket, Req3#sip{uri = URI},
 					    {?MODULE, route, [self()]}) of
 			      {ok, ClientTrID} ->
 				  NewTrIDs = [ClientTrID|TrIDs],
@@ -83,7 +83,7 @@ wait_for_request({#sip{type = request} = Req, TrID}, State) ->
 				  cancel_pending_transactions(AccState),
 				  Err
 			  end
-		  end, State, SIPSockets),
+		  end, State, SIPSocketsWithURIs),
 	    case NewState of
 		{error, _} = Err ->
 		    {Status, Reason} = esip:error_status(Err),
@@ -214,7 +214,7 @@ connect(#sip{hdrs = Hdrs} = Req, Opts) ->
 	false ->
 	    case esip:connect(Req, Opts) of
 		{ok, SIPSock} ->
-		    {ok, [SIPSock]};
+		    {ok, [{SIPSock, Req#sip.uri}]};
 		{error, _} = Err ->
 		    Err
 	    end
