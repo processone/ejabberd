@@ -265,7 +265,7 @@ is_request_within_dialog(#sip{hdrs = Hdrs}) ->
 
 get_configured_vias(LServer) ->
     gen_mod:get_module_opt(
-      LServer, ?MODULE, via,
+      LServer, mod_sip, via,
       fun(L) ->
 	      lists:map(
 		fun(Opts) ->
