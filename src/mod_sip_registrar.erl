@@ -85,17 +85,9 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
 		    case register_session(US, SIPSock, CallID, CSeq,
 					  ContactsWithExpires) of
 			{ok, Res} ->
-			    if Res == updated ->
-				    ?INFO_MSG("register SIP session for user "
-					      "~s@~s from ~s",
-					      [LUser, LServer,
-					       inet_parse:ntoa(PeerIP)]);
-			       Res == deleted ->
-				    ?INFO_MSG("unregister SIP session for user "
-					      "~s@~s from ~s",
-					      [LUser, LServer,
-					       inet_parse:ntoa(PeerIP)])
-			    end,
+			    ?INFO_MSG("~s SIP session for user ~s@~s from ~s",
+				      [Res, LUser, LServer,
+				       inet_parse:ntoa(PeerIP)]),
 			    Cs = prepare_contacts_to_send(ContactsWithExpires),
 			    mod_sip:make_response(
 			      Req,
@@ -219,48 +211,57 @@ write_session(#sip_session{us = {U, S} = US, bindings = NewBindings}) ->
 		    Err;
 	       (#binding{call_id = CallID,
 			 expires = Expires,
-			 cseq = CSeq} = Binding, {Add, Del}) ->
+			 cseq = CSeq} = Binding, {Add, Keep, Del}) ->
 		    case find_binding(Binding, PrevBindings) of
 			{ok, #binding{call_id = CallID, cseq = PrevCSeq}}
 			  when PrevCSeq > CSeq ->
 			    {error, cseq_out_of_order};
 			{ok, PrevBinding} when Expires == 0 ->
-			    {Add, [PrevBinding|Del]};
-			{ok, _} ->
-			    {[Binding|Add], Del};
+			    {Add, Keep -- [PrevBinding], [PrevBinding|Del]};
+			{ok, PrevBinding} ->
+			    {[Binding|Add], Keep -- [PrevBinding], Del};
 			{error, notfound} when Expires == 0 ->
 			    {error, notfound};
 			{error, notfound} ->
-			    {[Binding|Add], Del}
+			    {[Binding|Add], Keep, Del}
 		    end
-	    end, {[], []}, NewBindings),
+	    end, {[], PrevBindings, []}, NewBindings),
     MaxSessions = ejabberd_sm:get_max_user_sessions(U, S),
     case Res of
 	{error, Why} ->
 	    {error, Why};
-	{AddBindings, _} when length(AddBindings) > MaxSessions ->
-	    {error, too_many_sessions};
-	{AddBindings, DelBindings} ->
-	    lists:foreach(
-	      fun(#binding{tref = TRef}) ->
-		      erlang:cancel_timer(TRef)
-	      end, DelBindings),
-	    Bindings = lists:map(
-			 fun(#binding{tref = TRef,
-				      expires = Expires} = Binding) ->
-				 erlang:cancel_timer(TRef),
-				 NewTRef = erlang:start_timer(
-					     Expires * 1000, self(), US),
-				 Binding#binding{tref = NewTRef}
-			 end, AddBindings),
-	    case Bindings of
-		[] ->
-		    mnesia:dirty_delete(sip_session, US),
-		    {ok, deleted};
-		_ ->
-		    mnesia:dirty_write(
-		      #sip_session{us = US, bindings = Bindings}),
-		    {ok, updated}
+	{AddBindings, KeepBindings, DelBindings} ->
+	    MaxSessions = ejabberd_sm:get_max_user_sessions(U, S),
+	    AllBindings = AddBindings ++ KeepBindings,
+	    if length(AllBindings) > MaxSessions ->
+		    {error, too_many_sessions};
+	       true ->
+		    lists:foreach(
+		      fun(#binding{tref = TRef}) ->
+			      erlang:cancel_timer(TRef)
+		      end, DelBindings),
+		    AddBindings1 = lists:map(
+				     fun(#binding{tref = TRef,
+						  expires = Expires} = Binding) ->
+					     erlang:cancel_timer(TRef),
+					     NewTRef = erlang:start_timer(
+							 Expires * 1000, self(), US),
+					     Binding#binding{tref = NewTRef}
+				     end, AddBindings),
+		    AllBindings1 = AddBindings1 ++ KeepBindings,
+		    case AllBindings1 of
+			[] ->
+			    mnesia:dirty_delete(sip_session, US),
+			    {ok, unregister};
+			_ ->
+			    mnesia:dirty_write(
+			      #sip_session{us = US, bindings = AllBindings1}),
+			    if length(DelBindings) == length(NewBindings) ->
+				    {ok, unregister};
+			       true ->
+				    {ok, register}
+			    end
+		    end
 	    end
     end.
 
