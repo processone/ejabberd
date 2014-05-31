@@ -72,9 +72,10 @@ wait_for_request({#sip{type = request} = Req, TrID}, State) ->
 		  fun(_SIPSocketWithURI, {error, _} = Err) ->
 			  Err;
 		     ({SIPSocket, URI}, #state{tr_ids = TrIDs} = AccState) ->
-			  Req2 = add_record_route(SIPSocket, State#state.host, Req1),
+			  Req2 = add_record_route_and_set_uri(
+				   URI, State#state.host, Req1),
 			  Req3 = add_via(SIPSocket, State#state.host, Req2),
-			  case esip:request(SIPSocket, Req3#sip{uri = URI},
+			  case esip:request(SIPSocket, Req3,
 					    {?MODULE, route, [self()]}) of
 			      {ok, ClientTrID} ->
 				  NewTrIDs = [ClientTrID|TrIDs],
@@ -248,10 +249,19 @@ add_via(#sip_socket{type = Transport}, LServer, #sip{hdrs = Hdrs} = Req) ->
 			 {<<"rport">>, <<"">>}]},
     Req#sip{hdrs = [{'via', [Via]}|Hdrs]}.
 
-add_record_route(_SIPSocket, LServer, #sip{hdrs = Hdrs} = Req) ->
-    URI = #uri{host = LServer, params = [{<<"lr">>, <<"">>}]},
-    Hdrs1 = [{'record-route', [{<<>>, URI, []}]}|Hdrs],
-    Req#sip{hdrs = Hdrs1}.
+add_record_route_and_set_uri(URI, LServer, #sip{hdrs = Hdrs} = Req) ->
+    case is_request_within_dialog(Req) of
+	false ->
+	    RR_URI = #uri{host = LServer, params = [{<<"lr">>, <<"">>}]},
+	    Hdrs1 = [{'record-route', [{<<>>, RR_URI, []}]}|Hdrs],
+	    Req#sip{uri = URI, hdrs = Hdrs1};
+	true ->
+	    Req
+    end.
+
+is_request_within_dialog(#sip{hdrs = Hdrs}) ->
+    {_, _, Params} = esip:get_hdr('to', Hdrs),
+    esip:has_param(<<"tag">>, Params).
 
 get_configured_vias(LServer) ->
     gen_mod:get_module_opt(
