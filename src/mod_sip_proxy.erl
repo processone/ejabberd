@@ -252,7 +252,7 @@ add_via(#sip_socket{type = Transport}, LServer, #sip{hdrs = Hdrs} = Req) ->
 add_record_route_and_set_uri(URI, LServer, #sip{hdrs = Hdrs} = Req) ->
     case is_request_within_dialog(Req) of
 	false ->
-	    RR_URI = #uri{host = LServer, params = [{<<"lr">>, <<"">>}]},
+	    RR_URI = get_configured_route(LServer),
 	    Hdrs1 = [{'record-route', [{<<>>, RR_URI, []}]}|Hdrs],
 	    Req#sip{uri = URI, hdrs = Hdrs1};
 	true ->
@@ -281,6 +281,14 @@ get_configured_vias(LServer) ->
 		end, L)
       end, []).
 
+get_configured_route(LServer) ->
+    gen_mod:get_module_opt(
+      LServer, mod_sip, route,
+      fun(IOList) ->
+	      S = iolist_to_binary(IOList),
+	      #uri{} = esip:decode_uri(S)
+      end, #uri{host = LServer, params = [{<<"lr">>, <<"">>}]}).
+
 mark_transaction_as_complete(TrID, State) ->
     NewTrIDs = lists:delete(TrID, State#state.tr_ids),
     State#state{tr_ids = NewTrIDs}.
@@ -305,13 +313,22 @@ choose_best_response(#state{responses = Responses} = State) ->
 	    end
     end.
 
-prepare_request(Host, #sip{hdrs = Hdrs} = Req) ->
+%% TODO: this is *totally* wrong.
+%% Rewrite this using URI comparison rules
+cmp_uri(#uri{user = U, host = H, port = P},
+	#uri{user = U, host = H, port = P}) ->
+    true;
+cmp_uri(_, _) ->
+    false.
+
+prepare_request(LServer, #sip{hdrs = Hdrs} = Req) ->
+    ConfiguredRoute = get_configured_route(LServer),
     Hdrs1 = lists:flatmap(
 	      fun({Hdr, HdrList}) when Hdr == 'route';
 				       Hdr == 'record-route' ->
 		      case lists:filter(
-			     fun({_, #uri{user = <<"">>, host = Host1}, _}) ->
-				     Host1 /= Host
+			     fun({_, URI, _}) ->
+				     not cmp_uri(URI, ConfiguredRoute)
 			     end, HdrList) of
 			  [] ->
 			      [];
