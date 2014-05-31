@@ -47,9 +47,9 @@ route(Req, LServer, Opts) ->
     case connect(Req1, add_certfile(LServer, Opts)) of
 	{ok, SIPSocketsWithURIs} ->
 	    lists:foreach(
-	      fun({SIPSocket, URI}) ->
+	      fun({SIPSocket, _URI}) ->
 		      Req2 = add_via(SIPSocket, LServer, Req1),
-		      esip:send(SIPSocket, Req2#sip{uri = URI})
+		      esip:send(SIPSocket, Req2)
 	      end, SIPSocketsWithURIs);
 	_ ->
 	    error
