@@ -68,8 +68,15 @@ start() ->
     %% This start time is used by mod_last:
     {MegaSecs, Secs, _} = now(),
     UnixTime = MegaSecs*1000000 + Secs,
+    SharedKey = case erlang:get_cookie() of
+                    nocookie ->
+                        p1_sha:sha(randoms:get_string());
+                    Cookie ->
+                        p1_sha:sha(jlib:atom_to_binary(Cookie))
+                end,
     State1 = set_option({node_start, global}, UnixTime, State),
-    set_opts(State1).
+    State2 = set_option({shared_key, global}, SharedKey, State1),
+    set_opts(State2).
 
 %% @doc Get the filename of the ejabberd configuration file.
 %% The filename can be specified with: erl -config "/path/to/ejabberd.yml".
