@@ -80,7 +80,9 @@ response(_Resp, _SIPSock) ->
 request(#sip{method = <<"ACK">>} = Req, SIPSock) ->
     case action(Req, SIPSock) of
 	{relay, LServer} ->
-	    mod_sip_proxy:route(Req, LServer, []);
+	    mod_sip_proxy:route(Req, LServer, [{authenticated, true}]);
+	{proxy_auth, LServer} ->
+	    mod_sip_proxy:route(Req, LServer, [{authenticated, false}]);
 	_ ->
 	    error
     end;
@@ -112,20 +114,20 @@ request(Req, SIPSock, TrID, Action) ->
 		    ?INFO_MSG("failed to proxy request ~p: ~p", [Req, Err]),
                     Err
             end;
-        {proxy_auth, Host} ->
+        {proxy_auth, LServer} ->
             make_response(
               Req,
               #sip{status = 407,
                    type = response,
                    hdrs = [{'proxy-authenticate',
-                            make_auth_hdr(Host)}]});
-        {auth, Host} ->
+                            make_auth_hdr(LServer)}]});
+        {auth, LServer} ->
             make_response(
               Req,
               #sip{status = 401,
                    type = response,
                    hdrs = [{'www-authenticate',
-                            make_auth_hdr(Host)}]});
+                            make_auth_hdr(LServer)}]});
         deny ->
             make_response(Req, #sip{status = 403,
                                     type = response});
@@ -169,7 +171,7 @@ action(#sip{method = <<"REGISTER">>, type = request, hdrs = Hdrs,
 				true ->
 				    register;
 				false ->
-				    {auth, ToURI#uri.host}
+				    {auth, jlib:nameprep(ToURI#uri.host)}
 			    end;
 			false ->
 			    deny
@@ -259,8 +261,7 @@ process(Req, _) ->
 			    hdrs = [{'allow', allow()}]}).
 
 make_auth_hdr(LServer) ->
-    Realm = jlib:nameprep(LServer),
-    {<<"Digest">>, [{<<"realm">>, esip:quote(Realm)},
+    {<<"Digest">>, [{<<"realm">>, esip:quote(LServer)},
                     {<<"qop">>, esip:quote(<<"auth">>)},
                     {<<"nonce">>, esip:quote(esip:make_hexstr(20))}]}.
 
