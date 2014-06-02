@@ -271,8 +271,7 @@ add_via(#sip_socket{type = Transport}, LServer, #sip{hdrs = Hdrs} = Req) ->
     Via = #via{transport = ViaTransport,
 	       host = ViaHost,
 	       port = ViaPort,
-	       params = [{<<"branch">>, esip:make_branch()},
-			 {<<"rport">>, <<"">>}]},
+	       params = [{<<"branch">>, esip:make_branch()}]},
     Req#sip{hdrs = [{'via', [Via]}|Hdrs]}.
 
 add_record_route_and_set_uri(URI, LServer, #sip{hdrs = Hdrs} = Req) ->
