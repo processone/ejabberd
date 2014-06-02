@@ -49,12 +49,10 @@ route(#sip{hdrs = Hdrs} = Req, LServer, Opts) ->
 	true ->
 	    route_statelessly(Req, LServer, Opts);
 	false ->
-	    ConfiguredRoute = get_configured_route(LServer),
-	    ConfiguredBareRoute = ConfiguredRoute#uri{user = <<"">>},
+	    ConfiguredRRoute = get_configured_record_route(LServer),
 	    case esip:get_hdrs('route', Hdrs) of
 		[{_, URI, _}|_] ->
-		    BareURI = URI#uri{user = <<"">>},
-		    case cmp_uri(BareURI, ConfiguredBareRoute) of
+		    case cmp_uri(URI, ConfiguredRRoute) of
 			true ->
 			    case is_signed_by_me(URI#uri.user, Hdrs) of
 				true ->
@@ -280,7 +278,7 @@ add_via(#sip_socket{type = Transport}, LServer, #sip{hdrs = Hdrs} = Req) ->
 add_record_route_and_set_uri(URI, LServer, #sip{hdrs = Hdrs} = Req) ->
     case is_request_within_dialog(Req) of
 	false ->
-	    RR_URI = get_configured_route(LServer),
+	    RR_URI = get_configured_record_route(LServer),
 	    {MSecs, Secs, _} = now(),
 	    TS = list_to_binary(integer_to_list(MSecs*1000000 + Secs)),
 	    Sign = make_sign(TS, Hdrs),
@@ -338,13 +336,24 @@ get_configured_vias(LServer) ->
 		end, L)
       end, []).
 
-get_configured_route(LServer) ->
+get_configured_record_route(LServer) ->
     gen_mod:get_module_opt(
-      LServer, mod_sip, route,
+      LServer, mod_sip, record_route,
       fun(IOList) ->
 	      S = iolist_to_binary(IOList),
 	      #uri{} = esip:decode_uri(S)
       end, #uri{host = LServer, params = [{<<"lr">>, <<"">>}]}).
+
+get_configured_routes(LServer) ->
+    gen_mod:get_module_opt(
+      LServer, mod_sip, routes,
+      fun(L) ->
+	      lists:map(
+		fun(IOList) ->
+			S = iolist_to_binary(IOList),
+			#uri{} = esip:decode_uri(S)
+		end, L)
+      end, [#uri{host = LServer, params = [{<<"lr">>, <<"">>}]}]).
 
 mark_transaction_as_complete(TrID, State) ->
     NewTrIDs = lists:delete(TrID, State#state.tr_ids),
@@ -370,24 +379,23 @@ choose_best_response(#state{responses = Responses} = State) ->
 	    end
     end.
 
-%% TODO: this is *totally* wrong.
-%% Rewrite this using URI comparison rules
-cmp_uri(#uri{user = U, host = H, port = P},
-	#uri{user = U, host = H, port = P}) ->
-    true;
-cmp_uri(_, _) ->
-    false.
+%% Just compare host part only.
+cmp_uri(#uri{host = H1}, #uri{host = H2}) ->
+    jlib:nameprep(H1) == jlib:nameprep(H2).
+
+is_my_route(URI, URIs) ->
+    lists:any(fun(U) -> cmp_uri(URI, U) end, URIs).
 
 prepare_request(LServer, #sip{hdrs = Hdrs} = Req) ->
-    ConfiguredRoute = get_configured_route(LServer),
-    ConfiguredBareRoute = ConfiguredRoute#uri{user = <<"">>},
+    ConfiguredRRoute = get_configured_record_route(LServer),
+    ConfiguredRoutes = get_configured_routes(LServer),
     Hdrs1 = lists:flatmap(
 	      fun({Hdr, HdrList}) when Hdr == 'route';
 				       Hdr == 'record-route' ->
 		      case lists:filter(
 			     fun({_, URI, _}) ->
-				     BareURI = URI#uri{user = <<"">>},
-				     not cmp_uri(BareURI, ConfiguredBareRoute)
+				     not cmp_uri(URI, ConfiguredRRoute)
+					 and not is_my_route(URI, ConfiguredRoutes)
 			     end, HdrList) of
 			  [] ->
 			      [];
