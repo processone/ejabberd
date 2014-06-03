@@ -68,6 +68,8 @@ message_in(#sip{type = request, method = M} = Req, SIPSock)
         Action ->
             request(Req, SIPSock, undefined, Action)
     end;
+message_in(ping, _SIPSock) ->
+    pong;
 message_in(_, _) ->
     ok.
 
