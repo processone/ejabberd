@@ -595,7 +595,7 @@ transform_option({{Port, IP, Transport}, Mod, Opts}) ->
                       try
                           Mod:transform_listen_option(Opt, Acc)
                       catch error:undef ->
-                              Acc
+                              [Opt|Acc]
                       end
               end, [], Opts1),
     TransportOpt = if Transport == tcp -> [];
