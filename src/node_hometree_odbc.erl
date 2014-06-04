@@ -1317,6 +1317,7 @@ get_items(NodeId, _From,
 				  first = <<"modification@", F/binary>>,
 				  last = <<"modification@", (jlib:i2l(L))/binary>>},
 		{result, {[raw_to_item(NodeId, RItem) || RItem <- RItems], RsmOut}};
+	    [] -> {result, {[], #rsm_out{count = Count}}};
 	    0 -> {result, {[], #rsm_out{count = Count}}}
 	  end;
       _ -> {result, {[], none}}
