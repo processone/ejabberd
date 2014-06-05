@@ -450,6 +450,10 @@ format_result(String, {Name, string}) when is_list(String) ->
     {struct, [{Name, lists:flatten(String)}]};
 format_result(Binary, {Name, string}) when is_binary(Binary) ->
     {struct, [{Name, binary_to_list(Binary)}]};
+format_result(String, {Name, binary}) when is_list(String) ->
+    {struct, [{Name, lists:flatten(String)}]};
+format_result(Binary, {Name, binary}) when is_binary(Binary) ->
+    {struct, [{Name, binary_to_list(Binary)}]};
 format_result(Code, {Name, rescode}) ->
     {struct, [{Name, make_status(Code)}]};
 format_result({Code, Text}, {Name, restuple}) ->
