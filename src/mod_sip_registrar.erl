@@ -271,13 +271,7 @@ write_session([#sip_session{us = {U, S} = US}|_] = NewSessions,
 	    if length(AllSessions) > MaxSessions ->
 		    {error, too_many_sessions};
 	       true ->
-		    lists:foreach(
-		      fun(#sip_session{reg_tref = TRef,
-				       conn_mref = MRef} = Session) ->
-			      erlang:cancel_timer(TRef),
-			      catch erlang:demonitor(MRef, [flush]),
-			      mnesia:dirty_delete_object(Session)
-		      end, DelSessions),
+		    lists:foreach(fun delete_session/1, DelSessions),
 		    lists:foreach(
 		      fun(Session) ->
 			      NewSession = set_monitor_and_timer(
@@ -308,12 +302,10 @@ delete_session(US, CallID, CSeq) ->
 		true ->
 		    ContactsWithExpires =
 			lists:map(
-			  fun(#sip_session{contact = Contact,
-					   reg_tref = TRef}) ->
-				  erlang:cancel_timer(TRef),
+			  fun(#sip_session{contact = Contact} = Session) ->
+				  delete_session(Session),
 				  {Contact, 0}
 			  end, Sessions),
-		    mnesia:dirty_delete(sip_session, US),
 		    {ok, ContactsWithExpires};
 		false ->
 		    {error, cseq_out_of_order}
@@ -329,7 +321,7 @@ delete_expired_session(US, TRef) ->
 	      fun(#sip_session{reg_tref = T1,
 			       flow_tref = T2} = Session)
 		    when T1 == TRef; T2 == TRef ->
-		      mnesia:dirty_delete_object(Session);
+		      delete_session(Session);
 		 (_) ->
 		      ok
 	      end, Sessions);
@@ -525,6 +517,14 @@ set_monitor_and_timer(#sip_session{socket = #sip_socket{type = Type,
 
 set_timer(#sip_session{us = US}, Timeout) ->
     erlang:start_timer(Timeout * 1000, self(), US).
+
+delete_session(#sip_session{reg_tref = RegTRef,
+			    flow_tref = FlowTRef,
+			    conn_mref = MRef} = Session) ->
+    erlang:cancel_timer(RegTRef),
+    catch erlang:cancel_timer(FlowTRef),
+    catch erlang:demonitor(MRef, [flush]),
+    mnesia:dirty_delete_object(Session).
 
 process_ping(SIPSocket) ->
     ErrResponse = if SIPSocket#sip_socket.type == udp -> error;
