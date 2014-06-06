@@ -68,8 +68,8 @@ message_in(#sip{type = request, method = M} = Req, SIPSock)
         Action ->
             request(Req, SIPSock, undefined, Action)
     end;
-message_in(ping, _SIPSock) ->
-    pong;
+message_in(ping, SIPSock) ->
+    mod_sip_registrar:ping(SIPSock);
 message_in(_, _) ->
     ok.
 
@@ -162,8 +162,9 @@ action(#sip{method = <<"REGISTER">>, type = request, hdrs = Hdrs,
             uri = #uri{user = <<"">>} = URI} = Req, SIPSock) ->
     case at_my_host(URI) of
 	true ->
-	    case esip:get_hdrs('require', Hdrs) of
-		[_|_] = Require ->
+	    Require = esip:get_hdrs('require', Hdrs) -- supported(),
+	    case Require of
+		[_|_] ->
 		    {unsupported, Require};
 		_ ->
 		    {_, ToURI, _} = esip:get_hdr('to', Hdrs),
@@ -189,8 +190,9 @@ action(#sip{method = Method, hdrs = Hdrs, type = request} = Req, SIPSock) ->
         0 ->
             loop;
         _ ->
-            case esip:get_hdrs('proxy-require', Hdrs) of
-                [_|_] = Require ->
+	    Require = esip:get_hdrs('proxy-require', Hdrs) -- supported(),
+            case Require of
+                [_|_] ->
                     {unsupported, Require};
                 _ ->
                     {_, ToURI, _} = esip:get_hdr('to', Hdrs),
@@ -253,9 +255,13 @@ check_auth(#sip{method = Method, hdrs = Hdrs, body = Body}, AuthHdr, _SIPSock) -
 allow() ->
     [<<"OPTIONS">>, <<"REGISTER">>].
 
+supported() ->
+    [<<"path">>, <<"outbound">>].
+
 process(#sip{method = <<"OPTIONS">>} = Req, _) ->
     make_response(Req, #sip{type = response, status = 200,
-                            hdrs = [{'allow', allow()}]});
+                            hdrs = [{'allow', allow()},
+				    {'supported', supported()}]});
 process(#sip{method = <<"REGISTER">>} = Req, _) ->
     make_response(Req, #sip{type = response, status = 400});
 process(Req, _) ->
