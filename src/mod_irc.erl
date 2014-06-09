@@ -1238,7 +1238,8 @@ data_to_binary(JID, Data) ->
 					 ?ERROR_MSG("failed to convert "
 						    "parameter ~p",
 						    [Param])
-				 end
+				 end,
+				 []
 			 end
 		 end, Params)};
          (Opt) ->
