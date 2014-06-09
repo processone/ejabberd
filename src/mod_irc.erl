@@ -1229,10 +1229,16 @@ data_to_binary(JID, Data) ->
 			 try
 			     [conn_param_to_binary(Param)]
 			 catch _:_ ->
-				 ?ERROR_MSG("failed to convert parameter "
-					    " ~p for user ~s",
-					    [Param, jlib:jid_to_string(JID)]),
-				 []
+				 if JID /= error ->
+					 ?ERROR_MSG("failed to convert "
+						    "parameter ~p for user ~s",
+						    [Param,
+						     jlib:jid_to_string(JID)]);
+				    true ->
+					 ?ERROR_MSG("failed to convert "
+						    "parameter ~p",
+						    [Param])
+				 end
 			 end
 		 end, Params)};
          (Opt) ->
