@@ -1319,7 +1319,8 @@ update_roster_table() ->
                                     iolist_to_binary(R2)},
                              name = iolist_to_binary(Name),
                              groups = [iolist_to_binary(G) || G <- Gs],
-                             askmessage = iolist_to_binary(Ask),
+                             askmessage = try iolist_to_binary(Ask)
+					  catch _:_ -> <<"">> end,
                              xs = [xml:to_xmlel(X) || X <- Xs]}
             end);
       _ ->
