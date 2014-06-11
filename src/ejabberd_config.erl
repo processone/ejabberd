@@ -186,7 +186,9 @@ consult(File) ->
                 {ok, [Document|_]} ->
                     {ok, Document};
                 {error, Err} ->
-                    {error, p1_yaml:format_error(Err)}
+                    Msg1 = "Cannot load " ++ File ++ ": ",
+                    Msg2 = p1_yaml:format_error(Err),
+                    {error, Msg1 ++ Msg2}
             end;
         _ ->
             case file:consult(File) of
