@@ -321,6 +321,11 @@ delete_expired_session(US, TRef) ->
 	      fun(#sip_session{reg_tref = T1,
 			       flow_tref = T2} = Session)
 		    when T1 == TRef; T2 == TRef ->
+		      if T2 /= undefined ->
+			      close_socket(Session);
+			 true ->
+			      ok
+		      end,
 		      delete_session(Session);
 		 (_) ->
 		      ok
@@ -517,6 +522,13 @@ set_monitor_and_timer(#sip_session{socket = #sip_socket{type = Type,
 
 set_timer(#sip_session{us = US}, Timeout) ->
     erlang:start_timer(Timeout * 1000, self(), US).
+
+close_socket(#sip_session{socket = SIPSocket}) ->
+    if SIPSocket#sip_socket.type /= udp ->
+	    esip_socket:close(SIPSocket);
+       true ->
+	    ok
+    end.
 
 delete_session(#sip_session{reg_tref = RegTRef,
 			    flow_tref = FlowTRef,
