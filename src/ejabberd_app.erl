@@ -107,6 +107,18 @@ loop() ->
     end.
 
 db_init() ->
+    MyNode = node(),
+    DbNodes = mnesia:system_info(db_nodes),
+    case lists:member(MyNode, DbNodes) of
+	true ->
+	    ok;
+	false ->
+	    ?CRITICAL_MSG("Node name mismatch: I'm [~s], "
+			  "the database is owned by ~p", [MyNode, DbNodes]),
+	    ?CRITICAL_MSG("Either set ERLANG_NODE in ejabberdctl.cfg "
+			  "or change node name in Mnesia", []),
+	    erlang:error(node_name_mismatch)
+    end,
     case mnesia:system_info(extra_db_nodes) of
 	[] ->
 	    mnesia:create_schema([node()]);
