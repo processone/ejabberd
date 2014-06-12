@@ -25,7 +25,7 @@
 -define(CALL_TIMEOUT, timer:seconds(30)).
 -define(DEFAULT_EXPIRES, 3600).
 -define(FLOW_TIMEOUT_DATAGRAM, 29).
--define(FLOW_TIMEOUT_STREAM, 180).
+-define(FLOW_TIMEOUT_STREAM, 120).
 
 -record(sip_session, {us = {<<"">>, <<"">>} :: {binary(), binary()},
 		      socket = #sip_socket{} :: #sip_socket{},
