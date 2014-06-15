@@ -18,7 +18,7 @@
 --
 
 -- Needs MySQL (at least 4.0.x) with innodb back-end
-SET table_type=InnoDB;
+SET storage_engine=InnoDB;
 
 CREATE TABLE users (
     username varchar(250) PRIMARY KEY,
