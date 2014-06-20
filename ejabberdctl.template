@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # define default configuration
 POLL=true
