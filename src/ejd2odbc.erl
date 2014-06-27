@@ -48,7 +48,6 @@
 modules() ->
     [ejabberd_auth,
      mod_announce,
-     mod_caps,
      mod_irc,
      mod_last,
      mod_muc,
