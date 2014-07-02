@@ -73,6 +73,18 @@ get_pos_integer_env(Name, Default) ->
                                    [Name, Junk, Default]),
             Default
     end.
+get_pos_string_env(Name, Default) ->
+    case application:get_env(ejabberd, Name) of
+        {ok, L} when is_list(L) ->
+            L;
+        undefined ->
+            Default;
+        {ok, Junk} ->
+            error_logger:error_msg("wrong value for ~s: ~p; "
+                                   "using ~p as a fallback~n",
+                                   [Name, Junk, Default]),
+            Default
+    end.
 
 start() ->
     application:load(sasl),
@@ -82,6 +94,7 @@ start() ->
     Dir = filename:dirname(ConsoleLog),
     ErrorLog = filename:join([Dir, "error.log"]),
     CrashLog = filename:join([Dir, "crash.log"]),
+    LogRotateDate = get_pos_string_env(log_rotate_date, ""),
     LogRotateSize = get_pos_integer_env(log_rotate_size, 10*1024*1024),
     LogRotateCount = get_pos_integer_env(log_rotate_count, 1),
     LogRateLimit = get_pos_integer_env(log_rate_limit, 100),
@@ -89,11 +102,12 @@ start() ->
     application:set_env(
       lager, handlers,
       [{lager_console_backend, info},
-       {lager_file_backend, [{file, ConsoleLog}, {level, info},
+       {lager_file_backend, [{file, ConsoleLog}, {level, info}, {date, LogRotateDate},
                              {count, LogRotateCount}, {size, LogRotateSize}]},
-       {lager_file_backend, [{file, ErrorLog}, {level, error},
+       {lager_file_backend, [{file, ErrorLog}, {level, error}, {date, LogRotateDate},
                              {count, LogRotateCount}, {size, LogRotateSize}]}]),
     application:set_env(lager, crash_log, CrashLog),
+    application:set_env(lager, crash_log_date, LogRotateDate),
     application:set_env(lager, crash_log_size, LogRotateSize),
     application:set_env(lager, crash_log_count, LogRotateCount),
     ejabberd:start_app(lager),

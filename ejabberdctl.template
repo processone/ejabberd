@@ -126,6 +126,24 @@ else
     NAME="-name"
 fi
 
+# define ejabberd environment parameters
+if [ "$EJABBERD_CONFIG_PATH" != "${EJABBERD_CONFIG_PATH/.yml/}" ] ; then
+    rate=$(grep log_rate_limit $EJABBERD_CONFIG_PATH | cut -d':' -f2 | sed 's/ *//')
+    rotate=$(grep log_rotate_size $EJABBERD_CONFIG_PATH | cut -d':' -f2 | sed 's/ *//')
+    count=$(grep log_rotate_count $EJABBERD_CONFIG_PATH | cut -d':' -f2 | sed 's/ *//')
+    date=$(grep log_rotate_date $EJABBERD_CONFIG_PATH | cut -d':' -f2 | sed 's/ *//')
+else
+    rate=$(grep log_rate_limit $EJABBERD_CONFIG_PATH | cut -d',' -f2 | sed 's/ *//;s/}\.//')
+    rotate=$(grep log_rotate_size $EJABBERD_CONFIG_PATH | cut -d',' -f2 | sed 's/ *//;s/}\.//')
+    count=$(grep log_rotate_count $EJABBERD_CONFIG_PATH | cut -d',' -f2 | sed 's/ *//;s/}\.//')
+    date=$(grep log_rotate_date $EJABBERD_CONFIG_PATH | cut -d',' -f2 | sed 's/ *//;s/}\.//')
+fi
+[ -z "$rate" ] || EJABBERD_OPTS="log_rate_limit $rate"
+[ -z "$rotate" ] || EJABBERD_OPTS="${EJABBERD_OPTS} log_rotate_size $rotate"
+[ -z "$count" ] || EJABBERD_OPTS="${EJABBERD_OPTS} log_rotate_count $count"
+[ -z "$date" ] || EJABBERD_OPTS="${EJABBERD_OPTS} log_rotate_date '$date'"
+[ -z "$EJABBERD_OPTS" ] || EJABBERD_OPTS="-ejabberd ${EJABBERD_OPTS}"
+
 # create the ejabberd home dir with the proper user if doesn't exist
 # then change to that directory readable by INSTALLUSER to
 # prevent "File operation error: eacces." messages

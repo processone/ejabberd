@@ -6058,12 +6058,20 @@ The exact value is controlled by \term{log\_rotate\_size} option.
 The syntax is:
 \begin{description}
   \titem{log\_rotate\_size: N} Where N is the maximum size of a log file in bytes.
-  The default value is 104857600 (10Mb).
+  The default value is 10485760 (10Mb).
+\end{description}
+
+\ejabberd{} can also rotates the log files at given date interval.
+The exact value is controlled by \term{log\_rotate\_date} option.
+The syntax is:
+\begin{description}
+  \titem{log\_rotate\_date: D} Where D is a string with syntax is taken from the syntax newsyslog uses in newsyslog.conf.
+  The default value is \term{""} (no rotation triggered by date).
 \end{description}
 
 However, you can rotate the log files manually.
-For doing this, set \term{log\_rotate\_size} option to some absurdly high value, then,
-when you need to rotate the files, rename and then reopen them.
+For doing this, set \term{log\_rotate\_size} option to 0 and \term{log\_rotate\_date}
+to empty list, then, when you need to rotate the files, rename and then reopen them.
 The ejabberdctl command \term{reopen-log} 
 (please refer to section \ref{ectl-commands})
 reopens the log files,
