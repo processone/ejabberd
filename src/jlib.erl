@@ -451,15 +451,23 @@ iq_type_to_string(error) -> <<"error">>.
 ).
 
 iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
+    Children = case Type of
+		   set ->
+		       [SubEl];
+		   get ->
+		       [SubEl];
+		   _ ->
+		       SubEl
+	       end,
     if ID /= <<"">> ->
 	   #xmlel{name = <<"iq">>,
 		  attrs =
 		      [{<<"id">>, ID}, {<<"type">>, iq_type_to_string(Type)}],
-		  children = SubEl};
+		  children = Children};
        true ->
 	   #xmlel{name = <<"iq">>,
 		  attrs = [{<<"type">>, iq_type_to_string(Type)}],
-		  children = SubEl}
+		  children = Children}
     end.
 
 -spec(parse_xdata_submit/1 ::
@@ -800,7 +808,7 @@ base64_to_term(Base64) ->
 decode_base64(S) ->
     decode_base64_bin(S, <<>>).
 
-take_without_spaces(Bin, Count) -> 
+take_without_spaces(Bin, Count) ->
     take_without_spaces(Bin, Count, <<>>).
 
 take_without_spaces(Bin, 0, Acc) ->
