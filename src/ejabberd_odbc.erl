@@ -450,7 +450,7 @@ sql_query_internal(Query) ->
 		?DEBUG("MySQL, Send query~n~p~n", [Query]),  
 		%%squery to be able to specify result_type = binary
 		%%[Query] because p1_mysql_conn expect query to be a list (elements can be binaries, or iolist)
-		%%        but doesn't accept just a binary 
+		%%        but doesn't accept just a binary
 		R = mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
 						   [Query], self(),
 						   [{timeout, (?TRANSACTION_TIMEOUT) - 1000},
@@ -553,10 +553,16 @@ mysql_to_odbc({data, MySQLRes}) ->
     mysql_item_to_odbc(p1_mysql:get_result_field_info(MySQLRes),
 		       p1_mysql:get_result_rows(MySQLRes));
 mysql_to_odbc({error, MySQLRes})
-    when is_binary(MySQLRes) ->
+  when is_binary(MySQLRes) ->
     {error, MySQLRes};
+mysql_to_odbc({error, MySQLRes})
+  when is_list(MySQLRes) ->
+    {error, list_to_binary(MySQLRes)};
 mysql_to_odbc({error, MySQLRes}) ->
-    {error, p1_mysql:get_result_reason(MySQLRes)}.
+    {error, p1_mysql:get_result_reason(MySQLRes)};
+mysql_to_odbc(ok) ->
+    ok.
+
 
 %% When tabular data is returned, convert it to the ODBC formalism
 mysql_item_to_odbc(Columns, Recs) ->
