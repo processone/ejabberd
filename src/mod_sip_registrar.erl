@@ -20,7 +20,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("esip.hrl").
+-include_lib("esip/include/esip.hrl").
 
 -define(CALL_TIMEOUT, timer:seconds(30)).
 -define(DEFAULT_EXPIRES, 3600).

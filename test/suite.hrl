@@ -1,5 +1,5 @@
 -include_lib("common_test/include/ct.hrl").
--include("xml.hrl").
+-include_lib("p1_xml/include/xml.hrl").
 -include("ns.hrl").
 -include("ejabberd.hrl").
 -include("mod_proxy65.hrl").

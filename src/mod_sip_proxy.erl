@@ -21,7 +21,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("esip.hrl").
+-include_lib("esip/include/esip.hrl").
 
 -define(SIGN_LIFETIME, 300). %% in seconds.
 
