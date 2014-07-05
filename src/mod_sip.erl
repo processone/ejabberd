@@ -20,7 +20,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("esip.hrl").
+-include_lib("esip/include/esip.hrl").
 
 %%%===================================================================
 %%% API
