@@ -24,8 +24,8 @@
 
 -define(CALL_TIMEOUT, timer:seconds(30)).
 -define(DEFAULT_EXPIRES, 3600).
--define(FLOW_TIMEOUT_DATAGRAM, 29).
--define(FLOW_TIMEOUT_STREAM, 120).
+-define(FLOW_TIMEOUT_UDP, 29).
+-define(FLOW_TIMEOUT_TCP, 120).
 
 -record(sip_session, {us = {<<"">>, <<"">>} :: {binary(), binary()},
 		      socket = #sip_socket{} :: #sip_socket{},
@@ -475,8 +475,8 @@ need_ob_hdrs(Contacts, _IsOutboundSupported = true) ->
 get_flow_timeout(LServer, #sip_socket{type = Type}) ->
     {Option, Default} =
 	case Type of
-	    udp -> {flow_timeout_datagram, ?FLOW_TIMEOUT_DATAGRAM};
-	    _ -> {flow_timeout_stream, ?FLOW_TIMEOUT_STREAM}
+	    udp -> {flow_timeout_udp, ?FLOW_TIMEOUT_UDP};
+	    _ -> {flow_timeout_tcp, ?FLOW_TIMEOUT_TCP}
 	end,
     gen_mod:get_module_opt(
       LServer, mod_sip, Option,
