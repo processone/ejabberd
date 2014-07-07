@@ -4787,16 +4787,40 @@ modules:
 
 Options:
 \begin{description}
+\titem{record\_route: SIP\_URI}\ind{options!record\_route}When the option
+\term{always\_record\_route} is set or when SIP outbound
+is utilized \footahref{http://tools.ietf.org/html/rfc5626}{RFC 5626},
+\ejabberd{} inserts \term{Record-Route} header field with this \term{SIP\_URI}
+into a SIP message. The default is SIP URI constructed from the virtual host.
+\titem{always\_record\_route: true|false}\ind{options!always\_record\_route}
+Always insert \term{Record-Route} header into SIP messages. This approach allows
+to bypass NATs/firewalls a bit more easily. The default is \term{true}.
+\titem{routes: [SIP\_URI]}\ind{options!routes}You can set a list of SIP URIs of routes
+pointing to this proxy server. The default is a list of a SIP URI constructed
+from the virtual host.
+\titem{flow\_timeout\_udp: Seconds}For SIP outbound UDP connections set a keep-alive
+timer to \term{Seconds}. The default is 29.
+\titem{flow\_timeout\_tcp: Seconds}For SIP outbound TCP connections set a keep-alive
+timer to \term{Seconds}. The default is 120.
 \titem{via: [\{type: Type, host: Host, port: Port\}]}\ind{options!via}With
 this option for every \term{Type} you can specify \term{Host} and \term{Port}
 to set in \term{Via} header of outgoing SIP messages, where \term{Type} can be
 \term{udp}, \term{tcp} or \term{tls}. \term{Host} is a string and \term{Port} is 
 a non negative integer. This is useful if you're running your server in a non-standard
-network topology. Example configuration:
+network topology.
+\end{description}
+Example complex configuration:
 \begin{verbatim}
 modules:
   ...
   mod_sip:
+    always_record_route: false
+    record_route: sip:example.com;lr
+    routes:
+      - sip:example.com;lr
+      - sip:sip.example.com;lr
+    flow_timeout_udp: 30
+    flow_timeout_tcp: 130
     via:
       - 
         type: tls
@@ -4812,7 +4836,6 @@ modules:
         port: 5060
   ...
 \end{verbatim}
-\end{description}
 
 \makesubsection{modstats}{\modstats{}}
 \ind{modules!\modstats{}}\ind{protocols!XEP-0039: Statistics Gathering}\ind{statistics}
