@@ -277,13 +277,19 @@ add_via(#sip_socket{type = Transport}, LServer, #sip{hdrs = Hdrs} = Req) ->
 add_record_route_and_set_uri(URI, LServer, #sip{hdrs = Hdrs} = Req) ->
     case is_request_within_dialog(Req) of
 	false ->
-	    RR_URI = get_configured_record_route(LServer),
-	    {MSecs, Secs, _} = now(),
-	    TS = list_to_binary(integer_to_list(MSecs*1000000 + Secs)),
-	    Sign = make_sign(TS, Hdrs),
-	    NewRR_URI = RR_URI#uri{user = <<TS/binary, $-, Sign/binary>>},
-	    Hdrs1 = [{'record-route', [{<<>>, NewRR_URI, []}]}|Hdrs],
-	    Req#sip{uri = URI, hdrs = Hdrs1};
+	    case need_record_route(LServer) of
+		true ->
+		    RR_URI = get_configured_record_route(LServer),
+		    {MSecs, Secs, _} = now(),
+		    TS = list_to_binary(integer_to_list(MSecs*1000000 + Secs)),
+		    Sign = make_sign(TS, Hdrs),
+		    User = <<TS/binary, $-, Sign/binary>>,
+		    NewRR_URI = RR_URI#uri{user = User},
+		    Hdrs1 = [{'record-route', [{<<>>, NewRR_URI, []}]}|Hdrs],
+		    Req#sip{uri = URI, hdrs = Hdrs1};
+		false ->
+		    Req
+	    end;
 	true ->
 	    Req
     end.
@@ -291,6 +297,13 @@ add_record_route_and_set_uri(URI, LServer, #sip{hdrs = Hdrs} = Req) ->
 is_request_within_dialog(#sip{hdrs = Hdrs}) ->
     {_, _, Params} = esip:get_hdr('to', Hdrs),
     esip:has_param(<<"tag">>, Params).
+
+need_record_route(LServer) ->
+    gen_mod:get_module_opt(
+      LServer, mod_sip, always_record_route,
+      fun(true) -> true;
+	 (false) -> false
+      end, true).
 
 make_sign(TS, Hdrs) ->
     {_, #uri{user = FUser, host = FServer}, FParams} = esip:get_hdr('from', Hdrs),
