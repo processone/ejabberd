@@ -28,7 +28,7 @@
 
 -author('alexey@process-one.net').
 
--export([start/0, start_module/3, stop_module/2,
+-export([start/0, start_module/2, start_module/3, stop_module/2,
 	 stop_module_keep_config/2, get_opt/3, get_opt/4,
 	 get_opt_host/3, db_type/1, db_type/2, get_module_opt/5,
 	 get_module_opt_host/3, loaded_modules/1,
@@ -59,6 +59,19 @@ start() ->
 	    [named_table, public,
 	     {keypos, #ejabberd_module.module_host}]),
     ok.
+
+-spec start_module(binary(), atom()) -> any().
+
+start_module(Host, Module) ->
+    Modules = ejabberd_config:get_option(
+		{modules, Host},
+		fun(L) when is_list(L) -> L end, []),
+    case lists:keyfind(Module, 1, Modules) of
+	{_, Opts} ->
+	    start_module(Host, Module, Opts);
+	false ->
+	    {error, not_found_in_config}
+    end.
 
 -spec start_module(binary(), atom(), opts()) -> any().
 
