@@ -69,6 +69,7 @@ init_per_group(ldap, Config) ->
 init_per_group(extauth, Config) ->
     set_opt(server, ?EXTAUTH_VHOST, Config);
 init_per_group(riak, Config) ->
+    mod_muc:shutdown_rooms(?RIAK_VHOST),
     NewConfig = set_opt(server, ?RIAK_VHOST, Config),
     clear_riak_tables(NewConfig);
 init_per_group(_GroupName, Config) ->
