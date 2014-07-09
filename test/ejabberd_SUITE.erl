@@ -69,7 +69,8 @@ init_per_group(ldap, Config) ->
 init_per_group(extauth, Config) ->
     set_opt(server, ?EXTAUTH_VHOST, Config);
 init_per_group(riak, Config) ->
-    set_opt(server, ?RIAK_VHOST, Config);
+    NewConfig = set_opt(server, ?RIAK_VHOST, Config),
+    clear_riak_tables(NewConfig);
 init_per_group(_GroupName, Config) ->
     Pid = start_event_relay(),
     set_opt(event_relay, Pid, Config).
@@ -1076,3 +1077,33 @@ split(Data) ->
          (_) ->
               true
       end, re:split(Data, <<"\s">>)).
+
+clear_riak_tables(Config) ->
+    User = ?config(user, Config),
+    Server = ?config(server, Config),
+    Slave = jlib:make_jid(<<"test_slave">>, Server, <<>>),
+    Master = jlib:make_jid(<<"test_master">>, Server, <<>>),
+    Room = muc_room_jid(Config),
+    {U, S, _} = jlib:jid_tolower(jlib:make_jid(User, Server, <<>>)),
+    {USlave, SSlave, _} = LSlave = jlib:jid_tolower(Slave),
+    {UMaster, SMaster, _} = LMaster = jlib:jid_tolower(Master),
+    {URoom, SRoom, _} = jlib:jid_tolower(jlib:jid_remove_resource(Room)),
+    US = {U, S},
+    USSlave = {USlave, SSlave},
+    USMaster = {UMaster, SMaster},
+    USRoom = {URoom, SRoom},
+    ok = ejabberd_riak:delete(roster, {USlave, SSlave, LMaster}),
+    ok = ejabberd_riak:delete(roster, {UMaster, SMaster, LSlave}),
+    ok = ejabberd_riak:delete(passwd, US),
+    ok = ejabberd_riak:delete(passwd, USSlave),
+    ok = ejabberd_riak:delete(passwd, USMaster),
+    ok = ejabberd_riak:delete(roster_version, USSlave),
+    ok = ejabberd_riak:delete(roster_version, USMaster),
+    ok = ejabberd_riak:delete(last_activity, US),
+    ok = ejabberd_riak:delete(last_activity, USSlave),
+    ok = ejabberd_riak:delete(last_activity, USMaster),
+    ok = ejabberd_riak:delete(vcard, US),
+    ok = ejabberd_riak:delete(privacy, US),
+    ok = ejabberd_riak:delete(private_storage, {U, S, <<"storage:bookmarks">>}),
+    ok = ejabberd_riak:delete(muc_room, USRoom),
+    Config.
