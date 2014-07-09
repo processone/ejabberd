@@ -1,17 +1,50 @@
-You need MySQL and PostgreSQL up and running.
+You need MySQL, PostgreSQL and Riak up and running.
 MySQL should be accepting TCP connections on localhost:3306.
 PostgreSQL should be accepting TCP connections on localhost:5432.
-Both of them should grant full access to user 'ejabberd_test' with
+Riak should be accepting TCP connections on localhost:8087.
+MySQL and PostgreSQL should grant full access to user 'ejabberd_test' with
 password 'ejabberd_test' on database 'ejabberd_test'.
+Riak should be configured with leveldb as a database backend and -pz
+should be pointed to the directory with ejabberd BEAM files.
 
 Here is a quick setup example:
 
+------------------
+  PostgreSQL
+------------------
 $ psql template1
 template1=# CREATE USER ejabberd_test WITH PASSWORD 'ejabberd_test';
 template1=# CREATE DATABASE ejabberd_test;
 template1=# GRANT ALL PRIVILEGES ON DATABASE ejabberd_test TO ejabberd_test;
 
+-------------------
+  MySQL
+-------------------
 $ mysql
 mysql> CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';
 mysql> CREATE DATABASE ejabberd_test;
 mysql> GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';
+
+-------------------
+  Riak
+-------------------
+$ cat /etc/riak/vm.args
+...
+## Map/Reduce path
+-pz /path/to/ejabberd/ebin
+...
+
+For version < 2.x:
+
+$ cat /etc/riak/app.config:
+...
+ {riak_kv, [
+            {storage_backend, riak_kv_eleveldb_backend},
+...
+
+For version >= 2.x:
+
+$ cat /etc/riak/riak.conf:
+...
+storage_backend = leveldb
+...
