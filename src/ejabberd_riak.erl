@@ -30,7 +30,7 @@
 -export([start_link/4, get_proc/1, make_bucket/1, put/1, put/2,
          get/1, get/2, get_by_index/3, delete/1, delete/2,
          count_by_index/3, get_by_index_range/4,
-         get_keys/1, get_keys_by_index/3,
+         get_keys/1, get_keys_by_index/3, is_connected/0,
          count/1, delete_by_index/3]).
 %% For debugging
 -export([get_tables/0]).
@@ -63,6 +63,10 @@
 %% @private
 start_link(Num, Server, Port, _StartInterval) ->
     gen_server:start_link({local, get_proc(Num)}, ?MODULE, [Server, Port], []).
+
+%% @private
+is_connected() ->
+    catch riakc_pb_socket:is_connected(get_random_pid()).
 
 %% @private
 get_proc(I) ->
