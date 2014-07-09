@@ -88,6 +88,10 @@ CfgDeps = lists:flatmap(
                     [{p1_pam, ".*", {git, "git://github.com/processone/epam"}}];
                ({zlib, true}) ->
                     [{p1_zlib, ".*", {git, "git://github.com/processone/zlib"}}];
+               ({riak, true}) ->
+                    [{riakc, ".*",
+		      {git, "git://github.com/basho/riak-erlang-client",
+		       {tag, "1.4.2"}}}];
                ({json, true}) ->
                     [{jiffy, ".*", {git, "git://github.com/davisp/jiffy"}}];
                ({iconv, true}) ->
