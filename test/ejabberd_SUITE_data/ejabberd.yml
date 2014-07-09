@@ -151,6 +151,44 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
+  "riak.localhost": 
+    auth_method: riak
+    modules: 
+      mod_announce: 
+        db_type: riak
+      mod_blocking: 
+        db_type: riak
+      mod_caps: 
+        db_type: riak
+      mod_last: 
+        db_type: riak
+      mod_muc: 
+        db_type: riak
+      mod_offline: 
+        db_type: riak
+      mod_privacy: 
+        db_type: riak
+      mod_private: 
+        db_type: riak
+      mod_roster: 
+        versioning: true
+        store_current_id: true
+        db_type: riak
+      mod_vcard: 
+        db_type: riak
+      mod_adhoc: []
+      mod_configure: []
+      mod_disco: []
+      mod_ping: []
+      mod_proxy65: []
+      mod_register: 
+        welcome_message: 
+          subject: "Welcome!"
+          body: "Hi.
+Welcome to this XMPP server."
+      mod_stats: []
+      mod_time: []
+      mod_version: []
   "localhost": 
     auth_method: internal
   "ldap.localhost": 
@@ -186,6 +224,7 @@ hosts:
   - "pgsql.localhost"
   - "extauth.localhost"
   - "ldap.localhost"
+  - "riak.localhost"
 access: 
   announce: 
     admin: allow

@@ -68,6 +68,8 @@ init_per_group(ldap, Config) ->
     set_opt(server, ?LDAP_VHOST, Config);
 init_per_group(extauth, Config) ->
     set_opt(server, ?EXTAUTH_VHOST, Config);
+init_per_group(riak, Config) ->
+    set_opt(server, ?RIAK_VHOST, Config);
 init_per_group(_GroupName, Config) ->
     Pid = start_event_relay(),
     set_opt(event_relay, Pid, Config).
@@ -83,6 +85,8 @@ end_per_group(no_db, _Config) ->
 end_per_group(ldap, _Config) ->
     ok;
 end_per_group(extauth, _Config) ->
+    ok;
+end_per_group(riak, _Config) ->
     ok;
 end_per_group(_GroupName, Config) ->
     stop_event_relay(Config),
@@ -178,6 +182,54 @@ db_tests() ->
       [roster_remove_master,
        roster_remove_slave]}].
 
+db_tests(riak) ->
+    %% No support for mod_pubsub
+    [{single_user, [sequence],
+      [test_register,
+       auth_plain,
+       auth_md5,
+       presence_broadcast,
+       last,
+       roster_get,
+       private,
+       privacy,
+       blocking,
+       vcard,
+       muc_single,
+       test_unregister]},
+     {test_roster_subscribe, [parallel],
+      [roster_subscribe_master,
+       roster_subscribe_slave]},
+     {test_offline, [sequence],
+      [offline_master, offline_slave]},
+     {test_roster_remove, [parallel],
+      [roster_remove_master,
+       roster_remove_slave]}];
+db_tests(_) ->
+    [{single_user, [sequence],
+      [test_register,
+       auth_plain,
+       auth_md5,
+       presence_broadcast,
+       last,
+       roster_get,
+       roster_ver,
+       private,
+       privacy,
+       blocking,
+       vcard,
+       muc_single,
+       pubsub,
+       test_unregister]},
+     {test_roster_subscribe, [parallel],
+      [roster_subscribe_master,
+       roster_subscribe_slave]},
+     {test_offline, [sequence],
+      [offline_master, offline_slave]},
+     {test_roster_remove, [parallel],
+      [roster_remove_master,
+       roster_remove_slave]}].
+
 ldap_tests() ->
     [{ldap_tests, [sequence],
       [test_auth,
@@ -192,9 +244,10 @@ groups() ->
     [{ldap, [sequence], ldap_tests()},
      {extauth, [sequence], extauth_tests()},
      {no_db, [sequence], no_db_tests()},
-     {mnesia, [sequence], db_tests()},
-     {mysql, [sequence], db_tests()},
-     {pgsql, [sequence], db_tests()}].
+     {mnesia, [sequence], db_tests(mnesia)},
+     {mysql, [sequence], db_tests(mysql)},
+     {pgsql, [sequence], db_tests(pgsql)},
+     {riak, [sequence], db_tests(riak)}].
 
 all() ->
     [{group, ldap},
@@ -203,6 +256,7 @@ all() ->
      {group, mysql},
      {group, pgsql},
      {group, extauth},
+     {group, riak},
      stop_ejabberd].
 
 stop_ejabberd(Config) ->
