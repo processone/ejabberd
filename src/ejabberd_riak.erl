@@ -92,7 +92,7 @@ put(Rec, IndexInfo) ->
     case put_raw(Table, Key, Value, SecIdxs) of
         ok ->
             ok;
-        Error ->
+        {error, _} = Error ->
             log_error(Error, put, [{record, Rec},
                                    {index_info, IndexInfo}]),
             Error
@@ -135,6 +135,8 @@ get(Table) ->
                                    [Term]
                            end
                    end, Objs)};
+	{ok, []} ->
+	    {ok, []};
         {error, notfound} ->
             {ok, []};
         {error, _} = Error ->
@@ -154,7 +156,7 @@ get(Table, Key) ->
                 Term ->
                     {ok, Term}
             end;
-        Error ->
+        {error, _} = Error ->
             log_error(Error, get, [{table, Table},
                                    {key, Key}]),
             Error
@@ -182,7 +184,7 @@ get_by_index(Table, Index, Key) ->
                    end, Vals)};
         {error, notfound} ->
             {ok, []};
-        Error ->
+        {error, _} = Error ->
             log_error(Error, get_by_index,
                       [{table, Table},
                        {index, Index},
@@ -215,7 +217,7 @@ get_by_index_range(Table, Index, FromKey, ToKey) ->
                    end, Vals)};
         {error, notfound} ->
             {ok, []};
-        Error ->
+        {error, _} = Error ->
             log_error(Error, get_by_index_range,
                       [{table, Table}, {index, Index},
                        {start_key, FromKey}, {end_key, ToKey}]),
@@ -226,7 +228,7 @@ get_raw(Table, Key) ->
     case get_object_raw(Table, Key) of
         {ok, Obj} ->
             {ok, riakc_obj:get_value(Obj)};
-        Error ->
+        {error, _} = Error ->
             Error
     end.
 
@@ -240,6 +242,8 @@ get_keys(Table) ->
 		 [{map, {modfun, ?MODULE, map_key}, none, true}]) of
         {ok, [{_, Keys}]} ->
             {ok, Keys};
+	{ok, []} ->
+	    {ok, []};
         {error, _} = Error ->
             log_error(Error, get_keys, [{table, Table}]),
             Error
@@ -257,6 +261,8 @@ get_keys_by_index(Table, Index, Key) ->
 		 [{map, {modfun, ?MODULE, map_key}, none, true}]) of
         {ok, [{_, Keys}]} ->
             {ok, Keys};
+	{ok, []} ->
+	    {ok, []};
         {error, _} = Error ->
             log_error(Error, get_keys_by_index, [{table, Table},
                                                  {index, Index},
@@ -277,6 +283,8 @@ get_by_index_raw(Table, Index, Key) ->
              none, true}]) of
         {ok, [{_, Objs}]} ->
             {ok, Objs};
+	{ok, []} ->
+	    {ok, []};
         {error, _} = Error ->
             Error
     end.
@@ -290,6 +298,8 @@ get_by_index_range_raw(Table, Index, FromKey, ToKey) ->
 		   none, true}]) of
         {ok, [{_, Objs}]} ->
             {ok, Objs};
+	{ok, []} ->
+	    {ok, []};
         {error, _} = Error ->
             Error
     end.
@@ -320,7 +330,7 @@ count_by_index(Tab, Index, Key) ->
             {ok, Cnt};
         {error, notfound} ->
             {ok, 0};
-        Error ->
+        {error, _} = Error ->
             log_error(Error, count_by_index,
                       [{table, Tab},
                        {index, Index},
