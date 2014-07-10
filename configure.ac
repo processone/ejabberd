@@ -169,6 +169,14 @@ AC_ARG_ENABLE(zlib,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-zlib) ;;
 esac],[if test "x$zlib" = "x"; then zlib=true; fi])
 
+AC_ARG_ENABLE(riak,
+[AC_HELP_STRING([--enable-riak], [enable Riak support (default: no)])],
+[case "${enableval}" in
+  yes) riak=true ;;
+  no)  riak=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-riak) ;;
+esac],[if test "x$riak" = "x"; then riak=false; fi])
+
 AC_ARG_ENABLE(json,
 [AC_HELP_STRING([--enable-json], [enable JSON support for mod_bosh (default: no)])],
 [case "${enableval}" in
@@ -263,6 +271,7 @@ AC_SUBST(mysql)
 AC_SUBST(pgsql)
 AC_SUBST(pam)
 AC_SUBST(zlib)
+AC_SUBST(riak)
 AC_SUBST(json)
 AC_SUBST(iconv)
 AC_SUBST(debug)
