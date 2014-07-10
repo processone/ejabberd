@@ -1,7 +1,7 @@
 language: erlang
 
 otp_release:
-  - 17.0
+  - R16B03
   - R15B01
 
 before_install:
@@ -23,7 +23,7 @@ script:
   - ./configure --enable-all --disable-http --disable-odbc
   - make
   - make test
-  - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log
+  - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, 0 failed' logs/raw.log
 
 after_script:
   - find logs -name suite.log -exec cat '{}' ';'
