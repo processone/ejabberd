@@ -1,40 +1,45 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
-            "http://www.w3.org/TR/REC-html40/loose.dtd">
-<HTML>
-<HEAD>
-<TITLE>Ejabberd 2.1.12 Developers Guide
-</TITLE>
-
-<META http-equiv="Content-Type" content="text/html; charset=US-ASCII">
-<META name="GENERATOR" content="hevea 1.10">
-<STYLE type="text/css">
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="generator" content="hevea 2.09">
+<style type="text/css">
 .li-itemize{margin:1ex 0ex;}
 .li-enumerate{margin:1ex 0ex;}
 .dd-description{margin:0ex 0ex 1ex 4ex;}
 .dt-description{margin:0ex;}
 .toc{list-style:none;}
+.footnotetext{margin:0ex; padding:0ex;}
+div.footnotetext P{margin:0px; text-indent:1em;}
 .thefootnotes{text-align:left;margin:0ex;}
 .dt-thefootnotes{margin:0em;}
 .dd-thefootnotes{margin:0em 0em 0em 2em;}
 .footnoterule{margin:1em auto 1em 0px;width:50%;}
 .caption{padding-left:2ex; padding-right:2ex; margin-left:auto; margin-right:auto}
 .title{margin:2ex auto;text-align:center}
+.titlemain{margin:1ex 2ex 2ex 1ex;}
+.titlerest{margin:0ex 2ex;}
 .center{text-align:center;margin-left:auto;margin-right:auto;}
 .flushleft{text-align:left;margin-left:0ex;margin-right:auto;}
 .flushright{text-align:right;margin-left:auto;margin-right:0ex;}
-DIV TABLE{margin-left:inherit;margin-right:inherit;}
-PRE{text-align:left;margin-left:0ex;margin-right:auto;}
-BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
-TD P{margin:0px;}
+div table{margin-left:inherit;margin-right:inherit;margin-bottom:2px;margin-top:2px}
+td table{margin:auto;}
+table{border-collapse:collapse;}
+td{padding:0;}
+.cellpadding0 tr td{padding:0;}
+.cellpadding1 tr td{padding:1px;}
+pre{text-align:left;margin-left:0ex;margin-right:auto;}
+blockquote{margin-left:4ex;margin-right:4ex;text-align:left;}
+td p{margin:0px;}
 .boxed{border:1px solid black}
 .textboxed{border:1px solid black}
 .vbar{border:none;width:2px;background-color:black;}
 .hbar{border:none;height:2px;width:100%;background-color:black;}
 .hfill{border:none;height:1px;width:200%;background-color:black;}
 .vdisplay{border-collapse:separate;border-spacing:2px;width:auto; empty-cells:show; border:2px solid red;}
-.vdcell{white-space:nowrap;padding:0px;width:auto; border:2px solid green;}
+.vdcell{white-space:nowrap;padding:0px; border:2px solid green;}
 .display{border-collapse:separate;border-spacing:2px;width:auto; border:none;}
-.dcell{white-space:nowrap;padding:0px;width:auto; border:none;}
+.dcell{white-space:nowrap;padding:0px; border:none;}
 .dcenter{margin:0ex auto;}
 .vdcenter{border:solid #FF8000 2px; margin:0ex auto;}
 .minipage{text-align:left; margin-left:0em; margin-right:auto;}
@@ -43,169 +48,182 @@ TD P{margin:0px;}
 .marginparright{float:right; margin-left:1ex; margin-right:0ex;}
 .theorem{text-align:left;margin:1ex auto 1ex 0ex;}
 .part{margin:2ex auto;text-align:center}
-</STYLE>
-</HEAD>
-<BODY >
+</style>
+<title>Ejabberd community 14.05-120-gedfb5fc Developers Guide
+</title>
+</head>
+<body >
 <!--HEVEA command line is: /usr/bin/hevea -fix -pedantic dev.tex -->
-<!--CUT DEF section 1 --><P><A NAME="titlepage"></A>
+<!--CUT STYLE article--><!--CUT DEF section 1 --><p><a id="titlepage"></a>
 
-</P><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Ejabberd 2.1.12 Developers Guide</H1><H3 CLASS="titlerest">Alexey Shchepin<BR>
- <A HREF="mailto:alexey@sevcom.net"><TT>mailto:alexey@sevcom.net</TT></A><BR>
- <A HREF="xmpp:aleksey@jabber.ru"><TT>xmpp:aleksey@jabber.ru</TT></A></H3></TD></TR>
-</TABLE><DIV CLASS="center">
+</p><table class="title"><tr><td style="padding:1ex"><h1 class="titlemain">Ejabberd community 14.05-120-gedfb5fc Developers Guide</h1><h3 class="titlerest">Alexey Shchepin <br>
+ <a href="mailto:alexey@sevcom.net"><span style="font-family:monospace">mailto:alexey@sevcom.net</span></a> <br>
+ <a href="xmpp:aleksey@jabber.ru"><span style="font-family:monospace">xmpp:aleksey@jabber.ru</span></a></h3></td></tr>
+</table><div class="center">
 
-<IMG SRC="logo.png" ALT="logo.png">
+<img src="logo.png" alt="logo.png">
 
 
-</DIV><BLOCKQUOTE CLASS="quotation"><I>I can thoroughly recommend ejabberd for ease of setup &#X2013;
-Kevin Smith, Current maintainer of the Psi project</I></BLOCKQUOTE><!--TOC section Contents-->
-<H2 CLASS="section"><!--SEC ANCHOR -->Contents</H2><!--SEC END --><UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc1">1&#XA0;&#XA0;Key Features</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc2">2&#XA0;&#XA0;Additional Features</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc3">3&#XA0;&#XA0;How it Works</A>
-<UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc4">3.1&#XA0;&#XA0;Router</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc5">3.2&#XA0;&#XA0;Local Router</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc6">3.3&#XA0;&#XA0;Session Manager</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc7">3.4&#XA0;&#XA0;S2S Manager</A>
-</LI></UL>
-</LI><LI CLASS="li-toc"><A HREF="#htoc8">4&#XA0;&#XA0;Authentication</A>
-<UL CLASS="toc">
-<UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc9">4.0.1&#XA0;&#XA0;External</A>
-</LI></UL>
-</UL>
-</LI><LI CLASS="li-toc"><A HREF="#htoc10">5&#XA0;&#XA0;XML Representation</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc11">6&#XA0;&#XA0;Module <TT>xml</TT></A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc12">7&#XA0;&#XA0;Module <TT>xml_stream</TT></A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc13">8&#XA0;&#XA0;Modules</A>
-<UL CLASS="toc"><LI CLASS="li-toc">
-<A HREF="#htoc14">8.1&#XA0;&#XA0;Module gen_iq_handler</A>
-</LI><LI CLASS="li-toc"><A HREF="#htoc15">8.2&#XA0;&#XA0;Services</A>
-</LI></UL>
-</LI></UL><P>Introduction
-<A NAME="intro"></A></P><P><TT>ejabberd</TT> is a free and open source instant messaging server written in <A HREF="http://www.erlang.org/">Erlang/OTP</A>.</P><P><TT>ejabberd</TT> is cross-platform, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</P><P><TT>ejabberd</TT> is designed to be a rock-solid and feature rich XMPP server.</P><P><TT>ejabberd</TT> is suitable for small deployments, whether they need to be scalable or not, as well as extremely big deployments.</P><!--TOC section Key Features-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc1">1</A>&#XA0;&#XA0;Key Features</H2><!--SEC END --><P>
-<A NAME="keyfeatures"></A>
-</P><P><TT>ejabberd</TT> is:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
-Cross-platform: <TT>ejabberd</TT> runs under Microsoft Windows and Unix derived systems such as Linux, FreeBSD and NetBSD.</LI><LI CLASS="li-itemize">Distributed: You can run <TT>ejabberd</TT> on a cluster of machines and all of them will serve the same Jabber domain(s). When you need more capacity you can simply add a new cheap node to your cluster. Accordingly, you do not need to buy an expensive high-end machine to support tens of thousands concurrent users.</LI><LI CLASS="li-itemize">Fault-tolerant: You can deploy an <TT>ejabberd</TT> cluster so that all the information required for a properly working service will be replicated permanently on all nodes. This means that if one of the nodes crashes, the others will continue working without disruption. In addition, nodes also can be added or replaced &#X2018;on the fly&#X2019;.</LI><LI CLASS="li-itemize">Administrator Friendly: <TT>ejabberd</TT> is built on top of the Open Source Erlang. As a result you do not need to install an external database, an external web server, amongst others because everything is already included, and ready to run out of the box. Other administrator benefits include:
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</div><blockquote class="quotation"><span style="font-style:italic">I can thoroughly recommend ejabberd for ease of setup &#X2013;
+Kevin Smith, Current maintainer of the Psi project</span></blockquote><!--TOC section id="intro" Contents-->
+<h2 id="intro" class="section">Contents</h2><!--SEC END --><ul class="toc"><li class="li-toc">
+<a href="#sec2">1&#XA0;&#XA0;Key Features</a>
+</li><li class="li-toc"><a href="#sec3">2&#XA0;&#XA0;Additional Features</a>
+</li><li class="li-toc"><a href="#sec4">3&#XA0;&#XA0;How it Works</a>
+<ul class="toc"><li class="li-toc">
+<a href="#sec5">3.1&#XA0;&#XA0;Router</a>
+</li><li class="li-toc"><a href="#sec6">3.2&#XA0;&#XA0;Local Router</a>
+</li><li class="li-toc"><a href="#sec7">3.3&#XA0;&#XA0;Session Manager</a>
+</li><li class="li-toc"><a href="#sec8">3.4&#XA0;&#XA0;S2S Manager</a>
+</li></ul>
+</li><li class="li-toc"><a href="#sec9">4&#XA0;&#XA0;Authentication</a>
+<ul class="toc">
+<ul class="toc"><li class="li-toc">
+<a href="#sec10">4.0.1&#XA0;&#XA0;External</a>
+</li></ul>
+</ul>
+</li><li class="li-toc"><a href="#sec11">5&#XA0;&#XA0;XML Representation</a>
+</li><li class="li-toc"><a href="#sec12">6&#XA0;&#XA0;Module <span style="font-family:monospace">xml</span></a>
+</li><li class="li-toc"><a href="#sec13">7&#XA0;&#XA0;Module <span style="font-family:monospace">xml_stream</span></a>
+</li><li class="li-toc"><a href="#sec14">8&#XA0;&#XA0;Modules</a>
+<ul class="toc"><li class="li-toc">
+<a href="#sec15">8.1&#XA0;&#XA0;Module gen_iq_handler</a>
+</li><li class="li-toc"><a href="#sec16">8.2&#XA0;&#XA0;Services</a>
+</li></ul>
+</li></ul><p>Introduction
+</p><p><span style="font-family:monospace">ejabberd</span> is a free and open source instant messaging server written in <a href="http://www.erlang.org/">Erlang/OTP</a>.</p><p><span style="font-family:monospace">ejabberd</span> is cross-platform, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</p><p><span style="font-family:monospace">ejabberd</span> is designed to be a rock-solid and feature rich XMPP server.</p><p><span style="font-family:monospace">ejabberd</span> is suitable for small deployments, whether they need to be scalable or not, as well as extremely big deployments.</p>
+<!--TOC section id="sec2" Key Features-->
+<h2 id="sec2" class="section">1&#XA0;&#XA0;Key Features</h2><!--SEC END --><p>
+<a id="keyfeatures"></a>
+</p><p><span style="font-family:monospace">ejabberd</span> is:
+</p><ul class="itemize"><li class="li-itemize">
+Cross-platform: <span style="font-family:monospace">ejabberd</span> runs under Microsoft Windows and Unix derived systems such as Linux, FreeBSD and NetBSD.</li><li class="li-itemize">Distributed: You can run <span style="font-family:monospace">ejabberd</span> on a cluster of machines and all of them will serve the same Jabber domain(s). When you need more capacity you can simply add a new cheap node to your cluster. Accordingly, you do not need to buy an expensive high-end machine to support tens of thousands concurrent users.</li><li class="li-itemize">Fault-tolerant: You can deploy an <span style="font-family:monospace">ejabberd</span> cluster so that all the information required for a properly working service will be replicated permanently on all nodes. This means that if one of the nodes crashes, the others will continue working without disruption. In addition, nodes also can be added or replaced &#X2018;on the fly&#X2019;.</li><li class="li-itemize">Administrator Friendly: <span style="font-family:monospace">ejabberd</span> is built on top of the Open Source Erlang. As a result you do not need to install an external database, an external web server, amongst others because everything is already included, and ready to run out of the box. Other administrator benefits include:
+<ul class="itemize"><li class="li-itemize">
 Comprehensive documentation.
-</LI><LI CLASS="li-itemize">Straightforward installers for Linux, Mac OS X, and Windows. </LI><LI CLASS="li-itemize">Web Administration.
-</LI><LI CLASS="li-itemize">Shared Roster Groups.
-</LI><LI CLASS="li-itemize">Command line administration tool. </LI><LI CLASS="li-itemize">Can integrate with existing authentication mechanisms.
-</LI><LI CLASS="li-itemize">Capability to send announce messages.
-</LI></UL></LI><LI CLASS="li-itemize">Internationalized: <TT>ejabberd</TT> leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
-<UL CLASS="itemize"><LI CLASS="li-itemize">
-Translated to 25 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
-</LI></UL></LI><LI CLASS="li-itemize">Open Standards: <TT>ejabberd</TT> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">Straightforward installers for Linux, Mac OS X, and Windows. </li><li class="li-itemize">Web Administration.
+</li><li class="li-itemize">Shared Roster Groups.
+</li><li class="li-itemize">Command line administration tool. </li><li class="li-itemize">Can integrate with existing authentication mechanisms.
+</li><li class="li-itemize">Capability to send announce messages.
+</li></ul></li><li class="li-itemize">Internationalized: <span style="font-family:monospace">ejabberd</span> leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
+<ul class="itemize"><li class="li-itemize">
+Translated to 25 languages. </li><li class="li-itemize">Support for <a href="http://www.ietf.org/rfc/rfc3490.txt">IDNA</a>.
+</li></ul></li><li class="li-itemize">Open Standards: <span style="font-family:monospace">ejabberd</span> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
+<ul class="itemize"><li class="li-itemize">
 Fully XMPP compliant.
-</LI><LI CLASS="li-itemize">XML-based protocol.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.ejabberd.im/protocols">Many protocols supported</A>.
-</LI></UL></LI></UL><!--TOC section Additional Features-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc2">2</A>&#XA0;&#XA0;Additional Features</H2><!--SEC END --><P>
-<A NAME="addfeatures"></A>
-</P><P>Moreover, <TT>ejabberd</TT> comes with a wide range of other state-of-the-art features:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">XML-based protocol.
+</li><li class="li-itemize"><a href="http://www.ejabberd.im/protocols">Many protocols supported</a>.
+</li></ul></li></ul>
+<!--TOC section id="sec3" Additional Features-->
+<h2 id="sec3" class="section">2&#XA0;&#XA0;Additional Features</h2><!--SEC END --><p>
+<a id="addfeatures"></a>
+</p><p>Moreover, <span style="font-family:monospace">ejabberd</span> comes with a wide range of other state-of-the-art features:
+</p><ul class="itemize"><li class="li-itemize">
 Modular
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+<ul class="itemize"><li class="li-itemize">
 Load only the modules you want.
-</LI><LI CLASS="li-itemize">Extend <TT>ejabberd</TT> with your own custom modules.
-</LI></UL>
-</LI><LI CLASS="li-itemize">Security
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">Extend <span style="font-family:monospace">ejabberd</span> with your own custom modules.
+</li></ul>
+</li><li class="li-itemize">Security
+<ul class="itemize"><li class="li-itemize">
 SASL and STARTTLS for c2s and s2s connections.
-</LI><LI CLASS="li-itemize">STARTTLS and Dialback s2s connections.
-</LI><LI CLASS="li-itemize">Web Admin accessible via HTTPS secure access.
-</LI></UL>
-</LI><LI CLASS="li-itemize">Databases
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">STARTTLS and Dialback s2s connections.
+</li><li class="li-itemize">Web Admin accessible via HTTPS secure access.
+</li></ul>
+</li><li class="li-itemize">Databases
+<ul class="itemize"><li class="li-itemize">
 Internal database for fast deployment (Mnesia).
-</LI><LI CLASS="li-itemize">Native MySQL support.
-</LI><LI CLASS="li-itemize">Native PostgreSQL support.
-</LI><LI CLASS="li-itemize">ODBC data storage support.
-</LI><LI CLASS="li-itemize">Microsoft SQL Server support. </LI></UL>
-</LI><LI CLASS="li-itemize">Authentication
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">Native MySQL support.
+</li><li class="li-itemize">Native PostgreSQL support.
+</li><li class="li-itemize">ODBC data storage support.
+</li><li class="li-itemize">Microsoft SQL Server support. </li><li class="li-itemize">Riak NoSQL database support.
+</li></ul>
+</li><li class="li-itemize">Authentication
+<ul class="itemize"><li class="li-itemize">
 Internal Authentication.
-</LI><LI CLASS="li-itemize">PAM, LDAP and ODBC. </LI><LI CLASS="li-itemize">External Authentication script.
-</LI></UL>
-</LI><LI CLASS="li-itemize">Others
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">PAM, LDAP, ODBC and Riak. </li><li class="li-itemize">External Authentication script.
+</li></ul>
+</li><li class="li-itemize">Others
+<ul class="itemize"><li class="li-itemize">
 Support for virtual hosting.
-</LI><LI CLASS="li-itemize">Compressing XML streams with Stream Compression (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>).
-</LI><LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</A>).
-</LI><LI CLASS="li-itemize">IPv6 support both for c2s and s2s connections.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0045.html">Multi-User Chat</A> module with support for clustering and HTML logging. </LI><LI CLASS="li-itemize">Users Directory based on users vCards.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component with support for <A HREF="http://www.xmpp.org/extensions/xep-0163.html">Personal Eventing via Pubsub</A>.
-</LI><LI CLASS="li-itemize">Support for web clients: <A HREF="http://www.xmpp.org/extensions/xep-0025.html">HTTP Polling</A> and <A HREF="http://www.xmpp.org/extensions/xep-0206.html">HTTP Binding (BOSH)</A> services.
-</LI><LI CLASS="li-itemize">IRC transport.
-</LI><LI CLASS="li-itemize">Component support: interface with networks such as AIM, ICQ and MSN installing special tranports.
-</LI></UL>
-</LI></UL><!--TOC section How it Works-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc3">3</A>&#XA0;&#XA0;How it Works</H2><!--SEC END --><P>
-<A NAME="howitworks"></A></P><P>A XMPP domain is served by one or more <TT>ejabberd</TT> nodes. These nodes can
+</li><li class="li-itemize">Compressing XML streams with Stream Compression (<a href="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</a>).
+</li><li class="li-itemize">Statistics via Statistics Gathering (<a href="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</a>).
+</li><li class="li-itemize">IPv6 support both for c2s and s2s connections.
+</li><li class="li-itemize"><a href="http://www.xmpp.org/extensions/xep-0045.html">Multi-User Chat</a> module with support for clustering and HTML logging. </li><li class="li-itemize">Users Directory based on users vCards.
+</li><li class="li-itemize"><a href="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</a> component with support for <a href="http://www.xmpp.org/extensions/xep-0163.html">Personal Eventing via Pubsub</a>.
+</li><li class="li-itemize">Support for web clients: <a href="http://www.xmpp.org/extensions/xep-0025.html">HTTP Polling</a> and <a href="http://www.xmpp.org/extensions/xep-0206.html">HTTP Binding (BOSH)</a> services.
+</li><li class="li-itemize">IRC transport.
+</li><li class="li-itemize">SIP support.
+</li><li class="li-itemize">Component support: interface with networks such as AIM, ICQ and MSN installing special tranports.
+</li></ul>
+</li></ul>
+<!--TOC section id="sec4" How it Works-->
+<h2 id="sec4" class="section">3&#XA0;&#XA0;How it Works</h2><!--SEC END --><p>
+<a id="howitworks"></a></p><p>A XMPP domain is served by one or more <span style="font-family:monospace">ejabberd</span> nodes. These nodes can
 be run on different machines that are connected via a network. They all must
 have the ability to connect to port 4369 of all another nodes, and must have
 the same magic cookie (see Erlang/OTP documentation, in other words the file
-<TT>~ejabberd/.erlang.cookie</TT> must be the same on all nodes). This is
+<span style="font-family:monospace">~ejabberd/.erlang.cookie</span> must be the same on all nodes). This is
 needed because all nodes exchange information about connected users, S2S
-connections, registered services, etc&#X2026;</P><P>Each <TT>ejabberd</TT> node have following modules:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+connections, registered services, etc&#X2026;</p><p>Each <span style="font-family:monospace">ejabberd</span> node have following modules:
+</p><ul class="itemize"><li class="li-itemize">
 router;
-</LI><LI CLASS="li-itemize">local router.
-</LI><LI CLASS="li-itemize">session manager;
-</LI><LI CLASS="li-itemize">S2S manager;
-</LI></UL><!--TOC subsection Router-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc4">3.1</A>&#XA0;&#XA0;Router</H3><!--SEC END --><P>This module is the main router of XMPP packets on each node. It routes
+</li><li class="li-itemize">local router.
+</li><li class="li-itemize">session manager;
+</li><li class="li-itemize">S2S manager;
+</li></ul>
+<!--TOC subsection id="sec5" Router-->
+<h3 id="sec5" class="subsection">3.1&#XA0;&#XA0;Router</h3><!--SEC END --><p>This module is the main router of XMPP packets on each node. It routes
 them based on their destinations domains. It has two tables: local and global
 routes. First, domain of packet destination searched in local table, and if it
 found, then the packet is routed to appropriate process. If no, then it
-searches in global table, and is routed to the appropriate <TT>ejabberd</TT> node or
+searches in global table, and is routed to the appropriate <span style="font-family:monospace">ejabberd</span> node or
 process. If it does not exists in either tables, then it sent to the S2S
-manager.</P><!--TOC subsection Local Router-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc5">3.2</A>&#XA0;&#XA0;Local Router</H3><!--SEC END --><P>This module routes packets which have a destination domain equal to this server
+manager.</p>
+<!--TOC subsection id="sec6" Local Router-->
+<h3 id="sec6" class="subsection">3.2&#XA0;&#XA0;Local Router</h3><!--SEC END --><p>This module routes packets which have a destination domain equal to this server
 name. If destination JID has a non-empty user part, then it routed to the
-session manager, else it is processed depending on it&#X2019;s content.</P><!--TOC subsection Session Manager-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc6">3.3</A>&#XA0;&#XA0;Session Manager</H3><!--SEC END --><P>This module routes packets to local users. It searches for what user resource
+session manager, else it is processed depending on it&#X2019;s content.</p>
+<!--TOC subsection id="sec7" Session Manager-->
+<h3 id="sec7" class="subsection">3.3&#XA0;&#XA0;Session Manager</h3><!--SEC END --><p>This module routes packets to local users. It searches for what user resource
 packet must be sent via presence table. If this resource is connected to
 this node, it is routed to C2S process, if it connected via another node, then
-the packet is sent to session manager on that node.</P><!--TOC subsection S2S Manager-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc7">3.4</A>&#XA0;&#XA0;S2S Manager</H3><!--SEC END --><P>This module routes packets to other XMPP servers. First, it checks if an
+the packet is sent to session manager on that node.</p>
+<!--TOC subsection id="sec8" S2S Manager-->
+<h3 id="sec8" class="subsection">3.4&#XA0;&#XA0;S2S Manager</h3><!--SEC END --><p>This module routes packets to other XMPP servers. First, it checks if an
 open S2S connection from the domain of the packet source to the domain of
 packet destination already exists. If it is open on another node, then it
 routes the packet to S2S manager on that node, if it is open on this node, then
 it is routed to the process that serves this connection, and if a connection
-does not exist, then it is opened and registered.</P><!--TOC section Authentication-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc8">4</A>&#XA0;&#XA0;Authentication</H2><!--SEC END --><!--TOC subsubsection External-->
-<H4 CLASS="subsubsection"><!--SEC ANCHOR --><A NAME="htoc9">4.0.1</A>&#XA0;&#XA0;External</H4><!--SEC END --><P>
-<A NAME="externalauth"></A>
-</P><P>The external authentication script follows
-<A HREF="http://www.erlang.org/doc/tutorial/c_portdriver.html">the erlang port driver API</A>.</P><P>That script is supposed to do theses actions, in an infinite loop:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+does not exist, then it is opened and registered.</p>
+<!--TOC section id="sec9" Authentication-->
+<h2 id="sec9" class="section">4&#XA0;&#XA0;Authentication</h2><!--SEC END -->
+<!--TOC subsubsection id="sec10" External-->
+<h4 id="sec10" class="subsubsection">4.0.1&#XA0;&#XA0;External</h4><!--SEC END --><p>
+<a id="externalauth"></a>
+</p><p>The external authentication script follows
+<a href="http://www.erlang.org/doc/tutorial/c_portdriver.html">the erlang port driver API</a>.</p><p>That script is supposed to do theses actions, in an infinite loop:
+</p><ul class="itemize"><li class="li-itemize">
 read from stdin: AABBBBBBBBB.....
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+<ul class="itemize"><li class="li-itemize">
 A: 2 bytes of length data (a short in network byte order)
-</LI><LI CLASS="li-itemize">B: a string of length found in A that contains operation in plain text
+</li><li class="li-itemize">B: a string of length found in A that contains operation in plain text
 operation are as follows:
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+<ul class="itemize"><li class="li-itemize">
 auth:User:Server:Password (check if a username/password pair is correct)
-</LI><LI CLASS="li-itemize">isuser:User:Server (check if it&#X2019;s a valid user)
-</LI><LI CLASS="li-itemize">setpass:User:Server:Password (set user&#X2019;s password)
-</LI><LI CLASS="li-itemize">tryregister:User:Server:Password (try to register an account)
-</LI><LI CLASS="li-itemize">removeuser:User:Server (remove this account)
-</LI><LI CLASS="li-itemize">removeuser3:User:Server:Password (remove this account if the password is correct)
-</LI></UL>
-</LI></UL>
-</LI><LI CLASS="li-itemize">write to stdout: AABB
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">isuser:User:Server (check if it&#X2019;s a valid user)
+</li><li class="li-itemize">setpass:User:Server:Password (set user&#X2019;s password)
+</li><li class="li-itemize">tryregister:User:Server:Password (try to register an account)
+</li><li class="li-itemize">removeuser:User:Server (remove this account)
+</li><li class="li-itemize">removeuser3:User:Server:Password (remove this account if the password is correct)
+</li></ul>
+</li></ul>
+</li><li class="li-itemize">write to stdout: AABB
+<ul class="itemize"><li class="li-itemize">
 A: the number 2 (coded as a short, which is bytes length of following result)
-</LI><LI CLASS="li-itemize">B: the result code (coded as a short), should be 1 for success/valid, or 0 for failure/invalid
-</LI></UL>
-</LI></UL><P>Example python script
-</P><PRE CLASS="verbatim">#!/usr/bin/python
+</li><li class="li-itemize">B: the result code (coded as a short), should be 1 for success/valid, or 0 for failure/invalid
+</li></ul>
+</li></ul><p>Example python script
+</p><pre class="verbatim">#!/usr/bin/python
 
 import sys
 from struct import *
@@ -242,10 +260,11 @@ while True:
     elif data[0] == "setpass":
         success = setpass(data[1], data[2], data[3])
     to_ejabberd(success)
-</PRE><!--TOC section XML Representation-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc10">5</A>&#XA0;&#XA0;XML Representation</H2><!--SEC END --><P>
-<A NAME="xmlrepr"></A></P><P>Each XML stanza is represented as the following tuple:
-</P><PRE CLASS="verbatim">XMLElement = {xmlelement, Name, Attrs, [ElementOrCDATA]}
+</pre>
+<!--TOC section id="sec11" XML Representation-->
+<h2 id="sec11" class="section">5&#XA0;&#XA0;XML Representation</h2><!--SEC END --><p>
+<a id="xmlrepr"></a></p><p>Each XML stanza is represented as the following tuple:
+</p><pre class="verbatim">XMLElement = {xmlelement, Name, Attrs, [ElementOrCDATA]}
         Name = string()
         Attrs = [Attr]
         Attr = {Key, Val}
@@ -253,30 +272,31 @@ while True:
         Val = string()
         ElementOrCDATA = XMLElement | CDATA
         CDATA = {xmlcdata, string()}
-</PRE><P>E.&#XA0;g. this stanza:
-</P><PRE CLASS="verbatim">&lt;message to='test@conference.example.org' type='groupchat'&gt;
+</pre><p>E.&#XA0;g. this stanza:
+</p><pre class="verbatim">&lt;message to='test@conference.example.org' type='groupchat'&gt;
   &lt;body&gt;test&lt;/body&gt;
 &lt;/message&gt;
-</PRE><P>is represented as the following structure:
-</P><PRE CLASS="verbatim">{xmlelement, "message",
+</pre><p>is represented as the following structure:
+</p><pre class="verbatim">{xmlelement, "message",
     [{"to", "test@conference.example.org"},
      {"type", "groupchat"}],
     [{xmlelement, "body",
          [],
          [{xmlcdata, "test"}]}]}}
-</PRE><!--TOC section Module <TT>xml</TT>-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc11">6</A>&#XA0;&#XA0;Module <TT>xml</TT></H2><!--SEC END --><P>
-<A NAME="xmlmod"></A></P><DL CLASS="description"><DT CLASS="dt-description">
-</DT><DD CLASS="dd-description"><CODE>element_to_string(El) -&gt; string()</CODE>
-<PRE CLASS="verbatim">El = XMLElement
-</PRE>Returns string representation of XML stanza <TT>El</TT>.</DD><DT CLASS="dt-description"></DT><DD CLASS="dd-description"><CODE>crypt(S) -&gt; string()</CODE>
-<PRE CLASS="verbatim">S = string()
-</PRE>Returns string which correspond to <TT>S</TT> with encoded XML special
-characters.</DD><DT CLASS="dt-description"></DT><DD CLASS="dd-description"><CODE>remove_cdata(ECList) -&gt; EList</CODE>
-<PRE CLASS="verbatim">ECList = [ElementOrCDATA]
+</pre>
+<!--TOC section id="sec12" Module <span style="font-family:monospace">xml</span>-->
+<h2 id="sec12" class="section">6&#XA0;&#XA0;Module <span style="font-family:monospace">xml</span></h2><!--SEC END --><p>
+<a id="xmlmod"></a></p><dl class="description"><dt class="dt-description">
+</dt><dd class="dd-description"><code>element_to_string(El) -&gt; string()</code>
+<pre class="verbatim">El = XMLElement
+</pre>Returns string representation of XML stanza <span style="font-family:monospace">El</span>.</dd><dt class="dt-description"></dt><dd class="dd-description"><code>crypt(S) -&gt; string()</code>
+<pre class="verbatim">S = string()
+</pre>Returns string which correspond to <span style="font-family:monospace">S</span> with encoded XML special
+characters.</dd><dt class="dt-description"></dt><dd class="dd-description"><code>remove_cdata(ECList) -&gt; EList</code>
+<pre class="verbatim">ECList = [ElementOrCDATA]
 EList = [XMLElement]
-</PRE><TT>EList</TT> is a list of all non-CDATA elements of ECList.</DD><DT CLASS="dt-description"></DT><DD CLASS="dd-description"><CODE>get_path_s(El, Path) -&gt; Res</CODE>
-<PRE CLASS="verbatim">El = XMLElement
+</pre><span style="font-family:monospace">EList</span> is a list of all non-CDATA elements of ECList.</dd><dt class="dt-description"></dt><dd class="dd-description"><code>get_path_s(El, Path) -&gt; Res</code>
+<pre class="verbatim">El = XMLElement
 Path = [PathItem]
 PathItem = PathElem | PathAttr | PathCDATA
 PathElem = {elem, Name}
@@ -284,57 +304,60 @@ PathAttr = {attr, Name}
 PathCDATA = cdata
 Name = string()
 Res = string() | XMLElement
-</PRE>If <TT>Path</TT> is empty, then returns <TT>El</TT>. Else sequentially
-consider elements of <TT>Path</TT>. Each element is one of:
-<DL CLASS="description"><DT CLASS="dt-description">
-</DT><DD CLASS="dd-description"><CODE>{elem, Name}</CODE> <TT>Name</TT> is name of subelement of
-<TT>El</TT>, if such element exists, then this element considered in
+</pre>If <span style="font-family:monospace">Path</span> is empty, then returns <span style="font-family:monospace">El</span>. Else sequentially
+consider elements of <span style="font-family:monospace">Path</span>. Each element is one of:
+<dl class="description"><dt class="dt-description">
+</dt><dd class="dd-description"><code>{elem, Name}</code> <span style="font-family:monospace">Name</span> is name of subelement of
+<span style="font-family:monospace">El</span>, if such element exists, then this element considered in
 following steps, else returns empty string.
-</DD><DT CLASS="dt-description"></DT><DD CLASS="dd-description"><CODE>{attr, Name}</CODE> If <TT>El</TT> have attribute <TT>Name</TT>, then
+</dd><dt class="dt-description"></dt><dd class="dd-description"><code>{attr, Name}</code> If <span style="font-family:monospace">El</span> have attribute <span style="font-family:monospace">Name</span>, then
 returns value of this attribute, else returns empty string.
-</DD><DT CLASS="dt-description"></DT><DD CLASS="dd-description"><CODE>cdata</CODE> Returns CDATA of <TT>El</TT>.
-</DD></DL></DD><DT CLASS="dt-description"></DT><DD CLASS="dd-description">TODO:
-<PRE CLASS="verbatim">         get_cdata/1, get_tag_cdata/1
+</dd><dt class="dt-description"></dt><dd class="dd-description"><code>cdata</code> Returns CDATA of <span style="font-family:monospace">El</span>.
+</dd></dl></dd><dt class="dt-description"></dt><dd class="dd-description">TODO:
+<pre class="verbatim">         get_cdata/1, get_tag_cdata/1
          get_attr/2, get_attr_s/2
          get_tag_attr/2, get_tag_attr_s/2
          get_subtag/2
-</PRE></DD></DL><!--TOC section Module <TT>xml_stream</TT>-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc12">7</A>&#XA0;&#XA0;Module <TT>xml_stream</TT></H2><!--SEC END --><P>
-<A NAME="xmlstreammod"></A></P><DL CLASS="description"><DT CLASS="dt-description">
-</DT><DD CLASS="dd-description"><CODE>parse_element(Str) -&gt; XMLElement | {error, Err}</CODE>
-<PRE CLASS="verbatim">Str = string()
+</pre></dd></dl>
+<!--TOC section id="sec13" Module <span style="font-family:monospace">xml_stream</span>-->
+<h2 id="sec13" class="section">7&#XA0;&#XA0;Module <span style="font-family:monospace">xml_stream</span></h2><!--SEC END --><p>
+<a id="xmlstreammod"></a></p><dl class="description"><dt class="dt-description">
+</dt><dd class="dd-description"><code>parse_element(Str) -&gt; XMLElement | {error, Err}</code>
+<pre class="verbatim">Str = string()
 Err = term()
-</PRE>Parses <TT>Str</TT> using XML parser, returns either parsed element or error
+</pre>Parses <span style="font-family:monospace">Str</span> using XML parser, returns either parsed element or error
 tuple.
-</DD></DL><!--TOC section Modules-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc13">8</A>&#XA0;&#XA0;Modules</H2><!--SEC END --><P>
-<A NAME="emods"></A></P><!--TOC subsection Module gen_iq_handler-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc14">8.1</A>&#XA0;&#XA0;Module gen_iq_handler</H3><!--SEC END --><P>
-<A NAME="geniqhandl"></A></P><P>The module <CODE>gen_iq_handler</CODE> allows to easily write handlers for IQ packets
-of particular XML namespaces that addressed to server or to users bare JIDs.</P><P>In this module the following functions are defined:
-</P><DL CLASS="description"><DT CLASS="dt-description">
-</DT><DD CLASS="dd-description"><CODE>add_iq_handler(Component, Host, NS, Module, Function, Type)</CODE>
-<PRE CLASS="verbatim">Component = Module = Function = atom()
+</dd></dl>
+<!--TOC section id="sec14" Modules-->
+<h2 id="sec14" class="section">8&#XA0;&#XA0;Modules</h2><!--SEC END --><p>
+<a id="emods"></a></p>
+<!--TOC subsection id="sec15" Module gen_iq_handler-->
+<h3 id="sec15" class="subsection">8.1&#XA0;&#XA0;Module gen_iq_handler</h3><!--SEC END --><p>
+<a id="geniqhandl"></a></p><p>The module <code>gen_iq_handler</code> allows to easily write handlers for IQ packets
+of particular XML namespaces that addressed to server or to users bare JIDs.</p><p>In this module the following functions are defined:
+</p><dl class="description"><dt class="dt-description">
+</dt><dd class="dd-description"><code>add_iq_handler(Component, Host, NS, Module, Function, Type)</code>
+<pre class="verbatim">Component = Module = Function = atom()
 Host = NS = string()
 Type = no_queue | one_queue | parallel
-</PRE>Registers function <CODE>Module:Function</CODE> as handler for IQ packets on
-virtual host <CODE>Host</CODE> that contain child of namespace <CODE>NS</CODE> in
-<CODE>Component</CODE>. Queueing discipline is <CODE>Type</CODE>. There are at least
+</pre>Registers function <code>Module:Function</code> as handler for IQ packets on
+virtual host <code>Host</code> that contain child of namespace <code>NS</code> in
+<code>Component</code>. Queueing discipline is <code>Type</code>. There are at least
 two components defined:
-<DL CLASS="description"><DT CLASS="dt-description">
-</DT><DD CLASS="dd-description"><CODE>ejabberd_local</CODE> Handles packets that addressed to server JID;
-</DD><DT CLASS="dt-description"></DT><DD CLASS="dd-description"><CODE>ejabberd_sm</CODE> Handles packets that addressed to users bare JIDs.
-</DD></DL>
-</DD><DT CLASS="dt-description"></DT><DD CLASS="dd-description"><CODE>remove_iq_handler(Component, Host, NS)</CODE>
-<PRE CLASS="verbatim">Component = atom()
+<dl class="description"><dt class="dt-description">
+</dt><dd class="dd-description"><code>ejabberd_local</code> Handles packets that addressed to server JID;
+</dd><dt class="dt-description"></dt><dd class="dd-description"><code>ejabberd_sm</code> Handles packets that addressed to users bare JIDs.
+</dd></dl>
+</dd><dt class="dt-description"></dt><dd class="dd-description"><code>remove_iq_handler(Component, Host, NS)</code>
+<pre class="verbatim">Component = atom()
 Host = NS = string()
-</PRE>Removes IQ handler on virtual host <CODE>Host</CODE> for namespace <CODE>NS</CODE> from
-<CODE>Component</CODE>.
-</DD></DL><P>Handler function must have the following type:
-</P><DL CLASS="description"><DT CLASS="dt-description">
-</DT><DD CLASS="dd-description"><CODE>Module:Function(From, To, IQ)</CODE>
-<PRE CLASS="verbatim">From = To = jid()
-</PRE></DD></DL><PRE CLASS="verbatim">-module(mod_cputime).
+</pre>Removes IQ handler on virtual host <code>Host</code> for namespace <code>NS</code> from
+<code>Component</code>.
+</dd></dl><p>Handler function must have the following type:
+</p><dl class="description"><dt class="dt-description">
+</dt><dd class="dd-description"><code>Module:Function(From, To, IQ)</code>
+<pre class="verbatim">From = To = jid()
+</pre></dd></dl><pre class="verbatim">-module(mod_cputime).
 
 -behaviour(gen_mod).
 
@@ -368,9 +391,10 @@ process_local_iq(From, To, {iq, ID, Type, XMLNS, SubEl}) -&gt;
                [{"xmlns", ?NS_CPUTIME}],
                [{xmlelement, "cputime", [], [{xmlcdata, SCPUTime}]}]}]}
     end.
-</PRE><!--TOC subsection Services-->
-<H3 CLASS="subsection"><!--SEC ANCHOR --><A NAME="htoc15">8.2</A>&#XA0;&#XA0;Services</H3><!--SEC END --><P>
-<A NAME="services"></A></P><PRE CLASS="verbatim">-module(mod_echo).
+</pre>
+<!--TOC subsection id="sec16" Services-->
+<h3 id="sec16" class="subsection">8.2&#XA0;&#XA0;Services</h3><!--SEC END --><p>
+<a id="services"></a></p><pre class="verbatim">-module(mod_echo).
 
 -behaviour(gen_mod).
 
@@ -404,10 +428,10 @@ stop(Host) -&gt;
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Proc ! stop,
     {wait, Proc}.
-</PRE><!--CUT END -->
+</pre><!--CUT END -->
 <!--HTMLFOOT-->
 <!--ENDHTML-->
 <!--FOOTER-->
-<HR SIZE=2><BLOCKQUOTE CLASS="quote"><EM>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
-</EM><A HREF="http://hevea.inria.fr/index.html"><EM>H</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>V</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>A</EM></A><EM>.</EM></BLOCKQUOTE></BODY>
-</HTML>
+<hr style="height:2"><blockquote class="quote"><em>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
+</em><a href="http://hevea.inria.fr/index.html"><em>H</em><em><span style="font-size:small"><sup>E</sup></span></em><em>V</em><em><span style="font-size:small"><sup>E</sup></span></em><em>A</em></a><em>.</em></blockquote></body>
+</html>

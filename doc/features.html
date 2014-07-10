@@ -1,40 +1,45 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
-            "http://www.w3.org/TR/REC-html40/loose.dtd">
-<HTML>
-<HEAD>
-<TITLE>Ejabberd 2.1.12 Feature Sheet
-</TITLE>
-
-<META http-equiv="Content-Type" content="text/html; charset=US-ASCII">
-<META name="GENERATOR" content="hevea 1.10">
-<STYLE type="text/css">
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="generator" content="hevea 2.09">
+<style type="text/css">
 .li-itemize{margin:1ex 0ex;}
 .li-enumerate{margin:1ex 0ex;}
 .dd-description{margin:0ex 0ex 1ex 4ex;}
 .dt-description{margin:0ex;}
 .toc{list-style:none;}
+.footnotetext{margin:0ex; padding:0ex;}
+div.footnotetext P{margin:0px; text-indent:1em;}
 .thefootnotes{text-align:left;margin:0ex;}
 .dt-thefootnotes{margin:0em;}
 .dd-thefootnotes{margin:0em 0em 0em 2em;}
 .footnoterule{margin:1em auto 1em 0px;width:50%;}
 .caption{padding-left:2ex; padding-right:2ex; margin-left:auto; margin-right:auto}
 .title{margin:2ex auto;text-align:center}
+.titlemain{margin:1ex 2ex 2ex 1ex;}
+.titlerest{margin:0ex 2ex;}
 .center{text-align:center;margin-left:auto;margin-right:auto;}
 .flushleft{text-align:left;margin-left:0ex;margin-right:auto;}
 .flushright{text-align:right;margin-left:auto;margin-right:0ex;}
-DIV TABLE{margin-left:inherit;margin-right:inherit;}
-PRE{text-align:left;margin-left:0ex;margin-right:auto;}
-BLOCKQUOTE{margin-left:4ex;margin-right:4ex;text-align:left;}
-TD P{margin:0px;}
+div table{margin-left:inherit;margin-right:inherit;margin-bottom:2px;margin-top:2px}
+td table{margin:auto;}
+table{border-collapse:collapse;}
+td{padding:0;}
+.cellpadding0 tr td{padding:0;}
+.cellpadding1 tr td{padding:1px;}
+pre{text-align:left;margin-left:0ex;margin-right:auto;}
+blockquote{margin-left:4ex;margin-right:4ex;text-align:left;}
+td p{margin:0px;}
 .boxed{border:1px solid black}
 .textboxed{border:1px solid black}
 .vbar{border:none;width:2px;background-color:black;}
 .hbar{border:none;height:2px;width:100%;background-color:black;}
 .hfill{border:none;height:1px;width:200%;background-color:black;}
 .vdisplay{border-collapse:separate;border-spacing:2px;width:auto; empty-cells:show; border:2px solid red;}
-.vdcell{white-space:nowrap;padding:0px;width:auto; border:2px solid green;}
+.vdcell{white-space:nowrap;padding:0px; border:2px solid green;}
 .display{border-collapse:separate;border-spacing:2px;width:auto; border:none;}
-.dcell{white-space:nowrap;padding:0px;width:auto; border:none;}
+.dcell{white-space:nowrap;padding:0px; border:none;}
 .dcenter{margin:0ex auto;}
 .vdcenter{border:solid #FF8000 2px; margin:0ex auto;}
 .minipage{text-align:left; margin-left:0em; margin-right:auto;}
@@ -44,89 +49,95 @@ TD P{margin:0px;}
 .theorem{text-align:left;margin:1ex auto 1ex 0ex;}
 .part{margin:2ex auto;text-align:center}
 SPAN{width:20%; float:right; text-align:left; margin-left:auto;}
-</STYLE>
-</HEAD>
-<BODY >
+</style>
+<title>Ejabberd community 14.05-120-gedfb5fc Feature Sheet
+</title>
+</head>
+<body >
 <!--HEVEA command line is: /usr/bin/hevea -fix -pedantic features.tex -->
-<!--CUT DEF section 1 --><P><A NAME="titlepage"></A>
+<!--CUT STYLE article--><!--CUT DEF section 1 --><p><a id="titlepage"></a>
 
-</P><TABLE CLASS="title"><TR><TD><H1 CLASS="titlemain">Ejabberd 2.1.12 Feature Sheet</H1><H3 CLASS="titlerest">Sander Devrieze<BR>
- <A HREF="mailto:s.devrieze@pandora.be"><TT>mailto:s.devrieze@pandora.be</TT></A><BR>
- <A HREF="xmpp:sander@devrieze.dyndns.org"><TT>xmpp:sander@devrieze.dyndns.org</TT></A></H3></TD></TR>
-</TABLE><DIV CLASS="center">
+</p><table class="title"><tr><td style="padding:1ex"><h1 class="titlemain">Ejabberd community 14.05-120-gedfb5fc Feature Sheet</h1><h3 class="titlerest">Sander Devrieze <br>
+ <a href="mailto:s.devrieze@pandora.be"><span style="font-family:monospace">mailto:s.devrieze@pandora.be</span></a> <br>
+ <a href="xmpp:sander@devrieze.dyndns.org"><span style="font-family:monospace">xmpp:sander@devrieze.dyndns.org</span></a></h3></td></tr>
+</table><div class="center">
 
-<IMG SRC="logo.png" ALT="logo.png">
+<img src="logo.png" alt="logo.png">
 
 
-</DIV><BLOCKQUOTE CLASS="quotation"><FONT COLOR="#921700"><I>I can thoroughly recommend ejabberd for ease of setup &#X2013;
-Kevin Smith, Current maintainer of the Psi project</I></FONT></BLOCKQUOTE><P>Introduction
-<A NAME="intro"></A></P><BLOCKQUOTE CLASS="quotation"><FONT COLOR="#921700"><I>I just tried out ejabberd and was impressed both by ejabberd itself and the language it is written in, Erlang. &#X2014;
-Joeri</I></FONT></BLOCKQUOTE><P><TT>ejabberd</TT> is a <B><FONT SIZE=4><FONT COLOR="#001376">free and open source</FONT></FONT></B> instant messaging server written in <A HREF="http://www.erlang.org/">Erlang/OTP</A>.</P><P><TT>ejabberd</TT> is <B><FONT SIZE=4><FONT COLOR="#001376">cross-platform</FONT></FONT></B>, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</P><P><TT>ejabberd</TT> is designed to be a <B><FONT SIZE=4><FONT COLOR="#001376">rock-solid and feature rich</FONT></FONT></B> XMPP server.</P><P><TT>ejabberd</TT> is suitable for small deployments, whether they need to be <B><FONT SIZE=4><FONT COLOR="#001376">scalable</FONT></FONT></B> or not, as well as extremely big deployments.</P><!--TOC section Key Features-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc1"></A>Key Features</H2><!--SEC END --><P>
-<A NAME="keyfeatures"></A>
-</P><BLOCKQUOTE CLASS="quotation"><FONT COLOR="#921700"><I>Erlang seems to be tailor-made for writing stable, robust servers. &#X2014;
-Peter Saint-Andr&#XE9;, Executive Director of the Jabber Software Foundation</I></FONT></BLOCKQUOTE><P><TT>ejabberd</TT> is:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
-<B><FONT SIZE=4><FONT COLOR="#001376">Cross-platform:</FONT></FONT></B> <TT>ejabberd</TT> runs under Microsoft Windows and Unix derived systems such as Linux, FreeBSD and NetBSD.</LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Distributed:</FONT></FONT></B> You can run <TT>ejabberd</TT> on a cluster of machines and all of them will serve the same Jabber domain(s). When you need more capacity you can simply add a new cheap node to your cluster. Accordingly, you do not need to buy an expensive high-end machine to support tens of thousands concurrent users.</LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Fault-tolerant:</FONT></FONT></B> You can deploy an <TT>ejabberd</TT> cluster so that all the information required for a properly working service will be replicated permanently on all nodes. This means that if one of the nodes crashes, the others will continue working without disruption. In addition, nodes also can be added or replaced &#X2018;on the fly&#X2019;.</LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Administrator Friendly:</FONT></FONT></B> <TT>ejabberd</TT> is built on top of the Open Source Erlang. As a result you do not need to install an external database, an external web server, amongst others because everything is already included, and ready to run out of the box. Other administrator benefits include:
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</div><blockquote class="quotation"><span style="color:#921700"><span style="font-style:italic">I can thoroughly recommend ejabberd for ease of setup &#X2013;
+Kevin Smith, Current maintainer of the Psi project</span></span></blockquote><p>Introduction
+<a id="intro"></a></p><blockquote class="quotation"><span style="color:#921700"><span style="font-style:italic">I just tried out ejabberd and was impressed both by ejabberd itself and the language it is written in, Erlang. &#X2014;
+Joeri</span></span></blockquote><p><span style="font-family:monospace">ejabberd</span> is a <span style="font-weight:bold"><span style="font-size:large"><span style="color:#001376">free and open source</span></span></span> instant messaging server written in <a href="http://www.erlang.org/">Erlang/OTP</a>.</p><p><span style="font-family:monospace">ejabberd</span> is <span style="font-weight:bold"><span style="font-size:large"><span style="color:#001376">cross-platform</span></span></span>, distributed, fault-tolerant, and based on open standards to achieve real-time communication.</p><p><span style="font-family:monospace">ejabberd</span> is designed to be a <span style="font-weight:bold"><span style="font-size:large"><span style="color:#001376">rock-solid and feature rich</span></span></span> XMPP server.</p><p><span style="font-family:monospace">ejabberd</span> is suitable for small deployments, whether they need to be <span style="font-weight:bold"><span style="font-size:large"><span style="color:#001376">scalable</span></span></span> or not, as well as extremely big deployments.</p>
+<!--TOC section id="sec1" Key Features-->
+<h2 id="sec1" class="section">Key Features</h2><!--SEC END --><p>
+<a id="keyfeatures"></a>
+</p><blockquote class="quotation"><span style="color:#921700"><span style="font-style:italic">Erlang seems to be tailor-made for writing stable, robust servers. &#X2014;
+Peter Saint-Andr&#XE9;, Executive Director of the Jabber Software Foundation</span></span></blockquote><p><span style="font-family:monospace">ejabberd</span> is:
+</p><ul class="itemize"><li class="li-itemize">
+<span style="font-weight:bold"><span style="font-size:large"><span style="color:#001376">Cross-platform:</span></span></span> <span style="font-family:monospace">ejabberd</span> runs under Microsoft Windows and Unix derived systems such as Linux, FreeBSD and NetBSD.</li><li class="li-itemize"><span style="font-weight:bold"><span style="font-size:large"><span style="color:#001376">Distributed:</span></span></span> You can run <span style="font-family:monospace">ejabberd</span> on a cluster of machines and all of them will serve the same Jabber domain(s). When you need more capacity you can simply add a new cheap node to your cluster. Accordingly, you do not need to buy an expensive high-end machine to support tens of thousands concurrent users.</li><li class="li-itemize"><span style="font-weight:bold"><span style="font-size:large"><span style="color:#001376">Fault-tolerant:</span></span></span> You can deploy an <span style="font-family:monospace">ejabberd</span> cluster so that all the information required for a properly working service will be replicated permanently on all nodes. This means that if one of the nodes crashes, the others will continue working without disruption. In addition, nodes also can be added or replaced &#X2018;on the fly&#X2019;.</li><li class="li-itemize"><span style="font-weight:bold"><span style="font-size:large"><span style="color:#001376">Administrator Friendly:</span></span></span> <span style="font-family:monospace">ejabberd</span> is built on top of the Open Source Erlang. As a result you do not need to install an external database, an external web server, amongst others because everything is already included, and ready to run out of the box. Other administrator benefits include:
+<ul class="itemize"><li class="li-itemize">
 Comprehensive documentation.
-</LI><LI CLASS="li-itemize">Straightforward installers for Linux, Mac OS X, and Windows. </LI><LI CLASS="li-itemize">Web Administration.
-</LI><LI CLASS="li-itemize">Shared Roster Groups.
-</LI><LI CLASS="li-itemize">Command line administration tool. </LI><LI CLASS="li-itemize">Can integrate with existing authentication mechanisms.
-</LI><LI CLASS="li-itemize">Capability to send announce messages.
-</LI></UL></LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Internationalized:</FONT></FONT></B> <TT>ejabberd</TT> leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
-<UL CLASS="itemize"><LI CLASS="li-itemize">
-Translated to 25 languages. </LI><LI CLASS="li-itemize">Support for <A HREF="http://www.ietf.org/rfc/rfc3490.txt">IDNA</A>.
-</LI></UL></LI><LI CLASS="li-itemize"><B><FONT SIZE=4><FONT COLOR="#001376">Open Standards:</FONT></FONT></B> <TT>ejabberd</TT> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">Straightforward installers for Linux, Mac OS X, and Windows. </li><li class="li-itemize">Web Administration.
+</li><li class="li-itemize">Shared Roster Groups.
+</li><li class="li-itemize">Command line administration tool. </li><li class="li-itemize">Can integrate with existing authentication mechanisms.
+</li><li class="li-itemize">Capability to send announce messages.
+</li></ul></li><li class="li-itemize"><span style="font-weight:bold"><span style="font-size:large"><span style="color:#001376">Internationalized:</span></span></span> <span style="font-family:monospace">ejabberd</span> leads in internationalization. Hence it is very well suited in a globalized world. Related features are:
+<ul class="itemize"><li class="li-itemize">
+Translated to 25 languages. </li><li class="li-itemize">Support for <a href="http://www.ietf.org/rfc/rfc3490.txt">IDNA</a>.
+</li></ul></li><li class="li-itemize"><span style="font-weight:bold"><span style="font-size:large"><span style="color:#001376">Open Standards:</span></span></span> <span style="font-family:monospace">ejabberd</span> is the first Open Source Jabber server claiming to fully comply to the XMPP standard.
+<ul class="itemize"><li class="li-itemize">
 Fully XMPP compliant.
-</LI><LI CLASS="li-itemize">XML-based protocol.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.ejabberd.im/protocols">Many protocols supported</A>.
-</LI></UL></LI></UL><!--TOC section Additional Features-->
-<H2 CLASS="section"><!--SEC ANCHOR --><A NAME="htoc2"></A>Additional Features</H2><!--SEC END --><P>
-<A NAME="addfeatures"></A>
-</P><BLOCKQUOTE CLASS="quotation"><FONT COLOR="#921700"><I>ejabberd is making inroads to solving the "buggy incomplete server" problem &#X2014;
-Justin Karneges, Founder of the Psi and the Delta projects</I></FONT></BLOCKQUOTE><P>Moreover, <TT>ejabberd</TT> comes with a wide range of other state-of-the-art features:
-</P><UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">XML-based protocol.
+</li><li class="li-itemize"><a href="http://www.ejabberd.im/protocols">Many protocols supported</a>.
+</li></ul></li></ul>
+<!--TOC section id="sec2" Additional Features-->
+<h2 id="sec2" class="section">Additional Features</h2><!--SEC END --><p>
+<a id="addfeatures"></a>
+</p><blockquote class="quotation"><span style="color:#921700"><span style="font-style:italic">ejabberd is making inroads to solving the "buggy incomplete server" problem &#X2014;
+Justin Karneges, Founder of the Psi and the Delta projects</span></span></blockquote><p>Moreover, <span style="font-family:monospace">ejabberd</span> comes with a wide range of other state-of-the-art features:
+</p><ul class="itemize"><li class="li-itemize">
 Modular
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+<ul class="itemize"><li class="li-itemize">
 Load only the modules you want.
-</LI><LI CLASS="li-itemize">Extend <TT>ejabberd</TT> with your own custom modules.
-</LI></UL>
-</LI><LI CLASS="li-itemize">Security
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">Extend <span style="font-family:monospace">ejabberd</span> with your own custom modules.
+</li></ul>
+</li><li class="li-itemize">Security
+<ul class="itemize"><li class="li-itemize">
 SASL and STARTTLS for c2s and s2s connections.
-</LI><LI CLASS="li-itemize">STARTTLS and Dialback s2s connections.
-</LI><LI CLASS="li-itemize">Web Admin accessible via HTTPS secure access.
-</LI></UL>
-</LI><LI CLASS="li-itemize">Databases
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">STARTTLS and Dialback s2s connections.
+</li><li class="li-itemize">Web Admin accessible via HTTPS secure access.
+</li></ul>
+</li><li class="li-itemize">Databases
+<ul class="itemize"><li class="li-itemize">
 Internal database for fast deployment (Mnesia).
-</LI><LI CLASS="li-itemize">Native MySQL support.
-</LI><LI CLASS="li-itemize">Native PostgreSQL support.
-</LI><LI CLASS="li-itemize">ODBC data storage support.
-</LI><LI CLASS="li-itemize">Microsoft SQL Server support. </LI></UL>
-</LI><LI CLASS="li-itemize">Authentication
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">Native MySQL support.
+</li><li class="li-itemize">Native PostgreSQL support.
+</li><li class="li-itemize">ODBC data storage support.
+</li><li class="li-itemize">Microsoft SQL Server support. </li><li class="li-itemize">Riak NoSQL database support.
+</li></ul>
+</li><li class="li-itemize">Authentication
+<ul class="itemize"><li class="li-itemize">
 Internal Authentication.
-</LI><LI CLASS="li-itemize">PAM, LDAP and ODBC. </LI><LI CLASS="li-itemize">External Authentication script.
-</LI></UL>
-</LI><LI CLASS="li-itemize">Others
-<UL CLASS="itemize"><LI CLASS="li-itemize">
+</li><li class="li-itemize">PAM, LDAP, ODBC and Riak. </li><li class="li-itemize">External Authentication script.
+</li></ul>
+</li><li class="li-itemize">Others
+<ul class="itemize"><li class="li-itemize">
 Support for virtual hosting.
-</LI><LI CLASS="li-itemize">Compressing XML streams with Stream Compression (<A HREF="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</A>).
-</LI><LI CLASS="li-itemize">Statistics via Statistics Gathering (<A HREF="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</A>).
-</LI><LI CLASS="li-itemize">IPv6 support both for c2s and s2s connections.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0045.html">Multi-User Chat</A> module with support for clustering and HTML logging. </LI><LI CLASS="li-itemize">Users Directory based on users vCards.
-</LI><LI CLASS="li-itemize"><A HREF="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</A> component with support for <A HREF="http://www.xmpp.org/extensions/xep-0163.html">Personal Eventing via Pubsub</A>.
-</LI><LI CLASS="li-itemize">Support for web clients: <A HREF="http://www.xmpp.org/extensions/xep-0025.html">HTTP Polling</A> and <A HREF="http://www.xmpp.org/extensions/xep-0206.html">HTTP Binding (BOSH)</A> services.
-</LI><LI CLASS="li-itemize">IRC transport.
-</LI><LI CLASS="li-itemize">Component support: interface with networks such as AIM, ICQ and MSN installing special tranports.
-</LI></UL>
-</LI></UL><!--CUT END -->
+</li><li class="li-itemize">Compressing XML streams with Stream Compression (<a href="http://www.xmpp.org/extensions/xep-0138.html">XEP-0138</a>).
+</li><li class="li-itemize">Statistics via Statistics Gathering (<a href="http://www.xmpp.org/extensions/xep-0039.html">XEP-0039</a>).
+</li><li class="li-itemize">IPv6 support both for c2s and s2s connections.
+</li><li class="li-itemize"><a href="http://www.xmpp.org/extensions/xep-0045.html">Multi-User Chat</a> module with support for clustering and HTML logging. </li><li class="li-itemize">Users Directory based on users vCards.
+</li><li class="li-itemize"><a href="http://www.xmpp.org/extensions/xep-0060.html">Publish-Subscribe</a> component with support for <a href="http://www.xmpp.org/extensions/xep-0163.html">Personal Eventing via Pubsub</a>.
+</li><li class="li-itemize">Support for web clients: <a href="http://www.xmpp.org/extensions/xep-0025.html">HTTP Polling</a> and <a href="http://www.xmpp.org/extensions/xep-0206.html">HTTP Binding (BOSH)</a> services.
+</li><li class="li-itemize">IRC transport.
+</li><li class="li-itemize">SIP support.
+</li><li class="li-itemize">Component support: interface with networks such as AIM, ICQ and MSN installing special tranports.
+</li></ul>
+</li></ul><!--CUT END -->
 <!--HTMLFOOT-->
 <!--ENDHTML-->
 <!--FOOTER-->
-<HR SIZE=2><BLOCKQUOTE CLASS="quote"><EM>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
-</EM><A HREF="http://hevea.inria.fr/index.html"><EM>H</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>V</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>A</EM></A><EM>.</EM></BLOCKQUOTE></BODY>
-</HTML>
+<hr style="height:2"><blockquote class="quote"><em>This document was translated from L<sup>A</sup>T<sub>E</sub>X by
+</em><a href="http://hevea.inria.fr/index.html"><em>H</em><em><span style="font-size:small"><sup>E</sup></span></em><em>V</em><em><span style="font-size:small"><sup>E</sup></span></em><em>A</em></a><em>.</em></blockquote></body>
+</html>
