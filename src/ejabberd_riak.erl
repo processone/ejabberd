@@ -4,7 +4,7 @@
 %%% Interface for Riak database
 %%% @end
 %%% Created : 29 Dec 2011 by Alexey Shchepin <alexey@process-one.net>
-%%% @copyright (C) 2002-2012   ProcessOne
+%%% @copyright (C) 2002-2014   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -42,6 +42,7 @@
          terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 -record(state, {pid = self() :: pid()}).
 

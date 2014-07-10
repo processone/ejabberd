@@ -594,9 +594,8 @@ webadmin_page(Acc, _, _) -> Acc.
 get_offline_els(LUser, LServer) ->
     get_offline_els(LUser, LServer, gen_mod:db_type(LServer, ?MODULE)).
 
-get_offline_els(LUser, LServer, mnesia) ->
-    Msgs = read_all_msgs(LUser, LServer, mnesia),
-get_offline_els(LUser, LServer, DBType) when DBType == mnesia; DBType == riak ->
+get_offline_els(LUser, LServer, DBType)
+  when DBType == mnesia; DBType == riak ->
     Msgs = read_all_msgs(LUser, LServer, DBType),
     lists:map(
       fun(Msg) ->
@@ -606,8 +605,8 @@ get_offline_els(LUser, LServer, DBType) when DBType == mnesia; DBType == riak ->
 get_offline_els(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch ejabberd_odbc:sql_query(LServer,
-                                       [<<"select xml from spool where username='">>,
-                                        Username, <<"' order by seq;">>]) of
+				       [<<"select xml from spool  where username='">>,
+					Username, <<"'  order by seq;">>]) of
         {selected, [<<"xml">>], Rs} ->
             lists:flatmap(
               fun([XML]) ->
