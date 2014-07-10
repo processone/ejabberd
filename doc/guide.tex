@@ -2294,7 +2294,7 @@ listen:
 %TODO: this whole section is not yet 100% optimized
 
 \ejabberd{} uses its internal Mnesia database by default. However, it is
-possible to use a relational database or an LDAP server to store persistent,
+possible to use a relational database, key-value storage or an LDAP server to store persistent,
 long-living data. \ejabberd{} is very flexible: you can configure different
 authentication methods for different virtual hosts, you can configure different
 authentication mechanisms for the same virtual host (fallback), you can set
@@ -2307,6 +2307,7 @@ The following databases are supported by \ejabberd{}:
 \item \footahref{http://www.mysql.com/}{MySQL}
 \item \footahref{http://en.wikipedia.org/wiki/Open\_Database\_Connectivity}{Any ODBC compatible database}
 \item \footahref{http://www.postgresql.org/}{PostgreSQL}
+\item \footahref{http://basho.com/riak/}{Riak}
 \end{itemize}
 
 The following LDAP servers are tested with \ejabberd{}:
@@ -2661,6 +2662,79 @@ modules:
   ...
 \end{verbatim}
 
+\makesubsection{riak}{Riak}
+\ind{databases!Riak}
+
+\footahref{http://basho.com/riak/}{Riak} is a distributed NoSQL key-value data store.
+The actual database access is defined in the options with \term{riak\_} prefix.
+
+\makesubsubsection{riakconnection}{Connection}
+\ind{riak!connection}
+
+The following paramaters are available:
+\begin{description}
+  \titem{riak\_server: String} A hostname of the Riak server. The default is
+  \term{``localhost''}.
+  \titem{riak\_port: Port} The port where the Riak server is accepting connections.
+  The defalt is 8087.
+  \titem{riak\_pool\_size: N} By default \ejabberd{} opens 10 connections to
+  the Riak server. You can change this number by using this option.
+  \titem{riak\_start\_interval: N} If the connection to the Riak server fails,
+  \ejabberd{} waits 30 seconds before retrying.
+  You can modify this interval with this option.
+\end{description}
+
+Example configuration:
+\begin{verbatim}
+riak_server: "riak.server.com"
+riak_port: 9097
+\end{verbatim}
+
+\makesubsubsection{riakstorage}{Storage}
+\ind{riak!storage}
+
+Several \ejabberd{} modules can be used to store information in Riak database.
+Refer to the corresponding module documentation to see if it supports such
+ability. To enable storage to Riak database, just make
+sure that your database is running well (see the next section), and add the
+module option \term{db\_type: riak}.
+
+\makesubsubsection{riakconfiguration}{Riak Configuration}
+\ind{riak!configuration}
+
+First, you need to configure Riak to use
+\footahref{http://en.wikipedia.org/wiki/LevelDB}{LevelDB} as a database backend.
+
+If you are using Riak 2.x and higher, configure \term{storage\_backend} option
+of \term{/etc/riak/riak.conf} as follows:
+\begin{verbatim}
+...
+storage_backend = leveldb
+...
+\end{verbatim}
+
+If you are using Riak 1.4.x and older, configure \term{storage\_backend} option
+of \term{/etc/riak/app.config} in the section \term{riak\_kv} as follows:
+\begin{verbatim}
+...
+ {riak_kv, [
+            ...
+            {storage_backend, riak_kv_eleveldb_backend},
+...
+\end{verbatim}
+
+Second, Riak should be pointed to \ejabberd{} Erlang binary files (*.beam).
+As described in \ref{install}, by default those are located
+in \term{/lib/ejabberd/ebin} directory. So you
+should add the following to \term{/etc/riak/vm.args}:
+\begin{verbatim}
+...
+## Path to ejabberd beams in order to make map/reduce
+-pz /lib/ejabberd/ebin
+...
+\end{verbatim}
+Important notice: make sure Riak has at least read access to that directory.
+Otherwise its startup will likely fail.
 
 \makesection{modules}{Modules Configuration}
 \ind{modules}
