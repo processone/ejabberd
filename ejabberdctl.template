@@ -184,23 +184,24 @@ start()
 # attach to server
 debug()
 {
-    echo "--------------------------------------------------------------------"
-    echo ""
-    echo "IMPORTANT: we will attempt to attach an INTERACTIVE shell"
-    echo "to an already running ejabberd node."
-    echo "If an ERROR is printed, it means the connection was not successful."
-    echo "You can interact with the ejabberd node if you know how to use it."
-    echo "Please be extremely cautious with your actions,"
-    echo "and exit immediately if you are not completely sure."
-    echo ""
-    echo "To detach this shell from ejabberd, press:"
-    echo "  control+c, control+c"
-    echo ""
-    echo "--------------------------------------------------------------------"
-    echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
-    echo "  EJABBERD_BYPASS_WARNINGS=true"
-    echo "Press any key to continue"
     if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
+        echo "--------------------------------------------------------------------"
+        echo ""
+        echo "IMPORTANT: we will attempt to attach an INTERACTIVE shell"
+        echo "to an already running ejabberd node."
+        echo "If an ERROR is printed, it means the connection was not successful."
+        echo "You can interact with the ejabberd node if you know how to use it."
+        echo "Please be extremely cautious with your actions,"
+        echo "and exit immediately if you are not completely sure."
+        echo ""
+        echo "To detach this shell from ejabberd, press:"
+        echo "  control+c, control+c"
+        echo ""
+        echo "--------------------------------------------------------------------"
+        echo "To bypass permanently this warning, add to $EJABBERDCTL_CONFIG_PATH the line:"
+        echo "  EJABBERD_BYPASS_WARNINGS=true"
+        echo "Press any key to continue"
+
         read foo
     fi
     echo ""
@@ -217,22 +218,23 @@ debug()
 live()
 {
     check_start
-    echo "--------------------------------------------------------------------"
-    echo ""
-    echo "IMPORTANT: ejabberd is going to start in LIVE (interactive) mode."
-    echo "All log messages will be shown in the command shell."
-    echo "You can interact with the ejabberd node if you know how to use it."
-    echo "Please be extremely cautious with your actions,"
-    echo "and exit immediately if you are not completely sure."
-    echo ""
-    echo "To exit this LIVE mode and stop ejabberd, press:"
-    echo "  q().  and press the Enter key"
-    echo ""
-    echo "--------------------------------------------------------------------"
-    echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
-    echo "  EJABBERD_BYPASS_WARNINGS=true"
-    echo "Press any key to continue"
     if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
+        echo "--------------------------------------------------------------------"
+        echo ""
+        echo "IMPORTANT: ejabberd is going to start in LIVE (interactive) mode."
+        echo "All log messages will be shown in the command shell."
+        echo "You can interact with the ejabberd node if you know how to use it."
+        echo "Please be extremely cautious with your actions,"
+        echo "and exit immediately if you are not completely sure."
+        echo ""
+        echo "To exit this LIVE mode and stop ejabberd, press:"
+        echo "  q().  and press the Enter key"
+        echo ""
+        echo "--------------------------------------------------------------------"
+        echo "To bypass permanently this warning, add to $EJABBERDCTL_CONFIG_PATH the line:"
+        echo "  EJABBERD_BYPASS_WARNINGS=true"
+        echo "Press any key to continue"
+
         read foo
     fi
     echo ""
