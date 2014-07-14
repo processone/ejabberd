@@ -206,7 +206,8 @@ read_roster_version(LUser, LServer, odbc) ->
       {selected, [<<"version">>], []} -> error
     end;
 read_roster_version(LServer, LUser, riak) ->
-    case ejabberd_riak:get(roster_version, {LUser, LServer}) of
+    case ejabberd_riak:get(roster_version, roster_version_schema(),
+			   {LUser, LServer}) of
         {ok, #roster_version{version = V}} -> V;
         _Err -> error
     end.
@@ -248,7 +249,8 @@ write_roster_version(LUser, LServer, InTransaction, Ver,
 write_roster_version(LUser, LServer, _InTransaction, Ver,
 		     riak) ->
     US = {LUser, LServer},
-    ejabberd_riak:put(#roster_version{us = US, version = Ver}).
+    ejabberd_riak:put(#roster_version{us = US, version = Ver},
+		      roster_version_schema()).
 
 %% Load roster from DB only if neccesary. 
 %% It is neccesary if
@@ -357,7 +359,8 @@ get_roster(LUser, LServer, mnesia) ->
       _ -> []
     end;
 get_roster(LUser, LServer, riak) ->
-    case ejabberd_riak:get_by_index(roster, <<"us">>, {LUser, LServer}) of
+    case ejabberd_riak:get_by_index(roster, roster_schema(),
+				    <<"us">>, {LUser, LServer}) of
         {ok, Items} -> Items;
         _Err -> []
     end;
@@ -471,7 +474,7 @@ get_roster_by_jid_t(LUser, LServer, LJID, odbc) ->
 	  end
     end;
 get_roster_by_jid_t(LUser, LServer, LJID, riak) ->
-    case ejabberd_riak:get(roster, {LUser, LServer, LJID}) of
+    case ejabberd_riak:get(roster, roster_schema(), {LUser, LServer, LJID}) of
         {ok, I} ->
             I#roster{jid = LJID, name = <<"">>, groups = [],
                      xs = []};
@@ -660,7 +663,8 @@ get_subscription_lists(_, LUser, LServer, odbc) ->
       _ -> []
     end;
 get_subscription_lists(_, LUser, LServer, riak) ->
-    case ejabberd_riak:get_by_index(roster, <<"us">>, {LUser, LServer}) of
+    case ejabberd_riak:get_by_index(roster, roster_schema(),
+				    <<"us">>, {LUser, LServer}) of
         {ok, Items} -> Items;
         _Err -> []
     end.
@@ -703,7 +707,7 @@ roster_subscribe_t(LUser, LServer, LJID, Item, odbc) ->
     odbc_queries:roster_subscribe(LServer, Username, SJID,
 				  ItemVals);
 roster_subscribe_t(LUser, LServer, _LJID, Item, riak) ->
-    ejabberd_riak:put(Item,
+    ejabberd_riak:put(Item, roster_schema(),
                       [{'2i', [{<<"us">>, {LUser, LServer}}]}]).
 
 transaction(LServer, F) ->
@@ -763,7 +767,7 @@ get_roster_by_jid_with_groups_t(LUser, LServer, LJID,
 		  us = {LUser, LServer}, jid = LJID}
     end;
 get_roster_by_jid_with_groups_t(LUser, LServer, LJID, riak) ->
-    case ejabberd_riak:get(roster, {LUser, LServer, LJID}) of
+    case ejabberd_riak:get(roster, roster_schema(), {LUser, LServer, LJID}) of
         {ok, I} ->
             I;
         {error, notfound} ->
@@ -1057,7 +1061,7 @@ update_roster_t(LUser, LServer, LJID, Item, odbc) ->
     odbc_queries:update_roster(LServer, Username, SJID, ItemVals,
                                ItemGroups);
 update_roster_t(LUser, LServer, _LJID, Item, riak) ->
-    ejabberd_riak:put(Item,
+    ejabberd_riak:put(Item, roster_schema(),
                       [{'2i', [{<<"us">>, {LUser, LServer}}]}]).
 
 del_roster_t(LUser, LServer, LJID) ->
@@ -1254,7 +1258,7 @@ read_subscription_and_groups(LUser, LServer, LJID,
     end;
 read_subscription_and_groups(LUser, LServer, LJID,
 			     riak) ->
-    case ejabberd_riak:get(roster, {LUser, LServer, LJID}) of
+    case ejabberd_riak:get(roster, roster_schema(), {LUser, LServer, LJID}) of
         {ok, #roster{subscription = Subscription,
                      groups = Groups}} ->
             {Subscription, Groups};
@@ -1698,6 +1702,11 @@ is_managed_from_id(<<"roster-remotely-managed">>) ->
 is_managed_from_id(_Id) ->
     false.
 
+roster_schema() ->
+    {record_info(fields, roster), #roster{}}.
+
+roster_version_schema() ->
+    {record_info(fields, roster_version), #roster_version{}}.
 
 export(_Server) ->
     [{roster,
@@ -1749,8 +1758,9 @@ import(_LServer, mnesia, #roster{} = R) ->
 import(_LServer, mnesia, #roster_version{} = RV) ->
     mnesia:dirty_write(RV);
 import(_LServer, riak, #roster{us = {LUser, LServer}} = R) ->
-    ejabberd_riak:put(R, [{'2i', [{<<"us">>, {LUser, LServer}}]}]);
+    ejabberd_riak:put(R, roster_schema(),
+		      [{'2i', [{<<"us">>, {LUser, LServer}}]}]);
 import(_LServer, riak, #roster_version{} = RV) ->
-    ejabberd_riak:put(RV);
+    ejabberd_riak:put(RV, roster_version_schema());
 import(_, _, _) ->
     pass.

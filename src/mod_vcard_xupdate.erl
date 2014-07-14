@@ -90,7 +90,8 @@ add_xupdate(LUser, LServer, Hash, mnesia) ->
     mnesia:transaction(F);
 add_xupdate(LUser, LServer, Hash, riak) ->
     {atomic, ejabberd_riak:put(#vcard_xupdate{us = {LUser, LServer},
-                                              hash = Hash})};
+                                              hash = Hash},
+			       vcard_xupdate_schema())};
 add_xupdate(LUser, LServer, Hash, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     SHash = ejabberd_odbc:escape(Hash),
@@ -113,7 +114,8 @@ get_xupdate(LUser, LServer, mnesia) ->
       _ -> undefined
     end;
 get_xupdate(LUser, LServer, riak) ->
-    case ejabberd_riak:get(vcard_xupdate, {LUser, LServer}) of
+    case ejabberd_riak:get(vcard_xupdate, vcard_xupdate_schema(),
+			   {LUser, LServer}) of
         {ok, #vcard_xupdate{hash = Hash}} -> Hash;
         _ -> undefined
     end;
@@ -182,6 +184,9 @@ build_xphotoel(User, Host) ->
 	   attrs = [{<<"xmlns">>, ?NS_VCARD_UPDATE}],
 	   children = PhotoEl}.
 
+vcard_xupdate_schema() ->
+    {record_info(fields, vcard_xupdate), #vcard_xupdate{}}.
+
 update_table() ->
     Fields = record_info(fields, vcard_xupdate),
     case mnesia:table_info(vcard_xupdate, attributes) of
@@ -223,6 +228,6 @@ import(LServer) ->
 import(_LServer, mnesia, #vcard_xupdate{} = R) ->
     mnesia:dirty_write(R);
 import(_LServer, riak, #vcard_xupdate{} = R) ->
-    ejabberd_riak:put(R);
+    ejabberd_riak:put(R, vcard_xupdate_schema());
 import(_, _, _) ->
     pass.

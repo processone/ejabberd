@@ -169,7 +169,8 @@ get_last(LUser, LServer, mnesia) ->
 	  {ok, TimeStamp, Status}
     end;
 get_last(LUser, LServer, riak) ->
-    case ejabberd_riak:get(last_activity, {LUser, LServer}) of
+    case ejabberd_riak:get(last_activity, last_activity_schema(),
+			   {LUser, LServer}) of
         {ok, #last_activity{timestamp = TimeStamp,
                             status = Status}} ->
             {ok, TimeStamp, Status};
@@ -250,7 +251,8 @@ store_last_info(LUser, LServer, TimeStamp, Status,
     US = {LUser, LServer},
     {atomic, ejabberd_riak:put(#last_activity{us = US,
                                               timestamp = TimeStamp,
-                                              status = Status})};
+                                              status = Status},
+			       last_activity_schema())};
 store_last_info(LUser, LServer, TimeStamp, Status,
 		odbc) ->
     Username = ejabberd_odbc:escape(LUser),
@@ -301,6 +303,9 @@ update_table() ->
 	  mnesia:transform_table(last_activity, ignore, Fields)
     end.
 
+last_activity_schema() ->
+    {record_info(fields, last_activity), #last_activity{}}.
+
 export(_Server) ->
     [{last_activity,
       fun(Host, #last_activity{us = {LUser, LServer},
@@ -331,7 +336,7 @@ import(LServer) ->
 import(_LServer, mnesia, #last_activity{} = LA) ->
     mnesia:dirty_write(LA);
 import(_LServer, riak, #last_activity{} = LA) ->
-    ejabberd_riak:put(LA);
+    ejabberd_riak:put(LA, last_activity_schema());
 import(_, _, _) ->
     pass.
 

@@ -189,7 +189,8 @@ store_offline_msg(Host, {User, _}, Msgs, Len, MaxOfflineMsgs,
             lists:foreach(
               fun(#offline_msg{us = US,
                                timestamp = TS} = M) ->
-                      ejabberd_riak:put(M, [{i, TS}, {'2i', [{<<"us">>, US}]}])
+                      ejabberd_riak:put(M, offline_msg_schema(),
+					[{i, TS}, {'2i', [{<<"us">>, US}]}])
               end, Msgs)
     end.
 
@@ -440,7 +441,7 @@ pop_offline_messages(Ls, LUser, LServer, odbc) ->
       _ -> Ls
     end;
 pop_offline_messages(Ls, LUser, LServer, riak) ->
-    case ejabberd_riak:get_by_index(offline_msg,
+    case ejabberd_riak:get_by_index(offline_msg, offline_msg_schema(),
                                     <<"us">>, {LUser, LServer}) of
         {ok, Rs} ->
             try
@@ -655,7 +656,8 @@ read_all_msgs(LUser, LServer, mnesia) ->
 		  mnesia:dirty_read({offline_msg, US}));
 read_all_msgs(LUser, LServer, riak) ->
     case ejabberd_riak:get_by_index(
-           offline_msg, <<"us">>, {LUser, LServer}) of
+           offline_msg, offline_msg_schema(),
+	   <<"us">>, {LUser, LServer}) of
         {ok, Rs} ->
             lists:keysort(#offline_msg.timestamp, Rs);
         _Err ->
@@ -1014,6 +1016,9 @@ count_offline_messages(_Acc, User, Server) ->
     N = count_offline_messages(User, Server),
     {stop, N}.
 
+offline_msg_schema() ->
+    {record_info(fields, offline_msg), #offline_msg{}}.
+
 export(_Server) ->
     [{offline_msg,
       fun(Host, #offline_msg{us = {LUser, LServer},
@@ -1073,6 +1078,7 @@ import(LServer) ->
 import(_LServer, mnesia, #offline_msg{} = Msg) ->
     mnesia:dirty_write(Msg);
 import(_LServer, riak, #offline_msg{us = US, timestamp = TS} = M) ->
-    ejabberd_riak:put(M, [{i, TS}, {'2i', [{<<"us">>, US}]}]);
+    ejabberd_riak:put(M, offline_msg_schema(),
+		      [{i, TS}, {'2i', [{<<"us">>, US}]}]);
 import(_, _, _) ->
     pass.

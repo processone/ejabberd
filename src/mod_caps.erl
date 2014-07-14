@@ -444,7 +444,7 @@ caps_read_fun(_LServer, Node, mnesia) ->
     end;
 caps_read_fun(_LServer, Node, riak) ->
     fun() ->
-            case ejabberd_riak:get(caps_features, Node) of
+            case ejabberd_riak:get(caps_features, caps_features_schema(), Node) of
                 {ok, #caps_features{features = Features}} -> {ok, Features};
                 _ -> error
             end
@@ -482,7 +482,8 @@ caps_write_fun(_LServer, Node, Features, mnesia) ->
 caps_write_fun(_LServer, Node, Features, riak) ->
     fun () ->
             ejabberd_riak:put(#caps_features{node_pair = Node,
-                                             features = Features})
+                                             features = Features},
+			      caps_features_schema())
     end;
 caps_write_fun(LServer, NodePair, Features, odbc) ->
     fun () ->
@@ -676,6 +677,9 @@ sql_write_features_t({Node, SubNode}, Features) ->
        <<"values ('">>, SNode, <<"', '">>, SSubNode, <<"', '">>,
        ejabberd_odbc:escape(F), <<"');">>] || F <- NewFeatures]].
 
+caps_features_schema() ->
+    {record_info(fields, caps_features), #caps_features{}}.
+
 export(_Server) ->
     [{caps_features,
       fun(_Host, #caps_features{node_pair = NodePair,
@@ -717,13 +721,15 @@ import_next(LServer, DBType, NodePair) ->
               #caps_features{node_pair = NodePair, features = I});
         [I] when is_integer(I), DBType == riak ->
             ejabberd_riak:put(
-              #caps_features{node_pair = NodePair, features = I});
+              #caps_features{node_pair = NodePair, features = I},
+	      caps_features_schema());
         _ when DBType == mnesia ->
             mnesia:dirty_write(
               #caps_features{node_pair = NodePair, features = Features});
         _ when DBType == riak ->
             ejabberd_riak:put(
-              #caps_features{node_pair = NodePair, features = Features});
+              #caps_features{node_pair = NodePair, features = Features},
+	      caps_features_schema());
         _ when DBType == odbc ->
             ok
     end,

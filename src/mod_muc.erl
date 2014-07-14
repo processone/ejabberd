@@ -149,7 +149,8 @@ store_room(_LServer, Host, Name, Opts, mnesia) ->
     mnesia:transaction(F);
 store_room(_LServer, Host, Name, Opts, riak) ->
     {atomic, ejabberd_riak:put(#muc_room{name_host = {Name, Host},
-                                         opts = Opts})};
+                                         opts = Opts},
+			       muc_room_schema())};
 store_room(LServer, Host, Name, Opts, odbc) ->
     SName = ejabberd_odbc:escape(Name),
     SHost = ejabberd_odbc:escape(Host),
@@ -174,7 +175,7 @@ restore_room(_LServer, Host, Name, mnesia) ->
       _ -> error
     end;
 restore_room(_LServer, Host, Name, riak) ->
-    case ejabberd_riak:get(muc_room, {Name, Host}) of
+    case ejabberd_riak:get(muc_room, muc_room_schema(), {Name, Host}) of
         {ok, #muc_room{opts = Opts}} -> Opts;
         _ -> error
     end;
@@ -245,6 +246,7 @@ can_use_nick(LServer, Host, JID, Nick, riak) ->
     {LUser, LServer, _} = jlib:jid_tolower(JID),
     LUS = {LUser, LServer},
     case ejabberd_riak:get_by_index(muc_registered,
+				    muc_registered_schema(),
                                     <<"nick_host">>, {Nick, Host}) of
         {ok, []} ->
             true;
@@ -640,7 +642,7 @@ get_rooms(_LServer, Host, mnesia) ->
       Rs -> Rs
     end;
 get_rooms(_LServer, Host, riak) ->
-    case ejabberd_riak:get(muc_room) of
+    case ejabberd_riak:get(muc_room, muc_room_schema()) of
         {ok, Rs} ->
             lists:filter(
               fun(#muc_room{name_host = {_, H}}) ->
@@ -874,7 +876,9 @@ get_nick(_LServer, Host, From, mnesia) ->
 get_nick(LServer, Host, From, riak) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
     US = {LUser, LServer},
-    case ejabberd_riak:get(muc_registered, {US, Host}) of
+    case ejabberd_riak:get(muc_registered,
+			   muc_registered_schema(),
+			   {US, Host}) of
         {ok, #muc_registered{nick = Nick}} -> Nick;
         {error, _} -> error
     end;
@@ -971,6 +975,7 @@ set_nick(LServer, Host, From, Nick, riak) ->
          _ ->
              Allow = case ejabberd_riak:get_by_index(
                             muc_registered,
+			    muc_registered_schema(),
                             <<"nick_host">>, {Nick, Host}) of
                          {ok, []} ->
                              true;
@@ -982,6 +987,7 @@ set_nick(LServer, Host, From, Nick, riak) ->
              if Allow ->
                      ejabberd_riak:put(#muc_registered{us_host = {LUS, Host},
                                                        nick = Nick},
+				       muc_registered_schema(),
                                        [{'2i', [{<<"nick_host">>,
                                                  {Nick, Host}}]}]);
                 true ->
@@ -1173,6 +1179,12 @@ update_tables(Host) ->
     update_muc_room_table(Host),
     update_muc_registered_table(Host).
 
+muc_room_schema() ->
+    {record_info(fields, muc_room), #muc_room{}}.
+
+muc_registered_schema() ->
+    {record_info(fields, muc_registered), #muc_registered{}}.
+
 update_muc_room_table(_Host) ->
     Fields = record_info(fields, muc_room),
     case mnesia:table_info(muc_room, attributes) of
@@ -1269,9 +1281,10 @@ import(_LServer, mnesia, #muc_room{} = R) ->
 import(_LServer, mnesia, #muc_registered{} = R) ->
     mnesia:dirty_write(R);
 import(_LServer, riak, #muc_room{} = R) ->
-    ejabberd_riak:put(R);
+    ejabberd_riak:put(R, muc_room_schema());
 import(_LServer, riak,
        #muc_registered{us_host = {_, Host}, nick = Nick} = R) ->
-    ejabberd_riak:put(R, [{'2i', [{<<"nick_host">>, {Nick, Host}}]}]);
+    ejabberd_riak:put(R, muc_registered_schema(),
+		      [{'2i', [{<<"nick_host">>, {Nick, Host}}]}]);
 import(_, _, _) ->
     pass.

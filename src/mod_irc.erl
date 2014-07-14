@@ -594,7 +594,7 @@ get_data(_LServer, Host, From, mnesia) ->
 get_data(LServer, Host, From, riak) ->
     #jid{luser = LUser, lserver = LServer} = From,
     US = {LUser, LServer},
-    case ejabberd_riak:get(irc_custom, {US, Host}) of
+    case ejabberd_riak:get(irc_custom, irc_custom_schema(), {US, Host}) of
         {ok, #irc_custom{data = Data}} ->
             Data;
         {error, notfound} ->
@@ -738,7 +738,8 @@ set_data(LServer, Host, From, Data, riak) ->
     {LUser, LServer, _} = jlib:jid_tolower(From),
     US = {LUser, LServer},
     {atomic, ejabberd_riak:put(#irc_custom{us_host = {US, Host},
-                                           data = Data})};
+                                           data = Data},
+			       irc_custom_schema())};
 set_data(LServer, Host, From, Data, odbc) ->
     SJID =
 	ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From)))),
@@ -1284,6 +1285,9 @@ conn_params_to_list(Params) ->
                Port, binary_to_list(P)}
       end, Params).
 
+irc_custom_schema() ->
+    {record_info(fields, irc_custom), #irc_custom{}}.
+
 update_table() ->
     Fields = record_info(fields, irc_custom),
     case mnesia:table_info(irc_custom, attributes) of
@@ -1338,6 +1342,6 @@ import(_LServer) ->
 import(_LServer, mnesia, #irc_custom{} = R) ->
     mnesia:dirty_write(R);
 import(_LServer, riak, #irc_custom{} = R) ->
-    ejabberd_riak:put(R);
+    ejabberd_riak:put(R, irc_custom_schema());
 import(_, _, _) ->
     pass.

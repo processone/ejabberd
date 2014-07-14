@@ -214,7 +214,7 @@ get_vcard(LUser, LServer, odbc) ->
       _ -> error
     end;
 get_vcard(LUser, LServer, riak) ->
-    case ejabberd_riak:get(vcard, {LUser, LServer}) of
+    case ejabberd_riak:get(vcard, vcard_schema(), {LUser, LServer}) of
         {ok, R} ->
             [R#vcard.vcard];
         {error, notfound} ->
@@ -301,6 +301,7 @@ set_vcard(User, LServer, VCARD) ->
              riak ->
                  US = {LUser, LServer},
                  ejabberd_riak:put(#vcard{us = US, vcard = VCARD},
+				   vcard_schema(),
                                    [{'2i', [{<<"user">>, User},
                                             {<<"luser">>, LUser},
                                             {<<"fn">>, FN},
@@ -972,6 +973,9 @@ update_vcard_search_table() ->
 	  mnesia:transform_table(vcard_search, ignore, Fields)
     end.
 
+vcard_schema() ->
+    {record_info(fields, vcard), #vcard{}}.
+
 export(_Server) ->   
     [{vcard,
       fun(Host, #vcard{us = {LUser, LServer}, vcard = VCARD})
@@ -1121,7 +1125,7 @@ import(_LServer, riak, #vcard{us = {LUser, _}, vcard = El} = VCard) ->
     LEMail = string2lower(EMail),
     LOrgName = string2lower(OrgName),
     LOrgUnit = string2lower(OrgUnit),
-    ejabberd_riak:put(VCard,
+    ejabberd_riak:put(VCard, vcard_schema(),
                       [{'2i', [{<<"user">>, LUser},
                                {<<"luser">>, LUser},
                                {<<"fn">>, FN},

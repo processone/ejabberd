@@ -40,6 +40,7 @@
 	 get_password_s/2, is_user_exists/2, remove_user/2,
 	 remove_user/3, store_type/0, export/1, import/3,
 	 plain_password_required/0]).
+-export([passwd_schema/0]).
 
 -include("ejabberd.hrl").
 
@@ -63,10 +64,13 @@ store_type() ->
       true -> scram %% allows: PLAIN SCRAM
     end.
 
+passwd_schema() ->
+    {record_info(fields, passwd), #passwd{}}.
+
 check_password(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    case ejabberd_riak:get(passwd, {LUser, LServer}) of
+    case ejabberd_riak:get(passwd, passwd_schema(), {LUser, LServer}) of
         {ok, #passwd{password = Password}} when is_binary(Password) ->
             Password /= <<"">>;
         {ok, #passwd{password = Scram}} when is_record(Scram, scram) ->
@@ -79,7 +83,7 @@ check_password(User, Server, Password, Digest,
 	       DigestGen) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    case ejabberd_riak:get(passwd, {LUser, LServer}) of
+    case ejabberd_riak:get(passwd, passwd_schema(), {LUser, LServer}) of
       {ok, #passwd{password = Passwd}} when is_binary(Passwd) ->
 	  DigRes = if Digest /= <<"">> ->
 			  Digest == DigestGen(Passwd);
@@ -114,6 +118,7 @@ set_password(User, Server, Password) ->
                             false -> Password
                         end,
             ok = ejabberd_riak:put(#passwd{us = US, password = Password2},
+				   passwd_schema(),
                                    [{'2i', [{<<"host">>, LServer}]}])
     end.
 
@@ -125,7 +130,7 @@ try_register(User, Server, PasswordList) ->
     if (LUser == error) or (LServer == error) ->
 	   {error, invalid_jid};
        true ->
-            case ejabberd_riak:get(passwd, US) of
+            case ejabberd_riak:get(passwd, passwd_schema(), US) of
                 {error, notfound} ->
                     Password2 = case is_scrammed() and
                                     is_binary(Password)
@@ -136,6 +141,7 @@ try_register(User, Server, PasswordList) ->
                     {atomic, ejabberd_riak:put(
                                #passwd{us = US,
                                        password = Password2},
+			       passwd_schema(),
                                [{'2i', [{<<"host">>, LServer}]}])};
                 {ok, _} ->
                     exists;
@@ -177,7 +183,7 @@ get_vh_registered_users_number(Server, _) ->
 get_password(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    case ejabberd_riak:get(passwd, {LUser, LServer}) of
+    case ejabberd_riak:get(passwd, passwd_schema(), {LUser, LServer}) of
       {ok, #passwd{password = Password}}
 	  when is_binary(Password) ->
 	  Password;
@@ -193,7 +199,7 @@ get_password(User, Server) ->
 get_password_s(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    case ejabberd_riak:get(passwd, {LUser, LServer}) of
+    case ejabberd_riak:get(passwd, passwd_schema(), {LUser, LServer}) of
       {ok, #passwd{password = Password}}
 	  when is_binary(Password) ->
 	  Password;
@@ -206,7 +212,7 @@ get_password_s(User, Server) ->
 is_user_exists(User, Server) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    case ejabberd_riak:get(passwd, {LUser, LServer}) of
+    case ejabberd_riak:get(passwd, passwd_schema(), {LUser, LServer}) of
       {error, notfound} -> false;
       {ok, _} -> true;
       Err -> Err
@@ -221,7 +227,7 @@ remove_user(User, Server) ->
 remove_user(User, Server, Password) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    case ejabberd_riak:get(passwd, {LUser, LServer}) of
+    case ejabberd_riak:get(passwd, passwd_schema(), {LUser, LServer}) of
         {ok, #passwd{password = Password}}
           when is_binary(Password) ->
             ejabberd_riak:delete(passwd, {LUser, LServer}),
@@ -285,6 +291,6 @@ export(_Server) ->
       end}].
 
 import(LServer, riak, #passwd{} = Passwd) ->
-    ejabberd_riak:put(Passwd, [{'2i', [{<<"host">>, LServer}]}]);
+    ejabberd_riak:put(Passwd, passwd_schema(), [{'2i', [{<<"host">>, LServer}]}]);
 import(_, _, _) ->
     pass.

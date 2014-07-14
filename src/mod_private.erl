@@ -154,6 +154,7 @@ set_data(LUser, LServer, {XMLNS, El}, odbc) ->
 set_data(LUser, LServer, {XMLNS, El}, riak) ->
     ejabberd_riak:put(#private_storage{usns = {LUser, LServer, XMLNS},
                                        xml = El},
+		      private_storage_schema(),
                       [{'2i', [{<<"us">>, {LUser, LServer}}]}]).
 
 get_data(LUser, LServer, Data) ->
@@ -191,7 +192,8 @@ get_data(LUser, LServer, odbc, [{XMLNS, El} | Els],
     end;
 get_data(LUser, LServer, riak, [{XMLNS, El} | Els],
 	 Res) ->
-    case ejabberd_riak:get(private_storage, {LUser, LServer, XMLNS}) of
+    case ejabberd_riak:get(private_storage, private_storage_schema(),
+			   {LUser, LServer, XMLNS}) of
         {ok, #private_storage{xml = NewEl}} ->
             get_data(LUser, LServer, riak, Els, [NewEl|Res]);
         _ ->
@@ -226,12 +228,16 @@ get_all_data(LUser, LServer, odbc) ->
     end;
 get_all_data(LUser, LServer, riak) ->
     case ejabberd_riak:get_by_index(
-           private_storage, <<"us">>, {LUser, LServer}) of
+           private_storage, private_storage_schema(),
+	   <<"us">>, {LUser, LServer}) of
         {ok, Res} ->
             [El || #private_storage{xml = El} <- Res];
         _ ->
             []
     end.
+
+private_storage_schema() ->
+    {record_info(fields, private_storage), #private_storage{}}.
 
 remove_user(User, Server) ->
     LUser = jlib:nodeprep(User),
@@ -307,7 +313,9 @@ import(LServer) ->
 
 import(_LServer, mnesia, #private_storage{} = PS) ->
     mnesia:dirty_write(PS);
+
 import(_LServer, riak, #private_storage{usns = {LUser, LServer, _}} = PS) ->
-    ejabberd_riak:put(PS, [{'2i', [{<<"us">>, {LUser, LServer}}]}]);
+    ejabberd_riak:put(PS, private_storage_schema(),
+		      [{'2i', [{<<"us">>, {LUser, LServer}}]}]);
 import(_, _, _) ->
     pass.

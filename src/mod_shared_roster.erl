@@ -425,7 +425,8 @@ groups_with_opts(Host, mnesia) ->
 			       [], [['$1', '$2']]}]),
     lists:map(fun ([G, O]) -> {G, O} end, Gs);
 groups_with_opts(Host, riak) ->
-    case ejabberd_riak:get_by_index(sr_group, <<"host">>, Host) of
+    case ejabberd_riak:get_by_index(sr_group, sr_group_schema(),
+				    <<"host">>, Host) of
         {ok, Rs} ->
             [{G, O} || #sr_group{group_host = {G, _}, opts = O} <- Rs];
         _ ->
@@ -455,6 +456,7 @@ create_group(Host, Group, Opts, mnesia) ->
 create_group(Host, Group, Opts, riak) ->
     {atomic, ejabberd_riak:put(#sr_group{group_host = {Group, Host},
                                          opts = Opts},
+			       sr_group_schema(),
                                [{'2i', [{<<"host">>, Host}]}])};
 create_group(Host, Group, Opts, odbc) ->
     SGroup = ejabberd_odbc:escape(Group),
@@ -511,7 +513,7 @@ get_group_opts(Host, Group, mnesia) ->
       _ -> error
     end;
 get_group_opts(Host, Group, riak) ->
-    case ejabberd_riak:get(sr_group, {Group, Host}) of
+    case ejabberd_riak:get(sr_group, sr_group_schema(), {Group, Host}) of
         {ok, #sr_group{opts = Opts}} -> Opts;
         _ -> error
     end;
@@ -537,6 +539,7 @@ set_group_opts(Host, Group, Opts, mnesia) ->
 set_group_opts(Host, Group, Opts, riak) ->
     {atomic, ejabberd_riak:put(#sr_group{group_host = {Group, Host},
                                          opts = Opts},
+			       sr_group_schema(),
                                [{'2i', [{<<"host">>, Host}]}])};
 set_group_opts(Host, Group, Opts, odbc) ->
     SGroup = ejabberd_odbc:escape(Group),
@@ -562,7 +565,7 @@ get_user_groups(US, Host, mnesia) ->
       _ -> []
     end;
 get_user_groups(US, Host, riak) ->
-    case ejabberd_riak:get_by_index(sr_user, <<"us">>, US) of
+    case ejabberd_riak:get_by_index(sr_user, sr_user_schema(), <<"us">>, US) of
         {ok, Rs} ->
             [Group || #sr_user{group_host = {Group, H}} <- Rs, H == Host];
         _ ->
@@ -639,8 +642,8 @@ get_group_explicit_users(Host, Group, mnesia) ->
       _ -> []
     end;
 get_group_explicit_users(Host, Group, riak) ->
-    case ejabberd_riak:get_by_index(sr_user, <<"group_host">>,
-                                    {Group, Host}) of
+    case ejabberd_riak:get_by_index(sr_user, sr_user_schema(),
+				    <<"group_host">>, {Group, Host}) of
         {ok, Rs} ->
             [R#sr_user.us || R <- Rs];
         _ ->
@@ -733,7 +736,7 @@ get_user_displayed_groups(LUser, LServer, GroupsOpts,
     end;
 get_user_displayed_groups(LUser, LServer, GroupsOpts,
                           riak) ->
-    case ejabberd_riak:get_by_index(sr_user,
+    case ejabberd_riak:get_by_index(sr_user, sr_user_schema(),
                                     <<"us">>, {LUser, LServer}) of
         {ok, Rs} ->
             [{Group, proplists:get_value(Group, GroupsOpts, [])}
@@ -788,7 +791,7 @@ is_user_in_group(US, Group, Host, mnesia) ->
       _ -> true
     end;
 is_user_in_group(US, Group, Host, riak) ->
-    case ejabberd_riak:get_by_index(sr_user, <<"us">>, US) of
+    case ejabberd_riak:get_by_index(sr_user, sr_user_schema(), <<"us">>, US) of
         {ok, Rs} ->
             case lists:any(
                    fun(#sr_user{group_host = {G, H}}) ->
@@ -844,6 +847,7 @@ add_user_to_group(Host, US, Group, mnesia) ->
 add_user_to_group(Host, US, Group, riak) ->
     {atomic, ejabberd_riak:put(
                #sr_user{us = US, group_host = {Group, Host}},
+	       sr_user_schema(),
                [{i, {US, {Group, Host}}},
                 {'2i', [{<<"us">>, US},
                         {<<"group_host">>, {Group, Host}}]}])};
@@ -1358,6 +1362,12 @@ opts_to_binary(Opts) ->
               Opt
       end, Opts).
 
+sr_group_schema() ->
+    {record_info(fields, sr_group), #sr_group{}}.
+
+sr_user_schema() ->
+    {record_info(fields, sr_user), #sr_user{}}.
+
 update_tables() ->
     update_sr_group_table(),
     update_sr_user_table().
@@ -1439,12 +1449,13 @@ import(LServer) ->
 
 import(_LServer, mnesia, #sr_group{} = G) ->
     mnesia:dirty_write(G);
+
 import(_LServer, mnesia, #sr_user{} = U) ->
     mnesia:dirty_write(U);
 import(_LServer, riak, #sr_group{group_host = {_, Host}} = G) ->
-    ejabberd_riak:put(G, [{'2i', [{<<"host">>, Host}]}]);
+    ejabberd_riak:put(G, sr_group_schema(), [{'2i', [{<<"host">>, Host}]}]);
 import(_LServer, riak, #sr_user{us = US, group_host = {Group, Host}} = User) ->
-    ejabberd_riak:put(User,
+    ejabberd_riak:put(User, sr_user_schema(),
                       [{i, {US, {Group, Host}}},
                        {'2i', [{<<"us">>, US},
                                {<<"group_host">>, {Group, Host}}]}]);
