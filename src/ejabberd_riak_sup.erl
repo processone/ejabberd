@@ -68,6 +68,9 @@ is_riak_configured(Host) ->
     PortConfigured = ejabberd_config:get_option(
 		       {riak_port, Host},
 		       fun(_) -> true end, false),
+    AuthConfigured = lists:member(
+		       ejabberd_auth_riak,
+		       ejabberd_auth:auth_modules(Host)),
     Modules = ejabberd_config:get_option(
 		{modules, Host},
 		fun(L) when is_list(L) -> L end, []),
@@ -75,7 +78,8 @@ is_riak_configured(Host) ->
 				   fun({_Module, Opts}) ->
 					   gen_mod:db_type(Opts) == riak
 				   end, Modules),
-    ServerConfigured or PortConfigured or ModuleWithRiakDBConfigured.
+    ServerConfigured or PortConfigured
+	or AuthConfigured or ModuleWithRiakDBConfigured.
 
 do_start() ->
     SupervisorName = ?MODULE,
