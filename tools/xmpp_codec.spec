@@ -3,7 +3,6 @@
            xmlns = <<"jabber:iq:last">>,
            result = {last, '$seconds', '$text'},
            attrs = [#attr{name = <<"seconds">>,
-                          default = undefined,
                           enc = {enc_int, []},
                           dec = {dec_int, [0, infinity]}}],
            cdata = #cdata{label = '$text'}}).
@@ -61,7 +60,6 @@
                           enc = {enc_enum, []},
                           dec = {dec_enum, [[none,to,from,both,remove]]}},
                     #attr{name = <<"ask">>,
-                          default = undefined,
                           enc = {enc_enum, []},
                           dec = {dec_enum, [[subscribe]]}}],
            refs = [#ref{name = roster_group, label = '$groups'}]}).
