@@ -15,6 +15,8 @@
 
 -define(PUBSUB(Node), <<(?NS_PUBSUB)/binary, "#", Node>>).
 
+-define(EJABBERD_CT_URI, <<"http://www.process-one.net/en/ejabberd_ct/">>).
+
 -define(recv2(P1, P2),
         (fun() ->
                  case {R1 = recv(), R2 = recv()} of

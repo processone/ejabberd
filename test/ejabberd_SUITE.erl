@@ -400,11 +400,46 @@ presence(Config) ->
     disconnect(Config).
 
 presence_broadcast(Config) ->
-    send(Config, #presence{}),
+    Feature = <<"p1:tmp:", (randoms:get_string())/binary>>,
+    Ver = crypto:sha(["client", $/, "bot", $/, "en", $/,
+		      "ejabberd_ct", $<, Feature, $<]),
+    B64Ver = base64:encode(Ver),
+    Node = <<(?EJABBERD_CT_URI)/binary, $#, B64Ver/binary>>,
+    Server = ?config(server, Config),
+    ServerJID = server_jid(Config),
+    Info = #disco_info{identities =
+			   [#identity{category = <<"client">>,
+				      type = <<"bot">>,
+				      lang = <<"en">>,
+				      name = <<"ejabberd_ct">>}],
+		       node = Node, features = [Feature]},
+    Caps = #caps{hash = <<"sha-1">>, node = ?EJABBERD_CT_URI, ver = Ver},
+    send(Config, #presence{sub_els = [Caps]}),
     JID = my_jid(Config),
-    %% We receive the welcome message and the presence broadcast
-    ?recv2(#message{type = normal},
-           #presence{from = JID, to = JID}),
+    %% We receive:
+    %% 1) disco#info iq request for CAPS
+    %% 2) welcome message
+    %% 3) presence broadcast
+    {IQ, _, _} = ?recv3(#iq{type = get,
+			    from = ServerJID,
+			    sub_els = [#disco_info{node = Node}]},
+			#message{type = normal},
+			#presence{from = JID, to = JID}),
+    send(Config, #iq{type = result, id = IQ#iq.id,
+		     to = ServerJID, sub_els = [Info]}),
+    %% We're trying to read our feature from ejabberd database
+    %% with exponential back-off as our IQ response may be delayed.
+    [Feature] =
+	lists:foldl(
+	  fun(Time, []) ->
+		  timer:sleep(Time),
+		  mod_caps:get_features(
+		    Server,
+		    mod_caps:read_caps(
+		      [xmpp_codec:encode(Caps)]));
+	     (_, Acc) ->
+		  Acc
+	  end, [], [0, 100, 200, 2000, 5000, 10000]),
     disconnect(Config).
 
 ping(Config) ->
