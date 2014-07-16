@@ -86,10 +86,10 @@ request(#sip{method = <<"ACK">>} = Req, SIPSock) ->
 	{proxy_auth, LServer} ->
 	    mod_sip_proxy:route(Req, LServer, [{authenticated, false}]);
 	_ ->
-	    error
+	    ok
     end;
 request(_Req, _SIPSock) ->
-    error.
+    ok.
 
 request(Req, SIPSock, TrID) ->
     request(Req, SIPSock, TrID, action(Req, SIPSock)).
