@@ -493,8 +493,8 @@ process_blocklist_get(LUser, LServer, mnesia) ->
 	  end
     end;
 process_blocklist_get(LUser, LServer, riak) ->
-    case ejabberd_riak:get(privacy, {LUser, LServer},
-			   mod_privacy:privacy_schema()) of
+    case ejabberd_riak:get(privacy, mod_privacy:privacy_schema(),
+			   {LUser, LServer}) of
         {ok, #privacy{default = Default, lists = Lists}} ->
             case lists:keysearch(Default, 1, Lists) of
                 {value, {_, List}} -> List;
