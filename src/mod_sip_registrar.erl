@@ -539,7 +539,7 @@ delete_session(#sip_session{reg_tref = RegTRef,
     mnesia:dirty_delete_object(Session).
 
 process_ping(SIPSocket) ->
-    ErrResponse = if SIPSocket#sip_socket.type == udp -> error;
+    ErrResponse = if SIPSocket#sip_socket.type == udp -> pang;
 		     true -> drop
 		  end,
     Sessions = mnesia:dirty_index_read(
@@ -552,8 +552,13 @@ process_ping(SIPSocket) ->
 	      mnesia:dirty_delete_object(Session),
 	      Timeout = get_flow_timeout(LServer, SIPSocket),
 	      NewTRef = set_timer(Session, Timeout),
-	      mnesia:dirty_write(
-		Session#sip_session{flow_tref = NewTRef});
+	      case mnesia:dirty_write(
+		     Session#sip_session{flow_tref = NewTRef}) of
+		  ok ->
+		      pong;
+		  _Err ->
+		      pang
+	      end;
 	 (_, Acc) ->
 	      Acc
       end, ErrResponse, Sessions).
