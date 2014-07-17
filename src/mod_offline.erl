@@ -123,10 +123,7 @@ store_offline_msg(_Host, US, Msgs, Len, MaxOfflineMsgs,
 		  mnesia) ->
     F = fun () ->
 		Count = if MaxOfflineMsgs =/= infinity ->
-			       Len +
-				 p1_mnesia:count_records(offline_msg,
-							 #offline_msg{us = US,
-								      _ = '_'});
+			       Len + count_mnesia_records(US);
 			   true -> 0
 			end,
 		if Count > MaxOfflineMsgs -> discard_warn_sender(Msgs);
@@ -986,8 +983,7 @@ count_offline_messages(User, Server) ->
 count_offline_messages(LUser, LServer, mnesia) ->
     US = {LUser, LServer},
     F = fun () ->
-		p1_mnesia:count_records(offline_msg,
-					#offline_msg{us = US, _ = '_'})
+		count_mnesia_records(US)
 	end,
     case catch mnesia:async_dirty(F) of
       I when is_integer(I) -> I;
@@ -1015,6 +1011,32 @@ count_offline_messages(LUser, LServer, riak) ->
 count_offline_messages(_Acc, User, Server) ->
     N = count_offline_messages(User, Server),
     {stop, N}.
+
+%% Return the number of records matching a given match expression.
+%% This function is intended to be used inside a Mnesia transaction.
+%% The count has been written to use the fewest possible memory by
+%% getting the record by small increment and by using continuation.
+-define(BATCHSIZE, 100).
+
+count_mnesia_records(US) ->
+    MatchExpression = #offline_msg{us = US,  _ = '_'},
+    case mnesia:select(offline_msg, [{MatchExpression, [], [[]]}],
+		       ?BATCHSIZE, read) of
+	{Result, Cont} ->
+	    Count = length(Result),
+	    count_records_cont(Cont, Count);
+	'$end_of_table' ->
+	    0
+    end.
+
+count_records_cont(Cont, Count) ->
+    case mnesia:select(Cont) of
+	{Result, Cont} ->
+	    NewCount = Count + length(Result),
+	    count_records_cont(Cont, NewCount);
+	'$end_of_table' ->
+	    Count
+    end.
 
 offline_msg_schema() ->
     {record_info(fields, offline_msg), #offline_msg{}}.
