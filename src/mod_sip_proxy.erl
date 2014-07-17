@@ -308,10 +308,10 @@ need_record_route(LServer) ->
 make_sign(TS, Hdrs) ->
     {_, #uri{user = FUser, host = FServer}, FParams} = esip:get_hdr('from', Hdrs),
     {_, #uri{user = TUser, host = TServer}, _} = esip:get_hdr('to', Hdrs),
-    LFUser = jlib:nodeprep(FUser),
-    LTUser = jlib:nodeprep(TUser),
-    LFServer = jlib:nameprep(FServer),
-    LTServer = jlib:nameprep(TServer),
+    LFUser = safe_nodeprep(FUser),
+    LTUser = safe_nodeprep(TUser),
+    LFServer = safe_nameprep(FServer),
+    LTServer = safe_nameprep(TServer),
     FromTag = esip:get_param(<<"tag">>, FParams),
     CallID = esip:get_hdr('call-id', Hdrs),
     SharedKey = ejabberd_config:get_option(shared_key, fun(V) -> V end),
@@ -427,3 +427,15 @@ prepare_request(LServer, #sip{hdrs = Hdrs} = Req) ->
                       true
               end, Hdrs2),
     Req#sip{hdrs = Hdrs3}.
+
+safe_nodeprep(S) ->
+    case jlib:nodeprep(S) of
+	error -> S;
+	S1 -> S1
+    end.
+
+safe_nameprep(S) ->
+    case jlib:nameprep(S) of
+	error -> S;
+	S1 -> S1
+    end.
