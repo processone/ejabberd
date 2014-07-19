@@ -1974,6 +1974,56 @@
                         label = '$destroy'},
                    #ref{name = xdata, min = 0, max = 1, label = '$config'}]}).
 
+-xml(muc_admin_item,
+     #elem{name = <<"item">>,
+           xmlns = <<"http://jabber.org/protocol/muc#admin">>,
+           result = {muc_item, '$actor', '$continue', '$reason',
+                     '$affiliation', '$role', '$jid', '$nick'},
+           refs = [#ref{name = muc_admin_actor,
+                        min = 0, max = 1, label = '$actor'},
+                   #ref{name = muc_admin_continue,
+                        min = 0, max = 1, label = '$continue'},
+                   #ref{name = muc_admin_reason,
+                        min = 0, max = 1, label = '$reason'}],
+           attrs = [#attr{name = <<"affiliation">>,
+                          dec = {dec_enum, [[admin, member, none,
+                                             outcast, owner]]},
+                          enc = {enc_enum, []}},
+                    #attr{name = <<"role">>,
+                          dec = {dec_enum, [[moderator, none,
+                                             participant, visitor]]},
+                          enc = {enc_enum, []}},
+                    #attr{name = <<"jid">>,
+                          dec = {dec_jid, []},
+                          enc = {enc_jid, []}},
+                    #attr{name = <<"nick">>}]}).
+
+-xml(muc_admin_actor,
+     #elem{name = <<"actor">>,
+           xmlns = <<"http://jabber.org/protocol/muc#admin">>,
+           result = {muc_actor, '$jid', '$nick'},
+           attrs = [#attr{name = <<"jid">>,
+                          dec = {dec_jid, []},
+                          enc = {enc_jid, []}},
+                    #attr{name = <<"nick">>}]}).
+
+-xml(muc_admin_continue,
+     #elem{name = <<"continue">>,
+           xmlns = <<"http://jabber.org/protocol/muc#admin">>,
+           result = '$thread',
+           attrs = [#attr{name = <<"thread">>}]}).
+
+-xml(muc_admin_reason,
+     #elem{name = <<"reason">>,
+           xmlns = <<"http://jabber.org/protocol/muc#admin">>,
+           result = '$cdata'}).
+
+-xml(muc_admin,
+     #elem{name = <<"query">>,
+	   xmlns = <<"http://jabber.org/protocol/muc#admin">>,
+	   result = {muc_admin, '$items'},
+	   refs = [#ref{name = muc_admin_item, label = '$items'}]}).
+
 -xml(muc,
      #elem{name = <<"x">>,
            xmlns = <<"http://jabber.org/protocol/muc">>,

@@ -177,7 +177,6 @@ db_tests() ->
        privacy,
        blocking,
        vcard,
-       muc_single,
        pubsub,
        test_unregister]},
      {test_roster_subscribe, [parallel],
@@ -185,6 +184,8 @@ db_tests() ->
        roster_subscribe_slave]},
      {test_offline, [sequence],
       [offline_master, offline_slave]},
+     {test_muc, [parallel],
+      [muc_master, muc_slave]},
      {test_roster_remove, [parallel],
       [roster_remove_master,
        roster_remove_slave]}].
@@ -202,13 +203,14 @@ db_tests(riak) ->
        privacy,
        blocking,
        vcard,
-       muc_single,
        test_unregister]},
      {test_roster_subscribe, [parallel],
       [roster_subscribe_master,
        roster_subscribe_slave]},
      {test_offline, [sequence],
       [offline_master, offline_slave]},
+     {test_muc, [parallel],
+      [muc_master, muc_slave]},
      {test_roster_remove, [parallel],
       [roster_remove_master,
        roster_remove_slave]}];
@@ -225,7 +227,6 @@ db_tests(_) ->
        privacy,
        blocking,
        vcard,
-       muc_single,
        pubsub,
        test_unregister]},
      {test_roster_subscribe, [parallel],
@@ -233,6 +234,8 @@ db_tests(_) ->
        roster_subscribe_slave]},
      {test_offline, [sequence],
       [offline_master, offline_slave]},
+     {test_muc, [parallel],
+      [muc_master, muc_slave]},
      {test_roster_remove, [parallel],
       [roster_remove_master,
        roster_remove_slave]}].
@@ -916,15 +919,22 @@ proxy65_slave(Config) ->
     socks5_recv(Socks5, Data),
     disconnect(Config).
 
-muc_single(Config) ->
+muc_master(Config) ->
     MyJID = my_jid(Config),
+    PeerJID = ?config(slave, Config),
+    PeerBareJID = jlib:jid_remove_resource(PeerJID),
+    PeerJIDStr = jlib:jid_to_string(PeerJID),
     MUC = muc_jid(Config),
     Room = muc_room_jid(Config),
-    Nick = ?config(user, Config),
-    NickJID = jlib:jid_replace_resource(Room, Nick),
+    MyNick = ?config(master_nick, Config),
+    MyNickJID = jlib:jid_replace_resource(Room, MyNick),
+    PeerNick = ?config(slave_nick, Config),
+    PeerNickJID = jlib:jid_replace_resource(Room, PeerNick),
+    Subject = ?config(room_subject, Config),
+    Localhost = jlib:make_jid(<<"">>, <<"localhost">>, <<"">>),
     true = is_feature_advertised(Config, ?NS_MUC, MUC),
     %% Joining
-    send(Config, #presence{to = NickJID, sub_els = [#muc{}]}),
+    send(Config, #presence{to = MyNickJID, sub_els = [#muc{}]}),
     %% As per XEP-0045 we MUST receive stanzas in the following order:
     %% 1. In-room presence from other occupants
     %% 2. In-room presence from the joining entity itself (so-called "self-presence")
@@ -933,7 +943,7 @@ muc_single(Config) ->
     %% 5. Live messages, presence updates, new user joins, etc.
     %% As this is the newly created room, we receive only the 2nd stanza.
     #presence{
-          from = NickJID,
+          from = MyNickJID,
           sub_els = [#muc_user{
                         status_codes = Codes,
                         items = [#muc_item{role = moderator,
@@ -941,8 +951,7 @@ muc_single(Config) ->
                                            affiliation = owner}]}]} = recv(),
     %% 110 -> Inform user that presence refers to itself
     %% 201 -> Inform user that a new room has been created
-    true = lists:member(110, Codes),
-    true = lists:member(201, Codes),
+    [110, 201] = lists:sort(Codes),
     %% Request the configuration
     #iq{type = result, sub_els = [#muc_owner{config = #xdata{} = RoomCfg}]} =
         send_recv(Config, #iq{type = get, sub_els = [#muc_owner{}],
@@ -959,10 +968,14 @@ muc_single(Config) ->
                                  [<<"Trying to break the server">>];
                              <<"muc#roomconfig_persistentroom">> ->
                                  [<<"1">>];
-                             <<"muc#roomconfig_changesubject">> ->
-                                 [<<"0">>];
-                             <<"muc#roomconfig_allowinvites">> ->
-                                 [<<"1">>];
+			     <<"members_by_default">> ->
+				 [<<"0">>];
+			     <<"muc#roomconfig_allowvoicerequests">> ->
+				 [<<"1">>];
+			     <<"public_list">> ->
+				 [<<"1">>];
+			     <<"muc#roomconfig_publicroom">> ->
+				 [<<"1">>];
                              _ ->
                                  []
                          end,
@@ -974,20 +987,230 @@ muc_single(Config) ->
           end, RoomCfg#xdata.fields),
     NewRoomCfg = #xdata{type = submit, fields = NewFields},
     %% BUG: We should not receive any sub_els!
-    %% TODO: fix this crap in ejabberd.
     #iq{type = result, sub_els = [_|_]} =
         send_recv(Config, #iq{type = set, to = Room,
                               sub_els = [#muc_owner{config = NewRoomCfg}]}),
     %% Set subject
     send(Config, #message{to = Room, type = groupchat,
-                          body = [#text{data = <<"Subject">>}]}),
-    #message{from = NickJID, type = groupchat,
-             body = [#text{data = <<"Subject">>}]} = recv(),
-    %% Leaving
-    send(Config, #presence{type = unavailable, to = NickJID}),
-    #presence{from = NickJID, type = unavailable,
-              sub_els = [#muc_user{status_codes = NewCodes}]} = recv(),
-    true = lists:member(110, NewCodes),
+                          body = [#text{data = Subject}]}),
+    #message{from = MyNickJID, type = groupchat,
+             body = [#text{data = Subject}]} = recv(),
+    %% Sending messages (and thus, populating history for our peer)
+    lists:foreach(
+      fun(N) ->
+              Text = #text{data = jlib:integer_to_binary(N)},
+              I = send(Config, #message{to = Room, body = [Text],
+					type = groupchat}),
+	      #message{from = MyNickJID, id = I,
+		       type = groupchat,
+		       body = [Text]} = recv()
+      end, lists:seq(1, 5)),
+    %% Inviting the peer
+    send(Config, #message{to = Room, type = normal,
+			  sub_els =
+			      [#muc_user{
+				  invites =
+				      [#muc_invite{to = PeerJID}]}]}),
+    %% Peer is joining
+    #presence{from = PeerNickJID,
+	      sub_els = [#muc_user{
+			    items = [#muc_item{role = visitor,
+					       jid = PeerJID,
+					       affiliation = none}]}]} = recv(),
+    %% Receiving a voice request
+    #message{from = Room,
+	     sub_els = [#xdata{type = form,
+			       instructions = [_],
+			       fields = VoiceReqFs}]} = recv(),
+    %% Approving the voice request
+    ReplyVoiceReqFs =
+	lists:map(
+	  fun(#xdata_field{var = Var, values = OrigVals}) ->
+                  Vals = case {Var, OrigVals} of
+			     {<<"FORM_TYPE">>,
+			      [<<"http://jabber.org/protocol/muc#request">>]} ->
+				 OrigVals;
+			     {<<"muc#role">>, [<<"participant">>]} ->
+				 [<<"participant">>];
+			     {<<"muc#jid">>, [PeerJIDStr]} ->
+				 [PeerJIDStr];
+			     {<<"muc#roomnick">>, [PeerNick]} ->
+				 [PeerNick];
+			     {<<"muc#request_allow">>, [<<"0">>]} ->
+				 [<<"1">>]
+			 end,
+		  #xdata_field{values = Vals, var = Var}
+	  end, VoiceReqFs),
+    send(Config, #message{to = Room,
+			  sub_els = [#xdata{type = submit,
+					    fields = ReplyVoiceReqFs}]}),
+    %% Peer is becoming a participant
+    #presence{from = PeerNickJID,
+	      sub_els = [#muc_user{
+			    items = [#muc_item{role = participant,
+					       jid = PeerJID,
+					       affiliation = none}]}]} = recv(),
+    %% Receive private message from the peer
+    #message{from = PeerNickJID, body = [#text{data = Subject}]} = recv(),
+    %% Granting membership to the peer and localhost server
+    I1 = send(Config,
+	      #iq{type = set, to = Room,
+		  sub_els =
+		      [#muc_admin{
+			  items = [#muc_item{jid = Localhost,
+					     affiliation = member},
+				   #muc_item{nick = PeerNick,
+					     jid = PeerBareJID,
+					     affiliation = member}]}]}),
+    %% Peer became a member
+    #presence{from = PeerNickJID,
+	      sub_els = [#muc_user{
+			    items = [#muc_item{affiliation = member,
+					       jid = PeerJID,
+					       role = participant}]}]} = recv(),
+    %% BUG: We should not receive any sub_els!
+    #iq{type = result, id = I1, sub_els = [_|_]} = recv(),
+    %% Receive groupchat message from the peer
+    #message{type = groupchat, from = PeerNickJID,
+	     body = [#text{data = Subject}]} = recv(),
+    %% Kick the peer
+    I2 = send(Config,
+	      #iq{type = set, to = Room,
+		  sub_els = [#muc_admin{
+				items = [#muc_item{nick = PeerNick,
+						   role = none}]}]}),
+    %% Got notification the peer is kicked
+    %% 307 -> Inform user that he or she has been kicked from the room
+    #presence{from = PeerNickJID,
+	      sub_els = [#muc_user{
+			    status_codes = [307],
+			    items = [#muc_item{affiliation = member,
+					       jid = PeerJID,
+					       role = none}]}]} = recv(),
+    %% BUG: We should not receive any sub_els!
+    #iq{type = result, id = I2, sub_els = [_|_]} = recv(),
+    %% Destroying the room
+    I3 = send(Config,
+	      #iq{type = set, to = Room,
+		  sub_els = [#muc_owner{
+				destroy = #muc_owner_destroy{
+					     reason = Subject}}]}),
+    %% Kicked off
+    #presence{from = MyNickJID, type = unavailable,
+              sub_els = [#muc_user{items = [#muc_item{role = none,
+						      affiliation = none}],
+				   destroy = #muc_user_destroy{
+						reason = Subject}}]} = recv(),
+    %% BUG: We should not receive any sub_els!
+    #iq{type = result, id = I3, sub_els = [_|_]} = recv(),
+    disconnect(Config).
+
+muc_slave(Config) ->
+    MyJID = my_jid(Config),
+    MyBareJID = jlib:jid_remove_resource(MyJID),
+    PeerJID = ?config(master, Config),
+    MUC = muc_jid(Config),
+    Room = muc_room_jid(Config),
+    MyNick = ?config(slave_nick, Config),
+    MyNickJID = jlib:jid_replace_resource(Room, MyNick),
+    PeerNick = ?config(master_nick, Config),
+    PeerNickJID = jlib:jid_replace_resource(Room, PeerNick),
+    Subject = ?config(room_subject, Config),
+    Localhost = jlib:make_jid(<<"">>, <<"localhost">>, <<"">>),
+    %% Receive an invite from the peer
+    #message{from = Room, type = normal,
+	     sub_els =
+		 [#muc_user{invites =
+				[#muc_invite{from = PeerJID}]}]} = recv(),
+    %% But before joining we discover the MUC service first
+    %% to check if the room is in the disco list
+    #iq{type = result,
+	sub_els = [#disco_items{items = [#disco_item{jid = Room}]}]} =
+	send_recv(Config, #iq{type = get, to = MUC,
+			      sub_els = [#disco_items{}]}),
+    %% Now check if the peer is in the room. We check this via disco#items
+    #iq{type = result,
+	sub_els = [#disco_items{items = [#disco_item{jid = PeerNickJID,
+						     name = PeerNick}]}]} =
+	send_recv(Config, #iq{type = get, to = Room,
+			      sub_els = [#disco_items{}]}),
+    %% Now joining
+    send(Config, #presence{to = MyNickJID, sub_els = [#muc{}]}),
+    %% First presence is from the participant, i.e. from the peer
+    #presence{
+       from = PeerNickJID,
+       sub_els = [#muc_user{
+		     status_codes = [],
+		     items = [#muc_item{role = moderator,
+					affiliation = owner}]}]} = recv(),
+    %% The next is the self-presence (code 110 means it)
+    #presence{
+       from = MyNickJID,
+       sub_els = [#muc_user{
+		     status_codes = [110],
+		     items = [#muc_item{role = visitor,
+					affiliation = none}]}]} = recv(),
+    %% Receive the room subject
+    #message{from = PeerNickJID, type = groupchat,
+             body = [#text{data = Subject}],
+	     sub_els = [#delay{}, #legacy_delay{}]} = recv(),
+    %% Receive MUC history
+    lists:foreach(
+      fun(N) ->
+              Text = #text{data = jlib:integer_to_binary(N)},
+	      #message{from = PeerNickJID,
+		       type = groupchat,
+		       body = [Text],
+		       sub_els = [#delay{}, #legacy_delay{}]} = recv()
+      end, lists:seq(1, 5)),
+    %% Sending a voice request
+    VoiceReq = #xdata{
+		  type = submit,
+		  fields =
+		      [#xdata_field{
+			  var = <<"FORM_TYPE">>,
+			  values = [<<"http://jabber.org/protocol/muc#request">>]},
+		       #xdata_field{
+			  var = <<"muc#role">>,
+			  type = 'text-single',
+			  values = [<<"participant">>]}]},
+    send(Config, #message{to = Room, sub_els = [VoiceReq]}),
+    %% Becoming a participant
+    #presence{from = MyNickJID,
+	      sub_els = [#muc_user{
+			    items = [#muc_item{role = participant,
+					       affiliation = none}]}]} = recv(),
+    %% Sending private message to the peer
+    send(Config, #message{to = PeerNickJID,
+			  body = [#text{data = Subject}]}),
+    %% Becoming a member
+    #presence{from = MyNickJID,
+	      sub_els = [#muc_user{
+			    items = [#muc_item{role = participant,
+					       affiliation = member}]}]} = recv(),
+    %% Retrieving a member list
+    #iq{type = result, sub_els = [#muc_admin{items = MemberList}]} =
+	send_recv(Config,
+		  #iq{type = get, to = Room,
+		      sub_els =
+			  [#muc_admin{items = [#muc_item{affiliation = member}]}]}),
+    [#muc_item{affiliation = member,
+	       jid = Localhost},
+     #muc_item{affiliation = member,
+	       jid = MyBareJID}] = lists:keysort(#muc_item.jid, MemberList),
+    %% Sending groupchat message
+    send(Config, #message{to = Room, type = groupchat,
+			  body = [#text{data = Subject}]}),
+    %% Receive this message back
+    #message{type = groupchat, from = MyNickJID,
+	     body = [#text{data = Subject}]} = recv(),
+    %% We're kicked off
+    %% 307 -> Inform user that he or she has been kicked from the room
+    #presence{from = MyNickJID, type = unavailable,
+	      sub_els = [#muc_user{
+			    status_codes = [307],
+			    items = [#muc_item{affiliation = member,
+					       role = none}]}]} = recv(),
     disconnect(Config).
 
 offline_master(Config) ->

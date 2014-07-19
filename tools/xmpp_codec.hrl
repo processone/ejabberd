@@ -61,9 +61,6 @@
                             node :: binary(),
                             publisher :: binary()}).
 
--record(muc_actor, {jid :: any(),
-                    nick :: binary()}).
-
 -record(stat, {name :: binary(),
                units :: binary(),
                value :: binary(),
@@ -125,6 +122,9 @@
                               node :: binary(),
                               subid :: binary(),
                               type :: 'none' | 'pending' | 'subscribed' | 'unconfigured'}).
+
+-record(muc_actor, {jid :: any(),
+                    nick :: binary()}).
 
 -record(shim, {headers = [] :: [{binary(),'undefined' | binary()}]}).
 
@@ -207,6 +207,8 @@
                    items = [] :: [#muc_item{}],
                    status_codes = [] :: [pos_integer()],
                    password :: binary()}).
+
+-record(muc_admin, {items = [] :: [#muc_item{}]}).
 
 -record(bytestreams, {hosts = [] :: [#streamhost{}],
                       used :: any(),

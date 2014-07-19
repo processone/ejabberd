@@ -15,6 +15,21 @@ decode({xmlel, _name, _attrs, _} = _el) ->
       {<<"x">>, <<"http://jabber.org/protocol/muc">>} ->
 	  decode_muc(_el);
       {<<"query">>,
+       <<"http://jabber.org/protocol/muc#admin">>} ->
+	  decode_muc_admin(_el);
+      {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#admin">>} ->
+	  decode_muc_admin_reason(_el);
+      {<<"continue">>,
+       <<"http://jabber.org/protocol/muc#admin">>} ->
+	  decode_muc_admin_continue(_el);
+      {<<"actor">>,
+       <<"http://jabber.org/protocol/muc#admin">>} ->
+	  decode_muc_admin_actor(_el);
+      {<<"item">>,
+       <<"http://jabber.org/protocol/muc#admin">>} ->
+	  decode_muc_admin_item(_el);
+      {<<"query">>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  decode_muc_owner(_el);
       {<<"destroy">>,
@@ -692,6 +707,21 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
       {<<"x">>, <<"http://jabber.org/protocol/muc">>} -> true;
       {<<"query">>,
+       <<"http://jabber.org/protocol/muc#admin">>} ->
+	  true;
+      {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#admin">>} ->
+	  true;
+      {<<"continue">>,
+       <<"http://jabber.org/protocol/muc#admin">>} ->
+	  true;
+      {<<"actor">>,
+       <<"http://jabber.org/protocol/muc#admin">>} ->
+	  true;
+      {<<"item">>,
+       <<"http://jabber.org/protocol/muc#admin">>} ->
+	  true;
+      {<<"query">>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  true;
       {<<"destroy">>,
@@ -1240,6 +1270,10 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
 encode({muc, _, _} = X) ->
     encode_muc(X,
 	       [{<<"xmlns">>, <<"http://jabber.org/protocol/muc">>}]);
+encode({muc_admin, _} = Query) ->
+    encode_muc_admin(Query,
+		     [{<<"xmlns">>,
+		       <<"http://jabber.org/protocol/muc#admin">>}]);
 encode({muc_owner, _, _} = Query) ->
     encode_muc_owner(Query,
 		     [{<<"xmlns">>,
@@ -1252,14 +1286,6 @@ encode({muc_user, _, _, _, _, _, _} = X) ->
     encode_muc_user(X,
 		    [{<<"xmlns">>,
 		      <<"http://jabber.org/protocol/muc#user">>}]);
-encode({muc_item, _, _, _, _, _, _, _} = Item) ->
-    encode_muc_user_item(Item,
-			 [{<<"xmlns">>,
-			   <<"http://jabber.org/protocol/muc#user">>}]);
-encode({muc_actor, _, _} = Actor) ->
-    encode_muc_user_actor(Actor,
-			  [{<<"xmlns">>,
-			    <<"http://jabber.org/protocol/muc#user">>}]);
 encode({muc_invite, _, _, _} = Invite) ->
     encode_muc_user_invite(Invite,
 			   [{<<"xmlns">>,
@@ -1742,14 +1768,15 @@ pp(muc_history, 4) ->
 pp(muc_decline, 3) -> [reason, from, to];
 pp(muc_user_destroy, 2) -> [reason, jid];
 pp(muc_invite, 3) -> [reason, from, to];
-pp(muc_actor, 2) -> [jid, nick];
-pp(muc_item, 7) ->
-    [actor, continue, reason, affiliation, role, jid, nick];
 pp(muc_user, 6) ->
     [decline, destroy, invites, items, status_codes,
      password];
 pp(muc_owner_destroy, 3) -> [jid, reason, password];
 pp(muc_owner, 2) -> [destroy, config];
+pp(muc_item, 7) ->
+    [actor, continue, reason, affiliation, role, jid, nick];
+pp(muc_actor, 2) -> [jid, nick];
+pp(muc_admin, 1) -> [items];
 pp(muc, 2) -> [history, password];
 pp(_, _) -> no.
 
@@ -1833,6 +1860,319 @@ decode_muc_attr_password(_val) -> _val.
 encode_muc_attr_password(undefined, _acc) -> _acc;
 encode_muc_attr_password(_val, _acc) ->
     [{<<"password">>, _val} | _acc].
+
+decode_muc_admin({xmlel, <<"query">>, _attrs, _els}) ->
+    Items = decode_muc_admin_els(_els, []),
+    {muc_admin, Items}.
+
+decode_muc_admin_els([], Items) -> lists:reverse(Items);
+decode_muc_admin_els([{xmlel, <<"item">>, _attrs, _} =
+			  _el
+		      | _els],
+		     Items) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#admin">> ->
+	   decode_muc_admin_els(_els,
+				[decode_muc_admin_item(_el) | Items]);
+       true -> decode_muc_admin_els(_els, Items)
+    end;
+decode_muc_admin_els([_ | _els], Items) ->
+    decode_muc_admin_els(_els, Items).
+
+encode_muc_admin({muc_admin, Items}, _xmlns_attrs) ->
+    _els = 'encode_muc_admin_$items'(Items, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"query">>, _attrs, _els}.
+
+'encode_muc_admin_$items'([], _acc) -> _acc;
+'encode_muc_admin_$items'([Items | _els], _acc) ->
+    'encode_muc_admin_$items'(_els,
+			      [encode_muc_admin_item(Items, []) | _acc]).
+
+decode_muc_admin_reason({xmlel, <<"reason">>, _attrs,
+			 _els}) ->
+    Cdata = decode_muc_admin_reason_els(_els, <<>>), Cdata.
+
+decode_muc_admin_reason_els([], Cdata) ->
+    decode_muc_admin_reason_cdata(Cdata);
+decode_muc_admin_reason_els([{xmlcdata, _data} | _els],
+			    Cdata) ->
+    decode_muc_admin_reason_els(_els,
+				<<Cdata/binary, _data/binary>>);
+decode_muc_admin_reason_els([_ | _els], Cdata) ->
+    decode_muc_admin_reason_els(_els, Cdata).
+
+encode_muc_admin_reason(Cdata, _xmlns_attrs) ->
+    _els = encode_muc_admin_reason_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"reason">>, _attrs, _els}.
+
+decode_muc_admin_reason_cdata(<<>>) -> undefined;
+decode_muc_admin_reason_cdata(_val) -> _val.
+
+encode_muc_admin_reason_cdata(undefined, _acc) -> _acc;
+encode_muc_admin_reason_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_muc_admin_continue({xmlel, <<"continue">>,
+			   _attrs, _els}) ->
+    Thread = decode_muc_admin_continue_attrs(_attrs,
+					     undefined),
+    Thread.
+
+decode_muc_admin_continue_attrs([{<<"thread">>, _val}
+				 | _attrs],
+				_Thread) ->
+    decode_muc_admin_continue_attrs(_attrs, _val);
+decode_muc_admin_continue_attrs([_ | _attrs], Thread) ->
+    decode_muc_admin_continue_attrs(_attrs, Thread);
+decode_muc_admin_continue_attrs([], Thread) ->
+    decode_muc_admin_continue_attr_thread(Thread).
+
+encode_muc_admin_continue(Thread, _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_muc_admin_continue_attr_thread(Thread,
+						   _xmlns_attrs),
+    {xmlel, <<"continue">>, _attrs, _els}.
+
+decode_muc_admin_continue_attr_thread(undefined) ->
+    undefined;
+decode_muc_admin_continue_attr_thread(_val) -> _val.
+
+encode_muc_admin_continue_attr_thread(undefined,
+				      _acc) ->
+    _acc;
+encode_muc_admin_continue_attr_thread(_val, _acc) ->
+    [{<<"thread">>, _val} | _acc].
+
+decode_muc_admin_actor({xmlel, <<"actor">>, _attrs,
+			_els}) ->
+    {Jid, Nick} = decode_muc_admin_actor_attrs(_attrs,
+					       undefined, undefined),
+    {muc_actor, Jid, Nick}.
+
+decode_muc_admin_actor_attrs([{<<"jid">>, _val}
+			      | _attrs],
+			     _Jid, Nick) ->
+    decode_muc_admin_actor_attrs(_attrs, _val, Nick);
+decode_muc_admin_actor_attrs([{<<"nick">>, _val}
+			      | _attrs],
+			     Jid, _Nick) ->
+    decode_muc_admin_actor_attrs(_attrs, Jid, _val);
+decode_muc_admin_actor_attrs([_ | _attrs], Jid, Nick) ->
+    decode_muc_admin_actor_attrs(_attrs, Jid, Nick);
+decode_muc_admin_actor_attrs([], Jid, Nick) ->
+    {decode_muc_admin_actor_attr_jid(Jid),
+     decode_muc_admin_actor_attr_nick(Nick)}.
+
+encode_muc_admin_actor({muc_actor, Jid, Nick},
+		       _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_muc_admin_actor_attr_nick(Nick,
+					      encode_muc_admin_actor_attr_jid(Jid,
+									      _xmlns_attrs)),
+    {xmlel, <<"actor">>, _attrs, _els}.
+
+decode_muc_admin_actor_attr_jid(undefined) -> undefined;
+decode_muc_admin_actor_attr_jid(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"actor">>,
+			 <<"http://jabber.org/protocol/muc#admin">>}});
+      _res -> _res
+    end.
+
+encode_muc_admin_actor_attr_jid(undefined, _acc) ->
+    _acc;
+encode_muc_admin_actor_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_muc_admin_actor_attr_nick(undefined) ->
+    undefined;
+decode_muc_admin_actor_attr_nick(_val) -> _val.
+
+encode_muc_admin_actor_attr_nick(undefined, _acc) ->
+    _acc;
+encode_muc_admin_actor_attr_nick(_val, _acc) ->
+    [{<<"nick">>, _val} | _acc].
+
+decode_muc_admin_item({xmlel, <<"item">>, _attrs,
+		       _els}) ->
+    {Actor, Continue, Reason} =
+	decode_muc_admin_item_els(_els, undefined, undefined,
+				  undefined),
+    {Affiliation, Role, Jid, Nick} =
+	decode_muc_admin_item_attrs(_attrs, undefined,
+				    undefined, undefined, undefined),
+    {muc_item, Actor, Continue, Reason, Affiliation, Role,
+     Jid, Nick}.
+
+decode_muc_admin_item_els([], Actor, Continue,
+			  Reason) ->
+    {Actor, Continue, Reason};
+decode_muc_admin_item_els([{xmlel, <<"actor">>, _attrs,
+			    _} =
+			       _el
+			   | _els],
+			  Actor, Continue, Reason) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#admin">> ->
+	   decode_muc_admin_item_els(_els,
+				     decode_muc_admin_actor(_el), Continue,
+				     Reason);
+       true ->
+	   decode_muc_admin_item_els(_els, Actor, Continue, Reason)
+    end;
+decode_muc_admin_item_els([{xmlel, <<"continue">>,
+			    _attrs, _} =
+			       _el
+			   | _els],
+			  Actor, Continue, Reason) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#admin">> ->
+	   decode_muc_admin_item_els(_els, Actor,
+				     decode_muc_admin_continue(_el), Reason);
+       true ->
+	   decode_muc_admin_item_els(_els, Actor, Continue, Reason)
+    end;
+decode_muc_admin_item_els([{xmlel, <<"reason">>, _attrs,
+			    _} =
+			       _el
+			   | _els],
+			  Actor, Continue, Reason) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>;
+       _xmlns == <<"http://jabber.org/protocol/muc#admin">> ->
+	   decode_muc_admin_item_els(_els, Actor, Continue,
+				     decode_muc_admin_reason(_el));
+       true ->
+	   decode_muc_admin_item_els(_els, Actor, Continue, Reason)
+    end;
+decode_muc_admin_item_els([_ | _els], Actor, Continue,
+			  Reason) ->
+    decode_muc_admin_item_els(_els, Actor, Continue,
+			      Reason).
+
+decode_muc_admin_item_attrs([{<<"affiliation">>, _val}
+			     | _attrs],
+			    _Affiliation, Role, Jid, Nick) ->
+    decode_muc_admin_item_attrs(_attrs, _val, Role, Jid,
+				Nick);
+decode_muc_admin_item_attrs([{<<"role">>, _val}
+			     | _attrs],
+			    Affiliation, _Role, Jid, Nick) ->
+    decode_muc_admin_item_attrs(_attrs, Affiliation, _val,
+				Jid, Nick);
+decode_muc_admin_item_attrs([{<<"jid">>, _val}
+			     | _attrs],
+			    Affiliation, Role, _Jid, Nick) ->
+    decode_muc_admin_item_attrs(_attrs, Affiliation, Role,
+				_val, Nick);
+decode_muc_admin_item_attrs([{<<"nick">>, _val}
+			     | _attrs],
+			    Affiliation, Role, Jid, _Nick) ->
+    decode_muc_admin_item_attrs(_attrs, Affiliation, Role,
+				Jid, _val);
+decode_muc_admin_item_attrs([_ | _attrs], Affiliation,
+			    Role, Jid, Nick) ->
+    decode_muc_admin_item_attrs(_attrs, Affiliation, Role,
+				Jid, Nick);
+decode_muc_admin_item_attrs([], Affiliation, Role, Jid,
+			    Nick) ->
+    {decode_muc_admin_item_attr_affiliation(Affiliation),
+     decode_muc_admin_item_attr_role(Role),
+     decode_muc_admin_item_attr_jid(Jid),
+     decode_muc_admin_item_attr_nick(Nick)}.
+
+encode_muc_admin_item({muc_item, Actor, Continue,
+		       Reason, Affiliation, Role, Jid, Nick},
+		      _xmlns_attrs) ->
+    _els = 'encode_muc_admin_item_$reason'(Reason,
+					   'encode_muc_admin_item_$continue'(Continue,
+									     'encode_muc_admin_item_$actor'(Actor,
+													    []))),
+    _attrs = encode_muc_admin_item_attr_nick(Nick,
+					     encode_muc_admin_item_attr_jid(Jid,
+									    encode_muc_admin_item_attr_role(Role,
+													    encode_muc_admin_item_attr_affiliation(Affiliation,
+																		   _xmlns_attrs)))),
+    {xmlel, <<"item">>, _attrs, _els}.
+
+'encode_muc_admin_item_$actor'(undefined, _acc) -> _acc;
+'encode_muc_admin_item_$actor'(Actor, _acc) ->
+    [encode_muc_admin_actor(Actor, []) | _acc].
+
+'encode_muc_admin_item_$continue'(undefined, _acc) ->
+    _acc;
+'encode_muc_admin_item_$continue'(Continue, _acc) ->
+    [encode_muc_admin_continue(Continue, []) | _acc].
+
+'encode_muc_admin_item_$reason'(undefined, _acc) ->
+    _acc;
+'encode_muc_admin_item_$reason'(Reason, _acc) ->
+    [encode_muc_admin_reason(Reason, []) | _acc].
+
+decode_muc_admin_item_attr_affiliation(undefined) ->
+    undefined;
+decode_muc_admin_item_attr_affiliation(_val) ->
+    case catch dec_enum(_val,
+			[admin, member, none, outcast, owner])
+	of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"affiliation">>, <<"item">>,
+			 <<"http://jabber.org/protocol/muc#admin">>}});
+      _res -> _res
+    end.
+
+encode_muc_admin_item_attr_affiliation(undefined,
+				       _acc) ->
+    _acc;
+encode_muc_admin_item_attr_affiliation(_val, _acc) ->
+    [{<<"affiliation">>, enc_enum(_val)} | _acc].
+
+decode_muc_admin_item_attr_role(undefined) -> undefined;
+decode_muc_admin_item_attr_role(_val) ->
+    case catch dec_enum(_val,
+			[moderator, none, participant, visitor])
+	of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"role">>, <<"item">>,
+			 <<"http://jabber.org/protocol/muc#admin">>}});
+      _res -> _res
+    end.
+
+encode_muc_admin_item_attr_role(undefined, _acc) ->
+    _acc;
+encode_muc_admin_item_attr_role(_val, _acc) ->
+    [{<<"role">>, enc_enum(_val)} | _acc].
+
+decode_muc_admin_item_attr_jid(undefined) -> undefined;
+decode_muc_admin_item_attr_jid(_val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"item">>,
+			 <<"http://jabber.org/protocol/muc#admin">>}});
+      _res -> _res
+    end.
+
+encode_muc_admin_item_attr_jid(undefined, _acc) -> _acc;
+encode_muc_admin_item_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_muc_admin_item_attr_nick(undefined) -> undefined;
+decode_muc_admin_item_attr_nick(_val) -> _val.
+
+encode_muc_admin_item_attr_nick(undefined, _acc) ->
+    _acc;
+encode_muc_admin_item_attr_nick(_val, _acc) ->
+    [{<<"nick">>, _val} | _acc].
 
 decode_muc_owner({xmlel, <<"query">>, _attrs, _els}) ->
     {Config, Destroy} = decode_muc_owner_els(_els,
