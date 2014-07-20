@@ -105,18 +105,34 @@ init_per_testcase(TestCase, OrigConfig) ->
     subscribe_to_events(OrigConfig),
     Server = ?config(server, OrigConfig),
     Resource = ?config(resource, OrigConfig),
+    MasterResource = ?config(master_resource, OrigConfig),
+    SlaveResource = ?config(slave_resource, OrigConfig),
     Test = atom_to_list(TestCase),
     IsMaster = lists:suffix("_master", Test),
     IsSlave = lists:suffix("_slave", Test),
-    User = if IsMaster -> <<"test_master">>;
+    IsCarbons = lists:prefix("carbons_", Test),
+    User = if IsMaster or IsCarbons -> <<"test_master">>;
               IsSlave -> <<"test_slave">>;
               true -> <<"test_single">>
            end,
-    Slave = jlib:make_jid(<<"test_slave">>, Server, Resource),
-    Master = jlib:make_jid(<<"test_master">>, Server, Resource),
+    MyResource = if IsMaster and IsCarbons -> MasterResource;
+		    IsSlave and IsCarbons -> SlaveResource;
+		    true -> Resource
+		 end,
+    Slave = if IsCarbons ->
+		    jlib:make_jid(<<"test_master">>, Server, SlaveResource);
+	       true ->
+		    jlib:make_jid(<<"test_slave">>, Server, Resource)
+	    end,
+    Master = if IsCarbons ->
+		     jlib:make_jid(<<"test_master">>, Server, MasterResource);
+		true ->
+		     jlib:make_jid(<<"test_master">>, Server, Resource)
+	     end,
     Config = set_opt(user, User,
                      set_opt(slave, Slave,
-                             set_opt(master, Master, OrigConfig))),
+                             set_opt(master, Master,
+				     set_opt(resource, MyResource, OrigConfig)))),
     case TestCase of
         test_connect ->
             Config;
@@ -164,32 +180,6 @@ no_db_tests() ->
      {test_proxy65, [parallel],
       [proxy65_master, proxy65_slave]}].
 
-db_tests() ->
-    [{single_user, [sequence],
-      [test_register,
-       auth_plain,
-       auth_md5,
-       presence_broadcast,
-       last,
-       roster_get,
-       roster_ver,
-       private,
-       privacy,
-       blocking,
-       vcard,
-       pubsub,
-       test_unregister]},
-     {test_roster_subscribe, [parallel],
-      [roster_subscribe_master,
-       roster_subscribe_slave]},
-     {test_offline, [sequence],
-      [offline_master, offline_slave]},
-     {test_muc, [parallel],
-      [muc_master, muc_slave]},
-     {test_roster_remove, [parallel],
-      [roster_remove_master,
-       roster_remove_slave]}].
-
 db_tests(riak) ->
     %% No support for mod_pubsub
     [{single_user, [sequence],
@@ -214,7 +204,35 @@ db_tests(riak) ->
      {test_roster_remove, [parallel],
       [roster_remove_master,
        roster_remove_slave]}];
+db_tests(mnesia) ->
+    [{single_user, [sequence],
+      [test_register,
+       auth_plain,
+       auth_md5,
+       presence_broadcast,
+       last,
+       roster_get,
+       roster_ver,
+       private,
+       privacy,
+       blocking,
+       vcard,
+       pubsub,
+       test_unregister]},
+     {test_roster_subscribe, [parallel],
+      [roster_subscribe_master,
+       roster_subscribe_slave]},
+     {test_offline, [sequence],
+      [offline_master, offline_slave]},
+     {test_carbons, [parallel],
+      [carbons_master, carbons_slave]},
+     {test_muc, [parallel],
+      [muc_master, muc_slave]},
+     {test_roster_remove, [parallel],
+      [roster_remove_master,
+       roster_remove_slave]}];
 db_tests(_) ->
+    %% No support for carboncopy
     [{single_user, [sequence],
       [test_register,
        auth_plain,
@@ -1231,6 +1249,121 @@ offline_slave(Config) ->
                         subject = [#text{data = <<"subject">>}]}),
     true = lists:keymember(delay, 1, SubEls),
     true = lists:keymember(legacy_delay, 1, SubEls),
+    disconnect(Config).
+
+carbons_master(Config) ->
+    MyJID = my_jid(Config),
+    MyBareJID = jlib:jid_remove_resource(MyJID),
+    Peer = ?config(slave, Config),
+    Txt = #text{data = <<"body">>},
+    true = is_feature_advertised(Config, ?NS_CARBONS_2),
+    send(Config, #presence{priority = 10}),
+    #presence{from = MyJID} = recv(),
+    wait_for_slave(Config),
+    #presence{from = Peer} = recv(),
+    %% Enable carbons
+    #iq{type = result, sub_els = []} =
+	send_recv(Config,
+		  #iq{type = set,
+		      sub_els = [#carbons_enable{}]}),
+    %% Send a message to bare and full JID
+    send(Config, #message{to = MyBareJID, type = chat, body = [Txt]}),
+    send(Config, #message{to = MyJID, type = chat, body = [Txt]}),
+    send(Config, #message{to = MyBareJID, type = chat, body = [Txt],
+			  sub_els = [#carbons_private{}]}),
+    send(Config, #message{to = MyJID, type = chat, body = [Txt],
+			  sub_els = [#carbons_private{}]}),
+    %% Receive the messages back
+    ?recv4(#message{from = MyJID, to = MyBareJID, type = chat,
+		    body = [Txt], sub_els = []},
+	   #message{from = MyJID, to = MyJID, type = chat,
+		    body = [Txt], sub_els = []},
+	   #message{from = MyJID, to = MyBareJID, type = chat,
+		    body = [Txt], sub_els = [#carbons_private{}]},
+	   #message{from = MyJID, to = MyJID, type = chat,
+		    body = [Txt], sub_els = [#carbons_private{}]}),
+    %% Disable carbons
+    #iq{type = result, sub_els = []} =
+	send_recv(Config,
+		  #iq{type = set,
+		      sub_els = [#carbons_disable{}]}),
+    wait_for_slave(Config),
+    %% Repeat the same and leave
+    send(Config, #message{to = MyBareJID, type = chat, body = [Txt]}),
+    send(Config, #message{to = MyJID, type = chat, body = [Txt]}),
+    send(Config, #message{to = MyBareJID, type = chat, body = [Txt],
+			  sub_els = [#carbons_private{}]}),
+    send(Config, #message{to = MyJID, type = chat, body = [Txt],
+			  sub_els = [#carbons_private{}]}),
+    ?recv4(#message{from = MyJID, to = MyBareJID, type = chat,
+		    body = [Txt], sub_els = []},
+	   #message{from = MyJID, to = MyJID, type = chat,
+		    body = [Txt], sub_els = []},
+	   #message{from = MyJID, to = MyBareJID, type = chat,
+		    body = [Txt], sub_els = [#carbons_private{}]},
+	   #message{from = MyJID, to = MyJID, type = chat,
+		    body = [Txt], sub_els = [#carbons_private{}]}),
+    disconnect(Config).
+
+carbons_slave(Config) ->
+    MyJID = my_jid(Config),
+    MyBareJID = jlib:jid_remove_resource(MyJID),
+    Peer = ?config(master, Config),
+    Txt = #text{data = <<"body">>},
+    wait_for_master(Config),
+    send(Config, #presence{priority = 5}),
+    ?recv2(#presence{from = MyJID}, #presence{from = Peer}),
+    %% Enable carbons
+    #iq{type = result, sub_els = []} =
+	send_recv(Config,
+		  #iq{type = set,
+		      sub_els = [#carbons_enable{}]}),
+    %% Receive messages sent by the peer
+    ?recv4(
+       #message{from = MyBareJID, to = MyJID, type = chat,
+		sub_els =
+		    [#carbons_sent{
+			forwarded = #forwarded{
+				       sub_els =
+					   [#message{from = Peer,
+						     to = MyBareJID,
+						     type = chat,
+						     body = [Txt]}]}}]},
+       #message{from = MyBareJID, to = MyJID, type = chat,
+		sub_els =
+		    [#carbons_sent{
+			forwarded = #forwarded{
+				       sub_els =
+					   [#message{from = Peer,
+						     to = Peer,
+						     type = chat,
+						     body = [Txt]}]}}]},
+       #message{from = MyBareJID, to = MyJID, type = chat,
+		sub_els =
+		    [#carbons_received{
+			forwarded = #forwarded{
+				       sub_els =
+					   [#message{from = Peer,
+						     to = MyBareJID,
+						     type = chat,
+						     body = [Txt]}]}}]},
+       #message{from = MyBareJID, to = MyJID, type = chat,
+		sub_els =
+		    [#carbons_received{
+			forwarded = #forwarded{
+				       sub_els =
+					   [#message{from = Peer,
+						     to = Peer,
+						     type = chat,
+						     body = [Txt]}]}}]}),
+    %% Disable carbons
+    #iq{type = result, sub_els = []} =
+	send_recv(Config,
+		  #iq{type = set,
+		      sub_els = [#carbons_disable{}]}),
+    wait_for_master(Config),
+    %% Now we should receive nothing but presence unavailable from the peer
+    #presence{from = Peer, type = unavailable} = recv(),
     disconnect(Config).
 
 %%%===================================================================

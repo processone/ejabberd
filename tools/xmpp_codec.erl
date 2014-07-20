@@ -12,6 +12,18 @@
 
 decode({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"sent">>, <<"urn:xmpp:carbons:2">>} ->
+	  decode_carbons_sent(_el);
+      {<<"received">>, <<"urn:xmpp:carbons:2">>} ->
+	  decode_carbons_received(_el);
+      {<<"private">>, <<"urn:xmpp:carbons:2">>} ->
+	  decode_carbons_private(_el);
+      {<<"enable">>, <<"urn:xmpp:carbons:2">>} ->
+	  decode_carbons_enable(_el);
+      {<<"disable">>, <<"urn:xmpp:carbons:2">>} ->
+	  decode_carbons_disable(_el);
+      {<<"forwarded">>, <<"urn:xmpp:forward:0">>} ->
+	  decode_forwarded(_el);
       {<<"x">>, <<"http://jabber.org/protocol/muc">>} ->
 	  decode_muc(_el);
       {<<"query">>,
@@ -705,6 +717,12 @@ decode({xmlel, _name, _attrs, _} = _el) ->
 
 is_known_tag({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"sent">>, <<"urn:xmpp:carbons:2">>} -> true;
+      {<<"received">>, <<"urn:xmpp:carbons:2">>} -> true;
+      {<<"private">>, <<"urn:xmpp:carbons:2">>} -> true;
+      {<<"enable">>, <<"urn:xmpp:carbons:2">>} -> true;
+      {<<"disable">>, <<"urn:xmpp:carbons:2">>} -> true;
+      {<<"forwarded">>, <<"urn:xmpp:forward:0">>} -> true;
       {<<"x">>, <<"http://jabber.org/protocol/muc">>} -> true;
       {<<"query">>,
        <<"http://jabber.org/protocol/muc#admin">>} ->
@@ -1267,6 +1285,24 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
       _ -> false
     end.
 
+encode({carbons_sent, _} = Sent) ->
+    encode_carbons_sent(Sent,
+			[{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
+encode({carbons_received, _} = Received) ->
+    encode_carbons_received(Received,
+			    [{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
+encode({carbons_private} = Private) ->
+    encode_carbons_private(Private,
+			   [{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
+encode({carbons_enable} = Enable) ->
+    encode_carbons_enable(Enable,
+			  [{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
+encode({carbons_disable} = Disable) ->
+    encode_carbons_disable(Disable,
+			   [{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
+encode({forwarded, _, _} = Forwarded) ->
+    encode_forwarded(Forwarded,
+		     [{<<"xmlns">>, <<"urn:xmpp:forward:0">>}]);
 encode({muc, _, _} = X) ->
     encode_muc(X,
 	       [{<<"xmlns">>, <<"http://jabber.org/protocol/muc">>}]);
@@ -1778,6 +1814,12 @@ pp(muc_item, 7) ->
 pp(muc_actor, 2) -> [jid, nick];
 pp(muc_admin, 1) -> [items];
 pp(muc, 2) -> [history, password];
+pp(forwarded, 2) -> [delay, sub_els];
+pp(carbons_disable, 0) -> [];
+pp(carbons_enable, 0) -> [];
+pp(carbons_private, 0) -> [];
+pp(carbons_received, 1) -> [forwarded];
+pp(carbons_sent, 1) -> [forwarded];
 pp(_, _) -> no.
 
 enc_bool(false) -> <<"false">>;
@@ -1817,6 +1859,153 @@ dec_tzo(Val) ->
     H = jlib:binary_to_integer(H1),
     M = jlib:binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
+
+decode_carbons_sent({xmlel, <<"sent">>, _attrs,
+		     _els}) ->
+    Forwarded = decode_carbons_sent_els(_els, error),
+    {carbons_sent, Forwarded}.
+
+decode_carbons_sent_els([], Forwarded) ->
+    case Forwarded of
+      error ->
+	  erlang:error({xmpp_codec,
+			{missing_tag, <<"forwarded">>,
+			 <<"urn:xmpp:forward:0">>}});
+      {value, Forwarded1} -> Forwarded1
+    end;
+decode_carbons_sent_els([{xmlel, <<"forwarded">>,
+			  _attrs, _} =
+			     _el
+			 | _els],
+			Forwarded) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<"urn:xmpp:forward:0">> ->
+	   decode_carbons_sent_els(_els,
+				   {value, decode_forwarded(_el)});
+       true -> decode_carbons_sent_els(_els, Forwarded)
+    end;
+decode_carbons_sent_els([_ | _els], Forwarded) ->
+    decode_carbons_sent_els(_els, Forwarded).
+
+encode_carbons_sent({carbons_sent, Forwarded},
+		    _xmlns_attrs) ->
+    _els = 'encode_carbons_sent_$forwarded'(Forwarded, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"sent">>, _attrs, _els}.
+
+'encode_carbons_sent_$forwarded'(Forwarded, _acc) ->
+    [encode_forwarded(Forwarded,
+		      [{<<"xmlns">>, <<"urn:xmpp:forward:0">>}])
+     | _acc].
+
+decode_carbons_received({xmlel, <<"received">>, _attrs,
+			 _els}) ->
+    Forwarded = decode_carbons_received_els(_els, error),
+    {carbons_received, Forwarded}.
+
+decode_carbons_received_els([], Forwarded) ->
+    case Forwarded of
+      error ->
+	  erlang:error({xmpp_codec,
+			{missing_tag, <<"forwarded">>,
+			 <<"urn:xmpp:forward:0">>}});
+      {value, Forwarded1} -> Forwarded1
+    end;
+decode_carbons_received_els([{xmlel, <<"forwarded">>,
+			      _attrs, _} =
+				 _el
+			     | _els],
+			    Forwarded) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<"urn:xmpp:forward:0">> ->
+	   decode_carbons_received_els(_els,
+				       {value, decode_forwarded(_el)});
+       true -> decode_carbons_received_els(_els, Forwarded)
+    end;
+decode_carbons_received_els([_ | _els], Forwarded) ->
+    decode_carbons_received_els(_els, Forwarded).
+
+encode_carbons_received({carbons_received, Forwarded},
+			_xmlns_attrs) ->
+    _els = 'encode_carbons_received_$forwarded'(Forwarded,
+						[]),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"received">>, _attrs, _els}.
+
+'encode_carbons_received_$forwarded'(Forwarded, _acc) ->
+    [encode_forwarded(Forwarded,
+		      [{<<"xmlns">>, <<"urn:xmpp:forward:0">>}])
+     | _acc].
+
+decode_carbons_private({xmlel, <<"private">>, _attrs,
+			_els}) ->
+    {carbons_private}.
+
+encode_carbons_private({carbons_private},
+		       _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"private">>, _attrs, _els}.
+
+decode_carbons_enable({xmlel, <<"enable">>, _attrs,
+		       _els}) ->
+    {carbons_enable}.
+
+encode_carbons_enable({carbons_enable}, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"enable">>, _attrs, _els}.
+
+decode_carbons_disable({xmlel, <<"disable">>, _attrs,
+			_els}) ->
+    {carbons_disable}.
+
+encode_carbons_disable({carbons_disable},
+		       _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"disable">>, _attrs, _els}.
+
+decode_forwarded({xmlel, <<"forwarded">>, _attrs,
+		  _els}) ->
+    {Delay, __Els} = decode_forwarded_els(_els, undefined,
+					  []),
+    {forwarded, Delay, __Els}.
+
+decode_forwarded_els([], Delay, __Els) ->
+    {Delay, lists:reverse(__Els)};
+decode_forwarded_els([{xmlel, <<"delay">>, _attrs, _} =
+			  _el
+		      | _els],
+		     Delay, __Els) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<"urn:xmpp:delay">> ->
+	   decode_forwarded_els(_els, decode_delay(_el), __Els);
+       true -> decode_forwarded_els(_els, Delay, __Els)
+    end;
+decode_forwarded_els([{xmlel, _, _, _} = _el | _els],
+		     Delay, __Els) ->
+    case is_known_tag(_el) of
+      true ->
+	  decode_forwarded_els(_els, Delay,
+			       [decode(_el) | __Els]);
+      false -> decode_forwarded_els(_els, Delay, __Els)
+    end;
+decode_forwarded_els([_ | _els], Delay, __Els) ->
+    decode_forwarded_els(_els, Delay, __Els).
+
+encode_forwarded({forwarded, Delay, __Els},
+		 _xmlns_attrs) ->
+    _els = 'encode_forwarded_$delay'(Delay,
+				     [encode(_el) || _el <- __Els]),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"forwarded">>, _attrs, _els}.
+
+'encode_forwarded_$delay'(undefined, _acc) -> _acc;
+'encode_forwarded_$delay'(Delay, _acc) ->
+    [encode_delay(Delay,
+		  [{<<"xmlns">>, <<"urn:xmpp:delay">>}])
+     | _acc].
 
 decode_muc({xmlel, <<"x">>, _attrs, _els}) ->
     History = decode_muc_els(_els, undefined),

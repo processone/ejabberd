@@ -45,6 +45,8 @@ init_config(Config) ->
      {certfile, CertFile},
      {base_dir, BaseDir},
      {resource, <<"resource">>},
+     {master_resource, <<"master_resource">>},
+     {slave_resource, <<"slave_resource">>},
      {password, <<"password">>}
      |Config].
 

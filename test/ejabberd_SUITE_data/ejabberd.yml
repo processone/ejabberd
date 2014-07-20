@@ -138,6 +138,8 @@ Welcome to this XMPP server."
         db_type: internal
       mod_vcard: 
         db_type: internal
+      mod_carboncopy:
+        db_type: internal
       mod_adhoc: []
       mod_configure: []
       mod_disco: []

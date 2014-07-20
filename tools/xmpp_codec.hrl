@@ -9,6 +9,10 @@
                      host :: binary(),
                      port = 1080 :: non_neg_integer()}).
 
+-record(carbons_enable, {}).
+
+-record(carbons_private, {}).
+
 -record(pubsub_unsubscribe, {node :: binary(),
                              jid :: any(),
                              subid :: binary()}).
@@ -31,6 +35,9 @@
                       to :: any()}).
 
 -record(starttls_proceed, {}).
+
+-record(forwarded, {delay :: #delay{},
+                    sub_els = [] :: [any()]}).
 
 -record(starttls_failure, {}).
 
@@ -144,6 +151,8 @@
                        subid :: binary(),
                        items = [] :: [#pubsub_item{}]}).
 
+-record(carbons_sent, {forwarded :: #forwarded{}}).
+
 -record(p1_rebind, {}).
 
 -record(compress_failure, {reason :: 'processing-failed' | 'setup-failed' | 'unsupported-method'}).
@@ -156,6 +165,8 @@
                       pref = false :: boolean(),
                       x400 = false :: boolean(),
                       userid :: binary()}).
+
+-record(carbons_received, {forwarded :: #forwarded{}}).
 
 -record(pubsub_retract, {node :: binary(),
                          notify = false :: any(),
@@ -209,6 +220,8 @@
                    password :: binary()}).
 
 -record(muc_admin, {items = [] :: [#muc_item{}]}).
+
+-record(carbons_disable, {}).
 
 -record(bytestreams, {hosts = [] :: [#streamhost{}],
                       used :: any(),
