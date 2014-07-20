@@ -44,7 +44,7 @@ loglevel: 4
 ## does not disable rotation, it instead rotates the file and keeps no previous
 ## versions around. Setting size to X rotate log when it reaches X bytes.
 ## To disable rotation set the size to 0 and the date to ""
-## Size syntax is taken from the syntax newsyslog uses in newsyslog.conf.
+## Date syntax is taken from the syntax newsyslog uses in newsyslog.conf.
 ## Some examples:
 ##  $D0     rotate every night at midnight
 ##  $D23    rotate every day at 23:00 hr
