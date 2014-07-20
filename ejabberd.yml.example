@@ -44,7 +44,7 @@ loglevel: 4
 ## does not disable rotation, it instead rotates the file and keeps no previous
 ## versions around. Setting size to X rotate log when it reaches X bytes.
 ## To disable rotation set the size to 0 and the date to ""
-## Size syntax is taken from the syntax newsyslog uses in newsyslog.conf.
+## Date syntax is taken from the syntax newsyslog uses in newsyslog.conf.
 ## Some examples:
 ##  $D0     rotate every night at midnight
 ##  $D23    rotate every day at 23:00 hr
@@ -59,7 +59,7 @@ log_rotate_count: 1
 
 ##
 ## overload protection: If you want to limit the number of messages per second
-## allowed from error_logger, which is a good idea if you want to weather a flood
+## allowed from error_logger, which is a good idea if you want to avoid a flood
 ## of messages when system is overloaded, you can set a limit.
 ## 100 is ejabberd's default.
 log_rate_limit: 100
