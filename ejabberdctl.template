@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # define default configuration
 POLL=true
@@ -7,7 +7,6 @@ ERL_MAX_PORTS=32000
 ERL_PROCESSES=250000
 ERL_MAX_ETS_TABLES=1400
 FIREWALL_WINDOW=""
-INET_DIST_INTERFACE="127.0.0.1"
 ERLANG_NODE=ejabberd@localhost
 
 # define default environment variables
@@ -45,33 +44,33 @@ while [ $# -ne 0 ] ; do
     case $PARAM in
         --) break ;;
         --node) ERLANG_NODE_ARG=$1 ; shift ;;
-        --config-dir) ETCDIR=$1 ; shift ;;
-        --config) EJABBERD_CONFIG_PATH=$1 ; shift ;;
-        --ctl-config) EJABBERDCTL_CONFIG_PATH=$1 ; shift ;;
-        --logs) LOGS_DIR=$1 ; shift ;;
-        --spool) SPOOLDIR=$1 ; shift ;;
+        --config-dir) ETC_DIR="$1" ; shift ;;
+        --config) EJABBERD_CONFIG_PATH="$1" ; shift ;;
+        --ctl-config) EJABBERDCTL_CONFIG_PATH="$1" ; shift ;;
+        --logs) LOGS_DIR="$1" ; shift ;;
+        --spool) SPOOL_DIR="$1" ; shift ;;
         *) ARGS="$ARGS $PARAM" ;;
     esac
 done
 
 # Define ejabberd variable if they have not been defined from the command line
-if [ "$ETCDIR" = "" ] ; then
-    ETCDIR={{sysconfdir}}/ejabberd
+if [ "$ETC_DIR" = "" ] ; then
+    ETC_DIR={{sysconfdir}}/ejabberd
 fi
 if [ "$EJABBERDCTL_CONFIG_PATH" = "" ] ; then
-    EJABBERDCTL_CONFIG_PATH=$ETCDIR/ejabberdctl.cfg
+    EJABBERDCTL_CONFIG_PATH=$ETC_DIR/ejabberdctl.cfg
 fi
 if [ -f "$EJABBERDCTL_CONFIG_PATH" ] ; then
     . "$EJABBERDCTL_CONFIG_PATH"
 fi
 if [ "$EJABBERD_CONFIG_PATH" = "" ] ; then
-    EJABBERD_CONFIG_PATH=$ETCDIR/ejabberd.yml
+    EJABBERD_CONFIG_PATH=$ETC_DIR/ejabberd.yml
 fi
 if [ "$LOGS_DIR" = "" ] ; then
     LOGS_DIR={{localstatedir}}/log/ejabberd
 fi
-if [ "$SPOOLDIR" = "" ] ; then
-    SPOOLDIR={{localstatedir}}/lib/ejabberd
+if [ "$SPOOL_DIR" = "" ] ; then
+    SPOOL_DIR={{localstatedir}}/lib/ejabberd
 fi
 if [ "$EJABBERD_DOC_PATH" = "" ] ; then
     EJABBERD_DOC_PATH={{docdir}}
@@ -104,8 +103,7 @@ EJABBERD_LOG_PATH=$LOGS_DIR/ejabberd.log
 SASL_LOG_PATH=$LOGS_DIR/erlang.log
 DATETIME=`date "+%Y%m%d-%H%M%S"`
 ERL_CRASH_DUMP=$LOGS_DIR/erl_crash_$DATETIME.dump
-ERL_INETRC=$ETCDIR/inetrc
-HOME=$SPOOLDIR
+ERL_INETRC=$ETC_DIR/inetrc
 
 # define erl parameters
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
@@ -128,15 +126,15 @@ fi
 
 # define ejabberd environment parameters
 if [ "$EJABBERD_CONFIG_PATH" != "${EJABBERD_CONFIG_PATH%.yml}" ] ; then
-    rate=$(grep log_rate_limit $EJABBERD_CONFIG_PATH | cut -d':' -f2 | sed 's/ *//')
-    rotate=$(grep log_rotate_size $EJABBERD_CONFIG_PATH | cut -d':' -f2 | sed 's/ *//')
-    count=$(grep log_rotate_count $EJABBERD_CONFIG_PATH | cut -d':' -f2 | sed 's/ *//')
-    date=$(grep log_rotate_date $EJABBERD_CONFIG_PATH | cut -d':' -f2 | sed 's/ *//')
+    rate=$(sed '/^[ 	]*log_rate_limit/!d;s/.*://;s/ *//' $EJABBERD_CONFIG_PATH)
+    rotate=$(sed '/^[ 	]*log_rotate_size/!d;s/.*://;s/ *//' $EJABBERD_CONFIG_PATH)
+    count=$(sed '/^[ 	]*log_rotate_count/!d;s/.*://;s/ *//' $EJABBERD_CONFIG_PATH)
+    date=$(sed '/^[ 	]*log_rotate_date/!d;s/.*://;s/ *//' $EJABBERD_CONFIG_PATH)
 else
-    rate=$(grep log_rate_limit $EJABBERD_CONFIG_PATH | cut -d',' -f2 | sed 's/ *//;s/}\.//')
-    rotate=$(grep log_rotate_size $EJABBERD_CONFIG_PATH | cut -d',' -f2 | sed 's/ *//;s/}\.//')
-    count=$(grep log_rotate_count $EJABBERD_CONFIG_PATH | cut -d',' -f2 | sed 's/ *//;s/}\.//')
-    date=$(grep log_rotate_date $EJABBERD_CONFIG_PATH | cut -d',' -f2 | sed 's/ *//;s/}\.//')
+    rate=$(sed '/^[ 	]*log_rate_limit/!d;s/.*,//;s/ *//;s/}\.//' $EJABBERD_CONFIG_PATH)
+    rotate=$(sed '/^[ 	]*log_rotate_size/!d;s/.*,//;s/ *//;s/}\.//' $EJABBERD_CONFIG_PATH)
+    count=$(sed '/^[ 	]*log_rotate_count/!d;s/.*,//;s/ *//;s/}\.//' $EJABBERD_CONFIG_PATH)
+    date=$(sed '/^[ 	]*log_rotate_date/!d;s/.*,//;s/ *//;s/}\.//' $EJABBERD_CONFIG_PATH)
 fi
 [ -z "$rate" ] || EJABBERD_OPTS="log_rate_limit $rate"
 [ -z "$rotate" ] || EJABBERD_OPTS="${EJABBERD_OPTS} log_rotate_size $rotate"
@@ -148,7 +146,11 @@ fi
 # then change to that directory readable by INSTALLUSER to
 # prevent "File operation error: eacces." messages
 [ -d $HOME ] || $EXEC_CMD "mkdir -p $HOME"
-cd $HOME
+[ -d $SPOOL_DIR ] || $EXEC_CMD "mkdir -p $SPOOL_DIR"
+# then set SPOOL_DIR as ejabberd home directory by changing
+# to that directory readable by INSTALLUSER to prevent
+# "File operation error: eacces." messages
+cd $SPOOL_DIR
 
 # export global variables
 export EJABBERD_CONFIG_PATH
@@ -163,8 +165,6 @@ export ERL_EPMD_ADDRESS
 export ERL_INETRC
 export ERL_MAX_PORTS
 export ERL_MAX_ETS_TABLES
-export HOME
-export EXEC_CMD
 
 # start server
 start()
@@ -174,8 +174,9 @@ start()
       $NAME $ERLANG_NODE \
       -noinput -detached \
       -pa $EJABBERD_EBIN_PATH \
-      -mnesia dir \"\\\"$SPOOLDIR\\\"\" \
+      -mnesia dir \"\\\"$SPOOL_DIR\\\"\" \
       $KERNEL_OPTS \
+      $EJABBERD_OPTS \
       -s ejabberd \
       -sasl sasl_error_logger \\{file,\\\"$SASL_LOG_PATH\\\"\\} \
       $ERLANG_OPTS $ARGS \"$@\""
@@ -198,13 +199,12 @@ debug()
         echo "  control+c, control+c"
         echo ""
         echo "--------------------------------------------------------------------"
-        echo "To bypass permanently this warning, add to $EJABBERDCTL_CONFIG_PATH the line:"
+        echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
         echo "  EJABBERD_BYPASS_WARNINGS=true"
         echo "Press any key to continue"
-
         read foo
+        echo ""
     fi
-    echo ""
     TTY=`tty | sed -e  's/.*\///g'`
     $EXEC_CMD "$ERL \
       $NAME debug-${TTY}-${ERLANG_NODE} \
@@ -231,18 +231,18 @@ live()
         echo "  q().  and press the Enter key"
         echo ""
         echo "--------------------------------------------------------------------"
-        echo "To bypass permanently this warning, add to $EJABBERDCTL_CONFIG_PATH the line:"
+        echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
         echo "  EJABBERD_BYPASS_WARNINGS=true"
         echo "Press any key to continue"
-
         read foo
+        echo ""
     fi
-    echo ""
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
       -pa $EJABBERD_EBIN_PATH \
-      -mnesia dir \"\\\"$SPOOLDIR\\\"\" \
+      -mnesia dir \"\\\"$SPOOL_DIR\\\"\" \
       $KERNEL_OPTS \
+      $EJABBERD_OPTS \
       -s ejabberd \
       $ERLANG_OPTS $ARGS \"$@\""
 }
@@ -263,11 +263,11 @@ help()
     echo "  live   Start an ejabberd node in live (interactive) mode"
     echo ""
     echo "Optional parameters when starting an ejabberd node:"
-    echo "  --config-dir dir   Config ejabberd:    $ETCDIR"
+    echo "  --config-dir dir   Config ejabberd:    $ETC_DIR"
     echo "  --config file      Config ejabberd:    $EJABBERD_CONFIG_PATH"
     echo "  --ctl-config file  Config ejabberdctl: $EJABBERDCTL_CONFIG_PATH"
     echo "  --logs dir         Directory for logs: $LOGS_DIR"
-    echo "  --spool dir        Database spool dir: $SPOOLDIR"
+    echo "  --spool dir        Database spool dir: $SPOOL_DIR"
     echo "  --node nodename    ejabberd node name: $ERLANG_NODE"
     echo ""
 }
