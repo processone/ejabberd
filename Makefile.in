@@ -183,7 +183,6 @@ install: all
 	$(INSTALL) -m 644 doc/dev.html $(DOCDIR)
 	$(INSTALL) -m 644 doc/guide.html $(DOCDIR)
 	$(INSTALL) -m 644 doc/*.png $(DOCDIR)
-	$(INSTALL) -m 644 doc/*.txt $(DOCDIR)
 	[ -f doc/guide.pdf ] \
 		&& $(INSTALL) -m 644 doc/guide.pdf $(DOCDIR) \
 		|| echo "No doc/guide.pdf was built"
