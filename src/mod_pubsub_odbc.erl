@@ -385,7 +385,7 @@ init_send_loop(ServerHost, State) ->
 init_plugins(Host, ServerHost, Opts) ->
     TreePlugin =
 	jlib:binary_to_atom(<<(?TREE_PREFIX)/binary,
-				(gen_mod:get_opt(nodetree, Opts, fun(A) when is_list(A) -> A end,
+				(gen_mod:get_opt(nodetree, Opts, fun(A) when is_binary(A) -> A end,
 						 ?STDTREE))/binary,
 				(?ODBC_SUFFIX)/binary>>),
     ?DEBUG("** tree plugin is ~p", [TreePlugin]),
