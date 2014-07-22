@@ -1288,11 +1288,11 @@ access:
     all: normal
   xmlrpc_access: 
     xmlrpc_bot: allow
-  s2s_access:
+  s2s:
     trusted_servers: allow
     all: deny
 s2s_certfile: "/path/to/ssl.pem"
-s2s_policy: s2s_access
+s2s_access: s2s
 s2s_use_starttls: required_trusted
 listen: 
   - 

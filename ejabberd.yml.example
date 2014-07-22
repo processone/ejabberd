@@ -196,7 +196,7 @@ listen:
 ##
 ## Default s2s policy for undefined hosts.
 ##
-## s2s_policy: s2s_access
+## s2s_access: s2s
 
 ##
 ## Outgoing S2S options
@@ -487,7 +487,7 @@ access:
   trusted_network: 
     loopback: allow
   ## Do not establish S2S connections with bad servers
-  ## s2s_access:
+  ## s2s: 
   ##   bad_servers: deny
   ##   all: allow
 
