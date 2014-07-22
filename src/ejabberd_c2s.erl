@@ -1693,7 +1693,7 @@ handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
     Recipients = ejabberd_hooks:run_fold(
 		   c2s_broadcast_recipients, StateData#state.server,
 		   [],
-		   [StateData, Type, From, Packet]),
+		   [StateData#state.server, StateData, Type, From, Packet]),
     lists:foreach(
       fun(USR) ->
 	      ejabberd_router:route(
