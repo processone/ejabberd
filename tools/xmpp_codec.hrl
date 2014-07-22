@@ -9,6 +9,9 @@
                      host :: binary(),
                      port = 1080 :: non_neg_integer()}).
 
+-record(sm_resume, {h :: non_neg_integer(),
+                    previd :: binary()}).
+
 -record(carbons_enable, {}).
 
 -record(carbons_private, {}).
@@ -34,10 +37,18 @@
                       from :: any(),
                       to :: any()}).
 
+-record(sm_a, {h :: non_neg_integer()}).
+
 -record(starttls_proceed, {}).
+
+-record(sm_resumed, {h :: non_neg_integer(),
+                     previd :: binary()}).
 
 -record(forwarded, {delay :: #delay{},
                     sub_els = [] :: [any()]}).
+
+-record(sm_enable, {max :: non_neg_integer(),
+                    resume = false :: any()}).
 
 -record(starttls_failure, {}).
 
@@ -48,6 +59,8 @@
 -record(private, {xml_els = [] :: [any()]}).
 
 -record(p1_ack, {}).
+
+-record(feature_sm, {}).
 
 -record(pubsub_item, {id :: binary(),
                       xml_els = [] :: [any()]}).
@@ -68,6 +81,8 @@
                             node :: binary(),
                             publisher :: binary()}).
 
+-record(sm_r, {}).
+
 -record(stat, {name :: binary(),
                units :: binary(),
                value :: binary(),
@@ -82,13 +97,18 @@
 -record(last, {seconds :: non_neg_integer(),
                text :: binary()}).
 
+-record(redirect, {uri :: binary()}).
+
+-record(sm_enabled, {id :: binary(),
+                     location :: binary(),
+                     max :: non_neg_integer(),
+                     resume = false :: any()}).
+
 -record(pubsub_event_items, {node :: binary(),
                              retract = [] :: [binary()],
                              items = [] :: [#pubsub_event_item{}]}).
 
 -record(pubsub_event, {items = [] :: [#pubsub_event_items{}]}).
-
--record(redirect, {uri :: binary()}).
 
 -record(sasl_response, {text :: any()}).
 
@@ -357,6 +377,8 @@
                      xdata = [] :: [#xdata{}]}).
 
 -record(sasl_mechanisms, {list = [] :: [binary()]}).
+
+-record(sm_failed, {reason :: atom() | #gone{} | #redirect{}}).
 
 -record(error, {type :: 'auth' | 'cancel' | 'continue' | 'modify' | 'wait',
                 by :: binary(),

@@ -88,6 +88,11 @@ disconnect(Config) ->
     ejabberd_socket:close(Socket),
     Config.
 
+close_socket(Config) ->
+    Socket = ?config(socket, Config),
+    ejabberd_socket:close(Socket),
+    Config.
+
 starttls(Config) ->
     send(Config, #starttls{}),
     #starttls_proceed{} = recv(),
@@ -146,8 +151,13 @@ wait_auth_SASL_result(Config) ->
             {xmlstreamstart, <<"stream:stream">>, Attrs} = recv(),
             <<"jabber:client">> = xml:get_attr_s(<<"xmlns">>, Attrs),
             <<"1.0">> = xml:get_attr_s(<<"version">>, Attrs),
-            #stream_features{} = recv(),
-            Config;
+            #stream_features{sub_els = Fs} = recv(),
+	    lists:foldl(
+	      fun(#feature_sm{}, ConfigAcc) ->
+		      set_opt(sm, true, ConfigAcc);
+		 (_, ConfigAcc) ->
+		      ConfigAcc
+	      end, Config, Fs);
         #sasl_challenge{text = ClientIn} ->
             {Response, SASL} = (?config(sasl, Config))(ClientIn),
             send(Config, #sasl_response{text = Response}),

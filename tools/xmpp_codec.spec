@@ -2068,6 +2068,122 @@
 	   refs = [#ref{name = forwarded, min = 1,
                         max = 1, label = '$forwarded'}]}).
 
+-xml(feature_sm,
+     #elem{name = <<"sm">>,
+	   xmlns = <<"urn:xmpp:sm:3">>,
+	   result = {feature_sm}}).
+
+-xml(sm_enable,
+     #elem{name = <<"enable">>,
+	   xmlns = <<"urn:xmpp:sm:3">>,
+	   result = {sm_enable, '$max', '$resume'},
+	   attrs = [#attr{name = <<"max">>,
+			  dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}},
+		    #attr{name = <<"resume">>,
+			  default = false,
+			  dec = {dec_bool, []},
+                          enc = {enc_bool, []}}]}).
+
+-xml(sm_enabled,
+     #elem{name = <<"enabled">>,
+	   xmlns = <<"urn:xmpp:sm:3">>,
+	   result = {sm_enabled, '$id', '$location', '$max', '$resume'},
+	   attrs = [#attr{name = <<"id">>},
+		    #attr{name = <<"location">>},
+		    #attr{name = <<"max">>,
+			  dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}},
+		    #attr{name = <<"resume">>,
+			  default = false,
+			  dec = {dec_bool, []},
+                          enc = {enc_bool, []}}]}).
+
+-xml(sm_resume,
+     #elem{name = <<"resume">>,
+	   xmlns = <<"urn:xmpp:sm:3">>,
+	   result = {sm_resume, '$h', '$previd'},
+	   attrs = [#attr{name = <<"h">>,
+			  required = true,
+			  dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}},
+		    #attr{name = <<"previd">>,
+			  required = true}]}).
+
+-xml(sm_resumed,
+     #elem{name = <<"resumed">>,
+	   xmlns = <<"urn:xmpp:sm:3">>,
+	   result = {sm_resumed, '$h', '$previd'},
+	   attrs = [#attr{name = <<"h">>,
+			  required = true,
+			  dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}},
+		    #attr{name = <<"previd">>,
+			  required = true}]}).
+
+-xml(sm_r,
+     #elem{name = <<"r">>,
+	   xmlns = <<"urn:xmpp:sm:3">>,
+	   result = {sm_r}}).
+
+-xml(sm_a,
+     #elem{name = <<"a">>,
+	   xmlns = <<"urn:xmpp:sm:3">>,
+	   result = {sm_a, '$h'},
+	   attrs = [#attr{name = <<"h">>,
+			  required = true,
+			  dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}}]}).
+
+-xml(sm_failed,
+     #elem{name = <<"failed">>,
+	   xmlns = <<"urn:xmpp:sm:3">>,
+	   result = {sm_failed, '$reason'},
+	   refs = [#ref{name = error_bad_request,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_conflict,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_feature_not_implemented,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_forbidden,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_gone,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_internal_server_error,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_item_not_found,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_jid_malformed,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_not_acceptable,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_not_allowed,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_not_authorized,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_policy_violation,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_recipient_unavailable,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_redirect,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_registration_required,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_remote_server_not_found,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_remote_server_timeout,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_resource_constraint,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_service_unavailable,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_subscription_required,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_undefined_condition,
+                        min = 0, max = 1, label = '$reason'},
+                   #ref{name = error_unexpected_request,
+                        min = 0, max = 1, label = '$reason'}]}).
+
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),
     H = jlib:binary_to_integer(H1),
@@ -2110,7 +2226,9 @@ resourceprep(R) ->
     end.
 
 dec_bool(<<"false">>) -> false;
-dec_bool(<<"true">>) -> true.
+dec_bool(<<"0">>) -> false;
+dec_bool(<<"true">>) -> true;
+dec_bool(<<"1">>) -> true.
 
 enc_bool(false) -> <<"false">>;
 enc_bool(true) -> <<"true">>.

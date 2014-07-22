@@ -19,7 +19,8 @@
                 wait_for_master/1, wait_for_slave/1,
                 make_iq_result/1, start_event_relay/0,
                 stop_event_relay/1, put_event/2, get_event/1,
-                bind/1, auth/1, open_session/1, zlib/1, starttls/1]).
+                bind/1, auth/1, open_session/1, zlib/1, starttls/1,
+		close_socket/1]).
 
 -include("suite.hrl").
 
@@ -150,6 +151,8 @@ init_per_testcase(TestCase, OrigConfig) ->
             connect(Config);
         test_bind ->
             auth(connect(Config));
+	sm_resume ->
+	    auth(connect(Config));
         test_open_session ->
             bind(auth(connect(Config)));
         _ when IsMaster or IsSlave ->
@@ -176,6 +179,8 @@ no_db_tests() ->
        version,
        time,
        stats,
+       sm,
+       sm_resume,
        disco]},
      {test_proxy65, [parallel],
       [proxy65_master, proxy65_slave]}].
@@ -500,6 +505,43 @@ disco(Config) ->
                             #iq{type = get, to = JID,
                                 sub_els = [#disco_info{node = Node}]})
       end, Items),
+    disconnect(Config).
+
+sm(Config) ->
+    Server = ?config(server, Config),
+    ServerJID = jlib:make_jid(<<"">>, Server, <<"">>),
+    Msg = #message{to = ServerJID, body = [#text{data = <<"body">>}]},
+    true = ?config(sm, Config),
+    %% Enable the session management with resumption enabled
+    send(Config, #sm_enable{resume = true}),
+    #sm_enabled{id = ID, resume = true} = recv(),
+    %% Initial request; 'h' should be 0.
+    send(Config, #sm_r{}),
+    #sm_a{h = 0} = recv(),
+    %% sending two messages and requesting again; 'h' should be 3.
+    send(Config, Msg),
+    send(Config, Msg),
+    send(Config, Msg),
+    send(Config, #sm_r{}),
+    #sm_a{h = 3} = recv(),
+    close_socket(Config),
+    {save_config, set_opt(sm_previd, ID, Config)}.
+
+sm_resume(Config) ->
+    {sm, SMConfig} = ?config(saved_config, Config),
+    ID = ?config(sm_previd, SMConfig),
+    Server = ?config(server, Config),
+    ServerJID = jlib:make_jid(<<"">>, Server, <<"">>),
+    MyJID = my_jid(Config),
+    Txt = #text{data = <<"body">>},
+    Msg = #message{from = ServerJID, to = MyJID, body = [Txt]},
+    %% Route message. The message should be queued by the C2S process.
+    ejabberd_router:route(ServerJID, MyJID, xmpp_codec:encode(Msg)),
+    send(Config, #sm_resume{previd = ID, h = 0}),
+    #sm_resumed{previd = ID, h = 3} = recv(),
+    #message{from = ServerJID, to = MyJID, body = [Txt]} = recv(),
+    #sm_r{} = recv(),
+    send(Config, #sm_a{h = 1}),
     disconnect(Config).
 
 private(Config) ->
