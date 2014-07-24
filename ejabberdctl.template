@@ -22,7 +22,8 @@ if [ "$INSTALLUSER" != "" ] ; then
     EXEC_CMD="false"
     for GID in `id -G`; do
         if [ $GID -eq 0 ] ; then
-            EXEC_CMD="su $INSTALLUSER -p -c"
+            INSTALLUSER_HOME=$(getent passwd "$INSTALLUSER" | cut -d: -f6)
+            EXEC_CMD="env HOME=$INSTALLUSER_HOME su $INSTALLUSER -p -c"
         fi
     done
     if [ `id -g` -eq `id -g $INSTALLUSER` ] ; then
