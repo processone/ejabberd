@@ -152,9 +152,6 @@ fi
 [ -z "$EJABBERD_OPTS" ] || EJABBERD_OPTS="-ejabberd ${EJABBERD_OPTS}"
 
 [ -d $SPOOL_DIR ] || $EXEC_CMD "mkdir -p $SPOOL_DIR"
-# then set SPOOL_DIR as ejabberd home directory by changing
-# to that directory readable by INSTALLUSER to prevent
-# "File operation error: eacces." messages
 cd $SPOOL_DIR
 
 # export global variables
