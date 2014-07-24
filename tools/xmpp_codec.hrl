@@ -5,6 +5,9 @@
 
 -record(sasl_success, {text :: any()}).
 
+-record(text, {lang :: binary(),
+               data :: binary()}).
+
 -record(streamhost, {jid :: any(),
                      host :: binary(),
                      port = 1080 :: non_neg_integer()}).
@@ -83,6 +86,9 @@
 
 -record(sm_r, {}).
 
+-record(muc_actor, {jid :: any(),
+                    nick :: binary()}).
+
 -record(stat, {name :: binary(),
                units :: binary(),
                value :: binary(),
@@ -150,8 +156,15 @@
                               subid :: binary(),
                               type :: 'none' | 'pending' | 'subscribed' | 'unconfigured'}).
 
--record(muc_actor, {jid :: any(),
-                    nick :: binary()}).
+-record(muc_item, {actor :: #muc_actor{},
+                   continue :: binary(),
+                   reason :: binary(),
+                   affiliation :: 'admin' | 'member' | 'none' | 'outcast' | 'owner',
+                   role :: 'moderator' | 'none' | 'participant' | 'visitor',
+                   jid :: any(),
+                   nick :: binary()}).
+
+-record(muc_admin, {items = [] :: [#muc_item{}]}).
 
 -record(shim, {headers = [] :: [{binary(),'undefined' | binary()}]}).
 
@@ -192,9 +205,6 @@
                          notify = false :: any(),
                          items = [] :: [#pubsub_item{}]}).
 
--record(text, {lang :: binary(),
-               data :: binary()}).
-
 -record(vcard_geo, {lat :: binary(),
                     lon :: binary()}).
 
@@ -224,22 +234,12 @@
 -record(bind, {jid :: any(),
                resource :: any()}).
 
--record(muc_item, {actor :: #muc_actor{},
-                   continue :: binary(),
-                   reason :: binary(),
-                   affiliation :: 'admin' | 'member' | 'none' | 'outcast' | 'owner',
-                   role :: 'moderator' | 'none' | 'participant' | 'visitor',
-                   jid :: any(),
-                   nick :: binary()}).
-
 -record(muc_user, {decline :: #muc_decline{},
                    destroy :: #muc_user_destroy{},
                    invites = [] :: [#muc_invite{}],
                    items = [] :: [#muc_item{}],
                    status_codes = [] :: [pos_integer()],
                    password :: binary()}).
-
--record(muc_admin, {items = [] :: [#muc_item{}]}).
 
 -record(carbons_disable, {}).
 
