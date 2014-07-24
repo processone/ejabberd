@@ -7,6 +7,7 @@
 /Makefile
 /config.log
 /config.status
+/configure
 /aclocal.m4
 /contrib/extract_translations/extract_translations.beam
 /*.cache
