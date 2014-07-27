@@ -108,7 +108,7 @@ listen:
     ##
     ## If TLS is compiled in and you installed a SSL
     ## certificate, specify the full path to the
-    ## file and uncomment this line:
+    ## file and uncomment these lines:
     ##
     ## certfile: "/path/to/ssl.pem"
     ## starttls: true
