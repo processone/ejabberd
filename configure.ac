@@ -106,10 +106,10 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-riak --enable-json --enable-iconv --enable-debug --enable-http --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-riak --enable-json --enable-iconv --enable-debug --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true riak=true json=true iconv=true debug=true http=true lager=true tools=true ;;
-  no) nif=false odbc=false mysql=false pgsql=false pam=false zlib=false riak=false json=false iconv=false debug=false http=false lager=false tools=false ;;
+  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true riak=true json=true iconv=true debug=true lager=true tools=true ;;
+  no) nif=false odbc=false mysql=false pgsql=false pam=false zlib=false riak=false json=false iconv=false debug=false lager=false tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -201,14 +201,6 @@ AC_ARG_ENABLE(debug,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
 esac],[if test "x$debug" = "x"; then debug=true; fi])
 
-AC_ARG_ENABLE(http,
-[AC_HELP_STRING([--enable-http], [build external HTTP libraries ('ibrowse' and 'lhttpc', default: no)])],
-[case "${enableval}" in
-  yes) http=true ;;
-  no)  http=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-http) ;;
-esac],[if test "x$http" = "x"; then http=false; fi])
-
 AC_ARG_ENABLE(lager,
 [AC_HELP_STRING([--enable-lager], [enable lager support (default: yes)])],
 [case "${enableval}" in
@@ -250,7 +242,6 @@ AC_SUBST(riak)
 AC_SUBST(json)
 AC_SUBST(iconv)
 AC_SUBST(debug)
-AC_SUBST(http)
 AC_SUBST(lager)
 AC_SUBST(tools)
 
