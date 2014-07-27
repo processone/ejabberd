@@ -11,6 +11,7 @@ host_config:
     modules: 
       mod_announce: 
         db_type: odbc
+        access: local
       mod_blocking: 
         db_type: odbc
       mod_caps: 
@@ -64,6 +65,7 @@ Welcome to this XMPP server."
     modules: 
       mod_announce: 
         db_type: odbc
+        access: local
       mod_blocking: 
         db_type: odbc
       mod_caps: 
@@ -110,6 +112,7 @@ Welcome to this XMPP server."
     modules: 
       mod_announce: 
         db_type: internal
+        access: local
       mod_blocking: 
         db_type: internal
       mod_caps: 
@@ -158,6 +161,7 @@ Welcome to this XMPP server."
     modules: 
       mod_announce: 
         db_type: riak
+        access: local
       mod_blocking: 
         db_type: riak
       mod_caps: 
