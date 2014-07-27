@@ -22,7 +22,16 @@ if [ "$INSTALLUSER" != "" ] ; then
     EXEC_CMD="false"
     for GID in `id -G`; do
         if [ $GID -eq 0 ] ; then
-            EXEC_CMD="su $INSTALLUSER -p -c"
+            INSTALLUSER_HOME=$(getent passwd "$INSTALLUSER" | cut -d: -f6)
+            if [ -z "$INSTALLUSER_HOME" ] ; then
+                echo "Cannot determine home directory of $INSTALLUSER" >&2
+                exit 1
+            fi
+            if [ ! -d "$INSTALLUSER_HOME" ] ; then
+                mkdir -p "$INSTALLUSER_HOME"
+                chown "$INSTALLUSER" "$INSTALLUSER_HOME"
+            fi
+            EXEC_CMD="env HOME=$INSTALLUSER_HOME su $INSTALLUSER -p -c"
         fi
     done
     if [ `id -g` -eq `id -g $INSTALLUSER` ] ; then
@@ -142,14 +151,7 @@ fi
 [ -z "$date" ] || EJABBERD_OPTS="${EJABBERD_OPTS} log_rotate_date '$date'"
 [ -z "$EJABBERD_OPTS" ] || EJABBERD_OPTS="-ejabberd ${EJABBERD_OPTS}"
 
-# create the ejabberd home dir with the proper user if doesn't exist
-# then change to that directory readable by INSTALLUSER to
-# prevent "File operation error: eacces." messages
-[ -d $HOME ] || $EXEC_CMD "mkdir -p $HOME"
 [ -d $SPOOL_DIR ] || $EXEC_CMD "mkdir -p $SPOOL_DIR"
-# then set SPOOL_DIR as ejabberd home directory by changing
-# to that directory readable by INSTALLUSER to prevent
-# "File operation error: eacces." messages
 cd $SPOOL_DIR
 
 # export global variables
