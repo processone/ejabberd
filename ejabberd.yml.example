@@ -113,6 +113,11 @@ listen:
     ## certfile: "/path/to/ssl.pem"
     ## starttls: true
     ##
+    ## To enforce TLS encryption for client connections,
+    ## use this instead of the "starttls" option:
+    ##
+    ## starttls_required: true
+    ##
     ## Custom OpenSSL options
     ##
     ## protocol_options:
