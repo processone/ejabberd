@@ -206,7 +206,7 @@ db_tests(riak) ->
       [offline_master, offline_slave]},
      {test_muc, [parallel],
       [muc_master, muc_slave]},
-     {test_announce, [parallel],
+     {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_roster_remove, [parallel],
       [roster_remove_master,
@@ -235,7 +235,7 @@ db_tests(mnesia) ->
       [carbons_master, carbons_slave]},
      {test_muc, [parallel],
       [muc_master, muc_slave]},
-     {test_announce, [parallel],
+     {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_roster_remove, [parallel],
       [roster_remove_master,
@@ -263,7 +263,7 @@ db_tests(_) ->
       [offline_master, offline_slave]},
      {test_muc, [parallel],
       [muc_master, muc_slave]},
-     {test_announce, [parallel],
+     {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_roster_remove, [parallel],
       [roster_remove_master,
@@ -1282,9 +1282,7 @@ muc_slave(Config) ->
 announce_master(Config) ->
     MyJID = my_jid(Config),
     ServerJID = server_jid(Config),
-    Peer = ?config(slave, Config),
     MotdJID = jlib:jid_replace_resource(ServerJID, <<"announce/motd">>),
-    MotdDelJID = jlib:jid_replace_resource(ServerJID, <<"announce/motd/delete">>),
     MotdText = #text{data = <<"motd">>},
     send(Config, #presence{}),
     #presence{from = MyJID} = recv(),
@@ -1292,24 +1290,18 @@ announce_master(Config) ->
     send(Config, #message{to = MotdJID, body = [MotdText]}),
     %% Receive this message back
     #message{from = ServerJID, body = [MotdText]} = recv(),
-    wait_for_slave(Config),
-    %% Peer becomes available and then unavailable
-    #presence{from = Peer} = recv(),
-    #presence{from = Peer, type = unavailable} = recv(),
-    %% Delete message of the day
-    send(Config, #message{to = MotdDelJID}),
     disconnect(Config).
 
 announce_slave(Config) ->
     MyJID = my_jid(Config),
     ServerJID = server_jid(Config),
-    Peer = ?config(master, Config),
+    MotdDelJID = jlib:jid_replace_resource(ServerJID, <<"announce/motd/delete">>),
     MotdText = #text{data = <<"motd">>},
-    wait_for_master(Config),
     send(Config, #presence{}),
-    ?recv3(#presence{from = Peer},
-	   #presence{from = MyJID},
+    ?recv2(#presence{from = MyJID},
 	   #message{from = ServerJID, body = [MotdText]}),
+    %% Delete message of the day
+    send(Config, #message{to = MotdDelJID}),
     disconnect(Config).
 
 offline_master(Config) ->
