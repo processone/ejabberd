@@ -38,7 +38,6 @@ DepConfiguredApps = lists:flatmap(
                          ({stun, true}) -> [p1_stun];
                          ({json, true}) -> [jiffy];
                          ({iconv, true}) -> [p1_iconv];
-                         ({http, true}) -> [ibrowse, lhttpc];
                          ({lager, true}) -> [lager, goldrush];
                          ({lager, false}) -> [p1_logger];
                          (_) -> []
