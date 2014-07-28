@@ -23,15 +23,11 @@ if [ "$INSTALLUSER" != "" ] ; then
     for GID in `id -G`; do
         if [ $GID -eq 0 ] ; then
             INSTALLUSER_HOME=$(getent passwd "$INSTALLUSER" | cut -d: -f6)
-            if [ -z "$INSTALLUSER_HOME" ] ; then
-                echo "Cannot determine home directory of $INSTALLUSER" >&2
-                exit 1
-            fi
-            if [ ! -d "$INSTALLUSER_HOME" ] ; then
+            if [ -n "$INSTALLUSER_HOME" ] && [ ! -d "$INSTALLUSER_HOME" ] ; then
                 mkdir -p "$INSTALLUSER_HOME"
                 chown "$INSTALLUSER" "$INSTALLUSER_HOME"
             fi
-            EXEC_CMD="env HOME=$INSTALLUSER_HOME su $INSTALLUSER -p -c"
+            EXEC_CMD="su $INSTALLUSER -c"
         fi
     done
     if [ `id -g` -eq `id -g $INSTALLUSER` ] ; then
