@@ -1238,7 +1238,7 @@ read_subscription_and_groups(LUser, LServer, LJID,
     case catch odbc_queries:get_subscription(LServer,
 					     Username, SJID)
 	of
-      {selected, [<<"subscription">>], [{SSubscription}]} ->
+      {selected, [<<"subscription">>], [[SSubscription]]} ->
 	  Subscription = case SSubscription of
 			   <<"B">> -> both;
 			   <<"T">> -> to;
