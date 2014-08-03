@@ -690,9 +690,9 @@ update_node_database(Host, ServerHost) ->
     end,
     mnesia:transaction(fun () ->
 			       case catch mnesia:first(pubsub_node) of
-				 {_, L} when is_binary(L) ->
+				 {_, L} when is_list(L) ->
 				     lists:foreach(fun ({H, N})
-							   when is_binary(N) ->
+							   when is_list(N) ->
 							   [Node] =
 							       mnesia:read({pubsub_node,
 									    {H,
