@@ -97,10 +97,14 @@ update_t(Table, Fields, Vals, Where) ->
 	of
       {updated, 1} -> ok;
       _ ->
-	  ejabberd_odbc:sql_query_t([<<"insert into ">>, Table,
+		Res = ejabberd_odbc:sql_query_t([<<"insert into ">>, Table,
 				     <<"(">>, join(Fields, <<", ">>),
 				     <<") values ('">>, join(Vals, <<"', '">>),
-				     <<"');">>])
+				     <<"');">>]),
+		case Res of
+			{updated,1} -> ok;
+			_ -> Res
+		end
     end.
 
 update(LServer, Table, Fields, Vals, Where) ->
@@ -115,10 +119,14 @@ update(LServer, Table, Fields, Vals, Where) ->
 	of
       {updated, 1} -> ok;
       _ ->
-	  ejabberd_odbc:sql_query(LServer,
+		Res = ejabberd_odbc:sql_query(LServer,
 				  [<<"insert into ">>, Table, <<"(">>,
 				   join(Fields, <<", ">>), <<") values ('">>,
-				   join(Vals, <<"', '">>), <<"');">>])
+				   join(Vals, <<"', '">>), <<"');">>]),
+		case Res of
+			{updated,1} -> ok;
+			_ -> Res
+		end		   
     end.
 
 %% F can be either a fun or a list of queries
