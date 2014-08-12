@@ -989,7 +989,7 @@ report_and_stop(Tab, Err) ->
     halt(string:substr(ErrTxt, 1, 199)).
 
 emit_deprecation_warning(Module, NewModule, DBType) ->
-    ?WARNING_MSG("Module ~s is deprecated, use {~s, [{db_type, ~s}, ...]}"
+    ?WARNING_MSG("Module ~s is deprecated, use ~s with 'db_type: ~s'"
                  " instead", [Module, NewModule, DBType]).
 
 emit_deprecation_warning(Module, NewModule) ->
