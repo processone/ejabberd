@@ -38,9 +38,9 @@ any -> '$empty': [].
 initial -> value: initial('$1').
 final -> value: final('$1').
 
-extensible -> xattr ':dn' ':' matchingrule ':=' value: extensible('$6', ['$1', '$4']).
+extensible -> xattr ':dn' ':' matchingrule ':=' value: extensible('$6', ['$1', '$4', {dnAttributes, true}]).
 extensible -> xattr ':' matchingrule ':=' value: extensible('$5', ['$1', '$3']).
-extensible -> xattr ':dn' ':=' value: extensible('$4', ['$1']).
+extensible -> xattr ':dn' ':=' value: extensible('$4', ['$1', {dnAttributes, true}]).
 extensible -> xattr ':=' value: extensible('$3', ['$1']).
 extensible -> ':dn' ':' matchingrule ':=' value: extensible('$5', ['$3']).
 extensible -> ':' matchingrule ':=' value: extensible('$4', ['$2']).
