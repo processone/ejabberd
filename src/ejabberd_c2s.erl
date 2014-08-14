@@ -2936,6 +2936,8 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 		      {error, <<"Cannot grab session state">>}
 		end
 	  end;
+      {term, {_WrongU, _WrongS, _R, _Time}} ->
+	  {error, <<"Previous JID doesn't match authenticated JID">>};
       error ->
 	  {error, <<"Invalid 'previd' value">>}
     end.
