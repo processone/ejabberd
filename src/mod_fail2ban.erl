@@ -11,7 +11,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, c2s_auth_result/4]).
+-export([start/2, stop/1, c2s_auth_result/4, check_bl_c2s/2]).
 
 -include("jlib.hrl").
 
@@ -19,37 +19,32 @@
 %%% API
 %%%===================================================================
 start(Host, _Opts) ->
-    ets:new(failed_auth, [bag, named_table, public]),
-    ejabberd_hooks:add(c2s_auth_result, Host, ?MODULE, c2s_auth_result, 100).
+    catch ets:new(failed_auth, [named_table, public]),
+    ejabberd_hooks:add(c2s_auth_result, Host, ?MODULE, c2s_auth_result, 100),
+    ejabberd_hooks:add(check_bl_c2s, ?MODULE, check_bl_c2s, 100).
 
 stop(Host) ->
-    ejabberd_hooks:delete(c2s_auth_result, Host, ?MODULE, c2s_auth_result, 100).
+    ejabberd_hooks:delete(c2s_auth_result, Host, ?MODULE, c2s_auth_result, 100),
+    ejabberd_hooks:delete(check_bl_c2s, ?MODULE, check_bl_c2s, 100).
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-c2s_auth_result(true, User, Server, {Addr, _Port}) ->
-    case jlib:make_jid(User, Server, <<"">>) of
-	#jid{luser = LUser, lserver = LServer} ->
-	    US = {LUser, LServer},
-	    Objs = ets:lookup(failed_auth, Addr),
-	    case lists:filter(fun({_, US1, _}) -> US1 == US end, Objs) of
-		[_|_] ->
-		    ets:match_delete(failed_auth, {'_', US, '_'});
-		[] ->
-		    true
-	    end;
+c2s_auth_result(false, _User, _Server, {Addr, _Port}) ->
+    case ets:lookup(failed_auth, Addr) of
+	[] ->
+	    ets:insert(failed_auth, {Addr, 1});
+	_ ->
+	    ets:update_counter(failed_auth, Addr, 1)
+    end,
+    timer:sleep(3);
+c2s_auth_result(true, _User, _Server, _AddrPort) ->
+    ok.
+
+check_bl_c2s(_Acc, Addr) ->
+    case ets:lookup(failed_auth, Addr) of
+	[{Addr, N}] when N >= 100 ->
+	    {stop, true};
 	_ ->
 	    false
-    end;
-c2s_auth_result(false, User, Server, {Addr, _Port}) ->
-    case jlib:make_jid(User, Server, <<"">>) of
-	#jid{luser = LUser, lserver = LServer} ->
-	    US = {LUser, LServer},
-	    ets:insert(failed_auth, {Addr, US, now()}),
-	    Objs = ets:match_object(failed_auth, {'_', US, '_'}),
-	    Timeout = round(math:exp(length(Objs))),
-	    timer:sleep(timer:seconds(Timeout));
-	_ ->
-	    ok
     end.
