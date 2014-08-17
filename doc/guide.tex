@@ -72,6 +72,7 @@
 \newcommand{\modconfigure}{\module{mod\_configure}}
 \newcommand{\moddisco}{\module{mod\_disco}}
 \newcommand{\modecho}{\module{mod\_echo}}
+\newcommand{\modfailban}{\module{mod\_fail2ban}}
 \newcommand{\modhttpbind}{\module{mod\_http\_bind}}
 \newcommand{\modhttpfileserver}{\module{mod\_http\_fileserver}}
 \newcommand{\modirc}{\module{mod\_irc}}
@@ -2783,6 +2784,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\
     \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) &  \\
     \hline \ahrefloc{modecho}{\modecho{}} & Echoes XMPP stanzas &  \\
+    \hline \ahrefloc{modfail2ban}{\modfailban{}} & Bans IPs that show the malicious signs & \\
     \hline \ahrefloc{modhttpbind}{\modhttpbind{}} & XMPP over Bosh service (HTTP Binding) &  \\
     \hline \ahrefloc{modhttpfileserver}{\modhttpfileserver{}} & Small HTTP file server &  \\
     \hline \ahrefloc{modirc}{\modirc{}} & IRC transport &  \\
@@ -3114,6 +3116,30 @@ modules:
   ...
   mod_echo:
     host: "mirror.example.org"
+  ...
+\end{verbatim}
+
+\makesubsection{modfail2ban}{\modfailban{}}
+\ind{modules!\modfailban{}}\ind{modfail2ban}
+
+The module bans IPs that show the malicious signs. Currently only C2S authentication
+failures are detected.
+
+Available options:
+\begin{description}
+  \titem{c2s\_auth\_ban\_lifetime: Seconds} The lifetime of the IP ban caused by too
+  many C2S authentication failures. The default is 3600, i.e. one hour.
+  \titem{c2s\_max\_auth\_failures: Integer} The number of C2S authentication failures to
+  trigger the IP ban. The default is 20.
+\end{description}
+
+Example:
+\begin{verbatim}
+modules:
+  ...
+  mod_fail2ban:
+    c2s_auth_block_lifetime: 7200
+    c2s_max_auth_failures: 50
   ...
 \end{verbatim}
 

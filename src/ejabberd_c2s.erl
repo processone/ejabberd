@@ -316,33 +316,24 @@ init([{SockMod, Socket}, Opts]) ->
 		    end,
     ResendOnTimeout = proplists:get_bool(resend_on_timeout, Opts),
     IP = peerip(SockMod, Socket),
-    %% Check if IP is blacklisted:
-    case is_ip_blacklisted(IP) of
-      true ->
-	  ?INFO_MSG("Connection attempt from blacklisted "
-		    "IP: ~s (~w)",
-		    [jlib:ip_to_list(IP), IP]),
-	  {stop, normal};
-      false ->
-	  Socket1 = if TLSEnabled andalso
-			 SockMod /= ejabberd_frontend_socket ->
-			   SockMod:starttls(Socket, TLSOpts);
-		       true -> Socket
-		    end,
-	  SocketMonitor = SockMod:monitor(Socket1),
-	  StateData = #state{socket = Socket1, sockmod = SockMod,
-			     socket_monitor = SocketMonitor,
-			     xml_socket = XMLSocket, zlib = Zlib, tls = TLS,
-			     tls_required = StartTLSRequired,
-			     tls_enabled = TLSEnabled, tls_options = TLSOpts,
-			     sid = {now(), self()}, streamid = new_id(),
-			     access = Access, shaper = Shaper, ip = IP,
-			     mgmt_state = StreamMgmtState,
-			     mgmt_max_queue = MaxAckQueue,
-			     mgmt_timeout = ResumeTimeout,
-			     mgmt_resend = ResendOnTimeout},
-	  {ok, wait_for_stream, StateData, ?C2S_OPEN_TIMEOUT}
-    end.
+    Socket1 = if TLSEnabled andalso
+		 SockMod /= ejabberd_frontend_socket ->
+		      SockMod:starttls(Socket, TLSOpts);
+		 true -> Socket
+	      end,
+    SocketMonitor = SockMod:monitor(Socket1),
+    StateData = #state{socket = Socket1, sockmod = SockMod,
+		       socket_monitor = SocketMonitor,
+		       xml_socket = XMLSocket, zlib = Zlib, tls = TLS,
+		       tls_required = StartTLSRequired,
+		       tls_enabled = TLSEnabled, tls_options = TLSOpts,
+		       sid = {now(), self()}, streamid = new_id(),
+		       access = Access, shaper = Shaper, ip = IP,
+		       mgmt_state = StreamMgmtState,
+		       mgmt_max_queue = MaxAckQueue,
+		       mgmt_timeout = ResumeTimeout,
+		       mgmt_resend = ResendOnTimeout},
+    {ok, wait_for_stream, StateData, ?C2S_OPEN_TIMEOUT}.
 
 %% Return list of all available resources of contacts,
 get_subscribed(FsmRef) ->
@@ -366,21 +357,22 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
                         jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs));
                     S -> S
                 end,
+	    Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
+		       Lang1 when byte_size(Lang1) =< 35 ->
+			   %% As stated in BCP47, 4.4.1:
+			   %% Protocols or specifications that
+			   %% specify limited buffer sizes for
+			   %% language tags MUST allow for
+			   %% language tags of at least 35 characters.
+			   Lang1;
+		       _ ->
+			   %% Do not store long language tag to
+			   %% avoid possible DoS/flood attacks
+			   <<"">>
+		   end,
+	    IsBlacklistedIP = is_ip_blacklisted(StateData#state.ip, Lang),
 	    case lists:member(Server, ?MYHOSTS) of
-		true ->
-		    Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
-			       Lang1 when size(Lang1) =< 35 ->
-				   %% As stated in BCP47, 4.4.1:
-				   %% Protocols or specifications that
-				   %% specify limited buffer sizes for
-				   %% language tags MUST allow for
-				   %% language tags of at least 35 characters.
-				   Lang1;
-			       _ ->
-				   %% Do not store long language tag to
-				   %% avoid possible DoS/flood attacks
-				   <<"">>
-			   end,
+		true when IsBlacklistedIP == false ->
 		    change_shaper(StateData, jlib:make_jid(<<"">>, Server, <<"">>)),
 		    case xml:get_attr_s(<<"version">>, Attrs) of
 			<<"1.0">> ->
@@ -524,6 +516,15 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 							lang = Lang})
 		    end
 	    end;
+	true ->
+		IP = StateData#state.ip,
+		{true, LogReason, ReasonT} = IsBlacklistedIP,
+		?INFO_MSG("Connection attempt from blacklisted IP ~s: ~s",
+			  [jlib:ip_to_list(IP), LogReason]),
+		send_header(StateData, Server, <<"">>, DefaultLang),
+		send_element(StateData, ?POLICY_VIOLATION_ERR(Lang, ReasonT)),
+		send_trailer(StateData),
+		{stop, normal, StateData};
 	_ ->
 	    send_header(StateData, ?MYNAME, <<"">>, DefaultLang),
 	    send_element(StateData, ?HOST_UNKNOWN_ERR),
@@ -2492,9 +2493,9 @@ fsm_reply(Reply, StateName, StateData) ->
     {reply, Reply, StateName, StateData, ?C2S_OPEN_TIMEOUT}.
 
 %% Used by c2s blacklist plugins
-is_ip_blacklisted(undefined) -> false;
-is_ip_blacklisted({IP, _Port}) ->
-    ejabberd_hooks:run_fold(check_bl_c2s, false, [IP]).
+is_ip_blacklisted(undefined, _Lang) -> false;
+is_ip_blacklisted({IP, _Port}, Lang) ->
+    ejabberd_hooks:run_fold(check_bl_c2s, false, [IP, Lang]).
 
 %% Check from attributes
 %% returns invalid-from|NewElement
