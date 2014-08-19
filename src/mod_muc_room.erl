@@ -127,6 +127,13 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
 				   just_created = true,
 				   room_shaper = Shaper}),
     State1 = set_opts(DefRoomOpts, State),
+    if (State1#state.config)#config.persistent ->
+	   mod_muc:store_room(State1#state.server_host,
+			      State1#state.host,
+			      State1#state.room,
+			      make_opts(State1));
+       true -> ok
+    end,
     ?INFO_MSG("Created MUC room ~s@~s by ~s", 
 	      [Room, Host, jlib:jid_to_string(Creator)]),
     add_to_log(room_existence, created, State1),
