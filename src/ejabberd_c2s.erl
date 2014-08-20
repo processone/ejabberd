@@ -307,6 +307,7 @@ init([{SockMod, Socket}, Opts]) ->
 		      end,
     MaxAckQueue = case proplists:get_value(max_ack_queue, Opts) of
 		    Limit when is_integer(Limit), Limit > 0 -> Limit;
+		    infinity -> infinity;
 		    _ -> 500
 		  end,
     ResumeTimeout = case proplists:get_value(resume_timeout, Opts) of
@@ -2789,9 +2790,7 @@ mgmt_queue_drop(StateData, NumHandled) ->
 				     StateData#state.mgmt_queue),
     StateData#state{mgmt_queue = NewQueue}.
 
-check_queue_length(#state{mgmt_max_queue = Limit} = StateData)
-    when Limit == infinity;
-	 Limit == unlimited ->
+check_queue_length(#state{mgmt_max_queue = infinity} = StateData) ->
     StateData;
 check_queue_length(#state{mgmt_queue = Queue,
 			  mgmt_max_queue = Limit} = StateData) ->
