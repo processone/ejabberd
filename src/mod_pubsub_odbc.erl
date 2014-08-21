@@ -2315,7 +2315,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 		    {result, Reply};
 		{result, {NodeId, _SubsByDepth, Result}} ->
 		    ejabberd_hooks:run(pubsub_create_node, ServerHost, [ServerHost, Host, Node, NodeId, NodeOptions]),
-		    {result, Result};
+		    {result, Reply};
 		Error ->
 		    %% in case we change transaction to sync_dirty...
 		    %%  node_call(Type, delete_node, [Host, Node]),
