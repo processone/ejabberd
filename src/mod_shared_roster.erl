@@ -501,7 +501,10 @@ delete_group(Host, Group, odbc) ->
 		ejabberd_odbc:sql_query_t([<<"delete from sr_user where grp='">>,
 					   SGroup, <<"';">>])
 	end,
-    ejabberd_odbc:sql_transaction(Host, F).
+    case ejabberd_odbc:sql_transaction(Host, F) of
+        {atomic,{updated,_}} -> {atomic, ok};
+        Res -> Res
+    end.
 
 get_group_opts(Host, Group) ->
     get_group_opts(Host, Group,
