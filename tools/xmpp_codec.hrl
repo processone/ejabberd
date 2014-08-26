@@ -13,7 +13,8 @@
                      port = 1080 :: non_neg_integer()}).
 
 -record(sm_resume, {h :: non_neg_integer(),
-                    previd :: binary()}).
+                    previd :: binary(),
+                    xmlns :: binary()}).
 
 -record(carbons_enable, {}).
 
@@ -40,18 +41,21 @@
                       from :: any(),
                       to :: any()}).
 
--record(sm_a, {h :: non_neg_integer()}).
+-record(sm_a, {h :: non_neg_integer(),
+               xmlns :: binary()}).
 
 -record(starttls_proceed, {}).
 
 -record(sm_resumed, {h :: non_neg_integer(),
-                     previd :: binary()}).
+                     previd :: binary(),
+                     xmlns :: binary()}).
 
 -record(forwarded, {delay :: #delay{},
                     sub_els = [] :: [any()]}).
 
 -record(sm_enable, {max :: non_neg_integer(),
-                    resume = false :: any()}).
+                    resume = false :: any(),
+                    xmlns :: binary()}).
 
 -record(starttls_failure, {}).
 
@@ -63,7 +67,7 @@
 
 -record(p1_ack, {}).
 
--record(feature_sm, {}).
+-record(feature_sm, {xmlns :: binary()}).
 
 -record(pubsub_item, {id :: binary(),
                       xml_els = [] :: [any()]}).
@@ -84,7 +88,7 @@
                             node :: binary(),
                             publisher :: binary()}).
 
--record(sm_r, {}).
+-record(sm_r, {xmlns :: binary()}).
 
 -record(muc_actor, {jid :: any(),
                     nick :: binary()}).
@@ -108,7 +112,8 @@
 -record(sm_enabled, {id :: binary(),
                      location :: binary(),
                      max :: non_neg_integer(),
-                     resume = false :: any()}).
+                     resume = false :: any(),
+                     xmlns :: binary()}).
 
 -record(pubsub_event_items, {node :: binary(),
                              retract = [] :: [binary()],
@@ -378,7 +383,8 @@
 
 -record(sasl_mechanisms, {list = [] :: [binary()]}).
 
--record(sm_failed, {reason :: atom() | #gone{} | #redirect{}}).
+-record(sm_failed, {reason :: atom() | #gone{} | #redirect{},
+                    xmlns :: binary()}).
 
 -record(error, {type :: 'auth' | 'cancel' | 'continue' | 'modify' | 'wait',
                 by :: binary(),

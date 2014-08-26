@@ -2070,16 +2070,18 @@
 
 -xml(feature_sm,
      #elem{name = <<"sm">>,
-	   xmlns = <<"urn:xmpp:sm:3">>,
-	   result = {feature_sm}}).
+	   xmlns = [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+	   result = {feature_sm, '$xmlns'},
+	   attrs = [#attr{name = <<"xmlns">>}]}).
 
 -xml(sm_enable,
      #elem{name = <<"enable">>,
-	   xmlns = <<"urn:xmpp:sm:3">>,
-	   result = {sm_enable, '$max', '$resume'},
+	   xmlns = [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+	   result = {sm_enable, '$max', '$resume', '$xmlns'},
 	   attrs = [#attr{name = <<"max">>,
 			  dec = {dec_int, [0, infinity]},
                           enc = {enc_int, []}},
+		    #attr{name = <<"xmlns">>},
 		    #attr{name = <<"resume">>,
 			  default = false,
 			  dec = {dec_bool, []},
@@ -2087,10 +2089,11 @@
 
 -xml(sm_enabled,
      #elem{name = <<"enabled">>,
-	   xmlns = <<"urn:xmpp:sm:3">>,
-	   result = {sm_enabled, '$id', '$location', '$max', '$resume'},
+	   xmlns = [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+	   result = {sm_enabled, '$id', '$location', '$max', '$resume', '$xmlns'},
 	   attrs = [#attr{name = <<"id">>},
 		    #attr{name = <<"location">>},
+		    #attr{name = <<"xmlns">>},
 		    #attr{name = <<"max">>,
 			  dec = {dec_int, [0, infinity]},
                           enc = {enc_int, []}},
@@ -2101,44 +2104,49 @@
 
 -xml(sm_resume,
      #elem{name = <<"resume">>,
-	   xmlns = <<"urn:xmpp:sm:3">>,
-	   result = {sm_resume, '$h', '$previd'},
+	   xmlns = [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+	   result = {sm_resume, '$h', '$previd', '$xmlns'},
 	   attrs = [#attr{name = <<"h">>,
 			  required = true,
 			  dec = {dec_int, [0, infinity]},
                           enc = {enc_int, []}},
+		    #attr{name = <<"xmlns">>},
 		    #attr{name = <<"previd">>,
 			  required = true}]}).
 
 -xml(sm_resumed,
      #elem{name = <<"resumed">>,
-	   xmlns = <<"urn:xmpp:sm:3">>,
-	   result = {sm_resumed, '$h', '$previd'},
+	   xmlns = [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+	   result = {sm_resumed, '$h', '$previd', '$xmlns'},
 	   attrs = [#attr{name = <<"h">>,
 			  required = true,
 			  dec = {dec_int, [0, infinity]},
                           enc = {enc_int, []}},
+		    #attr{name = <<"xmlns">>},
 		    #attr{name = <<"previd">>,
 			  required = true}]}).
 
 -xml(sm_r,
      #elem{name = <<"r">>,
-	   xmlns = <<"urn:xmpp:sm:3">>,
-	   result = {sm_r}}).
+	   xmlns = [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+	   result = {sm_r, '$xmlns'},
+	   attrs = [#attr{name = <<"xmlns">>}]}).
 
 -xml(sm_a,
      #elem{name = <<"a">>,
-	   xmlns = <<"urn:xmpp:sm:3">>,
-	   result = {sm_a, '$h'},
+	   xmlns = [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+	   result = {sm_a, '$h', '$xmlns'},
 	   attrs = [#attr{name = <<"h">>,
 			  required = true,
 			  dec = {dec_int, [0, infinity]},
-                          enc = {enc_int, []}}]}).
+                          enc = {enc_int, []}},
+		    #attr{name = <<"xmlns">>}]}).
 
 -xml(sm_failed,
      #elem{name = <<"failed">>,
-	   xmlns = <<"urn:xmpp:sm:3">>,
-	   result = {sm_failed, '$reason'},
+	   xmlns = [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+	   result = {sm_failed, '$reason', '$xmlns'},
+	   attrs = [#attr{name = <<"xmlns">>}],
 	   refs = [#ref{name = error_bad_request,
                         min = 0, max = 1, label = '$reason'},
                    #ref{name = error_conflict,

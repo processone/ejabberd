@@ -519,16 +519,16 @@ sm(Config) ->
     Msg = #message{to = ServerJID, body = [#text{data = <<"body">>}]},
     true = ?config(sm, Config),
     %% Enable the session management with resumption enabled
-    send(Config, #sm_enable{resume = true}),
+    send(Config, #sm_enable{resume = true, xmlns = ?NS_STREAM_MGMT_3}),
     #sm_enabled{id = ID, resume = true} = recv(),
     %% Initial request; 'h' should be 0.
-    send(Config, #sm_r{}),
+    send(Config, #sm_r{xmlns = ?NS_STREAM_MGMT_3}),
     #sm_a{h = 0} = recv(),
     %% sending two messages and requesting again; 'h' should be 3.
     send(Config, Msg),
     send(Config, Msg),
     send(Config, Msg),
-    send(Config, #sm_r{}),
+    send(Config, #sm_r{xmlns = ?NS_STREAM_MGMT_3}),
     #sm_a{h = 3} = recv(),
     close_socket(Config),
     {save_config, set_opt(sm_previd, ID, Config)}.
@@ -543,11 +543,11 @@ sm_resume(Config) ->
     Msg = #message{from = ServerJID, to = MyJID, body = [Txt]},
     %% Route message. The message should be queued by the C2S process.
     ejabberd_router:route(ServerJID, MyJID, xmpp_codec:encode(Msg)),
-    send(Config, #sm_resume{previd = ID, h = 0}),
+    send(Config, #sm_resume{previd = ID, h = 0, xmlns = ?NS_STREAM_MGMT_3}),
     #sm_resumed{previd = ID, h = 3} = recv(),
     #message{from = ServerJID, to = MyJID, body = [Txt]} = recv(),
     #sm_r{} = recv(),
-    send(Config, #sm_a{h = 1}),
+    send(Config, #sm_a{h = 1, xmlns = ?NS_STREAM_MGMT_3}),
     disconnect(Config).
 
 private(Config) ->
