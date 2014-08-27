@@ -138,6 +138,8 @@ CfgXrefs = lists:flatmap(
 		     ["(\"lhttpc\":_/_)"];
 		({iconv, false}) ->
 		     ["(\"iconv\":_/_)"];
+		({odbc, false}) ->
+		     ["(\"odbc\":_/_)"];
 		(_) ->
 		     []
             end, Cfg),
