@@ -2202,7 +2202,7 @@ presence_broadcast_first(From, StateData, Packet) ->
 	   [],
 	   StateData#state.pres_t),
     PacketProbe = #xmlel{name = <<"presence">>, attrs = [{<<"type">>,<<"probe">>}], children = []},
-    JIDs2Probe = format_and_check_privacy(From, StateData, Packet, JIDsProbe, out),
+    JIDs2Probe = format_and_check_privacy(From, StateData, PacketProbe, JIDsProbe, out),
     Server = StateData#state.server,
     send_multiple(StateData, From, JIDs2Probe, PacketProbe),
     {As, JIDs} =
