@@ -293,27 +293,6 @@
                               nick :: binary(),
                               password :: binary()}).
 
--record(register, {registered = false :: boolean(),
-                   remove = false :: boolean(),
-                   instructions :: binary(),
-                   username :: 'none' | binary(),
-                   nick :: 'none' | binary(),
-                   password :: 'none' | binary(),
-                   name :: 'none' | binary(),
-                   first :: 'none' | binary(),
-                   last :: 'none' | binary(),
-                   email :: 'none' | binary(),
-                   address :: 'none' | binary(),
-                   city :: 'none' | binary(),
-                   state :: 'none' | binary(),
-                   zip :: 'none' | binary(),
-                   phone :: 'none' | binary(),
-                   url :: 'none' | binary(),
-                   date :: 'none' | binary(),
-                   misc :: 'none' | binary(),
-                   text :: 'none' | binary(),
-                   key :: 'none' | binary()}).
-
 -record(bookmark_url, {name :: binary(),
                        url :: binary()}).
 
@@ -375,6 +354,28 @@
                  options :: #pubsub_options{},
                  items :: #pubsub_items{},
                  retract :: #pubsub_retract{}}).
+
+-record(register, {registered = false :: boolean(),
+                   remove = false :: boolean(),
+                   instructions :: binary(),
+                   username :: 'none' | binary(),
+                   nick :: 'none' | binary(),
+                   password :: 'none' | binary(),
+                   name :: 'none' | binary(),
+                   first :: 'none' | binary(),
+                   last :: 'none' | binary(),
+                   email :: 'none' | binary(),
+                   address :: 'none' | binary(),
+                   city :: 'none' | binary(),
+                   state :: 'none' | binary(),
+                   zip :: 'none' | binary(),
+                   phone :: 'none' | binary(),
+                   url :: 'none' | binary(),
+                   date :: 'none' | binary(),
+                   misc :: 'none' | binary(),
+                   text :: 'none' | binary(),
+                   key :: 'none' | binary(),
+                   xdata :: #xdata{}}).
 
 -record(disco_info, {node :: binary(),
                      identities = [] :: [#identity{}],
@@ -473,3 +474,115 @@
 
 -record(time, {tzo :: any(),
                utc :: any()}).
+
+-type xmpp_element() :: #session{} |
+                        #compression{} |
+                        #pubsub_subscription{} |
+                        #version{} |
+                        #pubsub_affiliation{} |
+                        #muc_admin{} |
+                        #sm_a{} |
+                        #carbons_sent{} |
+                        #p1_rebind{} |
+                        #sasl_abort{} |
+                        #carbons_received{} |
+                        #pubsub_retract{} |
+                        #compressed{} |
+                        #block_list{} |
+                        #'see-other-host'{} |
+                        #starttls_proceed{} |
+                        #sm_resumed{} |
+                        #forwarded{} |
+                        #privacy_list{} |
+                        #text{} |
+                        #vcard_org{} |
+                        #feature_sm{} |
+                        #pubsub_item{} |
+                        #roster_item{} |
+                        #pubsub_event_item{} |
+                        #muc_item{} |
+                        #shim{} |
+                        #caps{} |
+                        #muc{} |
+                        #stream_features{} |
+                        #stats{} |
+                        #pubsub_items{} |
+                        #pubsub_event_items{} |
+                        #disco_items{} |
+                        #pubsub_options{} |
+                        #starttls{} |
+                        #sasl_mechanisms{} |
+                        #sasl_success{} |
+                        #compress{} |
+                        #bytestreams{} |
+                        #vcard_key{} |
+                        #identity{} |
+                        #legacy_delay{} |
+                        #muc_user_destroy{} |
+                        #muc_owner_destroy{} |
+                        #privacy{} |
+                        #delay{} |
+                        #muc_history{} |
+                        #bookmark_url{} |
+                        #vcard_email{} |
+                        #vcard_label{} |
+                        #vcard_tel{} |
+                        #disco_info{} |
+                        #vcard_logo{} |
+                        #vcard_geo{} |
+                        #vcard_photo{} |
+                        #muc_owner{} |
+                        #pubsub{} |
+                        #sm_r{} |
+                        #muc_actor{} |
+                        #error{} |
+                        #stream_error{} |
+                        #feature_register{} |
+                        #roster{} |
+                        #muc_user{} |
+                        #vcard_adr{} |
+                        #register{} |
+                        #muc_invite{} |
+                        #carbons_disable{} |
+                        #bookmark_conference{} |
+                        #time{} |
+                        #sasl_response{} |
+                        #pubsub_subscribe{} |
+                        #presence{} |
+                        #message{} |
+                        #sm_enable{} |
+                        #starttls_failure{} |
+                        #sasl_challenge{} |
+                        #gone{} |
+                        #private{} |
+                        #compress_failure{} |
+                        #sasl_failure{} |
+                        #bookmark_storage{} |
+                        #vcard_name{} |
+                        #sm_resume{} |
+                        #carbons_enable{} |
+                        #carbons_private{} |
+                        #pubsub_unsubscribe{} |
+                        #muc_decline{} |
+                        #sasl_auth{} |
+                        #p1_push{} |
+                        #pubsub_publish{} |
+                        #unblock{} |
+                        #p1_ack{} |
+                        #block{} |
+                        #xdata{} |
+                        #iq{} |
+                        #last{} |
+                        #redirect{} |
+                        #sm_enabled{} |
+                        #pubsub_event{} |
+                        #vcard_sound{} |
+                        #streamhost{} |
+                        #stat{} |
+                        #xdata_field{} |
+                        #bind{} |
+                        #sm_failed{} |
+                        #vcard{} |
+                        #ping{} |
+                        #disco_item{} |
+                        #privacy_item{}.
