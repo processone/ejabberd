@@ -914,7 +914,8 @@ iq_get_register_info(ServerHost, Host, From, Lang) ->
 					<<"You need a client that supports x:data "
 					  "to register the nickname">>)}]},
        #xmlel{name = <<"x">>,
-	      attrs = [{<<"xmlns">>, ?NS_XDATA}],
+	      attrs = [{<<"xmlns">>, ?NS_XDATA},
+		       {<<"type">>, <<"form">>}],
 	      children =
 		  [#xmlel{name = <<"title">>, attrs = [],
 			  children =
