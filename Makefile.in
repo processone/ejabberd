@@ -180,12 +180,16 @@ install: all
 	#
 	# Documentation
 	$(INSTALL) -d $(DOCDIR)
-	$(INSTALL) -m 644 doc/dev.html $(DOCDIR)
-	$(INSTALL) -m 644 doc/guide.html $(DOCDIR)
-	$(INSTALL) -m 644 doc/*.png $(DOCDIR)
+	[ -f doc/dev.html ] \
+		&& $(INSTALL) -m 644 doc/dev.html $(DOCDIR) \
+		|| echo "No doc/dev.html was built"
+	[ -f doc/guide.html ] \
+		&& $(INSTALL) -m 644 doc/guide.html $(DOCDIR) \
+		|| echo "No doc/guide.html was built"
 	[ -f doc/guide.pdf ] \
 		&& $(INSTALL) -m 644 doc/guide.pdf $(DOCDIR) \
 		|| echo "No doc/guide.pdf was built"
+	$(INSTALL) -m 644 doc/*.png $(DOCDIR)
 	$(INSTALL) -m 644 COPYING $(DOCDIR)
 
 uninstall: uninstall-binary
