@@ -2480,11 +2480,6 @@ fsm_next_state(StateName, StateData) ->
 fsm_reply(Reply, session_established, StateData) ->
     {reply, Reply, session_established, StateData,
      ?C2S_HIBERNATE_TIMEOUT};
-fsm_reply(Reply, wait_for_resume, #state{mgmt_pending_since = undefined} =
-	  StateData) ->
-    {reply, Reply, wait_for_resume,
-     StateData#state{mgmt_pending_since = os:timestamp()},
-     StateData#state.mgmt_timeout};
 fsm_reply(Reply, wait_for_resume, StateData) ->
     Diff = timer:now_diff(os:timestamp(), StateData#state.mgmt_pending_since),
     Timeout = max(StateData#state.mgmt_timeout - Diff div 1000, 1),
