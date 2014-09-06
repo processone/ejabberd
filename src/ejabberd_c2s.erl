@@ -1838,7 +1838,8 @@ send_text(StateData, Text) when StateData#state.mgmt_state == active ->
     ?DEBUG("Send XML on stream = ~p", [Text]),
     case catch (StateData#state.sockmod):send(StateData#state.socket, Text) of
       {'EXIT', _} ->
-	  (StateData#state.sockmod):close(StateData#state.socket);
+	  (StateData#state.sockmod):close(StateData#state.socket),
+	  error;
       _ ->
 	  ok
     end;
@@ -1857,8 +1858,13 @@ send_element(StateData, El) ->
 send_stanza(StateData, Stanza) when StateData#state.mgmt_state == pending ->
     mgmt_queue_add(StateData, Stanza);
 send_stanza(StateData, Stanza) when StateData#state.mgmt_state == active ->
-    send_stanza_and_ack_req(StateData, Stanza),
-    mgmt_queue_add(StateData, Stanza);
+    NewStateData = case send_stanza_and_ack_req(StateData, Stanza) of
+		     ok ->
+			 StateData;
+		     error ->
+			 StateData#state{mgmt_state = pending}
+		   end,
+    mgmt_queue_add(NewStateData, Stanza);
 send_stanza(StateData, Stanza) ->
     send_element(StateData, Stanza),
     StateData.
@@ -2455,13 +2461,15 @@ fsm_next_state_gc(StateName, PackedStateData) ->
 
 %% fsm_next_state: Generate the next_state FSM tuple with different
 %% timeout, depending on the future state
+fsm_next_state(session_established, #state{mgmt_state = pending} = StateData) ->
+    fsm_next_state(wait_for_resume, StateData);
 fsm_next_state(session_established, StateData) ->
     {next_state, session_established, StateData,
      ?C2S_HIBERNATE_TIMEOUT};
 fsm_next_state(wait_for_resume, #state{mgmt_timeout = 0} = StateData) ->
     {stop, normal, StateData};
-fsm_next_state(wait_for_resume, StateData)
-    when StateData#state.mgmt_state /= pending ->
+fsm_next_state(wait_for_resume, #state{mgmt_pending_since = undefined} =
+	       StateData) ->
     ?INFO_MSG("Waiting for resumption of stream for ~s",
 	      [jlib:jid_to_string(StateData#state.jid)]),
     {next_state, wait_for_resume,
