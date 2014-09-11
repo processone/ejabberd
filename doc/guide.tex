@@ -66,6 +66,7 @@
 \newcommand{\module}[1]{\texttt{#1}}
 \newcommand{\modadhoc}{\module{mod\_adhoc}}
 \newcommand{\modannounce}{\module{mod\_announce}}
+\newcommand{\modclientstate}{\module{mod\_client\_state}}
 \newcommand{\modblocking}{\module{mod\_blocking}}
 \newcommand{\modcaps}{\module{mod\_caps}}
 \newcommand{\modcarboncopy}{\module{mod\_carboncopy}}
@@ -2781,6 +2782,7 @@ The following table lists all modules included in \ejabberd{}.
     \hline \modblocking{} & Simple Communications Blocking (\xepref{0191}) & \modprivacy{} \\
     \hline \modcaps{} &  Entity Capabilities (\xepref{0115}) & \\
     \hline \modcarboncopy{} & Message Carbons (\xepref{0280}) & \\
+    \hline \ahrefloc{modclientstate}{\modclientstate{}} & Filter stanzas for inactive clients &  \\
     \hline \modconfigure{} & Server configuration using Ad-Hoc & \modadhoc{} \\
     \hline \ahrefloc{moddisco}{\moddisco{}} & Service Discovery (\xepref{0030}) &  \\
     \hline \ahrefloc{modecho}{\modecho{}} & Echoes XMPP stanzas &  \\
@@ -3000,6 +3002,38 @@ modules:
 Note that \modannounce{} can be resource intensive on large
 deployments as it can broadcast lot of messages. This module should be
 disabled for instances of \ejabberd{} with hundreds of thousands users.
+
+\makesubsection{modclientstate}{\modclientstate{}}
+\ind{modules!\modclientstate{}}\ind{Client State Indication}
+\ind{protocols!XEP-0352: Client State Indication}
+
+This module allows for queueing or dropping certain types of stanzas
+when a client indicates that the user is not actively using the client
+at the moment (see \xepref{0352}). This can save bandwidth and
+resources.
+
+Options:
+\begin{description}
+\titem{drop\_chat\_states: true|false} \ind{options!drop\_chat\_states}
+  Drop most "standalone" Chat State Notifications (as defined in
+  \xepref{0085}) while a client indicates inactivity. The default value
+  is \term{false}.
+\titem{queue\_presence: true|false} \ind{options!queue\_presence}
+  While a client is inactive, queue presence stanzas that indicate
+  (un)availability. The latest queued stanza of each contact is
+  delivered as soon as the client becomes active again. The default
+  value is \term{false}.
+\end{description}
+
+Example:
+\begin{verbatim}
+modules:
+  ...
+  mod_client_state:
+    drop_chat_states: true
+    queue_presence: true
+  ...
+\end{verbatim}
 
 \makesubsection{moddisco}{\moddisco{}}
 \ind{modules!\moddisco{}}
