@@ -237,6 +237,8 @@ db_tests(mnesia) ->
       [offline_master, offline_slave]},
      {test_carbons, [parallel],
       [carbons_master, carbons_slave]},
+     {test_client_state, [parallel],
+      [client_state_master, client_state_slave]},
      {test_muc, [parallel],
       [muc_master, muc_slave]},
      {test_announce, [sequence],
@@ -1503,6 +1505,42 @@ carbons_slave(Config) ->
     wait_for_master(Config),
     %% Now we should receive nothing but presence unavailable from the peer
     #presence{from = Peer, type = unavailable} = recv(),
+    disconnect(Config).
+
+client_state_master(Config) ->
+    Peer = ?config(slave, Config),
+    Presence = #presence{to = Peer},
+    Message = #message{to = Peer, thread = <<"1">>,
+		       sub_els = [#chatstate_active{}]},
+    wait_for_slave(Config),
+    %% Should be queued (but see below):
+    send(Config, Presence),
+    %% Should be sent immediately, together with the previous presence:
+    send(Config, Message#message{body = [#text{data = <<"body">>}]}),
+    %% Should be dropped:
+    send(Config, Message),
+    %% Should be queued (but see below):
+    send(Config, Presence),
+    %% Should replace the previous presence in the queue:
+    send(Config, Presence#presence{type = unavailable}),
+    wait_for_slave(Config),
+    %% Should be sent immediately, as the client is active again.
+    send(Config, Message),
+    disconnect(Config).
+
+client_state_slave(Config) ->
+    true = ?config(csi, Config),
+    Peer = ?config(master, Config),
+    send(Config, #csi_inactive{}),
+    wait_for_master(Config),
+    #presence{from = Peer, sub_els = [#delay{}]} = recv(),
+    #message{from = Peer, thread = <<"1">>, sub_els = [#chatstate_active{}],
+	     body = [#text{data = <<"body">>}]} = recv(),
+    wait_for_master(Config),
+    send(Config, #csi_active{}),
+    ?recv2(#presence{from = Peer, type = unavailable, sub_els = [#delay{}]},
+	   #message{from = Peer, thread = <<"1">>,
+		    sub_els = [#chatstate_active{}]}),
     disconnect(Config).
 
 %%%===================================================================
