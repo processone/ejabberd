@@ -155,6 +155,8 @@ wait_auth_SASL_result(Config) ->
 	    lists:foldl(
 	      fun(#feature_sm{}, ConfigAcc) ->
 		      set_opt(sm, true, ConfigAcc);
+		 (#feature_csi{}, ConfigAcc) ->
+		      set_opt(csi, true, ConfigAcc);
 		 (_, ConfigAcc) ->
 		      ConfigAcc
 	      end, Config, Fs);

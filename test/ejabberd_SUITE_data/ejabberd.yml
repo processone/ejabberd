@@ -143,6 +143,9 @@ Welcome to this XMPP server."
         db_type: internal
       mod_carboncopy:
         db_type: internal
+      mod_client_state:
+        drop_chat_states: true
+        queue_presence: true
       mod_adhoc: []
       mod_configure: []
       mod_disco: []

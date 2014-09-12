@@ -108,6 +108,8 @@
 		auth_module = unknown,
 		ip,
 		aux_fields = [],
+		csi_state = active,
+		csi_queue = [],
 		mgmt_state,
 		mgmt_xmlns,
 		mgmt_queue,
@@ -475,6 +477,10 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					      false ->
 						  []
 					    end,
+					ClientStateFeature =
+					    [#xmlel{name = <<"csi">>,
+						    attrs = [{<<"xmlns">>, ?NS_CLIENT_STATE}],
+						    children = []}],
 					StreamFeatures = [#xmlel{name = <<"bind">>,
 								attrs = [{<<"xmlns">>, ?NS_BIND}],
 								children = []},
@@ -484,6 +490,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 							    ++
 							    RosterVersioningFeature ++
 							    StreamManagementFeature ++
+							    ClientStateFeature ++
 							    ejabberd_hooks:run_fold(c2s_stream_features,
 								Server, [], [Server]),
 					send_element(StateData,
@@ -1165,6 +1172,17 @@ wait_for_session(closed, StateData) ->
 session_established({xmlstreamelement, #xmlel{name = Name} = El}, StateData)
     when ?IS_STREAM_MGMT_TAG(Name) ->
     fsm_next_state(session_established, dispatch_stream_mgmt(El, StateData));
+session_established({xmlstreamelement,
+		     #xmlel{name = <<"active">>,
+			    attrs = [{<<"xmlns">>, ?NS_CLIENT_STATE}]}},
+		    StateData) ->
+    NewStateData = csi_queue_flush(StateData),
+    fsm_next_state(session_established, NewStateData#state{csi_state = active});
+session_established({xmlstreamelement,
+		     #xmlel{name = <<"inactive">>,
+			    attrs = [{<<"xmlns">>, ?NS_CLIENT_STATE}]}},
+		    StateData) ->
+    fsm_next_state(session_established, StateData#state{csi_state = inactive});
 session_established({xmlstreamelement, El},
 		    StateData) ->
     FromJID = StateData#state.jid,
@@ -1855,6 +1873,8 @@ send_element(StateData, El) when StateData#state.xml_socket ->
 send_element(StateData, El) ->
     send_text(StateData, xml:element_to_binary(El)).
 
+send_stanza(StateData, Stanza) when StateData#state.csi_state == inactive ->
+    csi_filter_stanza(StateData, Stanza);
 send_stanza(StateData, Stanza) when StateData#state.mgmt_state == pending ->
     mgmt_queue_add(StateData, Stanza);
 send_stanza(StateData, Stanza) when StateData#state.mgmt_state == active ->
@@ -1869,18 +1889,14 @@ send_stanza(StateData, Stanza) ->
     send_element(StateData, Stanza),
     StateData.
 
-send_packet(StateData, Packet) when StateData#state.mgmt_state == active;
-				    StateData#state.mgmt_state == pending ->
+send_packet(StateData, Packet) ->
     case is_stanza(Packet) of
       true ->
 	  send_stanza(StateData, Packet);
       false ->
 	  send_element(StateData, Packet),
 	  StateData
-    end;
-send_packet(StateData, Stanza) ->
-    send_element(StateData, Stanza),
-    StateData.
+    end.
 
 send_header(StateData, Server, Version, Lang)
     when StateData#state.xml_socket ->
@@ -2762,9 +2778,11 @@ handle_resume(StateData, Attrs) ->
 		       #xmlel{name = <<"r">>,
 			      attrs = [{<<"xmlns">>, AttrXmlns}],
 			      children = []}),
+	  FlushedState = csi_queue_flush(NewState),
+	  NewStateData = FlushedState#state{csi_state = active},
 	  ?INFO_MSG("Resumed session for ~s",
-		    [jlib:jid_to_string(NewState#state.jid)]),
-	  {ok, NewState};
+		    [jlib:jid_to_string(NewStateData#state.jid)]),
+	  {ok, NewStateData};
       {error, El, Msg} ->
 	  send_element(StateData, El),
 	  ?INFO_MSG("Cannot resume session for ~s@~s: ~s",
@@ -2953,6 +2971,8 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 					   pres_invis = OldStateData#state.pres_invis,
 					   privacy_list = OldStateData#state.privacy_list,
 					   aux_fields = OldStateData#state.aux_fields,
+					   csi_state = OldStateData#state.csi_state,
+					   csi_queue = OldStateData#state.csi_queue,
 					   mgmt_xmlns = OldStateData#state.mgmt_xmlns,
 					   mgmt_queue = OldStateData#state.mgmt_queue,
 					   mgmt_timeout = OldStateData#state.mgmt_timeout,
@@ -2975,6 +2995,71 @@ resume_session({Time, PID}) ->
 make_resume_id(StateData) ->
     {Time, _} = StateData#state.sid,
     jlib:term_to_base64({StateData#state.resource, Time}).
+
+%%%----------------------------------------------------------------------
+%%% XEP-0352
+%%%----------------------------------------------------------------------
+
+csi_filter_stanza(#state{csi_state = CsiState, jid = JID} = StateData,
+		  Stanza) ->
+    Action = ejabberd_hooks:run_fold(csi_filter_stanza,
+				     StateData#state.server,
+				     send, [Stanza]),
+    ?DEBUG("Going to ~p stanza for inactive client ~p",
+	   [Action, jlib:jid_to_string(JID)]),
+    case Action of
+      queue -> csi_queue_add(StateData, Stanza);
+      drop -> StateData;
+      send ->
+	  From = xml:get_tag_attr_s(<<"from">>, Stanza),
+	  StateData1 = csi_queue_send(StateData, From),
+	  StateData2 = send_stanza(StateData1#state{csi_state = active},
+				   Stanza),
+	  StateData2#state{csi_state = CsiState}
+    end.
+
+csi_queue_add(#state{csi_queue = Queue, server = Host} = StateData,
+	      #xmlel{children = Els} = Stanza) ->
+    From = xml:get_tag_attr_s(<<"from">>, Stanza),
+    Time = calendar:now_to_universal_time(os:timestamp()),
+    DelayTag = [jlib:timestamp_to_xml(Time, utc,
+				      jlib:make_jid(<<"">>, Host, <<"">>),
+				      <<"Client Inactive">>)],
+    NewStanza = Stanza#xmlel{children = Els ++ DelayTag},
+    case length(StateData#state.csi_queue) >= csi_max_queue(StateData) of
+      true -> csi_queue_add(csi_queue_flush(StateData), NewStanza);
+      false ->
+	  NewQueue = lists:keystore(From, 1, Queue, {From, NewStanza}),
+	  StateData#state{csi_queue = NewQueue}
+    end.
+
+csi_queue_send(#state{csi_queue = Queue, csi_state = CsiState} = StateData,
+		From) ->
+    case lists:keytake(From, 1, Queue) of
+      {value, {From, Stanza}, NewQueue} ->
+	  NewStateData = send_stanza(StateData#state{csi_state = active},
+				     Stanza),
+	  NewStateData#state{csi_queue = NewQueue, csi_state = CsiState};
+      false -> StateData
+    end.
+
+csi_queue_flush(#state{csi_queue = Queue, csi_state = CsiState, jid = JID} =
+		StateData) ->
+    ?DEBUG("Flushing CSI queue for ~s", [jlib:jid_to_string(JID)]),
+    NewStateData =
+	lists:foldl(fun({_From, Stanza}, AccState) ->
+			  send_stanza(AccState, Stanza)
+		    end, StateData#state{csi_state = active}, Queue),
+    NewStateData#state{csi_queue = [], csi_state = CsiState}.
+
+%% Make sure we won't push too many messages to the XEP-0198 queue when the
+%% client becomes 'active' again.  Otherwise, the client might not manage to
+%% acknowledge the message flood in time.  Also, don't let the queue grow to
+%% more than 100 stanzas.
+csi_max_queue(#state{mgmt_max_queue = infinity}) -> 100;
+csi_max_queue(#state{mgmt_max_queue = Max}) when Max > 200 -> 100;
+csi_max_queue(#state{mgmt_max_queue = Max}) when Max < 2 -> 1;
+csi_max_queue(#state{mgmt_max_queue = Max}) -> Max div 2.
 
 %%%----------------------------------------------------------------------
 %%% JID Set memory footprint reduction code
