@@ -1902,23 +1902,23 @@ encode({pubsub, _, _, _, _, _, _, _, _} = Pubsub) ->
 encode({shim, _} = Headers) ->
     encode_shim_headers(Headers,
 			[{<<"xmlns">>, <<"http://jabber.org/protocol/shim">>}]);
-encode({chatstate_active} = Active) ->
+encode({chatstate, active} = Active) ->
     encode_chatstate_active(Active,
 			    [{<<"xmlns">>,
 			      <<"http://jabber.org/protocol/chatstates">>}]);
-encode({chatstate_composing} = Composing) ->
+encode({chatstate, composing} = Composing) ->
     encode_chatstate_composing(Composing,
 			       [{<<"xmlns">>,
 				 <<"http://jabber.org/protocol/chatstates">>}]);
-encode({chatstate_gone} = Gone) ->
+encode({chatstate, gone} = Gone) ->
     encode_chatstate_gone(Gone,
 			  [{<<"xmlns">>,
 			    <<"http://jabber.org/protocol/chatstates">>}]);
-encode({chatstate_inactive} = Inactive) ->
+encode({chatstate, inactive} = Inactive) ->
     encode_chatstate_inactive(Inactive,
 			      [{<<"xmlns">>,
 				<<"http://jabber.org/protocol/chatstates">>}]);
-encode({chatstate_paused} = Paused) ->
+encode({chatstate, paused} = Paused) ->
     encode_chatstate_paused(Paused,
 			    [{<<"xmlns">>,
 			      <<"http://jabber.org/protocol/chatstates">>}]);
@@ -1994,10 +1994,10 @@ encode({carbons_sent, _} = Sent) ->
 			[{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
 encode({feature_csi, _} = Csi) ->
     encode_feature_csi(Csi, []);
-encode({csi_active} = Active) ->
+encode({csi, active} = Active) ->
     encode_csi_active(Active,
 		      [{<<"xmlns">>, <<"urn:xmpp:csi:0">>}]);
-encode({csi_inactive} = Inactive) ->
+encode({csi, inactive} = Inactive) ->
     encode_csi_inactive(Inactive,
 			[{<<"xmlns">>, <<"urn:xmpp:csi:0">>}]);
 encode({feature_sm, _} = Sm) ->
@@ -2158,15 +2158,15 @@ get_ns({pubsub, _, _, _, _, _, _, _, _}) ->
     <<"http://jabber.org/protocol/pubsub">>;
 get_ns({shim, _}) ->
     <<"http://jabber.org/protocol/shim">>;
-get_ns({chatstate_active}) ->
+get_ns({chatstate, active}) ->
     <<"http://jabber.org/protocol/chatstates">>;
-get_ns({chatstate_composing}) ->
+get_ns({chatstate, composing}) ->
     <<"http://jabber.org/protocol/chatstates">>;
-get_ns({chatstate_gone}) ->
+get_ns({chatstate, gone}) ->
     <<"http://jabber.org/protocol/chatstates">>;
-get_ns({chatstate_inactive}) ->
+get_ns({chatstate, inactive}) ->
     <<"http://jabber.org/protocol/chatstates">>;
-get_ns({chatstate_paused}) ->
+get_ns({chatstate, paused}) ->
     <<"http://jabber.org/protocol/chatstates">>;
 get_ns({delay, _, _}) -> <<"urn:xmpp:delay">>;
 get_ns({legacy_delay, _, _}) -> <<"jabber:x:delay">>;
@@ -2200,8 +2200,8 @@ get_ns({carbons_received, _}) ->
     <<"urn:xmpp:carbons:2">>;
 get_ns({carbons_sent, _}) -> <<"urn:xmpp:carbons:2">>;
 get_ns({feature_csi, _}) -> <<"urn:xmpp:csi:0">>;
-get_ns({csi_active}) -> <<"urn:xmpp:csi:0">>;
-get_ns({csi_inactive}) -> <<"urn:xmpp:csi:0">>;
+get_ns({csi, active}) -> <<"urn:xmpp:csi:0">>;
+get_ns({csi, inactive}) -> <<"urn:xmpp:csi:0">>;
 get_ns(_) -> <<>>.
 
 dec_int(Val) -> dec_int(Val, infinity, infinity).
@@ -2359,11 +2359,7 @@ pp(pubsub, 8) ->
     [subscriptions, affiliations, publish, subscribe,
      unsubscribe, options, items, retract];
 pp(shim, 1) -> [headers];
-pp(chatstate_active, 0) -> [];
-pp(chatstate_composing, 0) -> [];
-pp(chatstate_gone, 0) -> [];
-pp(chatstate_inactive, 0) -> [];
-pp(chatstate_paused, 0) -> [];
+pp(chatstate, 1) -> [type];
 pp(delay, 2) -> [stamp, from];
 pp(legacy_delay, 2) -> [stamp, from];
 pp(streamhost, 3) -> [jid, host, port];
@@ -2391,8 +2387,7 @@ pp(carbons_private, 0) -> [];
 pp(carbons_received, 1) -> [forwarded];
 pp(carbons_sent, 1) -> [forwarded];
 pp(feature_csi, 1) -> [xmlns];
-pp(csi_active, 0) -> [];
-pp(csi_inactive, 0) -> [];
+pp(csi, 1) -> [type];
 pp(feature_sm, 1) -> [xmlns];
 pp(sm_enable, 3) -> [max, resume, xmlns];
 pp(sm_enabled, 5) -> [id, location, max, resume, xmlns];
@@ -3365,18 +3360,18 @@ encode_feature_sm_attr_xmlns(_val, _acc) ->
 
 decode_csi_inactive(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"inactive">>, _attrs, _els}) ->
-    {csi_inactive}.
+    {csi, inactive}.
 
-encode_csi_inactive({csi_inactive}, _xmlns_attrs) ->
+encode_csi_inactive({csi, inactive}, _xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"inactive">>, _attrs, _els}.
 
 decode_csi_active(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"active">>, _attrs, _els}) ->
-    {csi_active}.
+    {csi, active}.
 
-encode_csi_active({csi_active}, _xmlns_attrs) ->
+encode_csi_active({csi, active}, _xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"active">>, _attrs, _els}.
@@ -5500,9 +5495,9 @@ encode_delay_attr_from(_val, _acc) ->
 
 decode_chatstate_paused(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"paused">>, _attrs, _els}) ->
-    {chatstate_paused}.
+    {chatstate, paused}.
 
-encode_chatstate_paused({chatstate_paused},
+encode_chatstate_paused({chatstate, paused},
 			_xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
@@ -5510,9 +5505,9 @@ encode_chatstate_paused({chatstate_paused},
 
 decode_chatstate_inactive(__TopXMLNS, __IgnoreEls,
 			  {xmlel, <<"inactive">>, _attrs, _els}) ->
-    {chatstate_inactive}.
+    {chatstate, inactive}.
 
-encode_chatstate_inactive({chatstate_inactive},
+encode_chatstate_inactive({chatstate, inactive},
 			  _xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
@@ -5520,18 +5515,19 @@ encode_chatstate_inactive({chatstate_inactive},
 
 decode_chatstate_gone(__TopXMLNS, __IgnoreEls,
 		      {xmlel, <<"gone">>, _attrs, _els}) ->
-    {chatstate_gone}.
+    {chatstate, gone}.
 
-encode_chatstate_gone({chatstate_gone}, _xmlns_attrs) ->
+encode_chatstate_gone({chatstate, gone},
+		      _xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"gone">>, _attrs, _els}.
 
 decode_chatstate_composing(__TopXMLNS, __IgnoreEls,
 			   {xmlel, <<"composing">>, _attrs, _els}) ->
-    {chatstate_composing}.
+    {chatstate, composing}.
 
-encode_chatstate_composing({chatstate_composing},
+encode_chatstate_composing({chatstate, composing},
 			   _xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
@@ -5539,9 +5535,9 @@ encode_chatstate_composing({chatstate_composing},
 
 decode_chatstate_active(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"active">>, _attrs, _els}) ->
-    {chatstate_active}.
+    {chatstate, active}.
 
-encode_chatstate_active({chatstate_active},
+encode_chatstate_active({chatstate, active},
 			_xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,

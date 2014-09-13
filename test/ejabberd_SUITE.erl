@@ -1511,7 +1511,7 @@ client_state_master(Config) ->
     Peer = ?config(slave, Config),
     Presence = #presence{to = Peer},
     Message = #message{to = Peer, thread = <<"1">>,
-		       sub_els = [#chatstate_active{}]},
+		       sub_els = [#chatstate{type = active}]},
     wait_for_slave(Config),
     %% Should be queued (but see below):
     send(Config, Presence),
@@ -1531,16 +1531,16 @@ client_state_master(Config) ->
 client_state_slave(Config) ->
     true = ?config(csi, Config),
     Peer = ?config(master, Config),
-    send(Config, #csi_inactive{}),
+    send(Config, #csi{type = inactive}),
     wait_for_master(Config),
     #presence{from = Peer, sub_els = [#delay{}]} = recv(),
-    #message{from = Peer, thread = <<"1">>, sub_els = [#chatstate_active{}],
+    #message{from = Peer, thread = <<"1">>, sub_els = [#chatstate{type = active}],
 	     body = [#text{data = <<"body">>}]} = recv(),
     wait_for_master(Config),
-    send(Config, #csi_active{}),
+    send(Config, #csi{type = active}),
     ?recv2(#presence{from = Peer, type = unavailable, sub_els = [#delay{}]},
 	   #message{from = Peer, thread = <<"1">>,
-		    sub_els = [#chatstate_active{}]}),
+		    sub_els = [#chatstate{type = active}]}),
     disconnect(Config).
 
 %%%===================================================================
