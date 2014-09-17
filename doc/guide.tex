@@ -1022,7 +1022,7 @@ request_handlers:
   /"a"/"b": mod_foo
   /"http-bind": mod_http_bind
 \end{verbatim}
-  \titem{resend\_on\_timeout: true|false}
+  \titem{resend\_on\_timeout: true|false|if\_offline}
     If \term{stream\_management} is enabled and this option is set to
     \term{true}, any stanzas that weren't acknowledged by the client
     will be resent on session timeout. This behavior might often be
@@ -1030,8 +1030,12 @@ request_handlers:
     circumstances. For example, a message that was sent to two resources
     might get resent to one of them if the other one timed out.
     Therefore, the default value for this option is \term{false}, which
-    tells ejabberd to generate an error message instead. The option can
-    be specified for \term{ejabberd\_c2s} listeners.
+    tells ejabberd to generate an error message instead. As an
+    alternative, the option may be set to \term{if\_offline}. In this
+    case, unacknowledged stanzas are resent only if no other resource is
+    online when the session times out. Otherwise, error messages are
+    generated. The option can be specified for \term{ejabberd\_c2s}
+    listeners.
   \titem{resume\_timeout: Seconds}
     This option configures the number of seconds until a session times
     out if the connection is lost. During this period of time, a client

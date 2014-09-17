@@ -316,7 +316,11 @@ init([{SockMod, Socket}, Opts]) ->
 		      Timeout when is_integer(Timeout), Timeout >= 0 -> Timeout;
 		      _ -> 300
 		    end,
-    ResendOnTimeout = proplists:get_bool(resend_on_timeout, Opts),
+    ResendOnTimeout = case proplists:get_value(resend_on_timeout, Opts) of
+			Resend when is_boolean(Resend) -> Resend;
+			if_offline -> if_offline;
+			_ -> false
+		      end,
     IP = peerip(SockMod, Socket),
     Socket1 = if TLSEnabled andalso
 		 SockMod /= ejabberd_frontend_socket ->
@@ -2879,7 +2883,15 @@ handle_unacked_stanzas(_StateData, _F) ->
 handle_unacked_stanzas(StateData)
     when StateData#state.mgmt_state == active;
 	 StateData#state.mgmt_state == pending ->
-    ReRoute = case StateData#state.mgmt_resend of
+    ResendOnTimeout =
+	case StateData#state.mgmt_resend of
+	  Resend when is_boolean(Resend) ->
+	      Resend;
+	  if_offline ->
+	      ejabberd_sm:get_user_resources(StateData#state.user,
+					     StateData#state.server) == []
+	end,
+    ReRoute = case ResendOnTimeout of
 		true ->
 		    fun ejabberd_router:route/3;
 		false ->
