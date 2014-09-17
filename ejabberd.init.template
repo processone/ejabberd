@@ -24,7 +24,7 @@ test -x "$CTL" || {
 	echo "ERROR: ejabberd not found: $DIR"
 	exit 1
 }
-grep ^"$USER": /etc/passwd >/dev/null || {
+getent passwd "$USER" >/dev/null || {
 	echo "ERROR: System user not found: $USER"
 	exit 2
 }
