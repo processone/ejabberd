@@ -228,13 +228,28 @@ get_config(Host, Opts) ->
     Base = get_opt({ldap_base, Host}, Opts,
                    fun iolist_to_binary/1,
                    <<"">>),
-    DerefAliases = get_opt({deref_aliases, Host}, Opts,
-                           fun(never) -> never;
-                              (searching) -> searching;
-                              (finding) -> finding;
-                              (always) -> always
-                           end, never),
-    #eldap_config{servers = Servers,
+    OldDerefAliases = get_opt({deref_aliases, Host}, Opts,
+                              fun(never) -> never;
+                                 (searching) -> searching;
+                                 (finding) -> finding;
+                                 (always) -> always
+                              end, unspecified),
+    DerefAliases =
+        if OldDerefAliases == unspecified ->
+                get_opt({ldap_deref_aliases, Host}, Opts,
+                        fun(never) -> never;
+                           (searching) -> searching;
+                           (finding) -> finding;
+                           (always) -> always
+                        end, never);
+           true ->
+                ?WARNING_MSG("Option 'deref_aliases' is deprecated. "
+                             "The option is still supported "
+                             "but it is better to fix your config: "
+                             "use 'ldap_deref_aliases' instead.", []),
+                OldDerefAliases
+        end,
+   #eldap_config{servers = Servers,
                   backups = Backups,
                   tls_options = [{encrypt, Encrypt},
                                  {tls_verify, TLSVerify},
