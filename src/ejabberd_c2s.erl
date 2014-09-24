@@ -99,10 +99,8 @@
 		pres_t = ?SETS:new(),
 		pres_f = ?SETS:new(),
 		pres_a = ?SETS:new(),
-		pres_i = ?SETS:new(),
 		pres_last, pres_pri,
 		pres_timestamp,
-		pres_invis = false,
 		privacy_list = #userlist{},
 		conn = unknown,
 		auth_module = unknown,
@@ -1758,11 +1756,10 @@ handle_info(Info, StateName, StateData) ->
 %% Purpose: Prepare the state to be printed on error log
 %% Returns: State to print
 %%----------------------------------------------------------------------
-print_state(State = #state{pres_t = T, pres_f = F, pres_a = A, pres_i = I}) ->
+print_state(State = #state{pres_t = T, pres_f = F, pres_a = A}) ->
    State#state{pres_t = {pres_t, ?SETS:size(T)},
                pres_f = {pres_f, ?SETS:size(F)},
-               pres_a = {pres_a, ?SETS:size(A)},
-               pres_i = {pres_i, ?SETS:size(I)}
+               pres_a = {pres_a, ?SETS:size(A)}
                }.
     
 %%----------------------------------------------------------------------
@@ -1798,8 +1795,6 @@ terminate(_Reason, StateName, StateData) ->
 								<<"Replaced by new connection">>),
 		       presence_broadcast(StateData, From,
 					  StateData#state.pres_a, Packet),
-		       presence_broadcast(StateData, From,
-					  StateData#state.pres_i, Packet),
 		       handle_unacked_stanzas(StateData);
 		   _ ->
 		       ?INFO_MSG("(~w) Close session for ~s",
@@ -1807,10 +1802,7 @@ terminate(_Reason, StateName, StateData) ->
 				  jlib:jid_to_string(StateData#state.jid)]),
 		       EmptySet = (?SETS):new(),
 		       case StateData of
-			 #state{pres_last = undefined,
-				pres_a = EmptySet,
-				pres_i = EmptySet,
-				pres_invis = false} ->
+			 #state{pres_last = undefined, pres_a = EmptySet} ->
 			     ejabberd_sm:close_session(StateData#state.sid,
 						       StateData#state.user,
 						       StateData#state.server,
@@ -1826,9 +1818,7 @@ terminate(_Reason, StateName, StateData) ->
 								      StateData#state.resource,
 								      <<"">>),
 			     presence_broadcast(StateData, From,
-						StateData#state.pres_a, Packet),
-			     presence_broadcast(StateData, From,
-						StateData#state.pres_i, Packet)
+						StateData#state.pres_a, Packet)
 		       end,
 		       handle_unacked_stanzas(StateData)
 		 end,
@@ -2009,21 +1999,12 @@ process_presence_probe(From, To, StateData) ->
 	undefined ->
 	    ok;
 	_ ->
-	    Cond1 = (not StateData#state.pres_invis)
-		andalso (?SETS:is_element(LFrom, StateData#state.pres_f)
-			 orelse
-			 ((LFrom /= LBFrom) andalso
-			  ?SETS:is_element(LBFrom, StateData#state.pres_f)))
-		andalso (not
-			 (?SETS:is_element(LFrom, StateData#state.pres_i)
-			  orelse
-			  ((LFrom /= LBFrom) andalso
-			   ?SETS:is_element(LBFrom, StateData#state.pres_i)))),
-	    Cond2 = StateData#state.pres_invis
-		andalso ?SETS:is_element(LFrom, StateData#state.pres_f)
-		andalso ?SETS:is_element(LFrom, StateData#state.pres_a),
+	    Cond = ?SETS:is_element(LFrom, StateData#state.pres_f)
+		orelse
+		((LFrom /= LBFrom) andalso
+		 ?SETS:is_element(LBFrom, StateData#state.pres_f)),
 	    if
-		Cond1 ->
+		Cond ->
 		    Timestamp = StateData#state.pres_timestamp,
 		    Packet = xml:append_subtags(
 			       StateData#state.pres_last,
@@ -2045,11 +2026,6 @@ process_presence_probe(From, To, StateData) ->
 				    ok
 			    end
 		    end;
-		Cond2 ->
-		    ejabberd_router:route(To, From,
-			#xmlel{name = <<"presence">>,
-			       attrs = [],
-			       children = []});
 		true ->
 		    ok
 	    end
@@ -2976,11 +2952,9 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 					   pres_t = OldStateData#state.pres_t,
 					   pres_f = OldStateData#state.pres_f,
 					   pres_a = OldStateData#state.pres_a,
-					   pres_i = OldStateData#state.pres_i,
 					   pres_last = OldStateData#state.pres_last,
 					   pres_pri = OldStateData#state.pres_pri,
 					   pres_timestamp = OldStateData#state.pres_timestamp,
-					   pres_invis = OldStateData#state.pres_invis,
 					   privacy_list = OldStateData#state.privacy_list,
 					   aux_fields = OldStateData#state.aux_fields,
 					   csi_state = OldStateData#state.csi_state,
