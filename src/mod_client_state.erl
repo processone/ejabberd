@@ -28,7 +28,8 @@
 
 -behavior(gen_mod).
 
--export([start/2, stop/1, filter_presence/2, filter_chat_states/2]).
+-export([start/2, stop/1, add_stream_feature/2, filter_presence/2,
+	 filter_chat_states/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -39,14 +40,19 @@ start(Host, Opts) ->
 				    fun(true) -> true end, false),
     DropChatStates = gen_mod:get_opt(drop_chat_states, Opts,
 				     fun(true) -> true end, false),
-    if QueuePresence ->
-	   ejabberd_hooks:add(csi_filter_stanza, Host, ?MODULE,
-			      filter_presence, 50);
-       true -> ok
-    end,
-    if DropChatStates ->
-	   ejabberd_hooks:add(csi_filter_stanza, Host, ?MODULE,
-			      filter_chat_states, 50);
+    if QueuePresence; DropChatStates ->
+	   ejabberd_hooks:add(c2s_post_auth_features, Host, ?MODULE,
+			      add_stream_feature, 50),
+	   if QueuePresence ->
+		  ejabberd_hooks:add(csi_filter_stanza, Host, ?MODULE,
+				     filter_presence, 50);
+	      true -> ok
+	   end,
+	   if DropChatStates ->
+		  ejabberd_hooks:add(csi_filter_stanza, Host, ?MODULE,
+				     filter_chat_states, 50);
+	      true -> ok
+	   end;
        true -> ok
     end,
     ok.
@@ -56,7 +62,15 @@ stop(Host) ->
 			  filter_presence, 50),
     ejabberd_hooks:delete(csi_filter_stanza, Host, ?MODULE,
 			  filter_chat_states, 50),
+    ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
+			  add_stream_feature, 50),
     ok.
+
+add_stream_feature(Features, _Host) ->
+    Feature = #xmlel{name = <<"csi">>,
+		     attrs = [{<<"xmlns">>, ?NS_CLIENT_STATE}],
+		     children = []},
+    [Feature | Features].
 
 filter_presence(_Action, #xmlel{name = <<"presence">>, attrs = Attrs}) ->
     case xml:get_attr(<<"type">>, Attrs) of
