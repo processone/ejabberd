@@ -31,5 +31,6 @@
 	 host = <<"">>     :: binary(),
 	 port = 5280       :: inet:port_number(),
 	 tp = http, %         :: protocol(),
+	 opts = []         :: list(),
 	 headers = []      :: [{atom() | binary(), binary()}]}).
 

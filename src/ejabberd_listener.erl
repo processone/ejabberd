@@ -201,11 +201,7 @@ listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
 			catch
 			    _:_ -> []
 			end,
-	    DeliverAs = case Module of
-			    ejabberd_xmlrpc -> list;
-			    _ -> binary
-			end,
-	    Res = gen_tcp:listen(Port, [DeliverAs,
+	    Res = gen_tcp:listen(Port, [binary,
 					{packet, 0},
 					{active, false},
 					{reuseaddr, true},

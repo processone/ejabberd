@@ -17,11 +17,12 @@
 
 -author('badlop@process-one.net').
 
--export([start/2, handler/2, socket_type/0, transform_listen_option/2]).
+-export([start/2, handler/2, process/2, socket_type/0,
+	 transform_listen_option/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
+-include("ejabberd_http.hrl").
 -include("mod_roster.hrl").
 
 -include("jlib.hrl").
@@ -170,12 +171,14 @@
 %% -----------------------------
 
 start({gen_tcp = _SockMod, Socket}, Opts) ->
-    %MaxSessions = gen_mod:get_opt(maxsessions, Opts,
-    %                              fun(I) when is_integer(I), I>0 -> I end,
-    %                              10),
-    Timeout = gen_mod:get_opt(timeout, Opts,
-                              fun(I) when is_integer(I), I>0 -> I end,
-                              5000),
+    ejabberd_http:start({gen_tcp, Socket}, [{xmlrpc, true}|Opts]).
+
+socket_type() -> raw.
+
+%% -----------------------------
+%% HTTP interface
+%% -----------------------------
+process(_, #request{method = 'POST', data = Data, opts = Opts}) ->
     AccessCommandsOpts = gen_mod:get_opt(access_commands, Opts,
                                          fun(L) when is_list(L) -> L end,
                                          []),
@@ -201,19 +204,28 @@ start({gen_tcp = _SockMod, Socket}, Opts) ->
                                             [?MODULE, Wrong]),
                                []
                        end, AccessCommandsOpts),
-    GetAuth = case [ACom
-		    || {Ac, _, _} = ACom <- AccessCommands, Ac /= all]
-		  of
-		[] -> false;
-		_ -> true
+    GetAuth = case [ACom || {Ac, _, _} = ACom <- AccessCommands, Ac /= all] of
+		  [] -> false;
+		  _ -> true
 	      end,
-    Handler = {?MODULE, handler},
-    State = #state{access_commands = AccessCommands,
-		   get_auth = GetAuth},
-    Pid = proc_lib:spawn(xmlrpc_http, handler, [Socket, Timeout, Handler, State]),
-    {ok, Pid}.
-
-socket_type() -> raw.
+    State = #state{access_commands = AccessCommands, get_auth = GetAuth},
+    case xmlrpc_decode:payload(Data) of
+	{error, _} = Err ->
+	    ?ERROR_MSG("XML-RPC request ~s failed with reason: ~p",
+		       [Data, Err]),
+	    {400, [],
+	     #xmlel{name = <<"h1">>, attrs = [],
+		    children = [{xmlcdata, <<"Malformed Request">>}]}};
+	{ok, RPC} ->
+	    ?DEBUG("got XML-RPC request: ~p", [RPC]),
+	    {false, Result} = handler(State, RPC),
+	    {ok, XML} = xmlrpc_encode:payload(Result),
+	    {200, [], [{<<"Content-Type">>, <<"text/xml">>}], XML}
+    end;
+process(_, _) ->
+    {400, [],
+     #xmlel{name = <<"h1">>, attrs = [],
+	    children = [{xmlcdata, <<"400 Bad Request">>}]}}.
 
 %% -----------------------------
 %% Access verification
