@@ -209,18 +209,26 @@ process(_, #request{method = 'POST', data = Data, opts = Opts}) ->
 		  _ -> true
 	      end,
     State = #state{access_commands = AccessCommands, get_auth = GetAuth},
-    case xmlrpc_decode:payload(Data) of
-	{error, _} = Err ->
-	    ?ERROR_MSG("XML-RPC request ~s failed with reason: ~p",
-		       [Data, Err]),
+    case xml_stream:parse_element(Data) of
+	{error, _} ->
 	    {400, [],
 	     #xmlel{name = <<"h1">>, attrs = [],
-		    children = [{xmlcdata, <<"Malformed Request">>}]}};
-	{ok, RPC} ->
-	    ?DEBUG("got XML-RPC request: ~p", [RPC]),
-	    {false, Result} = handler(State, RPC),
-	    {ok, XML} = xmlrpc_encode:payload(Result),
-	    {200, [], [{<<"Content-Type">>, <<"text/xml">>}], XML}
+		    children = [{xmlcdata, <<"Malformed XML">>}]}};
+	El ->
+	    case p1_xmlrpc:decode(El) of
+		{error, _} = Err ->
+		    ?ERROR_MSG("XML-RPC request ~s failed with reason: ~p",
+			       [Data, Err]),
+		    {400, [],
+		     #xmlel{name = <<"h1">>, attrs = [],
+			    children = [{xmlcdata, <<"Malformed Request">>}]}};
+		{ok, RPC} ->
+		    ?DEBUG("got XML-RPC request: ~p", [RPC]),
+		    {false, Result} = handler(State, RPC),
+		    XML = xml:element_to_binary(p1_xmlrpc:encode(Result)),
+		    {200, [], [{<<"Content-Type">>, <<"text/xml">>}],
+		     <<"<?xml version=\"1.0\"?>", XML/binary>>}
+	    end
     end;
 process(_, _) ->
     {400, [],
