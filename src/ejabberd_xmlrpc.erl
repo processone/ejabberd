@@ -226,7 +226,7 @@ process(_, #request{method = 'POST', data = Data, opts = Opts}) ->
 		    ?DEBUG("got XML-RPC request: ~p", [RPC]),
 		    {false, Result} = handler(State, RPC),
 		    XML = xml:element_to_binary(p1_xmlrpc:encode(Result)),
-		    {200, [], [{<<"Content-Type">>, <<"text/xml">>}],
+		    {200, [{<<"Content-Type">>, <<"text/xml">>}],
 		     <<"<?xml version=\"1.0\"?>", XML/binary>>}
 	    end
     end;
