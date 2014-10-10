@@ -299,7 +299,8 @@ process_blocklist_unblock_all(LUser, LServer, Filter,
                      NewList = Filter(List),
                      NewLists1 = lists:keydelete(Default, 1, Lists),
                      NewLists = [{Default, NewList} | NewLists1],
-                     case ejabberd_riak:put(P#privacy{lists = NewLists}) of
+                     case ejabberd_riak:put(P#privacy{lists = NewLists},
+					    mod_privacy:privacy_schema()) of
                          ok ->
                              {ok, Default, NewList};
                          Err ->
