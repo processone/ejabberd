@@ -735,7 +735,7 @@ wait_for_feature_request({xmlstreamelement, El},
 	(StateData#state.sockmod):get_sockmod(StateData#state.socket),
     case {xml:get_attr_s(<<"xmlns">>, Attrs), Name} of
       {?NS_SASL, <<"auth">>}
-	  when not ((SockMod == gen_tcp) and TLSRequired) ->
+	  when TLSEnabled or not TLSRequired ->
 	  Mech = xml:get_attr_s(<<"mechanism">>, Attrs),
 	  ClientIn = jlib:decode_base64(xml:get_cdata(Els)),
 	  case cyrsasl:server_start(StateData#state.sasl_state,
@@ -856,7 +856,7 @@ wait_for_feature_request({xmlstreamelement, El},
 		end
 	  end;
       _ ->
-	  if (SockMod == gen_tcp) and TLSRequired ->
+	  if TLSRequired and not TLSEnabled ->
 		 Lang = StateData#state.lang,
 		 send_element(StateData,
 			      ?POLICY_VIOLATION_ERR(Lang,
