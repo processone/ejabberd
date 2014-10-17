@@ -2454,6 +2454,15 @@ fsm_next_state_gc(StateName, PackedStateData) ->
 
 %% fsm_next_state: Generate the next_state FSM tuple with different
 %% timeout, depending on the future state
+fsm_next_state(session_established, #state{mgmt_max_queue = exceeded} =
+	       StateData) ->
+    ?WARNING_MSG("ACK queue too long, terminating session for ~s",
+		 [jlib:jid_to_string(StateData#state.jid)]),
+    Err = ?SERRT_POLICY_VIOLATION(StateData#state.lang,
+				  <<"Too many unacked stanzas">>),
+    send_element(StateData, Err),
+    send_trailer(StateData),
+    {stop, normal, StateData#state{mgmt_resend = false}};
 fsm_next_state(session_established, #state{mgmt_state = pending} = StateData) ->
     fsm_next_state(wait_for_resume, StateData);
 fsm_next_state(session_established, StateData) ->
@@ -2815,18 +2824,15 @@ mgmt_queue_drop(StateData, NumHandled) ->
 				     StateData#state.mgmt_queue),
     StateData#state{mgmt_queue = NewQueue}.
 
-check_queue_length(#state{mgmt_max_queue = infinity} = StateData) ->
+check_queue_length(#state{mgmt_max_queue = Limit} = StateData)
+    when Limit == infinity;
+	 Limit == exceeded ->
     StateData;
 check_queue_length(#state{mgmt_queue = Queue,
 			  mgmt_max_queue = Limit} = StateData) ->
     case queue:len(Queue) > Limit of
       true ->
-	  ?WARNING_MSG("ACK queue too long, terminating session for ~s",
-		       [jlib:jid_to_string(StateData#state.jid)]),
-	  Lang = StateData#state.lang,
-	  Err = ?SERRT_POLICY_VIOLATION(Lang, <<"Too many unacked stanzas">>),
-	  self() ! {kick, queue_overflow, Err},
-	  StateData#state{mgmt_resend = false}; % Don't resend the flood!
+	  StateData#state{mgmt_max_queue = exceeded};
       false ->
 	  StateData
     end.
