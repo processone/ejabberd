@@ -646,7 +646,7 @@ modules:
 ##
 ## Enable modules with custom options in a specific virtual host
 ##
-## append_host_config:
+## host_config:
 ##   "localhost":
 ##     modules:
 ##       mod_echo:
