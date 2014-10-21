@@ -204,7 +204,7 @@ decode_term(Bin) ->
 %%%----------------------------------------------------------------------
 init([Host, StartInterval]) ->
     case ejabberd_config:get_option(
-           {keepalive_interval, Host},
+           {odbc_keepalive_interval, Host},
            fun(I) when is_integer(I), I>0 -> I end) of
         undefined ->
             ok;
