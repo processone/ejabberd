@@ -48,16 +48,11 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+-include("ejabberd_http.hrl").
 
 -include("jlib.hrl").
 
 -include_lib("kernel/include/file.hrl").
-
-%%-include("ejabberd_http.hrl").
-%% TODO: When ejabberd-modules SVN gets the new ejabberd_http.hrl, delete this code:
--record(request,
-	{method, path, q = [], us, auth, lang = <<"">>,
-	 data = <<"">>, ip, host, port, tp, headers}).
 
 -record(state,
 	{host, docroot, accesslog, accesslogfd,
