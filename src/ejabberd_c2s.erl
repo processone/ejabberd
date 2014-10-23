@@ -383,6 +383,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 			    send_header(StateData, Server, <<"1.0">>, DefaultLang),
 			    case StateData#state.authenticated of
 				false ->
+				    TLS = StateData#state.tls,
+				    TLSEnabled = StateData#state.tls_enabled,
+				    TLSRequired = StateData#state.tls_required,
 				    SASLState =
 					cyrsasl:server_new(
 					  <<"jabber">>, Server, <<"">>, [],
@@ -398,12 +401,21 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						  ejabberd_auth:check_password_with_authmodule(
 						    U, Server, P, D, DG)
 					  end),
-				    Mechs = lists:map(fun (S) ->
-						      #xmlel{name = <<"mechanism">>,
-							     attrs = [],
-							     children = [{xmlcdata, S}]}
-					      end,
-					      cyrsasl:listmech(Server)),
+				    Mechs =
+					case TLSEnabled or not TLSRequired of
+					    true ->
+						Ms = lists:map(fun (S) ->
+								       #xmlel{name = <<"mechanism">>,
+									      attrs = [],
+									      children = [{xmlcdata, S}]}
+							       end,
+							       cyrsasl:listmech(Server)),
+						[#xmlel{name = <<"mechanisms">>,
+							attrs = [{<<"xmlns">>, ?NS_SASL}],
+							children = Ms}];
+					    false ->
+						[]
+					end,
 				    SockMod =
 					(StateData#state.sockmod):get_sockmod(
 					  StateData#state.socket),
@@ -421,9 +433,6 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					    _ ->
 						[]
 					end,
-				    TLS = StateData#state.tls,
-				    TLSEnabled = StateData#state.tls_enabled,
-				    TLSRequired = StateData#state.tls_required,
 				    TLSFeature =
 					case (TLS == true) andalso
 					    (TLSEnabled == false) andalso
@@ -448,10 +457,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					    #xmlel{name = <<"stream:features">>,
 						   attrs = [],
 						   children =
-						    TLSFeature ++ CompressFeature ++
-						    [#xmlel{name = <<"mechanisms">>,
-							    attrs = [{<<"xmlns">>, ?NS_SASL}],
-							    children = Mechs}]
+						    TLSFeature ++ CompressFeature ++ Mechs
 						    ++
 						    ejabberd_hooks:run_fold(c2s_stream_features,
 							Server, [], [Server])}),
