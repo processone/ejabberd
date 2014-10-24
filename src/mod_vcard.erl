@@ -186,6 +186,11 @@ process_sm_iq(From, To,
 	    error ->
 		IQ#iq{type = error,
 		      sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
+	    [] ->
+		IQ#iq{type = result,
+		      sub_el = [#xmlel{name = <<"vCard">>,
+			        attrs = [{<<"xmlns">>, ?NS_VCARD}],
+			        children = []}]};
 	    Els -> IQ#iq{type = result, sub_el = Els}
 	  end
     end.
