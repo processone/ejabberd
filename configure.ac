@@ -2,7 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.53)
-AC_INIT(ejabberd, m4_esyscmd([echo `git describe --tags 2>/dev/null || echo community` | sed 's/-g.*//' | tr -d '\012']), [ejabberd@process-one.net], [ejabberd])
+m4_define([community_version], [community-])dnl
+m4_append([community_version], [m4_esyscmd([git describe --always --tags | tr -d ',\n'])])dnl
+AC_INIT(ejabberd, m4_normalize(community_version), [ejabberd@process-one.net], [ejabberd])
 REQUIRE_ERLANG_MIN="5.9.1 (Erlang/OTP R15B01)"
 REQUIRE_ERLANG_MAX="9.0.0 (No Max)"
 
