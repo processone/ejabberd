@@ -798,7 +798,12 @@ base64_to_term(Base64) ->
 -spec decode_base64(binary()) -> binary().
 
 decode_base64(S) ->
-    decode_base64_bin(S, <<>>).
+    case catch binary:last(S) of
+      C when C == $\n; C == $\s ->
+	  decode_base64(binary:part(S, 0, byte_size(S) - 1));
+      _ ->
+	  decode_base64_bin(S, <<>>)
+    end.
 
 take_without_spaces(Bin, Count) -> 
     take_without_spaces(Bin, Count, <<>>).
