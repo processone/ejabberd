@@ -296,9 +296,8 @@ get_sm_features(Acc, _From, _To, _Node, _Lang) ->
 
 store_packet(From, To, Packet) ->
     Type = xml:get_tag_attr_s(<<"type">>, Packet),
-	BodyElem = xml:get_path_s(Packet,[{elem, <<"body">>}]),
     if (Type /= <<"error">>) and (Type /= <<"groupchat">>)
-	 and (Type /= <<"headline">>) and (<<>> /= BodyElem) ->
+	 and (Type /= <<"headline">>) ->
 	   case has_no_storage_hint(Packet) of
 	     false ->
 		 case check_event(From, To, Packet) of
