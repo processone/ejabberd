@@ -293,11 +293,26 @@ get_sm_features(_Acc, _From, _To, ?NS_FEATURE_MSGOFFLINE, _Lang) ->
 get_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-
-store_packet(From, To, Packet) ->
+need_to_store(LServer, Packet) ->
     Type = xml:get_tag_attr_s(<<"type">>, Packet),
     if (Type /= <<"error">>) and (Type /= <<"groupchat">>)
-	 and (Type /= <<"headline">>) ->
+       and (Type /= <<"headline">>) ->
+	    case gen_mod:get_module_opt(
+		   LServer, ?MODULE, store_empty_body,
+		   fun(V) when is_boolean(V) -> V end,
+		   true) of
+		false ->
+		    xml:get_subtag(Packet, <<"body">>) /= false;
+		true ->
+		    true
+	    end;
+       true ->
+	    false
+    end.
+
+store_packet(From, To, Packet) ->
+    case need_to_store(To#jid.lserver, Packet) of
+	true ->
 	   case has_no_storage_hint(Packet) of
 	     false ->
 		 case check_event(From, To, Packet) of
@@ -315,7 +330,7 @@ store_packet(From, To, Packet) ->
 		 end;
 	     _ -> ok
 	   end;
-       true -> ok
+       false -> ok
     end.
 
 has_no_storage_hint(Packet) ->
