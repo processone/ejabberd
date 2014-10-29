@@ -75,7 +75,7 @@ if [ "$LOGS_DIR" = "" ] ; then
     LOGS_DIR={{localstatedir}}/log/ejabberd
 fi
 if [ "$SPOOL_DIR" = "" ] ; then
-    SPOOL_DIR={{localstatedir}}/lib/ejabberd
+    SPOOL_DIR={{localstatedir}}/lib/ejabberd/database/$ERLANG_NODE
 fi
 if [ "$EJABBERD_DOC_PATH" = "" ] ; then
     EJABBERD_DOC_PATH={{docdir}}
@@ -302,7 +302,7 @@ ctl()
         # concurrent invocations using a bound
         # number of atoms
         for N in `seq 1 $MAXCONNID`; do
-            CTL_CONN="ejabberdctl-$N"
+            CTL_CONN="ejabberdctl-${N}${ERLANG_NODE}"
             CTL_LOCKFILE="$CONNLOCKDIR/$CTL_CONN"
             (
                 exec 8>"$CTL_LOCKFILE"
