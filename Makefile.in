@@ -161,6 +161,7 @@ install: all
 	# Binary system libraries
 	$(INSTALL) -d $(SODIR)
 	$(INSTALL) -m 644 $(DLLs) $(SODIR)
+	[ -f $(SODIR)/jiffy.so ] && (cd $(PRIVDIR); ln -s lib/jiffy.so;)
 	#
 	# Translated strings
 	$(INSTALL) -d $(MSGSDIR)
