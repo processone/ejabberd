@@ -287,6 +287,12 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
       {<<"required">>, <<"jabber:x:data">>} ->
 	  decode_xdata_field_required(<<"jabber:x:data">>,
 				      IgnoreEls, _el);
+      {<<"x">>, <<"vcard-temp:x:update">>} ->
+	  decode_vcard_xupdate(<<"vcard-temp:x:update">>,
+			       IgnoreEls, _el);
+      {<<"photo">>, <<"vcard-temp:x:update">>} ->
+	  decode_vcard_xupdate_photo(<<"vcard-temp:x:update">>,
+				     IgnoreEls, _el);
       {<<"vCard">>, <<"vcard-temp">>} ->
 	  decode_vcard(<<"vcard-temp">>, IgnoreEls, _el);
       {<<"CLASS">>, <<"vcard-temp">>} ->
@@ -1182,6 +1188,8 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
       {<<"value">>, <<"jabber:x:data">>} -> true;
       {<<"desc">>, <<"jabber:x:data">>} -> true;
       {<<"required">>, <<"jabber:x:data">>} -> true;
+      {<<"x">>, <<"vcard-temp:x:update">>} -> true;
+      {<<"photo">>, <<"vcard-temp:x:update">>} -> true;
       {<<"vCard">>, <<"vcard-temp">>} -> true;
       {<<"CLASS">>, <<"vcard-temp">>} -> true;
       {<<"CATEGORIES">>, <<"vcard-temp">>} -> true;
@@ -1841,6 +1849,9 @@ encode({vcard, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
 	_, _, _, _, _, _, _, _, _, _, _, _, _, _, _} =
 	   Vcard) ->
     encode_vcard(Vcard, [{<<"xmlns">>, <<"vcard-temp">>}]);
+encode({vcard_xupdate, _} = X) ->
+    encode_vcard_xupdate(X,
+			 [{<<"xmlns">>, <<"vcard-temp:x:update">>}]);
 encode({xdata_field, _, _, _, _, _, _, _} = Field) ->
     encode_xdata_field(Field,
 		       [{<<"xmlns">>, <<"jabber:x:data">>}]);
@@ -2126,6 +2137,7 @@ get_ns({vcard_key, _, _}) -> <<"vcard-temp">>;
 get_ns({vcard, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
 	_, _, _, _, _, _, _, _, _, _, _, _, _, _, _}) ->
     <<"vcard-temp">>;
+get_ns({vcard_xupdate, _}) -> <<"vcard-temp:x:update">>;
 get_ns({xdata_field, _, _, _, _, _, _, _}) ->
     <<"jabber:x:data">>;
 get_ns({xdata, _, _, _, _, _, _}) ->
@@ -2339,6 +2351,7 @@ pp(vcard, 29) ->
      email, jabberid, mailer, tz, geo, title, role, logo,
      org, categories, note, prodid, rev, sort_string, sound,
      uid, url, class, key, desc];
+pp(vcard_xupdate, 1) -> [photo];
 pp(xdata_field, 7) ->
     [label, type, var, required, desc, values, options];
 pp(xdata, 6) ->
@@ -7514,6 +7527,77 @@ encode_xdata_field_required(true, _xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"required">>, _attrs, _els}.
+
+decode_vcard_xupdate(__TopXMLNS, __IgnoreEls,
+		     {xmlel, <<"x">>, _attrs, _els}) ->
+    Photo = decode_vcard_xupdate_els(__TopXMLNS,
+				     __IgnoreEls, _els, undefined),
+    {vcard_xupdate, Photo}.
+
+decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, [],
+			 Photo) ->
+    Photo;
+decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls,
+			 [{xmlel, <<"photo">>, _attrs, _} = _el | _els],
+			 Photo) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
+	   decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, _els,
+				    decode_vcard_xupdate_photo(__TopXMLNS,
+							       __IgnoreEls,
+							       _el));
+       true ->
+	   decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, _els,
+				    Photo)
+    end;
+decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls,
+			 [_ | _els], Photo) ->
+    decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, _els,
+			     Photo).
+
+encode_vcard_xupdate({vcard_xupdate, Photo},
+		     _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_vcard_xupdate_$photo'(Photo, [])),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"x">>, _attrs, _els}.
+
+'encode_vcard_xupdate_$photo'(undefined, _acc) -> _acc;
+'encode_vcard_xupdate_$photo'(Photo, _acc) ->
+    [encode_vcard_xupdate_photo(Photo, []) | _acc].
+
+decode_vcard_xupdate_photo(__TopXMLNS, __IgnoreEls,
+			   {xmlel, <<"photo">>, _attrs, _els}) ->
+    Cdata = decode_vcard_xupdate_photo_els(__TopXMLNS,
+					   __IgnoreEls, _els, <<>>),
+    Cdata.
+
+decode_vcard_xupdate_photo_els(__TopXMLNS, __IgnoreEls,
+			       [], Cdata) ->
+    decode_vcard_xupdate_photo_cdata(__TopXMLNS, Cdata);
+decode_vcard_xupdate_photo_els(__TopXMLNS, __IgnoreEls,
+			       [{xmlcdata, _data} | _els], Cdata) ->
+    decode_vcard_xupdate_photo_els(__TopXMLNS, __IgnoreEls,
+				   _els, <<Cdata/binary, _data/binary>>);
+decode_vcard_xupdate_photo_els(__TopXMLNS, __IgnoreEls,
+			       [_ | _els], Cdata) ->
+    decode_vcard_xupdate_photo_els(__TopXMLNS, __IgnoreEls,
+				   _els, Cdata).
+
+encode_vcard_xupdate_photo(Cdata, _xmlns_attrs) ->
+    _els = encode_vcard_xupdate_photo_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"photo">>, _attrs, _els}.
+
+decode_vcard_xupdate_photo_cdata(__TopXMLNS, <<>>) ->
+    undefined;
+decode_vcard_xupdate_photo_cdata(__TopXMLNS, _val) ->
+    _val.
+
+encode_vcard_xupdate_photo_cdata(undefined, _acc) ->
+    _acc;
+encode_vcard_xupdate_photo_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
 
 decode_vcard(__TopXMLNS, __IgnoreEls,
 	     {xmlel, <<"vCard">>, _attrs, _els}) ->

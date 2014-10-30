@@ -210,6 +210,8 @@ db_tests(riak) ->
       [muc_master, muc_slave]},
      {test_announce, [sequence],
       [announce_master, announce_slave]},
+     {test_vcard_xupdate, [parallel],
+      [vcard_xupdate_master, vcard_xupdate_slave]},
      {test_roster_remove, [parallel],
       [roster_remove_master,
        roster_remove_slave]}];
@@ -243,6 +245,8 @@ db_tests(mnesia) ->
       [muc_master, muc_slave]},
      {test_announce, [sequence],
       [announce_master, announce_slave]},
+     {test_vcard_xupdate, [parallel],
+      [vcard_xupdate_master, vcard_xupdate_slave]},
      {test_roster_remove, [parallel],
       [roster_remove_master,
        roster_remove_slave]}];
@@ -273,6 +277,8 @@ db_tests(_) ->
       [muc_master, muc_slave]},
      {test_announce, [sequence],
       [announce_master, announce_slave]},
+     {test_vcard_xupdate, [parallel],
+      [vcard_xupdate_master, vcard_xupdate_slave]},
      {test_roster_remove, [parallel],
       [roster_remove_master,
        roster_remove_slave]}].
@@ -722,6 +728,42 @@ vcard_get(Config) ->
         send_recv(Config, #iq{type = get, sub_els = [#vcard{}]}),
     disconnect(Config).
 
+vcard_xupdate_master(Config) ->
+    Img = <<137, "PNG\r\n", 26, $\n>>,
+    ImgHash = p1_sha:sha(Img),
+    MyJID = my_jid(Config),
+    Peer = ?config(slave, Config),
+    wait_for_slave(Config),
+    send(Config, #presence{}),
+    ?recv2(#presence{from = MyJID, type = undefined},
+           #presence{from = Peer, type = undefined}),
+    VCard = #vcard{photo = #vcard_photo{type = <<"image/png">>, binval = Img}},
+    I1 = send(Config, #iq{type = set, sub_els = [VCard]}),
+    ?recv2(#iq{type = result, sub_els = [], id = I1},
+	   #presence{from = MyJID, type = undefined,
+		     sub_els = [#vcard_xupdate{photo = ImgHash}]}),
+    I2 = send(Config, #iq{type = set, sub_els = [#vcard{}]}),
+    ?recv3(#iq{type = result, sub_els = [], id = I2},
+	   #presence{from = MyJID, type = undefined,
+		     sub_els = [#vcard_xupdate{photo = undefined}]},
+	   #presence{from = Peer, type = unavailable}),
+    disconnect(Config).
+
+vcard_xupdate_slave(Config) ->
+    Img = <<137, "PNG\r\n", 26, $\n>>,
+    ImgHash = p1_sha:sha(Img),
+    MyJID = my_jid(Config),
+    Peer = ?config(master, Config),
+    send(Config, #presence{}),
+    #presence{from = MyJID, type = undefined} = recv(),
+    wait_for_master(Config),
+    #presence{from = Peer, type = undefined} = recv(),
+    #presence{from = Peer, type = undefined,
+	      sub_els = [#vcard_xupdate{photo = ImgHash}]} = recv(),
+    #presence{from = Peer, type = undefined,
+	      sub_els = [#vcard_xupdate{photo = undefined}]} = recv(),
+    disconnect(Config).
+
 stats(Config) ->
     #iq{type = result, sub_els = [#stats{stat = Stats}]} =
         send_recv(Config, #iq{type = get, sub_els = [#stats{}],
@@ -1018,7 +1060,8 @@ muc_master(Config) ->
     %% As this is the newly created room, we receive only the 2nd stanza.
     #presence{
           from = MyNickJID,
-          sub_els = [#muc_user{
+          sub_els = [#vcard_xupdate{},
+		     #muc_user{
                         status_codes = Codes,
                         items = [#muc_item{role = moderator,
                                            jid = MyJID,
@@ -1087,7 +1130,8 @@ muc_master(Config) ->
 				      [#muc_invite{to = PeerJID}]}]}),
     %% Peer is joining
     #presence{from = PeerNickJID,
-	      sub_els = [#muc_user{
+	      sub_els = [#vcard_xupdate{},
+			 #muc_user{
 			    items = [#muc_item{role = visitor,
 					       jid = PeerJID,
 					       affiliation = none}]}]} = recv(),
@@ -1120,7 +1164,8 @@ muc_master(Config) ->
 					    fields = ReplyVoiceReqFs}]}),
     %% Peer is becoming a participant
     #presence{from = PeerNickJID,
-	      sub_els = [#muc_user{
+	      sub_els = [#vcard_xupdate{},
+			 #muc_user{
 			    items = [#muc_item{role = participant,
 					       jid = PeerJID,
 					       affiliation = none}]}]} = recv(),
@@ -1138,7 +1183,8 @@ muc_master(Config) ->
 					     affiliation = member}]}]}),
     %% Peer became a member
     #presence{from = PeerNickJID,
-	      sub_els = [#muc_user{
+	      sub_els = [#vcard_xupdate{},
+			 #muc_user{
 			    items = [#muc_item{affiliation = member,
 					       jid = PeerJID,
 					       role = participant}]}]} = recv(),
@@ -1155,7 +1201,7 @@ muc_master(Config) ->
 						   role = none}]}]}),
     %% Got notification the peer is kicked
     %% 307 -> Inform user that he or she has been kicked from the room
-    #presence{from = PeerNickJID,
+    #presence{from = PeerNickJID, type = unavailable,
 	      sub_els = [#muc_user{
 			    status_codes = [307],
 			    items = [#muc_item{affiliation = member,
@@ -1213,14 +1259,16 @@ muc_slave(Config) ->
     %% First presence is from the participant, i.e. from the peer
     #presence{
        from = PeerNickJID,
-       sub_els = [#muc_user{
+       sub_els = [#vcard_xupdate{},
+		  #muc_user{
 		     status_codes = [],
 		     items = [#muc_item{role = moderator,
 					affiliation = owner}]}]} = recv(),
     %% The next is the self-presence (code 110 means it)
     #presence{
        from = MyNickJID,
-       sub_els = [#muc_user{
+       sub_els = [#vcard_xupdate{},
+		  #muc_user{
 		     status_codes = [110],
 		     items = [#muc_item{role = visitor,
 					affiliation = none}]}]} = recv(),
@@ -1251,7 +1299,8 @@ muc_slave(Config) ->
     send(Config, #message{to = Room, sub_els = [VoiceReq]}),
     %% Becoming a participant
     #presence{from = MyNickJID,
-	      sub_els = [#muc_user{
+	      sub_els = [#vcard_xupdate{},
+			 #muc_user{
 			    items = [#muc_item{role = participant,
 					       affiliation = none}]}]} = recv(),
     %% Sending private message to the peer
@@ -1259,7 +1308,8 @@ muc_slave(Config) ->
 			  body = [#text{data = Subject}]}),
     %% Becoming a member
     #presence{from = MyNickJID,
-	      sub_els = [#muc_user{
+	      sub_els = [#vcard_xupdate{},
+			 #muc_user{
 			    items = [#muc_item{role = participant,
 					       affiliation = member}]}]} = recv(),
     %% Retrieving a member list

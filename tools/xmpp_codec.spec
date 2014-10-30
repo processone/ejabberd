@@ -1486,6 +1486,18 @@
                         label = '$categories'},
                    #ref{name = vcard_CLASS, min = 0, max = 1, label = '$class'}]}).
 
+-xml(vcard_xupdate_photo,
+     #elem{name = <<"photo">>,
+	   xmlns = <<"vcard-temp:x:update">>,
+	   result = '$cdata'}).
+
+-xml(vcard_xupdate,
+     #elem{name = <<"x">>,
+	   xmlns = <<"vcard-temp:x:update">>,
+	   result = {vcard_xupdate, '$photo'},
+	   refs = [#ref{name = vcard_xupdate_photo, min = 0, max = 1,
+			label = '$photo'}]}).
+
 -xml(xdata_field_required,
      #elem{name = <<"required">>,
            xmlns = <<"jabber:x:data">>,

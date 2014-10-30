@@ -252,6 +252,8 @@
                    status_codes = [] :: [pos_integer()],
                    password :: binary()}).
 
+-record(vcard_xupdate, {photo :: binary()}).
+
 -record(carbons_disable, {}).
 
 -record(bytestreams, {hosts = [] :: [#streamhost{}],

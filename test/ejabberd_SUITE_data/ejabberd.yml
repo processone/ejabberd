@@ -40,6 +40,8 @@ host_config:
         db_type: odbc
       mod_vcard: 
         db_type: odbc
+      mod_vcard_xupdate:
+        db_type: odbc
       mod_adhoc: []
       mod_configure: []
       mod_disco: []
@@ -94,6 +96,8 @@ Welcome to this XMPP server."
         db_type: odbc
       mod_vcard: 
         db_type: odbc
+      mod_vcard_xupdate:
+        db_type: odbc
       mod_adhoc: []
       mod_configure: []
       mod_disco: []
@@ -141,6 +145,8 @@ Welcome to this XMPP server."
         db_type: internal
       mod_vcard: 
         db_type: internal
+      mod_vcard_xupdate:
+        db_type: internal
       mod_carboncopy:
         db_type: internal
       mod_client_state:
@@ -184,6 +190,8 @@ Welcome to this XMPP server."
         store_current_id: true
         db_type: riak
       mod_vcard: 
+        db_type: riak
+      mod_vcard_xupdate:
         db_type: riak
       mod_adhoc: []
       mod_configure: []
