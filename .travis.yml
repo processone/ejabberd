@@ -24,7 +24,7 @@ before_script:
 script:
   - ./autogen.sh
   - ./configure --enable-all --disable-odbc
-  - make
+  - make xref
   - ERL_LIBS=$PWD make test
   - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log
 
