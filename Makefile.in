@@ -88,6 +88,10 @@ update:
 	rm -rf deps/.built
 	$(REBAR) update-deps && :> deps/.got
 
+xref: all
+	$(REBAR) skip_deps=true xref
+
+
 translations:
 	contrib/extract_translations/prepare-translation.sh -updateall
 

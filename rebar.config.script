@@ -116,6 +116,33 @@ CfgPostHooks = lists:flatmap(
                          []
                  end, Cfg),
 
+CfgXrefs = lists:flatmap(
+	     fun({mysql, false}) ->
+		     ["(\".*mysql.*\":_/_)"];
+		({pgsql, false}) ->
+		     ["(\".*pgsql.*\":_/_)"];
+		({pam, false}) ->
+		     ["(\"epam\":_/_)"];
+		({riak, false}) ->
+		     ["(\"riak.*\":_/_)"];
+		({riak, true}) ->
+		     % used in map-reduce function called from riak vm
+		     ["(\"riak_object\":_/_)"];
+		({json, false}) ->
+		    ["(\"jiffy\":_/_)"];
+		({zlib, false}) ->
+		     ["(\"ezlib\":_/_)"];
+		({http, false}) ->
+		     ["(\"lhttpc\":_/_)"];
+		({iconv, false}) ->
+		     ["(\"iconv\":_/_)"];
+		({odbc, false}) ->
+		     ["(\"odbc\":_/_)"];
+		(_) ->
+		     []
+            end, Cfg),
+
+
 {ok, Cwd} = file:get_cwd(),
 
 Config = [{erl_opts, Macros ++ HiPE ++ DebugInfo ++
@@ -124,6 +151,11 @@ Config = [{erl_opts, Macros ++ HiPE ++ DebugInfo ++
           {keep_build_info, true},
           {ct_extra_params, "-include "
            ++ filename:join([Cwd, "tools"])},
+	  {xref_warnings, false},
+          {xref_checks, []},
+	  {xref_queries,
+	   [{"(XC - UC) || (XU - X - B - "
+	     ++ string:join(CfgXrefs, " - ") ++ ")", []}]},
           {post_hooks, PostHooks ++ CfgPostHooks},
           {deps, Deps ++ CfgDeps}],
 %%io:format("ejabberd configuration:~n  ~p~n", [Config]),
