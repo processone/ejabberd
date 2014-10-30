@@ -1583,7 +1583,7 @@ client_state_slave(Config) ->
     Peer = ?config(master, Config),
     send(Config, #csi{type = inactive}),
     wait_for_master(Config),
-    #presence{from = Peer, sub_els = [#delay{}]} = recv(),
+    #presence{from = Peer, sub_els = [#vcard_xupdate{}|_]} = recv(),
     #message{from = Peer, thread = <<"1">>, sub_els = [#chatstate{type = active}],
 	     body = [#text{data = <<"body">>}]} = recv(),
     wait_for_master(Config),
