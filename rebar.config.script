@@ -130,8 +130,6 @@ CfgXrefs = lists:flatmap(
 		     ["(\"riak_object\":_/_)"];
 		({json, false}) ->
 		    ["(\"jiffy\":_/_)"];
-		({p1db, false}) ->
-		     ["(\"p1db.*\":_/_)"];
 		({zlib, false}) ->
 		     ["(\"ezlib\":_/_)"];
 		({http, false}) ->
@@ -157,8 +155,7 @@ Config = [{erl_opts, Macros ++ HiPE ++ DebugInfo ++
           {xref_checks, []},
 	  {xref_queries,
 	   [{"(XC - UC) || (XU - X - B - "
-	     ++ string:join(["(\"gen_transport\":_/_) - (\"eprof\":_/_)"]
-			    ++ CfgXrefs, " - ") ++ ")", []}]},
+	     ++ string:join(CfgXrefs, " - ") ++ ")", []}]},
           {post_hooks, PostHooks ++ CfgPostHooks},
           {deps, Deps ++ CfgDeps}],
 %%io:format("ejabberd configuration:~n  ~p~n", [Config]),
