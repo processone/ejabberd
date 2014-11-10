@@ -1453,6 +1453,11 @@ The FQDN is used to authenticate some clients that use the DIGEST-MD5 SASL mecha
 The option syntax is:
 \esyntax{fqdn: undefined|FqdnString|[FqdnString]}
 
+The option \option{disable\_sasl\_mechanisms} specifies a list of SASL
+mechanisms that should \emph{not} be offered to the client. The mechanisms can
+be listed as lowercase or uppercase strings. The option syntax is:
+\esyntax{disable\_sasl\_mechanisms: [Mechanism, ...]}
+
 \makesubsubsection{internalauth}{Internal}
 \ind{internal authentication}\ind{Mnesia}
 
