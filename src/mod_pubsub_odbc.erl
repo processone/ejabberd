@@ -3011,8 +3011,8 @@ send_items(Host, Node, NodeId, Type, LJID, last) ->
 						       itemsEls([LastItem])}],
 					   ModifNow, ModifUSR)
     end,
-    ejabberd_router:route(service_jid(Host), jlib:make_jid(LJID), Stanza);
-send_items(Host, Node, NodeId, Type, {U, S, R} = LJID, Number) ->
+    dispatch_items(Host, LJID, Node, Stanza);
+send_items(Host, Node, NodeId, Type, LJID, Number) ->
     ToSend = case node_action(Host, Type, get_items,
 			      [NodeId, LJID])
 		 of
@@ -3040,22 +3040,38 @@ send_items(Host, Node, NodeId, Type, {U, S, R} = LJID, Number) ->
 					attrs = nodeAttr(Node),
 					children = itemsEls(ToSend)}])
 	     end,
-    case {is_tuple(Host), Stanza} of
-      {_, undefined} ->
-	  ok;
-      {false, _} ->
-	  ejabberd_router:route(service_jid(Host),
-				jlib:make_jid(LJID), Stanza);
-      {true, _} ->
-	  case ejabberd_sm:get_session_pid(U, S, R) of
-	    C2SPid when is_pid(C2SPid) ->
-		ejabberd_c2s:broadcast(C2SPid,
-				       {pep_message,
-					<<((Node))/binary, "+notify">>},
-				       _Sender = service_jid(Host), Stanza);
-	    _ -> ok
-	  end
-    end.
+    dispatch_items(Host, LJID, Node, Stanza).
+
+-spec(dispatch_items/4 ::
+(
+  From   :: mod_pubsub:host(),
+  To     :: jid(),
+  Node   :: mod_pubsub:nodeId(),
+  Stanza :: xmlel() | undefined)
+    -> any()
+).
+
+dispatch_items(_From, _To, _Node, _Stanza = undefined) -> ok;
+dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To, Node,
+	       Stanza) ->
+    C2SPid = case ejabberd_sm:get_session_pid(ToU, ToS, ToR) of
+	       ToPid when is_pid(ToPid) -> ToPid;
+	       _ ->
+		   R = user_resource(FromU, FromS, FromR),
+		   case ejabberd_sm:get_session_pid(FromU, FromS, R) of
+		     FromPid when is_pid(FromPid) -> FromPid;
+		     _ -> undefined
+		   end
+	     end,
+    if C2SPid == undefined -> ok;
+       true ->
+	   ejabberd_c2s:send_filtered(C2SPid,
+				      {pep_message, <<Node/binary, "+notify">>},
+				      service_jid(From), jlib:make_jid(To),
+				      Stanza)
+    end;
+dispatch_items(From, To, _Node, Stanza) ->
+    ejabberd_router:route(service_jid(From), jlib:make_jid(To), Stanza).
 
 %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
 %%	 Host = host()

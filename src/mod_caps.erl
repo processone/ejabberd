@@ -48,7 +48,8 @@
 
 %% hook handlers
 -export([user_send_packet/3, user_receive_packet/4,
-	 c2s_presence_in/2, c2s_broadcast_recipients/6]).
+	 c2s_presence_in/2, c2s_filter_packet/6,
+	 c2s_broadcast_recipients/6]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -266,6 +267,21 @@ c2s_presence_in(C2SState,
        true -> C2SState
     end.
 
+c2s_filter_packet(InAcc, Host, C2SState, {pep_message, Feature}, To, _Packet) ->
+    case ejabberd_c2s:get_aux_field(caps_resources, C2SState) of
+      {ok, Rs} ->
+	  LTo = jlib:jid_tolower(To),
+	  case gb_trees:lookup(LTo, Rs) of
+	    {value, Caps} ->
+		Drop = not lists:member(Feature, get_features(Host, Caps)),
+		{stop, Drop};
+	    none ->
+		{stop, true}
+	  end;
+      _ -> InAcc
+    end;
+c2s_filter_packet(Acc, _, _, _, _, _) -> Acc.
+
 c2s_broadcast_recipients(InAcc, Host, C2SState,
 			 {pep_message, Feature}, _From, _Packet) ->
     case ejabberd_c2s:get_aux_field(caps_resources,
@@ -317,6 +333,8 @@ init([Host, Opts]) ->
 		  [{max_size, MaxSize}, {life_time, LifeTime}]),
     ejabberd_hooks:add(c2s_presence_in, Host, ?MODULE,
 		       c2s_presence_in, 75),
+    ejabberd_hooks:add(c2s_filter_packet, Host, ?MODULE,
+		       c2s_filter_packet, 75),
     ejabberd_hooks:add(c2s_broadcast_recipients, Host,
 		       ?MODULE, c2s_broadcast_recipients, 75),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
@@ -348,6 +366,8 @@ terminate(_Reason, State) ->
     Host = State#state.host,
     ejabberd_hooks:delete(c2s_presence_in, Host, ?MODULE,
 			  c2s_presence_in, 75),
+    ejabberd_hooks:delete(c2s_filter_packet, Host, ?MODULE,
+			  c2s_filter_packet, 75),
     ejabberd_hooks:delete(c2s_broadcast_recipients, Host,
 			  ?MODULE, c2s_broadcast_recipients, 75),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
