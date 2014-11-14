@@ -3367,14 +3367,23 @@ send_items(Host, Node, NodeId, Type, LJID, Number) ->
 ).
 
 dispatch_items(_From, _To, _Node, _Stanza = undefined) -> ok;
-dispatch_items(From, {ToU, ToS, ToR} = To, Node, Stanza) ->
-    case ejabberd_sm:get_session_pid(ToU, ToS, ToR) of
-      C2SPid when is_pid(C2SPid) ->
-	  ejabberd_c2s:send_filtered(C2SPid,
-				     {pep_message, <<Node/binary, "+notify">>},
-				     service_jid(From), jlib:make_jid(To),
-				     Stanza)
-      _ -> ok
+dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To, Node,
+	       Stanza) ->
+    C2SPid = case ejabberd_sm:get_session_pid(ToU, ToS, ToR) of
+	       ToPid when is_pid(ToPid) -> ToPid;
+	       _ ->
+		   R = user_resource(FromU, FromS, FromR),
+		   case ejabberd_sm:get_session_pid(FromU, FromS, R) of
+		     FromPid when is_pid(FromPid) -> FromPid;
+		     _ -> undefined
+		   end
+	     end,
+    if C2SPid == undefined -> ok;
+       true ->
+	   ejabberd_c2s:send_filtered(C2SPid,
+				      {pep_message, <<Node/binary, "+notify">>},
+				      service_jid(From), jlib:make_jid(To),
+				      Stanza)
     end;
 dispatch_items(From, To, _Node, Stanza) ->
     ejabberd_router:route(service_jid(From), jlib:make_jid(To), Stanza).
