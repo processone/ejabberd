@@ -3052,12 +3052,13 @@ send_items(Host, Node, NodeId, Type, LJID, Number) ->
 ).
 
 dispatch_items(_From, _To, _Node, _Stanza = undefined) -> ok;
-dispatch_items(From, {U, S, R}, Node, Stanza) when is_tuple(From) ->
-    case ejabberd_sm:get_session_pid(U, S, R) of
+dispatch_items(From, {ToU, ToS, ToR} = To, Node, Stanza) ->
+    case ejabberd_sm:get_session_pid(ToU, ToS, ToR) of
       C2SPid when is_pid(C2SPid) ->
-	  ejabberd_c2s:broadcast(C2SPid,
-				 {pep_message, <<((Node))/binary, "+notify">>},
-				 service_jid(From), Stanza);
+	  ejabberd_c2s:send_filtered(C2SPid,
+				     {pep_message, <<Node/binary, "+notify">>},
+				     service_jid(From), jlib:make_jid(To),
+				     Stanza)
       _ -> ok
     end;
 dispatch_items(From, To, _Node, Stanza) ->
