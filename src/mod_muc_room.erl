@@ -174,7 +174,7 @@ normal_state({route, From, <<"">>,
 		Now = now_to_usec(now()),
 		MinMessageInterval =
 		    trunc(gen_mod:get_module_opt(StateData#state.server_host,
-						 mod_muc, min_message_interval, fun(MMI) when is_integer(MMI) -> MMI end, 0)
+						 mod_muc, min_message_interval, fun(MMI) when is_number(MMI) -> MMI end, 0)
                           * 1000000),
 		Size = element_size(Packet),
 		{MessageShaper, MessageShaperInterval} =
@@ -1517,15 +1517,17 @@ get_user_activity(JID, StateData) ->
 
 store_user_activity(JID, UserActivity, StateData) ->
     MinMessageInterval =
-	gen_mod:get_module_opt(StateData#state.server_host,
-			       mod_muc, min_message_interval,
-                               fun(I) when is_integer(I), I>=0 -> I end,
-                               0),
+	trunc(gen_mod:get_module_opt(StateData#state.server_host,
+				     mod_muc, min_message_interval,
+				     fun(I) when is_number(I), I>=0 -> I end,
+				     0)
+	      * 1000),
     MinPresenceInterval =
-	gen_mod:get_module_opt(StateData#state.server_host,
-			       mod_muc, min_presence_interval,
-                               fun(I) when is_integer(I), I>=0 -> I end,
-                               0),
+	trunc(gen_mod:get_module_opt(StateData#state.server_host,
+				     mod_muc, min_presence_interval,
+				     fun(I) when is_number(I), I>=0 -> I end,
+				     0)
+	      * 1000),
     Key = jlib:jid_tolower(JID),
     Now = now_to_usec(now()),
     Activity1 = clean_treap(StateData#state.activity,
@@ -1556,8 +1558,8 @@ store_user_activity(JID, UserActivity, StateData) ->
 					       100000),
 			     Delay = lists:max([MessageShaperInterval,
 						PresenceShaperInterval,
-						MinMessageInterval * 1000,
-						MinPresenceInterval * 1000])
+						MinMessageInterval,
+						MinPresenceInterval])
 				       * 1000,
 			     Priority = {1, -(Now + Delay)},
 			     StateData#state{activity =
