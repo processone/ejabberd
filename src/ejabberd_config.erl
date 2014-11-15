@@ -210,9 +210,8 @@ get_absolute_path(File) ->
 	absolute ->
 	    File;
 	relative ->
-	    Config_path = get_ejabberd_config_path(),
-	    Config_dir = filename:dirname(Config_path),
-	    filename:absname_join(Config_dir, File)
+	    {ok, Dir} = file:get_cwd(),
+	    filename:absname_join(Dir, File)
     end.
 
 
