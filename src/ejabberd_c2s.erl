@@ -1755,7 +1755,13 @@ handle_info({send_filtered, Feature, From, To, Packet}, StateName, StateData) ->
 			  FinalPacket = jlib:replace_from_to(From, To, Packet),
 			  case StateData#state.jid of
 			    To ->
-				send_packet(StateData, FinalPacket);
+				case privacy_check_packet(StateData, From, To,
+							  FinalPacket, in) of
+				  deny ->
+				      StateData;
+				  allow ->
+				      send_stanza(StateData, FinalPacket)
+				end;
 			    _ ->
 				ejabberd_router:route(From, To, FinalPacket),
 				StateData
