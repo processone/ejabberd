@@ -387,7 +387,7 @@ parse_options(Host) ->
 				       [{<<"%u">>, <<"*">>}]),
     {DNFilter, DNFilterAttrs} =
         eldap_utils:get_opt({ldap_dn_filter, Host}, [],
-                            fun({DNF, DNFA}) ->
+                            fun([{DNF, DNFA}]) ->
                                     NewDNFA = case DNFA of
                                                   undefined ->
                                                       [];
