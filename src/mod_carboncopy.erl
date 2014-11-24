@@ -138,8 +138,8 @@ user_receive_packet(JID, _From, To, Packet) ->
 %    - registered to the user_send_packet hook, to be called only once even for multicast
 %    - do not support "private" message mode, and do not modify the original packet in any way
 %    - we also replicate "read" notifications
-check_and_forward(JID, To, #xmlel{name = <<"message">>, attrs = Attrs} = Packet, Direction)->
-    case xml:get_attr_s(<<"type">>, Attrs) == <<"chat">> andalso
+check_and_forward(JID, To, Packet, Direction)->
+    case is_chat_or_normal_message(Packet) andalso
 	     xml:get_subtag(Packet, <<"private">>) == false andalso
 		 xml:get_subtag(Packet, <<"no-copy">>) == false of
 	true ->
@@ -215,7 +215,7 @@ send_copies(JID, To, Packet, Direction)->
 build_forward_packet(JID, Packet, Sender, Dest, Direction, ?NS_CARBONS_2) ->
     #xmlel{name = <<"message">>, 
 	   attrs = [{<<"xmlns">>, <<"jabber:client">>},
-		    {<<"type">>, <<"chat">>},
+		    {<<"type">>, message_type(Packet)},
 		    {<<"from">>, jlib:jid_to_string(Sender)},
 		    {<<"to">>, jlib:jid_to_string(Dest)}],
 	   children = [	
@@ -231,7 +231,7 @@ build_forward_packet(JID, Packet, Sender, Dest, Direction, ?NS_CARBONS_2) ->
 build_forward_packet(JID, Packet, Sender, Dest, Direction, ?NS_CARBONS_1) ->
     #xmlel{name = <<"message">>, 
 	   attrs = [{<<"xmlns">>, <<"jabber:client">>},
-		    {<<"type">>, <<"chat">>},
+		    {<<"type">>, message_type(Packet)},
 		    {<<"from">>, jlib:jid_to_string(Sender)},
 		    {<<"to">>, jlib:jid_to_string(Dest)}],
 	   children = [	
@@ -271,6 +271,20 @@ complete_packet(From, #xmlel{name = <<"message">>, attrs = OrigAttrs} = Packet, 
 complete_packet(_From, #xmlel{name = <<"message">>, attrs=OrigAttrs} = Packet, received) ->
     Attrs = lists:keystore(<<"xmlns">>, 1, OrigAttrs, {<<"xmlns">>, <<"jabber:client">>}),
     Packet#xmlel{attrs = Attrs}.
+
+message_type(#xmlel{attrs = Attrs}) ->
+    case xml:get_attr(<<"type">>, Attrs) of
+	{value, Type} -> Type;
+	false -> <<"normal">>
+    end.
+
+is_chat_or_normal_message(#xmlel{name = <<"message">>} = Packet) ->
+    case message_type(Packet) of
+	<<"chat">> -> true;
+	<<"normal">> -> true;
+	_ -> false
+    end;
+is_chat_or_normal_message(_Packet) -> false.
 
 %% list {resource, cc_version} with carbons enabled for given user and host
 list(User, Server)->
