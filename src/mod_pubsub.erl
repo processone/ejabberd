@@ -74,7 +74,8 @@
 	 on_user_offline/3, remove_user/2,
 	 disco_local_identity/5, disco_local_features/5,
 	 disco_local_items/5, disco_sm_identity/5,
-	 disco_sm_features/5, disco_sm_items/5]).
+	 disco_sm_features/5, disco_sm_items/5,
+	 drop_pep_error/4]).
 
 %% exported iq handlers
 -export([iq_sm/3]).
@@ -344,6 +345,8 @@ init([ServerHost, Opts]) ->
 			     ?MODULE, disco_sm_features, 75),
 	  ejabberd_hooks:add(disco_sm_items, ServerHost, ?MODULE,
 			     disco_sm_items, 75),
+	  ejabberd_hooks:add(c2s_filter_packet_in, ServerHost, ?MODULE,
+			     drop_pep_error, 75),
 	  gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost,
 					?NS_PUBSUB, ?MODULE, iq_sm, IQDisc),
 	  gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost,
@@ -1279,6 +1282,33 @@ unsubscribe_user(Entity, Owner) ->
 	  end).
 
 %% -------
+%% packet receive hook handling function
+%%
+
+drop_pep_error(#xmlel{name = <<"message">>, attrs = Attrs} = Packet, _JID, From,
+	       #jid{lresource = <<"">>} = To) ->
+    case xml:get_attr_s(<<"type">>, Attrs) of
+      <<"error">> ->
+	  case xml:get_subtag(Packet, <<"event">>) of
+	    #xmlel{attrs = EventAttrs} ->
+		case xml:get_attr_s(<<"xmlns">>, EventAttrs) of
+		  ?NS_PUBSUB_EVENT ->
+		      ?DEBUG("Dropping PEP error message from ~s to ~s",
+			     [jlib:jid_to_string(From),
+			      jlib:jid_to_string(To)]),
+		      drop;
+		  _ ->
+		      Packet
+		end;
+	    false ->
+		Packet
+	  end;
+      _ ->
+	  Packet
+    end;
+drop_pep_error(Acc, _JID, _From, _To) -> Acc.
+
+%% -------
 %% user remove hook handling function
 %%
 
@@ -1418,6 +1448,8 @@ terminate(_Reason,
 				?MODULE, disco_sm_features, 75),
 	  ejabberd_hooks:delete(disco_sm_items, ServerHost,
 				?MODULE, disco_sm_items, 75),
+	  ejabberd_hooks:delete(c2s_filter_packet_in, ServerHost,
+				?MODULE, drop_pep_error, 75),
 	  gen_iq_handler:remove_iq_handler(ejabberd_sm,
 					   ServerHost, ?NS_PUBSUB),
 	  gen_iq_handler:remove_iq_handler(ejabberd_sm,
