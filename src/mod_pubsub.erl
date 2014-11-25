@@ -1179,8 +1179,12 @@ presence_probe(#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}, _Pid)
     %% ignore presence_probe from my other ressources
     %% to not get duplicated last items
     ok;
-presence_probe(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = Host} = JID, _Pid) ->
-    presence(Host, {presence, U, S, [R], JID}).
+presence_probe(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = S} = JID, _Pid) ->
+    presence(S, {presence, U, S, [R], JID});
+presence_probe(_Host, _JID, _Pid) ->
+    %% ignore presence_probe from remote contacts,
+    %% those are handled via caps_update
+    ok.
 
 presence(ServerHost, Presence) ->
     SendLoop = case
