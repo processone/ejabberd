@@ -4275,21 +4275,15 @@ payload_xmlelements([_ | Tail], Count) ->
 %% @spec (Els) -> stanza()
 %%	Els = [xmlelement()]
 %% @doc <p>Build pubsub event stanza</p>
-event_stanza(Els) -> event_stanza_withmoreels(Els, []).
-
-event_stanza_with_delay(Els, ModifNow, ModifUSR) ->
-    DateTime = calendar:now_to_datetime(ModifNow),
-    MoreEls = [jlib:timestamp_to_xml(DateTime, utc,
-				     ModifUSR, <<"">>)],
-    event_stanza_withmoreels(Els, MoreEls).
-
-event_stanza_withmoreels(Els, MoreEls) ->
+event_stanza(Els) ->
     #xmlel{name = <<"message">>, attrs = [],
 	   children =
 	       [#xmlel{name = <<"event">>,
 		       attrs = [{<<"xmlns">>, ?NS_PUBSUB_EVENT}],
-		       children = Els}
-		| MoreEls]}.
+		       children = Els}]}.
+
+event_stanza_with_delay(Els, ModifNow, ModifUSR) ->
+    jlib:add_delay_info(event_stanza(Els), ModifUSR, ModifNow).
 
 %%%%%% broadcast functions
 

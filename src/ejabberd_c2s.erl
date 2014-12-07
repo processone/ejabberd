@@ -2049,13 +2049,9 @@ process_presence_probe(From, To, StateData) ->
 		 ?SETS:is_element(LBFrom, StateData#state.pres_f)),
 	    if
 		Cond ->
-		    Timestamp = StateData#state.pres_timestamp,
-		    Packet = xml:append_subtags(
-			       StateData#state.pres_last,
-			       %% To is the one sending the presence (the target of the probe)
-			       [jlib:timestamp_to_xml(Timestamp, utc, To, <<"">>),
-				%% TODO: Delete the next line once XEP-0091 is Obsolete
-				jlib:timestamp_to_xml(Timestamp)]),
+		    %% To is the one sending the presence (the probe target)
+		    Packet = jlib:add_delay_info(StateData#state.pres_last, To,
+						 StateData#state.pres_timestamp),
 		    case privacy_check_packet(StateData, To, From, Packet, out) of
 			deny ->
 			    ok;
@@ -2107,12 +2103,11 @@ presence_update(From, Packet, StateData) ->
 			  OldPresence -> get_priority_from_presence(OldPresence)
 			end,
 	  NewPriority = get_priority_from_presence(Packet),
-	  Timestamp = calendar:now_to_universal_time(now()),
 	  update_priority(NewPriority, Packet, StateData),
 	  FromUnavail = (StateData#state.pres_last == undefined),
 	  ?DEBUG("from unavail = ~p~n", [FromUnavail]),
 	  NewStateData = StateData#state{pres_last = Packet,
-					 pres_timestamp = Timestamp},
+					 pres_timestamp = now()},
 	  NewState = if FromUnavail ->
 			    ejabberd_hooks:run(user_available_hook,
 					       NewStateData#state.server,
@@ -3054,14 +3049,9 @@ csi_filter_stanza(#state{csi_state = CsiState, jid = JID} = StateData,
 	  StateData2#state{csi_state = CsiState}
     end.
 
-csi_queue_add(#state{csi_queue = Queue, server = Host} = StateData,
-	      #xmlel{children = Els} = Stanza) ->
+csi_queue_add(#state{csi_queue = Queue, server = Host} = StateData, Stanza) ->
     From = xml:get_tag_attr_s(<<"from">>, Stanza),
-    Time = calendar:now_to_universal_time(os:timestamp()),
-    DelayTag = [jlib:timestamp_to_xml(Time, utc,
-				      jlib:make_jid(<<"">>, Host, <<"">>),
-				      <<"Client Inactive">>)],
-    NewStanza = Stanza#xmlel{children = Els ++ DelayTag},
+    NewStanza = jlib:add_delay_info(Stanza, Host, now(), <<"Client Inactive">>),
     case length(StateData#state.csi_queue) >= csi_max_queue(StateData) of
       true -> csi_queue_add(csi_queue_flush(StateData), NewStanza);
       false ->
