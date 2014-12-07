@@ -2800,7 +2800,10 @@ handle_resume(StateData, Attrs) ->
 				       {<<"h">>, AttrH},
 				       {<<"previd">>, AttrId}],
 			      children = []}),
-	  SendFun = fun(_F, _T, El) -> send_element(NewState, El) end,
+	  SendFun = fun(_F, _T, El, Time) ->
+			    NewEl = add_resent_delay_info(NewState, El, Time),
+			    send_element(NewState, NewEl)
+		    end,
 	  handle_unacked_stanzas(NewState, SendFun),
 	  send_element(NewState,
 		       #xmlel{name = <<"r">>,
@@ -2856,13 +2859,13 @@ mgmt_queue_add(StateData, El) ->
 	       Num ->
 		   Num + 1
 	     end,
-    NewQueue = queue:in({NewNum, El}, StateData#state.mgmt_queue),
+    NewQueue = queue:in({NewNum, now(), El}, StateData#state.mgmt_queue),
     NewState = StateData#state{mgmt_queue = NewQueue,
 			       mgmt_stanzas_out = NewNum},
     check_queue_length(NewState).
 
 mgmt_queue_drop(StateData, NumHandled) ->
-    NewQueue = jlib:queue_drop_while(fun({N, _Stanza}) -> N =< NumHandled end,
+    NewQueue = jlib:queue_drop_while(fun({N, _T, _E}) -> N =< NumHandled end,
 				     StateData#state.mgmt_queue),
     StateData#state{mgmt_queue = NewQueue}.
 
@@ -2890,12 +2893,12 @@ handle_unacked_stanzas(StateData, F)
 	  ?INFO_MSG("~B stanzas were not acknowledged by ~s",
 		    [N, jlib:jid_to_string(StateData#state.jid)]),
 	  lists:foreach(
-	    fun({_, #xmlel{attrs = Attrs} = El}) ->
+	    fun({_, Time, #xmlel{attrs = Attrs} = El}) ->
 		    From_s = xml:get_attr_s(<<"from">>, Attrs),
 		    From = jlib:string_to_jid(From_s),
 		    To_s = xml:get_attr_s(<<"to">>, Attrs),
 		    To = jlib:string_to_jid(To_s),
-		    F(From, To, El)
+		    F(From, To, El, Time)
 	    end, queue:to_list(Queue))
     end;
 handle_unacked_stanzas(_StateData, _F) ->
@@ -2914,16 +2917,19 @@ handle_unacked_stanzas(StateData)
 	end,
     ReRoute = case ResendOnTimeout of
 		true ->
-		    fun ejabberd_router:route/3;
+		    fun(From, To, El, Time) ->
+			    NewEl = add_resent_delay_info(StateData, El, Time),
+			    ejabberd_router:route(From, To, NewEl)
+		    end;
 		false ->
-		    fun(From, To, El) ->
+		    fun(From, To, El, _Time) ->
 			    Err =
 				jlib:make_error_reply(El,
 						      ?ERR_SERVICE_UNAVAILABLE),
 			    ejabberd_router:route(To, From, Err)
 		    end
 	      end,
-    F = fun(From, To, El) ->
+    F = fun(From, To, El, Time) ->
 		%% We'll drop the stanza if it was <forwarded/> by some
 		%% encapsulating protocol as per XEP-0297.  One such protocol is
 		%% XEP-0280, which says: "When a receiving server attempts to
@@ -2936,7 +2942,7 @@ handle_unacked_stanzas(StateData)
 		      ?DEBUG("Dropping forwarded stanza from ~s",
 			     [xml:get_attr_s(<<"from">>, El#xmlel.attrs)]);
 		  false ->
-		      ReRoute(From, To, El)
+		      ReRoute(From, To, El, Time)
 		end
 	end,
     handle_unacked_stanzas(StateData, F);
@@ -3026,6 +3032,9 @@ resume_session({Time, PID}) ->
 make_resume_id(StateData) ->
     {Time, _} = StateData#state.sid,
     jlib:term_to_base64({StateData#state.resource, Time}).
+
+add_resent_delay_info(#state{server = From}, El, Time) ->
+    jlib:add_delay_info(El, From, Time, <<"Resent">>).
 
 %%%----------------------------------------------------------------------
 %%% XEP-0352
