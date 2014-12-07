@@ -3058,32 +3058,36 @@ csi_filter_stanza(#state{csi_state = CsiState, jid = JID} = StateData,
 	  StateData2#state{csi_state = CsiState}
     end.
 
-csi_queue_add(#state{csi_queue = Queue, server = Host} = StateData, Stanza) ->
-    From = xml:get_tag_attr_s(<<"from">>, Stanza),
-    NewStanza = jlib:add_delay_info(Stanza, Host, now(), <<"Client Inactive">>),
+csi_queue_add(#state{csi_queue = Queue} = StateData, Stanza) ->
     case length(StateData#state.csi_queue) >= csi_max_queue(StateData) of
-      true -> csi_queue_add(csi_queue_flush(StateData), NewStanza);
+      true -> csi_queue_add(csi_queue_flush(StateData), Stanza);
       false ->
-	  NewQueue = lists:keystore(From, 1, Queue, {From, NewStanza}),
+	  From = xml:get_tag_attr_s(<<"from">>, Stanza),
+	  NewQueue = lists:keystore(From, 1, Queue, {From, now(), Stanza}),
 	  StateData#state{csi_queue = NewQueue}
     end.
 
-csi_queue_send(#state{csi_queue = Queue, csi_state = CsiState} = StateData,
-		From) ->
+csi_queue_send(#state{csi_queue = Queue, csi_state = CsiState, server = Host} =
+	       StateData, From) ->
     case lists:keytake(From, 1, Queue) of
-      {value, {From, Stanza}, NewQueue} ->
+      {value, {From, Time, Stanza}, NewQueue} ->
+	  NewStanza = jlib:add_delay_info(Stanza, Host, Time,
+					  <<"Client Inactive">>),
 	  NewStateData = send_stanza(StateData#state{csi_state = active},
-				     Stanza),
+				     NewStanza),
 	  NewStateData#state{csi_queue = NewQueue, csi_state = CsiState};
       false -> StateData
     end.
 
-csi_queue_flush(#state{csi_queue = Queue, csi_state = CsiState, jid = JID} =
-		StateData) ->
+csi_queue_flush(#state{csi_queue = Queue, csi_state = CsiState, jid = JID,
+		       server = Host} = StateData) ->
     ?DEBUG("Flushing CSI queue for ~s", [jlib:jid_to_string(JID)]),
     NewStateData =
-	lists:foldl(fun({_From, Stanza}, AccState) ->
-			  send_stanza(AccState, Stanza)
+	lists:foldl(fun({_From, Time, Stanza}, AccState) ->
+			    NewStanza =
+				jlib:add_delay_info(Stanza, Host, Time,
+						    <<"Client Inactive">>),
+			    send_stanza(AccState, NewStanza)
 		    end, StateData#state{csi_state = active}, Queue),
     NewStateData#state{csi_queue = [], csi_state = CsiState}.
 
