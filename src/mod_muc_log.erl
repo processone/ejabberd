@@ -146,7 +146,13 @@ init([Host, Opts]) ->
                                     (plaintext) -> plaintext
                                  end, html),
     FilePermissions = gen_mod:get_opt(file_permissions, Opts,
-                                 fun({A, B}) -> {A, B}
+                                 fun(SubOpts) ->
+                                         F = fun({mode, Mode}, {_M, G}) ->
+                                                        {Mode, G};
+                                                ({group, Group}, {M, _G}) ->
+                                                        {M, Group}
+                                             end,
+                                         lists:foldl(F, {644, 33}, SubOpts)
                                  end, {644, 33}),
     CSSFile = gen_mod:get_opt(cssfile, Opts,
                               fun iolist_to_binary/1,
