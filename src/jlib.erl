@@ -622,8 +622,7 @@ add_delay_info(El, From, Time, Desc, Name, XMLNS) ->
     case xml:get_subtag_with_xmlns(El, Name, XMLNS) of
       false ->
 	  %% Add new tag
-	  DelayTag = create_delay_tag(calendar:now_to_universal_time(Time),
-				      From, Desc, XMLNS),
+	  DelayTag = create_delay_tag(Time, From, Desc, XMLNS),
 	  xml:append_subtags(El, [DelayTag]);
       DelayTag ->
 	  %% Update existing tag
@@ -648,16 +647,16 @@ add_delay_info(El, From, Time, Desc, Name, XMLNS) ->
 	  xml:append_subtags(NewEl, [NewDelayTag])
     end.
 
--spec create_delay_tag(calendar:datetime(), jid() | binary(),
-		       binary(), binary()) -> xmlel() | error.
+-spec create_delay_tag(erlang:timestamp(), jid() | binary(), binary(),
+		       binary()) -> xmlel() | error.
 
-create_delay_tag(DateTime, FromJID, Desc, XMLNS) when is_tuple(FromJID) ->
+create_delay_tag(TimeStamp, FromJID, Desc, XMLNS) when is_tuple(FromJID) ->
     From = jlib:jid_to_string(FromJID),
     {Name, Stamp} = case XMLNS of
 		      ?NS_DELAY ->
-			  {T, Tz} = timestamp_to_iso(DateTime, utc),
-			  {<<"delay">>, <<T/binary, Tz/binary>>};
+			  {<<"delay">>, now_to_utc_string(TimeStamp, 3)};
 		      ?NS_DELAY91 ->
+			  DateTime = calendar:now_to_universal_time(TimeStamp),
 			  {<<"x">>, timestamp_to_iso(DateTime)}
 		    end,
     Children = case Desc of
@@ -710,13 +709,19 @@ timestamp_to_iso({{Year, Month, Day},
 -spec now_to_utc_string(erlang:timestamp()) -> binary().
 
 now_to_utc_string({MegaSecs, Secs, MicroSecs}) ->
+    now_to_utc_string({MegaSecs, Secs, MicroSecs}, 6).
+
+-spec now_to_utc_string(erlang:timestamp(), 1..6) -> binary().
+
+now_to_utc_string({MegaSecs, Secs, MicroSecs}, Precision) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} =
 	calendar:now_to_universal_time({MegaSecs, Secs,
 					MicroSecs}),
-    list_to_binary(io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w.~6."
+    FracOfSec = round(MicroSecs / math:pow(10, 6 - Precision)),
+    list_to_binary(io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w.~*."
                                  ".0wZ",
                                  [Year, Month, Day, Hour, Minute, Second,
-                                  MicroSecs])).
+                                  Precision, FracOfSec])).
 
 -spec now_to_local_string(erlang:timestamp()) -> binary().
 
