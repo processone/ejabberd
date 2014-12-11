@@ -1,0 +1,78 @@
+#!/bin/sh
+
+set -e
+set -u
+
+export PATH="/usr/local/bin:/usr/local/sbin:/bin:/sbin:/usr/bin:/usr/sbin:$PATH"
+
+deps_dir='deps'
+rebar_script='rebar.config.script'
+temp_file=$(mktemp "$rebar_script.XXXXXX")
+
+trap 'rm -f $temp_file' EXIT INT TERM
+
+die()
+{
+    echo >&2 "FATAL: $@."
+    exit 1
+}
+
+get_dep_list()
+{
+    sed -n \
+        '/.*{ *\([^,]*\),[^,]*, *{git, *"\([^"]*\)".*/ {
+            s//\1,\2/
+            p
+        }' "$rebar_script"
+}
+
+get_dep_name()
+{
+    printf '%s' "${1%%,*}"
+}
+
+get_dep_url()
+{
+    printf '%s' "${1#*,}"
+}
+
+get_dep_rev()
+{
+    dep_name=$(get_dep_name "$1")
+    dep_dir="$deps_dir/$dep_name"
+
+    test -d "$dep_dir" || clone_repo "$dep"
+    cd "$dep_dir"
+    printf '%s' "$(git rev-parse --verify HEAD)"
+    cd "$OLDPWD"
+}
+
+clone_repo()
+{
+    dep_name=$(get_dep_name "$1")
+    dep_url=$(get_dep_url "$1")
+
+    cd "$deps_dir"
+    git clone -q "$dep_url" "$dep_name"
+    cd "$OLDPWD"
+}
+
+edit_rebar_script()
+{
+    dep_name=$(get_dep_name "$1")
+    dep_url=$(get_dep_url "$1")
+    dep_rev=$(get_dep_rev "$1")
+
+    echo "Using revision $dep_rev of $dep_name"
+    sed "s|\"$dep_url\"[^}]*}|\"$dep_url\", \"$dep_rev\"}|" \
+        "$rebar_script" >"$temp_file"
+    mv "$temp_file" "$rebar_script"
+}
+
+test -e "$rebar_script" || die 'Please change to ejabberd source directory'
+test -d "$deps_dir" || mkdir -p "$deps_dir"
+
+for dep in $(get_dep_list)
+do
+    edit_rebar_script "$dep"
+done
