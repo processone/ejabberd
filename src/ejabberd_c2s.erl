@@ -2049,13 +2049,9 @@ process_presence_probe(From, To, StateData) ->
 		 ?SETS:is_element(LBFrom, StateData#state.pres_f)),
 	    if
 		Cond ->
-		    Timestamp = StateData#state.pres_timestamp,
-		    Packet = xml:append_subtags(
-			       StateData#state.pres_last,
-			       %% To is the one sending the presence (the target of the probe)
-			       [jlib:timestamp_to_xml(Timestamp, utc, To, <<"">>),
-				%% TODO: Delete the next line once XEP-0091 is Obsolete
-				jlib:timestamp_to_xml(Timestamp)]),
+		    %% To is the one sending the presence (the probe target)
+		    Packet = jlib:add_delay_info(StateData#state.pres_last, To,
+						 StateData#state.pres_timestamp),
 		    case privacy_check_packet(StateData, To, From, Packet, out) of
 			deny ->
 			    ok;
@@ -2107,12 +2103,11 @@ presence_update(From, Packet, StateData) ->
 			  OldPresence -> get_priority_from_presence(OldPresence)
 			end,
 	  NewPriority = get_priority_from_presence(Packet),
-	  Timestamp = calendar:now_to_universal_time(now()),
 	  update_priority(NewPriority, Packet, StateData),
 	  FromUnavail = (StateData#state.pres_last == undefined),
 	  ?DEBUG("from unavail = ~p~n", [FromUnavail]),
 	  NewStateData = StateData#state{pres_last = Packet,
-					 pres_timestamp = Timestamp},
+					 pres_timestamp = now()},
 	  NewState = if FromUnavail ->
 			    ejabberd_hooks:run(user_available_hook,
 					       NewStateData#state.server,
@@ -2805,7 +2800,10 @@ handle_resume(StateData, Attrs) ->
 				       {<<"h">>, AttrH},
 				       {<<"previd">>, AttrId}],
 			      children = []}),
-	  SendFun = fun(_F, _T, El) -> send_element(NewState, El) end,
+	  SendFun = fun(_F, _T, El, Time) ->
+			    NewEl = add_resent_delay_info(NewState, El, Time),
+			    send_element(NewState, NewEl)
+		    end,
 	  handle_unacked_stanzas(NewState, SendFun),
 	  send_element(NewState,
 		       #xmlel{name = <<"r">>,
@@ -2861,13 +2859,13 @@ mgmt_queue_add(StateData, El) ->
 	       Num ->
 		   Num + 1
 	     end,
-    NewQueue = queue:in({NewNum, El}, StateData#state.mgmt_queue),
+    NewQueue = queue:in({NewNum, now(), El}, StateData#state.mgmt_queue),
     NewState = StateData#state{mgmt_queue = NewQueue,
 			       mgmt_stanzas_out = NewNum},
     check_queue_length(NewState).
 
 mgmt_queue_drop(StateData, NumHandled) ->
-    NewQueue = jlib:queue_drop_while(fun({N, _Stanza}) -> N =< NumHandled end,
+    NewQueue = jlib:queue_drop_while(fun({N, _T, _E}) -> N =< NumHandled end,
 				     StateData#state.mgmt_queue),
     StateData#state{mgmt_queue = NewQueue}.
 
@@ -2895,12 +2893,12 @@ handle_unacked_stanzas(StateData, F)
 	  ?INFO_MSG("~B stanzas were not acknowledged by ~s",
 		    [N, jlib:jid_to_string(StateData#state.jid)]),
 	  lists:foreach(
-	    fun({_, #xmlel{attrs = Attrs} = El}) ->
+	    fun({_, Time, #xmlel{attrs = Attrs} = El}) ->
 		    From_s = xml:get_attr_s(<<"from">>, Attrs),
 		    From = jlib:string_to_jid(From_s),
 		    To_s = xml:get_attr_s(<<"to">>, Attrs),
 		    To = jlib:string_to_jid(To_s),
-		    F(From, To, El)
+		    F(From, To, El, Time)
 	    end, queue:to_list(Queue))
     end;
 handle_unacked_stanzas(_StateData, _F) ->
@@ -2919,16 +2917,19 @@ handle_unacked_stanzas(StateData)
 	end,
     ReRoute = case ResendOnTimeout of
 		true ->
-		    fun ejabberd_router:route/3;
+		    fun(From, To, El, Time) ->
+			    NewEl = add_resent_delay_info(StateData, El, Time),
+			    ejabberd_router:route(From, To, NewEl)
+		    end;
 		false ->
-		    fun(From, To, El) ->
+		    fun(From, To, El, _Time) ->
 			    Err =
 				jlib:make_error_reply(El,
 						      ?ERR_SERVICE_UNAVAILABLE),
 			    ejabberd_router:route(To, From, Err)
 		    end
 	      end,
-    F = fun(From, To, El) ->
+    F = fun(From, To, El, Time) ->
 		%% We'll drop the stanza if it was <forwarded/> by some
 		%% encapsulating protocol as per XEP-0297.  One such protocol is
 		%% XEP-0280, which says: "When a receiving server attempts to
@@ -2941,7 +2942,7 @@ handle_unacked_stanzas(StateData)
 		      ?DEBUG("Dropping forwarded stanza from ~s",
 			     [xml:get_attr_s(<<"from">>, El#xmlel.attrs)]);
 		  false ->
-		      ReRoute(From, To, El)
+		      ReRoute(From, To, El, Time)
 		end
 	end,
     handle_unacked_stanzas(StateData, F);
@@ -3032,6 +3033,9 @@ make_resume_id(StateData) ->
     {Time, _} = StateData#state.sid,
     jlib:term_to_base64({StateData#state.resource, Time}).
 
+add_resent_delay_info(#state{server = From}, El, Time) ->
+    jlib:add_delay_info(El, From, Time, <<"Resent">>).
+
 %%%----------------------------------------------------------------------
 %%% XEP-0352
 %%%----------------------------------------------------------------------
@@ -3054,37 +3058,36 @@ csi_filter_stanza(#state{csi_state = CsiState, jid = JID} = StateData,
 	  StateData2#state{csi_state = CsiState}
     end.
 
-csi_queue_add(#state{csi_queue = Queue, server = Host} = StateData,
-	      #xmlel{children = Els} = Stanza) ->
-    From = xml:get_tag_attr_s(<<"from">>, Stanza),
-    Time = calendar:now_to_universal_time(os:timestamp()),
-    DelayTag = [jlib:timestamp_to_xml(Time, utc,
-				      jlib:make_jid(<<"">>, Host, <<"">>),
-				      <<"Client Inactive">>)],
-    NewStanza = Stanza#xmlel{children = Els ++ DelayTag},
+csi_queue_add(#state{csi_queue = Queue} = StateData, Stanza) ->
     case length(StateData#state.csi_queue) >= csi_max_queue(StateData) of
-      true -> csi_queue_add(csi_queue_flush(StateData), NewStanza);
+      true -> csi_queue_add(csi_queue_flush(StateData), Stanza);
       false ->
-	  NewQueue = lists:keystore(From, 1, Queue, {From, NewStanza}),
+	  From = xml:get_tag_attr_s(<<"from">>, Stanza),
+	  NewQueue = lists:keystore(From, 1, Queue, {From, now(), Stanza}),
 	  StateData#state{csi_queue = NewQueue}
     end.
 
-csi_queue_send(#state{csi_queue = Queue, csi_state = CsiState} = StateData,
-		From) ->
+csi_queue_send(#state{csi_queue = Queue, csi_state = CsiState, server = Host} =
+	       StateData, From) ->
     case lists:keytake(From, 1, Queue) of
-      {value, {From, Stanza}, NewQueue} ->
+      {value, {From, Time, Stanza}, NewQueue} ->
+	  NewStanza = jlib:add_delay_info(Stanza, Host, Time,
+					  <<"Client Inactive">>),
 	  NewStateData = send_stanza(StateData#state{csi_state = active},
-				     Stanza),
+				     NewStanza),
 	  NewStateData#state{csi_queue = NewQueue, csi_state = CsiState};
       false -> StateData
     end.
 
-csi_queue_flush(#state{csi_queue = Queue, csi_state = CsiState, jid = JID} =
-		StateData) ->
+csi_queue_flush(#state{csi_queue = Queue, csi_state = CsiState, jid = JID,
+		       server = Host} = StateData) ->
     ?DEBUG("Flushing CSI queue for ~s", [jlib:jid_to_string(JID)]),
     NewStateData =
-	lists:foldl(fun({_From, Stanza}, AccState) ->
-			  send_stanza(AccState, Stanza)
+	lists:foldl(fun({_From, Time, Stanza}, AccState) ->
+			    NewStanza =
+				jlib:add_delay_info(Stanza, Host, Time,
+						    <<"Client Inactive">>),
+			    send_stanza(AccState, NewStanza)
 		    end, StateData#state{csi_state = active}, Queue),
     NewStateData#state{csi_queue = [], csi_state = CsiState}.
 

@@ -41,10 +41,11 @@
 	 jid_remove_resource/1, jid_replace_resource/2,
 	 get_iq_namespace/1, iq_query_info/1,
 	 iq_query_or_response_info/1, is_iq_request_type/1,
-	 iq_to_xml/1, parse_xdata_submit/1, timestamp_to_iso/1,
-	 timestamp_to_iso/2, timestamp_to_xml/4,
-	 timestamp_to_xml/1, now_to_utc_string/1,
-	 now_to_local_string/1, datetime_string_to_timestamp/1,
+	 iq_to_xml/1, parse_xdata_submit/1,
+	 add_delay_info/3, add_delay_info/4,
+	 timestamp_to_iso/1, timestamp_to_iso/2,
+	 now_to_utc_string/1, now_to_local_string/1,
+	 datetime_string_to_timestamp/1,
 	 term_to_base64/1, base64_to_term/1,
 	 decode_base64/1, encode_base64/1, ip_to_list/1,
 	 rsm_encode/1, rsm_encode/2, rsm_decode/1,
@@ -600,6 +601,77 @@ rsm_encode_count(Count, Arr) ->
 	    children = [{xmlcdata, i2l(Count)}]}
      | Arr].
 
+-spec add_delay_info(xmlel(), erlang:timestamp(), binary()) -> xmlel().
+
+add_delay_info(El, From, Time) ->
+    add_delay_info(El, From, Time, <<"">>).
+
+-spec add_delay_info(xmlel(), erlang:timestamp(), binary(),
+		     binary()) -> xmlel().
+
+add_delay_info(El, From, Time, Desc) ->
+    %% TODO: Remove support for <x/>, XEP-0091 is obsolete.
+    El1 = add_delay_info(El, From, Time, Desc, <<"delay">>, ?NS_DELAY),
+    El2 = add_delay_info(El1, From, Time, Desc, <<"x">>, ?NS_DELAY91),
+    El2.
+
+-spec add_delay_info(xmlel(), erlang:timestamp(), binary(), binary(), binary(),
+		     binary()) -> xmlel().
+
+add_delay_info(El, From, Time, Desc, Name, XMLNS) ->
+    case xml:get_subtag_with_xmlns(El, Name, XMLNS) of
+      false ->
+	  %% Add new tag
+	  DelayTag = create_delay_tag(Time, From, Desc, XMLNS),
+	  xml:append_subtags(El, [DelayTag]);
+      DelayTag ->
+	  %% Update existing tag
+	  NewDelayTag =
+	      case {xml:get_tag_cdata(DelayTag), Desc} of
+		{<<"">>, <<"">>} ->
+		    DelayTag;
+		{OldDesc, <<"">>} ->
+		    DelayTag#xmlel{children = [{xmlcdata, OldDesc}]};
+		{<<"">>, NewDesc} ->
+		    DelayTag#xmlel{children = [{xmlcdata, NewDesc}]};
+		{OldDesc, NewDesc} ->
+		    case binary:match(OldDesc, NewDesc) of
+		      nomatch ->
+			  FinalDesc = <<OldDesc/binary, ", ", NewDesc/binary>>,
+			  DelayTag#xmlel{children = [{xmlcdata, FinalDesc}]};
+		      _ ->
+			  DelayTag#xmlel{children = [{xmlcdata, OldDesc}]}
+		    end
+	      end,
+	  NewEl = xml:remove_subtags(El, Name, {<<"xmlns">>, XMLNS}),
+	  xml:append_subtags(NewEl, [NewDelayTag])
+    end.
+
+-spec create_delay_tag(erlang:timestamp(), jid() | binary(), binary(),
+		       binary()) -> xmlel() | error.
+
+create_delay_tag(TimeStamp, FromJID, Desc, XMLNS) when is_tuple(FromJID) ->
+    From = jlib:jid_to_string(FromJID),
+    {Name, Stamp} = case XMLNS of
+		      ?NS_DELAY ->
+			  {<<"delay">>, now_to_utc_string(TimeStamp, 3)};
+		      ?NS_DELAY91 ->
+			  DateTime = calendar:now_to_universal_time(TimeStamp),
+			  {<<"x">>, timestamp_to_iso(DateTime)}
+		    end,
+    Children = case Desc of
+		 <<"">> -> [];
+		 _ -> [{xmlcdata, Desc}]
+	       end,
+    #xmlel{name = Name,
+	   attrs =
+	       [{<<"xmlns">>, XMLNS}, {<<"from">>, From},
+		{<<"stamp">>, Stamp}],
+	   children = Children};
+create_delay_tag(DateTime, Host, Desc, XMLNS) when is_binary(Host) ->
+    FromJID = jlib:make_jid(<<"">>, Host, <<"">>),
+    create_delay_tag(DateTime, FromJID, Desc, XMLNS).
+
 -type tz() :: {binary(), {integer(), integer()}} | {integer(), integer()} | utc.
 
 %% Timezone = utc | {Sign::string(), {Hours, Minutes}} | {Hours, Minutes}
@@ -611,18 +683,18 @@ timestamp_to_iso({{Year, Month, Day},
                   {Hour, Minute, Second}},
                  Timezone) ->
     Timestamp_string =
-	lists:flatten(io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",
+	lists:flatten(io_lib:format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B:~2..0B",
 				    [Year, Month, Day, Hour, Minute, Second])),
     Timezone_string = case Timezone of
 			utc -> "Z";
 			{Sign, {TZh, TZm}} ->
-			    io_lib:format("~s~2..0w:~2..0w", [Sign, TZh, TZm]);
+			    io_lib:format("~s~2..0B:~2..0B", [Sign, TZh, TZm]);
 			{TZh, TZm} ->
 			    Sign = case TZh >= 0 of
 				     true -> "+";
 				     false -> "-"
 				   end,
-			    io_lib:format("~s~2..0w:~2..0w",
+			    io_lib:format("~s~2..0B:~2..0B",
 					  [Sign, abs(TZh), TZm])
 		      end,
     {iolist_to_binary(Timestamp_string), iolist_to_binary(Timezone_string)}.
@@ -631,46 +703,25 @@ timestamp_to_iso({{Year, Month, Day},
 
 timestamp_to_iso({{Year, Month, Day},
                   {Hour, Minute, Second}}) ->
-    iolist_to_binary(io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
+    iolist_to_binary(io_lib:format("~4..0B~2..0B~2..0BT~2..0B:~2..0B:~2..0B",
                                    [Year, Month, Day, Hour, Minute, Second])).
-
--spec timestamp_to_xml(calendar:datetime(), tz(), jid(), binary()) -> xmlel().
-
-timestamp_to_xml(DateTime, Timezone, FromJID, Desc) ->
-    {T_string, Tz_string} = timestamp_to_iso(DateTime,
-					     Timezone),
-    Text = [{xmlcdata, Desc}],
-    From = jlib:jid_to_string(FromJID),
-%% TODO: Remove this function once XEP-0091 is Obsolete
-    #xmlel{name = <<"delay">>,
-	   attrs =
-	       [{<<"xmlns">>, ?NS_DELAY}, {<<"from">>, From},
-		{<<"stamp">>, <<T_string/binary, Tz_string/binary>>}],
-	   children = Text}.
-
--spec timestamp_to_xml(calendar:datetime()) -> xmlel().
-
-timestamp_to_xml({{Year, Month, Day},
-		  {Hour, Minute, Second}}) ->
-    #xmlel{name = <<"x">>,
-	   attrs =
-	       [{<<"xmlns">>, ?NS_DELAY91},
-		{<<"stamp">>,
-		 iolist_to_binary(io_lib:format("~4..0w~2..0w~2..0wT~2..0w:~2..0w:~2..0w",
-						[Year, Month, Day, Hour, Minute,
-						 Second]))}],
-	   children = []}.
 
 -spec now_to_utc_string(erlang:timestamp()) -> binary().
 
 now_to_utc_string({MegaSecs, Secs, MicroSecs}) ->
+    now_to_utc_string({MegaSecs, Secs, MicroSecs}, 6).
+
+-spec now_to_utc_string(erlang:timestamp(), 1..6) -> binary().
+
+now_to_utc_string({MegaSecs, Secs, MicroSecs}, Precision) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} =
 	calendar:now_to_universal_time({MegaSecs, Secs,
 					MicroSecs}),
-    list_to_binary(io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w.~6."
-                                 ".0wZ",
+    FracOfSec = round(MicroSecs / math:pow(10, 6 - Precision)),
+    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B:~2..0B.~*."
+                                 ".0BZ",
                                  [Year, Month, Day, Hour, Minute, Second,
-                                  MicroSecs])).
+                                  Precision, FracOfSec])).
 
 -spec now_to_local_string(erlang:timestamp()) -> binary().
 
@@ -688,8 +739,8 @@ now_to_local_string({MegaSecs, Secs, MicroSecs}) ->
 			end,
     {{Year, Month, Day}, {Hour, Minute, Second}} =
 	LocalTime,
-    list_to_binary(io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w.~6."
-                                 ".0w~s~2..0w:~2..0w",
+    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B:~2..0B.~6."
+                                 ".0B~s~2..0B:~2..0B",
                                  [Year, Month, Day, Hour, Minute, Second,
                                   MicroSecs, Sign, H, M])).
 

@@ -2438,24 +2438,21 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 		    false -> false;
 		    _ -> true
 		  end,
-    TimeStamp = calendar:now_to_universal_time(now()),
+    TimeStamp = now(),
     SenderJid = case
 		  (StateData#state.config)#config.anonymous
 		    of
 		  true -> StateData#state.jid;
 		  false -> FromJID
 		end,
-    TSPacket = xml:append_subtags(Packet,
-				  [jlib:timestamp_to_xml(TimeStamp, utc,
-							 SenderJid, <<"">>),
-				   jlib:timestamp_to_xml(TimeStamp)]),
+    TSPacket = jlib:add_delay_info(Packet, SenderJid, TimeStamp),
     SPacket =
 	jlib:replace_from_to(jlib:jid_replace_resource(StateData#state.jid,
 						       FromNick),
 			     StateData#state.jid, TSPacket),
     Size = element_size(SPacket),
     Q1 = lqueue_in({FromNick, TSPacket, HaveSubject,
-		    TimeStamp, Size},
+		    calendar:now_to_universal_time(TimeStamp), Size},
 		   StateData#state.history),
     add_to_log(text, {FromNick, Packet}, StateData),
     StateData#state{history = Q1}.
