@@ -4,13 +4,13 @@
 %%% compliance with the License. You should have received a copy of the
 %%% Erlang Public License along with this software. If not, it can be
 %%% retrieved via the world wide web at http://www.erlang.org/.
-%%% 
+%%%
 %%%
 %%% Software distributed under the License is distributed on an "AS IS"
 %%% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
 %%% the License for the specific language governing rights and limitations
 %%% under the License.
-%%% 
+%%%
 %%%
 %%% The Initial Developer of the Original Code is ProcessOne.
 %%% Portions created by ProcessOne are Copyright 2006-2014, ProcessOne
@@ -357,6 +357,7 @@ init([ServerHost, Opts]) ->
     ejabberd_router:register_route(Host),
     update_node_database(Host, ServerHost),
     update_state_database(Host, ServerHost),
+    update_item_database_binary(),
     put(server_host, ServerHost),
     init_nodes(Host, ServerHost, NodeTree, Plugins),
     State = #state{host = Host, server_host = ServerHost,
@@ -437,12 +438,93 @@ init_nodes(Host, ServerHost, _NodeTree, Plugins) ->
       false -> ok
     end.
 
+
+update_item_database_binary() ->
+    F = fun () ->
+		case catch mnesia:read({pubsub_last_item, mnesia:first(pubsub_last_item)}) of
+		    [First] when is_list(First#pubsub_last_item.itemid) ->
+			?INFO_MSG("Binarization of pubsub items table...", []),
+			lists:foreach(fun (Id) ->
+					      [Node] = mnesia:read({pubsub_last_item, Id}),
+
+					      ItemId = iolist_to_binary(Node#pubsub_last_item.itemid),
+
+					      ok = mnesia:delete({pubsub_last_item, Id}),
+					      ok = mnesia:write(Node#pubsub_last_item{itemid=ItemId})
+				      end,
+				      mnesia:all_keys(pubsub_last_item));
+		    _-> no_need
+		end
+	end,
+    case mnesia:transaction(F) of
+	{aborted, Reason} ->
+	    ?ERROR_MSG("Failed to binarize pubsub items table: ~p", [Reason]);
+	{atomic, no_need} ->
+	    ok;
+	{atomic, Result} ->
+	    ?INFO_MSG("Pubsub items table has been binarized: ~p", [Result])
+    end.
+
+
+update_node_database_binary() ->
+    F = fun () ->
+		case catch mnesia:read({pubsub_node, mnesia:first(pubsub_node)}) of
+		    [First] when is_list(First#pubsub_node.type) ->
+			?INFO_MSG("Binarization of pubsub nodes table...", []),
+			lists:foreach(fun ({H, N}) ->
+					      [Node] = mnesia:read({pubsub_node, {H, N}}),
+
+					      Type = iolist_to_binary(Node#pubsub_node.type),
+					      BN = case N of
+						       Binary when is_binary(Binary) ->
+							   N;
+						       _ ->
+							   {result, BN1} = node_call(Type, path_to_node, [N]),
+							   BN1
+						   end,
+					      BP = case [case P of
+							     Binary2 when is_binary(Binary2) -> P;
+							     _ -> element(2, node_call(Type, path_to_node, [P]))
+							 end
+							 || P <- Node#pubsub_node.parents] of
+						       [<<>>] -> [];
+						       Parents -> Parents
+						   end,
+
+					      BH = case H of
+						       {U, S, R} -> {iolist_to_binary(U), iolist_to_binary(S), iolist_to_binary(R)};
+						       String -> iolist_to_binary(String)
+						   end,
+
+					      Owners = [{iolist_to_binary(U), iolist_to_binary(S), iolist_to_binary(R)} ||
+							   {U, S, R} <- Node#pubsub_node.owners],
+
+					      ok = mnesia:delete({pubsub_node, {H, N}}),
+					      ok = mnesia:write(Node#pubsub_node{nodeid = {BH, BN},
+									    parents = BP,
+									    type = Type,
+									    owners = Owners});
+					  (_) -> ok
+				      end,
+				      mnesia:all_keys(pubsub_node));
+		    _-> no_need
+		end
+	end,
+    case mnesia:transaction(F) of
+	{aborted, Reason} ->
+	    ?ERROR_MSG("Failed to binarize pubsub node table: ~p", [Reason]);
+	{atomic, no_need} ->
+	    ok;
+	{atomic, Result} ->
+	    ?INFO_MSG("Pubsub nodes table has been binarized: ~p", [Result])
+    end.
+
 update_node_database(Host, ServerHost) ->
     mnesia:del_table_index(pubsub_node, type),
     mnesia:del_table_index(pubsub_node, parentid),
     case catch mnesia:table_info(pubsub_node, attributes) of
       [host_node, host_parent, info] ->
-	  ?INFO_MSG("upgrade node pubsub tables", []),
+	    ?INFO_MSG("Upgrading pubsub nodes table...", []),
 	  F = fun () ->
 		      {Result, LastIdx} = lists:foldl(fun ({pubsub_node,
 							    NodeId, ParentId,
@@ -569,10 +651,10 @@ update_node_database(Host, ServerHost) ->
 		 end,
 	  case mnesia:transaction(FNew) of
 	    {atomic, Result} ->
-		?INFO_MSG("Pubsub node tables updated correctly: ~p",
+		    ?INFO_MSG("Pubsub nodes table upgraded: ~p",
 			  [Result]);
 	    {aborted, Reason} ->
-		?ERROR_MSG("Problem updating Pubsub node tables:~n~p",
+		    ?ERROR_MSG("Problem upgrading Pubsub nodes table:~n~p",
 			   [Reason])
 	  end;
       [nodeid, parentid, type, owners, options] ->
@@ -673,10 +755,10 @@ update_node_database(Host, ServerHost) ->
 	  case mnesia:transaction(FNew) of
 	    {atomic, Result} ->
 		rename_default_nodeplugin(),
-		?INFO_MSG("Pubsub node tables updated correctly: ~p",
+		    ?INFO_MSG("Pubsub nodes table upgraded: ~p",
 			  [Result]);
 	    {aborted, Reason} ->
-		?ERROR_MSG("Problem updating Pubsub node tables:~n~p",
+		    ?ERROR_MSG("Problem upgrading Pubsub nodes table:~n~p",
 			   [Reason])
 	  end;
       [nodeid, id, parent, type, owners, options] ->
@@ -691,48 +773,7 @@ update_node_database(Host, ServerHost) ->
 	  rename_default_nodeplugin();
       _ -> ok
     end,
-    mnesia:transaction(fun () ->
-			       case catch mnesia:first(pubsub_node) of
-				 {_, L} when is_list(L) ->
-				     lists:foreach(fun ({H, N})
-							   when is_list(N) ->
-							   [Node] =
-							       mnesia:read({pubsub_node,
-									    {H,
-									     N}}),
-							   Type =
-							       Node#pubsub_node.type,
-							   BN = element(2,
-									node_call(Type,
-										  path_to_node,
-										  [N])),
-							   BP = case [element(2,
-									      node_call(Type,
-											path_to_node,
-											[P]))
-								      || P
-									     <- Node#pubsub_node.parents]
-								    of
-								  [<<>>] -> [];
-								  Parents ->
-								      Parents
-								end,
-							   mnesia:write(Node#pubsub_node{nodeid
-											     =
-											     {H,
-											      BN},
-											 parents
-											     =
-											     BP}),
-							   mnesia:delete({pubsub_node,
-									  {H,
-									   N}});
-						       (_) -> ok
-						   end,
-						   mnesia:all_keys(pubsub_node));
-				 _ -> ok
-			       end
-		       end).
+    update_node_database_binary().
 
 rename_default_nodeplugin() ->
     lists:foreach(fun (Node) ->
@@ -745,11 +786,14 @@ rename_default_nodeplugin() ->
 
 update_state_database(_Host, _ServerHost) ->
     case catch mnesia:table_info(pubsub_state, attributes) of
-	[stateid, items, affiliation, subscription] ->
-	    ?INFO_MSG("upgrade state pubsub tables", []),
-	    F = fun ({pubsub_state, {JID, NodeID}, Items, Aff, Sub}, Acc) ->
+	[stateid, nodeidx, items, affiliation, subscriptions] ->
+	    ?INFO_MSG("Upgrading pubsub states table...", []),
+	    F = fun ({pubsub_state, {{U,S,R}, NodeID}, _NodeIdx, Items, Aff, Sub}, Acc) ->
+			JID = {iolist_to_binary(U), iolist_to_binary(S), iolist_to_binary(R)},
 			Subs = case Sub of
 				   none ->
+				       [];
+				   [] ->
 				       [];
 				   _ ->
 				       {result, SubID} = pubsub_subscription:subscribe_node(JID, NodeID, []),
@@ -772,10 +816,10 @@ update_state_database(_Host, _ServerHost) ->
 		   end,
 	    case mnesia:transaction(FNew) of
 		{atomic, Result} ->
-		    ?INFO_MSG("Pubsub state tables updated correctly: ~p",
+		    ?INFO_MSG("Pubsub states table upgraded: ~p",
 			      [Result]);
 		{aborted, Reason} ->
-		    ?ERROR_MSG("Problem updating Pubsub state tables:~n~p",
+		    ?ERROR_MSG("Problem upgrading Pubsub states table:~n~p",
 			       [Reason])
 	    end;
 	_ ->
@@ -4353,7 +4397,7 @@ broadcast_purge_node(Host, Node, NodeId, Type, NodeOptions) ->
 		    broadcast_stanza(Host, Node, NodeId, Type,
 				     NodeOptions, SubsByDepth, nodes, Stanza, false),
 		    {result, true};
-		_ -> 
+		_ ->
 		    {result, false}
 	    end;
 	_ ->
@@ -5500,4 +5544,3 @@ parse_subscriptions([{State, Item}]) ->
         subscribed -> "s"
     end,
     string:join([STATE, Item],":").
-
