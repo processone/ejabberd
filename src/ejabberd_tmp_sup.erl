@@ -36,4 +36,4 @@ init(Module) ->
     {ok,
      {{simple_one_for_one, 10, 1},
       [{undefined, {Module, start_link, []}, temporary,
-	brutal_kill, worker, [Module]}]}}.
+	1000, worker, [Module]}]}}.
