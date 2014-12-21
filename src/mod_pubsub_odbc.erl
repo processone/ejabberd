@@ -4091,10 +4091,7 @@ broadcast_stanza(Host, _Node, _NodeId, _Type, NodeOptions, SubsByDepth, NotifyTy
     NotificationType = get_option(NodeOptions, notification_type, headline),
     BroadcastAll = get_option(NodeOptions, broadcast_all_resources), %% XXX this is not standard, but usefull
     From = service_jid(Host),
-    Stanza = case NotificationType of
-	normal -> BaseStanza;
-	MsgType -> add_message_type(BaseStanza, iolist_to_binary(atom_to_list(MsgType)))
-	end,
+    Stanza = add_message_type(BaseStanza, NotificationType),
     %% Handles explicit subscriptions
     SubIDsByJID = subscribed_nodes_by_jid(NotifyType, SubsByDepth),
     lists:foreach(fun ({LJID, NodeName, SubIDs}) ->
@@ -4126,10 +4123,8 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, NodeId, Type, Nod
     SenderResource = user_resource(LUser, LServer, LResource),
     case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
 	C2SPid when is_pid(C2SPid) ->
-	    Stanza = case get_option(NodeOptions, notification_type, headline) of
-		normal -> BaseStanza;
-		MsgType -> add_message_type(BaseStanza, iolist_to_binary(atom_to_list(MsgType)))
-		end,
+	    NotificationType = get_option(NodeOptions, notification_type, headline),
+	    Stanza = add_message_type(BaseStanza, NotificationType),
 	    %% set the from address on the notification to the bare JID of the account owner
 	    %% Also, add "replyto" if entity has presence subscription to the account owner
 	    %% See XEP-0163 1.1 section 4.3.1
@@ -4966,10 +4961,19 @@ itemsEls(Items) ->
 		#xmlel{name = <<"item">>, attrs = itemAttr(ItemId), children = Payload}
 	end, Items).
 
+-spec(add_message_type/2 ::
+(
+  Message :: xmlel(),
+  Type    :: atom())
+    -> xmlel()
+).
+
+add_message_type(Message, normal) -> Message;
 add_message_type(#xmlel{name = <<"message">>, attrs = Attrs, children = Els},
   Type) ->
     #xmlel{name = <<"message">>,
-	   attrs = [{<<"type">>, Type} | Attrs], children = Els};
+           attrs = [{<<"type">>, jlib:atom_to_binary(Type)} | Attrs],
+           children = Els};
 add_message_type(XmlEl, _Type) -> XmlEl.
 
 %% Place of <headers/> changed at the bottom of the stanza
