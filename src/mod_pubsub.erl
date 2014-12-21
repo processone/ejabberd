@@ -87,7 +87,7 @@
 	 unsubscribe_node/5,
 	 publish_item/6,
 	 delete_item/4,
-	 send_items/6,
+	 send_items/7,
 	 get_items/2,
 	 get_item/3,
 	 get_cached_item/2,
@@ -864,6 +864,7 @@ send_loop(State) ->
 									      N,
 									      NodeId,
 									      Type,
+									      Options,
 									      LJID,
 									      last);
 							       _ -> ok
@@ -960,6 +961,7 @@ send_loop(State) ->
 											 Node,
 											 NodeId,
 											 Type,
+											 Options,
 											 LJID,
 											 last);
 									  true ->
@@ -2926,7 +2928,8 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
        {TNode, {Result, subscribed, SubId, send_last}}} ->
 	  NodeId = TNode#pubsub_node.id,
 	  Type = TNode#pubsub_node.type,
-	  send_items(Host, Node, NodeId, Type, Subscriber, last),
+	  Options = TNode#pubsub_node.options,
+	  send_items(Host, Node, NodeId, Type, Options, Subscriber, last),
 	  case Result of
 	    default -> {result, Reply({subscribed, SubId})};
 	    _ -> {result, Result}
@@ -3388,14 +3391,15 @@ get_allowed_items_call(Host, NodeIdx, From, Type, Options, Owners) ->
 %%	 Node = pubsubNode()
 %%	 NodeId = pubsubNodeId()
 %%	 Type = pubsubNodeType()
+%%	 Options = mod_pubsub:nodeOptions()
 %%	 LJID = {U, S, []}
 %%	 Number = last | integer()
 %% @doc <p>Resend the items of a node to the user.</p>
 %% @todo use cache-last-item feature
-send_items(Host, Node, NodeId, Type, LJID, last) ->
+send_items(Host, Node, NodeId, Type, Options, LJID, last) ->
     case get_cached_item(Host, NodeId) of
       undefined ->
-	  send_items(Host, Node, NodeId, Type, LJID, 1);
+	  send_items(Host, Node, NodeId, Type, Options, LJID, 1);
       LastItem ->
 	  {ModifNow, ModifUSR} =
 	      LastItem#pubsub_item.modification,
@@ -3405,9 +3409,9 @@ send_items(Host, Node, NodeId, Type, LJID, last) ->
 						   children =
 						       itemsEls([LastItem])}],
 					   ModifNow, ModifUSR),
-	  dispatch_items(Host, LJID, Node, Stanza)
+	  dispatch_items(Host, LJID, Node, Options, Stanza)
     end;
-send_items(Host, Node, NodeId, Type, LJID, Number) ->
+send_items(Host, Node, NodeId, Type, Options, LJID, Number) ->
     ToSend = case node_action(Host, Type, get_items,
 			      [NodeId, LJID])
 		 of
@@ -3435,20 +3439,23 @@ send_items(Host, Node, NodeId, Type, LJID, Number) ->
 					attrs = nodeAttr(Node),
 					children = itemsEls(ToSend)}])
 	     end,
-    dispatch_items(Host, LJID, Node, Stanza).
+    dispatch_items(Host, LJID, Node, Options, Stanza).
 
--spec(dispatch_items/4 ::
+-spec(dispatch_items/5 ::
 (
-  From   :: mod_pubsub:host(),
-  To     :: jid(),
-  Node   :: mod_pubsub:nodeId(),
-  Stanza :: xmlel() | undefined)
+  From    :: mod_pubsub:host(),
+  To      :: jid(),
+  Node    :: mod_pubsub:nodeId(),
+  Options :: mod_pubsub:nodeOptions(),
+  Stanza  :: xmlel() | undefined)
     -> any()
 ).
 
-dispatch_items(_From, _To, _Node, _Stanza = undefined) -> ok;
+dispatch_items(_From, _To, _Node, _Options, _Stanza = undefined) -> ok;
 dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To, Node,
-	       Stanza) ->
+	       Options, BaseStanza) ->
+    NotificationType = get_option(Options, notification_type, headline),
+    Stanza = add_message_type(BaseStanza, NotificationType),
     C2SPid = case ejabberd_sm:get_session_pid(ToU, ToS, ToR) of
 	       ToPid when is_pid(ToPid) -> ToPid;
 	       _ ->
@@ -3465,7 +3472,9 @@ dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To, Node,
 				      service_jid(From), jlib:make_jid(To),
 				      Stanza)
     end;
-dispatch_items(From, To, _Node, Stanza) ->
+dispatch_items(From, To, _Node, Options, BaseStanza) ->
+    NotificationType = get_option(Options, notification_type, headline),
+    Stanza = add_message_type(BaseStanza, NotificationType),
     ejabberd_router:route(service_jid(From), jlib:make_jid(To), Stanza).
 
 %% @spec (Host, JID, Plugins) -> {error, Reason} | {result, Response}
