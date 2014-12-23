@@ -549,10 +549,11 @@ get_transfer_protocol(PortString) ->
 
 get_port_listeners(PortNumber) ->
     AllListeners = ejabberd_config:get_option(listen, fun(V) -> V end),
-    lists:filter(fun ({{Port, _Ip, _Netp}, _Module1,
-		       _Opts1})
-			 when Port == PortNumber ->
-			 true;
+    lists:filter(fun (Listener) when is_list(Listener) ->
+			 case proplists:get_value(port, Listener) of
+			   PortNumber -> true;
+			   _ -> false
+			 end;
 		     (_) -> false
 		 end,
 		 AllListeners).
@@ -562,12 +563,11 @@ get_captcha_transfer_protocol([]) ->
 	    "is not a ejabberd_http listener with "
 	    "'captcha' option. Change the port number "
 	    "or specify http:// in that option.">>);
-get_captcha_transfer_protocol([{{_Port, _Ip, tcp},
-				ejabberd_http, Opts}
-			       | Listeners]) ->
-    case lists:member(captcha, Opts) of
+get_captcha_transfer_protocol([Listener | Listeners]) when is_list(Listener) ->
+    case proplists:get_value(module, Listener) == ejabberd_http andalso
+	   proplists:get_bool(captcha, Listener) of
       true ->
-	  case lists:member(tls, Opts) of
+	  case proplists:get_bool(tls, Listener) of
 	    true -> https;
 	    false -> http
 	  end;
