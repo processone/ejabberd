@@ -301,8 +301,7 @@ val_xfield(deliver, [Val]) -> xopt_to_bool(Val);
 %val_xfield(digest, [Val]) -> xopt_to_bool(Val);
 %val_xfield(digest_frequency, [Val]) ->
 %    jlib:binary_to_integer(Val);
-%val_xfield(expire, [Val]) ->
-%    jlib:datetime_string_to_timestamp(Val);
+val_xfield(expire, [Val]) -> xopt_to_expire(Val);
 %val_xfield(include_body, [Val]) -> xopt_to_bool(Val);
 val_xfield(show_values, Vals) -> Vals;
 val_xfield(subscription_type, [<<"items">>]) -> items;
@@ -313,6 +312,15 @@ val_xfield(subscription_depth, [Depth]) ->
       N when is_integer(N) -> N;
       _ -> {error, ?ERR_NOT_ACCEPTABLE}
     end.
+
+%% Check XForm pubsub#expire for presence or DateTime
+xopt_to_expire(Val = <<"presence">>) -> Val;
+xopt_to_expire(Val) -> 
+       case jlib:datetime_string_to_timestamp(Val) of
+               undefined ->
+                       {error, ?ERR_NOT_ACCEPTABLE};
+               TS -> TS
+       end.
 
 %% Convert XForm booleans to Erlang booleans.
 xopt_to_bool(<<"0">>) -> false;
