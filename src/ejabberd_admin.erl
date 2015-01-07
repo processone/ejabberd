@@ -252,9 +252,10 @@ reopen_log() ->
 %%% Stop Kindly
 %%%
 
-stop_kindly(DelaySeconds, AnnouncementText) ->
-    Subject = io_lib:format("Server stop in ~p seconds!", [DelaySeconds]),
-    WaitingDesc = io_lib:format("Waiting ~p seconds", [DelaySeconds]),
+stop_kindly(DelaySeconds, AnnouncementTextString) ->
+    Subject = list_to_binary(io_lib:format("Server stop in ~p seconds!", [DelaySeconds])),
+    WaitingDesc = list_to_binary(io_lib:format("Waiting ~p seconds", [DelaySeconds])),
+    AnnouncementText = list_to_binary(AnnouncementTextString),
     Steps = [
 	     {"Stopping ejabberd port listeners",
 	      ejabberd_listener, stop_listeners, []},
