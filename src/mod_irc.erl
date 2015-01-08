@@ -5,7 +5,7 @@
 %%% Created : 15 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -466,7 +466,7 @@ iq_get_vcard(Lang) ->
 		[{xmlcdata,
 		  <<(translate:translate(Lang,
 					 <<"ejabberd IRC module">>))/binary,
-		    "\nCopyright (c) 2003-2014 ProcessOne">>}]}].
+		    "\nCopyright (c) 2003-2015 ProcessOne">>}]}].
 
 command_items(ServerHost, Host, Lang) ->
     lists:map(fun ({Node, Name, _Function}) ->
