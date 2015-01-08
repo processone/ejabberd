@@ -76,9 +76,11 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 		  UserName ->
 		      case parse_attribute(ClientNonceAttribute) of
 			{$r, ClientNonce} ->
-			    case (State#state.get_password)(UserName) of
+			    {Ret, _AuthModule} = (State#state.get_password)(UserName),
+			    case {Ret, jlib:resourceprep(Ret)} of
 			      {false, _} -> {error, <<"not-authorized">>, UserName};
-			      {Ret, _AuthModule} ->
+			      {_, error} -> ?WARNING_MSG("invalid password", []), {error, <<"not-authorized">>, UserName};
+			      {Ret, _} ->
 				  {StoredKey, ServerKey, Salt, IterationCount} =
 				      if is_tuple(Ret) -> Ret;
 					 true ->
