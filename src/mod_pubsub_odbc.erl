@@ -2349,7 +2349,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 		{result, {NodeId, _SubsByDepth, default}} ->
 		    ejabberd_hooks:run(pubsub_create_node, ServerHost, [ServerHost, Host, Node, NodeId, NodeOptions]),
 		    {result, Reply};
-		{result, {NodeId, _SubsByDepth, Result}} ->
+		{result, {NodeId, _SubsByDepth, _Result}} ->
 		    ejabberd_hooks:run(pubsub_create_node, ServerHost, [ServerHost, Host, Node, NodeId, NodeOptions]),
 		    {result, Reply};
 		Error ->
