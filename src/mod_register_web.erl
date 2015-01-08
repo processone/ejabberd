@@ -142,7 +142,7 @@ process([<<"change_password">>],
 	  {404, [], ErrorText}
     end;
 
-process(Path, _Request) ->
+process(_Path, _Request) ->
     {404, [], "Not Found"}.
 
 %%%----------------------------------------------------------------------

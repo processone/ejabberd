@@ -300,7 +300,7 @@ get_password_with_authmodule(User, Server) ->
 
 -spec is_user_exists(binary(), binary()) -> boolean().
 
-is_user_exists(User, <<"">>) ->
+is_user_exists(_User, <<"">>) ->
     false;
 
 is_user_exists(User, Server) ->
