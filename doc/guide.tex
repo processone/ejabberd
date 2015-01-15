@@ -5403,15 +5403,10 @@ The \term{ejabberdctl commands} are:
 
 The \term{ejabberdctl} script can be restricted to require authentication
 and execute some \term{ejabberd commands}; see \ref{accesscommands}.
-Add the option to the file \term{ejabberd.yml}.
-In this example there is no restriction:
-\begin{verbatim}
-ejabberdctl_access_commands: []
-\end{verbatim}
 
 If account \term{robot1@example.org} is registered in \ejabberd{} with password \term{abcdef}
 (which MD5 is E8B501798950FC58AAD83C8C14978E),
-and \term{ejabberd.yml} contains this setting:
+and your old-format configuration file contains this setting:
 \begin{verbatim}
 {hosts, ["example.org"]}.
 {acl, bots, {user, "robot1", "example.org"}}.
@@ -5599,8 +5594,17 @@ The most interesting ones are:
 
 \makesubsection{accesscommands}{Restrict Execution with AccessCommands}
 
-The frontends can be configured to restrict access to certain commands.
+The frontends can be configured to restrict access to certain commands
+using the \term{AccessCommands}.
 In that case, authentication information must be provided.
+
+This option allows quite complex settings, so it does not use the YAML format,
+instead it uses the Erlang format.
+If you want to set that option,
+then you must move the frontend definition to another config file
+and include it using the \term{include\_config\_file} option
+(see section~\ref{includeconfigfile} and the example below).
+
 In each frontend the \term{AccessCommands} option is defined
 in a different place. But in all cases the option syntax is the same:
 \begin{verbatim}
@@ -5656,6 +5660,34 @@ See another list of restrictions (the corresponding ACL and ACCESS are not shown
  %% if argument host is provided, it must be "test.org":
  {_bot_reg_test, [register, unregister], [{host, "test.org"}]}
 ]
+\end{verbatim}
+
+In summary, you put the frontends configurations in a CFG file using Erlang format, for example a file called \term{additional.cfg}:
+\begin{verbatim}
+{ejabberdctl_access_commands, [ {ctlaccess, [registered_users, register], []} ]}.
+
+{listen, [
+  {4560, ejabberd_xmlrpc, [{maxsessions, 10}, {timeout, 5000},
+    {access_commands, [
+      {ctlaccess, [registered_users], [{host, "localhost"}]}
+    ]}
+  ]}
+ ]}.
+
+{modules, [
+  {mod_rest, [
+    {allowed_ips, [ {127,0,0,1}, {192,168,1,12} ]},
+    {allowed_destinations, [ "nolan@localhost", "admin@example.com" ]},
+    {allowed_stanza_types, [ "message", "presence", "iq" ]},
+    {access_commands, [
+      {ctlaccess, [registered_users], [{host, "localhost"}]}
+    ]}
+   ]}
+ ]}.
+\end{verbatim}
+and then add this line at the end of your main ejabberd configuration file, usually called \term{ejabberd.yml}:
+\begin{verbatim}
+include_config_file: "/etc/ejabberd/additional.cfg"
 \end{verbatim}
 
 \makesection{webadmin}{Web Admin}
