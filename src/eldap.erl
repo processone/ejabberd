@@ -828,7 +828,7 @@ send_command(Command, From, S) ->
     Message = #'LDAPMessage'{messageID = Id,
 			     protocolOp = {Name, Request}},
     ?DEBUG("~p~n", [{Name, Request}]),
-    {ok, Bytes} = asn1rt:encode('ELDAPv3', 'LDAPMessage',
+    {ok, Bytes} = 'ELDAPv3':encode('LDAPMessage',
 				Message),
     case (S#eldap.sockmod):send(S#eldap.fd, Bytes) of
       ok ->
@@ -863,11 +863,10 @@ gen_req({modify_dn, Entry, NewRDN, DelOldRDN,
      #'ModifyDNRequest'{entry = Entry, newrdn = NewRDN,
 			deleteoldrdn = DelOldRDN, newSuperior = NewSup}};
 gen_req({modify_passwd, DN, Passwd}) ->
-    {ok, ReqVal} = asn1rt:encode('ELDAPv3',
-				 'PasswdModifyRequestValue',
-				 #'PasswdModifyRequestValue'{userIdentity = DN,
-							     newPasswd =
-								 Passwd}),
+    {ok, ReqVal} = 'ELDAPv3':encode('PasswdModifyRequestValue',
+				    #'PasswdModifyRequestValue'{userIdentity = DN,
+								newPasswd =
+								    Passwd}),
     {extendedReq,
      #'ExtendedRequest'{requestName = ?passwdModifyOID,
 			requestValue = iolist_to_binary(ReqVal)}};
@@ -887,7 +886,7 @@ gen_req({bind, RootDN, Passwd}) ->
 %%  {'EXIT', Reason} - Broke
 %%-----------------------------------------------------------------------
 recvd_packet(Pkt, S) ->
-    case asn1rt:decode('ELDAPv3', 'LDAPMessage', Pkt) of
+    case 'ELDAPv3':decode('LDAPMessage', Pkt) of
       {ok, Msg} ->
 	  Op = Msg#'LDAPMessage'.protocolOp,
 	  ?DEBUG("~p", [Op]),
@@ -1005,7 +1004,7 @@ get_op_rec(Id, Dict) ->
 %%  {'EXIT', Reason} - Broken packet
 %%-----------------------------------------------------------------------
 recvd_wait_bind_response(Pkt, S) ->
-    case asn1rt:decode('ELDAPv3', 'LDAPMessage', Pkt) of
+    case 'ELDAPv3':decode('LDAPMessage', Pkt) of
       {ok, Msg} ->
 	  ?DEBUG("~p", [Msg]),
 	  check_id(S#eldap.id, Msg#'LDAPMessage'.messageID),
@@ -1152,7 +1151,7 @@ bind_request(Socket, S) ->
     Message = #'LDAPMessage'{messageID = Id,
 			     protocolOp = {bindRequest, Req}},
     ?DEBUG("Bind Request Message:~p~n", [Message]),
-    {ok, Bytes} = asn1rt:encode('ELDAPv3', 'LDAPMessage',
+    {ok, Bytes} = 'ELDAPv3':encode('LDAPMessage',
 				Message),
     case (S#eldap.sockmod):send(Socket, Bytes) of
       ok -> {ok, S#eldap{id = Id}};
