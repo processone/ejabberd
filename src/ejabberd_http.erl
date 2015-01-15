@@ -299,13 +299,16 @@ process_header(State, Data) ->
 		  _ -> ok
 		end,
 		#state{sockmod = SockMod, socket = Socket,
+		       options = State#state.options,
 		       request_handlers = State#state.request_handlers};
 	    _ ->
 		#state{end_of_request = true,
+		       options = State#state.options,
 		       request_handlers = State#state.request_handlers}
 	  end;
       _ ->
 	  #state{end_of_request = true,
+		 options = State#state.options,
 		 request_handlers = State#state.request_handlers}
     end.
 

@@ -399,7 +399,14 @@ check_auth({User, Server, Password}) ->
 check_access(all, _) ->
     true;
 check_access(Access, Auth) ->
-    {ok, User, Server} = check_auth(Auth),
+    case check_auth(Auth) of
+	{ok, User, Server} ->
+	    check_access(Access, User, Server);
+	_ ->
+	    false
+    end.
+
+check_access(Access, User, Server) ->
     %% Check this user has access permission
     case acl:match_rule(Server, Access, jlib:make_jid(User, Server, <<"">>)) of
 	allow -> true;
