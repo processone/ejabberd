@@ -210,7 +210,7 @@ process(Args) ->
 
 %% @spec (Args::[string()], AccessCommands) -> {String::string(), Code::integer()}
 process2(["--auth", User, Server, Pass | Args], AccessCommands) ->
-    process2(Args, {User, Server, Pass}, AccessCommands);
+    process2(Args, {list_to_binary(User), list_to_binary(Server), list_to_binary(Pass)}, AccessCommands);
 process2(Args, AccessCommands) ->
     process2(Args, noauth, AccessCommands).
 
