@@ -15,7 +15,7 @@ Installing with mod_mam:
 
 -   Install ejabberd
 ``` bash
-  $ git clone git://github.com/DarkSideF/ejabberd.git
+  $ git clone git://github.com/DarkSideF/ejabberd.git ejabberd
   $ cd ejabberd
   $ ./autogen.sh
   $ ./configure
