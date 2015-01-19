@@ -724,11 +724,7 @@ add_to_query({Key, X}, Query) ->
     end.
 
 get_order(none) -> asc;
-get_order(#rsm{before_item = B}) ->
-    case B of
-        last -> desc;
-        _    -> asc
-    end.
+get_order(#rsm{before_item = B}) -> desc.
 
 query_order(desc) -> {'_id', -1};
 query_order(asc)  -> {'_id', 1}.
