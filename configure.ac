@@ -82,7 +82,7 @@ AC_ARG_ENABLE(roster_gateway_workaround,
 esac],[roster_gateway_workaround=false])
 
 AC_ARG_ENABLE(transient_supervisors,
-[AC_HELP_STRING([--disable-transient_supervisors], [disable Erlang supervision for transient process (default: no)])],
+[AC_HELP_STRING([--disable-transient-supervisors], [disable Erlang supervision for transient processes (default: no)])],
 [case "${enableval}" in
   yes) transient_supervisors=true ;;
   no)  transient_supervisors=false ;;
