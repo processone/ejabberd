@@ -26,7 +26,7 @@
 -module(ejabberd_config).
 -author('alexey@process-one.net').
 
--export([start/0, load_file/1, read_file/1,
+-export([start/0, load_file/1, reload_file/0, read_file/1,
 	 add_global_option/2, add_local_option/2,
 	 get_global_option/2, get_local_option/2,
          get_global_option/3, get_local_option/3,
@@ -124,6 +124,12 @@ read_file(File, Opts) ->
 load_file(File) ->
     State = read_file(File),
     set_opts(State).
+
+-spec reload_file() -> ok.
+
+reload_file() ->
+    Config = get_ejabberd_config_path(),
+    load_file(Config).
 
 -spec convert_to_yaml(file:filename()) -> ok | {error, any()}.
 
