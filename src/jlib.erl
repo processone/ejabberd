@@ -717,7 +717,7 @@ now_to_utc_string({MegaSecs, Secs, MicroSecs}, Precision) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} =
 	calendar:now_to_universal_time({MegaSecs, Secs,
 					MicroSecs}),
-    Max = math:pow(10, Precision),
+    Max = round(math:pow(10, Precision)),
     FracOfSec = case round(MicroSecs / math:pow(10, 6 - Precision)) of
         Max -> Max - 1; % don't overflow io_lib:format
         X -> X
