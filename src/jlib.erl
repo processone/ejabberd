@@ -601,12 +601,13 @@ rsm_encode_count(Count, Arr) ->
 	    children = [{xmlcdata, i2l(Count)}]}
      | Arr].
 
--spec add_delay_info(xmlel(), erlang:timestamp(), binary()) -> xmlel().
+-spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp())
+		     -> xmlel().
 
 add_delay_info(El, From, Time) ->
     add_delay_info(El, From, Time, <<"">>).
 
--spec add_delay_info(xmlel(), erlang:timestamp(), binary(),
+-spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp(),
 		     binary()) -> xmlel().
 
 add_delay_info(El, From, Time, Desc) ->
@@ -615,8 +616,8 @@ add_delay_info(El, From, Time, Desc) ->
     El2 = add_delay_info(El1, From, Time, Desc, <<"x">>, ?NS_DELAY91),
     El2.
 
--spec add_delay_info(xmlel(), erlang:timestamp(), binary(), binary(), binary(),
-		     binary()) -> xmlel().
+-spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp(),
+		     binary(), binary(), binary()) -> xmlel().
 
 add_delay_info(El, From, Time, Desc, Name, XMLNS) ->
     case xml:get_subtag_with_xmlns(El, Name, XMLNS) of
@@ -647,7 +648,7 @@ add_delay_info(El, From, Time, Desc, Name, XMLNS) ->
 	  xml:append_subtags(NewEl, [NewDelayTag])
     end.
 
--spec create_delay_tag(erlang:timestamp(), jid() | binary(), binary(),
+-spec create_delay_tag(erlang:timestamp(), jid() | ljid() | binary(), binary(),
 		       binary()) -> xmlel() | error.
 
 create_delay_tag(TimeStamp, FromJID, Desc, XMLNS) when is_tuple(FromJID) ->
