@@ -717,11 +717,16 @@ now_to_utc_string({MegaSecs, Secs, MicroSecs}, Precision) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} =
 	calendar:now_to_universal_time({MegaSecs, Secs,
 					MicroSecs}),
-    FracOfSec = round(MicroSecs / math:pow(10, 6 - Precision)),
-    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B:~2..0B.~*."
-                                 ".0BZ",
-                                 [Year, Month, Day, Hour, Minute, Second,
-                                  Precision, FracOfSec])).
+    Max = round(math:pow(10, Precision)),
+    case round(MicroSecs / math:pow(10, 6 - Precision)) of
+      Max ->
+	  now_to_utc_string({MegaSecs, Secs + 1, 0}, Precision);
+      FracOfSec ->
+	  list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0BT"
+				       "~2..0B:~2..0B:~2..0B.~*..0BZ",
+				       [Year, Month, Day, Hour, Minute, Second,
+					Precision, FracOfSec]))
+    end.
 
 -spec now_to_local_string(erlang:timestamp()) -> binary().
 
