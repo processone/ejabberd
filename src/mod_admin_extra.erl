@@ -1425,14 +1425,14 @@ privacy_set(Username, Host, QueryS) ->
 stats(Name) ->
     case Name of
 	<<"uptimeseconds">> -> trunc(element(1, erlang:statistics(wall_clock))/1000);
-	<<"registeredusers">> -> length(ejabberd_auth:dirty_get_registered_users());
+	<<"registeredusers">> -> lists:foldl(fun(Host, Sum) -> ejabberd_auth:get_vh_registered_users_number(Host) + Sum end, 0, ?MYHOSTS);
 	<<"onlineusersnode">> -> length(ejabberd_sm:dirty_get_my_sessions_list());
 	<<"onlineusers">> -> length(ejabberd_sm:dirty_get_sessions_list())
     end.
 
 stats(Name, Host) ->
     case Name of
-	<<"registeredusers">> -> length(ejabberd_auth:get_vh_registered_users(Host));
+	<<"registeredusers">> -> ejabberd_auth:get_vh_registered_users_number(Host);
 	<<"onlineusers">> -> length(ejabberd_sm:get_vh_session_list(Host))
     end.
 
