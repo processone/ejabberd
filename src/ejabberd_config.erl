@@ -190,7 +190,7 @@ consult(File) ->
                 {ok, []} ->
                     {ok, []};
                 {ok, [Document|_]} ->
-                    {ok, Document};
+                    {ok, parserl(Document)};
                 {error, Err} ->
                     Msg1 = "Cannot load " ++ File ++ ": ",
                     Msg2 = p1_yaml:format_error(Err),
@@ -206,6 +206,19 @@ consult(File) ->
                     {error, describe_config_problem(File, Reason)}
             end
     end.
+
+parserl([$>, $\s | String]) ->
+    {ok, A2, _} = erl_scan:string(String),
+    {ok, A3} = erl_parse:parse_term(A2),
+    A3;
+parserl(B) when is_binary(B) ->
+    parserl(binary_to_list(B));
+parserl({A, B}) ->
+    {parserl(A), parserl(B)};
+parserl([El|Tail]) ->
+    [parserl(El) | parserl(Tail)];
+parserl(Other) ->
+    Other.
 
 %% @doc Convert configuration filename to absolute path.
 %% Input is an absolute or relative path to an ejabberd configuration file.

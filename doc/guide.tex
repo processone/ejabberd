@@ -693,6 +693,29 @@ in Erlang terms. The format is still supported, but it is highly recommended
 to convert it to the new YAML format using \term{convert\_to\_yaml} command
 from \term{ejabberdctl} (see~\ref{ejabberdctl} and \ref{list-eja-commands} for details).
 
+If you want to specify some options using the old Erlang format,
+you can set them in an additional cfg file, and include it using
+the \option{include\_config\_file} option, see \ref{includeconfigfile}
+for the option description and a related example in \ref{accesscommands}.
+
+If you just want to provide an erlang term inside an option,
+you can use the \term{"> erlangterm."} syntax for embedding erlang terms in a YAML file, for example:
+\begin{verbatim}
+modules:
+  mod_cron:
+    tasks:
+      - time: 10
+        units: seconds
+        module: mnesia
+        function: info
+        arguments: "> []."
+      - time: 3
+        units: seconds
+        module: ejabberd_auth
+        function: try_register
+        arguments: "> [\"user1\", \"localhost\", \"pass\"]."
+\end{verbatim}
+
 \makesubsection{hostnames}{Host Names}
 \ind{options!hosts}\ind{host names}
 
