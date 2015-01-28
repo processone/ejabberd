@@ -5551,7 +5551,7 @@ Other known frontends that can be installed to execute ejabberd commands in diff
 
 \makesubsection{list-eja-commands}{List of ejabberd Commands}
 
-\ejabberd{} includes a few ejabberd Commands by default.
+\ejabberd{} includes a few ejabberd Commands by default as listed below.
 When more modules are installed, new commands may be available in the frontends.
 
 The easiest way to get a list of the available commands, and get help for them is to use
@@ -5567,8 +5567,11 @@ Available commands in this ejabberd node:
   ...
 \end{verbatim}
 
-The most interesting ones are:
+The commands included in ejabberd by default are:
 \begin{description}
+\titem{stop\_kindly delay announcement} Inform users and rooms, wait, and stop the server.
+  Provide the delay in seconds, and the announcement quoted.
+\titem{registered\_vhosts} List all registered vhosts in SERVER
 \titem{reopen\_log} Reopen the log files after they were renamed.
   If the old files were not renamed before calling this command,
   they are automatically renamed to \term{"*-old.log"}. See section \ref{logfiles}.
@@ -5591,8 +5594,6 @@ The most interesting ones are:
   Restore immediately from a text file dump.
   This is not recommended for big databases, as it will consume much time,
   memory and processor. In that case it's preferable to use \term{backup} and \term{install\_fallback}.
-%%More information about backuping can
-%%  be found in section~\ref{backup}.
 \titem{import\_piefxis, export\_piefxis, export\_piefxis\_host} \ind{migrate between servers}
   These options can be used to migrate accounts
   using \xepref{0227} formatted XML files
@@ -5605,14 +5606,30 @@ The most interesting ones are:
   from other Jabber/XMPP servers
   There exist tutorials to
   \footahref{http://www.ejabberd.im/migrate-to-ejabberd}{migrate from other software to ejabberd}.
+\titem{set\_master nodename}
+  Set master node of the clustered Mnesia tables.
+  If you provide as nodename "self", this node will be set as its own master.
+\titem{mnesia\_change\_nodename oldnodename newnodename oldbackup newbackup}
+  Change the erlang node name in a backup file
 \titem{export2odbc virtualhost directory} \ind{export mnesia data to SQL files}
   Export virtual host information from Mnesia tables to SQL files.
+\titem{update\_list} List modified modules that can be updated
+\titem{update module} Update the given module, or use the keyword: all
+\titem{reload\_config} Reload ejabberd configuration file into memory
 \titem{delete\_expired\_messages} This option can be used to delete old messages
   in offline storage. This might be useful when the number of offline messages
   is very high.
 \titem{delete\_old\_messages days} Delete offline messages older than the given days.
+\titem{incoming\_s2s\_number} Number of incoming s2s connections on the node
+\titem{outgoing\_s2s\_number} Number of outgoing s2s connections on the node
 \titem{register user host password} Register an account in that domain with the given password.
 \titem{unregister user host} Unregister the given account.
+\titem{registered\_users host} List all registered users in HOST
+\titem{connected\_users} List all established sessions
+\titem{connected\_users\_number} Get the number of established sessions
+\titem{user\_resources user host} List user's connected resources
+\titem{kick\_user user host} Disconnect user's active sessions
+
 \end{description}
 
 \makesubsection{accesscommands}{Restrict Execution with AccessCommands}
