@@ -11,6 +11,9 @@ DESTDIR =
 # /etc/ejabberd/
 ETCDIR = $(DESTDIR)@sysconfdir@/ejabberd
 
+# /bin/
+BINDIR = $(DESTDIR)@bindir@
+
 # /sbin/
 SBINDIR = $(DESTDIR)@sbindir@
 
@@ -118,6 +121,7 @@ install: all
 		|| $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(ETCDIR)/ejabberd.yml
 	$(SED) -e "s*{{rootdir}}*@prefix@*" \
 		-e "s*{{installuser}}*@INSTALLUSER@*" \
+		-e "s*{{bindir}}*@bindir@*" \
 		-e "s*{{libdir}}*@libdir@*" \
 		-e "s*{{sysconfdir}}*@sysconfdir@*" \
 		-e "s*{{localstatedir}}*@localstatedir@*" \
@@ -132,6 +136,11 @@ install: all
 	# Administration script
 	[ -d $(SBINDIR) ] || $(INSTALL) -d -m 755 $(SBINDIR)
 	$(INSTALL) -m 550 $(G_USER) ejabberdctl.example $(SBINDIR)/ejabberdctl
+	# Elixir binaries
+	[ -d $(BINDIR) ] || $(INSTALL) -d -m 755 $(BINDIR)
+	[ -f deps/elixir/bin/iex ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/iex $(BINDIR)/iex
+	[ -f deps/elixir/bin/elixir ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/elixir $(BINDIR)/elixir
+	[ -f deps/elixir/bin/mix ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/mix $(BINDIR)/mix
 	#
 	# Init script
 	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*" \
@@ -145,6 +154,9 @@ install: all
 	$(INSTALL) -m 644 ebin/*.beam $(BEAMDIR)
 	$(INSTALL) -m 644 deps/*/ebin/*.app $(BEAMDIR)
 	$(INSTALL) -m 644 deps/*/ebin/*.beam $(BEAMDIR)
+	# Install Elixir and Elixir dependancies
+	-$(INSTALL) -m 644 deps/*/lib/*/ebin/*.app $(BEAMDIR)
+	-$(INSTALL) -m 644 deps/*/lib/*/ebin/*.beam $(BEAMDIR)
 	rm -f $(BEAMDIR)/configure.beam
 	#
 	# ejabberd header files
@@ -201,6 +213,9 @@ uninstall: uninstall-binary
 
 uninstall-binary:
 	rm -f  $(SBINDIR)/ejabberdctl
+	rm -f  $(BINDIR)/iex
+	rm -f  $(BINDIR)/elixir
+	rm -f  $(BINDIR)/mix
 	rm -fr $(DOCDIR)
 	rm -f  $(BEAMDIR)/*.beam
 	rm -f  $(BEAMDIR)/*.app
