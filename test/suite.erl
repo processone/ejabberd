@@ -175,6 +175,9 @@ re_register(Config) ->
     {atomic, ok} = ejabberd_auth:try_register(User, Server, Pass),
     ok.
 
+match_failure(Received, Matches) ->
+    ct:fail("Received input:~n~n~p~n~ndon't match expected patterns:~n~n~p", [Received, Matches]).
+
 recv() ->
     receive
         {'$gen_event', {xmlstreamelement, El}} ->
