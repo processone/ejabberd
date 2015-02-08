@@ -604,7 +604,7 @@ do_route(From, To, #xmlel{} = Packet) ->
 							?ERR_SERVICE_UNAVAILABLE),
 			    ejabberd_router:route(To, From, Err)
 		      end;
-		  _ -> ?DEBUG("packet droped~n", [])
+		  _ -> ?DEBUG("packet dropped~n", [])
 		end;
 	    Ss ->
 		Session = lists:max(Ss),
