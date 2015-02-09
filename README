@@ -119,6 +119,7 @@ To compile ejabberd you need:
 
 To compile ejabberd execute the commands:
 
+    ./autogen.sh
     ./configure
     make
 
