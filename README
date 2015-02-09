@@ -122,8 +122,10 @@ To compile ejabberd execute the commands:
     ./configure
     make
 
-To install ejabberd, run this command with system administrator rights
-(root user):
+If you don't have the `configure` script, run `autogen.sh` first.
+
+To install ejabberd, execute the following command with system administrator
+rights (root user):
 
     sudo make install
 
