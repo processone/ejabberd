@@ -149,5 +149,16 @@
 #EJABBERD_PID_PATH=/var/run/ejabberd/ejabberd.pid
 
 #.
+#' EJABBERD_CONFIG_PATH: ejabberd configuration file
+#
+# Specify the full path to the ejabberd configuration file. If the file name has
+# a ".yml" extension, it is parsed as a YAML file; otherwise, Erlang syntax is
+# expected.
+#
+# Default: $ETC_DIR/ejabberd.yml
+#
+#EJABBERD_CONFIG_PATH=/etc/ejabberd/ejabberd.yml
+
+#.
 #'
 # vim: foldmarker=#',#. foldmethod=marker:
