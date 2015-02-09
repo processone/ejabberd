@@ -207,12 +207,10 @@ consult(File) ->
             end
     end.
 
-parserl([$>, $\s | String]) ->
-    {ok, A2, _} = erl_scan:string(String),
+parserl(<<"> ", Term/binary>>) ->
+    {ok, A2, _} = erl_scan:string(binary_to_list(Term)),
     {ok, A3} = erl_parse:parse_term(A2),
     A3;
-parserl(B) when is_binary(B) ->
-    parserl(binary_to_list(B));
 parserl({A, B}) ->
     {parserl(A), parserl(B)};
 parserl([El|Tail]) ->
