@@ -29,6 +29,8 @@
 
 -behaviour(gen_mod).
 
+-include("logger.hrl").
+
 -export([start/2, stop/1,
 	 %% Node
 	 compile/1,
@@ -84,6 +86,7 @@
 	 srg_user_del/4,
 	 %% Stanza
 	 send_message_headline/4,
+	 send_message_normal/4,
 	 send_message_chat/3,
 	 send_stanza_c2s/4,
 	 privacy_set/3,
@@ -515,6 +518,12 @@ commands() ->
      #ejabberd_commands{name = send_message_headline, tags = [stanza],
 			desc = "Send a headline message to a local or remote bare of full JID",
 			module = ?MODULE, function = send_message_headline,
+			args = [{from, binary}, {to, binary},
+				{subject, binary}, {body, binary}],
+			result = {res, rescode}},
+     #ejabberd_commands{name = send_message_normal, tags = [stanza],
+			desc = "Send a normal message to a local or remote bare of full JID",
+			module = ?MODULE, function = send_message_normal,
 			args = [{from, binary}, {to, binary},
 				{subject, binary}, {body, binary}],
 			result = {res, rescode}},
@@ -1348,6 +1357,12 @@ send_message_headline(From, To, Subject, Body) ->
     Packet = build_packet(message_headline, [Subject, Body]),
     send_packet_all_resources(From, To, Packet).
 
+%% @doc Send a normal message to a Jabber account.
+%% @spec (From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
+send_message_normal(From, To, Subject, Body) ->
+    Packet = build_packet(message_normal, [Subject, Body]),
+    send_packet_all_resources(From, To, Packet).
+
 %% @doc Send a packet to a Jabber account.
 %% If a resource was specified in the JID,
 %% the packet is sent only to that specific resource.
@@ -1394,6 +1409,13 @@ build_packet(message_chat, [Body]) ->
 build_packet(message_headline, [Subject, Body]) ->
     {xmlel, <<"message">>,
      [{<<"type">>, <<"headline">>}, {<<"id">>, randoms:get_string()}],
+     [{xmlel, <<"subject">>, [], [{xmlcdata, Subject}]},
+      {xmlel, <<"body">>, [], [{xmlcdata, Body}]}
+     ]
+    };
+build_packet(message_normal, [Subject, Body]) ->
+    {xmlel, <<"message">>,
+     [{<<"type">>, <<"normal">>}, {<<"id">>, randoms:get_string()}],
      [{xmlel, <<"subject">>, [], [{xmlcdata, Subject}]},
       {xmlel, <<"body">>, [], [{xmlcdata, Body}]}
      ]
