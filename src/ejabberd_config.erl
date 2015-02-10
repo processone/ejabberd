@@ -707,26 +707,40 @@ replace_module(mod_roster_odbc) -> {mod_roster, odbc};
 replace_module(mod_shared_roster_odbc) -> {mod_shared_roster, odbc};
 replace_module(mod_vcard_odbc) -> {mod_vcard, odbc};
 replace_module(mod_vcard_xupdate_odbc) -> {mod_vcard_xupdate, odbc};
-replace_module(Module) -> Module.
+replace_module(Module) ->
+    case is_elixir_module(Module) of
+        true  -> expand_elixir_module(Module);
+        false -> Module
+    end.
 
-replace_modules(Modules) ->
-    lists:map(
-      fun({Module, Opts}) ->
-              case replace_module(Module) of
-                  {NewModule, DBType} ->
-                      emit_deprecation_warning(Module, NewModule, DBType),
-                      NewOpts = [{db_type, DBType} |
-                                 lists:keydelete(db_type, 1, Opts)],
-                      {NewModule, transform_module_options(Module, NewOpts)};
-                  NewModule ->
-                      if Module /= NewModule ->
-                              emit_deprecation_warning(Module, NewModule);
-                         true ->
-                              ok
-                      end,
-                      {NewModule, transform_module_options(Module, Opts)}
-              end
-      end, Modules).
+replace_modules(Modules) -> lists:map( fun({Module, Opts}) -> case
+    replace_module(Module) of {NewModule, DBType} ->
+    emit_deprecation_warning(Module, NewModule, DBType), NewOpts =
+    [{db_type, DBType} | lists:keydelete(db_type, 1, Opts)],
+    {NewModule, transform_module_options(Module, NewOpts)}; NewModule
+    -> if Module /= NewModule -> emit_deprecation_warning(Module,
+    NewModule); true -> ok end, {NewModule,
+    transform_module_options(Module, Opts)} end end, Modules).
+
+%% Elixir module naming
+%% ====================
+
+%% If module name start with uppercase letter, this is an Elixir module:
+is_elixir_module(Module) ->
+    case atom_to_list(Module) of
+        [H|_] when H >= 65, H =< 90 -> true;
+        _ ->false
+    end.
+
+%% We assume we know this is an elixir module
+expand_elixir_module(Module) ->
+    case atom_to_list(Module) of
+        %% Module name already specified as an Elixir from Erlang module name
+        "Elixir." ++ _ -> Module;
+        %% if start with uppercase letter, this is an Elixir module: Append 'Elixir.' to module name.
+        ModuleString ->
+            list_to_atom("Elixir." ++ ModuleString)
+    end.
 
 strings_to_binary([]) ->
     [];
@@ -1009,5 +1023,10 @@ emit_deprecation_warning(Module, NewModule, DBType) ->
                  " instead", [Module, NewModule, DBType]).
 
 emit_deprecation_warning(Module, NewModule) ->
-    ?WARNING_MSG("Module ~s is deprecated, use ~s instead",
-                 [Module, NewModule]).
+    case is_elixir_module(NewModule) of
+        %% Do not emit deprecation warning for Elixir
+        true -> ok;
+        false ->
+            ?WARNING_MSG("Module ~s is deprecated, use ~s instead",
+                         [Module, NewModule])
+    end.
