@@ -165,6 +165,7 @@ remove_connection(User, Server, Resource, _Status)->
 send_copies(JID, To, Packet, Direction)->
     {U, S, R} = jlib:jid_tolower(JID),
     PrioRes = ejabberd_sm:get_user_present_resources(U, S),
+    {_, AvailRs} = lists:unzip(PrioRes),
     {MaxPrio, MaxRes} = case catch lists:max(PrioRes) of
 	{Prio, Res} -> {Prio, Res};
 	_ -> {0, undefined}
@@ -186,7 +187,8 @@ send_copies(JID, To, Packet, Direction)->
 	{true, MaxRes} ->
 	    OrigTo = fun(Res) -> lists:member({MaxPrio, Res}, PrioRes) end,
 	    [ {jlib:make_jid({U, S, CCRes}), CC_Version}
-	     || {CCRes, CC_Version} <- list(U, S), not OrigTo(CCRes) ];
+	     || {CCRes, CC_Version} <- list(U, S),
+		lists:member(CCRes, AvailRs), not OrigTo(CCRes) ];
 	{true, _} ->
 	    %% The message was sent to our bare JID, and we currently have
 	    %% multiple resources with the same highest priority, so the session
@@ -196,7 +198,8 @@ send_copies(JID, To, Packet, Direction)->
 	    [];
 	{false, _} ->
 	    [ {jlib:make_jid({U, S, CCRes}), CC_Version}
-	     || {CCRes, CC_Version} <- list(U, S), CCRes /= R ]
+	     || {CCRes, CC_Version} <- list(U, S),
+		lists:member(CCRes, AvailRs), CCRes /= R ]
 	    %TargetJIDs = lists:delete(JID, [ jlib:make_jid({U, S, CCRes}) || CCRes <- list(U, S) ]),
     end,
 
