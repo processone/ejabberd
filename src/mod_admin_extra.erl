@@ -85,9 +85,7 @@
 	 srg_user_add/4,
 	 srg_user_del/4,
 	 %% Stanza
-	 send_message_headline/4,
-	 send_message_normal/4,
-	 send_message_chat/3,
+	 send_message/5,
 	 send_stanza_c2s/4,
 	 privacy_set/3,
 	 %% Stats
@@ -510,21 +508,10 @@ commands() ->
 			args = [{user, binary}, {host, binary}, {group, binary}, {grouphost, binary}],
 			result = {res, rescode}},
 
-     #ejabberd_commands{name = send_message_chat, tags = [stanza],
-			desc = "Send a chat message to a local or remote bare of full JID",
-			module = ?MODULE, function = send_message_chat,
-			args = [{from, binary}, {to, binary}, {body, binary}],
-			result = {res, rescode}},
-     #ejabberd_commands{name = send_message_headline, tags = [stanza],
-			desc = "Send a headline message to a local or remote bare of full JID",
-			module = ?MODULE, function = send_message_headline,
-			args = [{from, binary}, {to, binary},
-				{subject, binary}, {body, binary}],
-			result = {res, rescode}},
-     #ejabberd_commands{name = send_message_normal, tags = [stanza],
-			desc = "Send a normal message to a local or remote bare of full JID",
-			module = ?MODULE, function = send_message_normal,
-			args = [{from, binary}, {to, binary},
+     #ejabberd_commands{name = send_message, tags = [stanza],
+			desc = "Send a message to a local or remote bare of full JID",
+			module = ?MODULE, function = send_message,
+			args = [{type, binary}, {from, binary}, {to, binary},
 				{subject, binary}, {body, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = send_stanza_c2s, tags = [stanza],
@@ -1345,22 +1332,10 @@ srg_user_del(User, Host, Group, GroupHost) ->
 %%% Stanza
 %%%
 
-%% @doc Send a chat message to a Jabber account.
-%% @spec (From::binary(), To::binary(), Body::binary()) -> ok
-send_message_chat(From, To, Body) ->
-    Packet = build_packet(message_chat, [Body]),
-    send_packet_all_resources(From, To, Packet).
-
-%% @doc Send a headline message to a Jabber account.
-%% @spec (From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
-send_message_headline(From, To, Subject, Body) ->
-    Packet = build_packet(message_headline, [Subject, Body]),
-    send_packet_all_resources(From, To, Packet).
-
-%% @doc Send a normal message to a Jabber account.
-%% @spec (From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
-send_message_normal(From, To, Subject, Body) ->
-    Packet = build_packet(message_normal, [Subject, Body]),
+%% @doc Send a message to a Jabber account.
+%% @spec (Type::binary(), From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
+send_message(Type, From, To, Subject, Body) ->
+    Packet = build_packet(Type, Subject, Body),
     send_packet_all_resources(From, To, Packet).
 
 %% @doc Send a packet to a Jabber account.
@@ -1400,25 +1375,14 @@ send_packet_all_resources(FromJID, ToU, ToS, ToR, Packet) ->
     ToJID = jlib:make_jid(ToU, ToS, ToR),
     ejabberd_router:route(FromJID, ToJID, Packet).
 
-
-build_packet(message_chat, [Body]) ->
+build_packet(Type, Subject, Body) ->
+    Tail = case Subject of
+	<<"chat">> -> [];
+	_ -> [{xmlel, <<"subject">>, [], [{xmlcdata, Subject}]}]
+    end,
     {xmlel, <<"message">>,
-     [{<<"type">>, <<"chat">>}, {<<"id">>, randoms:get_string()}],
-     [{xmlel, <<"body">>, [], [{xmlcdata, Body}]}]
-    };
-build_packet(message_headline, [Subject, Body]) ->
-    {xmlel, <<"message">>,
-     [{<<"type">>, <<"headline">>}, {<<"id">>, randoms:get_string()}],
-     [{xmlel, <<"subject">>, [], [{xmlcdata, Subject}]},
-      {xmlel, <<"body">>, [], [{xmlcdata, Body}]}
-     ]
-    };
-build_packet(message_normal, [Subject, Body]) ->
-    {xmlel, <<"message">>,
-     [{<<"type">>, <<"normal">>}, {<<"id">>, randoms:get_string()}],
-     [{xmlel, <<"subject">>, [], [{xmlcdata, Subject}]},
-      {xmlel, <<"body">>, [], [{xmlcdata, Body}]}
-     ]
+     [{<<"type">>, Type}, {<<"id">>, randoms:get_string()}],
+     [{xmlel, <<"body">>, [], [{xmlcdata, Body}]} | Tail]
     }.
 
 send_stanza_c2s(Username, Host, Resource, Stanza) ->
