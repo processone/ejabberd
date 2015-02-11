@@ -58,7 +58,7 @@
          server = <<"">>             :: binary(),
 	 authenticated = false       :: boolean(),
          auth_domain = <<"">>        :: binary(),
-	 connections = (?DICT):new() :: dict(),
+	 connections = (?DICT):new() :: ?TDICT,
          timer = make_ref()          :: reference()}).
 
 %-define(DBGFSM, true).

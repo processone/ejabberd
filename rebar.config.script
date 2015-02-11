@@ -24,6 +24,8 @@ Macros = lists:flatmap(
                    [{d, 'mssql'}];
               ({lager, true}) ->
                    [{d, 'LAGER'}];
+              ({erlang_deprecated_types, true}) ->
+                   [{d, 'ERL_DEPRECATED_TYPES'}];
               (_) ->
                    []
            end, Cfg),

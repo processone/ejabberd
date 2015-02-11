@@ -77,7 +77,7 @@
          try_auth = true                  :: boolean(),
          myname = <<"">>                  :: binary(),
          server = <<"">>                  :: binary(),
-	 queue = queue:new()              :: queue(),
+	 queue = queue:new()              :: ?TQUEUE,
          delay_to_retry = undefined_delay :: undefined_delay | non_neg_integer(),
          new = false                      :: false | binary(),
 	 verify = false                   :: false | {pid(), binary(), binary()},

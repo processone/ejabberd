@@ -62,7 +62,7 @@
          start_interval = 0                  :: non_neg_integer(),
          host = <<"">>                       :: binary(),
 	 max_pending_requests_len            :: non_neg_integer(),
-         pending_requests = {0, queue:new()} :: {non_neg_integer(), queue()}}).
+         pending_requests = {0, queue:new()} :: {non_neg_integer(), ?TQUEUE}}).
 
 -define(STATE_KEY, ejabberd_odbc_state).
 

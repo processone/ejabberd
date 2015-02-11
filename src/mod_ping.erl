@@ -63,7 +63,7 @@
          send_pings = ?DEFAULT_SEND_PINGS :: boolean(),
 	 ping_interval = ?DEFAULT_PING_INTERVAL :: non_neg_integer(),
 	 timeout_action = none :: none | kill,
-         timers = (?DICT):new() :: dict()}).
+         timers = (?DICT):new() :: ?TDICT}).
 
 %%====================================================================
 %% API
