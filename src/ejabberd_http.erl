@@ -280,7 +280,7 @@ process_header(State, Data) ->
 		       []),
 	  throw(http_request_no_host_header);
       {ok, http_eoh} ->
-	  ?DEBUG("(~w) http query: ~w ~s~n",
+	  ?DEBUG("(~w) http query: ~w ~p~n",
 		 [State#state.socket, State#state.request_method,
 		  element(2, State#state.request_path)]),
 	  {HostProvided, Port, TP} =
