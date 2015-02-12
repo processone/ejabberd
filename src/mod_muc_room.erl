@@ -2955,6 +2955,9 @@ can_change_ra(owner, _FRole, admin, _TRole, affiliation,
 can_change_ra(owner, _FRole, owner, _TRole, affiliation,
 	      _Affiliation, _ServiceAf) ->
     check_owner;
+can_change_ra(admin, _FRole, admin, _TRole, role,
+	      _Role, _ServiceAf) ->
+    true;
 can_change_ra(_FAffiliation, _FRole, _TAffiliation,
 	      _TRole, affiliation, _Value, _ServiceAf) ->
     false;
