@@ -285,7 +285,7 @@ commands() ->
 			tags = [session],
 			desc = "Get information about all sessions of a user",
 			module = ?MODULE, function = user_sessions_info,
-			args = [{user, string}, {host, string}],
+			args = [{user, binary}, {host, binary}],
 			result = {sessions_info,
 				  {list,
 				   {session, {tuple,
