@@ -22,6 +22,10 @@ CREATE TABLE users (
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
+-- To support SCRAM auth:
+-- ALTER TABLE users ADD COLUMN serverkey text NOT NULL DEFAULT '';
+-- ALTER TABLE users ADD COLUMN salt text NOT NULL DEFAULT '';
+-- ALTER TABLE users ADD COLUMN iterationcount integer NOT NULL DEFAULT 0;
 
 CREATE TABLE last (
     username text PRIMARY KEY,

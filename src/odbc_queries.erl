@@ -28,8 +28,10 @@
 -author("mremond@process-one.net").
 
 -export([get_db_type/0, update/5, update_t/4, sql_transaction/2,
-	 get_last/2, set_last_t/4, del_last/2, get_password/2,
-	 set_password_t/3, add_user/3, del_user/2,
+	 get_last/2, set_last_t/4, del_last/2,
+         get_password/2, get_password_scram/2,
+	 set_password_t/3, set_password_scram_t/6,
+	 add_user/3, add_user_scram/6, del_user/2,
 	 del_user_return_password/3, list_users/1, list_users/2,
 	 users_number/1, users_number/2, add_spool_sql/2,
 	 add_spool/2, get_and_del_spool_msg_t/2, del_spool_msg/2,
@@ -157,6 +159,12 @@ get_password(LServer, Username) ->
 			    [<<"select password from users where username='">>,
 			     Username, <<"';">>]).
 
+get_password_scram(LServer, Username) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      [<<"select password, serverkey, salt, iterationcount from users where "
+        "username='">>, Username, <<"';">>]).
+
 set_password_t(LServer, Username, Pass) ->
     ejabberd_odbc:sql_transaction(LServer,
 				  fun () ->
@@ -168,11 +176,38 @@ set_password_t(LServer, Username, Pass) ->
 						    <<"'">>])
 				  end).
 
+set_password_scram_t(LServer, Username,
+                     StoredKey, ServerKey, Salt, IterationCount) ->
+    ejabberd_odbc:sql_transaction(LServer,
+				  fun () ->
+					  update_t(<<"users">>,
+						   [<<"username">>,
+						    <<"password">>,
+						    <<"serverkey">>,
+						    <<"salt">>,
+						    <<"iterationcount">>],
+						   [Username, StoredKey,
+                                                    ServerKey, Salt,
+                                                    IterationCount],
+						   [<<"username='">>, Username,
+						    <<"'">>])
+				  end).
+
 add_user(LServer, Username, Pass) ->
     ejabberd_odbc:sql_query(LServer,
 			    [<<"insert into users(username, password) "
 			       "values ('">>,
 			     Username, <<"', '">>, Pass, <<"');">>]).
+
+add_user_scram(LServer, Username,
+               StoredKey, ServerKey, Salt, IterationCount) ->
+    ejabberd_odbc:sql_query(LServer,
+			    [<<"insert into users(username, password, serverkey, salt, iterationcount) "
+			       "values ('">>,
+			     Username, <<"', '">>, StoredKey, <<"', '">>,
+                             ServerKey, <<"', '">>,
+                             Salt, <<"', '">>,
+                             IterationCount, <<"');">>]).
 
 del_user(LServer, Username) ->
     ejabberd_odbc:sql_query(LServer,
