@@ -5149,15 +5149,15 @@ consists of the following \modvcardldap{}-specific options:
 \begin{description}
 \hostitem{vjud}
 \iqdiscitem{\ns{vcard-temp}}
-\titem{\{search, true|false\}}\ind{options!search}This option specifies whether the search
+\titem{search: true|false}\ind{options!search}This option specifies whether the search
   functionality is enabled (value: \term{true}) or disabled (value:
   \term{false}). If disabled, the option \term{host} will be ignored and the
   \Jabber{} User Directory service will not appear in the Service Discovery item
   list. The default value is \term{true}.
-\titem{\{matches, infinity|Number\}}\ind{options!matches}With this option, the number of reported
+\titem{matches: infinity|Number}\ind{options!matches}With this option, the number of reported
   search results can be limited. If the option's value is set to \term{infinity},
   all search results are reported. The default value is \term{30}.
-\titem{\{ldap\_vcard\_map, [ \{Name, Pattern, LDAPattributes\}, ...]\}} \ind{options!ldap\_vcard\_map}
+\titem{ldap\_vcard\_map: \{ Name: \{Pattern, LDAPattributes\}, ...\}} \ind{options!ldap\_vcard\_map}
   With this option you can set the table that maps LDAP attributes to vCard fields.
   \ind{protocols!RFC 2426: vCard MIME Directory Profile}
   \term{Name} is the type name of the vCard as defined in
@@ -5172,48 +5172,48 @@ consists of the following \modvcardldap{}-specific options:
   and \term{"\%d"} will be replaced with the domain part of a JID. 
   The default is:
 \begin{verbatim}
-[{"NICKNAME", "%u", []},
- {"FN", "%s", ["displayName"]},
- {"LAST", "%s", ["sn"]},
- {"FIRST", "%s", ["givenName"]},
- {"MIDDLE", "%s", ["initials"]},
- {"ORGNAME", "%s", ["o"]},
- {"ORGUNIT", "%s", ["ou"]},
- {"CTRY", "%s", ["c"]},
- {"LOCALITY", "%s", ["l"]},
- {"STREET", "%s", ["street"]},
- {"REGION", "%s", ["st"]},
- {"PCODE", "%s", ["postalCode"]},
- {"TITLE", "%s", ["title"]},
- {"URL", "%s", ["labeleduri"]},
- {"DESC", "%s", ["description"]},
- {"TEL", "%s", ["telephoneNumber"]},
- {"EMAIL", "%s", ["mail"]},
- {"BDAY", "%s", ["birthDay"]},
- {"ROLE", "%s", ["employeeType"]},
- {"PHOTO", "%s", ["jpegPhoto"]}]
+"NICKNAME": {"%u": []}
+"FN": {"%s": ["displayName"]}
+"LAST": {"%s": ["sn"]}
+"FIRST": {"%s": ["givenName"]}
+"MIDDLE": {"%s": ["initials"]}
+"ORGNAME": {"%s": ["o"]}
+"ORGUNIT": {"%s": ["ou"]}
+"CTRY": {"%s": ["c"]}
+"LOCALITY": {"%s": ["l"]}
+"STREET": {"%s": ["street"]}
+"REGION": {"%s": ["st"]}
+"PCODE": {"%s": ["postalCode"]}
+"TITLE": {"%s": ["title"]}
+"URL": {"%s": ["labeleduri"]}
+"DESC": {"%s": ["description"]}
+"TEL": {"%s": ["telephoneNumber"]}
+"EMAIL": {"%s": ["mail"]}
+"BDAY": {"%s": ["birthDay"]}
+"ROLE": {"%s": ["employeeType"]}
+"PHOTO": {"%s": ["jpegPhoto"]}
 \end{verbatim}
-\titem{\{ldap\_search\_fields, [ \{Name, Attribute\}, ...]\}}\ind{options!ldap\_search\_fields}This option
+\titem{ldap\_search\_fields: \{ Name: Attribute, ...\}}\ind{options!ldap\_search\_fields}This option
   defines the search form and the LDAP attributes to search within.
   \term{Name} is the name of a search form
   field which will be automatically translated by using the translation
   files (see \term{msgs/*.msg} for available words). \term{Attribute} is the
   LDAP attribute or the pattern \term{"\%u"}. The default is:
 \begin{verbatim}
-[{"User", "%u"},
- {"Full Name", "displayName"},
- {"Given Name", "givenName"},
- {"Middle Name", "initials"},
- {"Family Name", "sn"},
- {"Nickname", "%u"},
- {"Birthday", "birthDay"},
- {"Country", "c"},
- {"City", "l"},
- {"Email", "mail"},
- {"Organization Name", "o"},
- {"Organization Unit", "ou"}]
+"User": "%u"
+"Full Name": "displayName"
+"Given Name": "givenName"
+"Middle Name": "initials"
+"Family Name": "sn"
+"Nickname": "%u"
+"Birthday": "birthDay"
+"Country": "c"
+"City": "l"
+"Email": "mail"
+"Organization Name": "o"
+"Organization Unit": "ou"
 \end{verbatim}
-\titem{\{ldap\_search\_reported, [ \{SearchField, VcardField\}, ...]\}}\ind{options!ldap\_search\_reported}This option
+\titem{ldap\_search\_reported: \{ SearchField: VcardField, ...\}}\ind{options!ldap\_search\_reported}This option
   defines which search fields should be reported.
   \term{SearchField} is the name of a search form
   field which will be automatically translated by using the translation
@@ -5221,17 +5221,17 @@ consists of the following \modvcardldap{}-specific options:
   vCard field name defined in the \option{ldap\_vcard\_map} option. The default
   is:
 \begin{verbatim}
-[{"Full Name", "FN"},
- {"Given Name", "FIRST"},
- {"Middle Name", "MIDDLE"},
- {"Family Name", "LAST"},
- {"Nickname", "NICKNAME"},
- {"Birthday", "BDAY"},
- {"Country", "CTRY"},
- {"City", "LOCALITY"},
- {"Email", "EMAIL"},
- {"Organization Name", "ORGNAME"},
- {"Organization Unit", "ORGUNIT"}]
+"Full Name": "FN"
+"Given Name": "FIRST"
+"Middle Name": "MIDDLE"
+"Family Name": "LAST"
+"Nickname": "NICKNAME"
+"Birthday": "BDAY"
+"Country": "CTRY"
+"City": "LOCALITY"
+"Email": "EMAIL"
+"Organization Name": "ORGNAME"
+"Organization Unit": "ORGUNIT"
 \end{verbatim}
 \end{description}
 
@@ -5247,12 +5247,13 @@ infos in \term{"ou=AddressBook,dc=example,dc=org"} directory.  Corresponding
 authentication section should looks like this:
 
 \begin{verbatim}
-%% authentication method
-{auth_method, ldap}.
-%% DNS name of our LDAP server
-{ldap_servers, ["ldap.example.org"]}.
-%% We want to authorize users from 'shadowAccount' object class only
-{ldap_filter, "(objectClass=shadowAccount)"}.
+## authentication method
+auth_method: ldap
+## DNS name of our LDAP server
+ldap_servers:
+  - "ldap.example.org"
+## We want to authorize users from 'shadowAccount' object class only
+ldap_filter: "(objectClass=shadowAccount)"
 \end{verbatim}
 
 Now we want to use users LDAP-info as their vCards. We have four attributes
@@ -5261,47 +5262,39 @@ defined in our LDAP schema: \term{"mail"} --- email address, \term{"givenName"}
 Also we want users to search each other. Let's see how we can set it up:
 
 \begin{verbatim}
-{modules,
-  ...
-  {mod_vcard_ldap,
-   [
-    %% We use the same server and port, but want to bind anonymously because
-    %% our LDAP server accepts anonymous requests to
-    %% "ou=AddressBook,dc=example,dc=org" subtree.
-    {ldap_rootdn, ""},
-    {ldap_password, ""},
-    %% define the addressbook's base
-    {ldap_base, "ou=AddressBook,dc=example,dc=org"},
-    %% uidattr: user's part of JID is located in the "mail" attribute
-    %% uidattr_format: common format for our emails
-    {ldap_uids, [{"mail","%u@mail.example.org"}]},
-    %% We have to define empty filter here, because entries in addressbook does not
-    %% belong to shadowAccount object class
-    {ldap_filter, ""},
-    %% Now we want to define vCard pattern
-    {ldap_vcard_map,
-     [{"NICKNAME", "%u", []}, % just use user's part of JID as his nickname
-      {"FIRST", "%s", ["givenName"]},
-      {"LAST", "%s", ["sn"]},
-      {"FN", "%s, %s", ["sn", "givenName"]}, % example: "Smith, John"
-      {"EMAIL", "%s", ["mail"]},
-      {"BDAY", "%s", ["birthDay"]}]},
-    %% Search form
-    {ldap_search_fields,
-     [{"User", "%u"},
-      {"Name", "givenName"},
-      {"Family Name", "sn"},
-      {"Email", "mail"},
-      {"Birthday", "birthDay"}]},
-    %% vCard fields to be reported
-    %% Note that JID is always returned with search results
-    {ldap_search_reported,
-     [{"Full Name", "FN"},
-      {"Nickname", "NICKNAME"},
-      {"Birthday", "BDAY"}]}
-  ]}
-  ...
-}.
+modules:
+  mod_vcard_ldap:
+    ## We use the same server and port, but want to bind anonymously because
+    ## our LDAP server accepts anonymous requests to
+    ## "ou=AddressBook,dc=example,dc=org" subtree.
+    ldap_rootdn: ""
+    ldap_password: ""
+    ## define the addressbook's base
+    ldap_base: "ou=AddressBook,dc=example,dc=org"
+    ## uidattr: user's part of JID is located in the "mail" attribute
+    ## uidattr_format: common format for our emails
+    ldap_uids: {"mail": "%u@mail.example.org"}
+    ## Now we want to define vCard pattern
+    ldap_vcard_map:
+      "NICKNAME": {"%u": []} # just use user's part of JID as his nickname
+      "FIRST": {"%s": ["givenName"]}
+      "LAST": {"%s": ["sn"]}
+      "FN": {"%s, %s": ["sn", "givenName"]} # example: "Smith, John"
+      "EMAIL": {"%s": ["mail"]}
+      "BDAY": {"%s": ["birthDay"]}
+    ## Search form
+    ldap_search_fields:
+      "User": "%u"
+      "Name": "givenName"
+      "Family Name": "sn"
+      "Email": "mail"
+      "Birthday": "birthDay"
+    ## vCard fields to be reported
+    ## Note that JID is always returned with search results
+    ldap_search_reported:
+      "Full Name": "FN"
+      "Nickname": "NICKNAME"
+      "Birthday": "BDAY"
 \end{verbatim}
 
 Note that \modvcardldap{} module checks an existence of the user before
@@ -5309,30 +5302,27 @@ searching his info in LDAP.
 
 \item \term{ldap\_vcard\_map} example:
 \begin{verbatim}
-{ldap_vcard_map,
- [{"NICKNAME", "%u", []},
-  {"FN", "%s", ["displayName"]},
-  {"CTRY", "Russia", []},
-  {"EMAIL", "%u@%d", []},
-  {"DESC", "%s\n%s", ["title", "description"]}
- ]},
+ldap_vcard_map:
+  "NICKNAME": {"%u": []} # just use user's part of JID as his nickname
+  "FN": {"%s": ["displayName"]}
+  "CTRY": {"Russia": []}
+  "EMAIL": {"%u@%d": []}
+  "DESC": {"%s\n%s": ["title", "description"]}
 \end{verbatim}
 \item \term{ldap\_search\_fields} example:
 \begin{verbatim}
-{ldap_search_fields,
- [{"User", "uid"},
-  {"Full Name", "displayName"},
-  {"Email", "mail"}
- ]},
+ldap_search_fields:
+  "User": "uid"
+  "Full Name": "displayName"
+  "Email": "mail"
 \end{verbatim}
 \item \term{ldap\_search\_reported} example:
 \begin{verbatim}
-{ldap_search_reported,
- [{"Full Name", "FN"},
-  {"Email", "EMAIL"},
-  {"Birthday", "BDAY"},
-  {"Nickname", "NICKNAME"}
- ]},
+ldap_search_reported:
+  "Full Name": "FN"
+  "Email": "EMAIL"
+  "Birthday": "BDAY"
+  "Nickname": "NICKNAME"
 \end{verbatim}
 \end{itemize}
 
