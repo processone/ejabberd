@@ -130,6 +130,10 @@ commands() ->
 	" N MIDDLE	- Middle name\n"
 	" ADR CTRY	- Address: Country\n"
 	" ADR LOCALITY	- Address: City\n"
+	" TEL HOME      - Telephone: Home\n"
+	" TEL CELL      - Telephone: Cellphone\n"
+	" TEL WORK      - Telephone: Work\n"
+	" TEL VOICE     - Telephone: Voice\n"
 	" EMAIL USERID	- E-Mail Address\n"
 	" ORG ORGNAME	- Work: Company\n"
 	" ORG ORGUNIT	- Work: Department",
@@ -979,10 +983,15 @@ get_vcard_content(User, Server, Data) ->
 	    throw(error_no_vcard_found)
     end.
 
+get_vcard([<<"TEL">>, TelType], {_, _, _, OldEls}) ->
+    {TakenEl, _NewEls} = take_vcard_tel(TelType, OldEls, [], not_found),
+    [TakenEl];
+
 get_vcard([Data1, Data2], A1) ->
     case get_subtag(A1, Data1) of
     	false -> false;
-	A2List -> lists:flatten([get_vcard([Data2], A2) || A2 <- A2List])
+	A2List ->
+	    lists:flatten([get_vcard([Data2], A2) || A2 <- A2List])
     end;
 
 get_vcard([Data], A1) ->
@@ -1029,6 +1038,24 @@ set_vcard_content(User, Server, Data, SomeContent) ->
 
     Module:Function(JID, JID, IQ2),
     ok.
+
+take_vcard_tel(TelType, [{xmlel, <<"TEL">>, _, SubEls}=OldEl | OldEls], NewEls, Taken) ->
+    {Taken2, NewEls2} = case lists:keymember(TelType, 2, SubEls) of
+	true -> {xml:get_subtag(OldEl, <<"NUMBER">>), NewEls};
+	false -> {Taken, [OldEl | NewEls]}
+    end,
+    take_vcard_tel(TelType, OldEls, NewEls2, Taken2);
+take_vcard_tel(TelType, [OldEl | OldEls], NewEls, Taken) ->
+    take_vcard_tel(TelType, OldEls, [OldEl | NewEls], Taken);
+take_vcard_tel(_TelType, [], NewEls, Taken) ->
+    {Taken, NewEls}.
+
+update_vcard_els([<<"TEL">>, TelType], [TelValue], OldEls) ->
+    {_, NewEls} = take_vcard_tel(TelType, OldEls, [], not_found),
+    NewEl = {xmlel,<<"TEL">>,[],
+             [{xmlel,TelType,[],[]},
+              {xmlel,<<"NUMBER">>,[],[{xmlcdata,TelValue}]}]},
+    [NewEl | NewEls];
 
 update_vcard_els(Data, ContentList, Els1) ->
     Els2 = lists:keysort(2, Els1),
