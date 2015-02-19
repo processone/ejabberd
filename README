@@ -1,4 +1,4 @@
-ejabberd Community Edition, by ProcessOne
+ejabberd Community Edition [![Build Status](https://travis-ci.org/processone/ejabberd.svg?branch=master)](https://travis-ci.org/processone/ejabberd)
 =========================================
 
 ejabberd is a distributed, fault-tolerant technology that allows the creation
