@@ -1594,6 +1594,9 @@ client_state_slave(Config) ->
     true = ?config(csi, Config),
     Peer = ?config(master, Config),
     send(Config, #csi{type = inactive}),
+    send_recv(
+      Config,
+      #iq{type = get, sub_els = [#ping{}], to = server_jid(Config)}),
     wait_for_master(Config),
     ?recv1(#presence{from = Peer, sub_els = [#vcard_xupdate{}|_]}),
     ?recv1(#message{from = Peer, thread = <<"1">>, sub_els = [#chatstate{type = active}],
