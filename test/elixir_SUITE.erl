@@ -6,7 +6,9 @@
 %%% Elixir from standard common test code.
 %%%
 %%% Example: Is run with:
-%%% ./rebar skip_deps=true ct suites=test/elixir_SUITE
+%%%     ./rebar skip_deps=true ct suites=elixir
+%%% or from ejabber overall test suite:
+%%%     make test
 %%% @end
 %%% Created :  19 Feb 2015 by Mickael Remond <mremond@process-one.net>
 %%%-------------------------------------------------------------------
