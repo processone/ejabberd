@@ -99,7 +99,9 @@ CfgDeps = lists:flatmap(
                     [{jiffy, ".*", {git, "git://github.com/davisp/jiffy"}}];
                ({elixir, true}) ->
                     [{rebar_elixir_plugin, ".*", {git, "git://github.com/yrashk/rebar_elixir_plugin"}},
-                     {elixir, "1.1.*", {git, "git://github.com/elixir-lang/elixir"}}];
+                     {elixir, ".*",
+                      {git, "git://github.com/elixir-lang/elixir",
+                       {branch, "v1.0"}}}];
                ({iconv, true}) ->
                     [{p1_iconv, ".*", {git, "git://github.com/processone/eiconv"}}];
                ({lager, true}) ->
