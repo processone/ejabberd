@@ -460,12 +460,12 @@ commands() ->
      #ejabberd_commands{name = private_get, tags = [private],
 			desc = "Get some information from a user private storage",
 			module = ?MODULE, function = private_get,
-			args = [{user, string}, {host, string}, {element, string}, {ns, string}],
+			args = [{user, binary}, {host, binary}, {element, binary}, {ns, binary}],
 			result = {res, string}},
      #ejabberd_commands{name = private_set, tags = [private],
 			desc = "Set to the user private storage",
 			module = ?MODULE, function = private_set,
-			args = [{user, string}, {host, string}, {element, string}],
+			args = [{user, binary}, {host, binary}, {element, binary}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = srg_create, tags = [shared_roster_group],
@@ -1289,7 +1289,7 @@ private_get(Username, Host, Element, Ns) ->
     [{xmlel, <<"query">>,
       [{<<"xmlns">>, <<"jabber:iq:private">>}],
       [SubEl]}] = ResIq#iq.sub_el,
-    xml:element_to_string(SubEl).
+    binary_to_list(xml:element_to_binary(SubEl)).
 
 private_set(Username, Host, ElementString) ->
     case xml_stream:parse_element(ElementString) of
