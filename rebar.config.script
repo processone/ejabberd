@@ -92,16 +92,12 @@ CfgDeps = lists:flatmap(
                ({zlib, true}) ->
                     [{p1_zlib, ".*", {git, "git://github.com/processone/zlib"}}];
                ({riak, true}) ->
-                    [{riakc, ".*",
-		      {git, "git://github.com/basho/riak-erlang-client",
-		       {tag, "1.4.2"}}}];
+                    [{riakc, ".*", {git, "git://github.com/basho/riak-erlang-client", {tag, "1.4.2"}}}];
                ({json, true}) ->
                     [{jiffy, ".*", {git, "git://github.com/davisp/jiffy"}}];
                ({elixir, true}) ->
                     [{rebar_elixir_plugin, ".*", {git, "git://github.com/yrashk/rebar_elixir_plugin"}},
-                     {elixir, ".*",
-                      {git, "git://github.com/elixir-lang/elixir",
-                       {branch, "v1.0"}}}];
+                     {elixir, ".*", {git, "git://github.com/elixir-lang/elixir", {branch, "v1.0"}}}];
                ({iconv, true}) ->
                     [{p1_iconv, ".*", {git, "git://github.com/processone/eiconv"}}];
                ({lager, true}) ->
