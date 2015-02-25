@@ -752,6 +752,9 @@ handle_sync_event({change_config, Config}, _From,
 handle_sync_event({change_state, NewStateData}, _From,
 		  StateName, _StateData) ->
     {reply, {ok, NewStateData}, StateName, NewStateData};
+handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData) ->
+    NSD = process_item_change(Item, StateData, UJID),
+    {reply, {ok, NSD}, StateName, NSD};
 handle_sync_event(_Event, _From, StateName,
 		  StateData) ->
     Reply = ok, {reply, Reply, StateName, StateData}.
@@ -2612,114 +2615,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 		    "room ~s:~n ~p",
 		    [jlib:jid_to_string(UJID),
 		     jlib:jid_to_string(StateData#state.jid), Res]),
-	  NSD = lists:foldl(fun (E, SD) ->
-				    case catch case E of
-						 {JID, affiliation, owner, _}
-						     when JID#jid.luser ==
-							    <<"">> ->
-						     %% If the provided JID does not have username,
-						     %% forget the affiliation completely
-						     SD;
-						 {JID, role, none, Reason} ->
-						     catch
-						       send_kickban_presence(UJID, JID,
-									     Reason,
-									     <<"307">>,
-									     SD),
-						     set_role(JID, none, SD);
-						 {JID, affiliation, none,
-						  Reason} ->
-						     case
-						       (SD#state.config)#config.members_only
-							 of
-						       true ->
-							   catch
-							     send_kickban_presence(UJID, JID,
-										   Reason,
-										   <<"321">>,
-										   none,
-										   SD),
-							   SD1 =
-							       set_affiliation(JID,
-									       none,
-									       SD),
-							   set_role(JID, none,
-								    SD1);
-						       _ ->
-							   SD1 =
-							       set_affiliation(JID,
-									       none,
-									       SD),
-							   send_update_presence(JID,
-										SD1),
-							   SD1
-						     end;
-						 {JID, affiliation, outcast,
-						  Reason} ->
-						     catch
-						       send_kickban_presence(UJID, JID,
-									     Reason,
-									     <<"301">>,
-									     outcast,
-									     SD),
-						     set_affiliation(JID,
-								     outcast,
-								     set_role(JID,
-									      none,
-									      SD),
-								     Reason);
-						 {JID, affiliation, A, Reason}
-						     when (A == admin) or
-							    (A == owner) ->
-						     SD1 = set_affiliation(JID,
-									   A,
-									   SD,
-									   Reason),
-						     SD2 = set_role(JID,
-								    moderator,
-								    SD1),
-						     send_update_presence(JID,
-									  Reason,
-									  SD2),
-						     SD2;
-						 {JID, affiliation, member,
-						  Reason} ->
-						     SD1 = set_affiliation(JID,
-									   member,
-									   SD,
-									   Reason),
-						     SD2 = set_role(JID,
-								    participant,
-								    SD1),
-						     send_update_presence(JID,
-									  Reason,
-									  SD2),
-						     SD2;
-						 {JID, role, Role, Reason} ->
-						     SD1 = set_role(JID, Role,
-								    SD),
-						     catch
-						       send_new_presence(JID,
-									 Reason,
-									 SD1),
-						     SD1;
-						 {JID, affiliation, A,
-						  _Reason} ->
-						     SD1 = set_affiliation(JID,
-									   A,
-									   SD),
-						     send_update_presence(JID,
-									  SD1),
-						     SD1
-					       end
-					of
-				      {'EXIT', ErrReason} ->
-					  ?ERROR_MSG("MUC ITEMS SET ERR: ~p~n",
-						     [ErrReason]),
-					  SD;
-				      NSD -> NSD
-				    end
-			    end,
+	  NSD = lists:foldl(process_item_change(UJID),
 			    StateData, lists:flatten(Res)),
 	  case (NSD#state.config)#config.persistent of
 	    true ->
@@ -2730,6 +2626,79 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 	  end,
 	  {result, [], NSD};
       Err -> Err
+    end.
+
+process_item_change(UJID) ->
+    fun(E, SD) ->
+        process_item_change(E, SD, UJID)
+    end.
+
+process_item_change(E, SD, UJID) ->
+    case catch case E of
+        {JID, affiliation, owner, _} when JID#jid.luser == <<"">> ->
+            %% If the provided JID does not have username,
+            %% forget the affiliation completely
+            SD;
+        {JID, role, none, Reason} ->
+            catch
+                send_kickban_presence(UJID, JID,
+                    Reason,
+                    <<"307">>,
+                    SD),
+            set_role(JID, none, SD);
+        {JID, affiliation, none, Reason} ->
+            case (SD#state.config)#config.members_only of
+                true ->
+                    catch
+                        send_kickban_presence(UJID, JID,
+                            Reason,
+                            <<"321">>,
+                            none,
+                            SD),
+                    SD1 = set_affiliation(JID, none, SD),
+                    set_role(JID, none, SD1);
+                _ ->
+                    SD1 = set_affiliation(JID, none, SD),
+                    send_update_presence(JID, SD1),
+                    SD1
+            end;
+        {JID, affiliation, outcast, Reason} ->
+            catch
+                send_kickban_presence(UJID, JID,
+                    Reason,
+                    <<"301">>,
+                    outcast,
+                    SD),
+            set_affiliation(JID,
+                outcast,
+                set_role(JID, none, SD),
+                Reason);
+        {JID, affiliation, A, Reason}
+            when (A == admin) or (A == owner) ->
+            SD1 = set_affiliation(JID, A, SD, Reason),
+            SD2 = set_role(JID, moderator, SD1),
+            send_update_presence(JID, Reason, SD2),
+            SD2;
+        {JID, affiliation, member, Reason} ->
+            SD1 = set_affiliation(JID, member, SD, Reason),
+            SD2 = set_role(JID, participant, SD1),
+            send_update_presence(JID, Reason, SD2),
+            SD2;
+        {JID, role, Role, Reason} ->
+            SD1 = set_role(JID, Role, SD),
+            catch
+                send_new_presence(JID, Reason, SD1),
+            SD1;
+        {JID, affiliation, A, _Reason} ->
+            SD1 = set_affiliation(JID, A, SD),
+            send_update_presence(JID, SD1),
+            SD1
+    end
+    of
+        {'EXIT', ErrReason} ->
+            ?ERROR_MSG("MUC ITEMS SET ERR: ~p~n", [ErrReason]),
+            SD;
+        NSD -> NSD
     end.
 
 find_changed_items(_UJID, _UAffiliation, _URole, [],
