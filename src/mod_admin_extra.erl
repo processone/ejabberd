@@ -860,7 +860,11 @@ connected_users_info() ->
 	      NodeS = atom_to_list(node(Pid)),
 	      Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
 				      calendar:now_to_local_time(Now)),
-	      {[U, $@, S, $/, R], atom_to_list(Conn), IPS, Port, Priority, NodeS, Uptime}
+	      PriorityI = case Priority of
+			      PI when is_integer(PI) -> PI;
+			      _ -> nil
+			  end,
+	      {[U, $@, S, $/, R], atom_to_list(Conn), IPS, Port, PriorityI, NodeS, Uptime}
       end,
       USRIs).
 
