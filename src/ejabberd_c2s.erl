@@ -2848,9 +2848,8 @@ send_stanza_and_ack_req(StateData, Stanza) ->
     AckReq = #xmlel{name = <<"r">>,
 		    attrs = [{<<"xmlns">>, StateData#state.mgmt_xmlns}],
 		    children = []},
-    StanzaS = xml:element_to_binary(Stanza),
-    AckReqS = xml:element_to_binary(AckReq),
-    send_text(StateData, [StanzaS, AckReqS]).
+    send_element(StateData, Stanza),
+    send_element(StateData, AckReq).
 
 mgmt_queue_add(StateData, El) ->
     NewNum = case StateData#state.mgmt_stanzas_out of
