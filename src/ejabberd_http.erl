@@ -109,11 +109,6 @@ init({SockMod, Socket}, Opts) ->
 				 {p1_tls, TLSSocket};
 			     true -> {SockMod, Socket}
 			  end,
-    case SockMod1 of
-      gen_tcp ->
-	  inet:setopts(Socket1, [{packet, http_bin}, {recbuf, 8192}]);
-      _ -> ok
-    end,
     Captcha = case proplists:get_bool(captcha, Opts) of
                   true -> [{[<<"captcha">>], ejabberd_captcha}];
                   false -> []
@@ -182,22 +177,10 @@ receive_headers(#state{trail = Trail} = State) ->
     SockMod = State#state.sockmod,
     Socket = State#state.socket,
     Data = SockMod:recv(Socket, 0, 300000),
-    case State#state.sockmod of
-        gen_tcp ->
-	    NewState = process_header(State, Data),
-	    case NewState#state.end_of_request of
-		true ->
-		    ok;
-		_ ->
-		    receive_headers(NewState)
-	    end;
-        _ ->
-            case Data of
-                {ok, D} ->
-                    parse_headers(State#state{trail = <<Trail/binary, D/binary>>});
-                {error, _} ->
-                    ok
-            end
+    case Data of
+        {error, _} -> ok;
+        {ok, D} ->
+            parse_headers(State#state{trail = <<Trail/binary, D/binary>>})
     end.
 
 parse_headers(#state{trail = <<>>} = State) ->
@@ -270,6 +253,11 @@ process_header(State, Data) ->
       {ok, {http_header, _, 'Host' = Name, _, Host}} ->
 	  State#state{request_host = Host,
 		      request_headers = add_header(Name, Host, State)};
+      {ok, {http_header, _, Name, _, Value}} when is_binary(Name) ->
+         State#state{request_headers =
+                         add_header(normalize_header_name(Name),
+                                     Value,
+                                    State)};
       {ok, {http_header, _, Name, _, Value}} ->
 	  State#state{request_headers =
 			  add_header(Name, Value, State)};
@@ -294,10 +282,6 @@ process_header(State, Data) ->
 	  send_text(State2, Out),
 	  case State2#state.request_keepalive of
 	    true ->
-		case SockMod of
-		  gen_tcp -> inet:setopts(Socket, [{packet, http_bin}]);
-		  _ -> ok
-		end,
 		#state{sockmod = SockMod, socket = Socket,
 		       options = State#state.options,
 		       request_handlers = State#state.request_handlers};
@@ -824,6 +808,26 @@ old_integer_to_hex(I) when I < 16 -> [I - 10 + $A];
 old_integer_to_hex(I) when I >= 16 ->
     N = trunc(I / 16),
     old_integer_to_hex(N) ++ old_integer_to_hex(I rem 16).
+
+% The following code is mostly taken from yaws_ssl.erl
+
+toupper(C) when C >= $a andalso C =< $z -> C - 32;
+toupper(C) -> C.
+
+tolower(C) when C >= $A andalso C =< $Z -> C + 32;
+tolower(C) -> C.
+
+normalize_header_name(Name) ->
+    normalize_header_name(Name, [], true).
+
+normalize_header_name(<<"">>, Acc, _) ->
+    iolist_to_binary(Acc);
+normalize_header_name(<<"-", Rest/binary>>, Acc, _) ->
+    normalize_header_name(Rest, [Acc, "-"], true);
+normalize_header_name(<<C:8, Rest/binary>>, Acc, true) ->
+    normalize_header_name(Rest, [Acc, toupper(C)], false);
+normalize_header_name(<<C:8, Rest/binary>>, Acc, false) ->
+    normalize_header_name(Rest, [Acc, tolower(C)], false).
 
 normalize_path(Path) ->
     normalize_path(Path, []).
