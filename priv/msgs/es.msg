@@ -29,6 +29,7 @@
 {"August","agosto"}.
 {"Backup","Guardar copia de seguridad"}.
 {"Backup Management","Gestión de copia de seguridad"}.
+{"Backup of ~p","Copia de seguridad de ~p"}.
 {"Backup to File at ","Guardar copia de seguridad en fichero en "}.
 {"Bad format","Mal formato"}.
 {"Birthday","Cumpleaños"}.
@@ -55,6 +56,7 @@
 {"Country","País"}.
 {"CPU Time:","Tiempo consumido de CPU:"}.
 {"Database","Base de datos"}.
+{"Database Tables at ~p","Tablas de la base de datos en ~p"}.
 {"Database Tables Configuration at ","Configuración de tablas de la base de datos en "}.
 {"December","diciembre"}.
 {"Default users as participants","Los usuarios son participantes por defecto"}.
@@ -97,6 +99,7 @@
 {"Error","Error"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Ejemplo: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Excluir Jabber IDs de las pruebas de CAPTCHA"}.
+{"Export all tables as SQL queries to a file:","Exportar todas las tablas a un fichero SQL:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportar datos de todos los usuarios del servidor a ficheros PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportar datos de los usuarios de un dominio a ficheros PIEFXIS (XEP-0227):"}.
 {"Family Name","Apellido"}.
@@ -183,6 +186,7 @@
 {"moderators only","solo moderadores"}.
 {"Modified modules","Módulos modificados"}.
 {"Module","Módulo"}.
+{"Modules at ~p","Módulos en ~p"}.
 {"Modules","Módulos"}.
 {"Monday","lunes"}.
 {"Name:","Nombre:"}.
@@ -197,6 +201,7 @@
 {"No Data","Sin datos"}.
 {"Node ID","Nodo ID"}.
 {"Node not found","Nodo no encontrado"}.
+{"Node ~p","Nodo ~p"}.
 {"Nodes","Nodos"}.
 {"No limit","Sin límite"}.
 {"None","Ninguno"}.
@@ -329,6 +334,7 @@
 {"There was an error changing the password: ","Hubo un error cambiando la contraseña."}.
 {"There was an error creating the account: ","Hubo uno error al crear la cuenta:"}.
 {"There was an error deleting the account: ","Hubo un error borrando la cuenta."}.
+{"This IP address is blacklisted in ~s","Esta dirección IP está en la lista negra en ~s"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","No importa si usas mayúsculas: macbeth es lo mismo que MacBeth y Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Esta página te permite crear una cuenta Jabber este servidor Jabber. Tu JID (Jabber IDentificador) será de la forma: nombredeusuario@servidor. Por favor lee detenidamente las instrucciones para rellenar correctamente los campos."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Esta página te permite borrar tu cuenta Jabber en este servidor Jabber."}.
@@ -336,6 +342,8 @@
 {"Thursday","jueves"}.
 {"Time delay","Retraso temporal"}.
 {"Time","Fecha"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Demasiadas (~p) autenticaciones fallidas de esta dirección IP (~s). La dirección será desbloqueada en ~s UTC"}.
+{"Too many unacked stanzas","Demasiados mensajes sin haber reconocido  recibirlos"}.
 {"To","Para"}.
 {"To ~s","A ~s"}.
 {"Transactions Aborted:","Transacciones abortadas:"}.
@@ -349,6 +357,7 @@
 {"Update","Actualizar"}.
 {"Update message of the day (don't send)","Actualizar mensaje del dia, pero no enviarlo"}.
 {"Update message of the day on all hosts (don't send)","Actualizar el mensaje del día en todos los dominos (pero no enviarlo)"}.
+{"Update ~p","Actualizar ~p"}.
 {"Update plan","Plan de actualización"}.
 {"Update script","Script de actualización"}.
 {"Uptime:","Tiempo desde el inicio:"}.
@@ -357,6 +366,7 @@
 {"User Management","Administración de usuarios"}.
 {"Username:","Nombre de usuario:"}.
 {"Users Last Activity","Última actividad de los usuarios"}.
+{"User ~s","Usuario ~s"}.
 {"Users","Usuarios"}.
 {"User","Usuario"}.
 {"Validate","Validar"}.
