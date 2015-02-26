@@ -66,7 +66,7 @@ msgstr "本当にお知らせメッセージを削除しますか ?"
 #: mod_announce.erl:515 mod_announce_odbc.erl:507 mod_configure.erl:1083
 #: mod_configure.erl:1128
 msgid "Subject"
-msgstr "題"
+msgstr "件名"
 
 #: mod_announce.erl:520 mod_announce_odbc.erl:512 mod_configure.erl:1088
 #: mod_configure.erl:1133
@@ -555,7 +555,7 @@ msgstr "サービス管理者のみがサービスメッセージを送信でき
 
 #: mod_muc/mod_muc.erl:493 mod_muc/mod_muc_odbc.erl:500
 msgid "Room creation is denied by service policy"
-msgstr "サービスポリシーによって談話室の作成が禁止されています"
+msgstr "サービスポリシーによってチャットルームの作成が禁止されています"
 
 #: mod_muc/mod_muc.erl:500 mod_muc/mod_muc_odbc.erl:507
 msgid "Conference room does not exist"
@@ -563,7 +563,7 @@ msgstr "会議室は存在しません"
 
 #: mod_muc/mod_muc.erl:582 mod_muc/mod_muc_odbc.erl:595
 msgid "Chatrooms"
-msgstr "談話室"
+msgstr "チャットルーム"
 
 #: mod_muc/mod_muc.erl:712 mod_muc/mod_muc_odbc.erl:729
 msgid "You need a client that supports x:data to register the nickname"
@@ -595,19 +595,19 @@ msgstr "フォームの\"ニックネーム\"欄を入力する必要があり�
 
 #: mod_muc/mod_muc.erl:808 mod_muc/mod_muc_odbc.erl:831
 msgid "ejabberd MUC module"
-msgstr "ejabberd MUC module"
+msgstr "ejabberd MUCモジュール"
 
 #: mod_muc/mod_muc_log.erl:374 mod_muc/mod_muc_log.erl:381
 msgid "Chatroom configuration modified"
-msgstr "談話室の設定が変更されました"
+msgstr "チャットルームの設定が変更されました"
 
 #: mod_muc/mod_muc_log.erl:384
 msgid "joins the room"
-msgstr "が談話室に参加しました"
+msgstr "がチャットルームに参加しました"
 
 #: mod_muc/mod_muc_log.erl:387 mod_muc/mod_muc_log.erl:390
 msgid "leaves the room"
-msgstr "が談話室から退出しました"
+msgstr "がチャットルームから退出しました"
 
 #: mod_muc/mod_muc_log.erl:393 mod_muc/mod_muc_log.erl:396
 msgid "has been banned"
@@ -623,7 +623,7 @@ msgstr "は分掌が変更されたためキックされました"
 
 #: mod_muc/mod_muc_log.erl:408
 msgid "has been kicked because the room has been changed to members-only"
-msgstr "は談話室がメンバー制に変更されたためキックされました"
+msgstr "はチャットルームがメンバー制に変更されたためキックされました"
 
 #: mod_muc/mod_muc_log.erl:411
 msgid "has been kicked because of a system shutdown"
@@ -636,23 +636,23 @@ msgstr "は名前を変更しました: "
 #: mod_muc/mod_muc_log.erl:417 mod_muc/mod_muc_log.erl:688
 #: mod_muc/mod_muc_room.erl:2393
 msgid " has set the subject to: "
-msgstr " は題を設定しました: "
+msgstr " は件名を設定しました: "
 
 #: mod_muc/mod_muc_log.erl:452
 msgid "Chatroom is created"
-msgstr "談話室を作りました"
+msgstr "チャットルームを作りました"
 
 #: mod_muc/mod_muc_log.erl:453
 msgid "Chatroom is destroyed"
-msgstr "談話室を削除しました"
+msgstr "チャットルームを終了しました"
 
 #: mod_muc/mod_muc_log.erl:454
 msgid "Chatroom is started"
-msgstr "談話室を開始しました"
+msgstr "チャットルームを開始しました"
 
 #: mod_muc/mod_muc_log.erl:455
 msgid "Chatroom is stopped"
-msgstr "談話室を停止しました"
+msgstr "チャットルームを停止しました"
 
 #: mod_muc/mod_muc_log.erl:459
 msgid "Monday"
@@ -732,7 +732,7 @@ msgstr "12月"
 
 #: mod_muc/mod_muc_log.erl:750
 msgid "Room Configuration"
-msgstr "談話室の設定"
+msgstr "チャットルームの設定"
 
 #: mod_muc/mod_muc_log.erl:759
 msgid "Room Occupants"
@@ -802,17 +802,17 @@ msgstr "在室者のみが会議にクエリーを送信することができま
 
 #: mod_muc/mod_muc_room.erl:646
 msgid "Queries to the conference members are not allowed in this room"
-msgstr "この談話室では、会議のメンバーへのクエリーは禁止されています"
+msgstr "このチャットルームでは、会議のメンバーへのクエリーは禁止されています"
 
 #: mod_muc/mod_muc_room.erl:932
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
-msgstr "モデレーターと参加者のみが談話室の題を変更できます"
+msgstr "モデレーターと参加者のみがチャットルームの件名を変更できます"
 
 #: mod_muc/mod_muc_room.erl:937
 msgid "Only moderators are allowed to change the subject in this room"
-msgstr "モデレーターのみが談話室の題を変更できます"
+msgstr "モデレーターのみがチャットルームの件名を変更できます"
 
 #: mod_muc/mod_muc_room.erl:947
 msgid "Visitors are not allowed to send messages to all occupants"
@@ -825,7 +825,7 @@ msgstr "エラープレゼンスを送信したため、この参加者はキッ
 
 #: mod_muc/mod_muc_room.erl:1040
 msgid "Visitors are not allowed to change their nicknames in this room"
-msgstr "傍聴者はこの談話室でニックネームを変更することはできません"
+msgstr "傍聴者はこのチャットルームでニックネームを変更することはできません"
 
 #: mod_muc/mod_muc_room.erl:1053 mod_muc/mod_muc_room.erl:1779
 msgid "That nickname is already in use by another occupant"
@@ -833,19 +833,19 @@ msgstr "そのニックネームは既にほかの在室者によって使用さ
 
 #: mod_muc/mod_muc_room.erl:1768
 msgid "You have been banned from this room"
-msgstr "あなたはこの談話室からバンされています"
+msgstr "あなたはこのチャットルームからバンされています"
 
 #: mod_muc/mod_muc_room.erl:1771
 msgid "Membership is required to enter this room"
-msgstr "この談話室に入るにはメンバーでなければなりません"
+msgstr "このチャットルームに入るにはメンバーでなければなりません"
 
 #: mod_muc/mod_muc_room.erl:1807
 msgid "This room is not anonymous"
-msgstr "この談話室は非匿名です"
+msgstr "このチャットルームは非匿名です"
 
 #: mod_muc/mod_muc_room.erl:1833
 msgid "A password is required to enter this room"
-msgstr "この談話室に入るにはパスワードが必要です"
+msgstr "このチャットルームに入るにはパスワードが必要です"
 
 #: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
 msgid "Too many CAPTCHA requests"
@@ -873,7 +873,7 @@ msgstr "Jabber ID ~s は無効です"
 
 #: mod_muc/mod_muc_room.erl:2633
 msgid "Nickname ~s does not exist in the room"
-msgstr "ニックネーム ~s はこの談話室にいません"
+msgstr "ニックネーム ~s はこのチャットルームにいません"
 
 #: mod_muc/mod_muc_room.erl:2659 mod_muc/mod_muc_room.erl:3049
 msgid "Invalid affiliation: ~s"
@@ -889,23 +889,23 @@ msgstr "主宰者の権限が必要です"
 
 #: mod_muc/mod_muc_room.erl:3195
 msgid "Configuration of room ~s"
-msgstr "談話室 ~s の設定"
+msgstr "チャットルーム ~s の設定"
 
 #: mod_muc/mod_muc_room.erl:3200
 msgid "Room title"
-msgstr "談話室のタイトル"
+msgstr "チャットルームのタイトル"
 
 #: mod_muc/mod_muc_room.erl:3203 mod_muc/mod_muc_room.erl:3692
 msgid "Room description"
-msgstr "談話室の説明"
+msgstr "チャットルームの説明"
 
 #: mod_muc/mod_muc_room.erl:3210
 msgid "Make room persistent"
-msgstr "談話室を永続化"
+msgstr "チャットルームを永続化"
 
 #: mod_muc/mod_muc_room.erl:3215
 msgid "Make room public searchable"
-msgstr "談話室を検索可"
+msgstr "チャットルームを検索可"
 
 #: mod_muc/mod_muc_room.erl:3218
 msgid "Make participants list public"
@@ -913,7 +913,7 @@ msgstr "参加者一覧を公開"
 
 #: mod_muc/mod_muc_room.erl:3221
 msgid "Make room password protected"
-msgstr "談話室をパスワードで保護"
+msgstr "チャットルームをパスワードで保護"
 
 #: mod_muc/mod_muc_room.erl:3232
 msgid "Maximum Number of Occupants"
@@ -937,11 +937,11 @@ msgstr "誰にでも"
 
 #: mod_muc/mod_muc_room.erl:3262
 msgid "Make room members-only"
-msgstr "談話室をメンバーのみに制限"
+msgstr "チャットルームをメンバーのみに制限"
 
 #: mod_muc/mod_muc_room.erl:3265
 msgid "Make room moderated"
-msgstr "談話室をモデレート化"
+msgstr "チャットルームをモデレート化"
 
 #: mod_muc/mod_muc_room.erl:3268
 msgid "Default users as participants"
@@ -949,7 +949,7 @@ msgstr "デフォルトのユーザーは参加者"
 
 #: mod_muc/mod_muc_room.erl:3271
 msgid "Allow users to change the subject"
-msgstr "ユーザーによる題の変更を許可"
+msgstr "ユーザーによる件名の変更を許可"
 
 #: mod_muc/mod_muc_room.erl:3274
 msgid "Allow users to send private messages"
@@ -989,7 +989,7 @@ msgstr "発言権の要求の最小時間間隔 (秒)"
 
 #: mod_muc/mod_muc_room.erl:3317
 msgid "Make room CAPTCHA protected"
-msgstr "談話室を CAPTCHA で保護"
+msgstr "チャットルームを CAPTCHA で保護"
 
 #: mod_muc/mod_muc_room.erl:3322
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1001,7 +1001,7 @@ msgstr "ロギングを有効"
 
 #: mod_muc/mod_muc_room.erl:3337
 msgid "You need an x:data capable client to configure room"
-msgstr "談話室を設定するには x:data をサポートするクライアントが必要です"
+msgstr "チャットルームを設定するには x:data をサポートするクライアントが必要です"
 
 #: mod_muc/mod_muc_room.erl:3694
 msgid "Number of occupants"
@@ -1029,7 +1029,7 @@ msgstr "この人に発言権を与えますか ?"
 
 #: mod_muc/mod_muc_room.erl:3960
 msgid "~s invites you to the room ~s"
-msgstr "~s はあなたを談話室 ~s に招待しています"
+msgstr "~s はあなたをチャットルーム ~s に招待しています"
 
 #: mod_muc/mod_muc_room.erl:3969
 msgid "the password is"
@@ -1413,7 +1413,7 @@ msgstr "~s アクセスルール設定"
 
 #: web/ejabberd_web_admin.erl:1035
 msgid "Virtual Hosts"
-msgstr "ヴァーチャルホスト"
+msgstr "バーチャルホスト"
 
 #: web/ejabberd_web_admin.erl:1043 web/ejabberd_web_admin.erl:1050
 msgid "Users"
@@ -1675,7 +1675,7 @@ msgstr "更新計画"
 
 #: web/ejabberd_web_admin.erl:2255
 msgid "Modified modules"
-msgstr "変更されたモジュール"
+msgstr "更新されたモジュール"
 
 #: web/ejabberd_web_admin.erl:2256
 msgid "Update script"
@@ -1839,7 +1839,7 @@ msgid "Unregister"
 msgstr "削除"
 
 #~ msgid "ejabberd virtual hosts"
-#~ msgstr "ejabberd ヴァーチャルホスト"
+#~ msgstr "ejabberd バーチャルホスト"
 
 #~ msgid "Captcha test failed"
 #~ msgstr "キャプチャのテストに失敗しました"
