@@ -2,12 +2,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ejabberd 2.1.x\n"
 "PO-Revision-Date: 2012-04-16 15:48+0900\n"
-"Last-Translator: Mako N <mako@pasero.net>\n"
+"Last-Translator: Tsukasa Hamano <code@cuspy.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Japanese (日本語)\n"
 "X-Additional-Translator: Tsukasa Hamano <code@cuspy.org>\n"
+"X-Additional-Translator: Mako N <mako@pasero.net>\n"
 
 #: ejabberd_c2s.erl:526 ejabberd_c2s.erl:873
 msgid "Use of STARTTLS required"
@@ -28,7 +29,7 @@ msgstr "はキックされました"
 
 #: ejabberd_c2s.erl:2504
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "多くのスタンザが応答していません"
 
 #: ejabberd_captcha.erl:125 ejabberd_captcha.erl:248 ejabberd_captcha.erl:293
 msgid "Enter the text you see"
@@ -242,9 +243,8 @@ msgid "Change Password"
 msgstr "パスワードを変更"
 
 #: ejabberd_web_admin.erl:1596
-#, fuzzy
 msgid "User ~s"
-msgstr "ユーザー "
+msgstr "ユーザー ~s"
 
 #: ejabberd_web_admin.erl:1607
 msgid "Connected Resources:"
@@ -276,9 +276,8 @@ msgid "Stopped Nodes"
 msgstr "停止ノード"
 
 #: ejabberd_web_admin.erl:1757 ejabberd_web_admin.erl:1782
-#, fuzzy
 msgid "Node ~p"
-msgstr "ノード "
+msgstr "ノード ~p"
 
 #: ejabberd_web_admin.erl:1766 mod_configure.erl:151 mod_configure.erl:612
 msgid "Database"
@@ -314,9 +313,8 @@ msgid "RPC Call Error"
 msgstr "RPC 呼び出しエラー"
 
 #: ejabberd_web_admin.erl:1841
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "データーベーステーブル: "
+msgstr "データーベーステーブル: ~p"
 
 #: ejabberd_web_admin.erl:1851 mod_vcard.erl:486 mod_vcard.erl:612
 msgid "Name"
@@ -339,9 +337,8 @@ msgid "Error"
 msgstr "エラー"
 
 #: ejabberd_web_admin.erl:1879
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "バックアップ: "
+msgstr "バックアップ: ~p"
 
 #: ejabberd_web_admin.erl:1885
 msgid ""
@@ -399,7 +396,7 @@ msgstr "ホストのユーザーデータを PIEFXIS ファイルにエクスポ
 
 #: ejabberd_web_admin.erl:1986
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "すべてのテーブルをSQL形式でファイルにエクスポート: "
 
 #: ejabberd_web_admin.erl:2002
 msgid "Import user data from jabberd14 spool file:"
@@ -414,9 +411,8 @@ msgid "Listened Ports at "
 msgstr "Listen ポート "
 
 #: ejabberd_web_admin.erl:2070
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "モジュール "
+msgstr "モジュール ~p"
 
 #: ejabberd_web_admin.erl:2101
 msgid "Statistics of ~p"
@@ -447,9 +443,8 @@ msgid "Transactions Logged:"
 msgstr "トランザクションのログ: "
 
 #: ejabberd_web_admin.erl:2169
-#, fuzzy
 msgid "Update ~p"
-msgstr "更新 "
+msgstr "更新 ~p"
 
 #: ejabberd_web_admin.erl:2180
 msgid "Update plan"
@@ -830,15 +825,15 @@ msgstr "プロパティを編集"
 msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
-msgstr ""
+msgstr "~p回の認証に失敗しました。このIPアドレス(~s)は~s UTCまでブロックされます。"
 
 #: mod_ip_blacklist.erl:122
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "このIPアドレスはアクセスを禁止されています ~s"
 
 #: mod_irc.erl:431
 msgid "IRC Transport"
-msgstr "IRC トランスポート"
+msgstr "IRCトランスポート"
 
 #: mod_irc.erl:468
 msgid "ejabberd IRC module"
@@ -1625,8 +1620,7 @@ msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
 msgstr ""
-"欄を埋めて Jabber User を検索してください (* を使用すると部分文字列にマッチし"
-"ます)"
+"項目を入力してユーザーを検索を行えます (* を使用すると部分文字列にマッチします)"
 
 #: mod_vcard.erl:486 mod_vcard.erl:611
 msgid "Full Name"
@@ -1654,7 +1648,7 @@ msgstr "検索を行うためには x:data をサポートするクライアン�
 
 #: mod_vcard.erl:515 mod_vcard_ldap.erl:528
 msgid "vCard User Search"
-msgstr "vCard ユーザー検索"
+msgstr "vCard検索"
 
 #: mod_vcard.erl:576 mod_vcard_ldap.erl:583
 msgid "ejabberd vCard module"
@@ -1666,7 +1660,7 @@ msgstr "検索結果: "
 
 #: mod_vcard_ldap.erl:499
 msgid "Fill in fields to search for any matching Jabber User"
-msgstr "欄を埋めて Jabber User を検索してください"
+msgstr "項目を入力してユーザーを検索してください"
 
 #~ msgid "Your active privacy list has denied the routing of this stanza."
 #~ msgstr ""
