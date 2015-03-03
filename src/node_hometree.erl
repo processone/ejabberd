@@ -328,6 +328,9 @@ subscribe_node(NodeIdx, Sender, Subscriber, AccessModel,
     if not Authorized ->
 	   {error,
 	    ?ERR_EXTENDED((?ERR_BAD_REQUEST), <<"invalid-jid">>)};
+       Affiliation == owner ->  
+		   make_subscription(NodeIdx, Subscriber,AccessModel, SendLast,
+							 SubState, Options );
        Affiliation == outcast -> {error, ?ERR_FORBIDDEN};
        PendingSubscription ->
 	   {error,
@@ -351,23 +354,41 @@ subscribe_node(NodeIdx, Sender, Subscriber, AccessModel,
        %%ForbiddenAnonymous ->
        %%	% Requesting entity is anonymous
        %%	{error, ?ERR_FORBIDDEN};
-       true ->
-	        SubId = pubsub_subscription:add_subscription(Subscriber, NodeIdx, Options),
-	        NewSub = case AccessModel of
-			    authorize -> pending;
-			    _ -> subscribed
-			  end,
-		    set_state(SubState#pubsub_state{subscriptions =
-						     [{NewSub, SubId} | Subscriptions]}),
-		    case {NewSub, SendLast} of
-		        {subscribed, never} ->
-		            {result, {default, subscribed, SubId}};
-		        {subscribed, _} ->
-		            {result, {default, subscribed, SubId, send_last}};
-		        {_, _} -> {result, {default, pending, SubId}}
-		    end
+   true -> 
+		make_subscription(NodeIdx, Subscriber, AccessModel, SendLast, 
+						  SubState, Options )
     end.
 
+
+-spec(make_subscription/6 ::
+(
+  NodeIdx              :: mod_pubsub:nodeIdx(),
+  Subscriber           :: ljid(),
+  AccessModel          :: mod_pubsub:accessModel(),
+  SendLast             :: 'never' | 'on_sub' | 'on_sub_and_presence',
+  SubState             :: mod_pubsub:pubsub_state(),
+  Options              :: mod_pubsub:subOptions())
+    -> {result, {default, subscribed, mod_pubsub:subId()}}
+     | {result, {default, subscribed, mod_pubsub:subId(), send_last}}
+     | {result, {default, pending, mod_pubsub:subId()}}
+).
+make_subscription(NodeIdx, Subscriber, AccessModel, SendLast,
+				  SubState, Options ) ->
+	SubId = pubsub_subscription:add_subscription(Subscriber, NodeIdx, Options),
+	NewSub = case AccessModel of
+				 authorize -> pending;
+				 _ -> subscribed
+			 end,
+	Subscriptions = SubState#pubsub_state.subscriptions,
+	set_state(SubState#pubsub_state{subscriptions =
+										[{NewSub, SubId} | Subscriptions]}),
+	case {NewSub, SendLast} of
+		{subscribed, never} ->
+			{result, {default, subscribed, SubId}};
+		{subscribed, _} ->
+			{result, {default, subscribed, SubId, send_last}};
+		{_, _} -> {result, {default, pending, SubId}}
+	end.
 %% @spec (NodeIdx, Sender, Subscriber, SubId) ->	{error, Reason} | {result, default}
 %%	 NodeIdx    = mod_pubsub:nodeIdx()
 %%	 Sender     = mod_pubsub:jid()
