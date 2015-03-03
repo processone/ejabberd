@@ -243,7 +243,13 @@ handle_info({Tag, _TCPSocket, Data},
 	    {ok, TLSData} ->
 		{noreply, process_data(TLSData, State),
 		 ?HIBERNATE_TIMEOUT};
-	    {error, _Reason} -> {stop, normal, State}
+	    {error, Reason} ->
+		  if is_binary(Reason) ->
+			  ?ERROR_MSG("TLS error = ~s", [Reason]);
+		     true ->
+			  ok
+		  end,
+		  {stop, normal, State}
 	  end;
       ezlib ->
 	  case ezlib:recv_data(Socket, Data) of
