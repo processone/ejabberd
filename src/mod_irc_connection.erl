@@ -697,9 +697,9 @@ terminate(_Reason, _StateName, FullStateData) ->
 					     <<"Server Connect Failed">>}]},
 				FullStateData}
 			 end,
-    (FullStateData#state.mod):closed_connection(StateData#state.host,
-						StateData#state.user,
-						StateData#state.server),
+    (StateData#state.mod):closed_connection(StateData#state.host,
+                                            StateData#state.user,
+                                            StateData#state.server),
     bounce_messages(<<"Server Connect Failed">>),
     lists:foreach(fun (Chan) ->
 			  Stanza = #xmlel{name = <<"presence">>,
