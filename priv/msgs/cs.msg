@@ -1,8 +1,8 @@
+%% -*- coding: latin-1 -*-
 {"Access Configuration","Konfigurace přístupů"}.
 {"Access Control List Configuration","Konfigurace seznamu přístupových práv (ACL)"}.
 {"Access control lists","Seznamy přístupových práv (ACL)"}.
 {"Access Control Lists","Seznamy přístupových práv (ACL)"}.
-{"Access denied by service policy","Přístup byl zamítnut nastavením služby"}.
 {"Access rules","Pravidla přístupů"}.
 {"Access Rules","Pravidla přístupů"}.
 {"Action on user","Akce aplikovaná na uživatele"}.
@@ -11,7 +11,6 @@
 {"Add User","Přidat uživatele"}.
 {"Administration","Administrace"}.
 {"Administration of ","Administrace "}.
-{"Administrator privileges required","Potřebujete práva administrátora"}.
 {"A friendly name for the node","Přívětivé jméno pro uzel"}.
 {"All activity","Všechny aktivity"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Povolit tomuto Jabber ID odebírat tento pubsub uzel?"}.
@@ -26,11 +25,9 @@
 {"All Users","Všichni uživatelé"}.
 {"Announcements","Oznámení"}.
 {"anyone","každému"}.
-{"A password is required to enter this room","Pro vstup do místnosti musíte zadat heslo"}.
 {"April",". dubna"}.
 {"August",". srpna"}.
 {"Backup Management","Správa zálohování"}.
-{"Backup of ","Záloha na "}.
 {"Backup to File at ","Záloha do souboru na "}.
 {"Backup","Zálohovat"}.
 {"Bad format","Nesprávný formát"}.
@@ -51,7 +48,6 @@
 {"Choose whether to approve this entity's subscription.","Zvolte, zda chcete schválit odebírání touto entitou"}.
 {"City","Město"}.
 {"Commands","Příkazy"}.
-{"Conference room does not exist","Konferenční místnost neexistuje"}.
 {"Configuration","Konfigurace"}.
 {"Configuration of room ~s","Konfigurace místnosti ~s"}.
 {"Connected Resources:","Připojené zdroje:"}.
@@ -59,7 +55,6 @@
 {"Country","Země"}.
 {"CPU Time:","Čas procesoru"}.
 {"Database","Databáze"}.
-{"Database Tables at ","Databázové tabulky na "}.
 {"Database Tables Configuration at ","Konfigurace databázových tabulek "}.
 {"December",". prosince"}.
 {"Default users as participants","Uživatelé jsou implicitně členy"}.
@@ -104,7 +99,6 @@
 {"Exclude Jabber IDs from CAPTCHA challenge","Vyloučit Jabber ID z procesu CAPTCHA ověřování"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportovat všechny uživatele do souboru ve formátu PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportovat uživatele na hostiteli do souboru ve formátu PIEFXIS (XEP-0227):"}.
-{"Failed to extract JID from your voice request approval","Došlo k chybě při získávání Jabber ID z vaší žádosti o voice práva"}.
 {"Family Name","Příjmení"}.
 {"February",". února"}.
 {"Fill in fields to search for any matching Jabber User","Vyplňte políčka pro vyhledání uživatele Jabberu"}.
@@ -138,8 +132,6 @@
 {"Import users data from jabberd14 spool directory:","Importovat uživatele z jabberd14 spool souborů:"}.
 {"Import Users from Dir at ","Importovat uživatele z adresáře na "}.
 {"Import Users From jabberd14 Spool Files","Importovat uživatele z jabberd14 spool souborů"}.
-{"Improper message type","Nesprávný typ zprávy"}.
-{"Incorrect password","Nesprávné heslo"}.
 {"Invalid affiliation: ~s","Neplatné přiřazení: ~s"}.
 {"Invalid role: ~s","Neplatná role: ~s"}.
 {"IP addresses","IP adresy"}.
@@ -151,9 +143,6 @@
 {"IRC username","IRC přezdívka"}.
 {"IRC Username","IRC přezdívka"}.
 {"is now known as","se přejmenoval(a) na"}.
-{"It is not allowed to send private messages","Je zakázáno posílat soukromé zprávy"}.
-{"It is not allowed to send private messages of type \"groupchat\"","Není dovoleno odeslání soukromé zprávy typu \"skupinová zpráva\" "}.
-{"It is not allowed to send private messages to the conference","Není povoleno odesílat soukromé zprávy do konference"}.
 {"Jabber Account Registration","Registrace účtu Jabberu"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s je neplatné"}.
@@ -186,17 +175,14 @@
 {"Max payload size in bytes","Maximální náklad v bajtech"}.
 {"May",". května"}.
 {"Members:","Členové:"}.
-{"Membership is required to enter this room","Pro vstup do místnosti musíte být členem"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Svoje heslo si zapamatujte, nebo si jej poznamenejte na papírek a ten uschovejte v bezpečí. Jabber nemá žádný automatizovaný způsob obnovy hesla."}.
 {"Memory","Paměť"}.
 {"Message body","Tělo zprávy"}.
 {"Middle Name","Druhé jméno"}.
 {"Minimum interval between voice requests (in seconds)","Minimální interval mezi žádostmi o voice práva (v sekundách)"}.
-{"Moderator privileges required","Potřebujete práva moderátora"}.
 {"moderators only","moderátorům"}.
 {"Modified modules","Aktualizované moduly"}.
 {"Module","Modul"}.
-{"Modules at ","Moduly na "}.
 {"Modules","Moduly"}.
 {"Monday","Pondělí"}.
 {"Name:","Jméno:"}.
@@ -212,7 +198,6 @@
 {"Node ID","ID uzlu"}.
 {"Node not found","Uzel nenalezen"}.
 {"Nodes","Uzly"}.
-{"Node ","Uzel "}.
 {"No limit","Bez limitu"}.
 {"None","Nic"}.
 {"No resource provided","Nebyl poskytnut žádný zdroj"}.
@@ -235,17 +220,12 @@
 {"Only deliver notifications to available users","Doručovat upozornění jen právě přihlášeným uživatelům"}.
 {"Only moderators and participants are allowed to change the subject in this room","Jen moderátoři a účastníci mají povoleno měnit téma této místnosti"}.
 {"Only moderators are allowed to change the subject in this room","Jen moderátoři mají povoleno měnit téma místnosti"}.
-{"Only moderators can approve voice requests","Pouze moderátoři mohou schválit žádosti o voice práva"}.
-{"Only occupants are allowed to send messages to the conference","Jen členové mají povolené zasílat zprávy do konference"}.
-{"Only occupants are allowed to send queries to the conference","Jen členové mohou odesílat požadavky (query) do konference"}.
-{"Only service administrators are allowed to send service messages","Pouze správci služby smí odesílat servisní zprávy"}.
 {"Options","Nastavení"}.
 {"Organization Name","Název firmy"}.
 {"Organization Unit","Oddělení"}.
 {"Outgoing s2s Connections:","Odchozí s2s spojení:"}.
 {"Outgoing s2s Connections","Odchozí s2s spojení"}.
 {"Outgoing s2s Servers:","Odchozí s2s servery:"}.
-{"Owner privileges required","Jsou vyžadována práva vlastníka"}.
 {"Packet","Paket"}.
 {"Password ~b","Heslo ~b"}.
 {"Password:","Heslo:"}.
@@ -259,7 +239,6 @@
 {"Persist items to storage","Uložit položky natrvalo do úložiště"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Podotýkáme, že tato nastavení budou zálohována do zabudované databáze Mnesia. Pokud používáte ODBC modul, musíte zálohovat svoji SQL databázi samostatně."}.
-{"Please, wait for a while before sending new voice request","Prosím, počkejte chvíli před posláním nové žádosti o voice práva"}.
 {"Pong","Pong"}.
 {"Port ~b","Port ~b"}.
 {"Port","Port"}.
@@ -269,12 +248,10 @@
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","Žádost odběratele PubSub"}.
 {"Purge all items when the relevant publisher goes offline","Smazat všechny položky, pokud se příslušný poskytovatel odpojí"}.
-{"Queries to the conference members are not allowed in this room","Požadavky (queries) na členy konference nejsou v této místnosti povolené"}.
 {"RAM and disc copy","Kopie RAM a disku"}.
 {"RAM copy","Kopie RAM"}.
 {"Raw","Zdroj"}.
 {"Really delete message of the day?","Skutečně smazat zprávu dne?"}.
-{"Recipient is not in the conference room","Příjemce se nenachází v konferenční místnosti"}.
 {"Register a Jabber account","Zaregistrujte si účet Jabberu"}.
 {"Registered Users","Registrovaní uživatelé"}.
 {"Registered Users:","Registrovaní živatelé:"}.
@@ -294,7 +271,6 @@
 {"Restore","Obnovit"}.
 {"Restore plain text backup immediately:","Okamžitě obnovit zálohu z textového souboru:"}.
 {"Room Configuration","Nastavení místnosti"}.
-{"Room creation is denied by service policy","Pravidla služby nepovolují vytvořit místnost"}.
 {"Room description","Popis místnosti"}.
 {"Room Occupants","Počet účastníků"}.
 {"Room title","Název místnosti"}.
@@ -346,13 +322,9 @@
 {"Subscriber Address","Adresa odběratele"}.
 {"Subscription","Přihlášení"}.
 {"Sunday","Neděle"}.
-{"That nickname is already in use by another occupant","Přezdívka je již používána jiným členem"}.
-{"That nickname is registered by another person","Přezdívka je zaregistrována jinou osobou"}.
 {"The CAPTCHA is valid.","CAPTCHA souhlasí."}.
-{"The CAPTCHA verification has failed","Ověření CAPTCHA se nezdařilo"}.
 {"The collections with which a node is affiliated","Kolekce, se kterými je uzel spřízněn"}.
 {"the password is","heslo je"}.
-{"The password is too weak","Heslo je příliš slabé"}.
 {"The password of your Jabber account was successfully changed.","Heslo vašeho účtu Jabberu bylo úspěšně změněno."}.
 {"There was an error changing the password: ","Při změně hesla došlo k chybě: "}.
 {"There was an error creating the account: ","Při vytváření účtu došlo k chybě."}.
@@ -360,27 +332,20 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Zde nezáleží na velikosti písmen: macbeth je stejný jako MacBeth a Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Na této stránce si můžete vytvořit účet na tomto serveru Jabberu. Vaše JID (Jabber IDentifikátor) bude mít tvar: uživatelskéjméno@server. Přečtěte si prosím pozorně instrukce pro vyplnění údajů."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Zde můžete zrušit registraci účtu na tomto serveru Jabberu."}.
-{"This participant is kicked from the room because he sent an error message","Tento účastník byl vyhozen, protože odeslal chybovou zprávu"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Tento účastník byl vyhozen, protože odeslal chybovou zprávu jinému účastníkovi"}.
-{"This participant is kicked from the room because he sent an error presence","Tento účastník byl vyhozen, protože odeslal chybový status"}.
 {"This room is not anonymous","Tato místnost není anonymní"}.
 {"Thursday","Čtvrtek"}.
 {"Time","Čas"}.
 {"Time delay","Časový posun"}.
-{"Too many CAPTCHA requests","Přiliš mnoho CAPTCHA žádostí"}.
 {"To","Pro"}.
 {"To ~s","Pro ~s"}.
-{"Traffic rate limit is exceeded","Byl překročen limit"}.
 {"Transactions Aborted:","Transakce zrušena"}.
 {"Transactions Committed:","Transakce potvrzena"}.
 {"Transactions Logged:","Transakce zaznamenána"}.
 {"Transactions Restarted:","Transakce restartována"}.
 {"Tuesday","Úterý"}.
-{"Unable to generate a CAPTCHA","Nebylo možné vygenerovat CAPTCHA"}.
 {"Unauthorized","Nemáte oprávnění"}.
 {"Unregister a Jabber account","Zrušte registraci účtu Jabberu"}.
 {"Unregister","Zrušit registraci"}.
-{"Update ","Aktualizovat "}.
 {"Update","Aktualizovat"}.
 {"Update message of the day (don't send)","Aktualizovat zprávu dne (neodesílat)"}.
 {"Update message of the day on all hosts (don't send)","Aktualizovat zprávu dne pro všechny hostitele (neodesílat)"}.
@@ -391,31 +356,22 @@
 {"User JID","Jabber ID uživatele"}.
 {"User Management","Správa uživatelů"}.
 {"Username:","Uživatelské jméno:"}.
-{"Users are not allowed to register accounts so quickly","Je zakázáno registrovat účty v tak rychlém sledu"}.
 {"Users Last Activity","Poslední aktivita uživatele"}.
 {"Users","Uživatelé"}.
-{"User ","Uživatel "}.
 {"User","Uživatel"}.
 {"Validate","Ověřit"}.
 {"vCard User Search","Hledání uživatelů podle vizitek"}.
 {"Virtual Hosts","Virtuální hostitelé"}.
-{"Visitors are not allowed to change their nicknames in this room","Návštěvníkům této místnosti je zakázáno měnit přezdívku"}.
-{"Visitors are not allowed to send messages to all occupants","Návštevníci nemají povoleno zasílat zprávy všem účastníkům konference"}.
-{"Voice requests are disabled in this conference","Voice žádosti jsou v této konferenci zakázány"}.
 {"Voice request","Žádost o voice práva"}.
 {"Wednesday","Středa"}.
 {"When to send the last published item","Kdy odeslat poslední publikovanou položku"}.
 {"Whether to allow subscriptions","Povolit odebírání"}.
 {"You can later change your password using a Jabber client.","Později můžete své heslo změnit pomocí klienta Jabberu."}.
-{"You have been banned from this room","Byl jste vyloučen z této místnosti"}.
-{"You must fill in field \"Nickname\" in the form","Musíte vyplnit políčko \"Přezdívka\" ve formuláři"}.
 {"You need a client that supports x:data and CAPTCHA to register","Pro registraci potřebujete klienta s podporou x:data a CAPTCHA"}.
 {"You need a client that supports x:data to register the nickname","Pro registraci přezdívky potřebujete klienta s podporou x:data"}.
 {"You need an x:data capable client to configure mod_irc settings","Pro konfiguraci mod_irc potřebujete klienta s podporou x:data"}.
 {"You need an x:data capable client to configure room","Ke konfiguraci místnosti potřebujete klienta podporujícího x:data"}.
 {"You need an x:data capable client to search","K vyhledávání potřebujete klienta podporujícího x:data"}.
-{"Your active privacy list has denied the routing of this stanza.","Vaše nastavení soukromí znemožnilo směrování této stance."}.
-{"Your contact offline message queue is full. The message has been discarded.","Fronta offline zpráv pro váš kontakt je plná. Zpráva byla zahozena."}.
 {"Your Jabber account was successfully created.","Váš účet Jabberu byl úspěšně vytvořen."}.
 {"Your Jabber account was successfully deleted.","Váš účet Jabberu byl úspěšně smazán."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Nesmíte posílat zprávy na ~s. Pro povolení navštivte ~s"}.

@@ -235,6 +235,8 @@ if test "$ENABLEUSER" != ""; then
   AC_SUBST([INSTALLUSER], [$ENABLEUSER])
 fi
 
+ERLANG_DEPRECATED_TYPES_CHECK
+
 AC_SUBST(hipe)
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(transient_supervisors)

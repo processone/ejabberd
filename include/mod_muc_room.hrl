@@ -18,6 +18,8 @@
 %%%
 %%%----------------------------------------------------------------------
 
+-include("ejabberd.hrl").
+
 -define(MAX_USERS_DEFAULT, 200).
 
 -define(SETS, gb_sets).
@@ -26,7 +28,7 @@
 
 -record(lqueue,
 {
-    queue :: queue(),
+    queue :: ?TQUEUE,
     len :: integer(),
     max :: integer()
 }).
@@ -58,8 +60,8 @@
     voice_request_min_interval           = 1800 :: non_neg_integer(),
     max_users                            = ?MAX_USERS_DEFAULT :: non_neg_integer() | none,
     logging                              = false :: boolean(),
-    vcard                                = <<"">> :: boolean(),
-    captcha_whitelist                    = (?SETS):empty() :: gb_set()
+    vcard                                = <<"">> :: binary(),
+    captcha_whitelist                    = (?SETS):empty() :: ?TGB_SET
 }).
 
 -type config() :: #config{}.
@@ -92,18 +94,18 @@
     access                  = {none,none,none,none} :: {atom(), atom(), atom(), atom()},
     jid                     = #jid{} :: jid(),
     config                  = #config{} :: config(),
-    users                   = (?DICT):new() :: dict(),
+    users                   = (?DICT):new() :: ?TDICT,
     last_voice_request_time = treap:empty() :: treap:treap(),
-    robots                  = (?DICT):new() :: dict(),
-    nicks                   = (?DICT):new() :: dict(),
-    affiliations            = (?DICT):new() :: dict(),
+    robots                  = (?DICT):new() :: ?TDICT,
+    nicks                   = (?DICT):new() :: ?TDICT,
+    affiliations            = (?DICT):new() :: ?TDICT,
     history                 :: lqueue(),
     subject                 = <<"">> :: binary(),
     subject_author          = <<"">> :: binary(),
     just_created            = false :: boolean(),
     activity                = treap:empty() :: treap:treap(),
     room_shaper             = none :: shaper:shaper(),
-    room_queue              = queue:new() :: queue()
+    room_queue              = queue:new() :: ?TQUEUE
 }).
 
 -record(muc_online_users, {us = {<<>>, <<>>} :: {binary(), binary()},

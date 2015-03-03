@@ -57,6 +57,7 @@
 %% TODO: Remove once XEP-0091 is Obsolete
 %% TODO: Remove once XEP-0091 is Obsolete
 
+-include("ejabberd.hrl").
 -include("jlib.hrl").
 
 -export_type([jid/0]).
@@ -972,7 +973,7 @@ i2l(L, N) when is_binary(L) ->
       _ -> i2l(<<$0, L/binary>>, N)
     end.
 
--spec queue_drop_while(fun((term()) -> boolean()), queue()) -> queue().
+-spec queue_drop_while(fun((term()) -> boolean()), ?TQUEUE) -> ?TQUEUE.
 
 queue_drop_while(F, Q) ->
     case queue:peek(Q) of

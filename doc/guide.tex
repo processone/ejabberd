@@ -1102,7 +1102,7 @@ request_handlers:
     commonly on port 5223 for client-to-server communications.
     But this method is nowadays deprecated and not recommended.
     The preferable encryption method is STARTTLS on port 5222, as defined 
-    \footahref{http://xmpp.org/rfcs/rfc3920.html\#tls}{RFC 3920: XMPP Core},
+    \footahref{http://xmpp.org/rfcs/rfc6120.html\#tls}{RFC 6120: XMPP Core},
     which can be enabled in \ejabberd{} with the option \term{starttls}.
     If this option is set, you should also set the \option{certfile} option.
     The option \term{tls} can also be used in \term{ejabberd\_http} to support HTTPS.
@@ -1180,9 +1180,9 @@ There are some additional global options that can be specified in the ejabberd c
     Default value: 'undefined'.
   \titem{route\_subdomains: local|s2s}
   Defines if ejabberd must route stanzas directed to subdomains locally (compliant with 
-  \footahref{http://xmpp.org/rfcs/rfc3920.html\#rules.subdomain}{RFC 3920: XMPP Core}),
+  \footahref{http://xmpp.org/rfcs/rfc6120.html\#rules-local}{RFC 6120 Local Domain rules}),
   or to foreign server using S2S (compliant with
-  \footahref{http://tools.ietf.org/html/draft-saintandre-rfc3920bis-09\#section-11.3}{RFC 3920 bis}).
+  \footahref{http://xmpp.org/rfcs/rfc6120.html\#rules-remote}{RFC 6120 Remote Domain rules}).
 \end{description}
 
 \makesubsubsection{listened-examples}{Examples}
@@ -1793,7 +1793,7 @@ acl:
   loopback:
     ip:
       - "127.0.0.0/8"
-      - "::"
+      - "::1"
 \end{verbatim}
 \titem{user\_regexp: Regexp} Matches any local user with a name that
   matches \term{Regexp} on local virtual hosts. Example:
@@ -3951,10 +3951,9 @@ modules:
 \end{verbatim}
 
 \makesubsection{modprivacy}{\modprivacy{}}
-\ind{modules!\modprivacy{}}\ind{Blocking Communication}\ind{Privacy Rules}\ind{protocols!RFC 3921: XMPP IM}
+\ind{modules!\modprivacy{}}\ind{Blocking Communication}\ind{Privacy Rules}\ind{protocols!XEP-0016: Privacy Lists}
 
-This module implements \footahref{http://xmpp.org/rfcs/rfc3921.html\#privacy}{Blocking Communication}
-(also known as Privacy Rules).
+This module implements \footahref{http://www.xmpp.org/extensions/xep-0016.html}{XEP-0016: Privacy Lists}.
 If end users have support for it in their \XMPP{} client, they will be able to:
 \begin{quote}
 \begin{itemize}
@@ -3974,7 +3973,6 @@ If end users have support for it in their \XMPP{} client, they will be able to:
 \item Allowing or blocking all communications based on JID, group, or
   subscription type (or globally).
 \end{itemize}
-(from \ahrefurl{http://xmpp.org/rfcs/rfc3921.html\#privacy})
 \end{quote}
 
 Options:
@@ -4239,7 +4237,7 @@ acl:
   loopback:
     ip:
       - "127.0.0.0/8"
-      - "::"
+      - "::1"
   shortname: 
     user_glob: 
       - "?"
