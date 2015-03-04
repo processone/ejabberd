@@ -185,7 +185,7 @@ get_plain_terms_file(File1, Opts) ->
 
 consult(File) ->
     case filename:extension(File) of
-        ".yml" ->
+        Ex when (Ex == ".yml") or (Ex == ".yaml") ->
             case p1_yaml:decode_from_file(File, [plain_as_atom]) of
                 {ok, []} ->
                     {ok, []};

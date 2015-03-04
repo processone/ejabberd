@@ -152,7 +152,7 @@
 #' EJABBERD_CONFIG_PATH: ejabberd configuration file
 #
 # Specify the full path to the ejabberd configuration file. If the file name has
-# a ".yml" extension, it is parsed as a YAML file; otherwise, Erlang syntax is
+# yml or yaml extension, it is parsed as a YAML file; otherwise, Erlang syntax is
 # expected.
 #
 # Default: $ETC_DIR/ejabberd.yml
