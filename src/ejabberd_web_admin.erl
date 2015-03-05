@@ -717,10 +717,9 @@ process_admin(Host,
 		       auth = {_, _Auth, AJID}, q = Query, lang = Lang}) ->
     SetAccess = fun (Rs) ->
 			mnesia:transaction(fun () ->
-						   Os = mnesia:select(local_config,
-								      [{{local_config,
-									 {access,
-									  '$1',
+						   Os = mnesia:select(access,
+								      [{{access,
+									 {'$1',
 									  Host},
 									 '$2'},
 									[],
@@ -732,9 +731,8 @@ process_admin(Host,
 						   lists:foreach(fun ({access,
 								       Name,
 								       Rules}) ->
-									 mnesia:write({local_config,
-										       {access,
-											Name,
+									 mnesia:write({access,
+										       {Name,
 											Host},
 										       Rules})
 								 end,
@@ -757,8 +755,8 @@ process_admin(Host,
 		end;
 	    _ -> nothing
 	  end,
-    Access = ets:select(local_config,
-			[{{local_config, {access, '$1', Host}, '$2'}, [],
+    Access = ets:select(access,
+			[{{access, {'$1', Host}, '$2'}, [],
 			  [{{access, '$1', '$2'}}]}]),
     {NumLines, AccessP} = term_to_paragraph(lists:keysort(2,Access), 80),
     make_xhtml((?H1GL((?T(<<"Access Rules">>)),
@@ -791,8 +789,8 @@ process_admin(Host,
 		end;
 	    _ -> nothing
 	  end,
-    AccessRules = ets:select(local_config,
-			     [{{local_config, {access, '$1', Host}, '$2'}, [],
+    AccessRules = ets:select(access,
+			     [{{access, {'$1', Host}, '$2'}, [],
 			       [{{access, '$1', '$2'}}]}]),
     make_xhtml((?H1GL((?T(<<"Access Rules">>)),
 		      <<"AccessRights">>, <<"Access Rights">>))
@@ -1174,8 +1172,8 @@ access_rules_to_xhtml(AccessRules, Lang) ->
 				    <<"Add New">>)])])]))]).
 
 access_parse_query(Host, Query) ->
-    AccessRules = ets:select(local_config,
-			     [{{local_config, {access, '$1', Host}, '$2'}, [],
+    AccessRules = ets:select(access,
+			     [{{access, {'$1', Host}, '$2'}, [],
 			       [{{access, '$1', '$2'}}]}]),
     case lists:keysearch(<<"addnew">>, 1, Query) of
       {value, _} ->
@@ -1203,9 +1201,8 @@ access_parse_delete(AccessRules, Host, Query) ->
 			  case lists:member({<<"selected">>, ID}, Query) of
 			    true ->
 				mnesia:transaction(fun () ->
-							   mnesia:delete({local_config,
-									  {access,
-									   Name,
+							   mnesia:delete({access,
+									  {Name,
 									   Host}})
 						   end);
 			    _ -> ok
