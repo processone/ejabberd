@@ -53,7 +53,9 @@ undefined_function(Module, Func, Args) ->
 run_elixir_test(Func) ->
     'Elixir.ExUnit':start([]),
     'Elixir.Code':load_file(list_to_binary(filename:join(test_dir(), atom_to_list(Func)))),
-    #{failures := 0} = 'Elixir.ExUnit':run().
+    %% I did not use map syntax, so that this file can still be build under R16
+    ResultMap = 'Elixir.ExUnit':run(),
+    {ok, 0} = maps:find(failures, ResultMap).
 
 test_dir() ->
     {ok, CWD} = file:get_cwd(),
