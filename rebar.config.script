@@ -104,6 +104,8 @@ CfgDeps = lists:flatmap(
                     [{lager, ".*", {git, "git://github.com/basho/lager"}}];
                ({lager, false}) ->
                     [{p1_logger, ".*", {git, "git://github.com/processone/p1_logger"}}];
+               ({tools, true}) ->
+                    [{meck, "0.*", {git, "https://github.com/eproxus/meck"}}];
                (_) ->
                     []
             end, Cfg),
