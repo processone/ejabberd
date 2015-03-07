@@ -42,15 +42,18 @@ is_elixir_available() ->
 
 undefined_function(?MODULE, Func, Args) ->
     case lists:suffix(".exs", atom_to_list(Func)) of
-        true ->            
-            'Elixir.ExUnit':start([]),
-            'Elixir.Code':load_file(list_to_binary(filename:join(test_dir(), atom_to_list(Func)))),
-            'Elixir.ExUnit':run();
+        true ->
+            run_elixir_test(Func);
         false ->
             error_handler:undefined_function(?MODULE, Func, Args)
     end;
 undefined_function(Module, Func, Args) ->
     error_handler:undefined_function(Module, Func,Args).
+
+run_elixir_test(Func) ->
+    'Elixir.ExUnit':start([]),
+    'Elixir.Code':load_file(list_to_binary(filename:join(test_dir(), atom_to_list(Func)))),
+    #{failures := 0} = 'Elixir.ExUnit':run().
 
 test_dir() ->
     {ok, CWD} = file:get_cwd(),
