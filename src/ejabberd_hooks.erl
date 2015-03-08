@@ -42,8 +42,11 @@
 	 add_dist/6,
 	 delete/5,
 	 delete_dist/6,
+	 get_handlers/2,
 	 run/3,
 	 run_fold/4]).
+
+-export([delete_all_hooks/0]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -67,13 +70,13 @@
 start_link() ->
     gen_server:start_link({local, ejabberd_hooks}, ejabberd_hooks, [], []).
 
--spec add(atom(), fun(), number()) -> any().
+-spec add(atom(), fun(), number()) -> ok.
 
 %% @doc See add/4.
 add(Hook, Function, Seq) when is_function(Function) ->
     add(Hook, global, undefined, Function, Seq).
 
--spec add(atom(), binary() | atom(), fun() | atom() , number()) -> any().
+-spec add(atom(), HostOrModule :: binary() | atom(), fun() | atom() , number()) -> ok.
 add(Hook, Host, Function, Seq) when is_function(Function) ->
     add(Hook, Host, undefined, Function, Seq);
 
@@ -82,17 +85,17 @@ add(Hook, Host, Function, Seq) when is_function(Function) ->
 add(Hook, Module, Function, Seq) ->
     add(Hook, global, Module, Function, Seq).
 
--spec add(atom(), binary() | global, atom(), atom() | fun(), number()) -> any().
+-spec add(atom(), binary() | global, atom(), atom() | fun(), number()) -> ok.
 
 add(Hook, Host, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {add, Hook, Host, Module, Function, Seq}).
 
--spec add_dist(atom(), atom(), atom(), atom() | fun(), number()) -> any().
+-spec add_dist(atom(), atom(), atom(), atom() | fun(), number()) -> ok.
 
 add_dist(Hook, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {add, Hook, global, Node, Module, Function, Seq}).
 
--spec add_dist(atom(), binary() | global, atom(), atom(), atom() | fun(), number()) -> any().
+-spec add_dist(atom(), binary() | global, atom(), atom(), atom() | fun(), number()) -> ok.
 
 add_dist(Hook, Host, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {add, Hook, Host, Node, Module, Function, Seq}).
@@ -127,6 +130,17 @@ delete_dist(Hook, Node, Module, Function, Seq) ->
 
 delete_dist(Hook, Host, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {delete, Hook, Host, Node, Module, Function, Seq}).
+
+-spec delete_all_hooks() -> true. 
+
+%% @doc Primarily for testing / instrumentation
+delete_all_hooks() ->
+    gen_server:call(ejabberd_hooks, {delete_all}).
+
+-spec get_handlers(atom(), binary() | global) -> [{Seq :: integer(), Module :: atom(), Function :: atom()}].
+
+get_handlers(Hook, Host) ->
+    gen_server:call(ejabberd_hooks, {get_handlers, Hook, Host}).
 
 -spec run(atom(), list()) -> ok.
 
@@ -244,6 +258,17 @@ handle_call({delete, Hook, Host, Node, Module, Function, Seq}, _From, State) ->
 		[] ->
 		    ok
 	    end,
+    {reply, Reply, State};
+handle_call({get_handlers, Hook, Host}, _From, State) ->
+    Reply = case ets:lookup(hooks, {Hook, Host}) of
+                [{_, Handlers}] ->
+                    Handlers;
+                [] ->
+                    []
+            end,
+    {reply, Reply, State};
+handle_call({delete_all}, _From, State) ->
+    Reply = ets:delete_all_objects(hooks),
     {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
