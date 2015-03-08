@@ -304,9 +304,14 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
+-spec run1([local_hook()|distributed_hook()], atom(), list()) -> ok.
+
 run1([], _Hook, _Args) ->
     ok;
+%% Run distributed hook on target node.
+%% It is not attempted again in case of failure. Next hook will be executed
 run1([{_Seq, Node, Module, Function} | Ls], Hook, Args) ->
+    %% MR: Should we have a safe rpc, like we have a safe apply or is bad_rpc enough ?
     case rpc:call(Node, Module, Function, Args, ?TIMEOUT_DISTRIBUTED_HOOK) of
 	timeout ->
 	    ?ERROR_MSG("Timeout on RPC to ~p~nrunning hook: ~p",
@@ -326,15 +331,10 @@ run1([{_Seq, Node, Module, Function} | Ls], Hook, Args) ->
 	    run1(Ls, Hook, Args)
     end;
 run1([{_Seq, Module, Function} | Ls], Hook, Args) ->
-    Res = if is_function(Function) ->
-		  catch apply(Function, Args);
-	     true ->
-		  catch apply(Module, Function, Args)
-	  end,
+    Res = safe_apply(Module, Function, Args),
     case Res of
 	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nrunning hook: ~p",
-		       [Reason, {Hook, Args}]),
+	    ?ERROR_MSG("~p~nrunning hook: ~p", [Reason, {Hook, Args}]),
 	    run1(Ls, Hook, Args);
 	stop ->
 	    ok;
@@ -367,15 +367,10 @@ run_fold1([{_Seq, Node, Module, Function} | Ls], Hook, Val, Args) ->
 	    run_fold1(Ls, Hook, NewVal, Args)
     end;
 run_fold1([{_Seq, Module, Function} | Ls], Hook, Val, Args) ->
-    Res = if is_function(Function) ->
-		  catch apply(Function, [Val | Args]);
-	     true ->
-		  catch apply(Module, Function, [Val | Args])
-	  end,
+    Res = safe_apply(Module, Function, [Val | Args]),
     case Res of
 	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nrunning hook: ~p",
-		       [Reason, {Hook, Args}]),
+	    ?ERROR_MSG("~p~nrunning hook: ~p", [Reason, {Hook, Args}]),
 	    run_fold1(Ls, Hook, Val, Args);
 	stop ->
 	    stopped;
@@ -383,4 +378,11 @@ run_fold1([{_Seq, Module, Function} | Ls], Hook, Val, Args) ->
 	    NewVal;
 	NewVal ->
 	    run_fold1(Ls, Hook, NewVal, Args)
+    end.
+
+safe_apply(Module, Function, Args) ->
+    if is_function(Function) ->
+            catch apply(Function, Args);
+       true ->
+            catch apply(Module, Function, Args)
     end.
