@@ -32,19 +32,19 @@
 -export([start_link/0,
 	 add/3,
 	 add/4,
+	 add/5,
 	 add_dist/5,
+	 add_dist/6,
 	 delete/3,
 	 delete/4,
-	 delete_dist/5,
-	 run/2,
-	 run_fold/3,
-	 add/5,
-	 add_dist/6,
 	 delete/5,
+	 delete_dist/5,
 	 delete_dist/6,
-	 get_handlers/2,
+	 run/2,
 	 run/3,
-	 run_fold/4]).
+	 run_fold/3,
+	 run_fold/4,
+	 get_handlers/2]).
 
 -export([delete_all_hooks/0]).
 
@@ -56,7 +56,6 @@
 	 handle_info/2,
 	 terminate/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 %% Timeout of 5 seconds in calls to distributed hooks
@@ -295,7 +294,6 @@ handle_info(_Info, State) ->
 %%----------------------------------------------------------------------
 terminate(_Reason, _State) ->
     ok.
-
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
