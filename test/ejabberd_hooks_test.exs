@@ -46,7 +46,7 @@ defmodule EjabberdHooksTest do
     hookname = :test_mod_hook
     callback = :hook_callback
     :ok = :ejabberd_hooks.add(hookname, @host, @self, callback, 40)
-    [{40, @self, callback}] = :ejabberd_hooks.get_handlers(hookname, @host)
+    [{40, @self, _callback}] = :ejabberd_hooks.get_handlers(hookname, @host)
   end
 
   test "An anonymous function can be removed from hook handlers" do
@@ -90,7 +90,7 @@ defmodule EjabberdHooksTest do
 
     :ok = :ejabberd_hooks.run(hookname, @host, [:hook_params])
     # callback2 is never run:
-    [{_pid, {modulename, callback, [:hook_params]}, :stop}] = :meck.history(modulename)   
+    [{_pid, {^modulename, _callback, [:hook_params]}, :stop}] = :meck.history(modulename)   
   end
 
   test "Run fold hooks accumulate state in correct order through handlers" do
@@ -110,8 +110,8 @@ defmodule EjabberdHooksTest do
     # setup test
     hookname = :test_mod_hook
     modulename = :hook_module
-    mock(modulename, :hook_callback1, fn(acc) -> :first end)
-    mock(modulename, :hook_callback2, fn(acc) -> :second end)
+    mock(modulename, :hook_callback1, fn(_acc) -> :first end)
+    mock(modulename, :hook_callback2, fn(_acc) -> :second end)
 
     :ok = :ejabberd_hooks.add(hookname, @host, modulename, :hook_callback2, 50)
     :ok = :ejabberd_hooks.add(hookname, @host, modulename, :hook_callback1, 40)
@@ -126,27 +126,27 @@ defmodule EjabberdHooksTest do
     # setup test
     hookname = :test_mod_hook
     modulename = :hook_module
-    mock(modulename, :hook_callback1, fn(acc) -> :stop end)
-    mock(modulename, :hook_callback2, fn(acc) -> :executed end)
+    mock(modulename, :hook_callback1, fn(_acc) -> :stop end)
+    mock(modulename, :hook_callback2, fn(_acc) -> :executed end)
 
     :ok = :ejabberd_hooks.add(hookname, @host, modulename, :hook_callback1, 40)
     :ok = :ejabberd_hooks.add(hookname, @host, modulename, :hook_callback2, 50)
 
     :stopped = :ejabberd_hooks.run_fold(hookname, @host, :started, [])
     # Only one module has been called
-    [{_pid, {modulename, :hook_callback1, [started]}, :stop}] = :meck.history(modulename)
+    [{_pid, {^modulename, :hook_callback1, [:started]}, :stop}] = :meck.history(modulename)
   end
 
   test "Error in run_fold is ignored" do
-    run_fold_crash(fn(acc) -> raise :crashed end)
+    run_fold_crash(fn(_acc) -> raise "crashed" end)
   end
 
   test "Throw in run_fold is ignored" do
-    run_fold_crash(fn(acc) -> throw :crashed end)
+    run_fold_crash(fn(_acc) -> throw :crashed end)
   end
 
   test "Exit in run_fold is ignored" do
-    run_fold_crash(fn(acc) -> exit :crashed end)
+    run_fold_crash(fn(_acc) -> exit :crashed end)
   end
   
   # test for run hook with various number of params
@@ -160,7 +160,7 @@ defmodule EjabberdHooksTest do
     # Then check
     :ok = :ejabberd_hooks.add(hookname, @host, modulename, callback, 40)
     :ok = :ejabberd_hooks.run(hookname, @host, params)
-    [{_pid, {modulename, callback, params}, result}] = :meck.history(modulename)   
+    [{_pid, {^modulename, ^callback, ^params}, ^result}] = :meck.history(modulename)   
   end
 
   def run_fold_crash(crash_fun) do
@@ -168,7 +168,7 @@ defmodule EjabberdHooksTest do
     hookname = :test_mod_hook
     modulename = :hook_module
     mock(modulename, :hook_callback1, crash_fun)
-    mock(modulename, :hook_callback2, fn(acc) -> :final end)
+    mock(modulename, :hook_callback2, fn(_acc) -> :final end)
 
     :ok = :ejabberd_hooks.add(hookname, @host, modulename, :hook_callback1, 40)
     :ok = :ejabberd_hooks.add(hookname, @host, modulename, :hook_callback2, 50)
