@@ -63,6 +63,8 @@
 -define(TIMEOUT_DISTRIBUTED_HOOK, 5000).
 
 -record(state, {}).
+-type local_hook() :: { Seq :: integer(), Module :: atom(), Function :: atom()}.
+-type distributed_hook() :: { Seq :: integer(), Node :: atom(), Module :: atom(), Function :: atom()}.
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -137,10 +139,10 @@ delete_dist(Hook, Host, Node, Module, Function, Seq) ->
 delete_all_hooks() ->
     gen_server:call(ejabberd_hooks, {delete_all}).
 
--spec get_handlers(atom(), binary() | global) -> [{Seq :: integer(), Module :: atom(), Function :: atom()}].
-
-get_handlers(Hook, Host) ->
-    gen_server:call(ejabberd_hooks, {get_handlers, Hook, Host}).
+-spec get_handlers(atom(), binary() | global) -> [local_hook() | distributed_hook()].
+%% @doc Returns currently set handler for hook name 
+get_handlers(Hookname, Host) ->
+    gen_server:call(ejabberd_hooks, {get_handlers, Hookname, Host}).
 
 -spec run(atom(), list()) -> ok.
 
@@ -204,75 +206,69 @@ init([]) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%----------------------------------------------------------------------
 handle_call({add, Hook, Host, Module, Function, Seq}, _From, State) ->
-    Reply = case ets:lookup(hooks, {Hook, Host}) of
-		[{_, Ls}] ->
-		    El = {Seq, Module, Function},
-		    case lists:member(El, Ls) of
-			true ->
-			    ok;
-			false ->
-			    NewLs = lists:merge(Ls, [El]),
-			    ets:insert(hooks, {{Hook, Host}, NewLs}),
-			    ok
-		    end;
-		[] ->
-		    NewLs = [{Seq, Module, Function}],
-		    ets:insert(hooks, {{Hook, Host}, NewLs}),
-		    ok
-	    end,
+    HookFormat = {Seq, Module, Function},
+    Reply = handle_add(Hook, Host, HookFormat),
     {reply, Reply, State};
 handle_call({add, Hook, Host, Node, Module, Function, Seq}, _From, State) ->
-    Reply = case ets:lookup(hooks, {Hook, Host}) of
-		[{_, Ls}] ->
-		    El = {Seq, Node, Module, Function},
-		    case lists:member(El, Ls) of
-			true ->
-			    ok;
-			false ->
-			    NewLs = lists:merge(Ls, [El]),
-			    ets:insert(hooks, {{Hook, Host}, NewLs}),
-			    ok
-		    end;
-		[] ->
-		    NewLs = [{Seq, Node, Module, Function}],
-		    ets:insert(hooks, {{Hook, Host}, NewLs}),
-		    ok
-	    end,
+    HookFormat = {Seq, Node, Module, Function},
+    Reply = handle_add(Hook, Host, HookFormat),
     {reply, Reply, State};
+
 handle_call({delete, Hook, Host, Module, Function, Seq}, _From, State) ->
-    Reply = case ets:lookup(hooks, {Hook, Host}) of
-		[{_, Ls}] ->
-		    NewLs = lists:delete({Seq, Module, Function}, Ls),
-		    ets:insert(hooks, {{Hook, Host}, NewLs}),
-		    ok;
-		[] ->
-		    ok
-	    end,
+    HookFormat = {Seq, Module, Function},
+    Reply = handle_delete(Hook, Host, HookFormat),
     {reply, Reply, State};
 handle_call({delete, Hook, Host, Node, Module, Function, Seq}, _From, State) ->
-    Reply = case ets:lookup(hooks, {Hook, Host}) of
-		[{_, Ls}] ->
-		    NewLs = lists:delete({Seq, Node, Module, Function}, Ls),
-		    ets:insert(hooks, {{Hook, Host}, NewLs}),
-		    ok;
-		[] ->
-		    ok
-	    end,
+    HookFormat = {Seq, Node, Module, Function},
+    Reply = handle_delete(Hook, Host, HookFormat),
     {reply, Reply, State};
+
 handle_call({get_handlers, Hook, Host}, _From, State) ->
     Reply = case ets:lookup(hooks, {Hook, Host}) of
-                [{_, Handlers}] ->
-                    Handlers;
-                [] ->
-                    []
+                [{_, Handlers}] -> Handlers;
+                []              -> []
             end,
     {reply, Reply, State};
+
 handle_call({delete_all}, _From, State) ->
     Reply = ets:delete_all_objects(hooks),
     {reply, Reply, State};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
+
+-spec handle_add(atom(), atom(), local_hook() | distributed_hook()) -> ok.
+%% in-memory storage operation: Handle adding hook in ETS table
+handle_add(Hook, Host, El) ->
+    case ets:lookup(hooks, {Hook, Host}) of
+        [{_, Ls}] ->
+            case lists:member(El, Ls) of
+                true ->
+                    ok;
+                false ->
+                    NewLs = lists:merge(Ls, [El]),
+                    ets:insert(hooks, {{Hook, Host}, NewLs}),
+                    ok
+            end;
+        [] ->
+            NewLs = [El],
+            ets:insert(hooks, {{Hook, Host}, NewLs}),
+            ok
+    end.
+
+
+-spec handle_delete(atom(), atom(), local_hook() | distributed_hook()) -> ok.
+%% in-memory storage operation: Handle deleting hook from ETS table
+handle_delete(Hook, Host, El) ->
+    case ets:lookup(hooks, {Hook, Host}) of
+        [{_, Ls}] ->
+            NewLs = lists:delete(El, Ls),
+            ets:insert(hooks, {{Hook, Host}, NewLs}),
+            ok;
+        [] ->
+            ok
+    end. 
 
 %%----------------------------------------------------------------------
 %% Func: handle_cast/2
