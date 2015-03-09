@@ -30,7 +30,7 @@
 %%%===================================================================
 -spec init() -> ok | {error, any()}.
 init() ->
-    Node = ejabberd_odbc:escape(erlang:atom_to_binary(node(), utf8)),
+    Node = ejabberd_odbc:escape(jlib:atom_to_binary(node())),
     lists:foldl(
       fun(Host, ok) ->
 	      case ejabberd_odbc:sql_query(
@@ -70,7 +70,7 @@ set_session(#session{sid = {Now, Pid}, usr = {U, LServer, R},
     PrioS = enc_priority(Priority),
     TS = now_to_timestamp(Now),
     PidS = list_to_binary(erlang:pid_to_list(Pid)),
-    Node = ejabberd_odbc:escape(erlang:atom_to_binary(node(Pid), utf8)),
+    Node = ejabberd_odbc:escape(jlib:atom_to_binary(node(Pid))),
     case odbc_queries:update(
 	   LServer,
 	   <<"sm">>,
@@ -145,10 +145,10 @@ get_sessions(LUser, LServer, LResource) ->
 %%% Internal functions
 %%%===================================================================
 now_to_timestamp({MSec, Sec, USec}) ->
-    erlang:integer_to_binary((MSec * 1000000 + Sec) * 1000000 + USec).
+    jlib:integer_to_binary((MSec * 1000000 + Sec) * 1000000 + USec).
 
 timestamp_to_now(TS) ->
-    I = erlang:binary_to_integer(TS),
+    I = jlib:binary_to_integer(TS),
     Head = I div 1000000,
     USec = I rem 1000000,
     MSec = Head div 1000000,
@@ -156,7 +156,7 @@ timestamp_to_now(TS) ->
     {MSec, Sec, USec}.
 
 dec_priority(Prio) ->
-    case catch erlang:binary_to_integer(Prio) of
+    case catch jlib:binary_to_integer(Prio) of
 	{'EXIT', _} ->
 	    undefined;
 	Int ->
@@ -166,7 +166,7 @@ dec_priority(Prio) ->
 enc_priority(undefined) ->
     <<"">>;
 enc_priority(Int) when is_integer(Int) ->
-    erlang:integer_to_binary(Int).
+    jlib:integer_to_binary(Int).
 
 row_to_session(LServer, [USec, PidS, User, Resource, PrioS, InfoS]) ->
     Now = timestamp_to_now(USec),
