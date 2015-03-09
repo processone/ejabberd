@@ -30,7 +30,8 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0,
+-export([start/0,
+	 start_link/0,
 	 route/3,
 	 open_session/5,
 	 open_session/6,
@@ -77,9 +78,9 @@
 -include("ejabberd_sm.hrl").
 
 -callback init() -> ok | {error, any()}.
--callback get_session(sid()) -> {ok, #session{}} | {error, notfound}.
+-callback get_session(binary(), sid()) -> {ok, #session{}} | {error, notfound}.
 -callback set_session(#session{}) -> ok.
--callback delete_session(sid()) -> ok.
+-callback delete_session(binary(), sid()) -> ok.
 -callback get_sessions() -> [#session{}].
 -callback get_sessions(binary()) -> [#session{}].
 -callback get_sessions(binary(), binary()) -> [#session{}].
@@ -98,6 +99,11 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 -export_type([sid/0]).
+
+start() ->
+    ChildSpec = {?MODULE, {?MODULE, start_link, []},
+		 transient, 1000, worker, [?MODULE]},
+    supervisor:start_child(ejabberd_sup, ChildSpec).
 
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
@@ -131,11 +137,12 @@ open_session(SID, User, Server, Resource, Info) ->
 
 close_session(SID, User, Server, Resource) ->
     Mod = get_sm_backend(),
-    Info = case Mod:get_session(SID) of
+    LServer = jlib:nameprep(Server),
+    Info = case Mod:get_session(LServer, SID) of
 	       {ok, #session{info = I}} -> I;
 	       {error, notfound} -> []
 	   end,
-    Mod:delete_session(SID),
+    Mod:delete_session(LServer, SID),
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_remove_connection_hook,
 		       JID#jid.lserver, [SID, JID, Info]).
@@ -723,7 +730,8 @@ force_update_presence({LUser, LServer}) ->
 get_sm_backend() ->
     DBType = ejabberd_config:get_option(sm_db_type,
 					fun(mnesia) -> mnesia;
-					   (internal) -> mnesia
+					   (internal) -> mnesia;
+					   (odbc) -> odbc
 					end, mnesia),
     list_to_atom("ejabberd_sm_" ++ atom_to_list(DBType)).
 

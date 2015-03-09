@@ -62,13 +62,6 @@ init([]) ->
 	 brutal_kill,
 	 worker,
 	 [ejabberd_router]},
-    SM =
-	{ejabberd_sm,
-	 {ejabberd_sm, start_link, []},
-	 permanent,
-	 brutal_kill,
-	 worker,
-	 [ejabberd_sm]},
     S2S =
 	{ejabberd_s2s,
 	 {ejabberd_s2s, start_link, []},
@@ -173,7 +166,6 @@ init([]) ->
 	   NodeGroups,
 	   SystemMonitor,
 	   Router,
-	   SM,
 	   S2S,
 	   Local,
 	   Captcha,

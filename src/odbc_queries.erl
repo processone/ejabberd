@@ -27,7 +27,7 @@
 
 -author("mremond@process-one.net").
 
--export([get_db_type/0, update_t/4, sql_transaction/2,
+-export([get_db_type/0, update/5, update_t/4, sql_transaction/2,
 	 get_last/2, set_last_t/4, del_last/2, get_password/2,
 	 set_password_t/3, add_user/3, del_user/2,
 	 del_user_return_password/3, list_users/1, list_users/2,

@@ -13,9 +13,9 @@
 
 %% API
 -export([init/0,
-	 get_session/1,
+	 get_session/2,
 	 set_session/1,
-	 delete_session/1,
+	 delete_session/2,
 	 get_sessions/0,
 	 get_sessions/1,
 	 get_sessions/2,
@@ -44,8 +44,8 @@ init() ->
 	    Err
     end.
 
--spec get_session(sid()) -> {ok, #session{}} | {error, notfound}.
-get_session(SID) ->
+-spec get_session(binary(), sid()) -> {ok, #session{}} | {error, notfound}.
+get_session(_LServer, SID) ->
     case mnesia:dirty_read(session, SID) of
 	[] ->
 	    {error, notfound};
@@ -57,8 +57,8 @@ get_session(SID) ->
 set_session(Session) ->
     mnesia:dirty_write(Session).
 
--spec delete_session(sid()) -> ok.
-delete_session(SID) ->
+-spec delete_session(binary(), sid()) -> ok.
+delete_session(_LServer, SID) ->
     mnesia:dirty_delete(session, SID).
 
 -spec get_sessions() -> [#session{}].
