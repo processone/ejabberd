@@ -38,7 +38,8 @@
 	 get_vh_registered_users_number/2, get_password/2,
 	 get_password_s/2, is_user_exists/2, remove_user/2,
 	 remove_user/3, store_type/0,
-	 plain_password_required/0]).
+	 plain_password_required/0,
+         convert_to_scram/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -411,3 +412,58 @@ is_password_scram_valid(Password, Scram) ->
 	scram:stored_key(scram:client_key(SaltedPassword)),
     jlib:decode_base64(Scram#scram.storedkey) == StoredKey.
 
+-define(BATCH_SIZE, 1000).
+
+set_password_scram_t(Username,
+                     StoredKey, ServerKey, Salt, IterationCount) ->
+    odbc_queries:update_t(<<"users">>,
+                          [<<"username">>,
+                           <<"password">>,
+                           <<"serverkey">>,
+                           <<"salt">>,
+                           <<"iterationcount">>],
+                          [Username, StoredKey,
+                           ServerKey, Salt,
+                           IterationCount],
+                          [<<"username='">>, Username,
+                           <<"'">>]).
+
+convert_to_scram(Server) ->
+    LServer = jlib:nameprep(Server),
+    if
+        LServer == error;
+        LServer == <<>> ->
+            {error, {incorrect_server_name, Server}};
+        true ->
+            F = fun () ->
+                        case ejabberd_odbc:sql_query_t(
+                               [<<"select username, password from users where "
+                                 "iterationcount=0 limit ">>,
+                                integer_to_binary(?BATCH_SIZE),
+                                <<";">>]) of
+                            {selected, [<<"username">>, <<"password">>], []} ->
+                                ok;
+                            {selected, [<<"username">>, <<"password">>], Rs} ->
+                                lists:foreach(
+                                  fun([LUser, Password]) ->
+                                          Username = ejabberd_odbc:escape(LUser),
+                                          Scram = password_to_scram(Password),
+                                          set_password_scram_t(
+                                            Username,
+                                            ejabberd_odbc:escape(Scram#scram.storedkey),
+                                            ejabberd_odbc:escape(Scram#scram.serverkey),
+                                            ejabberd_odbc:escape(Scram#scram.salt),
+                                            integer_to_binary(Scram#scram.iterationcount)
+                                           )
+                                  end, Rs),
+                                continue;
+                            Err -> {bad_reply, Err}
+                        end
+                end,
+            case odbc_queries:sql_transaction(LServer, F) of
+                {atomic, ok} -> ok;
+                {atomic, continue} -> convert_to_scram(Server);
+                {atomic, Error} -> {error, Error};
+                Error -> Error
+            end
+    end.
