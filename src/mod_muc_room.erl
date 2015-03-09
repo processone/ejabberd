@@ -2442,13 +2442,20 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 		    _ -> true
 		  end,
     TimeStamp = now(),
-    SenderJid = case
-		  (StateData#state.config)#config.anonymous
-		    of
-		  true -> StateData#state.jid;
-		  false -> FromJID
-		end,
-    TSPacket = jlib:add_delay_info(Packet, SenderJid, TimeStamp),
+    AddrPacket = case (StateData#state.config)#config.anonymous of
+		   true -> Packet;
+		   false ->
+		       Address = #xmlel{name = <<"address">>,
+					attrs = [{<<"type">>, <<"ofrom">>},
+						 {<<"jid">>,
+						  jlib:jid_to_string(FromJID)}],
+					children = []},
+		       Addresses = #xmlel{name = <<"addresses">>,
+					  attrs = [{<<"xmlns">>, ?NS_ADDRESS}],
+					  children = [Address]},
+		       xml:append_subtags(Packet, [Addresses])
+		 end,
+    TSPacket = jlib:add_delay_info(AddrPacket, StateData#state.jid, TimeStamp),
     SPacket =
 	jlib:replace_from_to(jlib:jid_replace_resource(StateData#state.jid,
 						       FromNick),
