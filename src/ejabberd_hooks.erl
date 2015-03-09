@@ -32,18 +32,21 @@
 -export([start_link/0,
 	 add/3,
 	 add/4,
+	 add/5,
 	 add_dist/5,
+	 add_dist/6,
 	 delete/3,
 	 delete/4,
-	 delete_dist/5,
-	 run/2,
-	 run_fold/3,
-	 add/5,
-	 add_dist/6,
 	 delete/5,
+	 delete_dist/5,
 	 delete_dist/6,
+	 run/2,
 	 run/3,
-	 run_fold/4]).
+	 run_fold/3,
+	 run_fold/4,
+	 get_handlers/2]).
+
+-export([delete_all_hooks/0]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -53,13 +56,14 @@
 	 handle_info/2,
 	 terminate/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 %% Timeout of 5 seconds in calls to distributed hooks
 -define(TIMEOUT_DISTRIBUTED_HOOK, 5000).
 
 -record(state, {}).
+-type local_hook() :: { Seq :: integer(), Module :: atom(), Function :: atom()}.
+-type distributed_hook() :: { Seq :: integer(), Node :: atom(), Module :: atom(), Function :: atom()}.
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -67,13 +71,13 @@
 start_link() ->
     gen_server:start_link({local, ejabberd_hooks}, ejabberd_hooks, [], []).
 
--spec add(atom(), fun(), number()) -> any().
+-spec add(atom(), fun(), number()) -> ok.
 
 %% @doc See add/4.
 add(Hook, Function, Seq) when is_function(Function) ->
     add(Hook, global, undefined, Function, Seq).
 
--spec add(atom(), binary() | atom(), fun() | atom() , number()) -> any().
+-spec add(atom(), HostOrModule :: binary() | atom(), fun() | atom() , number()) -> ok.
 add(Hook, Host, Function, Seq) when is_function(Function) ->
     add(Hook, Host, undefined, Function, Seq);
 
@@ -82,17 +86,17 @@ add(Hook, Host, Function, Seq) when is_function(Function) ->
 add(Hook, Module, Function, Seq) ->
     add(Hook, global, Module, Function, Seq).
 
--spec add(atom(), binary() | global, atom(), atom() | fun(), number()) -> any().
+-spec add(atom(), binary() | global, atom(), atom() | fun(), number()) -> ok.
 
 add(Hook, Host, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {add, Hook, Host, Module, Function, Seq}).
 
--spec add_dist(atom(), atom(), atom(), atom() | fun(), number()) -> any().
+-spec add_dist(atom(), atom(), atom(), atom() | fun(), number()) -> ok.
 
 add_dist(Hook, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {add, Hook, global, Node, Module, Function, Seq}).
 
--spec add_dist(atom(), binary() | global, atom(), atom(), atom() | fun(), number()) -> any().
+-spec add_dist(atom(), binary() | global, atom(), atom(), atom() | fun(), number()) -> ok.
 
 add_dist(Hook, Host, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {add, Hook, Host, Node, Module, Function, Seq}).
@@ -127,6 +131,17 @@ delete_dist(Hook, Node, Module, Function, Seq) ->
 
 delete_dist(Hook, Host, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {delete, Hook, Host, Node, Module, Function, Seq}).
+
+-spec delete_all_hooks() -> true. 
+
+%% @doc Primarily for testing / instrumentation
+delete_all_hooks() ->
+    gen_server:call(ejabberd_hooks, {delete_all}).
+
+-spec get_handlers(atom(), binary() | global) -> [local_hook() | distributed_hook()].
+%% @doc Returns currently set handler for hook name 
+get_handlers(Hookname, Host) ->
+    gen_server:call(ejabberd_hooks, {get_handlers, Hookname, Host}).
 
 -spec run(atom(), list()) -> ok.
 
@@ -190,64 +205,69 @@ init([]) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %%----------------------------------------------------------------------
 handle_call({add, Hook, Host, Module, Function, Seq}, _From, State) ->
-    Reply = case ets:lookup(hooks, {Hook, Host}) of
-		[{_, Ls}] ->
-		    El = {Seq, Module, Function},
-		    case lists:member(El, Ls) of
-			true ->
-			    ok;
-			false ->
-			    NewLs = lists:merge(Ls, [El]),
-			    ets:insert(hooks, {{Hook, Host}, NewLs}),
-			    ok
-		    end;
-		[] ->
-		    NewLs = [{Seq, Module, Function}],
-		    ets:insert(hooks, {{Hook, Host}, NewLs}),
-		    ok
-	    end,
+    HookFormat = {Seq, Module, Function},
+    Reply = handle_add(Hook, Host, HookFormat),
     {reply, Reply, State};
 handle_call({add, Hook, Host, Node, Module, Function, Seq}, _From, State) ->
-    Reply = case ets:lookup(hooks, {Hook, Host}) of
-		[{_, Ls}] ->
-		    El = {Seq, Node, Module, Function},
-		    case lists:member(El, Ls) of
-			true ->
-			    ok;
-			false ->
-			    NewLs = lists:merge(Ls, [El]),
-			    ets:insert(hooks, {{Hook, Host}, NewLs}),
-			    ok
-		    end;
-		[] ->
-		    NewLs = [{Seq, Node, Module, Function}],
-		    ets:insert(hooks, {{Hook, Host}, NewLs}),
-		    ok
-	    end,
+    HookFormat = {Seq, Node, Module, Function},
+    Reply = handle_add(Hook, Host, HookFormat),
     {reply, Reply, State};
+
 handle_call({delete, Hook, Host, Module, Function, Seq}, _From, State) ->
-    Reply = case ets:lookup(hooks, {Hook, Host}) of
-		[{_, Ls}] ->
-		    NewLs = lists:delete({Seq, Module, Function}, Ls),
-		    ets:insert(hooks, {{Hook, Host}, NewLs}),
-		    ok;
-		[] ->
-		    ok
-	    end,
+    HookFormat = {Seq, Module, Function},
+    Reply = handle_delete(Hook, Host, HookFormat),
     {reply, Reply, State};
 handle_call({delete, Hook, Host, Node, Module, Function, Seq}, _From, State) ->
-    Reply = case ets:lookup(hooks, {Hook, Host}) of
-		[{_, Ls}] ->
-		    NewLs = lists:delete({Seq, Node, Module, Function}, Ls),
-		    ets:insert(hooks, {{Hook, Host}, NewLs}),
-		    ok;
-		[] ->
-		    ok
-	    end,
+    HookFormat = {Seq, Node, Module, Function},
+    Reply = handle_delete(Hook, Host, HookFormat),
     {reply, Reply, State};
+
+handle_call({get_handlers, Hook, Host}, _From, State) ->
+    Reply = case ets:lookup(hooks, {Hook, Host}) of
+                [{_, Handlers}] -> Handlers;
+                []              -> []
+            end,
+    {reply, Reply, State};
+
+handle_call({delete_all}, _From, State) ->
+    Reply = ets:delete_all_objects(hooks),
+    {reply, Reply, State};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
+
+-spec handle_add(atom(), atom(), local_hook() | distributed_hook()) -> ok.
+%% in-memory storage operation: Handle adding hook in ETS table
+handle_add(Hook, Host, El) ->
+    case ets:lookup(hooks, {Hook, Host}) of
+        [{_, Ls}] ->
+            case lists:member(El, Ls) of
+                true ->
+                    ok;
+                false ->
+                    NewLs = lists:merge(Ls, [El]),
+                    ets:insert(hooks, {{Hook, Host}, NewLs}),
+                    ok
+            end;
+        [] ->
+            NewLs = [El],
+            ets:insert(hooks, {{Hook, Host}, NewLs}),
+            ok
+    end.
+
+
+-spec handle_delete(atom(), atom(), local_hook() | distributed_hook()) -> ok.
+%% in-memory storage operation: Handle deleting hook from ETS table
+handle_delete(Hook, Host, El) ->
+    case ets:lookup(hooks, {Hook, Host}) of
+        [{_, Ls}] ->
+            NewLs = lists:delete(El, Ls),
+            ets:insert(hooks, {{Hook, Host}, NewLs}),
+            ok;
+        [] ->
+            ok
+    end. 
 
 %%----------------------------------------------------------------------
 %% Func: handle_cast/2
@@ -275,7 +295,6 @@ handle_info(_Info, State) ->
 terminate(_Reason, _State) ->
     ok.
 
-
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
@@ -283,9 +302,14 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%----------------------------------------------------------------------
 
+-spec run1([local_hook()|distributed_hook()], atom(), list()) -> ok.
+
 run1([], _Hook, _Args) ->
     ok;
+%% Run distributed hook on target node.
+%% It is not attempted again in case of failure. Next hook will be executed
 run1([{_Seq, Node, Module, Function} | Ls], Hook, Args) ->
+    %% MR: Should we have a safe rpc, like we have a safe apply or is bad_rpc enough ?
     case rpc:call(Node, Module, Function, Args, ?TIMEOUT_DISTRIBUTED_HOOK) of
 	timeout ->
 	    ?ERROR_MSG("Timeout on RPC to ~p~nrunning hook: ~p",
@@ -305,15 +329,10 @@ run1([{_Seq, Node, Module, Function} | Ls], Hook, Args) ->
 	    run1(Ls, Hook, Args)
     end;
 run1([{_Seq, Module, Function} | Ls], Hook, Args) ->
-    Res = if is_function(Function) ->
-		  catch apply(Function, Args);
-	     true ->
-		  catch apply(Module, Function, Args)
-	  end,
+    Res = safe_apply(Module, Function, Args),
     case Res of
 	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nrunning hook: ~p",
-		       [Reason, {Hook, Args}]),
+	    ?ERROR_MSG("~p~nrunning hook: ~p", [Reason, {Hook, Args}]),
 	    run1(Ls, Hook, Args);
 	stop ->
 	    ok;
@@ -346,15 +365,10 @@ run_fold1([{_Seq, Node, Module, Function} | Ls], Hook, Val, Args) ->
 	    run_fold1(Ls, Hook, NewVal, Args)
     end;
 run_fold1([{_Seq, Module, Function} | Ls], Hook, Val, Args) ->
-    Res = if is_function(Function) ->
-		  catch apply(Function, [Val | Args]);
-	     true ->
-		  catch apply(Module, Function, [Val | Args])
-	  end,
+    Res = safe_apply(Module, Function, [Val | Args]),
     case Res of
 	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nrunning hook: ~p",
-		       [Reason, {Hook, Args}]),
+	    ?ERROR_MSG("~p~nrunning hook: ~p", [Reason, {Hook, Args}]),
 	    run_fold1(Ls, Hook, Val, Args);
 	stop ->
 	    stopped;
@@ -362,4 +376,11 @@ run_fold1([{_Seq, Module, Function} | Ls], Hook, Val, Args) ->
 	    NewVal;
 	NewVal ->
 	    run_fold1(Ls, Hook, NewVal, Args)
+    end.
+
+safe_apply(Module, Function, Args) ->
+    if is_function(Function) ->
+            catch apply(Function, Args);
+       true ->
+            catch apply(Module, Function, Args)
     end.

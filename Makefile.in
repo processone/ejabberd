@@ -312,6 +312,9 @@ test:
 	@echo "*************************************************************************"
 	$(REBAR) skip_deps=true ct
 
+quicktest:
+	$(REBAR) skip_deps=true ct suites=elixir
+
 .PHONY: src doc edoc dialyzer Makefile TAGS clean clean-rel distclean rel \
 	install uninstall uninstall-binary uninstall-all translations deps test spec \
-	erlang_plt deps_plt ejabberd_plt
+	quicktest erlang_plt deps_plt ejabberd_plt
