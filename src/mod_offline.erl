@@ -1085,13 +1085,10 @@ export(_Server) ->
                              packet = Packet})
             when LServer == Host ->
               Username = ejabberd_odbc:escape(LUser),
-              Packet1 =
-                  jlib:replace_from_to(From, To, Packet),
-              Packet2 =
-                  jlib:add_delay_info(Packet1, LServer, TimeStamp,
-                                      <<"Offline Storage">>),
-              XML =
-                  ejabberd_odbc:escape(xml:element_to_binary(Packet2)),
+              Packet1 = jlib:replace_from_to(From, To, Packet),
+              Packet2 = jlib:add_delay_info(Packet1, LServer, TimeStamp,
+                                            <<"Offline Storage">>),
+              XML = ejabberd_odbc:escape(xml:element_to_binary(Packet2)),
               [[<<"delete from spool where username='">>, Username, <<"';">>],
                [<<"insert into spool(username, xml) values ('">>,
                 Username, <<"', '">>, XML, <<"');">>]];
