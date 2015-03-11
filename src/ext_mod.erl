@@ -443,9 +443,14 @@ compile(_Module, _Spec, DestDir) ->
     filelib:ensure_dir(filename:join(Ebin, ".")),
     EjabBin = filename:dirname(code:which(ejabberd)),
     EjabInc = filename:join(filename:dirname(EjabBin), "include"),
+    Logger = case code:is_loaded(lager) of
+        {file, _} -> [{d, 'LAGER'}];
+        _ -> []
+    end,
     Options = [{outdir, Ebin}, {i, "include"}, {i, EjabInc},
                {d, 'NO_EXT_LIB'},  %% use include instead of include_lib
-               verbose, report_errors, report_warnings],
+               verbose, report_errors, report_warnings]
+              ++ Logger,
     Result = [case compile:file(File, Options) of
             {ok, _} -> ok;
             {ok, _, _} -> ok;
