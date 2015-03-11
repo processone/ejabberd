@@ -50,7 +50,6 @@ start(normal, _Args) ->
     ejabberd_commands:init(),
     ejabberd_admin:start(),
     gen_mod:start(),
-    ext_mod:start(),
     ejabberd_config:start(),
     set_loglevel_from_config(),
     acl:start(),
@@ -67,6 +66,7 @@ start(normal, _Args) ->
     %ejabberd_debug:fprof_start(),
     maybe_add_nameservers(),
     start_modules(),
+    ext_mod:start(),
     ejabberd_listener:start_listeners(),
     ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
     Sup;
