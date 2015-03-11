@@ -1086,8 +1086,7 @@ export(_Server) ->
             when LServer == Host ->
               Username = ejabberd_odbc:escape(LUser),
               Packet1 =
-                  jlib:replace_from_to(jlib:jid_to_string(From),
-                                       jlib:jid_to_string(To), Packet),
+                  jlib:replace_from_to(From, To, Packet),
               Packet2 =
                   jlib:add_delay_info(Packet1, LServer, TimeStamp,
                                       <<"Offline Storage">>),
