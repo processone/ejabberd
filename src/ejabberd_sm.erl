@@ -78,9 +78,9 @@
 -include("ejabberd_sm.hrl").
 
 -callback init() -> ok | {error, any()}.
--callback get_session(binary(), sid()) -> {ok, #session{}} | {error, notfound}.
 -callback set_session(#session{}) -> ok.
--callback delete_session(binary(), sid()) -> ok.
+-callback delete_session(binary(), binary(), binary(), sid()) ->
+    {ok, #session{}} | {error, notfound}.
 -callback get_sessions() -> [#session{}].
 -callback get_sessions(binary()) -> [#session{}].
 -callback get_sessions(binary(), binary()) -> [#session{}].
@@ -137,12 +137,13 @@ open_session(SID, User, Server, Resource, Info) ->
 
 close_session(SID, User, Server, Resource) ->
     Mod = get_sm_backend(),
+    LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    Info = case Mod:get_session(LServer, SID) of
+    LResource = jlib:resourceprep(Resource),
+    Info = case Mod:delete_session(LUser, LServer, LResource, SID) of
 	       {ok, #session{info = I}} -> I;
 	       {error, notfound} -> []
 	   end,
-    Mod:delete_session(LServer, SID),
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_remove_connection_hook,
 		       JID#jid.lserver, [SID, JID, Info]).
@@ -731,7 +732,8 @@ get_sm_backend() ->
     DBType = ejabberd_config:get_option(sm_db_type,
 					fun(mnesia) -> mnesia;
 					   (internal) -> mnesia;
-					   (odbc) -> odbc
+					   (odbc) -> odbc;
+					   (redis) -> redis
 					end, mnesia),
     list_to_atom("ejabberd_sm_" ++ atom_to_list(DBType)).
 

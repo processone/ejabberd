@@ -12,9 +12,8 @@
 
 %% API
 -export([init/0,
-	 get_session/2,
 	 set_session/1,
-	 delete_session/2,
+	 delete_session/4,
 	 get_sessions/0,
 	 get_sessions/1,
 	 get_sessions/2,
@@ -31,6 +30,7 @@
 -spec init() -> ok | {error, any()}.
 init() ->
     Node = ejabberd_odbc:escape(jlib:atom_to_binary(node())),
+    ?INFO_MSG("Cleaning SQL SM table...", []),
     lists:foldl(
       fun(Host, ok) ->
 	      case ejabberd_odbc:sql_query(
@@ -44,23 +44,6 @@ init() ->
 	 (_, Err) ->
 	      Err
       end, ok, ?MYHOSTS).
-
--spec get_session(binary(), sid()) -> {ok, #session{}} | {error, notfound}.
-get_session(LServer, {Now, Pid} = SID) ->
-    Host = ejabberd_odbc:escape(LServer),
-    PidS = list_to_binary(erlang:pid_to_list(Pid)),
-    TS = now_to_timestamp(Now),
-    case ejabberd_odbc:sql_query(
-	   Host, [<<"select username, resource, priority, info from sm ">>,
-		  <<"where usec='">>, TS, <<"' and pid='">>, PidS, <<"'">>]) of
-	{selected, _, [[User, Resource, Priority, Info]|_]} ->
-	    {ok, #session{sid = SID, us = {User, Resource},
-			  usr = {User, Resource, LServer},
-			  priority = dec_priority(Priority),
-			  info = ejabberd_odbc:decode_term(Info)}};
-	{selected, _, []} ->
-	    {error, notfound}
-    end.
 
 set_session(#session{sid = {Now, Pid}, usr = {U, LServer, R},
 		     priority = Priority, info = Info}) ->
@@ -84,16 +67,23 @@ set_session(#session{sid = {Now, Pid}, usr = {U, LServer, R},
 	    ?ERROR_MSG("failed to update 'sm' table: ~p", [Err])
     end.
 
-delete_session(LServer, {Now, Pid}) ->
+delete_session(_LUser, LServer, _LResource, {Now, Pid}) ->
     TS = now_to_timestamp(Now),
     PidS = list_to_binary(erlang:pid_to_list(Pid)),
     case ejabberd_odbc:sql_query(
-	   LServer, [<<"delete from sm where usec='">>,
-		     TS, <<"' and pid='">>, PidS, <<"'">>]) of
-	{updated, _} ->
-	    ok;
+	   LServer,
+	   [<<"select usec, pid, username, resource, priority, info ">>,
+	    <<"from sm where usec='">>, TS, <<"' and pid='">>,PidS, <<"'">>]) of
+	{selected, _, [Row]} ->
+	    ejabberd_odbc:sql_query(
+	      LServer, [<<"delete from sm where usec='">>,
+			TS, <<"' and pid='">>, PidS, <<"'">>]),
+	    {ok, row_to_session(LServer, Row)};
+	{selected, _, []} ->
+	    {error, notfound};
 	Err ->
-	    ?ERROR_MSG("failed to delete from 'sm' table: ~p", [Err])
+	    ?ERROR_MSG("failed to delete from 'sm' table: ~p", [Err]),
+	    {error, notfound}
     end.
 
 get_sessions() ->
