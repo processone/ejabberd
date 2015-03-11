@@ -1406,10 +1406,9 @@ send_packet_all_resources(FromJID, ToU, ToS, ToR, Packet) ->
     ejabberd_router:route(FromJID, ToJID, Packet).
 
 build_packet(Type, Subject, Body) ->
-    Tail = case Subject of
-	<<"chat">> -> [];
-	_ -> [{xmlel, <<"subject">>, [], [{xmlcdata, Subject}]}]
-    end,
+    Tail = if Subject == <<"">>; Type == <<"chat">> -> [];
+	      true -> [{xmlel, <<"subject">>, [], [{xmlcdata, Subject}]}]
+	   end,
     {xmlel, <<"message">>,
      [{<<"type">>, Type}, {<<"id">>, randoms:get_string()}],
      [{xmlel, <<"body">>, [], [{xmlcdata, Body}]} | Tail]
