@@ -19,7 +19,11 @@
 %%%----------------------------------------------------------------------
 
 -include("ns.hrl").
+-ifdef(NO_EXT_LIB).
+-include("xml.hrl").
+-else.
 -include_lib("p1_xml/include/xml.hrl").
+-endif.
 
 -define(STANZA_ERROR(Code, Type, Condition),
 	#xmlel{name = <<"error">>,

@@ -652,6 +652,14 @@ modules:
 ##       mod_echo:
 ##         host: "mirror.localhost"
 
+##
+## Enable modules management via ejabberdctl for installation and
+## uninstallation of public/private contributed modules
+## (enabled by default)
+##
+
+allow_contrib_modules: true
+
 ### Local Variables:
 ### mode: yaml
 ### End:

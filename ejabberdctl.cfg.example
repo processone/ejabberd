@@ -160,5 +160,15 @@
 #EJABBERD_CONFIG_PATH=/etc/ejabberd/ejabberd.yml
 
 #.
+#' CONTRIB_MODULES_PATH: contributed ejabberd modules path
+#
+# Specify the full path to the contributed ejabberd modules. If the path is not
+# defined, ejabberd will use ~/.ejabberd-modules in home of user running ejabberd.
+#
+# Default: $HOME/.ejabberd-modules
+#
+#CONTRIB_MODULES_PATH=/opt/ejabberd-modules
+
+#.
 #'
 # vim: foldmarker=#',#. foldmethod=marker:

@@ -50,6 +50,7 @@ start(normal, _Args) ->
     ejabberd_commands:init(),
     ejabberd_admin:start(),
     gen_mod:start(),
+    ext_mod:start(),
     ejabberd_config:start(),
     set_loglevel_from_config(),
     acl:start(),
