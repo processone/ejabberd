@@ -293,9 +293,7 @@ extract(zip, Zip, DestDir) ->
         Error -> Error
     end;
 extract(tar, Tar, DestDir) ->
-    erl_tar:extract(Tar, [compressed, {cwd, DestDir}]);
-extract(_, _, _) ->
-    {error, unknown_format}.
+    erl_tar:extract(Tar, [compressed, {cwd, DestDir}]).
 
 extract_url(Path, DestDir) ->
     hd([extract_github_master(Path, DestDir) || string:str(Path, "github") > 0]
@@ -405,8 +403,6 @@ check_sources(Module) ->
                         {value, {Key, Val}} -> [{invalid_meta, {Key, Val}}|Acc]
                     end
                 end, [], [author, summary, home, url]);
-        {error, enoent} ->
-            [];
         {error, Error} ->
             [{invalid_spec, Error}]
     end,
