@@ -52,6 +52,7 @@
 
 -type sockmod() :: ejabberd_http_poll |
                    ejabberd_http_bind |
+                   ejabberd_http_ws |
                    gen_tcp | p1_tls | ezlib.
 -type receiver() :: pid () | atom().
 -type socket() :: pid() | inet:socket() |
