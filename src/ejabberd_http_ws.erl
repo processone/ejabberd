@@ -47,10 +47,10 @@
 
 -record(state,
         {socket                       :: ws_socket(),
-         ping_interval = ?PING_INTERVAL :: pos_integer(),
+         ping_interval = ?PING_INTERVAL :: non_neg_integer(),
          ping_timer = make_ref()      :: reference(),
          pong_expected                :: boolean(),
-         timeout = ?WEBSOCKET_TIMEOUT :: pos_integer(),
+         timeout = ?WEBSOCKET_TIMEOUT :: non_neg_integer(),
          timer = make_ref()           :: reference(),
          input = []                   :: list(),
          waiting_input = false        :: false | pid(),
