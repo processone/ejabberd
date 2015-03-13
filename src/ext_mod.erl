@@ -195,7 +195,7 @@ upgrade(Package) when is_binary(Package) ->
     install(Package).
 
 add_sources(Path) when is_list(Path) ->
-    add_sources(module_name(Path), Path).
+    add_sources(iolist_to_binary(module_name(Path)), Path).
 add_sources(_, "") ->
     {error, no_url};
 add_sources(Module, Path) when is_atom(Module), is_list(Path) ->
