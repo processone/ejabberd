@@ -468,7 +468,7 @@ case $ARGS in
     ' etop') etop;;
     ' started') wait_for_status 0 30 2;; # wait 30x2s before timeout
     ' stopped') wait_for_status 3 15 2 && stop_epmd;; # wait 15x2s before timeout
-    ' join_cluster '*) join_cluster ${ARGS# join_cluster};;
-    ' leave_cluster '*) leave_cluster ${ARGS# leave_cluster};;
+    ' join_cluster'*) join_cluster ${ARGS# join_cluster};;
+    ' leave_cluster'*) leave_cluster ${ARGS# leave_cluster};;
     *) ctl $ARGS;;
 esac
