@@ -236,7 +236,7 @@ store_offline_msg(Host, {User, _}, Msgs, Len, MaxOfflineMsgs,
                     Len + count_offline_messages(User, Host);
                true -> 0
             end,
-    if 
+    if
         Count > MaxOfflineMsgs ->
             discard_warn_sender(Msgs);
         true ->
@@ -561,7 +561,19 @@ remove_old_messages(Days, _LServer, mnesia) ->
 			     ok, offline_msg)
 	end,
     mnesia:transaction(F);
-remove_old_messages(_Days, _LServer, odbc) ->
+
+remove_old_messages(Days, LServer, odbc) ->
+    case catch ejabberd_odbc:sql_query(
+		 LServer,
+		 [<<"DELETE FROM spool"
+		   " WHERE created_at < "
+		   "DATE_SUB(CURDATE(), INTERVAL ">>,
+		  integer_to_list(Days), <<" DAY);">>]) of
+	{updated, N} ->
+	    ?INFO_MSG("~p message(s) deleted from offline spool", [N]);
+	_Error ->
+	    ?ERROR_MSG("Cannot delete message in offline spool: ~p", [_Error])
+    end,
     {atomic, ok};
 remove_old_messages(_Days, _LServer, riak) ->
     {atomic, ok}.
