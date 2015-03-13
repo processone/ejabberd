@@ -292,7 +292,8 @@ process_blocklist_unblock_all(LUser, LServer, Filter,
 process_blocklist_unblock_all(LUser, LServer, Filter,
                               riak) ->
     {atomic,
-     case ejabberd_riak:get(privacy, {LUser, LServer}) of
+     case ejabberd_riak:get(privacy, mod_privacy:privacy_schema(),
+			    {LUser, LServer}) of
          {ok, #privacy{default = Default, lists = Lists} = P} ->
              case lists:keysearch(Default, 1, Lists) of
                  {value, {_, List}} ->
