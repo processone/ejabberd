@@ -43,6 +43,8 @@
 start() ->
     case is_contrib_allowed() of
         true ->
+            [code:add_patha(module_ebin_dir(Module))
+             || {Module, _} <- installed()],
             application:start(inets),
             ejabberd_commands:register_commands(commands());
         false ->
