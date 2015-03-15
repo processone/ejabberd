@@ -17,8 +17,8 @@ fi
 
 # Checks Erlang runtime and compiler
 AC_ARG_WITH(erlang,
-	AC_HELP_STRING([--with-erlang=dir],
-		[search for erlang in dir]),
+    AC_HELP_STRING([--with-erlang=dir],
+        [search for erlang in dir]),
 [if test "$withval" = "yes" -o "$withval" = "no" -o "X$with_erlang" = "X"; then
     extra_erl_path=""
 else
@@ -34,14 +34,14 @@ AC_ERLANG_NEED_ERLC
 
 AC_ARG_ENABLE(erlang-version-check,
 [AC_HELP_STRING([--enable-erlang-version-check],
-	[Check Erlang/OTP version @<:@default=yes@:>@])])
+    [Check Erlang/OTP version @<:@default=yes@:>@])])
 case "$enable_erlang_version_check" in
-	yes|'')
-		ERLANG_VERSION_CHECK([$REQUIRE_ERLANG_MIN],[$REQUIRE_ERLANG_MAX])
-		;;
-	no)
-		ERLANG_VERSION_CHECK([$REQUIRE_ERLANG_MIN],[$REQUIRE_ERLANG_MAX],[warn])
-		;;
+    yes|'')
+        ERLANG_VERSION_CHECK([$REQUIRE_ERLANG_MIN],[$REQUIRE_ERLANG_MAX])
+        ;;
+    no)
+        ERLANG_VERSION_CHECK([$REQUIRE_ERLANG_MIN],[$REQUIRE_ERLANG_MAX],[warn])
+        ;;
 esac
 
 # Checks and sets ERLANG_ROOT_DIR and ERLANG_LIB_DIR variable
@@ -106,10 +106,10 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-pam --enable-zlib --enable-riak --enable-redis --enable-json --enable-elixir --enable-iconv --enable-debug --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-json --enable-elixir --enable-iconv --enable-debug --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true riak=true redis=true json=true elixir=true iconv=true debug=true lager=true tools=true ;;
-  no) nif=false odbc=false mysql=false pgsql=false pam=false zlib=false riak=false redis=false json=false elixir=false iconv=false debug=false lager=false tools=false ;;
+  yes) nif=true odbc=true mysql=true pgsql=true pam=true zlib=true riak=true json=true elixir=true iconv=true debug=true lager=true tools=true ;;
+  no) nif=false odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false json=false elixir=false iconv=false debug=false lager=false tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -153,6 +153,14 @@ AC_ARG_ENABLE(pgsql,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-pgsql) ;;
 esac],[if test "x$pgsql" = "x"; then pgsql=false; fi])
 
+AC_ARG_ENABLE(sqlite,
+[AC_HELP_STRING([--enable-sqlite], [enable SQLite 3 support (default: no)])],
+[case "${enableval}" in
+yes) sqlite=true ;;
+no)  sqlite=false ;;
+*) AC_MSG_ERROR(bad value ${enableval} for --enable-sqlite) ;;
+esac],[if test "x$sqlite" = "x"; then sqlite=false; fi])
+
 AC_ARG_ENABLE(pam,
 [AC_HELP_STRING([--enable-pam], [enable PAM support (default: no)])],
 [case "${enableval}" in
@@ -176,14 +184,6 @@ AC_ARG_ENABLE(riak,
   no)  riak=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-riak) ;;
 esac],[if test "x$riak" = "x"; then riak=false; fi])
-
-AC_ARG_ENABLE(redis,
-[AC_HELP_STRING([--enable-redis], [enable Redis support (default: no)])],
-[case "${enableval}" in
-  yes) redis=true ;;
-  no)  redis=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-redis) ;;
-esac],[if test "x$redis" = "x"; then redis=false; fi])
 
 AC_ARG_ENABLE(json,
 [AC_HELP_STRING([--enable-json], [enable JSON support for mod_bosh (default: no)])],
@@ -226,8 +226,8 @@ AC_ARG_ENABLE(lager,
 esac],[if test "x$lager" = "x"; then lager=true; fi])
 
 AC_CONFIG_FILES([Makefile
-		 vars.config
-		 src/ejabberd.app.src])
+         vars.config
+         src/ejabberd.app.src])
 
 ENABLEUSER=""
 AC_ARG_ENABLE(user,
@@ -254,10 +254,10 @@ AC_SUBST(db_type)
 AC_SUBST(odbc)
 AC_SUBST(mysql)
 AC_SUBST(pgsql)
+AC_SUBST(sqlite)
 AC_SUBST(pam)
 AC_SUBST(zlib)
 AC_SUBST(riak)
-AC_SUBST(redis)
 AC_SUBST(json)
 AC_SUBST(elixir)
 AC_SUBST(iconv)

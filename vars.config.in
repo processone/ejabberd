@@ -23,6 +23,7 @@
 {odbc, @odbc@}.
 {mysql, @mysql@}.
 {pgsql, @pgsql@}.
+{sqlite, @sqlite@}.
 {pam, @pam@}.
 {zlib, @zlib@}.
 {riak, @riak@}.

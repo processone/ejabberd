@@ -126,7 +126,7 @@ update(LServer, Table, Fields, Vals, Where) ->
 		case Res of
 			{updated,1} -> ok;
 			_ -> Res
-		end		   
+		end
     end.
 
 %% F can be either a fun or a list of queries
@@ -229,6 +229,7 @@ users_number(LServer) ->
     Type = ejabberd_config:get_option({odbc_type, LServer},
                                       fun(pgsql) -> pgsql;
                                          (mysql) -> mysql;
+                                         (sqlite) -> sqlite;
                                          (odbc) -> odbc
                                       end, odbc),
     case Type of

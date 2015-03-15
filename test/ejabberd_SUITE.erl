@@ -300,6 +300,7 @@ groups() ->
      {mnesia, [sequence], db_tests(mnesia)},
      {mysql, [sequence], db_tests(mysql)},
      {pgsql, [sequence], db_tests(pgsql)},
+     {sqlite, [sequence], db_tests(sqlite)},
      {riak, [sequence], db_tests(riak)}].
 
 all() ->
@@ -308,6 +309,7 @@ all() ->
      {group, mnesia},
      {group, mysql},
      {group, pgsql},
+     {group, sqlite},
      {group, extauth},
      {group, riak},
      stop_ejabberd].
@@ -1369,7 +1371,7 @@ muc_register_nick(Config, MUC, PrevNick, Nick) ->
 	send_recv(Config, #iq{type = get, to = MUC,
 			      sub_els = [#register{}]}),
     #xdata_field{type = 'text-single', var = <<"nick">>,
-		 values = [Nick]} = 
+		 values = [Nick]} =
 	lists:keyfind(<<"nick">>, #xdata_field.var, FsWithNick).
 
 muc_register_master(Config) ->
@@ -1636,7 +1638,9 @@ create_sql_tables(Type, BaseDir) ->
                         mysql ->
                             {?MYSQL_VHOST, "mysql.sql"};
                         pgsql ->
-                            {?PGSQL_VHOST, "pg.sql"}
+                            {?PGSQL_VHOST, "pg.sql"};
+                        sqlite ->
+                            {?SQLITE_VHOST, "lite.sql"}
                     end,
     SQLFile = filename:join([BaseDir, "sql", File]),
     CreationQueries = read_sql_queries(SQLFile),
