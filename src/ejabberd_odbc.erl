@@ -58,7 +58,7 @@
 
 -record(state,
 	{db_ref = self()                     :: pid(),
-         db_type = odbc                      :: pgsql | mysql | odbc,
+         db_type = odbc                      :: pgsql | mysql | odbc | sqlite,
          start_interval = 0                  :: non_neg_integer(),
          host = <<"">>                       :: binary(),
 	 max_pending_requests_len            :: non_neg_integer(),
@@ -224,7 +224,8 @@ init([Host, StartInterval]) ->
 connecting(connect, #state{host = Host} = State) ->
     ConnectRes = case db_opts(Host) of
 		   [mysql | Args] -> apply(fun mysql_connect/5, Args);
-		   [pgsql | Args] -> apply(fun pgsql_connect/5, Args);
+           [pgsql | Args] -> apply(fun pgsql_connect/5, Args);
+           [sqlite | Args] -> apply(fun sqlite_connect/1, Args);
 		   [odbc | Args] -> apply(fun odbc_connect/1, Args)
 		 end,
     {_, PendingRequests} = State#state.pending_requests,
@@ -441,22 +442,25 @@ execute_bloc(F) ->
 sql_query_internal(Query) ->
     State = get(?STATE_KEY),
     Res = case State#state.db_type of
-	    odbc ->
-		to_odbc(odbc:sql_query(State#state.db_ref, Query,
-                                       (?TRANSACTION_TIMEOUT) - 1000));
-	    pgsql ->
-		pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query));
-	    mysql ->
-		?DEBUG("MySQL, Send query~n~p~n", [Query]),  
-		%%squery to be able to specify result_type = binary
-		%%[Query] because p1_mysql_conn expect query to be a list (elements can be binaries, or iolist)
-		%%        but doesn't accept just a binary
-		R = mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
-						   [Query], self(),
-						   [{timeout, (?TRANSACTION_TIMEOUT) - 1000},
-						    {result_type, binary}])),
-		%% ?INFO_MSG("MySQL, Received result~n~p~n", [R]),
-		R
+              odbc ->
+                  to_odbc(odbc:sql_query(State#state.db_ref, Query,
+                                         (?TRANSACTION_TIMEOUT) - 1000));
+              pgsql ->
+                  pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query));
+              mysql ->
+                  ?DEBUG("MySQL, Send query~n~p~n", [Query]),
+                  %%squery to be able to specify result_type = binary
+                  %%[Query] because p1_mysql_conn expect query
+                  %%to be a list (elements can be binaries, or iolist)
+                  %%        but doesn't accept just a binary
+                  R = mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
+                                                         [Query], self(),
+                                                         [{timeout, (?TRANSACTION_TIMEOUT) - 1000},
+                                                          {result_type, binary}])),
+                  %% ?INFO_MSG("MySQL, Received result~n~p~n", [R]),
+                  R;
+              sqlite ->
+                  sqlite_to_odbc(sqlite3:sql_exec(?SQLITE_DB, Query))
 	  end,
     case Res of
       {error, <<"No SQL-driver information available.">>} ->
@@ -487,6 +491,34 @@ abort_on_driver_error(Reply, From) ->
 odbc_connect(SQLServer) ->
     ejabberd:start_app(odbc),
     odbc:connect(binary_to_list(SQLServer), [{scrollable_cursors, off}]).
+
+%% == Native SQLite code
+
+%% part of init/1
+%% Open a database connection to SQLite
+
+sqlite_connect(DB) ->
+    process_flag(trap_exit, true),
+    case sqlite3:open(?SQLITE_DB, [{file, binary_to_list(DB)}]) of
+        {ok, Ref} ->
+            {ok, Ref};
+        {error, {already_started, Ref}} ->
+            {ok, Ref};
+        {'EXIT', Reason} ->
+            {error, Reason}
+    end.
+
+%% Convert SQLite query result to Erlang ODBC result formalism
+sqlite_to_odbc(ok) ->
+    {updated, sqlite3:changes(?SQLITE_DB)};
+sqlite_to_odbc({rowid, _}) ->
+    {updated, sqlite3:changes(?SQLITE_DB)};
+sqlite_to_odbc([{columns, Columns}, {rows, Rows}]) ->
+    {selected, [list_to_binary(C) || C <- Columns], [tuple_to_list(Row) || Row <- Rows]};
+sqlite_to_odbc({error, _Code, Reason}) ->
+    {error, Reason};
+sqlite_to_odbc(_) ->
+    {updated, undefined}.
 
 %% == Native PostgreSQL code
 
@@ -584,6 +616,7 @@ db_opts(Host) ->
     Type = ejabberd_config:get_option({odbc_type, Host},
                                       fun(mysql) -> mysql;
                                          (pgsql) -> pgsql;
+                                         (sqlite) -> sqlite;
                                          (odbc) -> odbc
                                       end, odbc),
     Server = ejabberd_config:get_option({odbc_server, Host},
@@ -592,6 +625,11 @@ db_opts(Host) ->
     case Type of
         odbc ->
             [odbc, Server];
+        sqlite ->
+            DB = ejabberd_config:get_option({odbc_database, Host},
+                                            fun iolist_to_binary/1,
+                                            <<"/tmp/ejabberd.db">>),
+            [sqlite, DB];
         _ ->
             Port = ejabberd_config:get_option(
                      {odbc_port, Host},

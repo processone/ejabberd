@@ -1,5 +1,5 @@
-host_config: 
-  "pgsql.localhost": 
+host_config:
+  "pgsql.localhost":
     odbc_username: "ejabberd_test"
     odbc_type: pgsql
     odbc_server: "localhost"
@@ -8,29 +8,29 @@ host_config:
     odbc_password: "ejabberd_test"
     odbc_database: "ejabberd_test"
     auth_method: odbc
-    modules: 
-      mod_announce: 
+    modules:
+      mod_announce:
         db_type: odbc
         access: local
-      mod_blocking: 
+      mod_blocking:
         db_type: odbc
-      mod_caps: 
+      mod_caps:
         db_type: odbc
-      mod_last: 
+      mod_last:
         db_type: odbc
-      mod_muc: 
+      mod_muc:
         db_type: odbc
-      mod_offline: 
+      mod_offline:
         db_type: odbc
-      mod_privacy: 
+      mod_privacy:
         db_type: odbc
-      mod_private: 
+      mod_private:
         db_type: odbc
-      mod_pubsub_odbc: 
+      mod_pubsub_odbc:
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
-        plugins: 
+        plugins:
           - "flat"
           - "hometree"
           - "pep"
@@ -38,7 +38,7 @@ host_config:
         versioning: true
         store_current_id: true
         db_type: odbc
-      mod_vcard: 
+      mod_vcard:
         db_type: odbc
       mod_vcard_xupdate:
         db_type: odbc
@@ -47,15 +47,15 @@ host_config:
       mod_disco: []
       mod_ping: []
       mod_proxy65: []
-      mod_register: 
-        welcome_message: 
+      mod_register:
+        welcome_message:
           subject: "Welcome!"
           body: "Hi.
 Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-  "mysql.localhost": 
+  "mysql.localhost":
     odbc_username: "ejabberd_test"
     odbc_type: mysql
     odbc_server: "localhost"
@@ -64,37 +64,37 @@ Welcome to this XMPP server."
     odbc_password: "ejabberd_test"
     odbc_database: "ejabberd_test"
     auth_method: odbc
-    modules: 
-      mod_announce: 
+    modules:
+      mod_announce:
         db_type: odbc
         access: local
-      mod_blocking: 
+      mod_blocking:
         db_type: odbc
-      mod_caps: 
+      mod_caps:
         db_type: odbc
-      mod_last: 
+      mod_last:
         db_type: odbc
-      mod_muc: 
+      mod_muc:
         db_type: odbc
-      mod_offline: 
+      mod_offline:
         db_type: odbc
-      mod_privacy: 
+      mod_privacy:
         db_type: odbc
-      mod_private: 
+      mod_private:
         db_type: odbc
-      mod_pubsub_odbc: 
+      mod_pubsub_odbc:
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
-        plugins: 
+        plugins:
           - "flat"
           - "hometree"
           - "pep"
-      mod_roster: 
+      mod_roster:
         versioning: true
         store_current_id: true
         db_type: odbc
-      mod_vcard: 
+      mod_vcard:
         db_type: odbc
       mod_vcard_xupdate:
         db_type: odbc
@@ -103,47 +103,99 @@ Welcome to this XMPP server."
       mod_disco: []
       mod_ping: []
       mod_proxy65: []
-      mod_register: 
-        welcome_message: 
+      mod_register:
+        welcome_message:
           subject: "Welcome!"
           body: "Hi.
 Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-  "mnesia.localhost": 
-    auth_method: internal
-    modules: 
-      mod_announce: 
-        db_type: internal
+  "sqlite.localhost":
+    odbc_type: sqlite
+    odbc_pool_size: 1
+    odbc_database: "/tmp/ejabberd_test.db"
+    auth_method: odbc
+    modules:
+      mod_announce:
+        db_type: odbc
         access: local
-      mod_blocking: 
-        db_type: internal
-      mod_caps: 
-        db_type: internal
-      mod_last: 
-        db_type: internal
-      mod_muc: 
-        db_type: internal
-      mod_offline: 
-        db_type: internal
-      mod_privacy: 
-        db_type: internal
-      mod_private: 
-        db_type: internal
-      mod_pubsub: 
+      mod_blocking:
+        db_type: odbc
+      mod_caps:
+        db_type: odbc
+      mod_last:
+        db_type: odbc
+      mod_muc:
+        db_type: odbc
+      mod_offline:
+        db_type: odbc
+      mod_privacy:
+        db_type: odbc
+      mod_private:
+        db_type: odbc
+      mod_pubsub_odbc:
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
-        plugins: 
+        plugins:
           - "flat"
           - "hometree"
           - "pep"
-      mod_roster: 
+      mod_roster:
+        versioning: true
+        store_current_id: true
+        db_type: odbc
+      mod_vcard:
+        db_type: odbc
+      mod_vcard_xupdate:
+        db_type: odbc
+      mod_adhoc: []
+      mod_configure: []
+      mod_disco: []
+      mod_ping: []
+      mod_proxy65: []
+      mod_register:
+        welcome_message:
+          subject: "Welcome!"
+          body: "Hi.
+Welcome to this XMPP server."
+      mod_stats: []
+      mod_time: []
+      mod_version: []
+  "mnesia.localhost":
+    auth_method: internal
+    modules:
+      mod_announce:
+        db_type: internal
+        access: local
+      mod_blocking:
+        db_type: internal
+      mod_caps:
+        db_type: internal
+      mod_last:
+        db_type: internal
+      mod_muc:
+        db_type: internal
+      mod_offline:
+        db_type: internal
+      mod_privacy:
+        db_type: internal
+      mod_private:
+        db_type: internal
+      mod_pubsub:
+        access_createnode: pubsub_createnode
+        ignore_pep_from_offline: true
+        last_item_cache: false
+        plugins:
+          - "flat"
+          - "hometree"
+          - "pep"
+      mod_roster:
         versioning: true
         store_current_id: true
         db_type: internal
-      mod_vcard: 
+      mod_vcard:
         db_type: internal
       mod_vcard_xupdate:
         db_type: internal
@@ -157,39 +209,39 @@ Welcome to this XMPP server."
       mod_disco: []
       mod_ping: []
       mod_proxy65: []
-      mod_register: 
-        welcome_message: 
+      mod_register:
+        welcome_message:
           subject: "Welcome!"
           body: "Hi.
 Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-  "riak.localhost": 
+  "riak.localhost":
     auth_method: riak
-    modules: 
-      mod_announce: 
+    modules:
+      mod_announce:
         db_type: riak
         access: local
-      mod_blocking: 
+      mod_blocking:
         db_type: riak
-      mod_caps: 
+      mod_caps:
         db_type: riak
-      mod_last: 
+      mod_last:
         db_type: riak
-      mod_muc: 
+      mod_muc:
         db_type: riak
-      mod_offline: 
+      mod_offline:
         db_type: riak
-      mod_privacy: 
+      mod_privacy:
         db_type: riak
-      mod_private: 
+      mod_private:
         db_type: riak
-      mod_roster: 
+      mod_roster:
         versioning: true
         store_current_id: true
         db_type: riak
-      mod_vcard: 
+      mod_vcard:
         db_type: riak
       mod_vcard_xupdate:
         db_type: riak
@@ -198,43 +250,43 @@ Welcome to this XMPP server."
       mod_disco: []
       mod_ping: []
       mod_proxy65: []
-      mod_register: 
-        welcome_message: 
+      mod_register:
+        welcome_message:
           subject: "Welcome!"
           body: "Hi.
 Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-  "localhost": 
+  "localhost":
     auth_method: internal
-  "ldap.localhost": 
-    ldap_servers: 
+  "ldap.localhost":
+    ldap_servers:
       - "localhost"
     ldap_rootdn: "cn=admin,dc=localhost"
     ldap_port: 1389
     ldap_password: "password"
     ldap_base: "ou=users,dc=localhost"
     auth_method: ldap
-    modules: 
+    modules:
       mod_vcard_ldap: []
       mod_adhoc: []
       mod_configure: []
       mod_disco: []
       mod_ping: []
       mod_proxy65: []
-      mod_register: 
-        welcome_message: 
+      mod_register:
+        welcome_message:
           subject: "Welcome!"
           body: "Hi.
 Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-  "extauth.localhost": 
+  "extauth.localhost":
     extauth_program: "python extauth.py"
     auth_method: external
-hosts: 
+hosts:
   - "localhost"
   - "mnesia.localhost"
   - "mysql.localhost"
@@ -242,44 +294,44 @@ hosts:
   - "extauth.localhost"
   - "ldap.localhost"
   - "riak.localhost"
-access: 
-  announce: 
+access:
+  announce:
     admin: allow
-  c2s: 
+  c2s:
     blocked: deny
     all: allow
-  c2s_shaper: 
+  c2s_shaper:
     admin: none
     all: normal
-  configure: 
+  configure:
     admin: allow
-  local: 
+  local:
     local: allow
-  max_user_offline_messages: 
+  max_user_offline_messages:
     admin: 5000
     all: 100
-  max_user_sessions: 
+  max_user_sessions:
     all: 10
-  muc: 
+  muc:
     all: allow
-  muc_admin: 
+  muc_admin:
     admin: allow
-  muc_create: 
+  muc_create:
     local: allow
-  pubsub_createnode: 
+  pubsub_createnode:
     local: allow
-  register: 
+  register:
     all: allow
-  s2s_shaper: 
+  s2s_shaper:
     all: fast
-acl: 
-  local: 
+acl:
+  local:
     user_regexp: ""
-define_macro: 
+define_macro:
   CERTFILE: "cert.pem"
 language: "en"
-listen: 
-  - 
+listen:
+  -
     port: 5222
     module: ejabberd_c2s
     max_stanza_size: 65536
@@ -288,23 +340,23 @@ listen:
     starttls: true
     shaper: c2s_shaper
     access: c2s
-  - 
+  -
     port: 5269
     module: ejabberd_s2s_in
-  - 
+  -
     port: 5280
     module: ejabberd_http
     captcha: true
 loglevel: 4
 max_fsm_queue: 1000
-modules: 
+modules:
   mod_adhoc: []
   mod_configure: []
   mod_disco: []
   mod_ping: []
   mod_proxy65: []
-  mod_register: 
-    welcome_message: 
+  mod_register:
+    welcome_message:
       subject: "Welcome!"
       body: "Hi.
 Welcome to this XMPP server."
@@ -312,6 +364,6 @@ Welcome to this XMPP server."
   mod_time: []
   mod_version: []
 registration_timeout: infinity
-shaper: 
+shaper:
   fast: 50000
   normal: 1000
