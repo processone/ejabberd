@@ -87,6 +87,8 @@ CfgDeps = lists:flatmap(
                     [{p1_mysql, ".*", {git, "git://github.com/processone/mysql"}}];
                ({pgsql, true}) ->
                     [{p1_pgsql, ".*", {git, "git://github.com/processone/pgsql"}}];
+               ({sqlite, true}) ->
+                    [{sqlite3, ".*", {git, "git://github.com/alexeyr/erlang-sqlite3"}}];
                ({pam, true}) ->
                     [{p1_pam, ".*", {git, "git://github.com/processone/epam"}}];
                ({zlib, true}) ->

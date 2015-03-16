@@ -67,6 +67,22 @@ init([Host]) ->
                       {odbc_start_interval, Host},
                       fun(I) when is_integer(I), I>0 -> I end,
                       ?DEFAULT_ODBC_START_INTERVAL),
+    Type = ejabberd_config:get_option({odbc_type, Host},
+                                      fun(mysql) -> mysql;
+                                         (pgsql) -> pgsql;
+                                         (sqlite) -> sqlite;
+                                         (odbc) -> odbc
+                                      end, odbc),
+    case Type of
+        sqlite ->
+            DB = ejabberd_config:get_option({odbc_database, Host},
+                                            fun iolist_to_binary/1,
+                                            <<"/tmp/ejabberd.db">>),
+            check_sqlite_db(DB);
+        _ ->
+            ok
+    end,
+
     {ok,
      {{one_for_one, PoolSize * 10, 1},
       lists:map(fun (I) ->
@@ -113,5 +129,39 @@ transform_options({odbc_server, {mysql, Server, DB, User, Pass}}, Opts) ->
     transform_options({odbc_server, {mysql, Server, ?MYSQL_PORT, DB, User, Pass}}, Opts);
 transform_options({odbc_server, {pgsql, Server, DB, User, Pass}}, Opts) ->
     transform_options({odbc_server, {pgsql, Server, ?PGSQL_PORT, DB, User, Pass}}, Opts);
+transform_options({odbc_server, {sqlite, DB}}, Opts) ->
+    transform_options({odbc_server, {sqlite, DB}}, Opts);
 transform_options(Opt, Opts) ->
     [Opt|Opts].
+
+check_sqlite_db(DB) ->
+    case sqlite3:open(?SQLITE_DB, [{file, binary_to_list(DB)}]) of
+        {ok, _Ref} -> ok;
+        {error, {already_started, _Ref}} -> ok
+    end,
+
+    case sqlite3:list_tables(?SQLITE_DB) of
+        [] ->
+            create_sqlite_tables(),
+            sqlite3:close(?SQLITE_DB),
+            ok;
+        [_H | _] ->
+            ok
+    end.
+
+create_sqlite_tables() ->
+    SqlDir = case code:priv_dir(ejabberd) of
+                 {error, _} ->
+                     ?SQL_DIR;
+                 PrivDir ->
+                     filename:join(PrivDir, "sql")
+             end,
+    Path = filename:join(SqlDir, "lite.sql"),
+    case file:read_file(Path) of
+        {ok, Data} ->
+            ok = sqlite3:sql_exec(?SQLITE_DB, "begin"),
+            ok = sqlite3:sql_exec(?SQLITE_DB, Data),
+            ok = sqlite3:sql_exec(?SQLITE_DB, "commit");
+        {error, _} ->
+            throw(sql_not_found)
+    end.

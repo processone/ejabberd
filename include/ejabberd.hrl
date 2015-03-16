@@ -31,6 +31,10 @@
 
 -define(MSGS_DIR, filename:join(["priv", "msgs"])).
 
+-define(SQL_DIR, filename:join(["priv", "sql"])).
+
+-define(SQLITE_DB, ejabberd_sqlite).
+
 -define(CONFIG_PATH, <<"ejabberd.cfg">>).
 
 -define(LOG_PATH, <<"ejabberd.log">>).

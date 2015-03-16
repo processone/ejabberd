@@ -344,6 +344,12 @@ auth_method: internal
 ## pgsql_users_number_estimate: true
 
 ##
+## SQLite:
+##
+## odbc_type: sqlite
+## odbc_database: "/path/to/database.db"
+
+##
 ## ODBC compatible or MSSQL server:
 ##
 ## odbc_type: odbc

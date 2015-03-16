@@ -11,7 +11,7 @@ before_install:
   - sudo apt-get -qq update
 
 install:
-  - sudo apt-get -qq install libexpat1-dev libyaml-dev libpam0g-dev
+  - sudo apt-get -qq install libexpat1-dev libyaml-dev libpam0g-dev libsqlite3-dev
 
 before_script:
   - mysql -u root -e "CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';"

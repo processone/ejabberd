@@ -55,6 +55,57 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
+  "sqlite.localhost": 
+    odbc_type: sqlite
+    odbc_database: "/tmp/ejabberd_test.db"
+    auth_method: odbc
+    modules: 
+      mod_announce: 
+        db_type: odbc
+        access: local
+      mod_blocking: 
+        db_type: odbc
+      mod_caps: 
+        db_type: odbc
+      mod_last: 
+        db_type: odbc
+      mod_muc: 
+        db_type: odbc
+      mod_offline: 
+        db_type: odbc
+      mod_privacy: 
+        db_type: odbc
+      mod_private: 
+        db_type: odbc
+      mod_pubsub_odbc: 
+        access_createnode: pubsub_createnode
+        ignore_pep_from_offline: true
+        last_item_cache: false
+        plugins: 
+          - "flat"
+          - "hometree"
+          - "pep"
+      mod_roster:
+        versioning: true
+        store_current_id: true
+        db_type: odbc
+      mod_vcard: 
+        db_type: odbc
+      mod_vcard_xupdate:
+        db_type: odbc
+      mod_adhoc: []
+      mod_configure: []
+      mod_disco: []
+      mod_ping: []
+      mod_proxy65: []
+      mod_register: 
+        welcome_message: 
+          subject: "Welcome!"
+          body: "Hi.
+Welcome to this XMPP server."
+      mod_stats: []
+      mod_time: []
+      mod_version: []
   "mysql.localhost": 
     odbc_username: "ejabberd_test"
     odbc_type: mysql
@@ -242,6 +293,7 @@ hosts:
   - "extauth.localhost"
   - "ldap.localhost"
   - "riak.localhost"
+  - "sqlite.localhost"
 access: 
   announce: 
     admin: allow
