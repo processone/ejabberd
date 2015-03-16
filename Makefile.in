@@ -43,6 +43,9 @@ SODIR = $(PRIVDIR)/lib
 # /usr/lib/ejabberd/priv/msgs
 MSGSDIR = $(PRIVDIR)/msgs
 
+# /usr/lib/ejabberd/priv/sql
+SQLDIR = $(PRIVDIR)/sql
+
 # /var/lib/ejabberd/
 SPOOLDIR = $(DESTDIR)@localstatedir@/lib/ejabberd
 
@@ -176,10 +179,15 @@ install: all
 	$(INSTALL) -d $(SODIR)
 	$(INSTALL) -m 644 $(DLLs) $(SODIR)
 	-[ -f $(SODIR)/jiffy.so ] && (cd $(PRIVDIR); ln -s lib/jiffy.so; true)
+	-[ -f $(SODIR)/sqlite3_drv.so ] && (cd $(PRIVDIR); ln -s lib/sqlite3_drv.so; true)
 	#
 	# Translated strings
 	$(INSTALL) -d $(MSGSDIR)
 	$(INSTALL) -m 644 priv/msgs/*.msg $(MSGSDIR)
+	#
+	# Copy lite.sql
+	-[ -d deps/sqlite3 ] && $(INSTALL) -d $(SQLDIR)
+	-[ -d deps/sqlite3 ] && $(INSTALL) -m 644 sql/lite.sql $(SQLDIR)
 	#
 	# Spool directory
 	$(INSTALL) -d -m 750 $(O_USER) $(SPOOLDIR)
@@ -229,6 +237,8 @@ uninstall-binary:
 	rm -fr $(SODIR)
 	rm -f  $(MSGSDIR)/*.msgs
 	rm -fr $(MSGSDIR)
+	rm -f  $(SQLDIR)/*.sql
+	rm -fr $(SQLDIR)
 	rm -fr $(PRIVDIR)
 	rm -fr $(EJABBERDDIR)
 
@@ -310,6 +320,7 @@ test:
 	@echo "************************** NOTICE ***************************************"
 	@cat test/README
 	@echo "*************************************************************************"
+	@cd priv && ln -sf ../sql
 	$(REBAR) skip_deps=true ct
 
 quicktest:
