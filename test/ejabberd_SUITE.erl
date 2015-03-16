@@ -69,7 +69,6 @@ init_per_group(sqlite, Config) ->
     case catch ejabberd_odbc:sql_query(?SQLITE_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?SQLITE_VHOST),
-            create_sql_tables(sqlite, ?config(base_dir, Config)),
             set_opt(server, ?SQLITE_VHOST, Config);
         Err ->
             {skip, {sqlite_not_available, Err}}

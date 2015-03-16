@@ -35,6 +35,8 @@
 
 -define(SQLITE_DB, ejabberd_sqlite).
 
+-define(DEFAULT_SQLITE_DB_PATH, <<"/tmp/ejabberd.db">>).
+
 -define(CONFIG_PATH, <<"ejabberd.cfg">>).
 
 -define(LOG_PATH, <<"ejabberd.log">>).

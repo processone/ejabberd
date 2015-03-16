@@ -628,7 +628,7 @@ db_opts(Host) ->
         sqlite ->
             DB = ejabberd_config:get_option({odbc_database, Host},
                                             fun iolist_to_binary/1,
-                                            <<"/tmp/ejabberd.db">>),
+                                            ?DEFAULT_SQLITE_DB_PATH),
             [sqlite, DB];
         _ ->
             Port = ejabberd_config:get_option(

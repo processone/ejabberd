@@ -179,6 +179,7 @@ install: all
 	$(INSTALL) -d $(SODIR)
 	$(INSTALL) -m 644 $(DLLs) $(SODIR)
 	-[ -f $(SODIR)/jiffy.so ] && (cd $(PRIVDIR); ln -s lib/jiffy.so; true)
+	-[ -f $(SODIR)/sqlite3_drv.so ] && (cd $(PRIVDIR); ln -s lib/sqlite3_drv.so; true)
 	#
 	# Translated strings
 	$(INSTALL) -d $(MSGSDIR)
@@ -319,6 +320,8 @@ test:
 	@echo "************************** NOTICE ***************************************"
 	@cat test/README
 	@echo "*************************************************************************"
+	# For tests
+	@cd priv && ln -s ../sql ./sql
 	$(REBAR) skip_deps=true ct
 
 quicktest:

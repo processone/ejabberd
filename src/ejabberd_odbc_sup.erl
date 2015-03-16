@@ -77,7 +77,7 @@ init([Host]) ->
         sqlite ->
             DB = ejabberd_config:get_option({odbc_database, Host},
                                             fun iolist_to_binary/1,
-                                            <<"/tmp/ejabberd.db">>),
+                                            ?DEFAULT_SQLITE_DB_PATH),
             check_sqlite_db(DB);
         _ ->
             ok
@@ -135,18 +135,24 @@ transform_options(Opt, Opts) ->
     [Opt|Opts].
 
 check_sqlite_db(DB) ->
-    case sqlite3:open(?SQLITE_DB, [{file, binary_to_list(DB)}]) of
-        {ok, _Ref} -> ok;
-        {error, {already_started, _Ref}} -> ok
-    end,
-
-    case sqlite3:list_tables(?SQLITE_DB) of
-        [] ->
-            create_sqlite_tables(),
-            sqlite3:close(?SQLITE_DB),
-            ok;
-        [_H | _] ->
-            ok
+    process_flag(trap_exit, true),
+    Ret = case sqlite3:open(?SQLITE_DB, [{file, binary_to_list(DB)}]) of
+              {ok, _Ref} -> ok;
+              {error, {already_started, _Ref}} -> ok;
+              {error, R} -> {error, R}
+          end,
+    case Ret of
+        ok ->
+            case sqlite3:list_tables(?SQLITE_DB) of
+                [] ->
+                    create_sqlite_tables(),
+                    sqlite3:close(?SQLITE_DB),
+                    ok;
+                [_H | _] ->
+                    ok
+            end;
+        {error, Reason} ->
+            ?INFO_MSG("Failed open sqlite database, reason ~p", [Reason])
     end.
 
 create_sqlite_tables() ->
@@ -157,11 +163,13 @@ create_sqlite_tables() ->
                      filename:join(PrivDir, "sql")
              end,
     Path = filename:join(SqlDir, "lite.sql"),
+    ct:pal("~n~nFilePath: ~p PrivDir: ~p~n~n~n", [Path, code:priv_dir(ejabberd)]),
     case file:read_file(Path) of
         {ok, Data} ->
             ok = sqlite3:sql_exec(?SQLITE_DB, "begin"),
             ok = sqlite3:sql_exec(?SQLITE_DB, Data),
             ok = sqlite3:sql_exec(?SQLITE_DB, "commit");
-        {error, _} ->
-            throw(sql_not_found)
+        {error, Reason} ->
+            ?INFO_MSG("Not found sqlite database schema, reason: ~p", [Reason]),
+            ok
     end.
