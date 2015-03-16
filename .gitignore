@@ -4,6 +4,8 @@
 *~
 \#*#
 .#*
+.edts
+*.dump
 /Makefile
 /config.log
 /config.status
@@ -38,3 +40,4 @@
 /dialyzer/
 /test/*.beam
 /logs/
+/priv/sql
