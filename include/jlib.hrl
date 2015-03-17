@@ -475,10 +475,10 @@
 
 -type(iq() :: iq_request() | iq_reply()).
 
--record(rsm_in, {max :: integer(),
+-record(rsm_in, {max :: integer() | error,
                  direction :: before | aft,
                  id :: binary(),
-                 index :: integer()}).
+                 index :: integer() | error}).
 
 -record(rsm_out, {count :: integer(),
                   index :: integer(),
