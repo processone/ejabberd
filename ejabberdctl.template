@@ -13,6 +13,7 @@ ERLANG_NODE=ejabberd@localhost
 SCRIPT_DIR=`cd ${0%/*} && pwd`
 ERL={{erl}}
 IEX={{bindir}}/iex
+EPMD={{bindir}}/epmd
 INSTALLUSER={{installuser}}
 
 # Compatibility in ZSH
@@ -406,13 +407,13 @@ ctlexec()
 # stop epmd if there is no other running node
 stop_epmd()
 {
-    epmd -names 2>/dev/null | grep -q name || epmd -kill >/dev/null
+    $EPMD -names 2>/dev/null | grep -q name || epmd -kill >/dev/null
 }
 
 # make sure node not already running and node name unregistered
 check_start()
 {
-    epmd -names 2>/dev/null | grep -q " ${ERLANG_NODE%@*} " && {
+    $EPMD -names 2>/dev/null | grep -q " ${ERLANG_NODE%@*} " && {
         ps ux | grep -v grep | grep -q " $ERLANG_NODE " && {
             echo "ERROR: The ejabberd node '$ERLANG_NODE' is already running."
             exit 4
@@ -423,7 +424,7 @@ check_start()
                 echo "Shutdown all other erlang nodes, and call 'epmd -kill'."
                 exit 5
             } || {
-                epmd -kill >/dev/null
+                $EPMD -kill >/dev/null
             }
         }
     }
