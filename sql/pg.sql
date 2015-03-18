@@ -161,6 +161,8 @@ CREATE TABLE privacy_list_data (
     match_presence_out boolean NOT NULL
 );
 
+CREATE INDEX i_privacy_list_data_id ON privacy_list_data USING btree (id);
+
 CREATE TABLE private_storage (
     username text NOT NULL,
     namespace text NOT NULL,
