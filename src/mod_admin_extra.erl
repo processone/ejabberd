@@ -836,7 +836,7 @@ get_status_list(Host, Status_required) ->
 	    end,
     Sessions3 = [ {Pid, Server, Priority} || {{_User, Server, _Resource}, {_, Pid}, Priority} <- Sessions2, apply(Fhost, [Server, Host])],
     %% For each Pid, get its presence
-    Sessions4 = [ {ejabberd_c2s:get_presence(Pid), Server, Priority} || {Pid, Server, Priority} <- Sessions3],
+    Sessions4 = [ {catch ejabberd_c2s:get_presence(Pid), Server, Priority} || {Pid, Server, Priority} <- Sessions3],
     %% Filter by status
     Fstatus = case Status_required of
 		  <<"all">> ->
