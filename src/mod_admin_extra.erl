@@ -979,7 +979,7 @@ get_vcard_content(User, Server, Data) ->
     case IQr#iq.sub_el of
 	[A1] ->
 	    case get_vcard(Data, A1) of
-		[] -> throw(error_no_value_found_in_vcard);
+		[false] -> throw(error_no_value_found_in_vcard);
 		ElemList -> [xml:get_tag_cdata(Elem) || Elem <- ElemList]
 	    end;
 	[] ->
