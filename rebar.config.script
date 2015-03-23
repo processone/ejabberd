@@ -6,6 +6,9 @@
 %%% @end
 %%% Created :  1 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%-------------------------------------------------------------------
+
+{require_min_otp_vsn, "16"}.
+
 Cfg = case file:consult("vars.config") of
           {ok, Terms} ->
               Terms;
