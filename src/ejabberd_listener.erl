@@ -546,7 +546,7 @@ normalize_proto(UnknownProto) ->
 socket_error(Reason, PortIP, Module, SockOpts, Port, IPS) ->
     ReasonT = case Reason of
 		  eaddrnotavail ->
-		      "IP address not available: " ++ IPS;
+		      "IP address not available: " ++ binary_to_list(IPS);
 		  eaddrinuse ->
 		      "IP address and port number already used: "
 			  ++binary_to_list(IPS)++" "++integer_to_list(Port);
