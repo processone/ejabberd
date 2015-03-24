@@ -1679,7 +1679,13 @@ handle_info({route, From, To,
 								 Packet, in)
 					   of
 					 allow -> {true, Attrs, StateData};
-					 deny -> {false, Attrs, StateData}
+					 deny ->
+					     Err =
+						 jlib:make_error_reply(Packet,
+								       ?ERR_SERVICE_UNAVAILABLE),
+					     ejabberd_router:route(To, From,
+								   Err),
+					     {false, Attrs, StateData}
 				       end;
 				   _ -> {true, Attrs, StateData}
 				 end,
