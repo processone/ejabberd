@@ -516,7 +516,18 @@ do_route(From, To, #xmlel{} = Packet) ->
 				     PResources);
 		   true -> ok
 		end;
-	    <<"message">> -> route_message(From, To, Packet);
+	    <<"message">> ->
+		case xml:get_attr_s(<<"type">>, Attrs) of
+		  <<"chat">> -> route_message(From, To, Packet);
+		  <<"headline">> -> route_message(From, To, Packet);
+		  <<"error">> -> ok;
+		  <<"groupchat">> ->
+		      Err = jlib:make_error_reply(Packet,
+						  ?ERR_SERVICE_UNAVAILABLE),
+		      ejabberd_router:route(To, From, Err);
+		  _ ->
+		      route_message(From, To, Packet)
+		end;
 	    <<"iq">> -> process_iq(From, To, Packet);
 	    _ -> ok
 	  end;
