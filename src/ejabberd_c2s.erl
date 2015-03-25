@@ -1700,23 +1700,12 @@ handle_info({route, From, To,
 	       jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 					  jlib:jid_to_string(To), NewAttrs),
 	    FixedPacket = #xmlel{name = Name, attrs = Attrs2, children = Els},
-	    FinalState =
-		case ejabberd_hooks:run_fold(c2s_filter_packet_in,
-					     NewState#state.server, FixedPacket,
-					     [NewState#state.jid, From, To])
-		    of
-		  drop ->
-		      NewState;
-		  FinalPacket = #xmlel{} ->
-		      SentState = send_packet(NewState, FinalPacket),
-		      ejabberd_hooks:run(user_receive_packet,
-					 SentState#state.server,
-					 [SentState#state.jid, From, To,
-					  FinalPacket]),
-		      SentState
-		end,
+	    SentStateData = send_packet(NewState, FixedPacket),
+	    ejabberd_hooks:run(user_receive_packet,
+			       SentStateData#state.server,
+			       [SentStateData#state.jid, From, To, FixedPacket]),
 	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
-	    fsm_next_state(StateName, FinalState);
+	    fsm_next_state(StateName, SentStateData);
 	true ->
 	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
 	    fsm_next_state(StateName, NewState)
