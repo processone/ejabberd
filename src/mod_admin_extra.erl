@@ -976,8 +976,9 @@ get_vcard_content(User, Server, Data) ->
     JID = jlib:make_jid(User, Server, get_module_resource(Server)),
     IQ = #iq{type = get, xmlns = ?NS_VCARD},
     IQr = Module:Function(JID, JID, IQ),
-    case IQr#iq.sub_el of
-	[A1] ->
+    [A1] = IQr#iq.sub_el,
+    case A1#xmlel.children of
+	[_] ->
 	    case get_vcard(Data, A1) of
 		[false] -> throw(error_no_value_found_in_vcard);
 		ElemList -> [xml:get_tag_cdata(Elem) || Elem <- ElemList]
