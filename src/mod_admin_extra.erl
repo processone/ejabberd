@@ -308,10 +308,10 @@ commands() ->
 			tags = [session],
 			desc = "Set presence of a session",
 			module = ?MODULE, function = set_presence,
-			args = [{user, string}, {host, string},
-				{resource, string}, {type, string},
-				{show, string}, {status, string},
-				{priority, string}],
+			args = [{user, binary}, {host, binary},
+				{resource, binary}, {type, binary},
+				{show, binary}, {status, binary},
+				{priority, binary}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = set_nickname, tags = [vcard],
@@ -546,10 +546,7 @@ commands() ->
 %%%
 
 compile(File) ->
-    case compile:file(File) of
-	ok -> ok;
-	_ -> error
-    end.
+    compile:file(File).
 
 load_config(Path) ->
     ok = ejabberd_config:load_file(Path).
@@ -771,7 +768,7 @@ set_random_password(User, Server, Reason) ->
 build_random_password(Reason) ->
     Date = jlib:timestamp_to_iso(calendar:universal_time()),
     RandomString = randoms:get_string(),
-    "BANNED_ACCOUNT--" ++ Date ++ "--" ++ RandomString ++ "--" ++ Reason.
+    <<"BANNED_ACCOUNT--", Date/binary, "--", RandomString/binary, "--", Reason/binary>>.
 
 set_password_auth(User, Server, Password) ->
     ok = ejabberd_auth:set_password(User, Server, Password).
@@ -804,11 +801,9 @@ kick_session(User, Server, Resource, ReasonText) ->
     ok.
 
 kick_this_session(User, Server, Resource, Reason) ->
-    ejabberd_router:route(
-      jlib:make_jid(<<>>, <<>>, <<>>),
-      jlib:make_jid(User, Server, Resource),
-      {broadcast, {exit, Reason}}).
-
+    ejabberd_sm:route(jlib:make_jid(<<"">>, <<"">>, <<"">>),
+                      jlib:make_jid(User, Server, Resource),
+                      {broadcast, {exit, Reason}}).
 
 status_num(Host, Status) ->
     length(get_status_list(Host, Status)).
@@ -886,8 +881,8 @@ stringize(String) ->
 
 set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
     Pid = ejabberd_sm:get_session_pid(User, Host, Resource),
-    USR = User ++ "@" ++ Host ++ "/" ++ Resource,
-    US = User ++ "@" ++ Host,
+    USR = jlib:make_jid(User, Host, Resource),
+    US = jlib:make_jid(User, Host, <<>>),
     Message = {route_xmlstreamelement,
 	       {xmlel, <<"presence">>,
 		[{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
@@ -1421,8 +1416,8 @@ send_stanza_c2s(Username, Host, Resource, Stanza) ->
     p1_fsm:send_event(C2sPid, {xmlstreamelement, XmlEl}).
 
 privacy_set(Username, Host, QueryS) ->
-    From = jlib:string_to_jid(Username ++ "@" ++ Host),
-    To = jlib:string_to_jid(Host),
+    From = jlib:make_jid(Username, Host, <<"">>),
+    To = jlib:make_jid(<<"">>, Host, <<"">>),
     QueryEl = xml_stream:parse_element(QueryS),
     StanzaEl = {xmlel, <<"iq">>, [{<<"type">>, <<"set">>}], [QueryEl]},
     IQ = jlib:iq_query_info(StanzaEl),
@@ -1534,7 +1529,7 @@ apply_action(delete, Key) ->
     mnesia:dirty_delete(roster, Key),
     R.
 
-print_progress_line({Pr, 0, NV, ND}) ->
+print_progress_line({_Pr, 0, _NV, _ND}) ->
     ok;
 print_progress_line({Pr, NT, NV, ND}) ->
     Pr2 = trunc((NV/NT)*100),
@@ -1592,7 +1587,7 @@ is_regexp_match(String, RegExp) ->
 	      [RegExp, ErrDesc]),
 	    false
     end.
-is_glob_match(String, [$! | Glob]) ->
+is_glob_match(String, <<"!", Glob/binary>>) ->
     not is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob));
 is_glob_match(String, Glob) ->
     is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
