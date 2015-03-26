@@ -1496,24 +1496,14 @@ process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
 		 [S || S <- string:tokens(ContactsS, ":")]
 		),
 
-    case rosteritem_purge({Action, Subs, Asks, Users, Contacts}) of
-	{atomic, Res} ->
-	    Res;
-	{error, Reason} ->
-	    io:format("Error purging rosteritems: ~p~n", [Reason]),
-	    error;
-	{badrpc, Reason} ->
-	    io:format("BadRPC purging rosteritems: ~p~n", [Reason]),
-	    error
-    end.
+    rosteritem_purge({Action, Subs, Asks, Users, Contacts}).
 
 %% @spec ({Action::atom(), Subs::[atom()], Asks::[atom()], User::string(), Contact::string()}) -> {atomic, ok}
 rosteritem_purge(Options) ->
     Num_rosteritems = mnesia:table_info(roster, size),
     io:format("There are ~p roster items in total.~n", [Num_rosteritems]),
     Key = mnesia:dirty_first(roster),
-    Res = rip(Key, Options, {0, Num_rosteritems, 0, 0}, []),
-    {atomic, Res}.
+    rip(Key, Options, {0, Num_rosteritems, 0, 0}, []).
 
 rip('$end_of_table', _Options, Counters, Res) ->
     print_progress_line(Counters),
@@ -1535,8 +1525,8 @@ rip(Key, Options, {Pr, NT, NV, ND}, Res) ->
 apply_action(list, Key) ->
     {User, Server, JID} = Key,
     {RUser, RServer, _} = JID,
-    Jid1string = User ++ "@" ++ Server,
-    Jid2string = RUser ++ "@" ++ RServer,
+    Jid1string = <<User/binary, "@", Server/binary>>,
+    Jid2string = <<RUser/binary, "@", RServer/binary>>,
     io:format("Matches: ~s ~s~n", [Jid1string, Jid2string]),
     {Jid1string, Jid2string};
 apply_action(delete, Key) ->
@@ -1544,6 +1534,8 @@ apply_action(delete, Key) ->
     mnesia:dirty_delete(roster, Key),
     R.
 
+print_progress_line({Pr, 0, NV, ND}) ->
+    ok;
 print_progress_line({Pr, NT, NV, ND}) ->
     Pr2 = trunc((NV/NT)*100),
     case Pr == Pr2 of
@@ -1571,14 +1563,14 @@ decide_rip_jid({UName, UServer, _UResource}, Match_list) ->
 decide_rip_jid({UName, UServer}, Match_list) ->
     lists:any(
       fun(Match_string) ->
-	      MJID = jlib:string_to_jid(Match_string),
+	      MJID = jlib:string_to_jid(list_to_binary(Match_string)),
 	      MName = MJID#jid.luser,
 	      MServer = MJID#jid.lserver,
 	      Is_server = is_glob_match(UServer, MServer),
 	      case MName of
-		  [] when UName == [] ->
+		  <<>> when UName == <<>> ->
 		      Is_server;
-		  [] ->
+		  <<>> ->
 		      false;
 		  _ ->
 		      Is_server
