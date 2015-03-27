@@ -317,7 +317,7 @@ commands() ->
      #ejabberd_commands{name = set_nickname, tags = [vcard],
 			desc = "Set nickname in a user's vCard",
 			module = ?MODULE, function = set_nickname,
-			args = [{user, string}, {host, string}, {nickname, string}],
+			args = [{user, binary}, {host, binary}, {nickname, binary}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = get_vcard, tags = [vcard],
@@ -933,7 +933,7 @@ set_nickname(User, Host, Nickname) ->
             ]
 	  }}),
     case R of
-	{iq, [], result, [], _L, []} ->
+	{iq, <<>>, result, <<>>, _L, []} ->
 	    ok;
 	_ ->
 	    error
@@ -988,7 +988,7 @@ get_vcard([<<"TEL">>, TelType], {_, _, _, OldEls}) ->
 
 get_vcard([Data1, Data2], A1) ->
     case get_subtag(A1, Data1) of
-    	false -> false;
+	[false] -> false;
 	A2List ->
 	    lists:flatten([get_vcard([Data2], A2) || A2 <- A2List])
     end;
@@ -1200,7 +1200,7 @@ push_roster_item(LU, LS, U, S, Action) ->
 push_roster_item(LU, LS, R, U, S, Action) ->
     LJID = jlib:make_jid(LU, LS, R),
     BroadcastEl = build_broadcast(U, S, Action),
-    ejabberd_router:route(LJID, LJID, BroadcastEl),
+    ejabberd_sm:route(LJID, LJID, BroadcastEl),
     Item = build_roster_item(U, S, Action),
     ResIQ = build_iq_roster_push(Item),
     ejabberd_router:route(LJID, LJID, ResIQ).

@@ -1057,10 +1057,7 @@ count_offline_messages(LUser, LServer, riak) ->
             Res;
         _ ->
             0
-    end;
-count_offline_messages(_Acc, User, Server) ->
-    N = count_offline_messages(User, Server),
-    {stop, N}.
+    end.
 
 %% Return the number of records matching a given match expression.
 %% This function is intended to be used inside a Mnesia transaction.

@@ -138,13 +138,6 @@ build_script(Dir, UpdatedBeams) ->
 	  LowLevelScript,
 	  [{ejabberd, "", filename:join(Dir, "..")}]),
     Check1 = case Check of
-                 ok ->
-                     %% This clause is for OTP R14B03 and older.
-                     %% Newer Dialyzer reports a never match pattern; don't worry.
-                     ?DEBUG("script: ~p~n", [Script]),
-                     ?DEBUG("low level script: ~p~n", [LowLevelScript]),
-                     ?DEBUG("check: ~p~n", [Check]),
-                     ok;
                  {ok, []} ->
                      ?DEBUG("script: ~p~n", [Script]),
                      ?DEBUG("low level script: ~p~n", [LowLevelScript]),

@@ -1689,13 +1689,7 @@ handle_info({route, From, To,
 				       end;
 				   _ -> {true, Attrs, StateData}
 				 end,
-    if Pass == exit ->
-	    %% When Pass==exit, NewState contains a string instead of a #state{}
-	    Lang = StateData#state.lang,
-	    send_element(StateData, ?SERRT_CONFLICT(Lang, NewState)),
-	    send_trailer(StateData),
-	    {stop, normal, StateData};
-	Pass ->
+    if Pass ->
 	    Attrs2 =
 	       jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 					  jlib:jid_to_string(To), NewAttrs),
