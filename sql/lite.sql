@@ -75,7 +75,7 @@ CREATE INDEX i_sr_user_grp ON sr_user (grp);
 CREATE TABLE spool (
     username text NOT NULL,
     xml text NOT NULL,
-    seq SERIAL,
+    seq INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -141,7 +141,7 @@ CREATE TABLE privacy_default_list (
 CREATE TABLE privacy_list (
     username text NOT NULL,
     name text NOT NULL,
-    id SERIAL UNIQUE,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -182,7 +182,7 @@ CREATE TABLE pubsub_node (
   node text,
   parent text,
   type text,
-  nodeid SERIAL UNIQUE
+  nodeid INTEGER PRIMARY KEY AUTOINCREMENT
 );
 CREATE INDEX i_pubsub_node_parent ON pubsub_node (parent);
 CREATE UNIQUE INDEX i_pubsub_node_tuple ON pubsub_node (host, node);
@@ -205,7 +205,7 @@ CREATE TABLE pubsub_state (
   jid text,
   affiliation character(1),
   subscriptions text,
-  stateid SERIAL UNIQUE
+  stateid INTEGER PRIMARY KEY AUTOINCREMENT
 );
 CREATE INDEX i_pubsub_state_jid ON pubsub_state (jid);
 CREATE UNIQUE INDEX i_pubsub_state_tuple ON pubsub_state (nodeid, jid);
