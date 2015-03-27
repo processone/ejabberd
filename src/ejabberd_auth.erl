@@ -71,7 +71,7 @@
 -callback get_vh_registered_users(binary(), opts()) -> [{binary(), binary()}].
 -callback get_vh_registered_users_number(binary()) -> number().
 -callback get_vh_registered_users_number(binary(), opts()) -> number().
--callback get_password(binary(), binary()) -> false | binary().
+-callback get_password(binary(), binary()) -> false | binary() | {binary(), binary(), binary(), integer()}.
 -callback get_password_s(binary(), binary()) -> binary().    
 
 start() ->
@@ -267,7 +267,7 @@ get_vh_registered_users_number(Server, Opts) ->
 			end,
 			auth_modules(Server))).
 
--spec get_password(binary(), binary()) -> false | binary().
+-spec get_password(binary(), binary()) -> false | binary() | {binary(), binary(), binary(), integer()}.
 
 get_password(User, Server) ->
     lists:foldl(fun (M, false) ->

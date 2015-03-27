@@ -81,7 +81,7 @@ load_file(Lang, File) ->
             io:setopts(Fd, [{encoding,latin1}]),
             load_file_loop(Fd, 1, File, Lang),
             file:close(Fd);
-        Error ->
+        {error, Error} ->
             ExitText = iolist_to_binary([File, ": ",
                                          file:format_error(Error)]),
             ?ERROR_MSG("Problem loading translation file ~n~s",

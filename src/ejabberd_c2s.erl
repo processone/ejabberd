@@ -1737,7 +1737,7 @@ handle_info(system_shutdown, StateName, StateData) ->
 	  ok
     end,
     {stop, normal, StateData};
-handle_info({route_xmlstreamelement, El}, StateName, StateData) ->
+handle_info({route_xmlstreamelement, El}, _StateName, StateData) ->
     {next_state, NStateName, NStateData, _Timeout} =
 	session_established({xmlstreamelement, El}, StateData),
     fsm_next_state(NStateName, NStateData);
