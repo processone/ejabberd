@@ -1743,6 +1743,9 @@ handle_info(system_shutdown, StateName, StateData) ->
 	  ok
     end,
     {stop, normal, StateData};
+handle_info({route_xmlstreamelement, El}, StateName, StateData) ->
+    session_established({xmlstreamelement, El}, StateData),
+    fsm_next_state(StateName, StateData);
 handle_info({force_update_presence, LUser}, StateName,
 	    #state{user = LUser, server = LServer} = StateData) ->
     NewStateData = case StateData#state.pres_last of

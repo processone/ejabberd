@@ -881,8 +881,8 @@ stringize(String) ->
 
 set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
     Pid = ejabberd_sm:get_session_pid(User, Host, Resource),
-    USR = jlib:make_jid(User, Host, Resource),
-    US = jlib:make_jid(User, Host, <<>>),
+    USR = jlib:jid_to_string(jlib:make_jid(User, Host, Resource)),
+    US = jlib:jid_to_string(jlib:make_jid(User, Host, <<>>)),
     Message = {route_xmlstreamelement,
 	       {xmlel, <<"presence">>,
 		[{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
