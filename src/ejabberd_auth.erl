@@ -432,7 +432,7 @@ auth_modules(Server) ->
                         V;
                    (V) when is_atom(V) ->
                         [V]
-                end, []),
+                end, [gen_mod:default_db(LServer)]),
     [jlib:binary_to_atom(<<"ejabberd_auth_",
                            (jlib:atom_to_binary(M))/binary>>)
      || M <- Methods].
