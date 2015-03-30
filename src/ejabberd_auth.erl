@@ -425,6 +425,10 @@ auth_modules() ->
 %% Return the list of authenticated modules for a given host
 auth_modules(Server) ->
     LServer = jlib:nameprep(Server),
+    Default = case gen_mod:default_db(LServer) of
+		  mnesia -> internal;
+		  DBType -> DBType
+	      end,
     Methods = ejabberd_config:get_option(
                 {auth_method, LServer},
                 fun(V) when is_list(V) ->
@@ -432,7 +436,7 @@ auth_modules(Server) ->
                         V;
                    (V) when is_atom(V) ->
                         [V]
-                end, [gen_mod:default_db(LServer)]),
+                end, [Default]),
     [jlib:binary_to_atom(<<"ejabberd_auth_",
                            (jlib:atom_to_binary(M))/binary>>)
      || M <- Methods].
