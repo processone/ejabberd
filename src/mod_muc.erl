@@ -283,7 +283,7 @@ can_use_nick(LServer, Host, JID, Nick, odbc) ->
 init([Host, Opts]) ->
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"conference.@HOST@">>),
-    case gen_mod:db_type(Opts) of
+    case gen_mod:db_type(Host, Opts) of
         mnesia ->
             mnesia:create_table(muc_room,
                                 [{disc_copies, [node()]},

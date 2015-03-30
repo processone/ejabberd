@@ -52,7 +52,7 @@
 -define(PROCNAME, ejabberd_mod_vcard).
 
 start(Host, Opts) ->
-    case gen_mod:db_type(Opts) of
+    case gen_mod:db_type(Host, Opts) of
       mnesia ->
 	  mnesia:create_table(vcard,
 			      [{disc_only_copies, [node()]},

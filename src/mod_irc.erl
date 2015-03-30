@@ -115,7 +115,7 @@ init([Host, Opts]) ->
     ejabberd:start_app(p1_iconv),
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"irc.@HOST@">>),
-    case gen_mod:db_type(Opts) of
+    case gen_mod:db_type(Host, Opts) of
       mnesia ->
 	  mnesia:create_table(irc_custom,
 			      [{disc_copies, [node()]},

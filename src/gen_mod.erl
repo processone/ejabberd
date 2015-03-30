@@ -33,7 +33,7 @@
 	 get_opt_host/3, db_type/1, db_type/2, get_module_opt/5,
 	 get_module_opt_host/3, loaded_modules/1,
 	 loaded_modules_with_opts/1, get_hosts/2,
-	 get_module_proc/2, is_loaded/2]).
+	 get_module_proc/2, is_loaded/2, default_db/1]).
 
 %%-export([behaviour_info/1]).
 
@@ -212,24 +212,36 @@ get_opt_host(Host, Opts, Default) ->
 -spec db_type(opts()) -> odbc | mnesia | riak.
 
 db_type(Opts) ->
-    get_opt(db_type, Opts,
-            fun(odbc) -> odbc;
-               (internal) -> mnesia;
-               (mnesia) -> mnesia;
-               (riak) -> riak
-            end,
-            mnesia).
+    db_type(global, Opts).
 
--spec db_type(binary(), atom()) -> odbc | mnesia | riak.
+-spec db_type(binary() | global, atom() | opts()) -> odbc | mnesia | riak.
 
-db_type(Host, Module) ->
+db_type(Host, Module) when is_atom(Module) ->
     get_module_opt(Host, Module, db_type,
                    fun(odbc) -> odbc;
                       (internal) -> mnesia;
                       (mnesia) -> mnesia;
                       (riak) -> riak
                    end,
-                   mnesia).
+                   default_db(Host));
+db_type(Host, Opts) when is_list(Opts) ->
+    get_opt(db_type, Opts,
+            fun(odbc) -> odbc;
+               (internal) -> mnesia;
+               (mnesia) -> mnesia;
+               (riak) -> riak
+            end,
+            default_db(Host)).
+
+-spec default_db(binary() | global) -> odbc | mnesia | riak.
+
+default_db(Host) ->
+    ejabberd_config:get_option({default_db, Host},
+			       fun(odbc) -> odbc;
+				  (mnesia) -> mnesia;
+				  (riak) -> riak;
+				  (internal) -> mnesia
+			       end, mnesia).
 
 -spec loaded_modules(binary()) -> [atom()].
 

@@ -108,7 +108,7 @@ stop(Host) ->
 %%====================================================================
 
 init([Host, Opts]) ->
-    case gen_mod:db_type(Opts) of
+    case gen_mod:db_type(Host, Opts) of
       mnesia ->
 	  mnesia:create_table(offline_msg,
 			      [{disc_only_copies, [node()]}, {type, bag},

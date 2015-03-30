@@ -28,7 +28,7 @@
 %%====================================================================
 
 start(Host, Opts) ->
-    case gen_mod:db_type(Opts) of
+    case gen_mod:db_type(Host, Opts) of
       mnesia ->
 	  mnesia:create_table(vcard_xupdate,
 			      [{disc_copies, [node()]},

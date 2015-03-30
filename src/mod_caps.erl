@@ -321,7 +321,7 @@ init_db(_, _) ->
     ok.
 
 init([Host, Opts]) ->
-    init_db(gen_mod:db_type(Opts), Host),
+    init_db(gen_mod:db_type(Host, Opts), Host),
     MaxSize = gen_mod:get_opt(cache_size, Opts,
                               fun(I) when is_integer(I), I>0 -> I end,
                               1000),

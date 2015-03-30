@@ -75,7 +75,7 @@ is_riak_configured(Host) ->
 		fun(L) when is_list(L) -> L end, []),
     ModuleWithRiakDBConfigured = lists:any(
 				   fun({_Module, Opts}) ->
-					   gen_mod:db_type(Opts) == riak
+					   gen_mod:db_type(Host, Opts) == riak
 				   end, Modules),
     ServerConfigured or PortConfigured
 	or AuthConfigured or ModuleWithRiakDBConfigured.
