@@ -962,10 +962,10 @@ process_groupchat_message(From,
 						?DEBUG("Group message filtered out with error: ~p", [ErrorMessage]),
 						if 
 							is_record(ErrorMessage, xmlel)  ->
-								ejabberd_router:route(StateData#state.jid, From, jlib:make_error_reply(Packet, Err));
+								ejabberd_router:route(StateData#state.jid, From, jlib:make_error_reply(Packet, ErrorMessage));
 							true -> ok
 						end,
-						{next_state, normal_state, StateData};
+						{next_state, normal_state, StateData}
 				end;
 		   _ ->
 		       Err = case
