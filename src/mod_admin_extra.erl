@@ -337,7 +337,7 @@ commands() ->
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard_multi,
 			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}],
-			result = {contents, {list, string}}},
+			result = {contents, {list, {value, string}}}},
 
      #ejabberd_commands{name = set_vcard, tags = [vcard],
 			desc = "Set content in a vCard field",
@@ -973,10 +973,10 @@ get_vcard_content(User, Server, Data) ->
     IQr = Module:Function(JID, JID, IQ),
     [A1] = IQr#iq.sub_el,
     case A1#xmlel.children of
-	[_] ->
+	[_|_] ->
 	    case get_vcard(Data, A1) of
 		[false] -> throw(error_no_value_found_in_vcard);
-		ElemList -> [xml:get_tag_cdata(Elem) || Elem <- ElemList]
+		ElemList -> ?DEBUG("ELS ~p", [ElemList]), [xml:get_tag_cdata(Elem) || Elem <- ElemList]
 	    end;
 	[] ->
 	    throw(error_no_vcard_found)
@@ -988,7 +988,7 @@ get_vcard([<<"TEL">>, TelType], {_, _, _, OldEls}) ->
 
 get_vcard([Data1, Data2], A1) ->
     case get_subtag(A1, Data1) of
-	[false] -> false;
+	[false] -> [false];
 	A2List ->
 	    lists:flatten([get_vcard([Data2], A2) || A2 <- A2List])
     end;
@@ -997,7 +997,7 @@ get_vcard([Data], A1) ->
     get_subtag(A1, Data).
 
 get_subtag(Xmlelement, Name) ->
-    xml:get_subtag(Xmlelement, Name).
+    [xml:get_subtag(Xmlelement, Name)].
 
 set_vcard_content(User, Server, Data, SomeContent) ->
     ContentList = case SomeContent of
