@@ -516,7 +516,18 @@ do_route(From, To, #xmlel{} = Packet) ->
 				     PResources);
 		   true -> ok
 		end;
-	    <<"message">> -> route_message(From, To, Packet);
+	    <<"message">> ->
+		case xml:get_attr_s(<<"type">>, Attrs) of
+		  <<"chat">> -> route_message(From, To, Packet, chat);
+		  <<"headline">> -> route_message(From, To, Packet, headline);
+		  <<"error">> -> ok;
+		  <<"groupchat">> ->
+		      Err = jlib:make_error_reply(Packet,
+						  ?ERR_SERVICE_UNAVAILABLE),
+		      ejabberd_router:route(To, From, Err);
+		  _ ->
+		      route_message(From, To, Packet, normal)
+		end;
 	    <<"iq">> -> process_iq(From, To, Packet);
 	    _ -> ok
 	  end;
@@ -525,7 +536,15 @@ do_route(From, To, #xmlel{} = Packet) ->
 	  case Mod:get_sessions(LUser, LServer, LResource) of
 	    [] ->
 		case Name of
-		  <<"message">> -> route_message(From, To, Packet);
+		  <<"message">> ->
+		      case xml:get_attr_s(<<"type">>, Attrs) of
+			<<"chat">> -> route_message(From, To, Packet, chat);
+			<<"error">> -> ok;
+			_ ->
+			    Err = jlib:make_error_reply(Packet,
+							?ERR_SERVICE_UNAVAILABLE),
+			    ejabberd_router:route(To, From, Err)
+		      end;
 		  <<"iq">> ->
 		      case xml:get_attr_s(<<"type">>, Attrs) of
 			<<"error">> -> ok;
@@ -568,14 +587,15 @@ is_privacy_allow(From, To, Packet, PrivacyList) ->
 			      [User, Server, PrivacyList, {From, To, Packet},
 			       in]).
 
-route_message(From, To, Packet) ->
+route_message(From, To, Packet, Type) ->
     LUser = To#jid.luser,
     LServer = To#jid.lserver,
     PrioRes = get_user_present_resources(LUser, LServer),
     case catch lists:max(PrioRes) of
       {Priority, _R}
 	  when is_integer(Priority), Priority >= 0 ->
-	  lists:foreach(fun ({P, R}) when P == Priority ->
+	  lists:foreach(fun ({P, R}) when P == Priority;
+					  (P >= 0) and (Type == headline) ->
 				LResource = jlib:resourceprep(R),
 				Mod = get_sm_backend(),
 				case Mod:get_sessions(LUser, LServer,
@@ -593,11 +613,10 @@ route_message(From, To, Packet) ->
 			end,
 			PrioRes);
       _ ->
-	  case xml:get_tag_attr_s(<<"type">>, Packet) of
-	    <<"error">> -> ok;
-	    <<"groupchat">> ->
-		bounce_offline_message(From, To, Packet);
-	    <<"headline">> ->
+	  case Type of
+	    error -> ok;
+	    headline -> ok;
+	    groupchat ->
 		bounce_offline_message(From, To, Packet);
 	    _ ->
 		case ejabberd_auth:is_user_exists(LUser, LServer) of
