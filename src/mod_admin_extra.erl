@@ -333,7 +333,7 @@ commands() ->
 			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}],
 			result = {content, string}},
      #ejabberd_commands{name = get_vcard2_multi, tags = [vcard],
-			desc = "Get multiple contents from a vCard field (requires exmpp installed)",
+			desc = "Get multiple contents from a vCard field",
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard_multi,
 			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}],
@@ -997,20 +997,7 @@ get_vcard([Data], A1) ->
     get_subtag(A1, Data).
 
 get_subtag(Xmlelement, Name) ->
-    case code:ensure_loaded(exmpp_xml) of
-	{error, _} ->
-	    [get_subtag_xml(Xmlelement, Name)];
-	{module, exmpp_xml} ->
-	    get_subtag_exmpp(Xmlelement, Name)
-    end.
-
-get_subtag_xml(Xmlelement, Name) ->
     xml:get_subtag(Xmlelement, Name).
-
-get_subtag_exmpp(Xmlelement, Name) ->
-    Xmlel = exmpp_xml:xmlelement_to_xmlel(Xmlelement),
-    XmlelList = exmpp_xml:get_elements(Xmlel, Name),
-    [exmpp_xml:xmlel_to_xmlelement(Xmlel2) || Xmlel2 <- XmlelList].
 
 set_vcard_content(User, Server, Data, SomeContent) ->
     ContentList = case SomeContent of
