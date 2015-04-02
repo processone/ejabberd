@@ -319,7 +319,6 @@ commands() ->
 			module = ?MODULE, function = set_nickname,
 			args = [{user, binary}, {host, binary}, {nickname, binary}],
 			result = {res, rescode}},
-
      #ejabberd_commands{name = get_vcard, tags = [vcard],
 			desc = "Get content from a vCard field",
 			longdesc = Vcard1FieldsString ++ "\n" ++ Vcard2FieldsString ++ "\n\n" ++ VcardXEP,
@@ -1324,8 +1323,7 @@ srg_get_info(Group, Host) ->
 	Os when is_list(Os) -> Os;
 	error -> []
     end,
-    [{io_lib:format("~p", [Title]),
-      io_lib:format("~p", [Value])} || {Title, Value} <- Opts].
+    [{jlib:atom_to_binary(Title), Value} || {Title, Value} <- Opts].
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),
