@@ -1302,7 +1302,7 @@ private_set2(Username, Host, Xml) ->
 
 srg_create(Group, Host, Name, Description, Display) ->
     DisplayList = case Display of
-	[] -> [];
+	<<>> -> [];
 	_ -> ejabberd_regexp:split(Display, <<"\\\\n">>)
     end,
     Opts = [{name, Name},
@@ -1323,7 +1323,12 @@ srg_get_info(Group, Host) ->
 	Os when is_list(Os) -> Os;
 	error -> []
     end,
-    [{jlib:atom_to_binary(Title), Value} || {Title, Value} <- Opts].
+    [{jlib:atom_to_binary(Title),
+      io_lib:format("~p", [btl(Value)])} || {Title, Value} <- Opts].
+
+btl([]) -> [];
+btl([B|L]) -> [btl(B)|btl(L)];
+btl(B) -> binary_to_list(B).
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),
