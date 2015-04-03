@@ -614,10 +614,7 @@ route_message(From, To, Packet, Type) ->
 			PrioRes);
       _ ->
 	  case Type of
-	    error -> ok;
 	    headline -> ok;
-	    groupchat ->
-		bounce_offline_message(From, To, Packet);
 	    _ ->
 		case ejabberd_auth:is_user_exists(LUser, LServer) of
 		  true ->
