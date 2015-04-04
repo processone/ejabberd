@@ -603,10 +603,10 @@ check_password_hash(User, Host, PasswordHash, HashMethod) ->
     end.
 get_md5(AccountPass) ->
     lists:flatten([io_lib:format("~.16B", [X])
-		   || X <- binary_to_list(crypto:md5(AccountPass))]).
+		   || X <- binary_to_list(erlang:md5(AccountPass))]).
 get_sha(AccountPass) ->
     lists:flatten([io_lib:format("~.16B", [X])
-		   || X <- binary_to_list(crypto:sha(AccountPass))]).
+		   || X <- binary_to_list(p1_sha:sha1(AccountPass))]).
 
 num_active_users(Host, Days) ->
     list_last_activity(Host, true, Days).
