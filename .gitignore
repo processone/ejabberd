@@ -28,7 +28,7 @@
 /ebin/
 /ejabberd.init
 /ejabberdctl.example
-/include/XmppAddr.hrl
+XmppAddr.hrl
 /rel/ejabberd/
 /src/XmppAddr.asn1db
 /src/XmppAddr.erl
