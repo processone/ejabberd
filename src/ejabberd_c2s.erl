@@ -2841,8 +2841,12 @@ send_stanza_and_ack_req(StateData, Stanza) ->
     AckReq = #xmlel{name = <<"r">>,
 		    attrs = [{<<"xmlns">>, StateData#state.mgmt_xmlns}],
 		    children = []},
-    send_element(StateData, Stanza),
-    send_element(StateData, AckReq).
+    case send_element(StateData, Stanza) of
+      ok ->
+	  send_element(StateData, AckReq);
+      error ->
+	  error
+    end.
 
 mgmt_queue_add(StateData, El) ->
     NewNum = case StateData#state.mgmt_stanzas_out of
