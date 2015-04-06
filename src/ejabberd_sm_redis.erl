@@ -82,7 +82,8 @@ set_session(Session) ->
 	    ?ERROR_MSG("failed to set session for redis: ~p", [Err])
     end.
 
--spec delete_session(binary(), binary(), binary(), sid()) -> ok.
+-spec delete_session(binary(), binary(), binary(), sid()) ->
+			    {ok, #session{}} | {error, notfound}.
 delete_session(LUser, LServer, _LResource, SID) ->
     USKey = us_to_key({LUser, LServer}),
     case eredis:q(?PROCNAME, ["HGETALL", USKey]) of
