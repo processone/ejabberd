@@ -7,8 +7,9 @@ defmodule Ejabberd.Mixfile do
      elixir: "~> 1.0",
      elixirc_paths: ["lib"],
      compile_path: ".",
-     compilers: Mix.compilers,
+     compilers: [:asn1] ++ Mix.compilers,
      erlc_options: erlc_options,
+     erlc_paths: ["asn1", "src"],
      deps: deps]
   end
 
@@ -33,12 +34,43 @@ defmodule Ejabberd.Mixfile do
         {:p1_cache_tab, github: "processone/cache_tab"},
         {:p1_utils, github: "processone/p1_utils"},
         {:p1_iconv, github: "processone/eiconv"},
-	      {:esip, github: "processone/p1_sip"},
-	      {:p1_stun, github: "processone/stun"},
+        {:esip, github: "processone/p1_sip"},
+        {:p1_stun, github: "processone/stun"},
         {:ehyperloglog, github: "vaxelfel/eHyperLogLog"},
         {:p1_mysql, github: "processone/mysql"},
         {:p1_pgsql, github: "processone/pgsql"},
-		    {:eredis, github: "wooga/eredis"}
+        {:eredis, github: "wooga/eredis"}
      ]
   end
+end
+
+defmodule Mix.Tasks.Compile.Asn1 do
+  use Mix.Task
+  alias Mix.Compilers.Erlang
+
+  @recursive true
+  @manifest ".compile.asn1"
+
+  @spec run(OptionParser.argv) :: :ok | :noop
+  def run(args) do
+    {opts, _, _} = OptionParser.parse(args, switches: [force: :boolean])
+
+    project      = Mix.Project.config
+    source_paths = project[:asn1_paths] || ["asn1"]
+    dest_paths    = project[:asn1_target] || ["src"]
+    mappings     = Enum.zip(source_paths, dest_paths)
+    options      = project[:asn1_options] || []
+
+    Erlang.compile(manifest(), mappings, :asn1, :erl, opts[:force], fn
+      input, output ->
+        options = options ++ [:noobj, outdir: Erlang.to_erl_file(Path.dirname(output))]
+        result = :asn1ct.compile(Erlang.to_erl_file(input), options)
+        :ok
+    end)
+  end
+
+  def manifests, do: [manifest]
+  defp manifest, do: Path.join(Mix.Project.manifest_path, @manifest)
+
+  def clean, do: Erlang.clean(manifest())
 end
