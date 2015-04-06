@@ -64,7 +64,7 @@ defmodule Mix.Tasks.Compile.Asn1 do
     Erlang.compile(manifest(), mappings, :asn1, :erl, opts[:force], fn
       input, output ->
         options = options ++ [:noobj, outdir: Erlang.to_erl_file(Path.dirname(output))]
-        result = :asn1ct.compile(Erlang.to_erl_file(input), options)
+        :asn1ct.compile(Erlang.to_erl_file(input), options)
         :ok
     end)
   end
