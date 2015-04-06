@@ -51,7 +51,6 @@ defmodule Mix.Tasks.Compile.Asn1 do
   @recursive true
   @manifest ".compile.asn1"
 
-  @spec run(OptionParser.argv) :: :ok | :noop
   def run(args) do
     {opts, _, _} = OptionParser.parse(args, switches: [force: :boolean])
 
@@ -64,8 +63,10 @@ defmodule Mix.Tasks.Compile.Asn1 do
     Erlang.compile(manifest(), mappings, :asn1, :erl, opts[:force], fn
       input, output ->
         options = options ++ [:noobj, outdir: Erlang.to_erl_file(Path.dirname(output))]
-        :asn1ct.compile(Erlang.to_erl_file(input), options)
-        :ok
+        case :asn1ct.compile(Erlang.to_erl_file(input), options) do
+          :ok -> {:ok, :done}
+          error -> error       
+        end
     end)
   end
 
