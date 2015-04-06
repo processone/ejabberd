@@ -110,6 +110,7 @@ loop() ->
     end.
 
 db_init() ->
+    ejabberd_config:env_binary_to_list(mnesia, dir),
     MyNode = node(),
     DbNodes = mnesia:system_info(db_nodes),
     case lists:member(MyNode, DbNodes) of

@@ -35,7 +35,8 @@
          get_version/0, get_myhosts/0, get_mylang/0,
          prepare_opt_val/4, convert_table_to_binary/5,
          transform_options/1, collect_options/1,
-         convert_to_yaml/1, convert_to_yaml/2]).
+         convert_to_yaml/1, convert_to_yaml/2,
+         env_binary_to_list/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -165,6 +166,22 @@ convert_to_yaml(File, Output) ->
             io:format("~s~n", [Data]);
         FileName ->
             file:write_file(FileName, Data)
+    end.
+
+%% Some Erlang apps expects env parameters to be list and not binary.
+%% For example, Mnesia is not able to start if mnesia dir is passed as a binary.
+%% However, binary is most common on Elixir, so it is easy to make a setup mistake.
+-spec env_binary_to_list(atom(), atom()) -> {ok, any()}|undefined.
+env_binary_to_list(Application, Parameter) ->
+    %% Application need to be loaded to allow setting parameters
+    application:load(Application),
+    case application:get_env(Application, Parameter) of
+        {ok, Val} when is_binary(Val) ->
+            BVal = binary_to_list(Val),
+            application:set_env(Application, Parameter, BVal),
+            {ok, BVal};
+        Other ->
+            Other
     end.
 
 %% @doc Read an ejabberd configuration file and return the terms.

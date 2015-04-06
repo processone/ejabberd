@@ -46,8 +46,10 @@
 %% If not defined it checks the environment variable EJABBERD_LOG_PATH.
 %% And if that one is neither defined, returns the default value:
 %% "ejabberd.log" in current directory.
+%% Note: If the directory where to place the ejabberd log file to not exist,
+%% it is not created and no log file will be generated.
 get_log_path() ->
-    case application:get_env(ejabberd, log_path) of
+    case ejabberd_config:env_binary_to_list(ejabberd, log_path) of
 	{ok, Path} ->
 	    Path;
 	undefined ->
