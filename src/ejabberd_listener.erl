@@ -195,9 +195,11 @@ listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
 	    ets:delete(listen_sockets, Port),
 	    ListenSocket;
 	_ ->
-	    SockOpts2 = try erlang:system_info(otp_release) >= "R13B" of
-			    true -> [{send_timeout_close, true} | SockOpts];
-			    false -> SockOpts
+	    SockOpts2 = try erlang:system_info(otp_release) of
+			    EVsn when EVsn >= "R13B"; EVsn >= "17" -> 
+                    [{send_timeout_close, true} | SockOpts];
+			    _ -> 
+                    SockOpts
 			catch
 			    _:_ -> []
 			end,
