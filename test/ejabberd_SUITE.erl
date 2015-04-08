@@ -813,7 +813,7 @@ pubsub(Config) ->
                                       node = Node,
                                       jid = my_jid(Config)}}]}),
     ?recv2(
-       #message{sub_els = [#pubsub_event{}, #delay{}, #legacy_delay{}]},
+       #message{sub_els = [#pubsub_event{}, #delay{}]},
        #iq{type = result, id = I1}),
     %% Get subscriptions
     true = lists:member(?PUBSUB("retrieve-subscriptions"), Features),
@@ -860,8 +860,7 @@ pubsub(Config) ->
        #message{sub_els = [#pubsub_event{
                               items = [#pubsub_event_items{
                                           node = Node,
-                                          retract = [ItemID]}]},
-                           #shim{headers = [{<<"Collection">>, Node}]}]}),
+                                          retract = [ItemID]}]}]}),
     %% Unsubscribe from node "presence"
     #iq{type = result, sub_els = []} =
         send_recv(Config,

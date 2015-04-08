@@ -26,7 +26,8 @@ host_config:
         db_type: odbc
       mod_private: 
         db_type: odbc
-      mod_pubsub_odbc: 
+      mod_pubsub: 
+        db_type: odbc
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
@@ -76,7 +77,8 @@ Welcome to this XMPP server."
         db_type: odbc
       mod_private: 
         db_type: odbc
-      mod_pubsub_odbc: 
+      mod_pubsub: 
+        db_type: odbc
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
@@ -132,7 +134,8 @@ Welcome to this XMPP server."
         db_type: odbc
       mod_private: 
         db_type: odbc
-      mod_pubsub_odbc: 
+      mod_pubsub: 
+        db_type: odbc
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
