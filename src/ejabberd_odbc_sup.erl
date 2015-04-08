@@ -143,6 +143,7 @@ check_sqlite_db(DB) ->
           end,
     case Ret of
         ok ->
+	    sqlite3:sql_exec(?SQLITE_DB, "pragma foreign_keys = on"),
             case sqlite3:list_tables(?SQLITE_DB) of
                 [] ->
                     create_sqlite_tables(),
