@@ -940,10 +940,8 @@ ip_to_list(IP) ->
 binary_to_atom(Bin) ->
     erlang:binary_to_atom(Bin, utf8).
 
-binary_to_integer(Bin) when is_binary(Bin) ->
-    list_to_integer(binary_to_list(Bin));
-binary_to_integer(Bin) when is_integer(Bin) ->
-    Bin.
+binary_to_integer(Bin) ->
+    list_to_integer(binary_to_list(Bin)).
 
 binary_to_integer(Bin, Base) ->
     list_to_integer(binary_to_list(Bin), Base).
