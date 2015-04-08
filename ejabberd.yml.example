@@ -584,6 +584,7 @@ modules:
     access_persistent: muc_create
     access_admin: muc_admin
   ## mod_muc_log: {}
+  ## mod_multicast: {}
   mod_offline: 
     access_max_user_messages: max_user_offline_messages
   mod_ping: {}
