@@ -513,8 +513,14 @@ sqlite_to_odbc(ok) ->
     {updated, sqlite3:changes(?SQLITE_DB)};
 sqlite_to_odbc({rowid, _}) ->
     {updated, sqlite3:changes(?SQLITE_DB)};
-sqlite_to_odbc([{columns, Columns}, {rows, Rows}]) ->
-    {selected, [list_to_binary(C) || C <- Columns], [tuple_to_list(Row) || Row <- Rows]};
+sqlite_to_odbc([{columns, Columns}, {rows, TRows}]) ->
+    Rows = [lists:map(
+	      fun(I) when is_integer(I) ->
+		      jlib:integer_to_binary(I);
+		 (B) ->
+		      B
+	      end, tuple_to_list(Row)) || Row <- TRows],
+    {selected, [list_to_binary(C) || C <- Columns], Rows};
 sqlite_to_odbc({error, _Code, Reason}) ->
     {error, Reason};
 sqlite_to_odbc(_) ->
