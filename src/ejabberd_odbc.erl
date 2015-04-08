@@ -40,6 +40,8 @@
 	 escape/1,
 	 escape_like/1,
 	 to_bool/1,
+	 sqlite_db/1,
+	 sqlite_file/1,
          encode_term/1,
          decode_term/1,
 	 keep_alive/1]).
@@ -199,6 +201,22 @@ decode_term(Bin) ->
     {ok, Term} = erl_parse:parse_term(Tokens),
     Term.
 
+-spec sqlite_db(binary()) -> atom().
+sqlite_db(Host) ->
+    list_to_atom("ejabberd_sqlite_" ++ binary_to_list(Host)).
+
+-spec sqlite_file(binary()) -> string().
+sqlite_file(Host) ->
+    case ejabberd_config:get_option({odbc_database, Host},
+				    fun iolist_to_binary/1) of
+	undefined ->
+	    {ok, Cwd} = file:get_cwd(),
+	    filename:join([Cwd, "sqlite", atom_to_list(node()),
+			   binary_to_list(Host), "ejabberd.db"]);
+	File ->
+	    binary_to_list(File)
+    end.
+
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
@@ -329,7 +347,7 @@ terminate(_Reason, _StateName, State) ->
     ejabberd_odbc_sup:remove_pid(State#state.host, self()),
     case State#state.db_type of
         mysql -> catch p1_mysql_conn:stop(State#state.db_ref);
-        sqlite -> catch sqlite3:close(?SQLITE_DB);
+        sqlite -> catch sqlite3:close(sqlite_db(State#state.host));
         _ -> ok
     end,
     ok.
@@ -458,9 +476,10 @@ sql_query_internal(Query) ->
 						   [{timeout, (?TRANSACTION_TIMEOUT) - 1000},
 						    {result_type, binary}])),
 		%% ?INFO_MSG("MySQL, Received result~n~p~n", [R]),
-        R;
-        sqlite ->
-        sqlite_to_odbc(sqlite3:sql_exec(?SQLITE_DB, Query))
+		  R;
+	      sqlite ->
+		  Host = State#state.host,
+		  sqlite_to_odbc(Host, sqlite3:sql_exec(sqlite_db(Host), Query))
 	  end,
     case Res of
       {error, <<"No SQL-driver information available.">>} ->
@@ -497,23 +516,30 @@ odbc_connect(SQLServer) ->
 %% part of init/1
 %% Open a database connection to SQLite
 
-sqlite_connect(DB) ->
-    case sqlite3:open(?SQLITE_DB, [{file, binary_to_list(DB)}]) of
-        {ok, Ref} ->
-	    sqlite3:sql_exec(?SQLITE_DB, "pragma foreign_keys = on"),
-            {ok, Ref};
-        {error, {already_started, Ref}} ->
-            {ok, Ref};
-        {error, Reason} ->
-            {error, Reason}
+sqlite_connect(Host) ->
+    File = sqlite_file(Host),
+    case filelib:ensure_dir(File) of
+	ok ->
+	    case sqlite3:open(sqlite_db(Host), [{file, File}]) of
+		{ok, Ref} ->
+		    sqlite3:sql_exec(
+		      sqlite_db(Host), "pragma foreign_keys = on"),
+		    {ok, Ref};
+		{error, {already_started, Ref}} ->
+		    {ok, Ref};
+		{error, Reason} ->
+		    {error, Reason}
+	    end;
+	Err ->
+	    Err
     end.
 
 %% Convert SQLite query result to Erlang ODBC result formalism
-sqlite_to_odbc(ok) ->
-    {updated, sqlite3:changes(?SQLITE_DB)};
-sqlite_to_odbc({rowid, _}) ->
-    {updated, sqlite3:changes(?SQLITE_DB)};
-sqlite_to_odbc([{columns, Columns}, {rows, TRows}]) ->
+sqlite_to_odbc(Host, ok) ->
+    {updated, sqlite3:changes(sqlite_db(Host))};
+sqlite_to_odbc(Host, {rowid, _}) ->
+    {updated, sqlite3:changes(sqlite_db(Host))};
+sqlite_to_odbc(_Host, [{columns, Columns}, {rows, TRows}]) ->
     Rows = [lists:map(
 	      fun(I) when is_integer(I) ->
 		      jlib:integer_to_binary(I);
@@ -521,9 +547,9 @@ sqlite_to_odbc([{columns, Columns}, {rows, TRows}]) ->
 		      B
 	      end, tuple_to_list(Row)) || Row <- TRows],
     {selected, [list_to_binary(C) || C <- Columns], Rows};
-sqlite_to_odbc({error, _Code, Reason}) ->
+sqlite_to_odbc(_Host, {error, _Code, Reason}) ->
     {error, Reason};
-sqlite_to_odbc(_) ->
+sqlite_to_odbc(_Host, _) ->
     {updated, undefined}.
 
 %% == Native PostgreSQL code
@@ -633,10 +659,7 @@ db_opts(Host) ->
         odbc ->
             [odbc, Server];
         sqlite ->
-            DB = ejabberd_config:get_option({odbc_database, Host},
-                                            fun iolist_to_binary/1,
-                                            ?DEFAULT_SQLITE_DB_PATH),
-            [sqlite, DB];
+            [sqlite, Host];
         _ ->
             Port = ejabberd_config:get_option(
                      {odbc_port, Host},

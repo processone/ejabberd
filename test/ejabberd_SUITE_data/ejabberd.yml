@@ -57,7 +57,6 @@ Welcome to this XMPP server."
       mod_version: []
   "sqlite.localhost": 
     odbc_type: sqlite
-    odbc_database: "/tmp/ejabberd_test.db"
     auth_method: odbc
     modules: 
       mod_announce: 

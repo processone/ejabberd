@@ -75,10 +75,7 @@ init([Host]) ->
                                       end, odbc),
     case Type of
         sqlite ->
-            DB = ejabberd_config:get_option({odbc_database, Host},
-                                            fun iolist_to_binary/1,
-                                            ?DEFAULT_SQLITE_DB_PATH),
-            check_sqlite_db(DB);
+            check_sqlite_db(Host);
         _ ->
             ok
     end,
@@ -134,19 +131,26 @@ transform_options({odbc_server, {sqlite, DB}}, Opts) ->
 transform_options(Opt, Opts) ->
     [Opt|Opts].
 
-check_sqlite_db(DB) ->
-    Ret = case sqlite3:open(?SQLITE_DB, [{file, binary_to_list(DB)}]) of
-              {ok, _Ref} -> ok;
-              {error, {already_started, _Ref}} -> ok;
-              {error, R} -> {error, R}
-          end,
+check_sqlite_db(Host) ->
+    DB = ejabberd_odbc:sqlite_db(Host),
+    File = ejabberd_odbc:sqlite_file(Host),
+    Ret = case filelib:ensure_dir(File) of
+	      ok ->
+		  case sqlite3:open(DB, [{file, File}]) of
+		      {ok, _Ref} -> ok;
+		      {error, {already_started, _Ref}} -> ok;
+		      {error, R} -> {error, R}
+		  end;
+	      Err ->
+		  Err
+	  end,
     case Ret of
         ok ->
-	    sqlite3:sql_exec(?SQLITE_DB, "pragma foreign_keys = on"),
-            case sqlite3:list_tables(?SQLITE_DB) of
+	    sqlite3:sql_exec(DB, "pragma foreign_keys = on"),
+            case sqlite3:list_tables(DB) of
                 [] ->
-                    create_sqlite_tables(),
-                    sqlite3:close(?SQLITE_DB),
+                    create_sqlite_tables(DB),
+                    sqlite3:close(DB),
                     ok;
                 [_H | _] ->
                     ok
@@ -155,7 +159,7 @@ check_sqlite_db(DB) ->
             ?INFO_MSG("Failed open sqlite database, reason ~p", [Reason])
     end.
 
-create_sqlite_tables() ->
+create_sqlite_tables(DB) ->
     SqlDir = case code:priv_dir(ejabberd) of
                  {error, _} ->
                      ?SQL_DIR;
@@ -166,12 +170,12 @@ create_sqlite_tables() ->
     case file:open(File, [read, binary]) of
         {ok, Fd} ->
             Qs = read_lines(Fd, File, []),
-            ok = sqlite3:sql_exec(?SQLITE_DB, "begin"),
-            [ok = sqlite3:sql_exec(?SQLITE_DB, Q) || Q <- Qs],
-            ok = sqlite3:sql_exec(?SQLITE_DB, "commit");
+            ok = sqlite3:sql_exec(DB, "begin"),
+            [ok = sqlite3:sql_exec(DB, Q) || Q <- Qs],
+            ok = sqlite3:sql_exec(DB, "commit");
         {error, Reason} ->
-            ?INFO_MSG("Not found sqlite database schema, reason: ~p", [Reason]),
-            ok
+            ?INFO_MSG("Failed to read SQLite schema file: ~s",
+		      [file:format_error(Reason)])
     end.
 
 read_lines(Fd, File, Acc) ->

@@ -35,7 +35,6 @@ init_per_suite(Config) ->
     LDIFFile = filename:join([DataDir, "ejabberd.ldif"]),
     {ok, _} = file:copy(ExtAuthScript, filename:join([CWD, "extauth.py"])),
     {ok, _} = ldap_srv:start(LDIFFile),
-    file:delete("/tmp/ejabberd_test.db"),
     ok = application:start(ejabberd),
     NewConfig.
 
