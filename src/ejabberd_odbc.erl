@@ -498,7 +498,6 @@ odbc_connect(SQLServer) ->
 %% Open a database connection to SQLite
 
 sqlite_connect(DB) ->
-    process_flag(trap_exit, true),
     case sqlite3:open(?SQLITE_DB, [{file, binary_to_list(DB)}]) of
         {ok, Ref} ->
 	    sqlite3:sql_exec(?SQLITE_DB, "pragma foreign_keys = on"),

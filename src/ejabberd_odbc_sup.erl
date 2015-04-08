@@ -135,7 +135,6 @@ transform_options(Opt, Opts) ->
     [Opt|Opts].
 
 check_sqlite_db(DB) ->
-    process_flag(trap_exit, true),
     Ret = case sqlite3:open(?SQLITE_DB, [{file, binary_to_list(DB)}]) of
               {ok, _Ref} -> ok;
               {error, {already_started, _Ref}} -> ok;
