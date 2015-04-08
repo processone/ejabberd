@@ -253,6 +253,13 @@ fi
 
 ERLANG_DEPRECATED_TYPES_CHECK
 
+if test "$sqlite" = "true"; then
+   AX_LIB_SQLITE3([3.6.19])
+   if test "x$SQLITE3_VERSION" = "x"; then
+      AC_MSG_ERROR(SQLite3 library >= 3.6.19 was not found)
+   fi
+fi
+
 AC_SUBST(hipe)
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(transient_supervisors)
