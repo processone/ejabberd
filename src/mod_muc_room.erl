@@ -681,14 +681,11 @@ handle_event({service_message, Msg}, _StateName,
 			children =
 			    [#xmlel{name = <<"body">>, attrs = [],
 				    children = [{xmlcdata, Msg}]}]},
-    lists:foreach(
-      fun({_LJID, Info}) ->
-	      ejabberd_router:route(
-		StateData#state.jid,
-		Info#user.jid,
-		MessagePkt)
-      end,
-      ?DICT:to_list(StateData#state.users)),
+    send_multiple(
+      StateData#state.jid,
+      StateData#state.server_host,
+      StateData#state.users,
+      MessagePkt),
     NSD = add_message_to_history(<<"">>,
 				 StateData#state.jid, MessagePkt, StateData),
     {next_state, normal_state, NSD};
@@ -945,16 +942,11 @@ process_groupchat_message(From,
 					      end,
 		 case IsAllowed of
 		   true ->
-			    lists:foreach(
-			      fun({_LJID, Info}) ->
-				      ejabberd_router:route(
-					jlib:jid_replace_resource(
-					  StateData#state.jid,
-					  FromNick),
-					Info#user.jid,
-					Packet)
-			      end,
-			      ?DICT:to_list(StateData#state.users)),
+			   send_multiple(
+			      jlib:jid_replace_resource(StateData#state.jid, FromNick),
+			      StateData#state.server_host,
+			      StateData#state.users,
+			      Packet),
 		       NewStateData2 = case has_body_or_subject(Packet) of
 			   true ->
 				add_message_to_history(FromNick, From,
@@ -4500,3 +4492,10 @@ has_body_or_subject(Packet) ->
 	(#xmlel{name = <<"subject">>}) -> false;
 	(_) -> true
     end, Packet#xmlel.children).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Multicast
+
+send_multiple(From, Server, Users, Packet) ->
+    JIDs = [ User#user.jid || {_, User} <- ?DICT:to_list(Users)],
+    ejabberd_router_multicast:route_multicast(From, Server, JIDs, Packet).

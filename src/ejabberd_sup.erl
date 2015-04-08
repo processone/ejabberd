@@ -62,6 +62,13 @@ init([]) ->
 	 brutal_kill,
 	 worker,
 	 [ejabberd_router]},
+    Router_multicast =
+	{ejabberd_router_multicast,
+	 {ejabberd_router_multicast, start_link, []},
+	 permanent,
+	 brutal_kill,
+	 worker,
+	 [ejabberd_router_multicast]},
     S2S =
 	{ejabberd_s2s,
 	 {ejabberd_s2s, start_link, []},
@@ -166,6 +173,7 @@ init([]) ->
 	   NodeGroups,
 	   SystemMonitor,
 	   Router,
+	   Router_multicast,
 	   S2S,
 	   Local,
 	   Captcha,
