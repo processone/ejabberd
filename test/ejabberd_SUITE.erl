@@ -35,6 +35,7 @@ init_per_suite(Config) ->
     LDIFFile = filename:join([DataDir, "ejabberd.ldif"]),
     {ok, _} = file:copy(ExtAuthScript, filename:join([CWD, "extauth.py"])),
     {ok, _} = ldap_srv:start(LDIFFile),
+    file:delete("/tmp/ejabberd_test.db"),
     ok = application:start(ejabberd),
     NewConfig.
 
@@ -65,6 +66,14 @@ init_per_group(pgsql, Config) ->
         Err ->
             {skip, {pgsql_not_available, Err}}
     end;
+init_per_group(sqlite, Config) ->
+    case catch ejabberd_odbc:sql_query(?SQLITE_VHOST, [<<"select 1;">>]) of
+        {selected, _, _} ->
+            mod_muc:shutdown_rooms(?SQLITE_VHOST),
+            set_opt(server, ?SQLITE_VHOST, Config);
+        Err ->
+            {skip, {sqlite_not_available, Err}}
+    end;
 init_per_group(ldap, Config) ->
     set_opt(server, ?LDAP_VHOST, Config);
 init_per_group(extauth, Config) ->
@@ -87,6 +96,8 @@ end_per_group(mnesia, _Config) ->
 end_per_group(mysql, _Config) ->
     ok;
 end_per_group(pgsql, _Config) ->
+    ok;
+end_per_group(sqlite, _Config) ->
     ok;
 end_per_group(no_db, _Config) ->
     ok;
@@ -300,6 +311,7 @@ groups() ->
      {mnesia, [sequence], db_tests(mnesia)},
      {mysql, [sequence], db_tests(mysql)},
      {pgsql, [sequence], db_tests(pgsql)},
+     {sqlite, [sequence], db_tests(sqlite)},
      {riak, [sequence], db_tests(riak)}].
 
 all() ->
@@ -308,6 +320,7 @@ all() ->
      {group, mnesia},
      {group, mysql},
      {group, pgsql},
+     {group, sqlite},
      {group, extauth},
      {group, riak},
      stop_ejabberd].
@@ -1631,6 +1644,8 @@ socks5_recv(Sock, Data) ->
 %%%===================================================================
 %%% SQL stuff
 %%%===================================================================
+create_sql_tables(sqlite, _BaseDir) ->
+    ok;
 create_sql_tables(Type, BaseDir) ->
     {VHost, File} = case Type of
                         mysql ->

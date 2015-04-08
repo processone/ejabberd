@@ -264,6 +264,7 @@ users_number(LServer) ->
     Type = ejabberd_config:get_option({odbc_type, LServer},
                                       fun(pgsql) -> pgsql;
                                          (mysql) -> mysql;
+                                         (sqlite) -> sqlite;
                                          (odbc) -> odbc
                                       end, odbc),
     case Type of
