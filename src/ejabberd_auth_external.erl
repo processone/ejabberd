@@ -30,8 +30,8 @@
 -behaviour(ejabberd_auth).
 
 %% External exports
--export([start/1, set_password/3, check_password/3,
-	 check_password/5, try_register/3,
+-export([start/1, set_password/3, check_password/4,
+	 check_password/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2,
 	 get_vh_registered_users_number/1,
@@ -75,16 +75,20 @@ plain_password_required() -> true.
 
 store_type() -> external.
 
-check_password(User, Server, Password) ->
-    case get_cache_option(Server) of
-      false -> check_password_extauth(User, Server, Password);
-      {true, CacheTime} ->
-	  check_password_cache(User, Server, Password, CacheTime)
+check_password(User, AuthzId, Server, Password) ->
+    if AuthzId /= <<>> andalso AuthzId /= User ->
+        false;
+    true ->
+        case get_cache_option(Server) of
+          false -> check_password_extauth(User, AuthzId, Server, Password);
+          {true, CacheTime} ->
+    	  check_password_cache(User, AuthzId, Server, Password, CacheTime)
+        end
     end.
 
-check_password(User, Server, Password, _Digest,
+check_password(User, AuthzId, Server, Password, _Digest,
 	       _DigestGen) ->
-    check_password(User, Server, Password).
+    check_password(User, AuthzId, Server, Password).
 
 set_password(User, Server, Password) ->
     case extauth:set_password(User, Server, Password) of
@@ -177,8 +181,8 @@ get_cache_option(Host) ->
         CacheTime -> {true, CacheTime}
     end.
 
-%% @spec (User, Server, Password) -> true | false
-check_password_extauth(User, Server, Password) ->
+%% @spec (User, AuthzId, Server, Password) -> true | false
+check_password_extauth(User, _AuthzId, Server, Password) ->
     extauth:check_password(User, Server, Password) andalso
       Password /= <<"">>.
 
@@ -186,35 +190,35 @@ check_password_extauth(User, Server, Password) ->
 try_register_extauth(User, Server, Password) ->
     extauth:try_register(User, Server, Password).
 
-check_password_cache(User, Server, Password, 0) ->
-    check_password_external_cache(User, Server, Password);
-check_password_cache(User, Server, Password,
+check_password_cache(User, AuthzId, Server, Password, 0) ->
+    check_password_external_cache(User, AuthzId, Server, Password);
+check_password_cache(User, AuthzId, Server, Password,
 		     CacheTime) ->
     case get_last_access(User, Server) of
       online ->
-	  check_password_internal(User, Server, Password);
+	  check_password_internal(User, AuthzId, Server, Password);
       never ->
-	  check_password_external_cache(User, Server, Password);
+	  check_password_external_cache(User, AuthzId, Server, Password);
       mod_last_required ->
 	  ?ERROR_MSG("extauth is used, extauth_cache is enabled "
 		     "but mod_last is not enabled in that "
 		     "host",
 		     []),
-	  check_password_external_cache(User, Server, Password);
+	  check_password_external_cache(User, AuthzId, Server, Password);
       TimeStamp ->
 	  case is_fresh_enough(TimeStamp, CacheTime) of
 	    %% If no need to refresh, check password against Mnesia
 	    true ->
-		case check_password_internal(User, Server, Password) of
+		case check_password_internal(User, AuthzId, Server, Password) of
 		  %% If password valid in Mnesia, accept it
 		  true -> true;
 		  %% Else (password nonvalid in Mnesia), check in extauth and cache result
 		  false ->
-		      check_password_external_cache(User, Server, Password)
+		      check_password_external_cache(User, AuthzId, Server, Password)
 		end;
 	    %% Else (need to refresh), check in extauth and cache result
 	    false ->
-		check_password_external_cache(User, Server, Password)
+		check_password_external_cache(User, AuthzId, Server, Password)
 	  end
     end.
 
@@ -240,8 +244,8 @@ get_password_cache(User, Server, CacheTime) ->
     end.
 
 %% Check the password using extauth; if success then cache it
-check_password_external_cache(User, Server, Password) ->
-    case check_password_extauth(User, Server, Password) of
+check_password_external_cache(User, AuthzId, Server, Password) ->
+    case check_password_extauth(User, AuthzId, Server, Password) of
       true ->
 	  set_password_internal(User, Server, Password), true;
       false -> false
@@ -255,9 +259,9 @@ try_register_external_cache(User, Server, Password) ->
       _ -> {error, not_allowed}
     end.
 
-%% @spec (User, Server, Password) -> true | false
-check_password_internal(User, Server, Password) ->
-    ejabberd_auth_internal:check_password(User, Server,
+%% @spec (User, AuthzId, Server, Password) -> true | false
+check_password_internal(User, AuthzId, Server, Password) ->
+    ejabberd_auth_internal:check_password(User, AuthzId, Server,
 					  Password).
 
 %% @spec (User, Server, Password) -> ok | {error, invalid_jid}

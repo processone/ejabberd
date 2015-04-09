@@ -30,8 +30,8 @@
 -behaviour(ejabberd_auth).
 
 %% External exports
--export([start/1, set_password/3, check_password/3,
-	 check_password/5, try_register/3,
+-export([start/1, set_password/3, check_password/4,
+	 check_password/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2,
 	 get_vh_registered_users_number/1,
@@ -63,89 +63,97 @@ store_type() ->
       true -> scram %% allows: PLAIN SCRAM
     end.
 
-%% @spec (User, Server, Password) -> true | false | {error, Error}
-check_password(User, Server, Password) ->
-    LServer = jlib:nameprep(Server),
-    LUser = jlib:nodeprep(User),
-    if (LUser == error) or (LServer == error) ->
-            false;
-       (LUser == <<>>) or (LServer == <<>>) ->
-            false;
-       true ->
-            Username = ejabberd_odbc:escape(LUser),
-            case is_scrammed() of
-                true ->
-                    try odbc_queries:get_password_scram(LServer, Username) of
-                        {selected, [<<"password">>, <<"serverkey">>,
-                                    <<"salt">>, <<"iterationcount">>],
-                         [[StoredKey, ServerKey, Salt, IterationCount]]} ->
-                            Scram =
-                                #scram{storedkey = StoredKey,
-                                       serverkey = ServerKey,
-                                       salt = Salt,
-                                       iterationcount = jlib:binary_to_integer(
-                                                          IterationCount)},
-                            is_password_scram_valid(Password, Scram);
-                        {selected, [<<"password">>, <<"serverkey">>,
-                                    <<"salt">>, <<"iterationcount">>], []} ->
-                            false; %% Account does not exist
-                        {error, _Error} ->
-                            false %% Typical error is that table doesn't exist
-                    catch
-                        _:_ ->
-                            false %% Typical error is database not accessible
-                    end;
-                false ->
-                    try odbc_queries:get_password(LServer, Username) of
-                        {selected, [<<"password">>], [[Password]]} ->
-                            Password /= <<"">>;
-                        {selected, [<<"password">>], [[_Password2]]} ->
-                            false; %% Password is not correct
-                        {selected, [<<"password">>], []} ->
-                            false; %% Account does not exist
-                        {error, _Error} ->
-                            false %% Typical error is that table doesn't exist
-                    catch
-                        _:_ ->
-                            false %% Typical error is database not accessible
-                    end
-            end
+%% @spec (User, AuthzId, Server, Password) -> true | false | {error, Error}
+check_password(User, AuthzId, Server, Password) ->
+    if AuthzId /= <<>> andalso AuthzId /= User ->
+        false;
+    true ->
+        LServer = jlib:nameprep(Server),
+        LUser = jlib:nodeprep(User),
+        if (LUser == error) or (LServer == error) ->
+                false;
+           (LUser == <<>>) or (LServer == <<>>) ->
+                false;
+           true ->
+                Username = ejabberd_odbc:escape(LUser),
+                case is_scrammed() of
+                    true ->
+                        try odbc_queries:get_password_scram(LServer, Username) of
+                            {selected, [<<"password">>, <<"serverkey">>,
+                                        <<"salt">>, <<"iterationcount">>],
+                             [[StoredKey, ServerKey, Salt, IterationCount]]} ->
+                                Scram =
+                                    #scram{storedkey = StoredKey,
+                                           serverkey = ServerKey,
+                                           salt = Salt,
+                                           iterationcount = jlib:binary_to_integer(
+                                                              IterationCount)},
+                                is_password_scram_valid(Password, Scram);
+                            {selected, [<<"password">>, <<"serverkey">>,
+                                        <<"salt">>, <<"iterationcount">>], []} ->
+                                false; %% Account does not exist
+                            {error, _Error} ->
+                                false %% Typical error is that table doesn't exist
+                        catch
+                            _:_ ->
+                                false %% Typical error is database not accessible
+                        end;
+                    false ->
+                        try odbc_queries:get_password(LServer, Username) of
+                            {selected, [<<"password">>], [[Password]]} ->
+                                Password /= <<"">>;
+                            {selected, [<<"password">>], [[_Password2]]} ->
+                                false; %% Password is not correct
+                            {selected, [<<"password">>], []} ->
+                                false; %% Account does not exist
+                            {error, _Error} ->
+                                false %% Typical error is that table doesn't exist
+                        catch
+                            _:_ ->
+                                false %% Typical error is database not accessible
+                        end
+                end
+        end
     end.
 
-%% @spec (User, Server, Password, Digest, DigestGen) -> true | false | {error, Error}
-check_password(User, Server, Password, Digest,
+%% @spec (User, AuthzId, Server, Password, Digest, DigestGen) -> true | false | {error, Error}
+check_password(User, AuthzId, Server, Password, Digest,
 	       DigestGen) ->
-    LServer = jlib:nameprep(Server),
-    LUser = jlib:nodeprep(User),
-    if (LUser == error) or (LServer == error) ->
-            false;
-       (LUser == <<>>) or (LServer == <<>>) ->
-            false;
-       true ->
-            case is_scrammed() of
-                false ->
-                    Username = ejabberd_odbc:escape(LUser),
-                    try odbc_queries:get_password(LServer, Username) of
-                        %% Account exists, check if password is valid
-                        {selected, [<<"password">>], [[Passwd]]} ->
-                            DigRes = if Digest /= <<"">> ->
-                                             Digest == DigestGen(Passwd);
-                                        true -> false
-                                     end,
-                            if DigRes -> true;
-                               true -> (Passwd == Password) and (Password /= <<"">>)
-                            end;
-                        {selected, [<<"password">>], []} ->
-                            false; %% Account does not exist
-                        {error, _Error} ->
-                            false %% Typical error is that table doesn't exist
-                    catch
-                        _:_ ->
-                            false %% Typical error is database not accessible
-                    end;
-                true ->
-                    false
-            end
+    if AuthzId /= <<>> andalso AuthzId /= User ->
+        false;
+    true ->
+        LServer = jlib:nameprep(Server),
+        LUser = jlib:nodeprep(User),
+        if (LUser == error) or (LServer == error) ->
+                false;
+           (LUser == <<>>) or (LServer == <<>>) ->
+                false;
+           true ->
+                case is_scrammed() of
+                    false ->
+                        Username = ejabberd_odbc:escape(LUser),
+                        try odbc_queries:get_password(LServer, Username) of
+                            %% Account exists, check if password is valid
+                            {selected, [<<"password">>], [[Passwd]]} ->
+                                DigRes = if Digest /= <<"">> ->
+                                                 Digest == DigestGen(Passwd);
+                                            true -> false
+                                         end,
+                                if DigRes -> true;
+                                   true -> (Passwd == Password) and (Password /= <<"">>)
+                                end;
+                            {selected, [<<"password">>], []} ->
+                                false; %% Account does not exist
+                            {error, _Error} ->
+                                false %% Typical error is that table doesn't exist
+                        catch
+                            _:_ ->
+                                false %% Typical error is database not accessible
+                        end;
+                    true ->
+                        false
+                end
+        end
     end.
 
 %% @spec (User::string(), Server::string(), Password::string()) ->
@@ -352,7 +360,7 @@ remove_user(User, Server, Password) ->
        true ->
             case is_scrammed() of
                 true ->
-                    case check_password(User, Server, Password) of
+                    case check_password(User, <<"">>, Server, Password) of
                         true ->
                             remove_user(User, Server),
                             ok;

@@ -154,7 +154,7 @@ wait_for_auth(Packet,
 	      #state{socket = Socket, host = Host} = StateData) ->
     case mod_proxy65_lib:unpack_auth_request(Packet) of
       {User, Pass} ->
-	  Result = ejabberd_auth:check_password(User, Host, Pass),
+	  Result = ejabberd_auth:check_password(User, <<"">>, Host, Pass),
 	  gen_tcp:send(Socket,
 		       mod_proxy65_lib:make_auth_reply(Result)),
 	  case Result of

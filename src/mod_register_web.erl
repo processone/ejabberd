@@ -437,7 +437,7 @@ check_account_exists(Username, Host) ->
     end.
 
 check_password(Username, Host, Password) ->
-    case ejabberd_auth:check_password(Username, Host,
+    case ejabberd_auth:check_password(Username, <<"">>, Host,
 				      Password)
 	of
       true -> password_correct;

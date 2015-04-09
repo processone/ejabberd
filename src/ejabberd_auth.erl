@@ -30,9 +30,9 @@
 -author('alexey@process-one.net').
 
 %% External exports
--export([start/0, set_password/3, check_password/3,
-	 check_password/5, check_password_with_authmodule/3,
-	 check_password_with_authmodule/5, try_register/3,
+-export([start/0, set_password/3, check_password/4,
+	 check_password/6, check_password_with_authmodule/4,
+	 check_password_with_authmodule/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2, export/1, import/1,
 	 get_vh_registered_users_number/1, import/3,
@@ -61,8 +61,8 @@
 -callback remove_user(binary(), binary()) -> any().
 -callback remove_user(binary(), binary(), binary()) -> any().
 -callback is_user_exists(binary(), binary()) -> boolean() | {error, atom()}.
--callback check_password(binary(), binary(), binary()) -> boolean().
--callback check_password(binary(), binary(), binary(), binary(),
+-callback check_password(binary(), binary(), binary(), binary()) -> boolean().
+-callback check_password(binary(), binary(), binary(), binary(), binary(),
                          fun((binary()) -> binary())) -> boolean().
 -callback try_register(binary(), binary(), binary()) -> {atomic, atom()} |
                                                         {error, atom()}.
@@ -100,10 +100,10 @@ store_type(Server) ->
 		end,
 		plain, auth_modules(Server)).
 
--spec check_password(binary(), binary(), binary()) -> boolean().
+-spec check_password(binary(), binary(), binary(), binary()) -> boolean().
 
-check_password(User, Server, Password) ->
-    case check_password_with_authmodule(User, Server,
+check_password(User, AuthzId, Server, Password) ->
+    case check_password_with_authmodule(User, AuthzId, Server,
 					Password)
 	of
       {true, _AuthModule} -> true;
@@ -111,15 +111,15 @@ check_password(User, Server, Password) ->
     end.
 
 %% @doc Check if the user and password can login in server.
-%% @spec (User::string(), Server::string(), Password::string(),
+%% @spec (User::string(), AuthzId::string(), Server::string(), Password::string(),
 %%        Digest::string(), DigestGen::function()) ->
 %%     true | false
--spec check_password(binary(), binary(), binary(), binary(),
+-spec check_password(binary(), binary(), binary(), binary(), binary(),
                      fun((binary()) -> binary())) -> boolean().
-                                 
-check_password(User, Server, Password, Digest,
+
+check_password(User, AuthzId, Server, Password, Digest,
 	       DigestGen) ->
-    case check_password_with_authmodule(User, Server,
+    case check_password_with_authmodule(User, AuthzId, Server,
 					Password, Digest, DigestGen)
 	of
       {true, _AuthModule} -> true;
@@ -130,28 +130,28 @@ check_password(User, Server, Password, Digest,
 %% The user can login if at least an authentication method accepts the user
 %% and the password.
 %% The first authentication method that accepts the credentials is returned.
-%% @spec (User::string(), Server::string(), Password::string()) ->
+%% @spec (User::string(), AuthzId::string(), Server::string(), Password::string()) ->
 %%     {true, AuthModule} | false
 %% where
 %%   AuthModule = ejabberd_auth_anonymous | ejabberd_auth_external
 %%                 | ejabberd_auth_internal | ejabberd_auth_ldap
-%%                 | ejabberd_auth_odbc | ejabberd_auth_pam
--spec check_password_with_authmodule(binary(), binary(), binary()) -> false |
+%%                 | ejabberd_auth_odbc | ejabberd_auth_pam | ejabberd_auth_riak
+-spec check_password_with_authmodule(binary(), binary(), binary(), binary()) -> false |
                                                                       {true, atom()}.
 
-check_password_with_authmodule(User, Server,
+check_password_with_authmodule(User, AuthzId, Server,
 			       Password) ->
     check_password_loop(auth_modules(Server),
-			[User, Server, Password]).
+			[User, AuthzId, Server, Password]).
 
--spec check_password_with_authmodule(binary(), binary(), binary(), binary(),
+-spec check_password_with_authmodule(binary(), binary(), binary(), binary(), binary(),
                                      fun((binary()) -> binary())) -> false |
                                                                      {true, atom()}.
 
-check_password_with_authmodule(User, Server, Password,
+check_password_with_authmodule(User, AuthzId, Server, Password,
 			       Digest, DigestGen) ->
     check_password_loop(auth_modules(Server),
-			[User, Server, Password, Digest, DigestGen]).
+			[User, AuthzId, Server, Password, Digest, DigestGen]).
 
 check_password_loop([], _Args) -> false;
 check_password_loop([AuthModule | AuthModules], Args) ->

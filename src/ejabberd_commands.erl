@@ -397,7 +397,7 @@ check_auth(noauth) ->
     no_auth_provided;
 check_auth({User, Server, Password}) ->
     %% Check the account exists and password is valid
-    case ejabberd_auth:check_password(User, Server, Password) of
+    case ejabberd_auth:check_password(User, <<"">>, Server, Password) of
 	true -> {ok, User, Server};
 	_ -> throw({error, invalid_account_data})
     end.
