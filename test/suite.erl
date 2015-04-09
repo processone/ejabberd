@@ -21,13 +21,30 @@ init_config(Config) ->
     PrivDir = proplists:get_value(priv_dir, Config),
     [_, _|Tail] = lists:reverse(filename:split(DataDir)),
     BaseDir = filename:join(lists:reverse(Tail)),
-    ConfigPath = filename:join([DataDir, "ejabberd.yml"]),
+    ConfigPathTpl = filename:join([DataDir, "ejabberd.yml"]),
     LogPath = filename:join([PrivDir, "ejabberd.log"]),
     SASLPath = filename:join([PrivDir, "sasl.log"]),
     MnesiaDir = filename:join([PrivDir, "mnesia"]),
     CertFile = filename:join([DataDir, "cert.pem"]),
     {ok, CWD} = file:get_cwd(),
     {ok, _} = file:copy(CertFile, filename:join([CWD, "cert.pem"])),
+    {ok, CfgContentTpl} = file:read_file(ConfigPathTpl),
+    CfgContent = process_config_tpl(CfgContentTpl, [
+                                                    {c2s_port, 5222},
+                                                    {web_port, 5280},
+                                                    {mysql_server, <<"localhost">>},
+                                                    {mysql_port, 3306},
+                                                    {mysql_db, <<"ejabberd_test">>},
+                                                    {mysql_user, <<"ejabberd_test">>},
+                                                    {mysql_pass, <<"ejabberd_test">>},
+                                                    {pgsql_server, <<"localhost">>},
+                                                    {pgsql_port, 5432},
+                                                    {pgsql_db, <<"ejabberd_test">>},
+                                                    {pgsql_user, <<"ejabberd_test">>},
+                                                    {pgsql_pass, <<"ejabberd_test">>}
+                                                   ]),
+    ConfigPath = filename:join([CWD, "ejabberd.yml"]),
+    ok = file:write_file(ConfigPath, CfgContent),
     ok = application:load(sasl),
     ok = application:load(mnesia),
     ok = application:load(ejabberd),
@@ -35,7 +52,7 @@ init_config(Config) ->
     application:set_env(ejabberd, log_path, LogPath),
     application:set_env(sasl, sasl_error_logger, {file, SASLPath}),
     application:set_env(mnesia, dir, MnesiaDir),
-    [{server_port, 5222},
+    [{server_port, ct:get_config(c2s_port, 5222)},
      {server_host, "localhost"},
      {server, ?COMMON_VHOST},
      {user, <<"test_single">>},
@@ -49,6 +66,21 @@ init_config(Config) ->
      {slave_resource, <<"slave_resource">>},
      {password, <<"password">>}
      |Config].
+
+process_config_tpl(Content, []) ->
+    Content;
+process_config_tpl(Content, [{Name, DefaultValue} | Rest]) ->
+    Val = case ct:get_config(Name, DefaultValue) of
+              V1 when is_integer(V1) ->
+                  integer_to_binary(V1);
+              V2 when is_atom(V2) ->
+                  atom_to_binary(V2, latin1);
+              V3 ->
+                  V3
+          end,
+    NewContent = binary:replace(Content, <<"@@",(atom_to_binary(Name, latin1))/binary, "@@">>, Val),
+    process_config_tpl(NewContent, Rest).
+
 
 connect(Config) ->
     {ok, Sock} = ejabberd_socket:connect(
