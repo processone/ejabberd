@@ -326,8 +326,8 @@ all() ->
 
 stop_ejabberd(Config) ->
     ok = application:stop(ejabberd),
-    #stream_error{reason = 'system-shutdown'} = recv(),
-    {xmlstreamend, <<"stream:stream">>} = recv(),
+    ?recv1(#stream_error{reason = 'system-shutdown'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
     Config.
 
 test_connect(Config) ->
@@ -391,7 +391,7 @@ try_unregister(Config) ->
           Config,
           #iq{type = set,
               sub_els = [#register{remove = true}]}),
-    #stream_error{reason = conflict} = recv(),
+    ?recv1(#stream_error{reason = conflict}),
     Config.
 
 auth_md5(Config) ->
@@ -440,7 +440,7 @@ roster_ver(Config) ->
     %% Attempting to subscribe to server's JID
     send(Config, #presence{type = subscribe, to = server_jid(Config)}),
     %% Receive a single roster push with the new "ver"
-    #iq{type = set, sub_els = [#roster{ver = Ver2}]} = recv(),
+    ?recv1(#iq{type = set, sub_els = [#roster{ver = Ver2}]}),
     %% Requesting roster with the previous "ver". Should receive Ver2 again
     #iq{type = result, sub_els = [#roster{ver = Ver2}]} =
         send_recv(Config, #iq{type = get,
@@ -454,7 +454,7 @@ roster_ver(Config) ->
 presence(Config) ->
     send(Config, #presence{}),
     JID = my_jid(Config),
-    #presence{from = JID, to = JID} = recv(),
+    ?recv1(#presence{from = JID, to = JID}),
     disconnect(Config).
 
 presence_broadcast(Config) ->
@@ -546,16 +546,16 @@ sm(Config) ->
     true = ?config(sm, Config),
     %% Enable the session management with resumption enabled
     send(Config, #sm_enable{resume = true, xmlns = ?NS_STREAM_MGMT_3}),
-    #sm_enabled{id = ID, resume = true} = recv(),
+    ?recv1(#sm_enabled{id = ID, resume = true}),
     %% Initial request; 'h' should be 0.
     send(Config, #sm_r{xmlns = ?NS_STREAM_MGMT_3}),
-    #sm_a{h = 0} = recv(),
+    ?recv1(#sm_a{h = 0}),
     %% sending two messages and requesting again; 'h' should be 3.
     send(Config, Msg),
     send(Config, Msg),
     send(Config, Msg),
     send(Config, #sm_r{xmlns = ?NS_STREAM_MGMT_3}),
-    #sm_a{h = 3} = recv(),
+    ?recv1(#sm_a{h = 3}),
     close_socket(Config),
     {save_config, set_opt(sm_previd, ID, Config)}.
 
@@ -570,9 +570,9 @@ sm_resume(Config) ->
     %% Route message. The message should be queued by the C2S process.
     ejabberd_router:route(ServerJID, MyJID, xmpp_codec:encode(Msg)),
     send(Config, #sm_resume{previd = ID, h = 0, xmlns = ?NS_STREAM_MGMT_3}),
-    #sm_resumed{previd = ID, h = 3} = recv(),
-    #message{from = ServerJID, to = MyJID, body = [Txt]} = recv(),
-    #sm_r{} = recv(),
+    ?recv1(#sm_resumed{previd = ID, h = 3}),
+    ?recv1(#message{from = ServerJID, to = MyJID, body = [Txt]}),
+    ?recv1(#sm_r{}),
     send(Config, #sm_a{h = 1, xmlns = ?NS_STREAM_MGMT_3}),
     disconnect(Config).
 
@@ -767,13 +767,13 @@ vcard_xupdate_slave(Config) ->
     MyJID = my_jid(Config),
     Peer = ?config(master, Config),
     send(Config, #presence{}),
-    #presence{from = MyJID, type = undefined} = recv(),
+    ?recv1(#presence{from = MyJID, type = undefined}),
     wait_for_master(Config),
-    #presence{from = Peer, type = undefined} = recv(),
-    #presence{from = Peer, type = undefined,
-	      sub_els = [#vcard_xupdate{photo = ImgHash}]} = recv(),
-    #presence{from = Peer, type = undefined,
-	      sub_els = [#vcard_xupdate{photo = undefined}]} = recv(),
+    ?recv1(#presence{from = Peer, type = undefined}),
+    ?recv1(#presence{from = Peer, type = undefined,
+	      sub_els = [#vcard_xupdate{photo = ImgHash}]}),
+    ?recv1(#presence{from = Peer, type = undefined,
+	      sub_els = [#vcard_xupdate{photo = undefined}]}),
     disconnect(Config).
 
 stats(Config) ->
@@ -873,16 +873,16 @@ pubsub(Config) ->
 
 roster_subscribe_master(Config) ->
     send(Config, #presence{}),
-    #presence{} = recv(),
+    ?recv1(#presence{}),
     wait_for_slave(Config),
     Peer = ?config(slave, Config),
     LPeer = jlib:jid_remove_resource(Peer),
     send(Config, #presence{type = subscribe, to = LPeer}),
-    Push1 = #iq{type = set,
+    Push1 = ?recv1(#iq{type = set,
                 sub_els = [#roster{items = [#roster_item{
                                                ask = subscribe,
                                                subscription = none,
-                                               jid = LPeer}]}]} = recv(),
+                                               jid = LPeer}]}]}),
     send(Config, make_iq_result(Push1)),
     {Push2, _} = ?recv2(
                     #iq{type = set,
@@ -891,19 +891,19 @@ roster_subscribe_master(Config) ->
                                                        jid = LPeer}]}]},
                     #presence{type = subscribed, from = LPeer}),
     send(Config, make_iq_result(Push2)),
-    #presence{type = undefined, from = Peer} = recv(),
+    ?recv1(#presence{type = undefined, from = Peer}),
     %% BUG: ejabberd sends previous push again. Is it ok?
-    Push3 = #iq{type = set,
+    Push3 = ?recv1(#iq{type = set,
                 sub_els = [#roster{items = [#roster_item{
                                                subscription = to,
-                                               jid = LPeer}]}]} = recv(),
+                                               jid = LPeer}]}]}),
     send(Config, make_iq_result(Push3)),
-    #presence{type = subscribe, from = LPeer} = recv(),
+    ?recv1(#presence{type = subscribe, from = LPeer}),
     send(Config, #presence{type = subscribed, to = LPeer}),
-    Push4 = #iq{type = set,
+    Push4 = ?recv1(#iq{type = set,
                 sub_els = [#roster{items = [#roster_item{
                                                subscription = both,
-                                               jid = LPeer}]}]} = recv(),
+                                               jid = LPeer}]}]}),
     send(Config, make_iq_result(Push4)),
     %% Move into a group
     Groups = [<<"A">>, <<"B">>],
@@ -920,28 +920,28 @@ roster_subscribe_master(Config) ->
     #iq{sub_els = [#roster{items = [#roster_item{groups = G1}]}]} = Push5,
     Groups = lists:sort(G1),
     wait_for_slave(Config),
-    #presence{type = unavailable, from = Peer} = recv(),
+    ?recv1(#presence{type = unavailable, from = Peer}),
     disconnect(Config).
 
 roster_subscribe_slave(Config) ->
     send(Config, #presence{}),
-    #presence{} = recv(),
+    ?recv1(#presence{}),
     wait_for_master(Config),
     Peer = ?config(master, Config),
     LPeer = jlib:jid_remove_resource(Peer),
-    #presence{type = subscribe, from = LPeer} = recv(),
+    ?recv1(#presence{type = subscribe, from = LPeer}),
     send(Config, #presence{type = subscribed, to = LPeer}),
-    Push1 = #iq{type = set,
+    Push1 = ?recv1(#iq{type = set,
                 sub_els = [#roster{items = [#roster_item{
                                                subscription = from,
-                                               jid = LPeer}]}]} = recv(),
+                                               jid = LPeer}]}]}),
     send(Config, make_iq_result(Push1)),
     send(Config, #presence{type = subscribe, to = LPeer}),
-    Push2 = #iq{type = set,
+    Push2 = ?recv1(#iq{type = set,
                 sub_els = [#roster{items = [#roster_item{
                                                ask = subscribe,
                                                subscription = from,
-                                               jid = LPeer}]}]} = recv(),
+                                               jid = LPeer}]}]}),
     send(Config, make_iq_result(Push2)),
     {Push3, _} = ?recv2(
                     #iq{type = set,
@@ -950,7 +950,7 @@ roster_subscribe_slave(Config) ->
                                                        jid = LPeer}]}]},
                     #presence{type = subscribed, from = LPeer}),
     send(Config, make_iq_result(Push3)),
-    #presence{type = undefined, from = Peer} = recv(),
+    ?recv1(#presence{type = undefined, from = Peer}),
     wait_for_master(Config),
     disconnect(Config).
 
@@ -993,9 +993,9 @@ roster_remove_slave(Config) ->
     Peer = ?config(master, Config),
     LPeer = jlib:jid_remove_resource(Peer),
     send(Config, #presence{}),
-    #presence{from = MyJID, type = undefined} = recv(),
+    ?recv1(#presence{from = MyJID, type = undefined}),
     wait_for_master(Config),
-    #presence{from = Peer, type = undefined} = recv(),
+    ?recv1(#presence{from = Peer, type = undefined}),
     %% Remove the peer from roster.
     Item = #roster_item{jid = LPeer, subscription = remove},
     I = send(Config, #iq{type = set, sub_els = [#roster{items = [Item]}]}),
@@ -1016,7 +1016,7 @@ proxy65_master(Config) ->
     Peer = ?config(slave, Config),
     wait_for_slave(Config),
     send(Config, #presence{}),
-    #presence{from = MyJID, type = undefined} = recv(),
+    ?recv1(#presence{from = MyJID, type = undefined}),
     true = is_feature_advertised(Config, ?NS_BYTESTREAMS, Proxy),
     #iq{type = result, sub_els = [#bytestreams{hosts = [StreamHost]}]} =
         send_recv(
@@ -1032,14 +1032,14 @@ proxy65_master(Config) ->
                   #iq{type = set, to = Proxy,
                       sub_els = [#bytestreams{activate = Peer, sid = SID}]}),
     socks5_send(Socks5, Data),
-    %%#presence{type = unavailable, from = Peer} = recv(),
+    %%?recv1(#presence{type = unavailable, from = Peer}),
     disconnect(Config).
 
 proxy65_slave(Config) ->
     MyJID = my_jid(Config),
     Peer = ?config(master, Config),
     send(Config, #presence{}),
-    #presence{from = MyJID, type = undefined} = recv(),
+    ?recv1(#presence{from = MyJID, type = undefined}),
     wait_for_master(Config),
     {StreamHost, SID, Data} = get_event(Config),
     Socks5 = socks5_connect(StreamHost, {SID, Peer, MyJID}),
@@ -1070,14 +1070,14 @@ muc_master(Config) ->
     %% 4. The room subject
     %% 5. Live messages, presence updates, new user joins, etc.
     %% As this is the newly created room, we receive only the 2nd stanza.
-    #presence{
+    ?recv1(#presence{
           from = MyNickJID,
           sub_els = [#vcard_xupdate{},
 		     #muc_user{
                         status_codes = Codes,
                         items = [#muc_item{role = moderator,
                                            jid = MyJID,
-                                           affiliation = owner}]}]} = recv(),
+                                           affiliation = owner}]}]}),
     %% 110 -> Inform user that presence refers to itself
     %% 201 -> Inform user that a new room has been created
     [110, 201] = lists:sort(Codes),
@@ -1122,17 +1122,17 @@ muc_master(Config) ->
     %% Set subject
     send(Config, #message{to = Room, type = groupchat,
                           body = [#text{data = Subject}]}),
-    #message{from = MyNickJID, type = groupchat,
-             body = [#text{data = Subject}]} = recv(),
+    ?recv1(#message{from = MyNickJID, type = groupchat,
+             body = [#text{data = Subject}]}),
     %% Sending messages (and thus, populating history for our peer)
     lists:foreach(
       fun(N) ->
               Text = #text{data = jlib:integer_to_binary(N)},
               I = send(Config, #message{to = Room, body = [Text],
 					type = groupchat}),
-	      #message{from = MyNickJID, id = I,
+	      ?recv1(#message{from = MyNickJID, id = I,
 		       type = groupchat,
-		       body = [Text]} = recv()
+		       body = [Text]})
       end, lists:seq(1, 5)),
     %% Inviting the peer
     send(Config, #message{to = Room, type = normal,
@@ -1141,17 +1141,17 @@ muc_master(Config) ->
 				  invites =
 				      [#muc_invite{to = PeerJID}]}]}),
     %% Peer is joining
-    #presence{from = PeerNickJID,
+    ?recv1(#presence{from = PeerNickJID,
 	      sub_els = [#vcard_xupdate{},
 			 #muc_user{
 			    items = [#muc_item{role = visitor,
 					       jid = PeerJID,
-					       affiliation = none}]}]} = recv(),
+					       affiliation = none}]}]}),
     %% Receiving a voice request
-    #message{from = Room,
+    ?recv1(#message{from = Room,
 	     sub_els = [#xdata{type = form,
 			       instructions = [_],
-			       fields = VoiceReqFs}]} = recv(),
+			       fields = VoiceReqFs}]}),
     %% Approving the voice request
     ReplyVoiceReqFs =
 	lists:map(
@@ -1175,14 +1175,14 @@ muc_master(Config) ->
 			  sub_els = [#xdata{type = submit,
 					    fields = ReplyVoiceReqFs}]}),
     %% Peer is becoming a participant
-    #presence{from = PeerNickJID,
+    ?recv1(#presence{from = PeerNickJID,
 	      sub_els = [#vcard_xupdate{},
 			 #muc_user{
 			    items = [#muc_item{role = participant,
 					       jid = PeerJID,
-					       affiliation = none}]}]} = recv(),
+					       affiliation = none}]}]}),
     %% Receive private message from the peer
-    #message{from = PeerNickJID, body = [#text{data = Subject}]} = recv(),
+    ?recv1(#message{from = PeerNickJID, body = [#text{data = Subject}]}),
     %% Granting membership to the peer and localhost server
     I1 = send(Config,
 	      #iq{type = set, to = Room,
@@ -1194,17 +1194,17 @@ muc_master(Config) ->
 					     jid = PeerBareJID,
 					     affiliation = member}]}]}),
     %% Peer became a member
-    #presence{from = PeerNickJID,
+    ?recv1(#presence{from = PeerNickJID,
 	      sub_els = [#vcard_xupdate{},
 			 #muc_user{
 			    items = [#muc_item{affiliation = member,
 					       jid = PeerJID,
-					       role = participant}]}]} = recv(),
+					       role = participant}]}]}),
     %% BUG: We should not receive any sub_els!
-    #iq{type = result, id = I1, sub_els = [_|_]} = recv(),
+    ?recv1(#iq{type = result, id = I1, sub_els = [_|_]}),
     %% Receive groupchat message from the peer
-    #message{type = groupchat, from = PeerNickJID,
-	     body = [#text{data = Subject}]} = recv(),
+    ?recv1(#message{type = groupchat, from = PeerNickJID,
+	     body = [#text{data = Subject}]}),
     %% Kick the peer
     I2 = send(Config,
 	      #iq{type = set, to = Room,
@@ -1213,14 +1213,14 @@ muc_master(Config) ->
 						   role = none}]}]}),
     %% Got notification the peer is kicked
     %% 307 -> Inform user that he or she has been kicked from the room
-    #presence{from = PeerNickJID, type = unavailable,
+    ?recv1(#presence{from = PeerNickJID, type = unavailable,
 	      sub_els = [#muc_user{
 			    status_codes = [307],
 			    items = [#muc_item{affiliation = member,
 					       jid = PeerJID,
-					       role = none}]}]} = recv(),
+					       role = none}]}]}),
     %% BUG: We should not receive any sub_els!
-    #iq{type = result, id = I2, sub_els = [_|_]} = recv(),
+    ?recv1(#iq{type = result, id = I2, sub_els = [_|_]}),
     %% Destroying the room
     I3 = send(Config,
 	      #iq{type = set, to = Room,
@@ -1228,13 +1228,13 @@ muc_master(Config) ->
 				destroy = #muc_owner_destroy{
 					     reason = Subject}}]}),
     %% Kicked off
-    #presence{from = MyNickJID, type = unavailable,
+    ?recv1(#presence{from = MyNickJID, type = unavailable,
               sub_els = [#muc_user{items = [#muc_item{role = none,
 						      affiliation = none}],
 				   destroy = #muc_user_destroy{
-						reason = Subject}}]} = recv(),
+						reason = Subject}}]}),
     %% BUG: We should not receive any sub_els!
-    #iq{type = result, id = I3, sub_els = [_|_]} = recv(),
+    ?recv1(#iq{type = result, id = I3, sub_els = [_|_]}),
     disconnect(Config).
 
 muc_slave(Config) ->
@@ -1250,10 +1250,10 @@ muc_slave(Config) ->
     Subject = ?config(room_subject, Config),
     Localhost = jlib:make_jid(<<"">>, <<"localhost">>, <<"">>),
     %% Receive an invite from the peer
-    #message{from = Room, type = normal,
+    ?recv1(#message{from = Room, type = normal,
 	     sub_els =
 		 [#muc_user{invites =
-				[#muc_invite{from = PeerJID}]}]} = recv(),
+				[#muc_invite{from = PeerJID}]}]}),
     %% But before joining we discover the MUC service first
     %% to check if the room is in the disco list
     #iq{type = result,
@@ -1269,33 +1269,33 @@ muc_slave(Config) ->
     %% Now joining
     send(Config, #presence{to = MyNickJID, sub_els = [#muc{}]}),
     %% First presence is from the participant, i.e. from the peer
-    #presence{
+    ?recv1(#presence{
        from = PeerNickJID,
        sub_els = [#vcard_xupdate{},
 		  #muc_user{
 		     status_codes = [],
 		     items = [#muc_item{role = moderator,
-					affiliation = owner}]}]} = recv(),
+					affiliation = owner}]}]}),
     %% The next is the self-presence (code 110 means it)
-    #presence{
+    ?recv1(#presence{
        from = MyNickJID,
        sub_els = [#vcard_xupdate{},
 		  #muc_user{
 		     status_codes = [110],
 		     items = [#muc_item{role = visitor,
-					affiliation = none}]}]} = recv(),
+					affiliation = none}]}]}),
     %% Receive the room subject
-    #message{from = PeerNickJID, type = groupchat,
+    ?recv1(#message{from = PeerNickJID, type = groupchat,
              body = [#text{data = Subject}],
-	     sub_els = [#delay{}, #legacy_delay{}]} = recv(),
+	     sub_els = [#delay{}, #legacy_delay{}]}),
     %% Receive MUC history
     lists:foreach(
       fun(N) ->
               Text = #text{data = jlib:integer_to_binary(N)},
-	      #message{from = PeerNickJID,
+	      ?recv1(#message{from = PeerNickJID,
 		       type = groupchat,
 		       body = [Text],
-		       sub_els = [#delay{}, #legacy_delay{}]} = recv()
+		       sub_els = [#delay{}, #legacy_delay{}]})
       end, lists:seq(1, 5)),
     %% Sending a voice request
     VoiceReq = #xdata{
@@ -1310,20 +1310,20 @@ muc_slave(Config) ->
 			  values = [<<"participant">>]}]},
     send(Config, #message{to = Room, sub_els = [VoiceReq]}),
     %% Becoming a participant
-    #presence{from = MyNickJID,
+    ?recv1(#presence{from = MyNickJID,
 	      sub_els = [#vcard_xupdate{},
 			 #muc_user{
 			    items = [#muc_item{role = participant,
-					       affiliation = none}]}]} = recv(),
+					       affiliation = none}]}]}),
     %% Sending private message to the peer
     send(Config, #message{to = PeerNickJID,
 			  body = [#text{data = Subject}]}),
     %% Becoming a member
-    #presence{from = MyNickJID,
+    ?recv1(#presence{from = MyNickJID,
 	      sub_els = [#vcard_xupdate{},
 			 #muc_user{
 			    items = [#muc_item{role = participant,
-					       affiliation = member}]}]} = recv(),
+					       affiliation = member}]}]}),
     %% Retrieving a member list
     #iq{type = result, sub_els = [#muc_admin{items = MemberList}]} =
 	send_recv(Config,
@@ -1338,15 +1338,15 @@ muc_slave(Config) ->
     send(Config, #message{to = Room, type = groupchat,
 			  body = [#text{data = Subject}]}),
     %% Receive this message back
-    #message{type = groupchat, from = MyNickJID,
-	     body = [#text{data = Subject}]} = recv(),
+    ?recv1(#message{type = groupchat, from = MyNickJID,
+	     body = [#text{data = Subject}]}),
     %% We're kicked off
     %% 307 -> Inform user that he or she has been kicked from the room
-    #presence{from = MyNickJID, type = unavailable,
+    ?recv1(#presence{from = MyNickJID, type = unavailable,
 	      sub_els = [#muc_user{
 			    status_codes = [307],
 			    items = [#muc_item{affiliation = member,
-					       role = none}]}]} = recv(),
+					       role = none}]}]}),
     disconnect(Config).
 
 muc_register_nick(Config, MUC, PrevNick, Nick) ->
@@ -1381,7 +1381,7 @@ muc_register_nick(Config, MUC, PrevNick, Nick) ->
 	send_recv(Config, #iq{type = get, to = MUC,
 			      sub_els = [#register{}]}),
     #xdata_field{type = 'text-single', var = <<"nick">>,
-		 values = [Nick]} = 
+		 values = [Nick]} =
 	lists:keyfind(<<"nick">>, #xdata_field.var, FsWithNick).
 
 muc_register_master(Config) ->
@@ -1415,11 +1415,11 @@ announce_master(Config) ->
     MotdJID = jlib:jid_replace_resource(ServerJID, <<"announce/motd">>),
     MotdText = #text{data = <<"motd">>},
     send(Config, #presence{}),
-    #presence{from = MyJID} = recv(),
+    ?recv1(#presence{from = MyJID}),
     %% Set message of the day
     send(Config, #message{to = MotdJID, body = [MotdText]}),
     %% Receive this message back
-    #message{from = ServerJID, body = [MotdText]} = recv(),
+    ?recv1(#message{from = ServerJID, body = [MotdText]}),
     disconnect(Config).
 
 announce_slave(Config) ->
@@ -1461,9 +1461,9 @@ carbons_master(Config) ->
     Txt = #text{data = <<"body">>},
     true = is_feature_advertised(Config, ?NS_CARBONS_2),
     send(Config, #presence{priority = 10}),
-    #presence{from = MyJID} = recv(),
+    ?recv1(#presence{from = MyJID}),
     wait_for_slave(Config),
-    #presence{from = Peer} = recv(),
+    ?recv1(#presence{from = Peer}),
     %% Enable carbons
     #iq{type = result, sub_els = []} =
 	send_recv(Config,
@@ -1566,7 +1566,7 @@ carbons_slave(Config) ->
 		      sub_els = [#carbons_disable{}]}),
     wait_for_master(Config),
     %% Now we should receive nothing but presence unavailable from the peer
-    #presence{from = Peer, type = unavailable} = recv(),
+    ?recv1(#presence{from = Peer, type = unavailable}),
     disconnect(Config).
 
 client_state_master(Config) ->
@@ -1595,9 +1595,9 @@ client_state_slave(Config) ->
     Peer = ?config(master, Config),
     send(Config, #csi{type = inactive}),
     wait_for_master(Config),
-    #presence{from = Peer, sub_els = [#vcard_xupdate{}|_]} = recv(),
-    #message{from = Peer, thread = <<"1">>, sub_els = [#chatstate{type = active}],
-	     body = [#text{data = <<"body">>}]} = recv(),
+    ?recv1(#presence{from = Peer, sub_els = [#vcard_xupdate{}|_]}),
+    ?recv1(#message{from = Peer, thread = <<"1">>, sub_els = [#chatstate{type = active}],
+	     body = [#text{data = <<"body">>}]}),
     wait_for_master(Config),
     send(Config, #csi{type = active}),
     ?recv2(#presence{from = Peer, type = unavailable,

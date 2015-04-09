@@ -175,6 +175,8 @@ re_register(Config) ->
     {atomic, ok} = ejabberd_auth:try_register(User, Server, Pass),
     ok.
 
+match_failure(Received, [Match]) when is_list(Match)->
+    ct:fail("Received input:~n~n~p~n~ndon't match expected patterns:~n~n~s", [Received, Match]);
 match_failure(Received, Matches) ->
     ct:fail("Received input:~n~n~p~n~ndon't match expected patterns:~n~n~p", [Received, Matches]).
 
