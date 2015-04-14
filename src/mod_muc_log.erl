@@ -381,6 +381,11 @@ set_filemode(Fn, {FileMode, FileGroup}) ->
 	ok = file:change_mode(Fn, list_to_integer(integer_to_list(FileMode), 8)),
     ok = file:change_group(Fn, FileGroup).
 
+htmlize_nick(Nick1, html) ->
+    htmlize(<<"<", Nick1/binary, ">">>, html);
+htmlize_nick(Nick1, plaintext) ->
+    htmlize(<<?PLAINTEXT_IN/binary, Nick1/binary, ?PLAINTEXT_OUT/binary>>, plaintext).
+
 add_message_to_log(Nick1, Message, RoomJID, Opts,
 		   State) ->
     #logstate{out_dir = OutDir, dir_type = DirType,
@@ -391,7 +396,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts,
 	State,
     Room = get_room_info(RoomJID, Opts),
     Nick = htmlize(Nick1, FileFormat),
-    Nick2 = htmlize(<<"<", Nick1/binary, ">">>, FileFormat),
+    Nick2 = htmlize_nick(Nick1, FileFormat),
     Now = now(),
     TimeStamp = case Timezone of
 		  local -> calendar:now_to_local_time(Now);
