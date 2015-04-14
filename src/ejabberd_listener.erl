@@ -202,7 +202,8 @@ listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
 					{nodelay, true},
 					{send_timeout, ?TCP_SEND_TIMEOUT},
 					{send_timeout_close, true},
-					{keepalive, true}]),
+					{keepalive, true} |
+					SockOpts]),
 	    case Res of
 		{ok, ListenSocket} ->
 		    ListenSocket;
