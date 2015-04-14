@@ -5,7 +5,7 @@
 %%% Created : 16 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -1679,38 +1679,27 @@ handle_info({route, From, To,
 								 Packet, in)
 					   of
 					 allow -> {true, Attrs, StateData};
-					 deny -> {false, Attrs, StateData}
+					 deny ->
+					     Err =
+						 jlib:make_error_reply(Packet,
+								       ?ERR_SERVICE_UNAVAILABLE),
+					     ejabberd_router:route(To, From,
+								   Err),
+					     {false, Attrs, StateData}
 				       end;
 				   _ -> {true, Attrs, StateData}
 				 end,
-    if Pass == exit ->
-	    %% When Pass==exit, NewState contains a string instead of a #state{}
-	    Lang = StateData#state.lang,
-	    send_element(StateData, ?SERRT_CONFLICT(Lang, NewState)),
-	    send_trailer(StateData),
-	    {stop, normal, StateData};
-	Pass ->
+    if Pass ->
 	    Attrs2 =
 	       jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 					  jlib:jid_to_string(To), NewAttrs),
 	    FixedPacket = #xmlel{name = Name, attrs = Attrs2, children = Els},
-	    FinalState =
-		case ejabberd_hooks:run_fold(c2s_filter_packet_in,
-					     NewState#state.server, FixedPacket,
-					     [NewState#state.jid, From, To])
-		    of
-		  drop ->
-		      NewState;
-		  FinalPacket = #xmlel{} ->
-		      SentState = send_packet(NewState, FinalPacket),
-		      ejabberd_hooks:run(user_receive_packet,
-					 SentState#state.server,
-					 [SentState#state.jid, From, To,
-					  FinalPacket]),
-		      SentState
-		end,
+	    SentStateData = send_packet(NewState, FixedPacket),
+	    ejabberd_hooks:run(user_receive_packet,
+			       SentStateData#state.server,
+			       [SentStateData#state.jid, From, To, FixedPacket]),
 	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
-	    fsm_next_state(StateName, FinalState);
+	    fsm_next_state(StateName, SentStateData);
 	true ->
 	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
 	    fsm_next_state(StateName, NewState)
@@ -1737,6 +1726,10 @@ handle_info(system_shutdown, StateName, StateData) ->
 	  ok
     end,
     {stop, normal, StateData};
+handle_info({route_xmlstreamelement, El}, _StateName, StateData) ->
+    {next_state, NStateName, NStateData, _Timeout} =
+	session_established({xmlstreamelement, El}, StateData),
+    fsm_next_state(NStateName, NStateData);
 handle_info({force_update_presence, LUser}, StateName,
 	    #state{user = LUser, server = LServer} = StateData) ->
     NewStateData = case StateData#state.pres_last of
@@ -2223,14 +2216,16 @@ try_roster_subscribe(Type, User, Server, From, To, Packet, StateData) ->
 presence_broadcast(StateData, From, JIDSet, Packet) ->
     JIDs = ?SETS:to_list(JIDSet),
     JIDs2 = format_and_check_privacy(From, StateData, Packet, JIDs, out),
-    send_multiple(StateData, From, JIDs2, Packet).
+    Server = StateData#state.server,
+    send_multiple(From, Server, JIDs2, Packet).
 
 %% Send presence when updating presence
 presence_broadcast_to_trusted(StateData, From, Trusted, JIDSet, Packet) ->
     JIDs = ?SETS:to_list(JIDSet),
     JIDs_trusted = [JID || JID <- JIDs, ?SETS:is_element(JID, Trusted)],
     JIDs2 = format_and_check_privacy(From, StateData, Packet, JIDs_trusted, out),
-    send_multiple(StateData, From, JIDs2, Packet).
+    Server = StateData#state.server,
+    send_multiple(From, Server, JIDs2, Packet).
 
 %% Send presence when connecting
 presence_broadcast_first(From, StateData, Packet) ->
@@ -2242,7 +2237,7 @@ presence_broadcast_first(From, StateData, Packet) ->
     PacketProbe = #xmlel{name = <<"presence">>, attrs = [{<<"type">>,<<"probe">>}], children = []},
     JIDs2Probe = format_and_check_privacy(From, StateData, PacketProbe, JIDsProbe, out),
     Server = StateData#state.server,
-    send_multiple(StateData, From, JIDs2Probe, PacketProbe),
+    send_multiple(From, Server, JIDs2Probe, PacketProbe),
     {As, JIDs} =
 	?SETS:fold(
 	   fun(JID, {A, JID_list}) ->
@@ -2251,8 +2246,7 @@ presence_broadcast_first(From, StateData, Packet) ->
 	   {StateData#state.pres_a, []},
 	   StateData#state.pres_f),
     JIDs2 = format_and_check_privacy(From, StateData, Packet, JIDs, out),
-    Server = StateData#state.server,
-    send_multiple(StateData, From, JIDs2, Packet),
+    send_multiple(From, Server, JIDs2, Packet),
     StateData#state{pres_a = As}.
 
 format_and_check_privacy(From, StateData, Packet, JIDs, Dir) ->
@@ -2273,16 +2267,8 @@ format_and_check_privacy(From, StateData, Packet, JIDs, Dir) ->
       end,
       FJIDs).
 
-send_multiple(StateData, From, JIDs, Packet) ->
-    lists:foreach(
-      fun(JID) ->
-              case privacy_check_packet(StateData, From, JID, Packet, out) of
-                  deny ->
-                      ok;
-                  allow ->
-                      ejabberd_router:route(From, JID, Packet)
-              end
-      end, JIDs).
+send_multiple(From, Server, JIDs, Packet) ->
+    ejabberd_router_multicast:route_multicast(From, Server, JIDs, Packet).
 
 remove_element(E, Set) ->
     case (?SETS):is_element(E, Set) of
@@ -2848,9 +2834,12 @@ send_stanza_and_ack_req(StateData, Stanza) ->
     AckReq = #xmlel{name = <<"r">>,
 		    attrs = [{<<"xmlns">>, StateData#state.mgmt_xmlns}],
 		    children = []},
-    StanzaS = xml:element_to_binary(Stanza),
-    AckReqS = xml:element_to_binary(AckReq),
-    send_text(StateData, [StanzaS, AckReqS]).
+    case send_element(StateData, Stanza) of
+      ok ->
+	  send_element(StateData, AckReq);
+      error ->
+	  error
+    end.
 
 mgmt_queue_add(StateData, El) ->
     NewNum = case StateData#state.mgmt_stanzas_out of

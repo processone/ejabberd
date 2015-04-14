@@ -5,7 +5,7 @@
 %%% Created : 23 Aug 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -52,6 +52,7 @@
 
 -type sockmod() :: ejabberd_http_poll |
                    ejabberd_http_bind |
+                   ejabberd_http_ws |
                    gen_tcp | p1_tls | ezlib.
 -type receiver() :: pid () | atom().
 -type socket() :: pid() | inet:socket() |

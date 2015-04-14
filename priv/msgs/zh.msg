@@ -1,8 +1,8 @@
+%% -*- coding: latin-1 -*-
 {"Access Configuration","访问配置"}.
 {"Access Control List Configuration","访问控制列表(ACL)配置"}.
 {"Access control lists","访问控制列表(ACL)"}.
 {"Access Control Lists","访问控制列表(ACL)"}.
-{"Access denied by service policy","访问被服务策略拒绝"}.
 {"Access rules","访问规则"}.
 {"Access Rules","访问规则"}.
 {"Action on user","对用户的动作"}.
@@ -11,7 +11,6 @@
 {"Add User","添加用户"}.
 {"Administration of ","管理"}.
 {"Administration","管理"}.
-{"Administrator privileges required","需要管理员权限"}.
 {"A friendly name for the node","该节点的友好名称"}.
 {"All activity","所有活动"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","允许该 Jabber ID 订阅该 pubsub 节点?"}.
@@ -26,11 +25,9 @@
 {"All Users","所有用户"}.
 {"Announcements","通知"}.
 {"anyone","任何人"}.
-{"A password is required to enter this room","进入此房间需要密码"}.
 {"April","四月"}.
 {"August","八月"}.
 {"Backup Management","备份管理"}.
-{"Backup of ","备份来源 "}.
 {"Backup to File at ","备份文件位于"}.
 {"Backup","备份"}.
 {"Bad format","格式错误"}.
@@ -51,14 +48,12 @@
 {"Choose whether to approve this entity's subscription.","选择是否允许该实体的订阅"}.
 {"City","城市"}.
 {"Commands","命令"}.
-{"Conference room does not exist","会议室不存在"}.
 {"Configuration of room ~s","房间 ~s 的配置 "}.
 {"Configuration","配置"}.
 {"Connected Resources:","已连接资源:"}.
 {"Connections parameters","连接参数"}.
 {"Country","国家"}.
 {"CPU Time:","CPU 时间："}.
-{"Database Tables at ","数据库列表位于 "}.
 {"Database Tables Configuration at ","数据库表格配置位于"}.
 {"Database","数据库"}.
 {"December","十二月"}.
@@ -104,7 +99,6 @@
 {"Exclude Jabber IDs from CAPTCHA challenge","从验证码挑战中排除 Jabber ID"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","将服务器上所有用户的数据导出到 PIEFXIS 文件 (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","将某主机的用户数据导出到 PIEFXIS 文件 (XEP-0227):"}.
-{"Failed to extract JID from your voice request approval","无法从你的声音请求确认信息中提取JID"}.
 {"Family Name","姓氏"}.
 {"February","二月"}.
 {"Fill in fields to search for any matching Jabber User","填充字段以搜索任何匹配的 Jabber 用户"}.
@@ -138,8 +132,6 @@
 {"Import users data from jabberd14 spool directory:","从 jabberd14 Spool 目录导入用户数据:"}.
 {"Import Users from Dir at ","导入用户的目录位于 "}.
 {"Import Users From jabberd14 Spool Files","从 jabberd14 Spool 文件导入用户"}.
-{"Improper message type","不恰当的消息类型"}.
-{"Incorrect password","密码不正确"}.
 {"Invalid affiliation: ~s","无效加入: ~s"}.
 {"Invalid role: ~s","无效角色: ~s"}.
 {"IP addresses","IP 地址"}.
@@ -151,9 +143,6 @@
 {"IRC username","IRC 用户名"}.
 {"IRC Username","IRC 用户名"}.
 {"is now known as","现在称呼为"}.
-{"It is not allowed to send private messages of type \"groupchat\"","\"群组聊天\"类型不允许发送私聊消息"}.
-{"It is not allowed to send private messages to the conference","不允许向会议发送私聊消息"}.
-{"It is not allowed to send private messages","不可以发送私聊消息"}.
 {"Jabber Account Registration","Jabber 帐户注册"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s 无效"}.
@@ -185,17 +174,14 @@
 {"Max # of items to persist","允许持久化的最大内容条目数"}.
 {"Max payload size in bytes","最大有效负载字节数"}.
 {"May","五月"}.
-{"Membership is required to enter this room","进入此房间需要会员身份"}.
 {"Members:","会员:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","记住你的密码, 或将其记到纸上并放于安全位置. 如果你忘记了密码, Jabber 也没有自动恢复密码的方式."}.
 {"Memory","内存"}.
 {"Message body","消息主体"}.
 {"Middle Name","中间名"}.
 {"Minimum interval between voice requests (in seconds)","声音请求的最小间隔(以秒为单位)"}.
-{"Moderator privileges required","需要主持人权限"}.
 {"moderators only","仅主持人"}.
 {"Modified modules","被修改模块"}.
-{"Modules at ","模块位于 "}.
 {"Modules","模块"}.
 {"Module","模块"}.
 {"Monday","星期一"}.
@@ -212,7 +198,6 @@
 {"Node ID","节点 ID"}.
 {"Node not found","没有找到节点"}.
 {"Nodes","节点"}.
-{"Node ","节点 "}.
 {"No limit","不限"}.
 {"None","无"}.
 {"No resource provided","无资源提供"}.
@@ -235,17 +220,12 @@
 {"Only deliver notifications to available users","仅将通知发送给可发送的用户"}.
 {"Only moderators and participants are allowed to change the subject in this room","只有主持人和参与人可以在此房间里更改主题"}.
 {"Only moderators are allowed to change the subject in this room","只有主持人可以在此房间里更改主题"}.
-{"Only moderators can approve voice requests","仅主持人能确认声音请求"}.
-{"Only occupants are allowed to send messages to the conference","只有与会人可以向大会发送消息"}.
-{"Only occupants are allowed to send queries to the conference","只有与会人可以向大会发出查询请求"}.
-{"Only service administrators are allowed to send service messages","只有服务管理员可以发送服务消息"}.
 {"Options","选项"}.
 {"Organization Name","组织名称"}.
 {"Organization Unit","组织单位"}.
 {"Outgoing s2s Connections:","出站 s2s 连接:"}.
 {"Outgoing s2s Connections","出站 s2s 连接"}.
 {"Outgoing s2s Servers:","出站 s2s 服务器"}.
-{"Owner privileges required","需要持有人权限"}.
 {"Packet","数据包"}.
 {"Password ~b","~b 的密码"}.
 {"Password Verification:","密码确认:"}.
@@ -259,7 +239,6 @@
 {"Persist items to storage","持久化内容条目"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","注意：这些选项仅将备份内置的 Mnesia 数据库. 如果您正在使用 ODBC 模块, 您还需要分别备份您的数据库."}.
-{"Please, wait for a while before sending new voice request","请稍后再发送新的声音请求"}.
 {"Pong","Pong"}.
 {"Port ~b","~b 的端口"}.
 {"Port","端口"}.
@@ -269,12 +248,10 @@
 {"Publish-Subscribe","发行-订阅"}.
 {"PubSub subscriber request","PubSub 订阅人请求"}.
 {"Purge all items when the relevant publisher goes offline","相关发布人离线后清除所有选项"}.
-{"Queries to the conference members are not allowed in this room","本房间不可以查询会议成员信息"}.
 {"RAM and disc copy","内存与磁盘复制"}.
 {"RAM copy","内存(RAM)复制"}.
 {"Raw","原始格式"}.
 {"Really delete message of the day?","确实要删除每日消息吗?"}.
-{"Recipient is not in the conference room","接收人不在会议室"}.
 {"Register a Jabber account","注册 Jabber 帐户"}.
 {"Registered Users:","注册用户:"}.
 {"Registered Users","注册用户"}.
@@ -294,7 +271,6 @@
 {"Restore plain text backup immediately:","立即恢复普通文本备份:"}.
 {"Restore","恢复"}.
 {"Room Configuration","房间配置"}.
-{"Room creation is denied by service policy","创建房间被服务策略拒绝"}.
 {"Room description","房间描述"}.
 {"Room Occupants","房间人数"}.
 {"Room title","房间标题"}.
@@ -346,12 +322,8 @@
 {"Subscriber Address","订阅人地址"}.
 {"Subscription","订阅"}.
 {"Sunday","星期天"}.
-{"That nickname is already in use by another occupant","该昵称已被另一用户使用"}.
-{"That nickname is registered by another person","该昵称已被另一个人注册了"}.
 {"The CAPTCHA is valid.","验证码有效."}.
-{"The CAPTCHA verification has failed","验证码检查失败"}.
 {"The collections with which a node is affiliated","加入结点的集合"}.
-{"The password is too weak","密码强度太弱"}.
 {"the password is","密码是"}.
 {"The password of your Jabber account was successfully changed.","你的 Jabber 帐户密码已成功更新."}.
 {"There was an error changing the password: ","修改密码出错: "}.
@@ -360,23 +332,17 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","此处不区分大小写: macbeth 与 MacBeth 和 Macbeth 是一样的."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","本页面允许在此服务器上创建 Jabber 帐户. 你的 JID (Jabber ID) 的形式如下: 用户名@服务器. 请仔细阅读说明并正确填写相应字段."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","此页面允许在此 Jabber 服务器上注销 Jabber 帐户"}.
-{"This participant is kicked from the room because he sent an error message to another participant","该参与人由于给其他人发送了出错消息而被踢出了聊天室"}.
-{"This participant is kicked from the room because he sent an error message","该参与人由于发送了错误消息而被踢出了聊天室"}.
-{"This participant is kicked from the room because he sent an error presence","该用户由于发送了错误状态而被踢出了聊天室"}.
 {"This room is not anonymous","此房间不是匿名房间"}.
 {"Thursday","星期四"}.
 {"Time delay","时间延迟"}.
 {"Time","时间"}.
-{"Too many CAPTCHA requests","验证码请求太多"}.
 {"To ~s","发送给~s"}.
 {"To","到"}.
-{"Traffic rate limit is exceeded","已经超过传输率限制"}.
 {"Transactions Aborted:","取消的事务:"}.
 {"Transactions Committed:","提交的事务:"}.
 {"Transactions Logged:","记入日志的事务:"}.
 {"Transactions Restarted:","重启的事务:"}.
 {"Tuesday","星期二"}.
-{"Unable to generate a CAPTCHA","无法生成验证码"}.
 {"Unauthorized","未认证的"}.
 {"Unregister a Jabber account","注销 Jabber 帐户"}.
 {"Unregister","取消注册"}.
@@ -384,38 +350,28 @@
 {"Update message of the day on all hosts (don't send)","更新所有主机上的每日消息(不发送)"}.
 {"Update plan","更新计划"}.
 {"Update script","更新脚本"}.
-{"Update ","更新 "}.
 {"Update","更新"}.
 {"Uptime:","正常运行时间:"}.
 {"Use of STARTTLS required","要求使用 STARTTLS"}.
 {"User JID","用户 JID"}.
 {"User Management","用户管理"}.
 {"Username:","用户名:"}.
-{"Users are not allowed to register accounts so quickly","不允许用户太频繁地注册帐户"}.
 {"Users Last Activity","用户上次活动"}.
 {"Users","用户"}.
-{"User ","用户 "}.
 {"User","用户"}.
 {"Validate","确认"}.
 {"vCard User Search","vCard 用户搜索"}.
 {"Virtual Hosts","虚拟主机"}.
-{"Visitors are not allowed to change their nicknames in this room","此房间不允许用户更改昵称"}.
-{"Visitors are not allowed to send messages to all occupants","不允许访客给所有占有者发送消息"}.
-{"Voice requests are disabled in this conference","该会议的声音请求以被禁用"}.
 {"Voice request","声音请求"}.
 {"Wednesday","星期三"}.
 {"When to send the last published item","何时发送最新发布的内容条目"}.
 {"Whether to allow subscriptions","是否允许订阅"}.
 {"You can later change your password using a Jabber client.","你可以稍后用 Jabber 客户端修改你的密码."}.
-{"You have been banned from this room","您已被禁止进入该房间"}.
-{"You must fill in field \"Nickname\" in the form","您必须填充表单中\"昵称\"项"}.
 {"You need a client that supports x:data and CAPTCHA to register","您需要一个支持 x:data 和验证码的客户端进行注册"}.
 {"You need a client that supports x:data to register the nickname","您需要一个支持 x:data 的客户端来注册昵称"}.
 {"You need an x:data capable client to configure mod_irc settings","您需要一个兼容 x:data 的客户端来配置 mod_irc 设置"}.
 {"You need an x:data capable client to configure room","您需要一个兼容 x:data 的客户端来配置房间"}.
 {"You need an x:data capable client to search","您需要一个兼容 x:data 的客户端来搜索"}.
-{"Your active privacy list has denied the routing of this stanza.","你的活跃私聊列表拒绝了在此房间进行路由分发."}.
-{"Your contact offline message queue is full. The message has been discarded.","您的联系人离线消息队列已满. 消息已被丢弃"}.
 {"Your Jabber account was successfully created.","你的 Jabber 帐户已成功创建."}.
 {"Your Jabber account was successfully deleted.","你的 Jabber 帐户已成功删除."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","您发送给 ~s 的消息已被阻止. 要解除阻止, 请访问 ~s"}.

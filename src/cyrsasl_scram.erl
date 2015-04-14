@@ -5,7 +5,7 @@
 %%% Created : 7 Aug 2011 by Stephen Röttger <stephen.roettger@googlemail.com>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -76,9 +76,11 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 		  UserName ->
 		      case parse_attribute(ClientNonceAttribute) of
 			{$r, ClientNonce} ->
-			    case (State#state.get_password)(UserName) of
+			    {Ret, _AuthModule} = (State#state.get_password)(UserName),
+			    case {Ret, jlib:resourceprep(Ret)} of
 			      {false, _} -> {error, <<"not-authorized">>, UserName};
-			      {Ret, _AuthModule} ->
+			      {_, error} when is_binary(Ret) -> ?WARNING_MSG("invalid plain password", []), {error, <<"not-authorized">>, UserName};
+			      {Ret, _} ->
 				  {StoredKey, ServerKey, Salt, IterationCount} =
 				      if is_tuple(Ret) -> Ret;
 					 true ->

@@ -5,7 +5,7 @@
 %%% Created : 11 Jan 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -210,7 +210,7 @@ process(Args) ->
 
 %% @spec (Args::[string()], AccessCommands) -> {String::string(), Code::integer()}
 process2(["--auth", User, Server, Pass | Args], AccessCommands) ->
-    process2(Args, {User, Server, Pass}, AccessCommands);
+    process2(Args, {list_to_binary(User), list_to_binary(Server), list_to_binary(Pass)}, AccessCommands);
 process2(Args, AccessCommands) ->
     process2(Args, noauth, AccessCommands).
 

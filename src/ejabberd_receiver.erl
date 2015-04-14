@@ -5,7 +5,7 @@
 %%% Created : 10 Nov 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -243,7 +243,13 @@ handle_info({Tag, _TCPSocket, Data},
 	    {ok, TLSData} ->
 		{noreply, process_data(TLSData, State),
 		 ?HIBERNATE_TIMEOUT};
-	    {error, _Reason} -> {stop, normal, State}
+	    {error, Reason} ->
+		  if is_binary(Reason) ->
+			  ?ERROR_MSG("TLS error = ~s", [Reason]);
+		     true ->
+			  ok
+		  end,
+		  {stop, normal, State}
 	  end;
       ezlib ->
 	  case ezlib:recv_data(Socket, Data) of

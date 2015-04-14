@@ -5,7 +5,7 @@
 %%% Created : 18 Jul 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -36,4 +36,4 @@ init(Module) ->
     {ok,
      {{simple_one_for_one, 10, 1},
       [{undefined, {Module, start_link, []}, temporary,
-	brutal_kill, worker, [Module]}]}}.
+	1000, worker, [Module]}]}}.

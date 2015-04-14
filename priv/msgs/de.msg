@@ -1,8 +1,8 @@
+%% -*- coding: latin-1 -*-
 {"Access Configuration","Zugangskonfiguration"}.
 {"Access Control List Configuration","Konfiguration der Zugangskontrolllisten"}.
 {"Access control lists","Zugangskontroll-Listen (ACL)"}.
 {"Access Control Lists","Zugangskontroll-Listen (ACL)"}.
-{"Access denied by service policy","Zugang aufgrund der Dienstrichtlinien verweigert"}.
 {"Access rules","Zugangsregeln"}.
 {"Access Rules","Zugangsregeln"}.
 {"Action on user","Aktion auf Benutzer"}.
@@ -11,7 +11,6 @@
 {"Add User","Benutzer hinzufügen"}.
 {"Administration of ","Administration von "}.
 {"Administration","Verwaltung"}.
-{"Administrator privileges required","Administratorenrechte benötigt"}.
 {"A friendly name for the node","Ein merkbarer Name für den Knoten"}.
 {"All activity","Alle Aktivitäten"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Dieser Jabber-ID das Abonnement dieses pubsub-Knotens erlauben?"}.
@@ -26,12 +25,10 @@
 {"All Users","Alle Benutzer"}.
 {"Announcements","Ankündigungen"}.
 {"anyone","jeden"}.
-{"A password is required to enter this room","Sie brauchen ein Passwort um diesen Raum zu betreten"}.
 {"April","April"}.
 {"August","August"}.
 {"Backup","Datensicherung"}.
 {"Backup Management","Datensicherungsverwaltung"}.
-{"Backup of ","Sicherung von "}.
 {"Backup to File at ","Datensicherung in die Datei "}.
 {"Bad format","Ungültiges Format"}.
 {"Birthday","Geburtsdatum"}.
@@ -51,7 +48,6 @@
 {"Choose whether to approve this entity's subscription.","Wähle Sie, ob dieses Abonnement akzeptiert werden soll."}.
 {"City","Stadt"}.
 {"Commands","Befehle"}.
-{"Conference room does not exist","Konferenzraum existiert nicht"}.
 {"Configuration","Konfiguration"}.
 {"Configuration of room ~s","Konfiguration für Raum ~s"}.
 {"Connected Resources:","Verbundene Ressourcen:"}.
@@ -59,7 +55,6 @@
 {"Country","Land"}.
 {"CPU Time:","CPU-Zeit:"}.
 {"Database","Datenbank"}.
-{"Database Tables at ","Datenbanktabellen auf "}.
 {"Database Tables Configuration at ","Datenbanktabellen-Konfiguration auf "}.
 {"December","Dezember"}.
 {"Default users as participants","Standardbenutzer als Teilnehmer"}.
@@ -104,7 +99,6 @@
 {"Exclude Jabber IDs from CAPTCHA challenge","Von CAPTCHA Überprüfung ausgeschlossene Jabber IDs"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Alle Benutzerdaten des Servers in PIEFXIS Dateien (XEP-0227) exportieren:"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Alle Benutzerdaten des Hosts in PIEFXIS Dateien (XEP-0227) exportieren:"}.
-{"Failed to extract JID from your voice request approval","Fehler beim Auslesen der JID aus der Anfragenbestätigung für Sprachrechte"}.
 {"Family Name","Nachname"}.
 {"February","Februar"}.
 {"Fill in fields to search for any matching Jabber User","Füllen Sie die Felder aus, um nach passenden Jabber-Benutzern zu suchen"}.
@@ -138,8 +132,6 @@
 {"Import users data from jabberd14 spool directory:","Importiere Benutzer von jabberd14 Spool Verzeichnis:"}.
 {"Import Users from Dir at ","Benutzer importieren aus dem Verzeichnis "}.
 {"Import Users From jabberd14 Spool Files","Importiere Benutzer aus jabberd14-Spool-Dateien"}.
-{"Improper message type","Unzulässiger Nachrichtentyp"}.
-{"Incorrect password","Falsches Passwort"}.
 {"Invalid affiliation: ~s","Ungültige Mitgliedschaft: ~s"}.
 {"Invalid role: ~s","Ungültige Rolle: ~s"}.
 {"IP addresses","IP Adressen"}.
@@ -151,9 +143,6 @@
 {"IRC username","IRC Benutzername"}.
 {"IRC Username","IRC-Benutzername"}.
 {"is now known as","ist nun bekannt als"}.
-{"It is not allowed to send private messages","Es ist nicht erlaubt private Nachrichten zu senden"}.
-{"It is not allowed to send private messages of type \"groupchat\"","Es ist nicht erlaubt private Nachrichten des Typs \"Gruppenchat\" zu senden"}.
-{"It is not allowed to send private messages to the conference","Es ist nicht erlaubt private Nachrichten an den Raum zu schicken"}.
 {"Jabber Account Registration","Jabber Konto Anmeldung"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Die Jabber-ID ~s ist ungültig"}.
@@ -185,18 +174,15 @@
 {"Max # of items to persist","Maximale Anzahl dauerhaft zu speichernder Einträge"}.
 {"Max payload size in bytes","Maximale Nutzlastgrösse in Bytes"}.
 {"May","Mai"}.
-{"Membership is required to enter this room","Um diesen Raum zu betreten müssen sie Mitglied sein"}.
 {"Members:","Mitglieder:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Merken sie sich ihr Passwort, oder schreiben sie es auf einen Zettel den sie sicher verwahren. Bei Jabber gibt es keine automatische Möglichkeit, das Passwort wiederherzustellen."}.
 {"Memory","Speicher"}.
 {"Message body","Nachrichtentext"}.
 {"Middle Name","Zweiter Vorname"}.
 {"Minimum interval between voice requests (in seconds)","Mindestdauer zwischen Anfragen für Sprachrechte (in Sekunden)"}.
-{"Moderator privileges required","Moderatorrechte benötigt"}.
 {"moderators only","ausschliesslich Moderatoren"}.
 {"Modified modules","Geänderte Module"}.
 {"Module","Modul"}.
-{"Modules at ","Module bei "}.
 {"Modules","Module"}.
 {"Monday","Montag"}.
 {"Name:","Name:"}.
@@ -210,7 +196,6 @@
 {"No body provided for announce message","Kein Text für die Ankündigung angegeben"}.
 {"No Data","Keine Daten"}.
 {"Node ID","Knoten-ID"}.
-{"Node ","Knoten "}.
 {"Node not found","Knoten nicht gefunden"}.
 {"Nodes","Knoten"}.
 {"No limit","Keine Begrenzung"}.
@@ -235,17 +220,12 @@
 {"Only deliver notifications to available users","Benachrichtigungen nur an verfügbare Benutzer schicken"}.
 {"Only moderators and participants are allowed to change the subject in this room","Nur Moderatoren und Mitglieder dürfen das Thema in diesem Raum ändern"}.
 {"Only moderators are allowed to change the subject in this room","Nur Moderatoren dürfen das Thema in diesem Raum ändern"}.
-{"Only moderators can approve voice requests","Nur Moderatoren können Anfragen für Sprachrechte bestätigen"}.
-{"Only occupants are allowed to send messages to the conference","Nur Teilnehmer dürfen Nachrichten an den Raum schicken"}.
-{"Only occupants are allowed to send queries to the conference","Nur Teilnehmer sind berechtigt Anfragen an die Konferenz zu senden"}.
-{"Only service administrators are allowed to send service messages","Nur Service-Administratoren sind berechtigt, Servicenachrichten zu versenden"}.
 {"Options","Optionen"}.
 {"Organization Name","Organisation"}.
 {"Organization Unit","Abteilung"}.
 {"Outgoing s2s Connections:","Ausgehende s2s-Verbindungen:"}.
 {"Outgoing s2s Connections","Ausgehende s2s-Verbindungen"}.
 {"Outgoing s2s Servers:","Ausgehende s2s-Server:"}.
-{"Owner privileges required","Besitzerrechte benötigt"}.
 {"Packet","Paket"}.
 {"Password ~b","Passwort ~b"}.
 {"Password:","Passwort:"}.
@@ -259,7 +239,6 @@
 {"Persist items to storage","Einträge dauerhaft speichern"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Beachten sie, das diese Optionen nur die eingebaute Mnesia-Datenbank sichern. Wenn sie das ODBC-Modul verwenden, müssen sie die SQL-Datenbank manuell sichern."}.
-{"Please, wait for a while before sending new voice request","Bitte warten sie ein wenig, bevor sie eine weitere Anfrage für Sprachrechte senden"}.
 {"Pong","Pong"}.
 {"Port ~b","Port ~b"}.
 {"Port","Port"}.
@@ -269,12 +248,10 @@
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub-Abonnenten-Anfrage"}.
 {"Purge all items when the relevant publisher goes offline","Alle Einträge entfernen, wenn der relevante Veröffentlicher offline geht"}.
-{"Queries to the conference members are not allowed in this room","Anfragen an die Teilnehmer sind in diesem Raum nicht erlaubt"}.
 {"RAM and disc copy","RAM und Festplatte"}.
 {"RAM copy","Nur RAM"}.
 {"Raw","Unformatiert"}.
 {"Really delete message of the day?","Die Nachricht des Tages wirklich löschen?"}.
-{"Recipient is not in the conference room","Der Empfänger ist nicht im Raum"}.
 {"Register a Jabber account","Jabber Konto registrieren"}.
 {"Register","Anmelden"}.
 {"Registered Users:","Registrierte Benutzer:"}.
@@ -294,7 +271,6 @@
 {"Restore plain text backup immediately:","Stelle Klartext-Sicherung sofort wieder her:"}.
 {"Restore","Wiederherstellung"}.
 {"Room Configuration","Raum-Konfiguration"}.
-{"Room creation is denied by service policy","Anlegen des Raumes aufgrund der Dienstrichtlinien verweigert"}.
 {"Room description","Raum Beschreibung"}.
 {"Room Occupants","Teilnehmer in diesem Raum"}.
 {"Room title","Raumname"}.
@@ -346,13 +322,9 @@
 {"Subscriber Address","Abonnenten-Adresse"}.
 {"Subscription","Abonnement"}.
 {"Sunday","Sonntag"}.
-{"That nickname is already in use by another occupant","Dieser Benutzername wird bereits von einem Teilnehmer genutzt"}.
-{"That nickname is registered by another person","Dieser Benutzername wurde bereits von jemand anderem registriert"}.
 {"The CAPTCHA is valid.","Die Verifizierung ist gültig."}.
-{"The CAPTCHA verification has failed","Die CAPTCHA Verifizierung schlug fehl"}.
 {"The collections with which a node is affiliated","Sammlungen, mit denen ein Knoten verknüpft ist"}.
 {"the password is","das Passwort lautet"}.
-{"The password is too weak","Das Passwort ist zu einfach"}.
 {"The password of your Jabber account was successfully changed.","Das Passwort von ihrem Jabber Konto wurde geändert."}.
 {"There was an error changing the password: ","Es trat ein Fehler beim Ändern des Passworts auf:"}.
 {"There was an error creating the account: ","Es trat ein Fehler beim erstellen des Kontos auf:"}.
@@ -360,62 +332,46 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Groß/Klein-Schreibung spielt hierbei keine Rolle: macbeth ist gleich MacBeth und Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Diese Seite erlaubt das anlegen eines Jabber Kontos auf diesem Jabber Server. Ihre JID (Jabber IDentifier) setzt sich folgend zusammen: benutzername@server. Bitte lesen sie die Hinweise genau durch, um die Felder korrekt auszufüllen."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Diese Seite erlaubt es, ein Jabber Konto von diesem Server zu entfernen."}.
-{"This participant is kicked from the room because he sent an error message","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine fehlerhafte Nachricht gesendet hat"}.
-{"This participant is kicked from the room because he sent an error message to another participant","Dieser Teilnehmer wurde aus dem Raum geworfen, da er eine fehlerhafte Nachricht an einen anderen Teilnehmer gesendet hat"}.
-{"This participant is kicked from the room because he sent an error presence","Dieser Teilnehmer wurde aus dem Raum gekickt, da er einen fehlerhaften Status gesendet hat"}.
 {"This room is not anonymous","Dieser Raum ist nicht anonym"}.
 {"Thursday","Donnerstag"}.
 {"Time delay","Zeitverzögerung"}.
 {"Time","Zeit"}.
 {"To","An"}.
-{"Too many CAPTCHA requests","Zu viele CAPTCHA Anfragen"}.
 {"To ~s","An ~s"}.
-{"Traffic rate limit is exceeded","Datenratenlimit wurde überschritten"}.
 {"Transactions Aborted:","Abgebrochene Transaktionen:"}.
 {"Transactions Committed:","Durchgeführte Transaktionen:"}.
 {"Transactions Logged:","Protokollierte Transaktionen:"}.
 {"Transactions Restarted:","Neu gestartete Transaktionen:"}.
 {"Tuesday","Dienstag"}.
-{"Unable to generate a CAPTCHA","Konnte CAPTCHA nicht erstellen"}.
 {"Unauthorized","Nicht berechtigt"}.
 {"Unregister","Abmelden"}.
 {"Unregister a Jabber account","Jabber Konto entfernen"}.
 {"Update","Aktualisieren"}.
-{"Update ","Aktualisierung "}.
 {"Update message of the day (don't send)","Aktualisiere Nachricht des Tages (nicht senden)"}.
 {"Update message of the day on all hosts (don't send)","Aktualisiere Nachricht des Tages auf allen Hosts (nicht senden)"}.
 {"Update plan","Aktualisierungsplan"}.
 {"Update script","Aktualisierungsscript"}.
 {"Uptime:","Betriebszeit:"}.
 {"Use of STARTTLS required","Verwendung von STARTTLS erforderlich"}.
-{"User ","Benutzer "}.
 {"User","Benutzer"}.
 {"User JID","Benutzer JID"}.
 {"User Management","Benutzerverwaltung"}.
 {"Username:","Benutzername:"}.
-{"Users are not allowed to register accounts so quickly","Benutzer dürfen Konten nicht so schnell registrieren"}.
 {"Users","Benutzer"}.
 {"Users Last Activity","Letzte Benutzeraktivität"}.
 {"Validate","Validieren"}.
 {"vCard User Search","vCard-Benutzer-Suche"}.
 {"Virtual Hosts","Virtuelle Hosts"}.
-{"Visitors are not allowed to change their nicknames in this room","Besucher dürfen in diesem Raum ihren Benutzernamen nicht ändern"}.
-{"Visitors are not allowed to send messages to all occupants","Besucher dürfen nicht an alle Teilnehmer Nachrichten verschicken"}.
 {"Voice request","Anfrage für Sprachrechte"}.
-{"Voice requests are disabled in this conference","Anfragen für Sprachrechte sind in diesem Raum deaktiviert"}.
 {"Wednesday","Mittwoch"}.
 {"When to send the last published item","Wann soll das letzte veröffentlichte Objekt gesendet werden"}.
 {"Whether to allow subscriptions","Ob Abonnements erlaubt sind"}.
 {"You can later change your password using a Jabber client.","Sie können das Passwort später mit einem Jabber Client Programm ändern."}.
-{"You have been banned from this room","Sie wurden aus diesem Raum verbannt"}.
-{"You must fill in field \"Nickname\" in the form","Sie müssen das Feld \"Benutzername\" ausfüllen"}.
 {"You need a client that supports x:data and CAPTCHA to register","Sie benötigen einen Client, der x:data und CAPTCHA unterstützt, um Ihren Benutzernamen zu registrieren"}.
 {"You need a client that supports x:data to register the nickname","Sie benötigen einen Client, der x:data unterstützt, um Ihren Benutzernamen zu registrieren"}.
 {"You need an x:data capable client to configure mod_irc settings","Sie benötigen einen Client, der x:data unterstützt, um die mod_irc-Einstellungen zu konfigurieren"}.
 {"You need an x:data capable client to configure room","Sie benötigen einen Client, der x:data unterstützt, um den Raum zu konfigurieren"}.
 {"You need an x:data capable client to search","Sie benötigen einen Client, der x:data unterstützt, um die Suche verwenden zu können"}.
-{"Your active privacy list has denied the routing of this stanza.","Ihre aktive Privacy Liste hat die Weiterleitung des Stanzas unterbunden."}.
-{"Your contact offline message queue is full. The message has been discarded.","Ihre Offline-Nachrichten-Warteschlange ist voll. Die Nachricht wurde verworfen."}.
 {"Your Jabber account was successfully created.","Ihr Jabber Konto wurde erfolgreich erstellt."}.
 {"Your Jabber account was successfully deleted.","Ihr Jabber Konto wurde erfolgreich gelöscht."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Ihre Nachrichten an ~s werden blockiert. Um dies zu ändern, besuchen sie ~s"}.

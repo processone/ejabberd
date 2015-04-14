@@ -5,7 +5,7 @@
 %%% Created : 23 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -57,6 +57,7 @@
 %% TODO: Remove once XEP-0091 is Obsolete
 %% TODO: Remove once XEP-0091 is Obsolete
 
+-include("ejabberd.hrl").
 -include("jlib.hrl").
 
 -export_type([jid/0]).
@@ -601,12 +602,13 @@ rsm_encode_count(Count, Arr) ->
 	    children = [{xmlcdata, i2l(Count)}]}
      | Arr].
 
--spec add_delay_info(xmlel(), erlang:timestamp(), binary()) -> xmlel().
+-spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp())
+		     -> xmlel().
 
 add_delay_info(El, From, Time) ->
     add_delay_info(El, From, Time, <<"">>).
 
--spec add_delay_info(xmlel(), erlang:timestamp(), binary(),
+-spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp(),
 		     binary()) -> xmlel().
 
 add_delay_info(El, From, Time, Desc) ->
@@ -615,8 +617,8 @@ add_delay_info(El, From, Time, Desc) ->
     El2 = add_delay_info(El1, From, Time, Desc, <<"x">>, ?NS_DELAY91),
     El2.
 
--spec add_delay_info(xmlel(), erlang:timestamp(), binary(), binary(), binary(),
-		     binary()) -> xmlel().
+-spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp(),
+		     binary(), binary(), binary()) -> xmlel().
 
 add_delay_info(El, From, Time, Desc, Name, XMLNS) ->
     case xml:get_subtag_with_xmlns(El, Name, XMLNS) of
@@ -647,7 +649,7 @@ add_delay_info(El, From, Time, Desc, Name, XMLNS) ->
 	  xml:append_subtags(NewEl, [NewDelayTag])
     end.
 
--spec create_delay_tag(erlang:timestamp(), jid() | binary(), binary(),
+-spec create_delay_tag(erlang:timestamp(), jid() | ljid() | binary(), binary(),
 		       binary()) -> xmlel() | error.
 
 create_delay_tag(TimeStamp, FromJID, Desc, XMLNS) when is_tuple(FromJID) ->
@@ -717,11 +719,16 @@ now_to_utc_string({MegaSecs, Secs, MicroSecs}, Precision) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} =
 	calendar:now_to_universal_time({MegaSecs, Secs,
 					MicroSecs}),
-    FracOfSec = round(MicroSecs / math:pow(10, 6 - Precision)),
-    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B:~2..0B.~*."
-                                 ".0BZ",
-                                 [Year, Month, Day, Hour, Minute, Second,
-                                  Precision, FracOfSec])).
+    Max = round(math:pow(10, Precision)),
+    case round(MicroSecs / math:pow(10, 6 - Precision)) of
+      Max ->
+	  now_to_utc_string({MegaSecs, Secs + 1, 0}, Precision);
+      FracOfSec ->
+	  list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0BT"
+				       "~2..0B:~2..0B:~2..0B.~*..0BZ",
+				       [Year, Month, Day, Hour, Minute, Second,
+					Precision, FracOfSec]))
+    end.
 
 -spec now_to_local_string(erlang:timestamp()) -> binary().
 
@@ -966,7 +973,7 @@ i2l(L, N) when is_binary(L) ->
       _ -> i2l(<<$0, L/binary>>, N)
     end.
 
--spec queue_drop_while(fun((term()) -> boolean()), queue()) -> queue().
+-spec queue_drop_while(fun((term()) -> boolean()), ?TQUEUE) -> ?TQUEUE.
 
 queue_drop_while(F, Q) ->
     case queue:peek(Q) of

@@ -5,7 +5,7 @@
 %%% Created : 27 Jan 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -138,13 +138,6 @@ build_script(Dir, UpdatedBeams) ->
 	  LowLevelScript,
 	  [{ejabberd, "", filename:join(Dir, "..")}]),
     Check1 = case Check of
-                 ok ->
-                     %% This clause is for OTP R14B03 and older.
-                     %% Newer Dialyzer reports a never match pattern; don't worry.
-                     ?DEBUG("script: ~p~n", [Script]),
-                     ?DEBUG("low level script: ~p~n", [LowLevelScript]),
-                     ?DEBUG("check: ~p~n", [Check]),
-                     ok;
                  {ok, []} ->
                      ?DEBUG("script: ~p~n", [Script]),
                      ?DEBUG("low level script: ~p~n", [LowLevelScript]),

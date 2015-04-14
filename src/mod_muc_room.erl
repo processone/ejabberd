@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -681,14 +681,11 @@ handle_event({service_message, Msg}, _StateName,
 			children =
 			    [#xmlel{name = <<"body">>, attrs = [],
 				    children = [{xmlcdata, Msg}]}]},
-    lists:foreach(
-      fun({_LJID, Info}) ->
-	      ejabberd_router:route(
-		StateData#state.jid,
-		Info#user.jid,
-		MessagePkt)
-      end,
-      ?DICT:to_list(StateData#state.users)),
+    send_multiple(
+      StateData#state.jid,
+      StateData#state.server_host,
+      StateData#state.users,
+      MessagePkt),
     NSD = add_message_to_history(<<"">>,
 				 StateData#state.jid, MessagePkt, StateData),
     {next_state, normal_state, NSD};
@@ -752,6 +749,9 @@ handle_sync_event({change_config, Config}, _From,
 handle_sync_event({change_state, NewStateData}, _From,
 		  StateName, _StateData) ->
     {reply, {ok, NewStateData}, StateName, NewStateData};
+handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData) ->
+    NSD = process_item_change(Item, StateData, UJID),
+    {reply, {ok, NSD}, StateName, NSD};
 handle_sync_event(_Event, _From, StateName,
 		  StateData) ->
     Reply = ok, {reply, Reply, StateName, StateData}.
@@ -942,16 +942,11 @@ process_groupchat_message(From,
 					      end,
 		 case IsAllowed of
 		   true ->
-			    lists:foreach(
-			      fun({_LJID, Info}) ->
-				      ejabberd_router:route(
-					jlib:jid_replace_resource(
-					  StateData#state.jid,
-					  FromNick),
-					Info#user.jid,
-					Packet)
-			      end,
-			      ?DICT:to_list(StateData#state.users)),
+			   send_multiple(
+			      jlib:jid_replace_resource(StateData#state.jid, FromNick),
+			      StateData#state.server_host,
+			      StateData#state.users,
+			      Packet),
 		       NewStateData2 = case has_body_or_subject(Packet) of
 			   true ->
 				add_message_to_history(FromNick, From,
@@ -2439,13 +2434,20 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 		    _ -> true
 		  end,
     TimeStamp = now(),
-    SenderJid = case
-		  (StateData#state.config)#config.anonymous
-		    of
-		  true -> StateData#state.jid;
-		  false -> FromJID
-		end,
-    TSPacket = jlib:add_delay_info(Packet, SenderJid, TimeStamp),
+    AddrPacket = case (StateData#state.config)#config.anonymous of
+		   true -> Packet;
+		   false ->
+		       Address = #xmlel{name = <<"address">>,
+					attrs = [{<<"type">>, <<"ofrom">>},
+						 {<<"jid">>,
+						  jlib:jid_to_string(FromJID)}],
+					children = []},
+		       Addresses = #xmlel{name = <<"addresses">>,
+					  attrs = [{<<"xmlns">>, ?NS_ADDRESS}],
+					  children = [Address]},
+		       xml:append_subtags(Packet, [Addresses])
+		 end,
+    TSPacket = jlib:add_delay_info(AddrPacket, StateData#state.jid, TimeStamp),
     SPacket =
 	jlib:replace_from_to(jlib:jid_replace_resource(StateData#state.jid,
 						       FromNick),
@@ -2612,114 +2614,7 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 		    "room ~s:~n ~p",
 		    [jlib:jid_to_string(UJID),
 		     jlib:jid_to_string(StateData#state.jid), Res]),
-	  NSD = lists:foldl(fun (E, SD) ->
-				    case catch case E of
-						 {JID, affiliation, owner, _}
-						     when JID#jid.luser ==
-							    <<"">> ->
-						     %% If the provided JID does not have username,
-						     %% forget the affiliation completely
-						     SD;
-						 {JID, role, none, Reason} ->
-						     catch
-						       send_kickban_presence(UJID, JID,
-									     Reason,
-									     <<"307">>,
-									     SD),
-						     set_role(JID, none, SD);
-						 {JID, affiliation, none,
-						  Reason} ->
-						     case
-						       (SD#state.config)#config.members_only
-							 of
-						       true ->
-							   catch
-							     send_kickban_presence(UJID, JID,
-										   Reason,
-										   <<"321">>,
-										   none,
-										   SD),
-							   SD1 =
-							       set_affiliation(JID,
-									       none,
-									       SD),
-							   set_role(JID, none,
-								    SD1);
-						       _ ->
-							   SD1 =
-							       set_affiliation(JID,
-									       none,
-									       SD),
-							   send_update_presence(JID,
-										SD1),
-							   SD1
-						     end;
-						 {JID, affiliation, outcast,
-						  Reason} ->
-						     catch
-						       send_kickban_presence(UJID, JID,
-									     Reason,
-									     <<"301">>,
-									     outcast,
-									     SD),
-						     set_affiliation(JID,
-								     outcast,
-								     set_role(JID,
-									      none,
-									      SD),
-								     Reason);
-						 {JID, affiliation, A, Reason}
-						     when (A == admin) or
-							    (A == owner) ->
-						     SD1 = set_affiliation(JID,
-									   A,
-									   SD,
-									   Reason),
-						     SD2 = set_role(JID,
-								    moderator,
-								    SD1),
-						     send_update_presence(JID,
-									  Reason,
-									  SD2),
-						     SD2;
-						 {JID, affiliation, member,
-						  Reason} ->
-						     SD1 = set_affiliation(JID,
-									   member,
-									   SD,
-									   Reason),
-						     SD2 = set_role(JID,
-								    participant,
-								    SD1),
-						     send_update_presence(JID,
-									  Reason,
-									  SD2),
-						     SD2;
-						 {JID, role, Role, Reason} ->
-						     SD1 = set_role(JID, Role,
-								    SD),
-						     catch
-						       send_new_presence(JID,
-									 Reason,
-									 SD1),
-						     SD1;
-						 {JID, affiliation, A,
-						  _Reason} ->
-						     SD1 = set_affiliation(JID,
-									   A,
-									   SD),
-						     send_update_presence(JID,
-									  SD1),
-						     SD1
-					       end
-					of
-				      {'EXIT', ErrReason} ->
-					  ?ERROR_MSG("MUC ITEMS SET ERR: ~p~n",
-						     [ErrReason]),
-					  SD;
-				      NSD -> NSD
-				    end
-			    end,
+	  NSD = lists:foldl(process_item_change(UJID),
 			    StateData, lists:flatten(Res)),
 	  case (NSD#state.config)#config.persistent of
 	    true ->
@@ -2730,6 +2625,79 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 	  end,
 	  {result, [], NSD};
       Err -> Err
+    end.
+
+process_item_change(UJID) ->
+    fun(E, SD) ->
+        process_item_change(E, SD, UJID)
+    end.
+
+process_item_change(E, SD, UJID) ->
+    case catch case E of
+        {JID, affiliation, owner, _} when JID#jid.luser == <<"">> ->
+            %% If the provided JID does not have username,
+            %% forget the affiliation completely
+            SD;
+        {JID, role, none, Reason} ->
+            catch
+                send_kickban_presence(UJID, JID,
+                    Reason,
+                    <<"307">>,
+                    SD),
+            set_role(JID, none, SD);
+        {JID, affiliation, none, Reason} ->
+            case (SD#state.config)#config.members_only of
+                true ->
+                    catch
+                        send_kickban_presence(UJID, JID,
+                            Reason,
+                            <<"321">>,
+                            none,
+                            SD),
+                    SD1 = set_affiliation(JID, none, SD),
+                    set_role(JID, none, SD1);
+                _ ->
+                    SD1 = set_affiliation(JID, none, SD),
+                    send_update_presence(JID, SD1),
+                    SD1
+            end;
+        {JID, affiliation, outcast, Reason} ->
+            catch
+                send_kickban_presence(UJID, JID,
+                    Reason,
+                    <<"301">>,
+                    outcast,
+                    SD),
+            set_affiliation(JID,
+                outcast,
+                set_role(JID, none, SD),
+                Reason);
+        {JID, affiliation, A, Reason}
+            when (A == admin) or (A == owner) ->
+            SD1 = set_affiliation(JID, A, SD, Reason),
+            SD2 = set_role(JID, moderator, SD1),
+            send_update_presence(JID, Reason, SD2),
+            SD2;
+        {JID, affiliation, member, Reason} ->
+            SD1 = set_affiliation(JID, member, SD, Reason),
+            SD2 = set_role(JID, participant, SD1),
+            send_update_presence(JID, Reason, SD2),
+            SD2;
+        {JID, role, Role, Reason} ->
+            SD1 = set_role(JID, Role, SD),
+            catch
+                send_new_presence(JID, Reason, SD1),
+            SD1;
+        {JID, affiliation, A, _Reason} ->
+            SD1 = set_affiliation(JID, A, SD),
+            send_update_presence(JID, SD1),
+            SD1
+    end
+    of
+        {'EXIT', ErrReason} ->
+            ?ERROR_MSG("MUC ITEMS SET ERR: ~p~n", [ErrReason]),
+            SD;
+        NSD -> NSD
     end.
 
 find_changed_items(_UJID, _UAffiliation, _URole, [],
@@ -4524,3 +4492,10 @@ has_body_or_subject(Packet) ->
 	(#xmlel{name = <<"subject">>}) -> false;
 	(_) -> true
     end, Packet#xmlel.children).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Multicast
+
+send_multiple(From, Server, Users, Packet) ->
+    JIDs = [ User#user.jid || {_, User} <- ?DICT:to_list(Users)],
+    ejabberd_router_multicast:route_multicast(From, Server, JIDs, Packet).

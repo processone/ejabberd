@@ -5,7 +5,7 @@
 %%% Created :  5 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -92,12 +92,13 @@ start_link(Host, Opts) ->
 start(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 temporary, 1000, worker, [?MODULE]},
+		 transient, 1000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ?GEN_SERVER:call(Proc, stop),
+    catch ?GEN_SERVER:call(Proc, stop),
+    supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc),
     ok.
 
@@ -107,7 +108,7 @@ stop(Host) ->
 %%====================================================================
 
 init([Host, Opts]) ->
-    case gen_mod:db_type(Opts) of
+    case gen_mod:db_type(Host, Opts) of
       mnesia ->
 	  mnesia:create_table(offline_msg,
 			      [{disc_only_copies, [node()]}, {type, bag},
@@ -235,7 +236,7 @@ store_offline_msg(Host, {User, _}, Msgs, Len, MaxOfflineMsgs,
                     Len + count_offline_messages(User, Host);
                true -> 0
             end,
-    if 
+    if
         Count > MaxOfflineMsgs ->
             discard_warn_sender(Msgs);
         true ->
@@ -560,7 +561,19 @@ remove_old_messages(Days, _LServer, mnesia) ->
 			     ok, offline_msg)
 	end,
     mnesia:transaction(F);
-remove_old_messages(_Days, _LServer, odbc) ->
+
+remove_old_messages(Days, LServer, odbc) ->
+    case catch ejabberd_odbc:sql_query(
+		 LServer,
+		 [<<"DELETE FROM spool"
+		   " WHERE created_at < "
+		   "DATE_SUB(CURDATE(), INTERVAL ">>,
+		  integer_to_list(Days), <<" DAY);">>]) of
+	{updated, N} ->
+	    ?INFO_MSG("~p message(s) deleted from offline spool", [N]);
+	_Error ->
+	    ?ERROR_MSG("Cannot delete message in offline spool: ~p", [_Error])
+    end,
     {atomic, ok};
 remove_old_messages(_Days, _LServer, riak) ->
     {atomic, ok}.
@@ -1044,10 +1057,7 @@ count_offline_messages(LUser, LServer, riak) ->
             Res;
         _ ->
             0
-    end;
-count_offline_messages(_Acc, User, Server) ->
-    N = count_offline_messages(User, Server),
-    {stop, N}.
+    end.
 
 %% Return the number of records matching a given match expression.
 %% This function is intended to be used inside a Mnesia transaction.
@@ -1085,14 +1095,10 @@ export(_Server) ->
                              packet = Packet})
             when LServer == Host ->
               Username = ejabberd_odbc:escape(LUser),
-              Packet1 =
-                  jlib:replace_from_to(jlib:jid_to_string(From),
-                                       jlib:jid_to_string(To), Packet),
-              Packet2 =
-                  jlib:add_delay_info(Packet1, LServer, TimeStamp,
-                                      <<"Offline Storage">>),
-              XML =
-                  ejabberd_odbc:escape(xml:element_to_binary(Packet2)),
+              Packet1 = jlib:replace_from_to(From, To, Packet),
+              Packet2 = jlib:add_delay_info(Packet1, LServer, TimeStamp,
+                                            <<"Offline Storage">>),
+              XML = ejabberd_odbc:escape(xml:element_to_binary(Packet2)),
               [[<<"delete from spool where username='">>, Username, <<"';">>],
                [<<"insert into spool(username, xml) values ('">>,
                 Username, <<"', '">>, XML, <<"');">>]];

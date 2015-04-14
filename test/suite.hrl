@@ -17,11 +17,25 @@
 
 -define(EJABBERD_CT_URI, <<"http://www.process-one.net/en/ejabberd_ct/">>).
 
+-define(recv1(P1),
+        P1 = (fun() ->
+                 V = recv(),
+                 case V of
+                     P1 -> V;
+                     _ -> suite:match_failure([V], [??P1])
+                 end
+         end)()).
+
 -define(recv2(P1, P2),
         (fun() ->
                  case {R1 = recv(), R2 = recv()} of
                      {P1, P2} -> {R1, R2};
-                     {P2, P1} -> {R2, R1}
+                     {P2, P1} -> {R2, R1};
+                     {P1, V1} -> suite:match_failure([V1], [P2]);
+                     {P2, V2} -> suite:match_failure([V2], [P1]);
+                     {V3, P1} -> suite:match_failure([V3], [P2]);
+                     {V4, P2} -> suite:match_failure([V4], [P1]);
+                     {V5, V6} -> suite:match_failure([V5, V6], [P1, P2])
                  end
          end)()).
 
@@ -30,7 +44,8 @@
                  case R3 = recv() of
                      P1 -> insert(R3, 1, ?recv2(P2, P3));
                      P2 -> insert(R3, 2, ?recv2(P1, P3));
-                     P3 -> insert(R3, 3, ?recv2(P1, P2))
+                     P3 -> insert(R3, 3, ?recv2(P1, P2));
+                     V -> suite:match_failure([V], [P1, P2, P3])
                  end
          end)()).
 
@@ -40,7 +55,8 @@
                      P1 -> insert(R4, 1, ?recv3(P2, P3, P4));
                      P2 -> insert(R4, 2, ?recv3(P1, P3, P4));
                      P3 -> insert(R4, 3, ?recv3(P1, P2, P4));
-                     P4 -> insert(R4, 4, ?recv3(P1, P2, P3))
+                     P4 -> insert(R4, 4, ?recv3(P1, P2, P3));
+                     V -> suite:match_failure([V], [P1, P2, P3, P4])
                  end
          end)()).
 
@@ -51,7 +67,8 @@
                      P2 -> insert(R5, 2, ?recv4(P1, P3, P4, P5));
                      P3 -> insert(R5, 3, ?recv4(P1, P2, P4, P5));
                      P4 -> insert(R5, 4, ?recv4(P1, P2, P3, P5));
-                     P5 -> insert(R5, 5, ?recv4(P1, P2, P3, P4))
+                     P5 -> insert(R5, 5, ?recv4(P1, P2, P3, P4));
+                     V -> suite:match_failure([V], [P1, P2, P3, P4, P5])
                  end
          end)()).
 
@@ -59,6 +76,7 @@
 -define(MNESIA_VHOST, <<"mnesia.localhost">>).
 -define(MYSQL_VHOST, <<"mysql.localhost">>).
 -define(PGSQL_VHOST, <<"pgsql.localhost">>).
+-define(SQLITE_VHOST, <<"sqlite.localhost">>).
 -define(LDAP_VHOST, <<"ldap.localhost">>).
 -define(EXTAUTH_VHOST, <<"extauth.localhost">>).
 -define(RIAK_VHOST, <<"riak.localhost">>).

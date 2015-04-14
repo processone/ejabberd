@@ -12,6 +12,8 @@ ERLANG_NODE=ejabberd@localhost
 # define default environment variables
 SCRIPT_DIR=`cd ${0%/*} && pwd`
 ERL={{erl}}
+IEX={{bindir}}/iex
+EPMD={{bindir}}/epmd
 INSTALLUSER={{installuser}}
 
 # Compatibility in ZSH
@@ -111,6 +113,7 @@ ERL_CRASH_DUMP=$LOGS_DIR/erl_crash_$DATETIME.dump
 ERL_INETRC=$ETC_DIR/inetrc
 
 # define erl parameters
+ERL_OPTIONS=$(echo $ERL_OPTIONS | sed 's/ /\\ /g')
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
 KERNEL_OPTS=""
 if [ "$FIREWALL_WINDOW" != "" ] ; then
@@ -128,6 +131,7 @@ if [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] ; then
 else
     NAME="-name"
 fi
+IEXNAME="-$NAME"
 
 # define ejabberd environment parameters
 if [ "$EJABBERD_CONFIG_PATH" != "${EJABBERD_CONFIG_PATH%.yml}" ] ; then
@@ -163,6 +167,7 @@ export ERL_EPMD_ADDRESS
 export ERL_INETRC
 export ERL_MAX_PORTS
 export ERL_MAX_ETS_TABLES
+export CONTRIB_MODULES_PATH
 
 # start server
 start()
@@ -185,6 +190,72 @@ start()
 # attach to server
 debug()
 {
+    debugwarning
+    TTY=`tty | sed -e  's/.*\///g'`
+    $EXEC_CMD "$ERL \
+      $NAME debug-${TTY}-${ERLANG_NODE} \
+      -remsh $ERLANG_NODE \
+      -hidden \
+      $KERNEL_OPTS \
+      $ERLANG_OPTS $ARGS \"$@\""
+}
+
+# attach to server using Elixir
+iexdebug()
+{
+    debugwarning
+    TTY=`tty | sed -e  's/.*\///g'`
+    # Elixir shell is hidden as default
+    $EXEC_CMD "$IEX \
+      $IEXNAME debug-${TTY}-${ERLANG_NODE} \
+      --remsh $ERLANG_NODE \
+      --erl \"$KERNEL_OPTS\" \
+      --erl \"$ERLANG_OPTS\" --erl \"$ARGS\" --erl \"$@\""
+}
+
+# start interactive server
+live()
+{
+    livewarning
+    $EXEC_CMD "$ERL \
+      $NAME $ERLANG_NODE \
+      -pa $EJABBERD_EBIN_PATH \
+      -pa $EJABBERD_EBIN_PATH/*/ebin \
+      -pa $EJABBERD_EBIN_PATH/*/deps/*/ebin \      
+      -mnesia dir \"\\\"$SPOOL_DIR\\\"\" \
+      $KERNEL_OPTS \
+      $EJABBERD_OPTS \
+      -s ejabberd \
+      $ERLANG_OPTS $ARGS \"$@\""
+}
+
+# start interactive server with Elixir
+iexlive()
+{
+    livewarning
+   
+    $EXEC_CMD "$IEX \
+      $IEXNAME $ERLANG_NODE \
+      -pa $EJABBERD_EBIN_PATH \
+      -pa $EJABBERD_EBIN_PATH/*/ebin \
+      -pa $EJABBERD_EBIN_PATH/*/deps/*/ebin \      
+      --erl \"-mnesia dir \\\"$SPOOL_DIR\\\"\" \
+      --erl \"$KERNEL_OPTS\" \
+      --erl \"$EJABBERD_OPTS\" \
+      --app ejabberd \
+      --erl \"$ERLANG_OPTS\" --erl $ARGS --erl \"$@\""
+}
+
+etop()
+{
+    $EXEC_CMD "$ERL \
+      $NAME debug-${TTY}-${ERLANG_NODE} \
+      -hidden -s etop -s erlang halt -output text -node $ERLANG_NODE"
+}
+
+# TODO: refactor debug warning and livewarning
+debugwarning()
+{
     if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
         echo "--------------------------------------------------------------------"
         echo ""
@@ -201,21 +272,13 @@ debug()
         echo "--------------------------------------------------------------------"
         echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
         echo "  EJABBERD_BYPASS_WARNINGS=true"
-        echo "Press any key to continue"
+        echo "Press return to continue"
         read foo
         echo ""
-    fi
-    TTY=`tty | sed -e  's/.*\///g'`
-    $EXEC_CMD "$ERL \
-      $NAME debug-${TTY}-${ERLANG_NODE} \
-      -remsh $ERLANG_NODE \
-      -hidden \
-      $KERNEL_OPTS \
-      $ERLANG_OPTS $ARGS \"$@\""
+    fi    
 }
 
-# start interactive server
-live()
+livewarning()
 {
     check_start
     if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
@@ -233,36 +296,22 @@ live()
         echo "--------------------------------------------------------------------"
         echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
         echo "  EJABBERD_BYPASS_WARNINGS=true"
-        echo "Press any key to continue"
+        echo "Press return to continue"
         read foo
         echo ""
     fi
-    $EXEC_CMD "$ERL \
-      $NAME $ERLANG_NODE \
-      -pa $EJABBERD_EBIN_PATH \
-      -pa $EJABBERD_EBIN_PATH/*/ebin \
-      -pa $EJABBERD_EBIN_PATH/*/deps/*/ebin \
-      -mnesia dir \"\\\"$SPOOL_DIR\\\"\" \
-      $KERNEL_OPTS \
-      $EJABBERD_OPTS \
-      -s ejabberd \
-      $ERLANG_OPTS $ARGS \"$@\""
 }
 
-etop()
-{
-    $EXEC_CMD "$ERL \
-      $NAME debug-${TTY}-${ERLANG_NODE} \
-      -hidden -s etop -s erlang halt -output text -node $ERLANG_NODE"
-}
-
+# TODO: Make iex command display only if ejabberd Elixir support has been enabled
 help()
 {
     echo ""
     echo "Commands to start an ejabberd node:"
-    echo "  start  Start an ejabberd node in server mode"
-    echo "  debug  Attach an interactive Erlang shell to a running ejabberd node"
-    echo "  live   Start an ejabberd node in live (interactive) mode"
+    echo "  start    Start an ejabberd node in server mode"
+    echo "  debug    Attach an interactive Erlang shell to a running ejabberd node"
+    echo "  iexdebug Attach an interactive Elixir shell to a running ejabberd node"
+    echo "  live     Start an ejabberd node in live (interactive) mode"
+    echo "  iexlive  Start an ejabberd node in live (interactive) mode, within an Elixir shell"
     echo ""
     echo "Optional parameters when starting an ejabberd node:"
     echo "  --config-dir dir   Config ejabberd:    $ETC_DIR"
@@ -368,13 +417,13 @@ ctlexec()
 # stop epmd if there is no other running node
 stop_epmd()
 {
-    epmd -names 2>/dev/null | grep -q name || epmd -kill >/dev/null
+    $EPMD -names 2>/dev/null | grep -q name || epmd -kill >/dev/null
 }
 
 # make sure node not already running and node name unregistered
 check_start()
 {
-    epmd -names 2>/dev/null | grep -q " ${ERLANG_NODE%@*} " && {
+    $EPMD -names 2>/dev/null | grep -q " ${ERLANG_NODE%@*} " && {
         ps ux | grep -v grep | grep -q " $ERLANG_NODE " && {
             echo "ERROR: The ejabberd node '$ERLANG_NODE' is already running."
             exit 4
@@ -385,10 +434,20 @@ check_start()
                 echo "Shutdown all other erlang nodes, and call 'epmd -kill'."
                 exit 5
             } || {
-                epmd -kill >/dev/null
+                $EPMD -kill >/dev/null
             }
         }
     }
+}
+
+# cluster setup
+join_cluster()
+{
+    $EJABBERD_BIN_PATH/joincluster $*
+}
+leave_cluster()
+{
+    $EJABBERD_BIN_PATH/leavecluster $*
 }
 
 # allow sync calls
@@ -415,9 +474,13 @@ wait_for_status()
 case $ARGS in
     ' start') start;;
     ' debug') debug;;
+    ' iexdebug') iexdebug;;
     ' live') live;;
+    ' iexlive') iexlive;;
     ' etop') etop;;
     ' started') wait_for_status 0 30 2;; # wait 30x2s before timeout
     ' stopped') wait_for_status 3 15 2 && stop_epmd;; # wait 15x2s before timeout
+    ' join_cluster'*) join_cluster ${ARGS# join_cluster};;
+    ' leave_cluster'*) leave_cluster ${ARGS# leave_cluster};;
     *) ctl $ARGS;;
 esac

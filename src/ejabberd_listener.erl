@@ -5,7 +5,7 @@
 %%% Created : 16 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -195,20 +195,14 @@ listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
 	    ets:delete(listen_sockets, Port),
 	    ListenSocket;
 	_ ->
-	    SockOpts2 = try erlang:system_info(otp_release) >= "R13B" of
-			    true -> [{send_timeout_close, true} | SockOpts];
-			    false -> SockOpts
-			catch
-			    _:_ -> []
-			end,
 	    Res = gen_tcp:listen(Port, [binary,
 					{packet, 0},
 					{active, false},
 					{reuseaddr, true},
 					{nodelay, true},
 					{send_timeout, ?TCP_SEND_TIMEOUT},
-					{keepalive, true} |
-					SockOpts2]),
+					{send_timeout_close, true},
+					{keepalive, true}]),
 	    case Res of
 		{ok, ListenSocket} ->
 		    ListenSocket;
@@ -546,7 +540,7 @@ normalize_proto(UnknownProto) ->
 socket_error(Reason, PortIP, Module, SockOpts, Port, IPS) ->
     ReasonT = case Reason of
 		  eaddrnotavail ->
-		      "IP address not available: " ++ IPS;
+		      "IP address not available: " ++ binary_to_list(IPS);
 		  eaddrinuse ->
 		      "IP address and port number already used: "
 			  ++binary_to_list(IPS)++" "++integer_to_list(Port);

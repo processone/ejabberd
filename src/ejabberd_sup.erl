@@ -5,7 +5,7 @@
 %%% Created : 31 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -62,13 +62,13 @@ init([]) ->
 	 brutal_kill,
 	 worker,
 	 [ejabberd_router]},
-    SM =
-	{ejabberd_sm,
-	 {ejabberd_sm, start_link, []},
+    Router_multicast =
+	{ejabberd_router_multicast,
+	 {ejabberd_router_multicast, start_link, []},
 	 permanent,
 	 brutal_kill,
 	 worker,
-	 [ejabberd_sm]},
+	 [ejabberd_router_multicast]},
     S2S =
 	{ejabberd_s2s,
 	 {ejabberd_s2s, start_link, []},
@@ -173,7 +173,7 @@ init([]) ->
 	   NodeGroups,
 	   SystemMonitor,
 	   Router,
-	   SM,
+	   Router_multicast,
 	   S2S,
 	   Local,
 	   Captcha,

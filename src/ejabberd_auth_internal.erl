@@ -5,7 +5,7 @@
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -77,10 +77,7 @@ update_reg_users_counter_table(Server) ->
     mnesia:sync_dirty(F).
 
 plain_password_required() ->
-    case is_scrammed() of
-      false -> false;
-      true -> true
-    end.
+    is_scrammed().
 
 store_type() ->
     case is_scrammed() of
@@ -150,7 +147,7 @@ set_password(User, Server, Password) ->
 	   ok
     end.
 
-%% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, invalid_jid} | {aborted, Reason}
+%% @spec (User, Server, Password) -> {atomic, ok} | {atomic, exists} | {error, invalid_jid} | {error, not_allowed} | {error, Reason}
 try_register(User, Server, PasswordList) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),

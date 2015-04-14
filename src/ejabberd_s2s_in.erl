@@ -5,7 +5,7 @@
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -58,7 +58,7 @@
          server = <<"">>             :: binary(),
 	 authenticated = false       :: boolean(),
          auth_domain = <<"">>        :: binary(),
-	 connections = (?DICT):new() :: dict(),
+	 connections = (?DICT):new() :: ?TDICT,
          timer = make_ref()          :: reference()}).
 
 %-define(DBGFSM, true).

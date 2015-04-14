@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 12 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%
-%%% ejabberd, Copyright (C) 2013   ProcessOne
+%%% ejabberd, Copyright (C) 2013-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -46,8 +46,10 @@
 %% If not defined it checks the environment variable EJABBERD_LOG_PATH.
 %% And if that one is neither defined, returns the default value:
 %% "ejabberd.log" in current directory.
+%% Note: If the directory where to place the ejabberd log file to not exist,
+%% it is not created and no log file will be generated.
 get_log_path() ->
-    case application:get_env(ejabberd, log_path) of
+    case ejabberd_config:env_binary_to_list(ejabberd, log_path) of
 	{ok, Path} ->
 	    Path;
 	undefined ->
@@ -61,9 +63,9 @@ get_log_path() ->
 
 -ifdef(LAGER).
 
-get_pos_integer_env(Name, Default) ->
+get_integer_env(Name, Default) ->
     case application:get_env(ejabberd, Name) of
-        {ok, I} when is_integer(I), I>0 ->
+        {ok, I} when is_integer(I), I>=0 ->
             I;
         undefined ->
             Default;
@@ -73,7 +75,7 @@ get_pos_integer_env(Name, Default) ->
                                    [Name, Junk, Default]),
             Default
     end.
-get_pos_string_env(Name, Default) ->
+get_string_env(Name, Default) ->
     case application:get_env(ejabberd, Name) of
         {ok, L} when is_list(L) ->
             L;
@@ -94,10 +96,10 @@ start() ->
     Dir = filename:dirname(ConsoleLog),
     ErrorLog = filename:join([Dir, "error.log"]),
     CrashLog = filename:join([Dir, "crash.log"]),
-    LogRotateDate = get_pos_string_env(log_rotate_date, ""),
-    LogRotateSize = get_pos_integer_env(log_rotate_size, 10*1024*1024),
-    LogRotateCount = get_pos_integer_env(log_rotate_count, 1),
-    LogRateLimit = get_pos_integer_env(log_rate_limit, 100),
+    LogRotateDate = get_string_env(log_rotate_date, ""),
+    LogRotateSize = get_integer_env(log_rotate_size, 10*1024*1024),
+    LogRotateCount = get_integer_env(log_rotate_count, 1),
+    LogRateLimit = get_integer_env(log_rate_limit, 100),
     application:set_env(lager, error_logger_hwm, LogRateLimit),
     application:set_env(
       lager, handlers,

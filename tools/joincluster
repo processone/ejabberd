@@ -1,0 +1,152 @@
+#!/bin/bash
+
+# Add the current ejabberd node in a cluster
+
+# copyright (c) 2010-2015 ProcessOne
+#
+# This script is proprietary software and cannot be published or redistribute.
+
+# Return Code:
+#  0 : groovy baby
+# 11 : erl not found
+# 12 : erlc not found
+# 20 : database dir doesn't exist
+# 21 : database dir not writable
+# 21 : database dir variable not set
+# 30 : network issue
+# 31 : node names incompatibility
+
+function error
+{
+    echo "Error: $1" >&2
+    exit $2
+}
+
+echo "--------------------------------------------------------------------"
+echo ""
+echo "ejabberd cluster configuration"
+echo ""
+echo "This ejabberd node will be configured for use in an ejabberd cluster."
+echo "IMPORTANT: all local data from the database will be lost, and"
+echo "cluster database will be initialized. All data from the master"
+echo "node will be replicated to this one."
+echo ""
+echo "--------------------------------------------------------------------"
+echo "Press any key to continue, or Ctrl+C to stop now"
+read foo
+echo ""
+
+[ $# -eq 0 ] && {
+    echo "Make sure you have a running remote master ejabberd node"
+    echo "Before continuing, you must copy the ~/.erlang.cookie file from"
+    echo "remote master node and check ejabberd.cfg compatibility."
+    echo "e.g. hosts definition must match on all nodes"
+    echo ""
+    echo "The remote master node name is defined as ERLANG_NODE into"
+    echo "ejabberdctl.cfg on that remote node."
+    echo ""
+    echo -n "Remote master node name: "
+    read REMOTE
+    echo ""
+} || {
+    echo "Using passed parameter for remote master node name: $1"
+    REMOTE=$1
+}
+
+cont=Y
+ping -q -c 1 ${REMOTE#*@} 2>/dev/null >/dev/null
+[ $? -eq 0 ] || {
+    echo "Cannot ping ${REMOTE#*@}. Are you sure network setup is correct ?"
+    echo -n "Should we continue anyway ? (Y/n) "
+    read cont
+}
+cont=`echo $cont | tr a-z A-Z`
+[ "$cont" == "Y" ] || error "Check your network configuration (dns, firewall, etc...)" 30
+
+HERE=`which "$0"`
+BASE=`dirname $HERE`/..
+ROOTDIR=`cd $BASE; pwd`
+. $ROOTDIR/bin/ejabberdctl stop 2>/dev/null >/dev/null
+NAME=-name
+[ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && NAME=-sname
+PA=/tmp/clustersetup_$$
+CLUSTERSETUP=clustersetup
+CLUSTERSETUP_ERL=$PA/$CLUSTERSETUP.erl
+
+REMOTENAME=-name
+[ "$REMOTE" = "${REMOTE%.*}" ] && REMOTENAME=-sname
+[ "$REMOTENAME" = "$NAME" ] || {
+    echo "IMPORTANT!: node names are incompatible"
+    echo "Remote node name is $REMOTE"
+    echo "Local node name is $ERLANG_NODE"
+    echo ""
+    echo "Both node names must be short or fqdn names."
+    echo "Using short and fqdn names is impossible."
+    echo ""
+    error "incompatible node names" 31
+}
+
+set -o errexit
+set -o nounset
+
+echo "Using commands:"
+which erl  || error "can't find erl"  11
+which erlc || error "can't find erlc" 12
+echo ""
+
+[ -d $SPOOL_DIR ] && rm -Rf $SPOOL_DIR
+mkdir $SPOOL_DIR || error "$SPOOL_DIR cannot be created" 20
+[ -w $SPOOL_DIR ] || error "$SPOOL_DIR directory is not writable" 21
+
+cd $ROOTDIR
+mkdir -p $PA
+cat <<EOF > $CLUSTERSETUP_ERL
+-module($CLUSTERSETUP).
+
+-export([start/0]).
+
+set_table_copy(Table, _Node, {badrpc, Reason}) ->
+    io:format("Error: cannot get storage type for table ~p on node $REMOTE:~n ~p~n",[Table, Reason]);
+set_table_copy(Table, Node, Type) ->
+    io:format("setting table ~p to mode ~p~n",[Table, Type]),
+    case mnesia:add_table_copy(Table, Node, Type) of
+    {aborted, _} ->
+        mnesia:change_table_copy_type(Table, Node, Type);
+    _ ->
+        ok
+    end.
+
+set_tables({badrpc, Reason}) ->
+    io:format("ERROR: cannot get tables list on $REMOTE : ~p~n",[Reason]);
+set_tables([]) ->
+    ok;
+set_tables([schema | Tables]) ->
+    set_tables(Tables);
+set_tables([s2s | Tables]) ->
+    set_tables(Tables);
+set_tables([session | Tables]) ->
+    set_tables(Tables);
+set_tables([Table | Tables]) ->
+    set_table_copy(Table, node(),
+                   rpc:call('$REMOTE', mnesia, table_info, [Table, storage_type])),
+    set_tables(Tables).
+
+start() ->
+    io:format("~n",[]),
+    R = case net_adm:ping('$REMOTE') of
+        pong ->
+            set_table_copy(schema, node(), disc_copies),
+            set_tables(rpc:call('$REMOTE', mnesia, system_info, [tables])),
+            0;
+        pang ->
+            io:format("node ~p is not reachable, please check epmd port, and FIREWALL_WINDOW ports~n", ['$REMOTE']),
+            1
+    end,
+    halt(R).
+EOF
+erlc -o $PA $CLUSTERSETUP_ERL
+sh -c "erl $NAME $ERLANG_NODE -pa $PA $KERNEL_OPTS -mnesia extra_db_nodes \"['$REMOTE']\" dir \"\\\"$SPOOL_DIR\\\"\" -s mnesia -s $CLUSTERSETUP start"
+rm -Rf $PA
+
+echo "End."
+echo "Check that there is no error in the above messages."

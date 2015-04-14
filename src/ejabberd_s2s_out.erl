@@ -5,7 +5,7 @@
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -77,7 +77,7 @@
          try_auth = true                  :: boolean(),
          myname = <<"">>                  :: binary(),
          server = <<"">>                  :: binary(),
-	 queue = queue:new()              :: queue(),
+	 queue = queue:new()              :: ?TQUEUE,
          delay_to_retry = undefined_delay :: undefined_delay | non_neg_integer(),
          new = false                      :: false | binary(),
 	 verify = false                   :: false | {pid(), binary(), binary()},

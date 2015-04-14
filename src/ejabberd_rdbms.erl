@@ -5,7 +5,7 @@
 %%% Created : 31 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -74,10 +74,12 @@ needs_odbc(Host) ->
     case ejabberd_config:get_option({odbc_type, LHost},
                                     fun(mysql) -> mysql;
                                        (pgsql) -> pgsql;
+                                       (sqlite) -> sqlite;
                                        (odbc) -> odbc
                                     end, undefined) of
         mysql -> {true, p1_mysql};
         pgsql -> {true, p1_pgsql};
+        sqlite -> {true, sqlite3};
         odbc -> {true, odbc};
         undefined -> false
     end.

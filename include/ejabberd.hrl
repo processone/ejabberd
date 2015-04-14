@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -18,8 +18,9 @@
 %%%
 %%%----------------------------------------------------------------------
 
-%% This macro returns a string of the ejabberd version running, e.g. "2.3.4"
-%% If the ejabberd application description isn't loaded, returns atom: undefined
+-ifndef(EJABBERD_HRL).
+-define(EJABBERD_HRL, true).
+
 -define(VERSION, ejabberd_config:get_version()).
 
 -define(MYHOSTS, ejabberd_config:get_myhosts()).
@@ -29,6 +30,8 @@
 -define(MYLANG, ejabberd_config:get_mylang()).
 
 -define(MSGS_DIR, filename:join(["priv", "msgs"])).
+
+-define(SQL_DIR, filename:join(["priv", "sql"])).
 
 -define(CONFIG_PATH, <<"ejabberd.cfg">>).
 
@@ -49,3 +52,21 @@
 -type scram() :: #scram{}.
 
 -define(SCRAM_DEFAULT_ITERATION_COUNT, 4096).
+
+-ifdef(ERL_DEPRECATED_TYPES).
+
+-define(TDICT, dict()).
+-define(TGB_TREE, gb_tree()).
+-define(TGB_SET, gb_set()).
+-define(TQUEUE, queue()).
+
+-else.
+
+-define(TDICT, dict:dict()).
+-define(TGB_TREE, gb_trees:tree()).
+-define(TGB_SET, gb_set:set()).
+-define(TQUEUE, queue:queue()).
+
+-endif.
+
+-endif.

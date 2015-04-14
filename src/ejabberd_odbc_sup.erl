@@ -5,7 +5,7 @@
 %%% Created : 22 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -67,6 +67,19 @@ init([Host]) ->
                       {odbc_start_interval, Host},
                       fun(I) when is_integer(I), I>0 -> I end,
                       ?DEFAULT_ODBC_START_INTERVAL),
+    Type = ejabberd_config:get_option({odbc_type, Host},
+                                      fun(mysql) -> mysql;
+                                         (pgsql) -> pgsql;
+                                         (sqlite) -> sqlite;
+                                         (odbc) -> odbc
+                                      end, odbc),
+    case Type of
+        sqlite ->
+            check_sqlite_db(Host);
+        _ ->
+            ok
+    end,
+
     {ok,
      {{one_for_one, PoolSize * 10, 1},
       lists:map(fun (I) ->
@@ -113,5 +126,82 @@ transform_options({odbc_server, {mysql, Server, DB, User, Pass}}, Opts) ->
     transform_options({odbc_server, {mysql, Server, ?MYSQL_PORT, DB, User, Pass}}, Opts);
 transform_options({odbc_server, {pgsql, Server, DB, User, Pass}}, Opts) ->
     transform_options({odbc_server, {pgsql, Server, ?PGSQL_PORT, DB, User, Pass}}, Opts);
+transform_options({odbc_server, {sqlite, DB}}, Opts) ->
+    transform_options({odbc_server, {sqlite, DB}}, Opts);
 transform_options(Opt, Opts) ->
     [Opt|Opts].
+
+check_sqlite_db(Host) ->
+    DB = ejabberd_odbc:sqlite_db(Host),
+    File = ejabberd_odbc:sqlite_file(Host),
+    Ret = case filelib:ensure_dir(File) of
+	      ok ->
+		  case sqlite3:open(DB, [{file, File}]) of
+		      {ok, _Ref} -> ok;
+		      {error, {already_started, _Ref}} -> ok;
+		      {error, R} -> {error, R}
+		  end;
+	      Err ->
+		  Err
+	  end,
+    case Ret of
+        ok ->
+	    sqlite3:sql_exec(DB, "pragma foreign_keys = on"),
+            case sqlite3:list_tables(DB) of
+                [] ->
+                    create_sqlite_tables(DB),
+                    sqlite3:close(DB),
+                    ok;
+                [_H | _] ->
+                    ok
+            end;
+        {error, Reason} ->
+            ?INFO_MSG("Failed open sqlite database, reason ~p", [Reason])
+    end.
+
+create_sqlite_tables(DB) ->
+    SqlDir = case code:priv_dir(ejabberd) of
+                 {error, _} ->
+                     ?SQL_DIR;
+                 PrivDir ->
+                     filename:join(PrivDir, "sql")
+             end,
+    File = filename:join(SqlDir, "lite.sql"),
+    case file:open(File, [read, binary]) of
+        {ok, Fd} ->
+            Qs = read_lines(Fd, File, []),
+            ok = sqlite3:sql_exec(DB, "begin"),
+            [ok = sqlite3:sql_exec(DB, Q) || Q <- Qs],
+            ok = sqlite3:sql_exec(DB, "commit");
+        {error, Reason} ->
+            ?INFO_MSG("Failed to read SQLite schema file: ~s",
+		      [file:format_error(Reason)])
+    end.
+
+read_lines(Fd, File, Acc) ->
+    case file:read_line(Fd) of
+        {ok, Line} ->
+            NewAcc = case str:strip(str:strip(Line, both, $\r), both, $\n) of
+                         <<"--", _/binary>> ->
+                             Acc;
+                         <<>> ->
+                             Acc;
+                         _ ->
+                             [Line|Acc]
+                     end,
+            read_lines(Fd, File, NewAcc);
+        eof ->
+            QueryList = str:tokens(list_to_binary(lists:reverse(Acc)), <<";">>),
+            lists:flatmap(
+              fun(Query) ->
+                      case str:strip(str:strip(Query, both, $\r), both, $\n) of
+                          <<>> ->
+                              [];
+                          Q ->
+                              [<<Q/binary, $;>>]
+                      end
+              end, QueryList);
+        {error, _} = Err ->
+            ?ERROR_MSG("Failed read from lite.sql, reason: ~p", [Err]),
+            []
+    end.

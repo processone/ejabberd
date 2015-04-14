@@ -1,5 +1,5 @@
 --
--- ejabberd, Copyright (C) 2002-2014   ProcessOne
+-- ejabberd, Copyright (C) 2002-2015   ProcessOne
 --
 -- This program is free software; you can redistribute it and/or
 -- modify it under the terms of the GNU General Public License as
@@ -22,6 +22,10 @@ CREATE TABLE users (
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
+-- To support SCRAM auth:
+-- ALTER TABLE users ADD COLUMN serverkey text NOT NULL DEFAULT '';
+-- ALTER TABLE users ADD COLUMN salt text NOT NULL DEFAULT '';
+-- ALTER TABLE users ADD COLUMN iterationcount integer NOT NULL DEFAULT 0;
 
 CREATE TABLE last (
     username text PRIMARY KEY,
@@ -160,6 +164,8 @@ CREATE TABLE privacy_list_data (
     match_presence_in boolean NOT NULL,
     match_presence_out boolean NOT NULL
 );
+
+CREATE INDEX i_privacy_list_data_id ON privacy_list_data USING btree (id);
 
 CREATE TABLE private_storage (
     username text NOT NULL,

@@ -2,463 +2,852 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ejabberd 2.1.x\n"
 "PO-Revision-Date: 2012-04-16 15:48+0900\n"
-"Last-Translator: Mako N <mako@pasero.net>\n"
+"Last-Translator: Tsukasa Hamano <code@cuspy.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Japanese (日本語)\n"
 "X-Additional-Translator: Tsukasa Hamano <code@cuspy.org>\n"
+"X-Additional-Translator: Mako N <mako@pasero.net>\n"
 
-#: ejabberd_c2s.erl:424 ejabberd_c2s.erl:727
+#: ejabberd_c2s.erl:526 ejabberd_c2s.erl:873
 msgid "Use of STARTTLS required"
 msgstr "STARTTLS の使用が必要です"
 
-#: ejabberd_c2s.erl:503
+#: ejabberd_c2s.erl:624
 msgid "No resource provided"
 msgstr "リソースが提供されませんでした"
 
-#: ejabberd_c2s.erl:1197
+#: ejabberd_c2s.erl:1397
 msgid "Replaced by new connection"
 msgstr "新しいコネクションによって置き換えられました"
 
-#: ejabberd_c2s.erl:1885
-msgid "Your active privacy list has denied the routing of this stanza."
-msgstr "あなたのプライバシーリストはこのスタンザのルーティングを拒否しました。"
+#: ejabberd_c2s.erl:1401 mod_configure.erl:1855 mod_muc_log.erl:469
+#: mod_muc_log.erl:472
+msgid "has been kicked"
+msgstr "はキックされました"
 
-#: ejabberd_captcha.erl:96 ejabberd_captcha.erl:152 ejabberd_captcha.erl:178
+#: ejabberd_c2s.erl:2504
+msgid "Too many unacked stanzas"
+msgstr "多くのスタンザが応答していません"
+
+#: ejabberd_captcha.erl:125 ejabberd_captcha.erl:248 ejabberd_captcha.erl:293
 msgid "Enter the text you see"
 msgstr "見えているテキストを入力してください"
 
-#: ejabberd_captcha.erl:101
+#: ejabberd_captcha.erl:150
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
 "~s 宛のメッセージはブロックされています。解除するにはこちらを見てください ~s"
 
-#: ejabberd_captcha.erl:134
+#: ejabberd_captcha.erl:195
 msgid "If you don't see the CAPTCHA image here, visit the web page."
 msgstr ""
 "ここに CAPTCHA 画像が表示されない場合、ウェブページを参照してください。"
 
-#: ejabberd_captcha.erl:146
+#: ejabberd_captcha.erl:230
 msgid "CAPTCHA web page"
 msgstr "CAPTCHA ウェブページ"
 
-#: ejabberd_captcha.erl:307
+#: ejabberd_captcha.erl:396
 msgid "The CAPTCHA is valid."
 msgstr "CAPTCHA は有効です。"
 
-#: mod_adhoc.erl:95 mod_adhoc.erl:125 mod_adhoc.erl:143 mod_adhoc.erl:161
-msgid "Commands"
-msgstr "コマンド"
+#: ejabberd_web_admin.erl:201 ejabberd_web_admin.erl:213
+#: ejabberd_web_admin.erl:233 ejabberd_web_admin.erl:245
+msgid "Unauthorized"
+msgstr "認証されていません"
 
-#: mod_adhoc.erl:149 mod_adhoc.erl:243
-msgid "Ping"
-msgstr "Ping"
+#: ejabberd_web_admin.erl:302 ejabberd_web_admin.erl:334
+msgid "ejabberd Web Admin"
+msgstr "ejabberd ウェブ管理"
 
-#: mod_adhoc.erl:260
-msgid "Pong"
-msgstr "Pong"
+#: ejabberd_web_admin.erl:592 ejabberd_web_admin.erl:603
+msgid "Administration"
+msgstr "管理"
 
-#: mod_announce.erl:507 mod_announce_odbc.erl:499
-msgid "Really delete message of the day?"
-msgstr "本当にお知らせメッセージを削除しますか ?"
-
-#: mod_announce.erl:515 mod_announce_odbc.erl:507 mod_configure.erl:1083
-#: mod_configure.erl:1128
-msgid "Subject"
-msgstr "題"
-
-#: mod_announce.erl:520 mod_announce_odbc.erl:512 mod_configure.erl:1088
-#: mod_configure.erl:1133
-msgid "Message body"
-msgstr "本文"
-
-#: mod_announce.erl:600 mod_announce_odbc.erl:592
-msgid "No body provided for announce message"
-msgstr "アナウンスメッセージはありませんでした"
-
-#: mod_announce.erl:635 mod_announce_odbc.erl:627
-msgid "Announcements"
-msgstr "アナウンス"
-
-#: mod_announce.erl:637 mod_announce_odbc.erl:629
-msgid "Send announcement to all users"
-msgstr "すべてのユーザーにアナウンスを送信"
-
-#: mod_announce.erl:639 mod_announce_odbc.erl:631
-msgid "Send announcement to all users on all hosts"
-msgstr "全ホストのユーザーにアナウンスを送信"
-
-#: mod_announce.erl:641 mod_announce_odbc.erl:633
-msgid "Send announcement to all online users"
-msgstr "すべてのオンラインユーザーにアナウンスを送信"
-
-#: mod_announce.erl:643 mod_announce_odbc.erl:635 mod_configure.erl:1078
-#: mod_configure.erl:1123
-msgid "Send announcement to all online users on all hosts"
-msgstr "全ホストのオンラインユーザーにアナウンスを送信"
-
-#: mod_announce.erl:645 mod_announce_odbc.erl:637
-msgid "Set message of the day and send to online users"
-msgstr "お知らせメッセージを設定し、オンラインユーザーに送信"
-
-#: mod_announce.erl:647 mod_announce_odbc.erl:639
-msgid "Set message of the day on all hosts and send to online users"
-msgstr "全ホストのお知らせメッセージを設定し、オンラインユーザーに送信"
-
-#: mod_announce.erl:649 mod_announce_odbc.erl:641
-msgid "Update message of the day (don't send)"
-msgstr "お知らせメッセージを更新 (送信しない)"
-
-#: mod_announce.erl:651 mod_announce_odbc.erl:643
-msgid "Update message of the day on all hosts (don't send)"
-msgstr "全ホストのお知らせメッセージを更新 (送信しない)"
-
-#: mod_announce.erl:653 mod_announce_odbc.erl:645
-msgid "Delete message of the day"
-msgstr "お知らせメッセージを削除"
-
-#: mod_announce.erl:655 mod_announce_odbc.erl:647
-msgid "Delete message of the day on all hosts"
-msgstr "全ホストのお知らせメッセージを削除"
-
-#: mod_configure.erl:114 mod_configure.erl:274 mod_configure.erl:296
-#: mod_configure.erl:498
-msgid "Configuration"
-msgstr "設定"
-
-#: mod_configure.erl:125 mod_configure.erl:576 web/ejabberd_web_admin.erl:1936
-msgid "Database"
-msgstr "データーベース"
-
-#: mod_configure.erl:127 mod_configure.erl:595
-msgid "Start Modules"
-msgstr "モジュールを起動"
-
-#: mod_configure.erl:129 mod_configure.erl:596
-msgid "Stop Modules"
-msgstr "モジュールを停止"
-
-#: mod_configure.erl:131 mod_configure.erl:604 web/ejabberd_web_admin.erl:1937
-msgid "Backup"
-msgstr "バックアップ"
-
-#: mod_configure.erl:133 mod_configure.erl:605
-msgid "Restore"
-msgstr "リストア"
-
-#: mod_configure.erl:135 mod_configure.erl:606
-msgid "Dump to Text File"
-msgstr "テキストファイルに出力"
-
-#: mod_configure.erl:137 mod_configure.erl:615
-msgid "Import File"
-msgstr "ファイルからインポート"
-
-#: mod_configure.erl:139 mod_configure.erl:616
-msgid "Import Directory"
-msgstr "ディレクトリインポート"
-
-#: mod_configure.erl:141 mod_configure.erl:581 mod_configure.erl:1057
-msgid "Restart Service"
-msgstr "サービスを再起動"
-
-#: mod_configure.erl:143 mod_configure.erl:582 mod_configure.erl:1102
-msgid "Shut Down Service"
-msgstr "サービスを停止"
-
-#: mod_configure.erl:145 mod_configure.erl:518 mod_configure.erl:1197
-#: web/ejabberd_web_admin.erl:1527
-msgid "Add User"
-msgstr "ユーザーを追加"
-
-#: mod_configure.erl:147 mod_configure.erl:519 mod_configure.erl:1219
-msgid "Delete User"
-msgstr "ユーザーを削除"
-
-#: mod_configure.erl:149 mod_configure.erl:520 mod_configure.erl:1231
-msgid "End User Session"
-msgstr "エンドユーザーセッション"
-
-#: mod_configure.erl:151 mod_configure.erl:521 mod_configure.erl:1243
-#: mod_configure.erl:1255
-msgid "Get User Password"
-msgstr "パスワードを取得"
-
-#: mod_configure.erl:153 mod_configure.erl:522
-msgid "Change User Password"
-msgstr "パスワードを変更"
-
-#: mod_configure.erl:155 mod_configure.erl:523 mod_configure.erl:1272
-msgid "Get User Last Login Time"
-msgstr "最終ログイン時間を取得"
-
-#: mod_configure.erl:157 mod_configure.erl:524 mod_configure.erl:1284
-msgid "Get User Statistics"
-msgstr "ユーザー統計を取得"
-
-#: mod_configure.erl:159 mod_configure.erl:525
-msgid "Get Number of Registered Users"
-msgstr "登録ユーザー数を取得"
-
-#: mod_configure.erl:161 mod_configure.erl:526
-msgid "Get Number of Online Users"
-msgstr "オンラインユーザー数を取得"
-
-#: mod_configure.erl:163 mod_configure.erl:509 web/ejabberd_web_admin.erl:831
-#: web/ejabberd_web_admin.erl:872
+#: ejabberd_web_admin.erl:660 ejabberd_web_admin.erl:696 mod_configure.erl:197
+#: mod_configure.erl:533
 msgid "Access Control Lists"
 msgstr "アクセスコントロールリスト"
 
-#: mod_configure.erl:165 mod_configure.erl:510 web/ejabberd_web_admin.erl:940
-#: web/ejabberd_web_admin.erl:976
+#: ejabberd_web_admin.erl:664 ejabberd_web_admin.erl:700
+#: ejabberd_web_admin.erl:768 ejabberd_web_admin.erl:801
+#: ejabberd_web_admin.erl:842 ejabberd_web_admin.erl:1319
+#: ejabberd_web_admin.erl:1600 ejabberd_web_admin.erl:1760
+#: ejabberd_web_admin.erl:1794 ejabberd_web_admin.erl:1874
+#: ejabberd_web_admin.erl:2046 ejabberd_web_admin.erl:2075
+#: ejabberd_web_admin.erl:2172 mod_offline.erl:777 mod_roster.erl:1490
+#: mod_shared_roster.erl:1169 mod_shared_roster.erl:1264
+msgid "Submitted"
+msgstr "送信完了"
+
+#: ejabberd_web_admin.erl:665 ejabberd_web_admin.erl:701
+#: ejabberd_web_admin.erl:769 ejabberd_web_admin.erl:802
+#: ejabberd_web_admin.erl:843 ejabberd_web_admin.erl:1320
+#: ejabberd_web_admin.erl:1601 ejabberd_web_admin.erl:1761
+#: ejabberd_web_admin.erl:2047 ejabberd_web_admin.erl:2076 mod_roster.erl:1491
+#: mod_shared_roster.erl:1170 mod_shared_roster.erl:1265
+msgid "Bad format"
+msgstr "不正なフォーマット"
+
+#: ejabberd_web_admin.erl:676 ejabberd_web_admin.erl:713
+#: ejabberd_web_admin.erl:780 ejabberd_web_admin.erl:850
+#: ejabberd_web_admin.erl:1863 mod_shared_roster.erl:1272
+msgid "Submit"
+msgstr "送信"
+
+#: ejabberd_web_admin.erl:705 ejabberd_web_admin.erl:806
+msgid "Raw"
+msgstr "Raw"
+
+#: ejabberd_web_admin.erl:710 ejabberd_web_admin.erl:812 mod_offline.erl:799
+#: mod_shared_roster.erl:1178
+msgid "Delete Selected"
+msgstr "選択した項目を削除"
+
+#: ejabberd_web_admin.erl:764 ejabberd_web_admin.erl:797 mod_configure.erl:199
+#: mod_configure.erl:534
 msgid "Access Rules"
 msgstr "アクセスルール"
 
-#: mod_configure.erl:297 mod_configure.erl:499
-msgid "User Management"
-msgstr "ユーザー管理"
+#: ejabberd_web_admin.erl:838
+msgid "~s access rule configuration"
+msgstr "~s アクセスルール設定"
 
-#: mod_configure.erl:500 web/ejabberd_web_admin.erl:1058
-#: web/ejabberd_web_admin.erl:1462
+#: ejabberd_web_admin.erl:856
+msgid "Virtual Hosts"
+msgstr "バーチャルホスト"
+
+#: ejabberd_web_admin.erl:865 ejabberd_web_admin.erl:873
+msgid "Users"
+msgstr "ユーザー"
+
+#: ejabberd_web_admin.erl:880 ejabberd_web_admin.erl:1265
+#: mod_configure.erl:525
 msgid "Online Users"
 msgstr "オンラインユーザー"
 
-#: mod_configure.erl:501
-msgid "All Users"
-msgstr "全ユーザー"
+#: ejabberd_web_admin.erl:896
+msgid "Users Last Activity"
+msgstr "ユーザーの活動履歴"
 
-#: mod_configure.erl:502
-msgid "Outgoing s2s Connections"
-msgstr "外向き s2s コネクション"
+#: ejabberd_web_admin.erl:900
+msgid "Period: "
+msgstr "期間: "
 
-#: mod_configure.erl:503 web/ejabberd_web_admin.erl:1907
-msgid "Running Nodes"
-msgstr "起動ノード"
+#: ejabberd_web_admin.erl:913
+msgid "Last month"
+msgstr "先月"
 
-#: mod_configure.erl:504 web/ejabberd_web_admin.erl:1909
-msgid "Stopped Nodes"
-msgstr "停止ノード"
+#: ejabberd_web_admin.erl:914
+msgid "Last year"
+msgstr "去年"
 
-#: mod_configure.erl:577 mod_configure.erl:587 web/ejabberd_web_admin.erl:1953
-msgid "Modules"
-msgstr "モジュール"
+#: ejabberd_web_admin.erl:916
+msgid "All activity"
+msgstr "すべて"
 
-#: mod_configure.erl:578
-msgid "Backup Management"
-msgstr "バックアップ管理"
+#: ejabberd_web_admin.erl:919
+msgid "Show Ordinary Table"
+msgstr "通常の表を表示"
 
-#: mod_configure.erl:579
-msgid "Import Users From jabberd14 Spool Files"
-msgstr "jabberd14 Spool ファイルからユーザーをインポート"
+#: ejabberd_web_admin.erl:922
+msgid "Show Integral Table"
+msgstr "累積の表を表示"
 
-#: mod_configure.erl:699
-msgid "To ~s"
-msgstr "宛先 ~s"
+#: ejabberd_web_admin.erl:929 ejabberd_web_admin.erl:1771
+msgid "Statistics"
+msgstr "統計"
 
-#: mod_configure.erl:717
-msgid "From ~s"
-msgstr "差出人 ~s"
+#: ejabberd_web_admin.erl:939
+msgid "Not Found"
+msgstr "見つかりません"
 
-#: mod_configure.erl:913
-msgid "Database Tables Configuration at "
-msgstr "データーベーステーブル設定 "
+#: ejabberd_web_admin.erl:952
+msgid "Node not found"
+msgstr "ノードが見つかりません"
 
-#: mod_configure.erl:918
-msgid "Choose storage type of tables"
-msgstr "テーブルのストレージタイプを選択"
+#: ejabberd_web_admin.erl:1174 ejabberd_web_admin.erl:2419
+#: mod_shared_roster.erl:1164
+msgid "Add New"
+msgstr "新規追加"
 
-#: mod_configure.erl:926 mod_configure.erl:928
-msgid "Disc only copy"
-msgstr "ディスクだけのコピー"
+#: ejabberd_web_admin.erl:1263
+msgid "Host"
+msgstr "ホスト"
 
-#: mod_configure.erl:926 mod_configure.erl:928
-msgid "RAM and disc copy"
-msgstr "RAM, ディスクコピー"
+#: ejabberd_web_admin.erl:1264
+msgid "Registered Users"
+msgstr "登録ユーザー"
 
-#: mod_configure.erl:926 mod_configure.erl:928
-msgid "RAM copy"
-msgstr "RAM コピー"
+#: ejabberd_web_admin.erl:1328 ejabberd_web_admin.erl:1383
+#: mod_register.erl:252 mod_vcard.erl:486
+msgid "User"
+msgstr "ユーザー"
 
-#: mod_configure.erl:926 mod_configure.erl:928
-msgid "Remote copy"
-msgstr "リモートコピー"
-
-#: mod_configure.erl:950
-msgid "Stop Modules at "
-msgstr "モジュールを停止: "
-
-#: mod_configure.erl:954
-msgid "Choose modules to stop"
-msgstr "停止するモジュールを選択"
-
-#: mod_configure.erl:969
-msgid "Start Modules at "
-msgstr "モジュールを開始: "
-
-#: mod_configure.erl:973
-msgid "Enter list of {Module, [Options]}"
-msgstr "{モジュール, [オプション]}のリストを入力してください"
-
-#: mod_configure.erl:974
-msgid "List of modules to start"
-msgstr "起動モジュールの一覧"
-
-#: mod_configure.erl:983
-msgid "Backup to File at "
-msgstr "ファイルにバックアップ: "
-
-#: mod_configure.erl:987 mod_configure.erl:1001
-msgid "Enter path to backup file"
-msgstr "バックアップファイルのパスを入力してください"
-
-#: mod_configure.erl:988 mod_configure.erl:1002 mod_configure.erl:1016
-#: mod_configure.erl:1030
-msgid "Path to File"
-msgstr "ファイルのパス"
-
-#: mod_configure.erl:997
-msgid "Restore Backup from File at "
-msgstr "ファイルからバックアップをリストア: "
-
-#: mod_configure.erl:1011
-msgid "Dump Backup to Text File at "
-msgstr "テキストファイルにバックアップ: "
-
-#: mod_configure.erl:1015
-msgid "Enter path to text file"
-msgstr "テキストファイルのパスを入力してください"
-
-#: mod_configure.erl:1025
-msgid "Import User from File at "
-msgstr "ファイルからユーザーをインポート: "
-
-#: mod_configure.erl:1029
-msgid "Enter path to jabberd14 spool file"
-msgstr "jabberd14 spool ファイルのパスを入力してください"
-
-#: mod_configure.erl:1039
-msgid "Import Users from Dir at "
-msgstr "ディレクトリからユーザーをインポート: "
-
-#: mod_configure.erl:1043
-msgid "Enter path to jabberd14 spool dir"
-msgstr "jabberd14 spool ディレクトリのディレクトリを入力してください"
-
-#: mod_configure.erl:1044
-msgid "Path to Dir"
-msgstr "ディレクトリのパス"
-
-#: mod_configure.erl:1060 mod_configure.erl:1105
-msgid "Time delay"
-msgstr "遅延時間"
-
-#: mod_configure.erl:1143
-msgid "Access Control List Configuration"
-msgstr "アクセスコントロールリスト設定"
-
-#: mod_configure.erl:1147
-msgid "Access control lists"
-msgstr "アクセスコントロールリスト"
-
-#: mod_configure.erl:1171
-msgid "Access Configuration"
-msgstr "アクセス設定"
-
-#: mod_configure.erl:1175
-msgid "Access rules"
-msgstr "アクセスルール"
-
-#: mod_configure.erl:1200 mod_configure.erl:1222 mod_configure.erl:1234
-#: mod_configure.erl:1246 mod_configure.erl:1258 mod_configure.erl:1275
-#: mod_configure.erl:1287 mod_configure.erl:1650 mod_configure.erl:1700
-#: mod_configure.erl:1721 mod_roster.erl:943 mod_roster_odbc.erl:1060
-#: mod_vcard.erl:472 mod_vcard_ldap.erl:554 mod_vcard_odbc.erl:448
-msgid "Jabber ID"
-msgstr "Jabber ID"
-
-#: mod_configure.erl:1205 mod_configure.erl:1263 mod_configure.erl:1651
-#: mod_configure.erl:1863 mod_muc/mod_muc_room.erl:3224 mod_register.erl:235
-#: web/ejabberd_web_admin.erl:1520
+#: ejabberd_web_admin.erl:1333 mod_configure.erl:1399 mod_configure.erl:1486
+#: mod_configure.erl:1890 mod_configure.erl:2125 mod_muc_room.erl:3347
+#: mod_register.erl:262
 msgid "Password"
 msgstr "パスワード"
 
-#: mod_configure.erl:1210
-msgid "Password Verification"
-msgstr "パスワード (確認)"
+#: ejabberd_web_admin.erl:1342 mod_configure.erl:178 mod_configure.erl:540
+#: mod_configure.erl:1387
+msgid "Add User"
+msgstr "ユーザーを追加"
 
-#: mod_configure.erl:1301
-msgid "Number of registered users"
-msgstr "登録ユーザー数"
+#: ejabberd_web_admin.erl:1384
+msgid "Offline Messages"
+msgstr "オフラインメッセージ"
 
-#: mod_configure.erl:1315
-msgid "Number of online users"
-msgstr "オンラインユーザー数"
+#: ejabberd_web_admin.erl:1385 ejabberd_web_admin.erl:1611
+msgid "Last Activity"
+msgstr "活動履歴"
 
-#: mod_configure.erl:1682 web/ejabberd_web_admin.erl:1588
-#: web/ejabberd_web_admin.erl:1743
+#: ejabberd_web_admin.erl:1403 ejabberd_web_admin.erl:1583
+#: mod_configure.erl:1918
 msgid "Never"
 msgstr "なし"
 
-#: mod_configure.erl:1696 web/ejabberd_web_admin.erl:1601
-#: web/ejabberd_web_admin.erl:1756
+#: ejabberd_web_admin.erl:1421 ejabberd_web_admin.erl:1594
+#: mod_configure.erl:1928
 msgid "Online"
 msgstr "オンライン"
 
-#: mod_configure.erl:1701
-msgid "Last login"
-msgstr "最終ログイン"
+#: ejabberd_web_admin.erl:1477 ejabberd_web_admin.erl:1496
+msgid "Registered Users:"
+msgstr "登録ユーザー:"
 
-#: mod_configure.erl:1722
-msgid "Roster size"
-msgstr "名簿サイズ"
+#: ejabberd_web_admin.erl:1480 ejabberd_web_admin.erl:1499
+#: ejabberd_web_admin.erl:2113
+msgid "Online Users:"
+msgstr "オンラインユーザー:"
 
-#: mod_configure.erl:1723
-msgid "IP addresses"
-msgstr "IP アドレス"
+#: ejabberd_web_admin.erl:1483
+msgid "Outgoing s2s Connections:"
+msgstr "外向き s2s コネクション:"
 
-#: mod_configure.erl:1724
-msgid "Resources"
-msgstr "リソース"
+#: ejabberd_web_admin.erl:1486
+msgid "Outgoing s2s Servers:"
+msgstr "外向き s2s サービス:"
 
-#: mod_configure.erl:1850
-msgid "Administration of "
-msgstr "管理: "
+#: ejabberd_web_admin.erl:1522 ejabberd_web_admin.erl:1718
+#: ejabberd_web_admin.erl:1728 ejabberd_web_admin.erl:2140 mod_roster.erl:1426
+msgid "None"
+msgstr "なし"
 
-#: mod_configure.erl:1853
-msgid "Action on user"
-msgstr "ユーザー操作"
+#: ejabberd_web_admin.erl:1575 mod_register_web.erl:188
+#: mod_register_web.erl:346 mod_register_web.erl:354 mod_register_web.erl:378
+msgid "Change Password"
+msgstr "パスワードを変更"
 
-#: mod_configure.erl:1857
-msgid "Edit Properties"
-msgstr "プロパティを編集"
+#: ejabberd_web_admin.erl:1596
+msgid "User ~s"
+msgstr "ユーザー ~s"
 
-#: mod_configure.erl:1860 web/ejabberd_web_admin.erl:1769
+#: ejabberd_web_admin.erl:1607
+msgid "Connected Resources:"
+msgstr "接続リソース:"
+
+#: ejabberd_web_admin.erl:1609 mod_register_web.erl:238
+#: mod_register_web.erl:474
+msgid "Password:"
+msgstr "パスワード"
+
+#: ejabberd_web_admin.erl:1616 mod_configure.erl:2119
 msgid "Remove User"
 msgstr "ユーザーを削除"
 
-#: mod_irc/mod_irc.erl:201 mod_irc/mod_irc_odbc.erl:196
-#: mod_muc/mod_muc.erl:336 mod_muc/mod_muc_odbc.erl:342
-msgid "Access denied by service policy"
-msgstr "サービスポリシーによってアクセスが禁止されました"
+#: ejabberd_web_admin.erl:1664
+msgid "No Data"
+msgstr "データなし"
 
-#: mod_irc/mod_irc.erl:401 mod_irc/mod_irc_odbc.erl:398
+#: ejabberd_web_admin.erl:1737
+msgid "Nodes"
+msgstr "ノード"
+
+#: ejabberd_web_admin.erl:1738 mod_configure.erl:529
+msgid "Running Nodes"
+msgstr "起動ノード"
+
+#: ejabberd_web_admin.erl:1739 mod_configure.erl:530
+msgid "Stopped Nodes"
+msgstr "停止ノード"
+
+#: ejabberd_web_admin.erl:1757 ejabberd_web_admin.erl:1782
+msgid "Node ~p"
+msgstr "ノード ~p"
+
+#: ejabberd_web_admin.erl:1766 mod_configure.erl:151 mod_configure.erl:612
+msgid "Database"
+msgstr "データーベース"
+
+#: ejabberd_web_admin.erl:1767 mod_configure.erl:160 mod_configure.erl:649
+msgid "Backup"
+msgstr "バックアップ"
+
+#: ejabberd_web_admin.erl:1769
+msgid "Listened Ports"
+msgstr "Listen ポート"
+
+#: ejabberd_web_admin.erl:1772 ejabberd_web_admin.erl:2187
+#: ejabberd_web_admin.erl:2395
+msgid "Update"
+msgstr "更新"
+
+#: ejabberd_web_admin.erl:1776 ejabberd_web_admin.erl:2539
+msgid "Restart"
+msgstr "再起動"
+
+#: ejabberd_web_admin.erl:1778 ejabberd_web_admin.erl:2543
+msgid "Stop"
+msgstr "停止"
+
+#: ejabberd_web_admin.erl:1785 mod_configure.erl:614 mod_configure.erl:627
+msgid "Modules"
+msgstr "モジュール"
+
+#: ejabberd_web_admin.erl:1790
+msgid "RPC Call Error"
+msgstr "RPC 呼び出しエラー"
+
+#: ejabberd_web_admin.erl:1841
+msgid "Database Tables at ~p"
+msgstr "データーベーステーブル: ~p"
+
+#: ejabberd_web_admin.erl:1851 mod_vcard.erl:486 mod_vcard.erl:612
+msgid "Name"
+msgstr "名"
+
+#: ejabberd_web_admin.erl:1852
+msgid "Storage Type"
+msgstr "ストレージタイプ"
+
+#: ejabberd_web_admin.erl:1853
+msgid "Elements"
+msgstr "要素"
+
+#: ejabberd_web_admin.erl:1854
+msgid "Memory"
+msgstr "メモリ"
+
+#: ejabberd_web_admin.erl:1876 ejabberd_web_admin.erl:2049
+msgid "Error"
+msgstr "エラー"
+
+#: ejabberd_web_admin.erl:1879
+msgid "Backup of ~p"
+msgstr "バックアップ: ~p"
+
+#: ejabberd_web_admin.erl:1885
+msgid ""
+"Please note that these options will only backup the builtin Mnesia database. "
+"If you are using the ODBC module, you also need to backup your SQL database "
+"separately."
+msgstr ""
+"これらのオプションは組み込みの Mnesia データーベースのバックアップのみを行う"
+"ことに注意してください。もし ODBC モジュールを使用している場合は、SQL デー"
+"ターベースのバックアップを別に行う必要があります。"
+
+#: ejabberd_web_admin.erl:1895
+msgid "Store binary backup:"
+msgstr "バイナリバックアップを保存:"
+
+#: ejabberd_web_admin.erl:1902 ejabberd_web_admin.erl:1912
+#: ejabberd_web_admin.erl:1923 ejabberd_web_admin.erl:1932
+#: ejabberd_web_admin.erl:1942 ejabberd_web_admin.erl:1955
+#: ejabberd_web_admin.erl:1967 ejabberd_web_admin.erl:1983
+#: ejabberd_web_admin.erl:1999 ejabberd_web_admin.erl:2010
+#: ejabberd_web_admin.erl:2020
+msgid "OK"
+msgstr "OK"
+
+#: ejabberd_web_admin.erl:1905
+msgid "Restore binary backup immediately:"
+msgstr "直ちにバイナリバックアップからリストア:"
+
+#: ejabberd_web_admin.erl:1915
+msgid ""
+"Restore binary backup after next ejabberd restart (requires less memory):"
+msgstr "ejabberd の再起動時にバイナリバックアップからリストア (メモリ少):"
+
+#: ejabberd_web_admin.erl:1925
+msgid "Store plain text backup:"
+msgstr "プレーンテキストバックアップを保存:"
+
+#: ejabberd_web_admin.erl:1935
+msgid "Restore plain text backup immediately:"
+msgstr "直ちにプレーンテキストバックアップからリストア:"
+
+#: ejabberd_web_admin.erl:1945
+msgid "Import users data from a PIEFXIS file (XEP-0227):"
+msgstr "ユーザーデータを PIEFXIS ファイルからインポート (XEP-0227):"
+
+#: ejabberd_web_admin.erl:1958
+msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
+msgstr ""
+"サーバーにあるすべてのユーザーデータを PIEFXIS ファイルにエクスポート "
+"(XEP-0227):"
+
+#: ejabberd_web_admin.erl:1970
+msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
+msgstr "ホストのユーザーデータを PIEFXIS ファイルにエクスポート (XEP-0227):"
+
+#: ejabberd_web_admin.erl:1986
+msgid "Export all tables as SQL queries to a file:"
+msgstr "すべてのテーブルをSQL形式でファイルにエクスポート: "
+
+#: ejabberd_web_admin.erl:2002
+msgid "Import user data from jabberd14 spool file:"
+msgstr "ユーザーデータを jabberd14 Spool ファイルからインポート:"
+
+#: ejabberd_web_admin.erl:2013
+msgid "Import users data from jabberd14 spool directory:"
+msgstr "ユーザーデータを jabberd14 Spool ディレクトリからインポート:"
+
+#: ejabberd_web_admin.erl:2041
+msgid "Listened Ports at "
+msgstr "Listen ポート "
+
+#: ejabberd_web_admin.erl:2070
+msgid "Modules at ~p"
+msgstr "モジュール ~p"
+
+#: ejabberd_web_admin.erl:2101
+msgid "Statistics of ~p"
+msgstr "~p の統計"
+
+#: ejabberd_web_admin.erl:2105
+msgid "Uptime:"
+msgstr "起動時間:"
+
+#: ejabberd_web_admin.erl:2109
+msgid "CPU Time:"
+msgstr "CPU時間:"
+
+#: ejabberd_web_admin.erl:2117
+msgid "Transactions Committed:"
+msgstr "トランザクションのコミット:"
+
+#: ejabberd_web_admin.erl:2121
+msgid "Transactions Aborted:"
+msgstr "トランザクションの失敗:"
+
+#: ejabberd_web_admin.erl:2125
+msgid "Transactions Restarted:"
+msgstr "トランザクションの再起動:"
+
+#: ejabberd_web_admin.erl:2129
+msgid "Transactions Logged:"
+msgstr "トランザクションのログ: "
+
+#: ejabberd_web_admin.erl:2169
+msgid "Update ~p"
+msgstr "更新 ~p"
+
+#: ejabberd_web_admin.erl:2180
+msgid "Update plan"
+msgstr "更新計画"
+
+#: ejabberd_web_admin.erl:2181
+msgid "Modified modules"
+msgstr "更新されたモジュール"
+
+#: ejabberd_web_admin.erl:2182
+msgid "Update script"
+msgstr "スクリプトの更新"
+
+#: ejabberd_web_admin.erl:2183
+msgid "Low level update script"
+msgstr "低レベル更新スクリプト"
+
+#: ejabberd_web_admin.erl:2184
+msgid "Script check"
+msgstr "スクリプトチェック"
+
+#: ejabberd_web_admin.erl:2364
+msgid "IP"
+msgstr "IP"
+
+#: ejabberd_web_admin.erl:2364
+msgid "Port"
+msgstr "ポート"
+
+#: ejabberd_web_admin.erl:2365
+msgid "Protocol"
+msgstr "プロトコル"
+
+#: ejabberd_web_admin.erl:2366 ejabberd_web_admin.erl:2521
+msgid "Module"
+msgstr "モジュール"
+
+#: ejabberd_web_admin.erl:2367 ejabberd_web_admin.erl:2522
+msgid "Options"
+msgstr "オプション"
+
+#: ejabberd_web_admin.erl:2399
+msgid "Delete"
+msgstr "削除"
+
+#: ejabberd_web_admin.erl:2555
+msgid "Start"
+msgstr "開始"
+
+#: mod_adhoc.erl:112 mod_adhoc.erl:146 mod_adhoc.erl:166 mod_adhoc.erl:189
+msgid "Commands"
+msgstr "コマンド"
+
+#: mod_adhoc.erl:174 mod_adhoc.erl:263
+msgid "Ping"
+msgstr "Ping"
+
+#: mod_adhoc.erl:277
+msgid "Pong"
+msgstr "Pong"
+
+#: mod_announce.erl:532
+msgid "Really delete message of the day?"
+msgstr "本当にお知らせメッセージを削除しますか ?"
+
+#: mod_announce.erl:545 mod_configure.erl:1239 mod_configure.erl:1299
+msgid "Subject"
+msgstr "件名"
+
+#: mod_announce.erl:553 mod_configure.erl:1245 mod_configure.erl:1305
+msgid "Message body"
+msgstr "本文"
+
+#: mod_announce.erl:636
+msgid "No body provided for announce message"
+msgstr "アナウンスメッセージはありませんでした"
+
+#: mod_announce.erl:671
+msgid "Announcements"
+msgstr "アナウンス"
+
+#: mod_announce.erl:673
+msgid "Send announcement to all users"
+msgstr "すべてのユーザーにアナウンスを送信"
+
+#: mod_announce.erl:675
+msgid "Send announcement to all users on all hosts"
+msgstr "全ホストのユーザーにアナウンスを送信"
+
+#: mod_announce.erl:677
+msgid "Send announcement to all online users"
+msgstr "すべてのオンラインユーザーにアナウンスを送信"
+
+#: mod_announce.erl:679 mod_configure.erl:1232 mod_configure.erl:1292
+msgid "Send announcement to all online users on all hosts"
+msgstr "全ホストのオンラインユーザーにアナウンスを送信"
+
+#: mod_announce.erl:681
+msgid "Set message of the day and send to online users"
+msgstr "お知らせメッセージを設定し、オンラインユーザーに送信"
+
+#: mod_announce.erl:683
+msgid "Set message of the day on all hosts and send to online users"
+msgstr "全ホストのお知らせメッセージを設定し、オンラインユーザーに送信"
+
+#: mod_announce.erl:685
+msgid "Update message of the day (don't send)"
+msgstr "お知らせメッセージを更新 (送信しない)"
+
+#: mod_announce.erl:687
+msgid "Update message of the day on all hosts (don't send)"
+msgstr "全ホストのお知らせメッセージを更新 (送信しない)"
+
+#: mod_announce.erl:689
+msgid "Delete message of the day"
+msgstr "お知らせメッセージを削除"
+
+#: mod_announce.erl:691
+msgid "Delete message of the day on all hosts"
+msgstr "全ホストのお知らせメッセージを削除"
+
+#: mod_configure.erl:141 mod_configure.erl:297 mod_configure.erl:319
+#: mod_configure.erl:523
+msgid "Configuration"
+msgstr "設定"
+
+#: mod_configure.erl:154 mod_configure.erl:637
+msgid "Start Modules"
+msgstr "モジュールを起動"
+
+#: mod_configure.erl:157 mod_configure.erl:639
+msgid "Stop Modules"
+msgstr "モジュールを停止"
+
+#: mod_configure.erl:163 mod_configure.erl:651
+msgid "Restore"
+msgstr "リストア"
+
+#: mod_configure.erl:166 mod_configure.erl:653
+msgid "Dump to Text File"
+msgstr "テキストファイルに出力"
+
+#: mod_configure.erl:169 mod_configure.erl:664
+msgid "Import File"
+msgstr "ファイルからインポート"
+
+#: mod_configure.erl:172 mod_configure.erl:666
+msgid "Import Directory"
+msgstr "ディレクトリインポート"
+
+#: mod_configure.erl:174 mod_configure.erl:620 mod_configure.erl:1206
+msgid "Restart Service"
+msgstr "サービスを再起動"
+
+#: mod_configure.erl:176 mod_configure.erl:622 mod_configure.erl:1266
+msgid "Shut Down Service"
+msgstr "サービスを停止"
+
+#: mod_configure.erl:180 mod_configure.erl:541 mod_configure.erl:1420
+msgid "Delete User"
+msgstr "ユーザーを削除"
+
+#: mod_configure.erl:182 mod_configure.erl:543 mod_configure.erl:1438
+msgid "End User Session"
+msgstr "エンドユーザーセッション"
+
+#: mod_configure.erl:184 mod_configure.erl:545 mod_configure.erl:1456
+#: mod_configure.erl:1474
+msgid "Get User Password"
+msgstr "パスワードを取得"
+
+#: mod_configure.erl:186 mod_configure.erl:547
+msgid "Change User Password"
+msgstr "パスワードを変更"
+
+#: mod_configure.erl:188 mod_configure.erl:549 mod_configure.erl:1501
+msgid "Get User Last Login Time"
+msgstr "最終ログイン時間を取得"
+
+#: mod_configure.erl:190 mod_configure.erl:551 mod_configure.erl:1518
+msgid "Get User Statistics"
+msgstr "ユーザー統計を取得"
+
+#: mod_configure.erl:192 mod_configure.erl:553
+msgid "Get Number of Registered Users"
+msgstr "登録ユーザー数を取得"
+
+#: mod_configure.erl:195 mod_configure.erl:555
+msgid "Get Number of Online Users"
+msgstr "オンラインユーザー数を取得"
+
+#: mod_configure.erl:321 mod_configure.erl:524
+msgid "User Management"
+msgstr "ユーザー管理"
+
+#: mod_configure.erl:526
+msgid "All Users"
+msgstr "全ユーザー"
+
+#: mod_configure.erl:527
+msgid "Outgoing s2s Connections"
+msgstr "外向き s2s コネクション"
+
+#: mod_configure.erl:616
+msgid "Backup Management"
+msgstr "バックアップ管理"
+
+#: mod_configure.erl:618
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "jabberd14 Spool ファイルからユーザーをインポート"
+
+#: mod_configure.erl:763
+msgid "To ~s"
+msgstr "宛先 ~s"
+
+#: mod_configure.erl:783
+msgid "From ~s"
+msgstr "差出人 ~s"
+
+#: mod_configure.erl:1003
+msgid "Database Tables Configuration at "
+msgstr "データーベーステーブル設定 "
+
+#: mod_configure.erl:1009
+msgid "Choose storage type of tables"
+msgstr "テーブルのストレージタイプを選択"
+
+#: mod_configure.erl:1018 mod_configure.erl:1020
+msgid "Disc only copy"
+msgstr "ディスクだけのコピー"
+
+#: mod_configure.erl:1018 mod_configure.erl:1020
+msgid "RAM and disc copy"
+msgstr "RAM, ディスクコピー"
+
+#: mod_configure.erl:1018 mod_configure.erl:1020
+msgid "RAM copy"
+msgstr "RAM コピー"
+
+#: mod_configure.erl:1018 mod_configure.erl:1020
+msgid "Remote copy"
+msgstr "リモートコピー"
+
+#: mod_configure.erl:1046
+msgid "Stop Modules at "
+msgstr "モジュールを停止: "
+
+#: mod_configure.erl:1052
+msgid "Choose modules to stop"
+msgstr "停止するモジュールを選択"
+
+#: mod_configure.erl:1073
+msgid "Start Modules at "
+msgstr "モジュールを開始: "
+
+#: mod_configure.erl:1079
+msgid "Enter list of {Module, [Options]}"
+msgstr "{モジュール, [オプション]}のリストを入力してください"
+
+#: mod_configure.erl:1081
+msgid "List of modules to start"
+msgstr "起動モジュールの一覧"
+
+#: mod_configure.erl:1095
+msgid "Backup to File at "
+msgstr "ファイルにバックアップ: "
+
+#: mod_configure.erl:1100 mod_configure.erl:1121
+msgid "Enter path to backup file"
+msgstr "バックアップファイルのパスを入力してください"
+
+#: mod_configure.erl:1101 mod_configure.erl:1122 mod_configure.erl:1143
+#: mod_configure.erl:1164
+msgid "Path to File"
+msgstr "ファイルのパス"
+
+#: mod_configure.erl:1116
+msgid "Restore Backup from File at "
+msgstr "ファイルからバックアップをリストア: "
+
+#: mod_configure.erl:1137
+msgid "Dump Backup to Text File at "
+msgstr "テキストファイルにバックアップ: "
+
+#: mod_configure.erl:1142
+msgid "Enter path to text file"
+msgstr "テキストファイルのパスを入力してください"
+
+#: mod_configure.erl:1157
+msgid "Import User from File at "
+msgstr "ファイルからユーザーをインポート: "
+
+#: mod_configure.erl:1163
+msgid "Enter path to jabberd14 spool file"
+msgstr "jabberd14 spool ファイルのパスを入力してください"
+
+#: mod_configure.erl:1178
+msgid "Import Users from Dir at "
+msgstr "ディレクトリからユーザーをインポート: "
+
+#: mod_configure.erl:1184
+msgid "Enter path to jabberd14 spool dir"
+msgstr "jabberd14 spool ディレクトリのディレクトリを入力してください"
+
+#: mod_configure.erl:1185
+msgid "Path to Dir"
+msgstr "ディレクトリのパス"
+
+#: mod_configure.erl:1210 mod_configure.erl:1270
+msgid "Time delay"
+msgstr "遅延時間"
+
+#: mod_configure.erl:1317
+msgid "Access Control List Configuration"
+msgstr "アクセスコントロールリスト設定"
+
+#: mod_configure.erl:1322
+msgid "Access control lists"
+msgstr "アクセスコントロールリスト"
+
+#: mod_configure.erl:1353
+msgid "Access Configuration"
+msgstr "アクセス設定"
+
+#: mod_configure.erl:1357
+msgid "Access rules"
+msgstr "アクセスルール"
+
+#: mod_configure.erl:1391 mod_configure.erl:1424 mod_configure.erl:1442
+#: mod_configure.erl:1460 mod_configure.erl:1478 mod_configure.erl:1505
+#: mod_configure.erl:1522 mod_configure.erl:1888 mod_configure.erl:1936
+#: mod_configure.erl:1963 mod_roster.erl:1431 mod_vcard.erl:609
+#: mod_vcard_ldap.erl:603
+msgid "Jabber ID"
+msgstr "Jabber ID"
+
+#: mod_configure.erl:1408
+msgid "Password Verification"
+msgstr "パスワード (確認)"
+
+#: mod_configure.erl:1541
+msgid "Number of registered users"
+msgstr "登録ユーザー数"
+
+#: mod_configure.erl:1560
+msgid "Number of online users"
+msgstr "オンラインユーザー数"
+
+#: mod_configure.erl:1938
+msgid "Last login"
+msgstr "最終ログイン"
+
+#: mod_configure.erl:1965
+msgid "Roster size"
+msgstr "名簿サイズ"
+
+#: mod_configure.erl:1967
+msgid "IP addresses"
+msgstr "IP アドレス"
+
+#: mod_configure.erl:1969
+msgid "Resources"
+msgstr "リソース"
+
+#: mod_configure.erl:2097
+msgid "Administration of "
+msgstr "管理: "
+
+#: mod_configure.erl:2102
+msgid "Action on user"
+msgstr "ユーザー操作"
+
+#: mod_configure.erl:2110
+msgid "Edit Properties"
+msgstr "プロパティを編集"
+
+#: mod_fail2ban.erl:90
+msgid ""
+"Too many (~p) failed authentications from this IP address (~s). The address "
+"will be unblocked at ~s UTC"
+msgstr "~p回の認証に失敗しました。このIPアドレス(~s)は~s UTCまでブロックされます。"
+
+#: mod_ip_blacklist.erl:122
+msgid "This IP address is blacklisted in ~s"
+msgstr "このIPアドレスはアクセスを禁止されています ~s"
+
+#: mod_irc.erl:431
 msgid "IRC Transport"
-msgstr "IRC トランスポート"
+msgstr "IRCトランスポート"
 
-#: mod_irc/mod_irc.erl:428 mod_irc/mod_irc_odbc.erl:425
+#: mod_irc.erl:468
 msgid "ejabberd IRC module"
 msgstr "ejabberd IRC module"
 
-#: mod_irc/mod_irc.erl:559 mod_irc/mod_irc_odbc.erl:568
+#: mod_irc.erl:636
 msgid "You need an x:data capable client to configure mod_irc settings"
 msgstr "mod_irc の設定には x:data をサポートするクライアントが必要です"
 
-#: mod_irc/mod_irc.erl:566 mod_irc/mod_irc_odbc.erl:575
+#: mod_irc.erl:645
 msgid "Registration in mod_irc for "
 msgstr "mod_irc での登録: "
 
-#: mod_irc/mod_irc.erl:571 mod_irc/mod_irc_odbc.erl:580
+#: mod_irc.erl:651
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
@@ -466,11 +855,11 @@ msgstr ""
 "IRC サーバーに接続先するために使用するユーザー名、文字エンコーディング、ポー"
 "ト、パスワードを入力してください"
 
-#: mod_irc/mod_irc.erl:576 mod_irc/mod_irc_odbc.erl:585
+#: mod_irc.erl:659
 msgid "IRC Username"
 msgstr "IRC ユーザー名"
 
-#: mod_irc/mod_irc.erl:586 mod_irc/mod_irc_odbc.erl:595
+#: mod_irc.erl:674
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
@@ -482,7 +871,7 @@ msgstr ""
 "デフォルトでエンコーディングは \"~s\" を使用し、ポートは ~p、パスワードは空に"
 "なっています。"
 
-#: mod_irc/mod_irc.erl:598 mod_irc/mod_irc_odbc.erl:607
+#: mod_irc.erl:696
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
@@ -490,36 +879,35 @@ msgstr ""
 "例: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net"
 "\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
-#: mod_irc/mod_irc.erl:603 mod_irc/mod_irc_odbc.erl:612
+#: mod_irc.erl:705
 msgid "Connections parameters"
 msgstr "接続パラメーター"
 
-#: mod_irc/mod_irc.erl:728 mod_irc/mod_irc_odbc.erl:757
+#: mod_irc.erl:874
 msgid "Join IRC channel"
 msgstr "IRC チャンネルに参加"
 
-#: mod_irc/mod_irc.erl:732 mod_irc/mod_irc_odbc.erl:761
+#: mod_irc.erl:881
 msgid "IRC channel (don't put the first #)"
 msgstr "IRC チャンネル (先頭に#は不要)"
 
-#: mod_irc/mod_irc.erl:737 mod_irc/mod_irc_odbc.erl:766
+#: mod_irc.erl:891
 msgid "IRC server"
 msgstr "IRC サーバー"
 
-#: mod_irc/mod_irc.erl:770 mod_irc/mod_irc.erl:774
-#: mod_irc/mod_irc_odbc.erl:799 mod_irc/mod_irc_odbc.erl:803
+#: mod_irc.erl:938 mod_irc.erl:946
 msgid "Join the IRC channel here."
 msgstr "この IRC チャンネルに参加します。"
 
-#: mod_irc/mod_irc.erl:778 mod_irc/mod_irc_odbc.erl:807
+#: mod_irc.erl:955
 msgid "Join the IRC channel in this Jabber ID: ~s"
 msgstr "Jabber ID: ~s でこの IRC チャンネルに参加"
 
-#: mod_irc/mod_irc.erl:863 mod_irc/mod_irc_odbc.erl:904
+#: mod_irc.erl:1034
 msgid "IRC settings"
 msgstr "IRC 設定"
 
-#: mod_irc/mod_irc.erl:868 mod_irc/mod_irc_odbc.erl:909
+#: mod_irc.erl:1039
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
@@ -529,1233 +917,543 @@ msgstr ""
 "さい。'Next' を押して次の項目に進みます。'Complete' を押すと設定が保存されま"
 "す。"
 
-#: mod_irc/mod_irc.erl:874 mod_irc/mod_irc_odbc.erl:915
+#: mod_irc.erl:1048
 msgid "IRC username"
 msgstr "IRC ユーザー名"
 
-#: mod_irc/mod_irc.erl:923 mod_irc/mod_irc_odbc.erl:964
+#: mod_irc.erl:1114
 msgid "Password ~b"
 msgstr "パスワード ~b"
 
-#: mod_irc/mod_irc.erl:928 mod_irc/mod_irc_odbc.erl:969
+#: mod_irc.erl:1125
 msgid "Port ~b"
 msgstr "ポート ~b"
 
-#: mod_irc/mod_irc.erl:933 mod_irc/mod_irc_odbc.erl:974
+#: mod_irc.erl:1138
 msgid "Encoding for server ~b"
 msgstr "サーバーのエンコーディング ~b"
 
-#: mod_irc/mod_irc.erl:942 mod_irc/mod_irc_odbc.erl:983
+#: mod_irc.erl:1159
 msgid "Server ~b"
 msgstr "サーバー ~b"
 
-#: mod_muc/mod_muc.erl:449 mod_muc/mod_muc_odbc.erl:456
-msgid "Only service administrators are allowed to send service messages"
-msgstr "サービス管理者のみがサービスメッセージを送信できます"
-
-#: mod_muc/mod_muc.erl:493 mod_muc/mod_muc_odbc.erl:500
-msgid "Room creation is denied by service policy"
-msgstr "サービスポリシーによって談話室の作成が禁止されています"
-
-#: mod_muc/mod_muc.erl:500 mod_muc/mod_muc_odbc.erl:507
-msgid "Conference room does not exist"
-msgstr "会議室は存在しません"
-
-#: mod_muc/mod_muc.erl:582 mod_muc/mod_muc_odbc.erl:595
+#: mod_muc.erl:721
 msgid "Chatrooms"
-msgstr "談話室"
+msgstr "チャットルーム"
 
-#: mod_muc/mod_muc.erl:712 mod_muc/mod_muc_odbc.erl:729
+#: mod_muc.erl:914
 msgid "You need a client that supports x:data to register the nickname"
 msgstr "ニックネームを登録するには x:data をサポートするクライアントが必要です"
 
-#: mod_muc/mod_muc.erl:718 mod_muc/mod_muc_odbc.erl:735
+#: mod_muc.erl:924
 msgid "Nickname Registration at "
 msgstr "ニックネーム登録: "
 
-#: mod_muc/mod_muc.erl:722 mod_muc/mod_muc_odbc.erl:739
+#: mod_muc.erl:930
 msgid "Enter nickname you want to register"
 msgstr "登録するニックネームを入力してください"
 
-#: mod_muc/mod_muc.erl:723 mod_muc/mod_muc_odbc.erl:740
-#: mod_muc/mod_muc_room.erl:3810 mod_roster.erl:944 mod_roster_odbc.erl:1061
-#: mod_vcard.erl:364 mod_vcard.erl:477 mod_vcard_odbc.erl:342
-#: mod_vcard_odbc.erl:453
+#: mod_muc.erl:931 mod_muc_room.erl:4188 mod_roster.erl:1432 mod_vcard.erl:486
+#: mod_vcard.erl:617
 msgid "Nickname"
 msgstr "ニックネーム"
 
-#: mod_muc/mod_muc.erl:762 mod_muc/mod_muc_odbc.erl:784
-#: mod_muc/mod_muc_room.erl:1064 mod_muc/mod_muc_room.erl:1787
-msgid "That nickname is registered by another person"
-msgstr "ニックネームはほかの人によって登録されています"
-
-#: mod_muc/mod_muc.erl:788 mod_muc/mod_muc_odbc.erl:811
-msgid "You must fill in field \"Nickname\" in the form"
-msgstr "フォームの\"ニックネーム\"欄を入力する必要があります"
-
-#: mod_muc/mod_muc.erl:808 mod_muc/mod_muc_odbc.erl:831
+#: mod_muc.erl:1094
 msgid "ejabberd MUC module"
-msgstr "ejabberd MUC module"
+msgstr "ejabberd MUCモジュール"
 
-#: mod_muc/mod_muc_log.erl:374 mod_muc/mod_muc_log.erl:381
+#: mod_muc_log.erl:440 mod_muc_log.erl:449
 msgid "Chatroom configuration modified"
-msgstr "談話室の設定が変更されました"
+msgstr "チャットルームの設定が変更されました"
 
-#: mod_muc/mod_muc_log.erl:384
+#: mod_muc_log.erl:452
 msgid "joins the room"
-msgstr "が談話室に参加しました"
+msgstr "がチャットルームに参加しました"
 
-#: mod_muc/mod_muc_log.erl:387 mod_muc/mod_muc_log.erl:390
+#: mod_muc_log.erl:455 mod_muc_log.erl:458
 msgid "leaves the room"
-msgstr "が談話室から退出しました"
+msgstr "がチャットルームから退出しました"
 
-#: mod_muc/mod_muc_log.erl:393 mod_muc/mod_muc_log.erl:396
+#: mod_muc_log.erl:462 mod_muc_log.erl:465
 msgid "has been banned"
 msgstr "はバンされました"
 
-#: mod_muc/mod_muc_log.erl:399 mod_muc/mod_muc_log.erl:402
-msgid "has been kicked"
-msgstr "はキックされました"
-
-#: mod_muc/mod_muc_log.erl:405
+#: mod_muc_log.erl:477
 msgid "has been kicked because of an affiliation change"
 msgstr "は分掌が変更されたためキックされました"
 
-#: mod_muc/mod_muc_log.erl:408
+#: mod_muc_log.erl:482
 msgid "has been kicked because the room has been changed to members-only"
-msgstr "は談話室がメンバー制に変更されたためキックされました"
+msgstr "はチャットルームがメンバー制に変更されたためキックされました"
 
-#: mod_muc/mod_muc_log.erl:411
+#: mod_muc_log.erl:487
 msgid "has been kicked because of a system shutdown"
 msgstr "はシステムシャットダウンのためキックされました"
 
-#: mod_muc/mod_muc_log.erl:414
+#: mod_muc_log.erl:492
 msgid "is now known as"
 msgstr "は名前を変更しました: "
 
-#: mod_muc/mod_muc_log.erl:417 mod_muc/mod_muc_log.erl:688
-#: mod_muc/mod_muc_room.erl:2393
+#: mod_muc_log.erl:495 mod_muc_log.erl:834 mod_muc_room.erl:2491
 msgid " has set the subject to: "
-msgstr " は題を設定しました: "
+msgstr " は件名を設定しました: "
 
-#: mod_muc/mod_muc_log.erl:452
+#: mod_muc_log.erl:535
 msgid "Chatroom is created"
-msgstr "談話室を作りました"
+msgstr "チャットルームを作りました"
 
-#: mod_muc/mod_muc_log.erl:453
+#: mod_muc_log.erl:537
 msgid "Chatroom is destroyed"
-msgstr "談話室を削除しました"
+msgstr "チャットルームを終了しました"
 
-#: mod_muc/mod_muc_log.erl:454
+#: mod_muc_log.erl:539
 msgid "Chatroom is started"
-msgstr "談話室を開始しました"
+msgstr "チャットルームを開始しました"
 
-#: mod_muc/mod_muc_log.erl:455
+#: mod_muc_log.erl:541
 msgid "Chatroom is stopped"
-msgstr "談話室を停止しました"
+msgstr "チャットルームを停止しました"
 
-#: mod_muc/mod_muc_log.erl:459
+#: mod_muc_log.erl:545
 msgid "Monday"
 msgstr "月曜日"
 
-#: mod_muc/mod_muc_log.erl:460
+#: mod_muc_log.erl:546
 msgid "Tuesday"
 msgstr "火曜日"
 
-#: mod_muc/mod_muc_log.erl:461
+#: mod_muc_log.erl:547
 msgid "Wednesday"
 msgstr "水曜日"
 
-#: mod_muc/mod_muc_log.erl:462
+#: mod_muc_log.erl:548
 msgid "Thursday"
 msgstr "木曜日"
 
-#: mod_muc/mod_muc_log.erl:463
+#: mod_muc_log.erl:549
 msgid "Friday"
 msgstr "金曜日"
 
-#: mod_muc/mod_muc_log.erl:464
+#: mod_muc_log.erl:550
 msgid "Saturday"
 msgstr "土曜日"
 
-#: mod_muc/mod_muc_log.erl:465
+#: mod_muc_log.erl:551
 msgid "Sunday"
 msgstr "日曜日"
 
-#: mod_muc/mod_muc_log.erl:469
+#: mod_muc_log.erl:555
 msgid "January"
 msgstr "1月"
 
-#: mod_muc/mod_muc_log.erl:470
+#: mod_muc_log.erl:556
 msgid "February"
 msgstr "2月"
 
-#: mod_muc/mod_muc_log.erl:471
+#: mod_muc_log.erl:557
 msgid "March"
 msgstr "3月"
 
-#: mod_muc/mod_muc_log.erl:472
+#: mod_muc_log.erl:558
 msgid "April"
 msgstr "4月"
 
-#: mod_muc/mod_muc_log.erl:473
+#: mod_muc_log.erl:559
 msgid "May"
 msgstr "5月"
 
-#: mod_muc/mod_muc_log.erl:474
+#: mod_muc_log.erl:560
 msgid "June"
 msgstr "6月"
 
-#: mod_muc/mod_muc_log.erl:475
+#: mod_muc_log.erl:561
 msgid "July"
 msgstr "7月"
 
-#: mod_muc/mod_muc_log.erl:476
+#: mod_muc_log.erl:562
 msgid "August"
 msgstr "8月"
 
-#: mod_muc/mod_muc_log.erl:477
+#: mod_muc_log.erl:563
 msgid "September"
 msgstr "9月"
 
-#: mod_muc/mod_muc_log.erl:478
+#: mod_muc_log.erl:564
 msgid "October"
 msgstr "10月"
 
-#: mod_muc/mod_muc_log.erl:479
+#: mod_muc_log.erl:565
 msgid "November"
 msgstr "11月"
 
-#: mod_muc/mod_muc_log.erl:480
+#: mod_muc_log.erl:566
 msgid "December"
 msgstr "12月"
 
-#: mod_muc/mod_muc_log.erl:750
+#: mod_muc_log.erl:954
 msgid "Room Configuration"
-msgstr "談話室の設定"
+msgstr "チャットルームの設定"
 
-#: mod_muc/mod_muc_log.erl:759
+#: mod_muc_log.erl:974
 msgid "Room Occupants"
 msgstr "在室者"
 
-#: mod_muc/mod_muc_room.erl:174
-msgid "Traffic rate limit is exceeded"
-msgstr "トラフィックレートの制限を超えました"
-
-#: mod_muc/mod_muc_room.erl:246
-msgid ""
-"This participant is kicked from the room because he sent an error message"
-msgstr "エラーメッセージを送信したため、この参加者はキックされました"
-
-#: mod_muc/mod_muc_room.erl:255
-msgid "It is not allowed to send private messages to the conference"
-msgstr "この会議にプライベートメッセージを送信することはできません"
-
-#: mod_muc/mod_muc_room.erl:332
-msgid "Please, wait for a while before sending new voice request"
-msgstr "新しい発言権の要求を送るまで少し間をおいてください"
-
-#: mod_muc/mod_muc_room.erl:347
-msgid "Voice requests are disabled in this conference"
-msgstr "この会議では、発言権の要求はできません"
-
-#: mod_muc/mod_muc_room.erl:364
-msgid "Failed to extract JID from your voice request approval"
-msgstr "発言権要求の承認から JID を取り出すことに失敗しました"
-
-#: mod_muc/mod_muc_room.erl:393
-msgid "Only moderators can approve voice requests"
-msgstr "モデレーターだけが発言権の要求を承認できます"
-
-#: mod_muc/mod_muc_room.erl:408
-msgid "Improper message type"
-msgstr "誤ったメッセージタイプです"
-
-#: mod_muc/mod_muc_room.erl:518
-msgid ""
-"This participant is kicked from the room because he sent an error message to "
-"another participant"
-msgstr ""
-"他の参加者にエラーメッセージを送信したため、この参加者はキックされました"
-
-#: mod_muc/mod_muc_room.erl:531
-msgid "It is not allowed to send private messages of type \"groupchat\""
-msgstr ""
-"種別が\"groupchat\" であるプライベートメッセージを送信することはできません"
-
-#: mod_muc/mod_muc_room.erl:543 mod_muc/mod_muc_room.erl:611
-msgid "Recipient is not in the conference room"
-msgstr "受信者はこの会議室にいません"
-
-#: mod_muc/mod_muc_room.erl:564 mod_muc/mod_muc_room.erl:585
-msgid "It is not allowed to send private messages"
-msgstr "プライベートメッセージを送信することはできません"
-
-#: mod_muc/mod_muc_room.erl:576 mod_muc/mod_muc_room.erl:956
-#: mod_muc/mod_muc_room.erl:4040
-msgid "Only occupants are allowed to send messages to the conference"
-msgstr "在室者のみがこの会議にメッセージを送ることができます"
-
-#: mod_muc/mod_muc_room.erl:634
-msgid "Only occupants are allowed to send queries to the conference"
-msgstr "在室者のみが会議にクエリーを送信することができます"
-
-#: mod_muc/mod_muc_room.erl:646
-msgid "Queries to the conference members are not allowed in this room"
-msgstr "この談話室では、会議のメンバーへのクエリーは禁止されています"
-
-#: mod_muc/mod_muc_room.erl:932
+#: mod_muc_room.erl:973
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
-msgstr "モデレーターと参加者のみが談話室の題を変更できます"
+msgstr "モデレーターと参加者のみがチャットルームの件名を変更できます"
 
-#: mod_muc/mod_muc_room.erl:937
+#: mod_muc_room.erl:978
 msgid "Only moderators are allowed to change the subject in this room"
-msgstr "モデレーターのみが談話室の題を変更できます"
+msgstr "モデレーターのみがチャットルームの件名を変更できます"
 
-#: mod_muc/mod_muc_room.erl:947
-msgid "Visitors are not allowed to send messages to all occupants"
-msgstr "傍聴者はすべての在室者にメッセージを送信することはできません"
-
-#: mod_muc/mod_muc_room.erl:1021
-msgid ""
-"This participant is kicked from the room because he sent an error presence"
-msgstr "エラープレゼンスを送信したため、この参加者はキックされました"
-
-#: mod_muc/mod_muc_room.erl:1040
-msgid "Visitors are not allowed to change their nicknames in this room"
-msgstr "傍聴者はこの談話室でニックネームを変更することはできません"
-
-#: mod_muc/mod_muc_room.erl:1053 mod_muc/mod_muc_room.erl:1779
-msgid "That nickname is already in use by another occupant"
-msgstr "そのニックネームは既にほかの在室者によって使用されています"
-
-#: mod_muc/mod_muc_room.erl:1768
-msgid "You have been banned from this room"
-msgstr "あなたはこの談話室からバンされています"
-
-#: mod_muc/mod_muc_room.erl:1771
-msgid "Membership is required to enter this room"
-msgstr "この談話室に入るにはメンバーでなければなりません"
-
-#: mod_muc/mod_muc_room.erl:1807
+#: mod_muc_room.erl:1868
 msgid "This room is not anonymous"
-msgstr "この談話室は非匿名です"
+msgstr "このチャットルームは非匿名です"
 
-#: mod_muc/mod_muc_room.erl:1833
-msgid "A password is required to enter this room"
-msgstr "この談話室に入るにはパスワードが必要です"
-
-#: mod_muc/mod_muc_room.erl:1855 mod_register.erl:246
-msgid "Too many CAPTCHA requests"
-msgstr "CAPTCHA 要求が多すぎます"
-
-#: mod_muc/mod_muc_room.erl:1864 mod_register.erl:251
-msgid "Unable to generate a CAPTCHA"
-msgstr "CAPTCHA を生成できません"
-
-#: mod_muc/mod_muc_room.erl:1874
-msgid "Incorrect password"
-msgstr "パスワードが違います"
-
-#: mod_muc/mod_muc_room.erl:2448
-msgid "Administrator privileges required"
-msgstr "管理者権限が必要です"
-
-#: mod_muc/mod_muc_room.erl:2463
-msgid "Moderator privileges required"
-msgstr "モデレーター権限が必要です"
-
-#: mod_muc/mod_muc_room.erl:2619
+#: mod_muc_room.erl:2722
 msgid "Jabber ID ~s is invalid"
 msgstr "Jabber ID ~s は無効です"
 
-#: mod_muc/mod_muc_room.erl:2633
+#: mod_muc_room.erl:2736
 msgid "Nickname ~s does not exist in the room"
-msgstr "ニックネーム ~s はこの談話室にいません"
+msgstr "ニックネーム ~s はこのチャットルームにいません"
 
-#: mod_muc/mod_muc_room.erl:2659 mod_muc/mod_muc_room.erl:3049
+#: mod_muc_room.erl:2759 mod_muc_room.erl:3139
 msgid "Invalid affiliation: ~s"
 msgstr "無効な分掌です: ~s"
 
-#: mod_muc/mod_muc_room.erl:2713
+#: mod_muc_room.erl:2810
 msgid "Invalid role: ~s"
 msgstr "無効な役です: ~s"
 
-#: mod_muc/mod_muc_room.erl:3026 mod_muc/mod_muc_room.erl:3062
-msgid "Owner privileges required"
-msgstr "主宰者の権限が必要です"
-
-#: mod_muc/mod_muc_room.erl:3195
+#: mod_muc_room.erl:3312
 msgid "Configuration of room ~s"
-msgstr "談話室 ~s の設定"
+msgstr "チャットルーム ~s の設定"
 
-#: mod_muc/mod_muc_room.erl:3200
+#: mod_muc_room.erl:3323
 msgid "Room title"
-msgstr "談話室のタイトル"
+msgstr "チャットルームのタイトル"
 
-#: mod_muc/mod_muc_room.erl:3203 mod_muc/mod_muc_room.erl:3692
+#: mod_muc_room.erl:3325 mod_muc_room.erl:4025
 msgid "Room description"
-msgstr "談話室の説明"
+msgstr "チャットルームの説明"
 
-#: mod_muc/mod_muc_room.erl:3210
+#: mod_muc_room.erl:3333
 msgid "Make room persistent"
-msgstr "談話室を永続化"
+msgstr "チャットルームを永続化"
 
-#: mod_muc/mod_muc_room.erl:3215
+#: mod_muc_room.erl:3339
 msgid "Make room public searchable"
-msgstr "談話室を検索可"
+msgstr "チャットルームを検索可"
 
-#: mod_muc/mod_muc_room.erl:3218
+#: mod_muc_room.erl:3342
 msgid "Make participants list public"
 msgstr "参加者一覧を公開"
 
-#: mod_muc/mod_muc_room.erl:3221
+#: mod_muc_room.erl:3344
 msgid "Make room password protected"
-msgstr "談話室をパスワードで保護"
+msgstr "チャットルームをパスワードで保護"
 
-#: mod_muc/mod_muc_room.erl:3232
+#: mod_muc_room.erl:3358
 msgid "Maximum Number of Occupants"
 msgstr "最大在室者数"
 
-#: mod_muc/mod_muc_room.erl:3239
+#: mod_muc_room.erl:3370
 msgid "No limit"
 msgstr "制限なし"
 
-#: mod_muc/mod_muc_room.erl:3250
+#: mod_muc_room.erl:3400
 msgid "Present real Jabber IDs to"
 msgstr "本当の Jabber ID を公開"
 
-#: mod_muc/mod_muc_room.erl:3258 mod_muc/mod_muc_room.erl:3292
+#: mod_muc_room.erl:3414 mod_muc_room.erl:3477
 msgid "moderators only"
 msgstr "モデレーターにのみ"
 
-#: mod_muc/mod_muc_room.erl:3260 mod_muc/mod_muc_room.erl:3294
+#: mod_muc_room.erl:3424 mod_muc_room.erl:3487
 msgid "anyone"
 msgstr "誰にでも"
 
-#: mod_muc/mod_muc_room.erl:3262
+#: mod_muc_room.erl:3430
 msgid "Make room members-only"
-msgstr "談話室をメンバーのみに制限"
+msgstr "チャットルームをメンバーのみに制限"
 
-#: mod_muc/mod_muc_room.erl:3265
+#: mod_muc_room.erl:3433
 msgid "Make room moderated"
-msgstr "談話室をモデレート化"
+msgstr "チャットルームをモデレート化"
 
-#: mod_muc/mod_muc_room.erl:3268
+#: mod_muc_room.erl:3436
 msgid "Default users as participants"
 msgstr "デフォルトのユーザーは参加者"
 
-#: mod_muc/mod_muc_room.erl:3271
+#: mod_muc_room.erl:3439
 msgid "Allow users to change the subject"
-msgstr "ユーザーによる題の変更を許可"
+msgstr "ユーザーによる件名の変更を許可"
 
-#: mod_muc/mod_muc_room.erl:3274
+#: mod_muc_room.erl:3442
 msgid "Allow users to send private messages"
 msgstr "ユーザーによるプライベートメッセージの送信を許可"
 
-#: mod_muc/mod_muc_room.erl:3279
+#: mod_muc_room.erl:3450
 msgid "Allow visitors to send private messages to"
 msgstr "傍聴者によるプライベートメッセージの送信を次の相手に許可"
 
-#: mod_muc/mod_muc_room.erl:3290
+#: mod_muc_room.erl:3468
 msgid "nobody"
 msgstr "誰にも許可しない"
 
-#: mod_muc/mod_muc_room.erl:3296
+#: mod_muc_room.erl:3493
 msgid "Allow users to query other users"
 msgstr "ユーザーによる他のユーザーへのクエリーを許可"
 
-#: mod_muc/mod_muc_room.erl:3299
+#: mod_muc_room.erl:3496
 msgid "Allow users to send invites"
 msgstr "ユーザーによる招待を許可"
 
-#: mod_muc/mod_muc_room.erl:3302
+#: mod_muc_room.erl:3499
 msgid "Allow visitors to send status text in presence updates"
 msgstr "傍聴者によるプレゼンス更新のステータス文の送信を許可"
 
-#: mod_muc/mod_muc_room.erl:3305
+#: mod_muc_room.erl:3503
 msgid "Allow visitors to change nickname"
 msgstr "傍聴者のニックネームの変更を許可"
 
-#: mod_muc/mod_muc_room.erl:3308
+#: mod_muc_room.erl:3506
 msgid "Allow visitors to send voice requests"
 msgstr "傍聴者による発言権の要求を許可"
 
-#: mod_muc/mod_muc_room.erl:3311
+#: mod_muc_room.erl:3509
 msgid "Minimum interval between voice requests (in seconds)"
 msgstr "発言権の要求の最小時間間隔 (秒)"
 
-#: mod_muc/mod_muc_room.erl:3317
+#: mod_muc_room.erl:3516
 msgid "Make room CAPTCHA protected"
-msgstr "談話室を CAPTCHA で保護"
+msgstr "チャットルームを CAPTCHA で保護"
 
-#: mod_muc/mod_muc_room.erl:3322
+#: mod_muc_room.erl:3522
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
 msgstr "CAPTCHA 試験を免除する Jabber ID"
 
-#: mod_muc/mod_muc_room.erl:3329
+#: mod_muc_room.erl:3531
 msgid "Enable logging"
 msgstr "ロギングを有効"
 
-#: mod_muc/mod_muc_room.erl:3337
+#: mod_muc_room.erl:3541
 msgid "You need an x:data capable client to configure room"
-msgstr "談話室を設定するには x:data をサポートするクライアントが必要です"
+msgstr ""
+"チャットルームを設定するには x:data をサポートするクライアントが必要です"
 
-#: mod_muc/mod_muc_room.erl:3694
+#: mod_muc_room.erl:4027
 msgid "Number of occupants"
 msgstr "在室者の数"
 
-#: mod_muc/mod_muc_room.erl:3750
+#: mod_muc_room.erl:4097
 msgid "private, "
 msgstr "プライベート、"
 
-#: mod_muc/mod_muc_room.erl:3799
+#: mod_muc_room.erl:4161
 msgid "Voice request"
 msgstr "発言権を要求"
 
-#: mod_muc/mod_muc_room.erl:3803
+#: mod_muc_room.erl:4166
 msgid "Either approve or decline the voice request."
 msgstr "発言権の要求を承認または却下します。"
 
-#: mod_muc/mod_muc_room.erl:3809
+#: mod_muc_room.erl:4186
 msgid "User JID"
 msgstr "ユーザー JID"
 
-#: mod_muc/mod_muc_room.erl:3811
+#: mod_muc_room.erl:4190
 msgid "Grant voice to this person?"
 msgstr "この人に発言権を与えますか ?"
 
-#: mod_muc/mod_muc_room.erl:3960
+#: mod_muc_room.erl:4333
 msgid "~s invites you to the room ~s"
-msgstr "~s はあなたを談話室 ~s に招待しています"
+msgstr "~s はあなたをチャットルーム ~s に招待しています"
 
-#: mod_muc/mod_muc_room.erl:3969
+#: mod_muc_room.erl:4345
 msgid "the password is"
 msgstr "パスワードは"
 
-#: mod_offline.erl:510 mod_offline_odbc.erl:352
-msgid ""
-"Your contact offline message queue is full. The message has been discarded."
-msgstr ""
-"相手先のオフラインメッセージキューが一杯です。このメッセージは破棄されます。"
-
-#: mod_offline.erl:560 mod_offline_odbc.erl:408
+#: mod_offline.erl:773
 msgid "~s's Offline Messages Queue"
 msgstr "~s' のオフラインメッセージキュー"
 
-#: mod_offline.erl:563 mod_offline_odbc.erl:411 mod_roster.erl:987
-#: mod_roster_odbc.erl:1104 mod_shared_roster.erl:901
-#: mod_shared_roster.erl:1010 mod_shared_roster_odbc.erl:930
-#: mod_shared_roster_odbc.erl:1039 web/ejabberd_web_admin.erl:833
-#: web/ejabberd_web_admin.erl:874 web/ejabberd_web_admin.erl:942
-#: web/ejabberd_web_admin.erl:978 web/ejabberd_web_admin.erl:1019
-#: web/ejabberd_web_admin.erl:1508 web/ejabberd_web_admin.erl:1760
-#: web/ejabberd_web_admin.erl:1931 web/ejabberd_web_admin.erl:1963
-#: web/ejabberd_web_admin.erl:2031 web/ejabberd_web_admin.erl:2135
-#: web/ejabberd_web_admin.erl:2160 web/ejabberd_web_admin.erl:2248
-msgid "Submitted"
-msgstr "送信完了"
-
-#: mod_offline.erl:571
+#: mod_offline.erl:786
 msgid "Time"
 msgstr "時間"
 
-#: mod_offline.erl:572
+#: mod_offline.erl:787
 msgid "From"
 msgstr "差出人"
 
-#: mod_offline.erl:573
+#: mod_offline.erl:788
 msgid "To"
 msgstr "宛先"
 
-#: mod_offline.erl:574 mod_offline_odbc.erl:419
+#: mod_offline.erl:789
 msgid "Packet"
 msgstr "パケット"
 
-#: mod_offline.erl:587 mod_offline_odbc.erl:432 mod_shared_roster.erl:908
-#: mod_shared_roster_odbc.erl:937 web/ejabberd_web_admin.erl:882
-#: web/ejabberd_web_admin.erl:986
-msgid "Delete Selected"
-msgstr "選択した項目を削除"
-
-#: mod_offline.erl:645 mod_offline_odbc.erl:519
+#: mod_offline.erl:967
 msgid "Offline Messages:"
 msgstr "オフラインメッセージ:"
 
-#: mod_offline.erl:645 mod_offline_odbc.erl:519
+#: mod_offline.erl:971
 msgid "Remove All Offline Messages"
 msgstr "すべてのオフラインメッセージを削除"
 
-#: mod_proxy65/mod_proxy65_service.erl:213
+#: mod_proxy65_service.erl:249
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams モジュール"
 
-#: mod_pubsub/mod_pubsub.erl:1120 mod_pubsub/mod_pubsub_odbc.erl:929
+#: mod_pubsub.erl:1815 mod_pubsub_odbc.erl:1431
 msgid "Publish-Subscribe"
 msgstr "Publish-Subscribe"
 
-#: mod_pubsub/mod_pubsub.erl:1214 mod_pubsub/mod_pubsub_odbc.erl:1025
+#: mod_pubsub.erl:1991 mod_pubsub_odbc.erl:1609
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Publish-Subscribe モジュール"
 
-#: mod_pubsub/mod_pubsub.erl:1497 mod_pubsub/mod_pubsub_odbc.erl:1312
+#: mod_pubsub.erl:2330 mod_pubsub_odbc.erl:1953
 msgid "PubSub subscriber request"
 msgstr "PubSub 購読者のリクエスト"
 
-#: mod_pubsub/mod_pubsub.erl:1499 mod_pubsub/mod_pubsub_odbc.erl:1314
+#: mod_pubsub.erl:2336 mod_pubsub_odbc.erl:1959
 msgid "Choose whether to approve this entity's subscription."
 msgstr "このエントリを承認するかどうかを選択してください"
 
-#: mod_pubsub/mod_pubsub.erl:1505 mod_pubsub/mod_pubsub_odbc.erl:1320
+#: mod_pubsub.erl:2355 mod_pubsub_odbc.erl:1978
 msgid "Node ID"
 msgstr "ノードID"
 
-#: mod_pubsub/mod_pubsub.erl:1510 mod_pubsub/mod_pubsub_odbc.erl:1325
+#: mod_pubsub.erl:2368 mod_pubsub_odbc.erl:1991
 msgid "Subscriber Address"
 msgstr "購読者のアドレス"
 
-#: mod_pubsub/mod_pubsub.erl:1516 mod_pubsub/mod_pubsub_odbc.erl:1331
+#: mod_pubsub.erl:2382 mod_pubsub_odbc.erl:2005
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "この Jabber ID に、この pubsubノードの購読を許可しますか ?"
 
-#: mod_pubsub/mod_pubsub.erl:3474 mod_pubsub/mod_pubsub_odbc.erl:3287
+#: mod_pubsub.erl:4767 mod_pubsub_odbc.erl:4375
 msgid "Deliver payloads with event notifications"
 msgstr "イベント通知と同時にペイロードを配送する"
 
-#: mod_pubsub/mod_pubsub.erl:3475 mod_pubsub/mod_pubsub_odbc.erl:3288
+#: mod_pubsub.erl:4769 mod_pubsub_odbc.erl:4377
 msgid "Deliver event notifications"
 msgstr "イベント通知を配送する"
 
-#: mod_pubsub/mod_pubsub.erl:3476 mod_pubsub/mod_pubsub_odbc.erl:3289
+#: mod_pubsub.erl:4771 mod_pubsub_odbc.erl:4379
 msgid "Notify subscribers when the node configuration changes"
 msgstr "ノード設定に変更があった時に購読者へ通知する"
 
-#: mod_pubsub/mod_pubsub.erl:3477 mod_pubsub/mod_pubsub_odbc.erl:3290
+#: mod_pubsub.erl:4774 mod_pubsub_odbc.erl:4382
 msgid "Notify subscribers when the node is deleted"
 msgstr "ノードが削除された時に購読者へ通知する"
 
-#: mod_pubsub/mod_pubsub.erl:3478 mod_pubsub/mod_pubsub_odbc.erl:3291
+#: mod_pubsub.erl:4777 mod_pubsub_odbc.erl:4385
 msgid "Notify subscribers when items are removed from the node"
 msgstr "アイテムがノードから消された時に購読者へ通知する"
 
-#: mod_pubsub/mod_pubsub.erl:3479 mod_pubsub/mod_pubsub_odbc.erl:3292
+#: mod_pubsub.erl:4780 mod_pubsub_odbc.erl:4388
 msgid "Persist items to storage"
 msgstr "アイテムをストレージに保存する"
 
-#: mod_pubsub/mod_pubsub.erl:3480 mod_pubsub/mod_pubsub_odbc.erl:3293
+#: mod_pubsub.erl:4782 mod_pubsub_odbc.erl:4390
 msgid "A friendly name for the node"
 msgstr "ノードのフレンドリネーム"
 
-#: mod_pubsub/mod_pubsub.erl:3481 mod_pubsub/mod_pubsub_odbc.erl:3294
+#: mod_pubsub.erl:4784 mod_pubsub_odbc.erl:4392
 msgid "Max # of items to persist"
 msgstr "アイテムの最大保存数"
 
-#: mod_pubsub/mod_pubsub.erl:3482 mod_pubsub/mod_pubsub_odbc.erl:3295
+#: mod_pubsub.erl:4786 mod_pubsub_odbc.erl:4394
 msgid "Whether to allow subscriptions"
 msgstr "購読を許可するかどうか"
 
-#: mod_pubsub/mod_pubsub.erl:3483 mod_pubsub/mod_pubsub_odbc.erl:3296
+#: mod_pubsub.erl:4788 mod_pubsub_odbc.erl:4396
 msgid "Specify the access model"
 msgstr "アクセスモデルを設定する"
 
-#: mod_pubsub/mod_pubsub.erl:3486 mod_pubsub/mod_pubsub_odbc.erl:3299
+#: mod_pubsub.erl:4791 mod_pubsub_odbc.erl:4399
 msgid "Roster groups allowed to subscribe"
 msgstr "名簿グループは購読を許可しました"
 
-#: mod_pubsub/mod_pubsub.erl:3487 mod_pubsub/mod_pubsub_odbc.erl:3300
+#: mod_pubsub.erl:4793 mod_pubsub_odbc.erl:4401
 msgid "Specify the publisher model"
 msgstr "公開モデルを指定する"
 
-#: mod_pubsub/mod_pubsub.erl:3489 mod_pubsub/mod_pubsub_odbc.erl:3302
+#: mod_pubsub.erl:4795 mod_pubsub_odbc.erl:4403
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr "公開者がオフラインになるときに、すべてのアイテムを削除"
 
-#: mod_pubsub/mod_pubsub.erl:3490 mod_pubsub/mod_pubsub_odbc.erl:3303
+#: mod_pubsub.erl:4798 mod_pubsub_odbc.erl:4406
 msgid "Specify the event message type"
 msgstr "イベントメッセージ種別を設定"
 
-#: mod_pubsub/mod_pubsub.erl:3492 mod_pubsub/mod_pubsub_odbc.erl:3305
+#: mod_pubsub.erl:4800 mod_pubsub_odbc.erl:4408
 msgid "Max payload size in bytes"
 msgstr "最大ぺイロードサイズ (byte)"
 
-#: mod_pubsub/mod_pubsub.erl:3493 mod_pubsub/mod_pubsub_odbc.erl:3306
+#: mod_pubsub.erl:4802 mod_pubsub_odbc.erl:4410
 msgid "When to send the last published item"
 msgstr "最後の公開アイテムを送信するタイミングで"
 
-#: mod_pubsub/mod_pubsub.erl:3495 mod_pubsub/mod_pubsub_odbc.erl:3308
+#: mod_pubsub.erl:4805 mod_pubsub_odbc.erl:4413
 msgid "Only deliver notifications to available users"
 msgstr "有効なユーザーにのみ告知を送信する"
 
-#: mod_pubsub/mod_pubsub.erl:3496 mod_pubsub/mod_pubsub_odbc.erl:3309
+#: mod_pubsub.erl:4808 mod_pubsub_odbc.erl:4416
 msgid "The collections with which a node is affiliated"
 msgstr "提携されたノードの集合です"
 
-#: mod_register.erl:193
-msgid "The CAPTCHA verification has failed"
-msgstr "CAPTCHA 検証は失敗しました"
-
-#: mod_register.erl:220
+#: mod_register.erl:240
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr "登録を行うには x:data と CAPTCHA をサポートするクライアントが必要です"
 
-#: mod_register.erl:226 mod_register.erl:265
+#: mod_register.erl:246 mod_register.erl:307
 msgid "Choose a username and password to register with this server"
 msgstr "サーバーに登録するユーザー名とパスワードを選択してください"
 
-#: mod_register.erl:230 mod_vcard.erl:364 mod_vcard_odbc.erl:342
-#: web/ejabberd_web_admin.erl:1515 web/ejabberd_web_admin.erl:1572
-msgid "User"
-msgstr "ユーザー"
-
-#: mod_register.erl:316 mod_register.erl:361
-msgid "The password is too weak"
-msgstr "このパスワードは単純過ぎます"
-
-#: mod_register.erl:365
-msgid "Users are not allowed to register accounts so quickly"
-msgstr "それほど速くアカウントを登録することはできません"
-
-#: mod_roster.erl:938 mod_roster_odbc.erl:1055 web/ejabberd_web_admin.erl:1701
-#: web/ejabberd_web_admin.erl:1886 web/ejabberd_web_admin.erl:1897
-#: web/ejabberd_web_admin.erl:2219
-msgid "None"
-msgstr "なし"
-
-#: mod_roster.erl:945 mod_roster_odbc.erl:1062
-msgid "Subscription"
-msgstr "認可"
-
-#: mod_roster.erl:946 mod_roster_odbc.erl:1063
-msgid "Pending"
-msgstr "保留"
-
-#: mod_roster.erl:947 mod_roster_odbc.erl:1064
-msgid "Groups"
-msgstr "グループ"
-
-#: mod_roster.erl:974 mod_roster_odbc.erl:1091
-msgid "Validate"
-msgstr "検証"
-
-#: mod_roster.erl:982 mod_roster_odbc.erl:1099
-msgid "Remove"
-msgstr "削除"
-
-#: mod_roster.erl:985 mod_roster_odbc.erl:1102
-msgid "Roster of "
-msgstr "名簿: "
-
-#: mod_roster.erl:988 mod_roster_odbc.erl:1105 mod_shared_roster.erl:902
-#: mod_shared_roster.erl:1011 mod_shared_roster_odbc.erl:931
-#: mod_shared_roster_odbc.erl:1040 web/ejabberd_web_admin.erl:834
-#: web/ejabberd_web_admin.erl:875 web/ejabberd_web_admin.erl:943
-#: web/ejabberd_web_admin.erl:979 web/ejabberd_web_admin.erl:1020
-#: web/ejabberd_web_admin.erl:1509 web/ejabberd_web_admin.erl:1761
-#: web/ejabberd_web_admin.erl:1932 web/ejabberd_web_admin.erl:2136
-#: web/ejabberd_web_admin.erl:2161
-msgid "Bad format"
-msgstr "不正なフォーマット"
-
-#: mod_roster.erl:995 mod_roster_odbc.erl:1112
-msgid "Add Jabber ID"
-msgstr "Jabber ID を追加"
-
-#: mod_roster.erl:1094 mod_roster_odbc.erl:1211
-msgid "Roster"
-msgstr "名簿"
-
-#: mod_shared_roster.erl:857 mod_shared_roster.erl:899
-#: mod_shared_roster.erl:1007 mod_shared_roster_odbc.erl:886
-#: mod_shared_roster_odbc.erl:928 mod_shared_roster_odbc.erl:1036
-msgid "Shared Roster Groups"
-msgstr "共有名簿グループ"
-
-#: mod_shared_roster.erl:895 mod_shared_roster_odbc.erl:924
-#: web/ejabberd_web_admin.erl:1365 web/ejabberd_web_admin.erl:2461
-msgid "Add New"
-msgstr "新規追加"
-
-#: mod_shared_roster.erl:978 mod_shared_roster_odbc.erl:1007
-msgid "Name:"
-msgstr "名前:"
-
-#: mod_shared_roster.erl:983 mod_shared_roster_odbc.erl:1012
-msgid "Description:"
-msgstr "説明:"
-
-#: mod_shared_roster.erl:991 mod_shared_roster_odbc.erl:1020
-msgid "Members:"
-msgstr "メンバー:"
-
-#: mod_shared_roster.erl:999 mod_shared_roster_odbc.erl:1028
-msgid "Displayed Groups:"
-msgstr "表示グループ"
-
-#: mod_shared_roster.erl:1008 mod_shared_roster_odbc.erl:1037
-msgid "Group "
-msgstr "グループ"
-
-#: mod_shared_roster.erl:1017 mod_shared_roster_odbc.erl:1046
-#: web/ejabberd_web_admin.erl:840 web/ejabberd_web_admin.erl:884
-#: web/ejabberd_web_admin.erl:949 web/ejabberd_web_admin.erl:1026
-#: web/ejabberd_web_admin.erl:2017
-msgid "Submit"
-msgstr "送信"
-
-#: mod_vcard.erl:165 mod_vcard_ldap.erl:238 mod_vcard_odbc.erl:129
-msgid "Erlang Jabber Server"
-msgstr "Erlang Jabber Server"
-
-#: mod_vcard.erl:364 mod_vcard.erl:478 mod_vcard_odbc.erl:342
-#: mod_vcard_odbc.erl:454
-msgid "Birthday"
-msgstr "誕生日"
-
-#: mod_vcard.erl:364 mod_vcard.erl:480 mod_vcard_odbc.erl:342
-#: mod_vcard_odbc.erl:456
-msgid "City"
-msgstr "都道府県"
-
-#: mod_vcard.erl:364 mod_vcard.erl:479 mod_vcard_odbc.erl:342
-#: mod_vcard_odbc.erl:455
-msgid "Country"
-msgstr "国"
-
-#: mod_vcard.erl:364 mod_vcard.erl:481 mod_vcard_odbc.erl:342
-#: mod_vcard_odbc.erl:457
-msgid "Email"
-msgstr "メールアドレス"
-
-#: mod_vcard.erl:364 mod_vcard.erl:476 mod_vcard_odbc.erl:342
-#: mod_vcard_odbc.erl:452
-msgid "Family Name"
-msgstr "姓"
-
-#: mod_vcard.erl:364 mod_vcard_odbc.erl:342
-msgid ""
-"Fill in the form to search for any matching Jabber User (Add * to the end of "
-"field to match substring)"
-msgstr ""
-"欄を埋めて Jabber User を検索してください (* を使用すると部分文字列にマッチし"
-"ます)"
-
-#: mod_vcard.erl:364 mod_vcard.erl:473 mod_vcard_odbc.erl:342
-#: mod_vcard_odbc.erl:449
-msgid "Full Name"
-msgstr "氏名"
-
-#: mod_vcard.erl:364 mod_vcard.erl:475 mod_vcard_odbc.erl:342
-#: mod_vcard_odbc.erl:451
-msgid "Middle Name"
-msgstr "ミドルネーム"
-
-#: mod_vcard.erl:364 mod_vcard.erl:474 mod_vcard_odbc.erl:342
-#: mod_vcard_odbc.erl:450 web/ejabberd_web_admin.erl:2006
-msgid "Name"
-msgstr "名"
-
-#: mod_vcard.erl:364 mod_vcard.erl:482 mod_vcard_odbc.erl:342
-#: mod_vcard_odbc.erl:458
-msgid "Organization Name"
-msgstr "会社名"
-
-#: mod_vcard.erl:364 mod_vcard.erl:483 mod_vcard_odbc.erl:342
-#: mod_vcard_odbc.erl:459
-msgid "Organization Unit"
-msgstr "部署名"
-
-#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
-msgid "Search users in "
-msgstr "ユーザーの検索: "
-
-#: mod_vcard.erl:364 mod_vcard_ldap.erl:462 mod_vcard_odbc.erl:342
-msgid "You need an x:data capable client to search"
-msgstr "検索を行うためには x:data をサポートするクライアントが必要です"
-
-#: mod_vcard.erl:389 mod_vcard_ldap.erl:487 mod_vcard_odbc.erl:367
-msgid "vCard User Search"
-msgstr "vCard ユーザー検索"
-
-#: mod_vcard.erl:445 mod_vcard_ldap.erl:541 mod_vcard_odbc.erl:421
-msgid "ejabberd vCard module"
-msgstr "ejabberd vCard モジュール"
-
-#: mod_vcard.erl:469 mod_vcard_ldap.erl:551 mod_vcard_odbc.erl:445
-msgid "Search Results for "
-msgstr "検索結果: "
-
-#: mod_vcard_ldap.erl:462
-msgid "Fill in fields to search for any matching Jabber User"
-msgstr "欄を埋めて Jabber User を検索してください"
-
-#: web/ejabberd_web_admin.erl:193 web/ejabberd_web_admin.erl:203
-#: web/ejabberd_web_admin.erl:219 web/ejabberd_web_admin.erl:229
-msgid "Unauthorized"
-msgstr "認証されていません"
-
-#: web/ejabberd_web_admin.erl:286 web/ejabberd_web_admin.erl:303
-msgid "ejabberd Web Admin"
-msgstr "ejabberd ウェブ管理"
-
-#: web/ejabberd_web_admin.erl:769 web/ejabberd_web_admin.erl:780
-msgid "Administration"
-msgstr "管理"
-
-#: web/ejabberd_web_admin.erl:878 web/ejabberd_web_admin.erl:982
-msgid "Raw"
-msgstr "Raw"
-
-#: web/ejabberd_web_admin.erl:1017
-msgid "~s access rule configuration"
-msgstr "~s アクセスルール設定"
-
-#: web/ejabberd_web_admin.erl:1035
-msgid "Virtual Hosts"
-msgstr "ヴァーチャルホスト"
-
-#: web/ejabberd_web_admin.erl:1043 web/ejabberd_web_admin.erl:1050
-msgid "Users"
-msgstr "ユーザー"
-
-#: web/ejabberd_web_admin.erl:1078
-msgid "Users Last Activity"
-msgstr "ユーザーの活動履歴"
-
-#: web/ejabberd_web_admin.erl:1080
-msgid "Period: "
-msgstr "期間: "
-
-#: web/ejabberd_web_admin.erl:1090
-msgid "Last month"
-msgstr "先月"
-
-#: web/ejabberd_web_admin.erl:1091
-msgid "Last year"
-msgstr "去年"
-
-#: web/ejabberd_web_admin.erl:1092
-msgid "All activity"
-msgstr "すべて"
-
-#: web/ejabberd_web_admin.erl:1094
-msgid "Show Ordinary Table"
-msgstr "通常の表を表示"
-
-#: web/ejabberd_web_admin.erl:1096
-msgid "Show Integral Table"
-msgstr "累積の表を表示"
-
-#: web/ejabberd_web_admin.erl:1105 web/ejabberd_web_admin.erl:1939
-msgid "Statistics"
-msgstr "統計"
-
-#: web/ejabberd_web_admin.erl:1117
-msgid "Not Found"
-msgstr "見つかりません"
-
-#: web/ejabberd_web_admin.erl:1134
-msgid "Node not found"
-msgstr "ノードが見つかりません"
-
-#: web/ejabberd_web_admin.erl:1460
-msgid "Host"
-msgstr "ホスト"
-
-#: web/ejabberd_web_admin.erl:1461
-msgid "Registered Users"
-msgstr "登録ユーザー"
-
-#: web/ejabberd_web_admin.erl:1573
-msgid "Offline Messages"
-msgstr "オフラインメッセージ"
-
-#: web/ejabberd_web_admin.erl:1574 web/ejabberd_web_admin.erl:1767
-msgid "Last Activity"
-msgstr "活動履歴"
-
-#: web/ejabberd_web_admin.erl:1659 web/ejabberd_web_admin.erl:1675
-msgid "Registered Users:"
-msgstr "登録ユーザー:"
-
-#: web/ejabberd_web_admin.erl:1661 web/ejabberd_web_admin.erl:1677
-#: web/ejabberd_web_admin.erl:2192
-msgid "Online Users:"
-msgstr "オンラインユーザー:"
-
-#: web/ejabberd_web_admin.erl:1663
-msgid "Outgoing s2s Connections:"
-msgstr "外向き s2s コネクション:"
-
-#: web/ejabberd_web_admin.erl:1665
-msgid "Outgoing s2s Servers:"
-msgstr "外向き s2s サービス:"
-
-#: web/ejabberd_web_admin.erl:1734 web/mod_register_web.erl:175
-#: web/mod_register_web.erl:372 web/mod_register_web.erl:381
-#: web/mod_register_web.erl:411
-msgid "Change Password"
-msgstr "パスワードを変更"
-
-#: web/ejabberd_web_admin.erl:1758
-msgid "User "
-msgstr "ユーザー "
-
-#: web/ejabberd_web_admin.erl:1765
-msgid "Connected Resources:"
-msgstr "接続リソース:"
-
-#: web/ejabberd_web_admin.erl:1766 web/mod_register_web.erl:227
-#: web/mod_register_web.erl:519
-msgid "Password:"
-msgstr "パスワード"
-
-#: web/ejabberd_web_admin.erl:1828
-msgid "No Data"
-msgstr "データなし"
-
-#: web/ejabberd_web_admin.erl:1906
-msgid "Nodes"
-msgstr "ノード"
-
-#: web/ejabberd_web_admin.erl:1929 web/ejabberd_web_admin.erl:1951
-msgid "Node "
-msgstr "ノード "
-
-#: web/ejabberd_web_admin.erl:1938
-msgid "Listened Ports"
-msgstr "Listen ポート"
-
-#: web/ejabberd_web_admin.erl:1940 web/ejabberd_web_admin.erl:2260
-#: web/ejabberd_web_admin.erl:2448
-msgid "Update"
-msgstr "更新"
-
-#: web/ejabberd_web_admin.erl:1943 web/ejabberd_web_admin.erl:2569
-msgid "Restart"
-msgstr "再起動"
-
-#: web/ejabberd_web_admin.erl:1945 web/ejabberd_web_admin.erl:2571
-msgid "Stop"
-msgstr "停止"
-
-#: web/ejabberd_web_admin.erl:1959
-msgid "RPC Call Error"
-msgstr "RPC 呼び出しエラー"
-
-#: web/ejabberd_web_admin.erl:2000
-msgid "Database Tables at "
-msgstr "データーベーステーブル: "
-
-#: web/ejabberd_web_admin.erl:2007
-msgid "Storage Type"
-msgstr "ストレージタイプ"
-
-#: web/ejabberd_web_admin.erl:2008
-msgid "Elements"
-msgstr "要素"
-
-#: web/ejabberd_web_admin.erl:2009
-msgid "Memory"
-msgstr "メモリ"
-
-#: web/ejabberd_web_admin.erl:2032 web/ejabberd_web_admin.erl:2137
-msgid "Error"
-msgstr "エラー"
-
-#: web/ejabberd_web_admin.erl:2034
-msgid "Backup of "
-msgstr "バックアップ: "
-
-#: web/ejabberd_web_admin.erl:2036
-msgid ""
-"Please note that these options will only backup the builtin Mnesia database. "
-"If you are using the ODBC module, you also need to backup your SQL database "
-"separately."
-msgstr ""
-"これらのオプションは組み込みの Mnesia データーベースのバックアップのみを行う"
-"ことに注意してください。もし ODBC モジュールを使用している場合は、SQL デー"
-"ターベースのバックアップを別に行う必要があります。"
-
-#: web/ejabberd_web_admin.erl:2041
-msgid "Store binary backup:"
-msgstr "バイナリバックアップを保存:"
-
-#: web/ejabberd_web_admin.erl:2045 web/ejabberd_web_admin.erl:2052
-#: web/ejabberd_web_admin.erl:2060 web/ejabberd_web_admin.erl:2067
-#: web/ejabberd_web_admin.erl:2074 web/ejabberd_web_admin.erl:2081
-#: web/ejabberd_web_admin.erl:2088 web/ejabberd_web_admin.erl:2096
-#: web/ejabberd_web_admin.erl:2103 web/ejabberd_web_admin.erl:2110
-msgid "OK"
-msgstr "OK"
-
-#: web/ejabberd_web_admin.erl:2048
-msgid "Restore binary backup immediately:"
-msgstr "直ちにバイナリバックアップからリストア:"
-
-#: web/ejabberd_web_admin.erl:2056
-msgid ""
-"Restore binary backup after next ejabberd restart (requires less memory):"
-msgstr "ejabberd の再起動時にバイナリバックアップからリストア (メモリ少):"
-
-#: web/ejabberd_web_admin.erl:2063
-msgid "Store plain text backup:"
-msgstr "プレーンテキストバックアップを保存:"
-
-#: web/ejabberd_web_admin.erl:2070
-msgid "Restore plain text backup immediately:"
-msgstr "直ちにプレーンテキストバックアップからリストア:"
-
-#: web/ejabberd_web_admin.erl:2077
-msgid "Import users data from a PIEFXIS file (XEP-0227):"
-msgstr "ユーザーデータを PIEFXIS ファイルからインポート (XEP-0227):"
-
-#: web/ejabberd_web_admin.erl:2084
-msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
-msgstr ""
-"サーバーにあるすべてのユーザーデータを PIEFXIS ファイルにエクスポート "
-"(XEP-0227):"
-
-#: web/ejabberd_web_admin.erl:2091
-msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
-msgstr "ホストのユーザーデータを PIEFXIS ファイルにエクスポート (XEP-0227):"
-
-#: web/ejabberd_web_admin.erl:2099
-msgid "Import user data from jabberd14 spool file:"
-msgstr "ユーザーデータを jabberd14 Spool ファイルからインポート:"
-
-#: web/ejabberd_web_admin.erl:2106
-msgid "Import users data from jabberd14 spool directory:"
-msgstr "ユーザーデータを jabberd14 Spool ディレクトリからインポート:"
-
-#: web/ejabberd_web_admin.erl:2132
-msgid "Listened Ports at "
-msgstr "Listen ポート "
-
-#: web/ejabberd_web_admin.erl:2157
-msgid "Modules at "
-msgstr "モジュール "
-
-#: web/ejabberd_web_admin.erl:2183
-msgid "Statistics of ~p"
-msgstr "~p の統計"
-
-#: web/ejabberd_web_admin.erl:2186
-msgid "Uptime:"
-msgstr "起動時間:"
-
-#: web/ejabberd_web_admin.erl:2189
-msgid "CPU Time:"
-msgstr "CPU時間:"
-
-#: web/ejabberd_web_admin.erl:2195
-msgid "Transactions Committed:"
-msgstr "トランザクションのコミット:"
-
-#: web/ejabberd_web_admin.erl:2198
-msgid "Transactions Aborted:"
-msgstr "トランザクションの失敗:"
-
-#: web/ejabberd_web_admin.erl:2201
-msgid "Transactions Restarted:"
-msgstr "トランザクションの再起動:"
-
-#: web/ejabberd_web_admin.erl:2204
-msgid "Transactions Logged:"
-msgstr "トランザクションのログ: "
-
-#: web/ejabberd_web_admin.erl:2246
-msgid "Update "
-msgstr "更新 "
-
-#: web/ejabberd_web_admin.erl:2254
-msgid "Update plan"
-msgstr "更新計画"
-
-#: web/ejabberd_web_admin.erl:2255
-msgid "Modified modules"
-msgstr "変更されたモジュール"
-
-#: web/ejabberd_web_admin.erl:2256
-msgid "Update script"
-msgstr "スクリプトの更新"
-
-#: web/ejabberd_web_admin.erl:2257
-msgid "Low level update script"
-msgstr "低レベル更新スクリプト"
-
-#: web/ejabberd_web_admin.erl:2258
-msgid "Script check"
-msgstr "スクリプトチェック"
-
-#: web/ejabberd_web_admin.erl:2426
-msgid "Port"
-msgstr "ポート"
-
-#: web/ejabberd_web_admin.erl:2427
-msgid "IP"
-msgstr "IP"
-
-#: web/ejabberd_web_admin.erl:2428
-msgid "Protocol"
-msgstr "プロトコル"
-
-#: web/ejabberd_web_admin.erl:2429 web/ejabberd_web_admin.erl:2556
-msgid "Module"
-msgstr "モジュール"
-
-#: web/ejabberd_web_admin.erl:2430 web/ejabberd_web_admin.erl:2557
-msgid "Options"
-msgstr "オプション"
-
-#: web/ejabberd_web_admin.erl:2450
-msgid "Delete"
-msgstr "削除"
-
-#: web/ejabberd_web_admin.erl:2579
-msgid "Start"
-msgstr "開始"
-
-#: web/mod_register_web.erl:104
+#: mod_register_web.erl:105
 msgid "Your Jabber account was successfully created."
 msgstr "Jabber アカウントの作成に成功しました。"
 
-#: web/mod_register_web.erl:107
+#: mod_register_web.erl:110
 msgid "There was an error creating the account: "
 msgstr "アカウントの作成中にエラーが発生しました: "
 
-#: web/mod_register_web.erl:115
+#: mod_register_web.erl:119
 msgid "Your Jabber account was successfully deleted."
 msgstr "Jabber アカウントの削除に成功しました。"
 
-#: web/mod_register_web.erl:118
+#: mod_register_web.erl:124
 msgid "There was an error deleting the account: "
 msgstr "アカウントの削除中にエラーが発生しました: "
 
-#: web/mod_register_web.erl:128
+#: mod_register_web.erl:135
 msgid "The password of your Jabber account was successfully changed."
 msgstr "Jabber アカウントのパスワード変更に成功しました。"
 
-#: web/mod_register_web.erl:131
+#: mod_register_web.erl:140
 msgid "There was an error changing the password: "
 msgstr "パスワードの変更中にエラーが発生しました: "
 
-#: web/mod_register_web.erl:163 web/mod_register_web.erl:172
+#: mod_register_web.erl:175 mod_register_web.erl:183
 msgid "Jabber Account Registration"
 msgstr "Jabber アカウント登録"
 
-#: web/mod_register_web.erl:174 web/mod_register_web.erl:192
-#: web/mod_register_web.erl:201
+#: mod_register_web.erl:186 mod_register_web.erl:204 mod_register_web.erl:212
 msgid "Register a Jabber account"
 msgstr "Jabber アカウントを登録"
 
-#: web/mod_register_web.erl:176 web/mod_register_web.erl:493
-#: web/mod_register_web.erl:502
+#: mod_register_web.erl:191 mod_register_web.erl:452 mod_register_web.erl:460
 msgid "Unregister a Jabber account"
 msgstr "Jabber アカウントを削除"
 
-#: web/mod_register_web.erl:203
+#: mod_register_web.erl:214
 msgid ""
 "This page allows to create a Jabber account in this Jabber server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
@@ -1765,26 +1463,24 @@ msgstr ""
 "(JabberID) は username@server のような形式になります。注意事項どおり、正しく"
 "項目を記入してください。"
 
-#: web/mod_register_web.erl:212 web/mod_register_web.erl:386
-#: web/mod_register_web.erl:509
+#: mod_register_web.erl:224 mod_register_web.erl:359 mod_register_web.erl:468
 msgid "Username:"
 msgstr "ユーザー名:"
 
-#: web/mod_register_web.erl:217
+#: mod_register_web.erl:230
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
 "大文字と小文字は区別しません: macbeth は MacBeth や Macbeth と同じです。"
 
-#: web/mod_register_web.erl:218
+#: mod_register_web.erl:233
 msgid "Characters not allowed:"
 msgstr "使用できない文字:"
 
-#: web/mod_register_web.erl:222 web/mod_register_web.erl:391
-#: web/mod_register_web.erl:514
+#: mod_register_web.erl:236 mod_register_web.erl:363 mod_register_web.erl:472
 msgid "Server:"
 msgstr "サーバー:"
 
-#: web/mod_register_web.erl:232
+#: mod_register_web.erl:244
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
@@ -1792,11 +1488,11 @@ msgstr ""
 "パスワードは誰にも教えないようにしてください。Jabber サーバーの管理者があなた"
 "にパスワードを尋ねることはありません。"
 
-#: web/mod_register_web.erl:234
+#: mod_register_web.erl:248
 msgid "You can later change your password using a Jabber client."
 msgstr "あなたは後で Jabber クライアントを使用してパスワードを変更できます。"
 
-#: web/mod_register_web.erl:235
+#: mod_register_web.erl:251
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
@@ -1804,7 +1500,7 @@ msgstr ""
 "Jabber クライアントはコンピューターにパスワードを記憶できます。コンピューター"
 "が安全であると信頼できる場合にのみ、この機能を使用してください。"
 
-#: web/mod_register_web.erl:237
+#: mod_register_web.erl:255
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
 "Jabber there isn't an automated way to recover your password if you forget "
@@ -1814,32 +1510,289 @@ msgstr ""
 "パスワードを忘れてしまった場合、Jabber ではパスワードのリカバリを自動的に行う"
 "ことはできません。"
 
-#: web/mod_register_web.erl:242 web/mod_register_web.erl:406
+#: mod_register_web.erl:261 mod_register_web.erl:373
 msgid "Password Verification:"
 msgstr "パスワード (確認):"
 
-#: web/mod_register_web.erl:250
+#: mod_register_web.erl:268
 msgid "Register"
 msgstr "登録"
 
-#: web/mod_register_web.erl:396
+#: mod_register_web.erl:365
 msgid "Old Password:"
 msgstr "古いパスワード:"
 
-#: web/mod_register_web.erl:401
+#: mod_register_web.erl:369
 msgid "New Password:"
 msgstr "新しいパスワード:"
 
-#: web/mod_register_web.erl:504
+#: mod_register_web.erl:462
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr "ここはこの Jabber サーバーのアカウントを削除するページです。"
 
-#: web/mod_register_web.erl:524
+#: mod_register_web.erl:479
 msgid "Unregister"
 msgstr "削除"
 
+#: mod_roster.erl:1433
+msgid "Subscription"
+msgstr "認可"
+
+#: mod_roster.erl:1434
+msgid "Pending"
+msgstr "保留"
+
+#: mod_roster.erl:1435
+msgid "Groups"
+msgstr "グループ"
+
+#: mod_roster.erl:1473
+msgid "Validate"
+msgstr "検証"
+
+#: mod_roster.erl:1482
+msgid "Remove"
+msgstr "削除"
+
+#: mod_roster.erl:1487
+msgid "Roster of "
+msgstr "名簿: "
+
+#: mod_roster.erl:1501
+msgid "Add Jabber ID"
+msgstr "Jabber ID を追加"
+
+#: mod_roster.erl:1619
+msgid "Roster"
+msgstr "名簿"
+
+#: mod_shared_roster.erl:1123 mod_shared_roster.erl:1165
+#: mod_shared_roster.erl:1259
+msgid "Shared Roster Groups"
+msgstr "共有名簿グループ"
+
+#: mod_shared_roster.erl:1235
+msgid "Name:"
+msgstr "名前:"
+
+#: mod_shared_roster.erl:1239
+msgid "Description:"
+msgstr "説明:"
+
+#: mod_shared_roster.erl:1246
+msgid "Members:"
+msgstr "メンバー:"
+
+#: mod_shared_roster.erl:1253
+msgid "Displayed Groups:"
+msgstr "表示グループ"
+
+#: mod_shared_roster.erl:1262
+msgid "Group "
+msgstr "グループ"
+
+#: mod_vcard.erl:164 mod_vcard_ldap.erl:222
+msgid "Erlang Jabber Server"
+msgstr "Erlang Jabber Server"
+
+#: mod_vcard.erl:486 mod_vcard.erl:618
+msgid "Birthday"
+msgstr "誕生日"
+
+#: mod_vcard.erl:486 mod_vcard.erl:620
+msgid "City"
+msgstr "都道府県"
+
+#: mod_vcard.erl:486 mod_vcard.erl:619
+msgid "Country"
+msgstr "国"
+
+#: mod_vcard.erl:486 mod_vcard.erl:621
+msgid "Email"
+msgstr "メールアドレス"
+
+#: mod_vcard.erl:486 mod_vcard.erl:615
+msgid "Family Name"
+msgstr "姓"
+
+#: mod_vcard.erl:486
+msgid ""
+"Fill in the form to search for any matching Jabber User (Add * to the end of "
+"field to match substring)"
+msgstr ""
+"項目を入力してユーザーを検索を行えます (* を使用すると部分文字列にマッチします)"
+
+#: mod_vcard.erl:486 mod_vcard.erl:611
+msgid "Full Name"
+msgstr "氏名"
+
+#: mod_vcard.erl:486 mod_vcard.erl:613
+msgid "Middle Name"
+msgstr "ミドルネーム"
+
+#: mod_vcard.erl:486 mod_vcard.erl:622
+msgid "Organization Name"
+msgstr "会社名"
+
+#: mod_vcard.erl:486 mod_vcard.erl:624
+msgid "Organization Unit"
+msgstr "部署名"
+
+#: mod_vcard.erl:486 mod_vcard_ldap.erl:499
+msgid "Search users in "
+msgstr "ユーザーの検索: "
+
+#: mod_vcard.erl:486 mod_vcard_ldap.erl:499
+msgid "You need an x:data capable client to search"
+msgstr "検索を行うためには x:data をサポートするクライアントが必要です"
+
+#: mod_vcard.erl:515 mod_vcard_ldap.erl:528
+msgid "vCard User Search"
+msgstr "vCard検索"
+
+#: mod_vcard.erl:576 mod_vcard_ldap.erl:583
+msgid "ejabberd vCard module"
+msgstr "ejabberd vCard モジュール"
+
+#: mod_vcard.erl:605 mod_vcard_ldap.erl:599
+msgid "Search Results for "
+msgstr "検索結果: "
+
+#: mod_vcard_ldap.erl:499
+msgid "Fill in fields to search for any matching Jabber User"
+msgstr "項目を入力してユーザーを検索してください"
+
+#~ msgid "Your active privacy list has denied the routing of this stanza."
+#~ msgstr ""
+#~ "あなたのプライバシーリストはこのスタンザのルーティングを拒否しました。"
+
+#~ msgid "Access denied by service policy"
+#~ msgstr "サービスポリシーによってアクセスが禁止されました"
+
+#~ msgid "Only service administrators are allowed to send service messages"
+#~ msgstr "サービス管理者のみがサービスメッセージを送信できます"
+
+#~ msgid "Room creation is denied by service policy"
+#~ msgstr "サービスポリシーによってチャットルームの作成が禁止されています"
+
+#~ msgid "Conference room does not exist"
+#~ msgstr "会議室は存在しません"
+
+#~ msgid "That nickname is registered by another person"
+#~ msgstr "ニックネームはほかの人によって登録されています"
+
+#~ msgid "You must fill in field \"Nickname\" in the form"
+#~ msgstr "フォームの\"ニックネーム\"欄を入力する必要があります"
+
+#~ msgid "Traffic rate limit is exceeded"
+#~ msgstr "トラフィックレートの制限を超えました"
+
+#~ msgid ""
+#~ "This participant is kicked from the room because he sent an error message"
+#~ msgstr "エラーメッセージを送信したため、この参加者はキックされました"
+
+#~ msgid "It is not allowed to send private messages to the conference"
+#~ msgstr "この会議にプライベートメッセージを送信することはできません"
+
+#~ msgid "Please, wait for a while before sending new voice request"
+#~ msgstr "新しい発言権の要求を送るまで少し間をおいてください"
+
+#~ msgid "Voice requests are disabled in this conference"
+#~ msgstr "この会議では、発言権の要求はできません"
+
+#~ msgid "Failed to extract JID from your voice request approval"
+#~ msgstr "発言権要求の承認から JID を取り出すことに失敗しました"
+
+#~ msgid "Only moderators can approve voice requests"
+#~ msgstr "モデレーターだけが発言権の要求を承認できます"
+
+#~ msgid "Improper message type"
+#~ msgstr "誤ったメッセージタイプです"
+
+#~ msgid ""
+#~ "This participant is kicked from the room because he sent an error message "
+#~ "to another participant"
+#~ msgstr ""
+#~ "他の参加者にエラーメッセージを送信したため、この参加者はキックされました"
+
+#~ msgid "It is not allowed to send private messages of type \"groupchat\""
+#~ msgstr ""
+#~ "種別が\"groupchat\" であるプライベートメッセージを送信することはできません"
+
+#~ msgid "Recipient is not in the conference room"
+#~ msgstr "受信者はこの会議室にいません"
+
+#~ msgid "It is not allowed to send private messages"
+#~ msgstr "プライベートメッセージを送信することはできません"
+
+#~ msgid "Only occupants are allowed to send messages to the conference"
+#~ msgstr "在室者のみがこの会議にメッセージを送ることができます"
+
+#~ msgid "Only occupants are allowed to send queries to the conference"
+#~ msgstr "在室者のみが会議にクエリーを送信することができます"
+
+#~ msgid "Queries to the conference members are not allowed in this room"
+#~ msgstr ""
+#~ "このチャットルームでは、会議のメンバーへのクエリーは禁止されています"
+
+#~ msgid "Visitors are not allowed to send messages to all occupants"
+#~ msgstr "傍聴者はすべての在室者にメッセージを送信することはできません"
+
+#~ msgid ""
+#~ "This participant is kicked from the room because he sent an error presence"
+#~ msgstr "エラープレゼンスを送信したため、この参加者はキックされました"
+
+#~ msgid "Visitors are not allowed to change their nicknames in this room"
+#~ msgstr "傍聴者はこのチャットルームでニックネームを変更することはできません"
+
+#~ msgid "That nickname is already in use by another occupant"
+#~ msgstr "そのニックネームは既にほかの在室者によって使用されています"
+
+#~ msgid "You have been banned from this room"
+#~ msgstr "あなたはこのチャットルームからバンされています"
+
+#~ msgid "Membership is required to enter this room"
+#~ msgstr "このチャットルームに入るにはメンバーでなければなりません"
+
+#~ msgid "A password is required to enter this room"
+#~ msgstr "このチャットルームに入るにはパスワードが必要です"
+
+#~ msgid "Too many CAPTCHA requests"
+#~ msgstr "CAPTCHA 要求が多すぎます"
+
+#~ msgid "Unable to generate a CAPTCHA"
+#~ msgstr "CAPTCHA を生成できません"
+
+#~ msgid "Incorrect password"
+#~ msgstr "パスワードが違います"
+
+#~ msgid "Administrator privileges required"
+#~ msgstr "管理者権限が必要です"
+
+#~ msgid "Moderator privileges required"
+#~ msgstr "モデレーター権限が必要です"
+
+#~ msgid "Owner privileges required"
+#~ msgstr "主宰者の権限が必要です"
+
+#~ msgid ""
+#~ "Your contact offline message queue is full. The message has been "
+#~ "discarded."
+#~ msgstr ""
+#~ "相手先のオフラインメッセージキューが一杯です。このメッセージは破棄されま"
+#~ "す。"
+
+#~ msgid "The CAPTCHA verification has failed"
+#~ msgstr "CAPTCHA 検証は失敗しました"
+
+#~ msgid "The password is too weak"
+#~ msgstr "このパスワードは単純過ぎます"
+
+#~ msgid "Users are not allowed to register accounts so quickly"
+#~ msgstr "それほど速くアカウントを登録することはできません"
+
 #~ msgid "ejabberd virtual hosts"
-#~ msgstr "ejabberd ヴァーチャルホスト"
+#~ msgstr "ejabberd バーチャルホスト"
 
 #~ msgid "Captcha test failed"
 #~ msgstr "キャプチャのテストに失敗しました"

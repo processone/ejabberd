@@ -1,8 +1,8 @@
 language: erlang
 
 otp_release:
+  - 17.4
   - R16B03
-  - R15B01
 
 services:
   - riak
@@ -11,7 +11,7 @@ before_install:
   - sudo apt-get -qq update
 
 install:
-  - sudo apt-get -qq install libexpat1-dev libyaml-dev libpam0g-dev
+  - sudo apt-get -qq install libexpat1-dev libyaml-dev libpam0g-dev libsqlite3-dev
 
 before_script:
   - mysql -u root -e "CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';"
@@ -23,7 +23,7 @@ before_script:
 
 script:
   - ./autogen.sh
-  - ./configure --enable-all --disable-odbc
+  - ./configure --enable-all --disable-odbc --disable-elixir
   - make xref
   - ERL_LIBS=$PWD make test
   - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log

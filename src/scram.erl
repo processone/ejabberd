@@ -5,7 +5,7 @@
 %%% Created : 7 Aug 2011 by Stephen Röttger <stephen.roettger@googlemail.com>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -41,7 +41,7 @@ salted_password(Password, Salt, IterationCount) ->
 -spec client_key(binary()) -> binary().
 
 client_key(SaltedPassword) ->
-    crypto:sha_mac(SaltedPassword, <<"Client Key">>).
+    sha_mac(SaltedPassword, <<"Client Key">>).
 
 -spec stored_key(binary()) -> binary().
 
@@ -50,12 +50,12 @@ stored_key(ClientKey) -> p1_sha:sha1(ClientKey).
 -spec server_key(binary()) -> binary().
 
 server_key(SaltedPassword) ->
-    crypto:sha_mac(SaltedPassword, <<"Server Key">>).
+    sha_mac(SaltedPassword, <<"Server Key">>).
 
 -spec client_signature(binary(), binary()) -> binary().
 
 client_signature(StoredKey, AuthMessage) ->
-    crypto:sha_mac(StoredKey, AuthMessage).
+    sha_mac(StoredKey, AuthMessage).
 
 -spec client_key(binary(), binary()) -> binary().
 
@@ -67,20 +67,25 @@ client_key(ClientProof, ClientSignature) ->
 -spec server_signature(binary(), binary()) -> binary().
 
 server_signature(ServerKey, AuthMessage) ->
-    crypto:sha_mac(ServerKey, AuthMessage).
+    sha_mac(ServerKey, AuthMessage).
 
 hi(Password, Salt, IterationCount) ->
-    U1 = crypto:sha_mac(Password, <<Salt/binary, 0, 0, 0, 1>>),
+    U1 = sha_mac(Password, <<Salt/binary, 0, 0, 0, 1>>),
     list_to_binary(lists:zipwith(fun (X, Y) -> X bxor Y end,
 				 binary_to_list(U1),
 				 binary_to_list(hi_round(Password, U1,
 							 IterationCount - 1)))).
 
 hi_round(Password, UPrev, 1) ->
-    crypto:sha_mac(Password, UPrev);
+    sha_mac(Password, UPrev);
 hi_round(Password, UPrev, IterationCount) ->
-    U = crypto:sha_mac(Password, UPrev),
+    U = sha_mac(Password, UPrev),
     list_to_binary(lists:zipwith(fun (X, Y) -> X bxor Y end,
 				 binary_to_list(U),
 				 binary_to_list(hi_round(Password, U,
 							 IterationCount - 1)))).
+
+sha_mac(Key, Data) ->
+    Context1 = crypto:hmac_init(sha, Key),
+    Context2 = crypto:hmac_update(Context1, Data),
+    crypto:hmac_final(Context2).

@@ -5,7 +5,7 @@
 %%% Created : 15 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -51,12 +51,12 @@
          encoding = <<"">>     :: binary(),
          port = 0              :: inet:port_number(),
          password = <<"">>     :: binary(),
-         queue = queue:new()   :: queue(),
+         queue = queue:new()   :: ?TQUEUE,
          user = #jid{}         :: jid(),
          host = <<"">>         :: binary(),
 	 server = <<"">>       :: binary(),
          nick = <<"">>         :: binary(),
-         channels = dict:new() :: dict(),
+         channels = dict:new() :: ?TDICT,
          nickchannel           :: binary(),
          mod = mod_irc         :: atom(),
 	 inbuf = <<"">>        :: binary(),
@@ -697,9 +697,9 @@ terminate(_Reason, _StateName, FullStateData) ->
 					     <<"Server Connect Failed">>}]},
 				FullStateData}
 			 end,
-    (FullStateData#state.mod):closed_connection(StateData#state.host,
-						StateData#state.user,
-						StateData#state.server),
+    (StateData#state.mod):closed_connection(StateData#state.host,
+                                            StateData#state.user,
+                                            StateData#state.server),
     bounce_messages(<<"Server Connect Failed">>),
     lists:foreach(fun (Chan) ->
 			  Stanza = #xmlel{name = <<"presence">>,

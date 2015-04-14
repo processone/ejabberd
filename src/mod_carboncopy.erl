@@ -7,7 +7,7 @@
 %%%              {mod_carboncopy, []}
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -153,9 +153,7 @@ check_and_forward(JID, To, Packet, Direction)->
 	    end;
         _ ->
 	    ok
-    end;
- 
-check_and_forward(_JID, _To, _Packet, _)-> ok.
+    end.
 
 remove_connection(User, Server, Resource, _Status)->
     disable(Server, User, Resource),
@@ -167,19 +165,16 @@ remove_connection(User, Server, Resource, _Status)->
 send_copies(JID, To, Packet, Direction)->
     {U, S, R} = jlib:jid_tolower(JID),
     PrioRes = ejabberd_sm:get_user_present_resources(U, S),
+    {_, AvailRs} = lists:unzip(PrioRes),
     {MaxPrio, MaxRes} = case catch lists:max(PrioRes) of
 	{Prio, Res} -> {Prio, Res};
 	_ -> {0, undefined}
     end,
 
+    %% unavailable resources are handled like bare JIDs
     IsBareTo = case {Direction, To} of
 	{received, #jid{lresource = <<>>}} -> true;
-	{received, #jid{lresource = LRes}} ->
-	    %% unavailable resources are handled like bare JIDs
-	    case lists:keyfind(LRes, 2, PrioRes) of
-		false -> true;
-		_ -> false
-	    end;
+	{received, #jid{lresource = LRes}} -> not lists:member(LRes, AvailRs);
 	_ -> false
     end,
     %% list of JIDs that should receive a carbon copy of this message (excluding the
@@ -188,7 +183,8 @@ send_copies(JID, To, Packet, Direction)->
 	{true, MaxRes} ->
 	    OrigTo = fun(Res) -> lists:member({MaxPrio, Res}, PrioRes) end,
 	    [ {jlib:make_jid({U, S, CCRes}), CC_Version}
-	     || {CCRes, CC_Version} <- list(U, S), not OrigTo(CCRes) ];
+	     || {CCRes, CC_Version} <- list(U, S),
+		lists:member(CCRes, AvailRs), not OrigTo(CCRes) ];
 	{true, _} ->
 	    %% The message was sent to our bare JID, and we currently have
 	    %% multiple resources with the same highest priority, so the session
@@ -198,7 +194,8 @@ send_copies(JID, To, Packet, Direction)->
 	    [];
 	{false, _} ->
 	    [ {jlib:make_jid({U, S, CCRes}), CC_Version}
-	     || {CCRes, CC_Version} <- list(U, S), CCRes /= R ]
+	     || {CCRes, CC_Version} <- list(U, S),
+		lists:member(CCRes, AvailRs), CCRes /= R ]
 	    %TargetJIDs = lists:delete(JID, [ jlib:make_jid({U, S, CCRes}) || CCRes <- list(U, S) ]),
     end,
 

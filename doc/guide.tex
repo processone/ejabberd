@@ -343,7 +343,7 @@ Alternatively, the latest development source code can be retrieved from the Git 
 \begin{verbatim}
 git clone git://github.com/processone/ejabberd.git ejabberd
 cd ejabberd
-git checkout -b 2.1.x origin/2.1.x
+./autogen.sh
 \end{verbatim}
 
 
@@ -692,6 +692,29 @@ In previous \ejabberd{} version the configuration file should be written
 in Erlang terms. The format is still supported, but it is highly recommended
 to convert it to the new YAML format using \term{convert\_to\_yaml} command
 from \term{ejabberdctl} (see~\ref{ejabberdctl} and \ref{list-eja-commands} for details).
+
+If you want to specify some options using the old Erlang format,
+you can set them in an additional cfg file, and include it using
+the \option{include\_config\_file} option, see \ref{includeconfigfile}
+for the option description and a related example in \ref{accesscommands}.
+
+If you just want to provide an erlang term inside an option,
+you can use the \term{"> erlangterm."} syntax for embedding erlang terms in a YAML file, for example:
+\begin{verbatim}
+modules:
+  mod_cron:
+    tasks:
+      - time: 10
+        units: seconds
+        module: mnesia
+        function: info
+        arguments: "> []."
+      - time: 3
+        units: seconds
+        module: ejabberd_auth
+        function: try_register
+        arguments: "> [\"user1\", \"localhost\", \"pass\"]."
+\end{verbatim}
 
 \makesubsection{hostnames}{Host Names}
 \ind{options!hosts}\ind{host names}
@@ -1079,7 +1102,7 @@ request_handlers:
     commonly on port 5223 for client-to-server communications.
     But this method is nowadays deprecated and not recommended.
     The preferable encryption method is STARTTLS on port 5222, as defined 
-    \footahref{http://xmpp.org/rfcs/rfc3920.html\#tls}{RFC 3920: XMPP Core},
+    \footahref{http://xmpp.org/rfcs/rfc6120.html\#tls}{RFC 6120: XMPP Core},
     which can be enabled in \ejabberd{} with the option \term{starttls}.
     If this option is set, you should also set the \option{certfile} option.
     The option \term{tls} can also be used in \term{ejabberd\_http} to support HTTPS.
@@ -1157,9 +1180,9 @@ There are some additional global options that can be specified in the ejabberd c
     Default value: 'undefined'.
   \titem{route\_subdomains: local|s2s}
   Defines if ejabberd must route stanzas directed to subdomains locally (compliant with 
-  \footahref{http://xmpp.org/rfcs/rfc3920.html\#rules.subdomain}{RFC 3920: XMPP Core}),
+  \footahref{http://xmpp.org/rfcs/rfc6120.html\#rules-local}{RFC 6120 Local Domain rules}),
   or to foreign server using S2S (compliant with
-  \footahref{http://tools.ietf.org/html/draft-saintandre-rfc3920bis-09\#section-11.3}{RFC 3920 bis}).
+  \footahref{http://xmpp.org/rfcs/rfc6120.html\#rules-remote}{RFC 6120 Remote Domain rules}).
 \end{description}
 
 \makesubsubsection{listened-examples}{Examples}
@@ -1770,7 +1793,7 @@ acl:
   loopback:
     ip:
       - "127.0.0.0/8"
-      - "::"
+      - "::1"
 \end{verbatim}
 \titem{user\_regexp: Regexp} Matches any local user with a name that
   matches \term{Regexp} on local virtual hosts. Example:
@@ -2083,7 +2106,7 @@ listen:
     port: 3478
     transport: udp
     use_turn: true
-    turn_ip: 10.20.30.1
+    turn_ip: "10.20.30.1"
     module: ejabberd_stun
   ...
 \end{verbatim}
@@ -3928,11 +3951,10 @@ modules:
 \end{verbatim}
 
 \makesubsection{modprivacy}{\modprivacy{}}
-\ind{modules!\modprivacy{}}\ind{Blocking Communication}\ind{Privacy Rules}\ind{protocols!RFC 3921: XMPP IM}
+\ind{modules!\modprivacy{}}\ind{Blocking Communication}\ind{Privacy Rules}\ind{protocols!XEP-0016: Privacy Lists}
 
-This module implements Blocking Communication (also known as Privacy Rules)
-as defined in section 10 from XMPP IM. If end users have support for it in
-their \XMPP{} client, they will be able to:
+This module implements \footahref{http://www.xmpp.org/extensions/xep-0016.html}{XEP-0016: Privacy Lists}.
+If end users have support for it in their \XMPP{} client, they will be able to:
 \begin{quote}
 \begin{itemize}
 \item Retrieving one's privacy lists.
@@ -3951,7 +3973,6 @@ their \XMPP{} client, they will be able to:
 \item Allowing or blocking all communications based on JID, group, or
   subscription type (or globally).
 \end{itemize}
-(from \ahrefurl{http://xmpp.org/rfcs/rfc3921.html\#privacy})
 \end{quote}
 
 Options:
@@ -4216,7 +4237,7 @@ acl:
   loopback:
     ip:
       - "127.0.0.0/8"
-      - "::"
+      - "::1"
   shortname: 
     user_glob: 
       - "?"
@@ -4330,10 +4351,10 @@ It is important to include the last / character in the URL,
 otherwise the subpages URL will be incorrect.
 
 \makesubsection{modroster}{\modroster{}}
-\ind{modules!\modroster{}}\ind{roster management}\ind{protocols!RFC 3921: XMPP IM}
+\ind{modules!\modroster{}}\ind{roster management}\ind{protocols!RFC 6121: XMPP IM}
 
 This module implements roster management as defined in
-\footahref{http://xmpp.org/rfcs/rfc3921.html\#roster}{RFC 3921: XMPP IM}.
+\footahref{http://tools.ietf.org/html/rfc6121\#section-2}{RFC 6121: XMPP IM}.
 It also supports Roster Versioning (\xepref{0237}).
 
 Options:
@@ -5126,15 +5147,15 @@ consists of the following \modvcardldap{}-specific options:
 \begin{description}
 \hostitem{vjud}
 \iqdiscitem{\ns{vcard-temp}}
-\titem{\{search, true|false\}}\ind{options!search}This option specifies whether the search
+\titem{search: true|false}\ind{options!search}This option specifies whether the search
   functionality is enabled (value: \term{true}) or disabled (value:
   \term{false}). If disabled, the option \term{host} will be ignored and the
   \Jabber{} User Directory service will not appear in the Service Discovery item
   list. The default value is \term{true}.
-\titem{\{matches, infinity|Number\}}\ind{options!matches}With this option, the number of reported
+\titem{matches: infinity|Number}\ind{options!matches}With this option, the number of reported
   search results can be limited. If the option's value is set to \term{infinity},
   all search results are reported. The default value is \term{30}.
-\titem{\{ldap\_vcard\_map, [ \{Name, Pattern, LDAPattributes\}, ...]\}} \ind{options!ldap\_vcard\_map}
+\titem{ldap\_vcard\_map: \{ Name: \{Pattern, LDAPattributes\}, ...\}} \ind{options!ldap\_vcard\_map}
   With this option you can set the table that maps LDAP attributes to vCard fields.
   \ind{protocols!RFC 2426: vCard MIME Directory Profile}
   \term{Name} is the type name of the vCard as defined in
@@ -5149,48 +5170,48 @@ consists of the following \modvcardldap{}-specific options:
   and \term{"\%d"} will be replaced with the domain part of a JID. 
   The default is:
 \begin{verbatim}
-[{"NICKNAME", "%u", []},
- {"FN", "%s", ["displayName"]},
- {"LAST", "%s", ["sn"]},
- {"FIRST", "%s", ["givenName"]},
- {"MIDDLE", "%s", ["initials"]},
- {"ORGNAME", "%s", ["o"]},
- {"ORGUNIT", "%s", ["ou"]},
- {"CTRY", "%s", ["c"]},
- {"LOCALITY", "%s", ["l"]},
- {"STREET", "%s", ["street"]},
- {"REGION", "%s", ["st"]},
- {"PCODE", "%s", ["postalCode"]},
- {"TITLE", "%s", ["title"]},
- {"URL", "%s", ["labeleduri"]},
- {"DESC", "%s", ["description"]},
- {"TEL", "%s", ["telephoneNumber"]},
- {"EMAIL", "%s", ["mail"]},
- {"BDAY", "%s", ["birthDay"]},
- {"ROLE", "%s", ["employeeType"]},
- {"PHOTO", "%s", ["jpegPhoto"]}]
+"NICKNAME": {"%u": []}
+"FN": {"%s": ["displayName"]}
+"LAST": {"%s": ["sn"]}
+"FIRST": {"%s": ["givenName"]}
+"MIDDLE": {"%s": ["initials"]}
+"ORGNAME": {"%s": ["o"]}
+"ORGUNIT": {"%s": ["ou"]}
+"CTRY": {"%s": ["c"]}
+"LOCALITY": {"%s": ["l"]}
+"STREET": {"%s": ["street"]}
+"REGION": {"%s": ["st"]}
+"PCODE": {"%s": ["postalCode"]}
+"TITLE": {"%s": ["title"]}
+"URL": {"%s": ["labeleduri"]}
+"DESC": {"%s": ["description"]}
+"TEL": {"%s": ["telephoneNumber"]}
+"EMAIL": {"%s": ["mail"]}
+"BDAY": {"%s": ["birthDay"]}
+"ROLE": {"%s": ["employeeType"]}
+"PHOTO": {"%s": ["jpegPhoto"]}
 \end{verbatim}
-\titem{\{ldap\_search\_fields, [ \{Name, Attribute\}, ...]\}}\ind{options!ldap\_search\_fields}This option
+\titem{ldap\_search\_fields: \{ Name: Attribute, ...\}}\ind{options!ldap\_search\_fields}This option
   defines the search form and the LDAP attributes to search within.
   \term{Name} is the name of a search form
   field which will be automatically translated by using the translation
   files (see \term{msgs/*.msg} for available words). \term{Attribute} is the
   LDAP attribute or the pattern \term{"\%u"}. The default is:
 \begin{verbatim}
-[{"User", "%u"},
- {"Full Name", "displayName"},
- {"Given Name", "givenName"},
- {"Middle Name", "initials"},
- {"Family Name", "sn"},
- {"Nickname", "%u"},
- {"Birthday", "birthDay"},
- {"Country", "c"},
- {"City", "l"},
- {"Email", "mail"},
- {"Organization Name", "o"},
- {"Organization Unit", "ou"}]
+"User": "%u"
+"Full Name": "displayName"
+"Given Name": "givenName"
+"Middle Name": "initials"
+"Family Name": "sn"
+"Nickname": "%u"
+"Birthday": "birthDay"
+"Country": "c"
+"City": "l"
+"Email": "mail"
+"Organization Name": "o"
+"Organization Unit": "ou"
 \end{verbatim}
-\titem{\{ldap\_search\_reported, [ \{SearchField, VcardField\}, ...]\}}\ind{options!ldap\_search\_reported}This option
+\titem{ldap\_search\_reported: \{ SearchField: VcardField, ...\}}\ind{options!ldap\_search\_reported}This option
   defines which search fields should be reported.
   \term{SearchField} is the name of a search form
   field which will be automatically translated by using the translation
@@ -5198,17 +5219,17 @@ consists of the following \modvcardldap{}-specific options:
   vCard field name defined in the \option{ldap\_vcard\_map} option. The default
   is:
 \begin{verbatim}
-[{"Full Name", "FN"},
- {"Given Name", "FIRST"},
- {"Middle Name", "MIDDLE"},
- {"Family Name", "LAST"},
- {"Nickname", "NICKNAME"},
- {"Birthday", "BDAY"},
- {"Country", "CTRY"},
- {"City", "LOCALITY"},
- {"Email", "EMAIL"},
- {"Organization Name", "ORGNAME"},
- {"Organization Unit", "ORGUNIT"}]
+"Full Name": "FN"
+"Given Name": "FIRST"
+"Middle Name": "MIDDLE"
+"Family Name": "LAST"
+"Nickname": "NICKNAME"
+"Birthday": "BDAY"
+"Country": "CTRY"
+"City": "LOCALITY"
+"Email": "EMAIL"
+"Organization Name": "ORGNAME"
+"Organization Unit": "ORGUNIT"
 \end{verbatim}
 \end{description}
 
@@ -5224,12 +5245,13 @@ infos in \term{"ou=AddressBook,dc=example,dc=org"} directory.  Corresponding
 authentication section should looks like this:
 
 \begin{verbatim}
-%% authentication method
-{auth_method, ldap}.
-%% DNS name of our LDAP server
-{ldap_servers, ["ldap.example.org"]}.
-%% We want to authorize users from 'shadowAccount' object class only
-{ldap_filter, "(objectClass=shadowAccount)"}.
+## authentication method
+auth_method: ldap
+## DNS name of our LDAP server
+ldap_servers:
+  - "ldap.example.org"
+## We want to authorize users from 'shadowAccount' object class only
+ldap_filter: "(objectClass=shadowAccount)"
 \end{verbatim}
 
 Now we want to use users LDAP-info as their vCards. We have four attributes
@@ -5238,47 +5260,39 @@ defined in our LDAP schema: \term{"mail"} --- email address, \term{"givenName"}
 Also we want users to search each other. Let's see how we can set it up:
 
 \begin{verbatim}
-{modules,
-  ...
-  {mod_vcard_ldap,
-   [
-    %% We use the same server and port, but want to bind anonymously because
-    %% our LDAP server accepts anonymous requests to
-    %% "ou=AddressBook,dc=example,dc=org" subtree.
-    {ldap_rootdn, ""},
-    {ldap_password, ""},
-    %% define the addressbook's base
-    {ldap_base, "ou=AddressBook,dc=example,dc=org"},
-    %% uidattr: user's part of JID is located in the "mail" attribute
-    %% uidattr_format: common format for our emails
-    {ldap_uids, [{"mail","%u@mail.example.org"}]},
-    %% We have to define empty filter here, because entries in addressbook does not
-    %% belong to shadowAccount object class
-    {ldap_filter, ""},
-    %% Now we want to define vCard pattern
-    {ldap_vcard_map,
-     [{"NICKNAME", "%u", []}, % just use user's part of JID as his nickname
-      {"FIRST", "%s", ["givenName"]},
-      {"LAST", "%s", ["sn"]},
-      {"FN", "%s, %s", ["sn", "givenName"]}, % example: "Smith, John"
-      {"EMAIL", "%s", ["mail"]},
-      {"BDAY", "%s", ["birthDay"]}]},
-    %% Search form
-    {ldap_search_fields,
-     [{"User", "%u"},
-      {"Name", "givenName"},
-      {"Family Name", "sn"},
-      {"Email", "mail"},
-      {"Birthday", "birthDay"}]},
-    %% vCard fields to be reported
-    %% Note that JID is always returned with search results
-    {ldap_search_reported,
-     [{"Full Name", "FN"},
-      {"Nickname", "NICKNAME"},
-      {"Birthday", "BDAY"}]}
-  ]}
-  ...
-}.
+modules:
+  mod_vcard_ldap:
+    ## We use the same server and port, but want to bind anonymously because
+    ## our LDAP server accepts anonymous requests to
+    ## "ou=AddressBook,dc=example,dc=org" subtree.
+    ldap_rootdn: ""
+    ldap_password: ""
+    ## define the addressbook's base
+    ldap_base: "ou=AddressBook,dc=example,dc=org"
+    ## uidattr: user's part of JID is located in the "mail" attribute
+    ## uidattr_format: common format for our emails
+    ldap_uids: {"mail": "%u@mail.example.org"}
+    ## Now we want to define vCard pattern
+    ldap_vcard_map:
+      "NICKNAME": {"%u": []} # just use user's part of JID as his nickname
+      "FIRST": {"%s": ["givenName"]}
+      "LAST": {"%s": ["sn"]}
+      "FN": {"%s, %s": ["sn", "givenName"]} # example: "Smith, John"
+      "EMAIL": {"%s": ["mail"]}
+      "BDAY": {"%s": ["birthDay"]}
+    ## Search form
+    ldap_search_fields:
+      "User": "%u"
+      "Name": "givenName"
+      "Family Name": "sn"
+      "Email": "mail"
+      "Birthday": "birthDay"
+    ## vCard fields to be reported
+    ## Note that JID is always returned with search results
+    ldap_search_reported:
+      "Full Name": "FN"
+      "Nickname": "NICKNAME"
+      "Birthday": "BDAY"
 \end{verbatim}
 
 Note that \modvcardldap{} module checks an existence of the user before
@@ -5286,30 +5300,27 @@ searching his info in LDAP.
 
 \item \term{ldap\_vcard\_map} example:
 \begin{verbatim}
-{ldap_vcard_map,
- [{"NICKNAME", "%u", []},
-  {"FN", "%s", ["displayName"]},
-  {"CTRY", "Russia", []},
-  {"EMAIL", "%u@%d", []},
-  {"DESC", "%s\n%s", ["title", "description"]}
- ]},
+ldap_vcard_map:
+  "NICKNAME": {"%u": []} # just use user's part of JID as his nickname
+  "FN": {"%s": ["displayName"]}
+  "CTRY": {"Russia": []}
+  "EMAIL": {"%u@%d": []}
+  "DESC": {"%s\n%s": ["title", "description"]}
 \end{verbatim}
 \item \term{ldap\_search\_fields} example:
 \begin{verbatim}
-{ldap_search_fields,
- [{"User", "uid"},
-  {"Full Name", "displayName"},
-  {"Email", "mail"}
- ]},
+ldap_search_fields:
+  "User": "uid"
+  "Full Name": "displayName"
+  "Email": "mail"
 \end{verbatim}
 \item \term{ldap\_search\_reported} example:
 \begin{verbatim}
-{ldap_search_reported,
- [{"Full Name", "FN"},
-  {"Email", "EMAIL"},
-  {"Birthday", "BDAY"},
-  {"Nickname", "NICKNAME"}
- ]},
+ldap_search_reported:
+  "Full Name": "FN"
+  "Email": "EMAIL"
+  "Birthday": "BDAY"
+  "Nickname": "NICKNAME"
 \end{verbatim}
 \end{itemize}
 
@@ -5403,15 +5414,10 @@ The \term{ejabberdctl commands} are:
 
 The \term{ejabberdctl} script can be restricted to require authentication
 and execute some \term{ejabberd commands}; see \ref{accesscommands}.
-Add the option to the file \term{ejabberd.yml}.
-In this example there is no restriction:
-\begin{verbatim}
-ejabberdctl_access_commands: []
-\end{verbatim}
 
 If account \term{robot1@example.org} is registered in \ejabberd{} with password \term{abcdef}
 (which MD5 is E8B501798950FC58AAD83C8C14978E),
-and \term{ejabberd.yml} contains this setting:
+and your old-format configuration file contains this setting:
 \begin{verbatim}
 {hosts, ["example.org"]}.
 {acl, bots, {user, "robot1", "example.org"}}.
@@ -5533,7 +5539,7 @@ Other known frontends that can be installed to execute ejabberd commands in diff
 
 \makesubsection{list-eja-commands}{List of ejabberd Commands}
 
-\ejabberd{} includes a few ejabberd Commands by default.
+\ejabberd{} includes a few ejabberd Commands by default as listed below.
 When more modules are installed, new commands may be available in the frontends.
 
 The easiest way to get a list of the available commands, and get help for them is to use
@@ -5549,8 +5555,11 @@ Available commands in this ejabberd node:
   ...
 \end{verbatim}
 
-The most interesting ones are:
+The commands included in ejabberd by default are:
 \begin{description}
+\titem{stop\_kindly delay announcement} Inform users and rooms, wait, and stop the server.
+  Provide the delay in seconds, and the announcement quoted.
+\titem{registered\_vhosts} List all registered vhosts in SERVER
 \titem{reopen\_log} Reopen the log files after they were renamed.
   If the old files were not renamed before calling this command,
   they are automatically renamed to \term{"*-old.log"}. See section \ref{logfiles}.
@@ -5573,8 +5582,6 @@ The most interesting ones are:
   Restore immediately from a text file dump.
   This is not recommended for big databases, as it will consume much time,
   memory and processor. In that case it's preferable to use \term{backup} and \term{install\_fallback}.
-%%More information about backuping can
-%%  be found in section~\ref{backup}.
 \titem{import\_piefxis, export\_piefxis, export\_piefxis\_host} \ind{migrate between servers}
   These options can be used to migrate accounts
   using \xepref{0227} formatted XML files
@@ -5587,20 +5594,45 @@ The most interesting ones are:
   from other Jabber/XMPP servers
   There exist tutorials to
   \footahref{http://www.ejabberd.im/migrate-to-ejabberd}{migrate from other software to ejabberd}.
+\titem{set\_master nodename}
+  Set master node of the clustered Mnesia tables.
+  If you provide as nodename "self", this node will be set as its own master.
+\titem{mnesia\_change\_nodename oldnodename newnodename oldbackup newbackup}
+  Change the erlang node name in a backup file
 \titem{export2odbc virtualhost directory} \ind{export mnesia data to SQL files}
   Export virtual host information from Mnesia tables to SQL files.
+\titem{update\_list} List modified modules that can be updated
+\titem{update module} Update the given module, or use the keyword: all
+\titem{reload\_config} Reload ejabberd configuration file into memory
 \titem{delete\_expired\_messages} This option can be used to delete old messages
   in offline storage. This might be useful when the number of offline messages
   is very high.
 \titem{delete\_old\_messages days} Delete offline messages older than the given days.
+\titem{incoming\_s2s\_number} Number of incoming s2s connections on the node
+\titem{outgoing\_s2s\_number} Number of outgoing s2s connections on the node
 \titem{register user host password} Register an account in that domain with the given password.
 \titem{unregister user host} Unregister the given account.
+\titem{registered\_users host} List all registered users in HOST
+\titem{connected\_users} List all established sessions
+\titem{connected\_users\_number} Get the number of established sessions
+\titem{user\_resources user host} List user's connected resources
+\titem{kick\_user user host} Disconnect user's active sessions
+
 \end{description}
 
 \makesubsection{accesscommands}{Restrict Execution with AccessCommands}
 
-The frontends can be configured to restrict access to certain commands.
+The frontends can be configured to restrict access to certain commands
+using the \term{AccessCommands}.
 In that case, authentication information must be provided.
+
+This option allows quite complex settings, so it does not use the YAML format,
+instead it uses the Erlang format.
+If you want to set that option,
+then you must move the frontend definition to another config file
+and include it using the \term{include\_config\_file} option
+(see section~\ref{includeconfigfile} and the example below).
+
 In each frontend the \term{AccessCommands} option is defined
 in a different place. But in all cases the option syntax is the same:
 \begin{verbatim}
@@ -5656,6 +5688,34 @@ See another list of restrictions (the corresponding ACL and ACCESS are not shown
  %% if argument host is provided, it must be "test.org":
  {_bot_reg_test, [register, unregister], [{host, "test.org"}]}
 ]
+\end{verbatim}
+
+In summary, you put the frontends configurations in a CFG file using Erlang format, for example a file called \term{additional.cfg}:
+\begin{verbatim}
+{ejabberdctl_access_commands, [ {ctlaccess, [registered_users, register], []} ]}.
+
+{listen, [
+  {4560, ejabberd_xmlrpc, [{maxsessions, 10}, {timeout, 5000},
+    {access_commands, [
+      {ctlaccess, [registered_users], [{host, "localhost"}]}
+    ]}
+  ]}
+ ]}.
+
+{modules, [
+  {mod_rest, [
+    {allowed_ips, [ {127,0,0,1}, {192,168,1,12} ]},
+    {allowed_destinations, [ "nolan@localhost", "admin@example.com" ]},
+    {allowed_stanza_types, [ "message", "presence", "iq" ]},
+    {access_commands, [
+      {ctlaccess, [registered_users], [{host, "localhost"}]}
+    ]}
+   ]}
+ ]}.
+\end{verbatim}
+and then add this line at the end of your main ejabberd configuration file, usually called \term{ejabberd.yml}:
+\begin{verbatim}
+include_config_file: "/etc/ejabberd/additional.cfg"
 \end{verbatim}
 
 \makesection{webadmin}{Web Admin}
@@ -6376,7 +6436,7 @@ Thanks to all people who contributed to this guide:
 \makechapter{copyright}{Copyright Information}
 
 Ejabberd Installation and Operation Guide.\\
-Copyright \copyright{} 2003 --- 2014 ProcessOne
+Copyright \copyright{} 2003 --- 2015 ProcessOne
 
 This document is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

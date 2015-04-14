@@ -5,7 +5,7 @@
 %%% Created : 23 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -71,7 +71,7 @@
 -callback get_vh_registered_users(binary(), opts()) -> [{binary(), binary()}].
 -callback get_vh_registered_users_number(binary()) -> number().
 -callback get_vh_registered_users_number(binary(), opts()) -> number().
--callback get_password(binary(), binary()) -> false | binary().
+-callback get_password(binary(), binary()) -> false | binary() | {binary(), binary(), binary(), integer()}.
 -callback get_password_s(binary(), binary()) -> binary().    
 
 start() ->
@@ -267,7 +267,7 @@ get_vh_registered_users_number(Server, Opts) ->
 			end,
 			auth_modules(Server))).
 
--spec get_password(binary(), binary()) -> false | binary().
+-spec get_password(binary(), binary()) -> false | binary() | {binary(), binary(), binary(), integer()}.
 
 get_password(User, Server) ->
     lists:foldl(fun (M, false) ->
@@ -300,7 +300,7 @@ get_password_with_authmodule(User, Server) ->
 
 -spec is_user_exists(binary(), binary()) -> boolean().
 
-is_user_exists(User, <<"">>) ->
+is_user_exists(_User, <<"">>) ->
     false;
 
 is_user_exists(User, Server) ->
@@ -425,6 +425,10 @@ auth_modules() ->
 %% Return the list of authenticated modules for a given host
 auth_modules(Server) ->
     LServer = jlib:nameprep(Server),
+    Default = case gen_mod:default_db(LServer) of
+		  mnesia -> internal;
+		  DBType -> DBType
+	      end,
     Methods = ejabberd_config:get_option(
                 {auth_method, LServer},
                 fun(V) when is_list(V) ->
@@ -432,7 +436,7 @@ auth_modules(Server) ->
                         V;
                    (V) when is_atom(V) ->
                         [V]
-                end, []),
+                end, [Default]),
     [jlib:binary_to_atom(<<"ejabberd_auth_",
                            (jlib:atom_to_binary(M))/binary>>)
      || M <- Methods].

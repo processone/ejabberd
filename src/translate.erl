@@ -5,7 +5,7 @@
 %%% Created :  6 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2014   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -81,7 +81,7 @@ load_file(Lang, File) ->
             io:setopts(Fd, [{encoding,latin1}]),
             load_file_loop(Fd, 1, File, Lang),
             file:close(Fd);
-        Error ->
+        {error, Error} ->
             ExitText = iolist_to_binary([File, ": ",
                                          file:format_error(Error)]),
             ?ERROR_MSG("Problem loading translation file ~n~s",
