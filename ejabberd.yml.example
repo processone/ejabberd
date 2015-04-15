@@ -161,8 +161,9 @@ listen:
   - 
     port: 5280
     module: ejabberd_http
-    ## request_handlers:
-    ##   "/pub/archive": mod_http_fileserver
+    request_handlers:
+      "/websocket": ejabberd_http_ws
+    ##  "/pub/archive": mod_http_fileserver
     web_admin: true
     http_poll: true
     http_bind: true
