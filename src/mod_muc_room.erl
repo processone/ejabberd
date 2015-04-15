@@ -2456,8 +2456,6 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
     Q1 = lqueue_in({FromNick, TSPacket, HaveSubject,
 		    calendar:now_to_universal_time(TimeStamp), Size},
 		   StateData#state.history),
-    ejabberd_hooks:run(offline_group_message_hook, StateData#state.server_host,
-					       [FromJID, FromNick, StateData#state.jid, Packet]),
     add_to_log(text, {FromNick, Packet}, StateData),
     StateData#state{history = Q1}.
 
