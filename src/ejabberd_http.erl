@@ -56,7 +56,7 @@
 		%% to have the module test_web handle requests with
 		%% paths starting with "/test/module":
 		%%
-		%%   {5280, ejabberd_http,    [http_poll, web_admin,
+		%%   {5280, ejabberd_http,    [http_bind, web_admin,
 		%%			       {request_handlers, [{["test", "module"], mod_test_web}]}]}
 		%%
 		request_handlers = [],
@@ -135,10 +135,6 @@ init({SockMod, Socket}, Opts) ->
              true -> [{[<<"http-bind">>], mod_http_bind}];
              false -> []
            end,
-    Poll = case proplists:get_bool(http_poll, Opts) of
-             true -> [{[<<"http-poll">>], ejabberd_http_poll}];
-             false -> []
-           end,
     XMLRPC = case proplists:get_bool(xmlrpc, Opts) of
 		 true -> [{[], ejabberd_xmlrpc}];
 		 false -> []
@@ -151,7 +147,7 @@ init({SockMod, Socket}, Opts) ->
                                   Mod} || {Path, Mod} <- Hs]
                         end, []),
     RequestHandlers = DefinedHandlers ++ Captcha ++ Register ++
-        Admin ++ Bind ++ Poll ++ XMLRPC,
+        Admin ++ Bind ++ XMLRPC,
     ?DEBUG("S: ~p~n", [RequestHandlers]),
 
     DefaultHost = gen_mod:get_opt(default_host, Opts, fun(A) -> A end, undefined),
@@ -862,7 +858,7 @@ transform_listen_option(web_admin, Opts) ->
 transform_listen_option(http_bind, Opts) ->
     [{http_bind, true}|Opts];
 transform_listen_option(http_poll, Opts) ->
-    [{http_poll, true}|Opts];
+    Opts;
 transform_listen_option({request_handlers, Hs}, Opts) ->
     Hs1 = lists:map(
             fun({PList, Mod}) when is_list(PList) ->

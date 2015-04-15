@@ -165,7 +165,6 @@ listen:
       "/websocket": ejabberd_http_ws
     ##  "/pub/archive": mod_http_fileserver
     web_admin: true
-    http_poll: true
     http_bind: true
     ## register: true
     captcha: true

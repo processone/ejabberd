@@ -1798,7 +1798,7 @@ print_state(State = #state{pres_t = T, pres_f = F, pres_a = A}) ->
                pres_f = {pres_f, ?SETS:size(F)},
                pres_a = {pres_a, ?SETS:size(A)}
                }.
-    
+
 %%----------------------------------------------------------------------
 %% Func: terminate/3
 %% Purpose: Shutdown the fsm
@@ -1881,7 +1881,7 @@ send_text(StateData, Text) when StateData#state.mgmt_state == pending ->
     ?DEBUG("Cannot send text while waiting for resumption: ~p", [Text]);
 send_text(StateData, Text) when StateData#state.xml_socket ->
     ?DEBUG("Send Text on stream = ~p", [Text]),
-    (StateData#state.sockmod):send_xml(StateData#state.socket, 
+    (StateData#state.sockmod):send_xml(StateData#state.socket,
 				       {xmlstreamraw, Text});
 send_text(StateData, Text) when StateData#state.mgmt_state == active ->
     ?DEBUG("Send XML on stream = ~p", [Text]),
@@ -2024,7 +2024,6 @@ get_conn_type(StateData) ->
 	    gen_tcp -> c2s_compressed;
 	    p1_tls -> c2s_compressed_tls
 	end;
-    ejabberd_http_poll -> http_poll;
     ejabberd_http_bind -> http_bind;
     _ -> unknown
     end.
