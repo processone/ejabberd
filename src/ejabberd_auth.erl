@@ -72,7 +72,7 @@
 -callback get_vh_registered_users_number(binary()) -> number().
 -callback get_vh_registered_users_number(binary(), opts()) -> number().
 -callback get_password(binary(), binary()) -> false | binary() | {binary(), binary(), binary(), integer()}.
--callback get_password_s(binary(), binary()) -> binary().    
+-callback get_password_s(binary(), binary()) -> binary() | {binary(), binary(), binary(), integer()}.
 
 start() ->
 %% This is only executed by ejabberd_c2s for non-SASL auth client
@@ -276,7 +276,7 @@ get_password(User, Server) ->
 		end,
 		false, auth_modules(Server)).
 
--spec get_password_s(binary(), binary()) -> binary().
+-spec get_password_s(binary(), binary()) -> binary() | {binary(), binary(), binary(), integer()}.
 
 get_password_s(User, Server) ->
     case get_password(User, Server) of
