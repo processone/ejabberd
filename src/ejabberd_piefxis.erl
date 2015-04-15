@@ -238,7 +238,17 @@ export_users([], _Server, _Fd) ->
 %%%==================================
 %%%% Utilities
 export_user(User, Server, Fd) ->
-    Pass = ejabberd_auth:get_password_s(User, Server),
+    Password = ejabberd_auth:get_password_s(User, Server),
+    LServer = jlib:nameprep(Server),
+    PasswordFormat = ejabberd_config:get_option({auth_password_format, LServer}, fun(X) -> X end, plain),
+    Pass = case Password of
+      {_,_,_,_} ->
+        case PasswordFormat of
+          scram -> format_scram_password(Password);          
+          _ -> <<"">>
+        end;
+      _ -> Password
+    end,
     Els = get_offline(User, Server) ++
         get_vcard(User, Server) ++
         get_privacy(User, Server) ++
@@ -249,6 +259,23 @@ export_user(User, Server, Fd) ->
                        attrs = [{<<"name">>, User},
                                 {<<"password">>, Pass}],
                        children = Els})).
+
+format_scram_password({StoredKey, ServerKey, Salt, IterationCount}) ->
+  StoredKeyB64 = base64:encode(StoredKey),
+  ServerKeyB64 = base64:encode(ServerKey),
+  SaltB64 = base64:encode(Salt),
+  IterationCountBin = list_to_binary(integer_to_list(IterationCount)),
+  <<"scram:", StoredKeyB64/binary, ",", ServerKeyB64/binary, ",", SaltB64/binary, ",", IterationCountBin/binary>>.
+
+parse_scram_password(PassData) ->
+  Split = binary:split(PassData, <<",">>, [global]),
+  [StoredKeyB64, ServerKeyB64, SaltB64, IterationCountBin] = Split,
+  #scram{
+    storedkey = StoredKeyB64,
+    serverkey = ServerKeyB64,
+    salt      = SaltB64,
+    iterationcount = list_to_integer(binary_to_list(IterationCountBin))
+  }.
 
 get_vcard(User, Server) ->
     JID = jlib:make_jid(User, Server, <<>>),
@@ -457,7 +484,18 @@ process_users([], State) ->
 process_user(#xmlel{name = <<"user">>, attrs = Attrs, children = Els},
              #state{server = LServer} = State) ->
     Name = xml:get_attr_s(<<"name">>, Attrs),
-    Pass = xml:get_attr_s(<<"password">>, Attrs),
+    Password = xml:get_attr_s(<<"password">>, Attrs),
+    PasswordFormat = ejabberd_config:get_option({auth_password_format, LServer}, fun(X) -> X end, plain),
+    Pass = case PasswordFormat of
+      scram ->
+        case Password of 
+          <<"scram:", PassData/binary>> ->
+            parse_scram_password(PassData);
+          P -> P
+        end;
+      _ -> Password
+    end,
+
     case jlib:nodeprep(Name) of
         error ->
             stop("Invalid 'user': ~s", [Name]);
@@ -541,8 +579,23 @@ process_privacy(El, State = #state{user = U, server = S}) ->
     JID = jlib:make_jid(U, S, <<"">>),
     case mod_privacy:process_iq_set(
            [], JID, JID, #iq{type = set, sub_el = El}) of
-        {error, _} = Err ->
-            stop("Failed to write privacy: ~p", [Err]);
+        {error, Error} = Err ->
+            #xmlel{children = Els} = El,
+            Name = case xml:remove_cdata(Els) of
+              [#xmlel{name = N}] -> N;
+              _ -> undefined
+            end,
+            #xmlel{attrs = Attrs} = Error,
+            ErrorCode = case lists:keysearch(<<"code">>, 1, Attrs) of
+              {value, {_, V}} -> V;
+              false -> undefined
+            end,
+            if 
+              ErrorCode == <<"404">>, Name == <<"default">> ->
+                {ok, State};
+              true ->
+                stop("Failed to write privacy: ~p", [Err])
+            end;
         _ ->
             {ok, State}
     end.
