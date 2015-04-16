@@ -1575,16 +1575,17 @@ client_state_master(Config) ->
     Message = #message{to = Peer, thread = <<"1">>,
 		       sub_els = [#chatstate{type = active}]},
     wait_for_slave(Config),
-    %% Should be queued (but see below):
-    send(Config, Presence),
-    %% Should be sent immediately, together with the previous presence:
-    send(Config, Message#message{body = [#text{data = <<"body">>}]}),
     %% Should be dropped:
     send(Config, Message),
     %% Should be queued (but see below):
-    send(Config, Presence),
-    %% Should replace the previous presence in the queue:
     send(Config, Presence#presence{type = unavailable}),
+    %% Should replace the previous presence in the queue:
+    send(Config, Presence),
+    %% Should be sent immediately, together with the previous presence:
+    send(Config, Message#message{body = [#text{data = <<"body">>}]}),
+    %% Should be queued:
+    send(Config, Presence#presence{type = unavailable}),
+    %% Wait for the slave to become active.
     wait_for_slave(Config),
     %% Should be sent immediately, as the client is active again.
     send(Config, Message),
@@ -1601,11 +1602,12 @@ client_state_slave(Config) ->
     ?recv1(#presence{from = Peer, sub_els = [#vcard_xupdate{}|_]}),
     ?recv1(#message{from = Peer, thread = <<"1">>, sub_els = [#chatstate{type = active}],
 	     body = [#text{data = <<"body">>}]}),
-    wait_for_master(Config),
     send(Config, #csi{type = active}),
-    ?recv2(#presence{from = Peer, type = unavailable,
-		     sub_els = [#delay{}, #legacy_delay{}]},
-	   #message{from = Peer, thread = <<"1">>,
+    %% The server now flushes the queue, so we receive the following presence.
+    ?recv1(#presence{from = Peer, type = unavailable,
+		     sub_els = [#delay{}, #legacy_delay{}]}),
+    wait_for_master(Config),
+    ?recv1(#message{from = Peer, thread = <<"1">>,
 		    sub_els = [#chatstate{type = active}]}),
     disconnect(Config).
 
