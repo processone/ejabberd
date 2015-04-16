@@ -319,18 +319,11 @@ open_socket1(Host, Port) ->
 open_socket2(Type, Addr, Port) ->
     ?DEBUG("s2s_out: connecting to ~p:~p~n", [Addr, Port]),
     Timeout = outgoing_s2s_timeout(),
-    SockOpts = try erlang:system_info(otp_release) >= "R13B"
-	       of
-		 true -> [{send_timeout_close, true}];
-		 false -> []
-	       catch
-		 _:_ -> []
-	       end,
     case catch ejabberd_socket:connect(Addr, Port,
 				       [binary, {packet, 0},
 					{send_timeout, ?TCP_SEND_TIMEOUT},
-					{active, false}, Type
-					| SockOpts],
+					{send_timeout_close, true},
+					{active, false}, Type],
 				       Timeout)
 	of
       {ok, _Socket} = R -> R;
