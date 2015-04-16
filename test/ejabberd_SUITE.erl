@@ -1570,42 +1570,38 @@ carbons_slave(Config) ->
     disconnect(Config).
 
 client_state_master(Config) ->
+    true = ?config(csi, Config),
     Peer = ?config(slave, Config),
     Presence = #presence{to = Peer},
-    Message = #message{to = Peer, thread = <<"1">>,
-		       sub_els = [#chatstate{type = active}]},
+    ChatState = #message{to = Peer, thread = <<"1">>,
+			 sub_els = [#chatstate{type = active}]},
+    Message = ChatState#message{body = [#text{data = <<"body">>}]},
+    %% Wait for the slave to become inactive.
     wait_for_slave(Config),
     %% Should be dropped:
-    send(Config, Message),
+    send(Config, ChatState),
     %% Should be queued (but see below):
-    send(Config, Presence#presence{type = unavailable}),
-    %% Should replace the previous presence in the queue:
     send(Config, Presence),
-    %% Should be sent immediately, together with the previous presence:
-    send(Config, Message#message{body = [#text{data = <<"body">>}]}),
-    %% Should be queued:
+    %% Should replace the previous presence in the queue:
     send(Config, Presence#presence{type = unavailable}),
+    %% Should be sent immediately, together with the previous presence:
+    send(Config, Message),
     %% Wait for the slave to become active.
     wait_for_slave(Config),
-    %% Should be sent immediately, as the client is active again.
-    send(Config, Message),
+    %% Should be delivered, as the client is active again:
+    send(Config, ChatState),
     disconnect(Config).
 
 client_state_slave(Config) ->
-    true = ?config(csi, Config),
     Peer = ?config(master, Config),
-    send(Config, #csi{type = inactive}),
-    send_recv(
-      Config,
-      #iq{type = get, sub_els = [#ping{}], to = server_jid(Config)}),
+    change_client_state(Config, inactive),
     wait_for_master(Config),
-    ?recv1(#presence{from = Peer, sub_els = [#vcard_xupdate{}|_]}),
-    ?recv1(#message{from = Peer, thread = <<"1">>, sub_els = [#chatstate{type = active}],
-	     body = [#text{data = <<"body">>}]}),
-    send(Config, #csi{type = active}),
-    %% The server now flushes the queue, so we receive the following presence.
     ?recv1(#presence{from = Peer, type = unavailable,
 		     sub_els = [#delay{}, #legacy_delay{}]}),
+    ?recv1(#message{from = Peer, thread = <<"1">>,
+		    body = [#text{data = <<"body">>}],
+		    sub_els = [#chatstate{type = active}]}),
+    change_client_state(Config, active),
     wait_for_master(Config),
     ?recv1(#message{from = Peer, thread = <<"1">>,
 		    sub_els = [#chatstate{type = active}]}),
@@ -1614,6 +1610,11 @@ client_state_slave(Config) ->
 %%%===================================================================
 %%% Aux functions
 %%%===================================================================
+change_client_state(Config, NewState) ->
+    send(Config, #csi{type = NewState}),
+    send_recv(Config, #iq{type = get, to = server_jid(Config),
+			  sub_els = [#ping{}]}).
+
 bookmark_conference() ->
     #bookmark_conference{name = <<"Some name">>,
                          autojoin = true,
