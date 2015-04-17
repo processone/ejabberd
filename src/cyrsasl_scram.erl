@@ -160,7 +160,7 @@ mech_step(#state{step = 4} = State, ClientIn) ->
 					 {ok, [{username, State#state.username}],
 					  <<"v=",
 					    (jlib:encode_base64(ServerSignature))/binary>>};
-				     true -> {error, <<"bad-auth">>}
+				     true -> {error, <<"bad-auth">>, State#state.username}
 				  end;
 			    _Else -> {error, <<"bad-protocol">>}
 			    end;
