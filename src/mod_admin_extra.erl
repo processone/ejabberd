@@ -33,7 +33,6 @@
 -export([start/2, stop/1,
 	 %% Node
 	 compile/1,
-	 load_config/1,
 	 get_cookie/0,
 	 remove_node/1,
 	 export2odbc/2,
@@ -144,11 +143,6 @@ commands() ->
      #ejabberd_commands{name = compile, tags = [erlang],
 			desc = "Recompile and reload Erlang source code file",
 			module = ?MODULE, function = compile,
-			args = [{file, string}],
-			result = {res, rescode}},
-     #ejabberd_commands{name = load_config, tags = [server],
-			desc = "Load ejabberd configuration file",
-			module = ?MODULE, function = load_config,
 			args = [{file, string}],
 			result = {res, rescode}},
      #ejabberd_commands{name = get_cookie, tags = [erlang],
@@ -546,9 +540,6 @@ commands() ->
 
 compile(File) ->
     compile:file(File).
-
-load_config(Path) ->
-    ok = ejabberd_config:load_file(Path).
 
 get_cookie() ->
     atom_to_list(erlang:get_cookie()).
