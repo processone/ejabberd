@@ -31,6 +31,7 @@ init_config(Config) ->
     {ok, CfgContentTpl} = file:read_file(ConfigPathTpl),
     CfgContent = process_config_tpl(CfgContentTpl, [
                                                     {c2s_port, 5222},
+                                                    {s2s_port, 5269},
                                                     {web_port, 5280},
                                                     {mysql_server, <<"localhost">>},
                                                     {mysql_port, 3306},

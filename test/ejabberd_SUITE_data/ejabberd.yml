@@ -340,7 +340,7 @@ listen:
     shaper: c2s_shaper
     access: c2s
   - 
-    port: 5269
+    port: @@s2s_port@@
     module: ejabberd_s2s_in
   - 
     port: @@web_port@@
