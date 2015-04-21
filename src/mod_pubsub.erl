@@ -3069,6 +3069,7 @@ get_roster_info(OwnerUser, OwnerServer, JID, AllowedGroups) ->
 
 string_to_affiliation(<<"owner">>) -> owner;
 string_to_affiliation(<<"publisher">>) -> publisher;
+string_to_affiliation(<<"publish-only">>) -> publish_only;
 string_to_affiliation(<<"member">>) -> member;
 string_to_affiliation(<<"outcast">>) -> outcast;
 string_to_affiliation(<<"none">>) -> none;
@@ -3082,6 +3083,7 @@ string_to_subscription(_) -> false.
 
 affiliation_to_string(owner) -> <<"owner">>;
 affiliation_to_string(publisher) -> <<"publisher">>;
+affiliation_to_string(publish_only) -> <<"publish-only">>;
 affiliation_to_string(member) -> <<"member">>;
 affiliation_to_string(outcast) -> <<"outcast">>;
 affiliation_to_string(_) -> <<"none">>.
@@ -4023,6 +4025,7 @@ features() ->
 	<<"presence-notifications">>,   % OPTIONAL
 	<<"presence-subscribe">>,   % RECOMMENDED
 	<<"publisher-affiliation">>,   % RECOMMENDED
+	<<"publish-only-affiliation">>,   % OPTIONAL
 	<<"retrieve-default">>,
 	<<"shim">>].   % RECOMMENDED
 

@@ -162,7 +162,7 @@ subscribe_node(Nidx, Sender, Subscriber, AccessModel,
     if not Authorized ->
 	    {error,
 		?ERR_EXTENDED((?ERR_BAD_REQUEST), <<"invalid-jid">>)};
-	Affiliation == outcast ->
+	(Affiliation == outcast) or (Affiliation == publish_only) ->
 	    {error, ?ERR_FORBIDDEN};
 	PendingSubscription ->
 	    {error,
@@ -299,7 +299,9 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
     end,
     if not ((PublishModel == open) or
 		    (PublishModel == publishers) and
-		    ((Affiliation == owner) or (Affiliation == publisher))
+		    ((Affiliation == owner)
+			 or (Affiliation == publisher)
+			 or (Affiliation == publish_only))
 		    or (Subscribed == true)) ->
 	    {error, ?ERR_FORBIDDEN};
 	true ->
@@ -868,7 +870,7 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM
 	%%InvalidSubId ->
 	%% Entity is subscribed but specifies an invalid subscription ID
 	%{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
-	Affiliation == outcast ->
+	(Affiliation == outcast) or (Affiliation == publish_only) ->
 	    {error, ?ERR_FORBIDDEN};
 	(AccessModel == presence) and not PresenceSubscription ->
 	    {error,
@@ -927,7 +929,7 @@ get_item(Nidx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _Sub
 	%%InvalidSubId ->
 	%% Entity is subscribed but specifies an invalid subscription ID
 	%{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
-	Affiliation == outcast ->
+	(Affiliation == outcast) or (Affiliation == publish_only) ->
 	    {error, ?ERR_FORBIDDEN};
 	(AccessModel == presence) and not PresenceSubscription ->
 	    {error,
@@ -1005,6 +1007,7 @@ path_to_node(Path) ->
 can_fetch_item(owner, _) -> true;
 can_fetch_item(member, _) -> true;
 can_fetch_item(publisher, _) -> true;
+can_fetch_item(publish_only, _) -> false;
 can_fetch_item(outcast, _) -> false;
 can_fetch_item(none, Subscriptions) -> is_subscribed(Subscriptions).
 %can_fetch_item(_Affiliation, _Subscription) -> false.
