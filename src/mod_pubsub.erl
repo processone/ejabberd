@@ -1057,27 +1057,21 @@ command_disco_info(_Host, ?NS_PUBSUB_GET_PENDING, _From) ->
 node_disco_info(Host, Node, From) ->
     node_disco_info(Host, Node, From, true, true).
 
-node_disco_info(Host, Node, From, _Identity, _Features) ->
-    Action = fun (#pubsub_node{type = Type, id = Nidx}) ->
-	    Types = case tree_call(Host, get_subnodes, [Host, Node, From]) of
-		[] ->
-		    [<<"leaf">>];
-		_ ->
-		    case node_call(Host, Type, get_items, [Nidx, From, none]) of
-			{result, {[], _}} -> [<<"collection">>];
-			{result, _} -> [<<"leaf">>, <<"collection">>];
-			_ -> []
-		    end
+node_disco_info(Host, Node, _From, _Identity, _Features) ->
+    Action = fun (#pubsub_node{type = Type, options = Options}) ->
+	    NodeType = case get_option(Options, node_type) of
+		collection -> <<"collection">>;
+		_ -> <<"leaf">>
 	    end,
-	    I = [#xmlel{name = <<"identity">>,
-			attrs = [{<<"category">>, <<"pubsub">>}, {<<"type">>, T}]}
-		    || T <- Types],
+	    I = #xmlel{name = <<"identity">>,
+			attrs = [{<<"category">>, <<"pubsub">>},
+				 {<<"type">>, NodeType}]},
 	    F = [#xmlel{name = <<"feature">>,
 			attrs = [{<<"var">>, ?NS_PUBSUB}]}
 		    | [#xmlel{name = <<"feature">>,
 			    attrs = [{<<"var">>, feature(F)}]}
 			|| F <- plugin_features(Host, Type)]],
-	    {result, I ++ F}
+	    {result, [I | F]}
     end,
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {_, Result}} -> {result, Result};
