@@ -158,6 +158,7 @@ subscribe_node(Nidx, Sender, Subscriber, AccessModel,
 		(_) -> false
 	    end,
 	    Subscriptions),
+    Owner = Affiliation == owner,
     if not Authorized ->
 	    {error,
 		?ERR_EXTENDED((?ERR_BAD_REQUEST), <<"invalid-jid">>)};
@@ -166,13 +167,13 @@ subscribe_node(Nidx, Sender, Subscriber, AccessModel,
 	PendingSubscription ->
 	    {error,
 		?ERR_EXTENDED((?ERR_NOT_AUTHORIZED), <<"pending-subscription">>)};
-	(AccessModel == presence) and not PresenceSubscription ->
+	(AccessModel == presence) and (not PresenceSubscription) and (not Owner) ->
 	    {error,
 		?ERR_EXTENDED((?ERR_NOT_AUTHORIZED), <<"presence-subscription-required">>)};
-	(AccessModel == roster) and not RosterGroup ->
+	(AccessModel == roster) and (not RosterGroup) and (not Owner) ->
 	    {error,
 		?ERR_EXTENDED((?ERR_NOT_AUTHORIZED), <<"not-in-roster-group">>)};
-	(AccessModel == whitelist) and not Whitelisted ->
+	(AccessModel == whitelist) and (not Whitelisted) and (not Owner) ->
 	    {error,
 		?ERR_EXTENDED((?ERR_NOT_ALLOWED), <<"closed-node">>)};
 	%%MustPay ->
