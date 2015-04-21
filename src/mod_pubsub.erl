@@ -3427,9 +3427,9 @@ broadcast_stanza(Host, _Node, _Nidx, _Type, NodeOptions, SubsByDepth, NotifyType
 			Stanza;
 		    %% If there's only one SubID, don't add it
 		    {true, [_]} ->
-			add_shim_headers(Stanza, collection_shim(NodeName));
+			Stnza;
 		    {true, SubIDs} ->
-			add_shim_headers(Stanza, lists:append(collection_shim(NodeName), subid_shim(SubIDs)))
+			add_shim_headers(Stanza, subid_shim(SubIDs))
 		end,
 		lists:foreach(fun(To) ->
 			    ejabberd_router:route(From, jlib:make_jid(To), StanzaToSend)
@@ -4243,11 +4243,6 @@ add_headers(#xmlel{name = Name, attrs = Attrs, children = Els}, HeaderName, Head
 	    children = HeaderEls},
     #xmlel{name = Name, attrs = Attrs,
 	children = lists:append(Els, [HeaderEl])}.
-
-collection_shim(Node) ->
-    [#xmlel{name = <<"header">>,
-	    attrs = [{<<"name">>, <<"Collection">>}],
-	    children = [{xmlcdata, Node}]}].
 
 subid_shim(SubIds) ->
     [#xmlel{name = <<"header">>,
