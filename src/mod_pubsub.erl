@@ -1670,7 +1670,7 @@ command_disco_info(_Host, ?NS_PUBSUB_GET_PENDING,
 node_disco_info(Host, Node, From) ->
     node_disco_info(Host, Node, From, true, true).
 
-node_disco_info(Host, Node, From, _Identity, _Features) ->
+node_disco_info(Host, Node, _From, _Identity, _Features) ->
 %    Action =
 %	fun(#pubsub_node{type = Type, id = NodeId}) ->
 %		I = case Identity of
@@ -1722,32 +1722,21 @@ node_disco_info(Host, Node, From, _Identity, _Features) ->
 %	{result, {_, Result}} -> {result, Result};
 %	Other -> Other
 %    end.
-    Action = fun (#pubsub_node{type = Type, id = NodeId}) ->
-		     Types = case tree_call(Host, get_subnodes,
-						      [Host, Node, From])
-					   of
-					 [] -> [<<"leaf">>];
-					 _ ->
-					     case node_call(Type, get_items,
-							    [NodeId, From])
-						 of
-					       {result, []} ->
-						   [<<"collection">>];
-					       {result, _} ->
-						   [<<"leaf">>,
-						    <<"collection">>];
-					       _ -> []
-					     end
-				       end,
-		    I = lists:map(fun (T) ->
+    Action = fun (#pubsub_node{type = Type, options = Options}) ->
+		     NodeType = case get_option(Options, node_type) of
+				    collection -> <<"collection">>;
+				    _ -> <<"leaf">>
+				end,
+		    I = 
 						 #xmlel{name = <<"identity">>,
 							attrs =
 							    [{<<"category">>,
 							      <<"pubsub">>},
-							     {<<"type">>, T}],
-							children = []}
-					 end,
-					 Types),
+							     {<<"type">>, NodeType}],
+							children = []},
+		     
+			
+
 		     F = [#xmlel{name = <<"feature">>,
 				       attrs = [{<<"var">>, ?NS_PUBSUB}],
 				       children = []}
@@ -1761,7 +1750,7 @@ node_disco_info(Host, Node, From, _Identity, _Features) ->
 							   children = []}
 					    end,
 					    features(Type))],
-		     {result, I ++ F}
+		     {result, [I | F]}
 	     end,
     case transaction(Host, Node, Action, sync_dirty) of
       {result, {_, Result}} -> {result, Result};
