@@ -1,18 +1,17 @@
-#!/bin/bash
+#!/bin/sh
 
 # Add the current ejabberd node in a cluster
 
 # copyright (c) 2010-2015 ProcessOne
-#
-# This script is proprietary software and cannot be published or redistribute.
 
 # Return Code:
 #  0 : groovy baby
+# 10 : ejabberdctl not found
 # 11 : erl not found
 # 12 : erlc not found
-# 20 : database dir doesn't exist
+# 20 : database dir can not be created 
 # 21 : database dir not writable
-# 21 : database dir variable not set
+# 22 : temporary dir can not be created
 # 30 : network issue
 # 31 : node names incompatibility
 
@@ -53,23 +52,28 @@ echo ""
     REMOTE=$1
 }
 
-cont=Y
-ping -q -c 1 ${REMOTE#*@} 2>/dev/null >/dev/null
-[ $? -eq 0 ] || {
-    echo "Cannot ping ${REMOTE#*@}. Are you sure network setup is correct ?"
-    echo -n "Should we continue anyway ? (Y/n) "
-    read cont
+PA=/tmp/clustersetup_$$
+CTL=$(which ejabberdctl)
+[ "$CTL" == "" ] && {
+  HERE=`which "$0"`
+  BASE=`dirname $HERE`/..
+  ROOTDIR=`cd $BASE; pwd`
+  PATH=$ROOTDIR/bin:$PATH
+  PA=$ROOTDIR/clustersetup_$$
+  CTL=$(which ejabberdctl)
 }
-cont=`echo $cont | tr a-z A-Z`
-[ "$cont" == "Y" ] || error "Check your network configuration (dns, firewall, etc...)" 30
+echo "Using commands:"
+[ -x $CTL ] && echo $CTL || error "can't find ejabberdctl" 10
 
-HERE=`which "$0"`
-BASE=`dirname $HERE`/..
-ROOTDIR=`cd $BASE; pwd`
-. $ROOTDIR/bin/ejabberdctl stop 2>/dev/null >/dev/null
+. $CTL stop 2>/dev/null >/dev/null
+ERLC=${ERL}c
+
+[ -x $ERL ] && echo $ERL || error "can't find erl"  11
+[ -x $ERLC ] && echo $ERLC || error "can't find erlc" 12
+echo ""
+
 NAME=-name
 [ "$ERLANG_NODE" = "${ERLANG_NODE%.*}" ] && NAME=-sname
-PA=/tmp/clustersetup_$$
 CLUSTERSETUP=clustersetup
 CLUSTERSETUP_ERL=$PA/$CLUSTERSETUP.erl
 
@@ -89,17 +93,11 @@ REMOTENAME=-name
 set -o errexit
 set -o nounset
 
-echo "Using commands:"
-which erl  || error "can't find erl"  11
-which erlc || error "can't find erlc" 12
-echo ""
-
 [ -d $SPOOL_DIR ] && rm -Rf $SPOOL_DIR
 mkdir $SPOOL_DIR || error "$SPOOL_DIR cannot be created" 20
 [ -w $SPOOL_DIR ] || error "$SPOOL_DIR directory is not writable" 21
-
-cd $ROOTDIR
-mkdir -p $PA
+mkdir -p $PA || error "$PA cannot be created" 22
+cd $PA
 cat <<EOF > $CLUSTERSETUP_ERL
 -module($CLUSTERSETUP).
 
@@ -144,8 +142,10 @@ start() ->
     end,
     halt(R).
 EOF
-erlc -o $PA $CLUSTERSETUP_ERL
-sh -c "erl $NAME $ERLANG_NODE -pa $PA $KERNEL_OPTS -mnesia extra_db_nodes \"['$REMOTE']\" dir \"\\\"$SPOOL_DIR\\\"\" -s mnesia -s $CLUSTERSETUP start"
+
+$ERLC -o $PA $CLUSTERSETUP_ERL
+sh -c "$ERL $NAME $ERLANG_NODE -pa $PA $KERNEL_OPTS -mnesia extra_db_nodes \"['$REMOTE']\" dir \"\\\"$SPOOL_DIR\\\"\" -s mnesia -s $CLUSTERSETUP start"
+cd -
 rm -Rf $PA
 
 echo "End."
