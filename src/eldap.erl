@@ -507,16 +507,14 @@ present(Attribute) ->
 -type substr() :: [{initial | any | final, binary()}].
 -type 'SubstringFilter'() ::
         #'SubstringFilter'{type :: binary(),
-                           substrings :: {'SubstringFilter_substrings',
-                                          substr()}}.
+                           substrings :: substr()}.
 
 -type substrings() :: {substrings, 'SubstringFilter'()}.
 -spec substrings(binary(), substr()) -> substrings().
 
 substrings(Type, SubStr) ->
-    Ss = {'SubstringFilter_substrings', SubStr},
     {substrings,
-     #'SubstringFilter'{type = Type, substrings = Ss}}.
+     #'SubstringFilter'{type = Type, substrings = SubStr}}.
 
 -type match_opts() :: [{matchingRule | type, binary()} |
                        {dnAttributes, boolean()}].
