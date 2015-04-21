@@ -3413,7 +3413,7 @@ broadcast_stanza(Host, _Node, _Nidx, _Type, NodeOptions, SubsByDepth, NotifyType
     Stanza = add_message_type(BaseStanza, NotificationType),
     %% Handles explicit subscriptions
     SubIDsByJID = subscribed_nodes_by_jid(NotifyType, SubsByDepth),
-    lists:foreach(fun ({LJID, NodeName, SubIDs}) ->
+    lists:foreach(fun ({LJID, _NodeName, SubIDs}) ->
 		LJIDs = case BroadcastAll of
 		    true ->
 			{U, S, _} = LJID,
@@ -3427,7 +3427,7 @@ broadcast_stanza(Host, _Node, _Nidx, _Type, NodeOptions, SubsByDepth, NotifyType
 			Stanza;
 		    %% If there's only one SubID, don't add it
 		    {true, [_]} ->
-			Stnza;
+			Stanza;
 		    {true, SubIDs} ->
 			add_shim_headers(Stanza, subid_shim(SubIDs))
 		end,
