@@ -4288,9 +4288,18 @@ purge_offline({User, Server, _} = LJID) ->
 	    {ok, []}, Plugins),
     case Result of
 	{ok, Affs} ->
+      FilteredAffs = lists:filter(fun ({#pubsub_node{nodeid = _, options = Options, type = _}, Affiliation}) ->
+        case proplists:get_value(publish_model, Options) of
+          open -> true;
+          _ -> case Affiliation of
+            owner -> true;
+            publisher -> true;
+            _ -> false
+          end
+        end
+      end, lists:usort(lists:flatten(Affs))),
 	    lists:foreach(fun
-		    ({#pubsub_node{nodeid = {_, Node}, options = Options, type = Type}, Aff})
-			    when Aff == owner orelse Aff == publisher ->
+		    ({#pubsub_node{nodeid = {_, Node}, options = Options, type = Type}, _}) ->
 			Action = fun (#pubsub_node{type = NType, id = Nidx}) ->
 				node_call(Host, NType, get_items, [Nidx, service_jid(Host), none])
 			end,
@@ -4324,7 +4333,7 @@ purge_offline({User, Server, _} = LJID) ->
 		    (_) ->
 			true
 		end,
-		lists:usort(lists:flatten(Affs)));
+		FilteredAffs);
 	{Error, _} ->
 	    ?DEBUG("on_user_offline ~p", [Error])
     end.
