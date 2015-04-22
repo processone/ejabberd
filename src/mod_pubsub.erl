@@ -4268,63 +4268,78 @@ on_user_offline(_, JID, _) ->
 	_ -> true
     end.
 
-purge_offline({User, Server, _} = LJID) ->
+purge_offline(LJID) ->
     Host = host(element(2, LJID)),
     Plugins = plugins(Host),
     Result = lists:foldl(fun (Type, {Status, Acc}) ->
+		    Features = plugin_features(Host, Type),
 		    case lists:member(<<"retrieve-affiliations">>, plugin_features(Host, Type)) of
 			false ->
-			    {{error,
-				    extended_error(?ERR_FEATURE_NOT_IMPLEMENTED,
+			    {{error, extended_error(?ERR_FEATURE_NOT_IMPLEMENTED,
 					unsupported, <<"retrieve-affiliations">>)},
 				Acc};
 			true ->
-			    {result, Affs} = node_action(Host, Type,
-				    get_entity_affiliations,
-				    [Host, LJID]),
-			    {Status, [Affs | Acc]}
+			    Items = lists:member(<<"retract-items">>, Features)
+				andalso lists:member(<<"persistent-items">>, Features),
+			    if Items ->
+				    {result, Affs} = node_action(Host, Type,
+					    get_entity_affiliations, [Host, LJID]),
+				    {Status, [Affs | Acc]};
+				true ->
+				    {Status, Acc}
+			    end
 		    end
 	    end,
 	    {ok, []}, Plugins),
     case Result of
 	{ok, Affs} ->
+	    lists:foreach(
+		    fun ({Node, Affiliation}) ->
+			    Options = Node#pubsub_node.options,
+			    Publisher = lists:member(Affiliation, [owner,publisher,publish_only]),
+			    Open = (get_option(Options, publish_model) == open),
+			    Purge = (get_option(Options, purge_offline)
+				andalso get_option(Options, persist_items)),
+			    if (Publisher or Open) and Purge ->
+				purge_offline(Host, LJID, Node);
+			    true ->
+				ok
+			    end
+		    end, lists:usort(lists:flatten(Affs)));
+	{Error, _} ->
+	    ?DEBUG("on_user_offline ~p", [Error])
+    end.
+
+purge_offline(Host, LJID, Node) ->
+    Nidx = Node#pubsub_node.id,
+    Type = Node#pubsub_node.type,
+    Options = Node#pubsub_node.options,
+    case node_action(Host, Type, get_items, [Nidx, service_jid(Host), none]) of
+	{result, {[], _}} ->
+	    ok;
+	{result, {Items, _}} ->
+	    {User, Server, _} = LJID,
+	    PublishModel = get_option(Options, publish_model),
+	    ForceNotify = get_option(Options, notify_retract),
+	    {_, NodeId} = Node#pubsub_node.nodeid,
 	    lists:foreach(fun
-		    ({#pubsub_node{nodeid = {_, Node}, options = Options, type = Type}, Aff})
-			    when Aff == owner orelse Aff == publisher ->
-			Action = fun (#pubsub_node{type = NType, id = Nidx}) ->
-				node_call(Host, NType, get_items, [Nidx, service_jid(Host), none])
-			end,
-			case transaction(Host, Node, Action, sync_dirty) of
-			    {result, {_, {[], _}}} ->
-				true;
-			    {result, {_, {Items, _}}} ->
-				Features = plugin_features(Host, Type),
-				case {lists:member(<<"retract-items">>, Features),
-					lists:member(<<"persistent-items">>, Features),
-					get_option(Options, persist_items),
-					get_option(Options, purge_offline)}
-				of
-				    {true, true, true, true} ->
-					ForceNotify = get_option(Options, notify_retract),
-					lists:foreach(fun
-						(#pubsub_item{itemid = {ItemId, _},
-								modification = {_, {U, S, _}}})
-							when (U == User) and (S == Server) ->
-						    delete_item(Host, Node, LJID, ItemId, ForceNotify);
-						(_) ->
-						    true
-					    end,
-					    Items);
-				    _ ->
-					true
+		    (#pubsub_item{itemid = {ItemId, _}, modification = {_, {U, S, _}}})
+			    when (U == User) and (S == Server) ->
+			case node_action(Host, Type, delete_item, [Nidx, {U, S, <<>>}, PublishModel, ItemId]) of
+			    {result, {_, broadcast}} ->
+				broadcast_retract_items(Host, NodeId, Nidx, Type, Options, [ItemId], ForceNotify),
+				case get_cached_item(Host, Nidx) of
+				    #pubsub_item{itemid = {ItemId, Nidx}} -> unset_cached_item(Host, Nidx);
+				    _ -> ok
 				end;
+			    {result, _} ->
+				ok;
 			    Error ->
 				Error
 			end;
 		    (_) ->
 			true
-		end,
-		lists:usort(lists:flatten(Affs)));
-	{Error, _} ->
-	    ?DEBUG("on_user_offline ~p", [Error])
+		end, Items);
+	Error ->
+	    Error
     end.
