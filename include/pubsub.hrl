@@ -98,7 +98,7 @@
 -type(affiliation() :: 'none'
                      | 'owner'
                      | 'publisher'
-                    %| 'publish-only'
+                     | 'publish_only'
                      | 'member'
                      | 'outcast'
 ).
