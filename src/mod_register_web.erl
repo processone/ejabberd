@@ -97,8 +97,8 @@ process([<<"change_password">>],
     form_changepass_get(Host, Lang);
 process([<<"new">>],
 	#request{method = 'POST', q = Q, ip = {Ip, _Port},
-		 lang = Lang, host = Host}) ->
-    case form_new_post(Q, Host) of
+		 lang = Lang, host = _HTTPHost}) ->
+    case form_new_post(Q) of
       {success, ok, {Username, Host, _Password}} ->
 	  Jid = jlib:make_jid(Username, Host, <<"">>),
           mod_register:send_registration_notifications(?MODULE, Jid, Ip),
@@ -233,7 +233,8 @@ form_new_get(Host, Lang, IP) ->
 				     <<(?T(<<"Characters not allowed:">>))/binary,
 				       " \" & ' / : < > @ ">>)])]),
 		       ?XE(<<"li">>,
-			   [?CT(<<"Server:">>), ?C(<<" ">>), ?C(Host)]),
+			   [?CT(<<"Server:">>), ?C(<<" ">>),
+			    ?INPUTS(<<"text">>, <<"host">>, Host, <<"20">>)]),
 		       ?XE(<<"li">>,
 			   [?CT(<<"Password:">>), ?C(<<" ">>),
 			    ?INPUTS(<<"password">>, <<"password">>, <<"">>,
@@ -277,9 +278,9 @@ form_new_get(Host, Lang, IP) ->
 %%% Formulary new POST
 %%%----------------------------------------------------------------------
 
-form_new_post(Q, Host) ->
+form_new_post(Q) ->
     case catch get_register_parameters(Q) of
-      [Username, Password, Password, Id, Key] ->
+      [Username, Host, Password, Password, Id, Key] ->
 	  form_new_post(Username, Host, Password, {Id, Key});
       [_Username, _Password, _Password2, false, false] ->
 	  {error, passwords_not_identical};
@@ -296,7 +297,7 @@ get_register_parameters(Q) ->
 			false -> false
 		      end
 	      end,
-	      [<<"username">>, <<"password">>, <<"password2">>,
+	      [<<"username">>, <<"host">>, <<"password">>, <<"password2">>,
 	       <<"id">>, <<"key">>]).
 
 form_new_post(Username, Host, Password,
