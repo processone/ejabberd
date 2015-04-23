@@ -252,7 +252,7 @@ init([ServerHost, Opts]) ->
     PepOffline = gen_mod:get_opt(ignore_pep_from_offline, Opts,
 	    fun(A) when is_boolean(A) -> A end, true),
     IQDisc = gen_mod:get_opt(iqdisc, Opts,
-	    fun(A) when is_atom(A) -> A end, one_queue),
+	    fun gen_iq_handler:check_type/1, one_queue),
     LastItemCache = gen_mod:get_opt(last_item_cache, Opts,
 	    fun(A) when is_boolean(A) -> A end, false),
     MaxItemsNode = gen_mod:get_opt(max_items_node, Opts,
