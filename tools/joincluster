@@ -21,19 +21,21 @@ function error
     exit $2
 }
 
-echo "--------------------------------------------------------------------"
-echo ""
-echo "ejabberd cluster configuration"
-echo ""
-echo "This ejabberd node will be configured for use in an ejabberd cluster."
-echo "IMPORTANT: all local data from the database will be lost, and"
-echo "cluster database will be initialized. All data from the master"
-echo "node will be replicated to this one."
-echo ""
-echo "--------------------------------------------------------------------"
-echo "Press any key to continue, or Ctrl+C to stop now"
-read foo
-echo ""
+[ -z $NO_WARNINGS ] && {
+    echo "--------------------------------------------------------------------"
+    echo ""
+    echo "ejabberd cluster configuration"
+    echo ""
+    echo "This ejabberd node will be configured for use in an ejabberd cluster."
+    echo "IMPORTANT: all local data from the database will be lost, and"
+    echo "cluster database will be initialized. All data from the master"
+    echo "node will be replicated to this one."
+    echo ""
+    echo "--------------------------------------------------------------------"
+    echo "Press any key to continue, or Ctrl+C to stop now"
+    read foo
+    echo ""
+}
 
 [ $# -eq 0 ] && {
     echo "Make sure you have a running remote master ejabberd node"
