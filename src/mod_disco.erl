@@ -352,21 +352,19 @@ get_sm_items(empty, From, To, _Node, _Lang) ->
       _ -> {error, ?ERR_NOT_ALLOWED}
     end.
 
-is_presence_subscribed(#jid{luser = User,
-			    lserver = Server},
+is_presence_subscribed(#jid{luser = User, lserver = Server},
 		       #jid{luser = User, lserver = Server}) -> true;
-is_presence_subscribed(#jid{luser = User,
-			    lserver = Server},
-		       #jid{luser = LUser, lserver = LServer}) ->
-    lists:any(fun (#roster{jid = {TUser, TServer, _},
-			   subscription = S}) ->
-		      if User == TUser, Server == TServer, S /= none ->
-			     true;
-			 true -> false
-		      end
+is_presence_subscribed(#jid{luser = FromUser, lserver = FromServer},
+		       #jid{luser = ToUser, lserver = ToServer}) ->
+    lists:any(fun (#roster{jid = {SubUser, SubServer, _}, subscription = Sub})
+		      when FromUser == SubUser, FromServer == SubServer,
+			   Sub /= none ->
+		      true;
+		  (_RosterEntry) ->
+		      false
 	      end,
-	      ejabberd_hooks:run_fold(roster_get, LServer, [],
-				      [{LUser, LServer}])).
+	      ejabberd_hooks:run_fold(roster_get, ToServer, [],
+				      [{ToUser, ToServer}])).
 
 process_sm_iq_info(From, To,
 		   #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
