@@ -354,6 +354,9 @@ get_sm_items(empty, From, To, _Node, _Lang) ->
 
 is_presence_subscribed(#jid{luser = User,
 			    lserver = Server},
+		       #jid{luser = User, lserver = Server}) -> true;
+is_presence_subscribed(#jid{luser = User,
+			    lserver = Server},
 		       #jid{luser = LUser, lserver = LServer}) ->
     lists:any(fun (#roster{jid = {TUser, TServer, _},
 			   subscription = S}) ->
@@ -363,8 +366,7 @@ is_presence_subscribed(#jid{luser = User,
 		      end
 	      end,
 	      ejabberd_hooks:run_fold(roster_get, LServer, [],
-				      [{LUser, LServer}]))
-      orelse User == LUser andalso Server == LServer.
+				      [{LUser, LServer}])).
 
 process_sm_iq_info(From, To,
 		   #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
