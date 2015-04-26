@@ -357,13 +357,13 @@ is_presence_subscribed(#jid{luser = User,
 		       #jid{luser = LUser, lserver = LServer}) ->
     lists:any(fun (#roster{jid = {TUser, TServer, _},
 			   subscription = S}) ->
-		      if LUser == TUser, LServer == TServer, S /= none ->
+		      if User == TUser, Server == TServer, S /= none ->
 			     true;
 			 true -> false
 		      end
 	      end,
-	      ejabberd_hooks:run_fold(roster_get, Server, [],
-				      [{User, Server}]))
+	      ejabberd_hooks:run_fold(roster_get, LServer, [],
+				      [{LUser, LServer}]))
       orelse User == LUser andalso Server == LServer.
 
 process_sm_iq_info(From, To,
