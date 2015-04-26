@@ -177,6 +177,8 @@ start()
       $NAME $ERLANG_NODE \
       -noinput -detached \
       -pa $EJABBERD_EBIN_PATH \
+      -pa $EJABBERD_EBIN_PATH/*/ebin \
+      -pa $EJABBERD_EBIN_PATH/*/deps/*/ebin \
       -mnesia dir \"\\\"$SPOOL_DIR\\\"\" \
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
@@ -218,6 +220,8 @@ live()
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
       -pa $EJABBERD_EBIN_PATH \
+      -pa $EJABBERD_EBIN_PATH/*/ebin \
+      -pa $EJABBERD_EBIN_PATH/*/deps/*/ebin \      
       -mnesia dir \"\\\"$SPOOL_DIR\\\"\" \
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
@@ -229,9 +233,12 @@ live()
 iexlive()
 {
     livewarning
+   
     $EXEC_CMD "$IEX \
       $IEXNAME $ERLANG_NODE \
       -pa $EJABBERD_EBIN_PATH \
+      -pa $EJABBERD_EBIN_PATH/*/ebin \
+      -pa $EJABBERD_EBIN_PATH/*/deps/*/ebin \      
       --erl \"-mnesia dir \\\"$SPOOL_DIR\\\"\" \
       --erl \"$KERNEL_OPTS\" \
       --erl \"$EJABBERD_OPTS\" \
@@ -401,6 +408,8 @@ ctlexec()
       -noinput \
       -hidden \
       -pa $EJABBERD_EBIN_PATH \
+      -pa $EJABBERD_EBIN_PATH/*/ebin \
+      -pa $EJABBERD_EBIN_PATH/*/deps/*/ebin \
       $KERNEL_OPTS \
       -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
 }

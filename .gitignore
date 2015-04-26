@@ -6,6 +6,9 @@
 .#*
 .edts
 *.dump
+/*.iml
+.idea
+.rebar
 /Makefile
 /config.log
 /config.status
