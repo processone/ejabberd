@@ -825,22 +825,12 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
 	[R] ->
 	    %% Get the PID for the online room so we can get the state of the room
 	    Pid = R#muc_online_room.pid,
-	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, get_state),
-	    SJID = jlib:string_to_jid(JID),
-	    LJID = jlib:jid_remove_resource(jlib:jid_tolower(SJID)),
-	    Affiliations = change_affiliation(Affiliation, LJID, StateData#state.affiliations),
-	    Res = StateData#state{affiliations = Affiliations},
-	    {ok, _State} = gen_fsm:sync_send_all_state_event(Pid, {change_state, Res}),
-	    mod_muc:store_room(Res#state.server_host, Res#state.host, Res#state.room, make_opts(Res)),
+	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jlib:string_to_jid(JID), affiliation, Affiliation, <<"">>}, <<"">>}),
+	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
 	[] ->
 	    error
     end.
-
-change_affiliation(none, LJID, Affiliations) ->
-    ?DICT:erase(LJID, Affiliations);
-change_affiliation(Affiliation, LJID, Affiliations) ->
-    ?DICT:store(LJID, Affiliation, Affiliations).
 
 -define(MAKE_CONFIG_OPT(Opt), {Opt, Config#config.Opt}).
 
