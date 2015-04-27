@@ -112,6 +112,8 @@ DATETIME=`date "+%Y%m%d-%H%M%S"`
 ERL_CRASH_DUMP=$LOGS_DIR/erl_crash_$DATETIME.dump
 ERL_INETRC=$ETC_DIR/inetrc
 
+# define mnesia options
+MNESIA_OPTS="-mnesia dir \"\\\"$SPOOL_DIR\\\"\" $MNESIA_OPTIONS"
 # define erl parameters
 ERL_OPTIONS=$(echo $ERL_OPTIONS | sed 's/ /\\ /g')
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
@@ -177,7 +179,7 @@ start()
       $NAME $ERLANG_NODE \
       -noinput -detached \
       -pa $EJABBERD_EBIN_PATH \
-      -mnesia dir \"\\\"$SPOOL_DIR\\\"\" \
+      $MNESIA_OPTS \
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
       -s ejabberd \
@@ -218,7 +220,7 @@ live()
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
       -pa $EJABBERD_EBIN_PATH \
-      -mnesia dir \"\\\"$SPOOL_DIR\\\"\" \
+      $MNESIA_OPTS \
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
       -s ejabberd \
