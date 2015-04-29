@@ -18,6 +18,7 @@
 	 create_room/3, destroy_room/3,
 	 create_rooms_file/1, destroy_rooms_file/1,
 	 rooms_unused_list/2, rooms_unused_destroy/2,
+	 get_user_rooms/2,
 	 get_room_occupants/2,
 	 get_room_occupants_number/2,
 	 send_direct_invitation/4,
@@ -107,6 +108,12 @@ commands() ->
 		       args = [{host, binary}, {days, integer}],
 		       result = {rooms, {list, {room, string}}}},
 
+     #ejabberd_commands{name = get_user_rooms, tags = [muc],
+			desc = "Get the list of rooms where this user is occupant",
+			module = ?MODULE, function = get_user_rooms,
+			args = [{user, binary}, {host, binary}],
+		        result = {rooms, {list, {room, string}}}},
+
      #ejabberd_commands{name = get_room_occupants, tags = [muc_room],
 			desc = "Get the list of occupants of a MUC room",
 			module = ?MODULE, function = get_room_occupants,
@@ -193,6 +200,15 @@ muc_unregister_nick(Nick) ->
 	    error
     end.
 
+get_user_rooms(LUser, LServer) ->
+    US = {LUser, LServer},
+    case catch ets:select(muc_online_users,
+                          [{#muc_online_users{us = US, room='$1', host='$2', _ = '_'}, [], [{{'$1', '$2'}}]}])
+        of
+      Res when is_list(Res) ->
+	[<<R/binary, "@", H/binary>> || {R, H} <- Res];
+      _ -> []
+    end.
 
 %%----------------------------
 %% Ad-hoc commands
@@ -524,7 +540,7 @@ rooms_unused_destroy(Host, Days) ->
 rooms_unused_report(Action, Host, Days) ->
     {NA, NP, RP} = muc_unused(Action, Host, Days),
     io:format("Unused rooms: ~p out of ~p~n", [NP, NA]),
-    [[R, <<"@">>, H] || {R, H, _P} <- RP].
+    [<<R/binary, "@", H/binary>> || {R, H, _P} <- RP].
 
 muc_unused(Action, ServerHost, Days) ->
     Host = find_host(ServerHost),
