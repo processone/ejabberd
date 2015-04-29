@@ -318,9 +318,23 @@ extract_github_master(Repos, DestDir) ->
             Error
     end.
 
-copy_file(From, To) ->
-    filelib:ensure_dir(To),
-    file:copy(From, To).
+copy(From, To) ->
+    case filelib:is_dir(From) of
+        true ->
+            Copy = fun(F) ->
+                    SubFrom = filename:join(From, F),
+                    SubTo = filename:join(To, F),
+                    copy(SubFrom, SubTo)
+            end,
+            lists:foldl(fun({ok, C2}, {ok, C1}) -> {ok, C1+C2};
+                           ({ok, _}, Error) -> Error;
+                           (Error, _) -> Error
+                end, {ok, 0},
+                [Copy(filename:basename(X)) || X<-filelib:wildcard(From++"/*")]);
+        false ->
+            filelib:ensure_dir(To),
+            file:copy(From, To)
+    end.
 
 delete_path(Path) ->
     case filelib:is_dir(Path) of
@@ -449,14 +463,9 @@ compile(_Module, _Spec, DestDir) ->
     filelib:ensure_dir(filename:join(Ebin, ".")),
     EjabBin = filename:dirname(code:which(ejabberd)),
     EjabInc = filename:join(filename:dirname(EjabBin), "include"),
-    Logger = case code:is_loaded(lager) of
-        {file, _} -> [{d, 'LAGER'}];
-        _ -> []
-    end,
-    ExtLib = case filelib:is_file(filename:join(EjabInc, "xml.hrl")) of
-        true -> [{d, 'NO_EXT_LIB'}]; %% use include instead of include_lib
-        false -> []
-    end,
+    XmlHrl = filename:join(EjabInc, "xml.hrl"),
+    Logger = [{d, 'LAGER'} || code:is_loaded(lager)=/=false],
+    ExtLib = [{d, 'NO_EXT_LIB'} || filelib:is_file(XmlHrl)],
     Options = [{outdir, Ebin}, {i, "include"}, {i, EjabInc},
                verbose, report_errors, report_warnings]
               ++ Logger ++ ExtLib,
@@ -476,11 +485,23 @@ compile(_Module, _Spec, DestDir) ->
         [Error|_] -> Error
     end.
 
-install(Module, _Spec, DestDir) ->
-    SpecFile = filename:flatten([Module, ".spec"]),
-    [copy_file(File, filename:join(DestDir, File))
-     || File <- [SpecFile | filelib:wildcard("{ebin,priv,conf,include}/**")]],
-    ok.
+install(Module, Spec, DestDir) ->
+    Errors = lists:dropwhile(fun({_, {ok, _}}) -> true;
+                                (_) -> false
+            end, [{File, copy(File, filename:join(DestDir, File))}
+                  || File <- filelib:wildcard("{ebin,priv,conf,include}/**")]),
+    Result = case Errors of
+        [{F, {error, E}}|_] ->
+            {error, {F, E}};
+        [] ->
+            SpecPath = proplists:get_value(path, Spec),
+            SpecFile = filename:flatten([Module, ".spec"]),
+            copy(filename:join(SpecPath, SpecFile), filename:join(DestDir, SpecFile))
+    end,
+    case Result of
+        {ok, _} -> ok;
+        Error -> Error
+    end.
 
 %% -- YAML spec parser
 
