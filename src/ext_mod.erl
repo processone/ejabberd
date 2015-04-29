@@ -302,7 +302,15 @@ extract_url(Path, DestDir) ->
      ++[{error, unsupported_source}]).
 
 extract_github_master(Repos, DestDir) ->
-    case extract(zip, geturl(Repos ++ "/archive/master.zip"), DestDir) of
+    Base = case string:tokens(Repos, ":") of
+        ["git@github.com", T1] -> "https://github.com/"++T1;
+        _ -> Repos
+    end,
+    Url = case lists:reverse(Base) of
+        [$t,$i,$g,$.|T2] -> lists:reverse(T2);
+        _ -> Base
+    end,
+    case extract(zip, geturl(Url++"/archive/master.zip"), DestDir) of
         ok ->
             RepDir = filename:join(DestDir, module_name(Repos)),
             file:rename(RepDir++"-master", RepDir);
@@ -445,10 +453,13 @@ compile(_Module, _Spec, DestDir) ->
         {file, _} -> [{d, 'LAGER'}];
         _ -> []
     end,
+    ExtLib = case filelib:is_file(filename:join(EjabInc, "xml.hrl")) of
+        true -> [{d, 'NO_EXT_LIB'}]; %% use include instead of include_lib
+        false -> []
+    end,
     Options = [{outdir, Ebin}, {i, "include"}, {i, EjabInc},
-               {d, 'NO_EXT_LIB'},  %% use include instead of include_lib
                verbose, report_errors, report_warnings]
-              ++ Logger,
+              ++ Logger ++ ExtLib,
     Result = [case compile:file(File, Options) of
             {ok, _} -> ok;
             {ok, _, _} -> ok;
