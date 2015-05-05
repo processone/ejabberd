@@ -446,7 +446,7 @@ commands() ->
 			longdesc = "Timestamp is the seconds since"
 			"1970-01-01 00:00:00 UTC, for example: date +%s",
 			module = ?MODULE, function = set_last,
-			args = [{user, string}, {host, string}, {timestamp, integer}, {status, string}],
+			args = [{user, binary}, {host, binary}, {timestamp, integer}, {status, binary}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = private_get, tags = [private],
