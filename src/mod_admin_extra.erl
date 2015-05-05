@@ -435,7 +435,7 @@ commands() ->
 			result = {res, rescode}},
 
      #ejabberd_commands{name = get_last, tags = [last],
-			desc = "Get last activity information",
+			desc = "Get last activity information (timestamp and status)",
 			longdesc = "Timestamp is the seconds since"
 			"1970-01-01 00:00:00 UTC, for example: date +%s",
 			module = ?MODULE, function = get_last,
@@ -1226,7 +1226,7 @@ get_last(User, Server) ->
             case Mod:get_last_info(User, Server) of
                 not_found ->
                     "Never";
-                {ok, Shift, _Status} ->
+                {ok, Shift, Status} ->
                     TimeStamp = {Shift div 1000000,
                         Shift rem 1000000,
                         0},
@@ -1234,8 +1234,8 @@ get_last(User, Server) ->
                         calendar:now_to_local_time(TimeStamp),
                     lists:flatten(
                         io_lib:format(
-                            "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
-                            [Year, Month, Day, Hour, Minute, Second]))
+                            "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w ~s",
+                            [Year, Month, Day, Hour, Minute, Second, Status]))
             end;
         _ ->
             "Online"
