@@ -70,7 +70,6 @@
 	 push_alltoall/2,
 	 %% mod_last
 	 get_last/2,
-	 set_last/4,
 	 %% mod_private
 	 private_get/4,
 	 private_set/3,
@@ -445,7 +444,7 @@ commands() ->
 			desc = "Set last activity information",
 			longdesc = "Timestamp is the seconds since"
 			"1970-01-01 00:00:00 UTC, for example: date +%s",
-			module = ?MODULE, function = set_last,
+			module = mod_last, function = store_last_info,
 			args = [{user, binary}, {host, binary}, {timestamp, integer}, {status, binary}],
 			result = {res, rescode}},
 
@@ -680,7 +679,7 @@ delete_old_users(Days, Users) ->
 		    %% If it isnt
 		    [] ->
 			%% Look for his last_activity
-			case (get_lastactivity_module(LServer)):get_last_info(LUser, LServer) of
+			case mod_last:get_last_info(LUser, LServer) of
 			    %% If it is
 			    %% existent:
 			    {ok, TimeStamp, _Status} ->
@@ -713,13 +712,6 @@ delete_old_users(Days, Users) ->
     %% Apply the function to every user in the list
     Users_removed = lists:filter(F, Users),
     {removed, length(Users_removed), Users_removed}.
-
-get_lastactivity_module(Server) ->
-    case lists:member(mod_last, gen_mod:loaded_modules(Server)) of
-        true -> mod_last;
-        _ -> mod_last_odbc
-    end.
-
 
 %%
 %% Ban account
@@ -1220,10 +1212,9 @@ build_broadcast(U, S, SubsAtom) when is_atom(SubsAtom) ->
 %%%
 
 get_last(User, Server) ->
-    Mod = get_lastactivity_module(Server),
     case ejabberd_sm:get_user_resources(User, Server) of
         [] ->
-            case Mod:get_last_info(User, Server) of
+            case mod_last:get_last_info(User, Server) of
                 not_found ->
                     "Never";
                 {ok, Shift, Status} ->
@@ -1240,10 +1231,6 @@ get_last(User, Server) ->
         _ ->
             "Online"
     end.
-
-set_last(User, Server, Timestamp, Status) ->
-    Mod = get_lastactivity_module(Server),
-    Mod:store_last_info(User, Server, Timestamp, Status).
 
 %%%
 %%% Private Storage
