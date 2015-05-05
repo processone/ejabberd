@@ -6,6 +6,7 @@
 .#*
 .edts
 *.dump
+.vagrant
 /Makefile
 /config.log
 /config.status
