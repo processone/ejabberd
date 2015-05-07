@@ -44,7 +44,7 @@
 	 handle_info/3,
 	 terminate/3,
 	 code_change/4]).
-
+-define(LAGER,1).
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
@@ -54,6 +54,8 @@
 
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
+
+-define(DEFAULT_MAX_USERS_PRESENCE,100).
 
 %-define(DBGFSM, true).
 
@@ -2105,170 +2107,188 @@ send_update_presence(JID, StateData) ->
     send_update_presence(JID, <<"">>, StateData).
 
 send_update_presence(JID, Reason, StateData) ->
-    LJID = jlib:jid_tolower(JID),
-    LJIDs = case LJID of
-	      {U, S, <<"">>} ->
-		  (?DICT):fold(fun (J, _, Js) ->
-				       case J of
-					 {U, S, _} -> [J | Js];
-					 _ -> Js
-				       end
-			       end,
-			       [], StateData#state.users);
-	      _ ->
-		  case (?DICT):is_key(LJID, StateData#state.users) of
-		    true -> [LJID];
-		    _ -> []
-		  end
-	    end,
-    lists:foreach(fun (J) ->
-			  send_new_presence(J, Reason, StateData)
-		  end,
-		  LJIDs).
+	MaxUserPresence = gen_mod:get_module_opt(StateData#state.server_host,
+						 mod_muc, max_user_presence, fun(MUP) when is_integer(MUP) -> MUP end, ?DEFAULT_MAX_USERS_PRESENCE),
+	case ((?DICT):size(StateData#state.users)>MaxUserPresence) of
+		true -> ok;
+		false ->
+	    LJID = jlib:jid_tolower(JID),
+	    LJIDs = case LJID of
+		      {U, S, <<"">>} ->
+			  (?DICT):fold(fun (J, _, Js) ->
+					       case J of
+						 {U, S, _} -> [J | Js];
+						 _ -> Js
+					       end
+				       end,
+				       [], StateData#state.users);
+		      _ ->
+			  case (?DICT):is_key(LJID, StateData#state.users) of
+			    true -> [LJID];
+			    _ -> []
+			  end
+		    end,
+	    lists:foreach(fun (J) ->
+				  send_new_presence(J, Reason, StateData)
+			  end,
+			  LJIDs)
+	end.
 
 send_new_presence(NJID, StateData) ->
     send_new_presence(NJID, <<"">>, StateData).
 
 send_new_presence(NJID, Reason, StateData) ->
-    #user{nick = Nick} =
-	(?DICT):fetch(jlib:jid_tolower(NJID),
-		      StateData#state.users),
-    LJID = find_jid_by_nick(Nick, StateData),
-    {ok,
-     #user{jid = RealJID, role = Role,
-	   last_presence = Presence}} =
-	(?DICT):find(jlib:jid_tolower(LJID),
-		     StateData#state.users),
-    Affiliation = get_affiliation(LJID, StateData),
-    SAffiliation = affiliation_to_list(Affiliation),
-    SRole = role_to_list(Role),
-    lists:foreach(fun ({_LJID, Info}) ->
-			  ItemAttrs = case Info#user.role == moderator orelse
-					     (StateData#state.config)#config.anonymous
-					       == false
-					  of
-					true ->
-					    [{<<"jid">>,
-					      jlib:jid_to_string(RealJID)},
-					     {<<"affiliation">>, SAffiliation},
-					     {<<"role">>, SRole}];
-					_ ->
-					    [{<<"affiliation">>, SAffiliation},
-					     {<<"role">>, SRole}]
-				      end,
-			  ItemEls = case Reason of
-				      <<"">> -> [];
-				      _ ->
-					  [#xmlel{name = <<"reason">>,
-						  attrs = [],
-						  children =
-						      [{xmlcdata, Reason}]}]
-				    end,
-			  Status = case StateData#state.just_created of
-				     true ->
-					 [#xmlel{name = <<"status">>,
-						 attrs =
-						     [{<<"code">>, <<"201">>}],
-						 children = []}];
-				     false -> []
-				   end,
-			  Status2 = case
-				      (StateData#state.config)#config.anonymous
-					== false
-					andalso NJID == Info#user.jid
-					of
-				      true ->
-					  [#xmlel{name = <<"status">>,
-						  attrs =
-						      [{<<"code">>, <<"100">>}],
-						  children = []}
-					   | Status];
-				      false -> Status
-				    end,
-			  Status3 = case NJID == Info#user.jid of
-				      true ->
-					  [#xmlel{name = <<"status">>,
-						  attrs =
-						      [{<<"code">>, <<"110">>}],
-						  children = []}
-					   | Status2];
-				      false -> Status2
-				    end,
-			  Packet = xml:append_subtags(Presence,
-						      [#xmlel{name = <<"x">>,
-							      attrs =
-								  [{<<"xmlns">>,
-								    ?NS_MUC_USER}],
-							      children =
-								  [#xmlel{name =
-									      <<"item">>,
-									  attrs
-									      =
-									      ItemAttrs,
-									  children
-									      =
-									      ItemEls}
-								   | Status3]}]),
-			  ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid,
-								 Nick),
-				       Info#user.jid, Packet)
-		  end,
-		  (?DICT):to_list(StateData#state.users)).
+	MaxUserPresence = gen_mod:get_module_opt(StateData#state.server_host,
+						 mod_muc, max_user_presence, fun(MUP) when is_integer(MUP) -> MUP end, ?DEFAULT_MAX_USERS_PRESENCE),
+	case ((?DICT):size(StateData#state.users)>MaxUserPresence) of
+		true -> ok;
+		false ->
+		    #user{nick = Nick} =
+			(?DICT):fetch(jlib:jid_tolower(NJID),
+				      StateData#state.users),
+		    LJID = find_jid_by_nick(Nick, StateData),
+		    {ok,
+		     #user{jid = RealJID, role = Role,
+			   last_presence = Presence}} =
+			(?DICT):find(jlib:jid_tolower(LJID),
+				     StateData#state.users),
+		    Affiliation = get_affiliation(LJID, StateData),
+		    SAffiliation = affiliation_to_list(Affiliation),
+		    SRole = role_to_list(Role),
+		    lists:foreach(fun ({_LJID, Info}) ->
+					  ItemAttrs = case Info#user.role == moderator orelse
+							     (StateData#state.config)#config.anonymous
+							       == false
+							  of
+							true ->
+							    [{<<"jid">>,
+							      jlib:jid_to_string(RealJID)},
+							     {<<"affiliation">>, SAffiliation},
+							     {<<"role">>, SRole}];
+							_ ->
+							    [{<<"affiliation">>, SAffiliation},
+							     {<<"role">>, SRole}]
+						      end,
+					  ItemEls = case Reason of
+						      <<"">> -> [];
+						      _ ->
+							  [#xmlel{name = <<"reason">>,
+								  attrs = [],
+								  children =
+								      [{xmlcdata, Reason}]}]
+						    end,
+					  Status = case StateData#state.just_created of
+						     true ->
+							 [#xmlel{name = <<"status">>,
+								 attrs =
+								     [{<<"code">>, <<"201">>}],
+								 children = []}];
+						     false -> []
+						   end,
+					  Status2 = case
+						      (StateData#state.config)#config.anonymous
+							== false
+							andalso NJID == Info#user.jid
+							of
+						      true ->
+							  [#xmlel{name = <<"status">>,
+								  attrs =
+								      [{<<"code">>, <<"100">>}],
+								  children = []}
+							   | Status];
+						      false -> Status
+						    end,
+					  Status3 = case NJID == Info#user.jid of
+						      true ->
+							  [#xmlel{name = <<"status">>,
+								  attrs =
+								      [{<<"code">>, <<"110">>}],
+								  children = []}
+							   | Status2];
+						      false -> Status2
+						    end,
+					  Packet = xml:append_subtags(Presence,
+								      [#xmlel{name = <<"x">>,
+									      attrs =
+										  [{<<"xmlns">>,
+										    ?NS_MUC_USER}],
+									      children =
+										  [#xmlel{name =
+											      <<"item">>,
+											  attrs
+											      =
+											      ItemAttrs,
+											  children
+											      =
+											      ItemEls}
+										   | Status3]}]),
+					  ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid,
+										 Nick),
+						       Info#user.jid, Packet)
+				  end,
+				  (?DICT):to_list(StateData#state.users))
+	end.
 
 send_existing_presences(ToJID, StateData) ->
-    LToJID = jlib:jid_tolower(ToJID),
-    {ok, #user{jid = RealToJID, role = Role}} =
-	(?DICT):find(LToJID, StateData#state.users),
-    lists:foreach(fun ({FromNick, _Users}) ->
-			  LJID = find_jid_by_nick(FromNick, StateData),
-			  #user{jid = FromJID, role = FromRole,
-				last_presence = Presence} =
-			      (?DICT):fetch(jlib:jid_tolower(LJID),
-					    StateData#state.users),
-			  case RealToJID of
-			    FromJID -> ok;
-			    _ ->
-				FromAffiliation = get_affiliation(LJID,
-								  StateData),
-				ItemAttrs = case Role == moderator orelse
-						   (StateData#state.config)#config.anonymous
-						     == false
-						of
-					      true ->
-						  [{<<"jid">>,
-						    jlib:jid_to_string(FromJID)},
-						   {<<"affiliation">>,
-						    affiliation_to_list(FromAffiliation)},
-						   {<<"role">>,
-						    role_to_list(FromRole)}];
-					      _ ->
-						  [{<<"affiliation">>,
-						    affiliation_to_list(FromAffiliation)},
-						   {<<"role">>,
-						    role_to_list(FromRole)}]
-					    end,
-				Packet = xml:append_subtags(Presence,
-							    [#xmlel{name =
-									<<"x">>,
-								    attrs =
-									[{<<"xmlns">>,
-									  ?NS_MUC_USER}],
-								    children =
-									[#xmlel{name
-										    =
-										    <<"item">>,
-										attrs
-										    =
-										    ItemAttrs,
-										children
-										    =
-										    []}]}]),
-				ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid,
-								       FromNick),
-					     RealToJID, Packet)
-			  end
-		  end,
-		  (?DICT):to_list(StateData#state.nicks)).
+	MaxUserPresence = gen_mod:get_module_opt(StateData#state.server_host,
+						 mod_muc, max_user_presence, fun(MUP) when is_integer(MUP) -> MUP end, ?DEFAULT_MAX_USERS_PRESENCE),
+	case ((?DICT):size(StateData#state.users)>MaxUserPresence) of
+		true -> ok;
+		false ->
+	    LToJID = jlib:jid_tolower(ToJID),
+	    {ok, #user{jid = RealToJID, role = Role}} =
+		(?DICT):find(LToJID, StateData#state.users),
+	    lists:foreach(fun ({FromNick, _Users}) ->
+				  LJID = find_jid_by_nick(FromNick, StateData),
+				  #user{jid = FromJID, role = FromRole,
+					last_presence = Presence} =
+				      (?DICT):fetch(jlib:jid_tolower(LJID),
+						    StateData#state.users),
+				  case RealToJID of
+				    FromJID -> ok;
+				    _ ->
+					FromAffiliation = get_affiliation(LJID,
+									  StateData),
+					ItemAttrs = case Role == moderator orelse
+							   (StateData#state.config)#config.anonymous
+							     == false
+							of
+						      true ->
+							  [{<<"jid">>,
+							    jlib:jid_to_string(FromJID)},
+							   {<<"affiliation">>,
+							    affiliation_to_list(FromAffiliation)},
+							   {<<"role">>,
+							    role_to_list(FromRole)}];
+						      _ ->
+							  [{<<"affiliation">>,
+							    affiliation_to_list(FromAffiliation)},
+							   {<<"role">>,
+							    role_to_list(FromRole)}]
+						    end,
+					Packet = xml:append_subtags(Presence,
+								    [#xmlel{name =
+										<<"x">>,
+									    attrs =
+										[{<<"xmlns">>,
+										  ?NS_MUC_USER}],
+									    children =
+										[#xmlel{name
+											    =
+											    <<"item">>,
+											attrs
+											    =
+											    ItemAttrs,
+											children
+											    =
+											    []}]}]),
+					ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid,
+									       FromNick),
+						     RealToJID, Packet)
+				  end
+			  end,
+			  (?DICT):to_list(StateData#state.nicks))
+	end.
 
 now_to_usec({MSec, Sec, USec}) ->
     (MSec * 1000000 + Sec) * 1000000 + USec.
