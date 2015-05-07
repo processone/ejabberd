@@ -68,10 +68,15 @@ stop(Host) ->
 				     ?NS_REGISTER).
 
 stream_feature_register(Acc, _Host) ->
-    [#xmlel{name = <<"register">>,
-	    attrs = [{<<"xmlns">>, ?NS_FEATURE_IQREGISTER}],
-	    children = []}
-     | Acc].
+    case lists:keymember(<<"mechanisms">>, 2, Acc) of
+	true ->
+	    [#xmlel{name = <<"register">>,
+		    attrs = [{<<"xmlns">>, ?NS_FEATURE_IQREGISTER}],
+		    children = []}
+	     | Acc];
+	false ->
+	    Acc
+    end.
 
 unauthenticated_iq_register(_Acc, Server,
 			    #iq{xmlns = ?NS_REGISTER} = IQ, IP) ->
