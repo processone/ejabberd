@@ -55,6 +55,8 @@
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
 
+-define(DEFAULT_MAX_USERS_PRESENCE,1000).
+
 %-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
@@ -2101,10 +2103,23 @@ extract_history([#xmlel{attrs = Attrs} = El | Els],
 extract_history([_ | Els], Type) ->
     extract_history(Els, Type).
 
+is_room_overcrowded(StateData) ->
+    MaxUsersPresence = gen_mod:get_module_opt(StateData#state.server_host,
+	mod_muc, max_users_presence,
+	fun(MUP) when is_integer(MUP) -> MUP end,
+	?DEFAULT_MAX_USERS_PRESENCE),
+    (?DICT):size(StateData#state.users) > MaxUsersPresence.
+
 send_update_presence(JID, StateData) ->
     send_update_presence(JID, <<"">>, StateData).
 
 send_update_presence(JID, Reason, StateData) ->
+    case is_room_overcrowded(StateData) of
+	true -> ok;
+	false -> send_update_presence1(JID, Reason, StateData)
+    end.
+
+send_update_presence1(JID, Reason, StateData) ->
     LJID = jlib:jid_tolower(JID),
     LJIDs = case LJID of
 	      {U, S, <<"">>} ->
@@ -2130,6 +2145,12 @@ send_new_presence(NJID, StateData) ->
     send_new_presence(NJID, <<"">>, StateData).
 
 send_new_presence(NJID, Reason, StateData) ->
+    case is_room_overcrowded(StateData) of
+	true -> ok;
+	false -> send_new_presence1(NJID, Reason, StateData)
+    end.
+
+send_new_presence1(NJID, Reason, StateData) ->
     #user{nick = Nick} =
 	(?DICT):fetch(jlib:jid_tolower(NJID),
 		      StateData#state.users),
@@ -2216,6 +2237,12 @@ send_new_presence(NJID, Reason, StateData) ->
 		  (?DICT):to_list(StateData#state.users)).
 
 send_existing_presences(ToJID, StateData) ->
+    case is_room_overcrowded(StateData) of
+	true -> ok;
+	false -> send_existing_presences1(ToJID, StateData)
+    end.
+
+send_existing_presences1(ToJID, StateData) ->
     LToJID = jlib:jid_tolower(ToJID),
     {ok, #user{jid = RealToJID, role = Role}} =
 	(?DICT):find(LToJID, StateData#state.users),
