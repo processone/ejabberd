@@ -190,7 +190,7 @@ commands() ->
 			desc = "Check if the password hash is correct",
 			longdesc = "Allowed hash methods: md5, sha.",
 			module = ?MODULE, function = check_password_hash,
-			args = [{user, binary}, {host, binary}, {passwordhash, binary}, {hashmethod, binary}],
+			args = [{user, binary}, {host, binary}, {passwordhash, string}, {hashmethod, string}],
 			result = {res, rescode}},
      #ejabberd_commands{name = change_password, tags = [accounts],
 			desc = "Change the password of an account",
