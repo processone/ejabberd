@@ -44,7 +44,7 @@
 	 handle_info/3,
 	 terminate/3,
 	 code_change/4]).
--define(LAGER,1).
+
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
