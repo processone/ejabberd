@@ -457,14 +457,14 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					    false ->
 						[]
 					end,
+				    StreamFeatures1 = TLSFeature ++ CompressFeature ++ Mechs,
+				    StreamFeatures = ejabberd_hooks:run_fold(c2s_stream_features,
+							Server, StreamFeatures1, [Server]),
 				    send_element(StateData,
 					    #xmlel{name = <<"stream:features">>,
 						   attrs = [],
 						   children =
-						    TLSFeature ++ CompressFeature ++ Mechs
-						    ++
-						    ejabberd_hooks:run_fold(c2s_stream_features,
-							Server, [], [Server])}),
+						    StreamFeatures}),
 				    fsm_next_state(wait_for_feature_request,
 					       StateData#state{
 						 server = Server,
@@ -489,7 +489,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 					      false ->
 						  []
 					    end,
-					StreamFeatures = [#xmlel{name = <<"bind">>,
+					StreamFeatures1 = [#xmlel{name = <<"bind">>,
 								attrs = [{<<"xmlns">>, ?NS_BIND}],
 								children = []},
 							    #xmlel{name = <<"session">>,
@@ -499,9 +499,9 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 							    RosterVersioningFeature ++
 							    StreamManagementFeature ++
 							    ejabberd_hooks:run_fold(c2s_post_auth_features,
-								Server, [], [Server]) ++
-							    ejabberd_hooks:run_fold(c2s_stream_features,
 								Server, [], [Server]),
+					StreamFeatures = ejabberd_hooks:run_fold(c2s_stream_features,
+								Server, StreamFeatures1, [Server]),
 					send_element(StateData,
 						    #xmlel{name = <<"stream:features">>,
 							    attrs = [],

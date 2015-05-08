@@ -382,6 +382,15 @@ check_access_commands(AccessCommands, Auth, Method, Command, Arguments) ->
 					       Method, Arguments);
 		      false ->
 			  false
+		  end;
+	      ({Access, Commands}) ->
+		  ArgumentRestrictions = [],
+		  case check_access(Access, Auth) of
+		      true ->
+			  check_access_command(Commands, Command, ArgumentRestrictions,
+					       Method, Arguments);
+		      false ->
+			  false
 		  end
 	  end,
 	  AccessCommands),
