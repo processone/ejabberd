@@ -785,6 +785,7 @@ change_option(Option, Value, Config) ->
 	allow_query_users -> Config#config{allow_query_users = Value};
 	allow_user_invites -> Config#config{allow_user_invites = Value};
 	anonymous -> Config#config{anonymous = Value};
+	description -> Config#config{description = Value};
 	logging -> Config#config{logging = Value};
 	max_users -> Config#config{max_users = Value};
 	members_by_default -> Config#config{members_by_default = Value};
