@@ -152,6 +152,14 @@ Operation Guide available online and in the `doc` directory of the source
 tarball.
 
 
+Development
+-----------
+
+In order to assist in the development of ejabberd, and particularly the
+execution of the test suite, a Vagrant environment is available at
+https://github.com/processone/ejabberd-vagrant-dev.
+
+
 Links
 -----
 
