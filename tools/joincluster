@@ -95,8 +95,7 @@ REMOTENAME=-name
 set -o errexit
 set -o nounset
 
-[ -d $SPOOL_DIR ] && rm -Rf $SPOOL_DIR
-mkdir $SPOOL_DIR || error "$SPOOL_DIR cannot be created" 20
+[ -d $SPOOL_DIR ] && rm -Rf $SPOOL_DIR/* || mkdir -p $SPOOL_DIR || error "$SPOOL_DIR cannot be created" 20
 [ -w $SPOOL_DIR ] || error "$SPOOL_DIR directory is not writable" 21
 mkdir -p $PA || error "$PA cannot be created" 22
 cd $PA
