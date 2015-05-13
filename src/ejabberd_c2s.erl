@@ -1891,7 +1891,7 @@ send_text(StateData, Text) when StateData#state.mgmt_state == active ->
     case catch (StateData#state.sockmod):send(StateData#state.socket, Text) of
       {'EXIT', _} ->
 	  (StateData#state.sockmod):close(StateData#state.socket),
-	  error;
+	  {error, closed};
       _ ->
 	  ok
     end;
@@ -1915,7 +1915,7 @@ send_stanza(StateData, Stanza) when StateData#state.mgmt_state == active ->
     NewStateData = case send_stanza_and_ack_req(StateData, Stanza) of
 		     ok ->
 			 StateData;
-		     error ->
+		     _Error ->
 			 StateData#state{mgmt_state = pending}
 		   end,
     mgmt_queue_add(NewStateData, Stanza);
@@ -2833,8 +2833,8 @@ send_stanza_and_ack_req(StateData, Stanza) ->
     case send_element(StateData, Stanza) of
       ok ->
 	  send_element(StateData, AckReq);
-      error ->
-	  error
+      Error ->
+	  Error
     end.
 
 mgmt_queue_add(StateData, El) ->
