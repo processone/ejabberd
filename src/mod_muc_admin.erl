@@ -23,6 +23,7 @@
 	 get_room_occupants_number/2,
 	 send_direct_invitation/4,
 	 change_room_option/4,
+	 get_room_options/2,
 	 set_room_affiliation/4,
 	 get_room_affiliations/2,
 	 web_menu_main/2, web_page_main/2, % Web Admin API
@@ -145,6 +146,16 @@ commands() ->
 		       args = [{name, binary}, {service, binary},
 			       {option, binary}, {value, binary}],
 		       result = {res, rescode}},
+     #ejabberd_commands{name = get_room_options, tags = [muc_room],
+		        desc = "Get options from a MUC room",
+		        module = ?MODULE, function = get_room_options,
+		        args = [{name, binary}, {service, binary}],
+			result = {options, {list,
+						 {option, {tuple,
+								[{name, string},
+								 {value, string}
+								]}}
+						}}},
 
      #ejabberd_commands{name = set_room_affiliation, tags = [muc_room],
 		       desc = "Change an affiliation in a MUC room",
@@ -799,6 +810,22 @@ change_option(Option, Value, Config) ->
 	title -> Config#config{title = Value}
     end.
 
+%%----------------------------
+%% Get Room Options
+%%----------------------------
+
+get_room_options(Name, Service) ->
+    Pid = get_room_pid(Name, Service),
+    get_room_options(Pid).
+
+get_room_options(Pid) ->
+    Config = get_room_config(Pid),
+    get_options(Config).
+
+get_options(Config) ->
+    Fields = record_info(fields, config),
+    [config | Values] = tuple_to_list(Config),
+    lists:zip(Fields, Values).
 
 %%----------------------------
 %% Get Room Affiliations

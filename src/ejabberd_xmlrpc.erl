@@ -466,6 +466,12 @@ format_result(String, {Name, string}) when is_list(String) ->
     {struct, [{Name, lists:flatten(String)}]};
 format_result(Binary, {Name, string}) when is_binary(Binary) ->
     {struct, [{Name, binary_to_list(Binary)}]};
+format_result(Atom, {Name, string}) when is_atom(Atom) ->
+    {struct, [{Name, atom_to_list(Atom)}]};
+format_result(Integer, {Name, string}) when is_integer(Integer) ->
+    {struct, [{Name, integer_to_list(Integer)}]};
+format_result(Other, {Name, string}) ->
+    {struct, [{Name, io_lib:format("~p", [Other])}]};
 format_result(String, {Name, binary}) when is_list(String) ->
     {struct, [{Name, lists:flatten(String)}]};
 format_result(Binary, {Name, binary}) when is_binary(Binary) ->
