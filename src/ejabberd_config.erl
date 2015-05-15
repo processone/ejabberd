@@ -769,14 +769,24 @@ replace_module(Module) ->
         false -> Module
     end.
 
-replace_modules(Modules) -> lists:map( fun({Module, Opts}) -> case
-    replace_module(Module) of {NewModule, DBType} ->
-    emit_deprecation_warning(Module, NewModule, DBType), NewOpts =
-    [{db_type, DBType} | lists:keydelete(db_type, 1, Opts)],
-    {NewModule, transform_module_options(Module, NewOpts)}; NewModule
-    -> if Module /= NewModule -> emit_deprecation_warning(Module,
-    NewModule); true -> ok end, {NewModule,
-    transform_module_options(Module, Opts)} end end, Modules).
+replace_modules(Modules) ->
+    lists:map(
+        fun({Module, Opts}) ->
+                case replace_module(Module) of
+                    {NewModule, DBType} ->
+                        emit_deprecation_warning(Module, NewModule, DBType),
+                        NewOpts = [{db_type, DBType} |
+                                   lists:keydelete(db_type, 1, Opts)],
+                        {NewModule, transform_module_options(Module, NewOpts)};
+                    NewModule ->
+                        if Module /= NewModule ->
+                                emit_deprecation_warning(Module, NewModule);
+                           true ->
+                                ok
+                        end,
+                        {NewModule, transform_module_options(Module, Opts)}
+                end
+        end, Modules).
 
 %% Elixir module naming
 %% ====================
