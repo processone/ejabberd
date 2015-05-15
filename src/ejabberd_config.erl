@@ -114,7 +114,8 @@ get_env_config() ->
 %% @spec (File::string()) -> #state{}.
 read_file(File) ->
     read_file(File, [{replace_macros, true},
-                     {include_files, true}]).
+                     {include_files, true},
+                     {include_modules_configs, true}]).
 
 read_file(File, Opts) ->
     Terms1 = get_plain_terms_file(File, Opts),
@@ -200,7 +201,14 @@ get_plain_terms_file(File1, Opts) ->
     File = get_absolute_path(File1),
     case consult(File) of
 	{ok, Terms} ->
-            BinTerms = strings_to_binary(Terms),
+            BinTerms1 = strings_to_binary(Terms),
+            ModInc = case proplists:get_bool(include_modules_configs, Opts) of
+                         true ->
+                             filelib:wildcard(ext_mod:modules_dir() ++ "/*/conf/*.yaml");
+                         _ ->
+                             []
+                     end,
+            BinTerms = BinTerms1 ++ [{include_config_file, list_to_binary(V)} || V <- ModInc],
             case proplists:get_bool(include_files, Opts) of
                 true ->
                     include_config_files(BinTerms);
@@ -374,7 +382,23 @@ include_config_files(Terms) ->
                fun({File, Opts}) ->
                        include_config_file(File, Opts)
                end, lists:flatten(FileOpts)),
-    Terms1 ++ Terms2.
+
+    SpecialTerms = dict:from_list([{hosts, none}, {listen, none}, {modules, none}]),
+    Partition = fun(L) ->
+                        lists:foldr(fun({Name, Val} = Pair, Dict) ->
+                                            case dict:find(Name, SpecialTerms) of
+                                                {ok, _} ->
+                                                    dict:store(Name, Val, Dict);
+                                                _ ->
+                                                    dict:update(rest, fun(L1) -> [Pair|L1] end, Dict)
+                                            end
+                                    end, dict:from_list([{rest, []}]), L)
+                end,
+
+    Merged = dict:merge(fun(_Name, V1, V2) -> V1 ++ V2 end,
+                        Partition(Terms1), Partition(Terms2)),
+    Rest = dict:fetch(rest, Merged),
+    dict:to_list(dict:erase(rest, Merged)) ++ Rest.
 
 transform_include_option({include_config_file, File}) when is_list(File) ->
     case is_string(File) of
@@ -452,11 +476,11 @@ split_terms_macros(Terms) ->
     lists:foldl(
       fun(Term, {TOs, Ms}) ->
 	      case Term of
-		  {define_macro, Key, Value} -> 
+		  {define_macro, Key, Value} ->
 		      case is_correct_macro({Key, Value}) of
-			  true -> 
+			  true ->
 			      {TOs, Ms++[{Key, Value}]};
-			  false -> 
+			  false ->
 			      exit({macro_not_properly_defined, Term})
 		      end;
                   {define_macro, KeyVals} ->
