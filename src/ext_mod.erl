@@ -32,7 +32,8 @@
          installed_command/0, installed/0, installed/1,
          install/1, uninstall/1,
          upgrade/0, upgrade/1,
-         add_sources/2, del_sources/1]).
+         add_sources/2, del_sources/1,
+         modules_dir/0]).
 
 -include("ejabberd_commands.hrl").
 
