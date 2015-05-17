@@ -140,17 +140,17 @@ if [ "$EJABBERD_CONFIG_PATH" != "${EJABBERD_CONFIG_PATH%.yml}" ] ; then
     rate=$(sed '/^[ 	]*log_rate_limit/!d;s/.*://;s/ *//' $EJABBERD_CONFIG_PATH)
     rotate=$(sed '/^[ 	]*log_rotate_size/!d;s/.*://;s/ *//' $EJABBERD_CONFIG_PATH)
     count=$(sed '/^[ 	]*log_rotate_count/!d;s/.*://;s/ *//' $EJABBERD_CONFIG_PATH)
-    date=$(sed '/^[ 	]*log_rotate_date/!d;s/.*://;s/ *//;s/""/[]/' $EJABBERD_CONFIG_PATH)
+    date=$(sed '/^[ 	]*log_rotate_date/!d;s/.*://;s/ *//' $EJABBERD_CONFIG_PATH)
 else
     rate=$(sed '/^[ 	]*log_rate_limit/!d;s/.*,//;s/ *//;s/}\.//' $EJABBERD_CONFIG_PATH)
     rotate=$(sed '/^[ 	]*log_rotate_size/!d;s/.*,//;s/ *//;s/}\.//' $EJABBERD_CONFIG_PATH)
     count=$(sed '/^[ 	]*log_rotate_count/!d;s/.*,//;s/ *//;s/}\.//' $EJABBERD_CONFIG_PATH)
-    date=$(sed '/^[ 	]*log_rotate_date/!d;s/.*,//;s/ *//;s/""/[]/;s/}\.//' $EJABBERD_CONFIG_PATH)
+    date=$(sed '/^[ 	]*log_rotate_date/!d;s/.*,//;s/ *//;s/}\.//' $EJABBERD_CONFIG_PATH)
 fi
 [ -z "$rate" ] || EJABBERD_OPTS="log_rate_limit $rate"
 [ -z "$rotate" ] || EJABBERD_OPTS="${EJABBERD_OPTS} log_rotate_size $rotate"
 [ -z "$count" ] || EJABBERD_OPTS="${EJABBERD_OPTS} log_rotate_count $count"
-[ -z "$date" ] || EJABBERD_OPTS="${EJABBERD_OPTS} log_rotate_date $date"
+[ -z "$date" ] || EJABBERD_OPTS="${EJABBERD_OPTS} log_rotate_date '$date'"
 [ -z "$EJABBERD_OPTS" ] || EJABBERD_OPTS="-ejabberd ${EJABBERD_OPTS}"
 
 [ -d $SPOOL_DIR ] || $EXEC_CMD "mkdir -p $SPOOL_DIR"
