@@ -193,7 +193,8 @@ to_bool(_) -> false.
 
 encode_term(Term) ->
     escape(list_to_binary(
-             erl_prettypr:format(erl_syntax:abstract(Term)))).
+             erl_prettypr:format(erl_syntax:abstract(Term),
+                                 [{paper, 65535}, {ribbon, 65535}]))).
 
 decode_term(Bin) ->
     Str = binary_to_list(<<Bin/binary, ".">>),
