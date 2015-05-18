@@ -54,9 +54,6 @@
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, queue_drop_while/2]).
 
-%% TODO: Remove once XEP-0091 is Obsolete
-%% TODO: Remove once XEP-0091 is Obsolete
-
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
@@ -612,10 +609,7 @@ add_delay_info(El, From, Time) ->
 		     binary()) -> xmlel().
 
 add_delay_info(El, From, Time, Desc) ->
-    %% TODO: Remove support for <x/>, XEP-0091 is obsolete.
-    El1 = add_delay_info(El, From, Time, Desc, <<"delay">>, ?NS_DELAY),
-    El2 = add_delay_info(El1, From, Time, Desc, <<"x">>, ?NS_DELAY91),
-    El2.
+    add_delay_info(El, From, Time, Desc, <<"delay">>, ?NS_DELAY).
 
 -spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp(),
 		     binary(), binary(), binary()) -> xmlel().
@@ -652,20 +646,15 @@ add_delay_info(El, From, Time, Desc, Name, XMLNS) ->
 -spec create_delay_tag(erlang:timestamp(), jid() | ljid() | binary(), binary(),
 		       binary()) -> xmlel() | error.
 
-create_delay_tag(TimeStamp, FromJID, Desc, XMLNS) when is_tuple(FromJID) ->
+create_delay_tag(TimeStamp, FromJID, Desc, XMLNS) when is_tuple(FromJID)
+    and (XMLNS == ?NS_DELAY) ->
     From = jlib:jid_to_string(FromJID),
-    {Name, Stamp} = case XMLNS of
-		      ?NS_DELAY ->
-			  {<<"delay">>, now_to_utc_string(TimeStamp, 3)};
-		      ?NS_DELAY91 ->
-			  DateTime = calendar:now_to_universal_time(TimeStamp),
-			  {<<"x">>, timestamp_to_iso(DateTime)}
-		    end,
+    Stamp = now_to_utc_string(TimeStamp, 3),
     Children = case Desc of
 		 <<"">> -> [];
 		 _ -> [{xmlcdata, Desc}]
 	       end,
-    #xmlel{name = Name,
+    #xmlel{name = <<"delay">>,
 	   attrs =
 	       [{<<"xmlns">>, XMLNS}, {<<"from">>, From},
 		{<<"stamp">>, Stamp}],
