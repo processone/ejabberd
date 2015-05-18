@@ -3662,7 +3662,7 @@ max_items(Host, Options) ->
 -define(INTEGER_CONFIG_FIELD(Label, Var),
     ?STRINGXFIELD(Label,
 	<<"pubsub#", (atom_to_binary(Var, latin1))/binary>>,
-	(integer_to_binary(get_option(Options, Var))))).
+	(jlib:integer_to_binary(get_option(Options, Var))))).
 
 -define(JLIST_CONFIG_FIELD(Label, Var, Opts),
     ?LISTXFIELD(Label,
