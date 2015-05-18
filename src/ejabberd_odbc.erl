@@ -510,7 +510,8 @@ abort_on_driver_error(Reply, From) ->
 %% Open an ODBC database connection
 odbc_connect(SQLServer) ->
     ejabberd:start_app(odbc),
-    odbc:connect(binary_to_list(SQLServer), [{scrollable_cursors, off}]).
+    odbc:connect(binary_to_list(SQLServer), [{scrollable_cursors, off},
+                                             {binary_strings, on}]).
 
 %% == Native SQLite code
 
@@ -635,7 +636,7 @@ mysql_item_to_odbc(Columns, Recs) ->
     {selected, [element(2, Column) || Column <- Columns], Recs}.
 
 to_odbc({selected, Columns, Recs}) ->
-    {selected, Columns, [tuple_to_list(Rec) || Rec <- Recs]};
+    {selected, [list_to_binary(Column) || Column <- Columns], [tuple_to_list(Rec) || Rec <- Recs]};
 to_odbc(Res) ->
     Res.
 
