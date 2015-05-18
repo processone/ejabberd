@@ -1286,7 +1286,7 @@ muc_slave(Config) ->
     %% Receive the room subject
     ?recv1(#message{from = PeerNickJID, type = groupchat,
              body = [#text{data = Subject}],
-	     sub_els = [#delay{}, #legacy_delay{}]}),
+	     sub_els = [#delay{}]}),
     %% Receive MUC history
     lists:foreach(
       fun(N) ->
@@ -1294,7 +1294,7 @@ muc_slave(Config) ->
 	      ?recv1(#message{from = PeerNickJID,
 		       type = groupchat,
 		       body = [Text],
-		       sub_els = [#delay{}, #legacy_delay{}]})
+		       sub_els = [#delay{}]})
       end, lists:seq(1, 5)),
     %% Sending a voice request
     VoiceReq = #xdata{
@@ -1450,7 +1450,6 @@ offline_slave(Config) ->
                         body = [#text{data = <<"body">>}],
                         subject = [#text{data = <<"subject">>}]}),
     true = lists:keymember(delay, 1, SubEls),
-    true = lists:keymember(legacy_delay, 1, SubEls),
     disconnect(Config).
 
 carbons_master(Config) ->
@@ -1596,7 +1595,7 @@ client_state_slave(Config) ->
     change_client_state(Config, inactive),
     wait_for_master(Config),
     ?recv1(#presence{from = Peer, type = unavailable,
-		     sub_els = [#delay{}, #legacy_delay{}]}),
+		     sub_els = [#delay{}]}),
     ?recv1(#message{from = Peer, thread = <<"1">>,
 		    body = [#text{data = <<"body">>}],
 		    sub_els = [#chatstate{type = active}]}),

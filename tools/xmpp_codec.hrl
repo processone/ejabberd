@@ -137,9 +137,6 @@
 
 -record(feature_csi, {xmlns :: binary()}).
 
--record(legacy_delay, {stamp :: binary(),
-                       from :: any()}).
-
 -record(muc_user_destroy, {reason :: binary(),
                            jid :: any()}).
 

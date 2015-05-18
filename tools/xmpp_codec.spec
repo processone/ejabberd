@@ -1808,16 +1808,6 @@
                           dec = {dec_jid, []},
                           enc = {enc_jid, []}}]}).
 
--xml(legacy_delay,
-     #elem{name = <<"x">>,
-           xmlns = <<"jabber:x:delay">>,
-           result = {legacy_delay, '$stamp', '$from'},
-           attrs = [#attr{name = <<"stamp">>,
-                          required = true},
-                    #attr{name = <<"from">>,
-                          dec = {dec_jid, []},
-                          enc = {enc_jid, []}}]}).
-
 -xml(bytestreams_streamhost,
      #elem{name = <<"streamhost">>,
            xmlns = <<"http://jabber.org/protocol/bytestreams">>,

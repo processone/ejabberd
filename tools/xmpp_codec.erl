@@ -166,9 +166,6 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
        <<"http://jabber.org/protocol/bytestreams">>} ->
 	  decode_bytestreams_streamhost(<<"http://jabber.org/protocol/bytestreams">>,
 					IgnoreEls, _el);
-      {<<"x">>, <<"jabber:x:delay">>} ->
-	  decode_legacy_delay(<<"jabber:x:delay">>, IgnoreEls,
-			      _el);
       {<<"delay">>, <<"urn:xmpp:delay">>} ->
 	  decode_delay(<<"urn:xmpp:delay">>, IgnoreEls, _el);
       {<<"paused">>,
@@ -1109,7 +1106,6 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
       {<<"streamhost">>,
        <<"http://jabber.org/protocol/bytestreams">>} ->
 	  true;
-      {<<"x">>, <<"jabber:x:delay">>} -> true;
       {<<"delay">>, <<"urn:xmpp:delay">>} -> true;
       {<<"paused">>,
        <<"http://jabber.org/protocol/chatstates">>} ->
@@ -1936,9 +1932,6 @@ encode({chatstate, paused} = Paused) ->
 encode({delay, _, _} = Delay) ->
     encode_delay(Delay,
 		 [{<<"xmlns">>, <<"urn:xmpp:delay">>}]);
-encode({legacy_delay, _, _} = X) ->
-    encode_legacy_delay(X,
-			[{<<"xmlns">>, <<"jabber:x:delay">>}]);
 encode({streamhost, _, _, _} = Streamhost) ->
     encode_bytestreams_streamhost(Streamhost,
 				  [{<<"xmlns">>,
@@ -2181,7 +2174,6 @@ get_ns({chatstate, inactive}) ->
 get_ns({chatstate, paused}) ->
     <<"http://jabber.org/protocol/chatstates">>;
 get_ns({delay, _, _}) -> <<"urn:xmpp:delay">>;
-get_ns({legacy_delay, _, _}) -> <<"jabber:x:delay">>;
 get_ns({streamhost, _, _, _}) ->
     <<"http://jabber.org/protocol/bytestreams">>;
 get_ns({bytestreams, _, _, _, _, _, _}) ->
@@ -2374,7 +2366,6 @@ pp(pubsub, 8) ->
 pp(shim, 1) -> [headers];
 pp(chatstate, 1) -> [type];
 pp(delay, 2) -> [stamp, from];
-pp(legacy_delay, 2) -> [stamp, from];
 pp(streamhost, 3) -> [jid, host, port];
 pp(bytestreams, 6) ->
     [hosts, used, activate, dstaddr, mode, sid];
@@ -5396,60 +5387,6 @@ encode_bytestreams_streamhost_attr_port(1080, _acc) ->
     _acc;
 encode_bytestreams_streamhost_attr_port(_val, _acc) ->
     [{<<"port">>, enc_int(_val)} | _acc].
-
-decode_legacy_delay(__TopXMLNS, __IgnoreEls,
-		    {xmlel, <<"x">>, _attrs, _els}) ->
-    {Stamp, From} = decode_legacy_delay_attrs(__TopXMLNS,
-					      _attrs, undefined, undefined),
-    {legacy_delay, Stamp, From}.
-
-decode_legacy_delay_attrs(__TopXMLNS,
-			  [{<<"stamp">>, _val} | _attrs], _Stamp, From) ->
-    decode_legacy_delay_attrs(__TopXMLNS, _attrs, _val,
-			      From);
-decode_legacy_delay_attrs(__TopXMLNS,
-			  [{<<"from">>, _val} | _attrs], Stamp, _From) ->
-    decode_legacy_delay_attrs(__TopXMLNS, _attrs, Stamp,
-			      _val);
-decode_legacy_delay_attrs(__TopXMLNS, [_ | _attrs],
-			  Stamp, From) ->
-    decode_legacy_delay_attrs(__TopXMLNS, _attrs, Stamp,
-			      From);
-decode_legacy_delay_attrs(__TopXMLNS, [], Stamp,
-			  From) ->
-    {decode_legacy_delay_attr_stamp(__TopXMLNS, Stamp),
-     decode_legacy_delay_attr_from(__TopXMLNS, From)}.
-
-encode_legacy_delay({legacy_delay, Stamp, From},
-		    _xmlns_attrs) ->
-    _els = [],
-    _attrs = encode_legacy_delay_attr_from(From,
-					   encode_legacy_delay_attr_stamp(Stamp,
-									  _xmlns_attrs)),
-    {xmlel, <<"x">>, _attrs, _els}.
-
-decode_legacy_delay_attr_stamp(__TopXMLNS, undefined) ->
-    erlang:error({xmpp_codec,
-		  {missing_attr, <<"stamp">>, <<"x">>, __TopXMLNS}});
-decode_legacy_delay_attr_stamp(__TopXMLNS, _val) ->
-    _val.
-
-encode_legacy_delay_attr_stamp(_val, _acc) ->
-    [{<<"stamp">>, _val} | _acc].
-
-decode_legacy_delay_attr_from(__TopXMLNS, undefined) ->
-    undefined;
-decode_legacy_delay_attr_from(__TopXMLNS, _val) ->
-    case catch dec_jid(_val) of
-      {'EXIT', _} ->
-	  erlang:error({xmpp_codec,
-			{bad_attr_value, <<"from">>, <<"x">>, __TopXMLNS}});
-      _res -> _res
-    end.
-
-encode_legacy_delay_attr_from(undefined, _acc) -> _acc;
-encode_legacy_delay_attr_from(_val, _acc) ->
-    [{<<"from">>, enc_jid(_val)} | _acc].
 
 decode_delay(__TopXMLNS, __IgnoreEls,
 	     {xmlel, <<"delay">>, _attrs, _els}) ->
