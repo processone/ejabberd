@@ -101,10 +101,6 @@ xref: all
 translations:
 	contrib/extract_translations/prepare-translation.sh -updateall
 
-doc:
-	echo making $$target in doc; \
-	(cd doc && $(MAKE) $$target) || exit 1
-
 edoc:
 	$(ERL) -noinput +B -eval \
         'case edoc:application(ejabberd, ".", []) of ok -> halt(0); error -> halt(1) end.'
@@ -207,16 +203,9 @@ install: all
 	#
 	# Documentation
 	$(INSTALL) -d $(DOCDIR)
-	[ -f doc/dev.html ] \
-		&& $(INSTALL) -m 644 doc/dev.html $(DOCDIR) \
-		|| echo "No doc/dev.html was built"
 	[ -f doc/guide.html ] \
 		&& $(INSTALL) -m 644 doc/guide.html $(DOCDIR) \
-		|| echo "No doc/guide.html was built"
-	[ -f doc/guide.pdf ] \
-		&& $(INSTALL) -m 644 doc/guide.pdf $(DOCDIR) \
-		|| echo "No doc/guide.pdf was built"
-	$(INSTALL) -m 644 doc/*.png $(DOCDIR)
+		|| echo "Documentation not included in sources"
 	$(INSTALL) -m 644 COPYING $(DOCDIR)
 
 uninstall: uninstall-binary
@@ -326,6 +315,6 @@ test:
 quicktest:
 	$(REBAR) skip_deps=true ct suites=elixir
 
-.PHONY: src doc edoc dialyzer Makefile TAGS clean clean-rel distclean rel \
+.PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean rel \
 	install uninstall uninstall-binary uninstall-all translations deps test spec \
 	quicktest erlang_plt deps_plt ejabberd_plt
