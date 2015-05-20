@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Remove the current ejabberd node in a cluster
 
@@ -36,7 +36,7 @@ exit
 
 PA=/tmp/clustersetup_$$
 CTL=$(which ejabberdctl)
-[ "$CTL" == "" ] && {
+[ -x "$CTL" ] || {
   HERE=`which "$0"`
   BASE=`dirname $HERE`/..
   ROOTDIR=`cd $BASE; pwd`
@@ -45,7 +45,7 @@ CTL=$(which ejabberdctl)
   CTL=$(which ejabberdctl)
 }
 echo "Using commands:"
-[ -x $CTL ] && echo $CTL || error "can't find ejabberdctl" 10
+[ -x "$CTL" ] && echo $CTL || error "can't find ejabberdctl" 10
 
 . $CTL stop 2>/dev/null >/dev/null
 ERLC=${ERL}c
