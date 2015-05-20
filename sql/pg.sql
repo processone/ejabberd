@@ -288,3 +288,17 @@ CREATE TABLE caps_features (
 );
 
 CREATE INDEX i_caps_features_node_subnode ON caps_features USING btree (node, subnode);
+
+CREATE TABLE sm (
+    usec bigint NOT NULL,
+    pid text NOT NULL,
+    node text NOT NULL,
+    username text NOT NULL,
+    resource text NOT NULL,
+    priority text NOT NULL,
+    info text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_sid ON sm USING btree (usec, pid);
+CREATE INDEX i_node ON sm USING btree (node);
+CREATE INDEX i_username ON sm USING btree (username);
