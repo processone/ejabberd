@@ -637,8 +637,8 @@ add_delay_info(El, From, Time, Desc) ->
 	  xml:append_subtags(NewEl, [NewDelayTag])
     end.
 
--spec create_delay_tag(erlang:timestamp(), jid() | ljid() | binary(), binary(),
-		       binary()) -> xmlel() | error.
+-spec create_delay_tag(erlang:timestamp(), jid() | ljid() | binary(), binary())
+		       -> xmlel() | error.
 
 create_delay_tag(TimeStamp, FromJID, Desc) when is_tuple(FromJID) ->
     From = jlib:jid_to_string(FromJID),
