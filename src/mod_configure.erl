@@ -2022,14 +2022,14 @@ stop_node(From, Host, ENode, Action, XData) ->
 				       #xmlel{name = <<"x">>,
 					      attrs =
 						  [{<<"xmlns">>,
-						    <<"jabber:x:data">>},
+						    ?NS_XDATA},
 						   {<<"type">>, <<"submit">>}],
 					      children = SubEls},
 				   others =
 				       [#xmlel{name = <<"x">>,
 					       attrs =
 						   [{<<"xmlns">>,
-						     <<"jabber:x:data">>},
+						     ?NS_XDATA},
 						    {<<"type">>, <<"submit">>}],
 					       children = SubEls}]},
 	  To = jlib:make_jid(<<"">>, Host, <<"">>),

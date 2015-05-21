@@ -1068,7 +1068,7 @@ subscribe(LU, LS, User, Server, Nick, Group, Subscription, _Xattrs) ->
     mod_roster:set_items(
 	LU, LS,
 	{xmlel, <<"query">>,
-            [{<<"xmlns">>, <<"jabber:iq:roster">>}],
+            [{<<"xmlns">>, ?NS_ROSTER}],
             [ItemEl]}).
 
 delete_rosteritem(LocalUser, LocalServer, User, Server) ->
@@ -1085,7 +1085,7 @@ unsubscribe(LU, LS, User, Server) ->
     mod_roster:set_items(
 	LU, LS,
 	{xmlel, <<"query">>,
-            [{<<"xmlns">>, <<"jabber:iq:roster">>}],
+            [{<<"xmlns">>, ?NS_ROSTER}],
             [ItemEl]}).
 
 %% -----------------------------
@@ -1250,7 +1250,7 @@ private_get(Username, Host, Element, Ns) ->
 	   [{xmlel, Element, [{<<"xmlns">>, Ns}], []}]}},
     ResIq = mod_private:process_sm_iq(From, To, IQ),
     [{xmlel, <<"query">>,
-      [{<<"xmlns">>, <<"jabber:iq:private">>}],
+      [{<<"xmlns">>, ?NS_PRIVATE}],
       [SubEl]}] = ResIq#iq.sub_el,
     binary_to_list(xml:element_to_binary(SubEl)).
 

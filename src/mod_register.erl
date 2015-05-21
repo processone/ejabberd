@@ -282,7 +282,7 @@ process_iq(From, To,
 				 [#xmlel{name = <<"query">>,
 					 attrs =
 					     [{<<"xmlns">>,
-					       <<"jabber:iq:register">>}],
+					       ?NS_REGISTER}],
 					 children =
 					     [TopInstrEl | CaptchaEls]}]};
 		   {error, limit} ->
@@ -304,7 +304,7 @@ process_iq(From, To,
 			   [#xmlel{name = <<"query">>,
 				   attrs =
 				       [{<<"xmlns">>,
-					 <<"jabber:iq:register">>}],
+					 ?NS_REGISTER}],
 				   children =
 				       [#xmlel{name = <<"instructions">>,
 					       attrs = [],
