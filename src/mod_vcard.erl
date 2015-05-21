@@ -27,6 +27,9 @@
 
 -author('alexey@process-one.net').
 
+-protocol({xep, 54, '1.2'}).
+-protocol({xep, 55, '1.3'}).
+
 -behaviour(gen_mod).
 
 -export([start/2, init/3, stop/1, get_sm_features/5,

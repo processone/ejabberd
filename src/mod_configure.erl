@@ -23,12 +23,11 @@
 %%%
 %%%----------------------------------------------------------------------
 
-%%% Implements most of XEP-0133: Service Administration Version 1.1
-%%% (2005-08-19)
-
 -module(mod_configure).
 
 -author('alexey@process-one.net').
+
+-protocol({xep, 133, '1.1'}).
 
 -behaviour(gen_mod).
 

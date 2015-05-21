@@ -28,6 +28,8 @@
 
 -behaviour(gen_mod).
 
+-protocol({xep, 191, '1.2'}).
+
 -export([start/2, stop/1, process_iq/3,
 	 process_iq_set/4, process_iq_get/5]).
 

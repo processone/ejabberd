@@ -27,6 +27,8 @@
 
 -author('alexey@process-one.net').
 
+-protocol({xep, 114, '1.6'}).
+
 -define(GEN_FSM, p1_fsm).
 
 -behaviour(?GEN_FSM).

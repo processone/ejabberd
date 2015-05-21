@@ -38,6 +38,8 @@
 
 -module(ejabberd_websocket).
 
+-protocol({rfc, 6455}).
+
 -author('ecestari@process-one.net').
 
 -export([check/2, socket_handoff/8]).

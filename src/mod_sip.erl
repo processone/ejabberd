@@ -24,6 +24,7 @@
 
 %%%-------------------------------------------------------------------
 -module(mod_sip).
+-protocol({rfc, 3261}).
 
 -behaviour(gen_mod).
 -behaviour(esip).

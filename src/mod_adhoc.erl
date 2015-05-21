@@ -27,6 +27,8 @@
 
 -author('henoch@dtek.chalmers.se').
 
+-protocol({xep, 50, '1.2'}).
+
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_local_iq/3,

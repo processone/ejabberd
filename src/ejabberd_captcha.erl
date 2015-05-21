@@ -25,6 +25,8 @@
 
 -module(ejabberd_captcha).
 
+-protocol({xep, 158, '1.0'}).
+
 -behaviour(gen_server).
 
 %% API

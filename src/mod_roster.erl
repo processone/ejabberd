@@ -34,6 +34,9 @@
 
 -module(mod_roster).
 
+-protocol({xep, 237, '1.3'}).
+-protocol({xep, 321, '0.1'}).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_mod).

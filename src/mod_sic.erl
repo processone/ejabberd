@@ -25,6 +25,8 @@
 
 -module(mod_sic).
 
+-protocol({xep, 279, '0.2'}).
+
 -author('karim.gemayel@process-one.net').
 
 -behaviour(gen_mod).

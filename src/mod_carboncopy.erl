@@ -26,6 +26,7 @@
 %%%----------------------------------------------------------------------
 -module (mod_carboncopy).
 -author ('ecestari@process-one.net').
+-protocol({xep, 280, '0.8'}).
 
 -behavior(gen_mod).
 

@@ -27,6 +27,10 @@
 
 -author('alexey@process-one.net').
 
+-protocol({xep, 59, '1.0'}).
+-protocol({xep, 82, '1.1'}).
+-protocol({xep, 203, '2.0'}).
+
 -compile({no_auto_import, [atom_to_binary/2,
                            binary_to_integer/1,
                            integer_to_binary/1]}).

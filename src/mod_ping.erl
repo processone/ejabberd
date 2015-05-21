@@ -27,6 +27,8 @@
 
 -author('bjc@kublai.com').
 
+-protocol({xep, 199, '2.0'}).
+
 -behavior(gen_mod).
 
 -behavior(gen_server).

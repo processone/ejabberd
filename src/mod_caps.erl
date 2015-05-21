@@ -29,6 +29,8 @@
 
 -author('henoch@dtek.chalmers.se').
 
+-protocol({xep, 115, '1.5'}).
+
 -behaviour(gen_server).
 
 -behaviour(gen_mod).

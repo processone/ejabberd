@@ -25,6 +25,8 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_stun).
 
+-protocol({rfc, 5766}).
+
 %% API
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/2, socket_type/0]).
 

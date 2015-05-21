@@ -47,7 +47,8 @@
 -behaviour(gen_mod).
 -behaviour(gen_server).
 -author('christophe.romain@process-one.net').
--version('1.13-1').
+-protocol({xep, 60, '1.13-1'}).
+-protocol({xep, 163, '1.2'}).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").

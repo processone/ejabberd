@@ -9,6 +9,8 @@
 
 -author('badlop@process-one.net').
 
+-protocol({xep, 33, '1.1'}).
+
 -behaviour(gen_server).
 
 -behaviour(gen_mod).

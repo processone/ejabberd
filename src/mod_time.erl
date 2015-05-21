@@ -28,6 +28,8 @@
 
 -author('alexey@process-one.net').
 
+-protocol({xep, 202, '2.0'}).
+
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_local_iq/3]).

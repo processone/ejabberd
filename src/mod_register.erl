@@ -27,6 +27,8 @@
 
 -author('alexey@process-one.net').
 
+-protocol({xep, 77, '2.4'}).
+
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, stream_feature_register/2,

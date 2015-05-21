@@ -10,6 +10,9 @@
 
 -module(ejabberd_http_bind).
 
+-protocol({xep, 124, '1.11'}).
+-protocol({xep, 206, '1.4'}).
+
 -behaviour(gen_fsm).
 
 %% External exports

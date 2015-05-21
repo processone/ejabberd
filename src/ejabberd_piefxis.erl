@@ -38,6 +38,8 @@
 
 -module(ejabberd_piefxis).
 
+-protocol({xep, 227, '1.0'}).
+
 %% API
 -export([import_file/1, export_server/1, export_host/2]).
 
