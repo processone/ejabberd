@@ -410,7 +410,7 @@ ctlexec()
 # stop epmd if there is no other running node
 stop_epmd()
 {
-    $EPMD -names 2>/dev/null | grep -q name || epmd -kill >/dev/null
+    $EPMD -names 2>/dev/null | grep -q name || $EPMD -kill >/dev/null
 }
 
 # make sure node not already running and node name unregistered
