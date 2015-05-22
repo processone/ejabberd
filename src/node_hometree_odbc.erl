@@ -1105,6 +1105,7 @@ decode_jid(SJID) ->
     ).
 decode_affiliation(<<"o">>) -> owner;
 decode_affiliation(<<"p">>) -> publisher;
+decode_affiliation(<<"u">>) -> publish_only;
 decode_affiliation(<<"m">>) -> member;
 decode_affiliation(<<"c">>) -> outcast;
 decode_affiliation(_) -> none.
@@ -1151,6 +1152,7 @@ encode_host(Host) -> ejabberd_odbc:escape(Host).
     ).
 encode_affiliation(owner) -> <<"o">>;
 encode_affiliation(publisher) -> <<"p">>;
+encode_affiliation(publish_only) -> <<"u">>;
 encode_affiliation(member) -> <<"m">>;
 encode_affiliation(outcast) -> <<"c">>;
 encode_affiliation(_) -> <<"n">>.
