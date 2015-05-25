@@ -391,7 +391,9 @@ include_config_files(Terms) ->
                                                     dict:store(Name, Val, Dict);
                                                 _ ->
                                                     dict:update(rest, fun(L1) -> [Pair|L1] end, Dict)
-                                            end
+                                            end;
+                                       (Tuple, Dict2) ->
+                                            dict:update(rest, fun(L2) -> [Tuple|L2] end, Dict2)
                                     end, dict:from_list([{rest, []}]), L)
                 end,
 
