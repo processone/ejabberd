@@ -292,6 +292,7 @@ init([{SockMod, Socket}, Opts]) ->
 	    StartTLSRequired orelse TLSEnabled,
     TLSOpts1 = lists:filter(fun ({certfile, _}) -> true;
 				({ciphers, _}) -> true;
+				({dhfile, _}) -> true;
 				(_) -> false
 			    end,
 			    Opts),
