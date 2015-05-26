@@ -1895,7 +1895,7 @@ send_text(StateData, Text) when StateData#state.mgmt_state == active ->
     case catch (StateData#state.sockmod):send(StateData#state.socket, Text) of
       {'EXIT', _} ->
 	  (StateData#state.sockmod):close(StateData#state.socket),
-	  error;
+	  {error, closed};
       _ ->
 	  ok
     end;
@@ -1916,12 +1916,7 @@ send_stanza(StateData, Stanza) when StateData#state.csi_state == inactive ->
 send_stanza(StateData, Stanza) when StateData#state.mgmt_state == pending ->
     mgmt_queue_add(StateData, Stanza);
 send_stanza(StateData, Stanza) when StateData#state.mgmt_state == active ->
-    NewStateData = case send_stanza_and_ack_req(StateData, Stanza) of
-		     ok ->
-			 StateData;
-		     error ->
-			 StateData#state{mgmt_state = pending}
-		   end,
+    NewStateData = send_stanza_and_ack_req(StateData, Stanza),
     mgmt_queue_add(NewStateData, Stanza);
 send_stanza(StateData, Stanza) ->
     send_element(StateData, Stanza),
@@ -2834,11 +2829,12 @@ send_stanza_and_ack_req(StateData, Stanza) ->
     AckReq = #xmlel{name = <<"r">>,
 		    attrs = [{<<"xmlns">>, StateData#state.mgmt_xmlns}],
 		    children = []},
-    case send_element(StateData, Stanza) of
-      ok ->
-	  send_element(StateData, AckReq);
-      error ->
-	  error
+    case send_element(StateData, Stanza) == ok andalso
+	 send_element(StateData, AckReq) == ok of
+      true ->
+	  StateData;
+      false ->
+	  StateData#state{mgmt_state = pending}
     end.
 
 mgmt_queue_add(StateData, El) ->
