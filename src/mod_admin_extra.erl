@@ -89,14 +89,12 @@
 	 stats/1, stats/2
 	]).
 
+
 -include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
 -include("mod_roster.hrl").
+-include("ejabberd_sm.hrl").
 -include("jlib.hrl").
-
-%% Copied from ejabberd_sm.erl
--record(session, {sid, usr, us, priority, info}).
-
 
 %%%
 %%% gen_mod

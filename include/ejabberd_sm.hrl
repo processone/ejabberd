@@ -1,3 +1,6 @@
+-ifndef(EJABBERD_SM_HRL).
+-define(EJABBERD_SM_HRL, true).
+
 -record(session, {sid, usr, us, priority, info}).
 -record(session_counter, {vhost, count}).
 -type sid() :: {erlang:timestamp(), pid()}.
@@ -5,3 +8,5 @@
 -type info() :: [{conn, atom()} | {ip, ip()} | {node, atom()}
                  | {oor, boolean()} | {auth_module, atom()}].
 -type prio() :: undefined | integer().
+
+-endif.
