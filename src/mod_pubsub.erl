@@ -733,39 +733,42 @@ in_subscription(_, _, _, _, _, _) ->
     true.
 
 unsubscribe_user(Entity, Owner) ->
-    BJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
-    Host = host(element(2, BJID)),
     spawn(fun () ->
-		lists:foreach(fun (PType) ->
-			    {result, Subs} = node_action(Host, PType,
-				    get_entity_subscriptions,
-				    [Host, Entity]),
-			    lists:foreach(fun
-				    ({#pubsub_node{options = Options,
-							owners = O,
-							id = Nidx},
-						    subscribed, _, JID}) ->
-					case match_option(Options, access_model, presence) of
-					    true ->
-						Owners = node_owners_action(Host, PType, Nidx, O),
-						case lists:member(BJID, Owners) of
-						    true ->
-							node_action(Host, PType,
-							    unsubscribe_node,
-							    [Nidx, Entity, JID, all]);
-						    false ->
-							{result, ok}
-						end;
-					    _ ->
-						{result, ok}
-					end;
-				    (_) ->
-					ok
-				end,
-				Subs)
-		    end,
-		    plugins(Host))
+	    [unsubscribe_user(ServerHost, Entity, Owner) ||
+		ServerHost <- lists:usort(lists:foldl(
+			fun(UserHost, Acc) ->
+				case gen_mod:is_loaded(UserHost, mod_pubsub) of
+				    true -> [UserHost|Acc];
+				    false -> Acc
+				end
+			end, [], [Entity#jid.lserver, Owner#jid.lserver]))]
 	end).
+unsubscribe_user(Host, Entity, Owner) ->
+    BJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    lists:foreach(fun (PType) ->
+		{result, Subs} = node_action(Host, PType,
+			get_entity_subscriptions,
+			[Host, Entity]),
+		lists:foreach(fun
+			({#pubsub_node{options = Options,
+				       owners = O,
+				       id = Nidx},
+				       subscribed, _, JID}) ->
+			    Unsubscribe = match_option(Options, access_model, presence)
+				andalso lists:member(BJID, node_owners_action(Host, PType, Nidx, O)),
+			    case Unsubscribe of
+				true ->
+				    node_action(Host, PType,
+					unsubscribe_node, [Nidx, Entity, JID, all]);
+				false ->
+				    ok
+			    end;
+			(_) ->
+			    ok
+		    end,
+		    Subs)
+	end,
+	plugins(Host)).
 
 %% -------
 %% user remove hook handling function
