@@ -307,13 +307,60 @@ init([Host, Opts]) ->
     catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
     clean_table_from_bad_node(node(), MyHost),
     mnesia:subscribe(system),
-    Access = gen_mod:get_opt(access, Opts, fun(A) -> A end, all),
-    AccessCreate = gen_mod:get_opt(access_create, Opts, fun(A) -> A end, all),
-    AccessAdmin = gen_mod:get_opt(access_admin, Opts, fun(A) -> A end, none),
-    AccessPersistent = gen_mod:get_opt(access_persistent, Opts, fun(A) -> A end, all),
-    HistorySize = gen_mod:get_opt(history_size, Opts, fun(A) -> A end, 20),
-    DefRoomOpts = gen_mod:get_opt(default_room_options, Opts, fun(A) -> A end, []),
-    RoomShaper = gen_mod:get_opt(room_shaper, Opts, fun(A) -> A end, none),
+    Access = gen_mod:get_opt(access, Opts,
+                             fun(A) when is_atom(A) -> A end, all),
+    AccessCreate = gen_mod:get_opt(access_create, Opts,
+                                   fun(A) when is_atom(A) -> A end, all),
+    AccessAdmin = gen_mod:get_opt(access_admin, Opts,
+                                  fun(A) when is_atom(A) -> A end,
+                                  none),
+    AccessPersistent = gen_mod:get_opt(access_persistent, Opts,
+				       fun(A) when is_atom(A) -> A end,
+                                       all),
+    HistorySize = gen_mod:get_opt(history_size, Opts,
+                                  fun(I) when is_integer(I), I>=0 -> I end,
+                                  20),
+    DefRoomOpts1 = gen_mod:get_opt(default_room_options, Opts,
+				   fun(L) when is_list(L) -> L end,
+				   []),
+    DefRoomOpts =
+	lists:filter(
+	  fun({Opt, Val}) ->
+		  VFun = case Opt of
+			     allow_change_subj -> fun is_boolean/1;
+			     allow_private_messages -> fun is_boolean/1;
+			     allow_query_users -> fun is_boolean/1;
+			     allow_user_invites -> fun is_boolean/1;
+			     allow_visitor_nickchange -> fun is_boolean/1;
+			     allow_visitor_status -> fun is_boolean/1;
+			     anonymous -> fun is_boolean/1;
+			     captcha_protected -> fun is_boolean/1;
+			     logging -> fun is_boolean/1;
+			     members_by_default -> fun is_boolean/1;
+			     members_only -> fun is_boolean/1;
+			     moderated -> fun is_boolean/1;
+			     password_protected -> fun is_boolean/1;
+			     persistent -> fun is_boolean/1;
+			     public -> fun is_boolean/1;
+			     public_list -> fun is_boolean/1;
+			     password -> fun iolist_to_binary/1;
+			     title -> fun iolist_to_binary/1;
+			     allow_private_messages_from_visitors ->
+				 fun(anyone) -> anyone;
+				    (moderators) -> moderators;
+				    (nobody) -> nobody
+				 end;
+			     max_users ->
+				 fun(I) when is_integer(I), I > 0 -> I end;
+			     _ ->
+				 ?ERROR_MSG("unknown option ~p with value ~p",
+					    [Opt, Val])
+			 end,
+		  Val == gen_mod:get_opt(Opt, [{Opt, Val}], VFun)
+	  end, DefRoomOpts1),
+    RoomShaper = gen_mod:get_opt(room_shaper, Opts,
+                                 fun(A) when is_atom(A) -> A end,
+                                 none),
     ejabberd_router:register_route(MyHost),
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
