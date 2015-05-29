@@ -2,8 +2,26 @@
 %%% File    : ejabberd_xmlrpc.erl
 %%% Author  : Badlop <badlop@process-one.net>
 %%% Purpose : XML-RPC server that frontends ejabberd commands
-%%% Created : 21 Aug 2007 by Badlop <badlop@ono.com>
-%%% Id      : $Id: ejabberd_xmlrpc.erl 595 2008-05-20 11:39:31Z badlop $
+%%% Created : 21 Aug 2007 by Badlop <badlop@process-one.net>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License
+%%% along with this program; if not, write to the Free Software
+%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+%%% 02111-1307 USA
+%%%
 %%%----------------------------------------------------------------------
 
 %%% TODO: Implement a command in ejabberdctl 'help COMMAND LANGUAGE' that shows
@@ -440,7 +458,7 @@ format_arg({array, Elements}, {list, ElementsDef})
     [format_arg(Element, ElementsDef)
      || Element <- Elements];
 format_arg(Arg, integer) when is_integer(Arg) -> Arg;
-format_arg(Arg, binary) when is_list(Arg) -> list_to_binary(Arg);
+format_arg(Arg, binary) when is_list(Arg) -> process_unicode_codepoints(Arg);
 format_arg(Arg, binary) when is_binary(Arg) -> Arg;
 format_arg(Arg, string) when is_list(Arg) -> Arg;
 format_arg(Arg, string) when is_binary(Arg) -> binary_to_list(Arg);
@@ -448,7 +466,12 @@ format_arg(undefined, binary) -> <<>>;
 format_arg(undefined, string) -> "";
 format_arg(Arg, Format) ->
     ?ERROR_MSG("don't know how to format Arg ~p for format ~p", [Arg, Format]),
-    throw({error_formatting_argument, Arg, Format}).
+    error.
+
+process_unicode_codepoints(Str) ->
+    iolist_to_binary(lists:map(fun(X) when X > 255 -> unicode:characters_to_binary([X]);
+                                  (Y) -> Y
+                               end, Str)).
 
 %% -----------------------------
 %% Result
