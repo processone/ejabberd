@@ -3,7 +3,7 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "15.03.0",
+     version: "@PACKAGE_VERSION@",
      elixir: "~> 1.0",
      elixirc_paths: ["lib"],
      compile_path: ".",
@@ -65,7 +65,7 @@ defmodule Mix.Tasks.Compile.Asn1 do
         options = options ++ [:noobj, outdir: Erlang.to_erl_file(Path.dirname(output))]
         case :asn1ct.compile(Erlang.to_erl_file(input), options) do
           :ok -> {:ok, :done}
-          error -> error       
+          error -> error
         end
     end)
   end
