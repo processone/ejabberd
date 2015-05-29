@@ -324,25 +324,26 @@ init([Host, Opts]) ->
 				   fun(L) when is_list(L) -> L end,
 				   []),
     DefRoomOpts =
-	lists:filter(
+	lists:flatmap(
 	  fun({Opt, Val}) ->
+		  Bool = fun(B) when is_boolean(B) -> B end,
 		  VFun = case Opt of
-			     allow_change_subj -> fun is_boolean/1;
-			     allow_private_messages -> fun is_boolean/1;
-			     allow_query_users -> fun is_boolean/1;
-			     allow_user_invites -> fun is_boolean/1;
-			     allow_visitor_nickchange -> fun is_boolean/1;
-			     allow_visitor_status -> fun is_boolean/1;
-			     anonymous -> fun is_boolean/1;
-			     captcha_protected -> fun is_boolean/1;
-			     logging -> fun is_boolean/1;
-			     members_by_default -> fun is_boolean/1;
-			     members_only -> fun is_boolean/1;
-			     moderated -> fun is_boolean/1;
-			     password_protected -> fun is_boolean/1;
-			     persistent -> fun is_boolean/1;
-			     public -> fun is_boolean/1;
-			     public_list -> fun is_boolean/1;
+			     allow_change_subj -> Bool;
+			     allow_private_messages -> Bool;
+			     allow_query_users -> Bool;
+			     allow_user_invites -> Bool;
+			     allow_visitor_nickchange -> Bool;
+			     allow_visitor_status -> Bool;
+			     anonymous -> Bool;
+			     captcha_protected -> Bool;
+			     logging -> Bool;
+			     members_by_default -> Bool;
+			     members_only -> Bool;
+			     moderated -> Bool;
+			     password_protected -> Bool;
+			     persistent -> Bool;
+			     public -> Bool;
+			     public_list -> Bool;
 			     password -> fun iolist_to_binary/1;
 			     title -> fun iolist_to_binary/1;
 			     allow_private_messages_from_visitors ->
@@ -354,9 +355,13 @@ init([Host, Opts]) ->
 				 fun(I) when is_integer(I), I > 0 -> I end;
 			     _ ->
 				 ?ERROR_MSG("unknown option ~p with value ~p",
-					    [Opt, Val])
+					    [Opt, Val]),
+				 fun(_) -> undefined end
 			 end,
-		  Val == gen_mod:get_opt(Opt, [{Opt, Val}], VFun)
+		  case gen_mod:get_opt(Opt, [{Opt, Val}], VFun) of
+		      undefined -> [];
+		      NewVal -> [{Opt, NewVal}]
+		  end
 	  end, DefRoomOpts1),
     RoomShaper = gen_mod:get_opt(room_shaper, Opts,
                                  fun(A) when is_atom(A) -> A end,
