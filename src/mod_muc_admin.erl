@@ -876,27 +876,25 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
 	    error
     end.
 
--define(MAKE_CONFIG_OPT(Opt), {Opt, Config#config.Opt}).
-
 make_opts(StateData) ->
     Config = StateData#state.config,
     [
-     ?MAKE_CONFIG_OPT(title),
-     ?MAKE_CONFIG_OPT(allow_change_subj),
-     ?MAKE_CONFIG_OPT(allow_query_users),
-     ?MAKE_CONFIG_OPT(allow_private_messages),
-     ?MAKE_CONFIG_OPT(public),
-     ?MAKE_CONFIG_OPT(public_list),
-     ?MAKE_CONFIG_OPT(persistent),
-     ?MAKE_CONFIG_OPT(moderated),
-     ?MAKE_CONFIG_OPT(members_by_default),
-     ?MAKE_CONFIG_OPT(members_only),
-     ?MAKE_CONFIG_OPT(allow_user_invites),
-     ?MAKE_CONFIG_OPT(password_protected),
-     ?MAKE_CONFIG_OPT(password),
-     ?MAKE_CONFIG_OPT(anonymous),
-     ?MAKE_CONFIG_OPT(logging),
-     ?MAKE_CONFIG_OPT(max_users),
+     {title, Config#config.title},
+     {allow_change_subj, Config#config.allow_change_subj},
+     {allow_query_users, Config#config.allow_query_users},
+     {allow_private_messages, Config#config.allow_private_messages},
+     {public, Config#config.public},
+     {public_list, Config#config.public_list},
+     {persistent, Config#config.persistent},
+     {moderated, Config#config.moderated},
+     {members_by_default, Config#config.members_by_default},
+     {members_only, Config#config.members_only},
+     {allow_user_invites, Config#config.allow_user_invites},
+     {password_protected, Config#config.password_protected},
+     {password, Config#config.password},
+     {anonymous, Config#config.anonymous},
+     {logging, Config#config.logging},
+     {max_users, Config#config.max_users},
      {affiliations, ?DICT:to_list(StateData#state.affiliations)},
      {subject, StateData#state.subject},
      {subject_author, StateData#state.subject_author}

@@ -173,14 +173,14 @@
 %% XEP-0198:
 
 -define(IS_STREAM_MGMT_TAG(Name),
-	Name == <<"enable">>;
-	Name == <<"resume">>;
-	Name == <<"a">>;
-	Name == <<"r">>).
+	(Name == <<"enable">>) or
+	(Name == <<"resume">>) or
+	(Name == <<"a">>) or
+	(Name == <<"r">>)).
 
 -define(IS_SUPPORTED_MGMT_XMLNS(Xmlns),
-	Xmlns == ?NS_STREAM_MGMT_2;
-	Xmlns == ?NS_STREAM_MGMT_3).
+	(Xmlns == ?NS_STREAM_MGMT_2) or
+	(Xmlns == ?NS_STREAM_MGMT_3)).
 
 -define(MGMT_FAILED(Condition, Xmlns),
 	#xmlel{name = <<"failed">>,
