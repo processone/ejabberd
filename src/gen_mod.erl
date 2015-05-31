@@ -155,13 +155,20 @@ wait_for_stop1(MonitorReference) ->
 
 -type check_fun() :: fun((any()) -> any()) | {module(), atom()}.
 
--spec get_opt(atom(), opts(), check_fun()) -> any().
+-spec get_opt(atom() | {atom(), binary()|global}, opts(), check_fun()) -> any().
 
 get_opt(Opt, Opts, F) ->
     get_opt(Opt, Opts, F, undefined).
 
--spec get_opt(atom(), opts(), check_fun(), any()) -> any().
+-spec get_opt(atom() | {atom(), binary()|global}, opts(), check_fun(), any()) -> any().
 
+get_opt({Opt, Host}, Opts, F, Default) ->
+    case lists:keysearch(Opt, 1, Opts) of
+        false ->
+            ejabberd_config:get_option({Opt, Host}, F, Default);
+        {value, {_, Val}} ->
+            ejabberd_config:prepare_opt_val(Opt, Val, F, Default)
+    end;
 get_opt(Opt, Opts, F, Default) ->
     case lists:keysearch(Opt, 1, Opts) of
         false ->

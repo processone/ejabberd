@@ -360,7 +360,7 @@ parse_options(Host) ->
     Eldap_ID = jlib:atom_to_binary(gen_mod:get_module_proc(Host, ?MODULE)),
     Bind_Eldap_ID = jlib:atom_to_binary(
                       gen_mod:get_module_proc(Host, bind_ejabberd_auth_ldap)),
-    UIDsTemp = eldap_utils:get_opt(
+    UIDsTemp = gen_mod:get_opt(
                  {ldap_uids, Host}, [],
                  fun(Us) ->
                          lists:map(
@@ -375,7 +375,7 @@ parse_options(Host) ->
                  end, [{<<"uid">>, <<"%u">>}]),
     UIDs = eldap_utils:uids_domain_subst(Host, UIDsTemp),
     SubFilter =	eldap_utils:generate_subfilter(UIDs),
-    UserFilter = case eldap_utils:get_opt(
+    UserFilter = case gen_mod:get_opt(
                         {ldap_filter, Host}, [],
                         fun check_filter/1, <<"">>) of
                      <<"">> ->
@@ -386,7 +386,7 @@ parse_options(Host) ->
     SearchFilter = eldap_filter:do_sub(UserFilter,
 				       [{<<"%u">>, <<"*">>}]),
     {DNFilter, DNFilterAttrs} =
-        eldap_utils:get_opt({ldap_dn_filter, Host}, [],
+        gen_mod:get_opt({ldap_dn_filter, Host}, [],
                             fun([{DNF, DNFA}]) ->
                                     NewDNFA = case DNFA of
                                                   undefined ->
@@ -398,7 +398,7 @@ parse_options(Host) ->
                                     NewDNF = check_filter(DNF),
                                     {NewDNF, NewDNFA}
                             end, {undefined, []}),
-    LocalFilter = eldap_utils:get_opt(
+    LocalFilter = gen_mod:get_opt(
                     {ldap_local_filter, Host}, [], fun(V) -> V end),
     #state{host = Host, eldap_id = Eldap_ID,
            bind_eldap_id = Bind_Eldap_ID,

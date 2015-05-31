@@ -739,7 +739,7 @@ parse_options(Host, Opts) ->
                               end, 30),
     Eldap_ID = jlib:atom_to_binary(gen_mod:get_module_proc(Host, ?PROCNAME)),
     Cfg = eldap_utils:get_config(Host, Opts),
-    UIDsTemp = eldap_utils:get_opt(
+    UIDsTemp = gen_mod:get_opt(
                  {ldap_uids, Host}, Opts,
                  fun(Us) ->
                          lists:map(
@@ -752,7 +752,7 @@ parse_options(Host, Opts) ->
                  end, [{<<"uid">>, <<"%u">>}]),
     UIDs = eldap_utils:uids_domain_subst(Host, UIDsTemp),
     SubFilter = eldap_utils:generate_subfilter(UIDs),
-    UserFilter = case eldap_utils:get_opt(
+    UserFilter = case gen_mod:get_opt(
                         {ldap_filter, Host}, Opts,
                         fun check_filter/1, <<"">>) of
                      <<"">> ->

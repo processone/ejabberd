@@ -521,29 +521,29 @@ parse_options(Host, Opts) ->
                                    (false) -> false;
                                    (true) -> true
                                 end, true),
-    UserCacheValidity = eldap_utils:get_opt(
+    UserCacheValidity = gen_mod:get_opt(
                           {ldap_user_cache_validity, Host}, Opts,
                           fun(I) when is_integer(I), I>0 -> I end,
                           ?USER_CACHE_VALIDITY),
-    GroupCacheValidity = eldap_utils:get_opt(
+    GroupCacheValidity = gen_mod:get_opt(
                            {ldap_group_cache_validity, Host}, Opts,
                            fun(I) when is_integer(I), I>0 -> I end,
                            ?GROUP_CACHE_VALIDITY),
-    UserCacheSize = eldap_utils:get_opt(
+    UserCacheSize = gen_mod:get_opt(
                       {ldap_user_cache_size, Host}, Opts,
                       fun(I) when is_integer(I), I>0 -> I end,
                       ?CACHE_SIZE),
-    GroupCacheSize = eldap_utils:get_opt(
+    GroupCacheSize = gen_mod:get_opt(
                        {ldap_group_cache_size, Host}, Opts,
                        fun(I) when is_integer(I), I>0 -> I end,
                        ?CACHE_SIZE),
-    ConfigFilter = eldap_utils:get_opt({ldap_filter, Host}, Opts,
+    ConfigFilter = gen_mod:get_opt({ldap_filter, Host}, Opts,
                                        fun check_filter/1, <<"">>),
-    ConfigUserFilter = eldap_utils:get_opt({ldap_ufilter, Host}, Opts,
+    ConfigUserFilter = gen_mod:get_opt({ldap_ufilter, Host}, Opts,
                                            fun check_filter/1, <<"">>),
-    ConfigGroupFilter = eldap_utils:get_opt({ldap_gfilter, Host}, Opts,
+    ConfigGroupFilter = gen_mod:get_opt({ldap_gfilter, Host}, Opts,
                                             fun check_filter/1, <<"">>),
-    RosterFilter = eldap_utils:get_opt({ldap_rfilter, Host}, Opts,
+    RosterFilter = gen_mod:get_opt({ldap_rfilter, Host}, Opts,
                                        fun check_filter/1, <<"">>),
     SubFilter = <<"(&(", UIDAttr/binary, "=",
 		  UIDAttrFormat/binary, ")(", GroupAttr/binary, "=%g))">>,
