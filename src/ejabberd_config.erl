@@ -36,13 +36,14 @@
          prepare_opt_val/4, convert_table_to_binary/5,
          transform_options/1, collect_options/1,
          convert_to_yaml/1, convert_to_yaml/2,
-         env_binary_to_list/2]).
+         env_binary_to_list/2, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_config.hrl").
 -include_lib("kernel/include/file.hrl").
 
+-callback opt_type(atom()) -> function() | [atom()].
 
 %% @type macro() = {macro_key(), macro_value()}
 
@@ -65,7 +66,8 @@ start() ->
 			 {attributes, record_info(fields, local_config)}]),
     mnesia:add_table_copy(local_config, node(), ram_copies),
     Config = get_ejabberd_config_path(),
-    State = read_file(Config),
+    State0 = read_file(Config),
+    State = validate_opts(State0),
     %% This start time is used by mod_last:
     {MegaSecs, Secs, _} = now(),
     UnixTime = MegaSecs*1000000 + Secs,
@@ -712,6 +714,47 @@ get_option(Opt, F, Default) ->
             end
     end.
 
+get_modules_with_options() ->
+    {ok, Mods} = application:get_key(ejabberd, modules),
+    lists:foldl(
+      fun(Mod, D) ->
+	      Attrs = Mod:module_info(attributes),
+	      Behavs = proplists:get_value(behaviour, Attrs, []),
+	      case lists:member(ejabberd_config, Behavs) or (Mod == ?MODULE) of
+		  true ->
+		      Opts = Mod:opt_type(''),
+		      lists:foldl(
+			fun(Opt, Acc) ->
+				dict:append(Opt, Mod, Acc)
+			end, D, Opts);
+		  false ->
+		      D
+	      end
+      end, dict:new(), [?MODULE|Mods]).
+
+validate_opts(#state{opts = Opts} = State) ->
+    ModOpts = get_modules_with_options(),
+    NewOpts = lists:filter(
+		fun(#local_config{key = {Opt, _Host}, value = Val}) ->
+			case dict:find(Opt, ModOpts) of
+			    {ok, [Mod|_]} ->
+				VFun = Mod:opt_type(Opt),
+				case catch VFun(Val) of
+				    {'EXIT', _} ->
+					?ERROR_MSG("ignoring option '~s' with "
+						   "invalid value: ~p",
+						   [Opt, Val]),
+					false;
+				    _ ->
+					true
+				end;
+			    _ ->
+				?ERROR_MSG("ignoring uknown option '~s'", [Opt]),
+				false
+			end
+		end, Opts),
+    State#state{opts = NewOpts}.
+
 -spec get_vh_by_auth_method(atom()) -> [binary()].
 
 %% Return the list of hosts handled by a given module
@@ -1098,3 +1141,15 @@ emit_deprecation_warning(Module, NewModule) ->
             ?WARNING_MSG("Module ~s is deprecated, use ~s instead",
                          [Module, NewModule])
     end.
+
+opt_type(hosts) ->
+    fun(L) when is_list(L) ->
+	    lists:map(
+	      fun(H) ->
+		      iolist_to_binary(H)
+	      end, L)
+    end;
+opt_type(language) ->
+    fun iolist_to_binary/1;
+opt_type(_) ->
+    [hosts, language].

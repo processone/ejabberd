@@ -25,6 +25,8 @@
 
 -module(ejabberd_service).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -protocol({xep, 114, '1.6'}).
@@ -37,11 +39,11 @@
 -export([start/2, start_link/2, send_text/2,
 	 send_element/2, socket_type/0, transform_listen_option/2]).
 
-%% gen_fsm callbacks
 -export([init/1, wait_for_stream/2,
 	 wait_for_handshake/2, stream_established/2,
 	 handle_event/3, handle_sync_event/4, code_change/4,
-	 handle_info/3, terminate/3, print_state/1]).
+	 handle_info/3, terminate/3, print_state/1,
+	 mod_opt_type/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -404,3 +406,10 @@ fsm_limit_opts(Opts) ->
                 N -> [{max_queue, N}]
             end
     end.
+
+mod_opt_type(password) -> fun iolist_to_binary/1;
+mod_opt_type(_) -> [password].
+
+opt_type(max_fsm_queue) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(_) -> [max_fsm_queue].

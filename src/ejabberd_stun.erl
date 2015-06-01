@@ -27,8 +27,8 @@
 
 -protocol({rfc, 5766}).
 
-%% API
--export([tcp_init/2, udp_init/2, udp_recv/5, start/2, socket_type/0]).
+-export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
+	 socket_type/0, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -100,3 +100,12 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
     MaxRate = shaper:get_max_rate(Shaper),
     Realm ++ [{auth_fun, AuthFun},{shaper, MaxRate} |
 	      lists:keydelete(shaper, 1, Opts)].
+
+mod_opt_type(auth_realm) -> fun iolist_to_binary/1;
+mod_opt_type(auth_type) ->
+    fun (anonymous) -> anonymous;
+	(user) -> user
+    end;
+mod_opt_type(shaper) ->
+    fun (S) when is_atom(S) -> S end;
+mod_opt_type(_) -> [auth_realm, auth_type, shaper].

@@ -24,17 +24,13 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_riak_sup).
+
+-behaviour(ejabberd_config).
 -author('alexey@process-one.net').
 
-%% API
--export([start/0,
-         start_link/0,
-	 init/1,
-	 get_pids/0,
-         transform_options/1,
-	 get_random_pid/0,
-	 get_random_pid/1
-	]).
+-export([start/0, start_link/0, init/1, get_pids/0,
+	 transform_options/1, get_random_pid/0, get_random_pid/1,
+	 mod_opt_type/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -158,3 +154,17 @@ transform_options({riak_server, {S, P}}, Opts) ->
     [{riak_server, S}, {riak_port, P}|Opts];
 transform_options(Opt, Opts) ->
     [Opt|Opts].
+
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(_) -> [db_type].
+
+opt_type(modules) -> fun (L) when is_list(L) -> L end;
+opt_type(riak_pool_size) ->
+    fun (N) when is_integer(N), N >= 1 -> N end;
+opt_type(riak_port) -> fun (_) -> true end;
+opt_type(riak_server) -> fun (_) -> true end;
+opt_type(riak_start_interval) ->
+    fun (N) when is_integer(N), N >= 1 -> N end;
+opt_type(_) ->
+    [modules, riak_pool_size, riak_port, riak_server,
+     riak_start_interval].

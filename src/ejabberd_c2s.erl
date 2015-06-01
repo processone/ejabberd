@@ -25,6 +25,8 @@
 
 -module(ejabberd_c2s).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -protocol({xep, 78, '2.5'}).
@@ -54,23 +56,12 @@
 	 get_subscribed/1,
          transform_listen_option/2]).
 
-%% gen_fsm callbacks
--export([init/1,
-	 wait_for_stream/2,
-	 wait_for_auth/2,
-	 wait_for_feature_request/2,
-	 wait_for_bind/2,
-	 wait_for_session/2,
-	 wait_for_sasl_response/2,
-	 wait_for_resume/2,
-	 session_established/2,
-	 handle_event/3,
-	 handle_sync_event/4,
-	 code_change/4,
-	 handle_info/3,
-	 terminate/3,
-	 print_state/1
-     ]).
+-export([init/1, wait_for_stream/2, wait_for_auth/2,
+	 wait_for_feature_request/2, wait_for_bind/2,
+	 wait_for_session/2, wait_for_sasl_response/2,
+	 wait_for_resume/2, session_established/2,
+	 handle_event/3, handle_sync_event/4, code_change/4,
+	 handle_info/3, terminate/3, print_state/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -3126,3 +3117,15 @@ pack_string(String, Pack) ->
 
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
+
+opt_type(domain_certfile) -> fun iolist_to_binary/1;
+opt_type(max_fsm_queue) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(resource_conflict) ->
+    fun (setresource) -> setresource;
+	(closeold) -> closeold;
+	(closenew) -> closenew;
+	(acceptnew) -> acceptnew
+    end;
+opt_type(_) ->
+    [domain_certfile, max_fsm_queue, resource_conflict].

@@ -25,11 +25,14 @@
 
 -module(mod_configure2).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/3]).
+-export([start/2, stop/1, process_local_iq/3,
+	 mod_opt_type/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -195,3 +198,21 @@ process_get(#xmlel{name = <<"last">>, attrs = Attrs}) ->
 %%process_get({xmlelement, Name, Attrs, SubEls}) ->
 %%    {result, };
 process_get(_) -> {error, ?ERR_BAD_REQUEST}.
+
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(_) -> [iqdisc].
+
+opt_type(registration_watchers) ->
+    fun (JIDs) when is_list(JIDs) ->
+	    lists:map(fun (J) ->
+			      #xmlel{name = <<"jid">>, attrs = [],
+				     children =
+					 [{xmlcdata, iolist_to_binary(J)}]}
+		      end,
+		      JIDs)
+    end;
+opt_type(welcome_message) ->
+    fun ({Subj, Body}) ->
+	    {iolist_to_binary(Subj), iolist_to_binary(Body)}
+    end;
+opt_type(_) -> [registration_watchers, welcome_message].

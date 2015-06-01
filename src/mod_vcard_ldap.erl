@@ -25,6 +25,8 @@
 
 -module(mod_vcard_ldap).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
@@ -37,7 +39,8 @@
 
 -export([start/2, start_link/2, stop/1,
 	 get_sm_features/5, process_local_iq/3, process_sm_iq/3,
-	 remove_user/1, route/4, transform_module_options/1]).
+	 remove_user/1, route/4, transform_module_options/1,
+	 mod_opt_type/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -840,3 +843,100 @@ check_filter(F) ->
     NewF = iolist_to_binary(F),
     {ok, _} = eldap_filter:parse(NewF),
     NewF.
+
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(ldap_filter) -> fun check_filter/1;
+mod_opt_type(ldap_search_fields) ->
+    fun (Ls) ->
+	    [{iolist_to_binary(S), iolist_to_binary(P)}
+	     || {S, P} <- Ls]
+    end;
+mod_opt_type(ldap_search_reported) ->
+    fun (Ls) ->
+	    [{iolist_to_binary(S), iolist_to_binary(P)}
+	     || {S, P} <- Ls]
+    end;
+mod_opt_type(ldap_uids) ->
+    fun (Us) ->
+	    lists:map(fun ({U, P}) ->
+			      {iolist_to_binary(U), iolist_to_binary(P)};
+			  ({U}) -> {iolist_to_binary(U)}
+		      end,
+		      Us)
+    end;
+mod_opt_type(ldap_vcard_map) ->
+    fun (Ls) ->
+	    lists:map(fun ({S, [{P, L}]}) ->
+			      {iolist_to_binary(S), iolist_to_binary(P),
+			       [iolist_to_binary(E) || E <- L]}
+		      end,
+		      Ls)
+    end;
+mod_opt_type(matches) ->
+    fun (infinity) -> 0;
+	(I) when is_integer(I), I > 0 -> I
+    end;
+mod_opt_type(search) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(deref_aliases) ->
+    fun (never) -> never;
+	(searching) -> searching;
+	(finding) -> finding;
+	(always) -> always
+    end;
+mod_opt_type(ldap_backups) ->
+    fun (L) -> [iolist_to_binary(H) || H <- L] end;
+mod_opt_type(ldap_base) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_deref_aliases) ->
+    fun (never) -> never;
+	(searching) -> searching;
+	(finding) -> finding;
+	(always) -> always
+    end;
+mod_opt_type(ldap_encrypt) ->
+    fun (tls) -> tls;
+	(starttls) -> starttls;
+	(none) -> none
+    end;
+mod_opt_type(ldap_password) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_port) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_servers) ->
+    fun (L) -> [iolist_to_binary(H) || H <- L] end;
+mod_opt_type(ldap_tls_cacertfile) ->
+    fun iolist_to_binary/1;
+mod_opt_type(ldap_tls_certfile) ->
+    fun iolist_to_binary/1;
+mod_opt_type(ldap_tls_depth) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
+mod_opt_type(ldap_tls_verify) ->
+    fun (hard) -> hard;
+	(soft) -> soft;
+	(false) -> false
+    end;
+mod_opt_type(_) ->
+    [host, iqdisc, ldap_filter, ldap_search_fields,
+     ldap_search_reported, ldap_uids, ldap_vcard_map,
+     matches, search, deref_aliases, ldap_backups, ldap_base,
+     ldap_deref_aliases, ldap_encrypt, ldap_password,
+     ldap_port, ldap_rootdn, ldap_servers,
+     ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,
+     ldap_tls_verify].
+
+opt_type(ldap_filter) -> fun check_filter/1;
+opt_type(ldap_uids) ->
+    fun (Us) ->
+	    lists:map(fun ({U, P}) ->
+			      {iolist_to_binary(U), iolist_to_binary(P)};
+			  ({U}) -> {iolist_to_binary(U)}
+		      end,
+		      Us)
+    end;
+opt_type(_) ->
+    [ldap_filter, ldap_uids, deref_aliases, ldap_backups, ldap_base,
+     ldap_deref_aliases, ldap_encrypt, ldap_password,
+     ldap_port, ldap_rootdn, ldap_servers,
+     ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,
+     ldap_tls_verify].

@@ -25,6 +25,8 @@
 
 -module(mod_last).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -protocol({xep, 12, '2.0'}).
@@ -32,9 +34,10 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_local_iq/3, export/1,
-	 process_sm_iq/3, on_presence_update/4, import/1, import/3,
-	 store_last_info/4, get_last_info/2, remove_user/2,
-         transform_options/1]).
+	 process_sm_iq/3, on_presence_update/4, import/1,
+	 import/3, store_last_info/4, get_last_info/2,
+	 remove_user/2, transform_options/1, mod_opt_type/1,
+	 opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -351,3 +354,11 @@ transform_options({node_start, {_, _, _} = Now}, Opts) ->
     [{node_start, now_to_seconds(Now)}|Opts];
 transform_options(Opt, Opts) ->
     [Opt|Opts].
+
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(_) -> [db_type, iqdisc].
+
+opt_type(node_start) ->
+    fun (S) when is_integer(S), S >= 0 -> S end;
+opt_type(_) -> [node_start].

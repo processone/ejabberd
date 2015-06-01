@@ -27,12 +27,13 @@
 
 -module(ejabberd_web_admin).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
-%% External exports
 -export([process/2, list_users/4,
 	 list_users_in_diapason/4, pretty_print_xml/1,
-	 term_to_id/1]).
+	 term_to_id/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -2877,3 +2878,6 @@ make_menu_item(item, 3, URI, Name, Lang) ->
 %%%==================================
 
 %%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:
+
+opt_type(access) -> fun (V) -> V end;
+opt_type(_) -> [access].

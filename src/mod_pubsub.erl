@@ -89,8 +89,7 @@
     handle_call/3, handle_cast/2, handle_info/2,
     terminate/2, code_change/3]).
 
-%% calls for parallel sending of last items
--export([send_loop/1]).
+-export([send_loop/1, mod_opt_type/1]).
 
 -define(PROCNAME, ejabberd_mod_pubsub).
 -define(LOOPNAME, ejabberd_mod_pubsub_loop).
@@ -4347,3 +4346,25 @@ purge_offline(Host, LJID, Node) ->
 	Error ->
 	    Error
     end.
+
+mod_opt_type(access_createnode) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(ignore_pep_from_offline) ->
+    fun (A) when is_boolean(A) -> A end;
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(last_item_cache) ->
+    fun (A) when is_boolean(A) -> A end;
+mod_opt_type(max_items_node) ->
+    fun (A) when is_integer(A) andalso A >= 0 -> A end;
+mod_opt_type(nodetree) ->
+    fun (A) when is_binary(A) -> A end;
+mod_opt_type(pep_mapping) ->
+    fun (A) when is_list(A) -> A end;
+mod_opt_type(plugins) ->
+    fun (A) when is_list(A) -> A end;
+mod_opt_type(_) ->
+    [access_createnode, db_type, host,
+     ignore_pep_from_offline, iqdisc, last_item_cache,
+     max_items_node, nodetree, pep_mapping, plugins].

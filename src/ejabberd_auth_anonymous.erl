@@ -24,6 +24,8 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_auth_anonymous).
+
+-behaviour(ejabberd_config).
 -author('mickael.remond@process-one.net').
 
 -export([start/1,
@@ -36,16 +38,15 @@
 	 unregister_connection/3
 	]).
 
-
-%% Function used by ejabberd_auth:
 -export([login/2, set_password/3, check_password/3,
 	 check_password/5, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
-         get_vh_registered_users/2, get_vh_registered_users_number/1,
-         get_vh_registered_users_number/2, get_password_s/2,
+	 get_vh_registered_users/2,
+	 get_vh_registered_users_number/1,
+	 get_vh_registered_users_number/2, get_password_s/2,
 	 get_password/2, get_password/3, is_user_exists/2,
 	 remove_user/2, remove_user/3, store_type/0,
-	 plain_password_required/0]).
+	 plain_password_required/0, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -269,3 +270,13 @@ plain_password_required() -> false.
 
 store_type() ->
 	plain.
+
+opt_type(allow_multiple_connections) ->
+    fun (V) when is_boolean(V) -> V end;
+opt_type(anonymous_protocol) ->
+    fun (sasl_anon) -> sasl_anon;
+	(login_anon) -> login_anon;
+	(both) -> both
+    end;
+opt_type(_) ->
+    [allow_multiple_connections, anonymous_protocol].

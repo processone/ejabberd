@@ -50,9 +50,9 @@
          import/3,
 	 can_use_nick/4]).
 
-%% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3]).
+	 handle_info/2, terminate/2, code_change/3,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1343,3 +1343,29 @@ import(_LServer, riak,
 		      [{'2i', [{<<"nick_host">>, {Nick, Host}}]}]);
 import(_, _, _) ->
     pass.
+
+mod_opt_type(access) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(access_admin) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(access_create) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(access_persistent) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(default_room_options) ->
+    fun (L) when is_list(L) -> L end;
+mod_opt_type(history_size) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(max_room_id) ->
+    fun (infinity) -> infinity;
+	(I) when is_integer(I), I > 0 -> I
+    end;
+mod_opt_type(persist_history) -> fun (X) -> X end;
+mod_opt_type(room_shaper) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(_) ->
+    [access, access_admin, access_create, access_persistent,
+     db_type, default_room_options, history_size, host,
+     max_room_id, persist_history, room_shaper].

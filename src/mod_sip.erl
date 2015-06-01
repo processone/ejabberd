@@ -32,9 +32,9 @@
 %% API
 -export([start/2, stop/1, make_response/2, is_my_host/1, at_my_host/1]).
 
-%% esip_callbacks
--export([data_in/2, data_out/2, message_in/2, message_out/2,
-	 request/2, request/3, response/2, locate/1]).
+-export([data_in/2, data_out/2, message_in/2,
+	 message_out/2, request/2, request/3, response/2,
+	 locate/1, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -299,3 +299,44 @@ at_my_host(#uri{host = Host}) ->
 
 is_my_host(LServer) ->
     gen_mod:is_loaded(LServer, ?MODULE).
+
+mod_opt_type(always_record_route) ->
+    fun (true) -> true;
+	(false) -> false
+    end;
+mod_opt_type(flow_timeout_tcp) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(flow_timeout_udp) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(record_route) ->
+    fun (IOList) ->
+	    S = iolist_to_binary(IOList),
+	    #uri{} = esip:decode_uri(S)
+    end;
+mod_opt_type(routes) ->
+    fun (L) ->
+	    lists:map(fun (IOList) ->
+			      S = iolist_to_binary(IOList),
+			      #uri{} = esip:decode_uri(S)
+		      end,
+		      L)
+    end;
+mod_opt_type(via) ->
+    fun (L) ->
+	    lists:map(fun (Opts) ->
+			      Type = proplists:get_value(type, Opts),
+			      Host = proplists:get_value(host, Opts),
+			      Port = proplists:get_value(port, Opts),
+			      true = (Type == tcp) or (Type == tls) or
+				       (Type == udp),
+			      true = is_binary(Host) and (Host /= <<"">>),
+			      true = is_integer(Port) and (Port > 0) and
+				       (Port < 65536)
+				       or (Port == undefined),
+			      {Type, {Host, Port}}
+		      end,
+		      L)
+    end;
+mod_opt_type(_) ->
+    [always_record_route, flow_timeout_tcp,
+     flow_timeout_udp, record_route, routes, via].

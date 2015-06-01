@@ -25,41 +25,38 @@
 
 -module(odbc_queries).
 
+-behaviour(ejabberd_config).
+
 -author("mremond@process-one.net").
 
--export([get_db_type/0, update/5, update_t/4, sql_transaction/2,
-	 get_last/2, set_last_t/4, del_last/2,
-         get_password/2, get_password_scram/2,
-	 set_password_t/3, set_password_scram_t/6,
-	 add_user/3, add_user_scram/6, del_user/2,
-	 del_user_return_password/3, list_users/1, list_users/2,
-	 users_number/1, users_number/2, add_spool_sql/2,
-	 add_spool/2, get_and_del_spool_msg_t/2, del_spool_msg/2,
-	 get_roster/2, get_roster_jid_groups/2,
+-export([get_db_type/0, update/5, update_t/4,
+	 sql_transaction/2, get_last/2, set_last_t/4, del_last/2,
+	 get_password/2, get_password_scram/2, set_password_t/3,
+	 set_password_scram_t/6, add_user/3, add_user_scram/6,
+	 del_user/2, del_user_return_password/3, list_users/1,
+	 list_users/2, users_number/1, users_number/2,
+	 add_spool_sql/2, add_spool/2, get_and_del_spool_msg_t/2,
+	 del_spool_msg/2, get_roster/2, get_roster_jid_groups/2,
 	 get_roster_groups/3, del_user_roster_t/2,
 	 get_roster_by_jid/3, get_rostergroup_by_jid/3,
 	 del_roster/3, del_roster_sql/2, update_roster/5,
 	 update_roster_sql/4, roster_subscribe/4,
 	 get_subscription/3, set_private_data/4,
-	 set_private_data_sql/3, get_private_data/3, get_private_data/2,
-	 del_user_private_storage/2, get_default_privacy_list/2,
+	 set_private_data_sql/3, get_private_data/3,
+	 get_private_data/2, del_user_private_storage/2,
+	 get_default_privacy_list/2,
 	 get_default_privacy_list_t/1, get_privacy_list_names/2,
 	 get_privacy_list_names_t/1, get_privacy_list_id/3,
 	 get_privacy_list_id_t/2, get_privacy_list_data/3,
-	 get_privacy_list_data_by_id/2, get_privacy_list_data_t/2,
+	 get_privacy_list_data_by_id/2,
+	 get_privacy_list_data_t/2,
 	 get_privacy_list_data_by_id_t/1,
 	 set_default_privacy_list/2,
-	 unset_default_privacy_list/2,
-	 remove_privacy_list/2,
-	 add_privacy_list/2,
-	 set_privacy_list/2,
-	 del_privacy_lists/3,
-	 set_vcard/26,
-	 get_vcard/2,
-	 escape/1,
-	 count_records_where/3,
-	 get_roster_version/2,
-	 set_roster_version/2]).
+	 unset_default_privacy_list/2, remove_privacy_list/2,
+	 add_privacy_list/2, set_privacy_list/2,
+	 del_privacy_lists/3, set_vcard/26, get_vcard/2,
+	 escape/1, count_records_where/3, get_roster_version/2,
+	 set_roster_version/2, opt_type/1]).
 
 %% We have only two compile time options for db queries:
 %-define(generic, true).
@@ -990,3 +987,13 @@ set_roster_version(Username, Version) ->
 			     <<"', '">>, Version, <<"'">>]).
 
 -endif.
+
+opt_type(odbc_type) ->
+    fun (pgsql) -> pgsql;
+	(mysql) -> mysql;
+	(sqlite) -> sqlite;
+	(odbc) -> odbc
+    end;
+opt_type(pgsql_users_number_estimate) ->
+    fun (V) when is_boolean(V) -> V end;
+opt_type(_) -> [odbc_type, pgsql_users_number_estimate].

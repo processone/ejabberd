@@ -12,8 +12,8 @@
 %% gen_mod callbacks
 -export([start/2, stop/1]).
 
-%% hooks
--export([update_presence/3, vcard_set/3, export/1, import/1, import/3]).
+-export([update_presence/3, vcard_set/3, export/1,
+	 import/1, import/3, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -231,3 +231,6 @@ import(_LServer, riak, #vcard_xupdate{} = R) ->
     ejabberd_riak:put(R, vcard_xupdate_schema());
 import(_, _, _) ->
     pass.
+
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(_) -> [db_type].

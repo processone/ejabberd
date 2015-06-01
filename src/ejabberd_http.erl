@@ -25,6 +25,8 @@
 
 -module(ejabberd_http).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 %% External exports
@@ -32,8 +34,7 @@
 	 socket_type/0, receive_headers/1, url_encode/1,
          transform_listen_option/2]).
 
-%% Callbacks
--export([init/2]).
+-export([init/2, mod_opt_type/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -870,3 +871,15 @@ transform_listen_option({request_handlers, Hs}, Opts) ->
     [{request_handlers, Hs1} | Opts];
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
+
+mod_opt_type(default_host) -> fun (A) -> A end;
+mod_opt_type(request_handlers) ->
+    fun (Hs) ->
+	    [{str:tokens(iolist_to_binary(Path), <<"/">>), Mod}
+	     || {Path, Mod} <- Hs]
+    end;
+mod_opt_type(_) -> [default_host, request_handlers].
+
+opt_type(trusted_proxies) ->
+    fun (TPs) -> [iolist_to_binary(TP) || TP <- TPs] end;
+opt_type(_) -> [trusted_proxies].

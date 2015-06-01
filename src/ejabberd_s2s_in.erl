@@ -25,6 +25,8 @@
 
 -module(ejabberd_s2s_in).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -behaviour(p1_fsm).
@@ -32,11 +34,10 @@
 %% External exports
 -export([start/2, start_link/2, socket_type/0]).
 
-%% gen_fsm callbacks
 -export([init/1, wait_for_stream/2,
 	 wait_for_feature_request/2, stream_established/2,
 	 handle_event/3, handle_sync_event/4, code_change/4,
-	 handle_info/3, print_state/1, terminate/3]).
+	 handle_info/3, print_state/1, terminate/3, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -710,3 +711,31 @@ fsm_limit_opts(Opts) ->
 	    N -> [{max_queue, N}]
 	  end
     end.
+
+opt_type(domain_certfile) -> fun iolist_to_binary/1;
+opt_type(max_fsm_queue) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(s2s_certfile) -> fun iolist_to_binary/1;
+opt_type(s2s_ciphers) -> fun iolist_to_binary/1;
+opt_type(s2s_protocol_options) ->
+    fun (Options) ->
+	    [_ | O] = lists:foldl(fun (X, Acc) -> X ++ Acc end, [],
+				  [["|" | binary_to_list(Opt)]
+				   || Opt <- Options, is_binary(Opt)]),
+	    iolist_to_binary(O)
+    end;
+opt_type(s2s_tls_compression) ->
+    fun (true) -> true;
+	(false) -> false
+    end;
+opt_type(s2s_use_starttls) ->
+    fun (false) -> false;
+	(true) -> true;
+	(optional) -> optional;
+	(required) -> required;
+	(required_trusted) -> required_trusted
+    end;
+opt_type(_) ->
+    [domain_certfile, max_fsm_queue, s2s_certfile,
+     s2s_ciphers, s2s_protocol_options, s2s_tls_compression,
+     s2s_use_starttls].

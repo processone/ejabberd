@@ -24,22 +24,21 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_auth_pam).
 
+-behaviour(ejabberd_config).
+
 -author('xram@jabber.ru').
 
 -behaviour(ejabberd_auth).
 
-%% External exports
-%%====================================================================
-%% API
-%%====================================================================
 -export([start/1, set_password/3, check_password/3,
 	 check_password/5, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
-         get_vh_registered_users/2, get_vh_registered_users_number/1,
-         get_vh_registered_users_number/2,
-	 get_password/2, get_password_s/2, is_user_exists/2,
-	 remove_user/2, remove_user/3, store_type/0,
-	 plain_password_required/0]).
+	 get_vh_registered_users/2,
+	 get_vh_registered_users_number/1,
+	 get_vh_registered_users_number/2, get_password/2,
+	 get_password_s/2, is_user_exists/2, remove_user/2,
+	 remove_user/3, store_type/0, plain_password_required/0,
+	 opt_type/1]).
 
 start(_Host) ->
     ejabberd:start_app(p1_pam).
@@ -118,3 +117,10 @@ get_pam_userinfotype(Host) ->
          (jid) -> jid
       end,
       username).
+
+opt_type(pam_service) -> fun iolist_to_binary/1;
+opt_type(pam_userinfotype) ->
+    fun (username) -> username;
+	(jid) -> jid
+    end;
+opt_type(_) -> [pam_service, pam_userinfotype].

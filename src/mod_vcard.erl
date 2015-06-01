@@ -34,7 +34,8 @@
 
 -export([start/2, init/3, stop/1, get_sm_features/5,
 	 process_local_iq/3, process_sm_iq/3, reindex_vcards/0,
-	 remove_user/2, export/1, import/1, import/3]).
+	 remove_user/2, export/1, import/1, import/3,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1162,3 +1163,20 @@ import(_LServer, riak, #vcard_search{}) ->
     ok;
 import(_, _, _) ->
     pass.
+
+mod_opt_type(allow_return_all) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(matches) ->
+    fun (infinity) -> infinity;
+	(I) when is_integer(I), I > 0 -> I
+    end;
+mod_opt_type(search) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(search_all_hosts) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(_) ->
+    [allow_return_all, db_type, host, iqdisc, matches,
+     search, search_all_hosts].

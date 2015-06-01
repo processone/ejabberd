@@ -44,14 +44,13 @@
 
 
 -module(ejabberd_ctl).
+
+-behaviour(ejabberd_config).
 -author('alexey@process-one.net').
 
--export([start/0,
-	 init/0,
-	 process/1,
-	 process2/2,
-	 register_commands/3,
-	 unregister_commands/3]).
+-export([start/0, init/0, process/1, process2/2,
+	 register_commands/3, unregister_commands/3,
+	 opt_type/1]).
 
 -include("ejabberd_ctl.hrl").
 -include("ejabberd_commands.hrl").
@@ -801,3 +800,7 @@ print(Format, Args) ->
 %%format_usage_xmlrpc(ArgsDef, ResultDef) ->
 %%    ["aaaa bbb ccc"].
 
+
+opt_type(ejabberdctl_access_commands) ->
+    fun (V) when is_list(V) -> V end;
+opt_type(_) -> [ejabberdctl_access_commands].

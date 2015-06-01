@@ -25,6 +25,8 @@
 
 -module(ejabberd_s2s).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
@@ -44,8 +46,8 @@
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 
-%% ejabberd API
--export([get_info_s2s_connections/1, transform_options/1]).
+-export([get_info_s2s_connections/1,
+	 transform_options/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -771,3 +773,11 @@ match_labels([DL | DLabels], [PL | PLabels]) ->
 	  end;
       false -> false
     end.
+
+opt_type(route_subdomains) ->
+    fun (s2s) -> s2s;
+	(local) -> local
+    end;
+opt_type(s2s_access) ->
+    fun (A) when is_atom(A) -> A end;
+opt_type(_) -> [route_subdomains, s2s_access].

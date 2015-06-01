@@ -27,6 +27,8 @@
 
 -module(ejabberd_auth).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 %% External exports
@@ -42,7 +44,7 @@
 	 remove_user/2, remove_user/3, plain_password_required/1,
 	 store_type/1, entropy/1]).
 
--export([auth_modules/1]).
+-export([auth_modules/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -453,3 +455,10 @@ import(Server, riak, Passwd) ->
     ejabberd_auth_riak:import(Server, riak, Passwd);
 import(_, _, _) ->
     pass.
+
+opt_type(auth_method) ->
+    fun (V) when is_list(V) ->
+	    true = lists:all(fun is_atom/1, V), V;
+	(V) when is_atom(V) -> [V]
+    end;
+opt_type(_) -> [auth_method].

@@ -31,7 +31,8 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/3]).
+-export([start/2, stop/1, process_local_iq/3,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -90,3 +91,8 @@ get_os() ->
     OS = <<OSType/binary, " ", OSVersion/binary>>,
     #xmlel{name = <<"os">>, attrs = [],
 	   children = [{xmlcdata, OS}]}.
+
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(show_os) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(_) -> [iqdisc, show_os].

@@ -29,16 +29,17 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, item_to_xml/1, export/1, import/1,
-	 webadmin_menu/3, webadmin_page/3, get_user_roster/2,
-	 get_subscription_lists/3, get_jid_info/4, import/3,
-	 process_item/2, in_subscription/6, out_subscription/4,
-	 user_available/1, unset_presence/4, register_user/2,
-	 remove_user/2, list_groups/1, create_group/2,
-	 create_group/3, delete_group/2, get_group_opts/2,
-	 set_group_opts/3, get_group_users/2,
-	 get_group_explicit_users/2, is_user_in_group/3,
-	 add_user_to_group/3, remove_user_from_group/3]).
+-export([start/2, stop/1, item_to_xml/1, export/1,
+	 import/1, webadmin_menu/3, webadmin_page/3,
+	 get_user_roster/2, get_subscription_lists/3,
+	 get_jid_info/4, import/3, process_item/2,
+	 in_subscription/6, out_subscription/4, user_available/1,
+	 unset_presence/4, register_user/2, remove_user/2,
+	 list_groups/1, create_group/2, create_group/3,
+	 delete_group/2, get_group_opts/2, set_group_opts/3,
+	 get_group_users/2, get_group_explicit_users/2,
+	 is_user_in_group/3, add_user_to_group/3,
+	 remove_user_from_group/3, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1506,3 +1507,6 @@ import(_LServer, riak, #sr_user{us = US, group_host = {Group, Host}} = User) ->
                                {<<"group_host">>, {Group, Host}}]}]);
 import(_, _, _) ->
     pass.
+
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(_) -> [db_type].

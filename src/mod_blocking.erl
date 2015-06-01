@@ -31,7 +31,7 @@
 -protocol({xep, 191, '1.2'}).
 
 -export([start/2, stop/1, process_iq/3,
-	 process_iq_set/4, process_iq_get/5]).
+	 process_iq_set/4, process_iq_get/5, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -451,3 +451,6 @@ process_blocklist_get(LUser, LServer, odbc) ->
 	  end;
       {'EXIT', _} -> error
     end.
+
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(_) -> [iqdisc].

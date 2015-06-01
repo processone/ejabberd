@@ -25,6 +25,8 @@
 
 -module(ejabberd_captcha).
 
+-behaviour(ejabberd_config).
+
 -protocol({xep, 158, '1.0'}).
 
 -behaviour(gen_server).
@@ -39,7 +41,7 @@
 -export([create_captcha/6, build_captcha_html/2,
 	 check_captcha/2, process_reply/1, process/2,
 	 is_feature_available/0, create_captcha_x/5,
-	 create_captcha_x/6]).
+	 create_captcha_x/6, opt_type/1]).
 
 -include("jlib.hrl").
 
@@ -695,3 +697,14 @@ clean_treap(Treap, CleanPriority) ->
 now_priority() ->
     {MSec, Sec, USec} = now(),
     -((MSec * 1000000 + Sec) * 1000000 + USec).
+
+opt_type(captcha_cmd) ->
+    fun (FileName) ->
+	    F = iolist_to_binary(FileName), if F /= <<"">> -> F end
+    end;
+opt_type(captcha_host) -> fun iolist_to_binary/1;
+opt_type(captcha_limit) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(listen) -> fun (V) -> V end;
+opt_type(_) ->
+    [captcha_cmd, captcha_host, captcha_limit, listen].

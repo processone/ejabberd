@@ -1,7 +1,6 @@
 %%%----------------------------------------------------------------------
 %%% File    : gen_mod.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : 
 %%% Purpose :
 %%% Created : 24 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
@@ -18,22 +17,26 @@
 %%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %%% General Public License for more details.
 %%%
-%%% You should have received a copy of the GNU General Public License along
-%%% with this program; if not, write to the Free Software Foundation, Inc.,
-%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%% You should have received a copy of the GNU General Public License
+%%% along with this program; if not, write to the Free Software
+%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+%%% 02111-1307 USA
 %%%
 %%%----------------------------------------------------------------------
 
 -module(gen_mod).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
--export([start/0, start_module/2, start_module/3, stop_module/2,
-	 stop_module_keep_config/2, get_opt/3, get_opt/4,
-	 get_opt_host/3, db_type/1, db_type/2, get_module_opt/5,
-	 get_module_opt_host/3, loaded_modules/1,
-	 loaded_modules_with_opts/1, get_hosts/2,
-	 get_module_proc/2, is_loaded/2, default_db/1]).
+-export([start/0, start_module/2, start_module/3,
+	 stop_module/2, stop_module_keep_config/2, get_opt/3,
+	 get_opt/4, get_opt_host/3, db_type/1, db_type/2,
+	 get_module_opt/4, get_module_opt/5, get_module_opt_host/3,
+	 loaded_modules/1, loaded_modules_with_opts/1,
+	 get_hosts/2, get_module_proc/2, is_loaded/2,
+	 start_modules/1, default_db/1, v_db/1, opt_type/1]).
 
 %%-export([behaviour_info/1]).
 
@@ -45,11 +48,13 @@
          opts = [] :: opts() | '_' | '$2'}).
 
 -type opts() :: [{atom(), any()}].
+-type db_type() :: odbc | mnesia | riak.
 
 -callback start(binary(), opts()) -> any().
 -callback stop(binary()) -> any().
 
 -export_type([opts/0]).
+-export_type([db_type/0]).
 
 %%behaviour_info(callbacks) -> [{start, 2}, {stop, 1}];
 %%behaviour_info(_Other) -> undefined.
@@ -59,6 +64,17 @@ start() ->
 	    [named_table, public,
 	     {keypos, #ejabberd_module.module_host}]),
     ok.
+
+-spec start_modules(binary()) -> any().
+
+start_modules(Host) ->
+    Modules = ejabberd_config:get_option(
+		{modules, Host},
+		fun(L) when is_list(L) -> L end, []),
+    lists:foreach(
+      fun({Module, Opts}) ->
+	      start_module(Host, Module, Opts)
+      end, Modules).
 
 -spec start_module(binary(), atom()) -> any().
 
@@ -75,7 +91,8 @@ start_module(Host, Module) ->
 
 -spec start_module(binary(), atom(), opts()) -> any().
 
-start_module(Host, Module, Opts) ->
+start_module(Host, Module, Opts0) ->
+    Opts = validate_opts(Module, Opts0),
     ets:insert(ejabberd_modules,
 	       #ejabberd_module{module_host = {Module, Host},
 				opts = Opts}),
@@ -107,18 +124,12 @@ is_app_running(AppName) ->
 
 -spec stop_module(binary(), atom()) -> error | {aborted, any()} | {atomic, any()}.
 
-%% @doc Stop the module in a host, and forget its configuration.
 stop_module(Host, Module) ->
     case stop_module_keep_config(Host, Module) of
       error -> error;
       ok -> ok
     end.
 
-%% @doc Stop the module in a host, but keep its configuration.
-%% As the module configuration is kept in the Mnesia local_config table,
-%% when ejabberd is restarted the module will be started again.
-%% This function is useful when ejabberd is being stopped
-%% and it stops all modules.
 -spec stop_module_keep_config(binary(), atom()) -> error | ok.
 
 stop_module_keep_config(Host, Module) ->
@@ -177,6 +188,11 @@ get_opt(Opt, Opts, F, Default) ->
             ejabberd_config:prepare_opt_val(Opt, Val, F, Default)
     end.
 
+-spec get_module_opt(global | binary(), atom(), atom(), check_fun()) -> any().
+
+get_module_opt(Host, Module, Opt, F) ->
+    get_module_opt(Host, Module, Opt, F, undefined).
+
 -spec get_module_opt(global | binary(), atom(), atom(), check_fun(), any()) -> any().
 
 get_module_opt(global, Module, Opt, F, Default) ->
@@ -216,26 +232,56 @@ get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, fun iolist_to_binary/1, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
--spec v_db(odbc | mnesia | riak | internal) -> odbc | mnesia | riak.
+validate_opts(Module, Opts) ->
+    lists:filter(
+      fun({Opt, Val}) ->
+	      case catch Module:mod_opt_type(Opt) of
+		  VFun when is_function(VFun) ->
+		      case catch VFun(Val) of
+			  {'EXIT', _} ->
+			      ?ERROR_MSG("ignoring invalid value '~p' for "
+					 "option '~s' of module '~s'",
+					 [Val, Opt, Module]),
+			      false;
+			  _ ->
+			      true
+		      end;
+		  L when is_list(L) ->
+		      SOpts = str:join([[$', atom_to_list(A), $'] || A <- L], <<", ">>),
+		      ?ERROR_MSG("ignoring unknown option '~s' for module '~s',"
+				 " available options are: ~s", [Opt, Module, SOpts]),
+		      false;
+		  {'EXIT', {undef, _}} ->
+		      ?WARNING_MSG("module '~s' doesn't export mod_opt_type/1",
+				   [Module]),
+		      true
+	      end;
+	 (Junk) ->
+	      ?ERROR_MSG("failed to understand option ~p for module '~s'",
+			 [Junk, Module]),
+	      false
+      end, Opts).
+
+-spec v_db(db_type() | internal) -> db_type().
 
 v_db(odbc) -> odbc;
 v_db(internal) -> mnesia;
 v_db(mnesia) -> mnesia;
 v_db(riak) -> riak.
 
--spec db_type(opts()) -> odbc | mnesia | riak.
+-spec db_type(opts()) -> db_type().
 
 db_type(Opts) ->
     db_type(global, Opts).
 
--spec db_type(binary() | global, atom() | opts()) -> odbc | mnesia | riak.
+-spec db_type(binary() | global, atom() | opts()) -> db_type().
 
 db_type(Host, Module) when is_atom(Module) ->
     get_module_opt(Host, Module, db_type, fun v_db/1, default_db(Host));
 db_type(Host, Opts) when is_list(Opts) ->
     get_opt(db_type, Opts, fun v_db/1, default_db(Host)).
 
--spec default_db(binary() | global) -> odbc | mnesia | riak.
+-spec default_db(binary() | global) -> db_type().
 
 default_db(Host) ->
     ejabberd_config:get_option({default_db, Host}, fun v_db/1, mnesia).
@@ -285,3 +331,7 @@ get_module_proc(Host, Base) ->
 
 is_loaded(Host, Module) ->
     ets:member(ejabberd_modules, {Module, Host}).
+
+opt_type(default_db) -> fun v_db/1;
+opt_type(modules) -> fun (L) when is_list(L) -> L end;
+opt_type(_) -> [default_db, modules].

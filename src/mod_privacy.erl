@@ -37,15 +37,14 @@
 	 raw_to_item/1, is_list_needdb/1, updated_list/3,
          item_to_xml/1, get_user_lists/2, import/3]).
 
-%% For mod_blocking
 -export([sql_add_privacy_list/2,
 	 sql_get_default_privacy_list/2,
 	 sql_get_default_privacy_list_t/1,
 	 sql_get_privacy_list_data/3,
 	 sql_get_privacy_list_data_by_id_t/1,
 	 sql_get_privacy_list_id_t/2,
-	 sql_set_default_privacy_list/2,
-	 sql_set_privacy_list/2, privacy_schema/0]).
+	 sql_set_default_privacy_list/2, sql_set_privacy_list/2,
+	 privacy_schema/0, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1257,3 +1256,7 @@ import(_LServer, riak, #privacy{} = P) ->
     ejabberd_riak:put(P, privacy_schema());
 import(_, _, _) ->
     pass.
+
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(_) -> [db_type, iqdisc].

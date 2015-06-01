@@ -25,6 +25,8 @@
 
 -module(ejabberd_odbc).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -define(GEN_FSM, p1_fsm).
@@ -51,9 +53,9 @@
 	 handle_info/3, terminate/3, print_state/1,
 	 code_change/4]).
 
-%% gen_fsm states
 -export([connecting/2, connecting/3,
-	 session_established/2, session_established/3]).
+	 session_established/2, session_established/3,
+	 opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -692,3 +694,24 @@ fsm_limit_opts() ->
       N when is_integer(N) -> [{max_queue, N}];
       _ -> []
     end.
+
+opt_type(max_fsm_queue) ->
+    fun (N) when is_integer(N), N > 0 -> N end;
+opt_type(odbc_database) -> fun iolist_to_binary/1;
+opt_type(odbc_keepalive_interval) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(odbc_password) -> fun iolist_to_binary/1;
+opt_type(odbc_port) ->
+    fun (P) when is_integer(P), P > 0, P < 65536 -> P end;
+opt_type(odbc_server) -> fun iolist_to_binary/1;
+opt_type(odbc_type) ->
+    fun (mysql) -> mysql;
+	(pgsql) -> pgsql;
+	(sqlite) -> sqlite;
+	(odbc) -> odbc
+    end;
+opt_type(odbc_username) -> fun iolist_to_binary/1;
+opt_type(_) ->
+    [max_fsm_queue, odbc_database, odbc_keepalive_interval,
+     odbc_password, odbc_port, odbc_server, odbc_type,
+     odbc_username].

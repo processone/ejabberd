@@ -24,18 +24,14 @@
 %%%----------------------------------------------------------------------
 
 -module(eldap_utils).
+
+-behaviour(ejabberd_config).
 -author('mremond@process-one.net').
 
--export([generate_subfilter/1,
-	 find_ldap_attrs/2,
-	 get_ldap_attr/2,
-	 get_user_part/2,
-	 make_filter/2,
-	 get_state/2,
-	 case_insensitive_match/2,
-         get_config/2,
-         decode_octet_string/3,
-	 uids_domain_subst/2]).
+-export([generate_subfilter/1, find_ldap_attrs/2,
+	 get_ldap_attr/2, get_user_part/2, make_filter/2,
+	 get_state/2, case_insensitive_match/2, get_config/2,
+	 decode_octet_string/3, uids_domain_subst/2, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -349,3 +345,43 @@ collect_parts_bit([{?N_BIT_STRING,<<Unused,Bits/binary>>}|Rest],Acc,Uacc) ->
     collect_parts_bit(Rest,[Bits|Acc],Unused+Uacc);
 collect_parts_bit([],Acc,Uacc) ->
     list_to_binary([Uacc|lists:reverse(Acc)]).
+
+opt_type(deref_aliases) ->
+    fun (never) -> never;
+	(searching) -> searching;
+	(finding) -> finding;
+	(always) -> always
+    end;
+opt_type(ldap_backups) ->
+    fun (L) -> [iolist_to_binary(H) || H <- L] end;
+opt_type(ldap_base) -> fun iolist_to_binary/1;
+opt_type(ldap_deref_aliases) ->
+    fun (never) -> never;
+	(searching) -> searching;
+	(finding) -> finding;
+	(always) -> always
+    end;
+opt_type(ldap_encrypt) ->
+    fun (tls) -> tls;
+	(starttls) -> starttls;
+	(none) -> none
+    end;
+opt_type(ldap_password) -> fun iolist_to_binary/1;
+opt_type(ldap_port) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
+opt_type(ldap_servers) ->
+    fun (L) -> [iolist_to_binary(H) || H <- L] end;
+opt_type(ldap_tls_cacertfile) -> fun iolist_to_binary/1;
+opt_type(ldap_tls_depth) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
+opt_type(ldap_tls_verify) ->
+    fun (hard) -> hard;
+	(soft) -> soft;
+	(false) -> false
+    end;
+opt_type(_) ->
+    [deref_aliases, ldap_backups, ldap_base,
+     ldap_deref_aliases, ldap_encrypt, ldap_password,
+     ldap_port, ldap_rootdn, ldap_servers,
+     ldap_tls_cacertfile, ldap_tls_depth, ldap_tls_verify].

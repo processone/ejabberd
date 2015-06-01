@@ -29,7 +29,8 @@
 
 -include("logger.hrl").
 
--export([export/2, export/3, import_file/2, import/2, import/3]).
+-export([export/2, export/3, import_file/2, import/2,
+	 import/3, mod_opt_type/1]).
 
 -define(MAX_RECORDS_PER_TRANSACTION, 100).
 
@@ -279,3 +280,6 @@ flatten1([H|T], Acc) ->
     flatten1(T, [[H, $\n]|Acc]);
 flatten1([], Acc) ->
     Acc.
+
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(_) -> [db_type].

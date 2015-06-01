@@ -39,7 +39,7 @@
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
 	 get_info/5, register_feature/2, unregister_feature/2,
 	 register_extra_domain/2, unregister_extra_domain/2,
-         transform_module_options/1]).
+	 transform_module_options/1, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -519,3 +519,18 @@ values_to_xml(Values) ->
 			     children = [{xmlcdata, Value}]}
 	      end,
 	      Values).
+
+mod_opt_type(extra_domains) ->
+    fun (Hs) -> [iolist_to_binary(H) || H <- Hs] end;
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(server_info) ->
+    fun (L) ->
+	    lists:map(fun (Opts) ->
+			      Mods = proplists:get_value(modules, Opts, all),
+			      Name = proplists:get_value(name, Opts, <<>>),
+			      URLs = proplists:get_value(urls, Opts, []),
+			      {Mods, Name, URLs}
+		      end,
+		      L)
+    end;
+mod_opt_type(_) -> [extra_domains, iqdisc, server_info].

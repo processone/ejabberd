@@ -34,13 +34,9 @@
 -export([start/2,
          stop/1]).
 
-%% Hooks:
--export([user_send_packet/3,
-	 user_receive_packet/4,
-         iq_handler2/3,
-         iq_handler1/3,
-         remove_connection/4,
-         is_carbon_copy/1]).
+-export([user_send_packet/3, user_receive_packet/4,
+	 iq_handler2/3, iq_handler1/3, remove_connection/4,
+	 is_carbon_copy/1, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -288,3 +284,6 @@ is_chat_or_normal_message(_Packet) -> false.
 list(User, Server)->
 	mnesia:dirty_select(?TABLE, [{#carboncopy{us = {User, Server}, resource = '$2', version = '$3'}, [], [{{'$2','$3'}}]}]).
 
+
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(_) -> [iqdisc].

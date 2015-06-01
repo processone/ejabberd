@@ -55,7 +55,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process/2]).
+-export([start/2, stop/1, process/2, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -574,3 +574,5 @@ get_error_text({error, passwords_not_identical}) ->
     <<"The passwords are different">>;
 get_error_text({error, wrong_parameters}) ->
     <<"Wrong parameters in the web formulary">>.
+
+mod_opt_type(_) -> [].

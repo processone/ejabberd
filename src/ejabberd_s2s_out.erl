@@ -25,6 +25,8 @@
 
 -module(ejabberd_s2s_out).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -behaviour(p1_fsm).
@@ -37,26 +39,14 @@
 	 stop_connection/1,
          transform_options/1]).
 
-%% p1_fsm callbacks (same as gen_fsm)
--export([init/1,
-	 open_socket/2,
-	 wait_for_stream/2,
-	 wait_for_validation/2,
-	 wait_for_features/2,
-	 wait_for_auth_result/2,
-	 wait_for_starttls_proceed/2,
-	 relay_to_bridge/2,
-	 reopen_socket/2,
-	 wait_before_retry/2,
-	 stream_established/2,
-	 handle_event/3,
-	 handle_sync_event/4,
-	 handle_info/3,
-	 terminate/3,
-     print_state/1,
-	 code_change/4,
-	 test_get_addr_port/1,
-	 get_addr_port/1]).
+-export([init/1, open_socket/2, wait_for_stream/2,
+	 wait_for_validation/2, wait_for_features/2,
+	 wait_for_auth_result/2, wait_for_starttls_proceed/2,
+	 relay_to_bridge/2, reopen_socket/2, wait_before_retry/2,
+	 stream_established/2, handle_event/3,
+	 handle_sync_event/4, handle_info/3, terminate/3,
+	 print_state/1, code_change/4, test_get_addr_port/1,
+	 get_addr_port/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1365,3 +1355,54 @@ fsm_limit_opts() ->
         undefined -> [];
         N -> [{max_queue, N}]
     end.
+
+opt_type(domain_certfile) -> fun iolist_to_binary/1;
+opt_type(max_fsm_queue) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(outgoing_s2s_families) ->
+    fun (Families) ->
+	    true = lists:all(fun (ipv4) -> true;
+				 (ipv6) -> true
+			     end,
+			     Families),
+	    Families
+    end;
+opt_type(outgoing_s2s_port) ->
+    fun (I) when is_integer(I), I > 0, I =< 65536 -> I end;
+opt_type(outgoing_s2s_timeout) ->
+    fun (TimeOut) when is_integer(TimeOut), TimeOut > 0 ->
+	    TimeOut;
+	(infinity) -> infinity
+    end;
+opt_type(s2s_certfile) -> fun iolist_to_binary/1;
+opt_type(s2s_ciphers) -> fun iolist_to_binary/1;
+opt_type(s2s_dns_retries) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
+opt_type(s2s_dns_timeout) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
+opt_type(s2s_max_retry_delay) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(s2s_protocol_options) ->
+    fun (Options) ->
+	    [_ | O] = lists:foldl(fun (X, Acc) -> X ++ Acc end, [],
+				  [["|" | binary_to_list(Opt)]
+				   || Opt <- Options, is_binary(Opt)]),
+	    iolist_to_binary(O)
+    end;
+opt_type(s2s_tls_compression) ->
+    fun (true) -> true;
+	(false) -> false
+    end;
+opt_type(s2s_use_starttls) ->
+    fun (true) -> true;
+	(false) -> false;
+	(optional) -> optional;
+	(required) -> required;
+	(required_trusted) -> required_trusted
+    end;
+opt_type(_) ->
+    [domain_certfile, max_fsm_queue, outgoing_s2s_families,
+     outgoing_s2s_port, outgoing_s2s_timeout, s2s_certfile,
+     s2s_ciphers, s2s_dns_retries, s2s_dns_timeout,
+     s2s_max_retry_delay, s2s_protocol_options,
+     s2s_tls_compression, s2s_use_starttls].

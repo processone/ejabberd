@@ -41,15 +41,16 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_iq/3, export/1, import/1,
-	 process_local_iq/3, get_user_roster/2, import/3,
-	 get_subscription_lists/3, get_roster/2,
+-export([start/2, stop/1, process_iq/3, export/1,
+	 import/1, process_local_iq/3, get_user_roster/2,
+	 import/3, get_subscription_lists/3, get_roster/2,
 	 get_in_pending_subscriptions/3, in_subscription/6,
 	 out_subscription/4, set_items/3, remove_user/2,
 	 get_jid_info/4, item_to_xml/1, webadmin_page/3,
 	 webadmin_user/4, get_versioning_feature/2,
 	 roster_versioning_enabled/1, roster_version/2,
-         record_to_string/1, groups_to_string/1]).
+	 record_to_string/1, groups_to_string/1,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1767,3 +1768,17 @@ import(_LServer, riak, #roster_version{} = RV) ->
     ejabberd_riak:put(RV, roster_version_schema());
 import(_, _, _) ->
     pass.
+
+mod_opt_type(access) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(managers) ->
+    fun (B) when is_list(B) -> B end;
+mod_opt_type(store_current_id) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(versioning) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(_) ->
+    [access, db_type, iqdisc, managers, store_current_id,
+     versioning].

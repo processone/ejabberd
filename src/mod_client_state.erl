@@ -29,8 +29,9 @@
 
 -behavior(gen_mod).
 
--export([start/2, stop/1, add_stream_feature/2, filter_presence/2,
-	 filter_chat_states/2]).
+-export([start/2, stop/1, add_stream_feature/2,
+	 filter_presence/2, filter_chat_states/2,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -108,3 +109,13 @@ filter_chat_states(_Action, #xmlel{name = <<"message">>} = Stanza) ->
 	  {stop, send}
     end;
 filter_chat_states(Action, _Stanza) -> Action.
+
+mod_opt_type(drop_chat_states) ->
+    fun (true) -> true;
+	(false) -> false
+    end;
+mod_opt_type(queue_presence) ->
+    fun (true) -> true;
+	(false) -> false
+    end;
+mod_opt_type(_) -> [drop_chat_states, queue_presence].

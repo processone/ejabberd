@@ -25,6 +25,8 @@
 
 -module(ejabberd_auth_ldap).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
@@ -34,16 +36,15 @@
 -export([init/1, handle_info/2, handle_call/3,
 	 handle_cast/2, terminate/2, code_change/3]).
 
-%% External exports
 -export([start/1, stop/1, start_link/1, set_password/3,
 	 check_password/3, check_password/5, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
-         get_vh_registered_users/2,
-         get_vh_registered_users_number/1,
+	 get_vh_registered_users/2,
+	 get_vh_registered_users_number/1,
 	 get_vh_registered_users_number/2, get_password/2,
 	 get_password_s/2, is_user_exists/2, remove_user/2,
-	 remove_user/3, store_type/0,
-	 plain_password_required/0]).
+	 remove_user/3, store_type/0, plain_password_required/0,
+	 mod_opt_type/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -418,3 +419,92 @@ check_filter(F) ->
     NewF = iolist_to_binary(F),
     {ok, _} = eldap_filter:parse(NewF),
     NewF.
+
+mod_opt_type(deref_aliases) ->
+    fun (never) -> never;
+	(searching) -> searching;
+	(finding) -> finding;
+	(always) -> always
+    end;
+mod_opt_type(ldap_backups) ->
+    fun (L) -> [iolist_to_binary(H) || H <- L] end;
+mod_opt_type(ldap_base) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_deref_aliases) ->
+    fun (never) -> never;
+	(searching) -> searching;
+	(finding) -> finding;
+	(always) -> always
+    end;
+mod_opt_type(ldap_encrypt) ->
+    fun (tls) -> tls;
+	(starttls) -> starttls;
+	(none) -> none
+    end;
+mod_opt_type(ldap_password) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_port) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_servers) ->
+    fun (L) -> [iolist_to_binary(H) || H <- L] end;
+mod_opt_type(ldap_tls_cacertfile) ->
+    fun iolist_to_binary/1;
+mod_opt_type(ldap_tls_certfile) ->
+    fun iolist_to_binary/1;
+mod_opt_type(ldap_tls_depth) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
+mod_opt_type(ldap_tls_verify) ->
+    fun (hard) -> hard;
+	(soft) -> soft;
+	(false) -> false
+    end;
+mod_opt_type(ldap_dn_filter) ->
+    fun ([{DNF, DNFA}]) ->
+	    NewDNFA = case DNFA of
+			undefined -> [];
+			_ -> [iolist_to_binary(A) || A <- DNFA]
+		      end,
+	    NewDNF = check_filter(DNF),
+	    {NewDNF, NewDNFA}
+    end;
+mod_opt_type(ldap_filter) -> fun check_filter/1;
+mod_opt_type(ldap_local_filter) -> fun (V) -> V end;
+mod_opt_type(ldap_uids) ->
+    fun (Us) ->
+	    lists:map(fun ({U, P}) ->
+			      {iolist_to_binary(U), iolist_to_binary(P)};
+			  ({U}) -> {iolist_to_binary(U)};
+			  (U) -> {iolist_to_binary(U)}
+		      end,
+		      lists:flatten(Us))
+    end;
+mod_opt_type(_) ->
+    [ldap_dn_filter, ldap_filter, ldap_local_filter,
+     ldap_uids, deref_aliases, ldap_backups, ldap_base,
+     ldap_deref_aliases, ldap_encrypt, ldap_password,
+     ldap_port, ldap_rootdn, ldap_servers,
+     ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,
+     ldap_tls_verify].
+
+opt_type(ldap_dn_filter) ->
+    fun ([{DNF, DNFA}]) ->
+	    NewDNFA = case DNFA of
+			undefined -> [];
+			_ -> [iolist_to_binary(A) || A <- DNFA]
+		      end,
+	    NewDNF = check_filter(DNF),
+	    {NewDNF, NewDNFA}
+    end;
+opt_type(ldap_filter) -> fun check_filter/1;
+opt_type(ldap_local_filter) -> fun (V) -> V end;
+opt_type(ldap_uids) ->
+    fun (Us) ->
+	    lists:map(fun ({U, P}) ->
+			      {iolist_to_binary(U), iolist_to_binary(P)};
+			  ({U}) -> {iolist_to_binary(U)};
+			  (U) -> {iolist_to_binary(U)}
+		      end,
+		      lists:flatten(Us))
+    end;
+opt_type(_) ->
+    [ldap_dn_filter, ldap_filter, ldap_local_filter,
+     ldap_uids].

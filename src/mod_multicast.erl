@@ -22,7 +22,7 @@
 -export([init/1, handle_info/2, handle_call/3,
 	 handle_cast/2, terminate/2, code_change/3]).
 
--export([purge_loop/1]).
+-export([purge_loop/1, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1162,3 +1162,10 @@ make_reply(forbidden, Lang, ErrText) ->
 stj(String) -> jlib:string_to_jid(String).
 
 jts(String) -> jlib:jid_to_string(String).
+
+mod_opt_type(access) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(limits) ->
+    fun (A) when is_list(A) -> A end;
+mod_opt_type(_) -> [access, host, limits].

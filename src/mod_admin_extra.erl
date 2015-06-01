@@ -30,64 +30,24 @@
 
 -include("logger.hrl").
 
--export([start/2, stop/1,
-	 %% Node
-	 compile/1,
-	 get_cookie/0,
-	 remove_node/1,
-	 export2odbc/2,
-	 %% Accounts
-	 set_password/3,
-	 check_password_hash/4,
-	 delete_old_users/1,
-	 delete_old_users_vhost/2,
-	 ban_account/3,
-	 num_active_users/2,
-	 %% Sessions
-	 num_resources/2,
-	 resource_num/3,
-	 kick_session/4,
-	 status_num/2, status_num/1,
-	 status_list/2, status_list/1,
-	 connected_users_info/0,
-	 connected_users_vhost/1,
-	 set_presence/7,
-	 user_sessions_info/2,
-	 %% Vcard
-	 set_nickname/3,
-	 get_vcard/3,
-	 get_vcard/4,
-	 get_vcard_multi/4,
-	 set_vcard/4,
-	 set_vcard/5,
-	 %% Roster
-	 add_rosteritem/7,
-	 delete_rosteritem/4,
-	 process_rosteritems/5,
-	 get_roster/2,
-	 push_roster/3,
-	 push_roster_all/1,
-	 push_alltoall/2,
-	 %% mod_last
-	 get_last/2,
-	 %% mod_private
-	 private_get/4,
-	 private_set/3,
-	 %% mod_shared_roster
-	 srg_create/5,
-	 srg_delete/2,
-	 srg_list/1,
-	 srg_get_info/2,
-	 srg_get_members/2,
-	 srg_user_add/4,
-	 srg_user_del/4,
-	 %% Stanza
-	 send_message/5,
-	 send_stanza_c2s/4,
-	 privacy_set/3,
-	 %% Stats
-	 stats/1, stats/2
-	]).
+-export([start/2, stop/1, compile/1, get_cookie/0,
+	 remove_node/1, export2odbc/2, set_password/3,
+	 check_password_hash/4, delete_old_users/1,
+	 delete_old_users_vhost/2, ban_account/3,
+	 num_active_users/2, num_resources/2, resource_num/3,
+	 kick_session/4, status_num/2, status_num/1,
+	 status_list/2, status_list/1, connected_users_info/0,
+	 connected_users_vhost/1, set_presence/7,
+	 user_sessions_info/2, set_nickname/3, get_vcard/3,
+	 get_vcard/4, get_vcard_multi/4, set_vcard/4,
+	 set_vcard/5, add_rosteritem/7, delete_rosteritem/4,
+	 process_rosteritems/5, get_roster/2, push_roster/3,
+	 push_roster_all/1, push_alltoall/2, get_last/2,
+	 private_get/4, private_set/3, srg_create/5,
+	 srg_delete/2, srg_list/1, srg_get_info/2,
+	 srg_get_members/2, srg_user_add/4, srg_user_del/4,
+	 send_message/5, send_stanza_c2s/4, privacy_set/3,
+	 stats/1, stats/2, mod_opt_type/1]).
 
 
 -include("ejabberd.hrl").
@@ -1557,3 +1517,6 @@ is_glob_match(String, <<"!", Glob/binary>>) ->
     not is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob));
 is_glob_match(String, Glob) ->
     is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
+
+mod_opt_type(module_resource) -> fun (A) -> A end;
+mod_opt_type(_) -> [module_resource].

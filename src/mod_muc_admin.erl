@@ -11,24 +11,16 @@
 
 -behaviour(gen_mod).
 
--export([
-	 start/2, stop/1, % gen_mod API
-	 muc_online_rooms/1,
-	 muc_unregister_nick/1,
-	 create_room/3, destroy_room/3,
+-export([start/2, stop/1, muc_online_rooms/1,
+	 muc_unregister_nick/1, create_room/3, destroy_room/3,
 	 create_rooms_file/1, destroy_rooms_file/1,
 	 rooms_unused_list/2, rooms_unused_destroy/2,
-	 get_user_rooms/2,
-	 get_room_occupants/2,
-	 get_room_occupants_number/2,
-	 send_direct_invitation/4,
-	 change_room_option/4,
-	 get_room_options/2,
-	 set_room_affiliation/4,
-	 get_room_affiliations/2,
-	 web_menu_main/2, web_page_main/2, % Web Admin API
-	 web_menu_host/3, web_page_host/3
-	]).
+	 get_user_rooms/2, get_room_occupants/2,
+	 get_room_occupants_number/2, send_direct_invitation/4,
+	 change_room_option/4, get_room_options/2,
+	 set_room_affiliation/4, get_room_affiliations/2,
+	 web_menu_main/2, web_page_main/2, web_menu_host/3,
+	 web_page_host/3, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -918,3 +910,5 @@ find_host(ServerHost) when is_list(ServerHost) ->
     find_host(list_to_binary(ServerHost));
 find_host(ServerHost) ->
     gen_mod:get_module_opt_host(ServerHost, mod_muc, <<"conference.@HOST@">>).
+
+mod_opt_type(_) -> [].

@@ -57,9 +57,9 @@
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5]).
 
-%% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3]).
+	 handle_info/2, terminate/2, code_change/3,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1140,3 +1140,11 @@ import(_LServer, riak, #offline_msg{us = US, timestamp = TS} = M) ->
 		      [{i, TS}, {'2i', [{<<"us">>, US}]}]);
 import(_, _, _) ->
     pass.
+
+mod_opt_type(access_max_user_messages) ->
+    fun (A) -> A end;
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(store_empty_body) ->
+    fun (V) when is_boolean(V) -> V end;
+mod_opt_type(_) ->
+    [access_max_user_messages, db_type, store_empty_body].

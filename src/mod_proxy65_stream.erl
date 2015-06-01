@@ -37,9 +37,8 @@
 	 wait_for_request/2, wait_for_activation/2,
 	 stream_established/2]).
 
-%% API.
 -export([start/2, stop/1, start_link/3, activate/2,
-	 relay/3, socket_type/0]).
+	 relay/3, socket_type/0, mod_opt_type/1]).
 
 -include("mod_proxy65.hrl").
 
@@ -289,3 +288,15 @@ find_maxrate(Shaper, JID1, JID2, Host) ->
     if MaxRate1 == none; MaxRate2 == none -> none;
        true -> lists:max([MaxRate1, MaxRate2])
     end.
+
+mod_opt_type(auth_type) ->
+    fun (plain) -> plain;
+	(anonymous) -> anonymous
+    end;
+mod_opt_type(recbuf) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(shaper) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(sndbuf) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(_) -> [auth_type, recbuf, shaper, sndbuf].

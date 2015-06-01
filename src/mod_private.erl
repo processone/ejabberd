@@ -32,7 +32,8 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_sm_iq/3, import/3,
-	 remove_user/2, get_data/2, export/1, import/1]).
+	 remove_user/2, get_data/2, export/1, import/1,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -321,3 +322,7 @@ import(_LServer, riak, #private_storage{usns = {LUser, LServer, _}} = PS) ->
 		      [{'2i', [{<<"us">>, {LUser, LServer}}]}]);
 import(_, _, _) ->
     pass.
+
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(_) -> [db_type, iqdisc].

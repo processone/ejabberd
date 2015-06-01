@@ -25,11 +25,12 @@
 
 -module(ejabberd_auth_internal).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -behaviour(ejabberd_auth).
 
-%% External exports
 -export([start/1, set_password/3, check_password/3,
 	 check_password/5, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
@@ -38,7 +39,7 @@
 	 get_vh_registered_users_number/2, get_password/2,
 	 get_password_s/2, is_user_exists/2, remove_user/2,
 	 remove_user/3, store_type/0, export/1, import/1,
-	 import/3, plain_password_required/0]).
+	 import/3, plain_password_required/0, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -484,3 +485,6 @@ import(_LServer, mnesia, #passwd{} = P) ->
     mnesia:dirty_write(P);
 import(_, _, _) ->
     pass.
+
+opt_type(auth_password_format) -> fun (V) -> V end;
+opt_type(_) -> [auth_password_format].

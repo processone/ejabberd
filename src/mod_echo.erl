@@ -35,9 +35,9 @@
 -export([start_link/2, start/2, stop/1,
 	 do_client_version/3]).
 
-%% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3]).
+	 handle_info/2, terminate/2, code_change/3,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -196,3 +196,6 @@ do_client_version(enabled, From, To) ->
     Values_string2 = iolist_to_binary(Values_string1),
     ?INFO_MSG("Information of the client: ~s~s",
 	      [ToS, Values_string2]).
+
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(_) -> [host].
