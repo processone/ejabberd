@@ -141,7 +141,7 @@ remove_connection(SID, LUser, LServer) ->
 %% Register connection
 register_connection(SID,
 		    #jid{luser = LUser, lserver = LServer}, Info) ->
-    AuthModule = list_to_atom(binary_to_list(xml:get_attr_s(<<"auth_module">>, Info))),
+    AuthModule = xml:get_attr_s(auth_module, Info),
     case AuthModule == (?MODULE) of
       true ->
 	  ejabberd_hooks:run(register_user, LServer,
