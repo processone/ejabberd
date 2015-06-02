@@ -31,7 +31,7 @@
 -include("logger.hrl").
 
 -export([start/2, stop/1, compile/1, get_cookie/0,
-	 remove_node/1, export2odbc/2, set_password/3,
+	 remove_node/1, set_password/3,
 	 check_password_hash/4, delete_old_users/1,
 	 delete_old_users_vhost/2, ban_account/3,
 	 num_active_users/2, num_resources/2, resource_num/3,
@@ -111,11 +111,6 @@ commands() ->
 			desc = "Remove an ejabberd node from Mnesia clustering config",
 			module = ?MODULE, function = remove_node,
 			args = [{node, string}],
-			result = {res, rescode}},
-     #ejabberd_commands{name = export2odbc, tags = [mnesia], %% Copied to ejabberd 2.1.x after 11
-			desc = "Export Mnesia tables to files in directory",
-			module = ?MODULE, function = export2odbc,
-			args = [{host, string}, {path, string}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = num_active_users, tags = [accounts, stats],
@@ -233,7 +228,7 @@ commands() ->
                        tags = [session],
                        desc = "Get the list of established sessions in a vhost",
                        module = ?MODULE, function = connected_users_vhost,
-                       args = [{host, string}],
+                       args = [{host, binary}],
                        result = {connected_users_vhost, {list, {sessions, string}}}},
      #ejabberd_commands{name = user_sessions_info,
 			tags = [session],
@@ -388,7 +383,7 @@ commands() ->
      #ejabberd_commands{name = push_alltoall, tags = [roster],
 			desc = "Add all the users to all the users of Host in Group",
 			module = ?MODULE, function = push_alltoall,
-			args = [{host, string}, {group, string}],
+			args = [{host, binary}, {group, binary}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = get_last, tags = [last],
@@ -504,25 +499,6 @@ get_cookie() ->
 remove_node(Node) ->
     mnesia:del_table_copy(schema, list_to_atom(Node)),
     ok.
-
-export2odbc(Host, Directory) ->
-    Tables = [
-	      {export_last, last},
-	      {export_offline, offline},
-	      {export_passwd, passwd},
-	      {export_private_storage, private_storage},
-	      {export_roster, roster},
-	      {export_vcard, vcard},
-	      {export_vcard_search, vcard_search}],
-    Export = fun({TableFun, Table}) ->
-		     Filename = filename:join([Directory, atom_to_list(Table)++".txt"]),
-		     io:format("Trying to export Mnesia table '~p' on Host '~s' to file '~s'~n", [Table, Host, Filename]),
-		     Res = (catch ejd2odbc:TableFun(Host, Filename)),
-		     io:format("  Result: ~p~n", [Res])
-	     end,
-    lists:foreach(Export, Tables),
-    ok.
-
 
 %%%
 %%% Accounts
