@@ -28,7 +28,7 @@
 -behaviour(ejabberd_config).
 
 %% API
--export([start/0, reopen_log/0, get/0, set/1, get_log_path/0, opt_type/1].
+-export([start/0, reopen_log/0, get/0, set/1, get_log_path/0, opt_type/1]).
 
 -include("ejabberd.hrl").
 
