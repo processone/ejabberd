@@ -1358,14 +1358,41 @@ mod_opt_type(default_room_options) ->
 mod_opt_type(history_size) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(max_room_desc) ->
+    fun (infinity) -> infinity;
+	(I) when is_integer(I), I > 0 -> I
+    end;
 mod_opt_type(max_room_id) ->
     fun (infinity) -> infinity;
 	(I) when is_integer(I), I > 0 -> I
     end;
-mod_opt_type(persist_history) -> fun (X) -> X end;
+mod_opt_type(max_room_name) ->
+    fun (infinity) -> infinity;
+	(I) when is_integer(I), I > 0 -> I
+    end;
+mod_opt_type(max_user_conferences) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(max_users) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(max_users_admin_threshold) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(max_users_presence) ->
+    fun (MUP) when is_integer(MUP) -> MUP end;
+mod_opt_type(min_message_interval) ->
+    fun (MMI) when is_number(MMI) -> MMI end;
+mod_opt_type(min_presence_interval) ->
+    fun (I) when is_number(I), I >= 0 -> I end;
 mod_opt_type(room_shaper) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(user_message_shaper) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(user_presence_shaper) ->
     fun (A) when is_atom(A) -> A end;
 mod_opt_type(_) ->
     [access, access_admin, access_create, access_persistent,
      db_type, default_room_options, history_size, host,
-     max_room_id, persist_history, room_shaper].
+     max_room_desc, max_room_id, max_room_name,
+     max_user_conferences, max_users,
+     max_users_admin_threshold, max_users_presence,
+     min_message_interval, min_presence_interval,
+     room_shaper, user_message_shaper, user_presence_shaper].
