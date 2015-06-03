@@ -63,6 +63,17 @@ get_log_path() ->
 	    end
     end.
 
+opt_type(log_rotate_date) ->
+    fun(S) -> binary_to_list(iolist_to_binary(S)) end;
+opt_type(log_rotate_size) ->
+    fun(I) when is_integer(I), I >= 0 -> I end;
+opt_type(log_rotate_count) ->
+    fun(I) when is_integer(I), I >= 0 -> I end;
+opt_type(log_rate_limit) ->
+    fun(I) when is_integer(I), I >= 0 -> I end;
+opt_type(_) ->
+    [log_rotate_date, log_rotate_size, log_rotate_count, log_rate_limit].
+
 -ifdef(LAGER).
 
 get_integer_env(Name, Default) ->
@@ -185,17 +196,6 @@ get() ->
 
 set(LogLevel) ->
     p1_loglevel:set(LogLevel).
-
-opt_type(log_rotate_date) ->
-    fun(S) -> binary_to_list(iolist_to_binary(S)) end;
-opt_type(log_rotate_size) ->
-    fun(I) when is_integer(I), I >= 0 -> I end;
-opt_type(log_rotate_count) ->
-    fun(I) when is_integer(I), I >= 0 -> I end;
-opt_type(log_rate_limit) ->
-    fun(I) when is_integer(I), I >= 0 -> I end;
-opt_type(_) ->
-    [log_rotate_date, log_rotate_size, log_rotate_count, log_rate_limit].
 
 %%%===================================================================
 %%% Internal functions
