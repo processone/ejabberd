@@ -36,7 +36,7 @@
 -author('badlop@process-one.net').
 
 -export([start/2, handler/2, process/2, socket_type/0,
-	 transform_listen_option/2, mod_opt_type/1]).
+	 transform_listen_option/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -541,14 +541,3 @@ transform_listen_option({access_commands, ACOpts}, Opts) ->
     [{access_commands, NewACOpts}|Opts];
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
-
-mod_opt_type(access_commands) ->
-    fun (L) when is_list(L) -> L end;
-mod_opt_type(commands) ->
-    fun (A) when is_atom(A) -> A;
-	(L) when is_list(L) ->
-	    true = lists:all(fun is_atom/1, L), L
-    end;
-mod_opt_type(options) ->
-    fun (L) when is_list(L) -> L end;
-mod_opt_type(_) -> [access_commands, commands, options].

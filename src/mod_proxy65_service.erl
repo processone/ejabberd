@@ -34,8 +34,7 @@
 	 handle_cast/2, terminate/2, code_change/3]).
 
 -export([start_link/2, add_listener/2,
-	 transform_module_options/1, delete_listener/1,
-	 mod_opt_type/1]).
+	 transform_module_options/1, delete_listener/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -292,19 +291,3 @@ get_my_ip() ->
       {ok, Addr} -> Addr;
       {error, _} -> {127, 0, 0, 1}
     end.
-
-mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
-mod_opt_type(host) -> fun iolist_to_binary/1;
-mod_opt_type(hostname) -> fun iolist_to_binary/1;
-mod_opt_type(ip) ->
-    fun (S) ->
-	    {ok, Addr} =
-		inet_parse:address(binary_to_list(iolist_to_binary(S))),
-	    Addr
-    end;
-mod_opt_type(name) -> fun iolist_to_binary/1;
-mod_opt_type(port) ->
-    fun (P) when is_integer(P), P > 0, P < 65536 -> P end;
-mod_opt_type(_) ->
-    [access, host, hostname, ip, name, port].

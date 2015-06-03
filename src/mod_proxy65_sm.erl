@@ -34,8 +34,7 @@
 	 handle_cast/2, terminate/2, code_change/3]).
 
 -export([start_link/2, register_stream/1,
-	 unregister_stream/1, activate_stream/4,
-	 mod_opt_type/1]).
+	 unregister_stream/1, activate_stream/4]).
 
 -record(state, {max_connections = infinity :: non_neg_integer() | infinity}).
 
@@ -171,9 +170,3 @@ activate_stream(SHA1, IJid, TJid, Host)
       {atomic, false} -> false;
       _ -> error
     end.
-
-mod_opt_type(max_connections) ->
-    fun (I) when is_integer(I), I > 0 -> I;
-	(infinity) -> infinity
-    end;
-mod_opt_type(_) -> [max_connections].

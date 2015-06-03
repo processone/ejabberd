@@ -84,4 +84,34 @@ init([Host, Opts]) ->
      {{one_for_one, 10, 1},
       [StreamManager, StreamSupervisor, Service]}}.
 
-mod_opt_type(_) -> [].
+mod_opt_type(auth_type) ->
+    fun (plain) -> plain;
+	(anonymous) -> anonymous
+    end;
+mod_opt_type(recbuf) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(shaper) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(sndbuf) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(access) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(hostname) -> fun iolist_to_binary/1;
+mod_opt_type(ip) ->
+    fun (S) ->
+	    {ok, Addr} =
+		inet_parse:address(binary_to_list(iolist_to_binary(S))),
+	    Addr
+    end;
+mod_opt_type(name) -> fun iolist_to_binary/1;
+mod_opt_type(port) ->
+    fun (P) when is_integer(P), P > 0, P < 65536 -> P end;
+mod_opt_type(max_connections) ->
+    fun (I) when is_integer(I), I > 0 -> I;
+	(infinity) -> infinity
+    end;
+mod_opt_type(_) ->
+    [auth_type, recbuf, shaper, sndbuf,
+     access, host, hostname, ip, name, port,
+     max_connections].
