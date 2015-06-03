@@ -142,7 +142,7 @@ remove_connection(SID, LUser, LServer) ->
 %% Register connection
 register_connection(SID,
 		    #jid{luser = LUser, lserver = LServer}, Info) ->
-    AuthModule = xml:get_attr_s(auth_module, Info),
+    AuthModule = proplists:get_value(auth_module, Info, undefined),
     case AuthModule == (?MODULE) of
       true ->
 	  ejabberd_hooks:run(register_user, LServer,
