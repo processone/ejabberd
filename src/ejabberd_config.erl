@@ -749,8 +749,9 @@ validate_opts(#state{opts = Opts} = State) ->
 					true
 				end;
 			    _ ->
-				?ERROR_MSG("ignoring uknown option '~s'", [Opt]),
-				false
+				?ERROR_MSG("unknown option '~s' will be likely"
+					   " ignored", [Opt]),
+				true
 			end
 		end, Opts),
     State#state{opts = NewOpts}.

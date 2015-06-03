@@ -248,9 +248,10 @@ validate_opts(Module, Opts) ->
 		      end;
 		  L when is_list(L) ->
 		      SOpts = str:join([[$', atom_to_list(A), $'] || A <- L], <<", ">>),
-		      ?ERROR_MSG("ignoring unknown option '~s' for module '~s',"
-				 " available options are: ~s", [Opt, Module, SOpts]),
-		      false;
+		      ?ERROR_MSG("unknown option '~s' for module '~s' will be"
+				 " likely ignored, available options are: ~s",
+				 [Opt, Module, SOpts]),
+		      true;
 		  {'EXIT', {undef, _}} ->
 		      ?WARNING_MSG("module '~s' doesn't export mod_opt_type/1",
 				   [Module]),
