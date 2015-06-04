@@ -202,14 +202,18 @@ do_route(From, Domain, Destinations, Packet) ->
 	%% If no multicast service is available in this server, send manually
 	[] -> do_route_normal(From, Destinations, Packet);
 
-	%% If available, send the packet using multicast service
-	[R] ->
-	    case R#route_multicast.pid of
-		Pid when is_pid(Pid) ->
-		    Pid ! {route_trusted, From, Destinations, Packet};
-		_ -> do_route_normal(From, Destinations, Packet)
-	    end
+	%% If some is available, send the packet using multicast service
+	Rs when is_list(Rs) ->
+	    Pid = pick_multicast_pid(Rs),
+	    Pid ! {route_trusted, From, Destinations, Packet}
     end.
+
+pick_multicast_pid(Rs) ->
+    List = case [R || R <- Rs, node(R#route_multicast.pid) == node()] of
+	[] -> Rs;
+	RLocals -> RLocals
+    end,
+    (hd(List))#route_multicast.pid.
 
 do_route_normal(From, Destinations, Packet) ->
     [ejabberd_router:route(From, To, Packet) || To <- Destinations].
