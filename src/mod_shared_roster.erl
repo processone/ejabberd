@@ -985,11 +985,11 @@ push_user_to_displayed(LUser, LServer, Group, Host, Subscription, DisplayedToGro
     GroupName = proplists:get_value(name, GroupOpts, Group),
     [push_user_to_group(LUser, LServer, GroupD, Host,
 			GroupName, Subscription)
-     || {GroupD, _Opts} <- DisplayedToGroupsOpts].
+     || GroupD <- DisplayedToGroupsOpts].
 
 broadcast_user_to_displayed(LUser, LServer, Host, Subscription, DisplayedToGroupsOpts) ->
     [broadcast_user_to_group(LUser, LServer, GroupD, Host, Subscription)
-	|| {GroupD, _Opts} <- DisplayedToGroupsOpts].
+	|| GroupD <- DisplayedToGroupsOpts].
 
 push_user_to_group(LUser, LServer, Group, Host,
 		   GroupName, Subscription) ->
@@ -1012,12 +1012,13 @@ broadcast_user_to_group(LUser, LServer, Group, Host, Subscription) ->
 %% Get list of groups to which this group is displayed
 displayed_to_groups(GroupName, LServer) ->
     GroupsOpts = groups_with_opts(LServer),
-    lists:filter(fun ({_Group, Opts}) ->
+    Gs = lists:filter(fun ({_Group, Opts}) ->
 			 lists:member(GroupName,
 				      proplists:get_value(displayed_groups,
 							  Opts, []))
 		 end,
-		 GroupsOpts).
+		 GroupsOpts),
+    [Name || {Name, _} <- Gs].
 
 push_item(User, Server, Item) ->
     Stanza = jlib:iq_to_xml(#iq{type = set,
