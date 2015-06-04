@@ -1883,7 +1883,7 @@ add_new_user(From, Nick,
 		Shift = count_stanza_shift(Nick, Els, NewState),
 		case send_history(From, Shift, NewState) of
 		  true -> ok;
-		  _ -> send_subject(From, Lang, StateData)
+		  _ -> send_subject(From, StateData)
 		end,
 		case NewState#state.just_created of
 		  true -> NewState#state{just_created = false};
@@ -2502,25 +2502,15 @@ send_history(JID, Shift, StateData) ->
 		lists:nthtail(Shift,
 			      lqueue_to_list(StateData#state.history))).
 
-send_subject(JID, Lang, StateData) ->
-    case StateData#state.subject_author of
-      <<"">> -> ok;
-      Nick ->
-	  Subject = StateData#state.subject,
-	  Packet = #xmlel{name = <<"message">>,
-			  attrs = [{<<"type">>, <<"groupchat">>}],
-			  children =
-			      [#xmlel{name = <<"subject">>, attrs = [],
-				      children = [{xmlcdata, Subject}]},
-			       #xmlel{name = <<"body">>, attrs = [],
-				      children =
-					  [{xmlcdata,
-					    <<Nick/binary,
-					      (translate:translate(Lang,
-								   <<" has set the subject to: ">>))/binary,
-					      Subject/binary>>}]}]},
-	  ejabberd_router:route(StateData#state.jid, JID, Packet)
-    end.
+send_subject(_JID, #state{subject_author = <<"">>}) -> ok;
+send_subject(JID, StateData) ->
+    Subject = StateData#state.subject,
+    Packet = #xmlel{name = <<"message">>,
+		    attrs = [{<<"type">>, <<"groupchat">>}],
+		    children =
+			[#xmlel{name = <<"subject">>, attrs = [],
+				children = [{xmlcdata, Subject}]}]},
+    ejabberd_router:route(StateData#state.jid, JID, Packet).
 
 check_subject(Packet) ->
     case xml:get_subtag(Packet, <<"subject">>) of
