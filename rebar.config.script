@@ -54,15 +54,15 @@ SrcDirs = lists:foldl(
                     Acc
             end, [], Cfg),
 
-Deps = [{p1_cache_tab, ".*", {git, "git://github.com/processone/cache_tab"}},
-        {p1_tls, ".*", {git, "git://github.com/processone/tls"}},
-        {p1_stringprep, ".*", {git, "git://github.com/processone/stringprep"}},
-        {p1_xml, ".*", {git, "git://github.com/processone/xml"}},
-	{esip, ".*", {git, "git://github.com/processone/p1_sip"}},
-	{p1_stun, ".*", {git, "git://github.com/processone/stun"}},
-        {p1_yaml, ".*", {git, "git://github.com/processone/p1_yaml"}},
+Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
+        {p1_tls, ".*", {git, "https://github.com/processone/tls"}},
+        {p1_stringprep, ".*", {git, "https://github.com/processone/stringprep"}},
+        {p1_xml, ".*", {git, "https://github.com/processone/xml"}},
+        {esip, ".*", {git, "https://github.com/processone/p1_sip"}},
+        {p1_stun, ".*", {git, "https://github.com/processone/stun"}},
+        {p1_yaml, ".*", {git, "https://github.com/processone/p1_yaml"}},
         {ehyperloglog, ".*", {git, "https://github.com/vaxelfel/eHyperLogLog.git"}},
-        {p1_utils, ".*", {git, "git://github.com/processone/p1_utils"}}],
+        {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}}],
 
 ConfigureCmd = fun(Pkg, Flags) ->
                        {'get-deps',
@@ -87,32 +87,32 @@ PostHooks = [ConfigureCmd("p1_tls", ""),
 
 CfgDeps = lists:flatmap(
             fun({mysql, true}) ->
-                    [{p1_mysql, ".*", {git, "git://github.com/processone/mysql"}}];
+                    [{p1_mysql, ".*", {git, "https://github.com/processone/mysql"}}];
                ({pgsql, true}) ->
-                    [{p1_pgsql, ".*", {git, "git://github.com/processone/pgsql"}}];
+                    [{p1_pgsql, ".*", {git, "https://github.com/processone/pgsql"}}];
                ({sqlite, true}) ->
-                    [{sqlite3, ".*", {git, "git://github.com/alexeyr/erlang-sqlite3"}}];
+                    [{sqlite3, ".*", {git, "https://github.com/alexeyr/erlang-sqlite3"}}];
                ({pam, true}) ->
-                    [{p1_pam, ".*", {git, "git://github.com/processone/epam"}}];
+                    [{p1_pam, ".*", {git, "https://github.com/processone/epam"}}];
                ({zlib, true}) ->
-                    [{p1_zlib, ".*", {git, "git://github.com/processone/zlib"}}];
+                    [{p1_zlib, ".*", {git, "https://github.com/processone/zlib"}}];
                ({riak, true}) ->
-                    [{riakc, ".*", {git, "git://github.com/basho/riak-erlang-client", {tag, "1.4.2"}}}];
+                    [{riakc, ".*", {git, "https://github.com/basho/riak-erlang-client", {tag, "1.4.2"}}}];
                ({json, true}) ->
-                    [{jiffy, ".*", {git, "git://github.com/davisp/jiffy"}}];
+                    [{jiffy, ".*", {git, "https://github.com/davisp/jiffy"}}];
                ({elixir, true}) ->
-                    [{rebar_elixir_plugin, ".*", {git, "git://github.com/yrashk/rebar_elixir_plugin"}},
-                     {elixir, ".*", {git, "git://github.com/elixir-lang/elixir", {branch, "v1.0"}}}];
+                    [{rebar_elixir_plugin, ".*", {git, "https://github.com/yrashk/rebar_elixir_plugin"}},
+                     {elixir, ".*", {git, "https://github.com/elixir-lang/elixir", {branch, "v1.0"}}}];
                ({iconv, true}) ->
-                    [{p1_iconv, ".*", {git, "git://github.com/processone/eiconv"}}];
+                    [{p1_iconv, ".*", {git, "https://github.com/processone/eiconv"}}];
                ({lager, true}) ->
-                    [{lager, ".*", {git, "git://github.com/basho/lager"}}];
+                    [{lager, ".*", {git, "https://github.com/basho/lager"}}];
                ({lager, false}) ->
-                    [{p1_logger, ".*", {git, "git://github.com/processone/p1_logger"}}];
+                    [{p1_logger, ".*", {git, "https://github.com/processone/p1_logger"}}];
                ({tools, true}) ->
                     [{meck, "0.*", {git, "https://github.com/eproxus/meck"}}];
-	       ({redis, true}) ->
-		    [{eredis, ".*", {git, "git://github.com/wooga/eredis"}}];
+               ({redis, true}) ->
+                    [{eredis, ".*", {git, "https://github.com/wooga/eredis"}}];
                (_) ->
                     []
             end, Cfg),
