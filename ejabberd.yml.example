@@ -72,6 +72,15 @@ log_rate_limit: 100
 ## watchdog_admins:
 ##   - "bob@example.com"
 
+###.  ===============
+###'  NODE PARAMETERS
+
+##
+## net_ticktime: Specifies net_kernel tick time in seconds. This options must have
+## identical value on all nodes, and in most cases shouldn't be changed at all from
+## default value.
+##
+## net_ticktime: 60
 
 ###.  ================
 ###'  SERVED HOSTNAMES

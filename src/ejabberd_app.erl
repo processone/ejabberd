@@ -54,7 +54,7 @@ start(normal, _Args) ->
     ejabberd_admin:start(),
     gen_mod:start(),
     ejabberd_config:start(),
-    set_loglevel_from_config(),
+    set_settings_from_config(),
     acl:start(),
     shaper:start(),
     connect_nodes(),
@@ -234,12 +234,17 @@ delete_pid_file() ->
 	    file:delete(PidFilename)
     end.
 
-set_loglevel_from_config() ->
+set_settings_from_config() ->
     Level = ejabberd_config:get_option(
               loglevel,
               fun(P) when P>=0, P=<5 -> P end,
               4),
-    ejabberd_logger:set(Level).
+    ejabberd_logger:set(Level),
+    Ticktime = ejabberd_config:get_option(
+                 net_ticktime,
+                 opt_type(net_ticktime),
+                 60),
+    net_kernel:set_net_ticktime(Ticktime).
 
 start_apps() ->
     crypto:start(),
@@ -252,6 +257,8 @@ start_apps() ->
     ejabberd:start_app(p1_zlib),
     ejabberd:start_app(p1_cache_tab).
 
+opt_type(net_ticktime) ->
+    fun (P) when is_integer(P), P > 0 -> P end;
 opt_type(cluster_nodes) ->
     fun (Ns) -> true = lists:all(fun is_atom/1, Ns), Ns end;
 opt_type(loglevel) ->
@@ -263,4 +270,4 @@ opt_type(modules) ->
 		      end,
 		      Mods)
     end;
-opt_type(_) -> [cluster_nodes, loglevel, modules].
+opt_type(_) -> [cluster_nodes, loglevel, modules, net_ticktime].
