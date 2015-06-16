@@ -1381,6 +1381,7 @@ opt_type(outgoing_s2s_timeout) ->
     end;
 opt_type(s2s_certfile) -> fun iolist_to_binary/1;
 opt_type(s2s_ciphers) -> fun iolist_to_binary/1;
+opt_type(s2s_dhfile) -> fun iolist_to_binary/1;
 opt_type(s2s_dns_retries) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 opt_type(s2s_dns_timeout) ->
