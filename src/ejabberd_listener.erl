@@ -297,7 +297,7 @@ accept(ListenSocket, Module, Opts) ->
 	    case {inet:sockname(Socket), inet:peername(Socket)} of
 		{{ok, {Addr, Port}}, {ok, {PAddr, PPort}}} ->
 		    ?INFO_MSG("(~w) Accepted connection ~s:~p -> ~s:~p",
-			      [Socket, inet_parse:ntoa(PAddr), PPort,
+			      [Socket, ejabberd_config:may_hide_data(inet_parse:ntoa(PAddr)), PPort,
 			       inet_parse:ntoa(Addr), Port]);
 		_ ->
 		    ok

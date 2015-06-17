@@ -36,7 +36,7 @@
          prepare_opt_val/4, convert_table_to_binary/5,
          transform_options/1, collect_options/1,
          convert_to_yaml/1, convert_to_yaml/2,
-         env_binary_to_list/2, opt_type/1]).
+         env_binary_to_list/2, opt_type/1, may_hide_data/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1154,3 +1154,18 @@ opt_type(language) ->
     fun iolist_to_binary/1;
 opt_type(_) ->
     [hosts, language].
+
+-spec may_hide_data(string()) -> string().
+
+may_hide_data(Data) ->
+    case ejabberd_config:get_option(
+	hide_sensitive_log_data,
+	    fun(false) -> false;
+	       (true) -> true
+	    end,
+        false) of
+	false ->
+	    Data;
+	true ->
+	    "hidden_by_ejabberd"
+    end.
