@@ -3646,8 +3646,8 @@ max_items(Host, Options) ->
 		    0;
 		_ ->
 		    case is_last_item_cache_enabled(Host) of
-			true -> 1;
-			false -> 0
+			true -> 0;
+			false -> 1
 		    end
 	    end
     end.
