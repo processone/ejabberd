@@ -3636,9 +3636,9 @@ max_items(Host, Options) ->
     case get_option(Options, persist_items) of
 	true ->
 	    case get_option(Options, max_items) of
-		false -> unlimited;
-		Result when Result < 0 -> 0;
-		Result -> Result
+		I when is_integer(I), I < 0 -> 0;
+		I when is_integer(I) -> I;
+		_ -> ?MAXITEMS
 	    end;
 	false ->
 	    case get_option(Options, send_last_published_item) of
@@ -3646,8 +3646,8 @@ max_items(Host, Options) ->
 		    0;
 		_ ->
 		    case is_last_item_cache_enabled(Host) of
-			true -> 0;
-			false -> 1
+			true -> 1;
+			false -> 0
 		    end
 	    end
     end.

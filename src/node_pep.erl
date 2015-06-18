@@ -62,7 +62,7 @@ options() ->
 	{notify_delete, false},
 	{notify_retract, false},
 	{purge_offline, false},
-	{persist_items, false},
+	{persist_items, true},
 	{max_items, 1},
 	{subscribe, true},
 	{access_model, presence},
