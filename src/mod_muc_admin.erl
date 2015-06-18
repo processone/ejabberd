@@ -785,9 +785,14 @@ change_option(Option, Value, Config) ->
     case Option of
 	allow_change_subj -> Config#config{allow_change_subj = Value};
 	allow_private_messages -> Config#config{allow_private_messages = Value};
+	allow_private_messages_from_visitors -> Config#config{allow_private_messages_from_visitors = Value};
 	allow_query_users -> Config#config{allow_query_users = Value};
 	allow_user_invites -> Config#config{allow_user_invites = Value};
+	allow_visitor_nickchange -> Config#config{allow_visitor_nickchange = Value};
+	allow_visitor_status -> Config#config{allow_visitor_status = Value};
+	allow_voice_requests -> Config#config{allow_voice_requests = Value};
 	anonymous -> Config#config{anonymous = Value};
+	captcha_protected -> Config#config{captcha_protected = Value};
 	description -> Config#config{description = Value};
 	logging -> Config#config{logging = Value};
 	max_users -> Config#config{max_users = Value};
@@ -799,7 +804,9 @@ change_option(Option, Value, Config) ->
 	persistent -> Config#config{persistent = Value};
 	public -> Config#config{public = Value};
 	public_list -> Config#config{public_list = Value};
-	title -> Config#config{title = Value}
+	title -> Config#config{title = Value};
+	vcard -> Config#config{vcard = Value};
+	voice_request_min_interval -> Config#config{voice_request_min_interval = Value}
     end.
 
 %%----------------------------
