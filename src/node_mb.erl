@@ -31,13 +31,17 @@
 -include("jlib.hrl").
 
 %%% @doc The module <strong>{@module}</strong> is the pep microblog PubSub plugin.
-%%% <p> To be used, mod_pubsub must be configured :
-%%% {mod_pubsub,   [ % requires mod_caps
-%%%             {access_createnode, pubsub_createnode},
-%%%             {plugins, ["default", "pep","mb"]},
-%%%          {pep_mapping, [{"urn:xmpp:microblog", "mb"}]}
-%%%            ]},
-%%% </p>
+%%% <p>To be used, mod_pubsub must be configured:<pre>
+%%% mod_pubsub:
+%%%   access_createnode: pubsub_createnode
+%%%   ignore_pep_from_offline: false
+%%%   plugins:
+%%%     - "flat"
+%%%     - "hometree"
+%%%     - "pep" # Requires mod_caps.
+%%%   pep_mapping:
+%%%     "urn:xmpp:microblog:0": "mb"
+%%% </pre></p>
 %%% <p>PubSub plugin nodes are using the {@link gen_pubsub_node} behaviour.</p>
 
 -export([init/3, terminate/2, options/0, features/0,
