@@ -743,5 +743,5 @@ opt_type(s2s_use_starttls) ->
     end;
 opt_type(_) ->
     [domain_certfile, max_fsm_queue, s2s_certfile,
-     s2s_ciphers, s2s_protocol_options, s2s_tls_compression,
-     s2s_use_starttls].
+     s2s_ciphers, s2s_dhfile, s2s_protocol_options,
+     s2s_tls_compression, s2s_use_starttls].

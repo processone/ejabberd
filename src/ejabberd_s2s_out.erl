@@ -1409,6 +1409,6 @@ opt_type(s2s_use_starttls) ->
 opt_type(_) ->
     [domain_certfile, max_fsm_queue, outgoing_s2s_families,
      outgoing_s2s_port, outgoing_s2s_timeout, s2s_certfile,
-     s2s_ciphers, s2s_dns_retries, s2s_dns_timeout,
+     s2s_ciphers, s2s_dhfile, s2s_dns_retries, s2s_dns_timeout,
      s2s_max_retry_delay, s2s_protocol_options,
      s2s_tls_compression, s2s_use_starttls].
