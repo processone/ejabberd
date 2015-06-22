@@ -141,6 +141,8 @@
 -define(NS_CAPTCHA, <<"urn:xmpp:captcha">>).
 -define(NS_MEDIA, <<"urn:xmpp:media-element">>).
 -define(NS_BOB, <<"urn:xmpp:bob">>).
+-define(NS_MAM_TMP, <<"urn:xmpp:mam:tmp">>).
+-define(NS_MAM_0, <<"urn:xmpp:mam:0">>).
 -define(NS_PING, <<"urn:xmpp:ping">>).
 -define(NS_CARBONS_2, <<"urn:xmpp:carbons:2">>).
 -define(NS_CARBONS_1, <<"urn:xmpp:carbons:1">>).

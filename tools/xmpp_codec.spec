@@ -2063,6 +2063,156 @@
            refs = [#ref{name = muc_history, min = 0, max = 1,
                         label = '$history'}]}).
 
+-xml(rsm_after,
+     #elem{name = <<"after">>,
+           xmlns = <<"http://jabber.org/protocol/rsm">>,
+           result = '$cdata'}).
+
+-xml(rsm_before,
+     #elem{name = <<"before">>,
+           xmlns = <<"http://jabber.org/protocol/rsm">>,
+           result = '$cdata'}).
+
+-xml(rsm_last,
+     #elem{name = <<"last">>,
+           xmlns = <<"http://jabber.org/protocol/rsm">>,
+           result = '$cdata'}).
+
+-xml(rsm_count,
+     #elem{name = <<"count">>, result = '$cdata',
+           xmlns = <<"http://jabber.org/protocol/rsm">>,
+           cdata = #cdata{dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}}}).
+
+-xml(rsm_index,
+     #elem{name = <<"index">>, result = '$cdata',
+           xmlns = <<"http://jabber.org/protocol/rsm">>,
+           cdata = #cdata{dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}}}).
+
+-xml(rsm_max,
+     #elem{name = <<"max">>, result = '$cdata',
+           xmlns = <<"http://jabber.org/protocol/rsm">>,
+           cdata = #cdata{dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}}}).
+
+-xml(rsm_first,
+     #elem{name = <<"first">>,
+           xmlns = <<"http://jabber.org/protocol/rsm">>,
+           result = {rsm_first, '$index', '$data'},
+           cdata = #cdata{label = '$data'},
+           attrs = [#attr{name = <<"index">>,
+                          dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}}]}).
+
+-xml(rsm_set,
+     #elem{name = <<"set">>,
+           xmlns = <<"http://jabber.org/protocol/rsm">>,
+           result = {rsm_set, '$after', '$before', '$count',
+                     '$first', '$index', '$last', '$max'},
+           refs = [#ref{name = rsm_after, label = '$after', min = 0, max = 1},
+                   #ref{name = rsm_before, label = '$before', min = 0, max = 1},
+                   #ref{name = rsm_count, label = '$count', min = 0, max = 1},
+                   #ref{name = rsm_first, label = '$first', min = 0, max = 1},
+                   #ref{name = rsm_index, label = '$index', min = 0, max = 1},
+                   #ref{name = rsm_last, label = '$last', min = 0, max = 1},
+                   #ref{name = rsm_max, label = '$max', min = 0, max = 1}]}).
+
+-xml(mam_start,
+     #elem{name = <<"start">>,
+           xmlns = <<"urn:xmpp:mam:tmp">>,
+           result = '$cdata',
+           cdata = #cdata{required = true,
+                          dec = {dec_utc, []},
+                          enc = {enc_utc, []}}}).
+
+-xml(mam_end,
+     #elem{name = <<"end">>,
+           xmlns = <<"urn:xmpp:mam:tmp">>,
+           result = '$cdata',
+           cdata = #cdata{required = true,
+                          dec = {dec_utc, []},
+                          enc = {enc_utc, []}}}).
+
+-xml(mam_with,
+     #elem{name = <<"with">>,
+           xmlns = <<"urn:xmpp:mam:tmp">>,
+           result = '$cdata',
+           cdata = #cdata{required = true,
+                          dec = {dec_jid, []},
+                          enc = {enc_jid, []}}}).
+
+-xml(mam_query,
+     #elem{name = <<"query">>,
+           xmlns = [<<"urn:xmpp:mam:0">>, <<"urn:xmpp:mam:tmp">>],
+           result = {mam_query, '$xmlns', '$id', '$start', '$end', '$with',
+		     '$rsm', '$xdata'},
+           attrs = [#attr{name = <<"queryid">>, label = '$id'},
+		    #attr{name = <<"xmlns">>}],
+           refs = [#ref{name = mam_start, min = 0, max = 1, label = '$start'},
+                   #ref{name = mam_end, min = 0, max = 1, label = '$end'},
+                   #ref{name = mam_with, min = 0, max = 1, label = '$with'},
+                   #ref{name = rsm_set, min = 0, max = 1, label = '$rsm'},
+		   #ref{name = xdata, min = 0, max = 1, label = '$xdata'}]}).
+
+-xml(mam_archived,
+     #elem{name = <<"archived">>,
+           xmlns = <<"urn:xmpp:mam:tmp">>,
+           result = {mam_archived, '$by', '$id'},
+           attrs = [#attr{name = <<"id">>},
+                    #attr{name = <<"by">>,
+                          required = true,
+                          dec = {dec_jid, []},
+                          enc = {enc_jid, []}}]}).
+
+-xml(mam_result,
+     #elem{name = <<"result">>,
+           xmlns = [<<"urn:xmpp:mam:0">>, <<"urn:xmpp:mam:tmp">>],
+           result = {mam_result, '$xmlns', '$queryid', '$id', '$_els'},
+           attrs = [#attr{name = <<"queryid">>},
+		    #attr{name = <<"xmlns">>},
+                    #attr{name = <<"id">>}]}).
+
+-xml(mam_jid,
+     #elem{name = <<"jid">>,
+           xmlns = <<"urn:xmpp:mam:tmp">>,
+           result = '$cdata',
+           cdata = #cdata{required = true,
+                          dec = {dec_jid, []},
+                          enc = {enc_jid, []}}}).
+
+-xml(mam_never,
+     #elem{name = <<"never">>,
+           xmlns = <<"urn:xmpp:mam:tmp">>,
+           result = '$jids',
+           refs = [#ref{name = mam_jid, label = '$jids', default = []}]}).
+
+-xml(mam_always,
+     #elem{name = <<"always">>,
+           xmlns = <<"urn:xmpp:mam:tmp">>,
+           result = '$jids',
+           refs = [#ref{name = mam_jid, label = '$jids', default = []}]}).
+
+-xml(mam_prefs,
+     #elem{name = <<"prefs">>,
+           xmlns = [<<"urn:xmpp:mam:0">>, <<"urn:xmpp:mam:tmp">>],
+           result = {mam_prefs, '$xmlns', '$default', '$always', '$never'},
+           attrs = [#attr{name = <<"default">>,
+                          dec = {dec_enum, [[always, never, roster]]},
+                          enc = {enc_enum, []}},
+		    #attr{name = <<"xmlns">>}],
+           refs = [#ref{name = mam_always, label = '$always',
+                        min = 0, max = 1, default = []},
+                   #ref{name = mam_never, label = '$never',
+                        min = 0, max = 1, default = []}]}).
+
+-xml(mam_fin,
+     #elem{name = <<"fin">>,
+	   xmlns = <<"urn:xmpp:mam:0">>,
+	   result = {mam_fin, '$id', '$rsm'},
+	   attrs = [#attr{name = <<"queryid">>, label = '$id'}],
+	   refs = [#ref{name = rsm_set, min = 0, max = 1, label = '$rsm'}]}).
+
 -xml(forwarded,
      #elem{name = <<"forwarded">>,
            xmlns = <<"urn:xmpp:forward:0">>,

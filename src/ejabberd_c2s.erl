@@ -1260,12 +1260,14 @@ session_established2(El, StateData) ->
 		 _ ->
 		     case Name of
 		       <<"presence">> ->
-			   PresenceEl =
+			   PresenceEl0 =
 			       ejabberd_hooks:run_fold(c2s_update_presence,
 						       Server, NewEl,
 						       [User, Server]),
-			   ejabberd_hooks:run(user_send_packet, Server,
-					      [FromJID, ToJID, PresenceEl]),
+			   PresenceEl =
+				 ejabberd_hooks:run_fold(
+				   user_send_packet, Server, PresenceEl0,
+				   [NewStateData, FromJID, ToJID]),
 			   case ToJID of
 			     #jid{user = User, server = Server,
 				  resource = <<"">>} ->
@@ -1285,16 +1287,18 @@ session_established2(El, StateData) ->
 				 process_privacy_iq(FromJID, ToJID, IQ,
 						    NewStateData);
 			     _ ->
-				 ejabberd_hooks:run(user_send_packet, Server,
-						    [FromJID, ToJID, NewEl]),
+				 NewEl0 = ejabberd_hooks:run_fold(
+					    user_send_packet, Server, NewEl,
+					    [NewStateData, FromJID, ToJID]),
 				 check_privacy_route(FromJID, NewStateData,
-						     FromJID, ToJID, NewEl)
+						     FromJID, ToJID, NewEl0)
 			   end;
 		       <<"message">> ->
-			   ejabberd_hooks:run(user_send_packet, Server,
-					      [FromJID, ToJID, NewEl]),
+			   NewEl0 = ejabberd_hooks:run_fold(
+				      user_send_packet, Server, NewEl,
+				      [NewStateData, FromJID, ToJID]),
 			   check_privacy_route(FromJID, NewStateData, FromJID,
-					       ToJID, NewEl);
+					       ToJID, NewEl0);
 		       _ -> NewStateData
 		     end
 	       end,
@@ -1692,11 +1696,13 @@ handle_info({route, From, To,
 	    Attrs2 =
 	       jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 					  jlib:jid_to_string(To), NewAttrs),
-	    FixedPacket = #xmlel{name = Name, attrs = Attrs2, children = Els},
+	    FixedPacket0 = #xmlel{name = Name, attrs = Attrs2, children = Els},
+	    FixedPacket = ejabberd_hooks:run_fold(
+			    user_receive_packet,
+			    NewState#state.server,
+			    FixedPacket0,
+			    [NewState, NewState#state.jid, From, To]),
 	    SentStateData = send_packet(NewState, FixedPacket),
-	    ejabberd_hooks:run(user_receive_packet,
-			       SentStateData#state.server,
-			       [SentStateData#state.jid, From, To, FixedPacket]),
 	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
 	    fsm_next_state(StateName, SentStateData);
 	true ->

@@ -9,6 +9,14 @@
 
 -record(sasl_success, {text :: any()}).
 
+-record(mam_result, {xmlns :: binary(),
+                     queryid :: binary(),
+                     id :: binary(),
+                     sub_els = [] :: [any()]}).
+
+-record(rsm_first, {index :: non_neg_integer(),
+                    data :: binary()}).
+
 -record(text, {lang :: binary(),
                data :: binary()}).
 
@@ -176,6 +184,11 @@
 
 -record(shim, {headers = [] :: [{binary(),'undefined' | binary()}]}).
 
+-record(mam_prefs, {xmlns :: binary(),
+                    default :: 'always' | 'never' | 'roster',
+                    always = [] :: [any()],
+                    never = [] :: [any()]}).
+
 -record(caps, {hash :: binary(),
                node :: binary(),
                ver :: any()}).
@@ -193,6 +206,9 @@
                        items = [] :: [#pubsub_item{}]}).
 
 -record(carbons_sent, {forwarded :: #forwarded{}}).
+
+-record(mam_archived, {by :: any(),
+                       id :: binary()}).
 
 -record(p1_rebind, {}).
 
@@ -262,6 +278,17 @@
 
 -record(vcard_org, {name :: binary(),
                     units = [] :: [binary()]}).
+
+-record(rsm_set, {'after' :: binary(),
+                  before :: binary(),
+                  count :: non_neg_integer(),
+                  first :: #rsm_first{},
+                  index :: non_neg_integer(),
+                  last :: binary(),
+                  max :: non_neg_integer()}).
+
+-record(mam_fin, {id :: binary(),
+                  rsm :: #rsm_set{}}).
 
 -record(vcard_tel, {home = false :: boolean(),
                     work = false :: boolean(),
@@ -342,6 +369,14 @@
                 reported :: [#xdata_field{}],
                 items = [] :: [[#xdata_field{}]],
                 fields = [] :: [#xdata_field{}]}).
+
+-record(mam_query, {xmlns :: binary(),
+                    id :: binary(),
+                    start :: any(),
+                    'end' :: any(),
+                    with :: any(),
+                    rsm :: #rsm_set{},
+                    xdata :: #xdata{}}).
 
 -record(muc_owner, {destroy :: #muc_owner_destroy{},
                     config :: #xdata{}}).

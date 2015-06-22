@@ -247,6 +247,10 @@ db_tests(mnesia) ->
        roster_subscribe_slave]},
      {test_offline, [sequence],
       [offline_master, offline_slave]},
+     {test_old_mam, [parallel],
+      [mam_old_master, mam_old_slave]},
+     {test_new_mam, [parallel],
+      [mam_new_master, mam_new_slave]},
      {test_carbons, [parallel],
       [carbons_master, carbons_slave]},
      {test_client_state, [parallel],
@@ -283,6 +287,10 @@ db_tests(_) ->
        roster_subscribe_slave]},
      {test_offline, [sequence],
       [offline_master, offline_slave]},
+     {test_old_mam, [parallel],
+      [mam_old_master, mam_old_slave]},
+     {test_new_mam, [parallel],
+      [mam_new_master, mam_new_slave]},
      {test_muc, [parallel],
       [muc_master, muc_slave]},
      {test_announce, [sequence],
@@ -1566,6 +1574,278 @@ carbons_slave(Config) ->
     %% Now we should receive nothing but presence unavailable from the peer
     ?recv1(#presence{from = Peer, type = unavailable}),
     disconnect(Config).
+
+mam_old_master(Config) ->
+    mam_master(Config, ?NS_MAM_TMP).
+
+mam_new_master(Config) ->
+    mam_master(Config, ?NS_MAM_0).
+
+mam_master(Config, NS) ->
+    true = is_feature_advertised(Config, NS),
+    MyJID = my_jid(Config),
+    BareMyJID = jlib:jid_remove_resource(MyJID),
+    Peer = ?config(slave, Config),
+    send(Config, #presence{}),
+    ?recv1(#presence{}),
+    wait_for_slave(Config),
+    ?recv1(#presence{from = Peer}),
+    #iq{type = result, sub_els = []} =
+        send_recv(Config,
+                  #iq{type = set,
+                      sub_els = [#mam_prefs{xmlns = NS,
+					    default = roster,
+                                            never = [MyJID]}]}),
+    if NS == ?NS_MAM_TMP ->
+	    FakeArchived = #mam_archived{id = randoms:get_string(),
+					 by = server_jid(Config)},
+	    send(Config, #message{to = MyJID,
+				  sub_els = [FakeArchived],
+				  body = [#text{data = <<"a">>}]}),
+	    send(Config, #message{to = BareMyJID,
+				  sub_els = [FakeArchived],
+				  body = [#text{data = <<"b">>}]}),
+	    %% NOTE: The server should strip fake archived tags,
+	    %% i.e. the sub_els received should be [].
+	    ?recv2(#message{body = [#text{data = <<"a">>}], sub_els = []},
+		   #message{body = [#text{data = <<"b">>}], sub_els = []});
+       true ->
+	    ok
+    end,
+    wait_for_slave(Config),
+    lists:foreach(
+      fun(N) ->
+              Text = #text{data = jlib:integer_to_binary(N)},
+              send(Config,
+                   #message{to = Peer, body = [Text]})
+      end, lists:seq(1, 5)),
+    ?recv1(#presence{type = unavailable, from = Peer}),
+    mam_query_all(Config, NS),
+    mam_query_with(Config, Peer, NS),
+    %% mam_query_with(Config, jlib:jid_remove_resource(Peer)),
+    mam_query_rsm(Config, NS),
+    #iq{type = result, sub_els = []} =
+        send_recv(Config, #iq{type = set,
+                              sub_els = [#mam_prefs{xmlns = NS,
+						    default = never}]}),
+    disconnect(Config).
+
+mam_old_slave(Config) ->
+    mam_slave(Config, ?NS_MAM_TMP).
+
+mam_new_slave(Config) ->
+    mam_slave(Config, ?NS_MAM_0).
+
+mam_slave(Config, NS) ->
+    Peer = ?config(master, Config),
+    ServerJID = server_jid(Config),
+    wait_for_master(Config),
+    send(Config, #presence{}),
+    ?recv2(#presence{}, #presence{from = Peer}),
+    #iq{type = result, sub_els = []} =
+        send_recv(Config,
+                  #iq{type = set,
+                      sub_els = [#mam_prefs{xmlns = NS, default = always}]}),
+    wait_for_master(Config),
+    lists:foreach(
+      fun(N) ->
+              Text = #text{data = jlib:integer_to_binary(N)},
+	      ?recv1(#message{from = Peer, body = [Text],
+			      sub_els = [#mam_archived{by = ServerJID}]})
+      end, lists:seq(1, 5)),
+    #iq{type = result, sub_els = []} =
+        send_recv(Config, #iq{type = set,
+                              sub_els = [#mam_prefs{xmlns = NS, default = never}]}),
+    disconnect(Config).
+
+mam_query_all(Config, NS) ->
+    QID = randoms:get_string(),
+    MyJID = my_jid(Config),
+    Peer = ?config(slave, Config),
+    I = send(Config, #iq{type = get, sub_els = [#mam_query{xmlns = NS, id = QID}]}),
+    maybe_recv_iq_result(NS, I),
+    Iter = if NS == ?NS_MAM_TMP -> lists:seq(1, 5);
+	      true -> lists:seq(1, 5) ++ lists:seq(1, 5)
+	   end,
+    lists:foreach(
+      fun(N) ->
+              Text = #text{data = jlib:integer_to_binary(N)},
+              ?recv1(#message{to = MyJID,
+                       sub_els =
+                           [#mam_result{
+                               queryid = QID,
+                               sub_els =
+                                   [#forwarded{
+                                       delay = #delay{},
+                                       sub_els =
+                                           [#message{
+                                               from = MyJID, to = Peer,
+                                               body = [Text]}]}]}]})
+      end, Iter),
+    if NS == ?NS_MAM_TMP ->
+	    ?recv1(#iq{type = result, id = I, sub_els = []});
+       true ->
+	    ?recv1(#message{sub_els = [#mam_fin{id = QID}]})
+    end.
+
+mam_query_with(Config, JID, NS) ->
+    MyJID = my_jid(Config),
+    Peer = ?config(slave, Config),
+    Query = if NS == ?NS_MAM_TMP ->
+		    #mam_query{xmlns = NS, with = JID};
+	       true ->
+		    Fs = [#xdata_field{var = <<"jid">>,
+				       values = [jlib:jid_to_string(JID)]}],
+		    #mam_query{xmlns = NS,
+			       xdata = #xdata{type = submit, fields = Fs}}
+	    end,
+    I = send(Config, #iq{type = get, sub_els = [Query]}),
+    Iter = if NS == ?NS_MAM_TMP -> lists:seq(1, 5);
+	      true -> lists:seq(1, 5) ++ lists:seq(1, 5)
+	   end,
+    maybe_recv_iq_result(NS, I),
+    lists:foreach(
+      fun(N) ->
+              Text = #text{data = jlib:integer_to_binary(N)},
+              ?recv1(#message{to = MyJID,
+                       sub_els =
+                           [#mam_result{
+                               sub_els =
+                                   [#forwarded{
+                                       delay = #delay{},
+                                       sub_els =
+                                           [#message{
+                                               from = MyJID, to = Peer,
+                                               body = [Text]}]}]}]})
+      end, Iter),
+    if NS == ?NS_MAM_TMP ->
+	    ?recv1(#iq{type = result, id = I, sub_els = []});
+       true ->
+	    ?recv1(#message{sub_els = [#mam_fin{}]})
+    end.
+
+maybe_recv_iq_result(?NS_MAM_0, I1) ->
+    ?recv1(#iq{type = result, id = I1});
+maybe_recv_iq_result(_, _) ->
+    ok.
+
+mam_query_rsm(Config, NS) ->
+    MyJID = my_jid(Config),
+    Peer = ?config(slave, Config),
+    %% Get the first 3 items out of 5
+    I1 = send(Config,
+              #iq{type = get,
+                  sub_els = [#mam_query{xmlns = NS, rsm = #rsm_set{max = 3}}]}),
+    maybe_recv_iq_result(NS, I1),
+    lists:foreach(
+      fun(N) ->
+              Text = #text{data = jlib:integer_to_binary(N)},
+              ?recv1(#message{to = MyJID,
+                       sub_els =
+                           [#mam_result{
+			       xmlns = NS,
+                               sub_els =
+                                   [#forwarded{
+                                       delay = #delay{},
+                                       sub_els =
+                                           [#message{
+                                               from = MyJID, to = Peer,
+                                               body = [Text]}]}]}]})
+      end, lists:seq(1, 3)),
+    if NS == ?NS_MAM_TMP ->
+	    ?recv1(#iq{type = result, id = I1,
+		       sub_els = [#mam_query{xmlns = NS,
+					     rsm = #rsm_set{last = Last, count = 5}}]});
+       true ->
+	    ?recv1(#message{sub_els = [#mam_fin{
+					  rsm = #rsm_set{last = Last, count = 10}}]})
+    end,
+    %% Get the next items starting from the `Last`.
+    %% Limit the response to 2 items.
+    I2 = send(Config,
+              #iq{type = get,
+                  sub_els = [#mam_query{xmlns = NS,
+					rsm = #rsm_set{max = 2,
+                                                       'after' = Last}}]}),
+    maybe_recv_iq_result(NS, I2),
+    lists:foreach(
+      fun(N) ->
+              Text = #text{data = jlib:integer_to_binary(N)},
+              ?recv1(#message{to = MyJID,
+                       sub_els =
+                           [#mam_result{
+			       xmlns = NS,
+                               sub_els =
+                                   [#forwarded{
+                                       delay = #delay{},
+                                       sub_els =
+                                           [#message{
+                                               from = MyJID, to = Peer,
+                                               body = [Text]}]}]}]})
+      end, lists:seq(4, 5)),
+    if NS == ?NS_MAM_TMP ->
+	    ?recv1(#iq{type = result, id = I2,
+		       sub_els = [#mam_query{
+				     xmlns = NS,
+				     rsm = #rsm_set{
+					      count = 5,
+					      first = #rsm_first{data = First}}}]});
+       true ->
+	    ?recv1(#message{
+		      sub_els = [#mam_fin{
+				    rsm = #rsm_set{
+					      count = 10,
+					      first = #rsm_first{data = First}}}]})
+    end,
+    %% Paging back. Should receive 2 elements: 2, 3.
+    I3 = send(Config,
+              #iq{type = get,
+                  sub_els = [#mam_query{xmlns = NS,
+					rsm = #rsm_set{max = 2,
+                                                       before = First}}]}),
+    maybe_recv_iq_result(NS, I3),
+    lists:foreach(
+      fun(N) ->
+              Text = #text{data = jlib:integer_to_binary(N)},
+              ?recv1(#message{to = MyJID,
+                       sub_els =
+                           [#mam_result{
+			       xmlns = NS,
+                               sub_els =
+                                   [#forwarded{
+                                       delay = #delay{},
+                                       sub_els =
+                                           [#message{
+                                               from = MyJID, to = Peer,
+                                               body = [Text]}]}]}]})
+      end, lists:seq(2, 3)),
+    if NS == ?NS_MAM_TMP ->
+	    ?recv1(#iq{type = result, id = I3,
+		       sub_els = [#mam_query{xmlns = NS, rsm = #rsm_set{count = 5}}]});
+       true ->
+	    ?recv1(#message{
+		      sub_els = [#mam_fin{rsm = #rsm_set{count = 10}}]})
+    end,
+    %% Getting the item count. Should be 5 (or 10).
+    I4 = send(Config,
+	      #iq{type = get,
+		  sub_els = [#mam_query{xmlns = NS,
+					rsm = #rsm_set{max = 0}}]}),
+    maybe_recv_iq_result(NS, I4),
+    if NS == ?NS_MAM_TMP ->
+	    ?recv1(#iq{type = result, id = I4,
+		       sub_els = [#mam_query{
+				     xmlns = NS,
+				     rsm = #rsm_set{count = 5,
+						    first = undefined,
+						    last = undefined}}]});
+       true ->
+	    ?recv1(#message{
+		      sub_els = [#mam_fin{
+				    rsm = #rsm_set{count = 10,
+						   first = undefined,
+						   last = undefined}}]})
+    end.
 
 client_state_master(Config) ->
     true = ?config(csi, Config),

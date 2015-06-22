@@ -57,7 +57,7 @@
 	 handle_cast/2, handle_info/2, code_change/3]).
 
 -export([iq_ping/3, user_online/3, user_offline/3,
-	 user_send/3, mod_opt_type/1]).
+	 user_send/4, mod_opt_type/1]).
 
 -record(state,
 	{host = <<"">>,
@@ -214,8 +214,9 @@ user_online(_SID, JID, _Info) ->
 user_offline(_SID, JID, _Info) ->
     stop_ping(JID#jid.lserver, JID).
 
-user_send(JID, _From, _Packet) ->
-    start_ping(JID#jid.lserver, JID).
+user_send(Packet, _C2SState, JID, _From) ->
+    start_ping(JID#jid.lserver, JID),
+    Packet.
 
 %%====================================================================
 %% Internal functions
