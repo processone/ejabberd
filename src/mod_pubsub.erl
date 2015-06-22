@@ -49,6 +49,7 @@
 -author('christophe.romain@process-one.net').
 -protocol({xep, 60, '1.13-1'}).
 -protocol({xep, 163, '1.2'}).
+-protocol({xep, 248, '0.2'}).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").

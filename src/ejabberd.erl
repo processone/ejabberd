@@ -26,6 +26,16 @@
 -module(ejabberd).
 -author('alexey@process-one.net').
 
+-protocol({xep, 4, '2.9'}).
+-protocol({xep, 86, '1.0'}).
+-protocol({xep, 106, '1.1'}).
+-protocol({xep, 170, '1.0'}).
+-protocol({xep, 205, '1.0'}).
+-protocol({xep, 212, '1.0'}).
+-protocol({xep, 216, '1.0'}).
+-protocol({xep, 243, '1.0'}).
+-protocol({xep, 270, '1.0'}).
+
 -export([start/0, stop/0, start_app/1, start_app/2,
 	 get_pid_file/0, check_app/1]).
 

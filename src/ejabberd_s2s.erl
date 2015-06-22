@@ -25,6 +25,8 @@
 
 -module(ejabberd_s2s).
 
+-protocol({xep, 220, '1.1'}).
+
 -behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
