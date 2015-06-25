@@ -515,12 +515,16 @@ set_password(User, Host, Password) ->
 %% Copied some code from ejabberd_commands.erl
 check_password_hash(User, Host, PasswordHash, HashMethod) ->
     AccountPass = ejabberd_auth:get_password_s(User, Host),
-    AccountPassHash = case HashMethod of
-			  "md5" -> get_md5(AccountPass);
-			  "sha" -> get_sha(AccountPass);
+    AccountPassHash = case {AccountPass, HashMethod} of
+			  {A, _} when is_tuple(A) -> scrammed;
+			  {_, "md5"} -> get_md5(AccountPass);
+			  {_, "sha"} -> get_sha(AccountPass);
 			  _ -> undefined
 		      end,
     case AccountPassHash of
+	scrammed ->
+	    ?ERROR_MSG("Passwords are scrammed, and check_password_hash can not work.", []),
+	    throw(passwords_scrammed_command_cannot_work);
 	undefined -> error;
 	PasswordHash -> ok;
 	_ -> error
