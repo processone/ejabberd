@@ -947,20 +947,32 @@ process_groupchat_message(From,
 					      end,
 		 case IsAllowed of
 		   true ->
-			   send_multiple(
-			      jlib:jid_replace_resource(StateData#state.jid, FromNick),
-			      StateData#state.server_host,
-			      StateData#state.users,
-			      Packet),
-		       NewStateData2 = case has_body_or_subject(Packet) of
-			   true ->
-				add_message_to_history(FromNick, From,
-							      Packet,
-							      NewStateData1);
-			   false ->
-				NewStateData1
-			 end,
-		       {next_state, normal_state, NewStateData2};
+		       case
+			 ejabberd_hooks:run_fold(muc_filter_packet,
+						 StateData#state.server_host,
+						 Packet,
+						 [StateData,
+						  StateData#state.jid,
+						  From, FromNick])
+			   of
+			 drop ->
+			     {next_state, normal_state, StateData};
+			 NewPacket ->
+			     send_multiple(jlib:jid_replace_resource(StateData#state.jid,
+								     FromNick),
+					   StateData#state.server_host,
+					   StateData#state.users,
+					   Packet),
+			     NewStateData2 = case has_body_or_subject(Packet) of
+					       true ->
+						   add_message_to_history(FromNick, From,
+									  Packet,
+									  NewStateData1);
+					       false ->
+						   NewStateData1
+					     end,
+			     {next_state, normal_state, NewStateData2}
+		       end;
 		   _ ->
 		       Err = case
 			       (StateData#state.config)#config.allow_change_subj
