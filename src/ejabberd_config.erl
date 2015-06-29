@@ -718,16 +718,13 @@ get_modules_with_options() ->
     {ok, Mods} = application:get_key(ejabberd, modules),
     lists:foldl(
       fun(Mod, D) ->
-	      Attrs = Mod:module_info(attributes),
-	      Behavs = proplists:get_value(behaviour, Attrs, []),
-	      case lists:member(ejabberd_config, Behavs) or (Mod == ?MODULE) of
-		  true ->
-		      Opts = Mod:opt_type(''),
+	      case catch Mod:opt_type('') of
+		  Opts when is_list(Opts) ->
 		      lists:foldl(
 			fun(Opt, Acc) ->
 				dict:append(Opt, Mod, Acc)
 			end, D, Opts);
-		  false ->
+		  {'EXIT', {undef, _}} ->
 		      D
 	      end
       end, dict:new(), [?MODULE|Mods]).
