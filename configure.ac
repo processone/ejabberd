@@ -235,8 +235,7 @@ esac],[if test "x$lager" = "x"; then lager=true; fi])
 
 AC_CONFIG_FILES([Makefile
 		 vars.config
-		 src/ejabberd.app.src
-		 mix.exs])
+		 src/ejabberd.app.src])
 
 ENABLEUSER=""
 AC_ARG_ENABLE(user,
