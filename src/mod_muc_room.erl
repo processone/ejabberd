@@ -1853,31 +1853,6 @@ add_new_user(From, Nick,
 		NewState = add_user_presence(From, Packet,
 					     add_online_user(From, Nick, Role,
 							     StateData)),
-		if not (NewState#state.config)#config.anonymous ->
-		       WPacket = #xmlel{name = <<"message">>,
-					attrs = [{<<"type">>, <<"groupchat">>}],
-					children =
-					    [#xmlel{name = <<"body">>,
-						    attrs = [],
-						    children =
-							[{xmlcdata,
-							  translate:translate(Lang,
-									      <<"This room is not anonymous">>)}]},
-					     #xmlel{name = <<"x">>,
-						    attrs =
-							[{<<"xmlns">>,
-							  ?NS_MUC_USER}],
-						    children =
-							[#xmlel{name =
-								    <<"status">>,
-								attrs =
-								    [{<<"code">>,
-								      <<"100">>}],
-								children =
-								    []}]}]},
-		       ejabberd_router:route(StateData#state.jid, From, WPacket);
-		   true -> ok
-		end,
 		send_existing_presences(From, NewState),
 		send_new_presence(From, NewState),
 		Shift = count_stanza_shift(Nick, Els, NewState),
