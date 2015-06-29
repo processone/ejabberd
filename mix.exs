@@ -25,21 +25,21 @@ defmodule Ejabberd.Mixfile do
   
   defp deps do
     [
-        {:p1_xml, github: "processone/xml"},
-        {:p1_logger, github: "processone/p1_logger"},
-        {:p1_yaml, github: "processone/p1_yaml"},
-        {:p1_tls, github: "processone/tls"},
-        {:p1_stringprep, github: "processone/stringprep"},
-        {:p1_zlib, github: "processone/zlib"},
-        {:p1_cache_tab, github: "processone/cache_tab"},
-        {:p1_utils, github: "processone/p1_utils"},
-        {:p1_iconv, github: "processone/eiconv"},
-        {:esip, github: "processone/p1_sip"},
-        {:p1_stun, github: "processone/stun"},
-        {:ehyperloglog, github: "vaxelfel/eHyperLogLog"},
-        {:p1_mysql, github: "processone/mysql"},
-        {:p1_pgsql, github: "processone/pgsql"},
-        {:eredis, github: "wooga/eredis"}
+        {:p1_xml, git: "https://github.com/processone/xml"},
+        {:p1_logger, git: "https://github.com/processone/p1_logger"},
+        {:p1_yaml, git: "https://github.com/processone/p1_yaml"},
+        {:p1_tls, git: "https://github.com/processone/tls"},
+        {:p1_stringprep, git: "https://github.com/processone/stringprep"},
+        {:p1_zlib, git: "https://github.com/processone/zlib"},
+        {:p1_cache_tab, git: "https://github.com/processone/cache_tab"},
+        {:p1_utils, git: "https://github.com/processone/p1_utils"},
+        {:p1_iconv, git: "https://github.com/processone/eiconv"},
+        {:esip, git: "https://github.com/processone/p1_sip"},
+        {:p1_stun, git: "https://github.com/processone/stun"},
+        {:ehyperloglog, git: "https://github.com/vaxelfel/eHyperLogLog"},
+        {:p1_mysql, git: "https://github.com/processone/mysql"},
+        {:p1_pgsql, git: "https://github.com/processone/pgsql"},
+        {:eredis, git: "https://github.com/wooga/eredis"}
      ]
   end
 end
