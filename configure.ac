@@ -6,6 +6,8 @@ AC_INIT(ejabberd, m4_esyscmd([echo `git describe --tags 2>/dev/null || echo 0.0`
 REQUIRE_ERLANG_MIN="5.9.1 (Erlang/OTP R15B01)"
 REQUIRE_ERLANG_MAX="9.0.0 (No Max)"
 
+AC_CONFIG_MACRO_DIR([m4])
+
 # Checks for programs.
 AC_PROG_MAKE_SET
 AC_PROG_INSTALL
