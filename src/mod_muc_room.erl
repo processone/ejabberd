@@ -3732,6 +3732,7 @@ set_xoption([_ | _Opts], _Config) ->
     {error, ?ERR_BAD_REQUEST}.
 
 change_config(Config, StateData) ->
+    send_config_change_info(Config, StateData),
     NSD = StateData#state{config = Config},
     case {(StateData#state.config)#config.persistent,
 	  Config#config.persistent}
@@ -3751,6 +3752,39 @@ change_config(Config, StateData) ->
 	  NSD1 = remove_nonmembers(NSD), {result, [], NSD1};
       _ -> {result, [], NSD}
     end.
+
+send_config_change_info(Config, #state{config = Config}) -> ok;
+send_config_change_info(New, #state{config = Old} = StateData) ->
+    Codes = case {Old#config.logging, New#config.logging} of
+	      {false, true} -> [<<"170">>];
+	      {true, false} -> [<<"171">>];
+	      _ -> []
+	    end
+	      ++
+	      case {Old#config.anonymous, New#config.anonymous} of
+		{true, false} -> [<<"172">>];
+		{false, true} -> [<<"173">>];
+		_ -> []
+	      end
+		++
+		case Old#config{anonymous = New#config.anonymous,
+				logging = New#config.logging} of
+		  New -> [];
+		  _ -> [<<"104">>]
+		end,
+    StatusEls = [#xmlel{name = <<"status">>,
+			attrs = [{<<"code">>, Code}],
+			children = []} || Code <- Codes],
+    Message = #xmlel{name = <<"message">>,
+		     attrs = [{<<"type">>, <<"groupchat">>},
+			      {<<"id">>, randoms:get_string()}],
+		     children = [#xmlel{name = <<"x">>,
+					attrs = [{<<"xmlns">>, ?NS_MUC_USER}],
+					children = StatusEls}]},
+    send_multiple(StateData#state.jid,
+		  StateData#state.server_host,
+		  StateData#state.users,
+		  Message).
 
 remove_nonmembers(StateData) ->
     lists:foldl(fun ({_LJID, #user{jid = JID}}, SD) ->

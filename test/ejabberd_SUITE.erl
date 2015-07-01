@@ -1122,10 +1122,11 @@ muc_master(Config) ->
                   end
           end, RoomCfg#xdata.fields),
     NewRoomCfg = #xdata{type = submit, fields = NewFields},
-    %% BUG: We should not receive any sub_els!
-    #iq{type = result, sub_els = [_|_]} =
-        send_recv(Config, #iq{type = set, to = Room,
-                              sub_els = [#muc_owner{config = NewRoomCfg}]}),
+    ID = send(Config, #iq{type = set, to = Room,
+			  sub_els = [#muc_owner{config = NewRoomCfg}]}),
+    ?recv2(#iq{type = result, id = ID},
+	   #message{from = Room, type = groupchat,
+		    sub_els = [#muc_user{status_codes = [104]}]}),
     %% Set subject
     send(Config, #message{to = Room, type = groupchat,
                           body = [#text{data = Subject}]}),
