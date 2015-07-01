@@ -33,7 +33,7 @@
 -export([init/3, terminate/2, options/0, features/0,
     create_node_permission/6, create_node/2, delete_node/1,
     purge_node/2, subscribe_node/8, unsubscribe_node/4,
-    publish_item/6, delete_item/4, remove_extra_items/3,
+    publish_item/7, delete_item/4, remove_extra_items/3,
     get_entity_affiliations/2, get_node_affiliations/1,
     get_affiliation/2, set_affiliation/3,
     get_entity_subscriptions/2, get_node_subscriptions/1,
@@ -72,7 +72,7 @@ subscribe_node(Nidx, Sender, Subscriber, AccessModel,
 unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
     node_hometree:unsubscribe_node(Nidx, Sender, Subscriber, SubId).
 
-publish_item(Nidx, Publisher, Model, MaxItems, ItemId, Payload) ->
+publish_item(Nidx, Publisher, Model, MaxItems, ItemId, Payload, PubOpts) ->
     case nodetree_dag:get_node(Nidx) of
 	#pubsub_node{options = Options} ->
 	    case find_opt(node_type, Options) of
@@ -82,7 +82,7 @@ publish_item(Nidx, Publisher, Model, MaxItems, ItemId, Payload) ->
 		     ?ERR_EXTENDED(?ERRT_NOT_ALLOWED(?MYLANG, Txt), <<"publish">>)};
 		_ ->
 		    node_hometree:publish_item(Nidx, Publisher, Model,
-			MaxItems, ItemId, Payload)
+			MaxItems, ItemId, Payload, PubOpts)
 	    end;
 	Err -> Err
     end.
