@@ -308,7 +308,7 @@ init([{SockMod, Socket}, Opts]) ->
     MaxAckQueue = case proplists:get_value(max_ack_queue, Opts) of
 		    Limit when is_integer(Limit), Limit > 0 -> Limit;
 		    infinity -> infinity;
-		    _ -> 500
+		    _ -> 1000
 		  end,
     ResumeTimeout = case proplists:get_value(resume_timeout, Opts) of
 		      Timeout when is_integer(Timeout), Timeout >= 0 -> Timeout;
