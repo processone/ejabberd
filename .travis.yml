@@ -8,7 +8,18 @@ services:
   - riak
 
 before_install:
+  #
+  # We need MySQL 5.6 or newer in order to get support for FULLTEXT indexes
+  # with InnoDB. As soon as Travis ships that version, the following lines
+  # (except for the "apt-get update" call) can go away.
+  #
+  # See: https://github.com/travis-ci/travis-ci/issues/1986
+  #
+  - sudo sed -i -e s/table_cache/table_open_cache/ -e /log_slow_queries/d /etc/mysql/my.cnf
+  - sudo apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5
+  - sudo add-apt-repository 'deb http://repo.mysql.com/apt/ubuntu/ precise mysql-5.6'
   - sudo apt-get -qq update
+  - sudo apt-get -qq -o Dpkg::Options::=--force-confold install mysql-server-5.6
 
 install:
   - sudo apt-get -qq install libexpat1-dev libyaml-dev libpam0g-dev libsqlite3-dev
