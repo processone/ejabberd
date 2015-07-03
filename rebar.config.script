@@ -61,7 +61,6 @@ Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
         {esip, ".*", {git, "https://github.com/processone/p1_sip"}},
         {p1_stun, ".*", {git, "https://github.com/processone/stun"}},
         {p1_yaml, ".*", {git, "https://github.com/processone/p1_yaml"}},
-        {ehyperloglog, ".*", {git, "https://github.com/vaxelfel/eHyperLogLog.git"}},
         {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}}],
 
 ConfigureCmd = fun(Pkg, Flags) ->
