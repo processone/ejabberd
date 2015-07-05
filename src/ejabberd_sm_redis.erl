@@ -8,16 +8,13 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_sm_redis).
 
+-behaviour(ejabberd_config).
+
 -behaviour(ejabberd_sm).
 
-%% API
--export([init/0,
-	 set_session/1,
-	 delete_session/4,
-	 get_sessions/0,
-	 get_sessions/1,
-	 get_sessions/2,
-	 get_sessions/3]).
+-export([init/0, set_session/1, delete_session/4,
+	 get_sessions/0, get_sessions/1, get_sessions/2,
+	 get_sessions/3, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("ejabberd_sm.hrl").
@@ -207,3 +204,17 @@ clean_table() ->
 				 "server ~s: ~p", [LServer, Err])
 	      end
       end, ?MYHOSTS).
+
+opt_type(redis_connect_timeout) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(redis_db) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
+opt_type(redis_password) -> fun iolist_to_list/1;
+opt_type(redis_port) ->
+    fun (P) when is_integer(P), P > 0, P < 65536 -> P end;
+opt_type(redis_reconnect_timeout) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(redis_server) -> fun iolist_to_list/1;
+opt_type(_) ->
+    [redis_connect_timeout, redis_db, redis_password,
+     redis_port, redis_reconnect_timeout, redis_server].

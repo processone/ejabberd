@@ -25,11 +25,13 @@
 
 -module(ejabberd_odbc_sup).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
-%% API
 -export([start_link/1, init/1, add_pid/2, remove_pid/2,
-	 get_pids/1, get_random_pid/1, transform_options/1]).
+	 get_pids/1, get_random_pid/1, transform_options/1,
+	 opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -205,3 +207,16 @@ read_lines(Fd, File, Acc) ->
             ?ERROR_MSG("Failed read from lite.sql, reason: ~p", [Err]),
             []
     end.
+
+opt_type(odbc_pool_size) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(odbc_start_interval) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(odbc_type) ->
+    fun (mysql) -> mysql;
+	(pgsql) -> pgsql;
+	(sqlite) -> sqlite;
+	(odbc) -> odbc
+    end;
+opt_type(_) ->
+    [odbc_pool_size, odbc_start_interval, odbc_type].

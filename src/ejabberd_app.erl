@@ -24,11 +24,14 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_app).
+
+-behaviour(ejabberd_config).
 -author('alexey@process-one.net').
 
 -behaviour(application).
 
--export([start_modules/0,start/2, prep_stop/1, stop/1, init/0]).
+-export([start_modules/0, start/2, prep_stop/1, stop/1,
+	 init/0, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -51,7 +54,7 @@ start(normal, _Args) ->
     ejabberd_admin:start(),
     gen_mod:start(),
     ejabberd_config:start(),
-    set_loglevel_from_config(),
+    set_settings_from_config(),
     acl:start(),
     shaper:start(),
     connect_nodes(),
@@ -59,13 +62,13 @@ start(normal, _Args) ->
     ejabberd_rdbms:start(),
     ejabberd_riak_sup:start(),
     ejabberd_sm:start(),
-    ejabberd_auth:start(),
     cyrsasl:start(),
     % Profiling
     %ejabberd_debug:eprof_start(),
     %ejabberd_debug:fprof_start(),
     maybe_add_nameservers(),
     ext_mod:start(),
+    ejabberd_auth:start(),
     start_modules(),
     ejabberd_listener:start_listeners(),
     ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
@@ -231,12 +234,17 @@ delete_pid_file() ->
 	    file:delete(PidFilename)
     end.
 
-set_loglevel_from_config() ->
+set_settings_from_config() ->
     Level = ejabberd_config:get_option(
               loglevel,
               fun(P) when P>=0, P=<5 -> P end,
               4),
-    ejabberd_logger:set(Level).
+    ejabberd_logger:set(Level),
+    Ticktime = ejabberd_config:get_option(
+                 net_ticktime,
+                 opt_type(net_ticktime),
+                 60),
+    net_kernel:set_net_ticktime(Ticktime).
 
 start_apps() ->
     crypto:start(),
@@ -248,3 +256,18 @@ start_apps() ->
     ejabberd:start_app(p1_stringprep),
     ejabberd:start_app(p1_zlib),
     ejabberd:start_app(p1_cache_tab).
+
+opt_type(net_ticktime) ->
+    fun (P) when is_integer(P), P > 0 -> P end;
+opt_type(cluster_nodes) ->
+    fun (Ns) -> true = lists:all(fun is_atom/1, Ns), Ns end;
+opt_type(loglevel) ->
+    fun (P) when P >= 0, P =< 5 -> P end;
+opt_type(modules) ->
+    fun (Mods) ->
+	    lists:map(fun ({M, A}) when is_atom(M), is_list(A) ->
+			      {M, A}
+		      end,
+		      Mods)
+    end;
+opt_type(_) -> [cluster_nodes, loglevel, modules, net_ticktime].

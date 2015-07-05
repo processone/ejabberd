@@ -29,16 +29,17 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, item_to_xml/1, export/1, import/1,
-	 webadmin_menu/3, webadmin_page/3, get_user_roster/2,
-	 get_subscription_lists/3, get_jid_info/4, import/3,
-	 process_item/2, in_subscription/6, out_subscription/4,
-	 user_available/1, unset_presence/4, register_user/2,
-	 remove_user/2, list_groups/1, create_group/2,
-	 create_group/3, delete_group/2, get_group_opts/2,
-	 set_group_opts/3, get_group_users/2,
-	 get_group_explicit_users/2, is_user_in_group/3,
-	 add_user_to_group/3, remove_user_from_group/3]).
+-export([start/2, stop/1, item_to_xml/1, export/1,
+	 import/1, webadmin_menu/3, webadmin_page/3,
+	 get_user_roster/2, get_subscription_lists/3,
+	 get_jid_info/4, import/3, process_item/2,
+	 in_subscription/6, out_subscription/4, user_available/1,
+	 unset_presence/4, register_user/2, remove_user/2,
+	 list_groups/1, create_group/2, create_group/3,
+	 delete_group/2, get_group_opts/2, set_group_opts/3,
+	 get_group_users/2, get_group_explicit_users/2,
+	 is_user_in_group/3, add_user_to_group/3,
+	 remove_user_from_group/3, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -984,11 +985,11 @@ push_user_to_displayed(LUser, LServer, Group, Host, Subscription, DisplayedToGro
     GroupName = proplists:get_value(name, GroupOpts, Group),
     [push_user_to_group(LUser, LServer, GroupD, Host,
 			GroupName, Subscription)
-     || {GroupD, _Opts} <- DisplayedToGroupsOpts].
+     || GroupD <- DisplayedToGroupsOpts].
 
 broadcast_user_to_displayed(LUser, LServer, Host, Subscription, DisplayedToGroupsOpts) ->
     [broadcast_user_to_group(LUser, LServer, GroupD, Host, Subscription)
-	|| {GroupD, _Opts} <- DisplayedToGroupsOpts].
+	|| GroupD <- DisplayedToGroupsOpts].
 
 push_user_to_group(LUser, LServer, Group, Host,
 		   GroupName, Subscription) ->
@@ -1011,12 +1012,13 @@ broadcast_user_to_group(LUser, LServer, Group, Host, Subscription) ->
 %% Get list of groups to which this group is displayed
 displayed_to_groups(GroupName, LServer) ->
     GroupsOpts = groups_with_opts(LServer),
-    lists:filter(fun ({_Group, Opts}) ->
+    Gs = lists:filter(fun ({_Group, Opts}) ->
 			 lists:member(GroupName,
 				      proplists:get_value(displayed_groups,
 							  Opts, []))
 		 end,
-		 GroupsOpts).
+		 GroupsOpts),
+    [Name || {Name, _} <- Gs].
 
 push_item(User, Server, Item) ->
     Stanza = jlib:iq_to_xml(#iq{type = set,
@@ -1506,3 +1508,6 @@ import(_LServer, riak, #sr_user{us = US, group_host = {Group, Host}} = User) ->
                                {<<"group_host">>, {Group, Host}}]}]);
 import(_, _, _) ->
     pass.
+
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(_) -> [db_type].

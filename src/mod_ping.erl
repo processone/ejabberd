@@ -27,6 +27,8 @@
 
 -author('bjc@kublai.com').
 
+-protocol({xep, 199, '2.0'}).
+
 -behavior(gen_mod).
 
 -behavior(gen_server).
@@ -54,9 +56,8 @@
 -export([init/1, terminate/2, handle_call/3,
 	 handle_cast/2, handle_info/2, code_change/3]).
 
-%% Hook callbacks
 -export([iq_ping/3, user_online/3, user_offline/3,
-	 user_send/3]).
+	 user_send/4, mod_opt_type/1]).
 
 -record(state,
 	{host = <<"">>,
@@ -213,8 +214,9 @@ user_online(_SID, JID, _Info) ->
 user_offline(_SID, JID, _Info) ->
     stop_ping(JID#jid.lserver, JID).
 
-user_send(JID, _From, _Packet) ->
-    start_ping(JID#jid.lserver, JID).
+user_send(Packet, _C2SState, JID, _From) ->
+    start_ping(JID#jid.lserver, JID),
+    Packet.
 
 %%====================================================================
 %% Internal functions
@@ -244,3 +246,15 @@ cancel_timer(TRef) ->
 	  receive {timeout, TRef, _} -> ok after 0 -> ok end;
       _ -> ok
     end.
+
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(ping_interval) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(send_pings) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(timeout_action) ->
+    fun (none) -> none;
+	(kill) -> kill
+    end;
+mod_opt_type(_) ->
+    [iqdisc, ping_interval, send_pings, timeout_action].

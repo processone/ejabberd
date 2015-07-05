@@ -25,8 +25,11 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_stun).
 
-%% API
--export([tcp_init/2, udp_init/2, udp_recv/5, start/2, socket_type/0]).
+-protocol({rfc, 5766}).
+-protocol({xep, 176, '1.0'}).
+
+-export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
+	 socket_type/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").

@@ -25,6 +25,8 @@
 
 -module(ejabberd_router).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
@@ -43,9 +45,8 @@
 
 -export([start_link/0]).
 
-%% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3]).
+	 handle_info/2, terminate/2, code_change/3, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -406,3 +407,7 @@ update_tables() ->
       false -> ok
     end.
 
+
+opt_type(domain_balancing_component_number) ->
+    fun (N) when is_integer(N), N > 1 -> N end;
+opt_type(_) -> [domain_balancing_component_number].

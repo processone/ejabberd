@@ -25,10 +25,13 @@
 
 -module(shaper).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
--export([start/0, new/1, new1/1, update/2, get_max_rate/1,
-         transform_options/1, load_from_config/0]).
+-export([start/0, new/1, new1/1, update/2,
+	 get_max_rate/1, transform_options/1, load_from_config/0,
+	 opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -140,3 +143,6 @@ transform_options(Opt, Opts) ->
 
 now_to_usec({MSec, Sec, USec}) ->
     (MSec * 1000000 + Sec) * 1000000 + USec.
+
+opt_type(shaper) -> fun (V) -> V end;
+opt_type(_) -> [shaper].

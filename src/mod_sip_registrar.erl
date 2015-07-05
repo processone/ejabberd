@@ -490,15 +490,18 @@ need_ob_hdrs(Contacts, _IsOutboundSupported = true) ->
       end, Contacts).
 
 get_flow_timeout(LServer, #sip_socket{type = Type}) ->
-    {Option, Default} =
-	case Type of
-	    udp -> {flow_timeout_udp, ?FLOW_TIMEOUT_UDP};
-	    _ -> {flow_timeout_tcp, ?FLOW_TIMEOUT_TCP}
-	end,
-    gen_mod:get_module_opt(
-      LServer, mod_sip, Option,
-      fun(I) when is_integer(I), I>0 -> I end,
-      Default).
+    case Type of
+	udp ->
+	    gen_mod:get_module_opt(
+	      LServer, mod_sip, flow_timeout_udp,
+	      fun(I) when is_integer(I), I>0 -> I end,
+	      ?FLOW_TIMEOUT_UDP);
+	_ ->
+	    gen_mod:get_module_opt(
+	      LServer, mod_sip, flow_timeout_tcp,
+	      fun(I) when is_integer(I), I>0 -> I end,
+	      ?FLOW_TIMEOUT_TCP)
+    end.
 
 update_table() ->
     Fields = record_info(fields, sip_session),

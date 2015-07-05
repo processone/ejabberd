@@ -50,16 +50,14 @@
 -include("logger.hrl").
 -include("jlib.hrl").
 
--type sockmod() :: ejabberd_http_poll |
-                   ejabberd_http_bind |
+-type sockmod() :: ejabberd_http_bind |
                    ejabberd_http_ws |
                    gen_tcp | p1_tls | ezlib.
 -type receiver() :: pid () | atom().
 -type socket() :: pid() | inet:socket() |
                   p1_tls:tls_socket() |
                   ezlib:zlib_socket() |
-                  ejabberd_http_bind:bind_socket() |
-                  ejabberd_http_poll:poll_socket().
+                  ejabberd_http_bind:bind_socket().
 
 -record(socket_state, {sockmod = gen_tcp :: sockmod(),
                        socket = self() :: socket(),
@@ -192,7 +190,7 @@ send(SocketData, Data) ->
 
 %% Can only be called when in c2s StateData#state.xml_socket is true
 %% This function is used for HTTP bind
-%% sockmod=ejabberd_http_poll|ejabberd_http_bind or any custom module
+%% sockmod=ejabberd_http_ws|ejabberd_http_bind or any custom module
 -spec send_xml(socket_state(), xmlel()) -> any().
 
 send_xml(SocketData, Data) ->

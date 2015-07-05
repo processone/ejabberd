@@ -270,3 +270,27 @@ CREATE TABLE caps_features (
 );
 
 CREATE INDEX i_caps_features_node_subnode ON caps_features (node, subnode);
+
+CREATE TABLE archive (
+    username text NOT NULL,
+    timestamp BIGINT UNSIGNED NOT NULL,
+    peer text NOT NULL,
+    bare_peer text NOT NULL,
+    xml text NOT NULL,
+    txt text,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX i_username ON archive(username);
+CREATE INDEX i_timestamp ON archive(timestamp);
+CREATE INDEX i_peer ON archive(peer);
+CREATE INDEX i_bare_peer ON archive(bare_peer);
+
+CREATE TABLE archive_prefs (
+    username text NOT NULL PRIMARY KEY,
+    def text NOT NULL,
+    always text NOT NULL,
+    never text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

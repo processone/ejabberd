@@ -29,7 +29,8 @@
 
 -include("logger.hrl").
 
--export([export/2, export/3, import_file/2, import/2, import/3]).
+-export([export/2, export/3, import_file/2, import/2,
+	 import/3]).
 
 -define(MAX_RECORDS_PER_TRANSACTION, 100).
 
@@ -54,7 +55,7 @@ modules() ->
      mod_offline,
      mod_privacy,
      mod_private,
-     mod_pubsub,
+     %% mod_pubsub,
      mod_roster,
      mod_shared_roster,
      mod_vcard,

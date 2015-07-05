@@ -27,13 +27,15 @@
 
 -author('henoch@dtek.chalmers.se').
 
+-protocol({xep, 50, '1.2'}).
+
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_local_iq/3,
 	 process_sm_iq/3, get_local_commands/5,
 	 get_local_identity/5, get_local_features/5,
 	 get_sm_commands/5, get_sm_identity/5, get_sm_features/5,
-	 ping_item/4, ping_command/4]).
+	 ping_item/4, ping_command/4, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -278,3 +280,8 @@ ping_command(_Acc, _From, _To,
        true -> {error, ?ERR_BAD_REQUEST}
     end;
 ping_command(Acc, _From, _To, _Request) -> Acc.
+
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(report_commands_node) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(_) -> [iqdisc, report_commands_node].

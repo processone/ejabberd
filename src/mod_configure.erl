@@ -23,12 +23,11 @@
 %%%
 %%%----------------------------------------------------------------------
 
-%%% Implements most of XEP-0133: Service Administration Version 1.1
-%%% (2005-08-19)
-
 -module(mod_configure).
 
 -author('alexey@process-one.net').
+
+-protocol({xep, 133, '1.1'}).
 
 -behaviour(gen_mod).
 
@@ -36,7 +35,7 @@
 	 get_local_features/5, get_local_items/5,
 	 adhoc_local_items/4, adhoc_local_commands/4,
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
-	 adhoc_sm_items/4, adhoc_sm_commands/4]).
+	 adhoc_sm_items/4, adhoc_sm_commands/4, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -2023,14 +2022,14 @@ stop_node(From, Host, ENode, Action, XData) ->
 				       #xmlel{name = <<"x">>,
 					      attrs =
 						  [{<<"xmlns">>,
-						    <<"jabber:x:data">>},
+						    ?NS_XDATA},
 						   {<<"type">>, <<"submit">>}],
 					      children = SubEls},
 				   others =
 				       [#xmlel{name = <<"x">>,
 					       attrs =
 						   [{<<"xmlns">>,
-						     <<"jabber:x:data">>},
+						     ?NS_XDATA},
 						    {<<"type">>, <<"submit">>}],
 					       children = SubEls}]},
 	  To = jlib:make_jid(<<"">>, Host, <<"">>),
@@ -2149,3 +2148,5 @@ set_sm_form(User, Server, <<"config">>,
     end;
 set_sm_form(_User, _Server, _Node, _Request, _Fields) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
+
+mod_opt_type(_) -> [].

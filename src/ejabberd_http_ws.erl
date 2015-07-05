@@ -24,16 +24,17 @@
 %%%----------------------------------------------------------------------
 -module(ejabberd_http_ws).
 
+-behaviour(ejabberd_config).
+
 -author('ecestari@process-one.net').
 
 -behaviour(gen_fsm).
 
-% External exports
 -export([start/1, start_link/1, init/1, handle_event/3,
 	 handle_sync_event/4, code_change/4, handle_info/3,
-	 terminate/3, send_xml/2, setopts/2, sockname/1, peername/1,
-	 controlling_process/2, become_controller/2, close/1,
-	 socket_handoff/6]).
+	 terminate/3, send_xml/2, setopts/2, sockname/1,
+	 peername/1, controlling_process/2, become_controller/2,
+	 close/1, socket_handoff/6, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -353,3 +354,10 @@ parsed_items(List) ->
     after 0 ->
             lists:reverse(List)
     end.
+
+opt_type(websocket_ping_interval) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
+opt_type(websocket_timeout) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(_) ->
+    [websocket_ping_interval, websocket_timeout].

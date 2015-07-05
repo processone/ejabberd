@@ -26,6 +26,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_shared_roster_ldap).
 
+-behaviour(ejabberd_config).
+
 -behaviour(gen_server).
 
 -behaviour(gen_mod).
@@ -39,7 +41,7 @@
 
 -export([get_user_roster/2, get_subscription_lists/3,
 	 get_jid_info/4, process_item/2, in_subscription/6,
-	 out_subscription/4]).
+	 out_subscription/4, mod_opt_type/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -521,29 +523,29 @@ parse_options(Host, Opts) ->
                                    (false) -> false;
                                    (true) -> true
                                 end, true),
-    UserCacheValidity = eldap_utils:get_opt(
+    UserCacheValidity = gen_mod:get_opt(
                           {ldap_user_cache_validity, Host}, Opts,
                           fun(I) when is_integer(I), I>0 -> I end,
                           ?USER_CACHE_VALIDITY),
-    GroupCacheValidity = eldap_utils:get_opt(
+    GroupCacheValidity = gen_mod:get_opt(
                            {ldap_group_cache_validity, Host}, Opts,
                            fun(I) when is_integer(I), I>0 -> I end,
                            ?GROUP_CACHE_VALIDITY),
-    UserCacheSize = eldap_utils:get_opt(
+    UserCacheSize = gen_mod:get_opt(
                       {ldap_user_cache_size, Host}, Opts,
                       fun(I) when is_integer(I), I>0 -> I end,
                       ?CACHE_SIZE),
-    GroupCacheSize = eldap_utils:get_opt(
+    GroupCacheSize = gen_mod:get_opt(
                        {ldap_group_cache_size, Host}, Opts,
                        fun(I) when is_integer(I), I>0 -> I end,
                        ?CACHE_SIZE),
-    ConfigFilter = eldap_utils:get_opt({ldap_filter, Host}, Opts,
+    ConfigFilter = gen_mod:get_opt({ldap_filter, Host}, Opts,
                                        fun check_filter/1, <<"">>),
-    ConfigUserFilter = eldap_utils:get_opt({ldap_ufilter, Host}, Opts,
+    ConfigUserFilter = gen_mod:get_opt({ldap_ufilter, Host}, Opts,
                                            fun check_filter/1, <<"">>),
-    ConfigGroupFilter = eldap_utils:get_opt({ldap_gfilter, Host}, Opts,
+    ConfigGroupFilter = gen_mod:get_opt({ldap_gfilter, Host}, Opts,
                                             fun check_filter/1, <<"">>),
-    RosterFilter = eldap_utils:get_opt({ldap_rfilter, Host}, Opts,
+    RosterFilter = gen_mod:get_opt({ldap_rfilter, Host}, Opts,
                                        fun check_filter/1, <<"">>),
     SubFilter = <<"(&(", UIDAttr/binary, "=",
 		  UIDAttrFormat/binary, ")(", GroupAttr/binary, "=%g))">>,
@@ -599,3 +601,99 @@ check_filter(F) ->
     NewF = iolist_to_binary(F),
     {ok, _} = eldap_filter:parse(NewF),
     NewF.
+
+mod_opt_type(deref_aliases) ->
+    fun (never) -> never;
+	(searching) -> searching;
+	(finding) -> finding;
+	(always) -> always
+    end;
+mod_opt_type(ldap_backups) ->
+    fun (L) -> [iolist_to_binary(H) || H <- L] end;
+mod_opt_type(ldap_base) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_deref_aliases) ->
+    fun (never) -> never;
+	(searching) -> searching;
+	(finding) -> finding;
+	(always) -> always
+    end;
+mod_opt_type(ldap_encrypt) ->
+    fun (tls) -> tls;
+	(starttls) -> starttls;
+	(none) -> none
+    end;
+mod_opt_type(ldap_password) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_port) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_servers) ->
+    fun (L) -> [iolist_to_binary(H) || H <- L] end;
+mod_opt_type(ldap_tls_cacertfile) ->
+    fun iolist_to_binary/1;
+mod_opt_type(ldap_tls_certfile) ->
+    fun iolist_to_binary/1;
+mod_opt_type(ldap_tls_depth) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
+mod_opt_type(ldap_tls_verify) ->
+    fun (hard) -> hard;
+	(soft) -> soft;
+	(false) -> false
+    end;
+mod_opt_type(ldap_auth_check) ->
+    fun (on) -> true;
+	(off) -> false;
+	(false) -> false;
+	(true) -> true
+    end;
+mod_opt_type(ldap_filter) -> fun check_filter/1;
+mod_opt_type(ldap_gfilter) -> fun check_filter/1;
+mod_opt_type(ldap_group_cache_size) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(ldap_group_cache_validity) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(ldap_groupattr) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_groupdesc) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_memberattr) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_memberattr_format) ->
+    fun iolist_to_binary/1;
+mod_opt_type(ldap_memberattr_format_re) ->
+    fun (S) ->
+	    Re = iolist_to_binary(S), {ok, MP} = re:compile(Re), MP
+    end;
+mod_opt_type(ldap_rfilter) -> fun check_filter/1;
+mod_opt_type(ldap_ufilter) -> fun check_filter/1;
+mod_opt_type(ldap_user_cache_size) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(ldap_user_cache_validity) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(ldap_userdesc) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_useruid) -> fun iolist_to_binary/1;
+mod_opt_type(_) ->
+    [ldap_auth_check, ldap_filter, ldap_gfilter,
+     ldap_group_cache_size, ldap_group_cache_validity,
+     ldap_groupattr, ldap_groupdesc, ldap_memberattr,
+     ldap_memberattr_format, ldap_memberattr_format_re,
+     ldap_rfilter, ldap_ufilter, ldap_user_cache_size,
+     ldap_user_cache_validity, ldap_userdesc, ldap_useruid,
+     deref_aliases, ldap_backups, ldap_base,
+     ldap_deref_aliases, ldap_encrypt, ldap_password,
+     ldap_port, ldap_rootdn, ldap_servers,
+     ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,
+     ldap_tls_verify].
+
+opt_type(ldap_filter) -> fun check_filter/1;
+opt_type(ldap_gfilter) -> fun check_filter/1;
+opt_type(ldap_group_cache_size) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(ldap_group_cache_validity) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(ldap_rfilter) -> fun check_filter/1;
+opt_type(ldap_ufilter) -> fun check_filter/1;
+opt_type(ldap_user_cache_size) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(ldap_user_cache_validity) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(_) ->
+    [ldap_filter, ldap_gfilter, ldap_group_cache_size,
+     ldap_group_cache_validity, ldap_rfilter, ldap_ufilter,
+     ldap_user_cache_size, ldap_user_cache_validity].

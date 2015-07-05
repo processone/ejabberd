@@ -32,49 +32,31 @@
 
 -include("jlib.hrl").
 
--type(host() :: mod_pubsub:host()
-              | mod_pubsub_odbc:host()
-).
-
--type(nodeId() :: mod_pubsub:nodeId()
-                | mod_pubsub_odbc:nodeId()
-).
-
--type(nodeIdx() :: mod_pubsub:nodeIdx()
-                | mod_pubsub_odbc:nodeIdx()
-).
-
--type(itemId() :: mod_pubsub:itemId()
-                | mod_pubsub_odbc:itemId()
-).
-
--type(pubsubNode() :: mod_pubsub:pubsubNode()
-                    | mod_pubsub_odbc:pubsubNode()
-).
-
--type(nodeOptions() :: mod_pubsub:nodeOptions()
-                     | mod_pubsub_odbc:nodeOptions()
-).
+-type(host() :: mod_pubsub:host()).
+-type(nodeId() :: mod_pubsub:nodeId()).
+-type(nodeIdx() :: mod_pubsub:nodeIdx()).
+-type(pubsubNode() :: mod_pubsub:pubsubNode()).
+-type(nodeOptions() :: mod_pubsub:nodeOptions()).
 
 -callback init(Host :: host(),
-               ServerHost :: binary(),
-               Opts :: [any()]) -> atom().
+	ServerHost :: binary(),
+	Opts :: [any()]) -> atom().
 
 -callback terminate(Host :: host(), ServerHost :: binary()) -> atom().
 
 -callback options() -> nodeOptions().
 
 -callback set_node(PubsubNode :: pubsubNode()) ->
-    ok | {result, NodeIdx::mod_pubsub_odbc:nodeIdx()} | {error, xmlel()}.
+    ok | {result, NodeIdx::nodeIdx()} | {error, xmlel()}.
 
 -callback get_node(Host   :: host(),
-                   NodeId :: nodeId(),
-                   From   :: jid()) ->
+	NodeId :: nodeId(),
+	From   :: jid()) ->
     pubsubNode() |
     {error, xmlel()}.
 
 -callback get_node(Host :: host(),
-                   NodeId :: nodeId()) ->
+	NodeId :: nodeId()) ->
     pubsubNode() |
     {error, xmlel()}.
 
@@ -83,42 +65,43 @@
     {error, xmlel()}.
 
 -callback get_nodes(Host :: host(),
-                   From :: jid())->
+	From :: jid())->
     [pubsubNode()].
 
 -callback get_nodes(Host :: host())->
     [pubsubNode()].
 
 -callback get_parentnodes(Host :: host(),
-                          NodeId :: nodeId(),
-                          From :: jid()) ->
+	NodeId :: nodeId(),
+	From :: jid()) ->
     [pubsubNode()] |
     {error, xmlel()}.
 
 -callback get_parentnodes_tree(Host :: host(),
-                               NodeId :: nodeId(),
-                               From :: jid()) ->
+	NodeId :: nodeId(),
+	From :: jid()) ->
     [{0, [pubsubNode(),...]}].
 
 -callback get_subnodes(Host :: host(),
-                       NodeId :: nodeId(),
-                       From :: ljid()) ->
+	NodeId :: nodeId(),
+	From :: jid()) ->
     [pubsubNode()].
 
 -callback get_subnodes_tree(Host :: host(),
-                            NodeId :: nodeId(),
-                            From :: ljid()) ->
+	NodeId :: nodeId(),
+	From :: jid()) ->
     [pubsubNode()].
 
 -callback create_node(Host :: host(),
-                      NodeId :: nodeId(),
-                      Type :: binary(),
-                      Owner :: jid(),
-                      Options :: nodeOptions(),
-                      Parents :: [nodeId()]) ->
+	NodeId :: nodeId(),
+	Type :: binary(),
+	Owner :: jid(),
+	Options :: nodeOptions(),
+	Parents :: [nodeId()]) ->
     {ok, NodeIdx::nodeIdx()} |
-    {error, xmlel()}.
+    {error, xmlel()} |
+    {error, {virtual, {host(), nodeId()}}}.
 
 -callback delete_node(Host :: host(),
-                      NodeId :: nodeId()) ->
+	NodeId :: nodeId()) ->
     [pubsubNode()].

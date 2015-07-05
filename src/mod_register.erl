@@ -25,14 +25,19 @@
 
 -module(mod_register).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
+
+-protocol({xep, 77, '2.4'}).
 
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, stream_feature_register/2,
 	 unauthenticated_iq_register/4, try_register/5,
 	 process_iq/3, send_registration_notifications/3,
-         transform_options/1, transform_module_options/1]).
+	 transform_options/1, transform_module_options/1,
+	 mod_opt_type/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -68,10 +73,15 @@ stop(Host) ->
 				     ?NS_REGISTER).
 
 stream_feature_register(Acc, _Host) ->
-    [#xmlel{name = <<"register">>,
-	    attrs = [{<<"xmlns">>, ?NS_FEATURE_IQREGISTER}],
-	    children = []}
-     | Acc].
+    case lists:keymember(<<"mechanisms">>, 2, Acc) of
+	true ->
+	    [#xmlel{name = <<"register">>,
+		    attrs = [{<<"xmlns">>, ?NS_FEATURE_IQREGISTER}],
+		    children = []}
+	     | Acc];
+	false ->
+	    Acc
+    end.
 
 unauthenticated_iq_register(_Acc, Server,
 			    #iq{xmlns = ?NS_REGISTER} = IQ, IP) ->
@@ -275,7 +285,7 @@ process_iq(From, To,
 				 [#xmlel{name = <<"query">>,
 					 attrs =
 					     [{<<"xmlns">>,
-					       <<"jabber:iq:register">>}],
+					       ?NS_REGISTER}],
 					 children =
 					     [TopInstrEl | CaptchaEls]}]};
 		   {error, limit} ->
@@ -297,7 +307,7 @@ process_iq(From, To,
 			   [#xmlel{name = <<"query">>,
 				   attrs =
 				       [{<<"xmlns">>,
-					 <<"jabber:iq:register">>}],
+					 ?NS_REGISTER}],
 				   children =
 				       [#xmlel{name = <<"instructions">>,
 					       attrs = [],
@@ -680,3 +690,37 @@ check_ip_access(undefined, _IPAccess) ->
     deny;
 check_ip_access(IPAddress, IPAccess) ->
     acl:match_rule(global, IPAccess, IPAddress).
+
+mod_opt_type(access) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(access_from) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(captcha_protected) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(ip_access) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(password_strength) ->
+    fun (N) when is_number(N), N >= 0 -> N end;
+mod_opt_type(registration_watchers) ->
+    fun (Ss) ->
+	    [#jid{} = jlib:string_to_jid(iolist_to_binary(S))
+	     || S <- Ss]
+    end;
+mod_opt_type(welcome_message) ->
+    fun (Opts) ->
+	    S = proplists:get_value(subject, Opts, <<>>),
+	    B = proplists:get_value(body, Opts, <<>>),
+	    {iolist_to_binary(S), iolist_to_binary(B)}
+    end;
+mod_opt_type(_) ->
+    [access, access_from, captcha_protected, ip_access,
+     iqdisc, password_strength, registration_watchers,
+     welcome_message].
+
+opt_type(registration_timeout) ->
+    fun (TO) when is_integer(TO), TO > 0 -> TO;
+	(infinity) -> infinity;
+	(unlimited) -> infinity
+    end;
+opt_type(_) -> [registration_timeout].

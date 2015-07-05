@@ -37,7 +37,6 @@
 	 wait_for_request/2, wait_for_activation/2,
 	 stream_established/2]).
 
-%% API.
 -export([start/2, stop/1, start_link/3, activate/2,
 	 relay/3, socket_type/0]).
 

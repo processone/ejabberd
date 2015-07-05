@@ -26,6 +26,7 @@
 %%%----------------------------------------------------------------------
 -module (mod_carboncopy).
 -author ('ecestari@process-one.net').
+-protocol({xep, 280, '0.8'}).
 
 -behavior(gen_mod).
 
@@ -33,13 +34,9 @@
 -export([start/2,
          stop/1]).
 
-%% Hooks:
--export([user_send_packet/3,
-	 user_receive_packet/4,
-         iq_handler2/3,
-         iq_handler1/3,
-         remove_connection/4,
-         is_carbon_copy/1]).
+-export([user_send_packet/4, user_receive_packet/5,
+	 iq_handler2/3, iq_handler1/3, remove_connection/4,
+	 is_carbon_copy/1, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -127,10 +124,10 @@ iq_handler(From, _To,  #iq{type=set, sub_el = #xmlel{name = Operation, children 
 iq_handler(_From, _To, IQ, _CC)->
     IQ#iq{type=error, sub_el = [?ERR_NOT_ALLOWED]}.
 
-user_send_packet(From, To, Packet) ->
+user_send_packet(Packet, _C2SState, From, To) ->
     check_and_forward(From, To, Packet, sent).
 
-user_receive_packet(JID, _From, To, Packet) ->
+user_receive_packet(Packet, _C2SState, JID, _From, To) ->
     check_and_forward(JID, To, Packet, received).
     
 % verifier si le trafic est local
@@ -145,14 +142,15 @@ check_and_forward(JID, To, Packet, Direction)->
 	true ->
 	    case is_carbon_copy(Packet) of
 		false ->
-		    send_copies(JID, To, Packet, Direction);
+		    send_copies(JID, To, Packet, Direction),
+		    Packet;
 		true ->
 		    %% stop the hook chain, we don't want mod_logdb to register
 		    %% this message (duplicate)
-		    stop
+		    {stop, Packet}
 	    end;
         _ ->
-	    ok
+	    Packet
     end.
 
 remove_connection(User, Server, Resource, _Status)->
@@ -287,3 +285,6 @@ is_chat_or_normal_message(_Packet) -> false.
 list(User, Server)->
 	mnesia:dirty_select(?TABLE, [{#carboncopy{us = {User, Server}, resource = '$2', version = '$3'}, [], [{{'$2','$3'}}]}]).
 
+
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(_) -> [iqdisc].

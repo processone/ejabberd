@@ -85,6 +85,29 @@ CREATE TABLE spool (
 
 CREATE INDEX i_despool ON spool USING btree (username);
 
+CREATE TABLE archive (
+    username text NOT NULL,
+    timestamp BIGINT NOT NULL,
+    peer text NOT NULL,
+    bare_peer text NOT NULL,
+    xml text NOT NULL,
+    txt text,
+    id SERIAL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX i_username ON archive USING btree (username);
+CREATE INDEX i_timestamp ON archive USING btree (timestamp);
+CREATE INDEX i_peer ON archive USING btree (peer);
+CREATE INDEX i_bare_peer ON archive USING btree (bare_peer);
+
+CREATE TABLE archive_prefs (
+    username text NOT NULL PRIMARY KEY,
+    def text NOT NULL,
+    always text NOT NULL,
+    never text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
 
 CREATE TABLE vcard (
     username text PRIMARY KEY,
@@ -288,3 +311,17 @@ CREATE TABLE caps_features (
 );
 
 CREATE INDEX i_caps_features_node_subnode ON caps_features USING btree (node, subnode);
+
+CREATE TABLE sm (
+    usec bigint NOT NULL,
+    pid text NOT NULL,
+    node text NOT NULL,
+    username text NOT NULL,
+    resource text NOT NULL,
+    priority text NOT NULL,
+    info text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_sm_sid ON sm USING btree (usec, pid);
+CREATE INDEX i_sm_node ON sm USING btree (node);
+CREATE INDEX i_sm_username ON sm USING btree (username);

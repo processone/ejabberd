@@ -80,7 +80,6 @@
 
 -export([get_status/1]).
 
-%% gen_fsm callbacks
 -export([init/1, connecting/2, connecting/3,
 	 wait_bind_response/3, active/3, active_bind/3,
 	 handle_event/3, handle_sync_event/4, handle_info/3,
@@ -507,16 +506,14 @@ present(Attribute) ->
 -type substr() :: [{initial | any | final, binary()}].
 -type 'SubstringFilter'() ::
         #'SubstringFilter'{type :: binary(),
-                           substrings :: {'SubstringFilter_substrings',
-                                          substr()}}.
+                           substrings :: substr()}.
 
 -type substrings() :: {substrings, 'SubstringFilter'()}.
 -spec substrings(binary(), substr()) -> substrings().
 
 substrings(Type, SubStr) ->
-    Ss = {'SubstringFilter_substrings', SubStr},
     {substrings,
-     #'SubstringFilter'{type = Type, substrings = Ss}}.
+     #'SubstringFilter'{type = Type, substrings = SubStr}}.
 
 -type match_opts() :: [{matchingRule | type, binary()} |
                        {dnAttributes, boolean()}].

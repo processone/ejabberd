@@ -24,20 +24,14 @@
 %%%----------------------------------------------------------------------
 
 -module(eldap_utils).
+
+-behaviour(ejabberd_config).
 -author('mremond@process-one.net').
 
--export([generate_subfilter/1,
-	 find_ldap_attrs/2,
-	 get_ldap_attr/2,
-	 get_user_part/2,
-	 make_filter/2,
-	 get_state/2,
-	 case_insensitive_match/2,
-         get_opt/3,
-         get_opt/4,
-         get_config/2,
-         decode_octet_string/3,
-	 uids_domain_subst/2]).
+-export([generate_subfilter/1, find_ldap_attrs/2,
+	 get_ldap_attr/2, get_user_part/2, make_filter/2,
+	 get_state/2, case_insensitive_match/2, get_config/2,
+	 decode_octet_string/3, uids_domain_subst/2, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -171,64 +165,48 @@ uids_domain_subst(Host, UIDs) ->
               end,
               UIDs).
 
--spec get_opt({atom(), binary()}, list(), fun()) -> any().
-
-get_opt({Key, Host}, Opts, F) ->
-    get_opt({Key, Host}, Opts, F, undefined).
-
--spec get_opt({atom(), binary()}, list(), fun(), any()) -> any().
-
-get_opt({Key, Host}, Opts, F, Default) ->
-    case gen_mod:get_opt(Key, Opts, F, undefined) of
-        undefined ->
-            ejabberd_config:get_option(
-              {Key, Host}, F, Default);
-        Val ->
-            Val
-    end.
-
 -spec get_config(binary(), list()) -> eldap_config().
 
 get_config(Host, Opts) ->
-    Servers = get_opt({ldap_servers, Host}, Opts,
+    Servers = gen_mod:get_opt({ldap_servers, Host}, Opts,
                       fun(L) ->
                               [iolist_to_binary(H) || H <- L]
                       end, [<<"localhost">>]),
-    Backups = get_opt({ldap_backups, Host}, Opts,
+    Backups = gen_mod:get_opt({ldap_backups, Host}, Opts,
                       fun(L) ->
                               [iolist_to_binary(H) || H <- L]
                       end, []),
-    Encrypt = get_opt({ldap_encrypt, Host}, Opts,
+    Encrypt = gen_mod:get_opt({ldap_encrypt, Host}, Opts,
                       fun(tls) -> tls;
                          (starttls) -> starttls;
                          (none) -> none
                       end, none),
-    TLSVerify = get_opt({ldap_tls_verify, Host}, Opts,
+    TLSVerify = gen_mod:get_opt({ldap_tls_verify, Host}, Opts,
                         fun(hard) -> hard;
                            (soft) -> soft;
                            (false) -> false
                         end, false),
-    TLSCAFile = get_opt({ldap_tls_cacertfile, Host}, Opts,
+    TLSCAFile = gen_mod:get_opt({ldap_tls_cacertfile, Host}, Opts,
                         fun iolist_to_binary/1),
-    TLSDepth = get_opt({ldap_tls_depth, Host}, Opts,
+    TLSDepth = gen_mod:get_opt({ldap_tls_depth, Host}, Opts,
                        fun(I) when is_integer(I), I>=0 -> I end),
-    Port = get_opt({ldap_port, Host}, Opts,
+    Port = gen_mod:get_opt({ldap_port, Host}, Opts,
                    fun(I) when is_integer(I), I>0 -> I end,
                    case Encrypt of
                        tls -> ?LDAPS_PORT;
                        starttls -> ?LDAP_PORT;
                        _ -> ?LDAP_PORT
                    end),
-    RootDN = get_opt({ldap_rootdn, Host}, Opts,
+    RootDN = gen_mod:get_opt({ldap_rootdn, Host}, Opts,
                      fun iolist_to_binary/1,
                      <<"">>),
-    Password = get_opt({ldap_password, Host}, Opts,
+    Password = gen_mod:get_opt({ldap_password, Host}, Opts,
                  fun iolist_to_binary/1,
                  <<"">>),
-    Base = get_opt({ldap_base, Host}, Opts,
+    Base = gen_mod:get_opt({ldap_base, Host}, Opts,
                    fun iolist_to_binary/1,
                    <<"">>),
-    OldDerefAliases = get_opt({deref_aliases, Host}, Opts,
+    OldDerefAliases = gen_mod:get_opt({deref_aliases, Host}, Opts,
                               fun(never) -> never;
                                  (searching) -> searching;
                                  (finding) -> finding;
@@ -236,7 +214,7 @@ get_config(Host, Opts) ->
                               end, unspecified),
     DerefAliases =
         if OldDerefAliases == unspecified ->
-                get_opt({ldap_deref_aliases, Host}, Opts,
+                gen_mod:get_opt({ldap_deref_aliases, Host}, Opts,
                         fun(never) -> never;
                            (searching) -> searching;
                            (finding) -> finding;
@@ -367,3 +345,43 @@ collect_parts_bit([{?N_BIT_STRING,<<Unused,Bits/binary>>}|Rest],Acc,Uacc) ->
     collect_parts_bit(Rest,[Bits|Acc],Unused+Uacc);
 collect_parts_bit([],Acc,Uacc) ->
     list_to_binary([Uacc|lists:reverse(Acc)]).
+
+opt_type(deref_aliases) ->
+    fun (never) -> never;
+	(searching) -> searching;
+	(finding) -> finding;
+	(always) -> always
+    end;
+opt_type(ldap_backups) ->
+    fun (L) -> [iolist_to_binary(H) || H <- L] end;
+opt_type(ldap_base) -> fun iolist_to_binary/1;
+opt_type(ldap_deref_aliases) ->
+    fun (never) -> never;
+	(searching) -> searching;
+	(finding) -> finding;
+	(always) -> always
+    end;
+opt_type(ldap_encrypt) ->
+    fun (tls) -> tls;
+	(starttls) -> starttls;
+	(none) -> none
+    end;
+opt_type(ldap_password) -> fun iolist_to_binary/1;
+opt_type(ldap_port) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
+opt_type(ldap_servers) ->
+    fun (L) -> [iolist_to_binary(H) || H <- L] end;
+opt_type(ldap_tls_cacertfile) -> fun iolist_to_binary/1;
+opt_type(ldap_tls_depth) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
+opt_type(ldap_tls_verify) ->
+    fun (hard) -> hard;
+	(soft) -> soft;
+	(false) -> false
+    end;
+opt_type(_) ->
+    [deref_aliases, ldap_backups, ldap_base,
+     ldap_deref_aliases, ldap_encrypt, ldap_password,
+     ldap_port, ldap_rootdn, ldap_servers,
+     ldap_tls_cacertfile, ldap_tls_depth, ldap_tls_verify].

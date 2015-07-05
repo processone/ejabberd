@@ -27,7 +27,8 @@
 
 -behavior(gen_mod).
 
--export([start/2, stop/1, check_packet/6]).
+-export([start/2, stop/1, check_packet/6,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -119,3 +120,9 @@ update(Server, JID, Dir) ->
 read(K) -> get({pres_counter, K}).
 
 write(K, V) -> put({pres_counter, K}, V).
+
+mod_opt_type(count) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(interval) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(_) -> [count, interval].

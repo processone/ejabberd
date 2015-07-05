@@ -25,6 +25,8 @@
 
 -module(ejabberd_odbc).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -define(GEN_FSM, p1_fsm).
@@ -51,9 +53,9 @@
 	 handle_info/3, terminate/3, print_state/1,
 	 code_change/4]).
 
-%% gen_fsm states
 -export([connecting/2, connecting/3,
-	 session_established/2, session_established/3]).
+	 session_established/2, session_established/3,
+	 opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -193,7 +195,8 @@ to_bool(_) -> false.
 
 encode_term(Term) ->
     escape(list_to_binary(
-             erl_prettypr:format(erl_syntax:abstract(Term)))).
+             erl_prettypr:format(erl_syntax:abstract(Term),
+                                 [{paper, 65535}, {ribbon, 65535}]))).
 
 decode_term(Bin) ->
     Str = binary_to_list(<<Bin/binary, ".">>),
@@ -509,7 +512,8 @@ abort_on_driver_error(Reply, From) ->
 %% Open an ODBC database connection
 odbc_connect(SQLServer) ->
     ejabberd:start_app(odbc),
-    odbc:connect(binary_to_list(SQLServer), [{scrollable_cursors, off}]).
+    odbc:connect(binary_to_list(SQLServer), [{scrollable_cursors, off},
+                                             {binary_strings, on}]).
 
 %% == Native SQLite code
 
@@ -634,7 +638,7 @@ mysql_item_to_odbc(Columns, Recs) ->
     {selected, [element(2, Column) || Column <- Columns], Recs}.
 
 to_odbc({selected, Columns, Recs}) ->
-    {selected, Columns, [tuple_to_list(Rec) || Rec <- Recs]};
+    {selected, [list_to_binary(Column) || Column <- Columns], [tuple_to_list(Rec) || Rec <- Recs]};
 to_odbc(Res) ->
     Res.
 
@@ -690,3 +694,24 @@ fsm_limit_opts() ->
       N when is_integer(N) -> [{max_queue, N}];
       _ -> []
     end.
+
+opt_type(max_fsm_queue) ->
+    fun (N) when is_integer(N), N > 0 -> N end;
+opt_type(odbc_database) -> fun iolist_to_binary/1;
+opt_type(odbc_keepalive_interval) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(odbc_password) -> fun iolist_to_binary/1;
+opt_type(odbc_port) ->
+    fun (P) when is_integer(P), P > 0, P < 65536 -> P end;
+opt_type(odbc_server) -> fun iolist_to_binary/1;
+opt_type(odbc_type) ->
+    fun (mysql) -> mysql;
+	(pgsql) -> pgsql;
+	(sqlite) -> sqlite;
+	(odbc) -> odbc
+    end;
+opt_type(odbc_username) -> fun iolist_to_binary/1;
+opt_type(_) ->
+    [max_fsm_queue, odbc_database, odbc_keepalive_interval,
+     odbc_password, odbc_port, odbc_server, odbc_type,
+     odbc_username].

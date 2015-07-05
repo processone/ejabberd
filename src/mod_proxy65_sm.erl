@@ -33,7 +33,6 @@
 -export([init/1, handle_info/2, handle_call/3,
 	 handle_cast/2, terminate/2, code_change/3]).
 
-%% API.
 -export([start_link/2, register_stream/1,
 	 unregister_stream/1, activate_stream/4]).
 

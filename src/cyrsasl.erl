@@ -25,10 +25,13 @@
 
 -module(cyrsasl).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -export([start/0, register_mechanism/3, listmech/1,
-	 server_new/7, server_start/3, server_step/2]).
+	 server_new/7, server_start/3, server_step/2,
+	 opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -237,3 +240,10 @@ is_disabled(Mechanism) ->
 			 [str:to_upper(V)]
 		 end, []),
     lists:member(Mechanism, Disabled).
+
+opt_type(disable_sasl_mechanisms) ->
+    fun (V) when is_list(V) ->
+	    lists:map(fun (M) -> str:to_upper(M) end, V);
+	(V) -> [str:to_upper(V)]
+    end;
+opt_type(_) -> [disable_sasl_mechanisms].

@@ -44,14 +44,13 @@
 
 
 -module(ejabberd_ctl).
+
+-behaviour(ejabberd_config).
 -author('alexey@process-one.net').
 
--export([start/0,
-	 init/0,
-	 process/1,
-	 process2/2,
-	 register_commands/3,
-	 unregister_commands/3]).
+-export([start/0, init/0, process/1, process2/2,
+	 register_commands/3, unregister_commands/3,
+	 opt_type/1]).
 
 -include("ejabberd_ctl.hrl").
 -include("ejabberd_commands.hrl").
@@ -352,6 +351,15 @@ format_result(String, {_Name, string}) when is_list(String) ->
 
 format_result(Binary, {_Name, string}) when is_binary(Binary) ->
     io_lib:format("~s", [binary_to_list(Binary)]);
+
+format_result(Atom, {_Name, string}) when is_atom(Atom) ->
+    io_lib:format("~s", [atom_to_list(Atom)]);
+
+format_result(Integer, {_Name, string}) when is_integer(Integer) ->
+    io_lib:format("~s", [integer_to_list(Integer)]);
+
+format_result(Other, {_Name, string})  ->
+    io_lib:format("~p", [Other]);
 
 format_result(Code, {_Name, rescode}) ->
     make_status(Code);
@@ -792,3 +800,7 @@ print(Format, Args) ->
 %%format_usage_xmlrpc(ArgsDef, ResultDef) ->
 %%    ["aaaa bbb ccc"].
 
+
+opt_type(ejabberdctl_access_commands) ->
+    fun (V) when is_list(V) -> V end;
+opt_type(_) -> [ejabberdctl_access_commands].

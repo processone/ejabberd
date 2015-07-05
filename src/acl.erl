@@ -25,11 +25,14 @@
 
 -module(acl).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -export([start/0, to_record/3, add/3, add_list/3,
-         add_local/3, add_list_local/3, load_from_config/0,
-	 match_rule/3, match_acl/3, transform_options/1]).
+	 add_local/3, add_list_local/3, load_from_config/0,
+	 match_rule/3, match_acl/3, transform_options/1,
+	 opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -476,3 +479,7 @@ transform_options({access, Name, Rules}, Opts) ->
     [{access, [{Name, NewRules}]}|Opts];
 transform_options(Opt, Opts) ->
     [Opt|Opts].
+
+opt_type(access) -> fun (V) -> V end;
+opt_type(acl) -> fun (V) -> V end;
+opt_type(_) -> [access, acl].

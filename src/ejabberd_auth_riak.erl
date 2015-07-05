@@ -124,7 +124,10 @@ set_password(User, Server, Password) ->
 try_register(User, Server, PasswordList) ->
     LUser = jlib:nodeprep(User),
     LServer = jlib:nameprep(Server),
-    Password = iolist_to_binary(PasswordList),
+    Password = if is_list(PasswordList); is_binary(PasswordList) ->
+      iolist_to_binary(PasswordList);
+      true -> PasswordList
+    end,
     US = {LUser, LServer},
     if (LUser == error) or (LServer == error) ->
 	   {error, invalid_jid};

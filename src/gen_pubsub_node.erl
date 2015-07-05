@@ -32,191 +32,146 @@
 
 -include("jlib.hrl").
 
--type(host() :: mod_pubsub:host()
-              | mod_pubsub_odbc:host()
-).
-
--type(nodeId() :: mod_pubsub:nodeId()
-                | mod_pubsub_odbc:nodeId()
-).
-
--type(nodeIdx() :: mod_pubsub:nodeIdx()
-                | mod_pubsub_odbc:nodeIdx()
-).
-
--type(itemId() :: mod_pubsub:itemId()
-                | mod_pubsub_odbc:itemId()
-).
-
--type(pubsubNode() :: mod_pubsub:pubsubNode()
-                    | mod_pubsub_odbc:pubsubNode()
-).
-
--type(pubsubState() :: mod_pubsub:pubsubState()
-                     | mod_pubsub_odbc:pubsubState()
-).
-
--type(pubsubItem() :: mod_pubsub:pubsubItem()
-                    | mod_pubsub_odbc:pubsubItem()
-).
-
--type(nodeOptions() :: mod_pubsub:nodeOptions()
-                     | mod_pubsub_odbc:nodeOptions()
-).
-
--type(subOptions() :: mod_pubsub:subOptions()
-                    | mod_pubsub_odbc:subOptions()
-).
-
--type(affiliation() :: mod_pubsub:affiliation()
-                     | mod_pubsub_odbc:affiliation()
-).
-
--type(subscription() :: mod_pubsub:subscription()
-                      | mod_pubsub_odbc:subscription()
-).
-
--type(subId() :: mod_pubsub:subId()
-               | mod_pubsub_odbc:subId()
-).
-
--type(accessModel() :: mod_pubsub:accessModel()
-                     | mod_pubsub_odbc:accessModel()
-).
-
--type(publishModel() :: mod_pubsub:publishModel()
-                     | mod_pubsub_odbc:publishModel()
-).
-
--type(payload() :: mod_pubsub:payload()
-                 | mod_pubsub_odbc:payload()
-).
+-type(host() :: mod_pubsub:host()).
+-type(nodeId() :: mod_pubsub:nodeId()).
+-type(nodeIdx() :: mod_pubsub:nodeIdx()).
+-type(itemId() :: mod_pubsub:itemId()).
+-type(pubsubNode() :: mod_pubsub:pubsubNode()).
+-type(pubsubState() :: mod_pubsub:pubsubState()).
+-type(pubsubItem() :: mod_pubsub:pubsubItem()).
+-type(subOptions() :: mod_pubsub:subOptions()).
+-type(affiliation() :: mod_pubsub:affiliation()).
+-type(subscription() :: mod_pubsub:subscription()).
+-type(subId() :: mod_pubsub:subId()).
+-type(accessModel() :: mod_pubsub:accessModel()).
+-type(publishModel() :: mod_pubsub:publishModel()).
+-type(payload() :: mod_pubsub:payload()).
 
 -callback init(Host :: binary(),
-               ServerHost :: binary(),
-               Opts :: [any()]) -> atom().
+	ServerHost :: binary(),
+	Opts :: [any()]) -> atom().
 
 -callback terminate(Host :: host(),
-                    ServerHost :: binary()) -> atom().
+	ServerHost :: binary()) -> atom().
 
 -callback options() -> [{atom(), any()}].
 
 -callback features() -> [binary()].
 
 -callback create_node_permission(Host :: host(),
-                                 ServerHost :: binary(),
-                                 Node :: nodeId(),
-                                 ParentNode :: nodeId(),
-                                 Owner :: jid(), Access :: atom()) ->
+	ServerHost :: binary(),
+	Node :: nodeId(),
+	ParentNode :: nodeId(),
+	Owner :: jid(), Access :: atom()) ->
     {result, boolean()}.
 
 -callback create_node(NodeIdx :: nodeIdx(),
-                      Owner   :: jid()) ->
+	Owner   :: jid()) ->
     {result, {default, broadcast}}.
 
 -callback delete_node(Nodes :: [pubsubNode(),...]) ->
     {result,
-     {default, broadcast,
-      [{pubsubNode(),
-        [{ljid(), [{subscription(), subId()}]},...]},...]
-     }
-    }
+	{default, broadcast,
+	    [{pubsubNode(),
+		    [{ljid(), [{subscription(), subId()}]},...]},...]
+	    }
+	}
     |
     {result,
-     {[],
-      [{pubsubNode(),
-        [{ljid(), [{subscription(), subId()}]},...]},...]
-     }
-    }.
+	{[],
+	    [{pubsubNode(),
+		    [{ljid(), [{subscription(), subId()}]},...]},...]
+	    }
+	}.
 
 -callback purge_node(NodeIdx :: nodeIdx(),
-                     Owner :: jid()) ->
+	Owner :: jid()) ->
     {result, {default, broadcast}} |
     {error, xmlel()}.
 
 -callback subscribe_node(NodeIdx :: nodeIdx(),
-                         Sender :: jid(),
-                         Subscriber :: ljid(),
-                         AccessModel :: accessModel(),
-                         SendLast :: 'never' | 'on_sub' | 'on_sub_and_presence',
-                         PresenceSubscription :: boolean(),
-                         RosterGroup :: boolean(),
-                         Options :: subOptions()) ->
+	Sender :: jid(),
+	Subscriber :: jid(),
+	AccessModel :: accessModel(),
+	SendLast :: 'never' | 'on_sub' | 'on_sub_and_presence',
+	PresenceSubscription :: boolean(),
+	RosterGroup :: boolean(),
+	Options :: subOptions()) ->
     {result, {default, subscribed, subId()}} |
     {result, {default, subscribed, subId(), send_last}} |
     {result, {default, pending, subId()}} |
     {error, xmlel()}.
 
 -callback unsubscribe_node(NodeIdx :: nodeIdx(),
-                           Sender :: jid(),
-                           Subscriber :: ljid(),
-                           SubId :: subId()) ->
+	Sender :: jid(),
+	Subscriber :: jid(),
+	SubId :: subId()) ->
     {result, default} |
     {error, xmlel()}.
 
 -callback publish_item(NodeId :: nodeIdx(),
-                       Publisher :: jid(),
-                       PublishModel :: publishModel(),
-                       Max_Items :: non_neg_integer(),
-                       ItemId :: <<>> | itemId(),
-                       Payload :: payload()) ->
+	Publisher :: jid(),
+	PublishModel :: publishModel(),
+	Max_Items :: non_neg_integer(),
+	ItemId :: <<>> | itemId(),
+	Payload :: payload()) ->
     {result, {default, broadcast, [itemId()]}} |
     {error, xmlel()}.
 
 -callback delete_item(NodeIdx :: nodeIdx(),
-                      Publisher :: jid(),
-                      PublishModel :: publishModel(),
-                      ItemId :: <<>> | itemId()) ->
+	Publisher :: jid(),
+	PublishModel :: publishModel(),
+	ItemId :: <<>> | itemId()) ->
     {result, {default, broadcast}} |
     {error, xmlel()}.
 
 -callback remove_extra_items(NodeIdx :: nodeIdx(),
-                             Max_Items :: unlimited | non_neg_integer(),
-                             ItemIds :: [itemId()]) ->
+	Max_Items :: unlimited | non_neg_integer(),
+	ItemIds :: [itemId()]) ->
     {result, {[itemId()], [itemId()]}
-    }.
+	}.
 
 -callback get_node_affiliations(NodeIdx :: nodeIdx()) ->
     {result, [{ljid(), affiliation()}]}.
 
 -callback get_entity_affiliations(Host :: host(),
-                                  Owner :: jid()) ->
+	Owner :: jid()) ->
     {result, [{pubsubNode(), affiliation()}]}.
 
 -callback get_affiliation(NodeIdx :: nodeIdx(),
-                          Owner :: jid()) ->
+	Owner :: jid()) ->
     {result, affiliation()}.
 
 -callback set_affiliation(NodeIdx :: nodeIdx(),
-                          Owner :: ljid(),
-                          Affiliation :: affiliation()) ->
+	Owner :: jid(),
+	Affiliation :: affiliation()) ->
     ok |
     {error, xmlel()}.
 
 -callback get_node_subscriptions(NodeIdx :: nodeIdx()) ->
     {result,
-     [{ljid(), subscription(), subId()}] |
-     [{ljid(), none},...]
-    }.
+	[{ljid(), subscription(), subId()}] |
+	[{ljid(), none},...]
+	}.
 
 -callback get_entity_subscriptions(Host :: host(),
-                                   Owner :: jid()) ->
+	Key :: jid()) ->
     {result, [{pubsubNode(), subscription(), subId(), ljid()}]
-    }.
+	}.
 
 -callback get_subscriptions(NodeIdx :: nodeIdx(),
-                            Owner :: ljid()) ->
+	Owner :: jid()) ->
     {result, [{subscription(), subId()}]}.
 
 -callback get_pending_nodes(Host :: host(),
-                            Owner :: jid()) ->
+	Owner :: jid()) ->
     {result, [nodeId()]}.
 
 -callback get_states(NodeIdx::nodeIdx()) ->
     {result, [pubsubState()]}.
 
 -callback get_state(NodeIdx :: nodeIdx(),
-                    JID :: ljid()) ->
+	Key :: ljid()) ->
     pubsubState().
 
 -callback set_state(State::pubsubState()) ->
@@ -224,30 +179,32 @@
     {error, xmlel()}.
 
 -callback get_items(NodeIdx :: nodeIdx(),
-                    JID :: jid(),
-                    AccessModel :: accessModel(),
-                    Presence_Subscription :: boolean(),
-                    RosterGroup :: boolean(),
-                    SubId :: subId()) ->
-    {result, [pubsubItem()]} |
+	JID :: jid(),
+	AccessModel :: accessModel(),
+	Presence_Subscription :: boolean(),
+	RosterGroup :: boolean(),
+	SubId :: subId(),
+	RSM :: none | rsm_in()) ->
+    {result, {[pubsubItem()], none | rsm_out()}} |
     {error, xmlel()}.
 
 -callback get_items(NodeIdx :: nodeIdx(),
-                    From :: jid()) ->
-    {result, [pubsubItem()]}.
+	From :: jid(),
+	RSM :: none | rsm_in()) ->
+    {result, {[pubsubItem()], none | rsm_out()}}.
 
 -callback get_item(NodeIdx :: nodeIdx(),
-                   ItemId :: itemId(),
-                   JID :: jid(),
-                   AccessModel :: accessModel(),
-                   PresenceSubscription :: boolean(),
-                   RosterGroup :: boolean(),
-                   SubId :: subId()) ->
+	ItemId :: itemId(),
+	JID :: jid(),
+	AccessModel :: accessModel(),
+	PresenceSubscription :: boolean(),
+	RosterGroup :: boolean(),
+	SubId :: subId()) ->
     {result, pubsubItem()} |
     {error, xmlel()}.
 
 -callback get_item(NodeIdx :: nodeIdx(),
-                   ItemId :: itemId()) ->
+	ItemId :: itemId()) ->
     {result, pubsubItem()} |
     {error, xmlel()}.
 
@@ -256,8 +213,8 @@
 %   | {error, _}.
 
 -callback get_item_name(Host :: host(),
-                        ServerHost :: binary(),
-                        Node :: nodeId()) ->
+	ServerHost :: binary(),
+	Node :: nodeId()) ->
     itemId().
 
 -callback node_to_path(Node :: nodeId()) ->

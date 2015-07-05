@@ -28,12 +28,12 @@
 
 -author('alexey@process-one.net').
 
+-protocol({xep, 202, '2.0'}).
+
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq90/3,
-	 process_local_iq/3]).
-
-                               % TODO: Remove once XEP-0090 is Obsolete
+-export([start/2, stop/1, process_local_iq/3,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -44,33 +44,11 @@ start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_TIME90, ?MODULE, process_local_iq90,
-				  IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 				  ?NS_TIME, ?MODULE, process_local_iq, IQDisc).
 
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
-				     ?NS_TIME90),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_TIME).
-
-%% TODO: Remove this function once XEP-0090 is Obsolete
-process_local_iq90(_From, _To,
-		   #iq{type = Type, sub_el = SubEl} = IQ) ->
-    case Type of
-      set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
-      get ->
-	  UTC = jlib:timestamp_to_iso(calendar:universal_time()),
-	  IQ#iq{type = result,
-		sub_el =
-		    [#xmlel{name = <<"query">>,
-			    attrs = [{<<"xmlns">>, ?NS_TIME90}],
-			    children =
-				[#xmlel{name = <<"utc">>, attrs = [],
-					children = [{xmlcdata, UTC}]}]}]}
-    end.
 
 process_local_iq(_From, _To,
 		 #iq{type = Type, sub_el = SubEl} = IQ) ->
@@ -107,3 +85,6 @@ process_local_iq(_From, _To,
 
 sign(N) when N < 0 -> <<"-">>;
 sign(_) -> <<"+">>.
+
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(_) -> [iqdisc].

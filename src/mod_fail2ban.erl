@@ -31,9 +31,9 @@
 %% API
 -export([start_link/2, start/2, stop/1, c2s_auth_result/4, check_bl_c2s/3]).
 
-%% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+-export([init/1, handle_call/3, handle_cast/2,
+	 handle_info/2, terminate/2, code_change/3,
+	 mod_opt_type/1]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("ejabberd.hrl").
@@ -53,20 +53,25 @@ start_link(Host, Opts) ->
     gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
 c2s_auth_result(false, _User, LServer, {Addr, _Port}) ->
-    BanLifetime = gen_mod:get_module_opt(
-		    LServer, ?MODULE, c2s_auth_ban_lifetime,
-		    fun(T) when is_integer(T), T > 0 -> T end,
-		    ?C2S_AUTH_BAN_LIFETIME),
-    MaxFailures = gen_mod:get_module_opt(
-		    LServer, ?MODULE, c2s_max_auth_failures,
-		    fun(I) when is_integer(I), I > 0 -> I end,
-		    ?C2S_MAX_AUTH_FAILURES),
-    UnbanTS = unban_timestamp(BanLifetime),
-    case ets:lookup(failed_auth, Addr) of
-	[{Addr, N, _, _}] ->
-	    ets:insert(failed_auth, {Addr, N+1, UnbanTS, MaxFailures});
-	[] ->
-	    ets:insert(failed_auth, {Addr, 1, UnbanTS, MaxFailures})
+    case is_whitelisted(LServer, Addr) of
+	true ->
+	    ok;
+	false ->
+	    BanLifetime = gen_mod:get_module_opt(
+			    LServer, ?MODULE, c2s_auth_ban_lifetime,
+			    fun(T) when is_integer(T), T > 0 -> T end,
+			    ?C2S_AUTH_BAN_LIFETIME),
+	    MaxFailures = gen_mod:get_module_opt(
+			    LServer, ?MODULE, c2s_max_auth_failures,
+			    fun(I) when is_integer(I), I > 0 -> I end,
+			    ?C2S_MAX_AUTH_FAILURES),
+	    UnbanTS = unban_timestamp(BanLifetime),
+	    case ets:lookup(failed_auth, Addr) of
+		[{Addr, N, _, _}] ->
+		    ets:insert(failed_auth, {Addr, N+1, UnbanTS, MaxFailures});
+		[] ->
+		    ets:insert(failed_auth, {Addr, 1, UnbanTS, MaxFailures})
+	    end
     end;
 c2s_auth_result(true, _User, _Server, _AddrPort) ->
     ok.
@@ -160,6 +165,12 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+is_whitelisted(Host, Addr) ->
+    Access = gen_mod:get_module_opt(Host, ?MODULE, access,
+				    fun(A) when is_atom(A) -> A end,
+				    none),
+    acl:match_rule(Host, Access, Addr) == allow.
+
 unban_timestamp(BanLifetime) ->
     {MegaSecs, MSecs, USecs} = now(),
     UnbanSecs = MegaSecs * 1000000 + MSecs + BanLifetime,
@@ -176,3 +187,12 @@ is_loaded_at_other_hosts(Host) ->
 format_date({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     io_lib:format("~2..0w:~2..0w:~2..0w ~2..0w.~2..0w.~4..0w",
 		  [Hour, Minute, Second, Day, Month, Year]).
+
+mod_opt_type(access) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(c2s_auth_ban_lifetime) ->
+    fun (T) when is_integer(T), T > 0 -> T end;
+mod_opt_type(c2s_max_auth_failures) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(_) ->
+    [access, c2s_auth_ban_lifetime, c2s_max_auth_failures].

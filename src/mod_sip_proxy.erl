@@ -25,16 +25,18 @@
 %%%-------------------------------------------------------------------
 -module(mod_sip_proxy).
 
+-behaviour(ejabberd_config).
+
 -define(GEN_FSM, p1_fsm).
 -behaviour(?GEN_FSM).
 
 %% API
 -export([start/2, start_link/2, route/3, route/4]).
 
-%% gen_fsm callbacks
--export([init/1, wait_for_request/2, wait_for_response/2,
-	 handle_event/3, handle_sync_event/4,
-	 handle_info/3, terminate/3, code_change/4]).
+-export([init/1, wait_for_request/2,
+	 wait_for_response/2, handle_event/3,
+	 handle_sync_event/4, handle_info/3, terminate/3,
+	 code_change/4, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -456,3 +458,7 @@ safe_nameprep(S) ->
 	error -> S;
 	S1 -> S1
     end.
+
+opt_type(domain_certfile) -> fun iolist_to_binary/1;
+opt_type(shared_key) -> fun (V) -> V end;
+opt_type(_) -> [domain_certfile, shared_key].

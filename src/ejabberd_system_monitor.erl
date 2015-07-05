@@ -25,6 +25,8 @@
 
 -module(ejabberd_system_monitor).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
@@ -33,9 +35,8 @@
 -export([start_link/0, process_command/3,
 	 process_remote_command/1]).
 
-%% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3]).
+	 handle_info/2, terminate/2, code_change/3, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -331,3 +332,12 @@ process_remote_command([setlh, NewValue]) ->
     io_lib:format("Result of set large heap: ~p --> ~p",
 		  [OldLH, NewLH]);
 process_remote_command(_) -> throw(unknown_command).
+
+opt_type(watchdog_admins) ->
+    fun (JIDs) ->
+	    [jlib:jid_tolower(jlib:string_to_jid(iolist_to_binary(S)))
+	     || S <- JIDs]
+    end;
+opt_type(watchdog_large_heap) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(_) -> [watchdog_admins, watchdog_large_heap].

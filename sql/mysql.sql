@@ -85,6 +85,31 @@ CREATE TABLE spool (
 CREATE INDEX i_despool USING BTREE ON spool(username);
 CREATE INDEX i_spool_created_at USING BTREE ON spool(created_at);
 
+CREATE TABLE archive (
+    username varchar(250) NOT NULL,
+    timestamp BIGINT UNSIGNED NOT NULL,
+    peer varchar(250) NOT NULL,
+    bare_peer varchar(250) NOT NULL,
+    xml text NOT NULL,
+    txt text,
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8;
+
+CREATE FULLTEXT INDEX i_text ON archive(txt);
+CREATE INDEX i_username USING BTREE ON archive(username);
+CREATE INDEX i_timestamp USING BTREE ON archive(timestamp);
+CREATE INDEX i_peer USING BTREE ON archive(peer);
+CREATE INDEX i_bare_peer USING BTREE ON archive(bare_peer);
+
+CREATE TABLE archive_prefs (
+    username varchar(250) NOT NULL PRIMARY KEY,
+    def text NOT NULL,
+    always text NOT NULL,
+    never text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8;
+
 CREATE TABLE vcard (
     username varchar(250) PRIMARY KEY,
     vcard mediumtext NOT NULL,

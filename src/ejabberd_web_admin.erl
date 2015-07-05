@@ -27,12 +27,13 @@
 
 -module(ejabberd_web_admin).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
-%% External exports
 -export([process/2, list_users/4,
 	 list_users_in_diapason/4, pretty_print_xml/1,
-	 term_to_id/1]).
+	 term_to_id/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -202,7 +203,7 @@ process([<<"server">>, SHost | RPath] = Path,
 	    {unauthorized, Error} ->
 		{BadUser, _BadPass} = Auth,
 		{IPT, _Port} = Request#request.ip,
-		IPS = jlib:ip_to_list(IPT),
+		IPS = ejabberd_config:may_hide_data(jlib:ip_to_list(IPT)),
 		?WARNING_MSG("Access of ~p from ~p failed with error: ~p",
 			     [BadUser, IPS, Error]),
 		{401,
@@ -234,7 +235,7 @@ process(RPath,
       {unauthorized, Error} ->
 	  {BadUser, _BadPass} = Auth,
 	  {IPT, _Port} = Request#request.ip,
-	  IPS = jlib:ip_to_list(IPT),
+	  IPS = ejabberd_config:may_hide_data(jlib:ip_to_list(IPT)),
 	  ?WARNING_MSG("Access of ~p from ~p failed with error: ~p",
 		       [BadUser, IPS, Error]),
 	  {401,
@@ -1549,9 +1550,7 @@ user_info(User, Server, Query, Lang) ->
                                                           c2s_compressed_tls ->
                                                               <<"tls+zlib">>;
                                                           http_bind ->
-                                                              <<"http-bind">>;
-                                                          http_poll ->
-                                                              <<"http-poll">>
+                                                              <<"http-bind">>
                                                       end,
                                               <<" (", ConnS/binary,
                                                 "://",
@@ -2880,3 +2879,5 @@ make_menu_item(item, 3, URI, Name, Lang) ->
 
 %%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:
 
+opt_type(access) -> fun (V) -> V end;
+opt_type(_) -> [access].

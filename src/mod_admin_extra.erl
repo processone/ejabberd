@@ -30,75 +30,31 @@
 
 -include("logger.hrl").
 
--export([start/2, stop/1,
-	 %% Node
-	 compile/1,
-	 load_config/1,
-	 get_cookie/0,
-	 remove_node/1,
-	 export2odbc/2,
-	 %% Accounts
-	 set_password/3,
-	 check_password_hash/4,
-	 delete_old_users/1,
-	 delete_old_users_vhost/2,
-	 ban_account/3,
-	 num_active_users/2,
-	 %% Sessions
-	 num_resources/2,
-	 resource_num/3,
-	 kick_session/4,
-	 status_num/2, status_num/1,
-	 status_list/2, status_list/1,
-	 connected_users_info/0,
-	 connected_users_vhost/1,
-	 set_presence/7,
-	 user_sessions_info/2,
-	 %% Vcard
-	 set_nickname/3,
-	 get_vcard/3,
-	 get_vcard/4,
-	 get_vcard_multi/4,
-	 set_vcard/4,
-	 set_vcard/5,
-	 %% Roster
-	 add_rosteritem/7,
-	 delete_rosteritem/4,
-	 process_rosteritems/5,
-	 get_roster/2,
-	 push_roster/3,
-	 push_roster_all/1,
-	 push_alltoall/2,
-	 %% mod_last
-	 get_last/2,
-	 set_last/4,
-	 %% mod_private
-	 private_get/4,
-	 private_set/3,
-	 %% mod_shared_roster
-	 srg_create/5,
-	 srg_delete/2,
-	 srg_list/1,
-	 srg_get_info/2,
-	 srg_get_members/2,
-	 srg_user_add/4,
-	 srg_user_del/4,
-	 %% Stanza
-	 send_message/5,
-	 send_stanza_c2s/4,
-	 privacy_set/3,
-	 %% Stats
-	 stats/1, stats/2
-	]).
+-export([start/2, stop/1, compile/1, get_cookie/0,
+	 remove_node/1, set_password/3,
+	 check_password_hash/4, delete_old_users/1,
+	 delete_old_users_vhost/2, ban_account/3,
+	 num_active_users/2, num_resources/2, resource_num/3,
+	 kick_session/4, status_num/2, status_num/1,
+	 status_list/2, status_list/1, connected_users_info/0,
+	 connected_users_vhost/1, set_presence/7,
+	 user_sessions_info/2, set_nickname/3, get_vcard/3,
+	 get_vcard/4, get_vcard_multi/4, set_vcard/4,
+	 set_vcard/5, add_rosteritem/7, delete_rosteritem/4,
+	 process_rosteritems/5, get_roster/2, push_roster/3,
+	 push_roster_all/1, push_alltoall/2, get_last/2,
+	 private_get/4, private_set/3, srg_create/5,
+	 srg_delete/2, srg_list/1, srg_get_info/2,
+	 srg_get_members/2, srg_user_add/4, srg_user_del/4,
+	 send_message/5, send_stanza_c2s/4, privacy_set/3,
+	 stats/1, stats/2, mod_opt_type/1]).
+
 
 -include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
 -include("mod_roster.hrl").
+-include("ejabberd_sm.hrl").
 -include("jlib.hrl").
-
-%% Copied from ejabberd_sm.erl
--record(session, {sid, usr, us, priority, info}).
-
 
 %%%
 %%% gen_mod
@@ -146,11 +102,6 @@ commands() ->
 			module = ?MODULE, function = compile,
 			args = [{file, string}],
 			result = {res, rescode}},
-     #ejabberd_commands{name = load_config, tags = [server],
-			desc = "Load ejabberd configuration file",
-			module = ?MODULE, function = load_config,
-			args = [{file, string}],
-			result = {res, rescode}},
      #ejabberd_commands{name = get_cookie, tags = [erlang],
 			desc = "Get the Erlang cookie of this node",
 			module = ?MODULE, function = get_cookie,
@@ -160,11 +111,6 @@ commands() ->
 			desc = "Remove an ejabberd node from Mnesia clustering config",
 			module = ?MODULE, function = remove_node,
 			args = [{node, string}],
-			result = {res, rescode}},
-     #ejabberd_commands{name = export2odbc, tags = [mnesia], %% Copied to ejabberd 2.1.x after 11
-			desc = "Export Mnesia tables to files in directory",
-			module = ?MODULE, function = export2odbc,
-			args = [{host, string}, {path, string}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = num_active_users, tags = [accounts, stats],
@@ -197,7 +143,7 @@ commands() ->
 			desc = "Check if the password hash is correct",
 			longdesc = "Allowed hash methods: md5, sha.",
 			module = ?MODULE, function = check_password_hash,
-			args = [{user, binary}, {host, binary}, {passwordhash, binary}, {hashmethod, binary}],
+			args = [{user, binary}, {host, binary}, {passwordhash, string}, {hashmethod, string}],
 			result = {res, rescode}},
      #ejabberd_commands{name = change_password, tags = [accounts],
 			desc = "Change the password of an account",
@@ -282,7 +228,7 @@ commands() ->
                        tags = [session],
                        desc = "Get the list of established sessions in a vhost",
                        module = ?MODULE, function = connected_users_vhost,
-                       args = [{host, string}],
+                       args = [{host, binary}],
                        result = {connected_users_vhost, {list, {sessions, string}}}},
      #ejabberd_commands{name = user_sessions_info,
 			tags = [session],
@@ -427,21 +373,21 @@ commands() ->
      #ejabberd_commands{name = push_roster, tags = [roster],
 			desc = "Push template roster from file to a user",
 			module = ?MODULE, function = push_roster,
-			args = [{file, string}, {user, string}, {host, string}],
+			args = [{file, binary}, {user, binary}, {host, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = push_roster_all, tags = [roster],
 			desc = "Push template roster from file to all those users",
 			module = ?MODULE, function = push_roster_all,
-			args = [{file, string}],
+			args = [{file, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = push_alltoall, tags = [roster],
 			desc = "Add all the users to all the users of Host in Group",
 			module = ?MODULE, function = push_alltoall,
-			args = [{host, string}, {group, string}],
+			args = [{host, binary}, {group, binary}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = get_last, tags = [last],
-			desc = "Get last activity information",
+			desc = "Get last activity information (timestamp and status)",
 			longdesc = "Timestamp is the seconds since"
 			"1970-01-01 00:00:00 UTC, for example: date +%s",
 			module = ?MODULE, function = get_last,
@@ -451,8 +397,8 @@ commands() ->
 			desc = "Set last activity information",
 			longdesc = "Timestamp is the seconds since"
 			"1970-01-01 00:00:00 UTC, for example: date +%s",
-			module = ?MODULE, function = set_last,
-			args = [{user, string}, {host, string}, {timestamp, integer}, {status, string}],
+			module = mod_last, function = store_last_info,
+			args = [{user, binary}, {host, binary}, {timestamp, integer}, {status, binary}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = private_get, tags = [private],
@@ -547,34 +493,12 @@ commands() ->
 compile(File) ->
     compile:file(File).
 
-load_config(Path) ->
-    ok = ejabberd_config:load_file(Path).
-
 get_cookie() ->
     atom_to_list(erlang:get_cookie()).
 
 remove_node(Node) ->
     mnesia:del_table_copy(schema, list_to_atom(Node)),
     ok.
-
-export2odbc(Host, Directory) ->
-    Tables = [
-	      {export_last, last},
-	      {export_offline, offline},
-	      {export_passwd, passwd},
-	      {export_private_storage, private_storage},
-	      {export_roster, roster},
-	      {export_vcard, vcard},
-	      {export_vcard_search, vcard_search}],
-    Export = fun({TableFun, Table}) ->
-		     Filename = filename:join([Directory, atom_to_list(Table)++".txt"]),
-		     io:format("Trying to export Mnesia table '~p' on Host '~s' to file '~s'~n", [Table, Host, Filename]),
-		     Res = (catch ejd2odbc:TableFun(Host, Filename)),
-		     io:format("  Result: ~p~n", [Res])
-	     end,
-    lists:foreach(Export, Tables),
-    ok.
-
 
 %%%
 %%% Accounts
@@ -591,12 +515,16 @@ set_password(User, Host, Password) ->
 %% Copied some code from ejabberd_commands.erl
 check_password_hash(User, Host, PasswordHash, HashMethod) ->
     AccountPass = ejabberd_auth:get_password_s(User, Host),
-    AccountPassHash = case HashMethod of
-			  "md5" -> get_md5(AccountPass);
-			  "sha" -> get_sha(AccountPass);
+    AccountPassHash = case {AccountPass, HashMethod} of
+			  {A, _} when is_tuple(A) -> scrammed;
+			  {_, "md5"} -> get_md5(AccountPass);
+			  {_, "sha"} -> get_sha(AccountPass);
 			  _ -> undefined
 		      end,
     case AccountPassHash of
+	scrammed ->
+	    ?ERROR_MSG("Passwords are scrammed, and check_password_hash can not work.", []),
+	    throw(passwords_scrammed_command_cannot_work);
 	undefined -> error;
 	PasswordHash -> ok;
 	_ -> error
@@ -689,7 +617,7 @@ delete_old_users(Days, Users) ->
 		    %% If it isnt
 		    [] ->
 			%% Look for his last_activity
-			case (get_lastactivity_module(LServer)):get_last_info(LUser, LServer) of
+			case mod_last:get_last_info(LUser, LServer) of
 			    %% If it is
 			    %% existent:
 			    {ok, TimeStamp, _Status} ->
@@ -722,13 +650,6 @@ delete_old_users(Days, Users) ->
     %% Apply the function to every user in the list
     Users_removed = lists:filter(F, Users),
     {removed, length(Users_removed), Users_removed}.
-
-get_lastactivity_module(Server) ->
-    case lists:member(mod_last, gen_mod:loaded_modules(Server)) of
-        true -> mod_last;
-        _ -> mod_last_odbc
-    end.
-
 
 %%
 %% Ban account
@@ -1085,7 +1006,7 @@ subscribe(LU, LS, User, Server, Nick, Group, Subscription, _Xattrs) ->
     mod_roster:set_items(
 	LU, LS,
 	{xmlel, <<"query">>,
-            [{<<"xmlns">>, <<"jabber:iq:roster">>}],
+            [{<<"xmlns">>, ?NS_ROSTER}],
             [ItemEl]}).
 
 delete_rosteritem(LocalUser, LocalServer, User, Server) ->
@@ -1102,7 +1023,7 @@ unsubscribe(LU, LS, User, Server) ->
     mod_roster:set_items(
 	LU, LS,
 	{xmlel, <<"query">>,
-            [{<<"xmlns">>, <<"jabber:iq:roster">>}],
+            [{<<"xmlns">>, ?NS_ROSTER}],
             [ItemEl]}).
 
 %% -----------------------------
@@ -1229,13 +1150,12 @@ build_broadcast(U, S, SubsAtom) when is_atom(SubsAtom) ->
 %%%
 
 get_last(User, Server) ->
-    Mod = get_lastactivity_module(Server),
     case ejabberd_sm:get_user_resources(User, Server) of
         [] ->
-            case Mod:get_last_info(User, Server) of
+            case mod_last:get_last_info(User, Server) of
                 not_found ->
                     "Never";
-                {ok, Shift, _Status} ->
+                {ok, Shift, Status} ->
                     TimeStamp = {Shift div 1000000,
                         Shift rem 1000000,
                         0},
@@ -1243,16 +1163,12 @@ get_last(User, Server) ->
                         calendar:now_to_local_time(TimeStamp),
                     lists:flatten(
                         io_lib:format(
-                            "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
-                            [Year, Month, Day, Hour, Minute, Second]))
+                            "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w ~s",
+                            [Year, Month, Day, Hour, Minute, Second, Status]))
             end;
         _ ->
             "Online"
     end.
-
-set_last(User, Server, Timestamp, Status) ->
-    Mod = get_lastactivity_module(Server),
-    Mod:store_last_info(User, Server, Timestamp, Status).
 
 %%%
 %%% Private Storage
@@ -1272,7 +1188,7 @@ private_get(Username, Host, Element, Ns) ->
 	   [{xmlel, Element, [{<<"xmlns">>, Ns}], []}]}},
     ResIq = mod_private:process_sm_iq(From, To, IQ),
     [{xmlel, <<"query">>,
-      [{<<"xmlns">>, <<"jabber:iq:private">>}],
+      [{<<"xmlns">>, ?NS_PRIVATE}],
       [SubEl]}] = ResIq#iq.sub_el,
     binary_to_list(xml:element_to_binary(SubEl)).
 
@@ -1581,3 +1497,6 @@ is_glob_match(String, <<"!", Glob/binary>>) ->
     not is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob));
 is_glob_match(String, Glob) ->
     is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
+
+mod_opt_type(module_resource) -> fun (A) -> A end;
+mod_opt_type(_) -> [module_resource].

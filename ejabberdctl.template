@@ -16,9 +16,6 @@ IEX={{bindir}}/iex
 EPMD={{bindir}}/epmd
 INSTALLUSER={{installuser}}
 
-# Compatibility in ZSH
-#setopt shwordsplit 2>/dev/null
-
 # check the proper system user is used if defined
 if [ "$INSTALLUSER" != "" ] ; then
     EXEC_CMD="false"
@@ -112,6 +109,8 @@ DATETIME=`date "+%Y%m%d-%H%M%S"`
 ERL_CRASH_DUMP=$LOGS_DIR/erl_crash_$DATETIME.dump
 ERL_INETRC=$ETC_DIR/inetrc
 
+# define mnesia options
+MNESIA_OPTS="-mnesia dir \"\\\"$SPOOL_DIR\\\"\" $MNESIA_OPTIONS"
 # define erl parameters
 ERL_OPTIONS=$(echo $ERL_OPTIONS | sed 's/ /\\ /g')
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
@@ -177,7 +176,7 @@ start()
       $NAME $ERLANG_NODE \
       -noinput -detached \
       -pa $EJABBERD_EBIN_PATH \
-      -mnesia dir \"\\\"$SPOOL_DIR\\\"\" \
+      $MNESIA_OPTS \
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
       -s ejabberd \
@@ -218,7 +217,7 @@ live()
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
       -pa $EJABBERD_EBIN_PATH \
-      -mnesia dir \"\\\"$SPOOL_DIR\\\"\" \
+      $MNESIA_OPTS \
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
       -s ejabberd \
@@ -239,14 +238,6 @@ iexlive()
       --erl \"$ERLANG_OPTS\" --erl $ARGS --erl \"$@\""
 }
 
-etop()
-{
-    $EXEC_CMD "$ERL \
-      $NAME debug-${TTY}-${ERLANG_NODE} \
-      -hidden -s etop -s erlang halt -output text -node $ERLANG_NODE"
-}
-
-# TODO: refactor debug warning and livewarning
 debugwarning()
 {
     if [ "$EJABBERD_BYPASS_WARNINGS" != "true" ] ; then
@@ -268,7 +259,7 @@ debugwarning()
         echo "Press return to continue"
         read foo
         echo ""
-    fi    
+    fi
 }
 
 livewarning()
@@ -295,7 +286,26 @@ livewarning()
     fi
 }
 
-# TODO: Make iex command display only if ejabberd Elixir support has been enabled
+etop()
+{
+    TTY=`tty | sed -e  's/.*\///g'`
+    $EXEC_CMD "$ERL \
+      $NAME debug-${TTY}-${ERLANG_NODE} \
+      -hidden -s etop -s erlang halt -output text -node $ERLANG_NODE"
+}
+
+ping()
+{
+    TTY=`tty | sed -e  's/.*\///g'`
+    $EXEC_CMD "$ERL \
+      $NAME ping-${TTY}-${ERLANG_NODE} \
+      -hidden \
+      -pa $EJABBERD_EBIN_PATH \
+      $KERNEL_OPTS $ERLANG_OPTS \
+      -eval 'io:format(\"~p~n\",[net_adm:ping($1)])' \
+      -s erlang halt -output text -noinput"
+}
+
 help()
 {
     echo ""
@@ -326,9 +336,9 @@ ctl()
     # flock that can lock a file descriptor.
     MAXCONNID=100
     CONNLOCKDIR={{localstatedir}}/lock/ejabberdctl
-    FLOCK='/usr/bin/flock'
+    FLOCK=/usr/bin/flock
     if [ ! -x "$FLOCK" ] || [ ! -d "$CONNLOCKDIR" ] ; then
-        JOT='/usr/bin/jot'
+        JOT=/usr/bin/jot
         if [ ! -x "$JOT" ] ; then
             # no flock or jot, simply invoke ctlexec()
             CTL_CONN="ctl-${ERLANG_NODE}"
@@ -395,7 +405,7 @@ ctl()
 ctlexec()
 {
     CONN_NAME=$1; shift
-    COMMAND=$@
+    COMMAND=$(echo $@ | sed 's/;/\\;/g')
     $EXEC_CMD "$ERL \
       $NAME ${CONN_NAME} \
       -noinput \
@@ -408,7 +418,7 @@ ctlexec()
 # stop epmd if there is no other running node
 stop_epmd()
 {
-    $EPMD -names 2>/dev/null | grep -q name || epmd -kill >/dev/null
+    $EPMD -names 2>/dev/null | grep -q name || $EPMD -kill >/dev/null
 }
 
 # make sure node not already running and node name unregistered
@@ -468,6 +478,7 @@ case $ARGS in
     ' iexdebug') iexdebug;;
     ' live') live;;
     ' iexlive') iexlive;;
+    ' ping'*) ping ${ARGS# ping};;
     ' etop') etop;;
     ' started') wait_for_status 0 30 2;; # wait 30x2s before timeout
     ' stopped') wait_for_status 3 15 2 && stop_epmd;; # wait 15x2s before timeout

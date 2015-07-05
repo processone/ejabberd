@@ -43,8 +43,7 @@
 %% request_handlers callbacks
 -export([process/2]).
 
-%% ejabberd_hooks callbacks
--export([reopen_log/1]).
+-export([reopen_log/1, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -448,3 +447,17 @@ ip_to_string(Address) when size(Address) == 4 ->
 ip_to_string(Address) when size(Address) == 8 ->
     Parts = lists:map(fun (Int) -> io_lib:format("~.16B", [Int]) end, tuple_to_list(Address)),
     string:to_lower(lists:flatten(join(Parts, ":"))).
+
+mod_opt_type(accesslog) -> fun iolist_to_binary/1;
+mod_opt_type(content_types) ->
+    fun (L) when is_list(L) -> L end;
+mod_opt_type(custom_headers) ->
+    fun (L) when is_list(L) -> L end;
+mod_opt_type(default_content_type) ->
+    fun iolist_to_binary/1;
+mod_opt_type(directory_indices) ->
+    fun (L) when is_list(L) -> L end;
+mod_opt_type(docroot) -> fun (A) -> A end;
+mod_opt_type(_) ->
+    [accesslog, content_types, custom_headers,
+     default_content_type, directory_indices, docroot].

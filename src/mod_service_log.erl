@@ -29,10 +29,8 @@
 
 -behaviour(gen_mod).
 
--export([start/2,
-	 stop/1,
-	 log_user_send/3,
-	 log_user_receive/4]).
+-export([start/2, stop/1, log_user_send/4,
+	 log_user_receive/5, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -53,11 +51,13 @@ stop(Host) ->
 			  ?MODULE, log_user_receive, 50),
     ok.
 
-log_user_send(From, To, Packet) ->
-    log_packet(From, To, Packet, From#jid.lserver).
+log_user_send(Packet, _C2SState, From, To) ->
+    log_packet(From, To, Packet, From#jid.lserver),
+    Packet.
 
-log_user_receive(_JID, From, To, Packet) ->
-    log_packet(From, To, Packet, To#jid.lserver).
+log_user_receive(Packet, _C2SState, _JID, From, To) ->
+    log_packet(From, To, Packet, To#jid.lserver),
+    Packet.
 
 log_packet(From, To,
 	   #xmlel{name = Name, attrs = Attrs, children = Els},
@@ -95,3 +95,14 @@ log_packet(From, To,
 							   [FixedPacket]})
 		  end,
 		  Loggers).
+
+mod_opt_type(loggers) ->
+    fun (L) ->
+	    lists:map(fun (S) ->
+			      B = iolist_to_binary(S),
+			      N = jlib:nameprep(B),
+			      if N /= error -> N end
+		      end,
+		      L)
+    end;
+mod_opt_type(_) -> [loggers].

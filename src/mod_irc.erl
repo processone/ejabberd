@@ -35,9 +35,9 @@
 -export([start_link/2, start/2, stop/1, export/1, import/1,
 	 import/3, closed_connection/3, get_connection_params/3]).
 
-%% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3]).
+	 handle_info/2, terminate/2, code_change/3,
+	 mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1345,3 +1345,12 @@ import(_LServer, riak, #irc_custom{} = R) ->
     ejabberd_riak:put(R, irc_custom_schema());
 import(_, _, _) ->
     pass.
+
+mod_opt_type(access) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(default_encoding) ->
+    fun iolist_to_binary/1;
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(_) ->
+    [access, db_type, default_encoding, host].

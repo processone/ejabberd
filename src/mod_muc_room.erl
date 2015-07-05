@@ -55,6 +55,8 @@
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
 
+-define(DEFAULT_MAX_USERS_PRESENCE,1000).
+
 %-define(DBGFSM, true).
 
 -ifdef(DBGFSM).
@@ -570,7 +572,10 @@ normal_state({route, From, ToNick,
 				   FromNickJID =
 				       jlib:jid_replace_resource(StateData#state.jid,
 								 FromNick),
-				   [ejabberd_router:route(FromNickJID, ToJID, Packet)
+				   X = #xmlel{name = <<"x">>,
+					      attrs = [{<<"xmlns">>, ?NS_MUC_USER}]},
+				   PrivMsg = xml:append_subtags(Packet, [X]),
+				   [ejabberd_router:route(FromNickJID, ToJID, PrivMsg)
 				    || ToJID <- ToJIDs];
 			       true ->
 				   ErrText =
@@ -1848,37 +1853,12 @@ add_new_user(From, Nick,
 		NewState = add_user_presence(From, Packet,
 					     add_online_user(From, Nick, Role,
 							     StateData)),
-		if not (NewState#state.config)#config.anonymous ->
-		       WPacket = #xmlel{name = <<"message">>,
-					attrs = [{<<"type">>, <<"groupchat">>}],
-					children =
-					    [#xmlel{name = <<"body">>,
-						    attrs = [],
-						    children =
-							[{xmlcdata,
-							  translate:translate(Lang,
-									      <<"This room is not anonymous">>)}]},
-					     #xmlel{name = <<"x">>,
-						    attrs =
-							[{<<"xmlns">>,
-							  ?NS_MUC_USER}],
-						    children =
-							[#xmlel{name =
-								    <<"status">>,
-								attrs =
-								    [{<<"code">>,
-								      <<"100">>}],
-								children =
-								    []}]}]},
-		       ejabberd_router:route(StateData#state.jid, From, WPacket);
-		   true -> ok
-		end,
 		send_existing_presences(From, NewState),
 		send_new_presence(From, NewState),
 		Shift = count_stanza_shift(Nick, Els, NewState),
 		case send_history(From, Shift, NewState) of
 		  true -> ok;
-		  _ -> send_subject(From, Lang, StateData)
+		  _ -> send_subject(From, StateData)
 		end,
 		case NewState#state.just_created of
 		  true -> NewState#state{just_created = false};
@@ -2098,10 +2078,23 @@ extract_history([#xmlel{attrs = Attrs} = El | Els],
 extract_history([_ | Els], Type) ->
     extract_history(Els, Type).
 
+is_room_overcrowded(StateData) ->
+    MaxUsersPresence = gen_mod:get_module_opt(StateData#state.server_host,
+	mod_muc, max_users_presence,
+	fun(MUP) when is_integer(MUP) -> MUP end,
+	?DEFAULT_MAX_USERS_PRESENCE),
+    (?DICT):size(StateData#state.users) > MaxUsersPresence.
+
 send_update_presence(JID, StateData) ->
     send_update_presence(JID, <<"">>, StateData).
 
 send_update_presence(JID, Reason, StateData) ->
+    case is_room_overcrowded(StateData) of
+	true -> ok;
+	false -> send_update_presence1(JID, Reason, StateData)
+    end.
+
+send_update_presence1(JID, Reason, StateData) ->
     LJID = jlib:jid_tolower(JID),
     LJIDs = case LJID of
 	      {U, S, <<"">>} ->
@@ -2127,6 +2120,12 @@ send_new_presence(NJID, StateData) ->
     send_new_presence(NJID, <<"">>, StateData).
 
 send_new_presence(NJID, Reason, StateData) ->
+    case is_room_overcrowded(StateData) of
+	true -> ok;
+	false -> send_new_presence1(NJID, Reason, StateData)
+    end.
+
+send_new_presence1(NJID, Reason, StateData) ->
     #user{nick = Nick} =
 	(?DICT):fetch(jlib:jid_tolower(NJID),
 		      StateData#state.users),
@@ -2213,6 +2212,12 @@ send_new_presence(NJID, Reason, StateData) ->
 		  (?DICT):to_list(StateData#state.users)).
 
 send_existing_presences(ToJID, StateData) ->
+    case is_room_overcrowded(StateData) of
+	true -> ok;
+	false -> send_existing_presences1(ToJID, StateData)
+    end.
+
+send_existing_presences1(ToJID, StateData) ->
     LToJID = jlib:jid_tolower(ToJID),
     {ok, #user{jid = RealToJID, role = Role}} =
 	(?DICT):find(LToJID, StateData#state.users),
@@ -2472,25 +2477,15 @@ send_history(JID, Shift, StateData) ->
 		lists:nthtail(Shift,
 			      lqueue_to_list(StateData#state.history))).
 
-send_subject(JID, Lang, StateData) ->
-    case StateData#state.subject_author of
-      <<"">> -> ok;
-      Nick ->
-	  Subject = StateData#state.subject,
-	  Packet = #xmlel{name = <<"message">>,
-			  attrs = [{<<"type">>, <<"groupchat">>}],
-			  children =
-			      [#xmlel{name = <<"subject">>, attrs = [],
-				      children = [{xmlcdata, Subject}]},
-			       #xmlel{name = <<"body">>, attrs = [],
-				      children =
-					  [{xmlcdata,
-					    <<Nick/binary,
-					      (translate:translate(Lang,
-								   <<" has set the subject to: ">>))/binary,
-					      Subject/binary>>}]}]},
-	  ejabberd_router:route(StateData#state.jid, JID, Packet)
-    end.
+send_subject(_JID, #state{subject_author = <<"">>}) -> ok;
+send_subject(JID, StateData) ->
+    Subject = StateData#state.subject,
+    Packet = #xmlel{name = <<"message">>,
+		    attrs = [{<<"type">>, <<"groupchat">>}],
+		    children =
+			[#xmlel{name = <<"subject">>, attrs = [],
+				children = [{xmlcdata, Subject}]}]},
+    ejabberd_router:route(StateData#state.jid, JID, Packet).
 
 check_subject(Packet) ->
     case xml:get_subtag(Packet, <<"subject">>) of
@@ -3737,6 +3732,7 @@ set_xoption([_ | _Opts], _Config) ->
     {error, ?ERR_BAD_REQUEST}.
 
 change_config(Config, StateData) ->
+    send_config_change_info(Config, StateData),
     NSD = StateData#state{config = Config},
     case {(StateData#state.config)#config.persistent,
 	  Config#config.persistent}
@@ -3756,6 +3752,39 @@ change_config(Config, StateData) ->
 	  NSD1 = remove_nonmembers(NSD), {result, [], NSD1};
       _ -> {result, [], NSD}
     end.
+
+send_config_change_info(Config, #state{config = Config}) -> ok;
+send_config_change_info(New, #state{config = Old} = StateData) ->
+    Codes = case {Old#config.logging, New#config.logging} of
+	      {false, true} -> [<<"170">>];
+	      {true, false} -> [<<"171">>];
+	      _ -> []
+	    end
+	      ++
+	      case {Old#config.anonymous, New#config.anonymous} of
+		{true, false} -> [<<"172">>];
+		{false, true} -> [<<"173">>];
+		_ -> []
+	      end
+		++
+		case Old#config{anonymous = New#config.anonymous,
+				logging = New#config.logging} of
+		  New -> [];
+		  _ -> [<<"104">>]
+		end,
+    StatusEls = [#xmlel{name = <<"status">>,
+			attrs = [{<<"code">>, Code}],
+			children = []} || Code <- Codes],
+    Message = #xmlel{name = <<"message">>,
+		     attrs = [{<<"type">>, <<"groupchat">>},
+			      {<<"id">>, randoms:get_string()}],
+		     children = [#xmlel{name = <<"x">>,
+					attrs = [{<<"xmlns">>, ?NS_MUC_USER}],
+					children = StatusEls}]},
+    send_multiple(StateData#state.jid,
+		  StateData#state.server_host,
+		  StateData#state.users,
+		  Message).
 
 remove_nonmembers(StateData) ->
     lists:foldl(fun ({_LJID, #user{jid = JID}}, SD) ->

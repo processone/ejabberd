@@ -26,7 +26,8 @@ host_config:
         db_type: odbc
       mod_private: 
         db_type: odbc
-      mod_pubsub_odbc: 
+      mod_pubsub: 
+        db_type: odbc
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
@@ -37,6 +38,8 @@ host_config:
       mod_roster:
         versioning: true
         store_current_id: true
+        db_type: odbc
+      mod_mam:
         db_type: odbc
       mod_vcard: 
         db_type: odbc
@@ -76,7 +79,8 @@ Welcome to this XMPP server."
         db_type: odbc
       mod_private: 
         db_type: odbc
-      mod_pubsub_odbc: 
+      mod_pubsub: 
+        db_type: odbc
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
@@ -87,6 +91,8 @@ Welcome to this XMPP server."
       mod_roster:
         versioning: true
         store_current_id: true
+        db_type: odbc
+      mod_mam:
         db_type: odbc
       mod_vcard: 
         db_type: odbc
@@ -132,7 +138,8 @@ Welcome to this XMPP server."
         db_type: odbc
       mod_private: 
         db_type: odbc
-      mod_pubsub_odbc: 
+      mod_pubsub: 
+        db_type: odbc
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
@@ -143,6 +150,8 @@ Welcome to this XMPP server."
       mod_roster: 
         versioning: true
         store_current_id: true
+        db_type: odbc
+      mod_mam:
         db_type: odbc
       mod_vcard: 
         db_type: odbc
@@ -192,6 +201,8 @@ Welcome to this XMPP server."
       mod_roster: 
         versioning: true
         store_current_id: true
+        db_type: internal
+      mod_mam:
         db_type: internal
       mod_vcard: 
         db_type: internal
@@ -340,7 +351,7 @@ listen:
     shaper: c2s_shaper
     access: c2s
   - 
-    port: 5269
+    port: @@s2s_port@@
     module: ejabberd_s2s_in
   - 
     port: @@web_port@@

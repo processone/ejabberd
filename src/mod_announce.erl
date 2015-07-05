@@ -31,20 +31,11 @@
 
 -behaviour(gen_mod).
 
--export([start/2,
-	 init/0,
-	 stop/1,
-	 export/1,
-         import/1,
-         import/3,
-	 announce/3,
-	 send_motd/1,
-	 disco_identity/5,
-	 disco_features/5,
-	 disco_items/5,
-	 send_announcement_to_all/3,
-	 announce_commands/4,
-	 announce_items/4]).
+-export([start/2, init/0, stop/1, export/1, import/1,
+	 import/3, announce/3, send_motd/1, disco_identity/5,
+	 disco_features/5, disco_items/5,
+	 send_announcement_to_all/3, announce_commands/4,
+	 announce_items/4, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1152,3 +1143,8 @@ import(_LServer, riak, #motd_users{us = {_, S}} = Users) ->
 		      [{'2i', [{<<"server">>, S}]}]);
 import(_, _, _) ->
     pass.
+
+mod_opt_type(access) ->
+    fun (A) when is_atom(A) -> A end;
+mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(_) -> [access, db_type].

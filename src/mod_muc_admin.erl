@@ -11,22 +11,16 @@
 
 -behaviour(gen_mod).
 
--export([
-	 start/2, stop/1, % gen_mod API
-	 muc_online_rooms/1,
-	 muc_unregister_nick/1,
-	 create_room/3, destroy_room/3,
+-export([start/2, stop/1, muc_online_rooms/1,
+	 muc_unregister_nick/1, create_room/3, destroy_room/3,
 	 create_rooms_file/1, destroy_rooms_file/1,
 	 rooms_unused_list/2, rooms_unused_destroy/2,
-	 get_room_occupants/2,
-	 get_room_occupants_number/2,
-	 send_direct_invitation/4,
-	 change_room_option/4,
-	 set_room_affiliation/4,
-	 get_room_affiliations/2,
-	 web_menu_main/2, web_page_main/2, % Web Admin API
-	 web_menu_host/3, web_page_host/3
-	]).
+	 get_user_rooms/2, get_room_occupants/2,
+	 get_room_occupants_number/2, send_direct_invitation/4,
+	 change_room_option/4, get_room_options/2,
+	 set_room_affiliation/4, get_room_affiliations/2,
+	 web_menu_main/2, web_page_main/2, web_menu_host/3,
+	 web_page_host/3, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -107,6 +101,12 @@ commands() ->
 		       args = [{host, binary}, {days, integer}],
 		       result = {rooms, {list, {room, string}}}},
 
+     #ejabberd_commands{name = get_user_rooms, tags = [muc],
+			desc = "Get the list of rooms where this user is occupant",
+			module = ?MODULE, function = get_user_rooms,
+			args = [{user, binary}, {host, binary}],
+		        result = {rooms, {list, {room, string}}}},
+
      #ejabberd_commands{name = get_room_occupants, tags = [muc_room],
 			desc = "Get the list of occupants of a MUC room",
 			module = ?MODULE, function = get_room_occupants,
@@ -138,6 +138,16 @@ commands() ->
 		       args = [{name, binary}, {service, binary},
 			       {option, binary}, {value, binary}],
 		       result = {res, rescode}},
+     #ejabberd_commands{name = get_room_options, tags = [muc_room],
+		        desc = "Get options from a MUC room",
+		        module = ?MODULE, function = get_room_options,
+		        args = [{name, binary}, {service, binary}],
+			result = {options, {list,
+						 {option, {tuple,
+								[{name, string},
+								 {value, string}
+								]}}
+						}}},
 
      #ejabberd_commands{name = set_room_affiliation, tags = [muc_room],
 		       desc = "Change an affiliation in a MUC room",
@@ -193,6 +203,15 @@ muc_unregister_nick(Nick) ->
 	    error
     end.
 
+get_user_rooms(LUser, LServer) ->
+    US = {LUser, LServer},
+    case catch ets:select(muc_online_users,
+                          [{#muc_online_users{us = US, room='$1', host='$2', _ = '_'}, [], [{{'$1', '$2'}}]}])
+        of
+      Res when is_list(Res) ->
+	[<<R/binary, "@", H/binary>> || {R, H} <- Res];
+      _ -> []
+    end.
 
 %%----------------------------
 %% Ad-hoc commands
@@ -524,7 +543,7 @@ rooms_unused_destroy(Host, Days) ->
 rooms_unused_report(Action, Host, Days) ->
     {NA, NP, RP} = muc_unused(Action, Host, Days),
     io:format("Unused rooms: ~p out of ~p~n", [NP, NA]),
-    [[R, <<"@">>, H] || {R, H, _P} <- RP].
+    [<<R/binary, "@", H/binary>> || {R, H, _P} <- RP].
 
 muc_unused(Action, ServerHost, Days) ->
     Host = find_host(ServerHost),
@@ -766,9 +785,15 @@ change_option(Option, Value, Config) ->
     case Option of
 	allow_change_subj -> Config#config{allow_change_subj = Value};
 	allow_private_messages -> Config#config{allow_private_messages = Value};
+	allow_private_messages_from_visitors -> Config#config{allow_private_messages_from_visitors = Value};
 	allow_query_users -> Config#config{allow_query_users = Value};
 	allow_user_invites -> Config#config{allow_user_invites = Value};
+	allow_visitor_nickchange -> Config#config{allow_visitor_nickchange = Value};
+	allow_visitor_status -> Config#config{allow_visitor_status = Value};
+	allow_voice_requests -> Config#config{allow_voice_requests = Value};
 	anonymous -> Config#config{anonymous = Value};
+	captcha_protected -> Config#config{captcha_protected = Value};
+	description -> Config#config{description = Value};
 	logging -> Config#config{logging = Value};
 	max_users -> Config#config{max_users = Value};
 	members_by_default -> Config#config{members_by_default = Value};
@@ -779,9 +804,27 @@ change_option(Option, Value, Config) ->
 	persistent -> Config#config{persistent = Value};
 	public -> Config#config{public = Value};
 	public_list -> Config#config{public_list = Value};
-	title -> Config#config{title = Value}
+	title -> Config#config{title = Value};
+	vcard -> Config#config{vcard = Value};
+	voice_request_min_interval -> Config#config{voice_request_min_interval = Value}
     end.
 
+%%----------------------------
+%% Get Room Options
+%%----------------------------
+
+get_room_options(Name, Service) ->
+    Pid = get_room_pid(Name, Service),
+    get_room_options(Pid).
+
+get_room_options(Pid) ->
+    Config = get_room_config(Pid),
+    get_options(Config).
+
+get_options(Config) ->
+    Fields = record_info(fields, config),
+    [config | Values] = tuple_to_list(Config),
+    lists:zip(Fields, Values).
 
 %%----------------------------
 %% Get Room Affiliations
@@ -825,44 +868,32 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
 	[R] ->
 	    %% Get the PID for the online room so we can get the state of the room
 	    Pid = R#muc_online_room.pid,
-	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, get_state),
-	    SJID = jlib:string_to_jid(JID),
-	    LJID = jlib:jid_remove_resource(jlib:jid_tolower(SJID)),
-	    Affiliations = change_affiliation(Affiliation, LJID, StateData#state.affiliations),
-	    Res = StateData#state{affiliations = Affiliations},
-	    {ok, _State} = gen_fsm:sync_send_all_state_event(Pid, {change_state, Res}),
-	    mod_muc:store_room(Res#state.server_host, Res#state.host, Res#state.room, make_opts(Res)),
+	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jlib:string_to_jid(JID), affiliation, Affiliation, <<"">>}, <<"">>}),
+	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
 	[] ->
 	    error
     end.
 
-change_affiliation(none, LJID, Affiliations) ->
-    ?DICT:erase(LJID, Affiliations);
-change_affiliation(Affiliation, LJID, Affiliations) ->
-    ?DICT:store(LJID, Affiliation, Affiliations).
-
--define(MAKE_CONFIG_OPT(Opt), {Opt, Config#config.Opt}).
-
 make_opts(StateData) ->
     Config = StateData#state.config,
     [
-     ?MAKE_CONFIG_OPT(title),
-     ?MAKE_CONFIG_OPT(allow_change_subj),
-     ?MAKE_CONFIG_OPT(allow_query_users),
-     ?MAKE_CONFIG_OPT(allow_private_messages),
-     ?MAKE_CONFIG_OPT(public),
-     ?MAKE_CONFIG_OPT(public_list),
-     ?MAKE_CONFIG_OPT(persistent),
-     ?MAKE_CONFIG_OPT(moderated),
-     ?MAKE_CONFIG_OPT(members_by_default),
-     ?MAKE_CONFIG_OPT(members_only),
-     ?MAKE_CONFIG_OPT(allow_user_invites),
-     ?MAKE_CONFIG_OPT(password_protected),
-     ?MAKE_CONFIG_OPT(password),
-     ?MAKE_CONFIG_OPT(anonymous),
-     ?MAKE_CONFIG_OPT(logging),
-     ?MAKE_CONFIG_OPT(max_users),
+     {title, Config#config.title},
+     {allow_change_subj, Config#config.allow_change_subj},
+     {allow_query_users, Config#config.allow_query_users},
+     {allow_private_messages, Config#config.allow_private_messages},
+     {public, Config#config.public},
+     {public_list, Config#config.public_list},
+     {persistent, Config#config.persistent},
+     {moderated, Config#config.moderated},
+     {members_by_default, Config#config.members_by_default},
+     {members_only, Config#config.members_only},
+     {allow_user_invites, Config#config.allow_user_invites},
+     {password_protected, Config#config.password_protected},
+     {password, Config#config.password},
+     {anonymous, Config#config.anonymous},
+     {logging, Config#config.logging},
+     {max_users, Config#config.max_users},
      {affiliations, ?DICT:to_list(StateData#state.affiliations)},
      {subject, StateData#state.subject},
      {subject_author, StateData#state.subject_author}
@@ -886,3 +917,5 @@ find_host(ServerHost) when is_list(ServerHost) ->
     find_host(list_to_binary(ServerHost));
 find_host(ServerHost) ->
     gen_mod:get_module_opt_host(ServerHost, mod_muc, <<"conference.@HOST@">>).
+
+mod_opt_type(_) -> [].
