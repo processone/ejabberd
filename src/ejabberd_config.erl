@@ -1152,7 +1152,8 @@ opt_type(language) ->
 opt_type(_) ->
     [hosts, language].
 
--spec may_hide_data(string()) -> string().
+-spec may_hide_data(string()) -> string();
+                   (binary()) -> binary().
 
 may_hide_data(Data) ->
     case ejabberd_config:get_option(
