@@ -243,27 +243,24 @@ c2s_presence_in(C2SState,
 		  error -> gb_trees:empty()
 		end,
 	   Caps = read_caps(Els),
-	   {CapsUpdated, NewRs} = case Caps of
-				    nothing when Insert == true -> {false, Rs};
-				    _ when Insert == true ->
-					case gb_trees:lookup(LFrom, Rs) of
-					  {value, Caps} -> {false, Rs};
-					  none ->
-					      {true,
-					       gb_trees:insert(LFrom, Caps,
-							       Rs)};
-					  _ ->
-					      {true,
-					       gb_trees:update(LFrom, Caps, Rs)}
-					end;
-				    _ -> {false, gb_trees:delete_any(LFrom, Rs)}
-				  end,
-	   if CapsUpdated ->
-		  ejabberd_hooks:run(caps_update, To#jid.lserver,
-				     [From, To,
-                                      get_features(To#jid.lserver, Caps)]);
-	      true -> ok
-	   end,
+	   NewRs = case Caps of
+		     nothing when Insert == true -> Rs;
+		     _ when Insert == true ->
+			 case gb_trees:lookup(LFrom, Rs) of
+			   {value, Caps} -> Rs;
+			   none ->
+				ejabberd_hooks:run(caps_add, To#jid.lserver,
+						   [From, To,
+						    get_features(To#jid.lserver, Caps)]),
+				gb_trees:insert(LFrom, Caps, Rs);
+			   _ ->
+				ejabberd_hooks:run(caps_update, To#jid.lserver,
+						   [From, To,
+						    get_features(To#jid.lserver, Caps)]),
+				gb_trees:update(LFrom, Caps, Rs)
+			 end;
+		     _ -> gb_trees:delete_any(LFrom, Rs)
+		   end,
 	   ejabberd_c2s:set_aux_field(caps_resources, NewRs,
 				      C2SState);
        true -> C2SState
