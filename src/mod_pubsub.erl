@@ -685,6 +685,15 @@ disco_items(Host, Node, From) ->
 
 caps_update(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = Host} = JID, _Features)
 	when Host =/= S ->
+    %% When a remote contact goes online while the local user is offline, the
+    %% remote contact won't receive last items from the local user even if
+    %% ignore_pep_from_offline is set to false. To work around this issue a bit,
+    %% we'll also send the last items to remote contacts when the local user
+    %% connects. That's the reason to use the caps_update hook instead of the
+    %% presence_probe_hook for remote contacts: The latter is only called when a
+    %% contact becomes available; the former also is also executed when the
+    %% local user goes online (because that triggers the contact to send a
+    %% presence packet with CAPS).
     presence(Host, {presence, U, S, [R], JID});
 caps_update(_From, _To, _Feature) ->
     ok.
