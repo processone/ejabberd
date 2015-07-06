@@ -34,7 +34,8 @@
 -export([start/2, stop/1]).
 
 -export([user_send_packet/4, user_receive_packet/5,
-	 process_iq/3, remove_user/2, mod_opt_type/1]).
+	 process_iq_v0_2/3, process_iq_v0_3/3, remove_user/2,
+	 mod_opt_type/1]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("jlib.hrl").
@@ -64,13 +65,13 @@ start(Host, Opts) ->
     init_db(DBType, Host),
     init_cache(DBType, Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-        			  ?NS_MAM_TMP, ?MODULE, process_iq, IQDisc),
+				  ?NS_MAM_TMP, ?MODULE, process_iq_v0_2, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-        			  ?NS_MAM_TMP, ?MODULE, process_iq, IQDisc),
+				  ?NS_MAM_TMP, ?MODULE, process_iq_v0_2, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-        			  ?NS_MAM_0, ?MODULE, process_iq, IQDisc),
+				  ?NS_MAM_0, ?MODULE, process_iq_v0_3, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-        			  ?NS_MAM_0, ?MODULE, process_iq, IQDisc),
+				  ?NS_MAM_0, ?MODULE, process_iq_v0_3, IQDisc),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
                        user_receive_packet, 500),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
@@ -197,13 +198,11 @@ user_send_packet(Pkt, C2SState, JID, Peer) ->
             Pkt
     end.
 
-process_iq(#jid{lserver = LServer} = From,
+% Query archive v0.2
+process_iq_v0_2(#jid{lserver = LServer} = From,
            #jid{lserver = LServer} = To,
            #iq{type = get, sub_el = #xmlel{name = <<"query">>} = SubEl} = IQ) ->
-    NS = xml:get_tag_attr_s(<<"xmlns">>, SubEl),
-    Fs = case NS of
-	     ?NS_MAM_TMP ->
-		 lists:flatmap(
+    Fs = lists:flatmap(
 		   fun(#xmlel{name = <<"start">>} = El) ->
 			   [{<<"start">>, [xml:get_tag_cdata(El)]}];
 		      (#xmlel{name = <<"end">>} = El) ->
@@ -218,9 +217,16 @@ process_iq(#jid{lserver = LServer} = From,
 			   [{<<"set">>, SubEl}];
 		      (_) ->
 			   []
-		   end, SubEl#xmlel.children);
-	     ?NS_MAM_0 ->
-		 case {xml:get_subtag_with_xmlns(SubEl, <<"x">>, ?NS_XDATA),
+	   end, SubEl#xmlel.children),
+    process_iq(From, To, IQ, SubEl, Fs);
+process_iq_v0_2(From, To, IQ) ->
+    process_iq(From, To, IQ).
+
+% Query archive v0.3
+process_iq_v0_3(#jid{lserver = LServer} = From,
+	   #jid{lserver = LServer} = To,
+	   #iq{type = set, sub_el = #xmlel{name = <<"query">>} = SubEl} = IQ) ->
+    Fs = case {xml:get_subtag_with_xmlns(SubEl, <<"x">>, ?NS_XDATA),
 		       xml:get_subtag_with_xmlns(SubEl, <<"set">>, ?NS_RSM)} of
 		     {#xmlel{} = XData, false} ->
 			 jlib:parse_xdata_submit(XData);
@@ -230,34 +236,16 @@ process_iq(#jid{lserver = LServer} = From,
 			 [{<<"set">>, SubEl}];
 		     {false, false} ->
 			 []
-		 end
 	 end,
-    case catch lists:foldl(
-                 fun({<<"start">>, [Data|_]}, {_, End, With, RSM}) ->
-                         {{_, _, _} = jlib:datetime_string_to_timestamp(Data),
-                          End, With, RSM};
-                    ({<<"end">>, [Data|_]}, {Start, _, With, RSM}) ->
-                         {Start,
-                          {_, _, _} = jlib:datetime_string_to_timestamp(Data),
-                          With, RSM};
-                    ({<<"with">>, [Data|_]}, {Start, End, _, RSM}) ->
-                         {Start, End, jlib:jid_tolower(jlib:string_to_jid(Data)), RSM};
-                    ({<<"withroom">>, [Data|_]}, {Start, End, _, RSM}) ->
-                         {Start, End,
-                          {room, jlib:jid_tolower(jlib:string_to_jid(Data))},
-                          RSM};
-                    ({<<"withtext">>, [Data|_]}, {Start, End, _, RSM}) ->
-                         {Start, End, {text, Data}, RSM};
-                    ({<<"set">>, El}, {Start, End, With, _}) ->
-                         {Start, End, With, jlib:rsm_decode(El)};
-                    (_, Acc) ->
-                         Acc
-                 end, {none, [], none, none}, Fs) of
-        {'EXIT', _} ->
-            IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]};
-        {Start, End, With, RSM} ->
-            select_and_send(From, To, Start, End, With, RSM, IQ)	    
-    end;
+    process_iq(From, To, IQ, SubEl, Fs);
+process_iq_v0_3(From, To, IQ) ->
+    process_iq(From, To, IQ).
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+
+% Preference setting (both v0.2 & v0.3)
 process_iq(#jid{luser = LUser, lserver = LServer},
            #jid{lserver = LServer},
            #iq{type = set, sub_el = #xmlel{name = <<"prefs">>} = SubEl} = IQ) ->
@@ -289,9 +277,34 @@ process_iq(#jid{luser = LUser, lserver = LServer},
 process_iq(_, _, #iq{sub_el = SubEl} = IQ) ->
     IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
 
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
+process_iq(From, To, IQ, SubEl, Fs) ->
+    case catch lists:foldl(
+		 fun({<<"start">>, [Data|_]}, {_, End, With, RSM}) ->
+			 {{_, _, _} = jlib:datetime_string_to_timestamp(Data),
+			  End, With, RSM};
+		    ({<<"end">>, [Data|_]}, {Start, _, With, RSM}) ->
+			 {Start,
+			  {_, _, _} = jlib:datetime_string_to_timestamp(Data),
+			  With, RSM};
+		    ({<<"with">>, [Data|_]}, {Start, End, _, RSM}) ->
+			 {Start, End, jlib:jid_tolower(jlib:string_to_jid(Data)), RSM};
+		    ({<<"withroom">>, [Data|_]}, {Start, End, _, RSM}) ->
+			 {Start, End,
+			  {room, jlib:jid_tolower(jlib:string_to_jid(Data))},
+			  RSM};
+		    ({<<"withtext">>, [Data|_]}, {Start, End, _, RSM}) ->
+			 {Start, End, {text, Data}, RSM};
+		    ({<<"set">>, El}, {Start, End, With, _}) ->
+			 {Start, End, With, jlib:rsm_decode(El)};
+		    (_, Acc) ->
+			 Acc
+		 end, {none, [], none, none}, Fs) of
+	{'EXIT', _} ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+	{Start, End, With, RSM} ->
+	    select_and_send(From, To, Start, End, With, RSM, IQ)
+    end.
+
 should_archive(#xmlel{name = <<"message">>} = Pkt) ->
     case {xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs),
           xml:get_subtag_cdata(Pkt, <<"body">>)} of
