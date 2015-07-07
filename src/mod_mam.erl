@@ -550,6 +550,12 @@ select(#jid{luser = LUser, lserver = LServer} = JidRequestor,
        Start, End, With, RSM, {odbc, Host}) ->
         {Query, CountQuery} = make_sql_query(LUser, LServer,
 					     Start, End, With, RSM),
+    % XXX TODO from XEP-0313:
+    % To conserve resources, a server MAY place a reasonable limit on
+    % how many stanzas may be pushed to a client in one request. If a
+    % query returns a number of stanzas greater than this limit and
+    % the client did not specify a limit using RSM then the server
+    % should return a policy-violation error to the client.
     case {ejabberd_odbc:sql_query(Host, Query),
           ejabberd_odbc:sql_query(Host, CountQuery)} of
         {{selected, _, Res}, {selected, _, [[Count]]}} ->
@@ -718,7 +724,7 @@ make_sql_query(LUser, _LServer, Start, End, With, RSM) ->
                                     RSM#rsm_in.direction,
                                     RSM#rsm_in.id};
                                none ->
-                                   {none, none, none}
+                                   {none, none, <<>>}
                            end,
     LimitClause = if is_integer(Max), Max >= 0 ->
                           [<<" limit ">>, jlib:integer_to_binary(Max)];
@@ -726,37 +732,35 @@ make_sql_query(LUser, _LServer, Start, End, With, RSM) ->
                           []
                   end,
     WithClause = case With of
-                     {text, <<>>} ->
-                         [];
-                     {text, Txt} ->
-                         [<<" and match (txt) against ('">>,
-                          ejabberd_odbc:escape(Txt), <<"')">>];
-                     {_, _, <<>>} ->
-                         [<<" and bare_peer='">>,
-                          ejabberd_odbc:escape(jlib:jid_to_string(With)),
-                          <<"'">>];
-                     {_, _, _} ->
-                         [<<" and peer='">>,
-                          ejabberd_odbc:escape(jlib:jid_to_string(With)),
-                          <<"'">>];
-                     none ->
-                         []
-                 end,
-    DirectionClause = case catch jlib:binary_to_integer(ID) of
-                          I when is_integer(I), I >= 0 ->
-                              case Direction of
-                                  before ->
-                                      [<<" and timestamp < ">>, ID,
-                                       <<" order by timestamp desc">>];
-                                  aft ->
-                                      [<<" and timestamp > ">>, ID,
-                                       <<" order by timestamp asc">>];
-                                  _ ->
-                                      []
-                              end;
-                          _ ->
-                              []
-                      end,
+		     {text, <<>>} ->
+			 [];
+		     {text, Txt} ->
+			 [<<" and match (txt) against ('">>,
+			  ejabberd_odbc:escape(Txt), <<"')">>];
+		     {_, _, <<>>} ->
+			 [<<" and bare_peer='">>,
+			  ejabberd_odbc:escape(jlib:jid_to_string(With)),
+			  <<"'">>];
+		     {_, _, _} ->
+			 [<<" and peer='">>,
+			  ejabberd_odbc:escape(jlib:jid_to_string(With)),
+			  <<"'">>];
+		     none ->
+			 []
+		 end,
+    PageClause = case catch jlib:binary_to_integer(ID) of
+		     I when is_integer(I), I >= 0 ->
+			 case Direction of
+			     before ->
+				 [<<" AND timestamp < ">>, ID];
+			     aft ->
+				 [<<" AND timestamp > ">>, ID];
+			     _ ->
+				 []
+			 end;
+		     _ ->
+			 []
+		 end,
     StartClause = case Start of
                       {_, _, _} ->
                           [<<" and timestamp >= ">>,
@@ -772,11 +776,27 @@ make_sql_query(LUser, _LServer, Start, End, With, RSM) ->
                         []
                 end,
     SUser = ejabberd_odbc:escape(LUser),
-    {[<<"select timestamp, xml, peer from archive where username='">>,
-      SUser, <<"'">>] ++ WithClause ++ StartClause ++ EndClause ++
-         DirectionClause ++ LimitClause ++ [<<";">>],
-     [<<"select count(*) from archive where username='">>,
-      SUser, <<"'">>] ++ WithClause ++ StartClause ++ EndClause ++ [<<";">>]}.
+
+    Query = [<<"SELECT timestamp, xml, peer"
+	      " FROM archive WHERE username='">>,
+	     SUser, <<"'">>, WithClause, StartClause, EndClause,
+	     PageClause],
+
+    QueryPage =
+	case Direction of
+	    before ->
+		% ID can be empty because of
+		% XEP-0059: Result Set Management
+		% 2.5 Requesting the Last Page in a Result Set
+		[<<"(">>, Query, <<" ORDER BY timestamp DESC ">>,
+		 LimitClause, <<") ORDER BY timestamp ASC;">>];
+	    _ ->
+		[Query, <<" ORDER BY timestamp ASC ">>,
+		 LimitClause, <<";">>]
+	end,
+    {QueryPage,
+     [<<"SELECT COUNT(*) FROM archive WHERE username='">>,
+      SUser, <<"'">>, WithClause, StartClause, EndClause, <<";">>]}.
 
 now_to_usec({MSec, Sec, USec}) ->
     (MSec*1000000 + Sec)*1000000 + USec.
