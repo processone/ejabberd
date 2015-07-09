@@ -280,7 +280,7 @@
                     units = [] :: [binary()]}).
 
 -record(rsm_set, {'after' :: binary(),
-                  before :: binary(),
+                  before :: 'none' | binary(),
                   count :: non_neg_integer(),
                   first :: #rsm_first{},
                   index :: non_neg_integer(),

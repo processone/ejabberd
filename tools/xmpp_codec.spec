@@ -2071,6 +2071,7 @@
 -xml(rsm_before,
      #elem{name = <<"before">>,
            xmlns = <<"http://jabber.org/protocol/rsm">>,
+	   cdata = #cdata{default = none},
            result = '$cdata'}).
 
 -xml(rsm_last,

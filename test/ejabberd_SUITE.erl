@@ -1854,6 +1854,35 @@ mam_query_rsm(Config, NS) ->
 				    rsm = #rsm_set{count = 10,
 						   first = undefined,
 						   last = undefined}}]})
+    end,
+    %% Should receive 2 last messages
+    I5 = send(Config,
+	      #iq{type = Type,
+		  sub_els = [#mam_query{xmlns = NS,
+					rsm = #rsm_set{max = 2,
+						       before = none}}]}),
+    maybe_recv_iq_result(NS, I5),
+    lists:foreach(
+      fun(N) ->
+	      Text = #text{data = jlib:integer_to_binary(N)},
+	      ?recv1(#message{to = MyJID,
+			      sub_els =
+				  [#mam_result{
+				      xmlns = NS,
+				      sub_els =
+					  [#forwarded{
+					      delay = #delay{},
+					      sub_els =
+						  [#message{
+						      from = MyJID, to = Peer,
+						      body = [Text]}]}]}]})
+      end, lists:seq(4, 5)),
+    if NS == ?NS_MAM_TMP ->
+	    ?recv1(#iq{type = result, id = I5,
+		       sub_els = [#mam_query{xmlns = NS, rsm = #rsm_set{count = 5}}]});
+       true ->
+	    ?recv1(#message{
+		      sub_els = [#mam_fin{rsm = #rsm_set{count = 10}}]})
     end.
 
 client_state_master(Config) ->

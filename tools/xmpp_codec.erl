@@ -4746,10 +4746,10 @@ encode_rsm_before(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"before">>, _attrs, _els}.
 
-decode_rsm_before_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_rsm_before_cdata(__TopXMLNS, <<>>) -> none;
 decode_rsm_before_cdata(__TopXMLNS, _val) -> _val.
 
-encode_rsm_before_cdata(undefined, _acc) -> _acc;
+encode_rsm_before_cdata(none, _acc) -> _acc;
 encode_rsm_before_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 

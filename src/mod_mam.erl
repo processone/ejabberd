@@ -663,21 +663,23 @@ filter_by_rsm(_Msgs, #rsm_in{max = Max}) when Max =< 0 ->
     [];
 filter_by_rsm(Msgs, #rsm_in{max = Max, direction = Direction, id = ID}) ->
     NewMsgs = case Direction of
-                  aft ->
-                      lists:filter(
-                        fun(#archive_msg{id = I}) ->
-                                I > ID
-                        end, Msgs);
-                  before ->
-                      lists:foldl(
-                        fun(#archive_msg{id = I} = Msg, Acc) when I < ID ->
-                                [Msg|Acc];
-                           (_, Acc) ->
-                                Acc
-                        end, [], Msgs);
-                  _ ->
-                      Msgs
-              end,
+		  aft when ID /= <<"">> ->
+		      lists:filter(
+			fun(#archive_msg{id = I}) ->
+				I > ID
+			end, Msgs);
+		  before when ID /= <<"">> ->
+		      lists:foldl(
+			fun(#archive_msg{id = I} = Msg, Acc) when I < ID ->
+				[Msg|Acc];
+			   (_, Acc) ->
+				Acc
+			end, [], Msgs);
+		  before when ID == <<"">> ->
+		      lists:reverse(Msgs);
+		  _ ->
+		      Msgs
+	      end,
     filter_by_max(NewMsgs, Max).
 
 filter_by_max(Msgs, undefined) ->
