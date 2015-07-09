@@ -788,8 +788,9 @@ make_sql_query(LUser, _LServer, Start, End, With, RSM) ->
 		% ID can be empty because of
 		% XEP-0059: Result Set Management
 		% 2.5 Requesting the Last Page in a Result Set
-		[<<"(">>, Query, <<" ORDER BY timestamp DESC ">>,
-		 LimitClause, <<") ORDER BY timestamp ASC;">>];
+		[<<"SELECT timestamp, xml, peer FROM (">>, Query,
+		 <<" ORDER BY timestamp DESC ">>,
+		 LimitClause, <<") AS t ORDER BY timestamp ASC;">>];
 	    _ ->
 		[Query, <<" ORDER BY timestamp ASC ">>,
 		 LimitClause, <<";">>]
