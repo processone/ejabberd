@@ -518,10 +518,10 @@ select_and_send(#jid{lserver = LServer} = From,
                     DBType).
 
 select_and_send(From, To, Start, End, With, RSM, IQ, DBType) ->
-    {Msgs, Count} = select_and_start(From, To, Start, End, With,
-				     RSM, DBType),
+    {Msgs, IsComplete, Count} = select_and_start(From, To, Start, End, With,
+						 RSM, DBType),
     SortedMsgs = lists:keysort(2, Msgs),
-    send(From, To, SortedMsgs, RSM, Count, IQ).
+    send(From, To, SortedMsgs, RSM, Count, IsComplete, IQ).
 
 select_and_start(From, _To, StartUser, End, With, RSM, DB) ->
     {JidRequestor, Start, With2} = case With of
@@ -538,17 +538,17 @@ select(#jid{luser = LUser, lserver = LServer} = JidRequestor,
        Start, End, With, RSM, mnesia) ->
     MS = make_matchspec(LUser, LServer, Start, End, With),
     Msgs = mnesia:dirty_select(archive_msg, MS),
-    FilteredMsgs = filter_by_rsm(Msgs, RSM),
+    {FilteredMsgs, IsComplete} = filter_by_rsm(Msgs, RSM),
     Count = length(Msgs),
     {lists:map(
        fun(Msg) ->
                {Msg#archive_msg.id,
                 jlib:binary_to_integer(Msg#archive_msg.id),
                 msg_to_el(Msg, JidRequestor)}
-       end, FilteredMsgs), Count};
+       end, FilteredMsgs), IsComplete, Count};
 select(#jid{luser = LUser, lserver = LServer} = JidRequestor,
        Start, End, With, RSM, {odbc, Host}) ->
-        {Query, CountQuery} = make_sql_query(LUser, LServer,
+	{Query, CountQuery} = make_sql_query(LUser, LServer,
 					     Start, End, With, RSM),
     % XXX TODO from XEP-0313:
     % To conserve resources, a server MAY place a reasonable limit on
@@ -559,6 +559,20 @@ select(#jid{luser = LUser, lserver = LServer} = JidRequestor,
     case {ejabberd_odbc:sql_query(Host, Query),
           ejabberd_odbc:sql_query(Host, CountQuery)} of
         {{selected, _, Res}, {selected, _, [[Count]]}} ->
+	    {Max, Direction} = case RSM of
+				   #rsm_in{max = M, direction = D} -> {M, D};
+				   _ -> {undefined, undefined}
+			       end,
+	    {Res1, IsComplete} =
+		if Max >= 0 andalso Max /= undefined andalso length(Res) > Max ->
+			if Direction == before ->
+				{lists:nthtail(1, Res), false};
+			   true ->
+				{lists:sublist(Res, Max), false}
+			end;
+		   true ->
+			{Res, true}
+		end,
             {lists:map(
                fun([TS, XML, PeerBin]) ->
                        #xmlel{} = El = xml_stream:parse_element(XML),
@@ -569,9 +583,9 @@ select(#jid{luser = LUser, lserver = LServer} = JidRequestor,
 					       packet = El,
 					       peer = PeerJid},
 				  JidRequestor)}
-               end, Res), jlib:binary_to_integer(Count)};
-        _ ->
-            {[], 0}
+               end, Res1), IsComplete, jlib:binary_to_integer(Count)};
+	_ ->
+	    {[], false, 0}
     end.
 
 msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, peer = Peer},
@@ -599,14 +613,19 @@ maybe_update_from_to(Pkt, JidRequestor, Peer) ->
 	_ -> Pkt
     end.
 
-send(From, To, Msgs, RSM, Count, #iq{sub_el = SubEl} = IQ) ->
+send(From, To, Msgs, RSM, Count, IsComplete, #iq{sub_el = SubEl} = IQ) ->
     QID = xml:get_tag_attr_s(<<"queryid">>, SubEl),
     NS = xml:get_tag_attr_s(<<"xmlns">>, SubEl),
     QIDAttr = if QID /= <<>> ->
-                      [{<<"queryid">>, QID}];
-                 true ->
-                    []
-              end,
+		      [{<<"queryid">>, QID}];
+		 true ->
+		    []
+	      end,
+    CompleteAttr = if NS == ?NS_MAM_TMP ->
+			   [];
+		      NS == ?NS_MAM_0 ->
+			   [{<<"complete">>, jlib:atom_to_binary(IsComplete)}]
+		   end,
     Els = lists:map(
 	    fun({ID, _IDInt, El}) ->
 		    #xmlel{name = <<"message">>,
@@ -615,7 +634,7 @@ send(From, To, Msgs, RSM, Count, #iq{sub_el = SubEl} = IQ) ->
 						       {<<"id">>, ID}|QIDAttr],
 					      children = [El]}]}
 	    end, Msgs),
-    RSMOut = make_rsm_out(Msgs, RSM, Count, QIDAttr, NS),
+    RSMOut = make_rsm_out(Msgs, RSM, Count, QIDAttr ++ CompleteAttr, NS),
     case NS of
 	?NS_MAM_TMP ->
 	    lists:foreach(
@@ -637,30 +656,30 @@ send(From, To, Msgs, RSM, Count, #iq{sub_el = SubEl} = IQ) ->
     end.
 
 
-make_rsm_out(_Msgs, none, _Count, _QIDAttr, ?NS_MAM_TMP) ->
+make_rsm_out(_Msgs, none, _Count, _Attrs, ?NS_MAM_TMP) ->
     [];
-make_rsm_out(_Msgs, none, _Count, QIDAttr, ?NS_MAM_0) ->
-    [#xmlel{name = <<"fin">>, attrs = [{<<"xmlns">>, ?NS_MAM_0}|QIDAttr]}];
-make_rsm_out([], #rsm_in{}, Count, QIDAttr, NS) ->
+make_rsm_out(_Msgs, none, _Count, Attrs, ?NS_MAM_0) ->
+    [#xmlel{name = <<"fin">>, attrs = [{<<"xmlns">>, ?NS_MAM_0}|Attrs]}];
+make_rsm_out([], #rsm_in{}, Count, Attrs, NS) ->
     Tag = if NS == ?NS_MAM_TMP -> <<"query">>;
 	     true -> <<"fin">>
 	  end,
-    [#xmlel{name = Tag, attrs = [{<<"xmlns">>, NS}|QIDAttr],
-            children = jlib:rsm_encode(#rsm_out{count = Count})}];
-make_rsm_out([{FirstID, _, _}|_] = Msgs, #rsm_in{}, Count, QIDAttr, NS) ->
+    [#xmlel{name = Tag, attrs = [{<<"xmlns">>, NS}|Attrs],
+	    children = jlib:rsm_encode(#rsm_out{count = Count})}];
+make_rsm_out([{FirstID, _, _}|_] = Msgs, #rsm_in{}, Count, Attrs, NS) ->
     {LastID, _, _} = lists:last(Msgs),
     Tag = if NS == ?NS_MAM_TMP -> <<"query">>;
 	     true -> <<"fin">>
 	  end,
-    [#xmlel{name = Tag, attrs = [{<<"xmlns">>, NS}|QIDAttr],
-            children = jlib:rsm_encode(
-                         #rsm_out{first = FirstID, count = Count,
-                                  last = LastID})}].
+    [#xmlel{name = Tag, attrs = [{<<"xmlns">>, NS}|Attrs],
+	    children = jlib:rsm_encode(
+			 #rsm_out{first = FirstID, count = Count,
+				  last = LastID})}].
 
 filter_by_rsm(Msgs, none) ->
-    Msgs;
-filter_by_rsm(_Msgs, #rsm_in{max = Max}) when Max =< 0 ->
-    [];
+    {Msgs, true};
+filter_by_rsm(_Msgs, #rsm_in{max = Max}) when Max < 0 ->
+    {[], true};
 filter_by_rsm(Msgs, #rsm_in{max = Max, direction = Direction, id = ID}) ->
     NewMsgs = case Direction of
 		  aft when ID /= <<"">> ->
@@ -683,11 +702,11 @@ filter_by_rsm(Msgs, #rsm_in{max = Max, direction = Direction, id = ID}) ->
     filter_by_max(NewMsgs, Max).
 
 filter_by_max(Msgs, undefined) ->
-    Msgs;
+    {Msgs, true};
 filter_by_max(Msgs, Len) when is_integer(Len), Len >= 0 ->
-    lists:sublist(Msgs, Len);
+    {lists:sublist(Msgs, Len), length(Msgs) =< Len};
 filter_by_max(_Msgs, _Junk) ->
-    [].
+    {[], true}.
 
 make_matchspec(LUser, LServer, Start, End, {_, _, <<>>} = With) ->
     ets:fun2ms(
@@ -729,10 +748,10 @@ make_sql_query(LUser, _LServer, Start, End, With, RSM) ->
                                    {none, none, <<>>}
                            end,
     LimitClause = if is_integer(Max), Max >= 0 ->
-                          [<<" limit ">>, jlib:integer_to_binary(Max)];
-                     true ->
-                          []
-                  end,
+			  [<<" limit ">>, jlib:integer_to_binary(Max+1)];
+		     true ->
+			  []
+		  end,
     WithClause = case With of
 		     {text, <<>>} ->
 			 [];

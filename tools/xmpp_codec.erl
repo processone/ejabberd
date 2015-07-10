@@ -2082,7 +2082,7 @@ encode({mam_result, _, _, _, _} = Result) ->
     encode_mam_result(Result, []);
 encode({mam_prefs, _, _, _, _} = Prefs) ->
     encode_mam_prefs(Prefs, []);
-encode({mam_fin, _, _} = Fin) ->
+encode({mam_fin, _, _, _, _} = Fin) ->
     encode_mam_fin(Fin,
 		   [{<<"xmlns">>, <<"urn:xmpp:mam:0">>}]);
 encode({forwarded, _, _} = Forwarded) ->
@@ -2308,7 +2308,7 @@ get_ns({rsm_first, _, _}) ->
 get_ns({rsm_set, _, _, _, _, _, _, _}) ->
     <<"http://jabber.org/protocol/rsm">>;
 get_ns({mam_archived, _, _}) -> <<"urn:xmpp:mam:tmp">>;
-get_ns({mam_fin, _, _}) -> <<"urn:xmpp:mam:0">>;
+get_ns({mam_fin, _, _, _, _}) -> <<"urn:xmpp:mam:0">>;
 get_ns({forwarded, _, _}) -> <<"urn:xmpp:forward:0">>;
 get_ns({carbons_disable}) -> <<"urn:xmpp:carbons:2">>;
 get_ns({carbons_enable}) -> <<"urn:xmpp:carbons:2">>;
@@ -2505,7 +2505,7 @@ pp(mam_query, 7) ->
 pp(mam_archived, 2) -> [by, id];
 pp(mam_result, 4) -> [xmlns, queryid, id, sub_els];
 pp(mam_prefs, 4) -> [xmlns, default, always, never];
-pp(mam_fin, 2) -> [id, rsm];
+pp(mam_fin, 4) -> [id, rsm, stable, complete];
 pp(forwarded, 2) -> [delay, sub_els];
 pp(carbons_disable, 0) -> [];
 pp(carbons_enable, 0) -> [];
@@ -3709,9 +3709,10 @@ decode_mam_fin(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"fin">>, _attrs, _els}) ->
     Rsm = decode_mam_fin_els(__TopXMLNS, __IgnoreEls, _els,
 			     undefined),
-    Id = decode_mam_fin_attrs(__TopXMLNS, _attrs,
-			      undefined),
-    {mam_fin, Id, Rsm}.
+    {Id, Stable, Complete} =
+	decode_mam_fin_attrs(__TopXMLNS, _attrs, undefined,
+			     undefined, undefined),
+    {mam_fin, Id, Rsm, Stable, Complete}.
 
 decode_mam_fin_els(__TopXMLNS, __IgnoreEls, [], Rsm) ->
     Rsm;
@@ -3729,16 +3730,37 @@ decode_mam_fin_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_mam_fin_els(__TopXMLNS, __IgnoreEls, _els, Rsm).
 
 decode_mam_fin_attrs(__TopXMLNS,
-		     [{<<"queryid">>, _val} | _attrs], _Id) ->
-    decode_mam_fin_attrs(__TopXMLNS, _attrs, _val);
-decode_mam_fin_attrs(__TopXMLNS, [_ | _attrs], Id) ->
-    decode_mam_fin_attrs(__TopXMLNS, _attrs, Id);
-decode_mam_fin_attrs(__TopXMLNS, [], Id) ->
-    decode_mam_fin_attr_queryid(__TopXMLNS, Id).
+		     [{<<"queryid">>, _val} | _attrs], _Id, Stable,
+		     Complete) ->
+    decode_mam_fin_attrs(__TopXMLNS, _attrs, _val, Stable,
+			 Complete);
+decode_mam_fin_attrs(__TopXMLNS,
+		     [{<<"stable">>, _val} | _attrs], Id, _Stable,
+		     Complete) ->
+    decode_mam_fin_attrs(__TopXMLNS, _attrs, Id, _val,
+			 Complete);
+decode_mam_fin_attrs(__TopXMLNS,
+		     [{<<"complete">>, _val} | _attrs], Id, Stable,
+		     _Complete) ->
+    decode_mam_fin_attrs(__TopXMLNS, _attrs, Id, Stable,
+			 _val);
+decode_mam_fin_attrs(__TopXMLNS, [_ | _attrs], Id,
+		     Stable, Complete) ->
+    decode_mam_fin_attrs(__TopXMLNS, _attrs, Id, Stable,
+			 Complete);
+decode_mam_fin_attrs(__TopXMLNS, [], Id, Stable,
+		     Complete) ->
+    {decode_mam_fin_attr_queryid(__TopXMLNS, Id),
+     decode_mam_fin_attr_stable(__TopXMLNS, Stable),
+     decode_mam_fin_attr_complete(__TopXMLNS, Complete)}.
 
-encode_mam_fin({mam_fin, Id, Rsm}, _xmlns_attrs) ->
+encode_mam_fin({mam_fin, Id, Rsm, Stable, Complete},
+	       _xmlns_attrs) ->
     _els = lists:reverse('encode_mam_fin_$rsm'(Rsm, [])),
-    _attrs = encode_mam_fin_attr_queryid(Id, _xmlns_attrs),
+    _attrs = encode_mam_fin_attr_complete(Complete,
+					  encode_mam_fin_attr_stable(Stable,
+								     encode_mam_fin_attr_queryid(Id,
+												 _xmlns_attrs))),
     {xmlel, <<"fin">>, _attrs, _els}.
 
 'encode_mam_fin_$rsm'(undefined, _acc) -> _acc;
@@ -3754,6 +3776,35 @@ decode_mam_fin_attr_queryid(__TopXMLNS, _val) -> _val.
 encode_mam_fin_attr_queryid(undefined, _acc) -> _acc;
 encode_mam_fin_attr_queryid(_val, _acc) ->
     [{<<"queryid">>, _val} | _acc].
+
+decode_mam_fin_attr_stable(__TopXMLNS, undefined) ->
+    undefined;
+decode_mam_fin_attr_stable(__TopXMLNS, _val) ->
+    case catch dec_bool(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"stable">>, <<"fin">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_mam_fin_attr_stable(undefined, _acc) -> _acc;
+encode_mam_fin_attr_stable(_val, _acc) ->
+    [{<<"stable">>, enc_bool(_val)} | _acc].
+
+decode_mam_fin_attr_complete(__TopXMLNS, undefined) ->
+    undefined;
+decode_mam_fin_attr_complete(__TopXMLNS, _val) ->
+    case catch dec_bool(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"complete">>, <<"fin">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_mam_fin_attr_complete(undefined, _acc) -> _acc;
+encode_mam_fin_attr_complete(_val, _acc) ->
+    [{<<"complete">>, enc_bool(_val)} | _acc].
 
 decode_mam_prefs(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"prefs">>, _attrs, _els}) ->
