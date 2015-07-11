@@ -2071,6 +2071,7 @@
 -xml(rsm_before,
      #elem{name = <<"before">>,
            xmlns = <<"http://jabber.org/protocol/rsm">>,
+	   cdata = #cdata{default = none},
            result = '$cdata'}).
 
 -xml(rsm_last,
@@ -2209,8 +2210,14 @@
 -xml(mam_fin,
      #elem{name = <<"fin">>,
 	   xmlns = <<"urn:xmpp:mam:0">>,
-	   result = {mam_fin, '$id', '$rsm'},
-	   attrs = [#attr{name = <<"queryid">>, label = '$id'}],
+	   result = {mam_fin, '$id', '$rsm', '$stable', '$complete'},
+	   attrs = [#attr{name = <<"queryid">>, label = '$id'},
+		    #attr{name = <<"stable">>, label = '$stable',
+			  dec = {dec_bool, []},
+			  enc = {enc_bool, []}},
+		    #attr{name = <<"complete">>, label = '$complete',
+			  dec = {dec_bool, []},
+			  enc = {enc_bool, []}}],
 	   refs = [#ref{name = rsm_set, min = 0, max = 1, label = '$rsm'}]}).
 
 -xml(forwarded,

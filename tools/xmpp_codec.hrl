@@ -280,7 +280,7 @@
                     units = [] :: [binary()]}).
 
 -record(rsm_set, {'after' :: binary(),
-                  before :: binary(),
+                  before :: 'none' | binary(),
                   count :: non_neg_integer(),
                   first :: #rsm_first{},
                   index :: non_neg_integer(),
@@ -288,7 +288,9 @@
                   max :: non_neg_integer()}).
 
 -record(mam_fin, {id :: binary(),
-                  rsm :: #rsm_set{}}).
+                  rsm :: #rsm_set{},
+                  stable :: any(),
+                  complete :: any()}).
 
 -record(vcard_tel, {home = false :: boolean(),
                     work = false :: boolean(),

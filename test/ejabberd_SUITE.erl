@@ -1663,7 +1663,11 @@ mam_query_all(Config, NS) ->
     QID = randoms:get_string(),
     MyJID = my_jid(Config),
     Peer = ?config(slave, Config),
-    I = send(Config, #iq{type = get, sub_els = [#mam_query{xmlns = NS, id = QID}]}),
+    Type = case NS of
+	       ?NS_MAM_TMP -> get;
+	       _ -> set
+	   end,
+    I = send(Config, #iq{type = Type, sub_els = [#mam_query{xmlns = NS, id = QID}]}),
     maybe_recv_iq_result(NS, I),
     Iter = if NS == ?NS_MAM_TMP -> lists:seq(1, 5);
 	      true -> lists:seq(1, 5) ++ lists:seq(1, 5)
@@ -1686,21 +1690,21 @@ mam_query_all(Config, NS) ->
     if NS == ?NS_MAM_TMP ->
 	    ?recv1(#iq{type = result, id = I, sub_els = []});
        true ->
-	    ?recv1(#message{sub_els = [#mam_fin{id = QID}]})
+	    ?recv1(#message{sub_els = [#mam_fin{complete = true, id = QID}]})
     end.
 
 mam_query_with(Config, JID, NS) ->
     MyJID = my_jid(Config),
     Peer = ?config(slave, Config),
-    Query = if NS == ?NS_MAM_TMP ->
-		    #mam_query{xmlns = NS, with = JID};
+    {Query, Type} = if NS == ?NS_MAM_TMP ->
+		    {#mam_query{xmlns = NS, with = JID}, get};
 	       true ->
 		    Fs = [#xdata_field{var = <<"jid">>,
 				       values = [jlib:jid_to_string(JID)]}],
-		    #mam_query{xmlns = NS,
-			       xdata = #xdata{type = submit, fields = Fs}}
+		    {#mam_query{xmlns = NS,
+			       xdata = #xdata{type = submit, fields = Fs}}, set}
 	    end,
-    I = send(Config, #iq{type = get, sub_els = [Query]}),
+    I = send(Config, #iq{type = Type, sub_els = [Query]}),
     Iter = if NS == ?NS_MAM_TMP -> lists:seq(1, 5);
 	      true -> lists:seq(1, 5) ++ lists:seq(1, 5)
 	   end,
@@ -1722,7 +1726,7 @@ mam_query_with(Config, JID, NS) ->
     if NS == ?NS_MAM_TMP ->
 	    ?recv1(#iq{type = result, id = I, sub_els = []});
        true ->
-	    ?recv1(#message{sub_els = [#mam_fin{}]})
+	    ?recv1(#message{sub_els = [#mam_fin{complete = true}]})
     end.
 
 maybe_recv_iq_result(?NS_MAM_0, I1) ->
@@ -1733,9 +1737,13 @@ maybe_recv_iq_result(_, _) ->
 mam_query_rsm(Config, NS) ->
     MyJID = my_jid(Config),
     Peer = ?config(slave, Config),
+    Type = case NS of
+	       ?NS_MAM_TMP -> get;
+	       _ -> set
+	   end,
     %% Get the first 3 items out of 5
     I1 = send(Config,
-              #iq{type = get,
+              #iq{type = Type,
                   sub_els = [#mam_query{xmlns = NS, rsm = #rsm_set{max = 3}}]}),
     maybe_recv_iq_result(NS, I1),
     lists:foreach(
@@ -1759,12 +1767,13 @@ mam_query_rsm(Config, NS) ->
 					     rsm = #rsm_set{last = Last, count = 5}}]});
        true ->
 	    ?recv1(#message{sub_els = [#mam_fin{
+					  complete = false,
 					  rsm = #rsm_set{last = Last, count = 10}}]})
     end,
     %% Get the next items starting from the `Last`.
     %% Limit the response to 2 items.
     I2 = send(Config,
-              #iq{type = get,
+              #iq{type = Type,
                   sub_els = [#mam_query{xmlns = NS,
 					rsm = #rsm_set{max = 2,
                                                        'after' = Last}}]}),
@@ -1794,15 +1803,16 @@ mam_query_rsm(Config, NS) ->
        true ->
 	    ?recv1(#message{
 		      sub_els = [#mam_fin{
+				    complete = false,
 				    rsm = #rsm_set{
 					      count = 10,
 					      first = #rsm_first{data = First}}}]})
     end,
-    %% Paging back. Should receive 2 elements: 2, 3.
+    %% Paging back. Should receive 3 elements: 1, 2, 3.
     I3 = send(Config,
-              #iq{type = get,
+              #iq{type = Type,
                   sub_els = [#mam_query{xmlns = NS,
-					rsm = #rsm_set{max = 2,
+					rsm = #rsm_set{max = 3,
                                                        before = First}}]}),
     maybe_recv_iq_result(NS, I3),
     lists:foreach(
@@ -1819,17 +1829,18 @@ mam_query_rsm(Config, NS) ->
                                            [#message{
                                                from = MyJID, to = Peer,
                                                body = [Text]}]}]}]})
-      end, lists:seq(2, 3)),
+      end, lists:seq(1, 3)),
     if NS == ?NS_MAM_TMP ->
 	    ?recv1(#iq{type = result, id = I3,
 		       sub_els = [#mam_query{xmlns = NS, rsm = #rsm_set{count = 5}}]});
        true ->
 	    ?recv1(#message{
-		      sub_els = [#mam_fin{rsm = #rsm_set{count = 10}}]})
+		      sub_els = [#mam_fin{complete = true,
+					  rsm = #rsm_set{count = 10}}]})
     end,
     %% Getting the item count. Should be 5 (or 10).
     I4 = send(Config,
-	      #iq{type = get,
+	      #iq{type = Type,
 		  sub_els = [#mam_query{xmlns = NS,
 					rsm = #rsm_set{max = 0}}]}),
     maybe_recv_iq_result(NS, I4),
@@ -1843,9 +1854,40 @@ mam_query_rsm(Config, NS) ->
        true ->
 	    ?recv1(#message{
 		      sub_els = [#mam_fin{
+				    complete = false,
 				    rsm = #rsm_set{count = 10,
 						   first = undefined,
 						   last = undefined}}]})
+    end,
+    %% Should receive 2 last messages
+    I5 = send(Config,
+	      #iq{type = Type,
+		  sub_els = [#mam_query{xmlns = NS,
+					rsm = #rsm_set{max = 2,
+						       before = none}}]}),
+    maybe_recv_iq_result(NS, I5),
+    lists:foreach(
+      fun(N) ->
+	      Text = #text{data = jlib:integer_to_binary(N)},
+	      ?recv1(#message{to = MyJID,
+			      sub_els =
+				  [#mam_result{
+				      xmlns = NS,
+				      sub_els =
+					  [#forwarded{
+					      delay = #delay{},
+					      sub_els =
+						  [#message{
+						      from = MyJID, to = Peer,
+						      body = [Text]}]}]}]})
+      end, lists:seq(4, 5)),
+    if NS == ?NS_MAM_TMP ->
+	    ?recv1(#iq{type = result, id = I5,
+		       sub_els = [#mam_query{xmlns = NS, rsm = #rsm_set{count = 5}}]});
+       true ->
+	    ?recv1(#message{
+		      sub_els = [#mam_fin{complete = false,
+					  rsm = #rsm_set{count = 10}}]})
     end.
 
 client_state_master(Config) ->

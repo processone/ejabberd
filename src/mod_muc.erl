@@ -115,7 +115,8 @@ shutdown_rooms(Host) ->
     Rooms = mnesia:dirty_select(muc_online_room,
 				[{#muc_online_room{name_host = '$1',
 						   pid = '$2'},
-				  [{'==', {element, 2, '$1'}, MyHost}],
+				  [{'==', {element, 2, '$1'}, MyHost},
+				   {'==', {node, '$2'}, node()}],
 				  ['$2']}]),
     [Pid ! shutdown || Pid <- Rooms],
     Rooms.
