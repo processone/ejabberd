@@ -10,7 +10,6 @@
 {roster_gateway_workaround, @roster_gateway_workaround@}.
 {transient_supervisors, @transient_supervisors@}.
 {full_xml, @full_xml@}.
-{nif, @nif@}.
 {db_type, @db_type@}.
 {debug, @debug@}.
 {hipe, @hipe@}.
