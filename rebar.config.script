@@ -19,8 +19,6 @@ Cfg = case file:consult("vars.config") of
 Macros = lists:flatmap(
            fun({roster_gateway_workaround, true}) ->
                    [{d, 'ROSTER_GATEWAY_WORKAROUND'}];
-              ({nif, true}) ->
-                   [{d, 'NIF'}];
               ({db_type, mssql}) ->
                    [{d, 'mssql'}];
               ({lager, true}) ->
@@ -76,9 +74,7 @@ ConfigureCmd = fun(Pkg, Flags) ->
                end,
 
 XMLFlags = lists:foldl(
-             fun({nif, true}, Acc) ->
-                     Acc ++ " --enable-nif";
-                ({full_xml, true}, Acc) ->
+             fun({full_xml, true}, Acc) ->
                      Acc ++ " --enable-full-xml";
                 (_, Acc) ->
                      Acc
