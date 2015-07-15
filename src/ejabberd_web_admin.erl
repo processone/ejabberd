@@ -340,8 +340,11 @@ make_xhtml(Els, Host, Node, Lang, JID) ->
 				 [{xmlcdata, <<"">>}])]),
 		      ?XAE(<<"div">>, [{<<"id">>, <<"copyrightouter">>}],
 			   [?XAE(<<"div">>, [{<<"id">>, <<"copyright">>}],
-				 [?XC(<<"p">>,
-				      <<"ejabberd (c) 2002-2015 ProcessOne">>)])])])]}}.
+				 [?XE(<<"p">>,
+				  [?AC(<<"https://www.ejabberd.im/">>, <<"ejabberd">>),
+				   ?C(<<" (c) 2002-2015 ">>),
+				   ?AC(<<"https://www.process-one.net/">>, <<"ProcessOne">>)]
+                                 )])])])]}}.
 
 get_base_path(global, cluster) -> <<"/admin/">>;
 get_base_path(Host, cluster) ->
