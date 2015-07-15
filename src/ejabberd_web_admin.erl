@@ -597,7 +597,7 @@ logo_fill() ->
 process_admin(global,
 	      #request{path = [], auth = {_, _, AJID},
 		       lang = Lang}) ->
-    make_xhtml((?H1GL((?T(<<"Administration">>)), <<"toc">>,
+    make_xhtml((?H1GL((?T(<<"Administration">>)), <<"">>,
 		      <<"Contents">>))
 		 ++
 		 [?XE(<<"ul">>,
@@ -666,7 +666,7 @@ process_admin(Host,
 				      [{{acl, '$1', '$2'}}]}])),
     {NumLines, ACLsP} = term_to_paragraph(ACLs, 80),
     make_xhtml((?H1GL((?T(<<"Access Control Lists">>)),
-		      <<"ACLDefinition">>, <<"ACL Definition">>))
+		      <<"acl-definition">>, <<"ACL Definition">>))
 		 ++
 		 case Res of
 		   ok -> [?XREST(<<"Submitted">>)];
@@ -702,7 +702,7 @@ process_admin(Host,
 				    [{{acl, {'$1', Host}, '$2'}, [],
 				      [{{acl, '$1', '$2'}}]}])),
     make_xhtml((?H1GL((?T(<<"Access Control Lists">>)),
-		      <<"ACLDefinition">>, <<"ACL Definition">>))
+		      <<"acl-definition">>, <<"ACL Definition">>))
 		 ++
 		 case Res of
 		   ok -> [?XREST(<<"Submitted">>)];
@@ -768,7 +768,7 @@ process_admin(Host,
 			  [{{access, '$1', '$2'}}]}]),
     {NumLines, AccessP} = term_to_paragraph(lists:keysort(2,Access), 80),
     make_xhtml((?H1GL((?T(<<"Access Rules">>)),
-		      <<"AccessRights">>, <<"Access Rights">>))
+		      <<"access-rights">>, <<"Access Rights">>))
 		 ++
 		 case Res of
 		   ok -> [?XREST(<<"Submitted">>)];
@@ -801,7 +801,7 @@ process_admin(Host,
 			     [{{access, {'$1', Host}, '$2'}, [],
 			       [{{access, '$1', '$2'}}]}]),
     make_xhtml((?H1GL((?T(<<"Access Rules">>)),
-		      <<"AccessRights">>, <<"Access Rights">>))
+		      <<"access-rights">>, <<"Access Rights">>))
 		 ++
 		 case Res of
 		   ok -> [?XREST(<<"Submitted">>)];
@@ -860,7 +860,7 @@ process_admin(global,
 		       lang = Lang}) ->
     Res = list_vhosts(Lang, AJID),
     make_xhtml((?H1GL((?T(<<"Virtual Hosts">>)),
-		      <<"virtualhost">>, <<"Virtual Hosting">>))
+		      <<"virtual-hosting">>, <<"Virtual Hosting">>))
 		 ++ Res,
 	       global, Lang, AJID);
 process_admin(Host,
@@ -1879,9 +1879,7 @@ get_node(global, Node, [<<"backup">>], Query, Lang) ->
 		 [?XRES(<<(?T(<<"Error">>))/binary, ": ",
 			  (list_to_binary(io_lib:format("~p", [Error])))/binary>>)]
 	   end,
-    (?H1GL(list_to_binary(io_lib:format(?T(<<"Backup of ~p">>), [Node])),
-	   <<"list-eja-commands">>,
-	   <<"List of ejabberd Commands">>))
+    [?XC(<<"h1">>, list_to_binary(io_lib:format(?T(<<"Backup of ~p">>), [Node])))]
       ++
       ResS ++
 	[?XCT(<<"p">>,
@@ -2043,7 +2041,7 @@ get_node(global, Node, [<<"ports">>], Query, Lang) ->
                                     []])),
     H1String = <<(?T(<<"Listened Ports at ">>))/binary,
 		 (iolist_to_binary(atom_to_list(Node)))/binary>>,
-    (?H1GL(H1String, <<"listened">>, <<"Listening Ports">>))
+    (?H1GL(H1String, <<"listening-ports">>, <<"Listening Ports">>))
       ++
       case Res of
 	ok -> [?XREST(<<"Submitted">>)];
@@ -2071,7 +2069,7 @@ get_node(Host, Node, [<<"modules">>], Query, Lang)
     NewModules = lists:sort(rpc:call(Node, gen_mod,
 				     loaded_modules_with_opts, [Host])),
     H1String = list_to_binary(io_lib:format(?T(<<"Modules at ~p">>), [Node])),
-    (?H1GL(H1String, <<"modoverview">>,
+    (?H1GL(H1String, <<"modules-overview">>,
 	   <<"Modules Overview">>))
       ++
       case Res of
