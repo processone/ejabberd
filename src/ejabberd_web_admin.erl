@@ -706,7 +706,7 @@ process_admin(Host,
 		   nothing -> []
 		 end
 		   ++
-		   [?XE(<<"p">>, [?ACT(<<"../acls-raw/">>, <<"Raw">>)])] ++
+		   [?XAE(<<"p">>, direction(ltr), [?ACT(<<"../acls-raw/">>, <<"Raw">>)])] ++
 		     [?XAE(<<"form">>,
 			   [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 			   [acls_to_xhtml(ACLs), ?BR,
@@ -805,7 +805,7 @@ process_admin(Host,
 		   nothing -> []
 		 end
 		   ++
-		   [?XE(<<"p">>, [?ACT(<<"../access-raw/">>, <<"Raw">>)])]
+		   [?XAE(<<"p">>, direction(ltr), [?ACT(<<"../access-raw/">>, <<"Raw">>)])]
 		     ++
 		     [?XAE(<<"form">>,
 			   [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
