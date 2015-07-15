@@ -1559,16 +1559,18 @@ user_info(User, Server, Query, Lang) ->
                                                           http_bind ->
                                                               <<"http-bind">>
                                                       end,
-                                              <<" (", ConnS/binary,
+                                              <<ConnS/binary,
                                                 "://",
                                                 (jlib:ip_to_list(IP))/binary,
                                                 ":",
                                                 (jlib:integer_to_binary(Port))/binary,
                                                 "#",
-                                                (jlib:atom_to_binary(Node))/binary,
-                                                ")">>
+                                                (jlib:atom_to_binary(Node))/binary>>
                                       end,
-                                ?LI([?C((<<R/binary, FIP/binary>>))])
+                                case direction(Lang) of
+				    [{_, <<"rtl">>}] -> ?LI([?C((<<FIP/binary, " - ", R/binary>>))]);
+				    _ -> ?LI([?C((<<R/binary, " - ", FIP/binary>>))])
+                                end
                         end,
                         lists:sort(Resources))))]
         end,
