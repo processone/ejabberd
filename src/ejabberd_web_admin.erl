@@ -167,15 +167,15 @@ process([<<"doc">>, LocalFile], _Request) ->
 	  ?DEBUG("Delivering content.", []),
 	  {200, [{<<"Server">>, <<"ejabberd">>}], FileContents};
       {error, Error} ->
-	  ?DEBUG("Delivering error: ~p", [Error]),
 	  Help = <<" ", FileName/binary,
 		   " - Try to specify the path to ejabberd "
 		   "documentation with the environment variable "
 		   "EJABBERD_DOC_PATH. Check the ejabberd "
 		   "Guide for more information.">>,
+	  ?INFO_MSG("Problem '~p' accessing the local Guide file ~s", [Error, Help]),
 	  case Error of
 	    eacces -> {403, [], <<"Forbidden", Help/binary>>};
-	    enoent -> {404, [], <<"Not found", Help/binary>>};
+	    enoent -> {307, [{<<"Location">>, <<"http://docs.ejabberd.im/admin/guide/configuration/">>}], <<"Not found", Help/binary>>};
 	    _Else ->
 		{404, [], <<(iolist_to_binary(atom_to_list(Error)))/binary, Help/binary>>}
 	  end
