@@ -241,8 +241,8 @@ web_menu_host(Acc, _Host, Lang) ->
 		      ])).
 
 web_page_main(_, #request{path=[<<"muc">>], lang = Lang} = _Request) ->
-    Res = [?XC(<<"h1">>, <<"Multi-User Chat">>),
-	   ?XC(<<"h3">>, <<"Statistics">>),
+    Res = [?XCT(<<"h1">>, <<"Multi-User Chat">>),
+	   ?XCT(<<"h3">>, <<"Statistics">>),
 	   ?XAE(<<"table">>, [],
 		[?XE(<<"tbody">>, [?TDTD(<<"Total rooms">>, ets:info(muc_online_room, size)),
 				   ?TDTD(<<"Permanent rooms">>, mnesia:table_info(muc_room, size)),
@@ -301,22 +301,22 @@ make_rooms_page(Host, Lang, {Sort_direction, Sort_column}) ->
 	      <<"Persistent">>,
 	      <<"Logging">>,
 	      <<"Just created">>,
-	      <<"Title">>],
+	      <<"Room title">>],
     {Titles_TR, _} =
 	lists:mapfoldl(
 	  fun(Title, Num_column) ->
 		  NCS = jlib:integer_to_binary(Num_column),
 		  TD = ?XE(<<"td">>, [?CT(Title),
 				      ?C(<<" ">>),
-				      ?ACT(<<"?sort=", NCS/binary>>, <<"<">>),
+				      ?AC(<<"?sort=", NCS/binary>>, <<"<">>),
 				      ?C(<<" ">>),
-				      ?ACT(<<"?sort=-", NCS/binary>>, <<">">>)]),
+				      ?AC(<<"?sort=-", NCS/binary>>, <<">">>)]),
 		  {TD, Num_column+1}
 	  end,
 	  1,
 	  Titles),
-    [?XC(<<"h1">>, <<"Multi-User Chat">>),
-     ?XC(<<"h2">>, <<"Rooms">>),
+    [?XCT(<<"h1">>, <<"Multi-User Chat">>),
+     ?XCT(<<"h2">>, <<"Chatrooms">>),
      ?XE(<<"table">>,
 	 [?XE(<<"thead">>,
 	      [?XE(<<"tr">>, Titles_TR)]
