@@ -167,10 +167,17 @@ initialize(Host, Opts) ->
                                          ?DEFAULT_CONTENT_TYPE),
     ContentTypes = build_list_content_types(
                      gen_mod:get_opt(content_types, Opts,
-                                     fun(L) when is_list(L) -> L end,
-                                     []),
+                                     fun(L) when is_list(L) ->
+					     lists:map(
+					       fun({K, V}) ->
+						       {iolist_to_binary(K),
+							iolist_to_binary(V)}
+					       end, L)
+				     end, []),
                      ?DEFAULT_CONTENT_TYPES),
-    ?INFO_MSG("initialize: ~n ~p", [ContentTypes]),%+++
+    ?INFO_MSG("known content types: ~s",
+	      [str:join([[$*, K, " -> ", V] || {K, V} <- ContentTypes],
+			<<", ">>)]),
     {DocRoot, AccessLog, AccessLogFD, DirectoryIndices,
      CustomHeaders, DefaultContentType, ContentTypes}.
 
