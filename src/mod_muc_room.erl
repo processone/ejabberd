@@ -915,7 +915,7 @@ process_groupchat_message(From,
 						  StateData),
 	  if (Role == moderator) or (Role == participant) or
 	       ((StateData#state.config)#config.moderated == false) ->
-		 {NewStateData1, IsAllowed} = case check_subject(Packet)
+		  {NewStateData1, IsAllowed} = case check_subject(Packet)
 						  of
 						false -> {StateData, true};
 						Subject ->
@@ -945,22 +945,33 @@ process_groupchat_message(From,
 						      _ -> {StateData, false}
 						    end
 					      end,
-		 case IsAllowed of
-		   true ->
-			   send_multiple(
-			      jlib:jid_replace_resource(StateData#state.jid, FromNick),
-			      StateData#state.server_host,
-			      StateData#state.users,
-			      Packet),
-		       NewStateData2 = case has_body_or_subject(Packet) of
-			   true ->
-				add_message_to_history(FromNick, From,
-							      Packet,
-							      NewStateData1);
-			   false ->
-				NewStateData1
-			 end,
-		       {next_state, normal_state, NewStateData2};
+		case IsAllowed of
+			true ->
+				case hook_filter(FromNick, From, Packet, NewStateData1) of
+					{ok, ModifiedPacket} ->
+						send_multiple(
+							jlib:jid_replace_resource(StateData#state.jid, FromNick),
+							StateData#state.server_host,
+							StateData#state.users,
+							Packet),
+						NewStateData2 = case has_body_or_subject(Packet) of
+							true ->
+								add_message_to_history(FromNick, From,
+									Packet,
+									NewStateData1);
+							false ->
+								NewStateData1
+						end,
+						{next_state, normal_state, NewStateData2};
+					{error, ErrorMessage} ->
+						?DEBUG("Group message filtered out with error: ~p", [ErrorMessage]),
+						if 
+							is_record(ErrorMessage, xmlel)  ->
+								ejabberd_router:route(StateData#state.jid, From, jlib:make_error_reply(Packet, ErrorMessage));
+							true -> ok
+						end,
+						{next_state, normal_state, StateData}
+				end;
 		   _ ->
 		       Err = case
 			       (StateData#state.config)#config.allow_change_subj
@@ -996,6 +1007,13 @@ process_groupchat_message(From,
 	  ejabberd_router:route(StateData#state.jid, From, Err),
 	  {next_state, normal_state, StateData}
     end.
+
+hook_filter(FromNick, FromJID, Packet, StateData) ->
+	case ejabberd_hooks:run_fold(muc_filter_message, StateData#state.server_host, {ok, Packet},
+				[FromJID, FromNick, StateData#state.jid, Packet, StateData#state.config]) of
+		stopped -> {ok, Packet};
+		Other -> Other
+	end.
 
 %% @doc Check if this non participant can send message to room.
 %%
