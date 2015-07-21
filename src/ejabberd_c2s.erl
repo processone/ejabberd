@@ -308,7 +308,7 @@ init([{SockMod, Socket}, Opts]) ->
     MaxAckQueue = case proplists:get_value(max_ack_queue, Opts) of
 		    Limit when is_integer(Limit), Limit > 0 -> Limit;
 		    infinity -> infinity;
-		    _ -> 500
+		    _ -> 1000
 		  end,
     ResumeTimeout = case proplists:get_value(resume_timeout, Opts) of
 		      Timeout when is_integer(Timeout), Timeout >= 0 -> Timeout;
@@ -3010,7 +3010,7 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
     end.
 
 resume_session({Time, PID}) ->
-    (?GEN_FSM):sync_send_all_state_event(PID, {resume_session, Time}, 3000).
+    (?GEN_FSM):sync_send_all_state_event(PID, {resume_session, Time}, 5000).
 
 make_resume_id(StateData) ->
     {Time, _} = StateData#state.sid,
