@@ -66,7 +66,7 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 	[First | _] -> First
     end,
     Type = Record#pubsub_node.type,
-    H = node_hometree_odbc:encode_host(Host),
+    H = node_flat_odbc:encode_host(Host),
     N = ejabberd_odbc:escape(Node),
     P = ejabberd_odbc:escape(Parent),
     Nidx = case nodeidx(Host, Node) of
@@ -116,7 +116,7 @@ get_node(Host, Node, _From) ->
     get_node(Host, Node).
 
 get_node(Host, Node) ->
-    H = node_hometree_odbc:encode_host(Host),
+    H = node_flat_odbc:encode_host(Host),
     N = ejabberd_odbc:escape(Node),
     case catch
 	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
@@ -151,7 +151,7 @@ get_nodes(Host, _From) ->
     get_nodes(Host).
 
 get_nodes(Host) ->
-    H = node_hometree_odbc:encode_host(Host),
+    H = node_flat_odbc:encode_host(Host),
     case catch
 	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
 		    "pubsub_node where host='">>, H, <<"';">>])
@@ -178,7 +178,7 @@ get_subnodes(Host, Node, _From) ->
     get_subnodes(Host, Node).
 
 get_subnodes(Host, Node) ->
-    H = node_hometree_odbc:encode_host(Host),
+    H = node_flat_odbc:encode_host(Host),
     N = ejabberd_odbc:escape(Node),
     case catch
 	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
@@ -196,7 +196,7 @@ get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).
 
 get_subnodes_tree(Host, Node) ->
-    H = node_hometree_odbc:encode_host(Host),
+    H = node_flat_odbc:encode_host(Host),
     N = ejabberd_odbc:escape(Node),
     case catch
 	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
@@ -256,7 +256,7 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
     end.
 
 delete_node(Host, Node) ->
-    H = node_hometree_odbc:encode_host(Host),
+    H = node_flat_odbc:encode_host(Host),
     N = ejabberd_odbc:escape(Node),
     Removed = get_subnodes_tree(Host, Node),
     catch ejabberd_odbc:sql_query_t([<<"delete from pubsub_node where host='">>,
@@ -295,7 +295,7 @@ raw_to_node(Host, [Node, Parent, Type, Nidx]) ->
 	id = Nidx, type = Type, options = Options}.
 
 nodeidx(Host, Node) ->
-    H = node_hometree_odbc:encode_host(Host),
+    H = node_flat_odbc:encode_host(Host),
     N = ejabberd_odbc:escape(Node),
     case catch
 	ejabberd_odbc:sql_query_t([<<"select nodeid from pubsub_node where "
@@ -311,5 +311,5 @@ nodeidx(Host, Node) ->
     end.
 
 nodeowners(Nidx) ->
-    {result, Res} = node_hometree_odbc:get_node_affiliations(Nidx),
+    {result, Res} = node_flat_odbc:get_node_affiliations(Nidx),
     [LJID || {LJID, Aff} <- Res, Aff =:= owner].
