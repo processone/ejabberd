@@ -445,9 +445,14 @@ compile_and_install(Module, Spec) ->
         true ->
             {ok, Dir} = file:get_cwd(),
             file:set_cwd(SrcDir),
-            Result = case compile(Module, Spec, LibDir) of
-                ok -> install(Module, Spec, LibDir);
-                Error -> Error
+            Result = case compile_deps(Module, Spec, LibDir) of
+                ok ->
+                    case compile(Module, Spec, LibDir) of
+                        ok -> install(Module, Spec, LibDir);
+                        Error -> Error
+                    end;
+                Error ->
+                    Error
             end,
             file:set_cwd(Dir),
             Result;
@@ -457,6 +462,35 @@ compile_and_install(Module, Spec) ->
                 ok -> compile_and_install(Module, Spec);
                 Error -> Error
             end
+    end.
+
+compile_deps(_Module, _Spec, DestDir) ->
+    case filelib:is_dir("deps") of
+        true -> ok;
+        false -> fetch_rebar_deps()
+    end,
+    Ebin = filename:join(DestDir, "ebin"),
+    filelib:ensure_dir(filename:join(Ebin, ".")),
+    Result = lists:foldl(fun(Dep, Acc) ->
+                Inc = filename:join(Dep, "include"),
+                Src = filename:join(Dep, "src"),
+                Options = [{outdir, Ebin}, {i, Inc}],
+                [file:copy(App, Ebin) || App <- filelib:wildcard(Src++"/*.app")],
+                Acc++[case compile:file(File, Options) of
+                        {ok, _} -> ok;
+                        {ok, _, _} -> ok;
+                        {ok, _, _, _} -> ok;
+                        error -> {error, {compilation_failed, File}};
+                        Error -> Error
+                    end
+                     || File <- filelib:wildcard(Src++"/*.erl")]
+        end, [], filelib:wildcard("deps/*")),
+    case lists:dropwhile(
+            fun(ok) -> true;
+                (_) -> false
+            end, Result) of
+        [] -> ok;
+        [Error|_] -> Error
     end.
 
 compile(_Module, _Spec, DestDir) ->
@@ -470,6 +504,7 @@ compile(_Module, _Spec, DestDir) ->
     Options = [{outdir, Ebin}, {i, "include"}, {i, EjabInc},
                verbose, report_errors, report_warnings]
               ++ Logger ++ ExtLib,
+    [file:copy(App, Ebin) || App <- filelib:wildcard("src/*.app")],
     Result = [case compile:file(File, Options) of
             {ok, _} -> ok;
             {ok, _, _} -> ok;
@@ -503,6 +538,42 @@ install(Module, Spec, DestDir) ->
         {ok, _} -> ok;
         Error -> Error
     end.
+
+%% -- minimalist rebar spec parser, only support git
+
+fetch_rebar_deps() ->
+    case rebar_deps("rebar.config")++rebar_deps("rebar.config.script") of
+        [] ->
+            ok;
+        Deps ->
+            filelib:ensure_dir(filename:join("deps", ".")),
+            lists:foreach(fun({_App, Cmd}) ->
+                        os:cmd("cd deps; "++Cmd++"; cd ..")
+                end, Deps)
+    end.
+rebar_deps(Script) ->
+    case file:script(Script) of
+        {ok, Config} when is_list(Config) ->
+            [rebar_dep(Dep) || Dep <- proplists:get_value(deps, Config, [])];
+        {ok, {deps, Deps}} ->
+            [rebar_dep(Dep) || Dep <- Deps];
+        _ ->
+            []
+    end.
+rebar_dep({App, _, {git, Url}}) ->
+    {App, "git clone "++Url++" "++filename:basename(App)};
+rebar_dep({App, _, {git, Url, {branch, Ref}}}) ->
+    {App, "git clone -n "++Url++" "++filename:basename(App)++
+     "; (cd "++filename:basename(App)++
+     "; git checkout -q origin/"++Ref++")"};
+rebar_dep({App, _, {git, Url, {tag, Ref}}}) ->
+    {App, "git clone -n "++Url++" "++filename:basename(App)++
+     "; (cd "++filename:basename(App)++
+     "; git checkout -q "++Ref++")"};
+rebar_dep({App, _, {git, Url, Ref}}) ->
+    {App, "git clone -n "++Url++" "++filename:basename(App)++
+     "; (cd "++filename:basename(App)++
+     "; git checkout -q "++Ref++")"}.
 
 %% -- YAML spec parser
 
