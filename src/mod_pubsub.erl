@@ -312,7 +312,6 @@ init([ServerHost, Opts]) ->
     pubsub_migrate:update_node_database(Host, ServerHost),
     pubsub_migrate:update_state_database(Host, ServerHost),
     pubsub_migrate:update_lastitem_database(Host, ServerHost),
-    init_nodes(Host, ServerHost, NodeTree, Plugins),
     {_, State} = init_send_loop(ServerHost),
     {ok, State}.
 
@@ -385,14 +384,6 @@ terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
 	Plugins),
     TreePlugin:terminate(Host, ServerHost),
     ok.
-
-init_nodes(Host, ServerHost, _NodeTree, Plugins) ->
-    case lists:member(<<"hometree">>, Plugins) of
-	true ->
-	    create_node(Host, ServerHost, <<"/home">>, service_jid(Host), <<"hometree">>),
-	    create_node(Host, ServerHost, <<"/home/", ServerHost/binary>>, service_jid(Host), <<"hometree">>);
-	false -> ok
-    end.
 
 send_loop(State) ->
     receive
