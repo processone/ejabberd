@@ -373,7 +373,8 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
     end,
     Affiliation = GenState#pubsub_state.affiliation,
     Subscribed = case PublishModel of
-	subscribers -> is_subscribed(SubState#pubsub_state.subscriptions);
+	subscribers -> is_subscribed(GenState#pubsub_state.subscriptions) orelse
+		       is_subscribed(SubState#pubsub_state.subscriptions);
 	_ -> undefined
     end,
     if not ((PublishModel == open) or
@@ -738,8 +739,10 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, _RS
     GenState = get_state(Nidx, GenKey),
     SubState = get_state(Nidx, SubKey),
     Affiliation = GenState#pubsub_state.affiliation,
-    Subscriptions = SubState#pubsub_state.subscriptions,
-    Whitelisted = can_fetch_item(Affiliation, Subscriptions),
+    BareSubscriptions = GenState#pubsub_state.subscriptions,
+    FullSubscriptions = SubState#pubsub_state.subscriptions,
+    Whitelisted = can_fetch_item(Affiliation, BareSubscriptions) orelse
+		  can_fetch_item(Affiliation, FullSubscriptions),
     if %%SubId == "", ?? ->
 	%% Entity has multiple subscriptions to the node but does not specify a subscription ID
 	%{error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
