@@ -37,7 +37,6 @@
 %%%   ignore_pep_from_offline: false
 %%%   plugins:
 %%%     - "flat"
-%%%     - "hometree"
 %%%     - "pep" # Requires mod_caps.
 %%%   pep_mapping:
 %%%     "urn:xmpp:microblog:0": "mb"

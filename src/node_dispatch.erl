@@ -179,7 +179,7 @@ get_item_name(Host, Node, Id) ->
     node_hometree:get_item_name(Host, Node, Id).
 
 node_to_path(Node) ->
-    node_flat:node_to_path(Node).
+    node_hometree:node_to_path(Node).
 
 path_to_node(Path) ->
-    node_flat:path_to_node(Path).
+    node_hometree:path_to_node(Path).
