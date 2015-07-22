@@ -2025,6 +2025,7 @@ get_conn_type(StateData) ->
 	    p1_tls -> c2s_compressed_tls
 	end;
     ejabberd_http_bind -> http_bind;
+    ejabberd_http_ws -> websocket;
     _ -> unknown
     end.
 
