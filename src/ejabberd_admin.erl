@@ -167,6 +167,10 @@ commands() ->
                         desc = "Export all tables as SQL queries to a file",
                         module = ejd2odbc, function = export,
                         args = [{host, string}, {file, string}], result = {res, rescode}},
+     #ejabberd_commands{name = convert_to_scram, tags = [odbc],
+			desc = "Convert the passwords in 'users' ODBC table to SCRAM",
+			module = ejabberd_auth_odbc, function = convert_to_scram,
+			args = [{host, binary}], result = {res, rescode}},
 
      #ejabberd_commands{name = convert_to_yaml, tags = [config],
                         desc = "Convert the input file from Erlang to YAML format",
