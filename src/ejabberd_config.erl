@@ -206,7 +206,7 @@ get_plain_terms_file(File1, Opts) ->
             BinTerms1 = strings_to_binary(Terms),
             ModInc = case proplists:get_bool(include_modules_configs, Opts) of
                          true ->
-                             filelib:wildcard(ext_mod:modules_dir() ++ "/*/conf/*.yaml");
+                             filelib:wildcard(ext_mod:modules_dir() ++ "/*/conf/*.{yml,yaml}");
                          _ ->
                              []
                      end,
