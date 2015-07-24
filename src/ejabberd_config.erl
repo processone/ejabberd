@@ -385,18 +385,19 @@ include_config_files(Terms) ->
                        include_config_file(File, Opts)
                end, lists:flatten(FileOpts)),
 
-    SpecialTerms = dict:from_list([{hosts, none}, {listen, none}, {modules, none}]),
+    SpecialTerms = dict:from_list([{hosts, []}, {listen, []}, {modules, []}]),
+    PartDict = dict:store(rest, [], SpecialTerms),
     Partition = fun(L) ->
                         lists:foldr(fun({Name, Val} = Pair, Dict) ->
                                             case dict:find(Name, SpecialTerms) of
                                                 {ok, _} ->
-                                                    dict:store(Name, Val, Dict);
+                                                    dict:append_list(Name, Val, Dict);
                                                 _ ->
-                                                    dict:update(rest, fun(L1) -> [Pair|L1] end, Dict)
+                                                    dict:append(rest, Pair, Dict)
                                             end;
                                        (Tuple, Dict2) ->
-                                            dict:update(rest, fun(L2) -> [Tuple|L2] end, Dict2)
-                                    end, dict:from_list([{rest, []}]), L)
+                                            dict:append(rest, Tuple, Dict2)
+                                    end, PartDict, L)
                 end,
 
     Merged = dict:merge(fun(_Name, V1, V2) -> V1 ++ V2 end,
