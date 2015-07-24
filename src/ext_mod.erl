@@ -164,6 +164,7 @@ install(Package) when is_binary(Package) ->
             case compile_and_install(Module, Attrs) of
                 ok ->
                     code:add_patha(module_ebin_dir(Module)),
+                    ejabberd_config:reload_file(),
                     ok;
                 Error ->
                     delete_path(module_lib_dir(Module)),
@@ -182,7 +183,8 @@ uninstall(Package) when is_binary(Package) ->
             code:purge(Module),
             code:delete(Module),
             code:del_path(module_ebin_dir(Module)),
-            delete_path(module_lib_dir(Module));
+            delete_path(module_lib_dir(Module)),
+            ejabberd_config:reload_file();
         false ->
             {error, not_installed}
     end.
