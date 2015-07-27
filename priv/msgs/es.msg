@@ -60,7 +60,6 @@
 {"Database Tables Configuration at ","Configuración de tablas de la base de datos en "}.
 {"December","diciembre"}.
 {"Default users as participants","Los usuarios son participantes por defecto"}.
-{"Delete","Eliminar"}.
 {"Delete message of the day","Borrar mensaje del dia"}.
 {"Delete message of the day on all hosts","Borrar el mensaje del día en todos los dominios"}.
 {"Delete Selected","Eliminar los seleccionados"}.
@@ -77,6 +76,7 @@
 {"Either approve or decline the voice request.","Aprueba o rechaza la petición de voz."}.
 {"ejabberd IRC module","Módulo de IRC para ejabberd"}.
 {"ejabberd MUC module","Módulo de MUC para ejabberd"}.
+{"ejabberd Multicast service","Servicio Multicast de ejabberd"}.
 {"ejabberd Publish-Subscribe module","Módulo de Publicar-Subscribir de ejabberd"}.
 {"ejabberd SOCKS5 Bytestreams module","Módulo SOCKS5 Bytestreams para ejabberd"}.
 {"ejabberd vCard module","Módulo vCard para ejabberd"}.
@@ -164,6 +164,7 @@
 {"Listened Ports at ","Puertos de escucha en "}.
 {"Listened Ports","Puertos de escucha"}.
 {"List of modules to start","Lista de módulos a iniciar"}.
+{"List of rooms","Lista de salas"}.
 {"Low level update script","Script de actualización a bajo nivel"}.
 {"Make participants list public","La lista de participantes es pública"}.
 {"Make room CAPTCHA protected","Proteger la sala con CAPTCHA"}.
@@ -189,6 +190,8 @@
 {"Modules at ~p","Módulos en ~p"}.
 {"Modules","Módulos"}.
 {"Monday","lunes"}.
+{"Multicast","Multicast"}.
+{"Multi-User Chat","Salas de Charla"}.
 {"Name:","Nombre:"}.
 {"Name","Nombre"}.
 {"Never","Nunca"}.
@@ -241,6 +244,7 @@
 {"Path to File","Ruta al fichero"}.
 {"Pending","Pendiente"}.
 {"Period: ","Periodo: "}.
+{"Permanent rooms","Salas permanentes"}.
 {"Persist items to storage","Persistir elementos al almacenar"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Ten en cuenta que estas opciones solo harán copia de seguridad de la base de datos Mnesia embebida. Si estás usando ODBC tendrás que hacer también copia de seguridad de tu base de datos SQL."}.
@@ -258,6 +262,7 @@
 {"Raw","Crudo"}.
 {"Really delete message of the day?","¿Está seguro de quere borrar el mensaje del dia?"}.
 {"Register a Jabber account","Registrar una cuenta Jabber"}.
+{"Registered nicknames","Apodos registrados"}.
 {"Registered Users:","Usuarios registrados:"}.
 {"Registered Users","Usuarios registrados"}.
 {"Register","Registrar"}.
@@ -338,7 +343,6 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","No importa si usas mayúsculas: macbeth es lo mismo que MacBeth y Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Esta página te permite crear una cuenta Jabber este servidor Jabber. Tu JID (Jabber IDentificador) será de la forma: nombredeusuario@servidor. Por favor lee detenidamente las instrucciones para rellenar correctamente los campos."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Esta página te permite borrar tu cuenta Jabber en este servidor Jabber."}.
-{"This room is not anonymous","Sala no anónima"}.
 {"Thursday","jueves"}.
 {"Time delay","Retraso temporal"}.
 {"Time","Fecha"}.
@@ -346,6 +350,7 @@
 {"Too many unacked stanzas","Demasiados mensajes sin haber reconocido  recibirlos"}.
 {"To","Para"}.
 {"To ~s","A ~s"}.
+{"Total rooms","Salas totales"}.
 {"Transactions Aborted:","Transacciones abortadas:"}.
 {"Transactions Committed:","Transacciones finalizadas:"}.
 {"Transactions Logged:","Transacciones registradas:"}.

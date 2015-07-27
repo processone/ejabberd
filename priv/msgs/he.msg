@@ -11,9 +11,9 @@
 {"Add User","הוסף משתמש"}.
 {"Administration of ","ניהול של "}.
 {"Administration","הנהלה"}.
-{"A friendly name for the node","שם ידידותי עבור הממסר"}.
+{"A friendly name for the node","שם ידידותי עבור הצומת"}.
 {"All activity","כל פעילות"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","להתיר לכתובת JID זו להירשם אל ממסר PubSub זה?"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","להתיר לכתובת JID זו להירשם לצומת PubSub זה?"}.
 {"Allow users to change the subject","התר למשתמשים לשנות את הנושא"}.
 {"Allow users to query other users","התר למשתמשים לתשאל משתמשים אחרים"}.
 {"Allow users to send invites","התר למשתמשים לשלוח הזמנות"}.
@@ -23,13 +23,14 @@
 {"Allow visitors to send status text in presence updates","התר למבקרים לשלוח טקסט מצב בעדכוני נוכחות"}.
 {"Allow visitors to send voice requests","התר למבקרים לשלוח בקשות ביטוי"}.
 {"All Users","כל המשתמשים"}.
-{"Announcements","מודעות"}.
+{"Announcements","בשורות"}.
 {"anyone","לכל אחד"}.
 {"April","אפריל"}.
 {"August","אוגוסט"}.
 {"Backup Management","ניהול גיבוי"}.
-{"Backup to File at ","גבה אל קובץ אצל "}.
-{"Backup","גבה"}.
+{"Backup of ~p","גיבוי של ~p"}.
+{"Backup to File at ","גבה לקובץ אצל "}.
+{"Backup","גיבוי"}.
 {"Bad format","פורמט רע"}.
 {"Birthday","יום הולדת"}.
 {"CAPTCHA web page","עמוד רשת CAPTCHA"}.
@@ -37,10 +38,10 @@
 {"Change User Password","שנה סיסמת משתמש"}.
 {"Characters not allowed:","תווים לא מורשים:"}.
 {"Chatroom configuration modified","תצורת חדר שיחה שונתה"}.
-{"Chatroom is created","חדר שיחה נוצר"}.
-{"Chatroom is destroyed","חדר שיחה הרוס"}.
-{"Chatroom is started","חדר שיחה מותחל"}.
-{"Chatroom is stopped","חדר שיחה הופסק"}.
+{"Chatroom is created","חדר שיחה הינו נוצר"}.
+{"Chatroom is destroyed","חדר שיחה הינו הרוס"}.
+{"Chatroom is started","חדר שיחה הינו מותחל"}.
+{"Chatroom is stopped","חדר שיחה הינו מופסק"}.
 {"Chatrooms","חדרי שיחה"}.
 {"Choose a username and password to register with this server","בחר שם משתמש וסיסמה להירשם עם שרת זה"}.
 {"Choose modules to stop","בחר מודולים להפסקה"}.
@@ -54,27 +55,28 @@
 {"Connections parameters","פרמטרים של חיבור"}.
 {"Country","ארץ"}.
 {"CPU Time:","זמן מחשב (CPU):"}.
+{"Database Tables at ~p","טבלאות מסד נתונים אצל ~p"}.
 {"Database Tables Configuration at ","תצורת טבלאות מסד נתונים אצל "}.
 {"Database","מסד נתונים"}.
 {"December","דצמבר"}.
 {"Default users as participants","משתמשים משתמטים כמשתתפים"}.
-{"Delete message of the day on all hosts","מחק הודעת היום בכל המארחים"}.
-{"Delete message of the day","מחק הודעת היום"}.
+{"Delete message of the day on all hosts","מחק את בשורת היום בכל המארחים"}.
+{"Delete message of the day","מחק את בשורת היום"}.
 {"Delete Selected","מחק נבחרות"}.
 {"Delete User","מחק משתמש"}.
-{"Delete","מחק"}.
 {"Deliver event notifications","מסירת התראות אירוע"}.
-{"Deliver payloads with event notifications","מסירת מטען ייעוד (מטע״ד) יחד עם התראות אירוע"}.
+{"Deliver payloads with event notifications","מסירת מטעני ייעוד (מטע״ד) יחד עם התראות אירוע"}.
 {"Description:","תיאור:"}.
 {"Disc only copy","העתק של תקליטור בלבד"}.
 {"Displayed Groups:","קבוצות מוצגות:"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","אל תגלה את הסיסמה שלך לאף אחד, אפילו לא למנהלים של שרת Jabber"}.
-{"Dump Backup to Text File at ","השלך גיבוי אל קובץ טקסט אצל "}.
-{"Dump to Text File","השלך אל קובץ טקסט"}.
+{"Don't tell your password to anybody, not even the administrators of the Jabber server.","אל תגלה את הסיסמה שלך לאף אחד, אפילו לא למנהלים של שרת Jabber."}.
+{"Dump Backup to Text File at ","השלך גיבוי לקובץ טקסט אצל "}.
+{"Dump to Text File","השלך לקובץ טקסט"}.
 {"Edit Properties","ערוך מאפיינים"}.
 {"Either approve or decline the voice request.","או שתאשר או שתדחה את בקשת הביטוי."}.
 {"ejabberd IRC module","מודול IRC של ejabberd"}.
 {"ejabberd MUC module","מודול MUC של ejabberd"}.
+{"ejabberd Multicast service","שירות שידור מרובב של ejabberd"}.
 {"ejabberd Publish-Subscribe module","מודול Publish-Subscribe של ejabberd"}.
 {"ejabberd SOCKS5 Bytestreams module","מודול SOCKS5 Bytestreams של ejabberd"}.
 {"ejabberd vCard module","מודול vCard של ejabberd"}.
@@ -86,25 +88,27 @@
 {"End User Session","סיים סשן משתמש"}.
 {"Enter list of {Module, [Options]}","הזן רשימה של {מודול, [אפשרויות]}"}.
 {"Enter nickname you want to register","הזן שם כינוי אשר ברצונך לרושמו"}.
-{"Enter path to backup file","הזן נתיב אל קובץ גיבוי"}.
-{"Enter path to jabberd14 spool dir","הזן נתיב אל מדור סליל (spool dir) של jabberd14"}.
-{"Enter path to jabberd14 spool file","הזן נתיב אל קובץ סליל (spool file) של jabberd14"}.
-{"Enter path to text file","הזן נתיב אל קובץ טקסט"}.
+{"Enter path to backup file","הזן נתיב לקובץ גיבוי"}.
+{"Enter path to jabberd14 spool dir","הזן נתיב למדור סליל (spool dir) של jabberd14"}.
+{"Enter path to jabberd14 spool file","הזן נתיב לקובץ סליל (spool file) של jabberd14"}.
+{"Enter path to text file","הזן נתיב לקובץ טקסט"}.
 {"Enter the text you see","הזן את הטקסט אותו הינך רואה"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers.  Press 'Next' to get more fields to fill in.  Press 'Complete' to save settings.","הזן שם משתמש וקידודים בהם ברצונך להשתמש לשם התחברות אל שרתים של IRC.  לחץ 'הבא' כדי להשיג עוד שדות למילוי.  לחץ 'סיים' כדי לשמור הגדרות."}.
-{"Enter username, encodings, ports and passwords you wish to use for connecting to IRC servers","הזן שם משתמש, קידודים, פורטים וסיסמאות בהם ברצונך להשתמש לשם התחברות אל שרתים של IRC"}.
+{"Enter username and encodings you wish to use for connecting to IRC servers.  Press 'Next' to get more fields to fill in.  Press 'Complete' to save settings.","הזן שם משתמש וקידודים בהם ברצונך להשתמש לצורך התחברות לשרתי IRC.  לחץ 'הבא' כדי להשיג עוד שדות למילוי.  לחץ 'סיים' כדי לשמור הגדרות."}.
+{"Enter username, encodings, ports and passwords you wish to use for connecting to IRC servers","הזן שם משתמש, קידודים, פורטים וסיסמאות בהם ברצונך להשתמש לצורך התחברות לשרתי IRC"}.
+{"Erlang Jabber Server","שרת ג׳אבּר Erlang"}.
 {"Error","שגיאה"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","דוגמא: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
 {"Exclude Jabber IDs from CAPTCHA challenge","הוצא כתובות של Jabber מתוך אתגר CAPTCHA"}.
-{"Export data of all users in the server to PIEFXIS files (XEP-0227):","ייצוא מידע של כל המשתמשים אשר מצויים בשרת זה אל קבצי PIEFXIS (‫XEP-0227):"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0227):","ייצוא מידע של כל המשתמשים בתוך מארח אל קבצי PIEFXIS (‫XEP-0227):"}.
+{"Export all tables as SQL queries to a file:","יצא את כל טבלאות בתור שאילתות SQL לתוך קובץ:"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","יצא מידע של כל המשתמשים שבתוך בשרת זה לתוך קבצי PIEFXIS ‏(XEP-0227):"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","יצא מידע של כל המשתמשים שבתוך מארח לתוך קבצי PIEFXIS ‏(XEP-0227):"}.
 {"Family Name","שם משפחה"}.
 {"February","פברואר"}.
 {"Fill in fields to search for any matching Jabber User","מלא את שדות אלו כדי לחפש עבור כל משתמש Jabber מבוקש"}.
-{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","מלא את התבניות כדי לחפש עבור כל משתמש Jabber מבוקש (באפשרותך להוסיף * בסוף שדה כדי להתאים אל מחרוזת-משנה)"}.
+{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","מלא את התבניות כדי לחפש עבור כל משתמש Jabber מבוקש (באפשרותך להוסיף * בסוף שדה כדי להתאים למחרוזת-משנה)"}.
 {"Friday","יום שישי"}.
 {"From ~s","מאת ~s"}.
-{"From","מן"}.
+{"From","מאת"}.
 {"Full Name","שם מלא"}.
 {"Get Number of Online Users","השג מספר של משתמשים מקוונים"}.
 {"Get Number of Registered Users","השג מספר של משתמשים רשומים"}.
@@ -125,12 +129,12 @@
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","אם ברצונך לציין פורטים, סיסמאות, קידודים אחרים עבור שרתים של IRC, מלא את רשימה זו עם ערכים בפורמט '{\"irc server\", \"encoding\", port, \"password\"}'.  באופן משתמט שירות זה משתמש בקידוד \"~s\", פורט ~p, סיסמה ריקה."}.
 {"Import Directory","ייבוא מדור"}.
 {"Import File","ייבוא קובץ"}.
-{"Import user data from jabberd14 spool file:","ייבוא נתוני משתמש מתוך קובץ סליל (spool file) של jabberd14:"}.
+{"Import user data from jabberd14 spool file:","יבא נתוני משתמש מתוך קובץ סליל (spool file) של jabberd14:"}.
 {"Import User from File at ","ייבוא משתמש מתוך קובץ אצל "}.
-{"Import users data from a PIEFXIS file (XEP-0227):","ייבוא מידע משתמשים מתוך קובץ PIEFXIS ‏(XEP-0227):"}.
-{"Import users data from jabberd14 spool directory:","ייבוא נתוני משתמשים מתוך מדור סליל (spool directory) של jabberd14:"}.
+{"Import users data from a PIEFXIS file (XEP-0227):","יבא מידע משתמשים מתוך קובץ PIEFXIS ‏(XEP-0227):"}.
+{"Import users data from jabberd14 spool directory:","יבא נתוני משתמשים מתוך מדור סליל (spool directory) של jabberd14:"}.
 {"Import Users from Dir at ","ייבוא משתמשים מתוך מדור אצל "}.
-{"Import Users From jabberd14 Spool Files","ייבוא משתמשים מתוך קבצי סליל (Spool Files) של jabberd14"}.
+{"Import Users From jabberd14 Spool Files","יבא משתמשים מתוך קבצי סליל (Spool Files) של jabberd14"}.
 {"Invalid affiliation: ~s","סינוף שגוי: ~s"}.
 {"Invalid role: ~s","תפקיד שגוי: ~s"}.
 {"IP addresses","כתובות IP"}.
@@ -146,18 +150,22 @@
 {"Jabber ID ~s is invalid","מזהה Jabber ‏~s הינו שגוי"}.
 {"Jabber ID","מזהה Jabber"}.
 {"January","ינואר"}.
-{"Join IRC channel","הצטרף אל ערוץ IRC"}.
+{"Join IRC channel","הצטרף לערוץ IRC"}.
 {"joins the room","נכנס/ת אל החדר"}.
-{"Join the IRC channel here.","הצטרף אל ערוץ IRC כאן."}.
-{"Join the IRC channel in this Jabber ID: ~s","הצטרף אל ערוץ IRC במזהה Jabber זה: ~s"}.
+{"Join the IRC channel here.","הצטרף לערוץ IRC כאן."}.
+{"Join the IRC channel in this Jabber ID: ~s","הצטרף לערוץ IRC במזהה Jabber זה: ~s"}.
 {"July","יולי"}.
 {"June","יוני"}.
 {"Last Activity","פעילות אחרונה"}.
 {"Last login","כניסה אחרונה"}.
 {"Last month","חודש אחרון"}.
 {"Last year","שנה אחרונה"}.
-{"leaves the room","עוזב/ת אל החדר"}.
+{"leaves the room","עוזב/ת את החדר"}.
+{"Listened Ports at ","פורטים מואזנים אצל "}.
+{"Listened Ports","פורטים מואזנים"}.
 {"List of modules to start","רשימה של מודולים להפעלה"}.
+{"List of rooms","רשימה של חדרים"}.
+{"Low level update script","תסריט עדכון Low level"}.
 {"Make participants list public","הפוך רשימת משתתפים אל פומבית"}.
 {"Make room CAPTCHA protected","הפוך חדר אל מוגן CAPTCHA"}.
 {"Make room members-only","הפוך חדר אל חברים-בלבד"}.
@@ -168,7 +176,7 @@
 {"March","מרץ"}.
 {"Maximum Number of Occupants","מספר מרבי של נוכחים"}.
 {"Max # of items to persist","מספר מרבי של פריטים לקיבוע"}.
-{"Max payload size in bytes","גודל מרבי של מטען הייעוד ביחידות מידה של byte"}.
+{"Max payload size in bytes","גודל מרבי של מטען ייעוד (payload) ביחידות מידה של byte"}.
 {"May","מאי"}.
 {"Members:","חברים:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","שנן את הסיסמה שלך, או רשום אותה בנייר שמור במקום בטוח. אצל Jabber אין דרך אוטומטית לשחזר את הסיסמה שלך במידה וזו תישמט מתוך זיכרונך."}.
@@ -178,9 +186,12 @@
 {"Minimum interval between voice requests (in seconds)","תדירות מינימלית בין בקשות ביטוי (בשניות)"}.
 {"moderators only","לאחראים בלבד"}.
 {"Modified modules","מודולים שהותאמו"}.
+{"Modules at ~p","מודולים אצל ~p"}.
 {"Modules","מודולים"}.
 {"Module","מודול"}.
 {"Monday","יום שני"}.
+{"Multicast","שידור מרובב"}.
+{"Multi-User Chat","שיחה מרובת משתמשים"}.
 {"Name:","שם:"}.
 {"Name","שם"}.
 {"Never","אף פעם"}.
@@ -188,17 +199,20 @@
 {"Nickname Registration at ","רישום שם כינוי אצל "}.
 {"Nickname ~s does not exist in the room","שם כינוי ~s לא קיים בחדר"}.
 {"Nickname","שם כינוי"}.
+{"No body provided for announce message","לא סופק גוף עבור הודעת בשורה"}.
 {"nobody","אף אחד"}.
 {"No Data","אין מידע"}.
-{"Node ID","מזהה ממסר (NID)"}.
-{"Node not found","ממסר לא נמצא"}.
-{"Nodes","ממסרים"}.
+{"Node ID","מזהה צומת (NID)"}.
+{"Node not found","צומת לא נמצא"}.
+{"Node ~p","צומת ~p"}.
+{"Nodes","צמתים"}.
 {"No limit","ללא הגבלה"}.
+{"None","אין"}.
 {"No resource provided","לא סופק משאב"}.
 {"Not Found","לא נמצא"}.
-{"Notify subscribers when items are removed from the node","הודע מנויים כאשר פריטים מוסרים מתוך הממסר"}.
-{"Notify subscribers when the node configuration changes","הודע מנויים כאשר תצורת הממסר משתנה"}.
-{"Notify subscribers when the node is deleted","הודע מנויים כאשר הממסר נמחק"}.
+{"Notify subscribers when items are removed from the node","הודע מנויים כאשר פריטים מוסרים מתוך הצומת"}.
+{"Notify subscribers when the node configuration changes","הודע מנויים כאשר תצורת הצומת משתנה"}.
+{"Notify subscribers when the node is deleted","הודע מנויים כאשר הצומת נמחק"}.
 {"November","נובמבר"}.
 {"Number of occupants","מספר של נוכחים"}.
 {"Number of online users","מספר של משתמשים מקוונים"}.
@@ -211,7 +225,7 @@
 {"Online Users:","משתמשים מקוונים:"}.
 {"Online Users","משתמשים מקוונים"}.
 {"Online","מקוון"}.
-{"Only deliver notifications to available users","מסור התראות אל משתמשים זמינים בלבד"}.
+{"Only deliver notifications to available users","מסור התראות למשתמשים זמינים בלבד"}.
 {"Only moderators and participants are allowed to change the subject in this room","רק אחראים ומשתתפים רשאים לשנות את הנושא בחדר זה"}.
 {"Only moderators are allowed to change the subject in this room","רק אחראים רשאים לשנות את הנושא בחדר זה"}.
 {"Options","אפשרויות"}.
@@ -220,34 +234,40 @@
 {"Outgoing s2s Connections:","חיבורי s2s יוצאים:"}.
 {"Outgoing s2s Connections","חיבורי s2s יוצאים"}.
 {"Outgoing s2s Servers:","שרתי s2s יוצאים:"}.
+{"Packet","חבילת מידע"}.
 {"Password ~b","סיסמה ~b"}.
 {"Password Verification:","אימות סיסמה:"}.
 {"Password Verification","אימות סיסמה"}.
 {"Password:","סיסמה:"}.
 {"Password","סיסמה"}.
-{"Path to Dir","נתיב אל מדור"}.
-{"Path to File","נתיב אל קובץ"}.
+{"Path to Dir","נתיב למדור"}.
+{"Path to File","נתיב לקובץ"}.
+{"Pending","ממתינות"}.
 {"Period: ","משך זמן: "}.
+{"Permanent rooms","חדרים קבועים"}.
 {"Persist items to storage","פריטים קבועים לאחסון"}.
 {"Ping","פינג"}.
-{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","נא לשים לב כי אפשרויות אלו יגבו את מסד הנתונים המובנה Mnesia בלבד. אם הינך עושה שימוש במודול ODBC, עליך גם לגבות את מסד הנתונים SQL אשר מצוי ברשותך בנפרד."}.
+{"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","אנא שים לב כי אפשרויות אלו יגבו את מסד הנתונים המובנה Mnesia בלבד. אם הינך עושה שימוש במודול ODBC, עליך גם לגבות את מסד הנתונים SQL אשר מצוי ברשותך בנפרד."}.
 {"Pong","פונג"}.
 {"Port ~b","פורט ~b"}.
 {"Port","פורט"}.
 {"Present real Jabber IDs to","הצג כתובות JID ממשיות"}.
+{"private, ","פרטי, "}.
 {"Protocol","פרוטוקול"}.
 {"Publish-Subscribe","‫Publish-Subscribe"}.
 {"PubSub subscriber request","בקשת מנוי PubSub"}.
 {"Purge all items when the relevant publisher goes offline","טיהור כל הפריטים כאשר המפרסם הרלוונטי "}.
 {"RAM and disc copy","העתק RAM וגם תקליטור"}.
 {"RAM copy","העתק RAM"}.
-{"Really delete message of the day?","באמת למחוק את הודעת היום?"}.
+{"Raw","גולמי"}.
+{"Really delete message of the day?","באמת למחוק את בשורת היום?"}.
 {"Register a Jabber account","רשום חשבון Jabber"}.
+{"Registered nicknames","שמות כינוי רשומים"}.
 {"Registered Users:","משתמשים רשומים:"}.
 {"Registered Users","משתמשים רשומים"}.
 {"Register","הרשם"}.
 {"Registration in mod_irc for ","רישום בתוך mod_irc עבור "}.
-{"Remote copy","עותק מרוחק"}.
+{"Remote copy","העתק מרוחק"}.
 {"Remove All Offline Messages","הסר את כל ההודעות הלא מקוונות"}.
 {"Remove User","הסר משתמש"}.
 {"Remove","הסר"}.
@@ -269,69 +289,81 @@
 {"Roster size","גודל רשימה"}.
 {"Roster","רשימה"}.
 {"RPC Call Error","שגיאת קריאת RPC"}.
-{"Running Nodes","ממסרים שמורצים כעת"}.
+{"Running Nodes","צמתים מורצים"}.
 {"~s access rule configuration","~s תצורת כללי גישה"}.
 {"Saturday","יום שבת"}.
+{"Script check","בדיקת תסריט"}.
 {"Search Results for ","תוצאות חיפוש עבור "}.
 {"Search users in ","חיפוש משתמשים אצל "}.
-{"Send announcement to all online users on all hosts","שלח מודעות אל כל המשתמשים המקוונים בכל המארחים"}.
-{"Send announcement to all online users","שלח מודעות אל כל המשתמשים המקוונים"}.
-{"Send announcement to all users on all hosts","שלח מודעות אל כל המשתמשים בכל המארחים"}.
-{"Send announcement to all users","שלח מודעות אל כל המשתמשים"}.
+{"Send announcement to all online users on all hosts","שלח בשורה לכל המשתמשים המקוונים בכל המארחים"}.
+{"Send announcement to all online users","שלח בשורה לכל המשתמשים המקוונים"}.
+{"Send announcement to all users on all hosts","שלח בשורה לכל המשתמשים בכל המארחים"}.
+{"Send announcement to all users","שלח בשורה לכל המשתמשים"}.
 {"September","ספטמבר"}.
 {"Server ~b","שרת ~b"}.
 {"Server:","שרת:"}.
-{"Set message of the day and send to online users","קבע הודעת היום ושלח אל משתמשים מקוונים"}.
-{"Set message of the day on all hosts and send to online users","קבע הודעת היום בכל המארחים ושלח אל משתמשים מקוונים"}.
+{"Set message of the day and send to online users","קבע את בשורת היום ושלח למשתמשים מקוונים"}.
+{"Set message of the day on all hosts and send to online users","קבע את בשורת היום בכל המארחים ושלח למשתמשים מקוונים"}.
 {"Shared Roster Groups","קבוצות רשימה משותפות"}.
 {"Show Integral Table","הצג טבלה אינטגרלית"}.
 {"Show Ordinary Table","הצג טבלה רגילה"}.
 {"Shut Down Service","כבה שירות"}.
-{"~s invites you to the room ~s","‫~s מזמינך אל החדר ~s"}.
+{"~s invites you to the room ~s","‫~s מזמינך לחדר ~s"}.
 {"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","לקוחות Jabber מסוימים יכולים לאחסן את הסיסמה שלך על המחשב שלך. השתמש בתכונה זו רק אם אתה סמוך כי המחשב שלך הינו מוגן."}.
 {"Specify the access model","ציין את מודל הגישה"}.
 {"Specify the event message type","ציין את טיפוס הודעת האירוע"}.
 {"Specify the publisher model","ציין את מודל הפרסום"}.
 {"~s's Offline Messages Queue","תור הודעות לא מקוונות של ~s"}.
+{"Start Modules at ","התחל מודולים אצל "}.
 {"Start Modules","התחל מודולים"}.
 {"Start","התחל"}.
-{"Statistics of ~p","סטטיסטיקות עבור ~p"}.
+{"Statistics of ~p","סטטיסטיקות של ~p"}.
 {"Statistics","סטטיסטיקה"}.
+{"Stop Modules at ","הפסק מודולים אצל "}.
 {"Stop Modules","הפסק מודולים"}.
-{"Stopped Nodes","ממסרים שנפסקו"}.
+{"Stopped Nodes","צמתים שנפסקו"}.
 {"Stop","הפסק"}.
 {"Storage Type","טיפוס אחסון"}.
 {"Store binary backup:","אחסן גיבוי בינארי:"}.
 {"Store plain text backup:","אחסן גיבוי טקסט גלוי (plain text):"}.
 {"Subject","נושא"}.
-{"Submit","שליחה"}.
+{"Submitted","נשלח"}.
+{"Submit","שלח"}.
 {"Subscriber Address","כתובת מנוי"}.
-{"Subscription","מִנּוּי"}.
+{"Subscription","הרשמה"}.
 {"Sunday","יום ראשון"}.
 {"The CAPTCHA is valid.","‏CAPTCHA הינה בתוקף."}.
+{"The collections with which a node is affiliated","האוספים עמם צומת מסונף"}.
 {"the password is","הסיסמה היא"}.
 {"The password of your Jabber account was successfully changed.","סיסמת חשבון Jabber שונתה בהצלחה."}.
 {"There was an error changing the password: ","אירעה שגיאה בשינוי הסיסמה: "}.
 {"There was an error creating the account: ","אירעה שגיאה ביצירת החשבון: "}.
 {"There was an error deleting the account: ","אירעה שגיאה במחיקת החשבון: "}.
+{"This IP address is blacklisted in ~s","כתובת IP זו רשומה ברשימה שחורה בתוך ~s"}.
+{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","חלק זה אינו ער לרישיות: macbeth הינה זהה כשם MacBeth וגם Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","עמוד זה מתיר ליצור חשבון Jabber בשרת Jabber זה. כתובת JID ‏(Jabber IDentifier) תגובש באופן של: username@server. נא לקרוא בזהירות את ההוראות למילוי השדות באופן נכון."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","עמוד זה מתיר לך לבטל רישום של חשבון Jabber בשרת Jabber זה."}.
-{"This room is not anonymous","חדר זה אינו אנונימי"}.
 {"Thursday","יום חמישי"}.
 {"Time delay","זמן שיהוי"}.
 {"Time","זמן"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","יותר מדי (~p) אימותים כושלים מתוך כתובת IP זו (~s). הכתובת תורשה לקבל גישה בשעה ~s UTC"}.
+{"Too many unacked stanzas","יותר מדי סטנזות בלי אישורי קבלה"}.
 {"To ~s","אל ~s"}.
-{"To","אל"}.
-{"Transactions Aborted:","טרנזקציות בוטלו:"}.
-{"Transactions Committed:","טרנזקציות בוצעו:"}.
-{"Transactions Logged:","טרנזקציות נרשמו:"}.
-{"Transactions Restarted:","טרנזקציות הותחלו מחדש:"}.
+{"Total rooms","חדרים סה״כ"}.
+{"To","לכבוד"}.
+{"Transactions Aborted:","טרנזקציות שבוטלו:"}.
+{"Transactions Committed:","טרנזקציות שבוצעו:"}.
+{"Transactions Logged:","טרנזקציות שנרשמו:"}.
+{"Transactions Restarted:","טרנזקציות שהותחלו מחדש:"}.
 {"Tuesday","יום שלישי"}.
 {"Unauthorized","לא מורשה"}.
 {"Unregister a Jabber account","בטל רישום חשבון Jabber"}.
 {"Unregister","בטל רישום"}.
-{"Update message of the day (don't send)","עדכן הודעת היום (אל תשלח)"}.
-{"Update message of the day on all hosts (don't send)","עדכן הודעת היום בכל המארחים (אל תשלח)"}.
+{"Update message of the day (don't send)","עדכן את בשורת היום (אל תשלח)"}.
+{"Update message of the day on all hosts (don't send)","עדכן את בשורת היום בכל המארחים (אל תשלח)"}.
+{"Update plan","תכנית עדכון"}.
+{"Update ~p","עדכון ~p"}.
+{"Update script","תסריט עדכון"}.
 {"Update","עדכן"}.
 {"Uptime:","זמן פעילות:"}.
 {"Use of STARTTLS required","נדרש שימוש של STARTTLS"}.
@@ -339,6 +371,7 @@
 {"User Management","ניהול משתמשים"}.
 {"Username:","שם משתמש:"}.
 {"Users Last Activity","פעילות משתמשים אחרונה"}.
+{"User ~s","משתמש ~s"}.
 {"Users","משתמשים"}.
 {"User","משתמש"}.
 {"Validate","הענק תוקף"}.
@@ -356,4 +389,4 @@
 {"You need an x:data capable client to search","עליך להשתמש בלקוח אשר מסוגל להבין x:data בכדי לחפש"}.
 {"Your Jabber account was successfully created.","חשבון Jabber נוצר בהצלחה."}.
 {"Your Jabber account was successfully deleted.","חשבון Jabber נמחק בהצלחה."}.
-{"Your messages to ~s are being blocked. To unblock them, visit ~s","ההודעות שלך לערוץ ~s הינן חסומות. כדי למנוע את חסימתן, בקר בכתובת ~s"}.
+{"Your messages to ~s are being blocked. To unblock them, visit ~s","ההודעות שלך לערוץ ~s הינן חסומות. כדי לבטל את חסימתן, בקר בכתובת ~s"}.
