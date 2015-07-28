@@ -136,7 +136,7 @@ user_receive_packet(Packet, _C2SState, JID, _From, To) ->
 %    - do not support "private" message mode, and do not modify the original packet in any way
 %    - we also replicate "read" notifications
 check_and_forward(JID, To, Packet, Direction)->
-    case is_chat_or_normal_message(Packet) andalso
+    case is_chat_message(Packet) andalso
 	     xml:get_subtag(Packet, <<"private">>) == false andalso
 		 xml:get_subtag(Packet, <<"no-copy">>) == false of
 	true ->
@@ -273,13 +273,16 @@ message_type(#xmlel{attrs = Attrs}) ->
 	false -> <<"normal">>
     end.
 
-is_chat_or_normal_message(#xmlel{name = <<"message">>} = Packet) ->
+is_chat_message(#xmlel{name = <<"message">>} = Packet) ->
     case message_type(Packet) of
 	<<"chat">> -> true;
-	<<"normal">> -> true;
+	<<"normal">> -> has_non_empty_body(Packet);
 	_ -> false
     end;
-is_chat_or_normal_message(_Packet) -> false.
+is_chat_message(_Packet) -> false.
+
+has_non_empty_body(Packet) ->
+    xml:get_subtag_cdata(Packet, <<"body">>) =/= <<"">>.
 
 %% list {resource, cc_version} with carbons enabled for given user and host
 list(User, Server)->
