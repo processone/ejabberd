@@ -3017,6 +3017,8 @@ make_resume_id(StateData) ->
     {Time, _} = StateData#state.sid,
     jlib:term_to_base64({StateData#state.resource, Time}).
 
+add_resent_delay_info(_State, #xmlel{name = <<"iq">>} = El, _Time) ->
+    El;
 add_resent_delay_info(#state{server = From}, El, Time) ->
     jlib:add_delay_info(El, From, Time, <<"Resent">>).
 
