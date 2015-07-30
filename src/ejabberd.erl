@@ -79,7 +79,7 @@ is_loaded() ->
 start_app(App, Type, StartFlag) when not is_list(App) ->
     start_app([App], Type, StartFlag);
 start_app([App|Apps], Type, StartFlag) ->
-    case application:start(App) of
+    case application:start(App,Type) of
         ok ->
             spawn(fun() -> check_app_modules(App, StartFlag) end),
             start_app(Apps, Type, StartFlag);
