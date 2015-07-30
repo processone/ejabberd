@@ -467,8 +467,8 @@ presence(Config) ->
 
 presence_broadcast(Config) ->
     Feature = <<"p1:tmp:", (randoms:get_string())/binary>>,
-    Ver = crypto:sha(["client", $/, "bot", $/, "en", $/,
-		      "ejabberd_ct", $<, Feature, $<]),
+    Ver = crypto:hash(sha, ["client", $/, "bot", $/, "en", $/,
+                            "ejabberd_ct", $<, Feature, $<]),
     B64Ver = base64:encode(Ver),
     Node = <<(?EJABBERD_CT_URI)/binary, $#, B64Ver/binary>>,
     Server = ?config(server, Config),
