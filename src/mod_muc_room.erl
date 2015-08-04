@@ -1035,117 +1035,125 @@ get_participant_data(From, StateData) ->
     end.
 
 process_presence(From, Nick,
-		 #xmlel{name = <<"presence">>, attrs = Attrs} = Packet,
+		 #xmlel{name = <<"presence">>, attrs = Attrs0} = Packet0,
 		 StateData) ->
-    Type = xml:get_attr_s(<<"type">>, Attrs),
-    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-    StateData1 = case Type of
-		   <<"unavailable">> ->
-		       case is_user_online(From, StateData) of
-			 true ->
-			     NewPacket = case
-					   {(StateData#state.config)#config.allow_visitor_status,
-					    is_visitor(From, StateData)}
-					     of
-					   {false, true} ->
-					       strip_status(Packet);
-					   _ -> Packet
-					 end,
-			     NewState = add_user_presence_un(From, NewPacket,
-							     StateData),
-			     case (?DICT):find(Nick, StateData#state.nicks) of
-			       {ok, [_, _ | _]} -> ok;
-			       _ -> send_new_presence(From, NewState)
-			     end,
-			     Reason = case xml:get_subtag(NewPacket,
-							  <<"status">>)
-					  of
-					false -> <<"">>;
-					Status_el ->
-					    xml:get_tag_cdata(Status_el)
-				      end,
-			     remove_online_user(From, NewState, Reason);
-			 _ -> StateData
-		       end;
-		   <<"error">> ->
-		       case is_user_online(From, StateData) of
-			 true ->
-			     ErrorText =
-				 <<"This participant is kicked from the "
-				   "room because he sent an error presence">>,
-			     expulse_participant(Packet, From, StateData,
-						 translate:translate(Lang,
-								     ErrorText));
-			 _ -> StateData
-		       end;
-		   <<"">> ->
-		       case is_user_online(From, StateData) of
-			 true ->
-			     case is_nick_change(From, Nick, StateData) of
-			       true ->
-				   case {nick_collision(From, Nick, StateData),
-					 mod_muc:can_use_nick(StateData#state.server_host,
-							      StateData#state.host,
-							      From, Nick),
-					 {(StateData#state.config)#config.allow_visitor_nickchange,
-					  is_visitor(From, StateData)}}
-				       of
-				     {_, _, {false, true}} ->
-					 ErrText =
-					     <<"Visitors are not allowed to change their "
-					       "nicknames in this room">>,
-					 Err = jlib:make_error_reply(Packet,
-								     ?ERRT_NOT_ALLOWED(Lang,
-										       ErrText)),
-					 ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid,
-										Nick),
-						      From, Err),
-					 StateData;
-				     {true, _, _} ->
-					 Lang = xml:get_attr_s(<<"xml:lang">>,
-							       Attrs),
-					 ErrText =
-					     <<"That nickname is already in use by another "
-					       "occupant">>,
-					 Err = jlib:make_error_reply(Packet,
-								     ?ERRT_CONFLICT(Lang,
-										    ErrText)),
-					 ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid,
-										Nick), % TODO: s/Nick/""/
-						      From, Err),
-					 StateData;
-				     {_, false, _} ->
-					 ErrText =
-					     <<"That nickname is registered by another "
-					       "person">>,
-					 Err = jlib:make_error_reply(Packet,
-								     ?ERRT_CONFLICT(Lang,
-										    ErrText)),
-					 ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid,
-										Nick),
-						      From, Err),
-					 StateData;
-				     _ -> change_nick(From, Nick, StateData)
-				   end;
-			       _NotNickChange ->
-				   Stanza = case
-					      {(StateData#state.config)#config.allow_visitor_status,
-					       is_visitor(From, StateData)}
-						of
-					      {false, true} ->
-						  strip_status(Packet);
-					      _Allowed -> Packet
-					    end,
-				   NewState = add_user_presence(From, Stanza,
-								StateData),
-				   send_new_presence(From, NewState),
-				   NewState
-			     end;
-			 _ -> add_new_user(From, Nick, Packet, StateData)
-		       end;
-		   _ -> StateData
-		 end,
-    close_room_if_temporary_and_empty(StateData1).
+    Type0 = xml:get_attr_s(<<"type">>, Attrs0),
+    IsOnline = is_user_online(From, StateData),
+    if Type0 == <<"">>;
+       IsOnline and ((Type0 == <<"unavailable">>) or (Type0 == <<"error">>)) ->
+	   case ejabberd_hooks:run_fold(muc_filter_presence,
+					StateData#state.server_host,
+					Packet0,
+					[StateData,
+					 StateData#state.jid,
+					 From, Nick]) of
+	     drop ->
+		 {next_state, normal_state, StateData};
+	     #xmlel{attrs = Attrs} = Packet ->
+		 Type = xml:get_attr_s(<<"xml:lang">>, Attrs),
+		 Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+		 StateData1 = case Type of
+				<<"unavailable">> ->
+				    NewPacket = case
+						  {(StateData#state.config)#config.allow_visitor_status,
+						   is_visitor(From, StateData)}
+						    of
+						  {false, true} ->
+						      strip_status(Packet);
+						  _ -> Packet
+						end,
+				    NewState = add_user_presence_un(From, NewPacket,
+								    StateData),
+				    case (?DICT):find(Nick, StateData#state.nicks) of
+				      {ok, [_, _ | _]} -> ok;
+				      _ -> send_new_presence(From, NewState)
+				    end,
+				    Reason = case xml:get_subtag(NewPacket,
+								 <<"status">>)
+						 of
+					       false -> <<"">>;
+					       Status_el ->
+						   xml:get_tag_cdata(Status_el)
+					     end,
+				    remove_online_user(From, NewState, Reason);
+				<<"error">> ->
+				    ErrorText =
+					<<"This participant is kicked from the "
+					  "room because he sent an error presence">>,
+				    expulse_participant(Packet, From, StateData,
+							translate:translate(Lang,
+									    ErrorText));
+				<<"">> ->
+				    if not IsOnline ->
+					   add_new_user(From, Nick, Packet, StateData);
+				       true ->
+					   case is_nick_change(From, Nick, StateData) of
+					     true ->
+						 case {nick_collision(From, Nick, StateData),
+						       mod_muc:can_use_nick(StateData#state.server_host,
+									    StateData#state.host,
+									    From, Nick),
+						       {(StateData#state.config)#config.allow_visitor_nickchange,
+							is_visitor(From, StateData)}}
+						     of
+						   {_, _, {false, true}} ->
+						       ErrText =
+							   <<"Visitors are not allowed to change their "
+							     "nicknames in this room">>,
+						       Err = jlib:make_error_reply(Packet,
+										   ?ERRT_NOT_ALLOWED(Lang,
+												     ErrText)),
+						       ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid,
+											      Nick),
+								    From, Err),
+						       StateData;
+						   {true, _, _} ->
+						       Lang = xml:get_attr_s(<<"xml:lang">>,
+									     Attrs),
+						       ErrText =
+							   <<"That nickname is already in use by another "
+							     "occupant">>,
+						       Err = jlib:make_error_reply(Packet,
+										   ?ERRT_CONFLICT(Lang,
+												  ErrText)),
+						       ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid,
+											      Nick), % TODO: s/Nick/""/
+								    From, Err),
+						       StateData;
+						   {_, false, _} ->
+						       ErrText =
+							   <<"That nickname is registered by another "
+							     "person">>,
+						       Err = jlib:make_error_reply(Packet,
+										   ?ERRT_CONFLICT(Lang,
+												  ErrText)),
+						       ejabberd_router:route(jlib:jid_replace_resource(StateData#state.jid,
+											      Nick),
+								   From, Err),
+						       StateData;
+						   _ -> change_nick(From, Nick, StateData)
+						 end;
+					     _NotNickChange ->
+						 Stanza = case
+							    {(StateData#state.config)#config.allow_visitor_status,
+							     is_visitor(From, StateData)}
+							      of
+							    {false, true} ->
+								strip_status(Packet);
+							    _Allowed -> Packet
+							  end,
+						 NewState = add_user_presence(From, Stanza,
+									      StateData),
+						 send_new_presence(From, NewState),
+						 NewState
+					   end
+				    end
+			      end,
+		 close_room_if_temporary_and_empty(StateData1)
+	   end;
+       true ->
+	   {next_state, normal_state, StateData}
+    end.
 
 close_room_if_temporary_and_empty(StateData1) ->
     case not (StateData1#state.config)#config.persistent
