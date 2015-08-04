@@ -39,7 +39,7 @@
 	 make_error_reply/2, make_error_element/2,
 	 make_correct_from_to_attrs/3, replace_from_to_attrs/3,
 	 replace_from_to/3, replace_from_attrs/2, replace_from/2,
-	 remove_attr/2, make_jid/3, make_jid/1, string_to_jid/1,
+	 remove_attr/2, make_jid/3, make_jid/1, split_jid/1, string_to_jid/1,
 	 jid_to_string/1, is_nodename/1, tolower/1, nodeprep/1,
 	 nameprep/1, resourceprep/1, jid_tolower/1,
 	 jid_remove_resource/1, jid_replace_resource/2,
@@ -213,6 +213,13 @@ make_jid(User, Server, Resource) ->
 
 make_jid({User, Server, Resource}) ->
     make_jid(User, Server, Resource).
+
+%% This is the reverse of make_jid/1
+-spec split_jid(jid()) -> {binary(), binary(), binary()} | error.                              
+split_jid(#jid{user = U, server = S, resource = R}) ->
+    {U, S, R};
+split_jid(_) ->
+    error.
 
 -spec string_to_jid(binary()) -> jid() | error.
 
