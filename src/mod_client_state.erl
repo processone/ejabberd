@@ -42,11 +42,11 @@ start(Host, Opts) ->
     QueuePresence = gen_mod:get_opt(queue_presence, Opts,
 				    fun(true) -> true;
 				       (false) -> false
-				    end, false),
+				    end, true),
     DropChatStates = gen_mod:get_opt(drop_chat_states, Opts,
 				     fun(true) -> true;
 				        (false) -> false
-				     end, false),
+				     end, true),
     if QueuePresence; DropChatStates ->
 	   ejabberd_hooks:add(c2s_post_auth_features, Host, ?MODULE,
 			      add_stream_feature, 50),
