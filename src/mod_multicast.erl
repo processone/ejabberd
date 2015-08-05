@@ -153,24 +153,11 @@ handle_cast(_Msg, State) -> {noreply, State}.
 handle_info({route, From, To,
 	     #xmlel{name = <<"iq">>, attrs = Attrs} = Packet},
 	    State) ->
-    IQ = jlib:iq_query_info(Packet),
-    case catch process_iq(From, IQ, State) of
-      Result when is_record(Result, iq) ->
-	  ejabberd_router:route(To, From, jlib:iq_to_xml(Result));
-      {'EXIT', Reason} ->
-	  ?ERROR_MSG("Error when processing IQ stanza: ~p",
-		     [Reason]),
-	  Err = jlib:make_error_reply(Packet,
-				      ?ERR_INTERNAL_SERVER_ERROR),
-	  ejabberd_router:route(To, From, Err);
-      reply ->
-	  LServiceS = jts(To),
-	  case xml:get_attr_s(<<"type">>, Attrs) of
-	    <<"result">> ->
-		process_iqreply_result(From, LServiceS, Packet, State);
-	    <<"error">> ->
-		process_iqreply_error(From, LServiceS, Packet)
-	  end
+    case catch handle_iq(From, To, #xmlel{attrs = Attrs} = Packet, State) of
+        {'EXIT', Reason} ->
+            ?ERROR_MSG("Error when processing IQ stanza: ~p",
+                       [Reason]);
+        _ -> ok
     end,
     {noreply, State};
 %% XEP33 allows only 'message' and 'presence' stanza type
@@ -188,11 +175,16 @@ handle_info({route, From, To,
 handle_info({route_trusted, From, Destinations, Packet},
 	    #state{lservice = LServiceS, lserver = LServerS} =
 		State) ->
-    route_trusted(LServiceS, LServerS, From, Destinations,
-		  Packet),
+    case catch route_trusted(LServiceS, LServerS, From, Destinations,
+                             Packet) of
+        {'EXIT', Reason} ->
+            ?ERROR_MSG("Error in route_trusted: ~p", [Reason]);
+        _ -> ok
+    end,
     {noreply, State};
 handle_info({get_host, Pid}, State) ->
-    Pid ! {my_host, State#state.lservice}, {noreply, State};
+    Pid ! {my_host, State#state.lservice},
+    {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
 terminate(_Reason, State) ->
@@ -209,6 +201,28 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%%------------------------
 %%% IQ Request Processing
 %%%------------------------
+
+handle_iq(From, To, #xmlel{attrs = Attrs} = Packet, State) ->
+    IQ = jlib:iq_query_info(Packet),
+    case catch process_iq(From, IQ, State) of
+        Result when is_record(Result, iq) ->
+            ejabberd_router:route(To, From, jlib:iq_to_xml(Result));
+        {'EXIT', Reason} ->
+            ?ERROR_MSG("Error when processing IQ stanza: ~p",
+                       [Reason]),
+            Err = jlib:make_error_reply(Packet,
+                                        ?ERR_INTERNAL_SERVER_ERROR),
+            ejabberd_router:route(To, From, Err);
+        reply ->
+            LServiceS = jts(To),
+            case xml:get_attr_s(<<"type">>, Attrs) of
+                <<"result">> ->
+                    process_iqreply_result(From, LServiceS, Packet, State);
+                <<"error">> ->
+                    process_iqreply_error(From, LServiceS, Packet)
+            end;
+        ok -> ok
+    end.
 
 process_iq(From,
 	   #iq{type = get, xmlns = ?NS_DISCO_INFO, lang = Lang} =
@@ -377,6 +391,9 @@ perform(From, Packet, AAttrs, LServiceS,
 		       group = Group, renewal = true, sender = From,
 		       packet = Packet, aattrs = AAttrs,
 		       addresses = Group#group.addresses});
+perform(_From, _Packet, _AAttrs, LServiceS,
+	{{ask, LServiceS, _}, _Group}) ->
+    ok;
 perform(From, Packet, AAttrs, LServiceS,
 	{{ask, Server, not_renewal}, Group}) ->
     send_query_info(Server, LServiceS),
@@ -411,7 +428,7 @@ strip_addresses_element(Packet) ->
 		Els_stripped = lists:keydelete(<<"addresses">>, 2, Els),
 		Packet_stripped = #xmlel{name = Name, attrs = Attrs,
 					 children = Els_stripped},
-		{ok, Packet_stripped, AAttrs, Addresses};
+		{ok, Packet_stripped, AAttrs, xml:remove_cdata(Addresses)};
 	    _ -> throw(ewxmlns)
 	  end;
       _ -> throw(eadsele)
@@ -646,7 +663,8 @@ check_relay(RS, LS, Gs) ->
     end.
 
 check_relay_required(RServer, LServerS, Groups) ->
-    case str:str(RServer, LServerS) > 0 of
+    case lists:suffix(str:tokens(LServerS, <<".">>),
+                      str:tokens(RServer, <<".">>)) of
       true -> false;
       false -> check_relay_required(LServerS, Groups)
     end.
@@ -830,29 +848,44 @@ get_limits_values(Values) ->
 %%%-------------------------
 
 process_discoitems_result(From, LServiceS, Els) ->
-    List = lists:foldl(fun (XML, Res) ->
-			       case XML of
-				 #xmlel{name = <<"item">>, attrs = Attrs} ->
-				     Res ++ [xml:get_attr_s(<<"jid">>, Attrs)];
-				 _ -> Res
-			       end
-		       end,
-		       [], Els),
-    [send_query_info(Item, LServiceS) || Item <- List],
     FromS = jts(From),
-    {found_waiter, Waiter} = search_waiter(FromS, LServiceS,
-					   items),
-    delo_waiter(Waiter),
-    add_waiter(Waiter#waiter{awaiting =
-				 {List, LServiceS, info},
-			     renewal = false}).
+    case search_waiter(FromS, LServiceS, items) of
+        {found_waiter, Waiter} ->
+            List = lists:foldl(
+                     fun(XML, Res) ->
+                             case XML of
+                                 #xmlel{name = <<"item">>, attrs = Attrs} ->
+                                     SJID = xml:get_attr_s(<<"jid">>, Attrs),
+                                     case jlib:string_to_jid(SJID) of
+                                         #jid{luser = <<"">>,
+                                              lresource = <<"">>} ->
+                                             [SJID | Res];
+                                         _ -> Res
+                                     end;
+                                 _ -> Res
+                             end
+                     end,
+                     [], Els),
+            case List of
+                [] ->
+                    received_awaiter(FromS, Waiter, LServiceS);
+                _ ->
+                    [send_query_info(Item, LServiceS) || Item <- List],
+                    delo_waiter(Waiter),
+                    add_waiter(Waiter#waiter{awaiting =
+                                             {List, LServiceS, info},
+                                             renewal = false})
+            end;
+        _ ->
+            ok
+    end.
 
 %%%-------------------------
 %%% Check protocol support: Receive response: Received awaiter
 %%%-------------------------
 
 received_awaiter(JID, Waiter, LServiceS) ->
-    {JIDs, LServiceS, info} = Waiter#waiter.awaiting,
+    {JIDs, LServiceS, _} = Waiter#waiter.awaiting,
     delo_waiter(Waiter),
     Group = Waiter#waiter.group,
     RServer = Group#group.server,
@@ -984,14 +1017,21 @@ purge_loop(NM) ->
 %%%-------------------------
 
 create_pool() ->
-    catch ets:new(multicastp,
-		  [duplicate_bag, public, named_table, {keypos, 2}]).
+    catch
+      begin
+          ets:new(multicastp,
+                  [duplicate_bag, public, named_table, {keypos, 2}]),
+          ets:give_away(multicastp, whereis(ejabberd), ok)
+      end.
 
 add_waiter(Waiter) ->
     true = ets:insert(multicastp, Waiter).
 
 delo_waiter(Waiter) ->
     true = ets:delete_object(multicastp, Waiter).
+
+-spec search_waiter(binary(), binary(), info | items) ->
+    {found_waiter, #waiter{}} | waiter_not_found.
 
 search_waiter(JID, LServiceS, Type) ->
     Rs = ets:foldl(fun (W, Res) ->
