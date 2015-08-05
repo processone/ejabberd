@@ -263,10 +263,9 @@ setup_timers(StateData) ->
     Timer = erlang:start_timer(StateData#state.timeout,
                                self(), []),
     cancel_timer(StateData#state.ping_timer),
-    PingTimer = case {StateData#state.ping_interval, StateData#state.rfc_compilant} of
-                    {0, _} -> StateData#state.ping_timer;
-                    {_, false} -> StateData#state.ping_timer;
-                    {V, _} -> erlang:start_timer(V, self(), [])
+    PingTimer = case StateData#state.ping_interval of
+                    0 -> StateData#state.ping_timer;
+                    V -> erlang:start_timer(V, self(), [])
                 end,
      StateData#state{timer = Timer, ping_timer = PingTimer,
                      pong_expected = false}.
