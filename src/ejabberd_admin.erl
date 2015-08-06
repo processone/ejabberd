@@ -187,11 +187,6 @@ commands() ->
 			module = ?MODULE, function = delete_old_messages,
 			args = [{days, integer}], result = {res, rescode}},
 	 
-     #ejabberd_commands{name = rename_default_nodeplugin, tags = [mnesia],
-			desc = "Update PubSub table from old ejabberd trunk SVN to 2.1.0",
-			module = mod_pubsub, function = rename_default_nodeplugin,
-			args = [], result = {res, rescode}},
-
      #ejabberd_commands{name = export2odbc, tags = [mnesia],
 			desc = "Export virtual host information from Mnesia tables to SQL files",
 			module = ejd2odbc, function = export,
