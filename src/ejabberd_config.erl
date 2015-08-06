@@ -378,8 +378,8 @@ get_config_option_key(Name, Val) ->
     end.
 
 maps_to_lists(IMap) ->
-    maps:fold(fun(host_config, Map, Res) ->
-                      [{host_config, [{Host, maps_to_lists(SMap)} || {Host,SMap} <- maps:values(Map)]} | Res];
+    maps:fold(fun(Name, Map, Res) when Name == host_config orelse Name == append_host_config ->
+                      [{Name, [{Host, maps_to_lists(SMap)} || {Host,SMap} <- maps:values(Map)]} | Res];
                  (Name, Map, Res) when is_map(Map) ->
                       [{Name, maps:values(Map)} | Res];
                  (Name, Val, Res) ->
@@ -391,7 +391,7 @@ merge_configs(Terms, ResMap) ->
     lists:foldl(fun({Name, Val}, Map) when is_list(Val) ->
                         Old = maps:get(Name, Map, #{}),
                         New = lists:foldl(fun(SVal, OMap) ->
-                                                  NVal = if Name == host_config ->
+                                                  NVal = if Name == host_config orelse Name == append_host_config ->
                                                                  {Host, Opts} = SVal,
                                                                  {_, SubMap} = maps:get(Host, OMap, {Host, #{}}),
                                                                  {Host, merge_configs(Opts, SubMap)};
