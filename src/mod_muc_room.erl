@@ -1050,7 +1050,7 @@ process_presence(From, Nick,
 	     drop ->
 		 {next_state, normal_state, StateData};
 	     #xmlel{attrs = Attrs} = Packet ->
-		 Type = xml:get_attr_s(<<"xml:lang">>, Attrs),
+		 Type = xml:get_attr_s(<<"type">>, Attrs),
 		 Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
 		 StateData1 = case Type of
 				<<"unavailable">> ->
