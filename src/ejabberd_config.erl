@@ -368,6 +368,44 @@ exit_or_halt(ExitText) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Support for 'include_config_file'
 
+get_config_option_key(Name, Val) ->
+    if Name == listen ->
+            lists:keyfind(port, 1, Val);
+       is_tuple(Val) ->
+            element(1, Val);
+       true ->
+            Val
+    end.
+
+maps_to_lists(IMap) ->
+    maps:fold(fun(host_config, Map, Res) ->
+                      [{host_config, [{Host, maps_to_lists(SMap)} || {Host,SMap} <- maps:values(Map)]} | Res];
+                 (Name, Map, Res) when is_map(Map) ->
+                      [{Name, maps:values(Map)} | Res];
+                 (Name, Val, Res) ->
+                      [{Name, Val} | Res]
+              end, [], IMap).
+
+
+merge_configs(Terms, ResMap) ->
+    lists:foldl(fun({Name, Val}, Map) when is_list(Val) ->
+                        Old = maps:get(Name, Map, #{}),
+                        New = lists:foldl(fun(SVal, OMap) ->
+                                                  NVal = if Name == host_config ->
+                                                                 {Host, Opts} = SVal,
+                                                                 {_, SubMap} = maps:get(Host, OMap, {Host, #{}}),
+                                                                 {Host, merge_configs(Opts, SubMap)};
+                                                            true ->
+                                                                 SVal
+                                                         end,
+                                                  maps:put(get_config_option_key(Name, SVal), NVal, OMap)
+                                          end, Old, Val),
+                        maps:put(Name, New, Map);
+                   ({Name, Val}, Map) ->
+                        maps:put(Name, Val, Map)
+                end, ResMap, Terms).
+
+
 %% @doc Include additional configuration files in the list of terms.
 %% @spec ([term()]) -> [term()]
 include_config_files(Terms) ->
@@ -385,25 +423,9 @@ include_config_files(Terms) ->
                        include_config_file(File, Opts)
                end, lists:flatten(FileOpts)),
 
-    SpecialTerms = dict:from_list([{hosts, []}, {listen, []}, {modules, []}]),
-    PartDict = dict:store(rest, [], SpecialTerms),
-    Partition = fun(L) ->
-                        lists:foldr(fun({Name, Val} = Pair, Dict) ->
-                                            case dict:find(Name, SpecialTerms) of
-                                                {ok, _} ->
-                                                    dict:append_list(Name, Val, Dict);
-                                                _ ->
-                                                    dict:append(rest, Pair, Dict)
-                                            end;
-                                       (Tuple, Dict2) ->
-                                            dict:append(rest, Tuple, Dict2)
-                                    end, PartDict, L)
-                end,
-
-    Merged = dict:merge(fun(_Name, V1, V2) -> V1 ++ V2 end,
-                        Partition(Terms1), Partition(Terms2)),
-    Rest = dict:fetch(rest, Merged),
-    dict:to_list(dict:erase(rest, Merged)) ++ Rest.
+    M1 = merge_configs(Terms1, #{}),
+    M2 = merge_configs(Terms2, M1),
+    maps_to_lists(M2).
 
 transform_include_option({include_config_file, File}) when is_list(File) ->
     case is_string(File) of
