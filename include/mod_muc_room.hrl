@@ -61,7 +61,8 @@
     max_users                            = ?MAX_USERS_DEFAULT :: non_neg_integer() | none,
     logging                              = false :: boolean(),
     vcard                                = <<"">> :: binary(),
-    captcha_whitelist                    = (?SETS):empty() :: ?TGB_SET
+    captcha_whitelist                    = (?SETS):empty() :: ?TGB_SET,
+    mam                                  = false :: boolean()
 }).
 
 -type config() :: #config{}.

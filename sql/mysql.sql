@@ -93,6 +93,8 @@ CREATE TABLE archive (
     xml text NOT NULL,
     txt text,
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
+    kind varchar(10),
+    nick varchar(250),
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB CHARACTER SET utf8;
 

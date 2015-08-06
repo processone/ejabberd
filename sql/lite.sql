@@ -279,6 +279,8 @@ CREATE TABLE archive (
     xml text NOT NULL,
     txt text,
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind text,
+    nick text,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

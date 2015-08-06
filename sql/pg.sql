@@ -93,6 +93,8 @@ CREATE TABLE archive (
     xml text NOT NULL,
     txt text,
     id SERIAL,
+    kind text,
+    nick text,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
