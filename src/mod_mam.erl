@@ -157,11 +157,12 @@ remove_user(LUser, LServer, odbc) ->
       LServer,
       [<<"delete from archive_prefs where username='">>, SUser, <<"';">>]).
 
-user_receive_packet(Pkt, C2SState, JID, Peer, _To) ->
+user_receive_packet(Pkt, C2SState, JID, Peer, To) ->
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
+    IsBareCopy = is_bare_copy(JID, To),
     case should_archive(Pkt) of
-        true ->
+        true when not IsBareCopy ->
             NewPkt = strip_my_archived_tag(Pkt, LServer),
 	    case store_msg(C2SState, NewPkt, LUser, LServer, Peer, recv) of
                 {ok, ID} ->
@@ -178,7 +179,7 @@ user_receive_packet(Pkt, C2SState, JID, Peer, _To) ->
                 _ ->
                     NewPkt
             end;
-        false ->
+        _ ->
             Pkt
     end.
 
@@ -725,6 +726,38 @@ maybe_update_from_to(#xmlel{children = Els} = Pkt, JidRequestor,
     Pkt1 = Pkt#xmlel{children = Items ++ Els},
     Pkt2 = jlib:replace_from(jlib:jid_replace_resource(JidRequestor, Nick), Pkt1),
     jlib:remove_attr(<<"to">>, Pkt2).
+
+is_bare_copy(#jid{luser = U, lserver = S, lresource = R}, To) ->
+    PrioRes = ejabberd_sm:get_user_present_resources(U, S),
+    MaxRes = case catch lists:max(PrioRes) of
+		 {_Prio, Res} when is_binary(Res) ->
+		     Res;
+		 _ ->
+		     undefined
+	     end,
+    IsBareTo = case To of
+		   #jid{lresource = <<"">>} ->
+		       true;
+		   #jid{lresource = LRes} ->
+		       %% Unavailable resources are handled like bare JIDs.
+		       lists:keyfind(LRes, 2, PrioRes) =:= false
+	       end,
+    case {IsBareTo, R} of
+	{true, MaxRes} ->
+	    ?DEBUG("Recipient of message to bare JID has top priority: ~s@~s/~s",
+		   [U, S, R]),
+	    false;
+	{true, _R} ->
+	    %% The message was sent to our bare JID, and we currently have
+	    %% multiple resources with the same highest priority, so the session
+	    %% manager routes the message to each of them. We store the message
+	    %% only from the resource where R equals MaxRes.
+	    ?DEBUG("Additional recipient of message to bare JID: ~s@~s/~s",
+		   [U, S, R]),
+	    true;
+	{false, _R} ->
+	    false
+    end.
 
 send(From, To, Msgs, RSM, Count, IsComplete, #iq{sub_el = SubEl} = IQ) ->
     QID = xml:get_tag_attr_s(<<"queryid">>, SubEl),
