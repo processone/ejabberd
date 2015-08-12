@@ -81,11 +81,13 @@ commands() ->
 		       result = {res, rescode}},
      #ejabberd_commands{name = create_rooms_file, tags = [muc],
 		       desc = "Create the rooms indicated in file",
+		       longdesc = "Provide one room JID per line. Rooms will be created after restart.",
 		       module = ?MODULE, function = create_rooms_file,
 		       args = [{file, string}],
 		       result = {res, rescode}},
      #ejabberd_commands{name = destroy_rooms_file, tags = [muc],
 		       desc = "Destroy the rooms indicated in file",
+		       longdesc = "Provide one room JID per line.",
 		       module = ?MODULE, function = destroy_rooms_file,
 		       args = [{file, string}],
 		       result = {res, rescode}},
@@ -502,7 +504,7 @@ split_roomjid(RoomJID) ->
     [Name, Host] = string:tokens(RoomJID, "@"),
     [_MUC_service_name | ServerHostList] = string:tokens(Host, "."),
     ServerHost = join(ServerHostList, "."),
-    {Name, Host, ServerHost}.
+    {list_to_binary(Name), list_to_binary(Host), list_to_binary(ServerHost)}.
 
 %% This function is copied from string:join/2 in Erlang/OTP R12B-1
 %% Note that string:join/2 is not implemented in Erlang/OTP R11B
