@@ -3985,6 +3985,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(password), ?MAKE_CONFIG_OPT(anonymous),
      ?MAKE_CONFIG_OPT(logging), ?MAKE_CONFIG_OPT(max_users),
      ?MAKE_CONFIG_OPT(allow_voice_requests),
+     ?MAKE_CONFIG_OPT(mam),
      ?MAKE_CONFIG_OPT(voice_request_min_interval),
      ?MAKE_CONFIG_OPT(vcard),
      {captcha_whitelist,
