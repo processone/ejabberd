@@ -440,7 +440,7 @@ normal_state({route, From, <<"">>,
 		    ejabberd_router:route(StateData#state.jid, From, jlib:iq_to_xml(IQRes)),
 		    {next_state, normal_state, StateData};
 		#iq{type = Type, xmlns = XMLNS, lang = Lang,
-		    sub_el = #xmlel{name = SubElName} = SubEl} = IQ
+		    sub_el = #xmlel{name = SubElName, attrs = Attrs} = SubEl} = IQ
 		  when (XMLNS == (?NS_MUC_ADMIN)) or
 		       (XMLNS == (?NS_MUC_OWNER))
 		       or (XMLNS == (?NS_DISCO_INFO))
@@ -453,7 +453,10 @@ normal_state({route, From, <<"">>,
 			       ?NS_MUC_OWNER ->
 				   process_iq_owner(From, Type, Lang, SubEl, StateData);
 			       ?NS_DISCO_INFO ->
-				   process_iq_disco_info(From, Type, Lang, StateData);
+				   case xml:get_attr(<<"node">>, Attrs) of
+					  false -> process_iq_disco_info(From, Type, Lang, StateData);
+					  {value, _} -> {error, ?ERR_SERVICE_UNAVAILABLE}
+					end;
 			       ?NS_DISCO_ITEMS ->
 				   process_iq_disco_items(From, Type, Lang, StateData);
 			       ?NS_VCARD ->
