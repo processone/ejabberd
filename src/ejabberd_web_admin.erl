@@ -550,7 +550,12 @@ css(Host) ->
       "#FE8A02;\n  padding: 1em;\n  margin-right: "
       "1em;\n  background: #FFE3C9;\n}\n\n*.alignrig"
       "ht {\n  font-size: 10pt;\n  text-align: "
-      "right;\n}\n\n">>.
+      "right;\n}\n\n#copyright a:link {\n color: "
+      "#ffffff;\n text-decoration: none;\n}\n"
+      "#copyright a:visited {\n color: #ffffff;\n "
+      "text-decoration: none;\n}\n#copyright a:hover"
+      " {\n color: #ffffff;\n text-decoration: "
+      "underline;\n}\n">>.
 
 favicon() ->
     jlib:decode_base64(<<"AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAA"
