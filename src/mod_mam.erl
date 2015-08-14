@@ -658,7 +658,7 @@ maybe_update_from_to(#xmlel{children = Els} = Pkt, JidRequestor,
     Items = case Role of
 		moderator ->
 		    [#xmlel{name = <<"x">>,
-			    attrs = [{<<"xmlns">>, ?NS_MUC_ADMIN}],
+			    attrs = [{<<"xmlns">>, ?NS_MUC_USER}],
 			    children =
 				[#xmlel{name = <<"item">>,
 					attrs = [{<<"jid">>,
