@@ -167,6 +167,12 @@ TestConfig = case file:read_file_info(TestConfigFile) of
                      ""
              end,
 
+AllDeps0 = Deps ++ CfgDeps,
+AllDeps = case lists:keytake(lager, 1, AllDeps0) of
+		{value, Tuple, Rest} -> [Tuple|Rest];
+		false -> AllDeps0
+	  end,
+
 Config = [{erl_opts, Macros ++ HiPE ++ DebugInfo ++
                [{src_dirs, [asn1, src | SrcDirs]}]},
           {sub_dirs, ["rel"]},
@@ -180,7 +186,7 @@ Config = [{erl_opts, Macros ++ HiPE ++ DebugInfo ++
 	   [{"(XC - UC) || (XU - X - B - "
 	     ++ string:join(CfgXrefs, " - ") ++ ")", []}]},
           {post_hooks, PostHooks ++ CfgPostHooks},
-          {deps, Deps ++ CfgDeps}] ++ ElixirConfig,
+          {deps, AllDeps}] ++ ElixirConfig,
 %%io:format("ejabberd configuration:~n  ~p~n", [Config]),
 Config.
 
