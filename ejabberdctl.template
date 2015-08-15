@@ -405,7 +405,7 @@ ctl()
 ctlexec()
 {
     CONN_NAME=$1; shift
-    COMMAND=$(echo $@ | sed 's/;/\\;/g')
+    COMMAND=$(echo $@ | sed 's/["&$;\|<>()]/\\&/g')
     $EXEC_CMD "$ERL \
       $NAME ${CONN_NAME} \
       -noinput \
