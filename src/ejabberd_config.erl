@@ -370,7 +370,10 @@ exit_or_halt(ExitText) ->
 
 get_config_option_key(Name, Val) ->
     if Name == listen ->
-            lists:keyfind(port, 1, Val);
+            case {lists:keyfind(port, 1, Val), lists:keyfind(transport, 1, Val)} of
+                {{_, Port}, false} -> {Port, tcp};
+                {{_, Port2}, {_, Trans}} -> {Port2, Trans}
+            end;
        is_tuple(Val) ->
             element(1, Val);
        true ->
