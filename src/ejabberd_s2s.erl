@@ -242,7 +242,9 @@ check_peer_certificate(SockMod, Sock, Peer) ->
 		{error, p1_tls:get_cert_verify_string(VerifyRes, Cert)}
 	  end;
       {error, _Reason} ->
-	  {error, <<"Cannot get peer certificate">>}
+	    {error, <<"Cannot get peer certificate">>};
+      error ->
+	    {error, <<"Cannot get peer certificate">>}
     end.
 
 %%====================================================================
