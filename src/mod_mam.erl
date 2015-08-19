@@ -34,7 +34,8 @@
 
 -export([user_send_packet/4, user_receive_packet/5,
 	 process_iq_v0_2/3, process_iq_v0_3/3, remove_user/2,
-	 mod_opt_type/1, muc_process_iq/4, muc_filter_message/5]).
+	 remove_user/3, mod_opt_type/1, muc_process_iq/4,
+	 muc_filter_message/5]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("jlib.hrl").
