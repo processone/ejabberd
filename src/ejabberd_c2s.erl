@@ -1741,8 +1741,8 @@ handle_info({route_xmlstreamelement, El}, _StateName, StateData) ->
     {next_state, NStateName, NStateData, _Timeout} =
 	session_established({xmlstreamelement, El}, StateData),
     fsm_next_state(NStateName, NStateData);
-handle_info({force_update_presence, LUser}, StateName,
-	    #state{user = LUser, server = LServer} = StateData) ->
+handle_info({force_update_presence, LUser, LServer}, StateName,
+	    #state{jid = #jid{luser = LUser, lserver = LServer}} = StateData) ->
     NewStateData = case StateData#state.pres_last of
 		     #xmlel{name = <<"presence">>} ->
 			 PresenceEl =

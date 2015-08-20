@@ -741,7 +741,7 @@ force_update_presence({LUser, LServer}) ->
     Mod = get_sm_backend(),
     Ss = Mod:get_sessions(LUser, LServer),
     lists:foreach(fun (#session{sid = {_, Pid}}) ->
-			  Pid ! {force_update_presence, LUser}
+			  Pid ! {force_update_presence, LUser, LServer}
 		  end,
 		  Ss).
 
