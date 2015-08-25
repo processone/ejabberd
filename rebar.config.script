@@ -21,8 +21,6 @@ Macros = lists:flatmap(
                    [{d, 'ROSTER_GATEWAY_WORKAROUND'}];
               ({transient_supervisors, false}) ->
                    [{d, 'NO_TRANSIENT_SUPERVISORS'}];
-              ({nif, true}) ->
-                   [{d, 'NIF'}];
               ({db_type, mssql}) ->
                    [{d, 'mssql'}];
               ({lager, true}) ->
@@ -70,9 +68,7 @@ ConfigureCmd = fun(Pkg, Flags) ->
                end,
 
 XMLFlags = lists:foldl(
-             fun({nif, true}, Acc) ->
-                     Acc ++ " --enable-nif";
-                ({full_xml, true}, Acc) ->
+             fun({full_xml, true}, Acc) ->
                      Acc ++ " --enable-full-xml";
                 (_, Acc) ->
                      Acc
