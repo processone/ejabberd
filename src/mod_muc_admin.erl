@@ -816,8 +816,10 @@ change_option(Option, Value, Config) ->
 %%----------------------------
 
 get_room_options(Name, Service) ->
-    Pid = get_room_pid(Name, Service),
-    get_room_options(Pid).
+    case get_room_pid(Name, Service) of
+        room_not_found -> [];
+        Pid -> get_room_options(Pid)
+    end.
 
 get_room_options(Pid) ->
     Config = get_room_config(Pid),
