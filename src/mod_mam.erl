@@ -679,11 +679,9 @@ msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
                        xml:replace_tag_attr(
                          <<"xmlns">>, <<"jabber:client">>, Pkt)]}.
 
-maybe_update_from_to(Pkt, _JIDRequestor, undefined, _Type, _Nick) ->
-    Pkt;
 maybe_update_from_to(Pkt, JidRequestor, Peer, chat, _Nick) ->
     case xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs) of
-	<<"groupchat">> ->
+	<<"groupchat">> when Peer /= undefined ->
 	    Pkt2 = xml:replace_tag_attr(<<"to">>,
 					jlib:jid_to_string(JidRequestor),
 					Pkt),
