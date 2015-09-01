@@ -236,7 +236,7 @@ muc_process_iq(#iq{type = set,
 	    LServer = MUCState#state.server_host,
 	    Role = mod_muc_room:get_role(From, MUCState),
 	    process_iq(LServer, From, To, IQ, SubEl,
-		       get_xdata_fields(SubEl), {groupchat, Role});
+		       get_xdata_fields(SubEl), {groupchat, Role, MUCState});
 	_ ->
 	    IQ
     end;
@@ -561,10 +561,47 @@ select_and_start(LServer, From, To, Start, End, With, RSM, MsgType, DBType) ->
 		    select(LServer, From, Start, End,
 			   With, RSM, MsgType, DBType)
 	    end;
-	{groupchat, _Role} ->
+	{groupchat, _Role, _MUCState} ->
 	    select(LServer, To, Start, End, With, RSM, MsgType, DBType)
     end.
 
+select(_LServer, JidRequestor, Start, End, _With, RSM,
+       {groupchat, _Role, #state{config = #config{mam = false},
+				 history = History}} = MsgType,
+       _DBType) ->
+    #lqueue{len = L, queue = Q} = History,
+    {Msgs0, _} =
+	lists:mapfoldl(
+	  fun({Nick, Pkt, _HaveSubject, UTCDateTime, _Size}, I) ->
+		  Now = datetime_to_now(UTCDateTime, I),
+		  TS = now_to_usec(Now),
+		  case match_interval(Now, Start, End) and
+		      match_rsm(Now, RSM) of
+		      true ->
+			  {[{jlib:integer_to_binary(TS), TS,
+			     msg_to_el(#archive_msg{
+					  type = groupchat,
+					  timestamp = Now,
+					  peer = undefined,
+					  nick = Nick,
+					  packet = Pkt},
+				       MsgType,
+				       JidRequestor)}], I+1};
+		      false ->
+			  {[], I+1}
+		  end
+	  end, 0, queue:to_list(Q)),
+    Msgs = lists:flatten(Msgs0),
+    case RSM of
+	#rsm_in{max = Max, direction = before} ->
+	    {NewMsgs, IsComplete} = filter_by_max(lists:reverse(Msgs), Max),
+	    {NewMsgs, IsComplete, L};
+	#rsm_in{max = Max} ->
+	    {NewMsgs, IsComplete} = filter_by_max(Msgs, Max),
+	    {NewMsgs, IsComplete, L};
+	_ ->
+	    {Msgs, true, L}
+    end;
 select(_LServer, #jid{luser = LUser, lserver = LServer} = JidRequestor,
        Start, End, With, RSM, MsgType, mnesia) ->
     MS = make_matchspec(LUser, LServer, Start, End, With),
@@ -581,7 +618,7 @@ select(LServer, #jid{luser = LUser} = JidRequestor,
        Start, End, With, RSM, MsgType, {odbc, Host}) ->
     User = case MsgType of
 	       chat -> LUser;
-	       {groupchat, _Role} -> jlib:jid_to_string(JidRequestor)
+	       {groupchat, _Role, _MUCState} -> jlib:jid_to_string(JidRequestor)
 	   end,
     {Query, CountQuery} = make_sql_query(User, LServer,
 					 Start, End, With, RSM),
@@ -655,9 +692,9 @@ maybe_update_from_to(Pkt, JidRequestor, Peer, chat, _Nick) ->
 	_ -> Pkt
     end;
 maybe_update_from_to(#xmlel{children = Els} = Pkt, JidRequestor,
-		     Peer, {groupchat, Role}, Nick) ->
+		     Peer, {groupchat, Role, _MUCState}, Nick) ->
     Items = case Role of
-		moderator ->
+		moderator when Peer /= undefined ->
 		    [#xmlel{name = <<"x">>,
 			    attrs = [{<<"xmlns">>, ?NS_MUC_USER}],
 			    children =
@@ -761,6 +798,18 @@ filter_by_max(Msgs, Len) when is_integer(Len), Len >= 0 ->
     {lists:sublist(Msgs, Len), length(Msgs) =< Len};
 filter_by_max(_Msgs, _Junk) ->
     {[], true}.
+
+match_interval(Now, Start, End) ->
+    (Now >= Start) and (Now =< End).
+
+match_rsm(Now, #rsm_in{id = ID, direction = aft}) when ID /= <<"">> ->
+    Now1 = (catch usec_to_now(jlib:binary_to_integer(ID))),
+    Now > Now1;
+match_rsm(Now, #rsm_in{id = ID, direction = before}) when ID /= <<"">> ->
+    Now1 = (catch usec_to_now(jlib:binary_to_integer(ID))),
+    Now < Now1;
+match_rsm(_Now, _) ->
+    true.
 
 make_matchspec(LUser, LServer, Start, End, {_, _, <<>>} = With) ->
     ets:fun2ms(
@@ -883,6 +932,16 @@ usec_to_now(Int) ->
     MSec = Secs div 1000000,
     Sec = Secs rem 1000000,
     {MSec, Sec, USec}.
+
+now_to_iso({_, _, USec} = Now) ->
+    DateTime = calendar:now_to_universal_time(Now),
+    {ISOTimestamp, Zone} = jlib:timestamp_to_iso(DateTime, utc, USec),
+    <<ISOTimestamp/binary, Zone/binary>>.
+
+datetime_to_now(DateTime, USecs) ->
+    Seconds = calendar:datetime_to_gregorian_seconds(DateTime) -
+	calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}),
+    {Seconds div 1000000, Seconds rem 1000000, USecs}.
 
 get_jids(Els) ->
     lists:flatmap(
