@@ -931,11 +931,6 @@ usec_to_now(Int) ->
     Sec = Secs rem 1000000,
     {MSec, Sec, USec}.
 
-now_to_iso({_, _, USec} = Now) ->
-    DateTime = calendar:now_to_universal_time(Now),
-    {ISOTimestamp, Zone} = jlib:timestamp_to_iso(DateTime, utc, USec),
-    <<ISOTimestamp/binary, Zone/binary>>.
-
 datetime_to_now(DateTime, USecs) ->
     Seconds = calendar:datetime_to_gregorian_seconds(DateTime) -
 	calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}),
