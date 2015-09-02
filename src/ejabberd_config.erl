@@ -1164,6 +1164,8 @@ emit_deprecation_warning(Module, NewModule) ->
                          [Module, NewModule])
     end.
 
+opt_type(hide_sensitive_log_data) ->
+    fun (H) when is_boolean(H) -> H end;
 opt_type(hosts) ->
     fun(L) when is_list(L) ->
 	    lists:map(
@@ -1174,7 +1176,7 @@ opt_type(hosts) ->
 opt_type(language) ->
     fun iolist_to_binary/1;
 opt_type(_) ->
-    [hosts, language].
+    [hide_sensitive_log_data, hosts, language].
 
 -spec may_hide_data(string()) -> string();
                    (binary()) -> binary().
