@@ -41,7 +41,8 @@ defmodule Ejabberd.Mixfile do
         {:ehyperloglog, git: "https://github.com/vaxelfel/eHyperLogLog"},
         {:p1_mysql, git: "https://github.com/processone/mysql"},
         {:p1_pgsql, git: "https://github.com/processone/pgsql"},
-        {:eredis, git: "https://github.com/wooga/eredis"}
+        {:eredis, git: "https://github.com/wooga/eredis"},
+        {:exrm, "~> 0.19.2"}
      ]
   end
 end
