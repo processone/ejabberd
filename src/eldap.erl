@@ -824,7 +824,7 @@ send_command(Command, From, S) ->
     {Name, Request} = gen_req(Command),
     Message = #'LDAPMessage'{messageID = Id,
 			     protocolOp = {Name, Request}},
-    ?DEBUG("~p~n", [{Name, Request}]),
+    ?DEBUG("~p~n", [{Name, ejabberd_config:may_hide_data(Request)}]),
     {ok, Bytes} = 'ELDAPv3':encode('LDAPMessage',
 				Message),
     case (S#eldap.sockmod):send(S#eldap.fd, Bytes) of
@@ -1147,7 +1147,7 @@ bind_request(Socket, S) ->
 			 authentication = {simple, S#eldap.passwd}},
     Message = #'LDAPMessage'{messageID = Id,
 			     protocolOp = {bindRequest, Req}},
-    ?DEBUG("Bind Request Message:~p~n", [Message]),
+    ?DEBUG("Bind Request Message:~p~n", [ejabberd_config:may_hide_data(Message)]),
     {ok, Bytes} = 'ELDAPv3':encode('LDAPMessage',
 				Message),
     case (S#eldap.sockmod):send(Socket, Bytes) of

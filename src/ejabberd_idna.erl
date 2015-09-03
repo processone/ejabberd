@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : idna.erl
+%%% File    : ejabberd_idna.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : Support for IDNA (RFC3490)
 %%% Created : 10 Apr 2004 by Alexey Shchepin <alexey@process-one.net>
@@ -23,7 +23,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(idna).
+-module(ejabberd_idna).
 
 -author('alexey@process-one.net').
 

@@ -370,10 +370,8 @@ exit_or_halt(ExitText) ->
 
 get_config_option_key(Name, Val) ->
     if Name == listen ->
-            case {lists:keyfind(port, 1, Val), lists:keyfind(transport, 1, Val)} of
-                {{_, Port}, false} -> {Port, tcp};
-                {{_, Port2}, {_, Trans}} -> {Port2, Trans}
-            end;
+            [{Key, _, _}] = ejabberd_listener:validate_cfg([Val]),
+            Key;
        is_tuple(Val) ->
             element(1, Val);
        true ->
@@ -1166,6 +1164,8 @@ emit_deprecation_warning(Module, NewModule) ->
                          [Module, NewModule])
     end.
 
+opt_type(hide_sensitive_log_data) ->
+    fun (H) when is_boolean(H) -> H end;
 opt_type(hosts) ->
     fun(L) when is_list(L) ->
 	    lists:map(
@@ -1176,7 +1176,7 @@ opt_type(hosts) ->
 opt_type(language) ->
     fun iolist_to_binary/1;
 opt_type(_) ->
-    [hosts, language].
+    [hide_sensitive_log_data, hosts, language].
 
 -spec may_hide_data(string()) -> string();
                    (binary()) -> binary().
