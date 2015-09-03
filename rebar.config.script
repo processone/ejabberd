@@ -61,13 +61,22 @@ Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
         {esip, ".*", {git, "https://github.com/processone/p1_sip"}},
         {p1_stun, ".*", {git, "https://github.com/processone/stun"}},
         {p1_yaml, ".*", {git, "https://github.com/processone/p1_yaml"}},
-        {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}}],
+        {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}},
+	{erlydtl, ".*", {git, "https://github.com/oxpa/erlydtl", {branch, "gb_tree"}},[raw]}
+	],
 
 ConfigureCmd = fun(Pkg, Flags) ->
                        {'get-deps',
                         "sh -c 'cd deps/" ++ Pkg ++
                             " && ./configure" ++ Flags ++ "'"}
                end,
+
+MakeCmd = fun(Pkg, Flags) ->
+                       {'get-deps',
+                        "sh -c 'cd deps/" ++ Pkg ++
+                            " && make " ++ Flags ++ "'"}
+               end,
+
 
 XMLFlags = lists:foldl(
              fun({nif, true}, Acc) ->
@@ -82,7 +91,8 @@ PostHooks = [ConfigureCmd("p1_tls", ""),
              ConfigureCmd("p1_stringprep", ""),
              ConfigureCmd("p1_yaml", ""),
 	     ConfigureCmd("esip", ""),
-             ConfigureCmd("p1_xml", XMLFlags)],
+             ConfigureCmd("p1_xml", XMLFlags),
+             MakeCmd("erlydtl","")],
 
 CfgDeps = lists:flatmap(
             fun({mysql, true}) ->

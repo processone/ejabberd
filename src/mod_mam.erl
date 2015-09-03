@@ -24,6 +24,7 @@
 %%%
 %%%-------------------------------------------------------------------
 -module(mod_mam).
+-on_load(init_web/0).
 
 -protocol({xep, 313, '0.3'}).
 
@@ -35,12 +36,13 @@
 -export([user_send_packet/4, user_receive_packet/5,
 	 process_iq_v0_2/3, process_iq_v0_3/3, remove_user/2,
 	 remove_user/3, mod_opt_type/1, muc_process_iq/4,
-	 muc_filter_message/5]).
+	 muc_filter_message/5, process/2, make_matchspec/5]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("jlib.hrl").
 -include("logger.hrl").
 -include("mod_muc_room.hrl").
+-include("ejabberd_http.hrl").
 
 -record(archive_msg,
         {us = {<<"">>, <<"">>}                :: {binary(), binary()} | '$2',
@@ -58,10 +60,31 @@
          always = []           :: [ljid()],
          never = []            :: [ljid()]}).
 
+-record(html_msg,
+       {type = text            :: text | action | join | leave | kick | ban | nick | subject | none,
+        nick = <<"">>          :: binary(),
+        text = <<"">>          :: binary(),
+        timestamp = calendar:local_time() :: calendar:datetime(),
+        ms   = 0               :: 0..999999 }).
+
+-define(CT_HTML,
+        {<<"Content-Type">>, <<"text/html; charset=utf-8">>}).
+-define(HEADER, [?CT_HTML]).
+-define(OK(Data), {200, ?HEADER, Data}).
+-define(BAD_REQUEST, {400, ?HEADER, #xmlel{name = <<"h1">>,
+                 children = [{xmlcdata,<<"400 Bad Request">>}]}}).
+-define(ACC_DENIED, {403, ?HEADER, #xmlel{name = <<"h1">>,
+                 children = [{xmlcdata,<<"403 Access Denied">>}]}}).
+-define(NOT_FOUND, {404, ?HEADER, #xmlel{name = <<"h1">>,
+                 children = [{xmlcdata,<<"404 Not Found">>}]}}).
+-define(SERVER_ERROR, {503, ?HEADER, #xmlel{name = <<"h1">>,
+                 children = [{xmlcdata,<<"503 Internal Server Error">>}]}}).
+
 %%%===================================================================
 %%% API
 %%%===================================================================
 start(Host, Opts) ->
+    ?DEBUG("Starting mam for ~p", [Host]),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
     DBType = gen_mod:db_type(Host, Opts),
@@ -256,9 +279,204 @@ get_xdata_fields(SubEl) ->
 			 []
     end.
 
+
+process([<<"conferences">>], #request{method = 'GET'} = R) ->
+    %TODO: conf options to manage logs access
+    MUC_server = case proplists:get_value(<<"Muc-Host">>, R#request.headers) of 
+        undefined -> case lists:member(R#request.host, ?MYHOSTS) of
+                         true -> R#request.host;
+                         false -> lists:nth(1, ?MYHOSTS)
+                     end;
+                H -> H
+    end,
+    Rooms = [ binary:split(Room,<<"@">>) || Room <- mod_muc_admin:muc_online_rooms(MUC_server) ],
+    case mam_web:render(conference_list, [{rooms, Rooms}]) of
+        {ok, Data} -> ?OK(Data);
+        _ -> ?SERVER_ERROR
+    end;
+
+process([<<"conferences">>, MUC_Name | T], _R=#request{method = 'GET'}) ->
+    MUC = binary:split(MUC_Name,[<<"@">>]),
+    case muc_logs_enabled(MUC) of
+        true -> render_muc_mam(MUC, T);
+        false -> ?NOT_FOUND
+    end;
+
+process([<<"users">> | _], #request{method = 'GET'}) ->
+    %TODO: list user logs. AAA
+    {204, ?HEADER,
+     #xmlel{name = <<"h1">>, 
+            children = [{xmlcdata,<<"">> }]}};
+
+%% Some "default behaviour" functions.
+process([], #request{method = 'OPTIONS', data = <<>>}) ->
+    {200, [], <<>>};
+process([], #request{method = 'HEAD'}) ->
+    ?OK(<<>>);
+process(_Path, _Request) ->
+    ?DEBUG("Bad Request at ~p: ~p", [_Path, _Request]),
+    ?BAD_REQUEST.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+get_room_options(MUC_name, MUC_server) ->
+    case binary:split(<<".">>, MUC_server) of
+        [MS,LS] -> mod_muc:restore_room(LS, MUC_server, MUC_name);
+        _       -> []
+    end.
+        
+muc_logs_enabled([MUC_jid, MUC_server]) ->
+    proplists:get_bool(mam, 
+                       mod_muc_admin:get_room_options(MUC_jid, MUC_server));
+muc_logs_enabled(_) -> false .
+muc_title([MUC_jid, MUC_server]) ->
+    case proplists:lookup(title, 
+                       mod_muc_admin:get_room_options(MUC_jid, MUC_server)) of
+        none -> {title, join([MUC_jid, MUC_server],<<"@">>)};
+        Title -> Title
+    end;
+muc_title(_) -> {title,<<>>}.
+muc_description([MUC_jid, MUC_server]) ->
+    case proplists:lookup(description,
+                       mod_muc_admin:get_room_options(MUC_jid, MUC_server)) of
+        none -> {description, <<>>};
+        Desc -> Desc
+    end;
+muc_description(_) -> {description, <<>>}.
+
+% list of years
+render_muc_mam([MUC_jid, MUC_server] = MUC, []) -> 
+     case mam_web:render(conference_years, [{muc_name, join(MUC, <<"@">>)},
+                    {dates, mnesia_get_distinct_dates(MUC_jid, MUC_server)},
+                    {year, <<>>},
+                    muc_title(MUC),
+                    muc_description(MUC)
+                    ]) of
+         {ok, Data} -> ?OK(Data);
+         _ -> ?NOT_FOUND
+     end;
+
+% list of months
+render_muc_mam([MUC_jid, MUC_server] = MUC, [Y]) -> 
+     case mam_web:render(conference_years, [{muc_name, join(MUC, <<"@">>)},
+                    {dates, mnesia_get_distinct_dates(MUC_jid, MUC_server)},
+                    {year, Y},
+                    muc_title(MUC),
+                    muc_description(MUC)
+                    ]) of
+         {ok, Data} -> ?OK(Data);
+         _ -> ?NOT_FOUND
+     end;
+
+
+% list of days
+render_muc_mam([MUC_jid, MUC_server] = MUC, [Y, M]) -> 
+     Month = lists:keyfind(list_to_integer(binary:bin_to_list(M)),1,
+                  proplists:get_value(list_to_integer(binary:bin_to_list(Y)),
+                          mnesia_get_distinct_dates(MUC_jid, MUC_server), [])),
+     case Month of 
+         false -> ?NOT_FOUND;
+         _Days ->
+             case mam_web:render(conference_month, [{muc_name, join(MUC, <<"@">>)},
+                            {year, Y},
+                            {month, Month},
+                             muc_title(MUC),
+                             muc_description(MUC)
+                            ]) of
+                 {ok, Data} -> ?OK(Data);
+                 _          -> ?SERVER_ERROR
+             end
+     end;
+% day messages per day
+render_muc_mam([MUC_jid, MUC_server] = MUC, [Y, M, D]) -> 
+    case muc_logs_enabled(MUC) of
+      true ->
+        case  {str:to_integer(Y), str:to_integer(M), str:to_integer(D)} of
+            {{Yi, _}, {Mi, _}, {Di, _}} when is_integer(Yi), is_integer(Mi), is_integer(Di) ->
+                case calendar:valid_date(Yi, Mi, Di) of
+                  false -> ?NOT_FOUND;
+                   true ->
+                     Seconds = calendar:datetime_to_gregorian_seconds(
+                                     {{Yi,Mi,Di}, {0,0,0}}) - 62167219200,
+                     Start = {Seconds div 1000000, Seconds rem 1000000, 0},
+                     EndSeconds = Seconds + 86400,
+                     End = {EndSeconds div 1000000, EndSeconds rem 1000000, 0}, 
+                     MS = make_matchspec(MUC_jid, MUC_server, Start, End, none),
+                     Msgs = mnesia:dirty_select(archive_msg, MS),
+                     
+                     case mam_web:render(conference_day, [
+                           {header, join(MUC,<<"@">>) },
+                            muc_title(MUC),
+                            muc_description(MUC),
+                           {messages, 
+                            lists:map(fun archive_to_html_message/1, Msgs)}
+                                                                           ]) of
+                         {ok, Data} -> ?OK(Data);
+                         _          -> ?DEBUG("Internal server error rendering",[]),
+                                       ?SERVER_ERROR
+                     end
+                end;
+             _ -> ?NOT_FOUND
+        end;
+      false -> ?ACC_DENIED
+    end;
+
+% catch all case
+render_muc_mam(_MUC, _Tail) ->
+    ?DEBUG("Got wrong request for ~p, with tail ~p.", [_MUC, _Tail]),
+    ?NOT_FOUND.
+    
+mnesia_get_distinct_dates(MJid, MServ) ->
+    Dates_of_messages = fun (E, S) ->
+            case E of
+                #archive_msg{us={MJid, MServ}} ->
+                    {{Y,M,D},_} = calendar:now_to_universal_time(
+                                                      E#archive_msg.timestamp),
+                    case dict:is_key(Y,S) of
+			true -> Months = dict:fetch(Y, S);
+                        false -> Months = dict:new()
+                    end,
+                    case dict:is_key(M, Months) of
+                        true -> Days = dict:fetch(M, Months);
+                        false -> Days = sets:new()
+                    end,
+                    dict:store(Y, dict:store(M, 
+                                        sets:add_element(D, Days), Months), S);
+				
+                _ -> S
+            end
+        end,
+    case mnesia:transaction(fun mnesia:foldl/3, 
+                            [Dates_of_messages, dict:new(), archive_msg]) of
+        {atomic, Dates} -> lists:map(fun({Y,D}) -> {Y, lists:map(
+				   fun({M,S}) -> 
+                                   {M, sets:to_list(S), {{Y,M,0},{0,0,0}}} end,
+                                   dict:to_list(D))} end, dict:to_list(Dates));
+        {error, _Reason} -> 
+                ?DEBUG("Request to mnesia for messages date failed with ~p",
+                                      [_Reason]), 
+                []
+    end.
+
+archive_to_html_message(#archive_msg{} = Msg) ->
+    {Type, Txt} = 
+      case {xml:get_subtag(Msg#archive_msg.packet, <<"subject">>),
+            xml:get_subtag(Msg#archive_msg.packet, <<"body">>)}
+          of
+        {false, false} -> {none,<<>>};
+        {false, SubEl} -> case  xml:get_tag_cdata(SubEl) of
+                          <<"/me ", T/binary>> -> {action, T};
+                                             T -> {text, T}
+                          end;
+        {SubEl, _} -> {subject, xml:get_tag_cdata(SubEl)}
+      end,
+    #html_msg{type = Type,
+         nick = Msg#archive_msg.nick,
+         timestamp = calendar:now_to_local_time(Msg#archive_msg.timestamp),
+         ms = element(3, Msg#archive_msg.timestamp),
+         text = Txt
+    }.
 
 % Preference setting (both v0.2 & v0.3)
 process_iq(#jid{luser = LUser, lserver = LServer},
@@ -932,3 +1150,11 @@ mod_opt_type(store_body_only) ->
 mod_opt_type(_) ->
     [cache_life_time, cache_size, db_type, default, iqdisc,
      store_body_only].
+
+init_web() -> 
+    ?DEBUG("Compiling web templates for MAM",[]),
+    erlydtl:compile_dir("templates/mam/", mam_web, [{record_info, [{html_msg, record_info(fields, html_msg) }] }] ), ok.
+%    ?DEBUG("~p", [erlydtl:compile("templates/mam/conferences.html", mucs_list)]),
+%    ?DEBUG("~p", [erlydtl:compile("templates/mam/conference.month.html", muc_month)]),
+%    ?DEBUG("~p", [erlydtl:compile("templates/mam/mam.logs.list.html", log_list_template,[{record_info, [{html_msg, record_info(fields, html_msg)}]}])]),
+%    ?DEBUG("~p", [erlydtl:compile("templates/mam/conference.years.html", muc_years,[{record_info, [{archive_msg, record_info(fields, archive_msg)}]}])]), ok.
