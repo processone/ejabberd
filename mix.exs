@@ -3,7 +3,7 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "15.06.0",
+     version: "15.07.0",
      elixir: "~> 1.0",
      elixirc_paths: ["lib"],
      compile_path: ".",
@@ -15,7 +15,9 @@ defmodule Ejabberd.Mixfile do
 
   def application do
     [mod: {:ejabberd_app, []},
-     applications: [:kernel, :stdlib]]
+     applications: [:ssl],
+     included_applications: [:p1_logger,:p1_yaml,:p1_tls,:p1_xml,:p1_stringprep,:p1_zlib,:p1_cache_tab,:mnesia,:p1_utils,
+                             :p1_iconv,:esip,:p1_stun,:ehyperloglog,:p1_mysql,:p1_pgsql,:eredis]]
   end
   
   defp erlc_options do
@@ -39,7 +41,8 @@ defmodule Ejabberd.Mixfile do
         {:ehyperloglog, git: "https://github.com/vaxelfel/eHyperLogLog"},
         {:p1_mysql, git: "https://github.com/processone/mysql"},
         {:p1_pgsql, git: "https://github.com/processone/pgsql"},
-        {:eredis, git: "https://github.com/wooga/eredis"}
+        {:eredis, git: "https://github.com/wooga/eredis"},
+        {:exrm, "~> 0.19.2"}
      ]
   end
 end
