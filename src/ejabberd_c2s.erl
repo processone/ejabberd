@@ -110,6 +110,7 @@
 		mgmt_max_queue,
 		mgmt_pending_since,
 		mgmt_timeout,
+		mgmt_max_timeout,
 		mgmt_resend,
 		mgmt_stanzas_in = 0,
 		mgmt_stanzas_out = 0,
@@ -314,6 +315,10 @@ init([{SockMod, Socket}, Opts]) ->
 		      Timeout when is_integer(Timeout), Timeout >= 0 -> Timeout;
 		      _ -> 300
 		    end,
+    MaxResumeTimeout = case proplists:get_value(max_resume_timeout, Opts) of
+			 Max when is_integer(Max), Max >= ResumeTimeout -> Max;
+			 _ -> ResumeTimeout
+		       end,
     ResendOnTimeout = case proplists:get_value(resend_on_timeout, Opts) of
 			Resend when is_boolean(Resend) -> Resend;
 			if_offline -> if_offline;
@@ -336,6 +341,7 @@ init([{SockMod, Socket}, Opts]) ->
 		       mgmt_state = StreamMgmtState,
 		       mgmt_max_queue = MaxAckQueue,
 		       mgmt_timeout = ResumeTimeout,
+		       mgmt_max_timeout = MaxResumeTimeout,
 		       mgmt_resend = ResendOnTimeout},
     {ok, wait_for_stream, StateData, ?C2S_OPEN_TIMEOUT}.
 
@@ -2688,16 +2694,17 @@ perform_stream_mgmt(#xmlel{name = Name, attrs = Attrs}, StateData) ->
 	  StateData
     end.
 
-handle_enable(#state{mgmt_timeout = ConfigTimeout} = StateData, Attrs) ->
+handle_enable(#state{mgmt_timeout = DefaultTimeout,
+		     mgmt_max_timeout = MaxTimeout} = StateData, Attrs) ->
     Timeout = case xml:get_attr_s(<<"resume">>, Attrs) of
 		ResumeAttr when ResumeAttr == <<"true">>;
 				ResumeAttr == <<"1">> ->
 		    MaxAttr = xml:get_attr_s(<<"max">>, Attrs),
 		    case catch jlib:binary_to_integer(MaxAttr) of
-		      Max when is_integer(Max), Max > 0, Max =< ConfigTimeout ->
+		      Max when is_integer(Max), Max > 0, Max =< MaxTimeout ->
 			  Max;
 		      _ ->
-			  ConfigTimeout
+			  DefaultTimeout
 		    end;
 		_ ->
 		    0
