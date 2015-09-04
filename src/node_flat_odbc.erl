@@ -46,8 +46,7 @@
     get_entity_subscriptions/2, get_node_subscriptions/1,
     get_subscriptions/2, set_subscriptions/4,
     get_pending_nodes/2, get_states/1, get_state/2,
-    set_state/1, get_items/6, get_items/2,
-    get_items/7, get_items/3, get_item/7,
+    set_state/1, get_items/7, get_items/3, get_item/7,
     get_item/2, set_item/1, get_item_name/3, node_to_path/1,
     path_to_node/1,
     get_entity_subscriptions_for_send_last/2, get_last_items/3]).
@@ -623,18 +622,18 @@ del_state(Nidx, JID) ->
 	    J, <<"' and nodeid='">>, Nidx, <<"';">>]),
     ok.
 
-get_items(Nidx, _From) ->
-    case catch
-	ejabberd_odbc:sql_query_t([<<"select itemid, publisher, creation, modification, payload "
-		    "from pubsub_item where nodeid='">>, Nidx,
-		<<"' order by modification desc;">>])
-    of
-	{selected,
-		    [<<"itemid">>, <<"publisher">>, <<"creation">>, <<"modification">>, <<"payload">>], RItems} ->
-	    {result, [raw_to_item(Nidx, RItem) || RItem <- RItems]};
-	_ ->
-	    {result, []}
-    end.
+%get_items(Nidx, _From) ->
+%    case catch
+%	ejabberd_odbc:sql_query_t([<<"select itemid, publisher, creation, modification, payload "
+%		    "from pubsub_item where nodeid='">>, Nidx,
+%		<<"' order by modification desc;">>])
+%    of
+%	{selected,
+%		    [<<"itemid">>, <<"publisher">>, <<"creation">>, <<"modification">>, <<"payload">>], RItems} ->
+%	    {result, [raw_to_item(Nidx, RItem) || RItem <- RItems]};
+%	_ ->
+%	    {result, []}
+%    end.
 
 get_items(Nidx, From, none) ->
     MaxItems = case catch
@@ -718,9 +717,6 @@ get_items(Nidx, _From,
 	_ ->
 	    {result, {[], none}}
     end.
-
-get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
-    get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, none).
 
 get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM) ->
     SubKey = jlib:jid_tolower(JID),

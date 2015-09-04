@@ -46,8 +46,7 @@
     get_entity_subscriptions/2, get_node_subscriptions/1,
     get_subscriptions/2, set_subscriptions/4,
     get_pending_nodes/2, get_states/1, get_state/2,
-    set_state/1, get_items/6, get_items/2,
-    get_items/7, get_items/3, get_item/7,
+    set_state/1, get_items/7, get_items/3, get_item/7,
     get_item/2, set_item/1, get_item_name/3, node_to_path/1,
     path_to_node/1, can_fetch_item/2, is_subscribed/1]).
 
@@ -698,19 +697,11 @@ del_state(Nidx, Key) ->
 %% mod_pubsub module.</p>
 %% <p>PubSub plugins can store the items where they wants (for example in a
 %% relational database), or they can even decide not to persist any items.</p>
-%% <p>If a PubSub plugin wants to delegate the item storage to the default node,
-%% they can implement this function like this:
-%% ```get_items(Nidx, From) ->
-%%           node_default:get_items(Nidx, From).'''</p>
-get_items(Nidx, From) ->
-    get_items(Nidx, From, none).
 get_items(Nidx, _From, _RSM) ->
     Items = mnesia:match_object(#pubsub_item{itemid = {'_', Nidx}, _ = '_'}),
     {result, {lists:reverse(lists:keysort(#pubsub_item.modification, Items)), none}}.
 
-get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
-    get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, none).
-get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, _RSM) ->
+get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM) ->
     SubKey = jlib:jid_tolower(JID),
     GenKey = jlib:jid_remove_resource(SubKey),
     GenState = get_state(Nidx, GenKey),
@@ -743,7 +734,7 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, _RS
 	%%        % Payment is required for a subscription
 	%%        {error, ?ERR_PAYMENT_REQUIRED};
 	true ->
-	    get_items(Nidx, JID)
+	    get_items(Nidx, JID, RSM)
     end.
 
 %% @doc <p>Returns an item (one item list), given its reference.</p>
