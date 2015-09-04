@@ -64,9 +64,9 @@ process([], #request{method = 'POST', data = <<>>}) ->
     {400, ?HEADER,
      #xmlel{name = <<"h1">>, children = [{xmlcdata, <<"400 Bad Request">>}]}};
 process([],
-	#request{method = 'POST', data = Data, ip = IP}) ->
+	#request{method = 'POST', data = Data, ip = IP, opts = Opts}) ->
     ?DEBUG("Incoming data: ~s", [Data]),
-    ejabberd_http_bind:process_request(Data, IP);
+    ejabberd_http_bind:process_request(Data, IP, Opts);
 process([], #request{method = 'GET', data = <<>>}) ->
     {200, ?HEADER, get_human_html_xmlel()};
 process([], #request{method = 'OPTIONS', data = <<>>}) ->
