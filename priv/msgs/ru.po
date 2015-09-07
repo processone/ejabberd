@@ -3,40 +3,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2012-04-15 13:38+0900\n"
+"PO-Revision-Date: 2015-09-07 15:04+0300\n"
 "Last-Translator: Evgeniy Khramtsov <ekhramtsov@process-one.net>\n"
 "Language-Team: Russian <kde-russian@lists.kde.ru>\n"
-"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: ru\n"
 "X-Language: Russian (русский)\n"
 "X-Additional-Translator: Konstantin Khomoutov\n"
 "X-Additional-Translator: Sergei Golovan\n"
 "X-Generator: Lokalize 1.0\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-
-#: ejabberd_c2s.erl:528 ejabberd_c2s.erl:875
-msgid "Use of STARTTLS required"
-msgstr "Вы обязаны использовать STARTTLS"
-
-#: ejabberd_c2s.erl:626
-msgid "No resource provided"
-msgstr "Не указан ресурс"
-
-#: ejabberd_c2s.erl:1401
-msgid "Replaced by new connection"
-msgstr "Заменено новым соединением"
-
-#: ejabberd_c2s.erl:1405 mod_configure.erl:1854 mod_muc_log.erl:474
-#: mod_muc_log.erl:477
-msgid "has been kicked"
-msgstr "выгнали из комнаты"
-
-#: ejabberd_c2s.erl:2490
-msgid "Too many unacked stanzas"
-msgstr ""
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: ejabberd_captcha.erl:129 ejabberd_captcha.erl:252 ejabberd_captcha.erl:297
 msgid "Enter the text you see"
@@ -59,121 +38,9 @@ msgstr "Ссылка на капчу"
 msgid "The CAPTCHA is valid."
 msgstr "Проверка капчи прошла успешно."
 
-#: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
-#: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
-msgid "Unauthorized"
-msgstr "Не авторизован"
-
 #: ejabberd_web_admin.erl:303 ejabberd_web_admin.erl:335
 msgid "ejabberd Web Admin"
 msgstr "Web-интерфейс администрирования ejabberd"
-
-#: ejabberd_web_admin.erl:605 ejabberd_web_admin.erl:616
-msgid "Administration"
-msgstr "Администрирование"
-
-#: ejabberd_web_admin.erl:673 ejabberd_web_admin.erl:709 mod_configure.erl:196
-#: mod_configure.erl:532
-msgid "Access Control Lists"
-msgstr "Списки управления доступом"
-
-#: ejabberd_web_admin.erl:677 ejabberd_web_admin.erl:713
-#: ejabberd_web_admin.erl:779 ejabberd_web_admin.erl:812
-#: ejabberd_web_admin.erl:853 ejabberd_web_admin.erl:1329
-#: ejabberd_web_admin.erl:1614 ejabberd_web_admin.erl:1774
-#: ejabberd_web_admin.erl:1808 ejabberd_web_admin.erl:1888
-#: ejabberd_web_admin.erl:2058 ejabberd_web_admin.erl:2087
-#: ejabberd_web_admin.erl:2184 mod_offline.erl:787 mod_roster.erl:1494
-#: mod_shared_roster.erl:1171 mod_shared_roster.erl:1266
-msgid "Submitted"
-msgstr "Отправлено"
-
-#: ejabberd_web_admin.erl:678 ejabberd_web_admin.erl:714
-#: ejabberd_web_admin.erl:780 ejabberd_web_admin.erl:813
-#: ejabberd_web_admin.erl:854 ejabberd_web_admin.erl:1330
-#: ejabberd_web_admin.erl:1615 ejabberd_web_admin.erl:1775
-#: ejabberd_web_admin.erl:2059 ejabberd_web_admin.erl:2088 mod_roster.erl:1495
-#: mod_shared_roster.erl:1172 mod_shared_roster.erl:1267
-msgid "Bad format"
-msgstr "Неправильный формат"
-
-#: ejabberd_web_admin.erl:689 ejabberd_web_admin.erl:726
-#: ejabberd_web_admin.erl:791 ejabberd_web_admin.erl:861
-#: ejabberd_web_admin.erl:1877 mod_shared_roster.erl:1274
-msgid "Submit"
-msgstr "Отправить"
-
-#: ejabberd_web_admin.erl:718 ejabberd_web_admin.erl:817
-msgid "Raw"
-msgstr "Необработанный формат"
-
-#: ejabberd_web_admin.erl:723 ejabberd_web_admin.erl:823 mod_offline.erl:809
-#: mod_shared_roster.erl:1180
-msgid "Delete Selected"
-msgstr "Удалить выделенные"
-
-#: ejabberd_web_admin.erl:775 ejabberd_web_admin.erl:808 mod_configure.erl:198
-#: mod_configure.erl:533
-msgid "Access Rules"
-msgstr "Правила доступа"
-
-#: ejabberd_web_admin.erl:849
-msgid "~s access rule configuration"
-msgstr "Конфигурация правила доступа ~s"
-
-#: ejabberd_web_admin.erl:867
-msgid "Virtual Hosts"
-msgstr "Виртуальные хосты"
-
-#: ejabberd_web_admin.erl:876 ejabberd_web_admin.erl:884
-msgid "Users"
-msgstr "Пользователи"
-
-#: ejabberd_web_admin.erl:891 ejabberd_web_admin.erl:1275
-#: mod_configure.erl:524
-msgid "Online Users"
-msgstr "Подключённые пользователи"
-
-#: ejabberd_web_admin.erl:907
-msgid "Users Last Activity"
-msgstr "Статистика последнего подключения пользователей"
-
-#: ejabberd_web_admin.erl:911
-msgid "Period: "
-msgstr "Период"
-
-#: ejabberd_web_admin.erl:924
-msgid "Last month"
-msgstr "За последний месяц"
-
-#: ejabberd_web_admin.erl:925
-msgid "Last year"
-msgstr "За последний год"
-
-#: ejabberd_web_admin.erl:927
-msgid "All activity"
-msgstr "Вся статистика"
-
-#: ejabberd_web_admin.erl:930
-msgid "Show Ordinary Table"
-msgstr "Показать обычную таблицу"
-
-#: ejabberd_web_admin.erl:933
-msgid "Show Integral Table"
-msgstr "Показать интегральную таблицу"
-
-#: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785
-#: mod_muc_admin.erl:246
-msgid "Statistics"
-msgstr "Статистика"
-
-#: ejabberd_web_admin.erl:950
-msgid "Not Found"
-msgstr "Не Найдено"
-
-#: ejabberd_web_admin.erl:963
-msgid "Node not found"
-msgstr "Узел не найден"
 
 #: ejabberd_web_admin.erl:1185 mod_shared_roster.erl:1166
 msgid "Add New"
@@ -186,6 +53,20 @@ msgstr "Хост"
 #: ejabberd_web_admin.erl:1274
 msgid "Registered Users"
 msgstr "Зарегистрированные пользователи"
+
+#: ejabberd_web_admin.erl:1275 mod_configure.erl:524
+msgid "Online Users"
+msgstr "Подключённые пользователи"
+
+#: ejabberd_web_admin.erl:1329 ejabberd_web_admin.erl:1614 mod_offline.erl:787
+#: mod_roster.erl:1494 mod_shared_roster.erl:1171 mod_shared_roster.erl:1266
+msgid "Submitted"
+msgstr "Отправлено"
+
+#: ejabberd_web_admin.erl:1330 ejabberd_web_admin.erl:1615 mod_roster.erl:1495
+#: mod_shared_roster.erl:1172 mod_shared_roster.erl:1267
+msgid "Bad format"
+msgstr "Неправильный формат"
 
 #: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393
 #: mod_register.erl:262 mod_vcard.erl:490
@@ -226,7 +107,6 @@ msgid "Registered Users:"
 msgstr "Зарегистрированные пользователи:"
 
 #: ejabberd_web_admin.erl:1490 ejabberd_web_admin.erl:1509
-#: ejabberd_web_admin.erl:2125
 msgid "Online Users:"
 msgstr "Подключённые пользователи:"
 
@@ -239,7 +119,7 @@ msgid "Outgoing s2s Servers:"
 msgstr "Исходящие s2s-серверы:"
 
 #: ejabberd_web_admin.erl:1532 ejabberd_web_admin.erl:1732
-#: ejabberd_web_admin.erl:1742 ejabberd_web_admin.erl:2152 mod_roster.erl:1430
+#: ejabberd_web_admin.erl:1742 mod_roster.erl:1430
 msgid "None"
 msgstr "Нет"
 
@@ -249,9 +129,8 @@ msgid "Change Password"
 msgstr "Сменить пароль"
 
 #: ejabberd_web_admin.erl:1610
-#, fuzzy
 msgid "User ~s"
-msgstr "Пользователь "
+msgstr "Пользователь ~s"
 
 #: ejabberd_web_admin.erl:1621
 msgid "Connected Resources:"
@@ -282,206 +161,6 @@ msgstr "Работающие узлы"
 msgid "Stopped Nodes"
 msgstr "Остановленные узлы"
 
-#: ejabberd_web_admin.erl:1771 ejabberd_web_admin.erl:1796
-#, fuzzy
-msgid "Node ~p"
-msgstr "Узел "
-
-#: ejabberd_web_admin.erl:1780 mod_configure.erl:150 mod_configure.erl:611
-msgid "Database"
-msgstr "База данных"
-
-#: ejabberd_web_admin.erl:1781 mod_configure.erl:159 mod_configure.erl:648
-msgid "Backup"
-msgstr "Резервное копирование"
-
-#: ejabberd_web_admin.erl:1783
-msgid "Listened Ports"
-msgstr "Прослушиваемые порты"
-
-#: ejabberd_web_admin.erl:1786 ejabberd_web_admin.erl:2199
-msgid "Update"
-msgstr "Обновить"
-
-#: ejabberd_web_admin.erl:1790 ejabberd_web_admin.erl:2407
-#: ejabberd_web_admin.erl:2551
-msgid "Restart"
-msgstr "Перезапустить"
-
-#: ejabberd_web_admin.erl:1792 ejabberd_web_admin.erl:2411
-#: ejabberd_web_admin.erl:2555
-msgid "Stop"
-msgstr "Остановить"
-
-#: ejabberd_web_admin.erl:1799 mod_configure.erl:613 mod_configure.erl:626
-msgid "Modules"
-msgstr "Модули"
-
-#: ejabberd_web_admin.erl:1804
-msgid "RPC Call Error"
-msgstr "Ошибка вызова RPC"
-
-#: ejabberd_web_admin.erl:1855
-#, fuzzy
-msgid "Database Tables at ~p"
-msgstr "Таблицы базы данных на "
-
-#: ejabberd_web_admin.erl:1865 mod_vcard.erl:490 mod_vcard.erl:616
-msgid "Name"
-msgstr "Название"
-
-#: ejabberd_web_admin.erl:1866
-msgid "Storage Type"
-msgstr "Тип таблицы"
-
-#: ejabberd_web_admin.erl:1867
-msgid "Elements"
-msgstr "Элементы"
-
-#: ejabberd_web_admin.erl:1868
-msgid "Memory"
-msgstr "Память"
-
-#: ejabberd_web_admin.erl:1890 ejabberd_web_admin.erl:2061
-msgid "Error"
-msgstr "Ошибка"
-
-#: ejabberd_web_admin.erl:1893
-#, fuzzy
-msgid "Backup of ~p"
-msgstr "Резервное копирование "
-
-#: ejabberd_web_admin.erl:1897
-msgid ""
-"Please note that these options will only backup the builtin Mnesia database. "
-"If you are using the ODBC module, you also need to backup your SQL database "
-"separately."
-msgstr ""
-"Заметьте, что здесь производится резервное копирование только встроенной "
-"базы данных Mnesia. Если Вы также используете другое хранилище данных "
-"(например с помощью модуля ODBC), то его резервное копирование следует "
-"осуществлять отдельно."
-
-#: ejabberd_web_admin.erl:1907
-msgid "Store binary backup:"
-msgstr "Сохранить бинарную резервную копию:"
-
-#: ejabberd_web_admin.erl:1914 ejabberd_web_admin.erl:1924
-#: ejabberd_web_admin.erl:1935 ejabberd_web_admin.erl:1944
-#: ejabberd_web_admin.erl:1954 ejabberd_web_admin.erl:1967
-#: ejabberd_web_admin.erl:1979 ejabberd_web_admin.erl:1995
-#: ejabberd_web_admin.erl:2011 ejabberd_web_admin.erl:2022
-#: ejabberd_web_admin.erl:2032
-msgid "OK"
-msgstr "Продолжить"
-
-#: ejabberd_web_admin.erl:1917
-msgid "Restore binary backup immediately:"
-msgstr "Восстановить из бинарной резервной копии немедленно:"
-
-#: ejabberd_web_admin.erl:1927
-msgid ""
-"Restore binary backup after next ejabberd restart (requires less memory):"
-msgstr ""
-"Восстановить из бинарной резервной копии при следующем запуске (требует "
-"меньше памяти):"
-
-#: ejabberd_web_admin.erl:1937
-msgid "Store plain text backup:"
-msgstr "Сохранить текстовую резервную копию:"
-
-#: ejabberd_web_admin.erl:1947
-msgid "Restore plain text backup immediately:"
-msgstr "Восстановить из текстовой резервной копии немедленно:"
-
-#: ejabberd_web_admin.erl:1957
-msgid "Import users data from a PIEFXIS file (XEP-0227):"
-msgstr "Импорт пользовательских данных из файла формата PIEFXIS (XEP-0227):"
-
-#: ejabberd_web_admin.erl:1970
-msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
-msgstr ""
-"Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-0227):"
-
-#: ejabberd_web_admin.erl:1982
-msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
-msgstr ""
-"Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0227):"
-
-#: ejabberd_web_admin.erl:1998
-msgid "Export all tables as SQL queries to a file:"
-msgstr ""
-
-#: ejabberd_web_admin.erl:2014
-msgid "Import user data from jabberd14 spool file:"
-msgstr "Импорт пользовательских данных из буферного файла jabberd14:"
-
-#: ejabberd_web_admin.erl:2025
-msgid "Import users data from jabberd14 spool directory:"
-msgstr "Импорт пользовательских данных из буферной директории jabberd14:"
-
-#: ejabberd_web_admin.erl:2053
-msgid "Listened Ports at "
-msgstr "Прослушиваемые порты на "
-
-#: ejabberd_web_admin.erl:2082
-#, fuzzy
-msgid "Modules at ~p"
-msgstr "Модули на "
-
-#: ejabberd_web_admin.erl:2113
-msgid "Statistics of ~p"
-msgstr "статистика узла ~p"
-
-#: ejabberd_web_admin.erl:2117
-msgid "Uptime:"
-msgstr "Время работы:"
-
-#: ejabberd_web_admin.erl:2121
-msgid "CPU Time:"
-msgstr "Процессорное время:"
-
-#: ejabberd_web_admin.erl:2129
-msgid "Transactions Committed:"
-msgstr "Транзакции завершенные:"
-
-#: ejabberd_web_admin.erl:2133
-msgid "Transactions Aborted:"
-msgstr "Транзакции отмененные:"
-
-#: ejabberd_web_admin.erl:2137
-msgid "Transactions Restarted:"
-msgstr "Транзакции перезапущенные:"
-
-#: ejabberd_web_admin.erl:2141
-msgid "Transactions Logged:"
-msgstr "Транзакции запротоколированные:"
-
-#: ejabberd_web_admin.erl:2181
-#, fuzzy
-msgid "Update ~p"
-msgstr "Обновление "
-
-#: ejabberd_web_admin.erl:2192
-msgid "Update plan"
-msgstr "План обновления"
-
-#: ejabberd_web_admin.erl:2193
-msgid "Modified modules"
-msgstr "Изменённые модули"
-
-#: ejabberd_web_admin.erl:2194
-msgid "Update script"
-msgstr "Сценарий обновления"
-
-#: ejabberd_web_admin.erl:2195
-msgid "Low level update script"
-msgstr "Низкоуровневый сценарий обновления"
-
-#: ejabberd_web_admin.erl:2196
-msgid "Script check"
-msgstr "Проверка сценария"
-
 #: ejabberd_web_admin.erl:2376
 msgid "IP"
 msgstr "IP"
@@ -501,6 +180,14 @@ msgstr "Модуль"
 #: ejabberd_web_admin.erl:2379 ejabberd_web_admin.erl:2534
 msgid "Options"
 msgstr "Параметры"
+
+#: ejabberd_web_admin.erl:2407 ejabberd_web_admin.erl:2551
+msgid "Restart"
+msgstr "Перезапустить"
+
+#: ejabberd_web_admin.erl:2411 ejabberd_web_admin.erl:2555
+msgid "Stop"
+msgstr "Остановить"
 
 #: ejabberd_web_admin.erl:2431 ejabberd_web_admin.erl:2567
 msgid "Start"
@@ -587,6 +274,10 @@ msgstr "Удалить сообщение дня со всех виртуаль�
 msgid "Configuration"
 msgstr "Конфигурация"
 
+#: mod_configure.erl:150 mod_configure.erl:611
+msgid "Database"
+msgstr "База данных"
+
 #: mod_configure.erl:153 mod_configure.erl:636
 msgid "Start Modules"
 msgstr "Запуск модулей"
@@ -594,6 +285,10 @@ msgstr "Запуск модулей"
 #: mod_configure.erl:156 mod_configure.erl:638
 msgid "Stop Modules"
 msgstr "Остановка модулей"
+
+#: mod_configure.erl:159 mod_configure.erl:648
+msgid "Backup"
+msgstr "Резервное копирование"
 
 #: mod_configure.erl:162 mod_configure.erl:650
 msgid "Restore"
@@ -652,6 +347,14 @@ msgstr "Получить количество зарегистрированны
 msgid "Get Number of Online Users"
 msgstr "Получить количество подключённых пользователей"
 
+#: mod_configure.erl:196 mod_configure.erl:532
+msgid "Access Control Lists"
+msgstr "Списки управления доступом"
+
+#: mod_configure.erl:198 mod_configure.erl:533
+msgid "Access Rules"
+msgstr "Правила доступа"
+
 #: mod_configure.erl:320 mod_configure.erl:523
 msgid "User Management"
 msgstr "Управление пользователями"
@@ -663,6 +366,10 @@ msgstr "Все пользователи"
 #: mod_configure.erl:526
 msgid "Outgoing s2s Connections"
 msgstr "Исходящие s2s-соединения"
+
+#: mod_configure.erl:613 mod_configure.erl:626
+msgid "Modules"
+msgstr "Модули"
 
 #: mod_configure.erl:615
 msgid "Backup Management"
@@ -809,6 +516,10 @@ msgstr "Количество зарегистрированных пользов
 msgid "Number of online users"
 msgstr "Количество подключённых пользователей"
 
+#: mod_configure.erl:1854 mod_muc_log.erl:474 mod_muc_log.erl:477
+msgid "has been kicked"
+msgstr "выгнали из комнаты"
+
 #: mod_configure.erl:1937
 msgid "Last login"
 msgstr "Время последнего подключения"
@@ -842,10 +553,12 @@ msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
+"Слишком много (~p) неудачных попыток аутентификации с этого IP-адреса (~s). "
+"Адрес будет разблокирован в ~s UTC"
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "Этот IP адрес находится в чёрном списке ~s"
 
 #: mod_irc.erl:431
 msgid "IRC Transport"
@@ -953,10 +666,6 @@ msgstr "Кодировка сервера ~b"
 msgid "Server ~b"
 msgstr "Сервер ~b"
 
-#: mod_muc.erl:797 mod_muc_admin.erl:320
-msgid "Chatrooms"
-msgstr "Комнаты"
-
 #: mod_muc.erl:997
 msgid "You need a client that supports x:data to register the nickname"
 msgstr "Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"
@@ -981,26 +690,31 @@ msgstr "ejabberd MUC модуль"
 #: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
 #: mod_muc_admin.erl:319
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "Конференция"
+
+#: mod_muc_admin.erl:246
+msgid "Statistics"
+msgstr "Статистика"
 
 #: mod_muc_admin.erl:248
-#, fuzzy
 msgid "Total rooms"
-msgstr "Комнаты"
+msgstr "Все комнаты"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "вышел(а) из комнаты"
+msgstr "Постоянные комнаты"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "Зарегистрированные пользователи"
+msgstr "Зарегистрированные псевдонимы"
 
 #: mod_muc_admin.erl:253
 msgid "List of rooms"
-msgstr ""
+msgstr "Список комнат"
+
+#: mod_muc_admin.erl:320
+msgid "Chatrooms"
+msgstr "Комнаты"
 
 #: mod_muc_log.erl:445 mod_muc_log.erl:454
 msgid "Chatroom configuration modified"
@@ -1156,7 +870,7 @@ msgstr "Jabber ID ~s недопустимый"
 msgid "Nickname ~s does not exist in the room"
 msgstr "Псевдоним ~s в комнате отсутствует"
 
-#: mod_muc_room.erl:2788 mod_muc_room.erl:3168
+#: mod_muc_room.erl:2788
 msgid "Invalid affiliation: ~s"
 msgstr "Недопустимый ранг: ~s"
 
@@ -1271,7 +985,7 @@ msgstr "Сделать комнату защищённой капчей"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Включить хранение сообщений"
 
 #: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1319,11 +1033,11 @@ msgstr "пароль:"
 
 #: mod_multicast.erl:273
 msgid "Multicast"
-msgstr ""
+msgstr "Мультикаст"
 
 #: mod_multicast.erl:288
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "ejabberd Multicast сервис"
 
 #: mod_offline.erl:783
 msgid "~s's Offline Messages Queue"
@@ -1344,6 +1058,10 @@ msgstr "Кому"
 #: mod_offline.erl:799
 msgid "Packet"
 msgstr "Пакет"
+
+#: mod_offline.erl:809 mod_shared_roster.erl:1180
+msgid "Delete Selected"
+msgstr "Удалить выделенные"
 
 #: mod_offline.erl:977
 msgid "Offline Messages:"
@@ -1638,6 +1356,10 @@ msgstr "Видимые группы:"
 msgid "Group "
 msgstr "Группа "
 
+#: mod_shared_roster.erl:1274
+msgid "Submit"
+msgstr "Отправить"
+
 #: mod_vcard.erl:168 mod_vcard_ldap.erl:225
 msgid "Erlang Jabber Server"
 msgstr "Erlang Jabber Server"
@@ -1678,6 +1400,10 @@ msgstr "Полное имя"
 msgid "Middle Name"
 msgstr "Отчество"
 
+#: mod_vcard.erl:490 mod_vcard.erl:616
+msgid "Name"
+msgstr "Название"
+
 #: mod_vcard.erl:490 mod_vcard.erl:626
 msgid "Organization Name"
 msgstr "Название организации"
@@ -1709,6 +1435,190 @@ msgstr "Результаты поиска в "
 #: mod_vcard_ldap.erl:502
 msgid "Fill in fields to search for any matching Jabber User"
 msgstr "Заполните форму для поиска пользователя Jabber"
+
+#~ msgid "Use of STARTTLS required"
+#~ msgstr "Вы обязаны использовать STARTTLS"
+
+#~ msgid "No resource provided"
+#~ msgstr "Не указан ресурс"
+
+#~ msgid "Replaced by new connection"
+#~ msgstr "Заменено новым соединением"
+
+#~ msgid "Too many unacked stanzas"
+#~ msgstr "Слишком много неподтверждённых пакетов"
+
+#~ msgid "Unauthorized"
+#~ msgstr "Не авторизован"
+
+#~ msgid "Administration"
+#~ msgstr "Администрирование"
+
+#~ msgid "Raw"
+#~ msgstr "Необработанный формат"
+
+#~ msgid "~s access rule configuration"
+#~ msgstr "Конфигурация правила доступа ~s"
+
+#~ msgid "Virtual Hosts"
+#~ msgstr "Виртуальные хосты"
+
+#~ msgid "Users"
+#~ msgstr "Пользователи"
+
+#~ msgid "Users Last Activity"
+#~ msgstr "Статистика последнего подключения пользователей"
+
+#~ msgid "Period: "
+#~ msgstr "Период"
+
+#~ msgid "Last month"
+#~ msgstr "За последний месяц"
+
+#~ msgid "Last year"
+#~ msgstr "За последний год"
+
+#~ msgid "All activity"
+#~ msgstr "Вся статистика"
+
+#~ msgid "Show Ordinary Table"
+#~ msgstr "Показать обычную таблицу"
+
+#~ msgid "Show Integral Table"
+#~ msgstr "Показать интегральную таблицу"
+
+#~ msgid "Not Found"
+#~ msgstr "Не Найдено"
+
+#~ msgid "Node not found"
+#~ msgstr "Узел не найден"
+
+#~ msgid "Node ~p"
+#~ msgstr "Узел ~p"
+
+#~ msgid "Listened Ports"
+#~ msgstr "Прослушиваемые порты"
+
+#~ msgid "Update"
+#~ msgstr "Обновить"
+
+#~ msgid "RPC Call Error"
+#~ msgstr "Ошибка вызова RPC"
+
+#~ msgid "Database Tables at ~p"
+#~ msgstr "Таблицы базы данных на ~p"
+
+#~ msgid "Storage Type"
+#~ msgstr "Тип таблицы"
+
+#~ msgid "Elements"
+#~ msgstr "Элементы"
+
+#~ msgid "Memory"
+#~ msgstr "Память"
+
+#~ msgid "Error"
+#~ msgstr "Ошибка"
+
+#~ msgid "Backup of ~p"
+#~ msgstr "Резервное копирование ~p"
+
+#~ msgid ""
+#~ "Please note that these options will only backup the builtin Mnesia "
+#~ "database. If you are using the ODBC module, you also need to backup your "
+#~ "SQL database separately."
+#~ msgstr ""
+#~ "Заметьте, что здесь производится резервное копирование только встроенной "
+#~ "базы данных Mnesia. Если Вы также используете другое хранилище данных "
+#~ "(например с помощью модуля ODBC), то его резервное копирование следует "
+#~ "осуществлять отдельно."
+
+#~ msgid "Store binary backup:"
+#~ msgstr "Сохранить бинарную резервную копию:"
+
+#~ msgid "OK"
+#~ msgstr "Продолжить"
+
+#~ msgid "Restore binary backup immediately:"
+#~ msgstr "Восстановить из бинарной резервной копии немедленно:"
+
+#~ msgid ""
+#~ "Restore binary backup after next ejabberd restart (requires less memory):"
+#~ msgstr ""
+#~ "Восстановить из бинарной резервной копии при следующем запуске (требует "
+#~ "меньше памяти):"
+
+#~ msgid "Store plain text backup:"
+#~ msgstr "Сохранить текстовую резервную копию:"
+
+#~ msgid "Restore plain text backup immediately:"
+#~ msgstr "Восстановить из текстовой резервной копии немедленно:"
+
+#~ msgid "Import users data from a PIEFXIS file (XEP-0227):"
+#~ msgstr "Импорт пользовательских данных из файла формата PIEFXIS (XEP-0227):"
+
+#~ msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
+#~ msgstr ""
+#~ "Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-"
+#~ "0227):"
+
+#~ msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
+#~ msgstr ""
+#~ "Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0227):"
+
+#~ msgid "Export all tables as SQL queries to a file:"
+#~ msgstr "Экспортировать все таблицы в виде SQL запросов в файл:"
+
+#~ msgid "Import user data from jabberd14 spool file:"
+#~ msgstr "Импорт пользовательских данных из буферного файла jabberd14:"
+
+#~ msgid "Import users data from jabberd14 spool directory:"
+#~ msgstr "Импорт пользовательских данных из буферной директории jabberd14:"
+
+#~ msgid "Listened Ports at "
+#~ msgstr "Прослушиваемые порты на "
+
+#~ msgid "Modules at ~p"
+#~ msgstr "Модули на ~p"
+
+#~ msgid "Statistics of ~p"
+#~ msgstr "статистика узла ~p"
+
+#~ msgid "Uptime:"
+#~ msgstr "Время работы:"
+
+#~ msgid "CPU Time:"
+#~ msgstr "Процессорное время:"
+
+#~ msgid "Transactions Committed:"
+#~ msgstr "Транзакции завершенные:"
+
+#~ msgid "Transactions Aborted:"
+#~ msgstr "Транзакции отмененные:"
+
+#~ msgid "Transactions Restarted:"
+#~ msgstr "Транзакции перезапущенные:"
+
+#~ msgid "Transactions Logged:"
+#~ msgstr "Транзакции запротоколированные:"
+
+#~ msgid "Update ~p"
+#~ msgstr "Обновление ~p"
+
+#~ msgid "Update plan"
+#~ msgstr "План обновления"
+
+#~ msgid "Modified modules"
+#~ msgstr "Изменённые модули"
+
+#~ msgid "Update script"
+#~ msgstr "Сценарий обновления"
+
+#~ msgid "Low level update script"
+#~ msgstr "Низкоуровневый сценарий обновления"
+
+#~ msgid "Script check"
+#~ msgstr "Проверка сценария"
 
 #~ msgid "Delete"
 #~ msgstr "Удалить"
