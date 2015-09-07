@@ -963,26 +963,23 @@ msgstr "ejabberd MUCモジュール"
 #: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
 #: mod_muc_admin.erl:319
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "マルチユーザーチャット"
 
 #: mod_muc_admin.erl:248
-#, fuzzy
 msgid "Total rooms"
-msgstr "チャットルーム"
+msgstr "チャットルーム数"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "がチャットルームから退出しました"
+msgstr "永続チャットルーム"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "登録ユーザー"
+msgstr "登録ニックネーム"
 
 #: mod_muc_admin.erl:253
 msgid "List of rooms"
-msgstr ""
+msgstr "チャットルームの一覧"
 
 #: mod_muc_log.erl:445 mod_muc_log.erl:454
 msgid "Chatroom configuration modified"
@@ -1252,7 +1249,7 @@ msgstr "チャットルームを CAPTCHA で保護"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "メッセージアーカイブを有効化"
 
 #: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1301,11 +1298,11 @@ msgstr "パスワードは"
 
 #: mod_multicast.erl:273
 msgid "Multicast"
-msgstr ""
+msgstr "マルチキャスト"
 
 #: mod_multicast.erl:288
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "ejabberdマルチキャストサービス"
 
 #: mod_offline.erl:783
 msgid "~s's Offline Messages Queue"
