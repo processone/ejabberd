@@ -22,7 +22,7 @@ defmodule Ejabberd.Mixfile do
   
   defp erlc_options do
     # Use our own includes + includes from all dependencies
-    includes = ["include"] + Path.wildcard(Path.join("..", "/*/include"))
+    includes = ["include"] ++ Path.wildcard(Path.join("..", "/*/include"))
     [:debug_info] ++ Enum.map(includes, fn(path) -> {:i, path} end)
   end
   
