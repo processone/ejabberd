@@ -3,8 +3,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2012-04-22 00:19+0200\n"
-"Last-Translator: JanKusanagi\n"
+"PO-Revision-Date: 2015-09-07 14:13+0100\n"
+"Last-Translator: Badlop <badlop@process-one.net>\n"
 "Language-Team: American English <kde-i18n-doc@kde.org>\n"
 "Language: en_US\n"
 "MIME-Version: 1.0\n"
@@ -13,7 +13,7 @@ msgstr ""
 "X-Language: Catalan (català)\n"
 "X-Additional-Translator: Vicent Alberola Canet\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Lokalize 1.4\n"
+"X-Generator: Poedit 1.6.10\n"
 
 #: ejabberd_c2s.erl:528 ejabberd_c2s.erl:875
 msgid "Use of STARTTLS required"
@@ -34,7 +34,7 @@ msgstr "Has sigut expulsat"
 
 #: ejabberd_c2s.erl:2490
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "Massa missatges sense haver reconegut la seva recepció"
 
 #: ejabberd_captcha.erl:129 ejabberd_captcha.erl:252 ejabberd_captcha.erl:297
 msgid "Enter the text you see"
@@ -247,9 +247,8 @@ msgid "Change Password"
 msgstr "Canviar Contrasenya"
 
 #: ejabberd_web_admin.erl:1610
-#, fuzzy
 msgid "User ~s"
-msgstr "Usuari "
+msgstr "Usuari  ~s"
 
 #: ejabberd_web_admin.erl:1621
 msgid "Connected Resources:"
@@ -281,9 +280,8 @@ msgid "Stopped Nodes"
 msgstr "Nodes parats"
 
 #: ejabberd_web_admin.erl:1771 ejabberd_web_admin.erl:1796
-#, fuzzy
 msgid "Node ~p"
-msgstr "Node "
+msgstr "Node ~p"
 
 #: ejabberd_web_admin.erl:1780 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -320,9 +318,8 @@ msgid "RPC Call Error"
 msgstr "Error de cridada RPC"
 
 #: ejabberd_web_admin.erl:1855
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Taules de la base de dades en "
+msgstr "Taules de la base de dades en ~p"
 
 #: ejabberd_web_admin.erl:1865 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -345,9 +342,8 @@ msgid "Error"
 msgstr "Error"
 
 #: ejabberd_web_admin.erl:1893
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "Còpia de seguretat de "
+msgstr "Còpia de seguretat de ~p"
 
 #: ejabberd_web_admin.erl:1897
 msgid ""
@@ -406,7 +402,7 @@ msgstr "Exportar dades d'usuaris d'un host a arxius PIEFXIS (XEP-0227):"
 
 #: ejabberd_web_admin.erl:1998
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "Exporta totes les taules a un fitxer SQL:"
 
 #: ejabberd_web_admin.erl:2014
 msgid "Import user data from jabberd14 spool file:"
@@ -421,9 +417,8 @@ msgid "Listened Ports at "
 msgstr "Ports a la escolta en "
 
 #: ejabberd_web_admin.erl:2082
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "Mòduls en "
+msgstr "Mòduls en ~p"
 
 #: ejabberd_web_admin.erl:2113
 msgid "Statistics of ~p"
@@ -454,9 +449,8 @@ msgid "Transactions Logged:"
 msgstr "Transaccions registrades"
 
 #: ejabberd_web_admin.erl:2181
-#, fuzzy
 msgid "Update ~p"
-msgstr "Actualitzar"
+msgstr "Actualitzar ~p"
 
 #: ejabberd_web_admin.erl:2192
 msgid "Update plan"
@@ -836,10 +830,12 @@ msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
+"Massa autenticacions (~p) han fallat des d'aquesta adreça IP (~s). L'adreça "
+"serà desbloquejada en ~s UTC"
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "Esta adreça IP està a la llista negra en ~s"
 
 #: mod_irc.erl:431
 msgid "IRC Transport"
@@ -956,20 +952,20 @@ msgstr "Sales de xat"
 #: mod_muc.erl:997
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
-"Necessites un client amb suport x:data per a poder registrar el Nickname"
+"Necessites un client amb suport x:data per a poder registrar el sobrenom"
 
 #: mod_muc.erl:1007
 msgid "Nickname Registration at "
-msgstr "Registre del Nickname en "
+msgstr "Registre del sobrenom en "
 
 #: mod_muc.erl:1013
 msgid "Enter nickname you want to register"
-msgstr "Introdueix el nickname que vols registrar"
+msgstr "Introdueix el sobrenom que vols registrar"
 
 #: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436
 #: mod_vcard.erl:490 mod_vcard.erl:621
 msgid "Nickname"
-msgstr "Nickname"
+msgstr "Sobrenom"
 
 #: mod_muc.erl:1177
 msgid "ejabberd MUC module"
@@ -978,26 +974,23 @@ msgstr "mòdul ejabberd MUC"
 #: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
 #: mod_muc_admin.erl:319
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "Multi-Usuari Converses"
 
 #: mod_muc_admin.erl:248
-#, fuzzy
 msgid "Total rooms"
-msgstr "Sales de xat"
+msgstr "Nombre total de sales"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "Deixar la sala"
+msgstr "Sales permanents"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "Usuaris registrats"
+msgstr "Sobrenoms registrats"
 
 #: mod_muc_admin.erl:253
 msgid "List of rooms"
-msgstr ""
+msgstr "Llista de sales"
 
 #: mod_muc_log.erl:445 mod_muc_log.erl:454
 msgid "Chatroom configuration modified"
@@ -1152,7 +1145,7 @@ msgstr "El Jabber ID ~s no és vàlid"
 
 #: mod_muc_room.erl:2765
 msgid "Nickname ~s does not exist in the room"
-msgstr "El Nickname ~s no existeix a la sala"
+msgstr "El sobrenom ~s no existeix a la sala"
 
 #: mod_muc_room.erl:2788 mod_muc_room.erl:3168
 msgid "Invalid affiliation: ~s"
@@ -1254,7 +1247,7 @@ msgstr ""
 
 #: mod_muc_room.erl:3532
 msgid "Allow visitors to change nickname"
-msgstr "Permetre als visitants canviar el Nickname"
+msgstr "Permetre als visitants canviar el sobrenom"
 
 #: mod_muc_room.erl:3535
 msgid "Allow visitors to send voice requests"
@@ -1270,7 +1263,7 @@ msgstr "Crear una sala protegida per CAPTCHA"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Activar l'emmagatzematge de missatges"
 
 #: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1318,11 +1311,11 @@ msgstr "la contrasenya és"
 
 #: mod_multicast.erl:273
 msgid "Multicast"
-msgstr ""
+msgstr "Multicast"
 
 #: mod_multicast.erl:288
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "Servei de Multicast d'ejabberd"
 
 #: mod_offline.erl:783
 msgid "~s's Offline Messages Queue"

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: es\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2015-07-24 12:41+0100\n"
+"PO-Revision-Date: 2015-09-07 14:02+0100\n"
 "Last-Translator: Badlop <badlop@process-one.net>\n"
 "Language-Team: \n"
 "Language: es\n"
@@ -1264,7 +1264,7 @@ msgstr "Proteger la sala con CAPTCHA"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Activar el almacenamiento de mensajes"
 
 #: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
