@@ -30,7 +30,7 @@ msgstr "foi removido"
 
 #: ejabberd_c2s.erl:2490
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "número excessivo de instâncias sem confirmação"
 
 #: ejabberd_captcha.erl:129 ejabberd_captcha.erl:252 ejabberd_captcha.erl:297
 msgid "Enter the text you see"
@@ -39,15 +39,15 @@ msgstr "Insira o texto que você vê"
 #: ejabberd_captcha.erl:154
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
-"Suas mensagens para ~s estão bloqueadas. Para desbloquea-las, visite: ~s"
+"Suas mensagens para ~s estão bloqueadas. Para desbloqueá-las, visite: ~s"
 
 #: ejabberd_captcha.erl:199
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "Se você não conseguir ver o CAPTCHA aqui, visite a web page."
 
 #: ejabberd_captcha.erl:234
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "CAPTCHA web page"
 
 #: ejabberd_captcha.erl:400
 msgid "The CAPTCHA is valid."
@@ -243,9 +243,8 @@ msgid "Change Password"
 msgstr "Mudar senha"
 
 #: ejabberd_web_admin.erl:1610
-#, fuzzy
 msgid "User ~s"
-msgstr "Usuário "
+msgstr "Usuário ~s"
 
 #: ejabberd_web_admin.erl:1621
 msgid "Connected Resources:"
@@ -277,9 +276,8 @@ msgid "Stopped Nodes"
 msgstr "Nos parados"
 
 #: ejabberd_web_admin.erl:1771 ejabberd_web_admin.erl:1796
-#, fuzzy
 msgid "Node ~p"
-msgstr "Nó"
+msgstr "Nó ~p"
 
 #: ejabberd_web_admin.erl:1780 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -316,9 +314,8 @@ msgid "RPC Call Error"
 msgstr "Erro de chamada RPC"
 
 #: ejabberd_web_admin.erl:1855
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Tabelas de base de dados em "
+msgstr "Tabelas do bancod de dados em ~p"
 
 #: ejabberd_web_admin.erl:1865 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -341,9 +338,8 @@ msgid "Error"
 msgstr "Erro"
 
 #: ejabberd_web_admin.erl:1893
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "Backup de "
+msgstr "Backup de ~p"
 
 #: ejabberd_web_admin.erl:1897
 msgid ""
@@ -376,8 +372,8 @@ msgstr "Restaurar backup binário imediatamente"
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
-"Restaurar backup binário após próximo reinicialização do ejabberd (requer "
-"menos memória):"
+"Restaurar backup binário após reinicialização do ejabberd (requer menos "
+"memória):"
 
 #: ejabberd_web_admin.erl:1937
 msgid "Store plain text backup:"
@@ -404,7 +400,7 @@ msgstr ""
 
 #: ejabberd_web_admin.erl:1998
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "Exportar todas as tabelas como SQL para um arquivo:"
 
 #: ejabberd_web_admin.erl:2014
 msgid "Import user data from jabberd14 spool file:"
@@ -416,12 +412,11 @@ msgstr "Importar dados dos usuários de um diretório-fila jabberd14:"
 
 #: ejabberd_web_admin.erl:2053
 msgid "Listened Ports at "
-msgstr "Portas ouvintes em "
+msgstr "Portas abertas em "
 
 #: ejabberd_web_admin.erl:2082
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "Módulos em "
+msgstr "Módulos em ~p"
 
 #: ejabberd_web_admin.erl:2113
 msgid "Statistics of ~p"
@@ -452,9 +447,8 @@ msgid "Transactions Logged:"
 msgstr "Transações de log:"
 
 #: ejabberd_web_admin.erl:2181
-#, fuzzy
 msgid "Update ~p"
-msgstr "Atualizar "
+msgstr "Atualizar ~p"
 
 #: ejabberd_web_admin.erl:2192
 msgid "Update plan"
@@ -592,7 +586,7 @@ msgstr "Restaurar"
 
 #: mod_configure.erl:165 mod_configure.erl:652
 msgid "Dump to Text File"
-msgstr "Exportar para arquivo de texto"
+msgstr "Exportar para arquivo texto"
 
 #: mod_configure.erl:168 mod_configure.erl:663
 msgid "Import File"
@@ -661,7 +655,7 @@ msgstr "Gestão de Backup"
 
 #: mod_configure.erl:617
 msgid "Import Users From jabberd14 Spool Files"
-msgstr "Importar usuários de arquivos jabberd14"
+msgstr "Importar usuários de arquivos jabberd14 (spool files)"
 
 #: mod_configure.erl:762
 msgid "To ~s"
@@ -833,10 +827,12 @@ msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
+"Número excessivo (~p) de tentativas falhas de autenticação (~s). O endereço "
+"serádesbloqueado as ~s UTC"
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "Este endereço IP está bloqueado em ~s"
 
 #: mod_irc.erl:431
 msgid "IRC Transport"
@@ -952,10 +948,9 @@ msgid "Chatrooms"
 msgstr "Salas de Chat"
 
 #: mod_muc.erl:997
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
-"Você precisa de um cliente com suporte de x:data para poder registrar o nick"
+"Você precisa de um cliente com suporte a x:data para registrar o seu apelido"
 
 #: mod_muc.erl:1007
 msgid "Nickname Registration at "
@@ -977,26 +972,23 @@ msgstr "Módulo de MUC para ejabberd"
 #: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
 #: mod_muc_admin.erl:319
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "Chat multi-usuário"
 
 #: mod_muc_admin.erl:248
-#, fuzzy
 msgid "Total rooms"
-msgstr "Salas de Chat"
+msgstr "Salas no total"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "Sair da sala"
+msgstr "Salas permanentes"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "Usuários Registrados"
+msgstr "Usuários registrados"
 
 #: mod_muc_admin.erl:253
 msgid "List of rooms"
-msgstr ""
+msgstr "Lista de salas"
 
 #: mod_muc_log.erl:445 mod_muc_log.erl:454
 msgid "Chatroom configuration modified"
@@ -1232,9 +1224,8 @@ msgid "Allow users to send private messages"
 msgstr "Permitir a usuários enviarem mensagens privadas"
 
 #: mod_muc_room.erl:3479
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Permitir a usuários enviarem mensagens privadas"
+msgstr "Permitir visitantes enviar mensagem privada para"
 
 #: mod_muc_room.erl:3497
 msgid "nobody"
@@ -1257,9 +1248,8 @@ msgid "Allow visitors to change nickname"
 msgstr "Permitir mudança de apelido aos visitantes"
 
 #: mod_muc_room.erl:3535
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Permitir a usuários envio de convites"
+msgstr "Permitir aos visitantes o envio de convites"
 
 #: mod_muc_room.erl:3538
 msgid "Minimum interval between voice requests (in seconds)"
@@ -1271,7 +1261,7 @@ msgstr "Tornar protegida a senha da sala"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Habilitar arquivamento de mensagens"
 
 #: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1302,13 +1292,12 @@ msgid "Either approve or decline the voice request."
 msgstr "Você deve aprovar/desaprovar a requisição de voz."
 
 #: mod_muc_room.erl:4262
-#, fuzzy
 msgid "User JID"
-msgstr "Usuário "
+msgstr "Usuário JID"
 
 #: mod_muc_room.erl:4266
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Dar 'voice' a esta usuário?"
 
 #: mod_muc_room.erl:4409
 msgid "~s invites you to the room ~s"
@@ -1320,11 +1309,11 @@ msgstr "a senha é"
 
 #: mod_multicast.erl:273
 msgid "Multicast"
-msgstr ""
+msgstr "Multicast"
 
 #: mod_multicast.erl:288
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "ejabberd Multicast service"
 
 #: mod_offline.erl:783
 msgid "~s's Offline Messages Queue"
@@ -1332,7 +1321,7 @@ msgstr "~s's Fila de Mensagens Offline"
 
 #: mod_offline.erl:796
 msgid "Time"
-msgstr "Fecha"
+msgstr "Tempo"
 
 #: mod_offline.erl:797
 msgid "From"
@@ -1459,7 +1448,6 @@ msgid "The collections with which a node is affiliated"
 msgstr "As coleções com as quais o nó está relacionado"
 
 #: mod_register.erl:250
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
 "Você precisa de um cliente com suporte de x:data para poder registrar o nick"
@@ -1516,9 +1504,8 @@ msgstr ""
 "campos."
 
 #: mod_register_web.erl:224 mod_register_web.erl:360 mod_register_web.erl:469
-#, fuzzy
 msgid "Username:"
-msgstr "Nome de usuário no IRC"
+msgstr "Usuário:"
 
 #: mod_register_web.erl:230
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
@@ -1530,9 +1517,8 @@ msgid "Characters not allowed:"
 msgstr "Caracteres não aceitos:"
 
 #: mod_register_web.erl:236 mod_register_web.erl:364 mod_register_web.erl:473
-#, fuzzy
 msgid "Server:"
-msgstr "Servidor ~b"
+msgstr "Servidor:"
 
 #: mod_register_web.erl:245
 msgid ""
@@ -1565,22 +1551,18 @@ msgstr ""
 "você a esquecer eventualmente."
 
 #: mod_register_web.erl:262 mod_register_web.erl:374
-#, fuzzy
 msgid "Password Verification:"
 msgstr "Verificação de Senha"
 
 #: mod_register_web.erl:269
-#, fuzzy
 msgid "Register"
-msgstr "Lista de contatos"
+msgstr "Registrar"
 
 #: mod_register_web.erl:366
-#, fuzzy
 msgid "Old Password:"
 msgstr "Senha Antiga:"
 
 #: mod_register_web.erl:370
-#, fuzzy
 msgid "New Password:"
 msgstr "Nova Senha:"
 
@@ -1639,12 +1621,11 @@ msgstr "Descrição:"
 
 #: mod_shared_roster.erl:1248
 msgid "Members:"
-msgstr "Miembros:"
+msgstr "Membros:"
 
 #: mod_shared_roster.erl:1255
-#, fuzzy
 msgid "Displayed Groups:"
-msgstr "Grupos Indicados:"
+msgstr "Grupos Exibidos:"
 
 #: mod_shared_roster.erl:1264
 msgid "Group "
@@ -1853,13 +1834,11 @@ msgstr "Preencha campos para buscar usuários Jabber que concordem"
 #~ msgid "The CAPTCHA verification has failed"
 #~ msgstr "A verificação do CAPTCHA falhou"
 
-#, fuzzy
 #~ msgid "The password is too weak"
 #~ msgstr "Senha considerada fraca'"
 
 #~ msgid "Users are not allowed to register accounts so quickly"
 #~ msgstr "Usuários não estão autorizados a registrar contas imediatamente"
 
-#, fuzzy
 #~ msgid "Captcha test failed"
 #~ msgstr "O CAPTCHA é inválido."
