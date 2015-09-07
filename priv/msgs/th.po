@@ -7,342 +7,343 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Thai (ภาษาไทย)\n"
 
-#: ejabberd_c2s.erl:526 ejabberd_c2s.erl:873
+#: ejabberd_c2s.erl:528 ejabberd_c2s.erl:875
 msgid "Use of STARTTLS required"
 msgstr "ต้องใช้ STARTTLS"
 
-#: ejabberd_c2s.erl:624
+#: ejabberd_c2s.erl:626
 msgid "No resource provided"
 msgstr "ไม่ได้ระบุข้อมูล"
 
-#: ejabberd_c2s.erl:1397
+#: ejabberd_c2s.erl:1401
 msgid "Replaced by new connection"
 msgstr "แทนที่ด้วยการเชื่อมต่อใหม่"
 
-#: ejabberd_c2s.erl:1401 mod_configure.erl:1855 mod_muc_log.erl:469
-#: mod_muc_log.erl:472
+#: ejabberd_c2s.erl:1405 mod_configure.erl:1854 mod_muc_log.erl:474
+#: mod_muc_log.erl:477
 msgid "has been kicked"
 msgstr "ถูกไล่ออก"
 
-#: ejabberd_c2s.erl:2504
+#: ejabberd_c2s.erl:2490
 msgid "Too many unacked stanzas"
 msgstr ""
 
-#: ejabberd_captcha.erl:125 ejabberd_captcha.erl:248 ejabberd_captcha.erl:293
+#: ejabberd_captcha.erl:129 ejabberd_captcha.erl:252 ejabberd_captcha.erl:297
 #, fuzzy
 msgid "Enter the text you see"
 msgstr "ป้อนพาธของไฟล์ข้อความ"
 
-#: ejabberd_captcha.erl:150
+#: ejabberd_captcha.erl:154
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
 
-#: ejabberd_captcha.erl:195
+#: ejabberd_captcha.erl:199
 msgid "If you don't see the CAPTCHA image here, visit the web page."
 msgstr ""
 
-#: ejabberd_captcha.erl:230
+#: ejabberd_captcha.erl:234
 msgid "CAPTCHA web page"
 msgstr ""
 
-#: ejabberd_captcha.erl:396
+#: ejabberd_captcha.erl:400
 msgid "The CAPTCHA is valid."
 msgstr ""
 
-#: ejabberd_web_admin.erl:201 ejabberd_web_admin.erl:213
-#: ejabberd_web_admin.erl:233 ejabberd_web_admin.erl:245
+#: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
+#: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
 msgid "Unauthorized"
 msgstr ""
 
-#: ejabberd_web_admin.erl:302 ejabberd_web_admin.erl:334
+#: ejabberd_web_admin.erl:303 ejabberd_web_admin.erl:335
 #, fuzzy
 msgid "ejabberd Web Admin"
 msgstr "เว็บอินเทอร์เฟซของ ejabberd"
 
-#: ejabberd_web_admin.erl:592 ejabberd_web_admin.erl:603
+#: ejabberd_web_admin.erl:605 ejabberd_web_admin.erl:616
 msgid "Administration"
 msgstr "การดูแล"
 
-#: ejabberd_web_admin.erl:660 ejabberd_web_admin.erl:696 mod_configure.erl:197
-#: mod_configure.erl:533
+#: ejabberd_web_admin.erl:673 ejabberd_web_admin.erl:709 mod_configure.erl:196
+#: mod_configure.erl:532
 msgid "Access Control Lists"
 msgstr "รายการควบคุมการเข้าถึง"
 
-#: ejabberd_web_admin.erl:664 ejabberd_web_admin.erl:700
-#: ejabberd_web_admin.erl:768 ejabberd_web_admin.erl:801
-#: ejabberd_web_admin.erl:842 ejabberd_web_admin.erl:1319
-#: ejabberd_web_admin.erl:1600 ejabberd_web_admin.erl:1760
-#: ejabberd_web_admin.erl:1794 ejabberd_web_admin.erl:1874
-#: ejabberd_web_admin.erl:2046 ejabberd_web_admin.erl:2075
-#: ejabberd_web_admin.erl:2172 mod_offline.erl:777 mod_roster.erl:1490
-#: mod_shared_roster.erl:1169 mod_shared_roster.erl:1264
+#: ejabberd_web_admin.erl:677 ejabberd_web_admin.erl:713
+#: ejabberd_web_admin.erl:779 ejabberd_web_admin.erl:812
+#: ejabberd_web_admin.erl:853 ejabberd_web_admin.erl:1329
+#: ejabberd_web_admin.erl:1614 ejabberd_web_admin.erl:1774
+#: ejabberd_web_admin.erl:1808 ejabberd_web_admin.erl:1888
+#: ejabberd_web_admin.erl:2058 ejabberd_web_admin.erl:2087
+#: ejabberd_web_admin.erl:2184 mod_offline.erl:787 mod_roster.erl:1494
+#: mod_shared_roster.erl:1171 mod_shared_roster.erl:1266
 msgid "Submitted"
 msgstr "ส่งแล้ว"
 
-#: ejabberd_web_admin.erl:665 ejabberd_web_admin.erl:701
-#: ejabberd_web_admin.erl:769 ejabberd_web_admin.erl:802
-#: ejabberd_web_admin.erl:843 ejabberd_web_admin.erl:1320
-#: ejabberd_web_admin.erl:1601 ejabberd_web_admin.erl:1761
-#: ejabberd_web_admin.erl:2047 ejabberd_web_admin.erl:2076 mod_roster.erl:1491
-#: mod_shared_roster.erl:1170 mod_shared_roster.erl:1265
+#: ejabberd_web_admin.erl:678 ejabberd_web_admin.erl:714
+#: ejabberd_web_admin.erl:780 ejabberd_web_admin.erl:813
+#: ejabberd_web_admin.erl:854 ejabberd_web_admin.erl:1330
+#: ejabberd_web_admin.erl:1615 ejabberd_web_admin.erl:1775
+#: ejabberd_web_admin.erl:2059 ejabberd_web_admin.erl:2088 mod_roster.erl:1495
+#: mod_shared_roster.erl:1172 mod_shared_roster.erl:1267
 msgid "Bad format"
 msgstr "รูปแบบที่ไม่ถูกต้อง"
 
-#: ejabberd_web_admin.erl:676 ejabberd_web_admin.erl:713
-#: ejabberd_web_admin.erl:780 ejabberd_web_admin.erl:850
-#: ejabberd_web_admin.erl:1863 mod_shared_roster.erl:1272
+#: ejabberd_web_admin.erl:689 ejabberd_web_admin.erl:726
+#: ejabberd_web_admin.erl:791 ejabberd_web_admin.erl:861
+#: ejabberd_web_admin.erl:1877 mod_shared_roster.erl:1274
 msgid "Submit"
 msgstr "ส่ง"
 
-#: ejabberd_web_admin.erl:705 ejabberd_web_admin.erl:806
+#: ejabberd_web_admin.erl:718 ejabberd_web_admin.erl:817
 msgid "Raw"
 msgstr "ข้อมูลดิบ"
 
-#: ejabberd_web_admin.erl:710 ejabberd_web_admin.erl:812 mod_offline.erl:799
-#: mod_shared_roster.erl:1178
+#: ejabberd_web_admin.erl:723 ejabberd_web_admin.erl:823 mod_offline.erl:809
+#: mod_shared_roster.erl:1180
 msgid "Delete Selected"
 msgstr "ลบข้อความที่เลือก"
 
-#: ejabberd_web_admin.erl:764 ejabberd_web_admin.erl:797 mod_configure.erl:199
-#: mod_configure.erl:534
+#: ejabberd_web_admin.erl:775 ejabberd_web_admin.erl:808 mod_configure.erl:198
+#: mod_configure.erl:533
 msgid "Access Rules"
 msgstr "กฎการเข้าถึง"
 
-#: ejabberd_web_admin.erl:838
+#: ejabberd_web_admin.erl:849
 msgid "~s access rule configuration"
 msgstr "~s การกำหนดค่ากฎการเข้าถึง"
 
-#: ejabberd_web_admin.erl:856
+#: ejabberd_web_admin.erl:867
 msgid "Virtual Hosts"
 msgstr "โฮสต์เสมือน"
 
-#: ejabberd_web_admin.erl:865 ejabberd_web_admin.erl:873
+#: ejabberd_web_admin.erl:876 ejabberd_web_admin.erl:884
 msgid "Users"
 msgstr "ผู้ใช้"
 
-#: ejabberd_web_admin.erl:880 ejabberd_web_admin.erl:1265
-#: mod_configure.erl:525
+#: ejabberd_web_admin.erl:891 ejabberd_web_admin.erl:1275
+#: mod_configure.erl:524
 msgid "Online Users"
 msgstr "ผู้ใช้ออนไลน์"
 
-#: ejabberd_web_admin.erl:896
+#: ejabberd_web_admin.erl:907
 msgid "Users Last Activity"
 msgstr "กิจกรรมล่าสุดของผู้ใช้"
 
-#: ejabberd_web_admin.erl:900
+#: ejabberd_web_admin.erl:911
 msgid "Period: "
 msgstr "ระยะเวลา:"
 
-#: ejabberd_web_admin.erl:913
+#: ejabberd_web_admin.erl:924
 msgid "Last month"
 msgstr "เดือนที่แล้ว"
 
-#: ejabberd_web_admin.erl:914
+#: ejabberd_web_admin.erl:925
 msgid "Last year"
 msgstr "ปีที่แล้ว"
 
-#: ejabberd_web_admin.erl:916
+#: ejabberd_web_admin.erl:927
 msgid "All activity"
 msgstr "กิจกรรมทั้งหมด"
 
-#: ejabberd_web_admin.erl:919
+#: ejabberd_web_admin.erl:930
 msgid "Show Ordinary Table"
 msgstr "แสดงตารางทั่วไป"
 
-#: ejabberd_web_admin.erl:922
+#: ejabberd_web_admin.erl:933
 msgid "Show Integral Table"
 msgstr "แสดงตารางรวม"
 
-#: ejabberd_web_admin.erl:929 ejabberd_web_admin.erl:1771
+#: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785
+#: mod_muc_admin.erl:246
 msgid "Statistics"
 msgstr "สถิติ"
 
-#: ejabberd_web_admin.erl:939
+#: ejabberd_web_admin.erl:950
 #, fuzzy
 msgid "Not Found"
 msgstr "ไม่พบโหนด"
 
-#: ejabberd_web_admin.erl:952
+#: ejabberd_web_admin.erl:963
 msgid "Node not found"
 msgstr "ไม่พบโหนด"
 
-#: ejabberd_web_admin.erl:1174 ejabberd_web_admin.erl:2419
-#: mod_shared_roster.erl:1164
+#: ejabberd_web_admin.erl:1185 mod_shared_roster.erl:1166
 msgid "Add New"
 msgstr "เพิ่มผู้ใช้ใหม่"
 
-#: ejabberd_web_admin.erl:1263
+#: ejabberd_web_admin.erl:1273
 msgid "Host"
 msgstr "โฮสต์"
 
-#: ejabberd_web_admin.erl:1264
+#: ejabberd_web_admin.erl:1274
 msgid "Registered Users"
 msgstr "ผู้ใช้ที่ลงทะเบียน"
 
-#: ejabberd_web_admin.erl:1328 ejabberd_web_admin.erl:1383
-#: mod_register.erl:252 mod_vcard.erl:486
+#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393
+#: mod_register.erl:262 mod_vcard.erl:490
 msgid "User"
 msgstr "ผู้ใช้"
 
-#: ejabberd_web_admin.erl:1333 mod_configure.erl:1399 mod_configure.erl:1486
-#: mod_configure.erl:1890 mod_configure.erl:2125 mod_muc_room.erl:3347
-#: mod_register.erl:262
+#: ejabberd_web_admin.erl:1343 mod_configure.erl:1398 mod_configure.erl:1485
+#: mod_configure.erl:1889 mod_configure.erl:2124 mod_muc_room.erl:3376
+#: mod_register.erl:272
 msgid "Password"
 msgstr "รหัสผ่าน"
 
-#: ejabberd_web_admin.erl:1342 mod_configure.erl:178 mod_configure.erl:540
-#: mod_configure.erl:1387
+#: ejabberd_web_admin.erl:1352 mod_configure.erl:177 mod_configure.erl:539
+#: mod_configure.erl:1386
 msgid "Add User"
 msgstr "เพิ่มผู้ใช้"
 
-#: ejabberd_web_admin.erl:1384
+#: ejabberd_web_admin.erl:1394
 msgid "Offline Messages"
 msgstr "ข้อความออฟไลน์"
 
-#: ejabberd_web_admin.erl:1385 ejabberd_web_admin.erl:1611
+#: ejabberd_web_admin.erl:1395 ejabberd_web_admin.erl:1625
 msgid "Last Activity"
 msgstr "กิจกรรมล่าสุด"
 
-#: ejabberd_web_admin.erl:1403 ejabberd_web_admin.erl:1583
-#: mod_configure.erl:1918
+#: ejabberd_web_admin.erl:1413 ejabberd_web_admin.erl:1597
+#: mod_configure.erl:1917
 msgid "Never"
 msgstr "ไม่เคย"
 
-#: ejabberd_web_admin.erl:1421 ejabberd_web_admin.erl:1594
-#: mod_configure.erl:1928
+#: ejabberd_web_admin.erl:1431 ejabberd_web_admin.erl:1608
+#: mod_configure.erl:1927
 msgid "Online"
 msgstr "ออนไลน์"
 
-#: ejabberd_web_admin.erl:1477 ejabberd_web_admin.erl:1496
+#: ejabberd_web_admin.erl:1487 ejabberd_web_admin.erl:1506
 msgid "Registered Users:"
 msgstr "ผู้ใช้ที่ลงทะเบียน:"
 
-#: ejabberd_web_admin.erl:1480 ejabberd_web_admin.erl:1499
-#: ejabberd_web_admin.erl:2113
+#: ejabberd_web_admin.erl:1490 ejabberd_web_admin.erl:1509
+#: ejabberd_web_admin.erl:2125
 msgid "Online Users:"
 msgstr "ผู้ใช้ออนไลน์:"
 
-#: ejabberd_web_admin.erl:1483
+#: ejabberd_web_admin.erl:1493
 msgid "Outgoing s2s Connections:"
 msgstr "การเชื่อมต่อ s2s ขาออก:"
 
-#: ejabberd_web_admin.erl:1486
+#: ejabberd_web_admin.erl:1496
 msgid "Outgoing s2s Servers:"
 msgstr "เซิร์ฟเวอร์ s2s ขาออก:"
 
-#: ejabberd_web_admin.erl:1522 ejabberd_web_admin.erl:1718
-#: ejabberd_web_admin.erl:1728 ejabberd_web_admin.erl:2140 mod_roster.erl:1426
+#: ejabberd_web_admin.erl:1532 ejabberd_web_admin.erl:1732
+#: ejabberd_web_admin.erl:1742 ejabberd_web_admin.erl:2152 mod_roster.erl:1430
 msgid "None"
 msgstr "ไม่มี"
 
-#: ejabberd_web_admin.erl:1575 mod_register_web.erl:188
-#: mod_register_web.erl:346 mod_register_web.erl:354 mod_register_web.erl:378
+#: ejabberd_web_admin.erl:1589 mod_register_web.erl:188
+#: mod_register_web.erl:347 mod_register_web.erl:355 mod_register_web.erl:379
 msgid "Change Password"
 msgstr "เปลี่ยนรหัสผ่าน"
 
-#: ejabberd_web_admin.erl:1596
+#: ejabberd_web_admin.erl:1610
 #, fuzzy
 msgid "User ~s"
 msgstr "ผู้ใช้"
 
-#: ejabberd_web_admin.erl:1607
+#: ejabberd_web_admin.erl:1621
 msgid "Connected Resources:"
 msgstr "ทรัพยากรที่เชื่อมต่อ:"
 
-#: ejabberd_web_admin.erl:1609 mod_register_web.erl:238
-#: mod_register_web.erl:474
+#: ejabberd_web_admin.erl:1623 mod_register_web.erl:239
+#: mod_register_web.erl:475
 msgid "Password:"
 msgstr "รหัสผ่าน:"
 
-#: ejabberd_web_admin.erl:1616 mod_configure.erl:2119
+#: ejabberd_web_admin.erl:1630 mod_configure.erl:2118
 msgid "Remove User"
 msgstr "ลบผู้ใช้"
 
-#: ejabberd_web_admin.erl:1664
+#: ejabberd_web_admin.erl:1678
 msgid "No Data"
 msgstr "ไม่มีข้อมูล"
 
-#: ejabberd_web_admin.erl:1737
+#: ejabberd_web_admin.erl:1751
 msgid "Nodes"
 msgstr "โหนด"
 
-#: ejabberd_web_admin.erl:1738 mod_configure.erl:529
+#: ejabberd_web_admin.erl:1752 mod_configure.erl:528
 msgid "Running Nodes"
 msgstr "โหนดที่ทำงาน"
 
-#: ejabberd_web_admin.erl:1739 mod_configure.erl:530
+#: ejabberd_web_admin.erl:1753 mod_configure.erl:529
 msgid "Stopped Nodes"
 msgstr "โหนดที่หยุด"
 
-#: ejabberd_web_admin.erl:1757 ejabberd_web_admin.erl:1782
+#: ejabberd_web_admin.erl:1771 ejabberd_web_admin.erl:1796
 #, fuzzy
 msgid "Node ~p"
 msgstr "โหนด "
 
-#: ejabberd_web_admin.erl:1766 mod_configure.erl:151 mod_configure.erl:612
+#: ejabberd_web_admin.erl:1780 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
 msgstr "ฐานข้อมูล"
 
-#: ejabberd_web_admin.erl:1767 mod_configure.erl:160 mod_configure.erl:649
+#: ejabberd_web_admin.erl:1781 mod_configure.erl:159 mod_configure.erl:648
 msgid "Backup"
 msgstr "การสำรองข้อมูล "
 
-#: ejabberd_web_admin.erl:1769
+#: ejabberd_web_admin.erl:1783
 msgid "Listened Ports"
 msgstr "พอร์ทฟัง"
 
-#: ejabberd_web_admin.erl:1772 ejabberd_web_admin.erl:2187
-#: ejabberd_web_admin.erl:2395
+#: ejabberd_web_admin.erl:1786 ejabberd_web_admin.erl:2199
 msgid "Update"
 msgstr "อัพเดต"
 
-#: ejabberd_web_admin.erl:1776 ejabberd_web_admin.erl:2539
+#: ejabberd_web_admin.erl:1790 ejabberd_web_admin.erl:2407
+#: ejabberd_web_admin.erl:2551
 msgid "Restart"
 msgstr "เริ่มต้นใหม่"
 
-#: ejabberd_web_admin.erl:1778 ejabberd_web_admin.erl:2543
+#: ejabberd_web_admin.erl:1792 ejabberd_web_admin.erl:2411
+#: ejabberd_web_admin.erl:2555
 msgid "Stop"
 msgstr "หยุด"
 
-#: ejabberd_web_admin.erl:1785 mod_configure.erl:614 mod_configure.erl:627
+#: ejabberd_web_admin.erl:1799 mod_configure.erl:613 mod_configure.erl:626
 msgid "Modules"
 msgstr "โมดูล"
 
-#: ejabberd_web_admin.erl:1790
+#: ejabberd_web_admin.erl:1804
 msgid "RPC Call Error"
 msgstr "ข้อผิดพลาดจากการเรียกใช้ RPC"
 
-#: ejabberd_web_admin.erl:1841
+#: ejabberd_web_admin.erl:1855
 #, fuzzy
 msgid "Database Tables at ~p"
 msgstr "ตารางฐานข้อมูลที่"
 
-#: ejabberd_web_admin.erl:1851 mod_vcard.erl:486 mod_vcard.erl:612
+#: ejabberd_web_admin.erl:1865 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
 msgstr "ชื่อ"
 
-#: ejabberd_web_admin.erl:1852
+#: ejabberd_web_admin.erl:1866
 msgid "Storage Type"
 msgstr "ชนิดที่เก็บข้อมูล"
 
-#: ejabberd_web_admin.erl:1853
+#: ejabberd_web_admin.erl:1867
 msgid "Elements"
 msgstr ""
 
-#: ejabberd_web_admin.erl:1854
+#: ejabberd_web_admin.erl:1868
 msgid "Memory"
 msgstr "หน่วยความจำ"
 
-#: ejabberd_web_admin.erl:1876 ejabberd_web_admin.erl:2049
+#: ejabberd_web_admin.erl:1890 ejabberd_web_admin.erl:2061
 msgid "Error"
 msgstr ""
 
-#: ejabberd_web_admin.erl:1879
+#: ejabberd_web_admin.erl:1893
 #, fuzzy
 msgid "Backup of ~p"
 msgstr "การสำรองข้อมูล"
 
-#: ejabberd_web_admin.erl:1885
+#: ejabberd_web_admin.erl:1897
 #, fuzzy
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
@@ -352,489 +353,485 @@ msgstr ""
 "โปรดทราบว่าตัวเลือกเหล่านี้จะสำรองข้อมูลในฐานข้อมูล builtin Mnesia เท่านั้น หากคุณใช้โมดูล "
 "ODBC คุณต้องสำรองข้อมูลของฐานข้อมูล SQL แยกต่างหากด้วย"
 
-#: ejabberd_web_admin.erl:1895
+#: ejabberd_web_admin.erl:1907
 msgid "Store binary backup:"
 msgstr "จัดเก็บข้อมูลสำรองแบบไบนารี:"
 
-#: ejabberd_web_admin.erl:1902 ejabberd_web_admin.erl:1912
-#: ejabberd_web_admin.erl:1923 ejabberd_web_admin.erl:1932
-#: ejabberd_web_admin.erl:1942 ejabberd_web_admin.erl:1955
-#: ejabberd_web_admin.erl:1967 ejabberd_web_admin.erl:1983
-#: ejabberd_web_admin.erl:1999 ejabberd_web_admin.erl:2010
-#: ejabberd_web_admin.erl:2020
+#: ejabberd_web_admin.erl:1914 ejabberd_web_admin.erl:1924
+#: ejabberd_web_admin.erl:1935 ejabberd_web_admin.erl:1944
+#: ejabberd_web_admin.erl:1954 ejabberd_web_admin.erl:1967
+#: ejabberd_web_admin.erl:1979 ejabberd_web_admin.erl:1995
+#: ejabberd_web_admin.erl:2011 ejabberd_web_admin.erl:2022
+#: ejabberd_web_admin.erl:2032
 msgid "OK"
 msgstr "ตกลง"
 
-#: ejabberd_web_admin.erl:1905
+#: ejabberd_web_admin.erl:1917
 msgid "Restore binary backup immediately:"
 msgstr "คืนค่าข้อมูลสำรองแบบไบนารีโดยทันที:"
 
-#: ejabberd_web_admin.erl:1915
+#: ejabberd_web_admin.erl:1927
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
 "คืนค่าข้อมูลสำรองแบบไบนารีหลังจากที่ ejabberd ถัดไปเริ่มการทำงานใหม่ (ใช้หน่วยความจำน้อยลง):"
 
-#: ejabberd_web_admin.erl:1925
+#: ejabberd_web_admin.erl:1937
 msgid "Store plain text backup:"
 msgstr "จัดเก็บข้อมูลสำรองที่เป็นข้อความธรรมดา:"
 
-#: ejabberd_web_admin.erl:1935
+#: ejabberd_web_admin.erl:1947
 msgid "Restore plain text backup immediately:"
 msgstr "คืนค่าข้อมูลสำรองที่เป็นข้อความธรรมดาโดยทันที:"
 
-#: ejabberd_web_admin.erl:1945
+#: ejabberd_web_admin.erl:1957
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
 msgstr ""
 
-#: ejabberd_web_admin.erl:1958
+#: ejabberd_web_admin.erl:1970
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
 
-#: ejabberd_web_admin.erl:1970
+#: ejabberd_web_admin.erl:1982
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr ""
 
-#: ejabberd_web_admin.erl:1986
+#: ejabberd_web_admin.erl:1998
 msgid "Export all tables as SQL queries to a file:"
 msgstr ""
 
-#: ejabberd_web_admin.erl:2002
+#: ejabberd_web_admin.erl:2014
 #, fuzzy
 msgid "Import user data from jabberd14 spool file:"
 msgstr "อิมพอร์ตผู้ใช้จากไฟล์เก็บพักข้อมูล jabberd14"
 
-#: ejabberd_web_admin.erl:2013
+#: ejabberd_web_admin.erl:2025
 #, fuzzy
 msgid "Import users data from jabberd14 spool directory:"
 msgstr "อิมพอร์ตผู้ใช้จากไฟล์เก็บพักข้อมูล jabberd14"
 
-#: ejabberd_web_admin.erl:2041
+#: ejabberd_web_admin.erl:2053
 msgid "Listened Ports at "
 msgstr "พอร์ทฟังที่"
 
-#: ejabberd_web_admin.erl:2070
+#: ejabberd_web_admin.erl:2082
 #, fuzzy
 msgid "Modules at ~p"
 msgstr "โมดูลที่ "
 
-#: ejabberd_web_admin.erl:2101
+#: ejabberd_web_admin.erl:2113
 msgid "Statistics of ~p"
 msgstr "สถิติของ ~p"
 
-#: ejabberd_web_admin.erl:2105
+#: ejabberd_web_admin.erl:2117
 msgid "Uptime:"
 msgstr "เวลาการทำงานต่อเนื่อง:"
 
-#: ejabberd_web_admin.erl:2109
+#: ejabberd_web_admin.erl:2121
 msgid "CPU Time:"
 msgstr "เวลาการทำงานของ CPU:"
 
-#: ejabberd_web_admin.erl:2117
+#: ejabberd_web_admin.erl:2129
 msgid "Transactions Committed:"
 msgstr "ทรานแซกชันที่ได้รับมอบหมาย:"
 
-#: ejabberd_web_admin.erl:2121
+#: ejabberd_web_admin.erl:2133
 msgid "Transactions Aborted:"
 msgstr "ทรานแซกชันที่ถูกยกเลิก:"
 
-#: ejabberd_web_admin.erl:2125
+#: ejabberd_web_admin.erl:2137
 msgid "Transactions Restarted:"
 msgstr "ทรานแซกชันที่เริ่มทำงานใหม่อีกครั้ง:"
 
-#: ejabberd_web_admin.erl:2129
+#: ejabberd_web_admin.erl:2141
 msgid "Transactions Logged:"
 msgstr "ทรานแซกชันที่บันทึก:"
 
-#: ejabberd_web_admin.erl:2169
+#: ejabberd_web_admin.erl:2181
 #, fuzzy
 msgid "Update ~p"
 msgstr "อัพเดต "
 
-#: ejabberd_web_admin.erl:2180
+#: ejabberd_web_admin.erl:2192
 msgid "Update plan"
 msgstr "แผนการอัพเดต"
 
-#: ejabberd_web_admin.erl:2181
+#: ejabberd_web_admin.erl:2193
 #, fuzzy
 msgid "Modified modules"
 msgstr "โมดูลที่อัพเดต"
 
-#: ejabberd_web_admin.erl:2182
+#: ejabberd_web_admin.erl:2194
 msgid "Update script"
 msgstr "อัพเดตสคริปต์"
 
-#: ejabberd_web_admin.erl:2183
+#: ejabberd_web_admin.erl:2195
 msgid "Low level update script"
 msgstr "อัพเดตสคริปต์ระดับต่ำ"
 
-#: ejabberd_web_admin.erl:2184
+#: ejabberd_web_admin.erl:2196
 msgid "Script check"
 msgstr "ตรวจสอบคริปต์"
 
-#: ejabberd_web_admin.erl:2364
+#: ejabberd_web_admin.erl:2376
 msgid "IP"
 msgstr ""
 
-#: ejabberd_web_admin.erl:2364
+#: ejabberd_web_admin.erl:2376
 msgid "Port"
 msgstr "พอร์ท"
 
-#: ejabberd_web_admin.erl:2365
+#: ejabberd_web_admin.erl:2377
 #, fuzzy
 msgid "Protocol"
 msgstr "พอร์ท"
 
-#: ejabberd_web_admin.erl:2366 ejabberd_web_admin.erl:2521
+#: ejabberd_web_admin.erl:2378 ejabberd_web_admin.erl:2533
 msgid "Module"
 msgstr "โมดูล"
 
-#: ejabberd_web_admin.erl:2367 ejabberd_web_admin.erl:2522
+#: ejabberd_web_admin.erl:2379 ejabberd_web_admin.erl:2534
 msgid "Options"
 msgstr "ตัวเลือก"
 
-#: ejabberd_web_admin.erl:2399
-msgid "Delete"
-msgstr "ลบ"
-
-#: ejabberd_web_admin.erl:2555
+#: ejabberd_web_admin.erl:2431 ejabberd_web_admin.erl:2567
 msgid "Start"
 msgstr "เริ่ม"
 
-#: mod_adhoc.erl:112 mod_adhoc.erl:146 mod_adhoc.erl:166 mod_adhoc.erl:189
+#: mod_adhoc.erl:114 mod_adhoc.erl:148 mod_adhoc.erl:168 mod_adhoc.erl:191
 msgid "Commands"
 msgstr "คำสั่ง"
 
-#: mod_adhoc.erl:174 mod_adhoc.erl:263
+#: mod_adhoc.erl:176 mod_adhoc.erl:265
 msgid "Ping"
 msgstr "Ping"
 
-#: mod_adhoc.erl:277
+#: mod_adhoc.erl:279
 msgid "Pong"
 msgstr "Pong"
 
-#: mod_announce.erl:532
+#: mod_announce.erl:523
 msgid "Really delete message of the day?"
 msgstr "แน่ใจว่าต้องการลบข้อความของวันหรือไม่"
 
-#: mod_announce.erl:545 mod_configure.erl:1239 mod_configure.erl:1299
+#: mod_announce.erl:536 mod_configure.erl:1238 mod_configure.erl:1298
 msgid "Subject"
 msgstr "หัวเรื่อง"
 
-#: mod_announce.erl:553 mod_configure.erl:1245 mod_configure.erl:1305
+#: mod_announce.erl:544 mod_configure.erl:1244 mod_configure.erl:1304
 msgid "Message body"
 msgstr "เนื้อหาของข้อความ"
 
-#: mod_announce.erl:636
+#: mod_announce.erl:627
 msgid "No body provided for announce message"
 msgstr "ไม่ได้ป้อนเนื้อหาสำหรับข้อความที่ประกาศ"
 
-#: mod_announce.erl:671
+#: mod_announce.erl:662
 msgid "Announcements"
 msgstr "ประกาศ"
 
-#: mod_announce.erl:673
+#: mod_announce.erl:664
 msgid "Send announcement to all users"
 msgstr "ส่งประกาศถึงผู้ใช้ทั้งหมด"
 
-#: mod_announce.erl:675
+#: mod_announce.erl:666
 msgid "Send announcement to all users on all hosts"
 msgstr "ส่งประกาศถึงผู้ใช้ทั้งหมดบนโฮสต์ทั้งหมด"
 
-#: mod_announce.erl:677
+#: mod_announce.erl:668
 msgid "Send announcement to all online users"
 msgstr "ส่งประกาศถึงผู้ใช้ออนไลน์ทั้งหมด"
 
-#: mod_announce.erl:679 mod_configure.erl:1232 mod_configure.erl:1292
+#: mod_announce.erl:670 mod_configure.erl:1231 mod_configure.erl:1291
 msgid "Send announcement to all online users on all hosts"
 msgstr "ส่งประกาศถึงผู้ใช้ออนไลน์ทั้งหมดบนโฮสต์ทั้งหมด"
 
-#: mod_announce.erl:681
+#: mod_announce.erl:672
 msgid "Set message of the day and send to online users"
 msgstr "ตั้งค่าข้อความของวันและส่งถึงผู้ใช้ออนไลน์"
 
-#: mod_announce.erl:683
+#: mod_announce.erl:674
 msgid "Set message of the day on all hosts and send to online users"
 msgstr "ตั้งค่าข้อความของวันบนโฮสต์ทั้งหมดและส่งถึงผู้ใช้ออนไลน์"
 
-#: mod_announce.erl:685
+#: mod_announce.erl:676
 msgid "Update message of the day (don't send)"
 msgstr "อัพเดตข้อความของวัน (ไม่ต้องส่ง)"
 
-#: mod_announce.erl:687
+#: mod_announce.erl:678
 msgid "Update message of the day on all hosts (don't send)"
 msgstr "อัพเดตข้อความของวันบนโฮสต์ทั้งหมด (ไม่ต้องส่ง) "
 
-#: mod_announce.erl:689
+#: mod_announce.erl:680
 msgid "Delete message of the day"
 msgstr "ลบข้อความของวัน"
 
-#: mod_announce.erl:691
+#: mod_announce.erl:682
 msgid "Delete message of the day on all hosts"
 msgstr "ลบข้อความของวันบนโฮสต์ทั้งหมด"
 
-#: mod_configure.erl:141 mod_configure.erl:297 mod_configure.erl:319
-#: mod_configure.erl:523
+#: mod_configure.erl:140 mod_configure.erl:296 mod_configure.erl:318
+#: mod_configure.erl:522
 msgid "Configuration"
 msgstr "การกำหนดค่า"
 
-#: mod_configure.erl:154 mod_configure.erl:637
+#: mod_configure.erl:153 mod_configure.erl:636
 msgid "Start Modules"
 msgstr "เริ่มโมดูล"
 
-#: mod_configure.erl:157 mod_configure.erl:639
+#: mod_configure.erl:156 mod_configure.erl:638
 msgid "Stop Modules"
 msgstr "หยุดโมดูล"
 
-#: mod_configure.erl:163 mod_configure.erl:651
+#: mod_configure.erl:162 mod_configure.erl:650
 msgid "Restore"
 msgstr "การคืนค่า"
 
-#: mod_configure.erl:166 mod_configure.erl:653
+#: mod_configure.erl:165 mod_configure.erl:652
 msgid "Dump to Text File"
 msgstr "ถ่ายโอนข้อมูลไปยังไฟล์ข้อความ"
 
-#: mod_configure.erl:169 mod_configure.erl:664
+#: mod_configure.erl:168 mod_configure.erl:663
 msgid "Import File"
 msgstr "อิมพอร์ตไฟล์"
 
-#: mod_configure.erl:172 mod_configure.erl:666
+#: mod_configure.erl:171 mod_configure.erl:665
 msgid "Import Directory"
 msgstr "อิมพอร์ตไดเร็กทอรี"
 
-#: mod_configure.erl:174 mod_configure.erl:620 mod_configure.erl:1206
+#: mod_configure.erl:173 mod_configure.erl:619 mod_configure.erl:1205
 msgid "Restart Service"
 msgstr "เริ่มต้นการบริการใหม่อีกครั้ง"
 
-#: mod_configure.erl:176 mod_configure.erl:622 mod_configure.erl:1266
+#: mod_configure.erl:175 mod_configure.erl:621 mod_configure.erl:1265
 msgid "Shut Down Service"
 msgstr "ปิดการบริการ"
 
-#: mod_configure.erl:180 mod_configure.erl:541 mod_configure.erl:1420
+#: mod_configure.erl:179 mod_configure.erl:540 mod_configure.erl:1419
 msgid "Delete User"
 msgstr "ลบผู้ใช้"
 
-#: mod_configure.erl:182 mod_configure.erl:543 mod_configure.erl:1438
+#: mod_configure.erl:181 mod_configure.erl:542 mod_configure.erl:1437
 msgid "End User Session"
 msgstr "สิ้นสุดเซสชันของผู้ใช้"
 
-#: mod_configure.erl:184 mod_configure.erl:545 mod_configure.erl:1456
-#: mod_configure.erl:1474
+#: mod_configure.erl:183 mod_configure.erl:544 mod_configure.erl:1455
+#: mod_configure.erl:1473
 msgid "Get User Password"
 msgstr "ขอรับรหัสผ่านของผู้ใช้"
 
-#: mod_configure.erl:186 mod_configure.erl:547
+#: mod_configure.erl:185 mod_configure.erl:546
 msgid "Change User Password"
 msgstr "เปลี่ยนรหัสผ่านของผู้ใช้"
 
-#: mod_configure.erl:188 mod_configure.erl:549 mod_configure.erl:1501
+#: mod_configure.erl:187 mod_configure.erl:548 mod_configure.erl:1500
 msgid "Get User Last Login Time"
 msgstr "แสดงเวลาเข้าสู่ระบบครั้งล่าสุดของผู้ใช้"
 
-#: mod_configure.erl:190 mod_configure.erl:551 mod_configure.erl:1518
+#: mod_configure.erl:189 mod_configure.erl:550 mod_configure.erl:1517
 msgid "Get User Statistics"
 msgstr "แสดงสถิติของผู้ใช้"
 
-#: mod_configure.erl:192 mod_configure.erl:553
+#: mod_configure.erl:191 mod_configure.erl:552
 msgid "Get Number of Registered Users"
 msgstr "แสดงจำนวนผู้ใช้ที่ลงทะเบียน"
 
-#: mod_configure.erl:195 mod_configure.erl:555
+#: mod_configure.erl:194 mod_configure.erl:554
 msgid "Get Number of Online Users"
 msgstr "แสดงจำนวนผู้ใช้ออนไลน์"
 
-#: mod_configure.erl:321 mod_configure.erl:524
+#: mod_configure.erl:320 mod_configure.erl:523
 msgid "User Management"
 msgstr "การจัดการผู้ใช้"
 
-#: mod_configure.erl:526
+#: mod_configure.erl:525
 msgid "All Users"
 msgstr "ผู้ใช้ทั้งหมด"
 
-#: mod_configure.erl:527
+#: mod_configure.erl:526
 msgid "Outgoing s2s Connections"
 msgstr "การเชื่อมต่อ s2s ขาออก"
 
-#: mod_configure.erl:616
+#: mod_configure.erl:615
 msgid "Backup Management"
 msgstr "การจัดการข้อมูลสำรอง"
 
-#: mod_configure.erl:618
+#: mod_configure.erl:617
 msgid "Import Users From jabberd14 Spool Files"
 msgstr "อิมพอร์ตผู้ใช้จากไฟล์เก็บพักข้อมูล jabberd14"
 
-#: mod_configure.erl:763
+#: mod_configure.erl:762
 msgid "To ~s"
 msgstr "ถึง ~s"
 
-#: mod_configure.erl:783
+#: mod_configure.erl:782
 msgid "From ~s"
 msgstr "จาก ~s"
 
-#: mod_configure.erl:1003
+#: mod_configure.erl:1002
 msgid "Database Tables Configuration at "
 msgstr "การกำหนดค่าตารางฐานข้อมูลที่"
 
-#: mod_configure.erl:1009
+#: mod_configure.erl:1008
 msgid "Choose storage type of tables"
 msgstr "เลือกชนิดการจัดเก็บของตาราง"
 
-#: mod_configure.erl:1018 mod_configure.erl:1020
+#: mod_configure.erl:1017 mod_configure.erl:1019
 msgid "Disc only copy"
 msgstr "คัดลอกเฉพาะดิสก์"
 
-#: mod_configure.erl:1018 mod_configure.erl:1020
+#: mod_configure.erl:1017 mod_configure.erl:1019
 msgid "RAM and disc copy"
 msgstr "คัดลอก RAM และดิสก์"
 
-#: mod_configure.erl:1018 mod_configure.erl:1020
+#: mod_configure.erl:1017 mod_configure.erl:1019
 msgid "RAM copy"
 msgstr "คัดลอก RAM"
 
-#: mod_configure.erl:1018 mod_configure.erl:1020
+#: mod_configure.erl:1017 mod_configure.erl:1019
 msgid "Remote copy"
 msgstr "คัดลอกระยะไกล"
 
-#: mod_configure.erl:1046
+#: mod_configure.erl:1045
 msgid "Stop Modules at "
 msgstr "หยุดโมดูลที่"
 
-#: mod_configure.erl:1052
+#: mod_configure.erl:1051
 msgid "Choose modules to stop"
 msgstr "เลือกโมดูลเพื่อหยุดการทำงาน"
 
-#: mod_configure.erl:1073
+#: mod_configure.erl:1072
 msgid "Start Modules at "
 msgstr "เริ่มโมดูลที่"
 
-#: mod_configure.erl:1079
+#: mod_configure.erl:1078
 msgid "Enter list of {Module, [Options]}"
 msgstr "ป้อนรายการของ {โมดูล, [ตัวเลือก]}"
 
-#: mod_configure.erl:1081
+#: mod_configure.erl:1080
 msgid "List of modules to start"
 msgstr "รายการของโมดูลที่จะเริ่มการทำงาน"
 
-#: mod_configure.erl:1095
+#: mod_configure.erl:1094
 msgid "Backup to File at "
 msgstr "สำรองไฟล์ข้อมูลที่"
 
-#: mod_configure.erl:1100 mod_configure.erl:1121
+#: mod_configure.erl:1099 mod_configure.erl:1120
 msgid "Enter path to backup file"
 msgstr "ป้อนพาธเพื่อสำรองไฟล์ข้อมูล"
 
-#: mod_configure.erl:1101 mod_configure.erl:1122 mod_configure.erl:1143
-#: mod_configure.erl:1164
+#: mod_configure.erl:1100 mod_configure.erl:1121 mod_configure.erl:1142
+#: mod_configure.erl:1163
 msgid "Path to File"
 msgstr "พาธของไฟล์ข้อมูล"
 
-#: mod_configure.erl:1116
+#: mod_configure.erl:1115
 msgid "Restore Backup from File at "
 msgstr "คืนค่าการสำรองข้อมูลจากไฟล์ที่"
 
-#: mod_configure.erl:1137
+#: mod_configure.erl:1136
 msgid "Dump Backup to Text File at "
 msgstr "ถ่ายโอนการสำรองข้อมูลไปยังไฟล์ข้อความที่"
 
-#: mod_configure.erl:1142
+#: mod_configure.erl:1141
 msgid "Enter path to text file"
 msgstr "ป้อนพาธของไฟล์ข้อความ"
 
-#: mod_configure.erl:1157
+#: mod_configure.erl:1156
 msgid "Import User from File at "
 msgstr "อิมพอร์ตผู้ใช้จากไฟล์ที่"
 
-#: mod_configure.erl:1163
+#: mod_configure.erl:1162
 msgid "Enter path to jabberd14 spool file"
 msgstr "ป้อนพาธไปยังไฟล์เก็บพักข้อมูล jabberd14"
 
-#: mod_configure.erl:1178
+#: mod_configure.erl:1177
 msgid "Import Users from Dir at "
 msgstr "อิมพอร์ตผู้ใช้จาก Dir ที่"
 
-#: mod_configure.erl:1184
+#: mod_configure.erl:1183
 msgid "Enter path to jabberd14 spool dir"
 msgstr "ป้อนพาธไปยัง jabberd14 spool dir"
 
-#: mod_configure.erl:1185
+#: mod_configure.erl:1184
 msgid "Path to Dir"
 msgstr "พาธไปยัง Dir"
 
-#: mod_configure.erl:1210 mod_configure.erl:1270
+#: mod_configure.erl:1209 mod_configure.erl:1269
 msgid "Time delay"
 msgstr "การหน่วงเวลา"
 
-#: mod_configure.erl:1317
+#: mod_configure.erl:1316
 msgid "Access Control List Configuration"
 msgstr "การกำหนดค่ารายการควบคุมการเข้าถึง"
 
-#: mod_configure.erl:1322
+#: mod_configure.erl:1321
 msgid "Access control lists"
 msgstr "รายการควบคุมการเข้าถึง"
 
-#: mod_configure.erl:1353
+#: mod_configure.erl:1352
 msgid "Access Configuration"
 msgstr "การกำหนดค่าการเข้าถึง"
 
-#: mod_configure.erl:1357
+#: mod_configure.erl:1356
 msgid "Access rules"
 msgstr "กฎการเข้าถึง"
 
-#: mod_configure.erl:1391 mod_configure.erl:1424 mod_configure.erl:1442
-#: mod_configure.erl:1460 mod_configure.erl:1478 mod_configure.erl:1505
-#: mod_configure.erl:1522 mod_configure.erl:1888 mod_configure.erl:1936
-#: mod_configure.erl:1963 mod_roster.erl:1431 mod_vcard.erl:609
-#: mod_vcard_ldap.erl:603
+#: mod_configure.erl:1390 mod_configure.erl:1423 mod_configure.erl:1441
+#: mod_configure.erl:1459 mod_configure.erl:1477 mod_configure.erl:1504
+#: mod_configure.erl:1521 mod_configure.erl:1887 mod_configure.erl:1935
+#: mod_configure.erl:1962 mod_roster.erl:1435 mod_vcard.erl:613
+#: mod_vcard_ldap.erl:606
 msgid "Jabber ID"
 msgstr "Jabber ID"
 
-#: mod_configure.erl:1408
+#: mod_configure.erl:1407
 msgid "Password Verification"
 msgstr "การตรวจสอบรหัสผ่าน"
 
-#: mod_configure.erl:1541
+#: mod_configure.erl:1540
 msgid "Number of registered users"
 msgstr "จำนวนผู้ใช้ที่ลงทะเบียน"
 
-#: mod_configure.erl:1560
+#: mod_configure.erl:1559
 msgid "Number of online users"
 msgstr "จำนวนผู้ใช้ออนไลน์"
 
-#: mod_configure.erl:1938
+#: mod_configure.erl:1937
 msgid "Last login"
 msgstr "การเข้าสู่ระบบครั้งล่าสุด"
 
-#: mod_configure.erl:1965
+#: mod_configure.erl:1964
 msgid "Roster size"
 msgstr "ขนาดของบัญชีรายชื่อ"
 
-#: mod_configure.erl:1967
+#: mod_configure.erl:1966
 msgid "IP addresses"
 msgstr "ที่อยู่ IP"
 
-#: mod_configure.erl:1969
+#: mod_configure.erl:1968
 msgid "Resources"
 msgstr "ทรัพยากร"
 
-#: mod_configure.erl:2097
+#: mod_configure.erl:2096
 msgid "Administration of "
 msgstr "การดูแล "
 
-#: mod_configure.erl:2102
+#: mod_configure.erl:2101
 msgid "Action on user"
 msgstr "การดำเนินการกับผู้ใช้"
 
-#: mod_configure.erl:2110
+#: mod_configure.erl:2109
 msgid "Edit Properties"
 msgstr "แก้ไขคุณสมบัติ"
 
-#: mod_fail2ban.erl:90
+#: mod_fail2ban.erl:95
 msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
 
-#: mod_ip_blacklist.erl:122
+#: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
 msgstr ""
 
@@ -946,503 +943,535 @@ msgstr ""
 msgid "Server ~b"
 msgstr ""
 
-#: mod_muc.erl:721
+#: mod_muc.erl:797 mod_muc_admin.erl:320
 msgid "Chatrooms"
 msgstr "ห้องสนทนา"
 
-#: mod_muc.erl:914
+#: mod_muc.erl:997
 #, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr "คุณต้องใช้ไคลเอ็นต์ที่รองรับ x:data เพื่อลงทะเบียนชื่อเล่น"
 
-#: mod_muc.erl:924
+#: mod_muc.erl:1007
 msgid "Nickname Registration at "
 msgstr "การลงทะเบียนชื่อเล่นที่ "
 
-#: mod_muc.erl:930
+#: mod_muc.erl:1013
 msgid "Enter nickname you want to register"
 msgstr "ป้อนชื่อเล่นที่คุณต้องการลงทะเบียน"
 
-#: mod_muc.erl:931 mod_muc_room.erl:4188 mod_roster.erl:1432 mod_vcard.erl:486
-#: mod_vcard.erl:617
+#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436
+#: mod_vcard.erl:490 mod_vcard.erl:621
 msgid "Nickname"
 msgstr "ชื่อเล่น"
 
-#: mod_muc.erl:1094
+#: mod_muc.erl:1177
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUC module"
 
-#: mod_muc_log.erl:440 mod_muc_log.erl:449
+#: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
+#: mod_muc_admin.erl:319
+msgid "Multi-User Chat"
+msgstr ""
+
+#: mod_muc_admin.erl:248
+#, fuzzy
+msgid "Total rooms"
+msgstr "ห้องสนทนา"
+
+#: mod_muc_admin.erl:249
+#, fuzzy
+msgid "Permanent rooms"
+msgstr "ออกจากห้อง"
+
+#: mod_muc_admin.erl:250
+#, fuzzy
+msgid "Registered nicknames"
+msgstr "ผู้ใช้ที่ลงทะเบียน"
+
+#: mod_muc_admin.erl:253
+msgid "List of rooms"
+msgstr ""
+
+#: mod_muc_log.erl:445 mod_muc_log.erl:454
 msgid "Chatroom configuration modified"
 msgstr "มีการปรับเปลี่ยนการกำหนดค่าของห้องสนทนา"
 
-#: mod_muc_log.erl:452
+#: mod_muc_log.erl:457
 msgid "joins the room"
 msgstr "เข้าห้องสนทนานี้"
 
-#: mod_muc_log.erl:455 mod_muc_log.erl:458
+#: mod_muc_log.erl:460 mod_muc_log.erl:463
 msgid "leaves the room"
 msgstr "ออกจากห้อง"
 
-#: mod_muc_log.erl:462 mod_muc_log.erl:465
+#: mod_muc_log.erl:467 mod_muc_log.erl:470
 msgid "has been banned"
 msgstr "ถูกสั่งห้าม"
 
-#: mod_muc_log.erl:477
+#: mod_muc_log.erl:482
 msgid "has been kicked because of an affiliation change"
 msgstr ""
 
-#: mod_muc_log.erl:482
+#: mod_muc_log.erl:487
 msgid "has been kicked because the room has been changed to members-only"
 msgstr ""
 
-#: mod_muc_log.erl:487
+#: mod_muc_log.erl:492
 msgid "has been kicked because of a system shutdown"
 msgstr ""
 
-#: mod_muc_log.erl:492
+#: mod_muc_log.erl:497
 msgid "is now known as"
 msgstr "ซึ่งรู้จักกันในชื่อ"
 
-#: mod_muc_log.erl:495 mod_muc_log.erl:834 mod_muc_room.erl:2491
+#: mod_muc_log.erl:500 mod_muc_log.erl:839
 msgid " has set the subject to: "
 msgstr " ตั้งหัวข้อว่า: "
 
-#: mod_muc_log.erl:535
+#: mod_muc_log.erl:540
 #, fuzzy
 msgid "Chatroom is created"
 msgstr "ห้องสนทนา"
 
-#: mod_muc_log.erl:537
+#: mod_muc_log.erl:542
 #, fuzzy
 msgid "Chatroom is destroyed"
 msgstr "ห้องสนทนา"
 
-#: mod_muc_log.erl:539
+#: mod_muc_log.erl:544
 #, fuzzy
 msgid "Chatroom is started"
 msgstr "ห้องสนทนา"
 
-#: mod_muc_log.erl:541
+#: mod_muc_log.erl:546
 #, fuzzy
 msgid "Chatroom is stopped"
 msgstr "ห้องสนทนา"
 
-#: mod_muc_log.erl:545
+#: mod_muc_log.erl:550
 msgid "Monday"
 msgstr "วันจันทร์"
 
-#: mod_muc_log.erl:546
+#: mod_muc_log.erl:551
 msgid "Tuesday"
 msgstr "วันอังคาร"
 
-#: mod_muc_log.erl:547
+#: mod_muc_log.erl:552
 msgid "Wednesday"
 msgstr "วันพุธ"
 
-#: mod_muc_log.erl:548
+#: mod_muc_log.erl:553
 msgid "Thursday"
 msgstr "วันพฤหัสบดี"
 
-#: mod_muc_log.erl:549
+#: mod_muc_log.erl:554
 msgid "Friday"
 msgstr "วันศุกร์"
 
-#: mod_muc_log.erl:550
+#: mod_muc_log.erl:555
 msgid "Saturday"
 msgstr "วันเสาร์"
 
-#: mod_muc_log.erl:551
+#: mod_muc_log.erl:556
 msgid "Sunday"
 msgstr "วันอาทิตย์"
 
-#: mod_muc_log.erl:555
+#: mod_muc_log.erl:560
 msgid "January"
 msgstr "มกราคม"
 
-#: mod_muc_log.erl:556
+#: mod_muc_log.erl:561
 msgid "February"
 msgstr "กุมภาพันธ์"
 
-#: mod_muc_log.erl:557
+#: mod_muc_log.erl:562
 msgid "March"
 msgstr "มีนาคม"
 
-#: mod_muc_log.erl:558
+#: mod_muc_log.erl:563
 msgid "April"
 msgstr "เมษายน"
 
-#: mod_muc_log.erl:559
+#: mod_muc_log.erl:564
 msgid "May"
 msgstr "พฤษภาคม"
 
-#: mod_muc_log.erl:560
+#: mod_muc_log.erl:565
 msgid "June"
 msgstr "มิถุนายน"
 
-#: mod_muc_log.erl:561
+#: mod_muc_log.erl:566
 msgid "July"
 msgstr "กรกฎาคม"
 
-#: mod_muc_log.erl:562
+#: mod_muc_log.erl:567
 msgid "August"
 msgstr "สิงหาคม"
 
-#: mod_muc_log.erl:563
+#: mod_muc_log.erl:568
 msgid "September"
 msgstr "กันยายน"
 
-#: mod_muc_log.erl:564
+#: mod_muc_log.erl:569
 msgid "October"
 msgstr "ตุลาคม"
 
-#: mod_muc_log.erl:565
+#: mod_muc_log.erl:570
 msgid "November"
 msgstr "พฤศจิกายน"
 
-#: mod_muc_log.erl:566
+#: mod_muc_log.erl:571
 msgid "December"
 msgstr "ธันวาคม"
 
-#: mod_muc_log.erl:954
+#: mod_muc_log.erl:959
 msgid "Room Configuration"
 msgstr "การกำหนดค่าห้องสนทนา"
 
-#: mod_muc_log.erl:974
+#: mod_muc_log.erl:979
 #, fuzzy
 msgid "Room Occupants"
 msgstr "จำนวนผู้ครอบครองห้อง"
 
-#: mod_muc_room.erl:973
+#: mod_muc_room.erl:997
 #, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr "ผู้ดูแลการสนทนาและผู้เข้าร่วมเท่านั้นที่ได้รับอนุญาตให้เปลี่ยนหัวข้อในห้องนี้"
 
-#: mod_muc_room.erl:978
+#: mod_muc_room.erl:1002
 #, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "ผู้ดูแลการสนทนาเท่านั้นที่ได้รับอนุญาตให้เปลี่ยนหัวข้อในห้องนี้"
 
-#: mod_muc_room.erl:1868
-msgid "This room is not anonymous"
-msgstr "ห้องนี้ไม่ปิดบังชื่อ"
-
-#: mod_muc_room.erl:2722
+#: mod_muc_room.erl:2751
 msgid "Jabber ID ~s is invalid"
 msgstr "Jabber ID ~s ไม่ถูกต้อง"
 
-#: mod_muc_room.erl:2736
+#: mod_muc_room.erl:2765
 msgid "Nickname ~s does not exist in the room"
 msgstr "ไม่มีชื่อเล่น ~s อยู่ในห้องนี้"
 
-#: mod_muc_room.erl:2759 mod_muc_room.erl:3139
+#: mod_muc_room.erl:2788 mod_muc_room.erl:3168
 msgid "Invalid affiliation: ~s"
 msgstr "การเข้าร่วมที่ไม่ถูกต้อง: ~s"
 
-#: mod_muc_room.erl:2810
+#: mod_muc_room.erl:2839
 msgid "Invalid role: ~s"
 msgstr "บทบาทไม่ถูกต้อง: ~s"
 
-#: mod_muc_room.erl:3312
+#: mod_muc_room.erl:3341
 #, fuzzy
 msgid "Configuration of room ~s"
 msgstr "การกำหนดค่าสำหรับ "
 
-#: mod_muc_room.erl:3323
+#: mod_muc_room.erl:3352
 msgid "Room title"
 msgstr "ชื่อห้อง"
 
-#: mod_muc_room.erl:3325 mod_muc_room.erl:4025
+#: mod_muc_room.erl:3354 mod_muc_room.erl:4101
 #, fuzzy
 msgid "Room description"
 msgstr "รายละเอียด:"
 
-#: mod_muc_room.erl:3333
+#: mod_muc_room.erl:3362
 msgid "Make room persistent"
 msgstr "สร้างเป็นห้องถาวร"
 
-#: mod_muc_room.erl:3339
+#: mod_muc_room.erl:3368
 msgid "Make room public searchable"
 msgstr "สร้างเป็นห้องที่บุคคลทั่วไปสามารถค้นหาได้"
 
-#: mod_muc_room.erl:3342
+#: mod_muc_room.erl:3371
 msgid "Make participants list public"
 msgstr "สร้างรายการผู้เข้าร่วมสำหรับใช้งานโดยบุคคลทั่วไป"
 
-#: mod_muc_room.erl:3344
+#: mod_muc_room.erl:3373
 msgid "Make room password protected"
 msgstr "สร้างห้องที่มีการป้องกันด้วยรหัสผ่าน"
 
-#: mod_muc_room.erl:3358
+#: mod_muc_room.erl:3387
 msgid "Maximum Number of Occupants"
 msgstr "จำนวนผู้ครอบครองห้องสูงสุด"
 
-#: mod_muc_room.erl:3370
+#: mod_muc_room.erl:3399
 msgid "No limit"
 msgstr "ไม่จำกัด"
 
-#: mod_muc_room.erl:3400
+#: mod_muc_room.erl:3429
 msgid "Present real Jabber IDs to"
 msgstr "แสดง Jabber IDs ที่ถูกต้องแก่"
 
-#: mod_muc_room.erl:3414 mod_muc_room.erl:3477
+#: mod_muc_room.erl:3443 mod_muc_room.erl:3506
 msgid "moderators only"
 msgstr "สำหรับผู้ดูแลการสนทนาเท่านั้น"
 
-#: mod_muc_room.erl:3424 mod_muc_room.erl:3487
+#: mod_muc_room.erl:3453 mod_muc_room.erl:3516
 msgid "anyone"
 msgstr "ทุกคน"
 
-#: mod_muc_room.erl:3430
+#: mod_muc_room.erl:3459
 msgid "Make room members-only"
 msgstr "สร้างห้องสำหรับสมาชิกเท่านั้น"
 
-#: mod_muc_room.erl:3433
+#: mod_muc_room.erl:3462
 #, fuzzy
 msgid "Make room moderated"
 msgstr "สร้างเป็นห้องถาวร"
 
-#: mod_muc_room.erl:3436
+#: mod_muc_room.erl:3465
 msgid "Default users as participants"
 msgstr "ผู้ใช้เริ่มต้นเป็นผู้เข้าร่วม"
 
-#: mod_muc_room.erl:3439
+#: mod_muc_room.erl:3468
 #, fuzzy
 msgid "Allow users to change the subject"
 msgstr "อนุญาตให้ผู้ใช้เปลี่ยนหัวข้อได้"
 
-#: mod_muc_room.erl:3442
+#: mod_muc_room.erl:3471
 msgid "Allow users to send private messages"
 msgstr "อนุญาตให้ผู้ใช้ส่งข้อความส่วนตัว"
 
-#: mod_muc_room.erl:3450
+#: mod_muc_room.erl:3479
 #, fuzzy
 msgid "Allow visitors to send private messages to"
 msgstr "อนุญาตให้ผู้ใช้ส่งข้อความส่วนตัว"
 
-#: mod_muc_room.erl:3468
+#: mod_muc_room.erl:3497
 msgid "nobody"
 msgstr ""
 
-#: mod_muc_room.erl:3493
+#: mod_muc_room.erl:3522
 msgid "Allow users to query other users"
 msgstr "อนุญาตให้ผู้ใช้ถามคำถามกับผู้ใช้คนอื่นๆ ได้"
 
-#: mod_muc_room.erl:3496
+#: mod_muc_room.erl:3525
 msgid "Allow users to send invites"
 msgstr "อนุญาตให้ผู้ใช้ส่งคำเชิญถึงกันได้"
 
-#: mod_muc_room.erl:3499
+#: mod_muc_room.erl:3528
 #, fuzzy
 msgid "Allow visitors to send status text in presence updates"
 msgstr "อนุญาตให้ผู้ใช้ส่งข้อความส่วนตัว"
 
-#: mod_muc_room.erl:3503
+#: mod_muc_room.erl:3532
 #, fuzzy
 msgid "Allow visitors to change nickname"
 msgstr "อนุญาตให้ผู้ใช้เปลี่ยนหัวข้อได้"
 
-#: mod_muc_room.erl:3506
+#: mod_muc_room.erl:3535
 #, fuzzy
 msgid "Allow visitors to send voice requests"
 msgstr "อนุญาตให้ผู้ใช้ส่งคำเชิญถึงกันได้"
 
-#: mod_muc_room.erl:3509
+#: mod_muc_room.erl:3538
 msgid "Minimum interval between voice requests (in seconds)"
 msgstr ""
 
-#: mod_muc_room.erl:3516
+#: mod_muc_room.erl:3545
 #, fuzzy
 msgid "Make room CAPTCHA protected"
 msgstr "สร้างห้องที่มีการป้องกันด้วยรหัสผ่าน"
 
-#: mod_muc_room.erl:3522
+#: mod_muc_room.erl:3552
+msgid "Enable message archiving"
+msgstr ""
+
+#: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
 msgstr ""
 
-#: mod_muc_room.erl:3531
+#: mod_muc_room.erl:3567
 msgid "Enable logging"
 msgstr "เปิดใช้งานการบันทึก"
 
-#: mod_muc_room.erl:3541
+#: mod_muc_room.erl:3577
 msgid "You need an x:data capable client to configure room"
 msgstr "คุณต้องใช้ไคลเอ็นต์ที่รองรับ x:data เพื่อกำหนดค่าห้องสนทนา "
 
-#: mod_muc_room.erl:4027
+#: mod_muc_room.erl:4103
 msgid "Number of occupants"
 msgstr "จำนวนผู้ครอบครองห้อง"
 
-#: mod_muc_room.erl:4097
+#: mod_muc_room.erl:4173
 msgid "private, "
 msgstr "ส่วนตัว, "
 
-#: mod_muc_room.erl:4161
+#: mod_muc_room.erl:4237
 msgid "Voice request"
 msgstr ""
 
-#: mod_muc_room.erl:4166
+#: mod_muc_room.erl:4242
 msgid "Either approve or decline the voice request."
 msgstr ""
 
-#: mod_muc_room.erl:4186
+#: mod_muc_room.erl:4262
 #, fuzzy
 msgid "User JID"
 msgstr "ผู้ใช้"
 
-#: mod_muc_room.erl:4190
+#: mod_muc_room.erl:4266
 msgid "Grant voice to this person?"
 msgstr ""
 
-#: mod_muc_room.erl:4333
+#: mod_muc_room.erl:4409
 msgid "~s invites you to the room ~s"
 msgstr "~s เชิญคุณเข้าร่วมสนทนาในห้อง ~s"
 
-#: mod_muc_room.erl:4345
+#: mod_muc_room.erl:4421
 msgid "the password is"
 msgstr "รหัสผ่านคือ"
 
-#: mod_offline.erl:773
+#: mod_multicast.erl:273
+msgid "Multicast"
+msgstr ""
+
+#: mod_multicast.erl:288
+msgid "ejabberd Multicast service"
+msgstr ""
+
+#: mod_offline.erl:783
 msgid "~s's Offline Messages Queue"
 msgstr "~s's ลำดับข้อความออฟไลน์"
 
-#: mod_offline.erl:786
+#: mod_offline.erl:796
 msgid "Time"
 msgstr "เวลา"
 
-#: mod_offline.erl:787
+#: mod_offline.erl:797
 msgid "From"
 msgstr "จาก"
 
-#: mod_offline.erl:788
+#: mod_offline.erl:798
 msgid "To"
 msgstr "ถึง"
 
-#: mod_offline.erl:789
+#: mod_offline.erl:799
 msgid "Packet"
 msgstr "แพ็กเก็ต"
 
-#: mod_offline.erl:967
+#: mod_offline.erl:977
 msgid "Offline Messages:"
 msgstr "ข้อความออฟไลน์:"
 
-#: mod_offline.erl:971
+#: mod_offline.erl:981
 #, fuzzy
 msgid "Remove All Offline Messages"
 msgstr "ข้อความออฟไลน์"
 
-#: mod_proxy65_service.erl:249
+#: mod_proxy65_service.erl:248
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams module"
 
-#: mod_pubsub.erl:1815 mod_pubsub_odbc.erl:1431
+#: mod_pubsub.erl:1103
 msgid "Publish-Subscribe"
 msgstr "เผยแพร่-สมัครเข้าใช้งาน"
 
-#: mod_pubsub.erl:1991 mod_pubsub_odbc.erl:1609
+#: mod_pubsub.erl:1223
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd Publish-Subscribe module"
 
-#: mod_pubsub.erl:2330 mod_pubsub_odbc.erl:1953
+#: mod_pubsub.erl:1538
 msgid "PubSub subscriber request"
 msgstr "คำร้องขอของผู้สมัครเข้าใช้งาน PubSub"
 
-#: mod_pubsub.erl:2336 mod_pubsub_odbc.erl:1959
+#: mod_pubsub.erl:1544
 msgid "Choose whether to approve this entity's subscription."
 msgstr "เลือกว่าจะอนุมัติการสมัครเข้าใช้งานของเอนทิตี้นี้หรือไม่"
 
-#: mod_pubsub.erl:2355 mod_pubsub_odbc.erl:1978
+#: mod_pubsub.erl:1560
 msgid "Node ID"
 msgstr "ID โหนด"
 
-#: mod_pubsub.erl:2368 mod_pubsub_odbc.erl:1991
+#: mod_pubsub.erl:1572
 msgid "Subscriber Address"
 msgstr "ที่อยู่ของผู้สมัคร"
 
-#: mod_pubsub.erl:2382 mod_pubsub_odbc.erl:2005
+#: mod_pubsub.erl:1585
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "อนุญาตให้ Jabber ID นี้เข้าร่วมเป็นสมาชิกของโหนด pubsub หรือไม่"
 
-#: mod_pubsub.erl:4767 mod_pubsub_odbc.erl:4375
+#: mod_pubsub.erl:3702
 msgid "Deliver payloads with event notifications"
 msgstr "ส่งส่วนของข้อมูล (payload) พร้อมกับการแจ้งเตือนเหตุการณ์"
 
-#: mod_pubsub.erl:4769 mod_pubsub_odbc.erl:4377
+#: mod_pubsub.erl:3704
 msgid "Deliver event notifications"
 msgstr "ส่งการแจ้งเตือนเหตุการณ์"
 
-#: mod_pubsub.erl:4771 mod_pubsub_odbc.erl:4379
+#: mod_pubsub.erl:3706
 msgid "Notify subscribers when the node configuration changes"
 msgstr "แจ้งเตือนผู้สมัครสมาชิกเมื่อการกำหนดค่าโหนดเปลี่ยนแปลง"
 
-#: mod_pubsub.erl:4774 mod_pubsub_odbc.erl:4382
+#: mod_pubsub.erl:3708
 msgid "Notify subscribers when the node is deleted"
 msgstr "แจ้งเตือนผู้สมัครสมาชิกเมื่อโหนดถูกลบ"
 
-#: mod_pubsub.erl:4777 mod_pubsub_odbc.erl:4385
+#: mod_pubsub.erl:3710
 msgid "Notify subscribers when items are removed from the node"
 msgstr "แจ้งเตือนผู้สมัครสมาชิกเมื่อรายการถูกลบออกจากโหนด"
 
-#: mod_pubsub.erl:4780 mod_pubsub_odbc.erl:4388
+#: mod_pubsub.erl:3712
 msgid "Persist items to storage"
 msgstr "ยืนยันรายการที่จะจัดเก็บ"
 
-#: mod_pubsub.erl:4782 mod_pubsub_odbc.erl:4390
+#: mod_pubsub.erl:3714
 msgid "A friendly name for the node"
 msgstr ""
 
-#: mod_pubsub.erl:4784 mod_pubsub_odbc.erl:4392
+#: mod_pubsub.erl:3716
 msgid "Max # of items to persist"
 msgstr "จำนวนสูงสุดของรายการที่ยืนยัน"
 
-#: mod_pubsub.erl:4786 mod_pubsub_odbc.erl:4394
+#: mod_pubsub.erl:3718
 msgid "Whether to allow subscriptions"
 msgstr "อนุญาตให้เข้าร่วมเป็นสมาชิกหรือไม่"
 
-#: mod_pubsub.erl:4788 mod_pubsub_odbc.erl:4396
+#: mod_pubsub.erl:3720
 msgid "Specify the access model"
 msgstr "ระบุโมเดลการเข้าถึง"
 
-#: mod_pubsub.erl:4791 mod_pubsub_odbc.erl:4399
+#: mod_pubsub.erl:3722
 msgid "Roster groups allowed to subscribe"
 msgstr ""
 
-#: mod_pubsub.erl:4793 mod_pubsub_odbc.erl:4401
+#: mod_pubsub.erl:3724
 msgid "Specify the publisher model"
 msgstr "ระบุโมเดลผู้เผยแพร่"
 
-#: mod_pubsub.erl:4795 mod_pubsub_odbc.erl:4403
+#: mod_pubsub.erl:3726
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr ""
 
-#: mod_pubsub.erl:4798 mod_pubsub_odbc.erl:4406
+#: mod_pubsub.erl:3728
 #, fuzzy
 msgid "Specify the event message type"
 msgstr "ระบุโมเดลการเข้าถึง"
 
-#: mod_pubsub.erl:4800 mod_pubsub_odbc.erl:4408
+#: mod_pubsub.erl:3730
 msgid "Max payload size in bytes"
 msgstr "ขนาดสูงสุดของส่วนของข้อมูล (payload) มีหน่วยเป็นไบต์"
 
-#: mod_pubsub.erl:4802 mod_pubsub_odbc.erl:4410
+#: mod_pubsub.erl:3732
 msgid "When to send the last published item"
 msgstr "เวลาที่ส่งรายการที่เผยแพร่ครั้งล่าสุด"
 
-#: mod_pubsub.erl:4805 mod_pubsub_odbc.erl:4413
+#: mod_pubsub.erl:3734
 msgid "Only deliver notifications to available users"
 msgstr "ส่งการแจ้งเตือนถึงผู้ใช้ที่สามารถติดต่อได้เท่านั้น"
 
-#: mod_pubsub.erl:4808 mod_pubsub_odbc.erl:4416
+#: mod_pubsub.erl:3736
 msgid "The collections with which a node is affiliated"
 msgstr ""
 
-#: mod_register.erl:240
+#: mod_register.erl:250
 #, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr "คุณต้องใช้ไคลเอ็นต์ที่รองรับ x:data เพื่อลงทะเบียนชื่อเล่น"
 
-#: mod_register.erl:246 mod_register.erl:307
+#: mod_register.erl:256 mod_register.erl:317
 msgid "Choose a username and password to register with this server"
 msgstr "เลือกชื่อผู้ใช้และรหัสผ่านเพื่อลงทะเบียนกับเซิร์ฟเวอร์นี้"
 
@@ -1478,7 +1507,7 @@ msgstr ""
 msgid "Register a Jabber account"
 msgstr ""
 
-#: mod_register_web.erl:191 mod_register_web.erl:452 mod_register_web.erl:460
+#: mod_register_web.erl:191 mod_register_web.erl:453 mod_register_web.erl:461
 msgid "Unregister a Jabber account"
 msgstr ""
 
@@ -1489,7 +1518,7 @@ msgid ""
 "carefully the instructions to fill correctly the fields."
 msgstr ""
 
-#: mod_register_web.erl:224 mod_register_web.erl:359 mod_register_web.erl:468
+#: mod_register_web.erl:224 mod_register_web.erl:360 mod_register_web.erl:469
 #, fuzzy
 msgid "Username:"
 msgstr "ชื่อผู้ใช้ IRC"
@@ -1502,144 +1531,144 @@ msgstr ""
 msgid "Characters not allowed:"
 msgstr ""
 
-#: mod_register_web.erl:236 mod_register_web.erl:363 mod_register_web.erl:472
+#: mod_register_web.erl:236 mod_register_web.erl:364 mod_register_web.erl:473
 #, fuzzy
 msgid "Server:"
 msgstr "ไม่เคย"
 
-#: mod_register_web.erl:244
+#: mod_register_web.erl:245
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
 
-#: mod_register_web.erl:248
+#: mod_register_web.erl:249
 msgid "You can later change your password using a Jabber client."
 msgstr ""
 
-#: mod_register_web.erl:251
+#: mod_register_web.erl:252
 msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
 
-#: mod_register_web.erl:255
+#: mod_register_web.erl:256
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
 
-#: mod_register_web.erl:261 mod_register_web.erl:373
+#: mod_register_web.erl:262 mod_register_web.erl:374
 #, fuzzy
 msgid "Password Verification:"
 msgstr "การตรวจสอบรหัสผ่าน"
 
-#: mod_register_web.erl:268
+#: mod_register_web.erl:269
 #, fuzzy
 msgid "Register"
 msgstr "บัญชีรายชื่อ"
 
-#: mod_register_web.erl:365
+#: mod_register_web.erl:366
 #, fuzzy
 msgid "Old Password:"
 msgstr "รหัสผ่าน:"
 
-#: mod_register_web.erl:369
+#: mod_register_web.erl:370
 #, fuzzy
 msgid "New Password:"
 msgstr "รหัสผ่าน:"
 
-#: mod_register_web.erl:462
+#: mod_register_web.erl:463
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr ""
 
-#: mod_register_web.erl:479
+#: mod_register_web.erl:480
 msgid "Unregister"
 msgstr ""
 
-#: mod_roster.erl:1433
+#: mod_roster.erl:1437
 msgid "Subscription"
 msgstr "การสมัครสมาชิก"
 
-#: mod_roster.erl:1434
+#: mod_roster.erl:1438
 msgid "Pending"
 msgstr "ค้างอยู่"
 
-#: mod_roster.erl:1435
+#: mod_roster.erl:1439
 msgid "Groups"
 msgstr "กลุ่ม"
 
-#: mod_roster.erl:1473
+#: mod_roster.erl:1477
 msgid "Validate"
 msgstr "ตรวจสอบ"
 
-#: mod_roster.erl:1482
+#: mod_roster.erl:1486
 msgid "Remove"
 msgstr "ลบ"
 
-#: mod_roster.erl:1487
+#: mod_roster.erl:1491
 msgid "Roster of "
 msgstr "บัญชีรายชื่อของ "
 
-#: mod_roster.erl:1501
+#: mod_roster.erl:1505
 msgid "Add Jabber ID"
 msgstr "เพิ่ม Jabber ID"
 
-#: mod_roster.erl:1619
+#: mod_roster.erl:1623
 msgid "Roster"
 msgstr "บัญชีรายชื่อ"
 
-#: mod_shared_roster.erl:1123 mod_shared_roster.erl:1165
-#: mod_shared_roster.erl:1259
+#: mod_shared_roster.erl:1125 mod_shared_roster.erl:1167
+#: mod_shared_roster.erl:1261
 msgid "Shared Roster Groups"
 msgstr "กลุ่มบัญชีรายชื่อที่ใช้งานร่วมกัน"
 
-#: mod_shared_roster.erl:1235
+#: mod_shared_roster.erl:1237
 msgid "Name:"
 msgstr "ชื่อ:"
 
-#: mod_shared_roster.erl:1239
+#: mod_shared_roster.erl:1241
 msgid "Description:"
 msgstr "รายละเอียด:"
 
-#: mod_shared_roster.erl:1246
+#: mod_shared_roster.erl:1248
 msgid "Members:"
 msgstr "สมาชิก:"
 
-#: mod_shared_roster.erl:1253
+#: mod_shared_roster.erl:1255
 msgid "Displayed Groups:"
 msgstr "กลุ่มที่แสดง:"
 
-#: mod_shared_roster.erl:1262
+#: mod_shared_roster.erl:1264
 msgid "Group "
 msgstr "กลุ่ม"
 
-#: mod_vcard.erl:164 mod_vcard_ldap.erl:222
+#: mod_vcard.erl:168 mod_vcard_ldap.erl:225
 msgid "Erlang Jabber Server"
 msgstr "Erlang Jabber Server"
 
-#: mod_vcard.erl:486 mod_vcard.erl:618
+#: mod_vcard.erl:490 mod_vcard.erl:622
 msgid "Birthday"
 msgstr "วันเกิด"
 
-#: mod_vcard.erl:486 mod_vcard.erl:620
+#: mod_vcard.erl:490 mod_vcard.erl:624
 msgid "City"
 msgstr "เมือง"
 
-#: mod_vcard.erl:486 mod_vcard.erl:619
+#: mod_vcard.erl:490 mod_vcard.erl:623
 msgid "Country"
 msgstr "ประเทศ"
 
-#: mod_vcard.erl:486 mod_vcard.erl:621
+#: mod_vcard.erl:490 mod_vcard.erl:625
 msgid "Email"
 msgstr "อีเมล"
 
-#: mod_vcard.erl:486 mod_vcard.erl:615
+#: mod_vcard.erl:490 mod_vcard.erl:619
 msgid "Family Name"
 msgstr "นามสกุล"
 
-#: mod_vcard.erl:486
+#: mod_vcard.erl:490
 msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
@@ -1647,45 +1676,51 @@ msgstr ""
 "กรอกข้อมูลในแบบฟอร์มเพื่อค้นหาผู้ใช้ Jabber ที่ตรงกัน (ใส่เครื่องหมาย * "
 "ที่ท้ายสุดของฟิลด์เพื่อจับคู่กับสตริงย่อย)"
 
-#: mod_vcard.erl:486 mod_vcard.erl:611
+#: mod_vcard.erl:490 mod_vcard.erl:615
 msgid "Full Name"
 msgstr "ชื่อเต็ม"
 
-#: mod_vcard.erl:486 mod_vcard.erl:613
+#: mod_vcard.erl:490 mod_vcard.erl:617
 msgid "Middle Name"
 msgstr "ชื่อกลาง"
 
-#: mod_vcard.erl:486 mod_vcard.erl:622
+#: mod_vcard.erl:490 mod_vcard.erl:626
 msgid "Organization Name"
 msgstr "ชื่อองค์กร"
 
-#: mod_vcard.erl:486 mod_vcard.erl:624
+#: mod_vcard.erl:490 mod_vcard.erl:628
 msgid "Organization Unit"
 msgstr "หน่วยขององค์กร"
 
-#: mod_vcard.erl:486 mod_vcard_ldap.erl:499
+#: mod_vcard.erl:490 mod_vcard_ldap.erl:502
 msgid "Search users in "
 msgstr "ค้นหาผู้ใช้ใน "
 
-#: mod_vcard.erl:486 mod_vcard_ldap.erl:499
+#: mod_vcard.erl:490 mod_vcard_ldap.erl:502
 msgid "You need an x:data capable client to search"
 msgstr "คุณต้องใช้ไคลเอ็นต์ที่รองรับ x:data เพื่อค้นหา"
 
-#: mod_vcard.erl:515 mod_vcard_ldap.erl:528
+#: mod_vcard.erl:519 mod_vcard_ldap.erl:531
 msgid "vCard User Search"
 msgstr "ค้นหาผู้ใช้ vCard "
 
-#: mod_vcard.erl:576 mod_vcard_ldap.erl:583
+#: mod_vcard.erl:580 mod_vcard_ldap.erl:586
 msgid "ejabberd vCard module"
 msgstr "ejabberd vCard module"
 
-#: mod_vcard.erl:605 mod_vcard_ldap.erl:599
+#: mod_vcard.erl:609 mod_vcard_ldap.erl:602
 msgid "Search Results for "
 msgstr "ผลการค้นหาสำหรับ "
 
-#: mod_vcard_ldap.erl:499
+#: mod_vcard_ldap.erl:502
 msgid "Fill in fields to search for any matching Jabber User"
 msgstr "กรอกข้อมูลลงในฟิลด์เพื่อค้นหาผู้ใช้ Jabber ที่ตรงกัน"
+
+#~ msgid "Delete"
+#~ msgstr "ลบ"
+
+#~ msgid "This room is not anonymous"
+#~ msgstr "ห้องนี้ไม่ปิดบังชื่อ"
 
 #~ msgid "Access denied by service policy"
 #~ msgstr "การเข้าถึงถูกปฏิเสธโดยนโยบายการบริการ"
