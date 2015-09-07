@@ -57,7 +57,7 @@
 {"Database","Datenbank"}.
 {"Database Tables Configuration at ","Datenbanktabellen-Konfiguration auf "}.
 {"December","Dezember"}.
-{"Default users as participants","Standardbenutzer als Teilnehmer"}.
+{"Default users as participants","Benutzer werden standardmäßig vollwertige Teilnehmer"}.
 {"Delete","Löschen"}.
 {"Delete message of the day","Lösche Nachricht des Tages"}.
 {"Delete message of the day on all hosts","Lösche Nachricht des Tages auf allen Hosts"}.

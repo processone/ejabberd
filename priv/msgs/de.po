@@ -1207,7 +1207,7 @@ msgstr "Raum moderiert machen"
 
 #: mod_muc_room.erl:3436
 msgid "Default users as participants"
-msgstr "Standardbenutzer als Teilnehmer"
+msgstr "Benutzer werden standardmäßig vollwertige Teilnehmer"
 
 #: mod_muc_room.erl:3439
 msgid "Allow users to change the subject"
