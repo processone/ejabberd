@@ -21,8 +21,9 @@ defmodule Ejabberd.Mixfile do
   end
   
   defp erlc_options do
-    includes = Path.wildcard(Path.join("..", "/*/include"))
-    [:debug_info, {:d, :NO_EXT_LIB}] ++ Enum.map(includes, fn(path) -> {:i, path} end)
+    # Use our own includes + includes from all dependencies
+    includes = ["include"] + Path.wildcard(Path.join("..", "/*/include"))
+    [:debug_info] ++ Enum.map(includes, fn(path) -> {:i, path} end)
   end
   
   defp deps do
