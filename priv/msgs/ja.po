@@ -37,13 +37,11 @@ msgstr "見えているテキストを入力してください"
 
 #: ejabberd_captcha.erl:154
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
-"~s 宛のメッセージはブロックされています。解除するにはこちらを見てください ~s"
+msgstr "~s 宛のメッセージはブロックされています。解除するにはこちらを見てください ~s"
 
 #: ejabberd_captcha.erl:199
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
-"ここに CAPTCHA 画像が表示されない場合、ウェブページを参照してください。"
+msgstr "ここに CAPTCHA 画像が表示されない場合、ウェブページを参照してください。"
 
 #: ejabberd_captcha.erl:234
 msgid "CAPTCHA web page"
@@ -123,8 +121,7 @@ msgstr "バーチャルホスト"
 msgid "Users"
 msgstr "ユーザー"
 
-#: ejabberd_web_admin.erl:891 ejabberd_web_admin.erl:1275
-#: mod_configure.erl:524
+#: ejabberd_web_admin.erl:891 ejabberd_web_admin.erl:1275 mod_configure.erl:524
 msgid "Online Users"
 msgstr "オンラインユーザー"
 
@@ -156,8 +153,7 @@ msgstr "通常の表を表示"
 msgid "Show Integral Table"
 msgstr "累積の表を表示"
 
-#: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785
-#: mod_muc_admin.erl:246
+#: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785 mod_muc_admin.erl:246
 msgid "Statistics"
 msgstr "統計"
 
@@ -181,8 +177,8 @@ msgstr "ホスト"
 msgid "Registered Users"
 msgstr "登録ユーザー"
 
-#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393
-#: mod_register.erl:262 mod_vcard.erl:490
+#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393 mod_register.erl:262
+#: mod_vcard.erl:490
 msgid "User"
 msgstr "ユーザー"
 
@@ -250,8 +246,7 @@ msgstr "ユーザー ~s"
 msgid "Connected Resources:"
 msgstr "接続リソース:"
 
-#: ejabberd_web_admin.erl:1623 mod_register_web.erl:239
-#: mod_register_web.erl:475
+#: ejabberd_web_admin.erl:1623 mod_register_web.erl:239 mod_register_web.erl:475
 msgid "Password:"
 msgstr "パスワード"
 
@@ -347,9 +342,8 @@ msgid ""
 "If you are using the ODBC module, you also need to backup your SQL database "
 "separately."
 msgstr ""
-"これらのオプションは組み込みの Mnesia データーベースのバックアップのみを行う"
-"ことに注意してください。もし ODBC モジュールを使用している場合は、SQL デー"
-"ターベースのバックアップを別に行う必要があります。"
+"これらのオプションは組み込みの Mnesia データーベースのバックアップのみを行うことに注意してください。もし ODBC "
+"モジュールを使用している場合は、SQL データーベースのバックアップを別に行う必要があります。"
 
 #: ejabberd_web_admin.erl:1907
 msgid "Store binary backup:"
@@ -387,9 +381,7 @@ msgstr "ユーザーデータを PIEFXIS ファイルからインポート (XEP-
 
 #: ejabberd_web_admin.erl:1970
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
-msgstr ""
-"サーバーにあるすべてのユーザーデータを PIEFXIS ファイルにエクスポート "
-"(XEP-0227):"
+msgstr "サーバーにあるすべてのユーザーデータを PIEFXIS ファイルにエクスポート (XEP-0227):"
 
 #: ejabberd_web_admin.erl:1982
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
@@ -822,8 +814,7 @@ msgstr "プロパティを編集"
 msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
-msgstr ""
-"~p回の認証に失敗しました。このIPアドレス(~s)は~s UTCまでブロックされます。"
+msgstr "~p回の認証に失敗しました。このIPアドレス(~s)は~s UTCまでブロックされます。"
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
@@ -849,9 +840,7 @@ msgstr "mod_irc での登録: "
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
-msgstr ""
-"IRC サーバーに接続先するために使用するユーザー名、文字エンコーディング、ポー"
-"ト、パスワードを入力してください"
+msgstr "IRC サーバーに接続先するために使用するユーザー名、文字エンコーディング、ポート、パスワードを入力してください"
 
 #: mod_irc.erl:659
 msgid "IRC Username"
@@ -860,22 +849,23 @@ msgstr "IRC ユーザー名"
 #: mod_irc.erl:674
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
-"servers, fill this list with values in format '{\"irc server\", \"encoding"
-"\", port, \"password\"}'.  By default this service use \"~s\" encoding, port "
-"~p, empty password."
+"servers, fill this list with values in format '{\"irc server\", "
+"\"encoding\", port, \"password\"}'.  By default this service use \"~s\" "
+"encoding, port ~p, empty password."
 msgstr ""
-"別のポートやパスワード、文字エンコーディングを使用したい場合、'{\"irc server"
-"\", \"encoding\", port, \"password\"}' という形式のリストを入力してください。"
-"デフォルトでエンコーディングは \"~s\" を使用し、ポートは ~p、パスワードは空に"
-"なっています。"
+"別のポートやパスワード、文字エンコーディングを使用したい場合、'{\"irc server\", \"encoding\", port, "
+"\"password\"}' という形式のリストを入力してください。デフォルトでエンコーディングは \"~s\" を使用し、ポートは "
+"~p、パスワードは空になっています。"
 
 #: mod_irc.erl:696
 msgid ""
-"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
-"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
+"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, "
+"{\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", "
+"\"utf-8\"}]."
 msgstr ""
-"例: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net"
-"\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
+"例: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, "
+"{\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", "
+"\"utf-8\"}]."
 
 #: mod_irc.erl:705
 msgid "Connections parameters"
@@ -911,9 +901,8 @@ msgid ""
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
 "settings."
 msgstr ""
-"IRC サーバーに接続先するためのユーザー名と文字エンコーディングを入力してくだ"
-"さい。'Next' を押して次の項目に進みます。'Complete' を押すと設定が保存されま"
-"す。"
+"IRC サーバーに接続先するためのユーザー名と文字エンコーディングを入力してください。'Next' を押して次の項目に進みます。'Complete' "
+"を押すと設定が保存されます。"
 
 #: mod_irc.erl:1048
 msgid "IRC username"
@@ -951,8 +940,8 @@ msgstr "ニックネーム登録: "
 msgid "Enter nickname you want to register"
 msgstr "登録するニックネームを入力してください"
 
-#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436
-#: mod_vcard.erl:490 mod_vcard.erl:621
+#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436 mod_vcard.erl:490
+#: mod_vcard.erl:621
 msgid "Nickname"
 msgstr "ニックネーム"
 
@@ -1249,7 +1238,7 @@ msgstr "チャットルームを CAPTCHA で保護"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "メッセージアーカイブを有効化"
 
 #: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1261,8 +1250,7 @@ msgstr "ロギングを有効"
 
 #: mod_muc_room.erl:3577
 msgid "You need an x:data capable client to configure room"
-msgstr ""
-"チャットルームを設定するには x:data をサポートするクライアントが必要です"
+msgstr "チャットルームを設定するには x:data をサポートするクライアントが必要です"
 
 #: mod_muc_room.erl:4103
 msgid "Number of occupants"
@@ -1298,11 +1286,11 @@ msgstr "パスワードは"
 
 #: mod_multicast.erl:273
 msgid "Multicast"
-msgstr ""
+msgstr "マルチキャスト"
 
 #: mod_multicast.erl:288
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "ejabberdマルチキャストサービス"
 
 #: mod_offline.erl:783
 msgid "~s's Offline Messages Queue"
@@ -1486,9 +1474,8 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"ここはこの Jabber サーバーにアカウントを作成するページです。あなたの JID "
-"(JabberID) は username@server のような形式になります。注意事項どおり、正しく"
-"項目を記入してください。"
+"ここはこの Jabber サーバーにアカウントを作成するページです。あなたの JID (JabberID) は username@server "
+"のような形式になります。注意事項どおり、正しく項目を記入してください。"
 
 #: mod_register_web.erl:224 mod_register_web.erl:360 mod_register_web.erl:469
 msgid "Username:"
@@ -1496,8 +1483,7 @@ msgstr "ユーザー名:"
 
 #: mod_register_web.erl:230
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
-msgstr ""
-"大文字と小文字は区別しません: macbeth は MacBeth や Macbeth と同じです。"
+msgstr "大文字と小文字は区別しません: macbeth は MacBeth や Macbeth と同じです。"
 
 #: mod_register_web.erl:233
 msgid "Characters not allowed:"
@@ -1511,9 +1497,7 @@ msgstr "サーバー:"
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
-msgstr ""
-"パスワードは誰にも教えないようにしてください。Jabber サーバーの管理者があなた"
-"にパスワードを尋ねることはありません。"
+msgstr "パスワードは誰にも教えないようにしてください。Jabber サーバーの管理者があなたにパスワードを尋ねることはありません。"
 
 #: mod_register_web.erl:249
 msgid "You can later change your password using a Jabber client."
@@ -1524,8 +1508,7 @@ msgid ""
 "Some Jabber clients can store your password in your computer. Use that "
 "feature only if you trust your computer is safe."
 msgstr ""
-"Jabber クライアントはコンピューターにパスワードを記憶できます。コンピューター"
-"が安全であると信頼できる場合にのみ、この機能を使用してください。"
+"Jabber クライアントはコンピューターにパスワードを記憶できます。コンピューターが安全であると信頼できる場合にのみ、この機能を使用してください。"
 
 #: mod_register_web.erl:256
 msgid ""
@@ -1533,9 +1516,8 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
-"パスワードは記憶するか、紙に書いて安全な場所に保管してください。もしあなたが"
-"パスワードを忘れてしまった場合、Jabber ではパスワードのリカバリを自動的に行う"
-"ことはできません。"
+"パスワードは記憶するか、紙に書いて安全な場所に保管してください。もしあなたがパスワードを忘れてしまった場合、Jabber "
+"ではパスワードのリカバリを自動的に行うことはできません。"
 
 #: mod_register_web.erl:262 mod_register_web.erl:374
 msgid "Password Verification:"
@@ -1646,9 +1628,7 @@ msgstr "姓"
 msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
-msgstr ""
-"項目を入力してユーザーを検索を行えます (* を使用すると部分文字列にマッチしま"
-"す)"
+msgstr "項目を入力してユーザーを検索を行えます (* を使用すると部分文字列にマッチします)"
 
 #: mod_vcard.erl:490 mod_vcard.erl:615
 msgid "Full Name"
@@ -1697,8 +1677,7 @@ msgstr "項目を入力してユーザーを検索してください"
 #~ msgstr "このチャットルームは非匿名です"
 
 #~ msgid "Your active privacy list has denied the routing of this stanza."
-#~ msgstr ""
-#~ "あなたのプライバシーリストはこのスタンザのルーティングを拒否しました。"
+#~ msgstr "あなたのプライバシーリストはこのスタンザのルーティングを拒否しました。"
 
 #~ msgid "Access denied by service policy"
 #~ msgstr "サービスポリシーによってアクセスが禁止されました"
@@ -1746,12 +1725,10 @@ msgstr "項目を入力してユーザーを検索してください"
 #~ msgid ""
 #~ "This participant is kicked from the room because he sent an error message "
 #~ "to another participant"
-#~ msgstr ""
-#~ "他の参加者にエラーメッセージを送信したため、この参加者はキックされました"
+#~ msgstr "他の参加者にエラーメッセージを送信したため、この参加者はキックされました"
 
 #~ msgid "It is not allowed to send private messages of type \"groupchat\""
-#~ msgstr ""
-#~ "種別が\"groupchat\" であるプライベートメッセージを送信することはできません"
+#~ msgstr "種別が\"groupchat\" であるプライベートメッセージを送信することはできません"
 
 #~ msgid "Recipient is not in the conference room"
 #~ msgstr "受信者はこの会議室にいません"
@@ -1766,8 +1743,7 @@ msgstr "項目を入力してユーザーを検索してください"
 #~ msgstr "在室者のみが会議にクエリーを送信することができます"
 
 #~ msgid "Queries to the conference members are not allowed in this room"
-#~ msgstr ""
-#~ "このチャットルームでは、会議のメンバーへのクエリーは禁止されています"
+#~ msgstr "このチャットルームでは、会議のメンバーへのクエリーは禁止されています"
 
 #~ msgid "Visitors are not allowed to send messages to all occupants"
 #~ msgstr "傍聴者はすべての在室者にメッセージを送信することはできません"
@@ -1812,9 +1788,7 @@ msgstr "項目を入力してユーザーを検索してください"
 #~ msgid ""
 #~ "Your contact offline message queue is full. The message has been "
 #~ "discarded."
-#~ msgstr ""
-#~ "相手先のオフラインメッセージキューが一杯です。このメッセージは破棄されま"
-#~ "す。"
+#~ msgstr "相手先のオフラインメッセージキューが一杯です。このメッセージは破棄されます。"
 
 #~ msgid "The CAPTCHA verification has failed"
 #~ msgstr "CAPTCHA 検証は失敗しました"
