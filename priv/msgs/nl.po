@@ -5,12 +5,13 @@ msgstr ""
 "PO-Revision-Date: \n"
 "Last-Translator: Andreas van Cranenburgh <andreas@unstable.nl>\n"
 "Language-Team: \n"
-"Language: \n"
+"Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Dutch (nederlands)\n"
 "X-Additional-Translator: Sander Devrieze\n"
+"X-Generator: Poedit 1.6.10\n"
 
 #: ejabberd_c2s.erl:528 ejabberd_c2s.erl:875
 msgid "Use of STARTTLS required"
@@ -27,11 +28,11 @@ msgstr "Vervangen door een nieuwe verbinding"
 #: ejabberd_c2s.erl:1405 mod_configure.erl:1854 mod_muc_log.erl:474
 #: mod_muc_log.erl:477
 msgid "has been kicked"
-msgstr "werd gekicked"
+msgstr "is weggestuurd"
 
 #: ejabberd_c2s.erl:2490
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "Te veel niet-bevestigde stanzas"
 
 #: ejabberd_captcha.erl:129 ejabberd_captcha.erl:252 ejabberd_captcha.erl:297
 msgid "Enter the text you see"
@@ -90,7 +91,7 @@ msgstr "Verzonden"
 #: ejabberd_web_admin.erl:2059 ejabberd_web_admin.erl:2088 mod_roster.erl:1495
 #: mod_shared_roster.erl:1172 mod_shared_roster.erl:1267
 msgid "Bad format"
-msgstr "Slecht formaat"
+msgstr "Verkeerd formaat"
 
 #: ejabberd_web_admin.erl:689 ejabberd_web_admin.erl:726
 #: ejabberd_web_admin.erl:791 ejabberd_web_admin.erl:861
@@ -244,9 +245,8 @@ msgid "Change Password"
 msgstr "Wachtwoord wijzigen"
 
 #: ejabberd_web_admin.erl:1610
-#, fuzzy
 msgid "User ~s"
-msgstr "Gebruiker "
+msgstr "Gebruiker ~s"
 
 #: ejabberd_web_admin.erl:1621
 msgid "Connected Resources:"
@@ -278,9 +278,8 @@ msgid "Stopped Nodes"
 msgstr "Gestopte nodes"
 
 #: ejabberd_web_admin.erl:1771 ejabberd_web_admin.erl:1796
-#, fuzzy
 msgid "Node ~p"
-msgstr "Node "
+msgstr "Node ~p"
 
 #: ejabberd_web_admin.erl:1780 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -317,9 +316,8 @@ msgid "RPC Call Error"
 msgstr "RPC-oproepfout"
 
 #: ejabberd_web_admin.erl:1855
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Databasetabellen van "
+msgstr "Databasetabellen van ~p"
 
 #: ejabberd_web_admin.erl:1865 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -342,9 +340,8 @@ msgid "Error"
 msgstr "Fout"
 
 #: ejabberd_web_admin.erl:1893
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "Backup maken van "
+msgstr "Backup maken van ~p"
 
 #: ejabberd_web_admin.erl:1897
 msgid ""
@@ -405,7 +402,7 @@ msgstr ""
 
 #: ejabberd_web_admin.erl:1998
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "Exporteer alle tabellen als SQL-queries naar een bestand:"
 
 #: ejabberd_web_admin.erl:2014
 msgid "Import user data from jabberd14 spool file:"
@@ -420,9 +417,8 @@ msgid "Listened Ports at "
 msgstr "Openstaande poorten op "
 
 #: ejabberd_web_admin.erl:2082
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "Modules op "
+msgstr "Modules op ~p"
 
 #: ejabberd_web_admin.erl:2113
 msgid "Statistics of ~p"
@@ -453,9 +449,8 @@ msgid "Transactions Logged:"
 msgstr "Gelogde transacties:"
 
 #: ejabberd_web_admin.erl:2181
-#, fuzzy
 msgid "Update ~p"
-msgstr "Opwaarderen van "
+msgstr "Opwaarderen van ~p"
 
 #: ejabberd_web_admin.erl:2192
 msgid "Update plan"
@@ -835,14 +830,16 @@ msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
+"Te veel (~p) mislukte authenticatie-pogingen van dit IP-adres (~s). Dit "
+"adres zal worden gedeblokkeerd om ~s UTC"
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "Dit IP-adres is geblokkeerd in ~s"
 
 #: mod_irc.erl:431
 msgid "IRC Transport"
-msgstr "IRC Transport"
+msgstr "IRC-transport"
 
 #: mod_irc.erl:468
 msgid "ejabberd IRC module"
@@ -977,26 +974,23 @@ msgstr "ejabberd's MUC module"
 #: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
 #: mod_muc_admin.erl:319
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "Groepschat"
 
 #: mod_muc_admin.erl:248
-#, fuzzy
 msgid "Total rooms"
-msgstr "Groepsgesprekken"
+msgstr "Aantal groepsgesprekken"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "verliet de chatruimte"
+msgstr "Permanente groepsgesprekken"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "Geregistreerde gebruikers"
+msgstr "Geregistreerde gebruikersnamen"
 
 #: mod_muc_admin.erl:253
 msgid "List of rooms"
-msgstr ""
+msgstr "Lijst van groepsgesprekken"
 
 #: mod_muc_log.erl:445 mod_muc_log.erl:454
 msgid "Chatroom configuration modified"
@@ -1012,7 +1006,7 @@ msgstr "verliet de chatruimte"
 
 #: mod_muc_log.erl:467 mod_muc_log.erl:470
 msgid "has been banned"
-msgstr "werd verbannen"
+msgstr "is verbannen"
 
 #: mod_muc_log.erl:482
 msgid "has been kicked because of an affiliation change"
@@ -1270,7 +1264,7 @@ msgstr "Chatruimte beveiligen met een geautomatiseerde Turing test"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Zet bericht-archivering aan"
 
 #: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1320,11 +1314,11 @@ msgstr "het wachtwoord is"
 
 #: mod_multicast.erl:273
 msgid "Multicast"
-msgstr ""
+msgstr "Multicast"
 
 #: mod_multicast.erl:288
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "ejabberd Multicast service"
 
 #: mod_offline.erl:783
 msgid "~s's Offline Messages Queue"

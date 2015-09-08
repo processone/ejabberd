@@ -5,11 +5,12 @@ msgstr ""
 "PO-Revision-Date: \n"
 "Last-Translator: Andreas van Cranenburgh <andreas@unstable.nl>\n"
 "Language-Team: \n"
-"Language: \n"
+"Language: eo\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Esperanto\n"
+"X-Generator: Poedit 1.6.10\n"
 
 #: ejabberd_c2s.erl:528 ejabberd_c2s.erl:875
 msgid "Use of STARTTLS required"
@@ -30,7 +31,7 @@ msgstr "estas forpelita"
 
 #: ejabberd_c2s.erl:2490
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "Tro da neagnoskitaj stancoj"
 
 #: ejabberd_captcha.erl:129 ejabberd_captcha.erl:252 ejabberd_captcha.erl:297
 msgid "Enter the text you see"
@@ -242,9 +243,8 @@ msgid "Change Password"
 msgstr "Ŝanĝu pasvorton"
 
 #: ejabberd_web_admin.erl:1610
-#, fuzzy
 msgid "User ~s"
-msgstr "Uzanto "
+msgstr "Uzanto ~s"
 
 #: ejabberd_web_admin.erl:1621
 msgid "Connected Resources:"
@@ -276,9 +276,8 @@ msgid "Stopped Nodes"
 msgstr "Neaktivaj Nodoj"
 
 #: ejabberd_web_admin.erl:1771 ejabberd_web_admin.erl:1796
-#, fuzzy
 msgid "Node ~p"
-msgstr "Nodo "
+msgstr "Nodo ~p"
 
 #: ejabberd_web_admin.erl:1780 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -315,9 +314,8 @@ msgid "RPC Call Error"
 msgstr "Eraro de RPC-alvoko"
 
 #: ejabberd_web_admin.erl:1855
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Datumbaz-tabeloj je "
+msgstr "Datumbaz-tabeloj je ~p"
 
 #: ejabberd_web_admin.erl:1865 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -340,9 +338,8 @@ msgid "Error"
 msgstr "Eraro"
 
 #: ejabberd_web_admin.erl:1893
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "Sekurkopio de "
+msgstr "Sekurkopio de ~p"
 
 #: ejabberd_web_admin.erl:1897
 msgid ""
@@ -399,7 +396,7 @@ msgstr "Eksportu datumoj de uzantoj en gastigo al PIEFXIS dosieroj (XEP-0227):"
 
 #: ejabberd_web_admin.erl:1998
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "Eksportu ĉiuj tabeloj kiel SQL-informmendo al dosierujo:"
 
 #: ejabberd_web_admin.erl:2014
 msgid "Import user data from jabberd14 spool file:"
@@ -414,9 +411,8 @@ msgid "Listened Ports at "
 msgstr "Atentataj pordoj je "
 
 #: ejabberd_web_admin.erl:2082
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "Moduloj je "
+msgstr "Moduloj je ~p"
 
 #: ejabberd_web_admin.erl:2113
 msgid "Statistics of ~p"
@@ -447,9 +443,8 @@ msgid "Transactions Logged:"
 msgstr "Transakcioj protokolitaj"
 
 #: ejabberd_web_admin.erl:2181
-#, fuzzy
 msgid "Update ~p"
-msgstr "Ĝisdatigu "
+msgstr "Ĝisdatigu ~p-n"
 
 #: ejabberd_web_admin.erl:2192
 msgid "Update plan"
@@ -828,10 +823,12 @@ msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
+"Tro da malsukcesaj aŭtentprovoj (~p) de ĉi tiu IP-adreso (~s). La adreso "
+"estos malbarata je ~s UTC."
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "Ĉi tiu IP-adreso estas barata in ~s"
 
 #: mod_irc.erl:431
 msgid "IRC Transport"
@@ -910,15 +907,14 @@ msgid "IRC settings"
 msgstr "IRC agordoj"
 
 #: mod_irc.erl:1039
-#, fuzzy
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
 "settings."
 msgstr ""
-"Enmetu uzantnomon kaj enkodigoj kiujn vi volas uzi por konektoj al IRC-"
-"serviloj. Elektu \"Sekvonto\" por ekhavi pliajn kampojn. Elektu \"Kompletigu"
-"\" por savi agordojn."
+"Enmetu uzantnomon kaj enkodigojn kiujn vi volas uzi por konektoj al IRC-"
+"serviloj. Elektu 'Sekvonto' por ekhavi pliajn kampojn. Elektu 'Kompletigu' "
+"por savi agordojn."
 
 #: mod_irc.erl:1048
 msgid "IRC username"
@@ -968,26 +964,23 @@ msgstr "ejabberd MUC-modulo"
 #: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
 #: mod_muc_admin.erl:319
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "Grupbabilado"
 
 #: mod_muc_admin.erl:248
-#, fuzzy
 msgid "Total rooms"
 msgstr "Babilejoj"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "eliras la babilejo"
+msgstr "Permanentaj babilejoj"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "Registritaj uzantoj"
+msgstr "Registritaj uzantnomoj"
 
 #: mod_muc_admin.erl:253
 msgid "List of rooms"
-msgstr ""
+msgstr "Listo de babilejoj"
 
 #: mod_muc_log.erl:445 mod_muc_log.erl:454
 msgid "Chatroom configuration modified"
@@ -1258,7 +1251,7 @@ msgstr "Farigu babilejon protektata per CAPTCHA"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Ŝaltu mesaĝo-arkivo"
 
 #: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1306,11 +1299,11 @@ msgstr "la pasvorto estas"
 
 #: mod_multicast.erl:273
 msgid "Multicast"
-msgstr ""
+msgstr "Multicast"
 
 #: mod_multicast.erl:288
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "ejabberd Multicast-servo"
 
 #: mod_offline.erl:783
 msgid "~s's Offline Messages Queue"
