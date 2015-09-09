@@ -1,0 +1,8 @@
+<!DOCTYPE html> 
+<html>
+{% for r in rooms %}
+<a class="roomname" href="{{r.2.1}}@{{r.2.2}}/">{{r.2.1}}</a><br/>
+{% empty %}
+<span class="emptyroomlist">Sorry, there is no logging configured for rooms on this host </span>
+{% endfor %}
+</html>

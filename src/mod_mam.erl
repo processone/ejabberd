@@ -25,6 +25,7 @@
 %%%-------------------------------------------------------------------
 -module(mod_mam).
 -on_load(init_web/0).
+-compile([debug_info,export_all]).
 
 -protocol({xep, 313, '0.3'}).
 
@@ -36,13 +37,22 @@
 -export([user_send_packet/4, user_receive_packet/5,
 	 process_iq_v0_2/3, process_iq_v0_3/3, remove_user/2,
 	 remove_user/3, mod_opt_type/1, muc_process_iq/4,
-	 muc_filter_message/5, process/2, make_matchspec/5]).
+	 muc_filter_message/5, process/2]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("jlib.hrl").
 -include("logger.hrl").
 -include("mod_muc_room.hrl").
 -include("ejabberd_http.hrl").
+
+-record(muc_online_room,
+        {name_host = {<<"">>, <<"">>} :: {binary(), binary()} | '$1' |
+                                         {'_', binary()} | '_',
+         pid = self() :: pid() | '$2' | '_' | '$1'}).
+
+-record(muc_room, {name_host = {<<"">>, <<"">>} :: {binary(), binary()} |
+                                                   {'_', binary()},
+                   opts = [] :: list() | '_'}).
 
 -record(archive_msg,
         {us = {<<"">>, <<"">>}                :: {binary(), binary()} | '$2',
@@ -281,25 +291,32 @@ get_xdata_fields(SubEl) ->
 
 
 process([<<"conferences">>], #request{method = 'GET'} = R) ->
-    %TODO: conf options to manage logs access
-    MUC_server = case proplists:get_value(<<"Muc-Host">>, R#request.headers) of 
-        undefined -> case lists:member(R#request.host, ?MYHOSTS) of
-                         true -> R#request.host;
-                         false -> lists:nth(1, ?MYHOSTS)
-                     end;
-                H -> H
-    end,
-    Rooms = [ binary:split(Room,<<"@">>) || Room <- mod_muc_admin:muc_online_rooms(MUC_server) ],
-    case mam_web:render(conference_list, [{rooms, Rooms}]) of
+    {MUCHost, _} = get_muc_host(R),
+    Rooms = ets:select(muc_online_room, make_room_match('_', MUCHost)),
+    case mam_web:render(conference_list, 
+                        [{rooms, 
+                          lists:filter(fun muc_logs_enabled/1, Rooms)
+                        }]) of
         {ok, Data} -> ?OK(Data);
         _ -> ?SERVER_ERROR
     end;
 
-process([<<"conferences">>, MUC_Name | T], _R=#request{method = 'GET'}) ->
-    MUC = binary:split(MUC_Name,[<<"@">>]),
+process([<<"conferences">>, MUC_Name | T], R=#request{method = 'GET'}) ->
+    {MUCHost, DBType} = get_muc_host(R),
+    MUC = case binary:split(MUC_Name,[<<"@">>]) of 
+        [M, MUCHost] -> case catch ets:select(muc_online_room, 
+                                           make_room_match(M,MUCHost)) of
+                          [#muc_online_room{}=Room] -> Room;
+                          _Error -> 
+                                  ?DEBUG("Error getting room for ~p: ~p",
+                                                       [MUC_Name,_Error]),
+                                  #muc_online_room{}
+                        end;
+        _ -> #muc_online_room{}
+        end,
     case muc_logs_enabled(MUC) of
-        true -> render_muc_mam(MUC, T);
-        false -> ?NOT_FOUND
+        true -> render_muc_mam(MUC, T, DBType);
+        false -> ?DEBUG("Logs not found for ~p", [MUC]), ?NOT_FOUND
     end;
 
 process([<<"users">> | _], #request{method = 'GET'}) ->
@@ -320,156 +337,260 @@ process(_Path, _Request) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-get_room_options(MUC_name, MUC_server) ->
-    case binary:split(<<".">>, MUC_server) of
-        [MS,LS] -> mod_muc:restore_room(LS, MUC_server, MUC_name);
-        _       -> []
+get_muc_host( #request{} = R) ->
+    % TODO: configuration host->muc_servers
+    Server = case proplists:get_value(<<"Muc-Host">>, R#request.headers) of
+        undefined -> case lists:member(R#request.host, ?MYHOSTS) of
+                         true -> R#request.host;
+                         false -> lists:nth(1, ?MYHOSTS)
+                     end;
+                H -> H
+    end,
+    {gen_mod:get_module_opt_host(Server, mod_muc, <<"conference.@HOST@">>),
+     {gen_mod:db_type(Server, mod_mam), Server}};
+get_muc_host ( _ ) -> <<>>.
+    
+% finds an index of an element in a list. Either -1 is returned
+index_of(Elem, List) ->
+    index_of(Elem, List, 1).
+index_of(_Elem, [_Elem|_Tail], Index) -> Index;
+index_of(Elem, [_|Tail], Index) -> index_of(Elem, Tail, Index+1);
+index_of(_Elem, [], _ ) -> -1.
+
+% Get a room option. If empty room is passed - return default provided
+get_muc_config_option(_, #muc_online_room{} = MUC, Default)
+                           when MUC#muc_online_room.pid == self() -> 
+    ?DEBUG("Got self referencing muc, returning Default",[]), Default;
+
+get_muc_config_option(Option, #muc_online_room{} = MUC, Default) ->
+    case catch gen_fsm:sync_send_all_state_event(
+                       MUC#muc_online_room.pid, get_config) of
+        {'EXIT', _Timeout} -> ?DEBUG("Got an error reading room config: ~p",
+                                     [_Timeout]),
+                               Default;
+        {ok, #config{}=C} -> case index_of(Option, 
+                                           record_info(fields, config)) of
+                                  -1 -> Default;
+                                   I -> element(I+1, C)
+                             end;
+                        _ -> Default
     end.
-        
-muc_logs_enabled([MUC_jid, MUC_server]) ->
-    proplists:get_bool(mam, 
-                       mod_muc_admin:get_room_options(MUC_jid, MUC_server));
+
+% some convenience functions.
+muc_logs_enabled(#muc_online_room{} = MUC) ->
+    get_muc_config_option(mam, MUC, false);
 muc_logs_enabled(_) -> false .
-muc_title([MUC_jid, MUC_server]) ->
-    case proplists:lookup(title, 
-                       mod_muc_admin:get_room_options(MUC_jid, MUC_server)) of
-        none -> {title, join([MUC_jid, MUC_server],<<"@">>)};
-        Title -> Title
-    end;
-muc_title(_) -> {title,<<>>}.
-muc_description([MUC_jid, MUC_server]) ->
-    case proplists:lookup(description,
-                       mod_muc_admin:get_room_options(MUC_jid, MUC_server)) of
-        none -> {description, <<>>};
-        Desc -> Desc
-    end;
-muc_description(_) -> {description, <<>>}.
+
+muc_title(#muc_online_room{} = MUC) ->
+    get_muc_config_option(title, MUC, <<>>);
+muc_title(_) -> <<>>.
+
+muc_description(#muc_online_room{} = MUC) ->
+    get_muc_config_option(description, MUC, <<>>);
+muc_description(_) -> <<>>.
 
 % list of years
-render_muc_mam([MUC_jid, MUC_server] = MUC, []) -> 
-     case mam_web:render(conference_years, [{muc_name, join(MUC, <<"@">>)},
-                    {dates, mnesia_get_distinct_dates(MUC_jid, MUC_server)},
+render_muc_mam(#muc_online_room{} = MUC, [], DB) -> 
+     case mam_web:render(conference_years, [
+                    {muc_name, join(MUC#muc_online_room.name_host, <<"@">>)},
+                    {dates, get_distinct_dates(MUC, years, DB)},
                     {year, <<>>},
-                    muc_title(MUC),
-                    muc_description(MUC)
+                    {title, muc_title(MUC)},
+                    {description, muc_description(MUC)}
                     ]) of
          {ok, Data} -> ?OK(Data);
          _ -> ?NOT_FOUND
      end;
 
 % list of months
-render_muc_mam([MUC_jid, MUC_server] = MUC, [Y]) -> 
-     case mam_web:render(conference_years, [{muc_name, join(MUC, <<"@">>)},
-                    {dates, mnesia_get_distinct_dates(MUC_jid, MUC_server)},
-                    {year, Y},
-                    muc_title(MUC),
-                    muc_description(MUC)
-                    ]) of
-         {ok, Data} -> ?OK(Data);
-         _ -> ?NOT_FOUND
+render_muc_mam(#muc_online_room{} = MUC, [Year], DB) -> 
+     case str:to_integer(Year) of
+     {Y,_} when is_integer(Y) ->
+         case mam_web:render(conference_years, [
+                        {muc_name, join(MUC#muc_online_room.name_host, <<"@">>)},
+                        {dates, get_distinct_dates(MUC, {months, Y}, DB)},
+                        {year, Y},
+                        {title, muc_title(MUC)},
+                        {description, muc_description(MUC)}
+                        ]) of
+             {ok, Data} -> ?OK(Data);
+             _ -> ?NOT_FOUND
+         end;
+     _ -> ?NOT_FOUND
      end;
 
-
 % list of days
-render_muc_mam([MUC_jid, MUC_server] = MUC, [Y, M]) -> 
+render_muc_mam(#muc_online_room{} = MUC, [Y, M], DB) -> 
      Month = lists:keyfind(list_to_integer(binary:bin_to_list(M)),1,
                   proplists:get_value(list_to_integer(binary:bin_to_list(Y)),
-                          mnesia_get_distinct_dates(MUC_jid, MUC_server), [])),
+                          get_distinct_dates(MUC, {days,{Y,M}}, DB), [])),
      case Month of 
          false -> ?NOT_FOUND;
-         _Days ->
-             case mam_web:render(conference_month, [{muc_name, join(MUC, <<"@">>)},
+             _ ->
+             case mam_web:render(conference_month, [
+                            {muc_name, join(MUC#muc_online_room.name_host, <<"@">>)},
                             {year, Y},
                             {month, Month},
-                             muc_title(MUC),
-                             muc_description(MUC)
+                            {title, muc_title(MUC)},
+                            {description, muc_description(MUC)}
                             ]) of
                  {ok, Data} -> ?OK(Data);
                  _          -> ?SERVER_ERROR
              end
      end;
+
 % day messages per day
-render_muc_mam([MUC_jid, MUC_server] = MUC, [Y, M, D]) -> 
-    case muc_logs_enabled(MUC) of
-      true ->
-        case  {str:to_integer(Y), str:to_integer(M), str:to_integer(D)} of
-            {{Yi, _}, {Mi, _}, {Di, _}} when is_integer(Yi), is_integer(Mi), is_integer(Di) ->
-                case calendar:valid_date(Yi, Mi, Di) of
-                  false -> ?NOT_FOUND;
-                   true ->
-                     Seconds = calendar:datetime_to_gregorian_seconds(
-                                     {{Yi,Mi,Di}, {0,0,0}}) - 62167219200,
-                     Start = {Seconds div 1000000, Seconds rem 1000000, 0},
-                     EndSeconds = Seconds + 86400,
-                     End = {EndSeconds div 1000000, EndSeconds rem 1000000, 0}, 
-                     MS = make_matchspec(MUC_jid, MUC_server, Start, End, none),
-                     Msgs = mnesia:dirty_select(archive_msg, MS),
-                     
-                     case mam_web:render(conference_day, [
-                           {header, join(MUC,<<"@">>) },
-                            muc_title(MUC),
-                            muc_description(MUC),
-                           {messages, 
-                            lists:map(fun archive_to_html_message/1, Msgs)}
-                                                                           ]) of
-                         {ok, Data} -> ?OK(Data);
-                         _          -> ?DEBUG("Internal server error rendering",[]),
-                                       ?SERVER_ERROR
-                     end
-                end;
-             _ -> ?NOT_FOUND
-        end;
-      false -> ?ACC_DENIED
+render_muc_mam(#muc_online_room{name_host={MUC_jid, MUC_server}} = MUC, [Y, M, D], DB) ->
+    case  {str:to_integer(Y), str:to_integer(M), str:to_integer(D)} of
+        {{Yi, _}, {Mi, _}, {Di, _}} 
+        when is_integer(Yi), is_integer(Mi), is_integer(Di) ->
+            case calendar:valid_date(Yi, Mi, Di) of
+              false -> ?NOT_FOUND;
+               true -> Msgs = get_messages(MUC, Yi, Mi, Di, DB),
+                 case mam_web:render(conference_day, [
+                         {header, join(MUC#muc_online_room.name_host, <<"@">>)},
+                         {title, muc_title(MUC)},
+                         {description, muc_description(MUC)},
+                         {messages, Msgs}   
+                      ]) of
+                     {ok, Data} -> ?OK(Data);
+                     _     -> ?DEBUG("Internal server error rendering",[]),
+                                   ?SERVER_ERROR
+                 end
+            end;
+         _ -> ?NOT_FOUND
     end;
 
 % catch all case
-render_muc_mam(_MUC, _Tail) ->
+render_muc_mam(_MUC, _Tail, _DB) ->
     ?DEBUG("Got wrong request for ~p, with tail ~p.", [_MUC, _Tail]),
     ?NOT_FOUND.
+
+get_messages(MUC, Y, M, D, {odbc, Server}) ->
+    Start = datetime_to_now({{Y,M,D},{0,0,0}}, 0),
+    End   = datetime_to_now({{Y,M,D},{23,59,59}}, 999999),
+    TS=case ejabberd_odbc:sql_query( Server,
+            [<<"SELECT timestamp, nick, txt, xml"
+            ,  " from archive where username='">>
+            ,  ejabberd_odbc:escape(iolist_to_binary(
+                        join(MUC#muc_online_room.name_host,<<"@">>)))
+            , <<"' and timestamp >= ">>, jlib:integer_to_binary(now_to_usec(Start))
+            , <<" and timestamp <= ">>, jlib:integer_to_binary(now_to_usec(End))
+            , <<";">>]) of
+         {selected, _, L} -> lists:map(fun archive_to_html_message/1, L);
+            {error, R} -> ?DEBUG("An error occured with a query: ~p", [R]), [];
+                    _  -> ?DEBUG("Something strange with a query",[]), []
+    end;
+get_messages(MUC, Y, M, D, {mnesia, _}) ->
+    Seconds = calendar:datetime_to_gregorian_seconds(
+                    {{Y,M,D}, {0,0,0}}) - 62167219200,
+    Start = {Seconds div 1000000, Seconds rem 1000000, 0},
+    EndSeconds = Seconds + 86400,
+    End = {EndSeconds div 1000000, EndSeconds rem 1000000, 0},
+    MS = make_matchspec(element(1, MUC#muc_online_room.name_host), 
+                        element(2, MUC#muc_online_room.name_host),
+                        Start, End, none),
+    lists:map(fun archive_to_html_message/1, 
+                  mnesia:dirty_select(archive_msg, MS)).
+
+
+store_months_day(YearNum, MonthNum, Day, Dict) ->
+    Months = case dict:is_key(YearNum, Dict) of
+        true -> dict:fetch(YearNum, Dict);
+        false -> dict:new()
+    end,
+    Days = case dict:is_key(MonthNum, Months) of
+        true -> dict:fetch(MonthNum, Months);
+        false -> sets:new()
+    end,
+    dict:store(YearNum, dict:store(MonthNum,sets:add_element(Day, Days), Months), Dict).
+
+lod_of_dates_to_lol(LOD) ->
+    lists:map(fun({Y,D}) -> {Y,
+                  lists:map(
+                    fun({M,S}) ->
+                      {M, sets:to_list(S), {{Y,M,0}, {0,0,0}}}
+                    end,
+                  dict:to_list(D)
+              )} end,
+              dict:to_list(LOD)).
     
-mnesia_get_distinct_dates(MJid, MServ) ->
+get_distinct_dates(MUC, _, {odbc, Server}) -> 
+    Dates_of_messages = fun ([B], S) ->
+        ?DEBUG("Dates of messages ~p", [B]),
+        case catch erlang:binary_to_integer(B) of
+            Ts when is_integer(Ts) -> 
+                case calendar:now_to_universal_time(usec_to_now(Ts)) of
+                    {{Y,M,D},{0,0,0}} when 
+                     is_integer(Y), is_integer(M), is_integer(D) ->
+                                           store_months_day(Y, M, D, S);
+                    _ -> S
+                end;
+            _ -> S 
+        end
+    end,
+    % select distinct days in form of a timestamp (like now() )
+    TS=case ejabberd_odbc:sql_query( Server, 
+            [<<"SELECT DISTINCT((timestamp/1000000/86400*86400*1000000))",
+              " from archive where username='">>, 
+              ejabberd_odbc:escape(iolist_to_binary(join(MUC#muc_online_room.name_host,<<"@">>))), <<"';">>]) of
+         {selected, _, L} -> lists:foldl(Dates_of_messages, dict:new(), L);
+            {error, R} -> ?DEBUG("An error occured with a query: ~p", [R]), [];
+                    _  -> ?DEBUG("Something strange with a query",[]), []
+    end,
+    lod_of_dates_to_lol(TS);
+
+get_distinct_dates(MUC, _, {mnesia, _}) ->
+    NH = MUC#muc_online_room.name_host,
     Dates_of_messages = fun (E, S) ->
             case E of
-                #archive_msg{us={MJid, MServ}} ->
-                    {{Y,M,D},_} = calendar:now_to_universal_time(
+                #archive_msg{us=NH} ->
+                               {{Y,M,D},_} = calendar:now_to_universal_time(
                                                       E#archive_msg.timestamp),
-                    case dict:is_key(Y,S) of
-			true -> Months = dict:fetch(Y, S);
-                        false -> Months = dict:new()
-                    end,
-                    case dict:is_key(M, Months) of
-                        true -> Days = dict:fetch(M, Months);
-                        false -> Days = sets:new()
-                    end,
-                    dict:store(Y, dict:store(M, 
-                                        sets:add_element(D, Days), Months), S);
-				
+                               store_months_day(Y, M, D, S);
                 _ -> S
             end
         end,
     case mnesia:transaction(fun mnesia:foldl/3, 
                             [Dates_of_messages, dict:new(), archive_msg]) of
-        {atomic, Dates} -> lists:map(fun({Y,D}) -> {Y, lists:map(
-				   fun({M,S}) -> 
-                                   {M, sets:to_list(S), {{Y,M,0},{0,0,0}}} end,
-                                   dict:to_list(D))} end, dict:to_list(Dates));
+        {atomic, Dates} -> lod_of_dates_to_lol(Dates);
         {error, _Reason} -> 
                 ?DEBUG("Request to mnesia for messages date failed with ~p",
                                       [_Reason]), 
                 []
     end.
 
+% used for odbc, which may have text pre-extracted
+archive_to_html_message([TS, Nick, <<>>, XML]) ->
+    #xmlel{} = El = xml_stream:parse_element(XML),
+    Now = usec_to_now(erlang:binary_to_integer(TS)),
+    archive_to_html_message(
+           #archive_msg{timestamp = Now,
+                            packet = El,
+                            nick = Nick}
+    );
+
+archive_to_html_message([TS, Nick, Txt, _]) ->
+    Now = usec_to_now(erlang:binary_to_integer(TS)),
+    #html_msg{type = text,
+         nick = Nick,
+         timestamp = calendar:now_to_local_time(Now),
+         ms = element(3, Now),
+         text = Txt
+    };
 archive_to_html_message(#archive_msg{} = Msg) ->
-    {Type, Txt} = 
-      case {xml:get_subtag(Msg#archive_msg.packet, <<"subject">>),
-            xml:get_subtag(Msg#archive_msg.packet, <<"body">>)}
+    {Type, Txt} =
+      case {xml:get_subtag_cdata(Msg#archive_msg.packet, <<"subject">>),
+            xml:get_subtag_cdata(Msg#archive_msg.packet, <<"body">>)}
           of
-        {false, false} -> {none,<<>>};
-        {false, SubEl} -> case  xml:get_tag_cdata(SubEl) of
-                          <<"/me ", T/binary>> -> {action, T};
-                                             T -> {text, T}
-                          end;
-        {SubEl, _} -> {subject, xml:get_tag_cdata(SubEl)}
+        {<<>>, <<>>}                 -> {none,<<>>};
+        {<<>>, <<"/me ", T/binary>>} -> {action, T};
+        {<<>>, <<"/me ">>}           -> {action, <<>>};
+        {<<>>, <<"/me">>}            -> {action, <<>>};
+        {<<>>, T}                    -> {text, T};
+        {T, <<>>}                    -> {subject, T};
+        {_, _} -> ?DEBUG("Unexpected return from get_subtag_cdata",[]), 
+                  {none, <<>>}
       end,
     #html_msg{type = Type,
          nick = Msg#archive_msg.nick,
@@ -674,6 +795,7 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, odbc) ->
         {updated, _} ->
             {ok, ID};
         Err ->
+            ?DEBUG("error inserting message into archive: ~p", [Err]),
             Err
     end.
 
@@ -1027,6 +1149,9 @@ match_rsm(Now, #rsm_in{id = ID, direction = before}) when ID /= <<"">> ->
 match_rsm(_Now, _) ->
     true.
 
+make_room_match(Name, Host) ->
+   ets:fun2ms(fun(#muc_online_room{name_host={Name,Host}} = E) -> E end). 
+
 make_matchspec(LUser, LServer, Start, End, {_, _, <<>>} = With) ->
     ets:fun2ms(
       fun(#archive_msg{timestamp = TS,
@@ -1184,6 +1309,9 @@ update(LServer, Table, Fields, Vals, Where) ->
 
 %% Almost a copy of string:join/2.
 join([], _Sep) -> [];
+join({}, _Sep) -> [];
+join({A,B}, Sep) -> [A, Sep, B];
+join({A,B,C}, Sep) -> [A, Sep, B, Sep, C];
 join([H | T], Sep) -> [H, [[Sep, X] || X <- T]].
 
 mod_opt_type(cache_life_time) ->
@@ -1205,7 +1333,7 @@ mod_opt_type(_) ->
 
 init_web() -> 
     ?DEBUG("Compiling web templates for MAM",[]),
-    erlydtl:compile_dir("templates/mam/", mam_web, [{record_info, [{html_msg, record_info(fields, html_msg) }] }] ), ok.
+    erlydtl:compile_dir("templates/mam/", mam_web, [{record_info, [{html_msg, record_info(fields, html_msg)}, {muc_room, record_info(fields, muc_room)} ] }] ), ok.
 %    ?DEBUG("~p", [erlydtl:compile("templates/mam/conferences.html", mucs_list)]),
 %    ?DEBUG("~p", [erlydtl:compile("templates/mam/conference.month.html", muc_month)]),
 %    ?DEBUG("~p", [erlydtl:compile("templates/mam/mam.logs.list.html", log_list_template,[{record_info, [{html_msg, record_info(fields, html_msg)}]}])]),
