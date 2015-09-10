@@ -740,6 +740,7 @@ get_option(Opt, F, Default) ->
 
 get_modules_with_options() ->
     {ok, Mods} = application:get_key(ejabberd, modules),
+    ExtMods = [Name || {Name, _Details} <- ext_mod:installed()],
     lists:foldl(
       fun(Mod, D) ->
 	      case catch Mod:opt_type('') of
@@ -751,7 +752,7 @@ get_modules_with_options() ->
 		  {'EXIT', {undef, _}} ->
 		      D
 	      end
-      end, dict:new(), [?MODULE|Mods]).
+      end, dict:new(), [?MODULE|ExtMods++Mods]).
 
 validate_opts(#state{opts = Opts} = State) ->
     ModOpts = get_modules_with_options(),
