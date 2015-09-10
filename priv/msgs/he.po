@@ -1282,7 +1282,7 @@ msgstr "הפוך חדר אל מוגן CAPTCHA"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "אפשר אחסון הודעות"
 
 # זהויות
 #: mod_muc_room.erl:3558
@@ -1291,7 +1291,7 @@ msgstr "הוצא כתובות של Jabber מתוך אתגר CAPTCHA"
 
 #: mod_muc_room.erl:3567
 msgid "Enable logging"
-msgstr "אפשור רישום פעילות"
+msgstr "אפשר רישום פעילות"
 
 #: mod_muc_room.erl:3577
 msgid "You need an x:data capable client to configure room"
