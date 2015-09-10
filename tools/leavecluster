@@ -31,8 +31,6 @@ function error
     read foo
     echo ""
 }
-echo ok
-exit
 
 PA=/tmp/clustersetup_$$
 CTL=$(which ejabberdctl)
