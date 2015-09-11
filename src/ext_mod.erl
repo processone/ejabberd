@@ -42,15 +42,10 @@
 %% -- ejabberd init and commands
 
 start() ->
-    case is_contrib_allowed() of
-        true ->
-            [code:add_patha(module_ebin_dir(Module))
-             || {Module, _} <- installed()],
-            application:start(inets),
-            ejabberd_commands:register_commands(commands());
-        false ->
-            ok
-    end.
+    [code:add_patha(module_ebin_dir(Module))
+     || {Module, _} <- installed()],
+    application:start(inets),
+    ejabberd_commands:register_commands(commands()).
 
 stop() ->
     ejabberd_commands:unregister_commands(commands()).
