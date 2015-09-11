@@ -5,7 +5,7 @@ msgstr ""
 "PO-Revision-Date: \n"
 "Last-Translator: Nikolaus Polak <nik@linuxlovers.at>\n"
 "Language-Team: \n"
-"Language: \n"
+"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -16,6 +16,7 @@ msgstr ""
 "X-Additional-Translator: Patrick Dreker\n"
 "X-Additional-Translator: Torsten Werner\n"
 "X-Additional-Translator: Marina Hahn\n"
+"X-Generator: Poedit 1.8.4\n"
 
 #: ejabberd_c2s.erl:528 ejabberd_c2s.erl:875
 msgid "Use of STARTTLS required"
@@ -32,11 +33,11 @@ msgstr "Durch neue Verbindung ersetzt"
 #: ejabberd_c2s.erl:1405 mod_configure.erl:1854 mod_muc_log.erl:474
 #: mod_muc_log.erl:477
 msgid "has been kicked"
-msgstr "wurde gekickt"
+msgstr "wurde entfernt"
 
 #: ejabberd_c2s.erl:2490
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "Zu viele unbestätigte Stanzas"
 
 #: ejabberd_captcha.erl:129 ejabberd_captcha.erl:252 ejabberd_captcha.erl:297
 msgid "Enter the text you see"
@@ -157,16 +158,16 @@ msgstr "Alle Aktivitäten"
 
 #: ejabberd_web_admin.erl:930
 msgid "Show Ordinary Table"
-msgstr "Normale Tabelle anzeigen"
+msgstr "Gewöhnliche Tabelle anzeigen"
 
 #: ejabberd_web_admin.erl:933
 msgid "Show Integral Table"
-msgstr "Vollständige Tabelle anzeigen"
+msgstr "Integrale Tabelle anzeigen"
 
 #: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785
 #: mod_muc_admin.erl:246
 msgid "Statistics"
-msgstr "Statistik"
+msgstr "Statistiken"
 
 #: ejabberd_web_admin.erl:950
 msgid "Not Found"
@@ -178,7 +179,7 @@ msgstr "Knoten nicht gefunden"
 
 #: ejabberd_web_admin.erl:1185 mod_shared_roster.erl:1166
 msgid "Add New"
-msgstr "Neue hinzufügen"
+msgstr "Neue(n) hinzufügen"
 
 #: ejabberd_web_admin.erl:1273
 msgid "Host"
@@ -250,9 +251,8 @@ msgid "Change Password"
 msgstr "Passwort ändern"
 
 #: ejabberd_web_admin.erl:1610
-#, fuzzy
 msgid "User ~s"
-msgstr "Benutzer "
+msgstr "Benutzer ~s"
 
 #: ejabberd_web_admin.erl:1621
 msgid "Connected Resources:"
@@ -281,12 +281,11 @@ msgstr "Aktive Knoten"
 
 #: ejabberd_web_admin.erl:1753 mod_configure.erl:529
 msgid "Stopped Nodes"
-msgstr "Inaktive Knoten"
+msgstr "Angehaltene Knoten"
 
 #: ejabberd_web_admin.erl:1771 ejabberd_web_admin.erl:1796
-#, fuzzy
 msgid "Node ~p"
-msgstr "Knoten "
+msgstr "Knoten ~p"
 
 #: ejabberd_web_admin.erl:1780 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -323,9 +322,8 @@ msgid "RPC Call Error"
 msgstr "Fehler bei RPC-Aufruf"
 
 #: ejabberd_web_admin.erl:1855
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Datenbanktabellen auf "
+msgstr "Datenbanktabellen auf ~p"
 
 #: ejabberd_web_admin.erl:1865 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -348,9 +346,8 @@ msgid "Error"
 msgstr "Fehler"
 
 #: ejabberd_web_admin.erl:1893
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "Sicherung von "
+msgstr "Sicherung von ~p"
 
 #: ejabberd_web_admin.erl:1897
 msgid ""
@@ -410,7 +407,7 @@ msgstr ""
 
 #: ejabberd_web_admin.erl:1998
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "Alle Tabellen als SQL Abfragen in eine Datei exportieren:"
 
 #: ejabberd_web_admin.erl:2014
 msgid "Import user data from jabberd14 spool file:"
@@ -425,9 +422,8 @@ msgid "Listened Ports at "
 msgstr "Aktive Ports bei"
 
 #: ejabberd_web_admin.erl:2082
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "Module bei "
+msgstr "Module bei ~p"
 
 #: ejabberd_web_admin.erl:2113
 msgid "Statistics of ~p"
@@ -458,9 +454,8 @@ msgid "Transactions Logged:"
 msgstr "Protokollierte Transaktionen:"
 
 #: ejabberd_web_admin.erl:2181
-#, fuzzy
 msgid "Update ~p"
-msgstr "Aktualisierung "
+msgstr "Aktualisierung ~p"
 
 #: ejabberd_web_admin.erl:2192
 msgid "Update plan"
@@ -532,7 +527,7 @@ msgstr "Nachrichtentext"
 
 #: mod_announce.erl:627
 msgid "No body provided for announce message"
-msgstr "Kein Text für die Ankündigung angegeben"
+msgstr "Kein Text für die Ankündigungsnachricht angegeben"
 
 #: mod_announce.erl:662
 msgid "Announcements"
@@ -753,7 +748,7 @@ msgstr "Benutzer aus dieser Datei importieren "
 
 #: mod_configure.erl:1162
 msgid "Enter path to jabberd14 spool file"
-msgstr "Geben Sie den Pfad zur jabberd14-Spool-Datei ein"
+msgstr "Geben sie den Pfad zur jabberd14-Spool-Datei ein"
 
 #: mod_configure.erl:1177
 msgid "Import Users from Dir at "
@@ -761,7 +756,7 @@ msgstr "Benutzer importieren aus dem Verzeichnis "
 
 #: mod_configure.erl:1183
 msgid "Enter path to jabberd14 spool dir"
-msgstr "Geben Sie den Pfad zum jabberd14-Spool-Verzeichnis ein"
+msgstr "Geben sie den Pfad zum jabberd14-Spool-Verzeichnis ein"
 
 #: mod_configure.erl:1184
 msgid "Path to Dir"
@@ -840,10 +835,12 @@ msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
+"Zu viele (~p) fehlgeschlagene Anmeldeversuche von dieser IP Adresse (~s). "
+"Die Adresse wird bis ~s UTC blockiert."
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "Diese IP Adresse ist blockiert in ~s"
 
 #: mod_irc.erl:431
 msgid "IRC Transport"
@@ -868,8 +865,8 @@ msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"Geben Sie Benutzernamen und Zeichenkodierung für die Verbindung zum IRC-"
-"Server an"
+"Geben sie den Benutzernamen, Zeichenkodierung, Ports und Passwörter, die sie "
+"für die Verbindung zum IRC-Server verwenden wollen, an"
 
 #: mod_irc.erl:659
 msgid "IRC Username"
@@ -983,26 +980,23 @@ msgstr "ejabberd MUC-Modul"
 #: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
 #: mod_muc_admin.erl:319
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "Mehrbenutzer-Chat (MUC)"
 
 #: mod_muc_admin.erl:248
-#, fuzzy
 msgid "Total rooms"
-msgstr "Chaträume"
+msgstr "Alle Chaträume"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "verlässt den Raum"
+msgstr "permanente Chaträume"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "Registrierte Benutzer"
+msgstr "Registrierte Benutzernamen"
 
 #: mod_muc_admin.erl:253
 msgid "List of rooms"
-msgstr ""
+msgstr "Liste von Chaträumen"
 
 #: mod_muc_log.erl:445 mod_muc_log.erl:454
 msgid "Chatroom configuration modified"
@@ -1022,15 +1016,15 @@ msgstr "wurde gebannt"
 
 #: mod_muc_log.erl:482
 msgid "has been kicked because of an affiliation change"
-msgstr "wurde wegen Änderung des Mitgliederstatus gekickt"
+msgstr "wurde wegen Änderung des Mitgliederstatus entfernt"
 
 #: mod_muc_log.erl:487
 msgid "has been kicked because the room has been changed to members-only"
-msgstr "wurde gekickt weil der Raum auf Nur-Mitglieder umgestellt wurde"
+msgstr "wurde entfernt weil der Raum auf Nur-Mitglieder umgestellt wurde"
 
 #: mod_muc_log.erl:492
 msgid "has been kicked because of a system shutdown"
-msgstr "wurde wegen Systemabschaltung gekickt"
+msgstr "wurde wegen einer Systemabschaltung entfernt"
 
 #: mod_muc_log.erl:497
 msgid "is now known as"
@@ -1256,7 +1250,7 @@ msgstr "Erlaube Besuchern einen Text bei Statusänderung zu senden"
 
 #: mod_muc_room.erl:3532
 msgid "Allow visitors to change nickname"
-msgstr "Erlaube Besuchern ihren Spitznamen zu ändern"
+msgstr "Erlaube Besuchern ihren Benutzernamen zu ändern"
 
 #: mod_muc_room.erl:3535
 msgid "Allow visitors to send voice requests"
@@ -1272,7 +1266,7 @@ msgstr "Raum mit Verifizierung (Captcha) versehen"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Nachrichtenarchivierung aktivieren"
 
 #: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1314,7 +1308,7 @@ msgstr "Sprachrechte dieser Person erteilen?"
 
 #: mod_muc_room.erl:4409
 msgid "~s invites you to the room ~s"
-msgstr "~s lädt Sie in den Raum ~s ein"
+msgstr "~s lädt sie in den Raum ~s ein"
 
 #: mod_muc_room.erl:4421
 msgid "the password is"
@@ -1322,11 +1316,11 @@ msgstr "das Passwort lautet"
 
 #: mod_multicast.erl:273
 msgid "Multicast"
-msgstr ""
+msgstr "Multicast"
 
 #: mod_multicast.erl:288
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "ejabberd Multicast Dienst"
 
 #: mod_offline.erl:783
 msgid "~s's Offline Messages Queue"
@@ -1374,7 +1368,7 @@ msgstr "PubSub-Abonnenten-Anfrage"
 
 #: mod_pubsub.erl:1544
 msgid "Choose whether to approve this entity's subscription."
-msgstr "Wähle Sie, ob dieses Abonnement akzeptiert werden soll."
+msgstr "Wählen sie, ob dieses Abonnement akzeptiert werden soll."
 
 #: mod_pubsub.erl:1560
 msgid "Node ID"
@@ -1451,7 +1445,7 @@ msgstr "Maximale Nutzlastgrösse in Bytes"
 
 #: mod_pubsub.erl:3732
 msgid "When to send the last published item"
-msgstr "Wann soll das letzte veröffentlichte Objekt gesendet werden"
+msgstr "Wann das letzte veröffentlichte Objekt gesendet werden soll"
 
 #: mod_pubsub.erl:3734
 msgid "Only deliver notifications to available users"
@@ -1477,7 +1471,7 @@ msgstr "Ihr Jabber Konto wurde erfolgreich erstellt."
 
 #: mod_register_web.erl:110
 msgid "There was an error creating the account: "
-msgstr "Es trat ein Fehler beim erstellen des Kontos auf:"
+msgstr "Es trat ein Fehler beim Erstellen des Kontos auf: "
 
 #: mod_register_web.erl:119
 msgid "Your Jabber account was successfully deleted."
@@ -1485,7 +1479,7 @@ msgstr "Ihr Jabber Konto wurde erfolgreich gelöscht."
 
 #: mod_register_web.erl:124
 msgid "There was an error deleting the account: "
-msgstr "Es trat ein Fehler beim Löschen des Kontos auf:"
+msgstr "Es trat ein Fehler beim Löschen des Kontos auf: "
 
 #: mod_register_web.erl:135
 msgid "The password of your Jabber account was successfully changed."
@@ -1493,7 +1487,7 @@ msgstr "Das Passwort von ihrem Jabber Konto wurde geändert."
 
 #: mod_register_web.erl:140
 msgid "There was an error changing the password: "
-msgstr "Es trat ein Fehler beim Ändern des Passworts auf:"
+msgstr "Es trat ein Fehler beim Ändern des Passworts auf: "
 
 #: mod_register_web.erl:175 mod_register_web.erl:183
 msgid "Jabber Account Registration"
@@ -1599,7 +1593,7 @@ msgstr "Abonnement"
 
 #: mod_roster.erl:1438
 msgid "Pending"
-msgstr "anhängig"
+msgstr "Schwebend"
 
 #: mod_roster.erl:1439
 msgid "Groups"
@@ -1679,7 +1673,7 @@ msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
 msgstr ""
-"Füllen Sie die Felder aus, um nach passenden Jabber-Benutzern zu suchen "
+"Füllen sie die Felder aus, um nach passenden Jabber-Benutzern zu suchen "
 "(beenden Sie ein Feld mit *, um auch nach Teilzeichenketten zu suchen)"
 
 #: mod_vcard.erl:490 mod_vcard.erl:615
@@ -1692,7 +1686,7 @@ msgstr "Zweiter Vorname"
 
 #: mod_vcard.erl:490 mod_vcard.erl:626
 msgid "Organization Name"
-msgstr "Organisation"
+msgstr "Name der Organisation"
 
 #: mod_vcard.erl:490 mod_vcard.erl:628
 msgid "Organization Unit"
@@ -1723,7 +1717,7 @@ msgstr "Suchergebnisse für "
 #: mod_vcard_ldap.erl:502
 msgid "Fill in fields to search for any matching Jabber User"
 msgstr ""
-"Füllen Sie die Felder aus, um nach passenden Jabber-Benutzern zu suchen"
+"Füllen sie die Felder aus, um nach bestimmten Jabber-Benutzern zu suchen"
 
 #~ msgid "Delete"
 #~ msgstr "Löschen"
