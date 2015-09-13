@@ -35,6 +35,9 @@
 -include("logger.hrl").
 
 start() ->
+    file:delete(ejabberd_odbc:freetds_config()),
+    file:delete(ejabberd_odbc:odbc_config()),
+    file:delete(ejabberd_odbc:odbcinst_config()),
     case lists:any(fun(H) -> needs_odbc(H) /= false end,
                    ?MYHOSTS) of
         true ->
@@ -77,11 +80,13 @@ needs_odbc(Host) ->
                                     fun(mysql) -> mysql;
                                        (pgsql) -> pgsql;
                                        (sqlite) -> sqlite;
+				       (mssql) -> mssql;
                                        (odbc) -> odbc
                                     end, undefined) of
         mysql -> {true, p1_mysql};
         pgsql -> {true, p1_pgsql};
         sqlite -> {true, sqlite3};
+	mssql -> {true, odbc};
         odbc -> {true, odbc};
         undefined -> false
     end.
@@ -90,6 +95,7 @@ opt_type(odbc_type) ->
     fun (mysql) -> mysql;
 	(pgsql) -> pgsql;
 	(sqlite) -> sqlite;
+	(mssql) -> mssql;
 	(odbc) -> odbc
     end;
 opt_type(_) -> [odbc_type].

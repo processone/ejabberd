@@ -651,6 +651,7 @@ opt_type(odbc_type) ->
     fun (pgsql) -> pgsql;
 	(mysql) -> mysql;
 	(sqlite) -> sqlite;
+	(mssql) -> mssql;
 	(odbc) -> odbc
     end;
 opt_type(pgsql_users_number_estimate) ->

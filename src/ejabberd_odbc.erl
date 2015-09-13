@@ -46,6 +46,10 @@
 	 sqlite_file/1,
          encode_term/1,
          decode_term/1,
+	 odbc_config/0,
+	 freetds_config/0,
+	 odbcinst_config/0,
+	 init_mssql/1,
 	 keep_alive/1]).
 
 %% gen_fsm callbacks
@@ -62,7 +66,7 @@
 
 -record(state,
 	{db_ref = self()                     :: pid(),
-         db_type = odbc                      :: pgsql | mysql | sqlite | odbc,
+         db_type = odbc                      :: pgsql | mysql | sqlite | odbc | mssql,
          start_interval = 0                  :: non_neg_integer(),
          host = <<"">>                       :: binary(),
 	 max_pending_requests_len            :: non_neg_integer(),
@@ -77,6 +81,8 @@
 -define(PGSQL_PORT, 5432).
 
 -define(MYSQL_PORT, 3306).
+
+-define(MSSQL_PORT, 1433).
 
 -define(MAX_TRANSACTION_RESTARTS, 10).
 
@@ -665,6 +671,7 @@ db_opts(Host) ->
                                       fun(mysql) -> mysql;
                                          (pgsql) -> pgsql;
                                          (sqlite) -> sqlite;
+					 (mssql) -> mssql;
                                          (odbc) -> odbc
                                       end, odbc),
     Server = ejabberd_config:get_option({odbc_server, Host},
@@ -680,6 +687,7 @@ db_opts(Host) ->
                      {odbc_port, Host},
                      fun(P) when is_integer(P), P > 0, P < 65536 -> P end,
                      case Type of
+			 mssql -> ?MSSQL_PORT;
                          mysql -> ?MYSQL_PORT;
                          pgsql -> ?PGSQL_PORT
                      end),
@@ -692,8 +700,95 @@ db_opts(Host) ->
             Pass = ejabberd_config:get_option({odbc_password, Host},
                                               fun iolist_to_binary/1,
                                               <<"">>),
+	    case Type of
+		mssql ->
+		    Username = get_mssql_user(Server, User),
+		    [odbc, <<"DSN=", Host/binary, ";UID=", Username/binary,
+			     ";PWD=", Pass/binary>>];
+		_ ->
             [Type, Server, Port, DB, User, Pass]
+	    end
     end.
+
+init_mssql(Host) ->
+    Server = ejabberd_config:get_option({odbc_server, Host},
+                                        fun iolist_to_binary/1,
+                                        <<"localhost">>),
+    Port = ejabberd_config:get_option(
+	     {odbc_port, Host},
+	     fun(P) when is_integer(P), P > 0, P < 65536 -> P end,
+	     ?MSSQL_PORT),
+    DB = ejabberd_config:get_option({odbc_database, Host},
+				    fun iolist_to_binary/1,
+				    <<"ejabberd">>),
+    FreeTDS = io_lib:fwrite("[~s]~n"
+			    "\thost = ~s~n"
+			    "\tport = ~p~n"
+			    "\ttds version = 7.1~n",
+			    [Host, Server, Port]),
+    ODBCINST = io_lib:fwrite("[freetds]~n"
+			     "Description = MSSQL connection~n"
+			     "Driver = libtdsodbc.so~n"
+			     "Setup = libtdsS.so~n"
+			     "UsageCount = 1~n"
+			     "FileUsage = 1~n", []),
+    ODBCINI = io_lib:fwrite("[~s]~n"
+			    "Description = MS SQL~n"
+			    "Driver = freetds~n"
+			    "Servername = ~s~n"
+			    "Database = ~s~n"
+			    "Port = ~p~n",
+			    [Host, Host, DB, Port]),
+    ?DEBUG("~s:~n~s", [freetds_config(), FreeTDS]),
+    ?DEBUG("~s:~n~s", [odbcinst_config(), ODBCINST]),
+    ?DEBUG("~s:~n~s", [odbc_config(), ODBCINI]),
+    case filelib:ensure_dir(freetds_config()) of
+	ok ->
+	    try
+		ok = file:write_file(freetds_config(), FreeTDS, [append]),
+		ok = file:write_file(odbcinst_config(), ODBCINST),
+		ok = file:write_file(odbc_config(), ODBCINI, [append]),
+		os:putenv("ODBCSYSINI", tmp_dir()),
+		os:putenv("FREETDS", freetds_config()),
+		os:putenv("FREETDSCONF", freetds_config()),
+		ok
+	    catch error:{badmatch, {error, Reason} = Err} ->
+		    ?ERROR_MSG("failed to create temporary files in ~s: ~s",
+			       [tmp_dir(), file:format_error(Reason)]),
+		    Err
+	    end;
+	{error, Reason} = Err ->
+	    ?ERROR_MSG("failed to create temporary directory ~s: ~s",
+		       [tmp_dir(), file:format_error(Reason)]),
+	    Err
+    end.
+
+get_mssql_user(Server, User) ->
+    HostName = case inet_parse:address(binary_to_list(Server)) of
+		   {ok, _} ->
+		       Server;
+		   {error, _} ->
+		       hd(str:tokens(Server, <<".">>))
+	       end,
+    UserName = case str:chr(User, $@) of
+		   0 ->
+		       <<User/binary, $@, HostName/binary>>;
+		   _ ->
+		       User
+	       end,
+    UserName.
+
+tmp_dir() ->
+    filename:join(["/tmp", "ejabberd"]).
+
+odbc_config() ->
+    filename:join(tmp_dir(), "odbc.ini").
+
+freetds_config() ->
+    filename:join(tmp_dir(), "freetds.conf").
+
+odbcinst_config() ->
+    filename:join(tmp_dir(), "odbcinst.ini").
 
 max_fsm_queue() ->
     ejabberd_config:get_option(
@@ -719,6 +814,7 @@ opt_type(odbc_type) ->
     fun (mysql) -> mysql;
 	(pgsql) -> pgsql;
 	(sqlite) -> sqlite;
+	(mssql) -> mssql;
 	(odbc) -> odbc
     end;
 opt_type(odbc_username) -> fun iolist_to_binary/1;
