@@ -432,13 +432,13 @@ outer_transaction(F, NRestarts, _Reason) ->
 		     [T]),
 	  erlang:exit(implementation_faulty)
     end,
-    sql_query_internal(<<"begin;">>),
+    sql_query_internal([<<"begin;">>]),
     put(?NESTING_KEY, PreviousNestingLevel + 1),
     Result = (catch F()),
     put(?NESTING_KEY, PreviousNestingLevel),
     case Result of
       {aborted, Reason} when NRestarts > 0 ->
-	  sql_query_internal(<<"rollback;">>),
+	  sql_query_internal([<<"rollback;">>]),
 	  outer_transaction(F, NRestarts - 1, Reason);
       {aborted, Reason} when NRestarts =:= 0 ->
 	  ?ERROR_MSG("SQL transaction restarts exceeded~n** "
@@ -447,11 +447,11 @@ outer_transaction(F, NRestarts, _Reason) ->
 		     "== ~p",
 		     [?MAX_TRANSACTION_RESTARTS, Reason,
 		      erlang:get_stacktrace(), get(?STATE_KEY)]),
-	  sql_query_internal(<<"rollback;">>),
+	  sql_query_internal([<<"rollback;">>]),
 	  {aborted, Reason};
       {'EXIT', Reason} ->
-	  sql_query_internal(<<"rollback;">>), {aborted, Reason};
-      Res -> sql_query_internal(<<"commit;">>), {atomic, Res}
+	  sql_query_internal([<<"rollback;">>]), {aborted, Reason};
+      Res -> sql_query_internal([<<"commit;">>]), {atomic, Res}
     end.
 
 execute_bloc(F) ->
@@ -463,6 +463,7 @@ execute_bloc(F) ->
 
 sql_query_internal(Query) ->
     State = get(?STATE_KEY),
+    ?DEBUG("SQL: \"~s\"", [Query]),
     Res = case State#state.db_type of
 	    odbc ->
 		to_odbc(odbc:sql_query(State#state.db_ref, Query,
@@ -512,8 +513,10 @@ abort_on_driver_error(Reply, From) ->
 %% Open an ODBC database connection
 odbc_connect(SQLServer) ->
     ejabberd:start_app(odbc),
-    odbc:connect(binary_to_list(SQLServer), [{scrollable_cursors, off},
-                                             {binary_strings, on}]).
+    odbc:connect(binary_to_list(SQLServer),
+		 [{scrollable_cursors, off},
+		  {tuple_row, off},
+		  {binary_strings, on}]).
 
 %% == Native SQLite code
 
@@ -638,7 +641,15 @@ mysql_item_to_odbc(Columns, Recs) ->
     {selected, [element(2, Column) || Column <- Columns], Recs}.
 
 to_odbc({selected, Columns, Recs}) ->
-    {selected, [list_to_binary(Column) || Column <- Columns], [tuple_to_list(Rec) || Rec <- Recs]};
+    Rows = [lists:map(
+	      fun(I) when is_integer(I) ->
+		      jlib:integer_to_binary(I);
+		 (B) ->
+		      B
+	      end, Row) || Row <- Recs],
+    {selected, [list_to_binary(C) || C <- Columns], Rows};
+to_odbc({error, Reason}) when is_list(Reason) ->
+    {error, list_to_binary(Reason)};
 to_odbc(Res) ->
     Res.
 
