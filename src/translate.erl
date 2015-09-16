@@ -91,6 +91,16 @@ load_file(Lang, File) ->
 
 load_file_loop(Fd, Line, File, Lang) ->
     case io:read(Fd, '', Line) of
+        {ok,{Orig, Trans, Context}, NextLine} ->
+            Trans1 = case Trans of
+                         <<"">> -> Orig;
+                         _ -> Trans
+                     end,
+            ets:insert(translations,
+                       {{Lang, iolist_to_binary(Orig)},
+                        {iolist_to_binary(Trans1),
+                         iolist_to_binary(Context)}}),
+            load_file_loop(Fd, NextLine, File, Lang);
         {ok,{Orig, Trans}, NextLine} ->
             Trans1 = case Trans of
                          <<"">> -> Orig;
@@ -128,9 +138,12 @@ load_file_loop(Fd, Line, File, Lang) ->
 
 -spec translate(binary(), binary()) -> binary().
 
+translate(Lang, Msg, Context) ->
+    translate(Lang, {Msg, Context}).
 translate(Lang, Msg) ->
     LLang = ascii_tolower(Lang),
     case ets:lookup(translations, {LLang, Msg}) of
+      [{_, {Trans, _Context}}] -> Trans;
       [{_, Trans}] -> Trans;
       _ ->
 	  ShortLang = case str:tokens(LLang, <<"-">>) of
@@ -138,10 +151,11 @@ translate(Lang, Msg) ->
 			[SL | _] -> SL
 		      end,
 	  case ShortLang of
-	    <<"en">> -> Msg;
+	    <<"en">> -> return_orig(Msg);
 	    LLang -> translate(Msg);
 	    _ ->
 		case ets:lookup(translations, {ShortLang, Msg}) of
+		  [{_, {Trans, _Context}}] -> Trans;
 		  [{_, Trans}] -> Trans;
 		  _ -> translate(Msg)
 		end
@@ -150,10 +164,11 @@ translate(Lang, Msg) ->
 
 translate(Msg) ->
     case ?MYLANG of
-      <<"en">> -> Msg;
+      <<"en">> -> return_orig(Msg);
       Lang ->
 	  LLang = ascii_tolower(Lang),
 	  case ets:lookup(translations, {LLang, Msg}) of
+	    [{_, {Trans, _Context}}] -> Trans;
 	    [{_, Trans}] -> Trans;
 	    _ ->
 		ShortLang = case str:tokens(LLang, <<"-">>) of
@@ -161,16 +176,20 @@ translate(Msg) ->
 			      [SL | _] -> SL
 			    end,
 		case ShortLang of
-		  <<"en">> -> Msg;
-		  Lang -> Msg;
+		  <<"en">> -> return_orig(Msg);
+		  Lang -> return_orig(Msg);
 		  _ ->
 		      case ets:lookup(translations, {ShortLang, Msg}) of
+			[{_, {Trans, _Context}}] -> Trans;
 			[{_, Trans}] -> Trans;
-			_ -> Msg
+			_ -> return_orig(Msg)
 		      end
 		end
 	  end
     end.
+
+return_orig({Msg, _Context}) -> Msg;
+return_orig(Msg) -> Msg.
 
 ascii_tolower(B) ->
     iolist_to_binary(ascii_tolower_s(binary_to_list(B))).
