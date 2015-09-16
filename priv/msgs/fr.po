@@ -245,9 +245,8 @@ msgid "Change Password"
 msgstr "Modifier le mot de passe"
 
 #: ejabberd_web_admin.erl:1610
-#, fuzzy
 msgid "User ~s"
-msgstr "Utilisateur "
+msgstr "Utilisateur ~s"
 
 #: ejabberd_web_admin.erl:1621
 msgid "Connected Resources:"
