@@ -28,7 +28,7 @@
 -author('alexey@process-one.net').
 
 -export([start/0, load_dir/1, load_file/2,
-	 translate/2]).
+	 translate/2, translate/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
