@@ -1,0 +1,9 @@
+<!DOCTYPE html> 
+<html>
+<h1>{% blocktrans %}Rooms with logs available{% endblocktrans %}</h1>
+{% for r in rooms %}
+<a class="roomname" href="{{prefix}}{{r.2.1}}@{{r.2.2}}/">{{r.2.1}}</a><br/>
+{% empty %}
+<span class="emptyroomlist">{% blocktrans %}Sorry, no room has logging configured at this host{% endblocktrans %}</span>
+{% endfor %}
+</html>

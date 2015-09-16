@@ -1,9 +1,0 @@
-<!DOCTYPE html> 
-<html>
-<h1>{{ title }}</h1>
-
-{% for y in dates %} 
-<a class="yearlink" id="{{y.1}}" href="#{{y.1}}">{{y.1}}</a>
-{% for m in y.2 %} <a class="monthlink" id="{{y.1}}{{m.3|date:"m"}}" href="{% if year != "" %}../{%endif%}{{y.1}}/{{m.3|date:"m"}}/">{{ m.3|date:"F"}}</a>{% endfor %}
-{% endfor %}
-<html>
