@@ -335,6 +335,7 @@ init([Sid, Key, IP, HOpts]) ->
     SOpts = lists:filtermap(fun({stream_managment, _}) -> true;
                                ({max_ack_queue, _}) -> true;
                                ({resume_timeout, _}) -> true;
+                               ({max_resume_timeout, _}) -> true;
                                ({resend_on_timeout, _}) -> true;
                                (_) -> false
                             end, HOpts),
