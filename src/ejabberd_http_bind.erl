@@ -16,7 +16,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/3,
+-export([start_link/4,
 	 init/1,
 	 handle_event/3,
 	 handle_sync_event/4,
@@ -35,13 +35,13 @@
 	 change_shaper/2,
 	 monitor/1,
 	 close/1,
-	 start/4,
+	 start/5,
 	 handle_session_start/8,
 	 handle_http_put/7,
 	 http_put/7,
 	 http_get/2,
 	 prepare_response/4,
-	 process_request/2]).
+	 process_request/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -140,17 +140,17 @@
 %%%----------------------------------------------------------------------
 %% TODO: If compile with no supervisor option, start the session without
 %%       supervisor
-start(XMPPDomain, Sid, Key, IP) ->
+start(XMPPDomain, Sid, Key, IP, HOpts) ->
     ?DEBUG("Starting session", []),
     SupervisorProc = gen_mod:get_module_proc(XMPPDomain, ?PROCNAME_MHB),
-    case catch supervisor:start_child(SupervisorProc, [Sid, Key, IP]) of
+    case catch supervisor:start_child(SupervisorProc, [Sid, Key, IP, HOpts]) of
     	{ok, Pid} -> {ok, Pid};
 	_ -> check_bind_module(XMPPDomain),
              {error, "Cannot start HTTP bind session"}
     end.
 
-start_link(Sid, Key, IP) ->
-    gen_fsm:start_link(?MODULE, [Sid, Key, IP], ?FSMOPTS).
+start_link(Sid, Key, IP, HOpts) ->
+    gen_fsm:start_link(?MODULE, [Sid, Key, IP, HOpts], ?FSMOPTS).
 
 send({http_bind, FsmRef, _IP}, Packet) ->
     gen_fsm:sync_send_all_state_event(FsmRef,
@@ -197,7 +197,7 @@ peername({http_bind, _FsmRef, IP}) -> {ok, IP}.
 
 
 %% Entry point for data coming from client through ejabberd HTTP server:
-process_request(Data, IP) ->
+process_request(Data, IP, HOpts) ->
     Opts1 = ejabberd_c2s_config:get_c2s_limits(),
     Opts = [{xml_socket, true} | Opts1],
     MaxStanzaSize = case lists:keysearch(max_stanza_size, 1,
@@ -221,7 +221,7 @@ process_request(Data, IP) ->
 		   (?NS_HTTP_BIND)/binary, "'/>">>};
 	    XmppDomain ->
 		Sid = p1_sha:sha(term_to_binary({now(), make_ref()})),
-		case start(XmppDomain, Sid, <<"">>, IP) of
+                  case start(XmppDomain, Sid, <<"">>, IP, HOpts) of
 		  {error, _} ->
 		      {500, ?HEADER,
 		       <<"<body type='terminate' condition='internal-se"
@@ -329,10 +329,17 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 %%          ignore                              |
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
-init([Sid, Key, IP]) ->
+init([Sid, Key, IP, HOpts]) ->
     ?DEBUG("started: ~p", [{Sid, Key, IP}]),
     Opts1 = ejabberd_c2s_config:get_c2s_limits(),
-    Opts = [{xml_socket, true} | Opts1],
+    SOpts = lists:filtermap(fun({stream_managment, _}) -> true;
+                               ({max_ack_queue, _}) -> true;
+                               ({resume_timeout, _}) -> true;
+                               ({resend_on_timeout, _}) -> true;
+                               (_) -> false
+                            end, HOpts),
+
+    Opts = [{xml_socket, true} | SOpts ++ Opts1],
     Shaper = none,
     ShaperState = shaper:new(Shaper),
     Socket = {http_bind, self(), IP},

@@ -45,4 +45,5 @@
 	 headers = []            :: [{atom() | binary(), binary()}],
 	 local_path = []         :: [binary()],
 	 q = []                  :: [{binary() | nokey, binary()}],
-	 buf                     :: binary()}).
+	 buf                     :: binary(),
+         http_opts = []          :: list()}).

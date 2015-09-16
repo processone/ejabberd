@@ -88,7 +88,8 @@ check(_Path, Headers) ->
     end.
 
 socket_handoff(LocalPath, #request{method = 'GET', ip = IP, q = Q, path = Path,
-                                   headers = Headers, host = Host, port = Port},
+                                   headers = Headers, host = Host, port = Port,
+                                   opts = HOpts},
                Socket, SockMod, Buf, _Opts, HandlerModule, InfoMsgFun) ->
     case check(LocalPath, Headers) of
         true ->
@@ -101,7 +102,8 @@ socket_handoff(LocalPath, #request{method = 'GET', ip = IP, q = Q, path = Path,
                      path = Path,
                      headers = Headers,
                      local_path = LocalPath,
-                     buf = Buf},
+                     buf = Buf,
+                     http_opts = HOpts},
 
             connect(WS, HandlerModule);
         _ ->
