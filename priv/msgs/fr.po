@@ -5,7 +5,7 @@ msgstr ""
 "PO-Revision-Date: \n"
 "Last-Translator: Nicolas Vérité <nicolas.verite@gmail.com>\n"
 "Language-Team: \n"
-"Language: \n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -13,6 +13,7 @@ msgstr ""
 "X-Additional-Translator: Christophe Romain\n"
 "X-Additional-Translator: Mickaël Rémond\n"
 "X-Additional-Translator: Vincent Ricard\n"
+"X-Generator: Poedit 1.8.4\n"
 
 #: ejabberd_c2s.erl:528 ejabberd_c2s.erl:875
 msgid "Use of STARTTLS required"
@@ -33,7 +34,7 @@ msgstr "a été expulsé"
 
 #: ejabberd_c2s.erl:2490
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "Trop de stanzas sans accusé de réception (ack)"
 
 #: ejabberd_captcha.erl:129 ejabberd_captcha.erl:252 ejabberd_captcha.erl:297
 msgid "Enter the text you see"
@@ -126,8 +127,7 @@ msgstr "Serveurs virtuels"
 msgid "Users"
 msgstr "Utilisateurs"
 
-#: ejabberd_web_admin.erl:891 ejabberd_web_admin.erl:1275
-#: mod_configure.erl:524
+#: ejabberd_web_admin.erl:891 ejabberd_web_admin.erl:1275 mod_configure.erl:524
 msgid "Online Users"
 msgstr "Utilisateurs en ligne"
 
@@ -159,8 +159,7 @@ msgstr "Montrer la table ordinaire"
 msgid "Show Integral Table"
 msgstr "Montrer la table intégralement"
 
-#: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785
-#: mod_muc_admin.erl:246
+#: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785 mod_muc_admin.erl:246
 msgid "Statistics"
 msgstr "Statistiques"
 
@@ -184,8 +183,8 @@ msgstr "Serveur"
 msgid "Registered Users"
 msgstr "Utilisateurs enregistrés"
 
-#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393
-#: mod_register.erl:262 mod_vcard.erl:490
+#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393 mod_register.erl:262
+#: mod_vcard.erl:490
 msgid "User"
 msgstr "Utilisateur"
 
@@ -280,9 +279,8 @@ msgid "Stopped Nodes"
 msgstr "Noeuds arrêtés"
 
 #: ejabberd_web_admin.erl:1771 ejabberd_web_admin.erl:1796
-#, fuzzy
 msgid "Node ~p"
-msgstr "Noeud "
+msgstr "Noeud ~p"
 
 #: ejabberd_web_admin.erl:1780 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -319,9 +317,8 @@ msgid "RPC Call Error"
 msgstr "Erreur d'appel RPC"
 
 #: ejabberd_web_admin.erl:1855
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Tables de base de données sur "
+msgstr "Tables de base de données sur ~p"
 
 #: ejabberd_web_admin.erl:1865 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -344,9 +341,8 @@ msgid "Error"
 msgstr "Erreur"
 
 #: ejabberd_web_admin.erl:1893
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "Sauvegarde de "
+msgstr "Sauvegarde de ~p"
 
 #: ejabberd_web_admin.erl:1897
 msgid ""
@@ -408,7 +404,7 @@ msgstr ""
 
 #: ejabberd_web_admin.erl:1998
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "Exporter toutes les tables en tant que requêtes SQL vers un fichier:"
 
 #: ejabberd_web_admin.erl:2014
 msgid "Import user data from jabberd14 spool file:"
@@ -423,9 +419,8 @@ msgid "Listened Ports at "
 msgstr "Ports ouverts sur "
 
 #: ejabberd_web_admin.erl:2082
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "Modules sur "
+msgstr "Modules sur ~p"
 
 #: ejabberd_web_admin.erl:2113
 msgid "Statistics of ~p"
@@ -456,9 +451,8 @@ msgid "Transactions Logged:"
 msgstr "Transactions journalisées :"
 
 #: ejabberd_web_admin.erl:2181
-#, fuzzy
 msgid "Update ~p"
-msgstr "Mise à jour "
+msgstr "Mise à jour de ~p"
 
 #: ejabberd_web_admin.erl:2192
 msgid "Update plan"
@@ -840,10 +834,12 @@ msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
+"Trop (~p) d'authentification ont échoué pour cette adresse IP (~s). "
+"L'adresse sera débloquée à ~s UTC"
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "Cette adresse IP est blacklistée dans ~s"
 
 #: mod_irc.erl:431
 msgid "IRC Transport"
@@ -970,8 +966,8 @@ msgstr "Enregistrement d'un pseudo sur "
 msgid "Enter nickname you want to register"
 msgstr "Entrez le pseudo que vous souhaitez enregistrer"
 
-#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436
-#: mod_vcard.erl:490 mod_vcard.erl:621
+#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436 mod_vcard.erl:490
+#: mod_vcard.erl:621
 msgid "Nickname"
 msgstr "Pseudo"
 
@@ -982,26 +978,23 @@ msgstr "Module MUC ejabberd"
 #: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
 #: mod_muc_admin.erl:319
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "Discussion de groupe"
 
 #: mod_muc_admin.erl:248
-#, fuzzy
 msgid "Total rooms"
-msgstr "Salons de discussion"
+msgstr "Nombre de salons"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "quitte le salon"
+msgstr "Salons persistent"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "Utilisateurs enregistrés"
+msgstr "Pseudos enregistrés"
 
 #: mod_muc_admin.erl:253
 msgid "List of rooms"
-msgstr ""
+msgstr "Liste des salons"
 
 #: mod_muc_log.erl:445 mod_muc_log.erl:454
 msgid "Chatroom configuration modified"
@@ -1236,13 +1229,12 @@ msgid "Allow users to send private messages"
 msgstr "Autoriser les utilisateurs à envoyer des messages privés"
 
 #: mod_muc_room.erl:3479
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Autoriser les utilisateurs à envoyer des messages privés"
+msgstr "Autoriser les visiteurs à envoyer des messages privés"
 
 #: mod_muc_room.erl:3497
 msgid "nobody"
-msgstr ""
+msgstr "personne"
 
 #: mod_muc_room.erl:3522
 msgid "Allow users to query other users"
@@ -1262,13 +1254,12 @@ msgid "Allow visitors to change nickname"
 msgstr "Autoriser les visiteurs à changer de pseudo"
 
 #: mod_muc_room.erl:3535
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Permettre aux utilisateurs d'envoyer des invitations"
+msgstr "Permettre aux visiteurs d'envoyer des demandes de 'voice'"
 
 #: mod_muc_room.erl:3538
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Intervalle minimum entre les demandes de 'voice' (en secondes)"
 
 #: mod_muc_room.erl:3545
 msgid "Make room CAPTCHA protected"
@@ -1276,11 +1267,11 @@ msgstr "Protéger le salon par un CAPTCHA"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Activer l'archivage de messages"
 
 #: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Exempter des Jabberd IDs du test CAPTCHA"
 
 #: mod_muc_room.erl:3567
 msgid "Enable logging"
@@ -1301,20 +1292,19 @@ msgstr "privé"
 
 #: mod_muc_room.erl:4237
 msgid "Voice request"
-msgstr ""
+msgstr "Demande de 'voice'"
 
 #: mod_muc_room.erl:4242
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Approuver ou refuser la demande de 'voice'"
 
 #: mod_muc_room.erl:4262
-#, fuzzy
 msgid "User JID"
-msgstr "Utilisateur "
+msgstr "JID de l'utilisateur "
 
 #: mod_muc_room.erl:4266
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Accorder 'voice' à cet utilisateur"
 
 #: mod_muc_room.erl:4409
 msgid "~s invites you to the room ~s"
@@ -1326,11 +1316,11 @@ msgstr "le mot de passe est"
 
 #: mod_multicast.erl:273
 msgid "Multicast"
-msgstr ""
+msgstr "Multidiffusion"
 
 #: mod_multicast.erl:288
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "Service de Multidiffusion d'ejabberd"
 
 #: mod_offline.erl:783
 msgid "~s's Offline Messages Queue"
