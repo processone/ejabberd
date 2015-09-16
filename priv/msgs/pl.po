@@ -3,9 +3,9 @@ msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: Zbyszek Żółkiewski <zzolkiewski@process-one.net>\n"
+"Last-Translator: Paweł Chmielowski <pchmielowski@process-one.net>\n"
 "Language-Team: \n"
-"Language: \n"
+"Language: pl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -14,6 +14,7 @@ msgstr ""
 "X-Additional-Translator: Marcin Owsiany\n"
 "X-Additional-Translator: Andrzej Smyk\n"
 "X-Additional-Translator: Mateusz Gajewski\n"
+"X-Generator: Poedit 1.8.4\n"
 
 #: ejabberd_c2s.erl:528 ejabberd_c2s.erl:875
 msgid "Use of STARTTLS required"
@@ -34,7 +35,7 @@ msgstr "został wyrzucony"
 
 #: ejabberd_c2s.erl:2490
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "Zbyt wiele niepotwierdzonych pakietów"
 
 #: ejabberd_captcha.erl:129 ejabberd_captcha.erl:252 ejabberd_captcha.erl:297
 msgid "Enter the text you see"
@@ -126,8 +127,7 @@ msgstr "Wirtualne Hosty"
 msgid "Users"
 msgstr "Użytkownicy"
 
-#: ejabberd_web_admin.erl:891 ejabberd_web_admin.erl:1275
-#: mod_configure.erl:524
+#: ejabberd_web_admin.erl:891 ejabberd_web_admin.erl:1275 mod_configure.erl:524
 msgid "Online Users"
 msgstr "Użytkownicy zalogowani"
 
@@ -159,8 +159,7 @@ msgstr "Pokaż zwykłą tabelę"
 msgid "Show Integral Table"
 msgstr "Pokaż tabelę całkowitą"
 
-#: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785
-#: mod_muc_admin.erl:246
+#: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785 mod_muc_admin.erl:246
 msgid "Statistics"
 msgstr "Statystyki"
 
@@ -184,8 +183,8 @@ msgstr "Host"
 msgid "Registered Users"
 msgstr "Użytkownicy zarejestrowani"
 
-#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393
-#: mod_register.erl:262 mod_vcard.erl:490
+#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393 mod_register.erl:262
+#: mod_vcard.erl:490
 msgid "User"
 msgstr "Użytkownik"
 
@@ -246,9 +245,8 @@ msgid "Change Password"
 msgstr "Zmień hasło"
 
 #: ejabberd_web_admin.erl:1610
-#, fuzzy
 msgid "User ~s"
-msgstr "Użytkownik "
+msgstr "Użytkownik ~s"
 
 #: ejabberd_web_admin.erl:1621
 msgid "Connected Resources:"
@@ -280,9 +278,8 @@ msgid "Stopped Nodes"
 msgstr "Zatrzymane węzły"
 
 #: ejabberd_web_admin.erl:1771 ejabberd_web_admin.erl:1796
-#, fuzzy
 msgid "Node ~p"
-msgstr "Węzeł "
+msgstr "Węzeł ~p"
 
 #: ejabberd_web_admin.erl:1780 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -319,9 +316,8 @@ msgid "RPC Call Error"
 msgstr "Błąd żądania RPC"
 
 #: ejabberd_web_admin.erl:1855
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Tabele bazy na "
+msgstr "Tabele bazy na ~p"
 
 #: ejabberd_web_admin.erl:1865 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -344,9 +340,8 @@ msgid "Error"
 msgstr "Błąd"
 
 #: ejabberd_web_admin.erl:1893
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "Kopia zapasowa "
+msgstr "Kopia zapasowa ~p"
 
 #: ejabberd_web_admin.erl:1897
 msgid ""
@@ -407,7 +402,7 @@ msgstr ""
 
 #: ejabberd_web_admin.erl:1998
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "Wyeksportuj wszystkie tabele jako zapytania SQL do pliku:"
 
 #: ejabberd_web_admin.erl:2014
 msgid "Import user data from jabberd14 spool file:"
@@ -422,9 +417,8 @@ msgid "Listened Ports at "
 msgstr "Porty nasłuchujące na "
 
 #: ejabberd_web_admin.erl:2082
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "Moduły na "
+msgstr "Moduły na ~p"
 
 #: ejabberd_web_admin.erl:2113
 msgid "Statistics of ~p"
@@ -455,9 +449,8 @@ msgid "Transactions Logged:"
 msgstr "Transakcje zalogowane:"
 
 #: ejabberd_web_admin.erl:2181
-#, fuzzy
 msgid "Update ~p"
-msgstr "Uaktualnij "
+msgstr "Uaktualnij ~p"
 
 #: ejabberd_web_admin.erl:2192
 msgid "Update plan"
@@ -839,10 +832,12 @@ msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
+"Zbyt wiele (~p) nieudanych prób logowanie z tego adresu IP (~s). Ten adres "
+"zostanie odblokowany o ~s UTC"
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "Ten adres IP został zablokowany w ~s"
 
 #: mod_irc.erl:431
 msgid "IRC Transport"
@@ -966,8 +961,8 @@ msgstr "Rejestracja nazwy użytkownika na "
 msgid "Enter nickname you want to register"
 msgstr "Wprowadz nazwę użytkownika którego chcesz zarejestrować"
 
-#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436
-#: mod_vcard.erl:490 mod_vcard.erl:621
+#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436 mod_vcard.erl:490
+#: mod_vcard.erl:621
 msgid "Nickname"
 msgstr "Nazwa użytkownika"
 
@@ -978,26 +973,23 @@ msgstr "Moduł MUC"
 #: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
 #: mod_muc_admin.erl:319
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "Wieloosobowa rozmowa"
 
 #: mod_muc_admin.erl:248
-#, fuzzy
 msgid "Total rooms"
-msgstr "Pokoje rozmów"
+msgstr "Wszystkich pokoi"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "opuszcza pokój"
+msgstr "Stałych pokoi"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "Użytkownicy zarejestrowani"
+msgstr "Zarejestrowanych nicków"
 
 #: mod_muc_admin.erl:253
 msgid "List of rooms"
-msgstr ""
+msgstr "Lista pokoi"
 
 #: mod_muc_log.erl:445 mod_muc_log.erl:454
 msgid "Chatroom configuration modified"
@@ -1267,7 +1259,7 @@ msgstr "Pokój zabezpieczony captchą"
 
 #: mod_muc_room.erl:3552
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Włącz archiwizowanie rozmów"
 
 #: mod_muc_room.erl:3558
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1315,11 +1307,11 @@ msgstr "hasło to:"
 
 #: mod_multicast.erl:273
 msgid "Multicast"
-msgstr ""
+msgstr "Multicast"
 
 #: mod_multicast.erl:288
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "Serwis multicast ejabbera"
 
 #: mod_offline.erl:783
 msgid "~s's Offline Messages Queue"
