@@ -41,22 +41,7 @@
 -include("jlib.hrl").
 -include("logger.hrl").
 -include("mod_muc_room.hrl").
-
--record(archive_msg,
-        {us = {<<"">>, <<"">>}                :: {binary(), binary()} | '$2',
-         id = <<>>                            :: binary() | '_',
-         timestamp = now()                    :: erlang:timestamp() | '_' | '$1',
-         peer = {<<"">>, <<"">>, <<"">>}      :: ljid() | '_' | '$3',
-         bare_peer = {<<"">>, <<"">>, <<"">>} :: ljid() | '_' | '$3',
-	 packet = #xmlel{}                    :: xmlel() | '_',
-	 nick = <<"">>                        :: binary(),
-	 type = chat                          :: chat | groupchat}).
-
--record(archive_prefs,
-        {us = {<<"">>, <<"">>} :: {binary(), binary()},
-         default = never       :: never | always | roster,
-         always = []           :: [ljid()],
-         never = []            :: [ljid()]}).
+-include("mod_mam.hrl").
 
 %%%===================================================================
 %%% API

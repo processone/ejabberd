@@ -62,7 +62,7 @@ Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
         {p1_stun, ".*", {git, "https://github.com/processone/stun"}},
         {p1_yaml, ".*", {git, "https://github.com/processone/p1_yaml"}},
         {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}},
-	{erlydtl, ".*", {git, "https://github.com/oxpa/erlydtl", {branch, "gb_tree"}},[raw]}
+	{erlydtl, ".*", {git, "https://github.com/erlydtl/erlydtl" },[raw]}
 	],
 
 ConfigureCmd = fun(Pkg, Flags) ->

@@ -23,6 +23,10 @@
                                          {'_', binary()} | '_',
          pid = self()                 :: pid() | '$2' | '_' | '$1'}).
 
+-record(muc_room, {name_host = {<<"">>, <<"">>} :: {binary(), binary()} |
+                                                   {'_', binary()},
+                   opts = [] :: list() | '_'}).
+
 -record(archive_msg,
         {us = {<<"">>, <<"">>}                :: {binary(), binary()} | '$2',
          id = <<>>                            :: binary() | '_',
