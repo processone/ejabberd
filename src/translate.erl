@@ -97,9 +97,9 @@ load_file_loop(Fd, Line, File, Lang) ->
                          _ -> Trans
                      end,
             ets:insert(translations,
-                       {{Lang, iolist_to_binary(Orig)},
-                        {iolist_to_binary(Trans1),
-                         iolist_to_binary(Context)}}),
+                       {Lang, {iolist_to_binary(Orig),
+                        iolist_to_binary(Trans1)},
+                         iolist_to_binary(Context)}),
             load_file_loop(Fd, NextLine, File, Lang);
         {ok,{Orig, Trans}, NextLine} ->
             Trans1 = case Trans of
@@ -143,7 +143,6 @@ translate(Lang, Msg, Context) ->
 translate(Lang, Msg) ->
     LLang = ascii_tolower(Lang),
     case ets:lookup(translations, {LLang, Msg}) of
-      [{_, {Trans, _Context}}] -> Trans;
       [{_, Trans}] -> Trans;
       _ ->
 	  ShortLang = case str:tokens(LLang, <<"-">>) of
@@ -155,7 +154,6 @@ translate(Lang, Msg) ->
 	    LLang -> translate(Msg);
 	    _ ->
 		case ets:lookup(translations, {ShortLang, Msg}) of
-		  [{_, {Trans, _Context}}] -> Trans;
 		  [{_, Trans}] -> Trans;
 		  _ -> translate(Msg)
 		end
@@ -168,7 +166,6 @@ translate(Msg) ->
       Lang ->
 	  LLang = ascii_tolower(Lang),
 	  case ets:lookup(translations, {LLang, Msg}) of
-	    [{_, {Trans, _Context}}] -> Trans;
 	    [{_, Trans}] -> Trans;
 	    _ ->
 		ShortLang = case str:tokens(LLang, <<"-">>) of
@@ -180,7 +177,6 @@ translate(Msg) ->
 		  Lang -> return_orig(Msg);
 		  _ ->
 		      case ets:lookup(translations, {ShortLang, Msg}) of
-			[{_, {Trans, _Context}}] -> Trans;
 			[{_, Trans}] -> Trans;
 			_ -> return_orig(Msg)
 		      end
