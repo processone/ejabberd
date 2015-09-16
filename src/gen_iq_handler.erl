@@ -44,9 +44,9 @@
 
 -record(state, {host, module, function}).
 
--type component() :: ejabberd_sm | ejabberd_local.
+%%-type component() :: ejabberd_sm | ejabberd_local.
 -type type() :: no_queue | one_queue | pos_integer() | parallel.
--type opts() :: no_queue | {one_queue, pid()} | {queues, [pid()]} | parallel.
+%%-type opts() :: no_queue | {one_queue, pid()} | {queues, [pid()]} | parallel.
 
 %%====================================================================
 %% API

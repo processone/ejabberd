@@ -1912,7 +1912,7 @@ set_form(From, Host,
 						Server)
 		of
 	      [] ->
-		  _US = {User, Server},
+%%		  _US = {User, Server},
 		  case get_last_info(User, Server) of
 		    not_found -> ?T(Lang, <<"Never">>);
 		    {ok, Timestamp, _Status} ->
