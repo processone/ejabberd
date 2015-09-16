@@ -120,12 +120,7 @@ read_file(File) ->
                      {include_modules_configs, true}]).
 
 read_file(File, Opts) ->
-    Terms1 = get_plain_terms_file(File, Opts),
-    Terms_macros = case proplists:get_bool(replace_macros, Opts) of
-                       true -> replace_macros(Terms1);
-                       false -> Terms1
-                   end,
-    Terms = transform_terms(Terms_macros),
+    Terms = get_plain_terms_file(File, Opts),
     State = lists:foldl(fun search_hosts/2, #state{}, Terms),
     {Head, Tail} = lists:partition(
                      fun({host_config, _}) -> false;
@@ -211,11 +206,16 @@ get_plain_terms_file(File1, Opts) ->
                              []
                      end,
             BinTerms = BinTerms1 ++ [{include_config_file, list_to_binary(V)} || V <- ModInc],
+            BinTerms2 = case proplists:get_bool(replace_macros, Opts) of
+                            true -> replace_macros(BinTerms);
+                            false -> BinTerms
+                        end,
+            BinTerms3 = transform_terms(BinTerms2),
             case proplists:get_bool(include_files, Opts) of
                 true ->
-                    include_config_files(BinTerms);
+                    include_config_files(BinTerms3);
                 false ->
-                    BinTerms
+                    BinTerms3
             end;
 	{error, Reason} ->
 	    ?ERROR_MSG(Reason, []),
@@ -740,6 +740,7 @@ get_option(Opt, F, Default) ->
 
 get_modules_with_options() ->
     {ok, Mods} = application:get_key(ejabberd, modules),
+    ExtMods = [Name || {Name, _Details} <- ext_mod:installed()],
     lists:foldl(
       fun(Mod, D) ->
 	      case catch Mod:opt_type('') of
@@ -751,7 +752,7 @@ get_modules_with_options() ->
 		  {'EXIT', {undef, _}} ->
 		      D
 	      end
-      end, dict:new(), [?MODULE|Mods]).
+      end, dict:new(), [?MODULE|ExtMods++Mods]).
 
 validate_opts(#state{opts = Opts} = State) ->
     ModOpts = get_modules_with_options(),

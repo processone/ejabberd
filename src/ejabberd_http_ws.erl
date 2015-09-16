@@ -111,8 +111,14 @@ socket_handoff(LocalPath, Request, Socket, SockMod, Buf, Opts) ->
 
 %%% Internal
 
-init([{#ws{ip = IP}, _} = WS]) ->
-    Opts = [{xml_socket, true} | ejabberd_c2s_config:get_c2s_limits()],
+init([{#ws{ip = IP, http_opts = HOpts}, _} = WS]) ->
+    SOpts = lists:filtermap(fun({stream_managment, _}) -> true;
+                               ({max_ack_queue, _}) -> true;
+                               ({resume_timeout, _}) -> true;
+                               ({resend_on_timeout, _}) -> true;
+                               (_) -> false
+                            end, HOpts),
+    Opts = [{xml_socket, true} | ejabberd_c2s_config:get_c2s_limits() ++ SOpts],
     PingInterval = ejabberd_config:get_option(
                      {websocket_ping_interval, ?MYNAME},
                      fun(I) when is_integer(I), I>=0 -> I end,
