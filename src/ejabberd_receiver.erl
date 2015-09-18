@@ -159,8 +159,13 @@ handle_call({starttls, TLSSocket}, _From,
 		   c2s_pid = C2SPid,
 		   max_stanza_size = MaxStanzaSize} = State) ->
     close_stream(XMLStreamState),
-    NewXMLStreamState = xml_stream:new(C2SPid,
-				       MaxStanzaSize),
+    NewXMLStreamState = case C2SPid of
+                            undefined ->
+                                XMLStreamState;
+                            _ ->
+                                xml_stream:new(C2SPid,
+                                               MaxStanzaSize)
+                        end,
     NewState = State#state{socket = TLSSocket,
 			   sock_mod = p1_tls,
 			   xml_stream_state = NewXMLStreamState},
@@ -347,7 +352,12 @@ process_data(Data,
 		    shaper_state = ShaperState, c2s_pid = C2SPid} =
 		 State) ->
     ?DEBUG("Received XML on stream = ~p", [(Data)]),
-    XMLStreamState1 = xml_stream:parse(XMLStreamState, Data),
+    XMLStreamState1 = case XMLStreamState of
+                          undefined ->
+                              XMLStreamState;
+                          _ ->
+                              xml_stream:parse(XMLStreamState, Data)
+                      end,
     {NewShaperState, Pause} = shaper:update(ShaperState, byte_size(Data)),
     if
 	C2SPid == undefined ->
