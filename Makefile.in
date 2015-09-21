@@ -137,9 +137,9 @@ install: all
 	$(INSTALL) -m 550 $(G_USER) ejabberdctl.example $(SBINDIR)/ejabberdctl
 	# Elixir binaries
 	[ -d $(BINDIR) ] || $(INSTALL) -d -m 755 $(BINDIR)
-	-[ -f deps/elixir/bin/iex ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/iex $(BINDIR)/iex
-	-[ -f deps/elixir/bin/elixir ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/elixir $(BINDIR)/elixir
-	-[ -f deps/elixir/bin/mix ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/mix $(BINDIR)/mix
+	[ -f deps/elixir/bin/iex ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/iex $(BINDIR)/iex || true
+	[ -f deps/elixir/bin/elixir ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/elixir $(BINDIR)/elixir || true
+	[ -f deps/elixir/bin/mix ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/mix $(BINDIR)/mix || true
 	#
 	# Init script
 	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*" \
@@ -168,22 +168,23 @@ install: all
 	$(INSTALL) -m 750 $(O_USER) tools/captcha.sh $(PBINDIR)
 	$(INSTALL) -m 750 $(O_USER) tools/joincluster $(PBINDIR)
 	$(INSTALL) -m 750 $(O_USER) tools/leavecluster $(PBINDIR)
-	-[ -f deps/p1_pam/priv/bin/epam ] \
-		&& $(INSTALL) -m 750 $(O_USER) deps/p1_pam/priv/bin/epam $(PBINDIR)
+	[ -f deps/p1_pam/priv/bin/epam ] \
+		&& $(INSTALL) -m 750 $(O_USER) deps/p1_pam/priv/bin/epam $(PBINDIR) \
+		|| true
 	#
 	# Binary system libraries
 	$(INSTALL) -d $(SODIR)
 	$(INSTALL) -m 644 $(DLLs) $(SODIR)
-	-[ -f $(SODIR)/jiffy.so ] && (cd $(PRIVDIR); ln -s lib/jiffy.so; true)
-	-[ -f $(SODIR)/sqlite3_drv.so ] && (cd $(PRIVDIR); ln -s lib/sqlite3_drv.so; true)
+	[ -f $(SODIR)/jiffy.so ] && (cd $(PRIVDIR); ln -s lib/jiffy.so; true) || true
+	[ -f $(SODIR)/sqlite3_drv.so ] && (cd $(PRIVDIR); ln -s lib/sqlite3_drv.so; true) || true
 	#
 	# Translated strings
 	$(INSTALL) -d $(MSGSDIR)
 	$(INSTALL) -m 644 priv/msgs/*.msg $(MSGSDIR)
 	#
 	# Copy lite.sql
-	-[ -d deps/sqlite3 ] && $(INSTALL) -d $(SQLDIR)
-	-[ -d deps/sqlite3 ] && $(INSTALL) -m 644 sql/lite.sql $(SQLDIR)
+	[ -d deps/sqlite3 ] && $(INSTALL) -d $(SQLDIR) || true
+	[ -d deps/sqlite3 ] && $(INSTALL) -m 644 sql/lite.sql $(SQLDIR) || true
 	#
 	# Spool directory
 	$(INSTALL) -d -m 750 $(O_USER) $(SPOOLDIR)
