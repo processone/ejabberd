@@ -1,5 +1,26 @@
-<h1>{{ title }}</h1>
-<h1>{{year}} {{ month.3|date:"F"}}</h1>
+<!DOCTYPE html>
+<html>
+<head>
+<title>{{muc_name}}: {{ month.3|date:"F"}} {{year}}</title>
+<style type="text/css">
+a.nav {color: #AAAAAA; font-family: monospace; letter-spacing: 3px; text-decoration: none;}
+div.roomtitle {border-bottom: #224466 solid 3pt; margin-left: 20pt;}
+.roomtitle {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; text-decoration: none;}
+h1.roomtitle {margin-left: 10px;}
+.daylink {margin-left: 15px; color: #336699; font-size: 18px; font-family: sans-serif;}
+a.roomjid {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; margin-left: 20pt; text-decoration: none;}
+div.logdate {color: #663399; font-size: 20px; font-weight: bold; font-family: sans-serif; letter-spacing: 2px; border-bottom: #224466 solid 1pt; margin-left:80pt; margin-top:20px;}
+div.roomsubject {color: #336699; font-size: 18px; font-family: sans-serif; margin-left: 80pt; margin-bottom: 10px;}
+</style>
+</head>
+<body>
+<div style="text-align: right;"><a style="color: #AAAAAA; font-family: monospace; text-decoration: none; font-weight: bold;" href="{{prefix}}../../../">Home</a></div>
+<div class="roomtitle"><a class="roomjid" href="xmpp:{{muc_name}}?join">{{ title }}</a></div>
+<br/>
+<div class="roomsubject">{{description}}</div>
+<br/>
+
+<h1 class="roomtitle">{{year}} {{ month.3|date:"F"}}</h1>
 {% for d in month.2 %}<a class="daylink" id="{{d}}" href="{{prefix}}{{d}}.html">{{d}}</a><br/>
 {% endfor %}
 

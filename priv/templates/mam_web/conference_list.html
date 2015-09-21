@@ -1,9 +1,21 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html>
-<h1>{% blocktrans %}Rooms with logs available{% endblocktrans %}</h1>
+<head>
+<title>{% trans "A list of rooms with logs available" context "title" %}</title>
+<style type="text/css">
+a.nav {color: #AAAAAA; font-family: monospace; letter-spacing: 3px; text-decoration: none;}
+div.roomtitle {border-bottom: #224466 solid 3pt; margin-left: 20pt;}
+.roomtitle {color: #336699; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; text-decoration: none;}
+h1.roomtitle {margin-left: 10px;}
+.roomname {margin-left: 18px; color: #336699; font-size: 18px; font-family: sans-serif;}
+a.roomjid {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; margin-left: 20pt; text-decoration: none;}
+div.logdate {color: #663399; font-size: 20px; font-weight: bold; font-family: sans-serif; letter-spacing: 2px; border-bottom: #224466 solid 1pt; margin-left:80pt; margin-top:20px;}
+div.roomsubject {color: #336699; font-size: 18px; font-family: sans-serif; margin-left: 80pt; margin-bottom: 10px;}
+</style>
+<h1 class="roomtitle">{% trans "Rooms with logs available" %}</h1>
 {% for r in rooms %}
 <a class="roomname" href="{{prefix}}{{r.2.1}}@{{r.2.2}}/">{{r.2.1}}</a><br/>
 {% empty %}
-<span class="emptyroomlist">{% blocktrans %}Sorry, no room has logging configured at this host{% endblocktrans %}</span>
+<span class="emptyroomlist">{% trans "Sorry, no room has logging configured at this host" %}</span>
 {% endfor %}
 </html>

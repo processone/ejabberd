@@ -24,11 +24,12 @@
 %%%
 %%%-------------------------------------------------------------------
 -module(mod_mam_web).
--compile([debug_info,export_all]).
+%-compile([debug_info,export_all]).
 
 -behaviour(gen_mod).
 
--export([process/2]).
+-export([process/2, reload_templates/1, reload_templates/0, get_translations/1]).
+-export([start/2, stop/1, mod_opt_type/1, opt_type/1]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("jlib.hrl").
@@ -44,16 +45,7 @@
 %%% This is used to do some preparations
 %%%===================================================================
 start(Host, _Opts) -> 
-    ?DEBUG("Compiling MAM Web templates for ~p",[Host]),
-    TemplateDir = gen_mod:get_module_opt(Host, ?MODULE, templates_dir,
-                                          fun erlang:binary_to_list/1,
-                                           "priv/templates/mam_web/"),
-    
-    erlydtl:compile_dir(TemplateDir, 
-                        erlang:binary_to_atom(<<"mam_web_", Host/binary>>, utf8),
-                        [{record_info, [{html_msg, record_info(fields, html_msg)},
-                                         {muc_room, record_info(fields, muc_room)} 
-                          ] }] ),
+    reload_templates(Host),
     ok.
 
 stop(_) -> ok.
@@ -61,6 +53,54 @@ stop(_) -> ok.
 %%%===================================================================
 %%% API
 %%%===================================================================
+get_translations(Host) ->
+    ?DEBUG("Listing strings for trasnaltion in WEB MAM templates for ~p",[Host]),
+    L1 = case catch erlang:apply(
+                 erlang:binary_to_atom(<<"mam_web_", Host/binary>>, utf8),
+                 translatable_strings,
+                 []) of
+             L when is_list(L) -> L;
+             {'EXIT', _Err} -> ?DEBUG("Caught internal server error."
+                                     " Got: ~p",[_Err]), [];
+             _Err -> ?DEBUG("Internal server error listing translations."
+                            " Got: ~p",[_Err]), []
+         end,
+    L2 = case catch erlang:apply(
+                 erlang:binary_to_atom(<<"mam_web_", Host/binary>>, utf8),
+                 translated_blocks,
+                 []) of
+             L5 when is_list(L5) -> L5;
+             {'EXIT',_Err2} -> ?DEBUG("Caught internal server error."
+                                     " Got: ~p",[_Err2]), [];
+             _Err2 -> ?DEBUG("Internal server error rendering."
+                            " Got: ~p",[_Err2]), []
+         end,
+     L1 ++ L2.
+
+mod_opt_type(templates_dir) -> fun erlang:binary_to_list/1;
+mod_opt_type(jslinkify) -> fun(B) when is_boolean(B) -> B end;
+mod_opt_type(_) -> [templates_dir, jslinkify].
+opt_type(templates_dir) -> fun erlang:binary_to_list/1;
+opt_type(jslinkify) -> fun(B) when is_boolean(B) -> B end;
+opt_type(_) -> [templates_dir, jslinkify].
+    
+reload_templates() ->
+    lists:foreach(fun reload_templates/1, ?MYHOSTS).
+reload_templates(Host) ->
+    ?DEBUG("Compiling MAM Web templates for ~p",[Host]),
+    TemplateDir = gen_mod:get_module_opt(Host, ?MODULE, templates_dir,
+                                          fun erlang:binary_to_list/1,
+                                           "priv/templates/mam_web/"),
+    JS = gen_mod:get_module_opt(Host, ?MODULE, jslinkify,
+                               fun(B) when is_boolean(B) -> B end,
+                               true),
+    erlydtl:compile_dir(TemplateDir, 
+                        erlang:binary_to_atom(<<"mam_web_", Host/binary>>, utf8),
+                        [{record_info, [{html_msg, record_info(fields, html_msg)},
+                                         {muc_room, record_info(fields, muc_room)}]}
+                        ,{auto_escape, JS}
+                        ] ).
+    
 process([<<"conferences">>], #request{method = 'GET'} = R) ->
     RD = get_request_details(R),
     Rooms = ets:select(muc_online_room, make_room_match(RD#rd.muchost)),
@@ -82,23 +122,21 @@ process([<<"conferences">>, MUC_Name | T], R=#request{method = 'GET'}) ->
         end,
     case muc_logs_enabled(MUC) of
         true  -> render_muc_mam(MUC, T, RD);
-        false -> ?DEBUG("Logs not found for ~p", [MUC]), ?NOT_FOUND
+        false -> ?DEBUG("Logs not found for ~p", [MUC]), http_not_found()
     end;
 
 process([<<"users">> | _], #request{method = 'GET'}) ->
     %TODO: list user logs. AAA
-    {204, ?HEADER,
-     #xmlel{name = <<"h1">>, 
-            children = [{xmlcdata,<<"">> }]}};
+    http_no_data();
 
 %% Some "default behaviour" functions.
 process([], #request{method = 'OPTIONS', data = <<>>}) ->
-    {200, [], <<>>};
+    http_ok(<<>>);
 process([], #request{method = 'HEAD'}) ->
-    ?OK(<<>>);
+    http_ok(<<>>);
 process(_Path, _Request) ->
     ?DEBUG("Bad Request at ~p: ~p", [_Path, _Request]),
-    ?BAD_REQUEST.
+    http_bad_request().
 
 %%%===================================================================
 %%% Internal functions
@@ -174,7 +212,7 @@ render_muc_mam(#muc_online_room{} = MUC, [Year], RD) ->
                   {title, muc_title(MUC)},
                   {description, muc_description(MUC)}
                 ]);
-     _ -> ?NOT_FOUND
+     _ -> http_not_found()
      end;
 
 % list of days
@@ -183,7 +221,7 @@ render_muc_mam(#muc_online_room{} = MUC, [Y, M], RD) ->
                   proplists:get_value(list_to_integer(binary:bin_to_list(Y)),
                    get_distinct_dates(MUC, {days,{Y,M}}, RD#rd.dbtype), [])),
      case Month of 
-         false -> ?NOT_FOUND;
+         false -> http_not_found();
              _ -> render(conference_month, RD,  
                    [ {muc_name, muc_to_string(MUC)},
                      {year, Y},
@@ -201,7 +239,7 @@ render_muc_mam(#muc_online_room{} = MUC, [Y, M, D], RD) ->
         {{Yi, _}, {Mi, _}, {Di, _}} 
         when is_integer(Yi), is_integer(Mi), is_integer(Di) ->
             case calendar:valid_date(Yi, Mi, Di) of
-              false -> ?NOT_FOUND;
+              false -> http_not_found();
                true -> Msgs = get_messages(MUC, Yi, Mi, Di, RD#rd.dbtype),
                        render(conference_day, RD, [
                                {header, muc_to_string(MUC)},
@@ -210,29 +248,29 @@ render_muc_mam(#muc_online_room{} = MUC, [Y, M, D], RD) ->
                                {messages, Msgs},
                                {prefix, RD#rd.prefix}])
             end;
-         _ -> ?NOT_FOUND
+         _ -> http_not_found()
     end;
 
 % catch all case
 render_muc_mam(_MUC, _Tail, _DB) ->
     ?DEBUG("Got wrong request for ~p, with tail ~p.", [_MUC, _Tail]),
-    ?NOT_FOUND.
+    http_not_found().
 
 render(Template, RD, VarList) ->
     render(Template, RD, 
            [{prefix, RD#rd.prefix}|VarList], % prefix is required everywhere...
            [{locale, RD#rd.lang}
-           ,{translation_fun, fun translate/2}]
-          ).
+           ,{translation_fun, fun translate/2}
+           ]).
 render(Template, RD, VarList, Options) ->
     Host = RD#rd.host, 
     case catch erlang:apply(
                  erlang:binary_to_atom(<<"mam_web_", Host/binary>>, utf8),
                  Template,
                  [VarList, Options]) of
-             L when is_list(L) -> ?OK(L);
+             L when is_list(L) -> http_ok(L);
              {'EXIT',_ERR} -> ?DEBUG("Internal server error rendering. Got: ~p",[_ERR]),
-                              ?SERVER_ERROR
+                              http_server_error()
          end.
 
 
@@ -247,11 +285,11 @@ get_messages(MUC, Y, M, D, {odbc, Server}) ->
             , <<"' and timestamp >= ">>, jlib:integer_to_binary(now_to_usec(Start))
             , <<"  and timestamp <= ">>, jlib:integer_to_binary(now_to_usec(End))
             , <<";">>]) of
-         {selected, _, L} -> lists:map(fun archive_to_html_message/1, L);
+         {selected, _, L} -> lists:map(to_html_message(Server), L);
             {error, R} -> ?DEBUG("An error occured with a query: ~p", [R]), [];
                     _  -> ?DEBUG("Something strange with a query",[]), []
     end;
-get_messages(MUC, Y, M, D, {mnesia, _}) ->
+get_messages(MUC, Y, M, D, {mnesia, Server}) ->
     Seconds = calendar:datetime_to_gregorian_seconds(
                     {{Y,M,D}, {0,0,0}}) - 62167219200,
     Start = {Seconds div 1000000, Seconds rem 1000000, 0},
@@ -260,7 +298,7 @@ get_messages(MUC, Y, M, D, {mnesia, _}) ->
     MS = make_matchspec(element(1, MUC#muc_online_room.name_host), 
                         element(2, MUC#muc_online_room.name_host),
                         Start, End),
-    lists:map(fun archive_to_html_message/1, 
+    lists:map(to_html_message(Server), 
                   mnesia:dirty_select(archive_msg, MS)).
 
 store_months_day(YearNum, MonthNum, Day, Dict) ->
@@ -325,25 +363,50 @@ get_distinct_dates(MUC, _, {mnesia, _}) ->
     lod_of_dates_to_lol(LOD).
     
 
+to_html_message(Server) ->
+    JsLinkify = gen_mod:get_module_opt(Server, ?MODULE, jslinkify,
+                               fun(B) when is_boolean(B) -> B end,
+                               true),
+    fun (Text) -> archive_to_html_message(Text, not JsLinkify) end.
+
+linkify(Text, false) -> 
+    Text;
+linkify(Text, true) -> 
+    S2 = ejabberd_regexp:greplace(Text, <<"\\&">>,
+                                  <<"\\&amp;">>),
+    S3 = ejabberd_regexp:greplace(S2, <<"<">>,
+                                  <<"\\&lt;">>),
+    S4 = ejabberd_regexp:greplace(S3, <<">">>,
+                                  <<"\\&gt;">>),
+    S5 = ejabberd_regexp:greplace(S4,
+                                  <<"((http|https|ftp)://|(mailto|xmpp):)"
+                                    "i([^] )'\"}]|&(?!(lt;|gt;|amp)))+">>,
+                                   <<"<a href=\"&\" rel=\"nofollow\">&</a>">>),
+    S6 = ejabberd_regexp:greplace(S5, <<"  ">>,
+                                  <<"\\&nbsp;\\&nbsp;">>),
+    S7 = ejabberd_regexp:greplace(S6, <<"\\t">>,
+                                  <<"\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;">>),
+    ejabberd_regexp:greplace(S7, <<226, 128, 174>>,
+                             <<"[RLO]">>).
+
 % used for odbc, which may have text pre-extracted
-archive_to_html_message([TS, Nick, <<>>, XML]) ->
+archive_to_html_message([TS, Nick, <<>>, XML], _Linkify) ->
     #xmlel{} = El = xml_stream:parse_element(XML),
     Now = usec_to_now(erlang:binary_to_integer(TS)),
-    archive_to_html_message(
-           #archive_msg{timestamp = Now,
-                            packet = El,
-                            nick = Nick}
-    );
+    archive_to_html_message(#archive_msg{timestamp = Now,
+                                             packet = El,
+                                              nick = Nick},
+                            false);
 
-archive_to_html_message([TS, Nick, Txt, _]) ->
+archive_to_html_message([TS, Nick, Txt, _], Linkify) ->
     Now = usec_to_now(erlang:binary_to_integer(TS)),
     #html_msg{type = text,
          nick = Nick,
          timestamp = calendar:now_to_local_time(Now),
          ms = element(3, Now),
-         text = Txt
+         text = linkify(Txt,Linkify)
     };
-archive_to_html_message(#archive_msg{} = Msg) ->
+archive_to_html_message(#archive_msg{} = Msg, Linkify) ->
     {Type, Txt} =
       case {xml:get_subtag_cdata(Msg#archive_msg.packet, <<"subject">>),
             xml:get_subtag_cdata(Msg#archive_msg.packet, <<"body">>)}
@@ -361,13 +424,31 @@ archive_to_html_message(#archive_msg{} = Msg) ->
          nick = Msg#archive_msg.nick,
          timestamp = calendar:now_to_local_time(Msg#archive_msg.timestamp),
          ms = element(3, Msg#archive_msg.timestamp),
-         text = Txt
+         text = linkify(Txt, Linkify)
     }.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% HTTP specific functions: various stand returns
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+http_ct_html() ->      {<<"Content-Type">>, <<"text/html; charset=utf-8">>}.
+http_header() -> [http_ct_html()].
+http_no_data() -> {204, http_header(), <<>>}.
+http_ok(Data) -> {200, http_header(), Data}.
+http_bad_request() -> {400, http_header(), #xmlel{name = <<"h1">>,
+                 children = [{xmlcdata,<<"400 Bad Request">>}]}}.
+%http_access_denied() -> {403, http_header(), #xmlel{name = <<"h1">>,
+%                 children = [{xmlcdata,<<"403 Access Denied">>}]}}.
+http_not_found() ->  {404, http_header(), #xmlel{name = <<"h1">>,
+                 children = [{xmlcdata,<<"404 Not Found">>}]}}.
+http_server_error() -> {503, http_header(), #xmlel{name = <<"h1">>,
+                 children = [{xmlcdata,<<"503 Internal Server Error">>}]}}.
 
 translate(Msg, {Locale, _Context}) ->
+    %% ?DEBUG("translating ~p into ~p, avoid context: ~p", [Msg, Locale, _Context]),
     translate:translate(Locale, Msg);
 translate(Msg, Locale) ->
-    ?DEBUG("translating ~p into ~p", [Msg, Locale]),
+    %% ?DEBUG("translating ~p into ~p", [Msg, Locale]),
     translate:translate(Locale, erlang:list_to_binary(Msg)).
 
 
@@ -417,3 +498,4 @@ muc_to_string(#muc_online_room{} = M) ->
 get_path_prefix(List) -> get_path_prefix(List,["/"]).
 get_path_prefix([H | T], Acc) -> get_path_prefix(T, "/"++[H|Acc]);
 get_path_prefix([], Acc) -> lists:reverse(Acc).
+

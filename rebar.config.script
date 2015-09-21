@@ -62,7 +62,7 @@ Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
         {p1_stun, ".*", {git, "https://github.com/processone/stun"}},
         {p1_yaml, ".*", {git, "https://github.com/processone/p1_yaml"}},
         {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}},
-	{erlydtl, ".*", {git, "https://github.com/erlydtl/erlydtl" },[raw]}
+	{erlydtl, ".*", {git, "https://github.com/oxpa/erlydtl.git", "module_trans" }}
 	],
 
 ConfigureCmd = fun(Pkg, Flags) ->
@@ -71,11 +71,11 @@ ConfigureCmd = fun(Pkg, Flags) ->
                             " && ./configure" ++ Flags ++ "'"}
                end,
 
-MakeCmd = fun(Pkg, Flags) ->
-                       {'get-deps',
-                        "sh -c 'cd deps/" ++ Pkg ++
-                            " && make " ++ Flags ++ "'"}
-               end,
+%MakeCmd = fun(Pkg, Flags) ->
+%                       {'get-deps',
+%                        "sh -c 'cd deps/" ++ Pkg ++
+%                            " && make " ++ Flags ++ "'"}
+%               end,
 
 
 XMLFlags = lists:foldl(
@@ -91,8 +91,8 @@ PostHooks = [ConfigureCmd("p1_tls", ""),
              ConfigureCmd("p1_stringprep", ""),
              ConfigureCmd("p1_yaml", ""),
 	     ConfigureCmd("esip", ""),
-             ConfigureCmd("p1_xml", XMLFlags),
-             MakeCmd("erlydtl","")],
+             ConfigureCmd("p1_xml", XMLFlags)],
+             %MakeCmd("erlydtl","")],
 
 CfgDeps = lists:flatmap(
             fun({mysql, true}) ->
@@ -191,7 +191,7 @@ Config = [{erl_opts, Macros ++ HiPE ++ DebugInfo ++
 	     ++ string:join(CfgXrefs, " - ") ++ ")", []}]},
           {post_hooks, PostHooks ++ CfgPostHooks},
           {deps, Deps ++ CfgDeps}] ++ ElixirConfig,
-%%io:format("ejabberd configuration:~n  ~p~n", [Config]),
+%io:format("ejabberd configuration:~n  ~p~n", [Config]),
 Config.
 
 %% Local Variables:

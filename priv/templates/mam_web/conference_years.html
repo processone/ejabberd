@@ -1,9 +1,31 @@
 <!DOCTYPE html> 
 <html>
-<h1>{{ title }}</h1>
+<head>
+<title>{{muc_name}}</title>
+<style type="text/css">
+a.nav {color: #AAAAAA; font-family: monospace; letter-spacing: 3px; text-decoration: none;}
+div.roomtitle {border-bottom: #224466 solid 3pt; margin-left: 20pt;}
+.roomtitle {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; text-decoration: none;}
+.yearlink {color: #336699; font-size: 18px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; text-decoration: none;}
+h1.roomtitle {margin-left: 10px;}
+.monthlink {margin-left: 5px; color: #336699; font-size: 15px; font-family: sans-serif;}
+a.roomjid {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; margin-left: 20pt; text-decoration: none;}
+div.roomsubject {color: #336699; font-size: 18px; font-family: sans-serif; margin-left: 80pt; margin-bottom: 10px;}
+</style>
+</head>
+</head>
+<body>
+
+<div style="text-align: right;"><a style="color: #AAAAAA; font-family: monospace; text-decoration: none; font-weight: bold;" href="{{prefix}}../">Home</a></div>
+<div class="roomtitle"><a class="roomjid" href="xmpp:{{muc_name}}?join">{{ title }}</a></div>
+<br/>
+<div class="roomsubject">{{description}}</div>
+<br/>
+
 
 {% for y in dates %} 
-<a class="yearlink" id="{{y.1}}" href="#{{y.1}}">{{y.1}}</a>
-{% for m in y.2 %} <a class="monthlink" id="{{y.1}}{{m.3|date:"m"}}" href="{{prefix}}{% if year != "" %}../{%endif%}{{y.1}}/{{m.3|date:"m"}}/">{{ _(m.3|date:"E")}}</a>{% endfor %}
+<br/><a class="yearlink" id="{{y.1}}" href="#{{y.1}}">{{y.1}}</a>
+{% for m in y.2 %} <a class="monthlink" id="{{y.1}}{{m.3|date:"m"}}" href="{{prefix}}{% if year != "" %}../{%endif%}{{y.1}}/{{m.3|date:"m"}}/">{{m.3|date:"E"}}</a>{% endfor %}
 {% endfor %}
-<html>
+</body>
+</html>
