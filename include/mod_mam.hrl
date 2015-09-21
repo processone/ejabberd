@@ -50,16 +50,3 @@
         timestamp = calendar:local_time() :: calendar:datetime(),
         ms   = 0               :: 0..999999 }).
 
--define(CT_HTML,
-        {<<"Content-Type">>, <<"text/html; charset=utf-8">>}).
--define(HEADER, [?CT_HTML]).
--define(OK(Data), {200, ?HEADER, Data}).
--define(BAD_REQUEST, {400, ?HEADER, #xmlel{name = <<"h1">>,
-                 children = [{xmlcdata,<<"400 Bad Request">>}]}}).
--define(ACC_DENIED, {403, ?HEADER, #xmlel{name = <<"h1">>,
-                 children = [{xmlcdata,<<"403 Access Denied">>}]}}).
--define(NOT_FOUND, {404, ?HEADER, #xmlel{name = <<"h1">>,
-                 children = [{xmlcdata,<<"404 Not Found">>}]}}).
--define(SERVER_ERROR, {503, ?HEADER, #xmlel{name = <<"h1">>,
-                 children = [{xmlcdata,<<"503 Internal Server Error">>}]}}).
-

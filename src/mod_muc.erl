@@ -42,7 +42,6 @@
 	 restore_room/3,
 	 forget_room/3,
 	 create_room/5,
-         get_rooms_by_vhost/1,
          shutdown_rooms/1,
 	 process_iq_disco_items/4,
 	 broadcast_service_message/2,
@@ -139,15 +138,6 @@ room_destroyed(Host, Room, Pid, ServerHost) ->
 create_room(Host, Name, From, Nick, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:call(Proc, {create, Name, From, Nick, Opts}).
-
-
-%%% @doc List  rooms for a server
-get_rooms_by_vhost(VHost) when is_binary(VHost) ->
-    MUCHost = gen_mod:get_module_opt_host(VHost,
-                                       mod_muc, <<"conference.@HOST@">>),
-    get_rooms(VHost, MUCHost, gen_mod:db_type(VHost, ?MODULE));
-get_rooms_by_vhost(_) -> [].
-
 
 store_room(ServerHost, Host, Name, Opts) ->
     LServer = jlib:nameprep(ServerHost),

@@ -71,13 +71,6 @@ ConfigureCmd = fun(Pkg, Flags) ->
                             " && ./configure" ++ Flags ++ "'"}
                end,
 
-%MakeCmd = fun(Pkg, Flags) ->
-%                       {'get-deps',
-%                        "sh -c 'cd deps/" ++ Pkg ++
-%                            " && make " ++ Flags ++ "'"}
-%               end,
-
-
 XMLFlags = lists:foldl(
              fun({nif, true}, Acc) ->
                      Acc ++ " --enable-nif";
@@ -92,7 +85,6 @@ PostHooks = [ConfigureCmd("p1_tls", ""),
              ConfigureCmd("p1_yaml", ""),
 	     ConfigureCmd("esip", ""),
              ConfigureCmd("p1_xml", XMLFlags)],
-             %MakeCmd("erlydtl","")],
 
 CfgDeps = lists:flatmap(
             fun({mysql, true}) ->
@@ -191,7 +183,7 @@ Config = [{erl_opts, Macros ++ HiPE ++ DebugInfo ++
 	     ++ string:join(CfgXrefs, " - ") ++ ")", []}]},
           {post_hooks, PostHooks ++ CfgPostHooks},
           {deps, Deps ++ CfgDeps}] ++ ElixirConfig,
-%io:format("ejabberd configuration:~n  ~p~n", [Config]),
+%%io:format("ejabberd configuration:~n  ~p~n", [Config]),
 Config.
 
 %% Local Variables:
