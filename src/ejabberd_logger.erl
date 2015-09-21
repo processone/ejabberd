@@ -157,7 +157,8 @@ set(LogLevel) when is_integer(LogLevel) ->
                         2 -> error;
                         3 -> warning;
                         4 -> info;
-                        5 -> debug
+                        5 -> debug;
+			E ->  throw({wrong_loglevel, E})
                     end,
     case lager:get_loglevel(lager_console_backend) of
         LagerLogLevel ->
@@ -194,8 +195,10 @@ reopen_log() ->
 get() ->
     p1_loglevel:get().
 
+set(LogLevel) when LogLevel >=0, LogLevel =< 5 ->
+    p1_loglevel:set(LogLevel);
 set(LogLevel) ->
-    p1_loglevel:set(LogLevel).
+    throw({wrong_loglevel, LogLevel}).
 
 %%%===================================================================
 %%% Internal functions

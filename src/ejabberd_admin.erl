@@ -29,6 +29,7 @@
 -export([start/0, stop/0,
 	 %% Server
 	 status/0, reopen_log/0,
+	 set_loglevel/1,
 	 stop_kindly/2, send_service_message_all_mucs/2,
 	 registered_vhosts/0,
 	 reload_config/0,
@@ -102,6 +103,11 @@ commands() ->
                                                        {levelatom, atom},
                                                        {leveldesc, string}
                                                       ]}}},
+     #ejabberd_commands{name = set_loglevel, tags = [logs, server],
+			desc = "Set the loglevel (0 to 5)",
+			module = ?MODULE, function = set_loglevel,
+			args = [{loglevel, integer}],
+			result = {logger, atom}},
 
      #ejabberd_commands{name = update_list, tags = [server],
 			desc = "List modified modules that can be updated",
@@ -251,6 +257,12 @@ status() ->
 reopen_log() ->
     ejabberd_hooks:run(reopen_log_hook, []),
     ejabberd_logger:reopen_log().
+
+
+set_loglevel(LogLevel) ->
+    {module, Module} = ejabberd_logger:set(LogLevel),
+    Module.
+
 
 %%%
 %%% Stop Kindly
