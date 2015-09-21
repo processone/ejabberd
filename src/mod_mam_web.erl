@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%%% @author Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%% @author Ippolitov Igor (iippolitov@gmail.com)
 %%% @doc
-%%%      Message Archive Management (XEP-0313)
+%%%      Message Archive Management (XEP-0313) Web representation
 %%% @end
-%%% Created :  4 Jul 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%% Created : 3 September, 2015, Ippolitov Igor (iippolitov@gmail.com)
 %%%
 %%%
 %%% ejabberd, Copyright (C) 2013-2015   ProcessOne
@@ -24,6 +24,7 @@
 %%%
 %%%-------------------------------------------------------------------
 -module(mod_mam_web).
+-author('iippolitov@gmail.com').
 %-compile([debug_info,export_all]).
 
 -behaviour(gen_mod).
