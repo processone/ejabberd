@@ -139,7 +139,7 @@ translate(Lang, Msg) ->
 			[SL | _] -> SL
 		      end,
 	  case ShortLang of
-	    <<"en">> -> return_orig(Msg);
+	    <<"en">> -> Msg;
 	    LLang -> translate(Msg);
 	    _ ->
 		case ets:lookup(translations, {ShortLang, Msg}) of
