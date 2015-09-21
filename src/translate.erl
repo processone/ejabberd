@@ -131,7 +131,6 @@ load_file_loop(Fd, Line, File, Lang) ->
 translate(Lang, Msg) ->
     LLang = ascii_tolower(Lang),
     case ets:lookup(translations, {LLang, Msg}) of
-      [{_, {Trans, _Context}}] -> Trans;
       [{_, Trans}] -> Trans;
       _ ->
 	  ShortLang = case str:tokens(LLang, <<"-">>) of
@@ -155,7 +154,6 @@ translate(Msg) ->
       Lang ->
 	  LLang = ascii_tolower(Lang),
 	  case ets:lookup(translations, {LLang, Msg}) of
-	    [{_, {Trans, _Context}}] -> Trans;
 	    [{_, Trans}] -> Trans;
 	    _ ->
 		ShortLang = case str:tokens(LLang, <<"-">>) of
