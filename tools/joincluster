@@ -145,7 +145,7 @@ start() ->
 EOF
 
 $ERLC -o $PA $CLUSTERSETUP_ERL
-sh -c "$ERL $NAME $ERLANG_NODE -pa $PA $KERNEL_OPTS -mnesia extra_db_nodes \"['$REMOTE']\" dir \"\\\"$SPOOL_DIR\\\"\" -s mnesia -s $CLUSTERSETUP start"
+$ERL $NAME $ERLANG_NODE -pa $PA $KERNEL_OPTS -mnesia extra_db_nodes "['$REMOTE']" dir "\"$SPOOL_DIR\"" -s mnesia -s $CLUSTERSETUP start
 cd -
 rm -Rf $PA
 

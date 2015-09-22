@@ -444,11 +444,11 @@ check_start()
 # cluster setup
 join_cluster()
 {
-    $EJABBERD_BIN_PATH/joincluster $*
+    $EXEC_CMD "$EJABBERD_BIN_PATH/joincluster $*"
 }
 leave_cluster()
 {
-    $EJABBERD_BIN_PATH/leavecluster $*
+    $EXEC_CMD "$EJABBERD_BIN_PATH/leavecluster $*"
 }
 
 # allow sync calls
