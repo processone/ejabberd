@@ -169,7 +169,11 @@ user_receive_packet(Pkt, C2SState, JID, Peer, _To) ->
                                       attrs = [{<<"by">>, LServer},
                                                {<<"xmlns">>, ?NS_MAM_TMP},
                                                {<<"id">>, ID}]},
-                    NewEls = [Archived|NewPkt#xmlel.children],
+		    StanzaID = #xmlel{name = <<"stanza-id">>,
+				      attrs = [{<<"by">>, LServer},
+                                               {<<"xmlns">>, ?NS_SID_0},
+                                               {<<"id">>, ID}]},
+                    NewEls = [Archived, StanzaID|NewPkt#xmlel.children],
                     NewPkt#xmlel{children = NewEls};
                 _ ->
                     NewPkt
@@ -194,9 +198,19 @@ user_send_packet(Pkt, C2SState, JID, Peer) ->
 muc_filter_message(Pkt, #state{config = Config} = MUCState,
 		   RoomJID, From, FromNick) ->
     if Config#config.mam ->
-	    NewPkt = strip_my_archived_tag(Pkt, MUCState#state.server_host),
-	    store_muc(MUCState, NewPkt, RoomJID, From, FromNick),
-	    NewPkt;
+	    By = jlib:jid_to_string(RoomJID),
+	    NewPkt = strip_my_archived_tag(Pkt, By),
+	    case store_muc(MUCState, NewPkt, RoomJID, From, FromNick) of
+		{ok, ID} ->
+		    StanzaID = #xmlel{name = <<"stanza-id">>,
+				      attrs = [{<<"by">>, By},
+                                               {<<"xmlns">>, ?NS_SID_0},
+                                               {<<"id">>, ID}]},
+                    NewEls = [StanzaID|NewPkt#xmlel.children],
+                    NewPkt#xmlel{children = NewEls};
+		_ ->
+		    NewPkt
+	    end;
 	true ->
 	    Pkt
     end.
@@ -345,8 +359,8 @@ should_archive(#xmlel{}) ->
 
 strip_my_archived_tag(Pkt, LServer) ->
     NewEls = lists:filter(
-               fun(#xmlel{name = <<"archived">>,
-                          attrs = Attrs}) ->
+               fun(#xmlel{name = Tag, attrs = Attrs})
+		  when Tag == <<"archived">>; Tag == <<"stanza-id">> ->
                        case catch jlib:nameprep(
                                     xml:get_attr_s(
                                       <<"by">>, Attrs)) of
