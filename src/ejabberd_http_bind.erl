@@ -220,8 +220,9 @@ process_request(Data, IP, HOpts) ->
 		   "dressing' xmlns='",
 		   (?NS_HTTP_BIND)/binary, "'/>">>};
 	    XmppDomain ->
+                NXmppDomain = jlib:nameprep(XmppDomain),
 		Sid = p1_sha:sha(term_to_binary({now(), make_ref()})),
-                  case start(XmppDomain, Sid, <<"">>, IP, HOpts) of
+                  case start(NXmppDomain, Sid, <<"">>, IP, HOpts) of
 		  {error, _} ->
 		      {500, ?HEADER,
 		       <<"<body type='terminate' condition='internal-se"
@@ -229,7 +230,7 @@ process_request(Data, IP, HOpts) ->
 			 (?NS_HTTP_BIND)/binary,
 			 "'>Internal Server Error</body>">>};
 		  {ok, Pid} ->
-		      handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
+		      handle_session_start(Pid, NXmppDomain, Sid, Rid, Attrs,
 					   Payload, PayloadSize, IP)
 		end
 	  end;
