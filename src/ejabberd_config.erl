@@ -201,9 +201,12 @@ get_plain_terms_file(File1, Opts) ->
             BinTerms1 = strings_to_binary(Terms),
             ModInc = case proplists:get_bool(include_modules_configs, Opts) of
                          true ->
-                             filelib:wildcard(ext_mod:modules_dir() ++ "/*/conf/*.{yml,yaml}");
+                            Files = [{filename:rootname(filename:basename(F)), F}
+                                     || F <- filelib:wildcard(ext_mod:config_dir() ++ "/*.{yml,yaml}")
+                                          ++ filelib:wildcard(ext_mod:modules_dir() ++ "/*/conf/*.{yml,yaml}")],
+                            [proplists:get_value(F,Files) || F <- proplists:get_keys(Files)];
                          _ ->
-                             []
+                            []
                      end,
             BinTerms = BinTerms1 ++ [{include_config_file, list_to_binary(V)} || V <- ModInc],
             BinTerms2 = case proplists:get_bool(replace_macros, Opts) of

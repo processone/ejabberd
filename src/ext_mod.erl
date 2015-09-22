@@ -33,7 +33,7 @@
 	 installed_command/0, installed/0, installed/1,
 	 install/1, uninstall/1, upgrade/0, upgrade/1,
 	 add_sources/2, del_sources/1, modules_dir/0,
-	 opt_type/1]).
+	 config_dir/0, opt_type/1]).
 
 -include("ejabberd_commands.hrl").
 
@@ -349,6 +349,10 @@ modules_dir() ->
 
 sources_dir() ->
     filename:join(modules_dir(), "sources").
+
+config_dir() ->
+    DefaultDir = filename:join(modules_dir(), "conf"),
+    getenv("CONTRIB_MODULES_CONF_DIR", DefaultDir).
 
 module_lib_dir(Package) ->
     filename:join(modules_dir(), Package).
