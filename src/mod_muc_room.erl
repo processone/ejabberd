@@ -251,7 +251,7 @@ normal_state({route, From, <<"">>,
 		case is_user_online(From, StateData) of
 		  true ->
 		      ErrorText = <<"This participant is kicked from the "
-				    "room because he sent an error message">>,
+				    "room because they sent an error message">>,
 		      NewState = expulse_participant(Packet, From, StateData,
 						     translate:translate(Lang,
 									 ErrorText)),
@@ -537,7 +537,7 @@ normal_state({route, From, ToNick,
       {expulse_sender, Reason} ->
 	  ?DEBUG(Reason, []),
 	  ErrorText = <<"This participant is kicked from the "
-			"room because he sent an error message "
+			"room because they sent an error message "
 			"to another participant">>,
 	  NewState = expulse_participant(Packet, From, StateData,
 					 translate:translate(Lang, ErrorText)),
@@ -1094,7 +1094,7 @@ process_presence(From, Nick,
 				<<"error">> ->
 				    ErrorText =
 					<<"This participant is kicked from the "
-					  "room because he sent an error presence">>,
+					  "room because they sent an error presence">>,
 				    expulse_participant(Packet, From, StateData,
 							translate:translate(Lang,
 									    ErrorText));
