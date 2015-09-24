@@ -311,7 +311,9 @@ get_mod_last_configured(Server) ->
     end.
 
 is_configured(Host, Module) ->
-    gen_mod:is_loaded(Host, Module).
+    Os = ejabberd_config:get_local_option({modules, Host},
+					  fun(M) when is_list(M) -> M end),
+    lists:keymember(Module, 1, Os).
 
 opt_type(extauth_cache) ->
     fun (false) -> undefined;
