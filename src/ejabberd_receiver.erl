@@ -250,7 +250,7 @@ handle_info({Tag, _TCPSocket, Data},
 		 ?HIBERNATE_TIMEOUT};
 	    {error, Reason} ->
 		  if is_binary(Reason) ->
-			  ?ERROR_MSG("TLS error = ~s", [Reason]);
+			  ?DEBUG("TLS error = ~s", [Reason]);
 		     true ->
 			  ok
 		  end,
