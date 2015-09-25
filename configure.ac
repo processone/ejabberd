@@ -108,10 +108,10 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-json --enable-elixir --enable-iconv --enable-debug --enable-lager --enable-tools --enable-oauth (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-json --enable-elixir --enable-iconv --enable-debug --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) nif=true odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true json=true elixir=true iconv=true debug=true lager=true tools=true oauth=true ;;
-  no) nif=false odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false json=false redis=false elixir=false iconv=false debug=false lager=false tools=false oauth=false ;;
+  yes) nif=true odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true json=true elixir=true iconv=true debug=true lager=true tools=true ;;
+  no) nif=false odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false json=false redis=false elixir=false iconv=false debug=false lager=false tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -235,14 +235,6 @@ AC_ARG_ENABLE(lager,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-lager) ;;
 esac],[if test "x$lager" = "x"; then lager=true; fi])
 
-AC_ARG_ENABLE(oauth,
-[AC_HELP_STRING([--enable-oauth], [enable oauth support (default: yes)])],
-[case "${enableval}" in
-  yes) oauth=true ;;
-  no)  oauth=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-oauth) ;;
-esac],[if test "x$oauth" = "x"; then oauth=false; fi])
-
 AC_CONFIG_FILES([Makefile
 		 vars.config
 		 src/ejabberd.app.src])
@@ -290,6 +282,5 @@ AC_SUBST(iconv)
 AC_SUBST(debug)
 AC_SUBST(lager)
 AC_SUBST(tools)
-AC_SUBST(oauth)
 
 AC_OUTPUT

@@ -32,7 +32,6 @@
 {elixir, @elixir@}.
 {lager, @lager@}.
 {iconv, @iconv@}.
-{oauth, @oauth@}.
 
 %% Version
 {vsn, "@PACKAGE_VERSION@"}.

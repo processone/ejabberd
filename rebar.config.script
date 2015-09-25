@@ -61,7 +61,9 @@ Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
         {esip, ".*", {git, "https://github.com/processone/p1_sip"}},
         {p1_stun, ".*", {git, "https://github.com/processone/stun"}},
         {p1_yaml, ".*", {git, "https://github.com/processone/p1_yaml"}},
-        {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}}],
+        {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}},
+        {oauth2, ".*", {git, "https://github.com/IvanMartinez/oauth2.git"}},
+        {xmlrpc, ".*", {git, "https://github.com/rds13/xmlrpc.git"}}],
 
 ConfigureCmd = fun(Pkg, Flags) ->
                        {'get-deps',
@@ -112,11 +114,6 @@ CfgDeps = lists:flatmap(
                     [{meck, "0.*", {git, "https://github.com/eproxus/meck"}}];
                ({redis, true}) ->
                     [{eredis, ".*", {git, "https://github.com/wooga/eredis"}}];
-               ({oauth, true}) ->
-                    %% ejabberd oauth support does not depends directly on xmlrpc.
-                    %% However, we include xmlrpc as it is convenient to document and test oauth
-                    [{oauth2, ".*", {git, "https://github.com/IvanMartinez/oauth2.git"}},
-                     {xmlrpc, ".*", {git, "https://github.com/rds13/xmlrpc.git"}}];
                (_) ->
                     []
             end, Cfg),
