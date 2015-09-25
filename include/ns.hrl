@@ -152,3 +152,4 @@
 -define(NS_CLIENT_STATE,  <<"urn:xmpp:csi:0">>).
 -define(NS_STREAM_MGMT_2,  <<"urn:xmpp:sm:2">>).
 -define(NS_STREAM_MGMT_3,  <<"urn:xmpp:sm:3">>).
+-define(NS_NICK,  <<"http://jabber.org/protocol/nick">>).

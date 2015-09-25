@@ -972,7 +972,8 @@ process_groupchat_message(From,
 			   of
 			 drop ->
 			     {next_state, normal_state, StateData};
-			 NewPacket ->
+			 NewPacket1 ->
+			     NewPacket = xml:remove_subtags(NewPacket1, <<"nick">>, {<<"xmlns">>, ?NS_NICK}),
 			     send_multiple(jlib:jid_replace_resource(StateData#state.jid,
 								     FromNick),
 					   StateData#state.server_host,
