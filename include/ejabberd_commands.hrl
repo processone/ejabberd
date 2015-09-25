@@ -34,6 +34,7 @@
 	 module                  :: atom(),
          function                :: atom(),
          args = []               :: [aterm()] | '_' | '$1' | '$2',
+         policy = restricted     :: open | restricted | admin | user,
          result = {res, rescode} :: rterm() | '_' | '$2'}).
 
 -type ejabberd_commands() :: #ejabberd_commands{name :: atom(),

@@ -84,6 +84,7 @@ start() ->
     cyrsasl_digest:start([]),
     cyrsasl_scram:start([]),
     cyrsasl_anonymous:start([]),
+    cyrsasl_oauth:start([]),
     ok.
 
 %%

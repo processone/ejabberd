@@ -211,7 +211,7 @@ process(Args) ->
 process2(["--auth", User, Server, Pass | Args], AccessCommands) ->
     process2(Args, {list_to_binary(User), list_to_binary(Server), list_to_binary(Pass)}, AccessCommands);
 process2(Args, AccessCommands) ->
-    process2(Args, noauth, AccessCommands).
+    process2(Args, admin, AccessCommands).
 
 process2(Args, Auth, AccessCommands) ->
     case try_run_ctp(Args, Auth, AccessCommands) of
@@ -283,7 +283,7 @@ call_command([CmdString | Args], Auth, AccessCommands) ->
     CmdStringU = ejabberd_regexp:greplace(
                    list_to_binary(CmdString), <<"-">>, <<"_">>),
     Command = list_to_atom(binary_to_list(CmdStringU)),
-    case ejabberd_commands:get_command_format(Command) of
+    case ejabberd_commands:get_command_format(Command, Auth) of
 	{error, command_unknown} ->
 	    {error, command_unknown};
 	{ArgsFormat, ResultFormat} ->
@@ -412,7 +412,8 @@ get_list_commands() ->
     end.
 
 %% Return: {string(), [string()], string()}
-tuple_command_help({Name, Args, Desc}) ->
+tuple_command_help({Name, _Args, Desc}) ->
+    {Args, _} = ejabberd_commands:get_command_format(Name, admin),
     Arguments = [atom_to_list(ArgN) || {ArgN, _ArgF} <- Args],
     Prepend = case is_supported_args(Args) of
 		  true -> "";
@@ -723,12 +724,13 @@ print_usage_command(Cmd, C, MaxC, ShCode) ->
 		     tags = TagsAtoms,
 		     desc = Desc,
 		     longdesc = LongDesc,
-		     args = ArgsDef,
 		     result = ResultDef} = C,
 
     NameFmt = ["  ", ?B("Command Name"), ": ", Cmd, "\n"],
 
     %% Initial indentation of result is 13 = length("  Arguments: ")
+    {ArgsDef, _} = ejabberd_commands:get_command_format(
+                     C#ejabberd_commands.name, admin),
     Args = [format_usage_ctype(ArgDef, 13) || ArgDef <- ArgsDef],
     ArgsMargin = lists:duplicate(13, $\s),
     ArgsListFmt = case Args of

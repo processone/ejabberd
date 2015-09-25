@@ -766,6 +766,9 @@ parse_auth(<<"Basic ", Auth64/binary>>) ->
             {User, <<$:, Pass/binary>>} = erlang:split_binary(Auth, Pos-1),
             {User, Pass}
     end;
+parse_auth(<<"Bearer ", SToken/binary>>) ->
+    Token = str:strip(SToken),
+    {oauth, Token, []};
 parse_auth(<<_/binary>>) -> undefined.
 
 parse_urlencoded(S) ->

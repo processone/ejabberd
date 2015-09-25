@@ -198,33 +198,35 @@ socket_type() -> raw.
 process(_, #request{method = 'POST', data = Data, opts = Opts}) ->
     AccessCommandsOpts = gen_mod:get_opt(access_commands, Opts,
                                          fun(L) when is_list(L) -> L end,
-                                         []),
-    AccessCommands = lists:flatmap(
-                       fun({Ac, AcOpts}) ->
-                               Commands = gen_mod:get_opt(
-                                            commands, AcOpts,
-                                            fun(A) when is_atom(A) ->
-                                                    A;
-                                               (L) when is_list(L) ->
-                                                    true = lists:all(
-                                                             fun is_atom/1,
-                                                             L),
-                                                    L
-                                            end, all),
-                               CommOpts = gen_mod:get_opt(
-                                            options, AcOpts,
-                                            fun(L) when is_list(L) -> L end,
-                                            []),
-                               [{Ac, Commands, CommOpts}];
-                          (Wrong) ->
-                               ?WARNING_MSG("wrong options format for ~p: ~p",
-                                            [?MODULE, Wrong]),
-                               []
-                       end, AccessCommandsOpts),
-    GetAuth = case [ACom || {Ac, _, _} = ACom <- AccessCommands, Ac /= all] of
-		  [] -> false;
-		  _ -> true
-	      end,
+                                         undefined),
+    AccessCommands =
+        case AccessCommandsOpts of
+            undefined -> undefined;
+            _ ->
+                lists:flatmap(
+                  fun({Ac, AcOpts}) ->
+                          Commands = gen_mod:get_opt(
+                                       commands, AcOpts,
+                                       fun(A) when is_atom(A) ->
+                                               A;
+                                          (L) when is_list(L) ->
+                                               true = lists:all(
+                                                        fun is_atom/1,
+                                                        L),
+                                               L
+                                       end, all),
+                          CommOpts = gen_mod:get_opt(
+                                       options, AcOpts,
+                                       fun(L) when is_list(L) -> L end,
+                                       []),
+                          [{Ac, Commands, CommOpts}];
+                     (Wrong) ->
+                          ?WARNING_MSG("wrong options format for ~p: ~p",
+                                       [?MODULE, Wrong]),
+                          []
+                  end, AccessCommandsOpts)
+        end,
+    GetAuth = true,
     State = #state{access_commands = AccessCommands, get_auth = GetAuth},
     case xml_stream:parse_element(Data) of
 	{error, _} ->
@@ -257,17 +259,22 @@ process(_, _) ->
 %% -----------------------------
 
 get_auth(AuthList) ->
-    [User, Server, Password] = try get_attrs([user, server,
-					      password],
-					     AuthList)
-			       of
-				 [U, S, P] -> [U, S, P]
-			       catch
-				 exit:{attribute_not_found, Attr, _} ->
-				     throw({error, missing_auth_arguments,
-					    Attr})
-			       end,
-    {User, Server, Password}.
+    Admin =
+        case lists:keysearch(admin, 1, AuthList) of
+            {value, {admin, true}} -> true;
+            _ -> false
+        end,
+    try get_attrs([user, server, token], AuthList) of
+        [U, S, T] -> {U, S, {oauth, T}, Admin}
+    catch
+        exit:{attribute_not_found, _Attr, _} ->
+            try get_attrs([user, server, password], AuthList) of
+                [U, S, P] -> {U, S, P, Admin}
+            catch
+                exit:{attribute_not_found, Attr, _} ->
+                    throw({error, missing_auth_arguments, Attr})
+            end
+    end.
 
 %% -----------------------------
 %% Handlers
@@ -297,9 +304,9 @@ handler(#state{get_auth = true, auth = noauth} = State,
 	{call, Method,
 	 [{struct, AuthList} | Arguments] = AllArgs}) ->
     try get_auth(AuthList) of
-      Auth ->
-	  handler(State#state{get_auth = false, auth = Auth},
-		  {call, Method, Arguments})
+        Auth ->
+            handler(State#state{get_auth = false, auth = Auth},
+                    {call, Method, Arguments})
     catch
       {error, missing_auth_arguments, _Attr} ->
 	  handler(State#state{get_auth = false, auth = noauth},
@@ -328,7 +335,7 @@ handler(State, {call, Command, []}) ->
     handler(State, {call, Command, [{struct, []}]});
 handler(State,
 	{call, Command, [{struct, AttrL}]} = Payload) ->
-    case ejabberd_commands:get_command_format(Command) of
+    case ejabberd_commands:get_command_format(Command, State#state.auth) of
       {error, command_unknown} ->
 	  build_fault_response(-112, "Unknown call: ~p",
 			       [Payload]);
