@@ -97,6 +97,8 @@ CfgDeps = lists:flatmap(
                     [{p1_zlib, ".*", {git, "https://github.com/processone/zlib"}}];
                ({riak, true}) ->
                     [{riakc, ".*", {git, "https://github.com/basho/riak-erlang-client", {tag, "1.4.2"}}}];
+               ({json, true}) ->
+                    [{jiffy, ".*", {git, "https://github.com/davisp/jiffy"}}];
                ({elixir, true}) ->
                     [{rebar_elixir_plugin, ".*", {git, "https://github.com/yrashk/rebar_elixir_plugin"}},
                      {elixir, ".*", {git, "https://github.com/elixir-lang/elixir", {branch, "v1.0"}}}];
@@ -142,6 +144,8 @@ CfgXrefs = lists:flatmap(
 		({riak, true}) ->
 		     % used in map-reduce function called from riak vm
 		     ["(\"riak_object\":_/_)"];
+		({json, false}) ->
+		    ["(\"jiffy\":_/_)"];
 		({zlib, false}) ->
 		     ["(\"ezlib\":_/_)"];
 		({http, false}) ->

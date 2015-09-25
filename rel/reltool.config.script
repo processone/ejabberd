@@ -36,6 +36,7 @@ DepConfiguredApps = lists:flatmap(
                          ({pam, true}) -> [p1_pam];
                          ({zlib, true}) -> [p1_zlib];
                          ({stun, true}) -> [p1_stun];
+                         ({json, true}) -> [jiffy];
                          ({iconv, true}) -> [p1_iconv];
                          ({lager, true}) -> [lager, goldrush];
                          ({lager, false}) -> [p1_logger];
