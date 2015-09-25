@@ -67,7 +67,7 @@ CTL=$(which ejabberdctl)
 echo "Using commands:"
 [ -x "$CTL" ] && echo $CTL || error "can't find ejabberdctl" 10
 
-$CTL stop 2>/dev/null >/dev/null
+exec $CTL stop 2>/dev/null >/dev/null
 ERLC=${ERL}c
 
 [ -x $ERL ] && echo $ERL || error "can't find erl"  11
