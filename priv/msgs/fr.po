@@ -1749,7 +1749,7 @@ msgstr "Remplissez les champs pour rechercher un utilisateur Jabber"
 #~ msgstr "La limite de trafic a été dépassée"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message"
+#~ "This participant is kicked from the room because they sent an error message"
 #~ msgstr ""
 #~ "Ce participant est expulsé du salon pour avoir envoyé un message erronée"
 
@@ -1761,7 +1761,7 @@ msgstr "Remplissez les champs pour rechercher un utilisateur Jabber"
 #~ msgstr "Mauvais type de message"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message "
+#~ "This participant is kicked from the room because they sent an error message "
 #~ "to another participant"
 #~ msgstr ""
 #~ "Ce participant est expulsé du salon pour avoir envoyé un message erronée "
@@ -1795,7 +1795,7 @@ msgstr "Remplissez les champs pour rechercher un utilisateur Jabber"
 #~ "occupants"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error presence"
+#~ "This participant is kicked from the room because they sent an error presence"
 #~ msgstr ""
 #~ "Ce participant est expulsé du salon pour avoir envoyé une présence erronée"
 

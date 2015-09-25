@@ -1652,7 +1652,7 @@ msgstr "Заполните форму для поиска пользовател
 #~ msgstr "Превышен лимит скорости посылки информации"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message"
+#~ "This participant is kicked from the room because they sent an error message"
 #~ msgstr ""
 #~ "Этого участника выгнали из комнаты за то, что он послал сообщение об "
 #~ "ошибке"
@@ -1677,7 +1677,7 @@ msgstr "Заполните форму для поиска пользовател
 #~ msgstr "Неправильный тип сообщения"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message "
+#~ "This participant is kicked from the room because they sent an error message "
 #~ "to another participant"
 #~ msgstr ""
 #~ "Этого участника выгнали из комнаты за то, что он послал сообщение об "
@@ -1705,7 +1705,7 @@ msgstr "Заполните форму для поиска пользовател
 #~ msgstr "Посетителям не разрешается посылать сообщения всем присутствующим"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error presence"
+#~ "This participant is kicked from the room because they sent an error presence"
 #~ msgstr ""
 #~ "Этого участника выгнали из комнаты за то, что он послал присутствие с "
 #~ "ошибкой"

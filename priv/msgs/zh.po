@@ -1712,7 +1712,7 @@ msgstr "填充字段以搜索任何匹配的 Jabber 用户"
 #~ msgstr "已经超过传输率限制"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message"
+#~ "This participant is kicked from the room because they sent an error message"
 #~ msgstr "该参与人由于发送了错误消息而被踢出了聊天室"
 
 #~ msgid "It is not allowed to send private messages to the conference"
@@ -1734,7 +1734,7 @@ msgstr "填充字段以搜索任何匹配的 Jabber 用户"
 #~ msgstr "不恰当的消息类型"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message "
+#~ "This participant is kicked from the room because they sent an error message "
 #~ "to another participant"
 #~ msgstr "该参与人由于给其他人发送了出错消息而被踢出了聊天室"
 
@@ -1760,7 +1760,7 @@ msgstr "填充字段以搜索任何匹配的 Jabber 用户"
 #~ msgstr "不允许访客给所有占有者发送消息"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error presence"
+#~ "This participant is kicked from the room because they sent an error presence"
 #~ msgstr "该用户由于发送了错误状态而被踢出了聊天室"
 
 #~ msgid "Visitors are not allowed to change their nicknames in this room"

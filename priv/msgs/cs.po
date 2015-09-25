@@ -1722,7 +1722,7 @@ msgstr "Vyplňte políčka pro vyhledání uživatele Jabberu"
 #~ msgstr "Byl překročen limit"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message"
+#~ "This participant is kicked from the room because they sent an error message"
 #~ msgstr "Tento účastník byl vyhozen, protože odeslal chybovou zprávu"
 
 #~ msgid "It is not allowed to send private messages to the conference"
@@ -1744,7 +1744,7 @@ msgstr "Vyplňte políčka pro vyhledání uživatele Jabberu"
 #~ msgstr "Nesprávný typ zprávy"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message "
+#~ "This participant is kicked from the room because they sent an error message "
 #~ "to another participant"
 #~ msgstr ""
 #~ "Tento účastník byl vyhozen, protože odeslal chybovou zprávu jinému "
@@ -1774,7 +1774,7 @@ msgstr "Vyplňte políčka pro vyhledání uživatele Jabberu"
 #~ "Návštevníci nemají povoleno zasílat zprávy všem účastníkům konference"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error presence"
+#~ "This participant is kicked from the room because they sent an error presence"
 #~ msgstr "Tento účastník byl vyhozen, protože odeslal chybový status"
 
 #~ msgid "Visitors are not allowed to change their nicknames in this room"
