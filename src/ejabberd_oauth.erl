@@ -125,10 +125,25 @@ get_client_identity(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
 verify_redirection_uri(_, _, Ctx) -> {ok, Ctx}.
 
 authenticate_user({User, Server}, {password, Password} = Ctx) ->
-    case ejabberd_auth:check_password(User, Server, Password) of
-        true ->
-            {ok, {Ctx, {user, User, Server}}};
-        false ->
+    case jlib:make_jid(User, Server, <<"">>) of
+        #jid{} = JID ->
+            Access =
+                ejabberd_config:get_option(
+                  {oauth_access, JID#jid.lserver},
+                  fun(A) when is_atom(A) -> A end,
+                  none),
+            case acl:match_rule(JID#jid.lserver, Access, JID) of
+                allow ->
+                    case ejabberd_auth:check_password(User, Server, Password) of
+                        true ->
+                            {ok, {Ctx, {user, User, Server}}};
+                        false ->
+                            {error, badpass}
+                    end;
+                deny ->
+                    {error, badpass}
+            end;
+        error ->
             {error, badpass}
     end.
 
@@ -470,4 +485,6 @@ logo() ->
 
 opt_type(oauth_expire) ->
     fun(I) when is_integer(I), I >= 0 -> I end;
-opt_type(_) -> [oauth_expire].
+opt_type(oauth_access) ->
+    fun(A) when is_atom(A) -> A end;
+opt_type(_) -> [oauth_expire, oauth_access].
