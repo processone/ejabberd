@@ -62,6 +62,7 @@ Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
         {p1_stun, ".*", {git, "https://github.com/processone/stun"}},
         {p1_yaml, ".*", {git, "https://github.com/processone/p1_yaml"}},
         {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}},
+        {jiffy, ".*", {git, "https://github.com/davisp/jiffy"}},
         {oauth2, ".*", {git, "https://github.com/IvanMartinez/oauth2.git"}},
         {xmlrpc, ".*", {git, "https://github.com/rds13/xmlrpc.git"}}],
 
@@ -99,8 +100,6 @@ CfgDeps = lists:flatmap(
                     [{p1_zlib, ".*", {git, "https://github.com/processone/zlib"}}];
                ({riak, true}) ->
                     [{riakc, ".*", {git, "https://github.com/basho/riak-erlang-client", {tag, "1.4.2"}}}];
-               ({json, true}) ->
-                    [{jiffy, ".*", {git, "https://github.com/davisp/jiffy"}}];
                ({elixir, true}) ->
                     [{rebar_elixir_plugin, ".*", {git, "https://github.com/yrashk/rebar_elixir_plugin"}},
                      {elixir, ".*", {git, "https://github.com/elixir-lang/elixir", {branch, "v1.0"}}}];
@@ -141,8 +140,6 @@ CfgXrefs = lists:flatmap(
 		({riak, true}) ->
 		     % used in map-reduce function called from riak vm
 		     ["(\"riak_object\":_/_)"];
-		({json, false}) ->
-		    ["(\"jiffy\":_/_)"];
 		({zlib, false}) ->
 		     ["(\"ezlib\":_/_)"];
 		({http, false}) ->

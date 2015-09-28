@@ -108,10 +108,10 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-json --enable-elixir --enable-iconv --enable-debug --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-elixir --enable-iconv --enable-debug --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) nif=true odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true json=true elixir=true iconv=true debug=true lager=true tools=true ;;
-  no) nif=false odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false json=false redis=false elixir=false iconv=false debug=false lager=false tools=false ;;
+  yes) nif=true odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true elixir=true iconv=true debug=true lager=true tools=true ;;
+  no) nif=false odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false elixir=false iconv=false debug=false lager=false tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -195,14 +195,6 @@ AC_ARG_ENABLE(redis,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-redis) ;;
 esac],[if test "x$redis" = "x"; then redis=false; fi])
 
-AC_ARG_ENABLE(json,
-[AC_HELP_STRING([--enable-json], [enable JSON support for mod_bosh (default: no)])],
-[case "${enableval}" in
-  yes) json=true ;;
-  no)  json=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-json) ;;
-esac],[if test "x$json" = "x"; then json=false; fi])
-
 AC_ARG_ENABLE(elixir,
 [AC_HELP_STRING([--enable-elixir], [enable Elixir support (default: no)])],
 [case "${enableval}" in
@@ -276,7 +268,6 @@ AC_SUBST(pam)
 AC_SUBST(zlib)
 AC_SUBST(riak)
 AC_SUBST(redis)
-AC_SUBST(json)
 AC_SUBST(elixir)
 AC_SUBST(iconv)
 AC_SUBST(debug)
