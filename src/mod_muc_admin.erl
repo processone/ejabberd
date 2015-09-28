@@ -59,6 +59,7 @@ commands() ->
     [
      #ejabberd_commands{name = muc_online_rooms, tags = [muc],
 		       desc = "List existing rooms ('global' to get all vhosts)",
+                       policy = admin,
 		       module = ?MODULE, function = muc_online_rooms,
 		       args = [{host, binary}],
 		       result = {rooms, {list, {room, string}}}},
