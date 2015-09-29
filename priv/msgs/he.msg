@@ -83,7 +83,8 @@
 {"ejabberd Web Admin","מנהל רשת ejabberd"}.
 {"Elements","אלמנטים"}.
 {"Email","דוא״ל"}.
-{"Enable logging","אפשור רישום פעילות"}.
+{"Enable logging","אפשר רישום פעילות"}.
+{"Enable message archiving","אפשר אחסון הודעות"}.
 {"Encoding for server ~b","קידוד עבור שרת ~b"}.
 {"End User Session","סיים סשן משתמש"}.
 {"Enter list of {Module, [Options]}","הזן רשימה של {מודול, [אפשרויות]}"}.

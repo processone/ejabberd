@@ -44,7 +44,6 @@
 {"Database Tables Configuration at ","การกำหนดค่าตารางฐานข้อมูลที่"}.
 {"December","ธันวาคม"}.
 {"Default users as participants","ผู้ใช้เริ่มต้นเป็นผู้เข้าร่วม"}.
-{"Delete","ลบ"}.
 {"Delete message of the day","ลบข้อความของวัน"}.
 {"Delete message of the day on all hosts","ลบข้อความของวันบนโฮสต์ทั้งหมด"}.
 {"Delete Selected","ลบข้อความที่เลือก"}.
@@ -251,7 +250,6 @@
 {"Subscription","การสมัครสมาชิก"}.
 {"Sunday","วันอาทิตย์"}.
 {"the password is","รหัสผ่านคือ"}.
-{"This room is not anonymous","ห้องนี้ไม่ปิดบังชื่อ"}.
 {"Thursday","วันพฤหัสบดี"}.
 {"Time","เวลา"}.
 {"Time delay","การหน่วงเวลา"}.

@@ -49,6 +49,26 @@ msgstr "Webová stránka CAPTCHA"
 msgid "The CAPTCHA is valid."
 msgstr "CAPTCHA souhlasí."
 
+#: ejabberd_oauth.erl:253 ejabberd_web_admin.erl:1338
+#: ejabberd_web_admin.erl:1393 mod_register.erl:262 mod_vcard.erl:490
+msgid "User"
+msgstr "Uživatel"
+
+#: ejabberd_oauth.erl:256
+#, fuzzy
+msgid "Server"
+msgstr "Server:"
+
+#: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1343 mod_configure.erl:1398
+#: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2124
+#: mod_muc_room.erl:3377 mod_register.erl:272
+msgid "Password"
+msgstr "Heslo"
+
+#: ejabberd_oauth.erl:267
+msgid "Accept"
+msgstr ""
+
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
 msgid "Unauthorized"
@@ -153,7 +173,7 @@ msgid "Show Integral Table"
 msgstr "Zobrazit kompletní tabulku"
 
 #: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785
-#: mod_muc_admin.erl:246
+#: mod_muc_admin.erl:247
 msgid "Statistics"
 msgstr "Statistiky"
 
@@ -176,17 +196,6 @@ msgstr "Hostitel"
 #: ejabberd_web_admin.erl:1274
 msgid "Registered Users"
 msgstr "Registrovaní uživatelé"
-
-#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393
-#: mod_register.erl:262 mod_vcard.erl:490
-msgid "User"
-msgstr "Uživatel"
-
-#: ejabberd_web_admin.erl:1343 mod_configure.erl:1398 mod_configure.erl:1485
-#: mod_configure.erl:1889 mod_configure.erl:2124 mod_muc_room.erl:3376
-#: mod_register.erl:272
-msgid "Password"
-msgstr "Heslo"
 
 #: ejabberd_web_admin.erl:1352 mod_configure.erl:177 mod_configure.erl:539
 #: mod_configure.erl:1386
@@ -936,7 +945,7 @@ msgstr "Kódování pro server ~b"
 msgid "Server ~b"
 msgstr "Server ~b"
 
-#: mod_muc.erl:797 mod_muc_admin.erl:320
+#: mod_muc.erl:797 mod_muc_admin.erl:321
 msgid "Chatrooms"
 msgstr "Konference"
 
@@ -952,7 +961,7 @@ msgstr "Registrace přezdívky na "
 msgid "Enter nickname you want to register"
 msgstr "Zadejte přezdívku, kterou chcete zaregistrovat"
 
-#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436
+#: mod_muc.erl:1014 mod_muc_room.erl:4265 mod_roster.erl:1436
 #: mod_vcard.erl:490 mod_vcard.erl:621
 msgid "Nickname"
 msgstr "Přezdívka"
@@ -961,27 +970,27 @@ msgstr "Přezdívka"
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUC modul"
 
-#: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
-#: mod_muc_admin.erl:319
+#: mod_muc_admin.erl:231 mod_muc_admin.erl:234 mod_muc_admin.erl:246
+#: mod_muc_admin.erl:320
 msgid "Multi-User Chat"
 msgstr ""
 
-#: mod_muc_admin.erl:248
+#: mod_muc_admin.erl:249
 #, fuzzy
 msgid "Total rooms"
 msgstr "Konference"
 
-#: mod_muc_admin.erl:249
+#: mod_muc_admin.erl:250
 #, fuzzy
 msgid "Permanent rooms"
 msgstr "opustil(a) místnost"
 
-#: mod_muc_admin.erl:250
+#: mod_muc_admin.erl:251
 #, fuzzy
 msgid "Registered nicknames"
 msgstr "Registrovaní uživatelé"
 
-#: mod_muc_admin.erl:253
+#: mod_muc_admin.erl:254
 msgid "List of rooms"
 msgstr ""
 
@@ -1121,181 +1130,181 @@ msgstr "Nastavení místnosti"
 msgid "Room Occupants"
 msgstr "Počet účastníků"
 
-#: mod_muc_room.erl:997
+#: mod_muc_room.erl:998
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr "Jen moderátoři a účastníci mají povoleno měnit téma této místnosti"
 
-#: mod_muc_room.erl:1002
+#: mod_muc_room.erl:1003
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Jen moderátoři mají povoleno měnit téma místnosti"
 
-#: mod_muc_room.erl:2751
+#: mod_muc_room.erl:2752
 msgid "Jabber ID ~s is invalid"
 msgstr "Jabber ID ~s je neplatné"
 
-#: mod_muc_room.erl:2765
+#: mod_muc_room.erl:2766
 msgid "Nickname ~s does not exist in the room"
 msgstr "Přezdívka ~s v místnosti neexistuje"
 
-#: mod_muc_room.erl:2788 mod_muc_room.erl:3168
+#: mod_muc_room.erl:2789 mod_muc_room.erl:3169
 msgid "Invalid affiliation: ~s"
 msgstr "Neplatné přiřazení: ~s"
 
-#: mod_muc_room.erl:2839
+#: mod_muc_room.erl:2840
 msgid "Invalid role: ~s"
 msgstr "Neplatná role: ~s"
 
-#: mod_muc_room.erl:3341
+#: mod_muc_room.erl:3342
 msgid "Configuration of room ~s"
 msgstr "Konfigurace místnosti ~s"
 
-#: mod_muc_room.erl:3352
+#: mod_muc_room.erl:3353
 msgid "Room title"
 msgstr "Název místnosti"
 
-#: mod_muc_room.erl:3354 mod_muc_room.erl:4101
+#: mod_muc_room.erl:3355 mod_muc_room.erl:4102
 msgid "Room description"
 msgstr "Popis místnosti"
 
-#: mod_muc_room.erl:3362
+#: mod_muc_room.erl:3363
 msgid "Make room persistent"
 msgstr "Nastavit místnost jako stálou"
 
-#: mod_muc_room.erl:3368
+#: mod_muc_room.erl:3369
 msgid "Make room public searchable"
 msgstr "Nastavit místnost jako veřejnou"
 
-#: mod_muc_room.erl:3371
+#: mod_muc_room.erl:3372
 msgid "Make participants list public"
 msgstr "Nastavit seznam účastníků jako veřejný"
 
-#: mod_muc_room.erl:3373
+#: mod_muc_room.erl:3374
 msgid "Make room password protected"
 msgstr "Chránit místnost heslem"
 
-#: mod_muc_room.erl:3387
+#: mod_muc_room.erl:3388
 msgid "Maximum Number of Occupants"
 msgstr "Počet účastníků"
 
-#: mod_muc_room.erl:3399
+#: mod_muc_room.erl:3400
 msgid "No limit"
 msgstr "Bez limitu"
 
-#: mod_muc_room.erl:3429
+#: mod_muc_room.erl:3430
 msgid "Present real Jabber IDs to"
 msgstr "Odhalovat skutečná Jabber ID"
 
-#: mod_muc_room.erl:3443 mod_muc_room.erl:3506
+#: mod_muc_room.erl:3444 mod_muc_room.erl:3507
 msgid "moderators only"
 msgstr "moderátorům"
 
-#: mod_muc_room.erl:3453 mod_muc_room.erl:3516
+#: mod_muc_room.erl:3454 mod_muc_room.erl:3517
 msgid "anyone"
 msgstr "každému"
 
-#: mod_muc_room.erl:3459
+#: mod_muc_room.erl:3460
 msgid "Make room members-only"
 msgstr "Zpřístupnit místnost jen členům"
 
-#: mod_muc_room.erl:3462
+#: mod_muc_room.erl:3463
 msgid "Make room moderated"
 msgstr "Nastavit místnost jako moderovanou"
 
-#: mod_muc_room.erl:3465
+#: mod_muc_room.erl:3466
 msgid "Default users as participants"
 msgstr "Uživatelé jsou implicitně členy"
 
-#: mod_muc_room.erl:3468
+#: mod_muc_room.erl:3469
 msgid "Allow users to change the subject"
 msgstr "Povolit uživatelům měnit téma místnosti"
 
-#: mod_muc_room.erl:3471
+#: mod_muc_room.erl:3472
 msgid "Allow users to send private messages"
 msgstr "Povolit uživatelům odesílat soukromé zprávy"
 
-#: mod_muc_room.erl:3479
+#: mod_muc_room.erl:3480
 msgid "Allow visitors to send private messages to"
 msgstr "Povolit návštěvníkům odesílat soukromé zprávy"
 
-#: mod_muc_room.erl:3497
+#: mod_muc_room.erl:3498
 msgid "nobody"
 msgstr "nikdo"
 
-#: mod_muc_room.erl:3522
+#: mod_muc_room.erl:3523
 msgid "Allow users to query other users"
 msgstr "Povolit uživatelům odesílat požadavky (query) ostatním uživatelům"
 
-#: mod_muc_room.erl:3525
+#: mod_muc_room.erl:3526
 msgid "Allow users to send invites"
 msgstr "Povolit uživatelům posílání pozvánek"
 
-#: mod_muc_room.erl:3528
+#: mod_muc_room.erl:3529
 msgid "Allow visitors to send status text in presence updates"
 msgstr "Povolit návštěvníkům posílat stavové zprávy ve statusu"
 
-#: mod_muc_room.erl:3532
+#: mod_muc_room.erl:3533
 msgid "Allow visitors to change nickname"
 msgstr "Povolit návštěvníkům měnit přezdívku"
 
-#: mod_muc_room.erl:3535
+#: mod_muc_room.erl:3536
 msgid "Allow visitors to send voice requests"
 msgstr "Povolit uživatelům posílat žádosti o voice práva"
 
-#: mod_muc_room.erl:3538
+#: mod_muc_room.erl:3539
 msgid "Minimum interval between voice requests (in seconds)"
 msgstr "Minimální interval mezi žádostmi o voice práva (v sekundách)"
 
-#: mod_muc_room.erl:3545
+#: mod_muc_room.erl:3546
 msgid "Make room CAPTCHA protected"
 msgstr "Chránit místnost pomocí CAPTCHA"
 
-#: mod_muc_room.erl:3552
+#: mod_muc_room.erl:3553
 msgid "Enable message archiving"
 msgstr ""
 
-#: mod_muc_room.erl:3558
+#: mod_muc_room.erl:3559
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
 msgstr "Vyloučit Jabber ID z procesu CAPTCHA ověřování"
 
-#: mod_muc_room.erl:3567
+#: mod_muc_room.erl:3568
 msgid "Enable logging"
 msgstr "Zaznamenávat konverzace"
 
-#: mod_muc_room.erl:3577
+#: mod_muc_room.erl:3578
 msgid "You need an x:data capable client to configure room"
 msgstr "Ke konfiguraci místnosti potřebujete klienta podporujícího x:data"
 
-#: mod_muc_room.erl:4103
+#: mod_muc_room.erl:4104
 msgid "Number of occupants"
 msgstr "Počet účastníků"
 
-#: mod_muc_room.erl:4173
+#: mod_muc_room.erl:4174
 msgid "private, "
 msgstr "soukromá, "
 
-#: mod_muc_room.erl:4237
+#: mod_muc_room.erl:4238
 msgid "Voice request"
 msgstr "Žádost o voice práva"
 
-#: mod_muc_room.erl:4242
+#: mod_muc_room.erl:4243
 msgid "Either approve or decline the voice request."
 msgstr "Povolit nebo odmítnout voice žádost."
 
-#: mod_muc_room.erl:4262
+#: mod_muc_room.erl:4263
 msgid "User JID"
 msgstr "Jabber ID uživatele"
 
-#: mod_muc_room.erl:4266
+#: mod_muc_room.erl:4267
 msgid "Grant voice to this person?"
 msgstr "Udělit voice práva této osobě?"
 
-#: mod_muc_room.erl:4409
+#: mod_muc_room.erl:4410
 msgid "~s invites you to the room ~s"
 msgstr "~s vás zve do místnosti ~s"
 
-#: mod_muc_room.erl:4421
+#: mod_muc_room.erl:4422
 msgid "the password is"
 msgstr "heslo je"
 

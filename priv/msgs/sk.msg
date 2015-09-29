@@ -62,7 +62,6 @@
 {"Delete message of the day","Zmazať správu dňa"}.
 {"Delete Selected","Zmazať vybrané"}.
 {"Delete User","Vymazať užívateľa"}.
-{"Delete","Zmazať"}.
 {"Deliver event notifications","Doručiť oznamy o udalosti"}.
 {"Deliver payloads with event notifications","Doručiť náklad s upozornením na udalosť"}.
 {"Description:","Popis:"}.
@@ -331,7 +330,6 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Veľké a malé písmená sa nerozlišujú: macbeth je to isté ako MacBeth a Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Táto stránka umožňuje refistrovať Jabber účet na tomto serveri. Vaše JID (Jabber IDentifikátor) bude vo formáte: užívateľ@server. Pozorne sledujte inštrukcie, aby ste údaje vypnili správne."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Na tejto stránke si môžete zrušiť Jabber účet registrovaný na tomto serveri."}.
-{"This room is not anonymous","Táto miestnosť nie je anonymná"}.
 {"Thursday","Štvrtok"}.
 {"Time","Čas"}.
 {"Time delay","Časový posun"}.

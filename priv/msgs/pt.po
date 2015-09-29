@@ -49,6 +49,26 @@ msgstr ""
 msgid "The CAPTCHA is valid."
 msgstr ""
 
+#: ejabberd_oauth.erl:253 ejabberd_web_admin.erl:1338
+#: ejabberd_web_admin.erl:1393 mod_register.erl:262 mod_vcard.erl:490
+msgid "User"
+msgstr "Utilizador"
+
+#: ejabberd_oauth.erl:256
+#, fuzzy
+msgid "Server"
+msgstr "Nunca"
+
+#: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1343 mod_configure.erl:1398
+#: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2124
+#: mod_muc_room.erl:3377 mod_register.erl:272
+msgid "Password"
+msgstr "Palavra-chave"
+
+#: ejabberd_oauth.erl:267
+msgid "Accept"
+msgstr ""
+
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
 msgid "Unauthorized"
@@ -161,7 +181,7 @@ msgid "Show Integral Table"
 msgstr ""
 
 #: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785
-#: mod_muc_admin.erl:246
+#: mod_muc_admin.erl:247
 msgid "Statistics"
 msgstr "Estatísticas"
 
@@ -187,17 +207,6 @@ msgstr "Nome do servidor"
 #, fuzzy
 msgid "Registered Users"
 msgstr "Utilizadores registados"
-
-#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393
-#: mod_register.erl:262 mod_vcard.erl:490
-msgid "User"
-msgstr "Utilizador"
-
-#: ejabberd_web_admin.erl:1343 mod_configure.erl:1398 mod_configure.erl:1485
-#: mod_configure.erl:1889 mod_configure.erl:2124 mod_muc_room.erl:3376
-#: mod_register.erl:272
-msgid "Password"
-msgstr "Palavra-chave"
 
 #: ejabberd_web_admin.erl:1352 mod_configure.erl:177 mod_configure.erl:539
 #: mod_configure.erl:1386
@@ -989,7 +998,7 @@ msgstr ""
 msgid "Server ~b"
 msgstr ""
 
-#: mod_muc.erl:797 mod_muc_admin.erl:320
+#: mod_muc.erl:797 mod_muc_admin.erl:321
 msgid "Chatrooms"
 msgstr ""
 
@@ -1007,7 +1016,7 @@ msgstr "Registo da alcunha em "
 msgid "Enter nickname you want to register"
 msgstr "Introduza a alcunha que quer registar"
 
-#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436
+#: mod_muc.erl:1014 mod_muc_room.erl:4265 mod_roster.erl:1436
 #: mod_vcard.erl:490 mod_vcard.erl:621
 msgid "Nickname"
 msgstr "Alcunha"
@@ -1016,25 +1025,25 @@ msgstr "Alcunha"
 msgid "ejabberd MUC module"
 msgstr "Módulo MUC de ejabberd"
 
-#: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
-#: mod_muc_admin.erl:319
+#: mod_muc_admin.erl:231 mod_muc_admin.erl:234 mod_muc_admin.erl:246
+#: mod_muc_admin.erl:320
 msgid "Multi-User Chat"
 msgstr ""
 
-#: mod_muc_admin.erl:248
+#: mod_muc_admin.erl:249
 msgid "Total rooms"
 msgstr ""
 
-#: mod_muc_admin.erl:249
+#: mod_muc_admin.erl:250
 msgid "Permanent rooms"
 msgstr ""
 
-#: mod_muc_admin.erl:250
+#: mod_muc_admin.erl:251
 #, fuzzy
 msgid "Registered nicknames"
 msgstr "Utilizadores registados"
 
-#: mod_muc_admin.erl:253
+#: mod_muc_admin.erl:254
 msgid "List of rooms"
 msgstr ""
 
@@ -1178,202 +1187,202 @@ msgstr "Configuração"
 msgid "Room Occupants"
 msgstr ""
 
-#: mod_muc_room.erl:997
+#: mod_muc_room.erl:998
 #, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr "Só os moderadores e os participantes podem mudar o tópico desta sala"
 
-#: mod_muc_room.erl:1002
+#: mod_muc_room.erl:1003
 #, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Só os moderadores podem mudar o tópico desta sala"
 
-#: mod_muc_room.erl:2751
+#: mod_muc_room.erl:2752
 msgid "Jabber ID ~s is invalid"
 msgstr "O Jabber ID ~s não é válido"
 
-#: mod_muc_room.erl:2765
+#: mod_muc_room.erl:2766
 msgid "Nickname ~s does not exist in the room"
 msgstr "A alcunha ~s não existe na sala"
 
-#: mod_muc_room.erl:2788 mod_muc_room.erl:3168
+#: mod_muc_room.erl:2789 mod_muc_room.erl:3169
 msgid "Invalid affiliation: ~s"
 msgstr "Afiliação inválida: ~s"
 
-#: mod_muc_room.erl:2839
+#: mod_muc_room.erl:2840
 msgid "Invalid role: ~s"
 msgstr "Papel inválido: ~s"
 
-#: mod_muc_room.erl:3341
+#: mod_muc_room.erl:3342
 #, fuzzy
 msgid "Configuration of room ~s"
 msgstr "Configuração para "
 
-#: mod_muc_room.erl:3352
+#: mod_muc_room.erl:3353
 msgid "Room title"
 msgstr "Título da sala"
 
-#: mod_muc_room.erl:3354 mod_muc_room.erl:4101
+#: mod_muc_room.erl:3355 mod_muc_room.erl:4102
 #, fuzzy
 msgid "Room description"
 msgstr "Subscrição"
 
-#: mod_muc_room.erl:3362
+#: mod_muc_room.erl:3363
 #, fuzzy
 msgid "Make room persistent"
 msgstr "Tornar a sala permanente?"
 
-#: mod_muc_room.erl:3368
+#: mod_muc_room.erl:3369
 #, fuzzy
 msgid "Make room public searchable"
 msgstr "Tornar a sala publicamente visível?"
 
-#: mod_muc_room.erl:3371
+#: mod_muc_room.erl:3372
 #, fuzzy
 msgid "Make participants list public"
 msgstr "Tornar pública a lista de participantes?"
 
-#: mod_muc_room.erl:3373
+#: mod_muc_room.erl:3374
 #, fuzzy
 msgid "Make room password protected"
 msgstr "Proteger a sala com palavra-chave?"
 
-#: mod_muc_room.erl:3387
+#: mod_muc_room.erl:3388
 msgid "Maximum Number of Occupants"
 msgstr ""
 
-#: mod_muc_room.erl:3399
+#: mod_muc_room.erl:3400
 msgid "No limit"
 msgstr ""
 
-#: mod_muc_room.erl:3429
+#: mod_muc_room.erl:3430
 msgid "Present real Jabber IDs to"
 msgstr ""
 
-#: mod_muc_room.erl:3443 mod_muc_room.erl:3506
+#: mod_muc_room.erl:3444 mod_muc_room.erl:3507
 msgid "moderators only"
 msgstr ""
 
-#: mod_muc_room.erl:3453 mod_muc_room.erl:3516
+#: mod_muc_room.erl:3454 mod_muc_room.erl:3517
 #, fuzzy
 msgid "anyone"
 msgstr "Nenhum"
 
-#: mod_muc_room.erl:3459
+#: mod_muc_room.erl:3460
 #, fuzzy
 msgid "Make room members-only"
 msgstr "Tornar a sala exclusiva a membros?"
 
-#: mod_muc_room.erl:3462
+#: mod_muc_room.erl:3463
 msgid "Make room moderated"
 msgstr "Tornar a sala moderada"
 
-#: mod_muc_room.erl:3465
+#: mod_muc_room.erl:3466
 #, fuzzy
 msgid "Default users as participants"
 msgstr "Os utilizadores são membros por omissão?"
 
-#: mod_muc_room.erl:3468
+#: mod_muc_room.erl:3469
 #, fuzzy
 msgid "Allow users to change the subject"
 msgstr "Permitir aos utilizadores mudar o tópico?"
 
-#: mod_muc_room.erl:3471
+#: mod_muc_room.erl:3472
 #, fuzzy
 msgid "Allow users to send private messages"
 msgstr "Permitir que os utilizadores enviem mensagens privadas?"
 
-#: mod_muc_room.erl:3479
+#: mod_muc_room.erl:3480
 #, fuzzy
 msgid "Allow visitors to send private messages to"
 msgstr "Permitir que os utilizadores enviem mensagens privadas?"
 
-#: mod_muc_room.erl:3497
+#: mod_muc_room.erl:3498
 msgid "nobody"
 msgstr ""
 
-#: mod_muc_room.erl:3522
+#: mod_muc_room.erl:3523
 #, fuzzy
 msgid "Allow users to query other users"
 msgstr "Permitir aos utilizadores consultar outros utilizadores?"
 
-#: mod_muc_room.erl:3525
+#: mod_muc_room.erl:3526
 #, fuzzy
 msgid "Allow users to send invites"
 msgstr "Permitir que os utilizadores enviem convites?"
 
-#: mod_muc_room.erl:3528
+#: mod_muc_room.erl:3529
 msgid "Allow visitors to send status text in presence updates"
 msgstr ""
 
-#: mod_muc_room.erl:3532
+#: mod_muc_room.erl:3533
 #, fuzzy
 msgid "Allow visitors to change nickname"
 msgstr "Permitir aos utilizadores mudar o tópico?"
 
-#: mod_muc_room.erl:3535
+#: mod_muc_room.erl:3536
 #, fuzzy
 msgid "Allow visitors to send voice requests"
 msgstr "Permitir que os utilizadores enviem convites?"
 
-#: mod_muc_room.erl:3538
+#: mod_muc_room.erl:3539
 msgid "Minimum interval between voice requests (in seconds)"
 msgstr ""
 
-#: mod_muc_room.erl:3545
+#: mod_muc_room.erl:3546
 #, fuzzy
 msgid "Make room CAPTCHA protected"
 msgstr "Proteger a sala com palavra-chave?"
 
-#: mod_muc_room.erl:3552
+#: mod_muc_room.erl:3553
 msgid "Enable message archiving"
 msgstr ""
 
-#: mod_muc_room.erl:3558
+#: mod_muc_room.erl:3559
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
 msgstr ""
 
-#: mod_muc_room.erl:3567
+#: mod_muc_room.erl:3568
 #, fuzzy
 msgid "Enable logging"
 msgstr "Guardar históricos?"
 
-#: mod_muc_room.erl:3577
+#: mod_muc_room.erl:3578
 msgid "You need an x:data capable client to configure room"
 msgstr "É necessário um cliente com suporte de x:data para configurar a sala"
 
-#: mod_muc_room.erl:4103
+#: mod_muc_room.erl:4104
 msgid "Number of occupants"
 msgstr ""
 
-#: mod_muc_room.erl:4173
+#: mod_muc_room.erl:4174
 msgid "private, "
 msgstr "privado"
 
-#: mod_muc_room.erl:4237
+#: mod_muc_room.erl:4238
 msgid "Voice request"
 msgstr ""
 
-#: mod_muc_room.erl:4242
+#: mod_muc_room.erl:4243
 msgid "Either approve or decline the voice request."
 msgstr ""
 
-#: mod_muc_room.erl:4262
+#: mod_muc_room.erl:4263
 #, fuzzy
 msgid "User JID"
 msgstr "Utilizador"
 
-#: mod_muc_room.erl:4266
+#: mod_muc_room.erl:4267
 msgid "Grant voice to this person?"
 msgstr ""
 
-#: mod_muc_room.erl:4409
+#: mod_muc_room.erl:4410
 msgid "~s invites you to the room ~s"
 msgstr ""
 
-#: mod_muc_room.erl:4421
+#: mod_muc_room.erl:4422
 #, fuzzy
 msgid "the password is"
 msgstr "Mudar palavra-chave"

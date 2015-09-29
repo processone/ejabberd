@@ -22,7 +22,6 @@
 {"Configuration","Configuração"}.
 {"Connected Resources:","Recursos conectados:"}.
 {"Country","País"}.
-{"Delete","Eliminar"}.
 {"Delete Selected","Eliminar os seleccionados"}.
 {"Disc only copy","Cópia apenas em disco"}.
 {"Dump Backup to Text File at ","Exporta cópia de segurança para ficheiro de texto em "}.

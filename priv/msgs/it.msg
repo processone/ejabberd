@@ -58,7 +58,6 @@
 {"Database Tables Configuration at ","Configurazione delle tabelle del database su "}.
 {"December","Dicembre"}.
 {"Default users as participants","Definire per default gli utenti come partecipanti"}.
-{"Delete","Eliminare"}.
 {"Delete message of the day","Eliminare il messaggio del giorno (MOTD)"}.
 {"Delete message of the day on all hosts","Eliminare il messaggio del giorno (MOTD) su tutti gli host"}.
 {"Delete Selected","Eliminare gli elementi selezionati"}.
@@ -332,7 +331,6 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Non fa differenza fra minuscolo e maiuscolo: macbeth, MacBeth e Macbeth si equivalgono."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Questa pagina consente di creare un account Jabber in questo server Jabber. Il tuo JID (Jabber IDentifier) avrà la forma: nome_utente@server. Leggi attentamente le istruzioni per compilare i campi correttamente."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Questa pagina consente di eliminare un account Jabber da questo server Jabber."}.
-{"This room is not anonymous","Questa stanza non è anonima"}.
 {"Thursday","Giovedì"}.
 {"Time delay","Ritardo"}.
 {"Time","Ora"}.

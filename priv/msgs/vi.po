@@ -49,6 +49,26 @@ msgstr ""
 msgid "The CAPTCHA is valid."
 msgstr ""
 
+#: ejabberd_oauth.erl:253 ejabberd_web_admin.erl:1338
+#: ejabberd_web_admin.erl:1393 mod_register.erl:262 mod_vcard.erl:490
+msgid "User"
+msgstr "Người sử dụng"
+
+#: ejabberd_oauth.erl:256
+#, fuzzy
+msgid "Server"
+msgstr "Không bao giờ"
+
+#: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1343 mod_configure.erl:1398
+#: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2124
+#: mod_muc_room.erl:3377 mod_register.erl:272
+msgid "Password"
+msgstr "Mật Khẩu"
+
+#: ejabberd_oauth.erl:267
+msgid "Accept"
+msgstr ""
+
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
 msgid "Unauthorized"
@@ -154,7 +174,7 @@ msgid "Show Integral Table"
 msgstr "Hiển Thị Bảng Đầy Đủ"
 
 #: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785
-#: mod_muc_admin.erl:246
+#: mod_muc_admin.erl:247
 msgid "Statistics"
 msgstr "Số liệu thống kê"
 
@@ -178,17 +198,6 @@ msgstr "Máy chủ"
 #: ejabberd_web_admin.erl:1274
 msgid "Registered Users"
 msgstr "Người Sử Dụng Đã Đăng Ký"
-
-#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393
-#: mod_register.erl:262 mod_vcard.erl:490
-msgid "User"
-msgstr "Người sử dụng"
-
-#: ejabberd_web_admin.erl:1343 mod_configure.erl:1398 mod_configure.erl:1485
-#: mod_configure.erl:1889 mod_configure.erl:2124 mod_muc_room.erl:3376
-#: mod_register.erl:272
-msgid "Password"
-msgstr "Mật Khẩu"
 
 #: ejabberd_web_admin.erl:1352 mod_configure.erl:177 mod_configure.erl:539
 #: mod_configure.erl:1386
@@ -954,7 +963,7 @@ msgstr ""
 msgid "Server ~b"
 msgstr ""
 
-#: mod_muc.erl:797 mod_muc_admin.erl:320
+#: mod_muc.erl:797 mod_muc_admin.erl:321
 msgid "Chatrooms"
 msgstr "Phòng trò chuyện"
 
@@ -973,7 +982,7 @@ msgstr "Đăng Ký Bí Danh tại"
 msgid "Enter nickname you want to register"
 msgstr "Nhập bí danh bạn muốn đăng ký"
 
-#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436
+#: mod_muc.erl:1014 mod_muc_room.erl:4265 mod_roster.erl:1436
 #: mod_vcard.erl:490 mod_vcard.erl:621
 msgid "Nickname"
 msgstr "Bí danh"
@@ -982,27 +991,27 @@ msgstr "Bí danh"
 msgid "ejabberd MUC module"
 msgstr "Môdun ejabberd MUC Bản quyền"
 
-#: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
-#: mod_muc_admin.erl:319
+#: mod_muc_admin.erl:231 mod_muc_admin.erl:234 mod_muc_admin.erl:246
+#: mod_muc_admin.erl:320
 msgid "Multi-User Chat"
 msgstr ""
 
-#: mod_muc_admin.erl:248
+#: mod_muc_admin.erl:249
 #, fuzzy
 msgid "Total rooms"
 msgstr "Phòng trò chuyện"
 
-#: mod_muc_admin.erl:249
+#: mod_muc_admin.erl:250
 #, fuzzy
 msgid "Permanent rooms"
 msgstr "rời khỏi phòng này"
 
-#: mod_muc_admin.erl:250
+#: mod_muc_admin.erl:251
 #, fuzzy
 msgid "Registered nicknames"
 msgstr "Người Sử Dụng Đã Đăng Ký"
 
-#: mod_muc_admin.erl:253
+#: mod_muc_admin.erl:254
 msgid "List of rooms"
 msgstr ""
 
@@ -1147,7 +1156,7 @@ msgstr "Cấu Hình Phòng"
 msgid "Room Occupants"
 msgstr "Số người tham dự"
 
-#: mod_muc_room.erl:997
+#: mod_muc_room.erl:998
 #, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
@@ -1156,188 +1165,188 @@ msgstr ""
 "Chỉ có những người điều phối và những người tham gia được phép thay đổi chủ "
 "đề trong phòng này"
 
-#: mod_muc_room.erl:1002
+#: mod_muc_room.erl:1003
 #, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Chỉ có những người điều phối được phép thay đổi chủ đề trong phòng này"
 
-#: mod_muc_room.erl:2751
+#: mod_muc_room.erl:2752
 msgid "Jabber ID ~s is invalid"
 msgstr "Jabber ID ~s không hợp lệ"
 
-#: mod_muc_room.erl:2765
+#: mod_muc_room.erl:2766
 msgid "Nickname ~s does not exist in the room"
 msgstr "Bí danh ~s không tồn tại trong phòng này"
 
-#: mod_muc_room.erl:2788 mod_muc_room.erl:3168
+#: mod_muc_room.erl:2789 mod_muc_room.erl:3169
 msgid "Invalid affiliation: ~s"
 msgstr "Tư cách không hợp lệ: ~s"
 
-#: mod_muc_room.erl:2839
+#: mod_muc_room.erl:2840
 msgid "Invalid role: ~s"
 msgstr "Vai trò không hợp lệ: ~s"
 
-#: mod_muc_room.erl:3341
+#: mod_muc_room.erl:3342
 #, fuzzy
 msgid "Configuration of room ~s"
 msgstr "Cấu hình cho "
 
-#: mod_muc_room.erl:3352
+#: mod_muc_room.erl:3353
 msgid "Room title"
 msgstr "Tên phòng"
 
-#: mod_muc_room.erl:3354 mod_muc_room.erl:4101
+#: mod_muc_room.erl:3355 mod_muc_room.erl:4102
 #, fuzzy
 msgid "Room description"
 msgstr "Miêu tả:"
 
-#: mod_muc_room.erl:3362
+#: mod_muc_room.erl:3363
 msgid "Make room persistent"
 msgstr "Tạo phòng bền vững"
 
-#: mod_muc_room.erl:3368
+#: mod_muc_room.erl:3369
 msgid "Make room public searchable"
 msgstr "Tạo phòng có thể tìm kiếm công khai"
 
-#: mod_muc_room.erl:3371
+#: mod_muc_room.erl:3372
 msgid "Make participants list public"
 msgstr "Tạo danh sách người tham dự công khai"
 
-#: mod_muc_room.erl:3373
+#: mod_muc_room.erl:3374
 msgid "Make room password protected"
 msgstr "Tạo phòng được bảo vệ bằng mật khẩu"
 
-#: mod_muc_room.erl:3387
+#: mod_muc_room.erl:3388
 msgid "Maximum Number of Occupants"
 msgstr "Số Lượng Người Tham Dự Tối Đa"
 
-#: mod_muc_room.erl:3399
+#: mod_muc_room.erl:3400
 msgid "No limit"
 msgstr "Không giới hạn"
 
-#: mod_muc_room.erl:3429
+#: mod_muc_room.erl:3430
 msgid "Present real Jabber IDs to"
 msgstr "Jabber ID thực tế hiện hành đến"
 
-#: mod_muc_room.erl:3443 mod_muc_room.erl:3506
+#: mod_muc_room.erl:3444 mod_muc_room.erl:3507
 msgid "moderators only"
 msgstr "nhà điều phối duy nhất"
 
-#: mod_muc_room.erl:3453 mod_muc_room.erl:3516
+#: mod_muc_room.erl:3454 mod_muc_room.erl:3517
 msgid "anyone"
 msgstr "bất kỳ ai"
 
-#: mod_muc_room.erl:3459
+#: mod_muc_room.erl:3460
 msgid "Make room members-only"
 msgstr "Tạo phòng chỉ cho phép tư cách thành viên tham gia"
 
-#: mod_muc_room.erl:3462
+#: mod_muc_room.erl:3463
 #, fuzzy
 msgid "Make room moderated"
 msgstr "Tạo phòng bền vững"
 
-#: mod_muc_room.erl:3465
+#: mod_muc_room.erl:3466
 msgid "Default users as participants"
 msgstr "Người sử dụng mặc định là người tham dự"
 
-#: mod_muc_room.erl:3468
+#: mod_muc_room.erl:3469
 #, fuzzy
 msgid "Allow users to change the subject"
 msgstr "Cho phép người sử dụng thay đổi chủ đề"
 
-#: mod_muc_room.erl:3471
+#: mod_muc_room.erl:3472
 msgid "Allow users to send private messages"
 msgstr "Cho phép người sử dụng gửi thư riêng"
 
-#: mod_muc_room.erl:3479
+#: mod_muc_room.erl:3480
 #, fuzzy
 msgid "Allow visitors to send private messages to"
 msgstr "Cho phép người sử dụng gửi thư riêng"
 
-#: mod_muc_room.erl:3497
+#: mod_muc_room.erl:3498
 msgid "nobody"
 msgstr ""
 
-#: mod_muc_room.erl:3522
+#: mod_muc_room.erl:3523
 msgid "Allow users to query other users"
 msgstr "Cho phép người sử dụng hỏi người sử dụng khác"
 
-#: mod_muc_room.erl:3525
+#: mod_muc_room.erl:3526
 msgid "Allow users to send invites"
 msgstr "Cho phép người sử dụng gửi lời mời"
 
-#: mod_muc_room.erl:3528
+#: mod_muc_room.erl:3529
 #, fuzzy
 msgid "Allow visitors to send status text in presence updates"
 msgstr "Cho phép người sử dụng gửi thư riêng"
 
-#: mod_muc_room.erl:3532
+#: mod_muc_room.erl:3533
 #, fuzzy
 msgid "Allow visitors to change nickname"
 msgstr "Cho phép người sử dụng thay đổi chủ đề"
 
-#: mod_muc_room.erl:3535
+#: mod_muc_room.erl:3536
 #, fuzzy
 msgid "Allow visitors to send voice requests"
 msgstr "Cho phép người sử dụng gửi lời mời"
 
-#: mod_muc_room.erl:3538
+#: mod_muc_room.erl:3539
 msgid "Minimum interval between voice requests (in seconds)"
 msgstr ""
 
-#: mod_muc_room.erl:3545
+#: mod_muc_room.erl:3546
 #, fuzzy
 msgid "Make room CAPTCHA protected"
 msgstr "Tạo phòng được bảo vệ bằng mật khẩu"
 
-#: mod_muc_room.erl:3552
+#: mod_muc_room.erl:3553
 msgid "Enable message archiving"
 msgstr ""
 
-#: mod_muc_room.erl:3558
+#: mod_muc_room.erl:3559
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
 msgstr ""
 
-#: mod_muc_room.erl:3567
+#: mod_muc_room.erl:3568
 msgid "Enable logging"
 msgstr "Cho phép ghi nhật ký"
 
-#: mod_muc_room.erl:3577
+#: mod_muc_room.erl:3578
 msgid "You need an x:data capable client to configure room"
 msgstr ""
 "Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để xác định "
 "cấu hình phòng họp"
 
-#: mod_muc_room.erl:4103
+#: mod_muc_room.erl:4104
 msgid "Number of occupants"
 msgstr "Số người tham dự"
 
-#: mod_muc_room.erl:4173
+#: mod_muc_room.erl:4174
 msgid "private, "
 msgstr "riêng,"
 
-#: mod_muc_room.erl:4237
+#: mod_muc_room.erl:4238
 msgid "Voice request"
 msgstr ""
 
-#: mod_muc_room.erl:4242
+#: mod_muc_room.erl:4243
 msgid "Either approve or decline the voice request."
 msgstr ""
 
-#: mod_muc_room.erl:4262
+#: mod_muc_room.erl:4263
 #, fuzzy
 msgid "User JID"
 msgstr "Người sử dụng "
 
-#: mod_muc_room.erl:4266
+#: mod_muc_room.erl:4267
 msgid "Grant voice to this person?"
 msgstr ""
 
-#: mod_muc_room.erl:4409
+#: mod_muc_room.erl:4410
 msgid "~s invites you to the room ~s"
 msgstr "~s mời bạn vào phòng ~s"
 
-#: mod_muc_room.erl:4421
+#: mod_muc_room.erl:4422
 msgid "the password is"
 msgstr "mật khẩu là"
 

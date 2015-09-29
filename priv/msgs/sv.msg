@@ -53,7 +53,6 @@
 {"Delete message of the day on all hosts","Ta bort dagens meddelande på alla värdar"}.
 {"Delete message of the day","Ta bort dagens meddelande"}.
 {"Delete Selected","Tabort valda"}.
-{"Delete","Ta bort"}.
 {"Delete User","Ta bort användare"}.
 {"Deliver event notifications","Skicka eventnotifikation"}.
 {"Deliver payloads with event notifications","Skicka innehåll tillsammans med notifikationer"}.
@@ -293,7 +292,6 @@
 {"Sunday","Söndag"}.
 {"The CAPTCHA is valid.","Din CAPTCHA är godkänd."}.
 {"the password is","Lösenordet är"}.
-{"This room is not anonymous","Detta rum är inte anonymt"}.
 {"Thursday","Torsdag"}.
 {"Time delay","Tidsförsening"}.
 {"Time","Tid"}.

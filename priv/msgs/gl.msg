@@ -50,7 +50,6 @@
 {"Database Tables Configuration at ","Configuración de táboas da base de datos en "}.
 {"December","Decembro"}.
 {"Default users as participants","Os usuarios son participantes por defecto"}.
-{"Delete","Eliminar"}.
 {"Delete message of the day","Borrar mensaxe do dia"}.
 {"Delete message of the day on all hosts","Borrar a mensaxe do día en todos os dominios"}.
 {"Delete Selected","Eliminar os seleccionados"}.
@@ -299,7 +298,6 @@
 {"The CAPTCHA is valid.","O CAPTCHA é válido."}.
 {"The collections with which a node is affiliated","As coleccións coas que un nodo está afiliado"}.
 {"the password is","a contrasinal é"}.
-{"This room is not anonymous","Sala non anónima"}.
 {"Thursday","Xoves"}.
 {"Time","Data"}.
 {"Time delay","Atraso temporal"}.

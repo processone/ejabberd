@@ -29,8 +29,9 @@
 {"August","Augustus"}.
 {"Backup","Backup"}.
 {"Backup Management","Backup"}.
+{"Backup of ~p","Backup maken van ~p"}.
 {"Backup to File at ","Binaire backup maken op "}.
-{"Bad format","Slecht formaat"}.
+{"Bad format","Verkeerd formaat"}.
 {"Birthday","Geboortedatum"}.
 {"CAPTCHA web page","CAPTCHA webpagina."}.
 {"Change Password","Wachtwoord wijzigen"}.
@@ -55,6 +56,7 @@
 {"Country","Land"}.
 {"CPU Time:","Processortijd:"}.
 {"Database","Database"}.
+{"Database Tables at ~p","Databasetabellen van ~p"}.
 {"Database Tables Configuration at ","Instellingen van databasetabellen op "}.
 {"December","December"}.
 {"Default users as participants","Gebruikers standaard instellen als deelnemers"}.
@@ -62,7 +64,6 @@
 {"Delete message of the day on all hosts","Verwijder bericht-van-de-dag op alle hosts"}.
 {"Delete Selected","Geselecteerde verwijderen"}.
 {"Delete User","Verwijder Gebruiker"}.
-{"Delete","Verwijderen"}.
 {"Deliver event notifications","Gebeurtenisbevestigingen Sturen"}.
 {"Deliver payloads with event notifications","Berichten bezorgen samen met gebeurtenisnotificaties"}.
 {"Description:","Beschrijving:"}.
@@ -75,6 +76,7 @@
 {"Either approve or decline the voice request.","Keur stemaanvraag goed of af."}.
 {"ejabberd IRC module","ejabberd's IRC-module"}.
 {"ejabberd MUC module","ejabberd's MUC module"}.
+{"ejabberd Multicast service","ejabberd Multicast service"}.
 {"ejabberd Publish-Subscribe module","ejabberd Publish-Subscribe module"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams module"}.
 {"ejabberd vCard module","ejabberd's vCard-module"}.
@@ -82,6 +84,7 @@
 {"Elements","Elementen"}.
 {"Email","E-mail"}.
 {"Enable logging","Logs aanzetten"}.
+{"Enable message archiving","Zet bericht-archivering aan"}.
 {"Encoding for server ~b","Karakterset voor server ~b"}.
 {"End User Session","Verwijder Gebruikers-sessie"}.
 {"Enter list of {Module, [Options]}","Voer lijst met op te starten modules als volgt in: {Module, [Opties]}"}.
@@ -97,6 +100,7 @@
 {"Error","Fout"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Voorbeeld: [{\"irc.example.org\", \"koi8-r\", 6667, \"geheim\"}, {\"vendetta.example.net\", \"iso8859-1\", 7000}, {irc,testserver.nl\", \"utf-8\"}]."}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Geen CAPTCHA test voor Jabber IDs"}.
+{"Export all tables as SQL queries to a file:","Exporteer alle tabellen als SQL-queries naar een bestand:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exporteer data van alle gebruikers in de server naar PIEFXIS-bestanden (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exporteer data van alle gebruikers van een host naar PIEXFIS-bestanden (XEP-0227):"}.
 {"Family Name","Achternaam"}.
@@ -115,11 +119,11 @@
 {"Grant voice to this person?","Stemaanvraag honoreren voor deze persoon?"}.
 {"Group ","Groep "}.
 {"Groups","Groepen"}.
-{"has been banned","werd verbannen"}.
+{"has been banned","is verbannen"}.
 {"has been kicked because of an affiliation change","is weggestuurd vanwege een affiliatieverandering"}.
 {"has been kicked because of a system shutdown","is weggestuurd omdat het systeem gestopt wordt"}.
 {"has been kicked because the room has been changed to members-only","is weggestuurd omdat de chatruimte vanaf heden alleen toegankelijk is voor leden"}.
-{"has been kicked","werd gekicked"}.
+{"has been kicked","is weggestuurd"}.
 {" has set the subject to: "," veranderde het onderwerp in: "}.
 {"Host","Host"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Als U het CAPTCHA-plaatje niet ziet, bezoek dan de webpagina."}.
@@ -139,7 +143,7 @@
 {"IRC channel (don't put the first #)","IRC kanaal (zonder eerste #)"}.
 {"IRC server","IRC-server"}.
 {"IRC settings","IRC instellingen"}.
-{"IRC Transport","IRC Transport"}.
+{"IRC Transport","IRC-transport"}.
 {"IRC username","Gebruikersnaam voor IRC"}.
 {"IRC Username","Gebruikersnaam voor IRC:"}.
 {"is now known as","heet nu"}.
@@ -161,6 +165,7 @@
 {"Listened Ports at ","Openstaande poorten op "}.
 {"Listened Ports","Openstaande poorten"}.
 {"List of modules to start","Lijst met op te starten modules"}.
+{"List of rooms","Lijst van groepsgesprekken"}.
 {"Low level update script","Lowlevel script voor de opwaardering"}.
 {"Make participants list public","Deelnemerslijst publiek maken"}.
 {"Make room CAPTCHA protected","Chatruimte beveiligen met een geautomatiseerde Turing test"}.
@@ -183,8 +188,11 @@
 {"moderators only","moderators"}.
 {"Modified modules","Gewijzigde modules"}.
 {"Module","Module"}.
+{"Modules at ~p","Modules op ~p"}.
 {"Modules","Modules"}.
 {"Monday","Maandag"}.
+{"Multicast","Multicast"}.
+{"Multi-User Chat","Groepschat"}.
 {"Name:","Naam:"}.
 {"Name","Naam"}.
 {"Never","Nooit"}.
@@ -197,6 +205,7 @@
 {"No Data","Geen gegevens"}.
 {"Node ID","Node ID"}.
 {"Node not found","Node niet gevonden"}.
+{"Node ~p","Node ~p"}.
 {"Nodes","Nodes"}.
 {"No limit","Geen limiet"}.
 {"None","Geen"}.
@@ -236,6 +245,7 @@
 {"Path to File","Pad naar bestand"}.
 {"Pending","Bezig"}.
 {"Period: ","Periode: "}.
+{"Permanent rooms","Permanente groepsgesprekken"}.
 {"Persist items to storage","Items in het geheugen bewaren"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Merk op dat volgende opties enkel backups maken van de ingebouwde database Mnesia. Als U de ODBC module gebruikt dan moeten daarvan afzonderlijke backups gemaakt worden."}.
@@ -253,6 +263,7 @@
 {"Raw","Ruw"}.
 {"Really delete message of the day?","Wilt u het bericht van de dag verwijderen?"}.
 {"Register a Jabber account","Registreer een Jabber-account"}.
+{"Registered nicknames","Geregistreerde gebruikersnamen"}.
 {"Registered Users:","Geregistreerde gebruikers:"}.
 {"Registered Users","Geregistreerde gebruikers"}.
 {"Register","Registreer"}.
@@ -329,15 +340,18 @@
 {"There was an error changing the password: ","Er was een fout bij het veranderen van het wachtwoord:"}.
 {"There was an error creating the account: ","Er was een fout bij het creeern van de account:"}.
 {"There was an error deleting the account: ","Er was een fout bij het verwijderen van de account."}.
+{"This IP address is blacklisted in ~s","Dit IP-adres is geblokkeerd in ~s"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Dit is niet hoofdlettergevoelig: macbeth is hetzelfde als MacBeth en Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Deze pagina maakt het mogelijk een Jabber-account te registreren op deze server. Uw JID (Jabber IDentiteit) zal er als volg uit zien: gebruikersnaam@server. Lees de instructies zorgvuldig teneinde de velden correct in te vullen."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Deze pagina maakt het mogelijk een Jabber-account op deze server op te heffen."}.
-{"This room is not anonymous","Deze chatruimte is niet anoniem"}.
 {"Thursday","Donderdag"}.
 {"Time delay","Vertraging"}.
 {"Time","Tijd"}.
 {"To","Aan"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Te veel (~p) mislukte authenticatie-pogingen van dit IP-adres (~s). Dit adres zal worden gedeblokkeerd om ~s UTC"}.
+{"Too many unacked stanzas","Te veel niet-bevestigde stanzas"}.
 {"To ~s","Naar ~s"}.
+{"Total rooms","Aantal groepsgesprekken"}.
 {"Transactions Aborted:","Afgebroken transacties:"}.
 {"Transactions Committed:","Bevestigde transacties:"}.
 {"Transactions Logged:","Gelogde transacties:"}.
@@ -350,6 +364,7 @@
 {"Update message of the day (don't send)","Bericht van de dag bijwerken (niet verzenden)"}.
 {"Update message of the day on all hosts (don't send)","Verander bericht-van-de-dag op alle hosts (niet versturen)"}.
 {"Update plan","Plan voor de opwaardering"}.
+{"Update ~p","Opwaarderen van ~p"}.
 {"Update script","Script voor de opwaardering"}.
 {"Uptime:","Uptime:"}.
 {"Use of STARTTLS required","Gebruik van STARTTLS is vereist"}.
@@ -357,6 +372,7 @@
 {"User JID","JID Gebruiker"}.
 {"User Management","Gebruikersbeheer"}.
 {"Username:","Gebruikersnaam:"}.
+{"User ~s","Gebruiker ~s"}.
 {"Users","Gebruikers"}.
 {"Users Last Activity","Laatste activiteit van gebruikers"}.
 {"Validate","Bevestigen"}.

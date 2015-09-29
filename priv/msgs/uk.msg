@@ -60,7 +60,6 @@
 {"Delete message of the day","Видалити повідомлення дня"}.
 {"Delete Selected","Видалити виділені"}.
 {"Delete User","Видалити Користувача"}.
-{"Delete","Видалити"}.
 {"Deliver event notifications","Доставляти сповіщення про події"}.
 {"Deliver payloads with event notifications","Доставляти разом з повідомленнями про публікації самі публікації"}.
 {"Description:","Опис:"}.
@@ -326,7 +325,6 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регістр не має значення: \"МАША\" та \"маша\" буде сприйматися як одне й те саме ім'я."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Тут ви можете зареєструвати обліковий запис Jabber на цьому сервері. Ваш JID (ідентифікатор Jabber) матиме вигляд \"користувач@сервер\". Щоб вірно заповнити поля нижче, будь ласка, уважно читайте інструкції до них."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Ця сторінка дозволяє видалити свій акаунт з Jabber-сервера."}.
-{"This room is not anonymous","Ця кімната не анонімна"}.
 {"Thursday","Четвер"}.
 {"Time delay","Час затримки"}.
 {"Time","Час"}.

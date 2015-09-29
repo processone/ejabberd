@@ -28,6 +28,7 @@
 {"April","апреля"}.
 {"August","августа"}.
 {"Backup Management","Управление резервным копированием"}.
+{"Backup of ~p","Резервное копирование ~p"}.
 {"Backup to File at ","Резервное копирование в файл на "}.
 {"Backup","Резервное копирование"}.
 {"Bad format","Неправильный формат"}.
@@ -54,6 +55,7 @@
 {"Connections parameters","Параметры соединения"}.
 {"Country","Страна"}.
 {"CPU Time:","Процессорное время:"}.
+{"Database Tables at ~p","Таблицы базы данных на ~p"}.
 {"Database Tables Configuration at ","Конфигурация таблиц базы данных на "}.
 {"Database","База данных"}.
 {"December","декабря"}.
@@ -62,7 +64,6 @@
 {"Delete message of the day","Удалить сообщение дня"}.
 {"Delete Selected","Удалить выделенные"}.
 {"Delete User","Удалить пользователя"}.
-{"Delete","Удалить"}.
 {"Deliver event notifications","Доставлять уведомления о событиях"}.
 {"Deliver payloads with event notifications","Доставлять вместе с уведомлениями o публикациях сами публикации"}.
 {"Description:","Описание:"}.
@@ -75,6 +76,7 @@
 {"Either approve or decline the voice request.","Подтвердите или отклоните право голоса."}.
 {"ejabberd IRC module","ejabberd IRC модуль"}.
 {"ejabberd MUC module","ejabberd MUC модуль"}.
+{"ejabberd Multicast service","ejabberd Multicast сервис"}.
 {"ejabberd Publish-Subscribe module","Модуль ejabberd Публикации-Подписки"}.
 {"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams модуль"}.
 {"ejabberd vCard module","ejabberd vCard модуль"}.
@@ -82,6 +84,7 @@
 {"Elements","Элементы"}.
 {"Email","Электронная почта"}.
 {"Enable logging","Включить журналирование"}.
+{"Enable message archiving","Включить хранение сообщений"}.
 {"Encoding for server ~b","Кодировка сервера ~b"}.
 {"End User Session","Завершить сеанс пользователя"}.
 {"Enter list of {Module, [Options]}","Введите список вида {Module, [Options]}"}.
@@ -97,6 +100,7 @@
 {"Error","Ошибка"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Пример: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Исключить показ капчи для списка Jabber ID"}.
+{"Export all tables as SQL queries to a file:","Экспортировать все таблицы в виде SQL запросов в файл:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0227):"}.
 {"Family Name","Фамилия"}.
@@ -161,6 +165,7 @@
 {"Listened Ports at ","Прослушиваемые порты на "}.
 {"Listened Ports","Прослушиваемые порты"}.
 {"List of modules to start","Список запускаемых модулей"}.
+{"List of rooms","Список комнат"}.
 {"Low level update script","Низкоуровневый сценарий обновления"}.
 {"Make participants list public","Сделать список участников видимым всем"}.
 {"Make room CAPTCHA protected","Сделать комнату защищённой капчей"}.
@@ -182,9 +187,12 @@
 {"Minimum interval between voice requests (in seconds)","Минимальный интервал между запросами на право голоса"}.
 {"moderators only","только модераторам"}.
 {"Modified modules","Изменённые модули"}.
+{"Modules at ~p","Модули на ~p"}.
 {"Modules","Модули"}.
 {"Module","Модуль"}.
 {"Monday","Понедельник"}.
+{"Multicast","Мультикаст"}.
+{"Multi-User Chat","Конференция"}.
 {"Name:","Название:"}.
 {"Name","Название"}.
 {"Never","Никогда"}.
@@ -197,6 +205,7 @@
 {"No Data","Нет данных"}.
 {"Node ID","ID узла"}.
 {"Node not found","Узел не найден"}.
+{"Node ~p","Узел ~p"}.
 {"Nodes","Узлы"}.
 {"No limit","Не ограничено"}.
 {"None","Нет"}.
@@ -236,6 +245,7 @@
 {"Path to File","Путь к файлу"}.
 {"Pending","Ожидание"}.
 {"Period: ","Период"}.
+{"Permanent rooms","Постоянные комнаты"}.
 {"Persist items to storage","Сохранять публикации в хранилище"}.
 {"Ping","Пинг"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Заметьте, что здесь производится резервное копирование только встроенной базы данных Mnesia. Если Вы также используете другое хранилище данных (например с помощью модуля ODBC), то его резервное копирование следует осуществлять отдельно."}.
@@ -253,6 +263,7 @@
 {"Raw","Необработанный формат"}.
 {"Really delete message of the day?","Действительно удалить сообщение дня?"}.
 {"Register a Jabber account","Зарегистрировать Jabber-аккаунт"}.
+{"Registered nicknames","Зарегистрированные псевдонимы"}.
 {"Registered Users:","Зарегистрированные пользователи:"}.
 {"Registered Users","Зарегистрированные пользователи"}.
 {"Register","Зарегистрировать"}.
@@ -329,14 +340,17 @@
 {"There was an error changing the password: ","Ошибка при смене пароля:"}.
 {"There was an error creating the account: ","Ошибка при создании аккаунта:"}.
 {"There was an error deleting the account: ","Ошибка при удалении аккаунта:"}.
+{"This IP address is blacklisted in ~s","Этот IP адрес находится в чёрном списке ~s"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регистр не имеет значения: \"маша\" и \"МАША\" будет считаться одним и тем же именем."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Здесь Вы можете создать Jabber-аккаунт на этом Jabber-сервере. Ваш JID (Jabber-идентификатор) будет в виде: \"пользователь@сервер\". Пожалуйста, внимательно читайте инструкции для правильного заполнения полей."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Здесь Вы можете удалить Jabber-аккаунт с этого сервера."}.
-{"This room is not anonymous","Эта комната не анонимная"}.
 {"Thursday","Четверг"}.
 {"Time delay","По истечение"}.
 {"Time","Время"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Слишком много (~p) неудачных попыток аутентификации с этого IP-адреса (~s). Адрес будет разблокирован в ~s UTC"}.
+{"Too many unacked stanzas","Слишком много неподтверждённых пакетов"}.
 {"To ~s","К ~s"}.
+{"Total rooms","Все комнаты"}.
 {"To","Кому"}.
 {"Transactions Aborted:","Транзакции отмененные:"}.
 {"Transactions Committed:","Транзакции завершенные:"}.
@@ -349,6 +363,7 @@
 {"Update message of the day (don't send)","Обновить сообщение дня (не рассылать)"}.
 {"Update message of the day on all hosts (don't send)","Обновить сообщение дня на всех виртуальных серверах (не рассылать)"}.
 {"Update plan","План обновления"}.
+{"Update ~p","Обновление ~p"}.
 {"Update script","Сценарий обновления"}.
 {"Update","Обновить"}.
 {"Uptime:","Время работы:"}.
@@ -358,6 +373,7 @@
 {"Username:","Имя пользователя:"}.
 {"Users Last Activity","Статистика последнего подключения пользователей"}.
 {"Users","Пользователи"}.
+{"User ~s","Пользователь ~s"}.
 {"User","Пользователь"}.
 {"Validate","Утвердить"}.
 {"vCard User Search","Поиск пользователей по vCard"}.

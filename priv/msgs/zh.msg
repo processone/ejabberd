@@ -62,7 +62,6 @@
 {"Delete message of the day","删除每日消息"}.
 {"Delete Selected","删除已选内容"}.
 {"Delete User","删除用户"}.
-{"Delete","删除"}.
 {"Deliver event notifications","传递事件通知"}.
 {"Deliver payloads with event notifications","用事件通告传输有效负载"}.
 {"Description:","描述:"}.
@@ -332,7 +331,6 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","此处不区分大小写: macbeth 与 MacBeth 和 Macbeth 是一样的."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","本页面允许在此服务器上创建 Jabber 帐户. 你的 JID (Jabber ID) 的形式如下: 用户名@服务器. 请仔细阅读说明并正确填写相应字段."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","此页面允许在此 Jabber 服务器上注销 Jabber 帐户"}.
-{"This room is not anonymous","此房间不是匿名房间"}.
 {"Thursday","星期四"}.
 {"Time delay","时间延迟"}.
 {"Time","时间"}.

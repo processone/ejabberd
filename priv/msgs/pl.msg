@@ -28,6 +28,7 @@
 {"April","Kwiecień"}.
 {"August","Sierpień"}.
 {"Backup Management","Zarządzanie kopiami zapasowymi"}.
+{"Backup of ~p","Kopia zapasowa ~p"}.
 {"Backup to File at ","Zapisz kopię w pliku na "}.
 {"Backup","Wykonaj kopie"}.
 {"Bad format","Błędny format"}.
@@ -55,6 +56,7 @@
 {"Country","Państwo"}.
 {"CPU Time:","Czas CPU:"}.
 {"Database","Baza danych"}.
+{"Database Tables at ~p","Tabele bazy na ~p"}.
 {"Database Tables Configuration at ","Konfiguracja tabel bazy na "}.
 {"December","Grudzień"}.
 {"Default users as participants","Domyślni użytkownicy jako uczestnicy"}.
@@ -62,7 +64,6 @@
 {"Delete message of the day","Usuń wiadomość dnia"}.
 {"Delete Selected","Usuń zaznaczone"}.
 {"Delete User","Usuń użytkownika"}.
-{"Delete","Usuń"}.
 {"Deliver event notifications","Dostarczaj powiadomienia o zdarzeniach"}.
 {"Deliver payloads with event notifications","Dostarczaj zawartość publikacji wraz z powiadomieniami o zdarzeniach"}.
 {"Description:","Opis:"}.
@@ -75,6 +76,7 @@
 {"Either approve or decline the voice request.","Zatwierdź lub odrzuć żądanie głosowe"}.
 {"ejabberd IRC module","Moduł IRC ejabberd"}.
 {"ejabberd MUC module","Moduł MUC"}.
+{"ejabberd Multicast service","Serwis multicast ejabbera"}.
 {"ejabberd Publish-Subscribe module","Moduł Publish-Subscribe"}.
 {"ejabberd SOCKS5 Bytestreams module","Moduł SOCKS5 Bytestreams"}.
 {"ejabberd vCard module","Moduł vCard ejabberd"}.
@@ -82,6 +84,7 @@
 {"Elements","Elementy"}.
 {"Email","Email"}.
 {"Enable logging","Włącz logowanie"}.
+{"Enable message archiving","Włącz archiwizowanie rozmów"}.
 {"Encoding for server ~b","Kodowanie znaków dla serwera ~b"}.
 {"End User Session","Zakończ sesję uzytkownika"}.
 {"Enter list of {Module, [Options]}","Wprowadź listę {Moduł, [Opcje]}"}.
@@ -97,6 +100,7 @@
 {"Error","Błąd"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Przykład: [{\"wroclaw.irc.pl\",\"utf-8\"}, {\"warszawa.irc.pl\", \"iso8859-2\"}]."}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Pomiń Jabber ID z żądania CAPTCHA"}.
+{"Export all tables as SQL queries to a file:","Wyeksportuj wszystkie tabele jako zapytania SQL do pliku:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Eksportuj dane wszystkich użytkowników serwera do plików w formacie PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Eksportuj dane użytkowników z hosta do plików w formacie PIEFXIS (XEP-0227):"}.
 {"Family Name","Nazwisko"}.
@@ -161,6 +165,7 @@
 {"Listened Ports at ","Porty nasłuchujące na "}.
 {"Listened Ports","Porty nasłuchujące"}.
 {"List of modules to start","Lista modułów do uruchomienia"}.
+{"List of rooms","Lista pokoi"}.
 {"Low level update script","Skrypt aktualizacji niskiego poziomu"}.
 {"Make participants list public","Upublicznij listę uczestników"}.
 {"Make room CAPTCHA protected","Pokój zabezpieczony captchą"}.
@@ -183,8 +188,11 @@
 {"moderators only","tylko moderatorzy"}.
 {"Modified modules","Zmodyfikowane moduły"}.
 {"Module","Moduł"}.
+{"Modules at ~p","Moduły na ~p"}.
 {"Modules","Moduły"}.
 {"Monday","Poniedziałek"}.
+{"Multicast","Multicast"}.
+{"Multi-User Chat","Wieloosobowa rozmowa"}.
 {"Name","Imię"}.
 {"Name:","Nazwa:"}.
 {"Never","Nigdy"}.
@@ -197,6 +205,7 @@
 {"No Data","Brak danych"}.
 {"Node ID","ID węzła"}.
 {"Node not found","Węzeł nie został znaleziony"}.
+{"Node ~p","Węzeł ~p"}.
 {"Nodes","Węzły"}.
 {"No limit","Bez limitu"}.
 {"None","Brak"}.
@@ -236,6 +245,7 @@
 {"Path to File","Scieżka do pliku"}.
 {"Pending","Oczekuje"}.
 {"Period: ","Przedział czasu: "}.
+{"Permanent rooms","Stałych pokoi"}.
 {"Persist items to storage","Przechowuj na stałe dane PubSub"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Te opcje kopii zapasowych dotyczą tylko wbudowanej bazy danych typu Mnesia. Jeśli korzystasz z modułu ODBC, musisz wykonać kopie bazy we własnym zakresie."}.
@@ -253,6 +263,7 @@
 {"Raw","Żródło"}.
 {"Really delete message of the day?","Na pewno usunąć wiadomość dnia?"}.
 {"Register a Jabber account","Załóż konto Jabber"}.
+{"Registered nicknames","Zarejestrowanych nicków"}.
 {"Registered Users:","Użytkownicy zarejestrowani:"}.
 {"Registered Users","Użytkownicy zarejestrowani"}.
 {"Register","Zarejestruj"}.
@@ -329,15 +340,18 @@
 {"There was an error changing the password: ","Podczas próby zmiany hasła wystąpił błąd:"}.
 {"There was an error creating the account: ","Wystąpił błąd podczas tworzenia konta:"}.
 {"There was an error deleting the account: ","Podczas usuwania konta wystąpił błąd:"}.
+{"This IP address is blacklisted in ~s","Ten adres IP został zablokowany w ~s"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Pole nie rozróżnia wielkości liter: słowo Hanna jest takie samo jak hAnna lub haNNa."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Niniejsza strona pozwala na założenie konta Jabber na tym serwerze. Twój JID (Jabber IDentyfikator) będzie miał postać: nazwa_użytkownika@serwer. Przeczytaj dokładnie instrukcję i wypełnij pola."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Ta strona pozwala usunąć konto Jabber z tego serwera."}.
-{"This room is not anonymous","Ten pokój nie jest anonimowy"}.
 {"Thursday","Czwartek"}.
 {"Time","Czas"}.
 {"Time delay","Opóźnienie"}.
 {"To","Do"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Zbyt wiele (~p) nieudanych prób logowanie z tego adresu IP (~s). Ten adres zostanie odblokowany o ~s UTC"}.
+{"Too many unacked stanzas","Zbyt wiele niepotwierdzonych pakietów"}.
 {"To ~s","Do ~s"}.
+{"Total rooms","Wszystkich pokoi"}.
 {"Transactions Aborted:","Transakcje anulowane:"}.
 {"Transactions Committed:","Transakcje zakończone:"}.
 {"Transactions Logged:","Transakcje zalogowane:"}.
@@ -350,6 +364,7 @@
 {"Update message of the day (don't send)","Aktualizuj wiadomość dnia (bez wysyłania)"}.
 {"Update message of the day on all hosts (don't send)","Aktualizuj wiadomość dnia na wszystkich hostach (bez wysyłania)"}.
 {"Update plan","Plan aktualizacji"}.
+{"Update ~p","Uaktualnij ~p"}.
 {"Update script","Skrypt aktualizacji"}.
 {"Uptime:","Czas pracy:"}.
 {"Use of STARTTLS required","Wymagane jest użycie STARTTLS"}.
@@ -358,6 +373,7 @@
 {"Username:","Nazwa użytkownika:"}.
 {"Users Last Activity","Ostatnia aktywność użytkowników"}.
 {"Users","Użytkownicy"}.
+{"User ~s","Użytkownik ~s"}.
 {"User","Użytkownik"}.
 {"Validate","Potwierdź"}.
 {"vCard User Search","Wyszukiwanie vCard użytkowników"}.

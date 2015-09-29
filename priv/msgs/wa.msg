@@ -47,7 +47,6 @@
 {"Database Tables Configuration at ","Apontiaedje des tåves del båze di dnêyes so "}.
 {"December","decimbe"}.
 {"Default users as participants","Les uzeus sont des pårticipants come prémetowe dujhance"}.
-{"Delete","Disfacer"}.
 {"Delete message of the day","Disfacer l' messaedje do djoû"}.
 {"Delete message of the day on all hosts","Disfacer l' messaedje do djoû so tos les lodjoes"}.
 {"Delete Selected","Disfacer les elemints tchoezis"}.
@@ -260,7 +259,6 @@
 {"Subscription","Abounmimnt"}.
 {"Sunday","dimegne"}.
 {"the password is","li scret est"}.
-{"This room is not anonymous","Cisse såle ci n' est nén anonime"}.
 {"Thursday","djudi"}.
 {"Time","Date"}.
 {"Time delay","Tårdjaedje"}.

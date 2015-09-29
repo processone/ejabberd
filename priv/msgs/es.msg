@@ -84,6 +84,7 @@
 {"Elements","Elementos"}.
 {"Email","correo"}.
 {"Enable logging","Guardar históricos"}.
+{"Enable message archiving","Activar el almacenamiento de mensajes"}.
 {"Encoding for server ~b","Codificación del servidor ~b"}.
 {"End User Session","Cerrar sesión de usuario"}.
 {"Enter list of {Module, [Options]}","Introduce lista de {módulo, [opciones]}"}.

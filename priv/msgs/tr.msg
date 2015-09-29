@@ -61,7 +61,6 @@
 {"Delete message of the day","Günün mesajını sil"}.
 {"Delete message of the day on all hosts","Tüm sunuculardaki günün mesajını sil"}.
 {"Delete Selected","Seçilenleri Sil"}.
-{"Delete","Sil"}.
 {"Delete User","Kullanıcıyı Sil"}.
 {"Deliver event notifications","Olay uyarıları gönderilsin"}.
 {"Deliver payloads with event notifications","Yükleri (payload) olay uyarıları ile beraber gönder"}.
@@ -332,7 +331,6 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Burada büyük küçük harfi yapılmaz: macbeth ile MacBeth ve Macbeth aynıdır."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Bu sayfa bu Jabber sunucusunda bir Jabber hesabı oluşturulmasına olanak tanıyor. Sizin JID'iniz (Jabber Tanımlayıcısı) şu biçemde olacaktır: kullanici_adi@sunucu. Lütfen alanları doğru doldurabilmek için yönergeleri dikkatle okuyunuz."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Bu sayfa bu Jabber sunucusundan bir Jabber hesabının kaydını silmeye olanak tanıyor."}.
-{"This room is not anonymous","Bu oda anonim değil"}.
 {"Thursday","Perşembe"}.
 {"Time delay","Zaman gecikmesi"}.
 {"Time","Zaman"}.

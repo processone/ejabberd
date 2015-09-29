@@ -56,7 +56,6 @@
 {"Database Tables Configuration at ","Database Tabel Konfigurasi pada"}.
 {"December","Desember"}.
 {"Default users as participants","pengguna pertama kali masuk sebagai participant"}.
-{"Delete","Hapus"}.
 {"Delete message of the day","Hapus pesan harian"}.
 {"Delete message of the day on all hosts","Hapus pesan harian pada semua host"}.
 {"Delete Selected","Hapus Yang Terpilih"}.
@@ -325,7 +324,6 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Pada bagian ini huruf besar dan kecil tidak dibedakan: Misalnya macbeth adalah sama dengan MacBeth juga Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Halaman ini memungkinkan untuk membuat akun Jabber di layanan Jabber ini. JID Anda (Jabber Pengenal) akan berbentuk: namapengguna@layanan. Harap baca dengan seksama petunjuk-petunjuk untuk mengisi kolom dengan benar."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Pada bagian ini memungkinkan Anda untuk membatalkan pendaftaran akun Jabber pada layanan Jabber ini."}.
-{"This room is not anonymous","Ruangan ini tidak dikenal"}.
 {"Thursday","Kamis"}.
 {"Time delay","Waktu tunda"}.
 {"Time","Waktu"}.

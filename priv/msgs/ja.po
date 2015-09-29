@@ -53,6 +53,26 @@ msgstr "CAPTCHA ウェブページ"
 msgid "The CAPTCHA is valid."
 msgstr "CAPTCHA は有効です。"
 
+#: ejabberd_oauth.erl:253 ejabberd_web_admin.erl:1338
+#: ejabberd_web_admin.erl:1393 mod_register.erl:262 mod_vcard.erl:490
+msgid "User"
+msgstr "ユーザー"
+
+#: ejabberd_oauth.erl:256
+#, fuzzy
+msgid "Server"
+msgstr "サーバー:"
+
+#: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1343 mod_configure.erl:1398
+#: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2124
+#: mod_muc_room.erl:3377 mod_register.erl:272
+msgid "Password"
+msgstr "パスワード"
+
+#: ejabberd_oauth.erl:267
+msgid "Accept"
+msgstr ""
+
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
 msgid "Unauthorized"
@@ -157,7 +177,7 @@ msgid "Show Integral Table"
 msgstr "累積の表を表示"
 
 #: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:1785
-#: mod_muc_admin.erl:246
+#: mod_muc_admin.erl:247
 msgid "Statistics"
 msgstr "統計"
 
@@ -180,17 +200,6 @@ msgstr "ホスト"
 #: ejabberd_web_admin.erl:1274
 msgid "Registered Users"
 msgstr "登録ユーザー"
-
-#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393
-#: mod_register.erl:262 mod_vcard.erl:490
-msgid "User"
-msgstr "ユーザー"
-
-#: ejabberd_web_admin.erl:1343 mod_configure.erl:1398 mod_configure.erl:1485
-#: mod_configure.erl:1889 mod_configure.erl:2124 mod_muc_room.erl:3376
-#: mod_register.erl:272
-msgid "Password"
-msgstr "パスワード"
 
 #: ejabberd_web_admin.erl:1352 mod_configure.erl:177 mod_configure.erl:539
 #: mod_configure.erl:1386
@@ -935,7 +944,7 @@ msgstr "サーバーのエンコーディング ~b"
 msgid "Server ~b"
 msgstr "サーバー ~b"
 
-#: mod_muc.erl:797 mod_muc_admin.erl:320
+#: mod_muc.erl:797 mod_muc_admin.erl:321
 msgid "Chatrooms"
 msgstr "チャットルーム"
 
@@ -951,7 +960,7 @@ msgstr "ニックネーム登録: "
 msgid "Enter nickname you want to register"
 msgstr "登録するニックネームを入力してください"
 
-#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436
+#: mod_muc.erl:1014 mod_muc_room.erl:4265 mod_roster.erl:1436
 #: mod_vcard.erl:490 mod_vcard.erl:621
 msgid "Nickname"
 msgstr "ニックネーム"
@@ -960,24 +969,24 @@ msgstr "ニックネーム"
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUCモジュール"
 
-#: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
-#: mod_muc_admin.erl:319
+#: mod_muc_admin.erl:231 mod_muc_admin.erl:234 mod_muc_admin.erl:246
+#: mod_muc_admin.erl:320
 msgid "Multi-User Chat"
 msgstr "マルチユーザーチャット"
 
-#: mod_muc_admin.erl:248
+#: mod_muc_admin.erl:249
 msgid "Total rooms"
 msgstr "チャットルーム数"
 
-#: mod_muc_admin.erl:249
+#: mod_muc_admin.erl:250
 msgid "Permanent rooms"
 msgstr "永続チャットルーム"
 
-#: mod_muc_admin.erl:250
+#: mod_muc_admin.erl:251
 msgid "Registered nicknames"
 msgstr "登録ニックネーム"
 
-#: mod_muc_admin.erl:253
+#: mod_muc_admin.erl:254
 msgid "List of rooms"
 msgstr "チャットルームの一覧"
 
@@ -1117,182 +1126,182 @@ msgstr "チャットルームの設定"
 msgid "Room Occupants"
 msgstr "在室者"
 
-#: mod_muc_room.erl:997
+#: mod_muc_room.erl:998
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr "モデレーターと参加者のみがチャットルームの件名を変更できます"
 
-#: mod_muc_room.erl:1002
+#: mod_muc_room.erl:1003
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "モデレーターのみがチャットルームの件名を変更できます"
 
-#: mod_muc_room.erl:2751
+#: mod_muc_room.erl:2752
 msgid "Jabber ID ~s is invalid"
 msgstr "Jabber ID ~s は無効です"
 
-#: mod_muc_room.erl:2765
+#: mod_muc_room.erl:2766
 msgid "Nickname ~s does not exist in the room"
 msgstr "ニックネーム ~s はこのチャットルームにいません"
 
-#: mod_muc_room.erl:2788 mod_muc_room.erl:3168
+#: mod_muc_room.erl:2789 mod_muc_room.erl:3169
 msgid "Invalid affiliation: ~s"
 msgstr "無効な分掌です: ~s"
 
-#: mod_muc_room.erl:2839
+#: mod_muc_room.erl:2840
 msgid "Invalid role: ~s"
 msgstr "無効な役です: ~s"
 
-#: mod_muc_room.erl:3341
+#: mod_muc_room.erl:3342
 msgid "Configuration of room ~s"
 msgstr "チャットルーム ~s の設定"
 
-#: mod_muc_room.erl:3352
+#: mod_muc_room.erl:3353
 msgid "Room title"
 msgstr "チャットルームのタイトル"
 
-#: mod_muc_room.erl:3354 mod_muc_room.erl:4101
+#: mod_muc_room.erl:3355 mod_muc_room.erl:4102
 msgid "Room description"
 msgstr "チャットルームの説明"
 
-#: mod_muc_room.erl:3362
+#: mod_muc_room.erl:3363
 msgid "Make room persistent"
 msgstr "チャットルームを永続化"
 
-#: mod_muc_room.erl:3368
+#: mod_muc_room.erl:3369
 msgid "Make room public searchable"
 msgstr "チャットルームを検索可"
 
-#: mod_muc_room.erl:3371
+#: mod_muc_room.erl:3372
 msgid "Make participants list public"
 msgstr "参加者一覧を公開"
 
-#: mod_muc_room.erl:3373
+#: mod_muc_room.erl:3374
 msgid "Make room password protected"
 msgstr "チャットルームをパスワードで保護"
 
-#: mod_muc_room.erl:3387
+#: mod_muc_room.erl:3388
 msgid "Maximum Number of Occupants"
 msgstr "最大在室者数"
 
-#: mod_muc_room.erl:3399
+#: mod_muc_room.erl:3400
 msgid "No limit"
 msgstr "制限なし"
 
-#: mod_muc_room.erl:3429
+#: mod_muc_room.erl:3430
 msgid "Present real Jabber IDs to"
 msgstr "本当の Jabber ID を公開"
 
-#: mod_muc_room.erl:3443 mod_muc_room.erl:3506
+#: mod_muc_room.erl:3444 mod_muc_room.erl:3507
 msgid "moderators only"
 msgstr "モデレーターにのみ"
 
-#: mod_muc_room.erl:3453 mod_muc_room.erl:3516
+#: mod_muc_room.erl:3454 mod_muc_room.erl:3517
 msgid "anyone"
 msgstr "誰にでも"
 
-#: mod_muc_room.erl:3459
+#: mod_muc_room.erl:3460
 msgid "Make room members-only"
 msgstr "チャットルームをメンバーのみに制限"
 
-#: mod_muc_room.erl:3462
+#: mod_muc_room.erl:3463
 msgid "Make room moderated"
 msgstr "チャットルームをモデレート化"
 
-#: mod_muc_room.erl:3465
+#: mod_muc_room.erl:3466
 msgid "Default users as participants"
 msgstr "デフォルトのユーザーは参加者"
 
-#: mod_muc_room.erl:3468
+#: mod_muc_room.erl:3469
 msgid "Allow users to change the subject"
 msgstr "ユーザーによる件名の変更を許可"
 
-#: mod_muc_room.erl:3471
+#: mod_muc_room.erl:3472
 msgid "Allow users to send private messages"
 msgstr "ユーザーによるプライベートメッセージの送信を許可"
 
-#: mod_muc_room.erl:3479
+#: mod_muc_room.erl:3480
 msgid "Allow visitors to send private messages to"
 msgstr "傍聴者によるプライベートメッセージの送信を次の相手に許可"
 
-#: mod_muc_room.erl:3497
+#: mod_muc_room.erl:3498
 msgid "nobody"
 msgstr "誰にも許可しない"
 
-#: mod_muc_room.erl:3522
+#: mod_muc_room.erl:3523
 msgid "Allow users to query other users"
 msgstr "ユーザーによる他のユーザーへのクエリーを許可"
 
-#: mod_muc_room.erl:3525
+#: mod_muc_room.erl:3526
 msgid "Allow users to send invites"
 msgstr "ユーザーによる招待を許可"
 
-#: mod_muc_room.erl:3528
+#: mod_muc_room.erl:3529
 msgid "Allow visitors to send status text in presence updates"
 msgstr "傍聴者によるプレゼンス更新のステータス文の送信を許可"
 
-#: mod_muc_room.erl:3532
+#: mod_muc_room.erl:3533
 msgid "Allow visitors to change nickname"
 msgstr "傍聴者のニックネームの変更を許可"
 
-#: mod_muc_room.erl:3535
+#: mod_muc_room.erl:3536
 msgid "Allow visitors to send voice requests"
 msgstr "傍聴者による発言権の要求を許可"
 
-#: mod_muc_room.erl:3538
+#: mod_muc_room.erl:3539
 msgid "Minimum interval between voice requests (in seconds)"
 msgstr "発言権の要求の最小時間間隔 (秒)"
 
-#: mod_muc_room.erl:3545
+#: mod_muc_room.erl:3546
 msgid "Make room CAPTCHA protected"
 msgstr "チャットルームを CAPTCHA で保護"
 
-#: mod_muc_room.erl:3552
+#: mod_muc_room.erl:3553
 msgid "Enable message archiving"
 msgstr "メッセージアーカイブを有効化"
 
-#: mod_muc_room.erl:3558
+#: mod_muc_room.erl:3559
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
 msgstr "CAPTCHA 試験を免除する Jabber ID"
 
-#: mod_muc_room.erl:3567
+#: mod_muc_room.erl:3568
 msgid "Enable logging"
 msgstr "ロギングを有効"
 
-#: mod_muc_room.erl:3577
+#: mod_muc_room.erl:3578
 msgid "You need an x:data capable client to configure room"
 msgstr ""
 "チャットルームを設定するには x:data をサポートするクライアントが必要です"
 
-#: mod_muc_room.erl:4103
+#: mod_muc_room.erl:4104
 msgid "Number of occupants"
 msgstr "在室者の数"
 
-#: mod_muc_room.erl:4173
+#: mod_muc_room.erl:4174
 msgid "private, "
 msgstr "プライベート、"
 
-#: mod_muc_room.erl:4237
+#: mod_muc_room.erl:4238
 msgid "Voice request"
 msgstr "発言権を要求"
 
-#: mod_muc_room.erl:4242
+#: mod_muc_room.erl:4243
 msgid "Either approve or decline the voice request."
 msgstr "発言権の要求を承認または却下します。"
 
-#: mod_muc_room.erl:4262
+#: mod_muc_room.erl:4263
 msgid "User JID"
 msgstr "ユーザー JID"
 
-#: mod_muc_room.erl:4266
+#: mod_muc_room.erl:4267
 msgid "Grant voice to this person?"
 msgstr "この人に発言権を与えますか ?"
 
-#: mod_muc_room.erl:4409
+#: mod_muc_room.erl:4410
 msgid "~s invites you to the room ~s"
 msgstr "~s はあなたをチャットルーム ~s に招待しています"
 
-#: mod_muc_room.erl:4421
+#: mod_muc_room.erl:4422
 msgid "the password is"
 msgstr "パスワードは"
 

@@ -61,7 +61,6 @@
 {"Delete message of the day on all hosts","Slett melding for dagen på alle maskiner"}.
 {"Delete message of the day","Slett melding for dagen"}.
 {"Delete Selected","Slett valgte"}.
-{"Delete","Slett"}.
 {"Delete User","Slett Bruker"}.
 {"Deliver event notifications","Lever begivenhets kunngjøringer"}.
 {"Deliver payloads with event notifications","Send innhold sammen med kunngjøringer"}.
@@ -332,7 +331,6 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Denne er ufølsom for små og store bokstaver: macbeth er det samme som MacBeth og Macbeth. "}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Denne siden lar deg lage en Jabber konto på denne Jabber serveren. Din JID (Jabber ID) vil være i formatet: brukernavn@server. Vennligst les instruksjonene nøye slik at du fyller ut skjemaet riktig."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Denne siden lar deg avregistrere en Jabber konto på denne Jabber serveren."}.
-{"This room is not anonymous","Dette rommet er ikke anonymt"}.
 {"Thursday","torsdag"}.
 {"Time delay","Tids forsinkelse"}.
 {"Time","Tid"}.

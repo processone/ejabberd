@@ -48,7 +48,6 @@
 {"Delete message of the day","Xóa thư trong ngày"}.
 {"Delete Selected","Tùy chọn Xóa được Chọn"}.
 {"Delete User","Xóa Người Sử Dụng"}.
-{"Delete","Xóa"}.
 {"Deliver event notifications","Đưa ra các thông báo sự kiện"}.
 {"Deliver payloads with event notifications","Đưa ra thông tin dung lượng với các thông báo sự kiện"}.
 {"Description:","Miêu tả:"}.
@@ -251,7 +250,6 @@
 {"Subscription","Đăng ký"}.
 {"Sunday","Chủ Nhật"}.
 {"the password is","mật khẩu là"}.
-{"This room is not anonymous","Phòng này không nặc danh"}.
 {"Thursday","Thứ Năm"}.
 {"Time delay","Thời gian trì hoãn"}.
 {"Time","Thời Gian"}.
