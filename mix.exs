@@ -10,6 +10,7 @@ defmodule Ejabberd.Mixfile do
      compilers: [:asn1] ++ Mix.compilers,
      erlc_options: erlc_options,
      erlc_paths: ["asn1", "src"],
+     package: package,
      deps: deps]
   end
 
@@ -45,6 +46,12 @@ defmodule Ejabberd.Mixfile do
         {:eredis, git: "https://github.com/wooga/eredis"},
         {:exrm, "~> 0.19.2"}
      ]
+
+  defp package do
+    [licenses: ["GPLv2"],
+     links: %{"Site" => "https://www.ejabberd.im",
+              "Documentation" => "http://docs.ejabberd.im",
+              "Source" => "https://github.com/processone/ejabberd"}]
   end
 end
 
