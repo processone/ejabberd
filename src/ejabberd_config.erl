@@ -120,7 +120,12 @@ read_file(File) ->
                      {include_modules_configs, true}]).
 
 read_file(File, Opts) ->
-    Terms = get_plain_terms_file(File, Opts),
+    Terms1 = get_plain_terms_file(File, Opts),
+    Terms_macros = case proplists:get_bool(replace_macros, Opts) of
+                       true -> replace_macros(Terms1);
+                       false -> Terms1
+                   end,
+    Terms = transform_terms(Terms_macros),
     State = lists:foldl(fun search_hosts/2, #state{}, Terms),
     {Head, Tail} = lists:partition(
                      fun({host_config, _}) -> false;
@@ -209,16 +214,11 @@ get_plain_terms_file(File1, Opts) ->
                             []
                      end,
             BinTerms = BinTerms1 ++ [{include_config_file, list_to_binary(V)} || V <- ModInc],
-            BinTerms2 = case proplists:get_bool(replace_macros, Opts) of
-                            true -> replace_macros(BinTerms);
-                            false -> BinTerms
-                        end,
-            BinTerms3 = transform_terms(BinTerms2),
             case proplists:get_bool(include_files, Opts) of
                 true ->
-                    include_config_files(BinTerms3);
+                    include_config_files(BinTerms);
                 false ->
-                    BinTerms3
+                    BinTerms
             end;
 	{error, Reason} ->
 	    ?ERROR_MSG(Reason, []),
@@ -373,8 +373,18 @@ exit_or_halt(ExitText) ->
 
 get_config_option_key(Name, Val) ->
     if Name == listen ->
-            [{Key, _, _}] = ejabberd_listener:validate_cfg([Val]),
-            Key;
+            lists:foldl(
+              fun({port, Port}, {_, IP, T, Mod}) ->
+                      {Port, IP, T, Mod};
+                 ({ip, IP}, {Port, _, T, Mod}) ->
+                      {Port, IP, T, Mod};
+                 ({transport, T}, {Port, IP, _, Mod}) ->
+                      {Port, IP, T, Mod};
+                 ({module, Mod}, {Port, IP, T, _}) ->
+                      {Port, IP, T, Mod};
+                 (_, Res) ->
+                      Res
+              end, {5222, {0,0,0,0}, tcp, ejabberd_c2s}, Val);
        is_tuple(Val) ->
             element(1, Val);
        true ->
