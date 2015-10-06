@@ -86,6 +86,4 @@ hi_round(Password, UPrev, IterationCount) ->
 							 IterationCount - 1)))).
 
 sha_mac(Key, Data) ->
-    Context1 = crypto:hmac_init(sha, Key),
-    Context2 = crypto:hmac_update(Context1, Data),
-    crypto:hmac_final(Context2).
+    crypto:hmac(sha, Key, Data).
