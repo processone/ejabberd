@@ -39,7 +39,6 @@ defmodule Ejabberd.Mixfile do
      {:p1_iconv, git: "https://github.com/processone/eiconv"},
      {:esip, git: "https://github.com/processone/p1_sip"},
      {:p1_stun, git: "https://github.com/processone/stun"},
-     {:ehyperloglog, git: "https://github.com/vaxelfel/eHyperLogLog"},
      {:p1_mysql, git: "https://github.com/processone/mysql"},
      {:p1_pgsql, git: "https://github.com/processone/pgsql"},
      {:eredis, git: "https://github.com/wooga/eredis"},
