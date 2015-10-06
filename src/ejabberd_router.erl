@@ -226,7 +226,8 @@ dirty_get_all_domains() ->
 init([]) ->
     update_tables(),
     mnesia:create_table(route,
-			[{ram_copies, [node()]}, {type, bag},
+			[{ram_copies, [node()]},
+			 {type, bag},
 			 {attributes, record_info(fields, route)}]),
     mnesia:add_table_copy(route, node(), ram_copies),
     mnesia:subscribe({table, route, simple}),

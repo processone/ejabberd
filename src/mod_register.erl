@@ -408,6 +408,8 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 					{error, ?ERR_JID_MALFORMED};
 				    {error, not_allowed} ->
 					{error, ?ERR_NOT_ALLOWED};
+				    {error, too_many_users} ->
+					{error, ?ERR_NOT_ALLOWED};
 				    {error, _Reason} ->
 					{error, ?ERR_INTERNAL_SERVER_ERROR}
 				  end

@@ -326,7 +326,7 @@ execute_command(Name, Arguments) ->
                      ) -> any().
 
 %% @spec (AccessCommands, Auth, Name::atom(), Arguments) -> ResultTerm | {error, Error}
-%% where 
+%% where
 %%       AccessCommands = [{Access, CommandNames, Arguments}]
 %%       Auth = {User::string(), Server::string(), Password::string(), Admin::boolean()}
 %%            | noauth
@@ -414,7 +414,7 @@ get_tags_commands() ->
 %% -----------------------------
 
 %% @spec (AccessCommands, Auth, Method, Command, Arguments) -> ok
-%% where 
+%% where
 %%       AccessCommands =  [ {Access, CommandNames, Arguments} ]
 %%       Auth = {User::string(), Server::string(), Password::string()} | noauth
 %%       Method = atom()
@@ -479,8 +479,8 @@ check_auth(Command, {User, Server, {oauth, Token}, _}) ->
 check_auth(_Command, {User, Server, Password, _}) when is_binary(Password) ->
     %% Check the account exists and password is valid
     case ejabberd_auth:check_password(User, Server, Password) of
-	true -> {ok, User, Server};
-	_ -> throw({error, invalid_account_data})
+        true -> {ok, User, Server};
+        _ -> throw({error, invalid_account_data})
     end.
 
 check_access(Command, all, _)
@@ -528,9 +528,9 @@ check_access_arguments(Command, ArgumentRestrictions, Arguments) ->
 
 tag_arguments(ArgsDefs, Args) ->
     lists:zipwith(
-      fun({ArgName, _ArgType}, ArgValue) -> 
+      fun({ArgName, _ArgType}, ArgValue) ->
 	      {ArgName, ArgValue}
-      end, 
+      end,
       ArgsDefs,
       Args).
 

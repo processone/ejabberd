@@ -175,7 +175,7 @@ get_local_stat(_Server, _, Name) ->
 
 get_node_stat(Node, Name)
     when Name == <<"time/uptime">> ->
-    case catch rpc:call(Node, erlang, statistics,
+    case catch ejabberd_cluster:call(Node, erlang, statistics,
 			[wall_clock])
 	of
       {badrpc, _Reason} ->
@@ -188,7 +188,7 @@ get_node_stat(Node, Name)
     end;
 get_node_stat(Node, Name)
     when Name == <<"time/cputime">> ->
-    case catch rpc:call(Node, erlang, statistics, [runtime])
+    case catch ejabberd_cluster:call(Node, erlang, statistics, [runtime])
 	of
       {badrpc, _Reason} ->
 	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
@@ -200,7 +200,7 @@ get_node_stat(Node, Name)
     end;
 get_node_stat(Node, Name)
     when Name == <<"users/online">> ->
-    case catch rpc:call(Node, ejabberd_sm,
+    case catch ejabberd_cluster:call(Node, ejabberd_sm,
 			dirty_get_my_sessions_list, [])
 	of
       {badrpc, _Reason} ->
@@ -211,7 +211,7 @@ get_node_stat(Node, Name)
     end;
 get_node_stat(Node, Name)
     when Name == <<"transactions/committed">> ->
-    case catch rpc:call(Node, mnesia, system_info,
+    case catch ejabberd_cluster:call(Node, mnesia, system_info,
 			[transaction_commits])
 	of
       {badrpc, _Reason} ->
@@ -222,7 +222,7 @@ get_node_stat(Node, Name)
     end;
 get_node_stat(Node, Name)
     when Name == <<"transactions/aborted">> ->
-    case catch rpc:call(Node, mnesia, system_info,
+    case catch ejabberd_cluster:call(Node, mnesia, system_info,
 			[transaction_failures])
 	of
       {badrpc, _Reason} ->
@@ -233,7 +233,7 @@ get_node_stat(Node, Name)
     end;
 get_node_stat(Node, Name)
     when Name == <<"transactions/restarted">> ->
-    case catch rpc:call(Node, mnesia, system_info,
+    case catch ejabberd_cluster:call(Node, mnesia, system_info,
 			[transaction_restarts])
 	of
       {badrpc, _Reason} ->
@@ -244,7 +244,7 @@ get_node_stat(Node, Name)
     end;
 get_node_stat(Node, Name)
     when Name == <<"transactions/logged">> ->
-    case catch rpc:call(Node, mnesia, system_info,
+    case catch ejabberd_cluster:call(Node, mnesia, system_info,
 			[transaction_log_writes])
 	of
       {badrpc, _Reason} ->

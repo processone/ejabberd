@@ -58,9 +58,6 @@
 
 -include("logger.hrl").
 
-%% Timeout of 5 seconds in calls to distributed hooks
--define(TIMEOUT_DISTRIBUTED_HOOK, 5000).
-
 -record(state, {}).
 -type local_hook() :: { Seq :: integer(), Module :: atom(), Function :: atom()}.
 -type distributed_hook() :: { Seq :: integer(), Node :: atom(), Module :: atom(), Function :: atom()}.
@@ -310,7 +307,7 @@ run1([], _Hook, _Args) ->
 %% It is not attempted again in case of failure. Next hook will be executed
 run1([{_Seq, Node, Module, Function} | Ls], Hook, Args) ->
     %% MR: Should we have a safe rpc, like we have a safe apply or is bad_rpc enough ?
-    case rpc:call(Node, Module, Function, Args, ?TIMEOUT_DISTRIBUTED_HOOK) of
+    case ejabberd_cluster:call(Node, Module, Function, Args) of
 	timeout ->
 	    ?ERROR_MSG("Timeout on RPC to ~p~nrunning hook: ~p",
 		       [Node, {Hook, Args}]),
@@ -344,7 +341,7 @@ run1([{_Seq, Module, Function} | Ls], Hook, Args) ->
 run_fold1([], _Hook, Val, _Args) ->
     Val;
 run_fold1([{_Seq, Node, Module, Function} | Ls], Hook, Val, Args) ->
-    case rpc:call(Node, Module, Function, [Val | Args], ?TIMEOUT_DISTRIBUTED_HOOK) of
+    case ejabberd_cluster:call(Node, Module, Function, [Val | Args]) of
 	{badrpc, Reason} ->
 	    ?ERROR_MSG("Bad RPC error to ~p: ~p~nrunning hook: ~p",
 		       [Node, Reason, {Hook, Args}]),

@@ -98,9 +98,6 @@ start(Host, Opts) ->
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50).
 
-%%ejabberd_hooks:add(remove_user, Host,
-%%    	       ?MODULE, remove_user, 50),
-
 stop(Host) ->
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE,
 			  webadmin_menu, 70),
@@ -126,12 +123,11 @@ stop(Host) ->
 			  register_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, Host,
 			  ?MODULE, remove_user, 50),
-%%ejabberd_hooks:delete(remove_user, Host,
-%%    		  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user,
-			  50).%%ejabberd_hooks:delete(remove_user, Host,
-			      %%    		  ?MODULE, remove_user, 50),
+			  50).
+    %%ejabberd_hooks:delete(remove_user, Host,
+    %%    		  ?MODULE, remove_user, 50),
 
 get_user_roster(Items, US) ->
     {U, S} = US,
@@ -622,7 +618,6 @@ get_group_users(Host1, Group1) ->
 
 get_group_users(Host, Group, GroupOpts) ->
     case proplists:get_value(all_users, GroupOpts, false) of
-%% @spec (Host::string(), Group::string()) -> [{User::string(), Server::string()}]
       true -> ejabberd_auth:get_vh_registered_users(Host);
       false -> []
     end
@@ -675,25 +670,22 @@ get_group_name(Host1, Group1) ->
 
 %% Get list of names of groups that have @all@/@online@/etc in the memberlist
 get_special_users_groups(Host) ->
-%% Get list of names of groups that have @online@ in the memberlist
     lists:filter(fun (Group) ->
 			 get_group_opt(Host, Group, all_users, false) orelse
 			   get_group_opt(Host, Group, online_users, false)
 		 end,
 		 list_groups(Host)).
 
+%% Get list of names of groups that have @online@ in the memberlist
 get_special_users_groups_online(Host) ->
-%% Given two lists of groupnames and their options,
-%% return the list of displayed groups to the second list
     lists:filter(fun (Group) ->
 			 get_group_opt(Host, Group, online_users, false)
 		 end,
 		 list_groups(Host)).
 
+%% Given two lists of groupnames and their options,
+%% return the list of displayed groups to the second list
 displayed_groups(GroupsOpts, SelectedGroupsOpts) ->
-%% Given a list of group names with options,
-%% for those that have @all@ in memberlist,
-%% get the list of groups displayed
     DisplayedGroups = lists:usort(lists:flatmap(fun
 						  ({_Group, Opts}) ->
 						      [G
@@ -712,6 +704,9 @@ displayed_groups(GroupsOpts, SelectedGroupsOpts) ->
 	  lists:member(disabled,
 		       proplists:get_value(G, GroupsOpts, []))].
 
+%% Given a list of group names with options,
+%% for those that have @all@ in memberlist,
+%% get the list of groups displayed
 get_special_displayed_groups(GroupsOpts) ->
     Groups = lists:filter(fun ({_Group, Opts}) ->
 				  proplists:get_value(all_users, Opts, false)
@@ -825,7 +820,7 @@ is_user_in_group(US, Group, Host, odbc) ->
 %% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok}
 add_user_to_group(Host, US, Group) ->
     {LUser, LServer} = US,
-    case ejabberd_regexp:run(LUser, <<"^@.+@$">>) of
+    case ejabberd_regexp:run(LUser, <<"^@.+@\$">>) of
       match ->
 	  GroupOpts = (?MODULE):get_group_opts(Host, Group),
 	  MoreGroupOpts = case LUser of
@@ -884,7 +879,7 @@ push_displayed_to_user(LUser, LServer, Host, Subscription, DisplayedGroups) ->
 
 remove_user_from_group(Host, US, Group) ->
     {LUser, LServer} = US,
-    case ejabberd_regexp:run(LUser, <<"^@.+@$">>) of
+    case ejabberd_regexp:run(LUser, <<"^@.+@\$">>) of
       match ->
 	  GroupOpts = (?MODULE):get_group_opts(Host, Group),
 	  NewGroupOpts = case LUser of

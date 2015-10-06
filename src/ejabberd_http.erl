@@ -166,7 +166,8 @@ init({SockMod, Socket}, Opts) ->
         {error, _} -> State
     end.
 
-become_controller(_Pid) -> ok.
+become_controller(_Pid) ->
+    ok.
 
 socket_type() ->
     raw.
@@ -201,22 +202,20 @@ parse_headers(#state{request_method = Method,
 		     trail = Data} =
 		  State) ->
     PktType = case Method of
-                  undefined -> http_bin;
-                  _ -> httph_bin
-              end,
+		undefined -> http_bin;
+		_ -> httph_bin
+	      end,
     case erlang:decode_packet(PktType, Data, []) of
-        {ok, Pkt, Rest} ->
-            NewState = process_header(State#state{trail = Rest}, {ok, Pkt}),
+	{ok, Pkt, Rest} ->
+	    NewState = process_header(State#state{trail = Rest}, {ok, Pkt}),
 	    case NewState#state.end_of_request of
-		true ->
-		    ok;
-		_ ->
-                    parse_headers(NewState)
+		true -> ok;
+		_ -> parse_headers(NewState)
 	    end;
-        {more, _} ->
-            receive_headers(State#state{trail = Data});
-        _ ->
-            ok
+	{more, _} ->
+	    receive_headers(State#state{trail = Data});
+	_ ->
+	    ok
     end.
 
 process_header(State, Data) ->
@@ -266,10 +265,8 @@ process_header(State, Data) ->
 	  State#state{request_host = Host,
 		      request_headers = add_header(Name, Host, State)};
       {ok, {http_header, _, Name, _, Value}} when is_binary(Name) ->
-         State#state{request_headers =
-                         add_header(normalize_header_name(Name),
-                                     Value,
-                                    State)};
+	  State#state{request_headers =
+			  add_header(normalize_header_name(Name), Value, State)};
       {ok, {http_header, _, Name, _, Value}} ->
 	  State#state{request_headers =
 			  add_header(Name, Value, State)};
@@ -322,14 +319,6 @@ get_host_really_served(Default, Provided) ->
       false -> Default
     end.
 
-%% @spec (SockMod, HostPort) -> {Host::string(), Port::integer(), TP}
-%% where
-%%       SockMod = gen_tcp | tls
-%%       HostPort = string()
-%%       TP = http | https
-%% @doc Given a socket and hostport header, return data of transfer protocol.
-%% Note that HostPort can be a string of a host like "example.org",
-%% or a string of a host and port like "example.org:5280".
 get_transfer_protocol(SockMod, HostPort) ->
     [Host | PortList] = str:tokens(HostPort, <<":">>),
     case {SockMod, PortList} of
@@ -416,17 +405,17 @@ extract_path_query(_State) ->
     false.
 
 process_request(#state{request_method = Method,
-                       request_auth = Auth,
-                       request_lang = Lang,
-                       sockmod = SockMod,
-                       socket = Socket,
-                       options = Options,
-                       request_host = Host,
-                       request_port = Port,
-                       request_tp = TP,
-                       request_headers = RequestHeaders,
-                       request_handlers = RequestHandlers,
-                       trail = Trail} = State) ->
+		       request_auth = Auth,
+		       request_lang = Lang,
+		       sockmod = SockMod,
+		       socket = Socket,
+		       options = Options,
+		       request_host = Host,
+		       request_port = Port,
+		       request_tp = TP,
+		       request_headers = RequestHeaders,
+		       request_handlers = RequestHandlers,
+		       trail = Trail} = State) ->
     case extract_path_query(State) of
 	false ->
 	    make_bad_request(State);
@@ -476,7 +465,6 @@ process_request(#state{request_method = Method,
     end.
 
 make_bad_request(State) ->
-%% Support for X-Forwarded-From
     make_xhtml_output(State, 400, [],
 		      ejabberd_web:make_xhtml([#xmlel{name = <<"h1">>,
 						      attrs = [],
@@ -532,13 +520,13 @@ recv_data(State, Len, Acc) ->
 
 make_xhtml_output(State, Status, Headers, XHTML) ->
     Data = case lists:member(html, Headers) of
-	     true ->
-		 iolist_to_binary([?HTML_DOCTYPE,
-				   xml:element_to_binary(XHTML)]);
-	     _ ->
-		 iolist_to_binary([?XHTML_DOCTYPE,
-				   xml:element_to_binary(XHTML)])
-	   end,
+	true ->
+	    iolist_to_binary([?HTML_DOCTYPE,
+		    xml:element_to_binary(XHTML)]);
+	_ ->
+	    iolist_to_binary([?XHTML_DOCTYPE,
+		    xml:element_to_binary(XHTML)])
+    end,
     Headers1 = case lists:keysearch(<<"Content-Type">>, 1,
 				    Headers)
 		   of

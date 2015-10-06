@@ -54,7 +54,8 @@ init(Host, ServerHost, Opts) ->
     ok.
 
 terminate(Host, ServerHost) ->
-    node_flat:terminate(Host, ServerHost), ok.
+    node_flat:terminate(Host, ServerHost),
+    ok.
 
 options() ->
     [{deliver_payloads, true},

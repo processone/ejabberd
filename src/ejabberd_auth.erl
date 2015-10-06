@@ -77,7 +77,7 @@
 -callback get_password_s(binary(), binary()) -> binary() | {binary(), binary(), binary(), integer()}.
 
 start() ->
-%% This is only executed by ejabberd_c2s for non-SASL auth client
+    %% This is only executed by ejabberd_c2s for non-SASL auth client
     lists:foreach(fun (Host) ->
 			  lists:foreach(fun (M) -> M:start(Host) end,
 					auth_modules(Host))
@@ -187,7 +187,8 @@ try_register(User, Server, Password) ->
     case is_user_exists(User, Server) of
       true -> {atomic, exists};
       false ->
-	  case lists:member(jlib:nameprep(Server), ?MYHOSTS) of
+	  LServer = jlib:nameprep(Server),
+	  case lists:member(LServer, ?MYHOSTS) of
 	    true ->
 		Res = lists:foldl(fun (_M, {atomic, ok} = Res) -> Res;
 				      (M, _) ->

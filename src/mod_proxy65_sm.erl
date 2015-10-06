@@ -64,8 +64,9 @@ start_link(Host, Opts) ->
 			  []).
 
 init([Opts]) ->
-    mnesia:create_table(bytestream, [{ram_copies, [node()]},
-				     {attributes, record_info(fields, bytestream)}]),
+    mnesia:create_table(bytestream,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, bytestream)}]),
     mnesia:add_table_copy(bytestream, node(), ram_copies),
     MaxConnections = gen_mod:get_opt(max_connections, Opts,
                                      fun(I) when is_integer(I), I>0 ->

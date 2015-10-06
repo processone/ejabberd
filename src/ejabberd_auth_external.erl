@@ -281,7 +281,6 @@ is_fresh_enough(TimeStampLast, CacheTime) ->
 get_last_access(User, Server) ->
     case ejabberd_sm:get_user_resources(User, Server) of
       [] ->
-%%	  _US = {User, Server},
 	  case get_last_info(User, Server) of
 	    mod_last_required -> mod_last_required;
 	    not_found -> never;

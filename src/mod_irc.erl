@@ -784,8 +784,6 @@ set_form(ServerHost, Host, From, [], _Lang, XData) ->
 set_form(_ServerHost, _Host, _, _, _Lang, _XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
-%% Host = "irc.example.com"
-%% ServerHost = "example.com"
 get_connection_params(Host, From, IRCServer) ->
     [_ | HostTail] = str:tokens(Host, <<".">>),
     ServerHost = str:join(HostTail, <<".">>),

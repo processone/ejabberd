@@ -76,23 +76,14 @@
 %%====================================================================
 %% API
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
 start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
 start(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec =
-	{Proc,
-	 {?MODULE, start_link, [Host, Opts]},
-	 temporary,
-	 1000,
-	 worker,
-	 [?MODULE]},
+    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
+		 temporary, 1000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->
@@ -123,19 +114,11 @@ transform_module_options(Opts) ->
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
-
-%%--------------------------------------------------------------------
-%% Function: init(Args) -> {ok, State} |
-%%                         {ok, State, Timeout} |
-%%                         ignore               |
-%%                         {stop, Reason}
-%% Description: Initiates the server
-%%--------------------------------------------------------------------
 init([Host, Opts]) ->
     OutDir = gen_mod:get_opt(outdir, Opts,
                              fun iolist_to_binary/1,
                              <<"www/muc">>),
-    DirType = gen_mod:get_opt(dirtype, Opts, 
+    DirType = gen_mod:get_opt(dirtype, Opts,
                               fun(subdirs) -> subdirs;
                                  (plain) -> plain
                               end, subdirs),
@@ -181,31 +164,17 @@ init([Host, Opts]) ->
     {ok,
      #logstate{host = Host, out_dir = OutDir,
 	       dir_type = DirType, dir_name = DirName,
-	       file_format = FileFormat, file_permissions = FilePermissions, css_file = CSSFile,
+	       file_format = FileFormat, css_file = CSSFile,
+	       file_permissions = FilePermissions,
 	       access = AccessLog, lang = Lang, timezone = Timezone,
 	       spam_prevention = NoFollow, top_link = Top_link}}.
 
-%%--------------------------------------------------------------------
-%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
-%%                                      {reply, Reply, State, Timeout} |
-%%                                      {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, Reply, State} |
-%%                                      {stop, Reason, State}
-%% Description: Handling call messages
-%%--------------------------------------------------------------------
 handle_call({check_access_log, ServerHost, FromJID}, _From, State) ->
     Reply = acl:match_rule(ServerHost, State#logstate.access, FromJID),
     {reply, Reply, State};
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_cast(Msg, State) -> {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, State}
-%% Description: Handling cast messages
-%%--------------------------------------------------------------------
 handle_cast({add_to_log, Type, Data, Room, Opts}, State) ->
     case catch add_to_log2(Type, Data, Room, Opts, State) of
       {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
@@ -214,27 +183,10 @@ handle_cast({add_to_log, Type, Data, Room, Opts}, State) ->
     {noreply, State};
 handle_cast(_Msg, State) -> {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_info(Info, State) -> {noreply, State} |
-%%                                       {noreply, State, Timeout} |
-%%                                       {stop, Reason, State}
-%% Description: Handling all non call/cast messages
-%%--------------------------------------------------------------------
 handle_info(_Info, State) -> {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: terminate(Reason, State) -> void()
-%% Description: This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any necessary
-%% cleaning up. When it returns, the gen_server terminates with Reason.
-%% The return value is ignored.
-%%--------------------------------------------------------------------
 terminate(_Reason, _State) -> ok.
 
-%%--------------------------------------------------------------------
-%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% Description: Convert process state when code is changed
-%%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -242,19 +194,19 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
     case has_no_permanent_store_hint(Packet) of
-      false ->
-	  case {xml:get_subtag(Packet, <<"subject">>),
-		xml:get_subtag(Packet, <<"body">>)}
-	      of
-	    {false, false} -> ok;
-	    {false, SubEl} ->
-		Message = {body, xml:get_tag_cdata(SubEl)},
-		add_message_to_log(Nick, Message, Room, Opts, State);
-	    {SubEl, _} ->
-		Message = {subject, xml:get_tag_cdata(SubEl)},
-		add_message_to_log(Nick, Message, Room, Opts, State)
-	  end;
-      true -> ok
+	false ->
+	    case {xml:get_subtag(Packet, <<"subject">>),
+		    xml:get_subtag(Packet, <<"body">>)}
+	    of
+		{false, false} -> ok;
+		{false, SubEl} ->
+		    Message = {body, xml:get_tag_cdata(SubEl)},
+		    add_message_to_log(Nick, Message, Room, Opts, State);
+		{SubEl, _} ->
+		    Message = {subject, xml:get_tag_cdata(SubEl)},
+		    add_message_to_log(Nick, Message, Room, Opts, State)
+	    end;
+	true -> ok
     end;
 add_to_log2(roomconfig_change, _Occupants, Room, Opts,
 	    State) ->
@@ -349,7 +301,6 @@ close_previous_log(Fn, Images_dir, FileFormat) ->
 
 write_last_lines(_, _, plaintext) -> ok;
 write_last_lines(F, Images_dir, _FileFormat) ->
-%% list_to_integer/2 was introduced in OTP R14
     fw(F, <<"<div class=\"legend\">">>),
     fw(F,
        <<"  <a href=\"http://www.ejabberd.im\"><img "
@@ -378,7 +329,7 @@ write_last_lines(F, Images_dir, _FileFormat) ->
     fw(F, <<"</span></div></body></html>">>).
 
 set_filemode(Fn, {FileMode, FileGroup}) ->
-	ok = file:change_mode(Fn, list_to_integer(integer_to_list(FileMode), 8)),
+    ok = file:change_mode(Fn, list_to_integer(integer_to_list(FileMode), 8)),
     ok = file:change_group(Fn, FileGroup).
 
 htmlize_nick(Nick1, html) ->
@@ -1163,10 +1114,7 @@ roomoccupants_to_string(Users, _FileFormat) ->
 	      Users1 /= []],
     iolist_to_binary([<<"<div class=\"rcot\">">>, Res, <<"</div>">>]).
 
-%% Users = [{JID, Nick, Role}]
 group_by_role(Users) ->
-%% Role = atom()
-%% Users = [{JID, Nick}]
     {Ms, Ps, Vs, Ns} = lists:foldl(fun ({JID, Nick,
 					 moderator},
 					{Mod, Par, Vis, Non}) ->
@@ -1238,7 +1186,8 @@ get_room_state(RoomPid) ->
 						get_state),
     R.
 
-get_proc_name(Host) -> gen_mod:get_module_proc(Host, ?PROCNAME).
+get_proc_name(Host) ->
+    gen_mod:get_module_proc(Host, ?PROCNAME).
 
 calc_hour_offset(TimeHere) ->
     TimeZero = calendar:now_to_universal_time(now()),

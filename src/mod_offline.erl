@@ -39,7 +39,7 @@
 -export([count_offline_messages/2]).
 
 -export([start/2,
-         start_link/2,
+	 start_link/2,
 	 stop/1,
 	 store_packet/3,
 	 resend_offline_messages/2,
@@ -48,11 +48,11 @@
 	 remove_expired_messages/1,
 	 remove_old_messages/2,
 	 remove_user/2,
-         import/1,
-         import/3,
-         export/1,
+	 import/1,
+	 import/3,
+	 export/1,
 	 get_queue_length/2,
-         get_offline_els/2,
+	 get_offline_els/2,
 	 webadmin_page/3,
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5]).
@@ -70,17 +70,7 @@
 
 -include("ejabberd_web_admin.hrl").
 
--record(offline_msg,
-	{us = {<<"">>, <<"">>} :: {binary(), binary()},
-         timestamp = now()     :: erlang:timestamp() | '_',
-         expire = now()        :: erlang:timestamp() | never | '_',
-         from = #jid{}         :: jid() | '_',
-         to = #jid{}           :: jid() | '_',
-         packet = #xmlel{}     :: xmlel() | '_'}).
-
--record(state,
-	{host = <<"">> :: binary(),
-         access_max_offline_messages}).
+-include("mod_offline.hrl").
 
 -define(PROCNAME, ejabberd_offline).
 
@@ -138,8 +128,11 @@ init([Host, Opts]) ->
     ejabberd_hooks:add(webadmin_user, Host,
 		       ?MODULE, webadmin_user, 50),
     ejabberd_hooks:add(webadmin_user_parse_query, Host,
-                       ?MODULE, webadmin_user_parse_query, 50),
-    AccessMaxOfflineMsgs = gen_mod:get_opt(access_max_user_messages, Opts, fun(A) -> A end, max_user_offline_messages),
+		       ?MODULE, webadmin_user_parse_query, 50),
+    AccessMaxOfflineMsgs =
+	gen_mod:get_opt(access_max_user_messages, Opts,
+			fun(A) when is_atom(A) -> A end,
+			max_user_offline_messages),
     {ok,
      #state{host = Host,
             access_max_offline_messages = AccessMaxOfflineMsgs}}.
@@ -253,7 +246,6 @@ store_offline_msg(Host, {User, _}, Msgs, Len, MaxOfflineMsgs,
               end, Msgs)
     end.
 
-%% Function copied from ejabberd_sm.erl:
 get_max_user_messages(AccessRule, {User, Server}, Host) ->
     case acl:match_rule(
 	   Host, AccessRule, jlib:make_jid(User, Server, <<"">>)) of
@@ -308,24 +300,24 @@ need_to_store(LServer, Packet) ->
 store_packet(From, To, Packet) ->
     case need_to_store(To#jid.lserver, Packet) of
 	true ->
-	   case has_no_store_hint(Packet) of
-	     false ->
-		 case check_event(From, To, Packet) of
-		   true ->
-		       #jid{luser = LUser, lserver = LServer} = To,
-		       TimeStamp = now(),
-		       #xmlel{children = Els} = Packet,
-		       Expire = find_x_expire(TimeStamp, Els),
-		       gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
-			 #offline_msg{us = {LUser, LServer},
-				      timestamp = TimeStamp, expire = Expire,
-				      from = From, to = To, packet = Packet},
-		       stop;
-		   _ -> ok
-		 end;
-	     _ -> ok
-	   end;
-       false -> ok
+	    case has_no_store_hint(Packet) of
+		false ->
+		    case check_event(From, To, Packet) of
+			true ->
+			    #jid{luser = LUser, lserver = LServer} = To,
+			    TimeStamp = now(),
+			    #xmlel{children = Els} = Packet,
+			    Expire = find_x_expire(TimeStamp, Els),
+			    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
+			    #offline_msg{us = {LUser, LServer},
+				timestamp = TimeStamp, expire = Expire,
+				from = From, to = To, packet = Packet},
+			    stop;
+			_ -> ok
+		    end;
+		_ -> ok
+	    end;
+	false -> ok
     end.
 
 has_no_store_hint(Packet) ->

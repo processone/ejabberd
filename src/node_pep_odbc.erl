@@ -55,7 +55,8 @@ init(Host, ServerHost, Opts) ->
     ok.
 
 terminate(Host, ServerHost) ->
-    node_flat_odbc:terminate(Host, ServerHost), ok.
+    node_flat_odbc:terminate(Host, ServerHost),
+    ok.
 
 options() ->
     [{odbc, true}, {rsm, true} | node_pep:options()].

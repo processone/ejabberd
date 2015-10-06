@@ -42,12 +42,12 @@
 	 restore_room/3,
 	 forget_room/3,
 	 create_room/5,
-         shutdown_rooms/1,
+	 shutdown_rooms/1,
 	 process_iq_disco_items/4,
 	 broadcast_service_message/2,
-         export/1,
-         import/1,
-         import/3,
+	 export/1,
+	 import/1,
+	 import/3,
 	 can_use_nick/4]).
 
 -export([init/1, handle_call/3, handle_cast/2,
@@ -85,10 +85,6 @@
 %%====================================================================
 %% API
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
 start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:start_link({local, Proc}, ?MODULE,
@@ -295,13 +291,6 @@ can_use_nick(LServer, Host, JID, Nick, odbc) ->
 %% gen_server callbacks
 %%====================================================================
 
-%%--------------------------------------------------------------------
-%% Function: init(Args) -> {ok, State} |
-%%                         {ok, State, Timeout} |
-%%                         ignore               |
-%%                         {stop, Reason}
-%% Description: Initiates the server
-%%--------------------------------------------------------------------
 init([Host, Opts]) ->
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"conference.@HOST@">>),
@@ -390,8 +379,7 @@ init([Host, Opts]) ->
     ejabberd_router:register_route(MyHost),
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
-			 HistorySize,
-			 RoomShaper),
+			 HistorySize, RoomShaper),
     {ok, #state{host = MyHost,
 		server_host = Host,
 		access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
@@ -399,15 +387,6 @@ init([Host, Opts]) ->
 		history_size = HistorySize,
 		room_shaper = RoomShaper}}.
 
-%%--------------------------------------------------------------------
-%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
-%%                                      {reply, Reply, State, Timeout} |
-%%                                      {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, Reply, State} |
-%%                                      {stop, Reason, State}
-%% Description: Handling call messages
-%%--------------------------------------------------------------------
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 handle_call({create, Room, From, Nick, Opts}, _From,
@@ -428,20 +407,8 @@ handle_call({create, Room, From, Nick, Opts}, _From,
     register_room(Host, Room, Pid),
     {reply, ok, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_cast(Msg, State) -> {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, State}
-%% Description: Handling cast messages
-%%--------------------------------------------------------------------
 handle_cast(_Msg, State) -> {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_info(Info, State) -> {noreply, State} |
-%%                                       {noreply, State, Timeout} |
-%%                                       {stop, Reason, State}
-%% Description: Handling all non call/cast messages
-%%--------------------------------------------------------------------
 handle_info({route, From, To, Packet},
 	    #state{host = Host, server_host = ServerHost,
 		   access = Access, default_room_opts = DefRoomOpts,
@@ -468,21 +435,10 @@ handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: terminate(Reason, State) -> void()
-%% Description: This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any necessary
-%% cleaning up. When it returns, the gen_server terminates with Reason.
-%% The return value is ignored.
-%%--------------------------------------------------------------------
 terminate(_Reason, State) ->
     ejabberd_router:unregister_route(State#state.host),
     ok.
 
-%%--------------------------------------------------------------------
-%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% Description: Convert process state when code is changed
-%%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -508,13 +464,13 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
 	    do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
-		      From, To, Packet, DefRoomOpts);
+		From, To, Packet, DefRoomOpts);
 	_ ->
 	    #xmlel{attrs = Attrs} = Packet,
 	    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
 	    ErrText = <<"Access denied by service policy">>,
 	    Err = jlib:make_error_reply(Packet,
-					?ERRT_FORBIDDEN(Lang, ErrText)),
+		    ?ERRT_FORBIDDEN(Lang, ErrText)),
 	    ejabberd_router:route_error(To, From, Err, Packet)
     end.
 
@@ -645,26 +601,23 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 		  <<"error">> -> ok;
 		  <<"result">> -> ok;
 		  _ ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_ITEM_NOT_FOUND),
-			    ejabberd_router:route(To, From, Err)
-		    end
-	    end;
-	_ ->
+		      Err = jlib:make_error_reply(Packet,
+						  ?ERR_ITEM_NOT_FOUND),
+		      ejabberd_router:route(To, From, Err)
+		end
+	  end;
+      _ ->
 	    case mnesia:dirty_read(muc_online_room, {Room, Host}) of
 		[] ->
 		    Type = xml:get_attr_s(<<"type">>, Attrs),
 		    case {Name, Type} of
 			{<<"presence">>, <<"">>} ->
 			    case check_user_can_create_room(ServerHost,
-							    AccessCreate, From,
-							    Room) of
+				    AccessCreate, From, Room) of
 				true ->
-				    {ok, Pid} = start_new_room(
-						  Host, ServerHost, Access,
-						  Room, HistorySize,
-						  RoomShaper, From,
-						  Nick, DefRoomOpts),
+				    {ok, Pid} = start_new_room(Host, ServerHost, Access,
+					    Room, HistorySize,
+					    RoomShaper, From, Nick, DefRoomOpts),
 				    register_room(Host, Room, Pid),
 				    mod_muc_room:route(Pid, From, Nick, Packet),
 				    ok;
@@ -676,19 +629,18 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 				    ejabberd_router:route(To, From, Err)
 			    end;
 			_ ->
-				Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-				ErrText = <<"Conference room does not exist">>,
-				Err = jlib:make_error_reply(Packet,
-							?ERRT_ITEM_NOT_FOUND(Lang,
-										ErrText)),
-				ejabberd_router:route(To, From, Err)
-			end;
-	    [R] ->
-		Pid = R#muc_online_room.pid,
-		?DEBUG("MUC: send to process ~p~n", [Pid]),
-		mod_muc_room:route(Pid, From, Nick, Packet),
-		ok
-	  end
+			    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+			    ErrText = <<"Conference room does not exist">>,
+			    Err = jlib:make_error_reply(Packet,
+				    ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+			    ejabberd_router:route(To, From, Err)
+		    end;
+		[R] ->
+		    Pid = R#muc_online_room.pid,
+		    ?DEBUG("MUC: send to process ~p~n", [Pid]),
+		    mod_muc_room:route(Pid, From, Nick, Packet),
+		    ok
+	    end
     end.
 
 check_user_can_create_room(ServerHost, AccessCreate,
@@ -743,48 +695,43 @@ get_rooms(LServer, Host, odbc) ->
       Err -> ?ERROR_MSG("failed to get rooms: ~p", [Err]), []
     end.
 
-load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
+load_permanent_rooms(Host, ServerHost, Access,
+		     HistorySize, RoomShaper) ->
     lists:foreach(
       fun(R) ->
-              {Room, Host} = R#muc_room.name_host,
-              case mnesia:dirty_read(muc_online_room, {Room, Host}) of
-                  [] ->
-                      {ok, Pid} = mod_muc_room:start(
-                                    Host,
-                                    ServerHost,
-                                    Access,
-                                    Room,
-                                    HistorySize,
-                                    RoomShaper,
-                                    R#muc_room.opts),
-                      register_room(Host, Room, Pid);
-                  _ ->
-                      ok
-              end
-      end, get_rooms(ServerHost, Host)).
+		{Room, Host} = R#muc_room.name_host,
+		case mnesia:dirty_read(muc_online_room, {Room, Host}) of
+		    [] ->
+			{ok, Pid} = mod_muc_room:start(Host,
+				ServerHost, Access, Room,
+				HistorySize, RoomShaper,
+				R#muc_room.opts),
+			register_room(Host, Room, Pid);
+		    _ -> ok
+		end
+	end,
+	get_rooms(ServerHost, Host)).
 
 start_new_room(Host, ServerHost, Access, Room,
-	       HistorySize, RoomShaper, From,
-	       Nick, DefRoomOpts) ->
+	    HistorySize, RoomShaper, From,
+	    Nick, DefRoomOpts) ->
     case restore_room(ServerHost, Host, Room) of
-        error ->
+	error ->
 	    ?DEBUG("MUC: open new room '~s'~n", [Room]),
-	    mod_muc_room:start(Host, ServerHost, Access,
-			       Room, HistorySize,
-			       RoomShaper, From,
-			       Nick, DefRoomOpts);
-        Opts ->
+	    mod_muc_room:start(Host, ServerHost, Access, Room,
+		HistorySize, RoomShaper,
+		From, Nick, DefRoomOpts);
+	Opts ->
 	    ?DEBUG("MUC: restore room '~s'~n", [Room]),
-	    mod_muc_room:start(Host, ServerHost, Access,
-			       Room, HistorySize,
-			       RoomShaper, Opts)
+	    mod_muc_room:start(Host, ServerHost, Access, Room,
+		HistorySize, RoomShaper, Opts)
     end.
 
 register_room(Host, Room, Pid) ->
     F = fun() ->
-		mnesia:write(#muc_online_room{name_host = {Room, Host},
-					      pid = Pid})
-	end,
+	    mnesia:write(#muc_online_room{name_host = {Room, Host},
+		    pid = Pid})
+    end,
     mnesia:transaction(F).
 
 
@@ -840,7 +787,6 @@ iq_disco_items(Host, From, Lang, none) ->
 		       _ -> false
 		     end
 	     end, get_vh_rooms(Host));
-
 iq_disco_items(Host, From, Lang, Rsm) ->
     {Rooms, RsmO} = get_vh_rooms(Host, Rsm),
     RsmOut = jlib:rsm_encode(RsmO),
@@ -920,13 +866,6 @@ get_room_pos(Desired, [_ | Rooms], HeadPosition) ->
 flush() -> receive _ -> flush() after 0 -> ok end.
 
 -define(XFIELD(Type, Label, Var, Val),
-%% @doc Get a pseudo unique Room Name. The Room Name is generated as a hash of 
-%%      the requester JID, the local time and a random salt.
-%%
-%%      "pseudo" because we don't verify that there is not a room
-%%       with the returned Name already created, nor mark the generated Name 
-%%       as "already used".  But in practice, it is unique enough. See
-%%       http://xmpp.org/extensions/xep-0045.html#createroom-unique
 	#xmlel{name = <<"field">>,
 	       attrs =
 		   [{<<"type">>, Type},
@@ -1177,13 +1116,12 @@ iq_get_vcard(Lang) ->
 					 <<"ejabberd MUC module">>))/binary,
 		    "\nCopyright (c) 2003-2015 ProcessOne">>}]}].
 
-
 broadcast_service_message(Host, Msg) ->
     lists:foreach(
-      fun(#muc_online_room{pid = Pid}) ->
-	      gen_fsm:send_all_state_event(
-		Pid, {service_message, Msg})
-      end, get_vh_rooms(Host)).
+	fun(#muc_online_room{pid = Pid}) ->
+		gen_fsm:send_all_state_event(
+		    Pid, {service_message, Msg})
+	end, get_vh_rooms(Host)).
 
 
 get_vh_rooms(Host) ->
@@ -1349,8 +1287,7 @@ import(_LServer) ->
     [{<<"select name, host, opts from muc_room;">>,
       fun([Name, RoomHost, SOpts]) ->
               Opts = opts_to_binary(ejabberd_odbc:decode_term(SOpts)),
-              #muc_room{name_host = {Name, RoomHost},
-                        opts = Opts}
+              #muc_room{name_host = {Name, RoomHost}, opts = Opts}
       end},
      {<<"select jid, host, nick from muc_registered;">>,
       fun([J, RoomHost, Nick]) ->

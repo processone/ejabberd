@@ -80,7 +80,7 @@ start() ->
 			     end
 		     end,
 	    Node = list_to_atom(SNode1),
-	    Status = case rpc:call(Node, ?MODULE, process, [Args]) of
+	    Status = case ejabberd_cluster:call(Node, ?MODULE, process, [Args]) of
 			 {badrpc, Reason} ->
 			     print("Failed RPC connection to the node ~p: ~p~n",
 				    [Node, Reason]),
@@ -392,7 +392,10 @@ format_result(ElementsTuple, {_Name, {tuple, ElementsDef}}) ->
        fun({Element, ElementDef}) ->
 	       ["\t" | format_result(Element, ElementDef)]
        end,
-       ElementsAndDef)].
+       ElementsAndDef)];
+
+format_result(404, {_Name, _}) ->
+    make_status(not_found).
 
 make_status(ok) -> ?STATUS_SUCCESS;
 make_status(true) -> ?STATUS_SUCCESS;

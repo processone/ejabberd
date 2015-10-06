@@ -462,7 +462,7 @@ restore_mnesia(Path) ->
 
 %% Mnesia database restore
 %% This function is called from ejabberd_ctl, ejabberd_web_admin and
-%% mod_configure/adhoc 
+%% mod_configure/adhoc
 restore(Path) ->
     mnesia:restore(Path, [{keep_tables,keep_tables()},
 			  {default_op, skip_tables}]).
@@ -477,7 +477,7 @@ keep_tables() ->
 
 %% Returns the list of modules tables in use, according to the list of actually
 %% loaded modules
-keep_modules_tables() ->		      
+keep_modules_tables() ->
     lists:map(fun(Module) -> module_tables(Module) end,
 	      gen_mod:loaded_modules(?MYNAME)).
 

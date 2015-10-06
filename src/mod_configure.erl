@@ -985,7 +985,7 @@ get_form(_Host, [<<"running nodes">>, ENode, <<"DB">>],
     case search_running_node(ENode) of
       false -> {error, ?ERR_ITEM_NOT_FOUND};
       Node ->
-	  case rpc:call(Node, mnesia, system_info, [tables]) of
+	  case ejabberd_cluster:call(Node, mnesia, system_info, [tables]) of
 	    {badrpc, _Reason} ->
 		{error, ?ERR_INTERNAL_SERVER_ERROR};
 	    Tables ->
@@ -1007,7 +1007,7 @@ get_form(_Host, [<<"running nodes">>, ENode, <<"DB">>],
 					   ?T(Lang,
 					      <<"Choose storage type of tables">>)}]}
 			      | lists:map(fun (Table) ->
-						  case rpc:call(Node, mnesia,
+						  case ejabberd_cluster:call(Node, mnesia,
 								table_info,
 								[Table,
 								 storage_type])
@@ -1028,7 +1028,7 @@ get_form(Host,
     case search_running_node(ENode) of
       false -> {error, ?ERR_ITEM_NOT_FOUND};
       Node ->
-	  case rpc:call(Node, gen_mod, loaded_modules, [Host]) of
+	  case ejabberd_cluster:call(Node, gen_mod, loaded_modules, [Host]) of
 	    {badrpc, _Reason} ->
 		{error, ?ERR_INTERNAL_SERVER_ERROR};
 	    Modules ->
@@ -1607,7 +1607,7 @@ set_form(_From, Host,
 				case Vals of
 				  [<<"1">>] ->
 				      Module = jlib:binary_to_atom(Var),
-				      rpc:call(Node, gen_mod, stop_module,
+				      ejabberd_cluster:call(Node, gen_mod, stop_module,
 					       [Host, Module]);
 				  _ -> ok
 				end
@@ -1634,7 +1634,7 @@ set_form(_From, Host,
 		      case erl_parse:parse_term(Tokens) of
 			{ok, Modules} ->
 			    lists:foreach(fun ({Module, Args}) ->
-						  rpc:call(Node, gen_mod,
+						  ejabberd_cluster:call(Node, gen_mod,
 							   start_module,
 							   [Host, Module, Args])
 					  end,
@@ -1656,7 +1656,7 @@ set_form(_From, _Host,
 	  case lists:keysearch(<<"path">>, 1, XData) of
 	    false -> {error, ?ERR_BAD_REQUEST};
 	    {value, {_, [String]}} ->
-		case rpc:call(Node, mnesia, backup, [String]) of
+		case ejabberd_cluster:call(Node, mnesia, backup, [String]) of
 		  {badrpc, _Reason} ->
 		      {error, ?ERR_INTERNAL_SERVER_ERROR};
 		  {error, _Reason} -> {error, ?ERR_INTERNAL_SERVER_ERROR};
@@ -1675,7 +1675,7 @@ set_form(_From, _Host,
 	  case lists:keysearch(<<"path">>, 1, XData) of
 	    false -> {error, ?ERR_BAD_REQUEST};
 	    {value, {_, [String]}} ->
-		case rpc:call(Node, ejabberd_admin, restore, [String])
+		case ejabberd_cluster:call(Node, ejabberd_admin, restore, [String])
 		    of
 		  {badrpc, _Reason} ->
 		      {error, ?ERR_INTERNAL_SERVER_ERROR};
@@ -1695,7 +1695,7 @@ set_form(_From, _Host,
 	  case lists:keysearch(<<"path">>, 1, XData) of
 	    false -> {error, ?ERR_BAD_REQUEST};
 	    {value, {_, [String]}} ->
-		case rpc:call(Node, ejabberd_admin, dump_to_textfile,
+		case ejabberd_cluster:call(Node, ejabberd_admin, dump_to_textfile,
 			      [String])
 		    of
 		  {badrpc, _Reason} ->
@@ -1715,7 +1715,7 @@ set_form(_From, _Host,
 	  case lists:keysearch(<<"path">>, 1, XData) of
 	    false -> {error, ?ERR_BAD_REQUEST};
 	    {value, {_, [String]}} ->
-		rpc:call(Node, jd2ejd, import_file, [String]),
+		ejabberd_cluster:call(Node, jd2ejd, import_file, [String]),
 		{result, []};
 	    _ -> {error, ?ERR_BAD_REQUEST}
 	  end
@@ -1729,7 +1729,7 @@ set_form(_From, _Host,
 	  case lists:keysearch(<<"path">>, 1, XData) of
 	    false -> {error, ?ERR_BAD_REQUEST};
 	    {value, {_, [String]}} ->
-		rpc:call(Node, jd2ejd, import_dir, [String]),
+		ejabberd_cluster:call(Node, jd2ejd, import_dir, [String]),
 		{result, []};
 	    _ -> {error, ?ERR_BAD_REQUEST}
 	  end
@@ -1912,7 +1912,6 @@ set_form(From, Host,
 						Server)
 		of
 	      [] ->
-%%		  _US = {User, Server},
 		  case get_last_info(User, Server) of
 		    not_found -> ?T(Lang, <<"Never">>);
 		    {ok, Timestamp, _Status} ->

@@ -85,13 +85,6 @@
 
 -type temporarily_blocked() :: #temporarily_blocked{}.
 
-%%====================================================================
-%% API
-%%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
@@ -162,7 +155,7 @@ remove_connection(FromTo, Pid, Key) ->
 
 have_connection(FromTo) ->
     case catch mnesia:dirty_read(s2s, FromTo) of
-        [_] ->
+       [_] ->
             true;
         _ ->
             false
@@ -251,51 +244,26 @@ check_peer_certificate(SockMod, Sock, Peer) ->
 %% gen_server callbacks
 %%====================================================================
 
-%%--------------------------------------------------------------------
-%% Function: init(Args) -> {ok, State} |
-%%                         {ok, State, Timeout} |
-%%                         ignore               |
-%%                         {stop, Reason}
-%% Description: Initiates the server
-%%--------------------------------------------------------------------
 init([]) ->
     update_tables(),
-    mnesia:create_table(s2s, [{ram_copies, [node()]}, {type, bag},
-			      {attributes, record_info(fields, s2s)}]),
+    mnesia:create_table(s2s,
+			[{ram_copies, [node()]},
+			 {type, bag},
+			 {attributes, record_info(fields, s2s)}]),
     mnesia:add_table_copy(s2s, node(), ram_copies),
     mnesia:subscribe(system),
     ejabberd_commands:register_commands(commands()),
-    mnesia:create_table(temporarily_blocked, [{ram_copies, [node()]}, {attributes, record_info(fields, temporarily_blocked)}]),
+    mnesia:create_table(temporarily_blocked,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, temporarily_blocked)}]),
     {ok, #state{}}.
 
-%%--------------------------------------------------------------------
-%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
-%%                                      {reply, Reply, State, Timeout} |
-%%                                      {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, Reply, State} |
-%%                                      {stop, Reason, State}
-%% Description: Handling call messages
-%%--------------------------------------------------------------------
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+    {reply, ok, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_cast(Msg, State) -> {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, State}
-%% Description: Handling cast messages
-%%--------------------------------------------------------------------
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_info(Info, State) -> {noreply, State} |
-%%                                       {noreply, State, Timeout} |
-%%                                       {stop, Reason, State}
-%% Description: Handling all non call/cast messages
-%%--------------------------------------------------------------------
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     clean_table_from_bad_node(Node),
     {noreply, State};
@@ -309,27 +277,17 @@ handle_info({route, From, To, Packet}, State) ->
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: terminate(Reason, State) -> void()
-%% Description: This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any necessary
-%% cleaning up. When it returns, the gen_server terminates with Reason.
-%% The return value is ignored.
-%%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
     ejabberd_commands:unregister_commands(commands()),
     ok.
 
-%%--------------------------------------------------------------------
-%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% Description: Convert process state when code is changed
-%%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
 clean_table_from_bad_node(Node) ->
     F = fun() ->
 		Es = mnesia:select(
@@ -520,7 +478,8 @@ parent_domains(Domain) ->
 		end,
 		[], lists:reverse(str:tokens(Domain, <<".">>))).
 
-send_element(Pid, El) -> Pid ! {send_element, El}.
+send_element(Pid, El) ->
+    Pid ! {send_element, El}.
 
 %%%----------------------------------------------------------------------
 %%% ejabberd commands
@@ -566,10 +525,8 @@ update_tables() ->
       {'EXIT', _} -> ok
     end,
     case lists:member(local_s2s, mnesia:system_info(tables)) of
-        true ->
-            mnesia:delete_table(local_s2s);
-        false ->
-            ok
+	true -> mnesia:delete_table(local_s2s);
+	false -> ok
     end.
 
 %% Check if host is in blacklist or white list

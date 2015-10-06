@@ -112,23 +112,17 @@ start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts) ->
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
 
-%%----------------------------------------------------------------------
-%% Func: init/1
-%% Returns: {ok, StateName, StateData}          |
-%%          {ok, StateName, StateData, Timeout} |
-%%          ignore                              |
-%%          {stop, StopReason}
-%%----------------------------------------------------------------------
-init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, DefRoomOpts]) ->
+init([Host, ServerHost, Access, Room, HistorySize,
+      RoomShaper, Creator, _Nick, DefRoomOpts]) ->
     process_flag(trap_exit, true),
     Shaper = shaper:new(RoomShaper),
     State = set_affiliation(Creator, owner,
-			    #state{host = Host, server_host = ServerHost,
-				   access = Access, room = Room,
-				   history = lqueue_new(HistorySize),
-				   jid = jlib:make_jid(Room, Host, <<"">>),
-				   just_created = true,
-				   room_shaper = Shaper}),
+	    #state{host = Host, server_host = ServerHost,
+		   access = Access, room = Room,
+		   history = lqueue_new(HistorySize),
+		   jid = jlib:make_jid(Room, Host, <<"">>),
+		   just_created = true,
+		   room_shaper = Shaper}),
     State1 = set_opts(DefRoomOpts, State),
     if (State1#state.config)#config.persistent ->
 	   mod_muc:store_room(State1#state.server_host,
@@ -137,7 +131,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Creator, _Nick, D
 			      make_opts(State1));
        true -> ok
     end,
-    ?INFO_MSG("Created MUC room ~s@~s by ~s", 
+    ?INFO_MSG("Created MUC room ~s@~s by ~s",
 	      [Room, Host, jlib:jid_to_string(Creator)]),
     add_to_log(room_existence, created, State1),
     add_to_log(room_existence, started, State1),
@@ -155,12 +149,6 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
     add_to_log(room_existence, started, State),
     {ok, normal_state, State}.
 
-%%----------------------------------------------------------------------
-%% Func: StateName/2
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%%----------------------------------------------------------------------
 normal_state({route, From, <<"">>,
 	      #xmlel{name = <<"message">>, attrs = Attrs,
 		     children = Els} =
@@ -688,12 +676,6 @@ normal_state({route, From, ToNick,
 normal_state(_Event, StateData) ->
     {next_state, normal_state, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: handle_event/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%%----------------------------------------------------------------------
 handle_event({service_message, Msg}, _StateName,
 	     StateData) ->
     MessagePkt = #xmlel{name = <<"message">>,
@@ -742,15 +724,6 @@ handle_event({set_affiliations, Affiliations},
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: handle_sync_event/4
-%% Returns: {next_state, NextStateName, NextStateData}            |
-%%          {next_state, NextStateName, NextStateData, Timeout}   |
-%%          {reply, Reply, NextStateName, NextStateData}          |
-%%          {reply, Reply, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}
-%%----------------------------------------------------------------------
 handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
     Reply = get_roomdesc_reply(JID, StateData,
 			       get_roomdesc_tail(StateData, Lang)),
@@ -779,12 +752,6 @@ handle_sync_event(_Event, _From, StateName,
 code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: handle_info/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%%----------------------------------------------------------------------
 handle_info({process_user_presence, From}, normal_state = _StateName, StateData) ->
     RoomQueueEmpty = queue:is_empty(StateData#state.room_queue),
     RoomQueue = queue:in({presence, From}, StateData#state.room_queue),
@@ -864,11 +831,6 @@ handle_info(shutdown, _StateName, StateData) ->
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: terminate/3
-%% Purpose: Shutdown the fsm
-%% Returns: any
-%%----------------------------------------------------------------------
 terminate(Reason, _StateName, StateData) ->
     ?INFO_MSG("Stopping MUC room ~s@~s",
 	      [StateData#state.room, StateData#state.host]),
@@ -979,7 +941,7 @@ process_groupchat_message(From,
 					   StateData#state.server_host,
 					   StateData#state.users,
 					   NewPacket),
-			     NewStateData2 = case has_body_or_subject(Packet) of
+			     NewStateData2 = case has_body_or_subject(NewPacket) of
 					       true ->
 						   add_message_to_history(FromNick, From,
 									  NewPacket,
@@ -1808,9 +1770,9 @@ is_nick_change(JID, Nick, StateData) ->
 
 nick_collision(User, Nick, StateData) ->
     UserOfNick = find_jid_by_nick(Nick, StateData),
-    UserOfNick /= false andalso
+    (UserOfNick /= false andalso
       jlib:jid_remove_resource(jlib:jid_tolower(UserOfNick))
-	/= jlib:jid_remove_resource(jlib:jid_tolower(User)).
+	/= jlib:jid_remove_resource(jlib:jid_tolower(User))).
 
 add_new_user(From, Nick,
 	     #xmlel{attrs = Attrs, children = Els} = Packet,
@@ -4412,7 +4374,6 @@ check_invitation(From, Els, Lang, StateData) ->
                                    jlib:jid_to_string({StateData#state.room,
                                                        StateData#state.host,
                                                        <<"">>})]),
-				
 				case
 				  (StateData#state.config)#config.password_protected
 				    of
@@ -4562,6 +4523,13 @@ element_size(El) ->
     byte_size(xml:element_to_binary(El)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Multicast
+
+send_multiple(From, Server, Users, Packet) ->
+    JIDs = [ User#user.jid || {_, User} <- ?DICT:to_list(Users)],
+    ejabberd_router_multicast:route_multicast(From, Server, JIDs, Packet).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Detect messange stanzas that don't have meaninful content
 
 has_body_or_subject(Packet) ->
@@ -4571,9 +4539,3 @@ has_body_or_subject(Packet) ->
 	(_) -> true
     end, Packet#xmlel.children).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Multicast
-
-send_multiple(From, Server, Users, Packet) ->
-    JIDs = [ User#user.jid || {_, User} <- ?DICT:to_list(Users)],
-    ejabberd_router_multicast:route_multicast(From, Server, JIDs, Packet).

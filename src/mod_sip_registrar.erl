@@ -1,10 +1,10 @@
 %%%-------------------------------------------------------------------
 %%% @author Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% @copyright (C) 2014, Evgeny Khramtsov
 %%% @doc
 %%%
 %%% @end
 %%% Created : 23 Apr 2014 by Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%%
 %%%
 %%% ejabberd, Copyright (C) 2014-2015   ProcessOne
 %%%

@@ -1005,7 +1005,6 @@ send_unsubscription_to_rosteritems(LUser, LServer) ->
 		  end,
 		  RosterItems).
 
-%% @spec (From::jid(), Item::roster()) -> ok
 send_unsubscribing_presence(From, Item) ->
     IsTo = case Item#roster.subscription of
 	     both -> true;

@@ -37,7 +37,7 @@
 	 start_connection/1,
 	 terminate_if_waiting_delay/2,
 	 stop_connection/1,
-         transform_options/1]).
+	 transform_options/1]).
 
 -export([init/1, open_socket/2, wait_for_stream/2,
 	 wait_for_validation/2, wait_for_features/2,
@@ -141,13 +141,6 @@ stop_connection(Pid) -> p1_fsm:send_event(Pid, closed).
 %%% Callback functions from p1_fsm
 %%%----------------------------------------------------------------------
 
-%%----------------------------------------------------------------------
-%% Func: init/1
-%% Returns: {ok, StateName, StateData}          |
-%%          {ok, StateName, StateData, Timeout} |
-%%          ignore                              |
-%%          {stop, StopReason}
-%%----------------------------------------------------------------------
 init([From, Server, Type]) ->
     process_flag(trap_exit, true),
     ?DEBUG("started: ~p", [{From, Server, Type}]),
@@ -222,12 +215,6 @@ init([From, Server, Type]) ->
 	    tls_options = TLSOpts, queue = queue:new(), myname = From,
 	    server = Server, new = New, verify = Verify, timer = Timer}}.
 
-%%----------------------------------------------------------------------
-%% Func: StateName/2
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%%----------------------------------------------------------------------
 open_socket(init, StateData) ->
     log_s2s_out(StateData#state.new, StateData#state.myname,
 		StateData#state.server, StateData#state.tls),
@@ -292,8 +279,6 @@ open_socket(timeout, StateData) ->
 open_socket(_, StateData) ->
     {next_state, open_socket, StateData}.
 
-%%----------------------------------------------------------------------
-%% IPv4
 open_socket1({_, _, _, _} = Addr, Port) ->
     open_socket2(inet, Addr, Port);
 %% IPv6
@@ -872,19 +857,7 @@ stream_established(closed, StateData) ->
 %%    Reply = ok,
 %%    {reply, Reply, state_name, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: handle_event/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%%----------------------------------------------------------------------
 handle_event(_Event, StateName, StateData) ->
-%%----------------------------------------------------------------------
-%% Func: handle_sync_event/4
-%% Returns: The associated StateData for this connection
-%%   {reply, Reply, NextStateName, NextStateData}
-%%   Reply = {state_infos, [{InfoName::atom(), InfoValue::any()]
-%%----------------------------------------------------------------------
     {next_state, StateName, StateData,
      get_timeout_interval(StateName)}.
 
@@ -933,12 +906,6 @@ handle_sync_event(_Event, _From, StateName,
 code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: handle_info/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
     cancel_timer(StateData#state.timer),
@@ -995,11 +962,6 @@ handle_info(_, StateName, StateData) ->
     {next_state, StateName, StateData,
      get_timeout_interval(StateName)}.
 
-%%----------------------------------------------------------------------
-%% Func: terminate/3
-%% Purpose: Shutdown the fsm
-%% Returns: any
-%%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
     ?DEBUG("terminated: ~p", [{Reason, StateName}]),
     case StateData#state.new of
@@ -1018,11 +980,6 @@ terminate(Reason, StateName, StateData) ->
     end,
     ok.
 
-%%----------------------------------------------------------------------
-%% Func: print_state/1
-%% Purpose: Prepare the state to be printed on error log
-%% Returns: State to print
-%%----------------------------------------------------------------------
 print_state(State) -> State.
 
 %%%----------------------------------------------------------------------
@@ -1328,10 +1285,6 @@ wait_before_reconnect(StateData) ->
 	      D1 -> lists:min([D1 * 2, get_max_retry_delay()])
 	    end,
     Timer = erlang:start_timer(Delay, self(), []),
-%% @doc Get the maximum allowed delay for retry to reconnect (in miliseconds).
-%% The default value is 5 minutes.
-%% The option {s2s_max_retry_delay, Seconds} can be used (in seconds).
-%% @spec () -> integer()
     {next_state, wait_before_retry,
      StateData#state{timer = Timer, delay_to_retry = Delay,
 		     queue = queue:new()}}.

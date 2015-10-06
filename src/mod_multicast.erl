@@ -3,6 +3,24 @@
 %%% Author  : Badlop <badlop@process-one.net>
 %%% Purpose : Extended Stanza Addressing (XEP-0033) support
 %%% Created : 29 May 2007 by Badlop <badlop@process-one.net>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
 %%%----------------------------------------------------------------------
 
 -module(mod_multicast).
@@ -713,8 +731,7 @@ process_iqreply_error(From, LServiceS, _Packet) ->
 %%% Check protocol support: Receive response: Disco
 %%%-------------------------
 
-process_iqreply_result(From, LServiceS, Packet,
-		       State) ->
+process_iqreply_result(From, LServiceS, Packet, State) ->
     #xmlel{name = <<"query">>, attrs = Attrs2,
 	   children = Els2} =
 	xml:get_subtag(Packet, <<"query">>),
@@ -741,37 +758,35 @@ process_discoinfo_result(From, LServiceS, Els,
 
 process_discoinfo_result2(From, FromS, LServiceS, Els,
 			  Waiter) ->
-    Multicast_support = lists:any(fun (XML) ->
-					  case XML of
-					    #xmlel{name = <<"feature">>,
-						   attrs = Attrs} ->
-						(?NS_ADDRESS) ==
-						  xml:get_attr_s(<<"var">>,
-								 Attrs);
-					    _ -> false
-					  end
-				  end,
-				  Els),
+    Multicast_support =
+	lists:any(
+	    fun(XML) ->
+		    case XML of
+			#xmlel{name = <<"feature">>, attrs = Attrs} ->
+			    (?NS_ADDRESS) == xml:get_attr_s(<<"var">>, Attrs);
+			_ -> false
+		    end
+	    end,
+	    Els),
     Group = Waiter#waiter.group,
     RServer = Group#group.server,
     case Multicast_support of
-      true ->
-	  SenderT = sender_type(From),
-	  RLimits = get_limits_xml(Els, SenderT),
-	  add_response(RServer,
-		       {multicast_supported, FromS, RLimits}),
-	  FromM = Waiter#waiter.sender,
-	  DestsM = Group#group.dests,
-	  PacketM = Waiter#waiter.packet,
-	  AAttrsM = Waiter#waiter.aattrs,
-	  AddressesM = Waiter#waiter.addresses,
-	  RServiceM = FromS,
-	  route_packet_multicast(FromM, RServiceM, PacketM,
-				 AAttrsM, DestsM, AddressesM, RLimits),
-	  delo_waiter(Waiter);
-      false ->
-	  case FromS of
-	    RServer ->
+	true ->
+	    SenderT = sender_type(From),
+	    RLimits = get_limits_xml(Els, SenderT),
+	    add_response(RServer, {multicast_supported, FromS, RLimits}),
+	    FromM = Waiter#waiter.sender,
+	    DestsM = Group#group.dests,
+	    PacketM = Waiter#waiter.packet,
+	    AAttrsM = Waiter#waiter.aattrs,
+	    AddressesM = Waiter#waiter.addresses,
+	    RServiceM = FromS,
+	    route_packet_multicast(FromM, RServiceM, PacketM,
+		AAttrsM, DestsM, AddressesM, RLimits),
+	    delo_waiter(Waiter);
+	false ->
+	    case FromS of
+		RServer ->
 		send_query_items(FromS, LServiceS),
 		delo_waiter(Waiter),
 		add_waiter(Waiter#waiter{awaiting =

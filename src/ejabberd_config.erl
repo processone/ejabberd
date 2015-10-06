@@ -192,7 +192,6 @@ env_binary_to_list(Application, Parameter) ->
 %% Returns a list of plain terms,
 %% in which the options 'include_config_file' were parsed
 %% and the terms in those files were included.
-%% @spec(string()) -> [term()]
 %% @spec(iolist()) -> [term()]
 get_plain_terms_file(File) ->
     get_plain_terms_file(File, [{include_files, true}]).
@@ -844,6 +843,7 @@ replace_module(mod_roster_odbc) -> {mod_roster, odbc};
 replace_module(mod_shared_roster_odbc) -> {mod_shared_roster, odbc};
 replace_module(mod_vcard_odbc) -> {mod_vcard, odbc};
 replace_module(mod_vcard_xupdate_odbc) -> {mod_vcard_xupdate, odbc};
+replace_module(mod_pubsub_odbc) -> {mod_pubsub, odbc};
 replace_module(Module) ->
     case is_elixir_module(Module) of
         true  -> expand_elixir_module(Module);

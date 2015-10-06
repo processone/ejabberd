@@ -1062,8 +1062,9 @@ term_to_string(T) ->
 
 %% @spec (T::any(), Cols::integer()) -> {NumLines::integer(), Paragraph::string()}
 term_to_paragraph(T, Cols) ->
-    Paragraph = list_to_binary(erl_prettypr:format(erl_syntax:abstract(T),
-                                                   [{paper, Cols}])),
+    P1 = erl_syntax:abstract(T),
+    P2 = erl_prettypr:format(P1, [{paper, Cols}]),
+    Paragraph = list_to_binary(P2),
     FieldList = ejabberd_regexp:split(Paragraph, <<"\n">>),
     NumLines = length(FieldList),
     {NumLines, Paragraph}.
@@ -1799,7 +1800,7 @@ get_node(Host, Node, [], _Query, Lang) ->
 		     <<"Modules">>)])]
 	    ++ MenuItems2))];
 get_node(global, Node, [<<"db">>], Query, Lang) ->
-    case rpc:call(Node, mnesia, system_info, [tables]) of
+    case ejabberd_cluster:call(Node, mnesia, system_info, [tables]) of
       {badrpc, _Reason} ->
 	  [?XCT(<<"h1">>, <<"RPC Call Error">>)];
       Tables ->
@@ -1811,7 +1812,7 @@ get_node(global, Node, [<<"db">>], Query, Lang) ->
 	  Rows = lists:map(fun (Table) ->
 				   STable =
 				       iolist_to_binary(atom_to_list(Table)),
-				   TInfo = case rpc:call(Node, mnesia,
+				   TInfo = case ejabberd_cluster:call(Node, mnesia,
 							 table_info,
 							 [Table, all])
 					       of
@@ -2031,7 +2032,7 @@ get_node(global, Node, [<<"backup">>], Query, Lang) ->
 				   [?INPUTT(<<"submit">>, <<"import_dir">>,
 					    <<"OK">>)])])])])])];
 get_node(global, Node, [<<"ports">>], Query, Lang) ->
-    Ports = rpc:call(Node, ejabberd_config,
+    Ports = ejabberd_cluster:call(Node, ejabberd_config,
 		     get_local_option, [listen,
                                         {ejabberd_listener, validate_cfg},
                                         []]),
@@ -2045,7 +2046,7 @@ get_node(global, Node, [<<"ports">>], Query, Lang) ->
 		{error, iolist_to_binary(io_lib:format("~p", [Reason]))};
 	    _ -> nothing
 	  end,
-    NewPorts = lists:sort(rpc:call(Node, ejabberd_config,
+    NewPorts = lists:sort(ejabberd_cluster:call(Node, ejabberd_config,
 				   get_local_option,
                                    [listen,
                                     {ejabberd_listener, validate_cfg},
@@ -2068,7 +2069,7 @@ get_node(global, Node, [<<"ports">>], Query, Lang) ->
 	      [node_ports_to_xhtml(NewPorts, Lang)])];
 get_node(Host, Node, [<<"modules">>], Query, Lang)
     when is_binary(Host) ->
-    Modules = rpc:call(Node, gen_mod,
+    Modules = ejabberd_cluster:call(Node, gen_mod,
 		       loaded_modules_with_opts, [Host]),
     Res = case catch node_modules_parse_query(Host, Node,
 					      Modules, Query)
@@ -2077,7 +2078,7 @@ get_node(Host, Node, [<<"modules">>], Query, Lang)
 	    {'EXIT', Reason} -> ?INFO_MSG("~p~n", [Reason]), error;
 	    _ -> nothing
 	  end,
-    NewModules = lists:sort(rpc:call(Node, gen_mod,
+    NewModules = lists:sort(ejabberd_cluster:call(Node, gen_mod,
 				     loaded_modules_with_opts, [Host])),
     H1String = list_to_binary(io_lib:format(?T(<<"Modules at ~p">>), [Node])),
     (?H1GL(H1String, <<"modules-overview">>,
@@ -2093,21 +2094,21 @@ get_node(Host, Node, [<<"modules">>], Query, Lang)
 	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 	      [node_modules_to_xhtml(NewModules, Lang)])];
 get_node(global, Node, [<<"stats">>], _Query, Lang) ->
-    UpTime = rpc:call(Node, erlang, statistics,
+    UpTime = ejabberd_cluster:call(Node, erlang, statistics,
 		      [wall_clock]),
     UpTimeS = list_to_binary(io_lib:format("~.3f",
                                            [element(1, UpTime) / 1000])),
-    CPUTime = rpc:call(Node, erlang, statistics, [runtime]),
+    CPUTime = ejabberd_cluster:call(Node, erlang, statistics, [runtime]),
     CPUTimeS = list_to_binary(io_lib:format("~.3f",
                                             [element(1, CPUTime) / 1000])),
     OnlineUsers = mnesia:table_info(session, size),
-    TransactionsCommitted = rpc:call(Node, mnesia,
+    TransactionsCommitted = ejabberd_cluster:call(Node, mnesia,
 				     system_info, [transaction_commits]),
-    TransactionsAborted = rpc:call(Node, mnesia,
+    TransactionsAborted = ejabberd_cluster:call(Node, mnesia,
 				   system_info, [transaction_failures]),
-    TransactionsRestarted = rpc:call(Node, mnesia,
+    TransactionsRestarted = ejabberd_cluster:call(Node, mnesia,
 				     system_info, [transaction_restarts]),
-    TransactionsLogged = rpc:call(Node, mnesia, system_info,
+    TransactionsLogged = ejabberd_cluster:call(Node, mnesia, system_info,
 				  [transaction_log_writes]),
     [?XC(<<"h1">>,
 	 list_to_binary(io_lib:format(?T(<<"Statistics of ~p">>), [Node]))),
@@ -2142,12 +2143,12 @@ get_node(global, Node, [<<"stats">>], _Query, Lang) ->
 		     ?XAC(<<"td">>, [{<<"class">>, <<"alignright">>}],
 			  (pretty_string_int(TransactionsLogged)))])])])];
 get_node(global, Node, [<<"update">>], Query, Lang) ->
-    rpc:call(Node, code, purge, [ejabberd_update]),
+    ejabberd_cluster:call(Node, code, purge, [ejabberd_update]),
     Res = node_update_parse_query(Node, Query),
-    rpc:call(Node, code, load_file, [ejabberd_update]),
+    ejabberd_cluster:call(Node, code, load_file, [ejabberd_update]),
     {ok, _Dir, UpdatedBeams, Script, LowLevelScript,
      Check} =
-	rpc:call(Node, ejabberd_update, update_info, []),
+	ejabberd_cluster:call(Node, ejabberd_update, update_info, []),
     Mods = case UpdatedBeams of
 	     [] -> ?CT(<<"None">>);
 	     _ ->
@@ -2216,14 +2217,14 @@ get_node(Host, Node, NPath, Query, Lang) ->
 node_parse_query(Node, Query) ->
     case lists:keysearch(<<"restart">>, 1, Query) of
       {value, _} ->
-	  case rpc:call(Node, init, restart, []) of
+	  case ejabberd_cluster:call(Node, init, restart, []) of
 	    {badrpc, _Reason} -> error;
 	    _ -> ok
 	  end;
       _ ->
 	  case lists:keysearch(<<"stop">>, 1, Query) of
 	    {value, _} ->
-		case rpc:call(Node, init, stop, []) of
+		case ejabberd_cluster:call(Node, init, stop, []) of
 		  {badrpc, _Reason} -> error;
 		  _ -> ok
 		end;
@@ -2307,35 +2308,35 @@ node_backup_parse_query(Node, Query) ->
 				{value, {_, Path}} ->
 				    Res = case Action of
 					    <<"store">> ->
-						rpc:call(Node, mnesia, backup,
+						ejabberd_cluster:call(Node, mnesia, backup,
 							 [binary_to_list(Path)]);
 					    <<"restore">> ->
-						rpc:call(Node, ejabberd_admin,
+						ejabberd_cluster:call(Node, ejabberd_admin,
 							 restore, [Path]);
 					    <<"fallback">> ->
-						rpc:call(Node, mnesia,
+						ejabberd_cluster:call(Node, mnesia,
 							 install_fallback,
 							 [binary_to_list(Path)]);
 					    <<"dump">> ->
-						rpc:call(Node, ejabberd_admin,
+						ejabberd_cluster:call(Node, ejabberd_admin,
 							 dump_to_textfile,
 							 [Path]);
 					    <<"load">> ->
-						rpc:call(Node, mnesia,
+						ejabberd_cluster:call(Node, mnesia,
 							 load_textfile,
                                                          [binary_to_list(Path)]);
 					    <<"import_piefxis_file">> ->
-						rpc:call(Node, ejabberd_piefxis,
+						ejabberd_cluster:call(Node, ejabberd_piefxis,
 							 import_file, [Path]);
 					    <<"export_piefxis_dir">> ->
-						rpc:call(Node, ejabberd_piefxis,
+						ejabberd_cluster:call(Node, ejabberd_piefxis,
 							 export_server, [Path]);
 					    <<"export_piefxis_host_dir">> ->
 						{value, {_, Host}} =
 						    lists:keysearch(<<Action/binary,
 								      "host">>,
 								    1, Query),
-						rpc:call(Node, ejabberd_piefxis,
+						ejabberd_cluster:call(Node, ejabberd_piefxis,
 							 export_host,
 							 [Path, Host]);
                                             <<"export_sql_file">> ->
@@ -2343,13 +2344,13 @@ node_backup_parse_query(Node, Query) ->
                                                     lists:keysearch(<<Action/binary,
                                                                       "host">>,
                                                                     1, Query),
-                                                rpc:call(Node, ejd2odbc,
+                                                ejabberd_cluster:call(Node, ejd2odbc,
                                                          export, [Host, Path]);
 					    <<"import_file">> ->
-						rpc:call(Node, ejabberd_admin,
+						ejabberd_cluster:call(Node, ejabberd_admin,
 							 import_file, [Path]);
 					    <<"import_dir">> ->
-						rpc:call(Node, ejabberd_admin,
+						ejabberd_cluster:call(Node, ejabberd_admin,
 							 import_dir, [Path])
 					  end,
 				    case Res of
@@ -2474,10 +2475,10 @@ node_ports_parse_query(Node, Ports, Query) ->
 				{ok, Tokens, _} =
 				    erl_scan:string(binary_to_list(SOpts) ++ "."),
 				{ok, Opts} = erl_parse:parse_term(Tokens),
-				rpc:call(Node, ejabberd_listener,
+				ejabberd_cluster:call(Node, ejabberd_listener,
 					 delete_listener,
 					 [PortIpNetp2, Module1]),
-				R = rpc:call(Node, ejabberd_listener,
+				R = ejabberd_cluster:call(Node, ejabberd_listener,
 					     add_listener,
 					     [PortIpNetp2, Module, Opts]),
 				throw({is_added, R});
@@ -2487,7 +2488,7 @@ node_ports_parse_query(Node, Ports, Query) ->
 						     1, Query)
 				    of
 				  {value, _} ->
-				      rpc:call(Node, ejabberd_listener,
+				      ejabberd_cluster:call(Node, ejabberd_listener,
 					       delete_listener,
 					       [PortIpNetp, Module1]),
 				      throw(submitted);
@@ -2520,7 +2521,7 @@ node_ports_parse_query(Node, Ports, Query) ->
 	  {Port2, _SPort, IP2, _SIP, _SSPort, NetProt2,
 	   OptsClean} =
 	      get_port_data({Port2, STIP2, NetProt2}, Opts),
-	  R = rpc:call(Node, ejabberd_listener, add_listener,
+	  R = ejabberd_cluster:call(Node, ejabberd_listener, add_listener,
 		       [{Port2, IP2, NetProt2}, Module, OptsClean]),
 	  throw({is_added, R});
       _ -> ok
@@ -2579,9 +2580,9 @@ node_modules_parse_query(Host, Node, Modules, Query) ->
 				{ok, Tokens, _} =
 				    erl_scan:string(binary_to_list(<<SOpts/binary, ".">>)),
 				{ok, Opts} = erl_parse:parse_term(Tokens),
-				rpc:call(Node, gen_mod, stop_module,
+				ejabberd_cluster:call(Node, gen_mod, stop_module,
 					 [Host, Module]),
-				rpc:call(Node, gen_mod, start_module,
+				ejabberd_cluster:call(Node, gen_mod, start_module,
 					 [Host, Module, Opts]),
 				throw(submitted);
 			    _ ->
@@ -2589,7 +2590,7 @@ node_modules_parse_query(Host, Node, Modules, Query) ->
 						     1, Query)
 				    of
 				  {value, _} ->
-				      rpc:call(Node, gen_mod, stop_module,
+				      ejabberd_cluster:call(Node, gen_mod, stop_module,
 					       [Host, Module]),
 				      throw(submitted);
 				  _ -> ok
@@ -2605,7 +2606,7 @@ node_modules_parse_query(Host, Node, Modules, Query) ->
 	  Module = jlib:binary_to_atom(SModule),
 	  {ok, Tokens, _} = erl_scan:string(binary_to_list(<<SOpts/binary, ".">>)),
 	  {ok, Opts} = erl_parse:parse_term(Tokens),
-	  rpc:call(Node, gen_mod, start_module,
+	  ejabberd_cluster:call(Node, gen_mod, start_module,
 		   [Host, Module, Opts]),
 	  throw(submitted);
       _ -> ok
@@ -2618,7 +2619,7 @@ node_update_parse_query(Node, Query) ->
 	      proplists:get_all_values(<<"selected">>, Query),
 	  ModulesToUpdate = [jlib:binary_to_atom(M)
 			     || M <- ModulesToUpdateStrings],
-	  case rpc:call(Node, ejabberd_update, update,
+	  case ejabberd_cluster:call(Node, ejabberd_update, update,
 			[ModulesToUpdate])
 	      of
 	    {ok, _} -> ok;
@@ -2893,7 +2894,8 @@ make_menu_item(item, 3, URI, Name, Lang) ->
 
 %%%==================================
 
-%%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:
 
 opt_type(access) -> fun (V) -> V end;
 opt_type(_) -> [access].
+
+%%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:

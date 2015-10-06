@@ -67,9 +67,6 @@ update(ModulesToUpdate) ->
 	    {error, Reason}
     end.
 
-%% OTP R14B03 and older provided release_handler_1:eval_script/3
-%% But OTP R14B04 and newer provide release_handler_1:eval_script/5
-%% Dialyzer reports a call to missing function; don't worry.
 eval_script(Script, Apps, LibDirs) ->
     release_handler_1:eval_script(Script, Apps, LibDirs, [], []).
 
@@ -138,17 +135,17 @@ build_script(Dir, UpdatedBeams) ->
 	  LowLevelScript,
 	  [{ejabberd, "", filename:join(Dir, "..")}]),
     Check1 = case Check of
-                 {ok, []} ->
-                     ?DEBUG("script: ~p~n", [Script]),
-                     ?DEBUG("low level script: ~p~n", [LowLevelScript]),
-                     ?DEBUG("check: ~p~n", [Check]),
-                     ok;
-                 _ ->
-                     ?ERROR_MSG("script: ~p~n", [Script]),
-                     ?ERROR_MSG("low level script: ~p~n", [LowLevelScript]),
-                     ?ERROR_MSG("check: ~p~n", [Check]),
-                     error
-             end,
+	{ok, []} ->
+	    ?DEBUG("script: ~p~n", [Script]),
+	    ?DEBUG("low level script: ~p~n", [LowLevelScript]),
+	    ?DEBUG("check: ~p~n", [Check]),
+	    ok;
+	_ ->
+	    ?ERROR_MSG("script: ~p~n", [Script]),
+	    ?ERROR_MSG("low level script: ~p~n", [LowLevelScript]),
+	    ?ERROR_MSG("check: ~p~n", [Check]),
+	    error
+    end,
     {Script, LowLevelScript, Check1}.
 
 %% Copied from Erlang/OTP file: lib/sasl/src/systools.hrl

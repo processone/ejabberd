@@ -98,7 +98,7 @@ to_record(Host, ACLName, ACLSpec) ->
 -spec add(binary(), aclname(), aclspec()) -> ok | {error, any()}.
 
 add(Host, ACLName, ACLSpec) ->
-    {ResL, BadNodes} = rpc:multicall(mnesia:system_info(running_db_nodes),
+    {ResL, BadNodes} = ejabberd_cluster:multicall(
                                      ?MODULE, add_local,
                                      [Host, ACLName, ACLSpec]),
     case lists:keyfind(aborted, 1, ResL) of
@@ -125,7 +125,7 @@ add_local(Host, ACLName, ACLSpec) ->
 -spec add_list(binary(), [acl()], boolean()) -> ok | {error, any()}.
 
 add_list(Host, ACLs, Clear) ->
-    {ResL, BadNodes} = rpc:multicall(mnesia:system_info(running_db_nodes),
+    {ResL, BadNodes} = ejabberd_cluster:multicall(
                                      ?MODULE, add_list_local,
                                      [Host, ACLs, Clear]),
     case lists:keyfind(aborted, 1, ResL) of
@@ -167,16 +167,12 @@ add_list_local(Host, ACLs, Clear) ->
                  access_name(), [access_rule()]) ->  ok | {error, any()}.
 
 add_access(Host, Access, Rules) ->
-    case mnesia:transaction(
-           fun() ->
-                   mnesia:write(
-                     #access{name = {Access, Host},
-                             rules = Rules})
-           end) of
-        {atomic, ok} ->
-            ok;
-        Err ->
-            {error, Err}
+    Obj = #access{name = {Access, Host}, rules = Rules},
+    case mnesia:transaction(fun() -> mnesia:write(Obj) end) of
+	{atomic, ok} ->
+	    ok;
+	Err ->
+	    {error, Err}
     end.
 
 -spec load_from_config() -> ok.
@@ -239,8 +235,7 @@ normalize_spec(Spec) ->
         {server_regexp, SR} -> {server_regexp, b(SR)};
         {server_glob, S} -> {server_glob, b(S)};
         {resource_glob, R} -> {resource_glob, b(R)};
-        {ip, {Net, Mask}} ->
-            {ip, {Net, Mask}};
+        {ip, {Net, Mask}} -> {ip, {Net, Mask}};
         {ip, S} ->
             case parse_ip_netmask(b(S)) of
                 {ok, Net, Mask} ->
@@ -294,17 +289,15 @@ match_acl(none, _JID, _Host) ->
 match_acl(ACL, IP, Host) when tuple_size(IP) == 4;
                               tuple_size(IP) == 8 ->
     lists:any(
-      fun(#acl{aclspec = {ip, {Net, Mask}}}) ->
+      fun({ip, {Net, Mask}}) ->
               is_ip_match(IP, Net, Mask);
          (_) ->
               false
-      end,
-      ets:lookup(acl, {ACL, Host}) ++
-          ets:lookup(acl, {ACL, global}));
+      end, get_aclspecs(ACL, Host));
 match_acl(ACL, JID, Host) ->
     {User, Server, Resource} = jlib:jid_tolower(JID),
     lists:any(
-      fun(#acl{aclspec = Spec}) ->
+      fun(Spec) ->
               case Spec of
                   all -> true;
                   {user, {U, S}} -> U == User andalso S == Server;
@@ -350,7 +343,13 @@ match_acl(ACL, JID, Host) ->
                       false
               end
       end,
-      ets:lookup(acl, {ACL, Host}) ++
+      get_aclspecs(ACL, Host)).
+
+get_aclspecs(ACL, Host) ->
+    lists:flatmap(
+      fun(#acl{aclspec = Specs}) ->
+              Specs
+      end, ets:lookup(acl, {ACL, Host}) ++
           ets:lookup(acl, {ACL, global})).
 
 is_regexp_match(String, RegExp) ->

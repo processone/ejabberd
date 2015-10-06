@@ -1,11 +1,27 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_http_bind.erl
 %%% Author  : Stefan Strigler <steve@zeank.in-berlin.de>
-%%% Purpose : Implements XMPP over BOSH (XEP-0206) (formerly known as
-%%%           HTTP Binding)
+%%% Purpose : Implements XMPP over BOSH (XEP-0206)
 %%% Created : 21 Sep 2005 by Stefan Strigler <steve@zeank.in-berlin.de>
 %%% Modified: may 2009 by Mickael Remond, Alexey Schepin
-%%% Id      : $Id: ejabberd_http_bind.erl 953 2009-05-07 10:40:40Z alexey $
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http_bind).
@@ -78,7 +94,7 @@
 		wait_timer,
 		ctime = 0,
 		timer,
-		pause=0,
+		pause = 0,
 		unprocessed_req_list = [], % list of request that have been delayed for proper reordering: {Request, PID}
 		req_list = [], % list of requests (cache)
 		max_inactivity,
@@ -132,19 +148,15 @@
 
 -define(PROCESS_DELAY_MAX, 1000).
 
-%% Line copied from mod_http_bind.erl
 -define(PROCNAME_MHB, ejabberd_mod_http_bind).
 
-%%%----------------------------------------------------------------------
-%%% API
-%%%----------------------------------------------------------------------
-%% TODO: If compile with no supervisor option, start the session without
-%%       supervisor
 start(XMPPDomain, Sid, Key, IP, HOpts) ->
     ?DEBUG("Starting session", []),
     SupervisorProc = gen_mod:get_module_proc(XMPPDomain, ?PROCNAME_MHB),
-    case catch supervisor:start_child(SupervisorProc, [Sid, Key, IP, HOpts]) of
-    	{ok, Pid} -> {ok, Pid};
+    case catch supervisor:start_child(SupervisorProc,
+				      [Sid, Key, IP, HOpts])
+    of
+	{ok, Pid} -> {ok, Pid};
 	_ -> check_bind_module(XMPPDomain),
              {error, "Cannot start HTTP bind session"}
     end.
@@ -222,7 +234,7 @@ process_request(Data, IP, HOpts) ->
 	    XmppDomain ->
                 NXmppDomain = jlib:nameprep(XmppDomain),
 		Sid = p1_sha:sha(term_to_binary({now(), make_ref()})),
-                  case start(NXmppDomain, Sid, <<"">>, IP, HOpts) of
+		case start(NXmppDomain, Sid, <<"">>, IP, HOpts) of
 		  {error, _} ->
 		      {500, ?HEADER,
 		       <<"<body type='terminate' condition='internal-se"
@@ -323,13 +335,6 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
 
-%%----------------------------------------------------------------------
-%% Func: init/1
-%% Returns: {ok, StateName, StateData}          |
-%%          {ok, StateName, StateData, Timeout} |
-%%          ignore                              |
-%%          {stop, StopReason}
-%%----------------------------------------------------------------------
 init([Sid, Key, IP, HOpts]) ->
     ?DEBUG("started: ~p", [{Sid, Key, IP}]),
     Opts1 = ejabberd_c2s_config:get_c2s_limits(),
@@ -355,12 +360,6 @@ init([Sid, Key, IP, HOpts]) ->
 		      max_pause = ?MAX_PAUSE,
 		      timer = Timer}}.
 
-%%----------------------------------------------------------------------
-%% Func: handle_event/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%%----------------------------------------------------------------------
 handle_event({become_controller, C2SPid}, StateName, StateData) ->
     case StateData#state.input of
       cancel ->
@@ -381,15 +380,6 @@ handle_event({change_shaper, Shaper}, StateName,
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: handle_sync_event/4
-%% Returns: {next_state, NextStateName, NextStateData}            |
-%%          {next_state, NextStateName, NextStateData, Timeout}   |
-%%          {reply, Reply, NextStateName, NextStateData}          |
-%%          {reply, Reply, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}
-%%----------------------------------------------------------------------
 handle_sync_event({send_xml, Packet}, _From, StateName,
 		  #state{http_receiver = undefined} = StateData) ->
     Output = [Packet | StateData#state.output],
@@ -458,10 +448,8 @@ handle_sync_event(#http_put{payload_size =
 					  shaper_timer = NewShaperTimer});
 %% HTTP GET: send packets to the client
 handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
-    %% setup timer
     TNow = tnow(),
-    if
-	(Hold > 0) and
+    if (Hold > 0) and
 	((StateData#state.output == []) or (StateData#state.rid < Rid)) and
 	((TNow - StateData#state.ctime) < (Wait*1000*1000)) and
 	(StateData#state.rid =< Rid) and
@@ -469,7 +457,6 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 	    send_receiver_reply(StateData#state.http_receiver, {ok, empty}),
 	    cancel_timer(StateData#state.wait_timer),
 	    WaitTimer = erlang:start_timer(Wait * 1000, self(), []),
-	    %% MR: Not sure we should cancel the state timer here.
 	    cancel_timer(StateData#state.timer),
 	    {next_state, StateName, StateData#state{
 				      http_receiver = From,
@@ -479,34 +466,30 @@ handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
 	true ->
 	    cancel_timer(StateData#state.timer),
 	    Reply = {ok, StateData#state.output},
-	    %% save request
 	    ReqList = [#hbr{rid = Rid,
 			    key = StateData#state.key,
-			    out = StateData#state.output
-			   } |
-		       [El || El <- StateData#state.req_list,
-			      El#hbr.rid /= Rid ]
-		      ],
-	    if
-                (StateData#state.http_receiver /= undefined) and
-                StateData#state.out_of_order_receiver ->
-                    {reply, Reply, StateName, StateData#state{
-                                                output = [],
-                                                timer = undefined,
-                                                req_list = ReqList,
-                                                out_of_order_receiver = false}};
-                true ->
-                    send_receiver_reply(StateData#state.http_receiver, {ok, empty}),
-                    cancel_timer(StateData#state.wait_timer),
-                    Timer = set_inactivity_timer(StateData#state.pause,
-                                                 StateData#state.max_inactivity),
-                    {reply, Reply, StateName,
-                     StateData#state{output = [],
-                                     http_receiver = undefined,
-                                     wait_timer = undefined,
-                                     timer = Timer,
-                                     req_list = ReqList}}
-            end
+			    out = StateData#state.output}
+		      | [El
+			 || El <- StateData#state.req_list,
+			    El#hbr.rid /= Rid]],
+	    if (StateData#state.http_receiver /= undefined) and
+			StateData#state.out_of_order_receiver ->
+		    {reply, Reply, StateName,
+			StateData#state{output = [], timer = undefined,
+			    req_list = ReqList,
+			    out_of_order_receiver = false}};
+		true ->
+		    send_receiver_reply(StateData#state.http_receiver, {ok, empty}),
+		    cancel_timer(StateData#state.wait_timer),
+		    Timer = set_inactivity_timer(StateData#state.pause,
+			    StateData#state.max_inactivity),
+		    {reply, Reply, StateName,
+			StateData#state{output = [],
+			    http_receiver = undefined,
+			    wait_timer = undefined,
+			    timer = Timer,
+			    req_list = ReqList}}
+	    end
     end;
 handle_sync_event(peername, _From, StateName,
 		  StateData) ->
@@ -519,13 +502,6 @@ handle_sync_event(_Event, _From, StateName,
 code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: handle_info/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%%----------------------------------------------------------------------
-%% We reached the max_inactivity timeout:
 handle_info({timeout, Timer, _}, _StateName,
 	    #state{id = SID, timer = Timer} = StateData) ->
     ?INFO_MSG("Session timeout. Closing the HTTP bind "
@@ -558,11 +534,6 @@ handle_info({timeout, ShaperTimer, _}, StateName,
 handle_info(_, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: terminate/3
-%% Purpose: Shutdown the fsm
-%% Returns: any
-%%----------------------------------------------------------------------
 terminate(_Reason, _StateName, StateData) ->
     ?DEBUG("terminate: Deleting session ~s",
 	   [StateData#state.id]),
@@ -804,19 +775,22 @@ http_put(Sid, Rid, Attrs, Payload, PayloadSize,
     ?DEBUG("Looking for session: ~p", [Sid]),
     case mnesia:dirty_read({http_bind, Sid}) of
 	[] ->
-            {error, not_exists};
-	[#http_bind{pid = FsmRef, hold=Hold, to={To, StreamVersion}}=Sess] ->
-            NewStream =
-                case StreamStart of
-                    true ->
-                        {To, StreamVersion};
-                    _ ->
-                        <<"">>
-                end,
-            {gen_fsm:sync_send_all_state_event(
-               FsmRef, #http_put{rid = Rid, attrs = Attrs, payload = Payload,
-				 payload_size = PayloadSize, hold = Hold,
-				 stream = NewStream, ip = IP}, 30000), Sess}
+	    {error, not_exists};
+	[#http_bind{pid = FsmRef, hold=Hold,
+		    to= {To, StreamVersion}} = Sess] ->
+	    NewStream = case StreamStart of
+		true -> {To, StreamVersion};
+		_ -> <<"">>
+	    end,
+	    {gen_fsm:sync_send_all_state_event(
+		    FsmRef, #http_put{rid = Rid,
+			    attrs = Attrs,
+			    payload = Payload,
+			    payload_size = PayloadSize,
+			    hold = Hold,
+			    stream = NewStream,
+			    ip = IP},
+			30000), Sess}
     end.
 
 handle_http_put_error(Reason,
@@ -1189,7 +1163,6 @@ set_inactivity_timer(Pause, _MaxInactivity)
 set_inactivity_timer(_Pause, MaxInactivity) ->
     erlang:start_timer(MaxInactivity, self(), []).
 
-%% TODO: Use tail recursion and list reverse ?
 elements_to_string([]) -> [];
 elements_to_string([El | Els]) ->
     [xml:element_to_binary(El) | elements_to_string(Els)].

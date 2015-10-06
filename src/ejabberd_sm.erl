@@ -95,10 +95,6 @@
 %%====================================================================
 %% API
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
 -export_type([sid/0]).
 
 start() ->
@@ -107,8 +103,7 @@ start() ->
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [],
-			  []).
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 -spec route(jid(), jid(), xmlel() | broadcast()) -> ok.
 
@@ -148,6 +143,9 @@ close_session(SID, User, Server, Resource) ->
     JID = jlib:make_jid(User, Server, Resource),
     ejabberd_hooks:run(sm_remove_connection_hook,
 		       JID#jid.lserver, [SID, JID, Info]).
+
+-spec check_in_subscription(any(), binary(), binary(),
+                            any(), any(), any()) -> any().
 
 check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
     case ejabberd_auth:is_user_exists(User, Server) of
@@ -268,6 +266,8 @@ dirty_get_sessions_list() ->
     Mod = get_sm_backend(),
     [S#session.usr || S <- Mod:get_sessions()].
 
+-spec dirty_get_my_sessions_list() -> [#session{}].
+
 dirty_get_my_sessions_list() ->
     Mod = get_sm_backend(),
     [S || S <- Mod:get_sessions(), node(element(2, S#session.sid)) == node()].
@@ -285,20 +285,20 @@ get_all_pids() ->
     Mod = get_sm_backend(),
     [element(2, S#session.sid) || S <- Mod:get_sessions()].
 
+-spec get_vh_session_number(binary()) -> non_neg_integer().
+
 get_vh_session_number(Server) ->
     LServer = jlib:nameprep(Server),
     Mod = get_sm_backend(),
     length(Mod:get_sessions(LServer)).
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
-    ejabberd_sm !
-      {register_iq_handler, Host, XMLNS, Module, Fun}.
+    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun}.
 
 -spec register_iq_handler(binary(), binary(), atom(), atom(), list()) -> any().
 
 register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
-    ejabberd_sm !
-      {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
+    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
 
 -spec unregister_iq_handler(binary(), binary()) -> any().
 
@@ -310,13 +310,6 @@ unregister_iq_handler(Host, XMLNS) ->
 %% gen_server callbacks
 %%====================================================================
 
-%%--------------------------------------------------------------------
-%% Function: init(Args) -> {ok, State} |
-%%                         {ok, State, Timeout} |
-%%                         ignore               |
-%%                         {stop, Reason}
-%% Description: Initiates the server
-%%--------------------------------------------------------------------
 init([]) ->
     Mod = get_sm_backend(),
     Mod:init(),
@@ -333,32 +326,11 @@ init([]) ->
     ejabberd_commands:register_commands(commands()),
     {ok, #state{}}.
 
-%%--------------------------------------------------------------------
-%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
-%%                                      {reply, Reply, State, Timeout} |
-%%                                      {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, Reply, State} |
-%%                                      {stop, Reason, State}
-%% Description: Handling call messages
-%%--------------------------------------------------------------------
 handle_call(_Request, _From, State) ->
     Reply = ok, {reply, Reply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_cast(Msg, State) -> {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, State}
-%% Description: Handling cast messages
-%%--------------------------------------------------------------------
 handle_cast(_Msg, State) -> {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_info(Info, State) -> {noreply, State} |
-%%                                       {noreply, State, Timeout} |
-%%                                       {stop, Reason, State}
-%% Description: Handling all non call/cast messages
-%%--------------------------------------------------------------------
 handle_info({route, From, To, Packet}, State) ->
     case catch do_route(From, To, Packet) of
 	{'EXIT', Reason} ->
@@ -388,26 +360,18 @@ handle_info({unregister_iq_handler, Host, XMLNS},
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: terminate(Reason, State) -> void()
-%% Description: This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any necessary
-%% cleaning up. When it returns, the gen_server terminates with Reason.
-%% The return value is ignored.
-%%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
     ejabberd_commands:unregister_commands(commands()),
     ok.
 
-%%--------------------------------------------------------------------
-%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% Description: Convert process state when code is changed
-%%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
+-spec set_session(sid(), binary(), binary(), binary(),
+                  prio(), info()) -> ok.
 
 set_session(SID, User, Server, Resource, Priority, Info) ->
     LUser = jlib:nodeprep(User),
