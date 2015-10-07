@@ -289,7 +289,7 @@ match_acl(none, _JID, _Host) ->
 match_acl(ACL, IP, Host) when tuple_size(IP) == 4;
                               tuple_size(IP) == 8 ->
     lists:any(
-      fun({ip, {Net, Mask}}) ->
+      fun(#acl{aclspec = {ip, {Net, Mask}}}) ->
               is_ip_match(IP, Net, Mask);
          (_) ->
               false
@@ -297,7 +297,7 @@ match_acl(ACL, IP, Host) when tuple_size(IP) == 4;
 match_acl(ACL, JID, Host) ->
     {User, Server, Resource} = jlib:jid_tolower(JID),
     lists:any(
-      fun(Spec) ->
+      fun(#acl{aclspec = Spec}) ->
               case Spec of
                   all -> true;
                   {user, {U, S}} -> U == User andalso S == Server;
@@ -346,11 +346,7 @@ match_acl(ACL, JID, Host) ->
       get_aclspecs(ACL, Host)).
 
 get_aclspecs(ACL, Host) ->
-    lists:flatmap(
-      fun(#acl{aclspec = Specs}) ->
-              Specs
-      end, ets:lookup(acl, {ACL, Host}) ++
-          ets:lookup(acl, {ACL, global})).
+      ets:lookup(acl, {ACL, Host}) ++ ets:lookup(acl, {ACL, global}).
 
 is_regexp_match(String, RegExp) ->
     case ejabberd_regexp:run(String, RegExp) of
