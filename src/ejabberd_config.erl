@@ -373,17 +373,15 @@ exit_or_halt(ExitText) ->
 get_config_option_key(Name, Val) ->
     if Name == listen ->
             lists:foldl(
-              fun({port, Port}, {_, IP, T, Mod}) ->
-                      {Port, IP, T, Mod};
-                 ({ip, IP}, {Port, _, T, Mod}) ->
-                      {Port, IP, T, Mod};
-                 ({transport, T}, {Port, IP, _, Mod}) ->
-                      {Port, IP, T, Mod};
-                 ({module, Mod}, {Port, IP, T, _}) ->
-                      {Port, IP, T, Mod};
+              fun({port, Port}, {_, IP, T}) ->
+                      {Port, IP, T};
+                 ({ip, IP}, {Port, _, T}) ->
+                      {Port, IP, T};
+                 ({transport, T}, {Port, IP, _}) ->
+                      {Port, IP, T};
                  (_, Res) ->
                       Res
-              end, {5222, {0,0,0,0}, tcp, ejabberd_c2s}, Val);
+              end, {5222, {0,0,0,0}, tcp}, Val);
        is_tuple(Val) ->
             element(1, Val);
        true ->
