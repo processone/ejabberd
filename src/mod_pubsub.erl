@@ -2450,7 +2450,7 @@ get_item(Host, Node, ItemId) ->
 
 get_allowed_items_call(Host, Nidx, From, Type, Options, Owners) ->
     case get_allowed_items_call(Host, Nidx, From, Type, Options, Owners, none) of
-	{result, {I, none}} -> {result, I};
+	{result, {Items, _RSM}} -> {result, Items};
 	Error -> Error
     end.
 get_allowed_items_call(Host, Nidx, From, Type, Options, Owners, RSM) ->
