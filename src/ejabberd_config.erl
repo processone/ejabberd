@@ -372,16 +372,27 @@ exit_or_halt(ExitText) ->
 
 get_config_option_key(Name, Val) ->
     if Name == listen ->
-            lists:foldl(
-              fun({port, Port}, {_, IP, T}) ->
-                      {Port, IP, T};
-                 ({ip, IP}, {Port, _, T}) ->
-                      {Port, IP, T};
-                 ({transport, T}, {Port, IP, _}) ->
-                      {Port, IP, T};
-                 (_, Res) ->
-                      Res
-              end, {5222, {0,0,0,0}, tcp}, Val);
+            case Val of
+                {{Port, IP, Trans}, _Mod, _Opts} ->
+                    {Port, IP, Trans};
+                {{Port, Trans}, _Mod, _Opts} when Trans == tcp; Trans == udp ->
+                    {Port, {0,0,0,0}, Trans};
+                {{Port, IP}, _Mod, _Opts} ->
+                    {Port, IP, tcp};
+                {Port, _Mod, _Opts} ->
+                    {Port, {0,0,0,0}, tcp};
+                V when is_list(V) ->
+                    lists:foldl(
+                      fun({port, Port}, {_, IP, T}) ->
+                              {Port, IP, T};
+                         ({ip, IP}, {Port, _, T}) ->
+                              {Port, IP, T};
+                         ({transport, T}, {Port, IP, _}) ->
+                              {Port, IP, T};
+                         (_, Res) ->
+                              Res
+                      end, {5222, {0,0,0,0}, tcp}, Val)
+            end;
        is_tuple(Val) ->
             element(1, Val);
        true ->
@@ -396,7 +407,6 @@ maps_to_lists(IMap) ->
                  (Name, Val, Res) ->
                       [{Name, Val} | Res]
               end, [], IMap).
-
 
 merge_configs(Terms, ResMap) ->
     lists:foldl(fun({Name, Val}, Map) when is_list(Val) ->
