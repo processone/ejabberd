@@ -760,7 +760,9 @@ iq_disco_info(ServerHost, Lang) ->
 	case gen_mod:is_loaded(ServerHost, mod_mam) of
 	    true ->
 		[#xmlel{name = <<"feature">>,
-			attrs = [{<<"var">>, ?NS_MAM_0}]}];
+			attrs = [{<<"var">>, ?NS_MAM_0}]},
+		 #xmlel{name = <<"feature">>,
+			attrs = [{<<"var">>, ?NS_MAM_1}]}];
 	    false ->
 		[]
 	end.
