@@ -104,7 +104,6 @@ if [ "{{release}}" != "true" ] ; then
     fi
 fi
 EJABBERD_LOG_PATH=$LOGS_DIR/ejabberd.log
-SASL_LOG_PATH=$LOGS_DIR/erlang.log
 DATETIME=`date "+%Y%m%d-%H%M%S"`
 ERL_CRASH_DUMP=$LOGS_DIR/erl_crash_$DATETIME.dump
 ERL_INETRC=$ETC_DIR/inetrc
@@ -180,7 +179,6 @@ start()
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
       -s ejabberd \
-      -sasl sasl_error_logger \\{file,\\\"$SASL_LOG_PATH\\\"\\} \
       $ERLANG_OPTS $ARGS \"$@\""
 }
 
