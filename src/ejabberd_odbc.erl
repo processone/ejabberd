@@ -90,7 +90,7 @@
 
 -define(KEEPALIVE_TIMEOUT, 60000).
 
--define(KEEPALIVE_QUERY, <<"SELECT 1;">>).
+-define(KEEPALIVE_QUERY, [<<"SELECT 1;">>]).
 
 %%-define(DBGFSM, true).
 
