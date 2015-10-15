@@ -109,9 +109,33 @@ spec:
 	$(ERL) -noinput +B -pa ebin -pa deps/*/ebin -eval \
 	'case xml_gen:compile("tools/xmpp_codec.spec") of ok -> halt(0); _ -> halt(1) end.'
 
-DLLs := $(wildcard deps/*/priv/*.so) $(wildcard deps/*/priv/lib/*.so)
+TO_DEST=$(foreach path,$(1),$(if $(filter deps/%,$(path)),$(patsubst deps/%,$(DESTDIR)/lib/%,$(path)),$(patsubst %,$(DESTDIR)/lib/ejabberd/%,$(path))))
+FILTER_DIRS=$(foreach path,$(1),$(if $(wildcard $(path)/*),,$(path)))
+FILES_WILDCARD=$(call FILTER_DIRS,$(foreach w,$(1),$(wildcard $(w))))
 
-install: all
+DEPS_FILES:=$(call FILES_WILDCARD,deps/*/ebin/*.beam deps/*/ebin/*.app deps/*/priv/* deps/*/priv/lib/* deps/*/priv/bin/* deps/*/include/*.hrl)
+DEPS_FILES_FILTERED:=$(filter-out %/epam,$(DEPS_FILES))
+DEPS_DIRS:=$(sort deps/ $(wildcard deps/*) $(dir $(DEPS_FILES)))
+
+MAIN_FILES:=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/lib/* include/*.hrl))
+MAIN_DIRS:=$(sort $(dir $(MAIN_FILES)))
+
+define COPY_template =
+$(call TO_DEST,$(1)): $(1) $(call TO_DEST,$(dir $(1)))
+	$(INSTALL) -m 644 $(1) $(call TO_DEST,$(1))
+endef
+
+$(foreach file,$(DEPS_FILES_FILTERED) $(MAIN_FILES),$(eval $(call COPY_template,$(file))))
+
+$(call TO_DEST,$(MAIN_DIRS) $(DEPS_DIRS)):
+	$(INSTALL) -d $@
+
+$(call TO_DEST,deps/p1_pam/priv/bin/epam): $(DESTDIR)/lib/%: deps/% $(call TO_DEST,deps/p1_pam/priv/bin/)
+	$(INSTALL) -m 750 $(O_USER) $< $@
+
+copy-files: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES))
+
+install: all copy-files
 	#
 	# Configuration files
 	$(INSTALL) -d -m 750 $(G_USER) $(ETCDIR)
@@ -146,41 +170,16 @@ install: all
 		-e "s*@installuser@*$(INIT_USER)*" ejabberd.init.template \
 		> ejabberd.init
 	chmod 755 ejabberd.init
-	#
-	# Binary Erlang files
-	$(INSTALL) -d $(BEAMDIR)
-	$(INSTALL) -m 644 ebin/*.app $(BEAMDIR)
-	$(INSTALL) -m 644 ebin/*.beam $(BEAMDIR)
-	$(INSTALL) -m 644 deps/*/ebin/*.app $(BEAMDIR)
-	$(INSTALL) -m 644 deps/*/ebin/*.beam $(BEAMDIR)
 	# Install Elixir and Elixir dependancies
 	-$(INSTALL) -m 644 deps/*/lib/*/ebin/*.app $(BEAMDIR)
 	-$(INSTALL) -m 644 deps/*/lib/*/ebin/*.beam $(BEAMDIR)
 	rm -f $(BEAMDIR)/configure.beam
-	#
-	# ejabberd header files
-	$(INSTALL) -d $(INCLUDEDIR)
-	$(INSTALL) -m 644 include/*.hrl $(INCLUDEDIR)
-	$(INSTALL) -m 644 deps/*/include/*.hrl $(INCLUDEDIR)
 	#
 	# Binary C programs
 	$(INSTALL) -d $(PBINDIR)
 	$(INSTALL) -m 750 $(O_USER) tools/captcha.sh $(PBINDIR)
 	$(INSTALL) -m 750 $(O_USER) tools/joincluster $(PBINDIR)
 	$(INSTALL) -m 750 $(O_USER) tools/leavecluster $(PBINDIR)
-	[ -f deps/p1_pam/priv/bin/epam ] \
-		&& $(INSTALL) -m 750 $(O_USER) deps/p1_pam/priv/bin/epam $(PBINDIR) \
-		|| true
-	#
-	# Binary system libraries
-	$(INSTALL) -d $(SODIR)
-	$(INSTALL) -m 644 $(DLLs) $(SODIR)
-	[ -f $(SODIR)/jiffy.so ] && (cd $(PRIVDIR); ln -s lib/jiffy.so; true) || true
-	[ -f $(SODIR)/sqlite3_drv.so ] && (cd $(PRIVDIR); ln -s lib/sqlite3_drv.so; true) || true
-	#
-	# Translated strings
-	$(INSTALL) -d $(MSGSDIR)
-	$(INSTALL) -m 644 priv/msgs/*.msg $(MSGSDIR)
 	#
 	# Copy lite.sql
 	[ -d deps/sqlite3 ] && $(INSTALL) -d $(SQLDIR) || true

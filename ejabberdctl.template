@@ -15,6 +15,7 @@ ERL={{erl}}
 IEX={{bindir}}/iex
 EPMD={{bindir}}/epmd
 INSTALLUSER={{installuser}}
+ERL_LIBS={{libdir}}
 
 # check the proper system user is used if defined
 if [ "$INSTALLUSER" != "" ] ; then
@@ -87,20 +88,11 @@ if [ "{{release}}" != "true" ] ; then
     if [ "$EJABBERDDIR" = "" ] ; then
         EJABBERDDIR={{libdir}}/ejabberd
     fi
-    if [ "$EJABBERD_EBIN_PATH" = "" ] ; then
-        EJABBERD_EBIN_PATH=$EJABBERDDIR/ebin
-    fi
     if [ "$EJABBERD_PRIV_PATH" = "" ] ; then
         EJABBERD_PRIV_PATH=$EJABBERDDIR/priv
     fi
     if [ "$EJABBERD_BIN_PATH" = "" ] ; then
         EJABBERD_BIN_PATH=$EJABBERD_PRIV_PATH/bin
-    fi
-    if [ "$EJABBERD_SO_PATH" = "" ] ; then
-        EJABBERD_SO_PATH=$EJABBERD_PRIV_PATH/lib
-    fi
-    if [ "$EJABBERD_MSGS_PATH" = "" ] ; then
-        EJABBERD_MSGS_PATH=$EJABBERD_PRIV_PATH/msgs
     fi
 fi
 EJABBERD_LOG_PATH=$LOGS_DIR/ejabberd.log
@@ -154,9 +146,7 @@ cd $SPOOL_DIR
 
 # export global variables
 export EJABBERD_CONFIG_PATH
-export EJABBERD_MSGS_PATH
 export EJABBERD_LOG_PATH
-export EJABBERD_SO_PATH
 export EJABBERD_BIN_PATH
 export EJABBERD_DOC_PATH
 export EJABBERD_PID_PATH
@@ -166,6 +156,7 @@ export ERL_INETRC
 export ERL_MAX_PORTS
 export ERL_MAX_ETS_TABLES
 export CONTRIB_MODULES_PATH
+export ERL_LIBS
 
 # start server
 start()
