@@ -43,6 +43,7 @@
 -export([start/2,
 	 stop/1,
 	 start_link/2,
+	 close/1,
 	 send_text/2,
 	 send_element/2,
 	 socket_type/0,
@@ -251,7 +252,9 @@ send_filtered(FsmRef, Feature, From, To, Packet) ->
 broadcast(FsmRef, Type, From, Packet) ->
     FsmRef ! {broadcast, Type, From, Packet}.
 
-stop(FsmRef) -> (?GEN_FSM):send_event(FsmRef, closed).
+stop(FsmRef) -> (?GEN_FSM):send_event(FsmRef, stop).
+
+close(FsmRef) -> (?GEN_FSM):send_event(FsmRef, closed).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -552,6 +555,8 @@ wait_for_stream({xmlstreamerror, _}, StateData) ->
     send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_stream(closed, StateData) ->
+    {stop, normal, StateData};
+wait_for_stream(stop, StateData) ->
     {stop, normal, StateData}.
 
 wait_for_auth({xmlstreamelement, #xmlel{name = Name} = El}, StateData)
@@ -707,6 +712,8 @@ wait_for_auth({xmlstreamerror, _}, StateData) ->
     send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_auth(closed, StateData) ->
+    {stop, normal, StateData};
+wait_for_auth(stop, StateData) ->
     {stop, normal, StateData}.
 
 wait_for_feature_request({xmlstreamelement, #xmlel{name = Name} = El},
@@ -869,6 +876,8 @@ wait_for_feature_request({xmlstreamerror, _},
     send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_feature_request(closed, StateData) ->
+    {stop, normal, StateData};
+wait_for_feature_request(stop, StateData) ->
     {stop, normal, StateData}.
 
 wait_for_sasl_response({xmlstreamelement, #xmlel{name = Name} = El}, StateData)
@@ -980,6 +989,8 @@ wait_for_sasl_response({xmlstreamerror, _},
     send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_sasl_response(closed, StateData) ->
+    {stop, normal, StateData};
+wait_for_sasl_response(stop, StateData) ->
     {stop, normal, StateData}.
 
 resource_conflict_action(U, S, R) ->
@@ -1086,6 +1097,8 @@ wait_for_bind({xmlstreamerror, _}, StateData) ->
     send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_bind(closed, StateData) ->
+    {stop, normal, StateData};
+wait_for_bind(stop, StateData) ->
     {stop, normal, StateData}.
 
 wait_for_session({xmlstreamelement, #xmlel{name = Name} = El}, StateData)
@@ -1154,6 +1167,8 @@ wait_for_session({xmlstreamerror, _}, StateData) ->
     send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_session(closed, StateData) ->
+    {stop, normal, StateData};
+wait_for_session(stop, StateData) ->
     {stop, normal, StateData}.
 
 session_established({xmlstreamelement, #xmlel{name = Name} = El}, StateData)
@@ -1205,6 +1220,8 @@ session_established(closed, #state{mgmt_state = active} = StateData) ->
     catch (StateData#state.sockmod):close(StateData#state.socket),
     fsm_next_state(wait_for_resume, StateData);
 session_established(closed, StateData) ->
+    {stop, normal, StateData};
+session_established(stop, StateData) ->
     {stop, normal, StateData}.
 
 %% Process packets sent by user (coming from user on c2s XMPP connection)

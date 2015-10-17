@@ -169,7 +169,7 @@ handle_cast({iq_pong, JID, timeout}, State) ->
 	      JID,
 	  case ejabberd_sm:get_session_pid(User, Server, Resource)
 	      of
-	    Pid when is_pid(Pid) -> ejabberd_c2s:stop(Pid);
+	    Pid when is_pid(Pid) -> ejabberd_c2s:close(Pid);
 	    _ -> ok
 	  end;
       _ -> ok
