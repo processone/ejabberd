@@ -186,8 +186,8 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
     case ets:lookup(listen_sockets, PortIP) of
 	[{PortIP, ListenSocket}] ->
-	    ?INFO_MSG("Reusing listening port for ~p", [Port]),
-	    ets:delete(listen_sockets, Port),
+	    ?INFO_MSG("Reusing listening port for ~p", [PortIP]),
+	    ets:delete(listen_sockets, PortIP),
 	    ListenSocket;
 	_ ->
 	    Res = gen_tcp:listen(Port, [binary,
