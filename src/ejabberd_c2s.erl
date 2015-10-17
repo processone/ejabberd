@@ -1202,6 +1202,7 @@ session_established({xmlstreamerror, _}, StateData) ->
     send_trailer(StateData),
     {stop, normal, StateData};
 session_established(closed, #state{mgmt_state = active} = StateData) ->
+    catch (StateData#state.sockmod):close(StateData#state.socket),
     fsm_next_state(wait_for_resume, StateData);
 session_established(closed, StateData) ->
     {stop, normal, StateData}.
