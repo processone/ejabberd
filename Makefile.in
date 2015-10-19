@@ -17,6 +17,9 @@ BINDIR = $(DESTDIR)@bindir@
 # /sbin/
 SBINDIR = $(DESTDIR)@sbindir@
 
+# /lib/
+LIBDIR =  $(DESTDIR)@libdir@
+
 # /lib/ejabberd/
 EJABBERDDIR = $(DESTDIR)@libdir@/ejabberd
 
@@ -109,7 +112,7 @@ spec:
 	$(ERL) -noinput +B -pa ebin -pa deps/*/ebin -eval \
 	'case xml_gen:compile("tools/xmpp_codec.spec") of ok -> halt(0); _ -> halt(1) end.'
 
-TO_DEST=$(foreach path,$(1),$(if $(filter deps/%,$(path)),$(patsubst deps/%,$(DESTDIR)/lib/%,$(path)),$(patsubst %,$(DESTDIR)/lib/ejabberd/%,$(path))))
+TO_DEST=$(foreach path,$(1),$(if $(filter deps/%,$(path)),$(patsubst deps/%,$(LIBDIR)/%,$(path)),$(patsubst %,$(LIBDIR)/ejabberd/%,$(path))))
 FILTER_DIRS=$(foreach path,$(1),$(if $(wildcard $(path)/*),,$(path)))
 FILES_WILDCARD=$(call FILTER_DIRS,$(foreach w,$(1),$(wildcard $(w))))
 
@@ -130,7 +133,7 @@ $(foreach file,$(DEPS_FILES_FILTERED) $(MAIN_FILES),$(eval $(call COPY_template,
 $(call TO_DEST,$(MAIN_DIRS) $(DEPS_DIRS)):
 	$(INSTALL) -d $@
 
-$(call TO_DEST,deps/p1_pam/priv/bin/epam): $(DESTDIR)/lib/%: deps/% $(call TO_DEST,deps/p1_pam/priv/bin/)
+$(call TO_DEST,deps/p1_pam/priv/bin/epam): $(LIBDIR)/%: deps/% $(call TO_DEST,deps/p1_pam/priv/bin/)
 	$(INSTALL) -m 750 $(O_USER) $< $@
 
 copy-files: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES))
