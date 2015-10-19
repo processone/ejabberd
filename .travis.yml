@@ -34,7 +34,9 @@ before_script:
 
 script:
   - ./autogen.sh
-  - ./configure --enable-all --disable-odbc --disable-elixir
+  - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc --disable-elixir
+  - make
+  - make install
   - make xref
   - ERL_LIBS=$PWD make test
   - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log
