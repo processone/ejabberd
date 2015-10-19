@@ -123,9 +123,8 @@ DEPS_DIRS:=$(sort deps/ $(wildcard deps/*) $(dir $(DEPS_FILES)))
 MAIN_FILES:=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/lib/* include/*.hrl))
 MAIN_DIRS:=$(sort $(dir $(MAIN_FILES)))
 
-define COPY_template =
-$(call TO_DEST,$(1)): $(1) $(call TO_DEST,$(dir $(1)))
-	$(INSTALL) -m 644 $(1) $(call TO_DEST,$(1))
+define COPY_template
+$(call TO_DEST,$(1)): $(1) $(call TO_DEST,$(dir $(1))) ; $$(INSTALL) -m 644 $(1) $(call TO_DEST,$(1))
 endef
 
 $(foreach file,$(DEPS_FILES_FILTERED) $(MAIN_FILES),$(eval $(call COPY_template,$(file))))
