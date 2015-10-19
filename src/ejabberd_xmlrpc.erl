@@ -197,11 +197,14 @@ socket_type() -> raw.
 %% -----------------------------
 process(_, #request{method = 'POST', data = Data, opts = Opts}) ->
     AccessCommandsOpts = gen_mod:get_opt(access_commands, Opts,
-                                         fun(L) when is_list(L) -> L end,
+                                         fun(L) when is_list(L) -> L;
+                                            (unrestricted) -> unrestricted
+                                         end,
                                          undefined),
     AccessCommands =
         case AccessCommandsOpts of
             undefined -> undefined;
+            unrestricted -> unrestricted;
             _ ->
                 lists:flatmap(
                   fun({Ac, AcOpts}) ->
@@ -537,6 +540,8 @@ make_status(false) -> 1;
 make_status(error) -> 1;
 make_status(_) -> 1.
 
+transform_listen_option({access_commands, unrestricted} = Opt, Opts) ->
+    [Opt | Opts];
 transform_listen_option({access_commands, ACOpts}, Opts) ->
     NewACOpts = lists:map(
                   fun({AName, ACmds, AOpts}) ->

@@ -226,6 +226,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
+-define(POLICY_ACCESS, '$policy').
 
 init() ->
     ets:new(ejabberd_commands, [named_table, set, public,
@@ -483,7 +484,7 @@ check_auth(_Command, {User, Server, Password, _}) when is_binary(Password) ->
         _ -> throw({error, invalid_account_data})
     end.
 
-check_access(Command, all, _)
+check_access(Command, ?POLICY_ACCESS, _)
   when Command#ejabberd_commands.policy == open ->
     true;
 check_access(_Command, _Access, admin) ->
@@ -491,7 +492,7 @@ check_access(_Command, _Access, admin) ->
 check_access(_Command, _Access, {_User, _Server, _, true}) ->
     false;
 check_access(Command, Access, Auth)
-  when Access =/= all;
+  when Access =/= ?POLICY_ACCESS;
        Command#ejabberd_commands.policy == open;
        Command#ejabberd_commands.policy == user ->
     case check_auth(Command, Auth) of
@@ -503,6 +504,8 @@ check_access(Command, Access, Auth)
 check_access(_Command, _Access, _Auth) ->
     false.
 
+check_access2(?POLICY_ACCESS, _User, _Server) ->
+    true;
 check_access2(Access, User, Server) ->
     %% Check this user has access permission
     case acl:match_rule(Server, Access, jlib:make_jid(User, Server, <<"">>)) of
@@ -536,9 +539,11 @@ tag_arguments(ArgsDefs, Args) ->
       Args).
 
 
+get_access_commands(unrestricted) ->
+    [];
 get_access_commands(undefined) ->
     Cmds = get_commands(),
-    [{all, Cmds, []}];
+    [{?POLICY_ACCESS, Cmds, []}];
 get_access_commands(AccessCommands) ->
     AccessCommands.
 
