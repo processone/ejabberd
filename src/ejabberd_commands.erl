@@ -491,7 +491,8 @@ check_access(_Command, _Access, admin) ->
 check_access(_Command, _Access, {_User, _Server, _, true}) ->
     false;
 check_access(Command, Access, Auth)
-  when Command#ejabberd_commands.policy == open;
+  when Access =/= all;
+       Command#ejabberd_commands.policy == open;
        Command#ejabberd_commands.policy == user ->
     case check_auth(Command, Auth) of
 	{ok, User, Server} ->
