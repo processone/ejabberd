@@ -66,10 +66,15 @@ Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
         {oauth2, ".*", {git, "https://github.com/prefiks/oauth2.git"}},
         {xmlrpc, ".*", {git, "https://github.com/rds13/xmlrpc.git"}}],
 
+CFLags = proplists:get_value(cflags, Cfg, ""),
+CPPFLags = proplists:get_value(cppflags, Cfg, ""),
+LDFLags = proplists:get_value(ldflags, Cfg, ""),
+
 ConfigureCmd = fun(Pkg, Flags) ->
                        {'get-deps',
                         "sh -c 'cd deps/" ++ Pkg ++
-                            " && ./configure" ++ Flags ++ "'"}
+                            " && CFLAGS=\""++ CFLags ++"\" CPPFLAGS=\""++ CPPFLags ++"\" LDFLAGS=\""++ LDFLags ++"\"" ++
+                            " ./configure" ++ Flags ++ "'"}
                end,
 
 XMLFlags = lists:foldl(

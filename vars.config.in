@@ -47,6 +47,10 @@
 {libdir, "{{release_dir}}/lib"}.
 {docdir, "{{release_dir}}/doc"}.
 
+{ldflags, "@LDFLAGS@"}.
+{cflags, "@CFLAGS@"}.
+{cppflags, "@CPPFLAGS@"}.
+
 %% Local Variables:
 %% mode: erlang
 %% End:
