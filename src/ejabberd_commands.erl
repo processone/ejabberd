@@ -299,7 +299,8 @@ get_command_format(Name, Auth) ->
     case Matched of
 	[] ->
 	    {error, command_unknown};
-	[[Args, Result, user]] when Admin ->
+	[[Args, Result, user]] when Admin;
+                                    Auth == noauth ->
 	    {[{user, binary}, {server, binary} | Args], Result};
 	[[Args, Result, _]] ->
 	    {Args, Result}
@@ -362,6 +363,9 @@ execute_command2(
     execute_command2(Command, Arguments);
 execute_command2(
   admin, #ejabberd_commands{policy = user} = Command, Arguments) ->
+    execute_command2(Command, Arguments);
+execute_command2(
+  noauth, #ejabberd_commands{policy = user} = Command, Arguments) ->
     execute_command2(Command, Arguments);
 execute_command2(
   {User, Server, _, _}, #ejabberd_commands{policy = user} = Command, Arguments) ->
@@ -429,7 +433,9 @@ check_access_commands([], _Auth, _Method, _Command, _Arguments) ->
 check_access_commands(AccessCommands, Auth, Method, Command1, Arguments) ->
     Command =
         case {Command1#ejabberd_commands.policy, Auth} of
-            {user, admin} ->
+            {user, {_, _, _}} ->
+                Command1;
+            {user, _} ->
                 Command1#ejabberd_commands{
                   args = [{user, binary}, {server, binary} |
                           Command1#ejabberd_commands.args]};
@@ -539,8 +545,6 @@ tag_arguments(ArgsDefs, Args) ->
       Args).
 
 
-get_access_commands(unrestricted) ->
-    [];
 get_access_commands(undefined) ->
     Cmds = get_commands(),
     [{?POLICY_ACCESS, Cmds, []}];
