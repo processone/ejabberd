@@ -1025,7 +1025,7 @@ push_item(User, Server, Item) ->
 					    children = [item_to_xml(Item)]}]}),
     lists:foreach(fun (Resource) ->
 			  JID = jlib:make_jid(User, Server, Resource),
-			  ejabberd_router:route(JID, JID, Stanza)
+			  ejabberd_router:route(jlib:jid_remove_resource(JID), JID, Stanza)
 		  end,
 		  ejabberd_sm:get_user_resources(User, Server)).
 
