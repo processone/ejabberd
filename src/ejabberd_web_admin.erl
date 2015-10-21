@@ -1478,10 +1478,8 @@ get_stats(global, Lang) ->
 					    + Total
 				  end,
 				  0, ?MYHOSTS),
-    S2SConns = ejabberd_s2s:dirty_get_connections(),
-    S2SConnections = length(S2SConns),
-    S2SServers = length(lists:usort([element(2, C)
-				      || C <- S2SConns])),
+    OutS2SNumber = ejabberd_s2s:outgoing_s2s_number(),
+    InS2SNumber = ejabberd_s2s:incoming_s2s_number(),
     [?XAE(<<"table">>, [],
 	  [?XE(<<"tbody">>,
 	       [?XE(<<"tr">>,
@@ -1492,10 +1490,10 @@ get_stats(global, Lang) ->
 		     ?XC(<<"td">>, (pretty_string_int(OnlineUsers)))]),
 		?XE(<<"tr">>,
 		    [?XCT(<<"td">>, <<"Outgoing s2s Connections:">>),
-		     ?XC(<<"td">>, (pretty_string_int(S2SConnections)))]),
+		     ?XC(<<"td">>, (pretty_string_int(OutS2SNumber)))]),
 		?XE(<<"tr">>,
-		    [?XCT(<<"td">>, <<"Outgoing s2s Servers:">>),
-		     ?XC(<<"td">>, (pretty_string_int(S2SServers)))])])])];
+		    [?XCT(<<"td">>, <<"Incoming s2s Connections:">>),
+		     ?XC(<<"td">>, (pretty_string_int(InS2SNumber)))])])])];
 get_stats(Host, Lang) ->
     OnlineUsers =
 	length(ejabberd_sm:get_vh_session_list(Host)),
