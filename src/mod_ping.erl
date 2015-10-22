@@ -63,6 +63,7 @@
 	{host = <<"">>,
          send_pings = ?DEFAULT_SEND_PINGS :: boolean(),
 	 ping_interval = ?DEFAULT_PING_INTERVAL :: non_neg_integer(),
+	 ping_ack_timeout = undefined :: non_neg_integer(),
 	 timeout_action = none :: none | kill,
          timers = (?DICT):new() :: ?TDICT}).
 
@@ -106,6 +107,9 @@ init([Host, Opts]) ->
     PingInterval = gen_mod:get_opt(ping_interval, Opts,
                                    fun(I) when is_integer(I), I>0 -> I end,
 				   ?DEFAULT_PING_INTERVAL),
+    PingAckTimeout = gen_mod:get_opt(ping_ack_timeout, Opts,
+                                     fun(I) when is_integer(I), I>0 -> I * 1000 end,
+                                     undefined),
     TimeoutAction = gen_mod:get_opt(timeout_action, Opts,
                                     fun(none) -> none;
                                        (kill) -> kill
@@ -131,6 +135,7 @@ init([Host, Opts]) ->
      #state{host = Host, send_pings = SendPings,
 	    ping_interval = PingInterval,
 	    timeout_action = TimeoutAction,
+	    ping_ack_timeout = PingAckTimeout,
 	    timers = (?DICT):new()}}.
 
 terminate(_Reason, #state{host = Host}) ->
@@ -187,7 +192,7 @@ handle_info({timeout, _TRef, {ping, JID}}, State) ->
 		gen_server:cast(Pid, {iq_pong, JID, Response})
 	end,
     From = jlib:make_jid(<<"">>, State#state.host, <<"">>),
-    ejabberd_local:route_iq(From, JID, IQ, F),
+    ejabberd_local:route_iq(From, JID, IQ, F, State#state.ping_ack_timeout),
     Timers = add_timer(JID, State#state.ping_interval,
 		       State#state.timers),
     {noreply, State#state{timers = Timers}};
