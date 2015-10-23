@@ -620,10 +620,15 @@ get_s2s_state(S2sPid) ->
     [{s2s_pid, S2sPid} | Infos].
 
 get_cert_domains(Cert) ->
-    {rdnSequence, Subject} =
-	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.subject,
-    Extensions =
-	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.extensions,
+    TBSCert = Cert#'Certificate'.tbsCertificate,
+    Subject = case TBSCert#'TBSCertificate'.subject of
+		  {rdnSequence, Subj} -> lists:flatten(Subj);
+		  _ -> []
+	      end,
+    Extensions = case TBSCert#'TBSCertificate'.extensions of
+		     Exts when is_list(Exts) -> Exts;
+		     _ -> []
+		 end,
     lists:flatmap(fun (#'AttributeTypeAndValue'{type =
 						    ?'id-at-commonName',
 						value = Val}) ->
@@ -646,7 +651,7 @@ get_cert_domains(Cert) ->
 			  end;
 		      (_) -> []
 		  end,
-		  lists:flatten(Subject))
+		  Subject)
       ++
       lists:flatmap(fun (#'Extension'{extnID =
 					  ?'id-ce-subjectAltName',
