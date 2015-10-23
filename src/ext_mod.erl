@@ -36,6 +36,7 @@
 	 config_dir/0, opt_type/1]).
 
 -include("ejabberd_commands.hrl").
+-include("logger.hrl").
 
 -define(REPOS, "https://github.com/processone/ejabberd-contrib").
 
@@ -111,10 +112,19 @@ commands() ->
 
 update() ->
     add_sources(?REPOS),
-    lists:foreach(fun({Package, Spec}) ->
+    Res = lists:foldl(fun({Package, Spec}, Acc) ->
                 Path = proplists:get_value(url, Spec, ""),
-                add_sources(Package, Path)
-        end, modules_spec(sources_dir(), "*")).
+                Update = add_sources(Package, Path),
+                ?INFO_MSG("Update package ~s: ~p", [Package, Update]),
+                case Update of
+                    ok -> Acc;
+                    Error -> [Error|Acc]
+                end
+        end, [], modules_spec(sources_dir(), "*")),
+    case Res of
+        [] -> ok;
+        [Error|_] -> Error
+    end.
 
 available() ->
     Jungle = modules_spec(sources_dir(), "*/*"),
