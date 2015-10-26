@@ -888,7 +888,7 @@ convert(Path, #media_info{type = T, width = W, height = H}) ->
 -spec thumb_el(string(), binary()) -> xmlel().
 
 thumb_el(Path, URI) ->
-    ContentType = guess_content_type(Path),
+    ContentType = guess_content_type(list_to_binary(Path)),
     case identify(Path) of
 	{ok, #media_info{height = H, width = W}} ->
 	    #xmlel{name = <<"thumbnail">>,
