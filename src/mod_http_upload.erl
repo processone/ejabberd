@@ -838,7 +838,7 @@ code_to_message(_Code) -> <<"">>.
 identify(Path) ->
     Cmd = lists:flatten(io_lib:fwrite("identify -format \"ok %m %h %w\" ~s",
 				      [Path])),
-    Res = os:cmd(Cmd),
+    Res = string:strip(os:cmd(Cmd), right, $\n),
     case string:tokens(Res, " ") of
 	["ok", T, H, W] ->
 	    {ok, #media_info{
@@ -869,7 +869,7 @@ convert(Path, #media_info{type = T, width = W, height = H}) ->
 		    {ok, OutPath};
 		Err ->
 		    ?ERROR_MSG("failed to convert ~s to ~s: ~s",
-			       [Path, OutPath, Err]),
+			       [Path, OutPath, string:strip(Err, right, $\n)]),
 		    pass
 	    end;
        true ->
