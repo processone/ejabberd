@@ -94,7 +94,7 @@
 -record(media_info,
 	{type   :: string(),
 	 height :: integer(),
-	 weight :: integer()}).
+	 width  :: integer()}).
 
 -type state() :: #state{}.
 -type slot() :: [binary()].
@@ -844,7 +844,7 @@ identify(Path) ->
 	    {ok, #media_info{
 		    type = string:to_lower(T),
 		    height = list_to_integer(H),
-		    weight = list_to_integer(W)}};
+		    width = list_to_integer(W)}};
 	_ ->
 	    ?ERROR_MSG("failed to identify type of ~s: ~s", [Path, Res]),
 	    {error, Res}
@@ -852,7 +852,7 @@ identify(Path) ->
 
 -spec convert(string(), media_info()) -> {ok, string()} | pass.
 
-convert(Path, #media_info{type = T, weight = W, height = H}) ->
+convert(Path, #media_info{type = T, width = W, height = H}) ->
     if W*H >= 25000000 ->
 	    ?DEBUG("the image ~s is more than 25 Mbpx", [Path]),
 	    pass;
@@ -882,7 +882,7 @@ convert(Path, #media_info{type = T, weight = W, height = H}) ->
 thumb_el(Path, URI) ->
     ContentType = guess_content_type(Path),
     case identify(Path) of
-	{ok, #media_info{height = H, weight = W}} ->
+	{ok, #media_info{height = H, width = W}} ->
 	    #xmlel{name = <<"thumbnail">>,
 		   attrs = [{<<"xmlns">>, ?NS_THUMBS_1},
 			    {<<"media-type">>, ContentType},
