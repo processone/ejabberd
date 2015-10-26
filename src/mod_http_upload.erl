@@ -719,6 +719,12 @@ iq_disco_info(Lang, Name) ->
 
 %% HTTP request handling.
 
+-spec store_file(file:filename_all(), binary(),
+		 integer() | undefined,
+		 integer() | undefined,
+		 binary(), binary(), boolean())
+      -> ok | {ok, [{binary(), binary()}], binary()} | {error, term()}.
+
 store_file(Path, Data, FileMode, DirMode, GetPrefix, LocalPath, Thumbnail) ->
     case do_store_file(Path, Data, FileMode, DirMode) of
 	ok when Thumbnail ->
@@ -747,7 +753,9 @@ store_file(Path, Data, FileMode, DirMode, GetPrefix, LocalPath, Thumbnail) ->
 	    Err
     end.
 
--spec do_store_file(file:filename_all(), binary(), integer(), integer())
+-spec do_store_file(file:filename_all(), binary(),
+		    integer() | undefined,
+		    integer() | undefined)
       -> ok | {error, term()}.
 
 do_store_file(Path, Data, FileMode, DirMode) ->
