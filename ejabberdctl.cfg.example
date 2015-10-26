@@ -170,5 +170,17 @@
 #CONTRIB_MODULES_PATH=/opt/ejabberd-modules
 
 #.
+#' CONTRIB_MODULES_CONF_DIR: configuration directory for contributed modules
+#
+# Specify the full path to the configuration directory for contributed ejabberd
+# modules. In order to configure a module named mod_foo, a mod_foo.yml file can
+# be created in this directory. This file will then be used instead of the
+# default configuration file provided with the module.
+#
+# Default: $CONTRIB_MODULES_PATH/conf
+#
+#CONTRIB_MODULES_CONF_DIR=/etc/ejabberd/modules
+
+#.
 #'
 # vim: foldmarker=#',#. foldmethod=marker:
