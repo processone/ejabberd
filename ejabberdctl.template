@@ -156,6 +156,7 @@ export ERL_INETRC
 export ERL_MAX_PORTS
 export ERL_MAX_ETS_TABLES
 export CONTRIB_MODULES_PATH
+export CONTRIB_MODULES_CONF_DIR
 export ERL_LIBS
 
 # start server
