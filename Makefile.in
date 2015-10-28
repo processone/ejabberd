@@ -112,12 +112,19 @@ spec:
 	$(ERL) -noinput +B -pa ebin -pa deps/*/ebin -eval \
 	'case xml_gen:compile("tools/xmpp_codec.spec") of ok -> halt(0); _ -> halt(1) end.'
 
-TO_DEST=$(foreach path,$(1),$(if $(filter deps/%,$(path)),$(patsubst deps/%,$(LIBDIR)/%,$(path)),$(patsubst %,$(LIBDIR)/ejabberd/%,$(path))))
+JOIN_PATHS=$(if $(wordlist 2,1000,$(1)),$(firstword $(1))/$(call JOIN_PATHS,$(wordlist 2,1000,$(1))),$(1))
+
+ELIXIR_TO_DEST=$(LIBDIR) $(wordlist 2,2,$(1)) $(wordlist 5,1000,$(1))
+DEPS_TO_DEST=$(LIBDIR) $(wordlist 2,1000,$(1))
+MAIN_TO_DEST=$(LIBDIR) ejabberd $(1)
+TO_DEST_SINGLE=$(if $(subst XdepsX,,X$(word 1,$(1))X),$(call MAIN_TO_DEST,$(1)),$(if $(subst XlibX,,X$(word 3,$(1))X),$(call DEPS_TO_DEST,$(1)),$(call ELIXIR_TO_DEST,$(1))))
+TO_DEST=$(foreach path,$(1),$(call JOIN_PATHS,$(call TO_DEST_SINGLE,$(subst /, ,$(path)))))
+
 FILTER_DIRS=$(foreach path,$(1),$(if $(wildcard $(path)/*),,$(path)))
 FILES_WILDCARD=$(call FILTER_DIRS,$(foreach w,$(1),$(wildcard $(w))))
 
-DEPS_FILES:=$(call FILES_WILDCARD,deps/*/ebin/*.beam deps/*/ebin/*.app deps/*/priv/* deps/*/priv/lib/* deps/*/priv/bin/* deps/*/include/*.hrl)
-DEPS_FILES_FILTERED:=$(filter-out %/epam,$(DEPS_FILES))
+DEPS_FILES:=$(call FILES_WILDCARD,deps/*/ebin/*.beam deps/*/ebin/*.app deps/*/priv/* deps/*/priv/lib/* deps/*/priv/bin/* deps/*/include/*.hrl deps/*/lib/*/ebin/*.beam deps/*/lib/*/ebin/*.app)
+DEPS_FILES_FILTERED:=$(filter-out %/epam deps/elixir/ebin/elixir.app,$(DEPS_FILES))
 DEPS_DIRS:=$(sort deps/ $(wildcard deps/*) $(dir $(DEPS_FILES)))
 
 MAIN_FILES:=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/lib/* include/*.hrl))
@@ -129,7 +136,7 @@ endef
 
 $(foreach file,$(DEPS_FILES_FILTERED) $(MAIN_FILES),$(eval $(call COPY_template,$(file))))
 
-$(call TO_DEST,$(MAIN_DIRS) $(DEPS_DIRS)):
+$(sort $(call TO_DEST,$(MAIN_DIRS) $(DEPS_DIRS))):
 	$(INSTALL) -d $@
 
 $(call TO_DEST,deps/p1_pam/priv/bin/epam): $(LIBDIR)/%: deps/% $(call TO_DEST,deps/p1_pam/priv/bin/)
@@ -172,10 +179,6 @@ install: all copy-files
 		-e "s*@installuser@*$(INIT_USER)*" ejabberd.init.template \
 		> ejabberd.init
 	chmod 755 ejabberd.init
-	# Install Elixir and Elixir dependancies
-	-$(INSTALL) -m 644 deps/*/lib/*/ebin/*.app $(BEAMDIR)
-	-$(INSTALL) -m 644 deps/*/lib/*/ebin/*.beam $(BEAMDIR)
-	rm -f $(BEAMDIR)/configure.beam
 	#
 	# Binary C programs
 	$(INSTALL) -d $(PBINDIR)
