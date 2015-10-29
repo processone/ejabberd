@@ -8,7 +8,7 @@
 -module(mod_http_upload).
 -author('holger@zedat.fu-berlin.de').
 
--protocol({xep, 363, '0.1'})
+-protocol({xep, 363, '0.1'}).
 
 -define(GEN_SERVER, gen_server).
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
