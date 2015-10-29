@@ -187,6 +187,21 @@ debug()
       $ERLANG_OPTS $ARGS \"$@\""
 }
 
+# start server in foreground
+foreground()
+{
+    check_start
+    $EXEC_CMD "$ERL \
+      $NAME $ERLANG_NODE \
+      -noinput \
+      -pa $EJABBERD_EBIN_PATH \
+      $MNESIA_OPTS \
+      $KERNEL_OPTS \
+      $EJABBERD_OPTS \
+      -s ejabberd \
+      $ERLANG_OPTS $ARGS \"$@\""
+}
+
 # attach to server using Elixir
 iexdebug()
 {
