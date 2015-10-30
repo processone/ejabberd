@@ -8,6 +8,8 @@
 -module(mod_http_upload).
 -author('holger@zedat.fu-berlin.de').
 
+-protocol({xep, 363, '0.1'}).
+
 -define(GEN_SERVER, gen_server).
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
 -define(SLOT_TIMEOUT, 18000000). % 5 hours.
@@ -719,6 +721,12 @@ iq_disco_info(Lang, Name) ->
 
 %% HTTP request handling.
 
+-spec store_file(file:filename_all(), binary(),
+		 integer() | undefined,
+		 integer() | undefined,
+		 binary(), binary(), boolean())
+      -> ok | {ok, [{binary(), binary()}], binary()} | {error, term()}.
+
 store_file(Path, Data, FileMode, DirMode, GetPrefix, LocalPath, Thumbnail) ->
     case do_store_file(Path, Data, FileMode, DirMode) of
 	ok when Thumbnail ->
@@ -747,7 +755,9 @@ store_file(Path, Data, FileMode, DirMode, GetPrefix, LocalPath, Thumbnail) ->
 	    Err
     end.
 
--spec do_store_file(file:filename_all(), binary(), integer(), integer())
+-spec do_store_file(file:filename_all(), binary(),
+		    integer() | undefined,
+		    integer() | undefined)
       -> ok | {error, term()}.
 
 do_store_file(Path, Data, FileMode, DirMode) ->
@@ -838,7 +848,7 @@ code_to_message(_Code) -> <<"">>.
 identify(Path) ->
     Cmd = lists:flatten(io_lib:fwrite("identify -format \"ok %m %h %w\" ~s",
 				      [Path])),
-    Res = os:cmd(Cmd),
+    Res = string:strip(os:cmd(Cmd), right, $\n),
     case string:tokens(Res, " ") of
 	["ok", T, H, W] ->
 	    {ok, #media_info{
@@ -869,7 +879,7 @@ convert(Path, #media_info{type = T, width = W, height = H}) ->
 		    {ok, OutPath};
 		Err ->
 		    ?ERROR_MSG("failed to convert ~s to ~s: ~s",
-			       [Path, OutPath, Err]),
+			       [Path, OutPath, string:strip(Err, right, $\n)]),
 		    pass
 	    end;
        true ->
@@ -880,7 +890,7 @@ convert(Path, #media_info{type = T, width = W, height = H}) ->
 -spec thumb_el(string(), binary()) -> xmlel().
 
 thumb_el(Path, URI) ->
-    ContentType = guess_content_type(Path),
+    ContentType = guess_content_type(list_to_binary(Path)),
     case identify(Path) of
 	{ok, #media_info{height = H, width = W}} ->
 	    #xmlel{name = <<"thumbnail">>,
