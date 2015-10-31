@@ -186,7 +186,7 @@ get_data(LUser, LServer, odbc, [{XMLNS, El} | Els],
     case catch odbc_queries:get_private_data(LServer,
 					     Username, LXMLNS)
 	of
-      {selected, [<<"data">>], [[SData]]} ->
+      {selected, [<<"DATA">>], [[SData]]} ->
 	  case xml_stream:parse_element(SData) of
 	    Data when is_record(Data, xmlel) ->
 		get_data(LUser, LServer, odbc, Els, [Data | Res])
@@ -216,7 +216,7 @@ get_all_data(LUser, LServer, mnesia) ->
 get_all_data(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_private_data(LServer, Username) of
-        {selected, [<<"namespace">>, <<"data">>], Res} ->
+        {selected, [<<"NAMESPACE">>, <<"DATA">>], Res} ->
             lists:flatmap(
               fun([_, SData]) ->
                       case xml_stream:parse_element(SData) of
@@ -307,7 +307,7 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select username, namespace, data from private_storage;">>,
+    [{<<"select username AS \"USERNAME\", namespace AS \"NAMESPACE\", data AS \"DATA\" from private_storage;">>,
       fun([LUser, XMLNS, XML]) ->
               El = #xmlel{} = xml_stream:parse_element(XML),
               #private_storage{usns = {LUser, LServer, XMLNS},
