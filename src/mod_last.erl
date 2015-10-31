@@ -187,9 +187,9 @@ get_last(LUser, LServer, riak) ->
 get_last(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_last(LServer, Username) of
-      {selected, [<<"seconds">>, <<"state">>], []} ->
+      {selected, [<<"SECONDS">>, <<"STATE">>], []} ->
 	  not_found;
-      {selected, [<<"seconds">>, <<"state">>],
+      {selected, [<<"SECONDS">>, <<"STATE">>],
        [[STimeStamp, Status]]} ->
 	  case catch jlib:binary_to_integer(STimeStamp) of
 	    TimeStamp when is_integer(TimeStamp) ->
@@ -330,7 +330,7 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select username, seconds, state from last">>,
+    [{<<"select username AS \"USERNAME\", seconds AS \"SECONDS\", state AS \"STATE\" from last">>,
       fun([LUser, TimeStamp, State]) ->
               #last_activity{us = {LUser, LServer},
                              timestamp = jlib:binary_to_integer(
