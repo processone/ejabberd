@@ -20,7 +20,7 @@
 
 CREATE TABLE users (
     username varchar2(255) PRIMARY KEY,
-    password varchar2(4000) NOT NULL,
+    password varchar2(255) NOT NULL,
     created_at TIMESTAMP DEFAULT sysdate NOT NULL
 );
 
@@ -31,21 +31,21 @@ CREATE TABLE users (
 
 CREATE TABLE last (
     username varchar2(255) PRIMARY KEY,
-    seconds varchar2(4000) NOT NULL,
-    state varchar2(4000) NOT NULL
+    seconds varchar2(255) NOT NULL,
+    state varchar2(255) NOT NULL
 );
 
 
 CREATE TABLE rosterusers (
     username varchar2(255) NOT NULL,
     jid varchar2(255) NOT NULL,
-    nick varchar2(4000) DEFAULT '' NOT NULL,
+    nick varchar2(255) DEFAULT '' NOT NULL,
     subscription char(1) NOT NULL,
     ask char(1) NOT NULL,
     askmessage varchar2(4000) NOT NULL,
     server char(1) NOT NULL,
     subscribe varchar2(4000),
-    "type" varchar2(4000),
+    "type" varchar2(255),
     created_at TIMESTAMP DEFAULT sysdate NOT NULL
 );
 CREATE UNIQUE INDEX i_rosteru_user_jid ON rosterusers (username ASC, jid ASC) PARALLEL COMPRESS;
@@ -55,7 +55,7 @@ CREATE INDEX i_rosteru_jid ON rosterusers (jid ASC) PARALLEL COMPRESS;
 CREATE TABLE rostergroups (
     username varchar2(255) NOT NULL,
     jid varchar2(255) NOT NULL,
-    grp varchar2(4000) NOT NULL
+    grp varchar2(255) NOT NULL
 );
 CREATE INDEX pk_rosterg_user_jid ON rostergroups (username ASC, jid ASC) PARALLEL COMPRESS;
 
@@ -144,28 +144,28 @@ CREATE TABLE vcard_xupdate (
 CREATE TABLE vcard_search (
     username varchar2(255) NOT NULL,
     lusername varchar2(255) PRIMARY KEY,
-    fn varchar2(1024) NOT NULL,
-    lfn varchar2(1024) NOT NULL,
-    family varchar2(1024) NOT NULL,
-    lfamily varchar2(1024) NOT NULL,
-    given varchar2(1024) NOT NULL,
-    lgiven varchar2(1024) NOT NULL,
-    middle varchar2(1024) NOT NULL,
-    lmiddle varchar2(1024) NOT NULL,
-    nickname varchar2(1024) NOT NULL,
-    lnickname varchar2(1024) NOT NULL,
-    bday varchar2(1024) NOT NULL,
-    lbday varchar2(1024) NOT NULL,
-    ctry varchar2(1024) NOT NULL,
-    lctry varchar2(1024) NOT NULL,
-    locality varchar2(1024) NOT NULL,
-    llocality varchar2(1024) NOT NULL,
-    email varchar2(1024) NOT NULL,
-    lemail varchar2(1024) NOT NULL,
-    orgname varchar2(1024) NOT NULL,
-    lorgname varchar2(1024) NOT NULL,
-    orgunit varchar2(1024) NOT NULL,
-    lorgunit varchar2(1024) NOT NULL
+    fn varchar2(4000) NOT NULL,
+    lfn varchar2(4000) NOT NULL,
+    family varchar2(4000) NOT NULL,
+    lfamily varchar2(4000) NOT NULL,
+    given varchar2(4000) NOT NULL,
+    lgiven varchar2(4000) NOT NULL,
+    middle varchar2(4000) NOT NULL,
+    lmiddle varchar2(4000) NOT NULL,
+    nickname varchar2(4000) NOT NULL,
+    lnickname varchar2(4000) NOT NULL,
+    bday varchar2(4000) NOT NULL,
+    lbday varchar2(4000) NOT NULL,
+    ctry varchar2(4000) NOT NULL,
+    lctry varchar2(4000) NOT NULL,
+    locality varchar2(4000) NOT NULL,
+    llocality varchar2(4000) NOT NULL,
+    email varchar2(4000) NOT NULL,
+    lemail varchar2(4000) NOT NULL,
+    orgname varchar2(4000) NOT NULL,
+    lorgname varchar2(4000) NOT NULL,
+    orgunit varchar2(4000) NOT NULL,
+    lorgunit varchar2(4000) NOT NULL
 );
 CREATE INDEX i_vcard_search_lfn       ON vcard_search(lfn ASC) PARALLEL COMPRESS;
 CREATE INDEX i_vcard_search_lfamily   ON vcard_search(lfamily ASC) PARALLEL COMPRESS;
