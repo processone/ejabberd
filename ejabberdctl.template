@@ -156,6 +156,7 @@ export ERL_INETRC
 export ERL_MAX_PORTS
 export ERL_MAX_ETS_TABLES
 export CONTRIB_MODULES_PATH
+export CONTRIB_MODULES_CONF_DIR
 export ERL_LIBS
 
 # start server
@@ -225,6 +226,21 @@ iexlive()
       --erl \"$EJABBERD_OPTS\" \
       --app ejabberd \
       --erl \"$ERLANG_OPTS\" --erl $ARGS --erl \"$@\""
+}
+
+# start server in the foreground
+foreground()
+{
+    check_start
+    $EXEC_CMD "$ERL \
+      $NAME $ERLANG_NODE \
+      -noinput \
+      -pa $EJABBERD_EBIN_PATH \
+      $MNESIA_OPTS \
+      $KERNEL_OPTS \
+      $EJABBERD_OPTS \
+      -s ejabberd \
+      $ERLANG_OPTS $ARGS \"$@\""
 }
 
 debugwarning()
@@ -299,11 +315,12 @@ help()
 {
     echo ""
     echo "Commands to start an ejabberd node:"
-    echo "  start    Start an ejabberd node in server mode"
-    echo "  debug    Attach an interactive Erlang shell to a running ejabberd node"
-    echo "  iexdebug Attach an interactive Elixir shell to a running ejabberd node"
-    echo "  live     Start an ejabberd node in live (interactive) mode"
-    echo "  iexlive  Start an ejabberd node in live (interactive) mode, within an Elixir shell"
+    echo "  start      Start an ejabberd node in server mode"
+    echo "  debug      Attach an interactive Erlang shell to a running ejabberd node"
+    echo "  iexdebug   Attach an interactive Elixir shell to a running ejabberd node"
+    echo "  live       Start an ejabberd node in live (interactive) mode"
+    echo "  iexlive    Start an ejabberd node in live (interactive) mode, within an Elixir shell"
+    echo "  foreground Start an ejabberd node in server mode (attached)"
     echo ""
     echo "Optional parameters when starting an ejabberd node:"
     echo "  --config-dir dir   Config ejabberd:    $ETC_DIR"
@@ -467,6 +484,7 @@ case $ARGS in
     ' iexdebug') iexdebug;;
     ' live') live;;
     ' iexlive') iexlive;;
+    ' foreground') foreground;;
     ' ping'*) ping ${ARGS# ping};;
     ' etop') etop;;
     ' started') wait_for_status 0 30 2;; # wait 30x2s before timeout

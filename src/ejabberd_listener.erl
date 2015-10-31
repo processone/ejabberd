@@ -225,8 +225,8 @@ listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
 %% so the option inet/inet6 is only used when no IP is specified at all.
 parse_listener_portip(PortIP, Opts) ->
     {IPOpt, Opts2} = strip_ip_option(Opts),
-    {IPVOpt, OptsClean} = case lists:member(inet6, Opts2) of
-			      true -> {inet6, Opts2 -- [inet6]};
+    {IPVOpt, OptsClean} = case proplists:get_bool(inet6, Opts2) of
+			      true -> {inet6, proplists:delete(inet6, Opts2)};
 			      false -> {inet, Opts2}
 			  end,
     {Port, IPT, IPS, Proto} =
@@ -569,11 +569,8 @@ transform_option({{Port, IP, Transport}, Mod, Opts}) ->
     Opts1 = lists:map(
               fun({ip, IPT}) when is_tuple(IPT) ->
                       {ip, list_to_binary(inet_parse:ntoa(IP))};
-                 (tls) -> {tls, true};
                  (ssl) -> {tls, true};
-                 (zlib) -> {zlib, true};
-                 (starttls) -> {starttls, true};
-                 (starttls_required) -> {starttls_required, true};
+		 (A) when is_atom(A) -> {A, true};
                  (Opt) -> Opt
               end, Opts),
     Opts2 = lists:foldl(
@@ -593,11 +590,11 @@ transform_option({{Port, IP, Transport}, Mod, Opts}) ->
     IPOpt ++ TransportOpt ++ [{port, Port}, {module, Mod} | Opts2];
 transform_option({{Port, Transport}, Mod, Opts})
   when ?IS_TRANSPORT(Transport) ->
-    transform_option({{Port, {0,0,0,0}, Transport}, Mod, Opts});
+    transform_option({{Port, all_zero_ip(Opts), Transport}, Mod, Opts});
 transform_option({{Port, IP}, Mod, Opts}) ->
     transform_option({{Port, IP, tcp}, Mod, Opts});
 transform_option({Port, Mod, Opts}) ->
-    transform_option({{Port, {0,0,0,0}, tcp}, Mod, Opts});
+    transform_option({{Port, all_zero_ip(Opts), tcp}, Mod, Opts});
 transform_option(Opt) ->
     Opt.
 
@@ -633,7 +630,7 @@ validate_cfg(L) ->
                         {Port, prepare_mod(Mod), Opts};
                    (Opt, {Port, Mod, Opts}) ->
                         {Port, Mod, [Opt|Opts]}
-                end, {{5222, {0,0,0,0}, tcp}, ejabberd_c2s, []}, LOpts)
+                end, {{5222, all_zero_ip(LOpts), tcp}, ejabberd_c2s, []}, LOpts)
       end, L).
 
 prepare_ip({A, B, C, D} = IP)
@@ -655,6 +652,12 @@ prepare_mod(sip) ->
     esip_socket;
 prepare_mod(Mod) when is_atom(Mod) ->
     Mod.
+
+all_zero_ip(Opts) ->
+    case proplists:get_bool(inet6, Opts) of
+	true -> {0,0,0,0,0,0,0,0};
+	false -> {0,0,0,0}
+    end.
 
 opt_type(listen) -> fun validate_cfg/1;
 opt_type(_) -> [listen].
