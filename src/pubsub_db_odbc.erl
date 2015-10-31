@@ -33,13 +33,13 @@
 %% -spec read_subscription(SubID :: string()) -> {ok, #pubsub_subscription{}} |  notfound.
 read_subscription(SubID) ->
     case
-	ejabberd_odbc:sql_query_t([<<"select opt_name, opt_value from pubsub_subscr"
+	ejabberd_odbc:sql_query_t([<<"select opt_name AS \"OPT_NAME\", opt_value AS \"OPT_VALUE\" from pubsub_subscr"
 		    "iption_opt where subid = '">>,
 		ejabberd_odbc:escape(SubID), <<"'">>])
     of
-	{selected, [<<"opt_name">>, <<"opt_value">>], []} ->
+	{selected, [<<"OPT_NAME">>, <<"OPT_VALUE">>], []} ->
 	    notfound;
-	{selected, [<<"opt_name">>, <<"opt_value">>], Options} ->
+	{selected, [<<"OPT_NAME">>, <<"OPT_VALUE">>], Options} ->
 	    {ok,
 		#pubsub_subscription{subid = SubID,
 		    options = lists:map(fun subscription_opt_from_odbc/1, Options)}}

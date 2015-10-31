@@ -182,11 +182,11 @@ restore_room(LServer, Host, Name, odbc) ->
     SName = ejabberd_odbc:escape(Name),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select opts from muc_room where name='">>,
+				       [<<"select opts AS \"OPTS\" from muc_room where name='">>,
 					SName, <<"' and host='">>, SHost,
 					<<"';">>])
 	of
-      {selected, [<<"opts">>], [[Opts]]} ->
+      {selected, [<<"OPTS">>], [[Opts]]} ->
 	  opts_to_binary(ejabberd_odbc:decode_term(Opts));
       _ -> error
     end.
@@ -279,11 +279,11 @@ can_use_nick(LServer, Host, JID, Nick, odbc) ->
     SNick = ejabberd_odbc:escape(Nick),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select jid from muc_registered ">>,
+				       [<<"select jid AS \"JID\" from muc_registered ">>,
 					<<"where nick='">>, SNick,
 					<<"' and host='">>, SHost, <<"';">>])
 	of
-      {selected, [<<"jid">>], [[SJID1]]} -> SJID == SJID1;
+      {selected, [<<"JID">>], [[SJID1]]} -> SJID == SJID1;
       _ -> true
     end.
 
@@ -682,17 +682,18 @@ get_rooms(_LServer, Host, riak) ->
 get_rooms(LServer, Host, odbc) ->
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select name, opts from muc_room ">>,
+				       [<<"select name AS \"NAME\", opts AS \"OPTS\" from muc_room ">>,
 					<<"where host='">>, SHost, <<"';">>])
 	of
-      {selected, [<<"name">>, <<"opts">>], RoomOpts} ->
+      {selected, [<<"NAME">>, <<"OPTS">>], RoomOpts} ->
 	  lists:map(fun ([Room, Opts]) ->
 			    #muc_room{name_host = {Room, Host},
 				      opts = opts_to_binary(
                                                ejabberd_odbc:decode_term(Opts))}
 		    end,
 		    RoomOpts);
-      Err -> ?ERROR_MSG("failed to get rooms: ~p", [Err]), []
+			{selected, [<<"NAME">>, <<"OPTS">>], []} -> []; %% There is nothing on the database...
+			{error, Reason} -> ?ERROR_MSG("failed to get rooms: ~p", [Reason]), []
     end.
 
 load_permanent_rooms(Host, ServerHost, Access,
@@ -911,12 +912,12 @@ get_nick(LServer, Host, From, odbc) ->
 	ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From)))),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select nick from muc_registered where "
+				       [<<"select nick AS \'NICK\" from muc_registered where "
 					  "jid='">>,
 					SJID, <<"' and host='">>, SHost,
 					<<"';">>])
 	of
-      {selected, [<<"nick">>], [[Nick]]} -> Nick;
+      {selected, [<<"NICK">>], [[Nick]]} -> Nick;
       _ -> error
     end.
 
@@ -1035,13 +1036,13 @@ set_nick(LServer, Host, From, Nick, odbc) ->
 		      ok;
 		  _ ->
 		      Allow = case
-				ejabberd_odbc:sql_query_t([<<"select jid from muc_registered ">>,
+				ejabberd_odbc:sql_query_t([<<"select jid AS \"JID\" from muc_registered ">>,
 							   <<"where nick='">>,
 							   SNick,
 							   <<"' and host='">>,
 							   SHost, <<"';">>])
 				  of
-				{selected, [<<"jid">>], [[J]]} -> J == JID;
+				{selected, [<<"JID">>], [[J]]} -> J == JID;
 				_ -> true
 			      end,
 		      if Allow ->
@@ -1286,12 +1287,12 @@ export(_Server) ->
       end}].
 
 import(_LServer) ->
-    [{<<"select name, host, opts from muc_room;">>,
+    [{<<"select name AS \"NAME\", host AS \"HOST\", opts AS \"OPTS\" from muc_room;">>,
       fun([Name, RoomHost, SOpts]) ->
               Opts = opts_to_binary(ejabberd_odbc:decode_term(SOpts)),
               #muc_room{name_host = {Name, RoomHost}, opts = Opts}
       end},
-     {<<"select jid, host, nick from muc_registered;">>,
+     {<<"select jid AS \"JID\", host AS \"HOST\", nick AS \"NICK\" from muc_registered;">>,
       fun([J, RoomHost, Nick]) ->
               #jid{user = U, server = S} =
                   jlib:string_to_jid(J),

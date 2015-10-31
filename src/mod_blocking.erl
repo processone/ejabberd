@@ -223,22 +223,22 @@ process_blocklist_block(LUser, LServer, Filter, odbc) ->
 		Default = case
 			    mod_privacy:sql_get_default_privacy_list_t(LUser)
 			      of
-			    {selected, [<<"name">>], []} ->
+			    {selected, [<<"NAME">>], []} ->
 				Name = <<"Blocked contacts">>,
 				mod_privacy:sql_add_privacy_list(LUser, Name),
 				mod_privacy:sql_set_default_privacy_list(LUser,
 									 Name),
 				Name;
-			    {selected, [<<"name">>], [[Name]]} -> Name
+			    {selected, [<<"NAME">>], [[Name]]} -> Name
 			  end,
-		{selected, [<<"id">>], [[ID]]} =
+		{selected, [<<"ID">>], [[ID]]} =
 		    mod_privacy:sql_get_privacy_list_id_t(LUser, Default),
 		case mod_privacy:sql_get_privacy_list_data_by_id_t(ID)
 		    of
 		  {selected,
-		   [<<"t">>, <<"value">>, <<"action">>, <<"ord">>,
-		    <<"match_all">>, <<"match_iq">>, <<"match_message">>,
-		    <<"match_presence_in">>, <<"match_presence_out">>],
+		   [<<"T">>, <<"VALUE">>, <<"ACTION">>, <<"ORD">>,
+		    <<"MATCH_ALL">>, <<"MATCH_IQ">>, <<"MATCH_MESSAGE">>,
+		    <<"MATCH_PRESENCE_IN">>, <<"MATCH_PRESENCE_OUT">>],
 		   RItems = [_ | _]} ->
 		      List = lists:flatmap(fun mod_privacy:raw_to_item/1, RItems);
 		  _ -> List = []
@@ -345,16 +345,16 @@ unblock_by_filter(LUser, LServer, Filter, odbc) ->
     F = fun () ->
 		case mod_privacy:sql_get_default_privacy_list_t(LUser)
 		    of
-		  {selected, [<<"name">>], []} -> ok;
-		  {selected, [<<"name">>], [[Default]]} ->
-		      {selected, [<<"id">>], [[ID]]} =
+		  {selected, [<<"NAME">>], []} -> ok;
+		  {selected, [<<"NAME">>], [[Default]]} ->
+		      {selected, [<<"ID">>], [[ID]]} =
 			  mod_privacy:sql_get_privacy_list_id_t(LUser, Default),
 		      case mod_privacy:sql_get_privacy_list_data_by_id_t(ID)
 			  of
 			{selected,
-			 [<<"t">>, <<"value">>, <<"action">>, <<"ord">>,
-			  <<"match_all">>, <<"match_iq">>, <<"match_message">>,
-			  <<"match_presence_in">>, <<"match_presence_out">>],
+			 [<<"T">>, <<"VALUE">>, <<"ACTION">>, <<"ORD">>,
+			  <<"MATCH_ALL">>, <<"MATCH_IQ">>, <<"MATCH_MESSAGE">>,
+			  <<"MATCH_PRESENCE_IN">>, <<"MATCH_PRESENCE_OUT">>],
 			 RItems = [_ | _]} ->
 			    List = lists:flatmap(fun mod_privacy:raw_to_item/1,
                                                  RItems),
@@ -435,15 +435,15 @@ process_blocklist_get(LUser, LServer, odbc) ->
     case catch
 	   mod_privacy:sql_get_default_privacy_list(LUser, LServer)
 	of
-      {selected, [<<"name">>], []} -> [];
-      {selected, [<<"name">>], [[Default]]} ->
+      {selected, [<<"NAME">>], []} -> [];
+      {selected, [<<"NAME">>], [[Default]]} ->
 	  case catch mod_privacy:sql_get_privacy_list_data(LUser,
 							   LServer, Default)
 	      of
 	    {selected,
-	     [<<"t">>, <<"value">>, <<"action">>, <<"ord">>,
-	      <<"match_all">>, <<"match_iq">>, <<"match_message">>,
-	      <<"match_presence_in">>, <<"match_presence_out">>],
+	     [<<"T">>, <<"VALUE">>, <<"ACTION">>, <<"ORD">>,
+	      <<"MATCH_ALL">>, <<"MATCH_IQ">>, <<"MATCH_MESSAGE">>,
+	      <<"MATCH_PRESENCE_IN">>, <<"MATCH_PRESENCE_OUT">>],
 	     RItems} ->
 		lists:flatmap(fun mod_privacy:raw_to_item/1, RItems);
 	    {'EXIT', _} -> error

@@ -120,19 +120,19 @@ get_entity_subscriptions(_Host, Owner) ->
     GJ = node_flat_odbc:encode_jid(GenKey),
     Query = case SubKey of
 	GenKey ->
-	    [<<"select host, node, type, i.nodeid, jid, "
-		    "subscriptions from pubsub_state i, pubsub_node n "
+	    [<<"select host AS \"HOST\", node AS \"NODE\", \"type\" AS \"TYPE\", i.nodeid AS \"NODEID\", jid AS \"JID\", "
+		    "subscriptions AS \"SUBSCRIPTIONS\" from pubsub_state i, pubsub_node n "
 		    "where i.nodeid = n.nodeid and jid "
 		    "like '">>, GJ, <<"%' and host like '%@">>, Host, <<"';">>];
 	_ ->
-	    [<<"select host, node, type, i.nodeid, jid, "
-		    "subscriptions from pubsub_state i, pubsub_node n "
+	    [<<"select host AS \"HOST\", node AS \"NODE\", \"type\" AS \"TYPE\", i.nodeid AS \"NODEID\", jid AS \"JID\", "
+		    "subscriptions AS \"SUBSCRIPTIONS\" from pubsub_state i, pubsub_node n "
 		    "where i.nodeid = n.nodeid and jid "
 		    "in ('">>, SJ, <<"', '">>, GJ, <<"') and host like '%@">>, Host, <<"';">>]
     end,
     Reply = case catch ejabberd_odbc:sql_query_t(Query) of
 	{selected,
-		    [<<"host">>, <<"node">>, <<"type">>, <<"nodeid">>, <<"jid">>, <<"subscriptions">>],
+		    [<<"HOST">>, <<"NODE">>, <<"TYPE">>, <<"NODEID">>, <<"JID">>, <<"SUBSCRIPTIONS">>],
 		    RItems} ->
 	    lists:map(fun ([H, N, T, I, J, S]) ->
 			O = node_flat_odbc:decode_jid(H),
@@ -155,15 +155,15 @@ get_entity_subscriptions_for_send_last(_Host, Owner) ->
     GJ = node_flat_odbc:encode_jid(GenKey),
     Query = case SubKey of
 	GenKey ->
-	    [<<"select host, node, type, i.nodeid, jid, "
-		    "subscriptions from pubsub_state i, pubsub_node n, "
+	    [<<"select host AS \"HOST\", node AS \"NODE\", \"type\" AS \"TYPE\", i.nodeid AS \"NODEID\", jid AS \"JID\", "
+		    "subscriptions AS \"SUBSCRIPTIONS\" from pubsub_state i, pubsub_node n, "
 		    "pubsub_node_option o where i.nodeid = n.nodeid "
 		    "and n.nodeid = o.nodeid and name='send_last_published_item' and "
 		    "val='on_sub_and_presence' and jid like '">>,
 		GJ, <<"%' and host like '%@">>, Host, <<"';">>];
 	_ ->
-	    [<<"select host, node, type, i.nodeid, jid, "
-		    "subscriptions from pubsub_state i, pubsub_node n, "
+	    [<<"select host AS \"HOST\", node AS \"NODE\", \"type\" AS \"TYPE\", i.nodeid AS \"NODEID\", jid AS \"JID\", "
+		    "subscriptions AS \"SUBSCRIPTIONS\" from pubsub_state i, pubsub_node n, "
 		    "pubsub_node_option o where i.nodeid = n.nodeid "
 		    "and n.nodeid = o.nodeid and name='send_last_published_item' and "
 		    "val='on_sub_and_presence' and jid in ",
@@ -171,7 +171,7 @@ get_entity_subscriptions_for_send_last(_Host, Owner) ->
     end,
     Reply = case catch ejabberd_odbc:sql_query_t(Query) of
 	{selected,
-		    [<<"host">>, <<"node">>, <<"type">>, <<"nodeid">>, <<"jid">>, <<"subscriptions">>],
+		    [<<"HOST">>, <<"NODE">>, <<"TYPE">>, <<"NODEID">>, <<"JID">>, <<"SUBSCRIPTIONS">>],
 		    RItems} ->
 	    lists:map(fun ([H, N, T, I, J, S]) ->
 			O = node_flat_odbc:decode_jid(H),
