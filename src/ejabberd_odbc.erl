@@ -90,6 +90,9 @@
 
 -define(KEEPALIVE_TIMEOUT, 60000).
 
+%% TODO - Timosenhko- Since sql does not allow SELECT whitout FROM we need to manage this in future:
+%% TODO   Sample: in oralce we need FROM : "SELECT 1;" -> "SELECT 1 FROM DUAL;"
+%% TODO   We can also create a dummy table DUAL in others databases to solve this problem
 -define(KEEPALIVE_QUERY, [<<"SELECT 1;">>]).
 
 %%-define(DBGFSM, true).
