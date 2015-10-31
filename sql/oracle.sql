@@ -25,7 +25,7 @@ CREATE TABLE users (
 );
 
 -- To support SCRAM auth:
--— ALTER TABLE USERS ADD (serverkey nvarchar2(255) DEFAULT '' NOT NULL);
+-- ALTER TABLE USERS ADD (serverkey nvarchar2(255) DEFAULT '' NOT NULL);
 -- ALTER TABLE USERS ADD (salt nvarchar2(255) DEFAULT '' NOT NULL);
 -- ALTER TABLE USERS ADD (iterationcount INTEGER DEFAULT 0 NOT NULL);
 
