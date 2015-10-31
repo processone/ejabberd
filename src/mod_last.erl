@@ -330,7 +330,7 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select username, seconds, state from last">>,
+    [{<<"select username AS \"username\", seconds AS \"seconds\", state AS \"state\" from last">>,
       fun([LUser, TimeStamp, State]) ->
               #last_activity{us = {LUser, LServer},
                              timestamp = jlib:binary_to_integer(

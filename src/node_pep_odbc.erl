@@ -120,13 +120,13 @@ get_entity_subscriptions(_Host, Owner) ->
     GJ = node_flat_odbc:encode_jid(GenKey),
     Query = case SubKey of
 	GenKey ->
-	    [<<"select host, node, type, i.nodeid, jid, "
-		    "subscriptions from pubsub_state i, pubsub_node n "
+	    [<<"select host AS \"host\", node AS \"node\", \"type\" AS \"type\", i.nodeid AS \"nodeid\", jid AS \"jid\", "
+		    "subscriptions AS \"subscriptions\" from pubsub_state i, pubsub_node n "
 		    "where i.nodeid = n.nodeid and jid "
 		    "like '">>, GJ, <<"%' and host like '%@">>, Host, <<"';">>];
 	_ ->
-	    [<<"select host, node, type, i.nodeid, jid, "
-		    "subscriptions from pubsub_state i, pubsub_node n "
+	    [<<"select host AS \"host\", node AS \"node\", \"type\" AS \"type\", i.nodeid AS \"nodeid\", jid AS \"jid\", "
+		    "subscriptions AS \"subscriptions\" from pubsub_state i, pubsub_node n "
 		    "where i.nodeid = n.nodeid and jid "
 		    "in ('">>, SJ, <<"', '">>, GJ, <<"') and host like '%@">>, Host, <<"';">>]
     end,
@@ -155,15 +155,15 @@ get_entity_subscriptions_for_send_last(_Host, Owner) ->
     GJ = node_flat_odbc:encode_jid(GenKey),
     Query = case SubKey of
 	GenKey ->
-	    [<<"select host, node, type, i.nodeid, jid, "
-		    "subscriptions from pubsub_state i, pubsub_node n, "
+	    [<<"select host AS \"host\", node AS \"node\", \"type\" AS \"type\", i.nodeid AS \"nodeid\", jid AS \"jid\", "
+		    "subscriptions AS \"subscriptions\" from pubsub_state i, pubsub_node n, "
 		    "pubsub_node_option o where i.nodeid = n.nodeid "
 		    "and n.nodeid = o.nodeid and name='send_last_published_item' and "
 		    "val='on_sub_and_presence' and jid like '">>,
 		GJ, <<"%' and host like '%@">>, Host, <<"';">>];
 	_ ->
-	    [<<"select host, node, type, i.nodeid, jid, "
-		    "subscriptions from pubsub_state i, pubsub_node n, "
+	    [<<"select host AS \"host\", node AS \"node\", \"type\" AS \"type\", i.nodeid AS \"nodeid\", jid AS \"jid\", "
+		    "subscriptions AS \"subscriptions\" from pubsub_state i, pubsub_node n, "
 		    "pubsub_node_option o where i.nodeid = n.nodeid "
 		    "and n.nodeid = o.nodeid and name='send_last_published_item' and "
 		    "val='on_sub_and_presence' and jid in ",

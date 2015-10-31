@@ -652,7 +652,7 @@ get_offline_els(LUser, LServer, DBType)
 get_offline_els(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select xml from spool  where username='">>,
+				       [<<"select xml AS \"xml\" from spool  where username='">>,
 					Username, <<"'  order by seq;">>]) of
         {selected, [<<"xml">>], Rs} ->
             lists:flatmap(
@@ -702,7 +702,7 @@ read_all_msgs(LUser, LServer, riak) ->
 read_all_msgs(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select xml from spool  where username='">>,
+				       [<<"select xml AS \"xml\" from spool  where username='">>,
 					Username, <<"'  order by seq;">>])
 	of
       {selected, [<<"xml">>], Rs} ->
@@ -849,7 +849,7 @@ user_queue_parse_query(LUser, LServer, Query, odbc) ->
     case lists:keysearch(<<"delete">>, 1, Query) of
       {value, _} ->
 	  Msgs = case catch ejabberd_odbc:sql_query(LServer,
-						    [<<"select xml, seq from spool  where username='">>,
+						    [<<"select xml AS \"xml\", seq AS \"seq\" from spool  where username='">>,
 						     Username,
 						     <<"'  order by seq;">>])
 		     of
@@ -913,7 +913,7 @@ get_queue_length(LUser, LServer, riak) ->
 get_queue_length(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select count(*) from spool  where username='">>,
+				       [<<"select CAST(count(*) AS INTEGER) from spool  where username='">>,
 					Username, <<"';">>])
 	of
       {selected, [_], [[SCount]]} ->
@@ -1096,7 +1096,7 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select username, xml from spool;">>,
+    [{<<"select username AS \"username\", xml AS \"xml\" from spool;">>,
       fun([LUser, XML]) ->
               El = #xmlel{} = xml_stream:parse_element(XML),
               From = #jid{} = jlib:string_to_jid(

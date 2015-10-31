@@ -437,7 +437,7 @@ convert_to_scram(Server) ->
         true ->
             F = fun () ->
                         case ejabberd_odbc:sql_query_t(
-                               [<<"select username, password from users where "
+                               [<<"select username AS \"username\", password AS \"password\" from users where "
                                  "iterationcount=0 limit ">>,
                                 integer_to_binary(?BATCH_SIZE),
                                 <<";">>]) of

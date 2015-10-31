@@ -717,9 +717,9 @@ search(LServer, MatchSpec, AllowReturnAll, odbc) ->
                             jlib:integer_to_binary(Val)]
                    end,
 	   case catch ejabberd_odbc:sql_query(LServer,
-					      [<<"select username, fn, family, given, "
-						 "middle,        nickname, bday, ctry, "
-						 "locality,        email, orgname, orgunit "
+					      [<<"select username AS \"username\", fn AS \"fn\", family AS \"family\", given AS \"given\", "
+						 "middle AS \"middle\", nickname AS \"nickname\", bday AS \"bday\", ctry \"ctry\", "
+						 "locality AS \"locality\", email AS \"email\", orgname AS \"orgname\", orgunit AS \"orgunit\" "
 						 "from vcard_search ">>,
 					       MatchSpec, Limit, <<";">>])
 	       of
@@ -985,7 +985,7 @@ update_vcard_search_table() ->
 vcard_schema() ->
     {record_info(fields, vcard), #vcard{}}.
 
-export(_Server) ->   
+export(_Server) ->
     [{vcard,
       fun(Host, #vcard{us = {LUser, LServer}, vcard = VCARD})
             when LServer == Host ->
@@ -1062,15 +1062,15 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select username, vcard from vcard;">>,
+    [{<<"select username AS \"username\", vcard AS \"vcard\" from vcard;">>,
       fun([LUser, SVCard]) ->
               #xmlel{} = VCARD = xml_stream:parse_element(SVCard),
               #vcard{us = {LUser, LServer}, vcard = VCARD}
       end},
-     {<<"select username, lusername, fn, lfn, family, lfamily, "
-        "given, lgiven, middle, lmiddle, nickname, lnickname, "
-        "bday, lbday, ctry, lctry, locality, llocality, email, "
-        "lemail, orgname, lorgname, orgunit, lorgunit from vcard_search;">>,
+     {<<"select username AS \"username\", lusername AS \"lusername\", fn AS \"fn\", lfn AS \"lfn\", family AS \"family\", lfamily AS \"lfamily\", "
+        "given AS \"given\", lgiven AS \"lgiven\", middle AS \"middle\", lmiddle AS \"lmiddle\", nickname AS \"nickname\", lnickname AS \"lnickname\", "
+        "bday AS \"bday\", lbday AS \"lbday\", ctry AS \"ctry\", lctry AS \"lctry\", locality AS \"locality\", llocality AS \"llocality\", email AS \"email\", "
+        "lemail AS \"lemail\", orgname AS \"orgname\", lorgname AS \"lorgname\", orgunit AS \"orgunit\", lorgunit AS \"lorgunit\" from vcard_search;">>,
       fun([User, LUser, FN, LFN,
            Family, LFamily, Given, LGiven,
            Middle, LMiddle, Nickname, LNickname,

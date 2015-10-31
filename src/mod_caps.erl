@@ -472,7 +472,7 @@ caps_read_fun(LServer, {Node, SubNode}, odbc) ->
             SNode = ejabberd_odbc:escape(Node),
             SSubNode = ejabberd_odbc:escape(SubNode),
             case ejabberd_odbc:sql_query(
-                   LServer, [<<"select feature from caps_features where ">>,
+                   LServer, [<<"select feature AS \"feature\" from caps_features where ">>,
                              <<"node='">>, SNode, <<"' and subnode='">>,
                              SSubNode, <<"';">>]) of
                 {selected, [<<"feature">>], [[H]|_] = Fs} ->

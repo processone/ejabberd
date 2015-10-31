@@ -542,7 +542,7 @@ get_prefs(LUser, LServer, mnesia) ->
 get_prefs(LUser, LServer, odbc) ->
     case ejabberd_odbc:sql_query(
 	   LServer,
-	   [<<"select def, always, never from archive_prefs ">>,
+	   [<<"select def AS \"def\", always AS \"always\", never AS \"never\" from archive_prefs ">>,
 	    <<"where username='">>,
 	    ejabberd_odbc:escape(LUser), <<"';">>]) of
 	{selected, _, [[SDefault, SAlways, SNever]]} ->
@@ -951,7 +951,7 @@ make_sql_query(User, _LServer, Start, End, With, RSM) ->
 		end,
     SUser = ejabberd_odbc:escape(User),
 
-    Query = [<<"SELECT timestamp, xml, peer, kind, nick"
+    Query = [<<"SELECT timestamp AS \"timestamp\", xml AS \"xml\", peer AS \"peer\", kind AS \"kind\", nick AS \"nick\""
 	      " FROM archive WHERE username='">>,
 	     SUser, <<"'">>, WithClause, StartClause, EndClause,
 	     PageClause],
@@ -962,7 +962,7 @@ make_sql_query(User, _LServer, Start, End, With, RSM) ->
 		% ID can be empty because of
 		% XEP-0059: Result Set Management
 		% 2.5 Requesting the Last Page in a Result Set
-		[<<"SELECT timestamp, xml, peer, kind, nick FROM (">>, Query,
+		[<<"SELECT timestamp AS \"timestamp\", xml AS \"xml\", peer AS \"peer\", kind AS \"kind\", nick AS \"nick\" FROM (">>, Query,
 		 <<" ORDER BY timestamp DESC ">>,
 		 LimitClause, <<") AS t ORDER BY timestamp ASC;">>];
 	    _ ->
@@ -970,7 +970,7 @@ make_sql_query(User, _LServer, Start, End, With, RSM) ->
 		 LimitClause, <<";">>]
 	end,
     {QueryPage,
-     [<<"SELECT COUNT(*) FROM archive WHERE username='">>,
+     [<<"SELECT CAST(COUNT(*) AS INTEGER) FROM archive WHERE username='">>,
       SUser, <<"'">>, WithClause, StartClause, EndClause, <<";">>]}.
 
 now_to_usec({MSec, Sec, USec}) ->

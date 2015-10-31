@@ -182,7 +182,7 @@ restore_room(LServer, Host, Name, odbc) ->
     SName = ejabberd_odbc:escape(Name),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select opts from muc_room where name='">>,
+				       [<<"select opts AS \"OPTS\" from muc_room where name='">>,
 					SName, <<"' and host='">>, SHost,
 					<<"';">>])
 	of
@@ -279,7 +279,7 @@ can_use_nick(LServer, Host, JID, Nick, odbc) ->
     SNick = ejabberd_odbc:escape(Nick),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select jid from muc_registered ">>,
+				       [<<"select jid AS \"jid\" from muc_registered ">>,
 					<<"where nick='">>, SNick,
 					<<"' and host='">>, SHost, <<"';">>])
 	of
@@ -682,7 +682,7 @@ get_rooms(_LServer, Host, riak) ->
 get_rooms(LServer, Host, odbc) ->
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select name, opts from muc_room ">>,
+				       [<<"select name AS \"name\", opts AS \"opts\" from muc_room ">>,
 					<<"where host='">>, SHost, <<"';">>])
 	of
       {selected, [<<"name">>, <<"opts">>], RoomOpts} ->
@@ -911,7 +911,7 @@ get_nick(LServer, Host, From, odbc) ->
 	ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From)))),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select nick from muc_registered where "
+				       [<<"select nick AS \"opts\" from muc_registered where "
 					  "jid='">>,
 					SJID, <<"' and host='">>, SHost,
 					<<"';">>])
@@ -1035,7 +1035,7 @@ set_nick(LServer, Host, From, Nick, odbc) ->
 		      ok;
 		  _ ->
 		      Allow = case
-				ejabberd_odbc:sql_query_t([<<"select jid from muc_registered ">>,
+				ejabberd_odbc:sql_query_t([<<"select jid AS \"jid\" from muc_registered ">>,
 							   <<"where nick='">>,
 							   SNick,
 							   <<"' and host='">>,
@@ -1286,12 +1286,12 @@ export(_Server) ->
       end}].
 
 import(_LServer) ->
-    [{<<"select name, host, opts from muc_room;">>,
+    [{<<"select name AS \"name\", host AS \"host\", opts AS \"opts\" from muc_room;">>,
       fun([Name, RoomHost, SOpts]) ->
               Opts = opts_to_binary(ejabberd_odbc:decode_term(SOpts)),
               #muc_room{name_host = {Name, RoomHost}, opts = Opts}
       end},
-     {<<"select jid, host, nick from muc_registered;">>,
+     {<<"select jid AS \"jid\", host AS \"host\", nick AS \"nick\" from muc_registered;">>,
       fun([J, RoomHost, Nick]) ->
               #jid{user = U, server = S} =
                   jlib:string_to_jid(J),

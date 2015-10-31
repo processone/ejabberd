@@ -1165,7 +1165,7 @@ update_table() ->
 
 export(Server) ->
     case catch ejabberd_odbc:sql_query(jlib:nameprep(Server),
-				 [<<"select id from privacy_list order by "
+				 [<<"select id AS \"id\" from privacy_list order by "
 				    "id desc limit 1;">>]) of
         {selected, [<<"id">>], [[I]]} ->
             put(id, jlib:binary_to_integer(I));
@@ -1220,7 +1220,7 @@ get_id() ->
     ID + 1.
 
 import(LServer) ->
-    [{<<"select username from privacy_list;">>,
+    [{<<"select username AS \"username\" from privacy_list;">>,
       fun([LUser]) ->
               Default = case sql_get_default_privacy_list_t(LUser) of
                             {selected, [<<"name">>], []} ->
