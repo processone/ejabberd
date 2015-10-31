@@ -456,7 +456,7 @@ pop_offline_messages(Ls, LUser, LServer, odbc) ->
     case odbc_queries:get_and_del_spool_msg_t(LServer,
 					      EUser)
 	of
-      {atomic, {selected, [<<"username">>, <<"xml">>], Rs}} ->
+      {atomic, {selected, [<<"USERNAME">>, <<"XML">>], Rs}} ->
 	  Ls ++
 	    lists:flatmap(fun ([_, XML]) ->
 				  case xml_stream:parse_element(XML) of
@@ -652,9 +652,9 @@ get_offline_els(LUser, LServer, DBType)
 get_offline_els(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select xml from spool  where username='">>,
+				       [<<"select xml AS \"XML\" from spool  where username='">>,
 					Username, <<"'  order by seq;">>]) of
-        {selected, [<<"xml">>], Rs} ->
+        {selected, [<<"XML">>], Rs} ->
             lists:flatmap(
               fun([XML]) ->
                       case xml_stream:parse_element(XML) of
@@ -702,10 +702,10 @@ read_all_msgs(LUser, LServer, riak) ->
 read_all_msgs(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select xml from spool  where username='">>,
+				       [<<"select xml AS \"XML\" from spool  where username='">>,
 					Username, <<"'  order by seq;">>])
 	of
-      {selected, [<<"xml">>], Rs} ->
+      {selected, [<<"XML">>], Rs} ->
 	  lists:flatmap(fun ([XML]) ->
 				case xml_stream:parse_element(XML) of
 				  {error, _Reason} -> [];
@@ -849,11 +849,11 @@ user_queue_parse_query(LUser, LServer, Query, odbc) ->
     case lists:keysearch(<<"delete">>, 1, Query) of
       {value, _} ->
 	  Msgs = case catch ejabberd_odbc:sql_query(LServer,
-						    [<<"select xml, seq from spool  where username='">>,
+						    [<<"select xml AS \"XML\", seq AS \"SEQ\" from spool  where username='">>,
 						     Username,
 						     <<"'  order by seq;">>])
 		     of
-		   {selected, [<<"xml">>, <<"seq">>], Rs} ->
+		   {selected, [<<"XML">>, <<"SEQ">>], Rs} ->
 		       lists:flatmap(fun ([XML, Seq]) ->
 					     case xml_stream:parse_element(XML)
 						 of
@@ -913,7 +913,7 @@ get_queue_length(LUser, LServer, riak) ->
 get_queue_length(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select count(*) from spool  where username='">>,
+				       [<<"select CAST(count(*) AS INTEGER) from spool  where username='">>,
 					Username, <<"';">>])
 	of
       {selected, [_], [[SCount]]} ->
@@ -1096,7 +1096,7 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select username, xml from spool;">>,
+    [{<<"select username AS \"USERNAME\", xml AS \"XML\" from spool;">>,
       fun([LUser, XML]) ->
               El = #xmlel{} = xml_stream:parse_element(XML),
               From = #jid{} = jlib:string_to_jid(
