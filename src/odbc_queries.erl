@@ -121,7 +121,7 @@ sql_transaction(LServer, F) ->
 
 get_last(LServer, Username) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select seconds AS \"SECONDS\", state AS \"STATE\" from last where "
+			    [<<"select seconds AS \"seconds\", state AS \"state\" from last where "
 			       "username='">>,
 			     Username, <<"'">>]).
 
@@ -138,13 +138,13 @@ del_last(LServer, Username) ->
 
 get_password(LServer, Username) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select password AS \"PASSWORD\" from users where username='">>,
+			    [<<"select password AS \"password\" from users where username='">>,
 			     Username, <<"';">>]).
 
 get_password_scram(LServer, Username) ->
     ejabberd_odbc:sql_query(
       LServer,
-      [<<"select password AS \"PASSWORD\", serverkey AS \"SERVERKEY\", salt AS \"SALT\", iterationcount AS \"ITERATIONCOUNT\" from users where "
+      [<<"select password AS \"password\", serverkey AS \"serverkey\", salt AS \"salt\", iterationcount AS \"iterationcount\" from users where "
         "username='">>, Username, <<"';">>]).
 
 set_password_t(LServer, Username, Pass) ->
@@ -198,7 +198,7 @@ del_user(LServer, Username) ->
 
 del_user_return_password(_LServer, Username, Pass) ->
     P =
-	ejabberd_odbc:sql_query_t([<<"select password AS \"PASSWORD\" from users where username='">>,
+	ejabberd_odbc:sql_query_t([<<"select password AS \"password\" from users where username='">>,
 				   Username, <<"';">>]),
     ejabberd_odbc:sql_query_t([<<"delete from users where username='">>,
 			       Username, <<"' and password='">>, Pass,
@@ -207,7 +207,7 @@ del_user_return_password(_LServer, Username, Pass) ->
 
 list_users(LServer) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select username AS \"USERNAME\" from users">>]).
+			    [<<"select username AS \"username\" from users">>]).
 
 list_users(LServer, [{from, Start}, {to, End}])
     when is_integer(Start) and is_integer(End) ->
@@ -225,7 +225,7 @@ list_users(LServer, [{limit, Limit}, {offset, Offset}])
     ejabberd_odbc:sql_query(LServer,
 			    [list_to_binary(
                                io_lib:format(
-                                 "select username AS \"USERNAME\" from users " ++
+                                 "select username AS \"username\" from users " ++
                                      "order by username " ++
                                      "limit ~w offset ~w",
                                  [Limit, Offset]))]);
@@ -236,7 +236,7 @@ list_users(LServer,
     ejabberd_odbc:sql_query(LServer,
 			    [list_to_binary(
                                io_lib:format(
-                                 "select username AS \"USERNAME\" from users " ++
+                                 "select username AS \"username\" from users " ++
                                      "where username like '~s%' " ++
                                      "order by username " ++
                                      "limit ~w offset ~w ",
@@ -294,7 +294,7 @@ add_spool(LServer, Queries) ->
 get_and_del_spool_msg_t(LServer, Username) ->
     F = fun () ->
 		Result =
-		    ejabberd_odbc:sql_query_t([<<"select username AS \"USERNAME\", xml AS \"XML\" from spool where "
+		    ejabberd_odbc:sql_query_t([<<"select username AS \"username\", xml AS \"xml\" from spool where "
 						 "username='">>,
 					       Username,
 					       <<"'  order by seq;">>]),
@@ -311,19 +311,19 @@ del_spool_msg(LServer, Username) ->
 
 get_roster(LServer, Username) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select username AS \"USERNAME\", jid AS \"JID\", nick AS \"NICK\", subscription AS \"SUBSCRIPTION\", "
-			       "ask AS \"ASK\", askmessage AS \"ASKMESSAGE\", server AS \"SERVER\", subscribe AS \"SUBSCRIBE\", "
-			       "\"type\" AS \"TYPE\" from rosterusers where username='">>,
+			    [<<"select username AS \"username\", jid AS \"jid\", nick AS \"nick\", subscription AS \"subscription\", "
+			       "ask AS \"ask\", askmessage AS \"askmessage\", server AS \"server\", subscribe AS \"subscribe\", "
+			       "\"type\" AS \"type\" from rosterusers where username='">>,
 			     Username, <<"'">>]).
 
 get_roster_jid_groups(LServer, Username) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select jid AS \"JID\", grp AS \"GRP\" from rostergroups where "
+			    [<<"select jid AS \"jid\", grp AS \"grp\" from rostergroups where "
 			       "username='">>,
 			     Username, <<"'">>]).
 
 get_roster_groups(_LServer, Username, SJID) ->
-    ejabberd_odbc:sql_query_t([<<"select grp AS \"GRP\" from rostergroups where username='">>,
+    ejabberd_odbc:sql_query_t([<<"select grp AS \"grp\" from rostergroups where username='">>,
 			       Username, <<"' and jid='">>, SJID, <<"';">>]).
 
 del_user_roster_t(LServer, Username) ->
@@ -340,9 +340,9 @@ del_user_roster_t(LServer, Username) ->
 				  end).
 
 get_roster_by_jid(_LServer, Username, SJID) ->
-    ejabberd_odbc:sql_query_t([<<"select username AS \"USERNAME\", jid AS \"JID\", nick AS \"NICK\", subscription AS \"SUBSCRIPTION\", "
-				 "ask AS \"ASK\", askmessage AS \"ASKMESSAGE\", server AS \"SERVER\", subscribe AS \"SUBSCRIBE\", "
-				 "\"type\" AS \"TYPE\" from rosterusers where username='">>,
+    ejabberd_odbc:sql_query_t([<<"select username AS \"username\", jid AS \"jid\", nick AS \"nick\", subscription AS \"subscription\", "
+				 "ask AS \"ask\", askmessage AS \"askmessage\", server AS \"serveR\", subscribe AS \"subscribe\", "
+				 "\"type\" AS \"type\" from rosterusers where username='">>,
 			       Username, <<"' and jid='">>, SJID, <<"';">>]).
 
 get_rostergroup_by_jid(LServer, Username, SJID) ->
@@ -421,7 +421,7 @@ roster_subscribe(_LServer, Username, SJID, ItemVals) ->
 
 get_subscription(LServer, Username, SJID) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select subscription AS \"SUBSCRIPTION\" from rosterusers "
+			    [<<"select subscription AS \"subscription\" from rosterusers "
 			       "where username='">>,
 			     Username, <<"' and jid='">>, SJID, <<"'">>]).
 
@@ -443,14 +443,14 @@ set_private_data_sql(Username, LXMLNS, SData) ->
 %% TODO: Need some tests
 get_private_data(LServer, Username, LXMLNS) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select data AS \"DATA\"  from private_storage where "
+			    [<<"select data AS \"data\"  from private_storage where "
 			       "username='">>,
 			     Username, <<"' and namespace='">>, LXMLNS,
 			     <<"';">>]).
 
 get_private_data(LServer, Username) ->
     ejabberd_odbc:sql_query(LServer,
-                            [<<"select namespace AS \"NAMESPACE\", data AS \"DATA\" from private_storage "
+                            [<<"select namespace AS \"namespace\", data AS \"data\" from private_storage "
                                "where username='">>, Username, <<"';">>]).
 
 del_user_private_storage(LServer, Username) ->
@@ -503,54 +503,54 @@ set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail, SFN,
 
 get_vcard(LServer, Username) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select vcard AS \"VCARD\" from vcard where username='">>,
+			    [<<"select vcard AS \"vcard\" from vcard where username='">>,
 			     Username, <<"';">>]).
 
 get_default_privacy_list(LServer, Username) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select name AS \"NAME\" from privacy_default_list "
+			    [<<"select name AS \"name\" from privacy_default_list "
 			       "where username='">>,
 			     Username, <<"';">>]).
 
 get_default_privacy_list_t(Username) ->
-    ejabberd_odbc:sql_query_t([<<"select name \"NAME\" from privacy_default_list "
+    ejabberd_odbc:sql_query_t([<<"select name \"name\" from privacy_default_list "
 				 "where username='">>,
 			       Username, <<"';">>]).
 
 get_privacy_list_names(LServer, Username) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select name \"NAME\" from privacy_list where "
+			    [<<"select name \"name\" from privacy_list where "
 			       "username='">>,
 			     Username, <<"';">>]).
 
 get_privacy_list_names_t(Username) ->
-    ejabberd_odbc:sql_query_t([<<"select name \"NAME\" from privacy_list where "
+    ejabberd_odbc:sql_query_t([<<"select name \"name\" from privacy_list where "
 				 "username='">>,
 			       Username, <<"';">>]).
 
 get_privacy_list_id(LServer, Username, SName) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select id AS \"ID\" from privacy_list where username='">>,
+			    [<<"select id AS \"id\" from privacy_list where username='">>,
 			     Username, <<"' and name='">>, SName, <<"';">>]).
 
 get_privacy_list_id_t(Username, SName) ->
-    ejabberd_odbc:sql_query_t([<<"select id AS \"ID\" from privacy_list where username='">>,
+    ejabberd_odbc:sql_query_t([<<"select id AS \"id\" from privacy_list where username='">>,
 			       Username, <<"' and name='">>, SName, <<"';">>]).
 
 get_privacy_list_data(LServer, Username, SName) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select t AS \"T\", value AS \"VALUE\", action AS \"ACTION\", ord AS \"ORD\", match_all AS \"MATCH_ALL\", "
-			       "match_iq AS \"MATCH_IQ\", match_message AS \"MATCH_MESSAGE\", match_presence_in AS \"MATCH_PRESENCE_IN\", "
-			       "match_presence_out AS \"MATCH_PRESENCE_OUT\" from privacy_list_data "
+			    [<<"select t AS \"t\", value AS \"value\", action AS \"action\", ord AS \"ord\", match_all AS \"match_all\", "
+			       "match_iq AS \"match_iq\", match_message AS \"match_message\", match_presence_in AS \"match_presence_in\", "
+			       "match_presence_out AS \"match_presence_out\" from privacy_list_data "
 			       "where id = (select id from privacy_list "
 			       "where             username='">>,
 			     Username, <<"' and name='">>, SName,
 			     <<"') order by ord;">>]).
 
 get_privacy_list_data_t(Username, SName) ->
-    ejabberd_odbc:sql_query_t([<<"select t AS \"T\", value AS \"VALUE\", action AS \"ACTION\", ord AS \"ORD\", match_all AS \"MATCH_ALL\", "
-                                 "match_iq AS \"MATCH_IQ\", match_message AS \"MATCH_MESSAGE\", match_presence_in AS \"MATCH_PRESENCE_IN\", "
-                                 "match_presence_out AS \"MATCH_PRESENCE_OUT\" from privacy_list_data "
+    ejabberd_odbc:sql_query_t([<<"select t AS \"t\", value AS \"value\", action AS \"action\", ord AS \"ord\", match_all AS \"match_all\", "
+                                 "match_iq AS \"match_iq\", match_message AS \"match_message\", match_presence_in AS \"match_presence_in\", "
+                                 "match_presence_out AS \"match_presence_out\" from privacy_list_data "
                                  "where id = (select id from privacy_list "
                                  "where             username='">>,
                                Username, <<"' and name='">>, SName,
@@ -558,16 +558,16 @@ get_privacy_list_data_t(Username, SName) ->
 
 get_privacy_list_data_by_id(LServer, ID) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select t AS \"T\", value AS \"VALUE\", action AS \"ACTION\", ord AS \"ORD\", match_all AS \"MATCH_ALL\", "
-					   "match_iq AS \"MATCH_IQ\", match_message AS \"MATCH_MESSAGE\", match_presence_in AS \"MATCH_PRESENCE_IN\", "
-			       "match_presence_out AS \"MATCH_PRESENCE_OUT\" from privacy_list_data "
+			    [<<"select t AS \"t\", value AS \"value\", action AS \"action\", ord AS \"ord\", match_all AS \"match_all\", "
+					   "match_iq AS \"match_iq\", match_message AS \"match_message\", match_presence_in AS \"match_presence_in\", "
+			       "match_presence_out AS \"match_presence_out\" from privacy_list_data "
 			       "where id='">>,
 			     ID, <<"' order by ord;">>]).
 
 get_privacy_list_data_by_id_t(ID) ->
-    ejabberd_odbc:sql_query_t([<<"select t AS \"T\", value AS \"VALUE\", action AS \"ACTION\", ord AS \"ORD\", match_all AS \"MATCH_ALL\", "
-		"match_iq AS \"MATCH_IQ\", match_message AS \"MATCH_MESSAGE\", match_presence_in AS \"MATCH_PRESENCE_IN\", "
-				 "match_presence_out AS \"MATCH_PRESENCE_OUT\" from privacy_list_data "
+    ejabberd_odbc:sql_query_t([<<"select t AS \"t\", value AS \"value\", action AS \"action\", ord AS \"ord\", match_all AS \"match_all\", "
+		"match_iq AS \"match_iq\", match_message AS \"match_message\", match_presence_in AS \"match_presence_in\", "
+				 "match_presence_out AS \"match_presence_out\" from privacy_list_data "
 				 "where id='">>,
 			       ID, <<"' order by ord;">>]).
 
@@ -639,7 +639,7 @@ count_records_where(LServer, Table, WhereClause) ->
 
 get_roster_version(LServer, LUser) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select version AS \"VERSION\" from roster_version where "
+			    [<<"select version AS \"version\" from roster_version where "
 			       "username = '">>,
 			     LUser, <<"'">>]).
 

@@ -122,11 +122,11 @@ get_xupdate(LUser, LServer, riak) ->
 get_xupdate(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case ejabberd_odbc:sql_query(LServer,
-				 [<<"select hash AS \"HASH\" from vcard_xupdate where "
+				 [<<"select hash from vcard_xupdate where "
 				    "username='">>,
 				  Username, <<"';">>])
 	of
-      {selected, [<<"HASH">>], [[Hash]]} -> Hash;
+      {selected, [<<"hash">>], [[Hash]]} -> Hash;
       _ -> undefined
     end.
 
@@ -220,7 +220,7 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select username AS \"USERNAME\", hash AS \"HASH\" from vcard_xupdate;">>,
+    [{<<"select username, hash from vcard_xupdate;">>,
       fun([LUser, Hash]) ->
               #vcard_xupdate{us = {LUser, LServer}, hash = Hash}
       end}].

@@ -214,12 +214,12 @@ get_vcard(LUser, LServer, mnesia) ->
 get_vcard(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_vcard(LServer, Username) of
-      {selected, [<<"VCARD">>], [[SVCARD]]} ->
+      {selected, [<<"vcard">>], [[SVCARD]]} ->
 	  case xml_stream:parse_element(SVCARD) of
 	    {error, _Reason} -> error;
 	    VCARD -> [VCARD]
 	  end;
-      {selected, [<<"VCARD">>], []} -> [];
+      {selected, [<<"vcard">>], []} -> [];
       _ -> error
     end;
 get_vcard(LUser, LServer, riak) ->
@@ -717,17 +717,17 @@ search(LServer, MatchSpec, AllowReturnAll, odbc) ->
                             jlib:integer_to_binary(Val)]
                    end,
 	   case catch ejabberd_odbc:sql_query(LServer,
-					      [<<"select username AS \"USERNAME\", fn AS \"FN\", family AS \"FAMILY\", given AS \"GIVEN\", "
-						              "middle AS \"MIDDLE\", nickname AS \"NICKNAME\", bday AS \"BDAY\", ctry AS \"CTRY\", "
-						              "locality AS \"LOCALITY\", email AS \"EMAIL\", orgname AS \"ORGNAME\", orgunit AS \"ORGUNIT\""
-						       "  from vcard_search ">>,
+					      [<<"select username, fn, family, given, "
+						 "middle,        nickname, bday, ctry, "
+						 "locality,        email, orgname, orgunit "
+						 "from vcard_search ">>,
 					       MatchSpec, Limit, <<";">>])
 	       of
 	     {selected,
-	      [<<"USERNAME">>, <<"FN">>, <<"FAMILY">>, <<"GIVEN">>,
-	       <<"MIDDLE">>, <<"NICKNAME">>, <<"BDAY">>, <<"CTRY">>,
-	       <<"LOCALITY">>, <<"EMAIL">>, <<"ORGNAME">>,
-	       <<"ORGUNIT">>],
+	      [<<"username">>, <<"fn">>, <<"family">>, <<"given">>,
+	       <<"middle">>, <<"nickname">>, <<"bday">>, <<"ctry">>,
+	       <<"locality">>, <<"email">>, <<"orgname">>,
+	       <<"orgunit">>],
 	      Rs}
 		 when is_list(Rs) ->
 		 Rs;
@@ -1062,15 +1062,15 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select username \"USERNAME\", vcard AS \"VCARD\" from vcard;">>,
+    [{<<"select username, vcard from vcard;">>,
       fun([LUser, SVCard]) ->
               #xmlel{} = VCARD = xml_stream:parse_element(SVCard),
               #vcard{us = {LUser, LServer}, vcard = VCARD}
       end},
-     {<<"select username AS \"USERNAME\", lusername AS \"LUSERNAME\", fn AS \"FN\", lfn AS \"LFN\", family AS \"FAMILY\", lfamily AS \"LFAMILY\", "
-        "given AS \"GIVEN\", lgiven AS \"LGIVEN\", middle AS \"MIDDLE\", lmiddle AS \"LMIDDLE\", nickname AS \"NICKNAME\", lnickname AS \"LNICKNAME\", "
-        "bday AS \"BDAY\", lbday AS \"LBDAY\", ctry AS \"CTRY\", lctry AS \"LCTRY\", locality AS \"LOCALITY\", llocality AS \"LLOCALITY\", email AS \"EMAIL\", "
-        "lemail AS \"LEMAIL\", orgname AS \"ORGNAME\", lorgname AS \"LORGNAME\", orgunit AS \"ORGUNIT\", lorgunit AS \"LORGUNIT\" from vcard_search;">>,
+     {<<"select username, lusername, fn, lfn, family, lfamily, "
+        "given, lgiven, middle, lmiddle, nickname, lnickname, "
+        "bday, lbday, ctry, lctry, locality, llocality, email, "
+        "lemail, orgname, lorgname, orgunit, lorgunit from vcard_search;">>,
       fun([User, LUser, FN, LFN,
            Family, LFamily, Given, LGiven,
            Middle, LMiddle, Nickname, LNickname,

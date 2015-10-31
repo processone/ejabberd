@@ -464,7 +464,7 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, odbc) ->
     Body = xml:get_subtag_cdata(Pkt, <<"body">>),
     case ejabberd_odbc:sql_query(
 	    LServer,
-	    [<<"insert into archive (username, \"timestamp\", "
+	    [<<"insert into archive (username, timestamp, "
 		    "peer, bare_peer, xml, txt, kind, nick) values (">>,
 		<<"'">>, ejabberd_odbc:escape(SUser), <<"', ">>,
 		<<"'">>, TS, <<"', ">>,
@@ -542,7 +542,7 @@ get_prefs(LUser, LServer, mnesia) ->
 get_prefs(LUser, LServer, odbc) ->
     case ejabberd_odbc:sql_query(
 	   LServer,
-	   [<<"select def AS \"DEF\", always AS \"ALWAYS\", never AS \"NEVER\" from archive_prefs ">>,
+	   [<<"select def, always, never from archive_prefs ">>,
 	    <<"where username='">>,
 	    ejabberd_odbc:escape(LUser), <<"';">>]) of
 	{selected, _, [[SDefault, SAlways, SNever]]} ->
@@ -926,9 +926,9 @@ make_sql_query(User, _LServer, Start, End, With, RSM) ->
 		     I when is_integer(I), I >= 0 ->
 			 case Direction of
 			     before ->
-				 [<<" AND \"timestamp\" < ">>, ID];
+				 [<<" AND timestamp < ">>, ID];
 			     aft ->
-				 [<<" AND \"timestamp\" > ">>, ID];
+				 [<<" AND timestamp > ">>, ID];
 			     _ ->
 				 []
 			 end;
@@ -937,21 +937,21 @@ make_sql_query(User, _LServer, Start, End, With, RSM) ->
 		 end,
     StartClause = case Start of
 		      {_, _, _} ->
-			  [<<" and \"timestamp\" >= ">>,
+			  [<<" and timestamp >= ">>,
 			   jlib:integer_to_binary(now_to_usec(Start))];
 		      _ ->
 			  []
 		  end,
     EndClause = case End of
 		    {_, _, _} ->
-			[<<" and \"timestamp\" <= ">>,
+			[<<" and timestamp <= ">>,
 			 jlib:integer_to_binary(now_to_usec(End))];
 		    _ ->
 			[]
 		end,
     SUser = ejabberd_odbc:escape(User),
 
-    Query = [<<"SELECT \"timestamp\" AS \"TIMESTAMP\", xml AS \"XML\", peer AS \"PEER\", kind AS \"KIND\", nick AS \"NICK\""
+    Query = [<<"SELECT timestamp, xml, peer, kind, nick"
 	      " FROM archive WHERE username='">>,
 	     SUser, <<"'">>, WithClause, StartClause, EndClause,
 	     PageClause],
@@ -962,15 +962,15 @@ make_sql_query(User, _LServer, Start, End, With, RSM) ->
 		% ID can be empty because of
 		% XEP-0059: Result Set Management
 		% 2.5 Requesting the Last Page in a Result Set
-		[<<"SELECT \"timestamp\" AS \"TIMESTAMP\", xml AS \"XML\", peer AS \"PEER\", kind AS \"KIND\", nick AS \"NICK\" FROM (">>, Query,
-		 <<" ORDER BY \"timestamp\" DESC ">>,
-		 LimitClause, <<") AS t ORDER BY \"timestamp\" ASC;">>];
+		[<<"SELECT timestamp, xml, peer, kind, nick FROM (">>, Query,
+		 <<" ORDER BY timestamp DESC ">>,
+		 LimitClause, <<") AS t ORDER BY timestamp ASC;">>];
 	    _ ->
-		[Query, <<" ORDER BY \"timestamp\" ASC ">>,
+		[Query, <<" ORDER BY timestamp ASC ">>,
 		 LimitClause, <<";">>]
 	end,
     {QueryPage,
-     [<<"SELECT CAST(COUNT(*) AS INTEGER) FROM archive WHERE username='">>,
+     [<<"SELECT COUNT(*) FROM archive WHERE username='">>,
       SUser, <<"'">>, WithClause, StartClause, EndClause, <<";">>]}.
 
 now_to_usec({MSec, Sec, USec}) ->

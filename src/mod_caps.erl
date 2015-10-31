@@ -472,10 +472,10 @@ caps_read_fun(LServer, {Node, SubNode}, odbc) ->
             SNode = ejabberd_odbc:escape(Node),
             SSubNode = ejabberd_odbc:escape(SubNode),
             case ejabberd_odbc:sql_query(
-                   LServer, [<<"select feature AS \"FEATURE\" from caps_features where ">>,
+                   LServer, [<<"select feature from caps_features where ">>,
                              <<"node='">>, SNode, <<"' and subnode='">>,
                              SSubNode, <<"';">>]) of
-                {selected, [<<"FEATURE">>], [[H]|_] = Fs} ->
+                {selected, [<<"feature">>], [[H]|_] = Fs} ->
                     case catch jlib:binary_to_integer(H) of
                         Int when is_integer(Int), Int>=0 ->
                             {ok, Int};

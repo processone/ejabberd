@@ -76,8 +76,8 @@ check_password(User, Server, Password) ->
             case is_scrammed() of
                 true ->
                     try odbc_queries:get_password_scram(LServer, Username) of
-                        {selected, [<<"PASSWORD">>, <<"SERVERKEY">>,
-                                    <<"SALT">>, <<"ITERATIONCOUNT">>],
+                        {selected, [<<"password">>, <<"serverkey">>,
+                                    <<"salt">>, <<"iterationcount">>],
                          [[StoredKey, ServerKey, Salt, IterationCount]]} ->
                             Scram =
                                 #scram{storedkey = StoredKey,
@@ -86,8 +86,8 @@ check_password(User, Server, Password) ->
                                        iterationcount = binary_to_integer(
                                                           IterationCount)},
                             is_password_scram_valid(Password, Scram);
-                        {selected, [<<"PASSWORD">>, <<"SERVERKEY">>,
-                                    <<"SALT">>, <<"ITERATIONCOUNT">>], []} ->
+                        {selected, [<<"password">>, <<"serverkey">>,
+                                    <<"salt">>, <<"iterationcount">>], []} ->
                             false; %% Account does not exist
                         {error, _Error} ->
                             false %% Typical error is that table doesn't exist
@@ -97,11 +97,11 @@ check_password(User, Server, Password) ->
                     end;
                 false ->
                     try odbc_queries:get_password(LServer, Username) of
-                        {selected, [<<"PASSWORD">>], [[Password]]} ->
+                        {selected, [<<"password">>], [[Password]]} ->
                             Password /= <<"">>;
-                        {selected, [<<"PASSWORD">>], [[_Password2]]} ->
+                        {selected, [<<"password">>], [[_Password2]]} ->
                             false; %% Password is not correct
-                        {selected, [<<"PASSWORD">>], []} ->
+                        {selected, [<<"password">>], []} ->
                             false; %% Account does not exist
                         {error, _Error} ->
                             false %% Typical error is that table doesn't exist
@@ -127,7 +127,7 @@ check_password(User, Server, Password, Digest,
                     Username = ejabberd_odbc:escape(LUser),
                     try odbc_queries:get_password(LServer, Username) of
                         %% Account exists, check if password is valid
-                        {selected, [<<"PASSWORD">>], [[Passwd]]} ->
+                        {selected, [<<"password">>], [[Passwd]]} ->
                             DigRes = if Digest /= <<"">> ->
                                              Digest == DigestGen(Passwd);
                                         true -> false
@@ -135,7 +135,7 @@ check_password(User, Server, Password, Digest,
                             if DigRes -> true;
                                true -> (Passwd == Password) and (Password /= <<"">>)
                             end;
-                        {selected, [<<"PASSWORD">>], []} ->
+                        {selected, [<<"password">>], []} ->
                             false; %% Account does not exist
                         {error, _Error} ->
                             false %% Typical error is that table doesn't exist
@@ -230,7 +230,7 @@ dirty_get_registered_users() ->
 get_vh_registered_users(Server) ->
     LServer = jlib:nameprep(Server),
     case catch odbc_queries:list_users(LServer) of
-      {selected, [<<"USERNAME">>], Res} ->
+      {selected, [<<"username">>], Res} ->
 	  [{U, LServer} || [U] <- Res];
       _ -> []
     end.
@@ -238,7 +238,7 @@ get_vh_registered_users(Server) ->
 get_vh_registered_users(Server, Opts) ->
     LServer = jlib:nameprep(Server),
     case catch odbc_queries:list_users(LServer, Opts) of
-      {selected, [<<"USERNAME">>], Res} ->
+      {selected, [<<"username">>], Res} ->
 	  [{U, LServer} || [U] <- Res];
       _ -> []
     end.
@@ -272,8 +272,8 @@ get_password(User, Server) ->
                 true ->
                     case catch odbc_queries:get_password_scram(
                                  LServer, Username) of
-                        {selected, [<<"PASSWORD">>, <<"SERVERKEY">>,
-                                    <<"SALT">>, <<"ITERATIONCOUNT">>],
+                        {selected, [<<"password">>, <<"serverkey">>,
+                                    <<"salt">>, <<"iterationcount">>],
                          [[StoredKey, ServerKey, Salt, IterationCount]]} ->
                             {jlib:decode_base64(StoredKey),
                              jlib:decode_base64(ServerKey),
@@ -284,7 +284,7 @@ get_password(User, Server) ->
                 false ->
                     case catch odbc_queries:get_password(LServer, Username)
                         of
-                        {selected, [<<"PASSWORD">>], [[Password]]} -> Password;
+                        {selected, [<<"password">>], [[Password]]} -> Password;
                         _ -> false
                     end
             end
@@ -302,7 +302,7 @@ get_password_s(User, Server) ->
                 false ->
                     Username = ejabberd_odbc:escape(LUser),
                     case catch odbc_queries:get_password(LServer, Username) of
-                        {selected, [<<"PASSWORD">>], [[Password]]} -> Password;
+                        {selected, [<<"password">>], [[Password]]} -> Password;
                         _ -> <<"">>
                     end;
                 true -> <<"">>
@@ -317,9 +317,9 @@ is_user_exists(User, Server) ->
 	  Username = ejabberd_odbc:escape(LUser),
 	  LServer = jlib:nameprep(Server),
 	  try odbc_queries:get_password(LServer, Username) of
-	    {selected, [<<"PASSWORD">>], [[_Password]]} ->
+	    {selected, [<<"password">>], [[_Password]]} ->
 		true; %% Account exists
-	    {selected, [<<"PASSWORD">>], []} ->
+	    {selected, [<<"password">>], []} ->
 		false; %% Account does not exist
 	    {error, Error} -> {error, Error}
 	  catch
@@ -365,9 +365,9 @@ remove_user(User, Server, Password) ->
                                 Result = odbc_queries:del_user_return_password(
                                            LServer, Username, Pass),
                                 case Result of
-                                    {selected, [<<"PASSWORD">>],
+                                    {selected, [<<"password">>],
                                      [[Password]]} -> ok;
-                                    {selected, [<<"PASSWORD">>],
+                                    {selected, [<<"password">>],
                                      []} -> not_exists;
                                     _ -> not_allowed
                                 end
@@ -437,13 +437,13 @@ convert_to_scram(Server) ->
         true ->
             F = fun () ->
                         case ejabberd_odbc:sql_query_t(
-                               [<<"select username AS \"USERNAME\" , password AS \"PASSWORD\" from users where "
+                               [<<"select username, password from users where "
                                  "iterationcount=0 limit ">>,
                                 integer_to_binary(?BATCH_SIZE),
                                 <<";">>]) of
-                            {selected, [<<"USERNAME">>, <<"PASSWORD">>], []} ->
+                            {selected, [<<"username">>, <<"password">>], []} ->
                                 ok;
-                            {selected, [<<"USERNAME">>, <<"PASSWORD">>], Rs} ->
+                            {selected, [<<"username">>, <<"password">>], Rs} ->
                                 lists:foreach(
                                   fun([LUser, Password]) ->
                                           Username = ejabberd_odbc:escape(LUser),

@@ -951,8 +951,8 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, riak) ->
     end;
 send_motd(#jid{luser = LUser, lserver = LServer} = JID, odbc) when LUser /= <<>> ->
     case catch ejabberd_odbc:sql_query(
-                 LServer, [<<"select xml AS \"XML\" from motd where username='';">>]) of
-        {selected, [<<"XML">>], [[XML]]} ->
+                 LServer, [<<"select xml from motd where username='';">>]) of
+        {selected, [<<"xml">>], [[XML]]} ->
             case xml_stream:parse_element(XML) of
                 {error, _} ->
                     ok;
@@ -960,9 +960,9 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, odbc) when LUser /= <<>>
                     Username = ejabberd_odbc:escape(LUser),
                     case catch ejabberd_odbc:sql_query(
                                  LServer,
-                                 [<<"select username AS \"USERNAME\"  from motd "
+                                 [<<"select username from motd "
                                     "where username='">>, Username, <<"';">>]) of
-                        {selected, [<<"USERNAME">>], []} ->
+                        {selected, [<<"username">>], []} ->
                             Local = jlib:make_jid(<<"">>, LServer, <<"">>),
                             ejabberd_router:route(Local, JID, Packet),
                             F = fun() ->
@@ -1008,8 +1008,8 @@ get_stored_motd_packet(LServer, riak) ->
     end;
 get_stored_motd_packet(LServer, odbc) ->
     case catch ejabberd_odbc:sql_query(
-                 LServer, [<<"select xml AS \"XML\" from motd where username='';">>]) of
-        {selected, [<<"XML">>], [[XML]]} ->
+                 LServer, [<<"select xml from motd where username='';">>]) of
+        {selected, [<<"xml">>], [[XML]]} ->
             case xml_stream:parse_element(XML) of
                 {error, _} ->
                     error;
@@ -1122,12 +1122,12 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select xml AS \"XML\" from motd where username='';">>,
+    [{<<"select xml from motd where username='';">>,
       fun([XML]) ->
               El = xml_stream:parse_element(XML),
               #motd{server = LServer, packet = El}
       end},
-     {<<"select username AS \"USERNAME\" from motd where xml='';">>,
+     {<<"select username from motd where xml='';">>,
       fun([LUser]) ->
               #motd_users{us = {LUser, LServer}}
       end}].

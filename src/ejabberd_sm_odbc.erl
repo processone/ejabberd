@@ -72,7 +72,7 @@ delete_session(_LUser, LServer, _LResource, {Now, Pid}) ->
     PidS = list_to_binary(erlang:pid_to_list(Pid)),
     case ejabberd_odbc:sql_query(
 	   LServer,
-	   [<<"select usec AS \"USEC\", pid AS \"PID\", username AS \"USERNAME\", resource AS \"RESOURCE\", priority AS \"PRIORITY\", info AS \"INFO\" ">>,
+	   [<<"select usec, pid, username, resource, priority, info ">>,
 	    <<"from sm where usec='">>, TS, <<"' and pid='">>,PidS, <<"'">>]) of
 	{selected, _, [Row]} ->
 	    ejabberd_odbc:sql_query(
@@ -94,8 +94,8 @@ get_sessions() ->
 
 get_sessions(LServer) ->
     case ejabberd_odbc:sql_query(
-	   LServer, [<<"select usec AS \"USEC\", pid AS \"PID\", username AS \"USERNAME\", ">>,
-		     <<"resource AS \"RESOURCE\", priority AS \"PRIORITY\", info AS \"INFO\" from sm">>]) of
+	   LServer, [<<"select usec, pid, username, ">>,
+		     <<"resource, priority, info from sm">>]) of
 	{selected, _, Rows} ->
 	    [row_to_session(LServer, Row) || Row <- Rows];
 	Err ->
@@ -106,8 +106,8 @@ get_sessions(LServer) ->
 get_sessions(LUser, LServer) ->
     Username = ejabberd_odbc:escape(LUser),
     case ejabberd_odbc:sql_query(
-	   LServer, [<<"select usec AS \"USEC\", pid AS \"PID\", username AS \"USERNAME\", ">>,
-		     <<"resource AS \"RESOURCE\", priority AS \"PRIORITY\", info AS \"INFO\" from sm where ">>,
+	   LServer, [<<"select usec, pid, username, ">>,
+		     <<"resource, priority, info from sm where ">>,
 		     <<"username='">>, Username, <<"'">>]) of
 	{selected, _, Rows} ->
 	    [row_to_session(LServer, Row) || Row <- Rows];
@@ -120,8 +120,8 @@ get_sessions(LUser, LServer, LResource) ->
     Username = ejabberd_odbc:escape(LUser),
     Resource = ejabberd_odbc:escape(LResource),
     case ejabberd_odbc:sql_query(
-	   LServer, [<<"select usec AS \"USEC\", pid AS \"PID\", username AS \"USERNAME\", ">>,
-		     <<"resource AS \"RESOURCE\", priority AS \"PRIORITY\", info AS \"INFO\" from sm where ">>,
+	   LServer, [<<"select usec, pid, username, ">>,
+		     <<"resource, priority, info from sm where ">>,
 		     <<"username='">>, Username, <<"' and resource='">>,
 		     Resource, <<"'">>]) of
 	{selected, _, Rows} ->

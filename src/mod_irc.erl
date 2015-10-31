@@ -607,11 +607,11 @@ get_data(LServer, Host, From, odbc) ->
 	ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From)))),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select data AS \"DATA\" from irc_custom where jid='">>,
+				       [<<"select data from irc_custom where jid='">>,
 					SJID, <<"' and host='">>, SHost,
 					<<"';">>])
 	of
-      {selected, [<<"DATA">>], [[SData]]} ->
+      {selected, [<<"data">>], [[SData]]} ->
 	  data_to_binary(From, ejabberd_odbc:decode_term(SData));
       {'EXIT', _} -> error;
       {selected, _, _} -> empty
@@ -1329,7 +1329,7 @@ export(_Server) ->
       end}].
 
 import(_LServer) ->
-    [{<<"select jid AS \"JID\", host AS \"HOST\", data AS \"DATA\" from irc_custom;">>,
+    [{<<"select jid, host, data from irc_custom;">>,
       fun([SJID, IRCHost, SData]) ->
               #jid{luser = U, lserver = S} = jlib:string_to_jid(SJID),
               Data = ejabberd_odbc:decode_term(SData),

@@ -206,8 +206,8 @@ read_roster_version(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case odbc_queries:get_roster_version(LServer, Username)
 	of
-      {selected, [<<"VERSION">>], [[Version]]} -> Version;
-      {selected, [<<"VERSION">>], []} -> error
+      {selected, [<<"version">>], [[Version]]} -> Version;
+      {selected, [<<"version">>], []} -> error
     end;
 read_roster_version(LServer, LUser, riak) ->
     case ejabberd_riak:get(roster_version, roster_version_schema(),
@@ -372,16 +372,16 @@ get_roster(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_roster(LServer, Username) of
       {selected,
-       [<<"USERNAME">>, <<"JID">>, <<"NICK">>,
-	<<"SUBSCRIPTION">>, <<"ASK">>, <<"ASKMESSAGE">>,
-	<<"SERVER">>, <<"SUBSCRIBE">>, <<"TYPE">>],
+       [<<"username">>, <<"jid">>, <<"nick">>,
+	<<"subscription">>, <<"ask">>, <<"askmessage">>,
+	<<"server">>, <<"subscribe">>, <<"type">>],
        Items}
 	  when is_list(Items) ->
 	  JIDGroups = case catch
 			     odbc_queries:get_roster_jid_groups(LServer,
 								Username)
 			  of
-			{selected, [<<"JID">>, <<"GRP">>], JGrps}
+			{selected, [<<"jid">>, <<"grp">>], JGrps}
 			    when is_list(JGrps) ->
 			    JGrps;
 			_ -> []
@@ -456,9 +456,9 @@ get_roster_by_jid_t(LUser, LServer, LJID, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     SJID = ejabberd_odbc:escape(jlib:jid_to_string(LJID)),
     {selected,
-     [<<"USERNAME">>, <<"JID">>, <<"NICK">>,
-      <<"SUBSCRIPTION">>, <<"ASK">>, <<"ASKMESSAGE">>,
-      <<"SERVER">>, <<"SUBSCRIBE">>, <<"TYPE">>],
+     [<<"username">>, <<"jid">>, <<"nick">>,
+      <<"subscription">>, <<"ask">>, <<"askmessage">>,
+      <<"server">>, <<"subscribe">>, <<"type">>],
      Res} =
 	odbc_queries:get_roster_by_jid(LServer, Username, SJID),
     case Res of
@@ -658,9 +658,9 @@ get_subscription_lists(_, LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_roster(LServer, Username) of
       {selected,
-       [<<"USERNAME">>, <<"JID">>, <<"NICK">>,
-	<<"SUBSCRIPTION">>, <<"ASK">>, <<"ASKMESSAGE">>,
-	<<"SERVER">>, <<"SUBSCRIBE">>, <<"TYPE">>],
+       [<<"username">>, <<"jid">>, <<"nick">>,
+	<<"subscription">>, <<"ask">>, <<"askmessage">>,
+	<<"server">>, <<"subscribe">>, <<"type">>],
        Items}
 	  when is_list(Items) ->
             lists:map(fun(I) -> raw_to_record(LServer, I) end, Items);
@@ -749,23 +749,23 @@ get_roster_by_jid_with_groups_t(LUser, LServer, LJID,
 					SJID)
 	of
       {selected,
-       [<<"USERNAME">>, <<"JID">>, <<"NICK">>,
-	<<"SUBSCRIPTION">>, <<"ASK">>, <<"ASKMESSAGE">>,
-	<<"SERVER">>, <<"SUBSCRIBE">>, <<"TYPE">>],
+       [<<"username">>, <<"jid">>, <<"nick">>,
+	<<"subscription">>, <<"ask">>, <<"askmessage">>,
+	<<"server">>, <<"subscribe">>, <<"type">>],
        [I]} ->
 	  R = raw_to_record(LServer, I),
 	  Groups = case odbc_queries:get_roster_groups(LServer,
 						       Username, SJID)
 		       of
-		     {selected, [<<"GRP">>], JGrps} when is_list(JGrps) ->
+		     {selected, [<<"grp">>], JGrps} when is_list(JGrps) ->
 			 [JGrp || [JGrp] <- JGrps];
 		     _ -> []
 		   end,
 	  R#roster{groups = Groups};
       {selected,
-       [<<"USERNAME">>, <<"JID">>, <<"NICK">>,
-	<<"SUBSCRIPTION">>, <<"ASK">>, <<"ASKMESSAGE">>,
-	<<"SERVER">>, <<"SUBSCRIBE">>, <<"TYPE">>],
+       [<<"username">>, <<"jid">>, <<"nick">>,
+	<<"subscription">>, <<"ask">>, <<"askmessage">>,
+	<<"server">>, <<"subscribe">>, <<"type">>],
        []} ->
 	  #roster{usj = {LUser, LServer, LJID},
 		  us = {LUser, LServer}, jid = LJID}
@@ -1180,9 +1180,9 @@ get_in_pending_subscriptions(Ls, User, Server, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case catch odbc_queries:get_roster(LServer, Username) of
       {selected,
-       [<<"USERNAME">>, <<"JID">>, <<"NICK">>,
-	<<"SUBSCRIPTION">>, <<"ASK">>, <<"ASKMESSAGE">>,
-	<<"SERVER">>, <<"SUBSCRIBE">>, <<"TYPE">>],
+       [<<"username">>, <<"jid">>, <<"nick">>,
+	<<"subscription">>, <<"ask">>, <<"askmessage">>,
+	<<"server">>, <<"subscribe">>, <<"type">>],
        Items}
 	  when is_list(Items) ->
 	  Ls ++
@@ -1241,7 +1241,7 @@ read_subscription_and_groups(LUser, LServer, LJID,
     case catch odbc_queries:get_subscription(LServer,
 					     Username, SJID)
 	of
-      {selected, [<<"SUBSCRIPTION">>], [[SSubscription]]} ->
+      {selected, [<<"subscription">>], [[SSubscription]]} ->
 	  Subscription = case SSubscription of
 			   <<"B">> -> both;
 			   <<"T">> -> to;
@@ -1252,7 +1252,7 @@ read_subscription_and_groups(LUser, LServer, LJID,
 			  odbc_queries:get_rostergroup_by_jid(LServer, Username,
 							      SJID)
 		       of
-		     {selected, [<<"GRP">>], JGrps} when is_list(JGrps) ->
+		     {selected, [<<"grp">>], JGrps} when is_list(JGrps) ->
 			 [JGrp || [JGrp] <- JGrps];
 		     _ -> []
 		   end,
@@ -1738,20 +1738,20 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select username AS \"USERNAME\", jid AS \"JID\", nick AS \"NICK\", subscription AS \"SUBSCRIPTION\", "
-        "ask AS \"ASK\", askmessage AS \"ASKMESSAGE\", server AS \"SERVER\", subscribe AS \"SUBSCRIBE\", \"type\" AS \"TYPE\" from rosterusers;">>,
+    [{<<"select username, jid, nick, subscription, "
+        "ask, askmessage, server, subscribe, type from rosterusers;">>,
       fun([LUser, JID|_] = Row) ->
               Item = raw_to_record(LServer, Row),
               Username = ejabberd_odbc:escape(LUser),
               SJID = ejabberd_odbc:escape(JID),
               {selected, _, Rows} =
                   ejabberd_odbc:sql_query_t(
-                    [<<"select grp AS \"GRP\" from rostergroups where username='">>,
+                    [<<"select grp from rostergroups where username='">>,
                      Username, <<"' and jid='">>, SJID, <<"'">>]),
               Groups = [Grp || [Grp] <- Rows],
               Item#roster{groups = Groups}
       end},
-     {<<"select username AS \"USERNAME\", version AS \"VERSION\" from roster_version;">>,
+     {<<"select username, version from roster_version;">>,
       fun([LUser, Ver]) ->
               #roster_version{us = {LUser, LServer}, version = Ver}
       end}].
