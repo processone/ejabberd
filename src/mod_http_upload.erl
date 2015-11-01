@@ -856,7 +856,7 @@ identify(Path) ->
 		    height = list_to_integer(H),
 		    width = list_to_integer(W)}};
 	_ ->
-	    ?ERROR_MSG("failed to identify type of ~s: ~s", [Path, Res]),
+	    ?DEBUG("failed to identify type of ~s: ~s", [Path, Res]),
 	    {error, Res}
     end.
 
