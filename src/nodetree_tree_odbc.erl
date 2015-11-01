@@ -85,7 +85,7 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 	_ ->
 	    catch
 	    ejabberd_odbc:sql_query_t([<<"insert into pubsub_node(host, node, "
-			"parent, type) values('">>,
+			"parent, \"type\") values('">>,
 		    H, <<"', '">>, N, <<"', '">>, P,
 		    <<"', '">>, Type, <<"');">>]),
 	    case nodeidx(Host, Node) of
