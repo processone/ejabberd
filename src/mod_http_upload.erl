@@ -94,7 +94,7 @@
 	 slots = dict:new()     :: term()}). % dict:dict() requires Erlang 17.
 
 -record(media_info,
-	{type   :: string(),
+	{type   :: binary(),
 	 height :: integer(),
 	 width  :: integer()}).
 
@@ -733,7 +733,7 @@ iq_disco_info(Lang, Name) ->
 
 %% HTTP request handling.
 
--spec store_file(file:filename_all(), binary(),
+-spec store_file(binary(), binary(),
 		 integer() | undefined,
 		 integer() | undefined,
 		 binary(), binary(), boolean())
@@ -855,7 +855,7 @@ code_to_message(_Code) -> <<"">>.
 %%--------------------------------------------------------------------
 %% Image manipulation stuff
 %%--------------------------------------------------------------------
--spec identify(string()) -> {ok, media_info()} | {error, string()}.
+-spec identify(binary()) -> {ok, media_info()} | {error, binary()}.
 
 identify(Path) ->
     Cmd = lists:flatten(io_lib:fwrite("identify -format \"ok %m %h %w\" ~s",
@@ -864,15 +864,15 @@ identify(Path) ->
     case string:tokens(Res, " ") of
 	["ok", T, H, W] ->
 	    {ok, #media_info{
-		    type = string:to_lower(T),
+		    type = list_to_binary(string:to_lower(T)),
 		    height = list_to_integer(H),
 		    width = list_to_integer(W)}};
 	_ ->
 	    ?DEBUG("failed to identify type of ~s: ~s", [Path, Res]),
-	    {error, Res}
+	    {error, list_to_binary(Res)}
     end.
 
--spec convert(string(), media_info()) -> {ok, string()} | pass.
+-spec convert(binary(), media_info()) -> {ok, binary()} | pass.
 
 convert(Path, #media_info{type = T, width = W, height = H}) ->
     if W*H >= 25000000 ->
@@ -880,9 +880,9 @@ convert(Path, #media_info{type = T, width = W, height = H}) ->
 	    pass;
        (W =< 300) and (H =< 300) ->
 	    {ok, Path};
-       T == "gif"; T == "jpeg"; T == "png"; T == "webp" ->
+       T == <<"gif">>; T == <<"jpeg">>; T == <<"png">>; T == <<"webp">> ->
 	    Dir = filename:dirname(Path),
-	    FileName = binary_to_list(randoms:get_string()) ++ "." ++ T,
+	    FileName = <<(randoms:get_string())/binary, $., T/binary>>,
 	    OutPath = filename:join(Dir, FileName),
 	    Cmd = lists:flatten(io_lib:fwrite("convert -resize 300 ~s ~s",
 					      [Path, OutPath])),
@@ -899,10 +899,10 @@ convert(Path, #media_info{type = T, width = W, height = H}) ->
 	    pass
     end.
 
--spec thumb_el(string(), binary()) -> xmlel().
+-spec thumb_el(binary(), binary()) -> xmlel().
 
 thumb_el(Path, URI) ->
-    ContentType = guess_content_type(list_to_binary(Path)),
+    ContentType = guess_content_type(Path),
     case identify(Path) of
 	{ok, #media_info{height = H, width = W}} ->
 	    #xmlel{name = <<"thumbnail">>,
