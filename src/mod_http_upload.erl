@@ -148,8 +148,8 @@ stop(ServerHost) ->
       false -> ok
     end,
     Proc = get_proc_name(ServerHost, ?PROCNAME),
-    ok = supervisor:terminate_child(ejabberd_sup, Proc),
-    ok = supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:terminate_child(ejabberd_sup, Proc),
+    supervisor:delete_child(ejabberd_sup, Proc).
 
 -spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
 
