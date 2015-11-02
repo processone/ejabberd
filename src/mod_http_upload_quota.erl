@@ -332,7 +332,7 @@ del_file_and_dir(File) ->
 	    ok ->
 		?DEBUG("Removed ~s", [Dir]);
 	    {error, Error} ->
-		?INFO_MSG("Cannot remove ~s: ~s", [Dir, ?FORMAT(Error)])
+		?DEBUG("Cannot remove ~s: ~s", [Dir, ?FORMAT(Error)])
 	  end;
       {error, Error} ->
 	  ?WARNING_MSG("Cannot remove ~s: ~s", [File, ?FORMAT(Error)])
