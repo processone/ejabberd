@@ -272,6 +272,18 @@ init({ServerHost, Opts}) ->
       Mode ->
 	  file:change_mode(DocRoot, Mode)
     end,
+    case Thumbnail of
+      true ->
+	  case string:str(os:cmd("identify"), "Magick") of
+	    0 ->
+		?ERROR_MSG("Cannot find 'identify' command, please install "
+			   "ImageMagick or disable thumbnail creation", []);
+	    _ ->
+		ok
+	  end;
+      false ->
+	  ok
+    end,
     ejabberd_router:register_route(Host),
     {ok, #state{server_host = ServerHost, host = Host, name = Name,
 		access = Access, max_size = MaxSize,
