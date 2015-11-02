@@ -498,10 +498,10 @@ vvaluel(Val) ->
 
 generate_adhoc_form(Lang, Node, ServerHost) ->
     LNode = tokenize(Node),
-    {OldSubject, OldBody} = if (LNode == ?NS_ADMINL("edit-motd")) 
+    {OldSubject, OldBody} = if (LNode == ?NS_ADMINL("edit-motd"))
 			       or (LNode == ?NS_ADMINL("edit-motd-allhosts")) ->
 				    get_stored_motd(ServerHost);
-			       true -> 
+			       true ->
 				    {<<>>, <<>>}
 			    end,
     #xmlel{
@@ -631,25 +631,25 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	{?NS_ADMIN_ANNOUNCE, _} ->
 	    Proc ! {announce_online, From, To, Packet},
 	    adhoc:produce_response(Response);
-	{?NS_ADMIN_ANNOUNCE_ALLHOSTS, _} ->	    
+	{?NS_ADMIN_ANNOUNCE_ALLHOSTS, _} ->
 	    Proc ! {announce_all_hosts_online, From, To, Packet},
 	    adhoc:produce_response(Response);
 	{?NS_ADMIN_ANNOUNCE_ALL, _} ->
 	    Proc ! {announce_all, From, To, Packet},
 	    adhoc:produce_response(Response);
-	{?NS_ADMIN_ANNOUNCE_ALL_ALLHOSTS, _} ->	    
+	{?NS_ADMIN_ANNOUNCE_ALL_ALLHOSTS, _} ->
 	    Proc ! {announce_all_hosts_all, From, To, Packet},
 	    adhoc:produce_response(Response);
 	{?NS_ADMIN_SET_MOTD, _} ->
 	    Proc ! {announce_motd, From, To, Packet},
 	    adhoc:produce_response(Response);
-	{?NS_ADMIN_SET_MOTD_ALLHOSTS, _} ->	    
+	{?NS_ADMIN_SET_MOTD_ALLHOSTS, _} ->
 	    Proc ! {announce_all_hosts_motd, From, To, Packet},
 	    adhoc:produce_response(Response);
 	{?NS_ADMIN_EDIT_MOTD, _} ->
 	    Proc ! {announce_motd_update, From, To, Packet},
 	    adhoc:produce_response(Response);
-	{?NS_ADMIN_EDIT_MOTD_ALLHOSTS, _} ->	    
+	{?NS_ADMIN_EDIT_MOTD_ALLHOSTS, _} ->
 	    Proc ! {announce_all_hosts_motd_update, From, To, Packet},
 	    adhoc:produce_response(Response);
 	_ ->
@@ -951,7 +951,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, riak) ->
     end;
 send_motd(#jid{luser = LUser, lserver = LServer} = JID, odbc) when LUser /= <<>> ->
     case catch ejabberd_odbc:sql_query(
-                 LServer, [<<"select xml from motd where username='';">>]) of
+                 LServer, [<<"select xml AS \"xml\" from motd where username='';">>]) of
         {selected, [<<"xml">>], [[XML]]} ->
             case xml_stream:parse_element(XML) of
                 {error, _} ->
@@ -960,7 +960,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, odbc) when LUser /= <<>>
                     Username = ejabberd_odbc:escape(LUser),
                     case catch ejabberd_odbc:sql_query(
                                  LServer,
-                                 [<<"select username from motd "
+                                 [<<"select username AS \"username\" from motd "
                                     "where username='">>, Username, <<"';">>]) of
                         {selected, [<<"username">>], []} ->
                             Local = jlib:make_jid(<<"">>, LServer, <<"">>),
@@ -1008,7 +1008,7 @@ get_stored_motd_packet(LServer, riak) ->
     end;
 get_stored_motd_packet(LServer, odbc) ->
     case catch ejabberd_odbc:sql_query(
-                 LServer, [<<"select xml from motd where username='';">>]) of
+                 LServer, [<<"select xml AS \"xml\" from motd where username='';">>]) of
         {selected, [<<"xml">>], [[XML]]} ->
             case xml_stream:parse_element(XML) of
                 {error, _} ->
@@ -1122,12 +1122,12 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select xml from motd where username='';">>,
+    [{<<"select xml AS \"xml\" from motd where username='';">>,
       fun([XML]) ->
               El = xml_stream:parse_element(XML),
               #motd{server = LServer, packet = El}
       end},
-     {<<"select username from motd where xml='';">>,
+     {<<"select username AS \"username\" from motd where xml='';">>,
       fun([LUser]) ->
               #motd_users{us = {LUser, LServer}}
       end}].

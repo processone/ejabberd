@@ -4,13 +4,13 @@
 %%% compliance with the License. You should have received a copy of the
 %%% Erlang Public License along with this software. If not, it can be
 %%% retrieved via the world wide web at http://www.erlang.org/.
-%%% 
+%%%
 %%%
 %%% Software distributed under the License is distributed on an "AS IS"
 %%% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
 %%% the License for the specific language governing rights and limitations
 %%% under the License.
-%%% 
+%%%
 %%%
 %%% The Initial Developer of the Original Code is ProcessOne.
 %%% Portions created by ProcessOne are Copyright 2006-2015, ProcessOne
@@ -85,7 +85,7 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 	_ ->
 	    catch
 	    ejabberd_odbc:sql_query_t([<<"insert into pubsub_node(host, node, "
-			"parent, type) values('">>,
+			"parent, \"type\") values('">>,
 		    H, <<"', '">>, N, <<"', '">>, P,
 		    <<"', '">>, Type, <<"');">>]),
 	    case nodeidx(Host, Node) of
@@ -119,7 +119,7 @@ get_node(Host, Node) ->
     H = node_flat_odbc:encode_host(Host),
     N = ejabberd_odbc:escape(Node),
     case catch
-	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
+	ejabberd_odbc:sql_query_t([<<"select node AS \"node\", parent AS \"parent\", \"type\" AS \"type\", nodeid AS \"nodeid\" from "
 		    "pubsub_node where host='">>,
 		H, <<"' and node='">>, N, <<"';">>])
     of
@@ -134,7 +134,7 @@ get_node(Host, Node) ->
 
 get_node(Nidx) ->
     case catch
-	ejabberd_odbc:sql_query_t([<<"select host, node, parent, type from "
+	ejabberd_odbc:sql_query_t([<<"select host AS \"host\", node AS \"node\", parent AS \"parent\", \"type\" AS \"type\" from "
 		    "pubsub_node where nodeid='">>,
 		Nidx, <<"';">>])
     of
@@ -153,7 +153,7 @@ get_nodes(Host, _From) ->
 get_nodes(Host) ->
     H = node_flat_odbc:encode_host(Host),
     case catch
-	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
+	ejabberd_odbc:sql_query_t([<<"select node AS \"node\", parent AS \"parent\", \"type\" AS \"type\", nodeid AS \"nodeid\" from "
 		    "pubsub_node where host='">>, H, <<"';">>])
     of
 	{selected,
@@ -181,7 +181,7 @@ get_subnodes(Host, Node) ->
     H = node_flat_odbc:encode_host(Host),
     N = ejabberd_odbc:escape(Node),
     case catch
-	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
+	ejabberd_odbc:sql_query_t([<<"select node AS \"node\", parent AS \"parent\", \"type\" AS \"type\", nodeid AS \"nodeid\" from "
 		    "pubsub_node where host='">>,
 		H, <<"' and parent='">>, N, <<"';">>])
     of
@@ -199,7 +199,7 @@ get_subnodes_tree(Host, Node) ->
     H = node_flat_odbc:encode_host(Host),
     N = ejabberd_odbc:escape(Node),
     case catch
-	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
+	ejabberd_odbc:sql_query_t([<<"select node AS \"node\", parent AS \"parent\", \"type\" AS \"type\", nodeid AS \"nodeid\" from "
 		    "pubsub_node where host='">>,
 		H, <<"' and node like '">>, N, <<"%';">>])
     of
@@ -266,7 +266,7 @@ delete_node(Host, Node) ->
 %% helpers
 raw_to_node(Host, [Node, Parent, Type, Nidx]) ->
     Options = case catch
-	ejabberd_odbc:sql_query_t([<<"select name,val from pubsub_node_option "
+	ejabberd_odbc:sql_query_t([<<"select name AS \"name\",val AS \"val\" from pubsub_node_option "
 		    "where nodeid='">>, Nidx, <<"';">>])
     of
 	{selected, [<<"name">>, <<"val">>], ROptions} ->
@@ -298,7 +298,7 @@ nodeidx(Host, Node) ->
     H = node_flat_odbc:encode_host(Host),
     N = ejabberd_odbc:escape(Node),
     case catch
-	ejabberd_odbc:sql_query_t([<<"select nodeid from pubsub_node where "
+	ejabberd_odbc:sql_query_t([<<"select nodeid AS \"nodeid\" from pubsub_node where "
 		    "host='">>,
 		H, <<"' and node='">>, N, <<"';">>])
     of

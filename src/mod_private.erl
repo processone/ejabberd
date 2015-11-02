@@ -307,7 +307,7 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select username, namespace, data from private_storage;">>,
+    [{<<"select username AS \"username\", namespace AS \"namespace\", data AS \"data\" from private_storage;">>,
       fun([LUser, XMLNS, XML]) ->
               El = #xmlel{} = xml_stream:parse_element(XML),
               #private_storage{usns = {LUser, LServer, XMLNS},

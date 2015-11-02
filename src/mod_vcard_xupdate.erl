@@ -122,7 +122,7 @@ get_xupdate(LUser, LServer, riak) ->
 get_xupdate(LUser, LServer, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     case ejabberd_odbc:sql_query(LServer,
-				 [<<"select hash from vcard_xupdate where "
+				 [<<"select hash AS \"hash\" from vcard_xupdate where "
 				    "username='">>,
 				  Username, <<"';">>])
 	of
@@ -199,7 +199,7 @@ update_table() ->
                                             iolist_to_binary(S)},
                                       hash = iolist_to_binary(Hash)}
               end);
-        _ ->            
+        _ ->
             ?INFO_MSG("Recreating vcard_xupdate table", []),
             mnesia:transform_table(vcard_xupdate, ignore, Fields)
     end.
@@ -220,7 +220,7 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select username, hash from vcard_xupdate;">>,
+    [{<<"select username AS \"username\", hash AS \"hash\" from vcard_xupdate;">>,
       fun([LUser, Hash]) ->
               #vcard_xupdate{us = {LUser, LServer}, hash = Hash}
       end}].

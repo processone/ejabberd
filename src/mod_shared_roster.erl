@@ -406,7 +406,7 @@ list_groups(Host, riak) ->
     end;
 list_groups(Host, odbc) ->
     case ejabberd_odbc:sql_query(Host,
-				 [<<"select name from sr_group;">>])
+				 [<<"select name AS \"name\" from sr_group;">>])
 	of
       {selected, [<<"name">>], Rs} -> [G || [G] <- Rs];
       _ -> []
@@ -431,7 +431,7 @@ groups_with_opts(Host, riak) ->
     end;
 groups_with_opts(Host, odbc) ->
     case ejabberd_odbc:sql_query(Host,
-				 [<<"select name, opts from sr_group;">>])
+				 [<<"select name AS \"name\", opts AS \"opts\" from sr_group;">>])
 	of
       {selected, [<<"name">>, <<"opts">>], Rs} ->
 	  [{G, opts_to_binary(ejabberd_odbc:decode_term(Opts))}
@@ -520,7 +520,7 @@ get_group_opts(Host, Group, riak) ->
 get_group_opts(Host, Group, odbc) ->
     SGroup = ejabberd_odbc:escape(Group),
     case catch ejabberd_odbc:sql_query(Host,
-				       [<<"select opts from sr_group where name='">>,
+				       [<<"select opts AS \"opts\" from sr_group where name='">>,
 					SGroup, <<"';">>])
 	of
       {selected, [<<"opts">>], [[SOpts]]} ->
@@ -574,7 +574,7 @@ get_user_groups(US, Host, riak) ->
 get_user_groups(US, Host, odbc) ->
     SJID = make_jid_s(US),
     case catch ejabberd_odbc:sql_query(Host,
-				       [<<"select grp from sr_user where jid='">>,
+				       [<<"select grp AS \"grp\" from sr_user where jid='">>,
 					SJID, <<"';">>])
 	of
       {selected, [<<"grp">>], Rs} -> [G || [G] <- Rs];
@@ -651,7 +651,7 @@ get_group_explicit_users(Host, Group, riak) ->
 get_group_explicit_users(Host, Group, odbc) ->
     SGroup = ejabberd_odbc:escape(Group),
     case catch ejabberd_odbc:sql_query(Host,
-				       [<<"select jid from sr_user where grp='">>,
+				       [<<"select jid AS \"jid\" from sr_user where grp='">>,
 					SGroup, <<"';">>])
 	of
       {selected, [<<"jid">>], Rs} ->
@@ -747,7 +747,7 @@ get_user_displayed_groups(LUser, LServer, GroupsOpts,
 			  odbc) ->
     SJID = make_jid_s(LUser, LServer),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select grp from sr_user where jid='">>,
+				       [<<"select grp AS \"grp\" from sr_user where jid='">>,
 					SJID, <<"';">>])
 	of
       {selected, [<<"grp">>], Rs} ->
@@ -1478,12 +1478,12 @@ export(_Server) ->
       end}].
 
 import(LServer) ->
-    [{<<"select name, opts from sr_group;">>,
+    [{<<"select name AS \"name\", opts AS \"opts\" from sr_group;">>,
       fun([Group, SOpts]) ->
               #sr_group{group_host = {Group, LServer},
                         opts = ejabberd_odbc:decode_term(SOpts)}
       end},
-     {<<"select jid, grp from sr_user;">>,
+     {<<"select jid AS \"jid\", grp AS \"grp\" from sr_user;">>,
       fun([SJID, Group]) ->
               #jid{luser = U, lserver = S} = jlib:string_to_jid(SJID),
               #sr_user{us = {U, S}, group_host = {Group, LServer}}
