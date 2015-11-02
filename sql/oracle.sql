@@ -77,7 +77,7 @@ CREATE INDEX i_sr_user_grp ON sr_user (grp ASC) PARALLEL COMPRESS;
 CREATE TABLE spool (
     username varchar2(255) NOT NULL,
     xml varchar2(4000) NOT NULL,
-    seq NUMERIC(10),
+    seq INTEGER,
     created_at TIMESTAMP DEFAULT sysdate NOT NULL
 );
 CREATE SEQUENCE tb_spool_sequence;
@@ -100,7 +100,7 @@ CREATE TABLE archive (
     bare_peer varchar2(255) NOT NULL,
     xml varchar2(4000) NOT NULL,
     txt varchar2(4000),
-    id NUMERIC(10),
+    id INTEGER,
     kind varchar2(4000),
     nick varchar2(255),
     created_at TIMESTAMP DEFAULT sysdate NOT NULL
@@ -187,7 +187,7 @@ CREATE TABLE privacy_default_list (
 CREATE TABLE privacy_list (
     username varchar2(255) NOT NULL,
     name varchar2(255) NOT NULL,
-    id NUMERIC(10) UNIQUE,
+    id INTEGER UNIQUE,
     created_at TIMESTAMP DEFAULT sysdate NOT NULL
 );
 CREATE SEQUENCE tb_privacy_list_sequence;
@@ -237,7 +237,7 @@ CREATE TABLE pubsub_node (
   node varchar2(255),
   parent varchar2(255),
   "type" varchar2(255),
-  nodeid NUMERIC(10) UNIQUE
+  nodeid INTEGER UNIQUE
 );
 CREATE SEQUENCE tb_pubsub_node_sequence;
 CREATE TRIGGER tb_pubsub_node_seq_trigger 
@@ -271,7 +271,7 @@ CREATE TABLE pubsub_state (
   jid varchar2(255),
   affiliation char(1),
   subscriptions varchar2(4000),
-  stateid NUMERIC(10) UNIQUE
+  stateid INTEGER UNIQUE
 );
 CREATE SEQUENCE tb_pubsub_state_sequence;
 CREATE TRIGGER tb_pubsub_state_seq_trigger 
