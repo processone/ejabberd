@@ -43,6 +43,7 @@
 start(normal, _Args) ->
     ejabberd_logger:start(),
     write_pid_file(),
+    jlib:start(),
     start_apps(),
     ejabberd:check_app(ejabberd),
     randoms:start(),

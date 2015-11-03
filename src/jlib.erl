@@ -58,10 +58,18 @@
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, queue_drop_while/2]).
 
+-export([start/0]).
+
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
 -export_type([jid/0]).
+
+start() ->
+    SplitPattern = binary:compile_pattern([<<"@">>, <<"/">>]),
+    catch ets:new(jlib, [named_table, protected, set, {keypos, 1}]),
+    ets:insert(jlib, {string_to_jid_pattern, SplitPattern}),
+    ok.
 
 %send_iq(From, To, ID, SubTags) ->
 %    ok.
@@ -215,7 +223,7 @@ make_jid({User, Server, Resource}) ->
     make_jid(User, Server, Resource).
 
 %% This is the reverse of make_jid/1
--spec split_jid(jid()) -> {binary(), binary(), binary()} | error.                              
+-spec split_jid(jid()) -> {binary(), binary(), binary()} | error.
 split_jid(#jid{user = U, server = S, resource = R}) ->
     {U, S, R};
 split_jid(_) ->
@@ -224,36 +232,44 @@ split_jid(_) ->
 -spec string_to_jid(binary()) -> jid() | error.
 
 string_to_jid(S) ->
-    string_to_jid1(binary_to_list(S), "").
-
-string_to_jid1([$@ | _J], "") -> error;
-string_to_jid1([$@ | J], N) ->
-    string_to_jid2(J, lists:reverse(N), "");
-string_to_jid1([$/ | _J], "") -> error;
-string_to_jid1([$/ | J], N) ->
-    string_to_jid3(J, "", lists:reverse(N), "");
-string_to_jid1([C | J], N) ->
-    string_to_jid1(J, [C | N]);
-string_to_jid1([], "") -> error;
-string_to_jid1([], N) ->
-    make_jid(<<"">>, list_to_binary(lists:reverse(N)), <<"">>).
-
-%% Only one "@" is admitted per JID
-string_to_jid2([$@ | _J], _N, _S) -> error;
-string_to_jid2([$/ | _J], _N, "") -> error;
-string_to_jid2([$/ | J], N, S) ->
-    string_to_jid3(J, N, lists:reverse(S), "");
-string_to_jid2([C | J], N, S) ->
-    string_to_jid2(J, N, [C | S]);
-string_to_jid2([], _N, "") -> error;
-string_to_jid2([], N, S) ->
-    make_jid(list_to_binary(N), list_to_binary(lists:reverse(S)), <<"">>).
-
-string_to_jid3([C | J], N, S, R) ->
-    string_to_jid3(J, N, S, [C | R]);
-string_to_jid3([], N, S, R) ->
-    make_jid(list_to_binary(N), list_to_binary(S),
-             list_to_binary(lists:reverse(R))).
+    SplitPattern = ets:lookup_element(jlib, string_to_jid_pattern, 2),
+    Size = size(S),
+    End = Size-1,
+    case binary:match(S, SplitPattern) of
+        {0, _} ->
+            error;
+        {End, _} ->
+            error;
+        {Pos1, _} ->
+            case binary:at(S, Pos1) of
+                $/ ->
+                    make_jid(<<>>,
+                             binary:part(S, 0, Pos1),
+                             binary:part(S, Pos1+1, Size-Pos1-1));
+                _ ->
+                    Pos1N = Pos1+1,
+                    case binary:match(S, SplitPattern, [{scope, {Pos1+1, Size-Pos1-1}}]) of
+                        {End, _} ->
+                            error;
+                        {Pos1N, _} ->
+                            error;
+                        {Pos2, _} ->
+                            case binary:at(S, Pos2) of
+                                $/ ->
+                                    make_jid(binary:part(S, 0, Pos1),
+                                             binary:part(S, Pos1+1, Pos2-Pos1-1),
+                                             binary:part(S, Pos2+1, Size-Pos2-1));
+                                _ -> error
+                            end;
+                        _ ->
+                            make_jid(binary:part(S, 0, Pos1),
+                                     binary:part(S, Pos1+1, Size-Pos1-1),
+                                     <<>>)
+                    end
+            end;
+        _ ->
+            make_jid(<<>>, S, <<>>)
+    end.
 
 -spec jid_to_string(jid() | ljid()) -> binary().
 
@@ -856,7 +872,7 @@ decode_base64(S) ->
 	  decode_base64_bin(S, <<>>)
     end.
 
-take_without_spaces(Bin, Count) -> 
+take_without_spaces(Bin, Count) ->
     take_without_spaces(Bin, Count, <<>>).
 
 take_without_spaces(Bin, 0, Acc) ->
