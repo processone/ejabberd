@@ -83,14 +83,6 @@ AC_ARG_ENABLE(roster_gateway_workaround,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-roster-gateway-workaround) ;;
 esac],[roster_gateway_workaround=false])
 
-AC_ARG_ENABLE(transient_supervisors,
-[AC_HELP_STRING([--disable-transient-supervisors], [disable Erlang supervision for transient processes (default: no)])],
-[case "${enableval}" in
-  yes) transient_supervisors=true ;;
-  no)  transient_supervisors=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-transient_supervisors) ;;
-esac],[transient_supervisors=true])
-
 AC_ARG_ENABLE(full_xml,
 [AC_HELP_STRING([--enable-full-xml], [use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)])],
 [case "${enableval}" in
@@ -256,7 +248,6 @@ fi
 
 AC_SUBST(hipe)
 AC_SUBST(roster_gateway_workaround)
-AC_SUBST(transient_supervisors)
 AC_SUBST(full_xml)
 AC_SUBST(nif)
 AC_SUBST(db_type)

@@ -105,13 +105,6 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_tmp_sup]},
-    C2SSupervisor =
-	{ejabberd_c2s_sup,
-	 {ejabberd_tmp_sup, start_link, [ejabberd_c2s_sup, ejabberd_c2s]},
-	 permanent,
-	 infinity,
-	 supervisor,
-	 [ejabberd_tmp_sup]},
     S2SInSupervisor =
 	{ejabberd_s2s_in_sup,
 	 {ejabberd_tmp_sup, start_link,
@@ -170,7 +163,6 @@ init([]) ->
 	   Local,
 	   Captcha,
 	   ReceiverSupervisor,
-	   C2SSupervisor,
 	   S2SInSupervisor,
 	   S2SOutSupervisor,
 	   ServiceSupervisor,

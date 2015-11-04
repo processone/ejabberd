@@ -91,7 +91,6 @@ start_link(Host, Opts) ->
 			  [Host, Opts], []).
 
 start(Host, Opts) ->
-    start_supervisor(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
 		 temporary, 1000, worker, [?MODULE]},
@@ -99,7 +98,6 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Rooms = shutdown_rooms(Host),
-    stop_supervisor(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:call(Proc, stop),
     supervisor:delete_child(ejabberd_sup, Proc),
@@ -444,19 +442,6 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
-start_supervisor(Host) ->
-    Proc = gen_mod:get_module_proc(Host,
-				   ejabberd_mod_muc_sup),
-    ChildSpec = {Proc,
-		 {ejabberd_tmp_sup, start_link, [Proc, mod_muc_room]},
-		 permanent, infinity, supervisor, [ejabberd_tmp_sup]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
-
-stop_supervisor(Host) ->
-    Proc = gen_mod:get_module_proc(Host,
-				   ejabberd_mod_muc_sup),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
 
 do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 	 From, To, Packet, DefRoomOpts) ->

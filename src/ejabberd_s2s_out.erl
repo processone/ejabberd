@@ -86,15 +86,6 @@
 
 -endif.
 
-%% Module start with or without supervisor:
--ifdef(NO_TRANSIENT_SUPERVISORS).
--define(SUPERVISOR_START, p1_fsm:start(ejabberd_s2s_out, [From, Host, Type],
-				       fsm_limit_opts() ++ ?FSMOPTS)).
--else.
--define(SUPERVISOR_START, supervisor:start_child(ejabberd_s2s_out_sup,
-						 [From, Host, Type])).
--endif.
-
 -define(FSMTIMEOUT, 30000).
 
 %% We do not block on send anymore.
@@ -127,7 +118,8 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(From, Host, Type) ->
-    ?SUPERVISOR_START.
+    supervisor:start_child(ejabberd_s2s_out_sup,
+			   [From, Host, Type]).
 
 start_link(From, Host, Type) ->
     p1_fsm:start_link(ejabberd_s2s_out, [From, Host, Type],

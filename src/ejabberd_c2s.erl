@@ -129,15 +129,6 @@
 
 -endif.
 
-%% Module start with or without supervisor:
--ifdef(NO_TRANSIENT_SUPERVISORS).
--define(SUPERVISOR_START, ?GEN_FSM:start(ejabberd_c2s, [SockData, Opts],
-					 fsm_limit_opts(Opts) ++ ?FSMOPTS)).
--else.
--define(SUPERVISOR_START, supervisor:start_child(ejabberd_c2s_sup,
-						 [SockData, Opts])).
--endif.
-
 %% This is the timeout to apply between event when starting a new
 %% session:
 -define(C2S_OPEN_TIMEOUT, 60000).
@@ -201,7 +192,9 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(SockData, Opts) ->
-    ?SUPERVISOR_START.
+    ?GEN_FSM:start(ejabberd_c2s,
+		   [SockData, Opts],
+		   fsm_limit_opts(Opts) ++ ?FSMOPTS).
 
 start_link(SockData, Opts) ->
     (?GEN_FSM):start_link(ejabberd_c2s,
