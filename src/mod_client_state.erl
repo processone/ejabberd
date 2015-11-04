@@ -1,8 +1,8 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_client_state.erl
-%%% Author  : Holger Weiss
+%%% Author  : Holger Weiss <holger@zedat.fu-berlin.de>
 %%% Purpose : Filter stanzas sent to inactive clients (XEP-0352)
-%%% Created : 11 Sep 2014 by Holger Weiss
+%%% Created : 11 Sep 2014 by Holger Weiss <holger@zedat.fu-berlin.de>
 %%%
 %%%
 %%% ejabberd, Copyright (C) 2014-2015   ProcessOne
