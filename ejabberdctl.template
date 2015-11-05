@@ -460,7 +460,8 @@ check_start()
 # cluster setup
 join_cluster()
 {
-    exec_cmd $EJABBERD_BIN_PATH/joincluster $*
+    set -- $*
+    . $EJABBERD_BIN_PATH/joincluster
 }
 leave_cluster()
 {
