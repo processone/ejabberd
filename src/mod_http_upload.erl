@@ -876,8 +876,7 @@ code_to_message(_Code) -> <<"">>.
 -spec identify(binary()) -> {ok, media_info()} | pass.
 
 identify(Path) ->
-    Cmd = lists:flatten(io_lib:fwrite("identify -format \"ok %m %h %w\" ~s",
-				      [Path])),
+    Cmd = io_lib:fwrite("identify -format \"ok %m %h %w\" ~s", [Path]),
     Res = string:strip(os:cmd(Cmd), right, $\n),
     case string:tokens(Res, " ") of
 	["ok", T, H, W] ->
@@ -902,8 +901,7 @@ convert(Path, #media_info{type = T, width = W, height = H}) ->
 	    Dir = filename:dirname(Path),
 	    FileName = <<(randoms:get_string())/binary, $., T/binary>>,
 	    OutPath = filename:join(Dir, FileName),
-	    Cmd = lists:flatten(io_lib:fwrite("convert -resize 300 ~s ~s",
-					      [Path, OutPath])),
+	    Cmd = io_lib:fwrite("convert -resize 300 ~s ~s", [Path, OutPath]),
 	    case os:cmd(Cmd) of
 		"" ->
 		    {ok, OutPath};
