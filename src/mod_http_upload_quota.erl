@@ -161,42 +161,42 @@ handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 		   access_hard_quota = AccessHardQuota,
 		   disk_usage = DiskUsage} = State) ->
     HardQuota = case acl:match_rule(ServerHost, AccessHardQuota, JID) of
-		  Hard when is_integer(Hard), Hard > 0 ->
-		      Hard * 1024 * 1024;
-		  _ ->
-		      0
+		    Hard when is_integer(Hard), Hard > 0 ->
+			Hard * 1024 * 1024;
+		    _ ->
+			0
 		end,
     SoftQuota = case acl:match_rule(ServerHost, AccessSoftQuota, JID) of
-		  Soft when is_integer(Soft), Soft > 0 ->
-		      Soft * 1024 * 1024;
-		  _ ->
-		      0
+		    Soft when is_integer(Soft), Soft > 0 ->
+			Soft * 1024 * 1024;
+		    _ ->
+			0
 		end,
     OldSize = case dict:find({U, S}, DiskUsage) of
-		{ok, Value} ->
-		    Value;
-		error ->
-		    undefined
+		  {ok, Value} ->
+		      Value;
+		  error ->
+		      undefined
 	      end,
     NewSize = case {HardQuota, SoftQuota} of
-		{0, 0} ->
-		    ?DEBUG("No quota specified for ~s",
-			   [jlib:jid_to_string(JID)]),
-		    Size;
-		{0, _} ->
+		  {0, 0} ->
+		      ?DEBUG("No quota specified for ~s",
+			     [jlib:jid_to_string(JID)]),
+		      Size;
+		  {0, _} ->
 		      ?WARNING_MSG("No hard quota specified for ~s",
 				   [jlib:jid_to_string(JID)]),
 		      enforce_quota(Path, Size, OldSize, SoftQuota, SoftQuota);
-		{_, 0} ->
+		  {_, 0} ->
 		      ?WARNING_MSG("No soft quota specified for ~s",
 				   [jlib:jid_to_string(JID)]),
 		      enforce_quota(Path, Size, OldSize, HardQuota, HardQuota);
-		_ when SoftQuota > HardQuota ->
+		  _ when SoftQuota > HardQuota ->
 		      ?WARNING_MSG("Bad quota for ~s (soft: ~p, hard: ~p)",
 				   [jlib:jid_to_string(JID),
 				    SoftQuota, HardQuota]),
 		      enforce_quota(Path, Size, OldSize, SoftQuota, SoftQuota);
-		_ ->
+		  _ ->
 		      ?DEBUG("Enforcing quota for ~s",
 			     [jlib:jid_to_string(JID)]),
 		      enforce_quota(Path, Size, OldSize, SoftQuota, HardQuota)
@@ -214,17 +214,19 @@ handle_info(sweep, #state{server_host = ServerHost,
     when is_integer(MaxDays), MaxDays > 0 ->
     ?DEBUG("Got 'sweep' message for ~s", [ServerHost]),
     case file:list_dir(DocRoot) of
-      {ok, Entries} ->
-	  BackThen = secs_since_epoch() - (MaxDays * 86400),
-	  DocRootS = binary_to_list(DocRoot),
-	  PathNames = lists:map(fun(Entry) -> DocRootS ++ "/" ++ Entry end,
-				Entries),
-	  UserDirs = lists:filter(fun filelib:is_dir/1, PathNames),
-	  lists:foreach(fun(UserDir) -> delete_old_files(UserDir, BackThen) end,
-			UserDirs);
-      {error, Error} ->
-	  ?ERROR_MSG("Cannot open document root ~s: ~s",
-		     [DocRoot, ?FORMAT(Error)])
+	{ok, Entries} ->
+	    BackThen = secs_since_epoch() - (MaxDays * 86400),
+	    DocRootS = binary_to_list(DocRoot),
+	    PathNames = lists:map(fun(Entry) ->
+					  DocRootS ++ "/" ++ Entry
+				  end, Entries),
+	    UserDirs = lists:filter(fun filelib:is_dir/1, PathNames),
+	    lists:foreach(fun(UserDir) ->
+				  delete_old_files(UserDir, BackThen)
+			  end, UserDirs);
+	{error, Error} ->
+	    ?ERROR_MSG("Cannot open document root ~s: ~s",
+		       [DocRoot, ?FORMAT(Error)])
     end,
     {noreply, State};
 handle_info(Info, State) ->
@@ -294,14 +296,14 @@ enforce_quota(UserDir, SlotSize, _OldSize, MinSize, MaxSize) ->
 
 -spec delete_old_files(file:filename_all(), integer()) -> ok.
 
-delete_old_files(UserDir, Timestamp) ->
+delete_old_files(UserDir, CutOff) ->
     FileInfo = gather_file_info(UserDir),
-    case [Path || {Path, _Size, Time} <- FileInfo, Time < Timestamp] of
-      [] ->
-	  ok;
-      OldFiles ->
-	  lists:foreach(fun(File) -> del_file_and_dir(File) end, OldFiles),
-	  file:del_dir(UserDir) % In case it's empty, now.
+    case [Path || {Path, _Size, Time} <- FileInfo, Time < CutOff] of
+	[] ->
+	    ok;
+	OldFiles ->
+	    lists:foreach(fun(File) -> del_file_and_dir(File) end, OldFiles),
+	    file:del_dir(UserDir) % In case it's empty, now.
     end.
 
 -spec gather_file_info(file:filename_all())
@@ -311,49 +313,50 @@ gather_file_info(Dir) when is_binary(Dir) ->
     gather_file_info(binary_to_list(Dir));
 gather_file_info(Dir) ->
     case file:list_dir(Dir) of
-      {ok, Entries} ->
-	  lists:foldl(fun(Entry, Acc) ->
-			      Path = Dir ++ "/" ++ Entry,
-			      case file:read_file_info(Path, [{time, posix}]) of
-				{ok, #file_info{type = directory}} ->
-				    gather_file_info(Path) ++ Acc;
-				{ok, #file_info{type = regular,
-						mtime = Time,
-						size = Size}} ->
-				    [{Path, Size, Time} | Acc];
-				{ok, _Info} ->
-				    ?DEBUG("Won't stat(2) non-regular file ~s",
-					   [Path]),
-				    Acc;
-				{error, Error} ->
-				    ?ERROR_MSG("Cannot stat(2) ~s: ~s",
-					       [Path, ?FORMAT(Error)]),
-				    Acc
-			      end
-		      end, [], Entries);
-      {error, enoent} ->
-	  ?DEBUG("Directory ~s doesn't exist", [Dir]),
-	  [];
-      {error, Error} ->
-	  ?ERROR_MSG("Cannot open directory ~s: ~s", [Dir, ?FORMAT(Error)]),
-	  []
+	{ok, Entries} ->
+	    lists:foldl(fun(Entry, Acc) ->
+				Path = Dir ++ "/" ++ Entry,
+				case file:read_file_info(Path,
+							 [{time, posix}]) of
+				    {ok, #file_info{type = directory}} ->
+					gather_file_info(Path) ++ Acc;
+				    {ok, #file_info{type = regular,
+						    mtime = Time,
+						    size = Size}} ->
+					[{Path, Size, Time} | Acc];
+				    {ok, _Info} ->
+					?DEBUG("Won't stat(2) non-regular file ~s",
+					       [Path]),
+					Acc;
+				    {error, Error} ->
+					?ERROR_MSG("Cannot stat(2) ~s: ~s",
+						   [Path, ?FORMAT(Error)]),
+					Acc
+				end
+			end, [], Entries);
+	{error, enoent} ->
+	    ?DEBUG("Directory ~s doesn't exist", [Dir]),
+	    [];
+	{error, Error} ->
+	    ?ERROR_MSG("Cannot open directory ~s: ~s", [Dir, ?FORMAT(Error)]),
+	    []
     end.
 
 -spec del_file_and_dir(file:name_all()) -> ok.
 
 del_file_and_dir(File) ->
     case file:delete(File) of
-      ok ->
-	  ?INFO_MSG("Removed ~s", [File]),
-	  Dir = filename:dirname(File),
-	  case file:del_dir(Dir) of
-	    ok ->
-		?DEBUG("Removed ~s", [Dir]);
-	    {error, Error} ->
-		?DEBUG("Cannot remove ~s: ~s", [Dir, ?FORMAT(Error)])
-	  end;
-      {error, Error} ->
-	  ?WARNING_MSG("Cannot remove ~s: ~s", [File, ?FORMAT(Error)])
+	ok ->
+	    ?INFO_MSG("Removed ~s", [File]),
+	    Dir = filename:dirname(File),
+	    case file:del_dir(Dir) of
+		ok ->
+		    ?DEBUG("Removed ~s", [Dir]);
+		{error, Error} ->
+		    ?DEBUG("Cannot remove ~s: ~s", [Dir, ?FORMAT(Error)])
+	    end;
+	{error, Error} ->
+	    ?WARNING_MSG("Cannot remove ~s: ~s", [File, ?FORMAT(Error)])
     end.
 
 -spec secs_since_epoch() -> non_neg_integer().
