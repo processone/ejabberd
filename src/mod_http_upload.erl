@@ -776,7 +776,7 @@ store_file(Path, Data, FileMode, DirMode, GetPrefix, LocalPath, Thumbnail) ->
 			       <<"text/xml; charset=utf-8">>}],
 			     xml:element_to_binary(ThumbEl)}
 		    end;
-		{error, _} ->
+		pass ->
 		    ok
 	    end;
 	ok ->
@@ -873,7 +873,7 @@ code_to_message(_Code) -> <<"">>.
 %%--------------------------------------------------------------------
 %% Image manipulation stuff
 %%--------------------------------------------------------------------
--spec identify(binary()) -> {ok, media_info()} | {error, binary()}.
+-spec identify(binary()) -> {ok, media_info()} | pass.
 
 identify(Path) ->
     Cmd = lists:flatten(io_lib:fwrite("identify -format \"ok %m %h %w\" ~s",
@@ -887,7 +887,7 @@ identify(Path) ->
 		    width = list_to_integer(W)}};
 	_ ->
 	    ?DEBUG("failed to identify type of ~s: ~s", [Path, Res]),
-	    {error, list_to_binary(Res)}
+	    pass
     end.
 
 -spec convert(binary(), media_info()) -> {ok, binary()} | pass.
@@ -929,7 +929,7 @@ thumb_el(Path, URI) ->
 			    {<<"uri">>, URI},
 			    {<<"height">>, jlib:integer_to_binary(H)},
 			    {<<"width">>, jlib:integer_to_binary(W)}]};
-	{error, _} ->
+	pass ->
 	    #xmlel{name = <<"thumbnail">>,
 		   attrs = [{<<"xmlns">>, ?NS_THUMBS_1},
 			    {<<"uri">>, URI},
