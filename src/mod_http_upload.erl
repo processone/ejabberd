@@ -117,7 +117,7 @@
 	 width  :: integer()}).
 
 -type state() :: #state{}.
--type slot() :: [binary()].
+-type slot() :: [binary(), ...].
 -type media_info() :: #media_info{}.
 
 %%--------------------------------------------------------------------
@@ -450,7 +450,7 @@ process(LocalPath, #request{method = Method, host = Host, ip = IP})
 			  [Path, ?ADDR_TO_STR(IP)]),
 		http_response(Host, 403);
 	    {error, enoent} ->
-		?INFO_MSG("Cannot serve ~s to ~s: No such file or directory",
+		?INFO_MSG("Cannot serve ~s to ~s: No such file",
 			  [Path, ?ADDR_TO_STR(IP)]),
 		http_response(Host, 404);
 	    {error, eisdir} ->
@@ -636,7 +636,7 @@ create_slot(#state{service_url = ServiceURL},
 			  [jlib:jid_to_string(JID), File]),
 		{ok, PutURL, GetURL};
 	    Lines ->
-		?ERROR_MSG("Cannot parse data received for ~s from <~s>: ~p",
+		?ERROR_MSG("Can't parse data received for ~s from <~s>: ~p",
 			   [jlib:jid_to_string(JID), ServiceURL, Lines]),
 		{error, ?ERR_SERVICE_UNAVAILABLE}
 	  end;
@@ -754,7 +754,7 @@ iq_disco_info(Lang, Name) ->
 -spec store_file(binary(), binary(),
 		 integer() | undefined,
 		 integer() | undefined,
-		 binary(), binary(), boolean())
+		 binary(), slot(), boolean())
       -> ok | {ok, [{binary(), binary()}], binary()} | {error, term()}.
 
 store_file(Path, Data, FileMode, DirMode, GetPrefix, LocalPath, Thumbnail) ->
@@ -763,10 +763,8 @@ store_file(Path, Data, FileMode, DirMode, GetPrefix, LocalPath, Thumbnail) ->
 	    case identify(Path) of
 		{ok, MediaInfo} ->
 		    case convert(Path, MediaInfo) of
-			pass ->
-			    ok;
 			{ok, OutPath} ->
-			    [UserDir, RandDir|_] = LocalPath,
+			    [UserDir, RandDir | _] = LocalPath,
 			    FileName = filename:basename(OutPath),
 			    URL = str:join([GetPrefix, UserDir,
 					    RandDir, FileName], <<$/>>),
@@ -774,7 +772,9 @@ store_file(Path, Data, FileMode, DirMode, GetPrefix, LocalPath, Thumbnail) ->
 			    {ok,
 			     [{<<"Content-Type">>,
 			       <<"text/xml; charset=utf-8">>}],
-			     xml:element_to_binary(ThumbEl)}
+			     xml:element_to_binary(ThumbEl)};
+			pass ->
+			    ok
 		    end;
 		pass ->
 		    ok
@@ -871,47 +871,47 @@ code_to_message(500) -> <<"Internal server error.">>;
 code_to_message(_Code) -> <<"">>.
 
 %%--------------------------------------------------------------------
-%% Image manipulation stuff
+%% Image manipulation stuff.
 %%--------------------------------------------------------------------
+
 -spec identify(binary()) -> {ok, media_info()} | pass.
 
 identify(Path) ->
-    Cmd = io_lib:fwrite("identify -format \"ok %m %h %w\" ~s", [Path]),
+    Cmd = io_lib:format("identify -format 'ok %m %h %w' ~s", [Path]),
     Res = string:strip(os:cmd(Cmd), right, $\n),
     case string:tokens(Res, " ") of
 	["ok", T, H, W] ->
-	    {ok, #media_info{
-		    type = list_to_binary(string:to_lower(T)),
-		    height = list_to_integer(H),
-		    width = list_to_integer(W)}};
+	    {ok, #media_info{type = list_to_binary(string:to_lower(T)),
+			     height = list_to_integer(H),
+			     width = list_to_integer(W)}};
 	_ ->
-	    ?DEBUG("failed to identify type of ~s: ~s", [Path, Res]),
+	    ?DEBUG("Cannot identify type of ~s: ~s", [Path, Res]),
 	    pass
     end.
 
 -spec convert(binary(), media_info()) -> {ok, binary()} | pass.
 
 convert(Path, #media_info{type = T, width = W, height = H}) ->
-    if W*H >= 25000000 ->
-	    ?DEBUG("the image ~s is more than 25 Mbpx", [Path]),
+    if W * H >= 25000000 ->
+	    ?DEBUG("The image ~s is more than 25 Mpix", [Path]),
 	    pass;
-       (W =< 300) and (H =< 300) ->
+       W =< 300, H =< 300 ->
 	    {ok, Path};
        T == <<"gif">>; T == <<"jpeg">>; T == <<"png">>; T == <<"webp">> ->
 	    Dir = filename:dirname(Path),
 	    FileName = <<(randoms:get_string())/binary, $., T/binary>>,
 	    OutPath = filename:join(Dir, FileName),
-	    Cmd = io_lib:fwrite("convert -resize 300 ~s ~s", [Path, OutPath]),
+	    Cmd = io_lib:format("convert -resize 300 ~s ~s", [Path, OutPath]),
 	    case os:cmd(Cmd) of
 		"" ->
 		    {ok, OutPath};
 		Err ->
-		    ?ERROR_MSG("failed to convert ~s to ~s: ~s",
+		    ?ERROR_MSG("Failed to convert ~s to ~s: ~s",
 			       [Path, OutPath, string:strip(Err, right, $\n)]),
 		    pass
 	    end;
        true ->
-	    ?DEBUG("do not call 'convert' for unknown type ~s", [T]),
+	    ?DEBUG("Won't call 'convert' for unknown type ~s", [T]),
 	    pass
     end.
 
