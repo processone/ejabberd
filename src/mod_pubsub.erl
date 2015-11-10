@@ -192,6 +192,8 @@
 	ignore_pep_from_offline = true,
 	last_item_cache         = false,
 	max_items_node          = ?MAXITEMS,
+	max_subscriptions_node  = undefined,
+	default_node_config     = [],
 	nodetree                = <<"nodetree_", (?STDTREE)/binary>>,
 	plugins                 = [?STDNODE],
 	db_type
@@ -206,6 +208,8 @@
 	ignore_pep_from_offline :: boolean(),
 	last_item_cache         :: boolean(),
 	max_items_node          :: non_neg_integer(),
+	max_subscriptions_node  :: non_neg_integer()|undefined,
+	default_node_config     :: [{atom(), binary()|boolean()|integer()|atom()}],
 	nodetree                :: binary(),
 	plugins                 :: [binary(),...],
 	db_type                 :: atom()
@@ -259,6 +263,10 @@ init([ServerHost, Opts]) ->
 	    fun(A) when is_boolean(A) -> A end, false),
     MaxItemsNode = gen_mod:get_opt(max_items_node, Opts,
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, ?MAXITEMS),
+    MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts,
+	    fun(A) when is_integer(A) andalso A >= 0 -> A end, undefined),
+    DefaultNodeCfg = gen_mod:get_opt(default_node_config, Opts,
+	    fun(A) when is_list(A) -> filter_node_options(A) end, []),
     pubsub_index:init(Host, ServerHost, Opts),
     ets:new(gen_mod:get_module_proc(ServerHost, config), [set, named_table]),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
@@ -270,6 +278,8 @@ init([ServerHost, Opts]) ->
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {plugins, Plugins}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {last_item_cache, LastItemCache}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {max_items_node, MaxItemsNode}),
+    ets:insert(gen_mod:get_module_proc(ServerHost, config), {max_subscriptions_node, MaxSubsNode}),
+    ets:insert(gen_mod:get_module_proc(ServerHost, config), {default_node_config, DefaultNodeCfg}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {pep_mapping, PepMapping}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {ignore_pep_from_offline, PepOffline}),
     ets:insert(gen_mod:get_module_proc(ServerHost, config), {host, Host}),
@@ -2013,6 +2023,21 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 	    AccessModel = get_option(Options, access_model),
 	    SendLast = get_option(Options, send_last_published_item),
 	    AllowedGroups = get_option(Options, roster_groups_allowed, []),
+	    CanSubscribe = case get_max_subscriptions_node(Host) of
+		Max when is_integer(Max) ->
+		    case node_call(Host, Type, get_node_subscriptions, [Nidx]) of
+			{result, NodeSubs} ->
+			    SubsNum = lists:foldl(
+				    fun ({_, subscribed, _}, Acc) -> Acc+1;
+					(_, Acc) -> Acc
+				    end, 0, NodeSubs),
+			    SubsNum < Max;
+			_ ->
+			    true
+		    end;
+		_ ->
+		    true
+	    end,
 	    if not SubscribeFeature ->
 		    {error,
 			extended_error(?ERR_FEATURE_NOT_IMPLEMENTED, unsupported, <<"subscribe">>)};
@@ -2025,6 +2050,10 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 		SubOpts == invalid ->
 		    {error,
 			extended_error(?ERR_BAD_REQUEST, <<"invalid-options">>)};
+		not CanSubscribe ->
+		    %% fallback to closest XEP compatible result, assume we are not allowed to subscribe
+		    {error,
+			extended_error(?ERR_NOT_ALLOWED, <<"closed-node">>)};
 		true ->
 		    Owners = node_owners_call(Host, Type, Nidx, O),
 		    {PS, RG} = get_presence_and_roster_permissions(Host, Subscriber,
@@ -3604,6 +3633,12 @@ get_option(Options, Var, Def) ->
     end.
 
 node_options(Host, Type) ->
+    case config(serverhost(Host), default_node_config) of
+	undefined -> node_plugin_options(Host, Type);
+	[] -> node_plugin_options(Host, Type);
+	Config -> Config
+    end.
+node_plugin_options(Host, Type) ->
     Module = plugin(Host, Type),
     case catch Module:options() of
 	{'EXIT', {undef, _}} ->
@@ -3612,6 +3647,11 @@ node_options(Host, Type) ->
 	Result ->
 	    Result
     end.
+filter_node_options(Options) ->
+    lists:foldl(fun({Key, Val}, Acc) ->
+		DefaultValue = proplists:get_value(Key, Options, Val),
+		[{Key, DefaultValue}|Acc]
+	end, [], node_flat:options()).
 
 node_owners_action(Host, Type, Nidx, []) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
@@ -3905,6 +3945,11 @@ get_max_items_node({_, ServerHost, _}) ->
     get_max_items_node(ServerHost);
 get_max_items_node(Host) ->
     config(serverhost(Host), max_items_node, undefined).
+
+get_max_subscriptions_node({_, ServerHost, _}) ->
+    get_max_subscriptions_node(ServerHost);
+get_max_subscriptions_node(Host) ->
+    config(serverhost(Host), max_subscriptions_node, undefined).
 
 %%%% last item cache handling
 
@@ -4382,6 +4427,10 @@ mod_opt_type(last_item_cache) ->
     fun (A) when is_boolean(A) -> A end;
 mod_opt_type(max_items_node) ->
     fun (A) when is_integer(A) andalso A >= 0 -> A end;
+mod_opt_type(max_subscriptions_node) ->
+    fun (A) when is_integer(A) andalso A >= 0 -> A end;
+mod_opt_type(default_node_config) ->
+    fun (A) when is_list(A) -> A end;
 mod_opt_type(nodetree) ->
     fun (A) when is_binary(A) -> A end;
 mod_opt_type(pep_mapping) ->
@@ -4391,4 +4440,5 @@ mod_opt_type(plugins) ->
 mod_opt_type(_) ->
     [access_createnode, db_type, host,
      ignore_pep_from_offline, iqdisc, last_item_cache,
-     max_items_node, nodetree, pep_mapping, plugins].
+     max_items_node, nodetree, pep_mapping, plugins,
+     max_subscriptions_node, default_node_config].
