@@ -182,7 +182,7 @@ handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 		  {0, 0} ->
 		      ?DEBUG("No quota specified for ~s",
 			     [jlib:jid_to_string(JID)]),
-		      Size;
+		      undefined;
 		  {0, _} ->
 		      ?WARNING_MSG("No hard quota specified for ~s",
 				   [jlib:jid_to_string(JID)]),
@@ -201,7 +201,12 @@ handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 			     [jlib:jid_to_string(JID)]),
 		      enforce_quota(Path, Size, OldSize, SoftQuota, HardQuota)
 	      end,
-    {noreply, State#state{disk_usage = dict:store({U, S}, NewSize, DiskUsage)}};
+    NewDiskUsage = if is_integer(NewSize) ->
+			   dict:store({U, S}, NewSize, DiskUsage);
+		      true ->
+			   DiskUsage
+		   end,
+    {noreply, State#state{disk_usage = NewDiskUsage}};
 handle_cast(Request, State) ->
     ?ERROR_MSG("Got unexpected request: ~p", [Request]),
     {noreply, State}.
