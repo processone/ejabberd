@@ -393,16 +393,16 @@ code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
 -spec process([binary()], #request{})
       -> {pos_integer(), [{binary(), binary()}], binary()}.
 
-process(LocalPath, #request{method = 'PUT', host = Host, ip = IP,
-			    data = Data}) ->
+process([_UserDir, _RandDir, _FileName] = Slot,
+	#request{method = 'PUT', host = Host, ip = IP, data = Data}) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    case catch gen_server:call(Proc, {use_slot, LocalPath}) of
+    case catch gen_server:call(Proc, {use_slot, Slot}) of
 	{ok, Size, Path, FileMode, DirMode, GetPrefix, Thumbnail}
 	    when byte_size(Data) == Size ->
 	    ?DEBUG("Storing file from ~s for ~s: ~s",
 		   [?ADDR_TO_STR(IP), Host, Path]),
 	    case store_file(Path, Data, FileMode, DirMode,
-			    GetPrefix, LocalPath, Thumbnail) of
+			    GetPrefix, Slot, Thumbnail) of
 		ok ->
 		    http_response(Host, 201);
 		{ok, Headers, OutData} ->
@@ -425,17 +425,17 @@ process(LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 		       [?ADDR_TO_STR(IP), Host, Error]),
 	    http_response(Host, 500)
     end;
-process(LocalPath, #request{method = Method, host = Host, ip = IP})
+process([_UserDir, _RandDir, FileName] = Slot,
+	#request{method = Method, host = Host, ip = IP})
     when Method == 'GET';
 	 Method == 'HEAD' ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     case catch gen_server:call(Proc, get_docroot) of
 	{ok, DocRoot} ->
-	    Path = str:join([DocRoot | LocalPath], <<$/>>),
+	    Path = str:join([DocRoot | Slot], <<$/>>),
 	    case file:read_file(Path) of
 		{ok, Data} ->
 		    ?INFO_MSG("Serving ~s to ~s", [Path, ?ADDR_TO_STR(IP)]),
-		    FileName = lists:last(LocalPath),
 		    ContentType = guess_content_type(FileName),
 		    Headers1 = case ContentType of
 				 <<"image/", _SubType/binary>> -> [];
@@ -469,6 +469,19 @@ process(LocalPath, #request{method = Method, host = Host, ip = IP})
 		       [Method, ?ADDR_TO_STR(IP), Host, Error]),
 	    http_response(Host, 500)
     end;
+process(LocalPath, #request{method = 'PUT', host = Host, ip = IP})
+    when length(LocalPath) > 3 ->
+    ?INFO_MSG("Rejecting PUT request from ~s for ~s: Too many path components",
+	      [?ADDR_TO_STR(IP), Host]),
+    ?INFO_MSG("Check whether 'request_handlers' path matches 'put_url'", []),
+    http_response(Host, 404);
+process(_LocalPath, #request{method = Method, host = Host, ip = IP})
+    when Method == 'PUT';
+	 Method == 'GET';
+	 Method == 'HEAD' ->
+    ?DEBUG("Rejecting ~s request from ~s for ~s: Too few/many path components",
+	   [Method, ?ADDR_TO_STR(IP), Host]),
+    http_response(Host, 404);
 process(_LocalPath, #request{method = 'OPTIONS', host = Host, ip = IP}) ->
     ?DEBUG("Responding to OPTIONS request from ~s for ~s",
 	   [?ADDR_TO_STR(IP), Host]),
