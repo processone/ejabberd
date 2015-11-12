@@ -363,7 +363,8 @@ normal_state({route, From, <<"">>,
 							catch
 							  send_new_presence(TargetJid,
 									    Reason,
-									    NSD),
+									    NSD,
+                                                                            StateData),
 							NSD;
 						    _ -> StateData
 						  end
@@ -1031,7 +1032,7 @@ process_presence(From, Nick,
 								    StateData),
 				    case (?DICT):find(Nick, StateData#state.nicks) of
 				      {ok, [_, _ | _]} -> ok;
-				      _ -> send_new_presence(From, NewState)
+				      _ -> send_new_presence(From, NewState, StateData)
 				    end,
 				    Reason = case xml:get_subtag(NewPacket,
 								 <<"status">>)
@@ -1109,7 +1110,8 @@ process_presence(From, Nick,
 							  end,
 						 NewState = add_user_presence(From, Stanza,
 									      StateData),
-						 send_new_presence(From, NewState),
+						 send_new_presence(
+                                                   From, NewState, StateData),
 						 NewState
 					   end
 				    end
@@ -1315,7 +1317,7 @@ expulse_participant(Packet, From, StateData, Reason1) ->
 							   [{xmlcdata,
 							     Reason2}]}]},
 				    StateData),
-    send_new_presence(From, NewState),
+    send_new_presence(From, NewState, StateData),
     remove_online_user(From, NewState).
 
 set_affiliation(JID, Affiliation, StateData) ->
@@ -1839,7 +1841,7 @@ add_new_user(From, Nick,
 					     add_online_user(From, Nick, Role,
 							     StateData)),
 		send_existing_presences(From, NewState),
-		send_new_presence(From, NewState),
+		send_new_presence(From, NewState, StateData),
 		Shift = count_stanza_shift(Nick, Els, NewState),
 		case send_history(From, Shift, NewState) of
 		  true -> ok;
@@ -2070,6 +2072,10 @@ is_room_overcrowded(StateData) ->
 	?DEFAULT_MAX_USERS_PRESENCE),
     (?DICT):size(StateData#state.users) > MaxUsersPresence.
 
+presence_broadcast_allowed(JID, StateData) ->
+    Role = get_role(JID, StateData),
+    lists:member(Role, (StateData#state.config)#config.presence_broadcast).
+
 send_update_presence(JID, StateData) ->
     send_update_presence(JID, <<"">>, StateData).
 
@@ -2097,15 +2103,17 @@ send_update_presence1(JID, Reason, StateData) ->
 		  end
 	    end,
     lists:foreach(fun (J) ->
-			  send_new_presence(J, Reason, StateData)
+			  send_new_presence(J, Reason, StateData, StateData)
 		  end,
 		  LJIDs).
 
-send_new_presence(NJID, StateData) ->
-    send_new_presence(NJID, <<"">>, StateData).
+send_new_presence(NJID, StateData, OldStateData) ->
+    send_new_presence(NJID, <<"">>, StateData, OldStateData).
 
-send_new_presence(NJID, Reason, StateData) ->
-    case is_room_overcrowded(StateData) of
+send_new_presence(NJID, Reason, StateData, OldStateData) ->
+    case is_room_overcrowded(StateData) orelse
+        not (presence_broadcast_allowed(NJID, StateData) orelse
+             presence_broadcast_allowed(NJID, OldStateData)) of
 	true -> ok;
 	false -> send_new_presence1(NJID, Reason, StateData)
     end.
@@ -2289,8 +2297,12 @@ change_nick(JID, Nick, StateData) ->
 	    end,
     NewStateData = StateData#state{users = Users,
 				   nicks = Nicks},
-    send_nick_changing(JID, OldNick, NewStateData,
-		       SendOldUnavailable, SendNewAvailable),
+    case presence_broadcast_allowed(JID, NewStateData) of
+        true ->
+            send_nick_changing(JID, OldNick, NewStateData,
+                               SendOldUnavailable, SendNewAvailable);
+        false -> ok
+    end,
     add_to_log(nickchange, {OldNick, Nick}, StateData),
     NewStateData.
 
@@ -2666,7 +2678,7 @@ process_item_change(E, SD, UJID) ->
         {JID, role, Role, Reason} ->
             SD1 = set_role(JID, Role, SD),
             catch
-                send_new_presence(JID, Reason, SD1),
+                send_new_presence(JID, Reason, SD1, SD),
             SD1;
         {JID, affiliation, A, _Reason} ->
             SD1 = set_affiliation(JID, A, SD),
@@ -3406,6 +3418,53 @@ get_config(Lang, StateData, From) ->
 					      children =
 						  [{xmlcdata,
 						    <<"anyone">>}]}]}]},
+	       #xmlel{name = <<"field">>,
+		      attrs =
+			  [{<<"type">>, <<"list-multi">>},
+			   {<<"label">>,
+			    translate:translate(Lang,
+						<<"Roles for which Presence is Broadcasted">>)},
+			   {<<"var">>, <<"muc#roomconfig_presencebroadcast">>}],
+		      children =
+                          lists:map(
+                            fun(Role) ->
+                                    #xmlel{name = <<"value">>, attrs = [],
+                                           children =
+                                               [{xmlcdata,
+                                                 atom_to_binary(Role, utf8)}]}
+                            end, Config#config.presence_broadcast
+                           ) ++
+			  [#xmlel{name = <<"option">>,
+				  attrs =
+				      [{<<"label">>,
+					translate:translate(Lang,
+							    <<"Moderator">>)}],
+				  children =
+				      [#xmlel{name = <<"value">>, attrs = [],
+					      children =
+						  [{xmlcdata,
+						    <<"moderator">>}]}]},
+			   #xmlel{name = <<"option">>,
+				  attrs =
+				      [{<<"label">>,
+					translate:translate(Lang,
+							    <<"Participant">>)}],
+				  children =
+				      [#xmlel{name = <<"value">>, attrs = [],
+					      children =
+						  [{xmlcdata,
+						    <<"participant">>}]}]},
+			   #xmlel{name = <<"option">>,
+				  attrs =
+				      [{<<"label">>,
+					translate:translate(Lang,
+							    <<"Visitor">>)}],
+				  children =
+				      [#xmlel{name = <<"value">>, attrs = [],
+					      children =
+						  [{xmlcdata,
+						    <<"visitor">>}]}]}
+                          ]},
 	       ?BOOLXFIELD(<<"Make room members-only">>,
 			   <<"muc#roomconfig_membersonly">>,
 			   (Config#config.members_only)),
@@ -3679,6 +3738,28 @@ set_xoption([{<<"muc#roomconfig_roomsecret">>, [Val]}
 set_xoption([{<<"anonymous">>, [Val]} | Opts],
 	    Config) ->
     ?SET_BOOL_XOPT(anonymous, Val);
+set_xoption([{<<"muc#roomconfig_presencebroadcast">>, Vals} | Opts],
+	    Config) ->
+    Roles =
+        lists:foldl(
+          fun(_S, error) -> error;
+             (S, {M, P, V}) ->
+                  case S of
+                      <<"moderator">> -> {true, P, V};
+                      <<"participant">> -> {M, true, V};
+                      <<"visitor">> -> {M, P, true};
+                      _ -> error
+                  end
+          end, {false, false, false}, Vals),
+    case Roles of
+        error -> {error, ?ERR_BAD_REQUEST};
+        {M, P, V} ->
+            Res =
+                if M -> [moderator]; true -> [] end ++
+                if P -> [participant]; true -> [] end ++
+                if V -> [visitor]; true -> [] end,
+            set_xoption(Opts, Config#config{presence_broadcast = Res})
+    end;
 set_xoption([{<<"muc#roomconfig_allowvoicerequests">>,
 	      [Val]}
 	     | Opts],
@@ -3871,6 +3952,10 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	    anonymous ->
 		StateData#state{config =
 				    (StateData#state.config)#config{anonymous =
+									Val}};
+	    presence_broadcast ->
+		StateData#state{config =
+				    (StateData#state.config)#config{presence_broadcast =
 									Val}};
 	    logging ->
 		StateData#state{config =

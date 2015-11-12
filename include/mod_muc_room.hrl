@@ -56,6 +56,8 @@
     password_protected                   = false :: boolean(),
     password                             = <<"">> :: binary(),
     anonymous                            = true :: boolean(),
+    presence_broadcast                   = [moderator, participant, visitor] ::
+          [moderator | participant | visitor],
     allow_voice_requests                 = true :: boolean(),
     voice_request_min_interval           = 1800 :: non_neg_integer(),
     max_users                            = ?MAX_USERS_DEFAULT :: non_neg_integer() | none,
