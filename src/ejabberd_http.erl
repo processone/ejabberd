@@ -287,16 +287,18 @@ process_header(State, Data) ->
 					HostProvided),
 	  State2 = State#state{request_host = Host,
 			       request_port = Port, request_tp = TP},
-	  Out = process_request(State2),
-	  send_text(State2, Out),
-	  case State2#state.request_keepalive of
+	  {State3, Out} = process_request(State2),
+	  send_text(State3, Out),
+	  case State3#state.request_keepalive of
 	    true ->
 		#state{sockmod = SockMod, socket = Socket,
+		       trail = State3#state.trail,
 		       options = State#state.options,
 		       default_host = State#state.default_host,
 		       request_handlers = State#state.request_handlers};
 	    _ ->
 		#state{end_of_request = true,
+		       trail = State3#state.trail,
 		       options = State#state.options,
 		       default_host = State#state.default_host,
 		       request_handlers = State#state.request_handlers}
@@ -366,20 +368,20 @@ process(Handlers, Request, Socket, SockMod, Trail) ->
     end.
 
 extract_path_query(#state{request_method = Method,
-			  request_path = {abs_path, Path}})
+			  request_path = {abs_path, Path}} = State)
     when Method =:= 'GET' orelse
 	   Method =:= 'HEAD' orelse
 	     Method =:= 'DELETE' orelse Method =:= 'OPTIONS' ->
     case catch url_decode_q_split(Path) of
-      {'EXIT', _} -> false;
-      {NPath, Query} ->
-	  LPath = normalize_path([NPE
-			  || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
-	  LQuery = case catch parse_urlencoded(Query) of
-		     {'EXIT', _Reason} -> [];
-		     LQ -> LQ
-		   end,
-	  {LPath, LQuery, <<"">>}
+	{'EXIT', _} -> {State, false};
+	{NPath, Query} ->
+	    LPath = normalize_path([NPE
+				    || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
+	    LQuery = case catch parse_urlencoded(Query) of
+			 {'EXIT', _Reason} -> [];
+			 LQ -> LQ
+		     end,
+	    {State, {LPath, LQuery, <<"">>}}
     end;
 extract_path_query(#state{request_method = Method,
 			  request_path = {abs_path, Path},
@@ -388,21 +390,21 @@ extract_path_query(#state{request_method = Method,
 			  socket = _Socket} = State)
     when (Method =:= 'POST' orelse Method =:= 'PUT') andalso
 	   is_integer(Len) ->
-    Data = recv_data(State, Len),
+    {NewState, Data} = recv_data(State, Len),
     ?DEBUG("client data: ~p~n", [Data]),
     case catch url_decode_q_split(Path) of
-      {'EXIT', _} -> false;
-      {NPath, _Query} ->
-	  LPath = normalize_path([NPE
-			  || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
-	  LQuery = case catch parse_urlencoded(Data) of
-		     {'EXIT', _Reason} -> [];
-		     LQ -> LQ
-		   end,
-          {LPath, LQuery, Data}
+        {'EXIT', _} -> {NewState, false};
+        {NPath, _Query} ->
+            LPath = normalize_path([NPE
+                                    || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
+            LQuery = case catch parse_urlencoded(Data) of
+                         {'EXIT', _Reason} -> [];
+                         LQ -> LQ
+                     end,
+            {NewState, {LPath, LQuery, Data}}
     end;
-extract_path_query(_State) ->
-    false.
+extract_path_query(State) ->
+    {State, false}.
 
 process_request(#state{request_method = Method,
 		       request_auth = Auth,
@@ -417,9 +419,9 @@ process_request(#state{request_method = Method,
 		       request_handlers = RequestHandlers,
 		       trail = Trail} = State) ->
     case extract_path_query(State) of
-	false ->
-	    make_bad_request(State);
-	{LPath, LQuery, Data} ->
+	{State2, false} ->
+	    {State2, make_bad_request(State)};
+	{State2, {LPath, LQuery, Data}} ->
 	    PeerName =
 		case SockMod of
 		    gen_tcp ->
@@ -445,23 +447,24 @@ process_request(#state{request_method = Method,
 			       opts = Options,
                                headers = RequestHeaders,
                                ip = IP},
-            case process(RequestHandlers, Request, Socket, SockMod, Trail) of
-                        El when is_record(El, xmlel) ->
-                            make_xhtml_output(State, 200, [], El);
-                        {Status, Headers, El}
-                          when is_record(El, xmlel) ->
-                            make_xhtml_output(State, Status, Headers, El);
-                        Output when is_binary(Output) or is_list(Output) ->
-                            make_text_output(State, 200, [], Output);
-                        {Status, Headers, Output}
-                          when is_binary(Output) or is_list(Output) ->
-                            make_text_output(State, Status, Headers, Output);
-                        {Status, Reason, Headers, Output}
-                          when is_binary(Output) or is_list(Output) ->
-                            make_text_output(State, Status, Reason, Headers, Output);
-                        _ ->
-                            none
-	    end
+	    Res = case process(RequestHandlers, Request, Socket, SockMod, Trail) of
+		      El when is_record(El, xmlel) ->
+			  make_xhtml_output(State, 200, [], El);
+		      {Status, Headers, El}
+			when is_record(El, xmlel) ->
+			  make_xhtml_output(State, Status, Headers, El);
+		      Output when is_binary(Output) or is_list(Output) ->
+			  make_text_output(State, 200, [], Output);
+		      {Status, Headers, Output}
+			when is_binary(Output) or is_list(Output) ->
+			  make_text_output(State, Status, Headers, Output);
+		      {Status, Reason, Headers, Output}
+			when is_binary(Output) or is_list(Output) ->
+			  make_text_output(State, Status, Reason, Headers, Output);
+		      _ ->
+			  none
+		  end,
+	    {State2, Res}
     end.
 
 make_bad_request(State) ->
@@ -501,21 +504,24 @@ is_ipchain_trusted(UserIPs, TrustedIPs) ->
 
 recv_data(State, Len) -> recv_data(State, Len, <<>>).
 
-recv_data(_State, 0, Acc) -> (iolist_to_binary(Acc));
+recv_data(State, 0, Acc) -> {State, Acc};
+recv_data(#state{trail = Trail} = State, Len, <<>>) when byte_size(Trail) > Len ->
+    <<Data:Len/binary, Rest/binary>> = Trail,
+    {State#state{trail = Rest}, Data};
 recv_data(State, Len, Acc) ->
     case State#state.trail of
-      <<>> ->
-	  case (State#state.sockmod):recv(State#state.socket, Len,
-					  300000)
-	      of
-	    {ok, Data} ->
-		recv_data(State, Len - byte_size(Data), <<Acc/binary, Data/binary>>);
-	    _ -> <<"">>
-	  end;
-      _ ->
-	  Trail = (State#state.trail),
-	  recv_data(State#state{trail = <<>>},
-		    Len - byte_size(Trail), <<Acc/binary, Trail/binary>>)
+	<<>> ->
+	    case (State#state.sockmod):recv(State#state.socket, Len,
+					    300000)
+	    of
+		{ok, Data} ->
+		    recv_data(State, Len - byte_size(Data), <<Acc/binary, Data/binary>>);
+		_ -> <<"">>
+	    end;
+	_ ->
+	    Trail = (State#state.trail),
+	    recv_data(State#state{trail = <<>>},
+		      Len - byte_size(Trail), <<Acc/binary, Trail/binary>>)
     end.
 
 make_xhtml_output(State, Status, Headers, XHTML) ->
