@@ -55,7 +55,7 @@
 	{serverhost = <<"">>        :: binary(),
          myhost = <<"">>            :: binary(),
          eldap_id = <<"">>          :: binary(),
-         search = true              :: boolean(),
+         search = false             :: boolean(),
          servers = []               :: [binary()],
          backups = []               :: [binary()],
 	 port = ?LDAP_PORT          :: inet:port_number(),
@@ -735,7 +735,7 @@ parse_options(Host, Opts) ->
 				  <<"vjud.@HOST@">>),
     Search = gen_mod:get_opt(search, Opts,
                              fun(B) when is_boolean(B) -> B end,
-                             true),
+                             false),
     Matches = gen_mod:get_opt(matches, Opts,
                               fun(infinity) -> 0;
                                  (I) when is_integer(I), I>0 -> I
