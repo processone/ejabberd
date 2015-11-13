@@ -658,7 +658,8 @@ modules:
   mod_shared_roster: {}
   mod_stats: {}
   mod_time: {}
-  mod_vcard: {}
+  mod_vcard:
+    search: false
   mod_version: {}
 
 ##
