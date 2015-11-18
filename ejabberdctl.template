@@ -27,19 +27,29 @@ if [ "$INSTALLUSER" != "" ] ; then
                 mkdir -p "$INSTALLUSER_HOME"
                 chown "$INSTALLUSER" "$INSTALLUSER_HOME"
             fi
-            EXEC_CMD="su $INSTALLUSER -c"
+            EXEC_CMD="as_installuser"
         fi
     done
     if [ `id -g` -eq `id -g $INSTALLUSER` ] ; then
-        EXEC_CMD="sh -c"
+        EXEC_CMD="as_current_user"
     fi
     if [ "$EXEC_CMD" = "false" ] ; then
         echo "This command can only be run by root or the user $INSTALLUSER" >&2
         exit 4
     fi
 else
-    EXEC_CMD="sh -c"
+    EXEC_CMD="as_current_user"
 fi
+
+# run command either directly or via su $INSTALLUSER according to EXEC_CMD
+exec_cmd()
+{
+    if [ "$EXEC_CMD" = as_installuser ]; then
+        su -c '"$0" "$@"' "$INSTALLUSER" -- "$@"
+    else
+        "$@"
+    fi
+}
 
 # parse command line parameters
 ARGS=""
@@ -141,7 +151,7 @@ fi
 [ -z "$date" ] || EJABBERD_OPTS="${EJABBERD_OPTS} log_rotate_date '$date'"
 [ -z "$EJABBERD_OPTS" ] || EJABBERD_OPTS="-ejabberd ${EJABBERD_OPTS}"
 
-[ -d $SPOOL_DIR ] || $EXEC_CMD "mkdir -p $SPOOL_DIR"
+[ -d $SPOOL_DIR ] || exec_cmd mkdir -p $SPOOL_DIR
 cd $SPOOL_DIR
 
 # export global variables
@@ -163,7 +173,7 @@ export ERL_LIBS
 start()
 {
     check_start
-    $EXEC_CMD "$ERL \
+    exec_cmd $ERL \
       $NAME $ERLANG_NODE \
       -noinput -detached \
       -pa $EJABBERD_EBIN_PATH \
@@ -171,7 +181,7 @@ start()
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
       -s ejabberd \
-      $ERLANG_OPTS $ARGS \"$@\""
+      $ERLANG_OPTS $ARGS "$@"
 }
 
 # attach to server
@@ -179,12 +189,12 @@ debug()
 {
     debugwarning
     TTY=`tty | sed -e  's/.*\///g'`
-    $EXEC_CMD "$ERL \
+    exec_cmd $ERL \
       $NAME debug-${TTY}-${ERLANG_NODE} \
       -remsh $ERLANG_NODE \
       -hidden \
       $KERNEL_OPTS \
-      $ERLANG_OPTS $ARGS \"$@\""
+      $ERLANG_OPTS $ARGS "$@"
 }
 
 # attach to server using Elixir
@@ -193,46 +203,46 @@ iexdebug()
     debugwarning
     TTY=`tty | sed -e  's/.*\///g'`
     # Elixir shell is hidden as default
-    $EXEC_CMD "$IEX \
+    exec_cmd $IEX \
       $IEXNAME debug-${TTY}-${ERLANG_NODE} \
       --remsh $ERLANG_NODE \
-      --erl \"$KERNEL_OPTS\" \
-      --erl \"$ERLANG_OPTS\" --erl \"$ARGS\" --erl \"$@\""
+      --erl "$KERNEL_OPTS" \
+      --erl "$ERLANG_OPTS" --erl "$ARGS" --erl "$@"
 }
 
 # start interactive server
 live()
 {
     livewarning
-    $EXEC_CMD "$ERL \
+    exec_cmd $ERL \
       $NAME $ERLANG_NODE \
       -pa $EJABBERD_EBIN_PATH \
       $MNESIA_OPTS \
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
       -s ejabberd \
-      $ERLANG_OPTS $ARGS \"$@\""
+      $ERLANG_OPTS $ARGS "$@"
 }
 
 # start interactive server with Elixir
 iexlive()
 {
     livewarning
-    $EXEC_CMD "$IEX \
+    exec_cmd $IEX \
       $IEXNAME $ERLANG_NODE \
       -pa $EJABBERD_EBIN_PATH \
-      --erl \"-mnesia dir \\\"$SPOOL_DIR\\\"\" \
-      --erl \"$KERNEL_OPTS\" \
-      --erl \"$EJABBERD_OPTS\" \
+      --erl "-mnesia dir \"$SPOOL_DIR\"" \
+      --erl "$KERNEL_OPTS" \
+      --erl "$EJABBERD_OPTS" \
       --app ejabberd \
-      --erl \"$ERLANG_OPTS\" --erl $ARGS --erl \"$@\""
+      --erl "$ERLANG_OPTS" --erl $ARGS --erl "$@"
 }
 
 # start server in the foreground
 foreground()
 {
     check_start
-    $EXEC_CMD "$ERL \
+    exec_cmd $ERL \
       $NAME $ERLANG_NODE \
       -noinput \
       -pa $EJABBERD_EBIN_PATH \
@@ -240,7 +250,7 @@ foreground()
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
       -s ejabberd \
-      $ERLANG_OPTS $ARGS \"$@\""
+      $ERLANG_OPTS $ARGS "$@"
 }
 
 debugwarning()
@@ -294,21 +304,21 @@ livewarning()
 etop()
 {
     TTY=`tty | sed -e  's/.*\///g'`
-    $EXEC_CMD "$ERL \
+    exec_cmd $ERL \
       $NAME debug-${TTY}-${ERLANG_NODE} \
-      -hidden -s etop -s erlang halt -output text -node $ERLANG_NODE"
+      -hidden -s etop -s erlang halt -output text -node $ERLANG_NODE
 }
 
 ping()
 {
     TTY=`tty | sed -e  's/.*\///g'`
-    $EXEC_CMD "$ERL \
+    exec_cmd $ERL \
       $NAME ping-${TTY}-${ERLANG_NODE} \
       -hidden \
       -pa $EJABBERD_EBIN_PATH \
       $KERNEL_OPTS $ERLANG_OPTS \
-      -eval 'io:format(\"~p~n\",[net_adm:ping($1)])' \
-      -s erlang halt -output text -noinput"
+      -eval 'io:format("~p~n",[net_adm:ping($1)])' \
+      -s erlang halt -output text -noinput
 }
 
 help()
@@ -412,13 +422,13 @@ ctlexec()
 {
     CONN_NAME=$1; shift
     COMMAND=$(echo $@ | sed 's/["&$;\|<>()]/\\&/g')
-    $EXEC_CMD "$ERL \
+    exec_cmd $ERL \
       $NAME ${CONN_NAME} \
       -noinput \
       -hidden \
       -pa $EJABBERD_EBIN_PATH \
       $KERNEL_OPTS \
-      -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
+      -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND
 }
 
 # stop epmd if there is no other running node
@@ -450,11 +460,12 @@ check_start()
 # cluster setup
 join_cluster()
 {
-    $EXEC_CMD "$EJABBERD_BIN_PATH/joincluster $*"
+    set -- $*
+    . $EJABBERD_BIN_PATH/joincluster
 }
 leave_cluster()
 {
-    $EXEC_CMD "$EJABBERD_BIN_PATH/leavecluster $*"
+    exec_cmd $EJABBERD_BIN_PATH/leavecluster $*
 }
 
 # allow sync calls
