@@ -141,7 +141,7 @@ commands() ->
 			args = [],
 			result = {vhosts, {list, {vhost, string}}}},
      #ejabberd_commands{name = reload_config, tags = [server],
-			desc = "Reload ejabberd configuration file into memory",
+			desc = "Reload config file in memory (only affects ACL and Access)",
 			module = ?MODULE, function = reload_config,
 			args = [],
 			result = {res, rescode}},
