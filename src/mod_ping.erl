@@ -255,6 +255,8 @@ cancel_timer(TRef) ->
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(ping_interval) ->
     fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(ping_ack_timeout) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(send_pings) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(timeout_action) ->
@@ -262,4 +264,4 @@ mod_opt_type(timeout_action) ->
 	(kill) -> kill
     end;
 mod_opt_type(_) ->
-    [iqdisc, ping_interval, send_pings, timeout_action].
+    [iqdisc, ping_interval, ping_ack_timeout, send_pings, timeout_action].
