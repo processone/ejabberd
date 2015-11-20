@@ -33,6 +33,8 @@
 	 stop_kindly/2, send_service_message_all_mucs/2,
 	 registered_vhosts/0,
 	 reload_config/0,
+	 %% Cluster
+	 join_cluster/1, leave_cluster/1, list_cluster/0,
 	 %% Erlang
 	 update_list/0, update/1,
 	 %% Accounts
@@ -145,6 +147,22 @@ commands() ->
 			module = ?MODULE, function = reload_config,
 			args = [],
 			result = {res, rescode}},
+
+     #ejabberd_commands{name = join_cluster, tags = [cluster],
+			desc = "Join this node into the cluster handled by Node",
+			module = ?MODULE, function = join_cluster,
+			args = [{node, binary}],
+			result = {res, rescode}},
+     #ejabberd_commands{name = leave_cluster, tags = [cluster],
+			desc = "Remove node handled by Node from the cluster",
+			module = ?MODULE, function = leave_cluster,
+			args = [{node, binary}],
+			result = {res, rescode}},
+     #ejabberd_commands{name = list_cluster, tags = [cluster],
+			desc = "List nodes that are part of the cluster handled by Node",
+			module = ?MODULE, function = list_cluster,
+			args = [], 
+			result = {nodes, {list, {node, atom}}}},
 
      #ejabberd_commands{name = import_file, tags = [mnesia],
 			desc = "Import user data from jabberd14 spool file",
@@ -372,6 +390,19 @@ reload_config() ->
     ejabberd_config:reload_file(),
     acl:start(),
     shaper:start().
+
+%%%
+%%% Cluster management
+%%%
+
+join_cluster(NodeBin) ->
+    ejabberd_cluster:join(list_to_atom(binary_to_list(NodeBin))).
+
+leave_cluster(NodeBin) ->
+    ejabberd_cluster:leave(list_to_atom(binary_to_list(NodeBin))).
+
+list_cluster() ->
+    ejabberd_cluster:get_nodes().
 
 %%%
 %%% Migration management

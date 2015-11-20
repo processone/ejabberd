@@ -183,8 +183,6 @@ install: all copy-files
 	# Binary C programs
 	$(INSTALL) -d $(PBINDIR)
 	$(INSTALL) -m 750 $(O_USER) tools/captcha.sh $(PBINDIR)
-	$(INSTALL) -m 750 $(O_USER) tools/joincluster $(PBINDIR)
-	$(INSTALL) -m 750 $(O_USER) tools/leavecluster $(PBINDIR)
 	#
 	# Copy lite.sql
 	[ -d deps/sqlite3 ] && $(INSTALL) -d $(SQLDIR) || true
