@@ -43,6 +43,9 @@
 %% request_handlers callbacks
 -export([process/2]).
 
+%% utility for other http modules
+-export([content_type/3]).
+
 -export([reopen_log/1, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
