@@ -51,7 +51,7 @@ set_node(#pubsub_node{nodeid = {Key, _}, owners = Owners, options = Options} = N
     end.
 
 create_node(Key, Node, Type, Owner, Options, Parents) ->
-    OwnerJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    OwnerJID = jid:tolower(jid:remove_resource(Owner)),
     case find_node(Key, Node) of
 	false ->
 	    Nidx = pubsub_index:new(node),

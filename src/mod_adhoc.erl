@@ -142,7 +142,7 @@ get_sm_commands(Acc, _From,
 		  end,
 	  Nodes = [#xmlel{name = <<"item">>,
 			  attrs =
-			      [{<<"jid">>, jlib:jid_to_string(To)},
+			      [{<<"jid">>, jid:to_string(To)},
 			       {<<"node">>, ?NS_COMMANDS},
 			       {<<"name">>,
 				translate:translate(Lang, <<"Commands">>)}],

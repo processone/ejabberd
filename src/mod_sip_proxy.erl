@@ -249,8 +249,8 @@ connect(#sip{hdrs = Hdrs} = Req, Opts) ->
     {_, ToURI, _} = esip:get_hdr('to', Hdrs),
     case mod_sip:at_my_host(ToURI) of
 	true ->
-	    LUser = jlib:nodeprep(ToURI#uri.user),
-	    LServer = jlib:nameprep(ToURI#uri.host),
+	    LUser = jid:nodeprep(ToURI#uri.user),
+	    LServer = jid:nameprep(ToURI#uri.host),
 	    case mod_sip_registrar:find_sockets(LUser, LServer) of
 		[_|_] = SIPSocks ->
 		    {ok, SIPSocks};
@@ -412,7 +412,7 @@ choose_best_response(#state{responses = Responses} = State) ->
 
 %% Just compare host part only.
 cmp_uri(#uri{host = H1}, #uri{host = H2}) ->
-    jlib:nameprep(H1) == jlib:nameprep(H2).
+    jid:nameprep(H1) == jid:nameprep(H2).
 
 is_my_route(URI, URIs) ->
     lists:any(fun(U) -> cmp_uri(URI, U) end, URIs).
@@ -441,20 +441,20 @@ prepare_request(LServer, #sip{hdrs = Hdrs} = Req) ->
     Hdrs3 = lists:filter(
               fun({'proxy-authorization', {_, Params}}) ->
                       Realm = esip:unquote(esip:get_param(<<"realm">>, Params)),
-		      not mod_sip:is_my_host(jlib:nameprep(Realm));
+		      not mod_sip:is_my_host(jid:nameprep(Realm));
                  (_) ->
                       true
               end, Hdrs2),
     Req#sip{hdrs = Hdrs3}.
 
 safe_nodeprep(S) ->
-    case jlib:nodeprep(S) of
+    case jid:nodeprep(S) of
 	error -> S;
 	S1 -> S1
     end.
 
 safe_nameprep(S) ->
-    case jlib:nameprep(S) of
+    case jid:nameprep(S) of
 	error -> S;
 	S1 -> S1
     end.

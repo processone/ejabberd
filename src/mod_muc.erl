@@ -134,7 +134,7 @@ create_room(Host, Name, From, Nick, Opts) ->
     gen_server:call(Proc, {create, Name, From, Nick, Opts}).
 
 store_room(ServerHost, Host, Name, Opts) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     store_room(LServer, Host, Name, Opts,
 	       gen_mod:db_type(LServer, ?MODULE)).
 
@@ -162,7 +162,7 @@ store_room(LServer, Host, Name, Opts, odbc) ->
     ejabberd_odbc:sql_transaction(LServer, F).
 
 restore_room(ServerHost, Host, Name) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     restore_room(LServer, Host, Name,
                  gen_mod:db_type(LServer, ?MODULE)).
 
@@ -190,7 +190,7 @@ restore_room(LServer, Host, Name, odbc) ->
     end.
 
 forget_room(ServerHost, Host, Name) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     forget_room(LServer, Host, Name,
 		gen_mod:db_type(LServer, ?MODULE)).
 
@@ -216,11 +216,11 @@ forget_room(LServer, Host, Name, odbc) ->
 remove_room_mam(LServer, Host, Name) ->
     case gen_mod:is_loaded(LServer, mod_mam) of
 	true ->
-	    U = jlib:nodeprep(Name),
-	    S = jlib:nameprep(Host),
+	    U = jid:nodeprep(Name),
+	    S = jid:nameprep(Host),
 	    DBType = gen_mod:db_type(LServer, mod_mam),
 	    if DBType == odbc ->
-		    mod_mam:remove_user(jlib:jid_to_string({U, S, <<>>}),
+		    mod_mam:remove_user(jid:to_string({U, S, <<>>}),
 					LServer, DBType);
 	       true ->
 		    mod_mam:remove_user(U, S, DBType)
@@ -241,12 +241,12 @@ process_iq_disco_items(Host, From, To,
 
 can_use_nick(_ServerHost, _Host, _JID, <<"">>) -> false;
 can_use_nick(ServerHost, Host, JID, Nick) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     can_use_nick(LServer, Host, JID, Nick,
 		 gen_mod:db_type(LServer, ?MODULE)).
 
 can_use_nick(_LServer, Host, JID, Nick, mnesia) ->
-    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    {LUser, LServer, _} = jid:tolower(JID),
     LUS = {LUser, LServer},
     case catch mnesia:dirty_select(muc_registered,
 				   [{#muc_registered{us_host = '$1',
@@ -259,7 +259,7 @@ can_use_nick(_LServer, Host, JID, Nick, mnesia) ->
       [#muc_registered{us_host = {U, _Host}}] -> U == LUS
     end;
 can_use_nick(LServer, Host, JID, Nick, riak) ->
-    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    {LUser, LServer, _} = jid:tolower(JID),
     LUS = {LUser, LServer},
     case ejabberd_riak:get_by_index(muc_registered,
 				    muc_registered_schema(),
@@ -273,7 +273,7 @@ can_use_nick(LServer, Host, JID, Nick, riak) ->
     end;
 can_use_nick(LServer, Host, JID, Nick, odbc) ->
     SJID =
-	jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(JID))),
+	jid:to_string(jid:tolower(jid:remove_resource(JID))),
     SNick = ejabberd_odbc:escape(Nick),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
@@ -463,7 +463,7 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts) ->
     {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
-    {Room, _, Nick} = jlib:jid_tolower(To),
+    {Room, _, Nick} = jid:tolower(To),
     #xmlel{name = Name, attrs = Attrs} = Packet,
     case Room of
       <<"">> ->
@@ -641,7 +641,7 @@ check_user_can_create_room(ServerHost, AccessCreate,
     end.
 
 get_rooms(ServerHost, Host) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     get_rooms(LServer, Host,
               gen_mod:db_type(LServer, ?MODULE)).
 
@@ -767,7 +767,7 @@ iq_disco_items(Host, From, Lang, none) ->
 			    #xmlel{name = <<"item">>,
 				   attrs =
 				       [{<<"jid">>,
-					 jlib:jid_to_string({Name, Host,
+					 jid:to_string({Name, Host,
 							     <<"">>})},
 					{<<"name">>, Desc}],
 				   children = []}};
@@ -791,7 +791,7 @@ iq_disco_items(Host, From, Lang, Rsm) ->
 			    #xmlel{name = <<"item">>,
 				   attrs =
 				       [{<<"jid">>,
-					 jlib:jid_to_string({Name, Host,
+					 jid:to_string({Name, Host,
 							     <<"">>})},
 					{<<"name">>, Desc}],
 				   children = []}};
@@ -868,12 +868,12 @@ iq_get_unique(From) ->
 			     randoms:get_string()]))}.
 
 get_nick(ServerHost, Host, From) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     get_nick(LServer, Host, From,
 	     gen_mod:db_type(LServer, ?MODULE)).
 
 get_nick(_LServer, Host, From, mnesia) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    {LUser, LServer, _} = jid:tolower(From),
     LUS = {LUser, LServer},
     case catch mnesia:dirty_read(muc_registered,
 				 {LUS, Host})
@@ -883,7 +883,7 @@ get_nick(_LServer, Host, From, mnesia) ->
       [#muc_registered{nick = Nick}] -> Nick
     end;
 get_nick(LServer, Host, From, riak) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    {LUser, LServer, _} = jid:tolower(From),
     US = {LUser, LServer},
     case ejabberd_riak:get(muc_registered,
 			   muc_registered_schema(),
@@ -893,7 +893,7 @@ get_nick(LServer, Host, From, riak) ->
     end;
 get_nick(LServer, Host, From, odbc) ->
     SJID =
-	ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From)))),
+	ejabberd_odbc:escape(jid:to_string(jid:tolower(jid:remove_resource(From)))),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
 				       [<<"select nick from muc_registered where "
@@ -941,12 +941,12 @@ iq_get_register_info(ServerHost, Host, From, Lang) ->
 			   Nick)]}].
 
 set_nick(ServerHost, Host, From, Nick) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     set_nick(LServer, Host, From, Nick,
 	     gen_mod:db_type(LServer, ?MODULE)).
 
 set_nick(_LServer, Host, From, Nick, mnesia) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    {LUser, LServer, _} = jid:tolower(From),
     LUS = {LUser, LServer},
     F = fun () ->
 		case Nick of
@@ -976,7 +976,7 @@ set_nick(_LServer, Host, From, Nick, mnesia) ->
 	end,
     mnesia:transaction(F);
 set_nick(LServer, Host, From, Nick, riak) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    {LUser, LServer, _} = jid:tolower(From),
     LUS = {LUser, LServer},
     {atomic,
      case Nick of
@@ -1006,7 +1006,7 @@ set_nick(LServer, Host, From, Nick, riak) ->
      end};
 set_nick(LServer, Host, From, Nick, odbc) ->
     JID =
-	jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From))),
+	jid:to_string(jid:tolower(jid:remove_resource(From))),
     SJID = ejabberd_odbc:escape(JID),
     SNick = ejabberd_odbc:escape(Nick),
     SHost = ejabberd_odbc:escape(Host),
@@ -1255,8 +1255,8 @@ export(_Server) ->
               case str:suffix(Host, RoomHost) of
                   true ->
                       SJID = ejabberd_odbc:escape(
-                               jlib:jid_to_string(
-                                 jlib:make_jid(U, S, <<"">>))),
+                               jid:to_string(
+                                 jid:make(U, S, <<"">>))),
                       SNick = ejabberd_odbc:escape(Nick),
                       SRoomHost = ejabberd_odbc:escape(RoomHost),
                       [[<<"delete from muc_registered where jid='">>,
@@ -1279,7 +1279,7 @@ import(_LServer) ->
      {<<"select jid, host, nick from muc_registered;">>,
       fun([J, RoomHost, Nick]) ->
               #jid{user = U, server = S} =
-                  jlib:string_to_jid(J),
+                  jid:from_string(J),
               #muc_registered{us_host = {{U, S}, RoomHost},
                               nick = Nick}
       end}].

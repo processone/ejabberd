@@ -122,8 +122,8 @@ allow_multiple_connections(Host) ->
 
 %% Check if user exist in the anonymus database
 anonymous_user_exist(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({anonymous, US}) of
 	[] ->

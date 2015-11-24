@@ -199,7 +199,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 	  send_text(StateData,
 		    ?STREAM_HEADER(<<" version='1.0'">>)),
 	  Auth = if StateData#state.tls_enabled ->
-			case jlib:nameprep(xml:get_attr_s(<<"from">>, Attrs)) of
+			case jid:nameprep(xml:get_attr_s(<<"from">>, Attrs)) of
 			  From when From /= <<"">>, From /= error ->
 			      {Result, Message} =
 				  ejabberd_s2s:check_peer_certificate(StateData#state.sockmod,
@@ -360,7 +360,7 @@ wait_for_feature_request({xmlstreamelement, El},
 		       ?INFO_MSG("Accepted s2s EXTERNAL authentication for ~s (TLS=~p)",
 				 [AuthDomain, StateData#state.tls_enabled]),
 		       change_shaper(StateData, <<"">>,
-				     jlib:make_jid(<<"">>, AuthDomain, <<"">>)),
+				     jid:make(<<"">>, AuthDomain, <<"">>)),
 		       {next_state, wait_for_stream,
 			StateData#state{streamid = new_id(),
 					authenticated = true}};
@@ -403,8 +403,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
     case is_key_packet(El) of
       {key, To, From, Id, Key} ->
 	  ?DEBUG("GET KEY: ~p", [{To, From, Id, Key}]),
-	  LTo = jlib:nameprep(To),
-	  LFrom = jlib:nameprep(From),
+	  LTo = jid:nameprep(To),
+	  LFrom = jid:nameprep(From),
 	  case {ejabberd_s2s:allow_host(LTo, LFrom),
 		lists:member(LTo,
 			     ejabberd_router:dirty_get_all_domains())}
@@ -418,7 +418,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 				      wait_for_verification,
 				      StateData#state.connections),
 		change_shaper(StateData, LTo,
-			      jlib:make_jid(<<"">>, LFrom, <<"">>)),
+			      jid:make(<<"">>, LFrom, <<"">>)),
 		{next_state, stream_established,
 		 StateData#state{connections = Conns, timer = Timer}};
 	    {_, false} ->
@@ -430,8 +430,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	  end;
       {verify, To, From, Id, Key} ->
 	  ?DEBUG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
-	  LTo = jlib:nameprep(To),
-	  LFrom = jlib:nameprep(From),
+	  LTo = jid:nameprep(To),
+	  LFrom = jid:nameprep(From),
 	  Type = case ejabberd_s2s:has_key({LTo, LFrom}, Key) of
 		   true -> <<"valid">>;
 		   _ -> <<"invalid">>
@@ -448,9 +448,9 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	  NewEl = jlib:remove_attr(<<"xmlns">>, El),
 	  #xmlel{name = Name, attrs = Attrs} = NewEl,
 	  From_s = xml:get_attr_s(<<"from">>, Attrs),
-	  From = jlib:string_to_jid(From_s),
+	  From = jid:from_string(From_s),
 	  To_s = xml:get_attr_s(<<"to">>, Attrs),
-	  To = jlib:string_to_jid(To_s),
+	  To = jid:from_string(To_s),
 	  if (To /= error) and (From /= error) ->
 		 LFrom = From#jid.lserver,
 		 LTo = To#jid.lserver,
@@ -500,8 +500,8 @@ stream_established({valid, From, To}, StateData) ->
 			children = []}),
     ?INFO_MSG("Accepted s2s dialback authentication for ~s (TLS=~p)",
 	      [From, StateData#state.tls_enabled]),
-    LFrom = jlib:nameprep(From),
-    LTo = jlib:nameprep(To),
+    LFrom = jid:nameprep(From),
+    LTo = jid:nameprep(To),
     NSD = StateData#state{connections =
 			      (?DICT):store({LFrom, LTo}, established,
 					    StateData#state.connections)},
@@ -513,8 +513,8 @@ stream_established({invalid, From, To}, StateData) ->
 			    [{<<"from">>, To}, {<<"to">>, From},
 			     {<<"type">>, <<"invalid">>}],
 			children = []}),
-    LFrom = jlib:nameprep(From),
-    LTo = jlib:nameprep(To),
+    LFrom = jid:nameprep(From),
+    LTo = jid:nameprep(To),
     NSD = StateData#state{connections =
 			      (?DICT):erase({LFrom, LTo},
 					    StateData#state.connections)},

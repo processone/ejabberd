@@ -560,12 +560,12 @@ process_iq(From,
 		    end;
 		{error, Error} ->
 		    ?DEBUG("Cannot parse request from ~s",
-			   [jlib:jid_to_string(From)]),
+			   [jid:to_string(From)]),
 		    IQ#iq{type = error, sub_el = [SubEl, Error]}
 	    end;
 	deny ->
 	    ?DEBUG("Denying HTTP upload slot request from ~s",
-		   [jlib:jid_to_string(From)]),
+		   [jid:to_string(From)]),
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
     end;
 process_iq(_From, #iq{sub_el = SubEl} = IQ, _State) ->
@@ -611,7 +611,7 @@ create_slot(#state{service_url = undefined, max_size = MaxSize},
     Text = <<"File larger than ", (jlib:integer_to_binary(MaxSize))/binary,
 	     " Bytes.">>,
     ?INFO_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
-	      [File, jlib:jid_to_string(JID), Size]),
+	      [File, jid:to_string(JID), Size]),
     {error, ?ERRT_NOT_ACCEPTABLE(Lang, Text)};
 create_slot(#state{service_url = undefined,
 		   jid_in_url = JIDinURL,
@@ -627,7 +627,7 @@ create_slot(#state{service_url = undefined,
 	    RandStr = make_rand_string(SecretLength),
 	    FileStr = make_file_string(File),
 	    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)",
-		      [jlib:jid_to_string(JID), File]),
+		      [jid:to_string(JID), File]),
 	    {ok, [UserStr, RandStr, FileStr]};
 	deny ->
 	    {error, ?ERR_SERVICE_UNAVAILABLE};
@@ -641,7 +641,7 @@ create_slot(#state{service_url = ServiceURL},
     HttpOptions = [{timeout, ?SERVICE_REQUEST_TIMEOUT}],
     SizeStr = jlib:integer_to_binary(Size),
     GetRequest = binary_to_list(ServiceURL) ++
-		     "?jid=" ++ ?URL_ENC(jlib:jid_to_string({U, S, <<"">>})) ++
+		     "?jid=" ++ ?URL_ENC(jid:to_string({U, S, <<"">>})) ++
 		     "&name=" ++ ?URL_ENC(File) ++
 		     "&size=" ++ ?URL_ENC(SizeStr) ++
 		     "&content_type=" ++ ?URL_ENC(ContentType),
@@ -651,32 +651,32 @@ create_slot(#state{service_url = ServiceURL},
 		[<<"http", _/binary>> = PutURL,
 		 <<"http", _/binary>> = GetURL] ->
 		    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)",
-			      [jlib:jid_to_string(JID), File]),
+			      [jid:to_string(JID), File]),
 		    {ok, PutURL, GetURL};
 		Lines ->
 		    ?ERROR_MSG("Can't parse data received for ~s from <~s>: ~p",
-			       [jlib:jid_to_string(JID), ServiceURL, Lines]),
+			       [jid:to_string(JID), ServiceURL, Lines]),
 		    {error, ?ERR_SERVICE_UNAVAILABLE}
 	    end;
 	{ok, {402, _Body}} ->
 	    ?INFO_MSG("Got status code 402 for ~s from <~s>",
-		      [jlib:jid_to_string(JID), ServiceURL]),
+		      [jid:to_string(JID), ServiceURL]),
 	    {error, ?ERR_RESOURCE_CONSTRAINT};
 	{ok, {403, _Body}} ->
 	    ?INFO_MSG("Got status code 403 for ~s from <~s>",
-		      [jlib:jid_to_string(JID), ServiceURL]),
+		      [jid:to_string(JID), ServiceURL]),
 	    {error, ?ERR_NOT_ALLOWED};
 	{ok, {413, _Body}} ->
 	    ?INFO_MSG("Got status code 413 for ~s from <~s>",
-		      [jlib:jid_to_string(JID), ServiceURL]),
+		      [jid:to_string(JID), ServiceURL]),
 	    {error, ?ERR_NOT_ACCEPTABLE};
 	{ok, {Code, _Body}} ->
 	    ?ERROR_MSG("Got unexpected status code for ~s from <~s>: ~B",
-		       [jlib:jid_to_string(JID), ServiceURL, Code]),
+		       [jid:to_string(JID), ServiceURL, Code]),
 	    {error, ?ERR_SERVICE_UNAVAILABLE};
 	{error, Reason} ->
 	    ?ERROR_MSG("Error requesting upload slot for ~s from <~s>: ~p",
-		       [jlib:jid_to_string(JID), ServiceURL, Reason]),
+		       [jid:to_string(JID), ServiceURL, Reason]),
 	    {error, ?ERR_SERVICE_UNAVAILABLE}
     end.
 
@@ -959,7 +959,7 @@ thumb_el(Path, URI) ->
 -spec remove_user(binary(), binary()) -> ok.
 
 remove_user(User, Server) ->
-    ServerHost = jlib:nameprep(Server),
+    ServerHost = jid:nameprep(Server),
     DocRoot = gen_mod:get_module_opt(ServerHost, ?MODULE, docroot,
 				     fun iolist_to_binary/1,
 				     <<"@HOME@/upload">>),
@@ -968,7 +968,7 @@ remove_user(User, Server) ->
 					 (node) -> node
 				      end,
 				      sha1),
-    UserStr = make_user_string(jlib:make_jid(User, Server, <<"">>), JIDinURL),
+    UserStr = make_user_string(jid:make(User, Server, <<"">>), JIDinURL),
     UserDir = str:join([expand_home(DocRoot), UserStr], <<$/>>),
     case del_tree(UserDir) of
 	ok ->

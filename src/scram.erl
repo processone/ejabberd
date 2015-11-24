@@ -36,7 +36,7 @@
 -spec salted_password(binary(), binary(), non_neg_integer()) -> binary().
 
 salted_password(Password, Salt, IterationCount) ->
-    hi(jlib:resourceprep(Password), Salt, IterationCount).
+    hi(jid:resourceprep(Password), Salt, IterationCount).
 
 -spec client_key(binary()) -> binary().
 

@@ -232,7 +232,7 @@ process_request(Data, IP, HOpts) ->
 		   "dressing' xmlns='",
 		   (?NS_HTTP_BIND)/binary, "'/>">>};
 	    XmppDomain ->
-                NXmppDomain = jlib:nameprep(XmppDomain),
+                NXmppDomain = jid:nameprep(XmppDomain),
 		Sid = p1_sha:sha(term_to_binary({now(), make_ref()})),
 		case start(NXmppDomain, Sid, <<"">>, IP, HOpts) of
 		  {error, _} ->

@@ -68,7 +68,7 @@ process_command(From, To, Packet) ->
 	  case Name of
 	    <<"message">> ->
 		LFrom =
-		    jlib:jid_tolower(jlib:jid_remove_resource(From)),
+		    jid:tolower(jid:remove_resource(From)),
 		case lists:member(LFrom, get_admin_jids()) of
 		  true ->
 		      Body = xml:get_path_s(Packet,
@@ -185,9 +185,9 @@ process_large_heap(Pid, Info) ->
              io_lib:format("(~w) The process ~w is consuming too "
                            "much memory:~n~p~n~s",
                            [node(), Pid, Info, DetailedInfo])),
-    From = jlib:make_jid(<<"">>, Host, <<"watchdog">>),
+    From = jid:make(<<"">>, Host, <<"watchdog">>),
     lists:foreach(fun (JID) ->
-                          send_message(From, jlib:make_jid(JID), Body)
+                          send_message(From, jid:make(JID), Body)
                   end, JIDs).
 
 send_message(From, To, Body) ->
@@ -203,8 +203,8 @@ get_admin_jids() ->
     ejabberd_config:get_option(
       watchdog_admins,
       fun(JIDs) ->
-              [jlib:jid_tolower(
-                 jlib:string_to_jid(
+              [jid:tolower(
+                 jid:from_string(
                    iolist_to_binary(S))) || S <- JIDs]
       end, []).
 
@@ -336,7 +336,7 @@ process_remote_command(_) -> throw(unknown_command).
 
 opt_type(watchdog_admins) ->
     fun (JIDs) ->
-	    [jlib:jid_tolower(jlib:string_to_jid(iolist_to_binary(S)))
+	    [jid:tolower(jid:from_string(iolist_to_binary(S)))
 	     || S <- JIDs]
     end;
 opt_type(watchdog_large_heap) ->

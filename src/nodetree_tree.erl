@@ -148,7 +148,7 @@ get_subnodes_tree(Host, Node) ->
     end.
 
 create_node(Host, Node, Type, Owner, Options, Parents) ->
-    BJID = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    BJID = jid:tolower(jid:remove_resource(Owner)),
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
 	[] ->
 	    ParentExists = case Host of

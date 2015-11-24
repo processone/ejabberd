@@ -95,7 +95,7 @@ remove_user(User, Server, Password) ->
 	      [<<"removeuser3">>, User, Server, Password]).
 
 call_port(Server, Msg) ->
-    LServer = jlib:nameprep(Server),
+    LServer = jid:nameprep(Server),
     ProcessName = get_process_name(LServer,
 				   random_instance(get_instances(LServer))),
     ProcessName ! {call, self(), Msg},

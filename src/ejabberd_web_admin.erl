@@ -95,7 +95,7 @@ is_acl_match(Host, Rules, Jid) ->
 get_jid(Auth, HostHTTP, Method) ->
     case get_auth_admin(Auth, HostHTTP, [], Method) of
       {ok, {User, Server}} ->
-	  jlib:make_jid(User, Server, <<"">>);
+	  jid:make(User, Server, <<"">>);
       {unauthorized, Error} ->
 	  ?ERROR_MSG("Unauthorized ~p: ~p", [Auth, Error]),
 	  throw({unauthorized, Auth})
@@ -184,7 +184,7 @@ process([<<"server">>, SHost | RPath] = Path,
 	#request{auth = Auth, lang = Lang, host = HostHTTP,
 		 method = Method} =
 	    Request) ->
-    Host = jlib:nameprep(SHost),
+    Host = jid:nameprep(SHost),
     case lists:member(Host, ?MYHOSTS) of
       true ->
 	  case get_auth_admin(Auth, HostHTTP, Path, Method) of
@@ -250,7 +250,7 @@ get_auth_admin(Auth, HostHTTP, RPath, Method) ->
     case Auth of
       {SJID, Pass} ->
 	  {HostOfRule, AccessRule} = get_acl_rule(RPath, Method),
-	  case jlib:string_to_jid(SJID) of
+	  case jid:from_string(SJID) of
 	    error -> {unauthorized, <<"badformed-jid">>};
 	    #jid{user = <<"">>, server = User} ->
 		get_auth_account(HostOfRule, AccessRule, User, HostHTTP,
@@ -267,7 +267,7 @@ get_auth_account(HostOfRule, AccessRule, User, Server,
     case ejabberd_auth:check_password(User, Server, Pass) of
       true ->
 	  case is_acl_match(HostOfRule, AccessRule,
-			    jlib:make_jid(User, Server, <<"">>))
+			    jid:make(User, Server, <<"">>))
 	      of
 	    false -> {unauthorized, <<"unprivileged-account">>};
 	    true -> {ok, {User, Server}}
@@ -1128,7 +1128,7 @@ string_to_spec(<<"server_regexp">>, Val) ->
     {server_regexp, Val};
 string_to_spec(<<"node_regexp">>, Val) ->
     #jid{luser = U, lserver = S, resource = <<"">>} =
-	jlib:string_to_jid(Val),
+	jid:from_string(Val),
     {node_regexp, U, S};
 string_to_spec(<<"user_glob">>, Val) ->
     string_to_spec2(user_glob, Val);
@@ -1136,7 +1136,7 @@ string_to_spec(<<"server_glob">>, Val) ->
     {server_glob, Val};
 string_to_spec(<<"node_glob">>, Val) ->
     #jid{luser = U, lserver = S, resource = <<"">>} =
-	jlib:string_to_jid(Val),
+	jid:from_string(Val),
     {node_glob, U, S};
 string_to_spec(<<"all">>, _) -> all;
 string_to_spec(<<"raw">>, Val) ->
@@ -1146,7 +1146,7 @@ string_to_spec(<<"raw">>, Val) ->
 
 string_to_spec2(ACLName, Val) ->
     #jid{luser = U, lserver = S, resource = <<"">>} =
-	jlib:string_to_jid(Val),
+	jid:from_string(Val),
     case U of
       <<"">> -> {ACLName, S};
       _ -> {ACLName, {U, S}}
@@ -1362,7 +1362,7 @@ list_users_parse_query(Query, Host) ->
 	      lists:keysearch(<<"newusername">>, 1, Query),
 	  {value, {_, Password}} =
 	      lists:keysearch(<<"newuserpassword">>, 1, Query),
-	  case jlib:string_to_jid(<<Username/binary, "@",
+	  case jid:from_string(<<Username/binary, "@",
 				    Host/binary>>)
 	      of
 	    error -> error;
@@ -1463,10 +1463,10 @@ get_lastactivity_menuitem_list(Server) ->
     end.
 
 us_to_list({User, Server}) ->
-    jlib:jid_to_string({User, Server, <<"">>}).
+    jid:to_string({User, Server, <<"">>}).
 
 su_to_list({Server, User}) ->
-    jlib:jid_to_string({User, Server, <<"">>}).
+    jid:to_string({User, Server, <<"">>}).
 
 %%%==================================
 %%%% get_stats
@@ -1521,8 +1521,8 @@ list_online_users(Host, _Lang) ->
 		  SUsers).
 
 user_info(User, Server, Query, Lang) ->
-    LServer = jlib:nameprep(Server),
-    US = {jlib:nodeprep(User), LServer},
+    LServer = jid:nameprep(Server),
+    US = {jid:nodeprep(User), LServer},
     Res = user_parse_query(User, Server, Query),
     Resources = ejabberd_sm:get_user_resources(User,
 					       Server),

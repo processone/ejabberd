@@ -100,7 +100,7 @@ process([<<"new">>],
 		 lang = Lang, host = _HTTPHost}) ->
     case form_new_post(Q) of
       {success, ok, {Username, Host, _Password}} ->
-	  Jid = jlib:make_jid(Username, Host, <<"">>),
+	  Jid = jid:make(Username, Host, <<"">>),
           mod_register:send_registration_notifications(?MODULE, Jid, Ip),
 	  Text = (?T(<<"Your Jabber account was successfully "
 		       "created.">>)),
@@ -491,7 +491,7 @@ register_account(Username, Host, Password) ->
     Access = gen_mod:get_module_opt(Host, mod_register, access,
                                     fun(A) when is_atom(A) -> A end,
                                     all),
-    case jlib:make_jid(Username, Host, <<"">>) of
+    case jid:make(Username, Host, <<"">>) of
       error -> {error, invalid_jid};
       JID ->
         case acl:match_rule(Host, Access, JID) of

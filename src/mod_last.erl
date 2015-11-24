@@ -236,8 +236,8 @@ on_presence_update(User, Server, _Resource, Status) ->
     store_last_info(User, Server, TimeStamp, Status).
 
 store_last_info(User, Server, TimeStamp, Status) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     DBType = gen_mod:db_type(LServer, ?MODULE),
     store_last_info(LUser, LServer, TimeStamp, Status,
 		    DBType).
@@ -276,8 +276,8 @@ get_last_info(LUser, LServer) ->
     end.
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     DBType = gen_mod:db_type(LServer, ?MODULE),
     remove_user(LUser, LServer, DBType).
 

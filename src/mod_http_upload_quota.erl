@@ -181,24 +181,24 @@ handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
     NewSize = case {HardQuota, SoftQuota} of
 		  {0, 0} ->
 		      ?DEBUG("No quota specified for ~s",
-			     [jlib:jid_to_string(JID)]),
+			     [jid:to_string(JID)]),
 		      undefined;
 		  {0, _} ->
 		      ?WARNING_MSG("No hard quota specified for ~s",
-				   [jlib:jid_to_string(JID)]),
+				   [jid:to_string(JID)]),
 		      enforce_quota(Path, Size, OldSize, SoftQuota, SoftQuota);
 		  {_, 0} ->
 		      ?WARNING_MSG("No soft quota specified for ~s",
-				   [jlib:jid_to_string(JID)]),
+				   [jid:to_string(JID)]),
 		      enforce_quota(Path, Size, OldSize, HardQuota, HardQuota);
 		  _ when SoftQuota > HardQuota ->
 		      ?WARNING_MSG("Bad quota for ~s (soft: ~p, hard: ~p)",
-				   [jlib:jid_to_string(JID),
+				   [jid:to_string(JID),
 				    SoftQuota, HardQuota]),
 		      enforce_quota(Path, Size, OldSize, SoftQuota, SoftQuota);
 		  _ ->
 		      ?DEBUG("Enforcing quota for ~s",
-			     [jlib:jid_to_string(JID)]),
+			     [jid:to_string(JID)]),
 		      enforce_quota(Path, Size, OldSize, SoftQuota, HardQuota)
 	      end,
     NewDiskUsage = if is_integer(NewSize) ->

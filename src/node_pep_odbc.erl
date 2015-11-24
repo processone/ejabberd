@@ -100,7 +100,7 @@ purge_node(Nidx, Owner) ->
     node_flat_odbc:purge_node(Nidx, Owner).
 
 get_entity_affiliations(_Host, Owner) ->
-    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    OwnerKey = jid:tolower(jid:remove_resource(Owner)),
     node_flat_odbc:get_entity_affiliations(OwnerKey, Owner).
 
 get_node_affiliations(Nidx) ->
@@ -113,8 +113,8 @@ set_affiliation(Nidx, Owner, Affiliation) ->
     node_flat_odbc:set_affiliation(Nidx, Owner, Affiliation).
 
 get_entity_subscriptions(_Host, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    SubKey = jid:tolower(Owner),
+    GenKey = jid:remove_resource(SubKey),
     Host = node_flat_odbc:encode_host(element(2, SubKey)),
     SJ = node_flat_odbc:encode_jid(SubKey),
     GJ = node_flat_odbc:encode_jid(GenKey),
@@ -148,8 +148,8 @@ get_entity_subscriptions(_Host, Owner) ->
     {result, Reply}.
 
 get_entity_subscriptions_for_send_last(_Host, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    SubKey = jid:tolower(Owner),
+    GenKey = jid:remove_resource(SubKey),
     Host = node_flat_odbc:encode_host(element(2, SubKey)),
     SJ = node_flat_odbc:encode_jid(SubKey),
     GJ = node_flat_odbc:encode_jid(GenKey),

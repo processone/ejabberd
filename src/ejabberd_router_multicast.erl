@@ -69,7 +69,7 @@ route_multicast(From, Domain, Destinations, Packet) ->
     end.
 
 register_route(Domain) ->
-    case jlib:nameprep(Domain) of
+    case jid:nameprep(Domain) of
 	error ->
 	    erlang:error({invalid_domain, Domain});
 	LDomain ->
@@ -82,7 +82,7 @@ register_route(Domain) ->
     end.
 
 unregister_route(Domain) ->
-    case jlib:nameprep(Domain) of
+    case jid:nameprep(Domain) of
 	error ->
 	    erlang:error({invalid_domain, Domain});
 	LDomain ->
@@ -209,9 +209,9 @@ code_change(_OldVsn, State, _Extra) ->
 do_route(From, Domain, Destinations, Packet) ->
 
     ?DEBUG("route_multicast~n\tfrom ~s~n\tdomain ~s~n\tdestinations ~p~n\tpacket ~p~n",
-	   [jlib:jid_to_string(From),
+	   [jid:to_string(From),
 	    Domain,
-	    [jlib:jid_to_string(To) || To <- Destinations],
+	    [jid:to_string(To) || To <- Destinations],
 	    Packet]),
 
     %% Try to find an appropriate multicast service

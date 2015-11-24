@@ -261,7 +261,7 @@ set_vcard(User, LServer, VCARD) ->
 	      <<"">> -> EMail2;
 	      _ -> EMail1
 	    end,
-    LUser = jlib:nodeprep(User),
+    LUser = jid:nodeprep(User),
     LFN = string2lower(FN),
     LFamily = string2lower(Family),
     LGiven = string2lower(Given),
@@ -404,7 +404,7 @@ string2lower(String) ->
 				[{xmlcdata,
 				  <<(translate:translate(Lang,
 							 <<"Search users in ">>))/binary,
-				    (jlib:jid_to_string(JID))/binary>>}]},
+				    (jid:to_string(JID))/binary>>}]},
 		     #xmlel{name = <<"instructions">>, attrs = [],
 			    children =
 				[{xmlcdata,
@@ -607,7 +607,7 @@ search_result(Lang, JID, ServerHost, Data) ->
 		[{xmlcdata,
 		  <<(translate:translate(Lang,
 					 <<"Search Results for ">>))/binary,
-		    (jlib:jid_to_string(JID))/binary>>}]},
+		    (jid:to_string(JID))/binary>>}]},
      #xmlel{name = <<"reported">>, attrs = [],
 	    children =
 		[?TLFIELD(<<"text-single">>, <<"Jabber ID">>,
@@ -916,8 +916,8 @@ reindex_vcards() ->
     mnesia:transaction(F).
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     remove_user(LUser, LServer,
 		gen_mod:db_type(LServer, ?MODULE)).
 

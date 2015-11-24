@@ -228,11 +228,11 @@ get_vh_registered_users_ldap(Server) ->
 									      UIDFormat)
 						      of
 						    {ok, U} ->
-							case jlib:nodeprep(U) of
+							case jid:nodeprep(U) of
 							  error -> [];
 							  LU ->
 							      [{LU,
-								jlib:nameprep(Server)}]
+								jid:nameprep(Server)}]
 							end;
 						    _ -> []
 						  end

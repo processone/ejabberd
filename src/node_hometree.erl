@@ -69,7 +69,7 @@ features() ->
 %% <p>This function also check that node can be created as a children of its
 %% parent node</p>
 create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
-    LOwner = jlib:jid_tolower(Owner),
+    LOwner = jid:tolower(Owner),
     {User, Server, _Resource} = LOwner,
     Allowed = case LOwner of
 	{<<"">>, Host, <<"">>} ->

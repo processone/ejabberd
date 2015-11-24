@@ -125,7 +125,7 @@ get_client_identity(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
 verify_redirection_uri(_, _, Ctx) -> {ok, Ctx}.
 
 authenticate_user({User, Server}, {password, Password} = Ctx) ->
-    case jlib:make_jid(User, Server, <<"">>) of
+    case jid:make(User, Server, <<"">>) of
         #jid{} = JID ->
             Access =
                 ejabberd_config:get_option(
@@ -173,8 +173,8 @@ associate_access_token(AccessToken, Context, AppContext) ->
         proplists:get_value(<<"resource_owner">>, Context, <<"">>),
     Scope = proplists:get_value(<<"scope">>, Context, []),
     Expire = proplists:get_value(<<"expiry_time">>, Context, 0),
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     R = #oauth_token{
       token = AccessToken,
       us = {LUser, LServer},
@@ -190,8 +190,8 @@ associate_refresh_token(RefreshToken, Context, AppContext) ->
 
 
 check_token(User, Server, Scope, Token) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     case catch mnesia:dirty_read(oauth_token, Token) of
         [#oauth_token{us = {LUser, LServer},
                       scope = TokenScope,

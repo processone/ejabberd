@@ -187,7 +187,7 @@ try_register(User, Server, Password) ->
     case is_user_exists(User, Server) of
       true -> {atomic, exists};
       false ->
-	  LServer = jlib:nameprep(Server),
+	  LServer = jid:nameprep(Server),
 	  case lists:member(LServer, ?MYHOSTS) of
 	    true ->
 		Res = lists:foldl(fun (_M, {atomic, ok} = Res) -> Res;
@@ -358,7 +358,7 @@ remove_user(User, Server) ->
     lists:foreach(fun (M) -> M:remove_user(User, Server)
 		  end,
 		  auth_modules(Server)),
-    ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
+    ejabberd_hooks:run(remove_user, jid:nameprep(Server),
 		       [User, Server]),
     ok.
 
@@ -376,7 +376,7 @@ remove_user(User, Server, Password) ->
 		    error, auth_modules(Server)),
     case R of
       ok ->
-	  ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
+	  ejabberd_hooks:run(remove_user, jid:nameprep(Server),
 			     [User, Server]);
       _ -> none
     end,
@@ -427,7 +427,7 @@ auth_modules() ->
 
 %% Return the list of authenticated modules for a given host
 auth_modules(Server) ->
-    LServer = jlib:nameprep(Server),
+    LServer = jid:nameprep(Server),
     Default = case gen_mod:default_db(LServer) of
 		  mnesia -> internal;
 		  DBType -> DBType

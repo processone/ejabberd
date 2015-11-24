@@ -167,7 +167,7 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %% Finally, the received response is printed in the ejabberd log file.
 do_client_version(disabled, _From, _To) -> ok;
 do_client_version(enabled, From, To) ->
-    ToS = jlib:jid_to_string(To),
+    ToS = jid:to_string(To),
     Random_resource =
 	iolist_to_binary(integer_to_list(random:uniform(100000))),
     From2 = From#jid{resource = Random_resource,

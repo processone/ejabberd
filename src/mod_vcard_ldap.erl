@@ -422,7 +422,7 @@ ldap_attribute_to_vcard(_, _) -> none.
 				[{xmlcdata,
 				  <<(translate:translate(Lang,
 							 <<"Search users in ">>))/binary,
-				    (jlib:jid_to_string(JID))/binary>>}]},
+				    (jid:to_string(JID))/binary>>}]},
 		     #xmlel{name = <<"instructions">>, attrs = [],
 			    children =
 				[{xmlcdata,
@@ -600,7 +600,7 @@ search_result(Lang, JID, State, Data) ->
 			 [{xmlcdata,
 			   <<(translate:translate(Lang,
 						  <<"Search Results for ">>))/binary,
-			     (jlib:jid_to_string(JID))/binary>>}]},
+			     (jid:to_string(JID))/binary>>}]},
 	      #xmlel{name = <<"reported">>, attrs = [],
 		     children =
 			 [?TLFIELD(<<"text-single">>, <<"Jabber ID">>,
