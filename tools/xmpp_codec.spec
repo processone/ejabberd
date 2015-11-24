@@ -2421,7 +2421,7 @@ enc_utc(Val) ->
     jlib:now_to_utc_string(Val).
 
 dec_jid(Val) ->
-    case jlib:string_to_jid(Val) of
+    case jid:from_string(Val) of
         error ->
             erlang:error(badarg);
         J ->
@@ -2429,10 +2429,10 @@ dec_jid(Val) ->
     end.
 
 enc_jid(J) ->            
-    jlib:jid_to_string(J).
+    jid:to_string(J).
 
 resourceprep(R) ->
-    case jlib:resourceprep(R) of
+    case jid:resourceprep(R) of
         error ->
             erlang:error(badarg);
         R1 ->

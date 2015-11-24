@@ -2533,15 +2533,15 @@ dec_bool(<<"true">>) -> true;
 dec_bool(<<"1">>) -> true.
 
 resourceprep(R) ->
-    case jlib:resourceprep(R) of
+    case jid:resourceprep(R) of
       error -> erlang:error(badarg);
       R1 -> R1
     end.
 
-enc_jid(J) -> jlib:jid_to_string(J).
+enc_jid(J) -> jid:to_string(J).
 
 dec_jid(Val) ->
-    case jlib:string_to_jid(Val) of
+    case jid:from_string(Val) of
       error -> erlang:error(badarg);
       J -> J
     end.

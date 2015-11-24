@@ -62,6 +62,18 @@
 	 nameprep/1, resourceprep/1, jid_tolower/1,
 	 jid_remove_resource/1, jid_replace_resource/2]).
 
+-deprecated([{make_jid, '_'},
+	     {split_jid, 1},
+	     {string_to_jid, 1},
+	     {jid_to_string, 1},
+	     {is_nodename, 1},
+	     {nodeprep, 1},
+	     {nameprep, 1},
+	     {resourceprep, 1},
+	     {jid_tolower, 1},
+	     {jid_remove_resource, 1},
+	     {jid_replace_resource, 2}]).
+
 -include("ejabberd.hrl").
 -include("jlib.hrl").
 
