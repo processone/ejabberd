@@ -43,6 +43,7 @@
 	 get_iq_namespace/1, iq_query_info/1,
 	 iq_query_or_response_info/1, is_iq_request_type/1,
 	 iq_to_xml/1, parse_xdata_submit/1,
+	 is_standalone_chat_state/1,
 	 add_delay_info/3, add_delay_info/4,
 	 timestamp_to_iso/1, timestamp_to_iso/2,
 	 now_to_utc_string/1, now_to_local_string/1,
@@ -526,6 +527,26 @@ rsm_encode_count(Count, Arr) ->
     [#xmlel{name = <<"count">>, attrs = [],
 	    children = [{xmlcdata, i2l(Count)}]}
      | Arr].
+
+-spec is_standalone_chat_state(xmlel()) -> boolean().
+
+is_standalone_chat_state(#xmlel{name = <<"message">>} = El) ->
+    ChatStates = [<<"active">>, <<"inactive">>, <<"gone">>, <<"composing">>,
+		  <<"paused">>],
+    Stripped =
+	lists:foldl(fun(ChatState, AccEl) ->
+			    xml:remove_subtags(AccEl, ChatState,
+					       {<<"xmlns">>, ?NS_CHATSTATES})
+		    end, El, ChatStates),
+    case Stripped of
+      #xmlel{children = [#xmlel{name = <<"thread">>}]} ->
+	  true;
+      #xmlel{children = []} ->
+	  true;
+      _ ->
+	  false
+    end;
+is_standalone_chat_state(_El) -> false.
 
 -spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp())
 		     -> xmlel().
