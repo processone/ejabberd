@@ -2376,7 +2376,10 @@ purge_node(Host, Node, Owner) ->
     ).
 get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
     MaxItems = if SMaxItems == <<>> ->
-	    get_max_items_node(Host);
+	    case get_max_items_node(Host) of
+		undefined -> ?MAXITEMS;
+		Max -> Max
+	    end;
 	true ->
 	    case catch jlib:binary_to_integer(SMaxItems) of
 		{'EXIT', _} -> {error, ?ERR_BAD_REQUEST};
@@ -3823,8 +3826,12 @@ add_opt(Key, Value, Opts) ->
 
 -define(SET_INTEGER_XOPT(Opt, Val, Min, Max),
     case catch jlib:binary_to_integer(Val) of
-	IVal when is_integer(IVal), IVal >= Min, IVal =< Max ->
-	    set_xoption(Host, Opts, add_opt(Opt, IVal, NewOpts));
+	IVal when is_integer(IVal), IVal >= Min ->
+	    if (Max =:= undefined) orelse (IVal =< Max) ->
+		set_xoption(Host, Opts, add_opt(Opt, IVal, NewOpts));
+	       true ->
+		{error, ?ERR_NOT_ACCEPTABLE}
+	    end;
 	_ ->
 	    {error, ?ERR_NOT_ACCEPTABLE}
     end).
@@ -3896,7 +3903,7 @@ set_xoption(Host, [_ | Opts], NewOpts) ->
 get_max_items_node({_, ServerHost, _}) ->
     get_max_items_node(ServerHost);
 get_max_items_node(Host) ->
-    config(serverhost(Host), max_items_node, ?MAXITEMS).
+    config(serverhost(Host), max_items_node, undefined).
 
 %%%% last item cache handling
 
