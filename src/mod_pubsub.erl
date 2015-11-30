@@ -83,7 +83,8 @@
 -export([subscription_to_string/1, affiliation_to_string/1,
     string_to_subscription/1, string_to_affiliation/1,
     extended_error/2, extended_error/3, service_jid/1,
-    tree/1, tree/2, plugin/2, config/3, host/1, serverhost/1]).
+    tree/1, tree/2, plugin/2, plugins/1, config/3,
+    host/1, serverhost/1]).
 
 %% API and gen_server callbacks
 -export([start_link/2, start/2, stop/1, init/1,
