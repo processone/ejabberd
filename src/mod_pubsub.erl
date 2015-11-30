@@ -3978,6 +3978,8 @@ tree(Host) ->
 	Tree -> Tree
     end.
 
+tree(_Host, <<"virtual">>) ->
+    nodetree_virtual;   % special case, virtual does not use any backend
 tree(Host, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
 	mnesia -> jlib:binary_to_atom(<<"nodetree_", Name/binary>>);
