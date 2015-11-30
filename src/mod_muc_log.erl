@@ -305,7 +305,7 @@ write_last_lines(F, Images_dir, _FileFormat) ->
     fw(F,
        <<"  <a href=\"http://www.ejabberd.im\"><img "
 	 "style=\"border:0\" src=\"~s/powered-by-ejabbe"
-	 "rd.png\" alt=\"Powered by ejabberd\"/></a>">>,
+	 "rd.png\" alt=\"Powered by ejabberd - robust, scalable and extensible XMPP server\"/></a>">>,
        [Images_dir]),
     fw(F,
        <<"  <a href=\"http://www.erlang.org/\"><img "
