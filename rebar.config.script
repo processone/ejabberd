@@ -52,7 +52,7 @@ SrcDirs = lists:foldl(
                     Acc
             end, [], Cfg),
 
-Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
+Deps = [{cache_tab, ".*", {git, "https://github.com/processone/cache_tab", {tag, "1.0.1"}}},
         {p1_tls, ".*", {git, "https://github.com/processone/tls"}},
         {p1_stringprep, ".*", {git, "https://github.com/processone/stringprep"}},
         {p1_xml, ".*", {git, "https://github.com/processone/xml"}},
