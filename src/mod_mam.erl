@@ -310,6 +310,24 @@ process_iq(#jid{luser = LUser, lserver = LServer},
     catch _:_ ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]}
     end;
+process_iq(#jid{luser = LUser, lserver = LServer},
+	   #jid{lserver = LServer},
+	   #iq{type = get, sub_el = #xmlel{name = <<"prefs">>}} = IQ) ->
+    Prefs = get_prefs(LUser, LServer),
+    Default = jlib:atom_to_binary(Prefs#archive_prefs.default),
+    JFun = fun(L) ->
+		   [#xmlel{name = <<"jid">>,
+			   children = [{xmlcdata, jid:to_string(J)}]}
+		    || J <- L]
+	   end,
+    Always = #xmlel{name = <<"always">>,
+		    children = JFun(Prefs#archive_prefs.always)},
+    Never = #xmlel{name = <<"never">>,
+		   children = JFun(Prefs#archive_prefs.never)},
+    IQ#iq{type = result,
+	  sub_el = [#xmlel{name = <<"prefs">>,
+			   attrs = [{<<"default">>, Default}],
+			   children = [Always, Never]}]};
 process_iq(_, _, #iq{sub_el = SubEl} = IQ) ->
     IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
 
