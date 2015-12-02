@@ -2193,6 +2193,15 @@ send_new_presence1(NJID, Reason, StateData) ->
 					   | Status2];
 				      false -> Status2
 				    end,
+			  Status4 = case (StateData#state.config)#config.logging of
+				      true ->
+					  [#xmlel{name = <<"status">>,
+						  attrs =
+						      [{<<"code">>, <<"170">>}],
+						  children = []}
+					   | Status3];
+				      false -> Status3
+				    end,
 			  Packet = xml:append_subtags(Presence,
 						      [#xmlel{name = <<"x">>,
 							      attrs =
@@ -2207,7 +2216,7 @@ send_new_presence1(NJID, Reason, StateData) ->
 									  children
 									      =
 									      ItemEls}
-								   | Status3]}]),
+								   | Status4]}]),
 			  ejabberd_router:route(jid:replace_resource(StateData#state.jid,
 								 Nick),
 				       Info#user.jid, Packet)
