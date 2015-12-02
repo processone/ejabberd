@@ -232,11 +232,12 @@ remove_room_mam(LServer, Host, Name) ->
 process_iq_disco_items(Host, From, To,
 		       #iq{lang = Lang} = IQ) ->
     Rsm = jlib:rsm_decode(IQ),
+    DiscoNode = xml:get_tag_attr_s(<<"node">>, IQ#iq.sub_el),
     Res = IQ#iq{type = result,
 		sub_el =
 		    [#xmlel{name = <<"query">>,
 			    attrs = [{<<"xmlns">>, ?NS_DISCO_ITEMS}],
-			    children = iq_disco_items(Host, From, Lang, Rsm)}]},
+			    children = iq_disco_items(Host, From, Lang, DiscoNode, Rsm)}]},
     ejabberd_router:route(To, From, jlib:iq_to_xml(Res)).
 
 can_use_nick(_ServerHost, _Host, _JID, <<"">>) -> false;
@@ -752,37 +753,28 @@ iq_disco_info(ServerHost, Lang) ->
 		[]
 	end.
 
-iq_disco_items(Host, From, Lang, none) ->
-    lists:zf(fun (#muc_online_room{name_host =
-				       {Name, _Host},
-				   pid = Pid}) ->
-		     case catch gen_fsm:sync_send_all_state_event(Pid,
-								  {get_disco_item,
-								   From, Lang},
-								  100)
-			 of
-		       {item, Desc} ->
-			   flush(),
-			   {true,
-			    #xmlel{name = <<"item">>,
+iq_disco_items(Host, From, Lang, <<>>, none) ->
+    XmlEmpty = #xmlel{name = <<"item">>,
 				   attrs =
-				       [{<<"jid">>,
-					 jid:to_string({Name, Host,
-							     <<"">>})},
-					{<<"name">>, Desc}],
-				   children = []}};
-		       _ -> false
-		     end
-	     end, get_vh_rooms(Host));
-iq_disco_items(Host, From, Lang, Rsm) ->
+				       [{<<"jid">>, <<"conference.localhost">>},
+					{<<"node">>, <<"emptyrooms">>},
+					{<<"name">>, translate:translate(Lang, <<"Empty Rooms">>)}],
+				   children = []},
+    Query = {get_disco_item, only_non_empty, From, Lang},
+    [XmlEmpty | iq_disco_items_list(Host, get_vh_rooms(Host), Query)];
+iq_disco_items(Host, From, Lang, <<"emptyrooms">>, none) ->
+    iq_disco_items_list(Host, get_vh_rooms(Host), {get_disco_item, 0, From, Lang});
+iq_disco_items(Host, From, Lang, _DiscoNode, Rsm) ->
     {Rooms, RsmO} = get_vh_rooms(Host, Rsm),
     RsmOut = jlib:rsm_encode(RsmO),
+    iq_disco_items_list(Host, Rooms, {get_disco_item, all, From, Lang}) ++ RsmOut.
+
+iq_disco_items_list(Host, Rooms, Query) ->
     lists:zf(fun (#muc_online_room{name_host =
 				       {Name, _Host},
 				   pid = Pid}) ->
 		     case catch gen_fsm:sync_send_all_state_event(Pid,
-								  {get_disco_item,
-								   From, Lang},
+								  Query,
 								  100)
 			 of
 		       {item, Desc} ->
@@ -797,9 +789,7 @@ iq_disco_items(Host, From, Lang, Rsm) ->
 				   children = []}};
 		       _ -> false
 		     end
-	     end,
-	     Rooms)
-      ++ RsmOut.
+	     end, Rooms).
 
 get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
     AllRooms = lists:sort(get_vh_rooms(Host)),

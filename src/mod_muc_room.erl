@@ -712,10 +712,20 @@ handle_event({set_affiliations, Affiliations},
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-handle_sync_event({get_disco_item, JID, Lang}, _From, StateName, StateData) ->
-    Reply = get_roomdesc_reply(JID, StateData,
-			       get_roomdesc_tail(StateData, Lang)),
+handle_sync_event({get_disco_item, Filter, JID, Lang}, _From, StateName, StateData) ->
+    Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0,
+                    StateData#state.users),
+    Reply = case (Filter == all) or (Filter == Len) or ((Filter /= 0) and (Len /= 0)) of
+	true ->
+	    get_roomdesc_reply(JID, StateData,
+			       get_roomdesc_tail(StateData, Lang));
+	false ->
+	    false
+    end,
     {reply, Reply, StateName, StateData};
+%% This clause is only for backwards compatibility
+handle_sync_event({get_disco_item, JID, Lang}, From, StateName, StateData) ->
+    handle_sync_event({get_disco_item, any, JID, Lang}, From, StateName, StateData);
 handle_sync_event(get_config, _From, StateName,
 		  StateData) ->
     {reply, {ok, StateData#state.config}, StateName,
