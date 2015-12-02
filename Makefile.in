@@ -123,12 +123,12 @@ TO_DEST=$(foreach path,$(1),$(call JOIN_PATHS,$(call TO_DEST_SINGLE,$(subst /, ,
 FILTER_DIRS=$(foreach path,$(1),$(if $(wildcard $(path)/*),,$(path)))
 FILES_WILDCARD=$(call FILTER_DIRS,$(foreach w,$(1),$(wildcard $(w))))
 
-DEPS_FILES:=$(call FILES_WILDCARD,deps/*/ebin/*.beam deps/*/ebin/*.app deps/*/priv/* deps/*/priv/lib/* deps/*/priv/bin/* deps/*/include/*.hrl deps/*/lib/*/ebin/*.beam deps/*/lib/*/ebin/*.app)
-DEPS_FILES_FILTERED:=$(filter-out %/epam deps/elixir/ebin/elixir.app,$(DEPS_FILES))
-DEPS_DIRS:=$(sort deps/ $(wildcard deps/*) $(dir $(DEPS_FILES)))
+DEPS_FILES=$(call FILES_WILDCARD,deps/*/ebin/*.beam deps/*/ebin/*.app deps/*/priv/* deps/*/priv/lib/* deps/*/priv/bin/* deps/*/include/*.hrl deps/*/lib/*/ebin/*.beam deps/*/lib/*/ebin/*.app)
+DEPS_FILES_FILTERED=$(filter-out %/epam deps/elixir/ebin/elixir.app,$(DEPS_FILES))
+DEPS_DIRS=$(sort deps/ $(wildcard deps/*) $(dir $(DEPS_FILES)))
 
-MAIN_FILES:=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/lib/* include/*.hrl))
-MAIN_DIRS:=$(sort $(dir $(MAIN_FILES)))
+MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/lib/* include/*.hrl))
+MAIN_DIRS=$(sort $(dir $(MAIN_FILES)))
 
 define COPY_template
 $(call TO_DEST,$(1)): $(1) $(call TO_DEST,$(dir $(1))) ; $$(INSTALL) -m 644 $(1) $(call TO_DEST,$(1))
@@ -142,7 +142,10 @@ $(sort $(call TO_DEST,$(MAIN_DIRS) $(DEPS_DIRS))):
 $(call TO_DEST,deps/p1_pam/priv/bin/epam): $(LIBDIR)/%: deps/% $(call TO_DEST,deps/p1_pam/priv/bin/)
 	$(INSTALL) -m 750 $(O_USER) $< $@
 
-copy-files: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES))
+copy-files:
+	$(MAKE) copy-files-sub
+
+copy-files-sub: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES))
 
 install: all copy-files
 	#
