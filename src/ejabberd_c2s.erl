@@ -1299,8 +1299,8 @@ session_established2(El, StateData) ->
     fsm_next_state(session_established, NewState).
 
 wait_for_resume({xmlstreamelement, _El} = Event, StateData) ->
-    session_established(Event, StateData),
-    fsm_next_state(wait_for_resume, StateData);
+    Result = session_established(Event, StateData),
+    fsm_next_state(wait_for_resume, element(3, Result));
 wait_for_resume(timeout, StateData) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
 	   [jid:to_string(StateData#state.jid)]),
