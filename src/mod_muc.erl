@@ -82,6 +82,8 @@
 
 -define(PROCNAME, ejabberd_mod_muc).
 
+-define(MAX_ROOMS_DISCOITEMS, 100).
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -754,6 +756,14 @@ iq_disco_info(ServerHost, Lang) ->
 	end.
 
 iq_disco_items(Host, From, Lang, <<>>, none) ->
+    Rooms = get_vh_rooms(Host),
+    case erlang:length(Rooms) < ?MAX_ROOMS_DISCOITEMS of
+	true ->
+	    iq_disco_items_list(Host, Rooms, {get_disco_item, all, From, Lang});
+	false ->
+	    iq_disco_items(Host, From, Lang, <<"nonemptyrooms">>, none)
+    end;
+iq_disco_items(Host, From, Lang, <<"nonemptyrooms">>, none) ->
     XmlEmpty = #xmlel{name = <<"item">>,
 				   attrs =
 				       [{<<"jid">>, <<"conference.localhost">>},
