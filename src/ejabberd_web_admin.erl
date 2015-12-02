@@ -2889,7 +2889,7 @@ make_server_menu(HostMenu, NodeMenu, Lang, JID) ->
     Fixed2 = [Tuple
 	      || Tuple <- Fixed,
 		 is_allowed_path(BasePath, Tuple, JID)],
-    {Base, <<"ejabberd">>, Fixed2}.
+    {Base, <<"">>, Fixed2}.
 
 get_menu_items_hook({hostnode, Host, Node}, Lang) ->
     ejabberd_hooks:run_fold(webadmin_menu_hostnode, Host,
