@@ -661,8 +661,7 @@ clean_treap(Treap, CleanPriority) ->
     end.
 
 now_priority() ->
-    {MSec, Sec, USec} = now(),
-    -((MSec * 1000000 + Sec) * 1000000 + USec).
+    -p1_time_compat:system_time(micro_seconds).
 
 opt_type(captcha_cmd) ->
     fun (FileName) ->

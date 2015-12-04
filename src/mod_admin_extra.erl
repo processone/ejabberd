@@ -554,8 +554,7 @@ num_active_users(Host, Days) ->
 
 %% Code based on ejabberd/src/web/ejabberd_web_admin.erl
 list_last_activity(Host, Integral, Days) ->
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    TimeStamp = MegaSecs * 1000000 + Secs,
+    TimeStamp = p1_time_compat:system_time(seconds),
     TS = TimeStamp - Days * 86400,
     case catch mnesia:dirty_select(
 		 last_activity, [{{last_activity, {'_', Host}, '$1', '_'},
@@ -620,8 +619,7 @@ delete_old_users(Days, Users) ->
     SecOlder = Days*24*60*60,
 
     %% Get current time
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    TimeStamp_now = MegaSecs * 1000000 + Secs,
+    TimeStamp_now = p1_time_compat:system_time(seconds),
 
     %% For a user, remove if required and answer true
     F = fun({LUser, LServer}) ->

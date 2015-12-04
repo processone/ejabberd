@@ -105,7 +105,7 @@ start_app([], _Type, _StartFlag) ->
     ok.
 
 check_app_modules(App, StartFlag) ->
-    {A, B, C} = now(),
+    {A, B, C} = p1_time_compat:timestamp(),
     random:seed(A, B, C),
     sleep(5000),
     case application:get_key(App, modules) of

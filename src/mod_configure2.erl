@@ -186,8 +186,7 @@ process_get(#xmlel{name = <<"last">>, attrs = Attrs}) ->
       {'EXIT', _Reason} ->
 	  {error, ?ERR_INTERNAL_SERVER_ERROR};
       Vals ->
-	  {MegaSecs, Secs, _MicroSecs} = now(),
-	  TimeStamp = MegaSecs * 1000000 + Secs,
+	  TimeStamp = p1_time_compat:system_time(seconds),
 	  Str = list_to_binary(
                   [[jlib:integer_to_binary(TimeStamp - V),
                     <<" ">>] || V <- Vals]),
