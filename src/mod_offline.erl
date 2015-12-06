@@ -309,7 +309,7 @@ store_packet(From, To, Packet) ->
 		    case check_event(From, To, Packet) of
 			true ->
 			    #jid{luser = LUser, lserver = LServer} = To,
-			    TimeStamp = now(),
+			    TimeStamp = p1_time_compat:timestamp(),
 			    #xmlel{children = Els} = Packet,
 			    Expire = find_x_expire(TimeStamp, Els),
 			    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
@@ -441,7 +441,7 @@ pop_offline_messages(Ls, LUser, LServer, mnesia) ->
 	end,
     case mnesia:transaction(F) of
       {atomic, Rs} ->
-	  TS = now(),
+	  TS = p1_time_compat:timestamp(),
 	  Ls ++
 	    lists:map(fun (R) ->
 			      offline_msg_to_route(LServer, R)
@@ -487,7 +487,7 @@ pop_offline_messages(Ls, LUser, LServer, riak) ->
                   fun(#offline_msg{timestamp = T}) ->
                           ok = ejabberd_riak:delete(offline_msg, T)
                   end, Rs),
-                TS = now(),
+                TS = p1_time_compat:timestamp(),
                 Ls ++ lists:map(
                         fun (R) ->
                                 offline_msg_to_route(LServer, R)
@@ -513,7 +513,7 @@ remove_expired_messages(Server) ->
 			    gen_mod:db_type(LServer, ?MODULE)).
 
 remove_expired_messages(_LServer, mnesia) ->
-    TimeStamp = now(),
+    TimeStamp = p1_time_compat:timestamp(),
     F = fun () ->
 		mnesia:write_lock_table(offline_msg),
 		mnesia:foldl(fun (Rec, _Acc) ->
@@ -538,8 +538,7 @@ remove_old_messages(Days, Server) ->
 			gen_mod:db_type(LServer, ?MODULE)).
 
 remove_old_messages(Days, _LServer, mnesia) ->
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    S = MegaSecs * 1000000 + Secs - 60 * 60 * 24 * Days,
+    S = p1_time_compat:system_time(seconds) - 60 * 60 * 24 * Days,
     MegaSecs1 = S div 1000000,
     Secs1 = S rem 1000000,
     TimeStamp = {MegaSecs1, Secs1, 0},
@@ -949,7 +948,7 @@ get_messages_subset2(Max, Length, MsgsAll, DBType)
     MsgsLastN = lists:nthtail(Length - FirstN - FirstN,
 			      Msgs2),
     NoJID = jid:make(<<"...">>, <<"...">>, <<"">>),
-    IntermediateMsg = #offline_msg{timestamp = now(),
+    IntermediateMsg = #offline_msg{timestamp = p1_time_compat:timestamp(),
 				   from = NoJID, to = NoJID,
 				   packet =
 				       #xmlel{name = <<"...">>, attrs = [],
@@ -1113,7 +1112,7 @@ import(LServer) ->
                        {_, _, _} = Now ->
                            Now;
                        undefined ->
-                           now()
+                           p1_time_compat:timestamp()
                    end,
               Expire = find_x_expire(TS, El#xmlel.children),
               #offline_msg{us = {LUser, LServer},

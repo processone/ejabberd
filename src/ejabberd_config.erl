@@ -69,8 +69,7 @@ start() ->
     State0 = read_file(Config),
     State = validate_opts(State0),
     %% This start time is used by mod_last:
-    {MegaSecs, Secs, _} = now(),
-    UnixTime = MegaSecs*1000000 + Secs,
+    UnixTime = p1_time_compat:system_time(seconds),
     SharedKey = case erlang:get_cookie() of
                     nocookie ->
                         p1_sha:sha(randoms:get_string());
