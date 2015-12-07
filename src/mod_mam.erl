@@ -361,17 +361,26 @@ process_iq(LServer, From, To, IQ, SubEl, Fs, MsgType) ->
     end.
 
 should_archive(#xmlel{name = <<"message">>} = Pkt) ->
-    case {xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs),
-	  xml:get_subtag_cdata(Pkt, <<"body">>)} of
-	{<<"error">>, _} ->
+    case xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs) of
+	<<"error">> ->
 	    false;
-	{<<"groupchat">>, _} ->
-	    false;
-	{_, <<>>} ->
-	    %% Empty body
+	<<"groupchat">> ->
 	    false;
 	_ ->
-	    true
+	    case check_store_hint(Pkt) of
+		store ->
+		    true;
+		no_store ->
+		    false;
+		none ->
+		    case xml:get_subtag_cdata(Pkt, <<"body">>) of
+			<<>> ->
+			    %% Empty body
+			    false;
+			_ ->
+			    true
+		    end
+	    end
     end;
 should_archive(#xmlel{}) ->
     false.
@@ -425,6 +434,33 @@ should_archive_peer(C2SState,
 should_archive_muc(_MUCState, _Peer) ->
     %% TODO
     true.
+
+check_store_hint(Pkt) ->
+    case has_store_hint(Pkt) of
+	true ->
+	    store;
+	false ->
+	    case has_no_store_hint(Pkt) of
+		true ->
+		    no_store;
+		false ->
+		    none
+	    end
+    end.
+
+has_store_hint(Message) ->
+    xml:get_subtag_with_xmlns(Message, <<"store">>, ?NS_HINTS)
+      /= false.
+
+has_no_store_hint(Message) ->
+    xml:get_subtag_with_xmlns(Message, <<"no-store">>, ?NS_HINTS)
+      /= false orelse
+    xml:get_subtag_with_xmlns(Message, <<"no-storage">>, ?NS_HINTS)
+      /= false orelse
+    xml:get_subtag_with_xmlns(Message, <<"no-permanent-store">>, ?NS_HINTS)
+      /= false orelse
+    xml:get_subtag_with_xmlns(Message, <<"no-permanent-storage">>, ?NS_HINTS)
+      /= false.
 
 store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
     Prefs = get_prefs(LUser, LServer),
