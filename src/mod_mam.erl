@@ -45,7 +45,7 @@
 -record(archive_msg,
 	{us = {<<"">>, <<"">>}                :: {binary(), binary()} | '$2',
 	 id = <<>>                            :: binary() | '_',
-	 timestamp = now()                    :: erlang:timestamp() | '_' | '$1',
+	 timestamp = p1_time_compat:timestamp() :: erlang:timestamp() | '_' | '$1',
 	 peer = {<<"">>, <<"">>, <<"">>}      :: ljid() | '_' | '$3',
 	 bare_peer = {<<"">>, <<"">>, <<"">>} :: ljid() | '_' | '$3',
 	 packet = #xmlel{}                    :: xmlel() | '_',
@@ -450,7 +450,7 @@ store_muc(MUCState, Pkt, RoomJID, Peer, Nick) ->
 
 store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir, mnesia) ->
     LPeer = {PUser, PServer, _} = jid:tolower(Peer),
-    TS = now(),
+    TS = p1_time_compat:timestamp(),
     ID = jlib:integer_to_binary(now_to_usec(TS)),
     case mnesia:dirty_write(
 	   #archive_msg{us = {LUser, LServer},
@@ -467,7 +467,7 @@ store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir, mnesia) ->
 	    Err
     end;
 store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, odbc) ->
-    TSinteger = now_to_usec(now()),
+    TSinteger = p1_time_compat:system_time(micro_seconds),
     ID = TS = jlib:integer_to_binary(TSinteger),
     SUser = case Type of
 		chat -> LUser;

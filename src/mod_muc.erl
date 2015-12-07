@@ -864,7 +864,7 @@ flush() -> receive _ -> flush() after 0 -> ok end.
 
 iq_get_unique(From) ->
     {xmlcdata,
-     p1_sha:sha(term_to_binary([From, now(),
+     p1_sha:sha(term_to_binary([From, p1_time_compat:timestamp(),
 			     randoms:get_string()]))}.
 
 get_nick(ServerHost, Host, From) ->

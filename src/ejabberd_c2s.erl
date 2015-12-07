@@ -326,7 +326,7 @@ init([{SockMod, Socket}, Opts]) ->
 		       xml_socket = XMLSocket, zlib = Zlib, tls = TLS,
 		       tls_required = StartTLSRequired,
 		       tls_enabled = TLSEnabled, tls_options = TLSOpts,
-		       sid = {now(), self()}, streamid = new_id(),
+		       sid = {p1_time_compat:timestamp(), self()}, streamid = new_id(),
 		       access = Access, shaper = Shaper, ip = IP,
 		       mgmt_state = StreamMgmtState,
 		       mgmt_max_queue = MaxAckQueue,
@@ -1011,9 +1011,7 @@ resource_conflict_action(U, S, R) ->
       acceptnew -> {accept_resource, R};
       closenew -> closenew;
       setresource ->
-	  Rnew = iolist_to_binary([randoms:get_string()
-                                   | [jlib:integer_to_binary(X)
-                                      || X <- tuple_to_list(now())]]),
+	  Rnew = iolist_to_binary([randoms:get_string(),randoms:get_string(),randoms:get_string()]),
 	  {accept_resource, Rnew}
     end.
 
@@ -1041,9 +1039,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 	  R = case jid:resourceprep(R1) of
 		error -> error;
 		<<"">> ->
-                      iolist_to_binary([randoms:get_string()
-                                        | [jlib:integer_to_binary(X)
-                                           || X <- tuple_to_list(now())]]);
+                      iolist_to_binary([randoms:get_string(),randoms:get_string(),randoms:get_string()]);
 		Resource -> Resource
 	      end,
 	  case R of
@@ -2047,7 +2043,7 @@ presence_update(From, Packet, StateData) ->
 	  FromUnavail = (StateData#state.pres_last == undefined),
 	  ?DEBUG("from unavail = ~p~n", [FromUnavail]),
 	  NewStateData = StateData#state{pres_last = Packet,
-					 pres_timestamp = now()},
+					 pres_timestamp = p1_time_compat:timestamp()},
 	  NewState = if FromUnavail ->
 			    ejabberd_hooks:run(user_available_hook,
 					       NewStateData#state.server,
@@ -2791,7 +2787,7 @@ mgmt_queue_add(StateData, El) ->
 	       Num ->
 		   Num + 1
 	     end,
-    NewQueue = queue:in({NewNum, now(), El}, StateData#state.mgmt_queue),
+    NewQueue = queue:in({NewNum, p1_time_compat:timestamp(), El}, StateData#state.mgmt_queue),
     NewState = StateData#state{mgmt_queue = NewQueue,
 			       mgmt_stanzas_out = NewNum},
     check_queue_length(NewState).
@@ -3003,7 +2999,7 @@ csi_queue_add(#state{csi_queue = Queue} = StateData, Stanza) ->
       true -> csi_queue_add(csi_queue_flush(StateData), Stanza);
       false ->
 	  From = xml:get_tag_attr_s(<<"from">>, Stanza),
-	  NewQueue = lists:keystore(From, 1, Queue, {From, now(), Stanza}),
+	  NewQueue = lists:keystore(From, 1, Queue, {From, p1_time_compat:timestamp(), Stanza}),
 	  StateData#state{csi_queue = NewQueue}
     end.
 

@@ -141,7 +141,7 @@ get_pids() ->
     [ejabberd_riak:get_proc(I) || I <- lists:seq(1, get_pool_size())].
 
 get_random_pid() ->
-    get_random_pid(now()).
+    get_random_pid(p1_time_compat:monotonic_time()).
 
 get_random_pid(Term) ->
     I = erlang:phash2(Term, get_pool_size()) + 1,

@@ -112,7 +112,7 @@ get_node_uptime() ->
         undefined ->
             trunc(element(1, erlang:statistics(wall_clock)) / 1000);
         Now ->
-            now_to_seconds(now()) - Now
+            p1_time_compat:system_time(seconds) - Now
     end.
 
 now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
@@ -210,7 +210,7 @@ get_last_iq(IQ, SubEl, LUser, LServer) ->
 		IQ#iq{type = error,
 		      sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
 	    {ok, TimeStamp, Status} ->
-		TimeStamp2 = now_to_seconds(now()),
+		TimeStamp2 = p1_time_compat:system_time(seconds),
 		Sec = TimeStamp2 - TimeStamp,
 		IQ#iq{type = result,
 		      sub_el =
@@ -232,7 +232,7 @@ get_last_iq(IQ, SubEl, LUser, LServer) ->
     end.
 
 on_presence_update(User, Server, _Resource, Status) ->
-    TimeStamp = now_to_seconds(now()),
+    TimeStamp = p1_time_compat:system_time(seconds),
     store_last_info(User, Server, TimeStamp, Status).
 
 store_last_info(User, Server, TimeStamp, Status) ->

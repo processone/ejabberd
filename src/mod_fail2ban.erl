@@ -65,7 +65,7 @@ c2s_auth_result(false, _User, LServer, {Addr, _Port}) ->
 			    LServer, ?MODULE, c2s_max_auth_failures,
 			    fun(I) when is_integer(I), I > 0 -> I end,
 			    ?C2S_MAX_AUTH_FAILURES),
-	    UnbanTS = unban_timestamp(BanLifetime),
+	    UnbanTS = p1_time_compat:system_time(seconds) + BanLifetime,
 	    case ets:lookup(failed_auth, Addr) of
 		[{Addr, N, _, _}] ->
 		    ets:insert(failed_auth, {Addr, N+1, UnbanTS, MaxFailures});
@@ -79,7 +79,7 @@ c2s_auth_result(true, _User, _Server, _AddrPort) ->
 check_bl_c2s(_Acc, Addr, Lang) ->
     case ets:lookup(failed_auth, Addr) of
 	[{Addr, N, TS, MaxFailures}] when N >= MaxFailures ->
-	    case TS > now() of
+	    case TS > p1_time_compat:system_time(seconds) of
 		true ->
 		    IP = jlib:ip_to_list(Addr),
 		    UnbanDate = format_date(
@@ -139,7 +139,7 @@ handle_cast(_Msg, State) ->
 
 handle_info(clean, State) ->
     ?DEBUG("cleaning ~p ETS table", [failed_auth]),
-    Now = now(),
+    Now = p1_time_compat:system_time(seconds),
     ets:select_delete(
       failed_auth,
       ets:fun2ms(fun({_, _, UnbanTS, _}) -> UnbanTS =< Now end)),
@@ -170,11 +170,6 @@ is_whitelisted(Host, Addr) ->
 				    fun(A) when is_atom(A) -> A end,
 				    none),
     acl:match_rule(Host, Access, Addr) == allow.
-
-unban_timestamp(BanLifetime) ->
-    {MegaSecs, MSecs, USecs} = now(),
-    UnbanSecs = MegaSecs * 1000000 + MSecs + BanLifetime,
-    {UnbanSecs div 1000000, UnbanSecs rem 1000000, USecs}.
 
 is_loaded_at_other_hosts(Host) ->
     lists:any(

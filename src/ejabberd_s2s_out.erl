@@ -1097,8 +1097,7 @@ get_addr_port(Server) ->
 	  ?DEBUG("srv lookup of '~s': ~p~n",
 		 [Server, HEnt#hostent.h_addr_list]),
 	  AddrList = HEnt#hostent.h_addr_list,
-	  {A1, A2, A3} = now(),
-	  random:seed(A1, A2, A3),
+	  random:seed(p1_time_compat:monotonic_time()),
 	  case catch lists:map(fun ({Priority, Weight, Port,
 				     Host}) ->
 				       N = case Weight of
@@ -1273,7 +1272,7 @@ wait_before_reconnect(StateData) ->
     cancel_timer(StateData#state.timer),
     Delay = case StateData#state.delay_to_retry of
 	      undefined_delay ->
-		  {_, _, MicroSecs} = now(), MicroSecs rem 14000 + 1000;
+		  {_, _, MicroSecs} = p1_time_compat:timestamp(), MicroSecs rem 14000 + 1000;
 	      D1 -> lists:min([D1 * 2, get_max_retry_delay()])
 	    end,
     Timer = erlang:start_timer(Delay, self(), []),

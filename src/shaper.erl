@@ -107,7 +107,7 @@ new(Name) ->
 new1(none) -> none;
 new1(MaxRate) ->
     #maxrate{maxrate = MaxRate, lastrate = 0.0,
-	     lasttime = now_to_usec(now())}.
+	     lasttime = p1_time_compat:system_time(micro_seconds)}.
 
 -spec update(shaper(), integer()) -> {shaper(), integer()}.
 
@@ -115,7 +115,7 @@ update(none, _Size) -> {none, 0};
 update(#maxrate{} = State, Size) ->
     MinInterv = 1000 * Size /
 		  (2 * State#maxrate.maxrate - State#maxrate.lastrate),
-    Interv = (now_to_usec(now()) - State#maxrate.lasttime) /
+    Interv = (p1_time_compat:system_time(micro_seconds) - State#maxrate.lasttime) /
 	       1000,
     ?DEBUG("State: ~p, Size=~p~nM=~p, I=~p~n",
 	   [State, Size, MinInterv, Interv]),
@@ -123,7 +123,7 @@ update(#maxrate{} = State, Size) ->
 		   1 + trunc(MinInterv - Interv);
 	       true -> 0
 	    end,
-    NextNow = now_to_usec(now()) + Pause * 1000,
+    NextNow = p1_time_compat:system_time(micro_seconds) + Pause * 1000,
     {State#maxrate{lastrate =
 		       (State#maxrate.lastrate +
 			  1000000 * Size / (NextNow - State#maxrate.lasttime))
@@ -140,9 +140,6 @@ transform_options({OptName, Name, none}, Opts) when OptName == shaper ->
     [{shaper, [{Name, none}]}|Opts];
 transform_options(Opt, Opts) ->
     [Opt|Opts].
-
-now_to_usec({MSec, Sec, USec}) ->
-    (MSec * 1000000 + Sec) * 1000000 + USec.
 
 opt_type(shaper) -> fun (V) -> V end;
 opt_type(_) -> [shaper].

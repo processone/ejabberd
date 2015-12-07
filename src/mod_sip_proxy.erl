@@ -299,8 +299,7 @@ add_record_route_and_set_uri(URI, LServer, #sip{hdrs = Hdrs} = Req) ->
 	    case need_record_route(LServer) of
 		true ->
 		    RR_URI = get_configured_record_route(LServer),
-		    {MSecs, Secs, _} = now(),
-		    TS = list_to_binary(integer_to_list(MSecs*1000000 + Secs)),
+		    TS = list_to_binary(integer_to_list(p1_time_compat:system_time(seconds))),
 		    Sign = make_sign(TS, Hdrs),
 		    User = <<TS/binary, $-, Sign/binary>>,
 		    NewRR_URI = RR_URI#uri{user = User},
@@ -341,8 +340,7 @@ is_signed_by_me(TS_Sign, Hdrs) ->
     try
 	[TSBin, Sign] = str:tokens(TS_Sign, <<"-">>),
 	TS = list_to_integer(binary_to_list(TSBin)),
-	{MSecs, Secs, _} = now(),
-	NowTS = MSecs*1000000 + Secs,
+	NowTS = p1_time_compat:system_time(seconds),
 	true = (NowTS - TS) =< ?SIGN_LIFETIME,
 	Sign == make_sign(TSBin, Hdrs)
     catch _:_ ->

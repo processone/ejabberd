@@ -509,8 +509,7 @@ check_timeout(Source) ->
                         infinity
                 end, 600),
     if is_integer(Timeout) ->
-	   {MSec, Sec, _USec} = now(),
-	   Priority = -(MSec * 1000000 + Sec),
+	   Priority = -p1_time_compat:system_time(seconds),
 	   CleanPriority = Priority + Timeout,
 	   F = fun () ->
 		       Treap = case mnesia:read(mod_register_ip, treap, write)

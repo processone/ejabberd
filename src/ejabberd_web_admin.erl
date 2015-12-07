@@ -1722,8 +1722,7 @@ user_parse_query1(Action, User, Server, Query) ->
     end.
 
 list_last_activity(Host, Lang, Integral, Period) ->
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    TimeStamp = MegaSecs * 1000000 + Secs,
+    TimeStamp = p1_time_compat:system_time(seconds),
     case Period of
       <<"all">> -> TS = 0, Days = infinity;
       <<"year">> -> TS = TimeStamp - 366 * 86400, Days = 366;

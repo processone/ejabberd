@@ -347,8 +347,8 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 			  ejabberd_config:get_local_option({domain_balancing,
 							    LDstDomain}, fun(D) when is_atom(D) -> D end)
 			    of
-			  undefined -> now();
-			  random -> now();
+			  undefined -> p1_time_compat:monotonic_time();
+			  random -> p1_time_compat:monotonic_time();
 			  source -> jid:tolower(From);
 			  destination -> jid:tolower(To);
 			  bare_source ->
