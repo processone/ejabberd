@@ -35,7 +35,7 @@ start() ->
     register(random_generator, spawn(randoms, init, [])).
 
 init() ->
-    random:seed(p1_time_compat:monotonic_time()), loop().
+    random:seed(p1_time_compat:timestamp()), loop().
 
 loop() ->
     receive
