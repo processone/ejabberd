@@ -72,8 +72,11 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_REGISTER).
 
-stream_feature_register(Acc, _Host) ->
-    case lists:keymember(<<"mechanisms">>, 2, Acc) of
+stream_feature_register(Acc, Host) ->
+    AF = gen_mod:get_module_opt(Host, ?MODULE, access_from,
+                                          fun(A) when is_atom(A) -> A end,
+					  all),
+    case (AF /= none) and lists:keymember(<<"mechanisms">>, 2, Acc) of
 	true ->
 	    [#xmlel{name = <<"register">>,
 		    attrs = [{<<"xmlns">>, ?NS_FEATURE_IQREGISTER}],
