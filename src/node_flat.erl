@@ -362,7 +362,7 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 	    {error, ?ERR_FORBIDDEN};
 	true ->
 	    if MaxItems > 0 ->
-		    Now = now(),
+		    Now = p1_time_compat:timestamp(),
 		    PubId = {Now, SubKey},
 		    Item = case get_item(Nidx, ItemId) of
 			{result, OldItem} ->

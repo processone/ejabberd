@@ -223,9 +223,9 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
 	    {error, ?ERR_FORBIDDEN};
 	true ->
 	    if MaxItems > 0 ->
-		    PubId = {now(), SubKey},
+		    PubId = {p1_time_compat:timestamp(), SubKey},
 		    set_item(#pubsub_item{itemid = {ItemId, Nidx},
-			    creation = {now(), GenKey},
+			    creation = {p1_time_compat:timestamp(), GenKey},
 			    modification = PubId,
 			    payload = Payload}),
 		    Items = [ItemId | itemids(Nidx, GenKey) -- [ItemId]],

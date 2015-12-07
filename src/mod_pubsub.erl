@@ -3141,7 +3141,7 @@ sub_option_can_deliver(nodes, _, {subscription_type, items}) -> false;
 sub_option_can_deliver(_, _, {subscription_depth, all}) -> true;
 sub_option_can_deliver(_, Depth, {subscription_depth, D}) -> Depth =< D;
 sub_option_can_deliver(_, _, {deliver, false}) -> false;
-sub_option_can_deliver(_, _, {expire, When}) -> now() < When;
+sub_option_can_deliver(_, _, {expire, When}) -> p1_time_compat:timestamp() < When;
 sub_option_can_deliver(_, _, _) -> true.
 
 -spec(presence_can_deliver/2 ::
@@ -3910,7 +3910,7 @@ set_cached_item({_, ServerHost, _}, Nidx, ItemId, Publisher, Payload) ->
 set_cached_item(Host, Nidx, ItemId, Publisher, Payload) ->
     case is_last_item_cache_enabled(Host) of
 	true -> mnesia:dirty_write({pubsub_last_item, Nidx, ItemId,
-		    {now(), jid:tolower(jid:remove_resource(Publisher))},
+		    {p1_time_compat:timestamp(), jid:tolower(jid:remove_resource(Publisher))},
 		    Payload});
 	_ -> ok
     end.
@@ -4218,7 +4218,7 @@ string_to_ljid(JID) ->
 
 -spec(uniqid/0 :: () -> mod_pubsub:itemId()).
 uniqid() ->
-    {T1, T2, T3} = now(),
+    {T1, T2, T3} = p1_time_compat:timestamp(),
     iolist_to_binary(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).
 
 nodeAttr(Node) -> [{<<"node">>, Node}].

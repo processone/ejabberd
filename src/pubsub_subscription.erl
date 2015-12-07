@@ -202,7 +202,7 @@ write_subscription(_JID, _NodeId, SubID, Options) ->
 
 -spec(make_subid/0 :: () -> SubId::mod_pubsub:subId()).
 make_subid() ->
-    {T1, T2, T3} = now(),
+    {T1, T2, T3} = p1_time_compat:timestamp(),
     iolist_to_binary(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).
 
 %%
