@@ -227,8 +227,6 @@ process_iq_v0_2(#jid{lserver = LServer} = From,
 		    [{<<"end">>, [xml:get_tag_cdata(El)]}];
 		(#xmlel{name = <<"with">>} = El) ->
 		    [{<<"with">>, [xml:get_tag_cdata(El)]}];
-		(#xmlel{name = <<"withroom">>} = El) ->
-		    [{<<"withroom">>, [xml:get_tag_cdata(El)]}];
 		(#xmlel{name = <<"withtext">>} = El) ->
 		    [{<<"withtext">>, [xml:get_tag_cdata(El)]}];
 		(#xmlel{name = <<"set">>}) ->
@@ -342,10 +340,6 @@ process_iq(LServer, From, To, IQ, SubEl, Fs, MsgType) ->
 			  With, RSM};
 		    ({<<"with">>, [Data|_]}, {Start, End, _, RSM}) ->
 			 {Start, End, jid:tolower(jid:from_string(Data)), RSM};
-		    ({<<"withroom">>, [Data|_]}, {Start, End, _, RSM}) ->
-			 {Start, End,
-			  {room, jid:tolower(jid:from_string(Data))},
-			  RSM};
 		    ({<<"withtext">>, [Data|_]}, {Start, End, _, RSM}) ->
 			 {Start, End, {text, Data}, RSM};
 		    ({<<"set">>, El}, {Start, End, With, _}) ->
@@ -628,14 +622,7 @@ select_and_send(LServer, From, To, Start, End, With, RSM, IQ, MsgType, DBType) -
 select_and_start(LServer, From, To, Start, End, With, RSM, MsgType, DBType) ->
     case MsgType of
 	chat ->
-	    case With of
-		{room, {_, _, <<"">>} = WithJID} ->
-		    select(LServer, jid:make(WithJID), Start, End,
-			   WithJID, RSM, MsgType, DBType);
-		_ ->
-		    select(LServer, From, Start, End,
-			   With, RSM, MsgType, DBType)
-	    end;
+	    select(LServer, From, Start, End, With, RSM, MsgType, DBType);
 	{groupchat, _Role, _MUCState} ->
 	    select(LServer, To, Start, End, With, RSM, MsgType, DBType)
     end.
