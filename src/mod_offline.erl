@@ -348,7 +348,7 @@ has_no_store_hint(Packet) ->
       orelse
       xml:get_subtag_with_xmlns(Packet, <<"no-storage">>, ?NS_HINTS) =/= false.
 
-%% Check if the packet has any content about XEP-0022 or XEP-0085
+%% Check if the packet has any content about XEP-0022
 check_event(From, To, Packet) ->
     #xmlel{name = Name, attrs = Attrs, children = Els} =
 	Packet,
@@ -392,7 +392,7 @@ check_event(From, To, Packet) ->
 	  end
     end.
 
-%% Check if the packet has subelements about XEP-0022, XEP-0085 or other
+%% Check if the packet has subelements about XEP-0022
 find_x_event([]) -> false;
 find_x_event([{xmlcdata, _} | Els]) ->
     find_x_event(Els);
