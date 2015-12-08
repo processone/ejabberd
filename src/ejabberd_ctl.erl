@@ -67,7 +67,7 @@ start() ->
                                  [SNode2, "--no-timeout" | Args2] ->
                                      [SNode2, infinity, Args2];
                                  [SNode3 | Args3] ->
-                                     [SNode3, 10000, Args3];
+                                     [SNode3, 60000, Args3];
                                  _ ->
                                      print_usage(),
                                      halt(?STATUS_USAGE)
