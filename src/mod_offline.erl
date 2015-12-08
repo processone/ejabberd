@@ -284,18 +284,25 @@ need_to_store(LServer, Packet) ->
     Type = xml:get_tag_attr_s(<<"type">>, Packet),
     if (Type /= <<"error">>) and (Type /= <<"groupchat">>)
        and (Type /= <<"headline">>) ->
-	    case gen_mod:get_module_opt(
-		   LServer, ?MODULE, store_empty_body,
-		   fun(V) when is_boolean(V) -> V;
-		      (unless_chat_state) -> unless_chat_state
-		   end,
-		   unless_chat_state) of
-		false ->
-		    xml:get_subtag(Packet, <<"body">>) /= false;
-		unless_chat_state ->
-		    not jlib:is_standalone_chat_state(Packet);
-		true ->
-		    true
+	    case check_store_hint(Packet) of
+		store ->
+		    true;
+		no_store ->
+		    false;
+		none ->
+		    case gen_mod:get_module_opt(
+			   LServer, ?MODULE, store_empty_body,
+			   fun(V) when is_boolean(V) -> V;
+			      (unless_chat_state) -> unless_chat_state
+			   end,
+			   unless_chat_state) of
+			false ->
+			    xml:get_subtag(Packet, <<"body">>) /= false;
+			unless_chat_state ->
+			    not jlib:is_standalone_chat_state(Packet);
+			true ->
+			    true
+		    end
 	    end;
        true ->
 	    false
@@ -304,25 +311,37 @@ need_to_store(LServer, Packet) ->
 store_packet(From, To, Packet) ->
     case need_to_store(To#jid.lserver, Packet) of
 	true ->
-	    case has_no_store_hint(Packet) of
-		false ->
-		    case check_event(From, To, Packet) of
-			true ->
-			    #jid{luser = LUser, lserver = LServer} = To,
-			    TimeStamp = p1_time_compat:timestamp(),
-			    #xmlel{children = Els} = Packet,
-			    Expire = find_x_expire(TimeStamp, Els),
-			    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
-			    #offline_msg{us = {LUser, LServer},
-				timestamp = TimeStamp, expire = Expire,
-				from = From, to = To, packet = Packet},
-			    stop;
-			_ -> ok
-		    end;
+	    case check_event(From, To, Packet) of
+		true ->
+		    #jid{luser = LUser, lserver = LServer} = To,
+		    TimeStamp = p1_time_compat:timestamp(),
+		    #xmlel{children = Els} = Packet,
+		    Expire = find_x_expire(TimeStamp, Els),
+		    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
+		      #offline_msg{us = {LUser, LServer},
+				   timestamp = TimeStamp, expire = Expire,
+				   from = From, to = To, packet = Packet},
+		    stop;
 		_ -> ok
 	    end;
 	false -> ok
     end.
+
+check_store_hint(Packet) ->
+    case has_store_hint(Packet) of
+	true ->
+	    store;
+	false ->
+	    case has_no_store_hint(Packet) of
+		true ->
+		    no_store;
+		false ->
+		    none
+	    end
+    end.
+
+has_store_hint(Packet) ->
+    xml:get_subtag_with_xmlns(Packet, <<"store">>, ?NS_HINTS) =/= false.
 
 has_no_store_hint(Packet) ->
     xml:get_subtag_with_xmlns(Packet, <<"no-store">>, ?NS_HINTS) =/= false
