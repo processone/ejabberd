@@ -63,37 +63,40 @@
 %%-----------------------------
 
 start() ->
-    case init:get_plain_arguments() of
-	[SNode | Args] ->
-	    SNode1 = case string:tokens(SNode, "@") of
-			 [_Node, _Server] ->
-			     SNode;
-			 _ ->
-			     case net_kernel:longnames() of
-				 true ->
-				     lists:flatten([SNode, "@", inet_db:gethostname(),
-                                                    ".", inet_db:res_option(domain)]);
-				 false ->
-                                     lists:flatten([SNode, "@", inet_db:gethostname()]);
-				 _ ->
-				     SNode
-			     end
-		     end,
-	    Node = list_to_atom(SNode1),
-	    Status = case rpc:call(Node, ?MODULE, process, [Args], 60000) of
-			 {badrpc, Reason} ->
-			     print("Failed RPC connection to the node ~p: ~p~n",
-				    [Node, Reason]),
-			     %% TODO: show minimal start help
-			     ?STATUS_BADRPC;
-			 S ->
-			     S
-		     end,
-	    halt(Status);
-	_ ->
-	    print_usage(),
-	    halt(?STATUS_USAGE)
-    end.
+    [SNode, Timeout, Args] = case init:get_plain_arguments() of
+                                 [SNode2, "--no-timeout" | Args2] ->
+                                     [SNode2, infinity, Args2];
+                                 [SNode3 | Args3] ->
+                                     [SNode3, 10000, Args3];
+                                 _ ->
+                                     print_usage(),
+                                     halt(?STATUS_USAGE)
+                             end,
+    SNode1 = case string:tokens(SNode, "@") of
+                 [_Node, _Server] ->
+                     SNode;
+                 _ ->
+                     case net_kernel:longnames() of
+                         true ->
+                             lists:flatten([SNode, "@", inet_db:gethostname(),
+                                            ".", inet_db:res_option(domain)]);
+                         false ->
+                             lists:flatten([SNode, "@", inet_db:gethostname()]);
+                         _ ->
+                             SNode
+                     end
+             end,
+    Node = list_to_atom(SNode1),
+    Status = case rpc:call(Node, ?MODULE, process, [Args], Timeout) of
+                 {badrpc, Reason} ->
+                     print("Failed RPC connection to the node ~p: ~p~n",
+                           [Node, Reason]),
+                     %% TODO: show minimal start help
+                     ?STATUS_BADRPC;
+                 S ->
+                     S
+             end,
+    halt(Status).
 
 init() ->
     ets:new(ejabberd_ctl_cmds, [named_table, set, public]),
@@ -470,7 +473,7 @@ print_usage(HelpMode, MaxC, ShCode) ->
 	get_list_ctls(),
 
     print(
-       ["Usage: ", ?B("ejabberdctl"), " [--node ", ?U("nodename"), "] [--auth ",
+       ["Usage: ", ?B("ejabberdctl"), " [--no-timeout] [--node ", ?U("nodename"), "] [--auth ",
 	?U("user"), " ", ?U("host"), " ", ?U("password"), "] ",
 	?U("command"), " [", ?U("options"), "]\n"
 	"\n"

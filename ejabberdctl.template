@@ -48,6 +48,7 @@ while [ $# -ne 0 ] ; do
     shift
     case $PARAM in
         --) break ;;
+        --no-timeout) EJABBERD_NO_TIMEOUT="--no-timeout" ;;
         --node) ERLANG_NODE_ARG=$1 ; shift ;;
         --config-dir) ETC_DIR="$1" ; shift ;;
         --config) EJABBERD_CONFIG_PATH="$1" ; shift ;;
@@ -418,7 +419,7 @@ ctlexec()
       -hidden \
       -pa $EJABBERD_EBIN_PATH \
       $KERNEL_OPTS \
-      -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
+      -s ejabberd_ctl -extra $ERLANG_NODE $EJABBERD_NO_TIMEOUT $COMMAND"
 }
 
 # stop epmd if there is no other running node
