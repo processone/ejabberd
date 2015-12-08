@@ -27,7 +27,7 @@
 -behaviour(ejabberd_config).
 
 %% API
--export([start/0, reopen_log/0, get/0, set/1, get_log_path/0, opt_type/1]).
+-export([start/0, reopen_log/0, rotate_log/0, get/0, set/1, get_log_path/0, opt_type/1]).
 
 -include("ejabberd.hrl").
 
@@ -36,6 +36,7 @@
 -spec start() -> ok.
 -spec get_log_path() -> string().
 -spec reopen_log() -> ok.
+-spec rotate_log() -> ok.
 -spec get() -> {loglevel(), atom(), string()}.
 -spec set(loglevel() | {loglevel(), list()}) -> {module, module()}.
 
@@ -128,6 +129,10 @@ start() ->
     ok.
 
 reopen_log() ->
+    %% Lager detects external log rotation automatically.
+    ok.
+
+rotate_log() ->
     lager_crash_log ! rotate,
     lists:foreach(
       fun({lager_file_backend, File}) ->
@@ -190,6 +195,10 @@ reopen_log() ->
     %% TODO: Use the Reopen log API for logger_h ?
     p1_logger_h:reopen_log(),
     reopen_sasl_log().
+
+rotate_log() ->
+    %% Not implemented.
+    ok.
 
 get() ->
     p1_loglevel:get().

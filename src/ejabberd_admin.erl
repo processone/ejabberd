@@ -28,7 +28,7 @@
 
 -export([start/0, stop/0,
 	 %% Server
-	 status/0, reopen_log/0,
+	 status/0, reopen_log/0, rotate_log/0,
 	 set_loglevel/1,
 	 stop_kindly/2, send_service_message_all_mucs/2,
 	 registered_vhosts/0,
@@ -87,6 +87,10 @@ commands() ->
      #ejabberd_commands{name = reopen_log, tags = [logs, server],
 			desc = "Reopen the log files",
 			module = ?MODULE, function = reopen_log,
+			args = [], result = {res, rescode}},
+     #ejabberd_commands{name = rotate_log, tags = [logs, server],
+			desc = "Rotate the log files",
+			module = ?MODULE, function = rotate_log,
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = stop_kindly, tags = [server],
 			desc = "Inform users and rooms, wait, and stop the server",
@@ -276,6 +280,9 @@ reopen_log() ->
     ejabberd_hooks:run(reopen_log_hook, []),
     ejabberd_logger:reopen_log().
 
+rotate_log() ->
+    ejabberd_hooks:run(rotate_log_hook, []),
+    ejabberd_logger:rotate_log().
 
 set_loglevel(LogLevel) ->
     {module, Module} = ejabberd_logger:set(LogLevel),
