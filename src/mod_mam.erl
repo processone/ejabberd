@@ -324,7 +324,8 @@ process_iq(#jid{luser = LUser, lserver = LServer},
 		   children = JFun(Prefs#archive_prefs.never)},
     IQ#iq{type = result,
 	  sub_el = [#xmlel{name = <<"prefs">>,
-			   attrs = [{<<"default">>, Default}],
+			   attrs = [{<<"xmlns">>, IQ#iq.xmlns},
+				    {<<"default">>, Default}],
 			   children = [Always, Never]}]};
 process_iq(_, _, #iq{sub_el = SubEl} = IQ) ->
     IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
