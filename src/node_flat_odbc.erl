@@ -57,7 +57,7 @@
     encode_host/1]).
 
 init(_Host, _ServerHost, _Opts) ->
-    pubsub_subscription_odbc:init(),
+    %%pubsub_subscription_odbc:init(),
     ok.
 
 terminate(_Host, _ServerHost) ->
@@ -95,7 +95,7 @@ delete_node(Nodes) ->
     {result, {default, broadcast, Reply}}.
 
 subscribe_node(Nidx, Sender, Subscriber, AccessModel,
-	    SendLast, PresenceSubscription, RosterGroup, Options) ->
+	    SendLast, PresenceSubscription, RosterGroup, _Options) ->
     SubKey = jid:tolower(Subscriber),
     GenKey = jid:remove_resource(SubKey),
     Authorized = jid:tolower(jid:remove_resource(Sender)) == GenKey,
@@ -131,16 +131,26 @@ subscribe_node(Nidx, Sender, Subscriber, AccessModel,
 	%%        % Requesting entity is anonymous
 	%%        {error, ?ERR_FORBIDDEN};
 	true ->
-	    {result, SubId} = pubsub_subscription_odbc:subscribe_node(Subscriber, Nidx, Options),
-	    NewSub = case AccessModel of
-		authorize -> pending;
-		_ -> subscribed
+	    %%{result, SubId} = pubsub_subscription_odbc:subscribe_node(Subscriber, Nidx, Options),
+	    {NewSub, SubId} = case Subscriptions of
+		[{subscribed, Id}|_] ->
+		    {subscribed, Id};
+		[] ->
+		    Id = pubsub_subscription_odbc:make_subid(),
+		    Sub = case AccessModel of
+			authorize -> pending;
+			_ -> subscribed
+		    end,
+		    update_subscription(Nidx, SubKey, [{Sub, Id} | Subscriptions]),
+		    {Sub, Id}
 	    end,
-	    update_subscription(Nidx, SubKey, [{NewSub, SubId} | Subscriptions]),
 	    case {NewSub, SendLast} of
-		{subscribed, never} -> {result, {default, subscribed, SubId}};
-		{subscribed, _} -> {result, {default, subscribed, SubId, send_last}};
-		{_, _} -> {result, {default, pending, SubId}}
+		{subscribed, never} ->
+		    {result, {default, subscribed, SubId}};
+		{subscribed, _} ->
+		    {result, {default, subscribed, SubId, send_last}};
+		{_, _} ->
+		    {result, {default, pending, SubId}}
 	    end
     end.
 
@@ -200,7 +210,7 @@ unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
 
 delete_subscription(SubKey, Nidx, {Subscription, SubId}, Affiliation, Subscriptions) ->
     NewSubs = Subscriptions -- [{Subscription, SubId}],
-    pubsub_subscription_odbc:unsubscribe_node(SubKey, Nidx, SubId),
+    %%pubsub_subscription_odbc:unsubscribe_node(SubKey, Nidx, SubId),
     case {Affiliation, NewSubs} of
 	{none, []} -> del_state(Nidx, SubKey);
 	_ -> update_subscription(Nidx, SubKey, NewSubs)
@@ -497,14 +507,15 @@ replace_subscription(_, [], Acc) -> Acc;
 replace_subscription({Sub, SubId}, [{_, SubId} | T], Acc) ->
     replace_subscription({Sub, SubId}, T, [{Sub, SubId} | Acc]).
 
-new_subscription(Nidx, Owner, Subscription, SubState) ->
-    {result, SubId} = pubsub_subscription_odbc:subscribe_node(Owner, Nidx, []),
+new_subscription(_Nidx, _Owner, Subscription, SubState) ->
+    %%{result, SubId} = pubsub_subscription_odbc:subscribe_node(Owner, Nidx, []),
+    SubId = pubsub_subscription_odbc:make_subid(),
     Subscriptions = [{Subscription, SubId} | SubState#pubsub_state.subscriptions],
     set_state(SubState#pubsub_state{subscriptions = Subscriptions}),
     {Subscription, SubId}.
 
 unsub_with_subid(Nidx, SubId, SubState) ->
-    pubsub_subscription_odbc:unsubscribe_node(SubState#pubsub_state.stateid, Nidx, SubId),
+    %%pubsub_subscription_odbc:unsubscribe_node(SubState#pubsub_state.stateid, Nidx, SubId),
     NewSubs = [{S, Sid}
 	    || {S, Sid} <- SubState#pubsub_state.subscriptions,
 		SubId =/= Sid],

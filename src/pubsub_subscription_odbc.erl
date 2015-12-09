@@ -27,6 +27,7 @@
 %% API
 -export([init/0, subscribe_node/3, unsubscribe_node/3,
     get_subscription/3, set_subscription/4,
+    make_subid/0,
     get_options_xform/2, parse_options_xform/1]).
 
 -include("pubsub.hrl").

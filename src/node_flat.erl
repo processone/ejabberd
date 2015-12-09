@@ -51,7 +51,7 @@
     path_to_node/1, can_fetch_item/2, is_subscribed/1]).
 
 init(_Host, _ServerHost, _Opts) ->
-    pubsub_subscription:init(),
+    %%pubsub_subscription:init(),
     mnesia:create_table(pubsub_state,
 	[{disc_copies, [node()]},
 	    {type, ordered_set},
@@ -97,7 +97,6 @@ features() ->
 	<<"instant-nodes">>,
 	<<"manage-subscriptions">>,
 	<<"modify-affiliations">>,
-	<<"multi-subscribe">>,
 	<<"outcast-affiliation">>,
 	<<"persistent-items">>,
 	<<"publish">>,
@@ -108,8 +107,8 @@ features() ->
 	<<"retrieve-items">>,
 	<<"retrieve-subscriptions">>,
 	<<"subscribe">>,
-	<<"subscription-notifications">>,
-	<<"subscription-options">>].
+	<<"subscription-notifications">>].
+%%<<"subscription-options">>
 
 %% @doc Checks if the current user has the permission to create the requested node
 %% <p>In flat node, any unused node name is allowed. The access parameter is also
@@ -177,7 +176,7 @@ delete_node(Nodes) ->
 %% </p>
 %% <p>In the default plugin module, the record is unchanged.</p>
 subscribe_node(Nidx, Sender, Subscriber, AccessModel,
-	    SendLast, PresenceSubscription, RosterGroup, Options) ->
+	    SendLast, PresenceSubscription, RosterGroup, _Options) ->
     SubKey = jid:tolower(Subscriber),
     GenKey = jid:remove_resource(SubKey),
     Authorized = jid:tolower(jid:remove_resource(Sender)) == GenKey,
@@ -219,13 +218,20 @@ subscribe_node(Nidx, Sender, Subscriber, AccessModel,
 	%%        % Requesting entity is anonymous
 	%%        {error, ?ERR_FORBIDDEN};
 	true ->
-	    SubId = pubsub_subscription:add_subscription(Subscriber, Nidx, Options),
-	    NewSub = case AccessModel of
-		authorize -> pending;
-		_ -> subscribed
+	    %%SubId = pubsub_subscription:add_subscription(Subscriber, Nidx, Options),
+	    {NewSub, SubId} = case Subscriptions of
+		[{subscribed, Id}|_] ->
+		    {subscribed, Id};
+		[] ->
+		    Id = pubsub_subscription:make_subid(),
+		    Sub = case AccessModel of
+			authorize -> pending;
+			_ -> subscribed
+		    end,
+		    set_state(SubState#pubsub_state{subscriptions =
+			    [{Sub, Id} | Subscriptions]}),
+		    {Sub, Id}
 	    end,
-	    set_state(SubState#pubsub_state{subscriptions =
-		    [{NewSub, SubId} | Subscriptions]}),
 	    case {NewSub, SendLast} of
 		{subscribed, never} ->
 		    {result, {default, subscribed, SubId}};
@@ -301,7 +307,7 @@ unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
 
 delete_subscriptions(SubKey, Nidx, Subscriptions, SubState) ->
     NewSubs = lists:foldl(fun ({Subscription, SubId}, Acc) ->
-		    pubsub_subscription:delete_subscription(SubKey, Nidx, SubId),
+		    %%pubsub_subscription:delete_subscription(SubKey, Nidx, SubId),
 		    Acc -- [{Subscription, SubId}]
 	    end, SubState#pubsub_state.subscriptions, Subscriptions),
     case {SubState#pubsub_state.affiliation, NewSubs} of
@@ -601,14 +607,15 @@ replace_subscription(_, [], Acc) -> Acc;
 replace_subscription({Sub, SubId}, [{_, SubId} | T], Acc) ->
     replace_subscription({Sub, SubId}, T, [{Sub, SubId} | Acc]).
 
-new_subscription(Nidx, Owner, Sub, SubState) ->
-    SubId = pubsub_subscription:add_subscription(Owner, Nidx, []),
+new_subscription(_Nidx, _Owner, Sub, SubState) ->
+    %%SubId = pubsub_subscription:add_subscription(Owner, Nidx, []),
+    SubId = pubsub_subscription:make_subid(),
     Subs = SubState#pubsub_state.subscriptions,
     set_state(SubState#pubsub_state{subscriptions = [{Sub, SubId} | Subs]}),
     {Sub, SubId}.
 
 unsub_with_subid(Nidx, SubId, #pubsub_state{stateid = {Entity, _}} = SubState) ->
-    pubsub_subscription:delete_subscription(SubState#pubsub_state.stateid, Nidx, SubId),
+    %%pubsub_subscription:delete_subscription(SubState#pubsub_state.stateid, Nidx, SubId),
     NewSubs = [{S, Sid}
 	    || {S, Sid} <- SubState#pubsub_state.subscriptions,
 		SubId =/= Sid],

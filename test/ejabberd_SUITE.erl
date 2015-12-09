@@ -839,15 +839,6 @@ pubsub(Config) ->
                           [#pubsub_affiliation{node = Node, type = owner}]}]} =
         send_recv(Config, #iq{type = get, to = pubsub_jid(Config),
                               sub_els = [#pubsub{affiliations = []}]}),
-    %% Get subscription options
-    true = lists:member(?PUBSUB("subscription-options"), Features),
-    #iq{type = result, sub_els = [#pubsub{options = #pubsub_options{
-                                            node = Node}}]} =
-        send_recv(Config,
-                  #iq{type = get, to = pubsub_jid(Config),
-                      sub_els = [#pubsub{options = #pubsub_options{
-                                           node = Node,
-                                           jid = my_jid(Config)}}]}),
     %% Fetching published items from node "presence"
     #iq{type = result,
         sub_els = [#pubsub{items = #pubsub_items{
