@@ -84,8 +84,9 @@
 	  "">>).
 
 start(SockData, Opts) ->
-    supervisor:start_child(ejabberd_http_sup,
-			   [SockData, Opts]).
+    {ok,
+     proc_lib:spawn(ejabberd_http, init,
+		    [SockData, Opts])}.
 
 start_link(SockData, Opts) ->
     {ok,

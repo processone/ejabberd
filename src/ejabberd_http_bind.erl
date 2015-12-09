@@ -152,9 +152,9 @@
 
 start(XMPPDomain, Sid, Key, IP, HOpts) ->
     ?DEBUG("Starting session", []),
-    SupervisorProc = gen_mod:get_module_proc(XMPPDomain, ?PROCNAME_MHB),
-    case catch supervisor:start_child(SupervisorProc,
-				      [Sid, Key, IP, HOpts])
+    case catch gen_fsm:start(?MODULE,
+			    [Sid, Key, IP, HOpts],
+			    ?FSMOPTS)
     of
 	{ok, Pid} -> {ok, Pid};
 	_ -> check_bind_module(XMPPDomain),
