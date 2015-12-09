@@ -363,18 +363,23 @@ should_archive(#xmlel{name = <<"message">>} = Pkt) ->
 	<<"groupchat">> ->
 	    false;
 	_ ->
-	    case check_store_hint(Pkt) of
-		store ->
-		    true;
-		no_store ->
+	    case is_resent(Pkt) of
+		true ->
 		    false;
-		none ->
-		    case xml:get_subtag_cdata(Pkt, <<"body">>) of
-			<<>> ->
-			    %% Empty body
+		false ->
+		    case check_store_hint(Pkt) of
+			store ->
+			    true;
+			no_store ->
 			    false;
-			_ ->
-			    true
+			none ->
+			    case xml:get_subtag_cdata(Pkt, <<"body">>) of
+				<<>> ->
+				    %% Empty body
+				    false;
+				_ ->
+				    true
+			    end
 		    end
 	    end
     end;
@@ -457,6 +462,14 @@ has_no_store_hint(Message) ->
       /= false orelse
     xml:get_subtag_with_xmlns(Message, <<"no-permanent-storage">>, ?NS_HINTS)
       /= false.
+
+is_resent(Pkt) ->
+    case xml:get_subtag_cdata(Pkt, <<"delay">>) of
+	<<>> ->
+	    false;
+	Desc ->
+	    binary:match(Desc, <<"Resent">>) =/= nomatch
+    end.
 
 store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
     Prefs = get_prefs(LUser, LServer),
