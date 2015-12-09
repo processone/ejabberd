@@ -30,6 +30,7 @@
 -protocol({xep, 22, '1.4'}).
 -protocol({xep, 23, '1.3'}).
 -protocol({xep, 160, '1.0'}).
+-protocol({xep, 334, '0.2'}).
 
 -define(GEN_SERVER, p1_server).
 -behaviour(?GEN_SERVER).

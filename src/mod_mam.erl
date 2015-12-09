@@ -26,6 +26,7 @@
 -module(mod_mam).
 
 -protocol({xep, 313, '0.4'}).
+-protocol({xep, 334, '0.2'}).
 
 -behaviour(gen_mod).
 

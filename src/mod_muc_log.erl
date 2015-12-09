@@ -25,6 +25,8 @@
 
 -module(mod_muc_log).
 
+-protocol({xep, 334, '0.2'}).
+
 -behaviour(ejabberd_config).
 
 -author('badlop@process-one.net').
