@@ -712,9 +712,10 @@ select(LServer, #jid{luser = LUser} = JidRequestor,
 		       #xmlel{} = El = xml_stream:parse_element(XML),
 		       Now = usec_to_now(jlib:binary_to_integer(TS)),
 		       PeerJid = jid:tolower(jid:from_string(PeerBin)),
-		       T = if Kind /= <<"">> ->
-				   jlib:binary_to_atom(Kind);
-			      true -> chat
+		       T = case Kind of
+                               <<"">> -> chat;
+                               null -> chat;
+                               _ -> jlib:binary_to_atom(Kind)
 			   end,
 		       {TS, jlib:binary_to_integer(TS),
 			msg_to_el(#archive_msg{timestamp = Now,
