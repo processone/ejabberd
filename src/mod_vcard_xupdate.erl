@@ -64,14 +64,10 @@ update_presence(Packet, _User, _Host) -> Packet.
 
 vcard_set(LUser, LServer, VCARD) ->
     US = {LUser, LServer},
-    case fxml:get_path_s(VCARD,
-			[{elem, <<"PHOTO">>}, {elem, <<"BINVAL">>}, cdata])
-	of
-      <<>> -> remove_xupdate(LUser, LServer);
-      BinVal ->
-	  add_xupdate(LUser, LServer,
-		      p1_sha:sha(jlib:decode_base64(BinVal)))
-    end,
+    BinVal = fxml:get_path_s(VCARD,
+			[{elem, <<"PHOTO">>}, {elem, <<"BINVAL">>}, cdata]),
+    add_xupdate(LUser, LServer,
+            p1_sha:sha(jlib:decode_base64(BinVal))),
     ejabberd_sm:force_update_presence(US).
 
 %%====================================================================
@@ -130,25 +126,6 @@ get_xupdate(LUser, LServer, odbc) ->
       _ -> undefined
     end.
 
-remove_xupdate(LUser, LServer) ->
-    remove_xupdate(LUser, LServer,
-		   gen_mod:db_type(LServer, ?MODULE)).
-
-remove_xupdate(LUser, LServer, mnesia) ->
-    F = fun () ->
-		mnesia:delete({vcard_xupdate, {LUser, LServer}})
-	end,
-    mnesia:transaction(F);
-remove_xupdate(LUser, LServer, riak) ->
-    {atomic, ejabberd_riak:delete(vcard_xupdate, {LUser, LServer})};
-remove_xupdate(LUser, LServer, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    F = fun () ->
-		ejabberd_odbc:sql_query_t([<<"delete from vcard_xupdate where username='">>,
-					   Username, <<"';">>])
-	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
-
 %%%----------------------------------------------------------------------
 %%% Presence stanza rebuilding
 %%%----------------------------------------------------------------------
@@ -175,9 +152,18 @@ presence_with_xupdate2([El | Els], Els2, XPhotoEl) ->
 build_xphotoel(User, Host) ->
     Hash = get_xupdate(User, Host),
     PhotoSubEls = case Hash of
-		    Hash when is_binary(Hash) -> [{xmlcdata, Hash}];
-		    _ -> []
-		  end,
+                      Hash when is_binary(Hash) ->
+                          case is_empty_hash(Hash) of
+                              false -> [{xmlcdata, Hash}];
+                              true -> []
+                          end;
+                      _ -> Hash1= get_vcard_picture_hash(User, Host),
+                           add_xupdate(User, Host, Hash1),
+                           case is_empty_hash(Hash1) of
+                               false -> [{xmlcdata, Hash1}];
+                               true -> []
+                           end
+                  end,
     PhotoEl = [#xmlel{name = <<"photo">>, attrs = [],
 		      children = PhotoSubEls}],
     #xmlel{name = <<"x">>,
@@ -234,3 +220,28 @@ import(_, _, _) ->
 
 mod_opt_type(db_type) -> fun gen_mod:v_db/1;
 mod_opt_type(_) -> [db_type].
+
+%%%----------------------------------------------------------------------
+%%% Query users VCARD
+%%%----------------------------------------------------------------------
+
+get_module_resource(Server) ->
+    case gen_mod:get_module_opt(Server, ?MODULE, module_resource, fun(A) -> A end, none) of
+        none -> list_to_binary(atom_to_list(?MODULE));
+        R when is_binary(R) -> R
+    end.
+
+get_vcard_picture_hash(User, Server) ->
+    [{_, Module, Function, _Opts}] = ets:lookup(sm_iqtable, {?NS_VCARD, Server}),
+    JID = jid:make(User, Server, get_module_resource(Server)),
+    IQ = #iq{type = get, xmlns = ?NS_VCARD},
+    IQr = Module:Function(JID, JID, IQ),
+    [VCARD] = IQr#iq.sub_el,
+    case fxml:get_path_s(VCARD,
+			[{elem, <<"PHOTO">>}, {elem, <<"BINVAL">>}, cdata]) of
+        <<>> -> p1_sha:sha(<<>>);
+        BinVal -> p1_sha:sha(jlib:decode_base64(BinVal))
+    end.
+
+is_empty_hash(<<"da39a3ee5e6b4b0d3255bfef95601890afd80709">>) -> true;
+is_empty_hash(_Hash) -> false.
