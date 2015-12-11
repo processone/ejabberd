@@ -76,8 +76,8 @@ start(Socket, SockMod, Shaper) ->
             non_neg_integer() | infinity) -> undefined | pid().
 
 start(Socket, SockMod, Shaper, MaxStanzaSize) ->
-    {ok, Pid} = ?GEN_SERVER:start(ejabberd_receiver,
-				  [Socket, SockMod, Shaper, MaxStanzaSize], []),
+    {ok, Pid} = gen_server:start(ejabberd_receiver,
+				 [Socket, SockMod, Shaper, MaxStanzaSize], []),
     Pid.
 
 -spec change_shaper(pid(), shaper:shaper()) -> ok.
