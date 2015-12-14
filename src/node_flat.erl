@@ -51,7 +51,7 @@
     path_to_node/1, can_fetch_item/2, is_subscribed/1]).
 
 init(_Host, _ServerHost, _Opts) ->
-    %%pubsub_subscription:init(),
+    pubsub_subscription:init(),
     mnesia:create_table(pubsub_state,
 	[{disc_copies, [node()]},
 	    {type, ordered_set},
