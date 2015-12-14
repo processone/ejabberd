@@ -451,8 +451,10 @@ handle_info({route_chan, Channel, Resource,
 					  ?ERR_FEATURE_NOT_IMPLEMENTED),
 	      ejabberd_router:route(To, From, Err);
 	  #iq{xmlns = ?NS_VCARD} ->
-	      Res = io_lib:format("WHOIS ~s \r\n", [Resource]),
-	      _ = (?SEND(Res)),
+	      % TODO: catch WHOIS replies and translate their details to something resembling vCards
+	      % For now this just errors out.
+	      %Res = io_lib:format("WHOIS ~s \r\n", [Resource]),
+	      %_ = (?SEND(Res)),
 	      Err = jlib:make_error_reply(El,
 					  ?ERR_FEATURE_NOT_IMPLEMENTED),
 	      ejabberd_router:route(To, From, Err);
