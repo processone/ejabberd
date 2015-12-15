@@ -4144,6 +4144,13 @@ process_iq_disco_info(_From, get, Lang, StateData) ->
 			     <<"muc_moderated">>, <<"muc_unmoderated">>),
       ?CONFIG_OPT_TO_FEATURE((Config#config.password_protected),
 			     <<"muc_passwordprotected">>, <<"muc_unsecured">>)]
+       ++ case {gen_mod:is_loaded(StateData#state.server_host, mod_mam),
+		Config#config.mam} of
+	    {true, true} ->
+		[?FEATURE(?NS_MAM_0)];
+	    _ ->
+		[]
+	  end
        ++ iq_disco_info_extras(Lang, StateData),
      StateData}.
 
