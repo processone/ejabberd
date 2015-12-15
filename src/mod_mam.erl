@@ -200,12 +200,12 @@ user_send_packet(Pkt, C2SState, JID, Peer) ->
 muc_filter_message(Pkt, #state{config = Config} = MUCState,
 		   RoomJID, From, FromNick) ->
     if Config#config.mam ->
-	    By = jid:to_string(RoomJID),
-	    NewPkt = strip_my_archived_tag(Pkt, By),
+	    LServer = RoomJID#jid.lserver,
+	    NewPkt = strip_my_archived_tag(Pkt, LServer),
 	    case store_muc(MUCState, NewPkt, RoomJID, From, FromNick) of
 		{ok, ID} ->
 		    StanzaID = #xmlel{name = <<"stanza-id">>,
-				      attrs = [{<<"by">>, By},
+				      attrs = [{<<"by">>, LServer},
                                                {<<"xmlns">>, ?NS_SID_0},
                                                {<<"id">>, ID}]},
                     NewEls = [StanzaID|NewPkt#xmlel.children],
