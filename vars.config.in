@@ -9,7 +9,6 @@
 %% Macros
 {roster_gateway_workaround, @roster_gateway_workaround@}.
 {full_xml, @full_xml@}.
-{nif, @nif@}.
 {db_type, @db_type@}.
 {debug, @debug@}.
 {hipe, @hipe@}.

@@ -19,8 +19,6 @@ Cfg = case file:consult("vars.config") of
 Macros = lists:flatmap(
            fun({roster_gateway_workaround, true}) ->
                    [{d, 'ROSTER_GATEWAY_WORKAROUND'}];
-              ({nif, true}) ->
-                   [{d, 'NIF'}];
               ({db_type, mssql}) ->
                    [{d, 'mssql'}];
               ({lager, true}) ->
@@ -76,9 +74,7 @@ ConfigureCmd = fun(Pkg, Flags) ->
                end,
 
 XMLFlags = lists:foldl(
-             fun({nif, true}, Acc) ->
-                     Acc ++ " --enable-nif";
-                ({full_xml, true}, Acc) ->
+             fun({full_xml, true}, Acc) ->
                      Acc ++ " --enable-full-xml";
                 (_, Acc) ->
                      Acc
@@ -157,10 +153,10 @@ CfgXrefs = lists:flatmap(
 
 ElixirConfig = case lists:keysearch(elixir, 1, Cfg) of
                    {value, {elixir, true}} ->
-                       [{plugins, [rebar_elixir_compiler, rebar_exunit] },
+                       [{plugins, [deps_erl_opts, rebar_elixir_compiler, rebar_exunit] },
                         {lib_dirs, ["deps/elixir/lib"]}];
                    _ ->
-                       []
+                       [{plugins, [deps_erl_opts]}]
                end,
 
 {ok, Cwd} = file:get_cwd(),
@@ -181,6 +177,7 @@ AllDeps = case lists:keytake(lager, 1, AllDeps0) of
 
 Config = [{erl_opts, Macros ++ HiPE ++ DebugInfo ++
                [{src_dirs, [asn1, src | SrcDirs]}]},
+          {deps_erl_opts, HiPE},
           {sub_dirs, ["rel"]},
           {keep_build_info, true},
           {ct_extra_params, "-ct_hooks cth_surefire "
