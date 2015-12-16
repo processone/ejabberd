@@ -3424,12 +3424,19 @@ get_node_subs_by_depth(Host, Node, From) ->
     [{Depth, [{N, get_node_subs(Host, N)} || N <- Nodes]} || {Depth, Nodes} <- ParentTree].
 
 get_node_subs(Host, #pubsub_node{type = Type, id = Nidx}) ->
+    WithOptions =  lists:member(<<"subscription-options">>, plugin_features(Host, Type)),
     case node_call(Host, Type, get_node_subscriptions, [Nidx]) of
-	{result, Subs} -> get_options_for_subs(Host, Nidx, Subs);
+	{result, Subs} -> get_options_for_subs(Host, Nidx, Subs, WithOptions);
 	Other -> Other
     end.
 
-get_options_for_subs(Host, Nidx, Subs) ->
+get_options_for_subs(_Host, _Nidx, Subs, false) ->
+    lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
+		    [{JID, SubID, []} | Acc];
+		   (_, Acc) ->
+		    Acc
+	end, [], Subs);
+get_options_for_subs(Host, Nidx, Subs, true) ->
     SubModule = subscription_plugin(Host),
     lists:foldl(fun({JID, subscribed, SubID}, Acc) ->
 		case SubModule:get_subscription(JID, Nidx, SubID) of
