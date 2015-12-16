@@ -2520,18 +2520,18 @@ send_items(Host, Node, Nidx, Type, Options, LJID, last) ->
 	undefined ->
 	    ok;
 	LastItem ->
-	    Stanza = items_event_stanza(Node, [LastItem]),
-	    dispatch_items(Host, LJID, Node, Options, Stanza)
+	    Stanza = items_event_stanza(Node, Options, [LastItem]),
+	    dispatch_items(Host, LJID, Node, Stanza)
     end;
 send_items(Host, Node, Nidx, Type, Options, LJID, Number) when Number > 0 ->
-    Stanza = items_event_stanza(Node, get_last_items(Host, Type, Nidx, Number, LJID)),
-    dispatch_items(Host, LJID, Node, Options, Stanza);
+    Stanza = items_event_stanza(Node, Options, get_last_items(Host, Type, Nidx, Number, LJID)),
+    dispatch_items(Host, LJID, Node, Stanza);
 send_items(Host, Node, _Nidx, _Type, Options, LJID, _) ->
-    Stanza = items_event_stanza(Node, []),
-    dispatch_items(Host, LJID, Node, Options, Stanza).
+    Stanza = items_event_stanza(Node, Options, []),
+    dispatch_items(Host, LJID, Node, Stanza).
 
-dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To, Node,
-	    Options, Stanza) ->
+dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To,
+	    Node, Stanza) ->
     C2SPid = case ejabberd_sm:get_session_pid(ToU, ToS, ToR) of
 	ToPid when is_pid(ToPid) -> ToPid;
 	_ ->
@@ -2543,17 +2543,13 @@ dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To, Node,
     end,
     if C2SPid == undefined -> ok;
 	true ->
-	    NotificationType = get_option(Options, notification_type, headline),
-	    Message = add_message_type(Stanza, NotificationType),
 	    ejabberd_c2s:send_filtered(C2SPid,
 		{pep_message, <<Node/binary, "+notify">>},
 		service_jid(From), jid:make(To),
-		Message)
+		Stanza)
     end;
-dispatch_items(From, To, _Node, Options, Stanza) ->
-    NotificationType = get_option(Options, notification_type, headline),
-    Message = add_message_type(Stanza, NotificationType),
-    ejabberd_router:route(service_jid(From), jid:make(To), Message).
+dispatch_items(From, To, _Node, Stanza) ->
+    ejabberd_router:route(service_jid(From), jid:make(To), Stanza).
 
 %% @doc <p>Return the list of affiliations as an XMPP response.</p>
 -spec(get_affiliations/4 ::
@@ -3257,7 +3253,8 @@ payload_xmlelements([#xmlel{} | Tail], Count) ->
 payload_xmlelements([_ | Tail], Count) ->
     payload_xmlelements(Tail, Count).
 
-items_event_stanza(Node, Items) ->
+items_event_stanza(Node, Options, Items) ->
+    NotificationType = get_option(Options, notification_type, headline),
     MoreEls = case Items of
 	[LastItem] ->
 	    {ModifNow, ModifUSR} = LastItem#pubsub_item.modification,
@@ -3271,7 +3268,11 @@ items_event_stanza(Node, Items) ->
 	    []
     end,
     event_stanza_with_els([#xmlel{name = <<"items">>,
-		attrs = [{<<"type">>, <<"headline">>} | nodeAttr(Node)],
+		attrs = case NotificationType of
+		    normal -> nodeAttr(Node);
+		    _ -> [{<<"type">>, jlib:atom_to_binary(NotificationType)}
+			    | nodeAttr(Node)]
+		end,
 		children = itemsEls(Items)}],
 	MoreEls).
 
