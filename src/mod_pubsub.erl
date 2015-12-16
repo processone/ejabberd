@@ -3254,7 +3254,6 @@ payload_xmlelements([_ | Tail], Count) ->
     payload_xmlelements(Tail, Count).
 
 items_event_stanza(Node, Options, Items) ->
-    NotificationType = get_option(Options, notification_type, headline),
     MoreEls = case Items of
 	[LastItem] ->
 	    {ModifNow, ModifUSR} = LastItem#pubsub_item.modification,
@@ -3267,14 +3266,12 @@ items_event_stanza(Node, Options, Items) ->
 	_ ->
 	    []
     end,
-    event_stanza_with_els([#xmlel{name = <<"items">>,
-		attrs = case NotificationType of
-		    normal -> nodeAttr(Node);
-		    _ -> [{<<"type">>, jlib:atom_to_binary(NotificationType)}
-			    | nodeAttr(Node)]
-		end,
+    BaseStanza = event_stanza_with_els([#xmlel{name = <<"items">>,
+		attrs = nodeAttr(Node),
 		children = itemsEls(Items)}],
-	MoreEls).
+	MoreEls),
+    NotificationType = get_option(Options, notification_type, headline),
+    add_message_type(BaseStanza, NotificationType).
 
 event_stanza(Els) ->
     event_stanza_with_els(Els, []).
