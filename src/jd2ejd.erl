@@ -42,8 +42,8 @@
 import_file(File) ->
     User = filename:rootname(filename:basename(File)),
     Server = filename:basename(filename:dirname(File)),
-    case jlib:nodeprep(User) /= error andalso
-	   jlib:nameprep(Server) /= error
+    case jid:nodeprep(User) /= error andalso
+	   jid:nameprep(Server) /= error
 	of
       true ->
 	  case file:read_file(File) of
@@ -112,7 +112,7 @@ process_xdb(User, Server,
 
 xdb_data(_User, _Server, {xmlcdata, _CData}) -> ok;
 xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
-    From = jlib:make_jid(User, Server, <<"">>),
+    From = jid:make(User, Server, <<"">>),
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
       ?NS_AUTH ->
 	  Password = xml:get_tag_cdata(El),
@@ -129,7 +129,7 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
 	  ok;
       ?NS_VCARD ->
 	  catch mod_vcard:process_sm_iq(From,
-					jlib:make_jid(<<"">>, Server, <<"">>),
+					jid:make(<<"">>, Server, <<"">>),
 					#iq{type = set, xmlns = ?NS_VCARD,
 					    sub_el = El}),
 	  ok;
@@ -139,7 +139,7 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
 	  case xml:get_attr_s(<<"j_private_flag">>, Attrs) of
 	    <<"1">> ->
 		catch mod_private:process_sm_iq(From,
-						jlib:make_jid(<<"">>, Server,
+						jid:make(<<"">>, Server,
 							      <<"">>),
 						#iq{type = set,
 						    xmlns = ?NS_PRIVATE,
@@ -158,13 +158,13 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
     end.
 
 process_offline(Server, To, #xmlel{children = Els}) ->
-    LServer = jlib:nameprep(Server),
+    LServer = jid:nameprep(Server),
     lists:foreach(fun (#xmlel{attrs = Attrs} = El) ->
 			  FromS = xml:get_attr_s(<<"from">>, Attrs),
 			  From = case FromS of
 				   <<"">> ->
-				       jlib:make_jid(<<"">>, Server, <<"">>);
-				   _ -> jlib:string_to_jid(FromS)
+				       jid:make(<<"">>, Server, <<"">>);
+				   _ -> jid:from_string(FromS)
 				 end,
 			  case From of
 			    error -> ok;

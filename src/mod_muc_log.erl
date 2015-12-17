@@ -25,6 +25,8 @@
 
 -module(mod_muc_log).
 
+-protocol({xep, 334, '0.2'}).
+
 -behaviour(ejabberd_config).
 
 -author('badlop@process-one.net').
@@ -279,7 +281,7 @@ build_filename_string(TimeStamp, OutDir, RoomJID,
     {Fd, Fn, Fnrel}.
 
 get_room_name(RoomJID) ->
-    JID = jlib:string_to_jid(RoomJID), JID#jid.user.
+    JID = jid:from_string(RoomJID), JID#jid.user.
 
 %% calculate day before
 get_timestamp_daydiff(TimeStamp, Daydiff) ->
@@ -305,7 +307,7 @@ write_last_lines(F, Images_dir, _FileFormat) ->
     fw(F,
        <<"  <a href=\"http://www.ejabberd.im\"><img "
 	 "style=\"border:0\" src=\"~s/powered-by-ejabbe"
-	 "rd.png\" alt=\"Powered by ejabberd\"/></a>">>,
+	 "rd.png\" alt=\"Powered by ejabberd - robust, scalable and extensible XMPP server\"/></a>">>,
        [Images_dir]),
     fw(F,
        <<"  <a href=\"http://www.erlang.org/\"><img "
@@ -348,7 +350,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts,
     Room = get_room_info(RoomJID, Opts),
     Nick = htmlize(Nick1, FileFormat),
     Nick2 = htmlize_nick(Nick1, FileFormat),
-    Now = now(),
+    Now = p1_time_compat:timestamp(),
     TimeStamp = case Timezone of
 		  local -> calendar:now_to_local_time(Now);
 		  universal -> calendar:now_to_universal_time(Now)
@@ -902,7 +904,7 @@ put_header_script(F) ->
 put_room_config(_F, _RoomConfig, _Lang, plaintext) ->
     ok;
 put_room_config(F, RoomConfig, Lang, _FileFormat) ->
-    {_, Now2, _} = now(),
+    {_, Now2, _} = p1_time_compat:timestamp(),
     fw(F, <<"<div class=\"rc\">">>),
     fw(F,
        <<"<div class=\"rct\" onclick=\"sh('a~p');return "
@@ -919,7 +921,7 @@ put_room_occupants(_F, _RoomOccupants, _Lang,
     ok;
 put_room_occupants(F, RoomOccupants, Lang,
 		   _FileFormat) ->
-    {_, Now2, _} = now(),
+    {_, Now2, _} = p1_time_compat:timestamp(),
 %% htmlize
 %% The default behaviour is to ignore the nofollow spam prevention on links
 %% (NoFollow=false)
@@ -999,7 +1001,7 @@ get_room_info(RoomJID, Opts) ->
 		      {value, {_, SA}} -> SA;
 		      false -> <<"">>
 		    end,
-    #room{jid = jlib:jid_to_string(RoomJID), title = Title,
+    #room{jid = jid:to_string(RoomJID), title = Title,
 	  subject = Subject, subject_author = SubjectAuthor,
 	  config = Opts}.
 
@@ -1160,7 +1162,7 @@ role_users_to_string(RoleS, Users) ->
     <<RoleS/binary, ": ", UsersString/binary>>.
 
 get_room_occupants(RoomJIDString) ->
-    RoomJID = jlib:string_to_jid(RoomJIDString),
+    RoomJID = jid:from_string(RoomJIDString),
     RoomName = RoomJID#jid.luser,
     MucService = RoomJID#jid.lserver,
     StateData = get_room_state(RoomName, MucService),
@@ -1190,7 +1192,7 @@ get_proc_name(Host) ->
     gen_mod:get_module_proc(Host, ?PROCNAME).
 
 calc_hour_offset(TimeHere) ->
-    TimeZero = calendar:now_to_universal_time(now()),
+    TimeZero = calendar:universal_time(),
     TimeHereHour =
 	calendar:datetime_to_gregorian_seconds(TimeHere) div
 	  3600,

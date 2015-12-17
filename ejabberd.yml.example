@@ -167,6 +167,7 @@ listen:
   ## - 
   ##   port: 4560
   ##   module: ejabberd_xmlrpc
+  ##   access_commands: {}
   - 
     port: 5280
     module: ejabberd_http
@@ -658,7 +659,8 @@ modules:
   mod_shared_roster: {}
   mod_stats: {}
   mod_time: {}
-  mod_vcard: {}
+  mod_vcard:
+    search: false
   mod_version: {}
 
 ##

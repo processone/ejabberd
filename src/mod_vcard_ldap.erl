@@ -55,7 +55,7 @@
 	{serverhost = <<"">>        :: binary(),
          myhost = <<"">>            :: binary(),
          eldap_id = <<"">>          :: binary(),
-         search = true              :: boolean(),
+         search = false             :: boolean(),
          servers = []               :: [binary()],
          backups = []               :: [binary()],
 	 port = ?LDAP_PORT          :: inet:port_number(),
@@ -422,7 +422,7 @@ ldap_attribute_to_vcard(_, _) -> none.
 				[{xmlcdata,
 				  <<(translate:translate(Lang,
 							 <<"Search users in ">>))/binary,
-				    (jlib:jid_to_string(JID))/binary>>}]},
+				    (jid:to_string(JID))/binary>>}]},
 		     #xmlel{name = <<"instructions">>, attrs = [],
 			    children =
 				[{xmlcdata,
@@ -600,7 +600,7 @@ search_result(Lang, JID, State, Data) ->
 			 [{xmlcdata,
 			   <<(translate:translate(Lang,
 						  <<"Search Results for ">>))/binary,
-			     (jlib:jid_to_string(JID))/binary>>}]},
+			     (jid:to_string(JID))/binary>>}]},
 	      #xmlel{name = <<"reported">>, attrs = [],
 		     children =
 			 [?TLFIELD(<<"text-single">>, <<"Jabber ID">>,
@@ -735,7 +735,7 @@ parse_options(Host, Opts) ->
 				  <<"vjud.@HOST@">>),
     Search = gen_mod:get_opt(search, Opts,
                              fun(B) when is_boolean(B) -> B end,
-                             true),
+                             false),
     Matches = gen_mod:get_opt(matches, Opts,
                               fun(infinity) -> 0;
                                  (I) when is_integer(I), I>0 -> I

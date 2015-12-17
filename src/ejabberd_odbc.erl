@@ -153,7 +153,8 @@ sql_call(Host, Msg) ->
         case ejabberd_odbc_sup:get_random_pid(Host) of
           none -> {error, <<"Unknown Host">>};
           Pid ->
-            (?GEN_FSM):sync_send_event(Pid,{sql_cmd, Msg, now()},
+            (?GEN_FSM):sync_send_event(Pid,{sql_cmd, Msg,
+                                            p1_time_compat:monotonic_time(milli_seconds)},
                                        ?TRANSACTION_TIMEOUT)
           end;
       _State -> nested_op(Msg)
@@ -161,7 +162,8 @@ sql_call(Host, Msg) ->
 
 keep_alive(PID) ->
     (?GEN_FSM):sync_send_event(PID,
-			       {sql_cmd, {sql_query, ?KEEPALIVE_QUERY}, now()},
+			       {sql_cmd, {sql_query, ?KEEPALIVE_QUERY},
+                                p1_time_compat:monotonic_time(milli_seconds)},
 			       ?KEEPALIVE_TIMEOUT).
 
 -spec sql_query_t(sql_query()) -> sql_query_result().
@@ -373,7 +375,7 @@ print_state(State) -> State.
 %%%----------------------------------------------------------------------
 
 run_sql_cmd(Command, From, State, Timestamp) ->
-    case timer:now_diff(now(), Timestamp) div 1000 of
+    case p1_time_compat:monotonic_time(milli_seconds) - Timestamp of
       Age when Age < (?TRANSACTION_TIMEOUT) ->
 	  put(?NESTING_KEY, ?TOP_LEVEL_TXN),
 	  put(?STATE_KEY, State),

@@ -3,7 +3,7 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "15.09.0",
+     version: "15.11.0",
      elixir: "~> 1.0",
      elixirc_paths: ["lib"],
      compile_path: ".",
@@ -18,7 +18,7 @@ defmodule Ejabberd.Mixfile do
     [mod: {:ejabberd_app, []},
      applications: [:ssl],
      included_applications: [:p1_logger, :p1_yaml, :p1_tls, :p1_xml,
-                             :p1_stringprep, :p1_zlib, :p1_cache_tab,
+                             :p1_stringprep, :p1_zlib, :cache_tab,
                              :mnesia, :p1_utils, :p1_iconv, :esip, :p1_stun,
                              :p1_mysql, :p1_pgsql, :eredis, :oauth2, :xmlrpc]]
   end
@@ -36,7 +36,7 @@ defmodule Ejabberd.Mixfile do
      {:p1_tls, git: "https://github.com/processone/tls"},
      {:p1_stringprep, git: "https://github.com/processone/stringprep"},
      {:p1_zlib, git: "https://github.com/processone/zlib"},
-     {:p1_cache_tab, git: "https://github.com/processone/cache_tab"},
+     {:cache_tab, git: "https://github.com/processone/cache_tab", tag: "1.0.1"},
      {:p1_utils, git: "https://github.com/processone/p1_utils"},
      {:p1_iconv, git: "https://github.com/processone/eiconv"},
      {:esip, git: "https://github.com/processone/p1_sip"},

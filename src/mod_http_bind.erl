@@ -81,19 +81,11 @@ process(_Path, _Request) ->
 %%%----------------------------------------------------------------------
 %%% BEHAVIOUR CALLBACKS
 %%%----------------------------------------------------------------------
-start(Host, _Opts) ->
-    setup_database(),
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME_MHB),
-    ChildSpec = {Proc,
-		 {ejabberd_tmp_sup, start_link,
-		  [Proc, ejabberd_http_bind]},
-		 permanent, infinity, supervisor, [ejabberd_tmp_sup]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+start(_Host, _Opts) ->
+    setup_database().
 
-stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME_MHB),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+stop(_Host) ->
+    ok.
 
 setup_database() ->
     migrate_database(),

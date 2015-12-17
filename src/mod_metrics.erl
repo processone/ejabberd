@@ -84,9 +84,9 @@ s2s_receive_packet(_From, #jid{lserver=LServer}, _Packet) ->
     push(LServer, s2s_receive_packet).
 
 remove_user(_User, Server) ->
-    push(jlib:nameprep(Server), remove_user).
+    push(jid:nameprep(Server), remove_user).
 register_user(_User, Server) ->
-    push(jlib:nameprep(Server), register_user).
+    push(jid:nameprep(Server), register_user).
 
 %%====================================================================
 %% metrics push handler

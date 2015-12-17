@@ -91,22 +91,12 @@ filter_presence(_Action, #xmlel{name = <<"presence">>, attrs = Attrs}) ->
 filter_presence(Action, _Stanza) -> Action.
 
 filter_chat_states(_Action, #xmlel{name = <<"message">>} = Stanza) ->
-    %% All XEP-0085 chat states except for <gone/>:
-    ChatStates = [<<"active">>, <<"inactive">>, <<"composing">>, <<"paused">>],
-    Stripped =
-	lists:foldl(fun(ChatState, AccStanza) ->
-			    xml:remove_subtags(AccStanza, ChatState,
-					       {<<"xmlns">>, ?NS_CHATSTATES})
-		    end, Stanza, ChatStates),
-    case Stripped of
-      #xmlel{children = [#xmlel{name = <<"thread">>}]} ->
+    case jlib:is_standalone_chat_state(Stanza) of
+      true ->
 	  ?DEBUG("Got standalone chat state notification", []),
 	  {stop, drop};
-      #xmlel{children = []} ->
-	  ?DEBUG("Got standalone chat state notification", []),
-	  {stop, drop};
-      _ ->
-	  ?DEBUG("Got message with chat state notification", []),
+      false ->
+	  ?DEBUG("Got message stanza", []),
 	  {stop, send}
     end;
 filter_chat_states(Action, _Stanza) -> Action.

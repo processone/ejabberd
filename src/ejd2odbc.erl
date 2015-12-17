@@ -62,7 +62,7 @@ modules() ->
      mod_vcard_xupdate].
 
 export(Server, Output) ->
-    LServer = jlib:nameprep(iolist_to_binary(Server)),
+    LServer = jid:nameprep(iolist_to_binary(Server)),
     Modules = modules(),
     IO = prepare_output(Output),
     lists:foreach(
@@ -72,7 +72,7 @@ export(Server, Output) ->
     close_output(Output, IO).
 
 export(Server, Output, Module) ->
-    LServer = jlib:nameprep(iolist_to_binary(Server)),
+    LServer = jid:nameprep(iolist_to_binary(Server)),
     IO = prepare_output(Output),
     lists:foreach(
       fun({Table, ConvertFun}) ->
@@ -87,7 +87,7 @@ import_file(Server, FileName) ->
                         {file, FileName},
                         {mode, read_only}]) of
         {ok, Fd} ->
-            LServer = jlib:nameprep(Server),
+            LServer = jid:nameprep(Server),
             Mods = [{Mod, gen_mod:db_type(LServer, Mod)}
                     || Mod <- modules(), gen_mod:is_loaded(LServer, Mod)],
             AuthMods = case lists:member(ejabberd_auth_internal,
@@ -106,7 +106,7 @@ import(Server, Output) ->
     import(Server, Output, [{fast, true}]).
 
 import(Server, Output, Opts) ->
-    LServer = jlib:nameprep(iolist_to_binary(Server)),
+    LServer = jid:nameprep(iolist_to_binary(Server)),
     Modules = modules(),
     IO = prepare_output(Output, disk_log),
     lists:foreach(
@@ -116,7 +116,7 @@ import(Server, Output, Opts) ->
     close_output(Output, IO).
 
 import(Server, Output, Opts, Module) ->
-    LServer = jlib:nameprep(iolist_to_binary(Server)),
+    LServer = jid:nameprep(iolist_to_binary(Server)),
     IO = prepare_output(Output, disk_log),
     lists:foreach(
       fun({SelectQuery, ConvertFun}) ->

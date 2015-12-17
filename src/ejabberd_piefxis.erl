@@ -242,7 +242,7 @@ export_users([], _Server, _Fd) ->
 %%%% Utilities
 export_user(User, Server, Fd) ->
     Password = ejabberd_auth:get_password_s(User, Server),
-    LServer = jlib:nameprep(Server),
+    LServer = jid:nameprep(Server),
     PasswordFormat = ejabberd_config:get_option({auth_password_format, LServer}, fun(X) -> X end, plain),
     Pass = case Password of
       {_,_,_,_} ->
@@ -281,7 +281,7 @@ parse_scram_password(PassData) ->
   }.
 
 get_vcard(User, Server) ->
-    JID = jlib:make_jid(User, Server, <<>>),
+    JID = jid:make(User, Server, <<>>),
     case mod_vcard:process_sm_iq(JID, JID, #iq{type = get}) of
         #iq{type = result, sub_el = [_|_] = VCardEls} ->
             VCardEls;
@@ -335,7 +335,7 @@ get_privacy(User, Server) ->
 
 %% @spec (Dir::string(), Hosts::[string()]) -> ok
 get_roster(User, Server) ->
-    JID = jlib:make_jid(User, Server, <<>>),
+    JID = jid:make(User, Server, <<>>),
     case mod_roster:get_roster(User, Server) of
         [_|_] = Items ->
             Subs =
@@ -349,8 +349,8 @@ get_roster(User, Server) ->
                           [#xmlel{name = <<"presence">>,
                                   attrs =
                                       [{<<"from">>,
-                                        jlib:jid_to_string(R#roster.jid)},
-                                       {<<"to">>, jlib:jid_to_string(JID)},
+                                        jid:to_string(R#roster.jid)},
+                                       {<<"to">>, jid:to_string(JID)},
                                        {<<"xmlns">>, <<"jabber:client">>},
                                        {<<"type">>, <<"subscribe">>}],
                                   children =
@@ -444,7 +444,7 @@ process_el({xmlstreamelement, #xmlel{name = <<"host">>,
                                      attrs = Attrs,
                                      children = Els}}, State) ->
     JIDS = xml:get_attr_s(<<"jid">>, Attrs),
-    case jlib:string_to_jid(JIDS) of
+    case jid:from_string(JIDS) of
         #jid{lserver = S} ->
             case lists:member(S, ?MYHOSTS) of
                 true ->
@@ -499,7 +499,7 @@ process_user(#xmlel{name = <<"user">>, attrs = Attrs, children = Els},
       _ -> Password
     end,
 
-    case jlib:nodeprep(Name) of
+    case jid:nodeprep(Name) of
         error ->
             stop("Invalid 'user': ~s", [Name]);
         LUser ->
@@ -579,7 +579,7 @@ process_roster(El, State = #state{user = U, server = S}) ->
 %%%==================================
 %%%% Export server
 process_privacy(El, State = #state{user = U, server = S}) ->
-    JID = jlib:make_jid(U, S, <<"">>),
+    JID = jid:make(U, S, <<"">>),
     case mod_privacy:process_iq_set(
            [], JID, JID, #iq{type = set, sub_el = El}) of
         {error, Error} = Err ->
@@ -605,7 +605,7 @@ process_privacy(El, State = #state{user = U, server = S}) ->
 
 %% @spec (Dir::string()) -> ok
 process_private(El, State = #state{user = U, server = S}) ->
-    JID = jlib:make_jid(U, S, <<"">>),
+    JID = jid:make(U, S, <<"">>),
     case mod_private:process_sm_iq(
            JID, JID, #iq{type = set, sub_el = El}) of
         #iq{type = result} ->
@@ -617,7 +617,7 @@ process_private(El, State = #state{user = U, server = S}) ->
 %%%==================================
 %%%% Export host
 process_vcard(El, State = #state{user = U, server = S}) ->
-    JID = jlib:make_jid(U, S, <<"">>),
+    JID = jid:make(U, S, <<"">>),
     case mod_vcard:process_sm_iq(
            JID, JID, #iq{type = set, sub_el = El}) of
         #iq{type = result} ->
@@ -629,9 +629,9 @@ process_vcard(El, State = #state{user = U, server = S}) ->
 %% @spec (Dir::string(), Host::string()) -> ok
 process_offline_msg(El, State = #state{user = U, server = S}) ->
     FromS = xml:get_attr_s(<<"from">>, El#xmlel.attrs),
-    case jlib:string_to_jid(FromS) of
+    case jid:from_string(FromS) of
         #jid{} = From ->
-            To = jlib:make_jid(U, S, <<>>),
+            To = jid:make(U, S, <<>>),
             NewEl = jlib:replace_from_to(From, To, El),
             case catch mod_offline:store_packet(From, To, NewEl) of
                 {'EXIT', _} = Err ->
@@ -646,9 +646,9 @@ process_offline_msg(El, State = #state{user = U, server = S}) ->
 %% @spec (Dir::string(), Fn::string(), Host::string()) -> ok
 process_presence(El, #state{user = U, server = S} = State) ->
     FromS = xml:get_attr_s(<<"from">>, El#xmlel.attrs),
-    case jlib:string_to_jid(FromS) of
+    case jid:from_string(FromS) of
         #jid{} = From ->
-            To = jlib:make_jid(U, S, <<>>),
+            To = jid:make(U, S, <<>>),
             NewEl = jlib:replace_from_to(From, To, El),
             ejabberd_router:route(From, To, NewEl),
             {ok, State};

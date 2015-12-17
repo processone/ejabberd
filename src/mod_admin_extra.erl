@@ -554,8 +554,7 @@ num_active_users(Host, Days) ->
 
 %% Code based on ejabberd/src/web/ejabberd_web_admin.erl
 list_last_activity(Host, Integral, Days) ->
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    TimeStamp = MegaSecs * 1000000 + Secs,
+    TimeStamp = p1_time_compat:system_time(seconds),
     TS = TimeStamp - Days * 86400,
     case catch mnesia:dirty_select(
 		 last_activity, [{{last_activity, {'_', Host}, '$1', '_'},
@@ -620,8 +619,7 @@ delete_old_users(Days, Users) ->
     SecOlder = Days*24*60*60,
 
     %% Get current time
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    TimeStamp_now = MegaSecs * 1000000 + Secs,
+    TimeStamp_now = p1_time_compat:system_time(seconds),
 
     %% For a user, remove if required and answer true
     F = fun({LUser, LServer}) ->
@@ -688,8 +686,8 @@ get_resources(User, Server) ->
       get_sessions(User, Server)).
 
 get_sessions(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     Sessions =  mnesia:dirty_index_read(session, {LUser, LServer}, #session.us),
     true = is_list(Sessions),
     Sessions.
@@ -734,8 +732,8 @@ kick_session(User, Server, Resource, ReasonText) ->
     ok.
 
 kick_this_session(User, Server, Resource, Reason) ->
-    ejabberd_sm:route(jlib:make_jid(<<"">>, <<"">>, <<"">>),
-                      jlib:make_jid(User, Server, Resource),
+    ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
+                      jid:make(User, Server, Resource),
                       {broadcast, {exit, Reason}}).
 
 status_num(Host, Status) ->
@@ -814,8 +812,8 @@ stringize(String) ->
 
 set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
     Pid = ejabberd_sm:get_session_pid(User, Host, Resource),
-    USR = jlib:jid_to_string(jlib:make_jid(User, Host, Resource)),
-    US = jlib:jid_to_string(jlib:make_jid(User, Host, <<>>)),
+    USR = jid:to_string(jid:make(User, Host, Resource)),
+    US = jid:to_string(jid:make(User, Host, <<>>)),
     Message = {route_xmlstreamelement,
 	       {xmlel, <<"presence">>,
 		[{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
@@ -901,7 +899,7 @@ get_module_resource(Server) ->
 
 get_vcard_content(User, Server, Data) ->
     [{_, Module, Function, _Opts}] = ets:lookup(sm_iqtable, {?NS_VCARD, Server}),
-    JID = jlib:make_jid(User, Server, get_module_resource(Server)),
+    JID = jid:make(User, Server, get_module_resource(Server)),
     IQ = #iq{type = get, xmlns = ?NS_VCARD},
     IQr = Module:Function(JID, JID, IQ),
     [A1] = IQr#iq.sub_el,
@@ -938,7 +936,7 @@ set_vcard_content(User, Server, Data, SomeContent) ->
 	Bin when is_binary(Bin) -> [SomeContent]
     end,
     [{_, Module, Function, _Opts}] = ets:lookup(sm_iqtable, {?NS_VCARD, Server}),
-    JID = jlib:make_jid(User, Server, get_module_resource(Server)),
+    JID = jid:make(User, Server, get_module_resource(Server)),
     IQ = #iq{type = get, xmlns = ?NS_VCARD},
     IQr = Module:Function(JID, JID, IQ),
 
@@ -1052,7 +1050,7 @@ get_roster(User, Server) ->
 make_roster_xmlrpc(Roster) ->
     lists:foldl(
       fun(Item, Res) ->
-	      JIDS = jlib:jid_to_string(Item#roster.jid),
+	      JIDS = jid:to_string(Item#roster.jid),
 	      Nick = Item#roster.name,
 	      Subs = atom_to_list(Item#roster.subscription),
 	      Ask = atom_to_list(Item#roster.ask),
@@ -1118,7 +1116,7 @@ push_roster_item(LU, LS, U, S, Action) ->
 		  end, ejabberd_sm:get_user_resources(LU, LS)).
 
 push_roster_item(LU, LS, R, U, S, Action) ->
-    LJID = jlib:make_jid(LU, LS, R),
+    LJID = jid:make(LU, LS, R),
     BroadcastEl = build_broadcast(U, S, Action),
     ejabberd_sm:route(LJID, LJID, BroadcastEl),
     Item = build_roster_item(U, S, Action),
@@ -1127,14 +1125,14 @@ push_roster_item(LU, LS, R, U, S, Action) ->
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
     {xmlel, <<"item">>,
-     [{<<"jid">>, jlib:jid_to_string(jlib:make_jid(U, S, <<>>))},
+     [{<<"jid">>, jid:to_string(jid:make(U, S, <<>>))},
       {<<"name">>, Nick},
       {<<"subscription">>, Subs}],
      [{xmlel, <<"group">>, [], [{xmlcdata, Group}]}]
     };
 build_roster_item(U, S, remove) ->
     {xmlel, <<"item">>,
-     [{<<"jid">>, jlib:jid_to_string(jlib:make_jid(U, S, <<>>))},
+     [{<<"jid">>, jid:to_string(jid:make(U, S, <<>>))},
       {<<"subscription">>, <<"remove">>}],
      []
     }.
@@ -1193,8 +1191,8 @@ get_last(User, Server) ->
 %% <aa xmlns='bb'>Cluth</aa>
 
 private_get(Username, Host, Element, Ns) ->
-    From = jlib:make_jid(Username, Host, <<>>),
-    To = jlib:make_jid(Username, Host, <<>>),
+    From = jid:make(Username, Host, <<>>),
+    To = jid:make(Username, Host, <<>>),
     IQ = {iq, <<>>, get, ?NS_PRIVATE, <<>>,
 	  {xmlel, <<"query">>,
 	   [{<<"xmlns">>,?NS_PRIVATE}],
@@ -1216,8 +1214,8 @@ private_set(Username, Host, ElementString) ->
     end.
 
 private_set2(Username, Host, Xml) ->
-    From = jlib:make_jid(Username, Host, <<>>),
-    To = jlib:make_jid(Username, Host, <<>>),
+    From = jid:make(Username, Host, <<>>),
+    To = jid:make(Username, Host, <<>>),
     IQ = {iq, <<>>, set, ?NS_PRIVATE, <<>>,
 	  {xmlel, <<"query">>,
 	   [{<<"xmlns">>, ?NS_PRIVATE}],
@@ -1261,7 +1259,7 @@ btl(B) -> binary_to_list(B).
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),
-    [jlib:jid_to_string(jlib:make_jid(MUser, MServer, <<>>))
+    [jid:to_string(jid:make(MUser, MServer, <<>>))
      || {MUser, MServer} <- Members].
 
 srg_user_add(User, Host, Group, GroupHost) ->
@@ -1292,8 +1290,8 @@ send_message(Type, From, To, Subject, Body) ->
 %% If the user is local and is online in several resources,
 %% the packet is sent to all its resources.
 send_packet_all_resources(FromJIDString, ToJIDString, Packet) ->
-    FromJID = jlib:string_to_jid(FromJIDString),
-    ToJID = jlib:string_to_jid(ToJIDString),
+    FromJID = jid:from_string(FromJIDString),
+    ToJID = jid:from_string(ToJIDString),
     ToUser = ToJID#jid.user,
     ToServer = ToJID#jid.server,
     case ToJID#jid.resource of
@@ -1317,7 +1315,7 @@ send_packet_all_resources(FromJID, ToUser, ToServer, Packet) ->
     end.
 
 send_packet_all_resources(FromJID, ToU, ToS, ToR, Packet) ->
-    ToJID = jlib:make_jid(ToU, ToS, ToR),
+    ToJID = jid:make(ToU, ToS, ToR),
     ejabberd_router:route(FromJID, ToJID, Packet).
 
 build_packet(Type, Subject, Body) ->
@@ -1335,8 +1333,8 @@ send_stanza_c2s(Username, Host, Resource, Stanza) ->
     p1_fsm:send_event(C2sPid, {xmlstreamelement, XmlEl}).
 
 privacy_set(Username, Host, QueryS) ->
-    From = jlib:make_jid(Username, Host, <<"">>),
-    To = jlib:make_jid(<<"">>, Host, <<"">>),
+    From = jid:make(Username, Host, <<"">>),
+    To = jid:make(<<"">>, Host, <<"">>),
     QueryEl = xml_stream:parse_element(QueryS),
     StanzaEl = {xmlel, <<"iq">>, [{<<"type">>, <<"set">>}], [QueryEl]},
     IQ = jlib:iq_query_info(StanzaEl),
@@ -1477,7 +1475,7 @@ decide_rip_jid({UName, UServer, _UResource}, Match_list) ->
 decide_rip_jid({UName, UServer}, Match_list) ->
     lists:any(
       fun(Match_string) ->
-	      MJID = jlib:string_to_jid(list_to_binary(Match_string)),
+	      MJID = jid:from_string(list_to_binary(Match_string)),
 	      MName = MJID#jid.luser,
 	      MServer = MJID#jid.lserver,
 	      Is_server = is_glob_match(UServer, MServer),

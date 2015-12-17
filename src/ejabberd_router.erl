@@ -99,7 +99,7 @@ register_route(Domain) ->
 -spec register_route(binary(), local_hint()) -> term().
 
 register_route(Domain, LocalHint) ->
-    case jlib:nameprep(Domain) of
+    case jid:nameprep(Domain) of
       error -> erlang:error({invalid_domain, Domain});
       LDomain ->
 	  Pid = self(),
@@ -161,7 +161,7 @@ register_routes(Domains) ->
 -spec unregister_route(binary()) -> term().
 
 unregister_route(Domain) ->
-    case jlib:nameprep(Domain) of
+    case jid:nameprep(Domain) of
       error -> erlang:error({invalid_domain, Domain});
       LDomain ->
 	  Pid = self(),
@@ -347,14 +347,14 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 			  ejabberd_config:get_local_option({domain_balancing,
 							    LDstDomain}, fun(D) when is_atom(D) -> D end)
 			    of
-			  undefined -> now();
-			  random -> now();
-			  source -> jlib:jid_tolower(From);
-			  destination -> jlib:jid_tolower(To);
+			  undefined -> p1_time_compat:monotonic_time();
+			  random -> p1_time_compat:monotonic_time();
+			  source -> jid:tolower(From);
+			  destination -> jid:tolower(To);
 			  bare_source ->
-			      jlib:jid_remove_resource(jlib:jid_tolower(From));
+			      jid:remove_resource(jid:tolower(From));
 			  bare_destination ->
-			      jlib:jid_remove_resource(jlib:jid_tolower(To))
+			      jid:remove_resource(jid:tolower(To))
 			end,
 		case get_component_number(LDstDomain) of
 		  undefined ->

@@ -75,7 +75,7 @@ start_odbc(Host, App) ->
 
 %% Returns {true, App} if we have configured odbc for the given host
 needs_odbc(Host) ->
-    LHost = jlib:nameprep(Host),
+    LHost = jid:nameprep(Host),
     case ejabberd_config:get_option({odbc_type, LHost},
                                     fun(mysql) -> mysql;
                                        (pgsql) -> pgsql;

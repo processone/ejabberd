@@ -224,7 +224,7 @@ del_aux_field(Key, #state{aux_fields = Opts} = State) ->
     State#state{aux_fields = Opts1}.
 
 get_subscription(From = #jid{}, StateData) ->
-    get_subscription(jlib:jid_tolower(From), StateData);
+    get_subscription(jid:tolower(From), StateData);
 get_subscription(LFrom, StateData) ->
     LBFrom = setelement(3, LFrom, <<"">>),
     F = (?SETS):is_element(LFrom, StateData#state.pres_f)
@@ -326,7 +326,7 @@ init([{SockMod, Socket}, Opts]) ->
 		       xml_socket = XMLSocket, zlib = Zlib, tls = TLS,
 		       tls_required = StartTLSRequired,
 		       tls_enabled = TLSEnabled, tls_options = TLSOpts,
-		       sid = {now(), self()}, streamid = new_id(),
+		       sid = {p1_time_compat:timestamp(), self()}, streamid = new_id(),
 		       access = Access, shaper = Shaper, ip = IP,
 		       mgmt_state = StreamMgmtState,
 		       mgmt_max_queue = MaxAckQueue,
@@ -347,7 +347,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	    Server =
 		case StateData#state.server of
 		<<"">> ->
-		    jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs));
+		    jid:nameprep(xml:get_attr_s(<<"to">>, Attrs));
 		S -> S
 	    end,
 	    Lang = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
@@ -366,7 +366,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 	    IsBlacklistedIP = is_ip_blacklisted(StateData#state.ip, Lang),
 	    case lists:member(Server, ?MYHOSTS) of
 		true when IsBlacklistedIP == false ->
-		    change_shaper(StateData, jlib:make_jid(<<"">>, Server, <<"">>)),
+		    change_shaper(StateData, jid:make(<<"">>, Server, <<"">>)),
 		    case xml:get_attr_s(<<"version">>, Attrs) of
 			<<"1.0">> ->
 			    send_header(StateData, Server, <<"1.0">>, DefaultLang),
@@ -605,7 +605,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	    send_element(StateData, Err),
 	    fsm_next_state(wait_for_auth, StateData);
 	{auth, _ID, set, {U, P, D, R}} ->
-	    JID = jlib:make_jid(U, StateData#state.server, R),
+	    JID = jid:make(U, StateData#state.server, R),
 	    case JID /= error andalso
 		acl:match_rule(StateData#state.server,
 		    StateData#state.access, JID)
@@ -622,7 +622,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			{true, AuthModule} ->
 			    ?INFO_MSG("(~w) Accepted legacy authentication for ~s by ~p from ~s",
 				[StateData#state.socket,
-				    jlib:jid_to_string(JID), AuthModule,
+				    jid:to_string(JID), AuthModule,
 				    ejabberd_config:may_hide_data(jlib:ip_to_list(StateData#state.ip))]),
 			    ejabberd_hooks:run(c2s_auth_result, StateData#state.server,
 				[true, U, StateData#state.server,
@@ -642,7 +642,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 				    StateData#state.server,
 				    {[], []},
 				    [U, StateData#state.server]),
-			    LJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
+			    LJID = jid:tolower(jid:remove_resource(JID)),
 			    Fs1 = [LJID | Fs],
 			    Ts1 = [LJID | Ts],
 			    PrivList = ejabberd_hooks:run_fold(privacy_get_user_list,
@@ -661,7 +661,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			_ ->
 			    ?INFO_MSG("(~w) Failed legacy authentication for ~s from ~s",
 				[StateData#state.socket,
-				    jlib:jid_to_string(JID),
+				    jid:to_string(JID),
 				    ejabberd_config:may_hide_data(jlib:ip_to_list(StateData#state.ip))]),
 			    ejabberd_hooks:run(c2s_auth_result, StateData#state.server,
 				[false, U, StateData#state.server,
@@ -682,7 +682,7 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 			    ?INFO_MSG("(~w) Forbidden legacy authentication "
 				"for ~s from ~s",
 				[StateData#state.socket,
-				    jlib:jid_to_string(JID),
+				    jid:to_string(JID),
 				    ejabberd_config:may_hide_data(jlib:ip_to_list(StateData#state.ip))]),
 			    ejabberd_hooks:run(c2s_auth_result, StateData#state.server,
 				[false, U, StateData#state.server,
@@ -1011,9 +1011,7 @@ resource_conflict_action(U, S, R) ->
       acceptnew -> {accept_resource, R};
       closenew -> closenew;
       setresource ->
-	  Rnew = iolist_to_binary([randoms:get_string()
-                                   | [jlib:integer_to_binary(X)
-                                      || X <- tuple_to_list(now())]]),
+	  Rnew = iolist_to_binary([randoms:get_string(),randoms:get_string(),randoms:get_string()]),
 	  {accept_resource, Rnew}
     end.
 
@@ -1038,12 +1036,10 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 	  U = StateData#state.user,
 	  R1 = xml:get_path_s(SubEl,
 			      [{elem, <<"resource">>}, cdata]),
-	  R = case jlib:resourceprep(R1) of
+	  R = case jid:resourceprep(R1) of
 		error -> error;
 		<<"">> ->
-                      iolist_to_binary([randoms:get_string()
-                                        | [jlib:integer_to_binary(X)
-                                           || X <- tuple_to_list(now())]]);
+                      iolist_to_binary([randoms:get_string(),randoms:get_string(),randoms:get_string()]);
 		Resource -> Resource
 	      end,
 	  case R of
@@ -1063,7 +1059,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 		      send_element(StateData, Err),
 		      fsm_next_state(wait_for_bind, StateData);
 		  {accept_resource, R2} ->
-		      JID = jlib:make_jid(U, StateData#state.server, R2),
+		      JID = jid:make(U, StateData#state.server, R2),
 		      Res = IQ#iq{type = result,
 				  sub_el =
 				      [#xmlel{name = <<"bind">>,
@@ -1073,7 +1069,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 							  attrs = [],
 							  children =
 							      [{xmlcdata,
-								jlib:jid_to_string(JID)}]}]}]},
+								jid:to_string(JID)}]}]}]},
 		      send_element(StateData, jlib:iq_to_xml(Res)),
 		      fsm_next_state(wait_for_session,
 				     StateData#state{resource = R2, jid = JID})
@@ -1108,7 +1104,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    NewStateData#state.access, JID) of
 		allow ->
 		    ?INFO_MSG("(~w) Opened session for ~s",
-			[NewStateData#state.socket, jlib:jid_to_string(JID)]),
+			[NewStateData#state.socket, jid:to_string(JID)]),
 		    Res = jlib:make_result_iq_reply(El#xmlel{children = []}),
 		    NewState = send_stanza(NewStateData, Res),
 		    change_shaper(NewState, JID),
@@ -1117,7 +1113,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 			    NewState#state.server,
 			    {[], []},
 			    [U, NewState#state.server]),
-		    LJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
+		    LJID = jid:tolower(jid:remove_resource(JID)),
 		    Fs1 = [LJID | Fs],
 		    Ts1 = [LJID | Ts],
 		    PrivList =
@@ -1143,7 +1139,7 @@ wait_for_session({xmlstreamelement, El}, StateData) ->
 		    ejabberd_hooks:run(forbidden_session_hook,
 			NewStateData#state.server, [JID]),
 		    ?INFO_MSG("(~w) Forbidden session for ~s",
-			[NewStateData#state.socket, jlib:jid_to_string(JID)]),
+			[NewStateData#state.socket, jid:to_string(JID)]),
 		    Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
 		    send_element(NewStateData, Err),
 		    fsm_next_state(wait_for_session, NewStateData)
@@ -1226,8 +1222,8 @@ session_established2(El, StateData) ->
     FromJID = NewStateData#state.jid,
     To = xml:get_attr_s(<<"to">>, Attrs),
     ToJID = case To of
-	      <<"">> -> jlib:make_jid(User, Server, <<"">>);
-	      _ -> jlib:string_to_jid(To)
+	      <<"">> -> jid:make(User, Server, <<"">>);
+	      _ -> jid:from_string(To)
 	    end,
     NewEl1 = jlib:remove_attr(<<"xmlns">>, El),
     NewEl = case xml:get_attr_s(<<"xml:lang">>, Attrs) of
@@ -1299,11 +1295,11 @@ session_established2(El, StateData) ->
     fsm_next_state(session_established, NewState).
 
 wait_for_resume({xmlstreamelement, _El} = Event, StateData) ->
-    session_established(Event, StateData),
-    fsm_next_state(wait_for_resume, StateData);
+    Result = session_established(Event, StateData),
+    fsm_next_state(wait_for_resume, element(3, Result));
 wait_for_resume(timeout, StateData) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
-	   [jlib:jid_to_string(StateData#state.jid)]),
+	   [jid:to_string(StateData#state.jid)]),
     {stop, normal, StateData};
 wait_for_resume(Event, StateData) ->
     ?DEBUG("Ignoring event while waiting for resumption: ~p", [Event]),
@@ -1395,7 +1391,7 @@ handle_info({route, _From, _To, {broadcast, Data}},
                                                                        PrivListName}],
                                                              children = []}]}]},
                     PrivPushEl = jlib:replace_from_to(
-                                   jlib:jid_remove_resource(StateData#state.jid),
+                                   jid:remove_resource(StateData#state.jid),
                                    StateData#state.jid,
                                    jlib:iq_to_xml(PrivPushIQ)),
                     NewState = send_stanza(
@@ -1423,9 +1419,9 @@ handle_info({route, From, To,
 								     Packet}]),
 				       case xml:get_attr_s(<<"type">>, Attrs) of
 					 <<"probe">> ->
-					     LFrom = jlib:jid_tolower(From),
+					     LFrom = jid:tolower(From),
 					     LBFrom =
-						 jlib:jid_remove_resource(LFrom),
+						 jid:remove_resource(LFrom),
 					     NewStateData = case
 							      (?SETS):is_element(LFrom,
 										 State#state.pres_a)
@@ -1468,7 +1464,7 @@ handle_info({route, From, To,
 					     {false, Attrs, NewStateData};
 					 <<"error">> ->
 					     NewA =
-						 remove_element(jlib:jid_tolower(From),
+						 remove_element(jid:tolower(From),
 								State#state.pres_a),
 					     {true, Attrs,
 					      State#state{pres_a = NewA}};
@@ -1504,9 +1500,9 @@ handle_info({route, From, To,
 						 of
 					       allow ->
 						   LFrom =
-						       jlib:jid_tolower(From),
+						       jid:tolower(From),
 						   LBFrom =
-						       jlib:jid_remove_resource(LFrom),
+						       jid:remove_resource(LFrom),
 						   case
 						     (?SETS):is_element(LFrom,
 									State#state.pres_a)
@@ -1557,9 +1553,9 @@ handle_info({route, From, To,
 				       IQ = jlib:iq_query_info(Packet),
 				       case IQ of
 					 #iq{xmlns = ?NS_LAST} ->
-					     LFrom = jlib:jid_tolower(From),
+					     LFrom = jid:tolower(From),
 					     LBFrom =
-						 jlib:jid_remove_resource(LFrom),
+						 jid:remove_resource(LFrom),
 					     HasFromSub =
 						 ((?SETS):is_element(LFrom,
 								     StateData#state.pres_f)
@@ -1654,8 +1650,8 @@ handle_info({route, From, To,
 				 end,
     if Pass ->
 	    Attrs2 =
-		jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-		    jlib:jid_to_string(To), NewAttrs),
+		jlib:replace_from_to_attrs(jid:to_string(From),
+		    jid:to_string(To), NewAttrs),
 	    FixedPacket0 = #xmlel{name = Name, attrs = Attrs2, children = Els},
 	    FixedPacket = ejabberd_hooks:run_fold(
 		    user_receive_packet,
@@ -1717,8 +1713,8 @@ handle_info({send_filtered, Feature, From, To, Packet}, StateName, StateData) ->
 					  Feature, To, Packet]),
     NewStateData = if Drop ->
 			  ?DEBUG("Dropping packet from ~p to ~p",
-				 [jlib:jid_to_string(From),
-				  jlib:jid_to_string(To)]),
+				 [jid:to_string(From),
+				  jid:to_string(To)]),
 			  StateData;
 		      true ->
 			  FinalPacket = jlib:replace_from_to(From, To, Packet),
@@ -1745,7 +1741,7 @@ handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
     lists:foreach(
       fun(USR) ->
 	      ejabberd_router:route(
-		From, jlib:make_jid(USR), Packet)
+		From, jid:make(USR), Packet)
       end, lists:usort(Recipients)),
     fsm_next_state(StateName, StateData);
 handle_info(Info, StateName, StateData) ->
@@ -1761,7 +1757,7 @@ terminate(_Reason, StateName, StateData) ->
     case StateData#state.mgmt_state of
       resumed ->
 	  ?INFO_MSG("Closing former stream of resumed session for ~s",
-		    [jlib:jid_to_string(StateData#state.jid)]);
+		    [jid:to_string(StateData#state.jid)]);
       _ ->
 	  if StateName == session_established;
 	     StateName == wait_for_resume ->
@@ -1769,7 +1765,7 @@ terminate(_Reason, StateName, StateData) ->
 		   replaced ->
 		       ?INFO_MSG("(~w) Replaced session for ~s",
 				 [StateData#state.socket,
-				  jlib:jid_to_string(StateData#state.jid)]),
+				  jid:to_string(StateData#state.jid)]),
 		       From = StateData#state.jid,
 		       Packet = #xmlel{name = <<"presence">>,
 				       attrs = [{<<"type">>, <<"unavailable">>}],
@@ -1789,7 +1785,7 @@ terminate(_Reason, StateName, StateData) ->
 		   _ ->
 		       ?INFO_MSG("(~w) Close session for ~s",
 				 [StateData#state.socket,
-				  jlib:jid_to_string(StateData#state.jid)]),
+				  jid:to_string(StateData#state.jid)]),
 		       EmptySet = (?SETS):new(),
 		       case StateData of
 			 #state{pres_last = undefined, pres_a = EmptySet} ->
@@ -1978,7 +1974,7 @@ get_conn_type(StateData) ->
     end.
 
 process_presence_probe(From, To, StateData) ->
-    LFrom = jlib:jid_tolower(From),
+    LFrom = jid:tolower(From),
     LBFrom = setelement(3, LFrom, <<"">>),
     case StateData#state.pres_last of
 	undefined ->
@@ -2047,7 +2043,7 @@ presence_update(From, Packet, StateData) ->
 	  FromUnavail = (StateData#state.pres_last == undefined),
 	  ?DEBUG("from unavail = ~p~n", [FromUnavail]),
 	  NewStateData = StateData#state{pres_last = Packet,
-					 pres_timestamp = now()},
+					 pres_timestamp = p1_time_compat:timestamp()},
 	  NewState = if FromUnavail ->
 			    ejabberd_hooks:run(user_available_hook,
 					       NewStateData#state.server,
@@ -2076,7 +2072,7 @@ presence_update(From, Packet, StateData) ->
 %% User sends a directed presence packet
 presence_track(From, To, Packet, StateData) ->
     #xmlel{attrs = Attrs} = Packet,
-    LTo = jlib:jid_tolower(To),
+    LTo = jid:tolower(To),
     User = StateData#state.user,
     Server = StateData#state.server,
     case xml:get_attr_s(<<"type">>, Attrs) of
@@ -2089,14 +2085,14 @@ presence_track(From, To, Packet, StateData) ->
 	  ejabberd_hooks:run(roster_out_subscription, Server,
 			     [User, Server, To, subscribed]),
 	  check_privacy_route(From, StateData,
-			      jlib:jid_remove_resource(From), To, Packet);
+			      jid:remove_resource(From), To, Packet);
       <<"unsubscribe">> ->
 	  try_roster_subscribe(unsubscribe, User, Server, From, To, Packet, StateData);
       <<"unsubscribed">> ->
 	  ejabberd_hooks:run(roster_out_subscription, Server,
 			     [User, Server, To, unsubscribed]),
 	  check_privacy_route(From, StateData,
-			      jlib:jid_remove_resource(From), To, Packet);
+			      jid:remove_resource(From), To, Packet);
       <<"error">> ->
 	  check_privacy_route(From, StateData, From, To, Packet);
       <<"probe">> ->
@@ -2139,7 +2135,7 @@ is_privacy_allow(StateData, From, To, Packet, Dir) ->
 
 %%% Check ACL before allowing to send a subscription stanza
 try_roster_subscribe(Type, User, Server, From, To, Packet, StateData) ->
-    JID1 = jlib:make_jid(User, Server, <<"">>),
+    JID1 = jid:make(User, Server, <<"">>),
     Access = gen_mod:get_module_opt(Server, mod_roster, access, fun(A) when is_atom(A) -> A end, all),
     case acl:match_rule(Server, Access, JID1) of
 	deny ->
@@ -2149,7 +2145,7 @@ try_roster_subscribe(Type, User, Server, From, To, Packet, StateData) ->
 	    ejabberd_hooks:run(roster_out_subscription,
 			       Server,
 			       [User, Server, To, Type]),
-	    check_privacy_route(From, StateData, jlib:jid_remove_resource(From),
+	    check_privacy_route(From, StateData, jid:remove_resource(From),
 				To, Packet)
     end.
 
@@ -2191,7 +2187,7 @@ presence_broadcast_first(From, StateData, Packet) ->
     StateData#state{pres_a = As}.
 
 format_and_check_privacy(From, StateData, Packet, JIDs, Dir) ->
-    FJIDs = [jlib:make_jid(JID) || JID <- JIDs],
+    FJIDs = [jid:make(JID) || JID <- JIDs],
     lists:filter(
       fun(FJID) ->
 	      case ejabberd_hooks:run_fold(
@@ -2218,7 +2214,7 @@ remove_element(E, Set) ->
     end.
 
 roster_change(IJID, ISubscription, StateData) ->
-    LIJID = jlib:jid_tolower(IJID),
+    LIJID = jid:tolower(IJID),
     IsFrom = (ISubscription == both) or (ISubscription == from),
     IsTo = (ISubscription == both) or (ISubscription == to),
     OldIsFrom = (?SETS):is_element(LIJID, StateData#state.pres_f),
@@ -2237,7 +2233,7 @@ roster_change(IJID, ISubscription, StateData) ->
 	  ?DEBUG("roster changed for ~p~n",
 		 [StateData#state.user]),
 	  From = StateData#state.jid,
-	  To = jlib:make_jid(IJID),
+	  To = jid:make(IJID),
 	  Cond1 = IsFrom andalso not OldIsFrom,
 	  Cond2 = not IsFrom andalso OldIsFrom andalso
 		    ((?SETS):is_element(LIJID, StateData#state.pres_a)),
@@ -2385,10 +2381,10 @@ process_unauthenticated_stanza(StateData, El) ->
 	    empty ->
 		ResIQ = IQ#iq{type = error,
 			      sub_el = [?ERR_SERVICE_UNAVAILABLE]},
-		Res1 = jlib:replace_from_to(jlib:make_jid(<<"">>,
+		Res1 = jlib:replace_from_to(jid:make(<<"">>,
 							  StateData#state.server,
 							  <<"">>),
-					    jlib:make_jid(<<"">>, <<"">>,
+					    jid:make(<<"">>, <<"">>,
 							  <<"">>),
 					    jlib:iq_to_xml(ResIQ)),
 		send_element(StateData,
@@ -2426,7 +2422,7 @@ fsm_next_state_gc(StateName, PackedStateData) ->
 fsm_next_state(session_established, #state{mgmt_max_queue = exceeded} =
 	       StateData) ->
     ?WARNING_MSG("ACK queue too long, terminating session for ~s",
-		 [jlib:jid_to_string(StateData#state.jid)]),
+		 [jid:to_string(StateData#state.jid)]),
     Err = ?SERRT_POLICY_VIOLATION(StateData#state.lang,
 				  <<"Too many unacked stanzas">>),
     send_element(StateData, Err),
@@ -2442,7 +2438,7 @@ fsm_next_state(wait_for_resume, #state{mgmt_timeout = 0} = StateData) ->
 fsm_next_state(wait_for_resume, #state{mgmt_pending_since = undefined} =
 	       StateData) ->
     ?INFO_MSG("Waiting for resumption of stream for ~s",
-	      [jlib:jid_to_string(StateData#state.jid)]),
+	      [jid:to_string(StateData#state.jid)]),
     {next_state, wait_for_resume,
      StateData#state{mgmt_state = pending, mgmt_pending_since = os:timestamp()},
      StateData#state.mgmt_timeout};
@@ -2477,7 +2473,7 @@ check_from(El, FromJID) ->
 	false ->
 	    El;
 	{value, SJID} ->
-	    JID = jlib:string_to_jid(SJID),
+	    JID = jid:from_string(SJID),
 	    case JID of
 		error ->
 		    'invalid-from';
@@ -2530,7 +2526,7 @@ route_blocking(What, StateData) ->
 					       #xmlel{name = <<"item">>,
 						      attrs =
 							  [{<<"jid">>,
-							    jlib:jid_to_string(JID)}],
+							    jid:to_string(JID)}],
 						      children = []}
 				       end,
 				       JIDs)};
@@ -2542,7 +2538,7 @@ route_blocking(What, StateData) ->
 					       #xmlel{name = <<"item">>,
 						      attrs =
 							  [{<<"jid">>,
-							    jlib:jid_to_string(JID)}],
+							    jid:to_string(JID)}],
 						      children = []}
 				       end,
 				       JIDs)};
@@ -2552,7 +2548,7 @@ route_blocking(What, StateData) ->
 	    end,
     PrivPushIQ = #iq{type = set, id = <<"push">>, sub_el = [SubEl]},
     PrivPushEl =
-	jlib:replace_from_to(jlib:jid_remove_resource(StateData#state.jid),
+	jlib:replace_from_to(jid:remove_resource(StateData#state.jid),
 			     StateData#state.jid, jlib:iq_to_xml(PrivPushIQ)),
     %% No need to replace active privacy list here,
     %% blocking pushes are always accompanied by
@@ -2653,13 +2649,13 @@ handle_enable(#state{mgmt_timeout = DefaultTimeout,
     ResAttrs = [{<<"xmlns">>, StateData#state.mgmt_xmlns}] ++
 	if Timeout > 0 ->
 	       ?INFO_MSG("Stream management with resumption enabled for ~s",
-			 [jlib:jid_to_string(StateData#state.jid)]),
+			 [jid:to_string(StateData#state.jid)]),
 	       [{<<"id">>, make_resume_id(StateData)},
 		{<<"resume">>, <<"true">>},
 		{<<"max">>, jlib:integer_to_binary(Timeout)}];
 	   true ->
 	       ?INFO_MSG("Stream management without resumption enabled for ~s",
-			 [jlib:jid_to_string(StateData#state.jid)]),
+			 [jid:to_string(StateData#state.jid)]),
 	       []
 	end,
     Res = #xmlel{name = <<"enabled">>,
@@ -2685,7 +2681,7 @@ handle_a(StateData, Attrs) ->
 	  check_h_attribute(StateData, H);
       _ ->
 	  ?DEBUG("Ignoring invalid ACK element from ~s",
-		 [jlib:jid_to_string(StateData#state.jid)]),
+		 [jid:to_string(StateData#state.jid)]),
 	  StateData
     end.
 
@@ -2740,7 +2736,7 @@ handle_resume(StateData, Attrs) ->
 	  FlushedState = csi_queue_flush(NewState),
 	  NewStateData = FlushedState#state{csi_state = active},
 	  ?INFO_MSG("Resumed session for ~s",
-		    [jlib:jid_to_string(NewStateData#state.jid)]),
+		    [jid:to_string(NewStateData#state.jid)]),
 	  {ok, NewStateData};
       {error, El, Msg} ->
 	  send_element(StateData, El),
@@ -2752,11 +2748,11 @@ handle_resume(StateData, Attrs) ->
 check_h_attribute(#state{mgmt_stanzas_out = NumStanzasOut} = StateData, H)
     when H > NumStanzasOut ->
     ?DEBUG("~s acknowledged ~B stanzas, but only ~B were sent",
-	   [jlib:jid_to_string(StateData#state.jid), H, NumStanzasOut]),
+	   [jid:to_string(StateData#state.jid), H, NumStanzasOut]),
     mgmt_queue_drop(StateData#state{mgmt_stanzas_out = H}, NumStanzasOut);
 check_h_attribute(#state{mgmt_stanzas_out = NumStanzasOut} = StateData, H) ->
     ?DEBUG("~s acknowledged ~B of ~B stanzas",
-	   [jlib:jid_to_string(StateData#state.jid), H, NumStanzasOut]),
+	   [jid:to_string(StateData#state.jid), H, NumStanzasOut]),
     mgmt_queue_drop(StateData, H).
 
 update_num_stanzas_in(#state{mgmt_state = active} = StateData, El) ->
@@ -2791,7 +2787,7 @@ mgmt_queue_add(StateData, El) ->
 	       Num ->
 		   Num + 1
 	     end,
-    NewQueue = queue:in({NewNum, now(), El}, StateData#state.mgmt_queue),
+    NewQueue = queue:in({NewNum, p1_time_compat:timestamp(), El}, StateData#state.mgmt_queue),
     NewState = StateData#state{mgmt_queue = NewQueue,
 			       mgmt_stanzas_out = NewNum},
     check_queue_length(NewState).
@@ -2823,13 +2819,13 @@ handle_unacked_stanzas(StateData, F)
 	  ok;
       N ->
 	  ?INFO_MSG("~B stanzas were not acknowledged by ~s",
-		    [N, jlib:jid_to_string(StateData#state.jid)]),
+		    [N, jid:to_string(StateData#state.jid)]),
 	  lists:foreach(
 	    fun({_, Time, #xmlel{attrs = Attrs} = El}) ->
 		    From_s = xml:get_attr_s(<<"from">>, Attrs),
-		    From = jlib:string_to_jid(From_s),
+		    From = jid:from_string(From_s),
 		    To_s = xml:get_attr_s(<<"to">>, Attrs),
-		    To = jlib:string_to_jid(To_s),
+		    To = jid:from_string(To_s),
 		    F(From, To, El, Time)
 	    end, queue:to_list(Queue))
     end;
@@ -2863,7 +2859,7 @@ handle_unacked_stanzas(StateData)
 	      end,
     F = fun(From, _To, #xmlel{name = <<"presence">>}, _Time) ->
 		?DEBUG("Dropping presence stanza from ~s",
-		       [jlib:jid_to_string(From)]);
+		       [jid:to_string(From)]);
 	   (From, To, #xmlel{name = <<"iq">>} = El, _Time) ->
 		Err = jlib:make_error_reply(El, ?ERR_SERVICE_UNAVAILABLE),
 		ejabberd_router:route(To, From, Err);
@@ -2986,7 +2982,7 @@ csi_filter_stanza(#state{csi_state = CsiState, jid = JID} = StateData,
 				     StateData#state.server,
 				     send, [Stanza]),
     ?DEBUG("Going to ~p stanza for inactive client ~p",
-	   [Action, jlib:jid_to_string(JID)]),
+	   [Action, jid:to_string(JID)]),
     case Action of
       queue -> csi_queue_add(StateData, Stanza);
       drop -> StateData;
@@ -3003,7 +2999,7 @@ csi_queue_add(#state{csi_queue = Queue} = StateData, Stanza) ->
       true -> csi_queue_add(csi_queue_flush(StateData), Stanza);
       false ->
 	  From = xml:get_tag_attr_s(<<"from">>, Stanza),
-	  NewQueue = lists:keystore(From, 1, Queue, {From, now(), Stanza}),
+	  NewQueue = lists:keystore(From, 1, Queue, {From, p1_time_compat:timestamp(), Stanza}),
 	  StateData#state{csi_queue = NewQueue}
     end.
 
@@ -3021,7 +3017,7 @@ csi_queue_send(#state{csi_queue = Queue, csi_state = CsiState, server = Host} =
 
 csi_queue_flush(#state{csi_queue = Queue, csi_state = CsiState, jid = JID,
 		       server = Host} = StateData) ->
-    ?DEBUG("Flushing CSI queue for ~s", [jlib:jid_to_string(JID)]),
+    ?DEBUG("Flushing CSI queue for ~s", [jid:to_string(JID)]),
     NewStateData =
 	lists:foldl(fun({_From, Time, Stanza}, AccState) ->
 			    NewStanza =

@@ -43,7 +43,7 @@
 start(normal, _Args) ->
     ejabberd_logger:start(),
     write_pid_file(),
-    jlib:start(),
+    jid:start(),
     start_apps(),
     ejabberd:check_app(ejabberd),
     randoms:start(),
@@ -257,7 +257,7 @@ start_apps() ->
     ejabberd:start_app(p1_xml),
     ejabberd:start_app(p1_stringprep),
     ejabberd:start_app(p1_zlib),
-    ejabberd:start_app(p1_cache_tab).
+    ejabberd:start_app(cache_tab).
 
 opt_type(net_ticktime) ->
     fun (P) when is_integer(P), P > 0 -> P end;

@@ -118,7 +118,7 @@ parse_blocklist_items([#xmlel{name = <<"item">>,
 		      JIDs) ->
     case xml:get_attr(<<"jid">>, Attrs) of
       {value, JID1} ->
-	  JID = jlib:jid_tolower(jlib:string_to_jid(JID1)),
+	  JID = jid:tolower(jid:from_string(JID1)),
 	  parse_blocklist_items(Els, [JID | JIDs]);
       false -> parse_blocklist_items(Els, JIDs)
     end;
@@ -375,13 +375,13 @@ make_userlist(Name, List) ->
     #userlist{name = Name, list = List, needdb = NeedDb}.
 
 broadcast_list_update(LUser, LServer, Name, UserList) ->
-    ejabberd_sm:route(jlib:make_jid(LUser, LServer,
+    ejabberd_sm:route(jid:make(LUser, LServer,
                                     <<"">>),
-                      jlib:make_jid(LUser, LServer, <<"">>),
+                      jid:make(LUser, LServer, <<"">>),
                       {broadcast, {privacy_list, UserList, Name}}).
 
 broadcast_blocklist_event(LUser, LServer, Event) ->
-    JID = jlib:make_jid(LUser, LServer, <<"">>),
+    JID = jid:make(LUser, LServer, <<"">>),
     ejabberd_sm:route(JID, JID,
                       {broadcast, {blocking, Event}}).
 
@@ -397,7 +397,7 @@ process_blocklist_get(LUser, LServer) ->
 				    #xmlel{name = <<"item">>,
 					   attrs =
 					       [{<<"jid">>,
-						 jlib:jid_to_string(JID)}],
+						 jid:to_string(JID)}],
 					   children = []}
 			    end,
 			    JIDs),

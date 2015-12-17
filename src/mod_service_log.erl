@@ -67,7 +67,7 @@ log_packet(From, To,
                                              lists:map(
                                                fun(S) ->
                                                        B = iolist_to_binary(S),
-                                                       N = jlib:nameprep(B),
+                                                       N = jid:nameprep(B),
                                                        if N /= error ->
                                                                N
                                                        end
@@ -77,8 +77,8 @@ log_packet(From, To,
 		     resource = <<"">>, luser = <<"">>, lserver = Host,
 		     lresource = <<"">>},
     NewAttrs =
-	jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-				   jlib:jid_to_string(To), Attrs),
+	jlib:replace_from_to_attrs(jid:to_string(From),
+				   jid:to_string(To), Attrs),
     FixedPacket = #xmlel{name = Name, attrs = NewAttrs,
 			 children = Els},
     lists:foreach(fun (Logger) ->
@@ -100,7 +100,7 @@ mod_opt_type(loggers) ->
     fun (L) ->
 	    lists:map(fun (S) ->
 			      B = iolist_to_binary(S),
-			      N = jlib:nameprep(B),
+			      N = jid:nameprep(B),
 			      if N /= error -> N end
 		      end,
 		      L)

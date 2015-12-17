@@ -75,7 +75,7 @@
 -export_type([ws_socket/0]).
 
 start(WS) ->
-    supervisor:start_child(ejabberd_wsloop_sup, [WS]).
+    gen_fsm:start(?MODULE, [WS], ?FSMOPTS).
 
 start_link(WS) ->
     gen_fsm:start_link(?MODULE, [WS], ?FSMOPTS).

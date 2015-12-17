@@ -48,7 +48,7 @@
 		      socket = #sip_socket{} :: #sip_socket{},
 		      call_id = <<"">> :: binary(),
 		      cseq = 0 :: non_neg_integer(),
-		      timestamp = now() :: erlang:timestamp(),
+		      timestamp = p1_time_compat:timestamp() :: erlang:timestamp(),
 		      contact :: {binary(), #uri{}, [{binary(), binary()}]},
 		      flow_tref :: reference(),
 		      reg_tref = make_ref() :: reference(),
@@ -65,8 +65,8 @@ start_link() ->
 
 request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
     {_, #uri{user = U, host = S}, _} = esip:get_hdr('to', Hdrs),
-    LUser = jlib:nodeprep(U),
-    LServer = jlib:nameprep(S),
+    LUser = jid:nodeprep(U),
+    LServer = jid:nameprep(S),
     {PeerIP, _} = SIPSock#sip_socket.peer,
     US = {LUser, LServer},
     CallID = esip:get_hdr('call-id', Hdrs),
@@ -242,7 +242,7 @@ register_session(US, SIPSocket, CallID, CSeq, IsOutboundSupported,
 				      socket = SIPSocket,
 				      call_id = CallID,
 				      cseq = CSeq,
-				      timestamp = now(),
+				      timestamp = p1_time_compat:timestamp(),
 				      contact = Contact,
 				      expires = Expires}
 		 end, ContactsWithExpires),

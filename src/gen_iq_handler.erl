@@ -113,7 +113,8 @@ handle(Host, Module, Function, Opts, From, To, IQ) ->
 	{one_queue, Pid} ->
 	    Pid ! {process_iq, From, To, IQ};
 	{queues, Pids} ->
-	    Pid = lists:nth(erlang:phash(now(), length(Pids)), Pids),
+	    Pid = lists:nth(erlang:phash(p1_time_compat:unique_integer(),
+                                         length(Pids)), Pids),
 	    Pid ! {process_iq, From, To, IQ};
 	parallel ->
 	    spawn(?MODULE, process_iq,
@@ -179,4 +180,3 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
-

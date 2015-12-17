@@ -152,9 +152,9 @@
 
 start(XMPPDomain, Sid, Key, IP, HOpts) ->
     ?DEBUG("Starting session", []),
-    SupervisorProc = gen_mod:get_module_proc(XMPPDomain, ?PROCNAME_MHB),
-    case catch supervisor:start_child(SupervisorProc,
-				      [Sid, Key, IP, HOpts])
+    case catch gen_fsm:start(?MODULE,
+			    [Sid, Key, IP, HOpts],
+			    ?FSMOPTS)
     of
 	{ok, Pid} -> {ok, Pid};
 	_ -> check_bind_module(XMPPDomain),
@@ -232,8 +232,8 @@ process_request(Data, IP, HOpts) ->
 		   "dressing' xmlns='",
 		   (?NS_HTTP_BIND)/binary, "'/>">>};
 	    XmppDomain ->
-                NXmppDomain = jlib:nameprep(XmppDomain),
-		Sid = p1_sha:sha(term_to_binary({now(), make_ref()})),
+                NXmppDomain = jid:nameprep(XmppDomain),
+		Sid = p1_sha:sha(term_to_binary({p1_time_compat:monotonic_time(), make_ref()})),
 		case start(NXmppDomain, Sid, <<"">>, IP, HOpts) of
 		  {error, _} ->
 		      {500, ?HEADER,
@@ -448,7 +448,7 @@ handle_sync_event(#http_put{payload_size =
 					  shaper_timer = NewShaperTimer});
 %% HTTP GET: send packets to the client
 handle_sync_event({http_get, Rid, Wait, Hold}, From, StateName, StateData) ->
-    TNow = tnow(),
+    TNow = p1_time_compat:system_time(micro_seconds),
     if (Hold > 0) and
 	((StateData#state.output == []) or (StateData#state.rid < Rid)) and
 	((TNow - StateData#state.ctime) < (Wait*1000*1000)) and
@@ -606,7 +606,7 @@ process_http_put(#http_put{rid = Rid, attrs = Attrs,
 			   end
 		     end
 	       end,
-    TNow = tnow(),
+    TNow = p1_time_compat:system_time(micro_seconds),
     LastPoll = if Payload == [] -> TNow;
 		  true -> 0
 	       end,
@@ -1184,11 +1184,6 @@ get_max_pause({Host, _}) ->
                            fun(I) when is_integer(I), I>0 -> I end,
 			   ?MAX_PAUSE);
 get_max_pause(_) -> ?MAX_PAUSE.
-
-%% Current time as integer
-tnow() ->
-    {TMegSec, TSec, TMSec} = now(),
-    (TMegSec * 1000000 + TSec) * 1000000 + TMSec.
 
 check_default_xmlns(#xmlel{name = Name, attrs = Attrs,
 			   children = Els} =

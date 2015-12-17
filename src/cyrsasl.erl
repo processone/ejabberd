@@ -112,12 +112,12 @@ register_mechanism(Mechanism, Module, PasswordType) ->
 %%-include("jlib.hrl").
 %%check_authzid(_State, Props) ->
 %%    AuthzId = xml:get_attr_s(authzid, Props),
-%%    case jlib:string_to_jid(AuthzId) of
+%%    case jid:from_string(AuthzId) of
 %%	error ->
 %%	    {error, "invalid-authzid"};
 %%	JID ->
-%%	    LUser = jlib:nodeprep(xml:get_attr_s(username, Props)),
-%%	    {U, S, R} = jlib:jid_tolower(JID),
+%%	    LUser = jid:nodeprep(xml:get_attr_s(username, Props)),
+%%	    {U, S, R} = jid:tolower(JID),
 %%	    case R of
 %%		"" ->
 %%		    {error, "invalid-authzid"};
@@ -133,7 +133,7 @@ register_mechanism(Mechanism, Module, PasswordType) ->
 
 check_credentials(_State, Props) ->
     User = proplists:get_value(username, Props, <<>>),
-    case jlib:nodeprep(User) of
+    case jid:nodeprep(User) of
       error -> {error, <<"not-authorized">>};
       <<"">> -> {error, <<"not-authorized">>};
       _LUser -> ok

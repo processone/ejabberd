@@ -871,7 +871,7 @@ process_discoitems_result(From, LServiceS, Els) ->
                              case XML of
                                  #xmlel{name = <<"item">>, attrs = Attrs} ->
                                      SJID = xml:get_attr_s(<<"jid">>, Attrs),
-                                     case jlib:string_to_jid(SJID) of
+                                     case jid:from_string(SJID) of
                                          #jid{luser = <<"">>,
                                               lresource = <<"">>} ->
                                              [SJID | Res];
@@ -937,8 +937,7 @@ create_cache() ->
 			 {attributes, record_info(fields, multicastc)}]).
 
 add_response(RServer, Response) ->
-    Secs =
-	calendar:datetime_to_gregorian_seconds(calendar:now_to_datetime(now())),
+    Secs = calendar:datetime_to_gregorian_seconds(calendar:local_time()),
     mnesia:dirty_write(#multicastc{rserver = RServer,
 				   response = Response, ts = Secs}).
 
@@ -949,8 +948,7 @@ search_server_on_cache(RServer, _LServerS, Maxmins) ->
     case look_server(RServer) of
       not_cached -> not_cached;
       {cached, Response, Ts} ->
-	  Now =
-	      calendar:datetime_to_gregorian_seconds(calendar:now_to_datetime(now())),
+	  Now = calendar:datetime_to_gregorian_seconds(calendar:local_time()),
 	  case is_obsolete(Response, Ts, Now, Maxmins) of
 	    false -> {cached, Response};
 	    true -> {obsolete, Response}
@@ -978,7 +976,7 @@ purge() ->
     Maxmins_positive = (?MAXTIME_CACHE_POSITIVE),
     Maxmins_negative = (?MAXTIME_CACHE_NEGATIVE),
     Now =
-	calendar:datetime_to_gregorian_seconds(calendar:now_to_datetime(now())),
+        calendar:datetime_to_gregorian_seconds(calendar:local_time()),
     purge(Now, {Maxmins_positive, Maxmins_negative}).
 
 purge(Now, Maxmins) ->
@@ -1214,9 +1212,9 @@ make_reply(internal_server_error, Lang, ErrText) ->
 make_reply(forbidden, Lang, ErrText) ->
     ?ERRT_FORBIDDEN(Lang, ErrText).
 
-stj(String) -> jlib:string_to_jid(String).
+stj(String) -> jid:from_string(String).
 
-jts(String) -> jlib:jid_to_string(String).
+jts(String) -> jid:to_string(String).
 
 mod_opt_type(access) ->
     fun (A) when is_atom(A) -> A end;

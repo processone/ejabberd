@@ -72,8 +72,11 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_REGISTER).
 
-stream_feature_register(Acc, _Host) ->
-    case lists:keymember(<<"mechanisms">>, 2, Acc) of
+stream_feature_register(Acc, Host) ->
+    AF = gen_mod:get_module_opt(Host, ?MODULE, access_from,
+                                          fun(A) when is_atom(A) -> A end,
+					  all),
+    case (AF /= none) and lists:keymember(<<"mechanisms">>, 2, Acc) of
 	true ->
 	    [#xmlel{name = <<"register">>,
 		    attrs = [{<<"xmlns">>, ?NS_FEATURE_IQREGISTER}],
@@ -89,19 +92,19 @@ unauthenticated_iq_register(_Acc, Server,
 		{A, _Port} -> A;
 		_ -> undefined
 	      end,
-    ResIQ = process_iq(jlib:make_jid(<<"">>, <<"">>,
+    ResIQ = process_iq(jid:make(<<"">>, <<"">>,
 				     <<"">>),
-		       jlib:make_jid(<<"">>, Server, <<"">>), IQ, Address),
-    Res1 = jlib:replace_from_to(jlib:make_jid(<<"">>,
+		       jid:make(<<"">>, Server, <<"">>), IQ, Address),
+    Res1 = jlib:replace_from_to(jid:make(<<"">>,
 					      Server, <<"">>),
-				jlib:make_jid(<<"">>, <<"">>, <<"">>),
+				jid:make(<<"">>, <<"">>, <<"">>),
 				jlib:iq_to_xml(ResIQ)),
     jlib:remove_attr(<<"to">>, Res1);
 unauthenticated_iq_register(Acc, _Server, _IQ, _IP) ->
     Acc.
 
 process_iq(From, To, IQ) ->
-    process_iq(From, To, IQ, jlib:jid_tolower(From)).
+    process_iq(From, To, IQ, jid:tolower(From)).
 
 process_iq(From, To,
 	   #iq{type = Type, lang = Lang, sub_el = SubEl, id = ID} =
@@ -171,9 +174,9 @@ process_iq(From, To,
 			resource = Resource} ->
 		       ResIQ = #iq{type = result, xmlns = ?NS_REGISTER,
 				   id = ID, sub_el = []},
-		       ejabberd_router:route(jlib:make_jid(User, Server,
+		       ejabberd_router:route(jid:make(User, Server,
 							   Resource),
-					     jlib:make_jid(User, Server,
+					     jid:make(User, Server,
 							   Resource),
 					     jlib:iq_to_xml(ResIQ)),
 		       ejabberd_auth:remove_user(User, Server),
@@ -373,10 +376,10 @@ try_set_password(User, Server, Password, IQ, SubEl,
     end.
 
 try_register(User, Server, Password, SourceRaw, Lang) ->
-    case jlib:is_nodename(User) of
+    case jid:is_nodename(User) of
       false -> {error, ?ERR_BAD_REQUEST};
       _ ->
-	  JID = jlib:make_jid(User, Server, <<"">>),
+	  JID = jid:make(User, Server, <<"">>),
 	  Access = gen_mod:get_module_opt(Server, ?MODULE, access,
                                           fun(A) when is_atom(A) -> A end,
 					  all),
@@ -441,7 +444,7 @@ send_welcome_message(JID) ->
 	of
       {<<"">>, <<"">>} -> ok;
       {Subj, Body} ->
-	  ejabberd_router:route(jlib:make_jid(<<"">>, Host,
+	  ejabberd_router:route(jid:make(<<"">>, Host,
 					      <<"">>),
 				JID,
 				#xmlel{name = <<"message">>,
@@ -463,7 +466,7 @@ send_registration_notifications(Mod, UJID, Source) ->
     case gen_mod:get_module_opt(
            Host, Mod, registration_watchers,
            fun(Ss) ->
-                   [#jid{} = jlib:string_to_jid(iolist_to_binary(S))
+                   [#jid{} = jid:from_string(iolist_to_binary(S))
                     || S <- Ss]
            end, []) of
         [] -> ok;
@@ -472,13 +475,13 @@ send_registration_notifications(Mod, UJID, Source) ->
                 iolist_to_binary(io_lib:format("[~s] The account ~s was registered from "
                                                "IP address ~s on node ~w using ~p.",
                                                [get_time_string(),
-                                                jlib:jid_to_string(UJID),
+                                                jid:to_string(UJID),
                                                 ip_to_string(Source), node(),
                                                 Mod])),
             lists:foreach(
               fun(JID) ->
                       ejabberd_router:route(
-                        jlib:make_jid(<<"">>, Host, <<"">>),
+                        jid:make(<<"">>, Host, <<"">>),
                         JID,
                         #xmlel{name = <<"message">>,
                                attrs = [{<<"type">>, <<"chat">>}],
@@ -509,8 +512,7 @@ check_timeout(Source) ->
                         infinity
                 end, 600),
     if is_integer(Timeout) ->
-	   {MSec, Sec, _USec} = now(),
-	   Priority = -(MSec * 1000000 + Sec),
+	   Priority = -p1_time_compat:system_time(seconds),
 	   CleanPriority = Priority + Timeout,
 	   F = fun () ->
 		       Treap = case mnesia:read(mod_register_ip, treap, write)
@@ -610,7 +612,7 @@ process_xdata_submit(El) ->
     end.
 
 is_strong_password(Server, Password) ->
-    LServer = jlib:nameprep(Server),
+    LServer = jid:nameprep(Server),
     case gen_mod:get_module_opt(LServer, ?MODULE, password_strength,
                                 fun(N) when is_number(N), N>=0 -> N end,
                                 0) of
@@ -673,7 +675,7 @@ transform_module_options(Opts) ->
 %%%
 
 may_remove_resource({_, _, _} = From) ->
-    jlib:jid_remove_resource(From);
+    jid:remove_resource(From);
 may_remove_resource(From) -> From.
 
 get_ip_access(Host) ->
@@ -706,7 +708,7 @@ mod_opt_type(password_strength) ->
     fun (N) when is_number(N), N >= 0 -> N end;
 mod_opt_type(registration_watchers) ->
     fun (Ss) ->
-	    [#jid{} = jlib:string_to_jid(iolist_to_binary(S))
+	    [#jid{} = jid:from_string(iolist_to_binary(S))
 	     || S <- Ss]
     end;
 mod_opt_type(welcome_message) ->

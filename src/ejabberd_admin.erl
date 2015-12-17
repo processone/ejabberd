@@ -28,11 +28,13 @@
 
 -export([start/0, stop/0,
 	 %% Server
-	 status/0, reopen_log/0,
+	 status/0, reopen_log/0, rotate_log/0,
 	 set_loglevel/1,
 	 stop_kindly/2, send_service_message_all_mucs/2,
 	 registered_vhosts/0,
 	 reload_config/0,
+	 %% Cluster
+	 join_cluster/1, leave_cluster/1, list_cluster/0,
 	 %% Erlang
 	 update_list/0, update/1,
 	 %% Accounts
@@ -85,6 +87,10 @@ commands() ->
      #ejabberd_commands{name = reopen_log, tags = [logs, server],
 			desc = "Reopen the log files",
 			module = ?MODULE, function = reopen_log,
+			args = [], result = {res, rescode}},
+     #ejabberd_commands{name = rotate_log, tags = [logs, server],
+			desc = "Rotate the log files",
+			module = ?MODULE, function = rotate_log,
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = stop_kindly, tags = [server],
 			desc = "Inform users and rooms, wait, and stop the server",
@@ -141,10 +147,26 @@ commands() ->
 			args = [],
 			result = {vhosts, {list, {vhost, string}}}},
      #ejabberd_commands{name = reload_config, tags = [server],
-			desc = "Reload ejabberd configuration file into memory",
+			desc = "Reload config file in memory (only affects ACL and Access)",
 			module = ?MODULE, function = reload_config,
 			args = [],
 			result = {res, rescode}},
+
+     #ejabberd_commands{name = join_cluster, tags = [cluster],
+			desc = "Join this node into the cluster handled by Node",
+			module = ?MODULE, function = join_cluster,
+			args = [{node, binary}],
+			result = {res, rescode}},
+     #ejabberd_commands{name = leave_cluster, tags = [cluster],
+			desc = "Remove node handled by Node from the cluster",
+			module = ?MODULE, function = leave_cluster,
+			args = [{node, binary}],
+			result = {res, rescode}},
+     #ejabberd_commands{name = list_cluster, tags = [cluster],
+			desc = "List nodes that are part of the cluster handled by Node",
+			module = ?MODULE, function = list_cluster,
+			args = [], 
+			result = {nodes, {list, {node, atom}}}},
 
      #ejabberd_commands{name = import_file, tags = [mnesia],
 			desc = "Import user data from jabberd14 spool file",
@@ -258,6 +280,9 @@ reopen_log() ->
     ejabberd_hooks:run(reopen_log_hook, []),
     ejabberd_logger:reopen_log().
 
+rotate_log() ->
+    ejabberd_hooks:run(rotate_log_hook, []),
+    ejabberd_logger:rotate_log().
 
 set_loglevel(LogLevel) ->
     {module, Module} = ejabberd_logger:set(LogLevel),
@@ -372,6 +397,19 @@ reload_config() ->
     ejabberd_config:reload_file(),
     acl:start(),
     shaper:start().
+
+%%%
+%%% Cluster management
+%%%
+
+join_cluster(NodeBin) ->
+    ejabberd_cluster:join(list_to_atom(binary_to_list(NodeBin))).
+
+leave_cluster(NodeBin) ->
+    ejabberd_cluster:leave(list_to_atom(binary_to_list(NodeBin))).
+
+list_cluster() ->
+    ejabberd_cluster:get_nodes().
 
 %%%
 %%% Migration management

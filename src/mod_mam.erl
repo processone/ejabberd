@@ -26,6 +26,7 @@
 -module(mod_mam).
 
 -protocol({xep, 313, '0.4'}).
+-protocol({xep, 334, '0.2'}).
 
 -behaviour(gen_mod).
 
@@ -33,8 +34,8 @@
 -export([start/2, stop/1]).
 
 -export([user_send_packet/4, user_receive_packet/5,
-	 process_iq_v0_2/3, process_iq_v0_3/3, remove_user/2,
-	 remove_user/3, mod_opt_type/1, muc_process_iq/4,
+	 process_iq_v0_2/3, process_iq_v0_3/3, disco_sm_features/5,
+	 remove_user/2, remove_user/3, mod_opt_type/1, muc_process_iq/4,
 	 muc_filter_message/5]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
@@ -45,8 +46,8 @@
 -record(archive_msg,
 	{us = {<<"">>, <<"">>}                :: {binary(), binary()} | '$2',
 	 id = <<>>                            :: binary() | '_',
-	 timestamp = now()                    :: erlang:timestamp() | '_' | '$1',
-	 peer = {<<"">>, <<"">>, <<"">>}      :: ljid() | '_' | '$3',
+	 timestamp = p1_time_compat:timestamp() :: erlang:timestamp() | '_' | '$1',
+	 peer = {<<"">>, <<"">>, <<"">>}      :: ljid() | '_' | '$3' | undefined,
 	 bare_peer = {<<"">>, <<"">>, <<"">>} :: ljid() | '_' | '$3',
 	 packet = #xmlel{}                    :: xmlel() | '_',
 	 nick = <<"">>                        :: binary(),
@@ -87,6 +88,8 @@ start(Host, Opts) ->
 		       muc_filter_message, 50),
     ejabberd_hooks:add(muc_process_iq, Host, ?MODULE,
 		       muc_process_iq, 50),
+    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
+		       disco_sm_features, 50),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, Host, ?MODULE,
@@ -129,6 +132,8 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_0),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_1),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_1),
+    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
+			  disco_sm_features, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, Host,
@@ -136,8 +141,8 @@ stop(Host) ->
     ok.
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     remove_user(LUser, LServer,
 		gen_mod:db_type(LServer, ?MODULE)).
 
@@ -199,12 +204,12 @@ user_send_packet(Pkt, C2SState, JID, Peer) ->
 muc_filter_message(Pkt, #state{config = Config} = MUCState,
 		   RoomJID, From, FromNick) ->
     if Config#config.mam ->
-	    By = jlib:jid_to_string(RoomJID),
-	    NewPkt = strip_my_archived_tag(Pkt, By),
+	    LServer = RoomJID#jid.lserver,
+	    NewPkt = strip_my_archived_tag(Pkt, LServer),
 	    case store_muc(MUCState, NewPkt, RoomJID, From, FromNick) of
 		{ok, ID} ->
 		    StanzaID = #xmlel{name = <<"stanza-id">>,
-				      attrs = [{<<"by">>, By},
+				      attrs = [{<<"by">>, LServer},
                                                {<<"xmlns">>, ?NS_SID_0},
                                                {<<"id">>, ID}]},
                     NewEls = [StanzaID|NewPkt#xmlel.children],
@@ -227,8 +232,6 @@ process_iq_v0_2(#jid{lserver = LServer} = From,
 		    [{<<"end">>, [xml:get_tag_cdata(El)]}];
 		(#xmlel{name = <<"with">>} = El) ->
 		    [{<<"with">>, [xml:get_tag_cdata(El)]}];
-		(#xmlel{name = <<"withroom">>} = El) ->
-		    [{<<"withroom">>, [xml:get_tag_cdata(El)]}];
 		(#xmlel{name = <<"withtext">>} = El) ->
 		    [{<<"withtext">>, [xml:get_tag_cdata(El)]}];
 		(#xmlel{name = <<"set">>}) ->
@@ -277,6 +280,15 @@ get_xdata_fields(SubEl) ->
 	    []
     end.
 
+disco_sm_features(empty, From, To, Node, Lang) ->
+    disco_sm_features({result, []}, From, To, Node, Lang);
+disco_sm_features({result, OtherFeatures},
+		  #jid{luser = U, lserver = S},
+		  #jid{luser = U, lserver = S}, <<>>, _Lang) ->
+    {result, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1 | OtherFeatures]};
+disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -310,6 +322,25 @@ process_iq(#jid{luser = LUser, lserver = LServer},
     catch _:_ ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]}
     end;
+process_iq(#jid{luser = LUser, lserver = LServer},
+	   #jid{lserver = LServer},
+	   #iq{type = get, sub_el = #xmlel{name = <<"prefs">>}} = IQ) ->
+    Prefs = get_prefs(LUser, LServer),
+    Default = jlib:atom_to_binary(Prefs#archive_prefs.default),
+    JFun = fun(L) ->
+		   [#xmlel{name = <<"jid">>,
+			   children = [{xmlcdata, jid:to_string(J)}]}
+		    || J <- L]
+	   end,
+    Always = #xmlel{name = <<"always">>,
+		    children = JFun(Prefs#archive_prefs.always)},
+    Never = #xmlel{name = <<"never">>,
+		   children = JFun(Prefs#archive_prefs.never)},
+    IQ#iq{type = result,
+	  sub_el = [#xmlel{name = <<"prefs">>,
+			   attrs = [{<<"xmlns">>, IQ#iq.xmlns},
+				    {<<"default">>, Default}],
+			   children = [Always, Never]}]};
 process_iq(_, _, #iq{sub_el = SubEl} = IQ) ->
     IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
 
@@ -323,11 +354,7 @@ process_iq(LServer, From, To, IQ, SubEl, Fs, MsgType) ->
 			  {_, _, _} = jlib:datetime_string_to_timestamp(Data),
 			  With, RSM};
 		    ({<<"with">>, [Data|_]}, {Start, End, _, RSM}) ->
-			 {Start, End, jlib:jid_tolower(jlib:string_to_jid(Data)), RSM};
-		    ({<<"withroom">>, [Data|_]}, {Start, End, _, RSM}) ->
-			 {Start, End,
-			  {room, jlib:jid_tolower(jlib:string_to_jid(Data))},
-			  RSM};
+			 {Start, End, jid:tolower(jid:from_string(Data)), RSM};
 		    ({<<"withtext">>, [Data|_]}, {Start, End, _, RSM}) ->
 			 {Start, End, {text, Data}, RSM};
 		    ({<<"set">>, El}, {Start, End, With, _}) ->
@@ -343,17 +370,31 @@ process_iq(LServer, From, To, IQ, SubEl, Fs, MsgType) ->
     end.
 
 should_archive(#xmlel{name = <<"message">>} = Pkt) ->
-    case {xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs),
-	  xml:get_subtag_cdata(Pkt, <<"body">>)} of
-	{<<"error">>, _} ->
+    case xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs) of
+	<<"error">> ->
 	    false;
-	{<<"groupchat">>, _} ->
-	    false;
-	{_, <<>>} ->
-	    %% Empty body
+	<<"groupchat">> ->
 	    false;
 	_ ->
-	    true
+	    case is_resent(Pkt) of
+		true ->
+		    false;
+		false ->
+		    case check_store_hint(Pkt) of
+			store ->
+			    true;
+			no_store ->
+			    false;
+			none ->
+			    case xml:get_subtag_cdata(Pkt, <<"body">>) of
+				<<>> ->
+				    %% Empty body
+				    false;
+				_ ->
+				    true
+			    end
+		    end
+	    end
     end;
 should_archive(#xmlel{}) ->
     false.
@@ -362,7 +403,7 @@ strip_my_archived_tag(Pkt, LServer) ->
     NewEls = lists:filter(
 	    fun(#xmlel{name = Tag, attrs = Attrs})
 			when Tag == <<"archived">>; Tag == <<"stanza-id">> ->
-		    case catch jlib:nameprep(
+		    case catch jid:nameprep(
 			    xml:get_attr_s(
 				<<"by">>, Attrs)) of
 			LServer ->
@@ -380,7 +421,7 @@ should_archive_peer(C2SState,
 				   always = Always,
 				   never = Never},
 		    Peer) ->
-    LPeer = jlib:jid_tolower(Peer),
+    LPeer = jid:tolower(Peer),
     case lists:member(LPeer, Always) of
 	true ->
 	    true;
@@ -408,6 +449,41 @@ should_archive_muc(_MUCState, _Peer) ->
     %% TODO
     true.
 
+check_store_hint(Pkt) ->
+    case has_store_hint(Pkt) of
+	true ->
+	    store;
+	false ->
+	    case has_no_store_hint(Pkt) of
+		true ->
+		    no_store;
+		false ->
+		    none
+	    end
+    end.
+
+has_store_hint(Message) ->
+    xml:get_subtag_with_xmlns(Message, <<"store">>, ?NS_HINTS)
+      /= false.
+
+has_no_store_hint(Message) ->
+    xml:get_subtag_with_xmlns(Message, <<"no-store">>, ?NS_HINTS)
+      /= false orelse
+    xml:get_subtag_with_xmlns(Message, <<"no-storage">>, ?NS_HINTS)
+      /= false orelse
+    xml:get_subtag_with_xmlns(Message, <<"no-permanent-store">>, ?NS_HINTS)
+      /= false orelse
+    xml:get_subtag_with_xmlns(Message, <<"no-permanent-storage">>, ?NS_HINTS)
+      /= false.
+
+is_resent(Pkt) ->
+    case xml:get_subtag_cdata(Pkt, <<"delay">>) of
+	<<>> ->
+	    false;
+	Desc ->
+	    binary:match(Desc, <<"Resent">>) =/= nomatch
+    end.
+
 store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
     Prefs = get_prefs(LUser, LServer),
     case should_archive_peer(C2SState, Prefs, Peer) of
@@ -423,7 +499,7 @@ store_muc(MUCState, Pkt, RoomJID, Peer, Nick) ->
     case should_archive_muc(MUCState, Peer) of
 	true ->
 	    LServer = MUCState#state.server_host,
-	    {U, S, _} = jlib:jid_tolower(RoomJID),
+	    {U, S, _} = jid:tolower(RoomJID),
 	    store(Pkt, LServer, {U, S}, groupchat, Peer, Nick, recv,
 		  gen_mod:db_type(LServer, ?MODULE));
 	false ->
@@ -431,8 +507,8 @@ store_muc(MUCState, Pkt, RoomJID, Peer, Nick) ->
     end.
 
 store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir, mnesia) ->
-    LPeer = {PUser, PServer, _} = jlib:jid_tolower(Peer),
-    TS = now(),
+    LPeer = {PUser, PServer, _} = jid:tolower(Peer),
+    TS = p1_time_compat:timestamp(),
     ID = jlib:integer_to_binary(now_to_usec(TS)),
     case mnesia:dirty_write(
 	   #archive_msg{us = {LUser, LServer},
@@ -449,17 +525,17 @@ store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir, mnesia) ->
 	    Err
     end;
 store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, odbc) ->
-    TSinteger = now_to_usec(now()),
+    TSinteger = p1_time_compat:system_time(micro_seconds),
     ID = TS = jlib:integer_to_binary(TSinteger),
     SUser = case Type of
 		chat -> LUser;
-		groupchat -> jlib:jid_to_string({LUser, LHost, <<>>})
+		groupchat -> jid:to_string({LUser, LHost, <<>>})
 	    end,
-    BarePeer = jlib:jid_to_string(
-		 jlib:jid_tolower(
-		   jlib:jid_remove_resource(Peer))),
-    LPeer = jlib:jid_to_string(
-	      jlib:jid_tolower(Peer)),
+    BarePeer = jid:to_string(
+		 jid:tolower(
+		   jid:remove_resource(Peer))),
+    LPeer = jid:to_string(
+	      jid:tolower(Peer)),
     XML = xml:element_to_binary(Pkt),
     Body = xml:get_subtag_cdata(Pkt, <<"body">>),
     case ejabberd_odbc:sql_query(
@@ -574,14 +650,7 @@ select_and_send(LServer, From, To, Start, End, With, RSM, IQ, MsgType, DBType) -
 select_and_start(LServer, From, To, Start, End, With, RSM, MsgType, DBType) ->
     case MsgType of
 	chat ->
-	    case With of
-		{room, {_, _, <<"">>} = WithJID} ->
-		    select(LServer, jlib:make_jid(WithJID), Start, End,
-			   WithJID, RSM, MsgType, DBType);
-		_ ->
-		    select(LServer, From, Start, End,
-			   With, RSM, MsgType, DBType)
-	    end;
+	    select(LServer, From, Start, End, With, RSM, MsgType, DBType);
 	{groupchat, _Role, _MUCState} ->
 	    select(LServer, To, Start, End, With, RSM, MsgType, DBType)
     end.
@@ -639,7 +708,7 @@ select(LServer, #jid{luser = LUser} = JidRequestor,
        Start, End, With, RSM, MsgType, {odbc, Host}) ->
     User = case MsgType of
 	       chat -> LUser;
-	       {groupchat, _Role, _MUCState} -> jlib:jid_to_string(JidRequestor)
+	       {groupchat, _Role, _MUCState} -> jid:to_string(JidRequestor)
 	   end,
     {Query, CountQuery} = make_sql_query(User, LServer,
 					 Start, End, With, RSM),
@@ -670,10 +739,11 @@ select(LServer, #jid{luser = LUser} = JidRequestor,
 	       fun([TS, XML, PeerBin, Kind, Nick]) ->
 		       #xmlel{} = El = xml_stream:parse_element(XML),
 		       Now = usec_to_now(jlib:binary_to_integer(TS)),
-		       PeerJid = jlib:jid_tolower(jlib:string_to_jid(PeerBin)),
-		       T = if Kind /= <<"">> ->
-				   jlib:binary_to_atom(Kind);
-			      true -> chat
+		       PeerJid = jid:tolower(jid:from_string(PeerBin)),
+		       T = case Kind of
+                               <<"">> -> chat;
+                               null -> chat;
+                               _ -> jlib:binary_to_atom(Kind)
 			   end,
 		       {TS, jlib:binary_to_integer(TS),
 			msg_to_el(#archive_msg{timestamp = Now,
@@ -704,9 +774,9 @@ maybe_update_from_to(Pkt, JidRequestor, Peer, chat, _Nick) ->
     case xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs) of
 	<<"groupchat">> when Peer /= undefined ->
 	    Pkt2 = xml:replace_tag_attr(<<"to">>,
-					jlib:jid_to_string(JidRequestor),
+					jid:to_string(JidRequestor),
 					Pkt),
-	    xml:replace_tag_attr(<<"from">>, jlib:jid_to_string(Peer),
+	    xml:replace_tag_attr(<<"from">>, jid:to_string(Peer),
 				 Pkt2);
 	_ -> Pkt
     end;
@@ -719,13 +789,12 @@ maybe_update_from_to(#xmlel{children = Els} = Pkt, JidRequestor,
 			    children =
 				[#xmlel{name = <<"item">>,
 					attrs = [{<<"jid">>,
-						  jlib:jid_to_string(Peer)}]}]}];
+						  jid:to_string(Peer)}]}]}];
 		_ ->
 		    []
 	    end,
     Pkt1 = Pkt#xmlel{children = Items ++ Els},
-    Pkt2 = jlib:replace_from(jlib:jid_replace_resource(JidRequestor, Nick), Pkt1),
-    jlib:remove_attr(<<"to">>, Pkt2).
+    Pkt2 = jlib:replace_from(jid:replace_resource(JidRequestor, Nick), Pkt1).
 
 is_bare_copy(#jid{luser = U, lserver = S, lresource = R}, To) ->
     PrioRes = ejabberd_sm:get_user_present_resources(U, S),
@@ -913,11 +982,11 @@ make_sql_query(User, _LServer, Start, End, With, RSM) ->
 			  ejabberd_odbc:escape(Txt), <<"')">>];
 		     {_, _, <<>>} ->
 			 [<<" and bare_peer='">>,
-			  ejabberd_odbc:escape(jlib:jid_to_string(With)),
+			  ejabberd_odbc:escape(jid:to_string(With)),
 			  <<"'">>];
 		     {_, _, _} ->
 			 [<<" and peer='">>,
-			  ejabberd_odbc:escape(jlib:jid_to_string(With)),
+			  ejabberd_odbc:escape(jid:to_string(With)),
 			  <<"'">>];
 		     none ->
 			 []
@@ -991,9 +1060,9 @@ datetime_to_now(DateTime, USecs) ->
 get_jids(Els) ->
     lists:flatmap(
       fun(#xmlel{name = <<"jid">>} = El) ->
-	      J = jlib:string_to_jid(xml:get_tag_cdata(El)),
-	      [jlib:jid_tolower(jlib:jid_remove_resource(J)),
-	       jlib:jid_tolower(J)];
+	      J = jid:from_string(xml:get_tag_cdata(El)),
+	      [jid:tolower(jid:remove_resource(J)),
+	       jid:tolower(J)];
 	 (_) ->
 	      []
       end, Els).

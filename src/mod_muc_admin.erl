@@ -608,7 +608,7 @@ decide_room({_Room_name, _Host, Room_pid}, Last_allowed) ->
     Num_users = length(?DICT:to_list(Room_users)),
 
     History = (S#state.history)#lqueue.queue,
-    Ts_now = calendar:now_to_universal_time(now()),
+    Ts_now = calendar:universal_time(),
     Ts_uptime = uptime_seconds(),
     {Has_hist, Last} = case queue:is_empty(History) of
 			   true ->
@@ -676,7 +676,7 @@ get_room_occupants(Pid) ->
     S = get_room_state(Pid),
     lists:map(
       fun({_LJID, Info}) ->
-	      {jlib:jid_to_string(Info#user.jid),
+	      {jid:to_string(Info#user.jid),
 	       Info#user.nick,
 	       atom_to_list(Info#user.role)}
       end,
@@ -691,11 +691,11 @@ get_room_occupants_number(Room, Host) ->
 %% http://xmpp.org/extensions/xep-0249.html
 
 send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) ->
-    RoomJid = jlib:make_jid(RoomName, RoomService, <<"">>),
-    RoomString = jlib:jid_to_string(RoomJid),
+    RoomJid = jid:make(RoomName, RoomService, <<"">>),
+    RoomString = jid:to_string(RoomJid),
     XmlEl = build_invitation(Password, Reason, RoomString),
     UsersStrings = get_users_to_invite(RoomJid, binary_to_list(UsersString)),
-    [send_direct_invitation(RoomJid, jlib:string_to_jid(list_to_binary(UserStrings)), XmlEl)
+    [send_direct_invitation(RoomJid, jid:from_string(list_to_binary(UserStrings)), XmlEl)
      || UserStrings <- UsersStrings],
     timer:sleep(1000),
     ok.
@@ -704,11 +704,11 @@ get_users_to_invite(RoomJid, UsersString) ->
     UsersStrings = string:tokens(UsersString, ":"),
     OccupantsTuples = get_room_occupants(RoomJid#jid.luser,
 					 RoomJid#jid.lserver),
-    OccupantsJids = [jlib:string_to_jid(JidString)
+    OccupantsJids = [jid:from_string(JidString)
 		     || {JidString, _Nick, _} <- OccupantsTuples],
     lists:filter(
 	fun(UserString) ->
-	    UserJid = jlib:string_to_jid(list_to_binary(UserString)),
+	    UserJid = jid:from_string(list_to_binary(UserString)),
 	    %% [{"badlop@localhost/work","badlop","moderator"}]
 	    lists:all(fun(OccupantJid) ->
 		UserJid#jid.luser /= OccupantJid#jid.luser
@@ -872,7 +872,7 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
 	[R] ->
 	    %% Get the PID for the online room so we can get the state of the room
 	    Pid = R#muc_online_room.pid,
-	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jlib:string_to_jid(JID), affiliation, Affiliation, <<"">>}, <<"">>}),
+	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:from_string(JID), affiliation, Affiliation, <<"">>}, <<"">>}),
 	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
 	[] ->

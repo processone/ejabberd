@@ -88,7 +88,7 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
       {ok, Type, Key, Image} ->
 	  Id = <<(randoms:get_string())/binary>>,
 	  B64Image = jlib:encode_base64((Image)),
-	  JID = jlib:jid_to_string(From),
+	  JID = jid:to_string(From),
 	  CID = <<"sha1+", (p1_sha:sha(Image))/binary,
 		  "@bob.xmpp.org">>,
 	  Data = #xmlel{name = <<"data">>,
@@ -109,7 +109,7 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
 						    {xmlcdata, ?NS_CAPTCHA}),
 					    ?VFIELD(<<"hidden">>, <<"from">>,
 						    {xmlcdata,
-						     jlib:jid_to_string(To)}),
+						     jid:to_string(To)}),
 					    ?VFIELD(<<"hidden">>,
 						    <<"challenge">>,
 						    {xmlcdata, Id}),
@@ -233,7 +233,7 @@ create_captcha_x(SID, To, Lang, Limiter, HeadEls,
 							 [{xmlcdata,
 							   Imageurl}]}]},
 				  ?VFIELD(<<"hidden">>, <<"from">>,
-					  {xmlcdata, jlib:jid_to_string(To)}),
+					  {xmlcdata, jid:to_string(To)}),
 				  ?VFIELD(<<"hidden">>, <<"challenge">>,
 					  {xmlcdata, Id}),
 				  ?VFIELD(<<"hidden">>, <<"sid">>,
@@ -661,8 +661,7 @@ clean_treap(Treap, CleanPriority) ->
     end.
 
 now_priority() ->
-    {MSec, Sec, USec} = now(),
-    -((MSec * 1000000 + Sec) * 1000000 + USec).
+    -p1_time_compat:system_time(micro_seconds).
 
 opt_type(captcha_cmd) ->
     fun (FileName) ->

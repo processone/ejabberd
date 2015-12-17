@@ -1,8 +1,8 @@
 %%%----------------------------------------------------------------------
-%%% File    : node_hometree.erl
+%%% File    : node_online.erl
 %%% Author  : Christophe Romain <christophe.romain@process-one.net>
-%%% Purpose : Standard tree ordered node plugin
-%%% Created :  1 Dec 2007 by Christophe Romain <christophe.romain@process-one.net>
+%%% Purpose : Handle only online users, remove offline subscriptions and nodes
+%%% Created : 15 Dec 2015 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
 %%% ejabberd, Copyright (C) 2002-2015   ProcessOne
@@ -23,7 +23,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(node_hometree).
+-module(node_online).
 -behaviour(gen_pubsub_node).
 -author('christophe.romain@process-one.net').
 
@@ -43,58 +43,57 @@
     get_item/2, set_item/1, get_item_name/3, node_to_path/1,
     path_to_node/1]).
 
+-export([user_offline/3]).
+
 init(Host, ServerHost, Opts) ->
     node_flat:init(Host, ServerHost, Opts),
-    Owner = mod_pubsub:service_jid(Host),
-    mod_pubsub:create_node(Host, ServerHost, <<"/home">>, Owner, <<"hometree">>),
-    mod_pubsub:create_node(Host, ServerHost, <<"/home/", ServerHost/binary>>, Owner, <<"hometree">>),
+    ejabberd_hooks:add(sm_remove_connection_hook, ServerHost,
+		       ?MODULE, user_offline, 75),
     ok.
 
 terminate(Host, ServerHost) ->
-    node_flat:terminate(Host, ServerHost).
+    node_flat:terminate(Host, ServerHost),
+    ejabberd_hooks:delete(sm_remove_connection_hook, ServerHost,
+			  ?MODULE, user_offline, 75),
+    ok.
+
+user_offline(_SID, #jid{luser=LUser,lserver=LServer}, _Info) ->
+    mod_pubsub:remove_user(LUser, LServer).
 
 options() ->
-    node_flat:options().
+    [{deliver_payloads, true},
+	{notify_config, false},
+	{notify_delete, false},
+	{notify_retract, false},
+	{purge_offline, true},
+	{persist_items, true},
+	{max_items, ?MAXITEMS},
+	{subscribe, true},
+	{access_model, open},
+	{roster_groups_allowed, []},
+	{publish_model, publishers},
+	{notification_type, headline},
+	{max_payload_size, ?MAX_PAYLOAD_SIZE},
+	{send_last_published_item, on_sub_and_presence},
+	{deliver_notifications, true},
+	{presence_based_delivery, true}].
 
 features() ->
     node_flat:features().
 
-%% @doc Checks if the current user has the permission to create the requested node
-%% <p>In hometree node, the permission is decided by the place in the
-%% hierarchy where the user is creating the node. The access parameter is also
-%% checked. This parameter depends on the value of the
-%% <tt>access_createnode</tt> ACL value in ejabberd config file.</p>
-%% <p>This function also check that node can be created as a children of its
-%% parent node</p>
-create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
-    LOwner = jid:tolower(Owner),
-    {User, Server, _Resource} = LOwner,
-    Allowed = case LOwner of
-	{<<"">>, Host, <<"">>} ->
-	    true; % pubsub service always allowed
-	_ ->
-	    case acl:match_rule(ServerHost, Access, LOwner) of
-		allow ->
-		    case node_to_path(Node) of
-			[<<"home">>, Server, User | _] -> true;
-			_ -> false
-		    end;
-		_ -> false
-	    end
-    end,
-    {result, Allowed}.
+create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
+    node_flat:create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access).
 
 create_node(Nidx, Owner) ->
     node_flat:create_node(Nidx, Owner).
 
-delete_node(Nodes) ->
-    node_flat:delete_node(Nodes).
+delete_node(Removed) ->
+    node_flat:delete_node(Removed).
 
 subscribe_node(Nidx, Sender, Subscriber, AccessModel,
 	    SendLast, PresenceSubscription, RosterGroup, Options) ->
-    node_flat:subscribe_node(Nidx, Sender, Subscriber,
-	AccessModel, SendLast, PresenceSubscription,
-	RosterGroup, Options).
+    node_flat:subscribe_node(Nidx, Sender, Subscriber, AccessModel, SendLast,
+	PresenceSubscription, RosterGroup, Options).
 
 unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
     node_flat:unsubscribe_node(Nidx, Sender, Subscriber, SubId).
@@ -167,10 +166,8 @@ set_item(Item) ->
 get_item_name(Host, Node, Id) ->
     node_flat:get_item_name(Host, Node, Id).
 
-%% @doc <p>Return the path of the node.</p>
 node_to_path(Node) ->
-    str:tokens(Node, <<"/">>).
+    node_flat:node_to_path(Node).
 
-path_to_node([]) -> <<>>;
-path_to_node(Path) -> iolist_to_binary(str:join([<<"">> | Path], <<"/">>)).
-
+path_to_node(Path) ->
+    node_flat:path_to_node(Path).

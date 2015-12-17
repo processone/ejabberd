@@ -157,7 +157,7 @@ update_node_database(Host, ServerHost) ->
 											{unknown,
 											 Publisher},
 										    M =
-											{now(),
+											{p1_time_compat:timestamp(),
 											 Publisher},
 										    mnesia:write(#pubsub_item{itemid
 														  =

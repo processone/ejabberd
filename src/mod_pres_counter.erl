@@ -78,8 +78,7 @@ update(Server, JID, Dir) ->
     TimeInterval = gen_mod:get_module_opt(Server, ?MODULE, interval,
                                           fun(I) when is_integer(I), I>0 -> I end,
                                           60),
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    TimeStamp = MegaSecs * 1000000 + Secs,
+    TimeStamp = p1_time_compat:system_time(seconds),
     case read(Dir) of
       undefined ->
 	  write(Dir,
@@ -99,14 +98,14 @@ update(Server, JID, Dir) ->
 		   in ->
 		       ?WARNING_MSG("User ~s is being flooded, ignoring received "
 				    "presence subscriptions",
-				    [jlib:jid_to_string(JID)]);
+				    [jid:to_string(JID)]);
 		   out ->
 		       IP = ejabberd_sm:get_user_ip(JID#jid.luser,
 						    JID#jid.lserver,
 						    JID#jid.lresource),
 		       ?WARNING_MSG("Flooder detected: ~s, on IP: ~s ignoring "
 				    "sent presence subscriptions~n",
-				    [jlib:jid_to_string(JID),
+				    [jid:to_string(JID),
 				     jlib:ip_to_list(IP)])
 		 end,
 		 {stop, deny};

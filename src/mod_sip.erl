@@ -160,8 +160,8 @@ locate(_SIPMsg) ->
     ok.
 
 find(#uri{user = User, host = Host}) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Host),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Host),
     if LUser == <<"">> ->
 	    to_me;
        true ->
@@ -192,7 +192,7 @@ action(#sip{method = <<"REGISTER">>, type = request, hdrs = Hdrs,
 				true ->
 				    register;
 				false ->
-				    {auth, jlib:nameprep(ToURI#uri.host)}
+				    {auth, jid:nameprep(ToURI#uri.host)}
 			    end;
 			false ->
 			    deny
@@ -223,7 +223,7 @@ action(#sip{method = Method, hdrs = Hdrs, type = request} = Req, SIPSock) ->
 					true ->
 					    find(ToURI);
 					false ->
-					    LServer = jlib:nameprep(FromURI#uri.host),
+					    LServer = jid:nameprep(FromURI#uri.host),
 					    {relay, LServer}
 				    end;
                                 false ->
@@ -250,8 +250,8 @@ check_auth(#sip{method = Method, hdrs = Hdrs, body = Body}, AuthHdr, _SIPSock) -
                      from
              end,
     {_, #uri{user = User, host = Host}, _} = esip:get_hdr(Issuer, Hdrs),
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Host),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Host),
     case lists:filter(
            fun({_, Params}) ->
                    Username = esip:get_param(<<"username">>, Params),
@@ -299,7 +299,7 @@ make_response(Req, Resp) ->
     esip:make_response(Req, Resp, esip:make_tag()).
 
 at_my_host(#uri{host = Host}) ->
-    is_my_host(jlib:nameprep(Host)).
+    is_my_host(jid:nameprep(Host)).
 
 is_my_host(LServer) ->
     gen_mod:is_loaded(LServer, ?MODULE).

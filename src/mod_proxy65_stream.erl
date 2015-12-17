@@ -120,8 +120,8 @@ activate({P1, J1}, {P2, J2}) ->
       {S1, S2} when is_port(S1), is_port(S2) ->
 	  P1 ! {activate, P2, S2, J1, J2},
 	  P2 ! {activate, P1, S1, J1, J2},
-	  JID1 = jlib:jid_to_string(J1),
-	  JID2 = jlib:jid_to_string(J2),
+	  JID1 = jid:to_string(J1),
+	  JID2 = jid:to_string(J2),
 	  ?INFO_MSG("(~w:~w) Activated bytestream for ~s "
 		    "-> ~s",
 		    [P1, P2, JID1, JID2]),

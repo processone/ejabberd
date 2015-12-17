@@ -322,7 +322,7 @@ type_to_list(Type) ->
 
 value_to_list(Type, Val) ->
     case Type of
-      jid -> jlib:jid_to_string(Val);
+      jid -> jid:to_string(Val);
       group -> Val;
       subscription ->
 	  case Val of
@@ -581,9 +581,9 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 	      of
 	    {atomic, conflict} -> {error, ?ERR_CONFLICT};
 	    {atomic, ok} ->
-		ejabberd_sm:route(jlib:make_jid(LUser, LServer,
+		ejabberd_sm:route(jid:make(LUser, LServer,
                                                 <<"">>),
-                                  jlib:make_jid(LUser, LServer, <<"">>),
+                                  jid:make(LUser, LServer, <<"">>),
                                   {broadcast, {privacy_list,
                                                #userlist{name = Name,
                                                          list = []},
@@ -597,9 +597,9 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 	      of
 	    {atomic, ok} ->
 		NeedDb = is_list_needdb(List),
-		ejabberd_sm:route(jlib:make_jid(LUser, LServer,
+		ejabberd_sm:route(jid:make(LUser, LServer,
                                                 <<"">>),
-                                  jlib:make_jid(LUser, LServer, <<"">>),
+                                  jid:make(LUser, LServer, <<"">>),
                                   {broadcast, {privacy_list,
                                                #userlist{name = Name,
                                                          list = List,
@@ -645,11 +645,11 @@ parse_items([#xmlel{name = <<"item">>, attrs = Attrs,
 		  {{value, T}, {value, V}} ->
 		      case T of
 			<<"jid">> ->
-			    case jlib:string_to_jid(V) of
+			    case jid:from_string(V) of
 			      error -> false;
 			      JID ->
 				  I1#listitem{type = jid,
-					      value = jlib:jid_tolower(JID)}
+					      value = jid:tolower(JID)}
 			    end;
 			<<"group">> -> I1#listitem{type = group, value = V};
 			<<"subscription">> ->
@@ -715,8 +715,8 @@ is_list_needdb(Items) ->
 	      Items).
 
 get_user_list(Acc, User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     {Default, Items} = get_user_list(Acc, LUser, LServer,
 				     gen_mod:db_type(LServer, ?MODULE)),
     NeedDb = is_list_needdb(Items),
@@ -772,8 +772,8 @@ get_user_list(_, LUser, LServer, odbc) ->
     end.
 
 get_user_lists(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     get_user_lists(LUser, LServer, gen_mod:db_type(LServer, ?MODULE)).
 
 get_user_lists(LUser, LServer, mnesia) ->
@@ -869,13 +869,13 @@ check_packet(_, User, Server,
 		     {_, _} -> other
 		   end,
 	  LJID = case Dir of
-		   in -> jlib:jid_tolower(From);
-		   out -> jlib:jid_tolower(To)
+		   in -> jid:tolower(From);
+		   out -> jid:tolower(To)
 		 end,
 	  {Subscription, Groups} = case NeedDb of
 				     true ->
 					 ejabberd_hooks:run_fold(roster_get_jid_info,
-								 jlib:nameprep(Server),
+								 jid:nameprep(Server),
 								 {none, []},
 								 [User, Server,
 								  LJID]);
@@ -944,8 +944,8 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
     end.
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     remove_user(LUser, LServer,
 		gen_mod:db_type(LServer, ?MODULE)).
 
@@ -971,9 +971,9 @@ raw_to_item([SType, SValue, SAction, SOrder, SMatchAll,
         {Type, Value} = case SType of
                             <<"n">> -> {none, none};
                             <<"j">> ->
-                                case jlib:string_to_jid(SValue) of
+                                case jid:from_string(SValue) of
                                     #jid{} = JID ->
-                                        {jid, jlib:jid_tolower(JID)}
+                                        {jid, jid:tolower(JID)}
                                 end;
                             <<"g">> -> {group, SValue};
                             <<"s">> ->
@@ -1013,7 +1013,7 @@ item_to_raw(#listitem{type = Type, value = Value,
 			none -> {<<"n">>, <<"">>};
 			jid ->
 			    {<<"j">>,
-			     ejabberd_odbc:escape(jlib:jid_to_string(Value))};
+			     ejabberd_odbc:escape(jid:to_string(Value))};
 			group -> {<<"g">>, ejabberd_odbc:escape(Value)};
 			subscription ->
 			    case Value of
@@ -1164,7 +1164,7 @@ update_table() ->
     end.
 
 export(Server) ->
-    case catch ejabberd_odbc:sql_query(jlib:nameprep(Server),
+    case catch ejabberd_odbc:sql_query(jid:nameprep(Server),
 				 [<<"select id from privacy_list order by "
 				    "id desc limit 1;">>]) of
         {selected, [<<"id">>], [[I]]} ->

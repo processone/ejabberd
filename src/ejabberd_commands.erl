@@ -514,7 +514,7 @@ check_access2(?POLICY_ACCESS, _User, _Server) ->
     true;
 check_access2(Access, User, Server) ->
     %% Check this user has access permission
-    case acl:match_rule(Server, Access, jlib:make_jid(User, Server, <<"">>)) of
+    case acl:match_rule(Server, Access, jid:make(User, Server, <<"">>)) of
 	allow -> true;
 	deny -> false
     end.
@@ -597,7 +597,7 @@ is_admin(Name, {User, Server, _, true} = Auth) ->
                     fun(A) when is_atom(A) -> A end,
                     none),
     case acl:match_rule(Server, AdminAccess,
-                        jlib:make_jid(User, Server, <<"">>)) of
+                        jid:make(User, Server, <<"">>)) of
         allow ->
             case catch check_auth(get_command_definition(Name), Auth) of
                 {ok, _, _} -> true;

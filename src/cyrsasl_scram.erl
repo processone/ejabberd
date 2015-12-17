@@ -79,7 +79,7 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 		      case parse_attribute(ClientNonceAttribute) of
 			{$r, ClientNonce} ->
 			    {Ret, _AuthModule} = (State#state.get_password)(UserName),
-			    case {Ret, jlib:resourceprep(Ret)} of
+			    case {Ret, jid:resourceprep(Ret)} of
 			      {false, _} -> {error, <<"not-authorized">>, UserName};
 			      {_, error} when is_binary(Ret) -> ?WARNING_MSG("invalid plain password", []), {error, <<"not-authorized">>, UserName};
 			      {Ret, _} ->

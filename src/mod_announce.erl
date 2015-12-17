@@ -691,10 +691,10 @@ announce_all(From, To, Packet) ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    Local = jlib:make_jid(<<>>, To#jid.server, <<>>),
+	    Local = jid:make(<<>>, To#jid.server, <<>>),
 	    lists:foreach(
 	      fun({User, Server}) ->
-		      Dest = jlib:make_jid(User, Server, <<>>),
+		      Dest = jid:make(User, Server, <<>>),
 		      ejabberd_router:route(Local, Dest, Packet)
 	      end, ejabberd_auth:get_vh_registered_users(Host))
     end.
@@ -706,10 +706,10 @@ announce_all_hosts_all(From, To, Packet) ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    Local = jlib:make_jid(<<>>, To#jid.server, <<>>),
+	    Local = jid:make(<<>>, To#jid.server, <<>>),
 	    lists:foreach(
 	      fun({User, Server}) ->
-		      Dest = jlib:make_jid(User, Server, <<>>),
+		      Dest = jid:make(User, Server, <<>>),
 		      ejabberd_router:route(Local, Dest, Packet)
 	      end, ejabberd_auth:dirty_get_registered_users())
     end.
@@ -740,10 +740,10 @@ announce_all_hosts_online(From, To, Packet) ->
     end.
 
 announce_online1(Sessions, Server, Packet) ->
-    Local = jlib:make_jid(<<>>, Server, <<>>),
+    Local = jid:make(<<>>, Server, <<>>),
     lists:foreach(
       fun({U, S, R}) ->
-	      Dest = jlib:make_jid(U, S, R),
+	      Dest = jid:make(U, S, R),
 	      ejabberd_router:route(Local, Dest, Packet)
       end, Sessions).
 
@@ -770,7 +770,7 @@ announce_all_hosts_motd(From, To, Packet) ->
     end.
 
 announce_motd(Host, Packet) ->
-    LServer = jlib:nameprep(Host),
+    LServer = jid:nameprep(Host),
     announce_motd_update(LServer, Packet),
     Sessions = ejabberd_sm:get_vh_session_list(LServer),
     announce_online1(Sessions, LServer, Packet),
@@ -922,7 +922,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, mnesia) ->
 		[#motd_users{}] ->
 		    ok;
 		_ ->
-		    Local = jlib:make_jid(<<>>, LServer, <<>>),
+		    Local = jid:make(<<>>, LServer, <<>>),
 		    ejabberd_router:route(Local, JID, Packet),
 		    F = fun() ->
 				mnesia:write(#motd_users{us = US})
@@ -940,7 +940,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, riak) ->
                 {ok, #motd_users{}} ->
                     ok;
                 _ ->
-                    Local = jlib:make_jid(<<>>, LServer, <<>>),
+                    Local = jid:make(<<>>, LServer, <<>>),
 		    ejabberd_router:route(Local, JID, Packet),
                     {atomic, ejabberd_riak:put(
                                #motd_users{us = US}, motd_users_schema(),
@@ -963,7 +963,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, odbc) when LUser /= <<>>
                                  [<<"select username from motd "
                                     "where username='">>, Username, <<"';">>]) of
                         {selected, [<<"username">>], []} ->
-                            Local = jlib:make_jid(<<"">>, LServer, <<"">>),
+                            Local = jid:make(<<"">>, LServer, <<"">>),
                             ejabberd_router:route(Local, JID, Packet),
                             F = fun() ->
                                         odbc_queries:update_t(
@@ -1038,10 +1038,10 @@ send_announcement_to_all(Host, SubjectS, BodyS) ->
         children = SubjectEls ++ BodyEls
     },
     Sessions = ejabberd_sm:dirty_get_sessions_list(),
-    Local = jlib:make_jid(<<>>, Host, <<>>),
+    Local = jid:make(<<>>, Host, <<>>),
     lists:foreach(
       fun({U, S, R}) ->
-	      Dest = jlib:make_jid(U, S, R),
+	      Dest = jid:make(U, S, R),
 	      ejabberd_router:route(Local, Dest, Packet)
       end, Sessions).
 

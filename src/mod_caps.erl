@@ -235,7 +235,7 @@ c2s_presence_in(C2SState,
     Delete = (Type == <<"unavailable">>) or
 	       (Type == <<"error">>),
     if Insert or Delete ->
-	   LFrom = jlib:jid_tolower(From),
+	   LFrom = jid:tolower(From),
 	   Rs = case ejabberd_c2s:get_aux_field(caps_resources,
 						C2SState)
 		    of
@@ -269,7 +269,7 @@ c2s_presence_in(C2SState,
 c2s_filter_packet(InAcc, Host, C2SState, {pep_message, Feature}, To, _Packet) ->
     case ejabberd_c2s:get_aux_field(caps_resources, C2SState) of
       {ok, Rs} ->
-	  LTo = jlib:jid_tolower(To),
+	  LTo = jid:tolower(To),
 	  case gb_trees:lookup(LTo, Rs) of
 	    {value, Caps} ->
 		Drop = not lists:member(Feature, get_features(Host, Caps)),
@@ -417,7 +417,7 @@ feature_request(Host, From, Caps,
 			     feature_response(IQReply, Host, From, Caps,
 					      SubNodes)
 		     end,
-		 ejabberd_local:route_iq(jlib:make_jid(<<"">>, Host,
+		 ejabberd_local:route_iq(jid:make(<<"">>, Host,
 						       <<"">>),
 					 From, IQ, F);
 	     true -> feature_request(Host, From, Caps, Tail)
@@ -449,7 +449,7 @@ feature_response(_IQResult, Host, From, Caps,
     feature_request(Host, From, Caps, SubNodes).
 
 caps_read_fun(Host, Node) ->
-    LServer = jlib:nameprep(Host),
+    LServer = jid:nameprep(Host),
     DBType = gen_mod:db_type(LServer, ?MODULE),
     caps_read_fun(LServer, Node, DBType).
 
@@ -488,7 +488,7 @@ caps_read_fun(LServer, {Node, SubNode}, odbc) ->
     end.
 
 caps_write_fun(Host, Node, Features) ->
-    LServer = jlib:nameprep(Host),
+    LServer = jid:nameprep(Host),
     DBType = gen_mod:db_type(LServer, ?MODULE),
     caps_write_fun(LServer, Node, Features, DBType).
 
@@ -511,7 +511,7 @@ caps_write_fun(LServer, NodePair, Features, odbc) ->
     end.
 
 make_my_disco_hash(Host) ->
-    JID = jlib:make_jid(<<"">>, Host, <<"">>),
+    JID = jid:make(<<"">>, Host, <<"">>),
     case {ejabberd_hooks:run_fold(disco_local_features,
 				  Host, empty, [JID, JID, <<"">>, <<"">>]),
 	  ejabberd_hooks:run_fold(disco_local_identity, Host, [],
@@ -648,7 +648,7 @@ gb_trees_fold_iter(F, Acc, Iter) ->
     end.
 
 now_ts() ->
-    {MegaSecs, Secs, _} = now(), MegaSecs * 1000000 + Secs.
+    p1_time_compat:system_time(seconds).
 
 is_valid_node(Node) ->
     case str:tokens(Node, <<"#">>) of

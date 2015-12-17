@@ -48,6 +48,7 @@ while [ $# -ne 0 ] ; do
     shift
     case $PARAM in
         --) break ;;
+        --no-timeout) EJABBERD_NO_TIMEOUT="--no-timeout" ;;
         --node) ERLANG_NODE_ARG=$1 ; shift ;;
         --config-dir) ETC_DIR="$1" ; shift ;;
         --config) EJABBERD_CONFIG_PATH="$1" ; shift ;;
@@ -418,7 +419,7 @@ ctlexec()
       -hidden \
       -pa $EJABBERD_EBIN_PATH \
       $KERNEL_OPTS \
-      -s ejabberd_ctl -extra $ERLANG_NODE $COMMAND"
+      -s ejabberd_ctl -extra $ERLANG_NODE $EJABBERD_NO_TIMEOUT $COMMAND"
 }
 
 # stop epmd if there is no other running node
@@ -445,16 +446,6 @@ check_start()
             }
         }
     }
-}
-
-# cluster setup
-join_cluster()
-{
-    $EXEC_CMD "$EJABBERD_BIN_PATH/joincluster $*"
-}
-leave_cluster()
-{
-    $EXEC_CMD "$EJABBERD_BIN_PATH/leavecluster $*"
 }
 
 # allow sync calls
@@ -489,7 +480,5 @@ case $ARGS in
     ' etop') etop;;
     ' started') wait_for_status 0 30 2;; # wait 30x2s before timeout
     ' stopped') wait_for_status 3 15 2 && stop_epmd;; # wait 15x2s before timeout
-    ' join_cluster'*) join_cluster ${ARGS# join_cluster};;
-    ' leave_cluster'*) leave_cluster ${ARGS# leave_cluster};;
     *) ctl $ARGS;;
 esac

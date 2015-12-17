@@ -179,15 +179,15 @@ process_iq(InitiatorJID,
 				      [{elem, <<"activate">>}]),
 	  SID = xml:get_tag_attr_s(<<"sid">>, SubEl),
 	  case catch
-		 jlib:string_to_jid(xml:get_tag_cdata(ActivateEl))
+		 jid:from_string(xml:get_tag_cdata(ActivateEl))
 	      of
 	    TargetJID
 		when is_record(TargetJID, jid), SID /= <<"">>,
 		     byte_size(SID) =< 128, TargetJID /= InitiatorJID ->
 		Target =
-		    jlib:jid_to_string(jlib:jid_tolower(TargetJID)),
+		    jid:to_string(jid:tolower(TargetJID)),
 		Initiator =
-		    jlib:jid_to_string(jlib:jid_tolower(InitiatorJID)),
+		    jid:to_string(jid:tolower(InitiatorJID)),
 		SHA1 = p1_sha:sha(<<SID/binary, Initiator/binary, Target/binary>>),
 		case mod_proxy65_sm:activate_stream(SHA1, InitiatorJID,
 						    TargetJID, ServerHost)

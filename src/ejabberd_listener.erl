@@ -292,6 +292,40 @@ get_ip_tuple(IPOpt, _IPVOpt) ->
     IPOpt.
 
 accept(ListenSocket, Module, Opts) ->
+    IntervalOpt =
+        case proplists:get_value(accept_interval, Opts) of
+            [{linear, [I1_, T1_, T2_, I2_]}] ->
+                {linear, I1_, T1_, T2_, I2_};
+            I_ -> I_
+        end,
+    Interval =
+        case IntervalOpt of
+            undefined ->
+                0;
+            I when is_integer(I), I >= 0 ->
+                I;
+            {linear, I1, T1, T2, I2}
+            when is_integer(I1),
+                 is_integer(T1),
+                 is_integer(T2),
+                 is_integer(I2),
+                 I1 >= 0,
+                 I2 >= 0,
+                 T2 > 0 ->
+                {MSec, Sec, _USec} = os:timestamp(),
+                TS = MSec * 1000000 + Sec,
+                {linear, I1, TS + T1, T2, I2};
+            I ->
+                ?WARNING_MSG("There is a problem in the configuration: "
+                             "~p is a wrong accept_interval value.  "
+                             "Using 0 as fallback",
+                             [I]),
+                0
+        end,
+    accept(ListenSocket, Module, Opts, Interval).
+
+accept(ListenSocket, Module, Opts, Interval) ->
+    NewInterval = check_rate_limit(Interval),
     case gen_tcp:accept(ListenSocket) of
 	{ok, Socket} ->
 	    case {inet:sockname(Socket), inet:peername(Socket)} of
@@ -307,11 +341,11 @@ accept(ListenSocket, Module, Opts) ->
 			  false -> ejabberd_socket
 		      end,
 	    CallMod:start(strip_frontend(Module), gen_tcp, Socket, Opts),
-	    accept(ListenSocket, Module, Opts);
+	    accept(ListenSocket, Module, Opts, NewInterval);
 	{error, Reason} ->
 	    ?ERROR_MSG("(~w) Failed TCP accept: ~w",
                        [ListenSocket, Reason]),
-	    accept(ListenSocket, Module, Opts)
+	    accept(ListenSocket, Module, Opts, NewInterval)
     end.
 
 udp_recv(Socket, Module, Opts) ->
@@ -554,6 +588,31 @@ format_error(Reason) ->
 	ReasonStr ->
 	    ReasonStr
     end.
+
+check_rate_limit(Interval) ->
+    NewInterval = receive
+		      {rate_limit, AcceptInterval} ->
+			  AcceptInterval
+		  after 0 ->
+			  Interval
+		  end,
+    case NewInterval of
+	0  -> ok;
+	Ms when is_integer(Ms) ->
+	    timer:sleep(Ms);
+        {linear, I1, T1, T2, I2} ->
+            {MSec, Sec, _USec} = os:timestamp(),
+            TS = MSec * 1000000 + Sec,
+            I =
+                if
+                    TS =< T1 -> I1;
+                    TS >= T1 + T2 -> I2;
+                    true ->
+                        round((I2 - I1) * (TS - T1) / T2 + I1)
+                end,
+            timer:sleep(I)
+    end,
+    NewInterval.
 
 -define(IS_CHAR(C), (is_integer(C) and (C >= 0) and (C =< 255))).
 -define(IS_UINT(U), (is_integer(U) and (U >= 0) and (U =< 65535))).
