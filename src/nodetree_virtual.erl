@@ -59,15 +59,12 @@ get_node(Host, Node, _From) ->
     get_node(Host, Node).
 
 get_node(Host, Node) ->
-    get_node(nodeidx(Host, Node)).
+    Nidx = nodeidx(Host, Node),
+    node_record(Host, Node, Nidx).
 
 get_node(Nidx) ->
     {Host, Node} = nodeid(Nidx),
-    [Type|_] = mod_pubsub:plugins(Host),
-    Module = mod_pubsub:plugin(Host, Type),
-    #pubsub_node{nodeid = Node, id = Nidx, type = Type,
-                 owners = [{<<"">>, Host, <<"">>}],
-                 options = Module:options()}.
+    node_record(Host, Node, Nidx).
 
 get_nodes(Host, _From) ->
     get_nodes(Host).
@@ -79,10 +76,7 @@ get_parentnodes(_Host, _Node, _From) ->
     [].
 
 get_parentnodes_tree(Host, Node, From) ->
-    case get_node(Host, Node, From) of
-	Node when is_record(Node, pubsub_node) -> [{0, [Node]}];
-	_Error -> []
-    end.
+    [{0, [get_node(Host, Node, From)]}].
 
 get_subnodes(Host, Node, _From) ->
     get_subnodes(Host, Node).
@@ -97,12 +91,35 @@ get_subnodes_tree(_Host, _Node) ->
     [].
 
 create_node(Host, Node, _Type, _Owner, _Options, _Parents) ->
-    {error, {virtual, {Host, Node}}}.
+    {error, {virtual, nodeidx(Host, Node)}}.
 
 delete_node(Host, Node) ->
     [get_node(Host, Node)].
 
 %% internal helper
 
-nodeidx(Host, Node) -> term_to_binary({Host, Node}).
-nodeid(Nidx) -> binary_to_term(Nidx).
+node_record({U,S,R}, Node, Nidx) ->
+    Host = mod_pubsub:host(S),
+    Type = <<"pep">>,
+    Module = mod_pubsub:plugin(Host, Type),
+    #pubsub_node{nodeid = {{U,S,R},Node}, id = Nidx, type = Type,
+                 owners = [{U,S,R}],
+                 options = Module:options()};
+node_record(Host, Node, Nidx) ->
+    [Type|_] = mod_pubsub:plugins(Host),
+    Module = mod_pubsub:plugin(Host, Type),
+    #pubsub_node{nodeid = {Host, Node}, id = Nidx, type = Type,
+                 owners = [{<<"">>, Host, <<"">>}],
+                 options = Module:options()}.
+
+nodeidx({U,S,R}, Node) ->
+    JID = jid:to_string(jid:make(U,S,R)),
+    <<JID/binary, ":", Node/binary>>;
+nodeidx(Host, Node) ->
+    <<Host/binary, ":", Node/binary>>.
+nodeid(Nidx) ->
+    [Head, Node] = binary:split(Nidx, <<":">>),
+    case jid:from_string(Head) of
+        {jid,<<>>,Host,<<>>,_,_,_} -> {Host, Node};
+        {jid,U,S,R,_,_,_} -> {{U,S,R}, Node}
+    end.
