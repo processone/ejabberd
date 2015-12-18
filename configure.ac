@@ -211,6 +211,14 @@ AC_ARG_ENABLE(lager,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-lager) ;;
 esac],[if test "x$lager" = "x"; then lager=true; fi])
 
+AC_ARG_ENABLE(latest_deps,
+[AC_HELP_STRING([--enable-latest-deps], [makes rebar use latest commits for dependences instead of tagged versions (default: no)])],
+[case "${enableval}" in
+  yes) latest_deps=true ;;
+  no)  latest_deps=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-latest-deps) ;;
+esac],[if test "x$latest_deps" = "x"; then latest_deps=false; fi])
+
 AC_CONFIG_FILES([Makefile
 		 vars.config
 		 src/ejabberd.app.src])
@@ -255,6 +263,7 @@ AC_SUBST(iconv)
 AC_SUBST(debug)
 AC_SUBST(lager)
 AC_SUBST(tools)
+AC_SUBST(latest_deps)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
