@@ -7,8 +7,6 @@
 %%% Created :  1 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%-------------------------------------------------------------------
 
-{require_min_otp_vsn, "16"}.
-
 Cfg = case file:consult("vars.config") of
           {ok, Terms} ->
               Terms;
@@ -16,51 +14,34 @@ Cfg = case file:consult("vars.config") of
               []
       end,
 
-Macros = lists:flatmap(
-           fun({roster_gateway_workaround, true}) ->
-                   [{d, 'ROSTER_GATEWAY_WORKAROUND'}];
-              ({db_type, mssql}) ->
-                   [{d, 'mssql'}];
-              ({lager, true}) ->
-                   [{d, 'LAGER'}];
-              ({erlang_deprecated_types, true}) ->
-                   [{d, 'ERL_DEPRECATED_TYPES'}];
-              (_) ->
-                   []
-           end, Cfg),
-
-DebugInfo = case lists:keysearch(debug, 1, Cfg) of
-                {value, {debug, true}} ->
-                    [];
-                _ ->
-                    [no_debug_info]
-            end,
-
-HiPE = case lists:keysearch(hipe, 1, Cfg) of
-           {value, {hipe, true}} ->
-               [native];
-           _ ->
-               []
-       end,
-
-SrcDirs = lists:foldl(
-            fun({tools, true}, Acc) ->
-                    [tools|Acc];
-               (_, Acc) ->
-                    Acc
-            end, [], Cfg),
-
-Deps = [{cache_tab, ".*", {git, "https://github.com/processone/cache_tab", {tag, "1.0.1"}}},
-        {p1_tls, ".*", {git, "https://github.com/processone/tls"}},
-        {p1_stringprep, ".*", {git, "https://github.com/processone/stringprep"}},
-        {p1_xml, ".*", {git, "https://github.com/processone/xml"}},
-        {esip, ".*", {git, "https://github.com/processone/p1_sip"}},
-        {p1_stun, ".*", {git, "https://github.com/processone/stun"}},
-        {p1_yaml, ".*", {git, "https://github.com/processone/p1_yaml"}},
-        {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}},
-        {jiffy, ".*", {git, "https://github.com/davisp/jiffy"}},
-        {oauth2, ".*", {git, "https://github.com/prefiks/oauth2.git"}},
-        {xmlrpc, ".*", {git, "https://github.com/rds13/xmlrpc.git"}}],
+ProcessVars = fun(_F, [], Acc) ->
+                      lists:reverse(Acc);
+                 (F, [{Type, Var, Value} | Tail], Acc) when
+                        Type == if_var_true orelse
+                        Type == if_var_false ->
+                      Flag = Type == if_var_true,
+                      case proplists:get_bool(Var, Cfg) of
+                          V when V == Flag ->
+                              F(F, Tail, [Value | Acc]);
+                          _ ->
+                              F(F, Tail, Acc)
+                      end;
+                 (F, [{Type, Var, Match, Value} | Tail], Acc) when
+                        Type == if_var_match orelse
+                        Type == if_var_no_match ->
+                      case proplists:get_value(Var, Cfg) of
+                          V when V == Match ->
+                              F(F, Tail, [Value | Acc]);
+                          _ ->
+                              F(F, Tail, Acc)
+                      end;
+                 (F, [Other1 | Tail1], Acc) ->
+                      F(F, Tail1, [F(F, Other1, []) | Acc]);
+                 (F, Val, Acc) when is_tuple(Val) ->
+                      list_to_tuple(F(F, tuple_to_list(Val), Acc));
+                 (_F, Other2, _Acc) ->
+                      Other2
+              end,
 
 CFLags = proplists:get_value(cflags, Cfg, ""),
 CPPFLags = proplists:get_value(cppflags, Cfg, ""),
@@ -70,97 +51,19 @@ ConfigureCmd = fun(Pkg, Flags) ->
                        {'get-deps',
                         "sh -c 'cd deps/" ++ Pkg ++
                             " && CFLAGS=\""++ CFLags ++"\" CPPFLAGS=\""++ CPPFLags ++"\" LDFLAGS=\""++ LDFLags ++"\"" ++
-                            " ./configure" ++ Flags ++ "'"}
+                            " ./configure " ++ Flags ++ "'"}
                end,
 
-XMLFlags = lists:foldl(
-             fun({full_xml, true}, Acc) ->
-                     Acc ++ " --enable-full-xml";
-                (_, Acc) ->
-                     Acc
-             end, "", Cfg),
+Conf = ProcessVars(ProcessVars, CONFIG, []),
 
-PostHooks = [ConfigureCmd("p1_tls", ""),
-             ConfigureCmd("p1_stringprep", ""),
-             ConfigureCmd("p1_yaml", ""),
-	     ConfigureCmd("esip", ""),
-             ConfigureCmd("p1_xml", XMLFlags)],
-
-CfgDeps = lists:flatmap(
-            fun({mysql, true}) ->
-                    [{p1_mysql, ".*", {git, "https://github.com/processone/mysql"}}];
-               ({pgsql, true}) ->
-                    [{p1_pgsql, ".*", {git, "https://github.com/processone/pgsql"}}];
-               ({sqlite, true}) ->
-                    [{sqlite3, ".*", {git, "https://github.com/alexeyr/erlang-sqlite3"}}];
-               ({pam, true}) ->
-                    [{p1_pam, ".*", {git, "https://github.com/processone/epam"}}];
-               ({zlib, true}) ->
-                    [{p1_zlib, ".*", {git, "https://github.com/processone/zlib"}}];
-               ({riak, true}) ->
-                    [{riakc, ".*", {git, "https://github.com/basho/riak-erlang-client"}}];
-               ({elixir, true}) ->
-                    [{rebar_elixir_plugin, ".*", {git, "https://github.com/yrashk/rebar_elixir_plugin"}},
-                     {elixir, ".*", {git, "https://github.com/elixir-lang/elixir", {branch, "v1.0"}}}];
-               ({iconv, true}) ->
-                    [{p1_iconv, ".*", {git, "https://github.com/processone/eiconv"}}];
-               ({lager, true}) ->
-                    [{lager, ".*", {git, "https://github.com/basho/lager"}}];
-               ({lager, false}) ->
-                    [{p1_logger, ".*", {git, "https://github.com/processone/p1_logger"}}];
-               ({tools, true}) ->
-                    [{meck, "0.8.2", {git, "https://github.com/eproxus/meck", {tag, "0.8.2"}}}];
-               ({redis, true}) ->
-                    [{eredis, ".*", {git, "https://github.com/wooga/eredis"}}];
-               (_) ->
-                    []
-            end, Cfg),
-
-CfgPostHooks = lists:flatmap(
-                 fun({pam, true}) ->
-                         [ConfigureCmd("p1_pam", "")];
-                    ({zlib, true}) ->
-                         [ConfigureCmd("p1_zlib", "")];
-                    ({iconv, true}) ->
-                         [ConfigureCmd("p1_iconv", "")];
-                    (_) ->
-                         []
-                 end, Cfg),
-
-CfgXrefs = lists:flatmap(
-	     fun({mysql, false}) ->
-		     ["(\".*mysql.*\":_/_)"];
-		({pgsql, false}) ->
-		     ["(\".*pgsql.*\":_/_)"];
-		({pam, false}) ->
-		     ["(\"epam\":_/_)"];
-		({riak, false}) ->
-		     ["(\"riak.*\":_/_)"];
-		({riak, true}) ->
-		     % used in map-reduce function called from riak vm
-		     ["(\"riak_object\":_/_)"];
-		({zlib, false}) ->
-		     ["(\"ezlib\":_/_)"];
-		({http, false}) ->
-		     ["(\"lhttpc\":_/_)"];
-		({iconv, false}) ->
-		     ["(\"iconv\":_/_)"];
-		({odbc, false}) ->
-		     ["(\"odbc\":_/_)"];
-		(_) ->
-		     []
-            end, Cfg),
-
-ElixirConfig = case lists:keysearch(elixir, 1, Cfg) of
-                   {value, {elixir, true}} ->
-                       [{plugins, [deps_erl_opts, rebar_elixir_compiler, rebar_exunit] },
-                        {lib_dirs, ["deps/elixir/lib"]}];
-                   _ ->
-                       [{plugins, [deps_erl_opts]}]
-               end,
+Conf1 = case lists:keytake(post_hook_configure, 1, Conf) of
+            {value, {_, Items}, Rest} ->
+                [{post_hooks, [ConfigureCmd(Mod, string:join(Opts, " ")) || {Mod, Opts} <- Items]} | Rest];
+            _ ->
+                Conf
+        end,
 
 {ok, Cwd} = file:get_cwd(),
-
 TestConfigFile = filename:join([Cwd, "test", "config.ctc"]),
 TestConfig = case file:read_file_info(TestConfigFile) of
                  {ok, _} ->
@@ -169,29 +72,44 @@ TestConfig = case file:read_file_info(TestConfigFile) of
                      ""
              end,
 
-AllDeps0 = Deps ++ CfgDeps,
-AllDeps = case lists:keytake(lager, 1, AllDeps0) of
-		{value, Tuple, Rest} -> [Tuple|Rest];
-		false -> AllDeps0
-	  end,
+Conf2 = [{ct_extra_params, "-ct_hooks cth_surefire "
+         ++ TestConfig
+         ++ "-include "
+         ++ filename:join([Cwd, "tools"])} | Conf1],
 
-Config = [{erl_opts, Macros ++ HiPE ++ DebugInfo ++
-               [{src_dirs, [asn1, src | SrcDirs]}]},
-          {deps_erl_opts, HiPE},
-          {sub_dirs, ["rel"]},
-          {keep_build_info, true},
-          {ct_extra_params, "-ct_hooks cth_surefire "
-           ++ TestConfig
-           ++ "-include " ++ filename:join([Cwd, "tools"])},
-	  {xref_warnings, false},
-          {xref_checks, [deprecated_function_calls]},
-	  {xref_queries,
-	   [{"(XC - UC) || (XU - X - B - "
-	     ++ string:join(CfgXrefs, " - ") ++ ")", []}]},
-          {post_hooks, PostHooks ++ CfgPostHooks},
-          {deps, AllDeps}] ++ ElixirConfig,
-%%io:format("ejabberd configuration:~n  ~p~n", [Config]),
-Config.
+Conf3 = case lists:keytake(xref_exclusions, 1, Conf2) of
+            {value, {_, Items2}, Rest2} ->
+                [{xref_queries, [{lists:flatten(["(XC - UC) || (XU - X - B ",
+                                                 [[" - ", V] || V <- Items2], ")"]), []}]} | Rest2];
+            _ ->
+                Conf2
+        end,
+
+Conf5 = case lists:keytake(floating_deps, 1, Conf3) of
+            {value, {_, FloatingDeps}, Rest4} ->
+                case lists:keytake(deps, 1, Rest4) of
+                    {value, {_, Deps}, Rest41} ->
+                        ND = lists:map(fun({DepName, Ver, {git, Repo, _Commit}}=Dep) ->
+                                               case lists:member(DepName, FloatingDeps) of
+                                                   true ->
+                                                       {DepName, ".*", {git, Repo}};
+                                                   _ ->
+                                                       Dep
+                                               end;
+                                          (Dep2) ->
+                                               Dep2
+                                       end, Deps),
+                        [{deps, ND} | Rest41];
+                    _ ->
+                        Rest4
+                end;
+            _ ->
+                Conf3
+        end,
+
+%io:format("ejabberd configuration:~n  ~p~n", [Conf5]),
+
+Conf5.
 
 %% Local Variables:
 %% mode: erlang
