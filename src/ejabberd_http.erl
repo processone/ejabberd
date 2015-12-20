@@ -518,7 +518,9 @@ recv_data(State, Len, Acc) ->
 	    of
 		{ok, Data} ->
 		    recv_data(State, Len - byte_size(Data), <<Acc/binary, Data/binary>>);
-		_ -> <<"">>
+		Err ->
+		    ?DEBUG("Cannot receive HTTP data: ~p", [Err]),
+		    <<"">>
 	    end;
 	_ ->
 	    Trail = (State#state.trail),
