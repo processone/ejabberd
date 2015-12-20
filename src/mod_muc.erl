@@ -364,6 +364,14 @@ init([Host, Opts]) ->
 				 end;
 			     max_users ->
 				 fun(I) when is_integer(I), I > 0 -> I end;
+                             presence_broadcast ->
+                                 fun(L) ->
+                                         lists:map(
+                                           fun(moderator) -> moderator;
+                                              (participant) -> participant;
+                                              (visitor) -> visitor
+                                           end, L)
+                                 end;
 			     _ ->
 				 ?ERROR_MSG("unknown option ~p with value ~p",
 					    [Opt, Val]),
