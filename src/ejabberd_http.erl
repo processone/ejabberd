@@ -513,8 +513,8 @@ recv_data(#state{trail = Trail} = State, Len, <<>>) when byte_size(Trail) > Len 
 recv_data(State, Len, Acc) ->
     case State#state.trail of
 	<<>> ->
-	    case (State#state.sockmod):recv(State#state.socket, Len,
-					    300000)
+	    case (State#state.sockmod):recv(State#state.socket,
+					    min(Len, 16#4000000), 300000)
 	    of
 		{ok, Data} ->
 		    recv_data(State, Len - byte_size(Data), <<Acc/binary, Data/binary>>);
