@@ -30,7 +30,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/8, start/9, route_chan/4,
+-export([start_link/12, start/13, route_chan/4,
 	 route_nick/3]).
 
 %% gen_fsm callbacks
@@ -55,9 +55,13 @@
          user = #jid{}         :: jid(),
          host = <<"">>         :: binary(),
 	 server = <<"">>       :: binary(),
+	 remoteAddr = <<"">>   :: binary(),
+	 ident = <<"">>        :: binary(),
+	 realname = <<"">>        :: binary(),
          nick = <<"">>         :: binary(),
          channels = dict:new() :: ?TDICT,
          nickchannel           :: binary(),
+	 webirc_password       :: binary(),
          mod = mod_irc         :: atom(),
 	 inbuf = <<"">>        :: binary(),
          outbuf = <<"">>       :: binary()}).
@@ -78,18 +82,18 @@
 -endif.
 
 start(From, Host, ServerHost, Server, Username,
-      Encoding, Port, Password, Mod) ->
+      Encoding, Port, Password, Ident, RemoteAddr, RealName, WebircPassword, Mod) ->
     Supervisor = gen_mod:get_module_proc(ServerHost,
 					 ejabberd_mod_irc_sup),
     supervisor:start_child(Supervisor,
 			   [From, Host, Server, Username, Encoding, Port,
-			    Password, Mod]).
+			    Password, Ident, RemoteAddr, RealName, WebircPassword, Mod]).
 
 start_link(From, Host, Server, Username, Encoding, Port,
-	   Password, Mod) ->
+	   Password, Ident, RemoteAddr, RealName, WebircPassword, Mod) ->
     gen_fsm:start_link(?MODULE,
 		       [From, Host, Server, Username, Encoding, Port, Password,
-			Mod],
+			Ident, RemoteAddr, RealName, WebircPassword, Mod],
 		       ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
@@ -104,13 +108,14 @@ start_link(From, Host, Server, Username, Encoding, Port,
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
 init([From, Host, Server, Username, Encoding, Port,
-      Password, Mod]) ->
+      Password, Ident, RemoteAddr, RealName, WebircPassword, Mod]) ->
     gen_fsm:send_event(self(), init),
     {ok, open_socket,
      #state{queue = queue:new(), mod = Mod,
 	    encoding = Encoding, port = Port, password = Password,
 	    user = From, nick = Username, host = Host,
-	    server = Server}}.
+	    server = Server, ident = Ident, realname = RealName,
+		remoteAddr = RemoteAddr, webirc_password = WebircPassword }}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -122,6 +127,10 @@ open_socket(init, StateData) ->
     Addr = StateData#state.server,
     Port = StateData#state.port,
     ?DEBUG("Connecting with IPv6 to ~s:~p", [Addr, Port]),
+    From = StateData#state.user,
+    #jid{user = JidUser, server = JidServer, resource = JidResource} = From,
+    UserIP = ejabberd_sm:get_user_ip(JidUser, JidServer, JidResource),
+    UserIPStr = inet_parse:ntoa(element(1, UserIP)),
     Connect6 = gen_tcp:connect(binary_to_list(Addr), Port,
 			       [inet6, binary, {packet, 0}]),
     Connect = case Connect6 of
@@ -136,6 +145,8 @@ open_socket(init, StateData) ->
     case Connect of
       {ok, Socket} ->
 	  NewStateData = StateData#state{socket = Socket},
+	  send_text(NewStateData,
+	  io_lib:format("WEBIRC ~s ~s ~s ~s\r\n", [StateData#state.webirc_password, JidResource, UserIPStr, UserIPStr])),
 	  if StateData#state.password /= <<"">> ->
 		 send_text(NewStateData,
 			   io_lib:format("PASS ~s\r\n",
@@ -146,9 +157,10 @@ open_socket(init, StateData) ->
 		    io_lib:format("NICK ~s\r\n", [StateData#state.nick])),
 	  send_text(NewStateData,
 		    io_lib:format("USER ~s ~s ~s :~s\r\n",
-				  [StateData#state.nick, StateData#state.nick,
+				  [StateData#state.ident,
+				   StateData#state.nick,
 				   StateData#state.host,
-				   StateData#state.nick])),
+				   StateData#state.realname])),
 	  {next_state, wait_for_registration, NewStateData};
       {error, Reason} ->
 	  ?DEBUG("connect return ~p~n", [Reason]),

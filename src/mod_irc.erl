@@ -46,12 +46,16 @@
 
 -include("adhoc.hrl").
 
--define(DEFAULT_IRC_ENCODING, <<"iso8859-1">>).
+-define(DEFAULT_IRC_ENCODING, <<"iso8859-15">>).
 
 -define(DEFAULT_IRC_PORT, 6667).
 
+-define(DEFAULT_REALNAME, <<"WebIRC-User">>).
+
+-define(DEFAULT_WEBIRC_PASSWORD, <<"">>).
+
 -define(POSSIBLE_ENCODINGS,
-	[<<"koi8-r">>, <<"iso8859-1">>, <<"iso8859-2">>,
+	[<<"koi8-r">>, <<"iso8859-15">>, <<"iso8859-1">>, <<"iso8859-2">>,
 	 <<"utf-8">>, <<"utf-8+latin-1">>]).
 
 -type conn_param() :: {binary(), binary(), inet:port_number(), binary()} |
@@ -379,11 +383,15 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 					     %% username part of the JID).
 					     _ -> Username
 					   end,
+		      Ident = extract_ident(Packet),
+		      RemoteAddr = extract_ip_address(Packet),
+		      RealName = get_realname(ServerHost),
+		      WebircPassword = get_webirc_password(ServerHost),
 		      {ok, Pid} = mod_irc_connection:start(From, Host,
 							   ServerHost, Server,
 							   ConnectionUsername,
 							   Encoding, Port,
-							   Password, ?MODULE),
+							   Password, Ident, RemoteAddr, RealName, WebircPassword, ?MODULE),
 		      ets:insert(irc_connection,
 				 #irc_connection{jid_server_host =
 						     {From, Server, Host},
@@ -798,6 +806,12 @@ get_default_encoding(ServerHost) ->
 	      "host ~p is: ~p~n",
 	      [ServerHost, Result]),
     Result.
+
+get_realname(ServerHost) ->
+    gen_mod:get_module_opt(ServerHost, ?MODULE, realname, fun iolist_to_binary/1, ?DEFAULT_REALNAME).
+
+get_webirc_password(ServerHost) ->
+    gen_mod:get_module_opt(ServerHost, ?MODULE, webirc_password, fun iolist_to_binary/1, ?DEFAULT_WEBIRC_PASSWORD).
 
 get_connection_params(Host, ServerHost, From,
 		      IRCServer) ->
@@ -1352,3 +1366,29 @@ mod_opt_type(default_encoding) ->
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(_) ->
     [access, db_type, default_encoding, host].
+
+extract_ident(Packet) ->
+    case xml:get_subtag(Packet, <<"headers">>) of
+	{xmlel, _Name, _Attrs, Headers} ->
+	    extract_header(<<"X-Irc-Ident">>, Headers);
+	_ ->
+	    "chatmovil"
+    end.
+
+extract_ip_address(Packet) ->
+    case xml:get_subtag(Packet, <<"headers">>) of
+	{xmlel, _Name, _Attrs, Headers} ->
+	    extract_header(<<"X-Forwarded-For">>, Headers);
+	_ ->
+	    "127.0.0.1"
+    end.
+
+extract_header(HeaderName, [{xmlel, _Name, _Attrs, [{xmlcdata, Value}]} | Tail]) ->
+    case xml:get_attr(<<"name">>, _Attrs) of
+	{value, HeaderName} ->
+	    binary_to_list(Value);
+	_ ->
+	    extract_header(HeaderName, Tail)
+    end;
+extract_header(_HeaderName, _Headers) ->
+	false.
