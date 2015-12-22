@@ -794,7 +794,8 @@ maybe_update_from_to(#xmlel{children = Els} = Pkt, JidRequestor,
 		    []
 	    end,
     Pkt1 = Pkt#xmlel{children = Items ++ Els},
-    Pkt2 = jlib:replace_from(jid:replace_resource(JidRequestor, Nick), Pkt1).
+    Pkt2 = jlib:replace_from(jid:replace_resource(JidRequestor, Nick), Pkt1),
+    jlib:remove_attr(<<"to">>, Pkt2).
 
 is_bare_copy(#jid{luser = U, lserver = S, lresource = R}, To) ->
     PrioRes = ejabberd_sm:get_user_present_resources(U, S),
