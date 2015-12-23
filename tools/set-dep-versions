@@ -6,7 +6,7 @@ set -u
 export PATH="/usr/local/bin:/usr/local/sbin:/bin:/sbin:/usr/bin:/usr/sbin:$PATH"
 
 deps_dir='deps'
-rebar_script='rebar.config.script'
+rebar_script='rebar.config'
 temp_file=$(mktemp "$rebar_script.XXXXXX")
 
 trap 'rm -f $temp_file' EXIT INT TERM
