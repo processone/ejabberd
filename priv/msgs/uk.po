@@ -1757,7 +1757,7 @@ msgstr "Заповніть поля для пошуку користувача J
 #~ msgstr "Швидкість передачі інформації було перевищено"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message"
+#~ "This participant is kicked from the room because they sent an error message"
 #~ msgstr ""
 #~ "Цього учасника було відключено від кімнати через те, що він надіслав "
 #~ "помилкове повідомлення"
@@ -1769,7 +1769,7 @@ msgstr "Заповніть поля для пошуку користувача J
 #~ msgstr "Неправильний тип повідомлення"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message "
+#~ "This participant is kicked from the room because they sent an error message "
 #~ "to another participant"
 #~ msgstr ""
 #~ "Цього учасника було відключено від кімнати через те, що він надіслав "
@@ -1797,7 +1797,7 @@ msgstr "Заповніть поля для пошуку користувача J
 #~ msgstr "Відвідувачам не дозволяється надсилати повідомлення всім присутнім"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error presence"
+#~ "This participant is kicked from the room because they sent an error presence"
 #~ msgstr ""
 #~ "Цього учасника було відключено від кімнати через те, що він надіслав "
 #~ "помилковий статус присутності"

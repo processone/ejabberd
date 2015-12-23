@@ -1731,7 +1731,7 @@ msgstr "項目を入力してユーザーを検索してください"
 #~ msgstr "トラフィックレートの制限を超えました"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message"
+#~ "This participant is kicked from the room because they sent an error message"
 #~ msgstr "エラーメッセージを送信したため、この参加者はキックされました"
 
 #~ msgid "It is not allowed to send private messages to the conference"
@@ -1753,7 +1753,7 @@ msgstr "項目を入力してユーザーを検索してください"
 #~ msgstr "誤ったメッセージタイプです"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error message "
+#~ "This participant is kicked from the room because they sent an error message "
 #~ "to another participant"
 #~ msgstr ""
 #~ "他の参加者にエラーメッセージを送信したため、この参加者はキックされました"
@@ -1782,7 +1782,7 @@ msgstr "項目を入力してユーザーを検索してください"
 #~ msgstr "傍聴者はすべての在室者にメッセージを送信することはできません"
 
 #~ msgid ""
-#~ "This participant is kicked from the room because he sent an error presence"
+#~ "This participant is kicked from the room because they sent an error presence"
 #~ msgstr "エラープレゼンスを送信したため、この参加者はキックされました"
 
 #~ msgid "Visitors are not allowed to change their nicknames in this room"
