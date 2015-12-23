@@ -115,6 +115,12 @@ parse_form(Dir, File, Form, Used) ->
 	 {string, Line, Value}
 	} ->
 	    ets:insert(vars, {Name, Value, Line});
+        {match,
+         _,
+         {var, _, Name},
+         {bin,Line,[{bin_element,_,{string,_,Value},_,_}]}
+        } ->
+            ets:insert(vars, {Name, Value, Line});
 	L when is_list(L) ->
 	    lists:foreach(
 	      fun(F) ->
