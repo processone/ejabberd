@@ -225,8 +225,9 @@ normal_state({route, From, <<"">>,
 	    <<"error">> ->
 		case is_user_online(From, StateData) of
 		  true ->
-		      ErrorText = <<"This participant is kicked from the "
-				    "room because he sent an error message">>,
+		      ErrorText = <<"It is not allowed to send error messages to the"
+				    " room. This participant (~s) sent an error "
+				    "message (~s) and gets kicked from the room">>,
 		      NewState = expulse_participant(Packet, From, StateData,
 						     translate:translate(Lang,
 									 ErrorText)),
@@ -512,9 +513,9 @@ normal_state({route, From, ToNick,
 	of
       {expulse_sender, Reason} ->
 	  ?DEBUG(Reason, []),
-	  ErrorText = <<"This participant is kicked from the "
-			"room because he sent an error message "
-			"to another participant">>,
+	  ErrorText = <<"It is not allowed to send error messages to the"
+		    " room. This participant (~s) sent an error "
+		    "message (~s) and gets kicked from the room">>,
 	  NewState = expulse_participant(Packet, From, StateData,
 					 translate:translate(Lang, ErrorText)),
 	  {next_state, normal_state, NewState};
@@ -1053,9 +1054,9 @@ process_presence(From, Nick,
 					     end,
 				    remove_online_user(From, NewState, Reason);
 				<<"error">> ->
-				    ErrorText =
-					<<"This participant is kicked from the "
-					  "room because he sent an error presence">>,
+				    ErrorText = <<"It is not allowed to send error messages to the"
+					" room. This participant (~s) sent an error "
+					"message (~s) and gets kicked from the room">>,
 				    expulse_participant(Packet, From, StateData,
 							translate:translate(Lang,
 									    ErrorText));
@@ -1310,11 +1311,13 @@ get_error_condition2(Packet) ->
 			  <- EEls],
     {condition, Condition}.
 
+make_reason(Packet, From, StateData, Reason1) ->
+    {ok, #user{nick = FromNick}} = (?DICT):find(jlib:jid_tolower(From), StateData#state.users),
+    Condition = get_error_condition(Packet),
+    iolist_to_binary(io_lib:format(Reason1, [FromNick, Condition])).
+
 expulse_participant(Packet, From, StateData, Reason1) ->
-    ErrorCondition = get_error_condition(Packet),
-    Reason2 = iolist_to_binary(
-                io_lib:format(binary_to_list(Reason1) ++ ": " ++ "~s",
-                              [ErrorCondition])),
+    Reason2 = make_reason(Packet, From, StateData, Reason1),
     NewState = add_user_presence_un(From,
 				    #xmlel{name = <<"presence">>,
 					   attrs =
