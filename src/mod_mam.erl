@@ -251,7 +251,7 @@ process_iq_v0_3(#jid{lserver = LServer} = From,
 process_iq_v0_3(From, To, IQ) ->
     process_iq(From, To, IQ).
 
-muc_process_iq(#iq{type = set,
+muc_process_iq(#iq{type = set, lang = Lang,
 		   sub_el = #xmlel{name = <<"query">>,
 				   attrs = Attrs} = SubEl} = IQ,
 	       MUCState, From, To) ->
@@ -259,8 +259,24 @@ muc_process_iq(#iq{type = set,
 	?NS_MAM_0 ->
 	    LServer = MUCState#state.server_host,
 	    Role = mod_muc_room:get_role(From, MUCState),
-	    process_iq(LServer, From, To, IQ, SubEl,
-		       get_xdata_fields(SubEl), {groupchat, Role, MUCState});
+	    Config = MUCState#state.config,
+	    if Config#config.members_only ->
+		    case mod_muc_room:is_occupant_or_admin(From, MUCState) of
+			true ->
+			    process_iq(LServer, From, To, IQ, SubEl,
+				       get_xdata_fields(SubEl),
+				       {groupchat, Role, MUCState});
+			false ->
+			    Text = <<"Only members are allowed to query "
+				     "archives of this room">>,
+			    Error = ?ERRT_FORBIDDEN(Lang, Text),
+			    IQ#iq{type = error, sub_el = [SubEl, Error]}
+		    end;
+	       true ->
+		    process_iq(LServer, From, To, IQ, SubEl,
+			       get_xdata_fields(SubEl),
+			       {groupchat, Role, MUCState})
+	    end;
 	_ ->
 	    IQ
     end;

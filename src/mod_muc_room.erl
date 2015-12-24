@@ -35,6 +35,8 @@
 	 start/9,
 	 start/7,
 	 get_role/2,
+	 get_affiliation/2,
+	 is_occupant_or_admin/2,
 	 route/4]).
 
 %% gen_fsm callbacks
