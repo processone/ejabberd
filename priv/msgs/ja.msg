@@ -3,6 +3,7 @@
 {"Access Control List Configuration","アクセスコントロールリスト設定"}.
 {"Access control lists","アクセスコントロールリスト"}.
 {"Access Control Lists","アクセスコントロールリスト"}.
+{"Access denied by service policy","サービスポリシーによってアクセスが禁止されました"}.
 {"Access rules","アクセスルール"}.
 {"Access Rules","アクセスルール"}.
 {"Action on user","ユーザー操作"}.
@@ -11,6 +12,7 @@
 {"Add User","ユーザーを追加"}.
 {"Administration of ","管理: "}.
 {"Administration","管理"}.
+{"Administrator privileges required","管理者権限が必要です"}.
 {"A friendly name for the node","ノードのフレンドリネーム"}.
 {"All activity","すべて"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","この Jabber ID に、この pubsubノードの購読を許可しますか ?"}.
@@ -25,6 +27,7 @@
 {"All Users","全ユーザー"}.
 {"Announcements","アナウンス"}.
 {"anyone","誰にでも"}.
+{"A password is required to enter this room","このチャットルームに入るにはパスワードが必要です"}.
 {"April","4月"}.
 {"August","8月"}.
 {"Backup","バックアップ"}.
@@ -49,6 +52,7 @@
 {"Choose whether to approve this entity's subscription.","このエントリを承認するかどうかを選択してください"}.
 {"City","都道府県"}.
 {"Commands","コマンド"}.
+{"Conference room does not exist","会議室は存在しません"}.
 {"Configuration of room ~s","チャットルーム ~s の設定"}.
 {"Configuration","設定"}.
 {"Connected Resources:","接続リソース:"}.
@@ -103,6 +107,7 @@
 {"Export all tables as SQL queries to a file:","すべてのテーブルをSQL形式でファイルにエクスポート: "}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","サーバーにあるすべてのユーザーデータを PIEFXIS ファイルにエクスポート (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","ホストのユーザーデータを PIEFXIS ファイルにエクスポート (XEP-0227):"}.
+{"Failed to extract JID from your voice request approval","発言権要求の承認から JID を取り出すことに失敗しました"}.
 {"Family Name","姓"}.
 {"February","2月"}.
 {"Fill in fields to search for any matching Jabber User","項目を入力してユーザーを検索してください"}.
@@ -136,6 +141,8 @@
 {"Import users data from jabberd14 spool directory:","ユーザーデータを jabberd14 Spool ディレクトリからインポート:"}.
 {"Import Users from Dir at ","ディレクトリからユーザーをインポート: "}.
 {"Import Users From jabberd14 Spool Files","jabberd14 Spool ファイルからユーザーをインポート"}.
+{"Improper message type","誤ったメッセージタイプです"}.
+{"Incorrect password","パスワードが違います"}.
 {"Invalid affiliation: ~s","無効な分掌です: ~s"}.
 {"Invalid role: ~s","無効な役です: ~s"}.
 {"IP addresses","IP アドレス"}.
@@ -147,6 +154,9 @@
 {"IRC username","IRC ユーザー名"}.
 {"IRC Username","IRC ユーザー名"}.
 {"is now known as","は名前を変更しました: "}.
+{"It is not allowed to send private messages of type \"groupchat\"","種別が\"groupchat\" であるプライベートメッセージを送信することはできません"}.
+{"It is not allowed to send private messages to the conference","この会議にプライベートメッセージを送信することはできません"}.
+{"It is not allowed to send private messages","プライベートメッセージを送信することはできません"}.
 {"Jabber Account Registration","Jabber アカウント登録"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s は無効です"}.
@@ -180,11 +190,13 @@
 {"Max payload size in bytes","最大ぺイロードサイズ (byte)"}.
 {"May","5月"}.
 {"Members:","メンバー:"}.
+{"Membership is required to enter this room","このチャットルームに入るにはメンバーでなければなりません"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","パスワードは記憶するか、紙に書いて安全な場所に保管してください。もしあなたがパスワードを忘れてしまった場合、Jabber ではパスワードのリカバリを自動的に行うことはできません。"}.
 {"Memory","メモリ"}.
 {"Message body","本文"}.
 {"Middle Name","ミドルネーム"}.
 {"Minimum interval between voice requests (in seconds)","発言権の要求の最小時間間隔 (秒)"}.
+{"Moderator privileges required","モデレーター権限が必要です"}.
 {"moderators only","モデレーターにのみ"}.
 {"Modified modules","更新されたモジュール"}.
 {"Module","モジュール"}.
@@ -229,12 +241,16 @@
 {"Only deliver notifications to available users","有効なユーザーにのみ告知を送信する"}.
 {"Only moderators and participants are allowed to change the subject in this room","モデレーターと参加者のみがチャットルームの件名を変更できます"}.
 {"Only moderators are allowed to change the subject in this room","モデレーターのみがチャットルームの件名を変更できます"}.
+{"Only moderators can approve voice requests","モデレーターだけが発言権の要求を承認できます"}.
+{"Only occupants are allowed to send messages to the conference","在室者のみがこの会議にメッセージを送ることができます"}.
+{"Only occupants are allowed to send queries to the conference","在室者のみが会議にクエリーを送信することができます"}.
+{"Only service administrators are allowed to send service messages","サービス管理者のみがサービスメッセージを送信できます"}.
 {"Options","オプション"}.
 {"Organization Name","会社名"}.
 {"Organization Unit","部署名"}.
 {"Outgoing s2s Connections:","外向き s2s コネクション:"}.
 {"Outgoing s2s Connections","外向き s2s コネクション"}.
-{"Outgoing s2s Servers:","外向き s2s サービス:"}.
+{"Owner privileges required","主宰者の権限が必要です"}.
 {"Packet","パケット"}.
 {"Password:","パスワード"}.
 {"Password","パスワード"}.
@@ -249,6 +265,7 @@
 {"Persist items to storage","アイテムをストレージに保存する"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","これらのオプションは組み込みの Mnesia データーベースのバックアップのみを行うことに注意してください。もし ODBC モジュールを使用している場合は、SQL データーベースのバックアップを別に行う必要があります。"}.
+{"Please, wait for a while before sending new voice request","新しい発言権の要求を送るまで少し間をおいてください"}.
 {"Pong","Pong"}.
 {"Port","ポート"}.
 {"Port ~b","ポート ~b"}.
@@ -258,10 +275,12 @@
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub 購読者のリクエスト"}.
 {"Purge all items when the relevant publisher goes offline","公開者がオフラインになるときに、すべてのアイテムを削除"}.
+{"Queries to the conference members are not allowed in this room","このチャットルームでは、会議のメンバーへのクエリーは禁止されています"}.
 {"RAM and disc copy","RAM, ディスクコピー"}.
 {"RAM copy","RAM コピー"}.
 {"Raw","Raw"}.
 {"Really delete message of the day?","本当にお知らせメッセージを削除しますか ?"}.
+{"Recipient is not in the conference room","受信者はこの会議室にいません"}.
 {"Register a Jabber account","Jabber アカウントを登録"}.
 {"Registered nicknames","登録ニックネーム"}.
 {"Registered Users:","登録ユーザー:"}.
@@ -282,6 +301,7 @@
 {"Restore binary backup immediately:","直ちにバイナリバックアップからリストア:"}.
 {"Restore plain text backup immediately:","直ちにプレーンテキストバックアップからリストア:"}.
 {"Room Configuration","チャットルームの設定"}.
+{"Room creation is denied by service policy","サービスポリシーによってチャットルームの作成が禁止されています"}.
 {"Room description","チャットルームの説明"}.
 {"Room Occupants","在室者"}.
 {"Room title","チャットルームのタイトル"}.
@@ -310,7 +330,7 @@
 {"Show Ordinary Table","通常の表を表示"}.
 {"Shut Down Service","サービスを停止"}.
 {"~s invites you to the room ~s","~s はあなたをチャットルーム ~s に招待しています"}.
-{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Jabber クライアントはコンピューターにパスワードを記憶できます。コンピューターが安全であると信頼できる場合にのみ、この機能を使用してください。"}.
+{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Jabber クライアントはコンピューターにパスワードを記憶できます。コンピューターが安全であると信頼できる場合にのみ、この機能を使用してください。"}.
 {"Specify the access model","アクセスモデルを設定する"}.
 {"Specify the event message type","イベントメッセージ種別を設定"}.
 {"Specify the publisher model","公開モデルを指定する"}.
@@ -333,9 +353,13 @@
 {"Subscriber Address","購読者のアドレス"}.
 {"Subscription","認可"}.
 {"Sunday","日曜日"}.
+{"That nickname is already in use by another occupant","そのニックネームは既にほかの在室者によって使用されています"}.
+{"That nickname is registered by another person","ニックネームはほかの人によって登録されています"}.
 {"The CAPTCHA is valid.","CAPTCHA は有効です。"}.
+{"The CAPTCHA verification has failed","CAPTCHA 検証は失敗しました"}.
 {"The collections with which a node is affiliated","提携されたノードの集合です"}.
 {"the password is","パスワードは"}.
+{"The password is too weak","このパスワードは単純過ぎます"}.
 {"The password of your Jabber account was successfully changed.","Jabber アカウントのパスワード変更に成功しました。"}.
 {"There was an error changing the password: ","パスワードの変更中にエラーが発生しました: "}.
 {"There was an error creating the account: ","アカウントの作成中にエラーが発生しました: "}.
@@ -347,16 +371,19 @@
 {"Thursday","木曜日"}.
 {"Time delay","遅延時間"}.
 {"Time","時間"}.
+{"Too many CAPTCHA requests","CAPTCHA 要求が多すぎます"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","~p回の認証に失敗しました。このIPアドレス(~s)は~s UTCまでブロックされます。"}.
 {"Too many unacked stanzas","多くのスタンザが応答していません"}.
 {"To ~s","宛先 ~s"}.
 {"Total rooms","チャットルーム数"}.
 {"To","宛先"}.
+{"Traffic rate limit is exceeded","トラフィックレートの制限を超えました"}.
 {"Transactions Aborted:","トランザクションの失敗:"}.
 {"Transactions Committed:","トランザクションのコミット:"}.
 {"Transactions Logged:","トランザクションのログ: "}.
 {"Transactions Restarted:","トランザクションの再起動:"}.
 {"Tuesday","火曜日"}.
+{"Unable to generate a CAPTCHA","CAPTCHA を生成できません"}.
 {"Unauthorized","認証されていません"}.
 {"Unregister a Jabber account","Jabber アカウントを削除"}.
 {"Unregister","削除"}.
@@ -373,21 +400,29 @@
 {"User Management","ユーザー管理"}.
 {"Username:","ユーザー名:"}.
 {"Users","ユーザー"}.
+{"Users are not allowed to register accounts so quickly","それほど速くアカウントを登録することはできません"}.
 {"Users Last Activity","ユーザーの活動履歴"}.
 {"User ~s","ユーザー ~s"}.
 {"Validate","検証"}.
 {"vCard User Search","vCard検索"}.
 {"Virtual Hosts","バーチャルホスト"}.
+{"Visitors are not allowed to change their nicknames in this room","傍聴者はこのチャットルームでニックネームを変更することはできません"}.
+{"Visitors are not allowed to send messages to all occupants","傍聴者はすべての在室者にメッセージを送信することはできません"}.
+{"Voice requests are disabled in this conference","この会議では、発言権の要求はできません"}.
 {"Voice request","発言権を要求"}.
 {"Wednesday","水曜日"}.
 {"When to send the last published item","最後の公開アイテムを送信するタイミングで"}.
 {"Whether to allow subscriptions","購読を許可するかどうか"}.
 {"You can later change your password using a Jabber client.","あなたは後で Jabber クライアントを使用してパスワードを変更できます。"}.
+{"You have been banned from this room","あなたはこのチャットルームからバンされています"}.
+{"You must fill in field \"Nickname\" in the form","フォームの\"ニックネーム\"欄を入力する必要があります"}.
 {"You need a client that supports x:data and CAPTCHA to register","登録を行うには x:data と CAPTCHA をサポートするクライアントが必要です"}.
 {"You need a client that supports x:data to register the nickname","ニックネームを登録するには x:data をサポートするクライアントが必要です"}.
 {"You need an x:data capable client to configure mod_irc settings","mod_irc の設定には x:data をサポートするクライアントが必要です"}.
 {"You need an x:data capable client to configure room","チャットルームを設定するには x:data をサポートするクライアントが必要です"}.
 {"You need an x:data capable client to search","検索を行うためには x:data をサポートするクライアントが必要です"}.
+{"Your active privacy list has denied the routing of this stanza.","あなたのプライバシーリストはこのスタンザのルーティングを拒否しました。"}.
+{"Your contact offline message queue is full. The message has been discarded.","相手先のオフラインメッセージキューが一杯です。このメッセージは破棄されます。"}.
 {"Your Jabber account was successfully created.","Jabber アカウントの作成に成功しました。"}.
 {"Your Jabber account was successfully deleted.","Jabber アカウントの削除に成功しました。"}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","~s 宛のメッセージはブロックされています。解除するにはこちらを見てください ~s"}.

@@ -3,6 +3,7 @@
 {"Access Control List Configuration","Конфигурация списков управления доступом"}.
 {"Access control lists","Списки управления доступом"}.
 {"Access Control Lists","Списки управления доступом"}.
+{"Access denied by service policy","Доступ запрещён политикой службы"}.
 {"Access rules","Правила доступа"}.
 {"Access Rules","Правила доступа"}.
 {"Action on user","Действие над пользователем"}.
@@ -11,6 +12,7 @@
 {"Add User","Добавить пользователя"}.
 {"Administration of ","Администрирование "}.
 {"Administration","Администрирование"}.
+{"Administrator privileges required","Требуются права администратора"}.
 {"A friendly name for the node","Легко запоминаемое имя для узла"}.
 {"All activity","Вся статистика"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Разрешить этому Jabber ID подписаться на данный узел?"}.
@@ -25,6 +27,7 @@
 {"All Users","Все пользователи"}.
 {"Announcements","Объявления"}.
 {"anyone","всем участникам"}.
+{"A password is required to enter this room","Чтобы войти в эту конференцию, нужен пароль"}.
 {"April","апреля"}.
 {"August","августа"}.
 {"Backup Management","Управление резервным копированием"}.
@@ -49,6 +52,7 @@
 {"Choose whether to approve this entity's subscription.","Решите: предоставить ли подписку этому объекту."}.
 {"City","Город"}.
 {"Commands","Команды"}.
+{"Conference room does not exist","Конференция не существует"}.
 {"Configuration of room ~s","Конфигурация комнаты ~s"}.
 {"Configuration","Конфигурация"}.
 {"Connected Resources:","Подключённые ресурсы:"}.
@@ -103,6 +107,7 @@
 {"Export all tables as SQL queries to a file:","Экспортировать все таблицы в виде SQL запросов в файл:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0227):"}.
+{"Failed to extract JID from your voice request approval","Ошибка обработки JID из вашего запроса на право голоса"}.
 {"Family Name","Фамилия"}.
 {"February","февраля"}.
 {"Fill in fields to search for any matching Jabber User","Заполните форму для поиска пользователя Jabber"}.
@@ -136,6 +141,8 @@
 {"Import users data from jabberd14 spool directory:","Импорт пользовательских данных из буферной директории jabberd14:"}.
 {"Import Users from Dir at ","Импорт пользователей из директории на "}.
 {"Import Users From jabberd14 Spool Files","Импорт пользователей из спула jabberd14"}.
+{"Improper message type","Неправильный тип сообщения"}.
+{"Incorrect password","Неправильный пароль"}.
 {"Invalid affiliation: ~s","Недопустимый ранг: ~s"}.
 {"Invalid role: ~s","Недопустимая роль: ~s"}.
 {"IP addresses","IP адреса"}.
@@ -147,6 +154,9 @@
 {"IRC username","Имя пользователя IRC"}.
 {"IRC Username","Имя пользователя IRC"}.
 {"is now known as","изменил(а) имя на"}.
+{"It is not allowed to send private messages of type \"groupchat\"","Нельзя посылать частные сообщения типа \"groupchat\""}.
+{"It is not allowed to send private messages to the conference","Не разрешается посылать частные сообщения прямо в конференцию"}.
+{"It is not allowed to send private messages","Запрещено посылать приватные сообщения"}.
 {"Jabber Account Registration","Регистрация Jabber-аккаунта"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s недопустимый"}.
@@ -179,12 +189,14 @@
 {"Max # of items to persist","Максимальное число сохраняемых публикаций"}.
 {"Max payload size in bytes","Максимальный размер полезной нагрузки в байтах"}.
 {"May","мая"}.
+{"Membership is required to enter this room","В эту конференцию могут входить только её члены"}.
 {"Members:","Члены:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Запомните пароль или запишите его на бумаге, которую сохраните в безопасном месте. В Jabber'е нет автоматизированного средства восстановления пароля в том случае, если Вы его забудете."}.
 {"Memory","Память"}.
 {"Message body","Тело сообщения"}.
 {"Middle Name","Отчество"}.
 {"Minimum interval between voice requests (in seconds)","Минимальный интервал между запросами на право голоса"}.
+{"Moderator privileges required","Требуются права модератора"}.
 {"moderators only","только модераторам"}.
 {"Modified modules","Изменённые модули"}.
 {"Modules at ~p","Модули на ~p"}.
@@ -229,12 +241,16 @@
 {"Only deliver notifications to available users","Доставлять уведомления только доступным пользователям"}.
 {"Only moderators and participants are allowed to change the subject in this room","Только модераторы и участники могут изменять тему в этой комнате"}.
 {"Only moderators are allowed to change the subject in this room","Только модераторы могут изменять тему в этой комнате"}.
+{"Only moderators can approve voice requests","Только модераторы могут утверждать запросы на право голоса"}.
+{"Only occupants are allowed to send messages to the conference","Только присутствующим разрешается посылать сообщения в конференцию"}.
+{"Only occupants are allowed to send queries to the conference","Только присутствующим разрешается посылать запросы в конференцию"}.
+{"Only service administrators are allowed to send service messages","Только администратор службы может посылать служебные сообщения"}.
 {"Options","Параметры"}.
 {"Organization Name","Название организации"}.
 {"Organization Unit","Отдел организации"}.
 {"Outgoing s2s Connections:","Исходящие s2s-серверы:"}.
 {"Outgoing s2s Connections","Исходящие s2s-соединения"}.
-{"Outgoing s2s Servers:","Исходящие s2s-серверы:"}.
+{"Owner privileges required","Требуются права владельца"}.
 {"Packet","Пакет"}.
 {"Password ~b","Пароль ~b"}.
 {"Password Verification:","Проверка пароля:"}.
@@ -249,6 +265,7 @@
 {"Persist items to storage","Сохранять публикации в хранилище"}.
 {"Ping","Пинг"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Заметьте, что здесь производится резервное копирование только встроенной базы данных Mnesia. Если Вы также используете другое хранилище данных (например с помощью модуля ODBC), то его резервное копирование следует осуществлять отдельно."}.
+{"Please, wait for a while before sending new voice request","Пожалуйста, подождите перед тем как подать новый запрос на право голоса"}.
 {"Pong","Понг"}.
 {"Port ~b","Порт ~b"}.
 {"Port","Порт"}.
@@ -258,10 +275,12 @@
 {"Publish-Subscribe","Публикация-Подписка"}.
 {"PubSub subscriber request","Запрос подписчика PubSub"}.
 {"Purge all items when the relevant publisher goes offline","Очищать все записи автора публикации когда он отключается"}.
+{"Queries to the conference members are not allowed in this room","Запросы к пользователям в этой конференции запрещены"}.
 {"RAM and disc copy","ОЗУ и диск"}.
 {"RAM copy","ОЗУ"}.
 {"Raw","Необработанный формат"}.
 {"Really delete message of the day?","Действительно удалить сообщение дня?"}.
+{"Recipient is not in the conference room","Адресата нет в конференции"}.
 {"Register a Jabber account","Зарегистрировать Jabber-аккаунт"}.
 {"Registered nicknames","Зарегистрированные псевдонимы"}.
 {"Registered Users:","Зарегистрированные пользователи:"}.
@@ -282,6 +301,7 @@
 {"Restore plain text backup immediately:","Восстановить из текстовой резервной копии немедленно:"}.
 {"Restore","Восстановление из резервной копии"}.
 {"Room Configuration","Конфигурация комнаты"}.
+{"Room creation is denied by service policy","Cоздавать конференцию запрещено политикой службы"}.
 {"Room description","Описание комнаты"}.
 {"Room Occupants","Участники комнаты"}.
 {"Room title","Название комнаты"}.
@@ -310,7 +330,7 @@
 {"Show Ordinary Table","Показать обычную таблицу"}.
 {"Shut Down Service","Остановить службу"}.
 {"~s invites you to the room ~s","~s приглашает вас в комнату ~s"}.
-{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Некоторые Jabber-клиенты могут сохранять пароль на Вашем компьютере. Используйте эту функцию только в том случае, если считаете это безопасным."}.
+{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Некоторые Jabber-клиенты могут сохранять пароль на Вашем компьютере. Используйте эту функцию только в том случае, если считаете это безопасным."}.
 {"Specify the access model","Укажите механизм управления доступом"}.
 {"Specify the event message type","Укажите тип сообщения о событии"}.
 {"Specify the publisher model","Условия публикации"}.
@@ -333,8 +353,12 @@
 {"Subscriber Address","Адрес подписчика"}.
 {"Subscription","Подписка"}.
 {"Sunday","Воскресенье"}.
+{"That nickname is already in use by another occupant","Этот псевдоним уже занят другим участником"}.
+{"That nickname is registered by another person","Этот псевдоним зарегистрирован кем-то другим"}.
 {"The CAPTCHA is valid.","Проверка капчи прошла успешно."}.
+{"The CAPTCHA verification has failed","Проверка капчи не пройдена"}.
 {"The collections with which a node is affiliated","Имя коллекции, в которую входит узел"}.
+{"The password is too weak","Слишком слабый пароль"}.
 {"the password is","пароль:"}.
 {"The password of your Jabber account was successfully changed.","Пароль Вашего Jabber-аккаунта был успешно изменен."}.
 {"There was an error changing the password: ","Ошибка при смене пароля:"}.
@@ -347,16 +371,19 @@
 {"Thursday","Четверг"}.
 {"Time delay","По истечение"}.
 {"Time","Время"}.
+{"Too many CAPTCHA requests","Слишком много запросов капчи"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Слишком много (~p) неудачных попыток аутентификации с этого IP-адреса (~s). Адрес будет разблокирован в ~s UTC"}.
 {"Too many unacked stanzas","Слишком много неподтверждённых пакетов"}.
 {"To ~s","К ~s"}.
 {"Total rooms","Все комнаты"}.
 {"To","Кому"}.
+{"Traffic rate limit is exceeded","Превышен лимит скорости посылки информации"}.
 {"Transactions Aborted:","Транзакции отмененные:"}.
 {"Transactions Committed:","Транзакции завершенные:"}.
 {"Transactions Logged:","Транзакции запротоколированные:"}.
 {"Transactions Restarted:","Транзакции перезапущенные:"}.
 {"Tuesday","Вторник"}.
+{"Unable to generate a CAPTCHA","Не получилось создать капчу"}.
 {"Unauthorized","Не авторизован"}.
 {"Unregister a Jabber account","Удалить Jabber-аккаунт"}.
 {"Unregister","Удалить"}.
@@ -371,6 +398,7 @@
 {"User JID","JID пользователя"}.
 {"User Management","Управление пользователями"}.
 {"Username:","Имя пользователя:"}.
+{"Users are not allowed to register accounts so quickly","Пользователи не могут регистрировать учётные записи так быстро"}.
 {"Users Last Activity","Статистика последнего подключения пользователей"}.
 {"Users","Пользователи"}.
 {"User ~s","Пользователь ~s"}.
@@ -378,16 +406,23 @@
 {"Validate","Утвердить"}.
 {"vCard User Search","Поиск пользователей по vCard"}.
 {"Virtual Hosts","Виртуальные хосты"}.
+{"Visitors are not allowed to change their nicknames in this room","Посетителям запрещено изменять свои псевдонимы в этой комнате"}.
+{"Visitors are not allowed to send messages to all occupants","Посетителям не разрешается посылать сообщения всем присутствующим"}.
+{"Voice requests are disabled in this conference","Запросы на право голоса отключены в этой конференции"}.
 {"Voice request","Запрос на право голоса"}.
 {"Wednesday","Среда"}.
 {"When to send the last published item","Когда посылать последний опубликованный элемент"}.
 {"Whether to allow subscriptions","Разрешить подписку"}.
 {"You can later change your password using a Jabber client.","Позже Вы можете изменить пароль через Jabber-клиент."}.
+{"You have been banned from this room","Вам запрещено входить в эту конференцию"}.
+{"You must fill in field \"Nickname\" in the form","Вы должны заполнить поле \"Псевдоним\" в форме"}.
 {"You need a client that supports x:data and CAPTCHA to register","Чтобы зарегистрироваться, требуется x:data-совместимый клиент"}.
 {"You need a client that supports x:data to register the nickname","Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to configure mod_irc settings","Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to configure room","Чтобы сконфигурировать комнату, требуется x:data-совместимый клиент"}.
 {"You need an x:data capable client to search","Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
+{"Your active privacy list has denied the routing of this stanza.","Маршрутизация этой строфы запрещена вашим активным списком приватности."}.
+{"Your contact offline message queue is full. The message has been discarded.","Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение не было сохранено."}.
 {"Your Jabber account was successfully created.","Ваш Jabber-аккаунт был успешно создан."}.
 {"Your Jabber account was successfully deleted.","Ваш Jabber-аккаунт был успешно удален."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"}.

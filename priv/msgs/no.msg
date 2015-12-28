@@ -3,6 +3,7 @@
 {"Access Control List Configuration","Konfigurasjon for Tilgangskontroll lister"}.
 {"Access Control Lists","Tilgangskontrollister"}.
 {"Access control lists","Tilgangskontroll lister"}.
+{"Access denied by service policy","Tilgang nektes på grunn av en tjeneste regel"}.
 {"Access rules","Tilgangsregler"}.
 {"Access Rules","Tilgangsregler"}.
 {"Action on user","Handling på bruker"}.
@@ -11,6 +12,7 @@
 {"Add User","Legg til Bruker"}.
 {"Administration","Administrasjon"}.
 {"Administration of ","Administrasjon av "}.
+{"Administrator privileges required","Administratorprivilegier kreves"}.
 {"A friendly name for the node","Et vennlig navn for noden"}.
 {"All activity","All aktivitet"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Tillat denne Jabber ID å abonnere på denne pubsub "}.
@@ -25,6 +27,7 @@
 {"All Users","Alle Brukere"}.
 {"Announcements","Kunngjøringer"}.
 {"anyone","hvem som helst"}.
+{"A password is required to enter this room","Et passord kreves for tilgang til samtalerommet"}.
 {"April","april"}.
 {"August","august"}.
 {"Backup Management","Håndtere Sikkerehetskopiering"}.
@@ -48,6 +51,7 @@
 {"Choose whether to approve this entity's subscription.","Velg om du vil godkjenne denne eksistensens abonement"}.
 {"City","By"}.
 {"Commands","Kommandoer"}.
+{"Conference room does not exist","Konferanserommet finnes ikke"}.
 {"Configuration","Konfigurasjon"}.
 {"Configuration of room ~s","Konfigurasjon for rom ~s"}.
 {"Connected Resources:","Tilkoblede Ressurser:"}.
@@ -98,6 +102,7 @@
 {"Exclude Jabber IDs from CAPTCHA challenge","Ekskluder Jabber IDer fra CAPTCHA utfordring"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Eksporter data om alle brukere i en server til PIEFXIS filer"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Eksporter data om alle brukere i en host til PIEFXIS filer (XEP-0227):"}.
+{"Failed to extract JID from your voice request approval","Feilet i forsøk på å hente JID fra din lyd forespørsel godkjenning"}.
 {"Family Name","Etternavn"}.
 {"February","februar"}.
 {"Fill in fields to search for any matching Jabber User","Fyll inn felt for å søke etter Jabber brukere"}.
@@ -131,6 +136,8 @@
 {"Import users data from jabberd14 spool directory:","Importer brukeres data fra jabberd14 spoolfil katalog:"}.
 {"Import Users from Dir at ","Importer Brukere fra Katalog på "}.
 {"Import Users From jabberd14 Spool Files","Importer Brukere Fra jabberd14 Spoolfiler"}.
+{"Improper message type","Feilaktig meldingstype"}.
+{"Incorrect password","Feil passord"}.
 {"Invalid affiliation: ~s","Ugyldig rang: ~s"}.
 {"Invalid role: ~s","Ugyldig rolle: ~s"}.
 {"IP addresses","IP adresser"}.
@@ -142,6 +149,9 @@
 {"IRC username","IRC brukernavn"}.
 {"IRC Username","IRC Brukernavn"}.
 {"is now known as","er nå kjent som"}.
+{"It is not allowed to send private messages","Det er ikke tillatt å sende private meldinger"}.
+{"It is not allowed to send private messages of type \"groupchat\"","Det er ikke tillatt å sende private meldinger med typen "}.
+{"It is not allowed to send private messages to the conference","Det er ikke tillatt å sende private meldinger til "}.
 {"Jabber Account Registration","Jabber Konto Registrering"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Ugyldig Jabber ID ~s"}.
@@ -173,12 +183,14 @@
 {"Max # of items to persist","Høyeste # elementer som skal lagres"}.
 {"Max payload size in bytes","Største innholdsstørrelse i byte"}.
 {"May","mai"}.
+{"Membership is required to enter this room","Medlemskap kreves for tilgang til samtalerommet"}.
 {"Members:","Medlemmer:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Husk passordet, eller skriv det ned på et papir lagret på et trygt sted. I Jabber er det ingen automatisert måte å gjenskape passordet om du glemmer det. "}.
 {"Memory","Minne"}.
 {"Message body","Meldingskropp"}.
 {"Middle Name","Mellomnavn"}.
 {"Minimum interval between voice requests (in seconds)","Minimums interval mellom lyd forespørsler (i sekunder)"}.
+{"Moderator privileges required","Redaktørprivilegier kreves"}.
 {"moderators only","kun for redaktører"}.
 {"Modified modules","Endrede moduler"}.
 {"Module","Modul"}.
@@ -219,12 +231,16 @@
 {"Only deliver notifications to available users","Send kunngjøringer bare til tilgjengelige brukere"}.
 {"Only moderators and participants are allowed to change the subject in this room","Bare redaktører og deltakere kan endre emnet i dette rommet"}.
 {"Only moderators are allowed to change the subject in this room","Bare ordstyrer tillates å  endre emnet i dette rommet"}.
+{"Only moderators can approve voice requests","Bare ordstyrer kan godkjenne lyd forespørsler"}.
+{"Only occupants are allowed to send messages to the conference","Bare deltakere får sende normale meldinger til konferansen"}.
+{"Only occupants are allowed to send queries to the conference","Bare deltakere er tillatt å sende forespørsler til "}.
+{"Only service administrators are allowed to send service messages","Bare tjeneste administratorer er tilatt å sende tjeneste "}.
 {"Options","Alternativer"}.
 {"Organization Name","Organisasjonsnavn"}.
 {"Organization Unit","Organisasjonsenhet"}.
 {"Outgoing s2s Connections:","Utgående s2s Koblinger"}.
 {"Outgoing s2s Connections","Utgående s2s Koblinger"}.
-{"Outgoing s2s Servers:","Utgående s2s Tjenere"}.
+{"Owner privileges required","Eierprivilegier kreves"}.
 {"Packet","Pakke"}.
 {"Password ~b","Passord ~b"}.
 {"Password:","Passord:"}.
@@ -238,6 +254,7 @@
 {"Persist items to storage","Vedvarende elementer til lagring"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Merk at disse valgene vil bare sikkerhetskopiere den innebygde Mnesia databasen. Dersom du bruker ODBC modulen må du også ta backup av din SQL database."}.
+{"Please, wait for a while before sending new voice request","Vennligst vent en stund før du sender en ny lyd forespørsel"}.
 {"Pong","Pong"}.
 {"Port ~b","Port ~b"}.
 {"Port","Port"}.
@@ -247,10 +264,12 @@
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub abonements forespørsel"}.
 {"Purge all items when the relevant publisher goes offline","Rydd alle elementer når den aktuelle utgiveren logger av"}.
+{"Queries to the conference members are not allowed in this room","Forespørsler til konferanse medlemmene er ikke tillat i dette rommet"}.
 {"RAM and disc copy","RAM og diskkopi"}.
 {"RAM copy","RAM kopi"}.
 {"Raw","Rå"}.
 {"Really delete message of the day?","Virkelig slette melding for dagen?"}.
+{"Recipient is not in the conference room","Mottakeren er ikke i konferanserommet"}.
 {"Register a Jabber account","Registrer en Jabber konto"}.
 {"Registered Users:","Registrerte Brukere:"}.
 {"Registered Users","Registrerte Brukere"}.
@@ -270,6 +289,7 @@
 {"Restore","Gjenopprett"}.
 {"Restore plain text backup immediately:","Gjenopprette rentekst sikkerhetskopi umiddelbart:"}.
 {"Room Configuration","Rom Konfigurasjon"}.
+{"Room creation is denied by service policy","Oppretting av rom nektes av en tjenste regel"}.
 {"Room description","Rom beskrivelse"}.
 {"Room Occupants","Samtalerom Deltakere"}.
 {"Room title","Romtittel"}.
@@ -298,7 +318,7 @@
 {"Show Ordinary Table","Vis Ordinær Tabell"}.
 {"Shut Down Service","Avslutt Tjeneste"}.
 {"~s invites you to the room ~s","~s inviterer deg til rommet ~s"}.
-{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Noen Jabber klienter kan lagre passordet på datamaskinen. Bruk bare den funksjonen dersom du er sikker på at maskinen er trygg."}.
+{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Noen Jabber klienter kan lagre passordet på datamaskinen. Bruk bare den funksjonen dersom du er sikker på at maskinen er trygg."}.
 {"Specify the access model","Spesifiser aksess modellen"}.
 {"Specify the event message type","Spesifiser hendelsesbeskjed type"}.
 {"Specify the publisher model","Angi publiserings modell"}.
@@ -321,9 +341,13 @@
 {"Subscriber Address","Abonnements Adresse"}.
 {"Subscription","Abonnement"}.
 {"Sunday","søndag"}.
+{"That nickname is already in use by another occupant","Det kallenavnet er allerede i bruk av en annen deltaker"}.
+{"That nickname is registered by another person","Det kallenavnet er registrert av en annen person"}.
 {"The CAPTCHA is valid.","Captchaen er ikke gyldig"}.
+{"The CAPTCHA verification has failed","CAPTCHA godkjenningen har feilet"}.
 {"The collections with which a node is affiliated","Samlingene som en node er assosiert med"}.
 {"the password is","passordet er"}.
+{"The password is too weak","Passordet er for svakt"}.
 {"The password of your Jabber account was successfully changed.","Passordet for din Jabber konto ble endret."}.
 {"There was an error changing the password: ","En feil skjedde under endring av passordet:"}.
 {"There was an error creating the account: ","En feil skjedde under oppretting av kontoen:"}.
@@ -334,13 +358,16 @@
 {"Thursday","torsdag"}.
 {"Time delay","Tids forsinkelse"}.
 {"Time","Tid"}.
+{"Too many CAPTCHA requests","For mange CAPTCHA forespørsler"}.
 {"To ~s","Til ~s"}.
 {"To","Til"}.
+{"Traffic rate limit is exceeded","Trafikkmengde grense overskredet"}.
 {"Transactions Aborted:","Avbrutte Transasksjoner:"}.
 {"Transactions Committed:","Sendte Transaksjoner:"}.
 {"Transactions Logged:","Loggede Transasksjoner:"}.
 {"Transactions Restarted:","Omstartede Transasksjoner:"}.
 {"Tuesday","tirsdag"}.
+{"Unable to generate a CAPTCHA","Umulig å generere en CAPTCHA"}.
 {"Unauthorized","Uautorisert"}.
 {"Unregister a Jabber account","Avregistrer en Jabber konto"}.
 {"Unregister","Avregistrer"}.
@@ -355,21 +382,29 @@
 {"User JID","Bruker JID"}.
 {"User Management","Bruker Behandling"}.
 {"Username:","Brukernavn:"}.
+{"Users are not allowed to register accounts so quickly","Brukere får ikke lov til  registrere kontoer så fort"}.
 {"Users","Brukere"}.
 {"Users Last Activity","Brukers Siste Aktivitet"}.
 {"Validate","Bekrefte gyldighet"}.
 {"vCard User Search","vCard Bruker Søk"}.
 {"Virtual Hosts","Virtuella Maskiner"}.
+{"Visitors are not allowed to change their nicknames in this room","Besøkende får ikke lov å endre kallenavn i dette "}.
+{"Visitors are not allowed to send messages to all occupants","Besøkende får ikke sende meldinger til alle deltakere"}.
 {"Voice request","Lyd forespørsel"}.
+{"Voice requests are disabled in this conference","Lyd forespørsler er blokkert i denne konferansen"}.
 {"Wednesday","onsdag"}.
 {"When to send the last published item","Når skal siste publiserte artikkel sendes"}.
 {"Whether to allow subscriptions","Om man skal tillate abonnenter"}.
 {"You can later change your password using a Jabber client.","Du kan når som helst endre passordet via en Jabber klient."}.
+{"You have been banned from this room","Du har blitt bannlyst i dette rommet."}.
+{"You must fill in field \"Nickname\" in the form","Du må fylle inn feltet \"Nickname\" i skjemaet"}.
 {"You need a client that supports x:data and CAPTCHA to register","Du trenger en klient som støtter x:data og CAPTCHA for registrering "}.
 {"You need a client that supports x:data to register the nickname","Du trenger en klient som støtter x:data for å registrere kallenavnet"}.
 {"You need an x:data capable client to configure mod_irc settings","Du trenger en x:data kompatibel klient for å konfigurere mod_irc instillinger"}.
 {"You need an x:data capable client to configure room","Du trenger en klient som støtter x:data for å "}.
 {"You need an x:data capable client to search","Du tregner en klient som støtter x:data for å kunne "}.
+{"Your active privacy list has denied the routing of this stanza.","Din aktive privat liste har blokkert rutingen av denne strofen."}.
+{"Your contact offline message queue is full. The message has been discarded.","Kontaktens frakoblede meldingskø er full. Meldingen har blitt kassert."}.
 {"Your Jabber account was successfully created.","Din Jabber konto ble opprettet"}.
 {"Your Jabber account was successfully deleted.","Dni Jabber konto er blitt sltettet."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Dine meldinger til ~s blir blokkert. For å åpne igjen, besøk ~s"}.

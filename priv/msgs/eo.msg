@@ -3,6 +3,7 @@
 {"Access Control List Configuration","Agordo de atingokontrolo"}.
 {"Access control lists","Atingokontrol-listoj"}.
 {"Access Control Lists","Atingokontrol-listoj"}.
+{"Access denied by service policy","Atingo rifuzita de serv-politiko"}.
 {"Access rules","Atingo-reguloj"}.
 {"Access Rules","Atingo-reguloj"}.
 {"Action on user","Ago je uzanto"}.
@@ -11,6 +12,7 @@
 {"Add User","Aldonu Uzanton"}.
 {"Administration","Administro"}.
 {"Administration of ","Mastrumado de "}.
+{"Administrator privileges required","Administrantaj rajtoj bezonata"}.
 {"A friendly name for the node","Kromnomo por ĉi tiu nodo"}.
 {"All activity","Ĉiu aktiveco"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Ĉu permesi ĉi tiun Jabber ID aboni al la jena PubAbo-nodo"}.
@@ -25,6 +27,7 @@
 {"All Users","Ĉiuj Uzantoj"}.
 {"Announcements","Anoncoj"}.
 {"anyone","iu ajn"}.
+{"A password is required to enter this room","Pasvorto estas bezonata por eniri ĉi tiun babilejon"}.
 {"April","Aprilo"}.
 {"August","Aŭgusto"}.
 {"Backup","Faru Sekurkopion"}.
@@ -49,6 +52,7 @@
 {"Choose whether to approve this entity's subscription.","Elektu ĉu permesi la abonon de ĉi tiu ento"}.
 {"City","Urbo"}.
 {"Commands","Ordonoj"}.
+{"Conference room does not exist","Babilejo ne ekzistas"}.
 {"Configuration","Agordo"}.
 {"Configuration of room ~s","Agordo de babilejo ~s"}.
 {"Connected Resources:","Konektataj risurcoj:"}.
@@ -103,6 +107,7 @@
 {"Export all tables as SQL queries to a file:","Eksportu ĉiuj tabeloj kiel SQL-informmendo al dosierujo:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Eksportu datumojn de ĉiuj uzantoj en servilo al PIEFXIS dosieroj (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Eksportu datumoj de uzantoj en gastigo al PIEFXIS dosieroj (XEP-0227):"}.
+{"Failed to extract JID from your voice request approval","Malsukcesis ekstrakti JID-on de via voĉ-pet-aprobo"}.
 {"Family Name","Lasta Nomo"}.
 {"February","Februaro"}.
 {"Fill in fields to search for any matching Jabber User","Kompletigu la formon por serĉi rekonata Jabber-uzanto"}.
@@ -136,6 +141,8 @@
 {"Import users data from jabberd14 spool directory:","Importu uzantojn de jabberd14-uzantdosieroj"}.
 {"Import Users from Dir at ","Importu uzantojn de dosierujo ĉe "}.
 {"Import Users From jabberd14 Spool Files","Importu uzantojn de jabberd14-uzantdosieroj"}.
+{"Improper message type","Malĝusta mesaĝo-tipo"}.
+{"Incorrect password","Nekorekta pasvorto"}.
 {"Invalid affiliation: ~s","Nevalida aparteneco: ~s"}.
 {"Invalid role: ~s","Nevalida rolo: ~s"}.
 {"IP addresses","IP-adresoj"}.
@@ -147,6 +154,9 @@
 {"IRC Username","IRC-kaŝnomo"}.
 {"IRC username","IRC-uzantnomo"}.
 {"is now known as","nun nomiĝas"}.
+{"It is not allowed to send private messages","Ne estas permesata sendi privatajn mesaĝojn"}.
+{"It is not allowed to send private messages of type \"groupchat\"","Malpermesas sendi mesaĝojn de tipo \"groupchat\""}.
+{"It is not allowed to send private messages to the conference","Nur partoprenantoj rajtas sendi privatajn mesaĝojn al la babilejo"}.
 {"Jabber Account Registration","Ĵabber-konto registrado"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s estas nevalida"}.
@@ -179,12 +189,14 @@
 {"Max # of items to persist","Maksimuma kiomo de eroj en konservado"}.
 {"Max payload size in bytes","Maksimuma aĵo-grando je bajtoj"}.
 {"May","Majo"}.
+{"Membership is required to enter this room","Membreco estas bezonata por eniri ĉi tiun babilejon"}.
 {"Members:","Membroj:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Memoru vian pasvorton, aŭ skribu ĝin sur papero formetata je sekura loko. Je Ĵabber ne ekzistas aŭtomata metodo por reakiri vian pasvorton se vi forgesas ĝin."}.
 {"Memory","Memoro"}.
 {"Message body","Teksto de mesaĝo"}.
 {"Middle Name","Meza Nomo"}.
 {"Minimum interval between voice requests (in seconds)","Minimuma intervalo inter voĉ-petoj (je sekundoj)"}.
+{"Moderator privileges required","Moderantaj rajtoj bezonata"}.
 {"moderators only","moderantoj sole"}.
 {"Modified modules","Ĝisdatigitaj moduloj"}.
 {"Module","Modulo"}.
@@ -229,12 +241,16 @@
 {"Only deliver notifications to available users","Nur liveru sciigojn al konektataj uzantoj"}.
 {"Only moderators and participants are allowed to change the subject in this room","Nur moderigantoj kaj partoprenantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"}.
 {"Only moderators are allowed to change the subject in this room","Nur moderigantoj rajtas ŝanĝi la temon en ĉi tiu babilejo"}.
+{"Only moderators can approve voice requests","Nur moderigantoj povas aprobi voĉ-petojn"}.
+{"Only occupants are allowed to send messages to the conference","Nur partoprenantoj rajtas sendi mesaĝojn al la babilejo"}.
+{"Only occupants are allowed to send queries to the conference","Nur partoprenantoj rajtas sendi informmendojn al la babilejoj"}.
+{"Only service administrators are allowed to send service messages","Nur servo-administrantoj rajtas sendi serv-mesaĝojn"}.
 {"Options","Elektebloj"}.
 {"Organization Name","Organiz-nomo"}.
 {"Organization Unit","Organiz-parto"}.
 {"Outgoing s2s Connections:","Elirantaj s-al-s-konektoj:"}.
 {"Outgoing s2s Connections","Elirantaj s-al-s-konektoj"}.
-{"Outgoing s2s Servers:","Elirantaj s-al-s-serviloj"}.
+{"Owner privileges required","Mastraj rajtoj bezonata"}.
 {"Packet","Pakaĵo"}.
 {"Password ~b","Pasvorto ~b"}.
 {"Password:","Pasvorto:"}.
@@ -249,6 +265,7 @@
 {"Persist items to storage","Savu erojn en konservado"}.
 {"Ping","Sondaĵo"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Rimarku ke ĉi tiuj elektebloj nur sekurkopias la propran Mnesia-datumbazon. Se vi uzas la ODBC-modulon, vi ankaŭ devas sekurkopii tiujn SQL-datumbazoj aparte."}.
+{"Please, wait for a while before sending new voice request","Bonvolu atendi iomete antaŭ ol sendi plian voĉ-peton"}.
 {"Pong","Resondaĵo"}.
 {"Port ~b","Pordo ~b"}.
 {"Port","Pordo"}.
@@ -258,10 +275,12 @@
 {"Publish-Subscribe","Public-Abonado"}.
 {"PubSub subscriber request","PubAbo abonpeto"}.
 {"Purge all items when the relevant publisher goes offline","Forigu ĉiujn erojn kiam la rilata publikanto malkonektiĝas"}.
+{"Queries to the conference members are not allowed in this room","Malpermesas informmendoj al partoprenantoj en ĉi tiu babilejo"}.
 {"RAM and disc copy","RAM- kaj disk-kopio"}.
 {"RAM copy","RAM-kopio"}.
 {"Raw","Kruda"}.
 {"Really delete message of the day?","Ĉu vere forigi mesaĝon de la tago?"}.
+{"Recipient is not in the conference room","Ricevanto ne ĉeestas en la babilejo "}.
 {"Register a Jabber account","Registru Ĵabber-konton"}.
 {"Registered nicknames","Registritaj uzantnomoj"}.
 {"Registered Users:","Registritaj uzantoj:"}.
@@ -282,6 +301,7 @@
 {"Restore plain text backup immediately:","Restaŭrigu sekurkopion el plata tekstdosiero tuj"}.
 {"Restore","Restaŭru"}.
 {"Room Configuration","Babilejo-agordo"}.
+{"Room creation is denied by service policy","Ĉi tiu serv-politiko ne permesas babilejo-kreadon"}.
 {"Room description","Babilejo-priskribo"}.
 {"Room Occupants","Nombro de ĉeestantoj"}.
 {"Room title","Babilejo-nomo"}.
@@ -310,7 +330,7 @@
 {"Show Ordinary Table","Montru ordinaran tabelon"}.
 {"Shut Down Service","Haltigu Servon"}.
 {"~s invites you to the room ~s","~s invitas vin al la babilejo ~s"}.
-{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Kelkaj Ĵabber-klientoj povas memori vian pasvorton je via komputilo. Nur uzu tiun eblon se vi fidas ke via komputilo estas sekura."}.
+{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Kelkaj Ĵabber-klientoj povas memori vian pasvorton je via komputilo. Nur uzu tiun eblon se vi fidas ke via komputilo estas sekura."}.
 {"Specify the access model","Specifu atingo-modelon"}.
 {"Specify the event message type","Specifu tipo de event-mesaĝo"}.
 {"Specify the publisher model","Enmetu publikadan modelon"}.
@@ -333,9 +353,13 @@
 {"Subscriber Address","Abonanta adreso"}.
 {"Subscription","Abono"}.
 {"Sunday","Dimanĉo"}.
+{"That nickname is already in use by another occupant","Tiu kaŝnomo jam estas uzata de alia partoprenanto"}.
+{"That nickname is registered by another person","Kaŝnomo estas registrita de alia persono"}.
 {"The CAPTCHA is valid.","La CAPTCHA ĝustas"}.
+{"The CAPTCHA verification has failed","La CAPTCHA-kontrolado malsukcesis"}.
 {"The collections with which a node is affiliated","Aro kun kiu nodo estas filigita"}.
 {"the password is","la pasvorto estas"}.
+{"The password is too weak","La pasvorto estas ne sufiĉe forta"}.
 {"The password of your Jabber account was successfully changed.","La pasvorto de via Ĵabber-konto estas sukcese ŝanĝata."}.
 {"There was an error changing the password: ","Estis eraro dum ŝanĝi de la pasvortro:"}.
 {"There was an error creating the account: ","Estis eraro dum kreado de la konto:"}.
@@ -348,15 +372,18 @@
 {"Time delay","Prokrasto"}.
 {"Time","Tempo"}.
 {"To","Ĝis"}.
+{"Too many CAPTCHA requests","Tro multaj CAPTCHA-petoj"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Tro da malsukcesaj aŭtentprovoj (~p) de ĉi tiu IP-adreso (~s). La adreso estos malbarata je ~s UTC."}.
 {"Too many unacked stanzas","Tro da neagnoskitaj stancoj"}.
 {"To ~s","Al ~s"}.
 {"Total rooms","Babilejoj"}.
+{"Traffic rate limit is exceeded","Trafikrapida limigo superita"}.
 {"Transactions Aborted:","Transakcioj nuligitaj"}.
 {"Transactions Committed:","Transakcioj enmetitaj"}.
 {"Transactions Logged:","Transakcioj protokolitaj"}.
 {"Transactions Restarted:","Transakcioj restartitaj"}.
 {"Tuesday","Mardo"}.
+{"Unable to generate a CAPTCHA","Ne eblis krei CAPTCHA"}.
 {"Unauthorized","Nepermesita"}.
 {"Unregister a Jabber account","Malregistru Ĵabber-konton"}.
 {"Unregister","Malregistru"}.
@@ -371,6 +398,7 @@
 {"User JID","Uzant-JID"}.
 {"User Management","Uzanto-administrado"}.
 {"Username:","Uzantnomo"}.
+{"Users are not allowed to register accounts so quickly","Ne estas permesata al uzantoj registri tiel rapide"}.
 {"Users Last Activity","Lasta aktiveco de uzanto"}.
 {"Users","Uzantoj"}.
 {"User ~s","Uzanto ~s"}.
@@ -378,16 +406,23 @@
 {"Validate","Validigu"}.
 {"vCard User Search","Serĉado de vizitkartoj"}.
 {"Virtual Hosts","Virtual-gastigoj"}.
+{"Visitors are not allowed to change their nicknames in this room","Ne estas permesata al vizitantoj ŝanĝi siajn kaŝnomojn en ĉi tiu ĉambro"}.
+{"Visitors are not allowed to send messages to all occupants","Vizitantoj ne rajtas sendi mesaĝojn al ĉiuj partoprenantoj"}.
+{"Voice requests are disabled in this conference","Voĉ-petoj estas malebligita en jena babilejo"}.
 {"Voice request","Voĉ-peto"}.
 {"Wednesday","Merkredo"}.
 {"When to send the last published item","Kiam sendi la laste publicitan eron"}.
 {"Whether to allow subscriptions","Ĉu permesi aboni"}.
 {"You can later change your password using a Jabber client.","Poste vi povas ŝanĝi vian pasvorton per Ĵabber-kliento."}.
+{"You have been banned from this room","Vi estas malpermesata en ĉi tiu babilejo"}.
+{"You must fill in field \"Nickname\" in the form","Vi devas kompletigi la \"Kaŝnomo\" kampon"}.
 {"You need a client that supports x:data and CAPTCHA to register","Vi bezonas klienton subtenante x:data-funkcio kaj CAPTCHA por registri kaŝnomon"}.
 {"You need a client that supports x:data to register the nickname","Vi bezonas klienton subtenante x:data-funkcio por registri kaŝnomon"}.
 {"You need an x:data capable client to configure mod_irc settings","Vi bezonas klienton kun x:data-funkcio por agordi mod_irc"}.
 {"You need an x:data capable client to configure room","Vi bezonas klienton kun x:data-funkcio por agordi la babilejon"}.
 {"You need an x:data capable client to search","Vi bezonas klienton kun x:data-funkcio por serĉado"}.
+{"Your active privacy list has denied the routing of this stanza.","Via aktiva privatec-listo malpermesas enkursigi ĉi-tiun pakaĵon"}.
+{"Your contact offline message queue is full. The message has been discarded.","Mesaĝo-atendovico de la senkonekta kontakto estas plena. La mesaĝo estas forĵetita"}.
 {"Your Jabber account was successfully created.","Via Ĵabber-konto estis sukcese kreata."}.
 {"Your Jabber account was successfully deleted.","Via Ĵabber-konto estas sukcese forigita."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Viaj mesaĝoj al ~s estas blokata. Por malbloki ilin, iru al ~s"}.

@@ -3,6 +3,7 @@
 {"Access Control List Configuration","Konfiguera ACL"}.
 {"Access control lists","ACL"}.
 {"Access Control Lists","ACL"}.
+{"Access denied by service policy","Åtkomst nekad enligt lokal policy"}.
 {"Access rules","Åtkomstregler"}.
 {"Access Rules","Åtkomstregler"}.
 {"Action on user","Handling mot användare"}.
@@ -11,6 +12,7 @@
 {"Add User","Lägg till användare"}.
 {"Administration","Administration"}.
 {"Administration of ","Administration av "}.
+{"Administrator privileges required","Administrationsprivilegier krävs"}.
 {"A friendly name for the node","Ett vänligt namn for noden"}.
 {"All activity","All aktivitet"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Tillåt denna Jabber ID att prenumerera på denna pubsub node"}.
@@ -40,6 +42,7 @@
 {"Choose whether to approve this entity's subscription.","Välj om du vill godkänna hela denna  prenumertion."}.
 {"City","Stad"}.
 {"Commands","Kommandon"}.
+{"Conference room does not exist","Rummet finns inte"}.
 {"Configuration","Konfiguration"}.
 {"Configuration of room ~s","Konfiguration för ~s"}.
 {"Connected Resources:","Anslutna resurser:"}.
@@ -117,6 +120,8 @@
 {"Import users data from jabberd14 spool directory:","Importera användare från jabberd14 Spool directory:"}.
 {"Import Users from Dir at ","Importera användare från katalog på "}.
 {"Import Users From jabberd14 Spool Files","Importera användare från jabberd14 Spool filer"}.
+{"Improper message type","Felaktig medelandetyp"}.
+{"Incorrect password","Fel lösenord"}.
 {"Invalid affiliation: ~s","Ogiltlig rang: ~s"}.
 {"Invalid role: ~s","Ogiltlig roll: ~s"}.
 {"IP addresses","IP adresser"}.
@@ -128,6 +133,9 @@
 {"IRC username","IRC-användarnamn"}.
 {"IRC Username","IRC-användarnamn"}.
 {"is now known as","är känd som"}.
+{"It is not allowed to send private messages","Det ar inte tillåtet att skicka privata meddelanden"}.
+{"It is not allowed to send private messages of type \"groupchat\"","Det är inte tillåtet att skicka privata medelanden med typen \"groupchat\""}.
+{"It is not allowed to send private messages to the conference","Det är inte tillåtet att skicka privata medelanden till den här konferensen"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Otillåtet Jabber ID ~s"}.
 {"January","Januari"}.
@@ -157,10 +165,12 @@
 {"Max # of items to persist","Högsta antal dataposter som sparas"}.
 {"Max payload size in bytes","Högsta innehållsstorlek i bytes"}.
 {"May","Maj"}.
+{"Membership is required to enter this room","Du måste vara medlem för att komma in i det här rummet"}.
 {"Members:","Medlemmar:"}.
 {"Memory","Minne"}.
 {"Message body","Meddelande kropp"}.
 {"Middle Name","Mellannamn"}.
+{"Moderator privileges required","Moderatorprivilegier krävs"}.
 {"moderators only","endast moderatorer"}.
 {"Modified modules","Uppdaterade moduler"}.
 {"Module","Modul"}.
@@ -197,12 +207,15 @@
 {"Online Users:","Inloggade användare"}.
 {"Only deliver notifications to available users","Skicka notifikationer bara till uppkopplade användare"}.
 {"Only moderators and participants are allowed to change the subject in this room","Endast moderatorer och deltagare har tillåtelse att ändra ämnet i det här rummet"}.
+{"Only occupants are allowed to send messages to the conference","Utomstående får inte skicka medelanden till den här konferensen"}.
+{"Only occupants are allowed to send queries to the conference","Utomstående får inte skicka iq-queries till den här konferensen"}.
+{"Only service administrators are allowed to send service messages","Endast administratörer får skicka tjänstmeddelanden"}.
 {"Options","Parametrar"}.
 {"Organization Name","Organisationsnamn"}.
 {"Organization Unit","Organisationsenhet"}.
 {"Outgoing s2s Connections","Utgaende s2s anslutning"}.
 {"Outgoing s2s Connections:","Utgående s2s anslutning"}.
-{"Outgoing s2s Servers:","Utgående s2s server"}.
+{"Owner privileges required","Ägarprivilegier krävs"}.
 {"Packet","Paket"}.
 {"Password ~b","Lösenord ~b"}.
 {"Password:","Lösenord:"}.
@@ -223,10 +236,12 @@
 {"Protocol","Protocol"}.
 {"Publish-Subscribe","Publikprenumeration"}.
 {"PubSub subscriber request","Pubsub prenumerationsforfrågan"}.
+{"Queries to the conference members are not allowed in this room","Det är förbjudet att skicka iq-queries till konferensdeltagare"}.
 {"RAM and disc copy","RAM- och diskkopia"}.
 {"RAM copy","RAM-kopia"}.
 {"Raw","Ra"}.
 {"Really delete message of the day?","Verkligen ta bort dagens meddelanden?"}.
+{"Recipient is not in the conference room","Mottagaren finns inte i rummet"}.
 {"Registered Users:","Registrerade användare"}.
 {"Registered Users","Registrerade användare"}.
 {"Registration in mod_irc for ","mod_irc-registrering för "}.
@@ -243,6 +258,7 @@
 {"Restore binary backup immediately:","återställ den binära backupen omedelbart"}.
 {"Restore plain text backup immediately:","återställ textbackup omedelbart"}.
 {"Room Configuration","Rumkonfiguration"}.
+{"Room creation is denied by service policy","Skapandet av rum är förbjudet enligt lokal policy"}.
 {"Room Occupants","Antal besökare"}.
 {"Room title","Rumstitel"}.
 {"Roster groups allowed to subscribe","Rostergrupper tillåts att prenumerera"}.
@@ -290,6 +306,7 @@
 {"Subscriber Address","Prenumerationsadress"}.
 {"Subscription","Prenumeration"}.
 {"Sunday","Söndag"}.
+{"That nickname is registered by another person","Smeknamnet är reserverat"}.
 {"The CAPTCHA is valid.","Din CAPTCHA är godkänd."}.
 {"the password is","Lösenordet är"}.
 {"Thursday","Torsdag"}.
@@ -297,6 +314,7 @@
 {"Time","Tid"}.
 {"To ~s","Till ~s"}.
 {"To","Till"}.
+{"Traffic rate limit is exceeded","Trafikgränsen har överstigits"}.
 {"Transactions Aborted:","Transaktioner borttagna"}.
 {"Transactions Committed:","Transaktioner kommittade"}.
 {"Transactions Logged:","Transaktioner loggade "}.
@@ -313,14 +331,20 @@
 {"User","Användarnamn"}.
 {"User Management","Användarmanagement"}.
 {"Users","Användare"}.
+{"Users are not allowed to register accounts so quickly","Det är inte tillåtet för användare att skapa konton så fort"}.
 {"Users Last Activity","Användarens senaste aktivitet"}.
 {"Validate","Validera"}.
 {"vCard User Search","vCard användare sök"}.
 {"Virtual Hosts","Virtuella servrar"}.
+{"Visitors are not allowed to change their nicknames in this room","Det är inte tillåtet for gäster att ändra sina smeknamn i detta rummet"}.
+{"Visitors are not allowed to send messages to all occupants","Besökare får inte skicka medelande till alla"}.
 {"Wednesday","Onsdag"}.
 {"When to send the last published item","När att skicka senast publicerade ämne"}.
 {"Whether to allow subscriptions","Tillåta prenumerationer?"}.
+{"You have been banned from this room","Du har blivit bannlyst från det här rummet"}.
+{"You must fill in field \"Nickname\" in the form","Du måste fylla i fält \"smeknamn\" i formen"}.
 {"You need an x:data capable client to configure mod_irc settings","Du behöer en klient som stöjer x:data för att konfigurera mod_irc"}.
 {"You need an x:data capable client to configure room","Du behöver en klient som stödjer x:data för att konfiguera detta rum"}.
 {"You need an x:data capable client to search","Du behöver en klient som stödjer x:data, för att kunna söka"}.
+{"Your contact offline message queue is full. The message has been discarded.","Din kontaktkö for offlinekontakter ar full"}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Dina meddelanden till ~s är blockerade. För att avblockera dem, gå till ~s"}.

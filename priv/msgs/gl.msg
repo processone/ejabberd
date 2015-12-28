@@ -3,6 +3,7 @@
 {"Access Control List Configuration","Configuración da Lista de Control de Acceso"}.
 {"Access control lists","Listas de Control de Acceso"}.
 {"Access Control Lists","Listas de Control de Acceso"}.
+{"Access denied by service policy","Acceso denegado pola política do servizo"}.
 {"Access rules","Regras de acceso"}.
 {"Access Rules","Regras de Acceso"}.
 {"Action on user","Acción no usuario"}.
@@ -11,6 +12,7 @@
 {"Add User","Engadir usuario"}.
 {"Administration","Administración"}.
 {"Administration of ","Administración de "}.
+{"Administrator privileges required","Necesítase privilexios de administrador"}.
 {"A friendly name for the node","Un nome para o nodo"}.
 {"All activity","Toda a actividade"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Desexas permitir a este JabberID que se subscriba a este nodo PubSub?"}.
@@ -23,6 +25,7 @@
 {"All Users","Todos os usuarios"}.
 {"Announcements","Anuncios"}.
 {"anyone","calquera"}.
+{"A password is required to enter this room","Necesítase contrasinal para entrar nesta sala"}.
 {"April","Abril"}.
 {"August","Agosto"}.
 {"Backup","Gardar copia de seguridade"}.
@@ -40,6 +43,7 @@
 {"Choose whether to approve this entity's subscription.","Decidir se aprobar a subscripción desta entidade."}.
 {"City","Cidade"}.
 {"Commands","Comandos"}.
+{"Conference room does not exist","A sala de conferencias non existe"}.
 {"Configuration","Configuración"}.
 {"Configuration of room ~s","Configuración para a sala ~s"}.
 {"Connected Resources:","Recursos conectados:"}.
@@ -118,6 +122,8 @@
 {"Import users data from jabberd14 spool directory:","Importar usuarios do directorio spool de jabberd14:"}.
 {"Import Users from Dir at ","Importar usuarios desde o directorio en "}.
 {"Import Users From jabberd14 Spool Files","Importar usuarios de ficheiros spool de jabberd-1.4"}.
+{"Improper message type","Tipo de mensaxe incorrecta"}.
+{"Incorrect password","Contrasinal incorrecta"}.
 {"Invalid affiliation: ~s","Afiliación non válida: ~s"}.
 {"Invalid role: ~s","Rol non válido: ~s"}.
 {"IP addresses","Direccións IP"}.
@@ -129,6 +135,9 @@
 {"IRC username","Nome de usuario en IRC"}.
 {"IRC Username","Nome de usuario en IRC"}.
 {"is now known as","cámbiase o nome a"}.
+{"It is not allowed to send private messages","Non está permitido enviar mensaxes privadas"}.
+{"It is not allowed to send private messages of type \"groupchat\"","Non está permitido enviar mensaxes privadas do tipo \"groupchat\""}.
+{"It is not allowed to send private messages to the conference","Impedir o envio de mensaxes privadas á sala"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","O Jabber ID ~s non é válido"}.
 {"January","Xaneiro"}.
@@ -159,10 +168,12 @@
 {"Max # of items to persist","Máximo # de elementos que persisten"}.
 {"Max payload size in bytes","Máximo tamaño do payload en bytes"}.
 {"May","Maio"}.
+{"Membership is required to enter this room","Necesitas ser membro desta sala para poder entrar"}.
 {"Members:","Membros:"}.
 {"Memory","Memoria"}.
 {"Message body","Corpo da mensaxe"}.
 {"Middle Name","Segundo nome"}.
+{"Moderator privileges required","Necesítase privilexios de moderador"}.
 {"moderators only","só moderadores"}.
 {"Modified modules","Módulos Modificados"}.
 {"Module","Módulo"}.
@@ -200,12 +211,15 @@
 {"Only deliver notifications to available users","Só enviar notificacións aos usuarios dispoñibles"}.
 {"Only moderators and participants are allowed to change the subject in this room","Só os moderadores e os participantes se lles permite cambiar o tema nesta sala"}.
 {"Only moderators are allowed to change the subject in this room","Só os moderadores están autorizados a cambiar o tema nesta sala"}.
+{"Only occupants are allowed to send messages to the conference","Só os ocupantes poden enviar mensaxes á sala"}.
+{"Only occupants are allowed to send queries to the conference","Só os ocupantes poden enviar solicitudes á sala"}.
+{"Only service administrators are allowed to send service messages","Só os administradores do servizo teñen permiso para enviar mensaxes de servizo"}.
 {"Options","Opcións"}.
 {"Organization Name","Nome da organización"}.
 {"Organization Unit","Unidade da organización"}.
 {"Outgoing s2s Connections:","Conexións S2S saíntes:"}.
 {"Outgoing s2s Connections","Conexións S2S saíntes"}.
-{"Outgoing s2s Servers:","Servidores S2S saíntes:"}.
+{"Owner privileges required","Requírense privilexios de propietario da sala"}.
 {"Packet","Paquete"}.
 {"Password ~b","Contrasinal ~b"}.
 {"Password:","Contrasinal:"}.
@@ -226,10 +240,12 @@
 {"Protocol","Protocolo"}.
 {"Publish-Subscribe","Publicar-Subscribir"}.
 {"PubSub subscriber request","Petición de subscriptor de PubSub"}.
+{"Queries to the conference members are not allowed in this room","Nesta sala non se permiten solicitudes aos membros da sala"}.
 {"RAM and disc copy","Copia en RAM e disco"}.
 {"RAM copy","Copia en RAM"}.
 {"Raw","Cru"}.
 {"Really delete message of the day?","Está seguro de quere borrar a mensaxe do dia?"}.
+{"Recipient is not in the conference room","O receptor non está na sala de conferencia"}.
 {"Registered Users:","Usuarios rexistrados:"}.
 {"Registered Users","Usuarios rexistrados"}.
 {"Registration in mod_irc for ","Rexistro en mod_irc para"}.
@@ -247,6 +263,7 @@
 {"Restore plain text backup immediately:","Restaurar copias de seguridade de texto plano inmediatamente:"}.
 {"Restore","Restaurar"}.
 {"Room Configuration","Configuración da Sala"}.
+{"Room creation is denied by service policy","Denegar crear a sala por política do servizo"}.
 {"Room description","Descrición da sala"}.
 {"Room Occupants","Ocupantes da sala"}.
 {"Room title","Título da sala"}.
@@ -295,6 +312,8 @@
 {"Subscriber Address","Dirección do subscriptor"}.
 {"Subscription","Subscripción"}.
 {"Sunday","Domingo"}.
+{"That nickname is already in use by another occupant","Ese alcume que xa está en uso por outro ocupante"}.
+{"That nickname is registered by another person","O alcume xa está rexistrado por outra persoa"}.
 {"The CAPTCHA is valid.","O CAPTCHA é válido."}.
 {"The collections with which a node is affiliated","As coleccións coas que un nodo está afiliado"}.
 {"the password is","a contrasinal é"}.
@@ -303,6 +322,7 @@
 {"Time delay","Atraso temporal"}.
 {"To","Para"}.
 {"To ~s","A ~s"}.
+{"Traffic rate limit is exceeded","Hase exedido o límite de tráfico"}.
 {"Transactions Aborted:","Transaccións abortadas:"}.
 {"Transactions Committed:","Transaccións finalizadas:"}.
 {"Transactions Logged:","Transaccións rexistradas:"}.
@@ -317,16 +337,22 @@
 {"Uptime:","Tempo desde o inicio:"}.
 {"Use of STARTTLS required","É obrigatorio usar STARTTLS"}.
 {"User Management","Administración de usuarios"}.
+{"Users are not allowed to register accounts so quickly","Os usuarios non están autorizados a rexistrar contas con tanta rapidez"}.
 {"Users Last Activity","Última actividade dos usuarios"}.
 {"Users","Usuarios"}.
 {"User","Usuario"}.
 {"Validate","Validar"}.
 {"vCard User Search","Procura de usuario en vCard"}.
 {"Virtual Hosts","Hosts Virtuais"}.
+{"Visitors are not allowed to change their nicknames in this room","Os visitantes non están autorizados a cambiar os seus That alcumes nesta sala"}.
+{"Visitors are not allowed to send messages to all occupants","Os visitantes non poden enviar mensaxes a todos os ocupantes"}.
 {"Wednesday","Mércores"}.
 {"When to send the last published item","Cando enviar o último elemento publicado"}.
 {"Whether to allow subscriptions","Permitir subscripciones"}.
+{"You have been banned from this room","fuches bloqueado nesta sala"}.
+{"You must fill in field \"Nickname\" in the form","Debes encher o campo \"Alcumo\" no formulario"}.
 {"You need an x:data capable client to configure mod_irc settings","Necesitas un cliente con soporte de x:data para configurar as opcións de mod_irc"}.
 {"You need an x:data capable client to configure room","Necesitas un cliente con soporte de x:data para configurar a sala"}.
 {"You need an x:data capable client to search","Necesitas un cliente con soporte de x:data para poder buscar"}.
+{"Your contact offline message queue is full. The message has been discarded.","A túa cola de mensaxes diferidas de contactos está chea. A mensaxe descartouse."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","As súas mensaxes a ~s encóntranse bloqueadas. Para desbloquear, visite ~s"}.

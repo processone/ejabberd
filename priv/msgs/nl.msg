@@ -3,6 +3,7 @@
 {"Access Control List Configuration","Instellingen van access control lists"}.
 {"Access control lists","Access control lists"}.
 {"Access Control Lists","Access control lists"}.
+{"Access denied by service policy","De toegang werd geweigerd door het beleid van deze dienst"}.
 {"Access rules","Access rules"}.
 {"Access Rules","Access rules"}.
 {"Action on user","Actie op gebruiker"}.
@@ -11,6 +12,7 @@
 {"Add User","Gebruiker toevoegen"}.
 {"Administration","Beheer"}.
 {"Administration of ","Beheer van "}.
+{"Administrator privileges required","U hebt beheerdersprivileges nodig"}.
 {"A friendly name for the node","Bijnaam voor deze knoop"}.
 {"All activity","Alle activiteit"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Deze gebruiker toestaan te abonneren op deze pubsub node?"}.
@@ -25,6 +27,7 @@
 {"All Users","Alle gebruikers"}.
 {"Announcements","Mededelingen"}.
 {"anyone","iedereen"}.
+{"A password is required to enter this room","U hebt een wachtwoord nodig om deze chatruimte te kunnen betreden"}.
 {"April","April"}.
 {"August","Augustus"}.
 {"Backup","Backup"}.
@@ -49,6 +52,7 @@
 {"Choose whether to approve this entity's subscription.","Beslis of dit verzoek tot abonneren zal worden goedgekeurd"}.
 {"City","Plaats"}.
 {"Commands","Commando's"}.
+{"Conference room does not exist","De chatruimte bestaat niet"}.
 {"Configuration","Instellingen"}.
 {"Configuration of room ~s","Instellingen van chatruimte ~s"}.
 {"Connected Resources:","Verbonden bronnen:"}.
@@ -103,6 +107,7 @@
 {"Export all tables as SQL queries to a file:","Exporteer alle tabellen als SQL-queries naar een bestand:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exporteer data van alle gebruikers in de server naar PIEFXIS-bestanden (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exporteer data van alle gebruikers van een host naar PIEXFIS-bestanden (XEP-0227):"}.
+{"Failed to extract JID from your voice request approval","Er kon geen JID worden ontleend uit deze stemaanvraag"}.
 {"Family Name","Achternaam"}.
 {"February","Februari"}.
 {"Fill in fields to search for any matching Jabber User","Vul de velden in om te zoeken naar Jabber-gebruikers op deze server"}.
@@ -136,6 +141,8 @@
 {"Import users data from jabberd14 spool directory:","Importeer gebruikersdata via spool-bestanden van jabberd14"}.
 {"Import Users from Dir at ","Gebruikers importeren vanaf directory op "}.
 {"Import Users From jabberd14 Spool Files","Importeer gebruikers via spool-bestanden van jabberd14"}.
+{"Improper message type","Onjuist berichttype"}.
+{"Incorrect password","Foutief wachtwoord"}.
 {"Invalid affiliation: ~s","Ongeldige affiliatie: ~s"}.
 {"Invalid role: ~s","Ongeldige rol: ~s"}.
 {"IP addresses","IP-adres"}.
@@ -147,6 +154,9 @@
 {"IRC username","Gebruikersnaam voor IRC"}.
 {"IRC Username","Gebruikersnaam voor IRC:"}.
 {"is now known as","heet nu"}.
+{"It is not allowed to send private messages","Het is niet toegestaan priveberichten te sturen"}.
+{"It is not allowed to send private messages of type \"groupchat\"","Er mogen geen privéberichten van het type \"groupchat\" worden verzonden"}.
+{"It is not allowed to send private messages to the conference","Er mogen geen privéberichten naar de chatruimte worden verzonden"}.
 {"Jabber Account Registration","Jabber-account registratie"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","De Jabber ID ~s is ongeldig"}.
@@ -180,11 +190,13 @@
 {"Max payload size in bytes","Maximumgrootte van bericht in bytes"}.
 {"May","Mei"}.
 {"Members:","Groepsleden:"}.
+{"Membership is required to enter this room","U moet lid zijn om deze chatruimte te kunnen betreden"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Onthou het wachtwoord, of schrijf het op en bewaar het op een veilige plaats. Met Jabber is er geen geautomatiseerde manier om het wachtwoord terug te halen als U het vergeet."}.
 {"Memory","Geheugen"}.
 {"Message body","Bericht"}.
 {"Middle Name","Tussennaam"}.
 {"Minimum interval between voice requests (in seconds)","Minimale interval tussen stemaanvragen (in seconden)"}.
+{"Moderator privileges required","U hebt moderatorprivileges nodig"}.
 {"moderators only","moderators"}.
 {"Modified modules","Gewijzigde modules"}.
 {"Module","Module"}.
@@ -229,12 +241,16 @@
 {"Only deliver notifications to available users","Notificaties alleen verzenden naar online gebruikers"}.
 {"Only moderators and participants are allowed to change the subject in this room","Alleen moderators en deelnemers mogen het onderwerp van deze chatruimte veranderen"}.
 {"Only moderators are allowed to change the subject in this room","Alleen moderators mogen het onderwerp van deze chatruimte veranderen"}.
+{"Only moderators can approve voice requests","Alleen moderators kunnen stemaanvragen goedkeuren"}.
+{"Only occupants are allowed to send messages to the conference","Alleen aanwezigen mogen berichten naar de chatruimte verzenden"}.
+{"Only occupants are allowed to send queries to the conference","Alleen aanwezigen mogen verzoeken verzenden naar de chatruimte"}.
+{"Only service administrators are allowed to send service messages","Alleen beheerders van deze dienst mogen mededelingen verzenden naar alle chatruimtes"}.
 {"Options","Opties"}.
 {"Organization Name","Organisatie"}.
 {"Organization Unit","Afdeling"}.
 {"Outgoing s2s Connections:","Uitgaande s2s-verbindingen:"}.
 {"Outgoing s2s Connections","Uitgaande s2s-verbindingen"}.
-{"Outgoing s2s Servers:","Uitgaande s2s-verbindingen:"}.
+{"Owner privileges required","U hebt eigenaarsprivileges nodig"}.
 {"Packet","Pakket"}.
 {"Password ~b","Wachtwoord ~b"}.
 {"Password Verification:","Wachtwoord Bevestiging:"}.
@@ -249,6 +265,7 @@
 {"Persist items to storage","Items in het geheugen bewaren"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Merk op dat volgende opties enkel backups maken van de ingebouwde database Mnesia. Als U de ODBC module gebruikt dan moeten daarvan afzonderlijke backups gemaakt worden."}.
+{"Please, wait for a while before sending new voice request","Wacht s.v.p. met het maken van een nieuwe stemaanvraag."}.
 {"Pong","Pong"}.
 {"Port ~b","Poort ~b"}.
 {"Port","Poort"}.
@@ -258,10 +275,12 @@
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","PubSub abonnee verzoek"}.
 {"Purge all items when the relevant publisher goes offline","Verwijder alle items wanneer de gerelateerde publiceerder offline gaat"}.
+{"Queries to the conference members are not allowed in this room","Er mogen geen verzoeken verzenden worden naar deelnemers in deze chatruimte"}.
 {"RAM and disc copy","RAM en harde schijf"}.
 {"RAM copy","RAM"}.
 {"Raw","Ruw"}.
 {"Really delete message of the day?","Wilt u het bericht van de dag verwijderen?"}.
+{"Recipient is not in the conference room","De ontvanger is niet in de chatruimte"}.
 {"Register a Jabber account","Registreer een Jabber-account"}.
 {"Registered nicknames","Geregistreerde gebruikersnamen"}.
 {"Registered Users:","Geregistreerde gebruikers:"}.
@@ -282,6 +301,7 @@
 {"Restore binary backup immediately:","Binaire backup direct herstellen:"}.
 {"Restore plain text backup immediately:","Backup in een tekstbestand direct herstellen:"}.
 {"Room Configuration","Instellingen van de chatruimte"}.
+{"Room creation is denied by service policy","De aanmaak van de chatruimte is verhinderd door de instellingen van deze server"}.
 {"Room description","Beschrijving"}.
 {"Room Occupants","Aantal aanwezigen"}.
 {"Room title","Naam van de chatruimte"}.
@@ -310,7 +330,7 @@
 {"Show Ordinary Table","Deel van tabel laten zien"}.
 {"Shut Down Service","Stop Service"}.
 {"~s invites you to the room ~s","~s nodigt je uit voor het groepsgesprek ~s"}.
-{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Sommige Jabber-clienten kunnen het wachtwoord opslaan op Uw computer. Gebruik deze mogelijkheid alleen als U vertrouwd dat Uw computer afdoende beveiligd is."}.
+{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Sommige Jabber-clienten kunnen het wachtwoord opslaan op Uw computer. Gebruik deze mogelijkheid alleen als U vertrouwd dat Uw computer afdoende beveiligd is."}.
 {"Specify the access model","Geef toegangsmodel"}.
 {"Specify the event message type","Geef type van eventbericht"}.
 {"Specify the publisher model","Publicatietype opgeven"}.
@@ -333,9 +353,13 @@
 {"Subscriber Address","Abonnee Adres"}.
 {"Subscription","Inschrijving"}.
 {"Sunday","Zondag"}.
+{"That nickname is already in use by another occupant","Deze bijnaam is al in gebruik door een andere aanwezige"}.
+{"That nickname is registered by another person","Deze bijnaam is al geregistreerd door iemand anders"}.
 {"The CAPTCHA is valid.","De geautomatiseerde Turing-test is geslaagd."}.
+{"The CAPTCHA verification has failed","De CAPTCHA-verificatie is mislukt"}.
 {"The collections with which a node is affiliated","De collecties waar een node mee is gerelateerd"}.
 {"the password is","het wachtwoord is"}.
+{"The password is too weak","Het wachtwoord is te zwak"}.
 {"The password of your Jabber account was successfully changed.","Het wachtwoord van Uw Jabber-account is succesvol veranderd."}.
 {"There was an error changing the password: ","Er was een fout bij het veranderen van het wachtwoord:"}.
 {"There was an error creating the account: ","Er was een fout bij het creeern van de account:"}.
@@ -348,15 +372,18 @@
 {"Time delay","Vertraging"}.
 {"Time","Tijd"}.
 {"To","Aan"}.
+{"Too many CAPTCHA requests","Te veel CAPTCHA-aanvragen"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Te veel (~p) mislukte authenticatie-pogingen van dit IP-adres (~s). Dit adres zal worden gedeblokkeerd om ~s UTC"}.
 {"Too many unacked stanzas","Te veel niet-bevestigde stanzas"}.
 {"To ~s","Naar ~s"}.
 {"Total rooms","Aantal groepsgesprekken"}.
+{"Traffic rate limit is exceeded","Dataverkeerslimiet overschreden"}.
 {"Transactions Aborted:","Afgebroken transacties:"}.
 {"Transactions Committed:","Bevestigde transacties:"}.
 {"Transactions Logged:","Gelogde transacties:"}.
 {"Transactions Restarted:","Herstarte transacties:"}.
 {"Tuesday","Dinsdag"}.
+{"Unable to generate a CAPTCHA","Het generen van een CAPTCHA is mislukt"}.
 {"Unauthorized","Niet geautoriseerd"}.
 {"Unregister a Jabber account","Opheffen van Jabber-account"}.
 {"Unregister","Opheffen"}.
@@ -372,22 +399,30 @@
 {"User JID","JID Gebruiker"}.
 {"User Management","Gebruikersbeheer"}.
 {"Username:","Gebruikersnaam:"}.
+{"Users are not allowed to register accounts so quickly","Het is gebruikers niet toegestaan zo snel achter elkaar te registreren"}.
 {"User ~s","Gebruiker ~s"}.
 {"Users","Gebruikers"}.
 {"Users Last Activity","Laatste activiteit van gebruikers"}.
 {"Validate","Bevestigen"}.
 {"vCard User Search","Gebruikers zoeken"}.
 {"Virtual Hosts","Virtuele hosts"}.
+{"Visitors are not allowed to change their nicknames in this room","Het is bezoekers niet toegestaan hun naam te veranderen in dit kanaal"}.
+{"Visitors are not allowed to send messages to all occupants","Bezoekers mogen geen berichten verzenden naar alle aanwezigen"}.
+{"Voice requests are disabled in this conference","Stemaanvragen zijn uitgeschakeld voor deze chatruimte"}.
 {"Voice request","Stemaanvraag"}.
 {"Wednesday","Woensdag"}.
 {"When to send the last published item","Wanneer het laatst gepubliceerde item verzonden moet worden"}.
 {"Whether to allow subscriptions","Abonnementsaanvraag toestaan"}.
 {"You can later change your password using a Jabber client.","U can het wachtwoord later veranderen met een Jabber-client."}.
+{"You have been banned from this room","U werd verbannen uit deze chatruimte"}.
+{"You must fill in field \"Nickname\" in the form","U moet het veld \"bijnaam\" invullen"}.
 {"You need a client that supports x:data and CAPTCHA to register","U hebt een client nodig die x:data en CAPTCHA ondersteunt om een bijnaam te registreren"}.
 {"You need a client that supports x:data to register the nickname","U hebt een client nodig die x:data ondersteunt om een bijnaam te registreren"}.
 {"You need an x:data capable client to configure mod_irc settings","U hebt een client nodig die x:data ondersteunt om dit IRC-transport in te stellen"}.
 {"You need an x:data capable client to configure room","U hebt een client nodig die x:data ondersteunt om deze chatruimte in te stellen"}.
 {"You need an x:data capable client to search","U hebt een client nodig die x:data ondersteunt om te zoeken"}.
+{"Your active privacy list has denied the routing of this stanza.","Uw actieve privacy-lijst verbied het routeren van dit stanza."}.
+{"Your contact offline message queue is full. The message has been discarded.","Te veel offline berichten voor dit contactpersoon. Het bericht is niet opgeslagen."}.
 {"Your Jabber account was successfully created.","Uw Jabber-account is succesvol gecreeerd."}.
 {"Your Jabber account was successfully deleted.","Uw Jabber-account is succesvol verwijderd."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Uw berichten aan ~s worden geblokkeerd. Om ze te deblokkeren, ga naar ~s"}.

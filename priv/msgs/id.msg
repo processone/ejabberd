@@ -3,6 +3,7 @@
 {"Access Control List Configuration","Konfigurasi Daftar Akses Pengendalian"}.
 {"Access Control Lists","Akses Daftar Pengendalian"}.
 {"Access control lists","Daftar Pengendalian Akses"}.
+{"Access denied by service policy","Akses ditolak oleh kebijakan layanan"}.
 {"Access rules","Akses peraturan"}.
 {"Access Rules","Aturan Akses"}.
 {"Action on user","Tindakan pada pengguna"}.
@@ -11,6 +12,7 @@
 {"Add User","Tambah Pengguna"}.
 {"Administration","Administrasi"}.
 {"Administration of ","Administrasi"}.
+{"Administrator privileges required","Hak istimewa Administrator dibutuhkan"}.
 {"A friendly name for the node","Nama yang dikenal untuk node"}.
 {"All activity","Semua aktifitas"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Izinkan ID Jabber ini untuk berlangganan pada node pubsub ini?"}.
@@ -23,6 +25,7 @@
 {"All Users","Semua Pengguna"}.
 {"Announcements","Pengumuman"}.
 {"anyone","Siapapun"}.
+{"A password is required to enter this room","Diperlukan kata sandi untuk masuk ruangan ini"}.
 {"April","April"}.
 {"August","Agustus"}.
 {"Backup","Backup"}.
@@ -46,6 +49,7 @@
 {"Choose whether to approve this entity's subscription.","Pilih apakah akan menyetujui hubungan pertemanan ini."}.
 {"City","Kota"}.
 {"Commands","Perintah"}.
+{"Conference room does not exist","Ruang Konferensi tidak ada"}.
 {"Configuration of room ~s","Pengaturan ruangan ~s"}.
 {"Configuration","Pengaturan"}.
 {"Connected Resources:","Sumber Daya Terhubung:"}.
@@ -126,6 +130,8 @@
 {"Import users data from jabberd14 spool directory:","Импорт пользовательских данных из буферной директории jabberd14:"}.
 {"Import Users from Dir at ","Impor Pengguna dari Dir di"}.
 {"Import Users From jabberd14 Spool Files","Impor Pengguna Dari jabberd14 Spool File"}.
+{"Improper message type","Jenis pesan yang tidak benar"}.
+{"Incorrect password","Kata sandi salah"}.
 {"Invalid affiliation: ~s","Afiliasi tidak valid: ~s"}.
 {"Invalid role: ~s","Peran tidak valid: ~s"}.
 {"IP addresses","Alamat IP"}.
@@ -137,6 +143,9 @@
 {"IRC username","Nama Pengguna IRC"}.
 {"IRC Username","Nama Pengguna IRC"}.
 {"is now known as","sekarang dikenal sebagai"}.
+{"It is not allowed to send private messages","Hal ini tidak diperbolehkan untuk mengirim pesan pribadi"}.
+{"It is not allowed to send private messages of type \"groupchat\"","Hal ini tidak diperbolehkan untuk mengirim pesan pribadi jenis \"groupchat \""}.
+{"It is not allowed to send private messages to the conference","Hal ini tidak diperbolehkan untuk mengirim pesan pribadi ke konferensi"}.
 {"Jabber Account Registration","Pendaftaran Akun Jabber"}.
 {"Jabber ID","Jabber ID"}.
 {"Jabber ID ~s is invalid","Jabber ID ~s tidak valid"}.
@@ -169,10 +178,12 @@
 {"Max payload size in bytes","Max kapasitas ukuran dalam bytes"}.
 {"May","Mei"}.
 {"Members:","Anggota:"}.
+{"Membership is required to enter this room","Hanya Member yang dapat masuk ruangan ini"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Hafalkan kata sandi Anda, atau dicatat dan letakkan di tempat yang aman. Didalam Jabber tidak ada cara otomatis untuk mendapatkan kembali password Anda jika Anda lupa."}.
 {"Memory","Memori"}.
 {"Message body","Isi Pesan"}.
 {"Middle Name","Nama Tengah"}.
+{"Moderator privileges required","Hak istimewa moderator dibutuhkan"}.
 {"moderators only","Hanya moderator"}.
 {"Modified modules","Modifikasi modul-modul"}.
 {"Module","Modul"}.
@@ -212,12 +223,15 @@
 {"Only deliver notifications to available users","Hanya mengirimkan pemberitahuan kepada pengguna yang tersedia"}.
 {"Only moderators and participants are allowed to change the subject in this room","Hanya moderator dan peserta yang diizinkan untuk mengganti topik pembicaraan di ruangan ini"}.
 {"Only moderators are allowed to change the subject in this room","Hanya moderator yang diperbolehkan untuk mengubah topik dalam ruangan ini"}.
+{"Only occupants are allowed to send messages to the conference","Hanya penghuni yang diizinkan untuk mengirim pesan ke konferensi"}.
+{"Only occupants are allowed to send queries to the conference","Hanya penghuni diizinkan untuk mengirim permintaan ke konferensi"}.
+{"Only service administrators are allowed to send service messages","Layanan hanya diperuntukan kepada administrator yang diizinkan untuk mengirim layanan pesan"}.
 {"Options","Pilihan-pilihan"}.
 {"Organization Name","Nama Organisasi"}.
 {"Organization Unit","Unit Organisasi"}.
 {"Outgoing s2s Connections","Koneksi Keluar s2s"}.
 {"Outgoing s2s Connections:","Koneksi s2s yang keluar:"}.
-{"Outgoing s2s Servers:","Layanan s2s yang keluar:"}.
+{"Owner privileges required","Hak istimewa owner dibutuhkan"}.
 {"Packet","Paket"}.
 {"Password ~b","Kata Sandi ~b"}.
 {"Password:","Kata Sandi:"}.
@@ -240,10 +254,12 @@
 {"Publish-Subscribe","Setujui-Pertemanan"}.
 {"PubSub subscriber request","Permintaan pertemanan PubSub"}.
 {"Purge all items when the relevant publisher goes offline","Bersihkan semua item ketika penerbit yang relevan telah offline"}.
+{"Queries to the conference members are not allowed in this room","Permintaan untuk para anggota konferensi tidak diperbolehkan di ruangan ini"}.
 {"RAM and disc copy","RAM dan disc salinan"}.
 {"RAM copy","Salinan RAM"}.
 {"Raw","mentah"}.
 {"Really delete message of the day?","Benar-benar ingin menghapus pesan harian?"}.
+{"Recipient is not in the conference room","Penerima tidak berada di ruangan konferensi"}.
 {"Register a Jabber account","Daftarkan sebuah akun jabber"}.
 {"Registered Users:","Pengguna Terdaftar:"}.
 {"Registered Users","Pengguna Terdaftar"}.
@@ -263,6 +279,7 @@
 {"Restore","Mengembalikan"}.
 {"Restore plain text backup immediately:","Segera mengembalikan cadangan teks biasa:"}.
 {"Room Configuration","Konfigurasi Ruangan"}.
+{"Room creation is denied by service policy","Pembuatan Ruangan ditolak oleh kebijakan layanan"}.
 {"Room description","Keterangan ruangan"}.
 {"Room Occupants","Penghuni Ruangan"}.
 {"Room title","Nama Ruangan"}.
@@ -291,7 +308,7 @@
 {"Show Ordinary Table","Tampilkan Tabel Normal"}.
 {"Shut Down Service","Shut Down Layanan"}.
 {"~s invites you to the room ~s","~s mengundang anda ke ruangan ~s"}.
-{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Beberapa klien Jabber dapat menyimpan password di komputer Anda. Gunakan fitur itu hanya jika Anda mempercayai komputer Anda aman."}.
+{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Beberapa klien Jabber dapat menyimpan password di komputer Anda. Gunakan fitur itu hanya jika Anda mempercayai komputer Anda aman."}.
 {"Specify the access model","Tentukan model akses"}.
 {"Specify the event message type","Tentukan jenis acara pesan"}.
 {"Specify the publisher model","Tentukan model penerbitan"}.
@@ -314,9 +331,13 @@
 {"Subscriber Address","Alamat Pertemanan"}.
 {"Subscription","Berlangganan"}.
 {"Sunday","Minggu"}.
+{"That nickname is already in use by another occupant","Julukan itu sudah digunakan oleh penghuni lain"}.
+{"That nickname is registered by another person","Julukan tersebut telah didaftarkan oleh orang lain"}.
 {"The CAPTCHA is valid.","Captcha ini benar."}.
+{"The CAPTCHA verification has failed","Verifikasi CAPTCHA telah gagal"}.
 {"The collections with which a node is affiliated","Koleksi dengan yang berafiliasi dengan sebuah node"}.
 {"the password is","kata sandi yaitu:"}.
+{"The password is too weak","Kata sandi terlalu lemah"}.
 {"The password of your Jabber account was successfully changed.","Kata sandi pada akun Jabber Anda telah berhasil diubah."}.
 {"There was an error changing the password: ","Ada kesalahan dalam mengubah password:"}.
 {"There was an error creating the account: ","Ada kesalahan saat membuat akun:"}.
@@ -329,11 +350,13 @@
 {"Time","Waktu"}.
 {"To","Kepada"}.
 {"To ~s","Kepada ~s"}.
+{"Traffic rate limit is exceeded","Lalu lintas melebihi batas"}.
 {"Transactions Aborted:","Transaksi yang dibatalkan:"}.
 {"Transactions Committed:","Transaksi yang dilakukan:"}.
 {"Transactions Logged:","Transaksi yang ditempuh:"}.
 {"Transactions Restarted:","Transaksi yang dijalankan ulang:"}.
 {"Tuesday","Selasa"}.
+{"Unable to generate a CAPTCHA","Tidak dapat menghasilkan CAPTCHA"}.
 {"Unauthorized","Ditolak"}.
 {"Unregister a Jabber account","Nonaktifkan akun jabber"}.
 {"Unregister","Nonaktifkan"}.
@@ -347,20 +370,27 @@
 {"User Management","Manajemen Pengguna"}.
 {"Username:","Nama Pengguna:"}.
 {"User","Pengguna"}.
+{"Users are not allowed to register accounts so quickly","Pengguna tidak diperkenankan untuk mendaftar akun begitu cepat"}.
 {"Users Last Activity","Aktifitas terakhir para pengguna"}.
 {"Users","Pengguna"}.
 {"Validate","Mengesahkan"}.
 {"vCard User Search","vCard Pencarian Pengguna"}.
 {"Virtual Hosts","Virtual Hosts"}.
+{"Visitors are not allowed to change their nicknames in this room","Visitor tidak diperbolehkan untuk mengubah nama julukan di ruangan ini"}.
+{"Visitors are not allowed to send messages to all occupants","Visitor tidak diperbolehkan untuk mengirim pesan ke semua penghuni"}.
 {"Wednesday","Rabu"}.
 {"When to send the last published item","Ketika untuk mengirim item terakhir yang dipublikasikan"}.
 {"Whether to allow subscriptions","Apakah diperbolehkan untuk berlangganan"}.
 {"You can later change your password using a Jabber client.","Anda dapat mengubah kata sandi anda dilain waktu dengan menggunakan klien Jabber."}.
+{"You have been banned from this room","Anda telah diblokir dari ruangan ini"}.
+{"You must fill in field \"Nickname\" in the form","Anda harus mengisi kolom \"Julukan\" dalam formulir"}.
 {"You need a client that supports x:data and CAPTCHA to register","Anda memerlukan klien yang mendukung x:data dan CAPTCHA untuk mendaftar"}.
 {"You need a client that supports x:data to register the nickname","Anda memerlukan klien yang mendukung x:data untuk mendaftar julukan"}.
 {"You need an x:data capable client to configure mod_irc settings","Anda memerlukan x:data klien untuk mampu mengkonfigurasi pengaturan mod_irc"}.
 {"You need an x:data capable client to configure room","Anda memerlukan x:data klien untuk dapat mengkonfigurasi ruangan"}.
 {"You need an x:data capable client to search","Anda memerlukan x:data klien untuk melakukan pencarian"}.
+{"Your active privacy list has denied the routing of this stanza.","Daftar privasi aktif Anda telah menolak routing ztanza ini"}.
+{"Your contact offline message queue is full. The message has been discarded.","Kontak offline Anda pada antrian pesan sudah penuh. Pesan telah dibuang."}.
 {"Your Jabber account was successfully created.","Jabber akun Anda telah sukses dibuat"}.
 {"Your Jabber account was successfully deleted.","Jabber akun Anda berhasil dihapus."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Pesan Anda untuk ~s sedang diblokir. Untuk membuka blokir tersebut, kunjungi ~s"}.

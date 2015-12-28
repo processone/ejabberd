@@ -3,6 +3,7 @@
 {"Access Control List Configuration","Configuració de la Llista de Control d'Accés"}.
 {"Access Control Lists","Llista de Control d'Accés"}.
 {"Access control lists","Llistes de Control de Accés"}.
+{"Access denied by service policy","Accés denegat per la política del servei"}.
 {"Access rules","Regles d'accés"}.
 {"Access Rules","Regles d'Accés"}.
 {"Action on user","Acció en l'usuari"}.
@@ -11,6 +12,7 @@
 {"Add User","Afegir usuari"}.
 {"Administration","Administració"}.
 {"Administration of ","Administració de "}.
+{"Administrator privileges required","Es necessita tenir privilegis d'administrador"}.
 {"A friendly name for the node","Un nom per al node"}.
 {"All activity","Tota l'activitat"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Permetre que aquesta Jabber ID es puga subscriure a aquest node pubsub"}.
@@ -25,6 +27,7 @@
 {"All Users","Tots els usuaris"}.
 {"Announcements","Anuncis"}.
 {"anyone","qualsevol"}.
+{"A password is required to enter this room","Es necessita contrasenya per a entrar en aquesta sala"}.
 {"April","Abril"}.
 {"August","Agost"}.
 {"Backup","Guardar còpia de seguretat"}.
@@ -49,6 +52,7 @@
 {"Choose whether to approve this entity's subscription.","Tria si aprova aquesta entitat de subscripció"}.
 {"City","Ciutat"}.
 {"Commands","Comandaments"}.
+{"Conference room does not exist","La sala de conferències no existeix"}.
 {"Configuration","Configuració"}.
 {"Configuration of room ~s","Configuració de la sala ~s"}.
 {"Connected Resources:","Recursos connectats:"}.
@@ -103,6 +107,7 @@
 {"Export all tables as SQL queries to a file:","Exporta totes les taules a un fitxer SQL:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportar dades de tots els usuaris del servidor a arxius PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportar dades d'usuaris d'un host a arxius PIEFXIS (XEP-0227):"}.
+{"Failed to extract JID from your voice request approval","No s'ha pogut extraure el JID de la teva aprovació de petició de veu"}.
 {"Family Name","Cognom"}.
 {"February","Febrer"}.
 {"Fill in fields to search for any matching Jabber User","Emplena camps per a buscar usuaris Jabber que concorden"}.
@@ -136,6 +141,8 @@
 {"Import users data from jabberd14 spool directory:","Importar dades d'usuaris del directori de spool de jabberd14:"}.
 {"Import Users from Dir at ","Importar usuaris des del directori en "}.
 {"Import Users From jabberd14 Spool Files","Importar usuaris de jabberd14"}.
+{"Improper message type","Tipus de missatge incorrecte"}.
+{"Incorrect password","Contrasenya incorrecta"}.
 {"Invalid affiliation: ~s","Afiliació invàlida: ~s"}.
 {"Invalid role: ~s","Rol invàlid: ~s"}.
 {"IP addresses","Adreça IP"}.
@@ -147,6 +154,9 @@
 {"IRC username","Nom d'usuari al IRC"}.
 {"IRC Username","Nom d'usuari al IRC"}.
 {"is now known as","ara es conegut com"}.
+{"It is not allowed to send private messages","No està permés enviar missatges privats"}.
+{"It is not allowed to send private messages of type \"groupchat\"","No està permés enviar missatges del tipus \"groupchat\""}.
+{"It is not allowed to send private messages to the conference","No està permès l'enviament de missatges privats a la sala"}.
 {"Jabber Account Registration","Registre de compte Jabber"}.
 {"Jabber ID","ID Jabber"}.
 {"Jabber ID ~s is invalid","El Jabber ID ~s no és vàlid"}.
@@ -179,12 +189,14 @@
 {"Max # of items to persist","Màxim # d'elements que persistixen"}.
 {"Max payload size in bytes","Màxim tamany del payload en bytes"}.
 {"May","Maig"}.
+{"Membership is required to enter this room","Necessites ser membre d'aquesta sala per a poder entrar"}.
 {"Members:","Membre:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Memoritza la teva contrasenya, o escriu-la en un paper guardat a un lloc segur.A Jabber no hi ha una forma automatitzada de recuperar la teva contrasenya si la oblides."}.
 {"Memory","Memòria"}.
 {"Message body","Missatge"}.
 {"Middle Name","Segon nom"}.
 {"Minimum interval between voice requests (in seconds)","Interval mínim entre peticions de veu (en segons)"}.
+{"Moderator privileges required","Es necessita tenir privilegis de moderador"}.
 {"moderators only","només moderadors"}.
 {"Modified modules","Mòduls modificats"}.
 {"Module","Mòdul"}.
@@ -229,12 +241,16 @@
 {"Only deliver notifications to available users","Sols enviar notificacions als usuaris disponibles"}.
 {"Only moderators and participants are allowed to change the subject in this room","Només els moderadors i participants poden canviar l'assumpte d'aquesta sala"}.
 {"Only moderators are allowed to change the subject in this room","Només els moderadors poden canviar l'assumpte d'aquesta sala"}.
+{"Only moderators can approve voice requests","Només els moderadors poden aprovar les peticions de veu"}.
+{"Only occupants are allowed to send messages to the conference","Sols els ocupants poden enviar missatges a la sala"}.
+{"Only occupants are allowed to send queries to the conference","Sols els ocupants poden enviar sol·licituds a la sala"}.
+{"Only service administrators are allowed to send service messages","Sols els administradors del servei tenen permís per a enviar missatges de servei"}.
 {"Options","Opcions"}.
 {"Organization Name","Nom de la organizació"}.
 {"Organization Unit","Unitat de la organizació"}.
 {"Outgoing s2s Connections:","Connexions d'eixida s2s"}.
 {"Outgoing s2s Connections","Connexions s2s d'eixida"}.
-{"Outgoing s2s Servers:","Servidors d'eixida de s2s"}.
+{"Owner privileges required","Es requerixen privilegis de propietari de la sala"}.
 {"Packet","Paquet"}.
 {"Password ~b","Contrasenya ~b"}.
 {"Password:","Contrasenya:"}.
@@ -249,6 +265,7 @@
 {"Persist items to storage","Persistir elements al guardar"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Recorda que aquestes opcions només fan còpia de seguretat de la base de dades Mnesia. Si estàs utilitzant el mòdul d'ODBC també deus de fer una còpia de seguretat de la base de dades de SQL a part."}.
+{"Please, wait for a while before sending new voice request","Si us plau, espera una mica abans d'enviar una nova petició de veu"}.
 {"Pong","Pong"}.
 {"Port ~b","Port ~b"}.
 {"Port","Port"}.
@@ -258,10 +275,12 @@
 {"Publish-Subscribe","Publicar-subscriure't"}.
 {"PubSub subscriber request","Petició de subscriptor PubSub"}.
 {"Purge all items when the relevant publisher goes offline","Eliminar tots els elements quan el publicant relevant es desconnecti"}.
+{"Queries to the conference members are not allowed in this room"," En aquesta sala no es permeten sol·licituds als membres de la conferència"}.
 {"RAM and disc copy","Còpia en RAM i disc"}.
 {"RAM copy","Còpia en RAM"}.
 {"Raw","en format text"}.
 {"Really delete message of the day?","Segur que vols eliminar el missatge del dia?"}.
+{"Recipient is not in the conference room","El receptor no està en la sala de conferència"}.
 {"Register a Jabber account","Registrar un compte Jabber"}.
 {"Registered nicknames","Sobrenoms registrats"}.
 {"Registered Users:","Usuaris registrats:"}.
@@ -282,6 +301,7 @@
 {"Restore plain text backup immediately:","Restaurar una còpia de seguretat en format de text pla ara mateix:"}.
 {"Restore","Restaurar"}.
 {"Room Configuration","Configuració de la sala"}.
+{"Room creation is denied by service policy","Se t'ha denegat el crear la sala per política del servei"}.
 {"Room description","Descripció de la sala:"}.
 {"Room Occupants","Nombre d'ocupants"}.
 {"Room title","Títol de la sala"}.
@@ -310,7 +330,7 @@
 {"Show Ordinary Table","Mostrar Taula Ordinaria"}.
 {"Shut Down Service","Apager el Servei"}.
 {"~s invites you to the room ~s","~s et convida a la sala ~s"}.
-{"Some Jabber clients can store your password in your computer. Use that feature only if you trust your computer is safe.","Alguns clients Jabber poden emmagatzemar la teva contrasenya al teu ordinador. Fes servir aquesta característica només si saps que el teu ordinador és segur."}.
+{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clients Jabber poden emmagatzemar la teva contrasenya al teu ordinador. Fes servir aquesta característica només si saps que el teu ordinador és segur."}.
 {"Specify the access model","Especificar el model d'accés"}.
 {"Specify the event message type","Especifica el tipus de missatge d'event"}.
 {"Specify the publisher model","Especificar el model del publicant"}.
@@ -333,9 +353,13 @@
 {"Subscriber Address","Adreça del Subscriptor"}.
 {"Subscription","Subscripció"}.
 {"Sunday","Diumenge"}.
+{"That nickname is already in use by another occupant","El Nickname està siguent utilitzat per una altra persona"}.
+{"That nickname is registered by another person","El nickname ja està registrat per una altra persona"}.
 {"The CAPTCHA is valid.","El CAPTCHA es vàlid."}.
+{"The CAPTCHA verification has failed","La verificació CAPTCHA ha fallat"}.
 {"The collections with which a node is affiliated","Les col.leccions amb les que un node està afiliat"}.
 {"the password is","la contrasenya és"}.
+{"The password is too weak","La contrasenya és massa simple"}.
 {"The password of your Jabber account was successfully changed.","La contrasenya del teu compte Jabber s'ha canviat correctament."}.
 {"There was an error changing the password: ","Hi ha hagut un error canviant la contrasenya: "}.
 {"There was an error creating the account: ","Hi ha hagut un error creant el compte: "}.
@@ -347,16 +371,19 @@
 {"Thursday","Dijous"}.
 {"Time","Data"}.
 {"Time delay","Temps de retard"}.
+{"Too many CAPTCHA requests","Massa peticions de CAPTCHA"}.
 {"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Massa autenticacions (~p) han fallat des d'aquesta adreça IP (~s). L'adreça serà desbloquejada en ~s UTC"}.
 {"Too many unacked stanzas","Massa missatges sense haver reconegut la seva recepció"}.
 {"To","Per a"}.
 {"To ~s","A ~s"}.
 {"Total rooms","Nombre total de sales"}.
+{"Traffic rate limit is exceeded","El llímit de tràfic ha sigut sobrepassat"}.
 {"Transactions Aborted:","Transaccions Avortades"}.
 {"Transactions Committed:","Transaccions Realitzades:"}.
 {"Transactions Logged:","Transaccions registrades"}.
 {"Transactions Restarted:","Transaccions reiniciades"}.
 {"Tuesday","Dimarts"}.
+{"Unable to generate a CAPTCHA","No s'ha pogut generar un CAPTCHA"}.
 {"Unauthorized","No autoritzat"}.
 {"Unregister a Jabber account","Anul·lar el registre d'un compte Jabber"}.
 {"Unregister","Anul·lar el registre"}.
@@ -371,6 +398,7 @@
 {"User JID","JID del usuari "}.
 {"User Management","Gestió d'Usuaris"}.
 {"Username:","Nom d'usuari:"}.
+{"Users are not allowed to register accounts so quickly","Els usuaris no tenen permís per a crear comptes tan depresa"}.
 {"Users Last Activity","Última activitat d'usuari"}.
 {"User ~s","Usuari  ~s"}.
 {"Users","Usuaris"}.
@@ -378,16 +406,23 @@
 {"Validate","Validar"}.
 {"vCard User Search","Recerca de vCard d'usuari"}.
 {"Virtual Hosts","Hosts virtuals"}.
+{"Visitors are not allowed to change their nicknames in this room","Els visitants no tenen permés canviar el seus Nicknames en esta sala"}.
+{"Visitors are not allowed to send messages to all occupants","Els visitants no poden enviar missatges a tots els ocupants"}.
 {"Voice request","Petició de veu"}.
+{"Voice requests are disabled in this conference","Les peticions de veu es troben desactivades en aquesta conferència"}.
 {"Wednesday","Dimecres"}.
 {"When to send the last published item","Quan s'ha enviat l'última publicació"}.
 {"Whether to allow subscriptions","Permetre subscripcions"}.
 {"You can later change your password using a Jabber client.","Podràs canviar la teva contrasenya més endavant utilitzant un client Jabber."}.
+{"You have been banned from this room","Has sigut bloquejat en aquesta sala"}.
+{"You must fill in field \"Nickname\" in the form","Deus d'omplir el camp \"Nickname\" al formulari"}.
 {"You need a client that supports x:data and CAPTCHA to register","Necessites un client amb suport x:data i de CAPTCHA para poder registrar-te"}.
 {"You need a client that supports x:data to register the nickname","Necessites un client amb suport x:data per a poder registrar el sobrenom"}.
 {"You need an x:data capable client to configure mod_irc settings","Necessites un client amb suport x:data per a configurar les opcions de mod_irc"}.
 {"You need an x:data capable client to configure room","Necessites un client amb suport x:data per a configurar la sala"}.
 {"You need an x:data capable client to search","Necessites un client amb suport x:data per a poder buscar"}.
+{"Your active privacy list has denied the routing of this stanza.","La teva llista de privacitat activa ha denegat l'encaminament d'aquesta stanza."}.
+{"Your contact offline message queue is full. The message has been discarded.","La cua de missatges offline és plena. El missatge ha sigut descartat"}.
 {"Your Jabber account was successfully created.","El teu compte Jabber ha sigut creat correctament."}.
 {"Your Jabber account was successfully deleted.","El teu compte Jabber ha sigut esborrat correctament."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Els teus missatges per ~s s'estan bloquejant. Per desbloquejar-los, visita ~s"}.

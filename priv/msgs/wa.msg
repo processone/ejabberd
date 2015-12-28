@@ -3,6 +3,7 @@
 {"Access Control List Configuration","Apontiaedje des droets (ACL)"}.
 {"Access control lists","Droets (ACL)"}.
 {"Access Control Lists","Droets (ACL)"}.
+{"Access denied by service policy","L' accès a stî rfuzé pal politike do siervice"}.
 {"Access rules","Rîles d' accès"}.
 {"Access Rules","Rîles d' accès"}.
 {"Action on user","Accion so l' uzeu"}.
@@ -11,6 +12,7 @@
 {"Add User","Radjouter èn uzeu"}.
 {"Administration","Manaedjaedje"}.
 {"Administration of ","Manaedjaedje di "}.
+{"Administrator privileges required","I fåt des priviledjes di manaedjeu"}.
 {"A friendly name for the node","On no uzeu-ahessåve pol nuk"}.
 {"All activity","Dispoy todi"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Permete ki ci Jabber ID ci si poye abouner a ç' nuk eplaidaedje-abounmint ci?"}.
@@ -39,6 +41,7 @@
 {"Choose whether to approve this entity's subscription.","Tchoezi s' i fåt aprover ou nén l' abounmint di ciste intité."}.
 {"City","Veye"}.
 {"Commands","Comandes"}.
+{"Conference room does not exist","Li såle di conferince n' egzistêye nén"}.
 {"Configuration","Apontiaedjes"}.
 {"Connected Resources:","Raloyî avou les rsoûces:"}.
 {"Country","Payis"}.
@@ -102,12 +105,17 @@
 {"Import User from File at ","Sititchî uzeu d' on fitchî so "}.
 {"Import Users from Dir at ","Sitichî des uzeus d' on ridant so "}.
 {"Import Users From jabberd14 Spool Files","Sititchî des uzeus Jabberd 1.4"}.
+{"Improper message type","Sôre di messaedje nén valide"}.
+{"Incorrect password","Sicret nén corek"}.
 {"Invalid affiliation: ~s","Afiyaedje nén valide: ~s"}.
 {"Invalid role: ~s","Role nén valide: ~s"}.
 {"IP addresses","Adresses IP"}.
 {"IRC Transport","Transpoirt IRC"}.
 {"IRC Username","No d' uzeu IRC"}.
 {"is now known as","est asteure kinoxhou come"}.
+{"It is not allowed to send private messages","Ci n' est nén permetou d' evoyî des messaedjes privés"}.
+{"It is not allowed to send private messages of type \"groupchat\"","C' est nén possibe d' evoyî des messaedjes privés del sôre «groupchat»"}.
+{"It is not allowed to send private messages to the conference","On n' pout nén evoyî des messaedjes privés dins cisse conferince ci"}.
 {"Jabber ID","ID Jabber"}.
 {"Jabber ID ~s is invalid","Li Jabber ID ~s n' est nén valide"}.
 {"January","djanvî"}.
@@ -138,6 +146,7 @@
 {"Memory","Memwere"}.
 {"Message body","Coir do messaedje"}.
 {"Middle Name","No do mitan"}.
+{"Moderator privileges required","I fåt des priviledjes di moderateu"}.
 {"moderators only","les moderateus seulmint"}.
 {"Module","Module"}.
 {"Modules","Modules"}.
@@ -171,12 +180,15 @@
 {"Online Users:","Uzeus raloyîs:"}.
 {"Online Users","Uzeus raloyîs"}.
 {"Only deliver notifications to available users","Seulmint evoyî des notifiaedje åzès uzeus disponibes"}.
+{"Only occupants are allowed to send messages to the conference","Seulmint les prezints polèt evoyî des messaedjes al conferince"}.
+{"Only occupants are allowed to send queries to the conference","Seulmint les prezints polèt evoyî des cweraedjes sol conferince"}.
+{"Only service administrators are allowed to send service messages","Seulmint les manaedjeus d' siervices polèt evoyî des messaedjes di siervice"}.
 {"Options","Tchuzes"}.
 {"Organization Name","No d' l' organizåcion"}.
 {"Organization Unit","Unité d' l' organizåcion"}.
 {"Outgoing s2s Connections:","Raloyaedjes s2s e rexhowe:"}.
 {"Outgoing s2s Connections","Raloyaedjes s2s e rexhowe"}.
-{"Outgoing s2s Servers:","Sierveus s2s e rexhowe:"}.
+{"Owner privileges required","I fåt des priviledjes di prôpietaire"}.
 {"Packet","Paket"}.
 {"Password:","Sicret:"}.
 {"Password","Sicret"}.
@@ -193,10 +205,12 @@
 {"private, ","privé, "}.
 {"Publish-Subscribe","Eplaidaedje-abounmint"}.
 {"PubSub subscriber request","Dimande d' eplaidaedje-abounmint d' èn abouné"}.
+{"Queries to the conference members are not allowed in this room","Les cweraedjes des mimbes del conferince ni sont nén permetous dins cisse såle ci"}.
 {"RAM and disc copy","Copeye e memwere (RAM) et sol deure plake"}.
 {"RAM copy","Copeye e memwere (RAM)"}.
 {"Raw","Dinêyes brutes"}.
 {"Really delete message of the day?","Voloz vs vormint disfacer l' messaedje do djoû?"}.
+{"Recipient is not in the conference room","Li riçuveu n' est nén dins l' såle di conferince"}.
 {"Registered Users:","Uzeus edjistrés:"}.
 {"Registered Users","Uzeus edjistrés"}.
 {"Registration in mod_irc for ","Edjîstraedje dins mod_irc po "}.
@@ -213,6 +227,7 @@
 {"Restore plain text backup immediately:","Rapexhî do côp foû d' ene copeye di såvrité tecse:"}.
 {"Restore","Rapexhî"}.
 {"Room Configuration","Apontiaedje del såle"}.
+{"Room creation is denied by service policy","L' ahivaedje del såle est rfuzé pal politike do siervice"}.
 {"Room title","Tite del såle"}.
 {"Roster","Djivêye des soçons"}.
 {"Roster groups allowed to subscribe","Pårtaedjîs groupes di soçons k' on s' î pout abouner"}.
@@ -264,6 +279,7 @@
 {"Time delay","Tårdjaedje"}.
 {"To","Po"}.
 {"To ~s","Viè ~s"}.
+{"Traffic rate limit is exceeded","Li limite pol volume di trafik a stî passêye"}.
 {"Transactions Aborted:","Transaccions arestêyes:"}.
 {"Transactions Committed:","Transaccions evoyeyes:"}.
 {"Transactions Logged:","Transaccions wårdêyes e djournå:"}.
@@ -283,9 +299,14 @@
 {"Validate","Valider"}.
 {"vCard User Search","Calpin des uzeus"}.
 {"Virtual Hosts","Forveyous sierveus"}.
+{"Visitors are not allowed to change their nicknames in this room","Les viziteus èn polèt nén candjî leus metous no po ç' såle ci"}.
+{"Visitors are not allowed to send messages to all occupants","Les viziteus n' polèt nén evoyî des messaedjes a tos les prezints"}.
 {"Wednesday","mierkidi"}.
 {"When to send the last published item","Cwand evoyî l' dierin cayet eplaidî"}.
 {"Whether to allow subscriptions","Si on permete les abounmints"}.
+{"You have been banned from this room","Vos avoz stî bani di cisse såle ci"}.
+{"You must fill in field \"Nickname\" in the form","Vos dvoz rimpli l' tchamp «Metou no» dins l' formiulaire"}.
 {"You need an x:data capable client to configure mod_irc settings","Vos avoz mezåjhe d' on cliyint ki sopoite x:data po candjî ls apontiaedjes di mod_irc"}.
 {"You need an x:data capable client to configure room","I vs fåt on cliyint ki sopoite x:data por vos poleur apontyî l' såle"}.
 {"You need an x:data capable client to search","Vos avoz mezåjhe d' on cliyint ki sopoite x:data po fé on cweraedje"}.
+{"Your contact offline message queue is full. The message has been discarded.","Li cawêye di messaedjes e môde disraloyî di vosse soçon est plinne. Li messaedje a stî tapé å diale."}.
