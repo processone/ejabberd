@@ -303,7 +303,7 @@ commands() ->
 			desc = "Set multiple contents in a vCard subfield",
 			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = set_vcard,
-			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}, {contents, {list, binary}}],
+			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}, {contents, {list, {value, binary}}}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = add_rosteritem, tags = [roster],
