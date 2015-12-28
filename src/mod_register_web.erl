@@ -250,8 +250,8 @@ form_new_get(Host, Lang, IP) ->
 					"a Jabber client.">>),
 				 ?XCT(<<"li">>,
 				      <<"Some Jabber clients can store your password "
-					"in your computer. Use that feature only "
-					"if you trust your computer is safe.">>),
+					"in the computer, but you should do this only "
+					"in your personal computer for safety reasons.">>),
 				 ?XCT(<<"li">>,
 				      <<"Memorize your password, or write it "
 					"in a paper placed in a safe place. In "
