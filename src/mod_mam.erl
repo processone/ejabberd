@@ -166,7 +166,7 @@ user_receive_packet(Pkt, C2SState, JID, Peer, To) ->
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
     IsBareCopy = is_bare_copy(JID, To),
-    case should_archive(Pkt) of
+    case should_archive(Pkt, LServer) of
 	true when not IsBareCopy ->
 	    NewPkt = strip_my_archived_tag(Pkt, LServer),
 	    case store_msg(C2SState, NewPkt, LUser, LServer, Peer, recv) of
@@ -191,7 +191,7 @@ user_receive_packet(Pkt, C2SState, JID, Peer, To) ->
 user_send_packet(Pkt, C2SState, JID, Peer) ->
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
-    case should_archive(Pkt) of
+    case should_archive(Pkt, LServer) of
 	true ->
 	    NewPkt = strip_my_archived_tag(Pkt, LServer),
 	    store_msg(C2SState, jlib:replace_from_to(JID, Peer, NewPkt),
@@ -385,14 +385,14 @@ process_iq(LServer, From, To, IQ, SubEl, Fs, MsgType) ->
 			    With, RSM, IQ, MsgType)
     end.
 
-should_archive(#xmlel{name = <<"message">>} = Pkt) ->
+should_archive(#xmlel{name = <<"message">>} = Pkt, LServer) ->
     case xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs) of
 	<<"error">> ->
 	    false;
 	<<"groupchat">> ->
 	    false;
 	_ ->
-	    case is_resent(Pkt) of
+	    case is_resent(Pkt, LServer) of
 		true ->
 		    false;
 		false ->
@@ -412,7 +412,7 @@ should_archive(#xmlel{name = <<"message">>} = Pkt) ->
 		    end
 	    end
     end;
-should_archive(#xmlel{}) ->
+should_archive(#xmlel{}, _LServer) ->
     false.
 
 strip_my_archived_tag(Pkt, LServer) ->
@@ -492,12 +492,17 @@ has_no_store_hint(Message) ->
     xml:get_subtag_with_xmlns(Message, <<"no-permanent-storage">>, ?NS_HINTS)
       /= false.
 
-is_resent(Pkt) ->
-    case xml:get_subtag_cdata(Pkt, <<"delay">>) of
-	<<>> ->
-	    false;
-	Desc ->
-	    binary:match(Desc, <<"Resent">>) =/= nomatch
+is_resent(Pkt, LServer) ->
+    case xml:get_subtag_with_xmlns(Pkt, <<"stanza-id">>, ?NS_SID_0) of
+	#xmlel{attrs = Attrs} ->
+	    case xml:get_attr(<<"by">>, Attrs) of
+		{value, LServer} ->
+		    true;
+		_ ->
+		    false
+	    end;
+	false ->
+	    false
     end.
 
 store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
