@@ -1314,7 +1314,7 @@ get_error_condition2(Packet) ->
     {condition, Condition}.
 
 make_reason(Packet, From, StateData, Reason1) ->
-    {ok, #user{nick = FromNick}} = (?DICT):find(jlib:jid_tolower(From), StateData#state.users),
+    {ok, #user{nick = FromNick}} = (?DICT):find(jid:tolower(From), StateData#state.users),
     Condition = get_error_condition(Packet),
     iolist_to_binary(io_lib:format(Reason1, [FromNick, Condition])).
 
