@@ -46,7 +46,7 @@
 	 private_get/4, private_set/3, srg_create/5,
 	 srg_delete/2, srg_list/1, srg_get_info/2,
 	 srg_get_members/2, srg_user_add/4, srg_user_del/4,
-	 send_message/5, send_stanza_c2s/4, privacy_set/3,
+	 send_message/5, send_stanza/3, send_stanza_c2s/4, privacy_set/3,
 	 stats/1, stats/2, mod_opt_type/1]).
 
 
@@ -477,6 +477,11 @@ commands() ->
 			desc = "Send a stanza as if sent from a c2s session",
 			module = ?MODULE, function = send_stanza_c2s,
 			args = [{user, binary}, {host, binary}, {resource, binary}, {stanza, binary}],
+			result = {res, rescode}},
+     #ejabberd_commands{name = send_stanza, tags = [stanza],
+			desc = "Send a stanza; provide From JID and valid To JID",
+			module = ?MODULE, function = send_stanza,
+			args = [{from, binary}, {to, binary}, {stanza, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = privacy_set, tags = [stanza],
 			desc = "Send a IQ set privacy stanza for a local account",
@@ -1326,6 +1331,12 @@ build_packet(Type, Subject, Body) ->
      [{<<"type">>, Type}, {<<"id">>, randoms:get_string()}],
      [{xmlel, <<"body">>, [], [{xmlcdata, Body}]} | Tail]
     }.
+
+send_stanza(FromString, ToString, Data) ->
+    Stanza = {xmlel, _, _, _} = xml_stream:parse_element(Data),
+    From = jlib:string_to_jid(FromString),
+    To = jlib:string_to_jid(ToString),
+    ejabberd_router:route(From, To, Stanza).
 
 send_stanza_c2s(Username, Host, Resource, Stanza) ->
     C2sPid = ejabberd_sm:get_session_pid(Username, Host, Resource),
