@@ -1334,8 +1334,8 @@ build_packet(Type, Subject, Body) ->
 
 send_stanza(FromString, ToString, Data) ->
     Stanza = {xmlel, _, _, _} = xml_stream:parse_element(Data),
-    From = jlib:string_to_jid(FromString),
-    To = jlib:string_to_jid(ToString),
+    From = jid:from_string(FromString),
+    To = jid:from_string(ToString),
     ejabberd_router:route(From, To, Stanza).
 
 send_stanza_c2s(Username, Host, Resource, Stanza) ->
