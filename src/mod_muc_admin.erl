@@ -797,6 +797,7 @@ change_option(Option, Value, Config) ->
 	captcha_protected -> Config#config{captcha_protected = Value};
 	description -> Config#config{description = Value};
 	logging -> Config#config{logging = Value};
+	mam -> Config#config{mam = Value};
 	max_users -> Config#config{max_users = Value};
 	members_by_default -> Config#config{members_by_default = Value};
 	members_only -> Config#config{members_only = Value};
