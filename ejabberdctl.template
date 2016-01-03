@@ -167,7 +167,6 @@ start()
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
       -noinput -detached \
-      -pa $EJABBERD_EBIN_PATH \
       $MNESIA_OPTS \
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
@@ -207,7 +206,6 @@ live()
     livewarning
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
-      -pa $EJABBERD_EBIN_PATH \
       $MNESIA_OPTS \
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
@@ -221,7 +219,6 @@ iexlive()
     livewarning
     $EXEC_CMD "$IEX \
       $IEXNAME $ERLANG_NODE \
-      -pa $EJABBERD_EBIN_PATH \
       --erl \"-mnesia dir \\\"$SPOOL_DIR\\\"\" \
       --erl \"$KERNEL_OPTS\" \
       --erl \"$EJABBERD_OPTS\" \
@@ -236,7 +233,6 @@ foreground()
     $EXEC_CMD "$ERL \
       $NAME $ERLANG_NODE \
       -noinput \
-      -pa $EJABBERD_EBIN_PATH \
       $MNESIA_OPTS \
       $KERNEL_OPTS \
       $EJABBERD_OPTS \
@@ -306,7 +302,6 @@ ping()
     $EXEC_CMD "$ERL \
       $NAME ping-${TTY}-${ERLANG_NODE} \
       -hidden \
-      -pa $EJABBERD_EBIN_PATH \
       $KERNEL_OPTS $ERLANG_OPTS \
       -eval 'io:format(\"~p~n\",[net_adm:ping($1)])' \
       -s erlang halt -output text -noinput"
@@ -417,7 +412,6 @@ ctlexec()
       $NAME ${CONN_NAME} \
       -noinput \
       -hidden \
-      -pa $EJABBERD_EBIN_PATH \
       $KERNEL_OPTS \
       -s ejabberd_ctl -extra $ERLANG_NODE $EJABBERD_NO_TIMEOUT $COMMAND"
 }
