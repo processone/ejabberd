@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # define default configuration
 POLL=true
@@ -42,9 +42,9 @@ else
 fi
 
 # parse command line parameters
-ARGS=""
+declare -a ARGS=()
 while [ $# -ne 0 ] ; do
-    PARAM=$1
+    PARAM="$1"
     shift
     case $PARAM in
         --) break ;;
@@ -55,7 +55,7 @@ while [ $# -ne 0 ] ; do
         --ctl-config) EJABBERDCTL_CONFIG_PATH="$1" ; shift ;;
         --logs) LOGS_DIR="$1" ; shift ;;
         --spool) SPOOL_DIR="$1" ; shift ;;
-        *) ARGS="$ARGS $PARAM" ;;
+        *) ARGS=("${ARGS[@]}" "$PARAM") ;;
     esac
 done
 
@@ -160,18 +160,27 @@ export CONTRIB_MODULES_PATH
 export CONTRIB_MODULES_CONF_DIR
 export ERL_LIBS
 
+shell_escape()
+{
+    local RES=()
+    for i in "$@"; do
+        printf '%q ' "$i"
+    done
+}
+
 # start server
 start()
 {
     check_start
-    $EXEC_CMD "$ERL \
-      $NAME $ERLANG_NODE \
-      -noinput -detached \
-      $MNESIA_OPTS \
-      $KERNEL_OPTS \
-      $EJABBERD_OPTS \
-      -s ejabberd \
-      $ERLANG_OPTS $ARGS \"$@\""
+    CMD="`shell_escape \"$ERL\" \"$NAME\" \"$ERLANG_NODE\"` \
+         -noinput -detached \
+         $MNESIA_OPTS \
+         $KERNEL_OPTS \
+         $EJABBERD_OPTS \
+         -s ejabberd \
+         $ERLANG_OPTS \
+         `shell_escape \"${ARGS[@]}\" \"$@\"`"
+    $EXEC_CMD "$CMD"
 }
 
 # attach to server
@@ -179,12 +188,13 @@ debug()
 {
     debugwarning
     TTY=`tty | sed -e  's/.*\///g'`
-    $EXEC_CMD "$ERL \
-      $NAME debug-${TTY}-${ERLANG_NODE} \
-      -remsh $ERLANG_NODE \
-      -hidden \
-      $KERNEL_OPTS \
-      $ERLANG_OPTS $ARGS \"$@\""
+    CMD="`shell_escape \"$ERL\" \"$NAME\" \"debug-${TTY}-${ERLANG_NODE}\"` \
+         -remsh $ERLANG_NODE \
+         -hidden \
+         $KERNEL_OPTS \
+         $ERLANG_OPTS \
+         `shell_escape \"${ARGS[@]}\" \"$@\"`"
+    $EXEC_CMD "$CMD"
 }
 
 # attach to server using Elixir
@@ -193,51 +203,57 @@ iexdebug()
     debugwarning
     TTY=`tty | sed -e  's/.*\///g'`
     # Elixir shell is hidden as default
-    $EXEC_CMD "$IEX \
-      $IEXNAME debug-${TTY}-${ERLANG_NODE} \
-      --remsh $ERLANG_NODE \
-      --erl \"$KERNEL_OPTS\" \
-      --erl \"$ERLANG_OPTS\" --erl \"$ARGS\" --erl \"$@\""
+    CMD="`shell_escape \"$IEX\" \"$IEXNAME\" \"debug-${TTY}-${ERLANG_NODE}\"` \
+         -remsh $ERLANG_NODE \
+         --erl \"`shell_escape \"$KERNEL_OPTS\"\" \
+         --erl \"`shell_escape \"$ERLANG_OPTS\"\" \
+         --erl \"`shell_escape \"${ARGS[@]}\"\" \
+         --erl \"`shell_escape \"$@\"\""
+    $EXEC_CMD "$CMD"
 }
 
 # start interactive server
 live()
 {
     livewarning
-    $EXEC_CMD "$ERL \
-      $NAME $ERLANG_NODE \
-      $MNESIA_OPTS \
-      $KERNEL_OPTS \
-      $EJABBERD_OPTS \
-      -s ejabberd \
-      $ERLANG_OPTS $ARGS \"$@\""
+    CMD="`shell_escape \"$ERL\" \"$NAME\" \"${ERLANG_NODE}\"` \
+         $MNESIA_OPTS \
+         $KERNEL_OPTS \
+         $EJABBERD_OPTS \
+         -s ejabberd \
+         $ERLANG_OPTS \
+         `shell_escape \"${ARGS[@]}\" \"$@\"`"
+    $EXEC_CMD "$CMD"
 }
 
 # start interactive server with Elixir
 iexlive()
 {
     livewarning
-    $EXEC_CMD "$IEX \
-      $IEXNAME $ERLANG_NODE \
-      --erl \"-mnesia dir \\\"$SPOOL_DIR\\\"\" \
-      --erl \"$KERNEL_OPTS\" \
-      --erl \"$EJABBERD_OPTS\" \
-      --app ejabberd \
-      --erl \"$ERLANG_OPTS\" --erl $ARGS --erl \"$@\""
+    CMD="`shell_escape \"$IEX\" \"$IEXNAME\" \"${ERLANG_NODE}\"` \
+         --erl \"-mnesia dir \\\"$SPOOL_DIR\\\"\" \
+         --erl \"`shell_escape \"$KERNEL_OPTS\"`\" \
+         --erl \"`shell_escape \"$EJABBERD_OPTS\"`\" \
+         --app ejabberd \
+         --erl \"`shell_escape \"$ERLANG_OPTS\"`\" \
+         --erl \"`shell_escape \"${ARGS[@]}\"`\" \
+         --erl \"`shell_escape \"$@\"`\""
+    $EXEC_CMD "$CMD"
 }
 
 # start server in the foreground
 foreground()
 {
     check_start
-    $EXEC_CMD "$ERL \
-      $NAME $ERLANG_NODE \
-      -noinput \
-      $MNESIA_OPTS \
-      $KERNEL_OPTS \
-      $EJABBERD_OPTS \
-      -s ejabberd \
-      $ERLANG_OPTS $ARGS \"$@\""
+    CMD="`shell_escape \"$ERL\" \"$NAME\" \"$ERLANG_NODE\"` \
+         -noinput \
+         $MNESIA_OPTS \
+         $KERNEL_OPTS \
+         $EJABBERD_OPTS \
+         -s ejabberd \
+         $ERLANG_OPTS \
+         `shell_escape \"${ARGS[@]}\" \"$@\"`"
+    $EXEC_CMD "$CMD"
 }
 
 debugwarning()
@@ -331,8 +347,6 @@ help()
 # common control function
 ctl()
 {
-    COMMAND=$@
-
     # Control number of connections identifiers
     # using flock if available. Expects a linux-style
     # flock that can lock a file descriptor.
@@ -344,13 +358,13 @@ ctl()
         if [ ! -x "$JOT" ] ; then
             # no flock or jot, simply invoke ctlexec()
             CTL_CONN="ctl-${ERLANG_NODE}"
-            ctlexec $CTL_CONN $COMMAND
+            ctlexec $CTL_CONN "$@"
             result=$?
         else
             # no flock, but at least there is jot
             RAND=`jot -r 1 0 $MAXCONNID`
             CTL_CONN="ctl-${RAND}-${ERLANG_NODE}"
-            ctlexec $CTL_CONN $COMMAND
+            ctlexec $CTL_CONN "$@"
             result=$?
         fi
     else
@@ -365,7 +379,7 @@ ctl()
             (
                 exec 8>"$CTL_LOCKFILE"
                 if flock --nb 8; then
-                    ctlexec $CTL_CONN $COMMAND
+                    ctlexec $CTL_CONN "$@"
                     ssresult=$?
                     # segregate from possible flock exit(1)
                     ssresult=`expr $ssresult \* 10`
@@ -407,13 +421,11 @@ ctl()
 ctlexec()
 {
     CONN_NAME=$1; shift
-    COMMAND=$(echo $@ | sed 's/["&$;\|<>()]/\\&/g')
-    $EXEC_CMD "$ERL \
-      $NAME ${CONN_NAME} \
-      -noinput \
-      -hidden \
-      $KERNEL_OPTS \
-      -s ejabberd_ctl -extra $ERLANG_NODE $EJABBERD_NO_TIMEOUT $COMMAND"
+    CMD="`shell_escape \"$ERL\" \"$NAME\" \"$CONN_NAME\"` \
+         -noinput -hidden $KERNEL_OPTS -s ejabberd_ctl \
+         -extra `shell_escape \"$ERLANG_NODE\"` $EJABBERD_NO_TIMEOUT \
+         `shell_escape \"$@\"`"
+    $EXEC_CMD "$CMD"
 }
 
 # stop epmd if there is no other running node
@@ -463,16 +475,16 @@ wait_for_status()
 }
 
 # main handler
-case $ARGS in
-    ' start') start;;
-    ' debug') debug;;
-    ' iexdebug') iexdebug;;
-    ' live') live;;
-    ' iexlive') iexlive;;
-    ' foreground') foreground;;
-    ' ping'*) ping ${ARGS# ping};;
-    ' etop') etop;;
-    ' started') wait_for_status 0 30 2;; # wait 30x2s before timeout
-    ' stopped') wait_for_status 3 15 2 && stop_epmd;; # wait 15x2s before timeout
-    *) ctl $ARGS;;
+case "${ARGS[0]}" in
+    'start') start;;
+    'debug') debug;;
+    'iexdebug') iexdebug;;
+    'live') live;;
+    'iexlive') iexlive;;
+    'foreground') foreground;;
+    'ping'*) ping ${ARGS# ping};;
+    'etop') etop;;
+    'started') wait_for_status 0 30 2;; # wait 30x2s before timeout
+    'stopped') wait_for_status 3 15 2 && stop_epmd;; # wait 15x2s before timeout
+    *) ctl "${ARGS[@]}";;
 esac
