@@ -412,7 +412,7 @@ process([_UserDir, _RandDir, _FileName] = Slot,
 			       [Path, ?ADDR_TO_STR(IP), Host, ?FORMAT(Error)]),
 		    http_response(Host, 500)
 	    end;
-	{ok, Size, Path} ->
+	{ok, Size, Path, _FileMode, _DirMode, _GetPrefix, _Thumbnail} ->
 	    ?INFO_MSG("Rejecting file ~s from ~s for ~s: Size is ~B, not ~B",
 		      [Path, ?ADDR_TO_STR(IP), Host, byte_size(Data), Size]),
 	    http_response(Host, 413);
