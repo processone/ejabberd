@@ -29,23 +29,12 @@
 
 -export([get_string/0]).
 
--export([start/0, init/0]).
+-export([start/0]).
 
 start() ->
-    register(random_generator, spawn(randoms, init, [])).
-
-init() ->
-    random:seed(p1_time_compat:timestamp()), loop().
-
-loop() ->
-    receive
-      {From, get_random, N} ->
-	  From ! {random, random:uniform(N)}, loop();
-      _ -> loop()
-    end.
+    ok.
 
 get_string() ->
-    random_generator ! {self(), get_random, 65536 * 65536},
-    receive
-      {random, R} -> jlib:integer_to_binary(R)
-    end.
+    R = crypto:rand_uniform(0, 16#10000000000000000),
+    jlib:integer_to_binary(R).
+
