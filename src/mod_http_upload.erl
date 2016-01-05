@@ -393,9 +393,17 @@ code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
 -spec process([binary()], #request{})
       -> {pos_integer(), [{binary(), binary()}], binary()}.
 
-process([_UserDir, _RandDir, _FileName] = Slot,
-	#request{method = 'PUT', host = Host, ip = IP, data = Data}) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+process(LocalPath, #request{method = Method, host = Host, ip = IP})
+    when length(LocalPath) < 3,
+	 Method == 'PUT' orelse
+	 Method == 'GET' orelse
+	 Method == 'HEAD' ->
+    ?DEBUG("Rejecting ~s request from ~s for ~s: Too few path components",
+	   [Method, ?ADDR_TO_STR(IP), Host]),
+    http_response(Host, 404);
+process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
+			     data = Data} = Request) ->
+    {Proc, Slot} = parse_http_request(Request),
     case catch gen_server:call(Proc, {use_slot, Slot}) of
 	{ok, Size, Path, FileMode, DirMode, GetPrefix, Thumbnail}
 	    when byte_size(Data) == Size ->
@@ -425,11 +433,10 @@ process([_UserDir, _RandDir, _FileName] = Slot,
 		       [?ADDR_TO_STR(IP), Host, Error]),
 	    http_response(Host, 500)
     end;
-process([_UserDir, _RandDir, FileName] = Slot,
-	#request{method = Method, host = Host, ip = IP})
+process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
     when Method == 'GET';
 	 Method == 'HEAD' ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    {Proc, [_UserDir, _RandDir, FileName] = Slot} = parse_http_request(Request),
     case catch gen_server:call(Proc, get_docroot) of
 	{ok, DocRoot} ->
 	    Path = str:join([DocRoot | Slot], <<$/>>),
@@ -469,19 +476,6 @@ process([_UserDir, _RandDir, FileName] = Slot,
 		       [Method, ?ADDR_TO_STR(IP), Host, Error]),
 	    http_response(Host, 500)
     end;
-process(LocalPath, #request{method = 'PUT', host = Host, ip = IP})
-    when length(LocalPath) > 3 ->
-    ?INFO_MSG("Rejecting PUT request from ~s for ~s: Too many path components",
-	      [?ADDR_TO_STR(IP), Host]),
-    ?INFO_MSG("Check whether 'request_handlers' path matches 'put_url'", []),
-    http_response(Host, 404);
-process(_LocalPath, #request{method = Method, host = Host, ip = IP})
-    when Method == 'PUT';
-	 Method == 'GET';
-	 Method == 'HEAD' ->
-    ?DEBUG("Rejecting ~s request from ~s for ~s: Too few/many path components",
-	   [Method, ?ADDR_TO_STR(IP), Host]),
-    http_response(Host, 404);
 process(_LocalPath, #request{method = 'OPTIONS', host = Host, ip = IP}) ->
     ?DEBUG("Responding to OPTIONS request from ~s for ~s",
 	   [?ADDR_TO_STR(IP), Host]),
@@ -504,10 +498,10 @@ get_proc_name(ServerHost, ModuleName) ->
 				       (_) -> <<"http://@HOST@">>
 				    end,
 				    <<"http://@HOST@">>),
-    [_, ProcHost | _] = binary:split(expand_host(PutURL, ServerHost),
-				     [<<"http://">>, <<"https://">>,
-				      <<":">>, <<"/">>], [global]),
-    gen_mod:get_module_proc(ProcHost, ModuleName).
+    {ok, {_Scheme, _UserInfo, Host, _Port, Path, _Query}} =
+	http_uri:parse(binary_to_list(expand_host(PutURL, ServerHost))),
+    ProcPrefix = list_to_binary(string:strip(Host ++ Path, right, $/)),
+    gen_mod:get_module_proc(ProcPrefix, ModuleName).
 
 -spec expand_home(binary()) -> binary().
 
@@ -768,6 +762,19 @@ iq_disco_info(Lang, Name) ->
 	    attrs = [{<<"var">>, ?NS_HTTP_UPLOAD_OLD}]}].
 
 %% HTTP request handling.
+
+-spec parse_http_request(#request{}) -> {atom(), slot()}.
+
+parse_http_request(#request{host = Host, path = Path}) ->
+    PrefixLength = length(Path) - 3,
+    {ProcURL, Slot} = if PrefixLength > 0 ->
+			      Prefix = lists:sublist(Path, PrefixLength),
+			      {str:join([Host | Prefix], $/),
+			       lists:nthtail(PrefixLength, Path)};
+			 true ->
+			      {Host, Path}
+		      end,
+    {gen_mod:get_module_proc(ProcURL, ?PROCNAME), Slot}.
 
 -spec store_file(binary(), binary(),
 		 integer() | undefined,
