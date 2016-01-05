@@ -775,14 +775,14 @@ iq_disco_info(Lang, Name) ->
 		 binary(), slot(), boolean())
       -> ok | {ok, [{binary(), binary()}], binary()} | {error, term()}.
 
-store_file(Path, Data, FileMode, DirMode, GetPrefix, LocalPath, Thumbnail) ->
+store_file(Path, Data, FileMode, DirMode, GetPrefix, Slot, Thumbnail) ->
     case do_store_file(Path, Data, FileMode, DirMode) of
 	ok when Thumbnail ->
 	    case identify(Path) of
 		{ok, MediaInfo} ->
 		    case convert(Path, MediaInfo) of
 			{ok, OutPath} ->
-			    [UserDir, RandDir | _] = LocalPath,
+			    [UserDir, RandDir | _] = Slot,
 			    FileName = filename:basename(OutPath),
 			    URL = str:join([GetPrefix, UserDir,
 					    RandDir, FileName], <<$/>>),
