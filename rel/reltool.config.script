@@ -28,21 +28,27 @@ ConfiguredOTPApps = lists:flatmap(
 
 OTPApps = RequiredOTPApps ++ ConfiguredOTPApps,
 
-DepRequiredApps = [p1_cache_tab, p1_tls, p1_stringprep, p1_xml, p1_yaml, p1_utils],
+DepRequiredApps = [cache_tab, p1_tls, p1_stringprep, p1_xml, esip, p1_stun,
+                   p1_yaml, p1_utils, jiffy, oauth2, xmlrpc],
 
-DepConfiguredApps = lists:flatmap(
+
+DepConfiguredApp0 = lists:flatmap(
                       fun({mysql, true}) -> [p1_mysql];
                          ({pgsql, true}) -> [p1_pgsql];
+                         ({sqlite, true}) -> [sqlite3];
                          ({pam, true}) -> [p1_pam];
                          ({zlib, true}) -> [p1_zlib];
-                         ({stun, true}) -> [p1_stun];
-                         ({json, true}) -> [jiffy];
+                         ({riak, true}) -> [riakc, riak_pb, protobuffs, hamcrest, meck];
+                         ({elixir, true}) -> [elixir, rebar_elixir_plugin];
                          ({iconv, true}) -> [p1_iconv];
+                         ({tools, true}) -> [meck];
+                         ({redis, true}) -> [eredis];
                          ({lager, true}) -> [lager, goldrush];
                          ({lager, false}) -> [p1_logger];
                          (_) -> []
                       end, Vars),
 
+DepConfiguredApps = lists:usort(fun(A, B) -> A >= B end, DepConfiguredApp0),
 DepApps = DepRequiredApps ++ DepConfiguredApps,
 
 Sys = [{lib_dirs, []},
