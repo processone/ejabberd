@@ -3,8 +3,8 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "15.11.0",
-     elixir: "~> 1.0",
+     version: "16.01.0",
+     elixir: "~> 1.1",
      elixirc_paths: ["lib"],
      compile_path: ".",
      compilers: [:asn1] ++ Mix.compilers,
@@ -16,11 +16,12 @@ defmodule Ejabberd.Mixfile do
 
   def application do
     [mod: {:ejabberd_app, []},
-     applications: [:ssl],
-     included_applications: [:p1_logger, :p1_yaml, :p1_tls, :p1_xml,
-                             :p1_stringprep, :p1_zlib, :cache_tab,
-                             :mnesia, :p1_utils, :p1_iconv, :esip, :p1_stun,
-                             :p1_mysql, :p1_pgsql, :eredis, :oauth2, :xmlrpc]]
+     applications: [:ssl, :mnesia],
+     included_applications: [:lager, :p1_utils, :cache_tab,
+                             :p1_tls, :p1_stringprep, :p1_xml,
+                             :p1_stun, :p1_yaml, :p1_zlib, :p1_iconv,
+                             :esip, :jiffy, :oauth2, :xmlrpc, :eredis,
+                             :p1_mysql, :p1_pgsql, :sqlite3]]
   end
 
   defp erlc_options do
@@ -30,23 +31,25 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp deps do
-    [{:p1_xml, git: "https://github.com/processone/xml"},
-     {:p1_logger, git: "https://github.com/processone/p1_logger"},
-     {:p1_yaml, git: "https://github.com/processone/p1_yaml"},
-     {:p1_tls, git: "https://github.com/processone/tls"},
-     {:p1_stringprep, git: "https://github.com/processone/stringprep"},
-     {:p1_zlib, git: "https://github.com/processone/zlib"},
+    [{:lager, git: "https://github.com/basho/lager", tag: "3.0.2"},
+     {:p1_utils, git: "https://github.com/processone/p1_utils", tag: "1.0.2"},
      {:cache_tab, git: "https://github.com/processone/cache_tab", tag: "1.0.1"},
-     {:p1_utils, git: "https://github.com/processone/p1_utils"},
-     {:p1_iconv, git: "https://github.com/processone/eiconv"},
-     {:esip, git: "https://github.com/processone/p1_sip"},
-     {:p1_stun, git: "https://github.com/processone/stun"},
-     {:p1_mysql, git: "https://github.com/processone/mysql"},
-     {:p1_pgsql, git: "https://github.com/processone/pgsql"},
-     {:eredis, git: "https://github.com/wooga/eredis"},
-     {:oauth2, git: "https://github.com/prefiks/oauth2.git"},
-     {:xmlrpc, git: "https://github.com/rds13/xmlrpc.git"},
-     {:exrm, "~> 0.19.2"}]
+     {:p1_tls, git: "https://github.com/processone/tls", tag: "1.0.0"},
+     {:p1_stringprep, git: "https://github.com/processone/stringprep", tag: "1.0.0"},
+     {:p1_xml, git: "https://github.com/processone/xml", tag: "1.1.1"},
+     {:p1_stun, git: "https://github.com/processone/stun", tag: "0.9.0"},
+     {:esip, git: "https://github.com/processone/p1_sip", tag: "1.0.0"},
+     {:p1_yaml, git: "https://github.com/processone/p1_yaml", tag: "1.0.0"},
+     {:jiffy, git: "https://github.com/davisp/jiffy", tag: "0.14.5"},
+     {:oauth2, git: "https://github.com/kivra/oauth2", "8d129fbf8866930b4ffa6dd84e65bd2b32b9acb8"},
+     {:xmlrpc, git: "https://github.com/rds13/xmlrpc.git", tag: "1.15"},
+     {:p1_mysql, git: "https://github.com/processone/mysql", tag: "1.0.0"},
+     {:p1_pgsql, git: "https://github.com/processone/pgsql", tag: "1.0.0"},
+     {:sqlite3, git: "https://github.com/alexeyr/erlang-sqlite3", "cbc3505f7a131254265d3ef56191b2581b8cc172"},
+     {:p1_zlib, git: "https://github.com/processone/zlib", tag: "1.0.0"},
+     {:p1_iconv, git: "https://github.com/processone/eiconv", tag: "0.9.0"},
+     {:eredis, git: "https://github.com/wooga/eredis", tag: "v1.0.8"},
+     {:exrm, "0.19.9"}]
   end
 
   defp package do
