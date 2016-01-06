@@ -100,10 +100,10 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-elixir --enable-iconv --enable-debug --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-elixir --enable-iconv --enable-debug --enable-lager --enable-tools --enable-json (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true elixir=true iconv=true debug=true lager=true tools=true ;;
-  no) odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false elixir=false iconv=false debug=false lager=false tools=false ;;
+  yes) odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true elixir=true iconv=true debug=true lager=true tools=true json=true ;;
+  no) odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false elixir=false iconv=false debug=false lager=false tools=false json=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -219,6 +219,14 @@ AC_ARG_ENABLE(latest_deps,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-latest-deps) ;;
 esac],[if test "x$latest_deps" = "x"; then latest_deps=false; fi])
 
+AC_ARG_ENABLE(json,
+[AC_HELP_STRING([--enable-json], [enable json support (default: no)])],
+[case "${enableval}" in
+  yes) json=true ;;
+  no)  json=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-json) ;;
+esac],[if test "x$json" = "x"; then json=true; fi])
+
 AC_CONFIG_FILES([Makefile
 		 vars.config
 		 src/ejabberd.app.src])
@@ -264,6 +272,7 @@ AC_SUBST(debug)
 AC_SUBST(lager)
 AC_SUBST(tools)
 AC_SUBST(latest_deps)
+AC_SUBST(json)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)

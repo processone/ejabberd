@@ -29,6 +29,7 @@
 {elixir, @elixir@}.
 {lager, @lager@}.
 {iconv, @iconv@}.
+{json, @json@}.
 
 %% Version
 {vsn, "@PACKAGE_VERSION@"}.
