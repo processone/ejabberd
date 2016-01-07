@@ -7,7 +7,7 @@
 %%% Created :  1 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%-------------------------------------------------------------------
 
-Cfg = case file:consult("vars.config") of
+Cfg = case file:consult(filename:join(filename:dirname(SCRIPT), "vars.config")) of
           {ok, Terms} ->
               Terms;
           _Err ->

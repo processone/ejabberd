@@ -6,7 +6,30 @@
 %%% @end
 %%% Created :  8 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%-------------------------------------------------------------------
-Vars = case file:consult(filename:join(["..", "vars.config"])) of
+
+TopDir = filename:join(filename:dirname(SCRIPT), ".."),
+
+GetDeps = fun(Config, GetDepsFun) ->
+                  case catch rebar_config:consult_file(Config) of
+                      {ok, Data} ->
+                          case lists:keyfind(deps, 1, Data) of
+                              {deps, Deps} ->
+                                  lists:map(fun({Dep, _, _}) ->
+                                                    [Dep, GetDepsFun(filename:join([TopDir,
+                                                                                    "deps",
+                                                                                    Dep,
+                                                                                    "rebar.config"]),
+                                                                     GetDepsFun)]
+                                            end, Deps);
+                              _ ->
+                                  []
+                          end;
+                      _ ->
+                          []
+                  end
+          end,
+
+Vars = case file:consult(filename:join([TopDir, "vars.config"])) of
            {ok, Terms} ->
                Terms;
            _Err ->
@@ -28,28 +51,7 @@ ConfiguredOTPApps = lists:flatmap(
 
 OTPApps = RequiredOTPApps ++ ConfiguredOTPApps,
 
-DepRequiredApps = [cache_tab, p1_tls, p1_stringprep, p1_xml, esip, p1_stun,
-                   p1_yaml, p1_utils, jiffy, oauth2, xmlrpc],
-
-
-DepConfiguredApp0 = lists:flatmap(
-                      fun({mysql, true}) -> [p1_mysql];
-                         ({pgsql, true}) -> [p1_pgsql];
-                         ({sqlite, true}) -> [sqlite3];
-                         ({pam, true}) -> [p1_pam];
-                         ({zlib, true}) -> [p1_zlib];
-                         ({riak, true}) -> [riakc, riak_pb, protobuffs, hamcrest, meck];
-                         ({elixir, true}) -> [elixir, rebar_elixir_plugin];
-                         ({iconv, true}) -> [p1_iconv];
-                         ({tools, true}) -> [meck];
-                         ({redis, true}) -> [eredis];
-                         ({lager, true}) -> [lager, goldrush];
-                         ({lager, false}) -> [p1_logger];
-                         (_) -> []
-                      end, Vars),
-
-DepConfiguredApps = lists:usort(fun(A, B) -> A >= B end, DepConfiguredApp0),
-DepApps = DepRequiredApps ++ DepConfiguredApps,
+DepApps = lists:usort(lists:flatten(GetDeps(filename:join(TopDir, "rebar.config"), GetDeps))),
 
 Sys = [{lib_dirs, []},
        {erts, [{mod_cond, derived}, {app_file, strip}]},
