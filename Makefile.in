@@ -114,21 +114,34 @@ spec:
 
 JOIN_PATHS=$(if $(wordlist 2,1000,$(1)),$(firstword $(1))/$(call JOIN_PATHS,$(wordlist 2,1000,$(1))),$(1))
 
+VERSIONED_DEP=$(if $(DEP_$(1)_VERSION),$(DEP_$(1)_VERSION),$(1))
+
 ELIXIR_TO_DEST=$(LIBDIR) $(wordlist 2,2,$(1)) $(wordlist 5,1000,$(1))
-DEPS_TO_DEST=$(LIBDIR) $(wordlist 2,1000,$(1))
-MAIN_TO_DEST=$(LIBDIR) ejabberd $(1)
+DEPS_TO_DEST=$(LIBDIR) $(call VERSIONED_DEP,$(word 2,$(1))) $(wordlist 3,1000,$(1))
+MAIN_TO_DEST=$(LIBDIR) $(call VERSIONED_DEP,ejabberd) $(1)
 TO_DEST_SINGLE=$(if $(subst XdepsX,,X$(word 1,$(1))X),$(call MAIN_TO_DEST,$(1)),$(if $(subst XlibX,,X$(word 3,$(1))X),$(call DEPS_TO_DEST,$(1)),$(call ELIXIR_TO_DEST,$(1))))
 TO_DEST=$(foreach path,$(1),$(call JOIN_PATHS,$(call TO_DEST_SINGLE,$(subst /, ,$(path)))))
 
 FILTER_DIRS=$(foreach path,$(1),$(if $(wildcard $(path)/*),,$(path)))
 FILES_WILDCARD=$(call FILTER_DIRS,$(foreach w,$(1),$(wildcard $(w))))
 
-DEPS_FILES=$(call FILES_WILDCARD,deps/*/ebin/*.beam deps/*/ebin/*.app deps/*/priv/* deps/*/priv/lib/* deps/*/priv/bin/* deps/*/include/*.hrl deps/*/lib/*/ebin/*.beam deps/*/lib/*/ebin/*.app)
+ifeq ($(MAKECMDGOALS),copy-files-sub)
+
+DEPS:=$(sort $(shell $(REBAR) list-deps|$(SED) -e 's/^\([a-z_0-9-]\+\).*/\1/;t;d'))
+
+DEPS_FILES=$(call FILES_WILDCARD,$(foreach DEP,$(DEPS),deps/$(DEP)/ebin/*.beam deps/$(DEP)/ebin/*.app deps/$(DEP)/priv/* deps/$(DEP)/priv/lib/* deps/$(DEP)/priv/bin/* deps/$(DEP)/include/*.hrl deps/$(DEP)/lib/*/ebin/*.beam deps/$(DEP)/lib/*/ebin/*.app))
 DEPS_FILES_FILTERED=$(filter-out %/epam deps/elixir/ebin/elixir.app,$(DEPS_FILES))
-DEPS_DIRS=$(sort deps/ $(wildcard deps/*) $(dir $(DEPS_FILES)))
+DEPS_DIRS=$(sort deps/ $(foreach DEP,$(DEPS),deps/$(DEP)/) $(dir $(DEPS_FILES)))
 
 MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/lib/* include/*.hrl))
-MAIN_DIRS=$(sort $(dir $(MAIN_FILES)))
+MAIN_DIRS=$(sort $(dir $(MAIN_FILES)) priv/bin priv/sql)
+
+define DEP_VERSION_template
+DEP_$(1)_VERSION:=$(shell sed -ne 's/.*{vsn\s*,\s*"\([^"]\+\)".*/$(1)-\1/;T;p;Q' $(2) 2>/dev/null)
+endef
+
+$(foreach DEP,$(DEPS),$(eval $(call DEP_VERSION_template,$(DEP),deps/$(DEP)/ebin/$(DEP).app)))
+$(eval $(call DEP_VERSION_template,ejabberd,ebin/ejabberd.app))
 
 define COPY_template
 $(call TO_DEST,$(1)): $(1) $(call TO_DEST,$(dir $(1))) ; $$(INSTALL) -m 644 $(1) $(call TO_DEST,$(1))
@@ -139,13 +152,23 @@ $(foreach file,$(DEPS_FILES_FILTERED) $(MAIN_FILES),$(eval $(call COPY_template,
 $(sort $(call TO_DEST,$(MAIN_DIRS) $(DEPS_DIRS))):
 	$(INSTALL) -d $@
 
-$(call TO_DEST,deps/p1_pam/priv/bin/epam): $(LIBDIR)/%: deps/% $(call TO_DEST,deps/p1_pam/priv/bin/)
+$(call TO_DEST,deps/p1_pam/priv/bin/epam): $(LIBDIR)/%: deps/p1_pam/priv/bin/epam $(call TO_DEST,deps/p1_pam/priv/bin/)
 	$(INSTALL) -m 750 $(O_USER) $< $@
+
+$(call TO_DEST,priv/sql/lite.sql): sql/lite.sql $(call TO_DEST,priv/sql)
+	$(INSTALL) -m 644 $< $@
+
+$(call TO_DEST,priv/bin/captcha.sh): tools/captcha.sh $(call TO_DEST,priv/bin)
+	$(INSTALL) -m 750 $(O_USER) $< $@
+
+copy-files-sub2: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES) priv/bin/captcha.sh priv/sql/lite.sql)
+
+endif
 
 copy-files:
 	$(MAKE) copy-files-sub
 
-copy-files-sub: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES))
+copy-files-sub: copy-files-sub2
 
 install: all copy-files
 	#
@@ -182,14 +205,6 @@ install: all copy-files
 		-e "s*@installuser@*$(INIT_USER)*" ejabberd.init.template \
 		> ejabberd.init
 	chmod 755 ejabberd.init
-	#
-	# Binary C programs
-	$(INSTALL) -d $(PBINDIR)
-	$(INSTALL) -m 750 $(O_USER) tools/captcha.sh $(PBINDIR)
-	#
-	# Copy lite.sql
-	[ -d deps/sqlite3 ] && $(INSTALL) -d $(SQLDIR) || true
-	[ -d deps/sqlite3 ] && $(INSTALL) -m 644 sql/lite.sql $(SQLDIR) || true
 	#
 	# Spool directory
 	$(INSTALL) -d -m 750 $(O_USER) $(SPOOLDIR)
