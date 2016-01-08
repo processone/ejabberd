@@ -248,9 +248,8 @@ msgid "Outgoing s2s Connections:"
 msgstr "חיבורי s2s יוצאים:"
 
 #: ejabberd_web_admin.erl:1559
-#, fuzzy
 msgid "Incoming s2s Connections:"
-msgstr "חיבורי s2s יוצאים:"
+msgstr "חיבורי s2s נכנסים:"
 
 #: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
 #: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
@@ -853,13 +852,13 @@ msgstr ""
 "יותר מדי (~p) אימותים כושלים מתוך כתובת IP זו (~s). הכתובת תורשה לקבל גישה "
 "בשעה ~s UTC"
 
-#: mod_http_upload.erl:593
+#: mod_http_upload.erl:587
 msgid "Please specify file size."
-msgstr ""
+msgstr "אנא ציין גודל קובץ."
 
-#: mod_http_upload.erl:597
+#: mod_http_upload.erl:591
 msgid "Please specify file name."
-msgstr ""
+msgstr "אנא ציין שם קובץ."
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
@@ -976,9 +975,8 @@ msgid "Server ~b"
 msgstr "שרת ~b"
 
 #: mod_mam.erl:270
-#, fuzzy
 msgid "Only members are allowed to query archives of this room"
-msgstr "רק אחראים רשאים לשנות את הנושא בחדר זה"
+msgstr "רק חברים רשאים לתשאל ארכיונים של חדר זה"
 
 #: mod_muc.erl:585
 msgid "Only service administrators are allowed to send service messages"
@@ -997,9 +995,8 @@ msgid "Chatrooms"
 msgstr "חדרי שיחה"
 
 #: mod_muc.erl:779
-#, fuzzy
 msgid "Empty Rooms"
-msgstr "חדרים"
+msgstr "חדרים ריקים"
 
 # to register nickname
 #: mod_muc.erl:931
@@ -1196,13 +1193,16 @@ msgstr "מגבלת שיעור תעבורה נחצתה"
 
 #: mod_muc_room.erl:230 mod_muc_room.erl:518 mod_muc_room.erl:1059
 msgid ""
-"It is not allowed to send error messages to the room. This participant (~s) "
-"sent an error message (~s) and gets kicked from the room"
+"It is not allowed to send error messages to the room. The participant (~s) "
+"has sent an error message (~s) and got kicked from the room"
 msgstr ""
+"אין זה מותר לשלוח הודעות שגיאה לחדר. משתתף זה (~s) שלח הודעת שגיאה (~s) "
+"ונבעט מתוך החדר"
 
+# חל איסור
 #: mod_muc_room.erl:241
 msgid "It is not allowed to send private messages to the conference"
-msgstr "אין זה מותר לשלוח הודעות פרטיות אל הועידה"
+msgstr "אין זה מותר לשלוח הודעות פרטיות לועידה"
 
 #: mod_muc_room.erl:316
 msgid "Please, wait for a while before sending new voice request"
@@ -1233,7 +1233,6 @@ msgstr "אין זה מותר לשלוח הודעות פרטיות מן טיפו�
 msgid "Recipient is not in the conference room"
 msgstr "מקבל אינו מצוי בחדר הועידה"
 
-# אסור
 #: mod_muc_room.erl:576 mod_muc_room.erl:598
 msgid "It is not allowed to send private messages"
 msgstr "אין זה מותר לשלוח הודעות פרטיות"
@@ -1377,20 +1376,19 @@ msgstr "לכל אחד"
 
 #: mod_muc_room.erl:3471
 msgid "Roles for which Presence is Broadcasted"
-msgstr ""
+msgstr "תפקידים להם נוכחות הינה משודרת"
 
 #: mod_muc_room.erl:3486
-#, fuzzy
 msgid "Moderator"
-msgstr "לאחראים בלבד"
+msgstr "אחראי"
 
 #: mod_muc_room.erl:3496
 msgid "Participant"
-msgstr ""
+msgstr "משתתף"
 
 #: mod_muc_room.erl:3506
 msgid "Visitor"
-msgstr ""
+msgstr "מבקר"
 
 #: mod_muc_room.erl:3513
 msgid "Make room members-only"
@@ -1739,13 +1737,15 @@ msgstr "אל תגלה את הסיסמה שלך לאף אחד, אפילו לא ל
 msgid "You can later change your password using a Jabber client."
 msgstr "באפשרותך לשנות את הסיסמה שלך מאוחר יותר באמצעות לקוח Jabber."
 
+# בוטח
+# trust that your
 #: mod_register_web.erl:252
 msgid ""
 "Some Jabber clients can store your password in the computer, but you should "
 "do this only in your personal computer for safety reasons."
 msgstr ""
-"לקוחות Jabber מסוימים יכולים לאחסן את הסיסמה שלך על המחשב שלך. השתמש בתכונה "
-"זו רק אם אתה סמוך כי המחשב שלך הינו מוגן."
+"ישנם לקוחות Jabber אשר מסוגלים לאחסן את הסיסמה שלך בתוך המחשב, אולם עליך "
+"לעשות זאת רק בתוך המחשב האישי שלך מסיבות ביטחוניות."
 
 # תישכח
 #: mod_register_web.erl:256
