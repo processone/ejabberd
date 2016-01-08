@@ -116,7 +116,7 @@ JOIN_PATHS=$(if $(wordlist 2,1000,$(1)),$(firstword $(1))/$(call JOIN_PATHS,$(wo
 
 VERSIONED_DEP=$(if $(DEP_$(1)_VERSION),$(DEP_$(1)_VERSION),$(1))
 
-ELIXIR_TO_DEST=$(LIBDIR) $(wordlist 2,2,$(1)) $(wordlist 5,1000,$(1))
+ELIXIR_TO_DEST=$(LIBDIR) $(call VERSIONED_DEP,$(word 2,$(1))) $(wordlist 5,1000,$(1))
 DEPS_TO_DEST=$(LIBDIR) $(call VERSIONED_DEP,$(word 2,$(1))) $(wordlist 3,1000,$(1))
 MAIN_TO_DEST=$(LIBDIR) $(call VERSIONED_DEP,ejabberd) $(1)
 TO_DEST_SINGLE=$(if $(subst XdepsX,,X$(word 1,$(1))X),$(call MAIN_TO_DEST,$(1)),$(if $(subst XlibX,,X$(word 3,$(1))X),$(call DEPS_TO_DEST,$(1)),$(call ELIXIR_TO_DEST,$(1))))
@@ -127,7 +127,7 @@ FILES_WILDCARD=$(call FILTER_DIRS,$(foreach w,$(1),$(wildcard $(w))))
 
 ifeq ($(MAKECMDGOALS),copy-files-sub)
 
-DEPS:=$(sort $(shell $(REBAR) list-deps|$(SED) -e 's/^\([a-z_0-9-]\+\).*/\1/;t;d'))
+DEPS:=$(sort $(shell $(REBAR) list-deps|$(SED) -e '/^=/d;s/ .*//'))
 
 DEPS_FILES=$(call FILES_WILDCARD,$(foreach DEP,$(DEPS),deps/$(DEP)/ebin/*.beam deps/$(DEP)/ebin/*.app deps/$(DEP)/priv/* deps/$(DEP)/priv/lib/* deps/$(DEP)/priv/bin/* deps/$(DEP)/include/*.hrl deps/$(DEP)/lib/*/ebin/*.beam deps/$(DEP)/lib/*/ebin/*.app))
 DEPS_FILES_FILTERED=$(filter-out %/epam deps/elixir/ebin/elixir.app,$(DEPS_FILES))
@@ -137,7 +137,7 @@ MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/
 MAIN_DIRS=$(sort $(dir $(MAIN_FILES)) priv/bin priv/sql)
 
 define DEP_VERSION_template
-DEP_$(1)_VERSION:=$(shell sed -ne 's/.*{vsn\s*,\s*"\([^"]\+\)".*/$(1)-\1/;T;p;Q' $(2) 2>/dev/null)
+DEP_$(1)_VERSION:=$(shell $(SED) -e '/vsn/!d;s/.*,"/$(1)-/;s/".*//' $(2) 2>/dev/null)
 endef
 
 $(foreach DEP,$(DEPS),$(eval $(call DEP_VERSION_template,$(DEP),deps/$(DEP)/ebin/$(DEP).app)))
