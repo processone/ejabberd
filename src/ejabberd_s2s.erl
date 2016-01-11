@@ -35,8 +35,8 @@
 
 %% API
 -export([start_link/0, route/3, have_connection/1,
-	 has_key/2, get_connections_pids/1, try_register/1,
-	 remove_connection/3, find_connection/2,
+	 make_key/2, get_connections_pids/1, try_register/1,
+	 remove_connection/2, find_connection/2,
 	 dirty_get_connections/0, allow_host/2,
 	 incoming_s2s_number/0, outgoing_s2s_number/0,
 	 clean_temporarily_blocked_table/0,
@@ -75,8 +75,7 @@
 %% once a server is temporarly blocked, it stay blocked for 60 seconds
 
 -record(s2s, {fromto = {<<"">>, <<"">>} :: {binary(), binary()} | '_',
-              pid = self()              :: pid() | '_' | '$1',
-              key = <<"">>              :: binary() | '_'}).
+              pid = self()              :: pid() | '_' | '$1'}).
 
 -record(state, {}).
 
@@ -134,19 +133,15 @@ is_temporarly_blocked(Host) ->
     end.
 
 -spec remove_connection({binary(), binary()},
-                        pid(), binary()) -> {atomic, ok} |
-                                            ok |
-                                            {aborted, any()}.
+                        pid()) -> {atomic, ok} | ok | {aborted, any()}.
 
-remove_connection(FromTo, Pid, Key) ->
+remove_connection(FromTo, Pid) ->
     case catch mnesia:dirty_match_object(s2s,
-					 #s2s{fromto = FromTo, pid = Pid,
-					      _ = '_'})
+					 #s2s{fromto = FromTo, pid = Pid})
 	of
-      [#s2s{pid = Pid, key = Key}] ->
+      [#s2s{pid = Pid}] ->
 	  F = fun () ->
-		      mnesia:delete_object(#s2s{fromto = FromTo, pid = Pid,
-						key = Key})
+		      mnesia:delete_object(#s2s{fromto = FromTo, pid = Pid})
 	      end,
 	  mnesia:transaction(F);
       _ -> ok
@@ -162,19 +157,6 @@ have_connection(FromTo) ->
             false
     end.
 
--spec has_key({binary(), binary()}, binary()) -> boolean().
-
-has_key(FromTo, Key) ->
-    case mnesia:dirty_select(s2s,
-			     [{#s2s{fromto = FromTo, key = Key, _ = '_'},
-			       [],
-			       ['$_']}]) of
-	[] ->
-	    false;
-	_ ->
-	    true
-    end.
-
 -spec get_connections_pids({binary(), binary()}) -> [pid()].
 
 get_connections_pids(FromTo) ->
@@ -185,10 +167,9 @@ get_connections_pids(FromTo) ->
 	    []
     end.
 
--spec try_register({binary(), binary()}) -> {key, binary()} | false.
+-spec try_register({binary(), binary()}) -> boolean().
 
 try_register(FromTo) ->
-    Key = randoms:get_string(),
     MaxS2SConnectionsNumber = max_s2s_connections_number(FromTo),
     MaxS2SConnectionsNumberPerNode =
 	max_s2s_connections_number_per_node(FromTo),
@@ -198,9 +179,8 @@ try_register(FromTo) ->
 							      MaxS2SConnectionsNumber,
 							      MaxS2SConnectionsNumberPerNode),
 		if NeededConnections > 0 ->
-		       mnesia:write(#s2s{fromto = FromTo, pid = self(),
-					 key = Key}),
-		       {key, Key};
+		       mnesia:write(#s2s{fromto = FromTo, pid = self()}),
+		       true;
 		   true -> false
 		end
 	end,
@@ -240,6 +220,12 @@ check_peer_certificate(SockMod, Sock, Peer) ->
       error ->
 	    {error, <<"Cannot get peer certificate">>}
     end.
+
+make_key({From, To}, StreamID) ->
+    Secret = ejabberd_config:get_option(shared_key, fun(V) -> V end),
+    p1_sha:to_hexlist(
+      crypto:hmac(sha256, p1_sha:to_hexlist(crypto:hash(sha256, Secret)),
+		  [To, " ", From, " ", StreamID])).
 
 %%====================================================================
 %% gen_server callbacks
@@ -407,17 +393,15 @@ open_several_connections(N, MyServer, Server, From,
 
 new_connection(MyServer, Server, From, FromTo,
 	       MaxS2SConnectionsNumber, MaxS2SConnectionsNumberPerNode) ->
-    Key = randoms:get_string(),
     {ok, Pid} = ejabberd_s2s_out:start(
-		  MyServer, Server, {new, Key}),
+		  MyServer, Server, new),
     F = fun() ->
 		L = mnesia:read({s2s, FromTo}),
 		NeededConnections = needed_connections_number(L,
 							      MaxS2SConnectionsNumber,
 							      MaxS2SConnectionsNumberPerNode),
 		if NeededConnections > 0 ->
-		       mnesia:write(#s2s{fromto = FromTo, pid = Pid,
-					 key = Key}),
+		       mnesia:write(#s2s{fromto = FromTo, pid = Pid}),
 		       ?INFO_MSG("New s2s connection started ~p", [Pid]),
 		       Pid;
 		   true -> choose_connection(From, L)
@@ -520,9 +504,12 @@ update_tables() ->
     end,
     case catch mnesia:table_info(s2s, attributes) of
       [fromto, node, key] ->
-	  mnesia:transform_table(s2s, ignore, [fromto, pid, key]),
+	  mnesia:transform_table(s2s, ignore, [fromto, pid]),
 	  mnesia:clear_table(s2s);
-      [fromto, pid, key] -> ok;
+      [fromto, pid, key] ->
+	  mnesia:transform_table(s2s, ignore, [fromto, pid]),
+	  mnesia:clear_table(s2s);
+      [fromto, pid] -> ok;
       {'EXIT', _} -> ok
     end,
     case lists:member(local_s2s, mnesia:system_info(tables)) of

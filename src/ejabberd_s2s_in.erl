@@ -432,9 +432,9 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	  ?DEBUG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
 	  LTo = jid:nameprep(To),
 	  LFrom = jid:nameprep(From),
-	  Type = case ejabberd_s2s:has_key({LTo, LFrom}, Key) of
-		   true -> <<"valid">>;
-		   _ -> <<"invalid">>
+	  Type = case ejabberd_s2s:make_key({LTo, LFrom}, Id) of
+		     Key -> <<"valid">>;
+		     _ -> <<"invalid">>
 		 end,
 	  send_element(StateData,
 		       #xmlel{name = <<"db:verify">>,
