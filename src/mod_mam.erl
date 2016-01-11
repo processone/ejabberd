@@ -756,25 +756,34 @@ select(LServer, #jid{luser = LUser} = JidRequestor,
 		   true ->
 			{Res, true}
 		end,
-	    {lists:map(
+	    {lists:flatmap(
 	       fun([TS, XML, PeerBin, Kind, Nick]) ->
-		       #xmlel{} = El = xml_stream:parse_element(XML),
-		       Now = usec_to_now(jlib:binary_to_integer(TS)),
-		       PeerJid = jid:tolower(jid:from_string(PeerBin)),
-		       T = case Kind of
-                               <<"">> -> chat;
-                               null -> chat;
-                               _ -> jlib:binary_to_atom(Kind)
-			   end,
-		       {TS, jlib:binary_to_integer(TS),
-			msg_to_el(#archive_msg{timestamp = Now,
-					       packet = El,
-					       type = T,
-					       nick = Nick,
-					       peer = PeerJid},
-				  MsgType,
-				  JidRequestor)}
-		    end, Res1), IsComplete, jlib:binary_to_integer(Count)};
+		       try
+			   #xmlel{} = El = xml_stream:parse_element(XML),
+			   Now = usec_to_now(jlib:binary_to_integer(TS)),
+			   PeerJid = jid:tolower(jid:from_string(PeerBin)),
+			   T = case Kind of
+				   <<"">> -> chat;
+				   null -> chat;
+				   _ -> jlib:binary_to_atom(Kind)
+			       end,
+			   [{TS, jlib:binary_to_integer(TS),
+			     msg_to_el(#archive_msg{timestamp = Now,
+						    packet = El,
+						    type = T,
+						    nick = Nick,
+						    peer = PeerJid},
+				       MsgType,
+				       JidRequestor)}]
+		       catch _:Err ->
+			       ?ERROR_MSG("failed to parse data from SQL: ~p. "
+					  "The data was: "
+					  "timestamp = ~s, xml = ~s, "
+					  "peer = ~s, kind = ~s, nick = ~s",
+					  [Err, TS, XML, PeerBin, Kind, Nick]),
+			       []
+		       end
+	       end, Res1), IsComplete, jlib:binary_to_integer(Count)};
 	_ ->
 	    {[], false, 0}
     end.
