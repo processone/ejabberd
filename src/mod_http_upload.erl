@@ -43,7 +43,6 @@
 	 {<<".bz2">>, <<"application/x-bzip2">>},
 	 {<<".gif">>, <<"image/gif">>},
 	 {<<".gz">>, <<"application/x-gzip">>},
-	 {<<".html">>, <<"text/html">>},
 	 {<<".jpeg">>, <<"image/jpeg">>},
 	 {<<".jpg">>, <<"image/jpeg">>},
 	 {<<".mp3">>, <<"audio/mpeg">>},
