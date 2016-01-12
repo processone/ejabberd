@@ -1636,6 +1636,8 @@ handle_info({route, From, To,
 					 deny ->
                                                case xml:get_attr_s(<<"type">>, Attrs) of
                                                    <<"error">> -> ok;
+                                                   <<"groupchat">> -> ok;
+                                                   <<"headline">> -> ok;
                                                    <<"result">> -> ok;
                                                    _ ->
                                                        Err =
