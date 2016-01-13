@@ -4152,7 +4152,9 @@ process_iq_disco_info(_From, get, Lang, StateData) ->
        ++ case {gen_mod:is_loaded(StateData#state.server_host, mod_mam),
 		Config#config.mam} of
 	    {true, true} ->
-		[?FEATURE(?NS_MAM_0), ?FEATURE(?NS_MAM_1)];
+		[?FEATURE(?NS_MAM_TMP),
+		 ?FEATURE(?NS_MAM_0),
+		 ?FEATURE(?NS_MAM_1)];
 	    _ ->
 		[]
 	  end

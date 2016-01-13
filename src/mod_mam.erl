@@ -218,11 +218,15 @@ muc_filter_message(Pkt, #state{config = Config} = MUCState,
 	    NewPkt = strip_my_archived_tag(Pkt, LServer),
 	    case store_muc(MUCState, NewPkt, RoomJID, From, FromNick) of
 		{ok, ID} ->
+		    Archived = #xmlel{name = <<"archived">>,
+				      attrs = [{<<"by">>, LServer},
+					       {<<"xmlns">>, ?NS_MAM_TMP},
+					       {<<"id">>, ID}]},
 		    StanzaID = #xmlel{name = <<"stanza-id">>,
 				      attrs = [{<<"by">>, LServer},
                                                {<<"xmlns">>, ?NS_SID_0},
                                                {<<"id">>, ID}]},
-                    NewEls = [StanzaID|NewPkt#xmlel.children],
+                    NewEls = [Archived, StanzaID|NewPkt#xmlel.children],
                     NewPkt#xmlel{children = NewEls};
 		_ ->
 		    NewPkt
@@ -235,20 +239,7 @@ muc_filter_message(Pkt, #state{config = Config} = MUCState,
 process_iq_v0_2(#jid{lserver = LServer} = From,
 	       #jid{lserver = LServer} = To,
 	       #iq{type = get, sub_el = #xmlel{name = <<"query">>} = SubEl} = IQ) ->
-    Fs = lists:flatmap(
-	    fun (#xmlel{name = <<"start">>} = El) ->
-		    [{<<"start">>, [xml:get_tag_cdata(El)]}];
-		(#xmlel{name = <<"end">>} = El) ->
-		    [{<<"end">>, [xml:get_tag_cdata(El)]}];
-		(#xmlel{name = <<"with">>} = El) ->
-		    [{<<"with">>, [xml:get_tag_cdata(El)]}];
-		(#xmlel{name = <<"withtext">>} = El) ->
-		    [{<<"withtext">>, [xml:get_tag_cdata(El)]}];
-		(#xmlel{name = <<"set">>}) ->
-		    [{<<"set">>, SubEl}];
-		(_) ->
-		   []
-	   end, SubEl#xmlel.children),
+    Fs = parse_query_v0_2(SubEl),
     process_iq(LServer, From, To, IQ, SubEl, Fs, chat);
 process_iq_v0_2(From, To, IQ) ->
     process_iq(From, To, IQ).
@@ -269,29 +260,10 @@ muc_process_iq(#iq{type = set, lang = Lang,
 		   sub_el = #xmlel{name = <<"query">>,
 				   attrs = Attrs} = SubEl} = IQ,
 	       MUCState, From, To) ->
-    XMLNS = xml:get_attr_s(<<"xmlns">>, Attrs),
-    if XMLNS == ?NS_MAM_0; XMLNS == ?NS_MAM_1 ->
-	    LServer = MUCState#state.server_host,
-	    Role = mod_muc_room:get_role(From, MUCState),
-	    Config = MUCState#state.config,
-	    if Config#config.members_only ->
-		    case mod_muc_room:is_occupant_or_admin(From, MUCState) of
-			true ->
-			    process_iq(LServer, From, To, IQ, SubEl,
-				       get_xdata_fields(SubEl),
-				       {groupchat, Role, MUCState});
-			false ->
-			    Text = <<"Only members are allowed to query "
-				     "archives of this room">>,
-			    Error = ?ERRT_FORBIDDEN(Lang, Text),
-			    IQ#iq{type = error, sub_el = [SubEl, Error]}
-		    end;
-	       true ->
-		    process_iq(LServer, From, To, IQ, SubEl,
-			       get_xdata_fields(SubEl),
-			       {groupchat, Role, MUCState})
-	    end;
-       true ->
+    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+	NS when NS == ?NS_MAM_0; NS == ?NS_MAM_1 ->
+	    muc_process_iq(IQ, MUCState, From, To, get_xdata_fields(SubEl));
+	_ ->
 	    IQ
     end;
 muc_process_iq(#iq{type = get,
@@ -299,7 +271,9 @@ muc_process_iq(#iq{type = get,
 				   attrs = Attrs} = SubEl} = IQ,
 	       MUCState, From, To) ->
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
-	?NS_MAM_0 ->
+	?NS_MAM_TMP ->
+	    muc_process_iq(IQ, MUCState, From, To, parse_query_v0_2(SubEl));
+	NS when NS == ?NS_MAM_0; NS == ?NS_MAM_1 ->
 	    LServer = MUCState#state.server_host,
 	    process_iq(LServer, IQ);
 	_ ->
@@ -496,6 +470,38 @@ process_iq(LServer, #jid{luser = LUser} = From, To, IQ, SubEl, Fs, MsgType) ->
 	    select_and_send(LServer, From, To, Start, End,
 			    With, RSM, IQ, MsgType)
     end.
+
+muc_process_iq(#iq{lang = Lang, sub_el = SubEl} = IQ,
+	       #state{config = #config{members_only = MembersOnly}} = MUCState,
+	       From, To, Fs) ->
+    case not MembersOnly orelse
+	mod_muc_room:is_occupant_or_admin(From, MUCState) of
+	true ->
+	    LServer = MUCState#state.server_host,
+	    Role = mod_muc_room:get_role(From, MUCState),
+	    process_iq(LServer, From, To, IQ, SubEl, Fs,
+		       {groupchat, Role, MUCState});
+	false ->
+	    Text = <<"Only members may query archives of this room">>,
+	    Error = ?ERRT_FORBIDDEN(Lang, Text),
+	    IQ#iq{type = error, sub_el = [SubEl, Error]}
+    end.
+
+parse_query_v0_2(Query) ->
+    lists:flatmap(
+      fun (#xmlel{name = <<"start">>} = El) ->
+	      [{<<"start">>, [xml:get_tag_cdata(El)]}];
+	  (#xmlel{name = <<"end">>} = El) ->
+	      [{<<"end">>, [xml:get_tag_cdata(El)]}];
+	  (#xmlel{name = <<"with">>} = El) ->
+	      [{<<"with">>, [xml:get_tag_cdata(El)]}];
+	  (#xmlel{name = <<"withtext">>} = El) ->
+	      [{<<"withtext">>, [xml:get_tag_cdata(El)]}];
+	  (#xmlel{name = <<"set">>}) ->
+	      [{<<"set">>, Query}];
+	  (_) ->
+	     []
+      end, Query#xmlel.children).
 
 should_archive(#xmlel{name = <<"message">>} = Pkt, LServer) ->
     case xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs) of
