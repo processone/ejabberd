@@ -360,7 +360,13 @@ process_iq(#jid{luser = LUser, lserver = LServer},
 process_iq(_, _, #iq{sub_el = SubEl} = IQ) ->
     IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
 
-process_iq(LServer, From, To, IQ, SubEl, Fs, MsgType) ->
+process_iq(LServer, #jid{luser = LUser} = From, To, IQ, SubEl, Fs, MsgType) ->
+    case MsgType of
+	chat ->
+	    maybe_activate_mam(LUser, LServer);
+	{groupchat, _Role, _MUCState} ->
+	    ok
+    end,
     case catch lists:foldl(
 		 fun({<<"start">>, [Data|_]}, {_, End, With, RSM}) ->
 			 {{_, _, _} = jlib:datetime_string_to_timestamp(Data),
@@ -620,13 +626,21 @@ get_prefs(LUser, LServer) ->
 	{ok, Prefs} ->
 	    Prefs;
 	error ->
-	    Default = gen_mod:get_module_opt(
-		    LServer, ?MODULE, default,
-		    fun(always) -> always;
-			(never) -> never;
-			(roster) -> roster
-		    end, never),
-	    #archive_prefs{us = {LUser, LServer}, default = Default}
+	    ActivateOpt = gen_mod:get_module_opt(
+			    LServer, ?MODULE, request_activates_archiving,
+			    fun(B) when is_boolean(B) -> B end, false),
+	    case ActivateOpt of
+		true ->
+		    #archive_prefs{us = {LUser, LServer}, default = never};
+		false ->
+		    Default = gen_mod:get_module_opt(
+				LServer, ?MODULE, default,
+				fun(always) -> always;
+				   (never) -> never;
+				   (roster) -> roster
+				end, never),
+		    #archive_prefs{us = {LUser, LServer}, default = Default}
+	    end
     end.
 
 get_prefs(LUser, LServer, mnesia) ->
@@ -652,6 +666,34 @@ get_prefs(LUser, LServer, odbc) ->
 		    never = Never}};
 	_ ->
 	    error
+    end.
+
+maybe_activate_mam(LUser, LServer) ->
+    ActivateOpt = gen_mod:get_module_opt(LServer, ?MODULE,
+					 request_activates_archiving,
+					 fun(B) when is_boolean(B) -> B end,
+					 false),
+    case ActivateOpt of
+	true ->
+	    Res = cache_tab:lookup(archive_prefs, {LUser, LServer},
+				   fun() ->
+					   get_prefs(LUser, LServer,
+						     gen_mod:db_type(LServer,
+								     ?MODULE))
+				   end),
+	    case Res of
+		{ok, _Prefs} ->
+		    ok;
+		error ->
+		    Default = gen_mod:get_module_opt(LServer, ?MODULE, default,
+						     fun(always) -> always;
+							(never) -> never;
+							(roster) -> roster
+						     end, never),
+		    write_prefs(LUser, LServer, LServer, Default, [], [])
+	    end;
+	false ->
+	    ok
     end.
 
 select_and_send(LServer, From, To, Start, End, With, RSM, IQ, MsgType) ->
@@ -1131,8 +1173,10 @@ mod_opt_type(default) ->
 	(roster) -> roster
     end;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(request_activates_archiving) ->
+    fun (B) when is_boolean(B) -> B end;
 mod_opt_type(store_body_only) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
     [cache_life_time, cache_size, db_type, default, iqdisc,
-     store_body_only].
+     request_activates_archiving, store_body_only].
