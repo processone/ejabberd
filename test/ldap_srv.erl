@@ -1,6 +1,6 @@
 %%%-------------------------------------------------------------------
 %%% @author Evgeniy Khramtsov <ekhramtsov@process-one.net>
-%%% @copyright (C) 2013, Evgeniy Khramtsov
+%%% @copyright (C) 2013-2016, Evgeniy Khramtsov
 %%% @doc
 %%%     Simple LDAP server intended for LDAP modules testing
 %%% @end

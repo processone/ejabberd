@@ -1,6 +1,6 @@
 %%%-------------------------------------------------------------------
 %%% @author Mickael Remond <mremond@process-one.net>
-%%% @copyright (C) 2002-2015, ProcessOne
+%%% @copyright (C) 2002-2016, ProcessOne
 %%% @doc
 %%% This is a common test wrapper to run our ejabberd tests written in
 %%% Elixir from standard common test code.
