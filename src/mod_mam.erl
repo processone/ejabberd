@@ -884,16 +884,13 @@ select(LServer, #jid{luser = LUser} = JidRequestor,
     end.
 
 msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
-	  MsgType, JidRequestor) ->
-    Delay = jlib:now_to_utc_string(TS),
-    Pkt = maybe_update_from_to(Pkt1, JidRequestor, Peer, MsgType, Nick),
-    #xmlel{name = <<"forwarded">>,
-	   attrs = [{<<"xmlns">>, ?NS_FORWARD}],
-	   children = [#xmlel{name = <<"delay">>,
-			      attrs = [{<<"xmlns">>, ?NS_DELAY},
-				       {<<"stamp">>, Delay}]},
-		       xml:replace_tag_attr(
-			 <<"xmlns">>, <<"jabber:client">>, Pkt)]}.
+	  MsgType, #jid{lserver = LServer} = JidRequestor) ->
+    Pkt2 = maybe_update_from_to(Pkt1, JidRequestor, Peer, MsgType, Nick),
+    Pkt3 = #xmlel{name = <<"forwarded">>,
+		  attrs = [{<<"xmlns">>, ?NS_FORWARD}],
+		  children = [xml:replace_tag_attr(
+				<<"xmlns">>, <<"jabber:client">>, Pkt2)]},
+    jlib:add_delay_info(Pkt3, LServer, TS).
 
 maybe_update_from_to(Pkt, JidRequestor, Peer, chat, _Nick) ->
     case xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs) of
