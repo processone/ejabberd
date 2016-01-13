@@ -44,6 +44,13 @@
 -include("mod_muc_room.hrl").
 -include("ejabberd_commands.hrl").
 
+-define(BIN_GREATER_THAN(A, B),
+	((A > B andalso byte_size(A) == byte_size(B))
+	 orelse byte_size(A) > byte_size(B))).
+-define(BIN_LESS_THAN(A, B),
+	((A < B andalso byte_size(A) == byte_size(B))
+	 orelse byte_size(A) < byte_size(B))).
+
 -record(archive_msg,
 	{us = {<<"">>, <<"">>}                :: {binary(), binary()} | '$2',
 	 id = <<>>                            :: binary() | '_',
@@ -1014,11 +1021,12 @@ filter_by_rsm(Msgs, #rsm_in{max = Max, direction = Direction, id = ID}) ->
 		  aft when ID /= <<"">> ->
 		      lists:filter(
 			fun(#archive_msg{id = I}) ->
-				I > ID
+				?BIN_GREATER_THAN(I, ID)
 			end, Msgs);
 		  before when ID /= <<"">> ->
 		      lists:foldl(
-			fun(#archive_msg{id = I} = Msg, Acc) when I < ID ->
+			fun(#archive_msg{id = I} = Msg, Acc)
+				when ?BIN_LESS_THAN(I, ID) ->
 				[Msg|Acc];
 			   (_, Acc) ->
 				Acc
