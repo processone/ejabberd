@@ -255,8 +255,8 @@ muc_process_iq(#iq{type = set, lang = Lang,
 		   sub_el = #xmlel{name = <<"query">>,
 				   attrs = Attrs} = SubEl} = IQ,
 	       MUCState, From, To) ->
-    case xml:get_attr_s(<<"xmlns">>, Attrs) of
-	?NS_MAM_0 ->
+    XMLNS = xml:get_attr_s(<<"xmlns">>, Attrs),
+    if XMLNS == ?NS_MAM_0; XMLNS == ?NS_MAM_1 ->
 	    LServer = MUCState#state.server_host,
 	    Role = mod_muc_room:get_role(From, MUCState),
 	    Config = MUCState#state.config,
@@ -277,7 +277,7 @@ muc_process_iq(#iq{type = set, lang = Lang,
 			       get_xdata_fields(SubEl),
 			       {groupchat, Role, MUCState})
 	    end;
-	_ ->
+       true ->
 	    IQ
     end;
 muc_process_iq(IQ, _MUCState, _From, _To) ->
