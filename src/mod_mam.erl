@@ -258,6 +258,10 @@ process_iq_v0_3(#jid{lserver = LServer} = From,
 		#jid{lserver = LServer} = To,
 		#iq{type = set, sub_el = #xmlel{name = <<"query">>} = SubEl} = IQ) ->
     process_iq(LServer, From, To, IQ, SubEl, get_xdata_fields(SubEl), chat);
+process_iq_v0_3(#jid{lserver = LServer},
+		#jid{lserver = LServer},
+		#iq{type = get, sub_el = #xmlel{name = <<"query">>}} = IQ) ->
+    process_iq(LServer, IQ);
 process_iq_v0_3(From, To, IQ) ->
     process_iq(From, To, IQ).
 
@@ -288,6 +292,17 @@ muc_process_iq(#iq{type = set, lang = Lang,
 			       {groupchat, Role, MUCState})
 	    end;
        true ->
+	    IQ
+    end;
+muc_process_iq(#iq{type = get,
+		   sub_el = #xmlel{name = <<"query">>,
+				   attrs = Attrs} = SubEl} = IQ,
+	       MUCState, From, To) ->
+    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+	?NS_MAM_0 ->
+	    LServer = MUCState#state.server_host,
+	    process_iq(LServer, IQ);
+	_ ->
 	    IQ
     end;
 muc_process_iq(IQ, _MUCState, _From, _To) ->
@@ -361,6 +376,44 @@ delete_old_messages(_TimeStamp, _Type, _Host, _DBType) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+process_iq(LServer, #iq{sub_el = #xmlel{attrs = Attrs}} = IQ) ->
+    NS = case xml:get_attr_s(<<"xmlns">>, Attrs) of
+	     ?NS_MAM_0 ->
+		 ?NS_MAM_0;
+	     _ ->
+		 ?NS_MAM_1
+	 end,
+    CommonFields = [#xmlel{name = <<"field">>,
+			   attrs = [{<<"type">>, <<"hidden">>},
+				    {<<"var">>, <<"FORM_TYPE">>}],
+			   children = [#xmlel{name = <<"value">>,
+					      children = [{xmlcdata, NS}]}]},
+		    #xmlel{name = <<"field">>,
+			   attrs = [{<<"type">>, <<"jid-single">>},
+				    {<<"var">>, <<"with">>}]},
+		    #xmlel{name = <<"field">>,
+			   attrs = [{<<"type">>, <<"text-single">>},
+				    {<<"var">>, <<"start">>}]},
+		    #xmlel{name = <<"field">>,
+			   attrs = [{<<"type">>, <<"text-single">>},
+				    {<<"var">>, <<"end">>}]}],
+    Fields = case gen_mod:db_type(LServer, ?MODULE) of
+		 odbc ->
+		     WithText = #xmlel{name = <<"field">>,
+				       attrs = [{<<"type">>, <<"text-single">>},
+						{<<"var">>, <<"withtext">>}]},
+		     [WithText|CommonFields];
+		 _ ->
+		     CommonFields
+	     end,
+    Form = #xmlel{name = <<"x">>,
+		  attrs = [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"form">>}],
+		  children = Fields},
+    IQ#iq{type = result,
+	  sub_el = [#xmlel{name = <<"query">>,
+			   attrs = [{<<"xmlns">>, NS}],
+			   children = [Form]}]}.
 
 % Preference setting (both v0.2 & v0.3)
 process_iq(#jid{luser = LUser, lserver = LServer},
