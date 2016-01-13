@@ -36,12 +36,13 @@
 -export([user_send_packet/4, user_receive_packet/5,
 	 process_iq_v0_2/3, process_iq_v0_3/3, disco_sm_features/5,
 	 remove_user/2, remove_user/3, mod_opt_type/1, muc_process_iq/4,
-	 muc_filter_message/5]).
+	 muc_filter_message/5, delete_old_messages/2]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("jlib.hrl").
 -include("logger.hrl").
 -include("mod_muc_room.hrl").
+-include("ejabberd_commands.hrl").
 
 -record(archive_msg,
 	{us = {<<"">>, <<"">>}                :: {binary(), binary()} | '$2',
@@ -94,6 +95,7 @@ start(Host, Opts) ->
 		       remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, Host, ?MODULE,
 		       remove_user, 50),
+    ejabberd_commands:register_commands(commands()),
     ok.
 
 init_db(mnesia, _Host) ->
@@ -138,6 +140,7 @@ stop(Host) ->
 			  remove_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, Host,
 			  ?MODULE, remove_user, 50),
+    ejabberd_commands:unregister_commands(commands()),
     ok.
 
 remove_user(User, Server) ->
@@ -304,6 +307,49 @@ disco_sm_features({result, OtherFeatures},
     {result, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1 | OtherFeatures]};
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
+
+delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
+					TypeBin == <<"groupchat">>;
+					TypeBin == <<"all">> ->
+    Diff = Days * 24 * 60 * 60 * 1000000,
+    TimeStamp = usec_to_now(p1_time_compat:system_time(micro_seconds) - Diff),
+    Type = jlib:binary_to_atom(TypeBin),
+    {Results, _} =
+	lists:foldl(fun(Host, {Results, MnesiaDone}) ->
+			    case {gen_mod:db_type(Host, ?MODULE), MnesiaDone} of
+				{mnesia, true} ->
+				    {Results, true};
+				{mnesia, false} ->
+				    Res = delete_old_messages(TimeStamp, Type,
+							      global, mnesia),
+				    {[Res|Results], true};
+				{DBType, _} ->
+				    Res = delete_old_messages(TimeStamp, Type,
+							      Host, DBType),
+				    {[Res|Results], MnesiaDone}
+			    end
+		    end, {[], false}, ?MYHOSTS),
+    case lists:filter(fun(Res) -> Res /= ok end, Results) of
+	[] -> ok;
+	[NotOk|_] -> NotOk
+    end;
+delete_old_messages(_TypeBin, _Days) ->
+    unsupported_type.
+
+delete_old_messages(TimeStamp, Type, global, mnesia) ->
+    MS = ets:fun2ms(fun(#archive_msg{timestamp = MsgTS,
+				     type = MsgType} = Msg)
+			    when MsgTS < TimeStamp,
+				 MsgType == Type orelse Type == all ->
+			    Msg
+		    end),
+    OldMsgs = mnesia:dirty_select(archive_msg, MS),
+    lists:foreach(fun(Rec) ->
+			  ok = mnesia:dirty_delete_object(Rec)
+		  end, OldMsgs);
+delete_old_messages(_TimeStamp, _Type, _Host, _DBType) ->
+    %% TODO
+    not_implemented.
 
 %%%===================================================================
 %%% Internal functions
@@ -1161,6 +1207,15 @@ update(LServer, Table, Fields, Vals, Where) ->
 %% Almost a copy of string:join/2.
 join([], _Sep) -> [];
 join([H | T], Sep) -> [H, [[Sep, X] || X <- T]].
+
+commands() ->
+    [#ejabberd_commands{name = delete_old_mam_messages, tags = [purge],
+			desc = "Delete MAM messages older than DAYS",
+			longdesc = "Valid message TYPEs: "
+				   "\"chat\", \"groupchat\", \"all\".",
+			module = ?MODULE, function = delete_old_messages,
+			args = [{type, binary}, {days, integer}],
+			result = {res, rescode}}].
 
 mod_opt_type(cache_life_time) ->
     fun (I) when is_integer(I), I > 0 -> I end;
