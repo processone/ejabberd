@@ -44,6 +44,9 @@
 -include("mod_muc_room.hrl").
 -include("ejabberd_commands.hrl").
 
+-define(DEF_PAGE_SIZE, 50).
+-define(MAX_PAGE_SIZE, 250).
+
 -define(BIN_GREATER_THAN(A, B),
 	((A > B andalso byte_size(A) == byte_size(B))
 	 orelse byte_size(A) > byte_size(B))).
@@ -469,8 +472,9 @@ process_iq(LServer, #jid{luser = LUser} = From, To, IQ, SubEl, Fs, MsgType) ->
 	{_Start, _End, _With, #rsm_in{index = Index}} when is_integer(Index) ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]};
 	{Start, End, With, RSM} ->
+	    NS = xml:get_tag_attr_s(<<"xmlns">>, SubEl),
 	    select_and_send(LServer, From, To, Start, End,
-			    With, RSM, IQ, MsgType)
+			    With, limit_max(RSM, NS), IQ, MsgType)
     end.
 
 muc_process_iq(#iq{lang = Lang, sub_el = SubEl} = IQ,
@@ -910,12 +914,12 @@ select(LServer, #jid{luser = LUser} = JidRequestor,
 	   end,
     {Query, CountQuery} = make_sql_query(User, LServer,
 					 Start, End, With, RSM),
-    % XXX TODO from XEP-0313:
-    % To conserve resources, a server MAY place a reasonable limit on
-    % how many stanzas may be pushed to a client in one request. If a
-    % query returns a number of stanzas greater than this limit and
-    % the client did not specify a limit using RSM then the server
-    % should return a policy-violation error to the client.
+    % TODO from XEP-0313 v0.2: "To conserve resources, a server MAY place a
+    % reasonable limit on how many stanzas may be pushed to a client in one
+    % request. If a query returns a number of stanzas greater than this limit
+    % and the client did not specify a limit using RSM then the server should
+    % return a policy-violation error to the client." We currently don't do this
+    % for v0.2 requests, but we do limit #rsm_in.max for v0.3 and newer.
     case {ejabberd_odbc:sql_query(Host, Query),
 	  ejabberd_odbc:sql_query(Host, CountQuery)} of
 	{{selected, _, Res}, {selected, _, [[Count]]}} ->
@@ -1123,6 +1127,15 @@ filter_by_max(Msgs, Len) when is_integer(Len), Len >= 0 ->
     {lists:sublist(Msgs, Len), length(Msgs) =< Len};
 filter_by_max(_Msgs, _Junk) ->
     {[], true}.
+
+limit_max(RSM, ?NS_MAM_TMP) ->
+    RSM; % XEP-0313 v0.2 doesn't require clients to support RSM.
+limit_max(#rsm_in{max = Max} = RSM, _NS) when not is_integer(Max) ->
+    RSM#rsm_in{max = ?DEF_PAGE_SIZE};
+limit_max(#rsm_in{max = Max} = RSM, _NS) when Max > ?MAX_PAGE_SIZE ->
+    RSM#rsm_in{max = ?MAX_PAGE_SIZE};
+limit_max(RSM, _NS) ->
+    RSM.
 
 match_interval(Now, Start, End) ->
     (Now >= Start) and (Now =< End).
