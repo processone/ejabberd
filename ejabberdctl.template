@@ -103,7 +103,6 @@ ERL_INETRC=$ETC_DIR/inetrc
 # define mnesia options
 MNESIA_OPTS="-mnesia dir \"\\\"$SPOOL_DIR\\\"\" $MNESIA_OPTIONS"
 # define erl parameters
-ERL_OPTIONS=$(echo $ERL_OPTIONS | sed 's/ /\\ /g')
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
 KERNEL_OPTS=""
 if [ "$FIREWALL_WINDOW" != "" ] ; then
