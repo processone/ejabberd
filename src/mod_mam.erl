@@ -466,6 +466,8 @@ process_iq(LServer, #jid{luser = LUser} = From, To, IQ, SubEl, Fs, MsgType) ->
 		 end, {none, [], none, none}, Fs) of
 	{'EXIT', _} ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+	{_Start, _End, _With, #rsm_in{index = Index}} when is_integer(Index) ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]};
 	{Start, End, With, RSM} ->
 	    select_and_send(LServer, From, To, Start, End,
 			    With, RSM, IQ, MsgType)
