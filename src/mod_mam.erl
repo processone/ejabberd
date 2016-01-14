@@ -579,9 +579,30 @@ should_archive_peer(C2SState,
 	    end
     end.
 
-should_archive_muc(_MUCState, _Peer) ->
-    %% TODO
-    true.
+should_archive_muc(Pkt) ->
+    case xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs) of
+	<<"groupchat">> ->
+	    case check_store_hint(Pkt) of
+		store ->
+		    true;
+		no_store ->
+		    false;
+		none ->
+		    case xml:get_subtag_cdata(Pkt, <<"body">>) of
+			<<>> ->
+			    case xml:get_subtag_cdata(Pkt, <<"subject">>) of
+				<<>> ->
+				    false;
+				_ ->
+				    true
+			    end;
+			_ ->
+			    true
+		    end
+	    end;
+	_ ->
+	    false
+    end.
 
 check_store_hint(Pkt) ->
     case has_store_hint(Pkt) of
@@ -635,7 +656,7 @@ store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
     end.
 
 store_muc(MUCState, Pkt, RoomJID, Peer, Nick) ->
-    case should_archive_muc(MUCState, Peer) of
+    case should_archive_muc(Pkt) of
 	true ->
 	    LServer = MUCState#state.server_host,
 	    {U, S, _} = jid:tolower(RoomJID),
