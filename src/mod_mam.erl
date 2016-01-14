@@ -256,7 +256,7 @@ process_iq_v0_3(#jid{lserver = LServer},
 process_iq_v0_3(From, To, IQ) ->
     process_iq(From, To, IQ).
 
-muc_process_iq(#iq{type = set, lang = Lang,
+muc_process_iq(#iq{type = set,
 		   sub_el = #xmlel{name = <<"query">>,
 				   attrs = Attrs} = SubEl} = IQ,
 	       MUCState, From, To) ->
