@@ -898,7 +898,8 @@ select(_LServer, #jid{luser = LUser, lserver = LServer} = JidRequestor,
        Start, End, With, RSM, MsgType, mnesia) ->
     MS = make_matchspec(LUser, LServer, Start, End, With),
     Msgs = mnesia:dirty_select(archive_msg, MS),
-    {FilteredMsgs, IsComplete} = filter_by_rsm(Msgs, RSM),
+    SortedMsgs = lists:keysort(#archive_msg.timestamp, Msgs),
+    {FilteredMsgs, IsComplete} = filter_by_rsm(SortedMsgs, RSM),
     Count = length(Msgs),
     {lists:map(
        fun(Msg) ->
