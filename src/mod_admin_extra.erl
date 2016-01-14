@@ -485,7 +485,7 @@ commands() ->
 			result = {res, rescode}},
 
      #ejabberd_commands{name = stats, tags = [stats],
-			desc = "Get statistical value: registeredusers onlineusers onlineusersnode uptimeseconds",
+			desc = "Get statistical value: registeredusers onlineusers onlineusersnode uptimeseconds processes",
                         policy = admin,
 			module = ?MODULE, function = stats,
 			args = [{name, binary}],
@@ -1355,6 +1355,7 @@ privacy_set(Username, Host, QueryS) ->
 stats(Name) ->
     case Name of
 	<<"uptimeseconds">> -> trunc(element(1, erlang:statistics(wall_clock))/1000);
+	<<"processes">> -> length(erlang:processes());
 	<<"registeredusers">> -> lists:foldl(fun(Host, Sum) -> ejabberd_auth:get_vh_registered_users_number(Host) + Sum end, 0, ?MYHOSTS);
 	<<"onlineusersnode">> -> length(ejabberd_sm:dirty_get_my_sessions_list());
 	<<"onlineusers">> -> length(ejabberd_sm:dirty_get_sessions_list())
