@@ -24,9 +24,9 @@
                    opts = [] :: list() | '_'}).
 
 -record(muc_online_room,
-        {name_host = {<<"">>, <<"">>} :: {binary(), binary()} | {'_', '$1'} | '$1' | '_',
-         timestamp = p1_time_compat:timestamp() :: erlang:timestamp() | '_',
-         pid = self() :: pid() | '$1' | '$2' | '_'}).
+        {name_host = {<<"">>, <<"">>} :: {binary(), binary()} | '$1' |
+                                         {'_', binary()} | '_',
+         pid = self() :: pid() | '$2' | '_' | '$1'}).
 
 -record(muc_registered,
         {us_host = {{<<"">>, <<"">>}, <<"">>} :: {{binary(), binary()}, binary()} | '$1',
