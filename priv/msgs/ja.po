@@ -64,7 +64,7 @@ msgstr "ユーザー"
 
 #: ejabberd_oauth.erl:256
 msgid "Server"
-msgstr "サーバー:"
+msgstr "サーバー"
 
 #: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1408 mod_configure.erl:1398
 #: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2123
@@ -74,7 +74,7 @@ msgstr "パスワード"
 
 #: ejabberd_oauth.erl:267
 msgid "Accept"
-msgstr ""
+msgstr "許可"
 
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
@@ -265,7 +265,7 @@ msgstr "接続リソース:"
 #: ejabberd_web_admin.erl:1686 mod_register_web.erl:239
 #: mod_register_web.erl:475
 msgid "Password:"
-msgstr "パスワード"
+msgstr "パスワード:"
 
 #: ejabberd_web_admin.erl:1693 mod_configure.erl:2117
 msgid "Remove User"
@@ -839,11 +839,11 @@ msgstr ""
 
 #: mod_http_upload.erl:586
 msgid "Please specify file size."
-msgstr ""
+msgstr "ファイルサイズを指定してください。"
 
 #: mod_http_upload.erl:590
 msgid "Please specify file name."
-msgstr ""
+msgstr "ファイル名を指定してください。"
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
@@ -981,7 +981,7 @@ msgstr "チャットルーム"
 
 #: mod_muc.erl:781
 msgid "Empty Rooms"
-msgstr ""
+msgstr "空のルーム"
 
 #: mod_muc.erl:933
 msgid "You need a client that supports x:data to register the nickname"
@@ -1177,7 +1177,7 @@ msgstr "トラフィックレートの制限を超えました"
 msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
-msgstr ""
+msgstr "このルームにエラーメッセージを送ることは許可されていません。参加者(~s)はエラーメッセージを(~s)を送信してルームからキックされました。"
 
 #: mod_muc_room.erl:241
 msgid "It is not allowed to send private messages to the conference"
@@ -1352,7 +1352,7 @@ msgstr "誰にでも"
 
 #: mod_muc_room.erl:3471
 msgid "Roles for which Presence is Broadcasted"
-msgstr ""
+msgstr "プレゼンスをブロードキャストするロール"
 
 #: mod_muc_room.erl:3486
 msgid "Moderator"
@@ -1805,7 +1805,7 @@ msgstr "メンバー:"
 
 #: mod_shared_roster.erl:1250
 msgid "Displayed Groups:"
-msgstr "表示グループ"
+msgstr "表示グループ:"
 
 #: mod_shared_roster.erl:1259
 msgid "Group "
