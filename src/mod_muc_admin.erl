@@ -26,12 +26,10 @@
 -include("logger.hrl").
 -include("jlib.hrl").
 -include("mod_muc_room.hrl").
+-include("mod_muc.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("ejabberd_commands.hrl").
-
-%% Copied from mod_muc/mod_muc.erl
--record(muc_online_room, {name_host, pid}).
 
 %%----------------------------
 %% gen_mod
