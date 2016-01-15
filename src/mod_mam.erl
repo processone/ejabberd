@@ -36,7 +36,7 @@
 -export([user_send_packet/4, user_receive_packet/5,
 	 process_iq_v0_2/3, process_iq_v0_3/3, disco_sm_features/5,
 	 remove_user/2, remove_user/3, mod_opt_type/1, muc_process_iq/4,
-	 muc_filter_message/5, delete_old_messages/2]).
+	 muc_filter_message/5, message_is_archived/5, delete_old_messages/2]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("jlib.hrl").
@@ -105,6 +105,17 @@ start(Host, Opts) ->
 		       remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, Host, ?MODULE,
 		       remove_user, 50),
+    case gen_mod:get_opt(assume_mam_usage, Opts,
+			 fun(if_enabled) -> if_enabled;
+			    (on_request) -> on_request;
+			    (never) -> never
+			 end, never) of
+	never ->
+	    ok;
+	_ ->
+	    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
+			       message_is_archived, 50)
+    end,
     ejabberd_commands:register_commands(commands()),
     ok.
 
@@ -150,6 +161,17 @@ stop(Host) ->
 			  remove_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, Host,
 			  ?MODULE, remove_user, 50),
+    case gen_mod:get_module_opt(Host, ?MODULE, assume_mam_usage,
+				fun(if_enabled) -> if_enabled;
+				   (on_request) -> on_request;
+				   (never) -> never
+				end, never) of
+	never ->
+	    ok;
+	_ ->
+	    ejabberd_hooks:delete(message_is_archived, Host, ?MODULE,
+				  message_is_archived, 50)
+    end,
     ejabberd_commands:unregister_commands(commands()),
     ok.
 
@@ -306,6 +328,34 @@ disco_sm_features({result, OtherFeatures},
     {result, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1 | OtherFeatures]};
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
+
+message_is_archived(true, _C2SState, _Peer, _JID, _Pkt) ->
+    true;
+message_is_archived(false, C2SState, Peer,
+		    #jid{luser = LUser, lserver = LServer}, Pkt) ->
+    Res = case gen_mod:get_module_opt(LServer, ?MODULE, assume_mam_usage,
+				      fun(if_enabled) -> if_enabled;
+					 (on_request) -> on_request;
+					 (never) -> never
+				      end, never) of
+	      if_enabled ->
+		  get_prefs(LUser, LServer);
+	      on_request ->
+		  DBType = gen_mod:db_type(LServer, ?MODULE),
+		  cache_tab:lookup(archive_prefs, {LUser, LServer},
+				   fun() ->
+					   get_prefs(LUser, LServer, DBType)
+				   end);
+	      never ->
+		  error
+	  end,
+    case Res of
+	{ok, Prefs} ->
+	    should_archive(strip_my_archived_tag(Pkt, LServer), LServer)
+		andalso should_archive_peer(C2SState, Prefs, Peer);
+	error ->
+	    false
+    end.
 
 delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
 					TypeBin == <<"groupchat">>;
@@ -1318,6 +1368,11 @@ commands() ->
 			args = [{type, binary}, {days, integer}],
 			result = {res, rescode}}].
 
+mod_opt_type(assume_mam_usage) ->
+    fun(if_enabled) -> if_enabled;
+       (on_request) -> on_request;
+       (never) -> never
+    end;
 mod_opt_type(cache_life_time) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(cache_size) ->
@@ -1334,5 +1389,5 @@ mod_opt_type(request_activates_archiving) ->
 mod_opt_type(store_body_only) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
-    [cache_life_time, cache_size, db_type, default, iqdisc,
+    [assume_mam_usage, cache_life_time, cache_size, db_type, default, iqdisc,
      request_activates_archiving, store_body_only].

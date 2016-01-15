@@ -2878,7 +2878,16 @@ handle_unacked_stanzas(StateData)
 		      ?DEBUG("Dropping forwarded message stanza from ~s",
 			     [xml:get_attr_s(<<"from">>, El#xmlel.attrs)]);
 		  false ->
-		      ReRoute(From, To, El, Time)
+		      case ejabberd_hooks:run_fold(message_is_archived,
+						   StateData#state.server,
+						   false,
+						   [StateData, From,
+						    StateData#state.jid, El]) of
+			true ->
+			    ok;
+			false ->
+			    ReRoute(From, To, El, Time)
+		      end
 		end
 	end,
     handle_unacked_stanzas(StateData, F);
