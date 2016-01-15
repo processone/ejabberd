@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: es\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2015-09-07 14:02+0100\n"
+"PO-Revision-Date: 2016-01-15 12:19+0100\n"
 "Last-Translator: Badlop <badlop@process-one.net>\n"
 "Language-Team: \n"
 "Language: es\n"
@@ -66,9 +66,8 @@ msgid "User"
 msgstr "Usuario"
 
 #: ejabberd_oauth.erl:256
-#, fuzzy
 msgid "Server"
-msgstr "Servidor:"
+msgstr "Servidor"
 
 #: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1408 mod_configure.erl:1398
 #: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2123
@@ -78,7 +77,7 @@ msgstr "Contraseña"
 
 #: ejabberd_oauth.erl:267
 msgid "Accept"
-msgstr ""
+msgstr "Aceptar"
 
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
@@ -245,9 +244,8 @@ msgid "Outgoing s2s Connections:"
 msgstr "Conexiones S2S salientes:"
 
 #: ejabberd_web_admin.erl:1559
-#, fuzzy
 msgid "Incoming s2s Connections:"
-msgstr "Conexiones S2S salientes:"
+msgstr "Conexiones S2S entrantes:"
 
 #: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
 #: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
@@ -850,11 +848,11 @@ msgstr ""
 
 #: mod_http_upload.erl:586
 msgid "Please specify file size."
-msgstr ""
+msgstr "Por favor especifica el tamaño del  fichero."
 
 #: mod_http_upload.erl:590
 msgid "Please specify file name."
-msgstr ""
+msgstr "Por favor especifica el nombre del fichero."
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
@@ -973,9 +971,8 @@ msgid "Server ~b"
 msgstr "Servidor ~b"
 
 #: mod_mam.erl:541
-#, fuzzy
 msgid "Only members may query archives of this room"
-msgstr "Solo los moderadores pueden cambiar el asunto de esta sala"
+msgstr "Solo miembros pueden consultar el archivo de mensajes de la sala"
 
 #: mod_muc.erl:585
 msgid "Only service administrators are allowed to send service messages"
@@ -997,7 +994,7 @@ msgstr "Salas de charla"
 
 #: mod_muc.erl:781
 msgid "Empty Rooms"
-msgstr ""
+msgstr "Salas vacías"
 
 #: mod_muc.erl:933
 msgid "You need a client that supports x:data to register the nickname"
@@ -1195,6 +1192,8 @@ msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
 msgstr ""
+"No está permitido enviar mensajes de error a la sala. Este participante (~s) "
+"ha enviado un mensaje de error (~s) y fue expulsado de la sala"
 
 #: mod_muc_room.erl:241
 msgid "It is not allowed to send private messages to the conference"
@@ -1369,20 +1368,19 @@ msgstr "cualquiera"
 
 #: mod_muc_room.erl:3471
 msgid "Roles for which Presence is Broadcasted"
-msgstr ""
+msgstr "Roles para los que sí se difunde su Presencia"
 
 #: mod_muc_room.erl:3486
-#, fuzzy
 msgid "Moderator"
-msgstr "solo moderadores"
+msgstr "Moderador"
 
 #: mod_muc_room.erl:3496
 msgid "Participant"
-msgstr ""
+msgstr "Participante"
 
 #: mod_muc_room.erl:3506
 msgid "Visitor"
-msgstr ""
+msgstr "Visitante"
 
 #: mod_muc_room.erl:3513
 msgid "Make room members-only"

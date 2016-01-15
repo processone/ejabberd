@@ -1,4 +1,5 @@
 %% -*- coding: latin-1 -*-
+{"Accept","Acceptar"}.
 {"Access Configuration","Configuració d'accesos"}.
 {"Access Control List Configuration","Configuració de la Llista de Control d'Accés"}.
 {"Access Control Lists","Llista de Control d'Accés"}.
@@ -87,6 +88,7 @@
 {"ejabberd Web Admin","Web d'administració del ejabberd"}.
 {"Elements","Elements"}.
 {"Email","Email"}.
+{"Empty Rooms","Sales buides "}.
 {"Enable logging","Habilitar el registre de la conversa"}.
 {"Enable message archiving","Activar l'emmagatzematge de missatges"}.
 {"Encoding for server ~b","Codificació pel servidor ~b"}.
@@ -142,6 +144,7 @@
 {"Import Users from Dir at ","Importar usuaris des del directori en "}.
 {"Import Users From jabberd14 Spool Files","Importar usuaris de jabberd14"}.
 {"Improper message type","Tipus de missatge incorrecte"}.
+{"Incoming s2s Connections:","Connexions s2s d'entrada"}.
 {"Incorrect password","Contrasenya incorrecta"}.
 {"Invalid affiliation: ~s","Afiliació invàlida: ~s"}.
 {"Invalid role: ~s","Rol invàlid: ~s"}.
@@ -154,6 +157,7 @@
 {"IRC username","Nom d'usuari al IRC"}.
 {"IRC Username","Nom d'usuari al IRC"}.
 {"is now known as","ara es conegut com"}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","No està permés enviar missatges d'error a la sala. El participant (~s) ha enviat un missatge d'error (~s) i ha sigut expulsat de la sala"}.
 {"It is not allowed to send private messages","No està permés enviar missatges privats"}.
 {"It is not allowed to send private messages of type \"groupchat\"","No està permés enviar missatges del tipus \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","No està permès l'enviament de missatges privats a la sala"}.
@@ -196,6 +200,7 @@
 {"Message body","Missatge"}.
 {"Middle Name","Segon nom"}.
 {"Minimum interval between voice requests (in seconds)","Interval mínim entre peticions de veu (en segons)"}.
+{"Moderator","Moderador"}.
 {"Moderator privileges required","Es necessita tenir privilegis de moderador"}.
 {"moderators only","només moderadors"}.
 {"Modified modules","Mòduls modificats"}.
@@ -239,6 +244,7 @@
 {"Online Users","Usuaris conectats"}.
 {"Online Users:","Usuaris en línia:"}.
 {"Only deliver notifications to available users","Sols enviar notificacions als usuaris disponibles"}.
+{"Only members may query archives of this room","Només membres poden consultar l'arxiu de missatges d'aquesta sala"}.
 {"Only moderators and participants are allowed to change the subject in this room","Només els moderadors i participants poden canviar l'assumpte d'aquesta sala"}.
 {"Only moderators are allowed to change the subject in this room","Només els moderadors poden canviar l'assumpte d'aquesta sala"}.
 {"Only moderators can approve voice requests","Només els moderadors poden aprovar les peticions de veu"}.
@@ -252,6 +258,7 @@
 {"Outgoing s2s Connections","Connexions s2s d'eixida"}.
 {"Owner privileges required","Es requerixen privilegis de propietari de la sala"}.
 {"Packet","Paquet"}.
+{"Participant","Participant"}.
 {"Password ~b","Contrasenya ~b"}.
 {"Password:","Contrasenya:"}.
 {"Password","Contrasenya"}.
@@ -265,6 +272,8 @@
 {"Persist items to storage","Persistir elements al guardar"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Recorda que aquestes opcions només fan còpia de seguretat de la base de dades Mnesia. Si estàs utilitzant el mòdul d'ODBC també deus de fer una còpia de seguretat de la base de dades de SQL a part."}.
+{"Please specify file name.","Per favor especifica el nom del fitxer."}.
+{"Please specify file size.","Per favor especifica la mida del fitxer."}.
 {"Please, wait for a while before sending new voice request","Si us plau, espera una mica abans d'enviar una nova petició de veu"}.
 {"Pong","Pong"}.
 {"Port ~b","Port ~b"}.
@@ -300,6 +309,7 @@
 {"Restore binary backup immediately:","Restaurar una còpia de seguretat binària ara mateix."}.
 {"Restore plain text backup immediately:","Restaurar una còpia de seguretat en format de text pla ara mateix:"}.
 {"Restore","Restaurar"}.
+{"Roles for which Presence is Broadcasted","Rols per als que sí se difon la seua presencia"}.
 {"Room Configuration","Configuració de la sala"}.
 {"Room creation is denied by service policy","Se t'ha denegat el crear la sala per política del servei"}.
 {"Room description","Descripció de la sala:"}.
@@ -323,6 +333,7 @@
 {"September","Setembre"}.
 {"Server ~b","Servidor ~b"}.
 {"Server:","Servidor:"}.
+{"Server","Servidor"}.
 {"Set message of the day and send to online users","Configurar el missatge del dia i enviar a tots els usuaris"}.
 {"Set message of the day on all hosts and send to online users","Escriure missatge del dia en tots els hosts i enviar-ho als usuaris connectats"}.
 {"Shared Roster Groups","Grups de contactes compartits"}.
@@ -408,6 +419,7 @@
 {"Virtual Hosts","Hosts virtuals"}.
 {"Visitors are not allowed to change their nicknames in this room","Els visitants no tenen permés canviar el seus Nicknames en esta sala"}.
 {"Visitors are not allowed to send messages to all occupants","Els visitants no poden enviar missatges a tots els ocupants"}.
+{"Visitor","Visitant"}.
 {"Voice request","Petició de veu"}.
 {"Voice requests are disabled in this conference","Les peticions de veu es troben desactivades en aquesta conferència"}.
 {"Wednesday","Dimecres"}.

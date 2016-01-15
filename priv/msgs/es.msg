@@ -1,4 +1,5 @@
 %% -*- coding: latin-1 -*-
+{"Accept","Aceptar"}.
 {"Access Configuration","Configuración de accesos"}.
 {"Access Control List Configuration","Configuración de la Lista de Control de Acceso"}.
 {"Access control lists","Listas de Control de Acceso"}.
@@ -87,6 +88,7 @@
 {"ejabberd Web Admin","ejabberd Web Admin"}.
 {"Elements","Elementos"}.
 {"Email","correo"}.
+{"Empty Rooms","Salas vacías"}.
 {"Enable logging","Guardar históricos"}.
 {"Enable message archiving","Activar el almacenamiento de mensajes"}.
 {"Encoding for server ~b","Codificación del servidor ~b"}.
@@ -142,6 +144,7 @@
 {"Import Users from Dir at ","Importar usuarios desde el directorio en "}.
 {"Import Users From jabberd14 Spool Files","Importar usuarios de ficheros spool de jabberd-1.4"}.
 {"Improper message type","Tipo de mensaje incorrecto"}.
+{"Incoming s2s Connections:","Conexiones S2S entrantes:"}.
 {"Incorrect password","Contraseña incorrecta"}.
 {"Invalid affiliation: ~s","Afiliación no válida: ~s"}.
 {"Invalid role: ~s","Rol no válido: ~s"}.
@@ -154,6 +157,7 @@
 {"IRC username","Nombre de usuario en IRC"}.
 {"IRC Username","Nombre de usuario en IRC"}.
 {"is now known as","se cambia el nombre a"}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","No está permitido enviar mensajes de error a la sala. Este participante (~s) ha enviado un mensaje de error (~s) y fue expulsado de la sala"}.
 {"It is not allowed to send private messages","No está permitido enviar mensajes privados"}.
 {"It is not allowed to send private messages of type \"groupchat\"","No está permitido enviar mensajes privados del tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir el envio de mensajes privados a la sala"}.
@@ -196,6 +200,7 @@
 {"Message body","Cuerpo del mensaje"}.
 {"Middle Name","Segundo nombre"}.
 {"Minimum interval between voice requests (in seconds)","Intervalo mínimo entre peticiones de voz (en segundos)"}.
+{"Moderator","Moderador"}.
 {"Moderator privileges required","Se necesita privilegios de moderador"}.
 {"moderators only","solo moderadores"}.
 {"Modified modules","Módulos modificados"}.
@@ -239,6 +244,7 @@
 {"Online Users:","Usuarios conectados:"}.
 {"Online Users","Usuarios conectados"}.
 {"Only deliver notifications to available users","Solo enviar notificaciones a los usuarios disponibles"}.
+{"Only members may query archives of this room","Solo miembros pueden consultar el archivo de mensajes de la sala"}.
 {"Only moderators and participants are allowed to change the subject in this room","Solo los moderadores y participantes pueden cambiar el asunto de esta sala"}.
 {"Only moderators are allowed to change the subject in this room","Solo los moderadores pueden cambiar el asunto de esta sala"}.
 {"Only moderators can approve voice requests","Solo los moderadores pueden aprobar peticiones de voz"}.
@@ -252,6 +258,7 @@
 {"Outgoing s2s Connections","Conexiones S2S salientes"}.
 {"Owner privileges required","Se requieren privilegios de propietario de la sala"}.
 {"Packet","Paquete"}.
+{"Participant","Participante"}.
 {"Password ~b","Contraseña ~b"}.
 {"Password:","Contraseña:"}.
 {"Password","Contraseña"}.
@@ -265,6 +272,8 @@
 {"Persist items to storage","Persistir elementos al almacenar"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Ten en cuenta que estas opciones solo harán copia de seguridad de la base de datos Mnesia embebida. Si estás usando ODBC tendrás que hacer también copia de seguridad de tu base de datos SQL."}.
+{"Please specify file name.","Por favor especifica el nombre del fichero."}.
+{"Please specify file size.","Por favor especifica el tamaño del  fichero."}.
 {"Please, wait for a while before sending new voice request","Por favor, espera un poco antes de enviar otra petición de voz"}.
 {"Pong","Pong"}.
 {"Port ~b","Puerto ~b"}.
@@ -300,6 +309,7 @@
 {"Restore binary backup immediately:","Restaurar inmediatamente copia de seguridad binaria:"}.
 {"Restore plain text backup immediately:","Restaurar copias de seguridad de texto plano inmediatamente:"}.
 {"Restore","Restaurar"}.
+{"Roles for which Presence is Broadcasted","Roles para los que sí se difunde su Presencia"}.
 {"Room Configuration","Configuración de la sala"}.
 {"Room creation is denied by service policy","Se te ha denegado crear la sala por política del servicio"}.
 {"Room description","Descripción de la sala"}.
@@ -323,6 +333,7 @@
 {"September","septiembre"}.
 {"Server ~b","Servidor ~b"}.
 {"Server:","Servidor:"}.
+{"Server","Servidor"}.
 {"Set message of the day and send to online users","Poner mensaje del dia y enviar a todos los usuarios conectados"}.
 {"Set message of the day on all hosts and send to online users","Poner mensaje del día en todos los dominios y enviar a los usuarios conectados"}.
 {"Shared Roster Groups","Grupos Compartidos"}.
@@ -408,6 +419,7 @@
 {"Virtual Hosts","Dominios Virtuales"}.
 {"Visitors are not allowed to change their nicknames in this room","Los visitantes no tienen permitido cambiar sus apodos en esta sala"}.
 {"Visitors are not allowed to send messages to all occupants","Los visitantes no pueden enviar mensajes a todos los ocupantes"}.
+{"Visitor","Visitante"}.
 {"Voice request","Petición de voz"}.
 {"Voice requests are disabled in this conference","Las peticiones de voz están desactivadas en esta sala"}.
 {"Wednesday","miércoles"}.
