@@ -88,6 +88,7 @@
 {"ejabberd Web Admin","מנהל רשת ejabberd"}.
 {"Elements","אלמנטים"}.
 {"Email","דוא״ל"}.
+{"Empty Rooms","חדרים ריקים"}.
 {"Enable logging","אפשר רישום פעילות"}.
 {"Enable message archiving","אפשר אחסון הודעות"}.
 {"Encoding for server ~b","קידוד עבור שרת ~b"}.
@@ -143,6 +144,7 @@
 {"Import Users from Dir at ","ייבוא משתמשים מתוך מדור אצל "}.
 {"Import Users From jabberd14 Spool Files","יבא משתמשים מתוך קבצי סליל (Spool Files) של jabberd14"}.
 {"Improper message type","טיפוס הודעה לא מתאים"}.
+{"Incoming s2s Connections:","חיבורי s2s נכנסים:"}.
 {"Incorrect password","מילת מעבר שגויה"}.
 {"Invalid affiliation: ~s","סינוף שגוי: ~s"}.
 {"Invalid role: ~s","תפקיד שגוי: ~s"}.
@@ -155,8 +157,9 @@
 {"IRC username","שם משתמש IRC"}.
 {"IRC Username","שם משתמש IRC"}.
 {"is now known as","ידועה כעת בכינוי"}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","אין זה מותר לשלוח הודעות שגיאה לחדר. משתתף זה (~s) שלח הודעת שגיאה (~s) ונבעט מתוך החדר"}.
 {"It is not allowed to send private messages of type \"groupchat\"","אין זה מותר לשלוח הודעות פרטיות מן טיפוס \"groupchat\""}.
-{"It is not allowed to send private messages to the conference","אין זה מותר לשלוח הודעות פרטיות אל הועידה"}.
+{"It is not allowed to send private messages to the conference","אין זה מותר לשלוח הודעות פרטיות לועידה"}.
 {"It is not allowed to send private messages","אין זה מותר לשלוח הודעות פרטיות"}.
 {"Jabber Account Registration","רישום חשבון Jabber"}.
 {"Jabber ID ~s is invalid","מזהה Jabber ‏~s הינו שגוי"}.
@@ -199,6 +202,7 @@
 {"Minimum interval between voice requests (in seconds)","תדירות מינימלית בין בקשות ביטוי (בשניות)"}.
 {"Moderator privileges required","נדרשות הרשאות אחראי"}.
 {"moderators only","לאחראים בלבד"}.
+{"Moderator","אחראי"}.
 {"Modified modules","מודולים שהותאמו"}.
 {"Modules at ~p","מודולים אצל ~p"}.
 {"Modules","מודולים"}.
@@ -253,6 +257,7 @@
 {"Outgoing s2s Connections","חיבורי s2s יוצאים"}.
 {"Owner privileges required","נדרשות הרשאות בעלים"}.
 {"Packet","חבילת מידע"}.
+{"Participant","משתתף"}.
 {"Password ~b","סיסמה ~b"}.
 {"Password Verification:","אימות סיסמה:"}.
 {"Password Verification","אימות סיסמה"}.
@@ -266,6 +271,8 @@
 {"Persist items to storage","פריטים קבועים לאחסון"}.
 {"Ping","פינג"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","אנא שים לב כי אפשרויות אלו יגבו את מסד הנתונים המובנה Mnesia בלבד. אם הינך עושה שימוש במודול ODBC, עליך גם לגבות את מסד הנתונים SQL אשר מצוי ברשותך בנפרד."}.
+{"Please specify file name.","אנא ציין שם קובץ."}.
+{"Please specify file size.","אנא ציין גודל קובץ."}.
 {"Please, wait for a while before sending new voice request","אנא, המתן לזמן מה לפני שליחת בקשת ביטוי חדשה"}.
 {"Pong","פונג"}.
 {"Port ~b","פורט ~b"}.
@@ -301,6 +308,7 @@
 {"Restore binary backup immediately:","שחזר גיבוי בינארי לאלתר:"}.
 {"Restore plain text backup immediately:","שחזר גיבוי טקסט גלוי (plain text) לאלתר:"}.
 {"Restore","שחזר"}.
+{"Roles for which Presence is Broadcasted","תפקידים להם נוכחות הינה משודרת"}.
 {"Room Configuration","תצורת חדר"}.
 {"Room creation is denied by service policy","יצירת חדר נדחתה על ידי פוליסת שירות"}.
 {"Room description","תיאור חדר"}.
@@ -332,7 +340,7 @@
 {"Show Ordinary Table","הצג טבלה רגילה"}.
 {"Shut Down Service","כבה שירות"}.
 {"~s invites you to the room ~s","‫~s מזמינך לחדר ~s"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","לקוחות Jabber מסוימים יכולים לאחסן את הסיסמה שלך על המחשב שלך. השתמש בתכונה זו רק אם אתה סמוך כי המחשב שלך הינו מוגן."}.
+{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","ישנם לקוחות Jabber אשר מסוגלים לאחסן את הסיסמה שלך בתוך המחשב, אולם עליך לעשות זאת רק בתוך המחשב האישי שלך מסיבות ביטחוניות."}.
 {"Specify the access model","ציין מודל גישה"}.
 {"Specify the event message type","ציין טיפוס הודעת אירוע"}.
 {"Specify the publisher model","ציין מודל פרסום"}.
@@ -410,6 +418,7 @@
 {"Virtual Hosts","מארחים מדומים"}.
 {"Visitors are not allowed to change their nicknames in this room","מבקרים אינם מורשים לשנות את שמות הכינויים שלהם בחדר זה"}.
 {"Visitors are not allowed to send messages to all occupants","מבקרים אינם מורשים לשלוח הודעות אל כל הנוכחים"}.
+{"Visitor","מבקר"}.
 {"Voice requests are disabled in this conference","בקשות ביטוי מנוטרלות בועידה זו"}.
 {"Voice request","בקשת ביטוי"}.
 {"Wednesday","יום רביעי"}.

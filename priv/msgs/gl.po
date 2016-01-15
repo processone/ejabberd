@@ -24,11 +24,11 @@ msgstr "Substituído por unha nova conexión"
 msgid "has been kicked"
 msgstr "foi expulsado"
 
-#: ejabberd_c2s.erl:2112
+#: ejabberd_c2s.erl:2114
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
 
-#: ejabberd_c2s.erl:2427
+#: ejabberd_c2s.erl:2429
 msgid "Too many unacked stanzas"
 msgstr ""
 
@@ -845,11 +845,11 @@ msgid ""
 "will be unblocked at ~s UTC"
 msgstr ""
 
-#: mod_http_upload.erl:593
+#: mod_http_upload.erl:586
 msgid "Please specify file size."
 msgstr ""
 
-#: mod_http_upload.erl:597
+#: mod_http_upload.erl:590
 msgid "Please specify file name."
 msgstr ""
 
@@ -969,9 +969,9 @@ msgstr "Codificación de servidor ~b"
 msgid "Server ~b"
 msgstr "Servidor ~b"
 
-#: mod_mam.erl:270
+#: mod_mam.erl:541
 #, fuzzy
-msgid "Only members are allowed to query archives of this room"
+msgid "Only members may query archives of this room"
 msgstr "Só os moderadores están autorizados a cambiar o tema nesta sala"
 
 #: mod_muc.erl:585
@@ -992,38 +992,38 @@ msgstr "A sala de conferencias non existe"
 msgid "Chatrooms"
 msgstr "Salas de charla"
 
-#: mod_muc.erl:779
+#: mod_muc.erl:781
 msgid "Empty Rooms"
 msgstr ""
 
-#: mod_muc.erl:931
+#: mod_muc.erl:933
 #, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
 "Necesitas un cliente con soporte de x:data para poder rexistrar o alcume"
 
-#: mod_muc.erl:941
+#: mod_muc.erl:943
 msgid "Nickname Registration at "
 msgstr "Rexistro do alcume en "
 
-#: mod_muc.erl:947
+#: mod_muc.erl:949
 msgid "Enter nickname you want to register"
 msgstr "Introduce o alcume que queiras rexistrar"
 
-#: mod_muc.erl:948 mod_muc_room.erl:4351 mod_roster.erl:1435 mod_vcard.erl:490
+#: mod_muc.erl:950 mod_muc_room.erl:4353 mod_roster.erl:1435 mod_vcard.erl:490
 #: mod_vcard.erl:621
 msgid "Nickname"
 msgstr "Alcume"
 
-#: mod_muc.erl:1060 mod_muc_room.erl:1104 mod_muc_room.erl:1843
+#: mod_muc.erl:1062 mod_muc_room.erl:1104 mod_muc_room.erl:1843
 msgid "That nickname is registered by another person"
 msgstr "O alcume xa está rexistrado por outra persoa"
 
-#: mod_muc.erl:1088
+#: mod_muc.erl:1090
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Debes encher o campo \"Alcumo\" no formulario"
 
-#: mod_muc.erl:1111
+#: mod_muc.erl:1113
 msgid "ejabberd MUC module"
 msgstr "Módulo de MUC para ejabberd"
 
@@ -1197,8 +1197,8 @@ msgstr "Hase exedido o límite de tráfico"
 
 #: mod_muc_room.erl:230 mod_muc_room.erl:518 mod_muc_room.erl:1059
 msgid ""
-"It is not allowed to send error messages to the room. This participant (~s) "
-"sent an error message (~s) and gets kicked from the room"
+"It is not allowed to send error messages to the room. The participant (~s) "
+"has sent an error message (~s) and got kicked from the room"
 msgstr ""
 
 #: mod_muc_room.erl:241
@@ -1238,7 +1238,7 @@ msgstr "O receptor non está na sala de conferencia"
 msgid "It is not allowed to send private messages"
 msgstr "Non está permitido enviar mensaxes privadas"
 
-#: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4592
+#: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4594
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Só os ocupantes poden enviar mensaxes á sala"
 
@@ -1324,7 +1324,7 @@ msgstr "Afiliación non válida: ~s"
 msgid "Invalid role: ~s"
 msgstr "Rol non válido: ~s"
 
-#: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4234
+#: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4236
 msgid "Owner privileges required"
 msgstr "Requírense privilexios de propietario da sala"
 
@@ -1336,7 +1336,7 @@ msgstr "Configuración para a sala ~s"
 msgid "Room title"
 msgstr "Título da sala"
 
-#: mod_muc_room.erl:3361 mod_muc_room.erl:4188
+#: mod_muc_room.erl:3361 mod_muc_room.erl:4190
 msgid "Room description"
 msgstr "Descrición da sala"
 
@@ -1468,36 +1468,36 @@ msgstr "Gardar históricos"
 msgid "You need an x:data capable client to configure room"
 msgstr "Necesitas un cliente con soporte de x:data para configurar a sala"
 
-#: mod_muc_room.erl:4190
+#: mod_muc_room.erl:4192
 msgid "Number of occupants"
 msgstr "Número de ocupantes"
 
-#: mod_muc_room.erl:4260
+#: mod_muc_room.erl:4262
 msgid "private, "
 msgstr "privado"
 
-#: mod_muc_room.erl:4324
+#: mod_muc_room.erl:4326
 msgid "Voice request"
 msgstr ""
 
-#: mod_muc_room.erl:4329
+#: mod_muc_room.erl:4331
 msgid "Either approve or decline the voice request."
 msgstr ""
 
-#: mod_muc_room.erl:4349
+#: mod_muc_room.erl:4351
 #, fuzzy
 msgid "User JID"
 msgstr "Usuario "
 
-#: mod_muc_room.erl:4353
+#: mod_muc_room.erl:4355
 msgid "Grant voice to this person?"
 msgstr ""
 
-#: mod_muc_room.erl:4496
+#: mod_muc_room.erl:4498
 msgid "~s invites you to the room ~s"
 msgstr "~s invítache á sala ~s"
 
-#: mod_muc_room.erl:4507
+#: mod_muc_room.erl:4509
 msgid "the password is"
 msgstr "a contrasinal é"
 

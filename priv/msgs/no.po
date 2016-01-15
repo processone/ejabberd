@@ -28,11 +28,11 @@ msgstr "Erstattet av en ny tilkobling"
 msgid "has been kicked"
 msgstr "har blitt kastet ut"
 
-#: ejabberd_c2s.erl:2112
+#: ejabberd_c2s.erl:2114
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr "Din aktive privat liste har blokkert rutingen av denne strofen."
 
-#: ejabberd_c2s.erl:2427
+#: ejabberd_c2s.erl:2429
 msgid "Too many unacked stanzas"
 msgstr ""
 
@@ -842,11 +842,11 @@ msgid ""
 "will be unblocked at ~s UTC"
 msgstr ""
 
-#: mod_http_upload.erl:593
+#: mod_http_upload.erl:586
 msgid "Please specify file size."
 msgstr ""
 
-#: mod_http_upload.erl:597
+#: mod_http_upload.erl:590
 msgid "Please specify file name."
 msgstr ""
 
@@ -964,9 +964,9 @@ msgstr "Tekstkoding for server ~b"
 msgid "Server ~b"
 msgstr "Server ~b"
 
-#: mod_mam.erl:270
+#: mod_mam.erl:541
 #, fuzzy
-msgid "Only members are allowed to query archives of this room"
+msgid "Only members may query archives of this room"
 msgstr "Bare ordstyrer tillates å  endre emnet i dette rommet"
 
 #: mod_muc.erl:585
@@ -985,36 +985,36 @@ msgstr "Konferanserommet finnes ikke"
 msgid "Chatrooms"
 msgstr "Samtalerom"
 
-#: mod_muc.erl:779
+#: mod_muc.erl:781
 msgid "Empty Rooms"
 msgstr ""
 
-#: mod_muc.erl:931
+#: mod_muc.erl:933
 msgid "You need a client that supports x:data to register the nickname"
 msgstr "Du trenger en klient som støtter x:data for å registrere kallenavnet"
 
-#: mod_muc.erl:941
+#: mod_muc.erl:943
 msgid "Nickname Registration at "
 msgstr "Registrer Kallenavn på "
 
-#: mod_muc.erl:947
+#: mod_muc.erl:949
 msgid "Enter nickname you want to register"
 msgstr "Skriv inn kallenavnet du ønsker å registrere"
 
-#: mod_muc.erl:948 mod_muc_room.erl:4351 mod_roster.erl:1435 mod_vcard.erl:490
+#: mod_muc.erl:950 mod_muc_room.erl:4353 mod_roster.erl:1435 mod_vcard.erl:490
 #: mod_vcard.erl:621
 msgid "Nickname"
 msgstr "Kallenavn"
 
-#: mod_muc.erl:1060 mod_muc_room.erl:1104 mod_muc_room.erl:1843
+#: mod_muc.erl:1062 mod_muc_room.erl:1104 mod_muc_room.erl:1843
 msgid "That nickname is registered by another person"
 msgstr "Det kallenavnet er registrert av en annen person"
 
-#: mod_muc.erl:1088
+#: mod_muc.erl:1090
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Du må fylle inn feltet \"Nickname\" i skjemaet"
 
-#: mod_muc.erl:1111
+#: mod_muc.erl:1113
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUC modul"
 
@@ -1185,8 +1185,8 @@ msgstr "Trafikkmengde grense overskredet"
 
 #: mod_muc_room.erl:230 mod_muc_room.erl:518 mod_muc_room.erl:1059
 msgid ""
-"It is not allowed to send error messages to the room. This participant (~s) "
-"sent an error message (~s) and gets kicked from the room"
+"It is not allowed to send error messages to the room. The participant (~s) "
+"has sent an error message (~s) and got kicked from the room"
 msgstr ""
 
 #: mod_muc_room.erl:241
@@ -1225,7 +1225,7 @@ msgstr "Mottakeren er ikke i konferanserommet"
 msgid "It is not allowed to send private messages"
 msgstr "Det er ikke tillatt å sende private meldinger"
 
-#: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4592
+#: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4594
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Bare deltakere får sende normale meldinger til konferansen"
 
@@ -1307,7 +1307,7 @@ msgstr "Ugyldig rang: ~s"
 msgid "Invalid role: ~s"
 msgstr "Ugyldig rolle: ~s"
 
-#: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4234
+#: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4236
 msgid "Owner privileges required"
 msgstr "Eierprivilegier kreves"
 
@@ -1319,7 +1319,7 @@ msgstr "Konfigurasjon for rom ~s"
 msgid "Room title"
 msgstr "Romtittel"
 
-#: mod_muc_room.erl:3361 mod_muc_room.erl:4188
+#: mod_muc_room.erl:3361 mod_muc_room.erl:4190
 msgid "Room description"
 msgstr "Rom beskrivelse"
 
@@ -1448,35 +1448,35 @@ msgstr "Slå på logging"
 msgid "You need an x:data capable client to configure room"
 msgstr "Du trenger en klient som støtter x:data for å "
 
-#: mod_muc_room.erl:4190
+#: mod_muc_room.erl:4192
 msgid "Number of occupants"
 msgstr "Antall deltakere"
 
-#: mod_muc_room.erl:4260
+#: mod_muc_room.erl:4262
 msgid "private, "
 msgstr "privat, "
 
-#: mod_muc_room.erl:4324
+#: mod_muc_room.erl:4326
 msgid "Voice request"
 msgstr "Lyd forespørsel"
 
-#: mod_muc_room.erl:4329
+#: mod_muc_room.erl:4331
 msgid "Either approve or decline the voice request."
 msgstr "Enten godkjenn eller forby lyd forespørselen"
 
-#: mod_muc_room.erl:4349
+#: mod_muc_room.erl:4351
 msgid "User JID"
 msgstr "Bruker JID"
 
-#: mod_muc_room.erl:4353
+#: mod_muc_room.erl:4355
 msgid "Grant voice to this person?"
 msgstr "Gi lyd til denne personen?"
 
-#: mod_muc_room.erl:4496
+#: mod_muc_room.erl:4498
 msgid "~s invites you to the room ~s"
 msgstr "~s inviterer deg til rommet ~s"
 
-#: mod_muc_room.erl:4507
+#: mod_muc_room.erl:4509
 msgid "the password is"
 msgstr "passordet er"
 

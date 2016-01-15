@@ -26,11 +26,11 @@ msgstr "被新的连接替换"
 msgid "has been kicked"
 msgstr "已被踢出"
 
-#: ejabberd_c2s.erl:2112
+#: ejabberd_c2s.erl:2114
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr "你的活跃私聊列表拒绝了在此房间进行路由分发."
 
-#: ejabberd_c2s.erl:2427
+#: ejabberd_c2s.erl:2429
 msgid "Too many unacked stanzas"
 msgstr ""
 
@@ -838,11 +838,11 @@ msgid ""
 "will be unblocked at ~s UTC"
 msgstr ""
 
-#: mod_http_upload.erl:593
+#: mod_http_upload.erl:586
 msgid "Please specify file size."
 msgstr ""
 
-#: mod_http_upload.erl:597
+#: mod_http_upload.erl:590
 msgid "Please specify file name."
 msgstr ""
 
@@ -956,9 +956,9 @@ msgstr "服务器 ~b 的编码"
 msgid "Server ~b"
 msgstr "服务器 ~b"
 
-#: mod_mam.erl:270
+#: mod_mam.erl:541
 #, fuzzy
-msgid "Only members are allowed to query archives of this room"
+msgid "Only members may query archives of this room"
 msgstr "只有主持人可以在此房间里更改主题"
 
 #: mod_muc.erl:585
@@ -977,36 +977,36 @@ msgstr "会议室不存在"
 msgid "Chatrooms"
 msgstr "聊天室"
 
-#: mod_muc.erl:779
+#: mod_muc.erl:781
 msgid "Empty Rooms"
 msgstr ""
 
-#: mod_muc.erl:931
+#: mod_muc.erl:933
 msgid "You need a client that supports x:data to register the nickname"
 msgstr "您需要一个支持 x:data 的客户端来注册昵称"
 
-#: mod_muc.erl:941
+#: mod_muc.erl:943
 msgid "Nickname Registration at "
 msgstr "昵称注册于 "
 
-#: mod_muc.erl:947
+#: mod_muc.erl:949
 msgid "Enter nickname you want to register"
 msgstr "请输入您想要注册的昵称"
 
-#: mod_muc.erl:948 mod_muc_room.erl:4351 mod_roster.erl:1435 mod_vcard.erl:490
+#: mod_muc.erl:950 mod_muc_room.erl:4353 mod_roster.erl:1435 mod_vcard.erl:490
 #: mod_vcard.erl:621
 msgid "Nickname"
 msgstr "昵称"
 
-#: mod_muc.erl:1060 mod_muc_room.erl:1104 mod_muc_room.erl:1843
+#: mod_muc.erl:1062 mod_muc_room.erl:1104 mod_muc_room.erl:1843
 msgid "That nickname is registered by another person"
 msgstr "该昵称已被另一个人注册了"
 
-#: mod_muc.erl:1088
+#: mod_muc.erl:1090
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "您必须填充表单中\"昵称\"项"
 
-#: mod_muc.erl:1111
+#: mod_muc.erl:1113
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUC 模块"
 
@@ -1176,8 +1176,8 @@ msgstr "已经超过传输率限制"
 
 #: mod_muc_room.erl:230 mod_muc_room.erl:518 mod_muc_room.erl:1059
 msgid ""
-"It is not allowed to send error messages to the room. This participant (~s) "
-"sent an error message (~s) and gets kicked from the room"
+"It is not allowed to send error messages to the room. The participant (~s) "
+"has sent an error message (~s) and got kicked from the room"
 msgstr ""
 
 #: mod_muc_room.erl:241
@@ -1216,7 +1216,7 @@ msgstr "接收人不在会议室"
 msgid "It is not allowed to send private messages"
 msgstr "不可以发送私聊消息"
 
-#: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4592
+#: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4594
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "只有与会人可以向大会发送消息"
 
@@ -1298,7 +1298,7 @@ msgstr "无效加入: ~s"
 msgid "Invalid role: ~s"
 msgstr "无效角色: ~s"
 
-#: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4234
+#: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4236
 msgid "Owner privileges required"
 msgstr "需要持有人权限"
 
@@ -1310,7 +1310,7 @@ msgstr "房间 ~s 的配置 "
 msgid "Room title"
 msgstr "房间标题"
 
-#: mod_muc_room.erl:3361 mod_muc_room.erl:4188
+#: mod_muc_room.erl:3361 mod_muc_room.erl:4190
 msgid "Room description"
 msgstr "房间描述"
 
@@ -1439,35 +1439,35 @@ msgstr "启用服务器端聊天记录"
 msgid "You need an x:data capable client to configure room"
 msgstr "您需要一个兼容 x:data 的客户端来配置房间"
 
-#: mod_muc_room.erl:4190
+#: mod_muc_room.erl:4192
 msgid "Number of occupants"
 msgstr "驻留人数"
 
-#: mod_muc_room.erl:4260
+#: mod_muc_room.erl:4262
 msgid "private, "
 msgstr "保密, "
 
-#: mod_muc_room.erl:4324
+#: mod_muc_room.erl:4326
 msgid "Voice request"
 msgstr "声音请求"
 
-#: mod_muc_room.erl:4329
+#: mod_muc_room.erl:4331
 msgid "Either approve or decline the voice request."
 msgstr "接受或拒绝声音请求"
 
-#: mod_muc_room.erl:4349
+#: mod_muc_room.erl:4351
 msgid "User JID"
 msgstr "用户 JID"
 
-#: mod_muc_room.erl:4353
+#: mod_muc_room.erl:4355
 msgid "Grant voice to this person?"
 msgstr "为此人授权声音?"
 
-#: mod_muc_room.erl:4496
+#: mod_muc_room.erl:4498
 msgid "~s invites you to the room ~s"
 msgstr "~s 邀请你到 ~s 房间"
 
-#: mod_muc_room.erl:4507
+#: mod_muc_room.erl:4509
 msgid "the password is"
 msgstr "密码是"
 

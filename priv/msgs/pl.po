@@ -33,11 +33,11 @@ msgstr "Połączenie zostało zastąpione"
 msgid "has been kicked"
 msgstr "został wyrzucony"
 
-#: ejabberd_c2s.erl:2112
+#: ejabberd_c2s.erl:2114
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr "Aktualna lista prywatności zabrania przesyłania tej stanzy"
 
-#: ejabberd_c2s.erl:2427
+#: ejabberd_c2s.erl:2429
 msgid "Too many unacked stanzas"
 msgstr "Zbyt wiele niepotwierdzonych pakietów"
 
@@ -851,11 +851,11 @@ msgstr ""
 "Zbyt wiele (~p) nieudanych prób logowanie z tego adresu IP (~s). Ten adres "
 "zostanie odblokowany o ~s UTC"
 
-#: mod_http_upload.erl:593
+#: mod_http_upload.erl:586
 msgid "Please specify file size."
 msgstr ""
 
-#: mod_http_upload.erl:597
+#: mod_http_upload.erl:590
 msgid "Please specify file name."
 msgstr ""
 
@@ -973,9 +973,9 @@ msgstr "Kodowanie znaków dla serwera ~b"
 msgid "Server ~b"
 msgstr "Serwer ~b"
 
-#: mod_mam.erl:270
+#: mod_mam.erl:541
 #, fuzzy
-msgid "Only members are allowed to query archives of this room"
+msgid "Only members may query archives of this room"
 msgstr "Tylko moderatorzy mogą zmienić temat tego pokoju"
 
 #: mod_muc.erl:585
@@ -994,36 +994,36 @@ msgstr "Pokój konferencyjny nie istnieje"
 msgid "Chatrooms"
 msgstr "Pokoje rozmów"
 
-#: mod_muc.erl:779
+#: mod_muc.erl:781
 msgid "Empty Rooms"
 msgstr ""
 
-#: mod_muc.erl:931
+#: mod_muc.erl:933
 msgid "You need a client that supports x:data to register the nickname"
 msgstr "Potrzebujesz klienta obsługującego x:data aby zarejestrować nick"
 
-#: mod_muc.erl:941
+#: mod_muc.erl:943
 msgid "Nickname Registration at "
 msgstr "Rejestracja nazwy użytkownika na "
 
-#: mod_muc.erl:947
+#: mod_muc.erl:949
 msgid "Enter nickname you want to register"
 msgstr "Wprowadz nazwę użytkownika którego chcesz zarejestrować"
 
-#: mod_muc.erl:948 mod_muc_room.erl:4351 mod_roster.erl:1435 mod_vcard.erl:490
+#: mod_muc.erl:950 mod_muc_room.erl:4353 mod_roster.erl:1435 mod_vcard.erl:490
 #: mod_vcard.erl:621
 msgid "Nickname"
 msgstr "Nazwa użytkownika"
 
-#: mod_muc.erl:1060 mod_muc_room.erl:1104 mod_muc_room.erl:1843
+#: mod_muc.erl:1062 mod_muc_room.erl:1104 mod_muc_room.erl:1843
 msgid "That nickname is registered by another person"
 msgstr "Ta nazwa użytkownika jest już zarejestrowana przez inną osobę"
 
-#: mod_muc.erl:1088
+#: mod_muc.erl:1090
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Musisz wypełnić pole \"Nazwa użytkownika\" w formularzu"
 
-#: mod_muc.erl:1111
+#: mod_muc.erl:1113
 msgid "ejabberd MUC module"
 msgstr "Moduł MUC"
 
@@ -1190,8 +1190,8 @@ msgstr "Limit transferu przekroczony"
 
 #: mod_muc_room.erl:230 mod_muc_room.erl:518 mod_muc_room.erl:1059
 msgid ""
-"It is not allowed to send error messages to the room. This participant (~s) "
-"sent an error message (~s) and gets kicked from the room"
+"It is not allowed to send error messages to the room. The participant (~s) "
+"has sent an error message (~s) and got kicked from the room"
 msgstr ""
 
 #: mod_muc_room.erl:241
@@ -1230,7 +1230,7 @@ msgstr "Odbiorcy nie ma w pokoju"
 msgid "It is not allowed to send private messages"
 msgstr "Wysyłanie prywatnych wiadomości jest zabronione"
 
-#: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4592
+#: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4594
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Tylko uczestnicy mogą wysyłać wiadomości na konferencję"
 
@@ -1312,7 +1312,7 @@ msgstr "Nieprawidłowa przynależność: ~s"
 msgid "Invalid role: ~s"
 msgstr "Nieprawidłowa rola: ~s"
 
-#: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4234
+#: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4236
 msgid "Owner privileges required"
 msgstr "Wymagane uprawnienia właściciela"
 
@@ -1324,7 +1324,7 @@ msgstr "Konfiguracja pokoju ~s"
 msgid "Room title"
 msgstr "Tytuł pokoju"
 
-#: mod_muc_room.erl:3361 mod_muc_room.erl:4188
+#: mod_muc_room.erl:3361 mod_muc_room.erl:4190
 msgid "Room description"
 msgstr "Opis pokoju"
 
@@ -1453,35 +1453,35 @@ msgstr "Włącz logowanie"
 msgid "You need an x:data capable client to configure room"
 msgstr "Potrzebujesz klienta obsługującego x:data aby skonfigurować pokój"
 
-#: mod_muc_room.erl:4190
+#: mod_muc_room.erl:4192
 msgid "Number of occupants"
 msgstr "Liczba uczestników"
 
-#: mod_muc_room.erl:4260
+#: mod_muc_room.erl:4262
 msgid "private, "
 msgstr "prywatny, "
 
-#: mod_muc_room.erl:4324
+#: mod_muc_room.erl:4326
 msgid "Voice request"
 msgstr "Żądanie głosowe"
 
-#: mod_muc_room.erl:4329
+#: mod_muc_room.erl:4331
 msgid "Either approve or decline the voice request."
 msgstr "Zatwierdź lub odrzuć żądanie głosowe"
 
-#: mod_muc_room.erl:4349
+#: mod_muc_room.erl:4351
 msgid "User JID"
 msgstr "Użytkownik "
 
-#: mod_muc_room.erl:4353
+#: mod_muc_room.erl:4355
 msgid "Grant voice to this person?"
 msgstr "Udzielić głosu tej osobie?"
 
-#: mod_muc_room.erl:4496
+#: mod_muc_room.erl:4498
 msgid "~s invites you to the room ~s"
 msgstr "~s zaprasza Cię do pokoju ~s"
 
-#: mod_muc_room.erl:4507
+#: mod_muc_room.erl:4509
 msgid "the password is"
 msgstr "hasło to:"
 
