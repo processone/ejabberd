@@ -12,11 +12,11 @@ msgstr ""
 
 #: ejabberd_c2s.erl:505 ejabberd_c2s.erl:853
 msgid "Use of STARTTLS required"
-msgstr "STARTTLS の使用が必要です"
+msgstr "STARTTLS の使用が必須です"
 
 #: ejabberd_c2s.erl:604
 msgid "No resource provided"
-msgstr "リソースが提供されませんでした"
+msgstr "リソースが指定されていません"
 
 #: ejabberd_c2s.erl:1349
 msgid "Replaced by new connection"
@@ -63,7 +63,6 @@ msgid "User"
 msgstr "ユーザー"
 
 #: ejabberd_oauth.erl:256
-#, fuzzy
 msgid "Server"
 msgstr "サーバー:"
 
@@ -242,9 +241,8 @@ msgid "Outgoing s2s Connections:"
 msgstr "外向き s2s コネクション:"
 
 #: ejabberd_web_admin.erl:1559
-#, fuzzy
 msgid "Incoming s2s Connections:"
-msgstr "外向き s2s コネクション:"
+msgstr "内向き s2s コネクション:"
 
 #: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
 #: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
@@ -673,7 +671,7 @@ msgstr "宛先 ~s"
 
 #: mod_configure.erl:782
 msgid "From ~s"
-msgstr "差出人 ~s"
+msgstr "From ~s"
 
 #: mod_configure.erl:1002
 msgid "Database Tables Configuration at "
@@ -962,9 +960,8 @@ msgid "Server ~b"
 msgstr "サーバー ~b"
 
 #: mod_mam.erl:541
-#, fuzzy
 msgid "Only members may query archives of this room"
-msgstr "モデレーターのみがチャットルームの件名を変更できます"
+msgstr "メンバーのみがこのルームのアーカイブを取得できます"
 
 #: mod_muc.erl:585
 msgid "Only service administrators are allowed to send service messages"
@@ -1358,17 +1355,16 @@ msgid "Roles for which Presence is Broadcasted"
 msgstr ""
 
 #: mod_muc_room.erl:3486
-#, fuzzy
 msgid "Moderator"
-msgstr "モデレーターにのみ"
+msgstr "モデレーター"
 
 #: mod_muc_room.erl:3496
 msgid "Participant"
-msgstr ""
+msgstr "参加者"
 
 #: mod_muc_room.erl:3506
 msgid "Visitor"
-msgstr ""
+msgstr "傍聴者"
 
 #: mod_muc_room.erl:3513
 msgid "Make room members-only"
@@ -1432,7 +1428,7 @@ msgstr "メッセージアーカイブを有効化"
 
 #: mod_muc_room.erl:3612
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr "CAPTCHA 試験を免除する Jabber ID"
+msgstr "CAPTCHA 入力を免除する Jabber ID"
 
 #: mod_muc_room.erl:3621
 msgid "Enable logging"
@@ -1503,7 +1499,7 @@ msgstr "差出人"
 
 #: mod_offline.erl:813
 msgid "To"
-msgstr "宛先"
+msgstr "To"
 
 #: mod_offline.erl:814
 msgid "Packet"
@@ -1752,7 +1748,7 @@ msgstr "新しいパスワード:"
 
 #: mod_register_web.erl:463
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr "ここはこの Jabber サーバーのアカウントを削除するページです。"
+msgstr "このページはサーバー上のJabberアカウントを削除するページです。"
 
 #: mod_register_web.erl:480
 msgid "Unregister"
