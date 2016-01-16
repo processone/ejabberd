@@ -62,7 +62,7 @@
 	 access_hard_quota              :: atom(),
 	 max_days                       :: pos_integer() | infinity,
 	 docroot                        :: binary(),
-	 disk_usage = dict:new()        :: term(),
+	 disk_usage = #{}               :: map(),
 	 timers                         :: [timer:tref()]}).
 
 -type state() :: #state{}.
@@ -172,7 +172,7 @@ handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 		    _ ->
 			0
 		end,
-    OldSize = case dict:find({U, S}, DiskUsage) of
+    OldSize = case maps:find({U, S}, DiskUsage) of
 		  {ok, Value} ->
 		      Value;
 		  error ->
@@ -202,7 +202,7 @@ handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 		      enforce_quota(Path, Size, OldSize, SoftQuota, HardQuota)
 	      end,
     NewDiskUsage = if is_integer(NewSize) ->
-			   dict:store({U, S}, NewSize, DiskUsage);
+			   maps:put({U, S}, NewSize, DiskUsage);
 		      true ->
 			   DiskUsage
 		   end,
