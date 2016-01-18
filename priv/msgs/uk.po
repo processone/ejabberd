@@ -5,14 +5,16 @@ msgstr ""
 "PO-Revision-Date: \n"
 "Last-Translator: Konstantin Khomoutov <flatworm@users.sourceforge.net>\n"
 "Language-Team: \n"
-"Language: \n"
+"Language: uk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Ukrainian (українська)\n"
+"X-Additional-Translator: Oleg Deordiev\n"
 "X-Additional-Translator: Ruslan Rakhmanin\n"
 "X-Additional-Translator: Stoune\n"
 "X-Additional-Translator: Sergei Golovan\n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ejabberd_c2s.erl:505 ejabberd_c2s.erl:853
 msgid "Use of STARTTLS required"
@@ -37,7 +39,7 @@ msgstr "Маршрутизація цієї строфи була відміне
 
 #: ejabberd_c2s.erl:2429
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "Занадто багато пакетів без відповідей"
 
 #: ejabberd_captcha.erl:122 ejabberd_captcha.erl:245 ejabberd_captcha.erl:284
 msgid "Enter the text you see"
@@ -65,7 +67,6 @@ msgid "User"
 msgstr "Користувач"
 
 #: ejabberd_oauth.erl:256
-#, fuzzy
 msgid "Server"
 msgstr "Сервер:"
 
@@ -77,7 +78,7 @@ msgstr "Пароль"
 
 #: ejabberd_oauth.erl:267
 msgid "Accept"
-msgstr ""
+msgstr "Прийняти"
 
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
@@ -149,8 +150,7 @@ msgstr "віртуальні хости"
 msgid "Users"
 msgstr "Користувачі"
 
-#: ejabberd_web_admin.erl:955 ejabberd_web_admin.erl:1340
-#: mod_configure.erl:524
+#: ejabberd_web_admin.erl:955 ejabberd_web_admin.erl:1340 mod_configure.erl:524
 msgid "Online Users"
 msgstr "Підключені користувачі"
 
@@ -244,9 +244,8 @@ msgid "Outgoing s2s Connections:"
 msgstr "Вихідні s2s-з'єднання:"
 
 #: ejabberd_web_admin.erl:1559
-#, fuzzy
 msgid "Incoming s2s Connections:"
-msgstr "Вихідні s2s-з'єднання:"
+msgstr "Вхідні s2s-з'єднання:"
 
 #: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
 #: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
@@ -259,9 +258,8 @@ msgid "Change Password"
 msgstr "Змінити пароль"
 
 #: ejabberd_web_admin.erl:1673
-#, fuzzy
 msgid "User ~s"
-msgstr "Користувач "
+msgstr "Користувач ~s"
 
 #: ejabberd_web_admin.erl:1684
 msgid "Connected Resources:"
@@ -293,9 +291,8 @@ msgid "Stopped Nodes"
 msgstr "Зупинені вузли"
 
 #: ejabberd_web_admin.erl:1833 ejabberd_web_admin.erl:1858
-#, fuzzy
 msgid "Node ~p"
-msgstr "Вузол "
+msgstr "Вузол ~p"
 
 #: ejabberd_web_admin.erl:1842 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -332,9 +329,8 @@ msgid "RPC Call Error"
 msgstr "Помилка виклику RPC"
 
 #: ejabberd_web_admin.erl:1917
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Таблиці бази даних на "
+msgstr "Таблиці бази даних на ~p"
 
 #: ejabberd_web_admin.erl:1927 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -357,9 +353,8 @@ msgid "Error"
 msgstr "Помилка"
 
 #: ejabberd_web_admin.erl:1955
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "Резервне копіювання "
+msgstr "Резервне копіювання ~p"
 
 #: ejabberd_web_admin.erl:1959
 msgid ""
@@ -418,7 +413,7 @@ msgstr "Експорт даних користувачів домена до ф�
 
 #: ejabberd_web_admin.erl:2060
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "Експорт усіх таблиць, як SQL запити, у файл"
 
 #: ejabberd_web_admin.erl:2076
 msgid "Import user data from jabberd14 spool file:"
@@ -433,9 +428,8 @@ msgid "Listened Ports at "
 msgstr "Відкриті порти на "
 
 #: ejabberd_web_admin.erl:2144
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "Модулі на "
+msgstr "Модулі на ~p"
 
 #: ejabberd_web_admin.erl:2175
 msgid "Statistics of ~p"
@@ -466,13 +460,12 @@ msgid "Transactions Logged:"
 msgstr "Транзакції запротокольовані:"
 
 #: ejabberd_web_admin.erl:2243
-#, fuzzy
 msgid "Update ~p"
-msgstr "Поновлення "
+msgstr "Оновлення ~p"
 
 #: ejabberd_web_admin.erl:2254
 msgid "Update plan"
-msgstr "План поновлення"
+msgstr "План оновлення"
 
 #: ejabberd_web_admin.erl:2255
 msgid "Modified modules"
@@ -528,7 +521,7 @@ msgstr "Понг"
 
 #: mod_announce.erl:523
 msgid "Really delete message of the day?"
-msgstr "Насправді видалити повідомлення дня?"
+msgstr "Насправді, видалити повідомлення дня?"
 
 #: mod_announce.erl:536 mod_configure.erl:1238 mod_configure.erl:1298
 msgid "Subject"
@@ -678,7 +671,7 @@ msgstr "Керування резервним копіюванням"
 
 #: mod_configure.erl:617
 msgid "Import Users From jabberd14 Spool Files"
-msgstr "Імпорт користувачів зі спулу jabberd14"
+msgstr "Імпорт користувачів з  jabberd14 файлів \"Spool\""
 
 #: mod_configure.erl:762
 msgid "To ~s"
@@ -850,18 +843,20 @@ msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
+"Забагато  (~p) помилок авторизації з цієї IP адреси (~s). Адресу буде "
+"розблоковано о ~s UTC"
 
 #: mod_http_upload.erl:586
 msgid "Please specify file size."
-msgstr ""
+msgstr "Будь ласка вкажіть розмір файлу."
 
 #: mod_http_upload.erl:590
 msgid "Please specify file name."
-msgstr ""
+msgstr "Будь ласка вкажіть ім'я файлу."
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "Ця IP адреса у чорному списку ~s"
 
 #: mod_irc.erl:220 mod_muc.erl:467
 msgid "Access denied by service policy"
@@ -976,9 +971,8 @@ msgid "Server ~b"
 msgstr "Сервер ~b"
 
 #: mod_mam.erl:541
-#, fuzzy
 msgid "Only members may query archives of this room"
-msgstr "Тільки модератори можуть змінювати тему в цій кімнаті"
+msgstr "Тільки модератори можуть запитувати архіви цієї кімнати"
 
 #: mod_muc.erl:585
 msgid "Only service administrators are allowed to send service messages"
@@ -998,7 +992,7 @@ msgstr "Кімнати"
 
 #: mod_muc.erl:781
 msgid "Empty Rooms"
-msgstr ""
+msgstr "Порожні кімнати"
 
 #: mod_muc.erl:933
 msgid "You need a client that supports x:data to register the nickname"
@@ -1034,26 +1028,23 @@ msgstr "ejabberd MUC модуль"
 #: mod_muc_admin.erl:231 mod_muc_admin.erl:234 mod_muc_admin.erl:246
 #: mod_muc_admin.erl:320
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "Багато-користувальницький чат"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Total rooms"
-msgstr "Кімнати"
+msgstr "Всього кімнат"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "вийшов(ла) з кімнати"
+msgstr "Постійні кімнати"
 
 #: mod_muc_admin.erl:251
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "Зареєстровані користувачі"
+msgstr "Зареєстровані імена"
 
 #: mod_muc_admin.erl:254
 msgid "List of rooms"
-msgstr ""
+msgstr "Перелік кімнат"
 
 #: mod_muc_log.erl:398 mod_muc_log.erl:407
 msgid "Chatroom configuration modified"
@@ -1200,6 +1191,8 @@ msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
 msgstr ""
+"Не дозволяється відправляти помилкові повідомлення в кімнату. Учасник (~s) "
+"відправив помилкове повідомлення (~s), та був виганий з кімнати"
 
 #: mod_muc_room.erl:241
 msgid "It is not allowed to send private messages to the conference"
@@ -1208,19 +1201,20 @@ msgstr "Не дозволяється надсилати приватні пов
 #: mod_muc_room.erl:316
 msgid "Please, wait for a while before sending new voice request"
 msgstr ""
+"Будь ласка, почекайте деякий час перед тим, як знову відправляти голосовий "
+"запит"
 
 #: mod_muc_room.erl:329
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Голосові запити відключені в цій конференції"
 
 #: mod_muc_room.erl:347
 msgid "Failed to extract JID from your voice request approval"
-msgstr ""
+msgstr "Помилка витягнення JID з вашого схвалення голосового запиту"
 
 #: mod_muc_room.erl:377
-#, fuzzy
 msgid "Only moderators can approve voice requests"
-msgstr "Дозволити користувачам надсилати запрошення"
+msgstr "Тільки модератори можуть схвалювати голосові запити"
 
 #: mod_muc_room.erl:389
 msgid "Improper message type"
@@ -1374,20 +1368,19 @@ msgstr "всім учасникам"
 
 #: mod_muc_room.erl:3471
 msgid "Roles for which Presence is Broadcasted"
-msgstr ""
+msgstr "Ролі для яких поширюється наявність"
 
 #: mod_muc_room.erl:3486
-#, fuzzy
 msgid "Moderator"
-msgstr "тільки модераторам"
+msgstr "Модератор"
 
 #: mod_muc_room.erl:3496
 msgid "Participant"
-msgstr ""
+msgstr "Учасник"
 
 #: mod_muc_room.erl:3506
 msgid "Visitor"
-msgstr ""
+msgstr "Відвідувач"
 
 #: mod_muc_room.erl:3513
 msgid "Make room members-only"
@@ -1410,13 +1403,12 @@ msgid "Allow users to send private messages"
 msgstr "Дозволити приватні повідомлення"
 
 #: mod_muc_room.erl:3533
-#, fuzzy
 msgid "Allow visitors to send private messages to"
-msgstr "Дозволити приватні повідомлення"
+msgstr "Дозволити відвідувачам відсилати приватні повідомлення"
 
 #: mod_muc_room.erl:3551
 msgid "nobody"
-msgstr ""
+msgstr "ніхто"
 
 #: mod_muc_room.erl:3576
 msgid "Allow users to query other users"
@@ -1436,13 +1428,12 @@ msgid "Allow visitors to change nickname"
 msgstr "Дозволити відвідувачам змінювати псевдонім"
 
 #: mod_muc_room.erl:3589
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Дозволити користувачам надсилати запрошення"
+msgstr "Дозволити відвідувачам надсилати голосові запрошення"
 
 #: mod_muc_room.erl:3592
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Мінімальний інтервал між голосовими запитами (в секундах)"
 
 #: mod_muc_room.erl:3599
 msgid "Make room CAPTCHA protected"
@@ -1450,7 +1441,7 @@ msgstr "Зробити кімнату захищеною капчею"
 
 #: mod_muc_room.erl:3606
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Ввімкнути архівацію повідомлень"
 
 #: mod_muc_room.erl:3612
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1476,20 +1467,19 @@ msgstr "приватна, "
 
 #: mod_muc_room.erl:4326
 msgid "Voice request"
-msgstr ""
+msgstr "Голосовий запит"
 
 #: mod_muc_room.erl:4331
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Підтвердить або відхилите голосовий запит"
 
 #: mod_muc_room.erl:4351
-#, fuzzy
 msgid "User JID"
-msgstr "Користувач "
+msgstr "JID Користувача"
 
 #: mod_muc_room.erl:4355
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Надати голос персоні?"
 
 #: mod_muc_room.erl:4498
 msgid "~s invites you to the room ~s"
@@ -1501,11 +1491,11 @@ msgstr "пароль:"
 
 #: mod_multicast.erl:291
 msgid "Multicast"
-msgstr ""
+msgstr "Мультікаст"
 
 #: mod_multicast.erl:306
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "Мультікаст ejabberd сервіс"
 
 #: mod_offline.erl:647
 msgid ""
