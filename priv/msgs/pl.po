@@ -14,7 +14,7 @@ msgstr ""
 "X-Additional-Translator: Marcin Owsiany\n"
 "X-Additional-Translator: Andrzej Smyk\n"
 "X-Additional-Translator: Mateusz Gajewski\n"
-"X-Generator: Poedit 1.8.4\n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ejabberd_c2s.erl:505 ejabberd_c2s.erl:853
 msgid "Use of STARTTLS required"
@@ -67,9 +67,8 @@ msgid "User"
 msgstr "Użytkownik"
 
 #: ejabberd_oauth.erl:256
-#, fuzzy
 msgid "Server"
-msgstr "Serwer:"
+msgstr "Serwer"
 
 #: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1408 mod_configure.erl:1398
 #: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2123
@@ -79,7 +78,7 @@ msgstr "Hasło"
 
 #: ejabberd_oauth.erl:267
 msgid "Accept"
-msgstr ""
+msgstr "Zaakceptuj"
 
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
@@ -151,8 +150,7 @@ msgstr "Wirtualne Hosty"
 msgid "Users"
 msgstr "Użytkownicy"
 
-#: ejabberd_web_admin.erl:955 ejabberd_web_admin.erl:1340
-#: mod_configure.erl:524
+#: ejabberd_web_admin.erl:955 ejabberd_web_admin.erl:1340 mod_configure.erl:524
 msgid "Online Users"
 msgstr "Użytkownicy zalogowani"
 
@@ -246,9 +244,8 @@ msgid "Outgoing s2s Connections:"
 msgstr "Wychodzące połączenia s2s:"
 
 #: ejabberd_web_admin.erl:1559
-#, fuzzy
 msgid "Incoming s2s Connections:"
-msgstr "Wychodzące połączenia s2s:"
+msgstr "Przychodzące połączenia s2s:"
 
 #: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
 #: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
@@ -853,11 +850,11 @@ msgstr ""
 
 #: mod_http_upload.erl:586
 msgid "Please specify file size."
-msgstr ""
+msgstr "Proszę podać rozmiar pliku."
 
 #: mod_http_upload.erl:590
 msgid "Please specify file name."
-msgstr ""
+msgstr "Proszę podać nazwę pliku."
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
@@ -974,9 +971,8 @@ msgid "Server ~b"
 msgstr "Serwer ~b"
 
 #: mod_mam.erl:541
-#, fuzzy
 msgid "Only members may query archives of this room"
-msgstr "Tylko moderatorzy mogą zmienić temat tego pokoju"
+msgstr "Tylko moderatorzy mogą przeglądać archiwa tego pokoju"
 
 #: mod_muc.erl:585
 msgid "Only service administrators are allowed to send service messages"
@@ -996,7 +992,7 @@ msgstr "Pokoje rozmów"
 
 #: mod_muc.erl:781
 msgid "Empty Rooms"
-msgstr ""
+msgstr "Puste pokoje"
 
 #: mod_muc.erl:933
 msgid "You need a client that supports x:data to register the nickname"
@@ -1193,6 +1189,8 @@ msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
 msgstr ""
+"Użytkownik nie może wysyłać wiadomości o błędach do pokoju. Użytkownik (~s) "
+"wysłał błąd (~s) i został wyrzucony z pokoju"
 
 #: mod_muc_room.erl:241
 msgid "It is not allowed to send private messages to the conference"
@@ -1366,20 +1364,19 @@ msgstr "wszystkich"
 
 #: mod_muc_room.erl:3471
 msgid "Roles for which Presence is Broadcasted"
-msgstr ""
+msgstr "Role dla których wysyłane są statusy"
 
 #: mod_muc_room.erl:3486
-#, fuzzy
 msgid "Moderator"
-msgstr "tylko moderatorzy"
+msgstr "Moderatorzy"
 
 #: mod_muc_room.erl:3496
 msgid "Participant"
-msgstr ""
+msgstr "Uczestnicy"
 
 #: mod_muc_room.erl:3506
 msgid "Visitor"
-msgstr ""
+msgstr "Odwiedzający"
 
 #: mod_muc_room.erl:3513
 msgid "Make room members-only"
