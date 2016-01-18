@@ -241,7 +241,8 @@ muc_filter_message(Pkt, #state{config = Config} = MUCState,
     if Config#config.mam ->
 	    LServer = RoomJID#jid.lserver,
 	    NewPkt = strip_my_archived_tag(Pkt, LServer),
-	    case store_muc(MUCState, NewPkt, RoomJID, From, FromNick) of
+	    StorePkt = strip_x_jid_tags(NewPkt),
+	    case store_muc(MUCState, StorePkt, RoomJID, From, FromNick) of
 		{ok, ID} ->
 		    Archived = #xmlel{name = <<"archived">>,
 				      attrs = [{<<"by">>, LServer},
@@ -604,6 +605,18 @@ strip_my_archived_tag(Pkt, LServer) ->
 		(_) ->
 		    true
 	    end, Pkt#xmlel.children),
+    Pkt#xmlel{children = NewEls}.
+
+strip_x_jid_tags(Pkt) ->
+    NewEls = lists:filter(
+	      fun(#xmlel{name = <<"x">>} = XEl) ->
+		      not lists:any(fun(ItemEl) ->
+					    xml:get_tag_attr(<<"jid">>, ItemEl)
+					      /= false
+				    end, xml:get_subtags(XEl, <<"item">>));
+		 (_) ->
+		      true
+	      end, Pkt#xmlel.children),
     Pkt#xmlel{children = NewEls}.
 
 should_archive_peer(C2SState,
