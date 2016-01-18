@@ -7,6 +7,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Czech (čeština)\n"
 "X-Additional-Translator: Milos Svasek [DuxforD] from openheads.net\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Language-Team: \n"
+"Language: cs\n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ejabberd_c2s.erl:505 ejabberd_c2s.erl:853
 msgid "Use of STARTTLS required"
@@ -31,7 +36,7 @@ msgstr "Vaše nastavení soukromí znemožnilo směrování této stance."
 
 #: ejabberd_c2s.erl:2429
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "Příliš mnoho nepotvrzených stanz"
 
 #: ejabberd_captcha.erl:122 ejabberd_captcha.erl:245 ejabberd_captcha.erl:284
 msgid "Enter the text you see"
@@ -59,9 +64,8 @@ msgid "User"
 msgstr "Uživatel"
 
 #: ejabberd_oauth.erl:256
-#, fuzzy
 msgid "Server"
-msgstr "Server:"
+msgstr "Server"
 
 #: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1408 mod_configure.erl:1398
 #: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2123
@@ -71,7 +75,7 @@ msgstr "Heslo"
 
 #: ejabberd_oauth.erl:267
 msgid "Accept"
-msgstr ""
+msgstr "Přijmout"
 
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
@@ -143,8 +147,7 @@ msgstr "Virtuální hostitelé"
 msgid "Users"
 msgstr "Uživatelé"
 
-#: ejabberd_web_admin.erl:955 ejabberd_web_admin.erl:1340
-#: mod_configure.erl:524
+#: ejabberd_web_admin.erl:955 ejabberd_web_admin.erl:1340 mod_configure.erl:524
 msgid "Online Users"
 msgstr "Online uživatelé"
 
@@ -238,9 +241,10 @@ msgid "Outgoing s2s Connections:"
 msgstr "Odchozí s2s spojení:"
 
 #: ejabberd_web_admin.erl:1559
-#, fuzzy
 msgid "Incoming s2s Connections:"
-msgstr "Odchozí s2s spojení:"
+msgstr ""
+"Příchozí\n"
+" s2s spojení:"
 
 #: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
 #: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
@@ -253,9 +257,10 @@ msgid "Change Password"
 msgstr "Změnit heslo"
 
 #: ejabberd_web_admin.erl:1673
-#, fuzzy
 msgid "User ~s"
-msgstr "Uživatel "
+msgstr ""
+"Uživatel\n"
+" ~s"
 
 #: ejabberd_web_admin.erl:1684
 msgid "Connected Resources:"
@@ -287,9 +292,8 @@ msgid "Stopped Nodes"
 msgstr "Zastavené uzly"
 
 #: ejabberd_web_admin.erl:1833 ejabberd_web_admin.erl:1858
-#, fuzzy
 msgid "Node ~p"
-msgstr "Uzel "
+msgstr "Uzel ~p"
 
 #: ejabberd_web_admin.erl:1842 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -326,9 +330,8 @@ msgid "RPC Call Error"
 msgstr "Chyba RPC volání"
 
 #: ejabberd_web_admin.erl:1917
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Databázové tabulky na "
+msgstr "Databázové tabulky na ~p"
 
 #: ejabberd_web_admin.erl:1927 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -351,9 +354,8 @@ msgid "Error"
 msgstr "Chyba"
 
 #: ejabberd_web_admin.erl:1955
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "Záloha na "
+msgstr "Záloha ~p"
 
 #: ejabberd_web_admin.erl:1959
 msgid ""
@@ -412,7 +414,7 @@ msgstr ""
 
 #: ejabberd_web_admin.erl:2060
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "Zálohovat všechny tabulky jako SQL dotazy do souboru:"
 
 #: ejabberd_web_admin.erl:2076
 msgid "Import user data from jabberd14 spool file:"
@@ -427,9 +429,8 @@ msgid "Listened Ports at "
 msgstr "Otevřené porty na "
 
 #: ejabberd_web_admin.erl:2144
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "Moduly na "
+msgstr "Moduly v ~p"
 
 #: ejabberd_web_admin.erl:2175
 msgid "Statistics of ~p"
@@ -460,9 +461,8 @@ msgid "Transactions Logged:"
 msgstr "Transakce zaznamenána"
 
 #: ejabberd_web_admin.erl:2243
-#, fuzzy
 msgid "Update ~p"
-msgstr "Aktualizovat "
+msgstr "Aktualizovat ~p"
 
 #: ejabberd_web_admin.erl:2254
 msgid "Update plan"
@@ -840,18 +840,20 @@ msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
+"Příliš mnoho (~p) chybných pokusů o přihlášení z této IP adresy (~s). Adresa "
+"bude zablokována do ~s UTC"
 
 #: mod_http_upload.erl:586
 msgid "Please specify file size."
-msgstr ""
+msgstr "Zvolit velikost souboru."
 
 #: mod_http_upload.erl:590
 msgid "Please specify file name."
-msgstr ""
+msgstr "Zvolit jméno souboru."
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "IP adresa je blokována na ~s"
 
 #: mod_irc.erl:220 mod_muc.erl:467
 msgid "Access denied by service policy"
@@ -963,9 +965,8 @@ msgid "Server ~b"
 msgstr "Server ~b"
 
 #: mod_mam.erl:541
-#, fuzzy
 msgid "Only members may query archives of this room"
-msgstr "Jen moderátoři mají povoleno měnit téma místnosti"
+msgstr "Pouze moderátoři mají povoleno měnit téma místnosti"
 
 #: mod_muc.erl:585
 msgid "Only service administrators are allowed to send service messages"
@@ -985,7 +986,7 @@ msgstr "Konference"
 
 #: mod_muc.erl:781
 msgid "Empty Rooms"
-msgstr ""
+msgstr "Prázdné konference"
 
 #: mod_muc.erl:933
 msgid "You need a client that supports x:data to register the nickname"
@@ -1019,26 +1020,23 @@ msgstr "ejabberd MUC modul"
 #: mod_muc_admin.erl:231 mod_muc_admin.erl:234 mod_muc_admin.erl:246
 #: mod_muc_admin.erl:320
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "Víceuživatelský chat"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Total rooms"
-msgstr "Konference"
+msgstr "Celkem konferencí"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "opustil(a) místnost"
+msgstr "Stálých konferencí"
 
 #: mod_muc_admin.erl:251
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "Registrovaní uživatelé"
+msgstr "Registrované přezdívky"
 
 #: mod_muc_admin.erl:254
 msgid "List of rooms"
-msgstr ""
+msgstr "Seznam konferencí"
 
 #: mod_muc_log.erl:398 mod_muc_log.erl:407
 msgid "Chatroom configuration modified"
@@ -1185,6 +1183,8 @@ msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
 msgstr ""
+"Není povoleno posílat chybové zprávy do konference. Účastník (~s) odeslal "
+"chybovou zprávu (~s) a byl vyhozen z konference."
 
 #: mod_muc_room.erl:241
 msgid "It is not allowed to send private messages to the conference"
@@ -1359,20 +1359,19 @@ msgstr "každému"
 
 #: mod_muc_room.erl:3471
 msgid "Roles for which Presence is Broadcasted"
-msgstr ""
+msgstr "Role, pro které je zpráva o stavu šířena"
 
 #: mod_muc_room.erl:3486
-#, fuzzy
 msgid "Moderator"
-msgstr "moderátorům"
+msgstr "Moderátor"
 
 #: mod_muc_room.erl:3496
 msgid "Participant"
-msgstr ""
+msgstr "Účastník"
 
 #: mod_muc_room.erl:3506
 msgid "Visitor"
-msgstr ""
+msgstr "Návštěvník"
 
 #: mod_muc_room.erl:3513
 msgid "Make room members-only"
@@ -1432,7 +1431,7 @@ msgstr "Chránit místnost pomocí CAPTCHA"
 
 #: mod_muc_room.erl:3606
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Povolit ukládání historie zpráv"
 
 #: mod_muc_room.erl:3612
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
@@ -1480,11 +1479,11 @@ msgstr "heslo je"
 
 #: mod_multicast.erl:291
 msgid "Multicast"
-msgstr ""
+msgstr "Multicast"
 
 #: mod_multicast.erl:306
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "Služba ejabberd Multicast"
 
 #: mod_offline.erl:647
 msgid ""
