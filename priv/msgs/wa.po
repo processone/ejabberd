@@ -1,11 +1,16 @@
+# Pablo Saratxaga <pablo@walon.org>, 2015
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
-"Last-Translator: Pablo Saratxaga\n"
+"PO-Revision-Date: 2015-01-18 12:19+0000\n"
+"Last-Translator: Pablo Saratxaga <pablo@walon.org>\n"
+"Language-Team: Pablo Saratxaga <pablo@walon.org>\n"
+"Language: wa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Walon (Walloon)\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #: ejabberd_c2s.erl:505 ejabberd_c2s.erl:853
 msgid "Use of STARTTLS required"
@@ -26,32 +31,31 @@ msgstr "a stî pité evoye"
 
 #: ejabberd_c2s.erl:2114
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "Vosse djivêye di privaceye active a rfuzé l' evoyaedje di ç' messaedje ci."
 
 #: ejabberd_c2s.erl:2429
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "Pår trop di messaedjes sins acertinaedje di rçuvaedje"
 
 #: ejabberd_captcha.erl:122 ejabberd_captcha.erl:245 ejabberd_captcha.erl:284
-#, fuzzy
 msgid "Enter the text you see"
-msgstr "Dinez l' tchimin viè l' fitchî tecse"
+msgstr "Tapez l' tecse ki vos voeyoz"
 
 #: ejabberd_captcha.erl:147
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
+msgstr "Vos messaedjes po ~s sont blokés. Po les disbloker, alez vey ~s"
 
 #: ejabberd_captcha.erl:192
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "Si vos n' voeyoz nole imådje CAPTCHA chal, vizitez l' pådje waibe."
 
 #: ejabberd_captcha.erl:227
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "Pådje web CAPTCHA"
 
 #: ejabberd_captcha.erl:381
 msgid "The CAPTCHA is valid."
-msgstr ""
+msgstr "Li CAPTCHA est valide."
 
 #: ejabberd_oauth.erl:253 ejabberd_web_admin.erl:1403
 #: ejabberd_web_admin.erl:1458 mod_register.erl:265 mod_vcard.erl:490
@@ -59,9 +63,8 @@ msgid "User"
 msgstr "Uzeu"
 
 #: ejabberd_oauth.erl:256
-#, fuzzy
 msgid "Server"
-msgstr "Måy"
+msgstr "Sierveu"
 
 #: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1408 mod_configure.erl:1398
 #: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2123
@@ -71,12 +74,12 @@ msgstr "Sicret"
 
 #: ejabberd_oauth.erl:267
 msgid "Accept"
-msgstr ""
+msgstr "Accepter"
 
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
 msgid "Unauthorized"
-msgstr ""
+msgstr "Nén otorijhî"
 
 #: ejabberd_web_admin.erl:303 ejabberd_web_admin.erl:335
 msgid "ejabberd Web Admin"
@@ -182,9 +185,8 @@ msgid "Statistics"
 msgstr "Sitatistikes"
 
 #: ejabberd_web_admin.erl:1014
-#, fuzzy
 msgid "Not Found"
-msgstr "Nuk nén trové"
+msgstr "Nén trové"
 
 #: ejabberd_web_admin.erl:1027
 msgid "Node not found"
@@ -239,9 +241,8 @@ msgid "Outgoing s2s Connections:"
 msgstr "Raloyaedjes s2s e rexhowe:"
 
 #: ejabberd_web_admin.erl:1559
-#, fuzzy
 msgid "Incoming s2s Connections:"
-msgstr "Raloyaedjes s2s e rexhowe:"
+msgstr "Raloyaedjes s2s en intrêye:"
 
 #: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
 #: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
@@ -254,9 +255,8 @@ msgid "Change Password"
 msgstr "Candjî l' sicret"
 
 #: ejabberd_web_admin.erl:1673
-#, fuzzy
 msgid "User ~s"
-msgstr "Uzeu "
+msgstr "Uzeu ~s"
 
 #: ejabberd_web_admin.erl:1684
 msgid "Connected Resources:"
@@ -288,9 +288,8 @@ msgid "Stopped Nodes"
 msgstr "Nuks essoctés"
 
 #: ejabberd_web_admin.erl:1833 ejabberd_web_admin.erl:1858
-#, fuzzy
 msgid "Node ~p"
-msgstr "Nuk "
+msgstr "Nuk ~p"
 
 #: ejabberd_web_admin.erl:1842 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -327,9 +326,8 @@ msgid "RPC Call Error"
 msgstr "Aroke di houcaedje RPC"
 
 #: ejabberd_web_admin.erl:1917
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Tåves del båze di dnêyes so "
+msgstr "Tåves del båze di dnêyes so ~p"
 
 #: ejabberd_web_admin.erl:1927 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -341,7 +339,7 @@ msgstr "Sôre di wårdaedje"
 
 #: ejabberd_web_admin.erl:1929
 msgid "Elements"
-msgstr ""
+msgstr "Elemints"
 
 #: ejabberd_web_admin.erl:1930
 msgid "Memory"
@@ -349,15 +347,13 @@ msgstr "Memwere"
 
 #: ejabberd_web_admin.erl:1952 ejabberd_web_admin.erl:2123
 msgid "Error"
-msgstr ""
+msgstr "Aroke"
 
 #: ejabberd_web_admin.erl:1955
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "Copeye di såvrité po "
+msgstr "Copeye di såvrité po ~p"
 
 #: ejabberd_web_admin.erl:1959
-#, fuzzy
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -402,38 +398,35 @@ msgstr "Rapexhî do côp foû d' ene copeye di såvrité tecse:"
 
 #: ejabberd_web_admin.erl:2019
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
-msgstr ""
+msgstr "Sititchî des dnêyes uzeus foû d' on fitchî PIEFXIS (XEP-0227):"
 
 #: ejabberd_web_admin.erl:2032
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
-msgstr ""
+msgstr "Espoirter les dnêyes di tos les uzeus do sierveu viè des fitchîs PIEFXIS (XEP-0227):"
 
 #: ejabberd_web_admin.erl:2044
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
-msgstr ""
+msgstr "Espoirter les dnêyes di tos les uzeus do sierveu viè des fitchîs PIEFXIS (XEP-0227):"
 
 #: ejabberd_web_admin.erl:2060
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "Espoirter totes les tåves, come des cmandes SQL, viè on fitchî"
 
 #: ejabberd_web_admin.erl:2076
-#, fuzzy
 msgid "Import user data from jabberd14 spool file:"
-msgstr "Sititchî des uzeus Jabberd 1.4"
+msgstr "Sititchî des dnêyes uzeus foû d' on fitchî spoûle jabberd14:"
 
 #: ejabberd_web_admin.erl:2087
-#, fuzzy
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "Sititchî des uzeus Jabberd 1.4"
+msgstr "Sititchî des dnêyes uzeus foû d' on ridant spoûle jabberd14:"
 
 #: ejabberd_web_admin.erl:2115
 msgid "Listened Ports at "
 msgstr "Pôrts drovous so "
 
 #: ejabberd_web_admin.erl:2144
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "Modules so "
+msgstr "Modules so ~p"
 
 #: ejabberd_web_admin.erl:2175
 msgid "Statistics of ~p"
@@ -464,18 +457,16 @@ msgid "Transactions Logged:"
 msgstr "Transaccions wårdêyes e djournå:"
 
 #: ejabberd_web_admin.erl:2243
-#, fuzzy
 msgid "Update ~p"
-msgstr "Metaedje a djoû "
+msgstr "Metaedje a djoû di ~p"
 
 #: ejabberd_web_admin.erl:2254
 msgid "Update plan"
 msgstr "Plan d' metaedje a djoû"
 
 #: ejabberd_web_admin.erl:2255
-#, fuzzy
 msgid "Modified modules"
-msgstr "Modules metous a djoû"
+msgstr "Modules di candjîs"
 
 #: ejabberd_web_admin.erl:2256
 msgid "Update script"
@@ -491,16 +482,15 @@ msgstr "Acertinaedje do scripe"
 
 #: ejabberd_web_admin.erl:2438
 msgid "IP"
-msgstr ""
+msgstr "IP"
 
 #: ejabberd_web_admin.erl:2438
 msgid "Port"
 msgstr "Pôrt"
 
 #: ejabberd_web_admin.erl:2439
-#, fuzzy
 msgid "Protocol"
-msgstr "Pôrt"
+msgstr "Protocole"
 
 #: ejabberd_web_admin.erl:2440 ejabberd_web_admin.erl:2595
 msgid "Module"
@@ -847,18 +837,20 @@ msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
 msgstr ""
+"I gn a-st avou pår trop (~p) d' otintifiaedjes k' ont fwait berwete vinant "
+"di ciste adresse IP la (~s). L' adresse serè disblokêye a ~s UTC"
 
 #: mod_http_upload.erl:586
 msgid "Please specify file size."
-msgstr ""
+msgstr "Dinez l' grandeu do fitchî."
 
 #: mod_http_upload.erl:590
 msgid "Please specify file name."
-msgstr ""
+msgstr "Dinez l' no do fitchî."
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "Ciste adresse IP est so ene noere djivêye e ~s"
 
 #: mod_irc.erl:220 mod_muc.erl:467
 msgid "Access denied by service policy"
@@ -883,105 +875,98 @@ msgid "Registration in mod_irc for "
 msgstr "Edjîstraedje dins mod_irc po "
 
 #: mod_irc.erl:659
-#, fuzzy
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"Dinez les nos d' uzeu et ls ecôdaedjes ki vos vloz eployî po vs raloyî åzès "
-"sierveus IRC"
+"Dinez l' no d' uzeu, les ecôdaedjes, les pôrts et les screts ki vos vloz "
+"eployî po vs raloyî åzès sierveus IRC"
 
 #: mod_irc.erl:667
 msgid "IRC Username"
 msgstr "No d' uzeu IRC"
 
 #: mod_irc.erl:682
-#, fuzzy
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
 "\", port, \"password\"}'.  By default this service use \"~s\" encoding, port "
 "~p, empty password."
 msgstr ""
-"Si vos vloz dner des ecôdaedjes diferins po les sierveus IRC, rimplixhoz "
-"cisse djivêye ci avou des valixhances del cogne «{\"sierveu irc\", "
-"\"ecôdaedje\"}». Li prémetou ecôdaedje do siervice c' est «~s»."
+"Si vos vloz dner des pôrts, sicrets ou ecôdaedjes diferins po les sierveus "
+"IRC, rimplixhoz cisse djivêye ci avou des valixhances del cogne «{\"sierveu "
+"irc\", \"ecôdaedje\", pôrt, \"sicret\"}». Les prémetowès valixhances do "
+"siervice sont «~s» po l' ecôdaedje, «~p» pol pôrt, et on vude sicret."
 
 #: mod_irc.erl:704
-#, fuzzy
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 msgstr ""
-"Egzimpe: [{\"irc.lucky.net\", \"koi8-r\"}, {\"vendetta.fef.net\", "
-"\"iso8859-1\"}]."
+"Egzimpe: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
+"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
 #: mod_irc.erl:713
 msgid "Connections parameters"
-msgstr ""
+msgstr "Parametes des raloyaedjes"
 
 #: mod_irc.erl:886
 msgid "Join IRC channel"
-msgstr ""
+msgstr "Radjonde canå IRC"
 
 #: mod_irc.erl:893
 msgid "IRC channel (don't put the first #)"
-msgstr ""
+msgstr "Canå IRC (èn nén mete li prumî #)"
 
 #: mod_irc.erl:903
-#, fuzzy
 msgid "IRC server"
-msgstr "No d' uzeu IRC"
+msgstr "Sierveu IRC"
 
 #: mod_irc.erl:950 mod_irc.erl:958
 msgid "Join the IRC channel here."
-msgstr ""
+msgstr "Radjonde li canå IRC droci."
 
 #: mod_irc.erl:967
 msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr ""
+msgstr "Radjonde li canå IRC e cist ID Jabber: ~s"
 
 #: mod_irc.erl:1046
 msgid "IRC settings"
-msgstr ""
+msgstr "Apontiaedjes IRC"
 
 #: mod_irc.erl:1051
-#, fuzzy
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
 "settings."
 msgstr ""
 "Dinez les nos d' uzeu et ls ecôdaedjes ki vos vloz eployî po vs raloyî åzès "
-"sierveus IRC"
+"sierveus IRC  Clitchîz so «Shuvant» po-z aveur di pus di tchamps a rimpli.  "
+"Clitchîz so «Fini» po schaper les apontiaedjes."
 
 #: mod_irc.erl:1060
-#, fuzzy
 msgid "IRC username"
 msgstr "No d' uzeu IRC"
 
 #: mod_irc.erl:1126
-#, fuzzy
 msgid "Password ~b"
-msgstr "Sicret"
+msgstr "Sicret ~b"
 
 #: mod_irc.erl:1137
-#, fuzzy
 msgid "Port ~b"
-msgstr "Pôrt"
+msgstr "Pôrt ~b"
 
 #: mod_irc.erl:1150
 msgid "Encoding for server ~b"
-msgstr ""
+msgstr "Ecôdaedje pol sierveu ~b"
 
 #: mod_irc.erl:1171
 msgid "Server ~b"
-msgstr ""
+msgstr "Sierveu ~b"
 
 #: mod_mam.erl:541
-#, fuzzy
 msgid "Only members may query archives of this room"
-msgstr "Seulmint les moderateus polèt candjî l' sudjet dins cisse såle ci"
+msgstr "Seulmint les mimbes polèt cweri les årtchives dins cisse såle ci"
 
 #: mod_muc.erl:585
 msgid "Only service administrators are allowed to send service messages"
@@ -1002,13 +987,12 @@ msgstr "Såles di berdelaedje"
 
 #: mod_muc.erl:781
 msgid "Empty Rooms"
-msgstr ""
+msgstr "Såles vudes"
 
 #: mod_muc.erl:933
-#, fuzzy
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
-"Vos avoz mezåjhe d' on cliyint ki sopoite x:data po-z edjîstrer on metou no"
+"Vos avoz mezåjhe d' on cliyint ki sopoite x:data po-z edjîstrer l' metou no"
 
 #: mod_muc.erl:943
 msgid "Nickname Registration at "
@@ -1024,7 +1008,6 @@ msgid "Nickname"
 msgstr "Metou no"
 
 #: mod_muc.erl:1062 mod_muc_room.erl:1104 mod_muc_room.erl:1843
-#, fuzzy
 msgid "That nickname is registered by another person"
 msgstr "Li metou no est ddja edjîstré pa ene ôte sakî"
 
@@ -1039,26 +1022,23 @@ msgstr "Module MUC (såles di berdelaedje) po ejabberd"
 #: mod_muc_admin.erl:231 mod_muc_admin.erl:234 mod_muc_admin.erl:246
 #: mod_muc_admin.erl:320
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "Berdelaedje a sacwants"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Total rooms"
-msgstr "Såles di berdelaedje"
+msgstr "Totå di såles"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "cwite li såle"
+msgstr "Såles tofer la"
 
 #: mod_muc_admin.erl:251
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "Uzeus edjistrés"
+msgstr "Metous nos edjistrés"
 
 #: mod_muc_admin.erl:254
 msgid "List of rooms"
-msgstr ""
+msgstr "Djivêye des såles"
 
 #: mod_muc_log.erl:398 mod_muc_log.erl:407
 msgid "Chatroom configuration modified"
@@ -1098,24 +1078,20 @@ msgid " has set the subject to: "
 msgstr " a candjî l' tite a: "
 
 #: mod_muc_log.erl:493
-#, fuzzy
 msgid "Chatroom is created"
-msgstr "Såles di berdelaedje"
+msgstr "Li såle di berdelaedje est ahivêye"
 
 #: mod_muc_log.erl:495
-#, fuzzy
 msgid "Chatroom is destroyed"
-msgstr "Såles di berdelaedje"
+msgstr "Li såle di berdelaedje est distrûte"
 
 #: mod_muc_log.erl:497
-#, fuzzy
 msgid "Chatroom is started"
-msgstr "Såles di berdelaedje"
+msgstr "Li såle di berdelaedje est enondêye"
 
 #: mod_muc_log.erl:499
-#, fuzzy
 msgid "Chatroom is stopped"
-msgstr "Såles di berdelaedje"
+msgstr "Li såle di berdelaedje est ahotêye"
 
 #: mod_muc_log.erl:503
 msgid "Monday"
@@ -1198,9 +1174,8 @@ msgid "Room Configuration"
 msgstr "Apontiaedje del såle"
 
 #: mod_muc_log.erl:932
-#, fuzzy
 msgid "Room Occupants"
-msgstr "Nombe di prezints"
+msgstr "Prezints el såle"
 
 #: mod_muc_room.erl:163
 msgid "Traffic rate limit is exceeded"
@@ -1211,6 +1186,8 @@ msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
 msgstr ""
+"On n' pout nén evoyî des messaedjes d' aroke sol såle. Li pårticipan (~s) "
+"a-st evoyî on messaedje d' aroke (~s) ey a stî tapé foû."
 
 #: mod_muc_room.erl:241
 msgid "It is not allowed to send private messages to the conference"
@@ -1218,20 +1195,20 @@ msgstr "On n' pout nén evoyî des messaedjes privés dins cisse conferince ci"
 
 #: mod_muc_room.erl:316
 msgid "Please, wait for a while before sending new voice request"
-msgstr ""
+msgstr "Ratindez ene miete s' i vs plait divant d' rivoyî ene nouve "
+"dimande di vwès"
 
 #: mod_muc_room.erl:329
 msgid "Voice requests are disabled in this conference"
-msgstr ""
+msgstr "Les dmandes di vwès sont dismetowes e cisse conferince ci"
 
 #: mod_muc_room.erl:347
 msgid "Failed to extract JID from your voice request approval"
-msgstr ""
+msgstr "Nén moyén di rsaetchî on JID foû d' l' aprovaedje di vosse dimande di vwès"
 
 #: mod_muc_room.erl:377
-#, fuzzy
 msgid "Only moderators can approve voice requests"
-msgstr "Les uzeus polèt evoyî priyaedjes"
+msgstr "Seulmint les moderateus polèt aprover des dmandes di vwès"
 
 #: mod_muc_room.erl:389
 msgid "Improper message type"
@@ -1264,7 +1241,6 @@ msgstr ""
 "såle ci"
 
 #: mod_muc_room.erl:961
-#, fuzzy
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
@@ -1273,7 +1249,6 @@ msgstr ""
 "cisse såle ci"
 
 #: mod_muc_room.erl:966
-#, fuzzy
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Seulmint les moderateus polèt candjî l' sudjet dins cisse såle ci"
 
@@ -1286,7 +1261,6 @@ msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr "Les viziteus èn polèt nén candjî leus metous no po ç' såle ci"
 
 #: mod_muc_room.erl:1093 mod_muc_room.erl:1835
-#, fuzzy
 msgid "That nickname is already in use by another occupant"
 msgstr "Li metou no est ddja eployî pa ene ôte sakî sol såle"
 
@@ -1295,22 +1269,20 @@ msgid "You have been banned from this room"
 msgstr "Vos avoz stî bani di cisse såle ci"
 
 #: mod_muc_room.erl:1826
-#, fuzzy
 msgid "Membership is required to enter this room"
 msgstr "I fåt esse mimbe po poleur intrer dins cisse såle ci"
 
 #: mod_muc_room.erl:1872
-#, fuzzy
 msgid "A password is required to enter this room"
 msgstr "I fåt dner on scret po poleur intrer dins cisse såle ci"
 
 #: mod_muc_room.erl:1898 mod_register.erl:295
 msgid "Too many CAPTCHA requests"
-msgstr ""
+msgstr "Pår trop di dmandes CAPTCHA"
 
 #: mod_muc_room.erl:1908 mod_register.erl:301
 msgid "Unable to generate a CAPTCHA"
-msgstr ""
+msgstr "Nén moyén di djenerer on CAPTCHA"
 
 #: mod_muc_room.erl:1919
 msgid "Incorrect password"
@@ -1345,18 +1317,16 @@ msgid "Owner privileges required"
 msgstr "I fåt des priviledjes di prôpietaire"
 
 #: mod_muc_room.erl:3348
-#, fuzzy
 msgid "Configuration of room ~s"
-msgstr "Apontiaedje po "
+msgstr "Apontiaedje del såle ~s"
 
 #: mod_muc_room.erl:3359
 msgid "Room title"
 msgstr "Tite del såle"
 
 #: mod_muc_room.erl:3361 mod_muc_room.erl:4190
-#, fuzzy
 msgid "Room description"
-msgstr "Discrijhaedje:"
+msgstr "Discrijhaedje del såle"
 
 #: mod_muc_room.erl:3369
 msgid "Make room persistent"
@@ -1396,20 +1366,19 @@ msgstr "tot l' minme kî"
 
 #: mod_muc_room.erl:3471
 msgid "Roles for which Presence is Broadcasted"
-msgstr ""
+msgstr "Roles ki leu prezince est difuzêye"
 
 #: mod_muc_room.erl:3486
-#, fuzzy
 msgid "Moderator"
-msgstr "les moderateus seulmint"
+msgstr "Moderateu"
 
 #: mod_muc_room.erl:3496
 msgid "Participant"
-msgstr ""
+msgstr "Pårticipant"
 
 #: mod_muc_room.erl:3506
 msgid "Visitor"
-msgstr ""
+msgstr "Viziteu"
 
 #: mod_muc_room.erl:3513
 msgid "Make room members-only"
@@ -1424,7 +1393,6 @@ msgid "Default users as participants"
 msgstr "Les uzeus sont des pårticipants come prémetowe dujhance"
 
 #: mod_muc_room.erl:3522
-#, fuzzy
 msgid "Allow users to change the subject"
 msgstr "Les uzeus polèt candjî l' tite"
 
@@ -1433,13 +1401,12 @@ msgid "Allow users to send private messages"
 msgstr "Les uzeus polèt evoyî des messaedjes privés"
 
 #: mod_muc_room.erl:3533
-#, fuzzy
 msgid "Allow visitors to send private messages to"
 msgstr "Les uzeus polèt evoyî des messaedjes privés"
 
 #: mod_muc_room.erl:3551
 msgid "nobody"
-msgstr ""
+msgstr "nolu"
 
 #: mod_muc_room.erl:3576
 msgid "Allow users to query other users"
@@ -1460,26 +1427,24 @@ msgid "Allow visitors to change nickname"
 msgstr "Permete ki les viziteus candjexhe leus metous nos"
 
 #: mod_muc_room.erl:3589
-#, fuzzy
 msgid "Allow visitors to send voice requests"
-msgstr "Les uzeus polèt evoyî priyaedjes"
+msgstr "Les uzeus polèt evoyî des dmandes di vwès"
 
 #: mod_muc_room.erl:3592
 msgid "Minimum interval between voice requests (in seconds)"
-msgstr ""
+msgstr "Tins minimom etur deus dmandes di vwès (e segondes)"
 
 #: mod_muc_room.erl:3599
-#, fuzzy
 msgid "Make room CAPTCHA protected"
-msgstr "Rinde li såle di berdelaedje protedjeye pa scret"
+msgstr "Rinde li såle di berdelaedje protedjeye pa CAPTCHA"
 
 #: mod_muc_room.erl:3606
 msgid "Enable message archiving"
-msgstr ""
+msgstr "Mete en alaedje l' årtchivaedje des messaedjes"
 
 #: mod_muc_room.erl:3612
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr ""
+msgstr "Esclure les IDs Jabber des kesses CAPTCHA"
 
 #: mod_muc_room.erl:3621
 msgid "Enable logging"
@@ -1499,20 +1464,19 @@ msgstr "privé, "
 
 #: mod_muc_room.erl:4326
 msgid "Voice request"
-msgstr ""
+msgstr "Dimande di vwès"
 
 #: mod_muc_room.erl:4331
 msgid "Either approve or decline the voice request."
-msgstr ""
+msgstr "Aprover oudonbén rifuzer li dmande di vwès."
 
 #: mod_muc_room.erl:4351
-#, fuzzy
 msgid "User JID"
-msgstr "Uzeu "
+msgstr "JID d' l' uzeu"
 
 #: mod_muc_room.erl:4355
 msgid "Grant voice to this person?"
-msgstr ""
+msgstr "Permete li vwès po cisse djin ci?"
 
 #: mod_muc_room.erl:4498
 msgid "~s invites you to the room ~s"
@@ -1524,11 +1488,11 @@ msgstr "li scret est"
 
 #: mod_multicast.erl:291
 msgid "Multicast"
-msgstr ""
+msgstr "Multicast"
 
 #: mod_multicast.erl:306
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "siervice multicast d' ejabberd"
 
 #: mod_offline.erl:647
 msgid ""
@@ -1562,9 +1526,8 @@ msgid "Offline Messages:"
 msgstr "Messaedjes ki ratindèt:"
 
 #: mod_offline.erl:996
-#, fuzzy
 msgid "Remove All Offline Messages"
-msgstr "Messaedjes ki ratindèt"
+msgstr "Oister tos les messaedjes ki ratindèt"
 
 #: mod_proxy65_service.erl:248
 msgid "ejabberd SOCKS5 Bytestreams module"
@@ -1649,12 +1612,11 @@ msgstr "Dinez l' modele d' eplaideu"
 
 #: mod_pubsub.erl:3769
 msgid "Purge all items when the relevant publisher goes offline"
-msgstr ""
+msgstr "Purdjî tos les cayets cwand l' eplaideu aloyî va foû raloyaedje"
 
 #: mod_pubsub.erl:3771
-#, fuzzy
 msgid "Specify the event message type"
-msgstr "Sipecifyî l' modele d' accès"
+msgstr "Sipecifyî l' sôre do messaedje d' evenmint"
 
 #: mod_pubsub.erl:3773
 msgid "Max payload size in bytes"
@@ -1670,17 +1632,16 @@ msgstr "Seulmint evoyî des notifiaedje åzès uzeus disponibes"
 
 #: mod_pubsub.erl:3779
 msgid "The collections with which a node is affiliated"
-msgstr ""
+msgstr "Les ramexhnêyes k' on nuk est afiyî avou"
 
 #: mod_register.erl:209
 msgid "The CAPTCHA verification has failed"
-msgstr ""
+msgstr "Li verifiaedje CAPTCHA a fwait berwete"
 
 #: mod_register.erl:253
-#, fuzzy
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
-"Vos avoz mezåjhe d' on cliyint ki sopoite x:data po-z edjîstrer on metou no"
+"Vos avoz mezåjhe d' on cliyint ki sopoite x:data eyet CAPTCHA po vs edjîstrer"
 
 #: mod_register.erl:259 mod_register.erl:320
 msgid "Choose a username and password to register with this server"
@@ -1688,50 +1649,48 @@ msgstr ""
 "Tchoezixhoz on no d' uzeu eyet on scret po vs edjîstrer so ç' sierveu ci"
 
 #: mod_register.erl:373 mod_register.erl:421
-#, fuzzy
 msgid "The password is too weak"
-msgstr "li scret est"
+msgstr "li scret est trop flåw"
 
 #: mod_register.erl:426
-#, fuzzy
 msgid "Users are not allowed to register accounts so quickly"
 msgstr "Les noveas uzeus n' si polèt nén edjîstrer si raddimint"
 
 #: mod_register_web.erl:105
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "Li conte Jabber da vosse a stî ahivé comifåt."
 
 #: mod_register_web.erl:110
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Åk n' a nén stî tot ahivant l' conte: "
 
 #: mod_register_web.erl:119
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "Li conte Jabber da vosse a stî disfacé comifåt."
 
 #: mod_register_web.erl:124
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Åk n' a nén stî tot disfaçant l' conte: "
 
 #: mod_register_web.erl:135
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "Li scret do conte Jabber da vosse a stî candjî comifåt."
 
 #: mod_register_web.erl:140
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Åk n' a nén stî tot candjant l' sicret: "
 
 #: mod_register_web.erl:175 mod_register_web.erl:183
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Edjîstraedje di conte Jabber"
 
 #: mod_register_web.erl:186 mod_register_web.erl:204 mod_register_web.erl:212
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Edjîstrer on conte Jabber"
 
 #: mod_register_web.erl:191 mod_register_web.erl:453 mod_register_web.erl:461
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Disdjîstrer on conte Jabber"
 
 #: mod_register_web.erl:214
 msgid ""
@@ -1739,40 +1698,45 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Cisse pådje permete d' ahiver on conte Jabber so ç' sierveu Jabber ci. "
+"Li JID (IDintifieu Jabber) da vosse serè del cogne: noduzeu@sierveu. Lijhoz "
+"atintivmint les instruccions po bén rimpli les tchamps."
 
 #: mod_register_web.erl:224 mod_register_web.erl:360 mod_register_web.erl:469
-#, fuzzy
 msgid "Username:"
-msgstr "No d' uzeu IRC"
+msgstr "No d' uzeu:"
 
 #: mod_register_web.erl:230
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
-msgstr ""
+msgstr "Pont d' diferince etur les grandes et ptitès letes: «macbeth» est l' minme ki «MacBeth» ou co «Macbeth»"
 
 #: mod_register_web.erl:233
 msgid "Characters not allowed:"
-msgstr ""
+msgstr "Caracteres nén permetous:"
 
 #: mod_register_web.erl:236 mod_register_web.erl:364 mod_register_web.erl:473
-#, fuzzy
 msgid "Server:"
-msgstr "Måy"
+msgstr "Sierveu:"
 
 #: mod_register_web.erl:245
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
+"Ni dnez vosse sicret a nolu, nén ddja ås manaedjeus do sierveu Jabber."
 
 #: mod_register_web.erl:249
 msgid "You can later change your password using a Jabber client."
-msgstr ""
+msgstr "Vos ploz candjî vosse sicret pus tård avou on cliyint Jabber."
 
 #: mod_register_web.erl:252
 msgid ""
 "Some Jabber clients can store your password in the computer, but you should "
 "do this only in your personal computer for safety reasons."
 msgstr ""
+"Des cliyints Jabber k' i gn a polèt wårder vosse sicret sol copiutrece, mins "
+"vos n' duvrîz fé çoula ki sol copiutrece da vosse, po des råjhons di "
+"såvrité."
 
 #: mod_register_web.erl:256
 msgid ""
@@ -1780,34 +1744,33 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Rimimbrez vosse sicret, ou scrijhoz l' so on papî ki vos wådroz en ene "
+"place bén a hoûte, ca avou Jabber i n' a pont moyén di rapexhî vosse "
+"sicret si vos l' rovyîz."
 
 #: mod_register_web.erl:262 mod_register_web.erl:374
-#, fuzzy
 msgid "Password Verification:"
-msgstr "Acertinaedje do scret"
+msgstr "Acertinaedje do scret:"
 
 #: mod_register_web.erl:269
-#, fuzzy
 msgid "Register"
-msgstr "Djivêye des soçons"
+msgstr "Edjîstrer"
 
 #: mod_register_web.erl:366
-#, fuzzy
 msgid "Old Password:"
-msgstr "Sicret:"
+msgstr "Vî scret:"
 
 #: mod_register_web.erl:370
-#, fuzzy
 msgid "New Password:"
-msgstr "Sicret:"
+msgstr "Novea scret:"
 
 #: mod_register_web.erl:463
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr ""
+msgstr "Cisse pådje permete di disdjîstrer on conte Jabber so ç' sierveu ci."
 
 #: mod_register_web.erl:480
 msgid "Unregister"
-msgstr ""
+msgstr "Disdjîstrer"
 
 #: mod_roster.erl:1436
 msgid "Subscription"
@@ -1977,3 +1940,4 @@ msgstr "Rimplixhoz les tchamps po cweri èn uzeu Jabber"
 
 #~ msgid "Size"
 #~ msgstr "Grandeu"
+
