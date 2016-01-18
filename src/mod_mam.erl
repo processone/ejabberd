@@ -1029,16 +1029,6 @@ msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
 				<<"xmlns">>, <<"jabber:client">>, Pkt2)]},
     jlib:add_delay_info(Pkt3, LServer, TS).
 
-maybe_update_from_to(Pkt, JidRequestor, Peer, chat, _Nick) ->
-    case xml:get_attr_s(<<"type">>, Pkt#xmlel.attrs) of
-	<<"groupchat">> when Peer /= undefined ->
-	    Pkt2 = xml:replace_tag_attr(<<"to">>,
-					jid:to_string(JidRequestor),
-					Pkt),
-	    xml:replace_tag_attr(<<"from">>, jid:to_string(Peer),
-				 Pkt2);
-	_ -> Pkt
-    end;
 maybe_update_from_to(#xmlel{children = Els} = Pkt, JidRequestor,
 		     Peer, {groupchat, Role, _MUCState}, Nick) ->
     Items = case Role of
@@ -1054,7 +1044,9 @@ maybe_update_from_to(#xmlel{children = Els} = Pkt, JidRequestor,
 	    end,
     Pkt1 = Pkt#xmlel{children = Items ++ Els},
     Pkt2 = jlib:replace_from(jid:replace_resource(JidRequestor, Nick), Pkt1),
-    jlib:remove_attr(<<"to">>, Pkt2).
+    jlib:remove_attr(<<"to">>, Pkt2);
+maybe_update_from_to(Pkt, _JidRequestor, _Peer, chat, _Nick) ->
+    Pkt.
 
 is_bare_copy(#jid{luser = U, lserver = S, lresource = R}, To) ->
     PrioRes = ejabberd_sm:get_user_present_resources(U, S),
@@ -1386,8 +1378,6 @@ mod_opt_type(default) ->
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(request_activates_archiving) ->
     fun (B) when is_boolean(B) -> B end;
-mod_opt_type(store_body_only) ->
-    fun (B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
     [assume_mam_usage, cache_life_time, cache_size, db_type, default, iqdisc,
-     request_activates_archiving, store_body_only].
+     request_activates_archiving].
