@@ -975,7 +975,6 @@ msgid "Server ~b"
 msgstr "שרת ~b"
 
 #: mod_mam.erl:541
-#, fuzzy
 msgid "Only members may query archives of this room"
 msgstr "רק חברים רשאים לתשאל ארכיונים של חדר זה"
 
