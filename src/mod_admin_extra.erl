@@ -1332,16 +1332,28 @@ build_packet(Type, Subject, Body) ->
      [{xmlel, <<"body">>, [], [{xmlcdata, Body}]} | Tail]
     }.
 
-send_stanza(FromString, ToString, Data) ->
-    Stanza = {xmlel, _, _, _} = xml_stream:parse_element(Data),
-    From = jid:from_string(FromString),
-    To = jid:from_string(ToString),
-    ejabberd_router:route(From, To, Stanza).
+send_stanza(FromString, ToString, Stanza) ->
+    case xml_stream:parse_element(Stanza) of
+	{error, Error} ->
+	    {error, Error};
+	XmlEl ->
+	    #xmlel{attrs = Attrs} = XmlEl,
+	    From = jid:from_string(proplists:get_value(<<"from">>, Attrs, FromString)),
+	    To = jid:from_string(proplists:get_value(<<"to">>, Attrs, ToString)),
+	    ejabberd_router:route(From, To, XmlEl)
+    end.
 
 send_stanza_c2s(Username, Host, Resource, Stanza) ->
-    C2sPid = ejabberd_sm:get_session_pid(Username, Host, Resource),
-    XmlEl = xml_stream:parse_element(Stanza),
-    p1_fsm:send_event(C2sPid, {xmlstreamelement, XmlEl}).
+    case {xml_stream:parse_element(Stanza),
+          ejabberd_sm:get_session_pid(Username, Host, Resource)}
+    of
+	{{error, Error}, _} ->
+	    {error, Error};
+	{_, none} ->
+	    {error, no_session};
+	{XmlEl, C2sPid} ->
+	    p1_fsm:send_event(C2sPid, {xmlstreamelement, XmlEl})
+    end.
 
 privacy_set(Username, Host, QueryS) ->
     From = jid:make(Username, Host, <<"">>),
