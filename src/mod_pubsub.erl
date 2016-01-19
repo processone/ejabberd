@@ -3170,17 +3170,15 @@ sub_option_can_deliver(_, _, _) -> true.
 presence_can_deliver(_, false) ->
     true;
 presence_can_deliver({User, Server, Resource}, true) ->
-    case mnesia:dirty_match_object({session, '_', '_', {User, Server}, '_', '_'}) of
+    case ejabberd_sm:get_user_present_resources(User, Server) of
 	[] ->
 	    false;
 	Ss ->
 	    lists:foldl(fun
 		    (_, true) ->
 			true;
-		    ({session, _, _, _, undefined, _}, _Acc) ->
-			false;
-		    ({session, {_, _, R}, _, _, _Priority, _}, _Acc) ->
-			case Resource of
+		    ({_, R}, _Acc) ->
+		    	case Resource of
 			    <<>> -> true;
 			    R -> true;
 			    _ -> false
