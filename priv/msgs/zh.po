@@ -72,7 +72,7 @@ msgstr "密码"
 
 #: ejabberd_oauth.erl:267
 msgid "Accept"
-msgstr ""
+msgstr "接受"
 
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
@@ -254,9 +254,8 @@ msgid "Change Password"
 msgstr "更改密码"
 
 #: ejabberd_web_admin.erl:1673
-#, fuzzy
 msgid "User ~s"
-msgstr "用户 "
+msgstr "用户 ~s"
 
 #: ejabberd_web_admin.erl:1684
 msgid "Connected Resources:"
@@ -288,9 +287,8 @@ msgid "Stopped Nodes"
 msgstr "已经停止的节点"
 
 #: ejabberd_web_admin.erl:1833 ejabberd_web_admin.erl:1858
-#, fuzzy
 msgid "Node ~p"
-msgstr "节点 "
+msgstr "节点 ~p"
 
 #: ejabberd_web_admin.erl:1842 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -327,9 +325,8 @@ msgid "RPC Call Error"
 msgstr "RPC 调用错误"
 
 #: ejabberd_web_admin.erl:1917
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "数据库列表位于 "
+msgstr "位于~p的数据库表"
 
 #: ejabberd_web_admin.erl:1927 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -352,9 +349,8 @@ msgid "Error"
 msgstr "错误"
 
 #: ejabberd_web_admin.erl:1955
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "备份来源 "
+msgstr "~p的备份"
 
 #: ejabberd_web_admin.erl:1959
 msgid ""
@@ -409,7 +405,7 @@ msgstr "将某主机的用户数据导出到 PIEFXIS 文件 (XEP-0227):"
 
 #: ejabberd_web_admin.erl:2060
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "将所有表以SQL查询语句导出到文件:"
 
 #: ejabberd_web_admin.erl:2076
 msgid "Import user data from jabberd14 spool file:"
@@ -424,9 +420,8 @@ msgid "Listened Ports at "
 msgstr "监听的端口位于 "
 
 #: ejabberd_web_admin.erl:2144
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "模块位于 "
+msgstr "位于~p的模块"
 
 #: ejabberd_web_admin.erl:2175
 msgid "Statistics of ~p"
@@ -457,9 +452,8 @@ msgid "Transactions Logged:"
 msgstr "记入日志的事务:"
 
 #: ejabberd_web_admin.erl:2243
-#, fuzzy
 msgid "Update ~p"
-msgstr "更新 "
+msgstr "更新 ~p"
 
 #: ejabberd_web_admin.erl:2254
 msgid "Update plan"
