@@ -32,7 +32,7 @@ msgstr "你的活跃私聊列表拒绝了在此房间进行路由分发."
 
 #: ejabberd_c2s.erl:2429
 msgid "Too many unacked stanzas"
-msgstr ""
+msgstr "未被确认的节太多"
 
 #: ejabberd_captcha.erl:122 ejabberd_captcha.erl:245 ejabberd_captcha.erl:284
 msgid "Enter the text you see"
@@ -40,7 +40,7 @@ msgstr "请输入您所看到的文本"
 
 #: ejabberd_captcha.erl:147
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr "您发送给 ~s 的消息已被阻止. 要解除阻止, 请访问 ~s"
+msgstr "您发送给~s的消息已被阻止. 要解除阻止, 请访问 ~s"
 
 #: ejabberd_captcha.erl:192
 msgid "If you don't see the CAPTCHA image here, visit the web page."
@@ -60,9 +60,8 @@ msgid "User"
 msgstr "用户"
 
 #: ejabberd_oauth.erl:256
-#, fuzzy
 msgid "Server"
-msgstr "服务器:"
+msgstr "服务器"
 
 #: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1408 mod_configure.erl:1398
 #: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2123
@@ -72,7 +71,7 @@ msgstr "密码"
 
 #: ejabberd_oauth.erl:267
 msgid "Accept"
-msgstr ""
+msgstr "接受"
 
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
@@ -81,7 +80,7 @@ msgstr "未认证的"
 
 #: ejabberd_web_admin.erl:303 ejabberd_web_admin.erl:335
 msgid "ejabberd Web Admin"
-msgstr "ejabberd 网页管理"
+msgstr "ejabberd网页管理"
 
 #: ejabberd_web_admin.erl:669 ejabberd_web_admin.erl:680
 msgid "Administration"
@@ -134,7 +133,7 @@ msgstr "访问规则"
 
 #: ejabberd_web_admin.erl:913
 msgid "~s access rule configuration"
-msgstr "~s 访问规则配置"
+msgstr "~s访问规则配置"
 
 #: ejabberd_web_admin.erl:931
 msgid "Virtual Hosts"
@@ -239,9 +238,8 @@ msgid "Outgoing s2s Connections:"
 msgstr "出站 s2s 连接:"
 
 #: ejabberd_web_admin.erl:1559
-#, fuzzy
 msgid "Incoming s2s Connections:"
-msgstr "出站 s2s 连接:"
+msgstr "入站 s2s 连接:"
 
 #: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
 #: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
@@ -254,9 +252,8 @@ msgid "Change Password"
 msgstr "更改密码"
 
 #: ejabberd_web_admin.erl:1673
-#, fuzzy
 msgid "User ~s"
-msgstr "用户 "
+msgstr "用户~s"
 
 #: ejabberd_web_admin.erl:1684
 msgid "Connected Resources:"
@@ -288,9 +285,8 @@ msgid "Stopped Nodes"
 msgstr "已经停止的节点"
 
 #: ejabberd_web_admin.erl:1833 ejabberd_web_admin.erl:1858
-#, fuzzy
 msgid "Node ~p"
-msgstr "节点 "
+msgstr "节点~p"
 
 #: ejabberd_web_admin.erl:1842 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -327,9 +323,8 @@ msgid "RPC Call Error"
 msgstr "RPC 调用错误"
 
 #: ejabberd_web_admin.erl:1917
-#, fuzzy
 msgid "Database Tables at ~p"
-msgstr "数据库列表位于 "
+msgstr "位于~p的数据库表"
 
 #: ejabberd_web_admin.erl:1927 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -352,9 +347,8 @@ msgid "Error"
 msgstr "错误"
 
 #: ejabberd_web_admin.erl:1955
-#, fuzzy
 msgid "Backup of ~p"
-msgstr "备份来源 "
+msgstr "~p的备份"
 
 #: ejabberd_web_admin.erl:1959
 msgid ""
@@ -409,7 +403,7 @@ msgstr "将某主机的用户数据导出到 PIEFXIS 文件 (XEP-0227):"
 
 #: ejabberd_web_admin.erl:2060
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "将所有表以SQL查询语句导出到文件:"
 
 #: ejabberd_web_admin.erl:2076
 msgid "Import user data from jabberd14 spool file:"
@@ -417,20 +411,19 @@ msgstr "从 jabberd14 Spool 文件导入用户数据:"
 
 #: ejabberd_web_admin.erl:2087
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "从 jabberd14 Spool 目录导入用户数据:"
+msgstr "从jabberd14 Spool目录导入用户数据:"
 
 #: ejabberd_web_admin.erl:2115
 msgid "Listened Ports at "
-msgstr "监听的端口位于 "
+msgstr "监听的端口位于"
 
 #: ejabberd_web_admin.erl:2144
-#, fuzzy
 msgid "Modules at ~p"
-msgstr "模块位于 "
+msgstr "位于~p的模块"
 
 #: ejabberd_web_admin.erl:2175
 msgid "Statistics of ~p"
-msgstr "~p 的统计"
+msgstr "~p的统计"
 
 #: ejabberd_web_admin.erl:2179
 msgid "Uptime:"
@@ -438,7 +431,7 @@ msgstr "正常运行时间:"
 
 #: ejabberd_web_admin.erl:2183
 msgid "CPU Time:"
-msgstr "CPU 时间："
+msgstr "CPU时间："
 
 #: ejabberd_web_admin.erl:2191
 msgid "Transactions Committed:"
@@ -457,9 +450,8 @@ msgid "Transactions Logged:"
 msgstr "记入日志的事务:"
 
 #: ejabberd_web_admin.erl:2243
-#, fuzzy
 msgid "Update ~p"
-msgstr "更新 "
+msgstr "更新~p"
 
 #: ejabberd_web_admin.erl:2254
 msgid "Update plan"
@@ -746,7 +738,7 @@ msgstr "请输入文本文件的路径"
 
 #: mod_configure.erl:1156
 msgid "Import User from File at "
-msgstr "导入用户的文件位于 "
+msgstr "导入用户的文件位于"
 
 #: mod_configure.erl:1162
 msgid "Enter path to jabberd14 spool file"
@@ -754,11 +746,11 @@ msgstr "请输入 jabberd14 spool 文件的路径"
 
 #: mod_configure.erl:1177
 msgid "Import Users from Dir at "
-msgstr "导入用户的目录位于 "
+msgstr "导入用户的目录位于"
 
 #: mod_configure.erl:1183
 msgid "Enter path to jabberd14 spool dir"
-msgstr "请输入 jabberd14 spool 目录的路径"
+msgstr "请输入jabberd14 spool目录的路径"
 
 #: mod_configure.erl:1184
 msgid "Path to Dir"
@@ -814,7 +806,7 @@ msgstr "花名册大小"
 
 #: mod_configure.erl:1965
 msgid "IP addresses"
-msgstr "IP 地址"
+msgstr "IP地址"
 
 #: mod_configure.erl:1967
 msgid "Resources"
@@ -836,19 +828,19 @@ msgstr "编辑属性"
 msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
-msgstr ""
+msgstr "来自IP地址(~s)的(~p)失败认证太多. 该地址将在UTC时间~s被禁用."
 
 #: mod_http_upload.erl:586
 msgid "Please specify file size."
-msgstr ""
+msgstr "请指定文件大小."
 
 #: mod_http_upload.erl:590
 msgid "Please specify file name."
-msgstr ""
+msgstr "请指定文件名称."
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
-msgstr ""
+msgstr "此IP地址在~s中已被列入黑名单"
 
 #: mod_irc.erl:220 mod_muc.erl:467
 msgid "Access denied by service policy"
@@ -856,7 +848,7 @@ msgstr "访问被服务策略拒绝"
 
 #: mod_irc.erl:439
 msgid "IRC Transport"
-msgstr "IRC 传输"
+msgstr "IRC传输"
 
 #: mod_irc.erl:476
 msgid "ejabberd IRC module"
@@ -864,7 +856,7 @@ msgstr "ejabberd IRC 模块"
 
 #: mod_irc.erl:644
 msgid "You need an x:data capable client to configure mod_irc settings"
-msgstr "您需要一个兼容 x:data 的客户端来配置 mod_irc 设置"
+msgstr "您需要一个兼容 x:data 的客户端来配置mod_irc设置"
 
 #: mod_irc.erl:653
 msgid "Registration in mod_irc for "
@@ -878,7 +870,7 @@ msgstr "请输入您想使用的用来连接到IRC服务器的用户名, 编码,
 
 #: mod_irc.erl:667
 msgid "IRC Username"
-msgstr "IRC 用户名"
+msgstr "IRC用户名"
 
 #: mod_irc.erl:682
 msgid ""
@@ -905,27 +897,27 @@ msgstr "连接参数"
 
 #: mod_irc.erl:886
 msgid "Join IRC channel"
-msgstr "加入 IRC 频道"
+msgstr "加入IRC频道"
 
 #: mod_irc.erl:893
 msgid "IRC channel (don't put the first #)"
-msgstr "IRC 频道 (不要输入第一个#号)"
+msgstr "IRC频道 (不要输入第一个#号)"
 
 #: mod_irc.erl:903
 msgid "IRC server"
-msgstr "IRC 服务器"
+msgstr "IRC服务器"
 
 #: mod_irc.erl:950 mod_irc.erl:958
 msgid "Join the IRC channel here."
-msgstr "在这里加入 IRC 频道."
+msgstr "在这里加入IRC频道."
 
 #: mod_irc.erl:967
 msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr "用此 Jabber ID: ~s  加入 IRC 频道"
+msgstr "用此Jabber ID ~s加入IRC频道"
 
 #: mod_irc.erl:1046
 msgid "IRC settings"
-msgstr "IRC 设置"
+msgstr "IRC设置"
 
 #: mod_irc.erl:1051
 msgid ""
@@ -938,28 +930,27 @@ msgstr ""
 
 #: mod_irc.erl:1060
 msgid "IRC username"
-msgstr "IRC 用户名"
+msgstr "IRC用户名"
 
 #: mod_irc.erl:1126
 msgid "Password ~b"
-msgstr "~b 的密码"
+msgstr "~b的密码"
 
 #: mod_irc.erl:1137
 msgid "Port ~b"
-msgstr "~b 的端口"
+msgstr "~b的端口"
 
 #: mod_irc.erl:1150
 msgid "Encoding for server ~b"
-msgstr "服务器 ~b 的编码"
+msgstr "服务器~b的编码"
 
 #: mod_irc.erl:1171
 msgid "Server ~b"
-msgstr "服务器 ~b"
+msgstr "服务器~b"
 
 #: mod_mam.erl:541
-#, fuzzy
 msgid "Only members may query archives of this room"
-msgstr "只有主持人可以在此房间里更改主题"
+msgstr "只有会员可以查询本房间的存档"
 
 #: mod_muc.erl:585
 msgid "Only service administrators are allowed to send service messages"
@@ -979,7 +970,7 @@ msgstr "聊天室"
 
 #: mod_muc.erl:781
 msgid "Empty Rooms"
-msgstr ""
+msgstr "空房间"
 
 #: mod_muc.erl:933
 msgid "You need a client that supports x:data to register the nickname"
@@ -987,7 +978,7 @@ msgstr "您需要一个支持 x:data 的客户端来注册昵称"
 
 #: mod_muc.erl:943
 msgid "Nickname Registration at "
-msgstr "昵称注册于 "
+msgstr "昵称注册于"
 
 #: mod_muc.erl:949
 msgid "Enter nickname you want to register"
@@ -1013,26 +1004,23 @@ msgstr "ejabberd MUC 模块"
 #: mod_muc_admin.erl:231 mod_muc_admin.erl:234 mod_muc_admin.erl:246
 #: mod_muc_admin.erl:320
 msgid "Multi-User Chat"
-msgstr ""
+msgstr "多用户聊天"
 
 #: mod_muc_admin.erl:249
-#, fuzzy
 msgid "Total rooms"
-msgstr "聊天室"
+msgstr "所有房间"
 
 #: mod_muc_admin.erl:250
-#, fuzzy
 msgid "Permanent rooms"
-msgstr "离开房间"
+msgstr "永久房间"
 
 #: mod_muc_admin.erl:251
-#, fuzzy
 msgid "Registered nicknames"
-msgstr "注册用户"
+msgstr "注册的昵称"
 
 #: mod_muc_admin.erl:254
 msgid "List of rooms"
-msgstr ""
+msgstr "房间列表"
 
 #: mod_muc_log.erl:398 mod_muc_log.erl:407
 msgid "Chatroom configuration modified"
@@ -1178,7 +1166,7 @@ msgstr "已经超过传输率限制"
 msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
-msgstr ""
+msgstr "不允许将错误消息发送到该房间. 参与者(~s)已发送过一条消息(~s)并已被踢出房间"
 
 #: mod_muc_room.erl:241
 msgid "It is not allowed to send private messages to the conference"
@@ -1288,7 +1276,7 @@ msgstr "Jabber ID ~s 无效"
 
 #: mod_muc_room.erl:2772
 msgid "Nickname ~s does not exist in the room"
-msgstr "昵称 ~s 不在该房间"
+msgstr "昵称~s不在该房间"
 
 #: mod_muc_room.erl:2795 mod_muc_room.erl:3175
 msgid "Invalid affiliation: ~s"
@@ -1304,7 +1292,7 @@ msgstr "需要持有人权限"
 
 #: mod_muc_room.erl:3348
 msgid "Configuration of room ~s"
-msgstr "房间 ~s 的配置 "
+msgstr "房间~s的配置 "
 
 #: mod_muc_room.erl:3359
 msgid "Room title"
@@ -1340,7 +1328,7 @@ msgstr "不限"
 
 #: mod_muc_room.erl:3436
 msgid "Present real Jabber IDs to"
-msgstr "将真实 Jabber ID 显示给"
+msgstr "将真实Jabber ID显示给"
 
 #: mod_muc_room.erl:3450 mod_muc_room.erl:3560
 msgid "moderators only"
@@ -1352,20 +1340,19 @@ msgstr "任何人"
 
 #: mod_muc_room.erl:3471
 msgid "Roles for which Presence is Broadcasted"
-msgstr ""
+msgstr "广播存在性的角色"
 
 #: mod_muc_room.erl:3486
-#, fuzzy
 msgid "Moderator"
-msgstr "仅主持人"
+msgstr "主持人"
 
 #: mod_muc_room.erl:3496
 msgid "Participant"
-msgstr ""
+msgstr "参与人"
 
 #: mod_muc_room.erl:3506
 msgid "Visitor"
-msgstr ""
+msgstr "访客"
 
 #: mod_muc_room.erl:3513
 msgid "Make room members-only"
@@ -1425,11 +1412,11 @@ msgstr "保护房间验证码"
 
 #: mod_muc_room.erl:3606
 msgid "Enable message archiving"
-msgstr ""
+msgstr "启用消息归档"
 
 #: mod_muc_room.erl:3612
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr "从验证码挑战中排除 Jabber ID"
+msgstr "从验证码挑战中排除Jabber ID"
 
 #: mod_muc_room.erl:3621
 msgid "Enable logging"
@@ -1457,7 +1444,7 @@ msgstr "接受或拒绝声音请求"
 
 #: mod_muc_room.erl:4351
 msgid "User JID"
-msgstr "用户 JID"
+msgstr "用户JID"
 
 #: mod_muc_room.erl:4355
 msgid "Grant voice to this person?"
@@ -1465,7 +1452,7 @@ msgstr "为此人授权声音?"
 
 #: mod_muc_room.erl:4498
 msgid "~s invites you to the room ~s"
-msgstr "~s 邀请你到 ~s 房间"
+msgstr "~s邀请你到房间~s"
 
 #: mod_muc_room.erl:4509
 msgid "the password is"
@@ -1473,11 +1460,11 @@ msgstr "密码是"
 
 #: mod_multicast.erl:291
 msgid "Multicast"
-msgstr ""
+msgstr "多重映射"
 
 #: mod_multicast.erl:306
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "ejabberd多重映射服务"
 
 #: mod_offline.erl:647
 msgid ""
@@ -1486,7 +1473,7 @@ msgstr "您的联系人离线消息队列已满. 消息已被丢弃"
 
 #: mod_offline.erl:798
 msgid "~s's Offline Messages Queue"
-msgstr "~s 的离线消息队列"
+msgstr "~s的离线消息队列"
 
 #: mod_offline.erl:811
 msgid "Time"
@@ -1526,7 +1513,7 @@ msgstr "ejabberd 发行-订阅模块"
 
 #: mod_pubsub.erl:1537
 msgid "PubSub subscriber request"
-msgstr "PubSub 订阅人请求"
+msgstr "PubSub订阅人请求"
 
 #: mod_pubsub.erl:1543
 msgid "Choose whether to approve this entity's subscription."
@@ -1534,7 +1521,7 @@ msgstr "选择是否允许该实体的订阅"
 
 #: mod_pubsub.erl:1559
 msgid "Node ID"
-msgstr "节点 ID"
+msgstr "节点ID"
 
 #: mod_pubsub.erl:1571
 msgid "Subscriber Address"
@@ -1542,7 +1529,7 @@ msgstr "订阅人地址"
 
 #: mod_pubsub.erl:1584
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
-msgstr "允许该 Jabber ID 订阅该 pubsub 节点?"
+msgstr "允许该Jabber ID订阅该pubsub节点?"
 
 #: mod_pubsub.erl:3745
 msgid "Deliver payloads with event notifications"
@@ -1639,7 +1626,7 @@ msgstr "不允许用户太频繁地注册帐户"
 
 #: mod_register_web.erl:105
 msgid "Your Jabber account was successfully created."
-msgstr "你的 Jabber 帐户已成功创建."
+msgstr "你的Jabber帐户已成功创建."
 
 #: mod_register_web.erl:110
 msgid "There was an error creating the account: "
@@ -1655,7 +1642,7 @@ msgstr "帐户删除失败: "
 
 #: mod_register_web.erl:135
 msgid "The password of your Jabber account was successfully changed."
-msgstr "你的 Jabber 帐户密码已成功更新."
+msgstr "你的Jabber帐户密码已成功更新."
 
 #: mod_register_web.erl:140
 msgid "There was an error changing the password: "
@@ -1663,15 +1650,15 @@ msgstr "修改密码出错: "
 
 #: mod_register_web.erl:175 mod_register_web.erl:183
 msgid "Jabber Account Registration"
-msgstr "Jabber 帐户注册"
+msgstr "Jabber帐户注册"
 
 #: mod_register_web.erl:186 mod_register_web.erl:204 mod_register_web.erl:212
 msgid "Register a Jabber account"
-msgstr "注册 Jabber 帐户"
+msgstr "注册Jabber帐户"
 
 #: mod_register_web.erl:191 mod_register_web.erl:453 mod_register_web.erl:461
 msgid "Unregister a Jabber account"
-msgstr "注销 Jabber 帐户"
+msgstr "注销Jabber帐户"
 
 #: mod_register_web.erl:214
 msgid ""
@@ -1679,7 +1666,7 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"本页面允许在此服务器上创建 Jabber 帐户. 你的 JID (Jabber ID) 的形式如下: 用户"
+"本页面允许在此服务器上创建Jabber帐户. 你的JID (Jabber ID) 的形式如下: 用户"
 "名@服务器. 请仔细阅读说明并正确填写相应字段."
 
 #: mod_register_web.erl:224 mod_register_web.erl:360 mod_register_web.erl:469
@@ -1702,11 +1689,11 @@ msgstr "服务器:"
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
-msgstr "不要将密码告诉任何人, 就算是 Jabber 服务器的管理员也不可以."
+msgstr "不要将密码告诉任何人, 就算是Jabber服务器的管理员也不可以."
 
 #: mod_register_web.erl:249
 msgid "You can later change your password using a Jabber client."
-msgstr "你可以稍后用 Jabber 客户端修改你的密码."
+msgstr "你可以稍后用Jabber客户端修改你的密码."
 
 #: mod_register_web.erl:252
 msgid ""
@@ -1722,7 +1709,7 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
-"记住你的密码, 或将其记到纸上并放于安全位置. 如果你忘记了密码, Jabber 也没有自"
+"记住你的密码, 或将其记到纸上并放于安全位置. 如果你忘记了密码, Jabber也没有自"
 "动恢复密码的方式."
 
 #: mod_register_web.erl:262 mod_register_web.erl:374
@@ -1739,11 +1726,11 @@ msgstr "旧密码: "
 
 #: mod_register_web.erl:370
 msgid "New Password:"
-msgstr "新密码: "
+msgstr "新密码:"
 
 #: mod_register_web.erl:463
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr "此页面允许在此 Jabber 服务器上注销 Jabber 帐户"
+msgstr "此页面允许在此Jabber服务器上注销Jabber帐户"
 
 #: mod_register_web.erl:480
 msgid "Unregister"
@@ -1771,11 +1758,11 @@ msgstr "移除"
 
 #: mod_roster.erl:1490
 msgid "Roster of "
-msgstr "花名册属于 "
+msgstr "花名册属于"
 
 #: mod_roster.erl:1504
 msgid "Add Jabber ID"
-msgstr "添加 Jabber ID"
+msgstr "添加Jabber ID"
 
 #: mod_roster.erl:1622
 msgid "Roster"
@@ -1808,7 +1795,7 @@ msgstr "组"
 
 #: mod_vcard.erl:168 mod_vcard_ldap.erl:225
 msgid "Erlang Jabber Server"
-msgstr "Erlang Jabber 服务器"
+msgstr "Erlang Jabber服务器"
 
 #: mod_vcard.erl:490 mod_vcard.erl:622
 msgid "Birthday"
@@ -1834,7 +1821,7 @@ msgstr "姓氏"
 msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
-msgstr "填充表单以搜索任何匹配的 Jabber 用户(在字段末添加*来匹配子串)"
+msgstr "填充表单以搜索任何匹配的Jabber用户(在字段末添加*来匹配子串)"
 
 #: mod_vcard.erl:490 mod_vcard.erl:615
 msgid "Full Name"
@@ -1854,7 +1841,7 @@ msgstr "组织单位"
 
 #: mod_vcard.erl:490 mod_vcard_ldap.erl:502
 msgid "Search users in "
-msgstr "搜索用户于 "
+msgstr "搜索用户于"
 
 #: mod_vcard.erl:490 mod_vcard_ldap.erl:502
 msgid "You need an x:data capable client to search"
@@ -1862,11 +1849,11 @@ msgstr "您需要一个兼容 x:data 的客户端来搜索"
 
 #: mod_vcard.erl:519 mod_vcard_ldap.erl:531
 msgid "vCard User Search"
-msgstr "vCard 用户搜索"
+msgstr "vCard用户搜索"
 
 #: mod_vcard.erl:580 mod_vcard_ldap.erl:586
 msgid "ejabberd vCard module"
-msgstr "ejabberd vCard 模块"
+msgstr "ejabberd vCard模块"
 
 #: mod_vcard.erl:609 mod_vcard_ldap.erl:602
 msgid "Search Results for "
@@ -1874,7 +1861,7 @@ msgstr "搜索结果属于关键词 "
 
 #: mod_vcard_ldap.erl:502
 msgid "Fill in fields to search for any matching Jabber User"
-msgstr "填充字段以搜索任何匹配的 Jabber 用户"
+msgstr "填充字段以搜索任何匹配的Jabber用户"
 
 #~ msgid "Outgoing s2s Servers:"
 #~ msgstr "出站 s2s 服务器"
@@ -1887,16 +1874,16 @@ msgstr "填充字段以搜索任何匹配的 Jabber 用户"
 
 #~ msgid ""
 #~ "This participant is kicked from the room because he sent an error message"
-#~ msgstr "该参与人由于发送了错误消息而被踢出了聊天室"
+#~ msgstr "该参与人由于发送了错误消息而被踢出了房间"
 
 #~ msgid ""
 #~ "This participant is kicked from the room because he sent an error message "
 #~ "to another participant"
-#~ msgstr "该参与人由于给其他人发送了出错消息而被踢出了聊天室"
+#~ msgstr "该参与人由于给其他人发送了出错消息而被踢出了房间"
 
 #~ msgid ""
 #~ "This participant is kicked from the room because he sent an error presence"
-#~ msgstr "该用户由于发送了错误状态而被踢出了聊天室"
+#~ msgstr "该用户由于发送了错误状态而被踢出了房间"
 
 #~ msgid "Captcha test failed"
 #~ msgstr "验证码检测失败."
