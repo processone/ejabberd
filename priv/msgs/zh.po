@@ -828,7 +828,7 @@ msgstr "编辑属性"
 msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
-msgstr "来自IP地址(~s)的(~p)失败认证太多. 该地址将在UTC时间~s被禁用."
+msgstr "来自IP地址(~p)的(~s)失败认证太多. 该地址将在UTC时间~s被禁用."
 
 #: mod_http_upload.erl:586
 msgid "Please specify file size."
