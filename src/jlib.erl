@@ -678,18 +678,18 @@ timestamp_to_iso({{Year, Month, Day},
                   {Hour, Minute, Second}},
                  Timezone) ->
     Timestamp_string =
-	lists:flatten(io_lib:format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B:~2..0B",
+	lists:flatten(io_lib:format("~4..0B-~2..0B-~2..0BT~2..0B~2..0B~2..0B",
 				    [Year, Month, Day, Hour, Minute, Second])),
     Timezone_string = case Timezone of
 			utc -> "Z";
 			{Sign, {TZh, TZm}} ->
-			    io_lib:format("~s~2..0B:~2..0B", [Sign, TZh, TZm]);
+			    io_lib:format("~s~2..0B~2..0B", [Sign, TZh, TZm]);
 			{TZh, TZm} ->
 			    Sign = case TZh >= 0 of
 				     true -> "+";
 				     false -> "-"
 				   end,
-			    io_lib:format("~s~2..0B:~2..0B",
+			    io_lib:format("~s~2..0B~2..0B",
 					  [Sign, abs(TZh), TZm])
 		      end,
     {iolist_to_binary(Timestamp_string), iolist_to_binary(Timezone_string)}.
@@ -698,7 +698,7 @@ timestamp_to_iso({{Year, Month, Day},
 
 timestamp_to_iso({{Year, Month, Day},
                   {Hour, Minute, Second}}) ->
-    iolist_to_binary(io_lib:format("~4..0B~2..0B~2..0BT~2..0B:~2..0B:~2..0B",
+    iolist_to_binary(io_lib:format("~4..0B~2..0B~2..0BT~2..0B~2..0B~2..0B",
                                    [Year, Month, Day, Hour, Minute, Second])).
 
 -spec now_to_utc_string(erlang:timestamp()) -> binary().
