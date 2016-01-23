@@ -355,7 +355,7 @@ build_info_room({Name, Host, Pid}) ->
 	    false ->
 		Last_message1 = queue:last(History),
 		{_, _, _, Ts_last, _} = Last_message1,
-		jlib:timestamp_to_iso(Ts_last)
+		jlib:timestamp_to_legacy(Ts_last)
 	end,
 
     {<<Name/binary, "@", Host/binary>>,
