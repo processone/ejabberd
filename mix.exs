@@ -32,8 +32,8 @@ defmodule Ejabberd.Mixfile do
 
   defp deps do
     [{:lager, git: "https://github.com/basho/lager", tag: "3.0.2"},
-     {:p1_utils, git: "https://github.com/processone/p1_utils", tag: "1.0.2"},
-     {:cache_tab, git: "https://github.com/processone/cache_tab", tag: "1.0.1"},
+     {:p1_utils, git: "https://github.com/processone/p1_utils", tag: "1.0.3"},
+     {:cache_tab, git: "https://github.com/processone/cache_tab", tag: "1.0.2"},
      {:p1_tls, git: "https://github.com/processone/tls", tag: "1.0.0"},
      {:p1_stringprep, git: "https://github.com/processone/stringprep", tag: "1.0.0"},
      {:p1_xml, git: "https://github.com/processone/xml", tag: "1.1.1"},
