@@ -45,7 +45,7 @@
 	 iq_to_xml/1, parse_xdata_submit/1,
 	 is_standalone_chat_state/1,
 	 add_delay_info/3, add_delay_info/4,
-	 timestamp_to_iso/1, timestamp_to_iso/2,
+	 timestamp_to_legacy/1, timestamp_to_iso_basic/1, timestamp_to_iso/2,
 	 now_to_utc_string/1, now_to_local_string/1,
 	 datetime_string_to_timestamp/1,
 	 term_to_base64/1, base64_to_term/1,
@@ -612,6 +612,9 @@ create_delay_tag(DateTime, Host, Desc) when is_binary(Host) ->
 %% Minutes = integer()
 -spec timestamp_to_iso(calendar:datetime(), tz()) -> {binary(), binary()}.
 
+%% This is the XEP-0082 date and time format
+%% http://xmpp.org/extensions/xep-0082.html
+
 timestamp_to_iso({{Year, Month, Day},
                   {Hour, Minute, Second}},
                  Timezone) ->
@@ -632,11 +635,20 @@ timestamp_to_iso({{Year, Month, Day},
 		      end,
     {iolist_to_binary(Timestamp_string), iolist_to_binary(Timezone_string)}.
 
--spec timestamp_to_iso(calendar:datetime()) -> binary().
 
-timestamp_to_iso({{Year, Month, Day},
+-spec timestamp_to_legacy(calendar:datetime()) -> binary().
+%% This is the jabber legacy format
+%% http://xmpp.org/extensions/xep-0091.html#time
+timestamp_to_legacy({{Year, Month, Day},
                   {Hour, Minute, Second}}) ->
     iolist_to_binary(io_lib:format("~4..0B~2..0B~2..0BT~2..0B:~2..0B:~2..0B",
+                                   [Year, Month, Day, Hour, Minute, Second])).
+
+-spec timestamp_to_iso_basic(calendar:datetime()) -> binary().
+%% This is the ISO 8601 basic bormat
+timestamp_to_iso_basic({{Year, Month, Day},
+                  {Hour, Minute, Second}}) ->
+    iolist_to_binary(io_lib:format("~4..0B~2..0B~2..0BT~2..0B~2..0B~2..0B",
                                    [Year, Month, Day, Hour, Minute, Second])).
 
 -spec now_to_utc_string(erlang:timestamp()) -> binary().
