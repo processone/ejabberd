@@ -4,6 +4,7 @@ defmodule Ejabberd.Mixfile do
   def project do
     [app: :ejabberd,
      version: "16.01.0",
+     description: description,
      elixir: "~> 1.1",
      elixirc_paths: ["lib"],
      compile_path: ".",
@@ -12,6 +13,12 @@ defmodule Ejabberd.Mixfile do
      erlc_paths: ["asn1", "src"],
      package: package,
      deps: deps]
+  end
+
+  defp description do
+    """
+    Robust, ubiquitous and massively scalable Jabber / XMPP Instant Messaging platform.
+    """
   end
 
   def application do
