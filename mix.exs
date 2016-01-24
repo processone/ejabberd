@@ -53,10 +53,13 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp package do
-    [licenses: ["GPLv2"],
-     links: %{"Site" => "https://www.ejabberd.im",
-              "Documentation" => "http://docs.ejabberd.im",
-              "Source" => "https://github.com/processone/ejabberd"}]
+    [# These are the default files included in the package
+      files: ["lib", "src", "priv", "mix.exs", "include", "README.md", "COPYING"],
+      maintainers: ["ProcessOne"],
+      licenses: ["GPLv2"],
+      links: %{"Site" => "https://www.ejabberd.im",
+               "Documentation" => "http://docs.ejabberd.im",
+               "Source" => "https://github.com/processone/ejabberd"}]
   end
 end
 
