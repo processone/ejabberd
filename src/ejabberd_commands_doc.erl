@@ -75,7 +75,7 @@ md_tag(dd, V) ->
 md_tag(li, V) ->
     [<<"- ">>, V, <<"\n">>];
 md_tag(pre, V) ->
-    [<<"\n">>, V, <<"\n">>];
+    [V, <<"\n">>];
 md_tag(p, V) ->
     [<<"\n\n">>, V, <<"\n">>];
 md_tag(h1, V) ->
@@ -111,7 +111,7 @@ perl_gen({Name, {list, ElDesc}}, List, Indent, HTMLOutput) ->
     [?ARG(Name), ?OP_L(" => ["), list_join_with(Res, [?OP_L(", ")]), ?OP_L("]")].
 
 perl_call(Name, ArgsDesc, Values, HTMLOutput) ->
-    {Indent, Preamble} = if HTMLOutput -> {<<"">>, []}; true -> {<<"    ">>, <<"    #!perl\n">>} end,
+    {Indent, Preamble} = if HTMLOutput -> {<<"">>, []}; true -> {<<"    ">>, <<"~~~ perl\n">>} end,
     [Preamble,
      Indent, ?ID_L("XMLRPC::Lite"), ?OP_L("->"), ?ID_L("proxy"), ?OP_L("("), ?ID_L("$url"), ?OP_L(")->"),
      ?ID_L("call"), ?OP_L("("), ?STR_A(Name), ?OP_L(", {"), ?BR, Indent, <<"  ">>,
@@ -150,7 +150,7 @@ java_gen({Name, {list, ElDesc}}, List, Indent, HTMLOutput) ->
      list_join_with(Res, [?OP_L(","), NI]), NI2, ?OP_L("});")].
 
 java_call(Name, ArgsDesc, Values, HTMLOutput) ->
-    {Indent, Preamble} = if HTMLOutput -> {<<"">>, []}; true -> {<<"    ">>, <<"    #!java\n">>} end,
+    {Indent, Preamble} = if HTMLOutput -> {<<"">>, []}; true -> {<<"    ">>, <<"~~~ java\n">>} end,
     [Preamble,
      Indent, ?ID_L("XmlRpcClientConfigImpl config"), ?OP_L(" = "), ?KW_L("new "), ?ID_L("XmlRpcClientConfigImpl"), ?OP_L("();"), ?BR,
      Indent, ?ID_L("config"), ?OP_L("."), ?ID_L("setServerURL"), ?OP_L("("), ?ID_L("url"), ?OP_L(");"), ?BR, Indent, ?BR,
@@ -202,7 +202,7 @@ xml_gen({Name, {list, ElDesc}}, List, Indent, HTMLOutput) ->
           ?XML(value, Indent, 1, [?XML(array, Indent, 2, [?XML(data, Indent, 3, Res)])])])].
 
 xml_call(Name, ArgsDesc, Values, HTMLOutput) ->
-    {Indent, Preamble} = if HTMLOutput -> {<<"">>, []}; true -> {<<"    ">>, <<"    #!xml">>} end,
+    {Indent, Preamble} = if HTMLOutput -> {<<"">>, []}; true -> {<<"    ">>, <<"~~~ xml">>} end,
     Res = lists:map(fun({A, B}) -> xml_gen(A, B, <<Indent/binary, "          ">>, HTMLOutput) end, lists:zip(ArgsDesc, Values)),
     [Preamble,
      ?XML(methodCall, Indent,
@@ -241,7 +241,7 @@ json_gen({_Name, {list, ElDesc}}, List, Indent, HTMLOutput) ->
     [?OP_L("["), ?BR, Indent2, list_join_with(Res, [?OP_L(","), ?BR, Indent2]), ?BR, Indent, ?OP_L("]")].
 
 json_call(Name, ArgsDesc, Values, ResultDesc, Result, HTMLOutput) ->
-    {Indent, Preamble} = if HTMLOutput -> {<<"">>, []}; true -> {<<"    ">>, <<"    #!json\n">>} end,
+    {Indent, Preamble} = if HTMLOutput -> {<<"">>, []}; true -> {<<"    ">>, <<"~~~ json\n">>} end,
     {Code, ResultStr} = case {ResultDesc, Result} of
                             {{_, rescode}, V} when V == true; V == ok ->
                                 {200, [?STR_L("")]};
@@ -324,10 +324,16 @@ gen_calls(#ejabberd_commands{args_example=Values, args=ArgsDesc,
                    case lists:member(<<"xmlrpc">>, Langs) of true -> ?TAG(li, ?TAG(pre, XML)); _ -> [] end,
                    case lists:member(<<"json">>, Langs) of true -> ?TAG(li, ?TAG(pre, JSON)); _ -> [] end])];
        true ->
-            [case lists:member(<<"java">>, Langs) of true -> [<<"Java example\n\n">>, ?TAG(pre, Java)]; _ -> [] end,
-             case lists:member(<<"perl">>, Langs) of true -> [<<"Perl example\n\n">>, ?TAG(pre, Perl)]; _ -> [] end,
-             case lists:member(<<"xmlrpc">>, Langs) of true -> [<<"XmlRPC example\n\n">>, ?TAG(pre, XML)]; _ -> [] end,
-             case lists:member(<<"json">>, Langs) of true -> [<<"JSON example\n\n">>, ?TAG(pre, JSON)]; _ -> [] end]
+            [<<"\n">>, case lists:member(<<"java">>, Langs) of true -> <<"* Java\n">>; _ -> [] end,
+             case lists:member(<<"perl">>, Langs) of true -> <<"* Perl\n">>; _ -> [] end,
+             case lists:member(<<"xmlrpc">>, Langs) of true -> <<"* XmlRPC\n">>; _ -> [] end,
+             case lists:member(<<"json">>, Langs) of true -> <<"* JSON\n">>; _ -> [] end,
+             <<"{: .code-samples-labels}\n">>,
+             case lists:member(<<"java">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, Java), <<"~~~\n">>]; _ -> [] end,
+             case lists:member(<<"perl">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, Perl), <<"~~~\n">>]; _ -> [] end,
+             case lists:member(<<"xmlrpc">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, XML), <<"~~~\n">>]; _ -> [] end,
+             case lists:member(<<"json">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, JSON), <<"~~~\n">>]; _ -> [] end,
+             <<"{: .code-samples-tabs}\n\n">>]
     end.
 
 gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
