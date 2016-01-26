@@ -420,9 +420,10 @@ generate_md_output(File, RegExp, Languages) ->
                                N1 =< N2
                        end, Cmds2),
     Langs = binary:split(Languages, <<",">>, [global]),
+    Header = <<"---\ntitle: Administration API reference\nbodyclass: nocomment\n---">>,
     Out = lists:map(fun(C) -> gen_doc(C, false, Langs) end, Cmds3),
     {ok, Fh} = file:open(File, [write]),
-    io:format(Fh, "~s", [[Out]]),
+    io:format(Fh, "~s~s", [Header, Out]),
     file:close(Fh),
     ok.
 
