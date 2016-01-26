@@ -618,7 +618,7 @@ mysql_connect(Server, Port, DB, Username, Password) ->
 	of
 	{ok, Ref} ->
 	    p1_mysql_conn:fetch(
-		Ref, [<<"set names 'utf8';">>], self()),
+		Ref, [<<"set names 'utf8mb4' collate 'utf8mb4_bin';">>], self()),
 	    {ok, Ref};
 	Err -> Err
     end.
