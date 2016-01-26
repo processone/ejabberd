@@ -74,68 +74,6 @@ opt_type(log_rate_limit) ->
 opt_type(_) ->
     [log_rotate_date, log_rotate_size, log_rotate_count, log_rate_limit].
 
-%% Default logger module is LAGER, defined in else clause.
-%% TODO: Remove p1_logger usage and allow using Elixir logger if running in Elixir context.
--ifdef(P1LOGGER).
-
-start() ->
-    set(4),
-    LogPath = get_log_path(),
-    error_logger:add_report_handler(p1_logger_h, LogPath),
-    ok.
-
-reopen_log() ->
-    %% TODO: Use the Reopen log API for logger_h ?
-    p1_logger_h:reopen_log(),
-    reopen_sasl_log().
-
-rotate_log() ->
-    %% Not implemented.
-    ok.
-
-get() ->
-    p1_loglevel:get().
-
-set(LogLevel) when LogLevel >=0, LogLevel =< 5 ->
-    p1_loglevel:set(LogLevel);
-set(LogLevel) ->
-    throw({wrong_loglevel, LogLevel}).
-
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
-reopen_sasl_log() ->
-    case application:get_env(sasl,sasl_error_logger) of
-	{ok, {file, SASLfile}} ->
-	    error_logger:delete_report_handler(sasl_report_file_h),
-            rotate_sasl_log(SASLfile),
-	    error_logger:add_report_handler(sasl_report_file_h,
-	        {SASLfile, get_sasl_error_logger_type()});
-	_ -> false
-	end,
-    ok.
-
-rotate_sasl_log(Filename) ->
-    case file:read_file_info(Filename) of
-        {ok, _FileInfo} ->
-            file:rename(Filename, [Filename, ".0"]),
-            ok;
-        {error, _Reason} ->
-            ok
-    end.
-
-%% Function copied from Erlang/OTP lib/sasl/src/sasl.erl which doesn't export it
-get_sasl_error_logger_type () ->
-    case application:get_env (sasl, errlog_type) of
-	{ok, error} -> error;
-	{ok, progress} -> progress;
-	{ok, all} -> all;
-	{ok, Bad} -> exit ({bad_config, {sasl, {errlog_type, Bad}}});
-	_ -> all
-    end.
-
--else.
-
 get_integer_env(Name, Default) ->
     case application:get_env(ejabberd, Name) of
         {ok, I} when is_integer(I), I>=0 ->
@@ -242,5 +180,3 @@ set(LogLevel) when is_integer(LogLevel) ->
 set({_LogLevel, _}) ->
     error_logger:error_msg("custom loglevels are not supported for 'lager'"),
     {module, lager}.
-
--endif.

@@ -27,7 +27,6 @@
 {riak, @riak@}.
 {redis, @redis@}.
 {elixir, @elixir@}.
-{lager, @lager@}.
 {iconv, @iconv@}.
 
 %% Version
