@@ -5,7 +5,7 @@
 %%% Created : 20 May 2008 by Badlop <badlop@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -373,10 +373,27 @@ gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
      ?TAG(h2, <<"Examples:">>),
      gen_calls(Cmd, HTMLOutput, Langs)].
 
+find_commands_definitions() ->
+    case code:lib_dir(ejabberd, ebin) of
+        {error, _} ->
+            lists:map(fun({N, _, _}) ->
+                              ejabberd_commands:get_command_definition(N)
+                      end, ejabberd_commands:list_commands());
+        Path ->
+            lists:flatmap(fun(P) ->
+                                  Mod = list_to_atom(filename:rootname(P)),
+                                  code:ensure_loaded(Mod),
+                                  case erlang:function_exported(Mod, get_commands_spec, 0) of
+                                      true ->
+                                          apply(Mod, get_commands_spec, []);
+                                      _ ->
+                                          []
+                                  end
+                          end, filelib:wildcard("*.beam", Path))
+    end.
+
 generate_html_output(File, RegExp, Languages) ->
-    Cmds = lists:map(fun({N, _, _}) ->
-                             ejabberd_commands:get_command_definition(N)
-                     end, ejabberd_commands:list_commands()),
+    Cmds = find_commands_definitions(),
     {ok, RE} = re:compile(RegExp),
     Cmds2 = lists:filter(fun(#ejabberd_commands{name=Name, module=Module}) ->
                                  re:run(atom_to_list(Name), RE, [{capture, none}]) == match orelse
@@ -393,9 +410,7 @@ generate_html_output(File, RegExp, Languages) ->
     ok.
 
 generate_md_output(File, RegExp, Languages) ->
-    Cmds = lists:map(fun({N, _, _}) ->
-                             ejabberd_commands:get_command_definition(N)
-                     end, ejabberd_commands:list_commands()),
+    Cmds = find_commands_definitions(),
     {ok, RE} = re:compile(RegExp),
     Cmds2 = lists:filter(fun(#ejabberd_commands{name=Name, module=Module}) ->
                                  re:run(atom_to_list(Name), RE, [{capture, none}]) == match orelse

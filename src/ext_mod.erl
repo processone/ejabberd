@@ -33,7 +33,7 @@
 	 installed_command/0, installed/0, installed/1,
 	 install/1, uninstall/1, upgrade/0, upgrade/1,
 	 add_sources/2, del_sources/1, modules_dir/0,
-	 config_dir/0, opt_type/1]).
+	 config_dir/0, opt_type/1, get_commands_spec/0]).
 
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
@@ -46,12 +46,12 @@ start() ->
     [code:add_patha(module_ebin_dir(Module))
      || {Module, _} <- installed()],
     application:start(inets),
-    ejabberd_commands:register_commands(commands()).
+    ejabberd_commands:register_commands(get_commands_spec()).
 
 stop() ->
-    ejabberd_commands:unregister_commands(commands()).
+    ejabberd_commands:unregister_commands(get_commands_spec()).
 
-commands() ->
+get_commands_spec() ->
     [#ejabberd_commands{name = modules_update_specs,
                         tags = [admin,modules],
                         desc = "",

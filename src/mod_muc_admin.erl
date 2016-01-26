@@ -20,7 +20,7 @@
 	 change_room_option/4, get_room_options/2,
 	 set_room_affiliation/4, get_room_affiliations/2,
 	 web_menu_main/2, web_page_main/2, web_menu_host/3,
-	 web_page_host/3, mod_opt_type/1]).
+	 web_page_host/3, mod_opt_type/1, get_commands_spec/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -36,14 +36,14 @@
 %%----------------------------
 
 start(Host, _Opts) ->
-    ejabberd_commands:register_commands(commands()),
+    ejabberd_commands:register_commands(get_commands_spec()),
     ejabberd_hooks:add(webadmin_menu_main, ?MODULE, web_menu_main, 50),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_main, ?MODULE, web_page_main, 50),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50).
 
 stop(Host) ->
-    ejabberd_commands:unregister_commands(commands()),
+    ejabberd_commands:unregister_commands(get_commands_spec()),
     ejabberd_hooks:delete(webadmin_menu_main, ?MODULE, web_menu_main, 50),
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
@@ -53,7 +53,7 @@ stop(Host) ->
 %%% Register commands
 %%%
 
-commands() ->
+get_commands_spec() ->
     [
      #ejabberd_commands{name = muc_online_rooms, tags = [muc],
 		       desc = "List existing rooms ('global' to get all vhosts)",

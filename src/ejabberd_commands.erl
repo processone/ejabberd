@@ -219,7 +219,8 @@
 	 unregister_commands/1,
 	 execute_command/2,
          execute_command/4,
-         opt_type/1
+         opt_type/1,
+         get_commands_spec/0
 	]).
 
 -include("ejabberd_commands.hrl").
@@ -228,10 +229,8 @@
 
 -define(POLICY_ACCESS, '$policy').
 
-init() ->
-    ets:new(ejabberd_commands, [named_table, set, public,
-				{keypos, #ejabberd_commands.name}]),
-    register_commands([
+get_commands_spec() ->
+    [
         #ejabberd_commands{name = gen_html_doc_for_commands, tags = [documentation],
                            desc = "Generates html documentation for ejabberd_commands",
                            module = ejabberd_commands_doc, function = generate_html_output,
@@ -259,7 +258,11 @@ init() ->
                                         "that will have example invocation include in markdown document"],
                            result_desc = "0 if command failed, 1 when succedded",
                            args_example = ["/home/me/docs/api.html", "mod_admin", "java,json"],
-                           result_example = ok}]).
+                           result_example = ok}].
+init() ->
+    ets:new(ejabberd_commands, [named_table, set, public,
+				{keypos, #ejabberd_commands.name}]),
+    register_commands(get_commands_spec()).
 
 -spec register_commands([ejabberd_commands()]) -> ok.
 
