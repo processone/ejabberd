@@ -43,6 +43,7 @@
 	 start_link/2,
 	 stop/1,
 	 store_packet/3,
+	 store_offline_msg/5,
 	 resend_offline_messages/2,
 	 pop_offline_messages/3,
 	 get_sm_features/5,
@@ -185,6 +186,9 @@ terminate(_Reason, State) ->
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
+store_offline_msg(Host, US, Msgs, Len, MaxOfflineMsgs) ->
+    DBType = gen_mod:db_type(Host, ?MODULE),
+    store_offline_msg(Host, US, Msgs, Len, MaxOfflineMsgs, DBType).
 
 store_offline_msg(_Host, US, Msgs, Len, MaxOfflineMsgs,
 		  mnesia) ->

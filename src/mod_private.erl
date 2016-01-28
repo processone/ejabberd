@@ -33,7 +33,7 @@
 
 -export([start/2, stop/1, process_sm_iq/3, import/3,
 	 remove_user/2, get_data/2, export/1, import/1,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, set_data/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -82,19 +82,7 @@ process_sm_iq(#jid{luser = LUser, lserver = LServer},
 		IQ#iq{type = error,
 		      sub_el = [IQ#iq.sub_el, ?ERR_NOT_ACCEPTABLE]};
 	    Data ->
-		DBType = gen_mod:db_type(LServer, ?MODULE),
-		F = fun () ->
-			    lists:foreach(fun (Datum) ->
-						  set_data(LUser, LServer,
-							   Datum, DBType)
-					  end,
-					  Data)
-		    end,
-		case DBType of
-		  odbc -> ejabberd_odbc:sql_transaction(LServer, F);
-		  mnesia -> mnesia:transaction(F);
-		  riak -> F()
-		end,
+		set_data(LUser, LServer, Data),
 		IQ#iq{type = result, sub_el = []}
 	  end;
       _ ->
@@ -143,6 +131,21 @@ filter_xmlels([#xmlel{attrs = Attrs} = Xmlel | Xmlels],
     end;
 filter_xmlels([_ | Xmlels], Data) ->
     filter_xmlels(Xmlels, Data).
+
+set_data(LUser, LServer, Data) ->
+    DBType = gen_mod:db_type(LServer, ?MODULE),
+    F = fun () ->
+		lists:foreach(fun (Datum) ->
+				      set_data(LUser, LServer,
+					       Datum, DBType)
+			      end,
+			      Data)
+	end,
+    case DBType of
+	odbc -> ejabberd_odbc:sql_transaction(LServer, F);
+	mnesia -> mnesia:transaction(F);
+	riak -> F()
+    end.
 
 set_data(LUser, LServer, {XmlNS, Xmlel}, mnesia) ->
     mnesia:write(#private_storage{usns =

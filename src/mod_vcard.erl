@@ -35,7 +35,7 @@
 -export([start/2, init/3, stop/1, get_sm_features/5,
 	 process_local_iq/3, process_sm_iq/3, reindex_vcards/0,
 	 remove_user/2, export/1, import/1, import/3,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, set_vcard/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
