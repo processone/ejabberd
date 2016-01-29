@@ -201,6 +201,11 @@ get_commands_spec() ->
 			module = ejabberd_auth_odbc, function = convert_to_scram,
 			args = [{host, binary}], result = {res, rescode}},
 
+     #ejabberd_commands{name = import_prosody, tags = [mnesia, odbc, riak],
+			desc = "Import data from Prosody",
+			module = prosody2ejabberd, function = from_dir,
+			args = [{dir, string}], result = {res, rescode}},
+
      #ejabberd_commands{name = convert_to_yaml, tags = [config],
                         desc = "Convert the input file from Erlang to YAML format",
                         module = ejabberd_config, function = convert_to_yaml,
