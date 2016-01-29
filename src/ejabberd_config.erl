@@ -227,6 +227,7 @@ get_plain_terms_file(File, Opts) when is_binary(File) ->
     get_plain_terms_file(binary_to_list(File), Opts);
 get_plain_terms_file(File1, Opts) ->
     File = get_absolute_path(File1),
+    DontStopOnError = lists:member(dont_halt_on_error, Opts),
     case consult(File) of
 	{ok, Terms} ->
             BinTerms1 = strings_to_binary(Terms),
@@ -246,9 +247,21 @@ get_plain_terms_file(File1, Opts) ->
                 false ->
                     BinTerms
             end;
-	{error, Reason} ->
+  {error, enoent, Reason} ->
+      case DontStopOnError of
+          true ->
+              ?WARNING_MSG(Reason, []),
+              [];
+          _ ->
 	    ?ERROR_MSG(Reason, []),
 	    exit_or_halt(Reason)
+      end;
+	{error, Reason} ->
+	    ?ERROR_MSG(Reason, []),
+      case DontStopOnError of
+          true -> [];
+          _ -> exit_or_halt(Reason)
+      end
     end.
 
 consult(File) ->
@@ -262,16 +275,28 @@ consult(File) ->
                 {error, Err} ->
                     Msg1 = "Cannot load " ++ File ++ ": ",
                     Msg2 = fast_yaml:format_error(Err),
+                    case Err of
+                        enoent ->
+                            {error, enoent, Msg1 ++ Msg2};
+                        _ ->
                     {error, Msg1 ++ Msg2}
+                    end
             end;
         _ ->
             case file:consult(File) of
                 {ok, Terms} ->
                     {ok, Terms};
+                {error, enoent} ->
+                    {error, enoent};
                 {error, {LineNumber, erl_parse, _ParseMessage} = Reason} ->
                     {error, describe_config_problem(File, Reason, LineNumber)};
                 {error, Reason} ->
+                    case Reason of
+                        enoent ->
+                            {error, enoent, describe_config_problem(File, Reason)};
+                        _ ->
                     {error, describe_config_problem(File, Reason)}
+            end
             end
     end.
 
@@ -488,7 +513,7 @@ transform_include_option({include_config_file, Filename, Options}) ->
     {Filename, Options}.
 
 include_config_file(Filename, Options) ->
-    Included_terms = get_plain_terms_file(Filename),
+    Included_terms = get_plain_terms_file(Filename, [{include_files, true}, dont_halt_on_error]),
     Disallow = proplists:get_value(disallow, Options, []),
     Included_terms2 = delete_disallowed(Disallow, Included_terms),
     Allow_only = proplists:get_value(allow_only, Options, all),
