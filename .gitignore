@@ -39,8 +39,10 @@ XmppAddr.hrl
 /vars.config
 /dialyzer/
 /test/*.beam
+/test/*.ctc
 /logs/
 /priv/sql
 /rel/ejabberd
 /_build
 /mnesiadb
+/.rebar
