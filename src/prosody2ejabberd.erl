@@ -16,6 +16,7 @@
 -include("logger.hrl").
 -include("mod_roster.hrl").
 -include("mod_offline.hrl").
+-include("mod_privacy.hrl").
 
 %%%===================================================================
 %%% API
@@ -32,7 +33,8 @@ from_dir(ProsodyDir) ->
 					 [ProsodyDir, HostDir, SubDir]),
 				convert_dir(Path, Host, SubDir)
 			end, ["vcard", "accounts", "roster",
-			      "private", "config", "offline"])
+			      "private", "config", "offline",
+			      "privacy"])
 	      end, HostDirs);
 	{error, Why} = Err ->
 	    ?ERROR_MSG("failed to list ~s: ~s",
@@ -159,6 +161,23 @@ convert_data(Host, "offline", User, [Data]) ->
 	     end, Data),
     mod_offline:store_offline_msg(
       LServer, {LUser, LServer}, Msgs, length(Msgs), infinity);
+convert_data(Host, "privacy", User, [Data]) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Host),
+    Lists = proplists:get_value(<<"lists">>, Data, []),
+    Priv = #privacy{
+	      us = {LUser, LServer},
+	      default = proplists:get_value(<<"default">>, Data, none),
+	      lists = lists:flatmap(
+			fun({Name, Vals}) ->
+				Items = proplists:get_value(<<"items">>, Vals, []),
+				case lists:map(fun convert_privacy_item/1,
+					       Items) of
+				    [] -> [];
+				    ListItems -> [{Name, ListItems}]
+				end
+			end, Lists)},
+    mod_privacy:set_privacy_list(Priv);
 convert_data(_Host, _Type, _User, _Data) ->
     ok.
 
@@ -245,6 +264,40 @@ convert_room_config(Data) ->
      {members_only,	proplists:get_bool(<<"members_only">>, Config)},
      {moderated, proplists:get_bool(<<"moderated">>, Config)},
      {anonymous, Anonymous}] ++ Pass ++ Subj.
+
+convert_privacy_item({_, Item}) ->
+    Action = proplists:get_value(<<"action">>, Item, <<"allow">>),
+    Order = proplists:get_value(<<"order">>, Item, 0),
+    T = jlib:binary_to_atom(proplists:get_value(<<"type">>, Item, <<"none">>)),
+    V = proplists:get_value(<<"value">>, Item, <<"">>),
+    MatchIQ = proplists:get_bool(<<"iq">>, Item),
+    MatchMsg = proplists:get_bool(<<"message">>, Item),
+    MatchPresIn = proplists:get_bool(<<"presence-in">>, Item),
+    MatchPresOut = proplists:get_bool(<<"presence-out">>, Item),
+    MatchAll = if (MatchIQ == false) and (MatchMsg == false) and
+		  (MatchPresIn == false) and (MatchPresOut == false) ->
+		       true;
+		  true ->
+		       false
+	       end,
+    {Type, Value} = try case T of
+			    none -> {T, none};
+			    group -> {T, V};
+			    jid -> {T, jid:tolower(jid:from_string(V))};
+			    subscription -> {T, jlib:binary_to_atom(V)}
+			end
+		    catch _:_ ->
+			    {none, none}
+		    end,
+    #listitem{type = Type,
+	      value = Value,
+	      action = jlib:binary_to_atom(Action),
+	      order = erlang:trunc(Order),
+	      match_all = MatchAll,
+	      match_iq = MatchIQ,
+	      match_message = MatchMsg,
+	      match_presence_in = MatchPresIn,
+	      match_presence_out = MatchPresOut}.
 
 el_to_offline_msg(LUser, LServer, #xmlel{attrs = Attrs} = El) ->
     case jlib:datetime_string_to_timestamp(
