@@ -2217,7 +2217,8 @@ send_new_presence1(NJID, Reason, StateData, OldStateData) ->
 					   | Status2];
 				      false -> Status2
 				    end,
-			  Status4 = case (StateData#state.config)#config.logging of
+			  Status4 = case (StateData#state.config)#config.logging == true
+                      andalso NJID == Info#user.jid of
 				      true ->
 					  [#xmlel{name = <<"status">>,
 						  attrs =
