@@ -2220,12 +2220,17 @@ send_new_presence1(NJID, Reason, StateData, OldStateData) ->
 			  Status4 = case (StateData#state.config)#config.logging == true
                       andalso NJID == Info#user.jid of
 				      true ->
-					  [#xmlel{name = <<"status">>,
-						  attrs =
-						      [{<<"code">>, <<"170">>}],
-						  children = []}
-					   | Status3];
-				      false -> Status3
+                          case (?DICT):find(jid:tolower(LJID),
+                                            OldStateData#state.users) of
+                              {ok, _} -> Status3;
+                              _ ->
+                                  [#xmlel{name = <<"status">>,
+                                          attrs =
+                                              [{<<"code">>, <<"170">>}],
+                                          children = []}
+                                   | Status3]
+                          end;
+                      false -> Status3
 				    end,
 			  Packet = xml:append_subtags(Presence,
 						      [#xmlel{name = <<"x">>,
