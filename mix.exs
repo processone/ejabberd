@@ -26,7 +26,7 @@ defmodule Ejabberd.Mixfile do
      applications: [:ssl],
      included_applications: [:lager, :mnesia, :p1_utils, :cache_tab,
                              :p1_tls, :stringprep, :p1_xml,
-                             :stun, :yaml, :p1_zlib, :iconv,
+                             :stun, :yaml, :ezlib, :iconv,
                              :esip, :jiffy, :oauth2, :xmlrpc, :eredis,
                              :p1_mysql, :p1_pgsql, :sqlite3]]
   end
@@ -53,7 +53,7 @@ defmodule Ejabberd.Mixfile do
      {:p1_mysql, "~> 1.0"},
      {:p1_pgsql, "~> 1.0"},
      {:sqlite3, "~> 1.1"},
-     {:p1_zlib, git: "https://github.com/processone/zlib", tag: "1.0.0"},
+     {:ezlib, "~> 1.0"},
      {:iconv, "~> 1.0"},
      {:eredis, "~> 1.0"},
      {:exrm, "~> 1.0.0-rc7", only: :dev}]
