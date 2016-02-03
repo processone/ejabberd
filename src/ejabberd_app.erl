@@ -252,7 +252,7 @@ start_apps() ->
     crypto:start(),
     ejabberd:start_app(sasl),
     ejabberd:start_app(ssl),
-    ejabberd:start_app(p1_yaml),
+    ejabberd:start_app(fast_yaml),
     ejabberd:start_app(p1_tls),
     ejabberd:start_app(p1_xml),
     ejabberd:start_app(stringprep),

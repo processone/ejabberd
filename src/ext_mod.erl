@@ -589,10 +589,10 @@ rebar_dep({App, _, {git, Url, Ref}}) ->
 %% -- YAML spec parser
 
 consult(File) ->
-    case p1_yaml:decode_from_file(File, [plain_as_atom]) of
+    case fast_yaml:decode_from_file(File, [plain_as_atom]) of
         {ok, []} -> {ok, []};
         {ok, [Doc|_]} -> {ok, [format(Spec) || Spec <- Doc]};
-        {error, Err} -> {error, p1_yaml:format_error(Err)}
+        {error, Err} -> {error, fast_yaml:format_error(Err)}
     end.
 
 format({Key, Val}) when is_binary(Val) ->
