@@ -26,7 +26,7 @@ defmodule Ejabberd.Mixfile do
      applications: [:ssl],
      included_applications: [:lager, :mnesia, :p1_utils, :cache_tab,
                              :p1_tls, :stringprep, :p1_xml,
-                             :p1_stun, :p1_yaml, :p1_zlib, :p1_iconv,
+                             :stun, :yaml, :p1_zlib, :iconv,
                              :esip, :jiffy, :oauth2, :xmlrpc, :eredis,
                              :p1_mysql, :p1_pgsql, :sqlite3]]
   end
