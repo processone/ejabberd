@@ -137,7 +137,7 @@ MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/
 MAIN_DIRS=$(sort $(dir $(MAIN_FILES)) priv/bin priv/sql)
 
 define DEP_VERSION_template
-DEP_$(1)_VERSION:=$(shell $(SED) -e '/vsn/!d;s/.*,"/$(1)-/;s/".*//' $(2) 2>/dev/null)
+DEP_$(1)_VERSION:=$(shell $(SED) -e '/vsn/!d;s/.*, *"/$(1)-/;s/".*//' $(2) 2>/dev/null)
 endef
 
 $(foreach DEP,$(DEPS),$(eval $(call DEP_VERSION_template,$(DEP),deps/$(DEP)/ebin/$(DEP).app)))
