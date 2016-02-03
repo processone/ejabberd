@@ -233,7 +233,7 @@ get_password_from_presence(#xmlel{name = <<"presence">>,
     case lists:filter(fun (El) ->
 			      case El of
 				#xmlel{name = <<"x">>, attrs = Attrs} ->
-				    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+				    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
 				      ?NS_MUC -> true;
 				      _ -> false
 				    end;
@@ -243,9 +243,9 @@ get_password_from_presence(#xmlel{name = <<"presence">>,
 		      Els)
 	of
       [ElXMUC | _] ->
-	  case xml:get_subtag(ElXMUC, <<"password">>) of
+	  case fxml:get_subtag(ElXMUC, <<"password">>) of
 	    #xmlel{name = <<"password">>} = PasswordTag ->
-		{true, xml:get_tag_cdata(PasswordTag)};
+		{true, fxml:get_tag_cdata(PasswordTag)};
 	    _ -> false
 	  end;
       _ -> false
@@ -261,7 +261,7 @@ handle_info({route_chan, Channel, Resource,
 	     #xmlel{name = <<"presence">>, attrs = Attrs} =
 		 Presence},
 	    StateName, StateData) ->
-    NewStateData = case xml:get_attr_s(<<"type">>, Attrs) of
+    NewStateData = case fxml:get_attr_s(<<"type">>, Attrs) of
 		     <<"unavailable">> ->
 			 send_stanza_unavailable(Channel, StateData),
 			 S1 = (?SEND((io_lib:format("PART #~s\r\n",
@@ -312,9 +312,9 @@ handle_info({route_chan, Channel, Resource,
 handle_info({route_chan, Channel, Resource,
 	     #xmlel{name = <<"message">>, attrs = Attrs} = El},
 	    StateName, StateData) ->
-    NewStateData = case xml:get_attr_s(<<"type">>, Attrs) of
+    NewStateData = case fxml:get_attr_s(<<"type">>, Attrs) of
 		     <<"groupchat">> ->
-			 case xml:get_path_s(El, [{elem, <<"subject">>}, cdata])
+			 case fxml:get_path_s(El, [{elem, <<"subject">>}, cdata])
 			     of
 			   <<"">> ->
 			       ejabberd_router:route(
@@ -325,7 +325,7 @@ handle_info({route_chan, Channel, Resource,
                                    StateData#state.host,
                                    StateData#state.nick),
                                  StateData#state.user, El),
-			       Body = xml:get_path_s(El,
+			       Body = fxml:get_path_s(El,
 						     [{elem, <<"body">>},
 						      cdata]),
 			       case Body of
@@ -386,7 +386,7 @@ handle_info({route_chan, Channel, Resource,
 			 when Type == <<"chat">>;
 			      Type == <<"">>;
 			      Type == <<"normal">> ->
-			 Body = xml:get_path_s(El, [{elem, <<"body">>}, cdata]),
+			 Body = fxml:get_path_s(El, [{elem, <<"body">>}, cdata]),
 			 case Body of
 			   <<"/quote ", Rest/binary>> ->
 			       ?SEND(<<Rest/binary, "\r\n">>);
@@ -481,9 +481,9 @@ handle_info({route_chan, _Channel, _Resource, _Packet},
 handle_info({route_nick, Nick,
 	     #xmlel{name = <<"message">>, attrs = Attrs} = El},
 	    StateName, StateData) ->
-    NewStateData = case xml:get_attr_s(<<"type">>, Attrs) of
+    NewStateData = case fxml:get_attr_s(<<"type">>, Attrs) of
 		     <<"chat">> ->
-			 Body = xml:get_path_s(El, [{elem, <<"body">>}, cdata]),
+			 Body = fxml:get_path_s(El, [{elem, <<"body">>}, cdata]),
 			 case Body of
 			   <<"/quote ", Rest/binary>> ->
 			       ?SEND(<<Rest/binary, "\r\n">>);
@@ -778,13 +778,13 @@ bounce_messages(Reason) ->
     receive
       {send_element, El} ->
 	  #xmlel{attrs = Attrs} = El,
-	  case xml:get_attr_s(<<"type">>, Attrs) of
+	  case fxml:get_attr_s(<<"type">>, Attrs) of
 	    <<"error">> -> ok;
 	    _ ->
 		Err = jlib:make_error_reply(El, <<"502">>, Reason),
-		From = jid:from_string(xml:get_attr_s(<<"from">>,
+		From = jid:from_string(fxml:get_attr_s(<<"from">>,
 							 Attrs)),
-		To = jid:from_string(xml:get_attr_s(<<"to">>,
+		To = jid:from_string(fxml:get_attr_s(<<"to">>,
 						       Attrs)),
 		ejabberd_router:route(To, From, Err)
 	  end,
@@ -1535,14 +1535,14 @@ iq_admin(StateData, Channel, From, To,
     end.
 
 process_iq_admin(StateData, Channel, set, SubEl) ->
-    case xml:get_subtag(SubEl, <<"item">>) of
+    case fxml:get_subtag(SubEl, <<"item">>) of
       false -> {error, ?ERR_BAD_REQUEST};
       ItemEl ->
-	  Nick = xml:get_tag_attr_s(<<"nick">>, ItemEl),
-	  Affiliation = xml:get_tag_attr_s(<<"affiliation">>,
+	  Nick = fxml:get_tag_attr_s(<<"nick">>, ItemEl),
+	  Affiliation = fxml:get_tag_attr_s(<<"affiliation">>,
 					   ItemEl),
-	  Role = xml:get_tag_attr_s(<<"role">>, ItemEl),
-	  Reason = xml:get_path_s(ItemEl,
+	  Role = fxml:get_tag_attr_s(<<"role">>, ItemEl),
+	  Reason = fxml:get_path_s(ItemEl,
 				  [{elem, <<"reason">>}, cdata]),
 	  process_admin(StateData, Channel, Nick, Affiliation,
 			Role, Reason)

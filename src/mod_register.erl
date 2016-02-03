@@ -121,9 +121,9 @@ process_iq(From, To,
 		       end,
     case Type of
       set ->
-	  UTag = xml:get_subtag(SubEl, <<"username">>),
-	  PTag = xml:get_subtag(SubEl, <<"password">>),
-	  RTag = xml:get_subtag(SubEl, <<"remove">>),
+	  UTag = fxml:get_subtag(SubEl, <<"username">>),
+	  PTag = fxml:get_subtag(SubEl, <<"password">>),
+	  RTag = fxml:get_subtag(SubEl, <<"remove">>),
 	  Server = To#jid.lserver,
 	  Access = gen_mod:get_module_opt(Server, ?MODULE, access,
                                           fun(A) when is_atom(A) -> A end,
@@ -132,14 +132,14 @@ process_iq(From, To,
 			  acl:match_rule(Server, Access, From),
 	  if (UTag /= false) and (RTag /= false) and
 	       AllowRemove ->
-		 User = xml:get_tag_cdata(UTag),
+		 User = fxml:get_tag_cdata(UTag),
 		 case From of
 		   #jid{user = User, lserver = Server} ->
 		       ejabberd_auth:remove_user(User, Server),
 		       IQ#iq{type = result, sub_el = []};
 		   _ ->
 		       if PTag /= false ->
-			      Password = xml:get_tag_cdata(PTag),
+			      Password = fxml:get_tag_cdata(PTag),
 			      case ejabberd_auth:remove_user(User, Server,
 							     Password)
 				  of
@@ -185,8 +185,8 @@ process_iq(From, To,
 		       IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
 		 end;
 	     (UTag /= false) and (PTag /= false) ->
-		 User = xml:get_tag_cdata(UTag),
-		 Password = xml:get_tag_cdata(PTag),
+		 User = fxml:get_tag_cdata(UTag),
+		 Password = fxml:get_tag_cdata(PTag),
 		 try_register_or_set_password(User, Server, Password,
 					      From, IQ, SubEl, Source, Lang,
 					      not IsCaptchaEnabled);
@@ -599,7 +599,7 @@ write_time({{Y, Mo, D}, {H, Mi, S}}) ->
 		  [Y, Mo, D, H, Mi, S]).
 
 process_xdata_submit(El) ->
-    case xml:get_subtag(El, <<"x">>) of
+    case fxml:get_subtag(El, <<"x">>) of
       false -> error;
       Xdata ->
 	  Fields = jlib:parse_xdata_submit(Xdata),

@@ -92,8 +92,8 @@ make_result_iq_reply(#xmlel{name = Name, attrs = Attrs,
 -spec make_result_iq_reply_attrs([attr()]) -> [attr()].
 
 make_result_iq_reply_attrs(Attrs) ->
-    To = xml:get_attr(<<"to">>, Attrs),
-    From = xml:get_attr(<<"from">>, Attrs),
+    To = fxml:get_attr(<<"to">>, Attrs),
+    From = fxml:get_attr(<<"from">>, Attrs),
     Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
     Attrs2 = lists:keydelete(<<"from">>, 1, Attrs1),
     Attrs3 = case To of
@@ -133,8 +133,8 @@ make_error_reply(#xmlel{name = Name, attrs = Attrs,
 -spec make_error_reply_attrs([attr()]) -> [attr()].
 
 make_error_reply_attrs(Attrs) ->
-    To = xml:get_attr(<<"to">>, Attrs),
-    From = xml:get_attr(<<"from">>, Attrs),
+    To = fxml:get_attr(<<"to">>, Attrs),
+    From = fxml:get_attr(<<"from">>, Attrs),
     Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
     Attrs2 = lists:keydelete(<<"from">>, 1, Attrs1),
     Attrs3 = case To of
@@ -159,7 +159,7 @@ make_error_element(Code, Desc) ->
 
 make_correct_from_to_attrs(From, To, Attrs) ->
     Attrs1 = lists:keydelete(<<"from">>, 1, Attrs),
-    Attrs2 = case xml:get_attr(<<"to">>, Attrs) of
+    Attrs2 = case fxml:get_attr(<<"to">>, Attrs) of
 	       {value, _} -> Attrs1;
 	       _ -> [{<<"to">>, To} | Attrs1]
 	     end,
@@ -299,8 +299,8 @@ jid_replace_resource(JID, Resource) ->
 -spec get_iq_namespace(xmlel()) -> binary().
 
 get_iq_namespace(#xmlel{name = <<"iq">>, children = Els}) ->
-    case xml:remove_cdata(Els) of
-        [#xmlel{attrs = Attrs}] -> xml:get_attr_s(<<"xmlns">>, Attrs);
+    case fxml:remove_cdata(Els) of
+        [#xmlel{attrs = Attrs}] -> fxml:get_attr_s(<<"xmlns">>, Attrs);
         _                       -> <<"">>
     end;
 get_iq_namespace(_) -> <<"">>.
@@ -326,9 +326,9 @@ iq_query_or_response_info(El) ->
     iq_info_internal(El, any).
 
 iq_info_internal(#xmlel{name = <<"iq">>, attrs = Attrs, children = Els}, Filter) ->
-    ID = xml:get_attr_s(<<"id">>, Attrs),
-    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-    {Type, Class} = case xml:get_attr_s(<<"type">>, Attrs) of
+    ID = fxml:get_attr_s(<<"id">>, Attrs),
+    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
+    {Type, Class} = case fxml:get_attr_s(<<"type">>, Attrs) of
         <<"set">>    -> {set,     request};
         <<"get">>    -> {get,     request};
         <<"result">> -> {result,  reply};
@@ -336,15 +336,15 @@ iq_info_internal(#xmlel{name = <<"iq">>, attrs = Attrs, children = Els}, Filter)
         _            -> {invalid, invalid}
     end,
     if Type == invalid -> invalid; Class == request; Filter == any ->
-        FilteredEls = xml:remove_cdata(Els),
+        FilteredEls = fxml:remove_cdata(Els),
         {XMLNS, SubEl} = case {Class, FilteredEls} of
             {request, [#xmlel{attrs = Attrs2}]} ->
-                {xml:get_attr_s(<<"xmlns">>, Attrs2), hd(FilteredEls)};
+                {fxml:get_attr_s(<<"xmlns">>, Attrs2), hd(FilteredEls)};
             {reply, _} ->
                 NonErrorEls = [El || #xmlel{name = SubName} = El <- FilteredEls,
                     SubName /= <<"error">>],
                 {case NonErrorEls of
-                     [NonErrorEl] -> xml:get_tag_attr_s(<<"xmlns">>, NonErrorEl);
+                     [NonErrorEl] -> fxml:get_tag_attr_s(<<"xmlns">>, NonErrorEl);
                      _            -> <<"">>
                  end,
                  FilteredEls};
@@ -399,7 +399,7 @@ iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
 ).
 
 parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
-    case xml:get_attr_s(<<"type">>, Attrs) of
+    case fxml:get_attr_s(<<"type">>, Attrs) of
         <<"submit">> ->
             lists:reverse(parse_xdata_fields(Els, []));
         <<"form">> -> %% This is a workaround to accept Psi's wrong forms
@@ -418,7 +418,7 @@ parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
 parse_xdata_fields([], Res) -> Res;
 parse_xdata_fields([#xmlel{name = <<"field">>, attrs = Attrs, children = SubEls}
   | Els], Res) ->
-    case xml:get_attr_s(<<"var">>, Attrs) of
+    case fxml:get_attr_s(<<"var">>, Attrs) of
         <<>> ->
             parse_xdata_fields(Els, Res);
         Var ->
@@ -437,7 +437,7 @@ parse_xdata_fields([_ | Els], Res) ->
 
 parse_xdata_values([], Res) -> Res;
 parse_xdata_values([#xmlel{name = <<"value">>, children = SubEls} | Els], Res) ->
-    Val = xml:get_cdata(SubEls),
+    Val = fxml:get_cdata(SubEls),
     parse_xdata_values(Els, [Val | Res]);
 parse_xdata_values([_ | Els], Res) ->
     parse_xdata_values(Els, Res).
@@ -446,7 +446,7 @@ parse_xdata_values([_ | Els], Res) ->
 
 rsm_decode(#iq{sub_el = SubEl}) -> rsm_decode(SubEl);
 rsm_decode(#xmlel{} = SubEl) ->
-    case xml:get_subtag(SubEl, <<"set">>) of
+    case fxml:get_subtag(SubEl, <<"set">>) of
       false -> none;
       #xmlel{name = <<"set">>, children = SubEls} ->
 	  lists:foldl(fun rsm_parse_element/2, #rsm_in{}, SubEls)
@@ -455,26 +455,26 @@ rsm_decode(#xmlel{} = SubEl) ->
 rsm_parse_element(#xmlel{name = <<"max">>, attrs = []} =
 		      Elem,
 		  RsmIn) ->
-    CountStr = xml:get_tag_cdata(Elem),
+    CountStr = fxml:get_tag_cdata(Elem),
     {Count, _} = str:to_integer(CountStr),
     RsmIn#rsm_in{max = Count};
 rsm_parse_element(#xmlel{name = <<"before">>,
 			 attrs = []} =
 		      Elem,
 		  RsmIn) ->
-    UID = xml:get_tag_cdata(Elem),
+    UID = fxml:get_tag_cdata(Elem),
     RsmIn#rsm_in{direction = before, id = UID};
 rsm_parse_element(#xmlel{name = <<"after">>,
 			 attrs = []} =
 		      Elem,
 		  RsmIn) ->
-    UID = xml:get_tag_cdata(Elem),
+    UID = fxml:get_tag_cdata(Elem),
     RsmIn#rsm_in{direction = aft, id = UID};
 rsm_parse_element(#xmlel{name = <<"index">>,
 			 attrs = []} =
 		      Elem,
 		  RsmIn) ->
-    IndexStr = xml:get_tag_cdata(Elem),
+    IndexStr = fxml:get_tag_cdata(Elem),
     {Index, _} = str:to_integer(IndexStr),
     RsmIn#rsm_in{index = Index};
 rsm_parse_element(_, RsmIn) -> RsmIn.
@@ -535,7 +535,7 @@ is_standalone_chat_state(#xmlel{name = <<"message">>} = El) ->
 		  <<"paused">>],
     Stripped =
 	lists:foldl(fun(ChatState, AccEl) ->
-			    xml:remove_subtags(AccEl, ChatState,
+			    fxml:remove_subtags(AccEl, ChatState,
 					       {<<"xmlns">>, ?NS_CHATSTATES})
 		    end, El, ChatStates),
     case Stripped of
@@ -558,15 +558,15 @@ add_delay_info(El, From, Time) ->
 		     binary()) -> xmlel().
 
 add_delay_info(El, From, Time, Desc) ->
-    case xml:get_subtag_with_xmlns(El, <<"delay">>, ?NS_DELAY) of
+    case fxml:get_subtag_with_xmlns(El, <<"delay">>, ?NS_DELAY) of
       false ->
 	  %% Add new tag
 	  DelayTag = create_delay_tag(Time, From, Desc),
-	  xml:append_subtags(El, [DelayTag]);
+	  fxml:append_subtags(El, [DelayTag]);
       DelayTag ->
 	  %% Update existing tag
 	  NewDelayTag =
-	      case {xml:get_tag_cdata(DelayTag), Desc} of
+	      case {fxml:get_tag_cdata(DelayTag), Desc} of
 		{<<"">>, <<"">>} ->
 		    DelayTag;
 		{OldDesc, <<"">>} ->
@@ -582,8 +582,8 @@ add_delay_info(El, From, Time, Desc) ->
 			  DelayTag#xmlel{children = [{xmlcdata, OldDesc}]}
 		    end
 	      end,
-	  NewEl = xml:remove_subtags(El, <<"delay">>, {<<"xmlns">>, ?NS_DELAY}),
-	  xml:append_subtags(NewEl, [NewDelayTag])
+	  NewEl = fxml:remove_subtags(El, <<"delay">>, {<<"xmlns">>, ?NS_DELAY}),
+	  fxml:append_subtags(NewEl, [NewDelayTag])
     end.
 
 -spec create_delay_tag(erlang:timestamp(), jid() | ljid() | binary(), binary())

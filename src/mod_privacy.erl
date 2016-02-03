@@ -109,12 +109,12 @@ process_iq_get(_, From, _To, #iq{sub_el = SubEl},
 	       #userlist{name = Active}) ->
     #jid{luser = LUser, lserver = LServer} = From,
     #xmlel{children = Els} = SubEl,
-    case xml:remove_cdata(Els) of
+    case fxml:remove_cdata(Els) of
       [] -> process_lists_get(LUser, LServer, Active);
       [#xmlel{name = Name, attrs = Attrs}] ->
 	  case Name of
 	    <<"list">> ->
-		ListName = xml:get_attr(<<"name">>, Attrs),
+		ListName = fxml:get_attr(<<"name">>, Attrs),
 		process_list_get(LUser, LServer, ListName);
 	    _ -> {error, ?ERR_BAD_REQUEST}
 	  end;
@@ -343,14 +343,14 @@ list_to_action(S) ->
 process_iq_set(_, From, _To, #iq{sub_el = SubEl}) ->
     #jid{luser = LUser, lserver = LServer} = From,
     #xmlel{children = Els} = SubEl,
-    case xml:remove_cdata(Els) of
+    case fxml:remove_cdata(Els) of
       [#xmlel{name = Name, attrs = Attrs,
 	      children = SubEls}] ->
-	  ListName = xml:get_attr(<<"name">>, Attrs),
+	  ListName = fxml:get_attr(<<"name">>, Attrs),
 	  case Name of
 	    <<"list">> ->
 		process_list_set(LUser, LServer, ListName,
-				 xml:remove_cdata(SubEls));
+				 fxml:remove_cdata(SubEls));
 	    <<"active">> ->
 		process_active_set(LUser, LServer, ListName);
 	    <<"default">> ->
@@ -651,10 +651,10 @@ parse_items([#xmlel{name = <<"item">>, attrs = Attrs,
 		    children = SubEls}
 	     | Els],
 	    Res) ->
-    Type = xml:get_attr(<<"type">>, Attrs),
-    Value = xml:get_attr(<<"value">>, Attrs),
-    SAction = xml:get_attr(<<"action">>, Attrs),
-    SOrder = xml:get_attr(<<"order">>, Attrs),
+    Type = fxml:get_attr(<<"type">>, Attrs),
+    Value = fxml:get_attr(<<"value">>, Attrs),
+    SAction = fxml:get_attr(<<"action">>, Attrs),
+    SOrder = fxml:get_attr(<<"order">>, Attrs),
     Action = case catch list_to_action(element(2, SAction))
 		 of
 	       {'EXIT', _} -> false;
@@ -704,7 +704,7 @@ parse_items([#xmlel{name = <<"item">>, attrs = Attrs,
 	   case I2 of
 	     false -> false;
 	     _ ->
-		 case parse_matches(I2, xml:remove_cdata(SubEls)) of
+		 case parse_matches(I2, fxml:remove_cdata(SubEls)) of
 		   false -> false;
 		   I3 -> parse_items(Els, [I3 | Res])
 		 end
@@ -882,7 +882,7 @@ check_packet(_, User, Server,
 		    <<"message">> -> message;
 		    <<"iq">> -> iq;
 		    <<"presence">> ->
-			case xml:get_attr_s(<<"type">>, Attrs) of
+			case fxml:get_attr_s(<<"type">>, Attrs) of
 			  %% notification
 			  <<"">> -> presence;
 			  <<"unavailable">> -> presence;

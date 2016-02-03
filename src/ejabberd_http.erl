@@ -532,10 +532,10 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
     Data = case lists:member(html, Headers) of
 	true ->
 	    iolist_to_binary([?HTML_DOCTYPE,
-		    xml:element_to_binary(XHTML)]);
+		    fxml:element_to_binary(XHTML)]);
 	_ ->
 	    iolist_to_binary([?XHTML_DOCTYPE,
-		    xml:element_to_binary(XHTML)])
+		    fxml:element_to_binary(XHTML)])
     end,
     Headers1 = case lists:keysearch(<<"Content-Type">>, 1,
 				    Headers)

@@ -206,11 +206,11 @@ get_rosteritem_name([ModVcard], U, S) ->
 
 get_rosteritem_name_vcard([]) -> <<"">>;
 get_rosteritem_name_vcard([Vcard]) ->
-    case xml:get_path_s(Vcard,
+    case fxml:get_path_s(Vcard,
 			[{elem, <<"NICKNAME">>}, cdata])
 	of
       <<"">> ->
-	  xml:get_path_s(Vcard, [{elem, <<"FN">>}, cdata]);
+	  fxml:get_path_s(Vcard, [{elem, <<"FN">>}, cdata]);
       Nickname -> Nickname
     end.
 

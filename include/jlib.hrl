@@ -20,9 +20,9 @@
 
 -include("ns.hrl").
 -ifdef(NO_EXT_LIB).
--include("xml.hrl").
+-include("fxml.hrl").
 -else.
--include_lib("p1_xml/include/xml.hrl").
+-include_lib("fast_xml/include/fxml.hrl").
 -endif.
 
 -define(STANZA_ERROR(Code, Type, Condition),

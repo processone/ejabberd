@@ -123,7 +123,7 @@ convert_data(Host, "private", User, [Data]) ->
 		 fun({_TagXMLNS, Raw}) ->
 			 case deserialize(Raw) of
 			     [El] ->
-				 XMLNS = xml:get_tag_attr_s(<<"xmlns">>, El),
+				 XMLNS = fxml:get_tag_attr_s(<<"xmlns">>, El),
 				 [{XMLNS, El}];
 			     _ ->
 				 []
@@ -301,7 +301,7 @@ convert_privacy_item({_, Item}) ->
 
 el_to_offline_msg(LUser, LServer, #xmlel{attrs = Attrs} = El) ->
     case jlib:datetime_string_to_timestamp(
-	   xml:get_attr_s(<<"stamp">>, Attrs)) of
+	   fxml:get_attr_s(<<"stamp">>, Attrs)) of
 	{_, _, _} = TS ->
 	    Attrs1 = lists:filter(
 		       fun(<<"stamp">>) -> false;
@@ -309,8 +309,8 @@ el_to_offline_msg(LUser, LServer, #xmlel{attrs = Attrs} = El) ->
 			  (_) -> true
 		       end, Attrs),
 	    Packet = El#xmlel{attrs = Attrs1},
-	    case {jid:from_string(xml:get_attr_s(<<"from">>, Attrs)),
-		  jid:from_string(xml:get_attr_s(<<"to">>, Attrs))} of
+	    case {jid:from_string(fxml:get_attr_s(<<"from">>, Attrs)),
+		  jid:from_string(fxml:get_attr_s(<<"to">>, Attrs))} of
 		{#jid{} = From, #jid{} = To} ->
 		    [#offline_msg{
 			us = {LUser, LServer},

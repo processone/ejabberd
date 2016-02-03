@@ -175,11 +175,11 @@ process_iq(InitiatorJID,
 	   #state{acl = ACL, serverhost = ServerHost}) ->
     case acl:match_rule(ServerHost, ACL, InitiatorJID) of
       allow ->
-	  ActivateEl = xml:get_path_s(SubEl,
+	  ActivateEl = fxml:get_path_s(SubEl,
 				      [{elem, <<"activate">>}]),
-	  SID = xml:get_tag_attr_s(<<"sid">>, SubEl),
+	  SID = fxml:get_tag_attr_s(<<"sid">>, SubEl),
 	  case catch
-		 jid:from_string(xml:get_tag_cdata(ActivateEl))
+		 jid:from_string(fxml:get_tag_cdata(ActivateEl))
 	      of
 	    TargetJID
 		when is_record(TargetJID, jid), SID /= <<"">>,

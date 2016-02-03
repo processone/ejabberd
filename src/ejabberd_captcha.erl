@@ -320,7 +320,7 @@ build_captcha_html(Id, Lang) ->
 -spec process_reply(xmlel()) -> ok | {error, bad_match | not_found | malformed}.
 
 process_reply(#xmlel{} = El) ->
-    case xml:get_subtag(El, <<"x">>) of
+    case fxml:get_subtag(El, <<"x">>) of
       false -> {error, malformed};
       Xdata ->
 	  Fields = jlib:parse_xdata_submit(Xdata),

@@ -267,7 +267,7 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
     LServer = From#jid.lserver,
     US = {LUser, LServer},
     try {ItemsToSend, VersionToSend} = case
-					 {xml:get_tag_attr(<<"ver">>, SubEl),
+					 {fxml:get_tag_attr(<<"ver">>, SubEl),
 					  roster_versioning_enabled(LServer),
 					  roster_version_on_db(LServer)}
 					   of
@@ -516,7 +516,7 @@ process_iq_set(From, To, #iq{sub_el = SubEl, id = Id} = IQ) ->
 
 process_item_set(From, To,
 		 #xmlel{attrs = Attrs, children = Els}, Managed) ->
-    JID1 = jid:from_string(xml:get_attr_s(<<"jid">>,
+    JID1 = jid:from_string(fxml:get_attr_s(<<"jid">>,
 					     Attrs)),
     #jid{user = User, luser = LUser, lserver = LServer} =
 	From,
@@ -585,10 +585,10 @@ process_item_els(Item,
 		  | Els]) ->
     case Name of
       <<"group">> ->
-	  Groups = [xml:get_cdata(SEls) | Item#roster.groups],
+	  Groups = [fxml:get_cdata(SEls) | Item#roster.groups],
 	  process_item_els(Item#roster{groups = Groups}, Els);
       _ ->
-	  case xml:get_attr_s(<<"xmlns">>, Attrs) of
+	  case fxml:get_attr_s(<<"xmlns">>, Attrs) of
 	    <<"">> -> process_item_els(Item, Els);
 	    _ ->
 		XEls = [#xmlel{name = Name, attrs = Attrs,
@@ -1089,7 +1089,7 @@ del_roster_t(LUser, LServer, LJID, riak) ->
 
 process_item_set_t(LUser, LServer,
 		   #xmlel{attrs = Attrs, children = Els}) ->
-    JID1 = jid:from_string(xml:get_attr_s(<<"jid">>,
+    JID1 = jid:from_string(fxml:get_attr_s(<<"jid">>,
 					     Attrs)),
     case JID1 of
       error -> ok;
@@ -1390,7 +1390,7 @@ update_roster_table() ->
                              groups = [iolist_to_binary(G) || G <- Gs],
                              askmessage = try iolist_to_binary(Ask)
 					  catch _:_ -> <<"">> end,
-                             xs = [xml:to_xmlel(X) || X <- Xs]}
+                             xs = [fxml:to_xmlel(X) || X <- Xs]}
             end);
       _ ->
 	  ?INFO_MSG("Recreating roster table", []),

@@ -55,9 +55,9 @@ is_carbon_copy(Packet) ->
 	is_carbon_copy(Packet, <<"received">>).
 
 is_carbon_copy(Packet, Direction) ->
-    case xml:get_subtag(Packet, Direction) of
+    case fxml:get_subtag(Packet, Direction) of
 	#xmlel{name = Direction, attrs = Attrs} ->
-	    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+	    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
 		?NS_CARBONS_2 -> true;
 		?NS_CARBONS_1 -> true;
 		_ -> false
@@ -137,8 +137,8 @@ user_receive_packet(Packet, _C2SState, JID, _From, To) ->
 %    - we also replicate "read" notifications
 check_and_forward(JID, To, Packet, Direction)->
     case is_chat_message(Packet) andalso
-	     xml:get_subtag(Packet, <<"private">>) == false andalso
-		 xml:get_subtag(Packet, <<"no-copy">>) == false of
+	     fxml:get_subtag(Packet, <<"private">>) == false andalso
+		 fxml:get_subtag(Packet, <<"no-copy">>) == false of
 	true ->
 	    case is_carbon_copy(Packet) of
 		false ->
@@ -268,7 +268,7 @@ complete_packet(_From, #xmlel{name = <<"message">>, attrs=OrigAttrs} = Packet, r
     Packet#xmlel{attrs = Attrs}.
 
 message_type(#xmlel{attrs = Attrs}) ->
-    case xml:get_attr(<<"type">>, Attrs) of
+    case fxml:get_attr(<<"type">>, Attrs) of
 	{value, Type} -> Type;
 	false -> <<"normal">>
     end.
@@ -282,7 +282,7 @@ is_chat_message(#xmlel{name = <<"message">>} = Packet) ->
 is_chat_message(_Packet) -> false.
 
 has_non_empty_body(Packet) ->
-    xml:get_subtag_cdata(Packet, <<"body">>) =/= <<"">>.
+    fxml:get_subtag_cdata(Packet, <<"body">>) =/= <<"">>.
 
 %% list {resource, cc_version} with carbons enabled for given user and host
 list(User, Server) ->

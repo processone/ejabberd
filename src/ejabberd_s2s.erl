@@ -308,7 +308,7 @@ do_route(From, To, Packet) ->
 		       #xmlel{name = Name, attrs = NewAttrs, children = Els}),
 	  ok;
       {aborted, _Reason} ->
-	  case xml:get_tag_attr_s(<<"type">>, Packet) of
+	  case fxml:get_tag_attr_s(<<"type">>, Packet) of
 	    <<"error">> -> ok;
 	    <<"result">> -> ok;
 	    _ ->

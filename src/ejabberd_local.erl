@@ -272,7 +272,7 @@ do_route(From, To, Packet) ->
 	   end;
        true ->
 	   #xmlel{attrs = Attrs} = Packet,
-	   case xml:get_attr_s(<<"type">>, Attrs) of
+	   case fxml:get_attr_s(<<"type">>, Attrs) of
 	     <<"error">> -> ok;
 	     <<"result">> -> ok;
 	     _ ->

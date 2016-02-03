@@ -48,7 +48,7 @@ import_file(File) ->
       true ->
 	  case file:read_file(File) of
 	    {ok, Text} ->
-		case xml_stream:parse_element(Text) of
+		case fxml_stream:parse_element(Text) of
 		  El when is_record(El, xmlel) ->
 		      case catch process_xdb(User, Server, El) of
 			{'EXIT', Reason} ->
@@ -113,16 +113,16 @@ process_xdb(User, Server,
 xdb_data(_User, _Server, {xmlcdata, _CData}) -> ok;
 xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
     From = jid:make(User, Server, <<"">>),
-    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       ?NS_AUTH ->
-	  Password = xml:get_tag_cdata(El),
+	  Password = fxml:get_tag_cdata(El),
 	  ejabberd_auth:set_password(User, Server, Password),
 	  ok;
       ?NS_ROSTER ->
 	  catch mod_roster:set_items(User, Server, El), ok;
       ?NS_LAST ->
-	  TimeStamp = xml:get_attr_s(<<"last">>, Attrs),
-	  Status = xml:get_tag_cdata(El),
+	  TimeStamp = fxml:get_attr_s(<<"last">>, Attrs),
+	  Status = fxml:get_tag_cdata(El),
 	  catch mod_last:store_last_info(User, Server,
 					 jlib:binary_to_integer(TimeStamp),
 					 Status),
@@ -136,7 +136,7 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
       <<"jabber:x:offline">> ->
 	  process_offline(Server, From, El), ok;
       XMLNS ->
-	  case xml:get_attr_s(<<"j_private_flag">>, Attrs) of
+	  case fxml:get_attr_s(<<"j_private_flag">>, Attrs) of
 	    <<"1">> ->
 		catch mod_private:process_sm_iq(From,
 						jid:make(<<"">>, Server,
@@ -160,7 +160,7 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
 process_offline(Server, To, #xmlel{children = Els}) ->
     LServer = jid:nameprep(Server),
     lists:foreach(fun (#xmlel{attrs = Attrs} = El) ->
-			  FromS = xml:get_attr_s(<<"from">>, Attrs),
+			  FromS = fxml:get_attr_s(<<"from">>, Attrs),
 			  From = case FromS of
 				   <<"">> ->
 				       jid:make(<<"">>, Server, <<"">>);

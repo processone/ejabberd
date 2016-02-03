@@ -824,7 +824,7 @@ set_item(Item) ->
     {M, JID} = Item#pubsub_item.modification,
     P = encode_jid(JID),
     Payload = Item#pubsub_item.payload,
-    XML = ejabberd_odbc:escape(str:join([xml:element_to_binary(X) || X<-Payload], <<>>)),
+    XML = ejabberd_odbc:escape(str:join([fxml:element_to_binary(X) || X<-Payload], <<>>)),
     S = fun ({T1, T2, T3}) ->
 	    str:join([jlib:i2l(T1, 6), jlib:i2l(T2, 6), jlib:i2l(T3, 6)], <<":">>)
     end,
@@ -1041,7 +1041,7 @@ raw_to_item(Nidx, [ItemId, SJID, Creation, Modification, XML]) ->
 	    [T1, T2, T3] = str:tokens(Str, <<":">>),
 	    {jlib:l2i(T1), jlib:l2i(T2), jlib:l2i(T3)}
     end,
-    Payload = case xml_stream:parse_element(XML) of
+    Payload = case fxml_stream:parse_element(XML) of
 	{error, _Reason} -> [];
 	El -> [El]
     end,
