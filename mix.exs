@@ -25,9 +25,9 @@ defmodule Ejabberd.Mixfile do
     [mod: {:ejabberd_app, []},
      applications: [:ssl],
      included_applications: [:lager, :mnesia, :p1_utils, :cache_tab,
-                             :p1_tls, :stringprep, :p1_xml,
-                             :stun, :yaml, :ezlib, :iconv,
-                             :esip, :jiffy, :oauth2, :xmlrpc, :eredis,
+                             :fast_tls, :stringprep, :p1_xml,
+                             :stun, :fast_yaml, :ezlib, :iconv,
+                             :esip, :jiffy, :p1_oauth2, :p1_xmlrpc, :eredis,
                              :p1_mysql, :p1_pgsql, :sqlite3]]
   end
 
@@ -43,7 +43,7 @@ defmodule Ejabberd.Mixfile do
      {:cache_tab, "~> 1.0"},
      {:stringprep, "~> 1.0"},
      {:fast_yaml, "~> 1.0"},
-     {:p1_tls, git: "https://github.com/processone/tls", tag: "1.0.0"},
+     {:fast_tls, "~> 1.0"},
      {:p1_xml, git: "https://github.com/processone/xml", tag: "1.1.2"},
      {:stun, "~> 1.0"},
      {:esip, "~> 1.0"},

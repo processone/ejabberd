@@ -48,8 +48,8 @@
 -include("logger.hrl").
 
 -record(state,
-	{socket :: inet:socket() | p1_tls:tls_socket() | ezlib:zlib_socket(),
-         sock_mod = gen_tcp :: gen_tcp | p1_tls | ezlib,
+	{socket :: inet:socket() | fast_tls:tls_socket() | ezlib:zlib_socket(),
+         sock_mod = gen_tcp :: gen_tcp | fast_tls | ezlib,
          shaper_state = none :: shaper:shaper(),
          c2s_pid :: pid(),
 	 max_stanza_size = infinity :: non_neg_integer() | infinity,
@@ -89,7 +89,7 @@ change_shaper(Pid, Shaper) ->
 
 reset_stream(Pid) -> do_call(Pid, reset_stream).
 
--spec starttls(pid(), p1_tls:tls_socket()) -> ok.
+-spec starttls(pid(), fast_tls:tls_socket()) -> ok.
 
 starttls(Pid, TLSSocket) ->
     do_call(Pid, {starttls, TLSSocket}).
@@ -129,8 +129,8 @@ init([Socket, SockMod, Shaper, MaxStanzaSize]) ->
 handle_call({starttls, TLSSocket}, _From, State) ->
     State1 = reset_parser(State),
     NewState = State1#state{socket = TLSSocket,
-                            sock_mod = p1_tls},
-    case p1_tls:recv_data(TLSSocket, <<"">>) of
+                            sock_mod = fast_tls},
+    case fast_tls:recv_data(TLSSocket, <<"">>) of
 	{ok, TLSData} ->
 	    {reply, ok,
 		process_data(TLSData, NewState), ?HIBERNATE_TIMEOUT};
@@ -182,8 +182,8 @@ handle_info({Tag, _TCPSocket, Data},
     when (Tag == tcp) or (Tag == ssl) or
 	   (Tag == ejabberd_xml) ->
     case SockMod of
-      p1_tls ->
-	  case p1_tls:recv_data(Socket, Data) of
+      fast_tls ->
+	  case fast_tls:recv_data(Socket, Data) of
 	    {ok, TLSData} ->
 		{noreply, process_data(TLSData, State),
 		 ?HIBERNATE_TIMEOUT};

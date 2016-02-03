@@ -15,7 +15,6 @@
   "p1_mysql": {:hex, :p1_mysql, "1.0.1"},
   "p1_oauth2": {:hex, :p1_oauth2, "0.6.1"},
   "p1_pgsql": {:hex, :p1_pgsql, "1.0.1"},
-  "p1_tls": {:git, "https://github.com/processone/tls", "f19e1f701e0a3980ffc70b3917c4aa85e68d8520", [tag: "1.0.0"]},
   "p1_utils": {:hex, :p1_utils, "1.0.3"},
   "p1_xml": {:git, "https://github.com/processone/xml", "79c6d54e56bf991f1ec70ceb5e255afcb8dbf53f", [tag: "1.1.2"]},
   "p1_xmlrpc": {:hex, :p1_xmlrpc, "1.15.1"},

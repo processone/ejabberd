@@ -148,20 +148,20 @@ init([Module, SockMod, Socket, Opts, Receiver]) ->
 		receiver = Receiver}}.
 
 handle_call({starttls, TLSOpts}, _From, State) ->
-    {ok, TLSSocket} = p1_tls:tcp_to_tls(State#state.socket, TLSOpts),
+    {ok, TLSSocket} = fast_tls:tcp_to_tls(State#state.socket, TLSOpts),
     ejabberd_receiver:starttls(State#state.receiver, TLSSocket),
     Reply = ok,
-    {reply, Reply, State#state{socket = TLSSocket, sockmod = p1_tls},
+    {reply, Reply, State#state{socket = TLSSocket, sockmod = fast_tls},
      ?HIBERNATE_TIMEOUT};
 
 handle_call({starttls, TLSOpts, Data}, _From, State) ->
-    {ok, TLSSocket} = p1_tls:tcp_to_tls(State#state.socket, TLSOpts),
+    {ok, TLSSocket} = fast_tls:tcp_to_tls(State#state.socket, TLSOpts),
     ejabberd_receiver:starttls(State#state.receiver, TLSSocket),
     catch (State#state.sockmod):send(
 	    State#state.socket, Data),
     Reply = ok,
     {reply, Reply,
-     State#state{socket = TLSSocket, sockmod = p1_tls},
+     State#state{socket = TLSSocket, sockmod = fast_tls},
      ?HIBERNATE_TIMEOUT};
 handle_call({compress, Data}, _From, State) ->
     {ok, ZlibSocket} =
@@ -187,10 +187,10 @@ handle_call(get_sockmod, _From, State) ->
     Reply = State#state.sockmod,
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 handle_call(get_peer_certificate, _From, State) ->
-    Reply = p1_tls:get_peer_certificate(State#state.socket),
+    Reply = fast_tls:get_peer_certificate(State#state.socket),
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 handle_call(get_verify_result, _From, State) ->
-    Reply = p1_tls:get_verify_result(State#state.socket),
+    Reply = fast_tls:get_verify_result(State#state.socket),
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 handle_call(close, _From, State) ->
     ejabberd_receiver:close(State#state.receiver),
@@ -236,9 +236,9 @@ check_starttls(SockMod, Socket, Receiver, Opts) ->
 			      (_) -> false
 			   end, Opts),
     if TLSEnabled ->
-	    {ok, TLSSocket} = p1_tls:tcp_to_tls(Socket, TLSOpts),
+	    {ok, TLSSocket} = fast_tls:tcp_to_tls(Socket, TLSOpts),
 	    ejabberd_receiver:starttls(Receiver, TLSSocket),
-	    {p1_tls, TLSSocket};
+	    {fast_tls, TLSSocket};
 	true ->
 	    {SockMod, Socket}
     end.

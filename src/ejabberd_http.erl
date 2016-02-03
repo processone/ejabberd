@@ -117,9 +117,9 @@ init({SockMod, Socket}, Opts) ->
     TLSOpts = [verify_none | TLSOpts3],
     {SockMod1, Socket1} = if TLSEnabled ->
 				 inet:setopts(Socket, [{recbuf, 8192}]),
-				 {ok, TLSSocket} = p1_tls:tcp_to_tls(Socket,
+				 {ok, TLSSocket} = fast_tls:tcp_to_tls(Socket,
 								  TLSOpts),
-				 {p1_tls, TLSSocket};
+				 {fast_tls, TLSSocket};
 			     true -> {SockMod, Socket}
 			  end,
     Captcha = case proplists:get_bool(captcha, Opts) of
@@ -328,8 +328,8 @@ get_transfer_protocol(SockMod, HostPort) ->
       {gen_tcp, []} -> {Host, 80, http};
       {gen_tcp, [Port]} ->
 	  {Host, jlib:binary_to_integer(Port), http};
-      {p1_tls, []} -> {Host, 443, https};
-      {p1_tls, [Port]} ->
+      {fast_tls, []} -> {Host, 443, https};
+      {fast_tls, [Port]} ->
 	  {Host, jlib:binary_to_integer(Port), https}
     end.
 
