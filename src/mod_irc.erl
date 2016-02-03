@@ -116,7 +116,7 @@ stop(Host) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
-    ejabberd:start_app(p1_iconv),
+    ejabberd:start_app(iconv),
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"irc.@HOST@">>),
     case gen_mod:db_type(Host, Opts) of

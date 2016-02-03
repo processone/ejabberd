@@ -54,7 +54,7 @@ defmodule Ejabberd.Mixfile do
      {:p1_pgsql, "~> 1.0"},
      {:sqlite3, "~> 1.1"},
      {:p1_zlib, git: "https://github.com/processone/zlib", tag: "1.0.0"},
-     {:p1_iconv, git: "https://github.com/processone/eiconv", tag: "0.9.0"},
+     {:iconv, "~> 1.0"},
      {:eredis, "~> 1.0"},
      {:exrm, "~> 1.0.0-rc7", only: :dev}]
   end
