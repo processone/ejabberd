@@ -133,7 +133,7 @@
 %% session:
 -define(C2S_OPEN_TIMEOUT, 60000).
 
--define(C2S_HIBERNATE_TIMEOUT, 90000).
+-define(C2S_HIBERNATE_TIMEOUT, ejabberd_config:get_option(c2s_hibernate, fun(X) when is_integer(X); X == hibernate-> X end, 90000)).
 
 -define(STREAM_HEADER,
 	<<"<?xml version='1.0'?><stream:stream "
