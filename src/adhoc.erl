@@ -51,9 +51,9 @@
 
 parse_request(#iq{type = set, lang = Lang, sub_el = SubEl, xmlns = ?NS_COMMANDS}) ->
     ?DEBUG("entering parse_request...", []),
-    Node = xml:get_tag_attr_s(<<"node">>, SubEl),
-    SessionID = xml:get_tag_attr_s(<<"sessionid">>, SubEl),
-    Action = xml:get_tag_attr_s(<<"action">>, SubEl),
+    Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
+    SessionID = fxml:get_tag_attr_s(<<"sessionid">>, SubEl),
+    Action = fxml:get_tag_attr_s(<<"action">>, SubEl),
     XData = find_xdata_el(SubEl),
     #xmlel{children = AllEls} = SubEl,
     Others = case XData of
@@ -76,7 +76,7 @@ find_xdata_el(#xmlel{children = SubEls}) ->
 
 find_xdata_el1([]) -> false;
 find_xdata_el1([El | Els]) when is_record(El, xmlel) ->
-    case xml:get_tag_attr_s(<<"xmlns">>, El) of
+    case fxml:get_tag_attr_s(<<"xmlns">>, El) of
         ?NS_XDATA -> El;
         _         -> find_xdata_el1(Els)
     end;

@@ -25,9 +25,9 @@ defmodule Ejabberd.Mixfile do
     [mod: {:ejabberd_app, []},
      applications: [:ssl],
      included_applications: [:lager, :mnesia, :p1_utils, :cache_tab,
-                             :p1_tls, :p1_stringprep, :p1_xml,
-                             :p1_stun, :p1_yaml, :p1_zlib, :p1_iconv,
-                             :esip, :jiffy, :oauth2, :xmlrpc, :eredis,
+                             :fast_tls, :stringprep, :fast_xml,
+                             :stun, :fast_yaml, :ezlib, :iconv,
+                             :esip, :jiffy, :p1_oauth2, :p1_xmlrpc, :eredis,
                              :p1_mysql, :p1_pgsql, :sqlite3]]
   end
 
@@ -38,25 +38,25 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp deps do
-    [{:lager, git: "https://github.com/basho/lager", tag: "3.0.2"},
-     {:p1_utils, git: "https://github.com/processone/p1_utils", tag: "1.0.3", override: true},
-     {:cache_tab, git: "https://github.com/processone/cache_tab", tag: "1.0.2"},
-     {:p1_tls, git: "https://github.com/processone/tls", tag: "1.0.0"},
-     {:p1_stringprep, git: "https://github.com/processone/stringprep", tag: "1.0.1"},
-     {:p1_xml, git: "https://github.com/processone/xml", tag: "1.1.2"},
-     {:p1_stun, git: "https://github.com/processone/stun", tag: "0.9.1"},
-     {:esip, git: "https://github.com/processone/p1_sip", tag: "1.0.1"},
-     {:p1_yaml, git: "https://github.com/processone/p1_yaml", tag: "1.0.1"},
-     {:jiffy, git: "https://github.com/davisp/jiffy", tag: "0.14.5"},
-     {:oauth2, git: "https://github.com/kivra/oauth2", ref: "8d129fbf8866930b4ffa6dd84e65bd2b32b9acb8"},
-     {:xmlrpc, git: "https://github.com/rds13/xmlrpc.git", tag: "1.15"},
-     {:p1_mysql, git: "https://github.com/processone/mysql", tag: "1.0.0"},
-     {:p1_pgsql, git: "https://github.com/processone/pgsql", tag: "1.0.0"},
-     {:sqlite3, git: "https://github.com/alexeyr/erlang-sqlite3", ref: "cbc3505f7a131254265d3ef56191b2581b8cc172"},
-     {:p1_zlib, git: "https://github.com/processone/zlib", tag: "1.0.0"},
-     {:p1_iconv, git: "https://github.com/processone/eiconv", tag: "0.9.0"},
-     {:eredis, git: "https://github.com/wooga/eredis", tag: "v1.0.8"},
-     {:exrm, "0.19.9"}]
+    [{:lager, "~> 3.0"},
+     {:p1_utils, "~> 1.0"},
+     {:cache_tab, "~> 1.0"},
+     {:stringprep, "~> 1.0"},
+     {:fast_yaml, "~> 1.0"},
+     {:fast_tls, "~> 1.0"},
+     {:fast_xml, "~> 1.1"},
+     {:stun, "~> 1.0"},
+     {:esip, "~> 1.0"},
+     {:jiffy, "~> 0.14.7"},
+     {:p1_oauth2, "~> 0.6.1"},
+     {:p1_xmlrpc, "~> 1.15"},
+     {:p1_mysql, "~> 1.0"},
+     {:p1_pgsql, "~> 1.0"},
+     {:sqlite3, "~> 1.1"},
+     {:ezlib, "~> 1.0"},
+     {:iconv, "~> 1.0"},
+     {:eredis, "~> 1.0"},
+     {:exrm, "~> 1.0.0-rc7", only: :dev}]
   end
 
   defp package do

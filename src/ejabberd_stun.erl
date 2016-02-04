@@ -38,11 +38,11 @@
 %%% API
 %%%===================================================================
 tcp_init(Socket, Opts) ->
-    ejabberd:start_app(p1_stun),
+    ejabberd:start_app(stun),
     stun:tcp_init(Socket, prepare_turn_opts(Opts)).
 
 udp_init(Socket, Opts) ->
-    ejabberd:start_app(p1_stun),
+    ejabberd:start_app(stun),
     stun:udp_init(Socket, prepare_turn_opts(Opts)).
 
 udp_recv(Socket, Addr, Port, Packet, Opts) ->

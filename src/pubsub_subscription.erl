@@ -126,7 +126,7 @@ get_options_xform(Lang, Options) ->
 	    ++ XFields}}.
 
 parse_options_xform(XFields) ->
-    case xml:remove_cdata(XFields) of
+    case fxml:remove_cdata(XFields) of
 	[#xmlel{name = <<"x">>} = XEl] ->
 	    case jlib:parse_xdata_submit(XEl) of
 		XData when is_list(XData) ->

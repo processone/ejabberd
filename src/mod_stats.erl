@@ -57,7 +57,7 @@ process_local_iq(_From, To,
 	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
       get ->
 	  #xmlel{children = Els} = SubEl,
-	  Node = str:tokens(xml:get_tag_attr_s(<<"node">>, SubEl),
+	  Node = str:tokens(fxml:get_tag_attr_s(<<"node">>, SubEl),
 			    <<"/">>),
 	  Names = get_names(Els, []),
 	  case get_local_stats(To#jid.server, Node, Names) of
@@ -76,7 +76,7 @@ get_names([], Res) -> Res;
 get_names([#xmlel{name = <<"stat">>, attrs = Attrs}
 	   | Els],
 	  Res) ->
-    Name = xml:get_attr_s(<<"name">>, Attrs),
+    Name = fxml:get_attr_s(<<"name">>, Attrs),
     case Name of
       <<"">> -> get_names(Els, Res);
       _ -> get_names(Els, [Name | Res])

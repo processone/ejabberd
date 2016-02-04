@@ -83,9 +83,9 @@ mech_step(#state{step = 3, nonce = Nonce} = State,
       bad -> {error, <<"bad-protocol">>};
       KeyVals ->
 	  DigestURI = proplists:get_value(<<"digest-uri">>, KeyVals, <<>>),
-	  %DigestURI = xml:get_attr_s(<<"digest-uri">>, KeyVals),
+	  %DigestURI = fxml:get_attr_s(<<"digest-uri">>, KeyVals),
 	  UserName = proplists:get_value(<<"username">>, KeyVals, <<>>),
-	  %UserName = xml:get_attr_s(<<"username">>, KeyVals),
+	  %UserName = fxml:get_attr_s(<<"username">>, KeyVals),
 	  case is_digesturi_valid(DigestURI, State#state.host,
 				  State#state.hostfqdn)
 	      of
@@ -97,13 +97,13 @@ mech_step(#state{step = 3, nonce = Nonce} = State,
 		{error, <<"not-authorized">>, UserName};
 	    true ->
 		AuthzId = proplists:get_value(<<"authzid">>, KeyVals, <<>>),
-		%AuthzId = xml:get_attr_s(<<"authzid">>, KeyVals),
+		%AuthzId = fxml:get_attr_s(<<"authzid">>, KeyVals),
 		case (State#state.get_password)(UserName) of
 		  {false, _} -> {error, <<"not-authorized">>, UserName};
 		  {Passwd, AuthModule} ->
 		      case (State#state.check_password)(UserName, <<"">>,
 		                    proplists:get_value(<<"response">>, KeyVals, <<>>),
-							%xml:get_attr_s(<<"response">>, KeyVals),
+							%fxml:get_attr_s(<<"response">>, KeyVals),
 							fun (PW) ->
 								response(KeyVals,
 									 UserName,

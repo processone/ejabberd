@@ -419,10 +419,10 @@ do_route(From, To, #xmlel{} = Packet) ->
       <<"">> ->
 	  case Name of
 	    <<"presence">> ->
-		{Pass, _Subsc} = case xml:get_attr_s(<<"type">>, Attrs)
+		{Pass, _Subsc} = case fxml:get_attr_s(<<"type">>, Attrs)
 				     of
 				   <<"subscribe">> ->
-				       Reason = xml:get_path_s(Packet,
+				       Reason = fxml:get_path_s(Packet,
 							       [{elem,
 								 <<"status">>},
 								cdata]),
@@ -483,7 +483,7 @@ do_route(From, To, #xmlel{} = Packet) ->
 		   true -> ok
 		end;
 	    <<"message">> ->
-		case xml:get_attr_s(<<"type">>, Attrs) of
+		case fxml:get_attr_s(<<"type">>, Attrs) of
 		  <<"chat">> -> route_message(From, To, Packet, chat);
 		  <<"headline">> -> route_message(From, To, Packet, headline);
 		  <<"error">> -> ok;
@@ -503,7 +503,7 @@ do_route(From, To, #xmlel{} = Packet) ->
 	    [] ->
 		case Name of
 		  <<"message">> ->
-		      case xml:get_attr_s(<<"type">>, Attrs) of
+		      case fxml:get_attr_s(<<"type">>, Attrs) of
 			<<"chat">> -> route_message(From, To, Packet, chat);
 			<<"normal">> -> route_message(From, To, Packet, normal);
 			<<"">> -> route_message(From, To, Packet, normal);
@@ -514,7 +514,7 @@ do_route(From, To, #xmlel{} = Packet) ->
 			    ejabberd_router:route(To, From, Err)
 		      end;
 		  <<"iq">> ->
-		      case xml:get_attr_s(<<"type">>, Attrs) of
+		      case fxml:get_attr_s(<<"type">>, Attrs) of
 			<<"error">> -> ok;
 			<<"result">> -> ok;
 			_ ->

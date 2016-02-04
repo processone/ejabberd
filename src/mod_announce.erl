@@ -845,7 +845,7 @@ announce_motd_update(LServer, Packet) ->
                                              packet = Packet},
 				       motd_schema())};
         odbc ->
-            XML = ejabberd_odbc:escape(xml:element_to_binary(Packet)),
+            XML = ejabberd_odbc:escape(fxml:element_to_binary(Packet)),
             F = fun() ->
                         odbc_queries:update_t(
                           <<"motd">>,
@@ -953,7 +953,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, odbc) when LUser /= <<>>
     case catch ejabberd_odbc:sql_query(
                  LServer, [<<"select xml from motd where username='';">>]) of
         {selected, [<<"xml">>], [[XML]]} ->
-            case xml_stream:parse_element(XML) of
+            case fxml_stream:parse_element(XML) of
                 {error, _} ->
                     ok;
                 Packet ->
@@ -986,8 +986,8 @@ send_motd(_, odbc) ->
 get_stored_motd(LServer) ->
     case get_stored_motd_packet(LServer, gen_mod:db_type(LServer, ?MODULE)) of
         {ok, Packet} ->
-            {xml:get_subtag_cdata(Packet, <<"subject">>),
-             xml:get_subtag_cdata(Packet, <<"body">>)};
+            {fxml:get_subtag_cdata(Packet, <<"subject">>),
+             fxml:get_subtag_cdata(Packet, <<"body">>)};
         error ->
             {<<>>, <<>>}
     end.
@@ -1010,7 +1010,7 @@ get_stored_motd_packet(LServer, odbc) ->
     case catch ejabberd_odbc:sql_query(
                  LServer, [<<"select xml from motd where username='';">>]) of
         {selected, [<<"xml">>], [[XML]]} ->
-            case xml_stream:parse_element(XML) of
+            case fxml_stream:parse_element(XML) of
                 {error, _} ->
                     error;
                 Packet ->
@@ -1067,7 +1067,7 @@ update_motd_table() ->
               fun(#motd{server = S}) -> S end,
               fun(#motd{server = S, packet = P} = R) ->
                       NewS = iolist_to_binary(S),
-                      NewP = xml:to_xmlel(P),
+                      NewP = fxml:to_xmlel(P),
                       R#motd{server = NewS, packet = NewP}
               end);
 	_ ->
@@ -1105,7 +1105,7 @@ export(_Server) ->
             when LServer == Host ->
               [[<<"delete from motd where username='';">>],
                [<<"insert into motd(username, xml) values ('', '">>,
-                ejabberd_odbc:escape(xml:element_to_binary(El)),
+                ejabberd_odbc:escape(fxml:element_to_binary(El)),
                 <<"');">>]];
          (_Host, _R) ->
               []
@@ -1124,7 +1124,7 @@ export(_Server) ->
 import(LServer) ->
     [{<<"select xml from motd where username='';">>,
       fun([XML]) ->
-              El = xml_stream:parse_element(XML),
+              El = fxml_stream:parse_element(XML),
               #motd{server = LServer, packet = El}
       end},
      {<<"select username from motd where xml='';">>,

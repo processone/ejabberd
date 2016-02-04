@@ -76,7 +76,7 @@ process_iq_set(_, From, _To,
 		   sub_el =
 		       #xmlel{name = SubElName, children = SubEls}}) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    Res = case {SubElName, xml:remove_cdata(SubEls)} of
+    Res = case {SubElName, fxml:remove_cdata(SubEls)} of
 	    {<<"block">>, []} -> {error, ?ERR_BAD_REQUEST};
 	    {<<"block">>, Els} ->
 		JIDs = parse_blocklist_items(Els, []),
@@ -116,7 +116,7 @@ parse_blocklist_items([#xmlel{name = <<"item">>,
 			      attrs = Attrs}
 		       | Els],
 		      JIDs) ->
-    case xml:get_attr(<<"jid">>, Attrs) of
+    case fxml:get_attr(<<"jid">>, Attrs) of
       {value, JID1} ->
 	  JID = jid:tolower(jid:from_string(JID1)),
 	  parse_blocklist_items(Els, [JID | JIDs]);

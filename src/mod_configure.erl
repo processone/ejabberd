@@ -350,7 +350,7 @@ adhoc_local_items(Acc, From,
 	  Nodes = recursively_get_local_items(PermLev, LServer,
 					      <<"">>, Server, Lang),
 	  Nodes1 = lists:filter(fun (N) ->
-					Nd = xml:get_tag_attr_s(<<"node">>, N),
+					Nd = fxml:get_tag_attr_s(<<"node">>, N),
 					F = get_local_features([], From, To, Nd,
 							       Lang),
 					case F of
@@ -379,9 +379,9 @@ recursively_get_local_items(PermLev, LServer, Node,
 	      {error, _Error} -> []
 	    end,
     Nodes = lists:flatten(lists:map(fun (N) ->
-					    S = xml:get_tag_attr_s(<<"jid">>,
+					    S = fxml:get_tag_attr_s(<<"jid">>,
 								   N),
-					    Nd = xml:get_tag_attr_s(<<"node">>,
+					    Nd = fxml:get_tag_attr_s(<<"node">>,
 								    N),
 					    if (S /= Server) or
 						 (Nd == <<"">>) ->

@@ -224,7 +224,7 @@ process_request(Data, IP, HOpts) ->
 	of
       %% No existing session:
       {ok, {<<"">>, Rid, Attrs, Payload}} ->
-	  case xml:get_attr_s(<<"to">>, Attrs) of
+	  case fxml:get_attr_s(<<"to">>, Attrs) of
 	    <<"">> ->
 		?DEBUG("Session not created (Improper addressing)", []),
 		{200, ?HEADER,
@@ -248,13 +248,13 @@ process_request(Data, IP, HOpts) ->
 	  end;
       %% Existing session
       {ok, {Sid, Rid, Attrs, Payload1}} ->
-	  StreamStart = case xml:get_attr_s(<<"xmpp:restart">>,
+	  StreamStart = case fxml:get_attr_s(<<"xmpp:restart">>,
 					    Attrs)
 			    of
 			  <<"true">> -> true;
 			  _ -> false
 			end,
-	  Payload2 = case xml:get_attr_s(<<"type">>, Attrs) of
+	  Payload2 = case fxml:get_attr_s(<<"type">>, Attrs) of
 		       <<"terminate">> ->
 			   Payload1 ++ [{xmlstreamend, <<"stream:stream">>}];
 		       _ -> Payload1
@@ -280,7 +280,7 @@ process_request(Data, IP, HOpts) ->
 handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 		     Payload, PayloadSize, IP) ->
     ?DEBUG("got pid: ~p", [Pid]),
-    Wait = case str:to_integer(xml:get_attr_s(<<"wait">>,
+    Wait = case str:to_integer(fxml:get_attr_s(<<"wait">>,
 					      Attrs))
 	       of
 	     {error, _} -> ?MAX_WAIT;
@@ -289,7 +289,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 		    true -> CWait
 		 end
 	   end,
-    Hold = case str:to_integer(xml:get_attr_s(<<"hold">>,
+    Hold = case str:to_integer(fxml:get_attr_s(<<"hold">>,
 					      Attrs))
 	       of
 	     {error, _} -> (?MAX_REQUESTS) - 1;
@@ -299,7 +299,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 		 end
 	   end,
     Pdelay = case
-	       str:to_integer(xml:get_attr_s(<<"process-delay">>,
+	       str:to_integer(fxml:get_attr_s(<<"process-delay">>,
 					     Attrs))
 		 of
 	       {error, _} -> ?PROCESS_DELAY_DEFAULT;
@@ -312,12 +312,12 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 			      ?PROCESS_DELAY_MIN])
 	     end,
     Version = case catch
-		     list_to_float(binary_to_list(xml:get_attr_s(<<"ver">>, Attrs)))
+		     list_to_float(binary_to_list(fxml:get_attr_s(<<"ver">>, Attrs)))
 		  of
 		{'EXIT', _} -> 0.0;
 		V -> V
 	      end,
-    XmppVersion = xml:get_attr_s(<<"xmpp:version">>, Attrs),
+    XmppVersion = fxml:get_attr_s(<<"xmpp:version">>, Attrs),
     ?DEBUG("Create session: ~p", [Sid]),
     mnesia:dirty_write(
       #http_bind{id = Sid,
@@ -589,8 +589,8 @@ process_http_put(#http_put{rid = Rid, attrs = Attrs,
 		     Request,
 		 StateName, StateData, RidAllow) ->
     ?DEBUG("Actually processing request: ~p", [Request]),
-    Key = xml:get_attr_s(<<"key">>, Attrs),
-    NewKey = xml:get_attr_s(<<"newkey">>, Attrs),
+    Key = fxml:get_attr_s(<<"key">>, Attrs),
+    NewKey = fxml:get_attr_s(<<"newkey">>, Attrs),
     KeyAllow = case RidAllow of
 		 repeat -> true;
 		 false -> false;
@@ -801,7 +801,7 @@ handle_http_put_error(Reason,
     case Reason of
       not_exists ->
 	  {200, ?HEADER,
-	   xml:element_to_binary(#xmlel{name = <<"body">>,
+	   fxml:element_to_binary(#xmlel{name = <<"body">>,
 					attrs =
 					    [{<<"xmlns">>, ?NS_HTTP_BIND},
 					     {<<"type">>, <<"terminate">>},
@@ -810,7 +810,7 @@ handle_http_put_error(Reason,
 					children = []})};
       bad_key ->
 	  {200, ?HEADER,
-	   xml:element_to_binary(#xmlel{name = <<"body">>,
+	   fxml:element_to_binary(#xmlel{name = <<"body">>,
 					attrs =
 					    [{<<"xmlns">>, ?NS_HTTP_BIND},
 					     {<<"type">>, <<"terminate">>},
@@ -819,7 +819,7 @@ handle_http_put_error(Reason,
 					children = []})};
       polling_too_frequently ->
 	  {200, ?HEADER,
-	   xml:element_to_binary(#xmlel{name = <<"body">>,
+	   fxml:element_to_binary(#xmlel{name = <<"body">>,
 					attrs =
 					    [{<<"xmlns">>, ?NS_HTTP_BIND},
 					     {<<"type">>, <<"terminate">>},
@@ -855,7 +855,7 @@ rid_allow(OldRid, NewRid, Attrs, Hold, MaxPause) ->
       %% We did not miss any packet, we can process it immediately:
       NewRid == OldRid + 1 ->
 	  case catch
-		 jlib:binary_to_integer(xml:get_attr_s(<<"pause">>,
+		 jlib:binary_to_integer(fxml:get_attr_s(<<"pause">>,
 							 Attrs))
 	      of
 	    {'EXIT', _} -> {true, 0};
@@ -929,9 +929,9 @@ prepare_outpacket_response(#http_bind{id = Sid,
 			   _Rid, OutPacket, true) ->
     case OutPacket of
       [{xmlstreamstart, _, OutAttrs} | Els] ->
-	  AuthID = xml:get_attr_s(<<"id">>, OutAttrs),
-	  From = xml:get_attr_s(<<"from">>, OutAttrs),
-	  Version = xml:get_attr_s(<<"version">>, OutAttrs),
+	  AuthID = fxml:get_attr_s(<<"id">>, OutAttrs),
+	  From = fxml:get_attr_s(<<"from">>, OutAttrs),
+	  Version = fxml:get_attr_s(<<"version">>, OutAttrs),
 	  OutEls = case Els of
 		     [] -> [];
 		     [{xmlstreamelement,
@@ -968,7 +968,7 @@ prepare_outpacket_response(#http_bind{id = Sid,
 		MaxInactivity = get_max_inactivity(To, ?MAX_INACTIVITY),
 		MaxPause = get_max_pause(To),
 		{200, ?HEADER,
-		 xml:element_to_binary(#xmlel{name = <<"body">>,
+		 fxml:element_to_binary(#xmlel{name = <<"body">>,
 					      attrs =
 						  [{<<"xmlns">>, ?NS_HTTP_BIND},
 						   {<<"sid">>, Sid},
@@ -1032,7 +1032,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 		TypedEls = lists:foldl(fun ({xmlstreamelement, El},
 					    Acc) ->
 					       Acc ++
-						 [xml:element_to_binary(check_default_xmlns(El))];
+						 [fxml:element_to_binary(check_default_xmlns(El))];
 					   ({xmlstreamraw, R}, Acc) ->
 					       Acc ++ [R]
 				       end,
@@ -1067,7 +1067,7 @@ send_outpacket(#http_bind{pid = FsmRef}, OutPacket) ->
 				      || {xmlstreamelement, OEl} <- StreamTail]
 			       end,
 		      {200, ?HEADER,
-		       xml:element_to_binary(#xmlel{name = <<"body">>,
+		       fxml:element_to_binary(#xmlel{name = <<"body">>,
 						    attrs =
 							[{<<"xmlns">>,
 							  ?NS_HTTP_BIND}],
@@ -1114,14 +1114,14 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
     ?DEBUG("--- incoming data --- ~n~s~n --- END "
 	   "--- ",
 	   [Data]),
-    case xml_stream:parse_element(Data) of
+    case fxml_stream:parse_element(Data) of
       #xmlel{name = <<"body">>, attrs = Attrs,
 	     children = Els} ->
-	  Xmlns = xml:get_attr_s(<<"xmlns">>, Attrs),
+	  Xmlns = fxml:get_attr_s(<<"xmlns">>, Attrs),
 	  if Xmlns /= (?NS_HTTP_BIND) -> {error, bad_request};
 	     true ->
 		 case catch
-			jlib:binary_to_integer(xml:get_attr_s(<<"rid">>,
+			jlib:binary_to_integer(fxml:get_attr_s(<<"rid">>,
 								Attrs))
 		     of
 		   {'EXIT', _} -> {error, bad_request};
@@ -1133,7 +1133,7 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
 						       end
 					       end,
 					       Els),
-		       Sid = xml:get_attr_s(<<"sid">>, Attrs),
+		       Sid = fxml:get_attr_s(<<"sid">>, Attrs),
 		       if PayloadSize =< MaxStanzaSize ->
 			      {ok, {Sid, Rid, Attrs, FixedEls}};
 			  true -> {size_limit, Sid}
@@ -1165,7 +1165,7 @@ set_inactivity_timer(_Pause, MaxInactivity) ->
 
 elements_to_string([]) -> [];
 elements_to_string([El | Els]) ->
-    [xml:element_to_binary(El) | elements_to_string(Els)].
+    [fxml:element_to_binary(El) | elements_to_string(Els)].
 
 %% @spec (To, Default::integer()) -> integer()
 %% where To = [] | {Host::string(), Version::string()}
@@ -1188,7 +1188,7 @@ get_max_pause(_) -> ?MAX_PAUSE.
 check_default_xmlns(#xmlel{name = Name, attrs = Attrs,
 			   children = Els} =
 			El) ->
-    case xml:get_tag_attr_s(<<"xmlns">>, El) of
+    case fxml:get_tag_attr_s(<<"xmlns">>, El) of
       <<"">> ->
 	  #xmlel{name = Name,
 		 attrs = [{<<"xmlns">>, ?NS_CLIENT} | Attrs],

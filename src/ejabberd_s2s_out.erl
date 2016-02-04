@@ -105,13 +105,13 @@
 -define(STREAM_TRAILER, <<"</stream:stream>">>).
 
 -define(INVALID_NAMESPACE_ERR,
-	xml:element_to_binary(?SERR_INVALID_NAMESPACE)).
+	fxml:element_to_binary(?SERR_INVALID_NAMESPACE)).
 
 -define(HOST_UNKNOWN_ERR,
-	xml:element_to_binary(?SERR_HOST_UNKNOWN)).
+	fxml:element_to_binary(?SERR_HOST_UNKNOWN)).
 
 -define(INVALID_XML_ERR,
-	xml:element_to_binary(?SERR_XML_NOT_WELL_FORMED)).
+	fxml:element_to_binary(?SERR_XML_NOT_WELL_FORMED)).
 
 -define(SOCKET_DEFAULT_RESULT, {error, badarg}).
 
@@ -323,15 +323,15 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 	   true ->
 	       {no_verify, <<"Not verified">>, StateData}
 	end,
-    RemoteStreamID = xml:get_attr_s(<<"id">>, Attrs),
+    RemoteStreamID = fxml:get_attr_s(<<"id">>, Attrs),
     NewStateData = StateData0#state{remote_streamid = RemoteStreamID},
-    case {xml:get_attr_s(<<"xmlns">>, Attrs),
-	  xml:get_attr_s(<<"xmlns:db">>, Attrs),
-	  xml:get_attr_s(<<"version">>, Attrs) == <<"1.0">>}
+    case {fxml:get_attr_s(<<"xmlns">>, Attrs),
+	  fxml:get_attr_s(<<"xmlns:db">>, Attrs),
+	  fxml:get_attr_s(<<"version">>, Attrs) == <<"1.0">>}
 	of
       _ when CertCheckRes == error ->
 	  send_text(NewStateData,
-		    <<(xml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
+		    <<(fxml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
 								     CertCheckMsg)))/binary,
 		      (?STREAM_TRAILER)/binary>>),
 	  ?INFO_MSG("Closing s2s connection: ~s -> ~s (~s)",
@@ -495,7 +495,7 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 								  STLSReq} =
 								     Acc) ->
 								    case
-								      xml:get_attr_s(<<"xmlns">>,
+								      fxml:get_attr_s(<<"xmlns">>,
 										     Attrs1)
 									of
 								      ?NS_SASL ->
@@ -508,7 +508,7 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 												      =
 												      Els2}) ->
 											      case
-												xml:get_cdata(Els2)
+												fxml:get_cdata(Els2)
 												  of
 												<<"EXTERNAL">> ->
 												    true;
@@ -533,13 +533,13 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 								  _STLSReq} =
 								     Acc) ->
 								    case
-								      xml:get_attr_s(<<"xmlns">>,
+								      fxml:get_attr_s(<<"xmlns">>,
 										     Attrs1)
 									of
 								      ?NS_TLS ->
 									  Req =
 									      case
-										xml:get_subtag(El1,
+										fxml:get_subtag(El1,
 											       <<"required">>)
 										  of
 										#xmlel{} ->
@@ -610,7 +610,7 @@ wait_for_features({xmlstreamelement, El}, StateData) ->
 	  end;
       _ ->
 	  send_text(StateData,
-		    <<(xml:element_to_binary(?SERR_BAD_FORMAT))/binary,
+		    <<(fxml:element_to_binary(?SERR_BAD_FORMAT))/binary,
 		      (?STREAM_TRAILER)/binary>>),
 	  ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad "
 		    "format)",
@@ -637,7 +637,7 @@ wait_for_auth_result({xmlstreamelement, El},
 		     StateData) ->
     case El of
       #xmlel{name = <<"success">>, attrs = Attrs} ->
-	  case xml:get_attr_s(<<"xmlns">>, Attrs) of
+	  case fxml:get_attr_s(<<"xmlns">>, Attrs) of
 	    ?NS_SASL ->
 		?DEBUG("auth: ~p",
 		       [{StateData#state.myname, StateData#state.server}]),
@@ -653,7 +653,7 @@ wait_for_auth_result({xmlstreamelement, El},
 		 ?FSMTIMEOUT};
 	    _ ->
 		send_text(StateData,
-			  <<(xml:element_to_binary(?SERR_BAD_FORMAT))/binary,
+			  <<(fxml:element_to_binary(?SERR_BAD_FORMAT))/binary,
 			    (?STREAM_TRAILER)/binary>>),
 		?INFO_MSG("Closing s2s connection: ~s -> ~s (bad "
 			  "format)",
@@ -661,7 +661,7 @@ wait_for_auth_result({xmlstreamelement, El},
 		{stop, normal, StateData}
 	  end;
       #xmlel{name = <<"failure">>, attrs = Attrs} ->
-	  case xml:get_attr_s(<<"xmlns">>, Attrs) of
+	  case fxml:get_attr_s(<<"xmlns">>, Attrs) of
 	    ?NS_SASL ->
 		?DEBUG("restarted: ~p",
 		       [{StateData#state.myname, StateData#state.server}]),
@@ -670,7 +670,7 @@ wait_for_auth_result({xmlstreamelement, El},
 		 StateData#state{socket = undefined}, ?FSMTIMEOUT};
 	    _ ->
 		send_text(StateData,
-			  <<(xml:element_to_binary(?SERR_BAD_FORMAT))/binary,
+			  <<(fxml:element_to_binary(?SERR_BAD_FORMAT))/binary,
 			    (?STREAM_TRAILER)/binary>>),
 		?INFO_MSG("Closing s2s connection: ~s -> ~s (bad "
 			  "format)",
@@ -679,7 +679,7 @@ wait_for_auth_result({xmlstreamelement, El},
 	  end;
       _ ->
 	  send_text(StateData,
-		    <<(xml:element_to_binary(?SERR_BAD_FORMAT))/binary,
+		    <<(fxml:element_to_binary(?SERR_BAD_FORMAT))/binary,
 		      (?STREAM_TRAILER)/binary>>),
 	  ?INFO_MSG("Closing s2s connection: ~s -> ~s (bad "
 		    "format)",
@@ -707,7 +707,7 @@ wait_for_starttls_proceed({xmlstreamelement, El},
 			  StateData) ->
     case El of
       #xmlel{name = <<"proceed">>, attrs = Attrs} ->
-	  case xml:get_attr_s(<<"xmlns">>, Attrs) of
+	  case fxml:get_attr_s(<<"xmlns">>, Attrs) of
 	    ?NS_TLS ->
 		?DEBUG("starttls: ~p",
 		       [{StateData#state.myname, StateData#state.server}]),
@@ -737,7 +737,7 @@ wait_for_starttls_proceed({xmlstreamelement, El},
 		 ?FSMTIMEOUT};
 	    _ ->
 		send_text(StateData,
-			  <<(xml:element_to_binary(?SERR_BAD_FORMAT))/binary,
+			  <<(fxml:element_to_binary(?SERR_BAD_FORMAT))/binary,
 			    (?STREAM_TRAILER)/binary>>),
 		?INFO_MSG("Closing s2s connection: ~s -> ~s (bad "
 			  "format)",
@@ -985,7 +985,7 @@ send_text(StateData, Text) ->
     ejabberd_socket:send(StateData#state.socket, Text).
 
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_binary(El)).
+    send_text(StateData, fxml:element_to_binary(El)).
 
 send_queue(StateData, Q) ->
     case queue:out(Q) of
@@ -997,14 +997,14 @@ send_queue(StateData, Q) ->
 %% Bounce a single message (xmlelement)
 bounce_element(El, Error) ->
     #xmlel{attrs = Attrs} = El,
-    case xml:get_attr_s(<<"type">>, Attrs) of
+    case fxml:get_attr_s(<<"type">>, Attrs) of
       <<"error">> -> ok;
       <<"result">> -> ok;
       _ ->
 	  Err = jlib:make_error_reply(El, Error),
-	  From = jid:from_string(xml:get_tag_attr_s(<<"from">>,
+	  From = jid:from_string(fxml:get_tag_attr_s(<<"from">>,
 						       El)),
-	  To = jid:from_string(xml:get_tag_attr_s(<<"to">>,
+	  To = jid:from_string(fxml:get_tag_attr_s(<<"to">>,
 						     El)),
 	  ejabberd_router:route(To, From, Err)
     end.
@@ -1070,16 +1070,16 @@ send_db_request(StateData) ->
 
 is_verify_res(#xmlel{name = Name, attrs = Attrs})
     when Name == <<"db:result">> ->
-    {result, xml:get_attr_s(<<"to">>, Attrs),
-     xml:get_attr_s(<<"from">>, Attrs),
-     xml:get_attr_s(<<"id">>, Attrs),
-     xml:get_attr_s(<<"type">>, Attrs)};
+    {result, fxml:get_attr_s(<<"to">>, Attrs),
+     fxml:get_attr_s(<<"from">>, Attrs),
+     fxml:get_attr_s(<<"id">>, Attrs),
+     fxml:get_attr_s(<<"type">>, Attrs)};
 is_verify_res(#xmlel{name = Name, attrs = Attrs})
     when Name == <<"db:verify">> ->
-    {verify, xml:get_attr_s(<<"to">>, Attrs),
-     xml:get_attr_s(<<"from">>, Attrs),
-     xml:get_attr_s(<<"id">>, Attrs),
-     xml:get_attr_s(<<"type">>, Attrs)};
+    {verify, fxml:get_attr_s(<<"to">>, Attrs),
+     fxml:get_attr_s(<<"from">>, Attrs),
+     fxml:get_attr_s(<<"id">>, Attrs),
+     fxml:get_attr_s(<<"type">>, Attrs)};
 is_verify_res(_) -> false.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -111,12 +111,12 @@ register_mechanism(Mechanism, Module, PasswordType) ->
 %%-include("ejabberd.hrl").
 %%-include("jlib.hrl").
 %%check_authzid(_State, Props) ->
-%%    AuthzId = xml:get_attr_s(authzid, Props),
+%%    AuthzId = fxml:get_attr_s(authzid, Props),
 %%    case jid:from_string(AuthzId) of
 %%	error ->
 %%	    {error, "invalid-authzid"};
 %%	JID ->
-%%	    LUser = jid:nodeprep(xml:get_attr_s(username, Props)),
+%%	    LUser = jid:nodeprep(fxml:get_attr_s(username, Props)),
 %%	    {U, S, R} = jid:tolower(JID),
 %%	    case R of
 %%		"" ->

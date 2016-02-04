@@ -152,7 +152,7 @@ process_local_iq_items(From, To,
       set ->
 	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
       get ->
-	  Node = xml:get_tag_attr_s(<<"node">>, SubEl),
+	  Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
 	  Host = To#jid.lserver,
 	  case ejabberd_hooks:run_fold(disco_local_items, Host,
 				       empty, [From, To, Node, Lang])
@@ -180,7 +180,7 @@ process_local_iq_info(From, To,
 	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
       get ->
 	  Host = To#jid.lserver,
-	  Node = xml:get_tag_attr_s(<<"node">>, SubEl),
+	  Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
 	  Identity = ejabberd_hooks:run_fold(disco_local_identity,
 					     Host, [], [From, To, Node, Lang]),
 	  Info = ejabberd_hooks:run_fold(disco_info, Host, [],
@@ -305,7 +305,7 @@ process_sm_iq_items(From, To,
 	  case is_presence_subscribed(From, To) of
 	    true ->
 		Host = To#jid.lserver,
-		Node = xml:get_tag_attr_s(<<"node">>, SubEl),
+		Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
 		case ejabberd_hooks:run_fold(disco_sm_items, Host,
 					     empty, [From, To, Node, Lang])
 		    of
@@ -378,7 +378,7 @@ process_sm_iq_info(From, To,
 	  case is_presence_subscribed(From, To) of
 	    true ->
 		Host = To#jid.lserver,
-		Node = xml:get_tag_attr_s(<<"node">>, SubEl),
+		Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
 		Identity = ejabberd_hooks:run_fold(disco_sm_identity,
 						   Host, [],
 						   [From, To, Node, Lang]),

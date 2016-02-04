@@ -912,7 +912,7 @@ get_vcard_content(User, Server, Data) ->
 	[_|_] ->
 	    case get_vcard(Data, A1) of
 		[false] -> throw(error_no_value_found_in_vcard);
-		ElemList -> ?DEBUG("ELS ~p", [ElemList]), [xml:get_tag_cdata(Elem) || Elem <- ElemList]
+		ElemList -> ?DEBUG("ELS ~p", [ElemList]), [fxml:get_tag_cdata(Elem) || Elem <- ElemList]
 	    end;
 	[] ->
 	    throw(error_no_vcard_found)
@@ -933,7 +933,7 @@ get_vcard([Data], A1) ->
     get_subtag(A1, Data).
 
 get_subtag(Xmlelement, Name) ->
-    [xml:get_subtag(Xmlelement, Name)].
+    [fxml:get_subtag(Xmlelement, Name)].
 
 set_vcard_content(User, Server, Data, SomeContent) ->
     ContentList = case SomeContent of
@@ -963,7 +963,7 @@ set_vcard_content(User, Server, Data, SomeContent) ->
 
 take_vcard_tel(TelType, [{xmlel, <<"TEL">>, _, SubEls}=OldEl | OldEls], NewEls, Taken) ->
     {Taken2, NewEls2} = case lists:keymember(TelType, 2, SubEls) of
-	true -> {xml:get_subtag(OldEl, <<"NUMBER">>), NewEls};
+	true -> {fxml:get_subtag(OldEl, <<"NUMBER">>), NewEls};
 	false -> {Taken, [OldEl | NewEls]}
     end,
     take_vcard_tel(TelType, OldEls, NewEls2, Taken2);
@@ -1206,10 +1206,10 @@ private_get(Username, Host, Element, Ns) ->
     [{xmlel, <<"query">>,
       [{<<"xmlns">>, ?NS_PRIVATE}],
       [SubEl]}] = ResIq#iq.sub_el,
-    binary_to_list(xml:element_to_binary(SubEl)).
+    binary_to_list(fxml:element_to_binary(SubEl)).
 
 private_set(Username, Host, ElementString) ->
-    case xml_stream:parse_element(ElementString) of
+    case fxml_stream:parse_element(ElementString) of
 	{error, Error} ->
 	    io:format("Error found parsing the element:~n  ~p~nError: ~p~n",
 		      [ElementString, Error]),
@@ -1333,7 +1333,7 @@ build_packet(Type, Subject, Body) ->
     }.
 
 send_stanza(FromString, ToString, Stanza) ->
-    case xml_stream:parse_element(Stanza) of
+    case fxml_stream:parse_element(Stanza) of
 	{error, Error} ->
 	    {error, Error};
 	XmlEl ->
@@ -1344,7 +1344,7 @@ send_stanza(FromString, ToString, Stanza) ->
     end.
 
 send_stanza_c2s(Username, Host, Resource, Stanza) ->
-    case {xml_stream:parse_element(Stanza),
+    case {fxml_stream:parse_element(Stanza),
           ejabberd_sm:get_session_pid(Username, Host, Resource)}
     of
 	{{error, Error}, _} ->
@@ -1358,7 +1358,7 @@ send_stanza_c2s(Username, Host, Resource, Stanza) ->
 privacy_set(Username, Host, QueryS) ->
     From = jid:make(Username, Host, <<"">>),
     To = jid:make(<<"">>, Host, <<"">>),
-    QueryEl = xml_stream:parse_element(QueryS),
+    QueryEl = fxml_stream:parse_element(QueryS),
     StanzaEl = {xmlel, <<"iq">>, [{<<"type">>, <<"set">>}], [QueryEl]},
     IQ = jlib:iq_query_info(StanzaEl),
     ejabberd_hooks:run_fold(

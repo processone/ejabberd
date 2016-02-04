@@ -35,8 +35,8 @@
 	 headers = []      :: [{atom() | binary(), binary()}]}).
 
 -record(ws,
-	{socket                  :: inet:socket() | p1_tls:tls_socket(),
-	 sockmod = gen_tcp       :: gen_tcp | p1_tls,
+	{socket                  :: inet:socket() | fast_tls:tls_socket(),
+	 sockmod = gen_tcp       :: gen_tcp | fast_tls,
 	 ip                      :: {inet:ip_address(), inet:port_number()},
 	 host = <<"">>           :: binary(),
 	 port = 5280             :: inet:port_number(),

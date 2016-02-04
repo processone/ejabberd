@@ -125,7 +125,7 @@ filter_xmlels(Xmlels) -> filter_xmlels(Xmlels, []).
 filter_xmlels([], Data) -> lists:reverse(Data);
 filter_xmlels([#xmlel{attrs = Attrs} = Xmlel | Xmlels],
 	      Data) ->
-    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       <<"">> -> [];
       XmlNS -> filter_xmlels(Xmlels, [{XmlNS, Xmlel} | Data])
     end;
@@ -154,7 +154,7 @@ set_data(LUser, LServer, {XmlNS, Xmlel}, mnesia) ->
 set_data(LUser, LServer, {XMLNS, El}, odbc) ->
     Username = ejabberd_odbc:escape(LUser),
     LXMLNS = ejabberd_odbc:escape(XMLNS),
-    SData = ejabberd_odbc:escape(xml:element_to_binary(El)),
+    SData = ejabberd_odbc:escape(fxml:element_to_binary(El)),
     odbc_queries:set_private_data(LServer, Username, LXMLNS,
 				  SData);
 set_data(LUser, LServer, {XMLNS, El}, riak) ->
@@ -190,7 +190,7 @@ get_data(LUser, LServer, odbc, [{XMLNS, El} | Els],
 					     Username, LXMLNS)
 	of
       {selected, [<<"data">>], [[SData]]} ->
-	  case xml_stream:parse_element(SData) of
+	  case fxml_stream:parse_element(SData) of
 	    Data when is_record(Data, xmlel) ->
 		get_data(LUser, LServer, odbc, Els, [Data | Res])
 	  end;
@@ -222,7 +222,7 @@ get_all_data(LUser, LServer, odbc) ->
         {selected, [<<"namespace">>, <<"data">>], Res} ->
             lists:flatmap(
               fun([_, SData]) ->
-                      case xml_stream:parse_element(SData) of
+                      case fxml_stream:parse_element(SData) of
                           #xmlel{} = El ->
                               [El];
                           _ ->
@@ -287,7 +287,7 @@ update_table() ->
                     R#private_storage{usns = {iolist_to_binary(U),
                                               iolist_to_binary(S),
                                               iolist_to_binary(NS)},
-                                      xml = xml:to_xmlel(El)}
+                                      xml = fxml:to_xmlel(El)}
             end);
       _ ->
 	  ?INFO_MSG("Recreating private_storage table", []),
@@ -302,7 +302,7 @@ export(_Server) ->
               Username = ejabberd_odbc:escape(LUser),
               LXMLNS = ejabberd_odbc:escape(XMLNS),
               SData =
-                  ejabberd_odbc:escape(xml:element_to_binary(Data)),
+                  ejabberd_odbc:escape(fxml:element_to_binary(Data)),
               odbc_queries:set_private_data_sql(Username, LXMLNS,
                                                 SData);
          (_Host, _R) ->
@@ -312,7 +312,7 @@ export(_Server) ->
 import(LServer) ->
     [{<<"select username, namespace, data from private_storage;">>,
       fun([LUser, XMLNS, XML]) ->
-              El = #xmlel{} = xml_stream:parse_element(XML),
+              El = #xmlel{} = fxml_stream:parse_element(XML),
               #private_storage{usns = {LUser, LServer, XMLNS},
                                xml = El}
       end}].

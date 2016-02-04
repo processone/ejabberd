@@ -85,16 +85,16 @@
 -define(STREAM_TRAILER, <<"</stream:stream>">>).
 
 -define(INVALID_NAMESPACE_ERR,
-	xml:element_to_binary(?SERR_INVALID_NAMESPACE)).
+	fxml:element_to_binary(?SERR_INVALID_NAMESPACE)).
 
 -define(HOST_UNKNOWN_ERR,
-	xml:element_to_binary(?SERR_HOST_UNKNOWN)).
+	fxml:element_to_binary(?SERR_HOST_UNKNOWN)).
 
 -define(INVALID_FROM_ERR,
-	xml:element_to_binary(?SERR_INVALID_FROM)).
+	fxml:element_to_binary(?SERR_INVALID_FROM)).
 
 -define(INVALID_XML_ERR,
-	xml:element_to_binary(?SERR_XML_NOT_WELL_FORMED)).
+	fxml:element_to_binary(?SERR_XML_NOT_WELL_FORMED)).
 
 start(SockData, Opts) ->
     supervisor:start_child(ejabberd_s2s_in_sup,
@@ -188,10 +188,10 @@ init([{SockMod, Socket}, Opts]) ->
 
 wait_for_stream({xmlstreamstart, _Name, Attrs},
 		StateData) ->
-    case {xml:get_attr_s(<<"xmlns">>, Attrs),
-	  xml:get_attr_s(<<"xmlns:db">>, Attrs),
-	  xml:get_attr_s(<<"to">>, Attrs),
-	  xml:get_attr_s(<<"version">>, Attrs) == <<"1.0">>}
+    case {fxml:get_attr_s(<<"xmlns">>, Attrs),
+	  fxml:get_attr_s(<<"xmlns:db">>, Attrs),
+	  fxml:get_attr_s(<<"to">>, Attrs),
+	  fxml:get_attr_s(<<"version">>, Attrs) == <<"1.0">>}
 	of
       {<<"jabber:server">>, _, Server, true}
 	  when StateData#state.tls and
@@ -199,7 +199,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 	  send_text(StateData,
 		    ?STREAM_HEADER(<<" version='1.0'">>)),
 	  Auth = if StateData#state.tls_enabled ->
-			case jid:nameprep(xml:get_attr_s(<<"from">>, Attrs)) of
+			case jid:nameprep(fxml:get_attr_s(<<"from">>, Attrs)) of
 			  From when From /= <<"">>, From /= error ->
 			      {Result, Message} =
 				  ejabberd_s2s:check_peer_certificate(StateData#state.sockmod,
@@ -234,7 +234,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 		?INFO_MSG("Closing s2s connection: ~s <--> ~s (~s)",
 			  [StateData#state.server, RemoteServer, CertError]),
 		send_text(StateData,
-			  <<(xml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
+			  <<(fxml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
 									   CertError)))/binary,
 			    (?STREAM_TRAILER)/binary>>),
 		{stop, normal, StateData};
@@ -306,7 +306,7 @@ wait_for_feature_request({xmlstreamelement, El},
     TLSEnabled = StateData#state.tls_enabled,
     SockMod =
 	(StateData#state.sockmod):get_sockmod(StateData#state.socket),
-    case {xml:get_attr_s(<<"xmlns">>, Attrs), Name} of
+    case {fxml:get_attr_s(<<"xmlns">>, Attrs), Name} of
       {?NS_TLS, <<"starttls">>}
 	  when TLS == true, TLSEnabled == false,
 	       SockMod == gen_tcp ->
@@ -331,7 +331,7 @@ wait_for_feature_request({xmlstreamelement, El},
                     end,
 	  TLSSocket = (StateData#state.sockmod):starttls(Socket,
 							 TLSOpts,
-							 xml:element_to_binary(#xmlel{name
+							 fxml:element_to_binary(#xmlel{name
 											  =
 											  <<"proceed">>,
 										      attrs
@@ -345,7 +345,7 @@ wait_for_feature_request({xmlstreamelement, El},
 	   StateData#state{socket = TLSSocket, streamid = new_id(),
 			   tls_enabled = true, tls_options = TLSOpts}};
       {?NS_SASL, <<"auth">>} when TLSEnabled ->
-	  Mech = xml:get_attr_s(<<"mechanism">>, Attrs),
+	  Mech = fxml:get_attr_s(<<"mechanism">>, Attrs),
 	  case Mech of
 	    <<"EXTERNAL">> when StateData#state.auth_domain /= <<"">> ->
 		AuthDomain = StateData#state.auth_domain,
@@ -447,9 +447,9 @@ stream_established({xmlstreamelement, El}, StateData) ->
       _ ->
 	  NewEl = jlib:remove_attr(<<"xmlns">>, El),
 	  #xmlel{name = Name, attrs = Attrs} = NewEl,
-	  From_s = xml:get_attr_s(<<"from">>, Attrs),
+	  From_s = fxml:get_attr_s(<<"from">>, Attrs),
 	  From = jid:from_string(From_s),
-	  To_s = xml:get_attr_s(<<"to">>, Attrs),
+	  To_s = fxml:get_attr_s(<<"to">>, Attrs),
 	  To = jid:from_string(To_s),
 	  if (To /= error) and (From /= error) ->
 		 LFrom = From#jid.lserver,
@@ -626,7 +626,7 @@ send_text(StateData, Text) ->
 				   Text).
 
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_binary(El)).
+    send_text(StateData, fxml:element_to_binary(El)).
 
 change_shaper(StateData, Host, JID) ->
     Shaper = acl:match_rule(Host, StateData#state.shaper,
@@ -643,15 +643,15 @@ cancel_timer(Timer) ->
 is_key_packet(#xmlel{name = Name, attrs = Attrs,
 		     children = Els})
     when Name == <<"db:result">> ->
-    {key, xml:get_attr_s(<<"to">>, Attrs),
-     xml:get_attr_s(<<"from">>, Attrs),
-     xml:get_attr_s(<<"id">>, Attrs), xml:get_cdata(Els)};
+    {key, fxml:get_attr_s(<<"to">>, Attrs),
+     fxml:get_attr_s(<<"from">>, Attrs),
+     fxml:get_attr_s(<<"id">>, Attrs), fxml:get_cdata(Els)};
 is_key_packet(#xmlel{name = Name, attrs = Attrs,
 		     children = Els})
     when Name == <<"db:verify">> ->
-    {verify, xml:get_attr_s(<<"to">>, Attrs),
-     xml:get_attr_s(<<"from">>, Attrs),
-     xml:get_attr_s(<<"id">>, Attrs), xml:get_cdata(Els)};
+    {verify, fxml:get_attr_s(<<"to">>, Attrs),
+     fxml:get_attr_s(<<"from">>, Attrs),
+     fxml:get_attr_s(<<"id">>, Attrs), fxml:get_cdata(Els)};
 is_key_packet(_) -> false.
 
 fsm_limit_opts(Opts) ->

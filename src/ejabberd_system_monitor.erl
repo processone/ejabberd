@@ -71,7 +71,7 @@ process_command(From, To, Packet) ->
 		    jid:tolower(jid:remove_resource(From)),
 		case lists:member(LFrom, get_admin_jids()) of
 		  true ->
-		      Body = xml:get_path_s(Packet,
+		      Body = fxml:get_path_s(Packet,
 					    [{elem, <<"body">>}, cdata]),
 		      spawn(fun () ->
 				    process_flag(priority, high),

@@ -373,10 +373,10 @@ process_frame(#frame_info{unprocessed =
     process_frame(FrameInfo#frame_info{unprocessed = <<>>},
                   <<UnprocessedPre/binary, Data/binary>>).
 
-handle_data(tcp, FrameInfo, Data, Socket, WsHandleLoopPid, p1_tls) ->
-    case p1_tls:recv_data(Socket, Data) of
+handle_data(tcp, FrameInfo, Data, Socket, WsHandleLoopPid, fast_tls) ->
+    case fast_tls:recv_data(Socket, Data) of
         {ok, NewData} ->
-            handle_data_int(FrameInfo, NewData, Socket, WsHandleLoopPid, p1_tls);
+            handle_data_int(FrameInfo, NewData, Socket, WsHandleLoopPid, fast_tls);
         {error, Error} ->
             {error, Error}
     end;

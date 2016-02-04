@@ -182,7 +182,7 @@ do_client_version(enabled, From, To) ->
     Els = receive
 	    {route, To, From2, IQ} ->
 		#xmlel{name = <<"query">>, children = List} =
-		    xml:get_subtag(IQ, <<"query">>),
+		    fxml:get_subtag(IQ, <<"query">>),
 		List
 	    after 5000 -> % Timeout in miliseconds: 5 seconds
 		      []

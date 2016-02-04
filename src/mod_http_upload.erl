@@ -572,12 +572,12 @@ process_iq(_From, invalid, _State) ->
       -> {ok, binary(), pos_integer(), binary()} | {error, xmlel()}.
 
 parse_request(#xmlel{name = <<"request">>, attrs = Attrs} = Request, Lang) ->
-    case xml:get_attr(<<"xmlns">>, Attrs) of
+    case fxml:get_attr(<<"xmlns">>, Attrs) of
 	{value, XMLNS} when XMLNS == ?NS_HTTP_UPLOAD;
 			    XMLNS == ?NS_HTTP_UPLOAD_OLD ->
-	    case {xml:get_subtag_cdata(Request, <<"filename">>),
-		  xml:get_subtag_cdata(Request, <<"size">>),
-		  xml:get_subtag_cdata(Request, <<"content-type">>)} of
+	    case {fxml:get_subtag_cdata(Request, <<"filename">>),
+		  fxml:get_subtag_cdata(Request, <<"size">>),
+		  fxml:get_subtag_cdata(Request, <<"content-type">>)} of
 		{File, SizeStr, ContentType} when byte_size(File) > 0 ->
 		    case catch jlib:binary_to_integer(SizeStr) of
 			Size when is_integer(Size), Size > 0 ->
@@ -796,7 +796,7 @@ store_file(Path, Data, FileMode, DirMode, GetPrefix, Slot, Thumbnail) ->
 			    {ok,
 			     [{<<"Content-Type">>,
 			       <<"text/xml; charset=utf-8">>}],
-			     xml:element_to_binary(ThumbEl)};
+			     fxml:element_to_binary(ThumbEl)};
 			pass ->
 			    ok
 		    end;

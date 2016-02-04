@@ -56,7 +56,7 @@ stop(Host) ->
 
 update_presence(#xmlel{name = <<"presence">>, attrs = Attrs} = Packet,
   User, Host) ->
-    case xml:get_attr_s(<<"type">>, Attrs) of
+    case fxml:get_attr_s(<<"type">>, Attrs) of
       <<>> -> presence_with_xupdate(Packet, User, Host);
       _ -> Packet
     end;
@@ -64,7 +64,7 @@ update_presence(Packet, _User, _Host) -> Packet.
 
 vcard_set(LUser, LServer, VCARD) ->
     US = {LUser, LServer},
-    case xml:get_path_s(VCARD,
+    case fxml:get_path_s(VCARD,
 			[{elem, <<"PHOTO">>}, {elem, <<"BINVAL">>}, cdata])
 	of
       <<>> -> remove_xupdate(LUser, LServer);

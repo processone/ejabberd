@@ -80,7 +80,7 @@ add_stream_feature(Features, _Host) ->
     [Feature | Features].
 
 filter_presence(_Action, #xmlel{name = <<"presence">>, attrs = Attrs}) ->
-    case xml:get_attr(<<"type">>, Attrs) of
+    case fxml:get_attr(<<"type">>, Attrs) of
       {value, Type} when Type /= <<"unavailable">> ->
 	  ?DEBUG("Got important presence stanza", []),
 	  {stop, send};

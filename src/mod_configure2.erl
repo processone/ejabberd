@@ -65,7 +65,7 @@ process_local_iq(From, To,
 	    set ->
 		IQ#iq{type = error,
 		      sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]};
-	    %%case xml:get_tag_attr_s("type", SubEl) of
+	    %%case fxml:get_tag_attr_s("type", SubEl) of
 	    %%    "cancel" ->
 	    %%        IQ#iq{type = result,
 	    %%		   sub_el = [{xmlelement, "query",
@@ -79,7 +79,7 @@ process_local_iq(From, To,
 	    %%    	_ ->
 	    %%    	    Node =
 	    %%    		string:tokens(
-	    %%    		  xml:get_tag_attr_s("node", SubEl),
+	    %%    		  fxml:get_tag_attr_s("node", SubEl),
 	    %%    		  "/"),
 	    %%    	    case set_form(Node, Lang, XData) of
 	    %%    		{result, Res} ->

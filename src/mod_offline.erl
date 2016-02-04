@@ -227,7 +227,7 @@ store_offline_msg(Host, {User, _Server}, Msgs, Len, MaxOfflineMsgs, odbc) ->
 							     M#offline_msg.timestamp,
 							     <<"Offline Storage">>),
 				     XML =
-					 ejabberd_odbc:escape(xml:element_to_binary(NewPacket)),
+					 ejabberd_odbc:escape(fxml:element_to_binary(NewPacket)),
 				     odbc_queries:add_spool_sql(Username, XML)
 			     end,
 			     Msgs),
@@ -286,7 +286,7 @@ get_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 need_to_store(LServer, Packet) ->
-    Type = xml:get_tag_attr_s(<<"type">>, Packet),
+    Type = fxml:get_tag_attr_s(<<"type">>, Packet),
     if (Type /= <<"error">>) and (Type /= <<"groupchat">>)
        and (Type /= <<"headline">>) ->
 	    case check_store_hint(Packet) of
@@ -302,7 +302,7 @@ need_to_store(LServer, Packet) ->
 			   end,
 			   unless_chat_state) of
 			false ->
-			    xml:get_subtag(Packet, <<"body">>) /= false;
+			    fxml:get_subtag(Packet, <<"body">>) /= false;
 			unless_chat_state ->
 			    not jlib:is_standalone_chat_state(Packet);
 			true ->
@@ -346,12 +346,12 @@ check_store_hint(Packet) ->
     end.
 
 has_store_hint(Packet) ->
-    xml:get_subtag_with_xmlns(Packet, <<"store">>, ?NS_HINTS) =/= false.
+    fxml:get_subtag_with_xmlns(Packet, <<"store">>, ?NS_HINTS) =/= false.
 
 has_no_store_hint(Packet) ->
-    xml:get_subtag_with_xmlns(Packet, <<"no-store">>, ?NS_HINTS) =/= false
+    fxml:get_subtag_with_xmlns(Packet, <<"no-store">>, ?NS_HINTS) =/= false
       orelse
-      xml:get_subtag_with_xmlns(Packet, <<"no-storage">>, ?NS_HINTS) =/= false.
+      fxml:get_subtag_with_xmlns(Packet, <<"no-storage">>, ?NS_HINTS) =/= false.
 
 %% Check if the packet has any content about XEP-0022
 check_event(From, To, Packet) ->
@@ -360,12 +360,12 @@ check_event(From, To, Packet) ->
     case find_x_event(Els) of
       false -> true;
       El ->
-	  case xml:get_subtag(El, <<"id">>) of
+	  case fxml:get_subtag(El, <<"id">>) of
 	    false ->
-		case xml:get_subtag(El, <<"offline">>) of
+		case fxml:get_subtag(El, <<"offline">>) of
 		  false -> true;
 		  _ ->
-		      ID = case xml:get_tag_attr_s(<<"id">>, Packet) of
+		      ID = case fxml:get_tag_attr_s(<<"id">>, Packet) of
 			     <<"">> ->
 				 #xmlel{name = <<"id">>, attrs = [],
 					children = []};
@@ -402,7 +402,7 @@ find_x_event([]) -> false;
 find_x_event([{xmlcdata, _} | Els]) ->
     find_x_event(Els);
 find_x_event([El | Els]) ->
-    case xml:get_tag_attr_s(<<"xmlns">>, El) of
+    case fxml:get_tag_attr_s(<<"xmlns">>, El) of
       ?NS_EVENT -> El;
       _ -> find_x_event(Els)
     end.
@@ -411,9 +411,9 @@ find_x_expire(_, []) -> never;
 find_x_expire(TimeStamp, [{xmlcdata, _} | Els]) ->
     find_x_expire(TimeStamp, Els);
 find_x_expire(TimeStamp, [El | Els]) ->
-    case xml:get_tag_attr_s(<<"xmlns">>, El) of
+    case fxml:get_tag_attr_s(<<"xmlns">>, El) of
       ?NS_EXPIRE ->
-	  Val = xml:get_tag_attr_s(<<"seconds">>, El),
+	  Val = fxml:get_tag_attr_s(<<"seconds">>, El),
 	  case catch jlib:binary_to_integer(Val) of
 	    {'EXIT', _} -> never;
 	    Int when Int > 0 ->
@@ -487,7 +487,7 @@ pop_offline_messages(Ls, LUser, LServer, odbc) ->
       {atomic, {selected, [<<"username">>, <<"xml">>], Rs}} ->
 	  Ls ++
 	    lists:flatmap(fun ([_, XML]) ->
-				  case xml_stream:parse_element(XML) of
+				  case fxml_stream:parse_element(XML) of
 				    {error, _Reason} ->
                                           [];
 				    El ->
@@ -635,7 +635,7 @@ update_table() ->
                                           iolist_to_binary(S)},
                                     from = jid_to_binary(From),
                                     to = jid_to_binary(To),
-                                    packet = xml:to_xmlel(El)}
+                                    packet = fxml:to_xmlel(El)}
               end);
         _ ->
             ?INFO_MSG("Recreating offline_msg table", []),
@@ -650,7 +650,7 @@ discard_warn_sender(Msgs) ->
 				    packet = Packet}) ->
 			  ErrText = <<"Your contact offline message queue is "
 				      "full. The message has been discarded.">>,
-			  Lang = xml:get_tag_attr_s(<<"xml:lang">>, Packet),
+			  Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
 			  Err = jlib:make_error_reply(Packet,
 						      ?ERRT_RESOURCE_CONSTRAINT(Lang,
 										ErrText)),
@@ -684,7 +684,7 @@ get_offline_els(LUser, LServer, odbc) ->
         {selected, [<<"xml">>], Rs} ->
             lists:flatmap(
               fun([XML]) ->
-                      case xml_stream:parse_element(XML) of
+                      case fxml_stream:parse_element(XML) of
                           #xmlel{} = El ->
                               case offline_msg_to_route(LServer, El) of
                                   {route, _, _, NewEl} ->
@@ -705,8 +705,8 @@ offline_msg_to_route(LServer, #offline_msg{} = R) ->
      jlib:add_delay_info(R#offline_msg.packet, LServer, R#offline_msg.timestamp,
 			 <<"Offline Storage">>)};
 offline_msg_to_route(_LServer, #xmlel{} = El) ->
-    To = jid:from_string(xml:get_tag_attr_s(<<"to">>, El)),
-    From = jid:from_string(xml:get_tag_attr_s(<<"from">>, El)),
+    To = jid:from_string(fxml:get_tag_attr_s(<<"to">>, El)),
+    From = jid:from_string(fxml:get_tag_attr_s(<<"from">>, El)),
     if (To /= error) and (From /= error) ->
             {route, From, To, El};
        true ->
@@ -734,7 +734,7 @@ read_all_msgs(LUser, LServer, odbc) ->
 	of
       {selected, [<<"xml">>], Rs} ->
 	  lists:flatmap(fun ([XML]) ->
-				case xml_stream:parse_element(XML) of
+				case fxml_stream:parse_element(XML) of
 				  {error, _Reason} -> [];
 				  El -> [El]
 				end
@@ -882,7 +882,7 @@ user_queue_parse_query(LUser, LServer, Query, odbc) ->
 		     of
 		   {selected, [<<"xml">>, <<"seq">>], Rs} ->
 		       lists:flatmap(fun ([XML, Seq]) ->
-					     case xml_stream:parse_element(XML)
+					     case fxml_stream:parse_element(XML)
 						 of
 					       {error, _Reason} -> [];
 					       El -> [{El, Seq}]
@@ -1114,7 +1114,7 @@ export(_Server) ->
               Packet1 = jlib:replace_from_to(From, To, Packet),
               Packet2 = jlib:add_delay_info(Packet1, LServer, TimeStamp,
                                             <<"Offline Storage">>),
-              XML = ejabberd_odbc:escape(xml:element_to_binary(Packet2)),
+              XML = ejabberd_odbc:escape(fxml:element_to_binary(Packet2)),
               [[<<"delete from spool where username='">>, Username, <<"';">>],
                [<<"insert into spool(username, xml) values ('">>,
                 Username, <<"', '">>, XML, <<"');">>]];
@@ -1125,12 +1125,12 @@ export(_Server) ->
 import(LServer) ->
     [{<<"select username, xml from spool;">>,
       fun([LUser, XML]) ->
-              El = #xmlel{} = xml_stream:parse_element(XML),
+              El = #xmlel{} = fxml_stream:parse_element(XML),
               From = #jid{} = jid:from_string(
-                                xml:get_attr_s(<<"from">>, El#xmlel.attrs)),
+                                fxml:get_attr_s(<<"from">>, El#xmlel.attrs)),
               To = #jid{} = jid:from_string(
-                              xml:get_attr_s(<<"to">>, El#xmlel.attrs)),
-              Stamp = xml:get_path_s(El, [{elem, <<"delay">>},
+                              fxml:get_attr_s(<<"to">>, El#xmlel.attrs)),
+              Stamp = fxml:get_path_s(El, [{elem, <<"delay">>},
                                           {attr, <<"stamp">>}]),
               TS = case jlib:datetime_string_to_timestamp(Stamp) of
                        {_, _, _} = Now ->

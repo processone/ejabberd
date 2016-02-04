@@ -86,7 +86,7 @@ route(From, To, Packet) ->
 
 route_error(From, To, ErrPacket, OrigPacket) ->
     #xmlel{attrs = Attrs} = OrigPacket,
-    case <<"error">> == xml:get_attr_s(<<"type">>, Attrs) of
+    case <<"error">> == fxml:get_attr_s(<<"type">>, Attrs) of
       false -> route(From, To, ErrPacket);
       true -> ok
     end.

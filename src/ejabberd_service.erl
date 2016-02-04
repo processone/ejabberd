@@ -91,10 +91,10 @@
 	  "m:error></stream:stream>">>).
 
 -define(INVALID_XML_ERR,
-	xml:element_to_binary(?SERR_XML_NOT_WELL_FORMED)).
+	fxml:element_to_binary(?SERR_XML_NOT_WELL_FORMED)).
 
 -define(INVALID_NS_ERR,
-	xml:element_to_binary(?SERR_INVALID_NAMESPACE)).
+	fxml:element_to_binary(?SERR_INVALID_NAMESPACE)).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -166,9 +166,9 @@ init([{SockMod, Socket}, Opts]) ->
 
 wait_for_stream({xmlstreamstart, _Name, Attrs},
 		StateData) ->
-    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       <<"jabber:component:accept">> ->
-	  To = xml:get_attr_s(<<"to">>, Attrs),
+	  To = fxml:get_attr_s(<<"to">>, Attrs),
 	  Host = jid:nameprep(To),
 	  if Host == error ->
 		  Header = io_lib:format(?STREAM_HEADER,
@@ -180,7 +180,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 		  {stop, normal, StateData};
 	     true ->
 		  Header = io_lib:format(?STREAM_HEADER,
-					 [StateData#state.streamid, xml:crypt(To)]),
+					 [StateData#state.streamid, fxml:crypt(To)]),
 		  send_text(StateData, Header),
 		  HostOpts = case dict:is_key(Host, StateData#state.host_opts) of
 				 true ->
@@ -212,7 +212,7 @@ wait_for_stream(closed, StateData) ->
 
 wait_for_handshake({xmlstreamelement, El}, StateData) ->
     #xmlel{name = Name, children = Els} = El,
-    case {Name, xml:get_cdata(Els)} of
+    case {Name, fxml:get_cdata(Els)} of
       {<<"handshake">>, Digest} ->
 	  case dict:find(StateData#state.host, StateData#state.host_opts) of
 	      {ok, Password} ->
@@ -250,7 +250,7 @@ wait_for_handshake(closed, StateData) ->
 stream_established({xmlstreamelement, El}, StateData) ->
     NewEl = jlib:remove_attr(<<"xmlns">>, El),
     #xmlel{name = Name, attrs = Attrs} = NewEl,
-    From = xml:get_attr_s(<<"from">>, Attrs),
+    From = fxml:get_attr_s(<<"from">>, Attrs),
     FromJID = case StateData#state.check_from of
 		%% If the admin does not want to check the from field
 		%% when accept packets from any address.
@@ -269,7 +269,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 		      _ -> error
 		    end
 	      end,
-    To = xml:get_attr_s(<<"to">>, Attrs),
+    To = fxml:get_attr_s(<<"to">>, Attrs),
     ToJID = case To of
 	      <<"">> -> error;
 	      _ -> jid:from_string(To)
@@ -356,7 +356,7 @@ handle_info({route, From, To, Packet}, StateName,
 	  Attrs2 =
 	      jlib:replace_from_to_attrs(jid:to_string(From),
 					 jid:to_string(To), Attrs),
-	  Text = xml:element_to_binary(#xmlel{name = Name,
+	  Text = fxml:element_to_binary(#xmlel{name = Name,
 					      attrs = Attrs2, children = Els}),
 	  send_text(StateData, Text);
       deny ->
@@ -402,7 +402,7 @@ send_text(StateData, Text) ->
 				   Text).
 
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_binary(El)).
+    send_text(StateData, fxml:element_to_binary(El)).
 
 new_id() -> randoms:get_string().
 
