@@ -640,7 +640,7 @@ check_create_roomid(ServerHost, RoomID) ->
 				 fun(infinity) -> infinity;
 				    (I) when is_integer(I), I>0 -> I
 				 end, infinity),
-    Regexp = gen_mod:get_module_opt(ServerHost, ?MODULE, room_id_regexp,
+    Regexp = gen_mod:get_module_opt(ServerHost, ?MODULE, regexp_room_id,
 				    fun iolist_to_binary/1, ""),
     (byte_size(RoomID) =< Max) and
     (re:run(RoomID, Regexp, [unicode, {capture, none}]) == match).
@@ -1323,7 +1323,7 @@ mod_opt_type(max_room_id) ->
     fun (infinity) -> infinity;
 	(I) when is_integer(I), I > 0 -> I
     end;
-mod_opt_type(room_id_regexp) ->
+mod_opt_type(regexp_room_id) ->
     fun iolist_to_binary/1;
 mod_opt_type(max_room_name) ->
     fun (infinity) -> infinity;
@@ -1350,7 +1350,7 @@ mod_opt_type(user_presence_shaper) ->
 mod_opt_type(_) ->
     [access, access_admin, access_create, access_persistent,
      db_type, default_room_options, history_size, host,
-     max_room_desc, max_room_id, max_room_name, room_id_regexp,
+     max_room_desc, max_room_id, max_room_name, regexp_room_id,
      max_user_conferences, max_users,
      max_users_admin_threshold, max_users_presence,
      min_message_interval, min_presence_interval,
