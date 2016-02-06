@@ -2833,8 +2833,16 @@ handle_unacked_stanzas(StateData)
 	  Resend when is_boolean(Resend) ->
 	      Resend;
 	  if_offline ->
-	      ejabberd_sm:get_user_resources(StateData#state.user,
-					     StateData#state.server) == []
+	      Resource = StateData#state.resource,
+	      case ejabberd_sm:get_user_resources(StateData#state.user,
+						  StateData#state.server) of
+		[Resource] -> % Same resource opened new session
+		    true;
+		[] ->
+		    true;
+		_ ->
+		    false
+	      end
 	end,
     ReRoute = case ResendOnTimeout of
 		true ->
