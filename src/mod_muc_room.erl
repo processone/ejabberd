@@ -2117,7 +2117,7 @@ send_update_presence1(JID, Reason, StateData, OldStateData) ->
 		  end
 	    end,
     lists:foreach(fun (J) ->
-			  send_new_presence(J, Reason, StateData, OldStateData)
+			  send_new_presence1(J, Reason, StateData, OldStateData)
 		  end,
 		  LJIDs).
 
