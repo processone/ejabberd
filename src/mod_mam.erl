@@ -529,11 +529,8 @@ process_iq(LServer, #jid{luser = LUser} = From, To, IQ, SubEl, Fs, MsgType) ->
 			    With, limit_max(RSM, NS), IQ, MsgType)
     end.
 
-muc_process_iq(#iq{lang = Lang, sub_el = SubEl} = IQ,
-	       #state{config = #config{members_only = MembersOnly}} = MUCState,
-	       From, To, Fs) ->
-    case not MembersOnly orelse
-	mod_muc_room:is_occupant_or_admin(From, MUCState) of
+muc_process_iq(#iq{lang = Lang, sub_el = SubEl} = IQ, MUCState, From, To, Fs) ->
+    case may_enter_room(From, MUCState) of
 	true ->
 	    LServer = MUCState#state.server_host,
 	    Role = mod_muc_room:get_role(From, MUCState),
@@ -713,6 +710,12 @@ is_resent(Pkt, LServer) ->
 	false ->
 	    false
     end.
+
+may_enter_room(From,
+	       #state{config = #config{members_only = false}} = MUCState) ->
+    mod_muc_room:get_affiliation(From, MUCState) /= outcast;
+may_enter_room(From, MUCState) ->
+    mod_muc_room:is_occupant_or_admin(From, MUCState).
 
 store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
     Prefs = get_prefs(LUser, LServer),
