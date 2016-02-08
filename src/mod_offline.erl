@@ -27,6 +27,7 @@
 
 -author('alexey@process-one.net').
 
+-protocol({xep, 13, '1.2'}).
 -protocol({xep, 22, '1.4'}).
 -protocol({xep, 23, '1.3'}).
 -protocol({xep, 160, '1.0'}).
