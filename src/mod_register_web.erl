@@ -113,8 +113,8 @@ process([<<"new">>],
     end;
 process([<<"delete">>],
 	#request{method = 'POST', q = Q, lang = Lang,
-		 host = Host}) ->
-    case form_del_post(Q, Host) of
+		 host = _HTTPHost}) ->
+    case form_del_post(Q) of
       {atomic, ok} ->
 	  Text = (?T(<<"Your Jabber account was successfully "
 		       "deleted.">>)),
@@ -129,8 +129,8 @@ process([<<"delete">>],
 %% should include the host where the POST was sent.
 process([<<"change_password">>],
 	#request{method = 'POST', q = Q, lang = Lang,
-		 host = Host}) ->
-    case form_changepass_post(Q, Host) of
+		 host = _HTTPHost}) ->
+    case form_changepass_post(Q) of
       {atomic, ok} ->
 	  Text = (?T(<<"The password of your Jabber account "
 		       "was successfully changed.">>)),
@@ -361,7 +361,8 @@ form_changepass_get(Host, Lang) ->
 			   ?INPUTS(<<"text">>, <<"username">>, <<"">>,
 				   <<"20">>)]),
 		      ?XE(<<"li">>,
-			  [?CT(<<"Server:">>), ?C(<<" ">>), ?C(Host)]),
+			  [?CT(<<"Server:">>), ?C(<<" ">>),
+			   ?INPUTS(<<"text">>, <<"host">>, Host, <<"20">>)]),
 		      ?XE(<<"li">>,
 			  [?CT(<<"Old Password:">>), ?C(<<" ">>),
 			   ?INPUTS(<<"password">>, <<"passwordold">>, <<"">>,
@@ -386,9 +387,9 @@ form_changepass_get(Host, Lang) ->
 %%% Formulary change password POST
 %%%----------------------------------------------------------------------
 
-form_changepass_post(Q, Host) ->
+form_changepass_post(Q) ->
     case catch get_changepass_parameters(Q) of
-      [Username, PasswordOld, Password, Password] ->
+      [Username, Host, PasswordOld, Password, Password] ->
 	  try_change_password(Username, Host, PasswordOld,
 			      Password);
       [_Username, _PasswordOld, _Password, _Password2] ->
@@ -405,7 +406,7 @@ get_changepass_parameters(Q) ->
 		      {value, {_Key, Value}} = lists:keysearch(Key, 1, Q),
 		      Value
 	      end,
-	      [<<"username">>, <<"passwordold">>, <<"password">>,
+	      [<<"username">>, <<"host">>, <<"passwordold">>, <<"password">>,
 	       <<"password2">>]).
 
 try_change_password(Username, Host, PasswordOld,
@@ -470,7 +471,8 @@ form_del_get(Host, Lang) ->
 			   ?INPUTS(<<"text">>, <<"username">>, <<"">>,
 				   <<"20">>)]),
 		      ?XE(<<"li">>,
-			  [?CT(<<"Server:">>), ?C(<<" ">>), ?C(Host)]),
+			  [?CT(<<"Server:">>), ?C(<<" ">>),
+			   ?INPUTS(<<"text">>, <<"host">>, Host, <<"20">>)]),
 		      ?XE(<<"li">>,
 			  [?CT(<<"Password:">>), ?C(<<" ">>),
 			   ?INPUTS(<<"password">>, <<"password">>, <<"">>,
@@ -513,9 +515,9 @@ register_account2(Username, Host, Password) ->
 %%% Formulary delete POST
 %%%----------------------------------------------------------------------
 
-form_del_post(Q, Host) ->
+form_del_post(Q) ->
     case catch get_unregister_parameters(Q) of
-      [Username, Password] ->
+      [Username, Host, Password] ->
 	  try_unregister_account(Username, Host, Password);
       _ -> {error, wrong_parameters}
     end.
@@ -529,7 +531,7 @@ get_unregister_parameters(Q) ->
 		      {value, {_Key, Value}} = lists:keysearch(Key, 1, Q),
 		      Value
 	      end,
-	      [<<"username">>, <<"password">>]).
+	      [<<"username">>, <<"host">>, <<"password">>]).
 
 try_unregister_account(Username, Host, Password) ->
     try unregister_account(Username, Host, Password) of
