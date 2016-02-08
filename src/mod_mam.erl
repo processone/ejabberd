@@ -919,12 +919,12 @@ select_and_send(LServer, From, To, Start, End, With, RSM, IQ, MsgType, DBType) -
 select_and_start(LServer, From, To, Start, End, With, RSM, MsgType, DBType) ->
     case MsgType of
 	chat ->
-	    select(LServer, From, Start, End, With, RSM, MsgType, DBType);
+	    select(LServer, From, From, Start, End, With, RSM, MsgType, DBType);
 	{groupchat, _Role, _MUCState} ->
-	    select(LServer, To, Start, End, With, RSM, MsgType, DBType)
+	    select(LServer, From, To, Start, End, With, RSM, MsgType, DBType)
     end.
 
-select(_LServer, JidRequestor, Start, End, _With, RSM,
+select(_LServer, JidRequestor, JidArchive, Start, End, _With, RSM,
        {groupchat, _Role, #state{config = #config{mam = false},
 				 history = History}} = MsgType,
        _DBType) ->
@@ -944,8 +944,8 @@ select(_LServer, JidRequestor, Start, End, _With, RSM,
 					  peer = undefined,
 					  nick = Nick,
 					  packet = Pkt},
-				       MsgType,
-				       JidRequestor)}], I+1};
+				       MsgType, JidRequestor, JidArchive)}],
+			   I+1};
 		      false ->
 			  {[], I+1}
 		  end
@@ -961,7 +961,8 @@ select(_LServer, JidRequestor, Start, End, _With, RSM,
 	_ ->
 	    {Msgs, true, L}
     end;
-select(_LServer, #jid{luser = LUser, lserver = LServer} = JidRequestor,
+select(_LServer, JidRequestor,
+       #jid{luser = LUser, lserver = LServer} = JidArchive,
        Start, End, With, RSM, MsgType, mnesia) ->
     MS = make_matchspec(LUser, LServer, Start, End, With),
     Msgs = mnesia:dirty_select(archive_msg, MS),
@@ -972,13 +973,13 @@ select(_LServer, #jid{luser = LUser, lserver = LServer} = JidRequestor,
        fun(Msg) ->
 	       {Msg#archive_msg.id,
 		jlib:binary_to_integer(Msg#archive_msg.id),
-		msg_to_el(Msg, MsgType, JidRequestor)}
+		msg_to_el(Msg, MsgType, JidRequestor, JidArchive)}
        end, FilteredMsgs), IsComplete, Count};
-select(LServer, #jid{luser = LUser} = JidRequestor,
+select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
        Start, End, With, RSM, MsgType, {odbc, Host}) ->
     User = case MsgType of
 	       chat -> LUser;
-	       {groupchat, _Role, _MUCState} -> jid:to_string(JidRequestor)
+	       {groupchat, _Role, _MUCState} -> jid:to_string(JidArchive)
 	   end,
     {Query, CountQuery} = make_sql_query(User, LServer,
 					 Start, End, With, RSM),
@@ -1022,8 +1023,7 @@ select(LServer, #jid{luser = LUser} = JidRequestor,
 						    type = T,
 						    nick = Nick,
 						    peer = PeerJid},
-				       MsgType,
-				       JidRequestor)}]
+				       MsgType, JidRequestor, JidArchive)}]
 		       catch _:Err ->
 			       ?ERROR_MSG("failed to parse data from SQL: ~p. "
 					  "The data was: "
@@ -1038,31 +1038,44 @@ select(LServer, #jid{luser = LUser} = JidRequestor,
     end.
 
 msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
-	  MsgType, #jid{lserver = LServer} = JidRequestor) ->
-    Pkt2 = maybe_update_from_to(Pkt1, JidRequestor, Peer, MsgType, Nick),
+	  MsgType, JidRequestor, #jid{lserver = LServer} = JidArchive) ->
+    Pkt2 = maybe_update_from_to(Pkt1, JidRequestor, JidArchive, Peer, MsgType,
+				Nick),
     Pkt3 = #xmlel{name = <<"forwarded">>,
 		  attrs = [{<<"xmlns">>, ?NS_FORWARD}],
 		  children = [fxml:replace_tag_attr(
 				<<"xmlns">>, <<"jabber:client">>, Pkt2)]},
     jlib:add_delay_info(Pkt3, LServer, TS).
 
-maybe_update_from_to(#xmlel{children = Els} = Pkt, JidRequestor,
-		     Peer, {groupchat, Role, _MUCState}, Nick) ->
-    Items = case Role of
-		moderator when Peer /= undefined ->
+maybe_update_from_to(#xmlel{children = Els} = Pkt, JidRequestor, JidArchive,
+		     Peer, {groupchat, Role,
+			    #state{config = #config{anonymous = Anon}}},
+		     Nick) ->
+    ExposeJID = case {Peer, JidRequestor} of
+		    {undefined, _JidRequestor} ->
+			false;
+		    {{U, S, _R}, #jid{luser = U, lserver = S}} ->
+			true;
+		    {_Peer, _JidRequestor} when not Anon; Role == moderator ->
+			true;
+		    {_Peer, _JidRequestor} ->
+			false
+		end,
+    Items = case ExposeJID of
+		true ->
 		    [#xmlel{name = <<"x">>,
 			    attrs = [{<<"xmlns">>, ?NS_MUC_USER}],
 			    children =
 				[#xmlel{name = <<"item">>,
 					attrs = [{<<"jid">>,
 						  jid:to_string(Peer)}]}]}];
-		_ ->
+		false ->
 		    []
 	    end,
     Pkt1 = Pkt#xmlel{children = Items ++ Els},
-    Pkt2 = jlib:replace_from(jid:replace_resource(JidRequestor, Nick), Pkt1),
+    Pkt2 = jlib:replace_from(jid:replace_resource(JidArchive, Nick), Pkt1),
     jlib:remove_attr(<<"to">>, Pkt2);
-maybe_update_from_to(Pkt, _JidRequestor, _Peer, chat, _Nick) ->
+maybe_update_from_to(Pkt, _JidRequestor, _JidArchive, _Peer, chat, _Nick) ->
     Pkt.
 
 is_bare_copy(#jid{luser = U, lserver = S, lresource = R}, To) ->
