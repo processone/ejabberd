@@ -66,7 +66,8 @@ defmodule Ejabberd.Mixfile do
       licenses: ["GPLv2"],
       links: %{"Site" => "https://www.ejabberd.im",
                "Documentation" => "http://docs.ejabberd.im",
-               "Source" => "https://github.com/processone/ejabberd"}]
+               "Source" => "https://github.com/processone/ejabberd",
+               "ProcessOne" => "http://www.process-one.net/"}]
   end
 end
 
