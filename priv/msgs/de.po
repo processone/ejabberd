@@ -16,7 +16,7 @@ msgstr ""
 "X-Additional-Translator: Patrick Dreker\n"
 "X-Additional-Translator: Torsten Werner\n"
 "X-Additional-Translator: Marina Hahn\n"
-"X-Generator: Poedit 1.8.4\n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ejabberd_c2s.erl:505 ejabberd_c2s.erl:853
 msgid "Use of STARTTLS required"
@@ -72,9 +72,8 @@ msgid "User"
 msgstr "Benutzer"
 
 #: ejabberd_oauth.erl:256
-#, fuzzy
 msgid "Server"
-msgstr "Server:"
+msgstr "Server"
 
 #: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1408 mod_configure.erl:1398
 #: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2123
@@ -84,7 +83,7 @@ msgstr "Passwort"
 
 #: ejabberd_oauth.erl:267
 msgid "Accept"
-msgstr ""
+msgstr "Akzeptieren"
 
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
@@ -156,8 +155,7 @@ msgstr "Virtuelle Hosts"
 msgid "Users"
 msgstr "Benutzer"
 
-#: ejabberd_web_admin.erl:955 ejabberd_web_admin.erl:1340
-#: mod_configure.erl:524
+#: ejabberd_web_admin.erl:955 ejabberd_web_admin.erl:1340 mod_configure.erl:524
 msgid "Online Users"
 msgstr "Angemeldete Benutzer"
 
@@ -251,9 +249,8 @@ msgid "Outgoing s2s Connections:"
 msgstr "Ausgehende s2s-Verbindungen:"
 
 #: ejabberd_web_admin.erl:1559
-#, fuzzy
 msgid "Incoming s2s Connections:"
-msgstr "Ausgehende s2s-Verbindungen:"
+msgstr "Eingehende s2s-Verbindungen:"
 
 #: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
 #: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
@@ -855,11 +852,11 @@ msgstr ""
 
 #: mod_http_upload.erl:586
 msgid "Please specify file size."
-msgstr ""
+msgstr "Bitte geben Sie die Dateigröße an."
 
 #: mod_http_upload.erl:590
 msgid "Please specify file name."
-msgstr ""
+msgstr "Bitte geben Sie den Dateinamen an."
 
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
@@ -978,9 +975,8 @@ msgid "Server ~b"
 msgstr "Server ~b"
 
 #: mod_mam.erl:541
-#, fuzzy
 msgid "Only members may query archives of this room"
-msgstr "Nur Moderatoren dürfen das Thema in diesem Raum ändern"
+msgstr "Nur Mitglieder dürfen den Verlauf dieses Raumes abrufen"
 
 #: mod_muc.erl:585
 msgid "Only service administrators are allowed to send service messages"
@@ -1001,7 +997,7 @@ msgstr "Chaträume"
 
 #: mod_muc.erl:781
 msgid "Empty Rooms"
-msgstr ""
+msgstr "Leere Räume"
 
 #: mod_muc.erl:933
 msgid "You need a client that supports x:data to register the nickname"
@@ -1011,7 +1007,7 @@ msgstr ""
 
 #: mod_muc.erl:943
 msgid "Nickname Registration at "
-msgstr "Registrieren des Benutzernames auf"
+msgstr "Registrieren des Benutzernames auf "
 
 #: mod_muc.erl:949
 msgid "Enter nickname you want to register"
@@ -1045,7 +1041,7 @@ msgstr "Alle Chaträume"
 
 #: mod_muc_admin.erl:250
 msgid "Permanent rooms"
-msgstr "permanente Chaträume"
+msgstr "Permanente Chaträume"
 
 #: mod_muc_admin.erl:251
 msgid "Registered nicknames"
@@ -1200,6 +1196,8 @@ msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
 msgstr ""
+"Es ist nicht erlaubt Fehlermeldungen an den Raum zu senden. Der Teilnehmer "
+"(~s) hat eine Fehlermeldung (~s) gesendet und wurde aus dem Raum entfernt"
 
 #: mod_muc_room.erl:241
 msgid "It is not allowed to send private messages to the conference"
@@ -1377,20 +1375,19 @@ msgstr "jeden"
 
 #: mod_muc_room.erl:3471
 msgid "Roles for which Presence is Broadcasted"
-msgstr ""
+msgstr "Rollen, für die der Status übertragen wird"
 
 #: mod_muc_room.erl:3486
-#, fuzzy
 msgid "Moderator"
-msgstr "ausschliesslich Moderatoren"
+msgstr "Moderator"
 
 #: mod_muc_room.erl:3496
 msgid "Participant"
-msgstr ""
+msgstr "Teilnehmer"
 
 #: mod_muc_room.erl:3506
 msgid "Visitor"
-msgstr ""
+msgstr "Besucher"
 
 #: mod_muc_room.erl:3513
 msgid "Make room members-only"
