@@ -396,7 +396,9 @@ prepare_room_info(Room_info) ->
 %% @spec (Name::binary(), Host::binary(), ServerHost::binary()) ->
 %%       ok | error
 %% @doc Create a room immediately with the default options.
-create_room(Name, Host, ServerHost) ->
+create_room(Name1, Host1, ServerHost) ->
+    Name = jid:nodeprep(Name1),
+    Host = jid:nodeprep(Host1),
 
     %% Get the default room options from the muc configuration
     DefRoomOpts = gen_mod:get_module_opt(ServerHost, mod_muc,
