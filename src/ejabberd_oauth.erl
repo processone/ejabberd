@@ -149,7 +149,7 @@ authenticate_user({User, Server}, {password, Password} = Ctx) ->
 
 authenticate_client(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
 
-verify_resowner_scope({user, User, Server}, Scope, Ctx) ->
+verify_resowner_scope({user, _User, _Server}, Scope, Ctx) ->
     Cmds = ejabberd_commands:get_commands(),
     Cmds1 = [sasl_auth | Cmds],
     RegisteredScope = [atom_to_binary(C, utf8) || C <- Cmds1],
@@ -164,7 +164,7 @@ verify_resowner_scope(_, _, _) ->
     {error, badscope}.
 
 
-associate_access_code(AccessCode, Context, AppContext) ->
+associate_access_code(_AccessCode, _Context, AppContext) ->
     %put(?ACCESS_CODE_TABLE, AccessCode, Context),
     {ok, AppContext}.
 
@@ -184,7 +184,7 @@ associate_access_token(AccessToken, Context, AppContext) ->
     mnesia:dirty_write(R),
     {ok, AppContext}.
 
-associate_refresh_token(RefreshToken, Context, AppContext) ->
+associate_refresh_token(_RefreshToken, _Context, AppContext) ->
     %put(?REFRESH_TOKEN_TABLE, RefreshToken, Context),
     {ok, AppContext}.
 
@@ -303,7 +303,7 @@ process(_Handlers,
 process(_Handlers,
 	#request{method = 'POST', q = Q, lang = _Lang,
 		 path = [_, <<"authorization_token">>]}) ->
-    ResponseType = proplists:get_value(<<"response_type">>, Q, <<"">>),
+    _ResponseType = proplists:get_value(<<"response_type">>, Q, <<"">>),
     ClientId = proplists:get_value(<<"client_id">>, Q, <<"">>),
     RedirectURI = proplists:get_value(<<"redirect_uri">>, Q, <<"">>),
     SScope = proplists:get_value(<<"scope">>, Q, <<"">>),
