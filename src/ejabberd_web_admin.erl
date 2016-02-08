@@ -735,7 +735,7 @@ process_admin(Host,
 				      [{{acl, '$1', '$2'}}]}])),
     {NumLines, ACLsP} = term_to_paragraph(ACLs, 80),
     make_xhtml((?H1GL((?T(<<"Access Control Lists">>)),
-		      <<"acl-definition">>, <<"ACL Definition">>))
+		      <<"acldefinition">>, <<"ACL Definition">>))
 		 ++
 		 case Res of
 		   ok -> [?XREST(<<"Submitted">>)];
@@ -771,7 +771,7 @@ process_admin(Host,
 				    [{{acl, {'$1', Host}, '$2'}, [],
 				      [{{acl, '$1', '$2'}}]}])),
     make_xhtml((?H1GL((?T(<<"Access Control Lists">>)),
-		      <<"acl-definition">>, <<"ACL Definition">>))
+		      <<"acldefinition">>, <<"ACL Definition">>))
 		 ++
 		 case Res of
 		   ok -> [?XREST(<<"Submitted">>)];
@@ -837,7 +837,7 @@ process_admin(Host,
 			  [{{access, '$1', '$2'}}]}]),
     {NumLines, AccessP} = term_to_paragraph(lists:keysort(2,Access), 80),
     make_xhtml((?H1GL((?T(<<"Access Rules">>)),
-		      <<"access-rights">>, <<"Access Rights">>))
+		      <<"accessrights">>, <<"Access Rights">>))
 		 ++
 		 case Res of
 		   ok -> [?XREST(<<"Submitted">>)];
@@ -870,7 +870,7 @@ process_admin(Host,
 			     [{{access, {'$1', Host}, '$2'}, [],
 			       [{{access, '$1', '$2'}}]}]),
     make_xhtml((?H1GL((?T(<<"Access Rules">>)),
-		      <<"access-rights">>, <<"Access Rights">>))
+		      <<"accessrights">>, <<"Access Rights">>))
 		 ++
 		 case Res of
 		   ok -> [?XREST(<<"Submitted">>)];
@@ -929,7 +929,7 @@ process_admin(global,
 		       lang = Lang}) ->
     Res = list_vhosts(Lang, AJID),
     make_xhtml((?H1GL((?T(<<"Virtual Hosts">>)),
-		      <<"virtual-hosting">>, <<"Virtual Hosting">>))
+		      <<"virtualhosting">>, <<"Virtual Hosting">>))
 		 ++ Res,
 	       global, Lang, AJID);
 process_admin(Host,
@@ -2114,7 +2114,7 @@ get_node(global, Node, [<<"ports">>], Query, Lang) ->
                                     []])),
     H1String = <<(?T(<<"Listened Ports at ">>))/binary,
 		 (iolist_to_binary(atom_to_list(Node)))/binary>>,
-    (?H1GL(H1String, <<"listening-ports">>, <<"Listening Ports">>))
+    (?H1GL(H1String, <<"listeningports">>, <<"Listening Ports">>))
       ++
       case Res of
 	ok -> [?XREST(<<"Submitted">>)];
@@ -2142,7 +2142,7 @@ get_node(Host, Node, [<<"modules">>], Query, Lang)
     NewModules = lists:sort(ejabberd_cluster:call(Node, gen_mod,
 				     loaded_modules_with_opts, [Host])),
     H1String = list_to_binary(io_lib:format(?T(<<"Modules at ~p">>), [Node])),
-    (?H1GL(H1String, <<"modules-overview">>,
+    (?H1GL(H1String, <<"modulesoverview">>,
 	   <<"Modules Overview">>))
       ++
       case Res of
