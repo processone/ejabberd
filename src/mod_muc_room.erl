@@ -1856,7 +1856,7 @@ add_new_user(From, Nick,
 					     add_online_user(From, Nick, Role,
 							     StateData)),
 		send_existing_presences(From, NewState),
-		send_new_presence(From, NewState, StateData),
+		send_initial_presence(From, NewState, StateData),
 		Shift = count_stanza_shift(Nick, Els, NewState),
 		case send_history(From, Shift, NewState) of
 		  true -> ok;
@@ -2090,6 +2090,9 @@ presence_broadcast_allowed(JID, StateData) ->
     Role = get_role(JID, StateData),
     lists:member(Role, (StateData#state.config)#config.presence_broadcast).
 
+send_initial_presence(NJID, StateData, OldStateData) ->
+    send_new_presence1(NJID, <<"">>, true, StateData, OldStateData).
+
 send_update_presence(JID, StateData, OldStateData) ->
     send_update_presence(JID, <<"">>, StateData, OldStateData).
 
@@ -2117,20 +2120,25 @@ send_update_presence1(JID, Reason, StateData, OldStateData) ->
 		  end
 	    end,
     lists:foreach(fun (J) ->
-			  send_new_presence1(J, Reason, StateData, OldStateData)
+			  send_new_presence1(J, Reason, false, StateData,
+					     OldStateData)
 		  end,
 		  LJIDs).
 
 send_new_presence(NJID, StateData, OldStateData) ->
-    send_new_presence(NJID, <<"">>, StateData, OldStateData).
+    send_new_presence(NJID, <<"">>, false, StateData, OldStateData).
 
 send_new_presence(NJID, Reason, StateData, OldStateData) ->
+    send_new_presence(NJID, Reason, false, StateData, OldStateData).
+
+send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
     case is_room_overcrowded(StateData) of
 	true -> ok;
-	false -> send_new_presence1(NJID, Reason, StateData, OldStateData)
+	false -> send_new_presence1(NJID, Reason, IsInitialPresence, StateData,
+				    OldStateData)
     end.
 
-send_new_presence1(NJID, Reason, StateData, OldStateData) ->
+send_new_presence1(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
     LNJID = jid:tolower(NJID),
     #user{nick = Nick} = (?DICT):fetch(LNJID, StateData#state.users),
     LJID = find_jid_by_nick(Nick, StateData),
@@ -2187,51 +2195,8 @@ send_new_presence1(NJID, Reason, StateData, OldStateData) ->
 						  children =
 						      [{xmlcdata, Reason}]}]
 				    end,
-			  Status = case StateData#state.just_created of
-				     true ->
-					 [#xmlel{name = <<"status">>,
-						 attrs =
-						     [{<<"code">>, <<"201">>}],
-						 children = []}];
-				     false -> []
-				   end,
-			  Status2 = case
-				      (StateData#state.config)#config.anonymous
-					== false
-					andalso NJID == Info#user.jid
-					of
-				      true ->
-					  [#xmlel{name = <<"status">>,
-						  attrs =
-						      [{<<"code">>, <<"100">>}],
-						  children = []}
-					   | Status];
-				      false -> Status
-				    end,
-			  Status3 = case NJID == Info#user.jid of
-				      true ->
-					  [#xmlel{name = <<"status">>,
-						  attrs =
-						      [{<<"code">>, <<"110">>}],
-						  children = []}
-					   | Status2];
-				      false -> Status2
-				    end,
-			  Status4 = case (StateData#state.config)#config.logging == true
-                      andalso NJID == Info#user.jid of
-				      true ->
-                          case (?DICT):find(jid:tolower(LJID),
-                                            OldStateData#state.users) of
-                              {ok, _} -> Status3;
-                              _ ->
-                                  [#xmlel{name = <<"status">>,
-                                          attrs =
-                                              [{<<"code">>, <<"170">>}],
-                                          children = []}
-                                   | Status3]
-                          end;
-                      false -> Status3
-				    end,
+			  StatusEls = status_els(IsInitialPresence, NJID, Info,
+						 StateData),
 			  Packet = fxml:append_subtags(Presence,
 						      [#xmlel{name = <<"x">>,
 							      attrs =
@@ -2246,7 +2211,7 @@ send_new_presence1(NJID, Reason, StateData, OldStateData) ->
 									  children
 									      =
 									      ItemEls}
-								   | Status4]}]),
+								   | StatusEls]}]),
 			  ejabberd_router:route(jid:replace_resource(StateData#state.jid,
 								 Nick),
 				       Info#user.jid, Packet)
@@ -2455,6 +2420,40 @@ send_nick_changing(JID, OldNick, StateData,
 			  end
 		  end,
 		  (?DICT):to_list(StateData#state.users)).
+
+status_els(IsInitialPresence, JID, #user{jid = JID}, StateData) ->
+    Status = case IsInitialPresence of
+	       true ->
+		   S1 = case StateData#state.just_created of
+			  true ->
+			      [#xmlel{name = <<"status">>,
+				      attrs = [{<<"code">>, <<"201">>}],
+				      children = []}];
+			  false -> []
+			end,
+		   S2 = case (StateData#state.config)#config.anonymous of
+			  true -> S1;
+			  false ->
+			      [#xmlel{name = <<"status">>,
+				      attrs = [{<<"code">>, <<"100">>}],
+				      children = []} | S1]
+			end,
+		   S3 = case (StateData#state.config)#config.logging of
+			  true ->
+			      [#xmlel{name = <<"status">>,
+				      attrs = [{<<"code">>, <<"170">>}],
+				      children = []} | S2];
+			  false -> S2
+			end,
+		   S3;
+	       false -> []
+	     end,
+    [#xmlel{name = <<"status">>,
+	    attrs =
+		[{<<"code">>,
+		  <<"110">>}],
+	    children = []} | Status];
+status_els(_IsInitialPresence, _JID, _Info, _StateData) -> [].
 
 lqueue_new(Max) ->
     #lqueue{queue = queue:new(), len = 0, max = Max}.
