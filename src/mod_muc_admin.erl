@@ -280,7 +280,7 @@ get_sort_query(Q) ->
 
 get_sort_query2(Q) ->
     {value, {_, String}} = lists:keysearch(<<"sort">>, 1, Q),
-    Integer = list_to_integer(binary_to_list(String)),
+    Integer = jlib:binary_to_integer(String),
     case Integer >= 0 of
 	true -> {ok, {normal, Integer}};
 	false -> {ok, {reverse, abs(Integer)}}
@@ -472,7 +472,7 @@ destroy_room({N, H, SH}) ->
 %% The file encoding must be UTF-8
 
 destroy_rooms_file(Filename) ->
-    {ok, F} = file:open(Filename, [read]),
+    {ok, F} = file:open(Filename, [read, binary]),
     RJID = read_room(F),
     Rooms = read_rooms(F, RJID, []),
     file:close(F),
@@ -500,23 +500,16 @@ read_room(F) ->
 %% This function is quite rudimentary
 %% and may not be accurate
 split_roomjid(RoomJID) ->
-    [Name, Host] = string:tokens(RoomJID, "@"),
-    [_MUC_service_name | ServerHostList] = string:tokens(Host, "."),
-    ServerHost = join(ServerHostList, "."),
-    {list_to_binary(Name), list_to_binary(Host), list_to_binary(ServerHost)}.
-
-%% This function is copied from string:join/2 in Erlang/OTP R12B-1
-%% Note that string:join/2 is not implemented in Erlang/OTP R11B
-join([H|T], Sep) ->
-    H ++ lists:concat([Sep ++ X || X <- T]).
-
+    [Name, Host] = binary:split(RoomJID, <<"@">>),
+    [_MUC_service_name, ServerHost] = binary:split(Host, <<".">>),
+    {Name, Host, ServerHost}.
 
 %%----------------------------
 %% Create Rooms in File
 %%----------------------------
 
 create_rooms_file(Filename) ->
-    {ok, F} = file:open(Filename, [read]),
+    {ok, F} = file:open(Filename, [read, binary]),
     RJID = read_room(F),
     Rooms = read_rooms(F, RJID, []),
     file:close(F),
@@ -693,29 +686,32 @@ send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) ->
     RoomJid = jid:make(RoomName, RoomService, <<"">>),
     RoomString = jid:to_string(RoomJid),
     XmlEl = build_invitation(Password, Reason, RoomString),
-    UsersStrings = get_users_to_invite(RoomJid, binary_to_list(UsersString)),
-    [send_direct_invitation(RoomJid, jid:from_string(list_to_binary(UserStrings)), XmlEl)
+    UsersStrings = get_users_to_invite(RoomJid, UsersString),
+    [send_direct_invitation(RoomJid, UserStrings, XmlEl)
      || UserStrings <- UsersStrings],
     timer:sleep(1000),
     ok.
 
 get_users_to_invite(RoomJid, UsersString) ->
-    UsersStrings = string:tokens(UsersString, ":"),
+    UsersStrings = binary:split(UsersString, <<":">>, [global]),
     OccupantsTuples = get_room_occupants(RoomJid#jid.luser,
 					 RoomJid#jid.lserver),
     OccupantsJids = [jid:from_string(JidString)
 		     || {JidString, _Nick, _} <- OccupantsTuples],
-    lists:filter(
-	fun(UserString) ->
-	    UserJid = jid:from_string(list_to_binary(UserString)),
-	    %% [{"badlop@localhost/work","badlop","moderator"}]
-	    lists:all(fun(OccupantJid) ->
-		UserJid#jid.luser /= OccupantJid#jid.luser
-		orelse UserJid#jid.lserver /= OccupantJid#jid.lserver
-	    end,
-	    OccupantsJids)
-	end,
-	UsersStrings).
+    lists:filtermap(
+      fun(UserString) ->
+	      UserJid = jid:from_string(UserString),
+	      Val = lists:all(fun(OccupantJid) ->
+				      UserJid#jid.luser /= OccupantJid#jid.luser
+					  orelse UserJid#jid.lserver /= OccupantJid#jid.lserver
+			      end,
+			      OccupantsJids),
+	      case Val of
+		  true -> {true, UserJid};
+		  _ -> false
+	      end
+      end,
+      UsersStrings).
 
 build_invitation(Password, Reason, RoomString) ->
     PasswordAttrList = case Password of
