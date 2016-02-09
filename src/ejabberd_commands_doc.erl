@@ -360,8 +360,9 @@ gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
                      none ->
                          [?RAW(io_lib:format("~p", [Result]))];
                      _ ->
-                         [?RAW(io_lib:format("~p", [Result])),
-                          ?TAG_R(p, ResultDesc)]
+                         [?TAG(dl, [
+			       ?TAG(dt, io_lib:format("~p", [Result])),
+			       ?TAG_R(dd, ResultDesc)])]
                  end,
 
     [?TAG(h1, [?TAG(strong, atom_to_list(Name)), <<" - ">>, ?RAW(Desc)]),
