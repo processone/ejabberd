@@ -178,7 +178,8 @@ muc_online_rooms(ServerHost) ->
     MUCHost = find_host(ServerHost),
     Rooms = ets:tab2list(muc_online_room),
     lists:foldl(
-      fun({_, {Roomname, Host}, _}, Results) ->
+      fun(Room, Results) ->
+	      {Roomname, Host} = Room#muc_online_room.name_host,
 	      case MUCHost of
 		  global ->
 		      [<<Roomname/binary, "@", Host/binary>> | Results];
