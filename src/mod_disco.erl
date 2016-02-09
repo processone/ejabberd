@@ -382,6 +382,8 @@ process_sm_iq_info(From, To,
 		Identity = ejabberd_hooks:run_fold(disco_sm_identity,
 						   Host, [],
 						   [From, To, Node, Lang]),
+		Info = ejabberd_hooks:run_fold(disco_info, Host, [],
+					       [From, To, Node, Lang]),
 		case ejabberd_hooks:run_fold(disco_sm_features, Host,
 					     empty, [From, To, Node, Lang])
 		    of
@@ -397,7 +399,7 @@ process_sm_iq_info(From, To,
 					    [{<<"xmlns">>, ?NS_DISCO_INFO}
 					     | ANode],
 					children =
-					    Identity ++
+					    Identity ++ Info ++
 					      features_to_xml(Features)}]};
 		  {error, Error} ->
 		      IQ#iq{type = error, sub_el = [SubEl, Error]}

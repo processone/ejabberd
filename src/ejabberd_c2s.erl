@@ -115,6 +115,7 @@
 		mgmt_resend,
 		mgmt_stanzas_in = 0,
 		mgmt_stanzas_out = 0,
+		ask_offline = true,
 		lang = <<"">>}).
 
 %-define(DBGFSM, true).
@@ -1737,6 +1738,8 @@ handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
 		From, jid:make(USR), Packet)
       end, lists:usort(Recipients)),
     fsm_next_state(StateName, StateData);
+handle_info(dont_ask_offline, StateName, StateData) ->
+    fsm_next_state(StateName, StateData#state{ask_offline = false});
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     fsm_next_state(StateName, StateData).
@@ -2310,7 +2313,7 @@ process_privacy_iq(From, To,
     ejabberd_router:route(To, From, jlib:iq_to_xml(IQRes)),
     NewStateData.
 
-resend_offline_messages(StateData) ->
+resend_offline_messages(#state{ask_offline = true} = StateData) ->
     case ejabberd_hooks:run_fold(resend_offline_messages_hook,
 				 StateData#state.server, [],
 				 [StateData#state.user, StateData#state.server])
@@ -2331,7 +2334,9 @@ resend_offline_messages(StateData) ->
 				end
 			end,
 			Rs)
-    end.
+    end;
+resend_offline_messages(_StateData) ->
+    ok.
 
 resend_subscription_requests(#state{user = User,
 				    server = Server} = StateData) ->
