@@ -1713,7 +1713,7 @@ mam_master(Config, NS) ->
     ?recv1(#presence{}),
     wait_for_slave(Config),
     ?recv1(#presence{from = Peer}),
-    #iq{type = result, sub_els = []} =
+    #iq{type = result, sub_els = [#mam_prefs{xmlns = NS, default = roster}]} =
         send_recv(Config,
                   #iq{type = set,
                       sub_els = [#mam_prefs{xmlns = NS,
@@ -1747,7 +1747,7 @@ mam_master(Config, NS) ->
     mam_query_with(Config, Peer, NS),
     %% mam_query_with(Config, jlib:jid_remove_resource(Peer)),
     mam_query_rsm(Config, NS),
-    #iq{type = result, sub_els = []} =
+    #iq{type = result, sub_els = [#mam_prefs{xmlns = NS, default = never}]} =
         send_recv(Config, #iq{type = set,
                               sub_els = [#mam_prefs{xmlns = NS,
 						    default = never}]}),
@@ -1765,7 +1765,7 @@ mam_slave(Config, NS) ->
     wait_for_master(Config),
     send(Config, #presence{}),
     ?recv2(#presence{}, #presence{from = Peer}),
-    #iq{type = result, sub_els = []} =
+    #iq{type = result, sub_els = [#mam_prefs{xmlns = NS, default = always}]} =
         send_recv(Config,
                   #iq{type = set,
                       sub_els = [#mam_prefs{xmlns = NS, default = always}]}),
@@ -1776,7 +1776,7 @@ mam_slave(Config, NS) ->
 	      ?recv1(#message{from = Peer, body = [Text],
 			      sub_els = [#mam_archived{by = ServerJID}]})
       end, lists:seq(1, 5)),
-    #iq{type = result, sub_els = []} =
+    #iq{type = result, sub_els = [#mam_prefs{xmlns = NS, default = never}]} =
         send_recv(Config, #iq{type = set,
                               sub_els = [#mam_prefs{xmlns = NS, default = never}]}),
     disconnect(Config).

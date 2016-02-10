@@ -461,11 +461,13 @@ process_iq(#jid{luser = LUser, lserver = LServer},
 		    (_, {A, N}) ->
 			{A, N}
 		end, {[], []}, SubEl#xmlel.children)} of
-	{Default, {Always, Never}} ->
-	    case write_prefs(LUser, LServer, LServer, Default,
-		    lists:usort(Always), lists:usort(Never)) of
+	{Default, {Always0, Never0}} ->
+	    Always = lists:usort(Always0),
+	    Never = lists:usort(Never0),
+	    case write_prefs(LUser, LServer, LServer, Default, Always, Never) of
 		ok ->
-		    IQ#iq{type = result, sub_el = []};
+		    NewPrefs = prefs_el(Default, Always, Never, IQ#iq.xmlns),
+		    IQ#iq{type = result, sub_el = [NewPrefs]};
 		_Err ->
 		    IQ#iq{type = error,
 			sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
@@ -477,21 +479,11 @@ process_iq(#jid{luser = LUser, lserver = LServer},
 	   #jid{lserver = LServer},
 	   #iq{type = get, sub_el = #xmlel{name = <<"prefs">>}} = IQ) ->
     Prefs = get_prefs(LUser, LServer),
-    Default = jlib:atom_to_binary(Prefs#archive_prefs.default),
-    JFun = fun(L) ->
-		   [#xmlel{name = <<"jid">>,
-			   children = [{xmlcdata, jid:to_string(J)}]}
-		    || J <- L]
-	   end,
-    Always = #xmlel{name = <<"always">>,
-		    children = JFun(Prefs#archive_prefs.always)},
-    Never = #xmlel{name = <<"never">>,
-		   children = JFun(Prefs#archive_prefs.never)},
-    IQ#iq{type = result,
-	  sub_el = [#xmlel{name = <<"prefs">>,
-			   attrs = [{<<"xmlns">>, IQ#iq.xmlns},
-				    {<<"default">>, Default}],
-			   children = [Always, Never]}]};
+    PrefsEl = prefs_el(Prefs#archive_prefs.default,
+		       Prefs#archive_prefs.always,
+		       Prefs#archive_prefs.never,
+		       IQ#iq.xmlns),
+    IQ#iq{type = result, sub_el = [PrefsEl]};
 process_iq(_, _, #iq{sub_el = SubEl} = IQ) ->
     IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
 
@@ -873,6 +865,22 @@ get_prefs(LUser, LServer, odbc) ->
 	_ ->
 	    error
     end.
+
+prefs_el(Default, Always, Never, NS) ->
+    Default1 = jlib:atom_to_binary(Default),
+    JFun = fun(L) ->
+		   [#xmlel{name = <<"jid">>,
+			   children = [{xmlcdata, jid:to_string(J)}]}
+		    || J <- L]
+	   end,
+    Always1 = #xmlel{name = <<"always">>,
+		     children = JFun(Always)},
+    Never1 = #xmlel{name = <<"never">>,
+		    children = JFun(Never)},
+    #xmlel{name = <<"prefs">>,
+	   attrs = [{<<"xmlns">>, NS},
+		    {<<"default">>, Default1}],
+	   children = [Always1, Never1]}.
 
 maybe_activate_mam(LUser, LServer) ->
     ActivateOpt = gen_mod:get_module_opt(LServer, ?MODULE,
