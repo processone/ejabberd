@@ -1,4 +1,4 @@
-%% Created automatically by XML generator (xml_gen.erl)
+%% Created automatically by XML generator (fxml_gen.erl)
 %% Source: xmpp_codec.spec
 
 -module(xmpp_codec).
@@ -15,6 +15,22 @@ decode(_el) -> decode(_el, []).
 decode({xmlel, _name, _attrs, _} = _el, Opts) ->
     IgnoreEls = proplists:get_bool(ignore_els, Opts),
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"offline">>,
+       <<"http://jabber.org/protocol/offline">>} ->
+	  decode_offline(<<"http://jabber.org/protocol/offline">>,
+			 IgnoreEls, _el);
+      {<<"item">>,
+       <<"http://jabber.org/protocol/offline">>} ->
+	  decode_offline_item(<<"http://jabber.org/protocol/offline">>,
+			      IgnoreEls, _el);
+      {<<"fetch">>,
+       <<"http://jabber.org/protocol/offline">>} ->
+	  decode_offline_fetch(<<"http://jabber.org/protocol/offline">>,
+			       IgnoreEls, _el);
+      {<<"purge">>,
+       <<"http://jabber.org/protocol/offline">>} ->
+	  decode_offline_purge(<<"http://jabber.org/protocol/offline">>,
+			       IgnoreEls, _el);
       {<<"failed">>, <<"urn:xmpp:sm:2">>} ->
 	  decode_sm_failed(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
       {<<"failed">>, <<"urn:xmpp:sm:3">>} ->
@@ -1072,6 +1088,18 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 
 is_known_tag({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"offline">>,
+       <<"http://jabber.org/protocol/offline">>} ->
+	  true;
+      {<<"item">>,
+       <<"http://jabber.org/protocol/offline">>} ->
+	  true;
+      {<<"fetch">>,
+       <<"http://jabber.org/protocol/offline">>} ->
+	  true;
+      {<<"purge">>,
+       <<"http://jabber.org/protocol/offline">>} ->
+	  true;
       {<<"failed">>, <<"urn:xmpp:sm:2">>} -> true;
       {<<"failed">>, <<"urn:xmpp:sm:3">>} -> true;
       {<<"a">>, <<"urn:xmpp:sm:2">>} -> true;
@@ -2124,7 +2152,15 @@ encode({sm_resumed, _, _, _} = Resumed) ->
 encode({sm_r, _} = R) -> encode_sm_r(R, []);
 encode({sm_a, _, _} = A) -> encode_sm_a(A, []);
 encode({sm_failed, _, _} = Failed) ->
-    encode_sm_failed(Failed, []).
+    encode_sm_failed(Failed, []);
+encode({offline_item, _, _} = Item) ->
+    encode_offline_item(Item,
+			[{<<"xmlns">>,
+			  <<"http://jabber.org/protocol/offline">>}]);
+encode({offline, _, _, _} = Offline) ->
+    encode_offline(Offline,
+		   [{<<"xmlns">>,
+		     <<"http://jabber.org/protocol/offline">>}]).
 
 get_ns({last, _, _}) -> <<"jabber:iq:last">>;
 get_ns({version, _, _, _}) -> <<"jabber:iq:version">>;
@@ -2319,6 +2355,10 @@ get_ns({carbons_sent, _}) -> <<"urn:xmpp:carbons:2">>;
 get_ns({feature_csi, _}) -> <<"urn:xmpp:csi:0">>;
 get_ns({csi, active}) -> <<"urn:xmpp:csi:0">>;
 get_ns({csi, inactive}) -> <<"urn:xmpp:csi:0">>;
+get_ns({offline_item, _, _}) ->
+    <<"http://jabber.org/protocol/offline">>;
+get_ns({offline, _, _, _}) ->
+    <<"http://jabber.org/protocol/offline">>;
 get_ns(_) -> <<>>.
 
 dec_int(Val) -> dec_int(Val, infinity, infinity).
@@ -2522,6 +2562,8 @@ pp(sm_resumed, 3) -> [h, previd, xmlns];
 pp(sm_r, 1) -> [xmlns];
 pp(sm_a, 2) -> [h, xmlns];
 pp(sm_failed, 2) -> [reason, xmlns];
+pp(offline_item, 2) -> [node, action];
+pp(offline, 3) -> [items, purge, fetch];
 pp(_, _) -> no.
 
 enc_bool(false) -> <<"false">>;
@@ -2563,6 +2605,156 @@ dec_tzo(Val) ->
     H = jlib:binary_to_integer(H1),
     M = jlib:binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
+
+decode_offline(__TopXMLNS, __IgnoreEls,
+	       {xmlel, <<"offline">>, _attrs, _els}) ->
+    {Items, Purge, Fetch} = decode_offline_els(__TopXMLNS,
+					       __IgnoreEls, _els, [], false,
+					       false),
+    {offline, Items, Purge, Fetch}.
+
+decode_offline_els(__TopXMLNS, __IgnoreEls, [], Items,
+		   Purge, Fetch) ->
+    {lists:reverse(Items), Purge, Fetch};
+decode_offline_els(__TopXMLNS, __IgnoreEls,
+		   [{xmlel, <<"purge">>, _attrs, _} = _el | _els], Items,
+		   Purge, Fetch) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
+	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			      decode_offline_purge(__TopXMLNS, __IgnoreEls,
+						   _el),
+			      Fetch);
+       true ->
+	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			      Purge, Fetch)
+    end;
+decode_offline_els(__TopXMLNS, __IgnoreEls,
+		   [{xmlel, <<"fetch">>, _attrs, _} = _el | _els], Items,
+		   Purge, Fetch) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
+	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			      Purge,
+			      decode_offline_fetch(__TopXMLNS, __IgnoreEls,
+						   _el));
+       true ->
+	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			      Purge, Fetch)
+    end;
+decode_offline_els(__TopXMLNS, __IgnoreEls,
+		   [{xmlel, <<"item">>, _attrs, _} = _el | _els], Items,
+		   Purge, Fetch) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
+	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els,
+			      [decode_offline_item(__TopXMLNS, __IgnoreEls, _el)
+			       | Items],
+			      Purge, Fetch);
+       true ->
+	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			      Purge, Fetch)
+    end;
+decode_offline_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		   Items, Purge, Fetch) ->
+    decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+		       Purge, Fetch).
+
+encode_offline({offline, Items, Purge, Fetch},
+	       _xmlns_attrs) ->
+    _els = lists:reverse('encode_offline_$items'(Items,
+						 'encode_offline_$purge'(Purge,
+									 'encode_offline_$fetch'(Fetch,
+												 [])))),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"offline">>, _attrs, _els}.
+
+'encode_offline_$items'([], _acc) -> _acc;
+'encode_offline_$items'([Items | _els], _acc) ->
+    'encode_offline_$items'(_els,
+			    [encode_offline_item(Items, []) | _acc]).
+
+'encode_offline_$purge'(false, _acc) -> _acc;
+'encode_offline_$purge'(Purge, _acc) ->
+    [encode_offline_purge(Purge, []) | _acc].
+
+'encode_offline_$fetch'(false, _acc) -> _acc;
+'encode_offline_$fetch'(Fetch, _acc) ->
+    [encode_offline_fetch(Fetch, []) | _acc].
+
+decode_offline_item(__TopXMLNS, __IgnoreEls,
+		    {xmlel, <<"item">>, _attrs, _els}) ->
+    {Node, Action} = decode_offline_item_attrs(__TopXMLNS,
+					       _attrs, undefined, undefined),
+    {offline_item, Node, Action}.
+
+decode_offline_item_attrs(__TopXMLNS,
+			  [{<<"node">>, _val} | _attrs], _Node, Action) ->
+    decode_offline_item_attrs(__TopXMLNS, _attrs, _val,
+			      Action);
+decode_offline_item_attrs(__TopXMLNS,
+			  [{<<"action">>, _val} | _attrs], Node, _Action) ->
+    decode_offline_item_attrs(__TopXMLNS, _attrs, Node,
+			      _val);
+decode_offline_item_attrs(__TopXMLNS, [_ | _attrs],
+			  Node, Action) ->
+    decode_offline_item_attrs(__TopXMLNS, _attrs, Node,
+			      Action);
+decode_offline_item_attrs(__TopXMLNS, [], Node,
+			  Action) ->
+    {decode_offline_item_attr_node(__TopXMLNS, Node),
+     decode_offline_item_attr_action(__TopXMLNS, Action)}.
+
+encode_offline_item({offline_item, Node, Action},
+		    _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_offline_item_attr_action(Action,
+					     encode_offline_item_attr_node(Node,
+									   _xmlns_attrs)),
+    {xmlel, <<"item">>, _attrs, _els}.
+
+decode_offline_item_attr_node(__TopXMLNS, undefined) ->
+    undefined;
+decode_offline_item_attr_node(__TopXMLNS, _val) -> _val.
+
+encode_offline_item_attr_node(undefined, _acc) -> _acc;
+encode_offline_item_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
+
+decode_offline_item_attr_action(__TopXMLNS,
+				undefined) ->
+    undefined;
+decode_offline_item_attr_action(__TopXMLNS, _val) ->
+    case catch dec_enum(_val, [view, remove]) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"action">>, <<"item">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_offline_item_attr_action(undefined, _acc) ->
+    _acc;
+encode_offline_item_attr_action(_val, _acc) ->
+    [{<<"action">>, enc_enum(_val)} | _acc].
+
+decode_offline_fetch(__TopXMLNS, __IgnoreEls,
+		     {xmlel, <<"fetch">>, _attrs, _els}) ->
+    true.
+
+encode_offline_fetch(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"fetch">>, _attrs, _els}.
+
+decode_offline_purge(__TopXMLNS, __IgnoreEls,
+		     {xmlel, <<"purge">>, _attrs, _els}) ->
+    true.
+
+encode_offline_purge(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"purge">>, _attrs, _els}.
 
 decode_sm_failed(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"failed">>, _attrs, _els}) ->

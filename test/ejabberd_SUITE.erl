@@ -214,6 +214,8 @@ db_tests(riak) ->
      {test_roster_subscribe, [parallel],
       [roster_subscribe_master,
        roster_subscribe_slave]},
+     {test_flex_offline, [sequence],
+      [flex_offline_master, flex_offline_slave]},
      {test_offline, [sequence],
       [offline_master, offline_slave]},
      {test_muc, [parallel],
@@ -245,6 +247,8 @@ db_tests(mnesia) ->
      {test_roster_subscribe, [parallel],
       [roster_subscribe_master,
        roster_subscribe_slave]},
+     {test_flex_offline, [sequence],
+      [flex_offline_master, flex_offline_slave]},
      {test_offline, [sequence],
       [offline_master, offline_slave]},
      {test_old_mam, [parallel],
@@ -285,6 +289,8 @@ db_tests(_) ->
      {test_roster_subscribe, [parallel],
       [roster_subscribe_master,
        roster_subscribe_slave]},
+     {test_flex_offline, [sequence],
+      [flex_offline_master, flex_offline_slave]},
      {test_offline, [sequence],
       [offline_master, offline_slave]},
      {test_old_mam, [parallel],
@@ -1431,6 +1437,131 @@ announce_slave(Config) ->
 	   #message{from = ServerJID, body = [MotdText]}),
     %% Delete message of the day
     send(Config, #message{to = MotdDelJID}),
+    disconnect(Config).
+
+flex_offline_master(Config) ->
+    Peer = ?config(slave, Config),
+    LPeer = jlib:jid_remove_resource(Peer),
+    lists:foreach(
+      fun(I) ->
+	      Body = jlib:integer_to_binary(I),
+	      send(Config, #message{to = LPeer,
+				    body = [#text{data = Body}],
+				    subject = [#text{data = <<"subject">>}]})
+      end, lists:seq(1, 5)),
+    disconnect(Config).
+
+flex_offline_slave(Config) ->
+    MyJID = my_jid(Config),
+    MyBareJID = jid:remove_resource(MyJID),
+    Peer = ?config(master, Config),
+    Peer_s = jid:to_string(Peer),
+    true = is_feature_advertised(Config, ?NS_FLEX_OFFLINE),
+    %% Request disco#info
+    #iq{type = result,
+	sub_els = [#disco_info{
+		      node = ?NS_FLEX_OFFLINE,
+		      identities = Ids,
+		      features = Fts,
+		      xdata = [X]}]} =
+	send_recv(Config, #iq{type = get,
+			      sub_els = [#disco_info{
+					    node = ?NS_FLEX_OFFLINE}]}),
+    %% Check if we have correct identities
+    true = lists:any(
+	     fun(#identity{category = <<"automation">>,
+			   type = <<"message-list">>}) -> true;
+		(_) -> false
+	     end, Ids),
+    %% Check if we have needed feature
+    true = lists:member(?NS_FLEX_OFFLINE, Fts),
+    %% Check xdata, the 'number_of_messages' should be 5
+    #xdata{type = result,
+	   fields = [#xdata_field{type = hidden,
+				  var = <<"FORM_TYPE">>},
+		     #xdata_field{var = <<"number_of_messages">>,
+				  values = [<<"5">>]}]} = X,
+    %% Fetch headers,
+    #iq{type = result,
+	sub_els = [#disco_items{
+		      node = ?NS_FLEX_OFFLINE,
+		      items = DiscoItems}]} =
+	send_recv(Config, #iq{type = get,
+			      sub_els = [#disco_items{
+					    node = ?NS_FLEX_OFFLINE}]}),
+    %% Check if headers are correct
+    Nodes = lists:sort(
+	      lists:map(
+		fun(#disco_item{jid = J, name = P, node = N})
+		      when (J == MyBareJID) and (P == Peer_s) ->
+			N
+		end, DiscoItems)),
+    %% Check full fetch
+    I0 = send(Config, #iq{type = get, sub_els = [#offline{fetch = true}]}),
+    lists:foreach(
+      fun({I, N}) ->
+	      Text = jlib:integer_to_binary(I),
+	      ?recv1(#message{body = Body, sub_els = SubEls}),
+	      [#text{data = Text}] = Body,
+	      #offline{items = [#offline_item{node = N}]} =
+		  lists:keyfind(offline, 1, SubEls),
+	      #delay{} = lists:keyfind(delay, 1, SubEls)
+      end, lists:zip(lists:seq(1, 5), Nodes)),
+    ?recv1(#iq{type = result, id = I0, sub_els = []}),
+    %% Fetch 2nd and 4th message
+    I1 = send(Config,
+	      #iq{type = get,
+		  sub_els = [#offline{
+				items = [#offline_item{
+					    action = view,
+					    node = lists:nth(2, Nodes)},
+					 #offline_item{
+					    action = view,
+					    node = lists:nth(4, Nodes)}]}]}),
+    lists:foreach(
+      fun({I, N}) ->
+	      Text = jlib:integer_to_binary(I),
+	      ?recv1(#message{body = [#text{data = Text}], sub_els = SubEls}),
+	      #offline{items = [#offline_item{node = N}]} =
+		  lists:keyfind(offline, 1, SubEls)
+      end, lists:zip([2, 4], [lists:nth(2, Nodes), lists:nth(4, Nodes)])),
+    ?recv1(#iq{type = result, id = I1, sub_els = []}),
+    %% Delete 2nd and 4th message
+    #iq{type = result, sub_els = []} =
+	send_recv(
+	  Config,
+	  #iq{type = set,
+	      sub_els = [#offline{
+			    items = [#offline_item{
+					action = remove,
+					node = lists:nth(2, Nodes)},
+				     #offline_item{
+					action = remove,
+					node = lists:nth(4, Nodes)}]}]}),
+    %% Check if messages were deleted
+    #iq{type = result,
+	sub_els = [#disco_items{
+		      node = ?NS_FLEX_OFFLINE,
+		      items = RemainedItems}]} =
+	send_recv(Config, #iq{type = get,
+			      sub_els = [#disco_items{
+					    node = ?NS_FLEX_OFFLINE}]}),
+    RemainedNodes = [lists:nth(1, Nodes),
+		     lists:nth(3, Nodes),
+		     lists:nth(5, Nodes)],
+    RemainedNodes = lists:sort(
+		      lists:map(
+			fun(#disco_item{node = N}) -> N end,
+			RemainedItems)),
+    %% Purge everything left
+    #iq{type = result, sub_els = []} =
+	send_recv(Config, #iq{type = set, sub_els = [#offline{purge = true}]}),
+    %% Check if there is no offline messages
+    #iq{type = result,
+	sub_els = [#disco_items{node = ?NS_FLEX_OFFLINE, items = []}]} =
+	send_recv(Config, #iq{type = get,
+			      sub_els = [#disco_items{
+					    node = ?NS_FLEX_OFFLINE}]}),
     disconnect(Config).
 
 offline_master(Config) ->

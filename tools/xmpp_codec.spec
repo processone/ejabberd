@@ -2398,6 +2398,35 @@
                    #ref{name = error_unexpected_request,
                         min = 0, max = 1, label = '$reason'}]}).
 
+-xml(offline_purge,
+     #elem{name = <<"purge">>,
+	   xmlns = <<"http://jabber.org/protocol/offline">>,
+	   result = true}).
+
+-xml(offline_fetch,
+     #elem{name = <<"fetch">>,
+	   xmlns = <<"http://jabber.org/protocol/offline">>,
+	   result = true}).
+
+-xml(offline_item,
+     #elem{name = <<"item">>,
+	   xmlns = <<"http://jabber.org/protocol/offline">>,
+	   result = {offline_item, '$node', '$action'},
+	   attrs = [#attr{name = <<"node">>},
+		    #attr{name = <<"action">>,
+			  dec = {dec_enum, [[view, remove]]},
+                          enc = {enc_enum, []}}]}).
+
+-xml(offline,
+     #elem{name = <<"offline">>,
+	   xmlns = <<"http://jabber.org/protocol/offline">>,
+	   result = {offline, '$items', '$purge', '$fetch'},
+	   refs = [#ref{name = offline_purge, min = 0, max = 1,
+			label = '$purge', default = false},
+		   #ref{name = offline_fetch, min = 0, max = 1,
+			label = '$fetch', default = false},
+		   #ref{name = offline_item, min = 0, label = '$items'}]}).
+
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),
     H = jlib:binary_to_integer(H1),

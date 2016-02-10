@@ -1,4 +1,4 @@
-%% Created automatically by XML generator (xml_gen.erl)
+%% Created automatically by XML generator (fxml_gen.erl)
 %% Source: xmpp_codec.spec
 
 -record(chatstate, {type :: active | composing | gone | inactive | paused}).
@@ -423,6 +423,13 @@
                      identities = [] :: [#identity{}],
                      features = [] :: [binary()],
                      xdata = [] :: [#xdata{}]}).
+
+-record(offline_item, {node :: binary(),
+                       action :: 'remove' | 'view'}).
+
+-record(offline, {items = [] :: [#offline_item{}],
+                  purge = false :: boolean(),
+                  fetch = false :: boolean()}).
 
 -record(sasl_mechanisms, {list = [] :: [binary()]}).
 
