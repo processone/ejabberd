@@ -177,8 +177,8 @@ parse_name(S, State) ->
     parse_name(S, [], State).
 
 parse_name([], Acc, State) ->
-                                                % todo
-    error;
+    throw({error, State#state.loc,
+           "expected ')', found end of string"});
 parse_name([$), T | S], Acc, State) ->
     Type =
         case T of
@@ -186,13 +186,13 @@ parse_name([$), T | S], Acc, State) ->
             $s -> string;
             $b -> boolean;
             _ ->
-                                                % todo
-                error
+                throw({error, State#state.loc,
+                       ["unknown type specifier '", T, "'"]})
         end,
     {lists:reverse(Acc), Type, S, State};
-parse_name([$) | _], Acc, State) ->
-                                                % todo
-    error;
+parse_name([$)], Acc, State) ->
+    throw({error, State#state.loc,
+           "expected type specifier, found end of string"});
 parse_name([C | S], Acc, State) ->
     parse_name(S, [C | Acc], State).
 
