@@ -563,6 +563,8 @@ select_sql_query([], _Type, _Version, undefined) ->
     undefined;
 select_sql_query([], _Type, _Version, Query) ->
     Query;
+select_sql_query([{any, Query} | _], _Type, _Version, _) ->
+    Query;
 select_sql_query([{Type, Query} | _], Type, _Version, _) ->
     Query;
 select_sql_query([{{Type, _Version1}, Query1} | Rest], Type, undefined, _) ->
