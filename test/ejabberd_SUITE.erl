@@ -1210,6 +1210,16 @@ muc_master(Config) ->
     %% Receive groupchat message from the peer
     ?recv1(#message{type = groupchat, from = PeerNickJID,
 	     body = [#text{data = Subject}]}),
+    %% Retrieving a member list
+    #iq{type = result, sub_els = [#muc_admin{items = MemberList}]} =
+	send_recv(Config,
+		  #iq{type = get, to = Room,
+		      sub_els =
+			  [#muc_admin{items = [#muc_item{affiliation = member}]}]}),
+    [#muc_item{affiliation = member,
+	       jid = Localhost},
+     #muc_item{affiliation = member,
+	       jid = MyBareJID}] = lists:keysort(#muc_item.jid, MemberList),
     %% Kick the peer
     I2 = send(Config,
 	      #iq{type = set, to = Room,
@@ -1329,16 +1339,6 @@ muc_slave(Config) ->
 			 #muc_user{
 			    items = [#muc_item{role = participant,
 					       affiliation = member}]}]}),
-    %% Retrieving a member list
-    #iq{type = result, sub_els = [#muc_admin{items = MemberList}]} =
-	send_recv(Config,
-		  #iq{type = get, to = Room,
-		      sub_els =
-			  [#muc_admin{items = [#muc_item{affiliation = member}]}]}),
-    [#muc_item{affiliation = member,
-	       jid = Localhost},
-     #muc_item{affiliation = member,
-	       jid = MyBareJID}] = lists:keysort(#muc_item.jid, MemberList),
     %% Sending groupchat message
     send(Config, #message{to = Room, type = groupchat,
 			  body = [#text{data = Subject}]}),

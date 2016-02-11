@@ -2569,7 +2569,8 @@ process_iq_admin(From, get, Lang, SubEl, StateData) ->
 			SAffiliation ->
 			    if (FAffiliation == owner) or
 				 (FAffiliation == admin) or
-				 ((FAffiliation == member) and (SAffiliation == member)) ->
+				 ((FAffiliation == member) and (SAffiliation == member) and
+				  not (StateData#state.config)#config.anonymous) ->
 				   Items = items_with_affiliation(SAffiliation,
 								  StateData),
 				   {result, Items, StateData};
