@@ -131,14 +131,14 @@ init_per_testcase(TestCase, OrigConfig) ->
 		    true -> Resource
 		 end,
     Slave = if IsCarbons ->
-		    jlib:make_jid(<<"test_master">>, Server, SlaveResource);
+		    jid:make(<<"test_master">>, Server, SlaveResource);
 	       true ->
-		    jlib:make_jid(<<"test_slave">>, Server, Resource)
+		    jid:make(<<"test_slave">>, Server, Resource)
 	    end,
     Master = if IsCarbons ->
-		     jlib:make_jid(<<"test_master">>, Server, MasterResource);
+		     jid:make(<<"test_master">>, Server, MasterResource);
 		true ->
-		     jlib:make_jid(<<"test_master">>, Server, Resource)
+		     jid:make(<<"test_master">>, Server, Resource)
 	     end,
     Config = set_opt(user, User,
                      set_opt(slave, Slave,
@@ -555,7 +555,7 @@ disco(Config) ->
 
 sm(Config) ->
     Server = ?config(server, Config),
-    ServerJID = jlib:make_jid(<<"">>, Server, <<"">>),
+    ServerJID = jid:make(<<"">>, Server, <<"">>),
     Msg = #message{to = ServerJID, body = [#text{data = <<"body">>}]},
     true = ?config(sm, Config),
     %% Enable the session management with resumption enabled
@@ -577,7 +577,7 @@ sm_resume(Config) ->
     {sm, SMConfig} = ?config(saved_config, Config),
     ID = ?config(sm_previd, SMConfig),
     Server = ?config(server, Config),
-    ServerJID = jlib:make_jid(<<"">>, Server, <<"">>),
+    ServerJID = jid:make(<<"">>, Server, <<"">>),
     MyJID = my_jid(Config),
     Txt = #text{data = <<"body">>},
     Msg = #message{from = ServerJID, to = MyJID, body = [Txt]},
@@ -593,7 +593,7 @@ sm_resume(Config) ->
 private(Config) ->
     Conference = #bookmark_conference{name = <<"Some name">>,
                                       autojoin = true,
-                                      jid = jlib:make_jid(
+                                      jid = jid:make(
                                               <<"some">>,
                                               <<"some.conference.org">>,
                                               <<>>)},
@@ -681,7 +681,7 @@ privacy(Config) ->
 
 blocking(Config) ->
     true = is_feature_advertised(Config, ?NS_BLOCKING),
-    JID = jlib:make_jid(<<"romeo">>, <<"montague.net">>, <<>>),
+    JID = jid:make(<<"romeo">>, <<"montague.net">>, <<>>),
     #iq{type = result, sub_els = [#block_list{}]} =
         send_recv(Config, #iq{type = get, sub_els = [#block_list{}]}),
     I1 = send(Config, #iq{type = set,
@@ -880,7 +880,7 @@ roster_subscribe_master(Config) ->
     ?recv1(#presence{}),
     wait_for_slave(Config),
     Peer = ?config(slave, Config),
-    LPeer = jlib:jid_remove_resource(Peer),
+    LPeer = jid:remove_resource(Peer),
     send(Config, #presence{type = subscribe, to = LPeer}),
     Push1 = ?recv1(#iq{type = set,
                 sub_els = [#roster{items = [#roster_item{
@@ -932,7 +932,7 @@ roster_subscribe_slave(Config) ->
     ?recv1(#presence{}),
     wait_for_master(Config),
     Peer = ?config(master, Config),
-    LPeer = jlib:jid_remove_resource(Peer),
+    LPeer = jid:remove_resource(Peer),
     ?recv1(#presence{type = subscribe, from = LPeer}),
     send(Config, #presence{type = subscribed, to = LPeer}),
     Push1 = ?recv1(#iq{type = set,
@@ -961,7 +961,7 @@ roster_subscribe_slave(Config) ->
 roster_remove_master(Config) ->
     MyJID = my_jid(Config),
     Peer = ?config(slave, Config),
-    LPeer = jlib:jid_remove_resource(Peer),
+    LPeer = jid:remove_resource(Peer),
     Groups = [<<"A">>, <<"B">>],
     wait_for_slave(Config),
     send(Config, #presence{}),
@@ -995,7 +995,7 @@ roster_remove_master(Config) ->
 roster_remove_slave(Config) ->
     MyJID = my_jid(Config),
     Peer = ?config(master, Config),
-    LPeer = jlib:jid_remove_resource(Peer),
+    LPeer = jid:remove_resource(Peer),
     send(Config, #presence{}),
     ?recv1(#presence{from = MyJID, type = undefined}),
     wait_for_master(Config),
@@ -1054,16 +1054,16 @@ proxy65_slave(Config) ->
 muc_master(Config) ->
     MyJID = my_jid(Config),
     PeerJID = ?config(slave, Config),
-    PeerBareJID = jlib:jid_remove_resource(PeerJID),
-    PeerJIDStr = jlib:jid_to_string(PeerJID),
+    PeerBareJID = jid:remove_resource(PeerJID),
+    PeerJIDStr = jid:to_string(PeerJID),
     MUC = muc_jid(Config),
     Room = muc_room_jid(Config),
     MyNick = ?config(master_nick, Config),
-    MyNickJID = jlib:jid_replace_resource(Room, MyNick),
+    MyNickJID = jid:replace_resource(Room, MyNick),
     PeerNick = ?config(slave_nick, Config),
-    PeerNickJID = jlib:jid_replace_resource(Room, PeerNick),
+    PeerNickJID = jid:replace_resource(Room, PeerNick),
     Subject = ?config(room_subject, Config),
-    Localhost = jlib:make_jid(<<"">>, <<"localhost">>, <<"">>),
+    Localhost = jid:make(<<"">>, <<"localhost">>, <<"">>),
     true = is_feature_advertised(Config, ?NS_MUC, MUC),
     %% Joining
     send(Config, #presence{to = MyNickJID, sub_els = [#muc{}]}),
@@ -1132,7 +1132,7 @@ muc_master(Config) ->
     %% Sending messages (and thus, populating history for our peer)
     lists:foreach(
       fun(N) ->
-              Text = #text{data = jlib:integer_to_binary(N)},
+              Text = #text{data = integer_to_binary(N)},
               I = send(Config, #message{to = Room, body = [Text],
 					type = groupchat}),
 	      ?recv1(#message{from = MyNickJID, id = I,
@@ -1244,16 +1244,16 @@ muc_master(Config) ->
 
 muc_slave(Config) ->
     MyJID = my_jid(Config),
-    MyBareJID = jlib:jid_remove_resource(MyJID),
+    MyBareJID = jid:remove_resource(MyJID),
     PeerJID = ?config(master, Config),
     MUC = muc_jid(Config),
     Room = muc_room_jid(Config),
     MyNick = ?config(slave_nick, Config),
-    MyNickJID = jlib:jid_replace_resource(Room, MyNick),
+    MyNickJID = jid:replace_resource(Room, MyNick),
     PeerNick = ?config(master_nick, Config),
-    PeerNickJID = jlib:jid_replace_resource(Room, PeerNick),
+    PeerNickJID = jid:replace_resource(Room, PeerNick),
     Subject = ?config(room_subject, Config),
-    Localhost = jlib:make_jid(<<"">>, <<"localhost">>, <<"">>),
+    Localhost = jid:make(<<"">>, <<"localhost">>, <<"">>),
     %% Receive an invite from the peer
     ?recv1(#message{from = Room, type = normal,
 	     sub_els =
@@ -1296,7 +1296,7 @@ muc_slave(Config) ->
     %% Receive MUC history
     lists:foreach(
       fun(N) ->
-              Text = #text{data = jlib:integer_to_binary(N)},
+              Text = #text{data = integer_to_binary(N)},
 	      ?recv1(#message{from = PeerNickJID,
 		       type = groupchat,
 		       body = [Text],
@@ -1417,7 +1417,7 @@ muc_register_slave(Config) ->
 announce_master(Config) ->
     MyJID = my_jid(Config),
     ServerJID = server_jid(Config),
-    MotdJID = jlib:jid_replace_resource(ServerJID, <<"announce/motd">>),
+    MotdJID = jid:replace_resource(ServerJID, <<"announce/motd">>),
     MotdText = #text{data = <<"motd">>},
     send(Config, #presence{}),
     ?recv1(#presence{from = MyJID}),
@@ -1430,7 +1430,7 @@ announce_master(Config) ->
 announce_slave(Config) ->
     MyJID = my_jid(Config),
     ServerJID = server_jid(Config),
-    MotdDelJID = jlib:jid_replace_resource(ServerJID, <<"announce/motd/delete">>),
+    MotdDelJID = jid:replace_resource(ServerJID, <<"announce/motd/delete">>),
     MotdText = #text{data = <<"motd">>},
     send(Config, #presence{}),
     ?recv2(#presence{from = MyJID},
@@ -1441,10 +1441,10 @@ announce_slave(Config) ->
 
 flex_offline_master(Config) ->
     Peer = ?config(slave, Config),
-    LPeer = jlib:jid_remove_resource(Peer),
+    LPeer = jid:remove_resource(Peer),
     lists:foreach(
       fun(I) ->
-	      Body = jlib:integer_to_binary(I),
+	      Body = integer_to_binary(I),
 	      send(Config, #message{to = LPeer,
 				    body = [#text{data = Body}],
 				    subject = [#text{data = <<"subject">>}]})
@@ -1504,7 +1504,7 @@ flex_offline_slave(Config) ->
     I0 = send(Config, #iq{type = get, sub_els = [#offline{fetch = true}]}),
     lists:foreach(
       fun({I, N}) ->
-	      Text = jlib:integer_to_binary(I),
+	      Text = integer_to_binary(I),
 	      ?recv1(#message{body = Body, sub_els = SubEls}),
 	      [#text{data = Text}] = Body,
 	      #offline{items = [#offline_item{node = N}]} =
@@ -1524,7 +1524,7 @@ flex_offline_slave(Config) ->
 					    node = lists:nth(4, Nodes)}]}]}),
     lists:foreach(
       fun({I, N}) ->
-	      Text = jlib:integer_to_binary(I),
+	      Text = integer_to_binary(I),
 	      ?recv1(#message{body = [#text{data = Text}], sub_els = SubEls}),
 	      #offline{items = [#offline_item{node = N}]} =
 		  lists:keyfind(offline, 1, SubEls)
@@ -1570,7 +1570,7 @@ flex_offline_slave(Config) ->
 
 offline_master(Config) ->
     Peer = ?config(slave, Config),
-    LPeer = jlib:jid_remove_resource(Peer),
+    LPeer = jid:remove_resource(Peer),
     send(Config, #message{to = LPeer,
                           body = [#text{data = <<"body">>}],
                           subject = [#text{data = <<"subject">>}]}),
@@ -1589,7 +1589,7 @@ offline_slave(Config) ->
 
 carbons_master(Config) ->
     MyJID = my_jid(Config),
-    MyBareJID = jlib:jid_remove_resource(MyJID),
+    MyBareJID = jid:remove_resource(MyJID),
     Peer = ?config(slave, Config),
     Txt = #text{data = <<"body">>},
     true = is_feature_advertised(Config, ?NS_CARBONS_2),
@@ -1643,7 +1643,7 @@ carbons_master(Config) ->
 
 carbons_slave(Config) ->
     MyJID = my_jid(Config),
-    MyBareJID = jlib:jid_remove_resource(MyJID),
+    MyBareJID = jid:remove_resource(MyJID),
     Peer = ?config(master, Config),
     Txt = #text{data = <<"body">>},
     wait_for_master(Config),
@@ -1711,7 +1711,7 @@ mam_new_master(Config) ->
 mam_master(Config, NS) ->
     true = is_feature_advertised(Config, NS),
     MyJID = my_jid(Config),
-    BareMyJID = jlib:jid_remove_resource(MyJID),
+    BareMyJID = jid:remove_resource(MyJID),
     Peer = ?config(slave, Config),
     send(Config, #presence{}),
     ?recv1(#presence{}),
@@ -1742,14 +1742,14 @@ mam_master(Config, NS) ->
     wait_for_slave(Config),
     lists:foreach(
       fun(N) ->
-              Text = #text{data = jlib:integer_to_binary(N)},
+              Text = #text{data = integer_to_binary(N)},
               send(Config,
                    #message{to = Peer, body = [Text]})
       end, lists:seq(1, 5)),
     ?recv1(#presence{type = unavailable, from = Peer}),
     mam_query_all(Config, NS),
     mam_query_with(Config, Peer, NS),
-    %% mam_query_with(Config, jlib:jid_remove_resource(Peer)),
+    %% mam_query_with(Config, jid:remove_resource(Peer)),
     mam_query_rsm(Config, NS),
     #iq{type = result, sub_els = [#mam_prefs{xmlns = NS, default = never}]} =
         send_recv(Config, #iq{type = set,
@@ -1776,7 +1776,7 @@ mam_slave(Config, NS) ->
     wait_for_master(Config),
     lists:foreach(
       fun(N) ->
-              Text = #text{data = jlib:integer_to_binary(N)},
+              Text = #text{data = integer_to_binary(N)},
 	      ?recv1(#message{from = Peer, body = [Text],
 			      sub_els = [#mam_archived{by = ServerJID}]})
       end, lists:seq(1, 5)),
@@ -1800,7 +1800,7 @@ mam_query_all(Config, NS) ->
 	   end,
     lists:foreach(
       fun(N) ->
-              Text = #text{data = jlib:integer_to_binary(N)},
+              Text = #text{data = integer_to_binary(N)},
               ?recv1(#message{to = MyJID,
                        sub_els =
                            [#mam_result{
@@ -1827,7 +1827,7 @@ mam_query_with(Config, JID, NS) ->
 		    {#mam_query{xmlns = NS, with = JID}, get};
 	       true ->
 		    Fs = [#xdata_field{var = <<"jid">>,
-				       values = [jlib:jid_to_string(JID)]}],
+				       values = [jid:to_string(JID)]}],
 		    {#mam_query{xmlns = NS,
 			       xdata = #xdata{type = submit, fields = Fs}}, set}
 	    end,
@@ -1838,7 +1838,7 @@ mam_query_with(Config, JID, NS) ->
     maybe_recv_iq_result(NS, I),
     lists:foreach(
       fun(N) ->
-              Text = #text{data = jlib:integer_to_binary(N)},
+              Text = #text{data = integer_to_binary(N)},
               ?recv1(#message{to = MyJID,
                        sub_els =
                            [#mam_result{
@@ -1876,7 +1876,7 @@ mam_query_rsm(Config, NS) ->
     maybe_recv_iq_result(NS, I1),
     lists:foreach(
       fun(N) ->
-              Text = #text{data = jlib:integer_to_binary(N)},
+              Text = #text{data = integer_to_binary(N)},
               ?recv1(#message{to = MyJID,
                        sub_els =
                            [#mam_result{
@@ -1908,7 +1908,7 @@ mam_query_rsm(Config, NS) ->
     maybe_recv_iq_result(NS, I2),
     lists:foreach(
       fun(N) ->
-              Text = #text{data = jlib:integer_to_binary(N)},
+              Text = #text{data = integer_to_binary(N)},
               ?recv1(#message{to = MyJID,
                        sub_els =
                            [#mam_result{
@@ -1945,7 +1945,7 @@ mam_query_rsm(Config, NS) ->
     maybe_recv_iq_result(NS, I3),
     lists:foreach(
       fun(N) ->
-              Text = #text{data = jlib:integer_to_binary(N)},
+              Text = #text{data = integer_to_binary(N)},
               ?recv1(#message{to = MyJID,
                        sub_els =
                            [#mam_result{
@@ -1996,7 +1996,7 @@ mam_query_rsm(Config, NS) ->
     maybe_recv_iq_result(NS, I5),
     lists:foreach(
       fun(N) ->
-	      Text = #text{data = jlib:integer_to_binary(N)},
+	      Text = #text{data = integer_to_binary(N)},
 	      ?recv1(#message{to = MyJID,
 			      sub_els =
 				  [#mam_result{
@@ -2067,14 +2067,14 @@ change_client_state(Config, NewState) ->
 bookmark_conference() ->
     #bookmark_conference{name = <<"Some name">>,
                          autojoin = true,
-                         jid = jlib:make_jid(
+                         jid = jid:make(
                                  <<"some">>,
                                  <<"some.conference.org">>,
                                  <<>>)}.
 
 socks5_connect(#streamhost{host = Host, port = Port},
                {SID, JID1, JID2}) ->
-    Hash = p1_sha:sha([SID, jlib:jid_to_string(JID1), jlib:jid_to_string(JID2)]),
+    Hash = p1_sha:sha([SID, jid:to_string(JID1), jid:to_string(JID2)]),
     {ok, Sock} = gen_tcp:connect(binary_to_list(Host), Port,
                                  [binary, {active, false}]),
     Init = <<?VERSION_5, 1, ?AUTH_ANONYMOUS>>,
@@ -2176,7 +2176,7 @@ clear_riak_tables(Config) ->
     User = ?config(user, Config),
     Server = ?config(server, Config),
     Room = muc_room_jid(Config),
-    {URoom, SRoom, _} = jlib:jid_tolower(Room),
+    {URoom, SRoom, _} = jid:tolower(Room),
     ejabberd_auth:remove_user(User, Server),
     ejabberd_auth:remove_user(<<"test_slave">>, Server),
     ejabberd_auth:remove_user(<<"test_master">>, Server),

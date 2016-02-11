@@ -331,28 +331,28 @@ response(User, Passwd, Nonce, AuthzId, Realm, CNonce,
     hex((erlang:md5(T))).
 
 my_jid(Config) ->
-    jlib:make_jid(?config(user, Config),
-                  ?config(server, Config),
-                  ?config(resource, Config)).
+    jid:make(?config(user, Config),
+	     ?config(server, Config),
+	     ?config(resource, Config)).
 
 server_jid(Config) ->
-    jlib:make_jid(<<>>, ?config(server, Config), <<>>).
+    jid:make(<<>>, ?config(server, Config), <<>>).
 
 pubsub_jid(Config) ->
     Server = ?config(server, Config),
-    jlib:make_jid(<<>>, <<"pubsub.", Server/binary>>, <<>>).
+    jid:make(<<>>, <<"pubsub.", Server/binary>>, <<>>).
 
 proxy_jid(Config) ->
     Server = ?config(server, Config),
-    jlib:make_jid(<<>>, <<"proxy.", Server/binary>>, <<>>).
+    jid:make(<<>>, <<"proxy.", Server/binary>>, <<>>).
 
 muc_jid(Config) ->
     Server = ?config(server, Config),
-    jlib:make_jid(<<>>, <<"conference.", Server/binary>>, <<>>).
+    jid:make(<<>>, <<"conference.", Server/binary>>, <<>>).
 
 muc_room_jid(Config) ->
     Server = ?config(server, Config),
-    jlib:make_jid(<<"test">>, <<"conference.", Server/binary>>, <<>>).
+    jid:make(<<"test">>, <<"conference.", Server/binary>>, <<>>).
 
 id() ->
     id(undefined).
