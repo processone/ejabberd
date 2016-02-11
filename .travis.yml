@@ -26,6 +26,10 @@ install:
   - sudo apt-get -qq install libexpat1-dev libyaml-dev libpam0g-dev libsqlite3-dev
 
 before_script:
+  - mkdir "$PWD/ebin"
+  - echo "[{riak_kv, [{add_paths, [\"$PWD/ebin/\"]}]}]." > advanced.config
+  - sudo mv advanced.config /etc/riak/advanced.config
+  - sudo service riak restart
   - mysql -u root -e "CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';"
   - mysql -u root -e "CREATE DATABASE ejabberd_test;"
   - mysql -u root -e "GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';"
@@ -39,7 +43,7 @@ script:
   - make
   - make install
   - make xref
-  - ERL_LIBS=$PWD make test
+  - make test
   - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log
 
 after_script:
