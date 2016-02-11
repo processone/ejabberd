@@ -1496,6 +1496,10 @@ flex_offline_slave(Config) ->
 		      when (J == MyBareJID) and (P == Peer_s) ->
 			N
 		end, DiscoItems)),
+    %% Since headers are received we can send initial presence without a risk
+    %% of getting offline messages flood
+    send(Config, #presence{}),
+    ?recv1(#presence{from = MyJID}),
     %% Check full fetch
     I0 = send(Config, #iq{type = get, sub_els = [#offline{fetch = true}]}),
     lists:foreach(
