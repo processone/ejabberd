@@ -324,7 +324,7 @@ format_args(Args, ArgsFormat) ->
 format_arg(Arg, integer) ->
     format_arg2(Arg, "~d");
 format_arg(Arg, binary) ->
-    list_to_binary(format_arg(Arg, string));
+    unicode:characters_to_binary(Arg, utf8);
 format_arg("", string) ->
     "";
 format_arg(Arg, string) ->

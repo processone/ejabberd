@@ -163,7 +163,11 @@ shell_escape()
 {
     local RES=()
     for i in "$@"; do
-        printf '%q ' "$i"
+        if test -z "$i"; then
+            printf '"" '
+        else
+            printf '"%q" ' "$i" | sed 's/\\\\n/\n/g;s/\\\\t/\t/g;s/\\\\r/\r/g'
+        fi
     done
 }
 
