@@ -174,12 +174,12 @@ append_string(S, State) ->
     State#state{query = [{str, S} | State#state.query]}.
 
 parse_name(S, State) ->
-    parse_name(S, [], State).
+    parse_name(S, [], 0, State).
 
-parse_name([], Acc, State) ->
+parse_name([], _Acc, _Depth, State) ->
     throw({error, State#state.loc,
            "expected ')', found end of string"});
-parse_name([$), T | S], Acc, State) ->
+parse_name([$), T | S], Acc, 0, State) ->
     Type =
         case T of
             $d -> integer;
@@ -190,11 +190,15 @@ parse_name([$), T | S], Acc, State) ->
                        ["unknown type specifier '", T, "'"]})
         end,
     {lists:reverse(Acc), Type, S, State};
-parse_name([$)], Acc, State) ->
+parse_name([$)], Acc, 0, State) ->
     throw({error, State#state.loc,
            "expected type specifier, found end of string"});
-parse_name([C | S], Acc, State) ->
-    parse_name(S, [C | Acc], State).
+parse_name([$( = C | S], Acc, Depth, State) ->
+    parse_name(S, [C | Acc], Depth + 1, State);
+parse_name([$) = C | S], Acc, Depth, State) ->
+    parse_name(S, [C | Acc], Depth - 1, State);
+parse_name([C | S], Acc, Depth, State) ->
+    parse_name(S, [C | Acc], Depth, State).
 
 
 make_sql_query(State) ->
