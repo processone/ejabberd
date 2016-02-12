@@ -25,6 +25,8 @@
 
 -module(odbc_queries).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -behaviour(ejabberd_config).
 
 -author("mremond@process-one.net").
@@ -60,6 +62,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 %% Almost a copy of string:join/2.
 %% We use this version because string:join/2 is relatively
@@ -291,23 +294,22 @@ add_spool_sql(Username, XML) ->
 add_spool(LServer, Queries) ->
     ejabberd_odbc:sql_transaction(LServer, Queries).
 
-get_and_del_spool_msg_t(LServer, Username) ->
+get_and_del_spool_msg_t(LServer, LUser) ->
     F = fun () ->
 		Result =
-		    ejabberd_odbc:sql_query_t([<<"select username, xml from spool where "
-						 "username='">>,
-					       Username,
-					       <<"'  order by seq;">>]),
-		ejabberd_odbc:sql_query_t([<<"delete from spool where username='">>,
-					   Username, <<"';">>]),
+		    ejabberd_odbc:sql_query_t(
+                      ?SQL("select @(username)s, @(xml)s from spool where "
+                           "username=%(LUser)s order by seq;")),
+		ejabberd_odbc:sql_query_t(
+                  ?SQL("delete from spool where username=%(LUser)s;")),
 		Result
 	end,
     ejabberd_odbc:sql_transaction(LServer, F).
 
-del_spool_msg(LServer, Username) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"delete from spool where username='">>, Username,
-			     <<"';">>]).
+del_spool_msg(LServer, LUser) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("delete from spool where username=%(LUser)s")).
 
 get_roster(LServer, Username) ->
     ejabberd_odbc:sql_query(LServer,
