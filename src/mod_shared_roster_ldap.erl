@@ -56,6 +56,8 @@
 
 -define(GROUP_CACHE_VALIDITY, 300).
 
+-define(SHARE_CACHE_VALIDITY, 86400).
+
 -define(LDAP_SEARCH_TIMEOUT, 5).
 
 -record(state,
@@ -85,7 +87,9 @@
          user_cache_size = ?CACHE_SIZE                :: non_neg_integer(),
          group_cache_size = ?CACHE_SIZE               :: non_neg_integer(),
 	 user_cache_validity = ?USER_CACHE_VALIDITY   :: non_neg_integer(),
-         group_cache_validity = ?GROUP_CACHE_VALIDITY :: non_neg_integer()}).
+         group_cache_validity = ?GROUP_CACHE_VALIDITY :: non_neg_integer(),
+    shared_cache_size = ?CACHE_SIZE :: non_neg_integer(),
+    shared_cache_validity = ?SHARE_CACHE_VALIDITY :: non_neg_integer()}).
 
 -record(group_info, {desc, members}).
 
@@ -228,6 +232,9 @@ init([Host, Opts]) ->
     cache_tab:new(shared_roster_ldap_group,
 		  [{max_size, State#state.group_cache_size}, {lru, false},
 		   {life_time, State#state.group_cache_validity}]),
+    cache_tab:new(shared_roster_display_groups,
+        [{max_size, State#state.shared_cache_size}, {lru, false},
+         {life_time, State#state.shared_cache_validity}]),
     ejabberd_hooks:add(roster_get, Host, ?MODULE,
 		       get_user_roster, 70),
     ejabberd_hooks:add(roster_in_subscription, Host,
@@ -312,8 +319,16 @@ eldap_search(State, FilterParseArgs, AttributesList) ->
 	  %% Filter parsing failed. Pretend we got no results.
 	  []
     end.
+get_user_displayed_groups({_, Host} = S) ->
+    case cache_tab:dirty_lookup(shared_roster_display_groups,
+        Host,
+        fun() -> A = get_user_displayed_groups_real(S), {ok, A} end)
+    of
+         {ok, List} -> List;
+         _ -> []
+    end.
 
-get_user_displayed_groups({User, Host}) ->
+get_user_displayed_groups_real({User, Host}) ->
     {ok, State} = eldap_utils:get_state(Host, ?MODULE),
     GroupAttr = State#state.group_attr,
     Entries = eldap_search(State,
@@ -524,6 +539,10 @@ parse_options(Host, Opts) ->
                            {ldap_group_cache_validity, Host}, Opts,
                            fun(I) when is_integer(I), I>0 -> I end,
                            ?GROUP_CACHE_VALIDITY),
+    SharedCacheValidity = gen_mod:get_opt(
+                           {ldap_shared_cache_validity, Host}, Opts,
+                           fun(I) when is_integer(I), I > 0 -> I end,
+                           ?SHARE_CACHE_VALIDITY),
     UserCacheSize = gen_mod:get_opt(
                       {ldap_user_cache_size, Host}, Opts,
                       fun(I) when is_integer(I), I>0 -> I end,
@@ -531,6 +550,10 @@ parse_options(Host, Opts) ->
     GroupCacheSize = gen_mod:get_opt(
                        {ldap_group_cache_size, Host}, Opts,
                        fun(I) when is_integer(I), I>0 -> I end,
+                       ?CACHE_SIZE),
+    SharedCacheSize = gen_mod:get_opt(
+                       {ldap_shared_cache_size, Host}, Opts,
+                       fun(I) when is_integer(I), I > 0 -> I end,
                        ?CACHE_SIZE),
     ConfigFilter = gen_mod:get_opt({ldap_filter, Host}, Opts,
                                        fun check_filter/1, <<"">>),
@@ -588,7 +611,9 @@ parse_options(Host, Opts) ->
 	   user_cache_size = UserCacheSize,
 	   user_cache_validity = UserCacheValidity,
 	   group_cache_size = GroupCacheSize,
-	   group_cache_validity = GroupCacheValidity}.
+	   group_cache_validity = GroupCacheValidity,
+     shared_cache_size = SharedCacheSize,
+     shared_cache_validity = SharedCacheValidity}.
 
 check_filter(F) ->
     NewF = iolist_to_binary(F),
