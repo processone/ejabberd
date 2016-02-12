@@ -3,7 +3,7 @@
 {"Access Control List Configuration","Configuração da Lista de Controle de Acesso"}.
 {"Access control lists","Listas de Controle de Acesso"}.
 {"Access Control Lists","Listas de Controle de Acesso"}.
-{"Access denied by service policy","Aceso denegado por la política do serviço"}.
+{"Access denied by service policy","Acesso negado pela política do serviço"}.
 {"Access rules","Regras de acesso"}.
 {"Access Rules","Regras de Acesso"}.
 {"Action on user","Ação no usuário"}.
@@ -23,11 +23,11 @@
 {"Allow visitors to change nickname","Permitir mudança de apelido aos visitantes"}.
 {"Allow visitors to send private messages to","Permitir visitantes enviar mensagem privada para"}.
 {"Allow visitors to send status text in presence updates","Permitir atualizações de status aos visitantes"}.
-{"Allow visitors to send voice requests","Permitir aos visitantes o envio de convites"}.
+{"Allow visitors to send voice requests","Permitir aos visitantes o envio de requisições de voz"}.
 {"All Users","Todos os usuários"}.
 {"Announcements","Anúncios"}.
 {"anyone","qualquer um"}.
-{"A password is required to enter this room","Se necessita senha para entrar em esta sala"}.
+{"A password is required to enter this room","Se necessita senha para entrar nesta sala"}.
 {"April","Abril"}.
 {"August","Agosto"}.
 {"Backup Management","Gestão de Backup"}.
@@ -43,7 +43,7 @@
 {"Chatroom configuration modified","Configuração da sala de bate-papo modificada"}.
 {"Chatroom is created","A sala de chat está criada"}.
 {"Chatroom is destroyed","A sala de chat está destruída"}.
-{"Chatroom is started","A sala de chat está inciada"}.
+{"Chatroom is started","A sala de chat está iniciada"}.
 {"Chatroom is stopped","A sala de chat está parada"}.
 {"Chatrooms","Salas de Chat"}.
 {"Choose a username and password to register with this server","Escolha um nome de usuário e senha para registrar-se neste servidor"}.
@@ -52,7 +52,7 @@
 {"Choose whether to approve this entity's subscription.","Aprovar esta assinatura."}.
 {"City","Cidade"}.
 {"Commands","Comandos"}.
-{"Conference room does not exist","La sala de conferencias não existe"}.
+{"Conference room does not exist","A sala de conferência não existe"}.
 {"Configuration","Configuração"}.
 {"Configuration of room ~s","Configuração para ~s"}.
 {"Connected Resources:","Recursos conectados:"}.
@@ -60,7 +60,7 @@
 {"Country","País"}.
 {"CPU Time:","Tempo de CPU"}.
 {"Database","Base de dados"}.
-{"Database Tables at ~p","Tabelas do bancod de dados em ~p"}.
+{"Database Tables at ~p","Tabelas da Base de dados em ~p"}.
 {"Database Tables Configuration at ","Configuração de Tabelas de Base de dados em "}.
 {"December","Dezembro"}.
 {"Default users as participants","Usuários padrões como participantes"}.
@@ -71,9 +71,9 @@
 {"Deliver event notifications","Entregar as notificações de evento"}.
 {"Deliver payloads with event notifications","Enviar payloads junto com as notificações de eventos"}.
 {"Description:","Descrição:"}.
-{"Disc only copy","Somente copia em disco"}.
+{"Disc only copy","Somente cópia em disco"}.
 {"Displayed Groups:","Grupos Exibidos:"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Não revele o seu computador a ninguém, mesmo para o administrador deste servidor Jabber."}.
+{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Não revele a sua senha a ninguém, nem mesmo para o administrador deste servidor Jabber."}.
 {"Dump Backup to Text File at ","Exportar backup para texto em "}.
 {"Dump to Text File","Exportar para arquivo texto"}.
 {"Edit Properties","Editar propriedades"}.
@@ -99,7 +99,7 @@
 {"Enter path to text file","Introduza caminho para o arquivo texto"}.
 {"Enter the text you see","Insira o texto que você vê"}.
 {"Enter username and encodings you wish to use for connecting to IRC servers.  Press 'Next' to get more fields to fill in.  Press 'Complete' to save settings.","Insira o nome de usuário e codificações que você deseja usar para conectar-se aos servidores de IRC. Depois, presione 'Next' ('Próximo') para exibir mais campos que devem ser preenchidos. Ao final, pressione 'Complete' ('Completar') para salvar a configuração."}.
-{"Enter username, encodings, ports and passwords you wish to use for connecting to IRC servers","Insira o nome de usuário, codificações, portas e senhas que vocêdeseja para usar nos servidores IRC"}.
+{"Enter username, encodings, ports and passwords you wish to use for connecting to IRC servers","Insira o nome de usuário, codificações, portas e senhas que você deseja para usar nos servidores IRC"}.
 {"Erlang Jabber Server","Servidor Jabber em Erlang"}.
 {"Error","Erro"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Exemplo: [{\"irc.teste.net\", \"koi8-r\"}, 6667, \"senha\"}, {\"dominio.foo.net\", \"iso8859-1\", 7000}, {\"irc.servidordeteste.net\", \"utf-8\"}]."}.
@@ -129,7 +129,7 @@
 {"has been kicked because of a system shutdown","foi desconectado porque o sistema foi desligado"}.
 {"has been kicked because the room has been changed to members-only","foi desconectado porque a política da sala mudou, só membros são permitidos"}.
 {"has been kicked","foi removido"}.
-{" has set the subject to: "," a posto o assunto: "}.
+{" has set the subject to: "," mudou o assunto para: "}.
 {"Host","Máquina"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Se você não conseguir ver o CAPTCHA aqui, visite a web page."}.
 {"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Se você deseja especificar portas diferentes, senhas ou codifações para servidores de IRC, complete esta lista com os valores no formato: '{\"servidor IRC\", \"codificação\", porta, \"senha\"}'. Por padrão, este serviço usa a codificação \"~s\", porta \"~p\", e senha em branco (vazia)"}.
@@ -155,7 +155,7 @@
 {"IRC Username","Usuário IRC"}.
 {"is now known as","é agora conhecido como"}.
 {"It is not allowed to send private messages","Não é permitido enviar mensagens privadas"}.
-{"It is not allowed to send private messages of type \"groupchat\"","No está permitido enviar mensagens privados do tipo \"groupchat\""}.
+{"It is not allowed to send private messages of type \"groupchat\"","Não é permitido enviar mensagens privadas do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir o envio de mensagens privadas para a sala"}.
 {"Jabber Account Registration","Registros de Contas Jabber"}.
 {"Jabber ID","ID Jabber"}.
@@ -181,7 +181,7 @@
 {"Make room CAPTCHA protected","Tornar protegida a senha da sala"}.
 {"Make room members-only","Tornar sala apenas para membros"}.
 {"Make room moderated","Tornar a sala moderada"}.
-{"Make room password protected","Tornar protegida a senha da sala"}.
+{"Make room password protected","Tornar sala protegida à senha"}.
 {"Make room persistent","Tornar sala persistente"}.
 {"Make room public searchable","Tornar sala pública possível de ser encontrada"}.
 {"March","Março"}.
@@ -189,7 +189,7 @@
 {"Max # of items to persist","Máximo # de elementos que persistem"}.
 {"Max payload size in bytes","Máximo tamanho do payload em bytes"}.
 {"May","Maio"}.
-{"Membership is required to enter this room","Necessitas ser membro de esta sala para poder entrar"}.
+{"Membership is required to enter this room","Necessitas ser membro desta sala para poder entrar"}.
 {"Members:","Membros:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Memorize a sua senha, ou escreva-a em um papel e guarde-o em um lugar seguro. Jabber não é uma maneira automatizada para recuperar a sua senha, se você a esquecer eventualmente."}.
 {"Memory","Memória"}.
@@ -211,7 +211,7 @@
 {"New Password:","Nova Senha:"}.
 {"Nickname","Apelido"}.
 {"Nickname Registration at ","Registro do apelido em "}.
-{"Nickname ~s does not exist in the room","O nick ~s não existe em la sala"}.
+{"Nickname ~s does not exist in the room","O nick ~s não existe na sala"}.
 {"nobody","ninguém"}.
 {"No body provided for announce message","Nenhum corpo de texto fornecido para anunciar mensagem"}.
 {"No Data","Nenhum dado"}.
@@ -238,19 +238,19 @@
 {"Online","Conectado"}.
 {"Online Users","Usuários conectados"}.
 {"Online Users:","Usuários online"}.
-{"Only deliver notifications to available users","Solo enviar notificações aos usuários disponíveis"}.
+{"Only deliver notifications to available users","Somente enviar notificações aos usuários disponíveis"}.
 {"Only moderators and participants are allowed to change the subject in this room","Somente os moderadores e os participamentes podem alterar o assunto desta sala"}.
 {"Only moderators are allowed to change the subject in this room","Somente os moderadores podem alterar o assunto desta sala"}.
 {"Only moderators can approve voice requests","Somente moderadores podem aprovar requisições de voz"}.
-{"Only occupants are allowed to send messages to the conference","Solo os ocupantes podem enviar mensagens a la sala"}.
-{"Only occupants are allowed to send queries to the conference","Solo os ocupantes podem enviar consultas a la sala"}.
+{"Only occupants are allowed to send messages to the conference","Somente os ocupantes podem enviar mensagens à sala"}.
+{"Only occupants are allowed to send queries to the conference","Somente os ocupantes podem enviar consultas à sala"}.
 {"Only service administrators are allowed to send service messages","Apenas administradores possuem permissão para enviar mensagens de serviço"}.
 {"Options","Opções"}.
 {"Organization Name","Nome da organização"}.
 {"Organization Unit","Departamento/Unidade"}.
 {"Outgoing s2s Connections","Conexões que partam de s2s"}.
 {"Outgoing s2s Connections:","Conexões que partem de s2s"}.
-{"Owner privileges required","Se requere privilégios de proprietário da sala"}.
+{"Owner privileges required","Se requer privilégios de proprietário da sala"}.
 {"Packet","Pacote"}.
 {"Password ~b","Senha ~b"}.
 {"Password:","Senha:"}.
@@ -276,18 +276,18 @@
 {"PubSub subscriber request","PubSub requisição de assinante"}.
 {"Purge all items when the relevant publisher goes offline","Descartar todos os itens quando o publicante principal estiver offline"}.
 {"Queries to the conference members are not allowed in this room","Nesta sala não se permite consultas aos membros da sala"}.
-{"RAM and disc copy","Copias na RAM e disco rígido"}.
-{"RAM copy","Copia em RAM"}.
+{"RAM and disc copy","Cópias na RAM e disco rígido"}.
+{"RAM copy","Cópia em RAM"}.
 {"Raw","Intocado"}.
 {"Really delete message of the day?","Deletar realmente a mensagem do dia?"}.
-{"Recipient is not in the conference room","O receptor não está em la sala de conferencia"}.
+{"Recipient is not in the conference room","O receptor não está na sala de conferência"}.
 {"Register a Jabber account","Registrar uma conta Jabber"}.
 {"Registered nicknames","Usuários registrados"}.
 {"Registered Users:","Usuários registrados"}.
 {"Registered Users","Usuários Registrados"}.
 {"Register","Registrar"}.
 {"Registration in mod_irc for ","Registro em mod_irc para "}.
-{"Remote copy","Copia remota"}.
+{"Remote copy","Cópia remota"}.
 {"Remove All Offline Messages","Remover Todas as Mensagens Offline"}.
 {"Remove","Remover"}.
 {"Remove User","Remover usuário"}.
@@ -301,7 +301,7 @@
 {"Restore plain text backup immediately:","Restaurar backup formato texto imediatamente:"}.
 {"Restore","Restaurar"}.
 {"Room Configuration","Configuração de salas"}.
-{"Room creation is denied by service policy","Se te a denegado criar la sala por política do serviço"}.
+{"Room creation is denied by service policy","Sala não pode ser criada devido à política do serviço"}.
 {"Room description","Descrição da Sala"}.
 {"Room Occupants","Número de participantes"}.
 {"Room title","Título da sala"}.
@@ -310,7 +310,7 @@
 {"Roster of ","Lista de contatos de "}.
 {"Roster size","Tamanho da Lista"}.
 {"RPC Call Error","Erro de chamada RPC"}.
-{"Running Nodes","Nos em execução"}.
+{"Running Nodes","Nós em execução"}.
 {"~s access rule configuration","Configuração da Regra de Acesso ~s"}.
 {"Saturday","Sábado"}.
 {"Script check","Verificação de Script"}.
@@ -330,7 +330,7 @@
 {"Show Ordinary Table","Mostrar Tabela Ordinária"}.
 {"Shut Down Service","Parar Serviço"}.
 {"~s invites you to the room ~s","~s convidou você para a sala ~s"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clientes jabber podem salvar a sua senha no seu computador. Use recurso somente se você considera este computador seguro o suficiente."}.
+{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clientes jabber podem salvar a sua senha no seu computador. Use o recurso somente se você considera este computador seguro o suficiente."}.
 {"Specify the access model","Especificar os modelos de acesso"}.
 {"Specify the event message type","Especificar o tipo de mensagem para o evento"}.
 {"Specify the publisher model","Especificar o modelo do publicante"}.
@@ -343,7 +343,7 @@
 {"Stop Modules at ","Parar módulos em "}.
 {"Stop Modules","Parar módulos"}.
 {"Stop","Parar"}.
-{"Stopped Nodes","Nos parados"}.
+{"Stopped Nodes","Nós parados"}.
 {"Storage Type","Tipo de armazenamento"}.
 {"Store binary backup:","Armazenar backup binário:"}.
 {"Store plain text backup:","Armazenar backup em texto:"}.
@@ -361,9 +361,9 @@
 {"the password is","a senha é"}.
 {"The password is too weak","Senha considerada fraca'"}.
 {"The password of your Jabber account was successfully changed.","A senha da sua conta Jabber foi mudada com sucesso."}.
-{"There was an error changing the password: ","Houveram erros ao mudar a senha: "}.
-{"There was an error creating the account: ","Houveram erras ao criar esta conta: "}.
-{"There was an error deleting the account: ","Erro ao deletar esta conta: "}.
+{"There was an error changing the password: ","Houve um erro ao mudar a senha: "}.
+{"There was an error creating the account: ","Houve um erro ao criar esta conta: "}.
+{"There was an error deleting the account: ","Houve um erro ao deletar esta conta: "}.
 {"This IP address is blacklisted in ~s","Este endereço IP está bloqueado em ~s"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Não é 'case insensitive': macbeth é o mesmo que MacBeth e ainda Macbeth. "}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Esta pagina aceita criações de novas contas Jabber neste servidor. A sua JID (Identificador Jabber) será da seguinte forma: 'usuário@servidor'. Por favor, leia cuidadosamente as instruções para preencher corretamente os campos."}.
@@ -372,7 +372,7 @@
 {"Time delay","Intervalo (Tempo)"}.
 {"Time","Tempo"}.
 {"Too many CAPTCHA requests","Número excessivo de requisições para o CAPTCHA"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Número excessivo (~p) de tentativas falhas de autenticação (~s). O endereço serádesbloqueado as ~s UTC"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Número excessivo (~p) de tentativas falhas de autenticação (~s). O endereço será desbloqueado às ~s UTC"}.
 {"Too many unacked stanzas","número excessivo de instâncias sem confirmação"}.
 {"To","Para"}.
 {"To ~s","Para ~s"}.
@@ -399,30 +399,30 @@
 {"User Management","Gerenciamento de Usuários"}.
 {"Username:","Usuário:"}.
 {"Users are not allowed to register accounts so quickly","Usuários não estão autorizados a registrar contas imediatamente"}.
-{"Users Last Activity","Ultimas atividades dos usuários"}.
+{"Users Last Activity","Últimas atividades dos usuários"}.
 {"User ~s","Usuário ~s"}.
 {"Users","Usuários"}.
 {"User","Usuário"}.
 {"Validate","Validar"}.
 {"vCard User Search","Busca de Usuário vCard"}.
 {"Virtual Hosts","Hosts virtuais"}.
-{"Visitors are not allowed to change their nicknames in this room","Nesta sala, os visitantes não pode mudar seus apelidos"}.
+{"Visitors are not allowed to change their nicknames in this room","Nesta sala, os visitantes não podem mudar seus apelidos"}.
 {"Visitors are not allowed to send messages to all occupants","Os visitantes não podem enviar mensagens a todos os ocupantes"}.
 {"Voice request","Requisição de voz"}.
-{"Voice requests are disabled in this conference","Requisições de voz estào desabilitadas nesta conferência"}.
+{"Voice requests are disabled in this conference","Requisições de voz estão desabilitadas nesta conferência"}.
 {"Wednesday","Quarta"}.
 {"When to send the last published item","Quando enviar o último tópico publicado"}.
 {"Whether to allow subscriptions","Permitir subscrições"}.
 {"You can later change your password using a Jabber client.","Mais tarde você pode alterar a sua senha usando um cliente Jabber."}.
-{"You have been banned from this room","As sido bloqueado em esta sala"}.
+{"You have been banned from this room","Você foi banido desta sala"}.
 {"You must fill in field \"Nickname\" in the form","Você deve completar o campo \"Apelido\" no formulário"}.
 {"You need a client that supports x:data and CAPTCHA to register","Você precisa de um cliente com suporte de x:data para poder registrar o nick"}.
 {"You need a client that supports x:data to register the nickname","Você precisa de um cliente com suporte a x:data para registrar o seu apelido"}.
-{"You need an x:data capable client to configure mod_irc settings","Necessitas um cliente com suporte de x:data para configurar las opções de mod_irc"}.
+{"You need an x:data capable client to configure mod_irc settings","Necessitas um cliente com suporte de x:data para configurar as opções de mod_irc"}.
 {"You need an x:data capable client to configure room","Necessitas um cliente com suporte de x:data para configurar la sala"}.
 {"You need an x:data capable client to search","Necessitas um cliente com suporte de x:data para poder buscar"}.
 {"Your active privacy list has denied the routing of this stanza.","Sua lista de privacidade ativa negou o roteamento deste."}.
 {"Your contact offline message queue is full. The message has been discarded.","Sua fila de mensagens offline esta cheia. Sua mensagem foi descartada"}.
-{"Your Jabber account was successfully created.","Sua conta jabber foi criada corretamente."}.
+{"Your Jabber account was successfully created.","Sua conta jabber foi criada com sucesso."}.
 {"Your Jabber account was successfully deleted.","Sua conta Jabber foi deletada com sucesso."}.
 {"Your messages to ~s are being blocked. To unblock them, visit ~s","Suas mensagens para ~s estão bloqueadas. Para desbloqueá-las, visite: ~s"}.

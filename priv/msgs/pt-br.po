@@ -1,11 +1,12 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
-"Last-Translator: Otávio Fernandes\n"
+"Last-Translator: Victor Rodrigues\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Portuguese (Brazil)\n"
+"X-Additional-Translator: Otávio Fernandes\n"
 "X-Additional-Translator: Renato Botelho\n"
 "X-Additional-Translator: Lucius Curado\n"
 "X-Additional-Translator: Felipe Brito Vasconcellos\n"
@@ -153,7 +154,7 @@ msgstr "Usuários conectados"
 
 #: ejabberd_web_admin.erl:971
 msgid "Users Last Activity"
-msgstr "Ultimas atividades dos usuários"
+msgstr "Últimas atividades dos usuários"
 
 #: ejabberd_web_admin.erl:975
 msgid "Period: "
@@ -281,7 +282,7 @@ msgstr "Nós"
 
 #: ejabberd_web_admin.erl:1814 mod_configure.erl:525
 msgid "Running Nodes"
-msgstr "Nos em execução"
+msgstr "Nós em execução"
 
 #: ejabberd_web_admin.erl:1815 mod_configure.erl:526
 msgid "Stopped Nodes"
@@ -327,7 +328,7 @@ msgstr "Erro de chamada RPC"
 
 #: ejabberd_web_admin.erl:1917
 msgid "Database Tables at ~p"
-msgstr "Tabelas do bancod de dados em ~p"
+msgstr "Tabelas da Base de dados em ~p"
 
 #: ejabberd_web_admin.erl:1927 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -687,19 +688,19 @@ msgstr "Selecione o tipo de armazenamento das tabelas"
 
 #: mod_configure.erl:1014 mod_configure.erl:1016
 msgid "Disc only copy"
-msgstr "Somente copia em disco"
+msgstr "Somente cópia em disco"
 
 #: mod_configure.erl:1014 mod_configure.erl:1016
 msgid "RAM and disc copy"
-msgstr "Copias na RAM e disco rígido"
+msgstr "Cópias na RAM e disco rígido"
 
 #: mod_configure.erl:1014 mod_configure.erl:1016
 msgid "RAM copy"
-msgstr "Copia em RAM"
+msgstr "Cópia em RAM"
 
 #: mod_configure.erl:1014 mod_configure.erl:1016
 msgid "Remote copy"
-msgstr "Copia remota"
+msgstr "Cópia remota"
 
 #: mod_configure.erl:1042
 msgid "Stop Modules at "
@@ -840,7 +841,7 @@ msgid ""
 "will be unblocked at ~s UTC"
 msgstr ""
 "Número excessivo (~p) de tentativas falhas de autenticação (~s). O endereço "
-"serádesbloqueado as ~s UTC"
+"será desbloqueado às ~s UTC"
 
 #: mod_http_upload.erl:586
 msgid "Please specify file size."
@@ -856,7 +857,7 @@ msgstr "Este endereço IP está bloqueado em ~s"
 
 #: mod_irc.erl:220 mod_muc.erl:455
 msgid "Access denied by service policy"
-msgstr "Aceso denegado por la política do serviço"
+msgstr "Acesso negado pela política do serviço"
 
 #: mod_irc.erl:439
 msgid "IRC Transport"
@@ -869,7 +870,7 @@ msgstr "Módulo de IRC para ejabberd"
 #: mod_irc.erl:644
 msgid "You need an x:data capable client to configure mod_irc settings"
 msgstr ""
-"Necessitas um cliente com suporte de x:data para configurar las opções de "
+"Necessitas um cliente com suporte de x:data para configurar as opções de "
 "mod_irc"
 
 #: mod_irc.erl:653
@@ -881,7 +882,7 @@ msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
 msgstr ""
-"Insira o nome de usuário, codificações, portas e senhas que vocêdeseja para "
+"Insira o nome de usuário, codificações, portas e senhas que você deseja para "
 "usar nos servidores IRC"
 
 #: mod_irc.erl:667
@@ -978,7 +979,7 @@ msgstr ""
 
 #: mod_muc.erl:610
 msgid "Room creation is denied by service policy"
-msgstr "Sala não pode ser criada devido a política de serviço"
+msgstr "Sala não pode ser criada devido à política do serviço"
 
 #: mod_muc.erl:617
 msgid "Conference room does not exist"
@@ -1078,7 +1079,7 @@ msgstr "é agora conhecido como"
 
 #: mod_muc_log.erl:449 mod_muc_log.erl:788
 msgid " has set the subject to: "
-msgstr " a posto o assunto: "
+msgstr " mudou o assunto para: "
 
 #: mod_muc_log.erl:489
 msgid "Chatroom is created"
@@ -1090,7 +1091,7 @@ msgstr "A sala de chat está destruída"
 
 #: mod_muc_log.erl:493
 msgid "Chatroom is started"
-msgstr "A sala de chat está inciada"
+msgstr "A sala de chat está iniciada"
 
 #: mod_muc_log.erl:495
 msgid "Chatroom is stopped"
@@ -1190,7 +1191,7 @@ msgid ""
 "has sent an error message (~s) and got kicked from the room"
 msgstr ""
 "Não é permitido o envio de mensagens de erro a esta sala. O membro "
-"(~s)enviou uma mensagem de erro (~s) e foi desconectado (\"kicked\")."
+"(~s) enviou uma mensagem de erro (~s) e foi desconectado (\"kicked\")."
 
 #: mod_muc_room.erl:241
 msgid "It is not allowed to send private messages to the conference"
@@ -1202,7 +1203,7 @@ msgstr "Por favor, espere antes de enviar uma nova requisição de voz"
 
 #: mod_muc_room.erl:329
 msgid "Voice requests are disabled in this conference"
-msgstr "Requisições de voz estào desabilitadas nesta conferência"
+msgstr "Requisições de voz estão desabilitadas nesta conferência"
 
 #: mod_muc_room.erl:347
 msgid "Failed to extract JID from your voice request approval"
@@ -1218,11 +1219,11 @@ msgstr "Tipo de mensagem incorreto"
 
 #: mod_muc_room.erl:534
 msgid "It is not allowed to send private messages of type \"groupchat\""
-msgstr "No está permitido enviar mensagens privados do tipo \"groupchat\""
+msgstr "Não é permitido enviar mensagens privadas do tipo \"groupchat\""
 
 #: mod_muc_room.erl:546 mod_muc_room.erl:621
 msgid "Recipient is not in the conference room"
-msgstr "O receptor não está em la sala de conferencia"
+msgstr "O receptor não está na sala de conferência"
 
 #: mod_muc_room.erl:576 mod_muc_room.erl:598
 msgid "It is not allowed to send private messages"
@@ -1230,11 +1231,11 @@ msgstr "Não é permitido enviar mensagens privadas"
 
 #: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4594
 msgid "Only occupants are allowed to send messages to the conference"
-msgstr "Solo os ocupantes podem enviar mensagens a la sala"
+msgstr "Somente os ocupantes podem enviar mensagens à sala"
 
 #: mod_muc_room.erl:644
 msgid "Only occupants are allowed to send queries to the conference"
-msgstr "Solo os ocupantes podem enviar consultas a la sala"
+msgstr "Somente os ocupantes podem enviar consultas à sala"
 
 #: mod_muc_room.erl:657
 msgid "Queries to the conference members are not allowed in this room"
@@ -1258,7 +1259,7 @@ msgstr "Os visitantes não podem enviar mensagens a todos os ocupantes"
 
 #: mod_muc_room.erl:1080
 msgid "Visitors are not allowed to change their nicknames in this room"
-msgstr "Nesta sala, os visitantes não pode mudar seus apelidos"
+msgstr "Nesta sala, os visitantes não podem mudar seus apelidos"
 
 #: mod_muc_room.erl:1093 mod_muc_room.erl:1835
 msgid "That nickname is already in use by another occupant"
@@ -1266,15 +1267,15 @@ msgstr "O apelido (nick) já está sendo utilizado"
 
 #: mod_muc_room.erl:1822
 msgid "You have been banned from this room"
-msgstr "As sido bloqueado em esta sala"
+msgstr "Você foi banido desta sala"
 
 #: mod_muc_room.erl:1826
 msgid "Membership is required to enter this room"
-msgstr "Necessitas ser membro de esta sala para poder entrar"
+msgstr "Necessitas ser membro desta sala para poder entrar"
 
 #: mod_muc_room.erl:1872
 msgid "A password is required to enter this room"
-msgstr "Se necessita senha para entrar em esta sala"
+msgstr "Se necessita senha para entrar nesta sala"
 
 #: mod_muc_room.erl:1898 mod_register.erl:295
 msgid "Too many CAPTCHA requests"
@@ -1302,7 +1303,7 @@ msgstr "O Jabber ID ~s não es válido"
 
 #: mod_muc_room.erl:2772
 msgid "Nickname ~s does not exist in the room"
-msgstr "O nick ~s não existe em la sala"
+msgstr "O nick ~s não existe na sala"
 
 #: mod_muc_room.erl:2795 mod_muc_room.erl:3175
 msgid "Invalid affiliation: ~s"
@@ -1314,7 +1315,7 @@ msgstr "Cargo (role) é não válido: ~s"
 
 #: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4236
 msgid "Owner privileges required"
-msgstr "Se requere privilégios de proprietário da sala"
+msgstr "Se requer privilégios de proprietário da sala"
 
 #: mod_muc_room.erl:3348
 msgid "Configuration of room ~s"
@@ -1342,7 +1343,7 @@ msgstr "Tornar pública a lista de participantes"
 
 #: mod_muc_room.erl:3380
 msgid "Make room password protected"
-msgstr "Tornar protegida a senha da sala"
+msgstr "Tornar sala protegida à senha"
 
 #: mod_muc_room.erl:3394
 msgid "Maximum Number of Occupants"
@@ -1426,7 +1427,7 @@ msgstr "Permitir mudança de apelido aos visitantes"
 
 #: mod_muc_room.erl:3589
 msgid "Allow visitors to send voice requests"
-msgstr "Permitir aos visitantes o envio de convites"
+msgstr "Permitir aos visitantes o envio de requisições de voz"
 
 #: mod_muc_room.erl:3592
 msgid "Minimum interval between voice requests (in seconds)"
@@ -1450,7 +1451,7 @@ msgstr "Permitir criação de logs"
 
 #: mod_muc_room.erl:3631
 msgid "You need an x:data capable client to configure room"
-msgstr "Necessitas um cliente com suporte de x:data para configurar la sala"
+msgstr "Necessitas um cliente com suporte de x:data para configurar a sala"
 
 #: mod_muc_room.erl:4192
 msgid "Number of occupants"
@@ -1474,7 +1475,7 @@ msgstr "Usuário JID"
 
 #: mod_muc_room.erl:4355
 msgid "Grant voice to this person?"
-msgstr "Dar 'voice' a esta usuário?"
+msgstr "Dar voz a esta pessoa?"
 
 #: mod_muc_room.erl:4498
 msgid "~s invites you to the room ~s"
@@ -1623,7 +1624,7 @@ msgstr "Quando enviar o último tópico publicado"
 
 #: mod_pubsub.erl:3777
 msgid "Only deliver notifications to available users"
-msgstr "Solo enviar notificações aos usuários disponíveis"
+msgstr "Somente enviar notificações aos usuários disponíveis"
 
 #: mod_pubsub.erl:3779
 msgid "The collections with which a node is affiliated"
@@ -1652,11 +1653,11 @@ msgstr "Usuários não estão autorizados a registrar contas imediatamente"
 
 #: mod_register_web.erl:105
 msgid "Your Jabber account was successfully created."
-msgstr "Sua conta jabber foi criada corretamente."
+msgstr "Sua conta jabber foi criada com sucesso."
 
 #: mod_register_web.erl:110
 msgid "There was an error creating the account: "
-msgstr "Houveram erras ao criar esta conta: "
+msgstr "Houve um erro ao criar esta conta: "
 
 #: mod_register_web.erl:119
 msgid "Your Jabber account was successfully deleted."
@@ -1664,7 +1665,7 @@ msgstr "Sua conta Jabber foi deletada com sucesso."
 
 #: mod_register_web.erl:124
 msgid "There was an error deleting the account: "
-msgstr "Erro ao deletar esta conta: "
+msgstr "Houve um erro ao deletar esta conta: "
 
 #: mod_register_web.erl:135
 msgid "The password of your Jabber account was successfully changed."
@@ -1672,7 +1673,7 @@ msgstr "A senha da sua conta Jabber foi mudada com sucesso."
 
 #: mod_register_web.erl:140
 msgid "There was an error changing the password: "
-msgstr "Houveram erros ao mudar a senha: "
+msgstr "Houve um erro ao mudar a senha: "
 
 #: mod_register_web.erl:175 mod_register_web.erl:183
 msgid "Jabber Account Registration"
@@ -1719,7 +1720,7 @@ msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
 msgstr ""
-"Não revele o seu computador a ninguém, mesmo para o administrador deste "
+"Não revele a sua senha a ninguém, nem mesmo para o administrador deste "
 "servidor Jabber."
 
 #: mod_register_web.erl:249
