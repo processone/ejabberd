@@ -139,16 +139,17 @@ del_last(LServer, Username) ->
 			    [<<"delete from last where username='">>, Username,
 			     <<"'">>]).
 
-get_password(LServer, Username) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"select password from users where username='">>,
-			     Username, <<"';">>]).
-
-get_password_scram(LServer, Username) ->
+get_password(LServer, LUser) ->
     ejabberd_odbc:sql_query(
       LServer,
-      [<<"select password, serverkey, salt, iterationcount from users where "
-        "username='">>, Username, <<"';">>]).
+      ?SQL("select @(password)s from users where username=%(LUser)s")).
+
+get_password_scram(LServer, LUser) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(password)s, @(serverkey)s, @(salt)s, @(iterationcount)d"
+           " from users"
+           " where username=%(LUser)s")).
 
 set_password_t(LServer, Username, Pass) ->
     ejabberd_odbc:sql_transaction(LServer,
@@ -311,46 +312,46 @@ del_spool_msg(LServer, LUser) ->
       LServer,
       ?SQL("delete from spool where username=%(LUser)s")).
 
-get_roster(LServer, Username) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"select username, jid, nick, subscription, "
-			       "ask, askmessage, server, subscribe, "
-			       "type from rosterusers where username='">>,
-			     Username, <<"'">>]).
+get_roster(LServer, LUser) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(username)s, @(jid)s, @(nick)s, @(subscription)s, "
+           "@(ask)s, @(askmessage)s, @(server)s, @(subscribe)s, "
+           "@(type)s from rosterusers where username=%(LUser)s")).
 
-get_roster_jid_groups(LServer, Username) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"select jid, grp from rostergroups where "
-			       "username='">>,
-			     Username, <<"'">>]).
+get_roster_jid_groups(LServer, LUser) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(jid)s, @(grp)s from rostergroups where "
+           "username=%(LUser)s")).
 
-get_roster_groups(_LServer, Username, SJID) ->
-    ejabberd_odbc:sql_query_t([<<"select grp from rostergroups where username='">>,
-			       Username, <<"' and jid='">>, SJID, <<"';">>]).
+get_roster_groups(_LServer, LUser, SJID) ->
+    ejabberd_odbc:sql_query_t(
+      ?SQL("select @(grp)s from rostergroups"
+           " where username=%(LUser)s and jid=%(SJID)s")).
 
-del_user_roster_t(LServer, Username) ->
-    ejabberd_odbc:sql_transaction(LServer,
-				  fun () ->
-					  ejabberd_odbc:sql_query_t([<<"delete from rosterusers       where "
-								       "username='">>,
-								     Username,
-								     <<"';">>]),
-					  ejabberd_odbc:sql_query_t([<<"delete from rostergroups       where "
-								       "username='">>,
-								     Username,
-								     <<"';">>])
-				  end).
+del_user_roster_t(LServer, LUser) ->
+    ejabberd_odbc:sql_transaction(
+      LServer,
+      fun () ->
+              ejabberd_odbc:sql_query_t(
+                ?SQL("delete from rosterusers where username=%(LUser)s")),
+              ejabberd_odbc:sql_query_t(
+                ?SQL("delete from rostergroups where username=%(LUser)s"))
+      end).
 
-get_roster_by_jid(_LServer, Username, SJID) ->
-    ejabberd_odbc:sql_query_t([<<"select username, jid, nick, subscription, "
-				 "ask, askmessage, server, subscribe, "
-				 "type from rosterusers where username='">>,
-			       Username, <<"' and jid='">>, SJID, <<"';">>]).
+get_roster_by_jid(_LServer, LUser, SJID) ->
+    ejabberd_odbc:sql_query_t(
+      ?SQL("select @(username)s, @(jid)s, @(nick)s, @(subscription)s,"
+           " @(ask)s, @(askmessage)s, @(server)s, @(subscribe)s,"
+           " @(type)s from rosterusers"
+           " where username=%(LUser)s and jid=%(SJID)s")).
 
-get_rostergroup_by_jid(LServer, Username, SJID) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"select grp from rostergroups where username='">>,
-			     Username, <<"' and jid='">>, SJID, <<"'">>]).
+get_rostergroup_by_jid(LServer, LUser, SJID) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(grp)s from rostergroups"
+           " where username=%(LUser)s and jid=%(SJID)s")).
 
 del_roster(_LServer, Username, SJID) ->
     ejabberd_odbc:sql_query_t([<<"delete from rosterusers       where "
@@ -421,11 +422,11 @@ roster_subscribe(_LServer, Username, SJID, ItemVals) ->
 	     [<<"username='">>, Username, <<"' and jid='">>, SJID,
 	      <<"'">>]).
 
-get_subscription(LServer, Username, SJID) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"select subscription from rosterusers "
-			       "where username='">>,
-			     Username, <<"' and jid='">>, SJID, <<"'">>]).
+get_subscription(LServer, LUser, SJID) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(subscription)s from rosterusers "
+           "where username=%(LUser)s and jid=%(SJID)s")).
 
 set_private_data(_LServer, Username, LXMLNS, SData) ->
     update_t(<<"private_storage">>,
@@ -639,10 +640,10 @@ count_records_where(LServer, Table, WhereClause) ->
 			     WhereClause, <<";">>]).
 
 get_roster_version(LServer, LUser) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"select version from roster_version where "
-			       "username = '">>,
-			     LUser, <<"'">>]).
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(version)s from roster_version"
+           " where username = %(LUser)s")).
 
 set_roster_version(LUser, Version) ->
     update_t(<<"roster_version">>,
