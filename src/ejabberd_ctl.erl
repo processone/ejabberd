@@ -349,7 +349,7 @@ format_result(Atom, {_Name, atom}) ->
 format_result(Int, {_Name, integer}) ->
     io_lib:format("~p", [Int]);
 
-format_result(String, {_Name, string}) when is_list(String) ->
+format_result([A|_]=String, {_Name, string}) when is_list(String) and is_integer(A) ->
     io_lib:format("~s", [String]);
 
 format_result(Binary, {_Name, string}) when is_binary(Binary) ->
