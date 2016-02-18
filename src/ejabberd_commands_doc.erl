@@ -158,7 +158,7 @@ java_call(Name, ArgsDesc, Values, HTMLOutput) ->
      Indent, ?ID_L("client"), ?OP_L("."), ?ID_L("setConfig"), ?OP_L("("), ?ID_L("config"), ?OP_L(");"), ?BR, Indent, ?BR,
      Indent, ?ID_L("client"), ?OP_L("."), ?ID_L("execute"), ?OP_L("("), ?STR_A(Name), ?OP_L(", "),
      java_gen_map(lists:map(fun({A,B})->java_gen(A, B, Indent, HTMLOutput) end, lists:zip(ArgsDesc, Values)), Indent, HTMLOutput),
-     ?OP_L(");"), ?BR].
+     ?OP_L(");")].
 
 -define(XML_S(N, V), ?OP_L("<"), ?FIELD_L(??N), ?OP_L(">"), V).
 -define(XML_E(N), ?OP_L("</"), ?FIELD_L(??N), ?OP_L(">")).
