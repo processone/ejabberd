@@ -475,6 +475,12 @@ execute_bloc(F) ->
       Res -> {atomic, Res}
     end.
 
+execute_fun(F) when is_function(F, 0) ->
+    F();
+execute_fun(F) when is_function(F, 2) ->
+    State = get(?STATE_KEY),
+    F(State#state.db_type, State#state.db_version).
+
 sql_query_internal([{_, _} | _] = Queries) ->
     State = get(?STATE_KEY),
     case select_sql_query(Queries, State) of
@@ -528,6 +534,11 @@ sql_query_internal(#sql_query{} = Query) ->
         {error, <<"No SQL-driver information available.">>} ->
             {updated, 0};
         _Else -> Res
+    end;
+sql_query_internal(F) when is_function(F) ->
+    case catch execute_fun(F) of
+        {'EXIT', Reason} -> {error, Reason};
+        Res -> Res
     end;
 sql_query_internal(Query) ->
     State = get(?STATE_KEY),
@@ -615,6 +626,9 @@ pgsql_execute_sql_query(SQLQuery, State) ->
     Args = (SQLQuery#sql_query.args)(pgsql_execute_escape()),
     ExecuteRes =
         pgsql:execute(State#state.db_ref, SQLQuery#sql_query.hash, Args),
+%    {T, ExecuteRes} =
+%        timer:tc(pgsql, execute, [State#state.db_ref, SQLQuery#sql_query.hash, Args]),
+%    io:format("T ~s ~p~n", [SQLQuery#sql_query.hash, T]),
     Res = pgsql_execute_to_odbc(ExecuteRes),
     sql_query_format_res(Res, SQLQuery).
 
