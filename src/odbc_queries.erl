@@ -122,22 +122,22 @@ update(LServer, Table, Fields, Vals, Where) ->
 sql_transaction(LServer, F) ->
     ejabberd_odbc:sql_transaction(LServer, F).
 
-get_last(LServer, Username) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"select seconds, state from last where "
-			       "username='">>,
-			     Username, <<"'">>]).
+get_last(LServer, LUser) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(seconds)d, @(state)s from last"
+           " where username=%(LUser)s")).
 
-set_last_t(LServer, Username, Seconds, State) ->
-    update(LServer, <<"last">>,
-	   [<<"username">>, <<"seconds">>, <<"state">>],
-	   [Username, Seconds, State],
-	   [<<"username='">>, Username, <<"'">>]).
+set_last_t(LServer, LUser, TimeStamp, Status) ->
+    ?SQL_UPSERT(LServer, "last",
+                ["!username=%(LUser)s",
+                 "seconds=%(TimeStamp)d",
+                 "state=%(Status)s"]).
 
-del_last(LServer, Username) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"delete from last where username='">>, Username,
-			     <<"'">>]).
+del_last(LServer, LUser) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("delete from last where username=%(LUser)s")).
 
 get_password(LServer, LUser) ->
     ejabberd_odbc:sql_query(
