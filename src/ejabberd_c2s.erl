@@ -469,6 +469,22 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						false ->
 						    []
 					    end,
+					    SockMod =
+						(StateData#state.sockmod):get_sockmod(
+						  StateData#state.socket),
+					    Zlib = StateData#state.zlib,
+					    CompressFeature =
+						case Zlib andalso
+						    ((SockMod == gen_tcp) orelse (SockMod == fast_tls)) of
+						    true ->
+							[#xmlel{name = <<"compression">>,
+								attrs = [{<<"xmlns">>, ?NS_FEATURE_COMPRESS}],
+								children = [#xmlel{name = <<"method">>,
+										   attrs = [],
+										   children = [{xmlcdata, <<"zlib">>}]}]}];
+						    _ ->
+							[]
+						end,
 					    StreamFeatures1 = [#xmlel{name = <<"bind">>,
 							attrs = [{<<"xmlns">>, ?NS_BIND}],
 							children = []},
@@ -479,6 +495,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 						++
 						RosterVersioningFeature ++
 						StreamManagementFeature ++
+						CompressFeature ++
 						ejabberd_hooks:run_fold(c2s_post_auth_features,
 						    Server, [], [Server]),
 					    StreamFeatures = ejabberd_hooks:run_fold(c2s_stream_features,
@@ -815,38 +832,7 @@ wait_for_feature_request({xmlstreamelement, El},
       {?NS_COMPRESS, <<"compress">>}
 	  when Zlib == true,
 	       (SockMod == gen_tcp) or (SockMod == fast_tls) ->
-	  case fxml:get_subtag(El, <<"method">>) of
-	    false ->
-		send_element(StateData,
-			     #xmlel{name = <<"failure">>,
-				    attrs = [{<<"xmlns">>, ?NS_COMPRESS}],
-				    children =
-					[#xmlel{name = <<"setup-failed">>,
-						attrs = [], children = []}]}),
-		fsm_next_state(wait_for_feature_request, StateData);
-	    Method ->
-		case fxml:get_tag_cdata(Method) of
-		  <<"zlib">> ->
-		      Socket = StateData#state.socket,
-		      BCompressed = fxml:element_to_binary(#xmlel{name = <<"compressed">>,
-								 attrs = [{<<"xmlns">>, ?NS_COMPRESS}]}),
-		      ZlibSocket = (StateData#state.sockmod):compress(Socket,
-								      BCompressed),
-		      fsm_next_state(wait_for_stream,
-				     StateData#state{socket = ZlibSocket,
-						     streamid = new_id()});
-		  _ ->
-		      send_element(StateData,
-				   #xmlel{name = <<"failure">>,
-					  attrs = [{<<"xmlns">>, ?NS_COMPRESS}],
-					  children =
-					      [#xmlel{name =
-							  <<"unsupported-method">>,
-						      attrs = [],
-						      children = []}]}),
-		      fsm_next_state(wait_for_feature_request, StateData)
-		end
-	  end;
+	  process_compression_request(El, wait_for_feature_request, StateData);
       _ ->
 	  if TLSRequired and not TLSEnabled ->
 		 Lang = StateData#state.lang,
@@ -1089,7 +1075,19 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
                         end
 		end
 	  end;
-      _ -> fsm_next_state(wait_for_bind, StateData)
+	_ ->
+	    #xmlel{name = Name, attrs = Attrs, children = _Els} = El,
+	    Zlib = StateData#state.zlib,
+	    SockMod =
+		(StateData#state.sockmod):get_sockmod(StateData#state.socket),
+	    case {fxml:get_attr_s(<<"xmlns">>, Attrs), Name} of
+		{?NS_COMPRESS, <<"compress">>}
+		when Zlib == true,
+		     (SockMod == gen_tcp) or (SockMod == fast_tls) ->
+		    process_compression_request(El, wait_for_bind, StateData);
+		_ ->
+		    fsm_next_state(wait_for_bind, StateData)
+	    end
     end;
 wait_for_bind(timeout, StateData) ->
     {stop, normal, StateData};
@@ -2508,6 +2506,41 @@ bounce_messages() ->
       {route, From, To, El} ->
 	  ejabberd_router:route(From, To, El), bounce_messages()
       after 0 -> ok
+    end.
+
+process_compression_request(El, StateName, StateData) ->
+    case fxml:get_subtag(El, <<"method">>) of
+	false ->
+	    send_element(StateData,
+			 #xmlel{name = <<"failure">>,
+				attrs = [{<<"xmlns">>, ?NS_COMPRESS}],
+				children =
+				[#xmlel{name = <<"setup-failed">>,
+					attrs = [], children = []}]}),
+	    fsm_next_state(StateName, StateData);
+	Method ->
+	    case fxml:get_tag_cdata(Method) of
+		<<"zlib">> ->
+		    Socket = StateData#state.socket,
+		    BCompressed = fxml:element_to_binary(
+				    #xmlel{name = <<"compressed">>,
+					   attrs = [{<<"xmlns">>,
+						     ?NS_COMPRESS}]}),
+		    ZlibSocket = (StateData#state.sockmod):compress(
+				   Socket, BCompressed),
+		    fsm_next_state(wait_for_stream,
+				   StateData#state{socket = ZlibSocket,
+						   streamid = new_id()});
+		_ ->
+		    send_element(StateData,
+				 #xmlel{name = <<"failure">>,
+					attrs = [{<<"xmlns">>, ?NS_COMPRESS}],
+					children =
+					[#xmlel{name = <<"unsupported-method">>,
+						attrs = [],
+						children = []}]}),
+		    fsm_next_state(StateName, StateData)
+	    end
     end.
 
 %%%----------------------------------------------------------------------
