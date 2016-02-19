@@ -224,6 +224,61 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
+  "redis.localhost": 
+    auth_method: internal
+    sm_db_type: redis
+    modules: 
+      mod_announce: 
+        db_type: internal
+        access: local
+      mod_blocking: []
+      mod_caps: 
+        db_type: internal
+      mod_last: 
+        db_type: internal
+      mod_muc: 
+        db_type: internal
+      mod_offline: 
+        db_type: internal
+      mod_privacy: 
+        db_type: internal
+      mod_private: 
+        db_type: internal
+      mod_pubsub: 
+        access_createnode: pubsub_createnode
+        ignore_pep_from_offline: true
+        last_item_cache: false
+        plugins: 
+          - "flat"
+          - "hometree"
+          - "pep"
+      mod_roster: 
+        versioning: true
+        store_current_id: true
+        db_type: internal
+      mod_mam:
+        db_type: internal
+      mod_vcard: 
+        db_type: internal
+      mod_vcard_xupdate:
+        db_type: internal
+      mod_carboncopy: []
+      mod_client_state:
+        drop_chat_states: true
+        queue_presence: true
+      mod_adhoc: []
+      mod_configure: []
+      mod_disco: []
+      mod_ping: []
+      mod_proxy65: []
+      mod_register: 
+        welcome_message: 
+          subject: "Welcome!"
+          body: "Hi.
+Welcome to this XMPP server."
+      mod_stats: []
+      mod_time: []
+      mod_version: []
   "riak.localhost": 
     auth_method: riak
     modules: 
@@ -295,6 +350,7 @@ Welcome to this XMPP server."
 hosts: 
   - "localhost"
   - "mnesia.localhost"
+  - "redis.localhost"
   - "mysql.localhost"
   - "pgsql.localhost"
   - "extauth.localhost"

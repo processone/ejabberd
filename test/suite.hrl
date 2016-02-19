@@ -74,6 +74,7 @@
 
 -define(COMMON_VHOST, <<"localhost">>).
 -define(MNESIA_VHOST, <<"mnesia.localhost">>).
+-define(REDIS_VHOST, <<"redis.localhost">>).
 -define(MYSQL_VHOST, <<"mysql.localhost">>).
 -define(PGSQL_VHOST, <<"pgsql.localhost">>).
 -define(SQLITE_VHOST, <<"sqlite.localhost">>).

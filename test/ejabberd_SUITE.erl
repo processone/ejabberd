@@ -47,6 +47,9 @@ init_per_group(no_db, Config) ->
 init_per_group(mnesia, Config) ->
     mod_muc:shutdown_rooms(?MNESIA_VHOST),
     set_opt(server, ?MNESIA_VHOST, Config);
+init_per_group(redis, Config) ->
+    mod_muc:shutdown_rooms(?REDIS_VHOST),
+    set_opt(server, ?REDIS_VHOST, Config);
 init_per_group(mysql, Config) ->
     case catch ejabberd_odbc:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
@@ -91,6 +94,8 @@ init_per_group(_GroupName, Config) ->
     set_opt(event_relay, Pid, Config).
 
 end_per_group(mnesia, _Config) ->
+    ok;
+end_per_group(redis, _Config) ->
     ok;
 end_per_group(mysql, _Config) ->
     ok;
@@ -227,7 +232,7 @@ db_tests(riak) ->
      {test_roster_remove, [parallel],
       [roster_remove_master,
        roster_remove_slave]}];
-db_tests(mnesia) ->
+db_tests(DB) when DB == mnesia; DB == redis ->
     [{single_user, [sequence],
       [test_register,
        auth_plain,
@@ -322,6 +327,7 @@ groups() ->
      {extauth, [sequence], extauth_tests()},
      {no_db, [sequence], no_db_tests()},
      {mnesia, [sequence], db_tests(mnesia)},
+     {redis, [sequence], db_tests(redis)},
      {mysql, [sequence], db_tests(mysql)},
      {pgsql, [sequence], db_tests(pgsql)},
      {sqlite, [sequence], db_tests(sqlite)},
@@ -331,6 +337,7 @@ all() ->
     [{group, ldap},
      {group, no_db},
      {group, mnesia},
+     {group, redis},
      {group, mysql},
      {group, pgsql},
      {group, sqlite},
