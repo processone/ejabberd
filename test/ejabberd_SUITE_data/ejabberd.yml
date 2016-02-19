@@ -8,6 +8,7 @@ host_config:
     odbc_password: "@@pgsql_pass@@"
     odbc_database: "@@pgsql_db@@"
     auth_method: odbc
+    sm_db_type: odbc
     modules: 
       mod_announce: 
         db_type: odbc
@@ -60,6 +61,7 @@ Welcome to this XMPP server."
   "sqlite.localhost": 
     odbc_type: sqlite
     auth_method: odbc
+    sm_db_type: odbc
     modules: 
       mod_announce: 
         db_type: odbc
@@ -118,6 +120,7 @@ Welcome to this XMPP server."
     odbc_password: "@@mysql_pass@@"
     odbc_database: "@@mysql_db@@"
     auth_method: odbc
+    sm_db_type: odbc
     modules: 
       mod_announce: 
         db_type: odbc

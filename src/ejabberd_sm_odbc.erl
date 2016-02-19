@@ -43,7 +43,7 @@ init() ->
 	      end;
 	 (_, Err) ->
 	      Err
-      end, ok, ?MYHOSTS).
+      end, ok, ejabberd_sm:get_vh_by_backend(?MODULE)).
 
 set_session(#session{sid = {Now, Pid}, usr = {U, LServer, R},
 		     priority = Priority, info = Info}) ->
@@ -90,7 +90,7 @@ get_sessions() ->
     lists:flatmap(
       fun(LServer) ->
 	      get_sessions(LServer)
-      end, ?MYHOSTS).
+      end, ejabberd_sm:get_vh_by_backend(?MODULE)).
 
 get_sessions(LServer) ->
     case ejabberd_odbc:sql_query(

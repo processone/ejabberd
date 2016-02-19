@@ -50,6 +50,7 @@
 	 dirty_get_my_sessions_list/0,
 	 get_vh_session_list/1,
 	 get_vh_session_number/1,
+	 get_vh_by_backend/1,
 	 register_iq_handler/4,
 	 register_iq_handler/5,
 	 unregister_iq_handler/2,
@@ -133,10 +134,10 @@ open_session(SID, User, Server, Resource, Info) ->
 -spec close_session(sid(), binary(), binary(), binary()) -> ok.
 
 close_session(SID, User, Server, Resource) ->
-    Mod = get_sm_backend(),
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LResource = jid:resourceprep(Resource),
+    Mod = get_sm_backend(LServer),
     Info = case Mod:delete_session(LUser, LServer, LResource, SID) of
 	       {ok, #session{info = I}} -> I;
 	       {error, notfound} -> []
@@ -172,14 +173,14 @@ disconnect_removed_user(User, Server) ->
 get_user_resources(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    Mod = get_sm_backend(),
+    Mod = get_sm_backend(LServer),
     Ss = Mod:get_sessions(LUser, LServer),
     [element(3, S#session.usr) || S <- clean_session_list(Ss)].
 
 -spec get_user_present_resources(binary(), binary()) -> [tuple()].
 
 get_user_present_resources(LUser, LServer) ->
-    Mod = get_sm_backend(),
+    Mod = get_sm_backend(LServer),
     Ss = Mod:get_sessions(LUser, LServer),
     [{S#session.priority, element(3, S#session.usr)}
      || S <- clean_session_list(Ss), is_integer(S#session.priority)].
@@ -190,7 +191,7 @@ get_user_ip(User, Server, Resource) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LResource = jid:resourceprep(Resource),
-    Mod = get_sm_backend(),
+    Mod = get_sm_backend(LServer),
     case Mod:get_sessions(LUser, LServer, LResource) of
 	[] ->
 	    undefined;
@@ -205,7 +206,7 @@ get_user_info(User, Server, Resource) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LResource = jid:resourceprep(Resource),
-    Mod = get_sm_backend(),
+    Mod = get_sm_backend(LServer),
     case Mod:get_sessions(LUser, LServer, LResource) of
 	[] ->
 	    offline;
@@ -255,7 +256,7 @@ get_session_pid(User, Server, Resource) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LResource = jid:resourceprep(Resource),
-    Mod = get_sm_backend(),
+    Mod = get_sm_backend(LServer),
     case Mod:get_sessions(LUser, LServer, LResource) of
 	[#session{sid = {_, Pid}}] -> Pid;
 	_ -> none
@@ -264,33 +265,40 @@ get_session_pid(User, Server, Resource) ->
 -spec dirty_get_sessions_list() -> [ljid()].
 
 dirty_get_sessions_list() ->
-    Mod = get_sm_backend(),
-    [S#session.usr || S <- Mod:get_sessions()].
+    lists:flatmap(
+      fun(Mod) ->
+	      [S#session.usr || S <- Mod:get_sessions()]
+      end, get_sm_backends()).
 
 -spec dirty_get_my_sessions_list() -> [#session{}].
 
 dirty_get_my_sessions_list() ->
-    Mod = get_sm_backend(),
-    [S || S <- Mod:get_sessions(), node(element(2, S#session.sid)) == node()].
+    lists:flatmap(
+      fun(Mod) ->
+	      [S || S <- Mod:get_sessions(),
+		    node(element(2, S#session.sid)) == node()]
+      end, get_sm_backends()).
 
 -spec get_vh_session_list(binary()) -> [ljid()].
 
 get_vh_session_list(Server) ->
     LServer = jid:nameprep(Server),
-    Mod = get_sm_backend(),
+    Mod = get_sm_backend(LServer),
     [S#session.usr || S <- Mod:get_sessions(LServer)].
 
 -spec get_all_pids() -> [pid()].
 
 get_all_pids() ->
-    Mod = get_sm_backend(),
-    [element(2, S#session.sid) || S <- Mod:get_sessions()].
+    lists:flatmap(
+      fun(Mod) ->
+	      [element(2, S#session.sid) || S <- Mod:get_sessions()]
+      end, get_sm_backends()).
 
 -spec get_vh_session_number(binary()) -> non_neg_integer().
 
 get_vh_session_number(Server) ->
     LServer = jid:nameprep(Server),
-    Mod = get_sm_backend(),
+    Mod = get_sm_backend(LServer),
     length(Mod:get_sessions(LServer)).
 
 register_iq_handler(Host, XMLNS, Module, Fun) ->
@@ -312,8 +320,7 @@ unregister_iq_handler(Host, XMLNS) ->
 %%====================================================================
 
 init([]) ->
-    Mod = get_sm_backend(),
-    Mod:init(),
+    lists:foreach(fun(Mod) -> Mod:init() end, get_sm_backends()),
     ets:new(sm_iqtable, [named_table]),
     lists:foreach(
       fun(Host) ->
@@ -380,7 +387,7 @@ set_session(SID, User, Server, Resource, Priority, Info) ->
     LResource = jid:resourceprep(Resource),
     US = {LUser, LServer},
     USR = {LUser, LServer, LResource},
-    Mod = get_sm_backend(),
+    Mod = get_sm_backend(LServer),
     Mod:set_session(#session{sid = SID, usr = USR, us = US,
 			     priority = Priority, info = Info}).
 
@@ -397,7 +404,7 @@ do_route(From, To, {broadcast, _} = Packet) ->
                           get_user_resources(To#jid.user, To#jid.server));
         _ ->
             {U, S, R} = jid:tolower(To),
-	    Mod = get_sm_backend(),
+	    Mod = get_sm_backend(S),
 	    case Mod:get_sessions(U, S, R) of
                 [] ->
                     ?DEBUG("packet dropped~n", []);
@@ -498,7 +505,7 @@ do_route(From, To, #xmlel{} = Packet) ->
 	    _ -> ok
 	  end;
       _ ->
-	  Mod = get_sm_backend(),
+	  Mod = get_sm_backend(LServer),
 	  case Mod:get_sessions(LUser, LServer, LResource) of
 	    [] ->
 		case Name of
@@ -565,7 +572,7 @@ route_message(From, To, Packet, Type) ->
 	  lists:foreach(fun ({P, R}) when P == Priority;
 					  (P >= 0) and (Type == headline) ->
 				LResource = jid:resourceprep(R),
-				Mod = get_sm_backend(),
+				Mod = get_sm_backend(LServer),
 				case Mod:get_sessions(LUser, LServer,
 						      LResource) of
 				  [] ->
@@ -647,11 +654,11 @@ get_resource_sessions(User, Server, Resource) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LResource = jid:resourceprep(Resource),
-    Mod = get_sm_backend(),
+    Mod = get_sm_backend(LServer),
     [S#session.sid || S <- Mod:get_sessions(LUser, LServer, LResource)].
 
 check_max_sessions(LUser, LServer) ->
-    Mod = get_sm_backend(),
+    Mod = get_sm_backend(LServer),
     SIDs = [S#session.sid || S <- Mod:get_sessions(LUser, LServer)],
     MaxSessions = get_max_user_sessions(LUser, LServer),
     if length(SIDs) =< MaxSessions -> ok;
@@ -703,23 +710,36 @@ process_iq(From, To, Packet) ->
 -spec force_update_presence({binary(), binary()}) -> any().
 
 force_update_presence({LUser, LServer}) ->
-    Mod = get_sm_backend(),
+    Mod = get_sm_backend(LServer),
     Ss = Mod:get_sessions(LUser, LServer),
     lists:foreach(fun (#session{sid = {_, Pid}}) ->
 			  Pid ! {force_update_presence, LUser, LServer}
 		  end,
 		  Ss).
 
--spec get_sm_backend() -> module().
+-spec get_sm_backend(binary()) -> module().
 
-get_sm_backend() ->
-    DBType = ejabberd_config:get_option(sm_db_type,
+get_sm_backend(Host) ->
+    DBType = ejabberd_config:get_option({sm_db_type, Host},
 					fun(mnesia) -> mnesia;
 					   (internal) -> mnesia;
 					   (odbc) -> odbc;
 					   (redis) -> redis
 					end, mnesia),
     list_to_atom("ejabberd_sm_" ++ atom_to_list(DBType)).
+
+-spec get_sm_backends() -> [module()].
+
+get_sm_backends() ->
+    lists:usort([get_sm_backend(Host) || Host <- ?MYHOSTS]).
+
+-spec get_vh_by_backend(module()) -> [binary()].
+
+get_vh_by_backend(Mod) ->
+    lists:filter(
+      fun(Host) ->
+	      get_sm_backend(Host) == Mod
+      end, ?MYHOSTS).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% ejabberd commands
