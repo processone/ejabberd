@@ -132,6 +132,7 @@ init({ServerHost, Opts}) ->
 				      fun iolist_to_binary/1,
 				      <<"@HOME@/upload">>),
     DocRoot2 = mod_http_upload:expand_home(str:strip(DocRoot1, right, $/)),
+    DocRoot3 = mod_http_upload:expand_host(DocRoot2, ServerHost),
     Timers = if MaxDays == infinity -> [];
 		true ->
 		     {ok, T1} = timer:send_after(?INITIAL_TIMEOUT, sweep),
@@ -144,7 +145,7 @@ init({ServerHost, Opts}) ->
 		access_soft_quota = AccessSoftQuota,
 		access_hard_quota = AccessHardQuota,
 		max_days = MaxDays,
-		docroot = DocRoot2,
+		docroot = DocRoot3,
 		timers = Timers}}.
 
 -spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.

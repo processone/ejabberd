@@ -86,7 +86,8 @@
 
 %% Utility functions.
 -export([get_proc_name/2,
-	 expand_home/1]).
+	 expand_home/1,
+	 expand_host/2]).
 
 -include("ejabberd.hrl").
 -include("ejabberd_http.hrl").
@@ -274,6 +275,7 @@ init({ServerHost, Opts}) ->
 				fun(B) when is_boolean(B) -> B end,
 				true),
     DocRoot1 = expand_home(str:strip(DocRoot, right, $/)),
+    DocRoot2 = expand_host(DocRoot1, ServerHost),
     case ServiceURL of
 	undefined ->
 	    ok;
@@ -290,7 +292,7 @@ init({ServerHost, Opts}) ->
 	undefined ->
 	    ok;
 	Mode ->
-	    file:change_mode(DocRoot1, Mode)
+	    file:change_mode(DocRoot2, Mode)
     end,
     case Thumbnail of
 	true ->
@@ -310,7 +312,7 @@ init({ServerHost, Opts}) ->
 		secret_length = SecretLength, jid_in_url = JIDinURL,
 		file_mode = FileMode, dir_mode = DirMode,
 		thumbnail = Thumbnail,
-		docroot = DocRoot1,
+		docroot = DocRoot2,
 		put_url = expand_host(str:strip(PutURL, right, $/), ServerHost),
 		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
 		service_url = ServiceURL}}.
@@ -509,6 +511,12 @@ expand_home(Subject) ->
     {ok, [[Home]]} = init:get_argument(home),
     Parts = binary:split(Subject, <<"@HOME@">>, [global]),
     str:join(Parts, list_to_binary(Home)).
+
+-spec expand_host(binary(), binary()) -> binary().
+
+expand_host(Subject, Host) ->
+    Parts = binary:split(Subject, <<"@HOST@">>, [global]),
+    str:join(Parts, Host).
 
 %%--------------------------------------------------------------------
 %% Internal functions.
@@ -737,12 +745,6 @@ make_rand_char() ->
 map_int_to_char(N) when N =<  9 -> N + 48; % Digit.
 map_int_to_char(N) when N =< 35 -> N + 55; % Upper-case character.
 map_int_to_char(N) when N =< 61 -> N + 61. % Lower-case character.
-
--spec expand_host(binary(), binary()) -> binary().
-
-expand_host(Subject, Host) ->
-    Parts = binary:split(Subject, <<"@HOST@">>, [global]),
-    str:join(Parts, Host).
 
 -spec yield_content_type(binary()) -> binary().
 
@@ -975,8 +977,9 @@ remove_user(User, Server) ->
 					 (node) -> node
 				      end,
 				      sha1),
+    DocRoot1 = expand_host(expand_home(DocRoot), ServerHost),
     UserStr = make_user_string(jid:make(User, Server, <<"">>), JIDinURL),
-    UserDir = str:join([expand_home(DocRoot), UserStr], <<$/>>),
+    UserDir = str:join([DocRoot1, UserStr], <<$/>>),
     case del_tree(UserDir) of
 	ok ->
 	    ?INFO_MSG("Removed HTTP upload directory of ~s@~s", [User, Server]);
