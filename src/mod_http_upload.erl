@@ -273,6 +273,7 @@ init({ServerHost, Opts}) ->
     Thumbnail = gen_mod:get_opt(thumbnail, Opts,
 				fun(B) when is_boolean(B) -> B end,
 				true),
+    DocRoot1 = expand_home(str:strip(DocRoot, right, $/)),
     case ServiceURL of
 	undefined ->
 	    ok;
@@ -289,7 +290,7 @@ init({ServerHost, Opts}) ->
 	undefined ->
 	    ok;
 	Mode ->
-	    file:change_mode(DocRoot, Mode)
+	    file:change_mode(DocRoot1, Mode)
     end,
     case Thumbnail of
 	true ->
@@ -309,7 +310,7 @@ init({ServerHost, Opts}) ->
 		secret_length = SecretLength, jid_in_url = JIDinURL,
 		file_mode = FileMode, dir_mode = DirMode,
 		thumbnail = Thumbnail,
-		docroot = expand_home(str:strip(DocRoot, right, $/)),
+		docroot = DocRoot1,
 		put_url = expand_host(str:strip(PutURL, right, $/), ServerHost),
 		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
 		service_url = ServiceURL}}.
