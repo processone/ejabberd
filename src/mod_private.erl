@@ -152,11 +152,8 @@ set_data(LUser, LServer, {XmlNS, Xmlel}, mnesia) ->
 				      {LUser, LServer, XmlNS},
 				  xml = Xmlel});
 set_data(LUser, LServer, {XMLNS, El}, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    LXMLNS = ejabberd_odbc:escape(XMLNS),
-    SData = ejabberd_odbc:escape(fxml:element_to_binary(El)),
-    odbc_queries:set_private_data(LServer, Username, LXMLNS,
-				  SData);
+    SData = fxml:element_to_binary(El),
+    odbc_queries:set_private_data(LServer, LUser, XMLNS, SData);
 set_data(LUser, LServer, {XMLNS, El}, riak) ->
     ejabberd_riak:put(#private_storage{usns = {LUser, LServer, XMLNS},
                                        xml = El},
@@ -184,12 +181,10 @@ get_data(LUser, LServer, mnesia,
     end;
 get_data(LUser, LServer, odbc, [{XMLNS, El} | Els],
 	 Res) ->
-    Username = ejabberd_odbc:escape(LUser),
-    LXMLNS = ejabberd_odbc:escape(XMLNS),
     case catch odbc_queries:get_private_data(LServer,
-					     Username, LXMLNS)
+					     LUser, XMLNS)
 	of
-      {selected, [<<"data">>], [[SData]]} ->
+      {selected, [{SData}]} ->
 	  case fxml_stream:parse_element(SData) of
 	    Data when is_record(Data, xmlel) ->
 		get_data(LUser, LServer, odbc, Els, [Data | Res])
@@ -217,11 +212,10 @@ get_all_data(LUser, LServer, mnesia) ->
                                              xml = '$1'},
                             [], ['$1']}]));
 get_all_data(LUser, LServer, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    case catch odbc_queries:get_private_data(LServer, Username) of
-        {selected, [<<"namespace">>, <<"data">>], Res} ->
+    case catch odbc_queries:get_private_data(LServer, LUser) of
+        {selected, Res} ->
             lists:flatmap(
-              fun([_, SData]) ->
+              fun({_, SData}) ->
                       case fxml_stream:parse_element(SData) of
                           #xmlel{} = El ->
                               [El];
@@ -269,9 +263,7 @@ remove_user(LUser, LServer, mnesia) ->
 	end,
     mnesia:transaction(F);
 remove_user(LUser, LServer, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:del_user_private_storage(LServer,
-					  Username);
+    odbc_queries:del_user_private_storage(LServer, LUser);
 remove_user(LUser, LServer, riak) ->
     {atomic, ejabberd_riak:delete_by_index(private_storage,
                                            <<"us">>, {LUser, LServer})}.

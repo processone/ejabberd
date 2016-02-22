@@ -153,26 +153,24 @@ set_password(User, Server, Password) ->
        (LUser == <<>>) or (LServer == <<>>) ->
             {error, invalid_jid};
        true ->
-            Username = ejabberd_odbc:escape(LUser),
             case is_scrammed() of
                 true ->
                     Scram = password_to_scram(Password),
                     case catch odbc_queries:set_password_scram_t(
                                  LServer,
-                                 Username,
-                                 ejabberd_odbc:escape(Scram#scram.storedkey),
-                                 ejabberd_odbc:escape(Scram#scram.serverkey),
-                                 ejabberd_odbc:escape(Scram#scram.salt),
-                                 integer_to_binary(Scram#scram.iterationcount)
+                                 LUser,
+                                 Scram#scram.storedkey,
+                                 Scram#scram.serverkey,
+                                 Scram#scram.salt,
+                                 Scram#scram.iterationcount
                                 )
                         of
                         {atomic, ok} -> ok;
                         Other -> {error, Other}
                     end;
                 false ->
-                    Pass = ejabberd_odbc:escape(Password),
                     case catch odbc_queries:set_password_t(LServer,
-                                                           Username, Pass)
+                                                           LUser, Password)
                         of
                         {atomic, ok} -> ok;
                         Other -> {error, Other}

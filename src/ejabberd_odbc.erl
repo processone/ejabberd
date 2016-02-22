@@ -616,9 +616,9 @@ pgsql_prepare(SQLQuery, State) ->
 
 pgsql_execute_escape() ->
     #sql_escape{string = fun(X) -> X end,
-                integer = fun(X) -> integer_to_binary(X) end,
-                boolean = fun(true) -> <<"1">>;
-                             (false) -> <<"0">>
+                integer = fun(X) -> [integer_to_binary(X)] end,
+                boolean = fun(true) -> "1";
+                             (false) -> "0"
                           end
                }.
 

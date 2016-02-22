@@ -25,7 +25,7 @@
 -define(SQL_UPSERT(Host, Table, Fields),
         ejabberd_odbc:sql_query(Host, ?SQL_UPSERT_MARK(Table, Fields))).
 -define(SQL_UPSERT_T(Table, Fields),
-        ejabberd_odbc:sql_query_t(Host, ?SQL_UPSERT_MARK(Table, Fields))).
+        ejabberd_odbc:sql_query_t(?SQL_UPSERT_MARK(Table, Fields))).
 
 -record(sql_query, {hash, format_query, format_res, args, loc}).
 
