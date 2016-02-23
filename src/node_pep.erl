@@ -257,7 +257,7 @@ complain_if_modcaps_disabled(ServerHost) ->
 	false ->
 	    ?WARNING_MSG("The PEP plugin is enabled in mod_pubsub "
 		"of host ~p. This plugin requires mod_caps "
-		"to be enabled, but it isn't.",
+		"but it does not seems enabled, please check config.",
 		[ServerHost]);
 	true -> ok
     end.
