@@ -244,6 +244,7 @@
 {"Online Users","משתמשים מקוונים"}.
 {"Online","מקוון"}.
 {"Only deliver notifications to available users","מסור התראות למשתמשים זמינים בלבד"}.
+{"Only members may query archives of this room","רק חברים רשאים לתשאל ארכיונים של חדר זה"}.
 {"Only moderators and participants are allowed to change the subject in this room","רק אחראים ומשתתפים רשאים לשנות את הנושא בחדר זה"}.
 {"Only moderators are allowed to change the subject in this room","רק אחראים רשאים לשנות את הנושא בחדר זה"}.
 {"Only moderators can approve voice requests","רק אחראים יכולים לאשר בקשות ביטוי"}.

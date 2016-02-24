@@ -1,4 +1,5 @@
 %% -*- coding: latin-1 -*-
+{"Accept","Aceito"}.
 {"Access Configuration","Configuração de Acesso"}.
 {"Access Control List Configuration","Configuração da Lista de Controle de Acesso"}.
 {"Access control lists","Listas de Controle de Acesso"}.
@@ -87,6 +88,7 @@
 {"ejabberd Web Admin","ejabberd Web Admin"}.
 {"Elements","Elementos"}.
 {"Email","Email"}.
+{"Empty Rooms","Salas vazias"}.
 {"Enable logging","Permitir criação de logs"}.
 {"Enable message archiving","Habilitar arquivamento de mensagens"}.
 {"Encoding for server ~b","Codificação para o servidor ~b"}.
@@ -121,7 +123,7 @@
 {"Get User Last Login Time","Obter a Data do Último Login"}.
 {"Get User Password","Obter Senha do Usuário"}.
 {"Get User Statistics","Obter Estatísticas do Usuário"}.
-{"Grant voice to this person?","Dar 'voice' a esta usuário?"}.
+{"Grant voice to this person?","Dar voz a esta pessoa?"}.
 {"Group ","Grupo "}.
 {"Groups","Grupos"}.
 {"has been banned","foi banido"}.
@@ -142,6 +144,7 @@
 {"Import Users from Dir at ","Importar usuários a partir do diretório em "}.
 {"Import Users From jabberd14 Spool Files","Importar usuários de arquivos jabberd14 (spool files)"}.
 {"Improper message type","Tipo de mensagem incorreto"}.
+{"Incoming s2s Connections:","Conexões que entram de s2s"}.
 {"Incorrect password","Senha incorreta"}.
 {"Invalid affiliation: ~s","Afiliação não válida: ~s"}.
 {"Invalid role: ~s","Cargo (role) é não válido: ~s"}.
@@ -154,6 +157,7 @@
 {"IRC username","Usuário IRC"}.
 {"IRC Username","Usuário IRC"}.
 {"is now known as","é agora conhecido como"}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Não é permitido o envio de mensagens de erro a esta sala. O membro (~s) enviou uma mensagem de erro (~s) e foi desconectado (\"kicked\")."}.
 {"It is not allowed to send private messages","Não é permitido enviar mensagens privadas"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Não é permitido enviar mensagens privadas do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir o envio de mensagens privadas para a sala"}.
@@ -196,6 +200,7 @@
 {"Message body","Corpo da mensagem"}.
 {"Middle Name","Nome do meio"}.
 {"Minimum interval between voice requests (in seconds)","O intervalo mínimo entre requisições de voz (em segundos)"}.
+{"Moderator","Moderador"}.
 {"Moderator privileges required","Se necessita privilégios de moderador"}.
 {"moderators only","apenas moderadores"}.
 {"Modified modules","Módulos atualizados"}.
@@ -239,6 +244,7 @@
 {"Online Users","Usuários conectados"}.
 {"Online Users:","Usuários online"}.
 {"Only deliver notifications to available users","Somente enviar notificações aos usuários disponíveis"}.
+{"Only members may query archives of this room","Somente os membros podem procurar nos arquivos desta sala"}.
 {"Only moderators and participants are allowed to change the subject in this room","Somente os moderadores e os participamentes podem alterar o assunto desta sala"}.
 {"Only moderators are allowed to change the subject in this room","Somente os moderadores podem alterar o assunto desta sala"}.
 {"Only moderators can approve voice requests","Somente moderadores podem aprovar requisições de voz"}.
@@ -252,6 +258,7 @@
 {"Outgoing s2s Connections:","Conexões que partem de s2s"}.
 {"Owner privileges required","Se requer privilégios de proprietário da sala"}.
 {"Packet","Pacote"}.
+{"Participant","Participante"}.
 {"Password ~b","Senha ~b"}.
 {"Password:","Senha:"}.
 {"Password","Senha"}.
@@ -265,6 +272,8 @@
 {"Persist items to storage","Persistir elementos ao armazenar"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Observe que tais opções farão backup apenas da base de dados Mnesia. Caso você esteja utilizando o modulo ODBC, você precisará fazer backup de sua base de dados SQL separadamente."}.
+{"Please specify file name.","Por favor informe o nome do arquivo."}.
+{"Please specify file size.","Por favor informe o tamanho do arquivo."}.
 {"Please, wait for a while before sending new voice request","Por favor, espere antes de enviar uma nova requisição de voz"}.
 {"Pong","Pong"}.
 {"Port ~b","Porta ~b"}.
@@ -300,6 +309,7 @@
 {"Restore binary backup immediately:","Restaurar backup binário imediatamente"}.
 {"Restore plain text backup immediately:","Restaurar backup formato texto imediatamente:"}.
 {"Restore","Restaurar"}.
+{"Roles for which Presence is Broadcasted","Para quem a presença será notificada"}.
 {"Room Configuration","Configuração de salas"}.
 {"Room creation is denied by service policy","Sala não pode ser criada devido à política do serviço"}.
 {"Room description","Descrição da Sala"}.
@@ -323,6 +333,7 @@
 {"September","Setembro"}.
 {"Server ~b","Servidor ~b"}.
 {"Server:","Servidor:"}.
+{"Server","Servidor"}.
 {"Set message of the day and send to online users","Definir mensagem do dia e enviar a todos usuários online"}.
 {"Set message of the day on all hosts and send to online users","Definir mensagem do dia em todos os hosts e enviar para os usuários online"}.
 {"Shared Roster Groups","Grupos Shared Roster"}.
@@ -330,7 +341,7 @@
 {"Show Ordinary Table","Mostrar Tabela Ordinária"}.
 {"Shut Down Service","Parar Serviço"}.
 {"~s invites you to the room ~s","~s convidou você para a sala ~s"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clientes jabber podem salvar a sua senha no seu computador. Use o recurso somente se você considera este computador seguro o suficiente."}.
+{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clientes jabber podem salvar a sua senha no seu computador. Use recurso somente se você considera este computador seguro o suficiente."}.
 {"Specify the access model","Especificar os modelos de acesso"}.
 {"Specify the event message type","Especificar o tipo de mensagem para o evento"}.
 {"Specify the publisher model","Especificar o modelo do publicante"}.
@@ -343,7 +354,7 @@
 {"Stop Modules at ","Parar módulos em "}.
 {"Stop Modules","Parar módulos"}.
 {"Stop","Parar"}.
-{"Stopped Nodes","Nós parados"}.
+{"Stopped Nodes","Nos parados"}.
 {"Storage Type","Tipo de armazenamento"}.
 {"Store binary backup:","Armazenar backup binário:"}.
 {"Store plain text backup:","Armazenar backup em texto:"}.
@@ -408,6 +419,7 @@
 {"Virtual Hosts","Hosts virtuais"}.
 {"Visitors are not allowed to change their nicknames in this room","Nesta sala, os visitantes não podem mudar seus apelidos"}.
 {"Visitors are not allowed to send messages to all occupants","Os visitantes não podem enviar mensagens a todos os ocupantes"}.
+{"Visitor","Visitante"}.
 {"Voice request","Requisição de voz"}.
 {"Voice requests are disabled in this conference","Requisições de voz estão desabilitadas nesta conferência"}.
 {"Wednesday","Quarta"}.
@@ -419,7 +431,7 @@
 {"You need a client that supports x:data and CAPTCHA to register","Você precisa de um cliente com suporte de x:data para poder registrar o nick"}.
 {"You need a client that supports x:data to register the nickname","Você precisa de um cliente com suporte a x:data para registrar o seu apelido"}.
 {"You need an x:data capable client to configure mod_irc settings","Necessitas um cliente com suporte de x:data para configurar as opções de mod_irc"}.
-{"You need an x:data capable client to configure room","Necessitas um cliente com suporte de x:data para configurar la sala"}.
+{"You need an x:data capable client to configure room","Necessitas um cliente com suporte de x:data para configurar a sala"}.
 {"You need an x:data capable client to search","Necessitas um cliente com suporte de x:data para poder buscar"}.
 {"Your active privacy list has denied the routing of this stanza.","Sua lista de privacidade ativa negou o roteamento deste."}.
 {"Your contact offline message queue is full. The message has been discarded.","Sua fila de mensagens offline esta cheia. Sua mensagem foi descartada"}.

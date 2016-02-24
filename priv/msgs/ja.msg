@@ -1,4 +1,5 @@
 %% -*- coding: latin-1 -*-
+{"Accept","許可"}.
 {"Access Configuration","アクセス設定"}.
 {"Access Control List Configuration","アクセスコントロールリスト設定"}.
 {"Access control lists","アクセスコントロールリスト"}.
@@ -72,7 +73,7 @@
 {"Deliver payloads with event notifications","イベント通知と同時にペイロードを配送する"}.
 {"Description:","説明:"}.
 {"Disc only copy","ディスクだけのコピー"}.
-{"Displayed Groups:","表示グループ"}.
+{"Displayed Groups:","表示グループ:"}.
 {"Don't tell your password to anybody, not even the administrators of the Jabber server.","パスワードは誰にも教えないようにしてください。Jabber サーバーの管理者があなたにパスワードを尋ねることはありません。"}.
 {"Dump Backup to Text File at ","テキストファイルにバックアップ: "}.
 {"Dump to Text File","テキストファイルに出力"}.
@@ -87,6 +88,7 @@
 {"ejabberd Web Admin","ejabberd ウェブ管理"}.
 {"Elements","要素"}.
 {"Email","メールアドレス"}.
+{"Empty Rooms","空のルーム"}.
 {"Enable logging","ロギングを有効"}.
 {"Enable message archiving","メッセージアーカイブを有効化"}.
 {"Encoding for server ~b","サーバーのエンコーディング ~b"}.
@@ -103,7 +105,7 @@
 {"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","エラー"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","例: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
-{"Exclude Jabber IDs from CAPTCHA challenge","CAPTCHA 試験を免除する Jabber ID"}.
+{"Exclude Jabber IDs from CAPTCHA challenge","CAPTCHA 入力を免除する Jabber ID"}.
 {"Export all tables as SQL queries to a file:","すべてのテーブルをSQL形式でファイルにエクスポート: "}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","サーバーにあるすべてのユーザーデータを PIEFXIS ファイルにエクスポート (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","ホストのユーザーデータを PIEFXIS ファイルにエクスポート (XEP-0227):"}.
@@ -113,7 +115,7 @@
 {"Fill in fields to search for any matching Jabber User","項目を入力してユーザーを検索してください"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","項目を入力してユーザーを検索を行えます (* を使用すると部分文字列にマッチします)"}.
 {"Friday","金曜日"}.
-{"From ~s","差出人 ~s"}.
+{"From ~s","From ~s"}.
 {"From","差出人"}.
 {"Full Name","氏名"}.
 {"Get Number of Online Users","オンラインユーザー数を取得"}.
@@ -142,6 +144,7 @@
 {"Import Users from Dir at ","ディレクトリからユーザーをインポート: "}.
 {"Import Users From jabberd14 Spool Files","jabberd14 Spool ファイルからユーザーをインポート"}.
 {"Improper message type","誤ったメッセージタイプです"}.
+{"Incoming s2s Connections:","内向き s2s コネクション:"}.
 {"Incorrect password","パスワードが違います"}.
 {"Invalid affiliation: ~s","無効な分掌です: ~s"}.
 {"Invalid role: ~s","無効な役です: ~s"}.
@@ -154,6 +157,7 @@
 {"IRC username","IRC ユーザー名"}.
 {"IRC Username","IRC ユーザー名"}.
 {"is now known as","は名前を変更しました: "}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","このルームにエラーメッセージを送ることは許可されていません。参加者(~s)はエラーメッセージを(~s)を送信してルームからキックされました。"}.
 {"It is not allowed to send private messages of type \"groupchat\"","種別が\"groupchat\" であるプライベートメッセージを送信することはできません"}.
 {"It is not allowed to send private messages to the conference","この会議にプライベートメッセージを送信することはできません"}.
 {"It is not allowed to send private messages","プライベートメッセージを送信することはできません"}.
@@ -196,6 +200,7 @@
 {"Message body","本文"}.
 {"Middle Name","ミドルネーム"}.
 {"Minimum interval between voice requests (in seconds)","発言権の要求の最小時間間隔 (秒)"}.
+{"Moderator","モデレーター"}.
 {"Moderator privileges required","モデレーター権限が必要です"}.
 {"moderators only","モデレーターにのみ"}.
 {"Modified modules","更新されたモジュール"}.
@@ -221,7 +226,7 @@
 {"Nodes","ノード"}.
 {"No limit","制限なし"}.
 {"None","なし"}.
-{"No resource provided","リソースが提供されませんでした"}.
+{"No resource provided","リソースが指定されていません"}.
 {"Not Found","見つかりません"}.
 {"Notify subscribers when items are removed from the node","アイテムがノードから消された時に購読者へ通知する"}.
 {"Notify subscribers when the node configuration changes","ノード設定に変更があった時に購読者へ通知する"}.
@@ -239,6 +244,7 @@
 {"Online Users:","オンラインユーザー:"}.
 {"Online Users","オンラインユーザー"}.
 {"Only deliver notifications to available users","有効なユーザーにのみ告知を送信する"}.
+{"Only members may query archives of this room","メンバーのみがこのルームのアーカイブを取得できます"}.
 {"Only moderators and participants are allowed to change the subject in this room","モデレーターと参加者のみがチャットルームの件名を変更できます"}.
 {"Only moderators are allowed to change the subject in this room","モデレーターのみがチャットルームの件名を変更できます"}.
 {"Only moderators can approve voice requests","モデレーターだけが発言権の要求を承認できます"}.
@@ -252,7 +258,8 @@
 {"Outgoing s2s Connections","外向き s2s コネクション"}.
 {"Owner privileges required","主宰者の権限が必要です"}.
 {"Packet","パケット"}.
-{"Password:","パスワード"}.
+{"Participant","参加者"}.
+{"Password:","パスワード:"}.
 {"Password","パスワード"}.
 {"Password ~b","パスワード ~b"}.
 {"Password Verification:","パスワード (確認):"}.
@@ -265,6 +272,8 @@
 {"Persist items to storage","アイテムをストレージに保存する"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","これらのオプションは組み込みの Mnesia データーベースのバックアップのみを行うことに注意してください。もし ODBC モジュールを使用している場合は、SQL データーベースのバックアップを別に行う必要があります。"}.
+{"Please specify file name.","ファイル名を指定してください。"}.
+{"Please specify file size.","ファイルサイズを指定してください。"}.
 {"Please, wait for a while before sending new voice request","新しい発言権の要求を送るまで少し間をおいてください"}.
 {"Pong","Pong"}.
 {"Port","ポート"}.
@@ -300,6 +309,7 @@
 {"Restore binary backup after next ejabberd restart (requires less memory):","ejabberd の再起動時にバイナリバックアップからリストア (メモリ少):"}.
 {"Restore binary backup immediately:","直ちにバイナリバックアップからリストア:"}.
 {"Restore plain text backup immediately:","直ちにプレーンテキストバックアップからリストア:"}.
+{"Roles for which Presence is Broadcasted","プレゼンスをブロードキャストするロール"}.
 {"Room Configuration","チャットルームの設定"}.
 {"Room creation is denied by service policy","サービスポリシーによってチャットルームの作成が禁止されています"}.
 {"Room description","チャットルームの説明"}.
@@ -322,6 +332,7 @@
 {"Send announcement to all users","すべてのユーザーにアナウンスを送信"}.
 {"September","9月"}.
 {"Server:","サーバー:"}.
+{"Server","サーバー"}.
 {"Server ~b","サーバー ~b"}.
 {"Set message of the day and send to online users","お知らせメッセージを設定し、オンラインユーザーに送信"}.
 {"Set message of the day on all hosts and send to online users","全ホストのお知らせメッセージを設定し、オンラインユーザーに送信"}.
@@ -367,7 +378,7 @@
 {"This IP address is blacklisted in ~s","このIPアドレスはアクセスを禁止されています ~s"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","大文字と小文字は区別しません: macbeth は MacBeth や Macbeth と同じです。"}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","ここはこの Jabber サーバーにアカウントを作成するページです。あなたの JID (JabberID) は username@server のような形式になります。注意事項どおり、正しく項目を記入してください。"}.
-{"This page allows to unregister a Jabber account in this Jabber server.","ここはこの Jabber サーバーのアカウントを削除するページです。"}.
+{"This page allows to unregister a Jabber account in this Jabber server.","このページはサーバー上のJabberアカウントを削除するページです。"}.
 {"Thursday","木曜日"}.
 {"Time delay","遅延時間"}.
 {"Time","時間"}.
@@ -376,7 +387,7 @@
 {"Too many unacked stanzas","多くのスタンザが応答していません"}.
 {"To ~s","宛先 ~s"}.
 {"Total rooms","チャットルーム数"}.
-{"To","宛先"}.
+{"To","To"}.
 {"Traffic rate limit is exceeded","トラフィックレートの制限を超えました"}.
 {"Transactions Aborted:","トランザクションの失敗:"}.
 {"Transactions Committed:","トランザクションのコミット:"}.
@@ -394,7 +405,7 @@
 {"Update script","スクリプトの更新"}.
 {"Update","更新"}.
 {"Uptime:","起動時間:"}.
-{"Use of STARTTLS required","STARTTLS の使用が必要です"}.
+{"Use of STARTTLS required","STARTTLS の使用が必須です"}.
 {"User","ユーザー"}.
 {"User JID","ユーザー JID"}.
 {"User Management","ユーザー管理"}.
@@ -408,6 +419,7 @@
 {"Virtual Hosts","バーチャルホスト"}.
 {"Visitors are not allowed to change their nicknames in this room","傍聴者はこのチャットルームでニックネームを変更することはできません"}.
 {"Visitors are not allowed to send messages to all occupants","傍聴者はすべての在室者にメッセージを送信することはできません"}.
+{"Visitor","傍聴者"}.
 {"Voice requests are disabled in this conference","この会議では、発言権の要求はできません"}.
 {"Voice request","発言権を要求"}.
 {"Wednesday","水曜日"}.

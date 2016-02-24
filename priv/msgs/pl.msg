@@ -1,4 +1,5 @@
 %% -*- coding: latin-1 -*-
+{"Accept","Zaakceptuj"}.
 {"Access Configuration","Konfiguracja dostępu"}.
 {"Access Control List Configuration","Konfiguracja listy dostępowej"}.
 {"Access Control Lists","Lista dostępowa"}.
@@ -87,6 +88,7 @@
 {"ejabberd Web Admin","ejabberd: Panel Administracyjny"}.
 {"Elements","Elementy"}.
 {"Email","Email"}.
+{"Empty Rooms","Puste pokoje"}.
 {"Enable logging","Włącz logowanie"}.
 {"Enable message archiving","Włącz archiwizowanie rozmów"}.
 {"Encoding for server ~b","Kodowanie znaków dla serwera ~b"}.
@@ -142,6 +144,7 @@
 {"Import Users from Dir at ","Importuj użytkowników z katalogu na "}.
 {"Import Users From jabberd14 Spool Files","Importuj użytkowników z plików roboczych serwera jabberd14"}.
 {"Improper message type","Nieprawidłowy typ wiadomości"}.
+{"Incoming s2s Connections:","Przychodzące połączenia s2s:"}.
 {"Incorrect password","Nieprawidłowe hasło"}.
 {"Invalid affiliation: ~s","Nieprawidłowa przynależność: ~s"}.
 {"Invalid role: ~s","Nieprawidłowa rola: ~s"}.
@@ -154,6 +157,7 @@
 {"IRC username","Nazwa użytkownika IRC"}.
 {"IRC Username","Nazwa użytkownika IRC"}.
 {"is now known as","jest teraz znany jako"}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Użytkownik nie może wysyłać wiadomości o błędach do pokoju. Użytkownik (~s) wysłał błąd (~s) i został wyrzucony z pokoju"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Nie można wysyłać prywatnych wiadomości typu \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Nie wolno wysyłac prywatnych wiadomości na konferencję"}.
 {"It is not allowed to send private messages","Wysyłanie prywatnych wiadomości jest zabronione"}.
@@ -196,6 +200,7 @@
 {"Message body","Treść wiadomości"}.
 {"Middle Name","Drugie imię"}.
 {"Minimum interval between voice requests (in seconds)","Minimalny odstęp między żądaniami głosowymi (w sekundach)"}.
+{"Moderator","Moderatorzy"}.
 {"Moderator privileges required","Wymagane uprawnienia moderatora"}.
 {"moderators only","tylko moderatorzy"}.
 {"Modified modules","Zmodyfikowane moduły"}.
@@ -239,6 +244,7 @@
 {"Online Users:","Użytkownicy zalogowani:"}.
 {"Online Users","Użytkownicy zalogowani"}.
 {"Only deliver notifications to available users","Dostarczaj powiadomienia tylko dostępnym użytkownikom"}.
+{"Only members may query archives of this room","Tylko moderatorzy mogą przeglądać archiwa tego pokoju"}.
 {"Only moderators and participants are allowed to change the subject in this room","Tylko moderatorzy i uczestnicy mogą zmienić temat tego pokoju"}.
 {"Only moderators are allowed to change the subject in this room","Tylko moderatorzy mogą zmienić temat tego pokoju"}.
 {"Only moderators can approve voice requests","Tylko moderatorzy mogą zatwierdzać żądania głosowe"}.
@@ -252,6 +258,7 @@
 {"Outgoing s2s Connections","Wychodzące połączenia s2s"}.
 {"Owner privileges required","Wymagane uprawnienia właściciela"}.
 {"Packet","Pakiet"}.
+{"Participant","Uczestnicy"}.
 {"Password ~b","Hasło ~b"}.
 {"Password:","Hasło:"}.
 {"Password","Hasło"}.
@@ -265,6 +272,8 @@
 {"Persist items to storage","Przechowuj na stałe dane PubSub"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Te opcje kopii zapasowych dotyczą tylko wbudowanej bazy danych typu Mnesia. Jeśli korzystasz z modułu ODBC, musisz wykonać kopie bazy we własnym zakresie."}.
+{"Please specify file name.","Proszę podać nazwę pliku."}.
+{"Please specify file size.","Proszę podać rozmiar pliku."}.
 {"Please, wait for a while before sending new voice request","Proszę poczekać chwile, zanim wyślesz nowe żądanie głosowe"}.
 {"Pong","Pong"}.
 {"Port ~b","Port ~b"}.
@@ -300,6 +309,7 @@
 {"Restore binary backup immediately:","Natychmiast odtwórz kopię binarną:"}.
 {"Restore plain text backup immediately:","Natychmiast odtwórz kopię z postaci tekstowej:"}.
 {"Restore","Przywróć z kopii"}.
+{"Roles for which Presence is Broadcasted","Role dla których wysyłane są statusy"}.
 {"Room Configuration","Konfiguracja pokoju"}.
 {"Room creation is denied by service policy","Zasady serwera zabraniają tworzyć nowe pokoje"}.
 {"Room description","Opis pokoju"}.
@@ -323,6 +333,7 @@
 {"September","Wrzesień"}.
 {"Server ~b","Serwer ~b"}.
 {"Server:","Serwer:"}.
+{"Server","Serwer"}.
 {"Set message of the day and send to online users","Wyślij wiadomość dnia do wszystkich zalogowanych użytkowników"}.
 {"Set message of the day on all hosts and send to online users","Ustaw wiadomość dnia dla wszystkich hostów i wyślij do zalogowanych uzytkowników"}.
 {"Shared Roster Groups","Wspólne grupy kontaktów"}.
@@ -406,6 +417,7 @@
 {"Validate","Potwierdź"}.
 {"vCard User Search","Wyszukiwanie vCard użytkowników"}.
 {"Virtual Hosts","Wirtualne Hosty"}.
+{"Visitor","Odwiedzający"}.
 {"Visitors are not allowed to change their nicknames in this room","Uczestnicy tego pokoju nie mogą zmieniać swoich nicków"}.
 {"Visitors are not allowed to send messages to all occupants","Odwiedzający nie mogą wysyłać wiadomości do wszystkich obecnych"}.
 {"Voice requests are disabled in this conference","Głosowe żądania są wyłączone w tym pokoju"}.
