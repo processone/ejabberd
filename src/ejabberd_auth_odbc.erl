@@ -187,26 +187,23 @@ try_register(User, Server, Password) ->
        (LUser == <<>>) or (LServer == <<>>) ->
             {error, invalid_jid};
        true ->
-	  Username = ejabberd_odbc:escape(LUser),
             case is_scrammed() of
                 true ->
                     Scram = password_to_scram(Password),
                     case catch odbc_queries:add_user_scram(
                                  LServer,
-                                 Username,
-                                 ejabberd_odbc:escape(Scram#scram.storedkey),
-                                 ejabberd_odbc:escape(Scram#scram.serverkey),
-                                 ejabberd_odbc:escape(Scram#scram.salt),
-                                 integer_to_binary(Scram#scram.iterationcount)
+                                 LUser,
+                                 Scram#scram.storedkey,
+                                 Scram#scram.serverkey,
+                                 Scram#scram.salt,
+                                 Scram#scram.iterationcount
                                 ) of
                         {updated, 1} -> {atomic, ok};
                         _ -> {atomic, exists}
                     end;
                 false ->
-                    Pass = ejabberd_odbc:escape(Password),
-                    case catch odbc_queries:add_user(LServer, Username,
-                                                     Pass)
-                        of
+                    case catch odbc_queries:add_user(LServer, LUser,
+                                                     Password) of
                         {updated, 1} -> {atomic, ok};
                         _ -> {atomic, exists}
                     end
@@ -221,35 +218,51 @@ dirty_get_registered_users() ->
 		  Servers).
 
 get_vh_registered_users(Server) ->
-    LServer = jid:nameprep(Server),
-    case catch odbc_queries:list_users(LServer) of
-      {selected, [<<"username">>], Res} ->
-	  [{U, LServer} || [U] <- Res];
-      _ -> []
+    case jid:nameprep(Server) of
+        error -> [];
+        <<>> -> [];
+        LServer ->
+            case catch odbc_queries:list_users(LServer) of
+                {selected, Res} ->
+                    [{U, LServer} || {U} <- Res];
+                _ -> []
+            end
     end.
 
 get_vh_registered_users(Server, Opts) ->
-    LServer = jid:nameprep(Server),
-    case catch odbc_queries:list_users(LServer, Opts) of
-      {selected, [<<"username">>], Res} ->
-	  [{U, LServer} || [U] <- Res];
-      _ -> []
+    case jid:nameprep(Server) of
+        error -> [];
+        <<>> -> [];
+        LServer ->
+            case catch odbc_queries:list_users(LServer, Opts) of
+                {selected, Res} ->
+                    [{U, LServer} || {U} <- Res];
+                _ -> []
+            end
     end.
 
 get_vh_registered_users_number(Server) ->
-    LServer = jid:nameprep(Server),
-    case catch odbc_queries:users_number(LServer) of
-      {selected, [_], [[Res]]} ->
-	  jlib:binary_to_integer(Res);
-      _ -> 0
+    case jid:nameprep(Server) of
+        error -> 0;
+        <<>> -> 0;
+        LServer ->
+            case catch odbc_queries:users_number(LServer) of
+                {selected, [{Res}]} ->
+                    Res;
+                _ -> 0
+            end
     end.
 
 get_vh_registered_users_number(Server, Opts) ->
-    LServer = jid:nameprep(Server),
-    case catch odbc_queries:users_number(LServer, Opts) of
-      {selected, [_], [[Res]]} ->
-	  jlib:binary_to_integer(Res);
-      _Other -> 0
+    case jid:nameprep(Server) of
+        error -> 0;
+        <<>> -> 0;
+        LServer ->
+            case catch odbc_queries:users_number(LServer, Opts) of
+                {selected, [{Res}]} ->
+                    Res;
+                _Other -> 0
+            end
     end.
 
 get_password(User, Server) ->
@@ -323,12 +336,14 @@ is_user_exists(User, Server) ->
 %% @doc Remove user.
 %% Note: it may return ok even if there was some problem removing the user.
 remove_user(User, Server) ->
-    case jid:nodeprep(User) of
-      error -> error;
-      LUser ->
-	  Username = ejabberd_odbc:escape(LUser),
-	  LServer = jid:nameprep(Server),
-	  catch odbc_queries:del_user(LServer, Username),
+    LServer = jid:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    if (LUser == error) or (LServer == error) ->
+            error;
+       (LUser == <<>>) or (LServer == <<>>) ->
+            error;
+       true ->
+	  catch odbc_queries:del_user(LServer, LUser),
 	  ok
     end.
 
@@ -351,16 +366,12 @@ remove_user(User, Server, Password) ->
                         false -> not_allowed
                     end;
                 false ->
-                    Username = ejabberd_odbc:escape(LUser),
-                    Pass = ejabberd_odbc:escape(Password),
                     F = fun () ->
                                 Result = odbc_queries:del_user_return_password(
-                                           LServer, Username, Pass),
+                                           LServer, LUser, Password),
                                 case Result of
-                                    {selected, [<<"password">>],
-                                     [[Password]]} -> ok;
-                                    {selected, [<<"password">>],
-                                     []} -> not_exists;
+                                    {selected, [{Password}]} -> ok;
+                                    {selected, []} -> not_exists;
                                     _ -> not_allowed
                                 end
                         end,

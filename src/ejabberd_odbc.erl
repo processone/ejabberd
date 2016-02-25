@@ -41,6 +41,7 @@
 	 sql_bloc/2,
 	 escape/1,
 	 escape_like/1,
+	 escape_like_arg/1,
 	 to_bool/1,
 	 sqlite_db/1,
 	 sqlite_file/1,
@@ -125,7 +126,7 @@ start_link(Host, StartInterval) ->
                             {error, binary()} |
                             {selected, [binary()],
                              [[binary()]]} |
-                            {selected, [any]}.
+                            {selected, [any()]}.
 
 -spec sql_query(binary(), sql_query()) -> sql_query_result().
 
@@ -198,6 +199,13 @@ escape_like(S) when is_binary(S) ->
 escape_like($%) -> <<"\\%">>;
 escape_like($_) -> <<"\\_">>;
 escape_like(C) when is_integer(C), C >= 0, C =< 255 -> odbc_queries:escape(C).
+
+escape_like_arg(S) when is_binary(S) ->
+    << <<(escape_like_arg(C))/binary>> || <<C>> <= S >>;
+escape_like_arg($%) -> <<"\\%">>;
+escape_like_arg($_) -> <<"\\_">>;
+escape_like_arg($\\) -> <<"\\\\">>;
+escape_like_arg(C) when is_integer(C), C >= 0, C =< 255 -> <<C>>.
 
 to_bool(<<"t">>) -> true;
 to_bool(<<"true">>) -> true;

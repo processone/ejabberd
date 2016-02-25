@@ -175,39 +175,39 @@ set_password_scram_t(LServer, LUser,
                   "iterationcount=%(IterationCount)d"])
       end).
 
-add_user(LServer, Username, Pass) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"insert into users(username, password) "
-			       "values ('">>,
-			     Username, <<"', '">>, Pass, <<"');">>]).
+add_user(LServer, LUser, Password) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("insert into users(username, password) "
+           "values (%(LUser)s, %(Password)s)")).
 
-add_user_scram(LServer, Username,
+add_user_scram(LServer, LUser,
                StoredKey, ServerKey, Salt, IterationCount) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"insert into users(username, password, serverkey, salt, iterationcount) "
-			       "values ('">>,
-			     Username, <<"', '">>, StoredKey, <<"', '">>,
-                             ServerKey, <<"', '">>,
-                             Salt, <<"', '">>,
-                             IterationCount, <<"');">>]).
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("insert into users(username, password, serverkey, salt, "
+           "iterationcount) "
+           "values (%(LUser)s, %(StoredKey)s, %(ServerKey)s,"
+           " %(Salt)s, %(IterationCount)d)")).
 
-del_user(LServer, Username) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"delete from users where username='">>, Username,
-			     <<"';">>]).
+del_user(LServer, LUser) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("delete from users where username=%(LUser)s")).
 
-del_user_return_password(_LServer, Username, Pass) ->
+del_user_return_password(_LServer, LUser, Password) ->
     P =
-	ejabberd_odbc:sql_query_t([<<"select password from users where username='">>,
-				   Username, <<"';">>]),
-    ejabberd_odbc:sql_query_t([<<"delete from users where username='">>,
-			       Username, <<"' and password='">>, Pass,
-			       <<"';">>]),
+	ejabberd_odbc:sql_query_t(
+          ?SQL("select @(password)s from users where username=%(LUser)s")),
+    ejabberd_odbc:sql_query_t(
+      ?SQL("delete from users"
+           " where username=%(LUser)s and password=%(Password)s")),
     P.
 
 list_users(LServer) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"select username from users">>]).
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(username)s from users")).
 
 list_users(LServer, [{from, Start}, {to, End}])
     when is_integer(Start) and is_integer(End) ->
@@ -222,64 +222,54 @@ list_users(LServer,
 		{offset, Start - 1}]);
 list_users(LServer, [{limit, Limit}, {offset, Offset}])
     when is_integer(Limit) and is_integer(Offset) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [list_to_binary(
-                               io_lib:format(
-                                 "select username from users " ++
-                                     "order by username " ++
-                                     "limit ~w offset ~w",
-                                 [Limit, Offset]))]);
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(username)s from users "
+           "order by username "
+           "limit %(Limit)d offset %(Offset)d"));
 list_users(LServer,
 	   [{prefix, Prefix}, {limit, Limit}, {offset, Offset}])
     when is_binary(Prefix) and is_integer(Limit) and
 	   is_integer(Offset) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [list_to_binary(
-                               io_lib:format(
-                                 "select username from users " ++
-                                     "where username like '~s%' " ++
-                                     "order by username " ++
-                                     "limit ~w offset ~w ",
-                                 [Prefix, Limit, Offset]))]).
+    SPrefix = ejabberd_odbc:escape_like_arg(Prefix),
+    SPrefix2 = <<SPrefix/binary, $%>>,
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(username)s from users "
+           "where username like %(SPrefix2)s "
+           "order by username "
+           "limit %(Limit)d offset %(Offset)d")).
 
 users_number(LServer) ->
-    Type = ejabberd_config:get_option({odbc_type, LServer},
-                                      fun(pgsql) -> pgsql;
-                                         (mysql) -> mysql;
-                                         (sqlite) -> sqlite;
-                                         (odbc) -> odbc
-                                      end, odbc),
-    case Type of
-      pgsql ->
-	  case
-	    ejabberd_config:get_option(
-              {pgsql_users_number_estimate, LServer},
-              fun(V) when is_boolean(V) -> V end,
-              false)
-	      of
-	    true ->
-		ejabberd_odbc:sql_query(LServer,
-					[<<"select reltuples from pg_class where "
-                                           "oid = 'users'::regclass::oid">>]);
-	    _ ->
-		ejabberd_odbc:sql_query(LServer,
-					[<<"select count(*) from users">>])
+    ejabberd_odbc:sql_query(
+      LServer,
+      fun(pgsql, _) ->
+              case
+                  ejabberd_config:get_option(
+                    {pgsql_users_number_estimate, LServer},
+                    fun(V) when is_boolean(V) -> V end,
+                    false) of
+                  true ->
+                      ejabberd_odbc:sql_query_t(
+                        ?SQL("select @(reltuples :: bigint)d from pg_class"
+                             " where oid = 'users'::regclass::oid"));
+                  _ ->
+                      ejabberd_odbc:sql_query_t(
+                        ?SQL("select @(count(*))d from users"))
 	  end;
-      _ ->
-	  ejabberd_odbc:sql_query(LServer,
-				  [<<"select count(*) from users">>])
-    end.
+         (_Type, _) ->
+              ejabberd_odbc:sql_query_t(
+                ?SQL("select @(count(*))d from users"))
+      end).
 
 users_number(LServer, [{prefix, Prefix}])
     when is_binary(Prefix) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [list_to_binary(
-                               io_lib:fwrite(
-                                 "select count(*) from users " ++
-                                     %% Warning: Escape prefix at higher level to prevent SQL
-                                     %%          injection.
-                                     "where username like '~s%'",
-                                 [Prefix]))]);
+    SPrefix = ejabberd_odbc:escape_like_arg(Prefix),
+    SPrefix2 = <<SPrefix/binary, $%>>,
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(count(*))d from users "
+           "where username like %(SPrefix2)s"));
 users_number(LServer, []) ->
     users_number(LServer).
 
