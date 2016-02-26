@@ -125,22 +125,28 @@ get_client_identity(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
 verify_redirection_uri(_, _, Ctx) -> {ok, Ctx}.
 
 authenticate_user({User, Server}, {password, Password} = Ctx) ->
-    case jid:make(User, Server, <<"">>) of
+    %% case jid:make(User, Server, <<"">>) of
+    case jlid:make(User, Server, <<"">>) of
         #jid{} = JID ->
-            Access =
-                ejabberd_config:get_option(
-                  {oauth_access, JID#jid.lserver},
-                  fun(A) when is_atom(A) -> A end,
-                  none),
-            case acl:match_rule(JID#jid.lserver, Access, JID) of
-                allow ->
-                    case ejabberd_auth:check_password(User, Server, Password) of
-                        true ->
-                            {ok, {Ctx, {user, User, Server}}};
-                        false ->
-                            {error, badpass}
-                    end;
-                deny ->
+            %Access =
+            %    ejabberd_config:get_option(
+            %      {oauth_access, JID#jid.lserver},
+            %      fun(A) when is_atom(A) -> A end,
+            %      none),
+            %case acl:match_rule(JID#jid.lserver, Access, JID) of
+            %    allow ->
+            %        case ejabberd_auth:check_password(User, Server, Password) of
+            %            true ->
+            %                {ok, {Ctx, {user, User, Server}}};
+            %            false ->
+            %                {error, badpass}
+            %        end;
+            %    deny ->
+            %        {error, badpass}
+            case ejabberd_auth:check_password(User, Server, Password) of
+                true ->
+                    {ok, {Ctx, {user, User, Server}}};
+                false ->
                     {error, badpass}
             end;
         error ->
@@ -173,8 +179,10 @@ associate_access_token(AccessToken, Context, AppContext) ->
         proplists:get_value(<<"resource_owner">>, Context, <<"">>),
     Scope = proplists:get_value(<<"scope">>, Context, []),
     Expire = proplists:get_value(<<"expiry_time">>, Context, 0),
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
+    %LUser = jid:nodeprep(User),
+    %LServer = jid:nameprep(Server),
+    LUser = jlid:nodeprep(User),
+    LServer = jlid:nameprep(Server),
     R = #oauth_token{
       token = AccessToken,
       us = {LUser, LServer},
@@ -190,8 +198,10 @@ associate_refresh_token(_RefreshToken, _Context, AppContext) ->
 
 
 check_token(User, Server, Scope, Token) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
+    %LUser = jid:nodeprep(User),
+    %LServer = jid:nameprep(Server),
+    LUser = jlid:nodeprep(User),
+    LServer = jlid:nameprep(Server),
     case catch mnesia:dirty_read(oauth_token, Token) of
         [#oauth_token{us = {LUser, LServer},
                       scope = TokenScope,
@@ -363,7 +373,7 @@ web_head() ->
      ?XA(<<"meta">>, [{<<"name">>, <<"viewport">>},
                       {<<"content">>,
                        <<"width=device-width, initial-scale=1">>}]),
-     ?XC(<<"title">>, <<"Authorization request">>),
+     ?XC(<<"title">>, <<"Authorization request-Coam:TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT">>),
      ?XC(<<"style">>, css())
     ].
 
