@@ -3292,9 +3292,14 @@ broadcast_publish_item(Host, Node, Nidx, Type, NodeOptions, ItemId, From, Payloa
 		true -> Payload;
 		false -> []
 	    end,
+	    Attrs = case get_option(NodeOptions, itemreply, none) of
+		owner -> itemAttr(ItemId);  %% owner not supported
+		publisher -> itemAttr(ItemId, {<<"publisher">>, jid:to_string(From)});
+		none -> itemAttr(ItemId)
+	    end,
 	    Stanza = event_stanza(
 		    [#xmlel{name = <<"items">>, attrs = nodeAttr(Node),
-			    children = [#xmlel{name = <<"item">>, attrs = itemAttr(ItemId),
+			    children = [#xmlel{name = <<"item">>, attrs = Attrs,
 				    children = Content}]}]),
 	    broadcast_stanza(Host, From, Node, Nidx, Type,
 		NodeOptions, SubsByDepth, items, Stanza, true),
@@ -3775,7 +3780,9 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
 	?BOOL_CONFIG_FIELD(<<"Only deliver notifications to available users">>,
 	    presence_based_delivery),
 	?NLIST_CONFIG_FIELD(<<"The collections with which a node is affiliated">>,
-	    collection)].
+	    collection),
+	?ALIST_CONFIG_FIELD(<<"Whether owners or publisher should receive replies to items">>,
+	    itemreply, [none, owner, publisher])].
 
 %%<p>There are several reasons why the node configuration request might fail:</p>
 %%<ul>
@@ -3929,6 +3936,8 @@ set_xoption(Host, [{<<"pubsub#collection">>, Value} | Opts], NewOpts) ->
 set_xoption(Host, [{<<"pubsub#node">>, [Value]} | Opts], NewOpts) ->
     %    NewValue = string_to_node(Value),
     ?SET_LIST_XOPT(node, Value);
+set_xoption(Host, [{<<"pubsub#itemreply">>, [Val]} | Opts], NewOpts) ->
+    ?SET_ALIST_XOPT(itemreply, Val, [none, owner, publisher]);
 set_xoption(Host, [_ | Opts], NewOpts) ->
     set_xoption(Host, Opts, NewOpts).
 
@@ -4266,6 +4275,7 @@ nodeAttr(Node) -> [{<<"node">>, Node}].
 
 itemAttr([]) -> [];
 itemAttr(ItemId) -> [{<<"id">>, ItemId}].
+itemAttr(ItemId, From) -> [{<<"id">>, ItemId}, From].
 
 itemsEls(Items) ->
     [#xmlel{name = <<"item">>, attrs = itemAttr(ItemId), children = Payload}
