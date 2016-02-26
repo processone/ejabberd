@@ -482,7 +482,7 @@ send_loop(State) ->
     -> [xmlel()]
     ).
 disco_local_identity(Acc, _From, To, <<>>, _Lang) ->
-    case lists:member(?PEPNODE, plugins(To#jid.lserver)) of
+    case lists:member(?PEPNODE, plugins(host(To#jid.lserver))) of
 	true ->
 	    [#xmlel{name = <<"identity">>,
 		    attrs = [{<<"category">>, <<"pubsub">>},
@@ -1236,7 +1236,7 @@ iq_get_vcard(Lang) ->
     ).
 
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
-    iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, all, plugins(ServerHost)).
+    iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, all, plugins(Host)).
 
 -spec(iq_pubsub/8 ::
     (
@@ -3997,16 +3997,11 @@ get_cached_item(Host, Nidx) ->
 host(ServerHost) ->
     config(ServerHost, host, <<"pubsub.", ServerHost/binary>>).
 
-serverhost({_U, Server, _R})->
-    Server;
+serverhost({_U, ServerHost, _R})->
+    ServerHost;
 serverhost(Host) ->
-    case binary:match(Host, <<"pubsub.">>) of
-	{0,7} ->
-	    [_,ServerHost] = binary:split(Host, <<".">>),
-	    ServerHost;
-	_ ->
-	    Host
-    end.
+    [_, ServerHost] = binary:split(Host, <<".">>),
+    ServerHost.
 
 tree(Host) ->
     case config(serverhost(Host), nodetree) of
@@ -4062,14 +4057,14 @@ select_type(ServerHost, Host, Node, Type) ->
 	_ ->
 	    Type
     end,
-    ConfiguredTypes = plugins(ServerHost),
+    ConfiguredTypes = plugins(Host),
     case lists:member(SelectedType, ConfiguredTypes) of
 	true -> SelectedType;
 	false -> hd(ConfiguredTypes)
     end.
 
 select_type(ServerHost, Host, Node) ->
-    select_type(ServerHost, Host, Node, hd(plugins(ServerHost))).
+    select_type(ServerHost, Host, Node, hd(plugins(Host))).
 
 feature(<<"rsm">>) -> ?NS_RSM;
 feature(Feature) -> <<(?NS_PUBSUB)/binary, "#", Feature/binary>>.
