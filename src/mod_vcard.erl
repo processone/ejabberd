@@ -25,6 +25,8 @@
 
 -module(mod_vcard).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -author('alexey@process-one.net').
 
 -protocol({xep, 54, '1.2'}).
@@ -39,6 +41,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 -include("jlib.hrl").
 
@@ -212,14 +215,13 @@ get_vcard(LUser, LServer, mnesia) ->
       {aborted, _Reason} -> error
     end;
 get_vcard(LUser, LServer, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    case catch odbc_queries:get_vcard(LServer, Username) of
-      {selected, [<<"vcard">>], [[SVCARD]]} ->
+    case catch odbc_queries:get_vcard(LServer, LUser) of
+      {selected, [{SVCARD}]} ->
 	  case fxml_stream:parse_element(SVCARD) of
 	    {error, _Reason} -> error;
 	    VCARD -> [VCARD]
 	  end;
-      {selected, [<<"vcard">>], []} -> [];
+      {selected, []} -> [];
       _ -> error
     end;
 get_vcard(LUser, LServer, riak) ->
@@ -336,39 +338,14 @@ set_vcard(User, LServer, VCARD) ->
                                             {<<"orgunit">>, OrgUnit},
                                             {<<"lorgunit">>, LOrgUnit}]}]);
 	     odbc ->
-		 Username = ejabberd_odbc:escape(User),
-		 LUsername = ejabberd_odbc:escape(LUser),
-		 SVCARD =
-		     ejabberd_odbc:escape(fxml:element_to_binary(VCARD)),
-		 SFN = ejabberd_odbc:escape(FN),
-		 SLFN = ejabberd_odbc:escape(LFN),
-		 SFamily = ejabberd_odbc:escape(Family),
-		 SLFamily = ejabberd_odbc:escape(LFamily),
-		 SGiven = ejabberd_odbc:escape(Given),
-		 SLGiven = ejabberd_odbc:escape(LGiven),
-		 SMiddle = ejabberd_odbc:escape(Middle),
-		 SLMiddle = ejabberd_odbc:escape(LMiddle),
-		 SNickname = ejabberd_odbc:escape(Nickname),
-		 SLNickname = ejabberd_odbc:escape(LNickname),
-		 SBDay = ejabberd_odbc:escape(BDay),
-		 SLBDay = ejabberd_odbc:escape(LBDay),
-		 SCTRY = ejabberd_odbc:escape(CTRY),
-		 SLCTRY = ejabberd_odbc:escape(LCTRY),
-		 SLocality = ejabberd_odbc:escape(Locality),
-		 SLLocality = ejabberd_odbc:escape(LLocality),
-		 SEMail = ejabberd_odbc:escape(EMail),
-		 SLEMail = ejabberd_odbc:escape(LEMail),
-		 SOrgName = ejabberd_odbc:escape(OrgName),
-		 SLOrgName = ejabberd_odbc:escape(LOrgName),
-		 SOrgUnit = ejabberd_odbc:escape(OrgUnit),
-		 SLOrgUnit = ejabberd_odbc:escape(LOrgUnit),
-		 odbc_queries:set_vcard(LServer, LUsername, SBDay, SCTRY,
-					SEMail, SFN, SFamily, SGiven, SLBDay,
-					SLCTRY, SLEMail, SLFN, SLFamily,
-					SLGiven, SLLocality, SLMiddle,
-					SLNickname, SLOrgName, SLOrgUnit,
-					SLocality, SMiddle, SNickname, SOrgName,
-					SOrgUnit, SVCARD, Username)
+		 SVCARD = fxml:element_to_binary(VCARD),
+		 odbc_queries:set_vcard(LServer, LUser, BDay, CTRY,
+					EMail, FN, Family, Given, LBDay,
+					LCTRY, LEMail, LFN, LFamily,
+					LGiven, LLocality, LMiddle,
+					LNickname, LOrgName, LOrgUnit,
+					Locality, Middle, Nickname, OrgName,
+					OrgUnit, SVCARD, User)
 	   end,
 	   ejabberd_hooks:run(vcard_set, LServer,
 			      [LUser, LServer, VCARD])
@@ -929,12 +906,14 @@ remove_user(LUser, LServer, mnesia) ->
 	end,
     mnesia:transaction(F);
 remove_user(LUser, LServer, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_transaction(LServer,
-				  [[<<"delete from vcard where username='">>,
-				    Username, <<"';">>],
-				   [<<"delete from vcard_search where lusername='">>,
-				    Username, <<"';">>]]);
+    ejabberd_odbc:sql_transaction(
+      LServer,
+      fun() ->
+              ejabberd_odbc:sql_query_t(
+                ?SQL("delete from vcard where username=%(LUser)s")),
+              ejabberd_odbc:sql_query_t(
+                ?SQL("delete from vcard_search where lusername=%(LUser)s"))
+      end);
 remove_user(LUser, LServer, riak) ->
     {atomic, ejabberd_riak:delete(vcard, {LUser, LServer})}.
 

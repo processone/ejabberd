@@ -121,7 +121,8 @@ start_link(Host, StartInterval) ->
 			  [Host, StartInterval],
 			  fsm_limit_opts() ++ (?FSMOPTS)).
 
--type sql_query() :: [sql_query() | binary()] | #sql_query{}.
+-type sql_query() :: [sql_query() | binary()] | #sql_query{} |
+                     fun(() -> any()) | fun((atom(), _) -> any()).
 -type sql_query_result() :: {updated, non_neg_integer()} |
                             {error, binary()} |
                             {selected, [binary()],

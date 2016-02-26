@@ -42,7 +42,7 @@
 	 get_roster_groups/3, del_user_roster_t/2,
 	 get_roster_by_jid/3, get_rostergroup_by_jid/3,
 	 del_roster/3, del_roster_sql/2, update_roster/5,
-	 update_roster_sql/4, roster_subscribe/4,
+	 update_roster_sql/4, roster_subscribe/1,
 	 get_subscription/3, set_private_data/4,
 	 set_private_data_sql/3, get_private_data/3,
 	 get_private_data/2, del_user_private_storage/2,
@@ -339,15 +339,13 @@ get_rostergroup_by_jid(LServer, LUser, SJID) ->
       ?SQL("select @(grp)s from rostergroups"
            " where username=%(LUser)s and jid=%(SJID)s")).
 
-del_roster(_LServer, Username, SJID) ->
-    ejabberd_odbc:sql_query_t([<<"delete from rosterusers       where "
-				 "username='">>,
-			       Username, <<"'         and jid='">>, SJID,
-			       <<"';">>]),
-    ejabberd_odbc:sql_query_t([<<"delete from rostergroups       where "
-				 "username='">>,
-			       Username, <<"'         and jid='">>, SJID,
-			       <<"';">>]).
+del_roster(_LServer, LUser, SJID) ->
+    ejabberd_odbc:sql_query_t(
+      ?SQL("delete from rosterusers"
+           " where username=%(LUser)s and jid=%(SJID)s")),
+    ejabberd_odbc:sql_query_t(
+      ?SQL("delete from rostergroups"
+           " where username=%(LUser)s and jid=%(SJID)s")).
 
 del_roster_sql(Username, SJID) ->
     [[<<"delete from rosterusers       where "
@@ -357,27 +355,19 @@ del_roster_sql(Username, SJID) ->
 	"username='">>,
       Username, <<"'         and jid='">>, SJID, <<"';">>]].
 
-update_roster(_LServer, Username, SJID, ItemVals,
+update_roster(_LServer, LUser, SJID, ItemVals,
 	      ItemGroups) ->
-    update_t(<<"rosterusers">>,
-	     [<<"username">>, <<"jid">>, <<"nick">>,
-	      <<"subscription">>, <<"ask">>, <<"askmessage">>,
-	      <<"server">>, <<"subscribe">>, <<"type">>],
-	     ItemVals,
-	     [<<"username='">>, Username, <<"' and jid='">>, SJID,
-	      <<"'">>]),
-    ejabberd_odbc:sql_query_t([<<"delete from rostergroups       where "
-				 "username='">>,
-			       Username, <<"'         and jid='">>, SJID,
-			       <<"';">>]),
-    lists:foreach(fun (ItemGroup) ->
-			  ejabberd_odbc:sql_query_t([<<"insert into rostergroups(           "
-						       "   username, jid, grp)  values ('">>,
-						     join(ItemGroup,
-							  <<"', '">>),
-						     <<"');">>])
-		  end,
-		  ItemGroups).
+    roster_subscribe(ItemVals),
+    ejabberd_odbc:sql_query_t(
+      ?SQL("delete from rostergroups"
+           " where username=%(LUser)s and jid=%(SJID)s")),
+    lists:foreach(
+      fun(ItemGroup) ->
+              ejabberd_odbc:sql_query_t(
+                ?SQL("insert into rostergroups(username, jid, grp) "
+                     "values (%(LUser)s, %(SJID)s, %(ItemGroup)s)"))
+      end,
+      ItemGroups).
 
 update_roster_sql(Username, SJID, ItemVals,
 		  ItemGroups) ->
@@ -399,14 +389,18 @@ update_roster_sql(Username, SJID, ItemVals,
 	join(ItemGroup, <<"', '">>), <<"');">>]
        || ItemGroup <- ItemGroups].
 
-roster_subscribe(_LServer, Username, SJID, ItemVals) ->
-    update_t(<<"rosterusers">>,
-	     [<<"username">>, <<"jid">>, <<"nick">>,
-	      <<"subscription">>, <<"ask">>, <<"askmessage">>,
-	      <<"server">>, <<"subscribe">>, <<"type">>],
-	     ItemVals,
-	     [<<"username='">>, Username, <<"' and jid='">>, SJID,
-	      <<"'">>]).
+roster_subscribe({LUser, SJID, Name, SSubscription, SAsk, AskMessage}) ->
+    ?SQL_UPSERT_T(
+       "rosterusers",
+       ["!username=%(LUser)s",
+        "!jid=%(SJID)s",
+        "nick=%(Name)s",
+        "subscription=%(SSubscription)s",
+        "ask=%(SAsk)s",
+        "askmessage=%(AskMessage)s",
+        "server='N'",
+        "subscribe=''",
+        "type='item'"]).
 
 get_subscription(LServer, LUser, SJID) ->
     ejabberd_odbc:sql_query(
@@ -447,53 +441,48 @@ del_user_private_storage(LServer, LUser) ->
       ?SQL("delete from private_storage"
            " where username=%(LUser)s")).
 
-set_vcard(LServer, LUsername, SBDay, SCTRY, SEMail, SFN,
-	  SFamily, SGiven, SLBDay, SLCTRY, SLEMail, SLFN,
-	  SLFamily, SLGiven, SLLocality, SLMiddle, SLNickname,
-	  SLOrgName, SLOrgUnit, SLocality, SMiddle, SNickname,
-	  SOrgName, SOrgUnit, SVCARD, Username) ->
-    ejabberd_odbc:sql_transaction(LServer,
-				  fun () ->
-					  update_t(<<"vcard">>,
-						   [<<"username">>,
-						    <<"vcard">>],
-						   [LUsername, SVCARD],
-						   [<<"username='">>, LUsername,
-						    <<"'">>]),
-					  update_t(<<"vcard_search">>,
-						   [<<"username">>,
-						    <<"lusername">>, <<"fn">>,
-						    <<"lfn">>, <<"family">>,
-						    <<"lfamily">>, <<"given">>,
-						    <<"lgiven">>, <<"middle">>,
-						    <<"lmiddle">>,
-						    <<"nickname">>,
-						    <<"lnickname">>, <<"bday">>,
-						    <<"lbday">>, <<"ctry">>,
-						    <<"lctry">>, <<"locality">>,
-						    <<"llocality">>,
-						    <<"email">>, <<"lemail">>,
-						    <<"orgname">>,
-						    <<"lorgname">>,
-						    <<"orgunit">>,
-						    <<"lorgunit">>],
-						   [Username, LUsername, SFN,
-						    SLFN, SFamily, SLFamily,
-						    SGiven, SLGiven, SMiddle,
-						    SLMiddle, SNickname,
-						    SLNickname, SBDay, SLBDay,
-						    SCTRY, SLCTRY, SLocality,
-						    SLLocality, SEMail, SLEMail,
-						    SOrgName, SLOrgName,
-						    SOrgUnit, SLOrgUnit],
-						   [<<"lusername='">>,
-						    LUsername, <<"'">>])
-				  end).
+set_vcard(LServer, LUser, BDay, CTRY, EMail, FN,
+	  Family, Given, LBDay, LCTRY, LEMail, LFN,
+	  LFamily, LGiven, LLocality, LMiddle, LNickname,
+	  LOrgName, LOrgUnit, Locality, Middle, Nickname,
+	  OrgName, OrgUnit, SVCARD, User) ->
+    ejabberd_odbc:sql_transaction(
+      LServer,
+      fun() ->
+              ?SQL_UPSERT(LServer, "vcard",
+                          ["!username=%(LUser)s",
+                           "vcard=%(SVCARD)s"]),
+              ?SQL_UPSERT(LServer, "vcard_search",
+                          ["username=%(User)s",
+                           "!lusername=%(LUser)s",
+                           "fn=%(FN)s",
+                           "lfn=%(LFN)s",
+                           "family=%(Family)s",
+                           "lfamily=%(LFamily)s",
+                           "given=%(Given)s",
+                           "lgiven=%(LGiven)s",
+                           "middle=%(Middle)s",
+                           "lmiddle=%(LMiddle)s",
+                           "nickname=%(Nickname)s",
+                           "lnickname=%(LNickname)s",
+                           "bday=%(BDay)s",
+                           "lbday=%(LBDay)s",
+                           "ctry=%(CTRY)s",
+                           "lctry=%(LCTRY)s",
+                           "locality=%(Locality)s",
+                           "llocality=%(LLocality)s",
+                           "email=%(EMail)s",
+                           "lemail=%(LEMail)s",
+                           "orgname=%(OrgName)s",
+                           "lorgname=%(LOrgName)s",
+                           "orgunit=%(OrgUnit)s",
+                           "lorgunit=%(LOrgUnit)s"])
+      end).
 
-get_vcard(LServer, Username) ->
-    ejabberd_odbc:sql_query(LServer,
-			    [<<"select vcard from vcard where username='">>,
-			     Username, <<"';">>]).
+get_vcard(LServer, LUser) ->
+    ejabberd_odbc:sql_query(
+      LServer,
+      ?SQL("select @(vcard)s from vcard where username=%(LUser)s")).
 
 get_default_privacy_list(LServer, LUser) ->
     ejabberd_odbc:sql_query(
