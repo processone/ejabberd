@@ -282,9 +282,9 @@ form_new_post(Q) ->
     case catch get_register_parameters(Q) of
       [Username, Host, Password, Password, Id, Key] ->
 	  form_new_post(Username, Host, Password, {Id, Key});
-      [_Username, _Password, _Password2, false, false] ->
+      [_Username, _Host, _Password, _Password2, false, false] ->
 	  {error, passwords_not_identical};
-      [_Username, _Password, _Password2, Id, Key] ->
+      [_Username, _Host, _Password, _Password2, Id, Key] ->
 	  ejabberd_captcha:check_captcha(Id, Key),
 	  {error, passwords_not_identical};
       _ -> {error, wrong_parameters}
@@ -392,7 +392,7 @@ form_changepass_post(Q) ->
       [Username, Host, PasswordOld, Password, Password] ->
 	  try_change_password(Username, Host, PasswordOld,
 			      Password);
-      [_Username, _PasswordOld, _Password, _Password2] ->
+      [_Username, _Host, _PasswordOld, _Password, _Password2] ->
 	  {error, passwords_not_identical};
       _ -> {error, wrong_parameters}
     end.
