@@ -185,8 +185,8 @@ process_item(RosterItem, _Host) ->
     end.
 
 get_subscription_lists({F, T}, User, Server) ->
-    U = jlib:nodeprep(User),
-    S = jlib:nameprep(Server),
+    U = jid:nodeprep(User),
+    S = jid:nameprep(Server),
     {ok, State} = eldap_utils:get_state(S, ?MODULE),
     SRJIDs = get_presense_subscribers(State, {U, S}),
 %?INFO_MSG("SRJIDs: ~p", [SRJIDs]),
@@ -194,7 +194,7 @@ get_subscription_lists({F, T}, User, Server) ->
 
 get_jid_info({Subscription, Groups}, User, Server, JID) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),
-    {U1, S1, _} = jlib:jid_tolower(JID),
+    {U1, S1, _} = jid:tolower(JID),
     US1 = {U1, S1},
     SR = get_shared_roster(State, {User, Server}),
     case lists:keysearch(US1, #shared_roster_item.us, SR) of
@@ -211,7 +211,7 @@ out_subscription(User, Server, JID, Type) ->
 
 process_subscription(Direction, User, Server, JID, _Type, Acc) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),
-    {U1, S1, _} = jlib:jid_tolower(JID),
+    {U1, S1, _} = jid:tolower(JID),
     US1 = {U1, S1},
     SR = get_shared_roster(State, {User, Server}),
     case lists:keysearch(US1, #shared_roster_item.us, SR) of
@@ -642,7 +642,7 @@ construct_user(State, Attrs) ->
             %% By returning "" get_ldap_attr means "not found"
             case Extractor(UID) of
                 {ok, UID1} ->
-                    UID2 = jlib:nodeprep(UID1),
+                    UID2 = jid:nodeprep(UID1),
                     case UID2 of
                         error -> error;
                         _ ->
@@ -761,22 +761,22 @@ parse_options(Host, Opts) ->
                                    (false) -> false;
                                    (true) -> true
                                 end, true),
-    RosterCacheValidity = eldap_utils:get_opt(
+    RosterCacheValidity = gen_mod:get_opt(
                            {ldap_group_cache_validity, Host}, Opts,
                            fun(I) when is_integer(I), I>0 -> I end,
                            ?CACHE_VALIDITY),
-    RosterCacheSize = eldap_utils:get_opt(
+    RosterCacheSize = gen_mod:get_opt(
                        {ldap_roster_cache_size, Host}, Opts,
                        fun(I) when is_integer(I), I>0 -> I end,
                        ?CACHE_SIZE),
-    ConfigFilter = eldap_utils:get_opt({ldap_filter, Host}, Opts,
-                                       fun check_filter/1, <<"">>),
-    ConfigUserFilter = eldap_utils:get_opt({ldap_ufilter, Host}, Opts,
-                                           fun check_filter/1, <<"">>),
-    ConfigGroupFilter = eldap_utils:get_opt({ldap_gfilter, Host}, Opts,
-                                            fun check_filter/1, <<"">>),
-    RosterFilter = eldap_utils:get_opt({ldap_rfilter, Host}, Opts,
-                                       fun check_filter/1, <<"">>),
+    ConfigFilter = gen_mod:get_opt({ldap_filter, Host}, Opts,
+				   fun check_filter/1, <<"">>),
+    ConfigUserFilter = gen_mod:get_opt({ldap_ufilter, Host}, Opts,
+				       fun check_filter/1, <<"">>),
+    ConfigGroupFilter = gen_mod:get_opt({ldap_gfilter, Host}, Opts,
+					fun check_filter/1, <<"">>),
+    RosterFilter = gen_mod:get_opt({ldap_rfilter, Host}, Opts,
+				   fun check_filter/1, <<"">>),
     SubFilter = <<"(&(", UIDAttr/binary, "=",
     	        UIDAttrFormat/binary, ")(", GroupAttr/binary, "=%g))">>,
     UserSubFilter = case ConfigUserFilter of
