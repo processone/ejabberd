@@ -60,9 +60,9 @@ transform(Form) ->
                             case erl_syntax:type(Arg) of
                                 string ->
                                     S = erl_syntax:string_value(Arg),
-                                    ParseRes =
-                                        parse(S, erl_syntax:get_pos(Arg)),
-                                    make_sql_query(ParseRes);
+                                    Pos = erl_syntax:get_pos(Arg),
+                                    ParseRes = parse(S, Pos),
+                                    set_pos(make_sql_query(ParseRes), Pos);
                                 _ ->
                                     throw({error, erl_syntax:get_pos(Form),
                                            "?SQL argument must be "
@@ -82,7 +82,10 @@ transform(Form) ->
                                     ParseRes =
                                         parse_upsert(
                                           erl_syntax:list_elements(FieldsArg)),
-                                    make_sql_upsert(Table, ParseRes);
+                                    Pos = erl_syntax:get_pos(Form),
+                                    set_pos(
+                                      make_sql_upsert(Table, ParseRes, Pos),
+                                      Pos);
                                 _ ->
                                     throw({error, erl_syntax:get_pos(Form),
                                            "?SQL_UPSERT arguments must be "
@@ -322,7 +325,8 @@ parse_upsert_field1([C | S], Acc, ParamPos, Loc) ->
     parse_upsert_field1(S, [C | Acc], ParamPos, Loc).
 
 
-make_sql_upsert(Table, ParseRes) ->
+make_sql_upsert(Table, ParseRes, Pos) ->
+    check_upsert(ParseRes, Pos),
     erl_syntax:fun_expr(
       [erl_syntax:clause(
          [erl_syntax:atom(pgsql), erl_syntax:variable("__Version")],
@@ -454,6 +458,22 @@ make_sql_upsert_pgsql901(Table, ParseRes) ->
       [Upsert]).
 
 
+check_upsert(ParseRes, Pos) ->
+    Set =
+        lists:filter(
+          fun({_Field, Match, _ST}) ->
+                  not Match
+          end, ParseRes),
+    case Set of
+        [] ->
+            throw({error, Pos,
+                   "No ?SQL_UPSERT fields to set, use INSERT instead"});
+        _ ->
+            ok
+    end,
+    ok.
+
+
 concat_states(States) ->
     lists:foldr(
       fun(ST11, ST2) ->
@@ -507,9 +527,18 @@ resolve_vars(ST1, ST2) ->
     ST1#state{params = NewParams, 'query' = NewQuery}.
 
 
-
 join_states([], _Sep) ->
     #state{};
 join_states([H | T], Sep) ->
     J = [[H] | [[#state{'query' = [{str, Sep}]}, X] || X <- T]],
     concat_states(lists:append(J)).
+
+
+set_pos(Tree, Pos) ->
+    erl_syntax_lib:map(
+      fun(Node) ->
+              case erl_syntax:get_pos(Node) of
+                  0 -> erl_syntax:set_pos(Node, Pos);
+                  _ -> Node
+              end
+      end, Tree).
