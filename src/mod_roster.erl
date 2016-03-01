@@ -645,14 +645,8 @@ get_subscription_lists(_, LUser, LServer, mnesia) ->
       _ -> []
     end;
 get_subscription_lists(_, LUser, LServer, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    case catch odbc_queries:get_roster(LServer, Username) of
-      {selected,
-       [<<"username">>, <<"jid">>, <<"nick">>,
-	<<"subscription">>, <<"ask">>, <<"askmessage">>,
-	<<"server">>, <<"subscribe">>, <<"type">>],
-       Items}
-	  when is_list(Items) ->
+    case catch odbc_queries:get_roster(LServer, LUser) of
+        {selected, Items} when is_list(Items) ->
             lists:map(fun(I) -> raw_to_record(LServer, I) end, Items);
       _ -> []
     end;
@@ -1149,14 +1143,8 @@ get_in_pending_subscriptions(Ls, User, Server, odbc) ->
     JID = jid:make(User, Server, <<"">>),
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
-    Username = ejabberd_odbc:escape(LUser),
-    case catch odbc_queries:get_roster(LServer, Username) of
-      {selected,
-       [<<"username">>, <<"jid">>, <<"nick">>,
-	<<"subscription">>, <<"ask">>, <<"askmessage">>,
-	<<"server">>, <<"subscribe">>, <<"type">>],
-       Items}
-	  when is_list(Items) ->
+    case catch odbc_queries:get_roster(LServer, LUser) of
+        {selected, Items} when is_list(Items) ->
 	  Ls ++
 	    lists:map(fun (R) ->
 			      Message = R#roster.askmessage,
