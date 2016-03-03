@@ -303,7 +303,7 @@ get_roster(LServer, LUser) ->
       LServer,
       ?SQL("select @(username)s, @(jid)s, @(nick)s, @(subscription)s, "
            "@(ask)s, @(askmessage)s, @(server)s, @(subscribe)s, "
-           "@(type)s from rosterusers where username=%(LUser)s")).
+           "@(\"type\")s from rosterusers where username=%(LUser)s")).
 
 get_roster_jid_groups(LServer, LUser) ->
     ejabberd_odbc:sql_query(
