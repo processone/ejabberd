@@ -504,7 +504,7 @@ disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
     -> [binary(),...]
     ).
 disco_local_features(Acc, _From, To, <<>>, _Lang) ->
-    Host = To#jid.lserver,
+    Host = host(To#jid.lserver),
     Feats = case Acc of
 	{result, I} -> I;
 	_ -> []
