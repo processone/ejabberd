@@ -1363,7 +1363,7 @@ count_offline_messages(LUser, LServer, mnesia) ->
 count_offline_messages(LUser, LServer, odbc) ->
     case catch ejabberd_odbc:sql_query(
                  LServer,
-                 ?SQL("select @(count(*))d from spool "
+                 ?SQL("select @(CAST(count(*) AS INTEGER))d from spool "
                       "where username=%(LUser)s")) of
         {selected, [{Res}]} ->
             Res;
