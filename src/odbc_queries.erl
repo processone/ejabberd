@@ -259,7 +259,7 @@ users_number(LServer) ->
 	  end;
          (_Type, _) ->
               ejabberd_odbc:sql_query_t(
-                ?SQL("select @(count(*))d from users"))
+                ?SQL("select @(CAST(count(*) AS INTEGER))d from users"))
       end).
 
 users_number(LServer, [{prefix, Prefix}])
