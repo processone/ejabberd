@@ -509,12 +509,11 @@ compile(_Module, _Spec, DestDir) ->
     filelib:ensure_dir(filename:join(Ebin, ".")),
     EjabBin = filename:dirname(code:which(ejabberd)),
     EjabInc = filename:join(filename:dirname(EjabBin), "include"),
-    XmlHrl = filename:join(EjabInc, "xml.hrl"),
-    Logger = [{d, 'P1LOGGER'} || code:is_loaded(lager)==false],
+    XmlHrl = filename:join(EjabInc, "fxml.hrl"),
     ExtLib = [{d, 'NO_EXT_LIB'} || filelib:is_file(XmlHrl)],
     Options = [{outdir, Ebin}, {i, "include"}, {i, EjabInc},
                verbose, report_errors, report_warnings]
-              ++ Logger ++ ExtLib,
+              ++ ExtLib,
     [file:copy(App, Ebin) || App <- filelib:wildcard("src/*.app")],
     Result = [case compile:file(File, Options) of
             {ok, _} -> ok;
