@@ -765,7 +765,7 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, odbc) ->
     Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
     case ejabberd_odbc:sql_query(
 	    LServer,
-	    [<<"insert into archive (username, timestamp, "
+	    [<<"insert into archive (username, \"timestamp\", "
 		    "peer, bare_peer, xml, txt, kind, nick) values (">>,
 		<<"'">>, ejabberd_odbc:escape(SUser), <<"', ">>,
 		<<"'">>, TS, <<"', ">>,
