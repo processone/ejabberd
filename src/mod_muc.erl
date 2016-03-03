@@ -25,6 +25,8 @@
 
 -module(mod_muc).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -author('alexey@process-one.net').
 
 -protocol({xep, 45, '1.25'}).
@@ -59,6 +61,8 @@
 
 -include("jlib.hrl").
 -include("mod_muc.hrl").
+
+-include("ejabberd_sql_pt.hrl").
 
 -record(state,
 	{host = <<"">> :: binary(),
@@ -670,12 +674,11 @@ get_rooms(_LServer, Host, riak) ->
             []
     end;
 get_rooms(LServer, Host, odbc) ->
-    SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
-				       [<<"select name, opts from muc_room ">>,
-					<<"where host='">>, SHost, <<"';">>])
+				       ?SQL("select @(name)s, @(opts)s from muc_room "
+					    "where host=%(Host)s"))
 	of
-      {selected, [<<"name">>, <<"opts">>], RoomOpts} ->
+      {selected, RoomOpts} ->
 	  lists:map(fun ([Room, Opts]) ->
 			    #muc_room{name_host = {Room, Host},
 				      opts = opts_to_binary(
