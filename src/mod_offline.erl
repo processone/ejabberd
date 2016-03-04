@@ -40,8 +40,6 @@
 
 -behaviour(gen_mod).
 
--export([count_offline_messages/2]).
-
 -export([start/2,
 	 start_link/2,
 	 stop/1,
@@ -61,6 +59,7 @@
 	 import/3,
 	 export/1,
 	 get_queue_length/2,
+	 count_offline_messages/2,
 	 get_offline_els/2,
 	 webadmin_page/3,
 	 webadmin_user/4,
@@ -69,6 +68,8 @@
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
 	 mod_opt_type/1]).
+
+-deprecated({get_queue_length,2}).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1294,7 +1295,7 @@ get_messages_subset2(Max, Length, MsgsAll, odbc) ->
     MsgsFirstN ++ [IntermediateMsg] ++ MsgsLastN.
 
 webadmin_user(Acc, User, Server, Lang) ->
-    QueueLen = get_queue_length(jid:nodeprep(User),
+    QueueLen = count_offline_messages(jid:nodeprep(User),
 				jid:nameprep(Server)),
     FQueueLen = [?AC(<<"queue/">>,
 		     (iolist_to_binary(integer_to_list(QueueLen))))],

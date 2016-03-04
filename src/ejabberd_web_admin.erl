@@ -1520,8 +1520,7 @@ get_offlinemsg_length(ModOffline, User, Server) ->
     case ModOffline of
       none -> <<"disabled">>;
       _ ->
-	  pretty_string_int(ModOffline:get_queue_length(User,
-							Server))
+	  pretty_string_int(ModOffline:count_offline_messages(User,Server))
     end.
 
 get_offlinemsg_module(Server) ->
