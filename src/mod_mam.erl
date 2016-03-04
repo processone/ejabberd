@@ -193,14 +193,6 @@ remove_user(LUser, LServer, mnesia) ->
 		mnesia:delete({archive_prefs, US})
 	end,
     mnesia:transaction(F);
-%remove_user(LUser, LServer, odbc) ->
-%    SUser = ejabberd_odbc:escape(LUser),
-%    ejabberd_odbc:sql_query(
-%      LServer,
-%      [<<"Delete from archive where username='">>, SUser, <<"';">>]),
-%    ejabberd_odbc:sql_query(
-%      LServer,
-%      [<<"delete from archive_prefs where username='">>, SUser, <<"';">>]).
 remove_user(LUser, LServer, odbc) ->
     ejabberd_odbc:sql_transaction(
 	LServer,
