@@ -330,7 +330,7 @@ get_roster_by_jid(_LServer, LUser, SJID) ->
     ejabberd_odbc:sql_query_t(
       ?SQL("select @(username)s, @(jid)s, @(nick)s, @(subscription)s,"
            " @(ask)s, @(askmessage)s, @(server)s, @(subscribe)s,"
-           " @(type)s from rosterusers"
+           " @(\"type\")s from rosterusers"
            " where username=%(LUser)s and jid=%(SJID)s")).
 
 get_rostergroup_by_jid(LServer, LUser, SJID) ->
