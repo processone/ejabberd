@@ -39,7 +39,7 @@
                 s2s_send_packet, s2s_receive_packet,
                 remove_user, register_user]).
 
--export([start/2, stop/1, send_metrics/4]).
+-export([start/2, stop/1, send_metrics/4, opt_type/1]).
 
 -export([offline_message_hook/3,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
@@ -123,3 +123,6 @@ send_metrics(Host, Probe, Peer, Port) ->
 	Error ->
 	    ?WARNING_MSG("can not open udp socket to grapherl: ~p", [Error])
     end.
+
+opt_type(_) ->
+     [].
