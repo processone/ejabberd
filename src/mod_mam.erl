@@ -25,6 +25,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_mam).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -protocol({xep, 313, '0.4'}).
 -protocol({xep, 334, '0.2'}).
 
@@ -44,6 +46,8 @@
 -include("logger.hrl").
 -include("mod_muc_room.hrl").
 -include("ejabberd_commands.hrl").
+
+-include("ejabberd_sql_pt.hrl").
 
 -define(DEF_PAGE_SIZE, 50).
 -define(MAX_PAGE_SIZE, 250).
@@ -189,15 +193,21 @@ remove_user(LUser, LServer, mnesia) ->
 		mnesia:delete({archive_prefs, US})
 	end,
     mnesia:transaction(F);
+%remove_user(LUser, LServer, odbc) ->
+%    SUser = ejabberd_odbc:escape(LUser),
+%    ejabberd_odbc:sql_query(
+%      LServer,
+%      [<<"Delete from archive where username='">>, SUser, <<"';">>]),
+%    ejabberd_odbc:sql_query(
+%      LServer,
+%      [<<"delete from archive_prefs where username='">>, SUser, <<"';">>]).
 remove_user(LUser, LServer, odbc) ->
-    SUser = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_query(
-      LServer,
-      [<<"delete from archive where username='">>, SUser, <<"';">>]),
-    ejabberd_odbc:sql_query(
-      LServer,
-      [<<"delete from archive_prefs where username='">>, SUser, <<"';">>]).
-
+    ejabberd_odbc:sql_transaction(
+	LServer,
+	fun() ->
+		ejabberd_odbc:sql_query_t(?SQL("delete from archive where username=%(LUser)s;")),
+		ejabberd_odbc:sql_query_t(?SQL("delete from archive_prefs where username=%(LUser)s;"))
+	end).
 user_receive_packet(Pkt, C2SState, JID, Peer, To) ->
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
