@@ -32,8 +32,10 @@
 -protocol({xep, 203, '2.0'}).
 
 -compile({no_auto_import, [atom_to_binary/2,
+                           atom_to_list/1,
                            binary_to_integer/1,
-                           integer_to_binary/1]}).
+                           integer_to_binary/1,
+			   binary_to_list/1]}).
 
 -export([make_result_iq_reply/1, make_error_reply/3,
 	 make_error_reply/2, make_error_element/2,
@@ -51,9 +53,9 @@
 	 term_to_base64/1, base64_to_term/1,
 	 decode_base64/1, encode_base64/1, ip_to_list/1,
 	 rsm_encode/1, rsm_encode/2, rsm_decode/1,
-	 binary_to_integer/1, binary_to_integer/2,
+	 binary_to_integer/1, binary_to_integer/2, binary_to_list/1,
 	 integer_to_binary/1, integer_to_binary/2,
-	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
+	 atom_to_binary/1, atom_to_list/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, queue_drop_while/2]).
 
 %% The following functions are deprecated and will be removed soon
@@ -889,6 +891,9 @@ binary_to_integer(Bin) ->
 binary_to_integer(Bin, Base) ->
     erlang:binary_to_integer(Bin, Base).
 
+binary_to_list(Bin) ->
+    erlang:binary_to_list(Bin).
+
 integer_to_binary(I) ->
     erlang:integer_to_binary(I).
 
@@ -901,6 +906,8 @@ tuple_to_binary(T) ->
 atom_to_binary(A) ->
     erlang:atom_to_binary(A, utf8).
 
+atom_to_list(A) ->
+    binary_to_list(atom_to_binary(A)).
 
 l2i(I) when is_integer(I) -> I;
 l2i(L) when is_binary(L) -> binary_to_integer(L).
