@@ -26,7 +26,7 @@ msgstr "foi expulsado"
 
 #: ejabberd_c2s.erl:2114
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
+msgstr "A súa lista de privacidade activa negou o encaminamiento desta estrofa."
 
 #: ejabberd_c2s.erl:2429
 msgid "Too many unacked stanzas"
@@ -43,11 +43,11 @@ msgstr ""
 
 #: ejabberd_captcha.erl:192
 msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr ""
+msgstr "Si non ves a imaxe CAPTCHA aquí, visita a páxina web."
 
 #: ejabberd_captcha.erl:227
 msgid "CAPTCHA web page"
-msgstr ""
+msgstr "APTCHA páxina Web"
 
 #: ejabberd_captcha.erl:381
 msgid "The CAPTCHA is valid."
@@ -71,7 +71,7 @@ msgstr "Contrasinal"
 
 #: ejabberd_oauth.erl:267
 msgid "Accept"
-msgstr ""
+msgstr "Aceptar"
 
 #: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
 #: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
@@ -1507,7 +1507,7 @@ msgstr ""
 
 #: mod_multicast.erl:306
 msgid "ejabberd Multicast service"
-msgstr ""
+msgstr "ejabberd servizo multidifusión"
 
 #: mod_offline.erl:647
 msgid ""
@@ -1626,7 +1626,7 @@ msgstr "Especificar o modelo do publicante"
 
 #: mod_pubsub.erl:3769
 msgid "Purge all items when the relevant publisher goes offline"
-msgstr ""
+msgstr "Purgar todos os elementos cando o editor correspondente desconéctase"
 
 #: mod_pubsub.erl:3771
 #, fuzzy
@@ -1676,39 +1676,39 @@ msgstr "Os usuarios non están autorizados a rexistrar contas con tanta rapidez"
 
 #: mod_register_web.erl:105
 msgid "Your Jabber account was successfully created."
-msgstr ""
+msgstr "A súa conta Jabber creouse correctamente."
 
 #: mod_register_web.erl:110
 msgid "There was an error creating the account: "
-msgstr ""
+msgstr "Produciuse un erro ao crear a conta: "
 
 #: mod_register_web.erl:119
 msgid "Your Jabber account was successfully deleted."
-msgstr ""
+msgstr "A súa conta Jabber eliminouse correctamente."
 
 #: mod_register_web.erl:124
 msgid "There was an error deleting the account: "
-msgstr ""
+msgstr "Produciuse un erro ao eliminar a conta: "
 
 #: mod_register_web.erl:135
 msgid "The password of your Jabber account was successfully changed."
-msgstr ""
+msgstr "O contrasinal da súa conta Jabber cambiouse correctamente."
 
 #: mod_register_web.erl:140
 msgid "There was an error changing the password: "
-msgstr ""
+msgstr "Produciuse un erro ao cambiar o contrasinal: "
 
 #: mod_register_web.erl:175 mod_register_web.erl:183
 msgid "Jabber Account Registration"
-msgstr ""
+msgstr "Rexistro de conta Jabber"
 
 #: mod_register_web.erl:186 mod_register_web.erl:204 mod_register_web.erl:212
 msgid "Register a Jabber account"
-msgstr ""
+msgstr "Rexistrar unha conta Jabber"
 
 #: mod_register_web.erl:191 mod_register_web.erl:453 mod_register_web.erl:461
 msgid "Unregister a Jabber account"
-msgstr ""
+msgstr "Eliminar o rexistro dunha conta Jabber"
 
 #: mod_register_web.erl:214
 msgid ""
@@ -1716,40 +1716,47 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
+"Esta páxina permite crear unha conta Jabber neste servidor Jabber. o seu JID "
+"(Jabber IDentificador) será da forma: nomeusuario@servidor. Por favor le "
+"coidadosamente as instrucións para encher correctamente os campos."
 
 #: mod_register_web.erl:224 mod_register_web.erl:360 mod_register_web.erl:469
 #, fuzzy
 msgid "Username:"
-msgstr "Nome de usuario en IRC"
+msgstr "Nome de usuario:"
 
 #: mod_register_web.erl:230
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
-msgstr ""
+msgstr "Esta é insensible: Macbeth é o mesmo que MacBeth e Macbeth."
 
 #: mod_register_web.erl:233
 msgid "Characters not allowed:"
-msgstr ""
+msgstr "Caracteres non permitidos:"
 
 #: mod_register_web.erl:236 mod_register_web.erl:364 mod_register_web.erl:473
 #, fuzzy
 msgid "Server:"
-msgstr "Servidor ~b"
+msgstr "Servidor:"
 
 #: mod_register_web.erl:245
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
+"Jabber Server."
 msgstr ""
+"Non lle diga o seu contrasinal a ninguén, nin sequera os administradores do "
+"Servidor Jabber."
 
 #: mod_register_web.erl:249
 msgid "You can later change your password using a Jabber client."
-msgstr ""
+msgstr "Máis tarde, pode cambiar o seu contrasinal utilizando un cliente Jabber."
 
 #: mod_register_web.erl:252
 msgid ""
 "Some Jabber clients can store your password in the computer, but you should "
 "do this only in your personal computer for safety reasons."
 msgstr ""
+"Algúns clientes Jabber pode almacenar o contrasinal no computador, pero debe "
+"facer isto só no seu computador persoal por razóns de seguridade."
 
 #: mod_register_web.erl:256
 msgid ""
@@ -1757,6 +1764,9 @@ msgid ""
 "Jabber there isn't an automated way to recover your password if you forget "
 "it."
 msgstr ""
+"Memorice o seu contrasinal ou escribilo nun papel colocado nun lugar seguro. En "
+"Jabber non hai unha forma automatizada para recuperar o seu contrasinal si "
+"a esquece"
 
 #: mod_register_web.erl:262 mod_register_web.erl:374
 #, fuzzy
@@ -1766,25 +1776,25 @@ msgstr "Verificación da contrasinal"
 #: mod_register_web.erl:269
 #, fuzzy
 msgid "Register"
-msgstr "Lista de contactos"
+msgstr "Rexistrar"
 
 #: mod_register_web.erl:366
 #, fuzzy
 msgid "Old Password:"
-msgstr "Contrasinal:"
+msgstr "Contrasinal anterior:"
 
 #: mod_register_web.erl:370
 #, fuzzy
 msgid "New Password:"
-msgstr "Contrasinal:"
+msgstr "Novo contrasinal:"
 
 #: mod_register_web.erl:463
 msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr ""
+msgstr "Esta páxina permite anular o rexistro dunha conta Jabber neste servidor Jabber."
 
 #: mod_register_web.erl:480
 msgid "Unregister"
-msgstr ""
+msgstr "Eliminar rexistro"
 
 #: mod_roster.erl:1436
 msgid "Subscription"
@@ -1901,7 +1911,7 @@ msgstr "Necesitas un cliente con soporte de x:data para poder buscar"
 
 #: mod_vcard.erl:519 mod_vcard_ldap.erl:531
 msgid "vCard User Search"
-msgstr "Procura de usuario en vCard"
+msgstr "vCard busqueda de usuario"
 
 #: mod_vcard.erl:580 mod_vcard_ldap.erl:586
 msgid "ejabberd vCard module"
