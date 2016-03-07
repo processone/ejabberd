@@ -139,8 +139,8 @@
 -define(STREAM_HEADER,
 	<<"<?xml version='1.0'?><stream:stream "
 	  "xmlns='jabber:client' xmlns:stream='http://et"
-	  "herx.jabber.org/streams' id='~s' from='~s'~s~"
-	  "s>">>).
+	  "herx.jabber.org/streams' id='~s' from='~s'~s"
+	  "~s>">>).
 
 -define(STREAM_TRAILER, <<"</stream:stream>">>).
 
