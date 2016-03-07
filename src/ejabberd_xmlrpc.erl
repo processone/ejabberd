@@ -491,7 +491,7 @@ format_result(Atom, {Name, atom}) ->
      [{Name, iolist_to_binary(atom_to_list(Atom))}]};
 format_result(Int, {Name, integer}) ->
     {struct, [{Name, Int}]};
-format_result(String, {Name, string}) when is_list(String) ->
+format_result([A|_]=String, {Name, string}) when is_list(String) and is_integer(A) ->
     {struct, [{Name, lists:flatten(String)}]};
 format_result(Binary, {Name, string}) when is_binary(Binary) ->
     {struct, [{Name, binary_to_list(Binary)}]};
