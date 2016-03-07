@@ -50,6 +50,7 @@
 %% "ejabberd.log" in current directory.
 %% Note: If the directory where to place the ejabberd log file to not exist,
 %% it is not created and no log file will be generated.
+%% @spec () -> string()
 get_log_path() ->
     case ejabberd_config:env_binary_to_list(ejabberd, log_path) of
 	{ok, Path} ->
@@ -99,6 +100,7 @@ get_string_env(Name, Default) ->
             Default
     end.
 
+%% @spec () -> ok
 start() ->
     application:load(sasl),
     application:set_env(sasl, sasl_error_logger, false),
@@ -126,10 +128,12 @@ start() ->
     ejabberd:start_app(lager),
     ok.
 
+%% @spec () -> ok
 reopen_log() ->
     %% Lager detects external log rotation automatically.
     ok.
 
+%% @spec () -> ok
 rotate_log() ->
     lager_crash_log ! rotate,
     lists:foreach(
@@ -139,6 +143,7 @@ rotate_log() ->
               ok
       end, gen_event:which_handlers(lager_event)).
 
+%% @spec () -> {loglevel(), atom(), string()}
 get() ->
     case lager:get_loglevel(lager_console_backend) of
         none -> {0, no_log, "No log"};
@@ -152,6 +157,7 @@ get() ->
         debug -> {5, debug, "Debug"}
     end.
 
+%% @spec (loglevel() | {loglevel(), list()}) -> {module, module()}
 set(LogLevel) when is_integer(LogLevel) ->
     LagerLogLevel = case LogLevel of
                         0 -> none;

@@ -222,7 +222,7 @@ check_password_cache(User, Server, Password,
 get_password_internal(User, Server) ->
     ejabberd_auth_internal:get_password(User, Server).
 
-%% @spec (User, Server, CacheTime) -> false | Password::string()
+-spec get_password_cache(User::binary(), Server::binary(), CacheTime::integer()) -> Password::string() | false.
 get_password_cache(User, Server, CacheTime) ->
     case get_last_access(User, Server) of
       online -> get_password_internal(User, Server);
@@ -273,10 +273,10 @@ is_fresh_enough(TimeStampLast, CacheTime) ->
     Now = p1_time_compat:system_time(seconds),
     TimeStampLast + CacheTime > Now.
 
-%% @spec (User, Server) -> online | never | mod_last_required | TimeStamp::integer()
 %% Code copied from mod_configure.erl
 %% Code copied from web/ejabberd_web_admin.erl
 %% TODO: Update time format to XEP-0202: Entity Time
+-spec(get_last_access(User::binary(), Server::binary()) -> (online | never | mod_last_required | integer())).
 get_last_access(User, Server) ->
     case ejabberd_sm:get_user_resources(User, Server) of
       [] ->
