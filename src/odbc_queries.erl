@@ -268,7 +268,7 @@ users_number(LServer, [{prefix, Prefix}])
     SPrefix2 = <<SPrefix/binary, $%>>,
     ejabberd_odbc:sql_query(
       LServer,
-      ?SQL("select @(count(*))d from users "
+      ?SQL("select @(CAST(count(*) AS INTEGER))d from users "
            "where username like %(SPrefix2)s"));
 users_number(LServer, []) ->
     users_number(LServer).
