@@ -113,7 +113,7 @@ update(LServer, Table, Fields, Vals, Where) ->
 		case Res of
 			{updated,1} -> ok;
 			_ -> Res
-		end		   
+		end
     end.
 
 %% F can be either a fun or a list of queries
@@ -619,7 +619,7 @@ escape(C) -> <<C>>.
 %% Count number of records in a table given a where clause
 count_records_where(LServer, Table, WhereClause) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select count(*) from ">>, Table, <<" ">>,
+			    [<<"select CAST(count(*) AS INTEGER) from ">>, Table, <<" ">>,
 			     WhereClause, <<";">>]).
 
 get_roster_version(LServer, LUser) ->
