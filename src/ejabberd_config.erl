@@ -112,7 +112,7 @@ get_env_config() ->
 %% @doc Read the ejabberd configuration file.
 %% It also includes additional configuration files and replaces macros.
 %% This function will crash if finds some error in the configuration file.
-%% @spec (File::string()) -> #state{}.
+%% @spec (File::string()) -> #state{}
 read_file(File) ->
     read_file(File, [{replace_macros, true},
                      {include_files, true},
