@@ -32,7 +32,7 @@
 %% API
 -export([start_link/0]).
 
--export([route/3, route_iq/4, route_iq/5,
+-export([route/3, route_iq/4, route_iq/5, process_iq/3,
 	 process_iq_reply/3, register_iq_handler/4,
 	 register_iq_handler/5, register_iq_response_handler/4,
 	 register_iq_response_handler/5, unregister_iq_handler/2,

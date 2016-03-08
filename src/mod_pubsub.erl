@@ -63,7 +63,7 @@
 %% exports for console debug manual use
 -export([create_node/5, create_node/7, delete_node/3,
     subscribe_node/5, unsubscribe_node/5, publish_item/6,
-    delete_item/4, send_items/7, get_items/2, get_item/3,
+    delete_item/4, delete_item/5, send_items/7, get_items/2, get_item/3,
     get_cached_item/2, get_configure/5, set_configure/5,
     tree_action/3, node_action/4, node_call/4]).
 
