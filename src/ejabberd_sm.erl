@@ -35,6 +35,7 @@
 -export([start/0,
 	 start_link/0,
 	 route/3,
+	 process_iq/3,
 	 open_session/5,
 	 open_session/6,
 	 close_session/4,
