@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: 2.1.0-alpha\n"
+"Project-Id-Version: 16.02\n"
 "Last-Translator: Carlos E. Lopez - suso AT jabber-hispano.org\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -47,7 +47,7 @@ msgstr "Si non ves a imaxe CAPTCHA aquí, visita a páxina web."
 
 #: ejabberd_captcha.erl:227
 msgid "CAPTCHA web page"
-msgstr "APTCHA páxina Web"
+msgstr "CAPTCHA páxina Web"
 
 #: ejabberd_captcha.erl:381
 msgid "The CAPTCHA is valid."
@@ -255,7 +255,7 @@ msgstr "Cambiar contrasinal"
 #: ejabberd_web_admin.erl:1673
 #, fuzzy
 msgid "User ~s"
-msgstr "Usuario "
+msgstr "Usuario ~s"
 
 #: ejabberd_web_admin.erl:1684
 msgid "Connected Resources:"
@@ -289,7 +289,7 @@ msgstr "Nodos detidos"
 #: ejabberd_web_admin.erl:1833 ejabberd_web_admin.erl:1858
 #, fuzzy
 msgid "Node ~p"
-msgstr "Nodo "
+msgstr "Nodo ~p"
 
 #: ejabberd_web_admin.erl:1842 mod_configure.erl:150 mod_configure.erl:611
 msgid "Database"
@@ -297,7 +297,7 @@ msgstr "Base de datos"
 
 #: ejabberd_web_admin.erl:1843 mod_configure.erl:159 mod_configure.erl:648
 msgid "Backup"
-msgstr "Gardar copia de seguridade"
+msgstr "Copia de seguridade"
 
 #: ejabberd_web_admin.erl:1845
 msgid "Listened Ports"
@@ -328,7 +328,7 @@ msgstr "Erro na chamada RPC"
 #: ejabberd_web_admin.erl:1917
 #, fuzzy
 msgid "Database Tables at ~p"
-msgstr "Táboas da base de datos en "
+msgstr "Táboas da base de datos en ~p"
 
 #: ejabberd_web_admin.erl:1927 mod_vcard.erl:490 mod_vcard.erl:616
 msgid "Name"
@@ -353,7 +353,7 @@ msgstr "Erro"
 #: ejabberd_web_admin.erl:1955
 #, fuzzy
 msgid "Backup of ~p"
-msgstr "Copia de seguridade de "
+msgstr "Copia de seguridade de ~p"
 
 #: ejabberd_web_admin.erl:1959
 msgid ""
@@ -387,7 +387,7 @@ msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
 "Restaurar copia de seguridade binaria no seguinte reinicio de ejabberd "
-"(require menos memoria que se instantánea):"
+"(require menos memoria):"
 
 #: ejabberd_web_admin.erl:1999
 msgid "Store plain text backup:"
@@ -399,23 +399,23 @@ msgstr "Restaurar copias de seguridade de texto plano inmediatamente:"
 
 #: ejabberd_web_admin.erl:2019
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
-msgstr "Importar usuarios desde un fichero PIEFXIS"
+msgstr "Importar usuarios en un fichero PIEFXIS (XEP-0227):"
 
 #: ejabberd_web_admin.erl:2032
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
-"Exportar datos de todos os usuarios do servidor a ficheros PIEFXIS "
+"Exportar datos de todos os usuarios do servidor a ficheros PIEFXIS (XEP-0227):"
 "(XEP-0227):"
 
 #: ejabberd_web_admin.erl:2044
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr ""
-"Exportar datos de todos os usuarios do servidor a ficheros PIEFXIS "
+"Exportar datos de los usuarios en un host de archivos PFX (XEP-0227):"
 "(XEP-0227):"
 
 #: ejabberd_web_admin.erl:2060
 msgid "Export all tables as SQL queries to a file:"
-msgstr ""
+msgstr "Exportar todas lanas tablas de lanas consultas SQL a un archivo:"
 
 #: ejabberd_web_admin.erl:2076
 msgid "Import user data from jabberd14 spool file:"
