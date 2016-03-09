@@ -30,15 +30,19 @@
 -export([init/1, handle_call/2, handle_event/2, handle_info/2, terminate/2,
          code_change/3]).
 
-init(_Opts) ->
-    State = [],
+-record(state, {level = debug}).
+
+init(Opts) ->
+    Level = proplists:get_value(level, Opts, debug),
+    State = #state{level = Level},
     {ok, State}.
 
 %% @private
 handle_event({log, LagerMsg}, State) ->
     #{mode := Mode, truncate := Truncate, level := MinLevel, utc_log := UTCLog} =  'Elixir.Logger.Config':'__data__'(),
     MsgLevel = severity_to_level(lager_msg:severity(LagerMsg)),
-    case {lager_util:is_loggable(LagerMsg, lager_util:level_to_num(debug), ?MODULE), 'Elixir.Logger':compare_levels(MsgLevel, MinLevel)} of
+    case {lager_util:is_loggable(LagerMsg, lager_util:level_to_num(State#state.level), ?MODULE),
+          'Elixir.Logger':compare_levels(MsgLevel, MinLevel)} of
         {_, lt}->
             {ok, State};
         {true, _} ->
@@ -55,13 +59,15 @@ handle_event({log, LagerMsg}, State) ->
         _ ->
             {ok, State}            
     end;
-handle_event(_, State) ->
+handle_event(_Msg, State) ->
     {ok, State}.
 
 %% @private
 %% TODO Handle loglevels
-handle_call(_Msg, State) ->
-    {ok, ok, State}.
+handle_call(get_loglevel, State) ->
+    {ok, lager_util:config_to_mask(State#state.level), State};
+handle_call({set_loglevel, Config}, State) ->
+    {ok, ok, State#state{level = Config}}.
 
 %% @private
 handle_info(_Msg, State) ->
@@ -77,7 +83,8 @@ code_change(_OldVsn, State, _Extra) ->
 
 notify(sync, Msg)  ->
     gen_event:sync_notify('Elixir.Logger', Msg);
-notify(async, Msg) -> gen_event:notify('Elixir.Logger', Msg).
+notify(async, Msg) ->
+    gen_event:notify('Elixir.Logger', Msg).
 
 normalize_pid(Metadata) ->
     case proplists:get_value(pid, Metadata) of

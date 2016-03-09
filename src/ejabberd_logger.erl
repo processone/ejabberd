@@ -104,8 +104,10 @@ get_string_env(Name, Default) ->
 start() ->
     StartedApps = application:which_applications(5000),
     case lists:keyfind(logger, 1, StartedApps) of
+        %% Elixir logger is started. We assume everything is in place
+        %% to use lager to Elixir logger bridge.
         {logger, _, _} ->
-            error_logger:info_msg("Ignoring logger options, using Elixir Logger.", []),
+            error_logger:info_msg("Ignoring ejabberd logger options, using Elixir Logger.", []),
             %% Do not start lager, we rely on Elixir Logger
             do_start_for_logger();
         _ ->
@@ -119,7 +121,7 @@ do_start_for_logger() ->
     application:set_env(lager, error_logger_redirect, false),
     application:set_env(lager, error_logger_whitelist, ['Elixir.Logger.ErrorHandler']),
     application:set_env(lager, crash_log, false),
-    application:set_env(lager, handlers, [{elixir_logger_backend, [{level, debug}]}]),
+    application:set_env(lager, handlers, [{elixir_logger_backend, [{level, info}]}]),
     ejabberd:start_app(lager),
     ok.
 
@@ -201,6 +203,8 @@ set(LogLevel) when is_integer(LogLevel) ->
                       lager:set_loglevel(H, LagerLogLevel);
                  (lager_console_backend = H) ->
                       lager:set_loglevel(H, LagerLogLevel);
+                 (elixir_logger_backend = H) ->
+                      lager:set_loglevel(H, LagerLogLevel);
                  (_) ->
                       ok
               end, gen_event:which_handlers(lager_event))
@@ -211,13 +215,15 @@ set({_LogLevel, _}) ->
     {module, lager}.
 
 get_lager_loglevel() ->
-    R = case get_lager_handlers() of
-            [] -> none;
-            [elixir_logger_backend] -> debug;
-            [FirstHandler|_] ->
-                lager:get_loglevel(FirstHandler)
-        end,
-    R.
+    Handlers = get_lager_handlers(),
+    lists:foldl(fun(lager_console_backend, _Acc) ->
+                        lager:get_loglevel(lager_console_backend);
+                   (elixir_logger_backend, _Acc) ->
+                        lager:get_loglevel(elixir_logger_backend);
+                   (_, Acc) ->
+                        Acc
+                end,
+                none, Handlers).
 
 get_lager_handlers() ->
     case catch gen_event:which_handlers(lager_event) of
