@@ -14,7 +14,7 @@
 %% API
 -export([start_link/2, start/2, stop/1, process_iq/3,
 	 disco_items/5, disco_identity/5, disco_info/5,
-	 disco_features/5]).
+	 disco_features/5, mod_opt_type/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -341,3 +341,7 @@ is_not_subscribed({error, ErrEl}) ->
 	#xmlel{} -> true;
 	_ -> false
     end.
+
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(_) -> [host, iqdisc].
