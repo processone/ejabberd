@@ -14,7 +14,7 @@
 %% API
 -export([start_link/2, start/2, stop/1, process_iq/3,
 	 disco_items/5, disco_identity/5, disco_info/5,
-	 disco_features/5]).
+	 disco_features/5, mod_opt_type/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -196,7 +196,21 @@ handle_info({route, From, To, Packet}, State) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, #state{host = Host}) ->
+    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 100),
+    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 100),
+    ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, disco_identity, 100),
+    ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, disco_items, 100),
+    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, disco_features, 100),
+    ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE, disco_identity, 100),
+    ejabberd_hooks:delete(disco_info, Host, ?MODULE, disco_info, 100),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PUBSUB),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_0),
+    ejabberd_router:unregister_route(Host),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -327,3 +341,7 @@ is_not_subscribed({error, ErrEl}) ->
 	#xmlel{} -> true;
 	_ -> false
     end.
+
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(_) -> [host, iqdisc].

@@ -535,7 +535,8 @@ process_iq(_From,
     IQ#iq{type = result,
 	  sub_el = [#xmlel{name = <<"query">>,
 			   attrs = [{<<"xmlns">>, ?NS_DISCO_INFO}],
-			   children = iq_disco_info(Lang, Name) ++ AddInfo}]};
+			   children = iq_disco_info(ServerHost, Lang, Name)
+					++ AddInfo}]};
 process_iq(From,
 	   #iq{type = get, xmlns = XMLNS, lang = Lang, sub_el = SubEl} = IQ,
 	   #state{server_host = ServerHost, access = Access} = State)
@@ -751,9 +752,36 @@ map_int_to_char(N) when N =< 61 -> N + 61. % Lower-case character.
 yield_content_type(<<"">>) -> ?DEFAULT_CONTENT_TYPE;
 yield_content_type(Type) -> Type.
 
--spec iq_disco_info(binary(), binary()) -> [xmlel()].
+-spec iq_disco_info(binary(), binary(), binary()) -> [xmlel()].
 
-iq_disco_info(Lang, Name) ->
+iq_disco_info(Host, Lang, Name) ->
+    Form = case gen_mod:get_module_opt(Host, ?MODULE, max_size,
+				       fun(I) when is_integer(I), I > 0 -> I;
+					  (infinity) -> infinity
+				       end,
+				       104857600) of
+	       infinity ->
+		   [];
+	       MaxSize ->
+		   MaxSizeStr = jlib:integer_to_binary(MaxSize),
+		   Fields = [#xmlel{name = <<"field">>,
+				    attrs = [{<<"type">>, <<"hidden">>},
+					     {<<"var">>, <<"FORM_TYPE">>}],
+				    children = [#xmlel{name = <<"value">>,
+						       children =
+							 [{xmlcdata,
+							   ?NS_HTTP_UPLOAD}]}]},
+			     #xmlel{name = <<"field">>,
+				    attrs = [{<<"var">>, <<"max-file-size">>}],
+				    children = [#xmlel{name = <<"value">>,
+						       children =
+							 [{xmlcdata,
+							   MaxSizeStr}]}]}],
+		   [#xmlel{name = <<"x">>,
+			   attrs = [{<<"xmlns">>, ?NS_XDATA},
+				    {<<"type">>, <<"result">>}],
+			   children = Fields}]
+	   end,
     [#xmlel{name = <<"identity">>,
 	    attrs = [{<<"category">>, <<"store">>},
 		     {<<"type">>, <<"file">>},
@@ -761,7 +789,7 @@ iq_disco_info(Lang, Name) ->
      #xmlel{name = <<"feature">>,
 	    attrs = [{<<"var">>, ?NS_HTTP_UPLOAD}]},
      #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_HTTP_UPLOAD_OLD}]}].
+	    attrs = [{<<"var">>, ?NS_HTTP_UPLOAD_OLD}]} | Form].
 
 %% HTTP request handling.
 
