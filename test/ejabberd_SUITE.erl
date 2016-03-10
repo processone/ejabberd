@@ -12,8 +12,8 @@
 
 -import(suite, [init_config/1, connect/1, disconnect/1,
                 recv/0, send/2, send_recv/2, my_jid/1, server_jid/1,
-                pubsub_jid/1, proxy_jid/1, muc_jid/1,
-                muc_room_jid/1, get_features/2, re_register/1,
+                pubsub_jid/1, proxy_jid/1, muc_jid/1, muc_room_jid/1,
+		mix_jid/1, mix_room_jid/1, get_features/2, re_register/1,
                 is_feature_advertised/2, subscribe_to_events/1,
                 is_feature_advertised/3, set_opt/3, auth_SASL/2,
                 wait_for_master/1, wait_for_slave/1,
@@ -249,6 +249,8 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        test_unregister]},
      {test_muc_register, [sequence],
       [muc_register_master, muc_register_slave]},
+     {test_mix, [parallel],
+      [mix_master, mix_slave]},
      {test_roster_subscribe, [parallel],
       [roster_subscribe_master,
        roster_subscribe_slave]},
@@ -882,6 +884,90 @@ pubsub(Config) ->
                                            jid = my_jid(Config)}}]}),
     disconnect(Config).
 
+mix_master(Config) ->
+    MIX = mix_jid(Config),
+    Room = mix_room_jid(Config),
+    MyJID = my_jid(Config),
+    MyBareJID = jid:remove_resource(MyJID),
+    true = is_feature_advertised(Config, ?NS_MIX_0, MIX),
+    #iq{type = result,
+	sub_els =
+	    [#disco_info{
+		identities = [#identity{category = <<"conference">>,
+					type = <<"text">>}],
+		xdata = [#xdata{type = result, fields = XFields}]}]} =
+	send_recv(Config, #iq{type = get, to = MIX, sub_els = [#disco_info{}]}),
+    true = lists:any(
+	     fun(#xdata_field{var = <<"FORM_TYPE">>,
+			      values = [?NS_MIX_SERVICEINFO_0]}) -> true;
+		(_) -> false
+	     end, XFields),
+    %% Joining
+    Nodes = [?NS_MIX_NODES_MESSAGES, ?NS_MIX_NODES_PRESENCE,
+	     ?NS_MIX_NODES_PARTICIPANTS, ?NS_MIX_NODES_SUBJECT,
+	     ?NS_MIX_NODES_CONFIG],
+    I0 = send(Config, #iq{type = set, to = Room,
+			  sub_els = [#mix_join{subscribe = Nodes}]}),
+    {_, #message{sub_els =
+		     [#pubsub_event{
+			 items = [#pubsub_event_items{
+				     node = ?NS_MIX_NODES_PARTICIPANTS,
+				     items = [#pubsub_event_item{
+						 id = ParticipantID,
+						 xml_els = [PXML]}]}]}]}} =
+	?recv2(#iq{type = result, id = I0,
+		   sub_els = [#mix_join{subscribe = Nodes, jid = MyBareJID}]},
+	       #message{from = Room}),
+    #mix_participant{jid = MyBareJID} = xmpp_codec:decode(PXML),
+    %% Coming online
+    PresenceID = randoms:get_string(),
+    Presence = xmpp_codec:encode(#presence{}),
+    I1 = send(
+	   Config,
+	   #iq{type = set, to = Room,
+	       sub_els =
+		   [#pubsub{
+		       publish = #pubsub_publish{
+				    node = ?NS_MIX_NODES_PRESENCE,
+				    items = [#pubsub_item{
+						id = PresenceID,
+						xml_els = [Presence]}]}}]}),
+    ?recv2(#iq{type = result, id = I1,
+	       sub_els =
+		   [#pubsub{
+		       publish = #pubsub_publish{
+				    node = ?NS_MIX_NODES_PRESENCE,
+				    items = [#pubsub_item{id = PresenceID}]}}]},
+	   #message{from = Room,
+		    sub_els =
+			[#pubsub_event{
+			    items = [#pubsub_event_items{
+					node = ?NS_MIX_NODES_PRESENCE,
+					items = [#pubsub_event_item{
+						    id = PresenceID,
+						    xml_els = [Presence]}]}]}]}),
+    %% Coming offline
+    send(Config, #presence{type = unavailable, to = Room}),
+    %% Receiving presence retract event
+    #message{from = Room,
+	     sub_els = [#pubsub_event{
+			   items = [#pubsub_event_items{
+				       node = ?NS_MIX_NODES_PRESENCE,
+				       retract = [PresenceID]}]}]} = recv(),
+    %% Leaving
+    I2 = send(Config, #iq{type = set, to = Room, sub_els = [#mix_leave{}]}),
+    ?recv2(#iq{type = result, id = I2, sub_els = []},
+	   #message{from = Room,
+		    sub_els =
+			[#pubsub_event{
+			    items = [#pubsub_event_items{
+					node = ?NS_MIX_NODES_PARTICIPANTS,
+					retract = [ParticipantID]}]}]}),
+    disconnect(Config).
+
+mix_slave(Config) ->	   
+    disconnect(Config).
+      
 roster_subscribe_master(Config) ->
     send(Config, #presence{}),
     ?recv1(#presence{}),

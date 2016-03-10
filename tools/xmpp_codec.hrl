@@ -36,6 +36,8 @@
                              jid :: any(),
                              subid :: binary()}).
 
+-record(mix_leave, {}).
+
 -record(ping, {}).
 
 -record(delay, {stamp :: any(),
@@ -98,7 +100,8 @@
 
 -record(pubsub_event_item, {id :: binary(),
                             node :: binary(),
-                            publisher :: binary()}).
+                            publisher :: binary(),
+                            xml_els = [] :: [any()]}).
 
 -record(sm_r, {xmlns :: binary()}).
 
@@ -228,6 +231,9 @@
 -record(pubsub_retract, {node :: binary(),
                          notify = false :: any(),
                          items = [] :: [#pubsub_item{}]}).
+
+-record(mix_participant, {jid :: any(),
+                          nick :: binary()}).
 
 -record(vcard_geo, {lat :: binary(),
                     lon :: binary()}).
@@ -470,6 +476,9 @@
              to :: any(),
              error :: #error{},
              sub_els = [] :: [any()]}).
+
+-record(mix_join, {jid :: any(),
+                   subscribe = [] :: [binary()]}).
 
 -record(privacy_item, {order :: non_neg_integer(),
                        action :: 'allow' | 'deny',

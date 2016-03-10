@@ -1645,7 +1645,7 @@
 -xml(pubsub_event_item,
      #elem{name = <<"item">>,
            xmlns = <<"http://jabber.org/protocol/pubsub#event">>,
-           result = {pubsub_event_item, '$id', '$node', '$publisher'},
+           result = {pubsub_event_item, '$id', '$node', '$publisher', '$_xmls'},
            attrs = [#attr{name = <<"id">>},
                     #attr{name = <<"node">>},
                     #attr{name = <<"publisher">>}]}).
@@ -2426,6 +2426,41 @@
 		   #ref{name = offline_fetch, min = 0, max = 1,
 			label = '$fetch', default = false},
 		   #ref{name = offline_item, min = 0, label = '$items'}]}).
+
+-xml(mix_subscribe,
+     #elem{name = <<"subscribe">>,
+           xmlns = <<"urn:xmpp:mix:0">>,
+           result = '$node',
+           attrs = [#attr{name = <<"node">>,
+                          required = true,
+                          label = '$node'}]}).
+
+-xml(mix_join,
+     #elem{name = <<"join">>,
+           xmlns = <<"urn:xmpp:mix:0">>,
+           result = {mix_join, '$jid', '$subscribe'},
+           attrs = [#attr{name = <<"jid">>,
+                          label = '$jid',
+                          dec = {dec_jid, []},
+                          enc = {enc_jid, []}}],
+           refs = [#ref{name = mix_subscribe, min = 0, label = '$subscribe'}]}).
+
+-xml(mix_leave,
+     #elem{name = <<"leave">>,
+           xmlns = <<"urn:xmpp:mix:0">>,
+           result = {mix_leave}}).
+
+-xml(mix_participant,
+     #elem{name = <<"participant">>,
+           xmlns = <<"urn:xmpp:mix:0">>,
+           result = {mix_participant, '$jid', '$nick'},
+           attrs = [#attr{name = <<"jid">>,
+                          required = true,
+                          label = '$jid',
+                          dec = {dec_jid, []},
+                          enc = {enc_jid, []}},
+                    #attr{name = <<"nick">>,
+                          label = '$nick'}]}).
 
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),
