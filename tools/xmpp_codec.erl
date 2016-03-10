@@ -15,6 +15,16 @@ decode(_el) -> decode(_el, []).
 decode({xmlel, _name, _attrs, _} = _el, Opts) ->
     IgnoreEls = proplists:get_bool(ignore_els, Opts),
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"participant">>, <<"urn:xmpp:mix:0">>} ->
+	  decode_mix_participant(<<"urn:xmpp:mix:0">>, IgnoreEls,
+				 _el);
+      {<<"leave">>, <<"urn:xmpp:mix:0">>} ->
+	  decode_mix_leave(<<"urn:xmpp:mix:0">>, IgnoreEls, _el);
+      {<<"join">>, <<"urn:xmpp:mix:0">>} ->
+	  decode_mix_join(<<"urn:xmpp:mix:0">>, IgnoreEls, _el);
+      {<<"subscribe">>, <<"urn:xmpp:mix:0">>} ->
+	  decode_mix_subscribe(<<"urn:xmpp:mix:0">>, IgnoreEls,
+			       _el);
       {<<"offline">>,
        <<"http://jabber.org/protocol/offline">>} ->
 	  decode_offline(<<"http://jabber.org/protocol/offline">>,
@@ -1088,6 +1098,10 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 
 is_known_tag({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"participant">>, <<"urn:xmpp:mix:0">>} -> true;
+      {<<"leave">>, <<"urn:xmpp:mix:0">>} -> true;
+      {<<"join">>, <<"urn:xmpp:mix:0">>} -> true;
+      {<<"subscribe">>, <<"urn:xmpp:mix:0">>} -> true;
       {<<"offline">>,
        <<"http://jabber.org/protocol/offline">>} ->
 	  true;
@@ -1987,7 +2001,7 @@ encode({pubsub_items, _, _, _, _} = Items) ->
     encode_pubsub_items(Items,
 			[{<<"xmlns">>,
 			  <<"http://jabber.org/protocol/pubsub">>}]);
-encode({pubsub_event_item, _, _, _} = Item) ->
+encode({pubsub_event_item, _, _, _, _} = Item) ->
     encode_pubsub_event_item(Item,
 			     [{<<"xmlns">>,
 			       <<"http://jabber.org/protocol/pubsub#event">>}]);
@@ -2160,7 +2174,16 @@ encode({offline_item, _, _} = Item) ->
 encode({offline, _, _, _} = Offline) ->
     encode_offline(Offline,
 		   [{<<"xmlns">>,
-		     <<"http://jabber.org/protocol/offline">>}]).
+		     <<"http://jabber.org/protocol/offline">>}]);
+encode({mix_join, _, _} = Join) ->
+    encode_mix_join(Join,
+		    [{<<"xmlns">>, <<"urn:xmpp:mix:0">>}]);
+encode({mix_leave} = Leave) ->
+    encode_mix_leave(Leave,
+		     [{<<"xmlns">>, <<"urn:xmpp:mix:0">>}]);
+encode({mix_participant, _, _} = Participant) ->
+    encode_mix_participant(Participant,
+			   [{<<"xmlns">>, <<"urn:xmpp:mix:0">>}]).
 
 get_ns({last, _, _}) -> <<"jabber:iq:last">>;
 get_ns({version, _, _, _}) -> <<"jabber:iq:version">>;
@@ -2286,7 +2309,7 @@ get_ns({pubsub_item, _, _}) ->
     <<"http://jabber.org/protocol/pubsub">>;
 get_ns({pubsub_items, _, _, _, _}) ->
     <<"http://jabber.org/protocol/pubsub">>;
-get_ns({pubsub_event_item, _, _, _}) ->
+get_ns({pubsub_event_item, _, _, _, _}) ->
     <<"http://jabber.org/protocol/pubsub#event">>;
 get_ns({pubsub_event_items, _, _, _}) ->
     <<"http://jabber.org/protocol/pubsub#event">>;
@@ -2359,6 +2382,9 @@ get_ns({offline_item, _, _}) ->
     <<"http://jabber.org/protocol/offline">>;
 get_ns({offline, _, _, _}) ->
     <<"http://jabber.org/protocol/offline">>;
+get_ns({mix_join, _, _}) -> <<"urn:xmpp:mix:0">>;
+get_ns({mix_leave}) -> <<"urn:xmpp:mix:0">>;
+get_ns({mix_participant, _, _}) -> <<"urn:xmpp:mix:0">>;
 get_ns(_) -> <<>>.
 
 dec_int(Val) -> dec_int(Val, infinity, infinity).
@@ -2505,7 +2531,8 @@ pp(pubsub_subscription, 4) -> [jid, node, subid, type];
 pp(pubsub_affiliation, 2) -> [node, type];
 pp(pubsub_item, 2) -> [id, xml_els];
 pp(pubsub_items, 4) -> [node, max_items, subid, items];
-pp(pubsub_event_item, 3) -> [id, node, publisher];
+pp(pubsub_event_item, 4) ->
+    [id, node, publisher, xml_els];
 pp(pubsub_event_items, 3) -> [node, retract, items];
 pp(pubsub_event, 1) -> [items];
 pp(pubsub_subscribe, 2) -> [node, jid];
@@ -2564,6 +2591,9 @@ pp(sm_a, 2) -> [h, xmlns];
 pp(sm_failed, 2) -> [reason, xmlns];
 pp(offline_item, 2) -> [node, action];
 pp(offline, 3) -> [items, purge, fetch];
+pp(mix_join, 2) -> [jid, subscribe];
+pp(mix_leave, 0) -> [];
+pp(mix_participant, 2) -> [jid, nick];
 pp(_, _) -> no.
 
 enc_bool(false) -> <<"false">>;
@@ -2605,6 +2635,170 @@ dec_tzo(Val) ->
     H = jlib:binary_to_integer(H1),
     M = jlib:binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
+
+decode_mix_participant(__TopXMLNS, __IgnoreEls,
+		       {xmlel, <<"participant">>, _attrs, _els}) ->
+    {Jid, Nick} = decode_mix_participant_attrs(__TopXMLNS,
+					       _attrs, undefined, undefined),
+    {mix_participant, Jid, Nick}.
+
+decode_mix_participant_attrs(__TopXMLNS,
+			     [{<<"jid">>, _val} | _attrs], _Jid, Nick) ->
+    decode_mix_participant_attrs(__TopXMLNS, _attrs, _val,
+				 Nick);
+decode_mix_participant_attrs(__TopXMLNS,
+			     [{<<"nick">>, _val} | _attrs], Jid, _Nick) ->
+    decode_mix_participant_attrs(__TopXMLNS, _attrs, Jid,
+				 _val);
+decode_mix_participant_attrs(__TopXMLNS, [_ | _attrs],
+			     Jid, Nick) ->
+    decode_mix_participant_attrs(__TopXMLNS, _attrs, Jid,
+				 Nick);
+decode_mix_participant_attrs(__TopXMLNS, [], Jid,
+			     Nick) ->
+    {decode_mix_participant_attr_jid(__TopXMLNS, Jid),
+     decode_mix_participant_attr_nick(__TopXMLNS, Nick)}.
+
+encode_mix_participant({mix_participant, Jid, Nick},
+		       _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_mix_participant_attr_nick(Nick,
+					      encode_mix_participant_attr_jid(Jid,
+									      _xmlns_attrs)),
+    {xmlel, <<"participant">>, _attrs, _els}.
+
+decode_mix_participant_attr_jid(__TopXMLNS,
+				undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"participant">>,
+		   __TopXMLNS}});
+decode_mix_participant_attr_jid(__TopXMLNS, _val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"participant">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_mix_participant_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_mix_participant_attr_nick(__TopXMLNS,
+				 undefined) ->
+    undefined;
+decode_mix_participant_attr_nick(__TopXMLNS, _val) ->
+    _val.
+
+encode_mix_participant_attr_nick(undefined, _acc) ->
+    _acc;
+encode_mix_participant_attr_nick(_val, _acc) ->
+    [{<<"nick">>, _val} | _acc].
+
+decode_mix_leave(__TopXMLNS, __IgnoreEls,
+		 {xmlel, <<"leave">>, _attrs, _els}) ->
+    {mix_leave}.
+
+encode_mix_leave({mix_leave}, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"leave">>, _attrs, _els}.
+
+decode_mix_join(__TopXMLNS, __IgnoreEls,
+		{xmlel, <<"join">>, _attrs, _els}) ->
+    Subscribe = decode_mix_join_els(__TopXMLNS, __IgnoreEls,
+				    _els, []),
+    Jid = decode_mix_join_attrs(__TopXMLNS, _attrs,
+				undefined),
+    {mix_join, Jid, Subscribe}.
+
+decode_mix_join_els(__TopXMLNS, __IgnoreEls, [],
+		    Subscribe) ->
+    lists:reverse(Subscribe);
+decode_mix_join_els(__TopXMLNS, __IgnoreEls,
+		    [{xmlel, <<"subscribe">>, _attrs, _} = _el | _els],
+		    Subscribe) ->
+    _xmlns = get_attr(<<"xmlns">>, _attrs),
+    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
+	   decode_mix_join_els(__TopXMLNS, __IgnoreEls, _els,
+			       [decode_mix_subscribe(__TopXMLNS, __IgnoreEls,
+						     _el)
+				| Subscribe]);
+       true ->
+	   decode_mix_join_els(__TopXMLNS, __IgnoreEls, _els,
+			       Subscribe)
+    end;
+decode_mix_join_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		    Subscribe) ->
+    decode_mix_join_els(__TopXMLNS, __IgnoreEls, _els,
+			Subscribe).
+
+decode_mix_join_attrs(__TopXMLNS,
+		      [{<<"jid">>, _val} | _attrs], _Jid) ->
+    decode_mix_join_attrs(__TopXMLNS, _attrs, _val);
+decode_mix_join_attrs(__TopXMLNS, [_ | _attrs], Jid) ->
+    decode_mix_join_attrs(__TopXMLNS, _attrs, Jid);
+decode_mix_join_attrs(__TopXMLNS, [], Jid) ->
+    decode_mix_join_attr_jid(__TopXMLNS, Jid).
+
+encode_mix_join({mix_join, Jid, Subscribe},
+		_xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_mix_join_$subscribe'(Subscribe,
+						   [])),
+    _attrs = encode_mix_join_attr_jid(Jid, _xmlns_attrs),
+    {xmlel, <<"join">>, _attrs, _els}.
+
+'encode_mix_join_$subscribe'([], _acc) -> _acc;
+'encode_mix_join_$subscribe'([Subscribe | _els],
+			     _acc) ->
+    'encode_mix_join_$subscribe'(_els,
+				 [encode_mix_subscribe(Subscribe, []) | _acc]).
+
+decode_mix_join_attr_jid(__TopXMLNS, undefined) ->
+    undefined;
+decode_mix_join_attr_jid(__TopXMLNS, _val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"join">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_mix_join_attr_jid(undefined, _acc) -> _acc;
+encode_mix_join_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_mix_subscribe(__TopXMLNS, __IgnoreEls,
+		     {xmlel, <<"subscribe">>, _attrs, _els}) ->
+    Node = decode_mix_subscribe_attrs(__TopXMLNS, _attrs,
+				      undefined),
+    Node.
+
+decode_mix_subscribe_attrs(__TopXMLNS,
+			   [{<<"node">>, _val} | _attrs], _Node) ->
+    decode_mix_subscribe_attrs(__TopXMLNS, _attrs, _val);
+decode_mix_subscribe_attrs(__TopXMLNS, [_ | _attrs],
+			   Node) ->
+    decode_mix_subscribe_attrs(__TopXMLNS, _attrs, Node);
+decode_mix_subscribe_attrs(__TopXMLNS, [], Node) ->
+    decode_mix_subscribe_attr_node(__TopXMLNS, Node).
+
+encode_mix_subscribe(Node, _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_mix_subscribe_attr_node(Node,
+					    _xmlns_attrs),
+    {xmlel, <<"subscribe">>, _attrs, _els}.
+
+decode_mix_subscribe_attr_node(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"node">>, <<"subscribe">>,
+		   __TopXMLNS}});
+decode_mix_subscribe_attr_node(__TopXMLNS, _val) ->
+    _val.
+
+encode_mix_subscribe_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
 
 decode_offline(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"offline">>, _attrs, _els}) ->
@@ -7883,10 +8077,24 @@ encode_pubsub_event_items_attr_node(_val, _acc) ->
 
 decode_pubsub_event_item(__TopXMLNS, __IgnoreEls,
 			 {xmlel, <<"item">>, _attrs, _els}) ->
+    __Xmls = decode_pubsub_event_item_els(__TopXMLNS,
+					  __IgnoreEls, _els, []),
     {Id, Node, Publisher} =
 	decode_pubsub_event_item_attrs(__TopXMLNS, _attrs,
 				       undefined, undefined, undefined),
-    {pubsub_event_item, Id, Node, Publisher}.
+    {pubsub_event_item, Id, Node, Publisher, __Xmls}.
+
+decode_pubsub_event_item_els(__TopXMLNS, __IgnoreEls,
+			     [], __Xmls) ->
+    lists:reverse(__Xmls);
+decode_pubsub_event_item_els(__TopXMLNS, __IgnoreEls,
+			     [{xmlel, _, _, _} = _el | _els], __Xmls) ->
+    decode_pubsub_event_item_els(__TopXMLNS, __IgnoreEls,
+				 _els, [_el | __Xmls]);
+decode_pubsub_event_item_els(__TopXMLNS, __IgnoreEls,
+			     [_ | _els], __Xmls) ->
+    decode_pubsub_event_item_els(__TopXMLNS, __IgnoreEls,
+				 _els, __Xmls).
 
 decode_pubsub_event_item_attrs(__TopXMLNS,
 			       [{<<"id">>, _val} | _attrs], _Id, Node,
@@ -7915,9 +8123,9 @@ decode_pubsub_event_item_attrs(__TopXMLNS, [], Id, Node,
 					     Publisher)}.
 
 encode_pubsub_event_item({pubsub_event_item, Id, Node,
-			  Publisher},
+			  Publisher, __Xmls},
 			 _xmlns_attrs) ->
-    _els = [],
+    _els = __Xmls,
     _attrs =
 	encode_pubsub_event_item_attr_publisher(Publisher,
 						encode_pubsub_event_item_attr_node(Node,

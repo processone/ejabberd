@@ -354,6 +354,14 @@ muc_room_jid(Config) ->
     Server = ?config(server, Config),
     jid:make(<<"test">>, <<"conference.", Server/binary>>, <<>>).
 
+mix_jid(Config) ->
+    Server = ?config(server, Config),
+    jid:make(<<>>, <<"mix.", Server/binary>>, <<>>).
+
+mix_room_jid(Config) ->
+    Server = ?config(server, Config),
+    jid:make(<<"test">>, <<"mix.", Server/binary>>, <<>>).
+
 id() ->
     id(undefined).
 
