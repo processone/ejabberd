@@ -159,6 +159,15 @@ export CONTRIB_MODULES_PATH
 export CONTRIB_MODULES_CONF_DIR
 export ERL_LIBS
 
+shell_escape_str()
+{
+    if test $# -eq 0; then
+        printf '"" '
+    else
+        shell_escape "$@"
+    fi
+}
+
 shell_escape()
 {
     local RES=()
@@ -208,10 +217,10 @@ iexdebug()
     # Elixir shell is hidden as default
     CMD="`shell_escape \"$IEX\" \"$IEXNAME\" \"debug-${TTY}-${ERLANG_NODE}\"` \
          -remsh $ERLANG_NODE \
-         --erl \"`shell_escape \"$KERNEL_OPTS\"\" \
-         --erl \"`shell_escape \"$ERLANG_OPTS\"\" \
-         --erl \"`shell_escape \"${ARGS[@]}\"\" \
-         --erl \"`shell_escape \"$@\"\""
+         --erl `shell_escape \"$KERNEL_OPTS\"` \
+         --erl `shell_escape \"$ERLANG_OPTS\"` \
+         --erl `shell_escape \"${ARGS[@]}\"` \
+         --erl `shell_escape_str \"$@\"`"
     $EXEC_CMD "$CMD"
 }
 
@@ -233,14 +242,15 @@ live()
 iexlive()
 {
     livewarning
+    echo $@
     CMD="`shell_escape \"$IEX\" \"$IEXNAME\" \"${ERLANG_NODE}\"` \
          --erl \"-mnesia dir \\\"$SPOOL_DIR\\\"\" \
          --erl \"`shell_escape \"$KERNEL_OPTS\"`\" \
          --erl \"`shell_escape \"$EJABBERD_OPTS\"`\" \
          --app ejabberd \
-         --erl \"`shell_escape \"$ERLANG_OPTS\"`\" \
-         --erl \"`shell_escape \"${ARGS[@]}\"`\" \
-         --erl \"`shell_escape \"$@\"`\""
+         --erl `shell_escape \"$ERLANG_OPTS\"` \
+         --erl `shell_escape \"${ARGS[@]}\"` \
+         --erl `shell_escape_str \"$@\"`"
     $EXEC_CMD "$CMD"
 }
 
