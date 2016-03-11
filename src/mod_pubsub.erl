@@ -3953,20 +3953,14 @@ set_xoption(Host, [{<<"pubsub#itemreply">>, [Val]} | Opts], NewOpts) ->
 set_xoption(Host, [_ | Opts], NewOpts) ->
     set_xoption(Host, Opts, NewOpts).
 
-get_max_items_node({_, ServerHost, _}) ->
-    get_max_items_node(ServerHost);
 get_max_items_node(Host) ->
     config(serverhost(Host), max_items_node, undefined).
 
-get_max_subscriptions_node({_, ServerHost, _}) ->
-    get_max_subscriptions_node(ServerHost);
 get_max_subscriptions_node(Host) ->
     config(serverhost(Host), max_subscriptions_node, undefined).
 
 %%%% last item cache handling
 
-is_last_item_cache_enabled({_, ServerHost, _}) ->
-    is_last_item_cache_enabled(ServerHost);
 is_last_item_cache_enabled(Host) ->
     config(serverhost(Host), last_item_cache, false).
 
