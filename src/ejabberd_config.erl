@@ -408,7 +408,7 @@ maps_to_lists(IMap) ->
               end, [], IMap).
 
 merge_configs(Terms, ResMap) ->
-    lists:foldl(fun({Name, Val}, Map) when is_list(Val) ->
+    lists:foldl(fun({Name, Val}, Map) when is_list(Val), Name =/= auth_method ->
                         Old = maps:get(Name, Map, #{}),
                         New = lists:foldl(fun(SVal, OMap) ->
                                                   NVal = if Name == host_config orelse Name == append_host_config ->
