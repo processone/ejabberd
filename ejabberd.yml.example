@@ -616,45 +616,39 @@ modules:
       - "flat"
       - "hometree"
       - "pep" # pep requires mod_caps
-  mod_register: 
+    ## mod_register:
     ##
     ## Protect In-Band account registrations with CAPTCHA.
     ##
-    ## captcha_protected: true
-
+    ##   captcha_protected: true
     ##
     ## Set the minimum informational entropy for passwords.
     ##
-    ## password_strength: 32
-
+    ##   password_strength: 32
     ##
     ## After successful registration, the user receives
     ## a message with this subject and body.
     ##
-    welcome_message: 
-      subject: "Welcome!"
-      body: |-
-        Hi.
-        Welcome to this XMPP server.
-
+    ##   welcome_message:
+    ##     subject: "Welcome!"
+    ##     body: |-
+    ##       Hi.
+    ##       Welcome to this XMPP server.
     ##
     ## When a user registers, send a notification to
     ## these XMPP accounts.
     ##
-    ## registration_watchers:
-    ##   - "admin1@example.org"
-
+    ##   registration_watchers:
+    ##     - "admin1@example.org"
     ##
     ## Only clients in the server machine can register accounts
     ##
-    ip_access: trusted_network
-
+    ##   ip_access: trusted_network
     ##
     ## Local c2s or remote s2s users cannot register accounts
     ##
-    ## access_from: deny
-
-    access: register
+    ##   access_from: deny
+    ##   access: register
   mod_roster: {}
   mod_shared_roster: {}
   mod_stats: {}
