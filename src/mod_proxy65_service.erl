@@ -63,7 +63,7 @@ start_link(Host, Opts) ->
 
 init([Host, Opts]) ->
     State = parse_options(Host, Opts),
-    ejabberd_router:register_route(State#state.myhost),
+    ejabberd_router:register_route(State#state.myhost, Host),
     {ok, State}.
 
 terminate(_Reason, #state{myhost = MyHost}) ->

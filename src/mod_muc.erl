@@ -373,7 +373,7 @@ init([Host, Opts]) ->
     RoomShaper = gen_mod:get_opt(room_shaper, Opts,
                                  fun(A) when is_atom(A) -> A end,
                                  none),
-    ejabberd_router:register_route(MyHost),
+    ejabberd_router:register_route(MyHost, Host),
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
 			 HistorySize, RoomShaper),

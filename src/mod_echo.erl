@@ -86,7 +86,7 @@ stop(Host) ->
 init([Host, Opts]) ->
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"echo.@HOST@">>),
-    ejabberd_router:register_route(MyHost),
+    ejabberd_router:register_route(MyHost, Host),
     {ok, #state{host = MyHost}}.
 
 %%--------------------------------------------------------------------

@@ -241,6 +241,7 @@ stop(Host) ->
 init([ServerHost, Opts]) ->
     ?DEBUG("pubsub init ~p ~p", [ServerHost, Opts]),
     Host = gen_mod:get_opt_host(ServerHost, Opts, <<"pubsub.@HOST@">>),
+    ejabberd_router:register_route(Host, ServerHost),
     Access = gen_mod:get_opt(access_createnode, Opts,
 	    fun(A) when is_atom(A) -> A end, all),
     PepOffline = gen_mod:get_opt(ignore_pep_from_offline, Opts,
@@ -309,7 +310,6 @@ init([ServerHost, Opts]) ->
 	false ->
 	    ok
     end,
-    ejabberd_router:register_route(Host),
     pubsub_migrate:update_node_database(Host, ServerHost),
     pubsub_migrate:update_state_database(Host, ServerHost),
     pubsub_migrate:update_lastitem_database(Host, ServerHost),
