@@ -293,6 +293,8 @@ db_tests(_) ->
        test_unregister]},
      {test_muc_register, [sequence],
       [muc_register_master, muc_register_slave]},
+     {test_mix, [parallel],
+      [mix_master, mix_slave]},
      {test_roster_subscribe, [parallel],
       [roster_subscribe_master,
        roster_subscribe_slave]},
