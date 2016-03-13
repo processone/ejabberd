@@ -877,7 +877,6 @@ handle_info(_Info, State) ->
 %% @private
 terminate(_Reason,
 	    #state{host = Host, server_host = ServerHost, nodetree = TreePlugin, plugins = Plugins}) ->
-    ejabberd_router:unregister_route(Host),
     case lists:member(?PEPNODE, Plugins) of
 	true ->
 	    ejabberd_hooks:delete(caps_add, ServerHost,
@@ -922,7 +921,8 @@ terminate(_Reason,
 	Pid ->
 	    Pid ! stop
     end,
-    terminate_plugins(Host, ServerHost, Plugins, TreePlugin).
+    terminate_plugins(Host, ServerHost, Plugins, TreePlugin),
+    ejabberd_router:unregister_route(Host).
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
