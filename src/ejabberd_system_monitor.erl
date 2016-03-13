@@ -186,18 +186,24 @@ process_large_heap(Pid, Info) ->
                            "much memory:~n~p~n~s",
                            [node(), Pid, Info, DetailedInfo])),
     From = jid:make(<<"">>, Host, <<"watchdog">>),
+    Hint = [#xmlel{name = <<"no-permanent-store">>,
+		   attrs = [{<<"xmlns">>, ?NS_HINTS}]}],
     lists:foreach(fun (JID) ->
-                          send_message(From, jid:make(JID), Body)
+                          send_message(From, jid:make(JID), Body, Hint)
                   end, JIDs).
 
 send_message(From, To, Body) ->
+    send_message(From, To, Body, []).
+
+send_message(From, To, Body, ExtraEls) ->
     ejabberd_router:route(From, To,
 			  #xmlel{name = <<"message">>,
 				 attrs = [{<<"type">>, <<"chat">>}],
 				 children =
 				     [#xmlel{name = <<"body">>, attrs = [],
 					     children =
-						 [{xmlcdata, Body}]}]}).
+						 [{xmlcdata, Body}]}
+				      | ExtraEls]}).
 
 get_admin_jids() ->
     ejabberd_config:get_option(
