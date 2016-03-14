@@ -1,23 +1,20 @@
-We are open to contribution for ejabberd, as Github pull requests (PR).
-Here is a few points to consider before submitting your pull request.
-(You can remove the whole text after reading).
+We are open to contributions for ejabberd, as GitHub pull requests (PR).
+Here are a few points to consider before submitting your PR. (You can
+remove the whole text after reading.)
 
-1. Does this PR address an issue ?
-   Please reference it in PR description.
+1. Does this PR address an issue? Please reference it in the PR
+   description.
 
-2. Have you properly described the proposed changed ?
+2. Have you properly described the proposed change?
 
-3. Please, make sure the change is atomic and does only touch the
-   needed modules.
-   If you have other changes / fixes to provide, please make them as
-   separate PR.
+3. Please make sure the change is atomic and does only touch the needed
+   modules. If you have other changes/fixes to provide, please submit
+   them as separate PRs.
 
-4. If you change or new feature involves backends,
-   did you make sure you change is compliant with all backends or
-   provide the feature for all backends ?
-   
-5. Do you provides tests ?
-   How can we check the behaviour of the code ?
+4. If your change or new feature involves storage backends, did you make
+   sure your change works with all backends?
 
-6. Did you consider documentation changes on project
-   processone/docs.ejabberd.im ?
+5. Do you provide tests? How can we check the behavior of the code?
+
+6. Did you consider documentation changes in the
+   processone/docs.ejabberd.im repository?

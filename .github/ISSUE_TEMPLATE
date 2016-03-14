@@ -1,16 +1,15 @@
-Please answer these questions before submitting your issue. It may help !
-
-Thanks!
-
-1. What version of ejabberd are you using ?
+> What version of ejabberd are you using?
 
 
-2. What operating system are you using ?
+
+> What operating system (version) are you using?
 
 
-3. How did you install ejabberd (source, package, distribution) ?
+
+> How did you install ejabberd (source, package, distribution)?
 
 
-4. What did not work as expected ? What that error in the log ?
-   What that unexpected behaviour ? What was the expected result ?
+
+> What did not work as expected? Are there error messages in the log? What
+> was the unexpected behavior? What was the expected result?
 
