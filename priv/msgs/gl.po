@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 16.02\n"
-"Last-Translator: Carlos E. Lopez - suso AT jabber-hispano.org\n"
+"Last-Translator: Carlos E. Lopez - carlos AT suchat.org\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -237,7 +237,6 @@ msgid "Outgoing s2s Connections:"
 msgstr "Conexións S2S saíntes:"
 
 #: ejabberd_web_admin.erl:1559
-#, fuzzy
 msgid "Incoming s2s Connections:"
 msgstr "Conexións S2S saíntes:"
 
@@ -404,9 +403,7 @@ msgstr ""
 
 #: ejabberd_web_admin.erl:2044
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
-msgstr ""
-"Exportar datos de los usuarios en un host de archivos PFX "
-"(XEP-0227):"
+msgstr "Exportar datos dos usuarios dun dominio a ficheiros PIEFXIS (XEP-0227):"
 
 #: ejabberd_web_admin.erl:2060
 msgid "Export all tables as SQL queries to a file:"
@@ -425,7 +422,6 @@ msgid "Listened Ports at "
 msgstr "Portos de escoita en "
 
 #: ejabberd_web_admin.erl:2144
-#, fuzzy
 msgid "Modules at ~p"
 msgstr "Módulos en ~p"
 
@@ -589,7 +585,7 @@ msgstr "Iniciar módulos"
 
 #: mod_configure.erl:156 mod_configure.erl:638
 msgid "Stop Modules"
-msgstr "Detener módulos"
+msgstr "Deter módulos"
 
 #: mod_configure.erl:162 mod_configure.erl:650
 msgid "Restore"
@@ -1068,7 +1064,7 @@ msgstr "foi expulsado, porque a sala cambiouse a só-membros"
 
 #: mod_muc_log.erl:445
 msgid "has been kicked because of a system shutdown"
-msgstr "foi expulsado por mor dun sistema de peche"
+msgstr "foi expulsado porque o sistema vaise a deter"
 
 #: mod_muc_log.erl:450
 msgid "is now known as"
@@ -1470,7 +1466,7 @@ msgstr "Aproba ou rexeita a petición de voz."
 
 #: mod_muc_room.erl:4351
 msgid "User JID"
-msgstr "Jabber IDE do usuario"
+msgstr "Jabber ID do usuario"
 
 #: mod_muc_room.erl:4355
 msgid "Grant voice to this person?"
@@ -1855,8 +1851,8 @@ msgid ""
 "Fill in the form to search for any matching Jabber User (Add * to the end of "
 "field to match substring)"
 msgstr ""
-"Enche o formulario para buscar usuarios Jabber. Engade * ao final dun campo "
-"para buscar subcadenas."
+"Enche o formulario para buscar usuarios Jabber (Engade * ao final dun campo "
+"para buscar subcadenas)"
 
 #: mod_vcard.erl:490 mod_vcard.erl:615
 msgid "Full Name"
