@@ -168,7 +168,7 @@ init([ServerHost, Opts]) ->
 				  ?NS_PUBSUB, mod_pubsub, iq_sm, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_MIX_0, ?MODULE, process_iq, IQDisc),
-    ejabberd_router:register_route(Host),
+    ejabberd_router:register_route(Host, ServerHost),
     {ok, #state{server_host = ServerHost, host = Host}}.
 
 handle_call(_Request, _From, State) ->

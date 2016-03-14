@@ -173,7 +173,7 @@ init([Host, Opts]) ->
 			  State#state.password, State#state.tls_options),
     case State#state.search of
       true ->
-	  ejabberd_router:register_route(State#state.myhost);
+	  ejabberd_router:register_route(State#state.myhost, Host);
       _ -> ok
     end,
     {ok, State}.
