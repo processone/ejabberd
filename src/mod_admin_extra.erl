@@ -861,7 +861,8 @@ connected_users_info() ->
 			      PI when is_integer(PI) -> PI;
 			      _ -> nil
 			  end,
-	      {[U, $@, S, $/, R], atom_to_list(Conn), IPS, Port, PriorityI, NodeS, Uptime}
+	      {binary_to_list(<<U/binary, $@, S/binary, $/, R/binary>>),
+	       atom_to_list(Conn), IPS, Port, PriorityI, NodeS, Uptime}
       end,
       USRIs).
 

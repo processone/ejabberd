@@ -36,7 +36,9 @@
 	 route_error/4,
 	 register_route/1,
 	 register_route/2,
+	 register_route/3,
 	 register_routes/1,
+	 host_of_route/1,
 	 unregister_route/1,
 	 unregister_routes/1,
 	 dirty_get_all_routes/0,
@@ -55,7 +57,7 @@
 
 -type local_hint() :: undefined | integer() | {apply, atom(), atom()}.
 
--record(route, {domain, pid, local_hint}).
+-record(route, {domain, server_host, pid, local_hint}).
 
 -record(state, {}).
 
@@ -94,19 +96,29 @@ route_error(From, To, ErrPacket, OrigPacket) ->
 -spec register_route(binary()) -> term().
 
 register_route(Domain) ->
-    register_route(Domain, undefined).
+    ?WARNING_MSG("~s:register_route/1 is deprected, "
+		 "use ~s:register_route/2 instead",
+		 [?MODULE, ?MODULE]),
+    register_route(Domain, ?MYNAME).
 
--spec register_route(binary(), local_hint()) -> term().
+-spec register_route(binary(), binary()) -> term().
 
-register_route(Domain, LocalHint) ->
-    case jid:nameprep(Domain) of
-      error -> erlang:error({invalid_domain, Domain});
-      LDomain ->
+register_route(Domain, ServerHost) ->
+    register_route(Domain, ServerHost, undefined).
+
+-spec register_route(binary(), binary(), local_hint()) -> term().
+
+register_route(Domain, ServerHost, LocalHint) ->
+    case {jid:nameprep(Domain), jid:nameprep(ServerHost)} of
+      {error, _} -> erlang:error({invalid_domain, Domain});
+      {_, error} -> erlang:error({invalid_domain, ServerHost});
+      {LDomain, LServerHost} ->
 	  Pid = self(),
 	  case get_component_number(LDomain) of
 	    undefined ->
 		F = fun () ->
 			    mnesia:write(#route{domain = LDomain, pid = Pid,
+						server_host = LServerHost,
 						local_hint = LocalHint})
 		    end,
 		mnesia:transaction(F);
@@ -115,46 +127,42 @@ register_route(Domain, LocalHint) ->
 			    case mnesia:wread({route, LDomain}) of
 			      [] ->
 				  mnesia:write(#route{domain = LDomain,
+						      server_host = LServerHost,
 						      pid = Pid,
 						      local_hint = 1}),
-				  lists:foreach(fun (I) ->
-							mnesia:write(#route{domain
-										=
-										LDomain,
-									    pid
-										=
-										undefined,
-									    local_hint
-										=
-										I})
-						end,
-						lists:seq(2, N));
+				  lists:foreach(
+				    fun (I) ->
+					    mnesia:write(
+					      #route{domain = LDomain,
+						     pid = undefined,
+						     server_host = LServerHost,
+						     local_hint = I})
+				    end,
+				    lists:seq(2, N));
 			      Rs ->
-				  lists:any(fun (#route{pid = undefined,
-							local_hint = I} =
-						     R) ->
-						    mnesia:write(#route{domain =
-									    LDomain,
-									pid =
-									    Pid,
-									local_hint
-									    =
-									    I}),
-						    mnesia:delete_object(R),
-						    true;
-						(_) -> false
-					    end,
-					    Rs)
+				  lists:any(
+				    fun (#route{pid = undefined,
+						local_hint = I} = R) ->
+					    mnesia:write(
+					      #route{domain = LDomain,
+						     pid = Pid,
+						     server_host = LServerHost,
+						     local_hint = I}),
+					    mnesia:delete_object(R),
+					    true;
+					(_) -> false
+				    end,
+				    Rs)
 			    end
 		    end,
 		mnesia:transaction(F)
 	  end
     end.
 
--spec register_routes([binary()]) -> ok.
+-spec register_routes([{binary(), binary()}]) -> ok.
 
 register_routes(Domains) ->
-    lists:foreach(fun (Domain) -> register_route(Domain)
+    lists:foreach(fun ({Domain, ServerHost}) -> register_route(Domain, ServerHost)
 		  end,
 		  Domains).
 
@@ -183,7 +191,9 @@ unregister_route(Domain) ->
 				of
 			      [R] ->
 				  I = R#route.local_hint,
+				  ServerHost = R#route.server_host,
 				  mnesia:write(#route{domain = LDomain,
+						      server_host = ServerHost,
 						      pid = undefined,
 						      local_hint = I}),
 				  mnesia:delete_object(R);
@@ -211,6 +221,20 @@ dirty_get_all_routes() ->
 dirty_get_all_domains() ->
     lists:usort(mnesia:dirty_all_keys(route)).
 
+-spec host_of_route(binary()) -> binary().
+
+host_of_route(Domain) ->
+    case jid:nameprep(Domain) of
+	error ->
+	    erlang:error({invalid_domain, Domain});
+	LDomain ->
+	    case mnesia:dirty_read(route, LDomain) of
+		[#route{server_host = ServerHost}|_] ->
+		    ServerHost;
+		[] ->
+		    erlang:error({unregistered_route, Domain})
+	    end
+    end.
 
 %%====================================================================
 %% gen_server callbacks
@@ -283,8 +307,11 @@ handle_info({'DOWN', _Ref, _Type, Pid, _Info}, State) ->
 				      if is_integer(E#route.local_hint) ->
 					     LDomain = E#route.domain,
 					     I = E#route.local_hint,
+					     ServerHost = E#route.server_host,
 					     mnesia:write(#route{domain =
 								     LDomain,
+								 server_host =
+								     ServerHost,
 								 pid =
 								     undefined,
 								 local_hint =
@@ -394,12 +421,10 @@ get_component_number(LDomain) ->
       undefined).
 
 update_tables() ->
-    case catch mnesia:table_info(route, attributes) of
-      [domain, node, pid] -> mnesia:delete_table(route);
-      [domain, pid] -> mnesia:delete_table(route);
-      [domain, pid, local_hint] -> ok;
-      [domain, pid, local_hint|_] -> mnesia:delete_table(route);
-      {'EXIT', _} -> ok
+    try
+	mnesia:transform_table(route, ignore, record_info(fields, route))
+    catch exit:{aborted, {no_exists, _}} ->
+	    ok
     end,
     case lists:member(local_route,
 		      mnesia:system_info(tables))

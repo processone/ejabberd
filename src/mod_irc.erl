@@ -133,7 +133,7 @@ init([Host, Opts]) ->
     catch ets:new(irc_connection,
 		  [named_table, public,
 		   {keypos, #irc_connection.jid_server_host}]),
-    ejabberd_router:register_route(MyHost),
+    ejabberd_router:register_route(MyHost, Host),
     {ok,
      #state{host = MyHost, server_host = Host,
 	    access = Access}}.

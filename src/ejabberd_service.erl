@@ -222,7 +222,7 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
 			  send_text(StateData, <<"<handshake/>">>),
 			  lists:foreach(
 			    fun (H) ->
-				    ejabberd_router:register_route(H),
+				    ejabberd_router:register_route(H, ?MYNAME),
 				    ?INFO_MSG("Route registered for service ~p~n",
 					      [H])
 			    end, dict:fetch_keys(StateData#state.host_opts)),

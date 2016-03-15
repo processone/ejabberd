@@ -306,7 +306,7 @@ init({ServerHost, Opts}) ->
 	false ->
 	    ok
     end,
-    ejabberd_router:register_route(Host),
+    ejabberd_router:register_route(Host, ServerHost),
     {ok, #state{server_host = ServerHost, host = Host, name = Name,
 		access = Access, max_size = MaxSize,
 		secret_length = SecretLength, jid_in_url = JIDinURL,

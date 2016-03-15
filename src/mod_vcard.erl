@@ -105,7 +105,7 @@ init(Host, ServerHost, Search) ->
     case Search of
       false -> loop(Host, ServerHost);
       _ ->
-	  ejabberd_router:register_route(Host),
+	  ejabberd_router:register_route(Host, ServerHost),
 	  loop(Host, ServerHost)
     end.
 
