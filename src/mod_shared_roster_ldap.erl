@@ -145,7 +145,7 @@ get_user_roster(Items, {U, S} = US) ->
             %%case dict:find(US1, SRUsers1) of
                 {value, _, SRUsers2} -> {Item#roster{subscription = both, ask = none}, SRUsers2};
                 %%{ok, _GroupNames} -> {Item#roster{subscription = both, ask = none}, dict:erase(US1, SRUsers1)};
-                error -> {Item, SRUsers1}
+                false -> {Item, SRUsers1}
             end
         end,
         SRUsers, Items),
