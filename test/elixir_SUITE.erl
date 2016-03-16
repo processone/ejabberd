@@ -8,7 +8,7 @@
 %%% Example: Is run with:
 %%%     ./rebar skip_deps=true ct suites=elixir
 %%% or from ejabber overall test suite:
-%%%     make test
+%%%     make quicktest
 %%% @end
 %%% Created :  19 Feb 2015 by Mickael Remond <mremond@process-one.net>
 %%%-------------------------------------------------------------------
@@ -16,6 +16,10 @@
 -module(elixir_SUITE).
 
 -compile(export_all).
+
+init_per_suite(Config) ->
+    check_meck(),
+    Config.
 
 init_per_testcase(_TestCase, Config) ->
     process_flag(error_handler, ?MODULE),
@@ -32,9 +36,19 @@ all() ->
             []
     end.
 
+check_meck() ->
+    case catch meck:module_info(module) of
+        meck ->
+            ok;
+        {'EXIT',{undef, _}} ->
+            ct:print("meck is not available. Please make sure you configured ejabberd with --enable-elixir --enable-tools"),
+            ok
+    end.
+
 is_elixir_available() ->
     case catch elixir:module_info() of
         {'EXIT',{undef,_}} ->
+            ct:print("ejabberd has not been build with Elixir support, skipping Elixir tests."),
             false;
         ModInfo when is_list(ModInfo) ->
             true
@@ -55,7 +69,14 @@ run_elixir_test(Func) ->
     'Elixir.Code':load_file(list_to_binary(filename:join(test_dir(), atom_to_list(Func)))),
     %% I did not use map syntax, so that this file can still be build under R16
     ResultMap = 'Elixir.ExUnit':run(),
-    {ok, 0} = maps:find(failures, ResultMap).
+    case maps:find(failures, ResultMap) of
+        {ok, 0} ->
+            %% Zero failures
+            ok;
+        {ok, Failures} ->
+            ct:print("Elixir tests failed: ~.10B~nSee logs for details", [Failures]),
+            ct:fail(elixir_test_failure)
+    end.
 
 test_dir() ->
     {ok, CWD} = file:get_cwd(),
