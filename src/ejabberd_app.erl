@@ -256,7 +256,6 @@ start_apps() ->
     ejabberd:start_app(fast_tls),
     ejabberd:start_app(fast_xml),
     ejabberd:start_app(stringprep),
-    ejabberd:start_app(ezlib),
     ejabberd:start_app(cache_tab).
 
 opt_type(net_ticktime) ->
