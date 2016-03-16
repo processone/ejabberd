@@ -999,7 +999,7 @@ resource_conflict_action(U, S, R) ->
       acceptnew -> {accept_resource, R};
       closenew -> closenew;
       setresource ->
-	  Rnew = iolist_to_binary([randoms:get_string(),randoms:get_string(),randoms:get_string()]),
+	  Rnew = new_uniq_id(),
 	  {accept_resource, Rnew}
     end.
 
@@ -1026,8 +1026,7 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 			      [{elem, <<"resource">>}, cdata]),
 	  R = case jid:resourceprep(R1) of
 		error -> error;
-		<<"">> ->
-                      iolist_to_binary([randoms:get_string(),randoms:get_string(),randoms:get_string()]);
+		<<"">> -> new_uniq_id();
 		Resource -> Resource
 	      end,
 	  case R of
@@ -1912,6 +1911,10 @@ send_trailer(StateData) ->
     send_text(StateData, ?STREAM_TRAILER).
 
 new_id() -> randoms:get_string().
+
+new_uniq_id() ->
+    iolist_to_binary([randoms:get_string(),
+		      jlib:integer_to_binary(p1_time_compat:unique_integer(positive))]).
 
 is_auth_packet(El) ->
     case jlib:iq_query_info(El) of
