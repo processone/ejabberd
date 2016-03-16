@@ -1,9 +1,8 @@
 language: erlang
 
 otp_release:
-  - 17.1
   - 17.5
-  - 18.0
+  - 18.2.1
 
 services:
   - riak
@@ -22,6 +21,8 @@ before_install:
   - sudo add-apt-repository 'deb http://repo.mysql.com/apt/ubuntu/ precise mysql-5.6'
   - sudo apt-get -qq update
   - sudo apt-get -qq -o Dpkg::Options::=--force-confold install mysql-server-5.6
+  # /END MYSQL 5.6
+
 
 install:
   - sudo apt-get -qq install libexpat1-dev libyaml-dev libpam0g-dev libsqlite3-dev
@@ -40,7 +41,7 @@ before_script:
 
 script:
   - ./autogen.sh
-  - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc --disable-elixir
+  - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc
   - make
   - make install
   - make xref
