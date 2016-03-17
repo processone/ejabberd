@@ -124,10 +124,18 @@ check_permissions(#request{auth = HTTPAuth, headers = Headers}, Command)
                                 false
                         end;
                     {oauth, Token, _} ->
-                        case ejabberd_oauth:check_token(Command, Token) of
-                            {ok, User, Server} ->
-                                {ok, {User, Server, {oauth, Token}, Admin}};
-                            false ->
+                        case oauth2:verify_access_token(Token, {}) of
+                            {ok, {_, GrantContext}} ->
+                                Scope = Command,
+                                ResourceOwner = proplists:get_value(<<"resource_owner">>, GrantContext, undefined),
+                                TokenScope = proplists:get_value(<<"scope">>, GrantContext, []),
+                                case {ResourceOwner, oauth2_priv_set:is_member(Scope, oauth2_priv_set:new(TokenScope))} of
+                                    {{user, User, Server}, true} ->
+                                        {ok, {User, Server, {oauth, Token}, Admin}};
+                                    _ ->
+                                        false
+                                end;
+                            {error, _} ->
                                 false
                         end;
                     _ ->

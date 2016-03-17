@@ -42,8 +42,6 @@
          associate_access_code/3,
          associate_access_token/3,
          associate_refresh_token/3,
-         check_token/4,
-         check_token/2,
          process/2,
          opt_type/1]).
 
@@ -187,41 +185,6 @@ associate_access_token(AccessToken, Context, AppContext) ->
 associate_refresh_token(_RefreshToken, _Context, AppContext) ->
     %put(?REFRESH_TOKEN_TABLE, RefreshToken, Context),
     {ok, AppContext}.
-
-
-check_token(User, Server, Scope, Token) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
-    case catch mnesia:dirty_read(oauth_token, Token) of
-        [#oauth_token{us = {LUser, LServer},
-                      scope = TokenScope,
-                      expire = Expire}] ->
-            {MegaSecs, Secs, _} = os:timestamp(),
-            TS = 1000000 * MegaSecs + Secs,
-            oauth2_priv_set:is_member(
-              Scope, oauth2_priv_set:new(TokenScope)) andalso
-                Expire > TS;
-        _ ->
-            false
-    end.
-
-check_token(Scope, Token) ->
-    case catch mnesia:dirty_read(oauth_token, Token) of
-        [#oauth_token{us = {LUser, LServer},
-                      scope = TokenScope,
-                      expire = Expire}] ->
-            {MegaSecs, Secs, _} = os:timestamp(),
-            TS = 1000000 * MegaSecs + Secs,
-            case oauth2_priv_set:is_member(
-                   Scope, oauth2_priv_set:new(TokenScope)) andalso
-                Expire > TS of
-                true -> {ok, LUser, LServer};
-                false -> false
-            end;
-        _ ->
-            false
-    end.
-
 
 expire() ->
     ejabberd_config:get_option(

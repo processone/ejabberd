@@ -509,10 +509,18 @@ check_auth(_Command, noauth) ->
     no_auth_provided;
 check_auth(Command, {User, Server, {oauth, Token}, _}) ->
     Scope = erlang:atom_to_binary(Command#ejabberd_commands.name, utf8),
-    case ejabberd_oauth:check_token(User, Server, Scope, Token) of
-        true ->
-            {ok, User, Server};
-        false ->
+    case oauth2:verify_access_token(Token, {}) of
+        {ok, {_, GrantContext}} ->
+            Scope = <<"sasl_auth">>,
+            ResourceOwner = proplists:get_value(<<"resource_owner">>, GrantContext, undefined),
+            TokenScope = proplists:get_value(<<"scope">>, GrantContext, []),
+            case {ResourceOwner, oauth2_priv_set:is_member(Scope, oauth2_priv_set:new(TokenScope))} of
+                {{user, User, Server}, true} ->
+                    {ok, User, Server};
+                _ ->
+                    throw({error, invalid_account_data})
+            end;
+        {error, _} ->
             throw({error, invalid_account_data})
     end;
 check_auth(_Command, {User, Server, Password, _}) when is_binary(Password) ->
