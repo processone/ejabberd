@@ -1914,7 +1914,7 @@ new_id() -> randoms:get_string().
 
 new_uniq_id() ->
     iolist_to_binary([randoms:get_string(),
-		      jlib:integer_to_binary(p1_time_compat:unique_integer(positive))]).
+		      jlib:integer_to_binary(p1_time_compat:unique_integer([positive]))]).
 
 is_auth_packet(El) ->
     case jlib:iq_query_info(El) of
