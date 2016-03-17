@@ -509,7 +509,7 @@ check_auth(_Command, noauth) ->
     no_auth_provided;
 check_auth(Command, {User, Server, {oauth, Token}, _}) ->
     Scope = erlang:atom_to_binary(Command#ejabberd_commands.name, utf8),
-    case ejabberd_auth:verify_access_token(Token, Scope, {user, User, Server}) of
+    case ejabberd_auth:check_access_token(Token, Scope, {user, User, Server}) of
         {error, _} ->
             throw({error, invalid_account_data});
         ResourceOwner ->

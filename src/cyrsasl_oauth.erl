@@ -47,7 +47,7 @@ mech_step(State, ClientIn) ->
         [AuthzId, User, Token] ->
             Host = State#state.host,
             Scope = <<"sasl_auth">>,
-            case ejabberd_auth:verify_access_token(Token, Scope, {user, User, Host}) of
+            case ejabberd_auth:check_access_token(Token, Scope, {user, User, Host}) of
                 {ok, User, Host} ->
                     {ok, [{username, User},
                           {authzid, AuthzId},

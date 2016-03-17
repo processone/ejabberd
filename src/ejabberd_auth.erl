@@ -435,7 +435,7 @@ check_access_token(Token, Scope, RequestedOwner) ->
     end,
     Response = lists:foldl(fun (_, {ok, _, _} = Res) -> Res;
                                (M, Res) ->
-                                   case erlang:function_exported(M, verify_access_token, 3) of
+                                   case erlang:function_exported(M, check_access_token, 3) of
                                        true -> M:check_access_token(Token, Scope, RequestedOwner);
                                        false -> Res
                                    end
