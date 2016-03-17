@@ -45,20 +45,13 @@ mech_new(Host, _GetPassword, _CheckPassword, _CheckPasswordDigest) ->
 mech_step(State, ClientIn) ->
     case prepare(ClientIn) of
         [AuthzId, User, Token] ->
-            case oauth2:verify_access_token(Token, {}) of
-                {ok, {_, GrantContext}} ->
-                    Scope = <<"sasl_auth">>,
-                    Host = State#state.host,
-                    ResourceOwner = proplists:get_value(<<"resource_owner">>, GrantContext, undefined),
-                    TokenScope = proplists:get_value(<<"scope">>, GrantContext, []),
-                    case {ResourceOwner, oauth2_priv_set:is_member(Scope, oauth2_priv_set:new(TokenScope))} of
-                        {{user, User, Host}, true} ->
-                            {ok, [{username, User},
-                                  {authzid, AuthzId},
-                                  {auth_module, ejabberd_oauth}]};
-                        _ ->
-                            {error, <<"not-authorized">>, User}
-                    end;
+            Host = State#state.host,
+            Scope = <<"sasl_auth">>,
+            case ejabberd_auth:verify_access_token(Token, Scope, {user, User, Host}) of
+                {ok, User, Host} ->
+                    {ok, [{username, User},
+                          {authzid, AuthzId},
+                          {auth_module, ejabberd_oauth}]};
                 {error, _} ->
                     {error, <<"not-authorized">>, User}
             end;
