@@ -328,8 +328,15 @@ etop()
 ping()
 {
     TTY=`tty | sed -e  's/.*\///g'`
+    if [ "$1" = "${1%.*}" ] ; then
+        PING_NAME="-sname"
+        PING_NODE=$(hostname -s)
+    else
+        PING_NAME="-name"
+        PING_NODE=$(hostname)
+    fi
     $EXEC_CMD "$ERL \
-      $NAME ping-${TTY}-${ERLANG_NODE} \
+      $PING_NAME ping-${TTY}@${PING_NODE} \
       -hidden \
       $KERNEL_OPTS $ERLANG_OPTS \
       -eval 'io:format(\"~p~n\",[net_adm:ping('\"'\"'$1'\"'\"')])' \
