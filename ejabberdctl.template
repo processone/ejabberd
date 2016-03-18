@@ -387,7 +387,7 @@ ctl()
         # concurrent invocations using a bound
         # number of atoms
         for N in `seq 1 $MAXCONNID`; do
-            CTL_CONN="ejabberdctl-$N"
+            CTL_CONN="ejabberdctl-$N-${ERLANG_NODE}"
             CTL_LOCKFILE="$CONNLOCKDIR/$CTL_CONN"
             (
                 exec 8>"$CTL_LOCKFILE"
