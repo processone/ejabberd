@@ -332,7 +332,7 @@ ping()
       $NAME ping-${TTY}-${ERLANG_NODE} \
       -hidden \
       $KERNEL_OPTS $ERLANG_OPTS \
-      -eval 'io:format(\"~p~n\",[net_adm:ping($1)])' \
+      -eval 'io:format(\"~p~n\",[net_adm:ping('\"'\"'$1'\"'\"')])' \
       -s erlang halt -output text -noinput"
 }
 
