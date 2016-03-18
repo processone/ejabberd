@@ -220,7 +220,9 @@ authenticate_user({{user, User, Server}, {password, Password}}, Ctx) ->
             end;
         error ->
             {error, badpass}
-    end.
+    end;
+authenticate_user(_, _) ->
+    {error, notfound}.
 
 authenticate_client(Client, Ctx) ->
     {ok, {Ctx, {client, Client}}}.
