@@ -45,7 +45,6 @@ script:
   - make
   - make install
   - make xref
-  - make quicktest
   - sed -i -e 's/ct:pal/ct:log/' test/suite.erl
   - ln -sf ../sql priv/
   - escript ./rebar skip_deps=true ct -v
