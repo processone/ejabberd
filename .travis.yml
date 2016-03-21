@@ -31,13 +31,19 @@ before_script:
   - mkdir "$PWD/ebin"
   - echo "[{riak_kv, [{add_paths, [\"$PWD/ebin/\"]}]}]." > advanced.config
   - sudo mv advanced.config /etc/riak/advanced.config
-  - sudo service riak restart
+  # MR: Temporarily stopping Riak to disable tests as Riak is too unreliable on Travis-ci
+  #- sudo service riak restart
+  - sudo service riak stop
   - mysql -u root -e "CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';"
   - mysql -u root -e "CREATE DATABASE ejabberd_test;"
   - mysql -u root -e "GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';"
   - psql -U postgres -c "CREATE USER ejabberd_test WITH PASSWORD 'ejabberd_test';"
   - psql -U postgres -c "CREATE DATABASE ejabberd_test;"
   - psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE ejabberd_test TO ejabberd_test;"
+  # MR: Temporarily stopping Riak to disable tests as Riak is too unreliable on Travis-ci
+  #- sudo /usr/sbin/riak-admin wait-for-service riak_kv 'riak@127.0.0.1'
+  #- sudo /usr/sbin/riak-admin test
+  # - tail -n 100000 /etc/riak/*
 
 script:
   - ./autogen.sh
@@ -54,6 +60,8 @@ after_script:
   - find logs -name suite.log -exec cat '{}' ';'
 
 after_failure:
+  # Try checking Riak database logs
+  - tail -n 100000 /var/log/riak/*.log
   - find logs -name ejabberd.log -exec cat '{}' ';'
 
 after_success:
