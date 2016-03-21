@@ -105,6 +105,7 @@ reload_templates(Host) ->
 process([<<"conferences">>], #request{method = 'GET'} = R) ->
     RD = get_request_details(R),
     Rooms = ets:select(muc_online_room, make_room_match(RD#rd.muchost)),
+    ?DEBUG("Listing room ~p with ~p", [Rooms,  make_room_match(RD#rd.muchost)]),
     render(conference_list, RD, 
            [{rooms, lists:filter(fun muc_logs_enabled/1, Rooms)}]);
 
@@ -285,7 +286,7 @@ get_messages(MUC, Y, M, D, {odbc, Server}) ->
             ,  ejabberd_odbc:escape(muc_to_string(MUC))
             , <<"' and timestamp >= ">>, jlib:integer_to_binary(now_to_usec(Start))
             , <<"  and timestamp <= ">>, jlib:integer_to_binary(now_to_usec(End))
-            , <<";">>]) of
+            , <<"ORDER BY timestamp asc;">>]) of
          {selected, _, L} -> lists:map(to_html_message(Server), L);
             {error, R} -> ?DEBUG("An error occured with a query: ~p", [R]), [];
                     _  -> ?DEBUG("Something strange with a query",[]), []
@@ -392,7 +393,7 @@ linkify(Text, true) ->
 
 % used for odbc, which may have text pre-extracted
 archive_to_html_message([TS, Nick, <<>>, XML], _Linkify) ->
-    #xmlel{} = El = xml_stream:parse_element(XML),
+    #xmlel{} = El = fxml_stream:parse_element(XML),
     Now = usec_to_now(erlang:binary_to_integer(TS)),
     archive_to_html_message(#archive_msg{timestamp = Now,
                                              packet = El,
@@ -454,7 +455,7 @@ translate(Msg, Locale) ->
 
 
 make_room_match(_Host) ->
-   ets:fun2ms(fun( E ) when E#muc_online_room.name_host == {'_',_Host} -> E end). 
+   ets:fun2ms(fun( E ) when element(2,E#muc_online_room.name_host) == _Host -> E end). 
 make_room_match(_Name, _Host) ->
    ets:fun2ms(fun( E ) when E#muc_online_room.name_host == {_Name,_Host} -> E end). 
 
