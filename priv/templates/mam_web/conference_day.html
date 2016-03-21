@@ -49,9 +49,9 @@ div.rcot:after {}
 
 {% for i in messages %} {%spaceless%} {% with d=i.timestamp|date:"H:i:s" %}
  <a id="{{d}}.{{i.ms}}"  name="{{d}}.{{i.ms}}" href="#{{d}}.{{i.ms}}" class="ts">[{{d}}]</a>
-{% if i.type == "text" %}<font class="mn"> &lt;{{ i.nick|escape }}&gt;</font> {{i.text}}<br/> {% endif %}
-{% if i.type == "subject" %}<font class="msc"> {{ i.nick|escape }} sets room theme to: <br/> {{i.text}}<br/></font> {% endif %}
-{% if i.type == "action" %} <font class="mne"> {{ i.nick|escape }} {{i.text}}</font><br/> {% endif %}
+{% if i.type == "text" %}<font class="mn"> &lt;{{ i.nick|escape }}&gt;</font> {{i.text|linebreaksbr}}<br/> {% endif %}
+{% if i.type == "subject" %}<font class="msc"> {{ i.nick|escape }} sets room theme to: <br/> {{i.text|linebreaksbr}}<br/></font> {% endif %}
+{% if i.type == "action" %} <font class="mne"> {{ i.nick|escape }} {{i.text|linebreaksbr}}</font><br/> {% endif %}
 {% endwith %}
 {% endspaceless%}
 {% endfor %}

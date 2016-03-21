@@ -113,10 +113,10 @@ process([<<"conferences">>, MUC_Name | T], R=#request{method = 'GET'}) ->
     MUC = case jlib:string_to_jid(MUC_Name) of 
         #jid{} = A -> 
                     M = make_room_match(A#jid.luser,A#jid.lserver),
-                    case catch ets:select(muc_online_room, M ) of
+                    case catch ets:select(muc_online_room, M) of
                         [#muc_online_room{} = Room] -> Room;
                         _Error -> 
-                          ?DEBUG("Error getting room for ~p: ~p",[MUC_Name, _Error]),
+                          ?DEBUG("Error getting room for ~p using ~p: ~p",[MUC_Name, M, _Error]),
                           #muc_online_room{}
                     end;
         _ -> #muc_online_room{}
@@ -409,8 +409,8 @@ archive_to_html_message([TS, Nick, Txt, _], Linkify) ->
     };
 archive_to_html_message(#archive_msg{} = Msg, Linkify) ->
     {Type, Txt} =
-      case {xml:get_subtag_cdata(Msg#archive_msg.packet, <<"subject">>),
-            xml:get_subtag_cdata(Msg#archive_msg.packet, <<"body">>)}
+      case {fxml:get_subtag_cdata(Msg#archive_msg.packet, <<"subject">>),
+            fxml:get_subtag_cdata(Msg#archive_msg.packet, <<"body">>)}
           of
         {<<>>, <<>>}                 -> {none,<<>>};
         {<<>>, <<"/me ", T/binary>>} -> {action, T};
@@ -454,9 +454,9 @@ translate(Msg, Locale) ->
 
 
 make_room_match(_Host) ->
-   ets:fun2ms(fun(#muc_online_room{name_host={'_',_Host}} = E) -> E end). 
+   ets:fun2ms(fun( E ) when E#muc_online_room.name_host == {'_',_Host} -> E end). 
 make_room_match(_Name, _Host) ->
-   ets:fun2ms(fun(#muc_online_room{name_host={_Name,_Host}} = E) -> E end). 
+   ets:fun2ms(fun( E ) when E#muc_online_room.name_host == {_Name,_Host} -> E end). 
 
 make_matchspec(LUser, LServer, Start, End) ->
     ets:fun2ms(
