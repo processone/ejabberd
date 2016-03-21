@@ -5,7 +5,7 @@
 %%% Created : 17 Feb 2006 by Mickael Remond <mremond@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -56,7 +56,7 @@
 %% Create the anonymous table if at least one virtual host has anonymous features enabled
 %% Register to login / logout events
 -record(anonymous, {us = {<<"">>, <<"">>} :: {binary(), binary()},
-                    sid = {now(), self()} :: ejabberd_sm:sid()}).
+                    sid = {p1_time_compat:timestamp(), self()} :: ejabberd_sm:sid()}).
 
 start(Host) ->
     %% TODO: Check cluster mode
@@ -122,8 +122,8 @@ allow_multiple_connections(Host) ->
 
 %% Check if user exist in the anonymus database
 anonymous_user_exist(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     US = {LUser, LServer},
     case catch mnesia:dirty_read({anonymous, US}) of
 	[] ->

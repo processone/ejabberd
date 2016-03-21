@@ -3,6 +3,24 @@
 %%% Author  : Badlop <badlop@process-one.net>
 %%% Purpose : Extended Stanza Addressing (XEP-0033) support
 %%% Created : 29 May 2007 by Badlop <badlop@process-one.net>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
 %%%----------------------------------------------------------------------
 
 -module(mod_multicast).
@@ -133,7 +151,7 @@ init([LServerS, Opts]) ->
     try_start_loop(),
     create_pool(),
     ejabberd_router_multicast:register_route(LServerS),
-    ejabberd_router:register_route(LServiceS),
+    ejabberd_router:register_route(LServiceS, LServerS),
     {ok,
      #state{lservice = LServiceS, lserver = LServerS,
 	    access = Access, service_limits = SLimits}}.
@@ -215,7 +233,7 @@ handle_iq(From, To, #xmlel{attrs = Attrs} = Packet, State) ->
             ejabberd_router:route(To, From, Err);
         reply ->
             LServiceS = jts(To),
-            case xml:get_attr_s(<<"type">>, Attrs) of
+            case fxml:get_attr_s(<<"type">>, Attrs) of
                 <<"result">> ->
                     process_iqreply_result(From, LServiceS, Packet, State);
                 <<"error">> ->
@@ -286,7 +304,7 @@ iq_vcard(Lang) ->
 		[{xmlcdata,
                   <<(translate:translate(Lang,
                                       <<"ejabberd Multicast service">>))/binary,
-                                        "\nCopyright (c) 2002-2015 ProcessOne">>}]}].
+                                        "\nCopyright (c) 2002-2016 ProcessOne">>}]}].
 
 %%%-------------------------
 %%% Route
@@ -377,7 +395,7 @@ act_groups(FromJID, Packet_stripped, AAttrs, LServiceS,
 perform(From, Packet, AAttrs, _,
 	{route_single, Group}) ->
     [route_packet(From, ToUser, Packet, AAttrs,
-		  Group#group.addresses)
+		  Group#group.others, Group#group.addresses)
      || ToUser <- Group#group.dests];
 perform(From, Packet, AAttrs, _,
 	{{route_multicast, JID, RLimits}, Group}) ->
@@ -418,17 +436,17 @@ check_access(LServerS, Access, From) ->
 %%%-------------------------
 
 strip_addresses_element(Packet) ->
-    case xml:get_subtag(Packet, <<"addresses">>) of
+    case fxml:get_subtag(Packet, <<"addresses">>) of
       #xmlel{name = <<"addresses">>, attrs = AAttrs,
 	     children = Addresses} ->
-	  case xml:get_attr_s(<<"xmlns">>, AAttrs) of
+	  case fxml:get_attr_s(<<"xmlns">>, AAttrs) of
 	    ?NS_ADDRESS ->
 		#xmlel{name = Name, attrs = Attrs, children = Els} =
 		    Packet,
 		Els_stripped = lists:keydelete(<<"addresses">>, 2, Els),
 		Packet_stripped = #xmlel{name = Name, attrs = Attrs,
 					 children = Els_stripped},
-		{ok, Packet_stripped, AAttrs, xml:remove_cdata(Addresses)};
+		{ok, Packet_stripped, AAttrs, fxml:remove_cdata(Addresses)};
 	    _ -> throw(ewxmlns)
 	  end;
       _ -> throw(eadsele)
@@ -442,10 +460,10 @@ split_addresses_todeliver(Addresses) ->
     lists:partition(fun (XML) ->
 			    case XML of
 			      #xmlel{name = <<"address">>, attrs = Attrs} ->
-				  case xml:get_attr_s(<<"delivered">>, Attrs) of
+				  case fxml:get_attr_s(<<"delivered">>, Attrs) of
 				    <<"true">> -> false;
 				    _ ->
-					Type = xml:get_attr_s(<<"type">>,
+					Type = fxml:get_attr_s(<<"type">>,
 							      Attrs),
 					case Type of
 					  <<"to">> -> true;
@@ -481,10 +499,10 @@ check_limit_dests(SLimits, FromJID, Packet,
 
 convert_dest_record(XMLs) ->
     lists:map(fun (XML) ->
-		      case xml:get_tag_attr_s(<<"jid">>, XML) of
+		      case fxml:get_tag_attr_s(<<"jid">>, XML) of
 			<<"">> -> #dest{jid_string = none, full_xml = XML};
 			JIDS ->
-			    Type = xml:get_tag_attr_s(<<"type">>, XML),
+			    Type = fxml:get_tag_attr_s(<<"type">>, XML),
 			    JIDJ = stj(JIDS),
 			    #dest{jid_string = JIDS, jid_jid = JIDJ,
 				  type = Type, full_xml = XML}
@@ -507,7 +525,7 @@ split_dests_jid(Dests) ->
 		    Dests).
 
 report_not_jid(From, Packet, Dests) ->
-    Dests2 = [xml:element_to_binary(Dest#dest.full_xml)
+    Dests2 = [fxml:element_to_binary(Dest#dest.full_xml)
 	      || Dest <- Dests],
     [route_error(From, From, Packet, jid_malformed,
 		 <<"This service can not process the address: ",
@@ -616,13 +634,13 @@ decide_action_group(Group) ->
 %%% Route packet
 %%%-------------------------
 
-route_packet(From, ToDest, Packet, AAttrs, Addresses) ->
+route_packet(From, ToDest, Packet, AAttrs, Others, Addresses) ->
     Dests = case ToDest#dest.type of
 	      <<"bcc">> -> [];
 	      _ -> [ToDest]
 	    end,
     route_packet2(From, ToDest#dest.jid_string, Dests,
-		  Packet, AAttrs, Addresses).
+		  Packet, AAttrs, {Others, Addresses}).
 
 route_packet_multicast(From, ToS, Packet, AAttrs, Dests,
 		       Addresses, Limits) ->
@@ -648,6 +666,8 @@ route_packet2(From, ToS, Dests, Packet, AAttrs,
     ToJID = stj(ToS),
     ejabberd_router:route(From, ToJID, Packet2).
 
+append_dests(_Dests, {Others, Addresses}) ->
+    Addresses++Others;
 append_dests([], Addresses) -> Addresses;
 append_dests([Dest | Dests], Addresses) ->
     append_dests(Dests, [Dest#dest.full_xml | Addresses]).
@@ -713,12 +733,11 @@ process_iqreply_error(From, LServiceS, _Packet) ->
 %%% Check protocol support: Receive response: Disco
 %%%-------------------------
 
-process_iqreply_result(From, LServiceS, Packet,
-		       State) ->
+process_iqreply_result(From, LServiceS, Packet, State) ->
     #xmlel{name = <<"query">>, attrs = Attrs2,
 	   children = Els2} =
-	xml:get_subtag(Packet, <<"query">>),
-    case xml:get_attr_s(<<"xmlns">>, Attrs2) of
+	fxml:get_subtag(Packet, <<"query">>),
+    case fxml:get_attr_s(<<"xmlns">>, Attrs2) of
       ?NS_DISCO_INFO ->
 	  process_discoinfo_result(From, LServiceS, Els2, State);
       ?NS_DISCO_ITEMS ->
@@ -741,37 +760,35 @@ process_discoinfo_result(From, LServiceS, Els,
 
 process_discoinfo_result2(From, FromS, LServiceS, Els,
 			  Waiter) ->
-    Multicast_support = lists:any(fun (XML) ->
-					  case XML of
-					    #xmlel{name = <<"feature">>,
-						   attrs = Attrs} ->
-						(?NS_ADDRESS) ==
-						  xml:get_attr_s(<<"var">>,
-								 Attrs);
-					    _ -> false
-					  end
-				  end,
-				  Els),
+    Multicast_support =
+	lists:any(
+	    fun(XML) ->
+		    case XML of
+			#xmlel{name = <<"feature">>, attrs = Attrs} ->
+			    (?NS_ADDRESS) == fxml:get_attr_s(<<"var">>, Attrs);
+			_ -> false
+		    end
+	    end,
+	    Els),
     Group = Waiter#waiter.group,
     RServer = Group#group.server,
     case Multicast_support of
-      true ->
-	  SenderT = sender_type(From),
-	  RLimits = get_limits_xml(Els, SenderT),
-	  add_response(RServer,
-		       {multicast_supported, FromS, RLimits}),
-	  FromM = Waiter#waiter.sender,
-	  DestsM = Group#group.dests,
-	  PacketM = Waiter#waiter.packet,
-	  AAttrsM = Waiter#waiter.aattrs,
-	  AddressesM = Waiter#waiter.addresses,
-	  RServiceM = FromS,
-	  route_packet_multicast(FromM, RServiceM, PacketM,
-				 AAttrsM, DestsM, AddressesM, RLimits),
-	  delo_waiter(Waiter);
-      false ->
-	  case FromS of
-	    RServer ->
+	true ->
+	    SenderT = sender_type(From),
+	    RLimits = get_limits_xml(Els, SenderT),
+	    add_response(RServer, {multicast_supported, FromS, RLimits}),
+	    FromM = Waiter#waiter.sender,
+	    DestsM = Group#group.dests,
+	    PacketM = Waiter#waiter.packet,
+	    AAttrsM = Waiter#waiter.aattrs,
+	    AddressesM = Waiter#waiter.addresses,
+	    RServiceM = FromS,
+	    route_packet_multicast(FromM, RServiceM, PacketM,
+		AAttrsM, DestsM, AddressesM, RLimits),
+	    delo_waiter(Waiter);
+	false ->
+	    case FromS of
+		RServer ->
 		send_query_items(FromS, LServiceS),
 		delo_waiter(Waiter),
 		add_waiter(Waiter#waiter{awaiting =
@@ -792,10 +809,10 @@ get_limits_els(Els) ->
 			  #xmlel{name = <<"x">>, attrs = Attrs,
 				 children = SubEls} ->
 			      case ((?NS_XDATA) ==
-				      xml:get_attr_s(<<"xmlns">>, Attrs))
+				      fxml:get_attr_s(<<"xmlns">>, Attrs))
 				     and
 				     (<<"result">> ==
-					xml:get_attr_s(<<"type">>, Attrs))
+					fxml:get_attr_s(<<"type">>, Attrs))
 				  of
 				true -> get_limits_fields(SubEls) ++ R;
 				false -> R
@@ -811,11 +828,11 @@ get_limits_fields(Fields) ->
 					     #xmlel{name = <<"field">>,
 						    attrs = Attrs} ->
 						 (<<"FORM_TYPE">> ==
-						    xml:get_attr_s(<<"var">>,
+						    fxml:get_attr_s(<<"var">>,
 								   Attrs))
 						   and
 						   (<<"hidden">> ==
-						      xml:get_attr_s(<<"type">>,
+						      fxml:get_attr_s(<<"type">>,
 								     Attrs));
 					     _ -> false
 					   end
@@ -833,8 +850,8 @@ get_limits_values(Values) ->
 				 children = SubEls} ->
 			      [#xmlel{name = <<"value">>, children = SubElsV}] =
 				  SubEls,
-			      Number = xml:get_cdata(SubElsV),
-			      Name = xml:get_attr_s(<<"var">>, Attrs),
+			      Number = fxml:get_cdata(SubElsV),
+			      Name = fxml:get_attr_s(<<"var">>, Attrs),
 			      [{jlib:binary_to_atom(Name),
 				jlib:binary_to_integer(Number)}
 			       | R];
@@ -855,8 +872,8 @@ process_discoitems_result(From, LServiceS, Els) ->
                      fun(XML, Res) ->
                              case XML of
                                  #xmlel{name = <<"item">>, attrs = Attrs} ->
-                                     SJID = xml:get_attr_s(<<"jid">>, Attrs),
-                                     case jlib:string_to_jid(SJID) of
+                                     SJID = fxml:get_attr_s(<<"jid">>, Attrs),
+                                     case jid:from_string(SJID) of
                                          #jid{luser = <<"">>,
                                               lresource = <<"">>} ->
                                              [SJID | Res];
@@ -897,8 +914,9 @@ received_awaiter(JID, Waiter, LServiceS) ->
 		From = Waiter#waiter.sender,
 		Packet = Waiter#waiter.packet,
 		AAttrs = Waiter#waiter.aattrs,
+		Others = Group#group.others,
 		Addresses = Waiter#waiter.addresses,
-		[route_packet(From, ToUser, Packet, AAttrs, Addresses)
+		[route_packet(From, ToUser, Packet, AAttrs, Others, Addresses)
 		 || ToUser <- Group#group.dests];
 	    true ->
 		send_query_info(RServer, LServiceS),
@@ -922,8 +940,7 @@ create_cache() ->
 			 {attributes, record_info(fields, multicastc)}]).
 
 add_response(RServer, Response) ->
-    Secs =
-	calendar:datetime_to_gregorian_seconds(calendar:now_to_datetime(now())),
+    Secs = calendar:datetime_to_gregorian_seconds(calendar:local_time()),
     mnesia:dirty_write(#multicastc{rserver = RServer,
 				   response = Response, ts = Secs}).
 
@@ -934,8 +951,7 @@ search_server_on_cache(RServer, _LServerS, Maxmins) ->
     case look_server(RServer) of
       not_cached -> not_cached;
       {cached, Response, Ts} ->
-	  Now =
-	      calendar:datetime_to_gregorian_seconds(calendar:now_to_datetime(now())),
+	  Now = calendar:datetime_to_gregorian_seconds(calendar:local_time()),
 	  case is_obsolete(Response, Ts, Now, Maxmins) of
 	    false -> {cached, Response};
 	    true -> {obsolete, Response}
@@ -963,7 +979,7 @@ purge() ->
     Maxmins_positive = (?MAXTIME_CACHE_POSITIVE),
     Maxmins_negative = (?MAXTIME_CACHE_NEGATIVE),
     Now =
-	calendar:datetime_to_gregorian_seconds(calendar:now_to_datetime(now())),
+        calendar:datetime_to_gregorian_seconds(calendar:local_time()),
     purge(Now, {Maxmins_positive, Maxmins_negative}).
 
 purge(Now, Maxmins) ->
@@ -1183,7 +1199,7 @@ to_binary(A) -> list_to_binary(hd(io_lib:format("~p", [A]))).
 
 route_error(From, To, Packet, ErrType, ErrText) ->
     #xmlel{attrs = Attrs} = Packet,
-    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
     Reply = make_reply(ErrType, Lang, ErrText),
     Err = jlib:make_error_reply(Packet, Reply),
     ejabberd_router:route(From, To, Err).
@@ -1199,9 +1215,9 @@ make_reply(internal_server_error, Lang, ErrText) ->
 make_reply(forbidden, Lang, ErrText) ->
     ?ERRT_FORBIDDEN(Lang, ErrText).
 
-stj(String) -> jlib:string_to_jid(String).
+stj(String) -> jid:from_string(String).
 
-jts(String) -> jlib:jid_to_string(String).
+jts(String) -> jid:to_string(String).
 
 mod_opt_type(access) ->
     fun (A) when is_atom(A) -> A end;

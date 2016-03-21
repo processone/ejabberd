@@ -5,7 +5,7 @@
 %%% Created : 16 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -186,8 +186,8 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
     case ets:lookup(listen_sockets, PortIP) of
 	[{PortIP, ListenSocket}] ->
-	    ?INFO_MSG("Reusing listening port for ~p", [Port]),
-	    ets:delete(listen_sockets, Port),
+	    ?INFO_MSG("Reusing listening port for ~p", [PortIP]),
+	    ets:delete(listen_sockets, PortIP),
 	    ListenSocket;
 	_ ->
 	    Res = gen_tcp:listen(Port, [binary,
@@ -225,8 +225,8 @@ listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
 %% so the option inet/inet6 is only used when no IP is specified at all.
 parse_listener_portip(PortIP, Opts) ->
     {IPOpt, Opts2} = strip_ip_option(Opts),
-    {IPVOpt, OptsClean} = case lists:member(inet6, Opts2) of
-			      true -> {inet6, Opts2 -- [inet6]};
+    {IPVOpt, OptsClean} = case proplists:get_bool(inet6, Opts2) of
+			      true -> {inet6, proplists:delete(inet6, Opts2)};
 			      false -> {inet, Opts2}
 			  end,
     {Port, IPT, IPS, Proto} =
@@ -292,6 +292,40 @@ get_ip_tuple(IPOpt, _IPVOpt) ->
     IPOpt.
 
 accept(ListenSocket, Module, Opts) ->
+    IntervalOpt =
+        case proplists:get_value(accept_interval, Opts) of
+            [{linear, [I1_, T1_, T2_, I2_]}] ->
+                {linear, I1_, T1_, T2_, I2_};
+            I_ -> I_
+        end,
+    Interval =
+        case IntervalOpt of
+            undefined ->
+                0;
+            I when is_integer(I), I >= 0 ->
+                I;
+            {linear, I1, T1, T2, I2}
+            when is_integer(I1),
+                 is_integer(T1),
+                 is_integer(T2),
+                 is_integer(I2),
+                 I1 >= 0,
+                 I2 >= 0,
+                 T2 > 0 ->
+                {MSec, Sec, _USec} = os:timestamp(),
+                TS = MSec * 1000000 + Sec,
+                {linear, I1, TS + T1, T2, I2};
+            I ->
+                ?WARNING_MSG("There is a problem in the configuration: "
+                             "~p is a wrong accept_interval value.  "
+                             "Using 0 as fallback",
+                             [I]),
+                0
+        end,
+    accept(ListenSocket, Module, Opts, Interval).
+
+accept(ListenSocket, Module, Opts, Interval) ->
+    NewInterval = check_rate_limit(Interval),
     case gen_tcp:accept(ListenSocket) of
 	{ok, Socket} ->
 	    case {inet:sockname(Socket), inet:peername(Socket)} of
@@ -307,11 +341,11 @@ accept(ListenSocket, Module, Opts) ->
 			  false -> ejabberd_socket
 		      end,
 	    CallMod:start(strip_frontend(Module), gen_tcp, Socket, Opts),
-	    accept(ListenSocket, Module, Opts);
+	    accept(ListenSocket, Module, Opts, NewInterval);
 	{error, Reason} ->
 	    ?ERROR_MSG("(~w) Failed TCP accept: ~w",
                        [ListenSocket, Reason]),
-	    accept(ListenSocket, Module, Opts)
+	    accept(ListenSocket, Module, Opts, NewInterval)
     end.
 
 udp_recv(Socket, Module, Opts) ->
@@ -555,6 +589,31 @@ format_error(Reason) ->
 	    ReasonStr
     end.
 
+check_rate_limit(Interval) ->
+    NewInterval = receive
+		      {rate_limit, AcceptInterval} ->
+			  AcceptInterval
+		  after 0 ->
+			  Interval
+		  end,
+    case NewInterval of
+	0  -> ok;
+	Ms when is_integer(Ms) ->
+	    timer:sleep(Ms);
+        {linear, I1, T1, T2, I2} ->
+            {MSec, Sec, _USec} = os:timestamp(),
+            TS = MSec * 1000000 + Sec,
+            I =
+                if
+                    TS =< T1 -> I1;
+                    TS >= T1 + T2 -> I2;
+                    true ->
+                        round((I2 - I1) * (TS - T1) / T2 + I1)
+                end,
+            timer:sleep(I)
+    end,
+    NewInterval.
+
 -define(IS_CHAR(C), (is_integer(C) and (C >= 0) and (C =< 255))).
 -define(IS_UINT(U), (is_integer(U) and (U >= 0) and (U =< 65535))).
 -define(IS_PORT(P), (is_integer(P) and (P > 0) and (P =< 65535))).
@@ -569,11 +628,8 @@ transform_option({{Port, IP, Transport}, Mod, Opts}) ->
     Opts1 = lists:map(
               fun({ip, IPT}) when is_tuple(IPT) ->
                       {ip, list_to_binary(inet_parse:ntoa(IP))};
-                 (tls) -> {tls, true};
                  (ssl) -> {tls, true};
-                 (zlib) -> {zlib, true};
-                 (starttls) -> {starttls, true};
-                 (starttls_required) -> {starttls_required, true};
+		 (A) when is_atom(A) -> {A, true};
                  (Opt) -> Opt
               end, Opts),
     Opts2 = lists:foldl(
@@ -593,11 +649,11 @@ transform_option({{Port, IP, Transport}, Mod, Opts}) ->
     IPOpt ++ TransportOpt ++ [{port, Port}, {module, Mod} | Opts2];
 transform_option({{Port, Transport}, Mod, Opts})
   when ?IS_TRANSPORT(Transport) ->
-    transform_option({{Port, {0,0,0,0}, Transport}, Mod, Opts});
+    transform_option({{Port, all_zero_ip(Opts), Transport}, Mod, Opts});
 transform_option({{Port, IP}, Mod, Opts}) ->
     transform_option({{Port, IP, tcp}, Mod, Opts});
 transform_option({Port, Mod, Opts}) ->
-    transform_option({{Port, {0,0,0,0}, tcp}, Mod, Opts});
+    transform_option({{Port, all_zero_ip(Opts), tcp}, Mod, Opts});
 transform_option(Opt) ->
     Opt.
 
@@ -633,7 +689,7 @@ validate_cfg(L) ->
                         {Port, prepare_mod(Mod), Opts};
                    (Opt, {Port, Mod, Opts}) ->
                         {Port, Mod, [Opt|Opts]}
-                end, {{5222, {0,0,0,0}, tcp}, ejabberd_c2s, []}, LOpts)
+                end, {{5222, all_zero_ip(LOpts), tcp}, ejabberd_c2s, []}, LOpts)
       end, L).
 
 prepare_ip({A, B, C, D} = IP)
@@ -655,6 +711,12 @@ prepare_mod(sip) ->
     esip_socket;
 prepare_mod(Mod) when is_atom(Mod) ->
     Mod.
+
+all_zero_ip(Opts) ->
+    case proplists:get_bool(inet6, Opts) of
+	true -> {0,0,0,0,0,0,0,0};
+	false -> {0,0,0,0}
+    end.
 
 opt_type(listen) -> fun validate_cfg/1;
 opt_type(_) -> [listen].

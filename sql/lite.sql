@@ -1,5 +1,5 @@
 --
--- ejabberd, Copyright (C) 2002-2015   ProcessOne
+-- ejabberd, Copyright (C) 2002-2016   ProcessOne
 --
 -- This program is free software; you can redistribute it and/or
 -- modify it under the terms of the GNU General Public License as
@@ -296,3 +296,17 @@ CREATE TABLE archive_prefs (
     never text NOT NULL,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE sm (
+    usec bigint NOT NULL,
+    pid text NOT NULL,
+    node text NOT NULL,
+    username text NOT NULL,
+    resource text NOT NULL,
+    priority text NOT NULL,
+    info text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_sm_sid ON sm(usec, pid);
+CREATE INDEX i_sm_node ON sm(node);
+CREATE INDEX i_sm_username ON sm(username);

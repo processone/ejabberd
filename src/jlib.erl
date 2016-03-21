@@ -5,7 +5,7 @@
 %%% Created : 23 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -39,15 +39,13 @@
 	 make_error_reply/2, make_error_element/2,
 	 make_correct_from_to_attrs/3, replace_from_to_attrs/3,
 	 replace_from_to/3, replace_from_attrs/2, replace_from/2,
-	 remove_attr/2, make_jid/3, make_jid/1, split_jid/1, string_to_jid/1,
-	 jid_to_string/1, is_nodename/1, tolower/1, nodeprep/1,
-	 nameprep/1, resourceprep/1, jid_tolower/1,
-	 jid_remove_resource/1, jid_replace_resource/2,
+	 remove_attr/2, tolower/1,
 	 get_iq_namespace/1, iq_query_info/1,
 	 iq_query_or_response_info/1, is_iq_request_type/1,
 	 iq_to_xml/1, parse_xdata_submit/1,
+	 is_standalone_chat_state/1,
 	 add_delay_info/3, add_delay_info/4,
-	 timestamp_to_iso/1, timestamp_to_iso/2,
+	 timestamp_to_legacy/1, timestamp_to_iso_basic/1, timestamp_to_iso/2,
 	 now_to_utc_string/1, now_to_local_string/1,
 	 datetime_string_to_timestamp/1,
 	 term_to_base64/1, base64_to_term/1,
@@ -58,10 +56,27 @@
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, queue_drop_while/2]).
 
+%% The following functions are deprecated and will be removed soon
+%% Use corresponding functions from jid.erl instead
+-export([make_jid/3, make_jid/1, split_jid/1, string_to_jid/1,
+	 jid_to_string/1, is_nodename/1, nodeprep/1,
+	 nameprep/1, resourceprep/1, jid_tolower/1,
+	 jid_remove_resource/1, jid_replace_resource/2]).
+
+-deprecated([{make_jid, '_'},
+	     {split_jid, 1},
+	     {string_to_jid, 1},
+	     {jid_to_string, 1},
+	     {is_nodename, 1},
+	     {nodeprep, 1},
+	     {nameprep, 1},
+	     {resourceprep, 1},
+	     {jid_tolower, 1},
+	     {jid_remove_resource, 1},
+	     {jid_replace_resource, 2}]).
+
 -include("ejabberd.hrl").
 -include("jlib.hrl").
-
--export_type([jid/0]).
 
 %send_iq(From, To, ID, SubTags) ->
 %    ok.
@@ -77,8 +92,8 @@ make_result_iq_reply(#xmlel{name = Name, attrs = Attrs,
 -spec make_result_iq_reply_attrs([attr()]) -> [attr()].
 
 make_result_iq_reply_attrs(Attrs) ->
-    To = xml:get_attr(<<"to">>, Attrs),
-    From = xml:get_attr(<<"from">>, Attrs),
+    To = fxml:get_attr(<<"to">>, Attrs),
+    From = fxml:get_attr(<<"from">>, Attrs),
     Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
     Attrs2 = lists:keydelete(<<"from">>, 1, Attrs1),
     Attrs3 = case To of
@@ -118,8 +133,8 @@ make_error_reply(#xmlel{name = Name, attrs = Attrs,
 -spec make_error_reply_attrs([attr()]) -> [attr()].
 
 make_error_reply_attrs(Attrs) ->
-    To = xml:get_attr(<<"to">>, Attrs),
-    From = xml:get_attr(<<"from">>, Attrs),
+    To = fxml:get_attr(<<"to">>, Attrs),
+    From = fxml:get_attr(<<"from">>, Attrs),
     Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
     Attrs2 = lists:keydelete(<<"from">>, 1, Attrs1),
     Attrs3 = case To of
@@ -144,7 +159,7 @@ make_error_element(Code, Desc) ->
 
 make_correct_from_to_attrs(From, To, Attrs) ->
     Attrs1 = lists:keydelete(<<"from">>, 1, Attrs),
-    Attrs2 = case xml:get_attr(<<"to">>, Attrs) of
+    Attrs2 = case fxml:get_attr(<<"to">>, Attrs) of
 	       {value, _} -> Attrs1;
 	       _ -> [{<<"to">>, To} | Attrs1]
 	     end,
@@ -165,8 +180,8 @@ replace_from_to_attrs(From, To, Attrs) ->
 replace_from_to(From, To,
 		#xmlel{name = Name, attrs = Attrs, children = Els}) ->
     NewAttrs =
-	replace_from_to_attrs(jlib:jid_to_string(From),
-			      jlib:jid_to_string(To), Attrs),
+	replace_from_to_attrs(jid:to_string(From),
+			      jid:to_string(To), Attrs),
     #xmlel{name = Name, attrs = NewAttrs, children = Els}.
 
 -spec replace_from_attrs(binary(), [attr()]) -> [attr()].
@@ -179,7 +194,7 @@ replace_from_attrs(From, Attrs) ->
 
 replace_from(From,
 	     #xmlel{name = Name, attrs = Attrs, children = Els}) ->
-    NewAttrs = replace_from_attrs(jlib:jid_to_string(From),
+    NewAttrs = replace_from_attrs(jid:to_string(From),
 				  Attrs),
     #xmlel{name = Name, attrs = NewAttrs, children = Els}.
 
@@ -193,93 +208,32 @@ remove_attr(Attr,
 -spec make_jid(binary(), binary(), binary()) -> jid() | error.
 
 make_jid(User, Server, Resource) ->
-    case nodeprep(User) of
-      error -> error;
-      LUser ->
-	  case nameprep(Server) of
-	    error -> error;
-	    LServer ->
-		case resourceprep(Resource) of
-		  error -> error;
-		  LResource ->
-		      #jid{user = User, server = Server, resource = Resource,
-			   luser = LUser, lserver = LServer,
-			   lresource = LResource}
-		end
-	  end
-    end.
+    jid:make(User, Server, Resource).
 
 -spec make_jid({binary(), binary(), binary()}) -> jid() | error.
 
 make_jid({User, Server, Resource}) ->
-    make_jid(User, Server, Resource).
+    jid:make({User, Server, Resource}).
 
 %% This is the reverse of make_jid/1
--spec split_jid(jid()) -> {binary(), binary(), binary()} | error.                              
-split_jid(#jid{user = U, server = S, resource = R}) ->
-    {U, S, R};
-split_jid(_) ->
-    error.
+-spec split_jid(jid()) -> {binary(), binary(), binary()} | error.
+split_jid(J) ->
+    jid:split(J).
 
 -spec string_to_jid(binary()) -> jid() | error.
 
 string_to_jid(S) ->
-    string_to_jid1(binary_to_list(S), "").
-
-string_to_jid1([$@ | _J], "") -> error;
-string_to_jid1([$@ | J], N) ->
-    string_to_jid2(J, lists:reverse(N), "");
-string_to_jid1([$/ | _J], "") -> error;
-string_to_jid1([$/ | J], N) ->
-    string_to_jid3(J, "", lists:reverse(N), "");
-string_to_jid1([C | J], N) ->
-    string_to_jid1(J, [C | N]);
-string_to_jid1([], "") -> error;
-string_to_jid1([], N) ->
-    make_jid(<<"">>, list_to_binary(lists:reverse(N)), <<"">>).
-
-%% Only one "@" is admitted per JID
-string_to_jid2([$@ | _J], _N, _S) -> error;
-string_to_jid2([$/ | _J], _N, "") -> error;
-string_to_jid2([$/ | J], N, S) ->
-    string_to_jid3(J, N, lists:reverse(S), "");
-string_to_jid2([C | J], N, S) ->
-    string_to_jid2(J, N, [C | S]);
-string_to_jid2([], _N, "") -> error;
-string_to_jid2([], N, S) ->
-    make_jid(list_to_binary(N), list_to_binary(lists:reverse(S)), <<"">>).
-
-string_to_jid3([C | J], N, S, R) ->
-    string_to_jid3(J, N, S, [C | R]);
-string_to_jid3([], N, S, R) ->
-    make_jid(list_to_binary(N), list_to_binary(S),
-             list_to_binary(lists:reverse(R))).
+    jid:from_string(S).
 
 -spec jid_to_string(jid() | ljid()) -> binary().
 
-jid_to_string(#jid{user = User, server = Server,
-		   resource = Resource}) ->
-    jid_to_string({User, Server, Resource});
-jid_to_string({N, S, R}) ->
-    Node = iolist_to_binary(N),
-    Server = iolist_to_binary(S),
-    Resource = iolist_to_binary(R),
-    S1 = case Node of
-	   <<"">> -> <<"">>;
-	   _ -> <<Node/binary, "@">>
-	 end,
-    S2 = <<S1/binary, Server/binary>>,
-    S3 = case Resource of
-	   <<"">> -> S2;
-	   _ -> <<S2/binary, "/", Resource/binary>>
-	 end,
-    S3.
+jid_to_string(J) ->
+    jid:to_string(J).
 
 -spec is_nodename(binary()) -> boolean().
 
 is_nodename(Node) ->
-    N = nodeprep(Node),
-    (N /= error) and (N /= <<>>).
+    jid:is_nodename(Node).
 
 %tolower_c(C) when C >= $A, C =< $Z ->
 %    C + 32;
@@ -317,72 +271,36 @@ tolower_s([]) -> [].
 
 -spec nodeprep(binary()) -> binary() | error.
 
-nodeprep("") -> <<>>;
-nodeprep(S) when byte_size(S) < 1024 ->
-    R = stringprep:nodeprep(S),
-    if byte_size(R) < 1024 -> R;
-       true -> error
-    end;
-nodeprep(_) -> error.
+nodeprep(S) -> jid:nodeprep(S).
 
 -spec nameprep(binary()) -> binary() | error.
 
-nameprep(S) when byte_size(S) < 1024 ->
-    R = stringprep:nameprep(S),
-    if byte_size(R) < 1024 -> R;
-       true -> error
-    end;
-nameprep(_) -> error.
+nameprep(S) -> jid:nameprep(S).
 
 -spec resourceprep(binary()) -> binary() | error.
 
-resourceprep(S) when byte_size(S) < 1024 ->
-    R = stringprep:resourceprep(S),
-    if byte_size(R) < 1024 -> R;
-       true -> error
-    end;
-resourceprep(_) -> error.
+resourceprep(S) -> jid:resourceprep(S).
 
 -spec jid_tolower(jid() | ljid()) -> error | ljid().
 
-jid_tolower(#jid{luser = U, lserver = S,
-		 lresource = R}) ->
-    {U, S, R};
-jid_tolower({U, S, R}) ->
-    case nodeprep(U) of
-      error -> error;
-      LUser ->
-	  case nameprep(S) of
-	    error -> error;
-	    LServer ->
-		case resourceprep(R) of
-		  error -> error;
-		  LResource -> {LUser, LServer, LResource}
-		end
-	  end
-    end.
+jid_tolower(J) ->
+    jid:tolower(J).
 
 -spec jid_remove_resource(jid()) -> jid();
                          (ljid()) -> ljid().
 
-jid_remove_resource(#jid{} = JID) ->
-    JID#jid{resource = <<"">>, lresource = <<"">>};
-jid_remove_resource({U, S, _R}) -> {U, S, <<"">>}.
+jid_remove_resource(J) -> jid:remove_resource(J).
 
 -spec jid_replace_resource(jid(), binary()) -> error | jid().
 
 jid_replace_resource(JID, Resource) ->
-    case resourceprep(Resource) of
-      error -> error;
-      LResource ->
-	  JID#jid{resource = Resource, lresource = LResource}
-    end.
+    jid:replace_resource(JID, Resource).
 
 -spec get_iq_namespace(xmlel()) -> binary().
 
 get_iq_namespace(#xmlel{name = <<"iq">>, children = Els}) ->
-    case xml:remove_cdata(Els) of
-        [#xmlel{attrs = Attrs}] -> xml:get_attr_s(<<"xmlns">>, Attrs);
+    case fxml:remove_cdata(Els) of
+        [#xmlel{attrs = Attrs}] -> fxml:get_attr_s(<<"xmlns">>, Attrs);
         _                       -> <<"">>
     end;
 get_iq_namespace(_) -> <<"">>.
@@ -408,9 +326,9 @@ iq_query_or_response_info(El) ->
     iq_info_internal(El, any).
 
 iq_info_internal(#xmlel{name = <<"iq">>, attrs = Attrs, children = Els}, Filter) ->
-    ID = xml:get_attr_s(<<"id">>, Attrs),
-    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-    {Type, Class} = case xml:get_attr_s(<<"type">>, Attrs) of
+    ID = fxml:get_attr_s(<<"id">>, Attrs),
+    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
+    {Type, Class} = case fxml:get_attr_s(<<"type">>, Attrs) of
         <<"set">>    -> {set,     request};
         <<"get">>    -> {get,     request};
         <<"result">> -> {result,  reply};
@@ -418,15 +336,15 @@ iq_info_internal(#xmlel{name = <<"iq">>, attrs = Attrs, children = Els}, Filter)
         _            -> {invalid, invalid}
     end,
     if Type == invalid -> invalid; Class == request; Filter == any ->
-        FilteredEls = xml:remove_cdata(Els),
+        FilteredEls = fxml:remove_cdata(Els),
         {XMLNS, SubEl} = case {Class, FilteredEls} of
             {request, [#xmlel{attrs = Attrs2}]} ->
-                {xml:get_attr_s(<<"xmlns">>, Attrs2), hd(FilteredEls)};
+                {fxml:get_attr_s(<<"xmlns">>, Attrs2), hd(FilteredEls)};
             {reply, _} ->
                 NonErrorEls = [El || #xmlel{name = SubName} = El <- FilteredEls,
                     SubName /= <<"error">>],
                 {case NonErrorEls of
-                     [NonErrorEl] -> xml:get_tag_attr_s(<<"xmlns">>, NonErrorEl);
+                     [NonErrorEl] -> fxml:get_tag_attr_s(<<"xmlns">>, NonErrorEl);
                      _            -> <<"">>
                  end,
                  FilteredEls};
@@ -481,7 +399,7 @@ iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
 ).
 
 parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
-    case xml:get_attr_s(<<"type">>, Attrs) of
+    case fxml:get_attr_s(<<"type">>, Attrs) of
         <<"submit">> ->
             lists:reverse(parse_xdata_fields(Els, []));
         <<"form">> -> %% This is a workaround to accept Psi's wrong forms
@@ -500,7 +418,7 @@ parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
 parse_xdata_fields([], Res) -> Res;
 parse_xdata_fields([#xmlel{name = <<"field">>, attrs = Attrs, children = SubEls}
   | Els], Res) ->
-    case xml:get_attr_s(<<"var">>, Attrs) of
+    case fxml:get_attr_s(<<"var">>, Attrs) of
         <<>> ->
             parse_xdata_fields(Els, Res);
         Var ->
@@ -519,7 +437,7 @@ parse_xdata_fields([_ | Els], Res) ->
 
 parse_xdata_values([], Res) -> Res;
 parse_xdata_values([#xmlel{name = <<"value">>, children = SubEls} | Els], Res) ->
-    Val = xml:get_cdata(SubEls),
+    Val = fxml:get_cdata(SubEls),
     parse_xdata_values(Els, [Val | Res]);
 parse_xdata_values([_ | Els], Res) ->
     parse_xdata_values(Els, Res).
@@ -528,7 +446,7 @@ parse_xdata_values([_ | Els], Res) ->
 
 rsm_decode(#iq{sub_el = SubEl}) -> rsm_decode(SubEl);
 rsm_decode(#xmlel{} = SubEl) ->
-    case xml:get_subtag(SubEl, <<"set">>) of
+    case fxml:get_subtag(SubEl, <<"set">>) of
       false -> none;
       #xmlel{name = <<"set">>, children = SubEls} ->
 	  lists:foldl(fun rsm_parse_element/2, #rsm_in{}, SubEls)
@@ -537,26 +455,26 @@ rsm_decode(#xmlel{} = SubEl) ->
 rsm_parse_element(#xmlel{name = <<"max">>, attrs = []} =
 		      Elem,
 		  RsmIn) ->
-    CountStr = xml:get_tag_cdata(Elem),
+    CountStr = fxml:get_tag_cdata(Elem),
     {Count, _} = str:to_integer(CountStr),
     RsmIn#rsm_in{max = Count};
 rsm_parse_element(#xmlel{name = <<"before">>,
 			 attrs = []} =
 		      Elem,
 		  RsmIn) ->
-    UID = xml:get_tag_cdata(Elem),
+    UID = fxml:get_tag_cdata(Elem),
     RsmIn#rsm_in{direction = before, id = UID};
 rsm_parse_element(#xmlel{name = <<"after">>,
 			 attrs = []} =
 		      Elem,
 		  RsmIn) ->
-    UID = xml:get_tag_cdata(Elem),
+    UID = fxml:get_tag_cdata(Elem),
     RsmIn#rsm_in{direction = aft, id = UID};
 rsm_parse_element(#xmlel{name = <<"index">>,
 			 attrs = []} =
 		      Elem,
 		  RsmIn) ->
-    IndexStr = xml:get_tag_cdata(Elem),
+    IndexStr = fxml:get_tag_cdata(Elem),
     {Index, _} = str:to_integer(IndexStr),
     RsmIn#rsm_in{index = Index};
 rsm_parse_element(_, RsmIn) -> RsmIn.
@@ -610,6 +528,26 @@ rsm_encode_count(Count, Arr) ->
 	    children = [{xmlcdata, i2l(Count)}]}
      | Arr].
 
+-spec is_standalone_chat_state(xmlel()) -> boolean().
+
+is_standalone_chat_state(#xmlel{name = <<"message">>} = El) ->
+    ChatStates = [<<"active">>, <<"inactive">>, <<"gone">>, <<"composing">>,
+		  <<"paused">>],
+    Stripped =
+	lists:foldl(fun(ChatState, AccEl) ->
+			    fxml:remove_subtags(AccEl, ChatState,
+					       {<<"xmlns">>, ?NS_CHATSTATES})
+		    end, El, ChatStates),
+    case Stripped of
+      #xmlel{children = [#xmlel{name = <<"thread">>}]} ->
+	  true;
+      #xmlel{children = []} ->
+	  true;
+      _ ->
+	  false
+    end;
+is_standalone_chat_state(_El) -> false.
+
 -spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp())
 		     -> xmlel().
 
@@ -620,15 +558,15 @@ add_delay_info(El, From, Time) ->
 		     binary()) -> xmlel().
 
 add_delay_info(El, From, Time, Desc) ->
-    case xml:get_subtag_with_xmlns(El, <<"delay">>, ?NS_DELAY) of
+    case fxml:get_subtag_with_xmlns(El, <<"delay">>, ?NS_DELAY) of
       false ->
 	  %% Add new tag
 	  DelayTag = create_delay_tag(Time, From, Desc),
-	  xml:append_subtags(El, [DelayTag]);
+	  fxml:append_subtags(El, [DelayTag]);
       DelayTag ->
 	  %% Update existing tag
 	  NewDelayTag =
-	      case {xml:get_tag_cdata(DelayTag), Desc} of
+	      case {fxml:get_tag_cdata(DelayTag), Desc} of
 		{<<"">>, <<"">>} ->
 		    DelayTag;
 		{OldDesc, <<"">>} ->
@@ -644,15 +582,15 @@ add_delay_info(El, From, Time, Desc) ->
 			  DelayTag#xmlel{children = [{xmlcdata, OldDesc}]}
 		    end
 	      end,
-	  NewEl = xml:remove_subtags(El, <<"delay">>, {<<"xmlns">>, ?NS_DELAY}),
-	  xml:append_subtags(NewEl, [NewDelayTag])
+	  NewEl = fxml:remove_subtags(El, <<"delay">>, {<<"xmlns">>, ?NS_DELAY}),
+	  fxml:append_subtags(NewEl, [NewDelayTag])
     end.
 
 -spec create_delay_tag(erlang:timestamp(), jid() | ljid() | binary(), binary())
 		       -> xmlel() | error.
 
 create_delay_tag(TimeStamp, FromJID, Desc) when is_tuple(FromJID) ->
-    From = jlib:jid_to_string(FromJID),
+    From = jid:to_string(FromJID),
     Stamp = now_to_utc_string(TimeStamp, 3),
     Children = case Desc of
 		 <<"">> -> [];
@@ -664,7 +602,7 @@ create_delay_tag(TimeStamp, FromJID, Desc) when is_tuple(FromJID) ->
 		{<<"stamp">>, Stamp}],
 	   children = Children};
 create_delay_tag(DateTime, Host, Desc) when is_binary(Host) ->
-    FromJID = jlib:make_jid(<<"">>, Host, <<"">>),
+    FromJID = jid:make(<<"">>, Host, <<"">>),
     create_delay_tag(DateTime, FromJID, Desc).
 
 -type tz() :: {binary(), {integer(), integer()}} | {integer(), integer()} | utc.
@@ -673,6 +611,9 @@ create_delay_tag(DateTime, Host, Desc) when is_binary(Host) ->
 %% Hours = integer()
 %% Minutes = integer()
 -spec timestamp_to_iso(calendar:datetime(), tz()) -> {binary(), binary()}.
+
+%% This is the XEP-0082 date and time format
+%% http://xmpp.org/extensions/xep-0082.html
 
 timestamp_to_iso({{Year, Month, Day},
                   {Hour, Minute, Second}},
@@ -694,11 +635,20 @@ timestamp_to_iso({{Year, Month, Day},
 		      end,
     {iolist_to_binary(Timestamp_string), iolist_to_binary(Timezone_string)}.
 
--spec timestamp_to_iso(calendar:datetime()) -> binary().
 
-timestamp_to_iso({{Year, Month, Day},
+-spec timestamp_to_legacy(calendar:datetime()) -> binary().
+%% This is the jabber legacy format
+%% http://xmpp.org/extensions/xep-0091.html#time
+timestamp_to_legacy({{Year, Month, Day},
                   {Hour, Minute, Second}}) ->
     iolist_to_binary(io_lib:format("~4..0B~2..0B~2..0BT~2..0B:~2..0B:~2..0B",
+                                   [Year, Month, Day, Hour, Minute, Second])).
+
+-spec timestamp_to_iso_basic(calendar:datetime()) -> binary().
+%% This is the ISO 8601 basic bormat
+timestamp_to_iso_basic({{Year, Month, Day},
+                  {Hour, Minute, Second}}) ->
+    iolist_to_binary(io_lib:format("~4..0B~2..0B~2..0BT~2..0B~2..0B~2..0B",
                                    [Year, Month, Day, Hour, Minute, Second])).
 
 -spec now_to_utc_string(erlang:timestamp()) -> binary().
@@ -856,7 +806,7 @@ decode_base64(S) ->
 	  decode_base64_bin(S, <<>>)
     end.
 
-take_without_spaces(Bin, Count) -> 
+take_without_spaces(Bin, Count) ->
     take_without_spaces(Bin, Count, <<>>).
 
 take_without_spaces(Bin, 0, Acc) ->
@@ -934,16 +884,16 @@ binary_to_atom(Bin) ->
     erlang:binary_to_atom(Bin, utf8).
 
 binary_to_integer(Bin) ->
-    list_to_integer(binary_to_list(Bin)).
+    erlang:binary_to_integer(Bin).
 
 binary_to_integer(Bin, Base) ->
-    list_to_integer(binary_to_list(Bin), Base).
+    erlang:binary_to_integer(Bin, Base).
 
 integer_to_binary(I) ->
-    list_to_binary(integer_to_list(I)).
+    erlang:integer_to_binary(I).
 
 integer_to_binary(I, Base) ->
-    list_to_binary(erlang:integer_to_list(I, Base)).
+    erlang:integer_to_binary(I, Base).
 
 tuple_to_binary(T) ->
     iolist_to_binary(tuple_to_list(T)).

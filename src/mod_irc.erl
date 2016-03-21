@@ -5,7 +5,7 @@
 %%% Created : 15 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -46,12 +46,16 @@
 
 -include("adhoc.hrl").
 
--define(DEFAULT_IRC_ENCODING, <<"iso8859-1">>).
+-define(DEFAULT_IRC_ENCODING, <<"iso8859-15">>).
 
 -define(DEFAULT_IRC_PORT, 6667).
 
+-define(DEFAULT_REALNAME, <<"WebIRC-User">>).
+
+-define(DEFAULT_WEBIRC_PASSWORD, <<"">>).
+
 -define(POSSIBLE_ENCODINGS,
-	[<<"koi8-r">>, <<"iso8859-1">>, <<"iso8859-2">>,
+	[<<"koi8-r">>, <<"iso8859-15">>, <<"iso8859-1">>, <<"iso8859-2">>,
 	 <<"utf-8">>, <<"utf-8+latin-1">>]).
 
 -type conn_param() :: {binary(), binary(), inet:port_number(), binary()} |
@@ -112,7 +116,7 @@ stop(Host) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
-    ejabberd:start_app(p1_iconv),
+    ejabberd:start_app(iconv),
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"irc.@HOST@">>),
     case gen_mod:db_type(Host, Opts) of
@@ -129,7 +133,7 @@ init([Host, Opts]) ->
     catch ets:new(irc_connection,
 		  [named_table, public,
 		   {keypos, #irc_connection.jid_server_host}]),
-    ejabberd_router:register_route(MyHost),
+    ejabberd_router:register_route(MyHost, Host),
     {ok,
      #state{host = MyHost, server_host = Host,
 	    access = Access}}.
@@ -212,7 +216,7 @@ do_route(Host, ServerHost, Access, From, To, Packet) ->
       allow -> do_route1(Host, ServerHost, From, To, Packet);
       _ ->
 	  #xmlel{attrs = Attrs} = Packet,
-	  Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+	  Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
 	  ErrText = <<"Access denied by service policy">>,
 	  Err = jlib:make_error_reply(Packet,
 				      ?ERRT_FORBIDDEN(Lang, ErrText)),
@@ -230,7 +234,7 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 		  #iq{type = get, xmlns = (?NS_DISCO_INFO) = XMLNS,
 		      sub_el = SubEl, lang = Lang} =
 		      IQ ->
-		      Node = xml:get_tag_attr_s(<<"node">>, SubEl),
+		      Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
 		      Info = ejabberd_hooks:run_fold(disco_info, ServerHost,
 						     [],
 						     [ServerHost, ?MODULE,
@@ -258,7 +262,7 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 		  #iq{type = get, xmlns = (?NS_DISCO_ITEMS) = XMLNS,
 		      sub_el = SubEl, lang = Lang} =
 		      IQ ->
-		      Node = xml:get_tag_attr_s(<<"node">>, SubEl),
+		      Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
 		      case Node of
 			<<>> ->
 			    ResIQ = IQ#iq{type = result,
@@ -379,11 +383,15 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 					     %% username part of the JID).
 					     _ -> Username
 					   end,
+		      Ident = extract_ident(Packet),
+		      RemoteAddr = extract_ip_address(Packet),
+		      RealName = get_realname(ServerHost),
+		      WebircPassword = get_webirc_password(ServerHost),
 		      {ok, Pid} = mod_irc_connection:start(From, Host,
 							   ServerHost, Server,
 							   ConnectionUsername,
 							   Encoding, Port,
-							   Password, ?MODULE),
+							   Password, Ident, RemoteAddr, RealName, WebircPassword, ?MODULE),
 		      ets:insert(irc_connection,
 				 #irc_connection{jid_server_host =
 						     {From, Server, Host},
@@ -466,7 +474,7 @@ iq_get_vcard(Lang) ->
 		[{xmlcdata,
 		  <<(translate:translate(Lang,
 					 <<"ejabberd IRC module">>))/binary,
-		    "\nCopyright (c) 2003-2015 ProcessOne">>}]}].
+		    "\nCopyright (c) 2003-2016 ProcessOne">>}]}].
 
 command_items(ServerHost, Host, Lang) ->
     lists:map(fun ({Node, Name, _Function}) ->
@@ -508,7 +516,7 @@ find_xdata_el1([]) -> false;
 find_xdata_el1([#xmlel{name = Name, attrs = Attrs,
 		       children = SubEls}
 		| Els]) ->
-    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       ?NS_XDATA ->
 	  #xmlel{name = Name, attrs = Attrs, children = SubEls};
       _ -> find_xdata_el1(Els)
@@ -527,7 +535,7 @@ process_irc_register(ServerHost, Host, From, _To,
 		IQ#iq{type = error,
 		      sub_el = [SubEl, ?ERR_NOT_ACCEPTABLE]};
 	    #xmlel{attrs = Attrs} ->
-		case xml:get_attr_s(<<"type">>, Attrs) of
+		case fxml:get_attr_s(<<"type">>, Attrs) of
 		  <<"cancel">> ->
 		      IQ#iq{type = result,
 			    sub_el =
@@ -541,7 +549,7 @@ process_irc_register(ServerHost, Host, From, _To,
 			    IQ#iq{type = error,
 				  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
 			_ ->
-			    Node = str:tokens(xml:get_tag_attr_s(<<"node">>,
+			    Node = str:tokens(fxml:get_tag_attr_s(<<"node">>,
 								 SubEl),
 					      <<"/">>),
 			    case set_form(ServerHost, Host, From, Node, Lang,
@@ -563,7 +571,7 @@ process_irc_register(ServerHost, Host, From, _To,
 		end
 	  end;
       get ->
-	  Node = str:tokens(xml:get_tag_attr_s(<<"node">>, SubEl),
+	  Node = str:tokens(fxml:get_tag_attr_s(<<"node">>, SubEl),
 			    <<"/">>),
 	  case get_form(ServerHost, Host, From, Node, Lang) of
 	    {result, Res} ->
@@ -578,7 +586,7 @@ process_irc_register(ServerHost, Host, From, _To,
     end.
 
 get_data(ServerHost, Host, From) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     get_data(LServer, Host, From,
              gen_mod:db_type(LServer, ?MODULE)).
 
@@ -604,7 +612,7 @@ get_data(LServer, Host, From, riak) ->
     end;
 get_data(LServer, Host, From, odbc) ->
     SJID =
-	ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From)))),
+	ejabberd_odbc:escape(jid:to_string(jid:tolower(jid:remove_resource(From)))),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
 				       [<<"select data from irc_custom where jid='">>,
@@ -722,12 +730,12 @@ get_form(_ServerHost, _Host, _, _, _Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 set_data(ServerHost, Host, From, Data) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     set_data(LServer, Host, From, data_to_binary(From, Data),
 	     gen_mod:db_type(LServer, ?MODULE)).
 
 set_data(_LServer, Host, From, Data, mnesia) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    {LUser, LServer, _} = jid:tolower(From),
     US = {LUser, LServer},
     F = fun () ->
 		mnesia:write(#irc_custom{us_host = {US, Host},
@@ -735,14 +743,14 @@ set_data(_LServer, Host, From, Data, mnesia) ->
 	end,
     mnesia:transaction(F);
 set_data(LServer, Host, From, Data, riak) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    {LUser, LServer, _} = jid:tolower(From),
     US = {LUser, LServer},
     {atomic, ejabberd_riak:put(#irc_custom{us_host = {US, Host},
                                            data = Data},
 			       irc_custom_schema())};
 set_data(LServer, Host, From, Data, odbc) ->
     SJID =
-	ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From)))),
+	ejabberd_odbc:escape(jid:to_string(jid:tolower(jid:remove_resource(From)))),
     SHost = ejabberd_odbc:escape(Host),
     SData = ejabberd_odbc:encode_term(Data),
     F = fun () ->
@@ -784,8 +792,6 @@ set_form(ServerHost, Host, From, [], _Lang, XData) ->
 set_form(_ServerHost, _Host, _, _, _Lang, _XData) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
-%% Host = "irc.example.com"
-%% ServerHost = "example.com"
 get_connection_params(Host, From, IRCServer) ->
     [_ | HostTail] = str:tokens(Host, <<".">>),
     ServerHost = str:join(HostTail, <<".">>),
@@ -800,6 +806,12 @@ get_default_encoding(ServerHost) ->
 	      "host ~p is: ~p~n",
 	      [ServerHost, Result]),
     Result.
+
+get_realname(ServerHost) ->
+    gen_mod:get_module_opt(ServerHost, ?MODULE, realname, fun iolist_to_binary/1, ?DEFAULT_REALNAME).
+
+get_webirc_password(ServerHost) ->
+    gen_mod:get_module_opt(ServerHost, ?MODULE, webirc_password, fun iolist_to_binary/1, ?DEFAULT_WEBIRC_PASSWORD).
 
 get_connection_params(Host, ServerHost, From,
 		      IRCServer) ->
@@ -923,7 +935,7 @@ adhoc_join(From, To,
 								    <<"invite">>,
 								attrs =
 								    [{<<"from">>,
-								      jlib:jid_to_string(From)}],
+								      jid:to_string(From)}],
 								children =
 								    [#xmlel{name
 										=
@@ -954,7 +966,7 @@ adhoc_join(From, To,
                                                                 Lang,
                                                                 <<"Join the IRC channel in this Jabber ID: ~s">>),
                                                               [RoomJID]))}]}]},
-			ejabberd_router:route(jlib:string_to_jid(RoomJID), From,
+			ejabberd_router:route(jid:from_string(RoomJID), From,
 					      Invite),
 			adhoc:produce_response(Request,
 					       #adhoc_response{status =
@@ -1250,7 +1262,7 @@ data_to_binary(JID, Data) ->
 					 ?ERROR_MSG("failed to convert "
 						    "parameter ~p for user ~s",
 						    [Param,
-						     jlib:jid_to_string(JID)]);
+						     jid:to_string(JID)]);
 				    true ->
 					 ?ERROR_MSG("failed to convert "
 						    "parameter ~p",
@@ -1297,7 +1309,7 @@ update_table() ->
             fun(#irc_custom{us_host = {_, H}}) -> H end,
             fun(#irc_custom{us_host = {{U, S}, H},
                             data = Data} = R) ->
-		    JID = jlib:make_jid(U, S, <<"">>),
+		    JID = jid:make(U, S, <<"">>),
                     R#irc_custom{us_host = {{iolist_to_binary(U),
                                              iolist_to_binary(S)},
                                             iolist_to_binary(H)},
@@ -1315,8 +1327,8 @@ export(_Server) ->
               case str:suffix(Host, IRCHost) of
                   true ->
                       SJID = ejabberd_odbc:escape(
-                               jlib:jid_to_string(
-                                 jlib:make_jid(U, S, <<"">>))),
+                               jid:to_string(
+                                 jid:make(U, S, <<"">>))),
                       SIRCHost = ejabberd_odbc:escape(IRCHost),
                       SData = ejabberd_odbc:encode_term(Data),
                       [[<<"delete from irc_custom where jid='">>, SJID,
@@ -1333,7 +1345,7 @@ export(_Server) ->
 import(_LServer) ->
     [{<<"select jid, host, data from irc_custom;">>,
       fun([SJID, IRCHost, SData]) ->
-              #jid{luser = U, lserver = S} = jlib:string_to_jid(SJID),
+              #jid{luser = U, lserver = S} = jid:from_string(SJID),
               Data = ejabberd_odbc:decode_term(SData),
               #irc_custom{us_host = {{U, S}, IRCHost},
                           data = Data}
@@ -1354,3 +1366,29 @@ mod_opt_type(default_encoding) ->
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(_) ->
     [access, db_type, default_encoding, host].
+
+extract_ident(Packet) ->
+    case fxml:get_subtag(Packet, <<"headers">>) of
+	{xmlel, _Name, _Attrs, Headers} ->
+	    extract_header(<<"X-Irc-Ident">>, Headers);
+	_ ->
+	    "chatmovil"
+    end.
+
+extract_ip_address(Packet) ->
+    case fxml:get_subtag(Packet, <<"headers">>) of
+	{xmlel, _Name, _Attrs, Headers} ->
+	    extract_header(<<"X-Forwarded-For">>, Headers);
+	_ ->
+	    "127.0.0.1"
+    end.
+
+extract_header(HeaderName, [{xmlel, _Name, _Attrs, [{xmlcdata, Value}]} | Tail]) ->
+    case fxml:get_attr(<<"name">>, _Attrs) of
+	{value, HeaderName} ->
+	    binary_to_list(Value);
+	_ ->
+	    extract_header(HeaderName, Tail)
+    end;
+extract_header(_HeaderName, _Headers) ->
+	false.

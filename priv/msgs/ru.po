@@ -6,190 +6,512 @@ msgstr ""
 "PO-Revision-Date: 2015-09-07 15:04+0300\n"
 "Last-Translator: Evgeniy Khramtsov <ekhramtsov@process-one.net>\n"
 "Language-Team: Russian <kde-russian@lists.kde.ru>\n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: ru\n"
 "X-Language: Russian (русский)\n"
 "X-Additional-Translator: Konstantin Khomoutov\n"
 "X-Additional-Translator: Sergei Golovan\n"
 "X-Generator: Lokalize 1.0\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
-"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: ejabberd_captcha.erl:129 ejabberd_captcha.erl:252 ejabberd_captcha.erl:297
+#: ejabberd_c2s.erl:505 ejabberd_c2s.erl:853
+msgid "Use of STARTTLS required"
+msgstr "Вы обязаны использовать STARTTLS"
+
+#: ejabberd_c2s.erl:604
+msgid "No resource provided"
+msgstr "Не указан ресурс"
+
+#: ejabberd_c2s.erl:1349
+msgid "Replaced by new connection"
+msgstr "Заменено новым соединением"
+
+#: ejabberd_c2s.erl:1353 mod_configure.erl:1854 mod_muc_log.erl:427
+#: mod_muc_log.erl:430
+msgid "has been kicked"
+msgstr "выгнали из комнаты"
+
+#: ejabberd_c2s.erl:2114
+msgid "Your active privacy list has denied the routing of this stanza."
+msgstr ""
+"Маршрутизация этой строфы запрещена вашим активным списком приватности."
+
+#: ejabberd_c2s.erl:2429
+msgid "Too many unacked stanzas"
+msgstr "Слишком много неподтверждённых пакетов"
+
+#: ejabberd_captcha.erl:122 ejabberd_captcha.erl:245 ejabberd_captcha.erl:284
 msgid "Enter the text you see"
 msgstr "Введите увиденный текст"
 
-#: ejabberd_captcha.erl:154
+#: ejabberd_captcha.erl:147
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
 "Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"
 
-#: ejabberd_captcha.erl:199
+#: ejabberd_captcha.erl:192
 msgid "If you don't see the CAPTCHA image here, visit the web page."
 msgstr "Если вы не видите изображение капчи, перейдите по ссылке."
 
-#: ejabberd_captcha.erl:234
+#: ejabberd_captcha.erl:227
 msgid "CAPTCHA web page"
 msgstr "Ссылка на капчу"
 
-#: ejabberd_captcha.erl:400
+#: ejabberd_captcha.erl:381
 msgid "The CAPTCHA is valid."
 msgstr "Проверка капчи прошла успешно."
+
+#: ejabberd_oauth.erl:253 ejabberd_web_admin.erl:1403
+#: ejabberd_web_admin.erl:1458 mod_register.erl:265 mod_vcard.erl:490
+msgid "User"
+msgstr "Пользователь"
+
+#: ejabberd_oauth.erl:256
+#, fuzzy
+msgid "Server"
+msgstr "Сервер:"
+
+#: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1408 mod_configure.erl:1398
+#: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2123
+#: mod_muc_room.erl:3383 mod_register.erl:275
+msgid "Password"
+msgstr "Пароль"
+
+#: ejabberd_oauth.erl:267
+msgid "Accept"
+msgstr ""
+
+#: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
+#: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
+msgid "Unauthorized"
+msgstr "Не авторизован"
 
 #: ejabberd_web_admin.erl:303 ejabberd_web_admin.erl:335
 msgid "ejabberd Web Admin"
 msgstr "Web-интерфейс администрирования ejabberd"
 
-#: ejabberd_web_admin.erl:1185 mod_shared_roster.erl:1166
-msgid "Add New"
-msgstr "Добавить"
+#: ejabberd_web_admin.erl:669 ejabberd_web_admin.erl:680
+msgid "Administration"
+msgstr "Администрирование"
 
-#: ejabberd_web_admin.erl:1273
-msgid "Host"
-msgstr "Хост"
+#: ejabberd_web_admin.erl:737 ejabberd_web_admin.erl:773 mod_configure.erl:196
+#: mod_configure.erl:532
+msgid "Access Control Lists"
+msgstr "Списки управления доступом"
 
-#: ejabberd_web_admin.erl:1274
-msgid "Registered Users"
-msgstr "Зарегистрированные пользователи"
-
-#: ejabberd_web_admin.erl:1275 mod_configure.erl:524
-msgid "Online Users"
-msgstr "Подключённые пользователи"
-
-#: ejabberd_web_admin.erl:1329 ejabberd_web_admin.erl:1614 mod_offline.erl:787
-#: mod_roster.erl:1494 mod_shared_roster.erl:1171 mod_shared_roster.erl:1266
+#: ejabberd_web_admin.erl:741 ejabberd_web_admin.erl:777
+#: ejabberd_web_admin.erl:843 ejabberd_web_admin.erl:876
+#: ejabberd_web_admin.erl:917 ejabberd_web_admin.erl:1394
+#: ejabberd_web_admin.erl:1677 ejabberd_web_admin.erl:1836
+#: ejabberd_web_admin.erl:1870 ejabberd_web_admin.erl:1950
+#: ejabberd_web_admin.erl:2120 ejabberd_web_admin.erl:2149
+#: ejabberd_web_admin.erl:2246 mod_offline.erl:802 mod_roster.erl:1493
+#: mod_shared_roster.erl:1166 mod_shared_roster.erl:1261
 msgid "Submitted"
 msgstr "Отправлено"
 
-#: ejabberd_web_admin.erl:1330 ejabberd_web_admin.erl:1615 mod_roster.erl:1495
-#: mod_shared_roster.erl:1172 mod_shared_roster.erl:1267
+#: ejabberd_web_admin.erl:742 ejabberd_web_admin.erl:778
+#: ejabberd_web_admin.erl:844 ejabberd_web_admin.erl:877
+#: ejabberd_web_admin.erl:918 ejabberd_web_admin.erl:1395
+#: ejabberd_web_admin.erl:1678 ejabberd_web_admin.erl:1837
+#: ejabberd_web_admin.erl:2121 ejabberd_web_admin.erl:2150 mod_roster.erl:1494
+#: mod_shared_roster.erl:1167 mod_shared_roster.erl:1262
 msgid "Bad format"
 msgstr "Неправильный формат"
 
-#: ejabberd_web_admin.erl:1338 ejabberd_web_admin.erl:1393
-#: mod_register.erl:262 mod_vcard.erl:490
-msgid "User"
-msgstr "Пользователь"
+#: ejabberd_web_admin.erl:753 ejabberd_web_admin.erl:790
+#: ejabberd_web_admin.erl:855 ejabberd_web_admin.erl:925
+#: ejabberd_web_admin.erl:1939 mod_shared_roster.erl:1269
+msgid "Submit"
+msgstr "Отправить"
 
-#: ejabberd_web_admin.erl:1343 mod_configure.erl:1398 mod_configure.erl:1485
-#: mod_configure.erl:1889 mod_configure.erl:2124 mod_muc_room.erl:3376
-#: mod_register.erl:272
-msgid "Password"
-msgstr "Пароль"
+#: ejabberd_web_admin.erl:782 ejabberd_web_admin.erl:881
+msgid "Raw"
+msgstr "Необработанный формат"
 
-#: ejabberd_web_admin.erl:1352 mod_configure.erl:177 mod_configure.erl:539
+#: ejabberd_web_admin.erl:787 ejabberd_web_admin.erl:887 mod_offline.erl:824
+#: mod_shared_roster.erl:1175
+msgid "Delete Selected"
+msgstr "Удалить выделенные"
+
+#: ejabberd_web_admin.erl:839 ejabberd_web_admin.erl:872 mod_configure.erl:198
+#: mod_configure.erl:533
+msgid "Access Rules"
+msgstr "Правила доступа"
+
+#: ejabberd_web_admin.erl:913
+msgid "~s access rule configuration"
+msgstr "Конфигурация правила доступа ~s"
+
+#: ejabberd_web_admin.erl:931
+msgid "Virtual Hosts"
+msgstr "Виртуальные хосты"
+
+#: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:948
+msgid "Users"
+msgstr "Пользователи"
+
+#: ejabberd_web_admin.erl:955 ejabberd_web_admin.erl:1340
+#: mod_configure.erl:524
+msgid "Online Users"
+msgstr "Подключённые пользователи"
+
+#: ejabberd_web_admin.erl:971
+msgid "Users Last Activity"
+msgstr "Статистика последнего подключения пользователей"
+
+#: ejabberd_web_admin.erl:975
+msgid "Period: "
+msgstr "Период"
+
+#: ejabberd_web_admin.erl:988
+msgid "Last month"
+msgstr "За последний месяц"
+
+#: ejabberd_web_admin.erl:989
+msgid "Last year"
+msgstr "За последний год"
+
+#: ejabberd_web_admin.erl:991
+msgid "All activity"
+msgstr "Вся статистика"
+
+#: ejabberd_web_admin.erl:994
+msgid "Show Ordinary Table"
+msgstr "Показать обычную таблицу"
+
+#: ejabberd_web_admin.erl:997
+msgid "Show Integral Table"
+msgstr "Показать интегральную таблицу"
+
+#: ejabberd_web_admin.erl:1004 ejabberd_web_admin.erl:1847
+#: mod_muc_admin.erl:247
+msgid "Statistics"
+msgstr "Статистика"
+
+#: ejabberd_web_admin.erl:1014
+msgid "Not Found"
+msgstr "Не Найдено"
+
+#: ejabberd_web_admin.erl:1027
+msgid "Node not found"
+msgstr "Узел не найден"
+
+#: ejabberd_web_admin.erl:1250 mod_shared_roster.erl:1161
+msgid "Add New"
+msgstr "Добавить"
+
+#: ejabberd_web_admin.erl:1338
+msgid "Host"
+msgstr "Хост"
+
+#: ejabberd_web_admin.erl:1339
+msgid "Registered Users"
+msgstr "Зарегистрированные пользователи"
+
+#: ejabberd_web_admin.erl:1417 mod_configure.erl:177 mod_configure.erl:539
 #: mod_configure.erl:1386
 msgid "Add User"
 msgstr "Добавить пользователя"
 
-#: ejabberd_web_admin.erl:1394
+#: ejabberd_web_admin.erl:1459
 msgid "Offline Messages"
 msgstr "Офлайновые сообщения"
 
-#: ejabberd_web_admin.erl:1395 ejabberd_web_admin.erl:1625
+#: ejabberd_web_admin.erl:1460 ejabberd_web_admin.erl:1688
 msgid "Last Activity"
 msgstr "Последнее подключение"
 
-#: ejabberd_web_admin.erl:1413 ejabberd_web_admin.erl:1597
-#: mod_configure.erl:1917
+#: ejabberd_web_admin.erl:1478 ejabberd_web_admin.erl:1660
+#: mod_configure.erl:1916
 msgid "Never"
 msgstr "Никогда"
 
-#: ejabberd_web_admin.erl:1431 ejabberd_web_admin.erl:1608
-#: mod_configure.erl:1927
+#: ejabberd_web_admin.erl:1496 ejabberd_web_admin.erl:1671
+#: mod_configure.erl:1926
 msgid "Online"
 msgstr "Подключён"
 
-#: ejabberd_web_admin.erl:1487 ejabberd_web_admin.erl:1506
+#: ejabberd_web_admin.erl:1550 ejabberd_web_admin.erl:1569
 msgid "Registered Users:"
 msgstr "Зарегистрированные пользователи:"
 
-#: ejabberd_web_admin.erl:1490 ejabberd_web_admin.erl:1509
+#: ejabberd_web_admin.erl:1553 ejabberd_web_admin.erl:1572
+#: ejabberd_web_admin.erl:2187
 msgid "Online Users:"
 msgstr "Подключённые пользователи:"
 
-#: ejabberd_web_admin.erl:1493
+#: ejabberd_web_admin.erl:1556
 msgid "Outgoing s2s Connections:"
 msgstr "Исходящие s2s-серверы:"
 
-#: ejabberd_web_admin.erl:1496
-msgid "Outgoing s2s Servers:"
+#: ejabberd_web_admin.erl:1559
+#, fuzzy
+msgid "Incoming s2s Connections:"
 msgstr "Исходящие s2s-серверы:"
 
-#: ejabberd_web_admin.erl:1532 ejabberd_web_admin.erl:1732
-#: ejabberd_web_admin.erl:1742 mod_roster.erl:1430
+#: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
+#: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
 msgid "None"
 msgstr "Нет"
 
-#: ejabberd_web_admin.erl:1589 mod_register_web.erl:188
+#: ejabberd_web_admin.erl:1652 mod_register_web.erl:188
 #: mod_register_web.erl:347 mod_register_web.erl:355 mod_register_web.erl:379
 msgid "Change Password"
 msgstr "Сменить пароль"
 
-#: ejabberd_web_admin.erl:1610
+#: ejabberd_web_admin.erl:1673
 msgid "User ~s"
 msgstr "Пользователь ~s"
 
-#: ejabberd_web_admin.erl:1621
+#: ejabberd_web_admin.erl:1684
 msgid "Connected Resources:"
 msgstr "Подключённые ресурсы:"
 
-#: ejabberd_web_admin.erl:1623 mod_register_web.erl:239
+#: ejabberd_web_admin.erl:1686 mod_register_web.erl:239
 #: mod_register_web.erl:475
 msgid "Password:"
 msgstr "Пароль:"
 
-#: ejabberd_web_admin.erl:1630 mod_configure.erl:2118
+#: ejabberd_web_admin.erl:1693 mod_configure.erl:2117
 msgid "Remove User"
 msgstr "Удалить пользователя"
 
-#: ejabberd_web_admin.erl:1678
+#: ejabberd_web_admin.erl:1740
 msgid "No Data"
 msgstr "Нет данных"
 
-#: ejabberd_web_admin.erl:1751
+#: ejabberd_web_admin.erl:1813
 msgid "Nodes"
 msgstr "Узлы"
 
-#: ejabberd_web_admin.erl:1752 mod_configure.erl:528
+#: ejabberd_web_admin.erl:1814 mod_configure.erl:528
 msgid "Running Nodes"
 msgstr "Работающие узлы"
 
-#: ejabberd_web_admin.erl:1753 mod_configure.erl:529
+#: ejabberd_web_admin.erl:1815 mod_configure.erl:529
 msgid "Stopped Nodes"
 msgstr "Остановленные узлы"
 
-#: ejabberd_web_admin.erl:2376
-msgid "IP"
-msgstr "IP"
+#: ejabberd_web_admin.erl:1833 ejabberd_web_admin.erl:1858
+msgid "Node ~p"
+msgstr "Узел ~p"
 
-#: ejabberd_web_admin.erl:2376
-msgid "Port"
-msgstr "Порт"
+#: ejabberd_web_admin.erl:1842 mod_configure.erl:150 mod_configure.erl:611
+msgid "Database"
+msgstr "База данных"
 
-#: ejabberd_web_admin.erl:2377
-msgid "Protocol"
-msgstr "Протокол"
+#: ejabberd_web_admin.erl:1843 mod_configure.erl:159 mod_configure.erl:648
+msgid "Backup"
+msgstr "Резервное копирование"
 
-#: ejabberd_web_admin.erl:2378 ejabberd_web_admin.erl:2533
-msgid "Module"
-msgstr "Модуль"
+#: ejabberd_web_admin.erl:1845
+msgid "Listened Ports"
+msgstr "Прослушиваемые порты"
 
-#: ejabberd_web_admin.erl:2379 ejabberd_web_admin.erl:2534
-msgid "Options"
-msgstr "Параметры"
+#: ejabberd_web_admin.erl:1848 ejabberd_web_admin.erl:2261
+msgid "Update"
+msgstr "Обновить"
 
-#: ejabberd_web_admin.erl:2407 ejabberd_web_admin.erl:2551
+#: ejabberd_web_admin.erl:1852 ejabberd_web_admin.erl:2469
+#: ejabberd_web_admin.erl:2613
 msgid "Restart"
 msgstr "Перезапустить"
 
-#: ejabberd_web_admin.erl:2411 ejabberd_web_admin.erl:2555
+#: ejabberd_web_admin.erl:1854 ejabberd_web_admin.erl:2473
+#: ejabberd_web_admin.erl:2617
 msgid "Stop"
 msgstr "Остановить"
 
-#: ejabberd_web_admin.erl:2431 ejabberd_web_admin.erl:2567
+#: ejabberd_web_admin.erl:1861 mod_configure.erl:613 mod_configure.erl:626
+msgid "Modules"
+msgstr "Модули"
+
+#: ejabberd_web_admin.erl:1866
+msgid "RPC Call Error"
+msgstr "Ошибка вызова RPC"
+
+#: ejabberd_web_admin.erl:1917
+msgid "Database Tables at ~p"
+msgstr "Таблицы базы данных на ~p"
+
+#: ejabberd_web_admin.erl:1927 mod_vcard.erl:490 mod_vcard.erl:616
+msgid "Name"
+msgstr "Название"
+
+#: ejabberd_web_admin.erl:1928
+msgid "Storage Type"
+msgstr "Тип таблицы"
+
+#: ejabberd_web_admin.erl:1929
+msgid "Elements"
+msgstr "Элементы"
+
+#: ejabberd_web_admin.erl:1930
+msgid "Memory"
+msgstr "Память"
+
+#: ejabberd_web_admin.erl:1952 ejabberd_web_admin.erl:2123
+msgid "Error"
+msgstr "Ошибка"
+
+#: ejabberd_web_admin.erl:1955
+msgid "Backup of ~p"
+msgstr "Резервное копирование ~p"
+
+#: ejabberd_web_admin.erl:1959
+msgid ""
+"Please note that these options will only backup the builtin Mnesia database. "
+"If you are using the ODBC module, you also need to backup your SQL database "
+"separately."
+msgstr ""
+"Заметьте, что здесь производится резервное копирование только встроенной "
+"базы данных Mnesia. Если Вы также используете другое хранилище данных "
+"(например с помощью модуля ODBC), то его резервное копирование следует "
+"осуществлять отдельно."
+
+#: ejabberd_web_admin.erl:1969
+msgid "Store binary backup:"
+msgstr "Сохранить бинарную резервную копию:"
+
+#: ejabberd_web_admin.erl:1976 ejabberd_web_admin.erl:1986
+#: ejabberd_web_admin.erl:1997 ejabberd_web_admin.erl:2006
+#: ejabberd_web_admin.erl:2016 ejabberd_web_admin.erl:2029
+#: ejabberd_web_admin.erl:2041 ejabberd_web_admin.erl:2057
+#: ejabberd_web_admin.erl:2073 ejabberd_web_admin.erl:2084
+#: ejabberd_web_admin.erl:2094
+msgid "OK"
+msgstr "Продолжить"
+
+#: ejabberd_web_admin.erl:1979
+msgid "Restore binary backup immediately:"
+msgstr "Восстановить из бинарной резервной копии немедленно:"
+
+#: ejabberd_web_admin.erl:1989
+msgid ""
+"Restore binary backup after next ejabberd restart (requires less memory):"
+msgstr ""
+"Восстановить из бинарной резервной копии при следующем запуске (требует "
+"меньше памяти):"
+
+#: ejabberd_web_admin.erl:1999
+msgid "Store plain text backup:"
+msgstr "Сохранить текстовую резервную копию:"
+
+#: ejabberd_web_admin.erl:2009
+msgid "Restore plain text backup immediately:"
+msgstr "Восстановить из текстовой резервной копии немедленно:"
+
+#: ejabberd_web_admin.erl:2019
+msgid "Import users data from a PIEFXIS file (XEP-0227):"
+msgstr "Импорт пользовательских данных из файла формата PIEFXIS (XEP-0227):"
+
+#: ejabberd_web_admin.erl:2032
+msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
+msgstr ""
+"Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-0227):"
+
+#: ejabberd_web_admin.erl:2044
+msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
+msgstr ""
+"Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0227):"
+
+#: ejabberd_web_admin.erl:2060
+msgid "Export all tables as SQL queries to a file:"
+msgstr "Экспортировать все таблицы в виде SQL запросов в файл:"
+
+#: ejabberd_web_admin.erl:2076
+msgid "Import user data from jabberd14 spool file:"
+msgstr "Импорт пользовательских данных из буферного файла jabberd14:"
+
+#: ejabberd_web_admin.erl:2087
+msgid "Import users data from jabberd14 spool directory:"
+msgstr "Импорт пользовательских данных из буферной директории jabberd14:"
+
+#: ejabberd_web_admin.erl:2115
+msgid "Listened Ports at "
+msgstr "Прослушиваемые порты на "
+
+#: ejabberd_web_admin.erl:2144
+msgid "Modules at ~p"
+msgstr "Модули на ~p"
+
+#: ejabberd_web_admin.erl:2175
+msgid "Statistics of ~p"
+msgstr "статистика узла ~p"
+
+#: ejabberd_web_admin.erl:2179
+msgid "Uptime:"
+msgstr "Время работы:"
+
+#: ejabberd_web_admin.erl:2183
+msgid "CPU Time:"
+msgstr "Процессорное время:"
+
+#: ejabberd_web_admin.erl:2191
+msgid "Transactions Committed:"
+msgstr "Транзакции завершенные:"
+
+#: ejabberd_web_admin.erl:2195
+msgid "Transactions Aborted:"
+msgstr "Транзакции отмененные:"
+
+#: ejabberd_web_admin.erl:2199
+msgid "Transactions Restarted:"
+msgstr "Транзакции перезапущенные:"
+
+#: ejabberd_web_admin.erl:2203
+msgid "Transactions Logged:"
+msgstr "Транзакции запротоколированные:"
+
+#: ejabberd_web_admin.erl:2243
+msgid "Update ~p"
+msgstr "Обновление ~p"
+
+#: ejabberd_web_admin.erl:2254
+msgid "Update plan"
+msgstr "План обновления"
+
+#: ejabberd_web_admin.erl:2255
+msgid "Modified modules"
+msgstr "Изменённые модули"
+
+#: ejabberd_web_admin.erl:2256
+msgid "Update script"
+msgstr "Сценарий обновления"
+
+#: ejabberd_web_admin.erl:2257
+msgid "Low level update script"
+msgstr "Низкоуровневый сценарий обновления"
+
+#: ejabberd_web_admin.erl:2258
+msgid "Script check"
+msgstr "Проверка сценария"
+
+#: ejabberd_web_admin.erl:2438
+msgid "IP"
+msgstr "IP"
+
+#: ejabberd_web_admin.erl:2438
+msgid "Port"
+msgstr "Порт"
+
+#: ejabberd_web_admin.erl:2439
+msgid "Protocol"
+msgstr "Протокол"
+
+#: ejabberd_web_admin.erl:2440 ejabberd_web_admin.erl:2595
+msgid "Module"
+msgstr "Модуль"
+
+#: ejabberd_web_admin.erl:2441 ejabberd_web_admin.erl:2596
+msgid "Options"
+msgstr "Параметры"
+
+#: ejabberd_web_admin.erl:2493 ejabberd_web_admin.erl:2629
 msgid "Start"
 msgstr "Запустить"
 
@@ -274,10 +596,6 @@ msgstr "Удалить сообщение дня со всех виртуаль�
 msgid "Configuration"
 msgstr "Конфигурация"
 
-#: mod_configure.erl:150 mod_configure.erl:611
-msgid "Database"
-msgstr "База данных"
-
 #: mod_configure.erl:153 mod_configure.erl:636
 msgid "Start Modules"
 msgstr "Запуск модулей"
@@ -285,10 +603,6 @@ msgstr "Запуск модулей"
 #: mod_configure.erl:156 mod_configure.erl:638
 msgid "Stop Modules"
 msgstr "Остановка модулей"
-
-#: mod_configure.erl:159 mod_configure.erl:648
-msgid "Backup"
-msgstr "Резервное копирование"
 
 #: mod_configure.erl:162 mod_configure.erl:650
 msgid "Restore"
@@ -347,14 +661,6 @@ msgstr "Получить количество зарегистрированны
 msgid "Get Number of Online Users"
 msgstr "Получить количество подключённых пользователей"
 
-#: mod_configure.erl:196 mod_configure.erl:532
-msgid "Access Control Lists"
-msgstr "Списки управления доступом"
-
-#: mod_configure.erl:198 mod_configure.erl:533
-msgid "Access Rules"
-msgstr "Правила доступа"
-
 #: mod_configure.erl:320 mod_configure.erl:523
 msgid "User Management"
 msgstr "Управление пользователями"
@@ -366,10 +672,6 @@ msgstr "Все пользователи"
 #: mod_configure.erl:526
 msgid "Outgoing s2s Connections"
 msgstr "Исходящие s2s-соединения"
-
-#: mod_configure.erl:613 mod_configure.erl:626
-msgid "Modules"
-msgstr "Модули"
 
 #: mod_configure.erl:615
 msgid "Backup Management"
@@ -498,8 +800,8 @@ msgstr "Правила доступа"
 
 #: mod_configure.erl:1390 mod_configure.erl:1423 mod_configure.erl:1441
 #: mod_configure.erl:1459 mod_configure.erl:1477 mod_configure.erl:1504
-#: mod_configure.erl:1521 mod_configure.erl:1887 mod_configure.erl:1935
-#: mod_configure.erl:1962 mod_roster.erl:1435 mod_vcard.erl:613
+#: mod_configure.erl:1521 mod_configure.erl:1887 mod_configure.erl:1934
+#: mod_configure.erl:1961 mod_roster.erl:1434 mod_vcard.erl:613
 #: mod_vcard_ldap.erl:606
 msgid "Jabber ID"
 msgstr "Jabber ID"
@@ -516,35 +818,31 @@ msgstr "Количество зарегистрированных пользов
 msgid "Number of online users"
 msgstr "Количество подключённых пользователей"
 
-#: mod_configure.erl:1854 mod_muc_log.erl:474 mod_muc_log.erl:477
-msgid "has been kicked"
-msgstr "выгнали из комнаты"
-
-#: mod_configure.erl:1937
+#: mod_configure.erl:1936
 msgid "Last login"
 msgstr "Время последнего подключения"
 
-#: mod_configure.erl:1964
+#: mod_configure.erl:1963
 msgid "Roster size"
 msgstr "Размер списка контактов"
 
-#: mod_configure.erl:1966
+#: mod_configure.erl:1965
 msgid "IP addresses"
 msgstr "IP адреса"
 
-#: mod_configure.erl:1968
+#: mod_configure.erl:1967
 msgid "Resources"
 msgstr "Ресурсы"
 
-#: mod_configure.erl:2096
+#: mod_configure.erl:2095
 msgid "Administration of "
 msgstr "Администрирование "
 
-#: mod_configure.erl:2101
+#: mod_configure.erl:2100
 msgid "Action on user"
 msgstr "Действие над пользователем"
 
-#: mod_configure.erl:2109
+#: mod_configure.erl:2108
 msgid "Edit Properties"
 msgstr "Изменить параметры"
 
@@ -556,27 +854,39 @@ msgstr ""
 "Слишком много (~p) неудачных попыток аутентификации с этого IP-адреса (~s). "
 "Адрес будет разблокирован в ~s UTC"
 
+#: mod_http_upload.erl:586
+msgid "Please specify file size."
+msgstr ""
+
+#: mod_http_upload.erl:590
+msgid "Please specify file name."
+msgstr ""
+
 #: mod_ip_blacklist.erl:121
 msgid "This IP address is blacklisted in ~s"
 msgstr "Этот IP адрес находится в чёрном списке ~s"
 
-#: mod_irc.erl:431
+#: mod_irc.erl:220 mod_muc.erl:467
+msgid "Access denied by service policy"
+msgstr "Доступ запрещён политикой службы"
+
+#: mod_irc.erl:439
 msgid "IRC Transport"
 msgstr "IRC Транспорт"
 
-#: mod_irc.erl:468
+#: mod_irc.erl:476
 msgid "ejabberd IRC module"
 msgstr "ejabberd IRC модуль"
 
-#: mod_irc.erl:636
+#: mod_irc.erl:644
 msgid "You need an x:data capable client to configure mod_irc settings"
 msgstr "Чтобы настроить параметры mod_irc, требуется x:data-совместимый клиент"
 
-#: mod_irc.erl:645
+#: mod_irc.erl:653
 msgid "Registration in mod_irc for "
 msgstr "Регистрация в mod_irc для "
 
-#: mod_irc.erl:651
+#: mod_irc.erl:659
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
@@ -584,11 +894,11 @@ msgstr ""
 "Введите имя пользователя, кодировки, порты и пароли, которые будут "
 "использоваться при подключении к IRC-серверам"
 
-#: mod_irc.erl:659
+#: mod_irc.erl:667
 msgid "IRC Username"
 msgstr "Имя пользователя IRC"
 
-#: mod_irc.erl:674
+#: mod_irc.erl:682
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
@@ -600,7 +910,7 @@ msgstr ""
 "\"пароль\"}'. По умолчанию сервис использует кодировку \"~s\", порт ~p, "
 "пустой пароль."
 
-#: mod_irc.erl:696
+#: mod_irc.erl:704
 msgid ""
 "Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
@@ -608,35 +918,35 @@ msgstr ""
 "Пример: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
 "net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
-#: mod_irc.erl:705
+#: mod_irc.erl:713
 msgid "Connections parameters"
 msgstr "Параметры соединения"
 
-#: mod_irc.erl:874
+#: mod_irc.erl:886
 msgid "Join IRC channel"
 msgstr "Присоединиться к каналу IRC"
 
-#: mod_irc.erl:881
+#: mod_irc.erl:893
 msgid "IRC channel (don't put the first #)"
 msgstr "Канал IRC (без символа #)"
 
-#: mod_irc.erl:891
+#: mod_irc.erl:903
 msgid "IRC server"
 msgstr "Сервер IRC"
 
-#: mod_irc.erl:938 mod_irc.erl:946
+#: mod_irc.erl:950 mod_irc.erl:958
 msgid "Join the IRC channel here."
 msgstr "Присоединяйтесь к каналу IRC"
 
-#: mod_irc.erl:955
+#: mod_irc.erl:967
 msgid "Join the IRC channel in this Jabber ID: ~s"
 msgstr "Присоединиться к каналу IRC с Jabber ID: ~s"
 
-#: mod_irc.erl:1034
+#: mod_irc.erl:1046
 msgid "IRC settings"
 msgstr "Настройки IRC"
 
-#: mod_irc.erl:1039
+#: mod_irc.erl:1051
 msgid ""
 "Enter username and encodings you wish to use for connecting to IRC servers.  "
 "Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
@@ -646,428 +956,580 @@ msgstr ""
 "подключении к IRC-серверам. Нажмите 'Далее' для получения дополнительных "
 "полей для заполнения. Нажмите 'Завершить' для сохранения настроек."
 
-#: mod_irc.erl:1048
+#: mod_irc.erl:1060
 msgid "IRC username"
 msgstr "Имя пользователя IRC"
 
-#: mod_irc.erl:1114
+#: mod_irc.erl:1126
 msgid "Password ~b"
 msgstr "Пароль ~b"
 
-#: mod_irc.erl:1125
+#: mod_irc.erl:1137
 msgid "Port ~b"
 msgstr "Порт ~b"
 
-#: mod_irc.erl:1138
+#: mod_irc.erl:1150
 msgid "Encoding for server ~b"
 msgstr "Кодировка сервера ~b"
 
-#: mod_irc.erl:1159
+#: mod_irc.erl:1171
 msgid "Server ~b"
 msgstr "Сервер ~b"
 
-#: mod_muc.erl:997
-msgid "You need a client that supports x:data to register the nickname"
-msgstr "Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"
+#: mod_mam.erl:541
+#, fuzzy
+msgid "Only members may query archives of this room"
+msgstr "Только модераторы могут изменять тему в этой комнате"
 
-#: mod_muc.erl:1007
-msgid "Nickname Registration at "
-msgstr "Регистрация псевдонима на "
+#: mod_muc.erl:585
+msgid "Only service administrators are allowed to send service messages"
+msgstr "Только администратор службы может посылать служебные сообщения"
 
-#: mod_muc.erl:1013
-msgid "Enter nickname you want to register"
-msgstr "Введите псевдоним, который Вы хотели бы зарегистрировать"
+#: mod_muc.erl:622
+msgid "Room creation is denied by service policy"
+msgstr "Cоздавать конференцию запрещено политикой службы"
 
-#: mod_muc.erl:1014 mod_muc_room.erl:4264 mod_roster.erl:1436
-#: mod_vcard.erl:490 mod_vcard.erl:621
-msgid "Nickname"
-msgstr "Псевдоним"
+#: mod_muc.erl:629
+msgid "Conference room does not exist"
+msgstr "Конференция не существует"
 
-#: mod_muc.erl:1177
-msgid "ejabberd MUC module"
-msgstr "ejabberd MUC модуль"
-
-#: mod_muc_admin.erl:230 mod_muc_admin.erl:233 mod_muc_admin.erl:245
-#: mod_muc_admin.erl:319
-msgid "Multi-User Chat"
-msgstr "Конференция"
-
-#: mod_muc_admin.erl:246
-msgid "Statistics"
-msgstr "Статистика"
-
-#: mod_muc_admin.erl:248
-msgid "Total rooms"
-msgstr "Все комнаты"
-
-#: mod_muc_admin.erl:249
-msgid "Permanent rooms"
-msgstr "Постоянные комнаты"
-
-#: mod_muc_admin.erl:250
-msgid "Registered nicknames"
-msgstr "Зарегистрированные псевдонимы"
-
-#: mod_muc_admin.erl:253
-msgid "List of rooms"
-msgstr "Список комнат"
-
-#: mod_muc_admin.erl:320
+#: mod_muc.erl:740 mod_muc_admin.erl:321
 msgid "Chatrooms"
 msgstr "Комнаты"
 
-#: mod_muc_log.erl:445 mod_muc_log.erl:454
+#: mod_muc.erl:781
+msgid "Empty Rooms"
+msgstr ""
+
+#: mod_muc.erl:933
+msgid "You need a client that supports x:data to register the nickname"
+msgstr "Чтобы зарегистрировать псевдоним, требуется x:data-совместимый клиент"
+
+#: mod_muc.erl:943
+msgid "Nickname Registration at "
+msgstr "Регистрация псевдонима на "
+
+#: mod_muc.erl:949
+msgid "Enter nickname you want to register"
+msgstr "Введите псевдоним, который Вы хотели бы зарегистрировать"
+
+#: mod_muc.erl:950 mod_muc_room.erl:4353 mod_roster.erl:1435 mod_vcard.erl:490
+#: mod_vcard.erl:621
+msgid "Nickname"
+msgstr "Псевдоним"
+
+#: mod_muc.erl:1062 mod_muc_room.erl:1104 mod_muc_room.erl:1843
+msgid "That nickname is registered by another person"
+msgstr "Этот псевдоним зарегистрирован кем-то другим"
+
+#: mod_muc.erl:1090
+msgid "You must fill in field \"Nickname\" in the form"
+msgstr "Вы должны заполнить поле \"Псевдоним\" в форме"
+
+#: mod_muc.erl:1113
+msgid "ejabberd MUC module"
+msgstr "ejabberd MUC модуль"
+
+#: mod_muc_admin.erl:231 mod_muc_admin.erl:234 mod_muc_admin.erl:246
+#: mod_muc_admin.erl:320
+msgid "Multi-User Chat"
+msgstr "Конференция"
+
+#: mod_muc_admin.erl:249
+msgid "Total rooms"
+msgstr "Все комнаты"
+
+#: mod_muc_admin.erl:250
+msgid "Permanent rooms"
+msgstr "Постоянные комнаты"
+
+#: mod_muc_admin.erl:251
+msgid "Registered nicknames"
+msgstr "Зарегистрированные псевдонимы"
+
+#: mod_muc_admin.erl:254
+msgid "List of rooms"
+msgstr "Список комнат"
+
+#: mod_muc_log.erl:398 mod_muc_log.erl:407
 msgid "Chatroom configuration modified"
 msgstr "Конфигурация комнаты изменилась"
 
-#: mod_muc_log.erl:457
+#: mod_muc_log.erl:410
 msgid "joins the room"
 msgstr "вошёл(а) в комнату"
 
-#: mod_muc_log.erl:460 mod_muc_log.erl:463
+#: mod_muc_log.erl:413 mod_muc_log.erl:416
 msgid "leaves the room"
 msgstr "вышел(а) из комнаты"
 
-#: mod_muc_log.erl:467 mod_muc_log.erl:470
+#: mod_muc_log.erl:420 mod_muc_log.erl:423
 msgid "has been banned"
 msgstr "запретили входить в комнату"
 
-#: mod_muc_log.erl:482
+#: mod_muc_log.erl:435
 msgid "has been kicked because of an affiliation change"
 msgstr "выгнали из комнаты вследствие смены ранга"
 
-#: mod_muc_log.erl:487
+#: mod_muc_log.erl:440
 msgid "has been kicked because the room has been changed to members-only"
 msgstr "выгнали из комнаты потому что она стала только для членов"
 
-#: mod_muc_log.erl:492
+#: mod_muc_log.erl:445
 msgid "has been kicked because of a system shutdown"
 msgstr "выгнали из комнаты из-за останова системы"
 
-#: mod_muc_log.erl:497
+#: mod_muc_log.erl:450
 msgid "is now known as"
 msgstr "изменил(а) имя на"
 
-#: mod_muc_log.erl:500 mod_muc_log.erl:839
+#: mod_muc_log.erl:453 mod_muc_log.erl:792
 msgid " has set the subject to: "
 msgstr " установил(а) тему: "
 
-#: mod_muc_log.erl:540
+#: mod_muc_log.erl:493
 msgid "Chatroom is created"
 msgstr "Комната создана"
 
-#: mod_muc_log.erl:542
+#: mod_muc_log.erl:495
 msgid "Chatroom is destroyed"
 msgstr "Комната уничтожена"
 
-#: mod_muc_log.erl:544
+#: mod_muc_log.erl:497
 msgid "Chatroom is started"
 msgstr "Комната запущена"
 
-#: mod_muc_log.erl:546
+#: mod_muc_log.erl:499
 msgid "Chatroom is stopped"
 msgstr "Комната остановлена"
 
-#: mod_muc_log.erl:550
+#: mod_muc_log.erl:503
 msgid "Monday"
 msgstr "Понедельник"
 
-#: mod_muc_log.erl:551
+#: mod_muc_log.erl:504
 msgid "Tuesday"
 msgstr "Вторник"
 
-#: mod_muc_log.erl:552
+#: mod_muc_log.erl:505
 msgid "Wednesday"
 msgstr "Среда"
 
-#: mod_muc_log.erl:553
+#: mod_muc_log.erl:506
 msgid "Thursday"
 msgstr "Четверг"
 
-#: mod_muc_log.erl:554
+#: mod_muc_log.erl:507
 msgid "Friday"
 msgstr "Пятница"
 
-#: mod_muc_log.erl:555
+#: mod_muc_log.erl:508
 msgid "Saturday"
 msgstr "Суббота"
 
-#: mod_muc_log.erl:556
+#: mod_muc_log.erl:509
 msgid "Sunday"
 msgstr "Воскресенье"
 
-#: mod_muc_log.erl:560
+#: mod_muc_log.erl:513
 msgid "January"
 msgstr "января"
 
-#: mod_muc_log.erl:561
+#: mod_muc_log.erl:514
 msgid "February"
 msgstr "февраля"
 
-#: mod_muc_log.erl:562
+#: mod_muc_log.erl:515
 msgid "March"
 msgstr "марта"
 
-#: mod_muc_log.erl:563
+#: mod_muc_log.erl:516
 msgid "April"
 msgstr "апреля"
 
-#: mod_muc_log.erl:564
+#: mod_muc_log.erl:517
 msgid "May"
 msgstr "мая"
 
-#: mod_muc_log.erl:565
+#: mod_muc_log.erl:518
 msgid "June"
 msgstr "июня"
 
-#: mod_muc_log.erl:566
+#: mod_muc_log.erl:519
 msgid "July"
 msgstr "июля"
 
-#: mod_muc_log.erl:567
+#: mod_muc_log.erl:520
 msgid "August"
 msgstr "августа"
 
-#: mod_muc_log.erl:568
+#: mod_muc_log.erl:521
 msgid "September"
 msgstr "сентября"
 
-#: mod_muc_log.erl:569
+#: mod_muc_log.erl:522
 msgid "October"
 msgstr "октября"
 
-#: mod_muc_log.erl:570
+#: mod_muc_log.erl:523
 msgid "November"
 msgstr "ноября"
 
-#: mod_muc_log.erl:571
+#: mod_muc_log.erl:524
 msgid "December"
 msgstr "декабря"
 
-#: mod_muc_log.erl:959
+#: mod_muc_log.erl:912
 msgid "Room Configuration"
 msgstr "Конфигурация комнаты"
 
-#: mod_muc_log.erl:979
+#: mod_muc_log.erl:932
 msgid "Room Occupants"
 msgstr "Участники комнаты"
 
-#: mod_muc_room.erl:997
+#: mod_muc_room.erl:163
+msgid "Traffic rate limit is exceeded"
+msgstr "Превышен лимит скорости посылки информации"
+
+#: mod_muc_room.erl:230 mod_muc_room.erl:518 mod_muc_room.erl:1059
+msgid ""
+"It is not allowed to send error messages to the room. The participant (~s) "
+"has sent an error message (~s) and got kicked from the room"
+msgstr ""
+
+#: mod_muc_room.erl:241
+msgid "It is not allowed to send private messages to the conference"
+msgstr "Не разрешается посылать частные сообщения прямо в конференцию"
+
+#: mod_muc_room.erl:316
+msgid "Please, wait for a while before sending new voice request"
+msgstr ""
+"Пожалуйста, подождите перед тем как подать новый запрос на право голоса"
+
+#: mod_muc_room.erl:329
+msgid "Voice requests are disabled in this conference"
+msgstr "Запросы на право голоса отключены в этой конференции"
+
+#: mod_muc_room.erl:347
+msgid "Failed to extract JID from your voice request approval"
+msgstr "Ошибка обработки JID из вашего запроса на право голоса"
+
+#: mod_muc_room.erl:377
+msgid "Only moderators can approve voice requests"
+msgstr "Только модераторы могут утверждать запросы на право голоса"
+
+#: mod_muc_room.erl:389
+msgid "Improper message type"
+msgstr "Неправильный тип сообщения"
+
+#: mod_muc_room.erl:534
+msgid "It is not allowed to send private messages of type \"groupchat\""
+msgstr "Нельзя посылать частные сообщения типа \"groupchat\""
+
+#: mod_muc_room.erl:546 mod_muc_room.erl:621
+msgid "Recipient is not in the conference room"
+msgstr "Адресата нет в конференции"
+
+#: mod_muc_room.erl:576 mod_muc_room.erl:598
+msgid "It is not allowed to send private messages"
+msgstr "Запрещено посылать приватные сообщения"
+
+#: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4594
+msgid "Only occupants are allowed to send messages to the conference"
+msgstr "Только присутствующим разрешается посылать сообщения в конференцию"
+
+#: mod_muc_room.erl:644
+msgid "Only occupants are allowed to send queries to the conference"
+msgstr "Только присутствующим разрешается посылать запросы в конференцию"
+
+#: mod_muc_room.erl:657
+msgid "Queries to the conference members are not allowed in this room"
+msgstr "Запросы к пользователям в этой конференции запрещены"
+
+#: mod_muc_room.erl:961
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr "Только модераторы и участники могут изменять тему в этой комнате"
 
-#: mod_muc_room.erl:1002
+#: mod_muc_room.erl:966
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Только модераторы могут изменять тему в этой комнате"
 
-#: mod_muc_room.erl:2751
+#: mod_muc_room.erl:974
+msgid "Visitors are not allowed to send messages to all occupants"
+msgstr "Посетителям не разрешается посылать сообщения всем присутствующим"
+
+#: mod_muc_room.erl:1080
+msgid "Visitors are not allowed to change their nicknames in this room"
+msgstr "Посетителям запрещено изменять свои псевдонимы в этой комнате"
+
+#: mod_muc_room.erl:1093 mod_muc_room.erl:1835
+msgid "That nickname is already in use by another occupant"
+msgstr "Этот псевдоним уже занят другим участником"
+
+#: mod_muc_room.erl:1822
+msgid "You have been banned from this room"
+msgstr "Вам запрещено входить в эту конференцию"
+
+#: mod_muc_room.erl:1826
+msgid "Membership is required to enter this room"
+msgstr "В эту конференцию могут входить только её члены"
+
+#: mod_muc_room.erl:1872
+msgid "A password is required to enter this room"
+msgstr "Чтобы войти в эту конференцию, нужен пароль"
+
+#: mod_muc_room.erl:1898 mod_register.erl:295
+msgid "Too many CAPTCHA requests"
+msgstr "Слишком много запросов капчи"
+
+#: mod_muc_room.erl:1908 mod_register.erl:301
+msgid "Unable to generate a CAPTCHA"
+msgstr "Не получилось создать капчу"
+
+#: mod_muc_room.erl:1919
+msgid "Incorrect password"
+msgstr "Неправильный пароль"
+
+#: mod_muc_room.erl:2573
+msgid "Administrator privileges required"
+msgstr "Требуются права администратора"
+
+#: mod_muc_room.erl:2586
+msgid "Moderator privileges required"
+msgstr "Требуются права модератора"
+
+#: mod_muc_room.erl:2758
 msgid "Jabber ID ~s is invalid"
 msgstr "Jabber ID ~s недопустимый"
 
-#: mod_muc_room.erl:2765
+#: mod_muc_room.erl:2772
 msgid "Nickname ~s does not exist in the room"
 msgstr "Псевдоним ~s в комнате отсутствует"
 
-#: mod_muc_room.erl:2788
+#: mod_muc_room.erl:2795 mod_muc_room.erl:3175
 msgid "Invalid affiliation: ~s"
 msgstr "Недопустимый ранг: ~s"
 
-#: mod_muc_room.erl:2839
+#: mod_muc_room.erl:2846
 msgid "Invalid role: ~s"
 msgstr "Недопустимая роль: ~s"
 
-#: mod_muc_room.erl:3341
+#: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4236
+msgid "Owner privileges required"
+msgstr "Требуются права владельца"
+
+#: mod_muc_room.erl:3348
 msgid "Configuration of room ~s"
 msgstr "Конфигурация комнаты ~s"
 
-#: mod_muc_room.erl:3352
+#: mod_muc_room.erl:3359
 msgid "Room title"
 msgstr "Название комнаты"
 
-#: mod_muc_room.erl:3354 mod_muc_room.erl:4101
+#: mod_muc_room.erl:3361 mod_muc_room.erl:4190
 msgid "Room description"
 msgstr "Описание комнаты"
 
-#: mod_muc_room.erl:3362
+#: mod_muc_room.erl:3369
 msgid "Make room persistent"
 msgstr "Сделать комнату постоянной"
 
-#: mod_muc_room.erl:3368
+#: mod_muc_room.erl:3375
 msgid "Make room public searchable"
 msgstr "Сделать комнату видимой всем"
 
-#: mod_muc_room.erl:3371
+#: mod_muc_room.erl:3378
 msgid "Make participants list public"
 msgstr "Сделать список участников видимым всем"
 
-#: mod_muc_room.erl:3373
+#: mod_muc_room.erl:3380
 msgid "Make room password protected"
 msgstr "Сделать комнату защищённой паролем"
 
-#: mod_muc_room.erl:3387
+#: mod_muc_room.erl:3394
 msgid "Maximum Number of Occupants"
 msgstr "Максимальное количество участников"
 
-#: mod_muc_room.erl:3399
+#: mod_muc_room.erl:3406
 msgid "No limit"
 msgstr "Не ограничено"
 
-#: mod_muc_room.erl:3429
+#: mod_muc_room.erl:3436
 msgid "Present real Jabber IDs to"
 msgstr "Сделать реальные Jabber ID участников видимыми"
 
-#: mod_muc_room.erl:3443 mod_muc_room.erl:3506
+#: mod_muc_room.erl:3450 mod_muc_room.erl:3560
 msgid "moderators only"
 msgstr "только модераторам"
 
-#: mod_muc_room.erl:3453 mod_muc_room.erl:3516
+#: mod_muc_room.erl:3460 mod_muc_room.erl:3570
 msgid "anyone"
 msgstr "всем участникам"
 
-#: mod_muc_room.erl:3459
+#: mod_muc_room.erl:3471
+msgid "Roles for which Presence is Broadcasted"
+msgstr ""
+
+#: mod_muc_room.erl:3486
+#, fuzzy
+msgid "Moderator"
+msgstr "только модераторам"
+
+#: mod_muc_room.erl:3496
+msgid "Participant"
+msgstr ""
+
+#: mod_muc_room.erl:3506
+msgid "Visitor"
+msgstr ""
+
+#: mod_muc_room.erl:3513
 msgid "Make room members-only"
 msgstr "Комната только для зарегистрированных участников"
 
-#: mod_muc_room.erl:3462
+#: mod_muc_room.erl:3516
 msgid "Make room moderated"
 msgstr "Сделать комнату модерируемой"
 
-#: mod_muc_room.erl:3465
+#: mod_muc_room.erl:3519
 msgid "Default users as participants"
 msgstr "Сделать пользователей участниками по умолчанию"
 
-#: mod_muc_room.erl:3468
+#: mod_muc_room.erl:3522
 msgid "Allow users to change the subject"
 msgstr "Разрешить пользователям изменять тему"
 
-#: mod_muc_room.erl:3471
+#: mod_muc_room.erl:3525
 msgid "Allow users to send private messages"
 msgstr "Разрешить приватные сообщения"
 
-#: mod_muc_room.erl:3479
+#: mod_muc_room.erl:3533
 msgid "Allow visitors to send private messages to"
 msgstr "Разрешить посетителям посылать приватные сообщения"
 
-#: mod_muc_room.erl:3497
+#: mod_muc_room.erl:3551
 msgid "nobody"
 msgstr "никто"
 
-#: mod_muc_room.erl:3522
+#: mod_muc_room.erl:3576
 msgid "Allow users to query other users"
 msgstr "Разрешить iq-запросы к пользователям"
 
-#: mod_muc_room.erl:3525
+#: mod_muc_room.erl:3579
 msgid "Allow users to send invites"
 msgstr "Разрешить пользователям посылать приглашения"
 
-#: mod_muc_room.erl:3528
+#: mod_muc_room.erl:3582
 msgid "Allow visitors to send status text in presence updates"
 msgstr ""
 "Разрешить посетителям вставлять текcт статуса в сообщения о присутствии"
 
-#: mod_muc_room.erl:3532
+#: mod_muc_room.erl:3586
 msgid "Allow visitors to change nickname"
 msgstr "Разрешить посетителям изменять псевдоним"
 
-#: mod_muc_room.erl:3535
+#: mod_muc_room.erl:3589
 msgid "Allow visitors to send voice requests"
 msgstr "Разрешить посетителям запрашивать право голоса"
 
-#: mod_muc_room.erl:3538
+#: mod_muc_room.erl:3592
 msgid "Minimum interval between voice requests (in seconds)"
 msgstr "Минимальный интервал между запросами на право голоса"
 
-#: mod_muc_room.erl:3545
+#: mod_muc_room.erl:3599
 msgid "Make room CAPTCHA protected"
 msgstr "Сделать комнату защищённой капчей"
 
-#: mod_muc_room.erl:3552
+#: mod_muc_room.erl:3606
 msgid "Enable message archiving"
 msgstr "Включить хранение сообщений"
 
-#: mod_muc_room.erl:3558
+#: mod_muc_room.erl:3612
 msgid "Exclude Jabber IDs from CAPTCHA challenge"
 msgstr "Исключить показ капчи для списка Jabber ID"
 
-#: mod_muc_room.erl:3567
+#: mod_muc_room.erl:3621
 msgid "Enable logging"
 msgstr "Включить журналирование"
 
-#: mod_muc_room.erl:3577
+#: mod_muc_room.erl:3631
 msgid "You need an x:data capable client to configure room"
 msgstr "Чтобы сконфигурировать комнату, требуется x:data-совместимый клиент"
 
-#: mod_muc_room.erl:4103
+#: mod_muc_room.erl:4192
 msgid "Number of occupants"
 msgstr "Число присутствующих"
 
-#: mod_muc_room.erl:4173
+#: mod_muc_room.erl:4262
 msgid "private, "
 msgstr "приватная, "
 
-#: mod_muc_room.erl:4237
+#: mod_muc_room.erl:4326
 msgid "Voice request"
 msgstr "Запрос на право голоса"
 
-#: mod_muc_room.erl:4242
+#: mod_muc_room.erl:4331
 msgid "Either approve or decline the voice request."
 msgstr "Подтвердите или отклоните право голоса."
 
-#: mod_muc_room.erl:4262
+#: mod_muc_room.erl:4351
 msgid "User JID"
 msgstr "JID пользователя"
 
-#: mod_muc_room.erl:4266
+#: mod_muc_room.erl:4355
 msgid "Grant voice to this person?"
 msgstr "Предоставить голос?"
 
-#: mod_muc_room.erl:4409
+#: mod_muc_room.erl:4498
 msgid "~s invites you to the room ~s"
 msgstr "~s приглашает вас в комнату ~s"
 
-#: mod_muc_room.erl:4421
+#: mod_muc_room.erl:4509
 msgid "the password is"
 msgstr "пароль:"
 
-#: mod_multicast.erl:273
+#: mod_multicast.erl:291
 msgid "Multicast"
 msgstr "Мультикаст"
 
-#: mod_multicast.erl:288
+#: mod_multicast.erl:306
 msgid "ejabberd Multicast service"
 msgstr "ejabberd Multicast сервис"
 
-#: mod_offline.erl:783
+#: mod_offline.erl:647
+msgid ""
+"Your contact offline message queue is full. The message has been discarded."
+msgstr ""
+"Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение не "
+"было сохранено."
+
+#: mod_offline.erl:798
 msgid "~s's Offline Messages Queue"
 msgstr "Oчередь офлайновых сообщений ~s"
 
-#: mod_offline.erl:796
+#: mod_offline.erl:811
 msgid "Time"
 msgstr "Время"
 
-#: mod_offline.erl:797
+#: mod_offline.erl:812
 msgid "From"
 msgstr "От кого"
 
-#: mod_offline.erl:798
+#: mod_offline.erl:813
 msgid "To"
 msgstr "Кому"
 
-#: mod_offline.erl:799
+#: mod_offline.erl:814
 msgid "Packet"
 msgstr "Пакет"
 
-#: mod_offline.erl:809 mod_shared_roster.erl:1180
-msgid "Delete Selected"
-msgstr "Удалить выделенные"
-
-#: mod_offline.erl:977
+#: mod_offline.erl:992
 msgid "Offline Messages:"
 msgstr "Офлайновые сообщения:"
 
-#: mod_offline.erl:981
+#: mod_offline.erl:996
 msgid "Remove All Offline Messages"
 msgstr "Удалить все офлайновые сообщения"
 
@@ -1075,113 +1537,125 @@ msgstr "Удалить все офлайновые сообщения"
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 Bytestreams модуль"
 
-#: mod_pubsub.erl:1103
+#: mod_pubsub.erl:1102
 msgid "Publish-Subscribe"
 msgstr "Публикация-Подписка"
 
-#: mod_pubsub.erl:1223
+#: mod_pubsub.erl:1222
 msgid "ejabberd Publish-Subscribe module"
 msgstr "Модуль ejabberd Публикации-Подписки"
 
-#: mod_pubsub.erl:1538
+#: mod_pubsub.erl:1537
 msgid "PubSub subscriber request"
 msgstr "Запрос подписчика PubSub"
 
-#: mod_pubsub.erl:1544
+#: mod_pubsub.erl:1543
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Решите: предоставить ли подписку этому объекту."
 
-#: mod_pubsub.erl:1560
+#: mod_pubsub.erl:1559
 msgid "Node ID"
 msgstr "ID узла"
 
-#: mod_pubsub.erl:1572
+#: mod_pubsub.erl:1571
 msgid "Subscriber Address"
 msgstr "Адрес подписчика"
 
-#: mod_pubsub.erl:1585
+#: mod_pubsub.erl:1584
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Разрешить этому Jabber ID подписаться на данный узел?"
 
-#: mod_pubsub.erl:3702
+#: mod_pubsub.erl:3745
 msgid "Deliver payloads with event notifications"
 msgstr "Доставлять вместе с уведомлениями o публикациях сами публикации"
 
-#: mod_pubsub.erl:3704
+#: mod_pubsub.erl:3747
 msgid "Deliver event notifications"
 msgstr "Доставлять уведомления о событиях"
 
-#: mod_pubsub.erl:3706
+#: mod_pubsub.erl:3749
 msgid "Notify subscribers when the node configuration changes"
 msgstr "Уведомлять подписчиков об изменении конфигурации сборника"
 
-#: mod_pubsub.erl:3708
+#: mod_pubsub.erl:3751
 msgid "Notify subscribers when the node is deleted"
 msgstr "Уведомлять подписчиков об удалении сборника"
 
-#: mod_pubsub.erl:3710
+#: mod_pubsub.erl:3753
 msgid "Notify subscribers when items are removed from the node"
 msgstr "Уведомлять подписчиков об удалении публикаций из сборника"
 
-#: mod_pubsub.erl:3712
+#: mod_pubsub.erl:3755
 msgid "Persist items to storage"
 msgstr "Сохранять публикации в хранилище"
 
-#: mod_pubsub.erl:3714
+#: mod_pubsub.erl:3757
 msgid "A friendly name for the node"
 msgstr "Легко запоминаемое имя для узла"
 
-#: mod_pubsub.erl:3716
+#: mod_pubsub.erl:3759
 msgid "Max # of items to persist"
 msgstr "Максимальное число сохраняемых публикаций"
 
-#: mod_pubsub.erl:3718
+#: mod_pubsub.erl:3761
 msgid "Whether to allow subscriptions"
 msgstr "Разрешить подписку"
 
-#: mod_pubsub.erl:3720
+#: mod_pubsub.erl:3763
 msgid "Specify the access model"
 msgstr "Укажите механизм управления доступом"
 
-#: mod_pubsub.erl:3722
+#: mod_pubsub.erl:3765
 msgid "Roster groups allowed to subscribe"
 msgstr "Группы списка контактов, которым разрешена подписка"
 
-#: mod_pubsub.erl:3724
+#: mod_pubsub.erl:3767
 msgid "Specify the publisher model"
 msgstr "Условия публикации"
 
-#: mod_pubsub.erl:3726
+#: mod_pubsub.erl:3769
 msgid "Purge all items when the relevant publisher goes offline"
 msgstr "Очищать все записи автора публикации когда он отключается"
 
-#: mod_pubsub.erl:3728
+#: mod_pubsub.erl:3771
 msgid "Specify the event message type"
 msgstr "Укажите тип сообщения о событии"
 
-#: mod_pubsub.erl:3730
+#: mod_pubsub.erl:3773
 msgid "Max payload size in bytes"
 msgstr "Максимальный размер полезной нагрузки в байтах"
 
-#: mod_pubsub.erl:3732
+#: mod_pubsub.erl:3775
 msgid "When to send the last published item"
 msgstr "Когда посылать последний опубликованный элемент"
 
-#: mod_pubsub.erl:3734
+#: mod_pubsub.erl:3777
 msgid "Only deliver notifications to available users"
 msgstr "Доставлять уведомления только доступным пользователям"
 
-#: mod_pubsub.erl:3736
+#: mod_pubsub.erl:3779
 msgid "The collections with which a node is affiliated"
 msgstr "Имя коллекции, в которую входит узел"
 
-#: mod_register.erl:250
+#: mod_register.erl:209
+msgid "The CAPTCHA verification has failed"
+msgstr "Проверка капчи не пройдена"
+
+#: mod_register.erl:253
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr "Чтобы зарегистрироваться, требуется x:data-совместимый клиент"
 
-#: mod_register.erl:256 mod_register.erl:317
+#: mod_register.erl:259 mod_register.erl:320
 msgid "Choose a username and password to register with this server"
 msgstr "Выберите имя пользователя и пароль для регистрации на этом сервере"
+
+#: mod_register.erl:373 mod_register.erl:421
+msgid "The password is too weak"
+msgstr "Слишком слабый пароль"
+
+#: mod_register.erl:426
+msgid "Users are not allowed to register accounts so quickly"
+msgstr "Пользователи не могут регистрировать учётные записи так быстро"
 
 #: mod_register_web.erl:105
 msgid "Your Jabber account was successfully created."
@@ -1259,8 +1733,8 @@ msgstr "Позже Вы можете изменить пароль через Ja
 
 #: mod_register_web.erl:252
 msgid ""
-"Some Jabber clients can store your password in your computer. Use that "
-"feature only if you trust your computer is safe."
+"Some Jabber clients can store your password in the computer, but you should "
+"do this only in your personal computer for safety reasons."
 msgstr ""
 "Некоторые Jabber-клиенты могут сохранять пароль на Вашем компьютере. "
 "Используйте эту функцию только в том случае, если считаете это безопасным."
@@ -1299,66 +1773,62 @@ msgstr "Здесь Вы можете удалить Jabber-аккаунт с э�
 msgid "Unregister"
 msgstr "Удалить"
 
-#: mod_roster.erl:1437
+#: mod_roster.erl:1436
 msgid "Subscription"
 msgstr "Подписка"
 
-#: mod_roster.erl:1438
+#: mod_roster.erl:1437
 msgid "Pending"
 msgstr "Ожидание"
 
-#: mod_roster.erl:1439
+#: mod_roster.erl:1438
 msgid "Groups"
 msgstr "Группы"
 
-#: mod_roster.erl:1477
+#: mod_roster.erl:1476
 msgid "Validate"
 msgstr "Утвердить"
 
-#: mod_roster.erl:1486
+#: mod_roster.erl:1485
 msgid "Remove"
 msgstr "Удалить"
 
-#: mod_roster.erl:1491
+#: mod_roster.erl:1490
 msgid "Roster of "
 msgstr "Ростер пользователя "
 
-#: mod_roster.erl:1505
+#: mod_roster.erl:1504
 msgid "Add Jabber ID"
 msgstr "Добавить Jabber ID"
 
-#: mod_roster.erl:1623
+#: mod_roster.erl:1622
 msgid "Roster"
 msgstr "Ростер"
 
-#: mod_shared_roster.erl:1125 mod_shared_roster.erl:1167
-#: mod_shared_roster.erl:1261
+#: mod_shared_roster.erl:1120 mod_shared_roster.erl:1162
+#: mod_shared_roster.erl:1256
 msgid "Shared Roster Groups"
 msgstr "Группы общих контактов"
 
-#: mod_shared_roster.erl:1237
+#: mod_shared_roster.erl:1232
 msgid "Name:"
 msgstr "Название:"
 
-#: mod_shared_roster.erl:1241
+#: mod_shared_roster.erl:1236
 msgid "Description:"
 msgstr "Описание:"
 
-#: mod_shared_roster.erl:1248
+#: mod_shared_roster.erl:1243
 msgid "Members:"
 msgstr "Члены:"
 
-#: mod_shared_roster.erl:1255
+#: mod_shared_roster.erl:1250
 msgid "Displayed Groups:"
 msgstr "Видимые группы:"
 
-#: mod_shared_roster.erl:1264
+#: mod_shared_roster.erl:1259
 msgid "Group "
 msgstr "Группа "
-
-#: mod_shared_roster.erl:1274
-msgid "Submit"
-msgstr "Отправить"
 
 #: mod_vcard.erl:168 mod_vcard_ldap.erl:225
 msgid "Erlang Jabber Server"
@@ -1400,10 +1870,6 @@ msgstr "Полное имя"
 msgid "Middle Name"
 msgstr "Отчество"
 
-#: mod_vcard.erl:490 mod_vcard.erl:616
-msgid "Name"
-msgstr "Название"
-
 #: mod_vcard.erl:490 mod_vcard.erl:626
 msgid "Organization Name"
 msgstr "Название организации"
@@ -1436,189 +1902,8 @@ msgstr "Результаты поиска в "
 msgid "Fill in fields to search for any matching Jabber User"
 msgstr "Заполните форму для поиска пользователя Jabber"
 
-#~ msgid "Use of STARTTLS required"
-#~ msgstr "Вы обязаны использовать STARTTLS"
-
-#~ msgid "No resource provided"
-#~ msgstr "Не указан ресурс"
-
-#~ msgid "Replaced by new connection"
-#~ msgstr "Заменено новым соединением"
-
-#~ msgid "Too many unacked stanzas"
-#~ msgstr "Слишком много неподтверждённых пакетов"
-
-#~ msgid "Unauthorized"
-#~ msgstr "Не авторизован"
-
-#~ msgid "Administration"
-#~ msgstr "Администрирование"
-
-#~ msgid "Raw"
-#~ msgstr "Необработанный формат"
-
-#~ msgid "~s access rule configuration"
-#~ msgstr "Конфигурация правила доступа ~s"
-
-#~ msgid "Virtual Hosts"
-#~ msgstr "Виртуальные хосты"
-
-#~ msgid "Users"
-#~ msgstr "Пользователи"
-
-#~ msgid "Users Last Activity"
-#~ msgstr "Статистика последнего подключения пользователей"
-
-#~ msgid "Period: "
-#~ msgstr "Период"
-
-#~ msgid "Last month"
-#~ msgstr "За последний месяц"
-
-#~ msgid "Last year"
-#~ msgstr "За последний год"
-
-#~ msgid "All activity"
-#~ msgstr "Вся статистика"
-
-#~ msgid "Show Ordinary Table"
-#~ msgstr "Показать обычную таблицу"
-
-#~ msgid "Show Integral Table"
-#~ msgstr "Показать интегральную таблицу"
-
-#~ msgid "Not Found"
-#~ msgstr "Не Найдено"
-
-#~ msgid "Node not found"
-#~ msgstr "Узел не найден"
-
-#~ msgid "Node ~p"
-#~ msgstr "Узел ~p"
-
-#~ msgid "Listened Ports"
-#~ msgstr "Прослушиваемые порты"
-
-#~ msgid "Update"
-#~ msgstr "Обновить"
-
-#~ msgid "RPC Call Error"
-#~ msgstr "Ошибка вызова RPC"
-
-#~ msgid "Database Tables at ~p"
-#~ msgstr "Таблицы базы данных на ~p"
-
-#~ msgid "Storage Type"
-#~ msgstr "Тип таблицы"
-
-#~ msgid "Elements"
-#~ msgstr "Элементы"
-
-#~ msgid "Memory"
-#~ msgstr "Память"
-
-#~ msgid "Error"
-#~ msgstr "Ошибка"
-
-#~ msgid "Backup of ~p"
-#~ msgstr "Резервное копирование ~p"
-
-#~ msgid ""
-#~ "Please note that these options will only backup the builtin Mnesia "
-#~ "database. If you are using the ODBC module, you also need to backup your "
-#~ "SQL database separately."
-#~ msgstr ""
-#~ "Заметьте, что здесь производится резервное копирование только встроенной "
-#~ "базы данных Mnesia. Если Вы также используете другое хранилище данных "
-#~ "(например с помощью модуля ODBC), то его резервное копирование следует "
-#~ "осуществлять отдельно."
-
-#~ msgid "Store binary backup:"
-#~ msgstr "Сохранить бинарную резервную копию:"
-
-#~ msgid "OK"
-#~ msgstr "Продолжить"
-
-#~ msgid "Restore binary backup immediately:"
-#~ msgstr "Восстановить из бинарной резервной копии немедленно:"
-
-#~ msgid ""
-#~ "Restore binary backup after next ejabberd restart (requires less memory):"
-#~ msgstr ""
-#~ "Восстановить из бинарной резервной копии при следующем запуске (требует "
-#~ "меньше памяти):"
-
-#~ msgid "Store plain text backup:"
-#~ msgstr "Сохранить текстовую резервную копию:"
-
-#~ msgid "Restore plain text backup immediately:"
-#~ msgstr "Восстановить из текстовой резервной копии немедленно:"
-
-#~ msgid "Import users data from a PIEFXIS file (XEP-0227):"
-#~ msgstr "Импорт пользовательских данных из файла формата PIEFXIS (XEP-0227):"
-
-#~ msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
-#~ msgstr ""
-#~ "Экспорт данных всех пользователей сервера в файлы формата PIEFXIS (XEP-"
-#~ "0227):"
-
-#~ msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
-#~ msgstr ""
-#~ "Экспорт пользовательских данных домена в файлы формата PIEFXIS (XEP-0227):"
-
-#~ msgid "Export all tables as SQL queries to a file:"
-#~ msgstr "Экспортировать все таблицы в виде SQL запросов в файл:"
-
-#~ msgid "Import user data from jabberd14 spool file:"
-#~ msgstr "Импорт пользовательских данных из буферного файла jabberd14:"
-
-#~ msgid "Import users data from jabberd14 spool directory:"
-#~ msgstr "Импорт пользовательских данных из буферной директории jabberd14:"
-
-#~ msgid "Listened Ports at "
-#~ msgstr "Прослушиваемые порты на "
-
-#~ msgid "Modules at ~p"
-#~ msgstr "Модули на ~p"
-
-#~ msgid "Statistics of ~p"
-#~ msgstr "статистика узла ~p"
-
-#~ msgid "Uptime:"
-#~ msgstr "Время работы:"
-
-#~ msgid "CPU Time:"
-#~ msgstr "Процессорное время:"
-
-#~ msgid "Transactions Committed:"
-#~ msgstr "Транзакции завершенные:"
-
-#~ msgid "Transactions Aborted:"
-#~ msgstr "Транзакции отмененные:"
-
-#~ msgid "Transactions Restarted:"
-#~ msgstr "Транзакции перезапущенные:"
-
-#~ msgid "Transactions Logged:"
-#~ msgstr "Транзакции запротоколированные:"
-
-#~ msgid "Update ~p"
-#~ msgstr "Обновление ~p"
-
-#~ msgid "Update plan"
-#~ msgstr "План обновления"
-
-#~ msgid "Modified modules"
-#~ msgstr "Изменённые модули"
-
-#~ msgid "Update script"
-#~ msgstr "Сценарий обновления"
-
-#~ msgid "Low level update script"
-#~ msgstr "Низкоуровневый сценарий обновления"
-
-#~ msgid "Script check"
-#~ msgstr "Проверка сценария"
+#~ msgid "Outgoing s2s Servers:"
+#~ msgstr "Исходящие s2s-серверы:"
 
 #~ msgid "Delete"
 #~ msgstr "Удалить"
@@ -1626,55 +1911,11 @@ msgstr "Заполните форму для поиска пользовател
 #~ msgid "This room is not anonymous"
 #~ msgstr "Эта комната не анонимная"
 
-#~ msgid "Your active privacy list has denied the routing of this stanza."
-#~ msgstr ""
-#~ "Маршрутизация этой строфы запрещена вашим активным списком приватности."
-
-#~ msgid "Access denied by service policy"
-#~ msgstr "Доступ запрещён политикой службы"
-
-#~ msgid "Only service administrators are allowed to send service messages"
-#~ msgstr "Только администратор службы может посылать служебные сообщения"
-
-#~ msgid "Room creation is denied by service policy"
-#~ msgstr "Cоздавать конференцию запрещено политикой службы"
-
-#~ msgid "Conference room does not exist"
-#~ msgstr "Конференция не существует"
-
-#~ msgid "That nickname is registered by another person"
-#~ msgstr "Этот псевдоним зарегистрирован кем-то другим"
-
-#~ msgid "You must fill in field \"Nickname\" in the form"
-#~ msgstr "Вы должны заполнить поле \"Псевдоним\" в форме"
-
-#~ msgid "Traffic rate limit is exceeded"
-#~ msgstr "Превышен лимит скорости посылки информации"
-
 #~ msgid ""
 #~ "This participant is kicked from the room because he sent an error message"
 #~ msgstr ""
 #~ "Этого участника выгнали из комнаты за то, что он послал сообщение об "
 #~ "ошибке"
-
-#~ msgid "It is not allowed to send private messages to the conference"
-#~ msgstr "Не разрешается посылать частные сообщения прямо в конференцию"
-
-#~ msgid "Please, wait for a while before sending new voice request"
-#~ msgstr ""
-#~ "Пожалуйста, подождите перед тем как подать новый запрос на право голоса"
-
-#~ msgid "Voice requests are disabled in this conference"
-#~ msgstr "Запросы на право голоса отключены в этой конференции"
-
-#~ msgid "Failed to extract JID from your voice request approval"
-#~ msgstr "Ошибка обработки JID из вашего запроса на право голоса"
-
-#~ msgid "Only moderators can approve voice requests"
-#~ msgstr "Только модераторы могут утверждать запросы на право голоса"
-
-#~ msgid "Improper message type"
-#~ msgstr "Неправильный тип сообщения"
 
 #~ msgid ""
 #~ "This participant is kicked from the room because he sent an error message "
@@ -1683,81 +1924,11 @@ msgstr "Заполните форму для поиска пользовател
 #~ "Этого участника выгнали из комнаты за то, что он послал сообщение об "
 #~ "ошибке другому участнику"
 
-#~ msgid "It is not allowed to send private messages of type \"groupchat\""
-#~ msgstr "Нельзя посылать частные сообщения типа \"groupchat\""
-
-#~ msgid "Recipient is not in the conference room"
-#~ msgstr "Адресата нет в конференции"
-
-#~ msgid "It is not allowed to send private messages"
-#~ msgstr "Запрещено посылать приватные сообщения"
-
-#~ msgid "Only occupants are allowed to send messages to the conference"
-#~ msgstr "Только присутствующим разрешается посылать сообщения в конференцию"
-
-#~ msgid "Only occupants are allowed to send queries to the conference"
-#~ msgstr "Только присутствующим разрешается посылать запросы в конференцию"
-
-#~ msgid "Queries to the conference members are not allowed in this room"
-#~ msgstr "Запросы к пользователям в этой конференции запрещены"
-
-#~ msgid "Visitors are not allowed to send messages to all occupants"
-#~ msgstr "Посетителям не разрешается посылать сообщения всем присутствующим"
-
 #~ msgid ""
 #~ "This participant is kicked from the room because he sent an error presence"
 #~ msgstr ""
 #~ "Этого участника выгнали из комнаты за то, что он послал присутствие с "
 #~ "ошибкой"
-
-#~ msgid "Visitors are not allowed to change their nicknames in this room"
-#~ msgstr "Посетителям запрещено изменять свои псевдонимы в этой комнате"
-
-#~ msgid "That nickname is already in use by another occupant"
-#~ msgstr "Этот псевдоним уже занят другим участником"
-
-#~ msgid "You have been banned from this room"
-#~ msgstr "Вам запрещено входить в эту конференцию"
-
-#~ msgid "Membership is required to enter this room"
-#~ msgstr "В эту конференцию могут входить только её члены"
-
-#~ msgid "A password is required to enter this room"
-#~ msgstr "Чтобы войти в эту конференцию, нужен пароль"
-
-#~ msgid "Too many CAPTCHA requests"
-#~ msgstr "Слишком много запросов капчи"
-
-#~ msgid "Unable to generate a CAPTCHA"
-#~ msgstr "Не получилось создать капчу"
-
-#~ msgid "Incorrect password"
-#~ msgstr "Неправильный пароль"
-
-#~ msgid "Administrator privileges required"
-#~ msgstr "Требуются права администратора"
-
-#~ msgid "Moderator privileges required"
-#~ msgstr "Требуются права модератора"
-
-#~ msgid "Owner privileges required"
-#~ msgstr "Требуются права владельца"
-
-#~ msgid ""
-#~ "Your contact offline message queue is full. The message has been "
-#~ "discarded."
-#~ msgstr ""
-#~ "Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение "
-#~ "не было сохранено."
-
-#~ msgid "The CAPTCHA verification has failed"
-#~ msgstr "Проверка капчи не пройдена"
-
-#~ msgid "The password is too weak"
-#~ msgstr "Слишком слабый пароль"
-
-#~ msgid "Users are not allowed to register accounts so quickly"
-#~ msgstr "Пользователи не могут регистрировать учётные записи так быстро"
 
 #, fuzzy
 #~ msgid "Captcha test failed"

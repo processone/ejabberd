@@ -20,32 +20,30 @@
 	 change_room_option/4, get_room_options/2,
 	 set_room_affiliation/4, get_room_affiliations/2,
 	 web_menu_main/2, web_page_main/2, web_menu_host/3,
-	 web_page_host/3, mod_opt_type/1]).
+	 web_page_host/3, mod_opt_type/1, get_commands_spec/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("jlib.hrl").
 -include("mod_muc_room.hrl").
+-include("mod_muc.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("ejabberd_commands.hrl").
-
-%% Copied from mod_muc/mod_muc.erl
--record(muc_online_room, {name_host, pid}).
 
 %%----------------------------
 %% gen_mod
 %%----------------------------
 
 start(Host, _Opts) ->
-    ejabberd_commands:register_commands(commands()),
+    ejabberd_commands:register_commands(get_commands_spec()),
     ejabberd_hooks:add(webadmin_menu_main, ?MODULE, web_menu_main, 50),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:add(webadmin_page_main, ?MODULE, web_page_main, 50),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50).
 
 stop(Host) ->
-    ejabberd_commands:unregister_commands(commands()),
+    ejabberd_commands:unregister_commands(get_commands_spec()),
     ejabberd_hooks:delete(webadmin_menu_main, ?MODULE, web_menu_main, 50),
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
@@ -55,10 +53,11 @@ stop(Host) ->
 %%% Register commands
 %%%
 
-commands() ->
+get_commands_spec() ->
     [
      #ejabberd_commands{name = muc_online_rooms, tags = [muc],
 		       desc = "List existing rooms ('global' to get all vhosts)",
+                       policy = admin,
 		       module = ?MODULE, function = muc_online_rooms,
 		       args = [{host, binary}],
 		       result = {rooms, {list, {room, string}}}},
@@ -179,7 +178,8 @@ muc_online_rooms(ServerHost) ->
     MUCHost = find_host(ServerHost),
     Rooms = ets:tab2list(muc_online_room),
     lists:foldl(
-      fun({_, {Roomname, Host}, _}, Results) ->
+      fun(Room, Results) ->
+	      {Roomname, Host} = Room#muc_online_room.name_host,
 	      case MUCHost of
 		  global ->
 		      [<<Roomname/binary, "@", Host/binary>> | Results];
@@ -280,7 +280,7 @@ get_sort_query(Q) ->
 
 get_sort_query2(Q) ->
     {value, {_, String}} = lists:keysearch(<<"sort">>, 1, Q),
-    Integer = list_to_integer(binary_to_list(String)),
+    Integer = jlib:binary_to_integer(String),
     case Integer >= 0 of
 	true -> {ok, {normal, Integer}};
 	false -> {ok, {reverse, abs(Integer)}}
@@ -356,7 +356,7 @@ build_info_room({Name, Host, Pid}) ->
 	    false ->
 		Last_message1 = queue:last(History),
 		{_, _, _, Ts_last, _} = Last_message1,
-		jlib:timestamp_to_iso(Ts_last)
+		jlib:timestamp_to_legacy(Ts_last)
 	end,
 
     {<<Name/binary, "@", Host/binary>>,
@@ -396,7 +396,9 @@ prepare_room_info(Room_info) ->
 %% @spec (Name::binary(), Host::binary(), ServerHost::binary()) ->
 %%       ok | error
 %% @doc Create a room immediately with the default options.
-create_room(Name, Host, ServerHost) ->
+create_room(Name1, Host1, ServerHost) ->
+    Name = jid:nodeprep(Name1),
+    Host = jid:nodeprep(Host1),
 
     %% Get the default room options from the muc configuration
     DefRoomOpts = gen_mod:get_module_opt(ServerHost, mod_muc,
@@ -410,7 +412,6 @@ create_room(Name, Host, ServerHost) ->
     AcCreate = gen_mod:get_module_opt(ServerHost, mod_muc, access_create, fun(X) -> X end, all),
     AcAdmin = gen_mod:get_module_opt(ServerHost, mod_muc, access_admin, fun(X) -> X end, none),
     AcPer = gen_mod:get_module_opt(ServerHost, mod_muc, access_persistent, fun(X) -> X end, all),
-    _PersistHistory = gen_mod:get_module_opt(ServerHost, mod_muc, persist_history, fun(X) -> X end, false),
     HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size, fun(X) -> X end, 20),
     RoomShaper = gen_mod:get_module_opt(ServerHost, mod_muc, room_shaper, fun(X) -> X end, none),
 
@@ -473,7 +474,7 @@ destroy_room({N, H, SH}) ->
 %% The file encoding must be UTF-8
 
 destroy_rooms_file(Filename) ->
-    {ok, F} = file:open(Filename, [read]),
+    {ok, F} = file:open(Filename, [read, binary]),
     RJID = read_room(F),
     Rooms = read_rooms(F, RJID, []),
     file:close(F),
@@ -501,23 +502,16 @@ read_room(F) ->
 %% This function is quite rudimentary
 %% and may not be accurate
 split_roomjid(RoomJID) ->
-    [Name, Host] = string:tokens(RoomJID, "@"),
-    [_MUC_service_name | ServerHostList] = string:tokens(Host, "."),
-    ServerHost = join(ServerHostList, "."),
-    {list_to_binary(Name), list_to_binary(Host), list_to_binary(ServerHost)}.
-
-%% This function is copied from string:join/2 in Erlang/OTP R12B-1
-%% Note that string:join/2 is not implemented in Erlang/OTP R11B
-join([H|T], Sep) ->
-    H ++ lists:concat([Sep ++ X || X <- T]).
-
+    [Name, Host] = binary:split(RoomJID, <<"@">>),
+    [_MUC_service_name, ServerHost] = binary:split(Host, <<".">>),
+    {Name, Host, ServerHost}.
 
 %%----------------------------
 %% Create Rooms in File
 %%----------------------------
 
 create_rooms_file(Filename) ->
-    {ok, F} = file:open(Filename, [read]),
+    {ok, F} = file:open(Filename, [read, binary]),
     RJID = read_room(F),
     Rooms = read_rooms(F, RJID, []),
     file:close(F),
@@ -608,7 +602,7 @@ decide_room({_Room_name, _Host, Room_pid}, Last_allowed) ->
     Num_users = length(?DICT:to_list(Room_users)),
 
     History = (S#state.history)#lqueue.queue,
-    Ts_now = calendar:now_to_universal_time(now()),
+    Ts_now = calendar:universal_time(),
     Ts_uptime = uptime_seconds(),
     {Has_hist, Last} = case queue:is_empty(History) of
 			   true ->
@@ -676,7 +670,7 @@ get_room_occupants(Pid) ->
     S = get_room_state(Pid),
     lists:map(
       fun({_LJID, Info}) ->
-	      {jlib:jid_to_string(Info#user.jid),
+	      {jid:to_string(Info#user.jid),
 	       Info#user.nick,
 	       atom_to_list(Info#user.role)}
       end,
@@ -691,32 +685,35 @@ get_room_occupants_number(Room, Host) ->
 %% http://xmpp.org/extensions/xep-0249.html
 
 send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) ->
-    RoomJid = jlib:make_jid(RoomName, RoomService, <<"">>),
-    RoomString = jlib:jid_to_string(RoomJid),
+    RoomJid = jid:make(RoomName, RoomService, <<"">>),
+    RoomString = jid:to_string(RoomJid),
     XmlEl = build_invitation(Password, Reason, RoomString),
-    UsersStrings = get_users_to_invite(RoomJid, binary_to_list(UsersString)),
-    [send_direct_invitation(RoomJid, jlib:string_to_jid(list_to_binary(UserStrings)), XmlEl)
+    UsersStrings = get_users_to_invite(RoomJid, UsersString),
+    [send_direct_invitation(RoomJid, UserStrings, XmlEl)
      || UserStrings <- UsersStrings],
     timer:sleep(1000),
     ok.
 
 get_users_to_invite(RoomJid, UsersString) ->
-    UsersStrings = string:tokens(UsersString, ":"),
+    UsersStrings = binary:split(UsersString, <<":">>, [global]),
     OccupantsTuples = get_room_occupants(RoomJid#jid.luser,
 					 RoomJid#jid.lserver),
-    OccupantsJids = [jlib:string_to_jid(JidString)
+    OccupantsJids = [jid:from_string(JidString)
 		     || {JidString, _Nick, _} <- OccupantsTuples],
-    lists:filter(
-	fun(UserString) ->
-	    UserJid = jlib:string_to_jid(list_to_binary(UserString)),
-	    %% [{"badlop@localhost/work","badlop","moderator"}]
-	    lists:all(fun(OccupantJid) ->
-		UserJid#jid.luser /= OccupantJid#jid.luser
-		orelse UserJid#jid.lserver /= OccupantJid#jid.lserver
-	    end,
-	    OccupantsJids)
-	end,
-	UsersStrings).
+    lists:filtermap(
+      fun(UserString) ->
+	      UserJid = jid:from_string(UserString),
+	      Val = lists:all(fun(OccupantJid) ->
+				      UserJid#jid.luser /= OccupantJid#jid.luser
+					  orelse UserJid#jid.lserver /= OccupantJid#jid.lserver
+			      end,
+			      OccupantsJids),
+	      case Val of
+		  true -> {true, UserJid};
+		  _ -> false
+	      end
+      end,
+      UsersStrings).
 
 build_invitation(Password, Reason, RoomString) ->
     PasswordAttrList = case Password of
@@ -797,6 +794,7 @@ change_option(Option, Value, Config) ->
 	captcha_protected -> Config#config{captcha_protected = Value};
 	description -> Config#config{description = Value};
 	logging -> Config#config{logging = Value};
+	mam -> Config#config{mam = Value};
 	max_users -> Config#config{max_users = Value};
 	members_by_default -> Config#config{members_by_default = Value};
 	members_only -> Config#config{members_only = Value};
@@ -872,7 +870,7 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
 	[R] ->
 	    %% Get the PID for the online room so we can get the state of the room
 	    Pid = R#muc_online_room.pid,
-	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jlib:string_to_jid(JID), affiliation, Affiliation, <<"">>}, <<"">>}),
+	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:from_string(JID), affiliation, Affiliation, <<"">>}, <<"">>}),
 	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
 	[] ->

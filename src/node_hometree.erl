@@ -1,29 +1,27 @@
-%%% ====================================================================
-%%% ``The contents of this file are subject to the Erlang Public License,
-%%% Version 1.1, (the "License"); you may not use this file except in
-%%% compliance with the License. You should have received a copy of the
-%%% Erlang Public License along with this software. If not, it can be
-%%% retrieved via the world wide web at http://www.erlang.org/.
+%%%----------------------------------------------------------------------
+%%% File    : node_hometree.erl
+%%% Author  : Christophe Romain <christophe.romain@process-one.net>
+%%% Purpose : Standard tree ordered node plugin
+%%% Created :  1 Dec 2007 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% Software distributed under the License is distributed on an "AS IS"
-%%% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
-%%% the License for the specific language governing rights and limitations
-%%% under the License.
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
 %%%
-%%% The Initial Developer of the Original Code is ProcessOne.
-%%% Portions created by ProcessOne are Copyright 2006-2015, ProcessOne
-%%% All Rights Reserved.''
-%%% This software is copyright 2006-2015, ProcessOne.
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
 %%%
-%%% @copyright 2006-2015 ProcessOne
-%%% @author Christophe Romain <christophe.romain@process-one.net>
-%%%   [http://www.process-one.net/]
-%%% @version {@vsn}, {@date} {@time}
-%%% @end
-%%% ====================================================================
-
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
+%%%----------------------------------------------------------------------
 
 -module(node_hometree).
 -behaviour(gen_pubsub_node).
@@ -69,7 +67,7 @@ features() ->
 %% <p>This function also check that node can be created as a children of its
 %% parent node</p>
 create_node_permission(Host, ServerHost, Node, _ParentNode, Owner, Access) ->
-    LOwner = jlib:jid_tolower(Owner),
+    LOwner = jid:tolower(Owner),
     {User, Server, _Resource} = LOwner,
     Allowed = case LOwner of
 	{<<"">>, Host, <<"">>} ->

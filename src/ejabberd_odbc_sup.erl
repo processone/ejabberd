@@ -5,7 +5,7 @@
 %%% Created : 22 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -102,7 +102,7 @@ get_pids(Host) ->
 get_random_pid(Host) ->
     case get_pids(Host) of
       [] -> none;
-      Pids -> lists:nth(erlang:phash(now(), length(Pids)), Pids)
+      Pids -> lists:nth(erlang:phash(p1_time_compat:unique_integer(), length(Pids)), Pids)
     end.
 
 add_pid(Host, Pid) ->

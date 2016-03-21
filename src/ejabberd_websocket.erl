@@ -33,7 +33,7 @@
 %%% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %%% POSSIBILITY OF SUCH DAMAGE.
 %%% ==========================================================================================================
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_websocket).
@@ -373,10 +373,10 @@ process_frame(#frame_info{unprocessed =
     process_frame(FrameInfo#frame_info{unprocessed = <<>>},
                   <<UnprocessedPre/binary, Data/binary>>).
 
-handle_data(tcp, FrameInfo, Data, Socket, WsHandleLoopPid, p1_tls) ->
-    case p1_tls:recv_data(Socket, Data) of
+handle_data(tcp, FrameInfo, Data, Socket, WsHandleLoopPid, fast_tls) ->
+    case fast_tls:recv_data(Socket, Data) of
         {ok, NewData} ->
-            handle_data_int(FrameInfo, NewData, Socket, WsHandleLoopPid, p1_tls);
+            handle_data_int(FrameInfo, NewData, Socket, WsHandleLoopPid, fast_tls);
         {error, Error} ->
             {error, Error}
     end;

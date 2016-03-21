@@ -5,7 +5,7 @@
 %%% Created : 26 Jul 2014 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -157,7 +157,7 @@ update_node_database(Host, ServerHost) ->
 											{unknown,
 											 Publisher},
 										    M =
-											{now(),
+											{p1_time_compat:timestamp(),
 											 Publisher},
 										    mnesia:write(#pubsub_item{itemid
 														  =

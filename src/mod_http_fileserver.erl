@@ -5,7 +5,7 @@
 %%% Created :
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -42,6 +42,9 @@
 
 %% request_handlers callbacks
 -export([process/2]).
+
+%% utility for other http modules
+-export([content_type/3]).
 
 -export([reopen_log/1, mod_opt_type/1]).
 
@@ -84,8 +87,6 @@
 	 {<<".xml">>, <<"application/xml">>},
 	 {<<".xpi">>, <<"application/x-xpinstall">>},
 	 {<<".xul">>, <<"application/vnd.mozilla.xul+xml">>}]).
-
--compile(export_all).
 
 %%====================================================================
 %% gen_mod callbacks

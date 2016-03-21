@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -20,9 +20,9 @@
 
 -include("ns.hrl").
 -ifdef(NO_EXT_LIB).
--include("xml.hrl").
+-include("fxml.hrl").
 -else.
--include_lib("p1_xml/include/xml.hrl").
+-include_lib("fast_xml/include/fxml.hrl").
 -endif.
 
 -define(STANZA_ERROR(Code, Type, Condition),

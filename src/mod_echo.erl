@@ -5,7 +5,7 @@
 %%% Created : 15 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -86,7 +86,7 @@ stop(Host) ->
 init([Host, Opts]) ->
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"echo.@HOST@">>),
-    ejabberd_router:register_route(MyHost),
+    ejabberd_router:register_route(MyHost, Host),
     {ok, #state{host = MyHost}}.
 
 %%--------------------------------------------------------------------
@@ -167,7 +167,7 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %% Finally, the received response is printed in the ejabberd log file.
 do_client_version(disabled, _From, _To) -> ok;
 do_client_version(enabled, From, To) ->
-    ToS = jlib:jid_to_string(To),
+    ToS = jid:to_string(To),
     Random_resource =
 	iolist_to_binary(integer_to_list(random:uniform(100000))),
     From2 = From#jid{resource = Random_resource,
@@ -182,7 +182,7 @@ do_client_version(enabled, From, To) ->
     Els = receive
 	    {route, To, From2, IQ} ->
 		#xmlel{name = <<"query">>, children = List} =
-		    xml:get_subtag(IQ, <<"query">>),
+		    fxml:get_subtag(IQ, <<"query">>),
 		List
 	    after 5000 -> % Timeout in miliseconds: 5 seconds
 		      []

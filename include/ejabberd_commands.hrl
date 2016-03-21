@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -34,7 +34,12 @@
 	 module                  :: atom(),
          function                :: atom(),
          args = []               :: [aterm()] | '_' | '$1' | '$2',
-         result = {res, rescode} :: rterm() | '_' | '$2'}).
+         policy = restricted     :: open | restricted | admin | user,
+         result = {res, rescode} :: rterm() | '_' | '$2',
+         args_desc = none        :: none | [string()] | '_',
+         result_desc = none      :: none | string() | '_',
+         args_example = none     :: none | [any()] | '_',
+         result_example = none   :: any()}).
 
 -type ejabberd_commands() :: #ejabberd_commands{name :: atom(),
                                                 tags :: [atom()],
@@ -71,4 +76,3 @@
 
 %% @type rterm() = {Name::atom(), Type::rtype()}.
 %% A result term is a tuple with the term name and the term type.
-

@@ -5,7 +5,7 @@
 %%% Created :  6 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -74,21 +74,6 @@
 
 -endif.
 
-%% Module start with or without supervisor:
--ifdef(NO_TRANSIENT_SUPERVISORS).
-
--define(SUPERVISOR_START,
-	p1_fsm:start(ejabberd_s2s_in, [SockData, Opts],
-                     ?FSMOPTS ++ fsm_limit_opts(Opts))).
-
--else.
-
--define(SUPERVISOR_START,
-	supervisor:start_child(ejabberd_s2s_in_sup,
-			       [SockData, Opts])).
-
--endif.
-
 -define(STREAM_HEADER(Version),
 	<<"<?xml version='1.0'?><stream:stream "
 	  "xmlns:stream='http://etherx.jabber.org/stream"
@@ -100,21 +85,20 @@
 -define(STREAM_TRAILER, <<"</stream:stream>">>).
 
 -define(INVALID_NAMESPACE_ERR,
-	xml:element_to_binary(?SERR_INVALID_NAMESPACE)).
+	fxml:element_to_binary(?SERR_INVALID_NAMESPACE)).
 
 -define(HOST_UNKNOWN_ERR,
-	xml:element_to_binary(?SERR_HOST_UNKNOWN)).
+	fxml:element_to_binary(?SERR_HOST_UNKNOWN)).
 
 -define(INVALID_FROM_ERR,
-	xml:element_to_binary(?SERR_INVALID_FROM)).
+	fxml:element_to_binary(?SERR_INVALID_FROM)).
 
 -define(INVALID_XML_ERR,
-	xml:element_to_binary(?SERR_XML_NOT_WELL_FORMED)).
+	fxml:element_to_binary(?SERR_XML_NOT_WELL_FORMED)).
 
-%%%----------------------------------------------------------------------
-%%% API
-%%%----------------------------------------------------------------------
-start(SockData, Opts) -> ?SUPERVISOR_START.
+start(SockData, Opts) ->
+    supervisor:start_child(ejabberd_s2s_in_sup,
+                            [SockData, Opts]).
 
 start_link(SockData, Opts) ->
     p1_fsm:start_link(ejabberd_s2s_in, [SockData, Opts],
@@ -126,13 +110,6 @@ socket_type() -> xml_stream.
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
 
-%%----------------------------------------------------------------------
-%% Func: init/1
-%% Returns: {ok, StateName, StateData}          |
-%%          {ok, StateName, StateData, Timeout} |
-%%          ignore                              |
-%%          {stop, StopReason}
-%%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
     ?DEBUG("started: ~p", [{SockMod, Socket}]),
     Shaper = case lists:keysearch(shaper, 1, Opts) of
@@ -211,10 +188,10 @@ init([{SockMod, Socket}, Opts]) ->
 
 wait_for_stream({xmlstreamstart, _Name, Attrs},
 		StateData) ->
-    case {xml:get_attr_s(<<"xmlns">>, Attrs),
-	  xml:get_attr_s(<<"xmlns:db">>, Attrs),
-	  xml:get_attr_s(<<"to">>, Attrs),
-	  xml:get_attr_s(<<"version">>, Attrs) == <<"1.0">>}
+    case {fxml:get_attr_s(<<"xmlns">>, Attrs),
+	  fxml:get_attr_s(<<"xmlns:db">>, Attrs),
+	  fxml:get_attr_s(<<"to">>, Attrs),
+	  fxml:get_attr_s(<<"version">>, Attrs) == <<"1.0">>}
 	of
       {<<"jabber:server">>, _, Server, true}
 	  when StateData#state.tls and
@@ -222,7 +199,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 	  send_text(StateData,
 		    ?STREAM_HEADER(<<" version='1.0'">>)),
 	  Auth = if StateData#state.tls_enabled ->
-			case jlib:nameprep(xml:get_attr_s(<<"from">>, Attrs)) of
+			case jid:nameprep(fxml:get_attr_s(<<"from">>, Attrs)) of
 			  From when From /= <<"">>, From /= error ->
 			      {Result, Message} =
 				  ejabberd_s2s:check_peer_certificate(StateData#state.sockmod,
@@ -257,7 +234,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 		?INFO_MSG("Closing s2s connection: ~s <--> ~s (~s)",
 			  [StateData#state.server, RemoteServer, CertError]),
 		send_text(StateData,
-			  <<(xml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
+			  <<(fxml:element_to_binary(?SERRT_POLICY_VIOLATION(<<"en">>,
 									   CertError)))/binary,
 			    (?STREAM_TRAILER)/binary>>),
 		{stop, normal, StateData};
@@ -329,7 +306,7 @@ wait_for_feature_request({xmlstreamelement, El},
     TLSEnabled = StateData#state.tls_enabled,
     SockMod =
 	(StateData#state.sockmod):get_sockmod(StateData#state.socket),
-    case {xml:get_attr_s(<<"xmlns">>, Attrs), Name} of
+    case {fxml:get_attr_s(<<"xmlns">>, Attrs), Name} of
       {?NS_TLS, <<"starttls">>}
 	  when TLS == true, TLSEnabled == false,
 	       SockMod == gen_tcp ->
@@ -354,7 +331,7 @@ wait_for_feature_request({xmlstreamelement, El},
                     end,
 	  TLSSocket = (StateData#state.sockmod):starttls(Socket,
 							 TLSOpts,
-							 xml:element_to_binary(#xmlel{name
+							 fxml:element_to_binary(#xmlel{name
 											  =
 											  <<"proceed">>,
 										      attrs
@@ -368,7 +345,7 @@ wait_for_feature_request({xmlstreamelement, El},
 	   StateData#state{socket = TLSSocket, streamid = new_id(),
 			   tls_enabled = true, tls_options = TLSOpts}};
       {?NS_SASL, <<"auth">>} when TLSEnabled ->
-	  Mech = xml:get_attr_s(<<"mechanism">>, Attrs),
+	  Mech = fxml:get_attr_s(<<"mechanism">>, Attrs),
 	  case Mech of
 	    <<"EXTERNAL">> when StateData#state.auth_domain /= <<"">> ->
 		AuthDomain = StateData#state.auth_domain,
@@ -383,7 +360,7 @@ wait_for_feature_request({xmlstreamelement, El},
 		       ?INFO_MSG("Accepted s2s EXTERNAL authentication for ~s (TLS=~p)",
 				 [AuthDomain, StateData#state.tls_enabled]),
 		       change_shaper(StateData, <<"">>,
-				     jlib:make_jid(<<"">>, AuthDomain, <<"">>)),
+				     jid:make(<<"">>, AuthDomain, <<"">>)),
 		       {next_state, wait_for_stream,
 			StateData#state{streamid = new_id(),
 					authenticated = true}};
@@ -426,8 +403,8 @@ stream_established({xmlstreamelement, El}, StateData) ->
     case is_key_packet(El) of
       {key, To, From, Id, Key} ->
 	  ?DEBUG("GET KEY: ~p", [{To, From, Id, Key}]),
-	  LTo = jlib:nameprep(To),
-	  LFrom = jlib:nameprep(From),
+	  LTo = jid:nameprep(To),
+	  LFrom = jid:nameprep(From),
 	  case {ejabberd_s2s:allow_host(LTo, LFrom),
 		lists:member(LTo,
 			     ejabberd_router:dirty_get_all_domains())}
@@ -441,7 +418,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
 				      wait_for_verification,
 				      StateData#state.connections),
 		change_shaper(StateData, LTo,
-			      jlib:make_jid(<<"">>, LFrom, <<"">>)),
+			      jid:make(<<"">>, LFrom, <<"">>)),
 		{next_state, stream_established,
 		 StateData#state{connections = Conns, timer = Timer}};
 	    {_, false} ->
@@ -453,11 +430,11 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	  end;
       {verify, To, From, Id, Key} ->
 	  ?DEBUG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
-	  LTo = jlib:nameprep(To),
-	  LFrom = jlib:nameprep(From),
-	  Type = case ejabberd_s2s:has_key({LTo, LFrom}, Key) of
-		   true -> <<"valid">>;
-		   _ -> <<"invalid">>
+	  LTo = jid:nameprep(To),
+	  LFrom = jid:nameprep(From),
+	  Type = case ejabberd_s2s:make_key({LTo, LFrom}, Id) of
+		     Key -> <<"valid">>;
+		     _ -> <<"invalid">>
 		 end,
 	  send_element(StateData,
 		       #xmlel{name = <<"db:verify">>,
@@ -470,10 +447,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
       _ ->
 	  NewEl = jlib:remove_attr(<<"xmlns">>, El),
 	  #xmlel{name = Name, attrs = Attrs} = NewEl,
-	  From_s = xml:get_attr_s(<<"from">>, Attrs),
-	  From = jlib:string_to_jid(From_s),
-	  To_s = xml:get_attr_s(<<"to">>, Attrs),
-	  To = jlib:string_to_jid(To_s),
+	  From_s = fxml:get_attr_s(<<"from">>, Attrs),
+	  From = jid:from_string(From_s),
+	  To_s = fxml:get_attr_s(<<"to">>, Attrs),
+	  To = jid:from_string(To_s),
 	  if (To /= error) and (From /= error) ->
 		 LFrom = From#jid.lserver,
 		 LTo = To#jid.lserver,
@@ -523,8 +500,8 @@ stream_established({valid, From, To}, StateData) ->
 			children = []}),
     ?INFO_MSG("Accepted s2s dialback authentication for ~s (TLS=~p)",
 	      [From, StateData#state.tls_enabled]),
-    LFrom = jlib:nameprep(From),
-    LTo = jlib:nameprep(To),
+    LFrom = jid:nameprep(From),
+    LTo = jid:nameprep(To),
     NSD = StateData#state{connections =
 			      (?DICT):store({LFrom, LTo}, established,
 					    StateData#state.connections)},
@@ -536,8 +513,8 @@ stream_established({invalid, From, To}, StateData) ->
 			    [{<<"from">>, To}, {<<"to">>, From},
 			     {<<"type">>, <<"invalid">>}],
 			children = []}),
-    LFrom = jlib:nameprep(From),
-    LTo = jlib:nameprep(To),
+    LFrom = jid:nameprep(From),
+    LTo = jid:nameprep(To),
     NSD = StateData#state{connections =
 			      (?DICT):erase({LFrom, LTo},
 					    StateData#state.connections)},
@@ -567,20 +544,8 @@ stream_established(closed, StateData) ->
 %    Reply = ok,
 %    {reply, Reply, state_name, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: handle_event/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%%----------------------------------------------------------------------
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
-%%----------------------------------------------------------------------
-%% Func: handle_sync_event/4
-%% Returns: The associated StateData for this connection
-%%   {reply, Reply, NextStateName, NextStateData}
-%%   Reply = {state_infos, [{InfoName::atom(), InfoValue::any()]
-%%----------------------------------------------------------------------
 
 handle_sync_event(get_state_infos, _From, StateName,
 		  StateData) ->
@@ -621,12 +586,6 @@ handle_sync_event(_Event, _From, StateName,
 code_change(_OldVsn, StateName, StateData, _Extra) ->
     {ok, StateName, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: handle_info/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}
-%%----------------------------------------------------------------------
 handle_info({send_text, Text}, StateName, StateData) ->
     send_text(StateData, Text),
     {next_state, StateName, StateData};
@@ -636,11 +595,6 @@ handle_info({timeout, Timer, _}, _StateName,
 handle_info(_, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-%%----------------------------------------------------------------------
-%% Func: terminate/3
-%% Purpose: Shutdown the fsm
-%% Returns: any
-%%----------------------------------------------------------------------
 terminate(Reason, _StateName, StateData) ->
     ?DEBUG("terminated: ~p", [Reason]),
     case Reason of
@@ -661,11 +615,6 @@ get_external_hosts(StateData) ->
 	   || {{D, _}, established} <- dict:to_list(Connections)]
     end.
 
-%%----------------------------------------------------------------------
-%% Func: print_state/1
-%% Purpose: Prepare the state to be printed on error log
-%% Returns: State to print
-%%----------------------------------------------------------------------
 print_state(State) -> State.
 
 %%%----------------------------------------------------------------------
@@ -677,7 +626,7 @@ send_text(StateData, Text) ->
 				   Text).
 
 send_element(StateData, El) ->
-    send_text(StateData, xml:element_to_binary(El)).
+    send_text(StateData, fxml:element_to_binary(El)).
 
 change_shaper(StateData, Host, JID) ->
     Shaper = acl:match_rule(Host, StateData#state.shaper,
@@ -694,15 +643,15 @@ cancel_timer(Timer) ->
 is_key_packet(#xmlel{name = Name, attrs = Attrs,
 		     children = Els})
     when Name == <<"db:result">> ->
-    {key, xml:get_attr_s(<<"to">>, Attrs),
-     xml:get_attr_s(<<"from">>, Attrs),
-     xml:get_attr_s(<<"id">>, Attrs), xml:get_cdata(Els)};
+    {key, fxml:get_attr_s(<<"to">>, Attrs),
+     fxml:get_attr_s(<<"from">>, Attrs),
+     fxml:get_attr_s(<<"id">>, Attrs), fxml:get_cdata(Els)};
 is_key_packet(#xmlel{name = Name, attrs = Attrs,
 		     children = Els})
     when Name == <<"db:verify">> ->
-    {verify, xml:get_attr_s(<<"to">>, Attrs),
-     xml:get_attr_s(<<"from">>, Attrs),
-     xml:get_attr_s(<<"id">>, Attrs), xml:get_cdata(Els)};
+    {verify, fxml:get_attr_s(<<"to">>, Attrs),
+     fxml:get_attr_s(<<"from">>, Attrs),
+     fxml:get_attr_s(<<"id">>, Attrs), fxml:get_cdata(Els)};
 is_key_packet(_) -> false.
 
 fsm_limit_opts(Opts) ->

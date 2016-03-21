@@ -83,14 +83,6 @@ AC_ARG_ENABLE(roster_gateway_workaround,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-roster-gateway-workaround) ;;
 esac],[roster_gateway_workaround=false])
 
-AC_ARG_ENABLE(transient_supervisors,
-[AC_HELP_STRING([--disable-transient-supervisors], [disable Erlang supervision for transient processes (default: no)])],
-[case "${enableval}" in
-  yes) transient_supervisors=true ;;
-  no)  transient_supervisors=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-transient_supervisors) ;;
-esac],[transient_supervisors=true])
-
 AC_ARG_ENABLE(full_xml,
 [AC_HELP_STRING([--enable-full-xml], [use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)])],
 [case "${enableval}" in
@@ -108,10 +100,10 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-elixir --enable-iconv --enable-debug --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-elixir --enable-iconv --enable-debug --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) nif=true odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true elixir=true iconv=true debug=true lager=true tools=true ;;
-  no) nif=false odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false elixir=false iconv=false debug=false lager=false tools=false ;;
+  yes) odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true elixir=true iconv=true debug=true tools=true ;;
+  no) odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false elixir=false iconv=false debug=false tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -122,14 +114,6 @@ AC_ARG_ENABLE(tools,
   no)  tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-tools) ;;
 esac],[if test "x$tools" = "x"; then tools=false; fi])
-
-AC_ARG_ENABLE(nif,
-[AC_HELP_STRING([--enable-nif], [replace some functions with C equivalents. Requires Erlang R13B04 or higher (default: no)])],
-[case "${enableval}" in
-  yes) nif=true ;;
-  no)  nif=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-nif) ;;
-esac],[if test "x$nif" = "x"; then nif=false; fi])
 
 AC_ARG_ENABLE(odbc,
 [AC_HELP_STRING([--enable-odbc], [enable pure ODBC support (default: no)])],
@@ -219,13 +203,13 @@ AC_ARG_ENABLE(debug,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
 esac],[if test "x$debug" = "x"; then debug=true; fi])
 
-AC_ARG_ENABLE(lager,
-[AC_HELP_STRING([--enable-lager], [enable lager support (default: yes)])],
+AC_ARG_ENABLE(latest_deps,
+[AC_HELP_STRING([--enable-latest-deps], [makes rebar use latest commits for dependences instead of tagged versions (default: no)])],
 [case "${enableval}" in
-  yes) lager=true ;;
-  no)  lager=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-lager) ;;
-esac],[if test "x$lager" = "x"; then lager=true; fi])
+  yes) latest_deps=true ;;
+  no)  latest_deps=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-latest-deps) ;;
+esac],[if test "x$latest_deps" = "x"; then latest_deps=false; fi])
 
 AC_CONFIG_FILES([Makefile
 		 vars.config
@@ -256,9 +240,7 @@ fi
 
 AC_SUBST(hipe)
 AC_SUBST(roster_gateway_workaround)
-AC_SUBST(transient_supervisors)
 AC_SUBST(full_xml)
-AC_SUBST(nif)
 AC_SUBST(db_type)
 AC_SUBST(odbc)
 AC_SUBST(mysql)
@@ -271,7 +253,10 @@ AC_SUBST(redis)
 AC_SUBST(elixir)
 AC_SUBST(iconv)
 AC_SUBST(debug)
-AC_SUBST(lager)
 AC_SUBST(tools)
+AC_SUBST(latest_deps)
+AC_SUBST(CFLAGS)
+AC_SUBST(CPPFLAGS)
+AC_SUBST(LDFLAGS)
 
 AC_OUTPUT

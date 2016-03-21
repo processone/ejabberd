@@ -1,166 +1,83 @@
 %%%-------------------------------------------------------------------
 %%% @author Evgeniy Khramtsov <ekhramtsov@process-one.net>
-%%% @copyright (C) 2013, Evgeniy Khramtsov
+%%% @copyright (C) 2013-2016, Evgeniy Khramtsov
 %%% @doc
 %%%
 %%% @end
 %%% Created :  1 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%-------------------------------------------------------------------
 
-{require_min_otp_vsn, "16"}.
+ModCfg0 = fun(F, Cfg, [Key|Tail], Op, Default) ->
+                 {OldVal,PartCfg} = case lists:keytake(Key, 1, Cfg) of
+                                        {value, {_, V1}, V2} -> {V1, V2};
+                                        false -> {if Tail == [] -> Default; true -> [] end, Cfg}
+                                    end,
+                 case Tail of
+                     [] ->
+                         [{Key, Op(OldVal)} | PartCfg];
+                     _ ->
+                         [{Key, F(F, OldVal, Tail, Op, Default)} | PartCfg]
+                 end
+         end,
+ModCfg = fun(Cfg, Keys, Op, Default) -> ModCfg0(ModCfg0, Cfg, Keys, Op, Default) end.
 
-Cfg = case file:consult("vars.config") of
+Cfg = case file:consult(filename:join(filename:dirname(SCRIPT), "vars.config")) of
           {ok, Terms} ->
               Terms;
           _Err ->
               []
       end,
 
-Macros = lists:flatmap(
-           fun({roster_gateway_workaround, true}) ->
-                   [{d, 'ROSTER_GATEWAY_WORKAROUND'}];
-              ({transient_supervisors, false}) ->
-                   [{d, 'NO_TRANSIENT_SUPERVISORS'}];
-              ({nif, true}) ->
-                   [{d, 'NIF'}];
-              ({db_type, mssql}) ->
-                   [{d, 'mssql'}];
-              ({lager, true}) ->
-                   [{d, 'LAGER'}];
-              ({erlang_deprecated_types, true}) ->
-                   [{d, 'ERL_DEPRECATED_TYPES'}];
-              (_) ->
-                   []
-           end, Cfg),
+ProcessVars = fun(_F, [], Acc) ->
+                      lists:reverse(Acc);
+                 (F, [{Type, Var, Value} | Tail], Acc) when
+                        Type == if_var_true orelse
+                        Type == if_var_false ->
+                      Flag = Type == if_var_true,
+                      case proplists:get_bool(Var, Cfg) of
+                          V when V == Flag ->
+                              F(F, Tail, [Value | Acc]);
+                          _ ->
+                              F(F, Tail, Acc)
+                      end;
+                 (F, [{Type, Var, Match, Value} | Tail], Acc) when
+                        Type == if_var_match orelse
+                        Type == if_var_no_match ->
+                      case proplists:get_value(Var, Cfg) of
+                          V when V == Match ->
+                              F(F, Tail, [Value | Acc]);
+                          _ ->
+                              F(F, Tail, Acc)
+                      end;
+                 (F, [Other1 | Tail1], Acc) ->
+                      F(F, Tail1, [F(F, Other1, []) | Acc]);
+                 (F, Val, Acc) when is_tuple(Val) ->
+                      list_to_tuple(F(F, tuple_to_list(Val), Acc));
+                 (_F, Other2, _Acc) ->
+                      Other2
+              end,
 
-DebugInfo = case lists:keysearch(debug, 1, Cfg) of
-                {value, {debug, true}} ->
-                    [];
-                _ ->
-                    [no_debug_info]
-            end,
-
-HiPE = case lists:keysearch(hipe, 1, Cfg) of
-           {value, {hipe, true}} ->
-               [native];
-           _ ->
-               []
-       end,
-
-SrcDirs = lists:foldl(
-            fun({tools, true}, Acc) ->
-                    [tools|Acc];
-               (_, Acc) ->
-                    Acc
-            end, [], Cfg),
-
-Deps = [{p1_cache_tab, ".*", {git, "https://github.com/processone/cache_tab"}},
-        {p1_tls, ".*", {git, "https://github.com/processone/tls"}},
-        {p1_stringprep, ".*", {git, "https://github.com/processone/stringprep"}},
-        {p1_xml, ".*", {git, "https://github.com/processone/xml"}},
-        {esip, ".*", {git, "https://github.com/processone/p1_sip"}},
-        {p1_stun, ".*", {git, "https://github.com/processone/stun"}},
-        {p1_yaml, ".*", {git, "https://github.com/processone/p1_yaml"}},
-        {p1_utils, ".*", {git, "https://github.com/processone/p1_utils"}},
-	{erlydtl, ".*", {git, "https://github.com/erlydtl/erlydtl.git"}}
-	],
+CFLags = proplists:get_value(cflags, Cfg, ""),
+CPPFLags = proplists:get_value(cppflags, Cfg, ""),
+LDFLags = proplists:get_value(ldflags, Cfg, ""),
 
 ConfigureCmd = fun(Pkg, Flags) ->
                        {'get-deps',
                         "sh -c 'cd deps/" ++ Pkg ++
-                            " && ./configure" ++ Flags ++ "'"}
+                            " && CFLAGS=\""++ CFLags ++"\" CPPFLAGS=\""++ CPPFLags ++"\" LDFLAGS=\""++ LDFLags ++"\"" ++
+                            " ./configure " ++ Flags ++ "'"}
                end,
 
-XMLFlags = lists:foldl(
-             fun({nif, true}, Acc) ->
-                     Acc ++ " --enable-nif";
-                ({full_xml, true}, Acc) ->
-                     Acc ++ " --enable-full-xml";
-                (_, Acc) ->
-                     Acc
-             end, "", Cfg),
+Conf = ProcessVars(ProcessVars, CONFIG, []),
 
-PostHooks = [ConfigureCmd("p1_tls", ""),
-             ConfigureCmd("p1_stringprep", ""),
-             ConfigureCmd("p1_yaml", ""),
-	     ConfigureCmd("esip", ""),
-             ConfigureCmd("p1_xml", XMLFlags)],
-
-CfgDeps = lists:flatmap(
-            fun({mysql, true}) ->
-                    [{p1_mysql, ".*", {git, "https://github.com/processone/mysql"}}];
-               ({pgsql, true}) ->
-                    [{p1_pgsql, ".*", {git, "https://github.com/processone/pgsql"}}];
-               ({sqlite, true}) ->
-                    [{sqlite3, ".*", {git, "https://github.com/alexeyr/erlang-sqlite3"}}];
-               ({pam, true}) ->
-                    [{p1_pam, ".*", {git, "https://github.com/processone/epam"}}];
-               ({zlib, true}) ->
-                    [{p1_zlib, ".*", {git, "https://github.com/processone/zlib"}}];
-               ({riak, true}) ->
-                    [{riakc, ".*", {git, "https://github.com/basho/riak-erlang-client", {tag, "1.4.2"}}}];
-               ({elixir, true}) ->
-                    [{rebar_elixir_plugin, ".*", {git, "https://github.com/yrashk/rebar_elixir_plugin"}},
-                     {elixir, ".*", {git, "https://github.com/elixir-lang/elixir", {branch, "v1.0"}}}];
-               ({iconv, true}) ->
-                    [{p1_iconv, ".*", {git, "https://github.com/processone/eiconv"}}];
-               ({lager, true}) ->
-                    [{lager, ".*", {git, "https://github.com/basho/lager"}}];
-               ({lager, false}) ->
-                    [{p1_logger, ".*", {git, "https://github.com/processone/p1_logger"}}];
-               ({tools, true}) ->
-                    [{meck, "0.*", {git, "https://github.com/eproxus/meck"}}];
-               ({redis, true}) ->
-                    [{eredis, ".*", {git, "https://github.com/wooga/eredis"}}];
-               (_) ->
-                    []
-            end, Cfg),
-
-CfgPostHooks = lists:flatmap(
-                 fun({pam, true}) ->
-                         [ConfigureCmd("p1_pam", "")];
-                    ({zlib, true}) ->
-                         [ConfigureCmd("p1_zlib", "")];
-                    ({iconv, true}) ->
-                         [ConfigureCmd("p1_iconv", "")];
-                    (_) ->
-                         []
-                 end, Cfg),
-
-CfgXrefs = lists:flatmap(
-	     fun({mysql, false}) ->
-		     ["(\".*mysql.*\":_/_)"];
-		({pgsql, false}) ->
-		     ["(\".*pgsql.*\":_/_)"];
-		({pam, false}) ->
-		     ["(\"epam\":_/_)"];
-		({riak, false}) ->
-		     ["(\"riak.*\":_/_)"];
-		({riak, true}) ->
-		     % used in map-reduce function called from riak vm
-		     ["(\"riak_object\":_/_)"];
-		({zlib, false}) ->
-		     ["(\"ezlib\":_/_)"];
-		({http, false}) ->
-		     ["(\"lhttpc\":_/_)"];
-		({iconv, false}) ->
-		     ["(\"iconv\":_/_)"];
-		({odbc, false}) ->
-		     ["(\"odbc\":_/_)"];
-		(_) ->
-		     []
-            end, Cfg),
-
-ElixirConfig = case lists:keysearch(elixir, 1, Cfg) of
-                   {value, {elixir, true}} ->
-                       [{plugins, [rebar_elixir_compiler, rebar_exunit] },
-                        {lib_dirs, ["deps/elixir/lib"]}];
-                   _ ->
-                       []
-               end,
+Conf1 = case lists:keytake(post_hook_configure, 1, Conf) of
+            {value, {_, Items}, Rest} ->
+                [{post_hooks, [ConfigureCmd(Mod, string:join(Opts, " ")) || {Mod, Opts} <- Items]} | Rest];
+            _ ->
+                Conf
+        end,
 
 {ok, Cwd} = file:get_cwd(),
-
 TestConfigFile = filename:join([Cwd, "test", "config.ctc"]),
 TestConfig = case file:read_file_info(TestConfigFile) of
                  {ok, _} ->
@@ -169,22 +86,55 @@ TestConfig = case file:read_file_info(TestConfigFile) of
                      ""
              end,
 
-Config = [{erl_opts, Macros ++ HiPE ++ DebugInfo ++
-               [{src_dirs, [asn1, src | SrcDirs]}]},
-          {sub_dirs, ["rel"]},
-          {keep_build_info, true},
-          {ct_extra_params, "-ct_hooks cth_surefire "
-           ++ TestConfig
-           ++ "-include " ++ filename:join([Cwd, "tools"])},
-	  {xref_warnings, false},
-          {xref_checks, []},
-	  {xref_queries,
-	   [{"(XC - UC) || (XU - X - B - "
-	     ++ string:join(CfgXrefs, " - ") ++ ")", []}]},
-          {post_hooks, PostHooks ++ CfgPostHooks},
-          {deps, Deps ++ CfgDeps}] ++ ElixirConfig,
-%%io:format("ejabberd configuration:~n  ~p~n", [Config]),
-Config.
+Conf2 = [{ct_extra_params, "-ct_hooks cth_surefire "
+         ++ TestConfig
+         ++ "-include "
+         ++ filename:join([Cwd, "tools"])} | Conf1],
+
+Conf3 = case lists:keytake(xref_exclusions, 1, Conf2) of
+            {value, {_, Items2}, Rest2} ->
+                [{xref_queries, [{lists:flatten(["(XC - UC) || (XU - X - B ",
+                                                 [[" - ", V] || V <- Items2], ")"]), []}]} | Rest2];
+            _ ->
+                Conf2
+        end,
+
+Conf5 = case lists:keytake(floating_deps, 1, Conf3) of
+            {value, {_, FloatingDeps}, Rest4} ->
+                case lists:keytake(deps, 1, Rest4) of
+                    {value, {_, Deps}, Rest41} ->
+                        ND = lists:map(fun({DepName, Ver, {git, Repo, _Commit}}=Dep) ->
+                                               case lists:member(DepName, FloatingDeps) of
+                                                   true ->
+                                                       {DepName, ".*", {git, Repo}};
+                                                   _ ->
+                                                       Dep
+                                               end;
+                                          (Dep2) ->
+                                               Dep2
+                                       end, Deps),
+                        [{deps, ND} | Rest41];
+                    _ ->
+                        Rest4
+                end;
+            _ ->
+                Conf3
+        end,
+
+%% When running Travis test, upload test coverage result to coveralls:
+Conf6 = case os:getenv("TRAVIS") of
+            "true" ->
+                JobId = os:getenv("TRAVIS_JOB_ID"),
+                CfgTemp = ModCfg(Conf5, [deps], fun(V) -> [{coveralls, ".*", {git, "https://github.com/markusn/coveralls-erl.git", "master"}}|V] end, []),
+                ModCfg(CfgTemp, [post_hooks], fun(V) -> V ++ [{ct, "echo '\n%%! -pa ebin/ deps/coveralls/ebin\nmain(_)->{ok,F}=file:open(\"erlang.json\",[write]),io:fwrite(F,\"~s\",[coveralls:convert_file(\"logs/all.coverdata\", \""++JobId++"\", \"travis-ci\")]).' > getcover.erl"},
+                                                              {ct, "escript ./getcover.erl"}] end, []);
+            _ ->
+                Conf5
+        end,
+
+%io:format("ejabberd configuration:~n  ~p~n", [Conf5]),
+
+Conf6.
 
 %% Local Variables:
 %% mode: erlang

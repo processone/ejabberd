@@ -5,7 +5,7 @@
 %%% Created : 12 Oct 2006 by Evgeniy Khramtsov <xram@jabber.ru>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -64,8 +64,9 @@ start_link(Host, Opts) ->
 			  []).
 
 init([Opts]) ->
-    mnesia:create_table(bytestream, [{ram_copies, [node()]},
-				     {attributes, record_info(fields, bytestream)}]),
+    mnesia:create_table(bytestream,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, bytestream)}]),
     mnesia:add_table_copy(bytestream, node(), ram_copies),
     MaxConnections = gen_mod:get_opt(max_connections, Opts,
                                      fun(I) when is_integer(I), I>0 ->

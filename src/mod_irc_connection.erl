@@ -5,7 +5,7 @@
 %%% Created : 15 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
 -behaviour(gen_fsm).
 
 %% External exports
--export([start_link/8, start/9, route_chan/4,
+-export([start_link/12, start/13, route_chan/4,
 	 route_nick/3]).
 
 %% gen_fsm callbacks
@@ -55,9 +55,13 @@
          user = #jid{}         :: jid(),
          host = <<"">>         :: binary(),
 	 server = <<"">>       :: binary(),
+	 remoteAddr = <<"">>   :: binary(),
+	 ident = <<"">>        :: binary(),
+	 realname = <<"">>        :: binary(),
          nick = <<"">>         :: binary(),
          channels = dict:new() :: ?TDICT,
          nickchannel           :: binary(),
+	 webirc_password       :: binary(),
          mod = mod_irc         :: atom(),
 	 inbuf = <<"">>        :: binary(),
          outbuf = <<"">>       :: binary()}).
@@ -78,18 +82,18 @@
 -endif.
 
 start(From, Host, ServerHost, Server, Username,
-      Encoding, Port, Password, Mod) ->
+      Encoding, Port, Password, Ident, RemoteAddr, RealName, WebircPassword, Mod) ->
     Supervisor = gen_mod:get_module_proc(ServerHost,
 					 ejabberd_mod_irc_sup),
     supervisor:start_child(Supervisor,
 			   [From, Host, Server, Username, Encoding, Port,
-			    Password, Mod]).
+			    Password, Ident, RemoteAddr, RealName, WebircPassword, Mod]).
 
 start_link(From, Host, Server, Username, Encoding, Port,
-	   Password, Mod) ->
+	   Password, Ident, RemoteAddr, RealName, WebircPassword, Mod) ->
     gen_fsm:start_link(?MODULE,
 		       [From, Host, Server, Username, Encoding, Port, Password,
-			Mod],
+			Ident, RemoteAddr, RealName, WebircPassword, Mod],
 		       ?FSMOPTS).
 
 %%%----------------------------------------------------------------------
@@ -104,13 +108,14 @@ start_link(From, Host, Server, Username, Encoding, Port,
 %%          {stop, StopReason}
 %%----------------------------------------------------------------------
 init([From, Host, Server, Username, Encoding, Port,
-      Password, Mod]) ->
+      Password, Ident, RemoteAddr, RealName, WebircPassword, Mod]) ->
     gen_fsm:send_event(self(), init),
     {ok, open_socket,
      #state{queue = queue:new(), mod = Mod,
 	    encoding = Encoding, port = Port, password = Password,
 	    user = From, nick = Username, host = Host,
-	    server = Server}}.
+	    server = Server, ident = Ident, realname = RealName,
+		remoteAddr = RemoteAddr, webirc_password = WebircPassword }}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -122,6 +127,10 @@ open_socket(init, StateData) ->
     Addr = StateData#state.server,
     Port = StateData#state.port,
     ?DEBUG("Connecting with IPv6 to ~s:~p", [Addr, Port]),
+    From = StateData#state.user,
+    #jid{user = JidUser, server = JidServer, resource = JidResource} = From,
+    UserIP = ejabberd_sm:get_user_ip(JidUser, JidServer, JidResource),
+    UserIPStr = inet_parse:ntoa(element(1, UserIP)),
     Connect6 = gen_tcp:connect(binary_to_list(Addr), Port,
 			       [inet6, binary, {packet, 0}]),
     Connect = case Connect6 of
@@ -136,6 +145,8 @@ open_socket(init, StateData) ->
     case Connect of
       {ok, Socket} ->
 	  NewStateData = StateData#state{socket = Socket},
+	  send_text(NewStateData,
+	  io_lib:format("WEBIRC ~s ~s ~s ~s\r\n", [StateData#state.webirc_password, JidResource, UserIPStr, UserIPStr])),
 	  if StateData#state.password /= <<"">> ->
 		 send_text(NewStateData,
 			   io_lib:format("PASS ~s\r\n",
@@ -146,9 +157,10 @@ open_socket(init, StateData) ->
 		    io_lib:format("NICK ~s\r\n", [StateData#state.nick])),
 	  send_text(NewStateData,
 		    io_lib:format("USER ~s ~s ~s :~s\r\n",
-				  [StateData#state.nick, StateData#state.nick,
+				  [StateData#state.ident,
+				   StateData#state.nick,
 				   StateData#state.host,
-				   StateData#state.nick])),
+				   StateData#state.realname])),
 	  {next_state, wait_for_registration, NewStateData};
       {error, Reason} ->
 	  ?DEBUG("connect return ~p~n", [Reason]),
@@ -221,7 +233,7 @@ get_password_from_presence(#xmlel{name = <<"presence">>,
     case lists:filter(fun (El) ->
 			      case El of
 				#xmlel{name = <<"x">>, attrs = Attrs} ->
-				    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+				    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
 				      ?NS_MUC -> true;
 				      _ -> false
 				    end;
@@ -231,9 +243,9 @@ get_password_from_presence(#xmlel{name = <<"presence">>,
 		      Els)
 	of
       [ElXMUC | _] ->
-	  case xml:get_subtag(ElXMUC, <<"password">>) of
+	  case fxml:get_subtag(ElXMUC, <<"password">>) of
 	    #xmlel{name = <<"password">>} = PasswordTag ->
-		{true, xml:get_tag_cdata(PasswordTag)};
+		{true, fxml:get_tag_cdata(PasswordTag)};
 	    _ -> false
 	  end;
       _ -> false
@@ -249,7 +261,7 @@ handle_info({route_chan, Channel, Resource,
 	     #xmlel{name = <<"presence">>, attrs = Attrs} =
 		 Presence},
 	    StateName, StateData) ->
-    NewStateData = case xml:get_attr_s(<<"type">>, Attrs) of
+    NewStateData = case fxml:get_attr_s(<<"type">>, Attrs) of
 		     <<"unavailable">> ->
 			 send_stanza_unavailable(Channel, StateData),
 			 S1 = (?SEND((io_lib:format("PART #~s\r\n",
@@ -300,20 +312,20 @@ handle_info({route_chan, Channel, Resource,
 handle_info({route_chan, Channel, Resource,
 	     #xmlel{name = <<"message">>, attrs = Attrs} = El},
 	    StateName, StateData) ->
-    NewStateData = case xml:get_attr_s(<<"type">>, Attrs) of
+    NewStateData = case fxml:get_attr_s(<<"type">>, Attrs) of
 		     <<"groupchat">> ->
-			 case xml:get_path_s(El, [{elem, <<"subject">>}, cdata])
+			 case fxml:get_path_s(El, [{elem, <<"subject">>}, cdata])
 			     of
 			   <<"">> ->
 			       ejabberd_router:route(
-                                 jlib:make_jid(
+                                 jid:make(
                                    iolist_to_binary([Channel,
                                                      <<"%">>,
                                                      StateData#state.server]),
                                    StateData#state.host,
                                    StateData#state.nick),
                                  StateData#state.user, El),
-			       Body = xml:get_path_s(El,
+			       Body = fxml:get_path_s(El,
 						     [{elem, <<"body">>},
 						      cdata]),
 			       case Body of
@@ -374,7 +386,7 @@ handle_info({route_chan, Channel, Resource,
 			 when Type == <<"chat">>;
 			      Type == <<"">>;
 			      Type == <<"normal">> ->
-			 Body = xml:get_path_s(El, [{elem, <<"body">>}, cdata]),
+			 Body = fxml:get_path_s(El, [{elem, <<"body">>}, cdata]),
 			 case Body of
 			   <<"/quote ", Rest/binary>> ->
 			       ?SEND(<<Rest/binary, "\r\n">>);
@@ -430,7 +442,7 @@ handle_info({route_chan, Channel, Resource,
 	     #xmlel{name = <<"iq">>} = El},
 	    StateName, StateData) ->
     From = StateData#state.user,
-    To = jlib:make_jid(iolist_to_binary([Channel, <<"%">>,
+    To = jid:make(iolist_to_binary([Channel, <<"%">>,
                                          StateData#state.server]),
 		       StateData#state.host, StateData#state.nick),
     _ = case jlib:iq_query_info(El) of
@@ -469,9 +481,9 @@ handle_info({route_chan, _Channel, _Resource, _Packet},
 handle_info({route_nick, Nick,
 	     #xmlel{name = <<"message">>, attrs = Attrs} = El},
 	    StateName, StateData) ->
-    NewStateData = case xml:get_attr_s(<<"type">>, Attrs) of
+    NewStateData = case fxml:get_attr_s(<<"type">>, Attrs) of
 		     <<"chat">> ->
-			 Body = xml:get_path_s(El, [{elem, <<"body">>}, cdata]),
+			 Body = fxml:get_path_s(El, [{elem, <<"body">>}, cdata]),
 			 case Body of
 			   <<"/quote ", Rest/binary>> ->
 			       ?SEND(<<Rest/binary, "\r\n">>);
@@ -716,7 +728,7 @@ terminate(_Reason, _StateName, FullStateData) ->
 
 send_stanza(Chan, StateData, Stanza) ->
     ejabberd_router:route(
-      jlib:make_jid(
+      jid:make(
         iolist_to_binary([Chan,
                           <<"%">>,
                           StateData#state.server]),
@@ -766,13 +778,13 @@ bounce_messages(Reason) ->
     receive
       {send_element, El} ->
 	  #xmlel{attrs = Attrs} = El,
-	  case xml:get_attr_s(<<"type">>, Attrs) of
+	  case fxml:get_attr_s(<<"type">>, Attrs) of
 	    <<"error">> -> ok;
 	    _ ->
 		Err = jlib:make_error_reply(El, <<"502">>, Reason),
-		From = jlib:string_to_jid(xml:get_attr_s(<<"from">>,
+		From = jid:from_string(fxml:get_attr_s(<<"from">>,
 							 Attrs)),
-		To = jlib:string_to_jid(xml:get_attr_s(<<"to">>,
+		To = jid:from_string(fxml:get_attr_s(<<"to">>,
 						       Attrs)),
 		ejabberd_router:route(To, From, Err)
 	  end,
@@ -830,7 +842,7 @@ process_channel_list_user(StateData, Chan, User) ->
 				       {U2, <<"admin">>, <<"moderator">>};
 				   _ -> {User1, <<"member">>, <<"participant">>}
 				 end,
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary([Chan,
+    ejabberd_router:route(jid:make(iolist_to_binary([Chan,
                                                           <<"%">>,
                                                           StateData#state.server]),
 					StateData#state.host, User2),
@@ -860,7 +872,7 @@ process_channel_topic(StateData, Chan, String) ->
     Msg = ejabberd_regexp:replace(String, <<".*332[^:]*:">>,
 				  <<"">>),
     Msg1 = filter_message(Msg),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary([Chan,
+    ejabberd_router:route(jid:make(iolist_to_binary([Chan,
                                                           <<"%">>,
                                                           StateData#state.server]),
 					StateData#state.host, <<"">>),
@@ -889,7 +901,7 @@ process_channel_topic_who(StateData, Chan, String) ->
 	     _ -> String
 	   end,
     Msg2 = filter_message(Msg1),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary([Chan,
+    ejabberd_router:route(jid:make(iolist_to_binary([Chan,
                                                           <<"%">>,
                                                           StateData#state.server]),
 					StateData#state.host, <<"">>),
@@ -921,7 +933,7 @@ process_nick_in_use(StateData, String) ->
 	  % Shouldn't happen with a well behaved server
 	  StateData;
       Chan ->
-	  ejabberd_router:route(jlib:make_jid(iolist_to_binary([Chan,
+	  ejabberd_router:route(jid:make(iolist_to_binary([Chan,
                                                                 <<"%">>,
                                                                 StateData#state.server]),
 					      StateData#state.host,
@@ -938,7 +950,7 @@ process_num_error(StateData, String) ->
 			      <<"continue">>),
     lists:foreach(fun (Chan) ->
 			  ejabberd_router:route(
-                            jlib:make_jid(
+                            jid:make(
                               iolist_to_binary(
                                 [Chan,
                                  <<"%">>,
@@ -956,7 +968,7 @@ process_num_error(StateData, String) ->
     StateData.
 
 process_endofwhois(StateData, _String, Nick) ->
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary([Nick,
+    ejabberd_router:route(jid:make(iolist_to_binary([Nick,
                                                           <<"!">>,
                                                           StateData#state.server]),
 					StateData#state.host, <<"">>),
@@ -973,7 +985,7 @@ process_whois311(StateData, String, Nick, Ident,
 		 Irchost) ->
     Fullname = ejabberd_regexp:replace(String,
 				       <<".*311[^:]*:">>, <<"">>),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary([Nick,
+    ejabberd_router:route(jid:make(iolist_to_binary([Nick,
                                                           <<"!">>,
                                                           StateData#state.server]),
 					StateData#state.host, <<"">>),
@@ -997,7 +1009,7 @@ process_whois311(StateData, String, Nick, Ident,
 process_whois312(StateData, String, Nick, Ircserver) ->
     Ircserverdesc = ejabberd_regexp:replace(String,
 					    <<".*312[^:]*:">>, <<"">>),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary([Nick,
+    ejabberd_router:route(jid:make(iolist_to_binary([Nick,
                                                           <<"!">>,
                                                           StateData#state.server]),
 					StateData#state.host, <<"">>),
@@ -1019,7 +1031,7 @@ process_whois312(StateData, String, Nick, Ircserver) ->
 process_whois319(StateData, String, Nick) ->
     Chanlist = ejabberd_regexp:replace(String,
 				       <<".*319[^:]*:">>, <<"">>),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+    ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Nick,
                                            <<"!">>,
                                            StateData#state.server]),
@@ -1047,7 +1059,7 @@ process_chanprivmsg(StateData, Chan, From, String) ->
 	     _ -> Msg
 	   end,
     Msg2 = filter_message(Msg1),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+    ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
                                            StateData#state.server]),
@@ -1069,7 +1081,7 @@ process_channotice(StateData, Chan, From, String) ->
 	     _ -> <<"/me NOTICE: ", Msg/binary>>
 	   end,
     Msg2 = filter_message(Msg1),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+    ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
                                            StateData#state.server]),
@@ -1091,7 +1103,7 @@ process_privmsg(StateData, _Nick, From, String) ->
 	     _ -> Msg
 	   end,
     Msg2 = filter_message(Msg1),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+    ejabberd_router:route(jid:make(iolist_to_binary(
                                           [FromUser,
                                            <<"!">>,
                                            StateData#state.server]),
@@ -1113,7 +1125,7 @@ process_notice(StateData, _Nick, From, String) ->
 	     _ -> <<"/me NOTICE: ", Msg/binary>>
 	   end,
     Msg2 = filter_message(Msg1),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+    ejabberd_router:route(jid:make(iolist_to_binary(
                                           [FromUser,
                                            <<"!">>,
                                            StateData#state.server]),
@@ -1141,14 +1153,14 @@ process_userinfo(StateData, _Nick, From) ->
     send_text(StateData,
 	      io_lib:format("NOTICE ~s :\001USERINFO xmpp:~s\001\r\n",
 			    [FromUser,
-			     jlib:jid_to_string(StateData#state.user)])).
+			     jid:to_string(StateData#state.user)])).
 
 process_topic(StateData, Chan, From, String) ->
     [FromUser | _] = str:tokens(From, <<"!">>),
     Msg = ejabberd_regexp:replace(String,
 				  <<".*TOPIC[^:]*:">>, <<"">>),
     Msg1 = filter_message(Msg),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+    ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
                                            StateData#state.server]),
@@ -1170,7 +1182,7 @@ process_part(StateData, Chan, From, String) ->
     Msg = ejabberd_regexp:replace(String,
 				  <<".*PART[^:]*:">>, <<"">>),
     Msg1 = filter_message(Msg),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+    ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
                                            StateData#state.server]),
@@ -1212,7 +1224,7 @@ process_quit(StateData, From, String) ->
     dict:map(fun (Chan, Ps) ->
 		     case (?SETS):is_member(FromUser, Ps) of
 		       true ->
-			   ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+			   ejabberd_router:route(jid:make(iolist_to_binary(
                                                                  [Chan,
                                                                   <<"%">>,
                                                                   StateData#state.server]),
@@ -1261,7 +1273,7 @@ process_quit(StateData, From, String) ->
 process_join(StateData, Channel, From, _String) ->
     [FromUser | FromIdent] = str:tokens(From, <<"!">>),
     [Chan | _] = binary:split(Channel, <<":#">>),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+    ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
                                            StateData#state.server]),
@@ -1294,7 +1306,7 @@ process_join(StateData, Channel, From, _String) ->
 
 process_mode_o(StateData, Chan, _From, Nick,
 	       Affiliation, Role) ->
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+    ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
                                            StateData#state.server]),
@@ -1318,7 +1330,7 @@ process_kick(StateData, Chan, From, Nick, String) ->
     Msg = lists:last(str:tokens(String, <<":">>)),
     Msg2 = <<Nick/binary, " kicked by ", From/binary, " (",
 	     (filter_message(Msg))/binary, ")">>,
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+    ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
                                            StateData#state.server]),
@@ -1329,7 +1341,7 @@ process_kick(StateData, Chan, From, Nick, String) ->
 				 children =
 				     [#xmlel{name = <<"body">>, attrs = [],
 					     children = [{xmlcdata, Msg2}]}]}),
-    ejabberd_router:route(jlib:make_jid(iolist_to_binary(
+    ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
                                            StateData#state.server]),
@@ -1361,7 +1373,7 @@ process_nick(StateData, From, NewNick) ->
     NewChans = dict:map(fun (Chan, Ps) ->
 				case (?SETS):is_member(FromUser, Ps) of
 				  true ->
-				      ejabberd_router:route(jlib:make_jid(
+				      ejabberd_router:route(jid:make(
                                                               iolist_to_binary(
                                                                 [Chan,
                                                                  <<"%">>,
@@ -1408,7 +1420,7 @@ process_nick(StateData, From, NewNick) ->
 											   children
 											       =
 											       []}]}]}),
-				      ejabberd_router:route(jlib:make_jid(
+				      ejabberd_router:route(jid:make(
                                                               iolist_to_binary(
                                                                 [Chan,
                                                                  <<"%">>,
@@ -1456,7 +1468,7 @@ process_nick(StateData, From, NewNick) ->
 
 process_error(StateData, String) ->
     lists:foreach(fun (Chan) ->
-			  ejabberd_router:route(jlib:make_jid(
+			  ejabberd_router:route(jid:make(
                                                   iolist_to_binary(
                                                     [Chan,
                                                      <<"%">>,
@@ -1523,14 +1535,14 @@ iq_admin(StateData, Channel, From, To,
     end.
 
 process_iq_admin(StateData, Channel, set, SubEl) ->
-    case xml:get_subtag(SubEl, <<"item">>) of
+    case fxml:get_subtag(SubEl, <<"item">>) of
       false -> {error, ?ERR_BAD_REQUEST};
       ItemEl ->
-	  Nick = xml:get_tag_attr_s(<<"nick">>, ItemEl),
-	  Affiliation = xml:get_tag_attr_s(<<"affiliation">>,
+	  Nick = fxml:get_tag_attr_s(<<"nick">>, ItemEl),
+	  Affiliation = fxml:get_tag_attr_s(<<"affiliation">>,
 					   ItemEl),
-	  Role = xml:get_tag_attr_s(<<"role">>, ItemEl),
-	  Reason = xml:get_path_s(ItemEl,
+	  Role = fxml:get_tag_attr_s(<<"role">>, ItemEl),
+	  Reason = fxml:get_path_s(ItemEl,
 				  [{elem, <<"reason">>}, cdata]),
 	  process_admin(StateData, Channel, Nick, Affiliation,
 			Role, Reason)

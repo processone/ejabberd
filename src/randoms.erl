@@ -5,7 +5,7 @@
 %%% Created : 13 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -29,23 +29,12 @@
 
 -export([get_string/0]).
 
--export([start/0, init/0]).
+-export([start/0]).
 
 start() ->
-    register(random_generator, spawn(randoms, init, [])).
-
-init() ->
-    {A1, A2, A3} = now(), random:seed(A1, A2, A3), loop().
-
-loop() ->
-    receive
-      {From, get_random, N} ->
-	  From ! {random, random:uniform(N)}, loop();
-      _ -> loop()
-    end.
+    ok.
 
 get_string() ->
-    random_generator ! {self(), get_random, 65536 * 65536},
-    receive
-      {random, R} -> jlib:integer_to_binary(R)
-    end.
+    R = crypto:rand_uniform(0, 16#10000000000000000),
+    jlib:integer_to_binary(R).
+

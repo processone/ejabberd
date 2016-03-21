@@ -1,11 +1,11 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_client_state.erl
-%%% Author  : Holger Weiss
+%%% Author  : Holger Weiss <holger@zedat.fu-berlin.de>
 %%% Purpose : Filter stanzas sent to inactive clients (XEP-0352)
-%%% Created : 11 Sep 2014 by Holger Weiss
+%%% Created : 11 Sep 2014 by Holger Weiss <holger@zedat.fu-berlin.de>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2014-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2014-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -80,7 +80,7 @@ add_stream_feature(Features, _Host) ->
     [Feature | Features].
 
 filter_presence(_Action, #xmlel{name = <<"presence">>, attrs = Attrs}) ->
-    case xml:get_attr(<<"type">>, Attrs) of
+    case fxml:get_attr(<<"type">>, Attrs) of
       {value, Type} when Type /= <<"unavailable">> ->
 	  ?DEBUG("Got important presence stanza", []),
 	  {stop, send};
@@ -91,22 +91,12 @@ filter_presence(_Action, #xmlel{name = <<"presence">>, attrs = Attrs}) ->
 filter_presence(Action, _Stanza) -> Action.
 
 filter_chat_states(_Action, #xmlel{name = <<"message">>} = Stanza) ->
-    %% All XEP-0085 chat states except for <gone/>:
-    ChatStates = [<<"active">>, <<"inactive">>, <<"composing">>, <<"paused">>],
-    Stripped =
-	lists:foldl(fun(ChatState, AccStanza) ->
-			    xml:remove_subtags(AccStanza, ChatState,
-					       {<<"xmlns">>, ?NS_CHATSTATES})
-		    end, Stanza, ChatStates),
-    case Stripped of
-      #xmlel{children = [#xmlel{name = <<"thread">>}]} ->
+    case jlib:is_standalone_chat_state(Stanza) of
+      true ->
 	  ?DEBUG("Got standalone chat state notification", []),
 	  {stop, drop};
-      #xmlel{children = []} ->
-	  ?DEBUG("Got standalone chat state notification", []),
-	  {stop, drop};
-      _ ->
-	  ?DEBUG("Got message with chat state notification", []),
+      false ->
+	  ?DEBUG("Got message stanza", []),
 	  {stop, send}
     end;
 filter_chat_states(Action, _Stanza) -> Action.

@@ -5,7 +5,7 @@
 %%% Created : 23 Aug 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -52,10 +52,10 @@
 
 -type sockmod() :: ejabberd_http_bind |
                    ejabberd_http_ws |
-                   gen_tcp | p1_tls | ezlib.
+                   gen_tcp | fast_tls | ezlib.
 -type receiver() :: pid () | atom().
 -type socket() :: pid() | inet:socket() |
-                  p1_tls:tls_socket() |
+                  fast_tls:tls_socket() |
                   ezlib:zlib_socket() |
                   ejabberd_http_bind:bind_socket().
 
@@ -67,15 +67,12 @@
 
 -export_type([socket_state/0, sockmod/0]).
 
--spec start(atom(), sockmod(), socket(), [{atom(), any()}]) -> any().
 
 %%====================================================================
 %% API
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function:
-%% Description:
-%%--------------------------------------------------------------------
+-spec start(atom(), sockmod(), socket(), [{atom(), any()}]) -> any().
+
 start(Module, SockMod, Socket, Opts) ->
     case Module:socket_type() of
       xml_stream ->
@@ -148,15 +145,15 @@ connect(Addr, Port, Opts, Timeout) ->
     end.
 
 starttls(SocketData, TLSOpts) ->
-    {ok, TLSSocket} = p1_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
+    {ok, TLSSocket} = fast_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
     ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
-    SocketData#socket_state{socket = TLSSocket, sockmod = p1_tls}.
+    SocketData#socket_state{socket = TLSSocket, sockmod = fast_tls}.
 
 starttls(SocketData, TLSOpts, Data) ->
-    {ok, TLSSocket} = p1_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
+    {ok, TLSSocket} = fast_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
     ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
     send(SocketData, Data),
-    SocketData#socket_state{socket = TLSSocket, sockmod = p1_tls}.
+    SocketData#socket_state{socket = TLSSocket, sockmod = fast_tls}.
 
 compress(SocketData) -> compress(SocketData, undefined).
 
@@ -219,10 +216,10 @@ get_sockmod(SocketData) ->
     SocketData#socket_state.sockmod.
 
 get_peer_certificate(SocketData) ->
-    p1_tls:get_peer_certificate(SocketData#socket_state.socket).
+    fast_tls:get_peer_certificate(SocketData#socket_state.socket).
 
 get_verify_result(SocketData) ->
-    p1_tls:get_verify_result(SocketData#socket_state.socket).
+    fast_tls:get_verify_result(SocketData#socket_state.socket).
 
 close(SocketData) ->
     ejabberd_receiver:close(SocketData#socket_state.receiver).
@@ -241,7 +238,3 @@ peername(#socket_state{sockmod = SockMod,
       _ -> SockMod:peername(Socket)
     end.
 
-%%====================================================================
-%% Internal functions
-%%====================================================================
-%====================================================================

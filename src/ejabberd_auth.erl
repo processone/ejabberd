@@ -5,7 +5,7 @@
 %%% Created : 23 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -77,7 +77,7 @@
 -callback get_password_s(binary(), binary()) -> binary() | {binary(), binary(), binary(), integer()}.
 
 start() ->
-%% This is only executed by ejabberd_c2s for non-SASL auth client
+    %% This is only executed by ejabberd_c2s for non-SASL auth client
     lists:foreach(fun (Host) ->
 			  lists:foreach(fun (M) -> M:start(Host) end,
 					auth_modules(Host))
@@ -187,7 +187,8 @@ try_register(User, Server, Password) ->
     case is_user_exists(User, Server) of
       true -> {atomic, exists};
       false ->
-	  case lists:member(jlib:nameprep(Server), ?MYHOSTS) of
+	  LServer = jid:nameprep(Server),
+	  case lists:member(LServer, ?MYHOSTS) of
 	    true ->
 		Res = lists:foldl(fun (_M, {atomic, ok} = Res) -> Res;
 				      (M, _) ->
@@ -357,7 +358,7 @@ remove_user(User, Server) ->
     lists:foreach(fun (M) -> M:remove_user(User, Server)
 		  end,
 		  auth_modules(Server)),
-    ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
+    ejabberd_hooks:run(remove_user, jid:nameprep(Server),
 		       [User, Server]),
     ok.
 
@@ -375,7 +376,7 @@ remove_user(User, Server, Password) ->
 		    error, auth_modules(Server)),
     case R of
       ok ->
-	  ejabberd_hooks:run(remove_user, jlib:nameprep(Server),
+	  ejabberd_hooks:run(remove_user, jid:nameprep(Server),
 			     [User, Server]);
       _ -> none
     end,
@@ -426,7 +427,7 @@ auth_modules() ->
 
 %% Return the list of authenticated modules for a given host
 auth_modules(Server) ->
-    LServer = jlib:nameprep(Server),
+    LServer = jid:nameprep(Server),
     Default = case gen_mod:default_db(LServer) of
 		  mnesia -> internal;
 		  DBType -> DBType

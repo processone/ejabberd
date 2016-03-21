@@ -5,7 +5,7 @@
 %%% Created : 21 Jul 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -35,7 +35,8 @@
 	 process_iq_set/4, process_iq_get/5, get_user_list/3,
 	 check_packet/6, remove_user/2, item_to_raw/1,
 	 raw_to_item/1, is_list_needdb/1, updated_list/3,
-         item_to_xml/1, get_user_lists/2, import/3]).
+         item_to_xml/1, get_user_lists/2, import/3,
+	 set_privacy_list/1]).
 
 -export([sql_add_privacy_list/2,
 	 sql_get_default_privacy_list/2,
@@ -108,12 +109,12 @@ process_iq_get(_, From, _To, #iq{sub_el = SubEl},
 	       #userlist{name = Active}) ->
     #jid{luser = LUser, lserver = LServer} = From,
     #xmlel{children = Els} = SubEl,
-    case xml:remove_cdata(Els) of
+    case fxml:remove_cdata(Els) of
       [] -> process_lists_get(LUser, LServer, Active);
       [#xmlel{name = Name, attrs = Attrs}] ->
 	  case Name of
 	    <<"list">> ->
-		ListName = xml:get_attr(<<"name">>, Attrs),
+		ListName = fxml:get_attr(<<"name">>, Attrs),
 		process_list_get(LUser, LServer, ListName);
 	    _ -> {error, ?ERR_BAD_REQUEST}
 	  end;
@@ -180,16 +181,14 @@ process_lists_get(LUser, LServer, _Active, riak) ->
             error
     end;
 process_lists_get(LUser, LServer, _Active, odbc) ->
-    Default = case catch sql_get_default_privacy_list(LUser,
-						      LServer)
-		  of
-		{selected, [<<"name">>], []} -> none;
-		{selected, [<<"name">>], [[DefName]]} -> DefName;
+    Default = case catch sql_get_default_privacy_list(LUser, LServer) of
+		{selected, []} -> none;
+		{selected, [{DefName}]} -> DefName;
 		_ -> none
 	      end,
     case catch sql_get_privacy_list_names(LUser, LServer) of
-      {selected, [<<"name">>], Names} ->
-	  LItems = lists:map(fun ([N]) ->
+      {selected, Names} ->
+	  LItems = lists:map(fun ({N}) ->
 				     #xmlel{name = <<"list">>,
 					    attrs = [{<<"name">>, N}],
 					    children = []}
@@ -241,17 +240,11 @@ process_list_get(LUser, LServer, Name, riak) ->
             error
     end;
 process_list_get(LUser, LServer, Name, odbc) ->
-    case catch sql_get_privacy_list_id(LUser, LServer, Name)
-	of
-      {selected, [<<"id">>], []} -> not_found;
-      {selected, [<<"id">>], [[ID]]} ->
-	  case catch sql_get_privacy_list_data_by_id(ID, LServer)
-	      of
-	    {selected,
-	     [<<"t">>, <<"value">>, <<"action">>, <<"ord">>,
-	      <<"match_all">>, <<"match_iq">>, <<"match_message">>,
-	      <<"match_presence_in">>, <<"match_presence_out">>],
-	     RItems} ->
+    case catch sql_get_privacy_list_id(LUser, LServer, Name) of
+      {selected, []} -> not_found;
+      {selected, [{ID}]} ->
+	  case catch sql_get_privacy_list_data_by_id(ID, LServer) of
+	    {selected, RItems} ->
 		lists:flatmap(fun raw_to_item/1, RItems);
 	    _ -> error
 	  end;
@@ -322,7 +315,7 @@ type_to_list(Type) ->
 
 value_to_list(Type, Val) ->
     case Type of
-      jid -> jlib:jid_to_string(Val);
+      jid -> jid:to_string(Val);
       group -> Val;
       subscription ->
 	  case Val of
@@ -342,14 +335,14 @@ list_to_action(S) ->
 process_iq_set(_, From, _To, #iq{sub_el = SubEl}) ->
     #jid{luser = LUser, lserver = LServer} = From,
     #xmlel{children = Els} = SubEl,
-    case xml:remove_cdata(Els) of
+    case fxml:remove_cdata(Els) of
       [#xmlel{name = Name, attrs = Attrs,
 	      children = SubEls}] ->
-	  ListName = xml:get_attr(<<"name">>, Attrs),
+	  ListName = fxml:get_attr(<<"name">>, Attrs),
 	  case Name of
 	    <<"list">> ->
 		process_list_set(LUser, LServer, ListName,
-				 xml:remove_cdata(SubEls));
+				 fxml:remove_cdata(SubEls));
 	    <<"active">> ->
 		process_active_set(LUser, LServer, ListName);
 	    <<"default">> ->
@@ -404,9 +397,9 @@ process_default_set(LUser, LServer, {value, Name},
 		    odbc) ->
     F = fun () ->
 		case sql_get_privacy_list_names_t(LUser) of
-		  {selected, [<<"name">>], []} -> not_found;
-		  {selected, [<<"name">>], Names} ->
-		      case lists:member([Name], Names) of
+		  {selected, []} -> not_found;
+		  {selected, Names} ->
+		      case lists:member({Name}, Names) of
 			true -> sql_set_default_privacy_list(LUser, Name), ok;
 			false -> not_found
 		      end
@@ -472,17 +465,11 @@ process_active_set(LUser, LServer, Name, riak) ->
             error
     end;
 process_active_set(LUser, LServer, Name, odbc) ->
-    case catch sql_get_privacy_list_id(LUser, LServer, Name)
-	of
-      {selected, [<<"id">>], []} -> error;
-      {selected, [<<"id">>], [[ID]]} ->
-	  case catch sql_get_privacy_list_data_by_id(ID, LServer)
-	      of
-	    {selected,
-	     [<<"t">>, <<"value">>, <<"action">>, <<"ord">>,
-	      <<"match_all">>, <<"match_iq">>, <<"match_message">>,
-	      <<"match_presence_in">>, <<"match_presence_out">>],
-	     RItems} ->
+    case catch sql_get_privacy_list_id(LUser, LServer, Name) of
+      {selected, []} -> error;
+      {selected, [{ID}]} ->
+	  case catch sql_get_privacy_list_data_by_id(ID, LServer) of
+	    {selected, RItems} ->
 		lists:flatmap(fun raw_to_item/1, RItems);
 	    _ -> error
 	  end;
@@ -519,13 +506,42 @@ remove_privacy_list(LUser, LServer, Name, riak) ->
 remove_privacy_list(LUser, LServer, Name, odbc) ->
     F = fun () ->
 		case sql_get_default_privacy_list_t(LUser) of
-		  {selected, [<<"name">>], []} ->
+		  {selected, []} ->
 		      sql_remove_privacy_list(LUser, Name), ok;
-		  {selected, [<<"name">>], [[Default]]} ->
+		  {selected, [{Default}]} ->
 		      if Name == Default -> conflict;
 			 true -> sql_remove_privacy_list(LUser, Name), ok
 		      end
 		end
+	end,
+    odbc_queries:sql_transaction(LServer, F).
+
+set_privacy_list(#privacy{us = {_, LServer}} = Privacy) ->
+    DBType = gen_mod:db_type(LServer, ?MODULE),
+    set_privacy_list(Privacy, DBType).
+
+set_privacy_list(Privacy, mnesia) ->
+    mnesia:dirty_write(Privacy);
+set_privacy_list(Privacy, riak) ->
+    ejabberd_riak:put(Privacy, privacy_schema());
+set_privacy_list(#privacy{us = {LUser, LServer},
+			  default = Default,
+			  lists = Lists}, odbc) ->
+    F = fun() ->
+		lists:foreach(
+		  fun({Name, List}) ->
+			  sql_add_privacy_list(LUser, Name),
+			  {selected, [<<"id">>], [[I]]} =
+			      sql_get_privacy_list_id_t(LUser, Name),
+			  RItems = lists:map(fun item_to_raw/1, List),
+			  sql_set_privacy_list(I, RItems),
+			  if is_binary(Default) ->
+				  sql_set_default_privacy_list(LUser, Default),
+				  ok;
+			     true ->
+				  ok
+			  end
+		  end, Lists)
 	end,
     odbc_queries:sql_transaction(LServer, F).
 
@@ -560,12 +576,12 @@ set_privacy_list(LUser, LServer, Name, List, odbc) ->
     RItems = lists:map(fun item_to_raw/1, List),
     F = fun () ->
 		ID = case sql_get_privacy_list_id_t(LUser, Name) of
-		       {selected, [<<"id">>], []} ->
+                         {selected, []} ->
 			   sql_add_privacy_list(LUser, Name),
-			   {selected, [<<"id">>], [[I]]} =
+			   {selected, [{I}]} =
 			       sql_get_privacy_list_id_t(LUser, Name),
 			   I;
-		       {selected, [<<"id">>], [[I]]} -> I
+		       {selected, [{I}]} -> I
 		     end,
 		sql_set_privacy_list(ID, RItems),
 		ok
@@ -581,14 +597,13 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 	      of
 	    {atomic, conflict} -> {error, ?ERR_CONFLICT};
 	    {atomic, ok} ->
-		ejabberd_sm:route(jlib:make_jid(LUser, LServer,
+		ejabberd_sm:route(jid:make(LUser, LServer,
                                                 <<"">>),
-                                  jlib:make_jid(LUser, LServer, <<"">>),
-                                  {broadcast,
-                                   {privacy_list,
-                                    #userlist{name = Name,
-                                              list = []},
-                                    Name}}),
+                                  jid:make(LUser, LServer, <<"">>),
+                                  {broadcast, {privacy_list,
+                                               #userlist{name = Name,
+                                                         list = []},
+                                               Name}}),
 		{result, []};
 	    _ -> {error, ?ERR_INTERNAL_SERVER_ERROR}
 	  end;
@@ -598,15 +613,14 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
 	      of
 	    {atomic, ok} ->
 		NeedDb = is_list_needdb(List),
-		ejabberd_sm:route(jlib:make_jid(LUser, LServer,
+		ejabberd_sm:route(jid:make(LUser, LServer,
                                                 <<"">>),
-                                  jlib:make_jid(LUser, LServer, <<"">>),
-                                  {broadcast,
-                                   {privacy_list,
-                                    #userlist{name = Name,
-                                              list = List,
-                                              needdb = NeedDb},
-                                    Name}}),
+                                  jid:make(LUser, LServer, <<"">>),
+                                  {broadcast, {privacy_list,
+                                               #userlist{name = Name,
+                                                         list = List,
+                                                         needdb = NeedDb},
+                                               Name}}),
 		{result, []};
 	    _ -> {error, ?ERR_INTERNAL_SERVER_ERROR}
 	  end
@@ -623,10 +637,10 @@ parse_items([#xmlel{name = <<"item">>, attrs = Attrs,
 		    children = SubEls}
 	     | Els],
 	    Res) ->
-    Type = xml:get_attr(<<"type">>, Attrs),
-    Value = xml:get_attr(<<"value">>, Attrs),
-    SAction = xml:get_attr(<<"action">>, Attrs),
-    SOrder = xml:get_attr(<<"order">>, Attrs),
+    Type = fxml:get_attr(<<"type">>, Attrs),
+    Value = fxml:get_attr(<<"value">>, Attrs),
+    SAction = fxml:get_attr(<<"action">>, Attrs),
+    SOrder = fxml:get_attr(<<"order">>, Attrs),
     Action = case catch list_to_action(element(2, SAction))
 		 of
 	       {'EXIT', _} -> false;
@@ -647,11 +661,11 @@ parse_items([#xmlel{name = <<"item">>, attrs = Attrs,
 		  {{value, T}, {value, V}} ->
 		      case T of
 			<<"jid">> ->
-			    case jlib:string_to_jid(V) of
+			    case jid:from_string(V) of
 			      error -> false;
 			      JID ->
 				  I1#listitem{type = jid,
-					      value = jlib:jid_tolower(JID)}
+					      value = jid:tolower(JID)}
 			    end;
 			<<"group">> -> I1#listitem{type = group, value = V};
 			<<"subscription">> ->
@@ -676,7 +690,7 @@ parse_items([#xmlel{name = <<"item">>, attrs = Attrs,
 	   case I2 of
 	     false -> false;
 	     _ ->
-		 case parse_matches(I2, xml:remove_cdata(SubEls)) of
+		 case parse_matches(I2, fxml:remove_cdata(SubEls)) of
 		   false -> false;
 		   I3 -> parse_items(Els, [I3 | Res])
 		 end
@@ -717,8 +731,8 @@ is_list_needdb(Items) ->
 	      Items).
 
 get_user_list(Acc, User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     {Default, Items} = get_user_list(Acc, LUser, LServer,
 				     gen_mod:db_type(LServer, ?MODULE)),
     NeedDb = is_list_needdb(Items),
@@ -757,16 +771,11 @@ get_user_list(_, LUser, LServer, riak) ->
 get_user_list(_, LUser, LServer, odbc) ->
     case catch sql_get_default_privacy_list(LUser, LServer)
 	of
-      {selected, [<<"name">>], []} -> {none, []};
-      {selected, [<<"name">>], [[Default]]} ->
+      {selected, []} -> {none, []};
+      {selected, [{Default}]} ->
 	  case catch sql_get_privacy_list_data(LUser, LServer,
-					       Default)
-	      of
-	    {selected,
-	     [<<"t">>, <<"value">>, <<"action">>, <<"ord">>,
-	      <<"match_all">>, <<"match_iq">>, <<"match_message">>,
-	      <<"match_presence_in">>, <<"match_presence_out">>],
-	     RItems} ->
+					       Default) of
+              {selected, RItems} ->
 		{Default, lists:flatmap(fun raw_to_item/1, RItems)};
 	    _ -> {none, []}
 	  end;
@@ -774,8 +783,8 @@ get_user_list(_, LUser, LServer, odbc) ->
     end.
 
 get_user_lists(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     get_user_lists(LUser, LServer, gen_mod:db_type(LServer, ?MODULE)).
 
 get_user_lists(LUser, LServer, mnesia) ->
@@ -794,26 +803,21 @@ get_user_lists(LUser, LServer, riak) ->
     end;
 get_user_lists(LUser, LServer, odbc) ->
     Default = case catch sql_get_default_privacy_list(LUser, LServer) of
-                  {selected, [<<"name">>], []} ->
+                  {selected, []} ->
                       none;
-                  {selected, [<<"name">>], [[DefName]]} ->
+                  {selected, [{DefName}]} ->
                       DefName;
                   _ ->
                       none
 	      end,
     case catch sql_get_privacy_list_names(LUser, LServer) of
-        {selected, [<<"name">>], Names} ->
+        {selected, Names} ->
             Lists =
                 lists:flatmap(
-                  fun([Name]) ->
+                  fun({Name}) ->
                           case catch sql_get_privacy_list_data(
                                        LUser, LServer, Name) of
-                              {selected,
-                               [<<"t">>, <<"value">>, <<"action">>,
-                                <<"ord">>, <<"match_all">>, <<"match_iq">>,
-                                <<"match_message">>, <<"match_presence_in">>,
-                                <<"match_presence_out">>],
-                               RItems} ->
+                              {selected, RItems} ->
                                   [{Name, lists:flatmap(fun raw_to_item/1, RItems)}];
                               _ ->
                                   []
@@ -854,7 +858,7 @@ check_packet(_, User, Server,
 		    <<"message">> -> message;
 		    <<"iq">> -> iq;
 		    <<"presence">> ->
-			case xml:get_attr_s(<<"type">>, Attrs) of
+			case fxml:get_attr_s(<<"type">>, Attrs) of
 			  %% notification
 			  <<"">> -> presence;
 			  <<"unavailable">> -> presence;
@@ -871,13 +875,13 @@ check_packet(_, User, Server,
 		     {_, _} -> other
 		   end,
 	  LJID = case Dir of
-		   in -> jlib:jid_tolower(From);
-		   out -> jlib:jid_tolower(To)
+		   in -> jid:tolower(From);
+		   out -> jid:tolower(To)
 		 end,
 	  {Subscription, Groups} = case NeedDb of
 				     true ->
 					 ejabberd_hooks:run_fold(roster_get_jid_info,
-								 jlib:nameprep(Server),
+								 jid:nameprep(Server),
 								 {none, []},
 								 [User, Server,
 								  LJID]);
@@ -946,8 +950,8 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
     end.
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     remove_user(LUser, LServer,
 		gen_mod:db_type(LServer, ?MODULE)).
 
@@ -966,16 +970,16 @@ updated_list(_, #userlist{name = OldName} = Old,
        true -> Old
     end.
 
-raw_to_item([SType, SValue, SAction, SOrder, SMatchAll,
-	     SMatchIQ, SMatchMessage, SMatchPresenceIn,
-	     SMatchPresenceOut] = Row) ->
+raw_to_item({SType, SValue, SAction, Order, MatchAll,
+	     MatchIQ, MatchMessage, MatchPresenceIn,
+	     MatchPresenceOut} = Row) ->
     try
         {Type, Value} = case SType of
                             <<"n">> -> {none, none};
                             <<"j">> ->
-                                case jlib:string_to_jid(SValue) of
+                                case jid:from_string(SValue) of
                                     #jid{} = JID ->
-                                        {jid, jlib:jid_tolower(JID)}
+                                        {jid, jid:tolower(JID)}
                                 end;
                             <<"g">> -> {group, SValue};
                             <<"s">> ->
@@ -990,12 +994,6 @@ raw_to_item([SType, SValue, SAction, SOrder, SMatchAll,
                      <<"a">> -> allow;
                      <<"d">> -> deny
                  end,
-        Order = jlib:binary_to_integer(SOrder),
-        MatchAll = ejabberd_odbc:to_bool(SMatchAll),
-        MatchIQ = ejabberd_odbc:to_bool(SMatchIQ),
-        MatchMessage = ejabberd_odbc:to_bool(SMatchMessage),
-        MatchPresenceIn = ejabberd_odbc:to_bool(SMatchPresenceIn),
-        MatchPresenceOut = ejabberd_odbc:to_bool(SMatchPresenceOut),
         [#listitem{type = Type, value = Value, action = Action,
                    order = Order, match_all = MatchAll, match_iq = MatchIQ,
                    match_message = MatchMessage,
@@ -1015,7 +1013,7 @@ item_to_raw(#listitem{type = Type, value = Value,
 			none -> {<<"n">>, <<"">>};
 			jid ->
 			    {<<"j">>,
-			     ejabberd_odbc:escape(jlib:jid_to_string(Value))};
+			     ejabberd_odbc:escape(jid:to_string(Value))};
 			group -> {<<"g">>, ejabberd_odbc:escape(Value)};
 			subscription ->
 			    case Value of
@@ -1029,58 +1027,29 @@ item_to_raw(#listitem{type = Type, value = Value,
 		allow -> <<"a">>;
 		deny -> <<"d">>
 	      end,
-    SOrder = iolist_to_binary(integer_to_list(Order)),
-    SMatchAll = if MatchAll -> <<"1">>;
-		   true -> <<"0">>
-		end,
-    SMatchIQ = if MatchIQ -> <<"1">>;
-		  true -> <<"0">>
-	       end,
-    SMatchMessage = if MatchMessage -> <<"1">>;
-		       true -> <<"0">>
-		    end,
-    SMatchPresenceIn = if MatchPresenceIn -> <<"1">>;
-			  true -> <<"0">>
-		       end,
-    SMatchPresenceOut = if MatchPresenceOut -> <<"1">>;
-			   true -> <<"0">>
-			end,
-    [SType, SValue, SAction, SOrder, SMatchAll, SMatchIQ,
-     SMatchMessage, SMatchPresenceIn, SMatchPresenceOut].
+    {SType, SValue, SAction, Order, MatchAll, MatchIQ,
+     MatchMessage, MatchPresenceIn, MatchPresenceOut}.
 
 sql_get_default_privacy_list(LUser, LServer) ->
-    Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:get_default_privacy_list(LServer,
-					  Username).
+    odbc_queries:get_default_privacy_list(LServer, LUser).
 
 sql_get_default_privacy_list_t(LUser) ->
-    Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:get_default_privacy_list_t(Username).
+    odbc_queries:get_default_privacy_list_t(LUser).
 
 sql_get_privacy_list_names(LUser, LServer) ->
-    Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:get_privacy_list_names(LServer, Username).
+    odbc_queries:get_privacy_list_names(LServer, LUser).
 
 sql_get_privacy_list_names_t(LUser) ->
-    Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:get_privacy_list_names_t(Username).
+    odbc_queries:get_privacy_list_names_t(LUser).
 
 sql_get_privacy_list_id(LUser, LServer, Name) ->
-    Username = ejabberd_odbc:escape(LUser),
-    SName = ejabberd_odbc:escape(Name),
-    odbc_queries:get_privacy_list_id(LServer, Username,
-				     SName).
+    odbc_queries:get_privacy_list_id(LServer, LUser, Name).
 
 sql_get_privacy_list_id_t(LUser, Name) ->
-    Username = ejabberd_odbc:escape(LUser),
-    SName = ejabberd_odbc:escape(Name),
-    odbc_queries:get_privacy_list_id_t(Username, SName).
+    odbc_queries:get_privacy_list_id_t(LUser, Name).
 
 sql_get_privacy_list_data(LUser, LServer, Name) ->
-    Username = ejabberd_odbc:escape(LUser),
-    SName = ejabberd_odbc:escape(Name),
-    odbc_queries:get_privacy_list_data(LServer, Username,
-				       SName).
+    odbc_queries:get_privacy_list_data(LServer, LUser, Name).
 
 sql_get_privacy_list_data_t(LUser, Name) ->
     Username = ejabberd_odbc:escape(LUser),
@@ -1094,33 +1063,22 @@ sql_get_privacy_list_data_by_id_t(ID) ->
     odbc_queries:get_privacy_list_data_by_id_t(ID).
 
 sql_set_default_privacy_list(LUser, Name) ->
-    Username = ejabberd_odbc:escape(LUser),
-    SName = ejabberd_odbc:escape(Name),
-    odbc_queries:set_default_privacy_list(Username, SName).
+    odbc_queries:set_default_privacy_list(LUser, Name).
 
 sql_unset_default_privacy_list(LUser, LServer) ->
-    Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:unset_default_privacy_list(LServer,
-					    Username).
+    odbc_queries:unset_default_privacy_list(LServer, LUser).
 
 sql_remove_privacy_list(LUser, Name) ->
-    Username = ejabberd_odbc:escape(LUser),
-    SName = ejabberd_odbc:escape(Name),
-    odbc_queries:remove_privacy_list(Username, SName).
+    odbc_queries:remove_privacy_list(LUser, Name).
 
 sql_add_privacy_list(LUser, Name) ->
-    Username = ejabberd_odbc:escape(LUser),
-    SName = ejabberd_odbc:escape(Name),
-    odbc_queries:add_privacy_list(Username, SName).
+    odbc_queries:add_privacy_list(LUser, Name).
 
 sql_set_privacy_list(ID, RItems) ->
     odbc_queries:set_privacy_list(ID, RItems).
 
 sql_del_privacy_lists(LUser, LServer) ->
-    Username = ejabberd_odbc:escape(LUser),
-    Server = ejabberd_odbc:escape(LServer),
-    odbc_queries:del_privacy_lists(LServer, Server,
-				   Username).
+    odbc_queries:del_privacy_lists(LServer, LUser).
 
 update_table() ->
     Fields = record_info(fields, privacy),
@@ -1166,7 +1124,7 @@ update_table() ->
     end.
 
 export(Server) ->
-    case ejabberd_odbc:sql_query(jlib:nameprep(Server),
+    case catch ejabberd_odbc:sql_query(jid:nameprep(Server),
 				 [<<"select id from privacy_list order by "
 				    "id desc limit 1;">>]) of
         {selected, [<<"id">>], [[I]]} ->

@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -42,12 +42,12 @@
 	 restore_room/3,
 	 forget_room/3,
 	 create_room/5,
-         shutdown_rooms/1,
+	 shutdown_rooms/1,
 	 process_iq_disco_items/4,
 	 broadcast_service_message/2,
-         export/1,
-         import/1,
-         import/3,
+	 export/1,
+	 import/1,
+	 import/3,
 	 can_use_nick/4]).
 
 -export([init/1, handle_call/3, handle_cast/2,
@@ -58,19 +58,7 @@
 -include("logger.hrl").
 
 -include("jlib.hrl").
-
--record(muc_room, {name_host = {<<"">>, <<"">>} :: {binary(), binary()} |
-                                                   {'_', binary()},
-                   opts = [] :: list() | '_'}).
-
--record(muc_online_room,
-        {name_host = {<<"">>, <<"">>} :: {binary(), binary()} | '$1' |
-                                         {'_', binary()} | '_',
-         pid = self() :: pid() | '$2' | '_' | '$1'}).
-
--record(muc_registered,
-        {us_host = {{<<"">>, <<"">>}, <<"">>} :: {{binary(), binary()}, binary()} | '$1',
-         nick = <<"">> :: binary()}).
+-include("mod_muc.hrl").
 
 -record(state,
 	{host = <<"">> :: binary(),
@@ -82,20 +70,17 @@
 
 -define(PROCNAME, ejabberd_mod_muc).
 
+-define(MAX_ROOMS_DISCOITEMS, 100).
+
 %%====================================================================
 %% API
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
 start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:start_link({local, Proc}, ?MODULE,
 			  [Host, Opts], []).
 
 start(Host, Opts) ->
-    start_supervisor(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
 		 temporary, 1000, worker, [?MODULE]},
@@ -103,7 +88,6 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Rooms = shutdown_rooms(Host),
-    stop_supervisor(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:call(Proc, stop),
     supervisor:delete_child(ejabberd_sup, Proc),
@@ -140,7 +124,7 @@ create_room(Host, Name, From, Nick, Opts) ->
     gen_server:call(Proc, {create, Name, From, Nick, Opts}).
 
 store_room(ServerHost, Host, Name, Opts) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     store_room(LServer, Host, Name, Opts,
 	       gen_mod:db_type(LServer, ?MODULE)).
 
@@ -168,7 +152,7 @@ store_room(LServer, Host, Name, Opts, odbc) ->
     ejabberd_odbc:sql_transaction(LServer, F).
 
 restore_room(ServerHost, Host, Name) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     restore_room(LServer, Host, Name,
                  gen_mod:db_type(LServer, ?MODULE)).
 
@@ -196,7 +180,7 @@ restore_room(LServer, Host, Name, odbc) ->
     end.
 
 forget_room(ServerHost, Host, Name) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     forget_room(LServer, Host, Name,
 		gen_mod:db_type(LServer, ?MODULE)).
 
@@ -222,11 +206,11 @@ forget_room(LServer, Host, Name, odbc) ->
 remove_room_mam(LServer, Host, Name) ->
     case gen_mod:is_loaded(LServer, mod_mam) of
 	true ->
-	    U = jlib:nodeprep(Name),
-	    S = jlib:nameprep(Host),
+	    U = jid:nodeprep(Name),
+	    S = jid:nameprep(Host),
 	    DBType = gen_mod:db_type(LServer, mod_mam),
 	    if DBType == odbc ->
-		    mod_mam:remove_user(jlib:jid_to_string({U, S, <<>>}),
+		    mod_mam:remove_user(jid:to_string({U, S, <<>>}),
 					LServer, DBType);
 	       true ->
 		    mod_mam:remove_user(U, S, DBType)
@@ -238,21 +222,22 @@ remove_room_mam(LServer, Host, Name) ->
 process_iq_disco_items(Host, From, To,
 		       #iq{lang = Lang} = IQ) ->
     Rsm = jlib:rsm_decode(IQ),
+    DiscoNode = fxml:get_tag_attr_s(<<"node">>, IQ#iq.sub_el),
     Res = IQ#iq{type = result,
 		sub_el =
 		    [#xmlel{name = <<"query">>,
 			    attrs = [{<<"xmlns">>, ?NS_DISCO_ITEMS}],
-			    children = iq_disco_items(Host, From, Lang, Rsm)}]},
+			    children = iq_disco_items(Host, From, Lang, DiscoNode, Rsm)}]},
     ejabberd_router:route(To, From, jlib:iq_to_xml(Res)).
 
 can_use_nick(_ServerHost, _Host, _JID, <<"">>) -> false;
 can_use_nick(ServerHost, Host, JID, Nick) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     can_use_nick(LServer, Host, JID, Nick,
 		 gen_mod:db_type(LServer, ?MODULE)).
 
 can_use_nick(_LServer, Host, JID, Nick, mnesia) ->
-    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    {LUser, LServer, _} = jid:tolower(JID),
     LUS = {LUser, LServer},
     case catch mnesia:dirty_select(muc_registered,
 				   [{#muc_registered{us_host = '$1',
@@ -265,7 +250,7 @@ can_use_nick(_LServer, Host, JID, Nick, mnesia) ->
       [#muc_registered{us_host = {U, _Host}}] -> U == LUS
     end;
 can_use_nick(LServer, Host, JID, Nick, riak) ->
-    {LUser, LServer, _} = jlib:jid_tolower(JID),
+    {LUser, LServer, _} = jid:tolower(JID),
     LUS = {LUser, LServer},
     case ejabberd_riak:get_by_index(muc_registered,
 				    muc_registered_schema(),
@@ -279,7 +264,7 @@ can_use_nick(LServer, Host, JID, Nick, riak) ->
     end;
 can_use_nick(LServer, Host, JID, Nick, odbc) ->
     SJID =
-	jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(JID))),
+	jid:to_string(jid:tolower(jid:remove_resource(JID))),
     SNick = ejabberd_odbc:escape(Nick),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
@@ -295,13 +280,6 @@ can_use_nick(LServer, Host, JID, Nick, odbc) ->
 %% gen_server callbacks
 %%====================================================================
 
-%%--------------------------------------------------------------------
-%% Function: init(Args) -> {ok, State} |
-%%                         {ok, State, Timeout} |
-%%                         ignore               |
-%%                         {stop, Reason}
-%% Description: Initiates the server
-%%--------------------------------------------------------------------
 init([Host, Opts]) ->
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"conference.@HOST@">>),
@@ -374,6 +352,14 @@ init([Host, Opts]) ->
 				 end;
 			     max_users ->
 				 fun(I) when is_integer(I), I > 0 -> I end;
+                             presence_broadcast ->
+                                 fun(L) ->
+                                         lists:map(
+                                           fun(moderator) -> moderator;
+                                              (participant) -> participant;
+                                              (visitor) -> visitor
+                                           end, L)
+                                 end;
 			     _ ->
 				 ?ERROR_MSG("unknown option ~p with value ~p",
 					    [Opt, Val]),
@@ -387,11 +373,10 @@ init([Host, Opts]) ->
     RoomShaper = gen_mod:get_opt(room_shaper, Opts,
                                  fun(A) when is_atom(A) -> A end,
                                  none),
-    ejabberd_router:register_route(MyHost),
+    ejabberd_router:register_route(MyHost, Host),
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
-			 HistorySize,
-			 RoomShaper),
+			 HistorySize, RoomShaper),
     {ok, #state{host = MyHost,
 		server_host = Host,
 		access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
@@ -399,15 +384,6 @@ init([Host, Opts]) ->
 		history_size = HistorySize,
 		room_shaper = RoomShaper}}.
 
-%%--------------------------------------------------------------------
-%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
-%%                                      {reply, Reply, State, Timeout} |
-%%                                      {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, Reply, State} |
-%%                                      {stop, Reason, State}
-%% Description: Handling call messages
-%%--------------------------------------------------------------------
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 handle_call({create, Room, From, Nick, Opts}, _From,
@@ -428,20 +404,8 @@ handle_call({create, Room, From, Nick, Opts}, _From,
     register_room(Host, Room, Pid),
     {reply, ok, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_cast(Msg, State) -> {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, State}
-%% Description: Handling cast messages
-%%--------------------------------------------------------------------
 handle_cast(_Msg, State) -> {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_info(Info, State) -> {noreply, State} |
-%%                                       {noreply, State, Timeout} |
-%%                                       {stop, Reason, State}
-%% Description: Handling all non call/cast messages
-%%--------------------------------------------------------------------
 handle_info({route, From, To, Packet},
 	    #state{host = Host, server_host = ServerHost,
 		   access = Access, default_room_opts = DefRoomOpts,
@@ -468,39 +432,15 @@ handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: terminate(Reason, State) -> void()
-%% Description: This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any necessary
-%% cleaning up. When it returns, the gen_server terminates with Reason.
-%% The return value is ignored.
-%%--------------------------------------------------------------------
 terminate(_Reason, State) ->
     ejabberd_router:unregister_route(State#state.host),
     ok.
 
-%%--------------------------------------------------------------------
-%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% Description: Convert process state when code is changed
-%%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
-start_supervisor(Host) ->
-    Proc = gen_mod:get_module_proc(Host,
-				   ejabberd_mod_muc_sup),
-    ChildSpec = {Proc,
-		 {ejabberd_tmp_sup, start_link, [Proc, mod_muc_room]},
-		 permanent, infinity, supervisor, [ejabberd_tmp_sup]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
-
-stop_supervisor(Host) ->
-    Proc = gen_mod:get_module_proc(Host,
-				   ejabberd_mod_muc_sup),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
 
 do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 	 From, To, Packet, DefRoomOpts) ->
@@ -508,13 +448,13 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
 	    do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
-		      From, To, Packet, DefRoomOpts);
+		From, To, Packet, DefRoomOpts);
 	_ ->
 	    #xmlel{attrs = Attrs} = Packet,
-	    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+	    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
 	    ErrText = <<"Access denied by service policy">>,
 	    Err = jlib:make_error_reply(Packet,
-					?ERRT_FORBIDDEN(Lang, ErrText)),
+		    ?ERRT_FORBIDDEN(Lang, ErrText)),
 	    ejabberd_router:route_error(To, From, Err, Packet)
     end.
 
@@ -522,7 +462,7 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts) ->
     {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
-    {Room, _, Nick} = jlib:jid_tolower(To),
+    {Room, _, Nick} = jid:tolower(To),
     #xmlel{name = Name, attrs = Attrs} = Packet,
     case Room of
       <<"">> ->
@@ -617,18 +557,18 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 			_ -> ok
 		      end;
 		  <<"message">> ->
-		      case xml:get_attr_s(<<"type">>, Attrs) of
+		      case fxml:get_attr_s(<<"type">>, Attrs) of
 			<<"error">> -> ok;
 			_ ->
 			    case acl:match_rule(ServerHost, AccessAdmin, From)
 				of
 			      allow ->
-				  Msg = xml:get_path_s(Packet,
+				  Msg = fxml:get_path_s(Packet,
 						       [{elem, <<"body">>},
 							cdata]),
 				  broadcast_service_message(Host, Msg);
 			      _ ->
-				  Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+				  Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
 				  ErrText =
 				      <<"Only service administrators are allowed "
 					"to send service messages">>,
@@ -641,70 +581,72 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 		  <<"presence">> -> ok
 		end;
 	    _ ->
-		case xml:get_attr_s(<<"type">>, Attrs) of
+		case fxml:get_attr_s(<<"type">>, Attrs) of
 		  <<"error">> -> ok;
 		  <<"result">> -> ok;
 		  _ ->
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERR_ITEM_NOT_FOUND),
-			    ejabberd_router:route(To, From, Err)
-		    end
-	    end;
-	_ ->
+		      Err = jlib:make_error_reply(Packet,
+						  ?ERR_ITEM_NOT_FOUND),
+		      ejabberd_router:route(To, From, Err)
+		end
+	  end;
+      _ ->
 	    case mnesia:dirty_read(muc_online_room, {Room, Host}) of
 		[] ->
-		    Type = xml:get_attr_s(<<"type">>, Attrs),
+		    Type = fxml:get_attr_s(<<"type">>, Attrs),
 		    case {Name, Type} of
 			{<<"presence">>, <<"">>} ->
 			    case check_user_can_create_room(ServerHost,
-							    AccessCreate, From,
-							    Room) of
+				    AccessCreate, From, Room) and
+				check_create_roomid(ServerHost, Room) of
 				true ->
-				    {ok, Pid} = start_new_room(
-						  Host, ServerHost, Access,
-						  Room, HistorySize,
-						  RoomShaper, From,
-						  Nick, DefRoomOpts),
+				    {ok, Pid} = start_new_room(Host, ServerHost, Access,
+					    Room, HistorySize,
+					    RoomShaper, From, Nick, DefRoomOpts),
 				    register_room(Host, Room, Pid),
 				    mod_muc_room:route(Pid, From, Nick, Packet),
 				    ok;
 				false ->
-				    Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
+				    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
 				    ErrText = <<"Room creation is denied by service policy">>,
 				    Err = jlib:make_error_reply(
 					    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
 				    ejabberd_router:route(To, From, Err)
 			    end;
 			_ ->
-				Lang = xml:get_attr_s(<<"xml:lang">>, Attrs),
-				ErrText = <<"Conference room does not exist">>,
-				Err = jlib:make_error_reply(Packet,
-							?ERRT_ITEM_NOT_FOUND(Lang,
-										ErrText)),
-				ejabberd_router:route(To, From, Err)
-			end;
-	    [R] ->
-		Pid = R#muc_online_room.pid,
-		?DEBUG("MUC: send to process ~p~n", [Pid]),
-		mod_muc_room:route(Pid, From, Nick, Packet),
-		ok
-	  end
+			    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
+			    ErrText = <<"Conference room does not exist">>,
+			    Err = jlib:make_error_reply(Packet,
+				    ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
+			    ejabberd_router:route(To, From, Err)
+		    end;
+		[R] ->
+		    Pid = R#muc_online_room.pid,
+		    ?DEBUG("MUC: send to process ~p~n", [Pid]),
+		    mod_muc_room:route(Pid, From, Nick, Packet),
+		    ok
+	    end
     end.
 
 check_user_can_create_room(ServerHost, AccessCreate,
-			   From, RoomID) ->
+			   From, _RoomID) ->
     case acl:match_rule(ServerHost, AccessCreate, From) of
-      allow ->
-	  byte_size(RoomID) =<
-	    gen_mod:get_module_opt(ServerHost, ?MODULE, max_room_id,
-                                   fun(infinity) -> infinity;
-                                      (I) when is_integer(I), I>0 -> I
-                                   end, infinity);
+      allow -> true;
       _ -> false
     end.
 
+check_create_roomid(ServerHost, RoomID) ->
+    Max = gen_mod:get_module_opt(ServerHost, ?MODULE, max_room_id,
+				 fun(infinity) -> infinity;
+				    (I) when is_integer(I), I>0 -> I
+				 end, infinity),
+    Regexp = gen_mod:get_module_opt(ServerHost, ?MODULE, regexp_room_id,
+				    fun iolist_to_binary/1, ""),
+    (byte_size(RoomID) =< Max) and
+    (re:run(RoomID, Regexp, [unicode, {capture, none}]) == match).
+
 get_rooms(ServerHost, Host) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     get_rooms(LServer, Host,
               gen_mod:db_type(LServer, ?MODULE)).
 
@@ -743,48 +685,43 @@ get_rooms(LServer, Host, odbc) ->
       Err -> ?ERROR_MSG("failed to get rooms: ~p", [Err]), []
     end.
 
-load_permanent_rooms(Host, ServerHost, Access, HistorySize, RoomShaper) ->
+load_permanent_rooms(Host, ServerHost, Access,
+		     HistorySize, RoomShaper) ->
     lists:foreach(
       fun(R) ->
-              {Room, Host} = R#muc_room.name_host,
-              case mnesia:dirty_read(muc_online_room, {Room, Host}) of
-                  [] ->
-                      {ok, Pid} = mod_muc_room:start(
-                                    Host,
-                                    ServerHost,
-                                    Access,
-                                    Room,
-                                    HistorySize,
-                                    RoomShaper,
-                                    R#muc_room.opts),
-                      register_room(Host, Room, Pid);
-                  _ ->
-                      ok
-              end
-      end, get_rooms(ServerHost, Host)).
+		{Room, Host} = R#muc_room.name_host,
+		case mnesia:dirty_read(muc_online_room, {Room, Host}) of
+		    [] ->
+			{ok, Pid} = mod_muc_room:start(Host,
+				ServerHost, Access, Room,
+				HistorySize, RoomShaper,
+				R#muc_room.opts),
+			register_room(Host, Room, Pid);
+		    _ -> ok
+		end
+	end,
+	get_rooms(ServerHost, Host)).
 
 start_new_room(Host, ServerHost, Access, Room,
-	       HistorySize, RoomShaper, From,
-	       Nick, DefRoomOpts) ->
+	    HistorySize, RoomShaper, From,
+	    Nick, DefRoomOpts) ->
     case restore_room(ServerHost, Host, Room) of
-        error ->
+	error ->
 	    ?DEBUG("MUC: open new room '~s'~n", [Room]),
-	    mod_muc_room:start(Host, ServerHost, Access,
-			       Room, HistorySize,
-			       RoomShaper, From,
-			       Nick, DefRoomOpts);
-        Opts ->
+	    mod_muc_room:start(Host, ServerHost, Access, Room,
+		HistorySize, RoomShaper,
+		From, Nick, DefRoomOpts);
+	Opts ->
 	    ?DEBUG("MUC: restore room '~s'~n", [Room]),
-	    mod_muc_room:start(Host, ServerHost, Access,
-			       Room, HistorySize,
-			       RoomShaper, Opts)
+	    mod_muc_room:start(Host, ServerHost, Access, Room,
+		HistorySize, RoomShaper, Opts)
     end.
 
 register_room(Host, Room, Pid) ->
     F = fun() ->
-		mnesia:write(#muc_online_room{name_host = {Room, Host},
-					      pid = Pid})
-	end,
+	    mnesia:write(#muc_online_room{name_host = {Room, Host},
+		    pid = Pid})
+    end,
     mnesia:transaction(F).
 
 
@@ -813,43 +750,45 @@ iq_disco_info(ServerHost, Lang) ->
 	case gen_mod:is_loaded(ServerHost, mod_mam) of
 	    true ->
 		[#xmlel{name = <<"feature">>,
-			attrs = [{<<"var">>, ?NS_MAM_0}]}];
+			attrs = [{<<"var">>, ?NS_MAM_TMP}]},
+		 #xmlel{name = <<"feature">>,
+			attrs = [{<<"var">>, ?NS_MAM_0}]},
+		 #xmlel{name = <<"feature">>,
+			attrs = [{<<"var">>, ?NS_MAM_1}]}];
 	    false ->
 		[]
 	end.
 
-iq_disco_items(Host, From, Lang, none) ->
-    lists:zf(fun (#muc_online_room{name_host =
-				       {Name, _Host},
-				   pid = Pid}) ->
-		     case catch gen_fsm:sync_send_all_state_event(Pid,
-								  {get_disco_item,
-								   From, Lang},
-								  100)
-			 of
-		       {item, Desc} ->
-			   flush(),
-			   {true,
-			    #xmlel{name = <<"item">>,
+iq_disco_items(Host, From, Lang, <<>>, none) ->
+    Rooms = get_vh_rooms(Host),
+    case erlang:length(Rooms) < ?MAX_ROOMS_DISCOITEMS of
+	true ->
+	    iq_disco_items_list(Host, Rooms, {get_disco_item, all, From, Lang});
+	false ->
+	    iq_disco_items(Host, From, Lang, <<"nonemptyrooms">>, none)
+    end;
+iq_disco_items(Host, From, Lang, <<"nonemptyrooms">>, none) ->
+    XmlEmpty = #xmlel{name = <<"item">>,
 				   attrs =
-				       [{<<"jid">>,
-					 jlib:jid_to_string({Name, Host,
-							     <<"">>})},
-					{<<"name">>, Desc}],
-				   children = []}};
-		       _ -> false
-		     end
-	     end, get_vh_rooms(Host));
-
-iq_disco_items(Host, From, Lang, Rsm) ->
+				       [{<<"jid">>, <<"conference.localhost">>},
+					{<<"node">>, <<"emptyrooms">>},
+					{<<"name">>, translate:translate(Lang, <<"Empty Rooms">>)}],
+				   children = []},
+    Query = {get_disco_item, only_non_empty, From, Lang},
+    [XmlEmpty | iq_disco_items_list(Host, get_vh_rooms(Host), Query)];
+iq_disco_items(Host, From, Lang, <<"emptyrooms">>, none) ->
+    iq_disco_items_list(Host, get_vh_rooms(Host), {get_disco_item, 0, From, Lang});
+iq_disco_items(Host, From, Lang, _DiscoNode, Rsm) ->
     {Rooms, RsmO} = get_vh_rooms(Host, Rsm),
     RsmOut = jlib:rsm_encode(RsmO),
+    iq_disco_items_list(Host, Rooms, {get_disco_item, all, From, Lang}) ++ RsmOut.
+
+iq_disco_items_list(Host, Rooms, Query) ->
     lists:zf(fun (#muc_online_room{name_host =
 				       {Name, _Host},
 				   pid = Pid}) ->
 		     case catch gen_fsm:sync_send_all_state_event(Pid,
-								  {get_disco_item,
-								   From, Lang},
+								  Query,
 								  100)
 			 of
 		       {item, Desc} ->
@@ -858,15 +797,13 @@ iq_disco_items(Host, From, Lang, Rsm) ->
 			    #xmlel{name = <<"item">>,
 				   attrs =
 				       [{<<"jid">>,
-					 jlib:jid_to_string({Name, Host,
+					 jid:to_string({Name, Host,
 							     <<"">>})},
 					{<<"name">>, Desc}],
 				   children = []}};
 		       _ -> false
 		     end
-	     end,
-	     Rooms)
-      ++ RsmOut.
+	     end, Rooms).
 
 get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
     AllRooms = lists:sort(get_vh_rooms(Host)),
@@ -920,13 +857,6 @@ get_room_pos(Desired, [_ | Rooms], HeadPosition) ->
 flush() -> receive _ -> flush() after 0 -> ok end.
 
 -define(XFIELD(Type, Label, Var, Val),
-%% @doc Get a pseudo unique Room Name. The Room Name is generated as a hash of 
-%%      the requester JID, the local time and a random salt.
-%%
-%%      "pseudo" because we don't verify that there is not a room
-%%       with the returned Name already created, nor mark the generated Name 
-%%       as "already used".  But in practice, it is unique enough. See
-%%       http://xmpp.org/extensions/xep-0045.html#createroom-unique
 	#xmlel{name = <<"field">>,
 	       attrs =
 		   [{<<"type">>, Type},
@@ -938,16 +868,16 @@ flush() -> receive _ -> flush() after 0 -> ok end.
 
 iq_get_unique(From) ->
     {xmlcdata,
-     p1_sha:sha(term_to_binary([From, now(),
+     p1_sha:sha(term_to_binary([From, p1_time_compat:timestamp(),
 			     randoms:get_string()]))}.
 
 get_nick(ServerHost, Host, From) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     get_nick(LServer, Host, From,
 	     gen_mod:db_type(LServer, ?MODULE)).
 
 get_nick(_LServer, Host, From, mnesia) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    {LUser, LServer, _} = jid:tolower(From),
     LUS = {LUser, LServer},
     case catch mnesia:dirty_read(muc_registered,
 				 {LUS, Host})
@@ -957,7 +887,7 @@ get_nick(_LServer, Host, From, mnesia) ->
       [#muc_registered{nick = Nick}] -> Nick
     end;
 get_nick(LServer, Host, From, riak) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    {LUser, LServer, _} = jid:tolower(From),
     US = {LUser, LServer},
     case ejabberd_riak:get(muc_registered,
 			   muc_registered_schema(),
@@ -967,7 +897,7 @@ get_nick(LServer, Host, From, riak) ->
     end;
 get_nick(LServer, Host, From, odbc) ->
     SJID =
-	ejabberd_odbc:escape(jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From)))),
+	ejabberd_odbc:escape(jid:to_string(jid:tolower(jid:remove_resource(From)))),
     SHost = ejabberd_odbc:escape(Host),
     case catch ejabberd_odbc:sql_query(LServer,
 				       [<<"select nick from muc_registered where "
@@ -1015,12 +945,12 @@ iq_get_register_info(ServerHost, Host, From, Lang) ->
 			   Nick)]}].
 
 set_nick(ServerHost, Host, From, Nick) ->
-    LServer = jlib:nameprep(ServerHost),
+    LServer = jid:nameprep(ServerHost),
     set_nick(LServer, Host, From, Nick,
 	     gen_mod:db_type(LServer, ?MODULE)).
 
 set_nick(_LServer, Host, From, Nick, mnesia) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    {LUser, LServer, _} = jid:tolower(From),
     LUS = {LUser, LServer},
     F = fun () ->
 		case Nick of
@@ -1050,7 +980,7 @@ set_nick(_LServer, Host, From, Nick, mnesia) ->
 	end,
     mnesia:transaction(F);
 set_nick(LServer, Host, From, Nick, riak) ->
-    {LUser, LServer, _} = jlib:jid_tolower(From),
+    {LUser, LServer, _} = jid:tolower(From),
     LUS = {LUser, LServer},
     {atomic,
      case Nick of
@@ -1080,7 +1010,7 @@ set_nick(LServer, Host, From, Nick, riak) ->
      end};
 set_nick(LServer, Host, From, Nick, odbc) ->
     JID =
-	jlib:jid_to_string(jlib:jid_tolower(jlib:jid_remove_resource(From))),
+	jid:to_string(jid:tolower(jid:remove_resource(From))),
     SJID = ejabberd_odbc:escape(JID),
     SNick = ejabberd_odbc:escape(Nick),
     SHost = ejabberd_odbc:escape(Host),
@@ -1132,12 +1062,12 @@ iq_set_register_info(ServerHost, Host, From, Nick,
 process_iq_register_set(ServerHost, Host, From, SubEl,
 			Lang) ->
     #xmlel{children = Els} = SubEl,
-    case xml:get_subtag(SubEl, <<"remove">>) of
+    case fxml:get_subtag(SubEl, <<"remove">>) of
       false ->
-	  case xml:remove_cdata(Els) of
+	  case fxml:remove_cdata(Els) of
 	    [#xmlel{name = <<"x">>} = XEl] ->
-		case {xml:get_tag_attr_s(<<"xmlns">>, XEl),
-		      xml:get_tag_attr_s(<<"type">>, XEl)}
+		case {fxml:get_tag_attr_s(<<"xmlns">>, XEl),
+		      fxml:get_tag_attr_s(<<"type">>, XEl)}
 		    of
 		  {?NS_XDATA, <<"cancel">>} -> {result, []};
 		  {?NS_XDATA, <<"submit">>} ->
@@ -1175,15 +1105,14 @@ iq_get_vcard(Lang) ->
 		[{xmlcdata,
 		  <<(translate:translate(Lang,
 					 <<"ejabberd MUC module">>))/binary,
-		    "\nCopyright (c) 2003-2015 ProcessOne">>}]}].
-
+		    "\nCopyright (c) 2003-2016 ProcessOne">>}]}].
 
 broadcast_service_message(Host, Msg) ->
     lists:foreach(
-      fun(#muc_online_room{pid = Pid}) ->
-	      gen_fsm:send_all_state_event(
-		Pid, {service_message, Msg})
-      end, get_vh_rooms(Host)).
+	fun(#muc_online_room{pid = Pid}) ->
+		gen_fsm:send_all_state_event(
+		    Pid, {service_message, Msg})
+	end, get_vh_rooms(Host)).
 
 
 get_vh_rooms(Host) ->
@@ -1330,8 +1259,8 @@ export(_Server) ->
               case str:suffix(Host, RoomHost) of
                   true ->
                       SJID = ejabberd_odbc:escape(
-                               jlib:jid_to_string(
-                                 jlib:make_jid(U, S, <<"">>))),
+                               jid:to_string(
+                                 jid:make(U, S, <<"">>))),
                       SNick = ejabberd_odbc:escape(Nick),
                       SRoomHost = ejabberd_odbc:escape(RoomHost),
                       [[<<"delete from muc_registered where jid='">>,
@@ -1349,13 +1278,12 @@ import(_LServer) ->
     [{<<"select name, host, opts from muc_room;">>,
       fun([Name, RoomHost, SOpts]) ->
               Opts = opts_to_binary(ejabberd_odbc:decode_term(SOpts)),
-              #muc_room{name_host = {Name, RoomHost},
-                        opts = Opts}
+              #muc_room{name_host = {Name, RoomHost}, opts = Opts}
       end},
      {<<"select jid, host, nick from muc_registered;">>,
       fun([J, RoomHost, Nick]) ->
               #jid{user = U, server = S} =
-                  jlib:string_to_jid(J),
+                  jid:from_string(J),
               #muc_registered{us_host = {{U, S}, RoomHost},
                               nick = Nick}
       end}].
@@ -1395,6 +1323,8 @@ mod_opt_type(max_room_id) ->
     fun (infinity) -> infinity;
 	(I) when is_integer(I), I > 0 -> I
     end;
+mod_opt_type(regexp_room_id) ->
+    fun iolist_to_binary/1;
 mod_opt_type(max_room_name) ->
     fun (infinity) -> infinity;
 	(I) when is_integer(I), I > 0 -> I
@@ -1420,7 +1350,7 @@ mod_opt_type(user_presence_shaper) ->
 mod_opt_type(_) ->
     [access, access_admin, access_create, access_persistent,
      db_type, default_room_options, history_size, host,
-     max_room_desc, max_room_id, max_room_name,
+     max_room_desc, max_room_id, max_room_name, regexp_room_id,
      max_user_conferences, max_users,
      max_users_admin_threshold, max_users_presence,
      min_message_interval, min_presence_interval,

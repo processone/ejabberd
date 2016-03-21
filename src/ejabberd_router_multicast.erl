@@ -3,6 +3,24 @@
 %%% Author  : Badlop <badlop@process-one.net>
 %%% Purpose : Multicast router
 %%% Created : 11 Aug 2007 by Badlop <badlop@process-one.net>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_router_multicast).
@@ -51,7 +69,7 @@ route_multicast(From, Domain, Destinations, Packet) ->
     end.
 
 register_route(Domain) ->
-    case jlib:nameprep(Domain) of
+    case jid:nameprep(Domain) of
 	error ->
 	    erlang:error({invalid_domain, Domain});
 	LDomain ->
@@ -64,7 +82,7 @@ register_route(Domain) ->
     end.
 
 unregister_route(Domain) ->
-    case jlib:nameprep(Domain) of
+    case jid:nameprep(Domain) of
 	error ->
 	    erlang:error({invalid_domain, Domain});
 	LDomain ->
@@ -191,9 +209,9 @@ code_change(_OldVsn, State, _Extra) ->
 do_route(From, Domain, Destinations, Packet) ->
 
     ?DEBUG("route_multicast~n\tfrom ~s~n\tdomain ~s~n\tdestinations ~p~n\tpacket ~p~n",
-	   [jlib:jid_to_string(From),
+	   [jid:to_string(From),
 	    Domain,
-	    [jlib:jid_to_string(To) || To <- Destinations],
+	    [jid:to_string(To) || To <- Destinations],
 	    Packet]),
 
     %% Try to find an appropriate multicast service

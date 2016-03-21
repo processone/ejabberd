@@ -5,7 +5,7 @@
 %%% Created : 26 Apr 2008 by Evgeniy Khramtsov <xramtsov@gmail.com>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -75,13 +75,6 @@
                   tref :: reference(),
                   args :: any()}).
 
-%%====================================================================
-%% API
-%%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
@@ -95,7 +88,7 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
       {ok, Type, Key, Image} ->
 	  Id = <<(randoms:get_string())/binary>>,
 	  B64Image = jlib:encode_base64((Image)),
-	  JID = jlib:jid_to_string(From),
+	  JID = jid:to_string(From),
 	  CID = <<"sha1+", (p1_sha:sha(Image))/binary,
 		  "@bob.xmpp.org">>,
 	  Data = #xmlel{name = <<"data">>,
@@ -116,7 +109,7 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
 						    {xmlcdata, ?NS_CAPTCHA}),
 					    ?VFIELD(<<"hidden">>, <<"from">>,
 						    {xmlcdata,
-						     jlib:jid_to_string(To)}),
+						     jid:to_string(To)}),
 					    ?VFIELD(<<"hidden">>,
 						    <<"challenge">>,
 						    {xmlcdata, Id}),
@@ -240,7 +233,7 @@ create_captcha_x(SID, To, Lang, Limiter, HeadEls,
 							 [{xmlcdata,
 							   Imageurl}]}]},
 				  ?VFIELD(<<"hidden">>, <<"from">>,
-					  {xmlcdata, jlib:jid_to_string(To)}),
+					  {xmlcdata, jid:to_string(To)}),
 				  ?VFIELD(<<"hidden">>, <<"challenge">>,
 					  {xmlcdata, Id}),
 				  ?VFIELD(<<"hidden">>, <<"sid">>,
@@ -276,12 +269,6 @@ create_captcha_x(SID, To, Lang, Limiter, HeadEls,
       Err -> Err
     end.
 
-%% @spec (Id::string(), Lang::string()) -> {FormEl, {ImgEl, TextEl, IdEl, KeyEl}} | captcha_not_found
-%% where FormEl = xmlelement()
-%%       ImgEl = xmlelement()
-%%       TextEl = xmlelement()
-%%       IdEl = xmlelement()
-%%       KeyEl = xmlelement()
 -spec build_captcha_html(binary(), binary()) -> captcha_not_found |
                                                 {xmlel(),
                                                  {xmlel(), xmlel(),
@@ -330,16 +317,10 @@ build_captcha_html(Id, Lang) ->
       _ -> captcha_not_found
     end.
 
-%% @spec (Id::string(), ProvidedKey::string()) -> captcha_valid | captcha_non_valid | captcha_not_found
--spec check_captcha(binary(), binary()) -> captcha_not_found |
-                                           captcha_valid |
-                                           captcha_non_valid.
-
-
 -spec process_reply(xmlel()) -> ok | {error, bad_match | not_found | malformed}.
 
 process_reply(#xmlel{} = El) ->
-    case xml:get_subtag(El, <<"x">>) of
+    case fxml:get_subtag(El, <<"x">>) of
       false -> {error, malformed};
       Xdata ->
 	  Fields = jlib:parse_xdata_submit(Xdata),
@@ -405,9 +386,6 @@ process(_Handlers,
 process(_Handlers, _Request) ->
     ejabberd_web:error(not_found).
 
-%%====================================================================
-%% gen_server callbacks
-%%====================================================================
 init([]) ->
     mnesia:delete_table(captcha),
     ets:new(captcha,
@@ -454,16 +432,6 @@ terminate(_Reason, _State) -> ok.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
-%%--------------------------------------------------------------------
-%%% Internal functions
-%%--------------------------------------------------------------------
-%%--------------------------------------------------------------------
-%% Function: create_image() -> {ok, Type, Key, Image} | {error, Reason}
-%% Type = "image/png" | "image/jpeg" | "image/gif"
-%% Key = string()
-%% Image = binary()
-%% Reason = atom()
-%%--------------------------------------------------------------------
 create_image() -> create_image(undefined).
 
 create_image(Limiter) ->
@@ -596,12 +564,6 @@ is_limited(Limiter) ->
 	  end
     end.
 
-%%--------------------------------------------------------------------
-%% Function: cmd(Cmd) -> Data | {error, Reason}
-%% Cmd = string()
-%% Data = binary()
-%% Description: os:cmd/1 replacement
-%%--------------------------------------------------------------------
 -define(CMD_TIMEOUT, 5000).
 
 -define(MAX_FILE_SIZE, 64 * 1024).
@@ -663,6 +625,10 @@ lookup_captcha(Id) ->
 	_ -> {error, enoent}
     end.
 
+-spec check_captcha(binary(), binary()) -> captcha_not_found |
+                                           captcha_valid |
+                                           captcha_non_valid.
+
 check_captcha(Id, ProvidedKey) ->
     case ets:lookup(captcha, Id) of
       [#captcha{pid = Pid, args = Args, key = ValidKey,
@@ -695,8 +661,7 @@ clean_treap(Treap, CleanPriority) ->
     end.
 
 now_priority() ->
-    {MSec, Sec, USec} = now(),
-    -((MSec * 1000000 + Sec) * 1000000 + USec).
+    -p1_time_compat:system_time(micro_seconds).
 
 opt_type(captcha_cmd) ->
     fun (FileName) ->

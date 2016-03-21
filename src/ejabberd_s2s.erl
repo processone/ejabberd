@@ -5,7 +5,7 @@
 %%% Created :  7 Dec 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -35,14 +35,15 @@
 
 %% API
 -export([start_link/0, route/3, have_connection/1,
-	 has_key/2, get_connections_pids/1, try_register/1,
-	 remove_connection/3, find_connection/2,
+	 make_key/2, get_connections_pids/1, try_register/1,
+	 remove_connection/2, find_connection/2,
 	 dirty_get_connections/0, allow_host/2,
 	 incoming_s2s_number/0, outgoing_s2s_number/0,
 	 clean_temporarily_blocked_table/0,
 	 list_temporarily_blocked_hosts/0,
 	 external_host_overloaded/1, is_temporarly_blocked/1,
-	 check_peer_certificate/3]).
+	 check_peer_certificate/3,
+	 get_commands_spec/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -75,23 +76,15 @@
 %% once a server is temporarly blocked, it stay blocked for 60 seconds
 
 -record(s2s, {fromto = {<<"">>, <<"">>} :: {binary(), binary()} | '_',
-              pid = self()              :: pid() | '_' | '$1',
-              key = <<"">>              :: binary() | '_'}).
+              pid = self()              :: pid() | '_' | '$1'}).
 
 -record(state, {}).
 
 -record(temporarily_blocked, {host = <<"">>     :: binary(),
-                              timestamp = now() :: erlang:timestamp()}).
+                              timestamp         :: integer()}).
 
 -type temporarily_blocked() :: #temporarily_blocked{}.
 
-%%====================================================================
-%% API
-%%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
@@ -121,9 +114,9 @@ external_host_overloaded(Host) ->
 	      "seconds",
 	      [Host, ?S2S_OVERLOAD_BLOCK_PERIOD]),
     mnesia:transaction(fun () ->
+                               Time = p1_time_compat:monotonic_time(),
 			       mnesia:write(#temporarily_blocked{host = Host,
-								 timestamp =
-								     now()})
+								 timestamp = Time})
 		       end).
 
 -spec is_temporarly_blocked(binary()) -> boolean().
@@ -132,7 +125,8 @@ is_temporarly_blocked(Host) ->
     case mnesia:dirty_read(temporarily_blocked, Host) of
       [] -> false;
       [#temporarily_blocked{timestamp = T} = Entry] ->
-	  case timer:now_diff(now(), T) of
+          Diff = p1_time_compat:monotonic_time() - T,
+	  case p1_time_compat:convert_time_unit(Diff, native, micro_seconds) of
 	    N when N > (?S2S_OVERLOAD_BLOCK_PERIOD) * 1000 * 1000 ->
 		mnesia:dirty_delete_object(Entry), false;
 	    _ -> true
@@ -140,19 +134,15 @@ is_temporarly_blocked(Host) ->
     end.
 
 -spec remove_connection({binary(), binary()},
-                        pid(), binary()) -> {atomic, ok} |
-                                            ok |
-                                            {aborted, any()}.
+                        pid()) -> {atomic, ok} | ok | {aborted, any()}.
 
-remove_connection(FromTo, Pid, Key) ->
+remove_connection(FromTo, Pid) ->
     case catch mnesia:dirty_match_object(s2s,
-					 #s2s{fromto = FromTo, pid = Pid,
-					      _ = '_'})
+					 #s2s{fromto = FromTo, pid = Pid})
 	of
-      [#s2s{pid = Pid, key = Key}] ->
+      [#s2s{pid = Pid}] ->
 	  F = fun () ->
-		      mnesia:delete_object(#s2s{fromto = FromTo, pid = Pid,
-						key = Key})
+		      mnesia:delete_object(#s2s{fromto = FromTo, pid = Pid})
 	      end,
 	  mnesia:transaction(F);
       _ -> ok
@@ -162,23 +152,10 @@ remove_connection(FromTo, Pid, Key) ->
 
 have_connection(FromTo) ->
     case catch mnesia:dirty_read(s2s, FromTo) of
-        [_] ->
+       [_] ->
             true;
         _ ->
             false
-    end.
-
--spec has_key({binary(), binary()}, binary()) -> boolean().
-
-has_key(FromTo, Key) ->
-    case mnesia:dirty_select(s2s,
-			     [{#s2s{fromto = FromTo, key = Key, _ = '_'},
-			       [],
-			       ['$_']}]) of
-	[] ->
-	    false;
-	_ ->
-	    true
     end.
 
 -spec get_connections_pids({binary(), binary()}) -> [pid()].
@@ -191,10 +168,9 @@ get_connections_pids(FromTo) ->
 	    []
     end.
 
--spec try_register({binary(), binary()}) -> {key, binary()} | false.
+-spec try_register({binary(), binary()}) -> boolean().
 
 try_register(FromTo) ->
-    Key = randoms:get_string(),
     MaxS2SConnectionsNumber = max_s2s_connections_number(FromTo),
     MaxS2SConnectionsNumberPerNode =
 	max_s2s_connections_number_per_node(FromTo),
@@ -204,9 +180,8 @@ try_register(FromTo) ->
 							      MaxS2SConnectionsNumber,
 							      MaxS2SConnectionsNumberPerNode),
 		if NeededConnections > 0 ->
-		       mnesia:write(#s2s{fromto = FromTo, pid = self(),
-					 key = Key}),
-		       {key, Key};
+		       mnesia:write(#s2s{fromto = FromTo, pid = self()}),
+		       true;
 		   true -> false
 		end
 	end,
@@ -239,7 +214,7 @@ check_peer_certificate(SockMod, Sock, Peer) ->
 		      end
 		end;
 	    VerifyRes ->
-		{error, p1_tls:get_cert_verify_string(VerifyRes, Cert)}
+		{error, fast_tls:get_cert_verify_string(VerifyRes, Cert)}
 	  end;
       {error, _Reason} ->
 	    {error, <<"Cannot get peer certificate">>};
@@ -247,55 +222,36 @@ check_peer_certificate(SockMod, Sock, Peer) ->
 	    {error, <<"Cannot get peer certificate">>}
     end.
 
+make_key({From, To}, StreamID) ->
+    Secret = ejabberd_config:get_option(shared_key, fun(V) -> V end),
+    p1_sha:to_hexlist(
+      crypto:hmac(sha256, p1_sha:to_hexlist(crypto:hash(sha256, Secret)),
+		  [To, " ", From, " ", StreamID])).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
 
-%%--------------------------------------------------------------------
-%% Function: init(Args) -> {ok, State} |
-%%                         {ok, State, Timeout} |
-%%                         ignore               |
-%%                         {stop, Reason}
-%% Description: Initiates the server
-%%--------------------------------------------------------------------
 init([]) ->
     update_tables(),
-    mnesia:create_table(s2s, [{ram_copies, [node()]}, {type, bag},
-			      {attributes, record_info(fields, s2s)}]),
+    mnesia:create_table(s2s,
+			[{ram_copies, [node()]},
+			 {type, bag},
+			 {attributes, record_info(fields, s2s)}]),
     mnesia:add_table_copy(s2s, node(), ram_copies),
     mnesia:subscribe(system),
-    ejabberd_commands:register_commands(commands()),
-    mnesia:create_table(temporarily_blocked, [{ram_copies, [node()]}, {attributes, record_info(fields, temporarily_blocked)}]),
+    ejabberd_commands:register_commands(get_commands_spec()),
+    mnesia:create_table(temporarily_blocked,
+			[{ram_copies, [node()]},
+			 {attributes, record_info(fields, temporarily_blocked)}]),
     {ok, #state{}}.
 
-%%--------------------------------------------------------------------
-%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
-%%                                      {reply, Reply, State, Timeout} |
-%%                                      {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, Reply, State} |
-%%                                      {stop, Reason, State}
-%% Description: Handling call messages
-%%--------------------------------------------------------------------
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+    {reply, ok, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_cast(Msg, State) -> {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, State}
-%% Description: Handling cast messages
-%%--------------------------------------------------------------------
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_info(Info, State) -> {noreply, State} |
-%%                                       {noreply, State, Timeout} |
-%%                                       {stop, Reason, State}
-%% Description: Handling all non call/cast messages
-%%--------------------------------------------------------------------
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     clean_table_from_bad_node(Node),
     {noreply, State};
@@ -309,27 +265,17 @@ handle_info({route, From, To, Packet}, State) ->
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: terminate(Reason, State) -> void()
-%% Description: This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any necessary
-%% cleaning up. When it returns, the gen_server terminates with Reason.
-%% The return value is ignored.
-%%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
-    ejabberd_commands:unregister_commands(commands()),
+    ejabberd_commands:unregister_commands(get_commands_spec()),
     ok.
 
-%%--------------------------------------------------------------------
-%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% Description: Convert process state when code is changed
-%%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
 clean_table_from_bad_node(Node) ->
     F = fun() ->
 		Es = mnesia:select(
@@ -353,8 +299,8 @@ do_route(From, To, Packet) ->
 	  #xmlel{name = Name, attrs = Attrs, children = Els} =
 	      Packet,
 	  NewAttrs =
-	      jlib:replace_from_to_attrs(jlib:jid_to_string(From),
-					 jlib:jid_to_string(To), Attrs),
+	      jlib:replace_from_to_attrs(jid:to_string(From),
+					 jid:to_string(To), Attrs),
 	  #jid{lserver = MyServer} = From,
 	  ejabberd_hooks:run(s2s_send_packet, MyServer,
 			     [From, To, Packet]),
@@ -362,7 +308,7 @@ do_route(From, To, Packet) ->
 		       #xmlel{name = Name, attrs = NewAttrs, children = Els}),
 	  ok;
       {aborted, _Reason} ->
-	  case xml:get_tag_attr_s(<<"type">>, Packet) of
+	  case fxml:get_tag_attr_s(<<"type">>, Packet) of
 	    <<"error">> -> ok;
 	    <<"result">> -> ok;
 	    _ ->
@@ -428,7 +374,7 @@ choose_pid(From, Pids) ->
 	      Ps -> Ps
 	    end,
     Pid =
-	lists:nth(erlang:phash(jlib:jid_remove_resource(From),
+	lists:nth(erlang:phash(jid:remove_resource(From),
 			       length(Pids1)),
 		  Pids1),
     ?DEBUG("Using ejabberd_s2s_out ~p~n", [Pid]),
@@ -448,17 +394,15 @@ open_several_connections(N, MyServer, Server, From,
 
 new_connection(MyServer, Server, From, FromTo,
 	       MaxS2SConnectionsNumber, MaxS2SConnectionsNumberPerNode) ->
-    Key = randoms:get_string(),
     {ok, Pid} = ejabberd_s2s_out:start(
-		  MyServer, Server, {new, Key}),
+		  MyServer, Server, new),
     F = fun() ->
 		L = mnesia:read({s2s, FromTo}),
 		NeededConnections = needed_connections_number(L,
 							      MaxS2SConnectionsNumber,
 							      MaxS2SConnectionsNumberPerNode),
 		if NeededConnections > 0 ->
-		       mnesia:write(#s2s{fromto = FromTo, pid = Pid,
-					 key = Key}),
+		       mnesia:write(#s2s{fromto = FromTo, pid = Pid}),
 		       ?INFO_MSG("New s2s connection started ~p", [Pid]),
 		       Pid;
 		   true -> choose_connection(From, L)
@@ -473,7 +417,7 @@ new_connection(MyServer, Server, From, FromTo,
 
 max_s2s_connections_number({From, To}) ->
     case acl:match_rule(From, max_s2s_connections,
-			jlib:make_jid(<<"">>, To, <<"">>))
+			jid:make(<<"">>, To, <<"">>))
 	of
       Max when is_integer(Max) -> Max;
       _ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER
@@ -481,7 +425,7 @@ max_s2s_connections_number({From, To}) ->
 
 max_s2s_connections_number_per_node({From, To}) ->
     case acl:match_rule(From, max_s2s_connections_per_node,
-			jlib:make_jid(<<"">>, To, <<"">>))
+			jid:make(<<"">>, To, <<"">>))
 	of
       Max when is_integer(Max) -> Max;
       _ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE
@@ -520,17 +464,19 @@ parent_domains(Domain) ->
 		end,
 		[], lists:reverse(str:tokens(Domain, <<".">>))).
 
-send_element(Pid, El) -> Pid ! {send_element, El}.
+send_element(Pid, El) ->
+    Pid ! {send_element, El}.
 
 %%%----------------------------------------------------------------------
 %%% ejabberd commands
 
-commands() ->
+get_commands_spec() ->
     [#ejabberd_commands{name = incoming_s2s_number,
 			tags = [stats, s2s],
 			desc =
 			    "Number of incoming s2s connections on "
 			    "the node",
+                        policy = admin,
 			module = ?MODULE, function = incoming_s2s_number,
 			args = [], result = {s2s_incoming, integer}},
      #ejabberd_commands{name = outgoing_s2s_number,
@@ -538,6 +484,7 @@ commands() ->
 			desc =
 			    "Number of outgoing s2s connections on "
 			    "the node",
+                        policy = admin,
 			module = ?MODULE, function = outgoing_s2s_number,
 			args = [], result = {s2s_outgoing, integer}}].
 
@@ -558,16 +505,17 @@ update_tables() ->
     end,
     case catch mnesia:table_info(s2s, attributes) of
       [fromto, node, key] ->
-	  mnesia:transform_table(s2s, ignore, [fromto, pid, key]),
+	  mnesia:transform_table(s2s, ignore, [fromto, pid]),
 	  mnesia:clear_table(s2s);
-      [fromto, pid, key] -> ok;
+      [fromto, pid, key] ->
+	  mnesia:transform_table(s2s, ignore, [fromto, pid]),
+	  mnesia:clear_table(s2s);
+      [fromto, pid] -> ok;
       {'EXIT', _} -> ok
     end,
     case lists:member(local_s2s, mnesia:system_info(tables)) of
-        true ->
-            mnesia:delete_table(local_s2s);
-        false ->
-            ok
+	true -> mnesia:delete_table(local_s2s);
+	false -> ok
     end.
 
 %% Check if host is in blacklist or white list
@@ -591,7 +539,7 @@ allow_host1(MyHost, S2SHost) ->
              s2s_access,
              fun(A) when is_atom(A) -> A end,
              all),
-    JID = jlib:make_jid(<<"">>, S2SHost, <<"">>),
+    JID = jid:make(<<"">>, S2SHost, <<"">>),
     case acl:match_rule(MyHost, Rule, JID) of
         deny -> false;
         allow ->
@@ -661,10 +609,15 @@ get_s2s_state(S2sPid) ->
     [{s2s_pid, S2sPid} | Infos].
 
 get_cert_domains(Cert) ->
-    {rdnSequence, Subject} =
-	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.subject,
-    Extensions =
-	(Cert#'Certificate'.tbsCertificate)#'TBSCertificate'.extensions,
+    TBSCert = Cert#'Certificate'.tbsCertificate,
+    Subject = case TBSCert#'TBSCertificate'.subject of
+		  {rdnSequence, Subj} -> lists:flatten(Subj);
+		  _ -> []
+	      end,
+    Extensions = case TBSCert#'TBSCertificate'.extensions of
+		     Exts when is_list(Exts) -> Exts;
+		     _ -> []
+		 end,
     lists:flatmap(fun (#'AttributeTypeAndValue'{type =
 						    ?'id-at-commonName',
 						value = Val}) ->
@@ -675,7 +628,7 @@ get_cert_domains(Cert) ->
 				       true -> error
 				    end,
 				if D /= error ->
-				       case jlib:string_to_jid(D) of
+				       case jid:from_string(D) of
 					 #jid{luser = <<"">>, lserver = LD,
 					      lresource = <<"">>} ->
 					     [LD];
@@ -687,7 +640,7 @@ get_cert_domains(Cert) ->
 			  end;
 		      (_) -> []
 		  end,
-		  lists:flatten(Subject))
+		  Subject)
       ++
       lists:flatmap(fun (#'Extension'{extnID =
 					  ?'id-ce-subjectAltName',
@@ -711,7 +664,7 @@ get_cert_domains(Cert) ->
 							      when
 								is_binary(D) ->
 							      case
-								jlib:string_to_jid((D))
+								jid:from_string((D))
 								  of
 								#jid{luser =
 									 <<"">>,
@@ -734,7 +687,7 @@ get_cert_domains(Cert) ->
 						    ({dNSName, D})
 							when is_list(D) ->
 							case
-							  jlib:string_to_jid(list_to_binary(D))
+							  jid:from_string(list_to_binary(D))
 							    of
 							  #jid{luser = <<"">>,
 							       lserver = LD,

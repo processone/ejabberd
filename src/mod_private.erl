@@ -5,7 +5,7 @@
 %%% Created : 16 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -33,7 +33,7 @@
 
 -export([start/2, stop/1, process_sm_iq/3, import/3,
 	 remove_user/2, get_data/2, export/1, import/1,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, set_data/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -82,19 +82,7 @@ process_sm_iq(#jid{luser = LUser, lserver = LServer},
 		IQ#iq{type = error,
 		      sub_el = [IQ#iq.sub_el, ?ERR_NOT_ACCEPTABLE]};
 	    Data ->
-		DBType = gen_mod:db_type(LServer, ?MODULE),
-		F = fun () ->
-			    lists:foreach(fun (Datum) ->
-						  set_data(LUser, LServer,
-							   Datum, DBType)
-					  end,
-					  Data)
-		    end,
-		case DBType of
-		  odbc -> ejabberd_odbc:sql_transaction(LServer, F);
-		  mnesia -> mnesia:transaction(F);
-		  riak -> F()
-		end,
+		set_data(LUser, LServer, Data),
 		IQ#iq{type = result, sub_el = []}
 	  end;
       _ ->
@@ -137,23 +125,35 @@ filter_xmlels(Xmlels) -> filter_xmlels(Xmlels, []).
 filter_xmlels([], Data) -> lists:reverse(Data);
 filter_xmlels([#xmlel{attrs = Attrs} = Xmlel | Xmlels],
 	      Data) ->
-    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       <<"">> -> [];
       XmlNS -> filter_xmlels(Xmlels, [{XmlNS, Xmlel} | Data])
     end;
 filter_xmlels([_ | Xmlels], Data) ->
     filter_xmlels(Xmlels, Data).
 
+set_data(LUser, LServer, Data) ->
+    DBType = gen_mod:db_type(LServer, ?MODULE),
+    F = fun () ->
+		lists:foreach(fun (Datum) ->
+				      set_data(LUser, LServer,
+					       Datum, DBType)
+			      end,
+			      Data)
+	end,
+    case DBType of
+	odbc -> ejabberd_odbc:sql_transaction(LServer, F);
+	mnesia -> mnesia:transaction(F);
+	riak -> F()
+    end.
+
 set_data(LUser, LServer, {XmlNS, Xmlel}, mnesia) ->
     mnesia:write(#private_storage{usns =
 				      {LUser, LServer, XmlNS},
 				  xml = Xmlel});
 set_data(LUser, LServer, {XMLNS, El}, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    LXMLNS = ejabberd_odbc:escape(XMLNS),
-    SData = ejabberd_odbc:escape(xml:element_to_binary(El)),
-    odbc_queries:set_private_data(LServer, Username, LXMLNS,
-				  SData);
+    SData = fxml:element_to_binary(El),
+    odbc_queries:set_private_data(LServer, LUser, XMLNS, SData);
 set_data(LUser, LServer, {XMLNS, El}, riak) ->
     ejabberd_riak:put(#private_storage{usns = {LUser, LServer, XMLNS},
                                        xml = El},
@@ -181,13 +181,11 @@ get_data(LUser, LServer, mnesia,
     end;
 get_data(LUser, LServer, odbc, [{XMLNS, El} | Els],
 	 Res) ->
-    Username = ejabberd_odbc:escape(LUser),
-    LXMLNS = ejabberd_odbc:escape(XMLNS),
     case catch odbc_queries:get_private_data(LServer,
-					     Username, LXMLNS)
+					     LUser, XMLNS)
 	of
-      {selected, [<<"data">>], [[SData]]} ->
-	  case xml_stream:parse_element(SData) of
+      {selected, [{SData}]} ->
+	  case fxml_stream:parse_element(SData) of
 	    Data when is_record(Data, xmlel) ->
 		get_data(LUser, LServer, odbc, Els, [Data | Res])
 	  end;
@@ -214,12 +212,11 @@ get_all_data(LUser, LServer, mnesia) ->
                                              xml = '$1'},
                             [], ['$1']}]));
 get_all_data(LUser, LServer, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    case catch odbc_queries:get_private_data(LServer, Username) of
-        {selected, [<<"namespace">>, <<"data">>], Res} ->
+    case catch odbc_queries:get_private_data(LServer, LUser) of
+        {selected, Res} ->
             lists:flatmap(
-              fun([_, SData]) ->
-                      case xml_stream:parse_element(SData) of
+              fun({_, SData}) ->
+                      case fxml_stream:parse_element(SData) of
                           #xmlel{} = El ->
                               [El];
                           _ ->
@@ -243,8 +240,8 @@ private_storage_schema() ->
     {record_info(fields, private_storage), #private_storage{}}.
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     remove_user(LUser, LServer,
 		gen_mod:db_type(Server, ?MODULE)).
 
@@ -266,9 +263,7 @@ remove_user(LUser, LServer, mnesia) ->
 	end,
     mnesia:transaction(F);
 remove_user(LUser, LServer, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    odbc_queries:del_user_private_storage(LServer,
-					  Username);
+    odbc_queries:del_user_private_storage(LServer, LUser);
 remove_user(LUser, LServer, riak) ->
     {atomic, ejabberd_riak:delete_by_index(private_storage,
                                            <<"us">>, {LUser, LServer})}.
@@ -284,7 +279,7 @@ update_table() ->
                     R#private_storage{usns = {iolist_to_binary(U),
                                               iolist_to_binary(S),
                                               iolist_to_binary(NS)},
-                                      xml = xml:to_xmlel(El)}
+                                      xml = fxml:to_xmlel(El)}
             end);
       _ ->
 	  ?INFO_MSG("Recreating private_storage table", []),
@@ -299,7 +294,7 @@ export(_Server) ->
               Username = ejabberd_odbc:escape(LUser),
               LXMLNS = ejabberd_odbc:escape(XMLNS),
               SData =
-                  ejabberd_odbc:escape(xml:element_to_binary(Data)),
+                  ejabberd_odbc:escape(fxml:element_to_binary(Data)),
               odbc_queries:set_private_data_sql(Username, LXMLNS,
                                                 SData);
          (_Host, _R) ->
@@ -309,7 +304,7 @@ export(_Server) ->
 import(LServer) ->
     [{<<"select username, namespace, data from private_storage;">>,
       fun([LUser, XMLNS, XML]) ->
-              El = #xmlel{} = xml_stream:parse_element(XML),
+              El = #xmlel{} = fxml_stream:parse_element(XML),
               #private_storage{usns = {LUser, LServer, XMLNS},
                                xml = El}
       end}].

@@ -5,7 +5,7 @@
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -228,11 +228,11 @@ get_vh_registered_users_ldap(Server) ->
 									      UIDFormat)
 						      of
 						    {ok, U} ->
-							case jlib:nodeprep(U) of
+							case jid:nodeprep(U) of
 							  error -> [];
 							  LU ->
 							      [{LU,
-								jlib:nameprep(Server)}]
+								jid:nameprep(Server)}]
 							end;
 						    _ -> []
 						  end

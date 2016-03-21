@@ -5,7 +5,7 @@
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -222,7 +222,7 @@ check_password_cache(User, Server, Password,
 get_password_internal(User, Server) ->
     ejabberd_auth_internal:get_password(User, Server).
 
-%% @spec (User, Server, CacheTime) -> false | Password::string()
+-spec get_password_cache(User::binary(), Server::binary(), CacheTime::integer()) -> Password::string() | false.
 get_password_cache(User, Server, CacheTime) ->
     case get_last_access(User, Server) of
       online -> get_password_internal(User, Server);
@@ -270,18 +270,16 @@ set_password_internal(User, Server, Password) ->
 					Password).
 
 is_fresh_enough(TimeStampLast, CacheTime) ->
-    {MegaSecs, Secs, _MicroSecs} = now(),
-    Now = MegaSecs * 1000000 + Secs,
+    Now = p1_time_compat:system_time(seconds),
     TimeStampLast + CacheTime > Now.
 
-%% @spec (User, Server) -> online | never | mod_last_required | TimeStamp::integer()
 %% Code copied from mod_configure.erl
 %% Code copied from web/ejabberd_web_admin.erl
 %% TODO: Update time format to XEP-0202: Entity Time
+-spec(get_last_access(User::binary(), Server::binary()) -> (online | never | mod_last_required | integer())).
 get_last_access(User, Server) ->
     case ejabberd_sm:get_user_resources(User, Server) of
       [] ->
-	  _US = {User, Server},
 	  case get_last_info(User, Server) of
 	    mod_last_required -> mod_last_required;
 	    not_found -> never;
@@ -311,7 +309,9 @@ get_mod_last_configured(Server) ->
     end.
 
 is_configured(Host, Module) ->
-    gen_mod:is_loaded(Host, Module).
+    Os = ejabberd_config:get_local_option({modules, Host},
+					  fun(M) when is_list(M) -> M end),
+    lists:keymember(Module, 1, Os).
 
 opt_type(extauth_cache) ->
     fun (false) -> undefined;

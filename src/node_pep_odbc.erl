@@ -1,28 +1,30 @@
-%%% ====================================================================
-%%% ``The contents of this file are subject to the Erlang Public License,
-%%% Version 1.1, (the "License"); you may not use this file except in
-%%% compliance with the License. You should have received a copy of the
-%%% Erlang Public License along with this software. If not, it can be
-%%% retrieved via the world wide web at http://www.erlang.org/.
+%%%----------------------------------------------------------------------
+%%% File    : node_pep_odbc.erl
+%%% Author  : Christophe Romain <christophe.romain@process-one.net>
+%%% Purpose : Standard PubSub PEP plugin with ODBC backend
+%%% Created :  1 Dec 2007 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% Software distributed under the License is distributed on an "AS IS"
-%%% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
-%%% the License for the specific language governing rights and limitations
-%%% under the License.
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
 %%%
-%%% The Initial Developer of the Original Code is ProcessOne.
-%%% Portions created by ProcessOne are Copyright 2006-2015, ProcessOne
-%%% All Rights Reserved.''
-%%% This software is copyright 2006-2015, ProcessOne.
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
 %%%
-%%% @copyright 2006-2015 ProcessOne
-%%% @author Christophe Romain <christophe.romain@process-one.net>
-%%%   [http://www.process-one.net/]
-%%% @version {@vsn}, {@date} {@time}
-%%% @end
-%%% ====================================================================
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
+%%%----------------------------------------------------------------------
+
+%%% @doc The module <strong>{@module}</strong> is the pep PubSub plugin.
+%%% <p>PubSub plugin nodes are using the {@link gen_pubsub_node} behaviour.</p>
 
 -module(node_pep_odbc).
 -behaviour(gen_pubsub_node).
@@ -31,9 +33,6 @@
 -include("pubsub.hrl").
 -include("jlib.hrl").
 -include("logger.hrl").
-
-%%% @doc The module <strong>{@module}</strong> is the pep PubSub plugin.
-%%% <p>PubSub plugin nodes are using the {@link gen_pubsub_node} behaviour.</p>
 
 -export([init/3, terminate/2, options/0, features/0,
     create_node_permission/6, create_node/2, delete_node/1,
@@ -55,7 +54,8 @@ init(Host, ServerHost, Opts) ->
     ok.
 
 terminate(Host, ServerHost) ->
-    node_flat_odbc:terminate(Host, ServerHost), ok.
+    node_flat_odbc:terminate(Host, ServerHost),
+    ok.
 
 options() ->
     [{odbc, true}, {rsm, true} | node_pep:options()].
@@ -99,7 +99,7 @@ purge_node(Nidx, Owner) ->
     node_flat_odbc:purge_node(Nidx, Owner).
 
 get_entity_affiliations(_Host, Owner) ->
-    OwnerKey = jlib:jid_tolower(jlib:jid_remove_resource(Owner)),
+    OwnerKey = jid:tolower(jid:remove_resource(Owner)),
     node_flat_odbc:get_entity_affiliations(OwnerKey, Owner).
 
 get_node_affiliations(Nidx) ->
@@ -112,8 +112,8 @@ set_affiliation(Nidx, Owner, Affiliation) ->
     node_flat_odbc:set_affiliation(Nidx, Owner, Affiliation).
 
 get_entity_subscriptions(_Host, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    SubKey = jid:tolower(Owner),
+    GenKey = jid:remove_resource(SubKey),
     Host = node_flat_odbc:encode_host(element(2, SubKey)),
     SJ = node_flat_odbc:encode_jid(SubKey),
     GJ = node_flat_odbc:encode_jid(GenKey),
@@ -147,8 +147,8 @@ get_entity_subscriptions(_Host, Owner) ->
     {result, Reply}.
 
 get_entity_subscriptions_for_send_last(_Host, Owner) ->
-    SubKey = jlib:jid_tolower(Owner),
-    GenKey = jlib:jid_remove_resource(SubKey),
+    SubKey = jid:tolower(Owner),
+    GenKey = jid:remove_resource(SubKey),
     Host = node_flat_odbc:encode_host(element(2, SubKey)),
     SJ = node_flat_odbc:encode_jid(SubKey),
     GJ = node_flat_odbc:encode_jid(GenKey),

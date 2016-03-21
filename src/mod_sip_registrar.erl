@@ -1,12 +1,12 @@
 %%%-------------------------------------------------------------------
 %%% @author Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% @copyright (C) 2014, Evgeny Khramtsov
 %%% @doc
 %%%
 %%% @end
 %%% Created : 23 Apr 2014 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
-%%% ejabberd, Copyright (C) 2014-2015   ProcessOne
+%%%
+%%% ejabberd, Copyright (C) 2014-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -48,7 +48,7 @@
 		      socket = #sip_socket{} :: #sip_socket{},
 		      call_id = <<"">> :: binary(),
 		      cseq = 0 :: non_neg_integer(),
-		      timestamp = now() :: erlang:timestamp(),
+		      timestamp = p1_time_compat:timestamp() :: erlang:timestamp(),
 		      contact :: {binary(), #uri{}, [{binary(), binary()}]},
 		      flow_tref :: reference(),
 		      reg_tref = make_ref() :: reference(),
@@ -65,8 +65,8 @@ start_link() ->
 
 request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
     {_, #uri{user = U, host = S}, _} = esip:get_hdr('to', Hdrs),
-    LUser = jlib:nodeprep(U),
-    LServer = jlib:nameprep(S),
+    LUser = jid:nodeprep(U),
+    LServer = jid:nameprep(S),
     {PeerIP, _} = SIPSock#sip_socket.peer,
     US = {LUser, LServer},
     CallID = esip:get_hdr('call-id', Hdrs),
@@ -242,7 +242,7 @@ register_session(US, SIPSocket, CallID, CSeq, IsOutboundSupported,
 				      socket = SIPSocket,
 				      call_id = CallID,
 				      cseq = CSeq,
-				      timestamp = now(),
+				      timestamp = p1_time_compat:timestamp(),
 				      contact = Contact,
 				      expires = Expires}
 		 end, ContactsWithExpires),

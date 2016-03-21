@@ -1,5 +1,5 @@
 -include_lib("common_test/include/ct.hrl").
--include_lib("p1_xml/include/xml.hrl").
+-include_lib("fast_xml/include/fxml.hrl").
 -include("ns.hrl").
 -include("ejabberd.hrl").
 -include("mod_proxy65.hrl").
@@ -74,6 +74,7 @@
 
 -define(COMMON_VHOST, <<"localhost">>).
 -define(MNESIA_VHOST, <<"mnesia.localhost">>).
+-define(REDIS_VHOST, <<"redis.localhost">>).
 -define(MYSQL_VHOST, <<"mysql.localhost">>).
 -define(PGSQL_VHOST, <<"pgsql.localhost">>).
 -define(SQLITE_VHOST, <<"sqlite.localhost">>).

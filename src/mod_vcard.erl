@@ -5,7 +5,7 @@
 %%% Created :  2 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -25,6 +25,8 @@
 
 -module(mod_vcard).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -author('alexey@process-one.net').
 
 -protocol({xep, 54, '1.2'}).
@@ -35,10 +37,11 @@
 -export([start/2, init/3, stop/1, get_sm_features/5,
 	 process_local_iq/3, process_sm_iq/3, reindex_vcards/0,
 	 remove_user/2, export/1, import/1, import/3,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, set_vcard/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 -include("jlib.hrl").
 
@@ -94,7 +97,7 @@ start(Host, Opts) ->
 				  <<"vjud.@HOST@">>),
     Search = gen_mod:get_opt(search, Opts,
                              fun(B) when is_boolean(B) -> B end,
-                             true),
+                             false),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     spawn(?MODULE, init, [MyHost, Host, Search])).
 
@@ -102,7 +105,7 @@ init(Host, ServerHost, Search) ->
     case Search of
       false -> loop(Host, ServerHost);
       _ ->
-	  ejabberd_router:register_route(Host),
+	  ejabberd_router:register_route(Host, ServerHost),
 	  loop(Host, ServerHost)
     end.
 
@@ -166,7 +169,7 @@ process_local_iq(_From, _To,
 					    [{xmlcdata,
 					      <<(translate:translate(Lang,
 								     <<"Erlang Jabber Server">>))/binary,
-						"\nCopyright (c) 2002-2015 ProcessOne">>}]},
+						"\nCopyright (c) 2002-2016 ProcessOne">>}]},
 				 #xmlel{name = <<"BDAY">>, attrs = [],
 					children =
 					    [{xmlcdata, <<"2002-11-16">>}]}]}]}
@@ -212,14 +215,13 @@ get_vcard(LUser, LServer, mnesia) ->
       {aborted, _Reason} -> error
     end;
 get_vcard(LUser, LServer, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    case catch odbc_queries:get_vcard(LServer, Username) of
-      {selected, [<<"vcard">>], [[SVCARD]]} ->
-	  case xml_stream:parse_element(SVCARD) of
+    case catch odbc_queries:get_vcard(LServer, LUser) of
+      {selected, [{SVCARD}]} ->
+	  case fxml_stream:parse_element(SVCARD) of
 	    {error, _Reason} -> error;
 	    VCARD -> [VCARD]
 	  end;
-      {selected, [<<"vcard">>], []} -> [];
+      {selected, []} -> [];
       _ -> error
     end;
 get_vcard(LUser, LServer, riak) ->
@@ -233,35 +235,35 @@ get_vcard(LUser, LServer, riak) ->
     end.
 
 set_vcard(User, LServer, VCARD) ->
-    FN = xml:get_path_s(VCARD, [{elem, <<"FN">>}, cdata]),
-    Family = xml:get_path_s(VCARD,
+    FN = fxml:get_path_s(VCARD, [{elem, <<"FN">>}, cdata]),
+    Family = fxml:get_path_s(VCARD,
 			    [{elem, <<"N">>}, {elem, <<"FAMILY">>}, cdata]),
-    Given = xml:get_path_s(VCARD,
+    Given = fxml:get_path_s(VCARD,
 			   [{elem, <<"N">>}, {elem, <<"GIVEN">>}, cdata]),
-    Middle = xml:get_path_s(VCARD,
+    Middle = fxml:get_path_s(VCARD,
 			    [{elem, <<"N">>}, {elem, <<"MIDDLE">>}, cdata]),
-    Nickname = xml:get_path_s(VCARD,
+    Nickname = fxml:get_path_s(VCARD,
 			      [{elem, <<"NICKNAME">>}, cdata]),
-    BDay = xml:get_path_s(VCARD,
+    BDay = fxml:get_path_s(VCARD,
 			  [{elem, <<"BDAY">>}, cdata]),
-    CTRY = xml:get_path_s(VCARD,
+    CTRY = fxml:get_path_s(VCARD,
 			  [{elem, <<"ADR">>}, {elem, <<"CTRY">>}, cdata]),
-    Locality = xml:get_path_s(VCARD,
+    Locality = fxml:get_path_s(VCARD,
 			      [{elem, <<"ADR">>}, {elem, <<"LOCALITY">>},
 			       cdata]),
-    EMail1 = xml:get_path_s(VCARD,
+    EMail1 = fxml:get_path_s(VCARD,
 			    [{elem, <<"EMAIL">>}, {elem, <<"USERID">>}, cdata]),
-    EMail2 = xml:get_path_s(VCARD,
+    EMail2 = fxml:get_path_s(VCARD,
 			    [{elem, <<"EMAIL">>}, cdata]),
-    OrgName = xml:get_path_s(VCARD,
+    OrgName = fxml:get_path_s(VCARD,
 			     [{elem, <<"ORG">>}, {elem, <<"ORGNAME">>}, cdata]),
-    OrgUnit = xml:get_path_s(VCARD,
+    OrgUnit = fxml:get_path_s(VCARD,
 			     [{elem, <<"ORG">>}, {elem, <<"ORGUNIT">>}, cdata]),
     EMail = case EMail1 of
 	      <<"">> -> EMail2;
 	      _ -> EMail1
 	    end,
-    LUser = jlib:nodeprep(User),
+    LUser = jid:nodeprep(User),
     LFN = string2lower(FN),
     LFamily = string2lower(Family),
     LGiven = string2lower(Given),
@@ -336,39 +338,14 @@ set_vcard(User, LServer, VCARD) ->
                                             {<<"orgunit">>, OrgUnit},
                                             {<<"lorgunit">>, LOrgUnit}]}]);
 	     odbc ->
-		 Username = ejabberd_odbc:escape(User),
-		 LUsername = ejabberd_odbc:escape(LUser),
-		 SVCARD =
-		     ejabberd_odbc:escape(xml:element_to_binary(VCARD)),
-		 SFN = ejabberd_odbc:escape(FN),
-		 SLFN = ejabberd_odbc:escape(LFN),
-		 SFamily = ejabberd_odbc:escape(Family),
-		 SLFamily = ejabberd_odbc:escape(LFamily),
-		 SGiven = ejabberd_odbc:escape(Given),
-		 SLGiven = ejabberd_odbc:escape(LGiven),
-		 SMiddle = ejabberd_odbc:escape(Middle),
-		 SLMiddle = ejabberd_odbc:escape(LMiddle),
-		 SNickname = ejabberd_odbc:escape(Nickname),
-		 SLNickname = ejabberd_odbc:escape(LNickname),
-		 SBDay = ejabberd_odbc:escape(BDay),
-		 SLBDay = ejabberd_odbc:escape(LBDay),
-		 SCTRY = ejabberd_odbc:escape(CTRY),
-		 SLCTRY = ejabberd_odbc:escape(LCTRY),
-		 SLocality = ejabberd_odbc:escape(Locality),
-		 SLLocality = ejabberd_odbc:escape(LLocality),
-		 SEMail = ejabberd_odbc:escape(EMail),
-		 SLEMail = ejabberd_odbc:escape(LEMail),
-		 SOrgName = ejabberd_odbc:escape(OrgName),
-		 SLOrgName = ejabberd_odbc:escape(LOrgName),
-		 SOrgUnit = ejabberd_odbc:escape(OrgUnit),
-		 SLOrgUnit = ejabberd_odbc:escape(LOrgUnit),
-		 odbc_queries:set_vcard(LServer, LUsername, SBDay, SCTRY,
-					SEMail, SFN, SFamily, SGiven, SLBDay,
-					SLCTRY, SLEMail, SLFN, SLFamily,
-					SLGiven, SLLocality, SLMiddle,
-					SLNickname, SLOrgName, SLOrgUnit,
-					SLocality, SMiddle, SNickname, SOrgName,
-					SOrgUnit, SVCARD, Username)
+		 SVCARD = fxml:element_to_binary(VCARD),
+		 odbc_queries:set_vcard(LServer, LUser, BDay, CTRY,
+					EMail, FN, Family, Given, LBDay,
+					LCTRY, LEMail, LFN, LFamily,
+					LGiven, LLocality, LMiddle,
+					LNickname, LOrgName, LOrgUnit,
+					Locality, Middle, Nickname, OrgName,
+					OrgUnit, SVCARD, User)
 	   end,
 	   ejabberd_hooks:run(vcard_set, LServer,
 			      [LUser, LServer, VCARD])
@@ -404,7 +381,7 @@ string2lower(String) ->
 				[{xmlcdata,
 				  <<(translate:translate(Lang,
 							 <<"Search users in ">>))/binary,
-				    (jlib:jid_to_string(JID))/binary>>}]},
+				    (jid:to_string(JID))/binary>>}]},
 		     #xmlel{name = <<"instructions">>, attrs = [],
 			    children =
 				[{xmlcdata,
@@ -578,7 +555,7 @@ iq_get_vcard(Lang) ->
 		[{xmlcdata,
 		  <<(translate:translate(Lang,
 					 <<"ejabberd vCard module">>))/binary,
-		    "\nCopyright (c) 2003-2015 ProcessOne">>}]}].
+		    "\nCopyright (c) 2003-2016 ProcessOne">>}]}].
 
 find_xdata_el(#xmlel{children = SubEls}) ->
     find_xdata_el1(SubEls).
@@ -587,7 +564,7 @@ find_xdata_el1([]) -> false;
 find_xdata_el1([#xmlel{name = Name, attrs = Attrs,
 		       children = SubEls}
 		| Els]) ->
-    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       ?NS_XDATA ->
 	  #xmlel{name = Name, attrs = Attrs, children = SubEls};
       _ -> find_xdata_el1(Els)
@@ -607,7 +584,7 @@ search_result(Lang, JID, ServerHost, Data) ->
 		[{xmlcdata,
 		  <<(translate:translate(Lang,
 					 <<"Search Results for ">>))/binary,
-		    (jlib:jid_to_string(JID))/binary>>}]},
+		    (jid:to_string(JID))/binary>>}]},
      #xmlel{name = <<"reported">>, attrs = [],
 	    children =
 		[?TLFIELD(<<"text-single">>, <<"Jabber ID">>,
@@ -862,27 +839,27 @@ set_vcard_t(R, _) ->
     US = R#vcard.us,
     User = US,
     VCARD = R#vcard.vcard,
-    FN = xml:get_path_s(VCARD, [{elem, <<"FN">>}, cdata]),
-    Family = xml:get_path_s(VCARD,
+    FN = fxml:get_path_s(VCARD, [{elem, <<"FN">>}, cdata]),
+    Family = fxml:get_path_s(VCARD,
 			    [{elem, <<"N">>}, {elem, <<"FAMILY">>}, cdata]),
-    Given = xml:get_path_s(VCARD,
+    Given = fxml:get_path_s(VCARD,
 			   [{elem, <<"N">>}, {elem, <<"GIVEN">>}, cdata]),
-    Middle = xml:get_path_s(VCARD,
+    Middle = fxml:get_path_s(VCARD,
 			    [{elem, <<"N">>}, {elem, <<"MIDDLE">>}, cdata]),
-    Nickname = xml:get_path_s(VCARD,
+    Nickname = fxml:get_path_s(VCARD,
 			      [{elem, <<"NICKNAME">>}, cdata]),
-    BDay = xml:get_path_s(VCARD,
+    BDay = fxml:get_path_s(VCARD,
 			  [{elem, <<"BDAY">>}, cdata]),
-    CTRY = xml:get_path_s(VCARD,
+    CTRY = fxml:get_path_s(VCARD,
 			  [{elem, <<"ADR">>}, {elem, <<"CTRY">>}, cdata]),
-    Locality = xml:get_path_s(VCARD,
+    Locality = fxml:get_path_s(VCARD,
 			      [{elem, <<"ADR">>}, {elem, <<"LOCALITY">>},
 			       cdata]),
-    EMail = xml:get_path_s(VCARD,
+    EMail = fxml:get_path_s(VCARD,
 			   [{elem, <<"EMAIL">>}, cdata]),
-    OrgName = xml:get_path_s(VCARD,
+    OrgName = fxml:get_path_s(VCARD,
 			     [{elem, <<"ORG">>}, {elem, <<"ORGNAME">>}, cdata]),
-    OrgUnit = xml:get_path_s(VCARD,
+    OrgUnit = fxml:get_path_s(VCARD,
 			     [{elem, <<"ORG">>}, {elem, <<"ORGUNIT">>}, cdata]),
     {LUser, _LServer} = US,
     LFN = string2lower(FN),
@@ -916,8 +893,8 @@ reindex_vcards() ->
     mnesia:transaction(F).
 
 remove_user(User, Server) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
     remove_user(LUser, LServer,
 		gen_mod:db_type(LServer, ?MODULE)).
 
@@ -929,12 +906,14 @@ remove_user(LUser, LServer, mnesia) ->
 	end,
     mnesia:transaction(F);
 remove_user(LUser, LServer, odbc) ->
-    Username = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_transaction(LServer,
-				  [[<<"delete from vcard where username='">>,
-				    Username, <<"';">>],
-				   [<<"delete from vcard_search where lusername='">>,
-				    Username, <<"';">>]]);
+    ejabberd_odbc:sql_transaction(
+      LServer,
+      fun() ->
+              ejabberd_odbc:sql_query_t(
+                ?SQL("delete from vcard where username=%(LUser)s")),
+              ejabberd_odbc:sql_query_t(
+                ?SQL("delete from vcard_search where lusername=%(LUser)s"))
+      end);
 remove_user(LUser, LServer, riak) ->
     {atomic, ejabberd_riak:delete(vcard, {LUser, LServer})}.
 
@@ -952,7 +931,7 @@ update_vcard_table() ->
             fun(#vcard{us = {U, S}, vcard = El} = R) ->
                     R#vcard{us = {iolist_to_binary(U),
                                   iolist_to_binary(S)},
-                            vcard = xml:to_xmlel(El)}
+                            vcard = fxml:to_xmlel(El)}
             end);
       _ ->
 	  ?INFO_MSG("Recreating vcard table", []),
@@ -991,7 +970,7 @@ export(_Server) ->
             when LServer == Host ->
               Username = ejabberd_odbc:escape(LUser),
               SVCARD =
-                  ejabberd_odbc:escape(xml:element_to_binary(VCARD)),
+                  ejabberd_odbc:escape(fxml:element_to_binary(VCARD)),
               [[<<"delete from vcard where username='">>, Username, <<"';">>],
                [<<"insert into vcard(username, vcard) values ('">>,
                 Username, <<"', '">>, SVCARD, <<"');">>]];
@@ -1064,7 +1043,7 @@ export(_Server) ->
 import(LServer) ->
     [{<<"select username, vcard from vcard;">>,
       fun([LUser, SVCard]) ->
-              #xmlel{} = VCARD = xml_stream:parse_element(SVCard),
+              #xmlel{} = VCARD = fxml_stream:parse_element(SVCard),
               #vcard{us = {LUser, LServer}, vcard = VCARD}
       end},
      {<<"select username, lusername, fn, lfn, family, lfamily, "
@@ -1095,29 +1074,29 @@ import(_LServer, mnesia, #vcard{} = VCard) ->
 import(_LServer, mnesia, #vcard_search{} = S) ->
     mnesia:dirty_write(S);
 import(_LServer, riak, #vcard{us = {LUser, _}, vcard = El} = VCard) ->
-    FN = xml:get_path_s(El, [{elem, <<"FN">>}, cdata]),
-    Family = xml:get_path_s(El,
+    FN = fxml:get_path_s(El, [{elem, <<"FN">>}, cdata]),
+    Family = fxml:get_path_s(El,
 			    [{elem, <<"N">>}, {elem, <<"FAMILY">>}, cdata]),
-    Given = xml:get_path_s(El,
+    Given = fxml:get_path_s(El,
 			   [{elem, <<"N">>}, {elem, <<"GIVEN">>}, cdata]),
-    Middle = xml:get_path_s(El,
+    Middle = fxml:get_path_s(El,
 			    [{elem, <<"N">>}, {elem, <<"MIDDLE">>}, cdata]),
-    Nickname = xml:get_path_s(El,
+    Nickname = fxml:get_path_s(El,
 			      [{elem, <<"NICKNAME">>}, cdata]),
-    BDay = xml:get_path_s(El,
+    BDay = fxml:get_path_s(El,
 			  [{elem, <<"BDAY">>}, cdata]),
-    CTRY = xml:get_path_s(El,
+    CTRY = fxml:get_path_s(El,
 			  [{elem, <<"ADR">>}, {elem, <<"CTRY">>}, cdata]),
-    Locality = xml:get_path_s(El,
+    Locality = fxml:get_path_s(El,
 			      [{elem, <<"ADR">>}, {elem, <<"LOCALITY">>},
 			       cdata]),
-    EMail1 = xml:get_path_s(El,
+    EMail1 = fxml:get_path_s(El,
 			    [{elem, <<"EMAIL">>}, {elem, <<"USERID">>}, cdata]),
-    EMail2 = xml:get_path_s(El,
+    EMail2 = fxml:get_path_s(El,
 			    [{elem, <<"EMAIL">>}, cdata]),
-    OrgName = xml:get_path_s(El,
+    OrgName = fxml:get_path_s(El,
 			     [{elem, <<"ORG">>}, {elem, <<"ORGNAME">>}, cdata]),
-    OrgUnit = xml:get_path_s(El,
+    OrgUnit = fxml:get_path_s(El,
 			     [{elem, <<"ORG">>}, {elem, <<"ORGUNIT">>}, cdata]),
     EMail = case EMail1 of
 	      <<"">> -> EMail2;

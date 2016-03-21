@@ -1,2 +1,0 @@
-defmodule Ejabberd do
-end

@@ -5,7 +5,7 @@
 %%% Created : 09-10-2010 by Eric Cestari <ecestari@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -75,7 +75,7 @@
 -export_type([ws_socket/0]).
 
 start(WS) ->
-    supervisor:start_child(ejabberd_wsloop_sup, [WS]).
+    gen_fsm:start(?MODULE, [WS], ?FSMOPTS).
 
 start_link(WS) ->
     gen_fsm:start_link(?MODULE, [WS], ?FSMOPTS).
@@ -115,6 +115,7 @@ init([{#ws{ip = IP, http_opts = HOpts}, _} = WS]) ->
     SOpts = lists:filtermap(fun({stream_managment, _}) -> true;
                                ({max_ack_queue, _}) -> true;
                                ({resume_timeout, _}) -> true;
+                               ({max_resume_timeout, _}) -> true;
                                ({resend_on_timeout, _}) -> true;
                                (_) -> false
                             end, HOpts),
@@ -170,11 +171,11 @@ handle_sync_event({send_xml, Packet}, _From, StateName,
                   {true, {xmlstreamelement, #xmlel{name=Name2} = El2}} ->
                       El3 = case Name2 of
                                 <<"stream:", _/binary>> ->
-                                    xml:replace_tag_attr(<<"xmlns:stream">>, ?NS_STREAM, El2);
+                                    fxml:replace_tag_attr(<<"xmlns:stream">>, ?NS_STREAM, El2);
                                 _ ->
-                                    case xml:get_tag_attr_s(<<"xmlns">>, El2) of
+                                    case fxml:get_tag_attr_s(<<"xmlns">>, El2) of
                                         <<"">> ->
-                                            xml:replace_tag_attr(<<"xmlns">>, <<"jabber:client">>, El2);
+                                            fxml:replace_tag_attr(<<"xmlns">>, <<"jabber:client">>, El2);
                                         _ ->
                                             El2
                                     end
@@ -185,12 +186,12 @@ handle_sync_event({send_xml, Packet}, _From, StateName,
               end,
     case Packet2 of
         {xmlstreamstart, Name, Attrs3} ->
-            B = xml:element_to_binary(#xmlel{name = Name, attrs = Attrs3}),
+            B = fxml:element_to_binary(#xmlel{name = Name, attrs = Attrs3}),
             WsPid ! {send, <<(binary:part(B, 0, byte_size(B)-2))/binary, ">">>};
         {xmlstreamend, Name} ->
             WsPid ! {send, <<"</", Name/binary, ">">>};
         {xmlstreamelement, El} ->
-            WsPid ! {send, xml:element_to_binary(El)};
+            WsPid ! {send, fxml:element_to_binary(El)};
         {xmlstreamraw, Bin} ->
             WsPid ! {send, Bin};
         {xmlstreamcdata, Bin2} ->
@@ -209,7 +210,7 @@ handle_sync_event(close, _From, StateName, #state{ws = {_, WsPid}, rfc_compilant
   when StateName /= stream_end_sent ->
     Close = #xmlel{name = <<"close">>,
                    attrs = [{<<"xmlns">>, <<"urn:ietf:params:xml:ns:xmpp-framing">>}]},
-    WsPid ! {send, xml:element_to_binary(Close)},
+    WsPid ! {send, fxml:element_to_binary(Close)},
     {stop, normal, StateData};
 handle_sync_event(close, _From, _StateName, StateData) ->
     {stop, normal, StateData}.
@@ -315,9 +316,9 @@ get_human_html_xmlel() ->
 parse(#state{rfc_compilant = C} = State, Data) ->
     case C of
         undefined ->
-            P = xml_stream:new(self()),
-            P2 = xml_stream:parse(P, Data),
-            xml_stream:close(P2),
+            P = fxml_stream:new(self()),
+            P2 = fxml_stream:parse(P, Data),
+            fxml_stream:close(P2),
             case parsed_items([]) of
                 error ->
                     {State#state{rfc_compilant = true}, <<"parse error">>};
@@ -329,7 +330,7 @@ parse(#state{rfc_compilant = C} = State, Data) ->
                     parse(State#state{rfc_compilant = false}, Data)
             end;
         true ->
-            El = xml_stream:parse_element(Data),
+            El = fxml_stream:parse_element(Data),
             case El of
                 #xmlel{name = <<"open">>, attrs = Attrs} ->
                     Attrs2 = [{<<"xmlns:stream">>, ?NS_STREAM}, {<<"xmlns">>, <<"jabber:client">>} |

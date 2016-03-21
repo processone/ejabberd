@@ -5,7 +5,7 @@
 %%% Created : 29 Dec 2011 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -103,12 +103,26 @@ init([]) ->
     StartInterval = get_start_interval(),
     Server = get_riak_server(),
     Port = get_riak_port(),
+    CACertFile = get_riak_cacertfile(),
+    Username = get_riak_username(),
+    Password = get_riak_password(),
+    Options = lists:filter(
+		fun(X) -> X /= nil end,
+		[auto_reconnect,
+		 if CACertFile /= nil -> {cacertfile ,CACertFile};
+		    true -> nil
+		 end,
+		 if (Username /= nil) and (Password /= nil) ->
+			 {credentials, Username, Password};
+		    true -> nil
+		 end
+		]),
     {ok, {{one_for_one, PoolSize*10, 1},
 	  lists:map(
 	    fun(I) ->
 		    {ejabberd_riak:get_proc(I),
 		     {ejabberd_riak, start_link,
-                      [I, Server, Port, StartInterval*1000]},
+                      [I, Server, Port, StartInterval*1000, Options]},
 		     transient, 2000, worker, [?MODULE]}
 	    end, lists:seq(1, PoolSize))}}.
 
@@ -131,6 +145,27 @@ get_riak_server() ->
 	      binary_to_list(iolist_to_binary(S))
       end, ?DEFAULT_RIAK_HOST).
 
+get_riak_cacertfile() ->
+    ejabberd_config:get_option(
+      riak_cacertfile,
+      fun(S) ->
+	      binary_to_list(iolist_to_binary(S))
+      end, nil).
+
+get_riak_username() ->
+    ejabberd_config:get_option(
+      riak_username,
+      fun(S) ->
+	      binary_to_list(iolist_to_binary(S))
+      end, nil).
+
+get_riak_password() ->
+    ejabberd_config:get_option(
+      riak_password,
+      fun(S) ->
+	      binary_to_list(iolist_to_binary(S))
+      end, nil).
+
 get_riak_port() ->
     ejabberd_config:get_option(
       riak_port,
@@ -141,7 +176,7 @@ get_pids() ->
     [ejabberd_riak:get_proc(I) || I <- lists:seq(1, get_pool_size())].
 
 get_random_pid() ->
-    get_random_pid(now()).
+    get_random_pid(p1_time_compat:monotonic_time()).
 
 get_random_pid(Term) ->
     I = erlang:phash2(Term, get_pool_size()) + 1,
@@ -162,6 +197,9 @@ opt_type(riak_port) -> fun (_) -> true end;
 opt_type(riak_server) -> fun (_) -> true end;
 opt_type(riak_start_interval) ->
     fun (N) when is_integer(N), N >= 1 -> N end;
+opt_type(riak_cacertfile) -> fun iolist_to_binary/1;
+opt_type(riak_username) -> fun iolist_to_binary/1;
+opt_type(riak_password) -> fun iolist_to_binary/1;
 opt_type(_) ->
     [modules, riak_pool_size, riak_port, riak_server,
-     riak_start_interval].
+     riak_start_interval, riak_cacertfile, riak_username, riak_password].

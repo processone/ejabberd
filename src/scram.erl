@@ -5,7 +5,7 @@
 %%% Created : 7 Aug 2011 by Stephen Röttger <stephen.roettger@googlemail.com>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
 -spec salted_password(binary(), binary(), non_neg_integer()) -> binary().
 
 salted_password(Password, Salt, IterationCount) ->
-    hi(jlib:resourceprep(Password), Salt, IterationCount).
+    hi(jid:resourceprep(Password), Salt, IterationCount).
 
 -spec client_key(binary()) -> binary().
 
@@ -86,6 +86,4 @@ hi_round(Password, UPrev, IterationCount) ->
 							 IterationCount - 1)))).
 
 sha_mac(Key, Data) ->
-    Context1 = crypto:hmac_init(sha, Key),
-    Context2 = crypto:hmac_update(Context1, Data),
-    crypto:hmac_final(Context2).
+    crypto:hmac(sha, Key, Data).

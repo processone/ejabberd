@@ -1,6 +1,6 @@
 %%%-------------------------------------------------------------------
 %%% @author Evgeniy Khramtsov <>
-%%% @copyright (C) 2013, Evgeniy Khramtsov
+%%% @copyright (C) 2013-2016, Evgeniy Khramtsov
 %%% @doc
 %%%
 %%% @end
@@ -94,8 +94,8 @@ init_stream(Config) ->
     ok = send_text(Config, io_lib:format(?STREAM_HEADER,
                                           [?config(server, Config)])),
     {xmlstreamstart, <<"stream:stream">>, Attrs} = recv(),
-    <<"jabber:client">> = xml:get_attr_s(<<"xmlns">>, Attrs),
-    <<"1.0">> = xml:get_attr_s(<<"version">>, Attrs),
+    <<"jabber:client">> = fxml:get_attr_s(<<"xmlns">>, Attrs),
+    <<"1.0">> = fxml:get_attr_s(<<"version">>, Attrs),
     #stream_features{sub_els = Fs} = recv(),
     Mechs = lists:flatmap(
               fun(#sasl_mechanisms{list = Ms}) ->
@@ -182,8 +182,8 @@ wait_auth_SASL_result(Config) ->
                       io_lib:format(?STREAM_HEADER,
                                     [?config(server, Config)])),
             {xmlstreamstart, <<"stream:stream">>, Attrs} = recv(),
-            <<"jabber:client">> = xml:get_attr_s(<<"xmlns">>, Attrs),
-            <<"1.0">> = xml:get_attr_s(<<"version">>, Attrs),
+            <<"jabber:client">> = fxml:get_attr_s(<<"xmlns">>, Attrs),
+            <<"1.0">> = fxml:get_attr_s(<<"version">>, Attrs),
             #stream_features{sub_els = Fs} = recv(),
 	    lists:foldl(
 	      fun(#feature_sm{}, ConfigAcc) ->
@@ -255,7 +255,7 @@ send(State, Pkt) ->
                       end,
     El = xmpp_codec:encode(NewPkt),
     ct:pal("sent: ~p <-~n~s", [El, xmpp_codec:pp(NewPkt)]),
-    ok = send_text(State, xml:element_to_binary(El)),
+    ok = send_text(State, fxml:element_to_binary(El)),
     NewID.
 
 send_recv(State, IQ) ->
@@ -271,7 +271,7 @@ sasl_new(<<"DIGEST-MD5">>, User, Server, Password) ->
 	     case cyrsasl_digest:parse(ServerIn) of
 	       bad -> {error, <<"Invalid SASL challenge">>};
 	       KeyVals ->
-		   Nonce = xml:get_attr_s(<<"nonce">>, KeyVals),
+		   Nonce = fxml:get_attr_s(<<"nonce">>, KeyVals),
 		   CNonce = id(),
                    Realm = proplists:get_value(<<"realm">>, KeyVals, Server),
 		   DigestURI = <<"xmpp/", Realm/binary>>,
@@ -331,28 +331,36 @@ response(User, Passwd, Nonce, AuthzId, Realm, CNonce,
     hex((erlang:md5(T))).
 
 my_jid(Config) ->
-    jlib:make_jid(?config(user, Config),
-                  ?config(server, Config),
-                  ?config(resource, Config)).
+    jid:make(?config(user, Config),
+	     ?config(server, Config),
+	     ?config(resource, Config)).
 
 server_jid(Config) ->
-    jlib:make_jid(<<>>, ?config(server, Config), <<>>).
+    jid:make(<<>>, ?config(server, Config), <<>>).
 
 pubsub_jid(Config) ->
     Server = ?config(server, Config),
-    jlib:make_jid(<<>>, <<"pubsub.", Server/binary>>, <<>>).
+    jid:make(<<>>, <<"pubsub.", Server/binary>>, <<>>).
 
 proxy_jid(Config) ->
     Server = ?config(server, Config),
-    jlib:make_jid(<<>>, <<"proxy.", Server/binary>>, <<>>).
+    jid:make(<<>>, <<"proxy.", Server/binary>>, <<>>).
 
 muc_jid(Config) ->
     Server = ?config(server, Config),
-    jlib:make_jid(<<>>, <<"conference.", Server/binary>>, <<>>).
+    jid:make(<<>>, <<"conference.", Server/binary>>, <<>>).
 
 muc_room_jid(Config) ->
     Server = ?config(server, Config),
-    jlib:make_jid(<<"test">>, <<"conference.", Server/binary>>, <<>>).
+    jid:make(<<"test">>, <<"conference.", Server/binary>>, <<>>).
+
+mix_jid(Config) ->
+    Server = ?config(server, Config),
+    jid:make(<<>>, <<"mix.", Server/binary>>, <<>>).
+
+mix_room_jid(Config) ->
+    Server = ?config(server, Config),
+    jid:make(<<"test">>, <<"mix.", Server/binary>>, <<>>).
 
 id() ->
     id(undefined).

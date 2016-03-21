@@ -5,7 +5,7 @@
 %%% Created : 12 Oct 2006 by Evgeniy Khramtsov <xram@jabber.ru>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -63,7 +63,7 @@ start_link(Host, Opts) ->
 
 init([Host, Opts]) ->
     State = parse_options(Host, Opts),
-    ejabberd_router:register_route(State#state.myhost),
+    ejabberd_router:register_route(State#state.myhost, Host),
     {ok, State}.
 
 terminate(_Reason, #state{myhost = MyHost}) ->
@@ -175,19 +175,19 @@ process_iq(InitiatorJID,
 	   #state{acl = ACL, serverhost = ServerHost}) ->
     case acl:match_rule(ServerHost, ACL, InitiatorJID) of
       allow ->
-	  ActivateEl = xml:get_path_s(SubEl,
+	  ActivateEl = fxml:get_path_s(SubEl,
 				      [{elem, <<"activate">>}]),
-	  SID = xml:get_tag_attr_s(<<"sid">>, SubEl),
+	  SID = fxml:get_tag_attr_s(<<"sid">>, SubEl),
 	  case catch
-		 jlib:string_to_jid(xml:get_tag_cdata(ActivateEl))
+		 jid:from_string(fxml:get_tag_cdata(ActivateEl))
 	      of
 	    TargetJID
 		when is_record(TargetJID, jid), SID /= <<"">>,
 		     byte_size(SID) =< 128, TargetJID /= InitiatorJID ->
 		Target =
-		    jlib:jid_to_string(jlib:jid_tolower(TargetJID)),
+		    jid:to_string(jid:tolower(TargetJID)),
 		Initiator =
-		    jlib:jid_to_string(jlib:jid_tolower(InitiatorJID)),
+		    jid:to_string(jid:tolower(InitiatorJID)),
 		SHA1 = p1_sha:sha(<<SID/binary, Initiator/binary, Target/binary>>),
 		case mod_proxy65_sm:activate_stream(SHA1, InitiatorJID,
 						    TargetJID, ServerHost)
@@ -246,7 +246,7 @@ iq_vcard(Lang) ->
 		[{xmlcdata,
 		  <<(translate:translate(Lang,
 					 <<"ejabberd SOCKS5 Bytestreams module">>))/binary,
-		    "\nCopyright (c) 2003-2015 ProcessOne">>}]}].
+		    "\nCopyright (c) 2003-2016 ProcessOne">>}]}].
 
 parse_options(ServerHost, Opts) ->
     MyHost = gen_mod:get_opt_host(ServerHost, Opts,

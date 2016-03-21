@@ -5,7 +5,7 @@
 %%% Created : 11 Aug 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -691,10 +691,10 @@ announce_all(From, To, Packet) ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    Local = jlib:make_jid(<<>>, To#jid.server, <<>>),
+	    Local = jid:make(<<>>, To#jid.server, <<>>),
 	    lists:foreach(
 	      fun({User, Server}) ->
-		      Dest = jlib:make_jid(User, Server, <<>>),
+		      Dest = jid:make(User, Server, <<>>),
 		      ejabberd_router:route(Local, Dest, Packet)
 	      end, ejabberd_auth:get_vh_registered_users(Host))
     end.
@@ -706,10 +706,10 @@ announce_all_hosts_all(From, To, Packet) ->
 	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
-	    Local = jlib:make_jid(<<>>, To#jid.server, <<>>),
+	    Local = jid:make(<<>>, To#jid.server, <<>>),
 	    lists:foreach(
 	      fun({User, Server}) ->
-		      Dest = jlib:make_jid(User, Server, <<>>),
+		      Dest = jid:make(User, Server, <<>>),
 		      ejabberd_router:route(Local, Dest, Packet)
 	      end, ejabberd_auth:dirty_get_registered_users())
     end.
@@ -740,10 +740,10 @@ announce_all_hosts_online(From, To, Packet) ->
     end.
 
 announce_online1(Sessions, Server, Packet) ->
-    Local = jlib:make_jid(<<>>, Server, <<>>),
+    Local = jid:make(<<>>, Server, <<>>),
     lists:foreach(
       fun({U, S, R}) ->
-	      Dest = jlib:make_jid(U, S, R),
+	      Dest = jid:make(U, S, R),
 	      ejabberd_router:route(Local, Dest, Packet)
       end, Sessions).
 
@@ -770,7 +770,7 @@ announce_all_hosts_motd(From, To, Packet) ->
     end.
 
 announce_motd(Host, Packet) ->
-    LServer = jlib:nameprep(Host),
+    LServer = jid:nameprep(Host),
     announce_motd_update(LServer, Packet),
     Sessions = ejabberd_sm:get_vh_session_list(LServer),
     announce_online1(Sessions, LServer, Packet),
@@ -845,7 +845,7 @@ announce_motd_update(LServer, Packet) ->
                                              packet = Packet},
 				       motd_schema())};
         odbc ->
-            XML = ejabberd_odbc:escape(xml:element_to_binary(Packet)),
+            XML = ejabberd_odbc:escape(fxml:element_to_binary(Packet)),
             F = fun() ->
                         odbc_queries:update_t(
                           <<"motd">>,
@@ -922,7 +922,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, mnesia) ->
 		[#motd_users{}] ->
 		    ok;
 		_ ->
-		    Local = jlib:make_jid(<<>>, LServer, <<>>),
+		    Local = jid:make(<<>>, LServer, <<>>),
 		    ejabberd_router:route(Local, JID, Packet),
 		    F = fun() ->
 				mnesia:write(#motd_users{us = US})
@@ -940,7 +940,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, riak) ->
                 {ok, #motd_users{}} ->
                     ok;
                 _ ->
-                    Local = jlib:make_jid(<<>>, LServer, <<>>),
+                    Local = jid:make(<<>>, LServer, <<>>),
 		    ejabberd_router:route(Local, JID, Packet),
                     {atomic, ejabberd_riak:put(
                                #motd_users{us = US}, motd_users_schema(),
@@ -953,7 +953,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, odbc) when LUser /= <<>>
     case catch ejabberd_odbc:sql_query(
                  LServer, [<<"select xml from motd where username='';">>]) of
         {selected, [<<"xml">>], [[XML]]} ->
-            case xml_stream:parse_element(XML) of
+            case fxml_stream:parse_element(XML) of
                 {error, _} ->
                     ok;
                 Packet ->
@@ -963,7 +963,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID, odbc) when LUser /= <<>>
                                  [<<"select username from motd "
                                     "where username='">>, Username, <<"';">>]) of
                         {selected, [<<"username">>], []} ->
-                            Local = jlib:make_jid(<<"">>, LServer, <<"">>),
+                            Local = jid:make(<<"">>, LServer, <<"">>),
                             ejabberd_router:route(Local, JID, Packet),
                             F = fun() ->
                                         odbc_queries:update_t(
@@ -986,8 +986,8 @@ send_motd(_, odbc) ->
 get_stored_motd(LServer) ->
     case get_stored_motd_packet(LServer, gen_mod:db_type(LServer, ?MODULE)) of
         {ok, Packet} ->
-            {xml:get_subtag_cdata(Packet, <<"subject">>),
-             xml:get_subtag_cdata(Packet, <<"body">>)};
+            {fxml:get_subtag_cdata(Packet, <<"subject">>),
+             fxml:get_subtag_cdata(Packet, <<"body">>)};
         error ->
             {<<>>, <<>>}
     end.
@@ -1010,7 +1010,7 @@ get_stored_motd_packet(LServer, odbc) ->
     case catch ejabberd_odbc:sql_query(
                  LServer, [<<"select xml from motd where username='';">>]) of
         {selected, [<<"xml">>], [[XML]]} ->
-            case xml_stream:parse_element(XML) of
+            case fxml_stream:parse_element(XML) of
                 {error, _} ->
                     error;
                 Packet ->
@@ -1038,10 +1038,10 @@ send_announcement_to_all(Host, SubjectS, BodyS) ->
         children = SubjectEls ++ BodyEls
     },
     Sessions = ejabberd_sm:dirty_get_sessions_list(),
-    Local = jlib:make_jid(<<>>, Host, <<>>),
+    Local = jid:make(<<>>, Host, <<>>),
     lists:foreach(
       fun({U, S, R}) ->
-	      Dest = jlib:make_jid(U, S, R),
+	      Dest = jid:make(U, S, R),
 	      ejabberd_router:route(Local, Dest, Packet)
       end, Sessions).
 
@@ -1067,7 +1067,7 @@ update_motd_table() ->
               fun(#motd{server = S}) -> S end,
               fun(#motd{server = S, packet = P} = R) ->
                       NewS = iolist_to_binary(S),
-                      NewP = xml:to_xmlel(P),
+                      NewP = fxml:to_xmlel(P),
                       R#motd{server = NewS, packet = NewP}
               end);
 	_ ->
@@ -1105,7 +1105,7 @@ export(_Server) ->
             when LServer == Host ->
               [[<<"delete from motd where username='';">>],
                [<<"insert into motd(username, xml) values ('', '">>,
-                ejabberd_odbc:escape(xml:element_to_binary(El)),
+                ejabberd_odbc:escape(fxml:element_to_binary(El)),
                 <<"');">>]];
          (_Host, _R) ->
               []
@@ -1124,7 +1124,7 @@ export(_Server) ->
 import(LServer) ->
     [{<<"select xml from motd where username='';">>,
       fun([XML]) ->
-              El = xml_stream:parse_element(XML),
+              El = fxml_stream:parse_element(XML),
               #motd{server = LServer, packet = El}
       end},
      {<<"select username from motd where xml='';">>,

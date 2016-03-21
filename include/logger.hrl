@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -18,8 +18,6 @@
 %%%
 %%%----------------------------------------------------------------------
 -define(PRINT(Format, Args), io:format(Format, Args)).
-
--ifdef(LAGER).
 -compile([{parse_transform, lager_transform}]).
 
 -define(DEBUG(Format, Args),
@@ -36,21 +34,3 @@
 
 -define(CRITICAL_MSG(Format, Args),
 	lager:critical(Format, Args)).
-
--else.
-
--define(DEBUG(Format, Args),
-	p1_logger:debug_msg(?MODULE, ?LINE, Format, Args)).
-
--define(INFO_MSG(Format, Args),
-	p1_logger:info_msg(?MODULE, ?LINE, Format, Args)).
-
--define(WARNING_MSG(Format, Args),
-	p1_logger:warning_msg(?MODULE, ?LINE, Format, Args)).
-
--define(ERROR_MSG(Format, Args),
-	p1_logger:error_msg(?MODULE, ?LINE, Format, Args)).
-
--define(CRITICAL_MSG(Format, Args),
-	p1_logger:critical_msg(?MODULE, ?LINE, Format, Args)).
--endif.

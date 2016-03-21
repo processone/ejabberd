@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
 %%%----------------------------------------------------------------------
 
 -record(request,
-	{method, %            :: method(),
+	{method            :: method(),
 	 path = []         :: [binary()],
 	 q = []            :: [{binary() | nokey, binary()}],
 	 us = {<<>>, <<>>} :: {binary(), binary()},
@@ -30,14 +30,13 @@
 	 ip                :: {inet:ip_address(), inet:port_number()},
 	 host = <<"">>     :: binary(),
 	 port = 5280       :: inet:port_number(),
-	 tp = http, %         :: protocol(),
 	 opts = []         :: list(),
+	 tp = http         :: protocol(),
 	 headers = []      :: [{atom() | binary(), binary()}]}).
 
-
 -record(ws,
-	{socket                  :: inet:socket() | p1_tls:tls_socket(),
-	 sockmod = gen_tcp       :: gen_tcp | p1_tls,
+	{socket                  :: inet:socket() | fast_tls:tls_socket(),
+	 sockmod = gen_tcp       :: gen_tcp | fast_tls,
 	 ip                      :: {inet:ip_address(), inet:port_number()},
 	 host = <<"">>           :: binary(),
 	 port = 5280             :: inet:port_number(),
@@ -47,3 +46,7 @@
 	 q = []                  :: [{binary() | nokey, binary()}],
 	 buf                     :: binary(),
          http_opts = []          :: list()}).
+
+-type method() :: 'GET' | 'HEAD' | 'DELETE' | 'OPTIONS' | 'PUT' | 'POST' | 'TRACE'.
+-type protocol() :: http | https.
+-type http_request() :: #request{}.

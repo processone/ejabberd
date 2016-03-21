@@ -629,27 +629,10 @@ init([Hosts, Port, Rootdn, Passwd, Opts]) ->
 	    id = 0, dict = dict:new(), req_q = queue:new()},
      0}.
 
-%%----------------------------------------------------------------------
-%% Func: StateName/2
-%% Called when gen_fsm:send_event/2,3 is invoked (async)
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
-%%----------------------------------------------------------------------
 connecting(timeout, S) ->
     {ok, NextState, NewS} = connect_bind(S),
     {next_state, NextState, NewS}.
 
-%%----------------------------------------------------------------------
-%% Func: StateName/3
-%% Called when gen_fsm:sync_send_event/2,3 is invoked.
-%% Returns: {next_state, NextStateName, NextStateData}            |
-%%          {next_state, NextStateName, NextStateData, Timeout}   |
-%%          {reply, Reply, NextStateName, NextStateData}          |
-%%          {reply, Reply, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
-%%----------------------------------------------------------------------
 connecting(Event, From, S) ->
     Q = queue:in({Event, From}, S#eldap.req_q),
     {next_state, connecting, S#eldap{req_q = Q}}.
@@ -678,34 +661,15 @@ handle_event(close, _StateName, S) ->
 handle_event(_Event, StateName, S) ->
     {next_state, StateName, S}.
 
-%%----------------------------------------------------------------------
-%% Func: handle_sync_event/4
-%% Called when gen_fsm:sync_send_all_state_event/2,3 is invoked
-%% Returns: {next_state, NextStateName, NextStateData}            |
-%%          {next_state, NextStateName, NextStateData, Timeout}   |
-%%          {reply, Reply, NextStateName, NextStateData}          |
-%%          {reply, Reply, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                          |
-%%          {stop, Reason, Reply, NewStateData}                    
-%%----------------------------------------------------------------------
 handle_sync_event(_Event, _From, StateName, S) ->
     {reply, {StateName, S}, StateName, S}.
-
-%%----------------------------------------------------------------------
-%% Func: handle_info/3
-%% Returns: {next_state, NextStateName, NextStateData}          |
-%%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
-%%          {stop, Reason, NewStateData}
-%%----------------------------------------------------------------------
 
 %%
 %% Packets arriving in various states
 %%
 handle_info({Tag, _Socket, Data}, connecting, S)
     when Tag == tcp; Tag == ssl ->
-    ?DEBUG("tcp packet received when disconnected!~n~p",
-	   [Data]),
+    ?DEBUG("tcp packet received when disconnected!~n~p", [Data]),
     {next_state, connecting, S};
 handle_info({Tag, _Socket, Data}, wait_bind_response, S)
     when Tag == tcp; Tag == ssl ->
@@ -724,8 +688,7 @@ handle_info({Tag, _Socket, Data}, wait_bind_response, S)
 	  {next_state, connecting, close_and_retry(S)}
     end;
 handle_info({Tag, _Socket, Data}, StateName, S)
-    when (StateName == active orelse
-	    StateName == active_bind)
+    when (StateName == active orelse StateName == active_bind)
 	   andalso (Tag == tcp orelse Tag == ssl) ->
     case catch recvd_packet(Data, S) of
       {response, Response, RequestType} ->
@@ -766,8 +729,7 @@ handle_info({timeout, Timer, {cmd_timeout, Id}},
 handle_info({timeout, retry_connect}, connecting, S) ->
     {ok, NextState, NewS} = connect_bind(S),
     {next_state, NextState, NewS};
-handle_info({timeout, _Timer, bind_timeout},
-	    wait_bind_response, S) ->
+handle_info({timeout, _Timer, bind_timeout}, wait_bind_response, S) ->
     {next_state, connecting, close_and_retry(S)};
 %%
 %% Make sure we don't fill the message queue with rubbish
@@ -825,16 +787,14 @@ send_command(Command, From, S) ->
     Message = #'LDAPMessage'{messageID = Id,
 			     protocolOp = {Name, Request}},
     ?DEBUG("~p~n", [{Name, ejabberd_config:may_hide_data(Request)}]),
-    {ok, Bytes} = 'ELDAPv3':encode('LDAPMessage',
-				Message),
+    {ok, Bytes} = 'ELDAPv3':encode('LDAPMessage', Message),
     case (S#eldap.sockmod):send(S#eldap.fd, Bytes) of
       ok ->
-	  Timer = erlang:start_timer(?CMD_TIMEOUT, self(),
-				     {cmd_timeout, Id}),
-	  New_dict = dict:store(Id,
-				[{Timer, Command, From, Name}], S#eldap.dict),
-	  {ok, S#eldap{id = Id, dict = New_dict}};
-      Error -> Error
+	Timer = erlang:start_timer(?CMD_TIMEOUT, self(), {cmd_timeout, Id}),
+	New_dict = dict:store(Id, [{Timer, Command, From, Name}], S#eldap.dict),
+	{ok, S#eldap{id = Id, dict = New_dict}};
+      Error ->
+	Error
     end.
 
 gen_req({search, A}) ->
@@ -1148,8 +1108,7 @@ bind_request(Socket, S) ->
     Message = #'LDAPMessage'{messageID = Id,
 			     protocolOp = {bindRequest, Req}},
     ?DEBUG("Bind Request Message:~p~n", [ejabberd_config:may_hide_data(Message)]),
-    {ok, Bytes} = 'ELDAPv3':encode('LDAPMessage',
-				Message),
+    {ok, Bytes} = 'ELDAPv3':encode('LDAPMessage', Message),
     case (S#eldap.sockmod):send(Socket, Bytes) of
       ok -> {ok, S#eldap{id = Id}};
       Error -> Error
@@ -1162,24 +1121,6 @@ next_host(Host,
 	  Hosts) ->                       % Find next in turn
     next_host(Host, Hosts, Hosts).
 
-%%% --------------------------------------------------------------------
-%%% Verify the input data
-%%% --------------------------------------------------------------------
-%%% --------------------------------------------------------------------
-%%% Get and Validate the initial configuration
-%%% --------------------------------------------------------------------
-%% get_atom(Key, List) ->
-%%     case lists:keysearch(Key, 1, List) of
-%% 	{value, {Key, Value}} when is_atom(Value) ->
-%% 	    Value;
-%% 	{value, {Key, _Value}} ->
-%% 	    throw({error, "Bad Value in Config for " ++ atom_to_list(Key)});
-%% 	false ->
-%% 	    throw({error, "No Entry in Config for " ++ atom_to_list(Key)})
-%%     end.
-%%% --------------------------------------------------------------------
-%%% Other Stuff
-%%% --------------------------------------------------------------------
 next_host(Host, [Host], Hosts) ->
     hd(Hosts);    % Wrap back to first
 next_host(Host, [Host | Tail], _Hosts) ->

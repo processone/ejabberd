@@ -1,29 +1,27 @@
-%%% ====================================================================
-%%% ``The contents of this file are subject to the Erlang Public License,
-%%% Version 1.1, (the "License"); you may not use this file except in
-%%% compliance with the License. You should have received a copy of the
-%%% Erlang Public License along with this software. If not, it can be
-%%% retrieved via the world wide web at http://www.erlang.org/.
-%%% 
-%%%
-%%% Software distributed under the License is distributed on an "AS IS"
-%%% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
-%%% the License for the specific language governing rights and limitations
-%%% under the License.
-%%% 
-%%%
-%%% The Initial Developer of the Original Code is ProcessOne.
-%%% Portions created by ProcessOne are Copyright 2006-2015, ProcessOne
-%%% All Rights Reserved.''
-%%% This software is copyright 2006-2015, ProcessOne.
+%%%----------------------------------------------------------------------
+%%% File    : nodetree_virtual.erl
+%%% Author  : Christophe Romain <christophe.romain@process-one.net>
+%%% Purpose : Standard node tree plugin using no storage backend
+%%% Created :  1 Dec 2007 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% @copyright 2006-2015 ProcessOne
-%%% @author Christophe Romain <christophe.romain@process-one.net>
-%%%   [http://www.process-one.net/]
-%%% @version {@vsn}, {@date} {@time}
-%%% @end
-%%% ====================================================================
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
+%%%----------------------------------------------------------------------
 
 %%% @doc The module <strong>{@module}</strong> is the PubSub node tree plugin that
 %%% allow virtual nodes handling. This prevent storage of nodes.
@@ -61,14 +59,12 @@ get_node(Host, Node, _From) ->
     get_node(Host, Node).
 
 get_node(Host, Node) ->
-    get_node(nodeidx(Host, Node)).
+    Nidx = nodeidx(Host, Node),
+    node_record(Host, Node, Nidx).
 
 get_node(Nidx) ->
     {Host, Node} = nodeid(Nidx),
-    Record = #pubsub_node{nodeid = Node, id = Nidx},
-    Module = jlib:binary_to_atom(<<"node_", (Record#pubsub_node.type)/binary>>),
-    Record#pubsub_node{owners = [{<<"">>, Host, <<"">>}],
-	options = Module:options()}.
+    node_record(Host, Node, Nidx).
 
 get_nodes(Host, _From) ->
     get_nodes(Host).
@@ -80,10 +76,7 @@ get_parentnodes(_Host, _Node, _From) ->
     [].
 
 get_parentnodes_tree(Host, Node, From) ->
-    case get_node(Host, Node, From) of
-	Node when is_record(Node, pubsub_node) -> [{0, [Node]}];
-	_Error -> []
-    end.
+    [{0, [get_node(Host, Node, From)]}].
 
 get_subnodes(Host, Node, _From) ->
     get_subnodes(Host, Node).
@@ -98,12 +91,35 @@ get_subnodes_tree(_Host, _Node) ->
     [].
 
 create_node(Host, Node, _Type, _Owner, _Options, _Parents) ->
-    {error, {virtual, {Host, Node}}}.
+    {error, {virtual, nodeidx(Host, Node)}}.
 
 delete_node(Host, Node) ->
     [get_node(Host, Node)].
 
 %% internal helper
 
-nodeidx(Host, Node) -> term_to_binary({Host, Node}).
-nodeid(Nidx) -> binary_to_term(Nidx).
+node_record({U,S,R}, Node, Nidx) ->
+    Host = mod_pubsub:host(S),
+    Type = <<"pep">>,
+    Module = mod_pubsub:plugin(Host, Type),
+    #pubsub_node{nodeid = {{U,S,R},Node}, id = Nidx, type = Type,
+                 owners = [{U,S,R}],
+                 options = Module:options()};
+node_record(Host, Node, Nidx) ->
+    [Type|_] = mod_pubsub:plugins(Host),
+    Module = mod_pubsub:plugin(Host, Type),
+    #pubsub_node{nodeid = {Host, Node}, id = Nidx, type = Type,
+                 owners = [{<<"">>, Host, <<"">>}],
+                 options = Module:options()}.
+
+nodeidx({U,S,R}, Node) ->
+    JID = jid:to_string(jid:make(U,S,R)),
+    <<JID/binary, ":", Node/binary>>;
+nodeidx(Host, Node) ->
+    <<Host/binary, ":", Node/binary>>.
+nodeid(Nidx) ->
+    [Head, Node] = binary:split(Nidx, <<":">>),
+    case jid:from_string(Head) of
+        {jid,<<>>,Host,<<>>,_,_,_} -> {Host, Node};
+        {jid,U,S,R,_,_,_} -> {{U,S,R}, Node}
+    end.

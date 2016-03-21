@@ -5,7 +5,7 @@
 %%% Created : 20 May 2008 by Badlop <badlop@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -211,22 +211,58 @@
 -export([init/0,
 	 list_commands/0,
 	 get_command_format/1,
+         get_command_format/2,
 	 get_command_definition/1,
 	 get_tags_commands/0,
+         get_commands/0,
 	 register_commands/1,
 	 unregister_commands/1,
 	 execute_command/2,
-	 execute_command/4
+         execute_command/4,
+         opt_type/1,
+         get_commands_spec/0
 	]).
 
 -include("ejabberd_commands.hrl").
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
+-define(POLICY_ACCESS, '$policy').
 
+get_commands_spec() ->
+    [
+        #ejabberd_commands{name = gen_html_doc_for_commands, tags = [documentation],
+                           desc = "Generates html documentation for ejabberd_commands",
+                           module = ejabberd_commands_doc, function = generate_html_output,
+                           args = [{file, binary}, {regexp, binary}, {examples, binary}],
+                           result = {res, rescode},
+                           args_desc = ["Path to file where generated "
+                                        "documentation should be stored",
+                                        "Regexp matching names of commands or modules "
+                                        "that will be included inside generated document",
+                                        "Comma separated list of languages (choosen from java, perl, xmlrpc, json)"
+                                        "that will have example invocation include in markdown document"],
+                           result_desc = "0 if command failed, 1 when succedded",
+                           args_example = ["/home/me/docs/api.html", "mod_admin", "java,json"],
+                           result_example = ok},
+        #ejabberd_commands{name = gen_markdown_doc_for_commands, tags = [documentation],
+                           desc = "Generates markdown documentation for ejabberd_commands",
+                           module = ejabberd_commands_doc, function = generate_md_output,
+                           args = [{file, binary}, {regexp, binary}, {examples, binary}],
+                           result = {res, rescode},
+                           args_desc = ["Path to file where generated "
+                                        "documentation should be stored",
+                                        "Regexp matching names of commands or modules "
+                                        "that will be included inside generated document",
+                                        "Comma separated list of languages (choosen from java, perl, xmlrpc, json)"
+                                        "that will have example invocation include in markdown document"],
+                           result_desc = "0 if command failed, 1 when succedded",
+                           args_example = ["/home/me/docs/api.html", "mod_admin", "java,json"],
+                           result_example = ok}].
 init() ->
     ets:new(ejabberd_commands, [named_table, set, public,
-				{keypos, #ejabberd_commands.name}]).
+				{keypos, #ejabberd_commands.name}]),
+    register_commands(get_commands_spec()).
 
 -spec register_commands([ejabberd_commands()]) -> ok.
 
@@ -265,19 +301,40 @@ list_commands() ->
 					    _ = '_'}),
     [{A, B, C} || [A, B, C] <- Commands].
 
+-spec list_commands_policy() -> [{atom(), [aterm()], string(), atom()}].
+
+%% @doc Get a list of all the available commands, arguments, description, and
+%% policy.
+list_commands_policy() ->
+    Commands = ets:match(ejabberd_commands,
+			 #ejabberd_commands{name = '$1',
+					    args = '$2',
+					    desc = '$3',
+					    policy = '$4',
+					    _ = '_'}),
+    [{A, B, C, D} || [A, B, C, D] <- Commands].
+
 -spec get_command_format(atom()) -> {[aterm()], rterm()} | {error, command_unknown}.
 
 %% @doc Get the format of arguments and result of a command.
 get_command_format(Name) ->
+    get_command_format(Name, noauth).
+
+get_command_format(Name, Auth) ->
+    Admin = is_admin(Name, Auth),
     Matched = ets:match(ejabberd_commands,
 			#ejabberd_commands{name = Name,
 					   args = '$1',
 					   result = '$2',
+                                           policy = '$3',
 					   _ = '_'}),
     case Matched of
 	[] ->
 	    {error, command_unknown};
-	[[Args, Result]] ->
+	[[Args, Result, user]] when Admin;
+                                    Auth == noauth ->
+	    {[{user, binary}, {server, binary} | Args], Result};
+	[[Args, Result, _]] ->
 	    {Args, Result}
     end.
 
@@ -295,23 +352,56 @@ get_command_definition(Name) ->
 execute_command(Name, Arguments) ->
     execute_command([], noauth, Name, Arguments).
 
+-spec execute_command([{atom(), [atom()], [any()]}],
+                      {binary(), binary(), binary(), boolean()} |
+                      noauth | admin,
+                      atom(),
+                      [any()]
+                     ) -> any().
+
 %% @spec (AccessCommands, Auth, Name::atom(), Arguments) -> ResultTerm | {error, Error}
-%% where 
+%% where
 %%       AccessCommands = [{Access, CommandNames, Arguments}]
-%%       Auth = {User::string(), Server::string(), Password::string()} | noauth
+%%       Auth = {User::string(), Server::string(), Password::string(), Admin::boolean()}
+%%            | noauth
+%%            | admin
 %%       Method = atom()
 %%       Arguments = [any()]
 %%       Error = command_unknown | account_unprivileged | invalid_account_data | no_auth_provided
-execute_command(AccessCommands, Auth, Name, Arguments) ->
+execute_command(AccessCommands1, Auth1, Name, Arguments) ->
+    Auth = case is_admin(Name, Auth1) of
+               true -> admin;
+               false -> Auth1
+           end,
     case ets:lookup(ejabberd_commands, Name) of
 	[Command] ->
+            AccessCommands = get_access_commands(AccessCommands1),
 	    try check_access_commands(AccessCommands, Auth, Name, Command, Arguments) of
-		ok -> execute_command2(Command, Arguments)
+		ok -> execute_command2(Auth, Command, Arguments)
 	    catch
 		{error, Error} -> {error, Error}
 	    end;
 	[] -> {error, command_unknown}
     end.
+
+execute_command2(
+  _Auth, #ejabberd_commands{policy = open} = Command, Arguments) ->
+    execute_command2(Command, Arguments);
+execute_command2(
+  _Auth, #ejabberd_commands{policy = restricted} = Command, Arguments) ->
+    execute_command2(Command, Arguments);
+execute_command2(
+  _Auth, #ejabberd_commands{policy = admin} = Command, Arguments) ->
+    execute_command2(Command, Arguments);
+execute_command2(
+  admin, #ejabberd_commands{policy = user} = Command, Arguments) ->
+    execute_command2(Command, Arguments);
+execute_command2(
+  noauth, #ejabberd_commands{policy = user} = Command, Arguments) ->
+    execute_command2(Command, Arguments);
+execute_command2(
+  {User, Server, _, _}, #ejabberd_commands{policy = user} = Command, Arguments) ->
+    execute_command2(Command, [User, Server | Arguments]).
 
 execute_command2(Command, Arguments) ->
     Module = Command#ejabberd_commands.module,
@@ -361,7 +451,7 @@ get_tags_commands() ->
 %% -----------------------------
 
 %% @spec (AccessCommands, Auth, Method, Command, Arguments) -> ok
-%% where 
+%% where
 %%       AccessCommands =  [ {Access, CommandNames, Arguments} ]
 %%       Auth = {User::string(), Server::string(), Password::string()} | noauth
 %%       Method = atom()
@@ -372,11 +462,22 @@ get_tags_commands() ->
 %% Error = account_unprivileged | invalid_account_data
 check_access_commands([], _Auth, _Method, _Command, _Arguments) ->
     ok;
-check_access_commands(AccessCommands, Auth, Method, Command, Arguments) ->
+check_access_commands(AccessCommands, Auth, Method, Command1, Arguments) ->
+    Command =
+        case {Command1#ejabberd_commands.policy, Auth} of
+            {user, {_, _, _}} ->
+                Command1;
+            {user, _} ->
+                Command1#ejabberd_commands{
+                  args = [{user, binary}, {server, binary} |
+                          Command1#ejabberd_commands.args]};
+            _ ->
+                Command1
+        end,
     AccessCommandsAllowed =
 	lists:filter(
 	  fun({Access, Commands, ArgumentRestrictions}) ->
-		  case check_access(Access, Auth) of
+		  case check_access(Command, Access, Auth) of
 		      true ->
 			  check_access_command(Commands, Command, ArgumentRestrictions,
 					       Method, Arguments);
@@ -385,7 +486,7 @@ check_access_commands(AccessCommands, Auth, Method, Command, Arguments) ->
 		  end;
 	      ({Access, Commands}) ->
 		  ArgumentRestrictions = [],
-		  case check_access(Access, Auth) of
+		  case check_access(Command, Access, Auth) of
 		      true ->
 			  check_access_command(Commands, Command, ArgumentRestrictions,
 					       Method, Arguments);
@@ -399,31 +500,53 @@ check_access_commands(AccessCommands, Auth, Method, Command, Arguments) ->
 	L when is_list(L) -> ok
     end.
 
--spec check_auth(noauth) -> noauth_provided;
-                ({binary(), binary(), binary()}) -> {ok, binary(), binary()}.
+-spec check_auth(ejabberd_commands(), noauth) -> noauth_provided;
+                (ejabberd_commands(),
+                 {binary(), binary(), binary(), boolean()}) ->
+    {ok, binary(), binary()}.
 
-check_auth(noauth) ->
+check_auth(_Command, noauth) ->
     no_auth_provided;
-check_auth({User, Server, Password}) ->
+check_auth(Command, {User, Server, {oauth, Token}, _}) ->
+    Scope = erlang:atom_to_binary(Command#ejabberd_commands.name, utf8),
+    case ejabberd_oauth:check_token(User, Server, Scope, Token) of
+        true ->
+            {ok, User, Server};
+        false ->
+            throw({error, invalid_account_data})
+    end;
+check_auth(_Command, {User, Server, Password, _}) when is_binary(Password) ->
     %% Check the account exists and password is valid
     case ejabberd_auth:check_password(User, Server, Password) of
-	true -> {ok, User, Server};
-	_ -> throw({error, invalid_account_data})
+        true -> {ok, User, Server};
+        _ -> throw({error, invalid_account_data})
     end.
 
-check_access(all, _) ->
+check_access(Command, ?POLICY_ACCESS, _)
+  when Command#ejabberd_commands.policy == open ->
     true;
-check_access(Access, Auth) ->
-    case check_auth(Auth) of
+check_access(_Command, _Access, admin) ->
+    true;
+check_access(_Command, _Access, {_User, _Server, _, true}) ->
+    false;
+check_access(Command, Access, Auth)
+  when Access =/= ?POLICY_ACCESS;
+       Command#ejabberd_commands.policy == open;
+       Command#ejabberd_commands.policy == user ->
+    case check_auth(Command, Auth) of
 	{ok, User, Server} ->
-	    check_access(Access, User, Server);
+	    check_access2(Access, User, Server);
 	_ ->
 	    false
-    end.
+    end;
+check_access(_Command, _Access, _Auth) ->
+    false.
 
-check_access(Access, User, Server) ->
+check_access2(?POLICY_ACCESS, _User, _Server) ->
+    true;
+check_access2(Access, User, Server) ->
     %% Check this user has access permission
-    case acl:match_rule(Server, Access, jlib:make_jid(User, Server, <<"">>)) of
+    case acl:match_rule(Server, Access, jid:make(User, Server, <<"">>)) of
 	allow -> true;
 	deny -> false
     end.
@@ -447,8 +570,76 @@ check_access_arguments(Command, ArgumentRestrictions, Arguments) ->
 
 tag_arguments(ArgsDefs, Args) ->
     lists:zipwith(
-      fun({ArgName, _ArgType}, ArgValue) -> 
+      fun({ArgName, _ArgType}, ArgValue) ->
 	      {ArgName, ArgValue}
-      end, 
+      end,
       ArgsDefs,
       Args).
+
+
+get_access_commands(undefined) ->
+    Cmds = get_commands(),
+    [{?POLICY_ACCESS, Cmds, []}];
+get_access_commands(AccessCommands) ->
+    AccessCommands.
+
+get_commands() ->
+    Opts = ejabberd_config:get_option(
+             commands,
+             fun(V) when is_list(V) -> V end,
+             []),
+    CommandsList = list_commands_policy(),
+    OpenCmds = [N || {N, _, _, open} <- CommandsList],
+    RestrictedCmds = [N || {N, _, _, restricted} <- CommandsList],
+    AdminCmds = [N || {N, _, _, admin} <- CommandsList],
+    UserCmds = [N || {N, _, _, user} <- CommandsList],
+    Cmds =
+        lists:foldl(
+          fun({add_commands, L}, Acc) ->
+                  Cmds = case L of
+                             open -> OpenCmds;
+                             restricted -> RestrictedCmds;
+                             admin -> AdminCmds;
+                             user -> UserCmds;
+                             _ when is_list(L) -> L
+                         end,
+                  lists:usort(Cmds ++ Acc);
+             ({remove_commands, L}, Acc) ->
+                  Cmds = case L of
+                             open -> OpenCmds;
+                             restricted -> RestrictedCmds;
+                             admin -> AdminCmds;
+                             user -> UserCmds;
+                             _ when is_list(L) -> L
+                         end,
+                  Acc -- Cmds;
+             (_, Acc) -> Acc
+          end, AdminCmds ++ UserCmds, Opts),
+    Cmds.
+
+is_admin(_Name, noauth) ->
+    false;
+is_admin(_Name, admin) ->
+    true;
+is_admin(_Name, {_User, _Server, _, false}) ->
+    false;
+is_admin(Name, {User, Server, _, true} = Auth) ->
+    AdminAccess = ejabberd_config:get_option(
+                    commands_admin_access,
+                    fun(A) when is_atom(A) -> A end,
+                    none),
+    case acl:match_rule(Server, AdminAccess,
+                        jid:make(User, Server, <<"">>)) of
+        allow ->
+            case catch check_auth(get_command_definition(Name), Auth) of
+                {ok, _, _} -> true;
+                _ -> false
+            end;
+        deny -> false
+    end.
+
+opt_type(commands_admin_access) ->
+    fun(A) when is_atom(A) -> A end;
+opt_type(commands) ->
+    fun(V) when is_list(V) -> V end;
+opt_type(_) -> [commands, commands_admin_access].

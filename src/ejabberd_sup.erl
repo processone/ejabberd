@@ -5,7 +5,7 @@
 %%% Created : 31 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -97,21 +97,6 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_listener]},
-    ReceiverSupervisor =
-	{ejabberd_receiver_sup,
-	 {ejabberd_tmp_sup, start_link,
-	  [ejabberd_receiver_sup, ejabberd_receiver]},
-	 permanent,
-	 infinity,
-	 supervisor,
-	 [ejabberd_tmp_sup]},
-    C2SSupervisor =
-	{ejabberd_c2s_sup,
-	 {ejabberd_tmp_sup, start_link, [ejabberd_c2s_sup, ejabberd_c2s]},
-	 permanent,
-	 infinity,
-	 supervisor,
-	 [ejabberd_tmp_sup]},
     S2SInSupervisor =
 	{ejabberd_s2s_in_sup,
 	 {ejabberd_tmp_sup, start_link,
@@ -132,14 +117,6 @@ init([]) ->
 	{ejabberd_service_sup,
 	 {ejabberd_tmp_sup, start_link,
 	  [ejabberd_service_sup, ejabberd_service]},
-	 permanent,
-	 infinity,
-	 supervisor,
-	 [ejabberd_tmp_sup]},
-    HTTPSupervisor =
-	{ejabberd_http_sup,
-	 {ejabberd_tmp_sup, start_link,
-	  [ejabberd_http_sup, ejabberd_http]},
 	 permanent,
 	 infinity,
 	 supervisor,
@@ -169,12 +146,9 @@ init([]) ->
 	   S2S,
 	   Local,
 	   Captcha,
-	   ReceiverSupervisor,
-	   C2SSupervisor,
 	   S2SInSupervisor,
 	   S2SOutSupervisor,
 	   ServiceSupervisor,
-	   HTTPSupervisor,
 	   IQSupervisor,
 	   FrontendSocketSupervisor,
 	   Listener]}}.

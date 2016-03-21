@@ -5,7 +5,7 @@
 %%% Created : 7 Oct 2006 by Magnus Henoch <henoch@dtek.chalmers.se>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -120,12 +120,12 @@ read_caps(Els) -> read_caps(Els, nothing).
 read_caps([#xmlel{name = <<"c">>, attrs = Attrs}
 	   | Tail],
 	  Result) ->
-    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       ?NS_CAPS ->
-	  Node = xml:get_attr_s(<<"node">>, Attrs),
-	  Version = xml:get_attr_s(<<"ver">>, Attrs),
-	  Hash = xml:get_attr_s(<<"hash">>, Attrs),
-	  Exts = str:tokens(xml:get_attr_s(<<"ext">>, Attrs),
+	  Node = fxml:get_attr_s(<<"node">>, Attrs),
+	  Version = fxml:get_attr_s(<<"ver">>, Attrs),
+	  Hash = fxml:get_attr_s(<<"hash">>, Attrs),
+	  Exts = str:tokens(fxml:get_attr_s(<<"ext">>, Attrs),
 			    <<" ">>),
 	  read_caps(Tail,
 		    #caps{node = Node, hash = Hash, version = Version,
@@ -135,7 +135,7 @@ read_caps([#xmlel{name = <<"c">>, attrs = Attrs}
 read_caps([#xmlel{name = <<"x">>, attrs = Attrs}
 	   | Tail],
 	  Result) ->
-    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       ?NS_MUC_USER -> nothing;
       _ -> read_caps(Tail, Result)
     end;
@@ -149,7 +149,7 @@ user_send_packet(#xmlel{name = <<"presence">>, attrs = Attrs,
 		 #jid{luser = User, lserver = Server} = From,
 		 #jid{luser = User, lserver = Server,
 		      lresource = <<"">>}) ->
-    Type = xml:get_attr_s(<<"type">>, Attrs),
+    Type = fxml:get_attr_s(<<"type">>, Attrs),
     if Type == <<"">>; Type == <<"available">> ->
 	   case read_caps(Els) of
 	     nothing -> ok;
@@ -167,7 +167,7 @@ user_receive_packet(#xmlel{name = <<"presence">>, attrs = Attrs,
 		    _C2SState,
 		    #jid{lserver = Server},
 		    From, _To) ->
-    Type = xml:get_attr_s(<<"type">>, Attrs),
+    Type = fxml:get_attr_s(<<"type">>, Attrs),
     IsRemote = not lists:member(From#jid.lserver, ?MYHOSTS),
     if IsRemote and
 	 ((Type == <<"">>) or (Type == <<"available">>)) ->
@@ -227,7 +227,7 @@ disco_info(Acc, Host, Module, Node, Lang) ->
 
 c2s_presence_in(C2SState,
 		{From, To, {_, _, Attrs, Els}}) ->
-    Type = xml:get_attr_s(<<"type">>, Attrs),
+    Type = fxml:get_attr_s(<<"type">>, Attrs),
     Subscription = ejabberd_c2s:get_subscription(From,
 						 C2SState),
     Insert = ((Type == <<"">>) or (Type == <<"available">>))
@@ -235,7 +235,7 @@ c2s_presence_in(C2SState,
     Delete = (Type == <<"unavailable">>) or
 	       (Type == <<"error">>),
     if Insert or Delete ->
-	   LFrom = jlib:jid_tolower(From),
+	   LFrom = jid:tolower(From),
 	   Rs = case ejabberd_c2s:get_aux_field(caps_resources,
 						C2SState)
 		    of
@@ -269,7 +269,7 @@ c2s_presence_in(C2SState,
 c2s_filter_packet(InAcc, Host, C2SState, {pep_message, Feature}, To, _Packet) ->
     case ejabberd_c2s:get_aux_field(caps_resources, C2SState) of
       {ok, Rs} ->
-	  LTo = jlib:jid_tolower(To),
+	  LTo = jid:tolower(To),
 	  case gb_trees:lookup(LTo, Rs) of
 	    {value, Caps} ->
 		Drop = not lists:member(Feature, get_features(Host, Caps)),
@@ -417,7 +417,7 @@ feature_request(Host, From, Caps,
 			     feature_response(IQReply, Host, From, Caps,
 					      SubNodes)
 		     end,
-		 ejabberd_local:route_iq(jlib:make_jid(<<"">>, Host,
+		 ejabberd_local:route_iq(jid:make(<<"">>, Host,
 						       <<"">>),
 					 From, IQ, F);
 	     true -> feature_request(Host, From, Caps, Tail)
@@ -434,7 +434,7 @@ feature_response(#iq{type = result,
 	  Features = lists:flatmap(fun (#xmlel{name =
 						   <<"feature">>,
 					       attrs = FAttrs}) ->
-					   [xml:get_attr_s(<<"var">>, FAttrs)];
+					   [fxml:get_attr_s(<<"var">>, FAttrs)];
 				       (_) -> []
 				   end,
 				   Els),
@@ -449,7 +449,7 @@ feature_response(_IQResult, Host, From, Caps,
     feature_request(Host, From, Caps, SubNodes).
 
 caps_read_fun(Host, Node) ->
-    LServer = jlib:nameprep(Host),
+    LServer = jid:nameprep(Host),
     DBType = gen_mod:db_type(LServer, ?MODULE),
     caps_read_fun(LServer, Node, DBType).
 
@@ -488,7 +488,7 @@ caps_read_fun(LServer, {Node, SubNode}, odbc) ->
     end.
 
 caps_write_fun(Host, Node, Features) ->
-    LServer = jlib:nameprep(Host),
+    LServer = jid:nameprep(Host),
     DBType = gen_mod:db_type(LServer, ?MODULE),
     caps_write_fun(LServer, Node, Features, DBType).
 
@@ -511,7 +511,7 @@ caps_write_fun(LServer, NodePair, Features, odbc) ->
     end.
 
 make_my_disco_hash(Host) ->
-    JID = jlib:make_jid(<<"">>, Host, <<"">>),
+    JID = jid:make(<<"">>, Host, <<"">>),
     case {ejabberd_hooks:run_fold(disco_local_features,
 				  Host, empty, [JID, JID, <<"">>, <<"">>]),
 	  ejabberd_hooks:run_fold(disco_local_identity, Host, [],
@@ -567,7 +567,7 @@ concat_features(Els) ->
     lists:usort(lists:flatmap(fun (#xmlel{name =
 					      <<"feature">>,
 					  attrs = Attrs}) ->
-				      [[xml:get_attr_s(<<"var">>, Attrs), $<]];
+				      [[fxml:get_attr_s(<<"var">>, Attrs), $<]];
 				  (_) -> []
 			      end,
 			      Els)).
@@ -576,11 +576,11 @@ concat_identities(Els) ->
     lists:sort(lists:flatmap(fun (#xmlel{name =
 					     <<"identity">>,
 					 attrs = Attrs}) ->
-				     [[xml:get_attr_s(<<"category">>, Attrs),
-				       $/, xml:get_attr_s(<<"type">>, Attrs),
+				     [[fxml:get_attr_s(<<"category">>, Attrs),
+				       $/, fxml:get_attr_s(<<"type">>, Attrs),
 				       $/,
-				       xml:get_attr_s(<<"xml:lang">>, Attrs),
-				       $/, xml:get_attr_s(<<"name">>, Attrs),
+				       fxml:get_attr_s(<<"xml:lang">>, Attrs),
+				       $/, fxml:get_attr_s(<<"name">>, Attrs),
 				       $<]];
 				 (_) -> []
 			     end,
@@ -589,8 +589,8 @@ concat_identities(Els) ->
 concat_info(Els) ->
     lists:sort(lists:flatmap(fun (#xmlel{name = <<"x">>,
 					 attrs = Attrs, children = Fields}) ->
-				     case {xml:get_attr_s(<<"xmlns">>, Attrs),
-					   xml:get_attr_s(<<"type">>, Attrs)}
+				     case {fxml:get_attr_s(<<"xmlns">>, Attrs),
+					   fxml:get_attr_s(<<"type">>, Attrs)}
 					 of
 				       {?NS_XDATA, <<"result">>} ->
 					   [concat_xdata_fields(Fields)];
@@ -606,10 +606,10 @@ concat_xdata_fields(Fields) ->
 					  attrs = Attrs, children = Els} =
 				       El,
 				   [FormType, VarFields] = Acc) ->
-				      case xml:get_attr_s(<<"var">>, Attrs) of
+				      case fxml:get_attr_s(<<"var">>, Attrs) of
 					<<"">> -> Acc;
 					<<"FORM_TYPE">> ->
-					    [xml:get_subtag_cdata(El,
+					    [fxml:get_subtag_cdata(El,
 								  <<"value">>),
 					     VarFields];
 					Var ->
@@ -622,7 +622,7 @@ concat_xdata_fields(Fields) ->
 										  children
 										      =
 										      VEls}) ->
-									      [[xml:get_cdata(VEls),
+									      [[fxml:get_cdata(VEls),
 										$<]];
 									  (_) ->
 									      []
@@ -648,7 +648,7 @@ gb_trees_fold_iter(F, Acc, Iter) ->
     end.
 
 now_ts() ->
-    {MegaSecs, Secs, _} = now(), MegaSecs * 1000000 + Secs.
+    p1_time_compat:system_time(seconds).
 
 is_valid_node(Node) ->
     case str:tokens(Node, <<"#">>) of

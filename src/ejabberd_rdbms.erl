@@ -5,7 +5,7 @@
 %%% Created : 31 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -75,7 +75,7 @@ start_odbc(Host, App) ->
 
 %% Returns {true, App} if we have configured odbc for the given host
 needs_odbc(Host) ->
-    LHost = jlib:nameprep(Host),
+    LHost = jid:nameprep(Host),
     case ejabberd_config:get_option({odbc_type, LHost},
                                     fun(mysql) -> mysql;
                                        (pgsql) -> pgsql;

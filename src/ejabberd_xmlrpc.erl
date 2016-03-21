@@ -5,7 +5,7 @@
 %%% Created : 21 Aug 2007 by Badlop <badlop@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2015   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -198,41 +198,43 @@ socket_type() -> raw.
 process(_, #request{method = 'POST', data = Data, opts = Opts}) ->
     AccessCommandsOpts = gen_mod:get_opt(access_commands, Opts,
                                          fun(L) when is_list(L) -> L end,
-                                         []),
-    AccessCommands = lists:flatmap(
-                       fun({Ac, AcOpts}) ->
-                               Commands = gen_mod:get_opt(
-                                            commands, AcOpts,
-                                            fun(A) when is_atom(A) ->
-                                                    A;
-                                               (L) when is_list(L) ->
-                                                    true = lists:all(
-                                                             fun is_atom/1,
-                                                             L),
-                                                    L
-                                            end, all),
-                               CommOpts = gen_mod:get_opt(
-                                            options, AcOpts,
-                                            fun(L) when is_list(L) -> L end,
-                                            []),
-                               [{Ac, Commands, CommOpts}];
-                          (Wrong) ->
-                               ?WARNING_MSG("wrong options format for ~p: ~p",
-                                            [?MODULE, Wrong]),
-                               []
-                       end, AccessCommandsOpts),
-    GetAuth = case [ACom || {Ac, _, _} = ACom <- AccessCommands, Ac /= all] of
-		  [] -> false;
-		  _ -> true
-	      end,
+                                         undefined),
+    AccessCommands =
+        case AccessCommandsOpts of
+            undefined -> undefined;
+            _ ->
+                lists:flatmap(
+                  fun({Ac, AcOpts}) ->
+                          Commands = gen_mod:get_opt(
+                                       commands, AcOpts,
+                                       fun(A) when is_atom(A) ->
+                                               A;
+                                          (L) when is_list(L) ->
+                                               true = lists:all(
+                                                        fun is_atom/1,
+                                                        L),
+                                               L
+                                       end, all),
+                          CommOpts = gen_mod:get_opt(
+                                       options, AcOpts,
+                                       fun(L) when is_list(L) -> L end,
+                                       []),
+                          [{Ac, Commands, CommOpts}];
+                     (Wrong) ->
+                          ?WARNING_MSG("wrong options format for ~p: ~p",
+                                       [?MODULE, Wrong]),
+                          []
+                  end, AccessCommandsOpts)
+        end,
+    GetAuth = true,
     State = #state{access_commands = AccessCommands, get_auth = GetAuth},
-    case xml_stream:parse_element(Data) of
+    case fxml_stream:parse_element(Data) of
 	{error, _} ->
 	    {400, [],
 	     #xmlel{name = <<"h1">>, attrs = [],
 		    children = [{xmlcdata, <<"Malformed XML">>}]}};
 	El ->
-	    case p1_xmlrpc:decode(El) of
+	    case fxmlrpc:decode(El) of
 		{error, _} = Err ->
 		    ?ERROR_MSG("XML-RPC request ~s failed with reason: ~p",
 			       [Data, Err]),
@@ -242,7 +244,7 @@ process(_, #request{method = 'POST', data = Data, opts = Opts}) ->
 		{ok, RPC} ->
 		    ?DEBUG("got XML-RPC request: ~p", [RPC]),
 		    {false, Result} = handler(State, RPC),
-		    XML = xml:element_to_binary(p1_xmlrpc:encode(Result)),
+		    XML = fxml:element_to_binary(fxmlrpc:encode(Result)),
 		    {200, [{<<"Content-Type">>, <<"text/xml">>}],
 		     <<"<?xml version=\"1.0\"?>", XML/binary>>}
 	    end
@@ -257,17 +259,22 @@ process(_, _) ->
 %% -----------------------------
 
 get_auth(AuthList) ->
-    [User, Server, Password] = try get_attrs([user, server,
-					      password],
-					     AuthList)
-			       of
-				 [U, S, P] -> [U, S, P]
-			       catch
-				 exit:{attribute_not_found, Attr, _} ->
-				     throw({error, missing_auth_arguments,
-					    Attr})
-			       end,
-    {User, Server, Password}.
+    Admin =
+        case lists:keysearch(admin, 1, AuthList) of
+            {value, {admin, true}} -> true;
+            _ -> false
+        end,
+    try get_attrs([user, server, token], AuthList) of
+        [U, S, T] -> {U, S, {oauth, T}, Admin}
+    catch
+        exit:{attribute_not_found, _Attr, _} ->
+            try get_attrs([user, server, password], AuthList) of
+                [U, S, P] -> {U, S, P, Admin}
+            catch
+                exit:{attribute_not_found, Attr, _} ->
+                    throw({error, missing_auth_arguments, Attr})
+            end
+    end.
 
 %% -----------------------------
 %% Handlers
@@ -297,9 +304,9 @@ handler(#state{get_auth = true, auth = noauth} = State,
 	{call, Method,
 	 [{struct, AuthList} | Arguments] = AllArgs}) ->
     try get_auth(AuthList) of
-      Auth ->
-	  handler(State#state{get_auth = false, auth = Auth},
-		  {call, Method, Arguments})
+        Auth ->
+            handler(State#state{get_auth = false, auth = Auth},
+                    {call, Method, Arguments})
     catch
       {error, missing_auth_arguments, _Attr} ->
 	  handler(State#state{get_auth = false, auth = noauth},
@@ -328,7 +335,7 @@ handler(State, {call, Command, []}) ->
     handler(State, {call, Command, [{struct, []}]});
 handler(State,
 	{call, Command, [{struct, AttrL}]} = Payload) ->
-    case ejabberd_commands:get_command_format(Command) of
+    case ejabberd_commands:get_command_format(Command, State#state.auth) of
       {error, command_unknown} ->
 	  build_fault_response(-112, "Unknown call: ~p",
 			       [Payload]);
@@ -484,7 +491,7 @@ format_result(Atom, {Name, atom}) ->
      [{Name, iolist_to_binary(atom_to_list(Atom))}]};
 format_result(Int, {Name, integer}) ->
     {struct, [{Name, Int}]};
-format_result(String, {Name, string}) when is_list(String) ->
+format_result([A|_]=String, {Name, string}) when is_list(String) and is_integer(A) ->
     {struct, [{Name, lists:flatten(String)}]};
 format_result(Binary, {Name, string}) when is_binary(Binary) ->
     {struct, [{Name, binary_to_list(Binary)}]};
