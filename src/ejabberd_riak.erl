@@ -28,7 +28,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/4, get_proc/1, make_bucket/1, put/2, put/3,
+-export([start_link/5, get_proc/1, make_bucket/1, put/2, put/3,
          get/2, get/3, get_by_index/4, delete/1, delete/2,
          count_by_index/3, get_by_index_range/5,
          get_keys/1, get_keys_by_index/3, is_connected/0,
@@ -68,8 +68,8 @@
 %%% API
 %%%===================================================================
 %% @private
-start_link(Num, Server, Port, _StartInterval) ->
-    gen_server:start_link({local, get_proc(Num)}, ?MODULE, [Server, Port], []).
+start_link(Num, Server, Port, _StartInterval, Options) ->
+    gen_server:start_link({local, get_proc(Num)}, ?MODULE, [Server, Port, Options], []).
 
 %% @private
 is_connected() ->
@@ -429,10 +429,8 @@ map_key(Obj, _, _) ->
 %%% gen_server API
 %%%===================================================================
 %% @private
-init([Server, Port]) ->
-    case riakc_pb_socket:start(
-           Server, Port,
-           [auto_reconnect]) of
+init([Server, Port, Options]) ->
+    case riakc_pb_socket:start(Server, Port, Options) of
         {ok, Pid} ->
             erlang:monitor(process, Pid),
             {ok, #state{pid = Pid}};

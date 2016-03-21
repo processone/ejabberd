@@ -616,7 +616,7 @@ modules:
       - "flat"
       - "hometree"
       - "pep" # pep requires mod_caps
-    ## mod_register:
+  ## mod_register:
     ##
     ## Protect In-Band account registrations with CAPTCHA.
     ##

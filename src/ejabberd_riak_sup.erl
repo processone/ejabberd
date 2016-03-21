@@ -103,12 +103,26 @@ init([]) ->
     StartInterval = get_start_interval(),
     Server = get_riak_server(),
     Port = get_riak_port(),
+    CACertFile = get_riak_cacertfile(),
+    Username = get_riak_username(),
+    Password = get_riak_password(),
+    Options = lists:filter(
+		fun(X) -> X /= nil end,
+		[auto_reconnect,
+		 if CACertFile /= nil -> {cacertfile ,CACertFile};
+		    true -> nil
+		 end,
+		 if (Username /= nil) and (Password /= nil) ->
+			 {credentials, Username, Password};
+		    true -> nil
+		 end
+		]),
     {ok, {{one_for_one, PoolSize*10, 1},
 	  lists:map(
 	    fun(I) ->
 		    {ejabberd_riak:get_proc(I),
 		     {ejabberd_riak, start_link,
-                      [I, Server, Port, StartInterval*1000]},
+                      [I, Server, Port, StartInterval*1000, Options]},
 		     transient, 2000, worker, [?MODULE]}
 	    end, lists:seq(1, PoolSize))}}.
 
@@ -130,6 +144,27 @@ get_riak_server() ->
       fun(S) ->
 	      binary_to_list(iolist_to_binary(S))
       end, ?DEFAULT_RIAK_HOST).
+
+get_riak_cacertfile() ->
+    ejabberd_config:get_option(
+      riak_cacertfile,
+      fun(S) ->
+	      binary_to_list(iolist_to_binary(S))
+      end, nil).
+
+get_riak_username() ->
+    ejabberd_config:get_option(
+      riak_username,
+      fun(S) ->
+	      binary_to_list(iolist_to_binary(S))
+      end, nil).
+
+get_riak_password() ->
+    ejabberd_config:get_option(
+      riak_password,
+      fun(S) ->
+	      binary_to_list(iolist_to_binary(S))
+      end, nil).
 
 get_riak_port() ->
     ejabberd_config:get_option(
@@ -162,6 +197,9 @@ opt_type(riak_port) -> fun (_) -> true end;
 opt_type(riak_server) -> fun (_) -> true end;
 opt_type(riak_start_interval) ->
     fun (N) when is_integer(N), N >= 1 -> N end;
+opt_type(riak_cacertfile) -> fun iolist_to_binary/1;
+opt_type(riak_username) -> fun iolist_to_binary/1;
+opt_type(riak_password) -> fun iolist_to_binary/1;
 opt_type(_) ->
     [modules, riak_pool_size, riak_port, riak_server,
-     riak_start_interval].
+     riak_start_interval, riak_cacertfile, riak_username, riak_password].
