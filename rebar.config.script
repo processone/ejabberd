@@ -7,6 +7,20 @@
 %%% Created :  1 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%-------------------------------------------------------------------
 
+ModCfg0 = fun(F, Cfg, [Key|Tail], Op, Default) ->
+                 {OldVal,PartCfg} = case lists:keytake(Key, 1, Cfg) of
+                                        {value, {_, V1}, V2} -> {V1, V2};
+                                        false -> {if Tail == [] -> Default; true -> [] end, Cfg}
+                                    end,
+                 case Tail of
+                     [] ->
+                         [{Key, Op(OldVal)} | PartCfg];
+                     _ ->
+                         [{Key, F(F, OldVal, Tail, Op, Default)} | PartCfg]
+                 end
+         end,
+ModCfg = fun(Cfg, Keys, Op, Default) -> ModCfg0(ModCfg0, Cfg, Keys, Op, Default) end.
+
 Cfg = case file:consult(filename:join(filename:dirname(SCRIPT), "vars.config")) of
           {ok, Terms} ->
               Terms;
@@ -107,9 +121,20 @@ Conf5 = case lists:keytake(floating_deps, 1, Conf3) of
                 Conf3
         end,
 
+%% When running Travis test, upload test coverage result to coveralls:
+Conf6 = case os:getenv("TRAVIS") of
+            "true" ->
+                JobId = os:getenv("TRAVIS_JOB_ID"),
+                CfgTemp = ModCfg(Conf5, [deps], fun(V) -> [{coveralls, ".*", {git, "https://github.com/markusn/coveralls-erl.git", "master"}}|V] end, []),
+                ModCfg(CfgTemp, [post_hooks], fun(V) -> V ++ [{ct, "echo '\n%%! -pa ebin/ deps/coveralls/ebin\nmain(_)->{ok,F}=file:open(\"erlang.json\",[write]),io:fwrite(F,\"~s\",[coveralls:convert_file(\"logs/all.coverdata\", \""++JobId++"\", \"travis-ci\")]).' > getcover.erl"},
+                                                              {ct, "escript ./getcover.erl"}] end, []);
+            _ ->
+                Conf5
+        end,
+
 %io:format("ejabberd configuration:~n  ~p~n", [Conf5]),
 
-Conf5.
+Conf6.
 
 %% Local Variables:
 %% mode: erlang
