@@ -22,7 +22,7 @@ before_install:
   - sudo apt-get -qq update
   - sudo apt-get -qq -o Dpkg::Options::=--force-confold install mysql-server-5.6
   # /END MYSQL 5.6
-  - pip install --user cpp-coveralls coveralls-merge
+  - pip install --user coveralls-merge
 
 install:
   - sudo apt-get -qq install libexpat1-dev libyaml-dev libpam0g-dev libsqlite3-dev
@@ -58,8 +58,7 @@ after_failure:
   - find logs -name ejabberd.log -exec cat '{}' ';'
 
 after_success:
-  - coveralls --exclude lib --exclude tests --gcov-options '\-lp' --dump c.json
-  - coveralls-merge c.json erlang.json
+  - coveralls-merge erlang.json
 
 notifications:
   email: false
