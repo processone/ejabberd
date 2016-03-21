@@ -87,9 +87,13 @@ split(#jid{user = U, server = S, resource = R}) ->
 split(_) ->
     error.
 
--spec from_string(binary()) -> jid() | error.
-
-from_string(S) ->
+-spec from_string([binary()|string()]) -> jid() | error.
+from_string(S) when is_list(S) ->
+    %% We do not accept list because we want to enforce good practice of
+    %% using binaries for string. However, we do not let it crash to avoid
+    %% losing associated ets table.
+    {error, need_jid_as_binary};
+from_string(S) when is_binary(S) ->
     SplitPattern = ets:lookup_element(jlib, string_to_jid_pattern, 2),
     Size = size(S),
     End = Size-1,
