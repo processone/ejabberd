@@ -54,7 +54,8 @@ script:
   - sed -i -e 's/ct:pal/ct:log/' test/suite.erl
   - ln -sf ../sql priv/
   - escript ./rebar skip_deps=true ct -v
-  - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log
+  #- grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log
+  grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, 0 failed' logs/raw.log
 
 after_script:
   - find logs -name suite.log -exec cat '{}' ';'
