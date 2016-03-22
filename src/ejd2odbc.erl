@@ -30,7 +30,7 @@
 -include("logger.hrl").
 
 -export([export/2, export/3, import_file/2, import/2,
-	 import/3]).
+	 import/3, delete/1]).
 
 -define(MAX_RECORDS_PER_TRANSACTION, 100).
 
@@ -79,6 +79,20 @@ export(Server, Output, Module) ->
               export(LServer, Table, IO, ConvertFun)
       end, Module:export(Server)),
     close_output(Output, IO).
+
+delete(Server) ->
+    Modules = modules(),
+    lists:foreach(
+      fun(Module) ->
+              delete(Server, Module)
+      end, Modules).
+
+delete(Server, Module) ->
+    LServer = jid:nameprep(iolist_to_binary(Server)),
+    lists:foreach(
+      fun({Table, ConvertFun}) ->
+              delete(LServer, Table, ConvertFun)
+      end, Module:export(Server)).
 
 import_file(Server, FileName) when is_binary(FileName) ->
     import(Server, binary_to_list(FileName));
@@ -159,6 +173,25 @@ output(LServer, _Table, odbc, SQLs) ->
 output(_LServer, Table, Fd, SQLs) ->
     file:write(Fd, ["-- \n-- Mnesia table: ", atom_to_list(Table),
                     "\n--\n", SQLs]).
+
+delete(LServer, Table, ConvertFun) ->
+    F = fun () ->
+                mnesia:write_lock_table(Table),
+                {_N, SQLs} =
+                    mnesia:foldl(
+                      fun(R, {N, SQLs} = Acc) ->
+                              case ConvertFun(LServer, R) of
+                                  [] ->
+                                      Acc;
+                                  _SQL ->
+				      mnesia:delete_object(R),
+                                      Acc
+                              end
+                      end,
+                      {0, []}, Table),
+                delete(LServer, Table, SQLs)
+        end,
+    mnesia:transaction(F).
 
 import(LServer, SelectQuery, IO, ConvertFun, Opts) ->
     F = case proplists:get_bool(fast, Opts) of

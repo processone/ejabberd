@@ -748,21 +748,7 @@ kick_sessions(User, Server, Reason) ->
       fun(Resource) ->
 	      kick_this_session(User, Server, Resource, Reason)
       end,
-      get_resources(User, Server)).
-
-get_resources(User, Server) ->
-    lists:map(
-      fun(Session) ->
-	      element(3, Session#session.usr)
-      end,
-      get_sessions(User, Server)).
-
-get_sessions(User, Server) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
-    Sessions =  mnesia:dirty_index_read(session, {LUser, LServer}, #session.us),
-    true = is_list(Sessions),
-    Sessions.
+      ejabberd_sm:get_user_resources(User, Server)).
 
 set_random_password(User, Server, Reason) ->
     NewPass = build_random_password(Reason),

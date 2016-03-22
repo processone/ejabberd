@@ -898,8 +898,7 @@ db_opts(Host) ->
                                               <<"">>),
 	    case Type of
 		mssql ->
-		    Username = get_mssql_user(Server, User),
-		    [odbc, <<"DSN=", Host/binary, ";UID=", Username/binary,
+		    [odbc, <<"DSN=", Host/binary, ";UID=", User/binary,
 			     ";PWD=", Pass/binary>>];
 		_ ->
 		    [Type, Server, Port, DB, User, Pass]
@@ -958,21 +957,6 @@ init_mssql(Host) ->
 		       [tmp_dir(), file:format_error(Reason)]),
 	    Err
     end.
-
-get_mssql_user(Server, User) ->
-    HostName = case inet_parse:address(binary_to_list(Server)) of
-		   {ok, _} ->
-		       Server;
-		   {error, _} ->
-		       hd(str:tokens(Server, <<".">>))
-	       end,
-    UserName = case str:chr(User, $@) of
-		   0 ->
-		       <<User/binary, $@, HostName/binary>>;
-		   _ ->
-		       User
-	       end,
-    UserName.
 
 tmp_dir() ->
     filename:join(["/tmp", "ejabberd"]).
