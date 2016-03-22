@@ -73,7 +73,13 @@ start_link(Num, Server, Port, _StartInterval, Options) ->
 
 %% @private
 is_connected() ->
-    catch riakc_pb_socket:is_connected(get_random_pid()).
+    lists:all(
+      fun({_Id, Pid, _Type, _Modules}) when is_pid(Pid) ->
+	      case catch riakc_pb_socket:is_connected(get_random_pid()) of
+		  true -> true;
+		  _ -> false
+	      end
+      end, supervisor:which_children(ejabberd_riak_sup)).
 
 %% @private
 get_proc(I) ->
