@@ -35,22 +35,57 @@ init_per_suite(Config) ->
     LDIFFile = filename:join([DataDir, "ejabberd.ldif"]),
     {ok, _} = file:copy(ExtAuthScript, filename:join([CWD, "extauth.py"])),
     {ok, _} = ldap_srv:start(LDIFFile),
-    ok = application:start(ejabberd),
+    start_ejabberd(NewConfig),
     NewConfig.
 
-end_per_suite(_Config) ->
-    ok.
+start_ejabberd(Config) ->
+    case proplists:get_value(backends, Config) of
+        all ->
+            ok = application:start(ejabberd, transient);
+        Backends when is_list(Backends) ->
+            Hosts = lists:map(fun(Backend) -> Backend ++ ".localhost" end, Backends),
+            application:load(ejabberd),
+            AllHosts = Hosts ++ ["localhost"],    %% We always need localhost for the generic no_db tests
+            application:set_env(ejabberd, hosts, AllHosts),
+            ok = application:start(ejabberd, transient)
+    end.
 
-init_per_group(no_db, Config) ->
+end_per_suite(_Config) ->
+    application:stop(ejabberd).
+
+-define(BACKENDS, [mnesia,redis,mysql,pgsql,sqlite,ldap,extauth,riak]).
+
+init_per_group(Group, Config) ->
+    case lists:member(Group, ?BACKENDS) of
+        false ->
+            %% Not a backend related group, do default init:
+            do_init_per_group(Group, Config);
+        true ->
+            case proplists:get_value(backends, Config) of
+                all ->
+                    %% All backends enabled
+                    do_init_per_group(Group, Config);
+                Backends ->
+                    %% Skipped backends that were not explicitely enabled
+                    case lists:member(atom_to_list(Group), Backends) of
+                        true ->
+                            do_init_per_group(Group, Config);
+                        false ->
+                            {skip, {disabled_backend, Group}}
+                    end
+            end
+    end.
+
+do_init_per_group(no_db, Config) ->
     re_register(Config),
     Config;
-init_per_group(mnesia, Config) ->
+do_init_per_group(mnesia, Config) ->
     mod_muc:shutdown_rooms(?MNESIA_VHOST),
     set_opt(server, ?MNESIA_VHOST, Config);
-init_per_group(redis, Config) ->
+do_init_per_group(redis, Config) ->
     mod_muc:shutdown_rooms(?REDIS_VHOST),
     set_opt(server, ?REDIS_VHOST, Config);
-init_per_group(mysql, Config) ->
+do_init_per_group(mysql, Config) ->
     case catch ejabberd_odbc:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?MYSQL_VHOST),
@@ -59,7 +94,7 @@ init_per_group(mysql, Config) ->
         Err ->
             {skip, {mysql_not_available, Err}}
     end;
-init_per_group(pgsql, Config) ->
+do_init_per_group(pgsql, Config) ->
     case catch ejabberd_odbc:sql_query(?PGSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?PGSQL_VHOST),
@@ -68,7 +103,7 @@ init_per_group(pgsql, Config) ->
         Err ->
             {skip, {pgsql_not_available, Err}}
     end;
-init_per_group(sqlite, Config) ->
+do_init_per_group(sqlite, Config) ->
     case catch ejabberd_odbc:sql_query(?SQLITE_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?SQLITE_VHOST),
@@ -76,11 +111,11 @@ init_per_group(sqlite, Config) ->
         Err ->
             {skip, {sqlite_not_available, Err}}
     end;
-init_per_group(ldap, Config) ->
+do_init_per_group(ldap, Config) ->
     set_opt(server, ?LDAP_VHOST, Config);
-init_per_group(extauth, Config) ->
+do_init_per_group(extauth, Config) ->
     set_opt(server, ?EXTAUTH_VHOST, Config);
-init_per_group(riak, Config) ->
+do_init_per_group(riak, Config) ->
     case ejabberd_riak:is_connected() of
 	true ->
 	    mod_muc:shutdown_rooms(?RIAK_VHOST),
@@ -89,7 +124,7 @@ init_per_group(riak, Config) ->
 	Err ->
 	    {skip, {riak_not_available, Err}}
     end;
-init_per_group(_GroupName, Config) ->
+do_init_per_group(_GroupName, Config) ->
     Pid = start_event_relay(),
     set_opt(event_relay, Pid, Config).
 
@@ -967,9 +1002,9 @@ mix_master(Config) ->
 					retract = [ParticipantID]}]}]}),
     disconnect(Config).
 
-mix_slave(Config) ->	   
+mix_slave(Config) ->
     disconnect(Config).
-      
+
 roster_subscribe_master(Config) ->
     send(Config, #presence{}),
     ?recv1(#presence{}),
