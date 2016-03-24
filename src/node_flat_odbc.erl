@@ -697,12 +697,21 @@ get_items(Nidx, _From,
 	{selected, [_], [[C]]} -> C;
 	_ -> <<"0">>
     end,
-    case catch
-	ejabberd_odbc:sql_query_t([<<"select itemid, publisher, creation, modification, payload "
-		    "from pubsub_item where nodeid='">>, Nidx,
-		<<"' and ">>, AttrName, <<" ">>, Way, <<" ">>, Id, <<" order by ">>,
-		AttrName, <<" ">>, Order, <<" limit ">>, jlib:i2l(Max), <<" ;">>])
-    of
+    Query = fun(mssql, _) ->
+		    ejabberd_odbc:sql_query_t(
+		      [<<"select top ">>, jlib:i2l(Max),
+		       <<" itemid, publisher, creation, modification, payload "
+			 "from pubsub_item where nodeid='">>, Nidx,
+		       <<"' and ">>, AttrName, <<" ">>, Way, <<" ">>, Id, <<" order by ">>,
+		       AttrName, <<" ">>, Order, <<";">>]);
+	       (_, _) ->
+		    ejabberd_odbc:sql_query_t(
+		      [<<"select itemid, publisher, creation, modification, payload "
+			 "from pubsub_item where nodeid='">>, Nidx,
+		       <<"' and ">>, AttrName, <<" ">>, Way, <<" ">>, Id, <<" order by ">>,
+		       AttrName, <<" ">>, Order, <<" limit ">>, jlib:i2l(Max), <<" ;">>])
+	    end,
+    case catch ejabberd_odbc:sql_query_t(Query) of
 	{selected,
 		    [<<"itemid">>, <<"publisher">>, <<"creation">>, <<"modification">>, <<"payload">>], RItems} ->
 	    case RItems of
@@ -760,11 +769,20 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM
     end.
 
 get_last_items(Nidx, _From, Count) ->
-    case catch
-	ejabberd_odbc:sql_query_t([<<"select itemid, publisher, creation, modification, payload "
-		    "from pubsub_item where nodeid='">>, Nidx,
-		<<"' order by modification desc limit ">>, jlib:i2l(Count), <<";">>])
-    of
+    Limit = jlib:i2l(Count),
+    Query = fun(mssql, _) ->
+		    ejabberd_odbc:sql_query_t(
+		      [<<"select top ">>, Limit,
+		       <<" itemid, publisher, creation, modification, payload "
+			 "from pubsub_item where nodeid='">>, Nidx,
+		       <<"' order by modification desc ;">>]);
+	       (_, _) ->
+		    ejabberd_odbc:sql_query_t(
+		      [<<"select itemid, publisher, creation, modification, payload "
+			 "from pubsub_item where nodeid='">>, Nidx,
+		       <<"' order by modification desc limit ">>, Limit, <<";">>])
+	    end,
+    case catch ejabberd_odbc:sql_query_t(Query) of
 	{selected,
 		    [<<"itemid">>, <<"publisher">>, <<"creation">>, <<"modification">>, <<"payload">>], RItems} ->
 	    {result, [raw_to_item(Nidx, RItem) || RItem <- RItems]};
