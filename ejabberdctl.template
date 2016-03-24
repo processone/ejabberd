@@ -373,7 +373,12 @@ ctl()
     MAXCONNID=100
     CONNLOCKDIR={{localstatedir}}/lock/ejabberdctl
     FLOCK=/usr/bin/flock
-    if [ ! -x "$FLOCK" ] || [ ! -d "$CONNLOCKDIR" ] ; then
+    if [ -f /proc/sys/kernel/random/uuid ]; then
+        UUID=`cat /proc/sys/kernel/random/uuid`
+        CTL_CONN="${UUID}-${ERLANG_NODE}"
+        ctlexec $CTL_CONN "$@"
+        result=$?
+    elif [ ! -x "$FLOCK" ] || [ ! -d "$CONNLOCKDIR" ] ; then
         JOT=/usr/bin/jot
         if [ ! -x "$JOT" ] ; then
             # no flock or jot, simply invoke ctlexec()
@@ -394,7 +399,7 @@ ctl()
         # concurrent invocations using a bound
         # number of atoms
         for N in `seq 1 $MAXCONNID`; do
-            CTL_CONN="ejabberdctl-$N"
+            CTL_CONN="ejabberdctl-$N-${ERLANG_NODE}"
             CTL_LOCKFILE="$CONNLOCKDIR/$CTL_CONN"
             (
                 exec 8>"$CTL_LOCKFILE"
