@@ -30,22 +30,31 @@
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3]).
+     handle_info/2, terminate/2, code_change/3]).
 
 -export([start/0,
          start_link/0,
-         get_client_identity/2,
-         verify_redirection_uri/3,
-         authenticate_user/2,
+         process/2,
+         opt_type/1]).
+
+%%% OAuth2 backend functionality
+-export([authenticate_user/2,
          authenticate_client/2,
-         verify_resowner_scope/3,
          associate_access_code/3,
          associate_access_token/3,
          associate_refresh_token/3,
-         check_token/4,
-         check_token/2,
-         process/2,
-         opt_type/1]).
+         resolve_access_code/2,
+         resolve_access_token/2,
+         resolve_refresh_token/2,
+         revoke_access_code/2,
+         revoke_access_token/2,
+         revoke_refresh_token/2,
+         get_client_identity/2,
+         verify_redirection_uri/3,
+         verify_client_scope/3,
+         verify_resowner_scope/3,
+         verify_scope/3
+        ]).
 
 -include("jlib.hrl").
 
@@ -55,12 +64,23 @@
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 
--record(oauth_token, {
-          token = {<<"">>, <<"">>} :: {binary(), binary()},
-          us = {<<"">>, <<"">>}    :: {binary(), binary()},
-          scope = []               :: [binary()],
-          expire                   :: integer()
+-record(oauth_access_code, {
+          code,
+          grant_context,
+          expiry_time
+        }).
+
+-record(oauth_access_token, {
+          token,
+          grant_context,
+          expiry_time
          }).
+
+-record(oauth_refresh_token, {
+          token,
+          grant_context,
+          expiry_time
+        }).
 
 -define(EXPIRE, 3600).
 
@@ -71,7 +91,7 @@ start() ->
     application:set_env(oauth2, expiry_time, Expire),
     application:start(oauth2),
     ChildSpec = {?MODULE, {?MODULE, start_link, []},
-		 temporary, 1000, worker, [?MODULE]},
+         temporary, 1000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec),
     ok.
 
@@ -89,18 +109,11 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info(clean, State) ->
-    {MegaSecs, Secs, MiniSecs} = os:timestamp(),
-    TS = 1000000 * MegaSecs + Secs,
-    F = fun() ->
-		Ts = mnesia:select(
-		       oauth_token,
-		       [{#oauth_token{expire = '$1', _ = '_'},
-			 [{'<', '$1', TS}],
-			 ['$_']}]),
-		lists:foreach(fun mnesia:delete_object/1, Ts)
-        end,
-    mnesia:async_dirty(F),
-    erlang:send_after(trunc(expire() * 1000 * (1 + MiniSecs / 1000000)),
+    error_logger:debug_msg("Cleaning up expired oauth tokens and codes"),
+    clean(oauth_access_code),
+    clean(oauth_access_token),
+    clean(oauth_refresh_token),
+    erlang:send_after(trunc(expire() * 1000 * (1 / 1000000)),
                       self(), clean),
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
@@ -109,22 +122,84 @@ terminate(_Reason, _State) -> ok.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
+expire() ->
+    ejabberd_config:get_option(
+        oauth_expire,
+        fun(I) when is_integer(I) -> I end,
+        ?EXPIRE).
+
+clean(oauth_access_code) ->
+    {MegaSecs, Secs, _} = os:timestamp(),
+    TS = 1000000 * MegaSecs + Secs,
+    F = fun() ->
+        Ts = mnesia:select(
+               oauth_access_code,
+               [{#oauth_access_code{expiry_time = '$1', _ = '_'},
+             [{'<', '$1', TS}],
+             ['$_']}]),
+        lists:foreach(fun mnesia:delete_object/1, Ts)
+        end,
+    mnesia:async_dirty(F);
+clean(oauth_access_token) ->
+    {MegaSecs, Secs, _} = os:timestamp(),
+    TS = 1000000 * MegaSecs + Secs,
+    F = fun() ->
+        Ts = mnesia:select(
+               oauth_access_code,
+               [{#oauth_access_code{expiry_time = '$1', _ = '_'},
+             [{'<', '$1', TS}],
+             ['$_']}]),
+        lists:foreach(fun mnesia:delete_object/1, Ts)
+        end,
+    mnesia:async_dirty(F);
+clean(oauth_refresh_token) ->
+    {MegaSecs, Secs, _} = os:timestamp(),
+    TS = 1000000 * MegaSecs + Secs,
+    F = fun() ->
+        Ts = mnesia:select(
+               oauth_refresh_token,
+               [{#oauth_refresh_token{expiry_time = '$1', _ = '_'},
+             [{'<', '$1', TS}],
+             ['$_']}]),
+        lists:foreach(fun mnesia:delete_object/1, Ts)
+        end,
+    mnesia:async_dirty(F).
 
 init_db(mnesia, _Host) ->
-    mnesia:create_table(oauth_token,
+    
+    %% Delete any leftover table using the previous record name (oauth_token).
+    %% It is not necessary to migrate the content, because the users can
+    %% easily create a new token.
+    mnesia:delete_table(oauth_token),
+    
+    %% Setting up the tables for the access code, access token and refresh token.
+    %% The table have a simple very simple structure consisting of the token
+    %% (or code) as the key, the grant context and the expiry time (for cleanup).
+    mnesia:create_table(oauth_access_code,
                         [{disc_copies, [node()]},
-                         {attributes,
-                          record_info(fields, oauth_token)}]),
-    mnesia:add_table_copy(oauth_token, node(), disc_copies);
+                         {attributes, record_info(fields, oauth_access_code)},
+                         {index, [expire]}]),
+    mnesia:add_table_copy(oauth_access_code, node(), disc_copies),
+    
+    mnesia:create_table(oauth_access_token,
+                        [{disc_copies, [node()]},
+                         {attributes, record_info(fields, oauth_access_token)},
+                         {index, [expire]}]),
+    mnesia:add_table_copy(oauth_access_token, node(), disc_copies),
+    
+    mnesia:create_table(oauth_refresh_token,
+                        [{disc_copies, [node()]},
+                         {attributes, record_info(fields, oauth_refresh_token)},
+                         {index, [expire]}]),
+    mnesia:add_table_copy(oauth_refresh_token, node(), disc_copies);
 init_db(_, _) ->
     ok.
 
+%% --------------------------------------------------------
+%% oauth2 backend API
+%% --------------------------------------------------------
 
-get_client_identity(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
-
-verify_redirection_uri(_, _, Ctx) -> {ok, Ctx}.
-
-authenticate_user({User, Server}, {password, Password} = Ctx) ->
+authenticate_user({{user, User, Server}, {password, Password}}, Ctx) ->
     case jid:make(User, Server, <<"">>) of
         #jid{} = JID ->
             Access =
@@ -145,9 +220,87 @@ authenticate_user({User, Server}, {password, Password} = Ctx) ->
             end;
         error ->
             {error, badpass}
+    end;
+authenticate_user(_, _) ->
+    {error, notfound}.
+
+authenticate_client(Client, Ctx) ->
+    {ok, {Ctx, {client, Client}}}.
+
+associate_access_code(AccessCode, Context, AppContext) ->
+    Expire = proplists:get_value(<<"expiry_time">>, Context, 0),
+    R = #oauth_access_code{
+        code = AccessCode,
+        grant_context = Context,
+        expiry_time = Expire
+    },
+    mnesia:dirty_write(R),
+    {ok, AppContext}.
+
+associate_access_token(AccessToken, Context, AppContext) ->
+    Expire = proplists:get_value(<<"expiry_time">>, Context, 0),
+    R = #oauth_access_token{
+      token = AccessToken,
+      grant_context = Context,
+      expiry_time = Expire
+     },
+    mnesia:dirty_write(R),
+    {ok, AppContext}.
+
+associate_refresh_token(RefreshToken, Context, AppContext) ->
+    Expire = proplists:get_value(<<"expiry_time">>, Context, 0),
+    R = #oauth_refresh_token{
+        token = RefreshToken,
+        grant_context = Context,
+        expiry_time = Expire
+    },
+    mnesia:dirty_write(R),
+    {ok, AppContext}.
+
+resolve_access_code(Code, AppContext) ->
+    case mnesia:dirty_read({oauth_access_code, Code}) of
+        [] ->
+            {error, notfound};
+        [#oauth_access_code{grant_context = Context}|_] ->
+            {ok, {AppContext, Context}}
     end.
 
-authenticate_client(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
+resolve_access_token(Token, AppContext) ->
+    case mnesia:dirty_read({oauth_access_token, Token}) of
+        [] ->
+            {error, notfound};
+        [#oauth_access_token{grant_context = Context}|_] ->
+            {ok, {AppContext, Context}}
+    end.
+
+resolve_refresh_token(Token, AppContext) ->
+    case mnesia:dirty_read({oauth_refresh_token, Token}) of
+        [] ->
+            {error, notfound};
+        [#oauth_refresh_token{grant_context = Context}|_] ->
+            {ok, {AppContext, Context}}
+    end.
+
+revoke_access_code(Code, AppContext) ->
+    mnesia:dirty_delete(oauth_access_code, Code),
+    {ok, AppContext}.
+
+revoke_access_token(Token, AppContext) ->
+    mnesia:dirty_delete(oauth_access_token, Token),
+    {ok, AppContext}.
+
+revoke_refresh_token(Token, AppContext) ->
+    mnesia:dirty_delete(oauth_refresh_token, Token),
+    {ok, AppContext}.
+
+get_client_identity(Client, Ctx) ->
+    {ok, {Ctx, {client, Client}}}.
+
+verify_redirection_uri(_, _, Ctx) ->
+    {ok, Ctx}.
+
+verify_client_scope(_Client, Scope, AppContext) ->
+    {ok, {AppContext, Scope}}.
 
 verify_resowner_scope({user, _User, _Server}, Scope, Ctx) ->
     Cmds = ejabberd_commands:get_commands(),
@@ -163,84 +316,31 @@ verify_resowner_scope({user, _User, _Server}, Scope, Ctx) ->
 verify_resowner_scope(_, _, _) ->
     {error, badscope}.
 
-
-associate_access_code(_AccessCode, _Context, AppContext) ->
-    %put(?ACCESS_CODE_TABLE, AccessCode, Context),
-    {ok, AppContext}.
-
-associate_access_token(AccessToken, Context, AppContext) ->
-    {user, User, Server} =
-        proplists:get_value(<<"resource_owner">>, Context, <<"">>),
-    Scope = proplists:get_value(<<"scope">>, Context, []),
-    Expire = proplists:get_value(<<"expiry_time">>, Context, 0),
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
-    R = #oauth_token{
-      token = AccessToken,
-      us = {LUser, LServer},
-      scope = Scope,
-      expire = Expire
-     },
-    mnesia:dirty_write(R),
-    {ok, AppContext}.
-
-associate_refresh_token(_RefreshToken, _Context, AppContext) ->
-    %put(?REFRESH_TOKEN_TABLE, RefreshToken, Context),
-    {ok, AppContext}.
-
-
-check_token(User, Server, Scope, Token) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
-    case catch mnesia:dirty_read(oauth_token, Token) of
-        [#oauth_token{us = {LUser, LServer},
-                      scope = TokenScope,
-                      expire = Expire}] ->
-            {MegaSecs, Secs, _} = os:timestamp(),
-            TS = 1000000 * MegaSecs + Secs,
-            oauth2_priv_set:is_member(
-              Scope, oauth2_priv_set:new(TokenScope)) andalso
-                Expire > TS;
-        _ ->
-            false
+verify_scope(RegisteredScope, Scope, AppContext) ->
+    case oauth2_priv_set:is_subset(oauth2_priv_set:new(Scope), 
+                                   oauth2_priv_set:new(RegisteredScope)) of
+        true ->
+            {ok, {AppContext, Scope}};
+        false ->
+            {error, badscope}
     end.
 
-check_token(Scope, Token) ->
-    case catch mnesia:dirty_read(oauth_token, Token) of
-        [#oauth_token{us = {LUser, LServer},
-                      scope = TokenScope,
-                      expire = Expire}] ->
-            {MegaSecs, Secs, _} = os:timestamp(),
-            TS = 1000000 * MegaSecs + Secs,
-            case oauth2_priv_set:is_member(
-                   Scope, oauth2_priv_set:new(TokenScope)) andalso
-                Expire > TS of
-                true -> {ok, LUser, LServer};
-                false -> false
-            end;
-        _ ->
-            false
-    end.
-
-
-expire() ->
-    ejabberd_config:get_option(
-      oauth_expire,
-      fun(I) when is_integer(I) -> I end,
-      ?EXPIRE).
+%% --------------------------------------------------------
+%% Web API
+%% --------------------------------------------------------
 
 -define(DIV(Class, Els),
-	?XAE(<<"div">>, [{<<"class">>, Class}], Els)).
+    ?XAE(<<"div">>, [{<<"class">>, Class}], Els)).
 -define(INPUTID(Type, Name, Value),
-	?XA(<<"input">>,
-	    [{<<"type">>, Type}, {<<"name">>, Name},
-	     {<<"value">>, Value}, {<<"id">>, Name}])).
+    ?XA(<<"input">>,
+        [{<<"type">>, Type}, {<<"name">>, Name},
+         {<<"value">>, Value}, {<<"id">>, Name}])).
 -define(LABEL(ID, Els),
-	?XAE(<<"label">>, [{<<"for">>, ID}], Els)).
+    ?XAE(<<"label">>, [{<<"for">>, ID}], Els)).
 
 process(_Handlers,
-	#request{method = 'GET', q = Q, lang = Lang,
-		 path = [_, <<"authorization_token">>]}) ->
+    #request{method = 'GET', q = Q, lang = Lang,
+         path = [_, <<"authorization_token">>]}) ->
     ResponseType = proplists:get_value(<<"response_type">>, Q, <<"">>),
     ClientId = proplists:get_value(<<"client_id">>, Q, <<"">>),
     RedirectURI = proplists:get_value(<<"redirect_uri">>, Q, <<"">>),
@@ -301,8 +401,8 @@ process(_Handlers,
     Body = ?DIV(<<"container">>, [Top, Middle, Bottom]),
     ejabberd_web:make_xhtml(web_head(), [Body]);
 process(_Handlers,
-	#request{method = 'POST', q = Q, lang = _Lang,
-		 path = [_, <<"authorization_token">>]}) ->
+    #request{method = 'POST', q = Q, lang = _Lang,
+         path = [_, <<"authorization_token">>]}) ->
     _ResponseType = proplists:get_value(<<"response_type">>, Q, <<"">>),
     ClientId = proplists:get_value(<<"client_id">>, Q, <<"">>),
     RedirectURI = proplists:get_value(<<"redirect_uri">>, Q, <<"">>),
@@ -312,11 +412,11 @@ process(_Handlers,
     Password = proplists:get_value(<<"password">>, Q, <<"">>),
     State = proplists:get_value(<<"state">>, Q, <<"">>),
     Scope = str:tokens(SScope, <<" ">>),
-    case oauth2:authorize_password({Username, Server},
+    case oauth2:authorize_password({{user, Username, Server}, {password, Password}},
                                    ClientId,
                                    RedirectURI,
                                    Scope,
-                                   {password, Password}) of
+                                   context) of
         {ok, {_AppContext, Authorization}} ->
             {ok, {_AppContext2, Response}} =
                 oauth2:issue_token(Authorization, none),

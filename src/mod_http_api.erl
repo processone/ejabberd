@@ -124,11 +124,10 @@ check_permissions(#request{auth = HTTPAuth, headers = Headers}, Command)
                                 false
                         end;
                     {oauth, Token, _} ->
-                        case ejabberd_oauth:check_token(Command, Token) of
+                        case ejabberd_auth:check_access_token(Token, Command, undefined) of
                             {ok, User, Server} ->
                                 {ok, {User, Server, {oauth, Token}, Admin}};
-                            false ->
-                                false
+                            _ -> false
                         end;
                     _ ->
                         false

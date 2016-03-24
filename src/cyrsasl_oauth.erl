@@ -45,13 +45,14 @@ mech_new(Host, _GetPassword, _CheckPassword, _CheckPasswordDigest) ->
 mech_step(State, ClientIn) ->
     case prepare(ClientIn) of
         [AuthzId, User, Token] ->
-            case ejabberd_oauth:check_token(
-                   User, State#state.host, <<"sasl_auth">>, Token) of
-                true ->
-                    {ok,
-                     [{username, User}, {authzid, AuthzId},
-                      {auth_module, ejabberd_oauth}]};
-                false ->
+            Host = State#state.host,
+            Scope = <<"sasl_auth">>,
+            case ejabberd_auth:check_access_token(Token, Scope, {user, User, Host}) of
+                {ok, User, Host} ->
+                    {ok, [{username, User},
+                          {authzid, AuthzId},
+                          {auth_module, ejabberd_oauth}]};
+                {error, _} ->
                     {error, <<"not-authorized">>, User}
             end;
         _ -> {error, <<"bad-protocol">>}

@@ -39,7 +39,7 @@
 	]).
 
 -export([login/2, set_password/3, check_password/3,
-	 check_password/5, try_register/3,
+	 check_password/5, check_access_token/3, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2,
 	 get_vh_registered_users_number/1,
@@ -191,6 +191,9 @@ check_password(User, Server, _Password, _Digest,
       maybe -> false;
       false -> login(User, Server)
     end.
+
+check_access_token(_Token, _Scope, _RequestedOwner) ->
+    {error, not_implemented}.
 
 login(User, Server) ->
     case is_login_anonymous_enabled(Server) of

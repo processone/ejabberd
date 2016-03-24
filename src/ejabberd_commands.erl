@@ -509,11 +509,11 @@ check_auth(_Command, noauth) ->
     no_auth_provided;
 check_auth(Command, {User, Server, {oauth, Token}, _}) ->
     Scope = erlang:atom_to_binary(Command#ejabberd_commands.name, utf8),
-    case ejabberd_oauth:check_token(User, Server, Scope, Token) of
-        true ->
-            {ok, User, Server};
-        false ->
-            throw({error, invalid_account_data})
+    case ejabberd_auth:check_access_token(Token, Scope, {user, User, Server}) of
+        {error, _} ->
+            throw({error, invalid_account_data});
+        ResourceOwner ->
+            ResourceOwner
     end;
 check_auth(_Command, {User, Server, Password, _}) when is_binary(Password) ->
     %% Check the account exists and password is valid

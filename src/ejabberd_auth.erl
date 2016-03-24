@@ -34,7 +34,7 @@
 %% External exports
 -export([start/0, set_password/3, check_password/3,
 	 check_password/5, check_password_with_authmodule/3,
-	 check_password_with_authmodule/5, try_register/3,
+	 check_password_with_authmodule/5, check_access_token/3, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2, export/1, import/1,
 	 get_vh_registered_users_number/1, import/3,
@@ -66,6 +66,7 @@
 -callback check_password(binary(), binary(), binary()) -> boolean().
 -callback check_password(binary(), binary(), binary(), binary(),
                          fun((binary()) -> binary())) -> boolean().
+-callback check_access_token(binary(), binary(), {user, binary(), binary()} | undefined) -> {ok, {binary(), binary()}} | {error, atom()}.
 -callback try_register(binary(), binary(), binary()) -> {atomic, atom()} |
                                                         {error, atom()}.
 -callback dirty_get_registered_users() -> [{binary(), binary()}].
@@ -75,6 +76,8 @@
 -callback get_vh_registered_users_number(binary(), opts()) -> number().
 -callback get_password(binary(), binary()) -> false | binary() | {binary(), binary(), binary(), integer()}.
 -callback get_password_s(binary(), binary()) -> binary() | {binary(), binary(), binary(), integer()}.
+
+
 
 start() ->
     %% This is only executed by ejabberd_c2s for non-SASL auth client
@@ -410,6 +413,78 @@ entropy(B) ->
 			    end,
 			    [0, 0, 0, 0, 0], S),
 	  length(S) * math:log(lists:sum(Set)) / math:log(2)
+    end.
+
+%% @spec (Token, Scope, {user, User, Host} | undefined) -> {ok, User, Server} | {error, atom()}
+%% @doc Verifies the given oauth2 access token
+%% Returns the associated user and server if the access token is valid and the
+%% requested scope matches the scope in the grant context, if not, returns an error.
+%% If the user/host is also given, the verification failes, if the token has been
+%% associated to a different resource owner.
+-spec check_access_token(binary(), binary(), {user, binary(), binary()} | undefined) -> {ok, {binary(), binary()}} | {error, atom()}.
+
+check_access_token(Token, Scope, RequestedOwner) ->
+    %% First give the auth modules a chance to verify the access token
+    %% with their own implementation. If the token could not be verified,
+    %% use the internal behaviour.
+    Modules = case RequestedOwner of
+        {user, _, Host} ->
+            auth_modules(Host);
+        undefined ->
+            auth_modules()
+    end,
+    Response = lists:foldl(fun (_, {ok, _, _} = Res) -> Res;
+                               (M, Res) ->
+                                   case erlang:function_exported(M, check_access_token, 3) of
+                                       true -> M:check_access_token(Token, Scope, RequestedOwner);
+                                       false -> Res
+                                   end
+                               end,
+                               {error, not_implemented}, Modules),
+    case Response of
+        {ok, User, Host2} ->
+            {ok, User, Host2};
+        {error, _} ->
+            internal_check_access_token(Token, Scope, RequestedOwner)
+    end.
+
+internal_check_access_token(Token, Scope, undefined) ->
+    case oauth2:verify_access_token(Token, undefined) of
+        {ok, {_, GrantContext}} ->
+            ResourceOwner = proplists:get_value(<<"resource_owner">>, GrantContext, undefined),
+            TokenScope = proplists:get_value(<<"scope">>, GrantContext, []),
+            case ResourceOwner of
+                {user, User, Host} ->
+                  case oauth2_priv_set:is_member(Scope, oauth2_priv_set:new(TokenScope)) of
+                    true ->
+                        {ok, User, Host};
+                    false ->
+                        {error, invalid_scope}
+                  end;
+                _ ->
+                  {error, resource_owner_mismatch}
+            end;
+        Error ->
+            Error
+    end;
+internal_check_access_token(Token, Scope, {user, User, Host}) ->
+    case oauth2:verify_access_token(Token, undefined) of
+        {ok, {_, GrantContext}} ->
+            ResourceOwner = proplists:get_value(<<"resource_owner">>, GrantContext, undefined),
+            TokenScope = proplists:get_value(<<"scope">>, GrantContext, []),
+            case ResourceOwner of
+                {user, User, Host} ->
+                  case oauth2_priv_set:is_member(Scope, oauth2_priv_set:new(TokenScope)) of
+                    true ->
+                        {ok, User, Host};
+                    false ->
+                        {error, invalid_scope}
+                  end;
+                _ ->
+                  {error, resource_owner_mismatch}
+            end;
+        Error ->
+            Error
     end.
 
 %%%----------------------------------------------------------------------
