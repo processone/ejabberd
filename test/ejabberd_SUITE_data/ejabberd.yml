@@ -424,7 +424,7 @@ listen:
     port: @@web_port@@
     module: ejabberd_http
     captcha: true
-loglevel: 5
+loglevel: 4
 max_fsm_queue: 1000
 modules: 
   mod_adhoc: []
