@@ -37,7 +37,7 @@
 	 handle_cast/2, terminate/2, code_change/3]).
 
 -export([start/1, stop/1, start_link/1, set_password/3,
-	 check_password/3, check_password/5, try_register/3,
+	 check_password/4, check_password/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2,
 	 get_vh_registered_users_number/1,
@@ -116,7 +116,10 @@ plain_password_required() -> true.
 
 store_type() -> external.
 
-check_password(User, Server, Password) ->
+check_password(User, AuthzId, Server, Password) ->
+    if AuthzId /= <<>> andalso AuthzId /= User ->
+        false;
+    true ->
     if Password == <<"">> -> false;
        true ->
 	   case catch check_password_ldap(User, Server, Password)
@@ -124,11 +127,12 @@ check_password(User, Server, Password) ->
 	     {'EXIT', _} -> false;
 	     Result -> Result
 	   end
+        end
     end.
 
-check_password(User, Server, Password, _Digest,
+check_password(User, AuthzId, Server, Password, _Digest,
 	       _DigestGen) ->
-    check_password(User, Server, Password).
+    check_password(User, AuthzId, Server, Password).
 
 set_password(User, Server, Password) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),

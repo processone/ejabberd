@@ -132,7 +132,7 @@ register_mechanism(Mechanism, Module, PasswordType) ->
 %%    end.
 
 check_credentials(_State, Props) ->
-    User = proplists:get_value(username, Props, <<>>),
+    User = proplists:get_value(authzid, Props, <<>>),
     case jid:nodeprep(User) of
       error -> {error, <<"not-authorized">>};
       <<"">> -> {error, <<"not-authorized">>};

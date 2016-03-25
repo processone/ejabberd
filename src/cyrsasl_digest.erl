@@ -50,7 +50,7 @@
                 username = <<"">> :: binary(),
                 authzid = <<"">> :: binary(),
                 get_password = fun(_) -> {false, <<>>} end :: get_password_fun(),
-                check_password = fun(_, _, _, _) -> false end :: check_password_fun(),
+                check_password = fun(_, _, _, _, _) -> false end :: check_password_fun(),
                 auth_module :: atom(),
                 host = <<"">> :: binary(),
                 hostfqdn = <<"">> :: binary()}).
@@ -83,9 +83,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State,
       bad -> {error, <<"bad-protocol">>};
       KeyVals ->
 	  DigestURI = proplists:get_value(<<"digest-uri">>, KeyVals, <<>>),
-	  %DigestURI = fxml:get_attr_s(<<"digest-uri">>, KeyVals),
 	  UserName = proplists:get_value(<<"username">>, KeyVals, <<>>),
-	  %UserName = fxml:get_attr_s(<<"username">>, KeyVals),
 	  case is_digesturi_valid(DigestURI, State#state.host,
 				  State#state.hostfqdn)
 	      of
@@ -97,13 +95,11 @@ mech_step(#state{step = 3, nonce = Nonce} = State,
 		{error, <<"not-authorized">>, UserName};
 	    true ->
 		AuthzId = proplists:get_value(<<"authzid">>, KeyVals, <<>>),
-		%AuthzId = fxml:get_attr_s(<<"authzid">>, KeyVals),
 		case (State#state.get_password)(UserName) of
 		  {false, _} -> {error, <<"not-authorized">>, UserName};
 		  {Passwd, AuthModule} ->
-		      case (State#state.check_password)(UserName, <<"">>,
+		      case (State#state.check_password)(UserName, UserName, <<"">>,
 		                    proplists:get_value(<<"response">>, KeyVals, <<>>),
-							%fxml:get_attr_s(<<"response">>, KeyVals),
 							fun (PW) ->
 								response(KeyVals,
 									 UserName,
@@ -130,7 +126,11 @@ mech_step(#state{step = 5, auth_module = AuthModule,
 		 username = UserName, authzid = AuthzId},
 	  <<"">>) ->
     {ok,
-     [{username, UserName}, {authzid, AuthzId},
+     [{username, UserName}, {authzid, case AuthzId of
+        <<"">> -> UserName;
+        _ -> AuthzId
+      end
+    },
       {auth_module, AuthModule}]};
 mech_step(A, B) ->
     ?DEBUG("SASL DIGEST: A ~p B ~p", [A, B]),

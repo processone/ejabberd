@@ -116,7 +116,7 @@ check_permissions(#request{auth = HTTPAuth, headers = Headers}, Command)
                     {SJID, Pass} ->
                         case jid:from_string(SJID) of
                             #jid{user = User, server = Server} ->
-                                case ejabberd_auth:check_password(User, Server, Pass) of
+                                case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
                                     true -> {ok, {User, Server, Pass, Admin}};
                                     false -> false
                                 end;
