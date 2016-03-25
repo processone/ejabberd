@@ -10,6 +10,10 @@ dn: ou=users,dc=localhost
 ou: users
 objectClass: organizationalUnit
 
+dn: ou=groups,dc=localhost
+ou: groups
+objectClass: organizationalUnit
+
 dn: uid=test_single,ou=users,dc=localhost
 uid: test_single
 mail: test_single@localhost
@@ -33,3 +37,16 @@ objectClass: person
 jpegPhoto:: /9g=
 cn: Test Slave
 password: password
+
+dn: uid=user2,ou=users,dc=localhost
+uid: user2
+mail: user2@localhost
+objectClass: person
+cn: Test User 2
+password: password
+
+dn: cn=group1,ou=groups,dc=localhost
+objectClass: posixGroup
+memberUid: test_single
+memberUid: user2
+cn: group1

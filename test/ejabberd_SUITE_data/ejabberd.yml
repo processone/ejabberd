@@ -336,6 +336,15 @@ Welcome to this XMPP server."
     auth_method: ldap
     modules: 
       mod_vcard_ldap: []
+      mod_roster: [] # mod_roster is required by mod_shared_roster
+      mod_shared_roster_ldap:
+        ldap_auth_check: off
+        ldap_base: "dc=localhost"
+        ldap_rfilter: "(objectClass=posixGroup)"
+        ldap_gfilter: "(&(objectClass=posixGroup)(cn=%g))"
+        ldap_memberattr: "memberUid"
+        ldap_ufilter: "(uid=%u)"
+        ldap_userdesc: "cn"
       mod_adhoc: []
       mod_configure: []
       mod_disco: []
