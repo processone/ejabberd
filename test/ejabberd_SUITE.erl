@@ -354,7 +354,8 @@ db_tests(_) ->
 ldap_tests() ->
     [{ldap_tests, [sequence],
       [test_auth,
-       vcard_get]}].
+       vcard_get,
+       ldap_shared_roster_vcard_get]}].
 
 extauth_tests() ->
     [{extauth_tests, [sequence],
@@ -798,6 +799,13 @@ vcard_get(Config) ->
     %% TODO: check if VCard corresponds to LDIF data from ejabberd.ldif
     #iq{type = result, sub_els = [_VCard]} =
         send_recv(Config, #iq{type = get, sub_els = [#vcard{}]}),
+    disconnect(Config).
+
+ldap_shared_roster_vcard_get(Config) ->
+    Item = #roster_item{jid = jid:from_string(<<"user2@ldap.localhost">>), name = <<"Test User 2">>,
+                        groups = [<<"group1">>], subscription = both},
+    #iq{type = result, sub_els = [#roster{items = [Item]}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#roster{}]}),
     disconnect(Config).
 
 vcard_xupdate_master(Config) ->
