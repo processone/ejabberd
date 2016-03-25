@@ -3172,11 +3172,9 @@ subscription_to_string(_) -> <<"none">>.
 	Host :: mod_pubsub:host())
     -> jid()
     ).
-service_jid(Host) ->
-    case Host of
-	{U, S, _} -> {jid, U, S, <<>>, U, S, <<>>};
-	_ -> {jid, <<>>, Host, <<>>, <<>>, Host, <<>>}
-    end.
+service_jid(#jid{} = Jid) -> Jid;
+service_jid({U, S, R}) -> jid:make(U, S, R);
+service_jid(Host) -> jid:make(<<>>, Host, <<>>).
 
 %% @spec (LJID, NotifyType, Depth, NodeOptions, SubOptions) -> boolean()
 %%        LJID = jid()
@@ -3525,7 +3523,7 @@ broadcast_stanza(Host, _Node, _Nidx, _Type, NodeOptions, SubsByDepth, NotifyType
 	end, SubIDsByJID).
 
 broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
-    broadcast_stanza({LUser, LServer, LResource}, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
+    broadcast_stanza({LUser, LServer, <<>>}, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
     SenderResource = user_resource(LUser, LServer, LResource),
     case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
