@@ -45,7 +45,7 @@ mech_new(_Host, _GetPassword, CheckPassword, _CheckPasswordDigest) ->
 mech_step(State, ClientIn) ->
     case prepare(ClientIn) of
       [AuthzId, User, Password] ->
-	  case (State#state.check_password)(User, Password) of
+	  case (State#state.check_password)(User, AuthzId, Password) of
 	    {true, AuthModule} ->
 		{ok,
 		 [{username, User}, {authzid, AuthzId},
@@ -60,12 +60,17 @@ prepare(ClientIn) ->
       [<<"">>, UserMaybeDomain, Password] ->
 	  case parse_domain(UserMaybeDomain) of
 	    %% <NUL>login@domain<NUL>pwd
-	    [User, _Domain] -> [UserMaybeDomain, User, Password];
+	    [User, _Domain] -> [User, User, Password];
 	    %% <NUL>login<NUL>pwd
-	    [User] -> [<<"">>, User, Password]
+	    [User] -> [User, User, Password]
 	  end;
+      [AuthzId, User, Password] ->
+      case parse_domain(AuthzId) of
       %% login@domain<NUL>login<NUL>pwd
-      [AuthzId, User, Password] -> [AuthzId, User, Password];
+        [AuthzUser, _Domain] -> [AuthzUser, User, Password];
+        %% login<NUL>login<NUL>pwd
+        [AuthzUser] -> [AuthzUser, User, Password]
+      end;
       _ -> error
     end.
 

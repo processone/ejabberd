@@ -30,8 +30,8 @@
 
 -behaviour(ejabberd_auth).
 
--export([start/1, set_password/3, check_password/3,
-	 check_password/5, try_register/3,
+-export([start/1, set_password/3, check_password/4,
+	 check_password/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2,
 	 get_vh_registered_users_number/1,
@@ -46,11 +46,14 @@ start(_Host) ->
 set_password(_User, _Server, _Password) ->
     {error, not_allowed}.
 
-check_password(User, Server, Password, _Digest,
+check_password(User, AuthzId, Server, Password, _Digest,
 	       _DigestGen) ->
-    check_password(User, Server, Password).
+    check_password(User, AuthzId, Server, Password).
 
-check_password(User, Host, Password) ->
+check_password(User, AuthzId, Host, Password) ->
+    if AuthzId /= <<>> andalso AuthzId /= User ->
+        false;
+    true ->
     Service = get_pam_service(Host),
     UserInfo = case get_pam_userinfotype(Host) of
 		 username -> User;
@@ -61,6 +64,7 @@ check_password(User, Host, Password) ->
 	of
       true -> true;
       _ -> false
+        end
     end.
 
 try_register(_User, _Server, _Password) ->

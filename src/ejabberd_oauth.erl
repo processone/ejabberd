@@ -134,7 +134,7 @@ authenticate_user({User, Server}, {password, Password} = Ctx) ->
                   none),
             case acl:match_rule(JID#jid.lserver, Access, JID) of
                 allow ->
-                    case ejabberd_auth:check_password(User, Server, Password) of
+                    case ejabberd_auth:check_password(User, <<"">>, Server, Password) of
                         true ->
                             {ok, {Ctx, {user, User, Server}}};
                         false ->

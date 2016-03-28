@@ -30,8 +30,8 @@
 -behaviour(ejabberd_auth).
 
 %% External exports
--export([start/1, set_password/3, check_password/3,
-	 check_password/5, try_register/3,
+-export([start/1, set_password/3, check_password/4,
+	 check_password/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2,
 	 get_vh_registered_users_number/1,
@@ -66,9 +66,12 @@ store_type() ->
 passwd_schema() ->
     {record_info(fields, passwd), #passwd{}}.
 
-check_password(User, Server, Password) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
+check_password(User, AuthzId, Server, Password) ->
+    if AuthzId /= <<>> andalso AuthzId /= User ->
+        false;
+    true ->
+        LUser = jid:nodeprep(User),
+        LServer = jid:nameprep(Server),
     case ejabberd_riak:get(passwd, passwd_schema(), {LUser, LServer}) of
         {ok, #passwd{password = Password}} when is_binary(Password) ->
             Password /= <<"">>;
@@ -76,12 +79,16 @@ check_password(User, Server, Password) ->
             is_password_scram_valid(Password, Scram);
         _ ->
             false
+        end
     end.
 
-check_password(User, Server, Password, Digest,
+check_password(User, AuthzId, Server, Password, Digest,
 	       DigestGen) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
+    if AuthzId /= <<>> andalso AuthzId /= User ->
+        false;
+    true ->
+        LUser = jid:nodeprep(User),
+        LServer = jid:nameprep(Server),
     case ejabberd_riak:get(passwd, passwd_schema(), {LUser, LServer}) of
       {ok, #passwd{password = Passwd}} when is_binary(Passwd) ->
 	  DigRes = if Digest /= <<"">> ->
@@ -102,6 +109,7 @@ check_password(User, Server, Password, Digest,
 	     true -> (Passwd == Password) and (Password /= <<"">>)
 	  end;
       _ -> false
+        end
     end.
 
 set_password(User, Server, Password) ->

@@ -517,7 +517,7 @@ check_auth(Command, {User, Server, {oauth, Token}, _}) ->
     end;
 check_auth(_Command, {User, Server, Password, _}) when is_binary(Password) ->
     %% Check the account exists and password is valid
-    case ejabberd_auth:check_password(User, Server, Password) of
+    case ejabberd_auth:check_password(User, <<"">>, Server, Password) of
         true -> {ok, User, Server};
         _ -> throw({error, invalid_account_data})
     end.

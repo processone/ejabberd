@@ -38,8 +38,8 @@
 	 unregister_connection/3
 	]).
 
--export([login/2, set_password/3, check_password/3,
-	 check_password/5, try_register/3,
+-export([login/2, set_password/3, check_password/4,
+	 check_password/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2,
 	 get_vh_registered_users_number/1,
@@ -175,11 +175,11 @@ purge_hook(true, LUser, LServer) ->
 
 %% When anonymous login is enabled, check the password for permenant users
 %% before allowing access
-check_password(User, Server, Password) ->
-    check_password(User, Server, Password, undefined,
+check_password(User, AuthzId, Server, Password) ->
+    check_password(User, AuthzId, Server, Password, undefined,
 		   undefined).
 
-check_password(User, Server, _Password, _Digest,
+check_password(User, _AuthzId, Server, _Password, _Digest,
 	       _DigestGen) ->
     case
       ejabberd_auth:is_user_exists_in_other_modules(?MODULE,

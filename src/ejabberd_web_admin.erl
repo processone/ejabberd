@@ -264,7 +264,7 @@ get_auth_admin(Auth, HostHTTP, RPath, Method) ->
 
 get_auth_account(HostOfRule, AccessRule, User, Server,
 		 Pass) ->
-    case ejabberd_auth:check_password(User, Server, Pass) of
+    case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
       true ->
 	  case is_acl_match(HostOfRule, AccessRule,
 			    jid:make(User, Server, <<"">>))

@@ -73,7 +73,15 @@ start_link(Num, Server, Port, _StartInterval, Options) ->
 
 %% @private
 is_connected() ->
-    catch riakc_pb_socket:is_connected(get_random_pid()).
+    lists:all(
+      fun({_Id, Pid, _Type, _Modules}) when is_pid(Pid) ->
+	      case catch riakc_pb_socket:is_connected(get_riak_pid(Pid)) of
+		  true -> true;
+		  _ -> false
+	      end;
+	 (_) ->
+	      false
+      end, supervisor:which_children(ejabberd_riak_sup)).
 
 %% @private
 get_proc(I) ->
@@ -515,6 +523,9 @@ make_invalid_object(Val) ->
 
 get_random_pid() ->
     PoolPid = ejabberd_riak_sup:get_random_pid(),
+    get_riak_pid(PoolPid).
+
+get_riak_pid(PoolPid) ->
     case catch gen_server:call(PoolPid, get_pid) of
 	{ok, Pid} ->
 	    Pid;

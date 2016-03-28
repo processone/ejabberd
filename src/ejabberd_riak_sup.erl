@@ -109,6 +109,7 @@ init([]) ->
     Options = lists:filter(
 		fun(X) -> X /= nil end,
 		[auto_reconnect,
+		 {keepalive, true},
 		 if CACertFile /= nil -> {cacertfile ,CACertFile};
 		    true -> nil
 		 end,
