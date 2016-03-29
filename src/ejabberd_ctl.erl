@@ -214,7 +214,7 @@ process(Args) ->
 process2(["--auth", User, Server, Pass | Args], AccessCommands) ->
     process2(Args, {list_to_binary(User), list_to_binary(Server), list_to_binary(Pass), true}, AccessCommands);
 process2(Args, AccessCommands) ->
-    process2(Args, admin, AccessCommands).
+    process2(Args, noauth, AccessCommands).
 
 process2(Args, Auth, AccessCommands) ->
     case try_run_ctp(Args, Auth, AccessCommands) of
