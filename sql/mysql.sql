@@ -19,10 +19,13 @@
 CREATE TABLE users (
     username varchar(191) PRIMARY KEY,
     password text NOT NULL,
+    serverkey text NOT NULL DEFAULT '',
+    salt text NOT NULL DEFAULT '',
+    iterationcount integer NOT NULL DEFAULT 0,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- To support SCRAM auth:
+-- Add support for SCRAM auth to a database created before ejabberd 16.03:
 -- ALTER TABLE users ADD COLUMN serverkey text NOT NULL DEFAULT '';
 -- ALTER TABLE users ADD COLUMN salt text NOT NULL DEFAULT '';
 -- ALTER TABLE users ADD COLUMN iterationcount integer NOT NULL DEFAULT 0;

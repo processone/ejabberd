@@ -362,6 +362,9 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW
 CREATE TABLE [dbo].[users] (
         [username] [varchar] (250) NOT NULL,
         [password] [text] NOT NULL,
+        [serverkey] [text] NOT NULL,
+        [salt] [text] NOT NULL,
+        [iterationcount] [smallint] NOT NULL DEFAULT 0,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
  CONSTRAINT [users_PRIMARY] PRIMARY KEY CLUSTERED 
 (
