@@ -29,21 +29,20 @@ install:
 
 before_script:
   # Ulimit: See Travis-CI issue report: https://github.com/travis-ci/travis-ci/issues/3328
-  - sudo sh -c 'ulimit -n 4096'
-  - sudo sh -c 'echo "ulimit -n 4096" > /etc/default/riak'
+  - echo 'ulimit -n 4096' > riak
+  - sudo mv riak /etc/default/riak
   - mkdir "$PWD/ebin"
   - echo "[{riak_kv, [{add_paths, [\"$PWD/ebin/\"]}]}]." > advanced.config
   - sudo mv advanced.config /etc/riak/advanced.config
   - sudo service riak restart
+  - sudo riak-admin wait-for-service riak_kv 'riak@127.0.0.1'
+  - sudo riak-admin test
   - mysql -u root -e "CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';"
   - mysql -u root -e "CREATE DATABASE ejabberd_test;"
   - mysql -u root -e "GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';"
   - psql -U postgres -c "CREATE USER ejabberd_test WITH PASSWORD 'ejabberd_test';"
   - psql -U postgres -c "CREATE DATABASE ejabberd_test;"
   - psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE ejabberd_test TO ejabberd_test;"
-  - sudo /usr/sbin/riak-admin wait-for-service riak_kv 'riak@127.0.0.1'
-  - sudo /usr/sbin/riak-admin test
-  # - tail -n 100000 /etc/riak/*
 
 script:
   - ./autogen.sh
