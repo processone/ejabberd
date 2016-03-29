@@ -35,7 +35,7 @@
 	 get_module_opt/4, get_module_opt/5, get_module_opt_host/3,
 	 loaded_modules/1, loaded_modules_with_opts/1,
 	 get_hosts/2, get_module_proc/2, is_loaded/2,
-	 start_modules/1, default_db/1, v_db/1, opt_type/1]).
+	 start_modules/1, stop_modules/1, default_db/1, v_db/1, opt_type/1]).
 
 %%-export([behaviour_info/1]).
 
@@ -128,6 +128,23 @@ stop_module(Host, Module) ->
       error -> error;
       ok -> ok
     end.
+
+-spec stop_modules(binary()) -> any().
+
+stop_modules(Host) ->
+    Modules = ejabberd_config:get_option(
+                          {modules, Host},
+                          fun(Mods) ->
+                                  lists:map(
+                                    fun({M, A}) when is_atom(M), is_list(A) ->
+                                            {M, A}
+                                    end, Mods)
+                          end, []),
+    lists:foreach(
+                fun({Module, _Args}) ->
+                        ?MODULE:stop_module_keep_config(Host, Module)
+                end, Modules).
+
 
 -spec stop_module_keep_config(binary(), atom()) -> error | ok.
 
