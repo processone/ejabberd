@@ -352,7 +352,7 @@ get_command_definition(Name) ->
 execute_command(Name, Arguments) ->
     execute_command([], noauth, Name, Arguments).
 
--spec execute_command([{atom(), [atom()], [any()]}],
+-spec execute_command([{atom(), [atom()], [any()]}] | undefined,
                       {binary(), binary(), binary(), boolean()} |
                       noauth | admin,
                       atom(),
@@ -361,7 +361,7 @@ execute_command(Name, Arguments) ->
 
 %% @spec (AccessCommands, Auth, Name::atom(), Arguments) -> ResultTerm | {error, Error}
 %% where
-%%       AccessCommands = [{Access, CommandNames, Arguments}]
+%%       AccessCommands = [{Access, CommandNames, Arguments}] | undefined
 %%       Auth = {User::string(), Server::string(), Password::string(), Admin::boolean()}
 %%            | noauth
 %%            | admin
@@ -465,7 +465,7 @@ check_access_commands([], _Auth, _Method, _Command, _Arguments) ->
 check_access_commands(AccessCommands, Auth, Method, Command1, Arguments) ->
     Command =
         case {Command1#ejabberd_commands.policy, Auth} of
-            {user, {_, _, _}} ->
+            {user, {_, _, _, _}} ->
                 Command1;
             {user, _} ->
                 Command1#ejabberd_commands{
