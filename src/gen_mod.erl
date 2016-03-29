@@ -35,7 +35,8 @@
 	 get_module_opt/4, get_module_opt/5, get_module_opt_host/3,
 	 loaded_modules/1, loaded_modules_with_opts/1,
 	 get_hosts/2, get_module_proc/2, is_loaded/2,
-	 start_modules/1, default_db/1, v_db/1, opt_type/1]).
+	 start_modules/0, start_modules/1, stop_modules/0, stop_modules/1,
+	 default_db/1, v_db/1, opt_type/1]).
 
 %%-export([behaviour_info/1]).
 
@@ -64,23 +65,38 @@ start() ->
 	     {keypos, #ejabberd_module.module_host}]),
     ok.
 
+-spec start_modules() -> any().
+
+%% Start all the modules in all the hosts
+start_modules() ->
+    lists:foreach(
+	fun(Host) ->
+	    start_modules(Host)
+	end, ?MYHOSTS).
+
+get_modules_options(Host) ->
+    ejabberd_config:get_option(
+	{modules, Host},
+	fun(Mods) ->
+	    lists:map(
+		fun({M, A}) when is_atom(M), is_list(A) ->
+		    {M, A}
+		end, Mods)
+	end, []).
+
 -spec start_modules(binary()) -> any().
 
 start_modules(Host) ->
-    Modules = ejabberd_config:get_option(
-		{modules, Host},
-		fun(L) when is_list(L) -> L end, []),
+    Modules = get_modules_options(Host),
     lists:foreach(
-      fun({Module, Opts}) ->
-	      start_module(Host, Module, Opts)
-      end, Modules).
+	fun({Module, Opts}) ->
+	    start_module(Host, Module, Opts)
+	end, Modules).
 
 -spec start_module(binary(), atom()) -> any().
 
 start_module(Host, Module) ->
-    Modules = ejabberd_config:get_option(
-		{modules, Host},
-		fun(L) when is_list(L) -> L end, []),
+    Modules = get_modules_options(Host),
     case lists:keyfind(Module, 1, Modules) of
 	{_, Opts} ->
 	    start_module(Host, Module, Opts);
@@ -120,6 +136,23 @@ is_app_running(AppName) ->
     Timeout = 15000,
     lists:keymember(AppName, 1,
 		    application:which_applications(Timeout)).
+
+-spec stop_modules() -> any().
+
+stop_modules() ->
+    lists:foreach(
+	fun(Host) ->
+	    stop_modules(Host)
+	end, ?MYHOSTS).
+
+-spec stop_modules(binary()) -> any().
+
+stop_modules(Host) ->
+    Modules = get_modules_options(Host),
+    lists:foreach(
+	fun({Module, _Args}) ->
+	    gen_mod:stop_module_keep_config(Host, Module)
+	end, Modules).
 
 -spec stop_module(binary(), atom()) -> error | {aborted, any()} | {atomic, any()}.
 
