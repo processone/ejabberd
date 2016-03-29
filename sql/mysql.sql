@@ -275,7 +275,7 @@ CREATE UNIQUE INDEX i_pubsub_subscription_opt ON pubsub_subscription_opt(subid(3
 CREATE TABLE muc_room (
     name text NOT NULL,
     host text NOT NULL,
-    opts text NOT NULL,
+    opts mediumtext NOT NULL,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
