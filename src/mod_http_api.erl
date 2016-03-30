@@ -279,6 +279,7 @@ handle2(Call, Auth, Args) when is_atom(Call), is_list(Args) ->
         0 -> {200, <<"OK">>};
         1 -> {500, <<"500 Internal server error">>};
         400 -> {400, <<"400 Bad Request">>};
+        401 -> {401, <<"401 Unauthorized">>};
         404 -> {404, <<"404 Not found">>};
         Res -> format_command_result(Call, Auth, Res)
     end.
@@ -366,6 +367,7 @@ ejabberd_command(Auth, Cmd, Args, Default) ->
              end,
     case catch ejabberd_commands:execute_command(Access, Auth, Cmd, Args) of
         {'EXIT', _} -> Default;
+        {error, account_unprivileged} -> 401;
         {error, _} -> Default;
         Result -> Result
     end.

@@ -43,7 +43,15 @@ defmodule ModHttpApiTest do
     {200, _, _} = :mod_http_api.process(["open_cmd"], request)
   end
 
-  test "Call to user, admin, restricted commands without authentication are rejected" do
+  # This related to the commands config file option
+  test "Attempting to access a command that is not exposed as HTTP API returns 401" do
+    :ejabberd_config.add_local_option(:commands, [])
+    request = request(method: :POST, data: "[]")
+    {401, _, _} = :mod_http_api.process(["open_cmd"], request)
+  end
+
+  test "Call to user commands without authentication are rejected" do
+    :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:user_cmd]}]])
     request = request(method: :POST, data: "[]")
     {401, _, _} = :mod_http_api.process(["user_cmd"], request)
   end
