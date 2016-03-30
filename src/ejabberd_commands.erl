@@ -595,7 +595,7 @@ get_commands() ->
     UserCmds = [N || {N, _, _, user} <- CommandsList],
     Cmds =
         lists:foldl(
-          fun({add_commands, L}, Acc) ->
+          fun([{add_commands, L}], Acc) ->
                   Cmds = case L of
                              open -> OpenCmds;
                              restricted -> RestrictedCmds;
@@ -604,7 +604,7 @@ get_commands() ->
                              _ when is_list(L) -> L
                          end,
                   lists:usort(Cmds ++ Acc);
-             ({remove_commands, L}, Acc) ->
+             ([{remove_commands, L}], Acc) ->
                   Cmds = case L of
                              open -> OpenCmds;
                              restricted -> RestrictedCmds;
