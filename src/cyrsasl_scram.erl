@@ -159,7 +159,8 @@ mech_step(#state{step = 4} = State, ClientIn) ->
 					 ServerSignature =
 					     scram:server_signature(State#state.server_key,
 								    AuthMessage),
-					 {ok, [{username, State#state.username}],
+					 {ok, [{username, State#state.username},
+					       {authzid, State#state.username}],
 					  <<"v=",
 					    (jlib:encode_base64(ServerSignature))/binary>>};
 				     true -> {error, <<"bad-auth">>, State#state.username}
