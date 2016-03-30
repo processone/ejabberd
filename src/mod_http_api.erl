@@ -116,7 +116,6 @@ start(_Host, _Opts) ->
 stop(_Host) ->
     ok.
 
-
 %% ----------
 %% basic auth
 %% ----------
@@ -124,12 +123,13 @@ stop(_Host) ->
 check_permissions(Request, Command) ->
     case catch binary_to_existing_atom(Command, utf8) of
         Call when is_atom(Call) ->
-            check_permissions2(Request, Call);
+            {ok, CommandPolicy} = ejabberd_commands:get_command_policy(Call),
+            check_permissions2(Request, Call, CommandPolicy);
         _ ->
             unauthorized_response()
     end.
 
-check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call)
+check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _)
   when HTTPAuth /= undefined ->
     Admin =
         case lists:keysearch(<<"X-Admin">>, 1, Headers) of
@@ -162,7 +162,9 @@ check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call)
         {ok, A} -> {allowed, Call, A};
         _ -> unauthorized_response()
     end;
-check_permissions2(#request{ip={IP, _Port}}, Call) ->
+check_permissions2(_Request, Call, open) ->
+    {allowed, Call, noauth};
+check_permissions2(#request{ip={IP, _Port}}, Call, _Policy) ->
     Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access,
                                     mod_opt_type(admin_ip_access),
                                     none),
@@ -207,7 +209,8 @@ process([Call], #request{method = 'POST', data = Data, ip = IP} = Req) ->
             {allowed, Cmd, Auth} ->
                 {Code, Result} = handle(Cmd, Auth, Args),
                 json_response(Code, jiffy:encode(Result));
-            ErrorResponse -> %% Should we reply 403 ?
+            %% Warning: check_permission direcly formats 401 reply if not authorized
+            ErrorResponse ->
                 ErrorResponse
         end
     catch _:Error ->
@@ -225,6 +228,7 @@ process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
             {allowed, Cmd, Auth} ->
                 {Code, Result} = handle(Cmd, Auth, Args),
                 json_response(Code, jiffy:encode(Result));
+            %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
                 ErrorResponse
         end
@@ -434,7 +438,9 @@ json_response(Code, Body) when is_integer(Code) ->
 
 log(Call, Args, {Addr, Port}) ->
     AddrS = jlib:ip_to_list({Addr, Port}),
-    ?INFO_MSG("API call ~s ~p from ~s:~p", [Call, Args, AddrS, Port]).
+    ?INFO_MSG("API call ~s ~p from ~s:~p", [Call, Args, AddrS, Port]);
+log(Call, Args, IP) ->
+    ?INFO_MSG("API call ~s ~p (~p)", [Call, Args, IP]).
 
 mod_opt_type(admin_ip_access) ->
     fun(Access) when is_atom(Access) -> Access end;

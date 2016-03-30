@@ -212,6 +212,7 @@
 	 list_commands/0,
 	 get_command_format/1,
          get_command_format/2,
+         get_command_policy/1,
 	 get_command_definition/1,
 	 get_tags_commands/0,
          get_commands/0,
@@ -336,6 +337,17 @@ get_command_format(Name, Auth) ->
 	    {[{user, binary}, {server, binary} | Args], Result};
 	[[Args, Result, _]] ->
 	    {Args, Result}
+    end.
+
+-spec get_command_policy(atom()) -> {ok, open|user|admin|restricted} | {error, command_not_found}.
+
+%% @doc return command policy.
+get_command_policy(Name) ->
+    case get_command_definition(Name) of
+        #ejabberd_commands{policy = Policy} ->
+            {ok, Policy};
+        command_not_found ->
+            {error, command_not_found}
     end.
 
 -spec get_command_definition(atom()) -> ejabberd_commands() | command_not_found.
