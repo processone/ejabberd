@@ -65,7 +65,9 @@ undefined_function(Module, Func, Args) ->
     error_handler:undefined_function(Module, Func,Args).
 
 run_elixir_test(Func) ->
-    'Elixir.ExUnit':start([]),
+    %% Elixir tests can be tagged as follow to be ignored (place before test start)
+    %% @tag pending: true
+    'Elixir.ExUnit':start([{exclude, [{pending, true}]}]),
     'Elixir.Code':load_file(list_to_binary(filename:join(test_dir(), atom_to_list(Func)))),
     %% I did not use map syntax, so that this file can still be build under R16
     ResultMap = 'Elixir.ExUnit':run(),
