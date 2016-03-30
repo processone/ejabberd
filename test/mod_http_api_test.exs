@@ -43,7 +43,6 @@ defmodule ModHttpApiTest do
     {200, _, _} = :mod_http_api.process(["open_cmd"], request)
   end
 
-  @tag pending: true
   test "Call to user, admin, restricted commands without authentication are rejected" do
     request = request(method: :POST, data: "[]")
     {401, _, _} = :mod_http_api.process(["user_cmd"], request)

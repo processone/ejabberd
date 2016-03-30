@@ -183,7 +183,9 @@ check_permissions2(#request{ip={IP, _Port}}, Call, _Policy) ->
             end;
         _ ->
             unauthorized_response()
-    end.
+    end;
+check_permissions2(_Request, _Call, _Policy) ->
+    unauthorized_response().
 
 oauth_check_token(Scope, Token) when is_atom(Scope) ->
     oauth_check_token(atom_to_binary(Scope, utf8), Token);
