@@ -753,6 +753,7 @@ code_to_phrase(503) -> <<"Service Unavailable">>;
 code_to_phrase(504) -> <<"Gateway Timeout">>;
 code_to_phrase(505) -> <<"HTTP Version Not Supported">>.
 
+-spec parse_auth(binary()) -> {binary(), binary()} | {oauth, binary(), []} | undefined.
 parse_auth(<<"Basic ", Auth64/binary>>) ->
     Auth = jlib:decode_base64(Auth64),
     %% Auth should be a string with the format: user@server:password

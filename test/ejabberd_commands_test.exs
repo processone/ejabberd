@@ -36,6 +36,10 @@ defmodule EjabberdCommandsTest do
     assert Enum.member?(commands, {:test_user, [], "Test user"})
   end
 
+  # TODO Test that we can add command to list of expose commands
+  # This can be done with:
+  # ejabberd_config:add_local_option(commands, [[{add_commands, [open_cmd]}]]).
+
 #  test "Check that a user can use a user command" do
 #    [Command] = ets:lookup(ejabberd_commands, test_user),
 #    AccessCommands = ejabberd_commands:get_access_commands(undefined),

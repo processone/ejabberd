@@ -23,8 +23,7 @@
 	 path = []         :: [binary()],
 	 q = []            :: [{binary() | nokey, binary()}],
 	 us = {<<>>, <<>>} :: {binary(), binary()},
-	 auth              :: {binary(), binary()} |
-	 {auth_jid, {binary(), binary()}, jlib:jid()},
+	 auth              :: {binary(), binary()} | {oauth, binary(), []} | undefined,
 	 lang = <<"">>     :: binary(),
 	 data = <<"">>     :: binary(),
 	 ip                :: {inet:ip_address(), inet:port_number()},
