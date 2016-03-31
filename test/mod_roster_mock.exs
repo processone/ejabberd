@@ -1,12 +1,28 @@
-	#  mod_roster mock
-	######################
+# ----------------------------------------------------------------------
+#
+# ejabberd, Copyright (C) 2002-2016   ProcessOne
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# ----------------------------------------------------------------------
 
 defmodule ModRosterMock do
 	@author "jsautret@process-one.net"
 
 	require Record
-	Record.defrecord :roster, Record.extract(:roster,
-																					 from: "mod_roster.hrl")
+	Record.defrecord :roster, Record.extract(:roster, from_lib: "ejabberd/include/mod_roster.hrl")
 
 	@agent __MODULE__
 
@@ -75,7 +91,7 @@ defmodule ModRosterMock do
 
 			:moka.replace(roster_mock, :del_roster_t,
 				fn (user, domain, jid)  ->
-					remove_roster_item(user, domain, :jlib.jid_to_string(jid))
+					remove_roster_item(user, domain, :jid.to_string(jid))
 				end)
 
 			:moka.load(roster_mock)
@@ -163,7 +179,7 @@ defmodule ModRosterMock do
 	def	to_record({{user, domain, jid}, r}) do
 		roster(usj: {user, domain, jid},
 					 us: {user, domain},
-					 jid: :jlib.string_to_usr(jid),
+					 jid: :jid.from_string(jid),
 					 subscription: r.subs,
 					 ask: r.ask,
 					 groups: r.groups,
