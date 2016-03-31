@@ -37,6 +37,13 @@ defmodule ModHttpApiTest do
     on_exit fn -> unregister_commands(cmds) end
   end
 
+  test "We can expose several commands to API at a time" do
+    :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:open_cmd, :user_cmd]}]])
+    commands = :ejabberd_commands.get_commands()
+    assert Enum.member?(commands, :open_cmd)
+    assert Enum.member?(commands, :user_cmd)
+  end
+
   test "We can call open commands without authentication" do
     :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:open_cmd]}]])
     request = request(method: :POST, data: "[]")
@@ -50,32 +57,33 @@ defmodule ModHttpApiTest do
     {401, _, _} = :mod_http_api.process(["open_cmd"], request)
   end
 
-  test "Call to user commands without authentication are rejected" do
-    :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:user_cmd]}]])
+  test "Call to user, admin or restricted commands without authentication are rejected" do
+    :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:user_cmd, :admin_cmd, :restricted]}]])
     request = request(method: :POST, data: "[]")
     {401, _, _} = :mod_http_api.process(["user_cmd"], request)
+    {401, _, _} = :mod_http_api.process(["admin_cmd"], request)
+    {401, _, _} = :mod_http_api.process(["restricted_cmd"], request)
   end
 
   # Define a set of test commands that we expose through API
+  # We define one for each policy type
   defp cmds do
-    # TODO Refactor
-    [ejabberd_commands(name: :open_cmd, tags: [:test],
-                       policy: :open,
-                       module: __MODULE__,
-                       function: :open_cmd_fun,
-                       args: [],
-                       result: {:res, :rescode}),
-     ejabberd_commands(name: :user_cmd, tags: [:test],
-                       policy: :user,
-                       module: __MODULE__,
-                       function: :user_cmd_fun,
-                       args: [],
-                       result: {:res, :rescode})
-     ]
+    [:open, :user, :admin, :restricted]
+    |> Enum.map(&({&1, String.to_atom(to_string(&1) <> "_cmd")}))
+    |> Enum.map(fn({cmd_type, cmd}) ->
+      ejabberd_commands(name: cmd, tags: [:test],
+                        policy: cmd_type,
+                        module: __MODULE__,
+                        function: cmd,
+                        args: [],
+                        result: {:res, :rescode})
+    end)
   end
 
-  def open_cmd_fun, do: :ok
-  def user_cmd_fun, do: :ok
+  def open_cmd, do: :ok
+  def user_cmd, do: :ok
+  def admin_cmd, do: :ok
+  def restricted_cmd, do: :ok
 
   defp unregister_commands(commands) do
     try do
