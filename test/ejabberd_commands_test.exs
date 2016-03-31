@@ -31,9 +31,17 @@ defmodule EjabberdCommandsTest do
   end
 
   test "Check that we can register a command" do
-    assert :ejabberd_commands.register_commands([user_test_command]) == :ok
+    :ok = :ejabberd_commands.register_commands([user_test_command])
     commands = :ejabberd_commands.list_commands
     assert Enum.member?(commands, {:test_user, [], "Test user"})
+  end
+
+  test "Check that admin commands are rejected with noauth credentials" do
+    :ok = :ejabberd_commands.register_commands([admin_test_command])
+    {:error, :account_unprivileged} = :ejabberd_commands.execute_command(:undefined, :noauth, :test_admin, [])
+    # Command executed from ejabberdctl passes anyway with access commands trick
+    # TODO: We should refactor to have explicit call when bypassing auth check for command-line
+    :ok = :ejabberd_commands.execute_command([], :noauth, :test_admin, [])
   end
 
   # TODO Test that we can add command to list of expose commands
@@ -58,4 +66,16 @@ defmodule EjabberdCommandsTest do
                                                                  {:nick, :string}
                                                                ]}}}})
   end
+
+  defp admin_test_command do
+    ejabberd_commands(name: :test_admin, tags: [:roster],
+                      desc: "Test admin",
+                      policy: :restricted,
+                      module: __MODULE__,
+                      function: :test_admin,
+                      args: [],
+                      result: {:res, :rescode})
+  end
+
+  def test_admin, do: :ok
 end
