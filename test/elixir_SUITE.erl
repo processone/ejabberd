@@ -66,7 +66,9 @@ undefined_function(Module, Func, Args) ->
     error_handler:undefined_function(Module, Func,Args).
 
 run_elixir_test(Func) ->
-    'Elixir.ExUnit':start([]),
+    %% Elixir tests can be tagged as follow to be ignored (place before test start)
+    %% @tag pending: true
+    'Elixir.ExUnit':start([{exclude, [{pending, true}]}]),
     filelib:fold_files(test_dir(), ".*\\.exs\$", true,
 		       fun (File, N) ->
 			       'Elixir.Code':require_file(list_to_binary(File)),

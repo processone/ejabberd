@@ -123,7 +123,6 @@ start(_Host, _Opts) ->
 stop(_Host) ->
     ok.
 
-
 %% ----------
 %% basic auth
 %% ----------
@@ -131,12 +130,13 @@ stop(_Host) ->
 check_permissions(Request, Command) ->
     case catch binary_to_existing_atom(Command, utf8) of
         Call when is_atom(Call) ->
-            check_permissions2(Request, Call);
+            {ok, CommandPolicy} = ejabberd_commands:get_command_policy(Call),
+            check_permissions2(Request, Call, CommandPolicy);
         _ ->
             unauthorized_response()
     end.
 
-check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call)
+check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _)
   when HTTPAuth /= undefined ->
     Admin =
         case lists:keysearch(<<"X-Admin">>, 1, Headers) of
@@ -169,7 +169,9 @@ check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call)
         {ok, A} -> {allowed, Call, A};
         _ -> unauthorized_response()
     end;
-check_permissions2(#request{ip={IP, _Port}}, Call) ->
+check_permissions2(_Request, Call, open) ->
+    {allowed, Call, noauth};
+check_permissions2(#request{ip={IP, _Port}}, Call, _Policy) ->
     Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access,
                                     mod_opt_type(admin_ip_access),
                                     none),
@@ -189,7 +191,9 @@ check_permissions2(#request{ip={IP, _Port}}, Call) ->
         _E ->
 	    ?DEBUG("Unauthorized: ~p", [_E]),
             unauthorized_response()
-    end.
+    end;
+check_permissions2(_Request, _Call, _Policy) ->
+    unauthorized_response().
 
 oauth_check_token(Scope, Token) when is_atom(Scope) ->
     oauth_check_token(atom_to_binary(Scope, utf8), Token);
@@ -218,7 +222,8 @@ process([Call], #request{method = 'POST', data = Data, ip = IP} = Req) ->
             {allowed, Cmd, Auth} ->
                 {Code, Result} = handle(Cmd, Auth, Args, Version),
                 json_response(Code, jiffy:encode(Result));
-            ErrorResponse -> %% Should we reply 403 ?
+            %% Warning: check_permission direcly formats 401 reply if not authorized
+            ErrorResponse ->
                 ErrorResponse
         end
     catch _:{error,{_,invalid_json}} = _Err ->
@@ -240,6 +245,7 @@ process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
             {allowed, Cmd, Auth} ->
                 {Code, Result} = handle(Cmd, Auth, Args, Version),
                 json_response(Code, jiffy:encode(Result));
+            %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
                 ErrorResponse
         end
@@ -328,13 +334,7 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 handle2(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
     {ArgsF, _ResultF} = ejabberd_commands:get_command_format(Call, Auth, Version),
     ArgsFormatted = format_args(Args, ArgsF),
-    case ejabberd_commands:execute_command(undefined, Auth, 
-					   Call, ArgsFormatted, Version) of
-	{error, Error} ->
-	    throw(Error);
-	Res ->
-	    format_command_result(Call, Auth, Res, Version)
-    end.
+    ejabberd_command(Auth, Call, ArgsFormatted, Version).
 
 get_elem_delete(A, L) ->
     case proplists:get_all_values(A, L) of
@@ -414,6 +414,17 @@ process_unicode_codepoints(Str) ->
 match(Args, Spec) ->
     [{Key, proplists:get_value(Key, Args, Default)} || {Key, Default} <- Spec].
 
+ejabberd_command(Auth, Cmd, Args, Version) ->
+    Access = case Auth of
+                 admin -> [];
+                 _ -> undefined
+             end,
+    case ejabberd_commands:execute_command(Access, Auth, Cmd, Args, Version) of
+        {error, Error} ->
+            throw(Error);
+        Res ->
+            format_command_result(Cmd, Auth, Res, Version)
+    end.
 
 format_command_result(Cmd, Auth, Result, Version) ->
     {_, ResultFormat} = ejabberd_commands:get_command_format(Cmd, Auth, Version),
@@ -486,7 +497,9 @@ json_response(Code, Body) when is_integer(Code) ->
 
 log(Call, Args, {Addr, Port}) ->
     AddrS = jlib:ip_to_list({Addr, Port}),
-    ?INFO_MSG("API call ~s ~p from ~s:~p", [Call, Args, AddrS, Port]).
+    ?INFO_MSG("API call ~s ~p from ~s:~p", [Call, Args, AddrS, Port]);
+log(Call, Args, IP) ->
+    ?INFO_MSG("API call ~s ~p (~p)", [Call, Args, IP]).
 
 mod_opt_type(admin_ip_access) ->
     fun(Access) when is_atom(Access) -> Access end;
