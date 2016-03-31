@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------
 #
-# ejabberd, Copyright (C) 2002-2015   ProcessOne
+# ejabberd, Copyright (C) 2002-2016   ProcessOne
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -19,170 +19,78 @@
 # ----------------------------------------------------------------------
 
 defmodule ModHttpApiTest do
-	use ExUnit.Case, async: false
+  @author "mremond@process-one.net"
 
-	@author "jsautret@process-one.net"
+  use ExUnit.Case, async: true
 
-	# Admin user
-	@admin "admin"
-	@adminpass "adminpass"
-	# Non admin user
-	@user "user"
-	@userpass "userpass"
-	# XMPP domain
-	@domain "domain"
-	# mocked command
-	@command "command_test"
-	@acommand String.to_atom(@command)
-	# default API version
-	@version 0
-	
-	require Record
-	Record.defrecord :request, Record.extract(:request,
-																						from: "ejabberd_http.hrl")
+  require Record
+  Record.defrecord :request, Record.extract(:request, from_lib: "ejabberd/include/ejabberd_http.hrl")
+  Record.defrecord :ejabberd_commands, Record.extract(:ejabberd_commands, from_lib: "ejabberd/include/ejabberd_commands.hrl")
 
-	setup_all do
-		try do
-			:stringprep.start
-		rescue
-			_ -> :ok
-		end
-		:mod_http_api.start(@domain, [])
-		EjabberdOauthMock.init
-		:ok
-	end
+  setup_all do
+    :ok = :mnesia.start
+    :ok = :ejabberd_config.start(["localhost"], [])
 
-	setup do
-		:meck.unload
-		:meck.new :ejabberd_commands
-		EjabberdAuthMock.init
-		:ok
-	end
+    :ok = :ejabberd_commands.init
 
-	test "HTTP GET simple command call with Basic Auth" do
-		EjabberdAuthMock.create_user @user, @domain, @userpass
+    :ok = :ejabberd_commands.register_commands(cmds)
+    on_exit fn -> unregister_commands(cmds) end
+  end
 
-		# Mock a simple command() -> :ok
-		:meck.expect(:ejabberd_commands, :get_command_format,
-			fn (@acommand, {@user, @domain, @userpass, false}, @version) ->
-				{[], {:res, :rescode}}
-			end)
-		:meck.expect(:ejabberd_commands, :execute_command,
-			fn (:undefined, {@user, @domain, @userpass, false}, @acommand, [], @version) ->
-				:ok
-			end)
+  test "We can expose several commands to API at a time" do
+    :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:open_cmd, :user_cmd]}]])
+    commands = :ejabberd_commands.get_commands()
+    assert Enum.member?(commands, :open_cmd)
+    assert Enum.member?(commands, :user_cmd)
+  end
 
-		#:ejabberd_logger.start
-		#:ejabberd_logger.set 5
+  test "We can call open commands without authentication" do
+    :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:open_cmd]}]])
+    request = request(method: :POST, data: "[]")
+    {200, _, _} = :mod_http_api.process(["open_cmd"], request)
+  end
 
-		# Correct Basic Auth call
-		req = request(method: :GET,
-									path: ["api", @command],
-									q: [nokey: ""],
-									# Basic auth
-									auth: {@user<>"@"<>@domain, @userpass},
-									ip: {{127,0,0,1},60000},
-									host: @domain)
-		result = :mod_http_api.process([@command], req)
-		assert 200 == elem(result, 0) # HTTP code
-		assert "0" == elem(result, 2) # command result
+  # This related to the commands config file option
+  test "Attempting to access a command that is not exposed as HTTP API returns 401" do
+    :ejabberd_config.add_local_option(:commands, [])
+    request = request(method: :POST, data: "[]")
+    {401, _, _} = :mod_http_api.process(["open_cmd"], request)
+  end
 
-		# Bad password
-		req = request(method: :GET,
-									path: ["api", @command],
-									q: [nokey: ""],
-									# Basic auth
-									auth: {@user<>"@"<>@domain, @userpass<>"bad"},
-									ip: {{127,0,0,1},60000},
-									host: @domain)
-		result = :mod_http_api.process([@command], req)
-		assert 401 == elem(result, 0) # HTTP code
+  test "Call to user, admin or restricted commands without authentication are rejected" do
+    :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:user_cmd, :admin_cmd, :restricted]}]])
+    request = request(method: :POST, data: "[]")
+    {401, _, _} = :mod_http_api.process(["user_cmd"], request)
+    {401, _, _} = :mod_http_api.process(["admin_cmd"], request)
+    {401, _, _} = :mod_http_api.process(["restricted_cmd"], request)
+  end
 
-		# Check that the command was executed only once
-		assert 1 ==
-			:meck.num_calls(:ejabberd_commands, :execute_command, :_)
+  # Define a set of test commands that we expose through API
+  # We define one for each policy type
+  defp cmds do
+    [:open, :user, :admin, :restricted]
+    |> Enum.map(&({&1, String.to_atom(to_string(&1) <> "_cmd")}))
+    |> Enum.map(fn({cmd_type, cmd}) ->
+      ejabberd_commands(name: cmd, tags: [:test],
+                        policy: cmd_type,
+                        module: __MODULE__,
+                        function: cmd,
+                        args: [],
+                        result: {:res, :rescode})
+    end)
+  end
 
-		assert :meck.validate :ejabberd_auth
-		assert :meck.validate :ejabberd_commands
-		#assert :ok = :meck.history(:ejabberd_commands)
-	end
+  def open_cmd, do: :ok
+  def user_cmd, do: :ok
+  def admin_cmd, do: :ok
+  def restricted_cmd, do: :ok
 
+  defp unregister_commands(commands) do
+    try do
+      :ejabberd_commands.unregister_commands(commands)
+    catch
+      _,_ -> :ok
+    end
+  end
 
-	test "HTTP GET simple command call with OAuth" do
-		EjabberdAuthMock.create_user @user, @domain, @userpass
-
-		# Mock a simple command() -> :ok
-		:meck.expect(:ejabberd_commands, :get_command_format,
-			fn (@acommand, {@user, @domain, {:oauth, _token}, false}, @version) ->
-					{[], {:res, :rescode}}
-			end)
-		:meck.expect(:ejabberd_commands, :execute_command,
-			fn (:undefined, {@user, @domain, {:oauth, _token}, false},
-					@acommand, [], @version) ->
-					:ok
-			end)
-
-		#:ejabberd_logger.start
-		#:ejabberd_logger.set 5
-
-		# Correct OAuth call
-		token = EjabberdOauthMock.get_token @user, @domain, @command
-		req = request(method: :GET,
-									path: ["api", @command],
-									q: [nokey: ""],
-									# OAuth
-									auth: {:oauth, token, []},
-									ip: {{127,0,0,1},60000},
-									host: @domain)
-		result = :mod_http_api.process([@command], req)
-		assert 200 == elem(result, 0) # HTTP code
-		assert "0" == elem(result, 2) # command result
-
-		# Wrong OAuth token
-		req = request(method: :GET,
-									path: ["api", @command],
-									q: [nokey: ""],
-									# OAuth
-									auth: {:oauth, "bad"<>token, []},
-									ip: {{127,0,0,1},60000},
-									host: @domain)
-		result = :mod_http_api.process([@command], req)
-		assert 401 == elem(result, 0) # HTTP code
-
-		# Expired OAuth token
-		token = EjabberdOauthMock.get_token @user, @domain, @command, 1
-		:timer.sleep 1500
-		req = request(method: :GET,
-									path: ["api", @command],
-									q: [nokey: ""],
-									# OAuth
-									auth: {:oauth, token, []},
-									ip: {{127,0,0,1},60000},
-									host: @domain)
-		result = :mod_http_api.process([@command], req)
-		assert 401 == elem(result, 0) # HTTP code
-
-		# Wrong OAuth scope
-		token = EjabberdOauthMock.get_token @user, @domain, "bad_command"
-		:timer.sleep 1500
-		req = request(method: :GET,
-									path: ["api", @command],
-									q: [nokey: ""],
-									# OAuth
-									auth: {:oauth, token, []},
-									ip: {{127,0,0,1},60000},
-									host: @domain)
-		result = :mod_http_api.process([@command], req)
-		assert 401 == elem(result, 0) # HTTP code
-
-		# Check that the command was executed only once
-		assert 1 ==
-			:meck.num_calls(:ejabberd_commands, :execute_command, :_)
-
-		assert :meck.validate :ejabberd_auth
-		assert :meck.validate :ejabberd_commands
-		#assert :ok = :meck.history(:ejabberd_commands)
-	end
-
-	
 end

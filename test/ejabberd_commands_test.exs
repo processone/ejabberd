@@ -19,406 +19,63 @@
 # ----------------------------------------------------------------------
 
 defmodule EjabberdCommandsTest do
-	use ExUnit.Case, async: false
+  @author "mremond@process-one.net"
 
-	@author "jsautret@process-one.net"
+  use ExUnit.Case, async: true
 
-	# mocked callback module
-	@module :test_module
-	# Admin user
-	@admin "admin"
-	@adminpass "adminpass"
-	# Non admin user
-	@user "user"
-	@userpass "userpass"
-	# XMPP domain
-	@domain "domain"
+  require Record
+  Record.defrecord :ejabberd_commands, Record.extract(:ejabberd_commands, from_lib: "ejabberd/include/ejabberd_commands.hrl")
 
-	require Record
-	Record.defrecord :ejabberd_commands, Record.extract(:ejabberd_commands,
-																from: "ejabberd_commands.hrl")
+  setup_all do
+    :ejabberd_commands.init
+  end
 
-	setup_all do
-		try do
-			:stringprep.start
-		rescue
-			_ -> :ok
-		end
-		:mnesia.start
-		EjabberdOauthMock.init
-		:ok
-	end
+  test "Check that we can register a command" do
+    :ok = :ejabberd_commands.register_commands([user_test_command])
+    commands = :ejabberd_commands.list_commands
+    assert Enum.member?(commands, {:test_user, [], "Test user"})
+  end
 
-	setup do
-		:meck.unload
-		:meck.new(@module, [:non_strict])
-		:ejabberd_commands.init
-	end
+  test "Check that admin commands are rejected with noauth credentials" do
+    :ok = :ejabberd_commands.register_commands([admin_test_command])
+    {:error, :account_unprivileged} = :ejabberd_commands.execute_command(:undefined, :noauth, :test_admin, [])
+    # Command executed from ejabberdctl passes anyway with access commands trick
+    # TODO: We should refactor to have explicit call when bypassing auth check for command-line
+    :ok = :ejabberd_commands.execute_command([], :noauth, :test_admin, [])
+  end
 
-	test "API command can be registered, listed and unregistered" do
-		command = ejabberd_commands name: :test, module: @module,
-		          function: :test_command
+  # TODO Test that we can add command to list of expose commands
+  # This can be done with:
+  # ejabberd_config:add_local_option(commands, [[{add_commands, [open_cmd]}]]).
 
-		assert :ok == :ejabberd_commands.register_commands [command]
-		commands = :ejabberd_commands.list_commands
-		assert Enum.member? commands, {:test, [], ''}
+#  test "Check that a user can use a user command" do
+#    [Command] = ets:lookup(ejabberd_commands, test_user),
+#    AccessCommands = ejabberd_commands:get_access_commands(undefined),
+#    ejabberd_commands:check_access_commands(AccessCommands, {<<"test">>,<<"localhost">>, {oauth,<<"MyToken">>}, false}, test_user, Command, []).
+#  end
 
-		assert :ok == :ejabberd_commands.unregister_commands [command]
-		commands = :ejabberd_commands.list_commands
-		refute Enum.member? commands, {:test, [], ''}
-	end
+  defp user_test_command do
+    ejabberd_commands(name: :test_user, tags: [:roster],
+                      desc: "Test user",
+                      policy: :user,
+                      module: __MODULE__,
+                      function: :test_user,
+                      args: [],
+                      result: {:contacts, {:list, {:contact, {:tuple, [
+                                                                 {:jid, :string},
+                                                                 {:nick, :string}
+                                                               ]}}}})
+  end
 
+  defp admin_test_command do
+    ejabberd_commands(name: :test_admin, tags: [:roster],
+                      desc: "Test admin",
+                      policy: :restricted,
+                      module: __MODULE__,
+                      function: :test_admin,
+                      args: [],
+                      result: {:res, :rescode})
+  end
 
-	test "API command with versions can be registered, listed and unregistered" do
-		command1 = ejabberd_commands name: :test, module: @module,
-		function: :test_command, version: 1, desc: 'version1'
-		command3 = ejabberd_commands name: :test, module: @module,
-		function: :test_command, version: 3, desc: 'version3'
-		assert :ejabberd_commands.register_commands [command1, command3]
-
-		version1 = {:test, [], 'version1'}
-		version3 = {:test, [], 'version3'}
-
-		# default version is latest one
-		commands = :ejabberd_commands.list_commands
-		refute Enum.member? commands, version1
-		assert Enum.member? commands, version3
-
-		# no such command in APIv0
-		commands = :ejabberd_commands.list_commands 0
-		refute Enum.member? commands, version1
-		refute Enum.member? commands, version3
-
-		commands = :ejabberd_commands.list_commands 1
-		assert Enum.member? commands, version1
-		refute Enum.member? commands, version3
-
-		commands = :ejabberd_commands.list_commands 2
-		assert Enum.member? commands, version1
-		refute Enum.member? commands, version3
-
-		commands = :ejabberd_commands.list_commands 3
-		refute Enum.member? commands, version1
-		assert Enum.member? commands, version3
-
-		commands = :ejabberd_commands.list_commands 4
-		refute Enum.member? commands, version1
-		assert Enum.member? commands, version3
-
-		assert :ok == :ejabberd_commands.unregister_commands [command1]
-
-		commands = :ejabberd_commands.list_commands 1
-		refute Enum.member? commands, version1
-		refute Enum.member? commands, version3
-
-		commands = :ejabberd_commands.list_commands 3
-		refute Enum.member? commands, version1
-		assert Enum.member? commands, version3
-
-		assert :ok == :ejabberd_commands.unregister_commands [command3]
-
-		commands = :ejabberd_commands.list_commands 1
-		refute Enum.member? commands, version1
-		refute Enum.member? commands, version3
-
-		commands = :ejabberd_commands.list_commands 3
-		refute Enum.member? commands, version1
-		refute Enum.member? commands, version3
-	end
-
-
-	test "API command can be registered and executed" do
-		# Create & register a mocked command test() -> :result
-		command_name = :test
-		function = :test_command
-		command = ejabberd_commands(name: command_name,
-																module: @module,
-																function: function)
-		:meck.expect @module, function, fn -> :result end
-		assert :ok == :ejabberd_commands.register_commands [command]
-
-		assert :result == :ejabberd_commands.execute_command(command_name, [])
-
-		assert :meck.validate @module
-	end
-
-	test "API command with versions can be registered and executed" do
-		command_name = :test
-
-		function1 = :test_command1
-		command1 = ejabberd_commands(name: command_name,
-																 version: 1,
-																 module: @module,
-																 function: function1)
-		:meck.expect(@module, function1, fn -> :result1 end)
-
-		function3 = :test_command3
-		command3 = ejabberd_commands(name: command_name,
-																 version: 3,
-																 module: @module,
-																 function: function3)
-		:meck.expect(@module, function3, fn -> :result3 end)
-
-		assert :ok == :ejabberd_commands.register_commands [command1, command3]
-
-		# default version is latest one
-		assert :result3 == :ejabberd_commands.execute_command(command_name, [])
-		# no such command in APIv0
-		assert :unknown_command ==
-			catch_throw :ejabberd_commands.execute_command(command_name, [], 0)
-		assert :result1 == :ejabberd_commands.execute_command(command_name, [], 1)
-		assert :result1 == :ejabberd_commands.execute_command(command_name, [], 2)
-		assert :result3 == :ejabberd_commands.execute_command(command_name, [], 3)
-		assert :result3 == :ejabberd_commands.execute_command(command_name, [], 4)
-
-		assert :meck.validate @module
-	end
-
-
-
-	test "API command with user policy" do
-		mock_commands_config
-
-		# Register a command test(user, domain) -> {:versionN, user, domain}
-		# with policy=user and versions 1 & 3
-		command_name = :test
-		command1 = ejabberd_commands(name: command_name,
-																 module: @module,
-																 function: :test_command1,
-																 policy: :user, version: 1)
-		command3 = ejabberd_commands(name: command_name,
-																 module: @module,
-																 function: :test_command3,
-																 policy: :user, version: 3)
-		:meck.expect(@module, :test_command1,
-			fn(user, domain) when is_binary(user) and is_binary(domain) ->
-				{:version1, user, domain}
-			end)
-		:meck.expect(@module, :test_command3,
-			fn(user, domain) when is_binary(user) and is_binary(domain) ->
-				{:version3, user, domain}
-			end)
-		assert :ok == :ejabberd_commands.register_commands [command1, command3]
-
-		# A normal user must not pass user info as parameter
-		assert {:version1, @user, @domain} ==
-			:ejabberd_commands.execute_command(:undefined,
-																				 {@user, @domain,
-																					@userpass, false},
-																				 command_name,
-																				 [], 2)
-		assert {:version3, @user, @domain} ==
-			:ejabberd_commands.execute_command(:undefined,
-																				 {@user, @domain,
-																					@userpass, false},
-																				 command_name,
-																				 [], 3)
-		token = EjabberdOauthMock.get_token @user, @domain, command_name
-		assert {:version3, @user, @domain} ==
-			:ejabberd_commands.execute_command(:undefined,
-																				 {@user, @domain,
-																					{:oauth, token}, false},
-																				 command_name,
-																				 [], 4)
-		# Expired oauth token
-		token = EjabberdOauthMock.get_token @user, @domain, command_name, 1
-		:timer.sleep 1500
-		assert {:error, :invalid_account_data} ==
-			catch_throw :ejabberd_commands.execute_command(:undefined,
-																										 {@user, @domain,
-																											{:oauth, token}, false},
-																										 command_name,
-																										 [], 4)
-		# Wrong oauth scope
-		token = EjabberdOauthMock.get_token @user, @domain, :bad_command
-		assert {:error, :invalid_account_data} ==
-			catch_throw :ejabberd_commands.execute_command(:undefined,
-																										 {@user, @domain,
-																											{:oauth, token}, false},
-																										 command_name,
-																										 [], 4)
-
-
-		assert :function_clause ==
-			catch_error :ejabberd_commands.execute_command(:undefined,
-																										 {@user, @domain,
-																											@userpass, false},
-																										 command_name,
-																										 [@user, @domain], 2)
-		# @user is not admin
-		assert {:error, :account_unprivileged} ==
-			catch_throw :ejabberd_commands.execute_command(:undefined,
-																										 {@user, @domain,
-																											@userpass, true},
-																										 command_name,
-																										 [], 2)
-		assert {:error, :account_unprivileged} ==
-			catch_throw :ejabberd_commands.execute_command(:undefined,
-																										 {@user, @domain,
-																											@userpass, true},
-																										 command_name,
-																										 [@user, @domain], 2)
-		assert {:error, :account_unprivileged} ==
-			catch_throw :ejabberd_commands.execute_command(:undefined,
-																										 {@user, @domain,
-																											{:oauth, token}, true},
-																										 command_name,
-																										 [@user, @domain], 2)
-
-
-		# An admin must explicitely pass user info
-		assert {:version1, @user, @domain} ==
-			:ejabberd_commands.execute_command(:undefined, :admin,
-																				 command_name, [@user, @domain], 2)
-		assert {:version3, @user, @domain} ==
-			:ejabberd_commands.execute_command(:undefined, :admin,
-																				 command_name, [@user, @domain], 4)
-		assert {:version1, @user, @domain} ==
-			:ejabberd_commands.execute_command(:undefined,
-																				 {@admin, @domain, @adminpass, true},
-																				 command_name, [@user, @domain], 1)
-		token = EjabberdOauthMock.get_token @admin, @domain, command_name
-		assert {:version3, @user, @domain} ==
-			:ejabberd_commands.execute_command(:undefined,
-																				 {@admin, @domain, {:oauth, token}, true},
-																				 command_name, [@user, @domain], 3)
-		# Wrong @admin password
-		assert {:error, :account_unprivileged} ==
-			catch_throw :ejabberd_commands.execute_command(:undefined,
-																										 {@admin, @domain,
-																											@adminpass<>"bad", true},
-																										 command_name,
-																										 [@user, @domain], 3)
-		# @admin calling as a normal user
-		assert {:version3, @admin, @domain} ==
-			:ejabberd_commands.execute_command(:undefined,
-																				 {@admin, @domain,
-																					@adminpass, false},
-																				 command_name, [], 5)
-		assert {:version3, @admin, @domain} ==
-			:ejabberd_commands.execute_command(:undefined,
-																				 {@admin, @domain,
-																					{:oauth, token}, false},
-																				 command_name, [], 6)
-		assert :function_clause ==
-			catch_error :ejabberd_commands.execute_command(:undefined,
-																										 {@admin, @domain,
-																											@adminpass, false},
-																										 command_name,
-																										 [@user, @domain], 5)
-		assert :meck.validate @module
-	end
-
-
-
-	test "API command with admin policy" do
-		mock_commands_config
-		
-		# Register a command test(user, domain) -> {user, domain}
-		# with policy=admin
-		command_name = :test
-		function = :test_command
-		command = ejabberd_commands(name: command_name,
-																args: [{:user, :binary}, {:host, :binary}],
-																module: @module,
-																function: function,
-																policy: :admin)
-		:meck.expect(@module, function,
-			fn(user, domain) when is_binary(user) and is_binary(domain) ->
-				{user, domain}
-			end)
-		assert :ok == :ejabberd_commands.register_commands [command]
-
-		# A normal user cannot call the command
-		assert {:error, :account_unprivileged} ==
-			catch_throw :ejabberd_commands.execute_command(:undefined,
-																										 {@user, @domain,
-																											@userpass, false},
-																										 command_name,
-																										 [@user, @domain])
-
-		# An admin can call the command
-		assert {@user, @domain} ==
-			:ejabberd_commands.execute_command(:undefined,
-																				 {@admin, @domain,
-																					@adminpass, true},
-																				 command_name,
-																				 [@user, @domain])
-
-		# An admin can call the command with oauth token
-		token = EjabberdOauthMock.get_token @admin, @domain, command_name
-		assert {@user, @domain} ==
-			:ejabberd_commands.execute_command(:undefined,
-																				 {@admin, @domain,
-																					{:oauth, token}, true},
-																				 command_name,
-																				 [@user, @domain])
-
-		
-		# An admin with bad password cannot call the command
-		assert {:error, :account_unprivileged} ==
-			catch_throw :ejabberd_commands.execute_command(:undefined,
-																										 {@admin, @domain,
-																											"bad"<>@adminpass, false},
-																										 command_name,
-																										 [@user, @domain])
-
-		# An admin cannot call the command with bad oauth token
-		assert {:error, :account_unprivileged} ==
-			catch_throw :ejabberd_commands.execute_command(:undefined,
-																				 {@admin, @domain,
-																					{:oauth, "bad"<>token}, true},
-																				 command_name,
-																				 [@user, @domain])
-
-		# An admin as a normal user cannot call the command
-		assert {:error, :account_unprivileged} ==
-			catch_throw :ejabberd_commands.execute_command(:undefined,
-																				 {@admin, @domain,
-																					@adminpass, false},
-																				 command_name,
-																				 [@user, @domain])
-
-		# An admin as a normal user cannot call the command with oauth token
-		assert {:error, :account_unprivileged} ==
-			catch_throw :ejabberd_commands.execute_command(:undefined,
-																				 {@admin, @domain,
-																					{:oauth, token}, false},
-																				 command_name,
-																				 [@user, @domain])
-
-		assert :meck.validate @module
-	end
-
-
-	##########################################################
-	# Utils
-
-	# Mock a config where only @admin user is allowed to call commands
-	# as admin
-	def mock_commands_config do
-		EjabberdAuthMock.init
-		EjabberdAuthMock.create_user @user, @domain, @userpass
-		EjabberdAuthMock.create_user @admin, @domain, @adminpass
-
-		:meck.new :ejabberd_config
-		:meck.expect(:ejabberd_config, :get_option,
-			fn(:commands_admin_access, _, _) -> :commands_admin_access
-			  (:oauth_access, _, _) -> :all
-				(_, _, default) -> default
-			end)
-		:meck.expect(:ejabberd_config, :get_myhosts,
-			fn() -> [@domain]	end)
-		:meck.new :acl
-		:meck.expect(:acl, :match_rule,
-			fn(@domain, :commands_admin_access, user) ->
-				case :jlib.make_jid(@admin, @domain, "") do
-					^user -> :allow
-					_ -> :deny
-				end
-				(@domain, :all, _user) ->
-					:allow
-			end)
-	end
-
+  def test_admin, do: :ok
 end
