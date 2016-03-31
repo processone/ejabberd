@@ -206,7 +206,8 @@ process_local_iq(_From, _To,
 		 #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
       set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       get ->
 	  IQ#iq{type = result,
 		sub_el =
@@ -240,10 +241,11 @@ process_sm_iq(_From, #jid{lserver = LServer} = To,
 
 process_vcard_ldap(To, IQ, Server) ->
     {ok, State} = eldap_utils:get_state(Server, ?PROCNAME),
-    #iq{type = Type, sub_el = SubEl} = IQ,
+    #iq{type = Type, sub_el = SubEl, lang = Lang} = IQ,
     case Type of
       set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       get ->
 	  #jid{luser = LUser} = To,
 	  LServer = State#state.serverhost,
@@ -455,15 +457,17 @@ route(State, From, To, Packet) ->
 		       XDataEl = find_xdata_el(SubEl),
 		       case XDataEl of
 			 false ->
-			     Err = jlib:make_error_reply(Packet,
-							 ?ERR_BAD_REQUEST),
+			     Txt = <<"Data form not found">>,
+			     Err = jlib:make_error_reply(
+				     Packet, ?ERRT_BAD_REQUEST(Lang, Txt)),
 			     ejabberd_router:route(To, From, Err);
 			 _ ->
 			     XData = jlib:parse_xdata_submit(XDataEl),
 			     case XData of
 			       invalid ->
-				   Err = jlib:make_error_reply(Packet,
-							       ?ERR_BAD_REQUEST),
+				   Txt = <<"Incorrect data form">>,
+				   Err = jlib:make_error_reply(
+					   Packet, ?ERRT_BAD_REQUEST(Lang, Txt)),
 				   ejabberd_router:route(To, From, Err);
 			       _ ->
 				   ResIQ = IQ#iq{type = result,
@@ -505,7 +509,8 @@ route(State, From, To, Packet) ->
 	     #iq{type = Type, xmlns = ?NS_DISCO_INFO, lang = Lang} ->
 		 case Type of
 		   set ->
-		       Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+		       Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+		       Err = jlib:make_error_reply(Packet, ?ERRT_NOT_ALLOWED(Lang, Txt)),
 		       ejabberd_router:route(To, From, Err);
 		   get ->
 		       Info = ejabberd_hooks:run_fold(disco_info, ServerHost,
@@ -545,10 +550,11 @@ route(State, From, To, Packet) ->
 						       ++ Info}]},
 		       ejabberd_router:route(To, From, jlib:iq_to_xml(ResIQ))
 		 end;
-	     #iq{type = Type, xmlns = ?NS_DISCO_ITEMS} ->
+	     #iq{type = Type, lang = Lang, xmlns = ?NS_DISCO_ITEMS} ->
 		 case Type of
 		   set ->
-		       Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+		       Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+		       Err = jlib:make_error_reply(Packet, ?ERRT_NOT_ALLOWED(Lang, Txt)),
 		       ejabberd_router:route(To, From, Err);
 		   get ->
 		       ResIQ = IQ#iq{type = result,

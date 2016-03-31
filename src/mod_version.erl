@@ -52,11 +52,12 @@ stop(Host) ->
 
 process_local_iq(_From, To,
 		 #iq{id = _ID, type = Type, xmlns = _XMLNS,
-		     sub_el = SubEl} =
+		     sub_el = SubEl, lang = Lang} =
 		     IQ) ->
     case Type of
       set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       get ->
 	  Host = To#jid.lserver,
 	  OS = case gen_mod:get_module_opt(Host, ?MODULE, show_os,

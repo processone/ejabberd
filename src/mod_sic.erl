@@ -60,8 +60,9 @@ process_local_iq(#jid{user = User, server = Server,
 		 _To, #iq{type = get, sub_el = _SubEl} = IQ) ->
     get_ip({User, Server, Resource}, IQ);
 process_local_iq(_From, _To,
-		 #iq{type = set, sub_el = SubEl} = IQ) ->
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
+		 #iq{type = set, sub_el = SubEl, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]}.
 
 process_sm_iq(#jid{user = User, server = Server,
 		   resource = Resource},
@@ -69,14 +70,17 @@ process_sm_iq(#jid{user = User, server = Server,
 	      #iq{type = get, sub_el = _SubEl} = IQ) ->
     get_ip({User, Server, Resource}, IQ);
 process_sm_iq(_From, _To,
-	      #iq{type = get, sub_el = SubEl} = IQ) ->
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]};
+	      #iq{type = get, sub_el = SubEl, lang = Lang} = IQ) ->
+    Txt = <<"Query to another users is forbidden">>,
+    IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]};
 process_sm_iq(_From, _To,
-	      #iq{type = set, sub_el = SubEl} = IQ) ->
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
+	      #iq{type = set, sub_el = SubEl, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]}.
 
 get_ip({User, Server, Resource},
-       #iq{sub_el =
+       #iq{lang = Lang,
+	   sub_el =
 	       #xmlel{name = Name, attrs = Attrs} = SubEl} =
 	   IQ) ->
     case ejabberd_sm:get_user_ip(User, Server, Resource) of
@@ -88,8 +92,9 @@ get_ip({User, Server, Resource},
 				[{xmlcdata,
 				  iolist_to_binary(jlib:ip_to_list(IP))}]}]};
       _ ->
+	  Txt = <<"User session not found">>,
 	  IQ#iq{type = error,
-		sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+		sub_el = [SubEl, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt)]}
     end.
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;

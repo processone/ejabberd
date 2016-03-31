@@ -68,7 +68,9 @@ parse_request(#iq{type = set, lang = Lang, sub_el = SubEl, xmlns = ?NS_COMMANDS}
         xdata     = XData,
         others    = Others
     };
-parse_request(_) -> {error, ?ERR_BAD_REQUEST}.
+parse_request(#iq{lang = Lang}) ->
+    Text = <<"Failed to parse ad-hoc command request">>,
+    {error, ?ERRT_BAD_REQUEST(Lang, Text)}.
 
 %% Borrowed from mod_vcard.erl
 find_xdata_el(#xmlel{children = SubEls}) ->

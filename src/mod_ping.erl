@@ -204,13 +204,14 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %% Hook callbacks
 %%====================================================================
 iq_ping(_From, _To,
-	#iq{type = Type, sub_el = SubEl} = IQ) ->
+	#iq{type = Type, sub_el = SubEl, lang = Lang} = IQ) ->
     case {Type, SubEl} of
       {get, #xmlel{name = <<"ping">>}} ->
 	  IQ#iq{type = result, sub_el = []};
       _ ->
+	  Txt = <<"Ping query is incorrect">>,
 	  IQ#iq{type = error,
-		sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]}
+		sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]}
     end.
 
 user_online(_SID, JID, _Info) ->

@@ -73,52 +73,58 @@ stop(Host) ->
 				     ?NS_PRIVATE).
 
 process_sm_iq(#jid{luser = LUser, lserver = LServer},
-	      #jid{luser = LUser, lserver = LServer}, IQ)
+	      #jid{luser = LUser, lserver = LServer}, #iq{lang = Lang} = IQ)
     when IQ#iq.type == set ->
     case IQ#iq.sub_el of
       #xmlel{name = <<"query">>, children = Xmlels} ->
 	  case filter_xmlels(Xmlels) of
 	    [] ->
+		Txt = <<"No private data found in this query">>,
 		IQ#iq{type = error,
-		      sub_el = [IQ#iq.sub_el, ?ERR_NOT_ACCEPTABLE]};
+		      sub_el = [IQ#iq.sub_el, ?ERRT_NOT_ACCEPTABLE(Lang, Txt)]};
 	    Data ->
 		set_data(LUser, LServer, Data),
 		IQ#iq{type = result, sub_el = []}
 	  end;
       _ ->
+	  Txt = <<"No query found">>,
 	  IQ#iq{type = error,
-		sub_el = [IQ#iq.sub_el, ?ERR_NOT_ACCEPTABLE]}
+		sub_el = [IQ#iq.sub_el, ?ERRT_NOT_ACCEPTABLE(Lang, Txt)]}
     end;
 %%
 process_sm_iq(#jid{luser = LUser, lserver = LServer},
-	      #jid{luser = LUser, lserver = LServer}, IQ)
+	      #jid{luser = LUser, lserver = LServer}, #iq{lang = Lang} = IQ)
     when IQ#iq.type == get ->
     case IQ#iq.sub_el of
       #xmlel{name = <<"query">>, attrs = Attrs,
 	     children = Xmlels} ->
 	  case filter_xmlels(Xmlels) of
 	    [] ->
+		Txt = <<"No private data found in this query">>,
 		IQ#iq{type = error,
-		      sub_el = [IQ#iq.sub_el, ?ERR_BAD_FORMAT]};
+		      sub_el = [IQ#iq.sub_el, ?ERRT_BAD_FORMAT(Lang, Txt)]};
 	    Data ->
 		case catch get_data(LUser, LServer, Data) of
 		  {'EXIT', _Reason} ->
+		      Txt = <<"Database failure">>,
 		      IQ#iq{type = error,
 			    sub_el =
-				[IQ#iq.sub_el, ?ERR_INTERNAL_SERVER_ERROR]};
+				[IQ#iq.sub_el, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt)]};
 		  Storage_Xmlels ->
 		      IQ#iq{type = result,
 			    sub_el = [?Xmlel_Query(Attrs, Storage_Xmlels)]}
 		end
 	  end;
       _ ->
+	  Txt = <<"No query found">>,
 	  IQ#iq{type = error,
-		sub_el = [IQ#iq.sub_el, ?ERR_BAD_FORMAT]}
+		sub_el = [IQ#iq.sub_el, ?ERRT_BAD_FORMAT(Lang, Txt)]}
     end;
 %%
-process_sm_iq(_From, _To, IQ) ->
+process_sm_iq(_From, _To, #iq{lang = Lang} = IQ) ->
+    Txt = <<"Query to another users is forbidden">>,
     IQ#iq{type = error,
-	  sub_el = [IQ#iq.sub_el, ?ERR_FORBIDDEN]}.
+	  sub_el = [IQ#iq.sub_el, ?ERRT_FORBIDDEN(Lang, Txt)]}.
 
 filter_xmlels(Xmlels) -> filter_xmlels(Xmlels, []).
 

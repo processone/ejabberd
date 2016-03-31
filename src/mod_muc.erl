@@ -1056,7 +1056,9 @@ iq_set_register_info(ServerHost, Host, From, Nick,
 	  ErrText = <<"That nickname is registered by another "
 		      "person">>,
 	  {error, ?ERRT_CONFLICT(Lang, ErrText)};
-      _ -> {error, ?ERR_INTERNAL_SERVER_ERROR}
+      _ ->
+	  Txt = <<"Database failure">>,
+	  {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt)}
     end.
 
 process_iq_register_set(ServerHost, Host, From, SubEl,
@@ -1073,7 +1075,9 @@ process_iq_register_set(ServerHost, Host, From, SubEl,
 		  {?NS_XDATA, <<"submit">>} ->
 		      XData = jlib:parse_xdata_submit(XEl),
 		      case XData of
-			invalid -> {error, ?ERR_BAD_REQUEST};
+			invalid ->
+			      Txt = <<"Incorrect data form">>,
+			      {error, ?ERRT_BAD_REQUEST(Lang, Txt)};
 			_ ->
 			    case lists:keysearch(<<"nick">>, 1, XData) of
 			      {value, {_, [Nick]}} when Nick /= <<"">> ->

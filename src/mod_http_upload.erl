@@ -569,7 +569,8 @@ process_iq(From,
 	deny ->
 	    ?DEBUG("Denying HTTP upload slot request from ~s",
 		   [jid:to_string(From)]),
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
+	    Txt = <<"Denied by ACL">>,
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]}
     end;
 process_iq(_From, #iq{sub_el = SubEl} = IQ, _State) ->
     IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
@@ -601,7 +602,8 @@ parse_request(#xmlel{name = <<"request">>, attrs = Attrs} = Request, Lang) ->
 		    {error, ?ERRT_BAD_REQUEST(Lang, Text)}
 	    end;
 	_ ->
-	    {error, ?ERR_BAD_REQUEST}
+	    Text = <<"No or invalid XML namespace">>,
+	    {error, ?ERRT_BAD_REQUEST(Lang, Text)}
     end;
 parse_request(_El, _Lang) -> {error, ?ERR_BAD_REQUEST}.
 
@@ -639,7 +641,7 @@ create_slot(#state{service_url = undefined,
     end;
 create_slot(#state{service_url = ServiceURL},
 	    #jid{luser = U, lserver = S} = JID, File, Size, ContentType,
-	    _Lang) ->
+	    Lang) ->
     Options = [{body_format, binary}, {full_result, false}],
     HttpOptions = [{timeout, ?SERVICE_REQUEST_TIMEOUT}],
     SizeStr = jlib:integer_to_binary(Size),
@@ -659,7 +661,8 @@ create_slot(#state{service_url = ServiceURL},
 		Lines ->
 		    ?ERROR_MSG("Can't parse data received for ~s from <~s>: ~p",
 			       [jid:to_string(JID), ServiceURL, Lines]),
-		    {error, ?ERR_SERVICE_UNAVAILABLE}
+		    Txt = <<"Failed to parse HTTP response">>,
+		    {error, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)}
 	    end;
 	{ok, {402, _Body}} ->
 	    ?INFO_MSG("Got status code 402 for ~s from <~s>",

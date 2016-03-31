@@ -51,10 +51,11 @@ stop(Host) ->
 				     ?NS_TIME).
 
 process_local_iq(_From, _To,
-		 #iq{type = Type, sub_el = SubEl} = IQ) ->
+		 #iq{type = Type, sub_el = SubEl, lang = Lang} = IQ) ->
     case Type of
       set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       get ->
 	  Now_universal = calendar:universal_time(),
 	  Now_local = calendar:universal_time_to_local_time(Now_universal),

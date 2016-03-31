@@ -200,31 +200,40 @@ var_xfield(?PUBSUB_SUBSCRIPTION_TYPE) -> subscription_type;
 var_xfield(?PUBSUB_SUBSCRIPTION_DEPTH) -> subscription_depth;
 var_xfield(_) -> {error, badarg}.
 
-val_xfield(deliver, [Val]) -> xopt_to_bool(Val);
-val_xfield(digest, [Val]) -> xopt_to_bool(Val);
-val_xfield(digest_frequency, [Val]) ->
+val_xfield(deliver = Opt, [Val]) -> xopt_to_bool(Opt, Val);
+val_xfield(digest = Opt, [Val]) -> xopt_to_bool(Opt, Val);
+val_xfield(digest_frequency = Opt, [Val]) ->
     case catch jlib:binary_to_integer(Val) of
 	N when is_integer(N) -> N;
-	_ -> {error, ?ERR_NOT_ACCEPTABLE}
+	_ ->
+	    Txt = <<"Value of '~s' should be integer">>,
+	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
+	    {error, ?ERRT_NOT_ACCEPTABLE(?MYLANG, ErrTxt)}
     end;
 val_xfield(expire, [Val]) -> jlib:datetime_string_to_timestamp(Val);
-val_xfield(include_body, [Val]) -> xopt_to_bool(Val);
+val_xfield(include_body = Opt, [Val]) -> xopt_to_bool(Opt, Val);
 val_xfield(show_values, Vals) -> Vals;
 val_xfield(subscription_type, [<<"items">>]) -> items;
 val_xfield(subscription_type, [<<"nodes">>]) -> nodes;
 val_xfield(subscription_depth, [<<"all">>]) -> all;
-val_xfield(subscription_depth, [Depth]) ->
+val_xfield(subscription_depth = Opt, [Depth]) ->
     case catch jlib:binary_to_integer(Depth) of
 	N when is_integer(N) -> N;
-	_ -> {error, ?ERR_NOT_ACCEPTABLE}
+	_ ->
+	    Txt = <<"Value of '~s' should be integer">>,
+	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
+	    {error, ?ERRT_NOT_ACCEPTABLE(?MYLANG, ErrTxt)}
     end.
 
 %% Convert XForm booleans to Erlang booleans.
-xopt_to_bool(<<"0">>) -> false;
-xopt_to_bool(<<"1">>) -> true;
-xopt_to_bool(<<"false">>) -> false;
-xopt_to_bool(<<"true">>) -> true;
-xopt_to_bool(_) -> {error, ?ERR_NOT_ACCEPTABLE}.
+xopt_to_bool(_, <<"0">>) -> false;
+xopt_to_bool(_, <<"1">>) -> true;
+xopt_to_bool(_, <<"false">>) -> false;
+xopt_to_bool(_, <<"true">>) -> true;
+xopt_to_bool(Option, _) ->
+    Txt = <<"Value of '~s' should be boolean">>,
+    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Option])),
+    {error, ?ERRT_NOT_ACCEPTABLE(?MYLANG, ErrTxt)}.
 
 %% Return a field for an XForm for Key, with data filled in, if
 %% applicable, from Options.

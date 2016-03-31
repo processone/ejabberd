@@ -86,10 +86,11 @@ stop(Host) ->
 %%%
 
 process_local_iq(_From, _To,
-		 #iq{type = Type, sub_el = SubEl} = IQ) ->
+		 #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
       set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       get ->
 	  Sec = get_node_uptime(),
 	  IQ#iq{type = result,
@@ -123,10 +124,11 @@ now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
 %%%
 
 process_sm_iq(From, To,
-	      #iq{type = Type, sub_el = SubEl} = IQ) ->
+	      #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
       set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       get ->
 	  User = To#jid.luser,
 	  Server = To#jid.lserver,
@@ -150,10 +152,12 @@ process_sm_iq(From, To,
 		     of
 		   allow -> get_last_iq(IQ, SubEl, User, Server);
 		   deny ->
-		       IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
+		       Txt = <<"Denied by privacy lists">>,
+		       IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]}
 		 end;
 	     true ->
-		 IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
+		 Txt = <<"Not subscribed">>,
+		 IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]}
 	  end
     end.
 
@@ -193,16 +197,18 @@ get_last(LUser, LServer, odbc) ->
         Reason -> {error, {invalid_result, Reason}}
     end.
 
-get_last_iq(IQ, SubEl, LUser, LServer) ->
+get_last_iq(#iq{lang = Lang} = IQ, SubEl, LUser, LServer) ->
     case ejabberd_sm:get_user_resources(LUser, LServer) of
       [] ->
 	  case get_last(LUser, LServer) of
 	    {error, _Reason} ->
+		Txt = <<"Database failure">>,
 		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]};
+		      sub_el = [SubEl, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt)]};
 	    not_found ->
+		Txt = <<"No info about last activity found">>,
 		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
+		      sub_el = [SubEl, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)]};
 	    {ok, TimeStamp, Status} ->
 		TimeStamp2 = p1_time_compat:system_time(seconds),
 		Sec = TimeStamp2 - TimeStamp,

@@ -118,7 +118,10 @@ handle_cast(_Msg, State) -> {noreply, State}.
 handle_info({route, From, To, Packet}, State) ->
     Packet2 = case From#jid.user of
 		<<"">> ->
-		    jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST);
+		    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+		    Txt = <<"User part of JID in 'from' is empty">>,
+		    jlib:make_error_reply(
+		      Packet, ?ERRT_BAD_REQUEST(Lang, Txt));
 		_ -> Packet
 	      end,
     do_client_version(disabled, To, From),

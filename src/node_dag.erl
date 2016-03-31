@@ -77,8 +77,9 @@ publish_item(Nidx, Publisher, Model, MaxItems, ItemId, Payload) ->
 	#pubsub_node{options = Options} ->
 	    case find_opt(node_type, Options) of
 		collection ->
+		    Txt = <<"Publishing items to collection node is not allowed">>,
 		    {error,
-			?ERR_EXTENDED((?ERR_NOT_ALLOWED), <<"publish">>)};
+		     ?ERR_EXTENDED(?ERRT_NOT_ALLOWED(?MYLANG, Txt), <<"publish">>)};
 		_ ->
 		    node_hometree:publish_item(Nidx, Publisher, Model,
 			MaxItems, ItemId, Payload)
