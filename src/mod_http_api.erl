@@ -309,6 +309,8 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 		    {401, jlib:atom_to_binary(Why)};
 		  throw:{not_allowed, Msg} ->
 		    {401, iolist_to_binary(Msg)};
+                  throw:{error, account_unprivileged} ->
+                    {401, iolist_to_binary(<<"Unauthorized: Account Unpriviledged">>)};
 		  throw:{invalid_parameter, Msg} ->
 		    {400, iolist_to_binary(Msg)};
 		  throw:{error, Why} when is_atom(Why) ->

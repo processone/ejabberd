@@ -30,7 +30,7 @@ all() ->
     case is_elixir_available() of
 	true ->
 	    Dir = test_dir(),
-	    filelib:fold_files(Dir, ".*\.exs", false,
+	    filelib:fold_files(Dir, ".*\.exs$", false,
 			       fun(Filename, Acc) -> [list_to_atom(filename:basename(Filename)) | Acc] end,
 			       []);
 	false ->
@@ -69,11 +69,6 @@ run_elixir_test(Func) ->
     %% Elixir tests can be tagged as follow to be ignored (place before test start)
     %% @tag pending: true
     'Elixir.ExUnit':start([{exclude, [{pending, true}]}]),
-    filelib:fold_files(test_dir(), ".*\\.exs\$", true,
-		       fun (File, N) ->
-			       'Elixir.Code':require_file(list_to_binary(File)),
-			       N+1
-		       end, 0),
     'Elixir.Code':load_file(list_to_binary(filename:join(test_dir(), atom_to_list(Func)))),
     %% I did not use map syntax, so that this file can still be build under R16
     ResultMap = 'Elixir.ExUnit':run(),
