@@ -336,6 +336,9 @@ test:
 quicktest:
 	$(REBAR) skip_deps=true ct suites=elixir
 
+eunit:
+	$(REBAR) skip_deps=true exunit
+
 .PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean rel \
 	install uninstall uninstall-binary uninstall-all translations deps test spec \
 	quicktest erlang_plt deps_plt ejabberd_plt

@@ -29,6 +29,11 @@
 %%    request_handlers:
 %%      "/api": mod_http_api
 %%
+%% To use a specific API version N, add a vN element in the URL path:
+%%  in ejabberd_http listener
+%%    request_handlers:
+%%      "/api/v2": mod_http_api
+%%
 %% Access rights are defined with:
 %% commands_admin_access: configure
 %% commands:
@@ -75,6 +80,8 @@
 -include("jlib.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
+
+-define(DEFAULT_API_VERSION, 0).
 
 -define(CT_PLAIN,
         {<<"Content-Type">>, <<"text/plain">>}).
@@ -179,7 +186,8 @@ check_permissions2(#request{ip={IP, _Port}}, Call) ->
                 true -> {allowed, Call, admin};
                 _ -> unauthorized_response()
             end;
-        _ ->
+        _E ->
+	    ?DEBUG("Unauthorized: ~p", [_E]),
             unauthorized_response()
     end.
 
@@ -192,10 +200,13 @@ oauth_check_token(Scope, Token) ->
 %% command processing
 %% ------------------
 
+%process(Call, Request) ->
+%    ?DEBUG("~p~n~p", [Call, Request]), ok;
 process(_, #request{method = 'POST', data = <<>>}) ->
     ?DEBUG("Bad Request: no data", []),
-    badrequest_response();
+    badrequest_response(<<"Missing POST data">>);
 process([Call], #request{method = 'POST', data = Data, ip = IP} = Req) ->
+    Version = get_api_version(Req),
     try
         Args = case jiffy:decode(Data) of
             List when is_list(List) -> List;
@@ -205,16 +216,20 @@ process([Call], #request{method = 'POST', data = Data, ip = IP} = Req) ->
         log(Call, Args, IP),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                {Code, Result} = handle(Cmd, Auth, Args),
+                {Code, Result} = handle(Cmd, Auth, Args, Version),
                 json_response(Code, jiffy:encode(Result));
             ErrorResponse -> %% Should we reply 403 ?
                 ErrorResponse
         end
-    catch _:Error ->
-        ?DEBUG("Bad Request: ~p", [Error]),
+    catch _:{error,{_,invalid_json}} = _Err ->
+	    ?DEBUG("Bad Request: ~p", [_Err]),
+	    badrequest_response(<<"Invalid JSON input">>);
+	  _:_Error ->
+        ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
         badrequest_response()
     end;
 process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
+    Version = get_api_version(Req),
     try
         Args = case Data of
             [{nokey, <<>>}] -> [];
@@ -223,13 +238,13 @@ process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
         log(Call, Args, IP),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                {Code, Result} = handle(Cmd, Auth, Args),
+                {Code, Result} = handle(Cmd, Auth, Args, Version),
                 json_response(Code, jiffy:encode(Result));
             ErrorResponse ->
                 ErrorResponse
         end
-    catch _:Error ->
-        ?DEBUG("Bad Request: ~p", [Error]),
+    catch _:_Error ->
+        ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
         badrequest_response()
     end;
 process([], #request{method = 'OPTIONS', data = <<>>}) ->
@@ -238,13 +253,28 @@ process(_Path, Request) ->
     ?DEBUG("Bad Request: no handler ~p", [Request]),
     badrequest_response().
 
+% get API version N from last "vN" element in URL path
+get_api_version(#request{path = Path}) ->
+    get_api_version(lists:reverse(Path));
+get_api_version([<<"v", String/binary>> | Tail]) ->
+    case catch jlib:binary_to_integer(String) of
+	N when is_integer(N) ->
+	    N;
+	_ ->
+	    get_api_version(Tail)
+    end;
+get_api_version([_Head | Tail]) ->
+    get_api_version(Tail);
+get_api_version([]) ->
+    ?DEFAULT_API_VERSION.
+
 %% ----------------
 %% command handlers
 %% ----------------
 
 % generic ejabberd command handler
-handle(Call, Auth, Args) when is_atom(Call), is_list(Args) ->
-    case ejabberd_commands:get_command_format(Call, Auth) of
+handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
+    case ejabberd_commands:get_command_format(Call, Auth, Version) of
         {ArgsSpec, _} when is_list(ArgsSpec) ->
             Args2 = [{jlib:binary_to_atom(Key), Value} || {Key, Value} <- Args],
             Spec = lists:foldr(
@@ -259,22 +289,51 @@ handle(Call, Auth, Args) when is_atom(Call), is_list(Args) ->
                         ({Key, atom}, Acc) ->
                             [{Key, undefined}|Acc]
                     end, [], ArgsSpec),
-            handle2(Call, Auth, match(Args2, Spec));
+	    try
+		handle2(Call, Auth, match(Args2, Spec), Version)
+	    catch throw:not_found ->
+		    {404, <<"not_found">>};
+		  throw:{not_found, Why} when is_atom(Why) ->
+		    {404, jlib:atom_to_binary(Why)};
+		  throw:{not_found, Msg} ->
+		    {404, iolist_to_binary(Msg)};
+		  throw:not_allowed ->
+		    {401, <<"not_allowed">>};
+		  throw:{not_allowed, Why} when is_atom(Why) ->
+		    {401, jlib:atom_to_binary(Why)};
+		  throw:{not_allowed, Msg} ->
+		    {401, iolist_to_binary(Msg)};
+		  throw:{invalid_parameter, Msg} ->
+		    {400, iolist_to_binary(Msg)};
+		  throw:{error, Why} when is_atom(Why) ->
+		    {400, jlib:atom_to_binary(Why)};
+		  throw:{error, Msg} ->
+		    {400, iolist_to_binary(Msg)};
+		  throw:Error when is_atom(Error) ->
+		    {400, jlib:atom_to_binary(Error)};
+		  throw:Msg when is_list(Msg); is_binary(Msg) ->
+		    {400, iolist_to_binary(Msg)};
+		  _Error ->
+		    ?ERROR_MSG("REST API Error: ~p ~p", [_Error, erlang:get_stacktrace()]),
+		    {500, <<"internal_error">>}
+	    end;
         {error, Msg} ->
+	    ?ERROR_MSG("REST API Error: ~p", [Msg]),
             {400, Msg};
         _Error ->
+	    ?ERROR_MSG("REST API Error: ~p", [_Error]),
             {400, <<"Error">>}
     end.
 
-handle2(Call, Auth, Args) when is_atom(Call), is_list(Args) ->
-    {ArgsF, _ResultF} = ejabberd_commands:get_command_format(Call, Auth),
+handle2(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
+    {ArgsF, _ResultF} = ejabberd_commands:get_command_format(Call, Auth, Version),
     ArgsFormatted = format_args(Args, ArgsF),
-    case ejabberd_command(Auth, Call, ArgsFormatted, 400) of
-        0 -> {200, <<"OK">>};
-        1 -> {500, <<"500 Internal server error">>};
-        400 -> {400, <<"400 Bad Request">>};
-        404 -> {404, <<"404 Not found">>};
-        Res -> format_command_result(Call, Auth, Res)
+    case ejabberd_commands:execute_command(undefined, Auth, 
+					   Call, ArgsFormatted, Version) of
+	{error, Error} ->
+	    throw(Error);
+	Res ->
+	    format_command_result(Call, Auth, Res, Version)
     end.
 
 get_elem_delete(A, L) ->
@@ -339,7 +398,9 @@ format_arg(undefined, binary) -> <<>>;
 format_arg(undefined, string) -> <<>>;
 format_arg(Arg, Format) ->
     ?ERROR_MSG("don't know how to format Arg ~p for format ~p", [Arg, Format]),
-    error.
+    throw({invalid_parameter,
+	   io_lib:format("Arg ~p is not in format ~p",
+			 [Arg, Format])}).
 
 process_unicode_codepoints(Str) ->
     iolist_to_binary(lists:map(fun(X) when X > 255 -> unicode:characters_to_binary([X]);
@@ -353,36 +414,26 @@ process_unicode_codepoints(Str) ->
 match(Args, Spec) ->
     [{Key, proplists:get_value(Key, Args, Default)} || {Key, Default} <- Spec].
 
-ejabberd_command(Auth, Cmd, Args, Default) ->
-    Access = case Auth of
-                 admin -> [];
-                 _ -> undefined
-             end,
-    case catch ejabberd_commands:execute_command(Access, Auth, Cmd, Args) of
-        {'EXIT', _} -> Default;
-        {error, _} -> Default;
-        Result -> Result
-    end.
 
-format_command_result(Cmd, Auth, Result) ->
-    {_, ResultFormat} = ejabberd_commands:get_command_format(Cmd, Auth),
+format_command_result(Cmd, Auth, Result, Version) ->
+    {_, ResultFormat} = ejabberd_commands:get_command_format(Cmd, Auth, Version),
     case {ResultFormat, Result} of
-        {{_, rescode}, V} when V == true; V == ok ->
-            {200, <<"">>};
-        {{_, rescode}, _} ->
-            {500, <<"">>};
-        {{_, restuple}, {V1, Text1}} when V1 == true; V1 == ok ->
-            {200, iolist_to_binary(Text1)};
-        {{_, restuple}, {_, Text2}} ->
-            {500, iolist_to_binary(Text2)};
-        {{_, {list, _}}, _V} ->
-            {_, L} = format_result(Result, ResultFormat),
-            {200, L};
-        {{_, {tuple, _}}, _V} ->
-            {_, T} = format_result(Result, ResultFormat),
-            {200, T};
-        _ ->
-            {200, {[format_result(Result, ResultFormat)]}}
+	{{_, rescode}, V} when V == true; V == ok ->
+	    {200, 0};
+	{{_, rescode}, _} ->
+	    {200, 1};
+	{{_, restuple}, {V1, Text1}} when V1 == true; V1 == ok ->
+	    {200, iolist_to_binary(Text1)};
+	{{_, restuple}, {_, Text2}} ->
+	    {500, iolist_to_binary(Text2)};
+	{{_, {list, _}}, _V} ->
+	    {_, L} = format_result(Result, ResultFormat),
+	    {200, L};
+	{{_, {tuple, _}}, _V} ->
+	    {_, T} = format_result(Result, ResultFormat),
+	    {200, T};
+	_ ->
+	    {200, {[format_result(Result, ResultFormat)]}}
     end.
 
 format_result(Atom, {Name, atom}) ->
@@ -421,14 +472,15 @@ format_result(404, {_Name, _}) ->
     "not_found".
 
 unauthorized_response() ->
-    {401, ?HEADER(?CT_XML),
-     #xmlel{name = <<"h1">>, attrs = [],
-            children = [{xmlcdata, <<"401 Unauthorized">>}]}}.
+    unauthorized_response(<<"401 Unauthorized">>).
+unauthorized_response(Body) ->
+    json_response(401, jiffy:encode(Body)).
 
 badrequest_response() ->
-    {400, ?HEADER(?CT_XML),
-     #xmlel{name = <<"h1">>, attrs = [],
-            children = [{xmlcdata, <<"400 Bad Request">>}]}}.
+    badrequest_response(<<"400 Bad Request">>).
+badrequest_response(Body) ->
+    json_response(400, jiffy:encode(Body)).
+
 json_response(Code, Body) when is_integer(Code) ->
     {Code, ?HEADER(?CT_JSON), Body}.
 
