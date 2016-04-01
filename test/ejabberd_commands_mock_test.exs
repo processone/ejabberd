@@ -18,7 +18,7 @@
 #
 # ----------------------------------------------------------------------
 
-defmodule EjabberdCommandsTest do
+defmodule EjabberdCommandsMockTest do
 	use ExUnit.Case, async: false
 
 	@author "jsautret@process-one.net"
@@ -35,8 +35,7 @@ defmodule EjabberdCommandsTest do
 	@domain "domain"
 
 	require Record
-	Record.defrecord :ejabberd_commands, Record.extract(:ejabberd_commands,
-																from: "ejabberd_commands.hrl")
+	Record.defrecord :ejabberd_commands, Record.extract(:ejabberd_commands,	from_lib: "ejabberd/include/ejabberd_commands.hrl")
 
 	setup_all do
 		try do
@@ -313,7 +312,7 @@ defmodule EjabberdCommandsTest do
 
 	test "API command with admin policy" do
 		mock_commands_config
-		
+
 		# Register a command test(user, domain) -> {user, domain}
 		# with policy=admin
 		command_name = :test
@@ -354,7 +353,7 @@ defmodule EjabberdCommandsTest do
 																				 command_name,
 																				 [@user, @domain])
 
-		
+
 		# An admin with bad password cannot call the command
 		assert {:error, :account_unprivileged} ==
 			catch_throw :ejabberd_commands.execute_command(:undefined,

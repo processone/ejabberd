@@ -18,7 +18,7 @@
 #
 # ----------------------------------------------------------------------
 
-defmodule ModHttpApiTest do
+defmodule ModHttpApiMockTest do
 	use ExUnit.Case, async: false
 
 	@author "jsautret@process-one.net"
@@ -36,14 +36,17 @@ defmodule ModHttpApiTest do
 	@acommand String.to_atom(@command)
 	# default API version
 	@version 0
-	
+
 	require Record
-	Record.defrecord :request, Record.extract(:request,
-																						from: "ejabberd_http.hrl")
+	Record.defrecord :request, Record.extract(:request, from_lib: "ejabberd/include/ejabberd_http.hrl")
 
 	setup_all do
 		try do
+      :jid.start
+      :mnesia.start
 			:stringprep.start
+      :ejabberd_config.start([@domain], [])
+      :ejabberd_commands.init
 		rescue
 			_ -> :ok
 		end
@@ -67,13 +70,16 @@ defmodule ModHttpApiTest do
 			fn (@acommand, {@user, @domain, @userpass, false}, @version) ->
 				{[], {:res, :rescode}}
 			end)
+    :meck.expect(:ejabberd_commands, :get_command_policy,
+			fn (@acommand) -> {:ok, :user} end)
+		:meck.expect(:ejabberd_commands, :get_commands,
+			fn () -> [@acommand] end)
 		:meck.expect(:ejabberd_commands, :execute_command,
 			fn (:undefined, {@user, @domain, @userpass, false}, @acommand, [], @version) ->
 				:ok
 			end)
 
-		#:ejabberd_logger.start
-		#:ejabberd_logger.set 5
+    :ejabberd_config.add_local_option(:commands, [[{:add_commands, [@acommand]}]])
 
 		# Correct Basic Auth call
 		req = request(method: :GET,
@@ -84,6 +90,9 @@ defmodule ModHttpApiTest do
 									ip: {{127,0,0,1},60000},
 									host: @domain)
 		result = :mod_http_api.process([@command], req)
+
+    # history = :meck.history(:ejabberd_commands)
+
 		assert 200 == elem(result, 0) # HTTP code
 		assert "0" == elem(result, 2) # command result
 
@@ -104,9 +113,7 @@ defmodule ModHttpApiTest do
 
 		assert :meck.validate :ejabberd_auth
 		assert :meck.validate :ejabberd_commands
-		#assert :ok = :meck.history(:ejabberd_commands)
 	end
-
 
 	test "HTTP GET simple command call with OAuth" do
 		EjabberdAuthMock.create_user @user, @domain, @userpass
@@ -116,14 +123,16 @@ defmodule ModHttpApiTest do
 			fn (@acommand, {@user, @domain, {:oauth, _token}, false}, @version) ->
 					{[], {:res, :rescode}}
 			end)
+    :meck.expect(:ejabberd_commands, :get_command_policy,
+			fn (@acommand) -> {:ok, :user} end)
+		:meck.expect(:ejabberd_commands, :get_commands,
+			fn () -> [@acommand] end)
 		:meck.expect(:ejabberd_commands, :execute_command,
 			fn (:undefined, {@user, @domain, {:oauth, _token}, false},
 					@acommand, [], @version) ->
 					:ok
 			end)
 
-		#:ejabberd_logger.start
-		#:ejabberd_logger.set 5
 
 		# Correct OAuth call
 		token = EjabberdOauthMock.get_token @user, @domain, @command
@@ -184,5 +193,5 @@ defmodule ModHttpApiTest do
 		#assert :ok = :meck.history(:ejabberd_commands)
 	end
 
-	
+
 end

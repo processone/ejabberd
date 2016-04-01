@@ -230,16 +230,16 @@ process([Call], #request{method = 'POST', data = Data, ip = IP} = Req) ->
 	    ?DEBUG("Bad Request: ~p", [_Err]),
 	    badrequest_response(<<"Invalid JSON input">>);
 	  _:_Error ->
-        ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
-        badrequest_response()
+            ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
+            badrequest_response()
     end;
 process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
     Version = get_api_version(Req),
     try
         Args = case Data of
-            [{nokey, <<>>}] -> [];
-            _ -> Data
-        end,
+                   [{nokey, <<>>}] -> [];
+                   _ -> Data
+               end,
         log(Call, Args, IP),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->

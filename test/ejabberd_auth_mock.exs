@@ -41,7 +41,7 @@ defmodule EjabberdAuthMock do
 				Agent.get(@agent, fn users -> Map.get(users, {user, domain}, "") end )
 			end)
 		mock(:ejabberd_auth, :check_password,
-			fn (user, authzid, domain, password)  ->
+			fn (user, _authzid, domain, password)  ->
 				Agent.get(@agent, fn users ->
 					Map.get(users, {user, domain}) end) == password
 			end)
