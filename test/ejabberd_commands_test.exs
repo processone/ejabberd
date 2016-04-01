@@ -27,6 +27,7 @@ defmodule EjabberdCommandsTest do
   Record.defrecord :ejabberd_commands, Record.extract(:ejabberd_commands, from_lib: "ejabberd/include/ejabberd_commands.hrl")
 
   setup_all do
+    :mnesia.start
     :ejabberd_commands.init
   end
 
@@ -38,7 +39,9 @@ defmodule EjabberdCommandsTest do
 
   test "Check that admin commands are rejected with noauth credentials" do
     :ok = :ejabberd_commands.register_commands([admin_test_command])
-    {:error, :account_unprivileged} = :ejabberd_commands.execute_command(:undefined, :noauth, :test_admin, [])
+
+    assert catch_throw(:ejabberd_commands.execute_command(:undefined, :noauth, :test_admin, [])) == {:error, :account_unprivileged}
+
     # Command executed from ejabberdctl passes anyway with access commands trick
     # TODO: We should refactor to have explicit call when bypassing auth check for command-line
     :ok = :ejabberd_commands.execute_command([], :noauth, :test_admin, [])

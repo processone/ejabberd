@@ -19,6 +19,7 @@
 
 init_per_suite(Config) ->
     check_meck(),
+    code:add_pathz(filename:join(test_dir(), "../include")),
     Config.
 
 init_per_testcase(_TestCase, Config) ->
@@ -27,13 +28,13 @@ init_per_testcase(_TestCase, Config) ->
 
 all() ->
     case is_elixir_available() of
-        true ->
-            Dir = test_dir(),
-            filelib:fold_files(Dir, ".*\.exs", false,
-                               fun(Filename, Acc) -> [list_to_atom(filename:basename(Filename)) | Acc] end,
-                               []);
-        false ->
-            []
+	true ->
+	    Dir = test_dir(),
+	    filelib:fold_files(Dir, ".*\.exs$", false,
+			       fun(Filename, Acc) -> [list_to_atom(filename:basename(Filename)) | Acc] end,
+			       []);
+	false ->
+	    []
     end.
 
 check_meck() ->
@@ -56,10 +57,10 @@ is_elixir_available() ->
 
 undefined_function(?MODULE, Func, Args) ->
     case lists:suffix(".exs", atom_to_list(Func)) of
-        true ->
-            run_elixir_test(Func);
-        false ->
-            error_handler:undefined_function(?MODULE, Func, Args)
+	true ->
+	    run_elixir_test(Func);
+	false ->
+	    error_handler:undefined_function(?MODULE, Func, Args)
     end;
 undefined_function(Module, Func, Args) ->
     error_handler:undefined_function(Module, Func,Args).
@@ -68,6 +69,13 @@ run_elixir_test(Func) ->
     %% Elixir tests can be tagged as follow to be ignored (place before test start)
     %% @tag pending: true
     'Elixir.ExUnit':start([{exclude, [{pending, true}]}]),
+
+    filelib:fold_files(test_dir(), ".*mock\.exs\$", true,
+                       fun (File, N) ->
+                               'Elixir.Code':load_file(list_to_binary(File)),
+                               N+1
+                       end, 0),
+
     'Elixir.Code':load_file(list_to_binary(filename:join(test_dir(), atom_to_list(Func)))),
     %% I did not use map syntax, so that this file can still be build under R16
     ResultMap = 'Elixir.ExUnit':run(),
