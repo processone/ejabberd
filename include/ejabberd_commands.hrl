@@ -32,7 +32,6 @@
          desc = ""               :: string() | '_' | '$3',
          longdesc = ""           :: string() | '_',
 	 version = 0             :: integer(),
-	 jabs = 1                :: integer(),
 	 module                  :: atom() | '_',
          function                :: atom() | '_',
          args = []               :: [aterm()] | '_' | '$1' | '$2',
