@@ -34,3 +34,10 @@
 
 -define(CRITICAL_MSG(Format, Args),
 	lager:critical(Format, Args)).
+
+%% Use only when trying to troubleshoot test problem with ExUnit
+-define(EXUNIT_LOG(Format, Args),
+        case lists:keyfind(logger, 1, application:loaded_applications()) of
+            false -> ok;
+            _ -> 'Elixir.Logger':bare_log(error, io_lib:format(Format, Args), [?MODULE])
+        end).
