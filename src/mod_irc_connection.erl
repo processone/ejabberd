@@ -1272,7 +1272,7 @@ process_quit(StateData, From, String) ->
 
 process_join(StateData, Channel, From, _String) ->
     [FromUser | FromIdent] = str:tokens(From, <<"!">>),
-    [Chan | _] = binary:split(Channel, <<":#">>),
+    [_ | Chan] = binary:split(Channel, <<":#">>),
     ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
