@@ -276,7 +276,7 @@ CREATE INDEX i_caps_features_node_subnode ON caps_features (node, subnode);
 
 CREATE TABLE archive (
     username text NOT NULL,
-    timestamp BIGINT UNSIGNED NOT NULL,
+    arch_timestamp BIGINT UNSIGNED NOT NULL,
     peer text NOT NULL,
     bare_peer text NOT NULL,
     xml text NOT NULL,
@@ -288,7 +288,7 @@ CREATE TABLE archive (
 );
 
 CREATE INDEX i_username ON archive(username);
-CREATE INDEX i_timestamp ON archive(timestamp);
+CREATE INDEX i_timestamp ON archive(arch_timestamp);
 CREATE INDEX i_peer ON archive(peer);
 CREATE INDEX i_bare_peer ON archive(bare_peer);
 

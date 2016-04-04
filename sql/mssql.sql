@@ -23,7 +23,7 @@ SET ANSI_PADDING ON;
 
 CREATE TABLE [dbo].[archive] (
         [username] [varchar] (250) NOT NULL,
-        [timestamp] [bigint] NOT NULL,
+        [arch_timestamp] [bigint] NOT NULL,
         [peer] [varchar] (250) NOT NULL,
         [bare_peer] [varchar] (250) NOT NULL,
         [xml] [text] NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE [dbo].[archive] (
         [kind] [varchar] (10) NULL,
         [nick] [varchar] (250) NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [archive_PK] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [archive_PK] PRIMARY KEY CLUSTERED
 (
         [id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -41,7 +41,7 @@ CREATE TABLE [dbo].[archive] (
 CREATE INDEX [archive_username] ON [archive] (username)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
-CREATE INDEX [archive_timestamp] ON [archive] (timestamp)
+CREATE INDEX [archive_timestamp] ON [archive] (arch_timestamp)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE INDEX [archive_peer] ON [archive] (peer)
@@ -56,7 +56,7 @@ CREATE TABLE [dbo].[archive_prefs] (
         [always] [text] NOT NULL,
         [never] [text] NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [archive_prefs_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [archive_prefs_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -86,7 +86,7 @@ CREATE TABLE [dbo].[last] (
         [username] [varchar] (250) NOT NULL,
         [seconds] [text] NOT NULL,
         [state] [text] NOT NULL,
- CONSTRAINT [last_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [last_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -96,7 +96,7 @@ CREATE TABLE [dbo].[motd] (
         [username] [varchar] (250) NOT NULL,
         [xml] [text] NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [motd_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [motd_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -128,7 +128,7 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW
 CREATE TABLE [dbo].[privacy_default_list] (
         [username] [varchar] (250) NOT NULL,
         [name] [varchar] (250) NOT NULL,
- CONSTRAINT [privacy_default_list_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [privacy_default_list_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -139,7 +139,7 @@ CREATE TABLE [dbo].[privacy_list] (
         [name] [varchar] (250) NOT NULL,
         [id] [bigint] IDENTITY(1,1) NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [privacy_list_PK] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [privacy_list_PK] PRIMARY KEY CLUSTERED
 (
         [id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -218,7 +218,7 @@ CREATE TABLE [dbo].[pubsub_state] (
         [affiliation] [char] (1) NULL,
         [subscriptions] [text] NULL,
         [stateid] [bigint] IDENTITY(1,1) NOT NULL,
- CONSTRAINT [pubsub_state_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [pubsub_state_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [stateid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -245,7 +245,7 @@ CREATE TABLE [dbo].[pubsub_node] (
         [parent] [varchar] (255) NULL,
         [type] [text] NULL,
         [nodeid] [bigint] IDENTITY(1,1) NOT NULL,
- CONSTRAINT [pubsub_node_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [pubsub_node_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [nodeid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -260,7 +260,7 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW
 CREATE TABLE [dbo].[roster_version] (
         [username] [varchar] (250) NOT NULL,
         [version] [text] NOT NULL,
- CONSTRAINT [roster_version_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [roster_version_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -321,7 +321,7 @@ CREATE TABLE [dbo].[spool] (
         [xml] [text] NOT NULL,
         [seq] [bigint] IDENTITY(1,1) NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [spool_PK] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [spool_PK] PRIMARY KEY CLUSTERED
 (
         [seq] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -338,7 +338,7 @@ CREATE TABLE [dbo].[sr_group] (
         [name] [varchar] (250) NOT NULL,
         [opts] [text] NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [sr_group_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [sr_group_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [name] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -366,7 +366,7 @@ CREATE TABLE [dbo].[users] (
         [salt] [text] NOT NULL,
         [iterationcount] [smallint] NOT NULL DEFAULT 0,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [users_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [users_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -376,7 +376,7 @@ CREATE TABLE [dbo].[vcard] (
         [username] [varchar] (250) NOT NULL,
         [vcard] [text] NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [vcard_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [vcard_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -407,7 +407,7 @@ CREATE TABLE [dbo].[vcard_search] (
         [lorgname] [varchar] (250) NOT NULL,
         [orgunit] [text] NOT NULL,
         [lorgunit] [varchar] (250) NOT NULL,
- CONSTRAINT [vcard_search_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [vcard_search_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [lusername] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -450,7 +450,7 @@ CREATE TABLE [dbo].[vcard_xupdate] (
         [username] [varchar] (250) NOT NULL,
         [hash] [text] NOT NULL,
         [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [vcard_xupdate_PRIMARY] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [vcard_xupdate_PRIMARY] PRIMARY KEY CLUSTERED
 (
         [username] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
@@ -479,4 +479,3 @@ REFERENCES [dbo].[pubsub_node] ([nodeid])
 ON DELETE CASCADE;
 
 ALTER TABLE [dbo].[pubsub_state] CHECK CONSTRAINT [pubsub_state_ibfk_1];
-

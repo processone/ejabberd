@@ -10,7 +10,7 @@
 -- but WITHOUT ANY WARRANTY; without even the implied warranty of
 -- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 -- General Public License for more details.
---                         
+--
 -- You should have received a copy of the GNU General Public License along
 -- with this program; if not, write to the Free Software Foundation, Inc.,
 -- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -81,8 +81,8 @@ CREATE TABLE spool (
     created_at TIMESTAMP DEFAULT sysdate NOT NULL
 );
 CREATE SEQUENCE tb_spool_sequence;
-CREATE TRIGGER tb_spool_seq_trigger 
-BEFORE INSERT ON spool 
+CREATE TRIGGER tb_spool_seq_trigger
+BEFORE INSERT ON spool
 FOR EACH ROW WHEN (new.seq IS NULL)
 BEGIN
   <<COLUMN_SEQUENCES>>
@@ -95,7 +95,7 @@ CREATE INDEX i_despool ON spool (username ASC) PARALLEL COMPRESS;
 
 CREATE TABLE archive (
     username varchar2(255) NOT NULL,
-    "timestamp" INTEGER NOT NULL,
+    arch_timestamp INTEGER NOT NULL,
     peer varchar2(255) NOT NULL,
     bare_peer varchar2(255) NOT NULL,
     xml varchar2(4000) NOT NULL,
@@ -106,8 +106,8 @@ CREATE TABLE archive (
     created_at TIMESTAMP DEFAULT sysdate NOT NULL
 );
 CREATE SEQUENCE tb_archive_sequence;
-CREATE TRIGGER tb_archive_seq_trigger 
-BEFORE INSERT ON archive 
+CREATE TRIGGER tb_archive_seq_trigger
+BEFORE INSERT ON archive
 FOR EACH ROW WHEN (new.id IS NULL)
 BEGIN
   <<COLUMN_SEQUENCES>>
@@ -117,7 +117,7 @@ BEGIN
 END;
 /
 CREATE INDEX i_username ON archive (username ASC) PARALLEL COMPRESS;
-CREATE INDEX i_timestamp ON archive ("timestamp" ASC) PARALLEL COMPRESS;
+CREATE INDEX i_timestamp ON archive (arch_timestamp ASC) PARALLEL COMPRESS;
 CREATE INDEX i_peer ON archive (peer ASC) PARALLEL COMPRESS;
 CREATE INDEX i_bare_peer ON archive (bare_peer ASC) PARALLEL COMPRESS;
 
@@ -191,8 +191,8 @@ CREATE TABLE privacy_list (
     created_at TIMESTAMP DEFAULT sysdate NOT NULL
 );
 CREATE SEQUENCE tb_privacy_list_sequence;
-CREATE TRIGGER tb_privacy_list_seq_trigger 
-BEFORE INSERT ON privacy_list 
+CREATE TRIGGER tb_privacy_list_seq_trigger
+BEFORE INSERT ON privacy_list
 FOR EACH ROW WHEN (new.id IS NULL)
 BEGIN
   <<COLUMN_SEQUENCES>>
@@ -240,9 +240,9 @@ CREATE TABLE pubsub_node (
   nodeid INTEGER UNIQUE
 );
 CREATE SEQUENCE tb_pubsub_node_sequence;
-CREATE TRIGGER tb_pubsub_node_seq_trigger 
-BEFORE INSERT ON pubsub_node 
-FOR EACH ROW WHEN (new.nodeid IS NULL) 
+CREATE TRIGGER tb_pubsub_node_seq_trigger
+BEFORE INSERT ON pubsub_node
+FOR EACH ROW WHEN (new.nodeid IS NULL)
 BEGIN
   <<COLUMN_SEQUENCES>>
   BEGIN
@@ -274,8 +274,8 @@ CREATE TABLE pubsub_state (
   stateid INTEGER UNIQUE
 );
 CREATE SEQUENCE tb_pubsub_state_sequence;
-CREATE TRIGGER tb_pubsub_state_seq_trigger 
-BEFORE INSERT ON pubsub_state 
+CREATE TRIGGER tb_pubsub_state_seq_trigger
+BEFORE INSERT ON pubsub_state
 FOR EACH ROW WHEN (new.stateid IS NULL)
 BEGIN
   <<COLUMN_SEQUENCES>>
@@ -289,7 +289,7 @@ CREATE UNIQUE INDEX i_pubsub_state_tuple ON pubsub_state (nodeid ASC, jid ASC) P
 
 CREATE TABLE pubsub_item (
   nodeid INTEGER REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
-  itemid varchar2(255), 
+  itemid varchar2(255),
   publisher varchar2(255),
   creation varchar2(255),
   modification varchar2(255),
@@ -356,4 +356,3 @@ CREATE TABLE sm (
 CREATE UNIQUE INDEX i_sm_sid ON sm (usec ASC, pid ASC) PARALLEL COMPRESS;
 CREATE INDEX i_sm_node ON sm (node ASC) PARALLEL COMPRESS;
 CREATE INDEX i_sm_username ON sm (username ASC) PARALLEL COMPRESS;
-
