@@ -30,14 +30,14 @@
 # log as we are exercising hook handler recovery from that situation.
 
 defmodule EjabberdHooksTest do
-  use ExUnit.Case, async: true
-
+  use ExUnit.Case, async: false
+  
   @author "mremond@process-one.net"
   @host <<"domain.net">>
   @self __MODULE__
 
   setup_all do
-    {:ok, _Pid} = :ejabberd_hooks.start_link
+    {:ok, _pid} = :ejabberd_hooks.start_link
     :ok
   end
 

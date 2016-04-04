@@ -90,7 +90,8 @@
 %%%    PowFloat = math:pow(Base, Exponent),
 %%%    round(PowFloat).</pre>
 %%%
-%%% Since this function will be called by ejabberd_commands, it must be exported.
+%%% Since this function will be called by ejabberd_commands, it must
+%%% be exported.
 %%% Add to your module:
 %%% <pre>-export([calc_power/2]).</pre>
 %%%
@@ -201,24 +202,34 @@
 %%% TODO: consider this feature:
 %%% All commands are catched. If an error happens, return the restuple:
 %%%   {error, flattened error string}
-%%% This means that ecomm call APIs (ejabberd_ctl, ejabberd_xmlrpc) need to allows this.
-%%% And ejabberd_xmlrpc must be prepared to handle such an unexpected response.
+%%% This means that ecomm call APIs (ejabberd_ctl, ejabberd_xmlrpc)
+%%% need to allows this. And ejabberd_xmlrpc must be prepared to
+%%% handle such an unexpected response.
 
 
 -module(ejabberd_commands).
 -author('badlop@process-one.net').
 
+-define(DEFAULT_VERSION, 1000000).
+
 -export([init/0,
 	 list_commands/0,
+	 list_commands/1,
 	 get_command_format/1,
-         get_command_format/2,
+	 get_command_format/2,
+	 get_command_format/3,
+         get_command_policy/1,
 	 get_command_definition/1,
+	 get_command_definition/2,
 	 get_tags_commands/0,
+	 get_tags_commands/1,
          get_commands/0,
 	 register_commands/1,
 	 unregister_commands/1,
 	 execute_command/2,
-         execute_command/4,
+	 execute_command/3,
+	 execute_command/4,
+	 execute_command/5,
          opt_type/1,
          get_commands_spec/0
 	]).
@@ -226,6 +237,7 @@
 -include("ejabberd_commands.hrl").
 -include("ejabberd.hrl").
 -include("logger.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 -define(POLICY_ACCESS, '$policy').
 
@@ -260,23 +272,26 @@ get_commands_spec() ->
                            args_example = ["/home/me/docs/api.html", "mod_admin", "java,json"],
                            result_example = ok}].
 init() ->
-    ets:new(ejabberd_commands, [named_table, set, public,
-				{keypos, #ejabberd_commands.name}]),
+    mnesia:delete_table(ejabberd_commands),
+    mnesia:create_table(ejabberd_commands,
+			[{ram_copies, [node()]},
+                         {local_content, true},
+			 {attributes, record_info(fields, ejabberd_commands)},
+			 {type, bag}]),
+    mnesia:add_table_copy(ejabberd_commands, node(), ram_copies),
     register_commands(get_commands_spec()).
 
 -spec register_commands([ejabberd_commands()]) -> ok.
 
 %% @doc Register ejabberd commands.
-%% If a command is already registered, a warning is printed and the old command is preserved.
+%% If a command is already registered, a warning is printed and the
+%% old command is preserved.
 register_commands(Commands) ->
     lists:foreach(
       fun(Command) ->
-	      case ets:insert_new(ejabberd_commands, Command) of
-		  true ->
-		      ok;
-		  false ->
-		      ?DEBUG("This command is already defined:~n~p", [Command])
-	      end
+	      % XXX check if command exists
+	      mnesia:dirty_write(Command)
+	      % ?DEBUG("This command is already defined:~n~p", [Command])
       end,
       Commands).
 
@@ -286,7 +301,7 @@ register_commands(Commands) ->
 unregister_commands(Commands) ->
     lists:foreach(
       fun(Command) ->
-	      ets:delete_object(ejabberd_commands, Command)
+	      mnesia:dirty_delete_object(Command)
       end,
       Commands).
 
@@ -294,94 +309,194 @@ unregister_commands(Commands) ->
 
 %% @doc Get a list of all the available commands, arguments and description.
 list_commands() ->
-    Commands = ets:match(ejabberd_commands,
-			 #ejabberd_commands{name = '$1',
-					    args = '$2',
-					    desc = '$3',
-					    _ = '_'}),
-    [{A, B, C} || [A, B, C] <- Commands].
+    list_commands(?DEFAULT_VERSION).
 
--spec list_commands_policy() -> [{atom(), [aterm()], string(), atom()}].
+-spec list_commands(integer()) -> [{atom(), [aterm()], string()}].
 
-%% @doc Get a list of all the available commands, arguments, description, and
-%% policy.
-list_commands_policy() ->
-    Commands = ets:match(ejabberd_commands,
-			 #ejabberd_commands{name = '$1',
-					    args = '$2',
-					    desc = '$3',
-					    policy = '$4',
-					    _ = '_'}),
-    [{A, B, C, D} || [A, B, C, D] <- Commands].
+%% @doc Get a list of all the available commands, arguments and
+%% description in a given API verion.
+list_commands(Version) ->
+    Commands = get_commands_definition(Version),
+    [{Name, Args, Desc} || #ejabberd_commands{name = Name,
+					      args = Args,
+					      desc = Desc} <- Commands].
 
--spec get_command_format(atom()) -> {[aterm()], rterm()} | {error, command_unknown}.
+
+-spec list_commands_policy(integer()) ->
+				  [{atom(), [aterm()], string(), atom()}].
+
+%% @doc Get a list of all the available commands, arguments,
+%% description, and policy in a given API version.
+list_commands_policy(Version) ->
+    Commands = get_commands_definition(Version),
+    [{Name, Args, Desc, Policy} ||
+	#ejabberd_commands{name = Name,
+			   args = Args,
+			   desc = Desc,
+			   policy = Policy} <- Commands].
+
+-spec get_command_format(atom()) -> {[aterm()], rterm()}.
 
 %% @doc Get the format of arguments and result of a command.
 get_command_format(Name) ->
-    get_command_format(Name, noauth).
+    get_command_format(Name, noauth, ?DEFAULT_VERSION).
+get_command_format(Name, Version) when is_integer(Version) ->
+    get_command_format(Name, noauth, Version);
+get_command_format(Name, Auth)  ->
+    get_command_format(Name, Auth, ?DEFAULT_VERSION).
 
-get_command_format(Name, Auth) ->
+-spec get_command_format(atom(),
+			 {binary(), binary(), binary(), boolean()} |
+			 noauth | admin,
+			 integer()) ->
+				{[aterm()], rterm()}.
+
+get_command_format(Name, Auth, Version) ->
     Admin = is_admin(Name, Auth),
-    Matched = ets:match(ejabberd_commands,
-			#ejabberd_commands{name = Name,
-					   args = '$1',
-					   result = '$2',
-                                           policy = '$3',
-					   _ = '_'}),
-    case Matched of
-	[] ->
-	    {error, command_unknown};
-	[[Args, Result, user]] when Admin;
-                                    Auth == noauth ->
+    #ejabberd_commands{args = Args,
+		       result = Result,
+		       policy = Policy} =
+	get_command_definition(Name, Version),
+    case Policy of
+	user when Admin;
+		  Auth == noauth ->
 	    {[{user, binary}, {server, binary} | Args], Result};
-	[[Args, Result, _]] ->
+	_ ->
 	    {Args, Result}
     end.
 
--spec get_command_definition(atom()) -> ejabberd_commands() | command_not_found.
+-spec get_command_policy(atom()) -> {ok, open|user|admin|restricted} | {error, command_not_found}.
+
+%% @doc return command policy.
+get_command_policy(Name) ->
+    case get_command_definition(Name) of
+        #ejabberd_commands{policy = Policy} ->
+            {ok, Policy};
+        command_not_found ->
+            {error, command_not_found}
+    end.
+
+-spec get_command_definition(atom()) -> ejabberd_commands().
 
 %% @doc Get the definition record of a command.
 get_command_definition(Name) ->
-    case ets:lookup(ejabberd_commands, Name) of
-	[E] -> E;
-	[] -> command_not_found
+    get_command_definition(Name, ?DEFAULT_VERSION).
+
+-spec get_command_definition(atom(), integer()) -> ejabberd_commands().
+
+%% @doc Get the definition record of a command in a given API version.
+get_command_definition(Name, Version) ->
+    case lists:reverse(
+	   lists:sort(
+	     mnesia:dirty_select(
+	       ejabberd_commands,
+	       ets:fun2ms(
+		 fun(#ejabberd_commands{name = N, version = V} = C)
+		       when N == Name, V =< Version ->
+			 {V, C}
+		 end)))) of
+	[{_, Command} | _ ] -> Command;
+	_E -> throw(unknown_command)
     end.
 
-%% @spec (Name::atom(), Arguments) -> ResultTerm | {error, command_unknown}
-%% @doc Execute a command.
-execute_command(Name, Arguments) ->
-    execute_command([], noauth, Name, Arguments).
+-spec get_commands_definition(integer()) -> [ejabberd_commands()].
 
--spec execute_command([{atom(), [atom()], [any()]}] | undefined,
-                      {binary(), binary(), binary(), boolean()} |
-                      noauth | admin,
-                      atom(),
-                      [any()]
+% @doc Returns all commands for a given API version
+get_commands_definition(Version) ->
+    L = lists:reverse(
+	  lists:sort(
+	    mnesia:dirty_select(
+	      ejabberd_commands,
+	      ets:fun2ms(
+		fun(#ejabberd_commands{name = Name, version = V} = C)
+		      when V =< Version ->
+			{Name, V, C}
+		end)))),
+    F = fun({_Name, _V, Command}, []) ->
+		[Command];
+	   ({Name, _V, _Command}, [#ejabberd_commands{name=Name}|_T] = Acc) ->
+		Acc;
+	   ({_Name, _V, Command}, Acc) -> [Command | Acc]
+	end,
+    lists:foldl(F, [], L).
+
+%% @spec (Name::atom(), Arguments) -> ResultTerm
+%% where
+%%       Arguments = [any()]
+%% @doc Execute a command.
+%% Can return the following exceptions:
+%% command_unknown | account_unprivileged | invalid_account_data |
+%% no_auth_provided
+execute_command(Name, Arguments) ->
+    execute_command(Name, Arguments, ?DEFAULT_VERSION).
+
+-spec execute_command(atom(),
+                      [any()],
+		      integer() |
+		      {binary(), binary(), binary(), boolean()} |
+                      noauth | admin
                      ) -> any().
 
-%% @spec (AccessCommands, Auth, Name::atom(), Arguments) -> ResultTerm | {error, Error}
+%% @spec (Name::atom(), Arguments, integer() | Auth) -> ResultTerm
+%% where
+%%       Auth = {User::string(), Server::string(), Password::string(),
+%%               Admin::boolean()}
+%%            | noauth
+%%            | admin
+%%       Arguments = [any()]
+%%
+%% @doc Execute a command in a given API version
+%% Can return the following exceptions:
+%% command_unknown | account_unprivileged | invalid_account_data |
+%% no_auth_provided
+execute_command(Name, Arguments, Version) when is_integer(Version) ->
+    execute_command([], noauth, Name, Arguments, Version);
+execute_command(Name, Arguments, Auth) ->
+    execute_command([], Auth, Name, Arguments, ?DEFAULT_VERSION).
+
+%% @spec (AccessCommands, Auth, Name::atom(), Arguments) ->
+%%                                     ResultTerm | {error, Error}
 %% where
 %%       AccessCommands = [{Access, CommandNames, Arguments}] | undefined
 %%       Auth = {User::string(), Server::string(), Password::string(), Admin::boolean()}
 %%            | noauth
 %%            | admin
-%%       Method = atom()
 %%       Arguments = [any()]
-%%       Error = command_unknown | account_unprivileged | invalid_account_data | no_auth_provided
-execute_command(AccessCommands1, Auth1, Name, Arguments) ->
+%%
+%% @doc Execute a command
+%% Can return the following exceptions:
+%% command_unknown | account_unprivileged | invalid_account_data | no_auth_provided
+execute_command(AccessCommands, Auth, Name, Arguments) ->
+    execute_command(AccessCommands, Auth, Name, Arguments, ?DEFAULT_VERSION).
+
+-spec execute_command([{atom(), [atom()], [any()]}] | undefined,
+                      {binary(), binary(), binary(), boolean()} |
+                      noauth | admin,
+                      atom(),
+                      [any()],
+		      integer()
+                     ) -> any().
+
+%% @spec (AccessCommands, Auth, Name::atom(), Arguments, integer()) -> ResultTerm
+%% where
+%%       AccessCommands = [{Access, CommandNames, Arguments}] | undefined
+%%       Auth = {User::string(), Server::string(), Password::string(), Admin::boolean()}
+%%            | noauth
+%%            | admin
+%%       Arguments = [any()]
+%%
+%% @doc Execute a command in a given API version
+%% Can return the following exceptions:
+%% command_unknown | account_unprivileged | invalid_account_data | no_auth_provided
+execute_command(AccessCommands1, Auth1, Name, Arguments, Version) ->
     Auth = case is_admin(Name, Auth1) of
                true -> admin;
                false -> Auth1
            end,
-    case ets:lookup(ejabberd_commands, Name) of
-	[Command] ->
-            AccessCommands = get_access_commands(AccessCommands1),
-	    try check_access_commands(AccessCommands, Auth, Name, Command, Arguments) of
-		ok -> execute_command2(Auth, Command, Arguments)
-	    catch
-		{error, Error} -> {error, Error}
-	    end;
-	[] -> {error, command_unknown}
+    Command = get_command_definition(Name, Version),
+    AccessCommands = get_access_commands(AccessCommands1, Version),
+    case check_access_commands(AccessCommands, Auth, Name, Command, Arguments) of
+	ok -> execute_command2(Auth, Command, Arguments)
     end.
 
 execute_command2(
@@ -407,26 +522,25 @@ execute_command2(Command, Arguments) ->
     Module = Command#ejabberd_commands.module,
     Function = Command#ejabberd_commands.function,
     ?DEBUG("Executing command ~p:~p with Args=~p", [Module, Function, Arguments]),
-    try apply(Module, Function, Arguments) of
-	Response ->
-	    Response
-    catch
-	Problem ->
-	    {error, Problem}
-    end.
+    apply(Module, Function, Arguments).
 
 -spec get_tags_commands() -> [{string(), [string()]}].
 
 %% @spec () -> [{Tag::string(), [CommandName::string()]}]
 %% @doc Get all the tags and associated commands.
 get_tags_commands() ->
-    CommandTags = ets:match(ejabberd_commands,
-			    #ejabberd_commands{
-			      name = '$1',
-			      tags = '$2',
-			      _ = '_'}),
+    get_tags_commands(?DEFAULT_VERSION).
+
+-spec get_tags_commands(integer()) -> [{string(), [string()]}].
+
+%% @spec (integer) -> [{Tag::string(), [CommandName::string()]}]
+%% @doc Get all the tags and associated commands in a given API version
+get_tags_commands(Version) ->
+    CommandTags = [{Name, Tags} ||
+		      #ejabberd_commands{name = Name, tags = Tags}
+			  <- get_commands_definition(Version)],
     Dict = lists:foldl(
-	     fun([CommandNameAtom, CTags], D) ->
+	     fun({CommandNameAtom, CTags}, D) ->
 		     CommandName = atom_to_list(CommandNameAtom),
 		     case CTags of
 			 [] ->
@@ -444,7 +558,6 @@ get_tags_commands() ->
 	     orddict:new(),
 	     CommandTags),
     orddict:to_list(Dict).
-
 
 %% -----------------------------
 %% Access verification
@@ -479,7 +592,8 @@ check_access_commands(AccessCommands, Auth, Method, Command1, Arguments) ->
 	  fun({Access, Commands, ArgumentRestrictions}) ->
 		  case check_access(Command, Access, Auth) of
 		      true ->
-			  check_access_command(Commands, Command, ArgumentRestrictions,
+			  check_access_command(Commands, Command,
+					       ArgumentRestrictions,
 					       Method, Arguments);
 		      false ->
 			  false
@@ -488,7 +602,8 @@ check_access_commands(AccessCommands, Auth, Method, Command1, Arguments) ->
 		  ArgumentRestrictions = [],
 		  case check_access(Command, Access, Auth) of
 		      true ->
-			  check_access_command(Commands, Command, ArgumentRestrictions,
+			  check_access_command(Commands, Command,
+					       ArgumentRestrictions,
 					       Method, Arguments);
 		      false ->
 			  false
@@ -551,9 +666,11 @@ check_access2(Access, User, Server) ->
 	deny -> false
     end.
 
-check_access_command(Commands, Command, ArgumentRestrictions, Method, Arguments) ->
+check_access_command(Commands, Command, ArgumentRestrictions,
+		     Method, Arguments) ->
     case Commands==all orelse lists:member(Method, Commands) of
-	true -> check_access_arguments(Command, ArgumentRestrictions, Arguments);
+	true -> check_access_arguments(Command, ArgumentRestrictions,
+				       Arguments);
 	false -> false
     end.
 
@@ -577,18 +694,20 @@ tag_arguments(ArgsDefs, Args) ->
       Args).
 
 
-get_access_commands(undefined) ->
-    Cmds = get_commands(),
+get_access_commands(undefined, Version) ->
+    Cmds = get_commands(Version),
     [{?POLICY_ACCESS, Cmds, []}];
-get_access_commands(AccessCommands) ->
+get_access_commands(AccessCommands, _Version) ->
     AccessCommands.
 
 get_commands() ->
+    get_commands(?DEFAULT_VERSION).
+get_commands(Version) ->
     Opts = ejabberd_config:get_option(
              commands,
              fun(V) when is_list(V) -> V end,
              []),
-    CommandsList = list_commands_policy(),
+    CommandsList = list_commands_policy(Version),
     OpenCmds = [N || {N, _, _, open} <- CommandsList],
     RestrictedCmds = [N || {N, _, _, restricted} <- CommandsList],
     AdminCmds = [N || {N, _, _, admin} <- CommandsList],

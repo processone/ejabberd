@@ -48,7 +48,7 @@
 -behaviour(ejabberd_config).
 -author('alexey@process-one.net').
 
--export([start/0, init/0, process/1, process2/2,
+-export([start/0, init/0, process/1,
 	 register_commands/3, unregister_commands/3,
 	 opt_type/1]).
 
@@ -56,6 +56,8 @@
 -include("ejabberd_commands.hrl").
 -include("ejabberd.hrl").
 -include("logger.hrl").
+
+-define(DEFAULT_VERSION, 1000000).
 
 
 %%-----------------------------
@@ -69,7 +71,7 @@ start() ->
                                  [SNode3 | Args3] ->
                                      [SNode3, 60000, Args3];
                                  _ ->
-                                     print_usage(),
+                                     print_usage(?DEFAULT_VERSION),
                                      halt(?STATUS_USAGE)
                              end,
     SNode1 = case string:tokens(SNode, "@") of
@@ -93,6 +95,9 @@ start() ->
                            [Node, Reason]),
                      %% TODO: show minimal start help
                      ?STATUS_BADRPC;
+                 {invalid_version, V} ->
+                     print("Invalid API version number: ~p~n", [V]),
+                     ?STATUS_ERROR;
                  S ->
                      S
              end,
@@ -126,11 +131,17 @@ unregister_commands(CmdDescs, Module, Function) ->
 %% Process
 %%-----------------------------
 
+
 -spec process([string()]) -> non_neg_integer().
+process(Args) ->
+    process(Args, ?DEFAULT_VERSION).
+
+
+-spec process([string()], non_neg_integer()) -> non_neg_integer().
 
 %% The commands status, stop and restart are defined here to ensure
 %% they are usable even if ejabberd is completely stopped.
-process(["status"]) ->
+process(["status"], _Version) ->
     {InternalStatus, ProvidedStatus} = init:get_status(),
     print("The node ~p is ~p with status: ~p~n",
 	   [node(), InternalStatus, ProvidedStatus]),
@@ -146,24 +157,24 @@ process(["status"]) ->
             ?STATUS_SUCCESS
     end;
 
-process(["stop"]) ->
+process(["stop"], _Version) ->
     %%ejabberd_cover:stop(),
     init:stop(),
     ?STATUS_SUCCESS;
 
-process(["restart"]) ->
+process(["restart"], _Version) ->
     init:restart(),
     ?STATUS_SUCCESS;
 
-process(["mnesia"]) ->
+process(["mnesia"], _Version) ->
     print("~p~n", [mnesia:system_info(all)]),
     ?STATUS_SUCCESS;
 
-process(["mnesia", "info"]) ->
+process(["mnesia", "info"], _Version) ->
     mnesia:info(),
     ?STATUS_SUCCESS;
 
-process(["mnesia", Arg]) ->
+process(["mnesia", Arg], _Version) ->
     case catch mnesia:system_info(list_to_atom(Arg)) of
 	{'EXIT', Error} -> print("Error: ~p~n", [Error]);
 	Return -> print("~p~n", [Return])
@@ -172,23 +183,23 @@ process(["mnesia", Arg]) ->
 
 %% The arguments --long and --dual are not documented because they are
 %% automatically selected depending in the number of columns of the shell
-process(["help" | Mode]) ->
+process(["help" | Mode], Version) ->
     {MaxC, ShCode} = get_shell_info(),
     case Mode of
 	[] ->
-	    print_usage(dual, MaxC, ShCode),
+	    print_usage(dual, MaxC, ShCode, Version),
 	    ?STATUS_USAGE;
 	["--dual"] ->
-	    print_usage(dual, MaxC, ShCode),
+	    print_usage(dual, MaxC, ShCode, Version),
 	    ?STATUS_USAGE;
 	["--long"] ->
-	    print_usage(long, MaxC, ShCode),
+	    print_usage(long, MaxC, ShCode, Version),
 	    ?STATUS_USAGE;
 	["--tags"] ->
-	    print_usage_tags(MaxC, ShCode),
+	    print_usage_tags(MaxC, ShCode, Version),
 	    ?STATUS_SUCCESS;
 	["--tags", Tag] ->
-	    print_usage_tags(Tag, MaxC, ShCode),
+	    print_usage_tags(Tag, MaxC, ShCode, Version),
 	    ?STATUS_SUCCESS;
 	["help"] ->
 	    print_usage_help(MaxC, ShCode),
@@ -196,13 +207,22 @@ process(["help" | Mode]) ->
 	[CmdString | _] ->
 	    CmdStringU = ejabberd_regexp:greplace(
                            list_to_binary(CmdString), <<"-">>, <<"_">>),
-	    print_usage_commands(binary_to_list(CmdStringU), MaxC, ShCode),
+	    print_usage_commands2(binary_to_list(CmdStringU), MaxC, ShCode, Version),
 	    ?STATUS_SUCCESS
     end;
 
-process(Args) ->
+process(["--version", Arg | Args], _) ->
+    Version = 
+	try
+	    list_to_integer(Arg)
+	catch _:_ ->
+		throw({invalid_version, Arg})
+	end,
+    process(Args, Version);
+
+process(Args, Version) ->
     AccessCommands = get_accesscommands(),
-    {String, Code} = process2(Args, AccessCommands),
+    {String, Code} = process2(Args, AccessCommands, Version),
     case String of
 	[] -> ok;
 	_ ->
@@ -211,18 +231,21 @@ process(Args) ->
     Code.
 
 %% @spec (Args::[string()], AccessCommands) -> {String::string(), Code::integer()}
-process2(["--auth", User, Server, Pass | Args], AccessCommands) ->
-    process2(Args, {list_to_binary(User), list_to_binary(Server), list_to_binary(Pass), true}, AccessCommands);
-process2(Args, AccessCommands) ->
-    process2(Args, noauth, AccessCommands).
+process2(["--auth", User, Server, Pass | Args], AccessCommands, Version) ->
+    process2(Args, AccessCommands, {list_to_binary(User), list_to_binary(Server),
+				    list_to_binary(Pass), true}, Version);
+process2(Args, AccessCommands, Version) ->
+    process2(Args, AccessCommands, admin, Version).
 
-process2(Args, Auth, AccessCommands) ->
-    case try_run_ctp(Args, Auth, AccessCommands) of
+
+
+process2(Args, AccessCommands, Auth, Version) ->
+    case try_run_ctp(Args, Auth, AccessCommands, Version) of
 	{String, wrong_command_arguments}
           when is_list(String) ->
 	    io:format(lists:flatten(["\n" | String]++["\n"])),
 	    [CommandString | _] = Args,
-            process(["help" | [CommandString]]),
+            process(["help" | [CommandString]], Version),
 	    {lists:flatten(String), ?STATUS_ERROR};
 	{String, Code}
           when is_list(String) and is_integer(Code) ->
@@ -246,29 +269,29 @@ get_accesscommands() ->
 %%-----------------------------
 
 %% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()}
-try_run_ctp(Args, Auth, AccessCommands) ->
+try_run_ctp(Args, Auth, AccessCommands, Version) ->
     try ejabberd_hooks:run_fold(ejabberd_ctl_process, false, [Args]) of
 	false when Args /= [] ->
-	    try_call_command(Args, Auth, AccessCommands);
+	    try_call_command(Args, Auth, AccessCommands, Version);
 	false ->
-	    print_usage(),
+	    print_usage(Version),
 	    {"", ?STATUS_USAGE};
 	Status ->
 	    {"", Status}
     catch
 	exit:Why ->
-	    print_usage(),
+	    print_usage(Version),
 	    {io_lib:format("Error in ejabberd ctl process: ~p", [Why]), ?STATUS_USAGE};
 	Error:Why ->
             %% In this case probably ejabberd is not started, so let's show Status
-            process(["status"]),
+            process(["status"], Version),
             print("~n", []),
 	    {io_lib:format("Error in ejabberd ctl process: '~p' ~p", [Error, Why]), ?STATUS_USAGE}
     end.
 
 %% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()}
-try_call_command(Args, Auth, AccessCommands) ->
-    try call_command(Args, Auth, AccessCommands) of
+try_call_command(Args, Auth, AccessCommands, Version) ->
+    try call_command(Args, Auth, AccessCommands, Version) of
 	{error, command_unknown} ->
 	    {io_lib:format("Error: command ~p not known.", [hd(Args)]), ?STATUS_ERROR};
 	{error, wrong_command_arguments} ->
@@ -276,24 +299,28 @@ try_call_command(Args, Auth, AccessCommands) ->
 	Res ->
 	    Res
     catch
+	throw:Error ->
+	    {io_lib:format("~p", [Error]), ?STATUS_ERROR};
 	A:Why ->
 	    Stack = erlang:get_stacktrace(),
 	    {io_lib:format("Problem '~p ~p' occurred executing the command.~nStacktrace: ~p", [A, Why, Stack]), ?STATUS_ERROR}
     end.
 
 %% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()} | {error, ErrorType}
-call_command([CmdString | Args], Auth, AccessCommands) ->
+call_command([CmdString | Args], Auth, AccessCommands, Version) ->
     CmdStringU = ejabberd_regexp:greplace(
                    list_to_binary(CmdString), <<"-">>, <<"_">>),
     Command = list_to_atom(binary_to_list(CmdStringU)),
-    case ejabberd_commands:get_command_format(Command, Auth) of
+    case ejabberd_commands:get_command_format(Command, Auth, Version) of
 	{error, command_unknown} ->
 	    {error, command_unknown};
 	{ArgsFormat, ResultFormat} ->
 	    case (catch format_args(Args, ArgsFormat)) of
 		ArgsFormatted when is_list(ArgsFormatted) ->
-		    Result = ejabberd_commands:execute_command(AccessCommands, Auth, Command,
-							       ArgsFormatted),
+		    Result = ejabberd_commands:execute_command(AccessCommands, 
+							       Auth, Command,
+							       ArgsFormatted,
+							       Version),
 		    format_result(Result, ResultFormat);
 		{'EXIT', {function_clause,[{lists,zip,[A1, A2], _} | _]}} ->
 		    {NumCompa, TextCompa} =
@@ -404,8 +431,8 @@ make_status(ok) -> ?STATUS_SUCCESS;
 make_status(true) -> ?STATUS_SUCCESS;
 make_status(_Error) -> ?STATUS_ERROR.
 
-get_list_commands() ->
-    try ejabberd_commands:list_commands() of
+get_list_commands(Version) ->
+    try ejabberd_commands:list_commands(Version) of
 	Commands ->
 	    [tuple_command_help(Command)
 	     || {N,_,_}=Command <- Commands,
@@ -458,10 +485,10 @@ get_list_ctls() ->
 -define(U2, "\e[24m").
 -define(U(S), case ShCode of true -> [?U1, S, ?U2]; false -> S end).
 
-print_usage() ->
+print_usage(Version) ->
     {MaxC, ShCode} = get_shell_info(),
-    print_usage(dual, MaxC, ShCode).
-print_usage(HelpMode, MaxC, ShCode) ->
+    print_usage(dual, MaxC, ShCode, Version).
+print_usage(HelpMode, MaxC, ShCode, Version) ->
     AllCommands =
 	[
 	 {"status", [], "Get ejabberd status"},
@@ -469,11 +496,11 @@ print_usage(HelpMode, MaxC, ShCode) ->
 	 {"restart", [], "Restart ejabberd"},
 	 {"help", ["[--tags [tag] | com?*]"], "Show help (try: ejabberdctl help help)"},
 	 {"mnesia", ["[info]"], "show information of Mnesia system"}] ++
-	get_list_commands() ++
+	get_list_commands(Version) ++
 	get_list_ctls(),
 
     print(
-       ["Usage: ", ?B("ejabberdctl"), " [--no-timeout] [--node ", ?U("nodename"), "] [--auth ",
+       ["Usage: ", ?B("ejabberdctl"), " [--no-timeout] [--node ", ?U("nodename"), "] [--version ", ?U("api_version"), "] [--auth ",
 	?U("user"), " ", ?U("host"), " ", ?U("password"), "] ",
 	?U("command"), " [", ?U("options"), "]\n"
 	"\n"
@@ -598,9 +625,9 @@ format_command_lines(CALD, _MaxCmdLen, MaxC, ShCode, long) ->
 %% Print Tags
 %%-----------------------------
 
-print_usage_tags(MaxC, ShCode) ->
+print_usage_tags(MaxC, ShCode, Version) ->
     print("Available tags and commands:", []),
-    TagsCommands = ejabberd_commands:get_tags_commands(),
+    TagsCommands = ejabberd_commands:get_tags_commands(Version),
     lists:foreach(
       fun({Tag, Commands} = _TagCommands) ->
 	      print(["\n\n  ", ?B(Tag), "\n     "], []),
@@ -611,10 +638,10 @@ print_usage_tags(MaxC, ShCode) ->
       TagsCommands),
     print("\n\n", []).
 
-print_usage_tags(Tag, MaxC, ShCode) ->
+print_usage_tags(Tag, MaxC, ShCode, Version) ->
     print(["Available commands with tag ", ?B(Tag), ":", "\n"], []),
     HelpMode = long,
-    TagsCommands = ejabberd_commands:get_tags_commands(),
+    TagsCommands = ejabberd_commands:get_tags_commands(Version),
     CommandsNames = case lists:keysearch(Tag, 1, TagsCommands) of
 			{value, {Tag, CNs}} -> CNs;
 			false -> []
@@ -622,7 +649,7 @@ print_usage_tags(Tag, MaxC, ShCode) ->
     CommandsList = lists:map(
 		     fun(NameString) ->
 			     C = ejabberd_commands:get_command_definition(
-                                   list_to_atom(NameString)),
+                                   list_to_atom(NameString), Version),
 			     #ejabberd_commands{name = Name,
 						args = Args,
 						desc = Desc} = C,
@@ -673,20 +700,20 @@ print_usage_help(MaxC, ShCode) ->
 %%-----------------------------
 
 %% @spec (CmdSubString::string(), MaxC::integer(), ShCode::boolean()) -> ok
-print_usage_commands(CmdSubString, MaxC, ShCode) ->
+print_usage_commands2(CmdSubString, MaxC, ShCode, Version) ->
     %% Get which command names match this substring
-    AllCommandsNames = [atom_to_list(Name) || {Name, _, _} <- ejabberd_commands:list_commands()],
+    AllCommandsNames = [atom_to_list(Name) || {Name, _, _} <- ejabberd_commands:list_commands(Version)],
     Cmds = filter_commands(AllCommandsNames, CmdSubString),
     case Cmds of
-    	[] -> io:format("Error: not command found that match: ~p~n", [CmdSubString]);
-	_ -> print_usage_commands2(lists:sort(Cmds), MaxC, ShCode)
+    	[] -> io:format("Error: no command found that match: ~p~n", [CmdSubString]);
+	_ -> print_usage_commands3(lists:sort(Cmds), MaxC, ShCode, Version)
     end.
 
-print_usage_commands2(Cmds, MaxC, ShCode) ->
+print_usage_commands3(Cmds, MaxC, ShCode, Version) ->
     %% Then for each one print it
     lists:mapfoldl(
       fun(Cmd, Remaining) ->
-	      print_usage_command(Cmd, MaxC, ShCode),
+	      print_usage_command(Cmd, MaxC, ShCode, Version),
 	      case Remaining > 1 of
 		  true -> print([" ", lists:duplicate(MaxC, 126), " \n"], []);
 		  false -> ok
@@ -716,16 +743,16 @@ filter_commands_regexp(All, Glob) ->
       All).
 
 %% @spec (Cmd::string(), MaxC::integer(), ShCode::boolean()) -> ok
-print_usage_command(Cmd, MaxC, ShCode) ->
+print_usage_command(Cmd, MaxC, ShCode, Version) ->
     Name = list_to_atom(Cmd),
-    case ejabberd_commands:get_command_definition(Name) of
+    case ejabberd_commands:get_command_definition(Name, Version) of
 	command_not_found ->
 	    io:format("Error: command ~p not known.~n", [Cmd]);
 	C ->
-	    print_usage_command(Cmd, C, MaxC, ShCode)
+	    print_usage_command2(Cmd, C, MaxC, ShCode)
     end.
 
-print_usage_command(Cmd, C, MaxC, ShCode) ->
+print_usage_command2(Cmd, C, MaxC, ShCode) ->
     #ejabberd_commands{
 		     tags = TagsAtoms,
 		     desc = Desc,
