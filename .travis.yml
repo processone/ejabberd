@@ -1,4 +1,3 @@
-# Just to force a build
 language: erlang
 
 otp_release:
