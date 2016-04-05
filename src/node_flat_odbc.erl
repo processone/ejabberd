@@ -800,8 +800,10 @@ get_item(Nidx, ItemId) ->
 	{selected,
 		    [<<"itemid">>, <<"publisher">>, <<"creation">>, <<"modification">>, <<"payload">>], [RItem]} ->
 	    {result, raw_to_item(Nidx, RItem)};
-	_ ->
-	    {error, ?ERR_ITEM_NOT_FOUND}
+	{selected, _, []} ->
+	    {error, ?ERR_ITEM_NOT_FOUND};
+	{'EXIT', _} ->
+	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Database failure">>)}
     end.
 
 get_item(Nidx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->

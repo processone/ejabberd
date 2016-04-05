@@ -137,13 +137,14 @@ process_iq(From, To, IQ) when ((From#jid.luser == <<"">>) andalso (From#jid.reso
     process_iq_manager(From, To, IQ);
 
 process_iq(From, To, IQ) ->
-    #iq{sub_el = SubEl} = IQ,
+    #iq{sub_el = SubEl, lang = Lang} = IQ,
     #jid{lserver = LServer} = From,
     case lists:member(LServer, ?MYHOSTS) of
       true -> process_local_iq(From, To, IQ);
       _ ->
+	  Txt = <<"The query is only allowed from local users">>,
 	  IQ#iq{type = error,
-		sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
+		sub_el = [SubEl, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)]}
     end.
 
 process_local_iq(From, To, #iq{type = Type} = IQ) ->
@@ -479,12 +480,13 @@ get_roster_by_jid_t(LUser, LServer, LJID, riak) ->
             exit(Err)
     end.
 
-try_process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
+try_process_iq_set(From, To, #iq{sub_el = SubEl, lang = Lang} = IQ) ->
     #jid{server = Server} = From,
     Access = gen_mod:get_module_opt(Server, ?MODULE, access, fun(A) when is_atom(A) -> A end, all),
     case acl:match_rule(Server, Access, From) of
 	deny ->
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	    Txt = <<"Denied by ACL">>,
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
 	allow ->
 	    process_iq_set(From, To, IQ)
     end.
@@ -1616,8 +1618,9 @@ process_iq_manager(From, To, IQ) ->
 	true ->
 	    process_iq_manager2(MatchDomain, To, IQ);
 	false ->
-	    #iq{sub_el = SubEl} = IQ,
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+	    #iq{sub_el = SubEl, lang = Lang} = IQ,
+	    Txt = <<"Roster management is not allowed from this domain">>,
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]}
     end.
 
 process_iq_manager2(MatchDomain, To, IQ) ->

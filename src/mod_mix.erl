@@ -132,8 +132,9 @@ process_iq(From, To,
 	{error, Err} ->
 	    IQ#iq{type = error, sub_el = [SubEl, Err]}
     end;
-process_iq(_From, _To, #iq{sub_el = SubEl} = IQ) ->
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]}.
+process_iq(_From, _To, #iq{sub_el = SubEl, lang = Lang} = IQ) ->
+    Txt = <<"Unsupported MIX query">>,
+    IQ#iq{type = error, sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]}.
 
 %%%===================================================================
 %%% gen_server callbacks

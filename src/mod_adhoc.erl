@@ -233,7 +233,7 @@ process_sm_iq(From, To, IQ) ->
     process_adhoc_request(From, To, IQ, adhoc_sm_commands).
 
 process_adhoc_request(From, To,
-		      #iq{sub_el = SubEl} = IQ, Hook) ->
+		      #iq{sub_el = SubEl, lang = Lang} = IQ, Hook) ->
     ?DEBUG("About to parse ~p...", [IQ]),
     case adhoc:parse_request(IQ) of
       {error, Error} ->
@@ -245,8 +245,9 @@ process_adhoc_request(From, To,
 	      of
 	    ignore -> ignore;
 	    empty ->
+		Txt = <<"No hook has processed this command">>,
 		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]};
+		      sub_el = [SubEl, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)]};
 	    {error, Error} ->
 		IQ#iq{type = error, sub_el = [SubEl, Error]};
 	    Command -> IQ#iq{type = result, sub_el = [Command]}
@@ -277,7 +278,9 @@ ping_command(_Acc, _From, _To,
 						      [{<<"info">>,
 							translate:translate(Lang,
 									    <<"Pong">>)}]});
-       true -> {error, ?ERR_BAD_REQUEST}
+       true ->
+	    Txt = <<"Incorrect value of 'action' attribute">>,
+	    {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
     end;
 ping_command(Acc, _From, _To, _Request) -> Acc.
 

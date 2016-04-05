@@ -150,7 +150,7 @@ process_iq(_,
 		      children = iq_vcard(Lang)}]};
 %% bytestreams info request
 process_iq(JID,
-	   #iq{type = get, sub_el = SubEl,
+	   #iq{type = get, sub_el = SubEl, lang = Lang,
 	       xmlns = ?NS_BYTESTREAMS} =
 	       IQ,
 	   #state{acl = ACL, stream_addr = StreamAddr,
@@ -165,11 +165,12 @@ process_iq(JID,
 			    attrs = [{<<"xmlns">>, ?NS_BYTESTREAMS}],
 			    children = StreamHostEl}]};
       deny ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
+	  Txt = <<"Denied by ACL">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]}
     end;
 %% bytestream activation request
 process_iq(InitiatorJID,
-	   #iq{type = set, sub_el = SubEl,
+	   #iq{type = set, sub_el = SubEl, lang = Lang,
 	       xmlns = ?NS_BYTESTREAMS} =
 	       IQ,
 	   #state{acl = ACL, serverhost = ServerHost}) ->
@@ -194,22 +195,27 @@ process_iq(InitiatorJID,
 		    of
 		  ok -> IQ#iq{type = result, sub_el = []};
 		  false ->
+		      Txt = <<"Failed to activate bytestream">>,
 		      IQ#iq{type = error,
-			    sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]};
+			    sub_el = [SubEl, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)]};
 		  limit ->
+		      Txt = <<"Too many active bytestreams">>,
 		      IQ#iq{type = error,
-			    sub_el = [SubEl, ?ERR_RESOURCE_CONSTRAINT]};
+			    sub_el = [SubEl, ?ERRT_RESOURCE_CONSTRAINT(Lang, Txt)]};
 		  conflict ->
-		      IQ#iq{type = error, sub_el = [SubEl, ?ERR_CONFLICT]};
+		      Txt = <<"Bytestream already activated">>,
+		      IQ#iq{type = error, sub_el = [SubEl, ?ERRT_CONFLICT(Lang, Txt)]};
 		  _ ->
 		      IQ#iq{type = error,
 			    sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
 		end;
 	    _ ->
-		IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+		Txt = <<"Malformed JID">>,
+		IQ#iq{type = error, sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]}
 	  end;
       deny ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
+	  Txt = <<"Denied by ACL">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]}
     end;
 %% Unknown "set" or "get" request
 process_iq(_, #iq{type = Type, sub_el = SubEl} = IQ, _)

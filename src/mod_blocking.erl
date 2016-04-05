@@ -64,29 +64,33 @@ process_iq(_From, _To, IQ) ->
     IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
 
 process_iq_get(_, From, _To,
-	       #iq{xmlns = ?NS_BLOCKING,
+	       #iq{xmlns = ?NS_BLOCKING, lang = Lang,
 		   sub_el = #xmlel{name = <<"blocklist">>}},
 	       _) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    {stop, process_blocklist_get(LUser, LServer)};
+    {stop, process_blocklist_get(LUser, LServer, Lang)};
 process_iq_get(Acc, _, _, _, _) -> Acc.
 
 process_iq_set(_, From, _To,
-	       #iq{xmlns = ?NS_BLOCKING,
+	       #iq{xmlns = ?NS_BLOCKING, lang = Lang,
 		   sub_el =
 		       #xmlel{name = SubElName, children = SubEls}}) ->
     #jid{luser = LUser, lserver = LServer} = From,
     Res = case {SubElName, fxml:remove_cdata(SubEls)} of
-	    {<<"block">>, []} -> {error, ?ERR_BAD_REQUEST};
+	    {<<"block">>, []} ->
+		Txt = <<"No items found in this query">>,
+		{error, ?ERRT_BAD_REQUEST(Lang, Txt)};
 	    {<<"block">>, Els} ->
 		JIDs = parse_blocklist_items(Els, []),
-		process_blocklist_block(LUser, LServer, JIDs);
+		process_blocklist_block(LUser, LServer, JIDs, Lang);
 	    {<<"unblock">>, []} ->
-		process_blocklist_unblock_all(LUser, LServer);
+		process_blocklist_unblock_all(LUser, LServer, Lang);
 	    {<<"unblock">>, Els} ->
 		JIDs = parse_blocklist_items(Els, []),
-		process_blocklist_unblock(LUser, LServer, JIDs);
-	    _ -> {error, ?ERR_BAD_REQUEST}
+		process_blocklist_unblock(LUser, LServer, JIDs, Lang);
+	    _ ->
+		Txt = <<"Unknown blocking command">>,
+		{error, ?ERRT_BAD_REQUEST(Lang, Txt)}
 	  end,
     {stop, Res};
 process_iq_set(Acc, _, _, _) -> Acc.
@@ -125,7 +129,7 @@ parse_blocklist_items([#xmlel{name = <<"item">>,
 parse_blocklist_items([_ | Els], JIDs) ->
     parse_blocklist_items(Els, JIDs).
 
-process_blocklist_block(LUser, LServer, JIDs) ->
+process_blocklist_block(LUser, LServer, JIDs, Lang) ->
     Filter = fun (List) ->
 		     AlreadyBlocked = list_to_blocklist_jids(List, []),
 		     lists:foldr(fun (JID, List1) ->
@@ -143,8 +147,8 @@ process_blocklist_block(LUser, LServer, JIDs) ->
 				 end,
 				 List, JIDs)
 	     end,
-    case process_blocklist_block(LUser, LServer, Filter,
-				 gen_mod:db_type(LServer, mod_privacy))
+    case process_blocklist_block_db(LUser, LServer, Filter,
+				    gen_mod:db_type(LServer, mod_privacy))
 	of
       {atomic, {ok, Default, List}} ->
 	  UserList = make_userlist(Default, List),
@@ -155,11 +159,11 @@ process_blocklist_block(LUser, LServer, JIDs) ->
 	  {result, [], UserList};
       _Err ->
 	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer, JIDs}, _Err]),
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
     end.
 
-process_blocklist_block(LUser, LServer, Filter,
-			mnesia) ->
+process_blocklist_block_db(LUser, LServer, Filter,
+			   mnesia) ->
     F = fun () ->
 		case mnesia:wread({privacy, {LUser, LServer}}) of
 		  [] ->
@@ -185,8 +189,8 @@ process_blocklist_block(LUser, LServer, Filter,
 		{ok, NewDefault, NewList}
 	end,
     mnesia:transaction(F);
-process_blocklist_block(LUser, LServer, Filter,
-			riak) ->
+process_blocklist_block_db(LUser, LServer, Filter,
+			   riak) ->
     {atomic,
      begin
          case ejabberd_riak:get(privacy, mod_privacy:privacy_schema(),
@@ -218,7 +222,7 @@ process_blocklist_block(LUser, LServer, Filter,
                  Err
          end
      end};
-process_blocklist_block(LUser, LServer, Filter, odbc) ->
+process_blocklist_block_db(LUser, LServer, Filter, odbc) ->
     F = fun () ->
 		Default = case
 			    mod_privacy:sql_get_default_privacy_list_t(LUser)
@@ -246,7 +250,7 @@ process_blocklist_block(LUser, LServer, Filter, odbc) ->
 	end,
     ejabberd_odbc:sql_transaction(LServer, F).
 
-process_blocklist_unblock_all(LUser, LServer) ->
+process_blocklist_unblock_all(LUser, LServer, Lang) ->
     Filter = fun (List) ->
 		     lists:filter(fun (#listitem{action = A}) -> A =/= deny
 				  end,
@@ -263,10 +267,10 @@ process_blocklist_unblock_all(LUser, LServer) ->
 	  {result, [], UserList};
       _Err ->
 	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer}, _Err]),
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
     end.
 
-process_blocklist_unblock(LUser, LServer, JIDs) ->
+process_blocklist_unblock(LUser, LServer, JIDs, Lang) ->
     Filter = fun (List) ->
 		     lists:filter(fun (#listitem{action = deny, type = jid,
 						 value = JID}) ->
@@ -287,7 +291,7 @@ process_blocklist_unblock(LUser, LServer, JIDs) ->
 	  {result, [], UserList};
       _Err ->
 	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer, JIDs}, _Err]),
-	    {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
     end.
 
 unblock_by_filter(LUser, LServer, Filter, mnesia) ->
@@ -375,11 +379,12 @@ broadcast_blocklist_event(LUser, LServer, Event) ->
     ejabberd_sm:route(JID, JID,
                       {broadcast, {blocking, Event}}).
 
-process_blocklist_get(LUser, LServer) ->
-    case process_blocklist_get(LUser, LServer,
-			       gen_mod:db_type(LServer, mod_privacy))
+process_blocklist_get(LUser, LServer, Lang) ->
+    case process_blocklist_get_db(LUser, LServer,
+				  gen_mod:db_type(LServer, mod_privacy))
 	of
-      error -> {error, ?ERR_INTERNAL_SERVER_ERROR};
+      error ->
+	  {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)};
       List ->
 	  JIDs = list_to_blocklist_jids(List, []),
 	  Items = lists:map(fun (JID) ->
@@ -397,7 +402,7 @@ process_blocklist_get(LUser, LServer) ->
 		   children = Items}]}
     end.
 
-process_blocklist_get(LUser, LServer, mnesia) ->
+process_blocklist_get_db(LUser, LServer, mnesia) ->
     case catch mnesia:dirty_read(privacy, {LUser, LServer})
 	of
       {'EXIT', _Reason} -> error;
@@ -408,7 +413,7 @@ process_blocklist_get(LUser, LServer, mnesia) ->
 	    _ -> []
 	  end
     end;
-process_blocklist_get(LUser, LServer, riak) ->
+process_blocklist_get_db(LUser, LServer, riak) ->
     case ejabberd_riak:get(privacy, mod_privacy:privacy_schema(),
 			   {LUser, LServer}) of
         {ok, #privacy{default = Default, lists = Lists}} ->
@@ -421,7 +426,7 @@ process_blocklist_get(LUser, LServer, riak) ->
         {error, _} ->
             error
     end;
-process_blocklist_get(LUser, LServer, odbc) ->
+process_blocklist_get_db(LUser, LServer, odbc) ->
     case catch
 	   mod_privacy:sql_get_default_privacy_list(LUser, LServer)
 	of

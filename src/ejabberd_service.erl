@@ -280,7 +280,9 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	 and (FromJID /= error) ->
 	   ejabberd_router:route(FromJID, ToJID, NewEl);
        true ->
-	   Err = jlib:make_error_reply(NewEl, ?ERR_BAD_REQUEST),
+	   Lang = fxml:get_tag_attr_s(<<"xml:lang">>, El),
+	   Txt = <<"Incorrect stanza name or from/to JID">>,
+	   Err = jlib:make_error_reply(NewEl, ?ERRT_BAD_REQUEST(Lang, Txt)),
 	   send_element(StateData, Err),
 	   error
     end,
@@ -360,7 +362,9 @@ handle_info({route, From, To, Packet}, StateName,
 					      attrs = Attrs2, children = Els}),
 	  send_text(StateData, Text);
       deny ->
-	  Err = jlib:make_error_reply(Packet, ?ERR_NOT_ALLOWED),
+	  Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	  Txt = <<"Denied by ACL">>,
+	  Err = jlib:make_error_reply(Packet, ?ERRT_NOT_ALLOWED(Lang, Txt)),
 	  ejabberd_router:route_error(To, From, Err, Packet)
     end,
     {next_state, StateName, StateData};

@@ -447,7 +447,7 @@ process_iq(LServer, #iq{sub_el = #xmlel{attrs = Attrs}} = IQ) ->
 % Preference setting (both v0.2 & v0.3)
 process_iq(#jid{luser = LUser, lserver = LServer},
 	   #jid{lserver = LServer},
-	   #iq{type = set, sub_el = #xmlel{name = <<"prefs">>} = SubEl} = IQ) ->
+	   #iq{type = set, lang = Lang, sub_el = #xmlel{name = <<"prefs">>} = SubEl} = IQ) ->
     try {case fxml:get_tag_attr_s(<<"default">>, SubEl) of
 	    <<"always">> -> always;
 	    <<"never">> -> never;
@@ -469,8 +469,9 @@ process_iq(#jid{luser = LUser, lserver = LServer},
 		    NewPrefs = prefs_el(Default, Always, Never, IQ#iq.xmlns),
 		    IQ#iq{type = result, sub_el = [NewPrefs]};
 		_Err ->
+		    Txt = <<"Database failure">>,
 		    IQ#iq{type = error,
-			sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+			sub_el = [SubEl, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt)]}
 	    end
     catch _:_ ->
 	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]}
