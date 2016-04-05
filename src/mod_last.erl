@@ -152,8 +152,7 @@ process_sm_iq(From, To,
 		     of
 		   allow -> get_last_iq(IQ, SubEl, User, Server);
 		   deny ->
-		       Txt = <<"Denied by privacy lists">>,
-		       IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]}
+		       IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
 		 end;
 	     true ->
 		 Txt = <<"Not subscribed">>,

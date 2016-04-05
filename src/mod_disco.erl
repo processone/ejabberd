@@ -150,7 +150,8 @@ process_local_iq_items(From, To,
 		       #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
       set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       get ->
 	  Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
 	  Host = To#jid.lserver,
@@ -177,7 +178,8 @@ process_local_iq_info(From, To,
 		      #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
       set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       get ->
 	  Host = To#jid.lserver,
 	  Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
@@ -229,10 +231,12 @@ get_local_features(Acc, _From, To, <<>>, _Lang) ->
      ets:select(disco_features,
 		[{{{'_', Host}}, [], ['$_']}])
        ++ Feats};
-get_local_features(Acc, _From, _To, _Node, _Lang) ->
+get_local_features(Acc, _From, _To, _Node, Lang) ->
     case Acc of
       {result, _Features} -> Acc;
-      empty -> {error, ?ERR_ITEM_NOT_FOUND}
+      empty ->
+	    Txt = <<"No features available">>,
+	    {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)}
     end.
 
 features_to_xml(FeatureList) ->
@@ -271,8 +275,8 @@ get_local_services(Acc, _From, To, <<>>, _Lang) ->
 get_local_services({result, _} = Acc, _From, _To, _Node,
 		   _Lang) ->
     Acc;
-get_local_services(empty, _From, _To, _Node, _Lang) ->
-    {error, ?ERR_ITEM_NOT_FOUND}.
+get_local_services(empty, _From, _To, _Node, Lang) ->
+    {error, ?ERRT_ITEM_NOT_FOUND(Lang, <<"No services available">>)}.
 
 get_vh_services(Host) ->
     Hosts = lists:sort(fun (H1, H2) ->
@@ -300,7 +304,8 @@ process_sm_iq_items(From, To,
 		    #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
       set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       get ->
 	  case is_presence_subscribed(From, To) of
 	    true ->
@@ -325,8 +330,9 @@ process_sm_iq_items(From, To,
 		      IQ#iq{type = error, sub_el = [SubEl, Error]}
 		end;
 	    false ->
+		Txt = <<"Not subscribed">>,
 		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]}
+		      sub_el = [SubEl, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)]}
 	  end
     end.
 
@@ -347,12 +353,14 @@ get_sm_items(Acc, From,
 get_sm_items({result, _} = Acc, _From, _To, _Node,
 	     _Lang) ->
     Acc;
-get_sm_items(empty, From, To, _Node, _Lang) ->
+get_sm_items(empty, From, To, _Node, Lang) ->
     #jid{luser = LFrom, lserver = LSFrom} = From,
     #jid{luser = LTo, lserver = LSTo} = To,
     case {LFrom, LSFrom} of
       {LTo, LSTo} -> {error, ?ERR_ITEM_NOT_FOUND};
-      _ -> {error, ?ERR_NOT_ALLOWED}
+      _ ->
+	    Txt = <<"Query to another users is forbidden">>,
+	    {error, ?ERRT_NOT_ALLOWED(Lang, Txt)}
     end.
 
 is_presence_subscribed(#jid{luser = User, lserver = Server},
@@ -373,7 +381,8 @@ process_sm_iq_info(From, To,
 		   #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case Type of
       set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       get ->
 	  case is_presence_subscribed(From, To) of
 	    true ->
@@ -405,8 +414,9 @@ process_sm_iq_info(From, To,
 		      IQ#iq{type = error, sub_el = [SubEl, Error]}
 		end;
 	    false ->
+		Txt = <<"Not subscribed">>,
 		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]}
+		      sub_el = [SubEl, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)]}
 	  end
     end.
 
@@ -423,12 +433,14 @@ get_sm_identity(Acc, _From,
 	_ -> []
       end.
 
-get_sm_features(empty, From, To, _Node, _Lang) ->
+get_sm_features(empty, From, To, _Node, Lang) ->
     #jid{luser = LFrom, lserver = LSFrom} = From,
     #jid{luser = LTo, lserver = LSTo} = To,
     case {LFrom, LSFrom} of
       {LTo, LSTo} -> {error, ?ERR_ITEM_NOT_FOUND};
-      _ -> {error, ?ERR_NOT_ALLOWED}
+      _ ->
+	    Txt = <<"Query to another users is forbidden">>,
+	    {error, ?ERRT_NOT_ALLOWED(Lang, Txt)}
     end;
 get_sm_features(Acc, _From, _To, _Node, _Lang) -> Acc.
 

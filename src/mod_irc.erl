@@ -304,8 +304,9 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 									Lang)}]},
 			    Res = jlib:iq_to_xml(ResIQ);
 			_ ->
-			    Res = jlib:make_error_reply(Packet,
-							?ERR_ITEM_NOT_FOUND)
+			    Txt = <<"Node not found">>,
+			    Res = jlib:make_error_reply(
+				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, Txt))
 		      end,
 		      ejabberd_router:route(To, From, Res);
 		  #iq{xmlns = ?NS_REGISTER} = IQ ->
@@ -319,7 +320,7 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 					      attrs = [{<<"xmlns">>, XMLNS}],
 					      children = iq_get_vcard(Lang)}]},
 		      ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
-		  #iq{type = set, xmlns = ?NS_COMMANDS, lang = _Lang,
+		  #iq{type = set, xmlns = ?NS_COMMANDS, lang = Lang,
 		      sub_el = SubEl} =
 		      IQ ->
 		      Request = adhoc:parse_request(IQ),
@@ -348,8 +349,9 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 			       true -> ok
 			    end;
 			_ ->
-			    Err = jlib:make_error_reply(Packet,
-							?ERR_ITEM_NOT_FOUND),
+			    Txt = <<"Node not found">>,
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)),
 			    ejabberd_router:route(To, From, Err)
 		      end;
 		  #iq{} = _IQ ->
@@ -407,12 +409,14 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 		      ok
 		end;
 	    _ ->
+		Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
 		case str:tokens(ChanServ, <<"!">>) of
 		  [<<_, _/binary>> = Nick, <<_, _/binary>> = Server] ->
 		      case ets:lookup(irc_connection, {From, Server, Host}) of
 			[] ->
-			    Err = jlib:make_error_reply(Packet,
-							?ERR_SERVICE_UNAVAILABLE),
+			    Txt = <<"IRC connection not found">>,
+			    Err = jlib:make_error_reply(
+				    Packet, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)),
 			    ejabberd_router:route(To, From, Err);
 			[R] ->
 			    Pid = R#irc_connection.pid,
@@ -421,7 +425,9 @@ do_route1(Host, ServerHost, From, To, Packet) ->
 			    ok
 		      end;
 		  _ ->
-		      Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
+		      Txt = <<"Failed to parse chanserv">>,
+		      Err = jlib:make_error_reply(
+			      Packet, ?ERRT_BAD_REQUEST(Lang, Txt)),
 		      ejabberd_router:route(To, From, Err)
 		end
 	  end
@@ -532,8 +538,9 @@ process_irc_register(ServerHost, Host, From, _To,
 	  XDataEl = find_xdata_el(SubEl),
 	  case XDataEl of
 	    false ->
+		Txt1 = <<"No data form found">>,
 		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERR_NOT_ACCEPTABLE]};
+		      sub_el = [SubEl, ?ERRT_NOT_ACCEPTABLE(Lang, Txt1)]};
 	    #xmlel{attrs = Attrs} ->
 		case fxml:get_attr_s(<<"type">>, Attrs) of
 		  <<"cancel">> ->
@@ -546,8 +553,9 @@ process_irc_register(ServerHost, Host, From, _To,
 		      XData = jlib:parse_xdata_submit(XDataEl),
 		      case XData of
 			invalid ->
+			    Txt2 = <<"Incorrect data form">>,
 			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+				  sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt2)]};
 			_ ->
 			    Node = str:tokens(fxml:get_tag_attr_s(<<"node">>,
 								 SubEl),
@@ -567,7 +575,9 @@ process_irc_register(ServerHost, Host, From, _To,
 			    end
 		      end;
 		  _ ->
-		      IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+		      Txt3 = <<"Incorrect value of 'type' attribute">>,
+		      IQ#iq{type = error,
+			    sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt3)]}
 		end
 	  end;
       get ->
@@ -629,7 +639,9 @@ get_form(ServerHost, Host, From, [], Lang) ->
     #jid{user = User, server = Server} = From,
     DefaultEncoding = get_default_encoding(Host),
     Customs = case get_data(ServerHost, Host, From) of
-		error -> {error, ?ERR_INTERNAL_SERVER_ERROR};
+		error ->
+		      Txt1 = <<"Database failure">>,
+		      {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt1)};
 		empty -> {User, []};
 		Data -> get_username_and_connection_params(Data)
 	      end,
@@ -763,7 +775,7 @@ set_data(LServer, Host, From, Data, odbc) ->
 	end,
     ejabberd_odbc:sql_transaction(LServer, F).
 
-set_form(ServerHost, Host, From, [], _Lang, XData) ->
+set_form(ServerHost, Host, From, [], Lang, XData) ->
     case {lists:keysearch(<<"username">>, 1, XData),
 	  lists:keysearch(<<"connections_params">>, 1, XData)}
 	of
@@ -781,11 +793,11 @@ set_form(ServerHost, Host, From, [], _Lang, XData) ->
 				     {connections_params, ConnectionsParams}])
 			  of
 			{atomic, _} -> {result, []};
-			_ -> {error, ?ERR_NOT_ACCEPTABLE}
+			_ -> {error, ?ERRT_NOT_ACCEPTABLE(Lang, <<"Database failure">>)}
 		      end;
-		  _ -> {error, ?ERR_NOT_ACCEPTABLE}
+		  _ -> {error, ?ERRT_NOT_ACCEPTABLE(Lang, <<"Parse error">>)}
 		end;
-	    _ -> {error, ?ERR_NOT_ACCEPTABLE}
+	    _ -> {error, ?ERRT_NOT_ACCEPTABLE(Lang, <<"Scan error">>)}
 	  end;
       _ -> {error, ?ERR_NOT_ACCEPTABLE}
     end;
@@ -909,7 +921,9 @@ adhoc_join(From, To,
 						  elements = [Form]});
        true ->
 	   case jlib:parse_xdata_submit(XData) of
-	     invalid -> {error, ?ERR_BAD_REQUEST};
+	     invalid ->
+		 Txt1 = <<"Incorrect data form">>,
+		 {error, ?ERRT_BAD_REQUEST(Lang, Txt1)};
 	     Fields ->
 		 Channel = case lists:keysearch(<<"channel">>, 1, Fields)
 			       of
@@ -998,7 +1012,8 @@ adhoc_register(ServerHost, From, To,
        true ->
 	   case jlib:parse_xdata_submit(XData) of
 	     invalid ->
-		 Error = {error, ?ERR_BAD_REQUEST},
+		 Txt1 = <<"Incorrect data form">>,
+		 Error = {error, ?ERRT_BAD_REQUEST(Lang, Txt1)},
 		 Username = false,
 		 ConnectionsParams = false;
 	     Fields ->
@@ -1021,7 +1036,9 @@ adhoc_register(ServerHost, From, To,
 	     {atomic, _} ->
 		 adhoc:produce_response(Request,
 					#adhoc_response{status = completed});
-	     _ -> {error, ?ERR_INTERNAL_SERVER_ERROR}
+	     _ ->
+		 Txt2 = <<"Database failure">>,
+		 {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt2)}
 	   end;
        true ->
 	   Form = generate_adhoc_register_form(Lang, Username,
