@@ -1309,8 +1309,7 @@ srg_get_info(Group, Host) ->
 	Os when is_list(Os) -> Os;
 	error -> []
     end,
-    [{jlib:atom_to_binary(Title),
-      io_lib:format("~p", [btl(Value)])} || {Title, Value} <- Opts].
+    [{jlib:atom_to_binary(Title), btl(Value)} || {Title, Value} <- Opts].
 
 btl([]) -> [];
 btl([B|L]) -> [btl(B)|btl(L)];
