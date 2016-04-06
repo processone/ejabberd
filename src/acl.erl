@@ -34,7 +34,7 @@
 	 match_rule/3, match_acl/3, transform_options/1,
 	 opt_type/1]).
 
--export([add_access/3]).
+-export([add_access/3, clear/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -45,6 +45,7 @@
                  rules = [] :: [access_rule()]}).
 
 -type regexp() :: binary().
+-type iprange() :: {inet:ip_address(), integer()} | binary().
 -type glob() :: binary().
 -type access_name() :: atom().
 -type access_rule() :: {atom(), any()}.
@@ -63,7 +64,7 @@
                    {user_glob, {glob(), host()} | glob()} |
                    {server_glob, glob()} |
                    {resource_glob, glob()} |
-                   {ip, {inet:ip_address(), integer()}} |
+                   {ip, iprange()} |
                    {node_glob, {glob(), glob()}}.
 
 -type acl() :: #acl{aclname :: aclname(),
@@ -205,6 +206,12 @@ load_from_config() ->
                         add_access(Host, Access, Rules)
                 end, AccessRules)
       end, Hosts).
+
+%% Delete all previous set ACLs and Access rules
+clear() ->
+    mnesia:clear_table(acl),
+    mnesia:clear_table(access),
+    ok.
 
 b(S) ->
     iolist_to_binary(S).
