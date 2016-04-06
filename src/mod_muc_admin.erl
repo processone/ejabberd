@@ -824,8 +824,12 @@ get_room_options(Pid) ->
     get_options(Config).
 
 get_options(Config) ->
-    Fields = record_info(fields, config),
-    [config | Values] = tuple_to_list(Config),
+    Fields = [jlib:atom_to_binary(Field) || Field <- record_info(fields, config)],
+    [config | ValuesRaw] = tuple_to_list(Config),
+    Values = lists:map(fun(V) when is_atom(V) -> jlib:atom_to_binary(V);
+                          (V) when is_integer(V) -> jlib:integer_to_binary(V);
+                          (V) when is_tuple(V); is_list(V) -> list_to_binary(hd(io_lib:format("~w", [V])));
+                          (V) -> V end, ValuesRaw),
     lists:zip(Fields, Values).
 
 %%----------------------------
