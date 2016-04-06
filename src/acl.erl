@@ -34,6 +34,8 @@
 	 match_rule/3, match_acl/3, transform_options/1,
 	 opt_type/1]).
 
+-export([add_access/3]).
+
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("jlib.hrl").
