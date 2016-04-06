@@ -93,7 +93,7 @@ hosts_to_start(State) ->
 -spec(start/2 :: (Hosts :: [binary()], Opts :: [acl:acl() | local_config()]) -> ok).
 start(Hosts, Opts) ->
     mnesia_init(),
-    set_opts(#state{hosts = Hosts, opts = Opts}).
+    set_opts(set_hosts_in_options(Hosts, #state{opts = Opts})).
 
 mnesia_init() ->
     case catch mnesia:table_info(local_config, storage_type) of
