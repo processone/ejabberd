@@ -30,6 +30,10 @@ defmodule ACLTest do
     :ok = :acl.start
   end
 
+  setup do
+    :acl.clear
+  end
+
   test "simple user access rule matches" do
     :acl.add(:global, :basic_acl_1, {:user, "test1"})
     :acl.add_access(:global, :basic_rule_1, [{:basic_acl_1, :allow}])
@@ -38,5 +42,12 @@ defmodule ACLTest do
     # We match on user part only for local domain. As an implicit rule remote domain are not matched
     assert :acl.match_rule(:global, :basic_rule_1, :jid.from_string("test1@otherdomain")) == :deny
     assert :acl.match_rule(:global, :basic_rule_1, :jid.from_string("test11@domain1")) == :deny
+
+    :acl.add(:global, :basic_acl_2, {:user, {"test2", "domain1"}})
+    :acl.add_access(:global, :basic_rule_2, [{:basic_acl_2, :allow}])
+    assert :acl.match_rule(:global, :basic_rule_2, :jid.from_string("test2@domain1")) == :allow
+    assert :acl.match_rule(:global, :basic_rule_2, :jid.from_string("test2@domain2")) == :deny
+    assert :acl.match_rule(:global, :basic_rule_2, :jid.from_string("test2@otherdomain")) == :deny
   end
+
 end
