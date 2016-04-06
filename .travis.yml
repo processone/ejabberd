@@ -59,6 +59,7 @@ after_script:
   - find logs -name suite.log -exec cat '{}' ';'
 
 after_failure:
+  - find logs -name exunit.log -exec cat '{}' ';'
   # Try checking Riak database logs
   - tail -n 100000 /var/log/riak/*.log
   - find logs -name ejabberd.log -exec cat '{}' ';'
