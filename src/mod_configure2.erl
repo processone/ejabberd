@@ -56,15 +56,17 @@ stop(Host) ->
 				     ?NS_ECONFIGURE).
 
 process_local_iq(From, To,
-		 #iq{type = Type, lang = _Lang, sub_el = SubEl} = IQ) ->
+		 #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
     case acl:match_rule(To#jid.lserver, configure, From) of
       deny ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Denied by ACL">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       allow ->
 	  case Type of
 	    set ->
+		Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
 		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERR_FEATURE_NOT_IMPLEMENTED]};
+		      sub_el = [SubEl, ?ERRT_FEATURE_NOT_IMPLEMENTED(Lang, Txt)]};
 	    %%case fxml:get_tag_attr_s("type", SubEl) of
 	    %%    "cancel" ->
 	    %%        IQ#iq{type = result,
@@ -98,7 +100,7 @@ process_local_iq(From, To,
 	    %%		   sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
 	    %%end;
 	    get ->
-		case process_get(SubEl) of
+		case process_get(SubEl, Lang) of
 		  {result, Res} -> IQ#iq{type = result, sub_el = [Res]};
 		  {error, Error} ->
 		      IQ#iq{type = error, sub_el = [SubEl, Error]}
@@ -106,7 +108,7 @@ process_local_iq(From, To,
 	  end
     end.
 
-process_get(#xmlel{name = <<"info">>}) ->
+process_get(#xmlel{name = <<"info">>}, _Lang) ->
     S2SConns = ejabberd_s2s:dirty_get_connections(),
     TConns = lists:usort([element(2, C) || C <- S2SConns]),
     Attrs = [{<<"registered-users">>,
@@ -130,7 +132,7 @@ process_get(#xmlel{name = <<"info">>}) ->
 	    attrs = [{<<"xmlns">>, ?NS_ECONFIGURE} | Attrs],
 	    children = []}};
 process_get(#xmlel{name = <<"welcome-message">>,
-		   attrs = Attrs}) ->
+		   attrs = Attrs}, _Lang) ->
     {Subj, Body} = ejabberd_config:get_option(
                      welcome_message,
                      fun({Subj, Body}) ->
@@ -146,7 +148,7 @@ process_get(#xmlel{name = <<"welcome-message">>,
 		 #xmlel{name = <<"body">>, attrs = [],
 			children = [{xmlcdata, Body}]}]}};
 process_get(#xmlel{name = <<"registration-watchers">>,
-		   attrs = Attrs}) ->
+		   attrs = Attrs}, _Lang) ->
     SubEls = ejabberd_config:get_option(
                registration_watchers,
                fun(JIDs) when is_list(JIDs) ->
@@ -160,14 +162,14 @@ process_get(#xmlel{name = <<"registration-watchers">>,
     {result,
      #xmlel{name = <<"registration_watchers">>,
 	    attrs = Attrs, children = SubEls}};
-process_get(#xmlel{name = <<"acls">>, attrs = Attrs}) ->
+process_get(#xmlel{name = <<"acls">>, attrs = Attrs}, _Lang) ->
     Str = iolist_to_binary(io_lib:format("~p.",
 					 [ets:tab2list(acl)])),
     {result,
      #xmlel{name = <<"acls">>, attrs = Attrs,
 	    children = [{xmlcdata, Str}]}};
 process_get(#xmlel{name = <<"access">>,
-		   attrs = Attrs}) ->
+		   attrs = Attrs}, _Lang) ->
     Str = iolist_to_binary(io_lib:format("~p.",
 					 [ets:select(local_config,
 						     [{{local_config, {access, '$1'},
@@ -178,13 +180,14 @@ process_get(#xmlel{name = <<"access">>,
     {result,
      #xmlel{name = <<"access">>, attrs = Attrs,
 	    children = [{xmlcdata, Str}]}};
-process_get(#xmlel{name = <<"last">>, attrs = Attrs}) ->
+process_get(#xmlel{name = <<"last">>, attrs = Attrs}, Lang) ->
     case catch mnesia:dirty_select(last_activity,
 				   [{{last_activity, '_', '$1', '_'}, [],
 				     ['$1']}])
 	of
       {'EXIT', _Reason} ->
-	  {error, ?ERR_INTERNAL_SERVER_ERROR};
+	  Txt = <<"Database failure">>,
+	  {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt)};
       Vals ->
 	  TimeStamp = p1_time_compat:system_time(seconds),
 	  Str = list_to_binary(
@@ -196,7 +199,7 @@ process_get(#xmlel{name = <<"last">>, attrs = Attrs}) ->
     end;
 %%process_get({xmlelement, Name, Attrs, SubEls}) ->
 %%    {result, };
-process_get(_) -> {error, ?ERR_BAD_REQUEST}.
+process_get(_, _) -> {error, ?ERR_BAD_REQUEST}.
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(_) -> [iqdisc].

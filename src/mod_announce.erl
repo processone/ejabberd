@@ -211,15 +211,15 @@ disco_identity(Acc, _From, _To, Node, Lang) ->
 
 %%-------------------------------------------------------------------------
 
--define(INFO_RESULT(Allow, Feats),
+-define(INFO_RESULT(Allow, Feats, Lang),
 	case Allow of
 	    deny ->
-		{error, ?ERR_FORBIDDEN};
+		{error, ?ERRT_FORBIDDEN(Lang, <<"Denied by ACL">>)};
 	    allow ->
 		{result, Feats}
 	end).
 
-disco_features(Acc, From, #jid{lserver = LServer} = _To, <<"announce">>, _Lang) ->
+disco_features(Acc, From, #jid{lserver = LServer} = _To, <<"announce">>, Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -229,13 +229,14 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To, <<"announce">>, _Lang) 
 	    case {acl:match_rule(LServer, Access1, From),
 		  acl:match_rule(global, Access2, From)} of
 		{deny, deny} ->
-		    {error, ?ERR_FORBIDDEN};
+		    Txt = <<"Denied by ACL">>,
+		    {error, ?ERRT_FORBIDDEN(Lang, Txt)};
 		_ ->
 		    {result, []}
 	    end
     end;
 
-disco_features(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
+disco_features(Acc, From, #jid{lserver = LServer} = _To, Node, Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -246,25 +247,25 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
 	    AllowGlobal = acl:match_rule(global, AccessGlobal, From),
 	    case Node of
 		?NS_ADMIN_ANNOUNCE ->
-		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 		?NS_ADMIN_ANNOUNCE_ALL ->
-		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 		?NS_ADMIN_SET_MOTD ->
-		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 		?NS_ADMIN_EDIT_MOTD ->
-		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 		?NS_ADMIN_DELETE_MOTD ->
-		    ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		    ?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 		?NS_ADMIN_ANNOUNCE_ALLHOSTS ->
-		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS]);
+		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS], Lang);
 		?NS_ADMIN_ANNOUNCE_ALL_ALLHOSTS ->
-		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS]);
+		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS], Lang);
 		?NS_ADMIN_SET_MOTD_ALLHOSTS ->
-		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS]);
+		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS], Lang);
 		?NS_ADMIN_EDIT_MOTD_ALLHOSTS ->
-		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS]);
+		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS], Lang);
 		?NS_ADMIN_DELETE_MOTD_ALLHOSTS ->
-		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS]);
+		    ?INFO_RESULT(AllowGlobal, [?NS_COMMANDS], Lang);
 		_ ->
 		    Acc
 	    end
@@ -283,10 +284,10 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
     }
 )).
 
--define(ITEMS_RESULT(Allow, Items),
+-define(ITEMS_RESULT(Allow, Items, Lang),
 	case Allow of
 	    deny ->
-		{error, ?ERR_FORBIDDEN};
+		{error, ?ERRT_FORBIDDEN(Lang, <<"Denied by ACL">>)};
 	    allow ->
 		{result, Items}
 	end).
@@ -320,7 +321,7 @@ disco_items(Acc, From, #jid{lserver = LServer} = To, <<"announce">>, Lang) ->
 	    announce_items(Acc, From, To, Lang)
     end;
 
-disco_items(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
+disco_items(Acc, From, #jid{lserver = LServer} = _To, Node, Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;
@@ -331,25 +332,25 @@ disco_items(Acc, From, #jid{lserver = LServer} = _To, Node, _Lang) ->
 	    AllowGlobal = acl:match_rule(global, AccessGlobal, From),
 	    case Node of
 		?NS_ADMIN_ANNOUNCE ->
-		    ?ITEMS_RESULT(Allow, []);
+		    ?ITEMS_RESULT(Allow, [], Lang);
 		?NS_ADMIN_ANNOUNCE_ALL ->
-		    ?ITEMS_RESULT(Allow, []);
+		    ?ITEMS_RESULT(Allow, [], Lang);
 		?NS_ADMIN_SET_MOTD ->
-		    ?ITEMS_RESULT(Allow, []);
+		    ?ITEMS_RESULT(Allow, [], Lang);
 		?NS_ADMIN_EDIT_MOTD ->
-		    ?ITEMS_RESULT(Allow, []);
+		    ?ITEMS_RESULT(Allow, [], Lang);
 		?NS_ADMIN_DELETE_MOTD ->
-		    ?ITEMS_RESULT(Allow, []);
+		    ?ITEMS_RESULT(Allow, [], Lang);
 		?NS_ADMIN_ANNOUNCE_ALLHOSTS ->
-		    ?ITEMS_RESULT(AllowGlobal, []);
+		    ?ITEMS_RESULT(AllowGlobal, [], Lang);
 		?NS_ADMIN_ANNOUNCE_ALL_ALLHOSTS ->
-		    ?ITEMS_RESULT(AllowGlobal, []);
+		    ?ITEMS_RESULT(AllowGlobal, [], Lang);
 		?NS_ADMIN_SET_MOTD_ALLHOSTS ->
-		    ?ITEMS_RESULT(AllowGlobal, []);
+		    ?ITEMS_RESULT(AllowGlobal, [], Lang);
 		?NS_ADMIN_EDIT_MOTD_ALLHOSTS ->
-		    ?ITEMS_RESULT(AllowGlobal, []);
+		    ?ITEMS_RESULT(AllowGlobal, [], Lang);
 		?NS_ADMIN_DELETE_MOTD_ALLHOSTS ->
-		    ?ITEMS_RESULT(AllowGlobal, []);
+		    ?ITEMS_RESULT(AllowGlobal, [], Lang);
 		_ ->
 		    Acc
 	    end
@@ -396,7 +397,8 @@ announce_items(Acc, From, #jid{lserver = LServer, server = Server} = _To, Lang) 
 commands_result(Allow, From, To, Request) ->
     case Allow of
 	deny ->
-	    {error, ?ERR_FORBIDDEN};
+	    Lang = Request#adhoc_request.lang,
+	    {error, ?ERRT_FORBIDDEN(Lang, <<"Denied by ACL">>)};
 	allow ->
 	    announce_commands(From, To, Request)
     end.
@@ -463,12 +465,13 @@ announce_commands(From, To,
 	    %% User returns form.
 	    case jlib:parse_xdata_submit(XData) of
 		invalid ->
-		    {error, ?ERR_BAD_REQUEST};
+		    {error, ?ERRT_BAD_REQUEST(Lang, <<"Incorrect data form">>)};
 		Fields ->
 		    handle_adhoc_form(From, To, Request, Fields)
 	    end;
        true ->
-	    {error, ?ERR_BAD_REQUEST}
+	    Txt = <<"Incorrect action or data form">>,
+	    {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
     end.
 
 -define(VVALUE(Val),
@@ -688,7 +691,9 @@ announce_all(From, To, Packet) ->
     Access = get_access(Host),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	    Txt = <<"Denied by ACL">>,
+	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, Txt)),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    Local = jid:make(<<>>, To#jid.server, <<>>),
@@ -703,7 +708,9 @@ announce_all_hosts_all(From, To, Packet) ->
     Access = get_access(global),
     case acl:match_rule(global, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	    Txt = <<"Denied by ACL">>,
+	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, Txt)),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    Local = jid:make(<<>>, To#jid.server, <<>>),
@@ -719,7 +726,9 @@ announce_online(From, To, Packet) ->
     Access = get_access(Host),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	    Txt = <<"Denied by ACL">>,
+	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, Txt)),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_online1(ejabberd_sm:get_vh_session_list(Host),
@@ -731,7 +740,9 @@ announce_all_hosts_online(From, To, Packet) ->
     Access = get_access(global),
     case acl:match_rule(global, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	    Txt = <<"Denied by ACL">>,
+	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, Txt)),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_online1(ejabberd_sm:dirty_get_sessions_list(),
@@ -752,7 +763,9 @@ announce_motd(From, To, Packet) ->
     Access = get_access(Host),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	    Txt = <<"Denied by ACL">>,
+	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, Txt)),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_motd(Host, Packet)
@@ -762,7 +775,9 @@ announce_all_hosts_motd(From, To, Packet) ->
     Access = get_access(global),
     case acl:match_rule(global, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	    Txt = <<"Denied by ACL">>,
+	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, Txt)),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    Hosts = ?MYHOSTS,
@@ -815,7 +830,9 @@ announce_motd_update(From, To, Packet) ->
     Access = get_access(Host),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	    Txt = <<"Denied by ACL">>,
+	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, Txt)),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_motd_update(Host, Packet)
@@ -825,7 +842,9 @@ announce_all_hosts_motd_update(From, To, Packet) ->
     Access = get_access(global),
     case acl:match_rule(global, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	    Txt = <<"Denied by ACL">>,
+	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, Txt)),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    Hosts = ?MYHOSTS,
@@ -861,7 +880,9 @@ announce_motd_delete(From, To, Packet) ->
     Access = get_access(Host),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	    Txt = <<"Denied by ACL">>,
+	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, Txt)),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    announce_motd_delete(Host)
@@ -871,7 +892,9 @@ announce_all_hosts_motd_delete(From, To, Packet) ->
     Access = get_access(global),
     case acl:match_rule(global, Access, From) of
 	deny ->
-	    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
+	    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	    Txt = <<"Denied by ACL">>,
+	    Err = jlib:make_error_reply(Packet, ?ERRT_FORBIDDEN(Lang, Txt)),
 	    ejabberd_router:route(To, From, Err);
 	allow ->
 	    Hosts = ?MYHOSTS,

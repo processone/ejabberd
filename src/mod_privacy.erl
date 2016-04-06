@@ -105,27 +105,29 @@ process_iq(_From, _To, IQ) ->
     SubEl = IQ#iq.sub_el,
     IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
 
-process_iq_get(_, From, _To, #iq{sub_el = SubEl},
+process_iq_get(_, From, _To, #iq{lang = Lang, sub_el = SubEl},
 	       #userlist{name = Active}) ->
     #jid{luser = LUser, lserver = LServer} = From,
     #xmlel{children = Els} = SubEl,
     case fxml:remove_cdata(Els) of
-      [] -> process_lists_get(LUser, LServer, Active);
+      [] -> process_lists_get(LUser, LServer, Active, Lang);
       [#xmlel{name = Name, attrs = Attrs}] ->
 	  case Name of
 	    <<"list">> ->
 		ListName = fxml:get_attr(<<"name">>, Attrs),
-		process_list_get(LUser, LServer, ListName);
-	    _ -> {error, ?ERR_BAD_REQUEST}
+		process_list_get(LUser, LServer, ListName, Lang);
+	    _ ->
+		  Txt = <<"Unsupported tag name">>,
+		  {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
 	  end;
-      _ -> {error, ?ERR_BAD_REQUEST}
+      _ -> {error, ?ERRT_BAD_REQUEST(Lang, <<"Too many elements">>)}
     end.
 
-process_lists_get(LUser, LServer, Active) ->
-    case process_lists_get(LUser, LServer, Active,
+process_lists_get(LUser, LServer, Active, Lang) ->
+    case process_lists_get_db(LUser, LServer, Active,
 			   gen_mod:db_type(LServer, ?MODULE))
 	of
-      error -> {error, ?ERR_INTERNAL_SERVER_ERROR};
+      error -> {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)};
       {_Default, []} ->
 	  {result,
 	   [#xmlel{name = <<"query">>,
@@ -151,7 +153,7 @@ process_lists_get(LUser, LServer, Active) ->
 		   children = ADItems}]}
     end.
 
-process_lists_get(LUser, LServer, _Active, mnesia) ->
+process_lists_get_db(LUser, LServer, _Active, mnesia) ->
     case catch mnesia:dirty_read(privacy, {LUser, LServer})
 	of
       {'EXIT', _Reason} -> error;
@@ -165,7 +167,7 @@ process_lists_get(LUser, LServer, _Active, mnesia) ->
 			     Lists),
 	  {Default, LItems}
     end;
-process_lists_get(LUser, LServer, _Active, riak) ->
+process_lists_get_db(LUser, LServer, _Active, riak) ->
     case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
         {ok, #privacy{default = Default, lists = Lists}} ->
             LItems = lists:map(fun ({N, _}) ->
@@ -180,7 +182,7 @@ process_lists_get(LUser, LServer, _Active, riak) ->
         {error, _} ->
             error
     end;
-process_lists_get(LUser, LServer, _Active, odbc) ->
+process_lists_get_db(LUser, LServer, _Active, odbc) ->
     Default = case catch sql_get_default_privacy_list(LUser, LServer) of
 		{selected, []} -> none;
 		{selected, [{DefName}]} -> DefName;
@@ -198,11 +200,11 @@ process_lists_get(LUser, LServer, _Active, odbc) ->
       _ -> error
     end.
 
-process_list_get(LUser, LServer, {value, Name}) ->
-    case process_list_get(LUser, LServer, Name,
+process_list_get(LUser, LServer, {value, Name}, Lang) ->
+    case process_list_get_db(LUser, LServer, Name,
 			  gen_mod:db_type(LServer, ?MODULE))
 	of
-      error -> {error, ?ERR_INTERNAL_SERVER_ERROR};
+      error -> {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)};
       not_found -> {error, ?ERR_ITEM_NOT_FOUND};
       Items ->
 	  LItems = lists:map(fun item_to_xml/1, Items),
@@ -213,10 +215,10 @@ process_list_get(LUser, LServer, {value, Name}) ->
 		       [#xmlel{name = <<"list">>, attrs = [{<<"name">>, Name}],
 			       children = LItems}]}]}
     end;
-process_list_get(_LUser, _LServer, false) ->
+process_list_get(_LUser, _LServer, false, _Lang) ->
     {error, ?ERR_BAD_REQUEST}.
 
-process_list_get(LUser, LServer, Name, mnesia) ->
+process_list_get_db(LUser, LServer, Name, mnesia) ->
     case catch mnesia:dirty_read(privacy, {LUser, LServer})
 	of
       {'EXIT', _Reason} -> error;
@@ -227,7 +229,7 @@ process_list_get(LUser, LServer, Name, mnesia) ->
 	    _ -> not_found
 	  end
     end;
-process_list_get(LUser, LServer, Name, riak) ->
+process_list_get_db(LUser, LServer, Name, riak) ->
     case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
         {ok, #privacy{lists = Lists}} ->
             case lists:keysearch(Name, 1, Lists) of
@@ -239,7 +241,7 @@ process_list_get(LUser, LServer, Name, riak) ->
         {error, _} ->
             error
     end;
-process_list_get(LUser, LServer, Name, odbc) ->
+process_list_get_db(LUser, LServer, Name, odbc) ->
     case catch sql_get_privacy_list_id(LUser, LServer, Name) of
       {selected, []} -> not_found;
       {selected, [{ID}]} ->
@@ -332,7 +334,7 @@ list_to_action(S) ->
       <<"deny">> -> deny
     end.
 
-process_iq_set(_, From, _To, #iq{sub_el = SubEl}) ->
+process_iq_set(_, From, _To, #iq{lang = Lang, sub_el = SubEl}) ->
     #jid{luser = LUser, lserver = LServer} = From,
     #xmlel{children = Els} = SubEl,
     case fxml:remove_cdata(Els) of
@@ -342,27 +344,30 @@ process_iq_set(_, From, _To, #iq{sub_el = SubEl}) ->
 	  case Name of
 	    <<"list">> ->
 		process_list_set(LUser, LServer, ListName,
-				 fxml:remove_cdata(SubEls));
+				 fxml:remove_cdata(SubEls), Lang);
 	    <<"active">> ->
 		process_active_set(LUser, LServer, ListName);
 	    <<"default">> ->
-		process_default_set(LUser, LServer, ListName);
-	    _ -> {error, ?ERR_BAD_REQUEST}
+		process_default_set(LUser, LServer, ListName, Lang);
+	    _ ->
+		Txt = <<"Unsupported tag name">>,
+		{error, ?ERRT_BAD_REQUEST(Lang, Txt)}
 	  end;
       _ -> {error, ?ERR_BAD_REQUEST}
     end.
 
-process_default_set(LUser, LServer, Value) ->
-    case process_default_set(LUser, LServer, Value,
+process_default_set(LUser, LServer, Value, Lang) ->
+    case process_default_set_db(LUser, LServer, Value,
 			     gen_mod:db_type(LServer, ?MODULE))
 	of
-      {atomic, error} -> {error, ?ERR_INTERNAL_SERVER_ERROR};
+      {atomic, error} ->
+	    {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)};
       {atomic, not_found} -> {error, ?ERR_ITEM_NOT_FOUND};
       {atomic, ok} -> {result, []};
       _ -> {error, ?ERR_INTERNAL_SERVER_ERROR}
     end.
 
-process_default_set(LUser, LServer, {value, Name},
+process_default_set_db(LUser, LServer, {value, Name},
 		    mnesia) ->
     F = fun () ->
 		case mnesia:read({privacy, {LUser, LServer}}) of
@@ -378,7 +383,7 @@ process_default_set(LUser, LServer, {value, Name},
 		end
 	end,
     mnesia:transaction(F);
-process_default_set(LUser, LServer, {value, Name}, riak) ->
+process_default_set_db(LUser, LServer, {value, Name}, riak) ->
     {atomic,
      case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
          {ok, #privacy{lists = Lists} = P} ->
@@ -393,7 +398,7 @@ process_default_set(LUser, LServer, {value, Name}, riak) ->
          {error, _} ->
              not_found
      end};
-process_default_set(LUser, LServer, {value, Name},
+process_default_set_db(LUser, LServer, {value, Name},
 		    odbc) ->
     F = fun () ->
 		case sql_get_privacy_list_names_t(LUser) of
@@ -406,7 +411,7 @@ process_default_set(LUser, LServer, {value, Name},
 		end
 	end,
     odbc_queries:sql_transaction(LServer, F);
-process_default_set(LUser, LServer, false, mnesia) ->
+process_default_set_db(LUser, LServer, false, mnesia) ->
     F = fun () ->
 		case mnesia:read({privacy, {LUser, LServer}}) of
 		  [] -> ok;
@@ -414,7 +419,7 @@ process_default_set(LUser, LServer, false, mnesia) ->
 		end
 	end,
     mnesia:transaction(F);
-process_default_set(LUser, LServer, false, riak) ->
+process_default_set_db(LUser, LServer, false, riak) ->
     {atomic,
      case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
          {ok, R} ->
@@ -422,7 +427,7 @@ process_default_set(LUser, LServer, false, riak) ->
          {error, _} ->
              ok
      end};
-process_default_set(LUser, LServer, false, odbc) ->
+process_default_set_db(LUser, LServer, false, odbc) ->
     case catch sql_unset_default_privacy_list(LUser,
 					      LServer)
 	of
@@ -588,14 +593,16 @@ set_privacy_list(LUser, LServer, Name, List, odbc) ->
 	end,
     odbc_queries:sql_transaction(LServer, F).
 
-process_list_set(LUser, LServer, {value, Name}, Els) ->
+process_list_set(LUser, LServer, {value, Name}, Els, Lang) ->
     case parse_items(Els) of
       false -> {error, ?ERR_BAD_REQUEST};
       remove ->
 	  case remove_privacy_list(LUser, LServer, Name,
 				   gen_mod:db_type(LServer, ?MODULE))
 	      of
-	    {atomic, conflict} -> {error, ?ERR_CONFLICT};
+	    {atomic, conflict} ->
+		  Txt = <<"Cannot remove default list">>,
+		  {error, ?ERRT_CONFLICT(Lang, Txt)};
 	    {atomic, ok} ->
 		ejabberd_sm:route(jid:make(LUser, LServer,
                                                 <<"">>),
@@ -605,7 +612,7 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
                                                          list = []},
                                                Name}}),
 		{result, []};
-	    _ -> {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    _ -> {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
 	  end;
       List ->
 	  case set_privacy_list(LUser, LServer, Name, List,
@@ -622,10 +629,10 @@ process_list_set(LUser, LServer, {value, Name}, Els) ->
                                                          needdb = NeedDb},
                                                Name}}),
 		{result, []};
-	    _ -> {error, ?ERR_INTERNAL_SERVER_ERROR}
+	    _ -> {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
 	  end
     end;
-process_list_set(_LUser, _LServer, false, _Els) ->
+process_list_set(_LUser, _LServer, false, _Els, _Lang) ->
     {error, ?ERR_BAD_REQUEST}.
 
 parse_items([]) -> remove;

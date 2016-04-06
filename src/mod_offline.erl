@@ -387,8 +387,9 @@ handle_offline_query(#jid{luser = U, lserver = S} = From,
 	    end
     end,
     IQ#iq{type = result, sub_el = []};
-handle_offline_query(_From, _To, #iq{sub_el = SubEl} = IQ) ->
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}.
+handle_offline_query(_From, _To, #iq{sub_el = SubEl, lang = Lang} = IQ) ->
+    Txt = <<"Query to another users is forbidden">>,
+    IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]}.
 
 handle_offline_items_view(JID, #xmlel{children = Items}) ->
     {U, S, R} = jid:tolower(JID),

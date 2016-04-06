@@ -151,21 +151,28 @@ process_iq(From, To,
 				%% modules.  lists:foreach can
 				%% only return ok:
 				not_allowed ->
+				    Txt = <<"Removal is not allowed">>,
 				    IQ#iq{type = error,
-					  sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+					  sub_el = [SubEl,
+						    ?ERRT_NOT_ALLOWED(Lang, Txt)]};
 				not_exists ->
+				    Txt = <<"No such user">>,
 				    IQ#iq{type = error,
 					  sub_el =
-					      [SubEl, ?ERR_ITEM_NOT_FOUND]};
-				_ ->
+					      [SubEl,
+					       ?ERRT_ITEM_NOT_FOUND(Lang, Txt)]};
+				Err ->
+				    ?ERROR_MSG("failed to remove user ~s@~s: ~p",
+					       [User, Server, Err]),
 				    IQ#iq{type = error,
 					  sub_el =
 					      [SubEl,
 					       ?ERR_INTERNAL_SERVER_ERROR]}
 			      end;
 			  true ->
+			      Txt = <<"No password in this query">>,
 			      IQ#iq{type = error,
-				    sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+				    sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]}
 		       end
 		 end;
 	     (UTag == false) and (RTag /= false) and AllowRemove ->
@@ -182,7 +189,9 @@ process_iq(From, To,
 		       ejabberd_auth:remove_user(User, Server),
 		       ignore;
 		   _ ->
-		       IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
+		       Txt = <<"The query is only allowed from local users">>,
+		       IQ#iq{type = error,
+			     sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]}
 		 end;
 	     (UTag /= false) and (PTag /= false) ->
 		 User = fxml:get_tag_cdata(UTag),
@@ -200,11 +209,14 @@ process_iq(From, To,
 							  SubEl, Source, Lang,
 							  true);
 			 _ ->
+			     Txt = <<"Incorrect data form">>,
 			     IQ#iq{type = error,
-				   sub_el = [SubEl, ?ERR_BAD_REQUEST]}
+				   sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]}
 		       end;
 		   {error, malformed} ->
-		       IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+		       Txt = <<"Incorrect CAPTCHA submit">>,
+		       IQ#iq{type = error,
+			     sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]};
 		   _ ->
 		       ErrText = <<"The CAPTCHA verification has failed">>,
 		       IQ#iq{type = error,
@@ -344,7 +356,8 @@ try_register_or_set_password(User, Server, Password,
 		      IQ#iq{type = error, sub_el = [SubEl, Error]}
 		end;
 	    deny ->
-		IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
+		Txt = <<"Denied by ACL">>,
+		IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]}
 	  end;
       _ ->
 	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}
@@ -359,13 +372,17 @@ try_set_password(User, Server, Password, IQ, SubEl,
 	      of
 	    ok -> IQ#iq{type = result, sub_el = []};
 	    {error, empty_password} ->
-		IQ#iq{type = error, sub_el = [SubEl, ?ERR_BAD_REQUEST]};
+		Txt = <<"Empty password">>,
+		IQ#iq{type = error, sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]};
 	    {error, not_allowed} ->
-		IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+		Txt = <<"Chaning password is not allowed">>,
+		IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
 	    {error, invalid_jid} ->
 		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]};
-	    _ ->
+		      sub_el = [SubEl, ?ERR_JID_MALFORMED]};
+	    Err ->
+		?ERROR_MSG("failed to register user ~s@~s: ~p",
+			   [User, Server, Err]),
 		IQ#iq{type = error,
 		      sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
 	  end;
@@ -377,7 +394,7 @@ try_set_password(User, Server, Password, IQ, SubEl,
 
 try_register(User, Server, Password, SourceRaw, Lang) ->
     case jid:is_nodename(User) of
-      false -> {error, ?ERR_BAD_REQUEST};
+      false -> {error, ?ERRT_BAD_REQUEST(Lang, <<"Malformed username">>)};
       _ ->
 	  JID = jid:make(User, Server, <<"">>),
 	  Access = gen_mod:get_module_opt(Server, ?MODULE, access,
@@ -387,8 +404,8 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 	  case {acl:match_rule(Server, Access, JID),
 		check_ip_access(SourceRaw, IPAccess)}
 	      of
-	    {deny, _} -> {error, ?ERR_FORBIDDEN};
-	    {_, deny} -> {error, ?ERR_FORBIDDEN};
+	    {deny, _} -> {error, ?ERRT_FORBIDDEN(Lang, <<"Denied by ACL">>)};
+	    {_, deny} -> {error, ?ERRT_FORBIDDEN(Lang, <<"Denied by ACL">>)};
 	    {allow, allow} ->
 		Source = may_remove_resource(SourceRaw),
 		case check_timeout(Source) of
@@ -406,14 +423,20 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 			      Error ->
 				  remove_timeout(Source),
 				  case Error of
-				    {atomic, exists} -> {error, ?ERR_CONFLICT};
+				    {atomic, exists} ->
+					Txt = <<"User already exists">>,
+					{error, ?ERRT_CONFLICT(Lang, Txt)};
 				    {error, invalid_jid} ->
 					{error, ?ERR_JID_MALFORMED};
 				    {error, not_allowed} ->
 					{error, ?ERR_NOT_ALLOWED};
 				    {error, too_many_users} ->
-					{error, ?ERR_NOT_ALLOWED};
-				    {error, _Reason} ->
+					Txt = <<"Too many users registered">>,
+					{error, ?ERRT_RESOURCE_CONSTRAINT(Lang, Txt)};
+				    {error, _} ->
+					?ERROR_MSG("failed to register user "
+						   "~s@~s: ~p",
+						   [User, Server, Error]),
 					{error, ?ERR_INTERNAL_SERVER_ERROR}
 				  end
 			    end;

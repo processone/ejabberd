@@ -93,7 +93,8 @@ set_node(Record) when is_record(Record, pubsub_node) ->
     end,
     case Nidx of
 	none ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	    Txt = <<"Node index not found">>,
+	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, Txt)};
 	_ ->
 	    lists:foreach(fun ({Key, Value}) ->
 			SKey = iolist_to_binary(atom_to_list(Key)),
@@ -125,9 +126,9 @@ get_node(Host, Node) ->
 		    [<<"node">>, <<"parent">>, <<"type">>, <<"nodeid">>], [RItem]} ->
 	    raw_to_node(Host, RItem);
 	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Database failure">>)};
 	_ ->
-	    {error, ?ERR_ITEM_NOT_FOUND}
+	    {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"Node not found">>)}
     end.
 
 get_node(Nidx) ->
@@ -140,9 +141,9 @@ get_node(Nidx) ->
 		    [<<"host">>, <<"node">>, <<"parent">>, <<"type">>], [[Host, Node, Parent, Type]]} ->
 	    raw_to_node(Host, [Node, Parent, Type, Nidx]);
 	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Database failure">>)};
 	_ ->
-	    {error, ?ERR_ITEM_NOT_FOUND}
+	    {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"Node not found">>)}
     end.
 
 get_nodes(Host, _From) ->
@@ -211,7 +212,7 @@ get_subnodes_tree(Host, Node) ->
 create_node(Host, Node, Type, Owner, Options, Parents) ->
     BJID = jid:tolower(jid:remove_resource(Owner)),
     case nodeidx(Host, Node) of
-	{error, ?ERR_ITEM_NOT_FOUND} ->
+	{error, not_found} ->
 	    ParentExists = case Host of
 		{_U, _S, _R} ->
 		    %% This is special case for PEP handling
@@ -248,9 +249,9 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 		    {error, ?ERR_FORBIDDEN}
 	    end;
 	{result, _} ->
-	    {error, ?ERR_CONFLICT};
-	Error ->
-	    Error
+	    {error, ?ERRT_CONFLICT(?MYLANG, <<"Node already exists">>)};
+	{error, db_fail} ->
+	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Database failure">>)}
     end.
 
 delete_node(Host, Node) ->
@@ -303,9 +304,9 @@ nodeidx(Host, Node) ->
 	{selected, [<<"nodeid">>], [[Nidx]]} ->
 	    {result, Nidx};
 	{'EXIT', _Reason} ->
-	    {error, ?ERR_INTERNAL_SERVER_ERROR};
+	    {error, db_fail};
 	_ ->
-	    {error, ?ERR_ITEM_NOT_FOUND}
+	    {error, not_found}
     end.
 
 nodeowners(Nidx) ->

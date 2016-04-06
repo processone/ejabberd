@@ -50,17 +50,18 @@ stop(Host) ->
 
 process_local_iq(_From, To,
 		 #iq{id = _ID, type = Type, xmlns = XMLNS,
-		     sub_el = SubEl} =
+		     sub_el = SubEl, lang = Lang} =
 		     IQ) ->
     case Type of
       set ->
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
+	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
       get ->
 	  #xmlel{children = Els} = SubEl,
 	  Node = str:tokens(fxml:get_tag_attr_s(<<"node">>, SubEl),
 			    <<"/">>),
 	  Names = get_names(Els, []),
-	  case get_local_stats(To#jid.server, Node, Names) of
+	  case get_local_stats(To#jid.server, Node, Names, Lang) of
 	    {result, Res} ->
 		IQ#iq{type = result,
 		      sub_el =
@@ -87,18 +88,18 @@ get_names([_ | Els], Res) -> get_names(Els, Res).
 	#xmlel{name = <<"stat">>, attrs = [{<<"name">>, Name}],
 	       children = []}).
 
-get_local_stats(_Server, [], []) ->
+get_local_stats(_Server, [], [], _Lang) ->
     {result,
      [?STAT(<<"users/online">>), ?STAT(<<"users/total">>),
       ?STAT(<<"users/all-hosts/online">>),
       ?STAT(<<"users/all-hosts/total">>)]};
-get_local_stats(Server, [], Names) ->
+get_local_stats(Server, [], Names, _Lang) ->
     {result,
      lists:map(fun (Name) -> get_local_stat(Server, [], Name)
 	       end,
 	       Names)};
 get_local_stats(_Server, [<<"running nodes">>, _],
-		[]) ->
+		[], _Lang) ->
     {result,
      [?STAT(<<"time/uptime">>), ?STAT(<<"time/cputime">>),
       ?STAT(<<"users/online">>),
@@ -107,16 +108,19 @@ get_local_stats(_Server, [<<"running nodes">>, _],
       ?STAT(<<"transactions/restarted">>),
       ?STAT(<<"transactions/logged">>)]};
 get_local_stats(_Server, [<<"running nodes">>, ENode],
-		Names) ->
+		Names, Lang) ->
     case search_running_node(ENode) of
-      false -> {error, ?ERR_ITEM_NOT_FOUND};
+      false ->
+	    Txt = <<"No running node found">>,
+	    {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
       Node ->
 	  {result,
 	   lists:map(fun (Name) -> get_node_stat(Node, Name) end,
 		     Names)}
     end;
-get_local_stats(_Server, _, _) ->
-    {error, ?ERR_FEATURE_NOT_IMPLEMENTED}.
+get_local_stats(_Server, _, _, Lang) ->
+    Txt = <<"No statistics found for this item">>,
+    {error, ?ERRT_FEATURE_NOT_IMPLEMENTED(Lang, Txt)}.
 
 -define(STATVAL(Val, Unit),
 	#xmlel{name = <<"stat">>,

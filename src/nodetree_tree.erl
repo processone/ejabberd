@@ -74,15 +74,15 @@ get_node(Host, Node, _From) ->
     get_node(Host, Node).
 
 get_node(Host, Node) ->
-    case catch mnesia:read({pubsub_node, {Host, Node}}) of
+    case mnesia:read({pubsub_node, {Host, Node}}) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
-	_ -> {error, ?ERR_ITEM_NOT_FOUND}
+	_ -> {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"Node not found">>)}
     end.
 
 get_node(Nidx) ->
-    case catch mnesia:index_read(pubsub_node, Nidx, #pubsub_node.id) of
+    case mnesia:index_read(pubsub_node, Nidx, #pubsub_node.id) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
-	_ -> {error, ?ERR_ITEM_NOT_FOUND}
+	_ -> {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"Node not found">>)}
     end.
 
 get_nodes(Host, _From) ->
@@ -147,7 +147,7 @@ get_subnodes_tree(Host, Node) ->
 
 create_node(Host, Node, Type, Owner, Options, Parents) ->
     BJID = jid:tolower(jid:remove_resource(Owner)),
-    case catch mnesia:read({pubsub_node, {Host, Node}}) of
+    case mnesia:read({pubsub_node, {Host, Node}}) of
 	[] ->
 	    ParentExists = case Host of
 		{_U, _S, _R} ->
@@ -183,7 +183,7 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 		    {error, ?ERR_FORBIDDEN}
 	    end;
 	_ ->
-	    {error, ?ERR_CONFLICT}
+	    {error, ?ERRT_CONFLICT(?MYLANG, <<"Node already exists">>)}
     end.
 
 delete_node(Host, Node) ->

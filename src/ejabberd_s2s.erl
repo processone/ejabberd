@@ -312,8 +312,10 @@ do_route(From, To, Packet) ->
 	    <<"error">> -> ok;
 	    <<"result">> -> ok;
 	    _ ->
-		Err = jlib:make_error_reply(Packet,
-					    ?ERR_SERVICE_UNAVAILABLE),
+		Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+		Txt = <<"No s2s connection found">>,
+		Err = jlib:make_error_reply(
+			Packet, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)),
 		ejabberd_router:route(To, From, Err)
 	  end,
 	  false

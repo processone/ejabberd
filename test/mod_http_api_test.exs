@@ -29,6 +29,7 @@ defmodule ModHttpApiTest do
 
   setup_all do
     :ok = :mnesia.start
+    :ok = :stringprep.start
     :ok = :ejabberd_config.start(["localhost"], [])
 
     :ok = :ejabberd_commands.init
@@ -63,6 +64,10 @@ defmodule ModHttpApiTest do
     {401, _, _} = :mod_http_api.process(["user_cmd"], request)
     {401, _, _} = :mod_http_api.process(["admin_cmd"], request)
     {401, _, _} = :mod_http_api.process(["restricted_cmd"], request)
+  end
+
+  @tag pending: true
+  test "If admin_ip_access is enabled, we can call restricted API without authentication from that IP" do
   end
 
   # Define a set of test commands that we expose through API

@@ -84,7 +84,7 @@ run_elixir_test(Func) ->
             %% Zero failures
             ok;
         {ok, Failures} ->
-            ct:print("Elixir tests failed: ~.10B~nSee logs for details", [Failures]),
+            ct:print("Elixir test failed in module '~p': ~.10B~nSee logs for details", [Func, Failures]),
             ct:fail(elixir_test_failure)
     end.
 

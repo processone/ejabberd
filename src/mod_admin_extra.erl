@@ -600,9 +600,9 @@ check_password_hash(User, Host, PasswordHash, HashMethod) ->
 			  {A, _} when is_tuple(A) -> scrammed;
 			  {_, <<"md5">>} -> get_md5(AccountPass);
 			  {_, <<"sha">>} -> get_sha(AccountPass);
-                          {_, _Method} ->
+                          {_, Method} ->
 			      ?ERROR_MSG("check_password_hash called "
- 					 "with hash method", [_Method]),
+ 					 "with hash method: ~p", [Method]),
  			      undefined
 		      end,
     case AccountPassHash of

@@ -102,7 +102,9 @@ iq_handler2(From, To, IQ) ->
 iq_handler1(From, To, IQ) ->
 	iq_handler(From, To, IQ, ?NS_CARBONS_1).
 
-iq_handler(From, _To,  #iq{type=set, sub_el = #xmlel{name = Operation, children = []}} = IQ, CC)->
+iq_handler(From, _To,
+	   #iq{type=set, lang = Lang,
+	       sub_el = #xmlel{name = Operation} = SubEl} = IQ, CC)->
     ?DEBUG("carbons IQ received: ~p", [IQ]),
     {U, S, R} = jid:tolower(From),
     Result = case Operation of
@@ -118,12 +120,14 @@ iq_handler(From, _To,  #iq{type=set, sub_el = #xmlel{name = Operation, children 
 	    ?DEBUG("carbons IQ result: ok", []),
             IQ#iq{type=result, sub_el=[]};
 	{error,_Error} ->
-	    ?WARNING_MSG("Error enabling / disabling carbons: ~p", [Result]),
-            IQ#iq{type=error,sub_el = [?ERR_BAD_REQUEST]}
+	    ?ERROR_MSG("Error enabling / disabling carbons: ~p", [Result]),
+	    Txt = <<"Database failure">>,
+            IQ#iq{type=error,sub_el = [SubEl, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt)]}
     end;
 
-iq_handler(_From, _To, IQ, _CC)->
-    IQ#iq{type=error, sub_el = [?ERR_NOT_ALLOWED]}.
+iq_handler(_From, _To, #iq{lang = Lang, sub_el = SubEl} = IQ, _CC)->
+    Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
+    IQ#iq{type=error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]}.
 
 user_send_packet(Packet, _C2SState, From, To) ->
     check_and_forward(From, To, Packet, sent).

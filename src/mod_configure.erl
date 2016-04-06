@@ -198,81 +198,81 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 
 %%%-----------------------------------------------------------------------
 
--define(INFO_RESULT(Allow, Feats),
+-define(INFO_RESULT(Allow, Feats, Lang),
 	case Allow of
-	  deny -> {error, ?ERR_FORBIDDEN};
+	  deny -> {error, ?ERRT_FORBIDDEN(Lang, <<"Denied by ACL">>)};
 	  allow -> {result, Feats}
 	end).
 
 get_sm_features(Acc, From,
-		#jid{lserver = LServer} = _To, Node, _Lang) ->
+		#jid{lserver = LServer} = _To, Node, Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
       false -> Acc;
       _ ->
 	  Allow = acl:match_rule(LServer, configure, From),
 	  case Node of
-	    <<"config">> -> ?INFO_RESULT(Allow, [?NS_COMMANDS]);
+	    <<"config">> -> ?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    _ -> Acc
 	  end
     end.
 
 get_local_features(Acc, From,
-		   #jid{lserver = LServer} = _To, Node, _Lang) ->
+		   #jid{lserver = LServer} = _To, Node, Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
       false -> Acc;
       _ ->
 	  LNode = tokenize(Node),
 	  Allow = acl:match_rule(LServer, configure, From),
 	  case LNode of
-	    [<<"config">>] -> ?INFO_RESULT(Allow, []);
-	    [<<"user">>] -> ?INFO_RESULT(Allow, []);
-	    [<<"online users">>] -> ?INFO_RESULT(Allow, []);
-	    [<<"all users">>] -> ?INFO_RESULT(Allow, []);
+	    [<<"config">>] -> ?INFO_RESULT(Allow, [], Lang);
+	    [<<"user">>] -> ?INFO_RESULT(Allow, [], Lang);
+	    [<<"online users">>] -> ?INFO_RESULT(Allow, [], Lang);
+	    [<<"all users">>] -> ?INFO_RESULT(Allow, [], Lang);
 	    [<<"all users">>, <<$@, _/binary>>] ->
-		?INFO_RESULT(Allow, []);
-	    [<<"outgoing s2s">> | _] -> ?INFO_RESULT(Allow, []);
-	    [<<"running nodes">>] -> ?INFO_RESULT(Allow, []);
-	    [<<"stopped nodes">>] -> ?INFO_RESULT(Allow, []);
+		?INFO_RESULT(Allow, [], Lang);
+	    [<<"outgoing s2s">> | _] -> ?INFO_RESULT(Allow, [], Lang);
+	    [<<"running nodes">>] -> ?INFO_RESULT(Allow, [], Lang);
+	    [<<"stopped nodes">>] -> ?INFO_RESULT(Allow, [], Lang);
 	    [<<"running nodes">>, _ENode] ->
-		?INFO_RESULT(Allow, [?NS_STATS]);
+		?INFO_RESULT(Allow, [?NS_STATS], Lang);
 	    [<<"running nodes">>, _ENode, <<"DB">>] ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    [<<"running nodes">>, _ENode, <<"modules">>] ->
-		?INFO_RESULT(Allow, []);
+		?INFO_RESULT(Allow, [], Lang);
 	    [<<"running nodes">>, _ENode, <<"modules">>, _] ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    [<<"running nodes">>, _ENode, <<"backup">>] ->
-		?INFO_RESULT(Allow, []);
+		?INFO_RESULT(Allow, [], Lang);
 	    [<<"running nodes">>, _ENode, <<"backup">>, _] ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    [<<"running nodes">>, _ENode, <<"import">>] ->
-		?INFO_RESULT(Allow, []);
+		?INFO_RESULT(Allow, [], Lang);
 	    [<<"running nodes">>, _ENode, <<"import">>, _] ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    [<<"running nodes">>, _ENode, <<"restart">>] ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    [<<"running nodes">>, _ENode, <<"shutdown">>] ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    [<<"config">>, _] ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"add-user">>) ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"delete-user">>) ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"end-user-session">>) ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"get-user-password">>) ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"change-user-password">>) ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"get-user-lastlogin">>) ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"user-stats">>) ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"get-registered-users-num">>) ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    ?NS_ADMINL(<<"get-online-users-num">>) ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS]);
+		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    _ -> Acc
 	  end
     end.
@@ -318,7 +318,8 @@ get_sm_items(Acc, From,
 		{result,
 		 Items ++ Nodes ++ get_user_resources(User, Server)};
 	    {allow, <<"config">>} -> {result, []};
-	    {_, <<"config">>} -> {error, ?ERR_FORBIDDEN};
+	    {_, <<"config">>} ->
+		  {error, ?ERRT_FORBIDDEN(Lang, <<"Denied by ACL">>)};
 	    _ -> Acc
 	  end
     end.
@@ -448,63 +449,64 @@ get_local_items(Acc, From, #jid{lserver = LServer} = To,
       _ ->
 	  LNode = tokenize(Node),
 	  Allow = acl:match_rule(LServer, configure, From),
+	  Err = ?ERRT_FORBIDDEN(Lang, <<"Denied by ACL">>),
 	  case LNode of
 	    [<<"config">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"user">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"online users">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"all users">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"all users">>, <<$@, _/binary>>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"outgoing s2s">> | _] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"stopped nodes">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"DB">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"modules">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"modules">>, _] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"backup">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"backup">>, _] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"import">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"import">>, _] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"restart">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"shutdown">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"config">>, _] ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"add-user">>) ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"delete-user">>) ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"end-user-session">>) ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"get-user-password">>) ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"change-user-password">>) ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"get-user-lastlogin">>) ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"user-stats">>) ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"get-registered-users-num">>) ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    ?NS_ADMINL(<<"get-online-users-num">>) ->
-		?ITEMS_RESULT(Allow, LNode, {error, ?ERR_FORBIDDEN});
+		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    _ -> Acc
 	  end
     end.
@@ -562,33 +564,29 @@ get_local_items({_, Host}, [<<"all users">>], _Server,
 get_local_items({_, Host},
 		[<<"all users">>, <<$@, Diap/binary>>], _Server,
 		_Lang) ->
-    case catch ejabberd_auth:get_vh_registered_users(Host)
-	of
-      {'EXIT', _Reason} -> ?ERR_INTERNAL_SERVER_ERROR;
-      Users ->
-	  SUsers = lists:sort([{S, U} || {U, S} <- Users]),
-	  case catch begin
-		       [S1, S2] = ejabberd_regexp:split(Diap, <<"-">>),
-		       N1 = jlib:binary_to_integer(S1),
-		       N2 = jlib:binary_to_integer(S2),
-		       Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
-		       lists:map(fun ({S, U}) ->
-					 #xmlel{name = <<"item">>,
-						attrs =
-						    [{<<"jid">>,
-						      <<U/binary, "@",
-							S/binary>>},
-						     {<<"name">>,
-						      <<U/binary, "@",
-							S/binary>>}],
-						children = []}
-				 end,
-				 Sub)
-		     end
-	      of
-	    {'EXIT', _Reason} -> ?ERR_NOT_ACCEPTABLE;
-	    Res -> {result, Res}
-	  end
+    Users = ejabberd_auth:get_vh_registered_users(Host),
+    SUsers = lists:sort([{S, U} || {U, S} <- Users]),
+    case catch begin
+		   [S1, S2] = ejabberd_regexp:split(Diap, <<"-">>),
+		   N1 = jlib:binary_to_integer(S1),
+		   N2 = jlib:binary_to_integer(S2),
+		   Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
+		   lists:map(fun ({S, U}) ->
+				     #xmlel{name = <<"item">>,
+					    attrs =
+						[{<<"jid">>,
+						  <<U/binary, "@",
+						    S/binary>>},
+						 {<<"name">>,
+						  <<U/binary, "@",
+						    S/binary>>}],
+					    children = []}
+			     end,
+			     Sub)
+	       end
+    of
+	{'EXIT', _Reason} -> ?ERR_NOT_ACCEPTABLE;
+	Res -> {result, Res}
     end;
 get_local_items({_, Host}, [<<"outgoing s2s">>],
 		_Server, Lang) ->
@@ -826,33 +824,33 @@ get_stopped_nodes(_Lang) ->
 %%-------------------------------------------------------------------------
 
 -define(COMMANDS_RESULT(LServerOrGlobal, From, To,
-			Request),
+			Request, Lang),
 	case acl:match_rule(LServerOrGlobal, configure, From) of
-	  deny -> {error, ?ERR_FORBIDDEN};
+	  deny -> {error, ?ERRT_FORBIDDEN(Lang, <<"Denied by ACL">>)};
 	  allow -> adhoc_local_commands(From, To, Request)
 	end).
 
 adhoc_local_commands(Acc, From,
 		     #jid{lserver = LServer} = To,
-		     #adhoc_request{node = Node} = Request) ->
+		     #adhoc_request{node = Node, lang = Lang} = Request) ->
     LNode = tokenize(Node),
     case LNode of
       [<<"running nodes">>, _ENode, <<"DB">>] ->
-	  ?COMMANDS_RESULT(global, From, To, Request);
+	  ?COMMANDS_RESULT(global, From, To, Request, Lang);
       [<<"running nodes">>, _ENode, <<"modules">>, _] ->
-	  ?COMMANDS_RESULT(LServer, From, To, Request);
+	  ?COMMANDS_RESULT(LServer, From, To, Request, Lang);
       [<<"running nodes">>, _ENode, <<"backup">>, _] ->
-	  ?COMMANDS_RESULT(global, From, To, Request);
+	  ?COMMANDS_RESULT(global, From, To, Request, Lang);
       [<<"running nodes">>, _ENode, <<"import">>, _] ->
-	  ?COMMANDS_RESULT(global, From, To, Request);
+	  ?COMMANDS_RESULT(global, From, To, Request, Lang);
       [<<"running nodes">>, _ENode, <<"restart">>] ->
-	  ?COMMANDS_RESULT(global, From, To, Request);
+	  ?COMMANDS_RESULT(global, From, To, Request, Lang);
       [<<"running nodes">>, _ENode, <<"shutdown">>] ->
-	  ?COMMANDS_RESULT(global, From, To, Request);
+	  ?COMMANDS_RESULT(global, From, To, Request, Lang);
       [<<"config">>, _] ->
-	  ?COMMANDS_RESULT(LServer, From, To, Request);
+	  ?COMMANDS_RESULT(LServer, From, To, Request, Lang);
       ?NS_ADMINL(_) ->
-	  ?COMMANDS_RESULT(LServer, From, To, Request);
+	  ?COMMANDS_RESULT(LServer, From, To, Request, Lang);
       _ -> Acc
     end.
 
@@ -882,7 +880,8 @@ adhoc_local_commands(From,
 	   end;
        XData /= false, ActionIsExecute ->
 	   case jlib:parse_xdata_submit(XData) of
-	     invalid -> {error, ?ERR_BAD_REQUEST};
+	     invalid ->
+		 {error, ?ERRT_BAD_REQUEST(Lang, <<"Incorrect data form">>)};
 	     Fields ->
 		 case catch set_form(From, LServer, LNode, Lang, Fields)
 		     of
@@ -898,7 +897,8 @@ adhoc_local_commands(From,
 		   {error, Error} -> {error, Error}
 		 end
 	   end;
-       true -> {error, ?ERR_BAD_REQUEST}
+       true ->
+	  {error, ?ERRT_BAD_REQUEST(Lang, <<"Incorrect action or data form">>)}
     end.
 
 -define(TVFIELD(Type, Var, Val),
@@ -980,10 +980,14 @@ adhoc_local_commands(From,
 get_form(_Host, [<<"running nodes">>, ENode, <<"DB">>],
 	 Lang) ->
     case search_running_node(ENode) of
-      false -> {error, ?ERR_ITEM_NOT_FOUND};
+      false ->
+	  Txt = <<"No running node found">>,
+	  {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
       Node ->
 	  case ejabberd_cluster:call(Node, mnesia, system_info, [tables]) of
-	    {badrpc, _Reason} ->
+	    {badrpc, Reason} ->
+		?ERROR_MSG("RPC call mnesia:system_info(tables) on node "
+			   "~s failed: ~p", [Node, Reason]),
 		{error, ?ERR_INTERNAL_SERVER_ERROR};
 	    Tables ->
 		STables = lists:sort(Tables),
@@ -1023,10 +1027,14 @@ get_form(Host,
 	 [<<"running nodes">>, ENode, <<"modules">>, <<"stop">>],
 	 Lang) ->
     case search_running_node(ENode) of
-      false -> {error, ?ERR_ITEM_NOT_FOUND};
+      false ->
+	  Txt = <<"No running node found">>,
+	  {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
       Node ->
 	  case ejabberd_cluster:call(Node, gen_mod, loaded_modules, [Host]) of
-	    {badrpc, _Reason} ->
+	    {badrpc, Reason} ->
+		?ERROR_MSG("RPC call gen_mod:loaded_modules(~s) on node "
+			   "~s failed: ~p", [Host, Node, Reason]),
 		{error, ?ERR_INTERNAL_SERVER_ERROR};
 	    Modules ->
 		SModules = lists:sort(Modules),
@@ -1562,9 +1570,11 @@ get_form(_Host, _, _Lang) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.
 
 set_form(_From, _Host,
-	 [<<"running nodes">>, ENode, <<"DB">>], _Lang, XData) ->
+	 [<<"running nodes">>, ENode, <<"DB">>], Lang, XData) ->
     case search_running_node(ENode) of
-      false -> {error, ?ERR_ITEM_NOT_FOUND};
+      false ->
+	  Txt = <<"No running node found">>,
+	  {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
       Node ->
 	  lists:foreach(fun ({SVar, SVals}) ->
 				Table = jlib:binary_to_atom(SVar),
@@ -1596,9 +1606,11 @@ set_form(_From, _Host,
     end;
 set_form(_From, Host,
 	 [<<"running nodes">>, ENode, <<"modules">>, <<"stop">>],
-	 _Lang, XData) ->
+	 Lang, XData) ->
     case search_running_node(ENode) of
-      false -> {error, ?ERR_ITEM_NOT_FOUND};
+      false ->
+	  Txt = <<"No running node found">>,
+	  {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
       Node ->
 	  lists:foreach(fun ({Var, Vals}) ->
 				case Vals of
@@ -1615,12 +1627,16 @@ set_form(_From, Host,
 set_form(_From, Host,
 	 [<<"running nodes">>, ENode, <<"modules">>,
 	  <<"start">>],
-	 _Lang, XData) ->
+	 Lang, XData) ->
     case search_running_node(ENode) of
-      false -> {error, ?ERR_ITEM_NOT_FOUND};
+      false ->
+	  Txt = <<"No running node found">>,
+	  {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
       Node ->
 	  case lists:keysearch(<<"modules">>, 1, XData) of
-	    false -> {error, ?ERR_BAD_REQUEST};
+	    false ->
+		Txt = <<"No 'modules' found in data form">>,
+		{error, ?ERRT_BAD_REQUEST(Lang, Txt)};
 	    {value, {_, Strings}} ->
 		String = lists:foldl(fun (S, Res) ->
 					     <<Res/binary, S/binary, "\n">>
@@ -1637,98 +1653,143 @@ set_form(_From, Host,
 					  end,
 					  Modules),
 			    {result, []};
-			_ -> {error, ?ERR_BAD_REQUEST}
+			_ -> {error, ?ERRT_BAD_REQUEST(Lang, <<"Parse failed">>)}
 		      end;
-		  _ -> {error, ?ERR_BAD_REQUEST}
+		  _ -> {error, ?ERRT_BAD_REQUEST(Lang, <<"Scan failed">>)}
 		end
 	  end
     end;
 set_form(_From, _Host,
 	 [<<"running nodes">>, ENode, <<"backup">>,
 	  <<"backup">>],
-	 _Lang, XData) ->
+	 Lang, XData) ->
     case search_running_node(ENode) of
-      false -> {error, ?ERR_ITEM_NOT_FOUND};
+      false ->
+	  Txt = <<"No running node found">>,
+	  {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
       Node ->
 	  case lists:keysearch(<<"path">>, 1, XData) of
-	    false -> {error, ?ERR_BAD_REQUEST};
+	    false ->
+		Txt = <<"No 'path' found in data form">>,
+		{error, ?ERRT_BAD_REQUEST(Lang, Txt)};
 	    {value, {_, [String]}} ->
 		case ejabberd_cluster:call(Node, mnesia, backup, [String]) of
-		  {badrpc, _Reason} ->
+		  {badrpc, Reason} ->
+		      ?ERROR_MSG("RPC call mnesia:backup(~s) to node ~s "
+				 "failed: ~p", [String, Node, Reason]),
 		      {error, ?ERR_INTERNAL_SERVER_ERROR};
-		  {error, _Reason} -> {error, ?ERR_INTERNAL_SERVER_ERROR};
+		  {error, Reason} ->
+		      ?ERROR_MSG("RPC call mnesia:backup(~s) to node ~s "
+				 "failed: ~p", [String, Node, Reason]),
+		      {error, ?ERR_INTERNAL_SERVER_ERROR};
 		  _ -> {result, []}
 		end;
-	    _ -> {error, ?ERR_BAD_REQUEST}
+	    _ ->
+		Txt = <<"Incorrect value of 'path' in data form">>,
+	        {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
 	  end
     end;
 set_form(_From, _Host,
 	 [<<"running nodes">>, ENode, <<"backup">>,
 	  <<"restore">>],
-	 _Lang, XData) ->
+	 Lang, XData) ->
     case search_running_node(ENode) of
-      false -> {error, ?ERR_ITEM_NOT_FOUND};
+      false ->
+	  Txt = <<"No running node found">>,
+	  {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
       Node ->
 	  case lists:keysearch(<<"path">>, 1, XData) of
-	    false -> {error, ?ERR_BAD_REQUEST};
+	    false ->
+		Txt = <<"No 'path' found in data form">>,
+		{error, ?ERRT_BAD_REQUEST(Lang, Txt)};
 	    {value, {_, [String]}} ->
 		case ejabberd_cluster:call(Node, ejabberd_admin, restore, [String])
 		    of
-		  {badrpc, _Reason} ->
+		  {badrpc, Reason} ->
+		      ?ERROR_MSG("RPC call ejabberd_admin:restore(~s) to node "
+				 "~s failed: ~p", [String, Node, Reason]),
 		      {error, ?ERR_INTERNAL_SERVER_ERROR};
-		  {error, _Reason} -> {error, ?ERR_INTERNAL_SERVER_ERROR};
+		  {error, Reason} ->
+		      ?ERROR_MSG("RPC call ejabberd_admin:restore(~s) to node "
+				 "~s failed: ~p", [String, Node, Reason]),
+		      {error, ?ERR_INTERNAL_SERVER_ERROR};
 		  _ -> {result, []}
 		end;
-	    _ -> {error, ?ERR_BAD_REQUEST}
+	    _ ->
+		Txt = <<"Incorrect value of 'path' in data form">>,
+	        {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
 	  end
     end;
 set_form(_From, _Host,
 	 [<<"running nodes">>, ENode, <<"backup">>,
 	  <<"textfile">>],
-	 _Lang, XData) ->
+	 Lang, XData) ->
     case search_running_node(ENode) of
-      false -> {error, ?ERR_ITEM_NOT_FOUND};
+      false ->
+	  Txt = <<"No running node found">>,
+	  {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
       Node ->
 	  case lists:keysearch(<<"path">>, 1, XData) of
-	    false -> {error, ?ERR_BAD_REQUEST};
+	    false ->
+		Txt = <<"No 'path' found in data form">>,
+		{error, ?ERRT_BAD_REQUEST(Lang, Txt)};
 	    {value, {_, [String]}} ->
 		case ejabberd_cluster:call(Node, ejabberd_admin, dump_to_textfile,
 			      [String])
 		    of
-		  {badrpc, _Reason} ->
+		  {badrpc, Reason} ->
+		      ?ERROR_MSG("RPC call ejabberd_admin:dump_to_textfile(~s) "
+				 "to node ~s failed: ~p", [String, Node, Reason]),
 		      {error, ?ERR_INTERNAL_SERVER_ERROR};
-		  {error, _Reason} -> {error, ?ERR_INTERNAL_SERVER_ERROR};
+		  {error, Reason} ->
+		      ?ERROR_MSG("RPC call ejabberd_admin:dump_to_textfile(~s) "
+				 "to node ~s failed: ~p", [String, Node, Reason]),
+		      {error, ?ERR_INTERNAL_SERVER_ERROR};
 		  _ -> {result, []}
 		end;
-	    _ -> {error, ?ERR_BAD_REQUEST}
+	    _ ->
+		Txt = <<"Incorrect value of 'path' in data form">>,
+	        {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
 	  end
     end;
 set_form(_From, _Host,
 	 [<<"running nodes">>, ENode, <<"import">>, <<"file">>],
-	 _Lang, XData) ->
+	 Lang, XData) ->
     case search_running_node(ENode) of
-      false -> {error, ?ERR_ITEM_NOT_FOUND};
+      false ->
+	  Txt = <<"No running node found">>,
+	  {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
       Node ->
 	  case lists:keysearch(<<"path">>, 1, XData) of
-	    false -> {error, ?ERR_BAD_REQUEST};
+	    false ->
+		Txt = <<"No 'path' found in data form">>,
+		{error, ?ERRT_BAD_REQUEST(Lang, Txt)};
 	    {value, {_, [String]}} ->
 		ejabberd_cluster:call(Node, jd2ejd, import_file, [String]),
 		{result, []};
-	    _ -> {error, ?ERR_BAD_REQUEST}
+	    _ ->
+		Txt = <<"Incorrect value of 'path' in data form">>,
+	        {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
 	  end
     end;
 set_form(_From, _Host,
 	 [<<"running nodes">>, ENode, <<"import">>, <<"dir">>],
-	 _Lang, XData) ->
+	 Lang, XData) ->
     case search_running_node(ENode) of
-      false -> {error, ?ERR_ITEM_NOT_FOUND};
+      false ->
+	  Txt = <<"No running node found">>,
+	  {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
       Node ->
 	  case lists:keysearch(<<"path">>, 1, XData) of
-	    false -> {error, ?ERR_BAD_REQUEST};
+	    false ->
+		Txt = <<"No 'path' found in data form">>,
+		{error, ?ERRT_BAD_REQUEST(Lang, Txt)};
 	    {value, {_, [String]}} ->
 		ejabberd_cluster:call(Node, jd2ejd, import_dir, [String]),
 		{result, []};
-	    _ -> {error, ?ERR_BAD_REQUEST}
+	    _ ->
+		Txt = <<"Incorrect value of 'path' in data form">>,
+	        {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
 	  end
     end;
 set_form(From, Host,
@@ -1739,7 +1800,7 @@ set_form(From, Host,
 	 [<<"running nodes">>, ENode, <<"shutdown">>], _Lang,
 	 XData) ->
     stop_node(From, Host, ENode, stop, XData);
-set_form(_From, Host, [<<"config">>, <<"acls">>], _Lang,
+set_form(_From, Host, [<<"config">>, <<"acls">>], Lang,
 	 XData) ->
     case lists:keysearch(<<"acls">>, 1, XData) of
       {value, {_, Strings}} ->
@@ -1753,14 +1814,16 @@ set_form(_From, Host, [<<"config">>, <<"acls">>], _Lang,
 		  {ok, ACLs} ->
 		      acl:add_list(Host, ACLs, true),
                       {result, []};
-		  _ -> {error, ?ERR_BAD_REQUEST}
+		  _ -> {error, ?ERRT_BAD_REQUEST(Lang, <<"Parse failed">>)}
 		end;
-	    _ -> {error, ?ERR_BAD_REQUEST}
+	    _ -> {error, ?ERRT_BAD_REQUEST(Lang, <<"Scan failed">>)}
 	  end;
-      _ -> {error, ?ERR_BAD_REQUEST}
+      _ ->
+	  Txt = <<"No 'acls' found in data form">>,
+	  {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
     end;
 set_form(_From, Host, [<<"config">>, <<"access">>],
-	 _Lang, XData) ->
+	 Lang, XData) ->
     SetAccess = fun (Rs) ->
 			mnesia:transaction(fun () ->
 						   Os = mnesia:select(local_config,
@@ -1803,11 +1866,13 @@ set_form(_From, Host, [<<"config">>, <<"access">>],
 			{atomic, _} -> {result, []};
 			_ -> {error, ?ERR_BAD_REQUEST}
 		      end;
-		  _ -> {error, ?ERR_BAD_REQUEST}
+		  _ -> {error, ?ERRT_BAD_REQUEST(Lang, <<"Parse failed">>)}
 		end;
-	    _ -> {error, ?ERR_BAD_REQUEST}
+	    _ -> {error, ?ERRT_BAD_REQUEST(Lang, <<"Scan failed">>)}
 	  end;
-      _ -> {error, ?ERR_BAD_REQUEST}
+      _ ->
+	  Txt = <<"No 'access' found in data form">>,
+	  {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
     end;
 set_form(From, Host, ?NS_ADMINL(<<"add-user">>), _Lang,
 	 XData) ->
@@ -2052,7 +2117,7 @@ adhoc_sm_commands(_Acc, From,
 				 action = Action, xdata = XData} =
 		      Request) ->
     case acl:match_rule(LServer, configure, From) of
-      deny -> {error, ?ERR_FORBIDDEN};
+      deny -> {error, ?ERRT_FORBIDDEN(Lang, <<"Denied by ACL">>)};
       allow ->
 	  ActionIsExecute = lists:member(Action,
 					 [<<"">>, <<"execute">>,
@@ -2071,11 +2136,15 @@ adhoc_sm_commands(_Acc, From,
 		 end;
 	     XData /= false, ActionIsExecute ->
 		 case jlib:parse_xdata_submit(XData) of
-		   invalid -> {error, ?ERR_BAD_REQUEST};
+		   invalid ->
+		       Txt = <<"Incorrect data form">>,
+		       {error, ?ERRT_BAD_REQUEST(Lang, Txt)};
 		   Fields ->
 		       set_sm_form(User, Server, <<"config">>, Request, Fields)
 		 end;
-	     true -> {error, ?ERR_BAD_REQUEST}
+	     true ->
+		Txt = <<"Incorrect action or data form">>,
+		{error, ?ERRT_BAD_REQUEST(Lang, Txt)}
 	  end
     end;
 adhoc_sm_commands(Acc, _From, _To, _Request) -> Acc.
@@ -2135,12 +2204,16 @@ set_sm_form(User, Server, <<"config">>,
 	    {value, {_, [Password]}} ->
 		ejabberd_auth:set_password(User, Server, Password),
 		adhoc:produce_response(Response);
-	    _ -> {error, ?ERR_NOT_ACCEPTABLE}
+	    _ ->
+		Txt = <<"No 'password' found in data form">>,
+		{error, ?ERRT_NOT_ACCEPTABLE(Lang, Txt)}
 	  end;
       {value, {_, [<<"remove">>]}} ->
 	  catch ejabberd_auth:remove_user(User, Server),
 	  adhoc:produce_response(Response);
-      _ -> {error, ?ERR_NOT_ACCEPTABLE}
+      _ ->
+	  Txt = <<"Incorrect value of 'action' in data form">>,
+	  {error, ?ERRT_NOT_ACCEPTABLE(Lang, Txt)}
     end;
 set_sm_form(_User, _Server, _Node, _Request, _Fields) ->
     {error, ?ERR_SERVICE_UNAVAILABLE}.

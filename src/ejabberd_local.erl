@@ -74,7 +74,7 @@ start_link() ->
 process_iq(From, To, Packet) ->
     IQ = jlib:iq_query_info(Packet),
     case IQ of
-      #iq{xmlns = XMLNS} ->
+      #iq{xmlns = XMLNS, lang = Lang} ->
 	  Host = To#jid.lserver,
 	  case ets:lookup(?IQTABLE, {XMLNS, Host}) of
 	    [{_, Module, Function}] ->
@@ -87,8 +87,10 @@ process_iq(From, To, Packet) ->
 		gen_iq_handler:handle(Host, Module, Function, Opts,
 				      From, To, IQ);
 	    [] ->
-		Err = jlib:make_error_reply(Packet,
-					    ?ERR_FEATURE_NOT_IMPLEMENTED),
+		Txt = <<"No module is handling this query">>,
+		Err = jlib:make_error_reply(
+			Packet,
+			?ERRT_FEATURE_NOT_IMPLEMENTED(Lang, Txt)),
 		ejabberd_router:route(To, From, Err)
 	  end;
       reply ->
@@ -166,8 +168,10 @@ refresh_iq_handlers() ->
     ejabberd_local ! refresh_iq_handlers.
 
 bounce_resource_packet(From, To, Packet) ->
+    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+    Txt = <<"No available resource found">>,
     Err = jlib:make_error_reply(Packet,
-				?ERR_ITEM_NOT_FOUND),
+				?ERRT_ITEM_NOT_FOUND(Lang, Txt)),
     ejabberd_router:route(To, From, Err),
     stop.
 
