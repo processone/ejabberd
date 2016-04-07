@@ -34,9 +34,11 @@ defmodule ACLTest do
     :acl.clear
   end
 
-  test "simple user access rule matches" do
+  test "access rule match with user part ACL" do
     :acl.add(:global, :basic_acl_1, {:user, "test1"})
     :acl.add_access(:global, :basic_rule_1, [{:basic_acl_1, :allow}])
+    # JID can only be passes as jid record.
+    # => TODO: Support passing JID as binary.
     assert :acl.match_rule(:global, :basic_rule_1, :jid.from_string("test1@domain1")) == :allow
     assert :acl.match_rule(:global, :basic_rule_1, :jid.from_string("test1@domain2")) == :allow
     # We match on user part only for local domain. As an implicit rule remote domain are not matched
@@ -48,6 +50,26 @@ defmodule ACLTest do
     assert :acl.match_rule(:global, :basic_rule_2, :jid.from_string("test2@domain1")) == :allow
     assert :acl.match_rule(:global, :basic_rule_2, :jid.from_string("test2@domain2")) == :deny
     assert :acl.match_rule(:global, :basic_rule_2, :jid.from_string("test2@otherdomain")) == :deny
+    assert :acl.match_rule(:global, :basic_rule_2, {127,0,0,1}) == :deny
   end
+
+  test "IP based ACL" do
+    :acl.add(:global, :ip_acl_1, {:ip, "127.0.0.0/24"})
+    :acl.add_access(:global, :ip_rule_1, [{:ip_acl_1, :allow}])
+    # IP must be expressed as a tuple when calling match rule
+    assert :acl.match_rule(:global, :ip_rule_1, {127,0,0,1}) == :allow
+    assert :acl.match_rule(:global, :ip_rule_1, {127,0,1,1}) == :deny
+    assert :acl.match_rule(:global, :ip_rule_1, :jid.from_string("test1@domain1")) == :deny
+  end
+
+  test "Access rule are evaluated sequentially" do
+    :acl.add(:global, :user_acl_1, {:user, {"test1", "domain2"}})
+    :acl.add(:global, :user_acl_2, {:user, "test1"})
+    :acl.add_access(:global, :user_rule_1, [{:user_acl_1, :deny}, {:user_acl_2, :allow}])
+    assert :acl.match_rule(:global, :user_rule_1, :jid.from_string("test1@domain1")) == :allow
+    assert :acl.match_rule(:global, :user_rule_1, :jid.from_string("test1@domain2")) == :deny
+  end
+
+  # At the moment IP and user rules to no go well together: TODO
 
 end
