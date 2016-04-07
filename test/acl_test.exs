@@ -70,6 +70,20 @@ defmodule ACLTest do
     assert :acl.match_rule(:global, :user_rule_1, :jid.from_string("test1@domain2")) == :deny
   end
 
+  # Access rules are sometimes used to provide values (i.e.: max_s2s_connections, max_user_sessions)
+  test "Access rules providing values" do
+    :acl.add(:global, :user_acl, {:user_regexp, ""})
+    :acl.add(:global, :admin_acl, {:user, "admin"})
+    :acl.add_access(:global, :value_rule_1, [{:admin_acl, 10}, {:user_acl, 5}])
+    assert :acl.match_rule(:global, :value_rule_1, :jid.from_string("test1@domain1")) == 5
+    assert :acl.match_rule(:global, :value_rule_1, :jid.from_string("admin@domain1")) == 10
+
+    # If we have no match, :deny is still the default value
+    # TODO maybe we should have a match rule which allow passing custom default value ?
+    assert :acl.match_rule(:global, :value_rule_1, :jid.from_string("user@otherdomain")) == :deny
+  end
+
+
   # At the moment IP and user rules to no go well together:
   test "mixing IP and user access rules" do
     :acl.add(:global, :user_acl_1, {:user, "test1"})
