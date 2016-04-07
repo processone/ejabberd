@@ -70,6 +70,17 @@ defmodule ACLTest do
     assert :acl.match_rule(:global, :user_rule_1, :jid.from_string("test1@domain2")) == :deny
   end
 
-  # At the moment IP and user rules to no go well together: TODO
+  # At the moment IP and user rules to no go well together:
+  test "mixing IP and user access rules" do
+    :acl.add(:global, :user_acl_1, {:user, "test1"})
+    :acl.add(:global, :ip_acl_1, {:ip, "127.0.0.0/24"})
+    :acl.add_access(:global, :mixed_rule_1, [{:user_acl_1, :allow}, {:ip_acl_1, :allow}])
+    assert :acl.match_rule(:global, :mixed_rule_1, :jid.from_string("test1@domain1")) == :allow
+    assert :acl.match_rule(:global, :mixed_rule_1, {127,0,0,1}) == :allow
+
+    :acl.add_access(:global, :mixed_rule_2, [{:user_acl_1, :deny}, {:ip_acl_1, :allow}])
+    assert :acl.match_rule(:global, :mixed_rule_2, :jid.from_string("test1@domain1")) == :deny
+    assert :acl.match_rule(:global, :mixed_rule_2, {127,0,0,1}) == :allow
+  end
 
 end
