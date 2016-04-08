@@ -327,7 +327,7 @@ init([{SockMod, Socket}, Opts]) ->
 		       xml_socket = XMLSocket, zlib = Zlib, tls = TLS,
 		       tls_required = StartTLSRequired,
 		       tls_enabled = TLSEnabled, tls_options = TLSOpts,
-		       sid = {p1_time_compat:timestamp(), self()}, streamid = new_id(),
+		       sid = ejabberd_sm:make_sid(), streamid = new_id(),
 		       access = Access, shaper = Shaper, ip = IP,
 		       mgmt_state = StreamMgmtState,
 		       mgmt_max_queue = MaxAckQueue,
