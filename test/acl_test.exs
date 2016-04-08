@@ -100,4 +100,29 @@ defmodule ACLTest do
     assert :acl.match_rule(:global, :mixed_rule_2, {127,0,0,1}) == :allow
   end
 
+  test "acl:match_access can match directly on user pattern" do
+    pattern = {:user, {"test1", "domain1"}}
+    assert :acl.match_access(:global, pattern, :jid.from_string("test1@domain1"), :allow) == :allow
+    assert :acl.match_access(:global, pattern, :jid.from_string("test2@domain1"), :allow) == :deny
+  end
+
+  ## Checking ACL on both user pattern and IP
+  ## ========================================
+
+  # Typical example is mod_register
+
+  # Deprecated approach
+  test "module can test both IP and user through two independent :acl.match_rule check (deprecated)" do
+    :acl.add(:global, :user_acl, {:user, {"test1", "domain1"}})
+    :acl.add(:global, :ip_acl, {:ip, "127.0.0.0/24"})
+    :acl.add_access(:global, :user_rule, [{:user_acl, :allow}])
+    :acl.add_access(:global, :ip_rule, [{:ip_acl, :allow}])
+
+    # acl module in 16.03 is not able to provide a function for compound result:
+    assert :acl.match_rule(:global, :user_rule, :jid.from_string("test1@domain1")) == :allow
+    assert :acl.match_rule(:global, :ip_rule, {127,0,0,1}) == :allow
+    assert :acl.match_rule(:global, :user_rule, :jid.from_string("test2@domain1")) == :deny
+    assert :acl.match_rule(:global, :ip_rule, {127,0,1,1}) == :deny
+  end
+
 end
