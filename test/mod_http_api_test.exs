@@ -29,7 +29,7 @@ defmodule ModHttpApiTest do
 
   setup_all do
     :ok = :mnesia.start
-    :ok = :stringprep.start
+    :stringprep.start
     :ok = :ejabberd_config.start(["localhost"], [])
 
     :ok = :ejabberd_commands.init

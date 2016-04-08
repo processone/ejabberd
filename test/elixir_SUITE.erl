@@ -30,7 +30,7 @@ all() ->
     case is_elixir_available() of
 	true ->
 	    Dir = test_dir(),
-	    filelib:fold_files(Dir, ".*\.exs$", false,
+	    filelib:fold_files(Dir, ".*test\.exs$", false,
 			       fun(Filename, Acc) -> [list_to_atom(filename:basename(Filename)) | Acc] end,
 			       []);
 	false ->
@@ -68,7 +68,7 @@ undefined_function(Module, Func, Args) ->
 run_elixir_test(Func) ->
     %% Elixir tests can be tagged as follow to be ignored (place before test start)
     %% @tag pending: true
-    'Elixir.ExUnit':start([{exclude, [{pending, true}]}]),
+    'Elixir.ExUnit':start([{exclude, [{pending, true}]}, {formatters, ['Elixir.ExUnit.CLIFormatter', 'Elixir.ExUnit.CTFormatter']}]),
 
     filelib:fold_files(test_dir(), ".*mock\.exs\$", true,
                        fun (File, N) ->
@@ -84,8 +84,9 @@ run_elixir_test(Func) ->
             %% Zero failures
             ok;
         {ok, Failures} ->
-            ct:print("Elixir test failed in module '~p': ~.10B~nSee logs for details", [Func, Failures]),
-            ct:fail(elixir_test_failure)
+            ct:print("Tests failed in module '~s': ~.10B failures.~nSee logs for details", [Func, Failures]),
+            ct:fail(elixir_test_failure),
+            error
     end.
 
 test_dir() ->
