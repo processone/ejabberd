@@ -79,12 +79,15 @@ defmodule ACLTest do
     assert :acl.match_rule(:global, :value_rule_1, :jid.from_string("admin@domain1")) == 10
 
     # If we have no match, :deny is still the default value
-    # TODO maybe we should have a match rule which allow passing custom default value ?
+    # => TODO maybe we should have a match rule which allow passing custom default value ?
     assert :acl.match_rule(:global, :value_rule_1, :jid.from_string("user@otherdomain")) == :deny
   end
 
 
-  # At the moment IP and user rules to no go well together:
+  # At the moment IP and user rules to no go well together: There is
+  # no way to combine IP and user restrictions.
+  # => TODO we need to implement access rules that implement both and will deny the access
+  # if either IP or user returns deny
   test "mixing IP and user access rules" do
     :acl.add(:global, :user_acl_1, {:user, "test1"})
     :acl.add(:global, :ip_acl_1, {:ip, "127.0.0.0/24"})
