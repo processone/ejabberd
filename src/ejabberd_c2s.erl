@@ -522,7 +522,6 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				    send_element(StateData,
 					?POLICY_VIOLATION_ERR(Lang,
 					    <<"Use of STARTTLS required">>)),
-				    send_trailer(StateData),
 				    {stop, normal, StateData};
 				true ->
 				    fsm_next_state(wait_for_auth,
@@ -537,34 +536,28 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 			[jlib:ip_to_list(IP), LogReason]),
 		    send_header(StateData, Server, <<"">>, DefaultLang),
 		    send_element(StateData, ?POLICY_VIOLATION_ERR(Lang, ReasonT)),
-		    send_trailer(StateData),
 		    {stop, normal, StateData};
 		_ ->
 		    send_header(StateData, ?MYNAME, <<"">>, DefaultLang),
 		    send_element(StateData, ?HOST_UNKNOWN_ERR),
-		    send_trailer(StateData),
 		    {stop, normal, StateData}
 	    end;
 	_ ->
 	    send_header(StateData, ?MYNAME, <<"">>, DefaultLang),
 	    send_element(StateData, ?INVALID_NS_ERR),
-	    send_trailer(StateData),
 	    {stop, normal, StateData}
     end;
 wait_for_stream(timeout, StateData) ->
     {stop, normal, StateData};
 wait_for_stream({xmlstreamelement, _}, StateData) ->
     send_element(StateData, ?INVALID_XML_ERR),
-    send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_stream({xmlstreamend, _}, StateData) ->
     send_element(StateData, ?INVALID_XML_ERR),
-    send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_stream({xmlstreamerror, _}, StateData) ->
     send_header(StateData, ?MYNAME, <<"1.0">>, <<"">>),
     send_element(StateData, ?INVALID_XML_ERR),
-    send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_stream(closed, StateData) ->
     {stop, normal, StateData};
@@ -724,10 +717,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 wait_for_auth(timeout, StateData) ->
     {stop, normal, StateData};
 wait_for_auth({xmlstreamend, _Name}, StateData) ->
-    send_trailer(StateData), {stop, normal, StateData};
+    {stop, normal, StateData};
 wait_for_auth({xmlstreamerror, _}, StateData) ->
     send_element(StateData, ?INVALID_XML_ERR),
-    send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_auth(closed, StateData) ->
     {stop, normal, StateData};
@@ -843,7 +835,6 @@ wait_for_feature_request({xmlstreamelement, El},
 		 send_element(StateData,
 			      ?POLICY_VIOLATION_ERR(Lang,
 						    <<"Use of STARTTLS required">>)),
-		 send_trailer(StateData),
 		 {stop, normal, StateData};
 	     true ->
 		 process_unauthenticated_stanza(StateData, El),
@@ -854,11 +845,10 @@ wait_for_feature_request(timeout, StateData) ->
     {stop, normal, StateData};
 wait_for_feature_request({xmlstreamend, _Name},
 			 StateData) ->
-    send_trailer(StateData), {stop, normal, StateData};
+    {stop, normal, StateData};
 wait_for_feature_request({xmlstreamerror, _},
 			 StateData) ->
     send_element(StateData, ?INVALID_XML_ERR),
-    send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_feature_request(closed, StateData) ->
     {stop, normal, StateData};
@@ -963,11 +953,10 @@ wait_for_sasl_response(timeout, StateData) ->
     {stop, normal, StateData};
 wait_for_sasl_response({xmlstreamend, _Name},
 		       StateData) ->
-    send_trailer(StateData), {stop, normal, StateData};
+    {stop, normal, StateData};
 wait_for_sasl_response({xmlstreamerror, _},
 		       StateData) ->
     send_element(StateData, ?INVALID_XML_ERR),
-    send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_sasl_response(closed, StateData) ->
     {stop, normal, StateData};
@@ -1092,10 +1081,9 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 wait_for_bind(timeout, StateData) ->
     {stop, normal, StateData};
 wait_for_bind({xmlstreamend, _Name}, StateData) ->
-    send_trailer(StateData), {stop, normal, StateData};
+    {stop, normal, StateData};
 wait_for_bind({xmlstreamerror, _}, StateData) ->
     send_element(StateData, ?INVALID_XML_ERR),
-    send_trailer(StateData),
     {stop, normal, StateData};
 wait_for_bind(closed, StateData) ->
     {stop, normal, StateData};
@@ -1168,7 +1156,6 @@ session_established({xmlstreamelement, El},
     case check_from(El, FromJID) of
 	'invalid-from' ->
 	    send_element(StateData, ?INVALID_FROM),
-	    send_trailer(StateData),
 	    {stop, normal, StateData};
 	_NewEl ->
 	    session_established2(El, StateData)
@@ -1181,17 +1168,15 @@ session_established(timeout, StateData) ->
 		       [?MODULE, Options, session_established, StateData]),
     fsm_next_state(session_established, StateData);
 session_established({xmlstreamend, _Name}, StateData) ->
-    send_trailer(StateData), {stop, normal, StateData};
+    {stop, normal, StateData};
 session_established({xmlstreamerror,
 		     <<"XML stanza is too big">> = E},
 		    StateData) ->
     send_element(StateData,
 		 ?POLICY_VIOLATION_ERR((StateData#state.lang), E)),
-    send_trailer(StateData),
     {stop, normal, StateData};
 session_established({xmlstreamerror, _}, StateData) ->
     send_element(StateData, ?INVALID_XML_ERR),
-    send_trailer(StateData),
     {stop, normal, StateData};
 session_established(closed, #state{mgmt_state = active} = StateData) ->
     catch (StateData#state.sockmod):close(StateData#state.socket),
@@ -1346,7 +1331,6 @@ handle_info(kick, StateName, StateData) ->
     handle_info({kick, kicked_by_admin, Xmlelement}, StateName, StateData);
 handle_info({kick, Reason, Xmlelement}, _StateName, StateData) ->
     send_element(StateData, Xmlelement),
-    send_trailer(StateData),
     {stop, normal,
      StateData#state{authenticated = Reason}};
 handle_info({route, _From, _To, {broadcast, Data}},
@@ -1359,7 +1343,6 @@ handle_info({route, _From, _To, {broadcast, Data}},
         {exit, Reason} ->
             Lang = StateData#state.lang,
             send_element(StateData, ?SERRT_CONFLICT(Lang, Reason)),
-            catch send_trailer(StateData),
             {stop, normal, StateData};
         {privacy_list, PrivList, PrivListName} ->
             case ejabberd_hooks:run_fold(privacy_updated_list,
@@ -1673,11 +1656,9 @@ handle_info(system_shutdown, StateName, StateData) ->
       wait_for_stream ->
 	  send_header(StateData, ?MYNAME, <<"1.0">>, <<"en">>),
 	  send_element(StateData, ?SERR_SYSTEM_SHUTDOWN),
-	  send_trailer(StateData),
 	  ok;
       _ ->
 	  send_element(StateData, ?SERR_SYSTEM_SHUTDOWN),
-	  send_trailer(StateData),
 	  ok
     end,
     {stop, normal, StateData};
@@ -1809,6 +1790,7 @@ terminate(_Reason, StateName, StateData) ->
 		 ok
 	  end
     end,
+    catch send_trailer(StateData),
     (StateData#state.sockmod):close(StateData#state.socket),
     ok.
 
@@ -2431,7 +2413,6 @@ fsm_next_state(session_established, #state{mgmt_max_queue = exceeded} =
     Err = ?SERRT_POLICY_VIOLATION(StateData#state.lang,
 				  <<"Too many unacked stanzas">>),
     send_element(StateData, Err),
-    send_trailer(StateData),
     {stop, normal, StateData#state{mgmt_resend = false}};
 fsm_next_state(session_established, #state{mgmt_state = pending} = StateData) ->
     fsm_next_state(wait_for_resume, StateData);
