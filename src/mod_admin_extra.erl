@@ -31,7 +31,7 @@
 -include("logger.hrl").
 
 -export([start/2, stop/1, compile/1, get_cookie/0,
-	 remove_node/1, set_password/3,
+	 remove_node/1, set_password/3, check_password/3,
 	 check_password_hash/4, delete_old_users/1,
 	 delete_old_users_vhost/2, ban_account/3,
 	 num_active_users/2, num_resources/2, resource_num/3,
@@ -162,7 +162,7 @@ get_commands_spec() ->
 			result_desc = "Status code: 0 on success, 1 otherwise"},
      #ejabberd_commands{name = check_password, tags = [accounts],
 			desc = "Check if a password is correct",
-			module = ejabberd_auth, function = check_password,
+			module = ?MODULE, function = check_password,
 			args = [{user, binary}, {host, binary}, {password, binary}],
 			args_example = [<<"peter">>, <<"myserver.com">>, <<"secret">>],
 			args_desc = ["User name to check", "Server to check", "Password to check"],
@@ -592,6 +592,9 @@ remove_node(Node) ->
 set_password(User, Host, Password) ->
     Fun = fun () -> ejabberd_auth:set_password(User, Host, Password) end,
     user_action(User, Host, Fun, ok).
+
+check_password(User, Host, Password) ->
+    ejabberd_auth:check_password(User, <<>>, Host, Password).
 
 %% Copied some code from ejabberd_commands.erl
 check_password_hash(User, Host, PasswordHash, HashMethod) ->
