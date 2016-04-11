@@ -192,7 +192,7 @@ init([From, Server, Type]) ->
                      {s2s_tls_compression, From},
                      fun(true) -> true;
                         (false) -> false
-                     end, true) of
+                     end, false) of
                   false -> [compression_none | TLSOpts4];
                   true -> TLSOpts4
               end,
