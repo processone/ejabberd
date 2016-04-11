@@ -48,7 +48,7 @@
 -behaviour(ejabberd_config).
 -author('alexey@process-one.net').
 
--export([start/0, init/0, process/1,
+-export([start/0, init/0, process/1, process2/2,
 	 register_commands/3, unregister_commands/3,
 	 opt_type/1]).
 
@@ -231,6 +231,10 @@ process(Args, Version) ->
     Code.
 
 %% @spec (Args::[string()], AccessCommands) -> {String::string(), Code::integer()}
+process2(Args, AccessCommands) ->
+    process2(Args, AccessCommands, ?DEFAULT_VERSION).
+
+%% @spec (Args::[string()], AccessCommands, Version) -> {String::string(), Code::integer()}
 process2(["--auth", User, Server, Pass | Args], AccessCommands, Version) ->
     process2(Args, AccessCommands, {list_to_binary(User), list_to_binary(Server),
 				    list_to_binary(Pass), true}, Version);
