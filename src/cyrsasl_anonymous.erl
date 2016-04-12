@@ -45,9 +45,8 @@ mech_new(Host, _GetPassword, _CheckPassword, _CheckPasswordDigest) ->
 
 mech_step(#state{server = Server} = S, ClientIn) ->
     User = iolist_to_binary([randoms:get_string(),
-                             randoms:get_string(),
-                             randoms:get_string()]),
+                             jlib:integer_to_binary(p1_time_compat:unique_integer([positive]))]),
     case ejabberd_auth:is_user_exists(User, Server) of
         true  -> mech_step(S, ClientIn);
-        false -> {ok, [{username, User}, {auth_module, ejabberd_auth_anonymous}]}
+        false -> {ok, [{username, User}, {authzid, User}, {auth_module, ejabberd_auth_anonymous}]}
     end.

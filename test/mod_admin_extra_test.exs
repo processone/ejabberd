@@ -73,13 +73,13 @@ defmodule EjabberdModAdminExtraTest do
 		EjabberdAuthMock.create_user @user, @domain, @password
 
 		assert :ejabberd_commands.execute_command(:check_password,
-																							[@user, <<"">>, @domain, @password])
+																							[@user, @domain, @password])
 		refute :ejabberd_commands.execute_command(:check_password,
-																							[@user, <<"">>, @domain, "bad_password"])
+																							[@user, @domain, "bad_password"])
 		refute :ejabberd_commands.execute_command(:check_password,
-																							[@user, <<"">>, "bad_domain", @password])
+																							[@user, "bad_domain", @password])
 		refute :ejabberd_commands.execute_command(:check_password,
-																							["bad_user", <<"">>, @domain, @password])
+																							["bad_user", @domain, @password])
 
 		assert :meck.validate :ejabberd_auth
 
@@ -117,9 +117,9 @@ defmodule EjabberdModAdminExtraTest do
 		assert :ejabberd_commands.execute_command(:change_password,
 																							[@user, @domain, "new_password"])
 		refute :ejabberd_commands.execute_command(:check_password,
-																							[@user, <<"">>, @domain, @password])
+																							[@user, @domain, @password])
 		assert :ejabberd_commands.execute_command(:check_password,
-																							[@user, <<"">>, @domain, "new_password"])
+																							[@user, @domain, "new_password"])
 		assert {:not_found, 'unknown_user'} ==
 			catch_throw :ejabberd_commands.execute_command(:change_password,
 																										 ["bad_user", @domain,

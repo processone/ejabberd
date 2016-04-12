@@ -325,7 +325,7 @@ wait_for_feature_request({xmlstreamelement, El},
                            {s2s_tls_compression, StateData#state.server},
                            fun(true) -> true;
                               (false) -> false
-                           end, true) of
+                           end, false) of
                         true -> lists:delete(compression_none, TLSOpts1);
                         false -> [compression_none | TLSOpts1]
                     end,
