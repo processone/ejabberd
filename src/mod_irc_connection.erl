@@ -1353,6 +1353,7 @@ process_kick(StateData, Chan, From, Nick, String) ->
 							 attrs =
 							     [{<<"code">>,
 							       <<"307">>},
+                                                              {<<"moderator">>, From/binary},
                                                               {<<"message">>, Msg}],
 							 children = []}]}]}).
 
