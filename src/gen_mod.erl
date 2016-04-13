@@ -36,7 +36,7 @@
 	 loaded_modules/1, loaded_modules_with_opts/1,
 	 get_hosts/2, get_module_proc/2, is_loaded/2,
 	 start_modules/0, start_modules/1, stop_modules/0, stop_modules/1,
-	 default_db/1, v_db/1, opt_type/1]).
+	 default_db/1, v_db/1, opt_type/1, db_mod/2, db_mod/3]).
 
 %%-export([behaviour_info/1]).
 
@@ -318,6 +318,19 @@ db_type(Host, Opts) when is_list(Opts) ->
 
 default_db(Host) ->
     ejabberd_config:get_option({default_db, Host}, fun v_db/1, mnesia).
+
+-spec db_mod(binary() | global | db_type(), module()) -> module().
+
+db_mod(odbc, Module) -> list_to_atom(atom_to_list(Module) ++ "_sql");
+db_mod(mnesia, Module) -> list_to_atom(atom_to_list(Module) ++ "_mnesia");
+db_mod(riak, Module) -> list_to_atom(atom_to_list(Module) ++ "_riak");
+db_mod(Host, Module) when is_binary(Host) orelse Host == global ->
+    db_mod(db_type(Host, Module), Module).
+
+-spec db_mod(binary() | global, opts(), module()) -> module().
+
+db_mod(Host, Opts, Module) when is_list(Opts) ->
+    db_mod(db_type(Host, Opts), Module).
 
 -spec loaded_modules(binary()) -> [atom()].
 
