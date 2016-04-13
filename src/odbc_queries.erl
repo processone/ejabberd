@@ -113,7 +113,7 @@ update(LServer, Table, Fields, Vals, Where) ->
 		case Res of
 			{updated,1} -> ok;
 			_ -> Res
-		end		   
+		end
     end.
 
 %% F can be either a fun or a list of queries
@@ -259,7 +259,7 @@ users_number(LServer) ->
 	  end;
          (_Type, _) ->
               ejabberd_odbc:sql_query_t(
-                ?SQL("select @(count(*))d from users"))
+                ?SQL("select @(CAST(count(*) AS INTEGER))d from users"))
       end).
 
 users_number(LServer, [{prefix, Prefix}])
@@ -268,7 +268,7 @@ users_number(LServer, [{prefix, Prefix}])
     SPrefix2 = <<SPrefix/binary, $%>>,
     ejabberd_odbc:sql_query(
       LServer,
-      ?SQL("select @(count(*))d from users "
+      ?SQL("select @(CAST(count(*) AS INTEGER))d from users "
            "where username like %(SPrefix2)s"));
 users_number(LServer, []) ->
     users_number(LServer).
@@ -303,7 +303,7 @@ get_roster(LServer, LUser) ->
       LServer,
       ?SQL("select @(username)s, @(jid)s, @(nick)s, @(subscription)s, "
            "@(ask)s, @(askmessage)s, @(server)s, @(subscribe)s, "
-           "@(type)s from rosterusers where username=%(LUser)s")).
+           "@(\"type\")s from rosterusers where username=%(LUser)s")).
 
 get_roster_jid_groups(LServer, LUser) ->
     ejabberd_odbc:sql_query(
@@ -330,7 +330,7 @@ get_roster_by_jid(_LServer, LUser, SJID) ->
     ejabberd_odbc:sql_query_t(
       ?SQL("select @(username)s, @(jid)s, @(nick)s, @(subscription)s,"
            " @(ask)s, @(askmessage)s, @(server)s, @(subscribe)s,"
-           " @(type)s from rosterusers"
+           " @(\"type\")s from rosterusers"
            " where username=%(LUser)s and jid=%(SJID)s")).
 
 get_rostergroup_by_jid(LServer, LUser, SJID) ->
@@ -619,7 +619,7 @@ escape(C) -> <<C>>.
 %% Count number of records in a table given a where clause
 count_records_where(LServer, Table, WhereClause) ->
     ejabberd_odbc:sql_query(LServer,
-			    [<<"select count(*) from ">>, Table, <<" ">>,
+			    [<<"select CAST(count(*) AS INTEGER) from ">>, Table, <<" ">>,
 			     WhereClause, <<";">>]).
 
 get_roster_version(LServer, LUser) ->

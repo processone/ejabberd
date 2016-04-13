@@ -25,6 +25,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_mam).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -protocol({xep, 313, '0.4'}).
 -protocol({xep, 334, '0.2'}).
 
@@ -44,6 +46,8 @@
 -include("logger.hrl").
 -include("mod_muc_room.hrl").
 -include("ejabberd_commands.hrl").
+
+-include("ejabberd_sql_pt.hrl").
 
 -define(DEF_PAGE_SIZE, 50).
 -define(MAX_PAGE_SIZE, 250).
@@ -190,14 +194,12 @@ remove_user(LUser, LServer, mnesia) ->
 	end,
     mnesia:transaction(F);
 remove_user(LUser, LServer, odbc) ->
-    SUser = ejabberd_odbc:escape(LUser),
-    ejabberd_odbc:sql_query(
-      LServer,
-      [<<"delete from archive where username='">>, SUser, <<"';">>]),
-    ejabberd_odbc:sql_query(
-      LServer,
-      [<<"delete from archive_prefs where username='">>, SUser, <<"';">>]).
-
+    ejabberd_odbc:sql_transaction(
+	LServer,
+	fun() ->
+		ejabberd_odbc:sql_query_t(?SQL("delete from archive where username=%(LUser)s;")),
+		ejabberd_odbc:sql_query_t(?SQL("delete from archive_prefs where username=%(LUser)s;"))
+	end).
 user_receive_packet(Pkt, C2SState, JID, Peer, To) ->
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
@@ -766,7 +768,7 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, odbc) ->
     Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
     case ejabberd_odbc:sql_query(
 	    LServer,
-	    [<<"insert into archive (username, timestamp, "
+	    [<<"insert into archive (username, arch_timestamp, "
 		    "peer, bare_peer, xml, txt, kind, nick) values (">>,
 		<<"'">>, ejabberd_odbc:escape(SUser), <<"', ">>,
 		<<"'">>, TS, <<"', ">>,
@@ -1304,9 +1306,9 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
 		     I when is_integer(I), I >= 0 ->
 			 case Direction of
 			     before ->
-				 [<<" AND timestamp < ">>, ID];
+				 [<<" AND arch_timestamp < ">>, ID];
 			     aft ->
-				 [<<" AND timestamp > ">>, ID];
+				 [<<" AND arch_timestamp > ">>, ID];
 			     _ ->
 				 []
 			 end;
@@ -1315,21 +1317,21 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
 		 end,
     StartClause = case Start of
 		      {_, _, _} ->
-			  [<<" and timestamp >= ">>,
+			  [<<" and arch_timestamp >= ">>,
 			   jlib:integer_to_binary(now_to_usec(Start))];
 		      _ ->
 			  []
 		  end,
     EndClause = case End of
 		    {_, _, _} ->
-			[<<" and timestamp <= ">>,
+			[<<" and arch_timestamp <= ">>,
 			 jlib:integer_to_binary(now_to_usec(End))];
 		    _ ->
 			[]
 		end,
     SUser = ejabberd_odbc:escape(User),
 
-    Query = [<<"SELECT ">>, TopClause, <<" timestamp, xml, peer, kind, nick"
+    Query = [<<"SELECT ">>, TopClause, <<" arch_timestamp, xml, peer, kind, nick"
 	      " FROM archive WHERE username='">>,
 	     SUser, <<"'">>, WithClause, StartClause, EndClause,
 	     PageClause],
@@ -1340,11 +1342,11 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
 		% ID can be empty because of
 		% XEP-0059: Result Set Management
 		% 2.5 Requesting the Last Page in a Result Set
-		[<<"SELECT timestamp, xml, peer, kind, nick FROM (">>, Query,
-		 <<" ORDER BY timestamp DESC ">>,
-		 LimitClause, <<") AS t ORDER BY timestamp ASC;">>];
+		[<<"SELECT arch_timestamp, xml, peer, kind, nick FROM (">>, Query,
+		 <<" ORDER BY arch_timestamp DESC ">>,
+		 LimitClause, <<") AS t ORDER BY arch_timestamp ASC;">>];
 	    _ ->
-		[Query, <<" ORDER BY timestamp ASC ">>,
+		[Query, <<" ORDER BY arch_timestamp ASC ">>,
 		 LimitClause, <<";">>]
 	end,
     {QueryPage,

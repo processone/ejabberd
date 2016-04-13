@@ -10,7 +10,7 @@
 -- but WITHOUT ANY WARRANTY; without even the implied warranty of
 -- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 -- General Public License for more details.
---                         
+--
 -- You should have received a copy of the GNU General Public License along
 -- with this program; if not, write to the Free Software Foundation, Inc.,
 -- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -90,7 +90,7 @@ CREATE INDEX i_despool ON spool USING btree (username);
 
 CREATE TABLE archive (
     username text NOT NULL,
-    timestamp BIGINT NOT NULL,
+    arch_timestamp BIGINT NOT NULL,
     peer text NOT NULL,
     bare_peer text NOT NULL,
     xml text NOT NULL,
@@ -102,7 +102,7 @@ CREATE TABLE archive (
 );
 
 CREATE INDEX i_username ON archive USING btree (username);
-CREATE INDEX i_timestamp ON archive USING btree (timestamp);
+CREATE INDEX i_timestamp ON archive USING btree (arch_timestamp);
 CREATE INDEX i_peer ON archive USING btree (peer);
 CREATE INDEX i_bare_peer ON archive USING btree (bare_peer);
 
@@ -258,7 +258,7 @@ CREATE UNIQUE INDEX i_pubsub_state_tuple ON pubsub_state USING btree (nodeid, ji
 
 CREATE TABLE pubsub_item (
   nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
-  itemid text, 
+  itemid text,
   publisher text,
   creation text,
   modification text,
