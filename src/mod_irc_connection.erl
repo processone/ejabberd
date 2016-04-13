@@ -858,7 +858,8 @@ process_channel_list_user(StateData, Chan, User) ->
 							     [{<<"affiliation">>,
 							       Affiliation},
 							      {<<"role">>,
-							       Role}],
+							       Role},
+                                                              {<<"names">>, <<"true">>}],
 							 children = []}]}]}),
     case catch dict:update(Chan,
 			   fun (Ps) -> (?SETS):add_element(User2, Ps) end,
@@ -1272,7 +1273,7 @@ process_quit(StateData, From, String) ->
 
 process_join(StateData, Channel, From, _String) ->
     [FromUser | FromIdent] = str:tokens(From, <<"!">>),
-    [Chan | _] = binary:split(Channel, <<":#">>),
+    [_ , Chan] = binary:split(Channel, <<":#">>),
     ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
@@ -1328,19 +1329,6 @@ process_mode_o(StateData, Chan, _From, Nick,
 
 process_kick(StateData, Chan, From, Nick, String) ->
     Msg = lists:last(str:tokens(String, <<":">>)),
-    Msg2 = <<Nick/binary, " kicked by ", From/binary, " (",
-	     (filter_message(Msg))/binary, ")">>,
-    ejabberd_router:route(jid:make(iolist_to_binary(
-                                          [Chan,
-                                           <<"%">>,
-                                           StateData#state.server]),
-					StateData#state.host, <<"">>),
-			  StateData#state.user,
-			  #xmlel{name = <<"message">>,
-				 attrs = [{<<"type">>, <<"groupchat">>}],
-				 children =
-				     [#xmlel{name = <<"body">>, attrs = [],
-					     children = [{xmlcdata, Msg2}]}]}),
     ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
@@ -1364,12 +1352,14 @@ process_kick(StateData, Chan, From, Nick, String) ->
 						  #xmlel{name = <<"status">>,
 							 attrs =
 							     [{<<"code">>,
-							       <<"307">>}],
+							       <<"307">>},
+                                                              {<<"moderator">>, From/binary},
+                                                              {<<"message">>, (filter_message(Msg))/binary}],
 							 children = []}]}]}).
 
 process_nick(StateData, From, NewNick) ->
     [FromUser | _] = str:tokens(From, <<"!">>),
-    [Nick | _] = binary:split(NewNick, <<":">>),
+    [_, Nick] = binary:split(NewNick, <<":">>),
     NewChans = dict:map(fun (Chan, Ps) ->
 				case (?SETS):is_member(FromUser, Ps) of
 				  true ->
@@ -1385,7 +1375,7 @@ process_nick(StateData, From, NewNick) ->
 								       <<"presence">>,
 								   attrs =
 								       [{<<"type">>,
-									 <<"unavailable">>}],
+									 <<"participant">>}],
 								   children =
 								       [#xmlel{name
 										   =
@@ -1417,39 +1407,6 @@ process_nick(StateData, From, NewNick) ->
 											       =
 											       [{<<"code">>,
 												 <<"303">>}],
-											   children
-											       =
-											       []}]}]}),
-				      ejabberd_router:route(jid:make(
-                                                              iolist_to_binary(
-                                                                [Chan,
-                                                                 <<"%">>,
-                                                                 StateData#state.server]),
-                                                              StateData#state.host,
-                                                              Nick),
-							    StateData#state.user,
-							    #xmlel{name =
-								       <<"presence">>,
-								   attrs = [],
-								   children =
-								       [#xmlel{name
-										   =
-										   <<"x">>,
-									       attrs
-										   =
-										   [{<<"xmlns">>,
-										     ?NS_MUC_USER}],
-									       children
-										   =
-										   [#xmlel{name
-											       =
-											       <<"item">>,
-											   attrs
-											       =
-											       [{<<"affiliation">>,
-												 <<"member">>},
-												{<<"role">>,
-												 <<"participant">>}],
 											   children
 											       =
 											       []}]}]}),
