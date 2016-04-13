@@ -41,11 +41,16 @@
 -include("logger.hrl").
 -include("jlib.hrl").
 -include("adhoc.hrl").
+-include("mod_announce.hrl").
 
--record(motd, {server = <<"">> :: binary(),
-               packet = #xmlel{} :: xmlel()}).
--record(motd_users, {us = {<<"">>, <<"">>} :: {binary(), binary()} | '$1',
-                     dummy = [] :: [] | '_'}).
+-callback init(binary(), gen_mod:opts()) -> any().
+-callback import(binary(), #motd{} | #motd_users{}) -> ok | pass.
+-callback set_motd_users(binary(), [{binary(), binary(), binary()}]) -> {atomic, any()}.
+-callback set_motd(binary(), xmlel()) -> {atomic, any()}.
+-callback delete_motd(binary()) -> {atomic, any()}.
+-callback get_motd(binary()) -> {ok, xmlel()} | error.
+-callback is_motd_user(binary(), binary()) -> boolean().
+-callback set_motd_user(binary(), binary()) -> {atomic, any()}.
 
 -define(PROCNAME, ejabberd_announce).
 
@@ -55,20 +60,8 @@
 tokenize(Node) -> str:tokens(Node, <<"/#">>).
 
 start(Host, Opts) ->
-    case gen_mod:db_type(Host, Opts) of
-        mnesia ->
-            mnesia:create_table(motd,
-                                [{disc_copies, [node()]},
-                                 {attributes,
-                                  record_info(fields, motd)}]),
-            mnesia:create_table(motd_users,
-                                [{disc_copies, [node()]},
-                                 {attributes,
-                                  record_info(fields, motd_users)}]),
-            update_tables();
-        _ ->
-            ok
-    end,
+    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
+    Mod:init(Host, Opts),
     ejabberd_hooks:add(local_send_to_resource_hook, Host,
 		       ?MODULE, announce, 50),
     ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, disco_identity, 50),
@@ -789,41 +782,8 @@ announce_motd(Host, Packet) ->
     announce_motd_update(LServer, Packet),
     Sessions = ejabberd_sm:get_vh_session_list(LServer),
     announce_online1(Sessions, LServer, Packet),
-    case gen_mod:db_type(LServer, ?MODULE) of
-        mnesia ->
-            F = fun() ->
-                        lists:foreach(
-                          fun({U, S, _R}) ->
-                                  mnesia:write(#motd_users{us = {U, S}})
-                          end, Sessions)
-                end,
-            mnesia:transaction(F);
-        riak ->
-            try
-                lists:foreach(
-                  fun({U, S, _R}) ->
-                          ok = ejabberd_riak:put(#motd_users{us = {U, S}},
-						 motd_users_schema(),
-                                                 [{'2i', [{<<"server">>, S}]}])
-                  end, Sessions),
-                {atomic, ok}
-            catch _:{badmatch, Err} ->
-                    {atomic, Err}
-            end;
-        odbc ->
-            F = fun() ->
-                        lists:foreach(
-                          fun({U, _S, _R}) ->
-                                  Username = ejabberd_odbc:escape(U),
-                                  odbc_queries:update_t(
-                                    <<"motd">>,
-                                    [<<"username">>, <<"xml">>],
-                                    [Username, <<"">>],
-                                    [<<"username='">>, Username, <<"'">>])
-                          end, Sessions)
-                end,
-            ejabberd_odbc:sql_transaction(LServer, F)
-    end.
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:set_motd_users(LServer, Sessions).
 
 announce_motd_update(From, To, Packet) ->
     Host = To#jid.lserver,
@@ -853,27 +813,8 @@ announce_all_hosts_motd_update(From, To, Packet) ->
 
 announce_motd_update(LServer, Packet) ->
     announce_motd_delete(LServer),
-    case gen_mod:db_type(LServer, ?MODULE) of
-        mnesia ->
-            F = fun() ->
-                        mnesia:write(#motd{server = LServer, packet = Packet})
-                end,
-            mnesia:transaction(F);
-        riak ->
-            {atomic, ejabberd_riak:put(#motd{server = LServer,
-                                             packet = Packet},
-				       motd_schema())};
-        odbc ->
-            XML = ejabberd_odbc:escape(fxml:element_to_binary(Packet)),
-            F = fun() ->
-                        odbc_queries:update_t(
-                          <<"motd">>,
-                          [<<"username">>, <<"xml">>],
-                          [<<"">>, XML],
-                          [<<"username=''">>])
-                end,
-            ejabberd_odbc:sql_transaction(LServer, F)
-    end.
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:set_motd(LServer, Packet).
 
 announce_motd_delete(From, To, Packet) ->
     Host = To#jid.lserver,
@@ -902,145 +843,35 @@ announce_all_hosts_motd_delete(From, To, Packet) ->
     end.
 
 announce_motd_delete(LServer) ->
-    case gen_mod:db_type(LServer, ?MODULE) of
-        mnesia ->
-            F = fun() ->
-                        mnesia:delete({motd, LServer}),
-                        mnesia:write_lock_table(motd_users),
-                        Users = mnesia:select(
-                                  motd_users,
-                                  [{#motd_users{us = '$1', _ = '_'},
-                                    [{'==', {element, 2, '$1'}, LServer}],
-                                    ['$1']}]),
-                        lists:foreach(fun(US) ->
-                                              mnesia:delete({motd_users, US})
-                                      end, Users)
-                end,
-            mnesia:transaction(F);
-        riak ->
-            try
-                ok = ejabberd_riak:delete(motd, LServer),
-                ok = ejabberd_riak:delete_by_index(motd_users,
-                                                   <<"server">>,
-                                                   LServer),
-                {atomic, ok}
-            catch _:{badmatch, Err} ->
-                    {atomic, Err}
-            end;
-        odbc ->
-            F = fun() ->
-                        ejabberd_odbc:sql_query_t([<<"delete from motd;">>])
-                end,
-            ejabberd_odbc:sql_transaction(LServer, F)
-    end.
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:delete_motd(LServer).
 
-send_motd(JID) ->
-    send_motd(JID, gen_mod:db_type(JID#jid.lserver, ?MODULE)).
-
-send_motd(#jid{luser = LUser, lserver = LServer} = JID, mnesia) ->
-    case catch mnesia:dirty_read({motd, LServer}) of
-	[#motd{packet = Packet}] ->
-	    US = {LUser, LServer},
-	    case catch mnesia:dirty_read({motd_users, US}) of
-		[#motd_users{}] ->
-		    ok;
-		_ ->
+send_motd(#jid{luser = LUser, lserver = LServer} = JID) when LUser /= <<>> ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case Mod:get_motd(LServer) of
+	{ok, Packet} ->
+	    case Mod:is_motd_user(LUser, LServer) of
+		false ->
 		    Local = jid:make(<<>>, LServer, <<>>),
 		    ejabberd_router:route(Local, JID, Packet),
-		    F = fun() ->
-				mnesia:write(#motd_users{us = US})
-			end,
-		    mnesia:transaction(F)
+		    Mod:set_motd_user(LUser, LServer);
+		true ->
+		    ok
 	    end;
-	_ ->
+	error ->
 	    ok
     end;
-send_motd(#jid{luser = LUser, lserver = LServer} = JID, riak) ->
-    case catch ejabberd_riak:get(motd, motd_schema(), LServer) of
-        {ok, #motd{packet = Packet}} ->
-            US = {LUser, LServer},
-            case ejabberd_riak:get(motd_users, motd_users_schema(), US) of
-                {ok, #motd_users{}} ->
-                    ok;
-                _ ->
-                    Local = jid:make(<<>>, LServer, <<>>),
-		    ejabberd_router:route(Local, JID, Packet),
-                    {atomic, ejabberd_riak:put(
-                               #motd_users{us = US}, motd_users_schema(),
-                               [{'2i', [{<<"server">>, LServer}]}])}
-            end;
-        _ ->
-            ok
-    end;
-send_motd(#jid{luser = LUser, lserver = LServer} = JID, odbc) when LUser /= <<>> ->
-    case catch ejabberd_odbc:sql_query(
-                 LServer, [<<"select xml from motd where username='';">>]) of
-        {selected, [<<"xml">>], [[XML]]} ->
-            case fxml_stream:parse_element(XML) of
-                {error, _} ->
-                    ok;
-                Packet ->
-                    Username = ejabberd_odbc:escape(LUser),
-                    case catch ejabberd_odbc:sql_query(
-                                 LServer,
-                                 [<<"select username from motd "
-                                    "where username='">>, Username, <<"';">>]) of
-                        {selected, [<<"username">>], []} ->
-                            Local = jid:make(<<"">>, LServer, <<"">>),
-                            ejabberd_router:route(Local, JID, Packet),
-                            F = fun() ->
-                                        odbc_queries:update_t(
-                                          <<"motd">>,
-                                          [<<"username">>, <<"xml">>],
-                                          [Username, <<"">>],
-                                          [<<"username='">>, Username, <<"'">>])
-                                end,
-                            ejabberd_odbc:sql_transaction(LServer, F);
-                        _ ->
-                            ok
-                    end
-            end;
-        _ ->
-            ok
-    end;
-send_motd(_, odbc) ->
+send_motd(_) ->
     ok.
 
 get_stored_motd(LServer) ->
-    case get_stored_motd_packet(LServer, gen_mod:db_type(LServer, ?MODULE)) of
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case Mod:get_motd(LServer) of
         {ok, Packet} ->
             {fxml:get_subtag_cdata(Packet, <<"subject">>),
              fxml:get_subtag_cdata(Packet, <<"body">>)};
         error ->
             {<<>>, <<>>}
-    end.
-
-get_stored_motd_packet(LServer, mnesia) ->
-    case catch mnesia:dirty_read({motd, LServer}) of
-	[#motd{packet = Packet}] ->
-            {ok, Packet};
-	_ ->
-	    error
-    end;
-get_stored_motd_packet(LServer, riak) ->
-    case ejabberd_riak:get(motd, motd_schema(), LServer) of
-        {ok, #motd{packet = Packet}} ->
-            {ok, Packet};
-	_ ->
-	    error
-    end;
-get_stored_motd_packet(LServer, odbc) ->
-    case catch ejabberd_odbc:sql_query(
-                 LServer, [<<"select xml from motd where username='';">>]) of
-        {selected, [<<"xml">>], [[XML]]} ->
-            case fxml_stream:parse_element(XML) of
-                {error, _} ->
-                    error;
-                Packet ->
-                    {ok, Packet}
-            end;
-        _ ->
-            error
     end.
 
 %% This function is similar to others, but doesn't perform any ACL verification
@@ -1076,96 +907,17 @@ get_access(Host) ->
                            none).
 
 %%-------------------------------------------------------------------------
-
-update_tables() ->
-    update_motd_table(),
-    update_motd_users_table().
-
-update_motd_table() ->
-    Fields = record_info(fields, motd),
-    case mnesia:table_info(motd, attributes) of
-	Fields ->
-            ejabberd_config:convert_table_to_binary(
-              motd, Fields, set,
-              fun(#motd{server = S}) -> S end,
-              fun(#motd{server = S, packet = P} = R) ->
-                      NewS = iolist_to_binary(S),
-                      NewP = fxml:to_xmlel(P),
-                      R#motd{server = NewS, packet = NewP}
-              end);
-	_ ->
-	    ?INFO_MSG("Recreating motd table", []),
-	    mnesia:transform_table(motd, ignore, Fields)
-    end.
-
-
-update_motd_users_table() ->
-    Fields = record_info(fields, motd_users),
-    case mnesia:table_info(motd_users, attributes) of
-	Fields ->
-	    ejabberd_config:convert_table_to_binary(
-              motd_users, Fields, set,
-              fun(#motd_users{us = {U, _}}) -> U end,
-              fun(#motd_users{us = {U, S}} = R) ->
-                      NewUS = {iolist_to_binary(U),
-                               iolist_to_binary(S)},
-                      R#motd_users{us = NewUS}
-              end);
-	_ ->
-	    ?INFO_MSG("Recreating motd_users table", []),
-	    mnesia:transform_table(motd_users, ignore, Fields)
-    end.
-
-motd_schema() ->
-    {record_info(fields, motd), #motd{}}.
-
-motd_users_schema() ->
-    {record_info(fields, motd_users), #motd_users{}}.
-
-export(_Server) ->
-    [{motd,
-      fun(Host, #motd{server = LServer, packet = El})
-            when LServer == Host ->
-              [[<<"delete from motd where username='';">>],
-               [<<"insert into motd(username, xml) values ('', '">>,
-                ejabberd_odbc:escape(fxml:element_to_binary(El)),
-                <<"');">>]];
-         (_Host, _R) ->
-              []
-      end},
-     {motd_users,
-      fun(Host, #motd_users{us = {LUser, LServer}})
-            when LServer == Host, LUser /= <<"">> ->
-              Username = ejabberd_odbc:escape(LUser),
-              [[<<"delete from motd where username='">>, Username, <<"';">>],
-               [<<"insert into motd(username, xml) values ('">>,
-                Username, <<"', '');">>]];
-         (_Host, _R) ->
-              []
-      end}].
+export(LServer) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:export(LServer).
 
 import(LServer) ->
-    [{<<"select xml from motd where username='';">>,
-      fun([XML]) ->
-              El = fxml_stream:parse_element(XML),
-              #motd{server = LServer, packet = El}
-      end},
-     {<<"select username from motd where xml='';">>,
-      fun([LUser]) ->
-              #motd_users{us = {LUser, LServer}}
-      end}].
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:import(LServer).
 
-import(_LServer, mnesia, #motd{} = Motd) ->
-    mnesia:dirty_write(Motd);
-import(_LServer, mnesia, #motd_users{} = Users) ->
-    mnesia:dirty_write(Users);
-import(_LServer, riak, #motd{} = Motd) ->
-    ejabberd_riak:put(Motd, motd_schema());
-import(_LServer, riak, #motd_users{us = {_, S}} = Users) ->
-    ejabberd_riak:put(Users, motd_users_schema(),
-		      [{'2i', [{<<"server">>, S}]}]);
-import(_, _, _) ->
-    pass.
+import(LServer, DBType, LA) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, LA).
 
 mod_opt_type(access) ->
     fun (A) when is_atom(A) -> A end;
