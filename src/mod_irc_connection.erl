@@ -1335,17 +1335,6 @@ process_kick(StateData, Chan, From, Nick, String) ->
                                           [Chan,
                                            <<"%">>,
                                            StateData#state.server]),
-					StateData#state.host, <<"">>),
-			  StateData#state.user,
-			  #xmlel{name = <<"message">>,
-				 attrs = [{<<"type">>, <<"groupchat">>}],
-				 children =
-				     [#xmlel{name = <<"body">>, attrs = [],
-					     children = [{xmlcdata, Msg2}]}]}),
-    ejabberd_router:route(jid:make(iolist_to_binary(
-                                          [Chan,
-                                           <<"%">>,
-                                           StateData#state.server]),
 					StateData#state.host, Nick),
 			  StateData#state.user,
 			  #xmlel{name = <<"presence">>,
@@ -1365,7 +1354,8 @@ process_kick(StateData, Chan, From, Nick, String) ->
 						  #xmlel{name = <<"status">>,
 							 attrs =
 							     [{<<"code">>,
-							       <<"307">>}],
+							       <<"307">>},
+                                                              {<<"message">>, Msg2}],
 							 children = []}]}]}).
 
 process_nick(StateData, From, NewNick) ->
