@@ -1354,7 +1354,7 @@ process_kick(StateData, Chan, From, Nick, String) ->
 							     [{<<"code">>,
 							       <<"307">>},
                                                               {<<"moderator">>, From/binary},
-                                                              {<<"message">>, Msg}],
+                                                              {<<"message">>, (filter_message(Msg))/binary}],
 							 children = []}]}]}).
 
 process_nick(StateData, From, NewNick) ->
