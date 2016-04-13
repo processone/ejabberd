@@ -1329,8 +1329,6 @@ process_mode_o(StateData, Chan, _From, Nick,
 
 process_kick(StateData, Chan, From, Nick, String) ->
     Msg = lists:last(str:tokens(String, <<":">>)),
-    Msg2 = <<Nick/binary, " kicked by ", From/binary, " (",
-	     (filter_message(Msg))/binary, ")">>,
     ejabberd_router:route(jid:make(iolist_to_binary(
                                           [Chan,
                                            <<"%">>,
@@ -1355,7 +1353,7 @@ process_kick(StateData, Chan, From, Nick, String) ->
 							 attrs =
 							     [{<<"code">>,
 							       <<"307">>},
-                                                              {<<"message">>, Msg2}],
+                                                              {<<"message">>, Msg}],
 							 children = []}]}]}).
 
 process_nick(StateData, From, NewNick) ->
