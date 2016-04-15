@@ -39,6 +39,10 @@
 
 -include("mod_privacy.hrl").
 
+-callback process_blocklist_block(binary(), binary(), function()) -> {atomic, any()}.
+-callback unblock_by_filter(binary(), binary(), function()) -> {atomic, any()}.
+-callback process_blocklist_get(binary(), binary()) -> [listitem()] | error.
+
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
@@ -147,9 +151,8 @@ process_blocklist_block(LUser, LServer, JIDs, Lang) ->
 				 end,
 				 List, JIDs)
 	     end,
-    case process_blocklist_block_db(LUser, LServer, Filter,
-				    gen_mod:db_type(LServer, mod_privacy))
-	of
+    Mod = db_mod(LServer),
+    case Mod:process_blocklist_block(LUser, LServer, Filter) of
       {atomic, {ok, Default, List}} ->
 	  UserList = make_userlist(Default, List),
 	  broadcast_list_update(LUser, LServer, Default,
@@ -162,102 +165,14 @@ process_blocklist_block(LUser, LServer, JIDs, Lang) ->
 	    {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
     end.
 
-process_blocklist_block_db(LUser, LServer, Filter,
-			   mnesia) ->
-    F = fun () ->
-		case mnesia:wread({privacy, {LUser, LServer}}) of
-		  [] ->
-		      P = #privacy{us = {LUser, LServer}},
-		      NewDefault = <<"Blocked contacts">>,
-		      NewLists1 = [],
-		      List = [];
-		  [#privacy{default = Default, lists = Lists} = P] ->
-		      case lists:keysearch(Default, 1, Lists) of
-			{value, {_, List}} ->
-			    NewDefault = Default,
-			    NewLists1 = lists:keydelete(Default, 1, Lists);
-			false ->
-			    NewDefault = <<"Blocked contacts">>,
-			    NewLists1 = Lists,
-			    List = []
-		      end
-		end,
-		NewList = Filter(List),
-		NewLists = [{NewDefault, NewList} | NewLists1],
-		mnesia:write(P#privacy{default = NewDefault,
-				       lists = NewLists}),
-		{ok, NewDefault, NewList}
-	end,
-    mnesia:transaction(F);
-process_blocklist_block_db(LUser, LServer, Filter,
-			   riak) ->
-    {atomic,
-     begin
-         case ejabberd_riak:get(privacy, mod_privacy:privacy_schema(),
-				{LUser, LServer}) of
-             {ok, #privacy{default = Default, lists = Lists} = P} ->
-                 case lists:keysearch(Default, 1, Lists) of
-                     {value, {_, List}} ->
-                         NewDefault = Default,
-                         NewLists1 = lists:keydelete(Default, 1, Lists);
-                     false ->
-                         NewDefault = <<"Blocked contacts">>,
-                         NewLists1 = Lists,
-                         List = []
-                 end;
-             {error, _} ->
-                 P = #privacy{us = {LUser, LServer}},
-                 NewDefault = <<"Blocked contacts">>,
-                 NewLists1 = [],
-                 List = []
-         end,
-         NewList = Filter(List),
-         NewLists = [{NewDefault, NewList} | NewLists1],
-         case ejabberd_riak:put(P#privacy{default = NewDefault,
-                                          lists = NewLists},
-				mod_privacy:privacy_schema()) of
-             ok ->
-                 {ok, NewDefault, NewList};
-             Err ->
-                 Err
-         end
-     end};
-process_blocklist_block_db(LUser, LServer, Filter, odbc) ->
-    F = fun () ->
-		Default = case
-			    mod_privacy:sql_get_default_privacy_list_t(LUser)
-			      of
-			    {selected, []} ->
-				Name = <<"Blocked contacts">>,
-				mod_privacy:sql_add_privacy_list(LUser, Name),
-				mod_privacy:sql_set_default_privacy_list(LUser,
-									 Name),
-				Name;
-			    {selected, [{Name}]} -> Name
-			  end,
-		{selected, [{ID}]} =
-		    mod_privacy:sql_get_privacy_list_id_t(LUser, Default),
-		case mod_privacy:sql_get_privacy_list_data_by_id_t(ID) of
-		  {selected, RItems = [_ | _]} ->
-		      List = lists:flatmap(fun mod_privacy:raw_to_item/1, RItems);
-		  _ -> List = []
-		end,
-		NewList = Filter(List),
-		NewRItems = lists:map(fun mod_privacy:item_to_raw/1,
-				      NewList),
-		mod_privacy:sql_set_privacy_list(ID, NewRItems),
-		{ok, Default, NewList}
-	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
-
 process_blocklist_unblock_all(LUser, LServer, Lang) ->
     Filter = fun (List) ->
 		     lists:filter(fun (#listitem{action = A}) -> A =/= deny
 				  end,
 				  List)
 	     end,
-    DBType = gen_mod:db_type(LServer, mod_privacy),
-    case unblock_by_filter(LUser, LServer, Filter, DBType) of
+    Mod = db_mod(LServer),
+    case Mod:unblock_by_filter(LUser, LServer, Filter) of
       {atomic, ok} -> {result, []};
       {atomic, {ok, Default, List}} ->
 	  UserList = make_userlist(Default, List),
@@ -279,8 +194,8 @@ process_blocklist_unblock(LUser, LServer, JIDs, Lang) ->
 				  end,
 				  List)
 	     end,
-    DBType = gen_mod:db_type(LServer, mod_privacy),
-    case unblock_by_filter(LUser, LServer, Filter, DBType) of
+    Mod = db_mod(LServer),
+    case Mod:unblock_by_filter(LUser, LServer, Filter) of
       {atomic, ok} -> {result, []};
       {atomic, {ok, Default, List}} ->
 	  UserList = make_userlist(Default, List),
@@ -293,76 +208,6 @@ process_blocklist_unblock(LUser, LServer, JIDs, Lang) ->
 	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer, JIDs}, _Err]),
 	    {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
     end.
-
-unblock_by_filter(LUser, LServer, Filter, mnesia) ->
-    F = fun () ->
-		case mnesia:read({privacy, {LUser, LServer}}) of
-		  [] ->
-		      % No lists, nothing to unblock
-		      ok;
-		  [#privacy{default = Default, lists = Lists} = P] ->
-		      case lists:keysearch(Default, 1, Lists) of
-			{value, {_, List}} ->
-			    NewList = Filter(List),
-			    NewLists1 = lists:keydelete(Default, 1, Lists),
-			    NewLists = [{Default, NewList} | NewLists1],
-			    mnesia:write(P#privacy{lists = NewLists}),
-			    {ok, Default, NewList};
-			false ->
-			    % No default list, nothing to unblock
-			    ok
-		      end
-		end
-	end,
-    mnesia:transaction(F);
-unblock_by_filter(LUser, LServer, Filter, riak) ->
-    {atomic,
-     case ejabberd_riak:get(privacy, mod_privacy:privacy_schema(),
-			    {LUser, LServer}) of
-         {error, _} ->
-             %% No lists, nothing to unblock
-             ok;
-         {ok, #privacy{default = Default, lists = Lists} = P} ->
-             case lists:keysearch(Default, 1, Lists) of
-                 {value, {_, List}} ->
-                     NewList = Filter(List),
-                     NewLists1 = lists:keydelete(Default, 1, Lists),
-                     NewLists = [{Default, NewList} | NewLists1],
-                     case ejabberd_riak:put(P#privacy{lists = NewLists},
-					    mod_privacy:privacy_schema()) of
-                         ok ->
-                             {ok, Default, NewList};
-                         Err ->
-                             Err
-                     end;
-                 false ->
-                     %% No default list, nothing to unblock
-                     ok
-             end
-     end};
-unblock_by_filter(LUser, LServer, Filter, odbc) ->
-    F = fun () ->
-		case mod_privacy:sql_get_default_privacy_list_t(LUser)
-		    of
-		  {selected, []} -> ok;
-		  {selected, [{Default}]} ->
-		      {selected, [{ID}]} =
-			  mod_privacy:sql_get_privacy_list_id_t(LUser, Default),
-		      case mod_privacy:sql_get_privacy_list_data_by_id_t(ID) of
-			{selected, RItems = [_ | _]} ->
-			    List = lists:flatmap(fun mod_privacy:raw_to_item/1,
-                                                 RItems),
-			    NewList = Filter(List),
-			    NewRItems = lists:map(fun mod_privacy:item_to_raw/1,
-						  NewList),
-			    mod_privacy:sql_set_privacy_list(ID, NewRItems),
-			    {ok, Default, NewList};
-			_ -> ok
-		      end;
-		  _ -> ok
-		end
-	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
 
 make_userlist(Name, List) ->
     NeedDb = mod_privacy:is_list_needdb(List),
@@ -380,9 +225,8 @@ broadcast_blocklist_event(LUser, LServer, Event) ->
                       {broadcast, {blocking, Event}}).
 
 process_blocklist_get(LUser, LServer, Lang) ->
-    case process_blocklist_get_db(LUser, LServer,
-				  gen_mod:db_type(LServer, mod_privacy))
-	of
+    Mod = db_mod(LServer),
+    case Mod:process_blocklist_get(LUser, LServer) of
       error ->
 	  {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)};
       List ->
@@ -402,45 +246,9 @@ process_blocklist_get(LUser, LServer, Lang) ->
 		   children = Items}]}
     end.
 
-process_blocklist_get_db(LUser, LServer, mnesia) ->
-    case catch mnesia:dirty_read(privacy, {LUser, LServer})
-	of
-      {'EXIT', _Reason} -> error;
-      [] -> [];
-      [#privacy{default = Default, lists = Lists}] ->
-	  case lists:keysearch(Default, 1, Lists) of
-	    {value, {_, List}} -> List;
-	    _ -> []
-	  end
-    end;
-process_blocklist_get_db(LUser, LServer, riak) ->
-    case ejabberd_riak:get(privacy, mod_privacy:privacy_schema(),
-			   {LUser, LServer}) of
-        {ok, #privacy{default = Default, lists = Lists}} ->
-            case lists:keysearch(Default, 1, Lists) of
-                {value, {_, List}} -> List;
-                _ -> []
-            end;
-        {error, notfound} ->
-            [];
-        {error, _} ->
-            error
-    end;
-process_blocklist_get_db(LUser, LServer, odbc) ->
-    case catch
-	   mod_privacy:sql_get_default_privacy_list(LUser, LServer)
-	of
-      {selected, []} -> [];
-      {selected, [{Default}]} ->
-	  case catch mod_privacy:sql_get_privacy_list_data(LUser,
-							   LServer, Default)
-	      of
-	    {selected, RItems} ->
-		lists:flatmap(fun mod_privacy:raw_to_item/1, RItems);
-	    {'EXIT', _} -> error
-	  end;
-      {'EXIT', _} -> error
-    end.
+db_mod(LServer) ->
+    DBType = gen_mod:db_type(LServer, mod_privacy),
+    gen_mod:db_mod(DBType, ?MODULE).
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(_) -> [iqdisc].
