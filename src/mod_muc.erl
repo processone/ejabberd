@@ -154,15 +154,7 @@ forget_room(ServerHost, Host, Name) ->
 remove_room_mam(LServer, Host, Name) ->
     case gen_mod:is_loaded(LServer, mod_mam) of
 	true ->
-	    U = jid:nodeprep(Name),
-	    S = jid:nameprep(Host),
-	    DBType = gen_mod:db_type(LServer, mod_mam),
-	    if DBType == odbc ->
-		    mod_mam:remove_user(jid:to_string({U, S, <<>>}),
-					LServer, DBType);
-	       true ->
-		    mod_mam:remove_user(U, S, DBType)
-	    end;
+	    mod_mam:remove_room(LServer, Name, Host);
 	false ->
 	    ok
     end.
