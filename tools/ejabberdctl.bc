@@ -42,7 +42,7 @@ _ejabberdctl()
         ejabberdctl)
             # This clause matches even when calling `/sbin/ejabberdctl` thanks to the ##*/ in the case
             get_help
-            COMPREPLY=($(compgen -W "--node --auth ${startpars} ${startcoms} ${runningcommands}" -- $cur))
+            COMPREPLY=($(compgen -W "--node ${startpars} ${startcoms} ${runningcommands}" -- $cur))
             return 0
             ;;
         start|live)
@@ -75,7 +75,7 @@ _ejabberdctl()
             prev2="${COMP_WORDS[COMP_CWORD-2]}"
             get_help
             if [[ "$prev2" == --* ]]; then
-                COMPREPLY=($(compgen -W "--node --auth ${startpars} ${startcoms} ${runningcommands}" -- $cur))
+                COMPREPLY=($(compgen -W "--node ${startpars} ${startcoms} ${runningcommands}" -- $cur))
             else
                 if [[ $ISRUNNING == 1 ]]; then
                     echo ""

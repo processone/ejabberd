@@ -504,8 +504,7 @@ print_usage(HelpMode, MaxC, ShCode, Version) ->
 	get_list_ctls(),
 
     print(
-       ["Usage: ", ?B("ejabberdctl"), " [--no-timeout] [--node ", ?U("nodename"), "] [--version ", ?U("api_version"), "] [--auth ",
-	?U("user"), " ", ?U("host"), " ", ?U("password"), "] ",
+       ["Usage: ", ?B("ejabberdctl"), " [--no-timeout] [--node ", ?U("nodename"), "] [--version ", ?U("api_version"), "] ",
 	?U("command"), " [", ?U("options"), "]\n"
 	"\n"
 	"Available commands in this ejabberd node:\n"], []),
