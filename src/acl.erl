@@ -31,8 +31,10 @@
 
 -export([start/0, to_record/3, add/3, add_list/3,
 	 add_local/3, add_list_local/3, load_from_config/0,
-	 match_rule/3, match_acl/3, transform_options/1,
+	 match_rule/3, match_access/4, match_acl/3, transform_options/1,
 	 opt_type/1]).
+
+-export([add_access/3, clear/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -43,6 +45,7 @@
                  rules = [] :: [access_rule()]}).
 
 -type regexp() :: binary().
+-type iprange() :: {inet:ip_address(), integer()} | binary().
 -type glob() :: binary().
 -type access_name() :: atom().
 -type access_rule() :: {atom(), any()}.
@@ -61,7 +64,7 @@
                    {user_glob, {glob(), host()} | glob()} |
                    {server_glob, glob()} |
                    {resource_glob, glob()} |
-                   {ip, {inet:ip_address(), integer()}} |
+                   {ip, iprange()} |
                    {node_glob, {glob(), glob()}}.
 
 -type acl() :: #acl{aclname :: aclname(),
@@ -204,6 +207,12 @@ load_from_config() ->
                 end, AccessRules)
       end, Hosts).
 
+%% Delete all previous set ACLs and Access rules
+clear() ->
+    mnesia:clear_table(acl),
+    mnesia:clear_table(access),
+    ok.
+
 b(S) ->
     iolist_to_binary(S).
 
@@ -245,6 +254,19 @@ normalize_spec(Spec) ->
                     none
             end
     end.
+
+-spec match_access(global | binary(), access_name(),
+                   jid() | ljid() | inet:ip_address(),
+                   atom()) -> any().
+
+match_access(_Host, all, _JID, _Default) ->
+    allow;
+match_access(_Host, none, _JID, _Default) ->
+    deny;
+match_access(_Host, {user, UserPattern}, JID, Default) ->
+    match_user_spec({user, UserPattern}, JID, Default);
+match_access(Host, AccessRule, JID, _Default) ->
+    match_rule(Host, AccessRule, JID).
 
 -spec match_rule(global | binary(), access_name(),
                  jid() | ljid() | inet:ip_address()) -> any().
@@ -347,6 +369,16 @@ match_acl(ACL, JID, Host) ->
 
 get_aclspecs(ACL, Host) ->
       ets:lookup(acl, {ACL, Host}) ++ ets:lookup(acl, {ACL, global}).
+
+
+match_user_spec(Spec, JID, Default) ->
+    case do_match_user_spec(Spec, jid:tolower(JID)) of
+        true -> Default;
+        false -> deny
+    end.
+
+do_match_user_spec({user, {U, S}}, {User, Server, _Resource}) ->
+    U == User andalso S == Server.
 
 is_regexp_match(String, RegExp) ->
     case ejabberd_regexp:run(String, RegExp) of

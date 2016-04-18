@@ -375,7 +375,7 @@ try_set_password(User, Server, Password, IQ, SubEl,
 		Txt = <<"Empty password">>,
 		IQ#iq{type = error, sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]};
 	    {error, not_allowed} ->
-		Txt = <<"Chaning password is not allowed">>,
+		Txt = <<"Changing password is not allowed">>,
 		IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
 	    {error, invalid_jid} ->
 		IQ#iq{type = error,
