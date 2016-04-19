@@ -375,7 +375,7 @@ handle_info(Info, State) ->
     ?ERROR_MSG("Got unexpected info: ~p", [Info]),
     {noreply, State}.
 
--spec terminate(normal | shutdown | {shutdown, _} | _, _) -> ok.
+-spec terminate(normal | shutdown | {shutdown, _} | _, state()) -> ok.
 
 terminate(Reason, #state{server_host = ServerHost, host = Host}) ->
     ?DEBUG("Stopping HTTP upload process for ~s: ~p", [ServerHost, Reason]),
