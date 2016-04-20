@@ -735,7 +735,8 @@ get_sm_backend(Host) ->
     DBType = ejabberd_config:get_option({sm_db_type, Host},
 					fun(mnesia) -> mnesia;
 					   (internal) -> mnesia;
-					   (odbc) -> odbc;
+					   (odbc) -> sql;
+					   (sql) -> sql;
 					   (redis) -> redis
 					end, mnesia),
     list_to_atom("ejabberd_sm_" ++ atom_to_list(DBType)).

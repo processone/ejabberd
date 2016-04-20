@@ -6,7 +6,7 @@
 %%% @end
 %%% Created :  9 Mar 2015 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%-------------------------------------------------------------------
--module(ejabberd_sm_odbc).
+-module(ejabberd_sm_sql).
 
 -behaviour(ejabberd_sm).
 
