@@ -21,19 +21,19 @@ init(_Host, _Opts) ->
     ok.
 
 add_xupdate(LUser, LServer, Hash) ->
-    Username = ejabberd_odbc:escape(LUser),
-    SHash = ejabberd_odbc:escape(Hash),
+    Username = ejabberd_sql:escape(LUser),
+    SHash = ejabberd_sql:escape(Hash),
     F = fun () ->
-		odbc_queries:update_t(<<"vcard_xupdate">>,
+		sql_queries:update_t(<<"vcard_xupdate">>,
 				      [<<"username">>, <<"hash">>],
 				      [Username, SHash],
 				      [<<"username='">>, Username, <<"'">>])
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 get_xupdate(LUser, LServer) ->
-    Username = ejabberd_odbc:escape(LUser),
-    case ejabberd_odbc:sql_query(LServer,
+    Username = ejabberd_sql:escape(LUser),
+    case ejabberd_sql:sql_query(LServer,
 				 [<<"select hash from vcard_xupdate where "
 				    "username='">>,
 				  Username, <<"';">>])
@@ -43,19 +43,19 @@ get_xupdate(LUser, LServer) ->
     end.
 
 remove_xupdate(LUser, LServer) ->
-    Username = ejabberd_odbc:escape(LUser),
+    Username = ejabberd_sql:escape(LUser),
     F = fun () ->
-		ejabberd_odbc:sql_query_t([<<"delete from vcard_xupdate where username='">>,
+		ejabberd_sql:sql_query_t([<<"delete from vcard_xupdate where username='">>,
 					   Username, <<"';">>])
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 export(_Server) ->
     [{vcard_xupdate,
       fun(Host, #vcard_xupdate{us = {LUser, LServer}, hash = Hash})
             when LServer == Host ->
-              Username = ejabberd_odbc:escape(LUser),
-              SHash = ejabberd_odbc:escape(Hash),
+              Username = ejabberd_sql:escape(LUser),
+              SHash = ejabberd_sql:escape(Hash),
               [[<<"delete from vcard_xupdate where username='">>,
                 Username, <<"';">>],
                [<<"insert into vcard_xupdate(username, "

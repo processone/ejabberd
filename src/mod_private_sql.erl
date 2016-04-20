@@ -28,14 +28,14 @@ set_data(LUser, LServer, Data) ->
 		lists:foreach(
 		  fun({XMLNS, El}) ->
 			  SData = fxml:element_to_binary(El),
-			  odbc_queries:set_private_data(
+			  sql_queries:set_private_data(
 			    LServer, LUser, XMLNS, SData)
 		  end, Data)
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 get_data(LUser, LServer, XMLNS) ->
-    case catch odbc_queries:get_private_data(LServer, LUser, XMLNS) of
+    case catch sql_queries:get_private_data(LServer, LUser, XMLNS) of
 	{selected, [{SData}]} ->
 	    case fxml_stream:parse_element(SData) of
 		Data when is_record(Data, xmlel) ->
@@ -48,7 +48,7 @@ get_data(LUser, LServer, XMLNS) ->
     end.
 
 get_all_data(LUser, LServer) ->
-    case catch odbc_queries:get_private_data(LServer, LUser) of
+    case catch sql_queries:get_private_data(LServer, LUser) of
         {selected, Res} ->
             lists:flatmap(
               fun({_, SData}) ->
@@ -64,18 +64,18 @@ get_all_data(LUser, LServer) ->
     end.
 
 remove_user(LUser, LServer) ->
-    odbc_queries:del_user_private_storage(LServer, LUser).
+    sql_queries:del_user_private_storage(LServer, LUser).
 
 export(_Server) ->
     [{private_storage,
       fun(Host, #private_storage{usns = {LUser, LServer, XMLNS},
                                  xml = Data})
             when LServer == Host ->
-              Username = ejabberd_odbc:escape(LUser),
-              LXMLNS = ejabberd_odbc:escape(XMLNS),
+              Username = ejabberd_sql:escape(LUser),
+              LXMLNS = ejabberd_sql:escape(XMLNS),
               SData =
-                  ejabberd_odbc:escape(fxml:element_to_binary(Data)),
-              odbc_queries:set_private_data_sql(Username, LXMLNS,
+                  ejabberd_sql:escape(fxml:element_to_binary(Data)),
+              sql_queries:set_private_data_sql(Username, LXMLNS,
                                                 SData);
          (_Host, _R) ->
               []

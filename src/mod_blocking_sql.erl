@@ -44,7 +44,7 @@ process_blocklist_block(LUser, LServer, Filter) ->
 		mod_privacy_sql:sql_set_privacy_list(ID, NewRItems),
 		{ok, Default, NewList}
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 unblock_by_filter(LUser, LServer, Filter) ->
     F = fun () ->
@@ -67,7 +67,7 @@ unblock_by_filter(LUser, LServer, Filter) ->
 		    _ -> ok
 		end
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 process_blocklist_get(LUser, LServer) ->
     case catch mod_privacy_sql:sql_get_default_privacy_list(LUser, LServer) of

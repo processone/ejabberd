@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : ejabberd_auth_odbc.erl
+%%% File    : ejabberd_auth_sql.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : Authentification via ODBC
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
@@ -23,7 +23,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(ejabberd_auth_odbc).
+-module(ejabberd_auth_sql).
 
 -behaviour(ejabberd_config).
 
@@ -77,7 +77,7 @@ check_password(User, AuthzId, Server, Password) ->
        true ->
             case is_scrammed() of
                 true ->
-                    try odbc_queries:get_password_scram(LServer, LUser) of
+                    try sql_queries:get_password_scram(LServer, LUser) of
                         {selected,
                          [{StoredKey, ServerKey, Salt, IterationCount}]} ->
                             Scram =
@@ -95,7 +95,7 @@ check_password(User, AuthzId, Server, Password) ->
                             false %% Typical error is database not accessible
                     end;
                 false ->
-                    try odbc_queries:get_password(LServer, LUser) of
+                    try sql_queries:get_password(LServer, LUser) of
                         {selected, [{Password}]} ->
                             Password /= <<"">>;
                         {selected, [{_Password2}]} ->
@@ -127,7 +127,7 @@ check_password(User, AuthzId, Server, Password, Digest,
        true ->
             case is_scrammed() of
                 false ->
-                    try odbc_queries:get_password(LServer, LUser) of
+                    try sql_queries:get_password(LServer, LUser) of
                         %% Account exists, check if password is valid
                         {selected, [{Passwd}]} ->
                             DigRes = if Digest /= <<"">> ->
@@ -164,7 +164,7 @@ set_password(User, Server, Password) ->
             case is_scrammed() of
                 true ->
                     Scram = password_to_scram(Password),
-                    case catch odbc_queries:set_password_scram_t(
+                    case catch sql_queries:set_password_scram_t(
                                  LServer,
                                  LUser,
                                  Scram#scram.storedkey,
@@ -177,7 +177,7 @@ set_password(User, Server, Password) ->
                         Other -> {error, Other}
                     end;
                 false ->
-                    case catch odbc_queries:set_password_t(LServer,
+                    case catch sql_queries:set_password_t(LServer,
                                                            LUser, Password)
                         of
                         {atomic, ok} -> ok;
@@ -198,7 +198,7 @@ try_register(User, Server, Password) ->
             case is_scrammed() of
                 true ->
                     Scram = password_to_scram(Password),
-                    case catch odbc_queries:add_user_scram(
+                    case catch sql_queries:add_user_scram(
                                  LServer,
                                  LUser,
                                  Scram#scram.storedkey,
@@ -210,7 +210,7 @@ try_register(User, Server, Password) ->
                         _ -> {atomic, exists}
                     end;
                 false ->
-                    case catch odbc_queries:add_user(LServer, LUser,
+                    case catch sql_queries:add_user(LServer, LUser,
                                                      Password) of
                         {updated, 1} -> {atomic, ok};
                         _ -> {atomic, exists}
@@ -219,7 +219,7 @@ try_register(User, Server, Password) ->
     end.
 
 dirty_get_registered_users() ->
-    Servers = ejabberd_config:get_vh_by_auth_method(odbc),
+    Servers = ejabberd_config:get_vh_by_auth_method(sql),
     lists:flatmap(fun (Server) ->
 			  get_vh_registered_users(Server)
 		  end,
@@ -230,7 +230,7 @@ get_vh_registered_users(Server) ->
         error -> [];
         <<>> -> [];
         LServer ->
-            case catch odbc_queries:list_users(LServer) of
+            case catch sql_queries:list_users(LServer) of
                 {selected, Res} ->
                     [{U, LServer} || {U} <- Res];
                 _ -> []
@@ -242,7 +242,7 @@ get_vh_registered_users(Server, Opts) ->
         error -> [];
         <<>> -> [];
         LServer ->
-            case catch odbc_queries:list_users(LServer, Opts) of
+            case catch sql_queries:list_users(LServer, Opts) of
                 {selected, Res} ->
                     [{U, LServer} || {U} <- Res];
                 _ -> []
@@ -254,7 +254,7 @@ get_vh_registered_users_number(Server) ->
         error -> 0;
         <<>> -> 0;
         LServer ->
-            case catch odbc_queries:users_number(LServer) of
+            case catch sql_queries:users_number(LServer) of
                 {selected, [{Res}]} ->
                     Res;
                 _ -> 0
@@ -266,7 +266,7 @@ get_vh_registered_users_number(Server, Opts) ->
         error -> 0;
         <<>> -> 0;
         LServer ->
-            case catch odbc_queries:users_number(LServer, Opts) of
+            case catch sql_queries:users_number(LServer, Opts) of
                 {selected, [{Res}]} ->
                     Res;
                 _Other -> 0
@@ -283,7 +283,7 @@ get_password(User, Server) ->
        true ->
             case is_scrammed() of
                 true ->
-                    case catch odbc_queries:get_password_scram(
+                    case catch sql_queries:get_password_scram(
                                  LServer, LUser) of
                         {selected,
                          [{StoredKey, ServerKey, Salt, IterationCount}]} ->
@@ -294,7 +294,7 @@ get_password(User, Server) ->
                         _ -> false
                     end;
                 false ->
-                    case catch odbc_queries:get_password(LServer, LUser)
+                    case catch sql_queries:get_password(LServer, LUser)
                         of
                         {selected, [{Password}]} -> Password;
                         _ -> false
@@ -312,7 +312,7 @@ get_password_s(User, Server) ->
        true ->
             case is_scrammed() of
                 false ->
-                    case catch odbc_queries:get_password(LServer, LUser) of
+                    case catch sql_queries:get_password(LServer, LUser) of
                         {selected, [{Password}]} -> Password;
                         _ -> <<"">>
                     end;
@@ -329,7 +329,7 @@ is_user_exists(User, Server) ->
        (LUser == <<>>) or (LServer == <<>>) ->
             false;
        true ->
-	  try odbc_queries:get_password(LServer, LUser) of
+	  try sql_queries:get_password(LServer, LUser) of
 	    {selected, [{_Password}]} ->
 		true; %% Account exists
 	    {selected, []} ->
@@ -351,7 +351,7 @@ remove_user(User, Server) ->
        (LUser == <<>>) or (LServer == <<>>) ->
             error;
        true ->
-	  catch odbc_queries:del_user(LServer, LUser),
+	  catch sql_queries:del_user(LServer, LUser),
 	  ok
     end.
 
@@ -375,7 +375,7 @@ remove_user(User, Server, Password) ->
                     end;
                 false ->
                     F = fun () ->
-                                Result = odbc_queries:del_user_return_password(
+                                Result = sql_queries:del_user_return_password(
                                            LServer, LUser, Password),
                                 case Result of
                                     {selected, [{Password}]} -> ok;
@@ -383,7 +383,7 @@ remove_user(User, Server, Password) ->
                                     _ -> not_allowed
                                 end
                         end,
-                    {atomic, Result} = odbc_queries:sql_transaction(
+                    {atomic, Result} = sql_queries:sql_transaction(
                                          LServer, F),
                     Result
             end
@@ -427,7 +427,7 @@ is_password_scram_valid(Password, Scram) ->
 
 set_password_scram_t(Username,
                      StoredKey, ServerKey, Salt, IterationCount) ->
-    odbc_queries:update_t(<<"users">>,
+    sql_queries:update_t(<<"users">>,
                           [<<"username">>,
                            <<"password">>,
                            <<"serverkey">>,
@@ -447,7 +447,7 @@ convert_to_scram(Server) ->
             {error, {incorrect_server_name, Server}};
         true ->
             F = fun () ->
-                        case ejabberd_odbc:sql_query_t(
+                        case ejabberd_sql:sql_query_t(
                                [<<"select username, password from users where "
                                  "iterationcount=0 limit ">>,
                                 integer_to_binary(?BATCH_SIZE),
@@ -457,13 +457,13 @@ convert_to_scram(Server) ->
                             {selected, [<<"username">>, <<"password">>], Rs} ->
                                 lists:foreach(
                                   fun([LUser, Password]) ->
-                                          Username = ejabberd_odbc:escape(LUser),
+                                          Username = ejabberd_sql:escape(LUser),
                                           Scram = password_to_scram(Password),
                                           set_password_scram_t(
                                             Username,
-                                            ejabberd_odbc:escape(Scram#scram.storedkey),
-                                            ejabberd_odbc:escape(Scram#scram.serverkey),
-                                            ejabberd_odbc:escape(Scram#scram.salt),
+                                            ejabberd_sql:escape(Scram#scram.storedkey),
+                                            ejabberd_sql:escape(Scram#scram.serverkey),
+                                            ejabberd_sql:escape(Scram#scram.salt),
                                             integer_to_binary(Scram#scram.iterationcount)
                                            )
                                   end, Rs),
@@ -471,7 +471,7 @@ convert_to_scram(Server) ->
                             Err -> {bad_reply, Err}
                         end
                 end,
-            case odbc_queries:sql_transaction(LServer, F) of
+            case sql_queries:sql_transaction(LServer, F) of
                 {atomic, ok} -> ok;
                 {atomic, continue} -> convert_to_scram(Server);
                 {atomic, Error} -> {error, Error};

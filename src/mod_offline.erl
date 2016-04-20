@@ -243,7 +243,7 @@ receive_all(US, Msgs, DBType) ->
       after 0 ->
 		case DBType of
 		  mnesia -> Msgs;
-		  odbc -> lists:reverse(Msgs);
+		  sql -> lists:reverse(Msgs);
 		  riak -> Msgs
 		end
     end.

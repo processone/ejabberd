@@ -39,7 +39,7 @@ store_messages(Host, {User, _Server}, Msgs, Len, MaxOfflineMsgs) ->
 	    Query = lists:map(
 		      fun(M) ->
 			      Username =
-				  ejabberd_odbc:escape((M#offline_msg.to)#jid.luser),
+				  ejabberd_sql:escape((M#offline_msg.to)#jid.luser),
 			      From = M#offline_msg.from,
 			      To = M#offline_msg.to,
 			      Packet =
@@ -50,15 +50,15 @@ store_messages(Host, {User, _Server}, Msgs, Len, MaxOfflineMsgs) ->
 						      M#offline_msg.timestamp,
 						      <<"Offline Storage">>),
 			      XML =
-				  ejabberd_odbc:escape(fxml:element_to_binary(NewPacket)),
-				     odbc_queries:add_spool_sql(Username, XML)
+				  ejabberd_sql:escape(fxml:element_to_binary(NewPacket)),
+				     sql_queries:add_spool_sql(Username, XML)
 		      end,
 		      Msgs),
-	    odbc_queries:add_spool(Host, Query)
+	    sql_queries:add_spool(Host, Query)
     end.
 
 pop_messages(LUser, LServer) ->
-    case odbc_queries:get_and_del_spool_msg_t(LServer, LUser) of
+    case sql_queries:get_and_del_spool_msg_t(LServer, LUser) of
 	{atomic, {selected, Rs}} ->
 	    {ok, lists:flatmap(
 		   fun({_, XML}) ->
@@ -78,7 +78,7 @@ remove_expired_messages(_LServer) ->
     {atomic, ok}.
 
 remove_old_messages(Days, LServer) ->
-    case catch ejabberd_odbc:sql_query(
+    case catch ejabberd_sql:sql_query(
 		 LServer,
 		 [<<"DELETE FROM spool"
 		   " WHERE created_at < "
@@ -92,11 +92,11 @@ remove_old_messages(Days, LServer) ->
     {atomic, ok}.
 
 remove_user(LUser, LServer) ->
-    odbc_queries:del_spool_msg(LServer, LUser).
+    sql_queries:del_spool_msg(LServer, LUser).
 
 read_message_headers(LUser, LServer) ->
-    Username = ejabberd_odbc:escape(LUser),
-    case catch ejabberd_odbc:sql_query(
+    Username = ejabberd_sql:escape(LUser),
+    case catch ejabberd_sql:sql_query(
 		 LServer, [<<"select xml, seq from spool where username ='">>,
 			   Username, <<"' order by seq;">>]) of
 	{selected, [<<"xml">>, <<"seq">>], Rows} ->
@@ -117,9 +117,9 @@ read_message_headers(LUser, LServer) ->
     end.
 
 read_message(LUser, LServer, Seq) ->
-    Username = ejabberd_odbc:escape(LUser),
-    SSeq = ejabberd_odbc:escape(integer_to_binary(Seq)),
-    case ejabberd_odbc:sql_query(
+    Username = ejabberd_sql:escape(LUser),
+    SSeq = ejabberd_sql:escape(integer_to_binary(Seq)),
+    case ejabberd_sql:sql_query(
 	   LServer,
 	   [<<"select xml from spool  where username='">>, Username,
 	    <<"'  and seq='">>, SSeq, <<"';">>]) of
@@ -135,16 +135,16 @@ read_message(LUser, LServer, Seq) ->
     end.
 
 remove_message(LUser, LServer, Seq) ->
-    Username = ejabberd_odbc:escape(LUser),
-    SSeq = ejabberd_odbc:escape(integer_to_binary(Seq)),
-    ejabberd_odbc:sql_query(
+    Username = ejabberd_sql:escape(LUser),
+    SSeq = ejabberd_sql:escape(integer_to_binary(Seq)),
+    ejabberd_sql:sql_query(
       LServer,
       [<<"delete from spool  where username='">>, Username,
        <<"'  and seq='">>, SSeq, <<"';">>]),
     ok.
 
 read_all_messages(LUser, LServer) ->
-    case catch ejabberd_odbc:sql_query(
+    case catch ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(xml)s from spool where "
                       "username=%(LUser)s order by seq")) of
@@ -161,11 +161,11 @@ read_all_messages(LUser, LServer) ->
     end.
 
 remove_all_messages(LUser, LServer) ->
-    odbc_queries:del_spool_msg(LServer, LUser),
+    sql_queries:del_spool_msg(LServer, LUser),
     {atomic, ok}.
 
 count_messages(LUser, LServer) ->
-    case catch ejabberd_odbc:sql_query(
+    case catch ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(count(*))d from spool "
                       "where username=%(LUser)s")) of
@@ -180,11 +180,11 @@ export(_Server) ->
                              timestamp = TimeStamp, from = From, to = To,
                              packet = Packet})
             when LServer == Host ->
-              Username = ejabberd_odbc:escape(LUser),
+              Username = ejabberd_sql:escape(LUser),
               Packet1 = jlib:replace_from_to(From, To, Packet),
               Packet2 = jlib:add_delay_info(Packet1, LServer, TimeStamp,
                                             <<"Offline Storage">>),
-              XML = ejabberd_odbc:escape(fxml:element_to_binary(Packet2)),
+              XML = ejabberd_sql:escape(fxml:element_to_binary(Packet2)),
               [[<<"delete from spool where username='">>, Username, <<"';">>],
                [<<"insert into spool(username, xml) values ('">>,
                 Username, <<"', '">>, XML, <<"');">>]];

@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : odbc_queries.erl
+%%% File    : sql_queries.erl
 %%% Author  : Mickael Remond <mremond@process-one.net>
 %%% Purpose : ODBC queries dependind on back-end
 %%% Created : by Mickael Remond <mremond@process-one.net>
@@ -23,7 +23,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(odbc_queries).
+-module(sql_queries).
 
 -compile([{parse_transform, ejabberd_sql_pt}]).
 
@@ -78,13 +78,13 @@ update_t(Table, Fields, Vals, Where) ->
 				   <<A/binary, "='", B/binary, "'">>
 			   end,
 			   Fields, Vals),
-    case ejabberd_odbc:sql_query_t([<<"update ">>, Table,
+    case ejabberd_sql:sql_query_t([<<"update ">>, Table,
 				    <<" set ">>, join(UPairs, <<", ">>),
 				    <<" where ">>, Where, <<";">>])
 	of
       {updated, 1} -> ok;
       _ ->
-		Res = ejabberd_odbc:sql_query_t([<<"insert into ">>, Table,
+		Res = ejabberd_sql:sql_query_t([<<"insert into ">>, Table,
 				     <<"(">>, join(Fields, <<", ">>),
 				     <<") values ('">>, join(Vals, <<"', '">>),
 				     <<"');">>]),
@@ -99,14 +99,14 @@ update(LServer, Table, Fields, Vals, Where) ->
 				   <<A/binary, "='", B/binary, "'">>
 			   end,
 			   Fields, Vals),
-    case ejabberd_odbc:sql_query(LServer,
+    case ejabberd_sql:sql_query(LServer,
 				 [<<"update ">>, Table, <<" set ">>,
 				  join(UPairs, <<", ">>), <<" where ">>, Where,
 				  <<";">>])
 	of
       {updated, 1} -> ok;
       _ ->
-		Res = ejabberd_odbc:sql_query(LServer,
+		Res = ejabberd_sql:sql_query(LServer,
 				  [<<"insert into ">>, Table, <<"(">>,
 				   join(Fields, <<", ">>), <<") values ('">>,
 				   join(Vals, <<"', '">>), <<"');">>]),
@@ -118,12 +118,12 @@ update(LServer, Table, Fields, Vals, Where) ->
 
 %% F can be either a fun or a list of queries
 %% TODO: We should probably move the list of queries transaction
-%% wrapper from the ejabberd_odbc module to this one (odbc_queries)
+%% wrapper from the ejabberd_sql module to this one (sql_queries)
 sql_transaction(LServer, F) ->
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 get_last(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(seconds)d, @(state)s from last"
            " where username=%(LUser)s")).
@@ -135,24 +135,24 @@ set_last_t(LServer, LUser, TimeStamp, Status) ->
                  "state=%(Status)s"]).
 
 del_last(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("delete from last where username=%(LUser)s")).
 
 get_password(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(password)s from users where username=%(LUser)s")).
 
 get_password_scram(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(password)s, @(serverkey)s, @(salt)s, @(iterationcount)d"
            " from users"
            " where username=%(LUser)s")).
 
 set_password_t(LServer, LUser, Password) ->
-    ejabberd_odbc:sql_transaction(
+    ejabberd_sql:sql_transaction(
       LServer,
       fun () ->
               ?SQL_UPSERT_T(
@@ -163,7 +163,7 @@ set_password_t(LServer, LUser, Password) ->
 
 set_password_scram_t(LServer, LUser,
                      StoredKey, ServerKey, Salt, IterationCount) ->
-    ejabberd_odbc:sql_transaction(
+    ejabberd_sql:sql_transaction(
       LServer,
       fun () ->
               ?SQL_UPSERT_T(
@@ -176,14 +176,14 @@ set_password_scram_t(LServer, LUser,
       end).
 
 add_user(LServer, LUser, Password) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("insert into users(username, password) "
            "values (%(LUser)s, %(Password)s)")).
 
 add_user_scram(LServer, LUser,
                StoredKey, ServerKey, Salt, IterationCount) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("insert into users(username, password, serverkey, salt, "
            "iterationcount) "
@@ -191,21 +191,21 @@ add_user_scram(LServer, LUser,
            " %(Salt)s, %(IterationCount)d)")).
 
 del_user(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("delete from users where username=%(LUser)s")).
 
 del_user_return_password(_LServer, LUser, Password) ->
     P =
-	ejabberd_odbc:sql_query_t(
+	ejabberd_sql:sql_query_t(
           ?SQL("select @(password)s from users where username=%(LUser)s")),
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("delete from users"
            " where username=%(LUser)s and password=%(Password)s")),
     P.
 
 list_users(LServer) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(username)s from users")).
 
@@ -222,7 +222,7 @@ list_users(LServer,
 		{offset, Start - 1}]);
 list_users(LServer, [{limit, Limit}, {offset, Offset}])
     when is_integer(Limit) and is_integer(Offset) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(username)s from users "
            "order by username "
@@ -231,9 +231,9 @@ list_users(LServer,
 	   [{prefix, Prefix}, {limit, Limit}, {offset, Offset}])
     when is_binary(Prefix) and is_integer(Limit) and
 	   is_integer(Offset) ->
-    SPrefix = ejabberd_odbc:escape_like_arg(Prefix),
+    SPrefix = ejabberd_sql:escape_like_arg(Prefix),
     SPrefix2 = <<SPrefix/binary, $%>>,
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(username)s from users "
            "where username like %(SPrefix2)s "
@@ -241,7 +241,7 @@ list_users(LServer,
            "limit %(Limit)d offset %(Offset)d")).
 
 users_number(LServer) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       fun(pgsql, _) ->
               case
@@ -250,100 +250,99 @@ users_number(LServer) ->
                     fun(V) when is_boolean(V) -> V end,
                     false) of
                   true ->
-                      ejabberd_odbc:sql_query_t(
+                      ejabberd_sql:sql_query_t(
                         ?SQL("select @(reltuples :: bigint)d from pg_class"
                              " where oid = 'users'::regclass::oid"));
                   _ ->
-                      ejabberd_odbc:sql_query_t(
+                      ejabberd_sql:sql_query_t(
                         ?SQL("select @(count(*))d from users"))
 	  end;
          (_Type, _) ->
-              ejabberd_odbc:sql_query_t(
+              ejabberd_sql:sql_query_t(
                 ?SQL("select @(count(*))d from users"))
       end).
 
 users_number(LServer, [{prefix, Prefix}])
     when is_binary(Prefix) ->
-    SPrefix = ejabberd_odbc:escape_like_arg(Prefix),
+    SPrefix = ejabberd_sql:escape_like_arg(Prefix),
     SPrefix2 = <<SPrefix/binary, $%>>,
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(count(*))d from users "
            "where username like %(SPrefix2)s"));
 users_number(LServer, []) ->
     users_number(LServer).
 
-
 add_spool_sql(Username, XML) ->
     [<<"insert into spool(username, xml) values ('">>,
      Username, <<"', '">>, XML, <<"');">>].
 
 add_spool(LServer, Queries) ->
-    ejabberd_odbc:sql_transaction(LServer, Queries).
+    ejabberd_sql:sql_transaction(LServer, Queries).
 
 get_and_del_spool_msg_t(LServer, LUser) ->
     F = fun () ->
 		Result =
-		    ejabberd_odbc:sql_query_t(
+		    ejabberd_sql:sql_query_t(
                       ?SQL("select @(username)s, @(xml)s from spool where "
                            "username=%(LUser)s order by seq;")),
-		ejabberd_odbc:sql_query_t(
+		ejabberd_sql:sql_query_t(
                   ?SQL("delete from spool where username=%(LUser)s;")),
 		Result
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 del_spool_msg(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("delete from spool where username=%(LUser)s")).
 
 get_roster(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(username)s, @(jid)s, @(nick)s, @(subscription)s, "
            "@(ask)s, @(askmessage)s, @(server)s, @(subscribe)s, "
            "@(type)s from rosterusers where username=%(LUser)s")).
 
 get_roster_jid_groups(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(jid)s, @(grp)s from rostergroups where "
            "username=%(LUser)s")).
 
 get_roster_groups(_LServer, LUser, SJID) ->
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("select @(grp)s from rostergroups"
            " where username=%(LUser)s and jid=%(SJID)s")).
 
 del_user_roster_t(LServer, LUser) ->
-    ejabberd_odbc:sql_transaction(
+    ejabberd_sql:sql_transaction(
       LServer,
       fun () ->
-              ejabberd_odbc:sql_query_t(
+              ejabberd_sql:sql_query_t(
                 ?SQL("delete from rosterusers where username=%(LUser)s")),
-              ejabberd_odbc:sql_query_t(
+              ejabberd_sql:sql_query_t(
                 ?SQL("delete from rostergroups where username=%(LUser)s"))
       end).
 
 get_roster_by_jid(_LServer, LUser, SJID) ->
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("select @(username)s, @(jid)s, @(nick)s, @(subscription)s,"
            " @(ask)s, @(askmessage)s, @(server)s, @(subscribe)s,"
            " @(type)s from rosterusers"
            " where username=%(LUser)s and jid=%(SJID)s")).
 
 get_rostergroup_by_jid(LServer, LUser, SJID) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(grp)s from rostergroups"
            " where username=%(LUser)s and jid=%(SJID)s")).
 
 del_roster(_LServer, LUser, SJID) ->
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("delete from rosterusers"
            " where username=%(LUser)s and jid=%(SJID)s")),
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("delete from rostergroups"
            " where username=%(LUser)s and jid=%(SJID)s")).
 
@@ -358,12 +357,12 @@ del_roster_sql(Username, SJID) ->
 update_roster(_LServer, LUser, SJID, ItemVals,
 	      ItemGroups) ->
     roster_subscribe(ItemVals),
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("delete from rostergroups"
            " where username=%(LUser)s and jid=%(SJID)s")),
     lists:foreach(
       fun(ItemGroup) ->
-              ejabberd_odbc:sql_query_t(
+              ejabberd_sql:sql_query_t(
                 ?SQL("insert into rostergroups(username, jid, grp) "
                      "values (%(LUser)s, %(SJID)s, %(ItemGroup)s)"))
       end,
@@ -403,7 +402,7 @@ roster_subscribe({LUser, SJID, Name, SSubscription, SAsk, AskMessage}) ->
         "type='item'"]).
 
 get_subscription(LServer, LUser, SJID) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(subscription)s from rosterusers "
            "where username=%(LUser)s and jid=%(SJID)s")).
@@ -424,19 +423,19 @@ set_private_data_sql(Username, LXMLNS, SData) ->
       <<"');">>]].
 
 get_private_data(LServer, LUser, XMLNS) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(data)s from private_storage"
            " where username=%(LUser)s and namespace=%(XMLNS)s")).
 
 get_private_data(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(namespace)s, @(data)s from private_storage"
            " where username=%(LUser)s")).
 
 del_user_private_storage(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("delete from private_storage"
            " where username=%(LUser)s")).
@@ -446,7 +445,7 @@ set_vcard(LServer, LUser, BDay, CTRY, EMail, FN,
 	  LFamily, LGiven, LLocality, LMiddle, LNickname,
 	  LOrgName, LOrgUnit, Locality, Middle, Nickname,
 	  OrgName, OrgUnit, SVCARD, User) ->
-    ejabberd_odbc:sql_transaction(
+    ejabberd_sql:sql_transaction(
       LServer,
       fun() ->
               ?SQL_UPSERT(LServer, "vcard",
@@ -480,45 +479,45 @@ set_vcard(LServer, LUser, BDay, CTRY, EMail, FN,
       end).
 
 get_vcard(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(vcard)s from vcard where username=%(LUser)s")).
 
 get_default_privacy_list(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(name)s from privacy_default_list "
            "where username=%(LUser)s")).
 
 get_default_privacy_list_t(LUser) ->
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("select @(name)s from privacy_default_list "
            "where username=%(LUser)s")).
 
 get_privacy_list_names(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(name)s from privacy_list"
            " where username=%(LUser)s")).
 
 get_privacy_list_names_t(LUser) ->
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("select @(name)s from privacy_list"
            " where username=%(LUser)s")).
 
 get_privacy_list_id(LServer, LUser, Name) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(id)d from privacy_list"
            " where username=%(LUser)s and name=%(Name)s")).
 
 get_privacy_list_id_t(LUser, Name) ->
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("select @(id)d from privacy_list"
            " where username=%(LUser)s and name=%(Name)s")).
 
 get_privacy_list_data(LServer, LUser, Name) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(t)s, @(value)s, @(action)s, @(ord)d, @(match_all)b, "
            "@(match_iq)b, @(match_message)b, @(match_presence_in)b, "
@@ -530,7 +529,7 @@ get_privacy_list_data(LServer, LUser, Name) ->
 
 %% Not used?
 get_privacy_list_data_t(LUser, Name) ->
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("select @(t)s, @(value)s, @(action)s, @(ord)d, @(match_all)b, "
            "@(match_iq)b, @(match_message)b, @(match_presence_in)b, "
            "@(match_presence_out)b from privacy_list_data "
@@ -540,7 +539,7 @@ get_privacy_list_data_t(LUser, Name) ->
            "order by ord")).
 
 get_privacy_list_data_by_id(LServer, ID) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(t)s, @(value)s, @(action)s, @(ord)d, @(match_all)b, "
            "@(match_iq)b, @(match_message)b, @(match_presence_in)b, "
@@ -548,7 +547,7 @@ get_privacy_list_data_by_id(LServer, ID) ->
            "where id=%(ID)d order by ord")).
 
 get_privacy_list_data_by_id_t(ID) ->
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("select @(t)s, @(value)s, @(action)s, @(ord)d, @(match_all)b, "
            "@(match_iq)b, @(match_message)b, @(match_presence_in)b, "
            "@(match_presence_out)b from privacy_list_data "
@@ -561,28 +560,28 @@ set_default_privacy_list(LUser, Name) ->
         "name=%(Name)s"]).
 
 unset_default_privacy_list(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("delete from privacy_default_list"
            " where username=%(LUser)s")).
 
 remove_privacy_list(LUser, Name) ->
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("delete from privacy_list where"
            " username=%(LUser)s and name=%(Name)s")).
 
 add_privacy_list(LUser, Name) ->
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("insert into privacy_list(username, name) "
            "values (%(LUser)s, %(Name)s)")).
 
 set_privacy_list(ID, RItems) ->
-    ejabberd_odbc:sql_query_t(
+    ejabberd_sql:sql_query_t(
       ?SQL("delete from privacy_list_data where id=%(ID)d")),
     lists:foreach(
       fun({SType, SValue, SAction, Order, MatchAll, MatchIQ,
            MatchMessage, MatchPresenceIn, MatchPresenceOut}) ->
-              ejabberd_odbc:sql_query_t(
+              ejabberd_sql:sql_query_t(
                 ?SQL("insert into privacy_list_data(id, t, "
                      "value, action, ord, match_all, match_iq, "
                      "match_message, match_presence_in, match_presence_out) "
@@ -594,14 +593,14 @@ set_privacy_list(ID, RItems) ->
 		  RItems).
 
 del_privacy_lists(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("delete from privacy_list where username=%(LUser)s")),
     %US = <<LUser/binary, "@", LServer/binary>>,
-    %ejabberd_odbc:sql_query(
+    %ejabberd_sql:sql_query(
     %  LServer,
     %  ?SQL("delete from privacy_list_data where value=%(US)s")),
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("delete from privacy_default_list where username=%(LUser)s")).
 
@@ -618,12 +617,12 @@ escape(C) -> <<C>>.
 
 %% Count number of records in a table given a where clause
 count_records_where(LServer, Table, WhereClause) ->
-    ejabberd_odbc:sql_query(LServer,
+    ejabberd_sql:sql_query(LServer,
 			    [<<"select count(*) from ">>, Table, <<" ">>,
 			     WhereClause, <<";">>]).
 
 get_roster_version(LServer, LUser) ->
-    ejabberd_odbc:sql_query(
+    ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(version)s from roster_version"
            " where username = %(LUser)s")).
@@ -633,7 +632,7 @@ set_roster_version(LUser, Version) ->
 	     [<<"username">>, <<"version">>], [LUser, Version],
 	     [<<"username = '">>, LUser, <<"'">>]).
 
-opt_type(odbc_type) ->
+opt_type(sql_type) ->
     fun (pgsql) -> pgsql;
 	(mysql) -> mysql;
 	(sqlite) -> sqlite;
@@ -642,4 +641,4 @@ opt_type(odbc_type) ->
     end;
 opt_type(pgsql_users_number_estimate) ->
     fun (V) when is_boolean(V) -> V end;
-opt_type(_) -> [odbc_type, pgsql_users_number_estimate].
+opt_type(_) -> [sql_type, pgsql_users_number_estimate].

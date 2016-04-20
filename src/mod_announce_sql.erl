@@ -27,35 +27,35 @@ set_motd_users(LServer, USRs) ->
     F = fun() ->
 		lists:foreach(
 		  fun({U, _S, _R}) ->
-			  Username = ejabberd_odbc:escape(U),
-			  odbc_queries:update_t(
+			  Username = ejabberd_sql:escape(U),
+			  sql_queries:update_t(
 			    <<"motd">>,
 			    [<<"username">>, <<"xml">>],
 			    [Username, <<"">>],
 			    [<<"username='">>, Username, <<"'">>])
 		  end, USRs)
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 set_motd(LServer, Packet) ->
-    XML = ejabberd_odbc:escape(fxml:element_to_binary(Packet)),
+    XML = ejabberd_sql:escape(fxml:element_to_binary(Packet)),
     F = fun() ->
-		odbc_queries:update_t(
+		sql_queries:update_t(
 		  <<"motd">>,
 		  [<<"username">>, <<"xml">>],
 		  [<<"">>, XML],
 		  [<<"username=''">>])
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 delete_motd(LServer) ->
     F = fun() ->
-		ejabberd_odbc:sql_query_t([<<"delete from motd;">>])
+		ejabberd_sql:sql_query_t([<<"delete from motd;">>])
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 get_motd(LServer) ->
-    case catch ejabberd_odbc:sql_query(
+    case catch ejabberd_sql:sql_query(
                  LServer, [<<"select xml from motd where username='';">>]) of
         {selected, [<<"xml">>], [[XML]]} ->
             case fxml_stream:parse_element(XML) of
@@ -69,8 +69,8 @@ get_motd(LServer) ->
     end.
 
 is_motd_user(LUser, LServer) ->
-    Username = ejabberd_odbc:escape(LUser),
-    case catch ejabberd_odbc:sql_query(
+    Username = ejabberd_sql:escape(LUser),
+    case catch ejabberd_sql:sql_query(
 		 LServer,
 		 [<<"select username from motd "
 		    "where username='">>, Username, <<"';">>]) of
@@ -81,15 +81,15 @@ is_motd_user(LUser, LServer) ->
     end.
 
 set_motd_user(LUser, LServer) ->
-    Username = ejabberd_odbc:escape(LUser),
+    Username = ejabberd_sql:escape(LUser),
     F = fun() ->
-		odbc_queries:update_t(
+		sql_queries:update_t(
 		  <<"motd">>,
 		  [<<"username">>, <<"xml">>],
 		  [Username, <<"">>],
 		  [<<"username='">>, Username, <<"'">>])
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 export(_Server) ->
     [{motd,
@@ -97,7 +97,7 @@ export(_Server) ->
             when LServer == Host ->
               [[<<"delete from motd where username='';">>],
                [<<"insert into motd(username, xml) values ('', '">>,
-                ejabberd_odbc:escape(fxml:element_to_binary(El)),
+                ejabberd_sql:escape(fxml:element_to_binary(El)),
                 <<"');">>]];
          (_Host, _R) ->
               []
@@ -105,7 +105,7 @@ export(_Server) ->
      {motd_users,
       fun(Host, #motd_users{us = {LUser, LServer}})
             when LServer == Host, LUser /= <<"">> ->
-              Username = ejabberd_odbc:escape(LUser),
+              Username = ejabberd_sql:escape(LUser),
               [[<<"delete from motd where username='">>, Username, <<"';">>],
                [<<"insert into motd(username, xml) values ('">>,
                 Username, <<"', '');">>]];

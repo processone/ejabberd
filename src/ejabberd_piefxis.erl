@@ -28,8 +28,8 @@
 
 %%% Not implemented:
 %%% - write mod_piefxis with ejabberdctl commands
-%%% - Export from mod_offline_odbc.erl
-%%% - Export from mod_private_odbc.erl
+%%% - Export from mod_offline_sql.erl
+%%% - Export from mod_private_sql.erl
 %%% - XEP-227: 6. Security Considerations
 %%% - Other schemas of XInclude are not tested, and may not be imported correctly.
 %%% - If a host has many users, split that host in XML files with 50 users each.

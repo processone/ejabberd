@@ -86,7 +86,7 @@ do_init_per_group(redis, Config) ->
     mod_muc:shutdown_rooms(?REDIS_VHOST),
     set_opt(server, ?REDIS_VHOST, Config);
 do_init_per_group(mysql, Config) ->
-    case catch ejabberd_odbc:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
+    case catch ejabberd_sql:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?MYSQL_VHOST),
             create_sql_tables(mysql, ?config(base_dir, Config)),
@@ -95,7 +95,7 @@ do_init_per_group(mysql, Config) ->
             {skip, {mysql_not_available, Err}}
     end;
 do_init_per_group(pgsql, Config) ->
-    case catch ejabberd_odbc:sql_query(?PGSQL_VHOST, [<<"select 1;">>]) of
+    case catch ejabberd_sql:sql_query(?PGSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?PGSQL_VHOST),
             create_sql_tables(pgsql, ?config(base_dir, Config)),
@@ -104,7 +104,7 @@ do_init_per_group(pgsql, Config) ->
             {skip, {pgsql_not_available, Err}}
     end;
 do_init_per_group(sqlite, Config) ->
-    case catch ejabberd_odbc:sql_query(?SQLITE_VHOST, [<<"select 1;">>]) of
+    case catch ejabberd_sql:sql_query(?SQLITE_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?SQLITE_VHOST),
             set_opt(server, ?SQLITE_VHOST, Config);
@@ -2248,7 +2248,7 @@ create_sql_tables(Type, BaseDir) ->
     SQLFile = filename:join([BaseDir, "sql", File]),
     CreationQueries = read_sql_queries(SQLFile),
     DropTableQueries = drop_table_queries(CreationQueries),
-    case ejabberd_odbc:sql_transaction(
+    case ejabberd_sql:sql_transaction(
            VHost, DropTableQueries ++ CreationQueries) of
         {atomic, ok} ->
             ok;

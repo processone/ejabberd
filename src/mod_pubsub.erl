@@ -2527,7 +2527,7 @@ get_last_item(Host, Type, Nidx, LJID, mnesia) ->
 	{result, {[LastItem|_], _}} -> LastItem;
 	_ -> undefined
     end;
-get_last_item(Host, Type, Nidx, LJID, odbc) ->
+get_last_item(Host, Type, Nidx, LJID, sql) ->
     case node_action(Host, Type, get_last_items, [Nidx, LJID, 1]) of
 	{result, [LastItem]} -> LastItem;
 	_ -> undefined
@@ -2542,7 +2542,7 @@ get_last_items(Host, Type, Nidx, LJID, Number, mnesia) ->
 	{result, {Items, _}} -> lists:sublist(Items, Number);
 	_ -> []
     end;
-get_last_items(Host, Type, Nidx, LJID, Number, odbc) ->
+get_last_items(Host, Type, Nidx, LJID, Number, sql) ->
     case node_action(Host, Type, get_last_items, [Nidx, LJID, Number]) of
 	{result, Items} -> Items;
 	_ -> []
@@ -3012,7 +3012,7 @@ get_subscriptions_for_send_last(Host, PType, mnesia, JID, LJID, BJID) ->
 	|| {Node, Sub, SubId, SubJID} <- Subs,
 	    Sub =:= subscribed, (SubJID == LJID) or (SubJID == BJID),
 	    match_option(Node, send_last_published_item, on_sub_and_presence)];
-get_subscriptions_for_send_last(Host, PType, odbc, JID, LJID, BJID) ->
+get_subscriptions_for_send_last(Host, PType, sql, JID, LJID, BJID) ->
     case catch node_action(Host, PType,
 	    get_entity_subscriptions_for_send_last,
 	    [Host, JID])
@@ -3688,7 +3688,7 @@ filter_node_options(Options) ->
 
 node_owners_action(Host, Type, Nidx, []) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	odbc ->
+	sql ->
 	    case node_action(Host, Type, get_node_affiliations, [Nidx]) of
 		{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
 		_ -> []
@@ -3701,7 +3701,7 @@ node_owners_action(_Host, _Type, _Nidx, Owners) ->
 
 node_owners_call(Host, Type, Nidx, []) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	odbc ->
+	sql ->
 	    case node_call(Host, Type, get_node_affiliations, [Nidx]) of
 		{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
 		_ -> []
@@ -4066,14 +4066,14 @@ tree(_Host, <<"virtual">>) ->
 tree(Host, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
 	mnesia -> jlib:binary_to_atom(<<"nodetree_", Name/binary>>);
-	odbc -> jlib:binary_to_atom(<<"nodetree_", Name/binary, "_odbc">>);
+	sql -> jlib:binary_to_atom(<<"nodetree_", Name/binary, "_sql">>);
 	_ -> Name
     end.
 
 plugin(Host, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
 	mnesia -> jlib:binary_to_atom(<<"node_", Name/binary>>);
-	odbc -> jlib:binary_to_atom(<<"node_", Name/binary, "_odbc">>);
+	sql -> jlib:binary_to_atom(<<"node_", Name/binary, "_sql">>);
 	_ -> Name
     end.
 
@@ -4087,7 +4087,7 @@ plugins(Host) ->
 subscription_plugin(Host) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
 	mnesia -> pubsub_subscription;
-	odbc -> pubsub_subscription_odbc;
+	sql -> pubsub_subscription_sql;
 	_ -> none
     end.
 
@@ -4184,8 +4184,8 @@ tree_action(Host, Function, Args) ->
     case gen_mod:db_type(ServerHost, ?MODULE) of
 	mnesia ->
 	    catch mnesia:sync_dirty(Fun);
-	odbc ->
-	    case catch ejabberd_odbc:sql_bloc(ServerHost, Fun) of
+	sql ->
+	    case catch ejabberd_sql:sql_bloc(ServerHost, Fun) of
 		{atomic, Result} ->
 		    Result;
 		{aborted, Reason} ->
@@ -4244,7 +4244,7 @@ transaction(Host, Fun, Trans) ->
     ServerHost = serverhost(Host),
     DBType = gen_mod:db_type(ServerHost, ?MODULE),
     Retry = case DBType of
-	odbc -> 2;
+	sql -> 2;
 	_ -> 1
     end,
     transaction_retry(Host, ServerHost, Fun, Trans, DBType, Retry).
@@ -4255,12 +4255,12 @@ transaction_retry(Host, ServerHost, Fun, Trans, DBType, Count) ->
     Res = case DBType of
 	mnesia ->
 	    catch mnesia:Trans(Fun);
-	odbc ->
+	sql ->
 	    SqlFun = case Trans of
 		transaction -> sql_transaction;
 		_ -> sql_bloc
 	    end,
-	    catch ejabberd_odbc:SqlFun(ServerHost, Fun);
+	    catch ejabberd_sql:SqlFun(ServerHost, Fun);
 	_ ->
 	    {unsupported, DBType}
     end,

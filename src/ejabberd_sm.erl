@@ -814,7 +814,8 @@ make_sid() ->
 opt_type(sm_db_type) ->
     fun (mnesia) -> mnesia;
 	(internal) -> mnesia;
-	(odbc) -> odbc;
+	(sql) -> sql;
+	(odbc) -> sql;
 	(redis) -> redis
     end;
 opt_type(_) -> [sm_db_type].

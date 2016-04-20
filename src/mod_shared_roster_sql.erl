@@ -29,69 +29,69 @@ init(_Host, _Opts) ->
     ok.
 
 list_groups(Host) ->
-    case ejabberd_odbc:sql_query(
+    case ejabberd_sql:sql_query(
 	   Host, [<<"select name from sr_group;">>]) of
 	{selected, [<<"name">>], Rs} -> [G || [G] <- Rs];
 	_ -> []
     end.
 
 groups_with_opts(Host) ->
-    case ejabberd_odbc:sql_query(Host,
+    case ejabberd_sql:sql_query(Host,
 				 [<<"select name, opts from sr_group;">>])
 	of
       {selected, [<<"name">>, <<"opts">>], Rs} ->
-	  [{G, mod_shared_roster:opts_to_binary(ejabberd_odbc:decode_term(Opts))}
+	  [{G, mod_shared_roster:opts_to_binary(ejabberd_sql:decode_term(Opts))}
 	   || [G, Opts] <- Rs];
       _ -> []
     end.
 
 create_group(Host, Group, Opts) ->
-    SGroup = ejabberd_odbc:escape(Group),
-    SOpts = ejabberd_odbc:encode_term(Opts),
+    SGroup = ejabberd_sql:escape(Group),
+    SOpts = ejabberd_sql:encode_term(Opts),
     F = fun () ->
-		odbc_queries:update_t(<<"sr_group">>,
+		sql_queries:update_t(<<"sr_group">>,
 				      [<<"name">>, <<"opts">>], [SGroup, SOpts],
 				      [<<"name='">>, SGroup, <<"'">>])
 	end,
-    ejabberd_odbc:sql_transaction(Host, F).
+    ejabberd_sql:sql_transaction(Host, F).
 
 delete_group(Host, Group) ->
-    SGroup = ejabberd_odbc:escape(Group),
+    SGroup = ejabberd_sql:escape(Group),
     F = fun () ->
-		ejabberd_odbc:sql_query_t([<<"delete from sr_group where name='">>,
+		ejabberd_sql:sql_query_t([<<"delete from sr_group where name='">>,
 					   SGroup, <<"';">>]),
-		ejabberd_odbc:sql_query_t([<<"delete from sr_user where grp='">>,
+		ejabberd_sql:sql_query_t([<<"delete from sr_user where grp='">>,
 					   SGroup, <<"';">>])
 	end,
-    case ejabberd_odbc:sql_transaction(Host, F) of
+    case ejabberd_sql:sql_transaction(Host, F) of
         {atomic,{updated,_}} -> {atomic, ok};
         Res -> Res
     end.
 
 get_group_opts(Host, Group) ->
-    SGroup = ejabberd_odbc:escape(Group),
-    case catch ejabberd_odbc:sql_query(
+    SGroup = ejabberd_sql:escape(Group),
+    case catch ejabberd_sql:sql_query(
 		 Host,
 		 [<<"select opts from sr_group where name='">>,
 		  SGroup, <<"';">>]) of
 	{selected, [<<"opts">>], [[SOpts]]} ->
-	    mod_shared_roster:opts_to_binary(ejabberd_odbc:decode_term(SOpts));
+	    mod_shared_roster:opts_to_binary(ejabberd_sql:decode_term(SOpts));
 	_ -> error
     end.
 
 set_group_opts(Host, Group, Opts) ->
-    SGroup = ejabberd_odbc:escape(Group),
-    SOpts = ejabberd_odbc:encode_term(Opts),
+    SGroup = ejabberd_sql:escape(Group),
+    SOpts = ejabberd_sql:encode_term(Opts),
     F = fun () ->
-		odbc_queries:update_t(<<"sr_group">>,
+		sql_queries:update_t(<<"sr_group">>,
 				      [<<"name">>, <<"opts">>], [SGroup, SOpts],
 				      [<<"name='">>, SGroup, <<"'">>])
 	end,
-    ejabberd_odbc:sql_transaction(Host, F).
+    ejabberd_sql:sql_transaction(Host, F).
 
 get_user_groups(US, Host) ->
     SJID = make_jid_s(US),
-    case catch ejabberd_odbc:sql_query(
+    case catch ejabberd_sql:sql_query(
 		 Host,
 		 [<<"select grp from sr_user where jid='">>,
 		  SJID, <<"';">>]) of
@@ -100,8 +100,8 @@ get_user_groups(US, Host) ->
     end.
 
 get_group_explicit_users(Host, Group) ->
-    SGroup = ejabberd_odbc:escape(Group),
-    case catch ejabberd_odbc:sql_query(
+    SGroup = ejabberd_sql:escape(Group),
+    case catch ejabberd_sql:sql_query(
 		 Host,
 		 [<<"select jid from sr_user where grp='">>,
 		  SGroup, <<"';">>]) of
@@ -117,7 +117,7 @@ get_group_explicit_users(Host, Group) ->
 
 get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
     SJID = make_jid_s(LUser, LServer),
-    case catch ejabberd_odbc:sql_query(
+    case catch ejabberd_sql:sql_query(
 		 LServer,
 		 [<<"select grp from sr_user where jid='">>,
 		  SJID, <<"';">>]) of
@@ -129,8 +129,8 @@ get_user_displayed_groups(LUser, LServer, GroupsOpts) ->
 
 is_user_in_group(US, Group, Host) ->
     SJID = make_jid_s(US),
-    SGroup = ejabberd_odbc:escape(Group),
-    case catch ejabberd_odbc:sql_query(Host,
+    SGroup = ejabberd_sql:escape(Group),
+    case catch ejabberd_sql:sql_query(Host,
 				       [<<"select * from sr_user where jid='">>,
 					SJID, <<"' and grp='">>, SGroup,
 					<<"';">>]) of
@@ -140,32 +140,32 @@ is_user_in_group(US, Group, Host) ->
 
 add_user_to_group(Host, US, Group) ->
     SJID = make_jid_s(US),
-    SGroup = ejabberd_odbc:escape(Group),
+    SGroup = ejabberd_sql:escape(Group),
     F = fun () ->
-		odbc_queries:update_t(<<"sr_user">>,
+		sql_queries:update_t(<<"sr_user">>,
 				      [<<"jid">>, <<"grp">>], [SJID, SGroup],
 				      [<<"jid='">>, SJID, <<"' and grp='">>,
 				       SGroup, <<"'">>])
 	end,
-    ejabberd_odbc:sql_transaction(Host, F).
+    ejabberd_sql:sql_transaction(Host, F).
 
 remove_user_from_group(Host, US, Group) ->
     SJID = make_jid_s(US),
-    SGroup = ejabberd_odbc:escape(Group),
+    SGroup = ejabberd_sql:escape(Group),
     F = fun () ->
-		ejabberd_odbc:sql_query_t([<<"delete from sr_user where jid='">>,
+		ejabberd_sql:sql_query_t([<<"delete from sr_user where jid='">>,
 					   SJID, <<"' and grp='">>, SGroup,
 					   <<"';">>]),
 		ok
 	end,
-    ejabberd_odbc:sql_transaction(Host, F).
+    ejabberd_sql:sql_transaction(Host, F).
 
 export(_Server) ->
     [{sr_group,
       fun(Host, #sr_group{group_host = {Group, LServer}, opts = Opts})
             when LServer == Host ->
-              SGroup = ejabberd_odbc:escape(Group),
-              SOpts = ejabberd_odbc:encode_term(Opts),
+              SGroup = ejabberd_sql:escape(Group),
+              SOpts = ejabberd_sql:encode_term(Opts),
               [[<<"delete from sr_group where name='">>, Group, <<"';">>],
                [<<"insert into sr_group(name, opts) values ('">>,
                 SGroup, <<"', '">>, SOpts, <<"');">>]];
@@ -175,8 +175,8 @@ export(_Server) ->
      {sr_user,
       fun(Host, #sr_user{us = {U, S}, group_host = {Group, LServer}})
             when LServer == Host ->
-              SGroup = ejabberd_odbc:escape(Group),
-              SJID = ejabberd_odbc:escape(
+              SGroup = ejabberd_sql:escape(Group),
+              SJID = ejabberd_sql:escape(
                        jid:to_string(
                          jid:tolower(
                            jid:make(U, S, <<"">>)))),
@@ -192,7 +192,7 @@ import(LServer) ->
     [{<<"select name, opts from sr_group;">>,
       fun([Group, SOpts]) ->
               #sr_group{group_host = {Group, LServer},
-                        opts = ejabberd_odbc:decode_term(SOpts)}
+                        opts = ejabberd_sql:decode_term(SOpts)}
       end},
      {<<"select jid, grp from sr_user;">>,
       fun([SJID, Group]) ->
@@ -207,6 +207,6 @@ import(_, _) ->
 %%% Internal functions
 %%%===================================================================
 make_jid_s(U, S) ->
-    ejabberd_odbc:escape(jid:to_string(jid:tolower(jid:make(U, S, <<"">>)))).
+    ejabberd_sql:escape(jid:to_string(jid:tolower(jid:make(U, S, <<"">>)))).
 
 make_jid_s({U, S}) -> make_jid_s(U, S).

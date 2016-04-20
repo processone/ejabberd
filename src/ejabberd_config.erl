@@ -651,13 +651,26 @@ process_host_term(Term, Host, State, Action) ->
         {hosts, _} ->
             State;
 	{Opt, Val} when Action == set ->
-	    set_option({Opt, Host}, Val, State);
+	    set_option({rename_option(Opt), Host}, Val, State);
         {Opt, Val} when Action == append ->
-            append_option({Opt, Host}, Val, State);
+            append_option({rename_option(Opt), Host}, Val, State);
         Opt ->
             ?WARNING_MSG("Ignore invalid (outdated?) option ~p", [Opt]),
             State
     end.
+
+rename_option(Option) when is_atom(Option) ->
+    case atom_to_list(Option) of
+	"odbc_" ++ T ->
+	    NewOption = list_to_atom("sql_" ++ T),
+	    ?WARNING_MSG("Option '~s' is obsoleted, use '~s' instead",
+			 [Option, NewOption]),
+	    NewOption;
+	_ ->
+	    Option
+    end;
+rename_option(Option) ->
+    Option.
 
 set_option(Opt, Val, State) ->
     State#state{opts = [#local_config{key = Opt, value = Val} |
@@ -867,20 +880,20 @@ get_mylang() ->
       fun iolist_to_binary/1,
       <<"en">>).
 
-replace_module(mod_announce_odbc) -> {mod_announce, odbc};
-replace_module(mod_blocking_odbc) -> {mod_blocking, odbc};
-replace_module(mod_caps_odbc) -> {mod_caps, odbc};
-replace_module(mod_irc_odbc) -> {mod_irc, odbc};
-replace_module(mod_last_odbc) -> {mod_last, odbc};
-replace_module(mod_muc_odbc) -> {mod_muc, odbc};
-replace_module(mod_offline_odbc) -> {mod_offline, odbc};
-replace_module(mod_privacy_odbc) -> {mod_privacy, odbc};
-replace_module(mod_private_odbc) -> {mod_private, odbc};
-replace_module(mod_roster_odbc) -> {mod_roster, odbc};
-replace_module(mod_shared_roster_odbc) -> {mod_shared_roster, odbc};
-replace_module(mod_vcard_odbc) -> {mod_vcard, odbc};
-replace_module(mod_vcard_xupdate_odbc) -> {mod_vcard_xupdate, odbc};
-replace_module(mod_pubsub_odbc) -> {mod_pubsub, odbc};
+replace_module(mod_announce_odbc) -> {mod_announce, sql};
+replace_module(mod_blocking_odbc) -> {mod_blocking, sql};
+replace_module(mod_caps_odbc) -> {mod_caps, sql};
+replace_module(mod_irc_odbc) -> {mod_irc, sql};
+replace_module(mod_last_odbc) -> {mod_last, sql};
+replace_module(mod_muc_odbc) -> {mod_muc, sql};
+replace_module(mod_offline_odbc) -> {mod_offline, sql};
+replace_module(mod_privacy_odbc) -> {mod_privacy, sql};
+replace_module(mod_private_odbc) -> {mod_private, sql};
+replace_module(mod_roster_odbc) -> {mod_roster, sql};
+replace_module(mod_shared_roster_odbc) -> {mod_shared_roster, sql};
+replace_module(mod_vcard_odbc) -> {mod_vcard, sql};
+replace_module(mod_vcard_xupdate_odbc) -> {mod_vcard_xupdate, sql};
+replace_module(mod_pubsub_odbc) -> {mod_pubsub, sql};
 replace_module(Module) ->
     case is_elixir_module(Module) of
         true  -> expand_elixir_module(Module);
@@ -985,7 +998,7 @@ transform_terms(Terms) ->
             mod_last,
             ejabberd_s2s,
             ejabberd_listener,
-            ejabberd_odbc_sup,
+            ejabberd_sql_sup,
             shaper,
             ejabberd_s2s_out,
             acl,

@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : node_pep_odbc.erl
+%%% File    : node_pep_sql.erl
 %%% Author  : Christophe Romain <christophe.romain@process-one.net>
 %%% Purpose : Standard PubSub PEP plugin with ODBC backend
 %%% Created :  1 Dec 2007 by Christophe Romain <christophe.romain@process-one.net>
@@ -26,7 +26,7 @@
 %%% @doc The module <strong>{@module}</strong> is the pep PubSub plugin.
 %%% <p>PubSub plugin nodes are using the {@link gen_pubsub_node} behaviour.</p>
 
--module(node_pep_odbc).
+-module(node_pep_sql).
 -behaviour(gen_pubsub_node).
 -author('christophe.romain@process-one.net').
 
@@ -49,16 +49,16 @@
     get_entity_subscriptions_for_send_last/2, get_last_items/3]).
 
 init(Host, ServerHost, Opts) ->
-    node_flat_odbc:init(Host, ServerHost, Opts),
+    node_flat_sql:init(Host, ServerHost, Opts),
     complain_if_modcaps_disabled(ServerHost),
     ok.
 
 terminate(Host, ServerHost) ->
-    node_flat_odbc:terminate(Host, ServerHost),
+    node_flat_sql:terminate(Host, ServerHost),
     ok.
 
 options() ->
-    [{odbc, true}, {rsm, true} | node_pep:options()].
+    [{sql, true}, {rsm, true} | node_pep:options()].
 
 features() ->
     [<<"rsm">> | node_pep:features()].
@@ -67,56 +67,56 @@ create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
     node_pep:create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access).
 
 create_node(Nidx, Owner) ->
-    node_flat_odbc:create_node(Nidx, Owner),
+    node_flat_sql:create_node(Nidx, Owner),
     {result, {default, broadcast}}.
 
 delete_node(Nodes) ->
-    {result, {_, _, Result}} = node_flat_odbc:delete_node(Nodes),
+    {result, {_, _, Result}} = node_flat_sql:delete_node(Nodes),
     {result, {[], Result}}.
 
 subscribe_node(Nidx, Sender, Subscriber, AccessModel,
 	    SendLast, PresenceSubscription, RosterGroup, Options) ->
-    node_flat_odbc:subscribe_node(Nidx, Sender, Subscriber, AccessModel, SendLast,
+    node_flat_sql:subscribe_node(Nidx, Sender, Subscriber, AccessModel, SendLast,
 	PresenceSubscription, RosterGroup, Options).
 
 
 unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
-    case node_flat_odbc:unsubscribe_node(Nidx, Sender, Subscriber, SubId) of
+    case node_flat_sql:unsubscribe_node(Nidx, Sender, Subscriber, SubId) of
 	{error, Error} -> {error, Error};
 	{result, _} -> {result, []}
     end.
 
 publish_item(Nidx, Publisher, Model, MaxItems, ItemId, Payload) ->
-    node_flat_odbc:publish_item(Nidx, Publisher, Model, MaxItems, ItemId, Payload).
+    node_flat_sql:publish_item(Nidx, Publisher, Model, MaxItems, ItemId, Payload).
 
 remove_extra_items(Nidx, MaxItems, ItemIds) ->
-    node_flat_odbc:remove_extra_items(Nidx, MaxItems, ItemIds).
+    node_flat_sql:remove_extra_items(Nidx, MaxItems, ItemIds).
 
 delete_item(Nidx, Publisher, PublishModel, ItemId) ->
-    node_flat_odbc:delete_item(Nidx, Publisher, PublishModel, ItemId).
+    node_flat_sql:delete_item(Nidx, Publisher, PublishModel, ItemId).
 
 purge_node(Nidx, Owner) ->
-    node_flat_odbc:purge_node(Nidx, Owner).
+    node_flat_sql:purge_node(Nidx, Owner).
 
 get_entity_affiliations(_Host, Owner) ->
     OwnerKey = jid:tolower(jid:remove_resource(Owner)),
-    node_flat_odbc:get_entity_affiliations(OwnerKey, Owner).
+    node_flat_sql:get_entity_affiliations(OwnerKey, Owner).
 
 get_node_affiliations(Nidx) ->
-    node_flat_odbc:get_node_affiliations(Nidx).
+    node_flat_sql:get_node_affiliations(Nidx).
 
 get_affiliation(Nidx, Owner) ->
-    node_flat_odbc:get_affiliation(Nidx, Owner).
+    node_flat_sql:get_affiliation(Nidx, Owner).
 
 set_affiliation(Nidx, Owner, Affiliation) ->
-    node_flat_odbc:set_affiliation(Nidx, Owner, Affiliation).
+    node_flat_sql:set_affiliation(Nidx, Owner, Affiliation).
 
 get_entity_subscriptions(_Host, Owner) ->
     SubKey = jid:tolower(Owner),
     GenKey = jid:remove_resource(SubKey),
-    Host = node_flat_odbc:encode_host(element(2, SubKey)),
-    SJ = node_flat_odbc:encode_jid(SubKey),
-    GJ = node_flat_odbc:encode_jid(GenKey),
+    Host = node_flat_sql:encode_host(element(2, SubKey)),
+    SJ = node_flat_sql:encode_jid(SubKey),
+    GJ = node_flat_sql:encode_jid(GenKey),
     Query = case SubKey of
 	GenKey ->
 	    [<<"select host, node, type, i.nodeid, jid, "
@@ -129,16 +129,16 @@ get_entity_subscriptions(_Host, Owner) ->
 		    "where i.nodeid = n.nodeid and jid "
 		    "in ('">>, SJ, <<"', '">>, GJ, <<"') and host like '%@">>, Host, <<"';">>]
     end,
-    Reply = case catch ejabberd_odbc:sql_query_t(Query) of
+    Reply = case catch ejabberd_sql:sql_query_t(Query) of
 	{selected,
 		    [<<"host">>, <<"node">>, <<"type">>, <<"nodeid">>, <<"jid">>, <<"subscriptions">>],
 		    RItems} ->
 	    lists:map(fun ([H, N, T, I, J, S]) ->
-			O = node_flat_odbc:decode_jid(H),
-			Node = nodetree_tree_odbc:raw_to_node(O, [N, <<"">>, T, I]),
+			O = node_flat_sql:decode_jid(H),
+			Node = nodetree_tree_sql:raw_to_node(O, [N, <<"">>, T, I]),
 			{Node,
-			    node_flat_odbc:decode_subscriptions(S),
-			    node_flat_odbc:decode_jid(J)}
+			    node_flat_sql:decode_subscriptions(S),
+			    node_flat_sql:decode_jid(J)}
 		end,
 		RItems);
 	_ ->
@@ -149,9 +149,9 @@ get_entity_subscriptions(_Host, Owner) ->
 get_entity_subscriptions_for_send_last(_Host, Owner) ->
     SubKey = jid:tolower(Owner),
     GenKey = jid:remove_resource(SubKey),
-    Host = node_flat_odbc:encode_host(element(2, SubKey)),
-    SJ = node_flat_odbc:encode_jid(SubKey),
-    GJ = node_flat_odbc:encode_jid(GenKey),
+    Host = node_flat_sql:encode_host(element(2, SubKey)),
+    SJ = node_flat_sql:encode_jid(SubKey),
+    GJ = node_flat_sql:encode_jid(GenKey),
     Query = case SubKey of
 	GenKey ->
 	    [<<"select host, node, type, i.nodeid, jid, "
@@ -168,16 +168,16 @@ get_entity_subscriptions_for_send_last(_Host, Owner) ->
 		    "val='on_sub_and_presence' and jid in ",
 		    "('">>, SJ, <<"', '">>, GJ, <<"') and host like '%@">>, Host, <<"';">>]
     end,
-    Reply = case catch ejabberd_odbc:sql_query_t(Query) of
+    Reply = case catch ejabberd_sql:sql_query_t(Query) of
 	{selected,
 		    [<<"host">>, <<"node">>, <<"type">>, <<"nodeid">>, <<"jid">>, <<"subscriptions">>],
 		    RItems} ->
 	    lists:map(fun ([H, N, T, I, J, S]) ->
-			O = node_flat_odbc:decode_jid(H),
-			Node = nodetree_tree_odbc:raw_to_node(O, [N, <<"">>, T, I]),
+			O = node_flat_sql:decode_jid(H),
+			Node = nodetree_tree_sql:raw_to_node(O, [N, <<"">>, T, I]),
 			{Node,
-			    node_flat_odbc:decode_subscriptions(S),
-			    node_flat_odbc:decode_jid(J)}
+			    node_flat_sql:decode_subscriptions(S),
+			    node_flat_sql:decode_jid(J)}
 		end,
 		RItems);
 	_ ->
@@ -186,54 +186,54 @@ get_entity_subscriptions_for_send_last(_Host, Owner) ->
     {result, Reply}.
 
 get_node_subscriptions(Nidx) ->
-    node_flat_odbc:get_node_subscriptions(Nidx).
+    node_flat_sql:get_node_subscriptions(Nidx).
 
 get_subscriptions(Nidx, Owner) ->
-    node_flat_odbc:get_subscriptions(Nidx, Owner).
+    node_flat_sql:get_subscriptions(Nidx, Owner).
 
 set_subscriptions(Nidx, Owner, Subscription, SubId) ->
-    node_flat_odbc:set_subscriptions(Nidx, Owner, Subscription, SubId).
+    node_flat_sql:set_subscriptions(Nidx, Owner, Subscription, SubId).
 
 get_pending_nodes(Host, Owner) ->
-    node_flat_odbc:get_pending_nodes(Host, Owner).
+    node_flat_sql:get_pending_nodes(Host, Owner).
 
 get_states(Nidx) ->
-    node_flat_odbc:get_states(Nidx).
+    node_flat_sql:get_states(Nidx).
 
 get_state(Nidx, JID) ->
-    node_flat_odbc:get_state(Nidx, JID).
+    node_flat_sql:get_state(Nidx, JID).
 
 set_state(State) ->
-    node_flat_odbc:set_state(State).
+    node_flat_sql:set_state(State).
 
 get_items(Nidx, From, RSM) ->
-    node_flat_odbc:get_items(Nidx, From, RSM).
+    node_flat_sql:get_items(Nidx, From, RSM).
 
 get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, RSM) ->
-    node_flat_odbc:get_items(Nidx, JID, AccessModel,
+    node_flat_sql:get_items(Nidx, JID, AccessModel,
 	PresenceSubscription, RosterGroup, SubId, RSM).
 
 get_last_items(Nidx, JID, Count) ->
-    node_flat_odbc:get_last_items(Nidx, JID, Count).
+    node_flat_sql:get_last_items(Nidx, JID, Count).
 
 get_item(Nidx, ItemId) ->
-    node_flat_odbc:get_item(Nidx, ItemId).
+    node_flat_sql:get_item(Nidx, ItemId).
 
 get_item(Nidx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, SubId) ->
-    node_flat_odbc:get_item(Nidx, ItemId, JID, AccessModel,
+    node_flat_sql:get_item(Nidx, ItemId, JID, AccessModel,
 	PresenceSubscription, RosterGroup, SubId).
 
 set_item(Item) ->
-    node_flat_odbc:set_item(Item).
+    node_flat_sql:set_item(Item).
 
 get_item_name(Host, Node, Id) ->
-    node_flat_odbc:get_item_name(Host, Node, Id).
+    node_flat_sql:get_item_name(Host, Node, Id).
 
 node_to_path(Node) ->
-    node_flat_odbc:node_to_path(Node).
+    node_flat_sql:node_to_path(Node).
 
 path_to_node(Path) ->
-    node_flat_odbc:path_to_node(Path).
+    node_flat_sql:path_to_node(Path).
 
 %%%
 %%% Internal

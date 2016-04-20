@@ -24,33 +24,33 @@ init(_Host, _Opts) ->
 
 get_data(LServer, Host, From) ->
     LJID = jid:tolower(jid:remove_resource(From)),
-    SJID = ejabberd_odbc:escape(jid:to_string(LJID)),
-    SHost = ejabberd_odbc:escape(Host),
-    case catch ejabberd_odbc:sql_query(
+    SJID = ejabberd_sql:escape(jid:to_string(LJID)),
+    SHost = ejabberd_sql:escape(Host),
+    case catch ejabberd_sql:sql_query(
 		 LServer,
 		 [<<"select data from irc_custom where jid='">>,
 		  SJID, <<"' and host='">>, SHost,
 		  <<"';">>]) of
 	{selected, [<<"data">>], [[SData]]} ->
-	    mod_irc:data_to_binary(From, ejabberd_odbc:decode_term(SData));
+	    mod_irc:data_to_binary(From, ejabberd_sql:decode_term(SData));
 	{'EXIT', _} -> error;
 	{selected, _, _} -> empty
     end.
 
 set_data(LServer, Host, From, Data) ->
     LJID = jid:tolower(jid:remove_resource(From)),
-    SJID = ejabberd_odbc:escape(jid:to_string(LJID)),
-    SHost = ejabberd_odbc:escape(Host),
-    SData = ejabberd_odbc:encode_term(Data),
+    SJID = ejabberd_sql:escape(jid:to_string(LJID)),
+    SHost = ejabberd_sql:escape(Host),
+    SData = ejabberd_sql:encode_term(Data),
     F = fun () ->
-		odbc_queries:update_t(<<"irc_custom">>,
+		sql_queries:update_t(<<"irc_custom">>,
 				      [<<"jid">>, <<"host">>, <<"data">>],
 				      [SJID, SHost, SData],
 				      [<<"jid='">>, SJID, <<"' and host='">>,
 				       SHost, <<"'">>]),
 		ok
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 export(_Server) ->
     [{irc_custom,
@@ -58,11 +58,11 @@ export(_Server) ->
                             data = Data}) ->
               case str:suffix(Host, IRCHost) of
                   true ->
-                      SJID = ejabberd_odbc:escape(
+                      SJID = ejabberd_sql:escape(
                                jid:to_string(
                                  jid:make(U, S, <<"">>))),
-                      SIRCHost = ejabberd_odbc:escape(IRCHost),
-                      SData = ejabberd_odbc:encode_term(Data),
+                      SIRCHost = ejabberd_sql:escape(IRCHost),
+                      SData = ejabberd_sql:encode_term(Data),
                       [[<<"delete from irc_custom where jid='">>, SJID,
                         <<"' and host='">>, SIRCHost, <<"';">>],
                        [<<"insert into irc_custom(jid, host, "
@@ -78,7 +78,7 @@ import(_LServer) ->
     [{<<"select jid, host, data from irc_custom;">>,
       fun([SJID, IRCHost, SData]) ->
               #jid{luser = U, lserver = S} = jid:from_string(SJID),
-              Data = ejabberd_odbc:decode_term(SData),
+              Data = ejabberd_sql:decode_term(SData),
               #irc_custom{us_host = {{U, S}, IRCHost},
                           data = Data}
       end}].

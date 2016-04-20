@@ -163,7 +163,7 @@ parse1([$@, $( | S], Acc, State) ->
                 EVar;
             boolean ->
                 erl_syntax:application(
-                  erl_syntax:atom(ejabberd_odbc),
+                  erl_syntax:atom(ejabberd_sql),
                   erl_syntax:atom(to_bool),
                   [EVar])
         end,
@@ -348,7 +348,7 @@ make_sql_upsert_generic(Table, ParseRes) ->
     InsertBranch =
         erl_syntax:case_expr(
           erl_syntax:application(
-            erl_syntax:atom(ejabberd_odbc),
+            erl_syntax:atom(ejabberd_sql),
             erl_syntax:atom(sql_query_t),
             [Insert]),
           [erl_syntax:clause(
@@ -361,7 +361,7 @@ make_sql_upsert_generic(Table, ParseRes) ->
              [erl_syntax:variable("__UpdateRes")])]),
     erl_syntax:case_expr(
       erl_syntax:application(
-        erl_syntax:atom(ejabberd_odbc),
+        erl_syntax:atom(ejabberd_sql),
         erl_syntax:atom(sql_query_t),
         [Update]),
       [erl_syntax:clause(
@@ -453,7 +453,7 @@ make_sql_upsert_pgsql901(Table, ParseRes) ->
           ]),
     Upsert = make_sql_query(State),
     erl_syntax:application(
-      erl_syntax:atom(ejabberd_odbc),
+      erl_syntax:atom(ejabberd_sql),
       erl_syntax:atom(sql_query_t),
       [Upsert]).
 

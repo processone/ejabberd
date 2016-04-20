@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : pubsub_db_odbc.erl
+%%% File    : pubsub_db_sql.erl
 %%% Author  : Pablo Polvorin <pablo.polvorin@process-one.net>
 %%% Purpose : Provide helpers for PubSub ODBC backend
 %%% Created :  7 Aug 2009 by Pablo Polvorin <pablo.polvorin@process-one.net>
@@ -23,7 +23,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(pubsub_db_odbc).
+-module(pubsub_db_sql).
 
 -author("pablo.polvorin@process-one.net").
 
@@ -37,16 +37,16 @@
 %% -spec read_subscription(SubID :: string()) -> {ok, #pubsub_subscription{}} |  notfound.
 read_subscription(SubID) ->
     case
-	ejabberd_odbc:sql_query_t([<<"select opt_name, opt_value from pubsub_subscr"
+	ejabberd_sql:sql_query_t([<<"select opt_name, opt_value from pubsub_subscr"
 		    "iption_opt where subid = '">>,
-		ejabberd_odbc:escape(SubID), <<"'">>])
+		ejabberd_sql:escape(SubID), <<"'">>])
     of
 	{selected, [<<"opt_name">>, <<"opt_value">>], []} ->
 	    notfound;
 	{selected, [<<"opt_name">>, <<"opt_value">>], Options} ->
 	    {ok,
 		#pubsub_subscription{subid = SubID,
-		    options = lists:map(fun subscription_opt_from_odbc/1, Options)}}
+		    options = lists:map(fun subscription_opt_from_sql/1, Options)}}
     end.
 
 %% -spec delete_subscription(SubID :: string()) -> ok.
@@ -54,19 +54,19 @@ delete_subscription(SubID) ->
     %% -spec update_subscription(#pubsub_subscription{}) -> ok .
     %% -spec add_subscription(#pubsub_subscription{}) -> ok.
     %% -------------- Internal utilities -----------------------
-    ejabberd_odbc:sql_query_t([<<"delete from pubsub_subscription_opt "
+    ejabberd_sql:sql_query_t([<<"delete from pubsub_subscription_opt "
 		"where subid = '">>,
-	    ejabberd_odbc:escape(SubID), <<"'">>]),
+	    ejabberd_sql:escape(SubID), <<"'">>]),
     ok.
 
 update_subscription(#pubsub_subscription{subid = SubId} = Sub) ->
     delete_subscription(SubId), add_subscription(Sub).
 
 add_subscription(#pubsub_subscription{subid = SubId, options = Opts}) ->
-    EscapedSubId = ejabberd_odbc:escape(SubId),
+    EscapedSubId = ejabberd_sql:escape(SubId),
     lists:foreach(fun (Opt) ->
-		{OdbcOptName, OdbcOptValue} = subscription_opt_to_odbc(Opt),
-		ejabberd_odbc:sql_query_t([<<"insert into pubsub_subscription_opt(subid, "
+		{OdbcOptName, OdbcOptValue} = subscription_opt_to_sql(Opt),
+		ejabberd_sql:sql_query_t([<<"insert into pubsub_subscription_opt(subid, "
 			    "opt_name, opt_value)values ('">>,
 			EscapedSubId, <<"','">>,
 			OdbcOptName, <<"','">>,
@@ -75,67 +75,67 @@ add_subscription(#pubsub_subscription{subid = SubId, options = Opts}) ->
 	Opts),
     ok.
 
-subscription_opt_from_odbc({<<"DELIVER">>, Value}) ->
-    {deliver, odbc_to_boolean(Value)};
-subscription_opt_from_odbc({<<"DIGEST">>, Value}) ->
-    {digest, odbc_to_boolean(Value)};
-subscription_opt_from_odbc({<<"DIGEST_FREQUENCY">>, Value}) ->
-    {digest_frequency, odbc_to_integer(Value)};
-subscription_opt_from_odbc({<<"EXPIRE">>, Value}) ->
-    {expire, odbc_to_timestamp(Value)};
-subscription_opt_from_odbc({<<"INCLUDE_BODY">>, Value}) ->
-    {include_body, odbc_to_boolean(Value)};
+subscription_opt_from_sql({<<"DELIVER">>, Value}) ->
+    {deliver, sql_to_boolean(Value)};
+subscription_opt_from_sql({<<"DIGEST">>, Value}) ->
+    {digest, sql_to_boolean(Value)};
+subscription_opt_from_sql({<<"DIGEST_FREQUENCY">>, Value}) ->
+    {digest_frequency, sql_to_integer(Value)};
+subscription_opt_from_sql({<<"EXPIRE">>, Value}) ->
+    {expire, sql_to_timestamp(Value)};
+subscription_opt_from_sql({<<"INCLUDE_BODY">>, Value}) ->
+    {include_body, sql_to_boolean(Value)};
 %%TODO: might be > than 1 show_values value??.
 %%      need to use compact all in only 1 opt.
-subscription_opt_from_odbc({<<"SHOW_VALUES">>, Value}) ->
+subscription_opt_from_sql({<<"SHOW_VALUES">>, Value}) ->
     {show_values, Value};
-subscription_opt_from_odbc({<<"SUBSCRIPTION_TYPE">>, Value}) ->
+subscription_opt_from_sql({<<"SUBSCRIPTION_TYPE">>, Value}) ->
     {subscription_type,
 	case Value of
 	    <<"items">> -> items;
 	    <<"nodes">> -> nodes
 	end};
-subscription_opt_from_odbc({<<"SUBSCRIPTION_DEPTH">>, Value}) ->
+subscription_opt_from_sql({<<"SUBSCRIPTION_DEPTH">>, Value}) ->
     {subscription_depth,
 	case Value of
 	    <<"all">> -> all;
-	    N -> odbc_to_integer(N)
+	    N -> sql_to_integer(N)
 	end}.
 
-subscription_opt_to_odbc({deliver, Bool}) ->
-    {<<"DELIVER">>, boolean_to_odbc(Bool)};
-subscription_opt_to_odbc({digest, Bool}) ->
-    {<<"DIGEST">>, boolean_to_odbc(Bool)};
-subscription_opt_to_odbc({digest_frequency, Int}) ->
-    {<<"DIGEST_FREQUENCY">>, integer_to_odbc(Int)};
-subscription_opt_to_odbc({expire, Timestamp}) ->
-    {<<"EXPIRE">>, timestamp_to_odbc(Timestamp)};
-subscription_opt_to_odbc({include_body, Bool}) ->
-    {<<"INCLUDE_BODY">>, boolean_to_odbc(Bool)};
-subscription_opt_to_odbc({show_values, Values}) ->
+subscription_opt_to_sql({deliver, Bool}) ->
+    {<<"DELIVER">>, boolean_to_sql(Bool)};
+subscription_opt_to_sql({digest, Bool}) ->
+    {<<"DIGEST">>, boolean_to_sql(Bool)};
+subscription_opt_to_sql({digest_frequency, Int}) ->
+    {<<"DIGEST_FREQUENCY">>, integer_to_sql(Int)};
+subscription_opt_to_sql({expire, Timestamp}) ->
+    {<<"EXPIRE">>, timestamp_to_sql(Timestamp)};
+subscription_opt_to_sql({include_body, Bool}) ->
+    {<<"INCLUDE_BODY">>, boolean_to_sql(Bool)};
+subscription_opt_to_sql({show_values, Values}) ->
     {<<"SHOW_VALUES">>, Values};
-subscription_opt_to_odbc({subscription_type, Type}) ->
+subscription_opt_to_sql({subscription_type, Type}) ->
     {<<"SUBSCRIPTION_TYPE">>,
 	case Type of
 	    items -> <<"items">>;
 	    nodes -> <<"nodes">>
 	end};
-subscription_opt_to_odbc({subscription_depth, Depth}) ->
+subscription_opt_to_sql({subscription_depth, Depth}) ->
     {<<"SUBSCRIPTION_DEPTH">>,
 	case Depth of
 	    all -> <<"all">>;
-	    N -> integer_to_odbc(N)
+	    N -> integer_to_sql(N)
 	end}.
 
-integer_to_odbc(N) -> iolist_to_binary(integer_to_list(N)).
+integer_to_sql(N) -> iolist_to_binary(integer_to_list(N)).
 
-boolean_to_odbc(true) -> <<"1">>;
-boolean_to_odbc(false) -> <<"0">>.
+boolean_to_sql(true) -> <<"1">>;
+boolean_to_sql(false) -> <<"0">>.
 
-timestamp_to_odbc(T) -> jlib:now_to_utc_string(T).
+timestamp_to_sql(T) -> jlib:now_to_utc_string(T).
 
-odbc_to_integer(N) -> jlib:binary_to_integer(N).
+sql_to_integer(N) -> jlib:binary_to_integer(N).
 
-odbc_to_boolean(B) -> B == <<"1">>.
+sql_to_boolean(B) -> B == <<"1">>.
 
-odbc_to_timestamp(T) -> jlib:datetime_string_to_timestamp(T).
+sql_to_timestamp(T) -> jlib:datetime_string_to_timestamp(T).

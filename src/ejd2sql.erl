@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : ejd2odbc.erl
+%%% File    : ejd2sql.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : Export some mnesia tables to SQL DB
 %%% Created : 22 Aug 2005 by Alexey Shchepin <alexey@process-one.net>
@@ -23,7 +23,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(ejd2odbc).
+-module(ejd2sql).
 
 -author('alexey@process-one.net').
 
@@ -43,7 +43,7 @@
 %%% A table can be converted from Mnesia to an ODBC database by calling
 %%% one of the API function with the following parameters:
 %%% - Server is the server domain you want to convert
-%%% - Output can be either odbc to export to the configured relational
+%%% - Output can be either sql to export to the configured relational
 %%%   database or "Filename" to export to text file.
 
 modules() ->
@@ -168,8 +168,8 @@ export(LServer, Table, IO, ConvertFun) ->
 
 output(_LServer, _Table, _IO, []) ->
     ok;
-output(LServer, _Table, odbc, SQLs) ->
-    ejabberd_odbc:sql_transaction(LServer, SQLs);
+output(LServer, _Table, sql, SQLs) ->
+    ejabberd_sql:sql_transaction(LServer, SQLs);
 output(_LServer, Table, Fd, SQLs) ->
     file:write(Fd, ["-- \n-- Mnesia table: ", atom_to_list(Table),
                     "\n--\n", SQLs]).
@@ -197,7 +197,7 @@ import(LServer, SelectQuery, IO, ConvertFun, Opts) ->
     F = case proplists:get_bool(fast, Opts) of
             true ->
                 fun() ->
-                        case ejabberd_odbc:sql_query_t(SelectQuery) of
+                        case ejabberd_sql:sql_query_t(SelectQuery) of
                             {selected, _, Rows} ->
                                 lists:foldl(fun process_sql_row/2,
                                             {IO, ConvertFun, undefined}, Rows);
@@ -207,16 +207,16 @@ import(LServer, SelectQuery, IO, ConvertFun, Opts) ->
                 end;
             false ->
                 fun() ->
-                        ejabberd_odbc:sql_query_t(
+                        ejabberd_sql:sql_query_t(
                           [iolist_to_binary(
                              [<<"declare c cursor for ">>, SelectQuery])]),
                         fetch(IO, ConvertFun, undefined)
                 end
         end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 fetch(IO, ConvertFun, PrevRow) ->
-    case ejabberd_odbc:sql_query_t([<<"fetch c;">>]) of
+    case ejabberd_sql:sql_query_t([<<"fetch c;">>]) of
         {selected, _, [Row]} ->
             process_sql_row(Row, {IO, ConvertFun, PrevRow}),
             fetch(IO, ConvertFun, Row);

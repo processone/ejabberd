@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : pubsub_subscription_odbc.erl
+%%% File    : pubsub_subscription_sql.erl
 %%% Author  : Pablo Polvorin <pablo.polvorin@process-one.net>
 %%% Purpose : Handle pubsub subscriptions options with ODBC backend
 %%%           based on pubsub_subscription.erl by Brian Cully <bjc@kublai.com>
@@ -24,7 +24,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(pubsub_subscription_odbc).
+-module(pubsub_subscription_sql).
 -author("pablo.polvorin@process-one.net").
 
 %% API
@@ -66,7 +66,7 @@
 -define(SUBSCRIPTION_DEPTH_VALUE_ONE_LABEL, <<"Receive notification from direct child nodes only">>).
 -define(SUBSCRIPTION_DEPTH_VALUE_ALL_LABEL, <<"Receive notification from all descendent nodes">>).
 
--define(DB_MOD, pubsub_db_odbc).
+-define(DB_MOD, pubsub_db_sql).
 %%====================================================================
 %% API
 %%====================================================================

@@ -26,46 +26,46 @@ init(_Host, _Opts) ->
     ok.
 
 store_room(LServer, Host, Name, Opts) ->
-    SName = ejabberd_odbc:escape(Name),
-    SHost = ejabberd_odbc:escape(Host),
-    SOpts = ejabberd_odbc:encode_term(Opts),
+    SName = ejabberd_sql:escape(Name),
+    SHost = ejabberd_sql:escape(Host),
+    SOpts = ejabberd_sql:encode_term(Opts),
     F = fun () ->
-		odbc_queries:update_t(<<"muc_room">>,
+		sql_queries:update_t(<<"muc_room">>,
 				      [<<"name">>, <<"host">>, <<"opts">>],
 				      [SName, SHost, SOpts],
 				      [<<"name='">>, SName, <<"' and host='">>,
 				       SHost, <<"'">>])
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 restore_room(LServer, Host, Name) ->
-    SName = ejabberd_odbc:escape(Name),
-    SHost = ejabberd_odbc:escape(Host),
-    case catch ejabberd_odbc:sql_query(LServer,
+    SName = ejabberd_sql:escape(Name),
+    SHost = ejabberd_sql:escape(Host),
+    case catch ejabberd_sql:sql_query(LServer,
 				       [<<"select opts from muc_room where name='">>,
 					SName, <<"' and host='">>, SHost,
 					<<"';">>]) of
 	{selected, [<<"opts">>], [[Opts]]} ->
-	    mod_muc:opts_to_binary(ejabberd_odbc:decode_term(Opts));
+	    mod_muc:opts_to_binary(ejabberd_sql:decode_term(Opts));
 	_ ->
 	    error
     end.
 
 forget_room(LServer, Host, Name) ->
-    SName = ejabberd_odbc:escape(Name),
-    SHost = ejabberd_odbc:escape(Host),
+    SName = ejabberd_sql:escape(Name),
+    SHost = ejabberd_sql:escape(Host),
     F = fun () ->
-		ejabberd_odbc:sql_query_t([<<"delete from muc_room where name='">>,
+		ejabberd_sql:sql_query_t([<<"delete from muc_room where name='">>,
 					   SName, <<"' and host='">>, SHost,
 					   <<"';">>])
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 can_use_nick(LServer, Host, JID, Nick) ->
     SJID = jid:to_string(jid:tolower(jid:remove_resource(JID))),
-    SNick = ejabberd_odbc:escape(Nick),
-    SHost = ejabberd_odbc:escape(Host),
-    case catch ejabberd_odbc:sql_query(LServer,
+    SNick = ejabberd_sql:escape(Nick),
+    SHost = ejabberd_sql:escape(Host),
+    case catch ejabberd_sql:sql_query(LServer,
 				       [<<"select jid from muc_registered ">>,
 					<<"where nick='">>, SNick,
 					<<"' and host='">>, SHost, <<"';">>]) of
@@ -74,8 +74,8 @@ can_use_nick(LServer, Host, JID, Nick) ->
     end.
 
 get_rooms(LServer, Host) ->
-    SHost = ejabberd_odbc:escape(Host),
-    case catch ejabberd_odbc:sql_query(LServer,
+    SHost = ejabberd_sql:escape(Host),
+    case catch ejabberd_sql:sql_query(LServer,
 				       [<<"select name, opts from muc_room ">>,
 					<<"where host='">>, SHost, <<"';">>]) of
 	{selected, [<<"name">>, <<"opts">>], RoomOpts} ->
@@ -83,7 +83,7 @@ get_rooms(LServer, Host) ->
 	      fun([Room, Opts]) ->
 		      #muc_room{name_host = {Room, Host},
 				opts = mod_muc:opts_to_binary(
-					 ejabberd_odbc:decode_term(Opts))}
+					 ejabberd_sql:decode_term(Opts))}
 	      end, RoomOpts);
 	Err ->
 	    ?ERROR_MSG("failed to get rooms: ~p", [Err]),
@@ -91,9 +91,9 @@ get_rooms(LServer, Host) ->
     end.
 
 get_nick(LServer, Host, From) ->
-    SJID = ejabberd_odbc:escape(jid:to_string(jid:tolower(jid:remove_resource(From)))),
-    SHost = ejabberd_odbc:escape(Host),
-    case catch ejabberd_odbc:sql_query(LServer,
+    SJID = ejabberd_sql:escape(jid:to_string(jid:tolower(jid:remove_resource(From)))),
+    SHost = ejabberd_sql:escape(Host),
+    case catch ejabberd_sql:sql_query(LServer,
 				       [<<"select nick from muc_registered where "
 					  "jid='">>,
 					SJID, <<"' and host='">>, SHost,
@@ -104,20 +104,20 @@ get_nick(LServer, Host, From) ->
 
 set_nick(LServer, Host, From, Nick) ->
     JID = jid:to_string(jid:tolower(jid:remove_resource(From))),
-    SJID = ejabberd_odbc:escape(JID),
-    SNick = ejabberd_odbc:escape(Nick),
-    SHost = ejabberd_odbc:escape(Host),
+    SJID = ejabberd_sql:escape(JID),
+    SNick = ejabberd_sql:escape(Nick),
+    SHost = ejabberd_sql:escape(Host),
     F = fun () ->
 		case Nick of
 		    <<"">> ->
-			ejabberd_odbc:sql_query_t(
+			ejabberd_sql:sql_query_t(
 			  [<<"delete from muc_registered where ">>,
 			   <<"jid='">>, SJID,
 			   <<"' and host='">>, Host,
 			   <<"';">>]),
 			ok;
 		    _ ->
-			Allow = case ejabberd_odbc:sql_query_t(
+			Allow = case ejabberd_sql:sql_query_t(
 				       [<<"select jid from muc_registered ">>,
 					<<"where nick='">>,
 					SNick,
@@ -127,7 +127,7 @@ set_nick(LServer, Host, From, Nick) ->
 				    _ -> true
 				end,
 			if Allow ->
-				odbc_queries:update_t(<<"muc_registered">>,
+				sql_queries:update_t(<<"muc_registered">>,
 						      [<<"jid">>, <<"host">>,
 						       <<"nick">>],
 						      [SJID, SHost, SNick],
@@ -140,16 +140,16 @@ set_nick(LServer, Host, From, Nick) ->
 			end
 		end
 	end,
-    ejabberd_odbc:sql_transaction(LServer, F).
+    ejabberd_sql:sql_transaction(LServer, F).
 
 export(_Server) ->
     [{muc_room,
       fun(Host, #muc_room{name_host = {Name, RoomHost}, opts = Opts}) ->
               case str:suffix(Host, RoomHost) of
                   true ->
-                      SName = ejabberd_odbc:escape(Name),
-                      SRoomHost = ejabberd_odbc:escape(RoomHost),
-                      SOpts = ejabberd_odbc:encode_term(Opts),
+                      SName = ejabberd_sql:escape(Name),
+                      SRoomHost = ejabberd_sql:escape(RoomHost),
+                      SOpts = ejabberd_sql:encode_term(Opts),
                       [[<<"delete from muc_room where name='">>, SName,
                         <<"' and host='">>, SRoomHost, <<"';">>],
                        [<<"insert into muc_room(name, host, opts) ",
@@ -165,11 +165,11 @@ export(_Server) ->
                                 nick = Nick}) ->
               case str:suffix(Host, RoomHost) of
                   true ->
-                      SJID = ejabberd_odbc:escape(
+                      SJID = ejabberd_sql:escape(
                                jid:to_string(
                                  jid:make(U, S, <<"">>))),
-                      SNick = ejabberd_odbc:escape(Nick),
-                      SRoomHost = ejabberd_odbc:escape(RoomHost),
+                      SNick = ejabberd_sql:escape(Nick),
+                      SRoomHost = ejabberd_sql:escape(RoomHost),
                       [[<<"delete from muc_registered where jid='">>,
                         SJID, <<"' and host='">>, SRoomHost, <<"';">>],
                        [<<"insert into muc_registered(jid, host, "
@@ -184,7 +184,7 @@ export(_Server) ->
 import(_LServer) ->
     [{<<"select name, host, opts from muc_room;">>,
       fun([Name, RoomHost, SOpts]) ->
-              Opts = mod_muc:opts_to_binary(ejabberd_odbc:decode_term(SOpts)),
+              Opts = mod_muc:opts_to_binary(ejabberd_sql:decode_term(SOpts)),
               #muc_room{name_host = {Name, RoomHost}, opts = Opts}
       end},
      {<<"select jid, host, nick from muc_registered;">>,

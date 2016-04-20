@@ -609,7 +609,7 @@ import_start(LServer, DBType) ->
     Mod:init(LServer, []),
     ok.
 
-import(_LServer, {odbc, _}, _DBType, <<"caps_features">>,
+import(_LServer, {sql, _}, _DBType, <<"caps_features">>,
        [Node, SubNode, Feature, _TimeStamp]) ->
     Feature1 = case catch jlib:binary_to_integer(Feature) of
                    I when is_integer(I), I>0 -> I;
@@ -642,7 +642,7 @@ import_next(LServer, DBType, NodePair) ->
             ejabberd_riak:put(
               #caps_features{node_pair = NodePair, features = Features},
 	      caps_features_schema());
-        _ when DBType == odbc ->
+        _ when DBType == sql ->
             ok
     end,
     import_next(LServer, DBType, ets:next(caps_features_tmp, NodePair)).

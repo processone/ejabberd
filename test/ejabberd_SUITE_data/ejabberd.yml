@@ -1,33 +1,33 @@
 host_config: 
   "pgsql.localhost": 
-    odbc_username: "@@pgsql_user@@"
-    odbc_type: pgsql
-    odbc_server: "@@pgsql_server@@"
-    odbc_port: @@pgsql_port@@
-    odbc_pool_size: 1
-    odbc_password: "@@pgsql_pass@@"
-    odbc_database: "@@pgsql_db@@"
-    auth_method: odbc
-    sm_db_type: odbc
+    sql_username: "@@pgsql_user@@"
+    sql_type: pgsql
+    sql_server: "@@pgsql_server@@"
+    sql_port: @@pgsql_port@@
+    sql_pool_size: 1
+    sql_password: "@@pgsql_pass@@"
+    sql_database: "@@pgsql_db@@"
+    auth_method: sql
+    sm_db_type: sql
     modules: 
       mod_announce: 
-        db_type: odbc
+        db_type: sql
         access: local
       mod_blocking: []
       mod_caps: 
-        db_type: odbc
+        db_type: sql
       mod_last: 
-        db_type: odbc
+        db_type: sql
       mod_muc: 
-        db_type: odbc
+        db_type: sql
       mod_offline: 
-        db_type: odbc
+        db_type: sql
       mod_privacy: 
-        db_type: odbc
+        db_type: sql
       mod_private: 
-        db_type: odbc
+        db_type: sql
       mod_pubsub: 
-        db_type: odbc
+        db_type: sql
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
@@ -39,13 +39,13 @@ host_config:
       mod_roster:
         versioning: true
         store_current_id: true
-        db_type: odbc
+        db_type: sql
       mod_mam:
-        db_type: odbc
+        db_type: sql
       mod_vcard: 
-        db_type: odbc
+        db_type: sql
       mod_vcard_xupdate:
-        db_type: odbc
+        db_type: sql
       mod_adhoc: []
       mod_configure: []
       mod_disco: []
@@ -60,28 +60,28 @@ Welcome to this XMPP server."
       mod_time: []
       mod_version: []
   "sqlite.localhost": 
-    odbc_type: sqlite
-    auth_method: odbc
-    sm_db_type: odbc
+    sql_type: sqlite
+    auth_method: sql
+    sm_db_type: sql
     modules: 
       mod_announce: 
-        db_type: odbc
+        db_type: sql
         access: local
       mod_blocking: []
       mod_caps: 
-        db_type: odbc
+        db_type: sql
       mod_last: 
-        db_type: odbc
+        db_type: sql
       mod_muc: 
-        db_type: odbc
+        db_type: sql
       mod_offline: 
-        db_type: odbc
+        db_type: sql
       mod_privacy: 
-        db_type: odbc
+        db_type: sql
       mod_private: 
-        db_type: odbc
+        db_type: sql
       mod_pubsub: 
-        db_type: odbc
+        db_type: sql
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
@@ -93,13 +93,13 @@ Welcome to this XMPP server."
       mod_roster:
         versioning: true
         store_current_id: true
-        db_type: odbc
+        db_type: sql
       mod_mam:
-        db_type: odbc
+        db_type: sql
       mod_vcard: 
-        db_type: odbc
+        db_type: sql
       mod_vcard_xupdate:
-        db_type: odbc
+        db_type: sql
       mod_adhoc: []
       mod_configure: []
       mod_disco: []
@@ -114,34 +114,34 @@ Welcome to this XMPP server."
       mod_time: []
       mod_version: []
   "mysql.localhost": 
-    odbc_username: "@@mysql_user@@"
-    odbc_type: mysql
-    odbc_server: "@@mysql_server@@"
-    odbc_port: @@mysql_port@@
-    odbc_pool_size: 1
-    odbc_password: "@@mysql_pass@@"
-    odbc_database: "@@mysql_db@@"
-    auth_method: odbc
-    sm_db_type: odbc
+    sql_username: "@@mysql_user@@"
+    sql_type: mysql
+    sql_server: "@@mysql_server@@"
+    sql_port: @@mysql_port@@
+    sql_pool_size: 1
+    sql_password: "@@mysql_pass@@"
+    sql_database: "@@mysql_db@@"
+    auth_method: sql
+    sm_db_type: sql
     modules: 
       mod_announce: 
-        db_type: odbc
+        db_type: sql
         access: local
       mod_blocking: []
       mod_caps: 
-        db_type: odbc
+        db_type: sql
       mod_last: 
-        db_type: odbc
+        db_type: sql
       mod_muc: 
-        db_type: odbc
+        db_type: sql
       mod_offline: 
-        db_type: odbc
+        db_type: sql
       mod_privacy: 
-        db_type: odbc
+        db_type: sql
       mod_private: 
-        db_type: odbc
+        db_type: sql
       mod_pubsub: 
-        db_type: odbc
+        db_type: sql
         access_createnode: pubsub_createnode
         ignore_pep_from_offline: true
         last_item_cache: false
@@ -153,13 +153,13 @@ Welcome to this XMPP server."
       mod_roster: 
         versioning: true
         store_current_id: true
-        db_type: odbc
+        db_type: sql
       mod_mam:
-        db_type: odbc
+        db_type: sql
       mod_vcard: 
-        db_type: odbc
+        db_type: sql
       mod_vcard_xupdate:
-        db_type: odbc
+        db_type: sql
       mod_adhoc: []
       mod_configure: []
       mod_disco: []

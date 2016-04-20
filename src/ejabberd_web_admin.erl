@@ -2414,7 +2414,7 @@ node_backup_parse_query(Node, Query) ->
                                                     lists:keysearch(<<Action/binary,
                                                                       "host">>,
                                                                     1, Query),
-                                                ejabberd_cluster:call(Node, ejd2odbc,
+                                                ejabberd_cluster:call(Node, ejd2sql,
                                                          export, [Host, Path]);
 					    <<"import_file">> ->
 						ejabberd_cluster:call(Node, ejabberd_admin,

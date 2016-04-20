@@ -65,7 +65,7 @@
 %% note: pos_integer() should always be used, but we allow anything else coded
 %% as binary, so one can have a custom implementation of nodetree with custom
 %% indexing (see nodetree_virtual). this also allows to use any kind of key for
-%% indexing nodes, as this can be usefull with external backends such as odbc.
+%% indexing nodes, as this can be usefull with external backends such as sql.
 
 -type(itemId() :: binary()).
 %% @type itemId() = string().

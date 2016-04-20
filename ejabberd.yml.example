@@ -254,10 +254,10 @@ auth_method: internal
 ## extauth_program: "/path/to/authentication/script"
 
 ##
-## Authentication using ODBC
+## Authentication using SQL
 ## Remember to setup a database in the next section.
 ##
-## auth_method: odbc
+## auth_method: sql
 
 ##
 ## Authentication using PAM
@@ -330,26 +330,26 @@ auth_method: internal
 ##
 ## MySQL server:
 ##
-## odbc_type: mysql
-## odbc_server: "server"
-## odbc_database: "database"
-## odbc_username: "username"
-## odbc_password: "password"
+## sql_type: mysql
+## sql_server: "server"
+## sql_database: "database"
+## sql_username: "username"
+## sql_password: "password"
 ##
 ## If you want to specify the port:
-## odbc_port: 1234
+## sql_port: 1234
 
 ##
 ## PostgreSQL server:
 ##
-## odbc_type: pgsql
-## odbc_server: "server"
-## odbc_database: "database"
-## odbc_username: "username"
-## odbc_password: "password"
+## sql_type: pgsql
+## sql_server: "server"
+## sql_database: "database"
+## sql_username: "username"
+## sql_password: "password"
 ##
 ## If you want to specify the port:
-## odbc_port: 1234
+## sql_port: 1234
 ##
 ## If you use PostgreSQL, have a large database, and need a
 ## faster but inexact replacement for "select count(*) from users"
@@ -359,25 +359,25 @@ auth_method: internal
 ##
 ## SQLite:
 ##
-## odbc_type: sqlite
-## odbc_database: "/path/to/database.db"
+## sql_type: sqlite
+## sql_database: "/path/to/database.db"
 
 ##
 ## ODBC compatible or MSSQL server:
 ##
-## odbc_type: odbc
-## odbc_server: "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"
+## sql_type: odbc
+## sql_server: "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"
 
 ##
 ## Number of connections to open to the database for each virtual host
 ##
-## odbc_pool_size: 10
+## sql_pool_size: 10
 
 ##
 ## Interval to make a dummy SQL request to keep the connections to the
 ## database alive. Specify in seconds: for example 28800 means 8 hours
 ##
-## odbc_keepalive_interval: undefined
+## sql_keepalive_interval: undefined
 
 ###.  ===============
 ###'  TRAFFIC SHAPERS

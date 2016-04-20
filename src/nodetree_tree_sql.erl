@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : nodetree_tree_odbc.erl
+%%% File    : nodetree_tree_sql.erl
 %%% Author  : Christophe Romain <christophe.romain@process-one.net>
 %%% Purpose : Standard node tree plugin with ODBC backend
 %%% Created :  1 Dec 2007 by Christophe Romain <christophe.romain@process-one.net>
@@ -33,7 +33,7 @@
 %%% useable and useful as is. Please, send us comments, feedback and
 %%% improvements.</p>
 
--module(nodetree_tree_odbc).
+-module(nodetree_tree_sql).
 -behaviour(gen_pubsub_nodetree).
 -author('christophe.romain@process-one.net').
 
@@ -55,7 +55,7 @@ terminate(_Host, _ServerHost) ->
     ok.
 
 options() ->
-    [{odbc, true} | nodetree_tree:options()].
+    [{sql, true} | nodetree_tree:options()].
 
 set_node(Record) when is_record(Record, pubsub_node) ->
     {Host, Node} = Record#pubsub_node.nodeid,
@@ -64,16 +64,16 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 	[First | _] -> First
     end,
     Type = Record#pubsub_node.type,
-    H = node_flat_odbc:encode_host(Host),
-    N = ejabberd_odbc:escape(Node),
-    P = ejabberd_odbc:escape(Parent),
+    H = node_flat_sql:encode_host(Host),
+    N = ejabberd_sql:escape(Node),
+    P = ejabberd_sql:escape(Parent),
     Nidx = case nodeidx(Host, Node) of
 	{result, OldNidx} ->
 	    catch
-	    ejabberd_odbc:sql_query_t([<<"delete from pubsub_node_option where "
+	    ejabberd_sql:sql_query_t([<<"delete from pubsub_node_option where "
 			"nodeid='">>, OldNidx, <<"';">>]),
 	    catch
-	    ejabberd_odbc:sql_query_t([<<"update pubsub_node set host='">>,
+	    ejabberd_sql:sql_query_t([<<"update pubsub_node set host='">>,
 		    H, <<"' node='">>, N,
 		    <<"' parent='">>, P,
 		    <<"' type='">>, Type,
@@ -82,7 +82,7 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 	    OldNidx;
 	_ ->
 	    catch
-	    ejabberd_odbc:sql_query_t([<<"insert into pubsub_node(host, node, "
+	    ejabberd_sql:sql_query_t([<<"insert into pubsub_node(host, node, "
 			"parent, type) values('">>,
 		    H, <<"', '">>, N, <<"', '">>, P,
 		    <<"', '">>, Type, <<"');">>]),
@@ -98,11 +98,11 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 	_ ->
 	    lists:foreach(fun ({Key, Value}) ->
 			SKey = iolist_to_binary(atom_to_list(Key)),
-			SValue = ejabberd_odbc:escape(
+			SValue = ejabberd_sql:escape(
 				list_to_binary(
 				    lists:flatten(io_lib:fwrite("~p", [Value])))),
 			catch
-			ejabberd_odbc:sql_query_t([<<"insert into pubsub_node_option(nodeid, "
+			ejabberd_sql:sql_query_t([<<"insert into pubsub_node_option(nodeid, "
 				    "name, val) values('">>,
 				Nidx, <<"', '">>,
 				SKey, <<"', '">>, SValue, <<"');">>])
@@ -115,10 +115,10 @@ get_node(Host, Node, _From) ->
     get_node(Host, Node).
 
 get_node(Host, Node) ->
-    H = node_flat_odbc:encode_host(Host),
-    N = ejabberd_odbc:escape(Node),
+    H = node_flat_sql:encode_host(Host),
+    N = ejabberd_sql:escape(Node),
     case catch
-	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
+	ejabberd_sql:sql_query_t([<<"select node, parent, type, nodeid from "
 		    "pubsub_node where host='">>,
 		H, <<"' and node='">>, N, <<"';">>])
     of
@@ -133,7 +133,7 @@ get_node(Host, Node) ->
 
 get_node(Nidx) ->
     case catch
-	ejabberd_odbc:sql_query_t([<<"select host, node, parent, type from "
+	ejabberd_sql:sql_query_t([<<"select host, node, parent, type from "
 		    "pubsub_node where nodeid='">>,
 		Nidx, <<"';">>])
     of
@@ -150,9 +150,9 @@ get_nodes(Host, _From) ->
     get_nodes(Host).
 
 get_nodes(Host) ->
-    H = node_flat_odbc:encode_host(Host),
+    H = node_flat_sql:encode_host(Host),
     case catch
-	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
+	ejabberd_sql:sql_query_t([<<"select node, parent, type, nodeid from "
 		    "pubsub_node where host='">>, H, <<"';">>])
     of
 	{selected,
@@ -177,10 +177,10 @@ get_subnodes(Host, Node, _From) ->
     get_subnodes(Host, Node).
 
 get_subnodes(Host, Node) ->
-    H = node_flat_odbc:encode_host(Host),
-    N = ejabberd_odbc:escape(Node),
+    H = node_flat_sql:encode_host(Host),
+    N = ejabberd_sql:escape(Node),
     case catch
-	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
+	ejabberd_sql:sql_query_t([<<"select node, parent, type, nodeid from "
 		    "pubsub_node where host='">>,
 		H, <<"' and parent='">>, N, <<"';">>])
     of
@@ -195,10 +195,10 @@ get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).
 
 get_subnodes_tree(Host, Node) ->
-    H = node_flat_odbc:encode_host(Host),
-    N = ejabberd_odbc:escape(Node),
+    H = node_flat_sql:encode_host(Host),
+    N = ejabberd_sql:escape(Node),
     case catch
-	ejabberd_odbc:sql_query_t([<<"select node, parent, type, nodeid from "
+	ejabberd_sql:sql_query_t([<<"select node, parent, type, nodeid from "
 		    "pubsub_node where host='">>,
 		H, <<"' and node like '">>, N, <<"%';">>])
     of
@@ -255,17 +255,17 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
     end.
 
 delete_node(Host, Node) ->
-    H = node_flat_odbc:encode_host(Host),
-    N = ejabberd_odbc:escape(Node),
+    H = node_flat_sql:encode_host(Host),
+    N = ejabberd_sql:escape(Node),
     Removed = get_subnodes_tree(Host, Node),
-    catch ejabberd_odbc:sql_query_t([<<"delete from pubsub_node where host='">>,
+    catch ejabberd_sql:sql_query_t([<<"delete from pubsub_node where host='">>,
 	    H, <<"' and node like '">>, N, <<"%';">>]),
     Removed.
 
 %% helpers
 raw_to_node(Host, [Node, Parent, Type, Nidx]) ->
     Options = case catch
-	ejabberd_odbc:sql_query_t([<<"select name,val from pubsub_node_option "
+	ejabberd_sql:sql_query_t([<<"select name,val from pubsub_node_option "
 		    "where nodeid='">>, Nidx, <<"';">>])
     of
 	{selected, [<<"name">>, <<"val">>], ROptions} ->
@@ -276,7 +276,7 @@ raw_to_node(Host, [Node, Parent, Type, Nidx]) ->
 			    {RKey, RValue}
 		    end,
 		    ROptions),
-	    Module = jlib:binary_to_atom(<<"node_", Type/binary, "_odbc">>),
+	    Module = jlib:binary_to_atom(<<"node_", Type/binary, "_sql">>),
 	    StdOpts = Module:options(),
 	    lists:foldl(fun ({Key, Value}, Acc) ->
 			lists:keyreplace(Key, 1, Acc, {Key, Value})
@@ -294,10 +294,10 @@ raw_to_node(Host, [Node, Parent, Type, Nidx]) ->
 	id = Nidx, type = Type, options = Options}.
 
 nodeidx(Host, Node) ->
-    H = node_flat_odbc:encode_host(Host),
-    N = ejabberd_odbc:escape(Node),
+    H = node_flat_sql:encode_host(Host),
+    N = ejabberd_sql:escape(Node),
     case catch
-	ejabberd_odbc:sql_query_t([<<"select nodeid from pubsub_node where "
+	ejabberd_sql:sql_query_t([<<"select nodeid from pubsub_node where "
 		    "host='">>,
 		H, <<"' and node='">>, N, <<"';">>])
     of
@@ -310,5 +310,5 @@ nodeidx(Host, Node) ->
     end.
 
 nodeowners(Nidx) ->
-    {result, Res} = node_flat_odbc:get_node_affiliations(Nidx),
+    {result, Res} = node_flat_sql:get_node_affiliations(Nidx),
     [LJID || {LJID, Aff} <- Res, Aff =:= owner].

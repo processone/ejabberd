@@ -21,9 +21,9 @@ init(_Host, _Opts) ->
     ok.
 
 caps_read(LServer, {Node, SubNode}) ->
-    SNode = ejabberd_odbc:escape(Node),
-    SSubNode = ejabberd_odbc:escape(SubNode),
-    case ejabberd_odbc:sql_query(
+    SNode = ejabberd_sql:escape(Node),
+    SSubNode = ejabberd_sql:escape(SubNode),
+    case ejabberd_sql:sql_query(
 	   LServer, [<<"select feature from caps_features where ">>,
 		     <<"node='">>, SNode, <<"' and subnode='">>,
 		     SSubNode, <<"';">>]) of
@@ -39,7 +39,7 @@ caps_read(LServer, {Node, SubNode}) ->
     end.
 
 caps_write(LServer, NodePair, Features) ->
-    ejabberd_odbc:sql_transaction(
+    ejabberd_sql:sql_transaction(
       LServer,
       sql_write_features_t(NodePair, Features)).
 
@@ -56,8 +56,8 @@ export(_Server) ->
 %%% Internal functions
 %%%===================================================================
 sql_write_features_t({Node, SubNode}, Features) ->
-    SNode = ejabberd_odbc:escape(Node),
-    SSubNode = ejabberd_odbc:escape(SubNode),
+    SNode = ejabberd_sql:escape(Node),
+    SSubNode = ejabberd_sql:escape(SubNode),
     NewFeatures = if is_integer(Features) ->
                           [jlib:integer_to_binary(Features)];
                      true ->
@@ -67,5 +67,5 @@ sql_write_features_t({Node, SubNode}, Features) ->
       SNode, <<"' and subnode='">>, SSubNode, <<"';">>]|
      [[<<"insert into caps_features(node, subnode, feature) ">>,
        <<"values ('">>, SNode, <<"', '">>, SSubNode, <<"', '">>,
-       ejabberd_odbc:escape(F), <<"');">>] || F <- NewFeatures]].
+       ejabberd_sql:escape(F), <<"');">>] || F <- NewFeatures]].
 

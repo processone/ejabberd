@@ -137,7 +137,7 @@ check_password(User, AuthzId, Server, Password, Digest,
 %% where
 %%   AuthModule = ejabberd_auth_anonymous | ejabberd_auth_external
 %%                 | ejabberd_auth_internal | ejabberd_auth_ldap
-%%                 | ejabberd_auth_odbc | ejabberd_auth_pam | ejabberd_auth_riak
+%%                 | ejabberd_auth_sql | ejabberd_auth_pam | ejabberd_auth_riak
 -spec check_password_with_authmodule(binary(), binary(), binary(), binary()) -> false |
                                                                       {true, atom()}.
 

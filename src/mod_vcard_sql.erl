@@ -28,7 +28,7 @@ init(_Host, _Opts) ->
     ok.
 
 get_vcard(LUser, LServer) ->
-    case catch odbc_queries:get_vcard(LServer, LUser) of
+    case catch sql_queries:get_vcard(LServer, LUser) of
 	{selected, [{SVCARD}]} ->
 	    case fxml_stream:parse_element(SVCARD) of
 		{error, _Reason} -> error;
@@ -63,7 +63,7 @@ set_vcard(LUser, LServer, VCARD,
 			orgunit = OrgUnit,
 			lorgunit = LOrgUnit}) ->
     SVCARD = fxml:element_to_binary(VCARD),
-    odbc_queries:set_vcard(LServer, LUser, BDay, CTRY,
+    sql_queries:set_vcard(LServer, LUser, BDay, CTRY,
 			   EMail, FN, Family, Given, LBDay,
 			   LCTRY, LEMail, LFN, LFamily,
 			   LGiven, LLocality, LMiddle,
@@ -81,7 +81,7 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
 			Val ->
 			    [<<" LIMIT ">>, jlib:integer_to_binary(Val)]
 		    end,
-	   case catch ejabberd_odbc:sql_query(
+	   case catch ejabberd_sql:sql_query(
 			LServer,
 			[<<"select username, fn, family, given, "
 			   "middle,        nickname, bday, ctry, "
@@ -100,12 +100,12 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
     end.
 
 remove_user(LUser, LServer) ->
-    ejabberd_odbc:sql_transaction(
+    ejabberd_sql:sql_transaction(
       LServer,
       fun() ->
-              ejabberd_odbc:sql_query_t(
+              ejabberd_sql:sql_query_t(
                 ?SQL("delete from vcard where username=%(LUser)s")),
-              ejabberd_odbc:sql_query_t(
+              ejabberd_sql:sql_query_t(
                 ?SQL("delete from vcard_search where lusername=%(LUser)s"))
       end).
 
@@ -113,9 +113,9 @@ export(_Server) ->
     [{vcard,
       fun(Host, #vcard{us = {LUser, LServer}, vcard = VCARD})
             when LServer == Host ->
-              Username = ejabberd_odbc:escape(LUser),
+              Username = ejabberd_sql:escape(LUser),
               SVCARD =
-                  ejabberd_odbc:escape(fxml:element_to_binary(VCARD)),
+                  ejabberd_sql:escape(fxml:element_to_binary(VCARD)),
               [[<<"delete from vcard where username='">>, Username, <<"';">>],
                [<<"insert into vcard(username, vcard) values ('">>,
                 Username, <<"', '">>, SVCARD, <<"');">>]];
@@ -135,30 +135,30 @@ export(_Server) ->
                               orgname = OrgName, lorgname = LOrgName,
                               orgunit = OrgUnit, lorgunit = LOrgUnit})
             when LServer == Host ->
-              Username = ejabberd_odbc:escape(User),
-              LUsername = ejabberd_odbc:escape(LUser),
-              SFN = ejabberd_odbc:escape(FN),
-              SLFN = ejabberd_odbc:escape(LFN),
-              SFamily = ejabberd_odbc:escape(Family),
-              SLFamily = ejabberd_odbc:escape(LFamily),
-              SGiven = ejabberd_odbc:escape(Given),
-              SLGiven = ejabberd_odbc:escape(LGiven),
-              SMiddle = ejabberd_odbc:escape(Middle),
-              SLMiddle = ejabberd_odbc:escape(LMiddle),
-              SNickname = ejabberd_odbc:escape(Nickname),
-              SLNickname = ejabberd_odbc:escape(LNickname),
-              SBDay = ejabberd_odbc:escape(BDay),
-              SLBDay = ejabberd_odbc:escape(LBDay),
-              SCTRY = ejabberd_odbc:escape(CTRY),
-              SLCTRY = ejabberd_odbc:escape(LCTRY),
-              SLocality = ejabberd_odbc:escape(Locality),
-              SLLocality = ejabberd_odbc:escape(LLocality),
-              SEMail = ejabberd_odbc:escape(EMail),
-              SLEMail = ejabberd_odbc:escape(LEMail),
-              SOrgName = ejabberd_odbc:escape(OrgName),
-              SLOrgName = ejabberd_odbc:escape(LOrgName),
-              SOrgUnit = ejabberd_odbc:escape(OrgUnit),
-              SLOrgUnit = ejabberd_odbc:escape(LOrgUnit),
+              Username = ejabberd_sql:escape(User),
+              LUsername = ejabberd_sql:escape(LUser),
+              SFN = ejabberd_sql:escape(FN),
+              SLFN = ejabberd_sql:escape(LFN),
+              SFamily = ejabberd_sql:escape(Family),
+              SLFamily = ejabberd_sql:escape(LFamily),
+              SGiven = ejabberd_sql:escape(Given),
+              SLGiven = ejabberd_sql:escape(LGiven),
+              SMiddle = ejabberd_sql:escape(Middle),
+              SLMiddle = ejabberd_sql:escape(LMiddle),
+              SNickname = ejabberd_sql:escape(Nickname),
+              SLNickname = ejabberd_sql:escape(LNickname),
+              SBDay = ejabberd_sql:escape(BDay),
+              SLBDay = ejabberd_sql:escape(LBDay),
+              SCTRY = ejabberd_sql:escape(CTRY),
+              SLCTRY = ejabberd_sql:escape(LCTRY),
+              SLocality = ejabberd_sql:escape(Locality),
+              SLLocality = ejabberd_sql:escape(LLocality),
+              SEMail = ejabberd_sql:escape(EMail),
+              SLEMail = ejabberd_sql:escape(LEMail),
+              SOrgName = ejabberd_sql:escape(OrgName),
+              SLOrgName = ejabberd_sql:escape(LOrgName),
+              SOrgUnit = ejabberd_sql:escape(OrgUnit),
+              SLOrgUnit = ejabberd_sql:escape(LOrgUnit),
               [[<<"delete from vcard_search where lusername='">>,
                 LUsername, <<"';">>],
                [<<"insert into vcard_search(        username, "
@@ -255,11 +255,11 @@ make_val(Match, Field, Val) ->
     Condition = case str:suffix(<<"*">>, Val) of
 		  true ->
 		      Val1 = str:substr(Val, 1, byte_size(Val) - 1),
-		      SVal = <<(ejabberd_odbc:escape_like(Val1))/binary,
+		      SVal = <<(ejabberd_sql:escape_like(Val1))/binary,
 			       "%">>,
 		      [Field, <<" LIKE '">>, SVal, <<"'">>];
 		  _ ->
-		      SVal = ejabberd_odbc:escape(Val),
+		      SVal = ejabberd_sql:escape(Val),
 		      [Field, <<" = '">>, SVal, <<"'">>]
 		end,
     case Match of

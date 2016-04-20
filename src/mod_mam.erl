@@ -344,7 +344,7 @@ delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
 		lists:map(
 		  fun(Host) ->
 			  case gen_mod:db_type(Host, ?MODULE) of
-			      odbc -> {odbc, Host};
+			      sql -> {sql, Host};
 			      Other -> {Other, global}
 			  end
 		  end, ?MYHOSTS)),
@@ -1018,7 +1018,8 @@ mod_opt_type(cache_life_time) ->
 mod_opt_type(cache_size) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(db_type) ->
-    fun(odbc) -> odbc;
+    fun(sql) -> sql;
+       (odbc) -> sql;
        (internal) -> mnesia;
        (mnesia) -> mnesia
     end;

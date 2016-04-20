@@ -474,8 +474,8 @@ export(_Server) ->
     [{passwd,
       fun(Host, #passwd{us = {LUser, LServer}, password = Password})
             when LServer == Host ->
-              Username = ejabberd_odbc:escape(LUser),
-              Pass = ejabberd_odbc:escape(Password),
+              Username = ejabberd_sql:escape(LUser),
+              Pass = ejabberd_sql:escape(Password),
               [[<<"delete from users where username='">>, Username, <<"';">>],
                [<<"insert into users(username, password) "
                   "values ('">>, Username, <<"', '">>, Pass, <<"');">>]];
