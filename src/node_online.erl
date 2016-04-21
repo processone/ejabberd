@@ -76,7 +76,8 @@ options() ->
 	{max_payload_size, ?MAX_PAYLOAD_SIZE},
 	{send_last_published_item, on_sub_and_presence},
 	{deliver_notifications, true},
-	{presence_based_delivery, true}].
+	{presence_based_delivery, true},
+	{itemreply, none}].
 
 features() ->
     node_flat:features().

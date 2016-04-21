@@ -71,7 +71,8 @@ options() ->
 	{max_payload_size, ?MAX_PAYLOAD_SIZE},
 	{send_last_published_item, never},
 	{deliver_notifications, true},
-	{presence_based_delivery, false}].
+	{presence_based_delivery, false},
+	{itemreply, none}].
 
 features() ->
     [<<"create-nodes">>,

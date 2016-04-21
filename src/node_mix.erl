@@ -52,7 +52,8 @@ options() ->
 	{send_last_published_item, never},
 	{deliver_notifications, true},
         {broadcast_all_resources, true},
-	{presence_based_delivery, false}].
+	{presence_based_delivery, false},
+	{itemreply, none}].
 
 features() ->
     [<<"create-nodes">>,
