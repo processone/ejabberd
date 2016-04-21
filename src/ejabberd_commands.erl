@@ -703,10 +703,11 @@ get_access_commands(AccessCommands, _Version) ->
 get_commands() ->
     get_commands(?DEFAULT_VERSION).
 get_commands(Version) ->
-    Opts = ejabberd_config:get_option(
+    Opts0 = ejabberd_config:get_option(
              commands,
              fun(V) when is_list(V) -> V end,
              []),
+    Opts = lists:map(fun(V) when is_tuple(V) -> [V]; (V) -> V end, Opts0),
     CommandsList = list_commands_policy(Version),
     OpenCmds = [N || {N, _, _, open} <- CommandsList],
     RestrictedCmds = [N || {N, _, _, restricted} <- CommandsList],
