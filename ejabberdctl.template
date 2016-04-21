@@ -199,8 +199,8 @@ start()
 debug()
 {
     debugwarning
-    TTY=`tty | sed -e  's/.*\///g'`
-    CMD="`shell_escape \"$ERL\" \"$NAME\" \"debug-${TTY}-${ERLANG_NODE}\"` \
+    NID=$(uid debug)
+    CMD="`shell_escape \"$ERL\" \"$NAME\" \"$NID\"` \
          -remsh $ERLANG_NODE \
          -hidden \
          $KERNEL_OPTS \
@@ -213,9 +213,9 @@ debug()
 iexdebug()
 {
     debugwarning
-    TTY=`tty | sed -e  's/.*\///g'`
     # Elixir shell is hidden as default
-    CMD="`shell_escape \"$IEX\" \"$IEXNAME\" \"debug-${TTY}-${ERLANG_NODE}\"` \
+    NID=$(uid debug)
+    CMD="`shell_escape \"$IEX\" \"$IEXNAME\" \"$NID\"` \
          -remsh $ERLANG_NODE \
          --erl `shell_escape \"$KERNEL_OPTS\"` \
          --erl `shell_escape \"$ERLANG_OPTS\"` \
@@ -319,15 +319,14 @@ livewarning()
 
 etop()
 {
-    TTY=`tty | sed -e  's/.*\///g'`
+    NID=$(uid top)
     $EXEC_CMD "$ERL \
-      $NAME debug-${TTY}-${ERLANG_NODE} \
+      $NAME $NID \
       -hidden -s etop -s erlang halt -output text -node $ERLANG_NODE"
 }
 
 ping()
 {
-    TTY=`tty | sed -e  's/.*\///g'`
     if [ "$1" = "${1%.*}" ] ; then
         PING_NAME="-sname"
         PING_NODE=$(hostname -s)
@@ -335,10 +334,10 @@ ping()
         PING_NAME="-name"
         PING_NODE=$(hostname)
     fi
+    NID=$(uid ping ${PING_NODE})
     $EXEC_CMD "$ERL \
-      $PING_NAME ping-${TTY}@${PING_NODE} \
-      -hidden \
-      $KERNEL_OPTS $ERLANG_OPTS \
+      $PING_NAME $NID \
+      -hidden $KERNEL_OPTS $ERLANG_OPTS \
       -eval 'io:format(\"~p~n\",[net_adm:ping('\"'\"'$1'\"'\"')])' \
       -s erlang halt -output text -noinput"
 }
@@ -367,85 +366,30 @@ help()
 # common control function
 ctl()
 {
-    # Control number of connections identifiers
-    # using flock if available. Expects a linux-style
-    # flock that can lock a file descriptor.
-    MAXCONNID=100
-    CONNLOCKDIR={{localstatedir}}/lock/ejabberdctl
-    FLOCK=/usr/bin/flock
-    if [ ! -x "$FLOCK" ] || [ ! -d "$CONNLOCKDIR" ] ; then
-        JOT=/usr/bin/jot
-        if [ ! -x "$JOT" ] ; then
-            # no flock or jot, simply invoke ctlexec()
-            CTL_CONN="ctl-${ERLANG_NODE}"
-            ctlexec $CTL_CONN "$@"
-            result=$?
-        else
-            # no flock, but at least there is jot
-            RAND=`jot -r 1 0 $MAXCONNID`
-            CTL_CONN="ctl-${RAND}-${ERLANG_NODE}"
-            ctlexec $CTL_CONN "$@"
-            result=$?
-        fi
-    else
-        # we have flock so we get a lock
-        # on one of a limited number of
-        # conn names -- this allows
-        # concurrent invocations using a bound
-        # number of atoms
-        for N in `seq 1 $MAXCONNID`; do
-            CTL_CONN="ctl-$N-${ERLANG_NODE}"
-            CTL_LOCKFILE="$CONNLOCKDIR/$CTL_CONN"
-            (
-                exec 8>"$CTL_LOCKFILE"
-                if flock --nb 8; then
-                    ctlexec $CTL_CONN "$@"
-                    ssresult=$?
-                    # segregate from possible flock exit(1)
-                    ssresult=`expr $ssresult \* 10`
-                    exit $ssresult
-                else
-                    exit 1
-                fi
-            )
-            result=$?
-            if [ $result -eq 1 ] ; then
-                # means we errored out in flock
-                # rather than in the exec - stay in the loop
-                # trying other conn names...
-                badlock=1
-            else
-                badlock=""
-                break;
-            fi
-        done
-        result=`expr $result / 10`
-    fi
-
-    if [ "$badlock" ] ;then
-        echo "Ran out of connections to try. Your ejabberd processes" >&2
-        echo "may be stuck or this is a very busy server. For very"   >&2
-        echo "busy servers, consider raising MAXCONNID in ejabberdctl">&2
-        exit 1;
-    fi
-
-    case $result in
-        0) :;;
-        1) :;;
-        2) help;;
-        3) help;;
-    esac
-    return $result
-}
-
-ctlexec()
-{
-    CONN_NAME=$1; shift
-    CMD="`shell_escape \"$ERL\" \"$NAME\" \"$CONN_NAME\"` \
+    NID=$(uid ctl)
+    CMD="`shell_escape \"$ERL\" \"$NAME\" \"$NID\"` \
          -noinput -hidden $KERNEL_OPTS -s ejabberd_ctl \
          -extra `shell_escape \"$ERLANG_NODE\"` $EJABBERD_NO_TIMEOUT \
          `shell_escape \"$@\"`"
     $EXEC_CMD "$CMD"
+    result=$?
+    case $result in
+        2) help;;
+        3) help;;
+        *) :;;
+    esac
+    return $result
+}
+
+uid()
+{
+    uuid=$(uuidgen 2>/dev/null)
+    [ -z "$uuid" -a -f /proc/sys/kernel/random/uuid ] && uuid=$(</proc/sys/kernel/random/uuid)
+    [ -z "$uuid" ] && uuid=$(printf "%X" $RANDOM$(date +%M%S)$$)
+    uuid=${uuid%%-*}
+    [ $# -eq 0 ] && echo ${uuid}-${ERLANG_NODE}
+    [ $# -eq 1 ] && echo ${uuid}-${1}-${ERLANG_NODE}
+    [ $# -eq 2 ] && echo ${uuid}-${1}@${2}
 }
 
 # stop epmd if there is no other running node
