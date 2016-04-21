@@ -327,7 +327,8 @@ etop()
 
 ping()
 {
-    if [ "$1" = "${1%.*}" ] ; then
+    [ -z "$1" ] && PEER=${ERLANG_NODE} || PEER=$1
+    if [ "$PEER" = "${PEER%.*}" ] ; then
         PING_NAME="-sname"
         PING_NODE=$(hostname -s)
     else
@@ -338,7 +339,7 @@ ping()
     $EXEC_CMD "$ERL \
       $PING_NAME $NID \
       -hidden $KERNEL_OPTS $ERLANG_OPTS \
-      -eval 'io:format(\"~p~n\",[net_adm:ping('\"'\"'$1'\"'\"')])' \
+      -eval 'io:format(\"~p~n\",[net_adm:ping('\"'\"'$PEER'\"'\"')])' \
       -s erlang halt -output text -noinput"
 }
 
@@ -446,7 +447,7 @@ case "${ARGS[0]}" in
     'live') live;;
     'iexlive') iexlive;;
     'foreground') foreground;;
-    'ping'*) ping ${ARGS# ping};;
+    'ping'*) ping ${ARGS[1]};;
     'etop') etop;;
     'started') wait_for_status 0 30 2;; # wait 30x2s before timeout
     'stopped') wait_for_status 3 15 2 && stop_epmd;; # wait 15x2s before timeout
