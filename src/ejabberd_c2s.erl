@@ -1036,32 +1036,52 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
 		      send_element(StateData, Err),
 		      fsm_next_state(wait_for_bind, StateData);
 		  {accept_resource, R2} ->
-                        JID = jid:make(U, StateData#state.server, R2),
-                        StateData2 =
-                            StateData#state{resource = R2, jid = JID},
-                        case open_session(StateData2) of
-                            {ok, StateData3} ->
-                                Res =
-                                    IQ#iq{
-                                      type = result,
-                                      sub_el =
-                                      [#xmlel{name = <<"bind">>,
-                                              attrs = [{<<"xmlns">>, ?NS_BIND}],
-                                              children =
-                                              [#xmlel{name = <<"jid">>,
-                                                      attrs = [],
-                                                      children =
-                                                      [{xmlcdata,
-                                                        jid:to_string(JID)}]}]}]},
-                                send_element(StateData3, jlib:iq_to_xml(Res)),
-                                fsm_next_state_pack(
-                                  session_established,
-                                  StateData3);
-                            {error, Error} ->
-                                Err = jlib:make_error_reply(El, Error),
-                                send_element(StateData, Err),
-                                fsm_next_state(wait_for_bind, StateData)
-                        end
+              JID = jid:make(U, StateData#state.server, R2),
+              StateData2 = StateData#state{resource = R2, jid = JID},
+              case acl:match_rule(StateData2#state.server, StateData2#state.access, JID) of
+                  allow ->
+                      ?INFO_MSG("(~w) Opened session for ~s",
+                                [StateData2#state.socket, jid:to_string(JID)]),
+                      Res = IQ#iq{type = result,
+                                  sub_el =
+                                  [#xmlel{name = <<"bind">>,
+                                          attrs = [{<<"xmlns">>, ?NS_BIND}],
+                                          children =
+                                          [#xmlel{name = <<"jid">>,
+                                                  attrs = [],
+                                                  children =
+                                                  [{xmlcdata, jid:to_string(JID)}]}]}]},
+                      send_element(StateData2, jlib:iq_to_xml(Res)),
+                      change_shaper(StateData2, JID),
+                      {Fs, Ts} = ejabberd_hooks:run_fold(roster_get_subscription_lists,
+                                                         StateData2#state.server,
+                                                         {[], []},
+                                                         [U, StateData2#state.server]),
+                      LJID = jid:tolower(jid:remove_resource(JID)),
+                      Fs1 = [LJID | Fs],
+                      Ts1 = [LJID | Ts],
+                      PrivList = ejabberd_hooks:run_fold(privacy_get_user_list,
+                                                         StateData2#state.server,
+                                                         #userlist{},
+                                                         [U, StateData2#state.server]),
+                      Conn = get_conn_type(StateData2),
+                      Info = [{ip, StateData2#state.ip}, {conn, Conn},
+                              {auth_module, StateData2#state.auth_module}],
+                      ejabberd_sm:open_session(StateData2#state.sid, U,
+                                               StateData2#state.server, R2, Info),
+                      StateData3 = StateData2#state{conn = Conn,
+                                                    pres_f = ?SETS:from_list(Fs1),
+                                                    pres_t = ?SETS:from_list(Ts1),
+                                                    privacy_list = PrivList},
+                      fsm_next_state_pack(session_established, StateData3);
+                  _ ->
+                      ejabberd_hooks:run(forbidden_session_hook, StateData2#state.server, [JID]),
+                      ?INFO_MSG("(~w) Forbidden session for ~s",
+                                [StateData2#state.socket, jid:to_string(JID)]),
+                      Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
+                      send_element(StateData, Err),
+                      fsm_next_state(wait_for_bind, StateData)
+              end
 		end
 	  end;
 	_ ->
@@ -1089,52 +1109,6 @@ wait_for_bind(closed, StateData) ->
     {stop, normal, StateData};
 wait_for_bind(stop, StateData) ->
     {stop, normal, StateData}.
-
-open_session(StateData) ->
-    U = StateData#state.user,
-    R = StateData#state.resource,
-    JID = StateData#state.jid,
-    Lang = StateData#state.lang,
-    case acl:match_rule(StateData#state.server,
-                        StateData#state.access, JID) of
-        allow ->
-            ?INFO_MSG("(~w) Opened session for ~s",
-                      [StateData#state.socket, jid:to_string(JID)]),
-            change_shaper(StateData, JID),
-            {Fs, Ts} = ejabberd_hooks:run_fold(
-                         roster_get_subscription_lists,
-                         StateData#state.server,
-                         {[], []},
-                         [U, StateData#state.server]),
-            LJID = jid:tolower(jid:remove_resource(JID)),
-            Fs1 = [LJID | Fs],
-            Ts1 = [LJID | Ts],
-            PrivList =
-                ejabberd_hooks:run_fold(
-                  privacy_get_user_list,
-                  StateData#state.server,
-                  #userlist{},
-                  [U, StateData#state.server]),
-            Conn = get_conn_type(StateData),
-            Info = [{ip, StateData#state.ip}, {conn, Conn},
-                    {auth_module, StateData#state.auth_module}],
-            ejabberd_sm:open_session(
-              StateData#state.sid, U, StateData#state.server, R, Info),
-            UpdatedStateData =
-                StateData#state{
-                  conn = Conn,
-                  pres_f = ?SETS:from_list(Fs1),
-                  pres_t = ?SETS:from_list(Ts1),
-                  privacy_list = PrivList},
-            {ok, UpdatedStateData};
-        _ ->
-            ejabberd_hooks:run(forbidden_session_hook,
-                               StateData#state.server, [JID]),
-            ?INFO_MSG("(~w) Forbidden session for ~s",
-                      [StateData#state.socket, jid:to_string(JID)]),
-	    Txt = <<"Denied by ACL">>,
-            {error, ?ERRT_NOT_ALLOWED(Lang, Txt)}
-    end.
 
 session_established({xmlstreamelement, #xmlel{name = Name} = El}, StateData)
     when ?IS_STREAM_MGMT_TAG(Name) ->
