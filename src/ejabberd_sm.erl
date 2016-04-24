@@ -518,16 +518,16 @@ do_route(From, To, #xmlel{} = Packet) ->
 		  <<"message">> ->
 		      case fxml:get_attr_s(<<"type">>, Attrs) of
 			<<"chat">> -> route_message(From, To, Packet, chat);
-			<<"normal">> -> route_message(From, To, Packet, normal);
-			<<"">> -> route_message(From, To, Packet, normal);
 			<<"headline">> -> ok;
 			<<"error">> -> ok;
-			_ ->
+			<<"groupchat">> ->
 			    ErrTxt = <<"User session not found">>,
 			    Err = jlib:make_error_reply(
 				    Packet,
 				    ?ERRT_SERVICE_UNAVAILABLE(Lang, ErrTxt)),
-			    ejabberd_router:route(To, From, Err)
+			    ejabberd_router:route(To, From, Err);
+			_ ->
+			    route_message(From, To, Packet, normal)
 		      end;
 		  <<"iq">> ->
 		      case fxml:get_attr_s(<<"type">>, Attrs) of
