@@ -500,7 +500,7 @@ do_route(From, To, #xmlel{} = Packet) ->
 		  <<"headline">> -> route_message(From, To, Packet, headline);
 		  <<"error">> -> ok;
 		  <<"groupchat">> ->
-		      ErrTxt = <<"Incorrect message type">>,
+		      ErrTxt = <<"User session not found">>,
 		      Err = jlib:make_error_reply(
 			      Packet, ?ERRT_SERVICE_UNAVAILABLE(Lang, ErrTxt)),
 		      ejabberd_router:route(To, From, Err);
@@ -523,7 +523,7 @@ do_route(From, To, #xmlel{} = Packet) ->
 			<<"headline">> -> ok;
 			<<"error">> -> ok;
 			_ ->
-			    ErrTxt = <<"Incorrect message type">>,
+			    ErrTxt = <<"User session not found">>,
 			    Err = jlib:make_error_reply(
 				    Packet,
 				    ?ERRT_SERVICE_UNAVAILABLE(Lang, ErrTxt)),
