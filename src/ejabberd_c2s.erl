@@ -1613,7 +1613,6 @@ handle_info({route, From, To,
                                                    <<"error">> -> ok;
                                                    <<"groupchat">> -> ok;
                                                    <<"headline">> -> ok;
-                                                   <<"result">> -> ok;
                                                    _ ->
                                                        Err =
                                                            jlib:make_error_reply(Packet,
