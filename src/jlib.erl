@@ -530,22 +530,13 @@ rsm_encode_count(Count, Arr) ->
 
 -spec is_standalone_chat_state(xmlel()) -> boolean().
 
-is_standalone_chat_state(#xmlel{name = <<"message">>} = El) ->
+is_standalone_chat_state(#xmlel{name = <<"message">>, children = Els}) ->
     ChatStates = [<<"active">>, <<"inactive">>, <<"gone">>, <<"composing">>,
 		  <<"paused">>],
-    Stripped =
-	lists:foldl(fun(ChatState, AccEl) ->
-			    fxml:remove_subtags(AccEl, ChatState,
-					       {<<"xmlns">>, ?NS_CHATSTATES})
-		    end, El, ChatStates),
-    case Stripped of
-      #xmlel{children = [#xmlel{name = <<"thread">>}]} ->
-	  true;
-      #xmlel{children = []} ->
-	  true;
-      _ ->
-	  false
-    end;
+    Stripped = [El || #xmlel{name = Name} = El <- Els,
+		      not lists:member(Name, ChatStates),
+		      Name /= <<"thread">>],
+    Stripped == [];
 is_standalone_chat_state(_El) -> false.
 
 -spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp())
