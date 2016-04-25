@@ -10,7 +10,6 @@ FIREWALL_WINDOW=""
 ERLANG_NODE=ejabberd@localhost
 
 # define default environment variables
-SCRIPT_DIR=`cd ${0%/*} && pwd`
 ERL={{erl}}
 IEX={{bindir}}/iex
 EPMD={{bindir}}/epmd
@@ -83,18 +82,9 @@ if [ "$EJABBERD_DOC_PATH" = "" ] ; then
 fi
 if [ "$ERLANG_NODE_ARG" != "" ] ; then
     ERLANG_NODE=$ERLANG_NODE_ARG
-    NODE=${ERLANG_NODE%@*}
 fi
-if [ "{{release}}" != "true" ] ; then
-    if [ "$EJABBERDDIR" = "" ] ; then
-        EJABBERDDIR={{libdir}}/ejabberd
-    fi
-    if [ "$EJABBERD_PRIV_PATH" = "" ] ; then
-        EJABBERD_PRIV_PATH=$EJABBERDDIR/priv
-    fi
-    if [ "$EJABBERD_BIN_PATH" = "" ] ; then
-        EJABBERD_BIN_PATH=$EJABBERD_PRIV_PATH/bin
-    fi
+if [ "{{release}}" != "true" -a "$EJABBERD_BIN_PATH" = "" ] ; then
+    EJABBERD_BIN_PATH={{libdir}}/ejabberd/priv/bin
 fi
 EJABBERD_LOG_PATH=$LOGS_DIR/ejabberd.log
 DATETIME=`date "+%Y%m%d-%H%M%S"`
@@ -141,8 +131,8 @@ fi
 [ -z "$date" ] || EJABBERD_OPTS="${EJABBERD_OPTS} log_rotate_date '$date'"
 [ -z "$EJABBERD_OPTS" ] || EJABBERD_OPTS="-ejabberd ${EJABBERD_OPTS}"
 
-[ -d $SPOOL_DIR ] || $EXEC_CMD "mkdir -p $SPOOL_DIR"
-cd $SPOOL_DIR
+[ -d "$SPOOL_DIR" ] || $EXEC_CMD "mkdir -p $SPOOL_DIR"
+cd "$SPOOL_DIR"
 
 # export global variables
 export EJABBERD_CONFIG_PATH
@@ -396,13 +386,13 @@ uid()
 # stop epmd if there is no other running node
 stop_epmd()
 {
-    $EPMD -names 2>/dev/null | grep -q name || $EPMD -kill >/dev/null
+    "$EPMD" -names 2>/dev/null | grep -q name || "$EPMD" -kill >/dev/null
 }
 
 # make sure node not already running and node name unregistered
 check_start()
 {
-    $EPMD -names 2>/dev/null | grep -q " ${ERLANG_NODE%@*} " && {
+    "$EPMD" -names 2>/dev/null | grep -q " ${ERLANG_NODE%@*} " && {
         ps ux | grep -v grep | grep -q " $ERLANG_NODE " && {
             echo "ERROR: The ejabberd node '$ERLANG_NODE' is already running."
             exit 4
@@ -413,7 +403,7 @@ check_start()
                 echo "Shutdown all other erlang nodes, and call 'epmd -kill'."
                 exit 5
             } || {
-                $EPMD -kill >/dev/null
+                "$EPMD" -kill >/dev/null
             }
         }
     }
