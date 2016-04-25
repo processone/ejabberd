@@ -254,10 +254,12 @@ init([ServerHost, Opts]) ->
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, ?MAXITEMS),
     MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts,
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, undefined),
-    DefaultNodeCfg = gen_mod:get_opt(default_node_config, Opts,
-	    fun(A) when is_list(A) -> filter_node_options(A) end, []),
     pubsub_index:init(Host, ServerHost, Opts),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
+    DefaultModule = plugin(Host, hd(Plugins)),
+    BaseOptions = DefaultModule:options(),
+    DefaultNodeCfg = gen_mod:get_opt(default_node_config, Opts,
+	    fun(A) when is_list(A) -> filter_node_options(A, BaseOptions) end, []),
     mnesia:create_table(pubsub_last_item,
 	[{ram_copies, [node()]},
 	    {attributes, record_info(fields, pubsub_last_item)}]),
@@ -3680,11 +3682,11 @@ node_plugin_options(Host, Type) ->
 	Result ->
 	    Result
     end.
-filter_node_options(Options) ->
+filter_node_options(Options, BaseOptions) ->
     lists:foldl(fun({Key, Val}, Acc) ->
 		DefaultValue = proplists:get_value(Key, Options, Val),
 		[{Key, DefaultValue}|Acc]
-	end, [], node_flat:options()).
+	end, [], BaseOptions).
 
 node_owners_action(Host, Type, Nidx, []) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
