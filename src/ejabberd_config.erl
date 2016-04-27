@@ -34,8 +34,8 @@
          get_vh_by_auth_method/1, is_file_readable/1,
          get_version/0, get_myhosts/0, get_mylang/0,
          prepare_opt_val/4, convert_table_to_binary/5,
-         transform_options/1, collect_options/1,
-         convert_to_yaml/1, convert_to_yaml/2,
+         transform_options/1, collect_options/1, default_db/2,
+         convert_to_yaml/1, convert_to_yaml/2, v_db/2,
          env_binary_to_list/2, opt_type/1, may_hide_data/1]).
 
 -export([start/2]).
@@ -674,7 +674,16 @@ rename_option(Option) ->
 
 change_val(auth_method, Val) ->
     prepare_opt_val(auth_method, Val,
-		    ejabberd_auth:opt_type(auth_method), [mnesia]);
+		    fun(V) ->
+			    L = if is_list(V) -> V;
+				   true -> [V]
+				end,
+			    lists:map(
+			      fun(odbc) -> sql;
+				 (internal) -> mnesia;
+				 (A) when is_atom(A) -> A
+			      end, L)
+		    end, [mnesia]);
 change_val(_Opt, Val) ->
     Val.
 
@@ -806,9 +815,57 @@ get_option(Opt, F, Default) ->
             end
     end.
 
+init_module_db_table(Modules) ->
+    catch ets:new(module_db, [named_table, public, bag]),
+    %% Dirty hack for mod_pubsub
+    ets:insert(module_db, {mod_pubsub, mnesia}),
+    ets:insert(module_db, {mod_pubsub, sql}),
+    lists:foreach(
+      fun(M) ->
+	      case re:split(atom_to_list(M), "_", [{return, list}]) of
+		  [_] ->
+		      ok;
+		  Parts ->
+		      [Suffix|T] = lists:reverse(Parts),
+		      BareMod = string:join(lists:reverse(T), "_"),
+		      ets:insert(module_db, {list_to_atom(BareMod),
+					     list_to_atom(Suffix)})
+	      end
+      end, Modules).
+
+-spec v_db(module(), atom()) -> atom().
+
+v_db(Mod, internal) -> v_db(Mod, mnesia);
+v_db(Mod, odbc) -> v_db(Mod, sql);
+v_db(Mod, Type) ->
+    case ets:match_object(module_db, {Mod, Type}) of
+	[_|_] -> Type;
+	[] -> erlang:error(badarg)
+    end.
+
+-spec default_db(binary(), module()) -> atom().
+
+default_db(Host, Module) ->
+    case ejabberd_config:get_option(
+	   {default_db, Host}, fun(T) when is_atom(T) -> T end) of
+	undefined ->
+	    mnesia;
+	DBType ->
+	    try
+		v_db(Module, DBType)
+	    catch error:badarg ->
+		    ?WARNING_MSG("Module '~s' doesn't support database '~s' "
+				 "defined in option 'default_db', using "
+				 "'mnesia' as fallback", [Module, DBType]),
+		    mnesia
+	    end
+    end.
+
 get_modules_with_options() ->
     {ok, Mods} = application:get_key(ejabberd, modules),
     ExtMods = [Name || {Name, _Details} <- ext_mod:installed()],
+    AllMods = [?MODULE|ExtMods++Mods],
+    init_module_db_table(AllMods),
     lists:foldl(
       fun(Mod, D) ->
 	      case catch Mod:opt_type('') of
@@ -820,7 +877,7 @@ get_modules_with_options() ->
 		  {'EXIT', {undef, _}} ->
 		      D
 	      end
-      end, dict:new(), [?MODULE|ExtMods++Mods]).
+      end, dict:new(), AllMods).
 
 validate_opts(#state{opts = Opts} = State) ->
     ModOpts = get_modules_with_options(),

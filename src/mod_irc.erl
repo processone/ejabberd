@@ -1253,7 +1253,7 @@ import(LServer, DBType, Data) ->
 
 mod_opt_type(access) ->
     fun (A) when is_atom(A) -> A end;
-mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default_encoding) ->
     fun iolist_to_binary/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;

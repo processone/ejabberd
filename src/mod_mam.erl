@@ -1017,12 +1017,7 @@ mod_opt_type(cache_life_time) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(cache_size) ->
     fun (I) when is_integer(I), I > 0 -> I end;
-mod_opt_type(db_type) ->
-    fun(sql) -> sql;
-       (odbc) -> sql;
-       (internal) -> mnesia;
-       (mnesia) -> mnesia
-    end;
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default) ->
     fun (always) -> always;
 	(never) -> never;

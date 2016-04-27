@@ -428,7 +428,7 @@ auth_modules() ->
 %% Return the list of authenticated modules for a given host
 auth_modules(Server) ->
     LServer = jid:nameprep(Server),
-    Default = gen_mod:default_db(LServer),
+    Default = ejabberd_config:default_db(LServer, ?MODULE),
     Methods = ejabberd_config:get_option(
                 {auth_method, LServer}, opt_type(auth_method), [Default]),
     [jlib:binary_to_atom(<<"ejabberd_auth_",
@@ -448,15 +448,9 @@ import(Server, riak, Passwd) ->
 import(_, _, _) ->
     pass.
 
--spec v_auth_method(atom()) -> atom().
-
-v_auth_method(odbc) -> sql;
-v_auth_method(internal) -> mnesia;
-v_auth_method(A) when is_atom(A) -> A.
-
 opt_type(auth_method) ->
     fun (V) when is_list(V) ->
-	    lists:map(fun v_auth_method/1, V);
-	(V) -> [v_auth_method(V)]
+	    lists:map(fun(M) -> ejabberd_config:v_db(?MODULE, M) end, V);
+	(V) -> [ejabberd_config:v_db(?MODULE, V)]
     end;
 opt_type(_) -> [auth_method].

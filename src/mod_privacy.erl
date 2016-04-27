@@ -593,6 +593,6 @@ import(LServer, DBType, Data) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
     Mod:import(LServer, Data).
 
-mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(_) -> [db_type, iqdisc].

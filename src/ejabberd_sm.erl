@@ -733,13 +733,10 @@ force_update_presence({LUser, LServer}) ->
 -spec get_sm_backend(binary()) -> module().
 
 get_sm_backend(Host) ->
-    DBType = ejabberd_config:get_option({sm_db_type, Host},
-					fun(mnesia) -> mnesia;
-					   (internal) -> mnesia;
-					   (odbc) -> sql;
-					   (sql) -> sql;
-					   (redis) -> redis
-					end, mnesia),
+    DBType = ejabberd_config:get_option(
+	       {sm_db_type, Host},
+	       fun(T) -> ejabberd_config:v_db(?MODULE, T) end,
+	       mnesia),
     list_to_atom("ejabberd_sm_" ++ atom_to_list(DBType)).
 
 -spec get_sm_backends() -> [module()].
@@ -812,11 +809,5 @@ kick_user(User, Server) ->
 make_sid() ->
     {p1_time_compat:unique_timestamp(), self()}.
 
-opt_type(sm_db_type) ->
-    fun (mnesia) -> mnesia;
-	(internal) -> mnesia;
-	(sql) -> sql;
-	(odbc) -> sql;
-	(redis) -> redis
-    end;
+opt_type(sm_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 opt_type(_) -> [sm_db_type].
