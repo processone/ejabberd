@@ -3,10 +3,10 @@
   "cf": {:hex, :cf, "0.2.1"},
   "eredis": {:hex, :eredis, "1.0.8"},
   "erlware_commons": {:hex, :erlware_commons, "0.19.0"},
-  "esip": {:hex, :esip, "1.0.2"},
+  "esip": {:hex, :esip, "1.0.3"},
   "exrm": {:hex, :exrm, "1.0.3"},
   "ezlib": {:hex, :ezlib, "1.0.1"},
-  "fast_tls": {:hex, :fast_tls, "1.0.1"},
+  "fast_tls": {:hex, :fast_tls, "1.0.2"},
   "fast_xml": {:hex, :fast_xml, "1.1.11"},
   "fast_yaml": {:hex, :fast_yaml, "1.0.3"},
   "getopt": {:hex, :getopt, "0.8.2"},
@@ -20,7 +20,7 @@
   "p1_utils": {:hex, :p1_utils, "1.0.3"},
   "p1_xmlrpc": {:hex, :p1_xmlrpc, "1.15.1"},
   "providers": {:hex, :providers, "1.6.0"},
-  "relx": {:hex, :relx, "3.18.0"},
+  "relx": {:hex, :relx, "3.19.0"},
   "sqlite3": {:hex, :sqlite3, "1.1.5"},
   "stringprep": {:hex, :stringprep, "1.0.3"},
-  "stun": {:hex, :stun, "1.0.1"}}
+  "stun": {:hex, :stun, "1.0.2"}}
