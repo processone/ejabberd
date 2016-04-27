@@ -136,7 +136,7 @@ check_password(User, AuthzId, Server, Password, Digest,
 %%     {true, AuthModule} | false
 %% where
 %%   AuthModule = ejabberd_auth_anonymous | ejabberd_auth_external
-%%                 | ejabberd_auth_internal | ejabberd_auth_ldap
+%%                 | ejabberd_auth_mnesia | ejabberd_auth_ldap
 %%                 | ejabberd_auth_sql | ejabberd_auth_pam | ejabberd_auth_riak
 -spec check_password_with_authmodule(binary(), binary(), binary(), binary()) -> false |
                                                                       {true, atom()}.
@@ -428,38 +428,35 @@ auth_modules() ->
 %% Return the list of authenticated modules for a given host
 auth_modules(Server) ->
     LServer = jid:nameprep(Server),
-    Default = case gen_mod:default_db(LServer) of
-		  mnesia -> internal;
-		  DBType -> DBType
-	      end,
+    Default = gen_mod:default_db(LServer),
     Methods = ejabberd_config:get_option(
-                {auth_method, LServer},
-                fun(V) when is_list(V) ->
-                        true = lists:all(fun is_atom/1, V),
-                        V;
-                   (V) when is_atom(V) ->
-                        [V]
-                end, [Default]),
+                {auth_method, LServer}, opt_type(auth_method), [Default]),
     [jlib:binary_to_atom(<<"ejabberd_auth_",
                            (jlib:atom_to_binary(M))/binary>>)
      || M <- Methods].
 
 export(Server) ->
-    ejabberd_auth_internal:export(Server).
+    ejabberd_auth_mnesia:export(Server).
 
 import(Server) ->
-    ejabberd_auth_internal:import(Server).
+    ejabberd_auth_mnesia:import(Server).
 
 import(Server, mnesia, Passwd) ->
-    ejabberd_auth_internal:import(Server, mnesia, Passwd);
+    ejabberd_auth_mnesia:import(Server, mnesia, Passwd);
 import(Server, riak, Passwd) ->
     ejabberd_auth_riak:import(Server, riak, Passwd);
 import(_, _, _) ->
     pass.
 
+-spec v_auth_method(atom()) -> atom().
+
+v_auth_method(odbc) -> sql;
+v_auth_method(internal) -> mnesia;
+v_auth_method(A) when is_atom(A) -> A.
+
 opt_type(auth_method) ->
     fun (V) when is_list(V) ->
-	    true = lists:all(fun is_atom/1, V), V;
-	(V) when is_atom(V) -> [V]
+	    lists:map(fun v_auth_method/1, V);
+	(V) -> [v_auth_method(V)]
     end;
 opt_type(_) -> [auth_method].

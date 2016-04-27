@@ -651,9 +651,9 @@ process_host_term(Term, Host, State, Action) ->
         {hosts, _} ->
             State;
 	{Opt, Val} when Action == set ->
-	    set_option({rename_option(Opt), Host}, Val, State);
+	    set_option({rename_option(Opt), Host}, change_val(Opt, Val), State);
         {Opt, Val} when Action == append ->
-            append_option({rename_option(Opt), Host}, Val, State);
+            append_option({rename_option(Opt), Host}, change_val(Opt, Val), State);
         Opt ->
             ?WARNING_MSG("Ignore invalid (outdated?) option ~p", [Opt]),
             State
@@ -671,6 +671,12 @@ rename_option(Option) when is_atom(Option) ->
     end;
 rename_option(Option) ->
     Option.
+
+change_val(auth_method, Val) ->
+    prepare_opt_val(auth_method, Val,
+		    ejabberd_auth:opt_type(auth_method), [mnesia]);
+change_val(_Opt, Val) ->
+    Val.
 
 set_option(Opt, Val, State) ->
     State#state{opts = [#local_config{key = Opt, value = Val} |
@@ -842,11 +848,25 @@ validate_opts(#state{opts = Opts} = State) ->
 
 -spec get_vh_by_auth_method(atom()) -> [binary()].
 
-%% Return the list of hosts handled by a given module
+%% Return the list of hosts with a given auth method
 get_vh_by_auth_method(AuthMethod) ->
-    mnesia:dirty_select(local_config,
-			[{#local_config{key = {auth_method, '$1'},
-					value=AuthMethod},[],['$1']}]).
+    Cfgs = mnesia:dirty_match_object(local_config,
+				     #local_config{key = {auth_method, '_'},
+						   _ = '_'}),
+    lists:flatmap(
+      fun(#local_config{key = {auth_method, Host}, value = M}) ->
+	      Methods = if not is_list(M) -> [M];
+			   true -> M
+			end,
+	      case lists:member(AuthMethod, Methods) of
+		  true when Host == global ->
+		      get_myhosts();
+		  true ->
+		      [Host];
+		  false ->
+		      []
+	      end
+      end, Cfgs).
 
 %% @spec (Path::string()) -> true | false
 is_file_readable(Path) ->
