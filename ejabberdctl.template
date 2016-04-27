@@ -212,7 +212,7 @@ iexdebug()
          --erl `shell_escape \"$ERLANG_OPTS\"` \
          --erl `shell_escape \"${ARGS[@]}\"` \
          --erl `shell_escape_str \"$@\"`"
-    $EXEC_CMD "$CMD"
+    $EXEC_CMD "ERL_PATH=$\"$ERL\" $CMD"
 }
 
 # start interactive server
@@ -242,7 +242,7 @@ iexlive()
          --erl `shell_escape \"$ERLANG_OPTS\"` \
          --erl `shell_escape \"${ARGS[@]}\"` \
          --erl `shell_escape_str \"$@\"`"
-    $EXEC_CMD "$CMD"
+    $EXEC_CMD "ERL_PATH=\"$ERL\" $CMD"
 }
 
 # start server in the foreground
