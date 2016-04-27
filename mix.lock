@@ -6,7 +6,7 @@
   "esip": {:hex, :esip, "1.0.3"},
   "exrm": {:hex, :exrm, "1.0.3"},
   "ezlib": {:hex, :ezlib, "1.0.1"},
-  "fast_tls": {:hex, :fast_tls, "1.0.2"},
+  "fast_tls": {:hex, :fast_tls, "1.0.3"},
   "fast_xml": {:hex, :fast_xml, "1.1.11"},
   "fast_yaml": {:hex, :fast_yaml, "1.0.3"},
   "getopt": {:hex, :getopt, "0.8.2"},
