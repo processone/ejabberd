@@ -753,13 +753,11 @@ prepare_opt_val(Opt, Val, F, Default) ->
           end,
     case Res of
         {'EXIT', _} ->
-            ?INFO_MSG("Configuration problem:~n"
-                      "** Option: ~s~n"
-                      "** Invalid value: ~s~n"
-                      "** Using as fallback: ~s",
-                      [format_term(Opt),
-                       format_term(Val),
-                       format_term(Default)]),
+	    ?WARNING_MSG("incorrect value '~s' of option '~s', "
+			 "using '~s' as fallback",
+			 [format_term(Val),
+			  format_term(Opt),
+			  format_term(Default)]),
             Default;
         _ ->
             Res
