@@ -2103,6 +2103,9 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    send_items(Host, Node, Nidx, Type, Options, Subscriber, last),
+	    ServerHost = serverhost(Host),
+	    ejabberd_hooks:run(pubsub_subscribe_node, ServerHost,
+		[ServerHost, Host, Node, Subscriber, SubId]),
 	    case Result of
 		default -> {result, Reply({subscribed, SubId})};
 		_ -> {result, Result}
@@ -2149,7 +2152,11 @@ unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
 	    node_call(Host, Type, unsubscribe_node, [Nidx, From, Subscriber, SubId])
     end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, default}} -> {result, []};
+	{result, {_, default}} ->
+	    ServerHost = serverhost(Host),
+	    ejabberd_hooks:run(pubsub_unsubscribe_node, ServerHost,
+		[ServerHost, Host, Node, Subscriber, SubId]),
+	    {result, []};
 	%      {result, {_, Result}} -> {result, Result};
 	Error -> Error
     end.
