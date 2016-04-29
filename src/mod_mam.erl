@@ -33,7 +33,7 @@
 %% API
 -export([start/2, stop/1]).
 
--export([user_send_packet/4, user_receive_packet/5,
+-export([user_send_packet/4, user_send_packet_strip_tag/4, user_receive_packet/5,
 	 process_iq_v0_2/3, process_iq_v0_3/3, disco_sm_features/5,
 	 remove_user/2, remove_room/3, mod_opt_type/1, muc_process_iq/4,
 	 muc_filter_message/5, message_is_archived/5, delete_old_messages/2,
@@ -89,9 +89,11 @@ start(Host, Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_MAM_1, ?MODULE, process_iq_v0_3, IQDisc),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
-		       user_receive_packet, 500),
+		       user_receive_packet, 88),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-		       user_send_packet, 500),
+		       user_send_packet, 88),
+    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
+               user_send_packet_strip_tag, 500),
     ejabberd_hooks:add(muc_filter_message, Host, ?MODULE,
 		       muc_filter_message, 50),
     ejabberd_hooks:add(muc_process_iq, Host, ?MODULE,
@@ -128,9 +130,11 @@ init_cache(Opts) ->
 
 stop(Host) ->
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-			  user_send_packet, 500),
+			  user_send_packet, 88),
     ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE,
-			  user_receive_packet, 500),
+			  user_receive_packet, 88),
+    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
+              user_send_packet_strip_tag, 500),
     ejabberd_hooks:delete(muc_filter_message, Host, ?MODULE,
 			  muc_filter_message, 50),
     ejabberd_hooks:delete(muc_process_iq, Host, ?MODULE,
@@ -205,12 +209,29 @@ user_send_packet(Pkt, C2SState, JID, Peer) ->
     case should_archive(Pkt, LServer) of
 	true ->
 	    NewPkt = strip_my_archived_tag(Pkt, LServer),
-	    store_msg(C2SState, jlib:replace_from_to(JID, Peer, NewPkt),
-		      LUser, LServer, Peer, send),
-	    NewPkt;
+	    case store_msg(C2SState, jlib:replace_from_to(JID, Peer, NewPkt),
+		      LUser, LServer, Peer, send) of
+              {ok, ID} ->
+      		    Archived = #xmlel{name = <<"archived">>,
+      				      attrs = [{<<"by">>, LServer},
+      					       {<<"xmlns">>, ?NS_MAM_TMP},
+      					       {<<"id">>, ID}]},
+      		    StanzaID = #xmlel{name = <<"stanza-id">>,
+      				      attrs = [{<<"by">>, LServer},
+      					       {<<"xmlns">>, ?NS_SID_0},
+      					       {<<"id">>, ID}]},
+                          NewEls = [Archived, StanzaID|NewPkt#xmlel.children],
+      		    NewPkt#xmlel{children = NewEls};
+            _ ->
+                NewPkt
+        end;
 	false ->
 	    Pkt
     end.
+
+user_send_packet_strip_tag(Pkt, _C2SState, JID, _Peer) ->
+    LServer = JID#jid.lserver,
+    strip_my_archived_tag(Pkt, LServer).
 
 muc_filter_message(Pkt, #state{config = Config} = MUCState,
 		   RoomJID, From, FromNick) ->
