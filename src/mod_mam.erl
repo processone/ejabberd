@@ -812,9 +812,9 @@ select(_LServer, JidRequestor, JidArchive, Start, End, _With, RSM,
 	_ ->
 	    {Msgs, true, L}
     end;
-select(LServer, From, From, Start, End, With, RSM, MsgType) ->
+select(LServer, From, To, Start, End, With, RSM, MsgType) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:select(LServer, From, From, Start, End, With, RSM, MsgType).
+    Mod:select(LServer, From, To, Start, End, With, RSM, MsgType).
 
 msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
 	  MsgType, JidRequestor, #jid{lserver = LServer} = JidArchive) ->
