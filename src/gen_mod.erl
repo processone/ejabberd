@@ -301,7 +301,7 @@ validate_opts(Module, Opts) ->
 db_type(Opts, Module) when is_list(Opts) ->
     db_type(global, Opts, Module);
 db_type(Host, Module) when is_atom(Module) ->
-    case Module:mod_opt_type(db_type) of
+    case catch Module:mod_opt_type(db_type) of
 	F when is_function(F) ->
 	    case get_module_opt(Host, Module, db_type, F) of
 		undefined -> ejabberd_config:default_db(Host, Module);
@@ -314,7 +314,7 @@ db_type(Host, Module) when is_atom(Module) ->
 -spec db_type(binary(), opts(), module()) -> db_type().
 
 db_type(Host, Opts, Module) ->
-    case Module:mod_opt_type(db_type) of
+    case catch Module:mod_opt_type(db_type) of
 	F when is_function(F) ->
 	    case get_opt(db_type, Opts, F) of
 		undefined -> ejabberd_config:default_db(Host, Module);
