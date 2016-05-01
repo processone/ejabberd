@@ -52,6 +52,7 @@
 
 -callback start(binary(), opts()) -> any().
 -callback stop(binary()) -> any().
+-callback mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
 
 -export_type([opts/0]).
 -export_type([db_type/0]).
