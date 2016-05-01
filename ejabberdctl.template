@@ -13,7 +13,7 @@ ERLANG_NODE=ejabberd@localhost
 SCRIPT_DIR=`cd ${0%/*} && pwd`
 ERL={{erl}}
 IEX={{bindir}}/iex
-EPMD={{bindir}}/epmd
+EPMD={{epmd}}
 INSTALLUSER={{installuser}}
 ERL_LIBS={{libdir}}
 

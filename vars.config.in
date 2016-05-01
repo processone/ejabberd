@@ -40,6 +40,7 @@
 {sysconfdir, "{{release_dir}}/etc"}.
 {installuser, "@INSTALLUSER@"}.
 {erl, "{{release_dir}}/{{erts_vsn}}/bin/erl"}.
+{epmd, "{{release_dir}}/{{erts_vsn}}/bin/epmd"}.
 {localstatedir, "{{release_dir}}/var"}.
 {libdir, "{{release_dir}}/lib"}.
 {docdir, "{{release_dir}}/doc"}.
