@@ -184,7 +184,7 @@ install: all copy-files
 		-e "s*{{sysconfdir}}*@sysconfdir@*" \
 		-e "s*{{localstatedir}}*@localstatedir@*" \
 		-e "s*{{docdir}}*@docdir@*" \
-		-e "s*{{erl}}*@ERL@*" ejabberdctl.template \
+		-e "s*{{erl}}*@ERL@*" \
 		-e "s*{{epmd}}*@EPMD@*" ejabberdctl.template \
 		> ejabberdctl.example
 	[ -f $(ETCDIR)/ejabberdctl.cfg ] \
