@@ -279,8 +279,5 @@ list(User, Server) ->
     Mod:list(User, Server).
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
-mod_opt_type(db_type) ->
-    fun(internal) -> mnesia;
-       (mnesia) -> mnesia
-    end;
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(_) -> [db_type, iqdisc].

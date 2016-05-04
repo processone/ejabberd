@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
-%%% File    : ejabberd_odbc.erl
+%%% File    : ejabberd_sql.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Serve ODBC connection
+%%% Purpose : Serve SQL connection
 %%% Created :  8 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

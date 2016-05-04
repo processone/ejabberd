@@ -303,6 +303,8 @@ db_tests(DB) when DB == mnesia; DB == redis ->
       [client_state_master, client_state_slave]},
      {test_muc, [parallel],
       [muc_master, muc_slave]},
+     {test_muc_mam, [parallel],
+      [muc_mam_master, muc_mam_slave]},
      {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_vcard_xupdate, [parallel],
@@ -343,6 +345,8 @@ db_tests(_) ->
       [mam_new_master, mam_new_slave]},
      {test_muc, [parallel],
       [muc_master, muc_slave]},
+     {test_muc_mam, [parallel],
+      [muc_mam_master, muc_mam_slave]},
      {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_vcard_xupdate, [parallel],
@@ -1187,6 +1191,92 @@ proxy65_slave(Config) ->
     Socks5 = socks5_connect(StreamHost, {SID, Peer, MyJID}),
     wait_for_master(Config),
     socks5_recv(Socks5, Data),
+    disconnect(Config).
+
+send_messages_to_room(Config, Range) ->
+    MyNick = ?config(master_nick, Config),
+    Room = muc_room_jid(Config),
+    MyNickJID = jid:replace_resource(Room, MyNick),
+    lists:foreach(
+      fun(N) ->
+              Text = #text{data = integer_to_binary(N)},
+              I = send(Config, #message{to = Room, body = [Text],
+					type = groupchat}),
+	      ?recv1(#message{from = MyNickJID, id = I,
+			      type = groupchat,
+			      body = [Text]})
+      end, Range).
+
+retrieve_messages_from_room_via_mam(Config, Range) ->
+    MyNick = ?config(master_nick, Config),
+    Room = muc_room_jid(Config),
+    MyNickJID = jid:replace_resource(Room, MyNick),
+    QID = randoms:get_string(),
+    I = send(Config, #iq{type = set, to = Room,
+			 sub_els = [#mam_query{xmlns = ?NS_MAM_1, id = QID}]}),
+    lists:foreach(
+      fun(N) ->
+	      Text = #text{data = integer_to_binary(N)},
+	      ?recv1(#message{
+			to = MyJID, from = Room,
+			sub_els =
+			    [#mam_result{
+				xmlns = ?NS_MAM_1,
+				queryid = QID,
+				sub_els =
+				    [#forwarded{
+					delay = #delay{},
+					sub_els = [#message{
+						      from = MyNickJID,
+						      type = groupchat,
+						      body = [Text]}]}]}]})
+      end, Range),
+    ?recv1(#iq{from = Room, id = I, type = result, sub_els = []}).
+
+muc_mam_master(Config) ->
+    MyJID = my_jid(Config),
+    MyNick = ?config(master_nick, Config),
+    Room = muc_room_jid(Config),
+    MyNickJID = jid:replace_resource(Room, MyNick),
+    %% Joining
+    send(Config, #presence{to = MyNickJID, sub_els = [#muc{}]}),
+    %% Receive self-presence
+    ?recv1(#presence{from = MyNickJID}),
+    %% MAM feature should not be advertised at this point,
+    %% because MAM is not enabled so far
+    false = is_feature_advertised(Config, ?NS_MAM_1, Room),
+    %% Fill in some history
+    send_messages_to_room(Config, lists:seq(1, 21)),
+    %% We now should be able to retrieve those via MAM, even though
+    %% MAM is disabled. However, only last 20 messages should be received.
+    retrieve_messages_from_room_via_mam(Config, lists:seq(2, 21)),
+    %% Now enable MAM for the conference
+    %% Retrieve config first
+    #iq{type = result, sub_els = [#muc_owner{config = #xdata{} = RoomCfg}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#muc_owner{}],
+                              to = Room}),
+    %% Find the MAM field in the config and enable it
+    NewFields = lists:flatmap(
+		  fun(#xdata_field{var = <<"muc#roomconfig_mam">> = Var}) ->
+			  [#xdata_field{var = Var, values = [<<"1">>]}];
+		     (_) ->
+			  []
+		  end, RoomCfg#xdata.fields),
+    NewRoomCfg = #xdata{type = submit, fields = NewFields},
+    I1 = send(Config, #iq{type = set, to = Room,
+			  sub_els = [#muc_owner{config = NewRoomCfg}]}),
+    ?recv2(#iq{type = result, id = I1},
+	   #message{from = Room, type = groupchat,
+		    sub_els = [#muc_user{status_codes = [104]}]}),
+    %% Check if MAM has been enabled
+    true = is_feature_advertised(Config, ?NS_MAM_1, Room),
+    %% We now sending some messages again
+    send_messages_to_room(Config, lists:seq(1, 5)),
+    %% And retrieve them via MAM again.
+    retrieve_messages_from_room_via_mam(Config, lists:seq(1, 5)),
+    disconnect(Config).
+
+muc_mam_slave(Config) ->
     disconnect(Config).
 
 muc_master(Config) ->

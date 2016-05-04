@@ -812,9 +812,10 @@ select(_LServer, JidRequestor, JidArchive, Start, End, _With, RSM,
 	_ ->
 	    {Msgs, true, L}
     end;
-select(LServer, From, From, Start, End, With, RSM, MsgType) ->
+select(LServer, JidRequestor, JidArchive, Start, End, With, RSM, MsgType) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:select(LServer, From, From, Start, End, With, RSM, MsgType).
+    Mod:select(LServer, JidRequestor, JidArchive, Start, End, With, RSM,
+	       MsgType).
 
 msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
 	  MsgType, JidRequestor, #jid{lserver = LServer} = JidArchive) ->
@@ -1017,12 +1018,7 @@ mod_opt_type(cache_life_time) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(cache_size) ->
     fun (I) when is_integer(I), I > 0 -> I end;
-mod_opt_type(db_type) ->
-    fun(sql) -> sql;
-       (odbc) -> sql;
-       (internal) -> mnesia;
-       (mnesia) -> mnesia
-    end;
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default) ->
     fun (always) -> always;
 	(never) -> never;

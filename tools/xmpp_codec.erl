@@ -103,6 +103,8 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 	  decode_mam_fin(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
       {<<"prefs">>, <<"urn:xmpp:mam:0">>} ->
 	  decode_mam_prefs(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
+      {<<"prefs">>, <<"urn:xmpp:mam:1">>} ->
+	  decode_mam_prefs(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
       {<<"prefs">>, <<"urn:xmpp:mam:tmp">>} ->
 	  decode_mam_prefs(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
 			   _el);
@@ -116,6 +118,8 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 	  decode_mam_jid(<<"urn:xmpp:mam:tmp">>, IgnoreEls, _el);
       {<<"result">>, <<"urn:xmpp:mam:0">>} ->
 	  decode_mam_result(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
+      {<<"result">>, <<"urn:xmpp:mam:1">>} ->
+	  decode_mam_result(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
       {<<"result">>, <<"urn:xmpp:mam:tmp">>} ->
 	  decode_mam_result(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
 			    _el);
@@ -124,6 +128,8 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 			      _el);
       {<<"query">>, <<"urn:xmpp:mam:0">>} ->
 	  decode_mam_query(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
+      {<<"query">>, <<"urn:xmpp:mam:1">>} ->
+	  decode_mam_query(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
       {<<"query">>, <<"urn:xmpp:mam:tmp">>} ->
 	  decode_mam_query(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
 			   _el);
@@ -1141,14 +1147,17 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
       {<<"forwarded">>, <<"urn:xmpp:forward:0">>} -> true;
       {<<"fin">>, <<"urn:xmpp:mam:0">>} -> true;
       {<<"prefs">>, <<"urn:xmpp:mam:0">>} -> true;
+      {<<"prefs">>, <<"urn:xmpp:mam:1">>} -> true;
       {<<"prefs">>, <<"urn:xmpp:mam:tmp">>} -> true;
       {<<"always">>, <<"urn:xmpp:mam:tmp">>} -> true;
       {<<"never">>, <<"urn:xmpp:mam:tmp">>} -> true;
       {<<"jid">>, <<"urn:xmpp:mam:tmp">>} -> true;
       {<<"result">>, <<"urn:xmpp:mam:0">>} -> true;
+      {<<"result">>, <<"urn:xmpp:mam:1">>} -> true;
       {<<"result">>, <<"urn:xmpp:mam:tmp">>} -> true;
       {<<"archived">>, <<"urn:xmpp:mam:tmp">>} -> true;
       {<<"query">>, <<"urn:xmpp:mam:0">>} -> true;
+      {<<"query">>, <<"urn:xmpp:mam:1">>} -> true;
       {<<"query">>, <<"urn:xmpp:mam:tmp">>} -> true;
       {<<"with">>, <<"urn:xmpp:mam:tmp">>} -> true;
       {<<"end">>, <<"urn:xmpp:mam:tmp">>} -> true;

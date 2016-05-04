@@ -254,10 +254,12 @@ init([ServerHost, Opts]) ->
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, ?MAXITEMS),
     MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts,
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, undefined),
-    DefaultNodeCfg = gen_mod:get_opt(default_node_config, Opts,
-	    fun(A) when is_list(A) -> filter_node_options(A) end, []),
     pubsub_index:init(Host, ServerHost, Opts),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
+    DefaultModule = plugin(Host, hd(Plugins)),
+    BaseOptions = DefaultModule:options(),
+    DefaultNodeCfg = gen_mod:get_opt(default_node_config, Opts,
+	    fun(A) when is_list(A) -> filter_node_options(A, BaseOptions) end, []),
     mnesia:create_table(pubsub_last_item,
 	[{ram_copies, [node()]},
 	    {attributes, record_info(fields, pubsub_last_item)}]),
@@ -2101,6 +2103,9 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    send_items(Host, Node, Nidx, Type, Options, Subscriber, last),
+	    ServerHost = serverhost(Host),
+	    ejabberd_hooks:run(pubsub_subscribe_node, ServerHost,
+		[ServerHost, Host, Node, Subscriber, SubId]),
 	    case Result of
 		default -> {result, Reply({subscribed, SubId})};
 		_ -> {result, Result}
@@ -2147,7 +2152,11 @@ unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
 	    node_call(Host, Type, unsubscribe_node, [Nidx, From, Subscriber, SubId])
     end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, default}} -> {result, []};
+	{result, {_, default}} ->
+	    ServerHost = serverhost(Host),
+	    ejabberd_hooks:run(pubsub_unsubscribe_node, ServerHost,
+		[ServerHost, Host, Node, Subscriber, SubId]),
+	    {result, []};
 	%      {result, {_, Result}} -> {result, Result};
 	Error -> Error
     end.
@@ -3163,11 +3172,9 @@ subscription_to_string(_) -> <<"none">>.
 	Host :: mod_pubsub:host())
     -> jid()
     ).
-service_jid(Host) ->
-    case Host of
-	{U, S, _} -> {jid, U, S, <<>>, U, S, <<>>};
-	_ -> {jid, <<>>, Host, <<>>, <<>>, Host, <<>>}
-    end.
+service_jid(#jid{} = Jid) -> Jid;
+service_jid({U, S, R}) -> jid:make(U, S, R);
+service_jid(Host) -> jid:make(<<>>, Host, <<>>).
 
 %% @spec (LJID, NotifyType, Depth, NodeOptions, SubOptions) -> boolean()
 %%        LJID = jid()
@@ -3516,7 +3523,7 @@ broadcast_stanza(Host, _Node, _Nidx, _Type, NodeOptions, SubsByDepth, NotifyType
 	end, SubIDsByJID).
 
 broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
-    broadcast_stanza({LUser, LServer, LResource}, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
+    broadcast_stanza({LUser, LServer, <<>>}, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
     SenderResource = user_resource(LUser, LServer, LResource),
     case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
@@ -3680,11 +3687,11 @@ node_plugin_options(Host, Type) ->
 	Result ->
 	    Result
     end.
-filter_node_options(Options) ->
+filter_node_options(Options, BaseOptions) ->
     lists:foldl(fun({Key, Val}, Acc) ->
 		DefaultValue = proplists:get_value(Key, Options, Val),
 		[{Key, DefaultValue}|Acc]
-	end, [], node_flat:options()).
+	end, [], BaseOptions).
 
 node_owners_action(Host, Type, Nidx, []) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
@@ -4468,7 +4475,7 @@ purge_offline(Host, LJID, Node) ->
 
 mod_opt_type(access_createnode) ->
     fun (A) when is_atom(A) -> A end;
-mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(ignore_pep_from_offline) ->
     fun (A) when is_boolean(A) -> A end;

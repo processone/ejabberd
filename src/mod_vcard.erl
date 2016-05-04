@@ -596,7 +596,7 @@ import(LServer, DBType, VCard) ->
 
 mod_opt_type(allow_return_all) ->
     fun (B) when is_boolean(B) -> B end;
-mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(matches) ->

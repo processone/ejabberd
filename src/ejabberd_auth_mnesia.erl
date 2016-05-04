@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : ejabberd_auth_internal.erl
+%%% File    : ejabberd_auth_mnesia.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : Authentification via mnesia
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
@@ -23,7 +23,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(ejabberd_auth_internal).
+-module(ejabberd_auth_mnesia).
 
 -behaviour(ejabberd_config).
 

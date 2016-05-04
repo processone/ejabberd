@@ -932,7 +932,7 @@ mod_opt_type(access_create) ->
     fun (A) when is_atom(A) -> A end;
 mod_opt_type(access_persistent) ->
     fun (A) when is_atom(A) -> A end;
-mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default_room_options) ->
     fun (L) when is_list(L) -> L end;
 mod_opt_type(history_size) ->

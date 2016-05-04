@@ -1236,7 +1236,7 @@ import(LServer, DBType, R) ->
 
 mod_opt_type(access) ->
     fun (A) when is_atom(A) -> A end;
-mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(managers) ->
     fun (B) when is_list(B) -> B end;

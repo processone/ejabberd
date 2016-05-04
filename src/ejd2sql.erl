@@ -104,7 +104,7 @@ import_file(Server, FileName) ->
             LServer = jid:nameprep(Server),
             Mods = [{Mod, gen_mod:db_type(LServer, Mod)}
                     || Mod <- modules(), gen_mod:is_loaded(LServer, Mod)],
-            AuthMods = case lists:member(ejabberd_auth_internal,
+            AuthMods = case lists:member(ejabberd_auth_mnesia,
                                          ejabberd_auth:auth_modules(LServer)) of
                            true ->
                                [{ejabberd_auth, mnesia}];

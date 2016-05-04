@@ -124,9 +124,13 @@ update(#maxrate{} = State, Size) ->
 	       true -> 0
 	    end,
     NextNow = p1_time_compat:system_time(micro_seconds) + Pause * 1000,
+    Div = case NextNow - State#maxrate.lasttime of
+        0 -> 1;
+        V -> V
+    end,
     {State#maxrate{lastrate =
 		       (State#maxrate.lastrate +
-			  1000000 * Size / (NextNow - State#maxrate.lasttime))
+			  1000000 * Size / Div)
 			 / 2,
 		   lasttime = NextNow},
      Pause}.
