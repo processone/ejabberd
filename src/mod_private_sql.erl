@@ -71,12 +71,8 @@ export(_Server) ->
       fun(Host, #private_storage{usns = {LUser, LServer, XMLNS},
                                  xml = Data})
             when LServer == Host ->
-              Username = ejabberd_sql:escape(LUser),
-              LXMLNS = ejabberd_sql:escape(XMLNS),
-              SData =
-                  ejabberd_sql:escape(fxml:element_to_binary(Data)),
-              sql_queries:set_private_data_sql(Username, LXMLNS,
-                                                SData);
+              SData = fxml:element_to_binary(Data),
+              sql_queries:set_private_data_sql(LUser, XMLNS, SData);
          (_Host, _R) ->
               []
       end}].

@@ -8,6 +8,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_mam_sql).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -behaviour(mod_mam).
 
 %% API
@@ -18,6 +20,7 @@
 -include("jlib.hrl").
 -include("mod_mam.hrl").
 -include("logger.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 %%%===================================================================
 %%% API
@@ -26,13 +29,12 @@ init(_Host, _Opts) ->
     ok.
 
 remove_user(LUser, LServer) ->
-    SUser = ejabberd_sql:escape(LUser),
     ejabberd_sql:sql_query(
       LServer,
-      [<<"delete from archive where username='">>, SUser, <<"';">>]),
+      ?SQL("delete from archive where username=%(LUser)s")),
     ejabberd_sql:sql_query(
       LServer,
-      [<<"delete from archive_prefs where username='">>, SUser, <<"';">>]).
+      ?SQL("delete from archive_prefs where username=%(LUser)s")).
 
 remove_room(LServer, LName, LHost) ->
     LUser = jid:to_string({LName, LHost, <<>>}),
@@ -55,7 +57,7 @@ extended_fields() ->
 
 store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
     TSinteger = p1_time_compat:system_time(micro_seconds),
-    ID = TS = jlib:integer_to_binary(TSinteger),
+    ID = jlib:integer_to_binary(TSinteger),
     SUser = case Type of
 		chat -> LUser;
 		groupchat -> jid:to_string({LUser, LHost, <<>>})
@@ -67,18 +69,19 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
 	      jid:tolower(Peer)),
     XML = fxml:element_to_binary(Pkt),
     Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
+    SType = jlib:atom_to_binary(Type),
     case ejabberd_sql:sql_query(
-	    LServer,
-	    [<<"insert into archive (username, timestamp, "
-		    "peer, bare_peer, xml, txt, kind, nick) values (">>,
-		<<"'">>, ejabberd_sql:escape(SUser), <<"', ">>,
-		<<"'">>, TS, <<"', ">>,
-		<<"'">>, ejabberd_sql:escape(LPeer), <<"', ">>,
-		<<"'">>, ejabberd_sql:escape(BarePeer), <<"', ">>,
-		<<"'">>, ejabberd_sql:escape(XML), <<"', ">>,
-		<<"'">>, ejabberd_sql:escape(Body), <<"', ">>,
-		<<"'">>, jlib:atom_to_binary(Type), <<"', ">>,
-		<<"'">>, ejabberd_sql:escape(Nick), <<"');">>]) of
+           LServer,
+           ?SQL("insert into archive (username, timestamp,"
+                " peer, bare_peer, xml, txt, kind, nick) values ("
+		"%(SUser)s, "
+		"%(TSinteger)d, "
+		"%(LPeer)s, "
+		"%(BarePeer)s, "
+		"%(XML)s, "
+		"%(Body)s, "
+		"%(SType)s, "
+		"%(Nick)s)")) of
 	{updated, _} ->
 	    {ok, ID};
 	Err ->

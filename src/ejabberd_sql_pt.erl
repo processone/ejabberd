@@ -305,20 +305,24 @@ parse_upsert(Fields) ->
                                  "a constant string"})
                   end
           end, {[], 0}, Fields),
-    %io:format("asd ~p~n", [{Fields, Fs}]),
+    %io:format("upsert ~p~n", [{Fields, Fs}]),
     Fs.
 
+%% key | {Update}
 parse_upsert_field([$! | S], ParamPos, Loc) ->
     {Name, ParseState} = parse_upsert_field1(S, [], ParamPos, Loc),
-    {Name, true, ParseState};
+    {Name, key, ParseState};
+parse_upsert_field([$- | S], ParamPos, Loc) ->
+    {Name, ParseState} = parse_upsert_field1(S, [], ParamPos, Loc),
+    {Name, {false}, ParseState};
 parse_upsert_field(S, ParamPos, Loc) ->
     {Name, ParseState} = parse_upsert_field1(S, [], ParamPos, Loc),
-    {Name, false, ParseState}.
+    {Name, {true}, ParseState}.
 
 parse_upsert_field1([], _Acc, _ParamPos, Loc) ->
     throw({error, Loc,
            "?SQL_UPSERT fields must have the "
-           "following form: \"[!]name=value\""});
+           "following form: \"[!-]name=value\""});
 parse_upsert_field1([$= | S], Acc, ParamPos, Loc) ->
     {lists:reverse(Acc), parse(S, ParamPos, Loc)};
 parse_upsert_field1([C | S], Acc, ParamPos, Loc) ->
@@ -376,9 +380,9 @@ make_sql_upsert_generic(Table, ParseRes) ->
 make_sql_upsert_update(Table, ParseRes) ->
     WPairs =
         lists:flatmap(
-          fun({_Field, false, _ST}) ->
+          fun({_Field, {_}, _ST}) ->
                   [];
-             ({Field, true, ST}) ->
+             ({Field, key, ST}) ->
                   [ST#state{
                      'query' = [{str, Field}, {str, "="}] ++ ST#state.'query'
                     }]
@@ -386,9 +390,11 @@ make_sql_upsert_update(Table, ParseRes) ->
     Where = join_states(WPairs, " AND "),
     SPairs =
         lists:flatmap(
-          fun({_Field, true, _ST}) ->
+          fun({_Field, key, _ST}) ->
                   [];
-             ({Field, false, ST}) ->
+             ({_Field, {false}, _ST}) ->
+                  [];
+             ({Field, {true}, ST}) ->
                   [ST#state{
                      'query' = [{str, Field}, {str, "="}] ++ ST#state.'query'
                     }]
@@ -462,7 +468,7 @@ check_upsert(ParseRes, Pos) ->
     Set =
         lists:filter(
           fun({_Field, Match, _ST}) ->
-                  not Match
+                  Match /= key
           end, ParseRes),
     case Set of
         [] ->

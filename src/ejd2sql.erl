@@ -28,6 +28,7 @@
 -author('alexey@process-one.net').
 
 -include("logger.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 -export([export/2, export/3, import_file/2, import/2,
 	 import/3, delete/1]).
@@ -76,7 +77,12 @@ export(Server, Output, Module) ->
     IO = prepare_output(Output),
     lists:foreach(
       fun({Table, ConvertFun}) ->
-              export(LServer, Table, IO, ConvertFun)
+              case export(LServer, Table, IO, ConvertFun) of
+                  {atomic, ok} -> ok;
+                  {aborted, Reason} ->
+                      ?ERROR_MSG("Failed export for module ~p: ~p",
+                                 [Module, Reason])
+              end
       end, Module:export(Server)),
     close_output(Output, IO).
 
@@ -150,7 +156,8 @@ export(LServer, Table, IO, ConvertFun) ->
                               case ConvertFun(LServer, R) of
                                   [] ->
                                       Acc;
-                                  SQL ->
+                                  SQL1 ->
+                                      SQL = format_queries(SQL1),
                                       if N < (?MAX_RECORDS_PER_TRANSACTION) - 1 ->
                                               {N + 1, [SQL | SQLs]};
                                          true ->
@@ -313,3 +320,11 @@ flatten1([H|T], Acc) ->
     flatten1(T, [[H, $\n]|Acc]);
 flatten1([], Acc) ->
     Acc.
+
+format_queries(SQLs) ->
+    lists:map(
+      fun(#sql_query{} = SQL) ->
+              ejabberd_sql:sql_query_to_iolist(SQL);
+         (SQL) ->
+              SQL
+      end, SQLs).

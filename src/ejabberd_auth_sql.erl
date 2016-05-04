@@ -25,6 +25,8 @@
 
 -module(ejabberd_auth_sql).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
@@ -43,6 +45,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 -define(SALT_LENGTH, 16).
 
@@ -425,19 +428,15 @@ is_password_scram_valid(Password, Scram) ->
 
 -define(BATCH_SIZE, 1000).
 
-set_password_scram_t(Username,
+set_password_scram_t(LUser,
                      StoredKey, ServerKey, Salt, IterationCount) ->
-    sql_queries:update_t(<<"users">>,
-                          [<<"username">>,
-                           <<"password">>,
-                           <<"serverkey">>,
-                           <<"salt">>,
-                           <<"iterationcount">>],
-                          [Username, StoredKey,
-                           ServerKey, Salt,
-                           IterationCount],
-                          [<<"username='">>, Username,
-                           <<"'">>]).
+    ?SQL_UPSERT_T(
+       "users",
+       ["!username=%(LUser)s",
+        "password=%(StoredKey)s",
+        "serverkey=%(ServerKey)s",
+        "salt=%(Salt)s",
+        "iterationcount=%(IterationCount)d"]).
 
 convert_to_scram(Server) ->
     LServer = jid:nameprep(Server),
@@ -447,24 +446,24 @@ convert_to_scram(Server) ->
             {error, {incorrect_server_name, Server}};
         true ->
             F = fun () ->
+                        BatchSize = ?BATCH_SIZE,
                         case ejabberd_sql:sql_query_t(
-                               [<<"select username, password from users where "
-                                 "iterationcount=0 limit ">>,
-                                integer_to_binary(?BATCH_SIZE),
-                                <<";">>]) of
-                            {selected, [<<"username">>, <<"password">>], []} ->
+                               ?SQL("select @(username)s, @(password)s"
+                                    " from users"
+                                    " where iterationcount=0"
+                                    " limit %(BatchSize)d")) of
+                            {selected, []} ->
                                 ok;
-                            {selected, [<<"username">>, <<"password">>], Rs} ->
+                            {selected, Rs} ->
                                 lists:foreach(
-                                  fun([LUser, Password]) ->
-                                          Username = ejabberd_sql:escape(LUser),
+                                  fun({LUser, Password}) ->
                                           Scram = password_to_scram(Password),
                                           set_password_scram_t(
-                                            Username,
-                                            ejabberd_sql:escape(Scram#scram.storedkey),
-                                            ejabberd_sql:escape(Scram#scram.serverkey),
-                                            ejabberd_sql:escape(Scram#scram.salt),
-                                            integer_to_binary(Scram#scram.iterationcount)
+                                            LUser,
+                                            Scram#scram.storedkey,
+                                            Scram#scram.serverkey,
+                                            Scram#scram.salt,
+                                            Scram#scram.iterationcount
                                            )
                                   end, Rs),
                                 continue;

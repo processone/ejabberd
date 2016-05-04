@@ -39,6 +39,7 @@
 	 sql_query_t/1,
 	 sql_transaction/2,
 	 sql_bloc/2,
+         sql_query_to_iolist/1,
 	 escape/1,
 	 escape_like/1,
 	 escape_like_arg/1,
@@ -667,6 +668,9 @@ sql_query_format_res({selected, _, Rows}, SQLQuery) ->
     {selected, Res};
 sql_query_format_res(Res, _SQLQuery) ->
     Res.
+
+sql_query_to_iolist(SQLQuery) ->
+    generic_sql_query_format(SQLQuery).
 
 %% Generate the OTP callback return tuple depending on the driver result.
 abort_on_driver_error({error, <<"query timed out">>} =

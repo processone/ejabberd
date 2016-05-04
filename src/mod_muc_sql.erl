@@ -8,6 +8,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_muc_sql).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -behaviour(mod_muc).
 
 %% API
@@ -18,6 +20,7 @@
 -include("jlib.hrl").
 -include("mod_muc.hrl").
 -include("logger.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 %%%===================================================================
 %%% API
@@ -26,61 +29,54 @@ init(_Host, _Opts) ->
     ok.
 
 store_room(LServer, Host, Name, Opts) ->
-    SName = ejabberd_sql:escape(Name),
-    SHost = ejabberd_sql:escape(Host),
-    SOpts = ejabberd_sql:encode_term(Opts),
+    SOpts = jlib:term_to_expr(Opts),
     F = fun () ->
-		sql_queries:update_t(<<"muc_room">>,
-				      [<<"name">>, <<"host">>, <<"opts">>],
-				      [SName, SHost, SOpts],
-				      [<<"name='">>, SName, <<"' and host='">>,
-				       SHost, <<"'">>])
+		?SQL_UPSERT_T(
+                   "muc_room",
+                   ["!name=%(Name)s",
+                    "!host=%(Host)s",
+                    "opts=%(SOpts)s"])
 	end,
     ejabberd_sql:sql_transaction(LServer, F).
 
 restore_room(LServer, Host, Name) ->
-    SName = ejabberd_sql:escape(Name),
-    SHost = ejabberd_sql:escape(Host),
-    case catch ejabberd_sql:sql_query(LServer,
-				       [<<"select opts from muc_room where name='">>,
-					SName, <<"' and host='">>, SHost,
-					<<"';">>]) of
-	{selected, [<<"opts">>], [[Opts]]} ->
+    case catch ejabberd_sql:sql_query(
+                 LServer,
+                 ?SQL("select @(opts)s from muc_room where name=%(Name)s"
+                      " and host=%(Host)s")) of
+	{selected, [{Opts}]} ->
 	    mod_muc:opts_to_binary(ejabberd_sql:decode_term(Opts));
 	_ ->
 	    error
     end.
 
 forget_room(LServer, Host, Name) ->
-    SName = ejabberd_sql:escape(Name),
-    SHost = ejabberd_sql:escape(Host),
     F = fun () ->
-		ejabberd_sql:sql_query_t([<<"delete from muc_room where name='">>,
-					   SName, <<"' and host='">>, SHost,
-					   <<"';">>])
+		ejabberd_sql:sql_query_t(
+                  ?SQL("delete from muc_room where name=%(Name)s"
+                       " and host=%(Host)s"))
 	end,
     ejabberd_sql:sql_transaction(LServer, F).
 
 can_use_nick(LServer, Host, JID, Nick) ->
     SJID = jid:to_string(jid:tolower(jid:remove_resource(JID))),
-    SNick = ejabberd_sql:escape(Nick),
-    SHost = ejabberd_sql:escape(Host),
-    case catch ejabberd_sql:sql_query(LServer,
-				       [<<"select jid from muc_registered ">>,
-					<<"where nick='">>, SNick,
-					<<"' and host='">>, SHost, <<"';">>]) of
-	{selected, [<<"jid">>], [[SJID1]]} -> SJID == SJID1;
+    case catch ejabberd_sql:sql_query(
+                 LServer,
+                 ?SQL("select @(jid)s from muc_registered "
+                      "where nick=%(Nick)s"
+                      " and host=%(Host)s")) of
+	{selected, [{SJID1}]} -> SJID == SJID1;
 	_ -> true
     end.
 
 get_rooms(LServer, Host) ->
-    SHost = ejabberd_sql:escape(Host),
-    case catch ejabberd_sql:sql_query(LServer,
-				       [<<"select name, opts from muc_room ">>,
-					<<"where host='">>, SHost, <<"';">>]) of
-	{selected, [<<"name">>, <<"opts">>], RoomOpts} ->
+    case catch ejabberd_sql:sql_query(
+                 LServer,
+                 ?SQL("select @(name)s, @(opts)s from muc_room"
+                      " where host=%(Host)s")) of
+	{selected, RoomOpts} ->
 	    lists:map(
-	      fun([Room, Opts]) ->
+	      fun({Room, Opts}) ->
 		      #muc_room{name_host = {Room, Host},
 				opts = mod_muc:opts_to_binary(
 					 ejabberd_sql:decode_term(Opts))}
@@ -91,49 +87,38 @@ get_rooms(LServer, Host) ->
     end.
 
 get_nick(LServer, Host, From) ->
-    SJID = ejabberd_sql:escape(jid:to_string(jid:tolower(jid:remove_resource(From)))),
-    SHost = ejabberd_sql:escape(Host),
-    case catch ejabberd_sql:sql_query(LServer,
-				       [<<"select nick from muc_registered where "
-					  "jid='">>,
-					SJID, <<"' and host='">>, SHost,
-					<<"';">>]) of
-	{selected, [<<"nick">>], [[Nick]]} -> Nick;
+    SJID = jid:to_string(jid:tolower(jid:remove_resource(From))),
+    case catch ejabberd_sql:sql_query(
+                 LServer,
+                 ?SQL("select @(nick)s from muc_registered where"
+                      " jid=%(SJID)s and host=%(Host)s")) of
+	{selected, [{Nick}]} -> Nick;
 	_ -> error
     end.
 
 set_nick(LServer, Host, From, Nick) ->
     JID = jid:to_string(jid:tolower(jid:remove_resource(From))),
-    SJID = ejabberd_sql:escape(JID),
-    SNick = ejabberd_sql:escape(Nick),
-    SHost = ejabberd_sql:escape(Host),
     F = fun () ->
 		case Nick of
 		    <<"">> ->
 			ejabberd_sql:sql_query_t(
-			  [<<"delete from muc_registered where ">>,
-			   <<"jid='">>, SJID,
-			   <<"' and host='">>, Host,
-			   <<"';">>]),
+			  ?SQL("delete from muc_registered where"
+                               " jid=%(JID)s and host=%(Host)s")),
 			ok;
 		    _ ->
 			Allow = case ejabberd_sql:sql_query_t(
-				       [<<"select jid from muc_registered ">>,
-					<<"where nick='">>,
-					SNick,
-					<<"' and host='">>,
-					SHost, <<"';">>]) of
-				    {selected, [<<"jid">>], [[J]]} -> J == JID;
+				       ?SQL("select @(jid)s from muc_registered"
+                                            " where nick=%(Nick)s"
+                                            " and host=%(Host)s")) of
+				    {selected, [{J}]} -> J == JID;
 				    _ -> true
 				end,
 			if Allow ->
-				sql_queries:update_t(<<"muc_registered">>,
-						      [<<"jid">>, <<"host">>,
-						       <<"nick">>],
-						      [SJID, SHost, SNick],
-						      [<<"jid='">>, SJID,
-						       <<"' and host='">>, SHost,
-						       <<"'">>]),
+				?SQL_UPSERT_T(
+                                  "muc_registered",
+                                  ["!jid=%(JID)s",
+                                   "!host=%(Host)s",
+                                   "nick=%(Nick)s"]),
 				ok;
 			   true ->
 				false
@@ -147,15 +132,12 @@ export(_Server) ->
       fun(Host, #muc_room{name_host = {Name, RoomHost}, opts = Opts}) ->
               case str:suffix(Host, RoomHost) of
                   true ->
-                      SName = ejabberd_sql:escape(Name),
-                      SRoomHost = ejabberd_sql:escape(RoomHost),
-                      SOpts = ejabberd_sql:encode_term(Opts),
-                      [[<<"delete from muc_room where name='">>, SName,
-                        <<"' and host='">>, SRoomHost, <<"';">>],
-                       [<<"insert into muc_room(name, host, opts) ",
-                          "values (">>,
-                        <<"'">>, SName, <<"', '">>, SRoomHost,
-                        <<"', '">>, SOpts, <<"');">>]];
+                      SOpts = jlib:term_to_expr(Opts),
+                      [?SQL("delete from muc_room where name=%(Name)s"
+                            " and host=%(RoomHost)s;"),
+                       ?SQL("insert into muc_room(name, host, opts) "
+                            "values ("
+                            "%(Name)s, %(RoomHost)s, %(SOpts)s);")];
                   false ->
                       []
               end
@@ -165,17 +147,12 @@ export(_Server) ->
                                 nick = Nick}) ->
               case str:suffix(Host, RoomHost) of
                   true ->
-                      SJID = ejabberd_sql:escape(
-                               jid:to_string(
-                                 jid:make(U, S, <<"">>))),
-                      SNick = ejabberd_sql:escape(Nick),
-                      SRoomHost = ejabberd_sql:escape(RoomHost),
-                      [[<<"delete from muc_registered where jid='">>,
-                        SJID, <<"' and host='">>, SRoomHost, <<"';">>],
-                       [<<"insert into muc_registered(jid, host, "
-                          "nick) values ('">>,
-                        SJID, <<"', '">>, SRoomHost, <<"', '">>, SNick,
-                        <<"');">>]];
+                      SJID = jid:to_string(jid:make(U, S, <<"">>)),
+                      [?SQL("delete from muc_registered where"
+                            " jid=%(SJID)s and host=%(RoomHost)s;"),
+                       ?SQL("insert into muc_registered(jid, host, "
+                            "nick) values ("
+                            "%(SJID)s, %(RoomHost)s, %(Nick)s);")];
                   false ->
                       []
               end

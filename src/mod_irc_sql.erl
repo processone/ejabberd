@@ -8,6 +8,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_irc_sql).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -behaviour(mod_irc).
 
 %% API
@@ -15,6 +17,7 @@
 
 -include("jlib.hrl").
 -include("mod_irc.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 %%%===================================================================
 %%% API
@@ -23,31 +26,26 @@ init(_Host, _Opts) ->
     ok.
 
 get_data(LServer, Host, From) ->
-    LJID = jid:tolower(jid:remove_resource(From)),
-    SJID = ejabberd_sql:escape(jid:to_string(LJID)),
-    SHost = ejabberd_sql:escape(Host),
+    SJID = jid:to_string(jid:tolower(jid:remove_resource(From))),
     case catch ejabberd_sql:sql_query(
-		 LServer,
-		 [<<"select data from irc_custom where jid='">>,
-		  SJID, <<"' and host='">>, SHost,
-		  <<"';">>]) of
-	{selected, [<<"data">>], [[SData]]} ->
-	    mod_irc:data_to_binary(From, ejabberd_sql:decode_term(SData));
-	{'EXIT', _} -> error;
-	{selected, _, _} -> empty
+                 LServer,
+                 ?SQL("select @(data)s from irc_custom"
+                      " where jid=%(SJID)s and host=%(Host)s")) of
+        {selected, [{SData}]} ->
+            mod_irc:data_to_binary(From, ejabberd_sql:decode_term(SData));
+        {'EXIT', _} -> error;
+        {selected, _} -> empty
     end.
 
 set_data(LServer, Host, From, Data) ->
-    LJID = jid:tolower(jid:remove_resource(From)),
-    SJID = ejabberd_sql:escape(jid:to_string(LJID)),
-    SHost = ejabberd_sql:escape(Host),
-    SData = ejabberd_sql:encode_term(Data),
+    SJID = jid:to_string(jid:tolower(jid:remove_resource(From))),
+    SData = jlib:term_to_expr(Data),
     F = fun () ->
-		sql_queries:update_t(<<"irc_custom">>,
-				      [<<"jid">>, <<"host">>, <<"data">>],
-				      [SJID, SHost, SData],
-				      [<<"jid='">>, SJID, <<"' and host='">>,
-				       SHost, <<"'">>]),
+                ?SQL_UPSERT_T(
+                   "irc_custom",
+                   ["!jid=%(SJID)s",
+                    "!host=%(Host)s",
+                    "data=%(SData)s"]),
 		ok
 	end,
     ejabberd_sql:sql_transaction(LServer, F).
@@ -58,17 +56,12 @@ export(_Server) ->
                             data = Data}) ->
               case str:suffix(Host, IRCHost) of
                   true ->
-                      SJID = ejabberd_sql:escape(
-                               jid:to_string(
-                                 jid:make(U, S, <<"">>))),
-                      SIRCHost = ejabberd_sql:escape(IRCHost),
-                      SData = ejabberd_sql:encode_term(Data),
-                      [[<<"delete from irc_custom where jid='">>, SJID,
-                        <<"' and host='">>, SIRCHost, <<"';">>],
-                       [<<"insert into irc_custom(jid, host, "
-                          "data) values ('">>,
-                        SJID, <<"', '">>, SIRCHost, <<"', '">>, SData,
-                        <<"');">>]];
+                      SJID = jid:to_string(jid:make(U, S, <<"">>)),
+                      SData = jlib:term_to_expr(Data),
+                      [?SQL("delete from irc_custom"
+                            " where jid=%(SJID)s and host=%(IRCHost)s;"),
+                       ?SQL("insert into irc_custom(jid, host, data)"
+                            " values (%(SJID)s, %(IRCHost)s, %(SData)s);")];
                   false ->
                       []
               end

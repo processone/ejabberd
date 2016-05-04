@@ -42,7 +42,7 @@
 	 get_roster_groups/3, del_user_roster_t/2,
 	 get_roster_by_jid/3, get_rostergroup_by_jid/3,
 	 del_roster/3, del_roster_sql/2, update_roster/5,
-	 update_roster_sql/4, roster_subscribe/1,
+	 update_roster_sql/2, roster_subscribe/1,
 	 get_subscription/3, set_private_data/4,
 	 set_private_data_sql/3, get_private_data/3,
 	 get_private_data/2, del_user_private_storage/2,
@@ -368,24 +368,27 @@ update_roster(_LServer, LUser, SJID, ItemVals,
       end,
       ItemGroups).
 
-update_roster_sql(Username, SJID, ItemVals,
+update_roster_sql({LUser, SJID, Name, SSubscription, SAsk, AskMessage},
 		  ItemGroups) ->
-    [[<<"delete from rosterusers       where "
-	"username='">>,
-      Username, <<"'         and jid='">>, SJID, <<"';">>],
-     [<<"insert into rosterusers(            "
-	"  username, jid, nick,              "
-	" subscription, ask, askmessage,     "
-	"          server, subscribe, type)  "
-	"values ('">>,
-      join(ItemVals, <<"', '">>), <<"');">>],
-     [<<"delete from rostergroups       where "
-	"username='">>,
-      Username, <<"'         and jid='">>, SJID, <<"';">>]]
+    [?SQL("delete from rosterusers where"
+          " username=%(LUser)s and jid=%(SJID)s;"),
+     ?SQL("insert into rosterusers("
+          " username, jid, nick,"
+          " subscription, ask, askmessage,"
+          " server, subscribe, type) "
+          "values ("
+          "%(LUser)s, "
+          "%(SJID)s, "
+          "%(Name)s, "
+          "%(SSubscription)s, "
+          "%(SAsk)s, "
+          "%(AskMessage)s, "
+          "'N', '', 'item');"),
+     ?SQL("delete from rostergroups where"
+          " username=%(LUser)s and jid=%(SJID)s;")]
       ++
-      [[<<"insert into rostergroups(           "
-	  "   username, jid, grp)  values ('">>,
-	join(ItemGroup, <<"', '">>), <<"');">>]
+      [?SQL("insert into rostergroups(username, jid, grp) "
+            "values (%(LUser)s, %(SJID)s, %(ItemGroup)s)")
        || ItemGroup <- ItemGroups].
 
 roster_subscribe({LUser, SJID, Name, SSubscription, SAsk, AskMessage}) ->
@@ -414,13 +417,12 @@ set_private_data(_LServer, LUser, XMLNS, SData) ->
         "!namespace=%(XMLNS)s",
         "data=%(SData)s"]).
 
-set_private_data_sql(Username, LXMLNS, SData) ->
-    [[<<"delete from private_storage where username='">>,
-      Username, <<"' and namespace='">>, LXMLNS, <<"';">>],
-     [<<"insert into private_storage(username, "
-	"namespace, data) values ('">>,
-      Username, <<"', '">>, LXMLNS, <<"', '">>, SData,
-      <<"');">>]].
+set_private_data_sql(LUser, XMLNS, SData) ->
+    [?SQL("delete from private_storage where"
+          " username=%(LUser)s and namespace=%(XMLNS)s;"),
+     ?SQL("insert into private_storage(username, "
+          "namespace, data) values ("
+          "%(LUser)s, %(XMLNS)s, %(SData)s);")].
 
 get_private_data(LServer, LUser, XMLNS) ->
     ejabberd_sql:sql_query(
@@ -628,9 +630,10 @@ get_roster_version(LServer, LUser) ->
            " where username = %(LUser)s")).
 
 set_roster_version(LUser, Version) ->
-    update_t(<<"roster_version">>,
-	     [<<"username">>, <<"version">>], [LUser, Version],
-	     [<<"username = '">>, LUser, <<"'">>]).
+    ?SQL_UPSERT_T(
+       "roster_version",
+       ["!username=%(LUser)s",
+        "version=%(Version)s"]).
 
 opt_type(sql_type) ->
     fun (pgsql) -> pgsql;

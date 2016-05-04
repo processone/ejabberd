@@ -8,6 +8,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_vcard_xupdate_sql).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -behaviour(mod_vcard_xupdate).
 
 %% API
@@ -15,6 +17,7 @@
 	 import/1, export/1]).
 
 -include("mod_vcard_xupdate.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 %%%===================================================================
 %%% API
@@ -23,46 +26,38 @@ init(_Host, _Opts) ->
     ok.
 
 add_xupdate(LUser, LServer, Hash) ->
-    Username = ejabberd_sql:escape(LUser),
-    SHash = ejabberd_sql:escape(Hash),
     F = fun () ->
-		sql_queries:update_t(<<"vcard_xupdate">>,
-				      [<<"username">>, <<"hash">>],
-				      [Username, SHash],
-				      [<<"username='">>, Username, <<"'">>])
+		?SQL_UPSERT_T(
+                   "vcard_xupdate",
+                   ["!username=%(LUser)s",
+                    "hash=%(Hash)s"])
 	end,
     ejabberd_sql:sql_transaction(LServer, F).
 
 get_xupdate(LUser, LServer) ->
-    Username = ejabberd_sql:escape(LUser),
-    case ejabberd_sql:sql_query(LServer,
-				 [<<"select hash from vcard_xupdate where "
-				    "username='">>,
-				  Username, <<"';">>])
+    case ejabberd_sql:sql_query(
+           LServer,
+           ?SQL("select @(hash)s from vcard_xupdate where"
+                " username=%(LUser)s"))
 	of
-      {selected, [<<"hash">>], [[Hash]]} -> Hash;
-      _ -> undefined
+        {selected, [{Hash}]} -> Hash;
+        _ -> undefined
     end.
 
 remove_xupdate(LUser, LServer) ->
-    Username = ejabberd_sql:escape(LUser),
     F = fun () ->
-		ejabberd_sql:sql_query_t([<<"delete from vcard_xupdate where username='">>,
-					   Username, <<"';">>])
+		ejabberd_sql:sql_query_t(
+                  ?SQL("delete from vcard_xupdate where username=%(LUser)s"))
 	end,
     ejabberd_sql:sql_transaction(LServer, F).
 
 export(_Server) ->
     [{vcard_xupdate,
       fun(Host, #vcard_xupdate{us = {LUser, LServer}, hash = Hash})
-            when LServer == Host ->
-              Username = ejabberd_sql:escape(LUser),
-              SHash = ejabberd_sql:escape(Hash),
-              [[<<"delete from vcard_xupdate where username='">>,
-                Username, <<"';">>],
-               [<<"insert into vcard_xupdate(username, "
-                  "hash) values ('">>,
-                Username, <<"', '">>, SHash, <<"');">>]];
+         when LServer == Host ->
+              [?SQL("delete from vcard_xupdate where username=%(LUser)s;"),
+               ?SQL("insert into vcard_xupdate(username, hash) values ("
+                    "%(LUser)s, %(Hash)s);")];
          (_Host, _R) ->
               []
       end}].

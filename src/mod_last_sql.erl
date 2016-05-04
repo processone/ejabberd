@@ -9,12 +9,15 @@
 -module(mod_last_sql).
 -behaviour(mod_last).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 %% API
 -export([init/2, get_last/2, store_last_info/4, remove_user/2,
 	 import/1, import/2, export/1]).
 
 -include("mod_last.hrl").
 -include("logger.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 %%%===================================================================
 %%% API
@@ -48,15 +51,9 @@ export(_Server) ->
       fun(Host, #last_activity{us = {LUser, LServer},
                                timestamp = TimeStamp, status = Status})
             when LServer == Host ->
-              Username = ejabberd_sql:escape(LUser),
-              Seconds =
-                  ejabberd_sql:escape(jlib:integer_to_binary(TimeStamp)),
-              State = ejabberd_sql:escape(Status),
-              [[<<"delete from last where username='">>, Username, <<"';">>],
-               [<<"insert into last(username, seconds, "
-                  "state) values ('">>,
-                Username, <<"', '">>, Seconds, <<"', '">>, State,
-                <<"');">>]];
+              [?SQL("delete from last where username=%(LUser)s;"),
+               ?SQL("insert into last(username, seconds, state)"
+                    " values (%(LUser)s, %(TimeStamp)d, %(Status)s);")];
          (_Host, _R) ->
               []
       end}].

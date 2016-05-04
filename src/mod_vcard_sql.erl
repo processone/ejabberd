@@ -113,12 +113,10 @@ export(_Server) ->
     [{vcard,
       fun(Host, #vcard{us = {LUser, LServer}, vcard = VCARD})
             when LServer == Host ->
-              Username = ejabberd_sql:escape(LUser),
-              SVCARD =
-                  ejabberd_sql:escape(fxml:element_to_binary(VCARD)),
-              [[<<"delete from vcard where username='">>, Username, <<"';">>],
-               [<<"insert into vcard(username, vcard) values ('">>,
-                Username, <<"', '">>, SVCARD, <<"');">>]];
+              SVCARD = fxml:element_to_binary(VCARD),
+              [?SQL("delete from vcard where username=%(LUser)s;"),
+               ?SQL("insert into vcard(username, vcard) values ("
+                    "%(LUser)s, %(SVCARD)s);")];
          (_Host, _R) ->
               []
       end},
@@ -135,52 +133,26 @@ export(_Server) ->
                               orgname = OrgName, lorgname = LOrgName,
                               orgunit = OrgUnit, lorgunit = LOrgUnit})
             when LServer == Host ->
-              Username = ejabberd_sql:escape(User),
-              LUsername = ejabberd_sql:escape(LUser),
-              SFN = ejabberd_sql:escape(FN),
-              SLFN = ejabberd_sql:escape(LFN),
-              SFamily = ejabberd_sql:escape(Family),
-              SLFamily = ejabberd_sql:escape(LFamily),
-              SGiven = ejabberd_sql:escape(Given),
-              SLGiven = ejabberd_sql:escape(LGiven),
-              SMiddle = ejabberd_sql:escape(Middle),
-              SLMiddle = ejabberd_sql:escape(LMiddle),
-              SNickname = ejabberd_sql:escape(Nickname),
-              SLNickname = ejabberd_sql:escape(LNickname),
-              SBDay = ejabberd_sql:escape(BDay),
-              SLBDay = ejabberd_sql:escape(LBDay),
-              SCTRY = ejabberd_sql:escape(CTRY),
-              SLCTRY = ejabberd_sql:escape(LCTRY),
-              SLocality = ejabberd_sql:escape(Locality),
-              SLLocality = ejabberd_sql:escape(LLocality),
-              SEMail = ejabberd_sql:escape(EMail),
-              SLEMail = ejabberd_sql:escape(LEMail),
-              SOrgName = ejabberd_sql:escape(OrgName),
-              SLOrgName = ejabberd_sql:escape(LOrgName),
-              SOrgUnit = ejabberd_sql:escape(OrgUnit),
-              SLOrgUnit = ejabberd_sql:escape(LOrgUnit),
-              [[<<"delete from vcard_search where lusername='">>,
-                LUsername, <<"';">>],
-               [<<"insert into vcard_search(        username, "
-                  "lusername, fn, lfn, family, lfamily, "
-                  "       given, lgiven, middle, lmiddle, "
-                  "nickname, lnickname,        bday, lbday, "
-                  "ctry, lctry, locality, llocality,   "
-                  "     email, lemail, orgname, lorgname, "
-                  "orgunit, lorgunit)values (">>,
-                <<"        '">>, Username, <<"', '">>, LUsername,
-                <<"',        '">>, SFN, <<"', '">>, SLFN,
-                <<"',        '">>, SFamily, <<"', '">>, SLFamily,
-                <<"',        '">>, SGiven, <<"', '">>, SLGiven,
-                <<"',        '">>, SMiddle, <<"', '">>, SLMiddle,
-                <<"',        '">>, SNickname, <<"', '">>, SLNickname,
-                <<"',        '">>, SBDay, <<"', '">>, SLBDay,
-                <<"',        '">>, SCTRY, <<"', '">>, SLCTRY,
-                <<"',        '">>, SLocality, <<"', '">>, SLLocality,
-                <<"',        '">>, SEMail, <<"', '">>, SLEMail,
-                <<"',        '">>, SOrgName, <<"', '">>, SLOrgName,
-                <<"',        '">>, SOrgUnit, <<"', '">>, SLOrgUnit,
-                <<"');">>]];
+              [?SQL("delete from vcard_search where lusername=%(LUser)s;"),
+               ?SQL("insert into vcard_search(username,"
+                    " lusername, fn, lfn, family, lfamily,"
+                    " given, lgiven, middle, lmiddle,"
+                    " nickname, lnickname, bday, lbday,"
+                    " ctry, lctry, locality, llocality,"
+                    " email, lemail, orgname, lorgname,"
+                    " orgunit, lorgunit) values ("
+                    " %(LUser)s, %(User)s,"
+                    " %(FN)s, %(LFN)s,"
+                    " %(Family)s, %(LFamily)s,"
+                    " %(Given)s, %(LGiven)s,"
+                    " %(Middle)s, %(LMiddle)s,"
+                    " %(Nickname)s, %(LNickname)s,"
+                    " %(BDay)s, %(LBDay)s,"
+                    " %(CTRY)s, %(LCTRY)s,"
+                    " %(Locality)s, %(LLocality)s,"
+                    " %(EMail)s, %(LEMail)s,"
+                    " %(OrgName)s, %(LOrgName)s,"
+                    " %(OrgUnit)s, %(LOrgUnit)s);")];
          (_Host, _R) ->
               []
       end}].

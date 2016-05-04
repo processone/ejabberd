@@ -8,6 +8,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_roster_sql).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -behaviour(mod_roster).
 
 %% API
@@ -20,6 +22,7 @@
 
 -include("jlib.hrl").
 -include("mod_roster.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 %%%===================================================================
 %%% API
@@ -34,15 +37,13 @@ read_roster_version(LUser, LServer) ->
     end.
 
 write_roster_version(LUser, LServer, InTransaction, Ver) ->
-    Username = ejabberd_sql:escape(LUser),
-    EVer = ejabberd_sql:escape(Ver),
     if InTransaction ->
-	    sql_queries:set_roster_version(Username, EVer);
+	    sql_queries:set_roster_version(LUser, Ver);
        true ->
 	    sql_queries:sql_transaction(
 	      LServer,
 	      fun () ->
-		      sql_queries:set_roster_version(Username, EVer)
+		      sql_queries:set_roster_version(LUser, Ver)
 	      end)
     end.
 
@@ -167,26 +168,20 @@ read_subscription_and_groups(LUser, LServer, LJID) ->
 
 export(_Server) ->
     [{roster,
-      fun(Host, #roster{usj = {LUser, LServer, LJID}} = R)
+      fun(Host, #roster{usj = {_LUser, LServer, _LJID}} = R)
             when LServer == Host ->
-              Username = ejabberd_sql:escape(LUser),
-              SJID = ejabberd_sql:escape(jid:to_string(LJID)),
-              ItemVals = record_to_string(R),
-              ItemGroups = groups_to_string(R),
-              sql_queries:update_roster_sql(Username, SJID,
-                                             ItemVals, ItemGroups);
+              ItemVals = record_to_row(R),
+              ItemGroups = R#roster.groups,
+              sql_queries:update_roster_sql(ItemVals, ItemGroups);
         (_Host, _R) ->
               []
       end},
      {roster_version,
       fun(Host, #roster_version{us = {LUser, LServer}, version = Ver})
             when LServer == Host ->
-              Username = ejabberd_sql:escape(LUser),
-              SVer = ejabberd_sql:escape(Ver),
-              [[<<"delete from roster_version where username='">>,
-                Username, <<"';">>],
-               [<<"insert into roster_version(username, version) values('">>,
-                Username, <<"', '">>, SVer, <<"');">>]];
+              [?SQL("delete from roster_version where username=%(LUser)s;"),
+               ?SQL("insert into roster_version(username, version) values("
+                    " %(LUser)s, %(Ver)s);")];
          (_Host, _R) ->
               []
       end}].
@@ -294,15 +289,3 @@ record_to_row(
 	     none -> <<"N">>
 	   end,
     {LUser, SJID, Name, SSubscription, SAsk, AskMessage}.
-
-groups_to_string(#roster{us = {User, _Server},
-			 jid = JID, groups = Groups}) ->
-    Username = ejabberd_sql:escape(User),
-    SJID =
-	ejabberd_sql:escape(jid:to_string(jid:tolower(JID))),
-    lists:foldl(fun (<<"">>, Acc) -> Acc;
-		    (Group, Acc) ->
-			G = ejabberd_sql:escape(Group),
-			[[Username, SJID, G] | Acc]
-		end,
-		[], Groups).
