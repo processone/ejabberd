@@ -54,7 +54,8 @@
 	 binary_to_integer/1, binary_to_integer/2,
 	 integer_to_binary/1, integer_to_binary/2,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
-	 l2i/1, i2l/1, i2l/2, queue_drop_while/2]).
+	 l2i/1, i2l/1, i2l/2, queue_drop_while/2,
+	 expr_to_term/1, term_to_expr/1]).
 
 %% The following functions are deprecated and will be removed soon
 %% Use corresponding functions from jid.erl instead
@@ -890,6 +891,14 @@ tuple_to_binary(T) ->
 atom_to_binary(A) ->
     erlang:atom_to_binary(A, utf8).
 
+expr_to_term(Expr) ->
+    Str = binary_to_list(<<Expr/binary, ".">>),
+    {ok, Tokens, _} = erl_scan:string(Str),
+    {ok, Term} = erl_parse:parse_term(Tokens),
+    Term.
+
+term_to_expr(Term) ->
+    list_to_binary(io_lib:print(Term)).
 
 l2i(I) when is_integer(I) -> I;
 l2i(L) when is_binary(L) -> binary_to_integer(L).
