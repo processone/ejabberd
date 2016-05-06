@@ -607,7 +607,9 @@ disco(Config) ->
 sm(Config) ->
     Server = ?config(server, Config),
     ServerJID = jid:make(<<"">>, Server, <<"">>),
-    Msg = #message{to = ServerJID, body = [#text{data = <<"body">>}]},
+    %% Send messages of type 'headline' so the server discards them silently
+    Msg = #message{to = ServerJID, type = headline,
+		   body = [#text{data = <<"body">>}]},
     true = ?config(sm, Config),
     %% Enable the session management with resumption enabled
     send(Config, #sm_enable{resume = true, xmlns = ?NS_STREAM_MGMT_3}),
