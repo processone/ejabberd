@@ -271,7 +271,16 @@ do_route(From, To, Packet) ->
 	   #xmlel{name = Name} = Packet,
 	   case Name of
 	     <<"iq">> -> process_iq(From, To, Packet);
-	     <<"message">> -> ok;
+	     <<"message">> ->
+		 #xmlel{attrs = Attrs} = Packet,
+		 case fxml:get_attr_s(<<"type">>, Attrs) of
+		   <<"headline">> -> ok;
+		   <<"error">> -> ok;
+		   _ ->
+		       Err = jlib:make_error_reply(Packet,
+						   ?ERR_SERVICE_UNAVAILABLE),
+		       ejabberd_router:route(To, From, Err)
+		 end;
 	     <<"presence">> -> ok;
 	     _ -> ok
 	   end;
