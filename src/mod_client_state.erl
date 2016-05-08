@@ -40,13 +40,11 @@
 
 start(Host, Opts) ->
     QueuePresence = gen_mod:get_opt(queue_presence, Opts,
-				    fun(true) -> true;
-				       (false) -> false
-				    end, true),
+				    fun(B) when is_boolean(B) -> B end,
+				    true),
     DropChatStates = gen_mod:get_opt(drop_chat_states, Opts,
-				     fun(true) -> true;
-				        (false) -> false
-				     end, true),
+				    fun(B) when is_boolean(B) -> B end,
+				    true),
     if QueuePresence; DropChatStates ->
 	   ejabberd_hooks:add(c2s_post_auth_features, Host, ?MODULE,
 			      add_stream_feature, 50),
@@ -65,12 +63,27 @@ start(Host, Opts) ->
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(csi_filter_stanza, Host, ?MODULE,
-			  filter_presence, 50),
-    ejabberd_hooks:delete(csi_filter_stanza, Host, ?MODULE,
-			  filter_chat_states, 50),
-    ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
-			  add_stream_feature, 50),
+    QueuePresence = gen_mod:get_module_opt(Host, ?MODULE, queue_presence,
+					   fun(B) when is_boolean(B) -> B end,
+					   true),
+    DropChatStates = gen_mod:get_module_opt(Host, ?MODULE, drop_chat_states,
+					    fun(B) when is_boolean(B) -> B end,
+					    true),
+    if QueuePresence; DropChatStates ->
+	   ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
+				 add_stream_feature, 50),
+	   if QueuePresence ->
+		  ejabberd_hooks:delete(csi_filter_stanza, Host, ?MODULE,
+					filter_presence, 50);
+	      true -> ok
+	   end,
+	   if DropChatStates ->
+		  ejabberd_hooks:delete(csi_filter_stanza, Host, ?MODULE,
+					filter_chat_states, 50);
+	      true -> ok
+	   end;
+       true -> ok
+    end,
     ok.
 
 add_stream_feature(Features, _Host) ->
@@ -102,11 +115,7 @@ filter_chat_states(_Action, #xmlel{name = <<"message">>} = Stanza) ->
 filter_chat_states(Action, _Stanza) -> Action.
 
 mod_opt_type(drop_chat_states) ->
-    fun (true) -> true;
-	(false) -> false
-    end;
+    fun(B) when is_boolean(B) -> B end;
 mod_opt_type(queue_presence) ->
-    fun (true) -> true;
-	(false) -> false
-    end;
+    fun(B) when is_boolean(B) -> B end;
 mod_opt_type(_) -> [drop_chat_states, queue_presence].
