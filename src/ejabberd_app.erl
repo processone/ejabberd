@@ -63,6 +63,7 @@ start(normal, _Args) ->
     Sup = ejabberd_sup:start_link(),
     ejabberd_rdbms:start(),
     ejabberd_riak_sup:start(),
+    ejabberd_redis:start(),
     ejabberd_sm:start(),
     cyrsasl:start(),
     % Profiling

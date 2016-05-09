@@ -30,7 +30,7 @@
 	 add_global_option/2, add_local_option/2,
 	 get_global_option/2, get_local_option/2,
          get_global_option/3, get_local_option/3,
-         get_option/2, get_option/3, add_option/2,
+         get_option/2, get_option/3, add_option/2, has_option/1,
          get_vh_by_auth_method/1, is_file_readable/1,
          get_version/0, get_myhosts/0, get_mylang/0,
          prepare_opt_val/4, convert_table_to_binary/5,
@@ -837,6 +837,10 @@ get_option(Opt, F, Default) ->
                     Default
             end
     end.
+
+-spec has_option(atom() | {atom(), global | binary()}) -> any().
+has_option(Opt) ->
+    get_option(Opt, fun(_) -> true end, false).
 
 init_module_db_table(Modules) ->
     catch ets:new(module_db, [named_table, public, bag]),
