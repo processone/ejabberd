@@ -1053,7 +1053,11 @@ wait_for_bind({xmlstreamelement, El}, StateData) ->
                                                       children =
                                                       [{xmlcdata,
                                                         jid:to_string(JID)}]}]}]},
-                                send_element(StateData3, jlib:iq_to_xml(Res)),
+				try
+				    send_element(StateData3, jlib:iq_to_xml(Res))
+				catch exit:normal ->
+					close(self())
+				end,
                                 fsm_next_state_pack(
                                   session_established,
                                   StateData3);
