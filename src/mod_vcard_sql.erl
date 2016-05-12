@@ -227,9 +227,11 @@ make_val(Match, Field, Val) ->
     Condition = case str:suffix(<<"*">>, Val) of
 		  true ->
 		      Val1 = str:substr(Val, 1, byte_size(Val) - 1),
-		      SVal = <<(ejabberd_sql:escape_like(Val1))/binary,
+		      SVal = <<(ejabberd_sql:escape(
+                                  ejabberd_sql:escape_like_arg_circumflex(
+                                    Val1)))/binary,
 			       "%">>,
-		      [Field, <<" LIKE '">>, SVal, <<"'">>];
+		      [Field, <<" LIKE '">>, SVal, <<"' ESCAPE '^'">>];
 		  _ ->
 		      SVal = ejabberd_sql:escape(Val),
 		      [Field, <<" = '">>, SVal, <<"'">>]

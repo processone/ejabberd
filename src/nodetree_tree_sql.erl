@@ -196,11 +196,11 @@ get_subnodes_tree(Host, Node, _From) ->
 
 get_subnodes_tree(Host, Node) ->
     H = node_flat_sql:encode_host(Host),
-    N = ejabberd_sql:escape(Node),
+    N = ejabberd_sql:escape(ejabberd_sql:escape_like_arg_circumflex(Node)),
     case catch
 	ejabberd_sql:sql_query_t([<<"select node, parent, type, nodeid from "
 		    "pubsub_node where host='">>,
-		H, <<"' and node like '">>, N, <<"%';">>])
+		H, <<"' and node like '">>, N, <<"%' escape '^';">>])
     of
 	{selected,
 		    [<<"node">>, <<"parent">>, <<"type">>, <<"nodeid">>], RItems} ->
@@ -256,10 +256,10 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 
 delete_node(Host, Node) ->
     H = node_flat_sql:encode_host(Host),
-    N = ejabberd_sql:escape(Node),
+    N = ejabberd_sql:escape(ejabberd_sql:escape_like_arg_circumflex(Node)),
     Removed = get_subnodes_tree(Host, Node),
     catch ejabberd_sql:sql_query_t([<<"delete from pubsub_node where host='">>,
-	    H, <<"' and node like '">>, N, <<"%';">>]),
+	    H, <<"' and node like '">>, N, <<"%' escape '^';">>]),
     Removed.
 
 %% helpers

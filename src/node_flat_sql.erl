@@ -51,9 +51,11 @@
     get_entity_subscriptions_for_send_last/2, get_last_items/3]).
 
 -export([decode_jid/1, encode_jid/1,
+         encode_jid_like/1,
     decode_affiliation/1, decode_subscriptions/1,
     encode_affiliation/1, encode_subscriptions/1,
-    encode_host/1]).
+         encode_host/1,
+         encode_host_like/1]).
 
 init(_Host, _ServerHost, _Opts) ->
     %%pubsub_subscription_sql:init(),
@@ -350,11 +352,13 @@ get_entity_subscriptions(Host, Owner) ->
     H = encode_host(Host),
     SJ = encode_jid(SubKey),
     GJ = encode_jid(GenKey),
+    GJLike = encode_jid_like(GenKey),
     Query = case SubKey of
 	GenKey ->
 	    [<<"select node, type, i.nodeid, jid, subscriptions "
 		    "from pubsub_state i, pubsub_node n "
-		    "where i.nodeid = n.nodeid and jid like '">>, GJ, <<"%' and host='">>, H, <<"';">>];
+		    "where i.nodeid = n.nodeid and jid like '">>, GJLike,
+             <<"%' escape '^' and host='">>, H, <<"';">>];
 	_ ->
 	    [<<"select node, type, i.nodeid, jid, subscriptions "
 		    "from pubsub_state i, pubsub_node n "
@@ -399,12 +403,14 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
     H = encode_host(Host),
     SJ = encode_jid(SubKey),
     GJ = encode_jid(GenKey),
+    GJLike = encode_jid_like(GenKey),
     Query = case SubKey of
 	GenKey ->
 	    [<<"select node, type, i.nodeid, jid, subscriptions "
 		    "from pubsub_state i, pubsub_node n, pubsub_node_option o "
 		    "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and name='send_last_published_item' "
-		    "and val='on_sub_and_presence' and jid like '">>, GJ, <<"%' and host='">>, H, <<"';">>];
+		    "and val='on_sub_and_presence' and jid like '">>, GJLike,
+             <<"%' escape '^' and host='">>, H, <<"';">>];
 	_ ->
 	    [<<"select node, type, i.nodeid, jid, subscriptions "
 		    "from pubsub_state i, pubsub_node n, pubsub_node_option o "
@@ -568,8 +574,9 @@ get_states(Nidx) ->
 		    [<<"jid">>, <<"affiliation">>, <<"subscriptions">>], RItems} ->
 	    {result,
 		lists:map(fun ([SJID, Aff, Subs]) ->
-			    #pubsub_state{stateid = {decode_jid(SJID), Nidx},
-				items = itemids(Nidx, SJID),
+                            JID = decode_jid(SJID),
+                            #pubsub_state{stateid = {JID, Nidx},
+				items = itemids(Nidx, JID),
 				affiliation = decode_affiliation(Aff),
 				subscriptions = decode_subscriptions(Subs)}
 		    end,
@@ -899,13 +906,12 @@ first_in_list(Pred, [H | T]) ->
 	_ -> first_in_list(Pred, T)
     end.
 
-itemids(Nidx, {U, S, R}) ->
-    itemids(Nidx, encode_jid({U, S, R}));
-itemids(Nidx, SJID) ->
+itemids(Nidx, {_U, _S, _R} = JID) ->
+    SJID = encode_jid_like(JID),
     case catch
 	ejabberd_sql:sql_query_t([<<"select itemid from pubsub_item where "
 		    "nodeid='">>, Nidx, <<"' and publisher like '">>, SJID,
-		<<"%' order by modification desc;">>])
+		<<"%' escape '^' order by modification desc;">>])
     of
 	{selected, [<<"itemid">>], RItems} ->
 	    [ItemId || [ItemId] <- RItems];
@@ -1011,12 +1017,24 @@ decode_subscriptions(Subscriptions) ->
 encode_jid(JID) ->
     ejabberd_sql:escape(jid:to_string(JID)).
 
+-spec(encode_jid_like/1 :: (JID :: ljid()) -> binary()).
+encode_jid_like(JID) ->
+    ejabberd_sql:escape(ejabberd_sql:escape_like_arg_circumflex(jid:to_string(JID))).
+
 -spec(encode_host/1 ::
     (   Host :: host())
     -> binary()
     ).
 encode_host({_U, _S, _R} = LJID) -> encode_jid(LJID);
 encode_host(Host) -> ejabberd_sql:escape(Host).
+
+-spec(encode_host_like/1 ::
+    (   Host :: host())
+    -> binary()
+    ).
+encode_host_like({_U, _S, _R} = LJID) -> encode_jid_like(LJID);
+encode_host_like(Host) ->
+    ejabberd_sql:escape(ejabberd_sql:escape_like_arg_circumflex(Host)).
 
 -spec(encode_affiliation/1 ::
     (   Arg :: atom())

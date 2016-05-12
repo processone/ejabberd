@@ -231,12 +231,12 @@ list_users(LServer,
 	   [{prefix, Prefix}, {limit, Limit}, {offset, Offset}])
     when is_binary(Prefix) and is_integer(Limit) and
 	   is_integer(Offset) ->
-    SPrefix = ejabberd_sql:escape_like_arg(Prefix),
+    SPrefix = ejabberd_sql:escape_like_arg_circumflex(Prefix),
     SPrefix2 = <<SPrefix/binary, $%>>,
     ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(username)s from users "
-           "where username like %(SPrefix2)s "
+           "where username like %(SPrefix2)s escape '^' "
            "order by username "
            "limit %(Limit)d offset %(Offset)d")).
 
@@ -264,12 +264,12 @@ users_number(LServer) ->
 
 users_number(LServer, [{prefix, Prefix}])
     when is_binary(Prefix) ->
-    SPrefix = ejabberd_sql:escape_like_arg(Prefix),
+    SPrefix = ejabberd_sql:escape_like_arg_circumflex(Prefix),
     SPrefix2 = <<SPrefix/binary, $%>>,
     ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(count(*))d from users "
-           "where username like %(SPrefix2)s"));
+           "where username like %(SPrefix2)s escape '^'"));
 users_number(LServer, []) ->
     users_number(LServer).
 

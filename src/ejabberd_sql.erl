@@ -43,6 +43,7 @@
 	 escape/1,
 	 escape_like/1,
 	 escape_like_arg/1,
+	 escape_like_arg_circumflex/1,
 	 to_bool/1,
 	 sqlite_db/1,
 	 sqlite_file/1,
@@ -200,6 +201,7 @@ escape_like(S) when is_binary(S) ->
     << <<(escape_like(C))/binary>> || <<C>> <= S >>;
 escape_like($%) -> <<"\\%">>;
 escape_like($_) -> <<"\\_">>;
+escape_like($\\) -> <<"\\\\\\\\">>;
 escape_like(C) when is_integer(C), C >= 0, C =< 255 -> sql_queries:escape(C).
 
 escape_like_arg(S) when is_binary(S) ->
@@ -208,6 +210,13 @@ escape_like_arg($%) -> <<"\\%">>;
 escape_like_arg($_) -> <<"\\_">>;
 escape_like_arg($\\) -> <<"\\\\">>;
 escape_like_arg(C) when is_integer(C), C >= 0, C =< 255 -> <<C>>.
+
+escape_like_arg_circumflex(S) when is_binary(S) ->
+    << <<(escape_like_arg_circumflex(C))/binary>> || <<C>> <= S >>;
+escape_like_arg_circumflex($%) -> <<"^%">>;
+escape_like_arg_circumflex($_) -> <<"^_">>;
+escape_like_arg_circumflex($^) -> <<"^^">>;
+escape_like_arg_circumflex(C) when is_integer(C), C >= 0, C =< 255 -> <<C>>.
 
 to_bool(<<"t">>) -> true;
 to_bool(<<"true">>) -> true;
@@ -508,7 +517,7 @@ sql_query_internal(#sql_query{} = Query) ->
                 odbc ->
                     generic_sql_query(Query);
 		mssql ->
-		    generic_sql_query(Query);
+		    mssql_sql_query(Query);
                 pgsql ->
                     Key = {?PREPARE_KEY, Query#sql_query.hash},
                     case get(Key) of
@@ -534,7 +543,7 @@ sql_query_internal(#sql_query{} = Query) ->
                 mysql ->
                     generic_sql_query(Query);
                 sqlite ->
-                    generic_sql_query(Query)
+                    sqlite_sql_query(Query)
             end
         catch
             Class:Reason ->
@@ -622,6 +631,32 @@ generic_escape() ->
                              (false) -> <<"0">>
                           end
                }.
+
+sqlite_sql_query(SQLQuery) ->
+    sql_query_format_res(
+      sql_query_internal(sqlite_sql_query_format(SQLQuery)),
+      SQLQuery).
+
+sqlite_sql_query_format(SQLQuery) ->
+    Args = (SQLQuery#sql_query.args)(sqlite_escape()),
+    (SQLQuery#sql_query.format_query)(Args).
+
+sqlite_escape() ->
+    #sql_escape{string = fun(X) -> <<"'", (standard_escape(X))/binary, "'">> end,
+                integer = fun(X) -> integer_to_binary(X) end,
+                boolean = fun(true) -> <<"1">>;
+                             (false) -> <<"0">>
+                          end
+               }.
+
+standard_escape(S) ->
+    << <<(case Char of
+              $' -> << "''" >>;
+              _ -> << Char >>
+          end)/binary>> || <<Char>> <= S >>.
+
+mssql_sql_query(SQLQuery) ->
+    sqlite_sql_query(SQLQuery).
 
 pgsql_prepare(SQLQuery, State) ->
     Escape = #sql_escape{_ = fun(X) -> X end},

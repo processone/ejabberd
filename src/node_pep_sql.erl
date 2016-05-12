@@ -114,20 +114,21 @@ set_affiliation(Nidx, Owner, Affiliation) ->
 get_entity_subscriptions(_Host, Owner) ->
     SubKey = jid:tolower(Owner),
     GenKey = jid:remove_resource(SubKey),
-    Host = node_flat_sql:encode_host(element(2, SubKey)),
+    HostLike = node_flat_sql:encode_host_like(element(2, SubKey)),
     SJ = node_flat_sql:encode_jid(SubKey),
     GJ = node_flat_sql:encode_jid(GenKey),
+    GJLike = node_flat_sql:encode_jid_like(GenKey),
     Query = case SubKey of
 	GenKey ->
 	    [<<"select host, node, type, i.nodeid, jid, "
 		    "subscriptions from pubsub_state i, pubsub_node n "
 		    "where i.nodeid = n.nodeid and jid "
-		    "like '">>, GJ, <<"%' and host like '%@">>, Host, <<"';">>];
+		    "like '">>, GJLike, <<"%' escape '^' and host like '%@">>, HostLike, <<"' escape '^';">>];
 	_ ->
 	    [<<"select host, node, type, i.nodeid, jid, "
 		    "subscriptions from pubsub_state i, pubsub_node n "
 		    "where i.nodeid = n.nodeid and jid "
-		    "in ('">>, SJ, <<"', '">>, GJ, <<"') and host like '%@">>, Host, <<"';">>]
+		    "in ('">>, SJ, <<"', '">>, GJ, <<"') and host like '%@">>, HostLike, <<"' escape '^';">>]
     end,
     Reply = case catch ejabberd_sql:sql_query_t(Query) of
 	{selected,
@@ -149,9 +150,10 @@ get_entity_subscriptions(_Host, Owner) ->
 get_entity_subscriptions_for_send_last(_Host, Owner) ->
     SubKey = jid:tolower(Owner),
     GenKey = jid:remove_resource(SubKey),
-    Host = node_flat_sql:encode_host(element(2, SubKey)),
+    HostLike = node_flat_sql:encode_host_like(element(2, SubKey)),
     SJ = node_flat_sql:encode_jid(SubKey),
     GJ = node_flat_sql:encode_jid(GenKey),
+    GJLike = node_flat_sql:encode_jid_like(GenKey),
     Query = case SubKey of
 	GenKey ->
 	    [<<"select host, node, type, i.nodeid, jid, "
@@ -159,14 +161,14 @@ get_entity_subscriptions_for_send_last(_Host, Owner) ->
 		    "pubsub_node_option o where i.nodeid = n.nodeid "
 		    "and n.nodeid = o.nodeid and name='send_last_published_item' and "
 		    "val='on_sub_and_presence' and jid like '">>,
-		GJ, <<"%' and host like '%@">>, Host, <<"';">>];
+		GJLike, <<"%' escape '^' and host like '%@">>, HostLike, <<"' escape '^';">>];
 	_ ->
 	    [<<"select host, node, type, i.nodeid, jid, "
 		    "subscriptions from pubsub_state i, pubsub_node n, "
 		    "pubsub_node_option o where i.nodeid = n.nodeid "
 		    "and n.nodeid = o.nodeid and name='send_last_published_item' and "
 		    "val='on_sub_and_presence' and jid in ",
-		    "('">>, SJ, <<"', '">>, GJ, <<"') and host like '%@">>, Host, <<"';">>]
+		    "('">>, SJ, <<"', '">>, GJ, <<"') and host like '%@">>, HostLike, <<"' escape '^';">>]
     end,
     Reply = case catch ejabberd_sql:sql_query_t(Query) of
 	{selected,
