@@ -87,7 +87,7 @@ split(#jid{user = U, server = S, resource = R}) ->
 split(_) ->
     error.
 
--spec from_string([binary()|string()]) -> jid() | error.
+-spec from_string(binary() | string()) -> jid() | error.
 from_string(S) when is_list(S) ->
     %% We do not accept list because we want to enforce good practice of
     %% using binaries for string. However, we do not let it crash to avoid
