@@ -104,7 +104,6 @@
 		ip,
 		aux_fields = [],
 		csi_state = active,
-		csi_queue = [],
 		mgmt_state,
 		mgmt_xmlns,
 		mgmt_queue,
@@ -1147,7 +1146,7 @@ session_established({xmlstreamelement,
 		     #xmlel{name = <<"active">>,
 			    attrs = [{<<"xmlns">>, ?NS_CLIENT_STATE}]}},
 		    StateData) ->
-    NewStateData = csi_queue_flush(StateData),
+    NewStateData = csi_flush_queue(StateData),
     fsm_next_state(session_established, NewStateData#state{csi_state = active});
 session_established({xmlstreamelement,
 		     #xmlel{name = <<"inactive">>,
@@ -2763,7 +2762,7 @@ handle_resume(StateData, Attrs) ->
 		       #xmlel{name = <<"r">>,
 			      attrs = [{<<"xmlns">>, AttrXmlns}],
 			      children = []}),
-	  FlushedState = csi_queue_flush(NewState),
+	  FlushedState = csi_flush_queue(NewState),
 	  NewStateData = FlushedState#state{csi_state = active},
 	  ?INFO_MSG("Resumed session for ~s",
 		    [jid:to_string(NewStateData#state.jid)]),
@@ -2995,7 +2994,6 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 					   privacy_list = OldStateData#state.privacy_list,
 					   aux_fields = OldStateData#state.aux_fields,
 					   csi_state = OldStateData#state.csi_state,
-					   csi_queue = OldStateData#state.csi_queue,
 					   mgmt_xmlns = OldStateData#state.mgmt_xmlns,
 					   mgmt_queue = OldStateData#state.mgmt_queue,
 					   mgmt_timeout = OldStateData#state.mgmt_timeout,
@@ -3028,65 +3026,25 @@ add_resent_delay_info(#state{server = From}, El, Time) ->
 %%% XEP-0352
 %%%----------------------------------------------------------------------
 
-csi_filter_stanza(#state{csi_state = CsiState, jid = JID} = StateData,
+csi_filter_stanza(#state{csi_state = CsiState, server = Server} = StateData,
 		  Stanza) ->
-    Action = ejabberd_hooks:run_fold(csi_filter_stanza,
-				     StateData#state.server,
-				     send, [Stanza]),
-    ?DEBUG("Going to ~p stanza for inactive client ~p",
-	   [Action, jid:to_string(JID)]),
-    case Action of
-      queue -> csi_queue_add(StateData, Stanza);
-      drop -> StateData;
-      send ->
-	  From = fxml:get_tag_attr_s(<<"from">>, Stanza),
-	  StateData1 = csi_queue_send(StateData, From),
-	  StateData2 = send_stanza(StateData1#state{csi_state = active},
-				   Stanza),
-	  StateData2#state{csi_state = CsiState}
-    end.
+    {StateData1, Stanzas} = ejabberd_hooks:run_fold(csi_filter_stanza, Server,
+						    {StateData, [Stanza]},
+						    [Server, Stanza]),
+    StateData2 = lists:foldl(fun(CurStanza, AccState) ->
+				     send_stanza(AccState, CurStanza)
+			     end, StateData1#state{csi_state = active},
+			     Stanzas),
+    StateData2#state{csi_state = CsiState}.
 
-csi_queue_add(#state{csi_queue = Queue} = StateData, Stanza) ->
-    case length(StateData#state.csi_queue) >= csi_max_queue(StateData) of
-      true -> csi_queue_add(csi_queue_flush(StateData), Stanza);
-      false ->
-	  From = fxml:get_tag_attr_s(<<"from">>, Stanza),
-	  NewQueue = lists:keystore(From, 1, Queue, {From, p1_time_compat:timestamp(), Stanza}),
-	  StateData#state{csi_queue = NewQueue}
-    end.
-
-csi_queue_send(#state{csi_queue = Queue, csi_state = CsiState, server = Host} =
-	       StateData, From) ->
-    case lists:keytake(From, 1, Queue) of
-      {value, {From, Time, Stanza}, NewQueue} ->
-	  NewStanza = jlib:add_delay_info(Stanza, Host, Time,
-					  <<"Client Inactive">>),
-	  NewStateData = send_stanza(StateData#state{csi_state = active},
-				     NewStanza),
-	  NewStateData#state{csi_queue = NewQueue, csi_state = CsiState};
-      false -> StateData
-    end.
-
-csi_queue_flush(#state{csi_queue = Queue, csi_state = CsiState, jid = JID,
-		       server = Host} = StateData) ->
-    ?DEBUG("Flushing CSI queue for ~s", [jid:to_string(JID)]),
-    NewStateData =
-	lists:foldl(fun({_From, Time, Stanza}, AccState) ->
-			    NewStanza =
-				jlib:add_delay_info(Stanza, Host, Time,
-						    <<"Client Inactive">>),
-			    send_stanza(AccState, NewStanza)
-		    end, StateData#state{csi_state = active}, Queue),
-    NewStateData#state{csi_queue = [], csi_state = CsiState}.
-
-%% Make sure we won't push too many messages to the XEP-0198 queue when the
-%% client becomes 'active' again.  Otherwise, the client might not manage to
-%% acknowledge the message flood in time.  Also, don't let the queue grow to
-%% more than 100 stanzas.
-csi_max_queue(#state{mgmt_max_queue = infinity}) -> 100;
-csi_max_queue(#state{mgmt_max_queue = Max}) when Max > 200 -> 100;
-csi_max_queue(#state{mgmt_max_queue = Max}) when Max < 2 -> 1;
-csi_max_queue(#state{mgmt_max_queue = Max}) -> Max div 2.
+csi_flush_queue(#state{csi_state = CsiState, server = Server} = StateData) ->
+    {StateData1, Stanzas} = ejabberd_hooks:run_fold(csi_flush_queue, Server,
+						    {StateData, []}, [Server]),
+    StateData2 = lists:foldl(fun(CurStanza, AccState) ->
+				     send_stanza(AccState, CurStanza)
+			     end, StateData1#state{csi_state = active},
+			     Stanzas),
+    StateData2#state{csi_state = CsiState}.
 
 %%%----------------------------------------------------------------------
 %%% JID Set memory footprint reduction code
