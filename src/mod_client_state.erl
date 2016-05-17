@@ -31,8 +31,8 @@
 -behavior(gen_mod).
 
 -export([start/2, stop/1, add_stream_feature/2,
-	 filter_presence/3, filter_chat_states/3, filter_other/3, flush_queue/2,
-	 mod_opt_type/1]).
+	 filter_presence/3, filter_chat_states/3, filter_pep/3, filter_other/3,
+	 flush_queue/2, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -41,13 +41,19 @@
 -define(CSI_QUEUE_MAX, 100).
 
 start(Host, Opts) ->
-    QueuePresence = gen_mod:get_opt(queue_presence, Opts,
-				    fun(B) when is_boolean(B) -> B end,
-				    true),
-    QueueChatStates = gen_mod:get_opt(queue_chat_states, Opts,
-				      fun(B) when is_boolean(B) -> B end,
-				      true),
-    if QueuePresence; QueueChatStates ->
+    QueuePresence =
+	gen_mod:get_opt(queue_presence, Opts,
+			fun(B) when is_boolean(B) -> B end,
+			true),
+    QueueChatStates =
+	gen_mod:get_opt(queue_chat_states, Opts,
+			fun(B) when is_boolean(B) -> B end,
+			true),
+    QueuePEP =
+	gen_mod:get_opt(queue_pep, Opts,
+			fun(B) when is_boolean(B) -> B end,
+			false),
+    if QueuePresence; QueueChatStates; QueuePEP ->
 	   ejabberd_hooks:add(c2s_post_auth_features, Host, ?MODULE,
 			      add_stream_feature, 50),
 	   if QueuePresence ->
@@ -60,6 +66,11 @@ start(Host, Opts) ->
 				     filter_chat_states, 50);
 	      true -> ok
 	   end,
+	   if QueuePEP ->
+		  ejabberd_hooks:add(csi_filter_stanza, Host, ?MODULE,
+				     filter_pep, 50);
+	      true -> ok
+	   end,
 	   ejabberd_hooks:add(csi_filter_stanza, Host, ?MODULE,
 			      filter_other, 100),
 	   ejabberd_hooks:add(csi_flush_queue, Host, ?MODULE,
@@ -68,13 +79,19 @@ start(Host, Opts) ->
     end.
 
 stop(Host) ->
-    QueuePresence = gen_mod:get_module_opt(Host, ?MODULE, queue_presence,
-					   fun(B) when is_boolean(B) -> B end,
-					   true),
-    QueueChatStates = gen_mod:get_module_opt(Host, ?MODULE, queue_chat_states,
-					     fun(B) when is_boolean(B) -> B end,
-					     true),
-    if QueuePresence; QueueChatStates ->
+    QueuePresence =
+	gen_mod:get_module_opt(Host, ?MODULE, queue_presence,
+			       fun(B) when is_boolean(B) -> B end,
+			       true),
+    QueueChatStates =
+	gen_mod:get_module_opt(Host, ?MODULE, queue_chat_states,
+			       fun(B) when is_boolean(B) -> B end,
+			       true),
+    QueuePEP =
+	gen_mod:get_module_opt(Host, ?MODULE, queue_pep,
+			       fun(B) when is_boolean(B) -> B end,
+			       false),
+    if QueuePresence; QueueChatStates; QueuePEP ->
 	   ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
 				 add_stream_feature, 50),
 	   if QueuePresence ->
@@ -85,6 +102,11 @@ stop(Host) ->
 	   if QueueChatStates ->
 		  ejabberd_hooks:delete(csi_filter_stanza, Host, ?MODULE,
 					filter_chat_states, 50);
+	      true -> ok
+	   end,
+	   if QueuePEP ->
+		  ejabberd_hooks:delete(csi_filter_stanza, Host, ?MODULE,
+					filter_pep, 50);
 	      true -> ok
 	   end,
 	   ejabberd_hooks:delete(csi_filter_stanza, Host, ?MODULE,
@@ -122,6 +144,17 @@ filter_chat_states({C2SState, _OutStanzas} = Acc, Host,
     end;
 filter_chat_states(Acc, _Host, _Stanza) -> Acc.
 
+filter_pep({C2SState, _OutStanzas} = Acc, Host,
+	   #xmlel{name = <<"message">>} = Stanza) ->
+    case find_pep(Stanza) of
+      {value, Type} ->
+	  ?DEBUG("Got PEP notification", []),
+	  queue_add(Type, Stanza, Host, C2SState);
+      false ->
+	  Acc
+    end;
+filter_pep(Acc, _Host, _Stanza) -> Acc.
+
 filter_other({C2SState, _OutStanzas}, Host, Stanza) ->
     ?DEBUG("Won't add stanza to CSI queue", []),
     queue_take(Stanza, Host, C2SState).
@@ -131,6 +164,42 @@ flush_queue({C2SState, _OutStanzas}, Host) ->
     Queue = get_queue(C2SState),
     NewState = set_queue([], C2SState),
     {stop, {NewState, get_stanzas(Queue, Host)}}.
+
+find_pep(#xmlel{name = <<"message">>} = Stanza) ->
+    From = fxml:get_tag_attr_s(<<"from">>, Stanza),
+    case jid:from_string(From) of
+      #jid{luser = <<>>} -> % It's not PEP.
+	  false;
+      _ ->
+	  case fxml:get_subtag_with_xmlns(Stanza, <<"event">>,
+					  ?NS_PUBSUB_EVENT) of
+	    #xmlel{children = Els} ->
+		get_pep_node_and_xmlns(fxml:remove_cdata(Els));
+	    false ->
+		false
+	  end
+    end.
+
+get_pep_node_and_xmlns([#xmlel{name = <<"items">>, attrs = ItemsAttrs,
+			       children = Item}]) ->
+    case {fxml:get_attr(<<"node">>, ItemsAttrs), fxml:remove_cdata(Item)} of
+      {{value, Node}, [#xmlel{name = <<"item">>, children = Payload}]} ->
+	  case fxml:remove_cdata(Payload) of
+	    [#xmlel{attrs = PayloadAttrs}] ->
+		case fxml:get_attr(<<"xmlns">>, PayloadAttrs) of
+		  {value, XMLNS} ->
+		      {value, {Node, XMLNS}};
+		  false ->
+		      false
+		end;
+	    _ ->
+		false
+	  end;
+      _ ->
+	  false
+    end;
+get_pep_node_and_xmlns(_) ->
+    false.
 
 queue_add(Type, Stanza, Host, C2SState) ->
     case get_queue(C2SState) of
@@ -179,4 +248,6 @@ mod_opt_type(queue_presence) ->
     fun(B) when is_boolean(B) -> B end;
 mod_opt_type(queue_chat_states) ->
     fun(B) when is_boolean(B) -> B end;
-mod_opt_type(_) -> [queue_presence, queue_chat_states].
+mod_opt_type(queue_pep) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type(_) -> [queue_presence, queue_chat_states, queue_pep].

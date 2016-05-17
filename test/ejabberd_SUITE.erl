@@ -2255,12 +2255,41 @@ client_state_master(Config) ->
     ChatState = #message{to = Peer, thread = <<"1">>,
 			 sub_els = [#chatstate{type = active}]},
     Message = ChatState#message{body = [#text{data = <<"body">>}]},
+    PepPayload = xmpp_codec:encode(#presence{}),
+    PepOne = #message{
+		to = Peer,
+		sub_els =
+		    [#pubsub_event{
+			items =
+			    [#pubsub_event_items{
+				node = <<"foo-1">>,
+				items =
+				    [#pubsub_event_item{
+					id = <<"pep-1">>,
+					xml_els = [PepPayload]}]}]}]},
+    PepTwo = #message{
+		to = Peer,
+		sub_els =
+		    [#pubsub_event{
+			items =
+			    [#pubsub_event_items{
+				node = <<"foo-2">>,
+				items =
+				    [#pubsub_event_item{
+					id = <<"pep-2">>,
+					xml_els = [PepPayload]}]}]}]},
     %% Wait for the slave to become inactive.
     wait_for_slave(Config),
     %% Should be queued (but see below):
     send(Config, Presence),
     %% Should replace the previous presence in the queue:
     send(Config, Presence#presence{type = unavailable}),
+    %% The following two PEP stanzas should be queued (but see below):
+    send(Config, PepOne),
+    send(Config, PepTwo),
+    %% The following two PEP stanzas should replace the previous two:
+    send(Config, PepOne),
+    send(Config, PepTwo),
     %% Should be queued (but see below):
     send(Config, ChatState),
     %% Should replace the previous chat state in the queue:
@@ -2279,6 +2308,28 @@ client_state_slave(Config) ->
     wait_for_master(Config),
     ?recv1(#presence{from = Peer, type = unavailable,
 		     sub_els = [#delay{}]}),
+    #message{
+       from = Peer,
+       sub_els =
+	   [#pubsub_event{
+	       items =
+		   [#pubsub_event_items{
+		       node = <<"foo-1">>,
+		       items =
+			   [#pubsub_event_item{
+			       id = <<"pep-1">>}]}]},
+	    #delay{}]} = recv(),
+    #message{
+       from = Peer,
+       sub_els =
+	   [#pubsub_event{
+	       items =
+		   [#pubsub_event_items{
+		       node = <<"foo-2">>,
+		       items =
+			   [#pubsub_event_item{
+			       id = <<"pep-2">>}]}]},
+	    #delay{}]} = recv(),
     ?recv1(#message{from = Peer, thread = <<"1">>,
 		    sub_els = [#chatstate{type = composing},
 			       #delay{}]}),

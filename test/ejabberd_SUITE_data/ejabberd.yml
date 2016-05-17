@@ -215,6 +215,7 @@ Welcome to this XMPP server."
       mod_client_state:
         queue_presence: true
         queue_chat_states: true
+        queue_pep: true
       mod_adhoc: []
       mod_configure: []
       mod_disco: []
@@ -271,6 +272,7 @@ Welcome to this XMPP server."
       mod_client_state:
         queue_presence: true
         queue_chat_states: true
+        queue_pep: true
       mod_adhoc: []
       mod_configure: []
       mod_disco: []
