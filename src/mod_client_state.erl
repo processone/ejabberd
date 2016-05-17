@@ -44,10 +44,10 @@ start(Host, Opts) ->
     QueuePresence = gen_mod:get_opt(queue_presence, Opts,
 				    fun(B) when is_boolean(B) -> B end,
 				    true),
-    DropChatStates = gen_mod:get_opt(drop_chat_states, Opts,
-				     fun(B) when is_boolean(B) -> B end,
-				     true),
-    if QueuePresence; DropChatStates ->
+    QueueChatStates = gen_mod:get_opt(queue_chat_states, Opts,
+				      fun(B) when is_boolean(B) -> B end,
+				      true),
+    if QueuePresence; QueueChatStates ->
 	   ejabberd_hooks:add(c2s_post_auth_features, Host, ?MODULE,
 			      add_stream_feature, 50),
 	   if QueuePresence ->
@@ -55,7 +55,7 @@ start(Host, Opts) ->
 				     filter_presence, 50);
 	      true -> ok
 	   end,
-	   if DropChatStates ->
+	   if QueueChatStates ->
 		  ejabberd_hooks:add(csi_filter_stanza, Host, ?MODULE,
 				     filter_chat_states, 50);
 	      true -> ok
@@ -71,10 +71,10 @@ stop(Host) ->
     QueuePresence = gen_mod:get_module_opt(Host, ?MODULE, queue_presence,
 					   fun(B) when is_boolean(B) -> B end,
 					   true),
-    DropChatStates = gen_mod:get_module_opt(Host, ?MODULE, drop_chat_states,
-					    fun(B) when is_boolean(B) -> B end,
-					    true),
-    if QueuePresence; DropChatStates ->
+    QueueChatStates = gen_mod:get_module_opt(Host, ?MODULE, queue_chat_states,
+					     fun(B) when is_boolean(B) -> B end,
+					     true),
+    if QueuePresence; QueueChatStates ->
 	   ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
 				 add_stream_feature, 50),
 	   if QueuePresence ->
@@ -82,7 +82,7 @@ stop(Host) ->
 					filter_presence, 50);
 	      true -> ok
 	   end,
-	   if DropChatStates ->
+	   if QueueChatStates ->
 		  ejabberd_hooks:delete(csi_filter_stanza, Host, ?MODULE,
 					filter_chat_states, 50);
 	      true -> ok
@@ -111,12 +111,12 @@ filter_presence({C2SState, _OutStanzas} = Acc, Host,
     end;
 filter_presence(Acc, _Host, _Stanza) -> Acc.
 
-filter_chat_states({C2SState, _OutStanzas} = Acc, _Host,
+filter_chat_states({C2SState, _OutStanzas} = Acc, Host,
 		   #xmlel{name = <<"message">>} = Stanza) ->
     case jlib:is_standalone_chat_state(Stanza) of
-      true -> % Drop the stanza.
+      true ->
 	  ?DEBUG("Got standalone chat state notification", []),
-	  {stop, {C2SState, []}};
+	  queue_add(chatstate, Stanza, Host, C2SState);
       false ->
 	  Acc
     end;
@@ -177,6 +177,6 @@ get_stanzas(Queue, Host) ->
 
 mod_opt_type(queue_presence) ->
     fun(B) when is_boolean(B) -> B end;
-mod_opt_type(drop_chat_states) ->
+mod_opt_type(queue_chat_states) ->
     fun(B) when is_boolean(B) -> B end;
-mod_opt_type(_) -> [queue_presence, drop_chat_states].
+mod_opt_type(_) -> [queue_presence, queue_chat_states].

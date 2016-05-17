@@ -213,8 +213,8 @@ Welcome to this XMPP server."
         db_type: internal
       mod_carboncopy: []
       mod_client_state:
-        drop_chat_states: true
         queue_presence: true
+        queue_chat_states: true
       mod_adhoc: []
       mod_configure: []
       mod_disco: []
@@ -269,8 +269,8 @@ Welcome to this XMPP server."
         db_type: internal
       mod_carboncopy: []
       mod_client_state:
-        drop_chat_states: true
         queue_presence: true
+        queue_chat_states: true
       mod_adhoc: []
       mod_configure: []
       mod_disco: []

@@ -2257,13 +2257,15 @@ client_state_master(Config) ->
     Message = ChatState#message{body = [#text{data = <<"body">>}]},
     %% Wait for the slave to become inactive.
     wait_for_slave(Config),
-    %% Should be dropped:
-    send(Config, ChatState),
     %% Should be queued (but see below):
     send(Config, Presence),
     %% Should replace the previous presence in the queue:
     send(Config, Presence#presence{type = unavailable}),
-    %% Should be sent immediately, together with the previous presence:
+    %% Should be queued (but see below):
+    send(Config, ChatState),
+    %% Should replace the previous chat state in the queue:
+    send(Config, ChatState#message{sub_els = [#chatstate{type = composing}]}),
+    %% Should be sent immediately, together with the queued stanzas:
     send(Config, Message),
     %% Wait for the slave to become active.
     wait_for_slave(Config),
@@ -2277,6 +2279,9 @@ client_state_slave(Config) ->
     wait_for_master(Config),
     ?recv1(#presence{from = Peer, type = unavailable,
 		     sub_els = [#delay{}]}),
+    ?recv1(#message{from = Peer, thread = <<"1">>,
+		    sub_els = [#chatstate{type = composing},
+			       #delay{}]}),
     ?recv1(#message{from = Peer, thread = <<"1">>,
 		    body = [#text{data = <<"body">>}],
 		    sub_els = [#chatstate{type = active}]}),
