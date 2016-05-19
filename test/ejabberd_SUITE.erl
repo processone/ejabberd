@@ -1435,6 +1435,11 @@ muc_master(Config) ->
 			    items = [#muc_item{affiliation = member,
 					       jid = PeerJID,
 					       role = participant}]}]}),
+    ?recv1(#message{from = Room,
+	      sub_els = [#muc_user{
+			    items = [#muc_item{affiliation = member,
+					       jid = Localhost,
+					       role = none}]}]}),
     %% BUG: We should not receive any sub_els!
     ?recv1(#iq{type = result, id = I1, sub_els = [_|_]}),
     %% Receive groupchat message from the peer
