@@ -382,14 +382,14 @@ process_item_set(From, To,
 		      Item = get_roster_by_jid_t(LUser, LServer, LJID),
 		      Item1 = process_item_attrs_managed(Item, Attrs, Managed),
 		      Item2 = process_item_els(Item1, Els),
-		      case Item2#roster.subscription of
-			remove -> del_roster_t(LUser, LServer, LJID);
-			_ -> update_roster_t(LUser, LServer, LJID, Item2)
-		      end,
-                      send_itemset_to_managers(From, Item2, Managed),
 		      Item3 = ejabberd_hooks:run_fold(roster_process_item,
 						      LServer, Item2,
 						      [LServer]),
+		      case Item3#roster.subscription of
+			remove -> del_roster_t(LUser, LServer, LJID);
+			_ -> update_roster_t(LUser, LServer, LJID, Item3)
+		      end,
+                      send_itemset_to_managers(From, Item3, Managed),
 		      case roster_version_on_db(LServer) of
 			true -> write_roster_version_t(LUser, LServer);
 			false -> ok
