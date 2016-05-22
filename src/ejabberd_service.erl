@@ -50,7 +50,7 @@
 -include("jlib.hrl").
 
 -record(state,
-    {socket                    :: ejabberd_socket:socket_state(),
+        {socket :: ejabberd_socket:socket_state(),
          sockmod = ejabberd_socket :: ejabberd_socket | ejabberd_frontend_socket,
          streamid = <<"">>         :: binary(),
          host_opts = dict:new()    :: ?TDICT,
