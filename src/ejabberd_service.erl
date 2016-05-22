@@ -96,6 +96,8 @@
 -define(INVALID_NS_ERR,
 	fxml:element_to_binary(?SERR_INVALID_NAMESPACE)).
 
+-define(ACCESS_ERROR, <<"<forbidden/>">>).
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -130,16 +132,17 @@ init([{SockMod, Socket}, Opts]) ->
 		   {hosts, HOpts} ->
 		       lists:foldl(
 			 fun({H, Os}, D) ->
-				 P = proplists:get_value(
-				       password, Os,
-				       p1_sha:sha(crypto:rand_bytes(20))),
-				 dict:store(H, P, D)
+				 P = proplists:get_value(password, Os,
+				 	                     p1_sha:sha(crypto:rand_bytes(20))),
+				  %% privilege access to  entities data
+                 PrivAccess = proplists:get_value(privilege_access, Os, []),
+				 dict:store(H,[{password, P}] ++ PrivAccess, D)
 			 end, dict:new(), HOpts);
 		   false ->
-		       Pass = proplists:get_value(
-				password, Opts,
-				p1_sha:sha(crypto:rand_bytes(20))),
-		       dict:from_list([{global, Pass}])
+		       Pass = proplists:get_value(password, Opts,
+				                          p1_sha:sha(crypto:rand_bytes(20))),
+		       PrivAccess = proplists:get_value(privilege_access, Opts, []),
+		       dict:from_list([{global, [{password, Pass}] ++ PrivAccess}])
 	       end,
     Shaper = case lists:keysearch(shaper_rule, 1, Opts) of
 	       {value, {_, S}} -> S;
@@ -168,37 +171,37 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
 		StateData) ->
     case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       <<"jabber:component:accept">> ->
-	  To = fxml:get_attr_s(<<"to">>, Attrs),
-	  Host = jid:nameprep(To),
-	  if Host == error ->
-		  Header = io_lib:format(?STREAM_HEADER,
-					 [<<"none">>, ?MYNAME]),
-		  send_text(StateData,
-			    <<(list_to_binary(Header))/binary,
-			      (?INVALID_XML_ERR)/binary,
-			      (?STREAM_TRAILER)/binary>>),
-		  {stop, normal, StateData};
-	     true ->
-		  Header = io_lib:format(?STREAM_HEADER,
-					 [StateData#state.streamid, fxml:crypt(To)]),
-		  send_text(StateData, Header),
-		  HostOpts = case dict:is_key(Host, StateData#state.host_opts) of
-				 true ->
-				     StateData#state.host_opts;
-				 false ->
-				     case dict:find(global, StateData#state.host_opts) of
-					 {ok, GlobalPass} ->
-					     dict:from_list([{Host, GlobalPass}]);
-					 error ->
-					     StateData#state.host_opts
-				     end
-			     end,
-		  {next_state, wait_for_handshake,
-		   StateData#state{host = Host, host_opts = HostOpts}}
-	  end;
+	      To = fxml:get_attr_s(<<"to">>, Attrs),
+	      Host = jid:nameprep(To),
+	      if Host == error ->
+		          Header = io_lib:format(?STREAM_HEADER,
+					                     [<<"none">>, ?MYNAME]),
+		          send_text(StateData,
+			                <<(list_to_binary(Header))/binary,
+			                  (?INVALID_XML_ERR)/binary,
+			                  (?STREAM_TRAILER)/binary>>),
+		          {stop, normal, StateData};
+	         true ->
+		          Header = io_lib:format(?STREAM_HEADER,
+					                     [StateData#state.streamid, fxml:crypt(To)]),
+		          send_text(StateData, Header),
+		          HostOpts = case dict:is_key(Host, StateData#state.host_opts) of
+				                  true ->
+				                      StateData#state.host_opts;
+				                  false ->
+				                      case dict:find(global, StateData#state.host_opts) of
+					                      {ok, Props} ->
+					                          dict:from_list([{Host, Props}]);
+					                      error ->
+					                          StateData#state.host_opts
+				                      end
+			                 end,
+		          {next_state, wait_for_handshake,
+		           StateData#state{host = Host, host_opts = HostOpts}}
+	      end;
       _ ->
-	  send_text(StateData, ?INVALID_HEADER_ERR),
-	  {stop, normal, StateData}
+	      send_text(StateData, ?INVALID_HEADER_ERR),
+	      {stop, normal, StateData}
     end;
 wait_for_stream({xmlstreamerror, _}, StateData) ->
     Header = io_lib:format(?STREAM_HEADER,
@@ -213,29 +216,30 @@ wait_for_stream(closed, StateData) ->
 wait_for_handshake({xmlstreamelement, El}, StateData) ->
     #xmlel{name = Name, children = Els} = El,
     case {Name, fxml:get_cdata(Els)} of
-      {<<"handshake">>, Digest} ->
-	  case dict:find(StateData#state.host, StateData#state.host_opts) of
-	      {ok, Password} ->
-		  case p1_sha:sha(<<(StateData#state.streamid)/binary,
-				    Password/binary>>) of
-		      Digest ->
-			  send_text(StateData, <<"<handshake/>">>),
-			  lists:foreach(
-			    fun (H) ->
-				    ejabberd_router:register_route(H, ?MYNAME),
-				    ?INFO_MSG("Route registered for service ~p~n",
-					      [H])
-			    end, dict:fetch_keys(StateData#state.host_opts)),
-			  {next_state, stream_established, StateData};
-		      _ ->
-			  send_text(StateData, ?INVALID_HANDSHAKE_ERR),
-			  {stop, normal, StateData}
-		  end;
-	      _ ->
-		  send_text(StateData, ?INVALID_HANDSHAKE_ERR),
-		  {stop, normal, StateData}
-	  end;
-      _ -> {next_state, wait_for_handshake, StateData}
+        {<<"handshake">>, Digest} ->
+	        case dict:find(StateData#state.host, StateData#state.host_opts) of
+	            {ok, HostProps} ->
+	                Password = get_prop(password, HostProps),
+		            case p1_sha:sha(<<(StateData#state.streamid)/binary,
+				                       Password/binary>>) of
+		                Digest ->
+			                send_text(StateData, <<"<handshake/>">>),
+			                lists:foreach(
+			                  fun (H) ->
+				                      ejabberd_router:register_route(H, ?MYNAME),
+				                      ?INFO_MSG("Route registered for service ~p~n",
+					                            [H])
+			                  end, dict:fetch_keys(StateData#state.host_opts)),
+			                {next_state, stream_established, StateData};
+		                _ ->
+			                send_text(StateData, ?INVALID_HANDSHAKE_ERR),
+			                {stop, normal, StateData}
+		            end;
+	            _ ->
+		            send_text(StateData, ?INVALID_HANDSHAKE_ERR),
+		            {stop, normal, StateData}
+	        end;
+        _ -> {next_state, wait_for_handshake, StateData}
     end;
 wait_for_handshake({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
@@ -252,47 +256,47 @@ stream_established({xmlstreamelement, El}, StateData) ->
     #xmlel{name = Name, attrs = Attrs} = NewEl,
     From = fxml:get_attr_s(<<"from">>, Attrs),
     FromJID = case StateData#state.check_from of
-		%% If the admin does not want to check the from field
-		%% when accept packets from any address.
-		%% In this case, the component can send packet of
-		%% behalf of the server users.
-		false -> jid:from_string(From);
-		%% The default is the standard behaviour in XEP-0114
-		_ ->
-		    FromJID1 = jid:from_string(From),
-		    case FromJID1 of
-		      #jid{lserver = Server} ->
-			  case dict:is_key(Server, StateData#state.host_opts) of
-			    true -> FromJID1;
-			    false -> error
-			  end;
-		      _ -> error
-		    end
-	      end,
+		        %% If the admin does not want to check the from field
+		        %% when accept packets from any address.
+		        %% In this case, the component can send packet of
+		        %% behalf of the server users.
+		        false -> jid:from_string(From);
+		        %% The default is the standard behaviour in XEP-0114
+		        _ ->
+		            FromJID1 = jid:from_string(From),
+		            case FromJID1 of
+		              #jid{lserver = Server} ->
+			              case dict:is_key(Server, StateData#state.host_opts) of
+			                true -> FromJID1;
+			                false -> error
+			              end;
+		              _ -> error
+		            end
+	          end,
     To = fxml:get_attr_s(<<"to">>, Attrs),
     ToJID = case To of
-	      <<"">> -> error;
-	      _ -> jid:from_string(To)
-	    end,
+	          <<"">> -> error;
+	          _ -> jid:from_string(To)
+	        end,
     if ((Name == <<"iq">>) or (Name == <<"message">>) or
-	  (Name == <<"presence">>))
-	 and (ToJID /= error)
-	 and (FromJID /= error) ->
-	   ejabberd_router:route(FromJID, ToJID, NewEl);
-       true ->
-	   Lang = fxml:get_tag_attr_s(<<"xml:lang">>, El),
-	   Txt = <<"Incorrect stanza name or from/to JID">>,
-	   Err = jlib:make_error_reply(NewEl, ?ERRT_BAD_REQUEST(Lang, Txt)),
-	   send_element(StateData, Err),
-	   error
+	      (Name == <<"presence">>))
+	     and (ToJID /= error)
+	     and (FromJID /= error) ->
+	       ejabberd_router:route(FromJID, ToJID, NewEl);
+        true ->
+	        Lang = fxml:get_tag_attr_s(<<"xml:lang">>, El),
+	        Txt = <<"Incorrect stanza name or from/to JID">>,
+	        Err = jlib:make_error_reply(NewEl, ?ERRT_BAD_REQUEST(Lang, Txt)),
+	        send_element(StateData, Err),
+	        error
     end,
     {next_state, stream_established, StateData};
 stream_established({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 stream_established({xmlstreamerror, _}, StateData) ->
     send_text(StateData,
-	      <<(?INVALID_XML_ERR)/binary,
-		(?STREAM_TRAILER)/binary>>),
+	          <<(?INVALID_XML_ERR)/binary,
+		        (?STREAM_TRAILER)/binary>>),
     {stop, normal, StateData};
 stream_established(closed, StateData) ->
     {stop, normal, StateData}.
@@ -349,23 +353,20 @@ handle_info({send_element, El}, StateName, StateData) ->
     {next_state, StateName, StateData};
 handle_info({route, From, To, Packet}, StateName,
 	    StateData) ->
-    case acl:match_rule(global, StateData#state.access,
-			From)
-	of
+    case acl:match_rule(global, StateData#state.access, From) of
       allow ->
-	  #xmlel{name = Name, attrs = Attrs, children = Els} =
-	      Packet,
-	  Attrs2 =
-	      jlib:replace_from_to_attrs(jid:to_string(From),
-					 jid:to_string(To), Attrs),
-	  Text = fxml:element_to_binary(#xmlel{name = Name,
-					      attrs = Attrs2, children = Els}),
-	  send_text(StateData, Text);
+	      #xmlel{name = Name, attrs = Attrs, children = Els} = Packet,
+	      Attrs2 =
+	          jlib:replace_from_to_attrs(jid:to_string(From),
+					                     jid:to_string(To), Attrs),
+	      Text = fxml:element_to_binary(#xmlel{name = Name,
+					                          attrs = Attrs2, children = Els}),
+	      send_text(StateData, Text);
       deny ->
-	  Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
-	  Txt = <<"Denied by ACL">>,
-	  Err = jlib:make_error_reply(Packet, ?ERRT_NOT_ALLOWED(Lang, Txt)),
-	  ejabberd_router:route_error(To, From, Err, Packet)
+	      Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+	      Txt = <<"Denied by ACL">>,
+	      Err = jlib:make_error_reply(Packet, ?ERRT_NOT_ALLOWED(Lang, Txt)),
+	      ejabberd_router:route_error(To, From, Err, Packet)
     end,
     {next_state, StateName, StateData};
 handle_info(Info, StateName, StateData) ->
@@ -381,10 +382,10 @@ terminate(Reason, StateName, StateData) ->
     ?INFO_MSG("terminated: ~p", [Reason]),
     case StateName of
       stream_established ->
-	  lists:foreach(fun (H) ->
-				ejabberd_router:unregister_route(H)
-			end,
-			dict:fetch_keys(StateData#state.host_opts));
+	      lists:foreach(fun (H) ->
+				            ejabberd_router:unregister_route(H)
+			            end,
+			            dict:fetch_keys(StateData#state.host_opts));
       _ -> ok
     end,
     (StateData#state.sockmod):close(StateData#state.socket),
@@ -402,8 +403,7 @@ print_state(State) -> State.
 %%%----------------------------------------------------------------------
 
 send_text(StateData, Text) ->
-    (StateData#state.sockmod):send(StateData#state.socket,
-				   Text).
+    (StateData#state.sockmod):send(StateData#state.socket,Text).
 
 send_element(StateData, El) ->
     send_text(StateData, fxml:element_to_binary(El)).
@@ -444,3 +444,8 @@ fsm_limit_opts(Opts) ->
 opt_type(max_fsm_queue) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(_) -> [max_fsm_queue].
+
+-spec get_prop(atom(), list()) -> atom().
+get_prop(Prop, Props ) ->
+    proplists:get_value(Prop, Props, none).
+
