@@ -16,6 +16,7 @@
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("jlib.hrl").
+-include("logger.hrl").
 -include("mod_mam.hrl").
 
 -define(BIN_GREATER_THAN(A, B),
@@ -49,16 +50,34 @@ remove_room(_LServer, LName, LHost) ->
     remove_user(LName, LHost).
 
 delete_old_messages(global, TimeStamp, Type) ->
-    MS = ets:fun2ms(fun(#archive_msg{timestamp = MsgTS,
-				     type = MsgType} = Msg)
-			  when MsgTS < TimeStamp,
-			       MsgType == Type orelse Type == all ->
-			    Msg
-		    end),
-    OldMsgs = mnesia:dirty_select(archive_msg, MS),
-    lists:foreach(fun(Rec) ->
-			  ok = mnesia:dirty_delete_object(Rec)
-		  end, OldMsgs).
+    delete_old_user_messages(mnesia:dirty_first(archive_msg), TimeStamp, Type).
+
+delete_old_user_messages('$end_of_table', _TimeStamp, _Type) ->
+    ok;
+delete_old_user_messages(User, TimeStamp, Type) ->
+    F = fun() ->
+		Msgs = mnesia:read(archive_msg, User),
+		Keep = lists:filter(
+			 fun(#archive_msg{timestamp = MsgTS,
+					  type = MsgType}) ->
+				 MsgTS >= TimeStamp orelse (Type /= all andalso
+							    Type /= MsgType)
+			 end, Msgs),
+		if length(Keep) < length(Msgs) ->
+			mnesia:delete({archive_msg, User}),
+			lists:foreach(fun(Msg) -> mnesia:write(Msg) end, Keep);
+		   true ->
+			ok
+		end
+	end,
+    case mnesia:transaction(F) of
+	{atomic, ok} ->
+	    delete_old_user_messages(mnesia:dirty_next(archive_msg, User),
+				     TimeStamp, Type);
+	{aborted, Err} ->
+	    ?ERROR_MSG("Cannot delete old MAM messages: ~s", [Err]),
+	    Err
+    end.
 
 extended_fields() ->
     [].
@@ -67,18 +86,22 @@ store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir) ->
     LPeer = {PUser, PServer, _} = jid:tolower(Peer),
     TS = p1_time_compat:timestamp(),
     ID = jlib:integer_to_binary(now_to_usec(TS)),
-    case mnesia:dirty_write(
-	   #archive_msg{us = {LUser, LServer},
-			id = ID,
-			timestamp = TS,
-			peer = LPeer,
-			bare_peer = {PUser, PServer, <<>>},
-			type = Type,
-			nick = Nick,
-			packet = Pkt}) of
-	ok ->
+    F = fun() ->
+		mnesia:write(#archive_msg{us = {LUser, LServer},
+					  id = ID,
+					  timestamp = TS,
+					  peer = LPeer,
+					  bare_peer = {PUser, PServer, <<>>},
+					  type = Type,
+					  nick = Nick,
+					  packet = Pkt})
+	end,
+    case mnesia:transaction(F) of
+	{atomic, ok} ->
 	    {ok, ID};
-	Err ->
+	{aborted, Err} ->
+	    ?ERROR_MSG("Cannot add message to MAM archive of ~s@~s: ~s",
+		       [LUser, LServer, Err]),
 	    Err
     end.
 
