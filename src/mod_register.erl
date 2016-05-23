@@ -441,6 +441,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 				  end
 			    end;
 			false ->
+			    remove_timeout(Source),
 			    ErrText = <<"The password is too weak">>,
 			    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)}
 		      end;
