@@ -91,51 +91,48 @@ store_type() ->
 
 check_password(User, AuthzId, Server, Password) ->
     if AuthzId /= <<>> andalso AuthzId /= User ->
-        false;
-    true ->
-        LUser = jid:nodeprep(User),
-        LServer = jid:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_read({passwd, US}) of
-      [#passwd{password = Password}]
-	  when is_binary(Password) ->
-	  Password /= <<"">>;
-      [#passwd{password = Scram}]
-	  when is_record(Scram, scram) ->
-	  is_password_scram_valid(Password, Scram);
-      _ -> false
-        end
+	    false;
+       true ->
+	    LUser = jid:nodeprep(User),
+	    LServer = jid:nameprep(Server),
+	    US = {LUser, LServer},
+	    case catch mnesia:dirty_read({passwd, US}) of
+	      [#passwd{password = Password}] when is_binary(Password) ->
+		  Password /= <<"">>;
+	      [#passwd{password = Scram}] when is_record(Scram, scram) ->
+		  is_password_scram_valid(Password, Scram);
+	      _ -> false
+	    end
     end.
 
 check_password(User, AuthzId, Server, Password, Digest,
 	       DigestGen) ->
     if AuthzId /= <<>> andalso AuthzId /= User ->
-        false;
-    true ->
-        LUser = jid:nodeprep(User),
-        LServer = jid:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_read({passwd, US}) of
-      [#passwd{password = Passwd}] when is_binary(Passwd) ->
-	  DigRes = if Digest /= <<"">> ->
-			  Digest == DigestGen(Passwd);
-		      true -> false
-		   end,
-	  if DigRes -> true;
-	     true -> (Passwd == Password) and (Password /= <<"">>)
-	  end;
-      [#passwd{password = Scram}]
-	  when is_record(Scram, scram) ->
-	  Passwd = jlib:decode_base64(Scram#scram.storedkey),
-	  DigRes = if Digest /= <<"">> ->
-			  Digest == DigestGen(Passwd);
-		      true -> false
-		   end,
-	  if DigRes -> true;
-	     true -> (Passwd == Password) and (Password /= <<"">>)
-	  end;
-      _ -> false
-        end
+	    false;
+       true ->
+	    LUser = jid:nodeprep(User),
+	    LServer = jid:nameprep(Server),
+	    US = {LUser, LServer},
+	    case catch mnesia:dirty_read({passwd, US}) of
+	      [#passwd{password = Passwd}] when is_binary(Passwd) ->
+		  DigRes = if Digest /= <<"">> ->
+				   Digest == DigestGen(Passwd);
+			      true -> false
+			   end,
+		  if DigRes -> true;
+		     true -> (Passwd == Password) and (Password /= <<"">>)
+		  end;
+	      [#passwd{password = Scram}] when is_record(Scram, scram) ->
+		  Passwd = jlib:decode_base64(Scram#scram.storedkey),
+		  DigRes = if Digest /= <<"">> ->
+				   Digest == DigestGen(Passwd);
+			      true -> false
+			   end,
+		  if DigRes -> true;
+		     true -> (Passwd == Password) and (Password /= <<"">>)
+		  end;
+	      _ -> false
+	    end
     end.
 
 %% @spec (User::string(), Server::string(), Password::string()) ->

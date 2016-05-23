@@ -78,13 +78,15 @@ store_type() -> external.
 
 check_password(User, AuthzId, Server, Password) ->
     if AuthzId /= <<>> andalso AuthzId /= User ->
-        false;
-    true ->
-    case get_cache_option(Server) of
-          false -> check_password_extauth(User, AuthzId, Server, Password);
-      {true, CacheTime} ->
-    	  check_password_cache(User, AuthzId, Server, Password, CacheTime)
-        end
+	    false;
+       true ->
+	    case get_cache_option(Server) of
+	      false ->
+		  check_password_extauth(User, AuthzId, Server, Password);
+	      {true, CacheTime} ->
+		  check_password_cache(User, AuthzId, Server, Password,
+				       CacheTime)
+	    end
     end.
 
 check_password(User, AuthzId, Server, Password, _Digest,
