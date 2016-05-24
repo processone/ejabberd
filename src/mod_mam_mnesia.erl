@@ -88,7 +88,7 @@ store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir) ->
     case {mnesia:table_info(archive_msg, disc_only_copies),
 	  mnesia:table_info(archive_msg, memory)} of
 	{[_|_], TableSize} when TableSize > ?TABLE_SIZE_LIMIT ->
-	    ?ERROR_MSG("MAM archive of ~s@~s too large, won't store message",
+	    ?ERROR_MSG("MAM archives too large, won't store message for ~s@~s",
 		       [LUser, LServer]),
 	    {error, overflow};
 	_ ->
