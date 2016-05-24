@@ -283,13 +283,26 @@ stream_established({xmlstreamelement, El}, StateData) ->
     To = fxml:get_attr_s(<<"to">>, Attrs),
     ToJID = case To of
               <<"">> -> error;
-              _ -> jid:from_string(To)
+              _ -> jid:from_string(To) 
             end,
-    if ((Name == <<"iq">>) or (Name == <<"message">>) or
-          (Name == <<"presence">>))
-         and (ToJID /= error)
-         and (FromJID /= error) ->
-           ejabberd_router:route(FromJID, ToJID, NewEl);
+
+    if  (Name == <<"iq">>) and (ToJID /= error) and (FromJID /= error) ->
+            IQ = jlib:iq_query_info(NewEl),
+            case IQ of
+                #iq{xmlns = ?NS_ROSTER} ->
+                    case (ToJID#jid.luser /= <<"">>) and
+                         (lists:member(ToJID#jid.lserver, ?MYHOSTS)) of
+                         true ->
+                            process_iq(StateData, FromJID,ToJID, NewEl);
+                         false -> 
+                            ejabberd_router:route(FromJID, ToJID, NewEl)
+                    end;
+                 _ ->
+                     ejabberd_router:route(FromJID, ToJID, NewEl)
+            end;
+        ((Name == <<"message">>) or (Name == <<"presence">>))
+        and (ToJID /= error) and (FromJID /= error) ->
+            ejabberd_router:route(FromJID, ToJID, NewEl);
         true ->
             Lang = fxml:get_tag_attr_s(<<"xml:lang">>, El),
             Txt = <<"Incorrect stanza name or from/to JID">>,
@@ -489,3 +502,30 @@ advertise_perm(StateData, HostOpts) ->
                      [StateData#state.host])
     end.
 
+%% TODO:  maybe add hook ? Anyway organize work in another module
+
+process_iq(StateData, FromJID, ToJID, Packet) ->
+    %% check privileges
+    {ok, HOpts} = dict:find(StateData#state.host, StateData#state.host_opts),
+    AccessType = get_prop(roster, HOpts),
+    Type = fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs),
+    IQ = jlib:iq_query_info(Packet),
+    case {Type, AccessType} of
+        {<<"get">>, T} when ( (T == <<"both">>) or (T == <<"get">>)) -> 
+            Roster = process_iq_get(ToJID, IQ),
+            send_iq_result(StateData, ToJID, FromJID, Roster);
+        {<<"set">>, T} when ( (T == <<"both">>) or (T == <<"set">>)) ->
+            ok;
+        _ ->
+            send_text(StateData, ?ACCESS_ERROR)
+    end.
+
+process_iq_get(ToJID, IQ) ->
+    Roster = mod_roster:process_iq(ToJID,ToJID, IQ),
+    jlib:iq_to_xml(Roster).
+   
+send_iq_result(StateData, From, To, #xmlel{attrs = Attrs } = Packet) ->
+    Attrs2 = jlib:replace_from_to_attrs(jid:to_string(From),
+                                        jid:to_string(To), Attrs),
+    Text = fxml:element_to_binary(Packet#xmlel{attrs = Attrs2}),
+    send_text(StateData, Text).
