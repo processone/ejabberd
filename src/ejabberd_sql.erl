@@ -41,6 +41,7 @@
 	 sql_bloc/2,
          sql_query_to_iolist/1,
 	 escape/1,
+         standard_escape/1,
 	 escape_like/1,
 	 escape_like_arg/1,
 	 escape_like_arg_circumflex/1,
@@ -216,6 +217,8 @@ escape_like_arg_circumflex(S) when is_binary(S) ->
 escape_like_arg_circumflex($%) -> <<"^%">>;
 escape_like_arg_circumflex($_) -> <<"^_">>;
 escape_like_arg_circumflex($^) -> <<"^^">>;
+escape_like_arg_circumflex($[) -> <<"^[">>;     % For MSSQL
+escape_like_arg_circumflex($]) -> <<"^]">>;
 escape_like_arg_circumflex(C) when is_integer(C), C >= 0, C =< 255 -> <<C>>.
 
 to_bool(<<"t">>) -> true;

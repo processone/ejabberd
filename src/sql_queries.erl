@@ -273,9 +273,8 @@ users_number(LServer, [{prefix, Prefix}])
 users_number(LServer, []) ->
     users_number(LServer).
 
-add_spool_sql(Username, XML) ->
-    [<<"insert into spool(username, xml) values ('">>,
-     Username, <<"', '">>, XML, <<"');">>].
+add_spool_sql(LUser, XML) ->
+    ?SQL("insert into spool(username, xml) values (%(LUser)s, %(XML)s)").
 
 add_spool(LServer, Queries) ->
     ejabberd_sql:sql_transaction(LServer, Queries).

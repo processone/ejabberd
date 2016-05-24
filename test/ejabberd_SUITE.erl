@@ -162,23 +162,23 @@ init_per_testcase(TestCase, OrigConfig) ->
     IsMaster = lists:suffix("_master", Test),
     IsSlave = lists:suffix("_slave", Test),
     IsCarbons = lists:prefix("carbons_", Test),
-    User = if IsMaster or IsCarbons -> <<"test_master">>;
-              IsSlave -> <<"test_slave">>;
-              true -> <<"test_single">>
+    User = if IsMaster or IsCarbons -> <<"test_master!#$%^*()`~+-;_=[]{}|\\">>;
+              IsSlave -> <<"test_slave!#$%^*()`~+-;_=[]{}|\\">>;
+              true -> <<"test_single!#$%^*()`~+-;_=[]{}|\\">>
            end,
     MyResource = if IsMaster and IsCarbons -> MasterResource;
 		    IsSlave and IsCarbons -> SlaveResource;
 		    true -> Resource
 		 end,
     Slave = if IsCarbons ->
-		    jid:make(<<"test_master">>, Server, SlaveResource);
+		    jid:make(<<"test_master!#$%^*()`~+-;_=[]{}|\\">>, Server, SlaveResource);
 	       true ->
-		    jid:make(<<"test_slave">>, Server, Resource)
+		    jid:make(<<"test_slave!#$%^*()`~+-;_=[]{}|\\">>, Server, Resource)
 	    end,
     Master = if IsCarbons ->
-		     jid:make(<<"test_master">>, Server, MasterResource);
+		     jid:make(<<"test_master!#$%^*()`~+-;_=[]{}|\\">>, Server, MasterResource);
 		true ->
-		     jid:make(<<"test_master">>, Server, Resource)
+		     jid:make(<<"test_master!#$%^*()`~+-;_=[]{}|\\">>, Server, Resource)
 	     end,
     Config = set_opt(user, User,
                      set_opt(slave, Slave,
@@ -882,7 +882,7 @@ pubsub(Config) ->
     true = lists:member(?NS_PUBSUB, Features),
     %% Publish <presence/> element within node "presence"
     ItemID = randoms:get_string(),
-    Node = <<"presence">>,
+    Node = <<"presence!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>,
     Item = #pubsub_item{id = ItemID,
                         xml_els = [xmpp_codec:encode(#presence{})]},
     #iq{type = result,

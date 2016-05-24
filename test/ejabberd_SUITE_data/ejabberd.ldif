@@ -15,35 +15,35 @@ ou: groups
 objectClass: organizationalUnit
 
 dn: uid=test_single,ou=users,dc=localhost
-uid: test_single
-mail: test_single@localhost
+uid: test_single!#$%^*()`~+-;_=[]{}|\
+mail: test_single!#$%^*()`~+-;_=[]{}|\@localhost
 objectClass: person
 jpegPhoto:: /9g=
 cn: Test Single
-password: password
+password: password!@#$%^&*()'"`~<>+-/;:_=[]{}|\
 
 dn: uid=test_master,ou=users,dc=localhost
-uid: test_master
-mail: test_master@localhost
+uid: test_master!#$%^*()`~+-;_=[]{}|\
+mail: test_master!#$%^*()`~+-;_=[]{}|\@localhost
 objectClass: person
 jpegPhoto:: /9g=
 cn: Test Master
-password: password
+password: password!@#$%^&*()'"`~<>+-/;:_=[]{}|\
 
 dn: uid=test_slave,ou=users,dc=localhost
-uid: test_slave
-mail: test_slave@localhost
+uid: test_slave!#$%^*()`~+-;_=[]{}|\
+mail: test_slave!#$%^*()`~+-;_=[]{}|\@localhost
 objectClass: person
 jpegPhoto:: /9g=
 cn: Test Slave
-password: password
+password: password!@#$%^&*()'"`~<>+-/;:_=[]{}|\
 
 dn: uid=user2,ou=users,dc=localhost
 uid: user2
 mail: user2@localhost
 objectClass: person
 cn: Test User 2
-password: password
+password: password!@#$%^&*()'"`~<>+-/;:_=[]{}|\
 
 dn: cn=group1,ou=groups,dc=localhost
 objectClass: posixGroup

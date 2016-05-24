@@ -37,8 +37,11 @@
 -behaviour(gen_pubsub_nodetree).
 -author('christophe.romain@process-one.net').
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -include("pubsub.hrl").
 -include("jlib.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 -export([init/3, terminate/2, options/0, set_node/1,
     get_node/3, get_node/2, get_node/1, get_nodes/2,
@@ -65,27 +68,27 @@ set_node(Record) when is_record(Record, pubsub_node) ->
     end,
     Type = Record#pubsub_node.type,
     H = node_flat_sql:encode_host(Host),
-    N = ejabberd_sql:escape(Node),
-    P = ejabberd_sql:escape(Parent),
     Nidx = case nodeidx(Host, Node) of
 	{result, OldNidx} ->
 	    catch
-	    ejabberd_sql:sql_query_t([<<"delete from pubsub_node_option where "
-			"nodeid='">>, OldNidx, <<"';">>]),
+	    ejabberd_sql:sql_query_t(
+              ?SQL("delete from pubsub_node_option where "
+                   "nodeid=%(OldNidx)d")),
 	    catch
-	    ejabberd_sql:sql_query_t([<<"update pubsub_node set host='">>,
-		    H, <<"' node='">>, N,
-		    <<"' parent='">>, P,
-		    <<"' type='">>, Type,
-		    <<"' where nodeid='">>,
-		    OldNidx, <<"';">>]),
+	    ejabberd_sql:sql_query_t(
+              ?SQL("update pubsub_node set"
+                   " host=%(H)s"
+                   " node=%(Node)s"
+                   " parent=%(Parent)s"
+                   " type=%(Type)s "
+                   "where nodeid=%(OldNidx)d")),
 	    OldNidx;
 	_ ->
 	    catch
-	    ejabberd_sql:sql_query_t([<<"insert into pubsub_node(host, node, "
-			"parent, type) values('">>,
-		    H, <<"', '">>, N, <<"', '">>, P,
-		    <<"', '">>, Type, <<"');">>]),
+	    ejabberd_sql:sql_query_t(
+              ?SQL("insert into pubsub_node(host, node, "
+                   "parent, type) values("
+                   "%(H)s, %(Node)s, %(Parent)s, %(Type)s)")),
 	    case nodeidx(Host, Node) of
 		{result, NewNidx} -> NewNidx;
 		_ -> none  % this should not happen
@@ -98,14 +101,12 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 	_ ->
 	    lists:foreach(fun ({Key, Value}) ->
 			SKey = iolist_to_binary(atom_to_list(Key)),
-			SValue = ejabberd_sql:escape(
-				list_to_binary(
-				    lists:flatten(io_lib:fwrite("~p", [Value])))),
+			SValue = jlib:term_to_expr(Value),
 			catch
-			ejabberd_sql:sql_query_t([<<"insert into pubsub_node_option(nodeid, "
-				    "name, val) values('">>,
-				Nidx, <<"', '">>,
-				SKey, <<"', '">>, SValue, <<"');">>])
+			ejabberd_sql:sql_query_t(
+                          ?SQL("insert into pubsub_node_option(nodeid, "
+                               "name, val) values ("
+                               "%(Nidx)d, %(SKey)s, %(SValue)s)"))
 		end,
 		Record#pubsub_node.options),
 	    {result, Nidx}
@@ -116,14 +117,12 @@ get_node(Host, Node, _From) ->
 
 get_node(Host, Node) ->
     H = node_flat_sql:encode_host(Host),
-    N = ejabberd_sql:escape(Node),
     case catch
-	ejabberd_sql:sql_query_t([<<"select node, parent, type, nodeid from "
-		    "pubsub_node where host='">>,
-		H, <<"' and node='">>, N, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(node)s, @(parent)s, @(type)s, @(nodeid)d from "
+               "pubsub_node where host=%(H)s and node=%(Node)s"))
     of
-	{selected,
-		    [<<"node">>, <<"parent">>, <<"type">>, <<"nodeid">>], [RItem]} ->
+	{selected, [RItem]} ->
 	    raw_to_node(Host, RItem);
 	{'EXIT', _Reason} ->
 	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Database failure">>)};
@@ -133,13 +132,12 @@ get_node(Host, Node) ->
 
 get_node(Nidx) ->
     case catch
-	ejabberd_sql:sql_query_t([<<"select host, node, parent, type from "
-		    "pubsub_node where nodeid='">>,
-		Nidx, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(host)s, @(node)s, @(parent)s, @(type)s from "
+               "pubsub_node where nodeid=%(Nidx)d"))
     of
-	{selected,
-		    [<<"host">>, <<"node">>, <<"parent">>, <<"type">>], [[Host, Node, Parent, Type]]} ->
-	    raw_to_node(Host, [Node, Parent, Type, Nidx]);
+	{selected, [{Host, Node, Parent, Type}]} ->
+	    raw_to_node(Host, {Node, Parent, Type, Nidx});
 	{'EXIT', _Reason} ->
 	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Database failure">>)};
 	_ ->
@@ -152,11 +150,11 @@ get_nodes(Host, _From) ->
 get_nodes(Host) ->
     H = node_flat_sql:encode_host(Host),
     case catch
-	ejabberd_sql:sql_query_t([<<"select node, parent, type, nodeid from "
-		    "pubsub_node where host='">>, H, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(node)s, @(parent)s, @(type)s, @(nodeid)d from "
+               "pubsub_node where host=%(H)s"))
     of
-	{selected,
-		    [<<"node">>, <<"parent">>, <<"type">>, <<"nodeid">>], RItems} ->
+	{selected, RItems} ->
 	    [raw_to_node(Host, Item) || Item <- RItems];
 	_ ->
 	    []
@@ -178,14 +176,12 @@ get_subnodes(Host, Node, _From) ->
 
 get_subnodes(Host, Node) ->
     H = node_flat_sql:encode_host(Host),
-    N = ejabberd_sql:escape(Node),
     case catch
-	ejabberd_sql:sql_query_t([<<"select node, parent, type, nodeid from "
-		    "pubsub_node where host='">>,
-		H, <<"' and parent='">>, N, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(node)s, @(parent)s, @(type)s, @(nodeid)d from "
+               "pubsub_node where host=%(H)s and parent=%(Node)s"))
     of
-	{selected,
-		    [<<"node">>, <<"parent">>, <<"type">>, <<"nodeid">>], RItems} ->
+	{selected, RItems} ->
 	    [raw_to_node(Host, Item) || Item <- RItems];
 	_ ->
 	    []
@@ -196,14 +192,14 @@ get_subnodes_tree(Host, Node, _From) ->
 
 get_subnodes_tree(Host, Node) ->
     H = node_flat_sql:encode_host(Host),
-    N = ejabberd_sql:escape(ejabberd_sql:escape_like_arg_circumflex(Node)),
+    N = <<(ejabberd_sql:escape_like_arg_circumflex(Node))/binary, "%">>,
     case catch
-	ejabberd_sql:sql_query_t([<<"select node, parent, type, nodeid from "
-		    "pubsub_node where host='">>,
-		H, <<"' and node like '">>, N, <<"%' escape '^';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(node)s, @(parent)s, @(type)s, @(nodeid)d from "
+               "pubsub_node where host=%(H)s"
+               " and node like %(N)s escape '^'"))
     of
-	{selected,
-		    [<<"node">>, <<"parent">>, <<"type">>, <<"nodeid">>], RItems} ->
+	{selected, RItems} ->
 	    [raw_to_node(Host, Item) || Item <- RItems];
 	_ ->
 	    []
@@ -256,20 +252,24 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 
 delete_node(Host, Node) ->
     H = node_flat_sql:encode_host(Host),
-    N = ejabberd_sql:escape(ejabberd_sql:escape_like_arg_circumflex(Node)),
+    N = <<(ejabberd_sql:escape_like_arg_circumflex(Node))/binary, "%">>,
     Removed = get_subnodes_tree(Host, Node),
-    catch ejabberd_sql:sql_query_t([<<"delete from pubsub_node where host='">>,
-	    H, <<"' and node like '">>, N, <<"%' escape '^';">>]),
+    catch ejabberd_sql:sql_query_t(
+            ?SQL("delete from pubsub_node where host=%(H)s"
+               " and node like %(N)s escape '^'")),
     Removed.
 
 %% helpers
 raw_to_node(Host, [Node, Parent, Type, Nidx]) ->
+    raw_to_node(Host, {Node, Parent, Type, binary_to_integer(Nidx)});
+raw_to_node(Host, {Node, Parent, Type, Nidx}) ->
     Options = case catch
-	ejabberd_sql:sql_query_t([<<"select name,val from pubsub_node_option "
-		    "where nodeid='">>, Nidx, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(name)s, @(val)s from pubsub_node_option "
+               "where nodeid=%(Nidx)d"))
     of
-	{selected, [<<"name">>, <<"val">>], ROptions} ->
-	    DbOpts = lists:map(fun ([Key, Value]) ->
+	{selected, ROptions} ->
+	    DbOpts = lists:map(fun ({Key, Value}) ->
 			    RKey = jlib:binary_to_atom(Key),
 			    Tokens = element(2, erl_scan:string(binary_to_list(<<Value/binary, ".">>))),
 			    RValue = element(2, erl_parse:parse_term(Tokens)),
@@ -295,13 +295,12 @@ raw_to_node(Host, [Node, Parent, Type, Nidx]) ->
 
 nodeidx(Host, Node) ->
     H = node_flat_sql:encode_host(Host),
-    N = ejabberd_sql:escape(Node),
     case catch
-	ejabberd_sql:sql_query_t([<<"select nodeid from pubsub_node where "
-		    "host='">>,
-		H, <<"' and node='">>, N, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(nodeid)d from pubsub_node where "
+               "host=%(H)s and node=%(Node)s"))
     of
-	{selected, [<<"nodeid">>], [[Nidx]]} ->
+	{selected, [{Nidx}]} ->
 	    {result, Nidx};
 	{'EXIT', _Reason} ->
 	    {error, db_fail};

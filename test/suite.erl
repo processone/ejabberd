@@ -59,16 +59,16 @@ init_config(Config) ->
     [{server_port, ct:get_config(c2s_port, 5222)},
      {server_host, "localhost"},
      {server, ?COMMON_VHOST},
-     {user, <<"test_single">>},
-     {master_nick, <<"master_nick">>},
-     {slave_nick, <<"slave_nick">>},
-     {room_subject, <<"hello, world!">>},
+     {user, <<"test_single!#$%^*()`~+-;_=[]{}|\\">>},
+     {master_nick, <<"master_nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {slave_nick, <<"slave_nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {room_subject, <<"hello, world!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {certfile, CertFile},
      {base_dir, BaseDir},
-     {resource, <<"resource">>},
-     {master_resource, <<"master_resource">>},
-     {slave_resource, <<"slave_resource">>},
-     {password, <<"password!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {resource, <<"resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {master_resource, <<"master_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {slave_resource, <<"slave_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {password, <<"password!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>}
      {backends, get_config_backends()}
      |Config].
 
@@ -317,7 +317,12 @@ sasl_new(<<"DIGEST-MD5">>, User, Server, Password) ->
 		   MyResponse = response(User, Password, Nonce, AuthzId,
 					 Realm, CNonce, DigestURI, NC, QOP,
 					 <<"AUTHENTICATE">>),
-		   Resp = <<"username=\"", User/binary, "\",realm=\"",
+                   SUser = << <<(case Char of
+                                     $" -> <<"\\\"">>;
+                                     $\\ -> <<"\\\\">>;
+                                     _ -> <<Char>>
+                                 end)/binary>> || <<Char>> <= User >>,
+		   Resp = <<"username=\"", SUser/binary, "\",realm=\"",
 			    Realm/binary, "\",nonce=\"", Nonce/binary,
 			    "\",cnonce=\"", CNonce/binary, "\",nc=", NC/binary,
 			    ",qop=", QOP/binary, ",digest-uri=\"",

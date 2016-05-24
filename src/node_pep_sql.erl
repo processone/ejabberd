@@ -116,9 +116,9 @@ get_entity_subscriptions(_Host, Owner) ->
     SubKey = jid:tolower(Owner),
     GenKey = jid:remove_resource(SubKey),
     HostLike = node_flat_sql:encode_host_like(element(2, SubKey)),
-    SJ = node_flat_sql:encode_jid(SubKey),
-    GJ = node_flat_sql:encode_jid(GenKey),
-    GJLike = node_flat_sql:encode_jid_like(GenKey),
+    SJ = ejabberd_sql:escape(node_flat_sql:encode_jid(SubKey)),
+    GJ = ejabberd_sql:escape(node_flat_sql:encode_jid(GenKey)),
+    GJLike = ejabberd_sql:escape(node_flat_sql:encode_jid_like(GenKey)),
     Query = case SubKey of
 	GenKey ->
 	    [<<"select host, node, type, i.nodeid, jid, "
@@ -152,9 +152,9 @@ get_entity_subscriptions_for_send_last(_Host, Owner) ->
     SubKey = jid:tolower(Owner),
     GenKey = jid:remove_resource(SubKey),
     HostLike = node_flat_sql:encode_host_like(element(2, SubKey)),
-    SJ = node_flat_sql:encode_jid(SubKey),
-    GJ = node_flat_sql:encode_jid(GenKey),
-    GJLike = node_flat_sql:encode_jid_like(GenKey),
+    SJ = ejabberd_sql:escape(node_flat_sql:encode_jid(SubKey)),
+    GJ = ejabberd_sql:escape(node_flat_sql:encode_jid(GenKey)),
+    GJLike = ejabberd_sql:escape(node_flat_sql:encode_jid_like(GenKey)),
     Query = case SubKey of
 	GenKey ->
 	    [<<"select host, node, type, i.nodeid, jid, "

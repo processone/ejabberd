@@ -33,8 +33,11 @@
 -behaviour(gen_pubsub_node).
 -author('christophe.romain@process-one.net').
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -include("pubsub.hrl").
 -include("jlib.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 -export([init/3, terminate/2, options/0, features/0,
     create_node_permission/6, create_node/2, delete_node/1,
@@ -75,19 +78,25 @@ create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
 
 create_node(Nidx, Owner) ->
     {_U, _S, _R} = OwnerKey = jid:tolower(jid:remove_resource(Owner)),
-    State = #pubsub_state{stateid = {OwnerKey, Nidx}, affiliation = owner},
-    catch ejabberd_sql:sql_query_t([<<"insert into pubsub_state(nodeid, jid, affiliation, subscriptions) "
-		"values(">>, state_to_raw(Nidx, State), <<");">>]),
+    J = encode_jid(OwnerKey),
+    A = encode_affiliation(owner),
+    S = encode_subscriptions([]),
+    catch ejabberd_sql:sql_query_t(
+            ?SQL("insert into pubsub_state("
+                 "nodeid, jid, affiliation, subscriptions) "
+                 "values (%(Nidx)d, %(J)s, %(A)s, %(S)s)")),
     {result, {default, broadcast}}.
 
 delete_node(Nodes) ->
     Reply = lists:map(fun (#pubsub_node{id = Nidx} = PubsubNode) ->
 		    Subscriptions = case catch
-			ejabberd_sql:sql_query_t([<<"select jid, subscriptions "
-				    "from pubsub_state where nodeid='">>, Nidx, <<"';">>])
+			ejabberd_sql:sql_query_t(
+                          ?SQL("select @(jid)s, @(subscriptions)s "
+                               "from pubsub_state where nodeid=%(Nidx)d"))
 		    of
-			{selected, [<<"jid">>, <<"subscriptions">>], RItems} ->
-			    [{decode_jid(SJID), decode_subscriptions(Subs)} || [SJID, Subs] <- RItems];
+			{selected, RItems} ->
+			    [{decode_jid(SJID), decode_subscriptions(Subs)} ||
+                                {SJID, Subs} <- RItems];
 			_ ->
 			    []
 		    end,
@@ -299,13 +308,14 @@ get_entity_affiliations(Host, Owner) ->
     H = encode_host(Host),
     J = encode_jid(GenKey),
     Reply = case catch
-	ejabberd_sql:sql_query_t([<<"select node, type, i.nodeid, affiliation "
-		    "from pubsub_state i, pubsub_node n where "
-		    "i.nodeid = n.nodeid and jid='">>, J, <<"' and host='">>, H, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(affiliation)s "
+               "from pubsub_state i, pubsub_node n where "
+               "i.nodeid = n.nodeid and jid=%(J)s and host=%(H)s"))
     of
-	{selected, [<<"node">>, <<"type">>, <<"nodeid">>, <<"affiliation">>], RItems} ->
-	    [{nodetree_tree_sql:raw_to_node(Host, [N, <<"">>, T, I]), decode_affiliation(A)}
-		|| [N, T, I, A] <- RItems];
+	{selected, RItems} ->
+	    [{nodetree_tree_sql:raw_to_node(Host, {N, <<"">>, T, I}), decode_affiliation(A)}
+		|| {N, T, I, A} <- RItems];
 	_ ->
 	    []
     end,
@@ -313,11 +323,12 @@ get_entity_affiliations(Host, Owner) ->
 
 get_node_affiliations(Nidx) ->
     Reply = case catch
-	ejabberd_sql:sql_query_t([<<"select jid, affiliation from pubsub_state "
-		    "where nodeid='">>, Nidx, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(jid)s, @(affiliation)s from pubsub_state "
+               "where nodeid=%(Nidx)d"))
     of
-	{selected, [<<"jid">>, <<"affiliation">>], RItems} ->
-	    [{decode_jid(J), decode_affiliation(A)} || [J, A] <- RItems];
+	{selected, RItems} ->
+	    [{decode_jid(J), decode_affiliation(A)} || {J, A} <- RItems];
 	_ ->
 	    []
     end,
@@ -328,10 +339,11 @@ get_affiliation(Nidx, Owner) ->
     GenKey = jid:remove_resource(SubKey),
     J = encode_jid(GenKey),
     Reply = case catch
-	ejabberd_sql:sql_query_t([<<"select affiliation from pubsub_state "
-		    "where nodeid='">>, Nidx, <<"' and jid='">>, J, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(affiliation)s from pubsub_state "
+               "where nodeid=%(Nidx)d and jid=%(J)s"))
     of
-	{selected, [<<"affiliation">>], [[A]]} ->
+	{selected, [{A}]} ->
 	    decode_affiliation(A);
 	_ ->
 	    none
@@ -353,23 +365,26 @@ get_entity_subscriptions(Host, Owner) ->
     H = encode_host(Host),
     SJ = encode_jid(SubKey),
     GJ = encode_jid(GenKey),
-    GJLike = encode_jid_like(GenKey),
-    Query = case SubKey of
-	GenKey ->
-	    [<<"select node, type, i.nodeid, jid, subscriptions "
-		    "from pubsub_state i, pubsub_node n "
-		    "where i.nodeid = n.nodeid and jid like '">>, GJLike,
-             <<"%' escape '^' and host='">>, H, <<"';">>];
-	_ ->
-	    [<<"select node, type, i.nodeid, jid, subscriptions "
-		    "from pubsub_state i, pubsub_node n "
-		    "where i.nodeid = n.nodeid and jid in ('">>, SJ, <<"', '">>, GJ, <<"') and host='">>, H, <<"';">>]
-    end,
+    GJLike = <<(encode_jid_like(GenKey))/binary, "%">>,
+    Query =
+        case SubKey of
+            GenKey ->
+                ?SQL("select @(node)s, @(type)s, @(i.nodeid)d,"
+                     " @(jid)s, @(subscriptions)s "
+                     "from pubsub_state i, pubsub_node n "
+                     "where i.nodeid = n.nodeid and jid like %(GJLike)s"
+                     " escape '^' and host=%(H)s");
+            _ ->
+                ?SQL("select @(node)s, @(type)s, @(i.nodeid)d,"
+                     " @(jid)s, @(subscriptions)s "
+                     "from pubsub_state i, pubsub_node n "
+                     "where i.nodeid = n.nodeid and jid in"
+                     " (%(SJ)s, %(GJ)s) and host=%(H)s")
+        end,
     Reply = case catch ejabberd_sql:sql_query_t(Query) of
-	{selected,
-		    [<<"node">>, <<"type">>, <<"nodeid">>, <<"jid">>, <<"subscriptions">>], RItems} ->
-	    lists:foldl(fun ([N, T, I, J, S], Acc) ->
-			Node = nodetree_tree_sql:raw_to_node(Host, [N, <<"">>, T, I]),
+	{selected, RItems} ->
+	    lists:foldl(fun ({N, T, I, J, S}, Acc) ->
+			Node = nodetree_tree_sql:raw_to_node(Host, {N, <<"">>, T, I}),
 			Jid = decode_jid(J),
 			case decode_subscriptions(S) of
 			    [] ->
@@ -404,25 +419,28 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
     H = encode_host(Host),
     SJ = encode_jid(SubKey),
     GJ = encode_jid(GenKey),
-    GJLike = encode_jid_like(GenKey),
-    Query = case SubKey of
-	GenKey ->
-	    [<<"select node, type, i.nodeid, jid, subscriptions "
-		    "from pubsub_state i, pubsub_node n, pubsub_node_option o "
-		    "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and name='send_last_published_item' "
-		    "and val='on_sub_and_presence' and jid like '">>, GJLike,
-             <<"%' escape '^' and host='">>, H, <<"';">>];
-	_ ->
-	    [<<"select node, type, i.nodeid, jid, subscriptions "
-		    "from pubsub_state i, pubsub_node n, pubsub_node_option o "
-		    "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and name='send_last_published_item' "
-		    "and val='on_sub_and_presence' and jid in ('">>, SJ, <<"', '">>, GJ, <<"') and host='">>, H, <<"';">>]
+    GJLike = <<(encode_jid_like(GenKey))/binary, "%">>,
+    Query =
+        case SubKey of
+            GenKey ->
+                ?SQL("select @(node)s, @(type)s, @(i.nodeid)d,"
+                     " @(jid)s, @(subscriptions)s "
+                     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
+                     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and name='send_last_published_item' "
+                     "and val='on_sub_and_presence' and jid like %(GJLike)s"
+                     " escape '^' and host=%(H)s");
+            _ ->
+                ?SQL("select @(node)s, @(type)s, @(i.nodeid)d,"
+                     " @(jid)s, @(subscriptions)s "
+                     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
+                     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and name='send_last_published_item' "
+                     "and val='on_sub_and_presence' and"
+                     " jid in (%(SJ)s, %(GJ)s) and host=%(H)s")
     end,
     Reply = case catch ejabberd_sql:sql_query_t(Query) of
-	{selected,
-		    [<<"node">>, <<"type">>, <<"nodeid">>, <<"jid">>, <<"subscriptions">>], RItems} ->
-	    lists:foldl(fun ([N, T, I, J, S], Acc) ->
-			Node = nodetree_tree_sql:raw_to_node(Host, [N, <<"">>, T, I]),
+	{selected, RItems} ->
+	    lists:foldl(fun ({N, T, I, J, S}, Acc) ->
+			Node = nodetree_tree_sql:raw_to_node(Host, {N, <<"">>, T, I}),
 			Jid = decode_jid(J),
 			case decode_subscriptions(S) of
 			    [] ->
@@ -442,11 +460,12 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
 
 get_node_subscriptions(Nidx) ->
     Reply = case catch
-	ejabberd_sql:sql_query_t([<<"select jid, subscriptions from pubsub_state "
-		    "where nodeid='">>, Nidx, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(jid)s, @(subscriptions)s from pubsub_state "
+               "where nodeid=%(Nidx)d"))
     of
-	{selected, [<<"jid">>, <<"subscriptions">>], RItems} ->
-	    lists:foldl(fun ([J, S], Acc) ->
+	{selected, RItems} ->
+	    lists:foldl(fun ({J, S}, Acc) ->
 			Jid = decode_jid(J),
 			case decode_subscriptions(S) of
 			    [] ->
@@ -468,10 +487,11 @@ get_subscriptions(Nidx, Owner) ->
     SubKey = jid:tolower(Owner),
     J = encode_jid(SubKey),
     Reply = case catch
-	ejabberd_sql:sql_query_t([<<"select subscriptions from pubsub_state where "
-		    "nodeid='">>, Nidx, <<"' and jid='">>, J, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(subscriptions)s from pubsub_state"
+               " where nodeid=%(Nidx)d and jid=%(J)s"))
     of
-	{selected, [<<"subscriptions">>], [[S]]} ->
+	{selected, [{S}]} ->
 	    decode_subscriptions(S);
 	_ ->
 	    []
@@ -568,13 +588,13 @@ get_nodes_helper(NodeTree, #pubsub_state{stateid = {_, N}, subscriptions = Subs}
 
 get_states(Nidx) ->
     case catch
-	ejabberd_sql:sql_query_t([<<"select jid, affiliation, subscriptions "
-		    "from pubsub_state where nodeid='">>, Nidx, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(jid)s, @(affiliation)s, @(subscriptions)s "
+               "from pubsub_state where nodeid=%(Nidx)d"))
     of
-	{selected,
-		    [<<"jid">>, <<"affiliation">>, <<"subscriptions">>], RItems} ->
+	{selected, RItems} ->
 	    {result,
-		lists:map(fun ([SJID, Aff, Subs]) ->
+		lists:map(fun ({SJID, Aff, Subs}) ->
                             JID = decode_jid(SJID),
                             #pubsub_state{stateid = {JID, Nidx},
 				items = itemids(Nidx, JID),
@@ -599,11 +619,12 @@ get_state(Nidx, JID) ->
 get_state_without_itemids(Nidx, JID) ->
     J = encode_jid(JID),
     case catch
-	ejabberd_sql:sql_query_t([<<"select jid, affiliation, subscriptions "
-		    "from pubsub_state where jid='">>, J, <<"' and nodeid='">>, Nidx, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(jid)s, @(affiliation)s, @(subscriptions)s "
+               "from pubsub_state "
+               "where nodeid=%(Nidx)d and jid=%(J)s"))
     of
-	{selected,
-		    [<<"jid">>, <<"affiliation">>, <<"subscriptions">>], [[SJID, Aff, Subs]]} ->
+	{selected, [{SJID, Aff, Subs}]} ->
 	    #pubsub_state{stateid = {decode_jid(SJID), Nidx},
 		affiliation = decode_affiliation(Aff),
 		subscriptions = decode_subscriptions(Subs)};
@@ -620,24 +641,20 @@ set_state(Nidx, State) ->
     J = encode_jid(JID),
     S = encode_subscriptions(State#pubsub_state.subscriptions),
     A = encode_affiliation(State#pubsub_state.affiliation),
-    case catch
-	ejabberd_sql:sql_query_t([<<"update pubsub_state set subscriptions='">>, S, <<"', affiliation='">>, A,
-		<<"' where nodeid='">>, Nidx, <<"' and jid='">>, J, <<"';">>])
-    of
-	{updated, 1} ->
-	    ok;
-	_ ->
-	    catch
-	    ejabberd_sql:sql_query_t([<<"insert into pubsub_state(nodeid, jid, affiliation, subscriptions) "
-			"values('">>,
-		    Nidx, <<"', '">>, J, <<"', '">>, A, <<"', '">>, S, <<"');">>])
-    end,
+    ?SQL_UPSERT_T(
+       "pubsub_state",
+       ["!nodeid=%(Nidx)d",
+        "!jid=%(J)s",
+        "affiliation=%(A)s",
+        "subscriptions=%(S)s"
+       ]),
     ok.
 
 del_state(Nidx, JID) ->
     J = encode_jid(JID),
-    catch ejabberd_sql:sql_query_t([<<"delete from pubsub_state where jid='">>,
-	    J, <<"' and nodeid='">>, Nidx, <<"';">>]),
+    catch ejabberd_sql:sql_query_t(
+            ?SQL("delete from pubsub_state"
+                 " where jid=%(J)s and nodeid=%(Nidx)d")),
     ok.
 
 %get_items(Nidx, _From) ->
@@ -655,12 +672,12 @@ del_state(Nidx, JID) ->
 
 get_items(Nidx, From, none) ->
     MaxItems = case catch
-	ejabberd_sql:sql_query_t([<<"select val from pubsub_node_option "
-		    "where nodeid='">>, Nidx, <<"' and name='max_items';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(val)s from pubsub_node_option "
+               "where nodeid=%(Nidx)d and name='max_items'"))
     of
-	{selected, [<<"val">>], [[Value]]} ->
-	    Tokens = element(2, erl_scan:string(binary_to_list(<<Value/binary, ".">>))),
-	    element(2, erl_parse:parse_term(Tokens));
+	{selected, [{Value}]} ->
+            jlib:expr_to_term(Value);
 	_ ->
 	    ?MAXITEMS
     end,
@@ -677,12 +694,13 @@ get_items(Nidx, _From,
 	_ ->
 	    {<<"is not">>, <<"desc">>}% Can be better
     end,
+    SNidx = integer_to_binary(Nidx),
     [AttrName, Id] = case I of
 	undefined when IncIndex =/= undefined ->
 	    case catch
 		ejabberd_sql:sql_query_t([<<"select modification from pubsub_item pi "
 			    "where exists ( select count(*) as count1 "
-			    "from pubsub_item where nodeid='">>, Nidx,
+			    "from pubsub_item where nodeid='">>, SNidx,
 			<<"' and modification > pi.modification having count1 = ">>,
 			ejabberd_sql:escape(jlib:i2l(IncIndex)), <<" );">>])
 	    of
@@ -700,7 +718,7 @@ get_items(Nidx, _From,
 	    [A, <<"'", B/binary, "'">>]
     end,
     Count = case catch
-	ejabberd_sql:sql_query_t([<<"select count(*) from pubsub_item where nodeid='">>, Nidx, <<"';">>])
+	ejabberd_sql:sql_query_t([<<"select count(*) from pubsub_item where nodeid='">>, SNidx, <<"';">>])
     of
 	{selected, [_], [[C]]} -> C;
 	_ -> <<"0">>
@@ -709,13 +727,13 @@ get_items(Nidx, _From,
 		    ejabberd_sql:sql_query_t(
 		      [<<"select top ">>, jlib:i2l(Max),
 		       <<" itemid, publisher, creation, modification, payload "
-			 "from pubsub_item where nodeid='">>, Nidx,
+			 "from pubsub_item where nodeid='">>, SNidx,
 		       <<"' and ">>, AttrName, <<" ">>, Way, <<" ">>, Id, <<" order by ">>,
 		       AttrName, <<" ">>, Order, <<";">>]);
 	       (_, _) ->
 		    ejabberd_sql:sql_query_t(
 		      [<<"select itemid, publisher, creation, modification, payload "
-			 "from pubsub_item where nodeid='">>, Nidx,
+			 "from pubsub_item where nodeid='">>, SNidx,
 		       <<"' and ">>, AttrName, <<" ">>, Way, <<" ">>, Id, <<" order by ">>,
 		       AttrName, <<" ">>, Order, <<" limit ">>, jlib:i2l(Max), <<" ;">>])
 	    end,
@@ -726,7 +744,7 @@ get_items(Nidx, _From,
 		[[_, _, _, F, _]|_] ->
 		    Index = case catch
 			ejabberd_sql:sql_query_t([<<"select count(*) from pubsub_item "
-				    "where nodeid='">>, Nidx, <<"' and ">>,
+				    "where nodeid='">>, SNidx, <<"' and ">>,
 				AttrName, <<" > '">>, F, <<"';">>])
 		    of
 			%{selected, [_], [{C}, {In}]} -> [string:strip(C, both, $"), string:strip(In, both, $")];
@@ -778,16 +796,17 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM
 
 get_last_items(Nidx, _From, Count) ->
     Limit = jlib:i2l(Count),
+    SNidx = integer_to_binary(Nidx),
     Query = fun(mssql, _) ->
 		    ejabberd_sql:sql_query_t(
 		      [<<"select top ">>, Limit,
 		       <<" itemid, publisher, creation, modification, payload "
-			 "from pubsub_item where nodeid='">>, Nidx,
+			 "from pubsub_item where nodeid='">>, SNidx,
 		       <<"' order by modification desc ;">>]);
 	       (_, _) ->
 		    ejabberd_sql:sql_query_t(
 		      [<<"select itemid, publisher, creation, modification, payload "
-			 "from pubsub_item where nodeid='">>, Nidx,
+			 "from pubsub_item where nodeid='">>, SNidx,
 		       <<"' order by modification desc limit ">>, Limit, <<";">>])
 	    end,
     case catch ejabberd_sql:sql_query_t(Query) of
@@ -799,16 +818,14 @@ get_last_items(Nidx, _From, Count) ->
     end.
 
 get_item(Nidx, ItemId) ->
-    I = ejabberd_sql:escape(ItemId),
-    case catch
-	ejabberd_sql:sql_query_t([<<"select itemid, publisher, creation, "
-		    "modification, payload from pubsub_item "
-		    "where nodeid='">>, Nidx, <<"' and itemid='">>, I, <<"';">>])
+    case catch ejabberd_sql:sql_query_t(
+                 ?SQL("select @(itemid)s, @(publisher)s, @(creation)s,"
+                      " @(modification)s, @(payload)s from pubsub_item"
+                      " where nodeid=%(Nidx)d and itemid=%(ItemId)s"))
     of
-	{selected,
-		    [<<"itemid">>, <<"publisher">>, <<"creation">>, <<"modification">>, <<"payload">>], [RItem]} ->
+	{selected, [RItem]} ->
 	    {result, raw_to_item(Nidx, RItem)};
-	{selected, _, []} ->
+	{selected, []} ->
 	    {error, ?ERR_ITEM_NOT_FOUND};
 	{'EXIT', _} ->
 	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Database failure">>)}
@@ -847,37 +864,31 @@ get_item(Nidx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _Sub
 
 set_item(Item) ->
     {ItemId, Nidx} = Item#pubsub_item.itemid,
-    I = ejabberd_sql:escape(ItemId),
     {C, _} = Item#pubsub_item.creation,
     {M, JID} = Item#pubsub_item.modification,
     P = encode_jid(JID),
     Payload = Item#pubsub_item.payload,
-    XML = ejabberd_sql:escape(str:join([fxml:element_to_binary(X) || X<-Payload], <<>>)),
+    XML = str:join([fxml:element_to_binary(X) || X<-Payload], <<>>),
     S = fun ({T1, T2, T3}) ->
 	    str:join([jlib:i2l(T1, 6), jlib:i2l(T2, 6), jlib:i2l(T3, 6)], <<":">>)
     end,
-    case catch
-	ejabberd_sql:sql_query_t([<<"update pubsub_item set publisher='">>, P,
-		<<"', modification='">>, S(M),
-		<<"', payload='">>, XML,
-		<<"' where nodeid='">>, Nidx, <<"' and itemid='">>, I, <<"';">>])
-    of
-	{updated, 1} ->
-	    ok;
-	_ ->
-	    catch
-	    ejabberd_sql:sql_query_t([<<"insert into pubsub_item (nodeid, itemid, "
-			"publisher, creation, modification, payload) "
-			"values('">>, Nidx, <<"', '">>, I, <<"', '">>, P,
-		    <<"', '">>, S(C), <<"', '">>, S(M),
-		    <<"', '">>, XML, <<"');">>])
-    end,
+    SM = S(M),
+    SC = S(C),
+    ?SQL_UPSERT_T(
+       "pubsub_item",
+       ["!nodeid=%(Nidx)d",
+        "!itemid=%(ItemId)s",
+        "publisher=%(P)s",
+        "modification=%(SM)s",
+        "payload=%(XML)s",
+        "-creation=%(SC)s"
+       ]),
     ok.
 
 del_item(Nidx, ItemId) ->
-    I = ejabberd_sql:escape(ItemId),
-    catch ejabberd_sql:sql_query_t([<<"delete from pubsub_item where itemid='">>,
-	    I, <<"' and nodeid='">>, Nidx, <<"';">>]).
+    catch ejabberd_sql:sql_query_t(
+            ?SQL("delete from pubsub_item where itemid=%(ItemId)s"
+                 " and nodeid=%(Nidx)d")).
 
 del_items(_, []) ->
     ok;
@@ -885,9 +896,10 @@ del_items(Nidx, [ItemId]) ->
     del_item(Nidx, ItemId);
 del_items(Nidx, ItemIds) ->
     I = str:join([[<<"'">>, ejabberd_sql:escape(X), <<"'">>] || X <- ItemIds], <<",">>),
+    SNidx = integer_to_binary(Nidx),
     catch
     ejabberd_sql:sql_query_t([<<"delete from pubsub_item where itemid in (">>,
-	    I, <<") and nodeid='">>, Nidx, <<"';">>]).
+	    I, <<") and nodeid='">>, SNidx, <<"';">>]).
 
 get_item_name(_Host, _Node, Id) ->
     Id.
@@ -908,14 +920,15 @@ first_in_list(Pred, [H | T]) ->
     end.
 
 itemids(Nidx, {_U, _S, _R} = JID) ->
-    SJID = encode_jid_like(JID),
+    SJID = <<(ejabberd_sql:escape(encode_jid_like(JID)))/binary, "%">>,
     case catch
-	ejabberd_sql:sql_query_t([<<"select itemid from pubsub_item where "
-		    "nodeid='">>, Nidx, <<"' and publisher like '">>, SJID,
-		<<"%' escape '^' order by modification desc;">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(itemid)s from pubsub_item where "
+               "nodeid=%(Nidx)d and publisher like %(SJID)s escape '^' "
+               "order by modification desc"))
     of
-	{selected, [<<"itemid">>], RItems} ->
-	    [ItemId || [ItemId] <- RItems];
+	{selected, RItems} ->
+	    [ItemId || {ItemId} <- RItems];
 	_ ->
 	    []
     end.
@@ -923,11 +936,11 @@ itemids(Nidx, {_U, _S, _R} = JID) ->
 select_affiliation_subscriptions(Nidx, JID) ->
     J = encode_jid(JID),
     case catch
-	ejabberd_sql:sql_query_t([<<"select affiliation,subscriptions from "
-		    "pubsub_state where nodeid='">>,
-		Nidx, <<"' and jid='">>, J, <<"';">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(affiliation)s, @(subscriptions)s from "
+               " pubsub_state where nodeid=%(Nidx)d and jid=%(J)s"))
     of
-	{selected, [<<"affiliation">>, <<"subscriptions">>], [[A, S]]} ->
+	{selected, [{A, S}]} ->
 	    {decode_affiliation(A), decode_subscriptions(S)};
 	_ ->
 	    {none, []}
@@ -943,33 +956,24 @@ select_affiliation_subscriptions(Nidx, GenKey, SubKey) ->
 update_affiliation(Nidx, JID, Affiliation) ->
     J = encode_jid(JID),
     A = encode_affiliation(Affiliation),
-    case catch
-	ejabberd_sql:sql_query_t([<<"update pubsub_state set affiliation='">>,
-		A, <<"' where nodeid='">>, Nidx,
-		<<"' and jid='">>, J, <<"';">>])
-    of
-	{updated, 1} ->
-	    ok;
-	_ ->
-	    catch
-	    ejabberd_sql:sql_query_t([<<"insert into pubsub_state(nodeid, jid, affiliation, subscriptions) "
-			"values('">>, Nidx, <<"', '">>, J, <<"', '">>, A, <<"', '');">>])
-    end.
+    ?SQL_UPSERT_T(
+       "pubsub_state",
+       ["!nodeid=%(Nidx)d",
+        "!jid=%(J)s",
+        "affiliation=%(A)s",
+        "-subscriptions=''"
+       ]).
 
 update_subscription(Nidx, JID, Subscription) ->
     J = encode_jid(JID),
     S = encode_subscriptions(Subscription),
-    case catch
-	ejabberd_sql:sql_query_t([<<"update pubsub_state set subscriptions='">>, S,
-		<<"' where nodeid='">>, Nidx, <<"' and jid='">>, J, <<"';">>])
-    of
-	{updated, 1} ->
-	    ok;
-	_ ->
-	    catch
-	    ejabberd_sql:sql_query_t([<<"insert into pubsub_state(nodeid, jid, affiliation, subscriptions) "
-			"values('">>, Nidx, <<"', '">>, J, <<"', 'n', '">>, S, <<"');">>])
-    end.
+    ?SQL_UPSERT_T(
+       "pubsub_state",
+       ["!nodeid=%(Nidx)d",
+        "!jid=%(J)s",
+        "subscriptions=%(S)s",
+        "-affiliation='n'"
+       ]).
 
 -spec(decode_jid/1 ::
     (   SJID :: binary())
@@ -1016,24 +1020,24 @@ decode_subscriptions(Subscriptions) ->
     -> binary()
     ).
 encode_jid(JID) ->
-    ejabberd_sql:escape(jid:to_string(JID)).
+    jid:to_string(JID).
 
 -spec(encode_jid_like/1 :: (JID :: ljid()) -> binary()).
 encode_jid_like(JID) ->
-    ejabberd_sql:escape(ejabberd_sql:escape_like_arg_circumflex(jid:to_string(JID))).
+    ejabberd_sql:escape_like_arg_circumflex(jid:to_string(JID)).
 
 -spec(encode_host/1 ::
     (   Host :: host())
     -> binary()
     ).
 encode_host({_U, _S, _R} = LJID) -> encode_jid(LJID);
-encode_host(Host) -> ejabberd_sql:escape(Host).
+encode_host(Host) -> Host.
 
 -spec(encode_host_like/1 ::
     (   Host :: host())
     -> binary()
     ).
-encode_host_like({_U, _S, _R} = LJID) -> encode_jid_like(LJID);
+encode_host_like({_U, _S, _R} = LJID) -> ejabberd_sql:escape(encode_jid_like(LJID));
 encode_host_like(Host) ->
     ejabberd_sql:escape(ejabberd_sql:escape_like_arg_circumflex(Host)).
 
@@ -1069,12 +1073,14 @@ encode_subscriptions(Subscriptions) ->
 
 state_to_raw(Nidx, State) ->
     {JID, _} = State#pubsub_state.stateid,
-    J = encode_jid(JID),
+    J = ejabberd_sql:escape(encode_jid(JID)),
     A = encode_affiliation(State#pubsub_state.affiliation),
     S = encode_subscriptions(State#pubsub_state.subscriptions),
     [<<"'">>, Nidx, <<"', '">>, J, <<"', '">>, A, <<"', '">>, S, <<"'">>].
 
 raw_to_item(Nidx, [ItemId, SJID, Creation, Modification, XML]) ->
+    raw_to_item(Nidx, {ItemId, SJID, Creation, Modification, XML});
+raw_to_item(Nidx, {ItemId, SJID, Creation, Modification, XML}) ->
     JID = decode_jid(SJID),
     ToTime = fun (Str) ->
 	    [T1, T2, T3] = str:tokens(Str, <<":">>),
