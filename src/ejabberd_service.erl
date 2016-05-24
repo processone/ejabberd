@@ -56,7 +56,7 @@
          host_opts = dict:new()    :: ?TDICT,
          host = <<"">>             :: binary(),
          access                    :: atom(),
-     check_from = true         :: boolean()}).
+         check_from = true         :: boolean()}).
 
 %-define(DBGFSM, true).
 
@@ -97,6 +97,8 @@
     fxml:element_to_binary(?SERR_INVALID_NAMESPACE)).
 
 -define(ACCESS_ERROR, <<"<forbidden/>">>).
+
+-define(NS_PRIVILEGE, <<"urn:xmpp:privilege:1">>).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -142,6 +144,7 @@ init([{SockMod, Socket}, Opts]) ->
                Pass = proplists:get_value(password, Opts,
                                           p1_sha:sha(crypto:rand_bytes(20))),
                PrivAccess = proplists:get_value(privilege_access, Opts, []),
+               
                dict:from_list([{global, [{password, Pass}] ++ PrivAccess}])
            end,
     Shaper = case lists:keysearch(shaper_rule, 1, Opts) of
@@ -229,7 +232,11 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                                       ejabberd_router:register_route(H, ?MYNAME),
                                       ?INFO_MSG("Route registered for service ~p~n",
                                                 [H])
-                              end, dict:fetch_keys(StateData#state.host_opts)),
+                              end, dict:fetch_keys(StateData#state.host_opts)), %% Why we need to register all hosts ?
+                            %% TODO: do it for each hosts in dict if it is necessary
+                            %% server advertises service of allowed permission
+                            advertise_perm(StateData, proplists:delete(password,HostProps)),
+
                             {next_state, stream_established, StateData};
                         _ ->
                             send_text(StateData, ?INVALID_HANDSHAKE_ERR),
@@ -448,4 +455,37 @@ opt_type(_) -> [max_fsm_queue].
 -spec get_prop(atom(), list()) -> atom().
 get_prop(Prop, Props ) ->
     proplists:get_value(Prop, Props, none).
+
+%%------------------------------------------------------------------------
+%% XEP-0356
+
+-spec permissions(binary(), binary(), list()) -> #xmlel{}.
+permissions(Id, Host, HostOpts) ->
+    Stanza = #xmlel{name = <<"message">>, 
+                    attrs = [{<<"from">>,?MYNAME},
+                             {<<"to">>, Host},
+                             {<<"id">>, Id}]},
+    Stanza0 = #xmlel{name = <<"privilege">>, 
+                     attrs = [{<<"xmlns">> ,?NS_PRIVILEGE}]},
+    Perms = lists:map(fun({Access, Type}) -> 
+                              #xmlel{name = <<"perm">>, 
+                                     attrs = [{<<"access">>, 
+                                               atom_to_binary(Access,latin1)},
+                                              {<<"type">>, Type}]}
+                          end, HostOpts),
+    Stanza1 = Stanza0#xmlel{children = Perms},
+    Stanza#xmlel{children = [Stanza1]}.
+    
+
+advertise_perm(StateData, HostOpts) ->
+    case HostOpts of 
+        [] -> ok;
+        _ -> 
+            Stanza = permissions(StateData#state.streamid,
+                                 StateData#state.host, HostOpts),
+            Text = fxml:element_to_binary(Stanza),
+            send_text(StateData, Text),
+            ?INFO_MSG("Advertise service of allowed permissions ~p~n",
+                     [StateData#state.host])
+    end.
 
