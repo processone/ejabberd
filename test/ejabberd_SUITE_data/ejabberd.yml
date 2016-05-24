@@ -419,6 +419,7 @@ listen:
     starttls: true
     shaper: c2s_shaper
     access: c2s
+    resume_timeout: 3
   - 
     port: @@s2s_port@@
     module: ejabberd_s2s_in

@@ -166,27 +166,32 @@
 	(Xmlns == ?NS_STREAM_MGMT_2) or
 	(Xmlns == ?NS_STREAM_MGMT_3)).
 
--define(MGMT_FAILED(Condition, Xmlns),
+-define(MGMT_FAILED(Condition, Attrs),
 	#xmlel{name = <<"failed">>,
-	       attrs = [{<<"xmlns">>, Xmlns}],
+	       attrs = Attrs,
 	       children = [#xmlel{name = Condition,
 				  attrs = [{<<"xmlns">>, ?NS_STANZAS}],
 				  children = []}]}).
 
 -define(MGMT_BAD_REQUEST(Xmlns),
-	?MGMT_FAILED(<<"bad-request">>, Xmlns)).
-
--define(MGMT_ITEM_NOT_FOUND(Xmlns),
-	?MGMT_FAILED(<<"item-not-found">>, Xmlns)).
+	?MGMT_FAILED(<<"bad-request">>, [{<<"xmlns">>, Xmlns}])).
 
 -define(MGMT_SERVICE_UNAVAILABLE(Xmlns),
-	?MGMT_FAILED(<<"service-unavailable">>, Xmlns)).
+	?MGMT_FAILED(<<"service-unavailable">>, [{<<"xmlns">>, Xmlns}])).
 
 -define(MGMT_UNEXPECTED_REQUEST(Xmlns),
-	?MGMT_FAILED(<<"unexpected-request">>, Xmlns)).
+	?MGMT_FAILED(<<"unexpected-request">>, [{<<"xmlns">>, Xmlns}])).
 
 -define(MGMT_UNSUPPORTED_VERSION(Xmlns),
-	?MGMT_FAILED(<<"unsupported-version">>, Xmlns)).
+	?MGMT_FAILED(<<"unsupported-version">>, [{<<"xmlns">>, Xmlns}])).
+
+-define(MGMT_ITEM_NOT_FOUND(Xmlns),
+	?MGMT_FAILED(<<"item-not-found">>, [{<<"xmlns">>, Xmlns}])).
+
+-define(MGMT_ITEM_NOT_FOUND_H(Xmlns, NumStanzasIn),
+	?MGMT_FAILED(<<"item-not-found">>,
+		     [{<<"xmlns">>, Xmlns},
+		      {<<"h">>, jlib:integer_to_binary(NumStanzasIn)}])).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -1280,7 +1285,7 @@ wait_for_resume({xmlstreamelement, _El} = Event, StateData) ->
 wait_for_resume(timeout, StateData) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
 	   [jid:to_string(StateData#state.jid)]),
-    {stop, normal, StateData};
+    {stop, normal, StateData#state{mgmt_state = timeout}};
 wait_for_resume(Event, StateData) ->
     ?DEBUG("Ignoring event while waiting for resumption: ~p", [Event]),
     fsm_next_state(wait_for_resume, StateData).
@@ -1790,6 +1795,18 @@ terminate(_Reason, StateName, StateData) ->
 								      <<"">>),
 			     presence_broadcast(StateData, From,
 						StateData#state.pres_a, Packet)
+		       end,
+		       case StateData#state.mgmt_state of
+			 timeout ->
+			     Info = [{num_stanzas_in,
+				      StateData#state.mgmt_stanzas_in}],
+			     ejabberd_sm:set_offline_info(StateData#state.sid,
+							  StateData#state.user,
+							  StateData#state.server,
+							  StateData#state.resource,
+							  Info);
+			 _ ->
+			    ok
 		       end,
 		       handle_unacked_stanzas(StateData)
 		 end,
@@ -2726,6 +2743,8 @@ handle_resume(StateData, Attrs) ->
 			  case inherit_session_state(StateData, PrevID) of
 			    {ok, InheritedState} ->
 				{ok, InheritedState, H};
+			    {error, Err, InH} ->
+				{error, ?MGMT_ITEM_NOT_FOUND_H(Xmlns, InH), Err};
 			    {error, Err} ->
 				{error, ?MGMT_ITEM_NOT_FOUND(Xmlns), Err}
 			  end;
@@ -2965,7 +2984,17 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
       {term, {R, Time}} ->
 	  case ejabberd_sm:get_session_pid(U, S, R) of
 	    none ->
-		{error, <<"Previous session PID not found">>};
+		case ejabberd_sm:get_offline_info(Time, U, S, R) of
+		  none ->
+		      {error, <<"Previous session PID not found">>};
+		  Info ->
+		      case proplists:get_value(num_stanzas_in, Info) of
+			undefined ->
+			    {error, <<"Previous session timed out">>};
+			H ->
+			    {error, <<"Previous session timed out">>, H}
+		      end
+		end;
 	    OldPID ->
 		OldSID = {Time, OldPID},
 		case catch resume_session(OldSID) of

@@ -440,6 +440,7 @@
 -record(sasl_mechanisms, {list = [] :: [binary()]}).
 
 -record(sm_failed, {reason :: atom() | #gone{} | #redirect{},
+                    h :: non_neg_integer(),
                     xmlns :: binary()}).
 
 -record(error, {type :: 'auth' | 'cancel' | 'continue' | 'modify' | 'wait',
