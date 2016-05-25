@@ -498,8 +498,8 @@ include_config_files(Terms) ->
                        include_config_file(File, Opts)
                end, lists:flatten(FileOpts)),
 
-    M1 = merge_configs(transform_terms(Terms1), #{}),
-    M2 = merge_configs(transform_terms(Terms2), M1),
+    M1 = merge_configs(Terms1, #{}),
+    M2 = merge_configs(Terms2, M1),
     maps_to_lists(M2).
 
 transform_include_option({include_config_file, File}) when is_list(File) ->
