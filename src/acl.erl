@@ -29,12 +29,12 @@
 
 -author('alexey@process-one.net').
 
--export([start/0, to_record/3, add/3, add_list/3,
-	 add_local/3, add_list_local/3, load_from_config/0,
-	 match_rule/3, match_access/4, match_acl/3, transform_options/1,
-	 opt_type/1]).
-
 -export([add_access/3, clear/0]).
+-export([start/0, add/3, add_list/3, add_local/3, add_list_local/3,
+	 load_from_config/0, match_rule/3,
+	 transform_options/1, opt_type/1, acl_rule_matches/3,
+	 acl_rule_verify/1, access_matches/3,
+	 transform_access_rules_config/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -91,12 +91,6 @@ start() ->
     mnesia:add_table_copy(access, node(), ram_copies),
     load_from_config(),
     ok.
-
--spec to_record(binary(), atom(), aclspec()) -> acl().
-
-to_record(Host, ACLName, ACLSpec) ->
-    #acl{aclname = {ACLName, Host},
-	 aclspec = normalize_spec(ACLSpec)}.
 
 -spec add(binary(), aclname(), aclspec()) -> ok | {error, any()}.
 
@@ -188,6 +182,10 @@ load_from_config() ->
                        {acl, Host}, fun(V) -> V end, []),
               AccessRules = ejabberd_config:get_option(
                               {access, Host}, fun(V) -> V end, []),
+              AccessRulesNew = ejabberd_config:get_option(
+				 {access_rules, Host}, fun(V) -> V end, []),
+              ShaperRules = ejabberd_config:get_option(
+				 {shaper_rules, Host}, fun(V) -> V end, []),
               lists:foreach(
                 fun({ACLName, SpecList}) ->
                         lists:foreach(
@@ -203,8 +201,19 @@ load_from_config() ->
                 end, ACLs),
               lists:foreach(
                 fun({Access, Rules}) ->
+			NRules = lists:map(fun({ACL, Type}) ->
+					     {Type, [{acl, ACL}]}
+				     end, Rules),
+                        add_access(Host, Access, NRules ++ [{deny, [all]}])
+                end, AccessRules),
+              lists:foreach(
+                fun({Access, Rules}) ->
                         add_access(Host, Access, Rules)
-                end, AccessRules)
+                end, AccessRulesNew),
+              lists:foreach(
+                fun({Access, Rules}) ->
+                        add_access(Host, Access, Rules)
+                end, ShaperRules)
       end, Hosts).
 
 %% Delete all previous set ACLs and Access rules
@@ -229,6 +238,7 @@ normalize_spec(Spec) ->
     case Spec of
         all -> all;
         none -> none;
+        {acl, N} -> {acl, N};
         {user, {U, S}} -> {user, {nodeprep(U), nameprep(S)}};
         {user, U} -> {user, nodeprep(U)};
         {shared_group, {G, H}} -> {shared_group, {b(G), nameprep(H)}};
@@ -255,130 +265,177 @@ normalize_spec(Spec) ->
             end
     end.
 
--spec match_access(global | binary(), access_name(),
-                   jid() | ljid() | inet:ip_address(),
-                   atom()) -> any().
-
-match_access(_Host, all, _JID, _Default) ->
-    allow;
-match_access(_Host, none, _JID, _Default) ->
-    deny;
-match_access(_Host, {user, UserPattern}, JID, Default) ->
-    match_user_spec({user, UserPattern}, JID, Default);
-match_access(Host, AccessRule, JID, _Default) ->
-    match_rule(Host, AccessRule, JID).
-
 -spec match_rule(global | binary(), access_name(),
                  jid() | ljid() | inet:ip_address()) -> any().
 
-match_rule(_Host, all, _JID) ->
-    allow;
-match_rule(_Host, none, _JID) ->
-    deny;
+match_rule(Host, Access, IP) when tuple_size(IP) == 4;
+    tuple_size(IP) == 8 ->
+    access_matches(Access, #{ip => IP}, Host);
 match_rule(Host, Access, JID) ->
-    GAccess = ets:lookup(access, {Access, global}),
-    LAccess = if Host /= global ->
-                      ets:lookup(access, {Access, Host});
-                 true ->
-                      []
-              end,
-    case GAccess ++ LAccess of
-        [] ->
-            deny;
-        AccessList ->
-            Rules = lists:flatmap(
-                      fun(#access{rules = Rs}) ->
-                              Rs
-                      end, AccessList),
-            match_acls(Rules, JID, Host)
-    end.
+    access_matches(Access, #{usr => jid:tolower(JID)}, Host).
 
-match_acls([], _, _Host) -> deny;
-match_acls([{ACL, Access} | ACLs], JID, Host) ->
-    case match_acl(ACL, JID, Host) of
-      true -> Access;
-      _ -> match_acls(ACLs, JID, Host)
-    end.
+-spec acl_rule_verify(aclspec()) -> boolean().
 
--spec match_acl(atom(),
-                jid() | ljid() | inet:ip_address(),
-                binary()) -> boolean().
-
-match_acl(all, _JID, _Host) ->
+acl_rule_verify(all) ->
     true;
-match_acl(none, _JID, _Host) ->
+acl_rule_verify(none) ->
+    true;
+acl_rule_verify({ip, {{A,B,C,D}, Mask}})
+    when is_integer(A), is_integer(B), is_integer(C), is_integer(D),
+    A >= 0, A =< 255, B >= 0, B =< 255, C >= 0, C =< 255, D >= 0, D =< 255,
+    is_integer(Mask), Mask >= 0, Mask =< 32 ->
+    true;
+acl_rule_verify({ip, {{A,B,C,D,E,F,G,H}, Mask}}) when
+    is_integer(A), is_integer(B), is_integer(C), is_integer(D),
+    is_integer(E), is_integer(F), is_integer(G), is_integer(H),
+    A >= 0, A =< 65535, B >= 0, B =< 65535, C >= 0, C =< 65535, D >= 0, D =< 65535,
+    E >= 0, E =< 65535, F >= 0, F =< 65535, G >= 0, G =< 65535, H >= 0, H =< 65535,
+    is_integer(Mask), Mask >= 0, Mask =< 64 ->
+    true;
+acl_rule_verify({user, {U, S}}) when is_binary(U), is_binary(S) ->
+    true;
+acl_rule_verify({user, U}) when is_binary(U) ->
+    true;
+acl_rule_verify({server, S}) when is_binary(S) ->
+    true;
+acl_rule_verify({resource, R}) when is_binary(R) ->
+    true;
+acl_rule_verify({shared_group, {G, H}}) when is_binary(G), is_binary(H) ->
+    true;
+acl_rule_verify({shared_group, G}) when is_binary(G) ->
+    true;
+acl_rule_verify({user_regexp, {UR, S}}) when is_binary(UR), is_binary(S) ->
+    true;
+acl_rule_verify({user_regexp, UR}) when is_binary(UR) ->
+    true;
+acl_rule_verify({server_regexp, SR}) when is_binary(SR) ->
+    true;
+acl_rule_verify({resource_regexp, RR}) when is_binary(RR) ->
+    true;
+acl_rule_verify({node_regexp, {UR, SR}}) when is_binary(UR), is_binary(SR) ->
+    true;
+acl_rule_verify({user_glob, {UR, S}}) when is_binary(UR), is_binary(S) ->
+    true;
+acl_rule_verify({user_glob, UR}) when is_binary(UR) ->
+    true;
+acl_rule_verify({server_glob, SR}) when is_binary(SR) ->
+    true;
+acl_rule_verify({resource_glob, RR}) when is_binary(RR) ->
+    true;
+acl_rule_verify({node_glob, {UR, SR}}) when is_binary(UR), is_binary(SR) ->
+    true;
+acl_rule_verify(_Spec) ->
+    false.
+
+
+all_acl_rules_matches([], _Data, _Host) ->
     false;
-match_acl(ACL, IP, Host) when tuple_size(IP) == 4;
-                              tuple_size(IP) == 8 ->
-    lists:any(
-      fun(#acl{aclspec = {ip, {Net, Mask}}}) ->
-              is_ip_match(IP, Net, Mask);
-         (_) ->
-              false
-      end, get_aclspecs(ACL, Host));
-match_acl(ACL, JID, Host) ->
-    {User, Server, Resource} = jid:tolower(JID),
-    lists:any(
-      fun(#acl{aclspec = Spec}) ->
-              case Spec of
-                  all -> true;
-                  {user, {U, S}} -> U == User andalso S == Server;
-                  {user, U} ->
-                      U == User andalso
-                          lists:member(Server, ?MYHOSTS);
-                  {server, S} -> S == Server;
-                  {resource, R} -> R == Resource;
-                  {shared_group, {G, H}} ->
-                      Mod = loaded_shared_roster_module(H),
-                      Mod:is_user_in_group({User, Server}, G, H);
-                  {shared_group, G} ->
-                      Mod = loaded_shared_roster_module(Host),
-                      Mod:is_user_in_group({User, Server}, G, Host);
-                  {user_regexp, {UR, S}} ->
-                      S == Server andalso is_regexp_match(User, UR);
-                  {user_regexp, UR} ->
-                      lists:member(Server, ?MYHOSTS)
-                          andalso is_regexp_match(User, UR);
-                  {server_regexp, SR} ->
-                      is_regexp_match(Server, SR);
-                  {resource_regexp, RR} ->
-                      is_regexp_match(Resource, RR);
-                  {node_regexp, {UR, SR}} ->
-                      is_regexp_match(Server, SR) andalso
-                          is_regexp_match(User, UR);
-                  {user_glob, {UR, S}} ->
-                      S == Server andalso is_glob_match(User, UR);
-                  {user_glob, UR} ->
-                      lists:member(Server, ?MYHOSTS)
-                          andalso is_glob_match(User, UR);
-                  {server_glob, SR} -> is_glob_match(Server, SR);
-                  {resource_glob, RR} ->
-                      is_glob_match(Resource, RR);
-                  {node_glob, {UR, SR}} ->
-                      is_glob_match(Server, SR) andalso
-                          is_glob_match(User, UR);
-                  WrongSpec ->
-                      ?ERROR_MSG("Wrong ACL expression: ~p~nCheck your "
-                                 "config file and reload it with the override_a"
-                                 "cls option enabled",
-                                 [WrongSpec]),
-                      false
-              end
-      end,
-      get_aclspecs(ACL, Host)).
+all_acl_rules_matches(Rules, Data, Host) ->
+    all_acl_rules_matches2(Rules, Data, Host).
+
+all_acl_rules_matches2([Rule | Tail], Data, Host) ->
+    case acl_rule_matches(Rule, Data, Host) of
+	true ->
+	    all_acl_rules_matches2(Tail, Data, Host);
+	false ->
+	    false
+    end;
+all_acl_rules_matches2([], _Data, _Host) ->
+    true.
+
+-spec acl_rule_matches(aclspec(), any(), global|binary()) -> boolean().
+
+acl_rule_matches(all, _Data, _Host) ->
+    true;
+acl_rule_matches({acl, all}, _Data, _Host) ->
+    true;
+acl_rule_matches({acl, Name}, Data, Host) ->
+    ACLs = get_aclspecs(Name, Host),
+    RawACLs = lists:map(fun(#acl{aclspec = R}) -> R end, ACLs),
+    all_acl_rules_matches(RawACLs, Data, Host);
+acl_rule_matches({ip, {Net, Mask}}, #{ip := {IP, _Port}}, _Host) ->
+    is_ip_match(IP, Net, Mask);
+acl_rule_matches({ip, {Net, Mask}}, #{ip := IP}, _Host) ->
+    is_ip_match(IP, Net, Mask);
+acl_rule_matches({user, {U, S}}, #{usr := {U, S, _}}, _Host) ->
+    true;
+acl_rule_matches({user, U}, #{usr := {U, S, _}}, _Host) ->
+    lists:member(S, ?MYHOSTS);
+acl_rule_matches({server, S}, #{usr := {_, S, _}}, _Host) ->
+    true;
+acl_rule_matches({resource, R}, #{usr := {_, _, R}}, _Host) ->
+    true;
+acl_rule_matches({shared_group, {G, H}}, #{usr := {U, S, _}}, _Host) ->
+    Mod = loaded_shared_roster_module(H),
+    Mod:is_user_in_group({U, S}, G, H);
+acl_rule_matches({shared_group, G}, #{usr := {U, S, _}}, Host) ->
+    Mod = loaded_shared_roster_module(Host),
+    Mod:is_user_in_group({U, S}, G, Host);
+acl_rule_matches({user_regexp, {UR, S}}, #{usr := {U, S, _}}, _Host) ->
+    is_regexp_match(U, UR);
+acl_rule_matches({user_regexp, UR}, #{usr := {U, S, _}}, _Host) ->
+    lists:member(S, ?MYHOSTS) andalso is_regexp_match(U, UR);
+acl_rule_matches({server_regexp, SR}, #{usr := {_, S, _}}, _Host) ->
+    is_regexp_match(S, SR);
+acl_rule_matches({resource_regexp, RR}, #{usr := {_, _, R}}, _Host) ->
+    is_regexp_match(R, RR);
+acl_rule_matches({node_regexp, {UR, SR}}, #{usr := {U, S, _}}, _Host) ->
+    is_regexp_match(U, UR) andalso is_regexp_match(S, SR);
+acl_rule_matches({user_glob, {UR, S}}, #{usr := {U, S, _}}, _Host) ->
+    is_glob_match(U, UR);
+acl_rule_matches({user_glob, UR}, #{usr := {U, S, _}}, _Host) ->
+    lists:member(S, ?MYHOSTS) andalso is_glob_match(U, UR);
+acl_rule_matches({server_glob, SR}, #{usr := {_, S, _}}, _Host) ->
+    is_glob_match(S, SR);
+acl_rule_matches({resource_glob, RR}, #{usr := {_, _, R}}, _Host) ->
+    is_glob_match(R, RR);
+acl_rule_matches({node_glob, {UR, SR}}, #{usr := {U, S, _}}, _Host) ->
+    is_glob_match(U, UR) andalso is_glob_match(S, SR);
+acl_rule_matches(_ACL, _Data, _Host) ->
+    false.
+
+-spec access_matches(atom()|list(), any(), global|binary()) -> any().
+access_matches(all, _Data, _Host) ->
+    allow;
+access_matches(none, _Data, _Host) ->
+    deny;
+access_matches(Name, Data, Host) when is_atom(Name) ->
+    GAccess = ets:lookup(access, {Name, global}),
+    LAccess =
+	if Host /= global -> ets:lookup(access, {Name, Host});
+	    true -> []
+	end,
+    case GAccess ++ LAccess of
+	[] ->
+	    deny;
+	AccessList ->
+	    Rules = lists:flatmap(
+		fun(#access{rules = Rs}) ->
+		    Rs
+		end, AccessList),
+	    access_rules_matches(Rules, Data, Host)
+    end;
+access_matches(Rules, Data, Host) when is_list(Rules) ->
+    access_rules_matches(Rules, Data, Host).
+
+
+-spec access_rules_matches(list(), any(), global|binary()) -> any().
+
+access_rules_matches(AR, Data, Host) ->
+    access_rules_matches(AR, Data, Host, deny).
+
+access_rules_matches([{Type, Acls} | Rest], Data, Host, Default) ->
+    case all_acl_rules_matches(Acls, Data, Host) of
+	false ->
+	    access_rules_matches(Rest, Data, Host, Default);
+	true ->
+	    Type
+    end;
+access_rules_matches([], _Data, _Host, Default) ->
+    Default.
 
 get_aclspecs(ACL, Host) ->
-      ets:lookup(acl, {ACL, Host}) ++ ets:lookup(acl, {ACL, global}).
-
-
-match_user_spec(Spec, JID, Default) ->
-    case do_match_user_spec(Spec, jid:tolower(JID)) of
-        true -> Default;
-        false -> deny
-    end.
-
-do_match_user_spec({user, {U, S}}, {User, Server, _Resource}) ->
-    U == User andalso S == Server.
+    ets:lookup(acl, {ACL, Host}) ++ ets:lookup(acl, {ACL, global}).
 
 is_regexp_match(String, RegExp) ->
     case ejabberd_regexp:run(String, RegExp) of
@@ -450,6 +507,18 @@ parse_ip_netmask(S) ->
       _ -> error
     end.
 
+transform_access_rules_config(Config) ->
+    lists:map(fun transform_access_rules_config2/1, lists:flatten(Config)).
+
+transform_access_rules_config2({Res, Rules}) when is_list(Rules) ->
+    {Res, lists:map(fun({Type, Args}) when is_list(Args) ->
+			     normalize_spec({Type, hd(lists:flatten(Args))});
+			(V) -> normalize_spec(V)
+		     end, lists:flatten(Rules))};
+transform_access_rules_config2({Res, Rule}) ->
+    {Res, [Rule]}.
+
+
 transform_options(Opts) ->
     Opts1 = lists:foldl(fun transform_options/2, [], Opts),
     {ACLOpts, Opts2} = lists:mapfoldl(
@@ -464,6 +533,18 @@ transform_options(Opts) ->
                                (O, Acc) ->
                                     {[], [O|Acc]}
                             end, [], Opts2),
+    {NewAccessOpts, Opts4} = lists:mapfoldl(
+                            fun({access_rules, Os}, Acc) ->
+                                    {Os, Acc};
+                               (O, Acc) ->
+                                    {[], [O|Acc]}
+                            end, [], Opts3),
+    {ShaperOpts, Opts5} = lists:mapfoldl(
+                            fun({shaper_rules, Os}, Acc) ->
+                                    {Os, Acc};
+                               (O, Acc) ->
+                                    {[], [O|Acc]}
+                            end, [], Opts4),
     ACLOpts1 = ejabberd_config:collect_options(lists:flatten(ACLOpts)),
     AccessOpts1 = case ejabberd_config:collect_options(
                          lists:flatten(AccessOpts)) of
@@ -477,7 +558,21 @@ transform_options(Opts) ->
                    [] -> [];
                    L2 -> [{acl, L2}]
                end,
-    ACLOpts2 ++ AccessOpts1 ++ Opts3.
+    NewAccessOpts1 = case lists:map(
+			    fun({NAName, Os}) ->
+				    {NAName, transform_access_rules_config(Os)}
+			    end, lists:flatten(NewAccessOpts)) of
+			 [] -> [];
+			 L3 -> [{access_rules, L3}]
+		     end,
+    ShaperOpts1 = case lists:map(
+			    fun({SName, Ss}) ->
+				    {SName, transform_access_rules_config(Ss)}
+			    end, lists:flatten(ShaperOpts)) of
+			 [] -> [];
+			 L4 -> [{shaper_rules, L4}]
+		     end,
+    ACLOpts2 ++ AccessOpts1 ++ NewAccessOpts1 ++ ShaperOpts1 ++ Opts5.
 
 transform_options({acl, Name, Type}, Opts) ->
     T = case Type of
@@ -508,5 +603,7 @@ transform_options(Opt, Opts) ->
     [Opt|Opts].
 
 opt_type(access) -> fun (V) -> V end;
+opt_type(access_rules) -> fun (V) -> V end;
+opt_type(shaper_rules) -> fun (V) -> V end;
 opt_type(acl) -> fun (V) -> V end;
-opt_type(_) -> [access, acl].
+opt_type(_) -> [access, acl, acces_rules, shaper_rules].
