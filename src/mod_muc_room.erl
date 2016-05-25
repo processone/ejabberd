@@ -1803,8 +1803,8 @@ add_new_user(From, Nick,
                                10),
     Collision = nick_collision(From, Nick, StateData),
     case {(ServiceAffiliation == owner orelse
-	     (Affiliation == admin orelse Affiliation == owner)
-	       andalso NUsers < MaxAdminUsers
+	     ((Affiliation == admin orelse Affiliation == owner)
+	       andalso NUsers < MaxAdminUsers)
 	       orelse NUsers < MaxUsers)
 	    andalso NConferences < MaxConferences,
 	  Collision,
