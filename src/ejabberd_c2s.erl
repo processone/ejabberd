@@ -624,9 +624,9 @@ wait_for_auth({xmlstreamelement, El}, StateData) ->
 	{auth, _ID, set, {U, P, D, R}} ->
 	    JID = jid:make(U, StateData#state.server, R),
 	    case JID /= error andalso
-		acl:match_rule(StateData#state.server,
-		    StateData#state.access, JID)
-		== allow
+		acl:access_matches(StateData#state.access,
+				   #{usr => jid:split(JID), ip => StateData#state.ip},
+				   StateData#state.server) == allow
 	    of
 		true ->
 		    DGen = fun (PW) ->
@@ -1103,8 +1103,10 @@ open_session(StateData) ->
     R = StateData#state.resource,
     JID = StateData#state.jid,
     Lang = StateData#state.lang,
-    case acl:match_rule(StateData#state.server,
-                        StateData#state.access, JID) of
+    IP = StateData#state.ip,
+    case acl:access_matches(StateData#state.access,
+			    #{usr => jid:split(JID), ip => IP},
+			    StateData#state.server) of
         allow ->
             ?INFO_MSG("(~w) Opened session for ~s",
                       [StateData#state.socket, jid:to_string(JID)]),
@@ -1824,8 +1826,9 @@ terminate(_Reason, StateName, StateData) ->
 %%%----------------------------------------------------------------------
 
 change_shaper(StateData, JID) ->
-    Shaper = acl:match_rule(StateData#state.server,
-			    StateData#state.shaper, JID),
+    Shaper = acl:access_matches(StateData#state.shaper,
+				#{usr => jid:split(JID), ip => StateData#state.ip},
+				StateData#state.server),
     (StateData#state.sockmod):change_shaper(StateData#state.socket,
 					    Shaper).
 
