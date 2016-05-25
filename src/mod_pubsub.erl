@@ -107,6 +107,8 @@
 	nodeOptions/0,
 	subOption/0,
 	subOptions/0,
+	pubOption/0,
+	pubOptions/0,
 	%%
 	affiliation/0,
 	subscription/0,
@@ -1289,7 +1291,16 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 			[#xmlel{name = <<"item">>, attrs = ItemAttrs,
 					children = Payload}] ->
 			    ItemId = fxml:get_attr_s(<<"id">>, ItemAttrs),
-			    publish_item(Host, ServerHost, Node, From, ItemId, Payload, Access);
+			    PubOpts = case [C || #xmlel{name = <<"publish-options">>,
+							children = [C]} <- Rest] of
+				[XEl] ->
+				    case jlib:parse_xdata_submit(XEl) of
+				      invalid -> [];
+				      Form -> Form
+				    end;
+				_ -> []
+			    end,
+			    publish_item(Host, ServerHost, Node, From, ItemId, Payload, PubOpts, Access);
 			[] ->
 			    {error,
 				extended_error(?ERR_BAD_REQUEST, <<"item-required">>)};
@@ -2185,10 +2196,10 @@ unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
     | {error, xmlel()}
     ).
 publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
-    publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, all).
-publish_item(Host, ServerHost, Node, Publisher, <<>>, Payload, Access) ->
-    publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload, Access);
-publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
+    publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, [], all).
+publish_item(Host, ServerHost, Node, Publisher, <<>>, Payload, PubOpts, Access) ->
+    publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload, PubOpts, Access);
+publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access) ->
     Action = fun (#pubsub_node{options = Options, type = Type, id = Nidx}) ->
 	    Features = plugin_features(Host, Type),
 	    PublishFeature = lists:member(<<"publish">>, Features),
@@ -2220,7 +2231,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
 			extended_error(?ERR_BAD_REQUEST, <<"item-required">>)};
 		true ->
 		    node_call(Host, Type, publish_item,
-			[Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload])
+			[Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload, PubOpts])
 	    end
     end,
     Reply = [#xmlel{name = <<"pubsub">>,
@@ -2281,7 +2292,8 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
 					 attrs = [{<<"xmlns">>, ?NS_PUBSUB}],
 					 children = [#xmlel{name = <<"create">>,
 							    attrs = [{<<"node">>, NewNode}]}]}]} ->
-				    publish_item(Host, ServerHost, NewNode, Publisher, ItemId, Payload);
+			    publish_item(Host, ServerHost, NewNode, Publisher, ItemId,
+				Payload, PubOpts, Access);
 				_ ->
 				    {error, ?ERR_ITEM_NOT_FOUND}
 			    end;
