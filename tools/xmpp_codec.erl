@@ -2174,7 +2174,7 @@ encode({sm_resumed, _, _, _} = Resumed) ->
     encode_sm_resumed(Resumed, []);
 encode({sm_r, _} = R) -> encode_sm_r(R, []);
 encode({sm_a, _, _} = A) -> encode_sm_a(A, []);
-encode({sm_failed, _, _} = Failed) ->
+encode({sm_failed, _, _, _} = Failed) ->
     encode_sm_failed(Failed, []);
 encode({offline_item, _, _} = Item) ->
     encode_offline_item(Item,
@@ -2597,7 +2597,7 @@ pp(sm_resume, 3) -> [h, previd, xmlns];
 pp(sm_resumed, 3) -> [h, previd, xmlns];
 pp(sm_r, 1) -> [xmlns];
 pp(sm_a, 2) -> [h, xmlns];
-pp(sm_failed, 2) -> [reason, xmlns];
+pp(sm_failed, 3) -> [reason, h, xmlns];
 pp(offline_item, 2) -> [node, action];
 pp(offline, 3) -> [items, purge, fetch];
 pp(mix_join, 2) -> [jid, subscribe];
@@ -2963,9 +2963,9 @@ decode_sm_failed(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"failed">>, _attrs, _els}) ->
     Reason = decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 				  _els, undefined),
-    Xmlns = decode_sm_failed_attrs(__TopXMLNS, _attrs,
-				   undefined),
-    {sm_failed, Reason, Xmlns}.
+    {H, Xmlns} = decode_sm_failed_attrs(__TopXMLNS, _attrs,
+					undefined, undefined),
+    {sm_failed, Reason, H, Xmlns}.
 
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls, [],
 		     Reason) ->
@@ -3285,20 +3285,25 @@ decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 			 Reason).
 
 decode_sm_failed_attrs(__TopXMLNS,
-		       [{<<"xmlns">>, _val} | _attrs], _Xmlns) ->
-    decode_sm_failed_attrs(__TopXMLNS, _attrs, _val);
-decode_sm_failed_attrs(__TopXMLNS, [_ | _attrs],
+		       [{<<"h">>, _val} | _attrs], _H, Xmlns) ->
+    decode_sm_failed_attrs(__TopXMLNS, _attrs, _val, Xmlns);
+decode_sm_failed_attrs(__TopXMLNS,
+		       [{<<"xmlns">>, _val} | _attrs], H, _Xmlns) ->
+    decode_sm_failed_attrs(__TopXMLNS, _attrs, H, _val);
+decode_sm_failed_attrs(__TopXMLNS, [_ | _attrs], H,
 		       Xmlns) ->
-    decode_sm_failed_attrs(__TopXMLNS, _attrs, Xmlns);
-decode_sm_failed_attrs(__TopXMLNS, [], Xmlns) ->
-    decode_sm_failed_attr_xmlns(__TopXMLNS, Xmlns).
+    decode_sm_failed_attrs(__TopXMLNS, _attrs, H, Xmlns);
+decode_sm_failed_attrs(__TopXMLNS, [], H, Xmlns) ->
+    {decode_sm_failed_attr_h(__TopXMLNS, H),
+     decode_sm_failed_attr_xmlns(__TopXMLNS, Xmlns)}.
 
-encode_sm_failed({sm_failed, Reason, Xmlns},
+encode_sm_failed({sm_failed, Reason, H, Xmlns},
 		 _xmlns_attrs) ->
     _els = lists:reverse('encode_sm_failed_$reason'(Reason,
 						    [])),
     _attrs = encode_sm_failed_attr_xmlns(Xmlns,
-					 _xmlns_attrs),
+					 encode_sm_failed_attr_h(H,
+								 _xmlns_attrs)),
     {xmlel, <<"failed">>, _attrs, _els}.
 
 'encode_sm_failed_$reason'(undefined, _acc) -> _acc;
@@ -3442,6 +3447,20 @@ encode_sm_failed({sm_failed, Reason, Xmlns},
 				     [{<<"xmlns">>,
 				       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
      | _acc].
+
+decode_sm_failed_attr_h(__TopXMLNS, undefined) ->
+    undefined;
+decode_sm_failed_attr_h(__TopXMLNS, _val) ->
+    case catch dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"h">>, <<"failed">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_sm_failed_attr_h(undefined, _acc) -> _acc;
+encode_sm_failed_attr_h(_val, _acc) ->
+    [{<<"h">>, enc_int(_val)} | _acc].
 
 decode_sm_failed_attr_xmlns(__TopXMLNS, undefined) ->
     undefined;

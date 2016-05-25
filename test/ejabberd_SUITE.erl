@@ -203,6 +203,8 @@ init_per_testcase(TestCase, OrigConfig) ->
             auth(connect(Config));
 	sm_resume ->
 	    auth(connect(Config));
+	sm_resume_failed ->
+	    auth(connect(Config));
         test_open_session ->
             bind(auth(connect(Config)));
         _ when IsMaster or IsSlave ->
@@ -231,6 +233,7 @@ no_db_tests() ->
        stats,
        sm,
        sm_resume,
+       sm_resume_failed,
        disco]},
      {test_proxy65, [parallel],
       [proxy65_master, proxy65_slave]}].
@@ -641,6 +644,17 @@ sm_resume(Config) ->
     ?recv1(#message{from = ServerJID, to = MyJID, body = [Txt]}),
     ?recv1(#sm_r{}),
     send(Config, #sm_a{h = 1, xmlns = ?NS_STREAM_MGMT_3}),
+    %% Send another stanza to increment the server's 'h' for sm_resume_failed.
+    send(Config, #presence{to = ServerJID}),
+    close_socket(Config),
+    {save_config, set_opt(sm_previd, ID, Config)}.
+
+sm_resume_failed(Config) ->
+    {sm_resume, SMConfig} = ?config(saved_config, Config),
+    ID = ?config(sm_previd, SMConfig),
+    ct:sleep(5000), % Wait for session to time out.
+    send(Config, #sm_resume{previd = ID, h = 1, xmlns = ?NS_STREAM_MGMT_3}),
+    ?recv1(#sm_failed{reason = 'item-not-found', h = 4}),
     disconnect(Config).
 
 private(Config) ->
