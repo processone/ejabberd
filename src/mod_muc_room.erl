@@ -266,6 +266,8 @@ normal_state({route, From, <<"">>,
 				     none ->
 					 NSD = set_affiliation(IJID, member,
 							       StateData),
+					 send_affiliation(IJID, member,
+							  StateData),
 					 case
 					   (NSD#state.config)#config.persistent
 					     of
@@ -2440,6 +2442,51 @@ send_nick_changing(JID, OldNick, StateData,
 		  end,
 		  (?DICT):to_list(StateData#state.users)).
 
+maybe_send_affiliation(JID, Affiliation, StateData) ->
+    LJID = jid:tolower(JID),
+    IsOccupant = case LJID of
+		   {LUser, LServer, <<"">>} ->
+		       not (?DICT):is_empty(
+			     (?DICT):filter(fun({U, S, _}, _) ->
+						    U == LUser andalso
+						      S == LServer
+					    end, StateData#state.users));
+		   {_LUser, _LServer, _LResource} ->
+		       (?DICT):is_key(LJID, StateData#state.users)
+		 end,
+    case IsOccupant of
+      true ->
+	  ok; % The new affiliation is published via presence.
+      false ->
+	  send_affiliation(LJID, Affiliation, StateData)
+    end.
+
+send_affiliation(LJID, Affiliation, StateData) ->
+    ItemAttrs = [{<<"jid">>, jid:to_string(LJID)},
+		 {<<"affiliation">>, affiliation_to_list(Affiliation)},
+		 {<<"role">>, <<"none">>}],
+    Message = #xmlel{name = <<"message">>,
+		     attrs = [{<<"id">>, randoms:get_string()}],
+		     children =
+			 [#xmlel{name = <<"x">>,
+				 attrs = [{<<"xmlns">>, ?NS_MUC_USER}],
+				 children =
+				     [#xmlel{name = <<"item">>,
+					     attrs = ItemAttrs}]}]},
+    Recipients = case (StateData#state.config)#config.anonymous of
+		   true ->
+		       (?DICT):filter(fun(_, #user{role = moderator}) ->
+					      true;
+					 (_, _) ->
+					      false
+				      end, StateData#state.users);
+		   false ->
+		       StateData#state.users
+		 end,
+    send_multiple(StateData#state.jid,
+		  StateData#state.server_host,
+		  Recipients, Message).
+
 status_els(IsInitialPresence, JID, #user{jid = JID}, StateData) ->
     Status = case IsInitialPresence of
 	       true ->
@@ -2722,11 +2769,13 @@ process_item_change(E, SD, UJID) ->
                             <<"321">>,
                             none,
                             SD),
+                    maybe_send_affiliation(JID, none, SD),
                     SD1 = set_affiliation(JID, none, SD),
                     set_role(JID, none, SD1);
                 _ ->
                     SD1 = set_affiliation(JID, none, SD),
                     send_update_presence(JID, SD1, SD),
+                    maybe_send_affiliation(JID, none, SD1),
                     SD1
             end;
         {JID, affiliation, outcast, Reason} ->
@@ -2736,6 +2785,7 @@ process_item_change(E, SD, UJID) ->
                     <<"301">>,
                     outcast,
                     SD),
+            maybe_send_affiliation(JID, outcast, SD),
             set_affiliation(JID,
                 outcast,
                 set_role(JID, none, SD),
@@ -2745,11 +2795,13 @@ process_item_change(E, SD, UJID) ->
             SD1 = set_affiliation(JID, A, SD, Reason),
             SD2 = set_role(JID, moderator, SD1),
             send_update_presence(JID, Reason, SD2, SD),
+            maybe_send_affiliation(JID, A, SD2),
             SD2;
         {JID, affiliation, member, Reason} ->
             SD1 = set_affiliation(JID, member, SD, Reason),
             SD2 = set_role(JID, participant, SD1),
             send_update_presence(JID, Reason, SD2, SD),
+            maybe_send_affiliation(JID, member, SD2),
             SD2;
         {JID, role, Role, Reason} ->
             SD1 = set_role(JID, Role, SD),
@@ -2759,6 +2811,7 @@ process_item_change(E, SD, UJID) ->
         {JID, affiliation, A, _Reason} ->
             SD1 = set_affiliation(JID, A, SD),
             send_update_presence(JID, SD1, SD),
+            maybe_send_affiliation(JID, A, SD1),
             SD1
     end
     of
