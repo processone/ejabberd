@@ -188,9 +188,8 @@ check_permissions2(#request{ip={IP, _Port}}, Call, _Policy) ->
                 true -> {allowed, Call, admin};
                 _ -> unauthorized_response()
             end;
-        E ->
-	    ?DEBUG("Unauthorized: ~p", [E]),
-            unauthorized_response()
+        _E ->
+            {allowed, Call, noauth}
     end;
 check_permissions2(_Request, _Call, _Policy) ->
     unauthorized_response().
@@ -209,7 +208,7 @@ oauth_check_token(Scope, Token) ->
 process(_, #request{method = 'POST', data = <<>>}) ->
     ?DEBUG("Bad Request: no data", []),
     badrequest_response(<<"Missing POST data">>);
-process([Call], #request{method = 'POST', data = Data, ip = IP} = Req) ->
+process([Call], #request{method = 'POST', data = Data, ip = {IP, _} = IPPort} = Req) ->
     Version = get_api_version(Req),
     try
         Args = case jiffy:decode(Data) of
@@ -217,10 +216,10 @@ process([Call], #request{method = 'POST', data = Data, ip = IP} = Req) ->
             {List} when is_list(List) -> List;
             Other -> [Other]
         end,
-        log(Call, Args, IP),
+        log(Call, Args, IPPort),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                {Code, Result} = handle(Cmd, Auth, Args, Version),
+                {Code, Result} = handle(Cmd, Auth, Args, Version, IP),
                 json_response(Code, jiffy:encode(Result));
             %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
@@ -243,7 +242,7 @@ process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
         log(Call, Args, IP),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                {Code, Result} = handle(Cmd, Auth, Args, Version),
+                {Code, Result} = handle(Cmd, Auth, Args, Version, IP),
                 json_response(Code, jiffy:encode(Result));
             %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
@@ -279,7 +278,7 @@ get_api_version([]) ->
 %% ----------------
 
 % generic ejabberd command handler
-handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
+handle(Call, Auth, Args, Version, IP) when is_atom(Call), is_list(Args) ->
     case ejabberd_commands:get_command_format(Call, Auth, Version) of
         {ArgsSpec, _} when is_list(ArgsSpec) ->
             Args2 = [{jlib:binary_to_atom(Key), Value} || {Key, Value} <- Args],
@@ -296,7 +295,7 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
                             [{Key, undefined}|Acc]
                     end, [], ArgsSpec),
 	    try
-		handle2(Call, Auth, match(Args2, Spec), Version)
+		handle2(Call, Auth, match(Args2, Spec), Version, IP)
 	    catch throw:not_found ->
 		    {404, <<"not_found">>};
 		  throw:{not_found, Why} when is_atom(Why) ->
@@ -333,10 +332,10 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
             {400, <<"Error">>}
     end.
 
-handle2(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
+handle2(Call, Auth, Args, Version, IP) when is_atom(Call), is_list(Args) ->
     {ArgsF, _ResultF} = ejabberd_commands:get_command_format(Call, Auth, Version),
     ArgsFormatted = format_args(Args, ArgsF),
-    ejabberd_command(Auth, Call, ArgsFormatted, Version).
+    ejabberd_command(Auth, Call, ArgsFormatted, Version, IP).
 
 get_elem_delete(A, L) ->
     case proplists:get_all_values(A, L) of
@@ -416,12 +415,12 @@ process_unicode_codepoints(Str) ->
 match(Args, Spec) ->
     [{Key, proplists:get_value(Key, Args, Default)} || {Key, Default} <- Spec].
 
-ejabberd_command(Auth, Cmd, Args, Version) ->
+ejabberd_command(Auth, Cmd, Args, Version, IP) ->
     Access = case Auth of
                  admin -> [];
                  _ -> undefined
              end,
-    case ejabberd_commands:execute_command(Access, Auth, Cmd, Args, Version) of
+    case ejabberd_commands:execute_command(Access, Auth, Cmd, Args, Version, #{ip => IP}) of
         {error, Error} ->
             throw(Error);
         Res ->

@@ -230,6 +230,7 @@
 	 execute_command/3,
 	 execute_command/4,
 	 execute_command/5,
+	 execute_command/6,
          opt_type/1,
          get_commands_spec/0
 	]).
@@ -352,7 +353,7 @@ get_command_format(Name, Auth)  ->
 				{[aterm()], rterm()}.
 
 get_command_format(Name, Auth, Version) ->
-    Admin = is_admin(Name, Auth),
+    Admin = is_admin(Name, Auth, #{}),
     #ejabberd_commands{args = Args,
 		       result = Result,
 		       policy = Policy} =
@@ -489,13 +490,16 @@ execute_command(AccessCommands, Auth, Name, Arguments) ->
 %% Can return the following exceptions:
 %% command_unknown | account_unprivileged | invalid_account_data | no_auth_provided
 execute_command(AccessCommands1, Auth1, Name, Arguments, Version) ->
-    Auth = case is_admin(Name, Auth1) of
+execute_command(AccessCommands1, Auth1, Name, Arguments, Version, #{}).
+
+execute_command(AccessCommands1, Auth1, Name, Arguments, Version, CallerInfo) ->
+    Auth = case is_admin(Name, Auth1, CallerInfo) of
                true -> admin;
                false -> Auth1
            end,
     Command = get_command_definition(Name, Version),
     AccessCommands = get_access_commands(AccessCommands1, Version),
-    case check_access_commands(AccessCommands, Auth, Name, Command, Arguments) of
+    case check_access_commands(AccessCommands, Auth, Name, Command, Arguments, CallerInfo) of
 	ok -> execute_command2(Auth, Command, Arguments)
     end.
 
@@ -573,9 +577,9 @@ get_tags_commands(Version) ->
 %% At least one AccessCommand must be satisfied.
 %% It may throw {error, Error} where:
 %% Error = account_unprivileged | invalid_account_data
-check_access_commands([], _Auth, _Method, _Command, _Arguments) ->
+check_access_commands([], _Auth, _Method, _Command, _Arguments, _CallerInfo) ->
     ok;
-check_access_commands(AccessCommands, Auth, Method, Command1, Arguments) ->
+check_access_commands(AccessCommands, Auth, Method, Command1, Arguments, CallerInfo) ->
     Command =
         case {Command1#ejabberd_commands.policy, Auth} of
             {user, {_, _, _, _}} ->
@@ -590,7 +594,7 @@ check_access_commands(AccessCommands, Auth, Method, Command1, Arguments) ->
     AccessCommandsAllowed =
 	lists:filter(
 	  fun({Access, Commands, ArgumentRestrictions}) ->
-		  case check_access(Command, Access, Auth) of
+		  case check_access(Command, Access, Auth, CallerInfo) of
 		      true ->
 			  check_access_command(Commands, Command,
 					       ArgumentRestrictions,
@@ -600,7 +604,7 @@ check_access_commands(AccessCommands, Auth, Method, Command1, Arguments) ->
 		  end;
 	      ({Access, Commands}) ->
 		  ArgumentRestrictions = [],
-		  case check_access(Command, Access, Auth) of
+		  case check_access(Command, Access, Auth, CallerInfo) of
 		      true ->
 			  check_access_command(Commands, Command,
 					       ArgumentRestrictions,
@@ -637,31 +641,33 @@ check_auth(_Command, {User, Server, Password, _}) when is_binary(Password) ->
         _ -> throw({error, invalid_account_data})
     end.
 
-check_access(Command, ?POLICY_ACCESS, _)
+check_access(Command, ?POLICY_ACCESS, _, _)
   when Command#ejabberd_commands.policy == open ->
     true;
-check_access(_Command, _Access, admin) ->
+check_access(_Command, _Access, admin, _) ->
     true;
-check_access(_Command, _Access, {_User, _Server, _, true}) ->
+check_access(_Command, _Access, {_User, _Server, _, true}, _) ->
     false;
-check_access(Command, Access, Auth)
+check_access(Command, Access, Auth, CallerInfo)
   when Access =/= ?POLICY_ACCESS;
        Command#ejabberd_commands.policy == open;
        Command#ejabberd_commands.policy == user ->
     case check_auth(Command, Auth) of
 	{ok, User, Server} ->
-	    check_access2(Access, User, Server);
+	    check_access2(Access, CallerInfo#{usr => jid:split(jid:make(User, Server, <<>>))}, Server);
+	no_auth_provided ->
+	    check_access2(Access, CallerInfo, global);
 	_ ->
 	    false
     end;
-check_access(_Command, _Access, _Auth) ->
+check_access(_Command, _Access, _Auth, _CallerInfo) ->
     false.
 
-check_access2(?POLICY_ACCESS, _User, _Server) ->
+check_access2(?POLICY_ACCESS, _CallerInfo, _Server) ->
     true;
-check_access2(Access, User, Server) ->
+check_access2(Access, AccessInfo, Server) ->
     %% Check this user has access permission
-    case acl:match_rule(Server, Access, jid:make(User, Server, <<"">>)) of
+    case acl:access_matches(Access, AccessInfo, Server) of
 	allow -> true;
 	deny -> false
     end.
@@ -737,22 +743,26 @@ get_commands(Version) ->
           end, AdminCmds ++ UserCmds, Opts),
     Cmds.
 
-is_admin(_Name, noauth) ->
-    false;
-is_admin(_Name, admin) ->
+is_admin(_Name, admin, _Extra) ->
     true;
-is_admin(_Name, {_User, _Server, _, false}) ->
+is_admin(_Name, {_User, _Server, _, false}, _Extra) ->
     false;
-is_admin(Name, {User, Server, _, true} = Auth) ->
+is_admin(Name, Auth, Extra) ->
+    {ACLInfo, Server} = case Auth of
+			    {U, S, _, _} ->
+				{Extra#{usr=>jid:split(jid:make(U, S, <<>>))}, S};
+			    _ ->
+				{Extra, global}
+	      end,
     AdminAccess = ejabberd_config:get_option(
                     commands_admin_access,
                     fun(A) when is_atom(A) -> A end,
                     none),
-    case acl:match_rule(Server, AdminAccess,
-                        jid:make(User, Server, <<"">>)) of
+    case acl:access_matches(AdminAccess, ACLInfo, Server) of
         allow ->
             case catch check_auth(get_command_definition(Name), Auth) of
                 {ok, _, _} -> true;
+		no_auth_provided -> true;
                 _ -> false
             end;
         deny -> false
