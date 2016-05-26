@@ -462,54 +462,76 @@ acl:
 ##           - "bob-local": "localhost"
 
 ###.  ============
-###'  ACCESS RULES
-access:
+###'  SHAPER RULES
+
+shaper_rules:
   ## Maximum number of simultaneous sessions allowed for a single user:
-  max_user_sessions: 
-    all: 10
+  max_user_sessions:
+    - 10:
+        - all
   ## Maximum number of offline messages that users can have:
-  max_user_offline_messages: 
-    admin: 5000
-    all: 100
-  ## This rule allows access only for local users:
-  local: 
-    local: allow
-  ## Only non-blocked users can use c2s connections:
-  c2s: 
-    blocked: deny
-    all: allow
+  max_user_offline_messages:
+    - 5000:
+        - acl: admin
+    - 100:
+        - all
   ## For C2S connections, all users except admins use the "normal" shaper
-  c2s_shaper: 
-    admin: none
-    all: normal
+  c2s_shaper:
+    - none:
+        - acl: admin
+    - normal:
+        - all
   ## All S2S connections use the "fast" shaper
-  s2s_shaper: 
-    all: fast
+  s2s_shaper:
+    - fast:
+        - all
+
+###.  ============
+###'  ACCESS RULES
+access_rules:
+  ## This rule allows access only for local users:
+  local:
+    - allow:
+        - acl: local
+  ## Only non-blocked users can use c2s connections:
+  c2s:
+    - deny:
+        - acl: blocked
+    - allow:
+        - all
   ## Only admins can send announcement messages:
-  announce: 
-    admin: allow
+  announce:
+    - allow:
+        - acl: admin
   ## Only admins can use the configuration interface:
   configure: 
-    admin: allow
+    - allow:
+        - acl: admin
   ## Admins of this server are also admins of the MUC service:
   muc_admin: 
-    admin: allow
+    - allow:
+        - acl: admin
   ## Only accounts of the local ejabberd server can create rooms:
   muc_create: 
-    local: allow
+    - allow:
+        - acl: local
   ## All users are allowed to use the MUC service:
   muc: 
-    all: allow
+    - allow:
+        - all
   ## Only accounts on the local ejabberd server can create Pubsub nodes:
   pubsub_createnode: 
-    local: allow
+    - allow:
+        - acl: local
   ## In-band registration allows registration of any possible username.
   ## To disable in-band registration, replace 'allow' with 'deny'.
   register: 
-    all: allow
+    - allow:
+        - all
   ## Only allow to register from localhost
   trusted_network: 
-    loopback: allow
+    - allow:
+        - acl: loopback
   ## Do not establish S2S connections with bad servers
   ## s2s: 
   ##   bad_servers: deny
