@@ -564,6 +564,7 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
                                 %% it isn't case of 0356 extension
                                 [#xmlel{name = <<"presence">>} = Child] ->
                                     %% check privilege access
+                                    ?INFO_MSG("presence: ~p", [Child]),
                                     T = get_prop(roster, HOpts),
                                     Type = fxml:get_attr_s(<<"type">>, 
                                                            Child#xmlel.attrs),
@@ -580,7 +581,11 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
                                                                    Child#xmlel.attrs),
                                             FromJ = jid:from_string(From),
                                             ToJ = jid:from_string(To),
-                                            ejabberd_router:route(FromJ,ToJ, Child);       
+                                            if (FromJ /= ToJ) ->
+                                                    ejabberd_router:route(FromJ,ToJ, Child);
+                                                true ->
+                                                    ok %% What is the type of error?
+                                            end;
                                         true -> 
                                             send_text(StateData, ?FORBIDDEN_ERROR)
                                     end;        
