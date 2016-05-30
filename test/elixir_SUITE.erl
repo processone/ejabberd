@@ -18,17 +18,7 @@
 -compile(export_all).
 
 init_per_suite(Config) ->
-    case code:lib_dir(ejabberd) of
-	{error, _} ->
-	    DataDir = proplists:get_value(data_dir, Config),
-	    {ok, CWD} = file:get_cwd(),
-	    NewEjPath = filename:join([CWD, "ejabberd-0.0.1"]),
-	    TopDir = filename:dirname(filename:dirname(filename:dirname(DataDir))),
-	    ok = file:make_symlink(TopDir, NewEjPath),
-	    code:replace_path(ejabberd, NewEjPath);
-	_ ->
-	    ok
-    end,
+    suite:setup_ejabberd_lib_path(Config),
     check_meck(),
     code:add_pathz(filename:join(test_dir(), "../include")),
     Config.
