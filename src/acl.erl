@@ -234,20 +234,28 @@ nameprep(S) ->
 resourceprep(S) ->
     jid:resourceprep(b(S)).
 
+split_user_server(Str, NormFunUsr, NormFunSrv) ->
+    case binary:split(Str, <<"@">>) of
+	[U, S] ->
+	    {NormFunUsr(U), NormFunSrv(S)};
+	_ ->
+	    NormFunUsr(Str)
+    end.
+
 normalize_spec(Spec) ->
     case Spec of
         all -> all;
         none -> none;
         {acl, N} -> {acl, N};
         {user, {U, S}} -> {user, {nodeprep(U), nameprep(S)}};
-        {user, U} -> {user, nodeprep(U)};
+        {user, U} -> {user, split_user_server(U, fun nodeprep/1, fun nameprep/1)};
         {shared_group, {G, H}} -> {shared_group, {b(G), nameprep(H)}};
-        {shared_group, G} -> {shared_group, b(G)};
+        {shared_group, G} -> {shared_group, split_user_server(G, fun b/1, fun nameprep/1)};
         {user_regexp, {UR, S}} -> {user_regexp, {b(UR), nameprep(S)}};
-        {user_regexp, UR} -> {user_regexp, b(UR)};
+        {user_regexp, UR} -> {user_regexp, split_user_server(UR, fun b/1, fun nameprep/1)};
         {node_regexp, {UR, SR}} -> {node_regexp, {b(UR), b(SR)}};
         {user_glob, {UR, S}} -> {user_glob, {b(UR), nameprep(S)}};
-        {user_glob, UR} -> {user_glob, b(UR)};
+        {user_glob, UR} -> {user_glob, split_user_server(UR, fun b/1, fun nameprep/1)};
         {node_glob, {UR, SR}} -> {node_glob, {b(UR), b(SR)}};
         {server, S} -> {server, nameprep(S)};
         {resource, R} -> {resource, resourceprep(R)};
