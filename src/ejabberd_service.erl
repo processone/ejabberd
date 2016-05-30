@@ -582,7 +582,7 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
                                             ToJ = jid:from_string(To),
 
                                             if (FromJ /= ToJ) ->
-                                                  case (FromJ#jid.lresource== <<"">>) and 
+                                                  case (FromJ#jid.lresource == <<"">>) and 
                                                        (FromJ#jid.lserver == ?MYNAME) of
                                                             true ->
                                                                 ejabberd_router:route(FromJ,ToJ, Child);
@@ -610,7 +610,7 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
                                                                  ChildNew#xmlel.attrs),
                                             FromJ = jid:from_string(From),
                                             ToJ = jid:from_string(To),                            
-                                            case (FromJ#jid.lresource== <<"">>) and 
+                                            case (FromJ#jid.lresource == <<"">>) and 
                                                  (FromJ#jid.lserver == ?MYNAME) of %% check it
                                                       true ->
                                                           %% there are no restriction on to attribute
