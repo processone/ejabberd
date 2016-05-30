@@ -656,7 +656,12 @@ check_access(Command, Access, Auth, CallerInfo)
 	{ok, User, Server} ->
 	    check_access2(Access, CallerInfo#{usr => jid:split(jid:make(User, Server, <<>>))}, Server);
 	no_auth_provided ->
-	    check_access2(Access, CallerInfo, global);
+	    case Command#ejabberd_commands.policy of
+		user ->
+		    false;
+		_ ->
+		    check_access2(Access, CallerInfo, global)
+	    end;
 	_ ->
 	    false
     end;
