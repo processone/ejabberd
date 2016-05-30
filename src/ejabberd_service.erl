@@ -44,6 +44,7 @@
      handle_event/3, handle_sync_event/4, code_change/4,
      handle_info/3, terminate/3, print_state/1, opt_type/1]).
 
+
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
@@ -95,8 +96,6 @@
 
 -define(INVALID_NS_ERR,
     fxml:element_to_binary(?SERR_INVALID_NAMESPACE)).
-
--define(FORBIDDEN_ERROR, <<"<forbidden/>">>).
 
 -define(NS_PRIVILEGE, <<"urn:xmpp:privilege:1">>).
 
@@ -300,10 +299,10 @@ stream_established({xmlstreamelement, El}, StateData) ->
                          (ToJID#jid.lserver == ?MYNAME) and %% ?MYHOSTS
                          %% only component.host, or user@component.host ?
                          (FromJID#jid.luser == <<"">>) of 
-                         true ->
-                            process_iq(StateData, FromJID,ToJID, NewEl);
-                         false -> 
-                            ejabberd_router:route(FromJID, ToJID, NewEl)
+                             true ->
+                                 process_iq(StateData, FromJID,ToJID, NewEl);
+                             false -> 
+                                 ejabberd_router:route(FromJID, ToJID, NewEl)
                     end;
                  _ ->
                      ejabberd_router:route(FromJID, ToJID, NewEl)
@@ -530,10 +529,12 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
                     ResIQ = mod_roster:process_iq(ToJID, ToJID, IQ),
                     send_iq_result(StateData, ToJID, FromJID, jlib:iq_to_xml(ResIQ));
                 false -> 
-                    send_text(StateData, ?FORBIDDEN_ERROR) %%  RFC 6121 2.1.5
+                    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN), %%  RFC 6121 2.1.5
+                    send_element(StateData, Err)
             end;
         _ ->
-            send_text(StateData, ?FORBIDDEN_ERROR)
+            Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN), %%  RFC 6121 2.1.5
+            send_element(StateData, Err)
     end.
    
 send_iq_result(StateData, From, To, #xmlel{attrs = Attrs } = Packet) ->
@@ -542,12 +543,12 @@ send_iq_result(StateData, From, To, #xmlel{attrs = Attrs } = Packet) ->
     Text = fxml:element_to_binary(Packet#xmlel{attrs = Attrs2}),
     send_text(StateData, Text).
 
-%% it isn't case of 0356 protocol specification
+%% TODO : rewrite this function 
 process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet) ->
-%% if presence was send from service to server
+%% if presence was send from service to server,
     {ok, HOpts} = dict:find(StateData#state.host, StateData#state.host_opts),
     case (ToJID#jid.lserver == ?MYNAME) and %% ?in ?MYHOSTS
-          (FromJID#jid.luser == <<"">>) of
+         (FromJID#jid.luser == <<"">>) of %% service
         true -> 
             %% if stanza contains privilege element
             case Children of
@@ -564,10 +565,8 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
                                 %% it isn't case of 0356 extension
                                 [#xmlel{name = <<"presence">>} = Child] ->
                                     %% check privilege access
-                                    ?INFO_MSG("presence: ~p", [Child]),
                                     T = get_prop(roster, HOpts),
-                                    Type = fxml:get_attr_s(<<"type">>, 
-                                                           Child#xmlel.attrs),
+                                    Type = fxml:get_attr_s(<<"type">>, Child#xmlel.attrs),
                                     if  ((T == <<"both">>) or (T == <<"set">>)) and 
                                         (Type == <<"subscribe">>) ->
                                             %% we can send presence on behalf
@@ -578,18 +577,54 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
                                             From = fxml:get_attr_s(<<"from">>, 
                                                                    Child#xmlel.attrs),
                                             To = fxml:get_attr_s(<<"to">>, 
-                                                                   Child#xmlel.attrs),
+                                                                 Child#xmlel.attrs),
                                             FromJ = jid:from_string(From),
                                             ToJ = jid:from_string(To),
+
                                             if (FromJ /= ToJ) ->
-                                                    ejabberd_router:route(FromJ,ToJ, Child);
+                                                  case (FromJ#jid.lresource== <<"">>) and 
+                                                       (FromJ#jid.lserver == ?MYNAME) of
+                                                            true ->
+                                                                ejabberd_router:route(FromJ,ToJ, Child);
+                                                            _ ->
+                                                                Err = 
+                                                                  jlib:make_error_reply(Child,
+                                                                                        ?ERR_FORBIDDEN),
+                                                                send_element(StateData, Err)
+                                                  end;
                                                 true ->
-                                                    ok %% What is the type of error?
+                                                    ok %% we don't want presence sent to self
                                             end;
-                                        true -> 
-                                            send_text(StateData, ?FORBIDDEN_ERROR)
+                                        true ->
+                                            Err = jlib:make_error_reply(Child, ?ERR_FORBIDDEN),
+                                            send_element(StateData, Err)
                                     end;        
-                                [#xmlel{name = <<"message">>} = Child] -> ok; %% xep-0356
+                                [#xmlel{name = <<"message">>} = Child] -> 
+                                    T = get_prop(message, HOpts),
+                                    ChildNew = jlib:remove_attr(<<"xmlns">>, Child),
+                                    if  (T == <<"outgoing">>) ->
+                                            %% xep-0356
+                                            From = fxml:get_attr_s(<<"from">>, 
+                                                                   ChildNew#xmlel.attrs),
+                                            To = fxml:get_attr_s(<<"to">>, 
+                                                                 ChildNew#xmlel.attrs),
+                                            FromJ = jid:from_string(From),
+                                            ToJ = jid:from_string(To),                            
+                                            case (FromJ#jid.lresource== <<"">>) and 
+                                                 (FromJ#jid.lserver == ?MYNAME) of %% check it
+                                                      true ->
+                                                          %% there are no restriction on to attribute
+                                                          ejabberd_router:route(FromJ,ToJ, ChildNew); 
+                                                      _ ->
+                                                          Err = 
+                                                           jlib:make_error_reply(ChildNew,
+                                                                                 ?ERR_FORBIDDEN),
+                                                          send_element(StateData, Err)
+                                            end;
+                                        true ->
+                                            Err = jlib:make_error_reply(ChildNew,?ERR_FORBIDDEN),
+                                            send_element(StateData, Err)
+                                    end;
                                 _ -> 
                                     ejabberd_router:route(FromJID, ToJID, Packet)
                             end;
