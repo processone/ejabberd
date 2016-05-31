@@ -863,9 +863,10 @@ connected_users_vhost(Host) ->
 dirty_get_sessions_list2() ->
     mnesia:dirty_select(
       session,
-      [{#session{usr = '$1', sid = '$2', priority = '$3', info = '$4', _ = '_'},
-	[],
-	[['$1', '$2', '$3', '$4']]}]).
+      [{#session{usr = '$1', sid = {'$2', '$3'}, priority = '$4', info = '$5',
+		 _ = '_'},
+	[{is_pid, '$3'}],
+	[['$1', {{'$2', '$3'}}, '$4', '$5']]}]).
 
 %% Make string more print-friendly
 stringize(String) ->
@@ -900,7 +901,9 @@ user_sessions_info(User, Host) ->
 		   {'EXIT', _Reason} ->
 		       [];
 		   Ss ->
-		       Ss
+		       lists:filter(fun(#session{sid = {_, Pid}}) ->
+					    is_pid(Pid)
+				    end, Ss)
 	       end,
     lists:map(
       fun(Session) ->

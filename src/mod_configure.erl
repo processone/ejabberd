@@ -1917,17 +1917,19 @@ set_form(From, Host, ?NS_ADMINL(<<"end-user-session">>),
     case JID#jid.lresource of
       <<>> ->
 	  SIDs = mnesia:dirty_select(session,
-				     [{#session{sid = '$1',
+				     [{#session{sid = {'$1', '$2'},
 						usr = {LUser, LServer, '_'},
 						_ = '_'},
-				       [], ['$1']}]),
+				       [{is_pid, '$2'}],
+				       [{{'$1', '$2'}}]}]),
 	  [Pid ! {kick, kicked_by_admin, Xmlelement} || {_, Pid} <- SIDs];
       R ->
 	  [{_, Pid}] = mnesia:dirty_select(session,
-					   [{#session{sid = '$1',
+					   [{#session{sid = {'$1', '$2'},
 						      usr = {LUser, LServer, R},
 						      _ = '_'},
-					     [], ['$1']}]),
+					     [{is_pid, '$2'}],
+					     [{{'$1', '$2'}}]}]),
 	  Pid ! {kick, kicked_by_admin, Xmlelement}
     end,
     {result, []};
