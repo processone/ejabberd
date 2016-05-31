@@ -136,8 +136,8 @@ Conf5 = case lists:keytake(floating_deps, 1, Conf3) of
         end,
 
 %% When running Travis test, upload test coverage result to coveralls:
-Conf6 = case os:getenv("TRAVIS") of
-            "true" ->
+Conf6 = case {lists:keyfind(cover_enabled, 1, Conf5), os:getenv("TRAVIS")} of
+            {{cover_enabled, true}, "true"} ->
                 JobId = os:getenv("TRAVIS_JOB_ID"),
                 CfgTemp = ModCfg(Conf5, [deps], fun(V) -> [{coveralls, ".*", {git, "https://github.com/markusn/coveralls-erl.git", "master"}}|V] end, []),
                 ModCfg(CfgTemp, [post_hooks], fun(V) -> V ++ [{ct, "echo '\n%%! -pa ebin/ deps/coveralls/ebin\nmain(_)->{ok,F}=file:open(\"erlang.json\",[write]),io:fwrite(F,\"~s\",[coveralls:convert_file(\"logs/all.coverdata\", \""++JobId++"\", \"travis-ci\")]).' > getcover.erl"},
