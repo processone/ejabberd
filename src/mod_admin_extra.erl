@@ -872,17 +872,26 @@ stringize(String) ->
     %% Replace newline characters with other code
     ejabberd_regexp:greplace(String, <<"\n">>, <<"\\n">>).
 
+set_presence(User, Host, Resource, Type, Show, Status, Priority)
+        when is_integer(Priority) ->
+    BPriority = integer_to_binary(Priority),
+    set_presence(User, Host, Resource, Type, Show, Status, BPriority);
 set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
-    Pid = ejabberd_sm:get_session_pid(User, Host, Resource),
-    USR = jid:to_string(jid:make(User, Host, Resource)),
-    US = jid:to_string(jid:make(User, Host, <<>>)),
-    Message = {route_xmlstreamelement,
-	       {xmlel, <<"presence">>,
-		[{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
-		[{xmlel, <<"show">>, [], [{xmlcdata, Show}]},
-		 {xmlel, <<"status">>, [], [{xmlcdata, Status}]},
-		 {xmlel, <<"priority">>, [], [{xmlcdata, Priority}]}]}},
-    Pid ! Message.
+    case ejabberd_sm:get_session_pid(User, Host, Resource) of
+	none ->
+	    error;
+	Pid ->
+	    USR = jid:to_string(jid:make(User, Host, Resource)),
+	    US = jid:to_string(jid:make(User, Host, <<>>)),
+	    Message = {route_xmlstreamelement,
+		    {xmlel, <<"presence">>,
+			[{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
+			[{xmlel, <<"show">>, [], [{xmlcdata, Show}]},
+			{xmlel, <<"status">>, [], [{xmlcdata, Status}]},
+			{xmlel, <<"priority">>, [], [{xmlcdata, Priority}]}]}},
+	    Pid ! Message,
+	    ok
+    end.
 
 user_sessions_info(User, Host) ->
     CurrentSec = calendar:datetime_to_gregorian_seconds({date(), time()}),
