@@ -30,6 +30,20 @@ Cfg = case file:consult(filename:join(filename:dirname(SCRIPT), "vars.config")) 
 
 ProcessVars = fun(_F, [], Acc) ->
                       lists:reverse(Acc);
+                 (F, [{Type, Ver, Value} | Tail], Acc) when
+                        Type == if_version_above orelse
+                        Type == if_version_below ->
+		      SysVer = erlang:system_info(otp_release),
+		      Include = if Type == if_version_above ->
+					SysVer > Ver;
+				   true ->
+					SysVer < Ver
+				end,
+		      if Include ->
+                              F(F, Tail, [Value | Acc]);
+			 true ->
+                              F(F, Tail, Acc)
+		      end;
                  (F, [{Type, Var, Value} | Tail], Acc) when
                         Type == if_var_true orelse
                         Type == if_var_false ->
