@@ -47,6 +47,6 @@ password: password!@#$%^&*()'"`~<>+-/;:_=[]{}|\
 
 dn: cn=group1,ou=groups,dc=localhost
 objectClass: posixGroup
-memberUid: test_single
+memberUid: test_single!#$%^*()`~+-;_=[]{}|\
 memberUid: user2
 cn: group1
