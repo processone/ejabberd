@@ -68,7 +68,7 @@ init_config(Config) ->
      {resource, <<"resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {master_resource, <<"master_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {slave_resource, <<"slave_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
-     {password, <<"password!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>}
+     {password, <<"password!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {backends, get_config_backends()}
      |Config].
 
