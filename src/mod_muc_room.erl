@@ -3145,14 +3145,7 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 		     StateData#state.users),
     SAffiliation = affiliation_to_list(Affiliation),
     BannedJIDString = jid:to_string(RealJID),
-    case MJID /= <<"">> of
-	true ->
-		{ok, #user{nick = ActorNick}} =
-		(?DICT):find(jid:tolower(MJID),
-			     StateData#state.users);
-	false ->
-		ActorNick = <<"">>
-    end,
+    ActorNick = get_actor_nick(MJID, StateData),
     lists:foreach(fun ({_LJID, Info}) ->
 			  JidAttrList = case Info#user.role == moderator orelse
 					       (StateData#state.config)#config.anonymous
@@ -3206,6 +3199,14 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 				       Info#user.jid, Packet)
 		  end,
 		  (?DICT):to_list(StateData#state.users)).
+
+get_actor_nick(<<"">>, StateData) ->
+    <<"">>;
+get_actor_nick(MJID, StateData) ->
+    case (?DICT):find(jid:tolower(MJID), StateData#state.users) of
+	{ok, #user{nick = ActorNick}} -> ActorNick;
+	_ -> <<"">>
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Owner stuff
