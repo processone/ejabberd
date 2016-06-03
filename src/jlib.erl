@@ -532,8 +532,10 @@ rsm_encode_count(Count, Arr) ->
 -spec is_standalone_chat_state(xmlel()) -> boolean().
 
 is_standalone_chat_state(#xmlel{name = <<"message">>, children = Els}) ->
+    IgnoreNS = [?NS_CHATSTATES, ?NS_DELAY],
     Stripped = [El || #xmlel{name = Name, attrs = Attrs} = El <- Els,
-		      fxml:get_attr_s(<<"xmlns">>, Attrs) /= ?NS_CHATSTATES,
+		      not lists:member(fxml:get_attr_s(<<"xmlns">>, Attrs),
+				       IgnoreNS),
 		      Name /= <<"thread">>],
     Stripped == [];
 is_standalone_chat_state(_El) -> false.
