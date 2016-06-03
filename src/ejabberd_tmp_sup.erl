@@ -29,11 +29,24 @@
 
 -export([start_link/2, init/1]).
 
+-include("ejabberd.hrl").
+
 start_link(Name, Module) ->
     supervisor:start_link({local, Name}, ?MODULE, Module).
 
+
 init(Module) ->
+    case Module of 
+    	ejabberd_service ->
+    	      %% this hook is for receiving presences for privilege services XEP-0356
+              ejabberd_hooks:add(user_send_packet, ?MYNAME,
+                       ejabberd_service, process_presence, 0),
+              %% contain {service domain, Pid}
+              ets:new(registered_services, [named_table, public]),
+              ok;
+        _ -> ok
+    end,
     {ok,
      {{simple_one_for_one, 10, 1},
       [{undefined, {Module, start_link, []}, temporary,
-	1000, worker, [Module]}]}}.
+	   1000, worker, [Module]}]}}.

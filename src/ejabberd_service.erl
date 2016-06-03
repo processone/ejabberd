@@ -44,6 +44,8 @@
      handle_event/3, handle_sync_event/4, code_change/4,
      handle_info/3, terminate/3, print_state/1, opt_type/1]).
 
+-export([process_presence/4]).
+
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -103,6 +105,7 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(SockData, Opts) ->
+    %% подписаться на получение призенсов 
     supervisor:start_child(ejabberd_service_sup,
                [SockData, Opts]).
 
@@ -157,6 +160,7 @@ init([{SockMod, Socket}, Opts]) ->
           _ -> true
         end,
     SockMod:change_shaper(Socket, Shaper),
+
     {ok, wait_for_stream,
      #state{socket = Socket, sockmod = SockMod,
         streamid = new_id(), host_opts = HostOpts,
@@ -168,7 +172,6 @@ init([{SockMod, Socket}, Opts]) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
-
 wait_for_stream({xmlstreamstart, _Name, Attrs},
         StateData) ->
     case fxml:get_attr_s(<<"xmlns">>, Attrs) of
@@ -232,12 +235,14 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                                       ?INFO_MSG("Route registered for service ~p~n",
                                                 [H])
                               end, dict:fetch_keys(StateData#state.host_opts)), 
+
                             %% Why we need to register all hosts ?
                             %% TODO: do it for each host in dict if it is necessary
                             %% server advertises service of allowed permission
                             advertise_perm(StateData, proplists:delete(password,HostProps)),
-
-                            {next_state, stream_established, StateData};
+                            %% for all hosts ?
+                            ets:insert(registered_services, {StateData#state.host, self()}), 
+                            {next_state, stream_established, StateData}; 
                         _ ->
                             send_text(StateData, ?INVALID_HANDSHAKE_ERR),
                             {stop, normal, StateData}
@@ -397,6 +402,23 @@ handle_info({route, From, To, Packet}, StateName,
           ejabberd_router:route_error(To, From, Err, Packet)
     end,
     {next_state, StateName, StateData};
+
+handle_info({presence, Packet, FromJID, ServiceHost}, 
+            stream_established, StateData) ->
+    {ok, HOpts} = dict:find(ServiceHost, StateData#state.host_opts),
+    AccessType = get_prop(presence, HOpts),
+    case AccessType of
+        <<"managed_entity">> ->
+            ToJID = jid:from_string(ServiceHost),
+            PacketNew = 
+                jlib:replace_from_to(FromJID, ToJID, Packet),
+            send_element(StateData, PacketNew);
+        <<"roster">> ->
+            ok;
+        _ -> ok
+    end,
+    {next_state, stream_established, StateData};
+
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {next_state, StateName, StateData}.
@@ -513,7 +535,8 @@ advertise_perm(StateData, HostOpts) ->
 %% TODO:  maybe add hook ? Anyway organize work in another module
 process_iq(StateData, FromJID, ToJID, Packet) ->
     %% check privileges
-    {ok, HOpts} = dict:find(StateData#state.host, StateData#state.host_opts),
+    %% replace StateData#state.host with FromJid#jid.lserver ?
+    {ok, HOpts} = dict:find(StateData#state.host, StateData#state.host_opts), 
     AccessType = get_prop(roster, HOpts),
     Type = fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs),
     IQ = jlib:iq_query_info(Packet),
@@ -635,3 +658,25 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
         false ->
             ejabberd_router:route(FromJID, ToJID, Packet)
     end.
+
+%% hook , event user_send_packet
+%% user_send_packet(Packet, C2SState, From, To) -> Packet
+process_presence(#xmlel{name = <<"presence">>} = Packet,
+                 _C2SState, FromJid, _ToJid) ->
+    case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
+        T when (T == <<"">>) or (T == <<"unavailable">>) ->
+            case ets:info(registered_services) of
+                undefined -> ok;
+                _ ->
+                    lists:foreach(fun({ServiceHost, Pid}) -> 
+                                      Pid ! {presence, Packet,
+                                             FromJid, ServiceHost} 
+                                  end,
+                    ets:tab2list(registered_services))
+            end;
+        _ -> ok
+    end,
+    Packet;
+process_presence(Packet, _C2SState, _From, _To) ->
+    Packet.
+
