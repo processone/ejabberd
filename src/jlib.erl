@@ -43,7 +43,7 @@
 	 get_iq_namespace/1, iq_query_info/1,
 	 iq_query_or_response_info/1, is_iq_request_type/1,
 	 iq_to_xml/1, parse_xdata_submit/1,
-	 is_standalone_chat_state/1,
+	 unwrap_carbon/1, is_standalone_chat_state/1,
 	 add_delay_info/3, add_delay_info/4,
 	 timestamp_to_legacy/1, timestamp_to_iso_basic/1, timestamp_to_iso/2,
 	 now_to_utc_string/1, now_to_local_string/1,
@@ -528,6 +528,49 @@ rsm_encode_count(Count, Arr) ->
     [#xmlel{name = <<"count">>, attrs = [],
 	    children = [{xmlcdata, i2l(Count)}]}
      | Arr].
+
+-spec unwrap_carbon(xmlel()) -> xmlel().
+
+unwrap_carbon(#xmlel{name = <<"message">>} = Stanza) ->
+    case unwrap_carbon(Stanza, <<"sent">>) of
+      #xmlel{} = Payload ->
+	  Payload;
+      false ->
+	  case unwrap_carbon(Stanza, <<"received">>) of
+	    #xmlel{} = Payload ->
+		Payload;
+	    false ->
+		Stanza
+	  end
+    end;
+unwrap_carbon(Stanza) -> Stanza.
+
+-spec unwrap_carbon(xmlel(), binary()) -> xmlel() | false.
+
+unwrap_carbon(Stanza, Direction) ->
+    case fxml:get_subtag(Stanza, Direction) of
+      #xmlel{name = Direction, attrs = Attrs} = El ->
+	  case fxml:get_attr_s(<<"xmlns">>, Attrs) of
+	    NS when NS == ?NS_CARBONS_2;
+		    NS == ?NS_CARBONS_1 ->
+		case fxml:get_subtag_with_xmlns(El, <<"forwarded">>,
+						?NS_FORWARD) of
+		  #xmlel{children = Els} ->
+		      case fxml:remove_cdata(Els) of
+			[#xmlel{} = Payload] ->
+			    Payload;
+			_ ->
+			    false
+		      end;
+		  false ->
+		      false
+		end;
+	    _NS ->
+		false
+	  end;
+      false ->
+	  false
+    end.
 
 -spec is_standalone_chat_state(xmlel()) -> boolean().
 

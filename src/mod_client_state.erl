@@ -165,7 +165,7 @@ filter_presence(Acc, _Host, _Stanza) -> Acc.
 
 filter_chat_states({C2SState, _OutStanzas} = Acc, Host,
 		   #xmlel{name = <<"message">>} = Stanza) ->
-    case jlib:is_standalone_chat_state(Stanza) of
+    case jlib:is_standalone_chat_state(jlib:unwrap_carbon(Stanza)) of
       true ->
 	  ?DEBUG("Got standalone chat state notification", []),
 	  queue_add(chatstate, Stanza, Host, C2SState);

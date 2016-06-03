@@ -455,7 +455,8 @@ need_to_store(LServer, Packet) ->
 				false ->
 				    fxml:get_subtag(Packet, <<"body">>) /= false;
 				unless_chat_state ->
-				    not jlib:is_standalone_chat_state(Packet);
+				    not jlib:is_standalone_chat_state(
+					  jlib:unwrap_carbon(Packet));
 				true ->
 				    true
 			    end
