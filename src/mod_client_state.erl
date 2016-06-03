@@ -165,10 +165,21 @@ filter_presence(Acc, _Host, _Stanza) -> Acc.
 
 filter_chat_states({C2SState, _OutStanzas} = Acc, Host,
 		   #xmlel{name = <<"message">>} = Stanza) ->
-    case jlib:is_standalone_chat_state(jlib:unwrap_carbon(Stanza)) of
+    Payload = jlib:unwrap_carbon(Stanza),
+    case jlib:is_standalone_chat_state(Payload) of
       true ->
-	  ?DEBUG("Got standalone chat state notification", []),
-	  queue_add(chatstate, Stanza, Host, C2SState);
+	  From = fxml:get_tag_attr_s(<<"from">>, Payload),
+	  To = fxml:get_tag_attr_s(<<"to">>, Payload),
+	  case {jid:from_string(From), jid:from_string(To)} of
+	    {#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}} ->
+		%% Don't queue (carbon copies of) chat states from other
+		%% resources, as they might be used to sync the state of
+		%% conversations across clients.
+		Acc;
+	    _ ->
+		?DEBUG("Got standalone chat state notification", []),
+		queue_add(chatstate, Stanza, Host, C2SState)
+	  end;
       false ->
 	  Acc
     end;
