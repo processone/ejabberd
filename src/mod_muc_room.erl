@@ -3200,7 +3200,7 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 		  end,
 		  (?DICT):to_list(StateData#state.users)).
 
-get_actor_nick(<<"">>, StateData) ->
+get_actor_nick(<<"">>, _StateData) ->
     <<"">>;
 get_actor_nick(MJID, StateData) ->
     case (?DICT):find(jid:tolower(MJID), StateData#state.users) of
