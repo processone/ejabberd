@@ -44,7 +44,7 @@
      handle_event/3, handle_sync_event/4, code_change/4,
      handle_info/3, terminate/3, print_state/1, opt_type/1]).
 
--export([process_presence/4]).
+-export([process_presence/2]).
 
 
 -include("ejabberd.hrl").
@@ -234,12 +234,19 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                                       ejabberd_router:register_route(H, ?MYNAME),
                                       ?INFO_MSG("Route registered for service ~p~n",
                                                 [H])
-                              end, dict:fetch_keys(StateData#state.host_opts)), 
+                              end, dict:fetch_keys(StateData#state.host_opts)),
 
                             %% Why we need to register all hosts ?
                             %% TODO: do it for each host in dict if it is necessary
                             %% server advertises service of allowed permission
                             advertise_perm(StateData, proplists:delete(password,HostProps)),
+                            %% send initial presences from all server users
+                            case get_prop(presence, HostProps) of
+                                Priv when (Priv == <<"managed_entity">>) or
+                                          (Priv == <<"roster">>) ->
+                                        initial_presence(StateData);
+                                _ -> ok
+                            end,
                             %% for all hosts ?
                             ets:insert(registered_services, {StateData#state.host, self()}), 
                             {next_state, stream_established, StateData}; 
@@ -403,18 +410,31 @@ handle_info({route, From, To, Packet}, StateName,
     end,
     {next_state, StateName, StateData};
 
-handle_info({presence, Packet, FromJID, ServiceHost}, 
+handle_info({user_presence, Packet, FromJID, ServiceHost}, 
             stream_established, StateData) ->
     {ok, HOpts} = dict:find(ServiceHost, StateData#state.host_opts),
     AccessType = get_prop(presence, HOpts),
     case AccessType of
-        <<"managed_entity">> ->
+        T when (T == <<"managed_entity">>) or
+               (T == <<"roster">> ) ->
             ToJID = jid:from_string(ServiceHost),
-            PacketNew = 
-                jlib:replace_from_to(FromJID, ToJID, Packet),
+            PacketNew = jlib:replace_from_to(FromJID, ToJID, Packet),
             send_element(StateData, PacketNew);
-        <<"roster">> ->
-            ok;
+        _ -> ok
+    end,
+    {next_state, stream_established, StateData};
+
+handle_info({roster_presence, Packet, FromJID, ServiceHost}, 
+            stream_established, StateData) ->
+    {ok, HOpts} = dict:find(ServiceHost, StateData#state.host_opts),
+    AccessType = get_prop(presence, HOpts),
+    RosterAccessType = get_prop(roster, HOpts),
+    case {AccessType, RosterAccessType} of
+        {P, R} when (P == <<"roster">>) and 
+                    ((R == <<"both">>) or (R == <<"get">>)) ->
+            ToJID = jid:from_string(ServiceHost),
+            PacketNew = jlib:replace_from_to(FromJID, ToJID, Packet),
+            send_element(StateData, PacketNew);
         _ -> ok
     end,
     {next_state, stream_established, StateData};
@@ -659,24 +679,56 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
             ejabberd_router:route(FromJID, ToJID, Packet)
     end.
 
-%% hook , event user_send_packet
-%% user_send_packet(Packet, C2SState, From, To) -> Packet
-process_presence(#xmlel{name = <<"presence">>} = Packet,
-                 _C2SState, FromJid, _ToJid) ->
+initial_presence(_StateData) ->
+    Pids = ejabberd_sm:get_all_pids(),
+    case Pids /= [] of 
+        true -> 
+            % lists:foreach(fun(Pid) ->
+            %                  {User, Resource,Show,Inf} = ejabberd_c2s:get_presence(Pid),
+            %                  From = #jid{user = User, server = ?MYNAME, resource = Resource},
+            %                  To = StateData#state.host,
+            %                  Child = case Show of
+            %                  Presence = #xmlel{name = <<"presence">>,[],  }
+            %                  PacketNew = jlib:replace_from_to(FromJID, ToJID, Packet),
+            %               end, Pids);
+            ok;     
+        _ -> ok
+    end.
+
+%% hook c2s_presence_in(Acc, {From, To, Packet}) -> C2SState
+process_presence(Acc, {From, To, Packet}) ->
     case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
         T when (T == <<"">>) or (T == <<"unavailable">>) ->
-            case ets:info(registered_services) of
-                undefined -> ok;
-                _ ->
-                    lists:foreach(fun({ServiceHost, Pid}) -> 
-                                      Pid ! {presence, Packet,
-                                             FromJid, ServiceHost} 
-                                  end,
-                    ets:tab2list(registered_services))
-            end;
+            % ?INFO_MSG("From~p~n", [From]),
+            % ?INFO_MSG("To~p~n", [To]),
+            % ?INFO_MSG("presence from other user~p~n", [Packet]),
+
+            if (From#jid.user == To#jid.user) and
+               (From#jid.server == To#jid.server) ->
+                    case ets:info(registered_services) of
+                        undefined -> ok;
+                        _ ->
+                            lists:foreach(fun({ServiceHost, Pid}) -> 
+                                              Pid ! {user_presence, Packet,
+                                                     From, ServiceHost} 
+                                          end,
+                                          ets:tab2list(registered_services))
+                    end;                
+                true -> 
+                    %% ignore ejabberd hosts
+                    case lists:member(From#jid.server, ?MYHOSTS) of
+                        false ->
+                            lists:foreach(fun({ServiceHost, Pid}) -> 
+                                              Pid ! {roster_presence, Packet,
+                                                     From, ServiceHost} 
+                                          end,
+                                          ets:tab2list(registered_services));
+                        _ -> ok
+                    end
+            end;        
         _ -> ok
     end,
-    Packet;
-process_presence(Packet, _C2SState, _From, _To) ->
-    Packet.
+    Acc.
+
+
 
