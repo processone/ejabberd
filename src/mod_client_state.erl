@@ -43,7 +43,7 @@
 
 -define(CSI_QUEUE_MAX, 100).
 
--type csi_type() :: presence | chatstate | {pep, binary(), binary()}.
+-type csi_type() :: presence | chatstate | {pep, binary()}.
 -type csi_key() :: {ljid(), csi_type()}.
 -type csi_stanza() :: {csi_key(), erlang:timestamp(), xmlel()}.
 -type csi_queue() :: [csi_stanza()].
@@ -190,10 +190,10 @@ filter_chat_states(Acc, _Host, _Stanza) -> Acc.
 
 filter_pep({C2SState, _OutStanzas} = Acc, Host,
 	   #xmlel{name = <<"message">>} = Stanza) ->
-    case find_pep(Stanza) of
-      {value, Type} ->
+    case get_pep_node(Stanza) of
+      {value, Node} ->
 	  ?DEBUG("Got PEP notification", []),
-	  queue_add(Type, Stanza, Host, C2SState);
+	  queue_add({pep, Node}, Stanza, Host, C2SState);
       false ->
 	  Acc
     end;
@@ -280,9 +280,9 @@ get_stanzas(Queue, Host) ->
 					  <<"Client Inactive">>)
 	      end, Queue).
 
--spec find_pep(xmlel()) -> {pep, binary(), binary()} | false.
+-spec get_pep_node(xmlel()) -> {value, binary()} | false.
 
-find_pep(#xmlel{name = <<"message">>} = Stanza) ->
+get_pep_node(#xmlel{name = <<"message">>} = Stanza) ->
     From = fxml:get_tag_attr_s(<<"from">>, Stanza),
     case jid:from_string(From) of
       #jid{luser = <<>>} -> % It's not PEP.
@@ -291,31 +291,13 @@ find_pep(#xmlel{name = <<"message">>} = Stanza) ->
 	  case fxml:get_subtag_with_xmlns(Stanza, <<"event">>,
 					  ?NS_PUBSUB_EVENT) of
 	    #xmlel{children = Els} ->
-		get_pep_node_and_xmlns(fxml:remove_cdata(Els));
+		case fxml:remove_cdata(Els) of
+		  [#xmlel{name = <<"items">>, attrs = ItemsAttrs}] ->
+		      fxml:get_attr(<<"node">>, ItemsAttrs);
+		  _ ->
+		      false
+		end;
 	    false ->
 		false
 	  end
     end.
-
--spec get_pep_node_and_xmlns([xmlel()]) -> {pep, binary(), binary()} | false.
-
-get_pep_node_and_xmlns([#xmlel{name = <<"items">>, attrs = ItemsAttrs,
-			       children = Item}]) ->
-    case {fxml:get_attr(<<"node">>, ItemsAttrs), fxml:remove_cdata(Item)} of
-      {{value, Node}, [#xmlel{name = <<"item">>, children = Payload}]} ->
-	  case fxml:remove_cdata(Payload) of
-	    [#xmlel{attrs = PayloadAttrs}] ->
-		case fxml:get_attr(<<"xmlns">>, PayloadAttrs) of
-		  {value, XMLNS} ->
-		      {value, {pep, Node, XMLNS}};
-		  false ->
-		      false
-		end;
-	    _ ->
-		false
-	  end;
-      _ ->
-	  false
-    end;
-get_pep_node_and_xmlns(_) ->
-    false.
