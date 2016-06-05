@@ -43,6 +43,7 @@ defmodule EjabberdModAdminExtraTest do
 			_ -> :ok
 		end
 		:ejabberd_commands.init
+                :ok = :ejabberd_config.start([@domain], [])
 		:mod_admin_extra.start(@domain, [])
 		:sel_application.start_app(:moka)
 		{:ok, _pid} = :ejabberd_hooks.start_link
