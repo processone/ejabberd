@@ -574,14 +574,19 @@ unwrap_carbon(Stanza, Direction) ->
 
 -spec is_standalone_chat_state(xmlel()) -> boolean().
 
-is_standalone_chat_state(#xmlel{name = <<"message">>, children = Els}) ->
-    IgnoreNS = [?NS_CHATSTATES, ?NS_DELAY],
-    Stripped = [El || #xmlel{name = Name, attrs = Attrs} = El <- Els,
-		      not lists:member(fxml:get_attr_s(<<"xmlns">>, Attrs),
-				       IgnoreNS),
-		      Name /= <<"thread">>],
-    Stripped == [];
-is_standalone_chat_state(_El) -> false.
+is_standalone_chat_state(Stanza) ->
+    case unwrap_carbon(Stanza) of
+      #xmlel{name = <<"message">>, children = Els} ->
+	  IgnoreNS = [?NS_CHATSTATES, ?NS_DELAY],
+	  Stripped = [El || #xmlel{name = Name, attrs = Attrs} = El <- Els,
+			    not lists:member(fxml:get_attr_s(<<"xmlns">>,
+							     Attrs),
+					     IgnoreNS),
+			    Name /= <<"thread">>],
+	  Stripped == [];
+      #xmlel{} ->
+	  false
+    end.
 
 -spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp())
 		     -> xmlel().
