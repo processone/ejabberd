@@ -3873,6 +3873,7 @@ set_configure(Host, Node, From, Els, Lang) ->
 							    set_node,
 							    [N#pubsub_node{options = NewOpts}])
 						    of
+							{ok, Nidx} -> {result, ok};
 							ok -> {result, ok};
 							Err -> Err
 						    end;
