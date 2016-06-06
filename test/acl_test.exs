@@ -100,6 +100,208 @@ defmodule ACLTest do
     assert :acl.match_rule(:global, :mixed_rule_2, {127,0,0,1}) == :allow
   end
 
+  test "access_matches works with predefined access rules" do
+    :acl.add(:global, :user_acl_2, {:user, "user"})
+    :acl.add_access(:global, :user_rule_2, [{:allow, [{:acl, :user_acl_2}]}, {:deny, [:all]}])
+
+    assert :acl.access_matches(:user_rule_2, %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :allow
+    assert :acl.access_matches(:user_rule_2, %{usr: {"user2", "domain1", ""}, ip: {127,0,0,1}}, :global) == :deny
+  end
+
+  test "access_matches rule all always matches" do
+    assert :acl.access_matches(:all, %{}, :global) == :allow
+    assert :acl.access_matches(:all, %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :allow
+  end
+
+  test "access_matches rule none never matches" do
+    assert :acl.access_matches(:none, %{}, :global) == :deny
+    assert :acl.access_matches(:none, %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :deny
+  end
+
+  test "access_matches with not existing rule never matches" do
+    assert :acl.access_matches(:bleble, %{}, :global) == :deny
+    assert :acl.access_matches(:bleble, %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :deny
+  end
+
+  test "access_matches works with inlined access rules" do
+    :acl.add(:global, :user_acl_3, {:user, "user"})
+
+    assert :acl.access_matches([{:allow, [{:acl, :user_acl_3}]}, {:deny, [:all]}],
+                               %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :allow
+    assert :acl.access_matches([{:allow, [{:acl, :user_acl_3}]}, {:deny, [:all]}],
+                               %{usr: {"user2", "domain1", ""}, ip: {127,0,0,1}}, :global) == :deny
+  end
+
+  test "access_matches allow to have acl rules inlined" do
+    assert :acl.access_matches([{:allow, [{:user, "user"}]}, {:deny, [:all]}],
+                               %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :allow
+    assert :acl.access_matches([{:allow, [{:user, "user"}]}, {:deny, [:all]}],
+                               %{usr: {"user2", "domain1", ""}, ip: {127,0,0,1}}, :global) == :deny
+  end
+
+  test "access_matches test have implicit deny at end" do
+    assert :acl.access_matches([{:allow, [{:user, "user"}]}],
+                               %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :allow
+    assert :acl.access_matches([{:allow, [{:user, "user"}]}],
+                               %{usr: {"user2", "domain1", ""}, ip: {127,0,0,1}}, :global) == :deny
+  end
+
+  test "access_matches requires that all subrules match" do
+    rules = [{:allow, [{:user, "user"}, {:ip, {{127,0,0,1}, 32}}]}]
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", ""}, ip: {127,0,0,2}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user2", "domain1", ""}, ip: {127,0,0,1}}, :global) == :deny
+  end
+
+  test "access_matches rules are matched in order" do
+    rules = [{:allow, [{:user, "user"}]}, {:deny, [{:user, "user2"}]}, {:allow, [{:user_regexp, "user"}]}]
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user2", "domain1", ""}, ip: {127,0,0,1}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user22", "domain1", ""}, ip: {127,0,0,1}}, :global) == :allow
+  end
+
+  test "access_matches rules that require ip but no one is provided don't crash" do
+    rules = [{:allow, [{:ip, {{127,0,0,1}, 32}}]},
+             {:allow, [{:user, "user"}]},
+             {:allow, [{:user, "user2"}, {:ip, {{127,0,0,1}, 32}}]}]
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", ""}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user2", "domain1", ""}}, :global) == :deny
+  end
+
+  test "access_matches rules that require usr but no one is provided don't crash" do
+    rules = [{:allow, [{:ip, {{127,0,0,1}, 32}}]},
+             {:allow, [{:user, "user"}]},
+             {:allow, [{:user, "user2"}, {:ip, {{127,0,0,2}, 32}}]}]
+    assert :acl.access_matches(rules, %{ip: {127,0,0,1}}, :global) == :allow
+    assert :acl.access_matches(rules, %{ip: {127,0,0,2}}, :global) == :deny
+  end
+
+  test "access_matches rules with all always matches" do
+    rules = [{:allow, [:all]}, {:deny, {:user, "user"}}]
+    assert :acl.access_matches(rules, %{}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :allow
+  end
+
+  test "access_matches rules with {acl, all} always matches" do
+    rules = [{:allow, [{:acl, :all}]}, {:deny, {:user, "user"}}]
+    assert :acl.access_matches(rules, %{}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :allow
+  end
+
+  test "access_matches rules with none never matches" do
+    rules = [{:allow, [:none]}, {:deny, [:all]}]
+    assert :acl.access_matches(rules, %{}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :deny
+  end
+
+  test "access_matches with no rules never matches" do
+    assert :acl.access_matches([], %{}, :global) == :deny
+    assert :acl.access_matches([], %{usr: {"user", "domain1", ""}, ip: {127,0,0,1}}, :global) == :deny
+  end
+
+  test "access_matches ip rule accepts {ip, port}" do
+    rules = [{:allow, [{:ip, {{127,0,0,1}, 32}}]}]
+    assert :acl.access_matches(rules, %{ip: {{127,0,0,1}, 5000}}, :global) == :allow
+    assert :acl.access_matches(rules, %{ip: {{127,0,0,2}, 5000}}, :global) == :deny
+  end
+
+  test "access_matches user rule works" do
+    rules = [{:allow, [{:user, "user1"}]}]
+    assert :acl.access_matches(rules, %{usr: {"user1", "domain1", ""}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user2", "domain1", ""}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user1", "domain3", ""}}, :global) == :deny
+  end
+
+  test "access_matches 2 arg user rule works" do
+    rules = [{:allow, [{:user, {"user1", "server1"}}]}]
+    assert :acl.access_matches(rules, %{usr: {"user1", "server1", ""}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user1", "server2", ""}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user2", "server1", ""}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user2", "server2", ""}}, :global) == :deny
+  end
+
+  test "access_matches server rule works" do
+    rules = [{:allow, [{:server, "server1"}]}]
+    assert :acl.access_matches(rules, %{usr: {"user", "server1", ""}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user", "server2", ""}}, :global) == :deny
+  end
+
+  test "access_matches resource rule works" do
+    rules = [{:allow, [{:resource, "res1"}]}]
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", "res1"}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", "res2"}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user", "domain3", "res1"}}, :global) == :allow
+  end
+
+  test "access_matches user_regexp rule works" do
+    rules = [{:allow, [{:user_regexp, "user[0-9]"}]}]
+    assert :acl.access_matches(rules, %{usr: {"user1", "domain1", "res1"}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"userA", "domain1", "res1"}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user1", "domain3", "res1"}}, :global) == :deny
+  end
+
+  test "access_matches 2 arg user_regexp rule works" do
+    rules = [{:allow, [{:user_regexp, {"user[0-9]", "server1"}}]}]
+    assert :acl.access_matches(rules, %{usr: {"user1", "server1", "res1"}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"userA", "server1", "res1"}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user1", "server2", "res1"}}, :global) == :deny
+  end
+
+  test "access_matches server_regexp rule works" do
+    rules = [{:allow, [{:server_regexp, "server[0-9]"}]}]
+    assert :acl.access_matches(rules, %{usr: {"user", "server1", ""}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user", "serverA", ""}}, :global) == :deny
+  end
+
+  test "access_matches resource_regexp rule works" do
+    rules = [{:allow, [{:resource_regexp, "res[0-9]"}]}]
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", "res1"}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", "resA"}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user", "domain3", "res1"}}, :global) == :allow
+  end
+
+  test "access_matches node_regexp rule works" do
+    rules = [{:allow, [{:node_regexp, {"user[0-9]", "server[0-9]"}}]}]
+    assert :acl.access_matches(rules, %{usr: {"user1", "server1", "res1"}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"userA", "server1", "res1"}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user1", "serverA", "res1"}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"userA", "serverA", "res1"}}, :global) == :deny
+  end
+
+  test "access_matches user_glob rule works" do
+    rules = [{:allow, [{:user_glob, "user?"}]}]
+    assert :acl.access_matches(rules, %{usr: {"user1", "domain1", "res1"}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user11", "domain1", "res1"}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user1", "domain3", "res1"}}, :global) == :deny
+  end
+
+  test "access_matches 2 arg user_glob rule works" do
+    rules = [{:allow, [{:user_glob, {"user?", "server1"}}]}]
+    assert :acl.access_matches(rules, %{usr: {"user1", "server1", "res1"}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user11", "server1", "res1"}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user1", "server2", "res1"}}, :global) == :deny
+  end
+
+  test "access_matches server_glob rule works" do
+    rules = [{:allow, [{:server_glob, "server?"}]}]
+    assert :acl.access_matches(rules, %{usr: {"user", "server1", ""}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user", "server11", ""}}, :global) == :deny
+  end
+
+  test "access_matches resource_glob rule works" do
+    rules = [{:allow, [{:resource_glob, "res?"}]}]
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", "res1"}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user", "domain1", "res11"}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user", "domain3", "res1"}}, :global) == :allow
+  end
+
+  test "access_matches node_glob rule works" do
+    rules = [{:allow, [{:node_glob, {"user?", "server?"}}]}]
+    assert :acl.access_matches(rules, %{usr: {"user1", "server1", "res1"}}, :global) == :allow
+    assert :acl.access_matches(rules, %{usr: {"user11", "server1", "res1"}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user1", "server11", "res1"}}, :global) == :deny
+    assert :acl.access_matches(rules, %{usr: {"user11", "server11", "res1"}}, :global) == :deny
+  end
   ## Checking ACL on both user pattern and IP
   ## ========================================
 
