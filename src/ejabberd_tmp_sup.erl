@@ -39,7 +39,7 @@ init(Module) ->
     case Module of 
     	ejabberd_service ->
     	      %% this hook is for receiving presences for privilege services XEP-0356
-              ejabberd_hooks:add(c2s_presence_in, ?MYNAME,
+              ejabberd_hooks:add(user_send_packet, ?MYNAME,
               	                 ejabberd_service, process_presence, 0),
               %% contain {service domain, Pid}
               ets:new(registered_services, [named_table, public]),
