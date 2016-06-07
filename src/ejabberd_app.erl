@@ -84,9 +84,9 @@ start(_, _) ->
 %% before shutting down the processes of the application.
 prep_stop(State) ->
     ejabberd_listener:stop_listeners(),
-    gen_mod:stop_modules(),
     ejabberd_admin:stop(),
     broadcast_c2s_shutdown(),
+    gen_mod:stop_modules(),
     timer:sleep(5000),
     State.
 
