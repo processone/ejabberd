@@ -53,11 +53,11 @@
                 check_password = fun(_, _, _, _, _) -> false end :: check_password_fun(),
                 auth_module :: atom(),
                 host = <<"">> :: binary(),
-                hostfqdn = <<"">> :: binary()}).
+                hostfqdn = <<"">> :: binary() | [binary()]}).
 
 start(_Opts) ->
     Fqdn = get_local_fqdn(),
-    ?INFO_MSG("FQDN used to check DIGEST-MD5 SASL authentication: ~s",
+    ?INFO_MSG("FQDN used to check DIGEST-MD5 SASL authentication: ~p",
 	      [Fqdn]),
     cyrsasl:register_mechanism(<<"DIGEST-MD5">>, ?MODULE,
 			       digest).
@@ -183,16 +183,16 @@ is_digesturi_valid(DigestURICase, JabberDomain,
     DigestURI = stringprep:tolower(DigestURICase),
     case catch str:tokens(DigestURI, <<"/">>) of
 	[<<"xmpp">>, Host] ->
-	    IsHostFqdn = is_host_fqdn(binary_to_list(Host), binary_to_list(JabberFQDN)),
+	    IsHostFqdn = is_host_fqdn(Host, JabberFQDN),
 	    (Host == JabberDomain) or IsHostFqdn;
 	[<<"xmpp">>, Host, ServName] ->
-	    IsHostFqdn = is_host_fqdn(binary_to_list(Host), binary_to_list(JabberFQDN)),
+	    IsHostFqdn = is_host_fqdn(Host, JabberFQDN),
 	    (ServName == JabberDomain) and IsHostFqdn;
 	_ ->
 	    false
     end.
 
-is_host_fqdn(Host, [Letter | _Tail] = Fqdn) when not is_list(Letter) ->
+is_host_fqdn(Host, Fqdn) when is_binary(Fqdn) ->
     Host == Fqdn;
 is_host_fqdn(_Host, []) ->
     false;
@@ -204,6 +204,7 @@ is_host_fqdn(Host, [Fqdn | FqdnTail]) when Host /= Fqdn ->
 get_local_fqdn() ->
     case catch get_local_fqdn2() of
       Str when is_binary(Str) -> Str;
+      List when is_list(List) -> List;
       _ ->
 	  <<"unknown-fqdn, please configure fqdn "
 	    "option in ejabberd.yml!">>
@@ -211,9 +212,11 @@ get_local_fqdn() ->
 
 get_local_fqdn2() ->
     case ejabberd_config:get_option(
-           fqdn, fun iolist_to_binary/1) of
+           fqdn, fun(X) -> X end) of
         ConfiguredFqdn when is_binary(ConfiguredFqdn) ->
             ConfiguredFqdn;
+        [A | _] = ConfiguredFqdns when is_binary(A) ->
+            ConfiguredFqdns;
         undefined ->
             {ok, Hostname} = inet:gethostname(),
             {ok, {hostent, Fqdn, _, _, _, _}} =
