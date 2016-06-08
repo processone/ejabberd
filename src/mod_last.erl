@@ -37,7 +37,7 @@
 	 process_sm_iq/3, on_presence_update/4, import/1,
 	 import/3, store_last_info/4, get_last_info/2,
 	 remove_user/2, transform_options/1, mod_opt_type/1,
-	 opt_type/1]).
+	 opt_type/1, register_user/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -64,12 +64,16 @@ start(Host, Opts) ->
 				  ?NS_LAST, ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_LAST, ?MODULE, process_sm_iq, IQDisc),
+    ejabberd_hooks:add(register_user, Host, ?MODULE,
+		       register_user, 50),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50),
     ejabberd_hooks:add(unset_presence_hook, Host, ?MODULE,
 		       on_presence_update, 50).
 
 stop(Host) ->
+    ejabberd_hooks:delete(register_user, Host, ?MODULE,
+			  register_user, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50),
     ejabberd_hooks:delete(unset_presence_hook, Host,
@@ -197,6 +201,13 @@ get_last_iq(#iq{lang = Lang} = IQ, SubEl, LUser, LServer) ->
 				 {<<"seconds">>, <<"0">>}],
 			    children = []}]}
     end.
+
+register_user(User, Server) ->
+    on_presence_update(
+       User,
+       Server,
+       <<"RegisterResource">>,
+       <<"Registered but didn't login">>).
 
 on_presence_update(User, Server, _Resource, Status) ->
     TimeStamp = p1_time_compat:system_time(seconds),
