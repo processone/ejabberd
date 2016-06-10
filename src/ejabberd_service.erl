@@ -44,7 +44,7 @@
      handle_event/3, handle_sync_event/4, code_change/4,
      handle_info/3, terminate/3, print_state/1, opt_type/1]).
 
--export([process_presence/4]).
+-export([process_presence/4, process_roster_presence/2]).
 
 
 -include("ejabberd.hrl").
@@ -424,7 +424,7 @@ handle_info({user_presence, Packet, FromJID, ServiceHost},
     end,
     {next_state, stream_established, StateData};
 
-handle_info({roster_presence, Packet, FromJID, ServiceHost}, 
+handle_info({roster_presence, Packet, ServiceHost}, 
             stream_established, StateData) ->
     {ok, HOpts} = dict:find(ServiceHost, StateData#state.host_opts),
     AccessType = get_prop(presence, HOpts),
@@ -433,7 +433,7 @@ handle_info({roster_presence, Packet, FromJID, ServiceHost},
         {P, R} when (P == <<"roster">>) and 
                     ((R == <<"both">>) or (R == <<"get">>)) ->
             ToJID = jid:from_string(ServiceHost),
-            PacketNew = jlib:replace_from_to(FromJID, ToJID, Packet),
+            PacketNew = replace_to(ToJID, Packet),
             send_element(StateData, PacketNew);
         _ -> ok
     end,
@@ -518,6 +518,22 @@ opt_type(_) -> [max_fsm_queue].
 -spec get_prop(atom(), list()) -> atom().
 get_prop(Prop, Props ) ->
     proplists:get_value(Prop, Props, none).
+
+%% add to jlib 
+
+-spec replace_to_attr(binary(), [attr()]) -> [attr()].
+
+replace_to_attr(To, Attrs) ->
+    Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
+    Attrs2 = [{<<"to">>, To} | Attrs1],
+    Attrs2.
+
+-spec replace_to(jid(), xmlel()) -> xmlel().
+
+replace_to(To, #xmlel{name = Name, attrs = Attrs, children = Els}) ->
+    NewAttrs = 
+        replace_to_attr(jid:to_string(To), Attrs),
+    #xmlel{name = Name, attrs = NewAttrs, children = Els}.
 
 %%------------------------------------------------------------------------
 %% XEP-0356
@@ -700,13 +716,10 @@ initial_presence(StateData) ->
 
 %% hook user_send_packet(Packet, C2SState, From, To) -> Packet
 %% for Managed Entity Presence
-
-process_presence(#xmlel{name = <<"presence">>} = Packet, _C2SState, From, To) ->
+process_presence(#xmlel{name = <<"presence">>} = Packet, _C2SState, From, _To) ->
     case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
         T when (T == <<"">>) or (T == <<"unavailable">>) ->
-            ?INFO_MSG("From~p~n", [From]),
-            ?INFO_MSG("To~p~n", [To]),
-            ?INFO_MSG("presence from other user~p~n", [Packet]),
+            ?INFO_MSG("User presence~p~n", [Packet]),
             case ets:info(registered_services) of
                 undefined -> ok;
                 _ ->
@@ -722,15 +735,32 @@ process_presence(#xmlel{name = <<"presence">>} = Packet, _C2SState, From, To) ->
 process_presence(Packet, _C2SState, _From, _To) ->
     Packet.
 
+%% c2s_presence_in(Acc, {From, To, Packet}) -> C2SState
+%% for Roster Presence
+process_roster_presence(State, {From, To, Packet}) ->
+    case {fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs)} of %% ?
+        T when (T == <<"">>) or (T == <<"unavailable">>) ->
+            case From#jid.server /= ?MYNAME of %% ignore users of our server
+                true ->
+                    ?INFO_MSG("Roster presence~p~n", [Packet]),
+                    case ets:info(registered_services) of
+                        undefined -> ok;
+                        _ ->
+                            %% ejabber_c2s:privacy_check_packet(State, From, To, Packet, in) ?
+                            %% проверяем было ли уже послано сообщение
+                            
+                            lists:foreach(fun({ServiceHost, Pid}) -> 
+                                              Pid ! {roster_presence, Packet,
+                                                     ServiceHost} 
+                                          end,
+                                          ets:tab2list(registered_services))
+                    end;
+                _->     
+                   ok
+            end;
+        _ -> ok
+    end,
+    State.
 
 
-%% ignore ejabberd hosts
-                    % case lists:member(From#jid.server, ?MYHOSTS) of
-                    %     false ->
-                    %         lists:foreach(fun({ServiceHost, Pid}) -> 
-                    %                           Pid ! {roster_presence, Packet,
-                    %                                  From, ServiceHost} 
-                    %                       end,
-                    %                       ets:tab2list(registered_services));
-                    %     _ -> ok
-                    % end
+                
