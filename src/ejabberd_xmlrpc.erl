@@ -472,7 +472,7 @@ format_arg(undefined, binary) -> <<>>;
 format_arg(undefined, string) -> "";
 format_arg(Arg, Format) ->
     ?ERROR_MSG("don't know how to format Arg ~p for format ~p", [Arg, Format]),
-    error.
+    throw({error_formatting_argument, Arg, Format}).
 
 process_unicode_codepoints(Str) ->
     iolist_to_binary(lists:map(fun(X) when X > 255 -> unicode:characters_to_binary([X]);
