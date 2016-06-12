@@ -44,7 +44,7 @@
      handle_event/3, handle_sync_event/4, code_change/4,
      handle_info/3, terminate/3, print_state/1, opt_type/1]).
 
--export([process_presence/4, process_roster_presence/2]).
+-export([process_presence/4, process_roster_presence/3]).
 
 
 -include("ejabberd.hrl").
@@ -59,7 +59,8 @@
          host_opts = dict:new()    :: ?TDICT,
          host = <<"">>             :: binary(),
          access                    :: atom(),
-         check_from = true         :: boolean()}).
+         check_from = true         :: boolean(),
+         last_pres                 :: xmlel()}).
 
 %-define(DBGFSM, true).
 
@@ -429,15 +430,29 @@ handle_info({roster_presence, Packet, ServiceHost},
     {ok, HOpts} = dict:find(ServiceHost, StateData#state.host_opts),
     AccessType = get_prop(presence, HOpts),
     RosterAccessType = get_prop(roster, HOpts),
+    StateDataNew = StateData#state{last_pres = Packet},
     case {AccessType, RosterAccessType} of
         {P, R} when (P == <<"roster">>) and 
                     ((R == <<"both">>) or (R == <<"get">>)) ->
-            ToJID = jid:from_string(ServiceHost),
-            PacketNew = replace_to(ToJID, Packet),
-            send_element(StateData, PacketNew);
+            %% check that current presence stanza is equivalent to last
+            LastPresence =
+                if (StateData#state.last_pres /= undefined) ->
+                        jlib:remove_attr(<<"to">>, StateData#state.last_pres);
+                    true -> 
+                        StateData#state.last_pres
+                end,
+            NewPacket = jlib:remove_attr(<<"to">>, Packet),
+            case compare_presences(LastPresence, NewPacket) of
+                false ->
+                    ToJID = jid:from_string(ServiceHost),
+                    PacketNew = replace_to(ToJID, Packet),
+                    send_element(StateData, PacketNew);
+                _ ->
+                    ok
+            end;
         _ -> ok
     end,
-    {next_state, stream_established, StateData};
+    {next_state, stream_established, StateDataNew};
 
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
@@ -719,7 +734,6 @@ initial_presence(StateData) ->
 process_presence(#xmlel{name = <<"presence">>} = Packet, _C2SState, From, _To) ->
     case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
         T when (T == <<"">>) or (T == <<"unavailable">>) ->
-            ?INFO_MSG("User presence~p~n", [Packet]),
             case ets:info(registered_services) of
                 undefined -> ok;
                 _ ->
@@ -735,32 +749,66 @@ process_presence(#xmlel{name = <<"presence">>} = Packet, _C2SState, From, _To) -
 process_presence(Packet, _C2SState, _From, _To) ->
     Packet.
 
-%% c2s_presence_in(Acc, {From, To, Packet}) -> C2SState
+%% s2s_receive_packet(From, To, Packet) -> ok
 %% for Roster Presence
-process_roster_presence(State, {From, To, Packet}) ->
-    case {fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs)} of %% ?
+%% From subscription "from" or "both"
+process_roster_presence(_From, _To, #xmlel{name = <<"presence">>} = Packet) ->
+    case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
         T when (T == <<"">>) or (T == <<"unavailable">>) ->
-            case From#jid.server /= ?MYNAME of %% ignore users of our server
-                true ->
+            case ets:info(registered_services) of
+                undefined -> ok;
+                _ ->
                     ?INFO_MSG("Roster presence~p~n", [Packet]),
-                    case ets:info(registered_services) of
-                        undefined -> ok;
-                        _ ->
-                            %% ejabber_c2s:privacy_check_packet(State, From, To, Packet, in) ?
-                            %% проверяем было ли уже послано сообщение
-                            
-                            lists:foreach(fun({ServiceHost, Pid}) -> 
-                                              Pid ! {roster_presence, Packet,
-                                                     ServiceHost} 
-                                          end,
-                                          ets:tab2list(registered_services))
-                    end;
-                _->     
-                   ok
+                    lists:foreach(fun({ServiceHost, Pid}) -> 
+                                              Pid ! {roster_presence, Packet, ServiceHost}
+                                  end,
+                                  ets:tab2list(registered_services))
             end;
         _ -> ok
-    end,
-    State.
+    end;
+process_roster_presence(_From, _To, _Packet) -> ok.
+                 
+compare_presences(undefined, _Presence2) -> false;      
+compare_presences(#xmlel{attrs = Attrs, children = Child},
+                  #xmlel{attrs = Attrs2, children = Child2}) ->
+    Id1 = fxml:get_attr_s(<<"id">>, Attrs),
+    Id2 = fxml:get_attr_s(<<"id">>, Attrs2),
+    case not compare_arrts(Attrs, Attrs2) of
+        true -> false;
+        _ -> 
+            case (Id1 /= <<"">>) and (Id1 == Id2) of
+                true -> true;
+                _ -> 
+                    compare_elements(Child, Child2)
+            end
+    end.
 
 
-                
+
+compare_elements([],[]) -> true;
+compare_elements(Tags1, Tags2) when length(Tags1) == length(Tags2) ->
+    compare_tags(Tags1,Tags2);
+compare_elements(_Tags1, _Tags2) -> false.
+
+compare_tags([],[]) -> true;
+compare_tags([{xmlcdata, CData}|Tags1], [{xmlcdata, CData}|Tags2]) ->
+    compare_tags(Tags1, Tags2);
+compare_tags([{xmlcdata, _CData1}|_Tags1], [{xmlcdata, _CData2}|_Tags2]) ->
+    false;
+compare_tags([#xmlel{} = Stanza1|Tags1], [#xmlel{} = Stanza2|Tags2]) ->
+    case (Stanza1#xmlel.name == Stanza2#xmlel.name) and
+        compare_arrts(Stanza1#xmlel.attrs, Stanza2#xmlel.attrs) and
+        compare_tags(Stanza1#xmlel.children, Stanza2#xmlel.children) of
+        true -> 
+            compare_tags(Tags1,Tags2);
+        false ->
+            false
+    end.
+
+%% attr() :: {Name, Value}
+-spec compare_arrts([attr()], [attr()]) -> boolean().
+compare_arrts([],[]) -> true;
+compare_arrts(Attrs1, Attrs2) when length(Attrs1) == length(Attrs2) ->
+    lists:foldl(fun(Attr,Acc) -> lists:member(Attr, Attrs2) and Acc end, true, Attrs1);
+compare_arrts(_Attrs1, _Attrs2) -> false.
+

@@ -40,7 +40,9 @@ init(Module) ->
     	ejabberd_service ->
     	      %% this hook is for receiving presences for privilege services XEP-0356
               ejabberd_hooks:add(user_send_packet, ?MYNAME,
-              	                 ejabberd_service, process_presence, 0),
+              	                 ejabberd_service, process_presence, 0), %% priority?
+              ejabberd_hooks:add(s2s_receive_packet, ?MYNAME,
+              	                 ejabberd_service, process_roster_presence, 0),
               %% contain {service domain, Pid}
               ets:new(registered_services, [named_table, public]),
               ok;
