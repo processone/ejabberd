@@ -386,6 +386,10 @@ try_set_password(User, Server, Password, IQ, SubEl,
 		IQ#iq{type = error,
 		      sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
 	  end;
+      error_preparing_password ->
+	  ErrText = <<"The password contains unacceptable characters">>,
+	  IQ#iq{type = error,
+		sub_el = [SubEl, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)]};
       false ->
 	  ErrText = <<"The password is too weak">>,
 	  IQ#iq{type = error,
@@ -440,6 +444,10 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 					{error, ?ERR_INTERNAL_SERVER_ERROR}
 				  end
 			    end;
+			error_preparing_password ->
+			    remove_timeout(Source),
+			    ErrText = <<"The password contains unacceptable characters">>,
+			    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
 			false ->
 			    remove_timeout(Source),
 			    ErrText = <<"The password is too weak">>,
@@ -636,6 +644,14 @@ process_xdata_submit(El) ->
     end.
 
 is_strong_password(Server, Password) ->
+    case jid:resourceprep(Password) of
+	PP when is_binary(PP) ->
+	    is_strong_password2(Server, Password);
+	error ->
+	    error_preparing_password
+    end.
+
+is_strong_password2(Server, Password) ->
     LServer = jid:nameprep(Server),
     case gen_mod:get_module_opt(LServer, ?MODULE, password_strength,
                                 fun(N) when is_number(N), N>=0 -> N end,
