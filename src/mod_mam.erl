@@ -316,7 +316,12 @@ message_is_archived(false, C2SState, Peer,
 					 (never) -> never
 				      end, never) of
 	      if_enabled ->
-		  get_prefs(LUser, LServer);
+		  case get_prefs(LUser, LServer) of
+		      #archive_prefs{} = P ->
+			  {ok, P};
+		      error ->
+			  error
+		  end;
 	      on_request ->
 		  Mod = gen_mod:db_mod(LServer, ?MODULE),
 		  cache_tab:lookup(archive_prefs, {LUser, LServer},
