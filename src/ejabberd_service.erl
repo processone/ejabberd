@@ -60,6 +60,7 @@
          host = <<"">>             :: binary(),
          access                    :: atom(),
          check_from = true         :: boolean(),
+         privilege_access          :: [attr()],
          last_pres                 :: xmlel()}).
 
 %-define(DBGFSM, true).
@@ -130,42 +131,44 @@ socket_type() -> xml_stream.
 init([{SockMod, Socket}, Opts]) ->
     ?INFO_MSG("(~w) External service connected", [Socket]),
     Access = case lists:keysearch(access, 1, Opts) of
-           {value, {_, A}} -> A;
-           _ -> all
-         end,
+                 {value, {_, A}} -> A;
+                 _ -> all
+             end,
     HostOpts = case lists:keyfind(hosts, 1, Opts) of
-           {hosts, HOpts} ->
-               lists:foldl(
-             fun({H, Os}, D) ->
-                 P = proplists:get_value(password, Os,
-                                         p1_sha:sha(crypto:rand_bytes(20))),
-                  %% privilege access to  entities data
-                 PrivAccess = proplists:get_value(privilege_access, Os, []),
-                 dict:store(H,[{password, P}] ++ PrivAccess, D)
-             end, dict:new(), HOpts);
-           false ->
-               Pass = proplists:get_value(password, Opts,
+                   {hosts, HOpts} ->
+                       lists:foldl(
+                         fun({H, Os}, D) ->
+                                 P = proplists:get_value(
+                                       password, Os,
+                                       p1_sha:sha(crypto:rand_bytes(20))),
+                                 dict:store(H,P,D)
+                         end, dict:new(), HOpts);
+                   false ->
+                       Pass = proplists:get_value(password, Opts,
                                           p1_sha:sha(crypto:rand_bytes(20))),
-               PrivAccess = proplists:get_value(privilege_access, Opts, []),
-               
-               dict:from_list([{global, [{password, Pass}] ++ PrivAccess}])
-           end,
+                   dict:from_list([{global,Pass}])
+               end,
+    %% privilege access to entities data
+    PrivAccess = case lists:keyfind(privilege_access, 1, Opts) of
+                     {privilege_access, PrivAcc} ->
+                         PrivAcc;
+                     false -> []
+                 end,
     Shaper = case lists:keysearch(shaper_rule, 1, Opts) of
-           {value, {_, S}} -> S;
-           _ -> none
-         end,
-    CheckFrom = case lists:keysearch(service_check_from, 1,
-                     Opts)
-            of
-          {value, {_, CF}} -> CF;
-          _ -> true
-        end,
+                 {value, {_, S}} -> S;
+                 _ -> none
+             end,
+    CheckFrom = case lists:keysearch(service_check_from, 1, Opts) of
+                    {value, {_, CF}} -> CF;
+                    _ -> true
+                end,
     SockMod:change_shaper(Socket, Shaper),
 
     {ok, wait_for_stream,
      #state{socket = Socket, sockmod = SockMod,
-        streamid = new_id(), host_opts = HostOpts,
-        access = Access, check_from = CheckFrom}}.
+            streamid = new_id(), host_opts = HostOpts,
+            access = Access, check_from = CheckFrom, 
+            privilege_access = PrivAccess}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -196,8 +199,8 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
                                       StateData#state.host_opts;
                                   false ->
                                       case dict:find(global, StateData#state.host_opts) of
-                                          {ok, Props} ->
-                                              dict:from_list([{Host, Props}]);
+                                          {ok, GlobalPass} ->
+                                              dict:from_list([{Host, GlobalPass}]);
                                           error ->
                                               StateData#state.host_opts
                                       end
@@ -224,8 +227,7 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
     case {Name, fxml:get_cdata(Els)} of
         {<<"handshake">>, Digest} ->
             case dict:find(StateData#state.host, StateData#state.host_opts) of
-                {ok, HostProps} ->
-                    Password = get_prop(password, HostProps),
+                {ok, Password} ->
                     case p1_sha:sha(<<(StateData#state.streamid)/binary,
                                        Password/binary>>) of
                         Digest ->
@@ -237,18 +239,16 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                                                 [H])
                               end, dict:fetch_keys(StateData#state.host_opts)),
 
-                            %% Why we need to register all hosts ?
                             %% TODO: do it for each host in dict if it is necessary
                             %% server advertises service of allowed permission
-                            advertise_perm(StateData, proplists:delete(password,HostProps)),
+                            advertise_perm(StateData),
                             %% send initial presences from all server users
-                            case get_prop(presence, HostProps) of
+                            case get_prop(presence, StateData#state.privilege_access) of
                                 Priv when (Priv == <<"managed_entity">>) or
                                           (Priv == <<"roster">>) ->
                                         initial_presence(StateData);
                                 _ -> ok
                             end,
-                            %% for all hosts ?
                             ets:insert(registered_services, {StateData#state.host, self()}), 
                             {next_state, stream_established, StateData}; 
                         _ ->
@@ -309,7 +309,7 @@ stream_established({xmlstreamelement, El}, StateData) ->
             case IQ of
                 #iq{xmlns = ?NS_ROSTER} ->
                     case (ToJID#jid.luser /= <<"">>) and
-                         (ToJID#jid.lserver == ?MYNAME) and %% ?MYHOSTS
+                         lists:member(ToJID#jid.lserver,?MYHOSTS) and 
                          %% only component.host, or user@component.host ?
                          (FromJID#jid.luser == <<"">>) of 
                              true ->
@@ -411,48 +411,46 @@ handle_info({route, From, To, Packet}, StateName,
     end,
     {next_state, StateName, StateData};
 
-handle_info({user_presence, Packet, FromJID, ServiceHost}, 
+handle_info({user_presence, Packet, FromJID}, 
             stream_established, StateData) ->
-    {ok, HOpts} = dict:find(ServiceHost, StateData#state.host_opts),
-    AccessType = get_prop(presence, HOpts),
+    AccessType = get_prop(presence, StateData#state.privilege_access),
     case AccessType of
         T when (T == <<"managed_entity">>) or
                (T == <<"roster">> ) ->
-            ToJID = jid:from_string(ServiceHost),
-            PacketNew = jlib:replace_from_to(FromJID, ToJID, Packet),
-            send_element(StateData, PacketNew);
+            lists:foreach(fun (H) ->
+                            ToJID = jid:from_string(H),
+                            PacketNew = 
+                                jlib:replace_from_to(FromJID, ToJID, Packet),
+                            send_element(StateData, PacketNew)
+                          end, dict:fetch_keys(StateData#state.host_opts));
         _ -> ok
     end,
     {next_state, stream_established, StateData};
 
-handle_info({roster_presence, Packet, ServiceHost}, 
+handle_info({roster_presence, Packet}, 
             stream_established, StateData) ->
-    {ok, HOpts} = dict:find(ServiceHost, StateData#state.host_opts),
-    AccessType = get_prop(presence, HOpts),
-    RosterAccessType = get_prop(roster, HOpts),
-    StateDataNew = StateData#state{last_pres = Packet},
+    AccessType = get_prop(presence, StateData#state.privilege_access),
+    RosterAccessType = get_prop(roster, StateData#state.privilege_access),
     case {AccessType, RosterAccessType} of
         {P, R} when (P == <<"roster">>) and 
                     ((R == <<"both">>) or (R == <<"get">>)) ->
             %% check that current presence stanza is equivalent to last
-            LastPresence =
-                if (StateData#state.last_pres /= undefined) ->
-                        jlib:remove_attr(<<"to">>, StateData#state.last_pres);
-                    true -> 
-                        StateData#state.last_pres
-                end,
             NewPacket = jlib:remove_attr(<<"to">>, Packet),
-            case compare_presences(LastPresence, NewPacket) of
+            case compare_presences(StateData#state.last_pres, NewPacket) of
                 false ->
-                    ToJID = jid:from_string(ServiceHost),
-                    PacketNew = replace_to(ToJID, Packet),
-                    send_element(StateData, PacketNew);
+                    lists:foreach(fun (H) ->
+                                    PacketNew = replace_to(H, Packet),
+                                    send_element(StateData, PacketNew)
+                                  end, 
+                                  dict:fetch_keys(StateData#state.host_opts));
                 _ ->
                     ok
-            end;
-        _ -> ok
-    end,
-    {next_state, stream_established, StateDataNew};
+            end,
+            StateDataNew = StateData#state{last_pres = NewPacket},
+            {next_state, stream_established, StateDataNew};
+        _ -> 
+            {next_state, stream_established, StateData}    
+    end;
 
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
@@ -543,52 +541,48 @@ replace_to_attr(To, Attrs) ->
     Attrs2 = [{<<"to">>, To} | Attrs1],
     Attrs2.
 
--spec replace_to(jid(), xmlel()) -> xmlel().
+-spec replace_to(binary(), xmlel()) -> xmlel().
 
 replace_to(To, #xmlel{name = Name, attrs = Attrs, children = Els}) ->
     NewAttrs = 
-        replace_to_attr(jid:to_string(To), Attrs),
+        replace_to_attr(To, Attrs),
     #xmlel{name = Name, attrs = NewAttrs, children = Els}.
 
 %%------------------------------------------------------------------------
 %% XEP-0356
 
--spec permissions(binary(), binary(), list()) -> #xmlel{}.
-permissions(Id, Host, HostOpts) ->
+-spec permissions(binary(), list()) -> #xmlel{}.
+permissions(Id, PrivAccess) ->
     Stanza = #xmlel{name = <<"message">>, 
                     attrs = [{<<"from">>,?MYNAME},
-                             {<<"to">>, Host},
                              {<<"id">>, Id}]},
     Stanza0 = #xmlel{name = <<"privilege">>, 
                      attrs = [{<<"xmlns">> ,?NS_PRIVILEGE}]},
     Perms = lists:map(fun({Access, Type}) -> 
-                              #xmlel{name = <<"perm">>, 
-                                     attrs = [{<<"access">>, 
-                                               atom_to_binary(Access,latin1)},
-                                              {<<"type">>, Type}]}
-                          end, HostOpts),
+                          #xmlel{name = <<"perm">>, 
+                                 attrs = [{<<"access">>, 
+                                           atom_to_binary(Access,latin1)},
+                                          {<<"type">>, Type}]}
+                      end, PrivAccess),
     Stanza1 = Stanza0#xmlel{children = Perms},
     Stanza#xmlel{children = [Stanza1]}.
     
 
-advertise_perm(StateData, HostOpts) ->
-    case HostOpts of 
+advertise_perm(StateData) ->
+    case StateData#state.privilege_access of 
         [] -> ok;
-        _ -> 
-            Stanza = permissions(StateData#state.streamid,
-                                 StateData#state.host, HostOpts),
-            Text = fxml:element_to_binary(Stanza),
-            send_text(StateData, Text),
-            ?INFO_MSG("Advertise service of allowed permissions ~p~n",
-                     [StateData#state.host])
+        PrivAccess ->
+            Stanza = permissions(StateData#state.streamid, PrivAccess),
+            lists:foreach(fun (H) ->
+                              send_element(StateData, replace_to(H, Stanza)),
+                              ?INFO_MSG("Advertise service of allowed permissions ~p~n",[H])
+                          end, dict:fetch_keys(StateData#state.host_opts))
     end.
 
-%% TODO:  maybe add hook ? Anyway organize work in another module
 process_iq(StateData, FromJID, ToJID, Packet) ->
     %% check privileges
     %% replace StateData#state.host with FromJid#jid.lserver ?
-    {ok, HOpts} = dict:find(StateData#state.host, StateData#state.host_opts), 
-    AccessType = get_prop(roster, HOpts),
+    AccessType = get_prop(roster, StateData#state.privilege_access),
     Type = fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs),
     IQ = jlib:iq_query_info(Packet),
     case {Type, AccessType} of
@@ -598,7 +592,7 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
         {<<"set">>, T} when ( (T == <<"both">>) or (T == <<"set">>)) ->
             %% check if user ToJID  exist
             #jid{lserver= Server, luser = User} = ToJID,
-            case ejabberd_auth:is_user_exists(User,Server) of
+            case ejabberd_auth:is_user_exists(User,Server) of %% when Server - remote server
                 true ->
                     ResIQ = mod_roster:process_iq(ToJID, ToJID, IQ),
                     send_iq_result(StateData, ToJID, FromJID, jlib:iq_to_xml(ResIQ));
@@ -620,8 +614,8 @@ send_iq_result(StateData, From, To, #xmlel{attrs = Attrs } = Packet) ->
 %% TODO : rewrite this function 
 process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet) ->
 %% if presence was send from service to server,
-    {ok, HOpts} = dict:find(StateData#state.host, StateData#state.host_opts),
-    case (ToJID#jid.lserver == ?MYNAME) and %% ?in ?MYHOSTS
+    PrivAccess = StateData#state.privilege_access,
+    case lists:member(ToJID#jid.lserver,?MYHOSTS) and
          (FromJID#jid.luser == <<"">>) of %% service
         true -> 
             %% if stanza contains privilege element
@@ -639,7 +633,7 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
                                 %% it isn't case of 0356 extension
                                 [#xmlel{name = <<"presence">>} = Child] ->
                                     %% check privilege access
-                                    T = get_prop(roster, HOpts),
+                                    T = get_prop(roster, PrivAccess),
                                     Type = fxml:get_attr_s(<<"type">>, Child#xmlel.attrs),
                                     if  ((T == <<"both">>) or (T == <<"set">>)) and 
                                         (Type == <<"subscribe">>) ->
@@ -657,7 +651,7 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
 
                                             if (FromJ /= ToJ) ->
                                                   case (FromJ#jid.lresource == <<"">>) and 
-                                                       (FromJ#jid.lserver == ?MYNAME) of
+                                                       lists:member(FromJ#jid.lserver, ?MYHOSTS) of
                                                             true ->
                                                                 ejabberd_router:route(FromJ,ToJ, Child);
                                                             _ ->
@@ -674,7 +668,7 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
                                             send_element(StateData, Err)
                                     end;        
                                 [#xmlel{name = <<"message">>} = Child] -> 
-                                    T = get_prop(message, HOpts),
+                                    T = get_prop(message, PrivAccess),
                                     ChildNew = jlib:remove_attr(<<"xmlns">>, Child),
                                     if  (T == <<"outgoing">>) ->
                                             %% xep-0356
@@ -685,7 +679,7 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
                                             FromJ = jid:from_string(From),
                                             ToJ = jid:from_string(To),                            
                                             case (FromJ#jid.lresource == <<"">>) and 
-                                                 (FromJ#jid.lserver == ?MYNAME) of %% check it
+                                                 lists:member(FromJ#jid.lserver, ?MYHOSTS) of %% check it
                                                       true ->
                                                           %% there are no restriction on to attribute
                                                           ejabberd_router:route(FromJ,ToJ, ChildNew); 
@@ -714,17 +708,20 @@ initial_presence(StateData) ->
     Pids = ejabberd_sm:get_all_pids(),
     case Pids /= [] of 
         true -> 
-
-             lists:foreach(fun(Pid) ->
-                                {User, Resource, PresenceLast} = 
-                                    ejabberd_c2s:get_last_presence(Pid),
-                                From = #jid{user = User,
-                                            server = ?MYNAME,
-                                            resource = Resource},
-                                To = jid:from_string(StateData#state.host), %% ?
-                                PacketNew = jlib:replace_from_to(From, To, PresenceLast),
-                                send_element(StateData, PacketNew)
-                           end, Pids),
+            lists:foreach(fun(Pid) ->
+                            {User, Server, Resource, PresenceLast} = 
+                                ejabberd_c2s:get_last_presence(Pid),
+                            From = #jid{user = User,
+                                        server = Server,
+                                        resource = Resource},
+                            lists:foreach(fun (H) ->
+                                            To = jid:from_string(H),
+                                            PacketNew = 
+                                                jlib:replace_from_to(From, To, PresenceLast),
+                                            send_element(StateData, PacketNew)
+                                          end, 
+                                          dict:fetch_keys(StateData#state.host_opts))
+                          end, Pids),
             ok;     
         _ -> ok
     end.
@@ -737,9 +734,8 @@ process_presence(#xmlel{name = <<"presence">>} = Packet, _C2SState, From, _To) -
             case ets:info(registered_services) of
                 undefined -> ok;
                 _ ->
-                    lists:foreach(fun({ServiceHost, Pid}) -> 
-                                      Pid ! {user_presence, Packet,
-                                             From, ServiceHost} 
+                    lists:foreach(fun({_ServiceHost, Pid}) -> 
+                                      Pid ! {user_presence, Packet, From} 
                                   end,
                                   ets:tab2list(registered_services))
             end;                   
@@ -759,8 +755,8 @@ process_roster_presence(_From, _To, #xmlel{name = <<"presence">>} = Packet) ->
                 undefined -> ok;
                 _ ->
                     ?INFO_MSG("Roster presence~p~n", [Packet]),
-                    lists:foreach(fun({ServiceHost, Pid}) -> 
-                                              Pid ! {roster_presence, Packet, ServiceHost}
+                    lists:foreach(fun({_ServiceHost, Pid}) -> %% ?From
+                                              Pid ! {roster_presence, Packet}
                                   end,
                                   ets:tab2list(registered_services))
             end;
@@ -811,4 +807,3 @@ compare_arrts([],[]) -> true;
 compare_arrts(Attrs1, Attrs2) when length(Attrs1) == length(Attrs2) ->
     lists:foldl(fun(Attr,Acc) -> lists:member(Attr, Attrs2) and Acc end, true, Attrs1);
 compare_arrts(_Attrs1, _Attrs2) -> false.
-

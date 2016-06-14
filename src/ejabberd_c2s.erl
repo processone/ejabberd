@@ -205,7 +205,7 @@ start_link(SockData, Opts) ->
 
 socket_type() -> xml_stream.
 
-%% Return Username, Resource and presence information
+%% Return Username, Server, Resource and presence information
 get_presence(FsmRef) ->
     (?GEN_FSM):sync_send_all_state_event(FsmRef,
 					 {get_presence}, 1000).
@@ -1294,7 +1294,6 @@ handle_sync_event({get_presence}, _From, StateName,
 		  StateData) ->
     User = StateData#state.user,
     PresLast = StateData#state.pres_last,
-    ?INFO_MSG("presence last~p~n",[PresLast]),
     Show = get_showtag(PresLast),
     Status = get_statustag(PresLast),
     Resource = StateData#state.resource,
@@ -1304,9 +1303,10 @@ handle_sync_event({get_presence}, _From, StateName,
 handle_sync_event({get_last_presence}, _From, StateName,
 		  StateData) ->
     User = StateData#state.user,
+    Server = StateData#state.server,
     PresLast = StateData#state.pres_last,
     Resource = StateData#state.resource,
-    Reply = {User, Resource, PresLast},
+    Reply = {User, Server, Resource, PresLast},
     fsm_reply(Reply, StateName, StateData);
 
 handle_sync_event(get_subscribed, _From, StateName,
