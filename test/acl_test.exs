@@ -302,6 +302,31 @@ defmodule ACLTest do
     assert :acl.access_matches(rules, %{usr: {"user1", "server11", "res1"}}, :global) == :deny
     assert :acl.access_matches(rules, %{usr: {"user11", "server11", "res1"}}, :global) == :deny
   end
+
+  test "transform_access_rules_config expands allow rule" do
+    assert :acl.transform_access_rules_config([:allow]) == [{:allow, [:all]}]
+  end
+
+  test "transform_access_rules_config expands deny rule" do
+    assert :acl.transform_access_rules_config([:deny]) == [{:deny, [:all]}]
+  end
+
+  test "transform_access_rules_config expands <integer> rule" do
+    assert :acl.transform_access_rules_config([100]) == [{100, [:all]}]
+  end
+
+  test "transform_access_rules_config expands allow: <acl_name> rule" do
+    assert :acl.transform_access_rules_config([{:allow, :test1}]) == [{:allow, [{:acl, :test1}]}]
+  end
+
+  test "transform_access_rules_config expands deny: <acl_name> rule" do
+    assert :acl.transform_access_rules_config([{:deny, :test1}]) == [{:deny, [{:acl, :test1}]}]
+  end
+
+  test "transform_access_rules_config expands integer: <acl_name> rule" do
+    assert :acl.transform_access_rules_config([{100, :test1}]) == [{100, [{:acl, :test1}]}]
+  end
+
   ## Checking ACL on both user pattern and IP
   ## ========================================
 

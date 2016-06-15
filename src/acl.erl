@@ -518,11 +518,16 @@ parse_ip_netmask(S) ->
 transform_access_rules_config(Config) ->
     lists:map(fun transform_access_rules_config2/1, lists:flatten(Config)).
 
+transform_access_rules_config2(Type) when is_integer(Type); Type == allow; Type == deny ->
+    {Type, [all]};
+transform_access_rules_config2({Type, ACL}) when is_atom(ACL) ->
+    {Type, [{acl, ACL}]};
 transform_access_rules_config2({Res, Rules}) when is_list(Rules) ->
-    {Res, lists:map(fun({Type, Args}) when is_list(Args) ->
-			     normalize_spec({Type, hd(lists:flatten(Args))});
-			(V) -> normalize_spec(V)
-		     end, lists:flatten(Rules))};
+    T = lists:map(fun({Type, Args}) when is_list(Args) ->
+			  normalize_spec({Type, hd(lists:flatten(Args))});
+		     (V) -> normalize_spec(V)
+		  end, lists:flatten(Rules)),
+    {Res, T};
 transform_access_rules_config2({Res, Rule}) ->
     {Res, [Rule]}.
 
