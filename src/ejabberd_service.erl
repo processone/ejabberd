@@ -61,7 +61,7 @@
          access                    :: atom(),
          check_from = true         :: boolean(),
          privilege_access          :: [attr()],
-         last_pres                 :: xmlel()}).
+         last_pres = dict:new()    :: ?TDICT}).
 
 %-define(DBGFSM, true).
 
@@ -403,7 +403,7 @@ handle_info({user_presence, Packet, FromJID},
     end,
     {next_state, stream_established, StateData};
 
-handle_info({roster_presence, Packet}, 
+handle_info({roster_presence, From, Packet}, 
             stream_established, StateData) ->
     AccessType = get_prop(presence, StateData#state.privilege_access),
     RosterAccessType = get_prop(roster, StateData#state.privilege_access),
@@ -412,7 +412,13 @@ handle_info({roster_presence, Packet},
                     ((R == <<"both">>) or (R == <<"get">>)) ->
             %% check that current presence stanza is equivalent to last
             NewPacket = jlib:remove_attr(<<"to">>, Packet),
-            case compare_presences(StateData#state.last_pres, NewPacket) of
+            Dict = StateData#state.last_pres,
+            LastPresence = 
+                try dict:fetch(From, Dict)
+                catch _:_ -> 
+                    undefined
+                end,
+            case compare_presences(LastPresence, NewPacket) of
                 false ->
                     lists:foreach(fun (H) ->
                                     PacketNew = replace_to(H, Packet),
@@ -422,7 +428,8 @@ handle_info({roster_presence, Packet},
                 _ ->
                     ok
             end,
-            StateDataNew = StateData#state{last_pres = NewPacket},
+            DictNew = dict:store(From, NewPacket, Dict),
+            StateDataNew = StateData#state{last_pres = DictNew},
             {next_state, stream_established, StateDataNew};
         _ -> 
             {next_state, stream_established, StateData}    
@@ -755,22 +762,22 @@ process_presence(Packet, _C2SState, _From, _To) ->
 %% s2s_receive_packet(From, To, Packet) -> ok
 %% for Roster Presence
 %% From subscription "from" or "both"
-process_roster_presence(_From, _To, #xmlel{name = <<"presence">>} = Packet) ->
+process_roster_presence(From, _To, #xmlel{name = <<"presence">>} = Packet) ->
     case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
         T when (T == <<"">>) or (T == <<"unavailable">>) ->
             case ets:info(registered_services) of
                 undefined -> ok;
                 _ ->
                     lists:foreach(fun({_ServiceHost, Pid}) -> %% ?From
-                                              Pid ! {roster_presence, Packet}
+                                              Pid ! {roster_presence, From, Packet}
                                   end,
                                   ets:tab2list(registered_services))
             end;
         _ -> ok
     end;
 process_roster_presence(_From, _To, _Packet) -> ok.
-                 
-compare_presences(undefined, _Presence2) -> false;      
+               
+compare_presences(undefined, _Presence) -> false;                       
 compare_presences(#xmlel{attrs = Attrs, children = Child},
                   #xmlel{attrs = Attrs2, children = Child2}) ->
     Id1 = fxml:get_attr_s(<<"id">>, Attrs),
