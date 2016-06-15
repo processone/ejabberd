@@ -101,8 +101,6 @@
 -define(INVALID_NS_ERR,
     fxml:element_to_binary(?SERR_INVALID_NAMESPACE)).
 
--define(NS_PRIVILEGE, <<"urn:xmpp:privilege:1">>).
-
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -233,14 +231,11 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                         Digest ->
                             send_text(StateData, <<"<handshake/>">>),
                             lists:foreach(
-                              fun (H) ->
-                                      ejabberd_router:register_route(H, ?MYNAME),
-                                      ?INFO_MSG("Route registered for service ~p~n",
-                                                [H])
-                              end, dict:fetch_keys(StateData#state.host_opts)),
+                                fun (H) ->
+                                  ejabberd_router:register_route(H, ?MYNAME),
+                                  ?INFO_MSG("Route registered for service ~p~n", [H])
+                                end, dict:fetch_keys(StateData#state.host_opts)),
 
-                            %% TODO: do it for each host in dict if it is necessary
-                            %% server advertises service of allowed permission
                             advertise_perm(StateData),
                             %% send initial presences from all server users
                             case get_prop(presence, StateData#state.privilege_access) of
@@ -298,28 +293,9 @@ stream_established({xmlstreamelement, El}, StateData) ->
               <<"">> -> error;
               _ -> jid:from_string(To) 
             end,
-    %% TODO: check conditions        
-
-    %% xep-0356 : The server MUST check that the privileged entity has
-    %% right to get or set the roster of managed entity, 
-    %% and MUST return a <forbidden/> error if it is not the case
 
     if  (Name == <<"iq">>) and (ToJID /= error) and (FromJID /= error) ->
-            IQ = jlib:iq_query_info(NewEl),
-            case IQ of
-                #iq{xmlns = ?NS_ROSTER} ->
-                    case (ToJID#jid.luser /= <<"">>) and
-                         lists:member(ToJID#jid.lserver,?MYHOSTS) and 
-                         %% only component.host, or user@component.host ?
-                         (FromJID#jid.luser == <<"">>) of 
-                             true ->
-                                 process_iq(StateData, FromJID,ToJID, NewEl);
-                             false -> 
-                                 ejabberd_router:route(FromJID, ToJID, NewEl)
-                    end;
-                 _ ->
-                     ejabberd_router:route(FromJID, ToJID, NewEl)
-            end;
+            process_iq(StateData, FromJID,ToJID, NewEl);                  
         (Name == <<"presence">>) and (ToJID /= error) and (FromJID /= error) ->
             ejabberd_router:route(FromJID, ToJID, NewEl);
         (Name == <<"message">>) and (ToJID /= error) and (FromJID /= error) ->
@@ -533,7 +509,6 @@ get_prop(Prop, Props ) ->
     proplists:get_value(Prop, Props, none).
 
 %% add to jlib 
-
 -spec replace_to_attr(binary(), [attr()]) -> [attr()].
 
 replace_to_attr(To, Attrs) ->
@@ -574,44 +549,64 @@ advertise_perm(StateData) ->
         PrivAccess ->
             Stanza = permissions(StateData#state.streamid, PrivAccess),
             lists:foreach(fun (H) ->
-                              send_element(StateData, replace_to(H, Stanza)),
-                              ?INFO_MSG("Advertise service of allowed permissions ~p~n",[H])
+                            send_element(StateData, replace_to(H, Stanza)),
+                            ?INFO_MSG("Advertise service of allowed permissions ~p~n",[H])
                           end, dict:fetch_keys(StateData#state.host_opts))
     end.
 
 process_iq(StateData, FromJID, ToJID, Packet) ->
-    %% check privileges
-    %% replace StateData#state.host with FromJid#jid.lserver ?
-    AccessType = get_prop(roster, StateData#state.privilege_access),
-    Type = fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs),
     IQ = jlib:iq_query_info(Packet),
-    case {Type, AccessType} of
-        {<<"get">>, T} when ( (T == <<"both">>) or (T == <<"get">>)) -> 
-            Roster = mod_roster:process_iq(ToJID,ToJID, IQ),
-            send_iq_result(StateData, ToJID, FromJID, jlib:iq_to_xml(Roster));
-        {<<"set">>, T} when ( (T == <<"both">>) or (T == <<"set">>)) ->
-            %% check if user ToJID  exist
-            #jid{lserver= Server, luser = User} = ToJID,
-            case ejabberd_auth:is_user_exists(User,Server) of %% when Server - remote server
+    case IQ of 
+        #iq{xmlns = ?NS_ROSTER} ->
+            case (ToJID#jid.luser /= <<"">>) and
+                 lists:member(ToJID#jid.lserver,?MYHOSTS) and 
+                 %% only component.host, or user@component.host ?
+                 (FromJID#jid.luser == <<"">>) of 
                 true ->
-                    ResIQ = mod_roster:process_iq(ToJID, ToJID, IQ),
-                    send_iq_result(StateData, ToJID, FromJID, jlib:iq_to_xml(ResIQ));
-                false -> 
-                    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN), %%  RFC 6121 2.1.5
-                    send_element(StateData, Err)
+                    AccessType = get_prop(roster, StateData#state.privilege_access),
+                    Type = fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs),
+                    case {Type, AccessType} of
+                        {<<"get">>, T} when ( (T == <<"both">>) or (T == <<"get">>)) -> 
+                            Roster = mod_roster:process_iq(ToJID,ToJID, IQ),
+                            send_iq_result(StateData, ToJID,
+                                           FromJID, jlib:iq_to_xml(Roster));
+                        {<<"set">>, T} when ( (T == <<"both">>) or (T == <<"set">>)) ->
+                            %% check if user ToJID  exist
+                            #jid{lserver= Server, luser = User} = ToJID,
+                            case ejabberd_auth:is_user_exists(User,Server) of
+                                true ->
+                                    Access = 
+                                      gen_mod:get_module_opt(Server, mod_roster, access,
+                                                             fun(A) when is_atom(A) -> A 
+                                                             end, all),
+                                    case acl:match_rule(Server, Access, ToJID) of
+                                        deny ->
+                                            ok;
+                                        allow ->
+                                            ResIQ = mod_roster:process_iq(ToJID, ToJID, IQ),
+                                            send_iq_result(StateData, ToJID, 
+                                                           FromJID, jlib:iq_to_xml(ResIQ))
+                                    end;
+                                _ ->
+                                    ejabberd_router:route(FromJID, ToJID, Packet)
+                            end;
+                        _ ->
+                            Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN), 
+                            send_element(StateData, Err)
+                    end;
+                _ ->
+                    ejabberd_router:route(FromJID, ToJID, Packet)
             end;
         _ ->
-            Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN), %%  RFC 6121 2.1.5
-            send_element(StateData, Err)
+            ejabberd_router:route(FromJID, ToJID, Packet)
     end.
-   
+
 send_iq_result(StateData, From, To, #xmlel{attrs = Attrs } = Packet) ->
     Attrs2 = jlib:replace_from_to_attrs(jid:to_string(From),
                                         jid:to_string(To), Attrs),
     Text = fxml:element_to_binary(Packet#xmlel{attrs = Attrs2}),
     send_text(StateData, Text).
 
-%% TODO : rewrite this function 
 process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet) ->
 %% if presence was send from service to server,
     PrivAccess = StateData#state.privilege_access,
@@ -632,67 +627,9 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
                             case Children2 of
                                 %% it isn't case of 0356 extension
                                 [#xmlel{name = <<"presence">>} = Child] ->
-                                    %% check privilege access
-                                    T = get_prop(roster, PrivAccess),
-                                    Type = fxml:get_attr_s(<<"type">>, Child#xmlel.attrs),
-                                    if  ((T == <<"both">>) or (T == <<"set">>)) and 
-                                        (Type == <<"subscribe">>) ->
-                                            %% we can send presence on behalf
-                                            %% of the server client
-                                            %% now send presence anyway
-                                            %% TODO: check is it important to 
-                                            %% filter presence messages
-                                            From = fxml:get_attr_s(<<"from">>, 
-                                                                   Child#xmlel.attrs),
-                                            To = fxml:get_attr_s(<<"to">>, 
-                                                                 Child#xmlel.attrs),
-                                            FromJ = jid:from_string(From),
-                                            ToJ = jid:from_string(To),
-
-                                            if (FromJ /= ToJ) ->
-                                                  case (FromJ#jid.lresource == <<"">>) and 
-                                                       lists:member(FromJ#jid.lserver, ?MYHOSTS) of
-                                                            true ->
-                                                                ejabberd_router:route(FromJ,ToJ, Child);
-                                                            _ ->
-                                                                Err = 
-                                                                  jlib:make_error_reply(Child,
-                                                                                        ?ERR_FORBIDDEN),
-                                                                send_element(StateData, Err)
-                                                  end;
-                                                true ->
-                                                    ok %% we don't want presence sent to self
-                                            end;
-                                        true ->
-                                            Err = jlib:make_error_reply(Child, ?ERR_FORBIDDEN),
-                                            send_element(StateData, Err)
-                                    end;        
-                                [#xmlel{name = <<"message">>} = Child] -> 
-                                    T = get_prop(message, PrivAccess),
-                                    ChildNew = jlib:remove_attr(<<"xmlns">>, Child),
-                                    if  (T == <<"outgoing">>) ->
-                                            %% xep-0356
-                                            From = fxml:get_attr_s(<<"from">>, 
-                                                                   ChildNew#xmlel.attrs),
-                                            To = fxml:get_attr_s(<<"to">>, 
-                                                                 ChildNew#xmlel.attrs),
-                                            FromJ = jid:from_string(From),
-                                            ToJ = jid:from_string(To),                            
-                                            case (FromJ#jid.lresource == <<"">>) and 
-                                                 lists:member(FromJ#jid.lserver, ?MYHOSTS) of %% check it
-                                                      true ->
-                                                          %% there are no restriction on to attribute
-                                                          ejabberd_router:route(FromJ,ToJ, ChildNew); 
-                                                      _ ->
-                                                          Err = 
-                                                           jlib:make_error_reply(ChildNew,
-                                                                                 ?ERR_FORBIDDEN),
-                                                          send_element(StateData, Err)
-                                            end;
-                                        true ->
-                                            Err = jlib:make_error_reply(ChildNew,?ERR_FORBIDDEN),
-                                            send_element(StateData, Err)
-                                    end;
+                                    forward_subscribe(StateData, Child, PrivAccess);
+                                [#xmlel{name = <<"message">>} = Child] -> %% xep-0356
+                                    forward_message(StateData, Child, PrivAccess);
                                 _ -> 
                                     ejabberd_router:route(FromJID, ToJID, Packet)
                             end;
@@ -702,6 +639,76 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
 
         false ->
             ejabberd_router:route(FromJID, ToJID, Packet)
+    end.
+
+forward_subscribe(StateData, Presence, PrivAccess) ->
+    %% check privilege access
+    T = get_prop(roster, PrivAccess),
+    Type = fxml:get_attr_s(<<"type">>, Presence#xmlel.attrs),
+    if  ((T == <<"both">>) or (T == <<"set">>)),
+        (Type == <<"subscribe">>) ->
+            %% we can send presence on behalf
+            %% of the server client
+            From = fxml:get_attr_s(<<"from">>, Presence#xmlel.attrs),
+            To = fxml:get_attr_s(<<"to">>, Presence#xmlel.attrs),
+            FromJ = jid:from_string(From),
+            ToJ = jid:from_string(To),
+            Server = FromJ#jid.lserver,
+            User = FromJ#jid.luser,
+            case ejabberd_auth:is_user_exists(User,Server) and
+                 (FromJ#jid.lresource == <<"">>) and 
+                 lists:member(Server, ?MYHOSTS) of
+                true ->
+                    if  (Server /= ToJ#jid.lserver) or
+                        (User /= ToJ#jid.luser) ->
+                            %% from ejabberd_c2s direct presence
+                            %% 0356 server MUST NOT allow the privileged entity
+                            %% to do anything that the managed entity could not do
+                            Access = 
+                             gen_mod:get_module_opt(Server, mod_roster, access,
+                                                    fun(A) when is_atom(A) -> A end, all),
+                            case acl:match_rule(Server, Access, FromJ) of
+                                deny ->
+                                    ok;
+                                allow ->
+                                    ejabberd_hooks:run(roster_out_subscription, Server,
+                                                       [User, Server, ToJ, subscribe]),
+                                    %% how to check privacy ?
+                                    ejabberd_router:route(FromJ, ToJ, Presence)
+                            
+                            end;                       
+                        true -> %% we don't want presence sent to self
+                            ok
+                    end;
+                _ ->
+                    Err = jlib:make_error_reply(Presence, ?ERR_FORBIDDEN),
+                    send_element(StateData, Err)
+            end;
+        true ->
+            Err = jlib:make_error_reply(Presence, ?ERR_FORBIDDEN),
+            send_element(StateData, Err)
+    end.
+
+forward_message(StateData, Message, PrivAccess) ->
+    T = get_prop(message, PrivAccess),
+    MessageNew = jlib:remove_attr(<<"xmlns">>, Message),
+    if  (T == <<"outgoing">>) ->            
+        From = fxml:get_attr_s(<<"from">>, MessageNew#xmlel.attrs),
+        To = fxml:get_attr_s(<<"to">>, MessageNew#xmlel.attrs),
+        FromJ = jid:from_string(From),
+        ToJ = jid:from_string(To),                            
+        case (FromJ#jid.lresource == <<"">>) and 
+             lists:member(FromJ#jid.lserver, ?MYHOSTS) of
+            true ->
+                %% there are no restriction on to attribute
+                ejabberd_router:route(FromJ,ToJ, MessageNew); 
+            _ ->
+                Err = jlib:make_error_reply(MessageNew, ?ERR_FORBIDDEN),
+                send_element(StateData, Err)
+        end;
+    true ->
+        Err = jlib:make_error_reply(MessageNew,?ERR_FORBIDDEN),
+        send_element(StateData, Err)
     end.
 
 initial_presence(StateData) ->
@@ -717,7 +724,7 @@ initial_presence(StateData) ->
                             lists:foreach(fun (H) ->
                                             To = jid:from_string(H),
                                             PacketNew = 
-                                                jlib:replace_from_to(From, To, PresenceLast),
+                                             jlib:replace_from_to(From, To, PresenceLast),
                                             send_element(StateData, PacketNew)
                                           end, 
                                           dict:fetch_keys(StateData#state.host_opts))
@@ -754,7 +761,6 @@ process_roster_presence(_From, _To, #xmlel{name = <<"presence">>} = Packet) ->
             case ets:info(registered_services) of
                 undefined -> ok;
                 _ ->
-                    ?INFO_MSG("Roster presence~p~n", [Packet]),
                     lists:foreach(fun({_ServiceHost, Pid}) -> %% ?From
                                               Pid ! {roster_presence, Packet}
                                   end,
@@ -778,8 +784,6 @@ compare_presences(#xmlel{attrs = Attrs, children = Child},
                     compare_elements(Child, Child2)
             end
     end.
-
-
 
 compare_elements([],[]) -> true;
 compare_elements(Tags1, Tags2) when length(Tags1) == length(Tags2) ->

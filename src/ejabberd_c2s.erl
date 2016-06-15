@@ -205,7 +205,7 @@ start_link(SockData, Opts) ->
 
 socket_type() -> xml_stream.
 
-%% Return Username, Server, Resource and presence information
+%% Return Username, Resource and presence information
 get_presence(FsmRef) ->
     (?GEN_FSM):sync_send_all_state_event(FsmRef,
 					 {get_presence}, 1000).
@@ -1233,7 +1233,7 @@ session_established2(El, StateData) ->
 				 ejabberd_hooks:run_fold(
 				   user_send_packet, Server, PresenceEl0,
 				   [NewStateData, FromJID, ToJID]),
-
+			
 			   case ToJID of
 			     #jid{user = User, server = Server,
 				  resource = <<"">>} ->
