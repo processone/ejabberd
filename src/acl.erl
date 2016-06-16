@@ -515,10 +515,12 @@ parse_ip_netmask(S) ->
       _ -> error
     end.
 
+transform_access_rules_config(Config) when is_list(Config) ->
+    lists:map(fun transform_access_rules_config2/1, lists:flatten(Config));
 transform_access_rules_config(Config) ->
-    lists:map(fun transform_access_rules_config2/1, lists:flatten(Config)).
+    transform_access_rules_config([Config]).
 
-transform_access_rules_config2(Type) when is_integer(Type); Type == allow; Type == deny ->
+transform_access_rules_config2(Type) when is_integer(Type); is_atom(Type) ->
     {Type, [all]};
 transform_access_rules_config2({Type, ACL}) when is_atom(ACL) ->
     {Type, [{acl, ACL}]};
