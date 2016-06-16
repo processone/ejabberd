@@ -619,4 +619,4 @@ opt_type(access) -> fun (V) -> V end;
 opt_type(access_rules) -> fun (V) -> V end;
 opt_type(shaper_rules) -> fun (V) -> V end;
 opt_type(acl) -> fun (V) -> V end;
-opt_type(_) -> [access, acl, acces_rules, shaper_rules].
+opt_type(_) -> [access, acl, access_rules, shaper_rules].
