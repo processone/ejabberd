@@ -466,76 +466,60 @@ acl:
 
 shaper_rules:
   ## Maximum number of simultaneous sessions allowed for a single user:
-  max_user_sessions:
-    - 10:
-        - all
+  max_user_sessions: 10
   ## Maximum number of offline messages that users can have:
   max_user_offline_messages:
-    - 5000:
-        - acl: admin
-    - 100:
-        - all
+    - 5000: admin
+    - 100
   ## For C2S connections, all users except admins use the "normal" shaper
   c2s_shaper:
-    - none:
-        - acl: admin
-    - normal:
-        - all
+    - none: admin
+    - normal
   ## All S2S connections use the "fast" shaper
-  s2s_shaper:
-    - fast:
-        - all
+  s2s_shaper: fast
 
 ###.  ============
 ###'  ACCESS RULES
 access_rules:
   ## This rule allows access only for local users:
   local:
-    - allow:
-        - acl: local
+    - allow: local
   ## Only non-blocked users can use c2s connections:
   c2s:
-    - deny:
-        - acl: blocked
-    - allow:
-        - all
+    - deny: blocked
+    - allow
   ## Only admins can send announcement messages:
   announce:
-    - allow:
-        - acl: admin
+    - allow: admin
   ## Only admins can use the configuration interface:
   configure: 
-    - allow:
-        - acl: admin
+    - allow: admin
   ## Admins of this server are also admins of the MUC service:
   muc_admin: 
-    - allow:
-        - acl: admin
+    - allow: admin
   ## Only accounts of the local ejabberd server can create rooms:
   muc_create: 
-    - allow:
-        - acl: local
+    - allow: local
   ## All users are allowed to use the MUC service:
   muc: 
-    - allow:
-        - all
+    - allow
   ## Only accounts on the local ejabberd server can create Pubsub nodes:
   pubsub_createnode: 
-    - allow:
-        - acl: local
+    - allow: local
   ## In-band registration allows registration of any possible username.
   ## To disable in-band registration, replace 'allow' with 'deny'.
   register: 
-    - allow:
-        - all
+    - allow
   ## Only allow to register from localhost
   trusted_network: 
-    - allow:
-        - acl: loopback
+    - allow: loopback
   ## Do not establish S2S connections with bad servers
   ## s2s: 
-  ##   bad_servers: deny
-  ##   all: allow
+  ##   - deny:
+  ##     - ip: "XXX.XXX.XXX.XXX/32"
+  ##   - deny:
+  ##     - ip: "XXX.XXX.XXX.XXX/32"
+  ##   - allow
 
 ## By default the frequency of account registrations from the same IP
 ## is limited to 1 account every 10 minutes. To disable, specify: infinity
@@ -548,10 +532,10 @@ access_rules:
 ##   "localhost":
 ##     access:
 ##       c2s:
-##         admin: allow
-##         all: deny
+##         - allow: admin
+##         - deny
 ##       register:
-##         all: deny
+##         - deny
 
 ###.  ================
 ###'  DEFAULT LANGUAGE
