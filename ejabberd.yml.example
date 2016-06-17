@@ -408,14 +408,14 @@ acl:
   ##
   ## admin:
   ##   user:
-  ##     - "aleksey": "localhost"
-  ##     - "ermine": "example.org"
+  ##     - "aleksey@localhost"
+  ##     - "ermine@example.org"
   ##
   ## Blocked users
   ##
   ## blocked:
   ##   user:
-  ##     - "baduser": "example.org"
+  ##     - "baduser@example.org"
   ##     - "test"
 
   ## Local users: don't modify this.
@@ -431,7 +431,7 @@ acl:
   ##     - "jabber.org"
   ## aleksey:
   ##   user:
-  ##     - "aleksey": "jabber.ru"
+  ##     - "aleksey@jabber.ru"
   ## test:
   ##   user_regexp: "^test"
   ##   user_glob: "test*"
@@ -459,7 +459,7 @@ acl:
 ##     acl:
 ##       admin:
 ##         user:
-##           - "bob-local": "localhost"
+##           - "bob-local@localhost"
 
 ###.  ============
 ###'  SHAPER RULES
