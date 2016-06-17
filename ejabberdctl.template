@@ -441,6 +441,6 @@ case "${ARGS[0]}" in
     'ping'*) ping ${ARGS[1]};;
     'etop') etop;;
     'started') wait_for_status 0 30 2;; # wait 30x2s before timeout
-    'stopped') wait_for_status 3 15 2 && stop_epmd;; # wait 15x2s before timeout
+    'stopped') wait_for_status 3 30 2 && stop_epmd;; # wait 30x2s before timeout
     *) ctl "${ARGS[@]}";;
 esac
