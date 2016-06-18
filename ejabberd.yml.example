@@ -154,10 +154,6 @@ listen:
   ##   hosts:
   ##     "icq.example.org":
   ##       password: "secret"
-  ##       privilege_access: 
-  ##          roster: "both"
-  ##          message: "outgoing"
-  ##          presence: "roster"
   ##     "sms.example.org":
   ##       password: "secret"
 
