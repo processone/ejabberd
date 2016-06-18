@@ -147,9 +147,17 @@ listen:
   ##   access: all
   ##   shaper_rule: fast
   ##   ip: "127.0.0.1"
+  ##   privilege_access: 
+  ##      roster: "both"
+  ##      message: "outgoing"
+  ##      presence: "roster"
   ##   hosts:
   ##     "icq.example.org":
   ##       password: "secret"
+  ##       privilege_access: 
+  ##          roster: "both"
+  ##          message: "outgoing"
+  ##          presence: "roster"
   ##     "sms.example.org":
   ##       password: "secret"
 

@@ -40,9 +40,9 @@
      send_element/2, socket_type/0, transform_listen_option/2]).
 
 -export([init/1, wait_for_stream/2,
-     wait_for_handshake/2, stream_established/2,
-     handle_event/3, handle_sync_event/4, code_change/4,
-     handle_info/3, terminate/3, print_state/1, opt_type/1]).
+         wait_for_handshake/2, stream_established/2,
+         handle_event/3, handle_sync_event/4, code_change/4,
+         handle_info/3, terminate/3, print_state/1, opt_type/1]).
 
 -export([process_presence/4, process_roster_presence/3]).
 
@@ -54,7 +54,7 @@
 -include("mod_privacy.hrl").
 
 -record(state,
-        {socket :: ejabberd_socket:socket_state(),
+        {socket                    :: ejabberd_socket:socket_state(),
          sockmod = ejabberd_socket :: ejabberd_socket | ejabberd_frontend_socket,
          streamid = <<"">>         :: binary(),
          host_opts = dict:new()    :: ?TDICT,
@@ -77,42 +77,41 @@
 -endif.
 
 -define(STREAM_HEADER,
-    <<"<?xml version='1.0'?><stream:stream "
-      "xmlns:stream='http://etherx.jabber.org/stream"
-      "s' xmlns='jabber:component:accept' id='~s' "
-      "from='~s'>">>).
+        <<"<?xml version='1.0'?><stream:stream "
+          "xmlns:stream='http://etherx.jabber.org/stream"
+          "s' xmlns='jabber:component:accept' id='~s' "
+          "from='~s'>">>).
 
 -define(STREAM_TRAILER, <<"</stream:stream>">>).
 
 -define(INVALID_HEADER_ERR,
-    <<"<stream:stream xmlns:stream='http://etherx.ja"
-      "bber.org/streams'><stream:error>Invalid "
-      "Stream Header</stream:error></stream:stream>">>).
+        <<"<stream:stream xmlns:stream='http://etherx.ja"
+          "bber.org/streams'><stream:error>Invalid "
+          "Stream Header</stream:error></stream:stream>">>).
 
 -define(INVALID_HANDSHAKE_ERR,
-    <<"<stream:error><not-authorized xmlns='urn:ietf"
-      ":params:xml:ns:xmpp-streams'/><text "
-      "xmlns='urn:ietf:params:xml:ns:xmpp-streams' "
-      "xml:lang='en'>Invalid Handshake</text></strea"
-      "m:error></stream:stream>">>).
+        <<"<stream:error><not-authorized xmlns='urn:ietf"
+          ":params:xml:ns:xmpp-streams'/><text "
+          "xmlns='urn:ietf:params:xml:ns:xmpp-streams' "
+          "xml:lang='en'>Invalid Handshake</text></strea"
+          "m:error></stream:stream>">>).
 
 -define(INVALID_XML_ERR,
-    fxml:element_to_binary(?SERR_XML_NOT_WELL_FORMED)).
+        fxml:element_to_binary(?SERR_XML_NOT_WELL_FORMED)).
 
 -define(INVALID_NS_ERR,
-    fxml:element_to_binary(?SERR_INVALID_NAMESPACE)).
+        fxml:element_to_binary(?SERR_INVALID_NAMESPACE)).
 
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
 start(SockData, Opts) ->
-    %% подписаться на получение призенсов 
     supervisor:start_child(ejabberd_service_sup,
-               [SockData, Opts]).
+                           [SockData, Opts]).
 
 start_link(SockData, Opts) ->
     (?GEN_FSM):start_link(ejabberd_service,
-              [SockData, Opts], fsm_limit_opts(Opts) ++ (?FSMOPTS)).
+                          [SockData, Opts], fsm_limit_opts(Opts) ++ (?FSMOPTS)).
 
 socket_type() -> xml_stream.
 
@@ -175,8 +174,7 @@ init([{SockMod, Socket}, Opts]) ->
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
-wait_for_stream({xmlstreamstart, _Name, Attrs},
-        StateData) ->
+wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
     case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       <<"jabber:component:accept">> ->
           To = fxml:get_attr_s(<<"to">>, Attrs),
@@ -213,10 +211,10 @@ wait_for_stream({xmlstreamstart, _Name, Attrs},
     end;
 wait_for_stream({xmlstreamerror, _}, StateData) ->
     Header = io_lib:format(?STREAM_HEADER,
-               [<<"none">>, ?MYNAME]),
+                           [<<"none">>, ?MYNAME]),
     send_text(StateData,
-          <<(list_to_binary(Header))/binary, (?INVALID_XML_ERR)/binary,
-        (?STREAM_TRAILER)/binary>>),
+              <<(list_to_binary(Header))/binary, (?INVALID_XML_ERR)/binary,
+                (?STREAM_TRAILER)/binary>>),
     {stop, normal, StateData};
 wait_for_stream(closed, StateData) ->
     {stop, normal, StateData}.
@@ -261,8 +259,8 @@ wait_for_handshake({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 wait_for_handshake({xmlstreamerror, _}, StateData) ->
     send_text(StateData,
-          <<(?INVALID_XML_ERR)/binary,
-        (?STREAM_TRAILER)/binary>>),
+              <<(?INVALID_XML_ERR)/binary,
+                (?STREAM_TRAILER)/binary>>),
     {stop, normal, StateData};
 wait_for_handshake(closed, StateData) ->
     {stop, normal, StateData}.
@@ -350,8 +348,7 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
-handle_sync_event(_Event, _From, StateName,
-          StateData) ->
+handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok, {reply, Reply, StateName, StateData}.
 
 code_change(_OldVsn, StateName, StateData, _Extra) ->
@@ -378,7 +375,7 @@ handle_info({route, From, To, Packet}, StateName,
               jlib:replace_from_to_attrs(jid:to_string(From),
                                          jid:to_string(To), Attrs),
           Text = fxml:element_to_binary(#xmlel{name = Name,
-                                              attrs = Attrs2, children = Els}),
+                                               attrs = Attrs2, children = Els}),
           send_text(StateData, Text);
       deny ->
           Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
@@ -603,7 +600,8 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
                             send_element(StateData, Err)
                     end;
                 _ ->
-                    ejabberd_router:route(FromJID, ToJID, Packet) %% ?
+                    Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN), 
+                    send_element(StateData, Err)
             end;
         _ ->
             ejabberd_router:route(FromJID, ToJID, Packet)
@@ -615,7 +613,6 @@ send_iq_result(StateData, From, To, #xmlel{attrs = Attrs } = Packet) ->
     Text = fxml:element_to_binary(Packet#xmlel{attrs = Attrs2}),
     send_text(StateData, Text).
 
-%% TODO: check forwarded rules
 process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet) ->
 %% if presence was send from service to server,
     PrivAccess = StateData#state.privilege_access,
