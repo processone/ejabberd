@@ -2863,7 +2863,8 @@ check_queue_length(#state{mgmt_queue = Queue,
 
 handle_unacked_stanzas(StateData, F)
     when StateData#state.mgmt_state == active;
-	 StateData#state.mgmt_state == pending ->
+	 StateData#state.mgmt_state == pending;
+	 StateData#state.mgmt_state == timeout ->
     Queue = StateData#state.mgmt_queue,
     case queue:len(Queue) of
       0 ->
@@ -2885,7 +2886,8 @@ handle_unacked_stanzas(_StateData, _F) ->
 
 handle_unacked_stanzas(StateData)
     when StateData#state.mgmt_state == active;
-	 StateData#state.mgmt_state == pending ->
+	 StateData#state.mgmt_state == pending;
+	 StateData#state.mgmt_state == timeout ->
     ResendOnTimeout =
 	case StateData#state.mgmt_resend of
 	  Resend when is_boolean(Resend) ->
