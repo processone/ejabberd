@@ -141,7 +141,7 @@ init([Host, Opts]) ->
                               fun iolist_to_binary/1,
                               false),
     AccessLog = gen_mod:get_opt(access_log, Opts,
-                                fun(A) when is_atom(A) -> A end,
+                                fun acl:access_rules_validator/1,
                                 muc_admin),
     Timezone = gen_mod:get_opt(timezone, Opts,
                                fun(local) -> local;

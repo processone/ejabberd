@@ -74,7 +74,7 @@ stop(Host) ->
 
 stream_feature_register(Acc, Host) ->
     AF = gen_mod:get_module_opt(Host, ?MODULE, access_from,
-                                          fun(A) when is_atom(A) -> A end,
+                                          fun(A) -> A end,
 					  all),
     case (AF /= none) and lists:keymember(<<"mechanisms">>, 2, Acc) of
 	true ->
@@ -126,7 +126,7 @@ process_iq(From, To,
 	  RTag = fxml:get_subtag(SubEl, <<"remove">>),
 	  Server = To#jid.lserver,
 	  Access = gen_mod:get_module_opt(Server, ?MODULE, access,
-                                          fun(A) when is_atom(A) -> A end,
+                                          fun(A) -> A end,
 					  all),
 	  AllowRemove = allow ==
 			  acl:match_rule(Server, Access, From),
@@ -402,7 +402,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
       _ ->
 	  JID = jid:make(User, Server, <<"">>),
 	  Access = gen_mod:get_module_opt(Server, ?MODULE, access,
-                                          fun(A) when is_atom(A) -> A end,
+                                          fun(A) -> A end,
 					  all),
 	  IPAccess = get_ip_access(Server),
 	  case {acl:match_rule(Server, Access, JID),
@@ -528,7 +528,7 @@ check_from(#jid{user = <<"">>, server = <<"">>},
     allow;
 check_from(JID, Server) ->
     Access = gen_mod:get_module_opt(Server, ?MODULE, access_from,
-                                    fun(A) when is_atom(A) -> A end,
+                                    fun(A) -> A end,
                                     none),
     acl:match_rule(Server, Access, JID).
 
@@ -736,13 +736,13 @@ check_ip_access(IPAddress, IPAccess) ->
     acl:match_rule(global, IPAccess, IPAddress).
 
 mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(access_from) ->
     fun (A) when is_atom(A) -> A end;
 mod_opt_type(captcha_protected) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(ip_access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(password_strength) ->
     fun (N) when is_number(N), N >= 0 -> N end;

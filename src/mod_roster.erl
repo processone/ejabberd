@@ -351,7 +351,7 @@ get_roster_by_jid_t(LUser, LServer, LJID) ->
 
 try_process_iq_set(From, To, #iq{sub_el = SubEl, lang = Lang} = IQ) ->
     #jid{server = Server} = From,
-    Access = gen_mod:get_module_opt(Server, ?MODULE, access, fun(A) when is_atom(A) -> A end, all),
+    Access = gen_mod:get_module_opt(Server, ?MODULE, access, fun(A) -> A end, all),
     case acl:match_rule(Server, Access, From) of
 	deny ->
 	    Txt = <<"Denied by ACL">>,
@@ -1235,7 +1235,7 @@ import(LServer, DBType, R) ->
     Mod:import(LServer, R).
 
 mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(managers) ->

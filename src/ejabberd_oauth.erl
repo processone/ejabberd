@@ -130,7 +130,7 @@ authenticate_user({User, Server}, {password, Password} = Ctx) ->
             Access =
                 ejabberd_config:get_option(
                   {oauth_access, JID#jid.lserver},
-                  fun(A) when is_atom(A) -> A end,
+		  fun(A) -> A end,
                   none),
             case acl:match_rule(JID#jid.lserver, Access, JID) of
                 allow ->
@@ -486,5 +486,5 @@ logo() ->
 opt_type(oauth_expire) ->
     fun(I) when is_integer(I), I >= 0 -> I end;
 opt_type(oauth_access) ->
-    fun(A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 opt_type(_) -> [oauth_expire, oauth_access].

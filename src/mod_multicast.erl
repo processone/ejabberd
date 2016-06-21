@@ -140,7 +140,7 @@ init([LServerS, Opts]) ->
     LServiceS = gen_mod:get_opt_host(LServerS, Opts,
 				     <<"multicast.@HOST@">>),
     Access = gen_mod:get_opt(access, Opts,
-			     fun (A) when is_atom(A) -> A end, all),
+			     fun acl:access_rules_validator/1, all),
     SLimits =
 	build_service_limit_record(gen_mod:get_opt(limits, Opts,
 						   fun (A) when is_list(A) ->
@@ -1220,7 +1220,7 @@ stj(String) -> jid:from_string(String).
 jts(String) -> jid:to_string(String).
 
 mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(limits) ->
     fun (A) when is_list(A) -> A end;

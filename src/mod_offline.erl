@@ -162,7 +162,7 @@ init([Host, Opts]) ->
 				  ?MODULE, handle_offline_query, IQDisc),
     AccessMaxOfflineMsgs =
 	gen_mod:get_opt(access_max_user_messages, Opts,
-			fun(A) when is_atom(A) -> A end,
+			fun acl:shaper_rules_validator/1,
 			max_user_offline_messages),
     {ok,
      #state{host = Host,
@@ -866,7 +866,7 @@ import(LServer, DBType, Data) ->
     Mod:import(LServer, Data).
 
 mod_opt_type(access_max_user_messages) ->
-    fun (A) -> A end;
+    fun acl:shaper_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(store_empty_body) ->
     fun (V) when is_boolean(V) -> V;

@@ -117,7 +117,7 @@ init([Host, Opts]) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     Access = gen_mod:get_opt(access, Opts,
-                             fun(A) when is_atom(A) -> A end,
+                             fun acl:access_rules_validator/1,
                              all),
     catch ets:new(irc_connection,
 		  [named_table, public,
@@ -1252,7 +1252,7 @@ import(LServer, DBType, Data) ->
     Mod:import(LServer, Data).
 
 mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default_encoding) ->
     fun iolist_to_binary/1;

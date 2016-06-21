@@ -903,7 +903,7 @@ send_announcement_to_all(Host, SubjectS, BodyS) ->
 
 get_access(Host) ->
     gen_mod:get_module_opt(Host, ?MODULE, access,
-                           fun(A) when is_atom(A) -> A end,
+                           fun(A) -> A end,
                            none).
 
 %%-------------------------------------------------------------------------
@@ -920,6 +920,6 @@ import(LServer, DBType, LA) ->
     Mod:import(LServer, LA).
 
 mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(_) -> [access, db_type].

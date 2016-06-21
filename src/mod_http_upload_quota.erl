@@ -99,9 +99,9 @@ stop(ServerHost) ->
 -spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
 
 mod_opt_type(access_soft_quota) ->
-    fun(A) when is_atom(A) -> A end;
+    fun acl:shaper_rules_validator/1;
 mod_opt_type(access_hard_quota) ->
-    fun(A) when is_atom(A) -> A end;
+    fun acl:shaper_rules_validator/1;
 mod_opt_type(max_days) ->
     fun(I) when is_integer(I), I > 0 -> I;
        (infinity) -> infinity
@@ -118,10 +118,10 @@ mod_opt_type(_) ->
 init({ServerHost, Opts}) ->
     process_flag(trap_exit, true),
     AccessSoftQuota = gen_mod:get_opt(access_soft_quota, Opts,
-				      fun(A) when is_atom(A) -> A end,
+				      fun acl:shaper_rules_validator/1,
 				      soft_upload_quota),
     AccessHardQuota = gen_mod:get_opt(access_hard_quota, Opts,
-				      fun(A) when is_atom(A) -> A end,
+				      fun acl:shaper_rules_validator/1,
 				      hard_upload_quota),
     MaxDays = gen_mod:get_opt(max_days, Opts,
 			      fun(I) when is_integer(I), I > 0 -> I;

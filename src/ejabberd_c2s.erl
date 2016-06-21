@@ -259,14 +259,10 @@ close(FsmRef) -> (?GEN_FSM):send_event(FsmRef, closed).
 %%%----------------------------------------------------------------------
 
 init([{SockMod, Socket}, Opts]) ->
-    Access = case lists:keysearch(access, 1, Opts) of
-	       {value, {_, A}} -> A;
-	       _ -> all
-	     end,
-    Shaper = case lists:keysearch(shaper, 1, Opts) of
-	       {value, {_, S}} -> S;
-	       _ -> none
-	     end,
+    Access = gen_mod:get_opt(access, Opts,
+			     fun acl:access_rules_validator/1, all),
+    Shaper = gen_mod:get_opt(shaper, Opts,
+			     fun acl:shaper_rules_validator/1, none),
     XMLSocket = case lists:keysearch(xml_socket, 1, Opts) of
 		  {value, {_, XS}} -> XS;
 		  _ -> false

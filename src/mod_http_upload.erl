@@ -178,7 +178,7 @@ mod_opt_type(host) ->
 mod_opt_type(name) ->
     fun iolist_to_binary/1;
 mod_opt_type(access) ->
-    fun(A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(max_size) ->
     fun(I) when is_integer(I), I > 0 -> I;
        (infinity) -> infinity
@@ -235,7 +235,7 @@ init({ServerHost, Opts}) ->
 			   fun iolist_to_binary/1,
 			   <<"HTTP File Upload">>),
     Access = gen_mod:get_opt(access, Opts,
-			     fun(A) when is_atom(A) -> A end,
+			     fun acl:access_rules_validator/1,
 			     local),
     MaxSize = gen_mod:get_opt(max_size, Opts,
 			      fun(I) when is_integer(I), I > 0 -> I;

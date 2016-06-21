@@ -193,14 +193,14 @@ init([Host, Opts]) ->
     clean_table_from_bad_node(node(), MyHost),
     mnesia:subscribe(system),
     Access = gen_mod:get_opt(access, Opts,
-                             fun(A) when is_atom(A) -> A end, all),
+                             fun acl:access_rules_validator/1, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts,
-                                   fun(A) when is_atom(A) -> A end, all),
+                                   fun acl:access_rules_validator/1, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts,
-                                  fun(A) when is_atom(A) -> A end,
+                                  fun acl:access_rules_validator/1,
                                   none),
     AccessPersistent = gen_mod:get_opt(access_persistent, Opts,
-				       fun(A) when is_atom(A) -> A end,
+				       fun acl:access_rules_validator/1,
                                        all),
     HistorySize = gen_mod:get_opt(history_size, Opts,
                                   fun(I) when is_integer(I), I>=0 -> I end,
@@ -925,13 +925,13 @@ import(LServer, DBType, Data) ->
     Mod:import(LServer, Data).
 
 mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(access_admin) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(access_create) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(access_persistent) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default_room_options) ->
     fun (L) when is_list(L) -> L end;
