@@ -761,7 +761,7 @@ is_admin(Name, Auth, Extra) ->
 	      end,
     AdminAccess = ejabberd_config:get_option(
                     commands_admin_access,
-                    fun(A) when is_atom(A) -> A end,
+		    fun(V) -> V end,
                     none),
     case acl:access_matches(AdminAccess, ACLInfo, Server) of
         allow ->
@@ -773,8 +773,7 @@ is_admin(Name, Auth, Extra) ->
         deny -> false
     end.
 
-opt_type(commands_admin_access) ->
-    fun(A) when is_atom(A) -> A end;
+opt_type(commands_admin_access) -> fun acl:access_rules_validator/1;
 opt_type(commands) ->
     fun(V) when is_list(V) -> V end;
 opt_type(_) -> [commands, commands_admin_access].

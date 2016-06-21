@@ -173,7 +173,7 @@ check_permissions2(_Request, Call, open) ->
     {allowed, Call, noauth};
 check_permissions2(#request{ip={IP, _Port}}, Call, _Policy) ->
     Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access,
-                                    mod_opt_type(admin_ip_access),
+                                    fun(V) -> V end,
                                     none),
     Res = acl:match_rule(global, Access, IP),
     case Res of
@@ -502,6 +502,5 @@ log(Call, Args, {Addr, Port}) ->
 log(Call, Args, IP) ->
     ?INFO_MSG("API call ~s ~p (~p)", [Call, Args, IP]).
 
-mod_opt_type(admin_ip_access) ->
-    fun(Access) when is_atom(Access) -> Access end;
+mod_opt_type(admin_ip_access) -> fun acl:access_rules_validator/1;
 mod_opt_type(_) -> [admin_ip_access].
