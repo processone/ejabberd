@@ -2802,7 +2802,9 @@ check_h_attribute(#state{mgmt_stanzas_out = NumStanzasOut} = StateData, H) ->
 	   [jid:to_string(StateData#state.jid), H, NumStanzasOut]),
     mgmt_queue_drop(StateData, H).
 
-update_num_stanzas_in(#state{mgmt_state = active} = StateData, El) ->
+update_num_stanzas_in(StateData, El)
+    when StateData#state.mgmt_state == active;
+	 StateData#state.mgmt_state == pending ->
     NewNum = case {is_stanza(El), StateData#state.mgmt_stanzas_in} of
 	       {true, 4294967295} ->
 		   0;
