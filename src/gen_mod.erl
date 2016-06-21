@@ -266,18 +266,25 @@ get_opt_host(Host, Opts, Default) ->
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
 validate_opts(Module, Opts) ->
-    lists:filter(
+    lists:filtermap(
       fun({Opt, Val}) ->
 	      case catch Module:mod_opt_type(Opt) of
 		  VFun when is_function(VFun) ->
-		      case catch VFun(Val) of
-			  {'EXIT', _} ->
+		      try VFun(Val) of
+			  _ ->
+			      true
+		      catch {replace_with, NewVal} ->
+			      {true, {Opt, NewVal}};
+			    {invalid_syntax, Error} ->
+			      ?ERROR_MSG("ignoring invalid value '~p' for "
+					 "option '~s' of module '~s': ~s",
+					 [Val, Opt, Module, Error]),
+			      false;
+			    _:_ ->
 			      ?ERROR_MSG("ignoring invalid value '~p' for "
 					 "option '~s' of module '~s'",
 					 [Val, Opt, Module]),
-			      false;
-			  _ ->
-			      true
+			      false
 		      end;
 		  L when is_list(L) ->
 		      SOpts = str:join([[$', atom_to_list(A), $'] || A <- L], <<", ">>),

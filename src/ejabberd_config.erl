@@ -770,22 +770,32 @@ add_option(Opt, Val) ->
 -spec prepare_opt_val(any(), any(), check_fun(), any()) -> any().
 
 prepare_opt_val(Opt, Val, F, Default) ->
-    Res = case F of
-              {Mod, Fun} ->
-                  catch Mod:Fun(Val);
-              _ ->
-                  catch F(Val)
-          end,
-    case Res of
-        {'EXIT', _} ->
+    Call = case F of
+	       {Mod, Fun} ->
+		   fun() -> Mod:Fun(Val) end;
+	       _ ->
+		   fun() -> F(Val) end
+	   end,
+    try Call() of
+	Res ->
+	    Res
+    catch {replace_with, NewRes} ->
+	    NewRes;
+	  {invalid_syntax, Error} ->
+	    ?WARNING_MSG("incorrect value '~s' of option '~s', "
+			 "using '~s' as fallback: ~s",
+			 [format_term(Val),
+			  format_term(Opt),
+			  format_term(Default),
+			  Error]),
+	    Default;
+	  _:_ ->
 	    ?WARNING_MSG("incorrect value '~s' of option '~s', "
 			 "using '~s' as fallback",
 			 [format_term(Val),
 			  format_term(Opt),
 			  format_term(Default)]),
-            Default;
-        _ ->
-            Res
+	    Default
     end.
 
 -type check_fun() :: fun((any()) -> any()) | {module(), atom()}.
@@ -908,19 +918,26 @@ get_modules_with_options() ->
 
 validate_opts(#state{opts = Opts} = State) ->
     ModOpts = get_modules_with_options(),
-    NewOpts = lists:filter(
-		fun(#local_config{key = {Opt, _Host}, value = Val}) ->
+    NewOpts = lists:filtermap(
+		fun(#local_config{key = {Opt, _Host}, value = Val} = In) ->
 			case dict:find(Opt, ModOpts) of
 			    {ok, [Mod|_]} ->
 				VFun = Mod:opt_type(Opt),
-				case catch VFun(Val) of
-				    {'EXIT', _} ->
+				try VFun(Val) of
+				    _ ->
+					true
+				catch {replace_with, NewVal} ->
+					{true, In#local_config{value = NewVal}};
+				      {invalid_syntax, Error} ->
+					?ERROR_MSG("ignoring option '~s' with "
+						   "invalid value: ~p: ~s",
+						   [Opt, Val, Error]),
+					false;
+				      _:_ ->
 					?ERROR_MSG("ignoring option '~s' with "
 						   "invalid value: ~p",
 						   [Opt, Val]),
-					false;
-				    _ ->
-					true
+					false
 				end;
 			    _ ->
 				?ERROR_MSG("unknown option '~s' will be likely"
