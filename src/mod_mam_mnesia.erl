@@ -52,7 +52,10 @@ remove_room(_LServer, LName, LHost) ->
     remove_user(LName, LHost).
 
 delete_old_messages(global, TimeStamp, Type) ->
-    delete_old_user_messages(mnesia:dirty_first(archive_msg), TimeStamp, Type).
+    mnesia:change_table_copy_type(archive_msg, node(), disc_copies),
+    Result = delete_old_user_messages(mnesia:dirty_first(archive_msg), TimeStamp, Type),
+    mnesia:change_table_copy_type(archive_msg, node(), disc_only_copies),
+    Result.
 
 delete_old_user_messages('$end_of_table', _TimeStamp, _Type) ->
     ok;
