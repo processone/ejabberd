@@ -34,7 +34,8 @@
 	 load_from_config/0, match_rule/3,
 	 transform_options/1, opt_type/1, acl_rule_matches/3,
 	 acl_rule_verify/1, access_matches/3,
-	 transform_access_rules_config/1]).
+	 transform_access_rules_config/1,
+	 access_rules_validator/1, shaper_rules_validator/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -334,6 +335,25 @@ acl_rule_verify({node_glob, {UR, SR}}) when is_binary(UR), is_binary(SR) ->
     true;
 acl_rule_verify(_Spec) ->
     false.
+invalid_syntax(Msg, Data) ->
+    throw({invalid_syntax, iolist_to_binary(io_lib:format(Msg, Data))}).
+
+acl_rules_verify([{acl, Name} | Rest], true) when is_atom(Name) ->
+    acl_rules_verify(Rest, true);
+acl_rules_verify([{acl, Name} = Rule | _Rest], false) when is_atom(Name) ->
+    invalid_syntax(<<"Using acl: rules not allowed: ~p">>, [Rule]);
+acl_rules_verify([Rule | Rest], AllowAcl) ->
+    case acl_rule_verify(Rule) of
+	false ->
+	    invalid_syntax(<<"Invalid rule: ~p">>, [Rule]);
+	true ->
+	    acl_rules_verify(Rest, AllowAcl)
+    end;
+acl_rules_verify([], _AllowAcl) ->
+    true;
+acl_rules_verify(Rules, _AllowAcl) ->
+    invalid_syntax(<<"Not a acl rules list: ~p">>, [Rules]).
+
 
 
 all_acl_rules_matches([], _Data, _Host) ->
@@ -532,6 +552,44 @@ transform_access_rules_config2({Res, Rules}) when is_list(Rules) ->
     {Res, T};
 transform_access_rules_config2({Res, Rule}) ->
     {Res, [Rule]}.
+
+access_rules_validator(Name) when is_atom(Name) ->
+    Name;
+access_rules_validator(Rules0) ->
+    Rules = transform_access_rules_config(Rules0),
+    access_shaper_rules_validator(Rules, fun(allow) -> true;
+					  (deny) -> true;
+					  (_) -> false
+				       end),
+    throw({replace_with, Rules}).
+
+
+shaper_rules_validator(Name) when is_atom(Name) ->
+    Name;
+shaper_rules_validator(Rules0) ->
+    Rules = transform_access_rules_config(Rules0),
+    access_shaper_rules_validator(Rules, fun(V) when is_atom(V) -> true;
+					  (V2) when is_integer(V2) -> true;
+					  (_) -> false
+				       end),
+    throw({replace_with, Rules}).
+
+access_shaper_rules_validator([{Type, Acls} = Rule | Rest], RuleTypeCheck) ->
+    case RuleTypeCheck(Type) of
+	true ->
+	    case acl_rules_verify(Acls, true) of
+		true ->
+		    access_shaper_rules_validator(Rest, RuleTypeCheck);
+		Err ->
+		    Err
+	    end;
+	false ->
+	    invalid_syntax(<<"Invalid rule type: ~p in rule ~p">>, [Type, Rule])
+    end;
+access_shaper_rules_validator([], _RuleTypeCheck) ->
+    true;
+access_shaper_rules_validator(Value, _RuleTypeCheck) ->
+    invalid_syntax(<<"Not a rule definition: ~p">>, [Value]).
 
 
 transform_options(Opts) ->
