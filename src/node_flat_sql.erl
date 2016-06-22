@@ -686,13 +686,10 @@ get_items(Nidx, _From,
 	    #rsm_in{max = M, direction = Direction, id = I, index = IncIndex}) ->
     Max = ejabberd_sql:escape(jlib:i2l(M)),
     {Way, Order} = case Direction of
-	%     aft -> {<<"<">>, <<"desc">>};
-	%     before when I == <<>> -> {<<"is not">>, <<"asc">>};
-	%     before -> {<<">">>, <<"asc">>};
-	%     _ when IncIndex =/= undefined ->
-	%         {<<"<">>, <<"desc">>}; % using index
-	_ ->
-	    {<<"is not">>, <<"desc">>}% Can be better
+	     aft when I == <<>> -> {<<"is not">>, <<"desc">>};
+	     aft -> {<<"<">>, <<"desc">>};
+	     before when I == <<>> -> {<<"is not">>, <<"asc">>};
+	     before -> {<<">">>, <<"asc">>}
     end,
     SNidx = integer_to_binary(Nidx),
     [AttrName, Id] = case I of
