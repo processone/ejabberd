@@ -689,7 +689,8 @@ get_items(Nidx, _From,
 	     aft when I == <<>> -> {<<"is not">>, <<"desc">>};
 	     aft -> {<<"<">>, <<"desc">>};
 	     before when I == <<>> -> {<<"is not">>, <<"asc">>};
-	     before -> {<<">">>, <<"asc">>}
+	     before -> {<<">">>, <<"asc">>};
+	     _ -> {<<"is not">>, <<"desc">>}
     end,
     SNidx = integer_to_binary(Nidx),
     [AttrName, Id] = case I of
