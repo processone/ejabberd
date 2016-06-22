@@ -351,6 +351,74 @@ defmodule ACLTest do
     assert :acl.transform_access_rules_config(:fast) == [{:fast, [:all]}]
   end
 
+  test "access_rules_validator works with <AccessName>" do
+    assert :acl.access_rules_validator(:my_access) == :my_access
+  end
+
+  test "get_opt with access_rules_validation works with <AccessName>" do
+    assert :gen_mod.get_opt(:access, [access: :my_rule], &:acl.access_rules_validator/1)
+    == :my_rule
+  end
+
+  test "get_opt with access_rules_validation perform normalization for acl rules" do
+    assert :gen_mod.get_opt(:access, [access: [[allow: :zed]]], &:acl.access_rules_validator/1)
+    == [allow: [acl: :zed]]
+  end
+
+  test "get_opt with access_rules_validation perform normalization for user@server rules" do
+    assert :gen_mod.get_opt(:access, [access: [allow: [user: "a@b"]]], &:acl.access_rules_validator/1)
+    == [allow: [user: {"a", "b"}]]
+  end
+
+  test "get_opt with access_rules_validation return default value with number as rule type" do
+    assert :gen_mod.get_opt(:access, [access: [{100, [user: "a@b"]}]], &:acl.access_rules_validator/1)
+    == :undefined
+  end
+
+  test "get_opt with access_rules_validation return default value when invalid rule type is passed" do
+    assert :gen_mod.get_opt(:access, [access: [allow2: [user: "a@b"]]], &:acl.access_rules_validator/1)
+    == :undefined
+  end
+
+  test "get_opt with access_rules_validation return default value when invalid acl is passed" do
+    assert :gen_mod.get_opt(:access, [access: [allow: [user2: "a@b"]]], &:acl.access_rules_validator/1)
+    == :undefined
+  end
+
+  test "shapes_rules_validator works with <AccessName>" do
+    assert :acl.shaper_rules_validator(:my_access) == :my_access
+  end
+
+  test "get_opt with shaper_rules_validation works with <AccessName>" do
+    assert :gen_mod.get_opt(:access, [access: :my_rule], &:acl.shaper_rules_validator/1)
+    == :my_rule
+  end
+
+  test "get_opt with shaper_rules_validation perform normalization for acl rules" do
+    assert :gen_mod.get_opt(:access, [access: [[allow: :zed]]], &:acl.shaper_rules_validator/1)
+    == [allow: [acl: :zed]]
+  end
+
+  test "get_opt with shaper_rules_validation perform normalization for user@server rules" do
+    assert :gen_mod.get_opt(:access, [access: [allow: [user: "a@b"]]], &:acl.shaper_rules_validator/1)
+    == [allow: [user: {"a", "b"}]]
+  end
+
+  test "get_opt with shaper_rules_validation return accepts number as rule type" do
+    assert :gen_mod.get_opt(:access, [access: [{100, [user: "a@b"]}]], &:acl.shaper_rules_validator/1)
+    == [{100, [user: {"a", "b"}]}]
+  end
+
+  test "get_opt with shaper_rules_validation return accepts any atom as rule type" do
+    assert :gen_mod.get_opt(:access, [access: [fast: [user: "a@b"]]], &:acl.shaper_rules_validator/1)
+    == [fast: [user: {"a", "b"}]]
+  end
+
+  test "get_opt with shaper_rules_validation return default value when invalid acl is passed" do
+    assert :gen_mod.get_opt(:access, [access: [allow: [user2: "a@b"]]], &:acl.shaper_rules_validator/1)
+    == :undefined
+  end
+
   ## Checking ACL on both user pattern and IP
   ## ========================================
 
