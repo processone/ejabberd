@@ -494,15 +494,9 @@ access_rules:
   ## Only admins can use the configuration interface:
   configure: 
     - allow: admin
-  ## Admins of this server are also admins of the MUC service:
-  muc_admin: 
-    - allow: admin
   ## Only accounts of the local ejabberd server can create rooms:
   muc_create: 
     - allow: local
-  ## All users are allowed to use the MUC service:
-  muc: 
-    - allow
   ## Only accounts on the local ejabberd server can create Pubsub nodes:
   pubsub_createnode: 
     - allow: local
@@ -596,10 +590,12 @@ modules:
   mod_last: {}
   mod_muc: 
     ## host: "conference.@HOST@"
-    access: muc
+    access:
+      - allow
+    access_admin:
+      - allow: admin
     access_create: muc_create
     access_persistent: muc_create
-    access_admin: muc_admin
   ## mod_muc_log: {}
   ## mod_multicast: {}
   mod_offline: 
