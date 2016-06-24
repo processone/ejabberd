@@ -371,6 +371,16 @@ all_acl_rules_matches2([Rule | Tail], Data, Host) ->
 all_acl_rules_matches2([], _Data, _Host) ->
     true.
 
+any_acl_rules_matches([], _Data, _Host) ->
+    false;
+any_acl_rules_matches([Rule|Tail], Data, Host) ->
+    case acl_rule_matches(Rule, Data, Host) of
+	true ->
+	    true;
+	false ->
+	    any_acl_rules_matches(Tail, Data, Host)
+    end.
+
 -spec acl_rule_matches(aclspec(), any(), global|binary()) -> boolean().
 
 acl_rule_matches(all, _Data, _Host) ->
@@ -380,7 +390,7 @@ acl_rule_matches({acl, all}, _Data, _Host) ->
 acl_rule_matches({acl, Name}, Data, Host) ->
     ACLs = get_aclspecs(Name, Host),
     RawACLs = lists:map(fun(#acl{aclspec = R}) -> R end, ACLs),
-    all_acl_rules_matches(RawACLs, Data, Host);
+    any_acl_rules_matches(RawACLs, Data, Host);
 acl_rule_matches({ip, {Net, Mask}}, #{ip := {IP, _Port}}, _Host) ->
     is_ip_match(IP, Net, Mask);
 acl_rule_matches({ip, {Net, Mask}}, #{ip := IP}, _Host) ->

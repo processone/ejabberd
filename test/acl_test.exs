@@ -36,13 +36,17 @@ defmodule ACLTest do
 
   test "access rule match with user part ACL" do
     :acl.add(:global, :basic_acl_1, {:user, "test1"})
+    :acl.add(:global, :basic_acl_1, {:user, "test2"})
     :acl.add_access(:global, :basic_rule_1, [{:allow, [{:acl, :basic_acl_1}]}])
     # JID can only be passes as jid record.
     # => TODO: Support passing JID as binary.
     assert :acl.match_rule(:global, :basic_rule_1, :jid.from_string("test1@domain1")) == :allow
     assert :acl.match_rule(:global, :basic_rule_1, :jid.from_string("test1@domain2")) == :allow
+    assert :acl.match_rule(:global, :basic_rule_1, :jid.from_string("test2@domain1")) == :allow
+    assert :acl.match_rule(:global, :basic_rule_1, :jid.from_string("test2@domain2")) == :allow
     # We match on user part only for local domain. As an implicit rule remote domain are not matched
     assert :acl.match_rule(:global, :basic_rule_1, :jid.from_string("test1@otherdomain")) == :deny
+    assert :acl.match_rule(:global, :basic_rule_1, :jid.from_string("test2@otherdomain")) == :deny
     assert :acl.match_rule(:global, :basic_rule_1, :jid.from_string("test11@domain1")) == :deny
 
     :acl.add(:global, :basic_acl_2, {:user, {"test2", "domain1"}})
