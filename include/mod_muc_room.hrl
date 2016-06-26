@@ -53,6 +53,7 @@
     members_by_default                   = true :: boolean(),
     members_only                         = false :: boolean(),
     allow_user_invites                   = false :: boolean(),
+    allow_subscription                   = false :: boolean(),
     password_protected                   = false :: boolean(),
     password                             = <<"">> :: binary(),
     anonymous                            = true :: boolean(),
@@ -76,6 +77,8 @@
     jid :: jid(),
     nick :: binary(),
     role :: role(),
+    is_subscriber = false :: boolean(),
+    subscriptions = [] :: [binary()],
     last_presence :: xmlel()
 }).
 
