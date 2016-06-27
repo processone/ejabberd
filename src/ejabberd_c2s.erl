@@ -364,11 +364,17 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 		    %% avoid possible DoS/flood attacks
 		    <<"">>
 	    end,
+	    StreamVersion = case fxml:get_attr_s(<<"version">>, Attrs) of
+			      <<"1.0">> ->
+				  <<"1.0">>;
+			      _ ->
+				  <<"">>
+			  end,
 	    IsBlacklistedIP = is_ip_blacklisted(StateData#state.ip, Lang),
 	    case lists:member(Server, ?MYHOSTS) of
 		true when IsBlacklistedIP == false ->
 		    change_shaper(StateData, jid:make(<<"">>, Server, <<"">>)),
-		    case fxml:get_attr_s(<<"version">>, Attrs) of
+		    case StreamVersion of
 			<<"1.0">> ->
 			    send_header(StateData, Server, <<"1.0">>, DefaultLang),
 			    case StateData#state.authenticated of
@@ -534,11 +540,11 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 		    {true, LogReason, ReasonT} = IsBlacklistedIP,
 		    ?INFO_MSG("Connection attempt from blacklisted IP ~s: ~s",
 			[jlib:ip_to_list(IP), LogReason]),
-		    send_header(StateData, Server, <<"">>, DefaultLang),
+		    send_header(StateData, Server, StreamVersion, DefaultLang),
 		    send_element(StateData, ?POLICY_VIOLATION_ERR(Lang, ReasonT)),
 		    {stop, normal, StateData};
 		_ ->
-		    send_header(StateData, ?MYNAME, <<"">>, DefaultLang),
+		    send_header(StateData, ?MYNAME, StreamVersion, DefaultLang),
 		    send_element(StateData, ?HOST_UNKNOWN_ERR),
 		    {stop, normal, StateData}
 	    end;
