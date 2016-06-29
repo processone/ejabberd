@@ -66,7 +66,7 @@ start(Host, Opts) ->
     QueuePEP =
 	gen_mod:get_opt(queue_pep, Opts,
 			fun(B) when is_boolean(B) -> B end,
-			false),
+			true),
     if QueuePresence; QueueChatStates; QueuePEP ->
 	   ejabberd_hooks:add(c2s_post_auth_features, Host, ?MODULE,
 			      add_stream_feature, 50),
@@ -106,7 +106,7 @@ stop(Host) ->
     QueuePEP =
 	gen_mod:get_module_opt(Host, ?MODULE, queue_pep,
 			       fun(B) when is_boolean(B) -> B end,
-			       false),
+			       true),
     if QueuePresence; QueueChatStates; QueuePEP ->
 	   ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
 				 add_stream_feature, 50),
