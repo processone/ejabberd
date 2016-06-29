@@ -39,6 +39,7 @@
          authenticate_user/2,
          authenticate_client/2,
          verify_resowner_scope/3,
+         verify_client_scope/3,
          associate_access_code/3,
          associate_access_token/3,
          associate_refresh_token/3,
@@ -46,6 +47,8 @@
          check_token/2,
          process/2,
          opt_type/1]).
+
+-export([oauth_issue_token/1, oauth_list_tokens/0, oauth_revoke_token/1, oauth_list_scopes/0]).
 
 -include("jlib.hrl").
 
@@ -55,9 +58,16 @@
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 
+-include("ejabberd_commands.hrl").
+
+
+%% There are two ways to obtain an oauth token:
+%%   * Using the web form/api results in the token being generated in behalf of the user providing the user/pass
+%%   * Using the command line and oauth_issue_token command, the token is generated in behalf of ejabberd' sysadmin
+%%    (as it has access to ejabberd command line).
 -record(oauth_token, {
           token = {<<"">>, <<"">>} :: {binary(), binary()},
-          us = {<<"">>, <<"">>}    :: {binary(), binary()},
+          us = {<<"">>, <<"">>}    :: {binary(), binary()} | server_admin,
           scope = []               :: [binary()],
           expire                   :: integer()
          }).
@@ -73,7 +83,76 @@ start() ->
     ChildSpec = {?MODULE, {?MODULE, start_link, []},
 		 temporary, 1000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec),
+    ejabberd_commands:register_commands(get_commands_spec()),
     ok.
+
+
+get_commands_spec() ->
+    [
+     #ejabberd_commands{name = oauth_issue_token, tags = [oauth],
+                        desc = "Issue an oauth token. Available scopes are the ones usable by ejabberd admins",
+                        module = ?MODULE, function = oauth_issue_token,
+                        args = [{scopes, string}],
+                        policy = restricted,
+                        args_example = ["connected_users_number;muc_online_rooms"],
+                        args_desc = ["List of scopes to allow, separated by ';'"],
+                        result = {result, {tuple, [{token, string}, {scopes, string}, {expires_in, string}]}}
+                       },
+     #ejabberd_commands{name = oauth_list_tokens, tags = [oauth],
+                        desc = "List oauth tokens, their scope, and how many seconds remain until expirity",
+                        module = ?MODULE, function = oauth_list_tokens,
+                        args = [],
+                        policy = restricted,
+                        result = {tokens, {list, {token, {tuple, [{token, string}, {scope, string}, {expires_in, string}]}}}}
+                       },
+     #ejabberd_commands{name = oauth_list_scopes, tags = [oauth],
+                        desc = "List scopes that can be granted to tokens generated through the command line",
+                        module = ?MODULE, function = oauth_list_scopes,
+                        args = [],
+                        policy = restricted,
+                        result = {scopes, {list, {scope, string}}}
+                       },
+     #ejabberd_commands{name = oauth_revoke_token, tags = [oauth],
+                        desc = "Revoke authorization for a token",
+                        module = ?MODULE, function = oauth_revoke_token,
+                        args = [{token, string}],
+                        policy = restricted,
+                        result = {tokens, {list, {token, {tuple, [{token, string}, {scope, string}, {expires_in, string}]}}}},
+                        result_desc = "List of remaining tokens"
+                       }
+    ].
+
+oauth_issue_token(ScopesString) ->
+    Scopes = [list_to_binary(Scope) || Scope <- string:tokens(ScopesString, ";")],
+    case oauth2:authorize_client_credentials(ejabberd_ctl, Scopes, none) of
+        {ok, {_AppCtx, Authorization}} ->
+            {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, none),
+            {ok, AccessToken} = oauth2_response:access_token(Response),
+            {ok, Expires} = oauth2_response:expires_in(Response),
+            {ok, VerifiedScope} = oauth2_response:scope(Response),
+            {AccessToken, VerifiedScope, integer_to_list(Expires) ++ " seconds"};
+        {error, Error} ->
+            {error, Error}
+    end.
+
+oauth_list_tokens() ->
+    Tokens = mnesia:dirty_match_object(#oauth_token{us = server_admin, _ = '_'}),
+    {MegaSecs, Secs, _MiniSecs} = os:timestamp(),
+    TS = 1000000 * MegaSecs + Secs,
+    [{Token, Scope, integer_to_list(Expires - TS) ++ " seconds"} ||
+        #oauth_token{token=Token, scope=Scope, expire=Expires} <- Tokens].
+
+
+oauth_revoke_token(Token) ->
+    ok = mnesia:dirty_delete(oauth_token, list_to_binary(Token)),
+    oauth_list_tokens().
+
+oauth_list_scopes() ->
+    get_cmd_scopes().
+
+
+
+
 
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -164,20 +243,46 @@ verify_resowner_scope(_, _, _) ->
     {error, badscope}.
 
 
+get_cmd_scopes() ->
+    Cmds = lists:filter(fun(Cmd) -> case ejabberd_commands:get_command_policy(Cmd) of
+                                        {ok, Policy} when Policy =/= restricted -> true;
+                                        _ -> false
+                                    end end,
+                        ejabberd_commands:get_commands()),
+    [atom_to_binary(C, utf8) || C <- Cmds].
+
+%% This is callback for oauth tokens generated through the command line.  Only open and admin commands are
+%% made available.
+verify_client_scope({client, ejabberd_ctl}, Scope, Ctx) ->
+    RegisteredScope = get_cmd_scopes(),
+    case oauth2_priv_set:is_subset(oauth2_priv_set:new(Scope),
+                                   oauth2_priv_set:new(RegisteredScope)) of
+        true ->
+            {ok, {Ctx, Scope}};
+        false ->
+            {error, badscope}
+    end.
+
+
+
+
+
 associate_access_code(_AccessCode, _Context, AppContext) ->
     %put(?ACCESS_CODE_TABLE, AccessCode, Context),
     {ok, AppContext}.
 
 associate_access_token(AccessToken, Context, AppContext) ->
-    {user, User, Server} =
-        proplists:get_value(<<"resource_owner">>, Context, <<"">>),
+    %% Tokens generated using the API/WEB belongs to users and always include the user, server pair.
+    %% Tokens generated form command line aren't tied to an user, and instead belongs to the ejabberd sysadmin
+    US = case proplists:get_value(<<"resource_owner">>, Context, <<"">>) of
+                               {user, User, Server} -> {jid:nodeprep(User), jid:nodeprep(Server)};
+                               undefined -> server_admin
+                           end,
     Scope = proplists:get_value(<<"scope">>, Context, []),
     Expire = proplists:get_value(<<"expiry_time">>, Context, 0),
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
     R = #oauth_token{
       token = AccessToken,
-      us = {LUser, LServer},
+      us = US,
       scope = Scope,
       expire = Expire
      },
@@ -207,7 +312,7 @@ check_token(User, Server, Scope, Token) ->
 
 check_token(Scope, Token) ->
     case catch mnesia:dirty_read(oauth_token, Token) of
-        [#oauth_token{us = {LUser, LServer},
+        [#oauth_token{us = US,
                       scope = TokenScope,
                       expire = Expire}] ->
             {MegaSecs, Secs, _} = os:timestamp(),
@@ -215,7 +320,10 @@ check_token(Scope, Token) ->
             case oauth2_priv_set:is_member(
                    Scope, oauth2_priv_set:new(TokenScope)) andalso
                 Expire > TS of
-                true -> {ok, LUser, LServer};
+                true -> case US of
+                            {LUser, LServer} -> {ok, user, {LUser, LServer}};
+                            server_admin -> {ok, server_admin}
+                        end;
                 false -> false
             end;
         _ ->
