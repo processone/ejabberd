@@ -138,12 +138,15 @@ select(_LServer, JidRequestor,
     SortedMsgs = lists:keysort(#archive_msg.timestamp, Msgs),
     {FilteredMsgs, IsComplete} = filter_by_rsm(SortedMsgs, RSM),
     Count = length(Msgs),
-    {lists:map(
-       fun(Msg) ->
-	       {Msg#archive_msg.id,
-		jlib:binary_to_integer(Msg#archive_msg.id),
-		mod_mam:msg_to_el(Msg, MsgType, JidRequestor, JidArchive)}
-       end, FilteredMsgs), IsComplete, Count}.
+    Result = {lists:map(
+		fun(Msg) ->
+			{Msg#archive_msg.id,
+			 jlib:binary_to_integer(Msg#archive_msg.id),
+			 mod_mam:msg_to_el(Msg, MsgType, JidRequestor,
+					   JidArchive)}
+		end, FilteredMsgs), IsComplete, Count},
+    erlang:garbage_collect(),
+    Result.
 
 %%%===================================================================
 %%% Internal functions
