@@ -402,17 +402,13 @@ get_entity_subscriptions(Host, Owner) ->
     end,
     {result, Reply}.
 
--spec(get_entity_subscriptions_for_send_last/2 ::
-    (
-	Host :: mod_pubsub:hostPubsub(),
-	Owner :: jid())
-    -> {result,
-    [{mod_pubsub:pubsubNode(),
-    mod_pubsub:subscription(),
-    mod_pubsub:subId(),
-    ljid()}]
-    }
-    ).
+-spec get_entity_subscriptions_for_send_last(Host :: mod_pubsub:hostPubsub(),
+					     Owner :: jid()) ->
+						    {result, [{mod_pubsub:pubsubNode(),
+							       mod_pubsub:subscription(),
+							       mod_pubsub:subId(),
+							       ljid()}]}.
+
 get_entity_subscriptions_for_send_last(Host, Owner) ->
     SubKey = jid:tolower(Owner),
     GenKey = jid:remove_resource(SubKey),
@@ -611,11 +607,9 @@ get_state(Nidx, JID) ->
     {SJID, _} = State#pubsub_state.stateid,
     State#pubsub_state{items = itemids(Nidx, SJID)}.
 
--spec(get_state_without_itemids/2 ::
-    (Nidx :: mod_pubsub:nodeIdx(),
-	Key :: ljid()) ->
-    mod_pubsub:pubsubState()
-    ).
+-spec get_state_without_itemids(Nidx :: mod_pubsub:nodeIdx(), Key :: ljid()) ->
+				       mod_pubsub:pubsubState().
+
 get_state_without_itemids(Nidx, JID) ->
     J = encode_jid(JID),
     case catch
@@ -973,17 +967,11 @@ update_subscription(Nidx, JID, Subscription) ->
         "-affiliation='n'"
        ]).
 
--spec(decode_jid/1 ::
-    (   SJID :: binary())
-    -> ljid()
-    ).
+-spec decode_jid(SJID :: binary()) -> ljid().
 decode_jid(SJID) ->
     jid:tolower(jid:from_string(SJID)).
 
--spec(decode_affiliation/1 ::
-    (   Arg :: binary())
-    -> atom()
-    ).
+-spec decode_affiliation(Arg :: binary()) -> atom().
 decode_affiliation(<<"o">>) -> owner;
 decode_affiliation(<<"p">>) -> publisher;
 decode_affiliation(<<"u">>) -> publish_only;
@@ -991,19 +979,13 @@ decode_affiliation(<<"m">>) -> member;
 decode_affiliation(<<"c">>) -> outcast;
 decode_affiliation(_) -> none.
 
--spec(decode_subscription/1 ::
-    (   Arg :: binary())
-    -> atom()
-    ).
+-spec decode_subscription(Arg :: binary()) -> atom().
 decode_subscription(<<"s">>) -> subscribed;
 decode_subscription(<<"p">>) -> pending;
 decode_subscription(<<"u">>) -> unconfigured;
 decode_subscription(_) -> none.
 
--spec(decode_subscriptions/1 ::
-    (   Subscriptions :: binary())
-    -> [] | [{atom(), binary()},...]
-    ).
+-spec decode_subscriptions(Subscriptions :: binary()) -> [] | [{atom(), binary()},...].
 decode_subscriptions(Subscriptions) ->
     lists:foldl(fun (Subscription, Acc) ->
 		case str:tokens(Subscription, <<":">>) of
@@ -1013,36 +995,24 @@ decode_subscriptions(Subscriptions) ->
 	end,
 	[], str:tokens(Subscriptions, <<",">>)).
 
--spec(encode_jid/1 ::
-    (   JID :: ljid())
-    -> binary()
-    ).
+-spec encode_jid(JID :: ljid()) -> binary().
 encode_jid(JID) ->
     jid:to_string(JID).
 
--spec(encode_jid_like/1 :: (JID :: ljid()) -> binary()).
+-spec encode_jid_like(JID :: ljid()) -> binary().
 encode_jid_like(JID) ->
     ejabberd_sql:escape_like_arg_circumflex(jid:to_string(JID)).
 
--spec(encode_host/1 ::
-    (   Host :: host())
-    -> binary()
-    ).
+-spec encode_host(Host :: host()) -> binary().
 encode_host({_U, _S, _R} = LJID) -> encode_jid(LJID);
 encode_host(Host) -> Host.
 
--spec(encode_host_like/1 ::
-    (   Host :: host())
-    -> binary()
-    ).
+-spec encode_host_like(Host :: host()) -> binary().
 encode_host_like({_U, _S, _R} = LJID) -> ejabberd_sql:escape(encode_jid_like(LJID));
 encode_host_like(Host) ->
     ejabberd_sql:escape(ejabberd_sql:escape_like_arg_circumflex(Host)).
 
--spec(encode_affiliation/1 ::
-    (   Arg :: atom())
-    -> binary()
-    ).
+-spec encode_affiliation(Arg :: atom()) -> binary().
 encode_affiliation(owner) -> <<"o">>;
 encode_affiliation(publisher) -> <<"p">>;
 encode_affiliation(publish_only) -> <<"u">>;
@@ -1050,19 +1020,13 @@ encode_affiliation(member) -> <<"m">>;
 encode_affiliation(outcast) -> <<"c">>;
 encode_affiliation(_) -> <<"n">>.
 
--spec(encode_subscription/1 ::
-    (   Arg :: atom())
-    -> binary()
-    ).
+-spec encode_subscription(Arg :: atom()) -> binary().
 encode_subscription(subscribed) -> <<"s">>;
 encode_subscription(pending) -> <<"p">>;
 encode_subscription(unconfigured) -> <<"u">>;
 encode_subscription(_) -> <<"n">>.
 
--spec(encode_subscriptions/1 ::
-    (   Subscriptions :: [] | [{atom(), binary()},...])
-    -> binary()
-    ).
+-spec encode_subscriptions(Subscriptions :: [] | [{atom(), binary()},...]) -> binary().
 encode_subscriptions(Subscriptions) ->
     str:join([<<(encode_subscription(S))/binary, ":", SubId/binary>>
 	    || {S, SubId} <- Subscriptions], <<",">>).

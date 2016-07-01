@@ -307,21 +307,16 @@ get_iq_namespace(#xmlel{name = <<"iq">>, children = Els}) ->
 get_iq_namespace(_) -> <<"">>.
 
 %%
--spec(iq_query_info/1 ::
-(
-  Xmlel :: xmlel())
-    -> iq_request() | 'reply' | 'invalid' | 'not_iq'
-).
+-spec iq_query_info(Xmlel :: xmlel()) ->
+			   iq_request() | 'reply' | 'invalid' | 'not_iq'.
 
 %% @spec (xmlelement()) -> iq() | reply | invalid | not_iq
 iq_query_info(El) -> iq_info_internal(El, request).
 
 %%
--spec(iq_query_or_response_info/1 ::
-(
-  Xmlel :: xmlel())
-    -> iq_request() | iq_reply() | 'reply' | 'invalid' | 'not_iq'
-).
+-spec iq_query_or_response_info(Xmlel :: xmlel()) ->
+				       iq_request() | iq_reply() |
+				       'reply' | 'invalid' | 'not_iq'.
 
 iq_query_or_response_info(El) ->
     iq_info_internal(El, any).
@@ -373,11 +368,7 @@ iq_type_to_string(get) -> <<"get">>;
 iq_type_to_string(result) -> <<"result">>;
 iq_type_to_string(error) -> <<"error">>.
 
--spec(iq_to_xml/1 ::
-(
-  IQ :: iq())
-    -> xmlel()
-).
+-spec iq_to_xml(IQ :: iq()) -> xmlel().
 
 iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
     if ID /= <<"">> ->
@@ -391,13 +382,8 @@ iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
 		  children = SubEl}
     end.
 
--spec(parse_xdata_submit/1 ::
-(
-  El :: xmlel())
-    -> [{Var::binary(), Values::[binary()]}]
-    %%
-     | 'invalid'
-).
+-spec parse_xdata_submit(El :: xmlel()) ->
+				[{Var::binary(), Values::[binary()]}] | 'invalid'.
 
 parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
     case fxml:get_attr_s(<<"type">>, Attrs) of
@@ -409,12 +395,9 @@ parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
             invalid
     end.
 
--spec(parse_xdata_fields/2 ::
-(
-  Xmlels :: [xmlel() | cdata()],
-  Res    :: [{Var::binary(), Values :: [binary()]}])
-    -> [{Var::binary(), Values::[binary()]}]
-).
+-spec parse_xdata_fields(Xmlels :: [xmlel() | cdata()],
+			 Res :: [{Var::binary(), Values :: [binary()]}]) ->
+				[{Var::binary(), Values::[binary()]}].
 
 parse_xdata_fields([], Res) -> Res;
 parse_xdata_fields([#xmlel{name = <<"field">>, attrs = Attrs, children = SubEls}
@@ -429,12 +412,8 @@ parse_xdata_fields([#xmlel{name = <<"field">>, attrs = Attrs, children = SubEls}
 parse_xdata_fields([_ | Els], Res) ->
     parse_xdata_fields(Els, Res).
 
--spec(parse_xdata_values/2 ::
-(
-  Xmlels :: [xmlel() | cdata()],
-  Res    :: [binary()])
-    -> [binary()]
-).
+-spec parse_xdata_values(Xmlels :: [xmlel() | cdata()],
+			 Res :: [binary()]) -> [binary()].
 
 parse_xdata_values([], Res) -> Res;
 parse_xdata_values([#xmlel{name = <<"value">>, children = SubEls} | Els], Res) ->

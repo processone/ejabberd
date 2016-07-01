@@ -41,13 +41,7 @@
 %% Parse an ad-hoc request.  Return either an adhoc_request record or
 %% an {error, ErrorType} tuple.
 %%
--spec(parse_request/1 ::
-(
-  IQ :: iq_request())
-    -> adhoc_response()
-    %%
-     | {error, _}
-).
+-spec parse_request(IQ :: iq_request()) -> adhoc_response() | {error, _}.
 
 parse_request(#iq{type = set, lang = Lang, sub_el = SubEl, xmlns = ?NS_COMMANDS}) ->
     ?DEBUG("entering parse_request...", []),
@@ -88,12 +82,9 @@ find_xdata_el1([_ | Els]) -> find_xdata_el1(Els).
 %% record, filling in values for language, node and session id from
 %% the request.
 %%
--spec(produce_response/2 ::
-(
-  Adhoc_Request  :: adhoc_request(),
-  Adhoc_Response :: adhoc_response())
-    -> Xmlel::xmlel()
-).
+-spec produce_response(Adhoc_Request :: adhoc_request(),
+		       Adhoc_Response :: adhoc_response()) ->
+			      Xmlel::xmlel().
 
 %% Produce a <command/> node to use as response from an adhoc_response
 %% record.
@@ -104,11 +95,7 @@ produce_response(#adhoc_request{lang = Lang, node = Node, sessionid = SessionID}
     }).
 
 %%
--spec(produce_response/1 ::
-(
-  Adhoc_Response::adhoc_response())
-    -> Xmlel::xmlel()
-).
+-spec produce_response(Adhoc_Response::adhoc_response()) -> Xmlel::xmlel().
 
 produce_response(
   #adhoc_response{
