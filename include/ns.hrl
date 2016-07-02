@@ -165,3 +165,4 @@
 -define(NS_MIX_NODES_SUBJECT, <<"urn:xmpp:mix:nodes:subject">>).
 -define(NS_MIX_NODES_CONFIG, <<"urn:xmpp:mix:nodes:config">>).
 -define(NS_PRIVILEGE, <<"urn:xmpp:privilege:1">>).
+-define(NS_DELEGATION, <<"urn:xmpp:delegation:1">>).
