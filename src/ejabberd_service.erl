@@ -178,7 +178,6 @@ init([{SockMod, Socket}, Opts]) ->
         _ ->
             ok
     end,
-
     {ok, wait_for_stream,
      #state{socket = Socket, sockmod = SockMod,
             streamid = new_id(), host_opts = HostOpts, access = Access,
@@ -253,7 +252,7 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                                 end, dict:fetch_keys(StateData#state.host_opts)),
 
                             advertise_perm(StateData),
-                            % namespace_delegation:advertise_delegations(StateData),
+                            namespace_delegation:advertise_delegations(StateData),
                             %% send initial presences from all server users
                             case get_prop(presence, StateData#state.privilege_access) of
                                 Priv when (Priv == <<"managed_entity">>) or
@@ -285,6 +284,7 @@ wait_for_handshake(closed, StateData) ->
     {stop, normal, StateData}.
 
 stream_established({xmlstreamelement, El}, StateData) ->
+    % ?INFO_MSG(" message from comp ~p~n" , [El]),
     NewEl = jlib:remove_attr(<<"xmlns">>, El),
     #xmlel{name = Name, attrs = Attrs} = NewEl,
     From = fxml:get_attr_s(<<"from">>, Attrs),
@@ -562,8 +562,8 @@ add_hooks2(Host) ->
     %% these hooks are used for receiving presences for privilege services XEP-0356
     ejabberd_hooks:add(user_send_packet, Host,
                        ?MODULE, process_presence, 10),
-    % ejabberd_hooks:add(user_send_packet, Host,
-    %                    namespace_delegation, process_packet, 10),
+    ejabberd_hooks:add(user_send_packet, Host,
+                       namespace_delegation, process_packet, 10),
     ejabberd_hooks:add(s2s_receive_packet, Host,
                        ejabberd_service, process_roster_presence, 10).
 
@@ -640,6 +640,7 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
                     send_element(StateData, Err)
             end;
         _ ->
+            
             ejabberd_router:route(FromJID, ToJID, Packet)
     end.
 
