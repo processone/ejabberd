@@ -202,7 +202,7 @@ get_subnodes_tree(Host, Node) ->
 		?SQL("select @(node)s, @(parent)s, @(type)s, @(nodeid)d from "
 		    "pubsub_node where host=%(H)s"
 		    " and node like %(N)s escape '^'"
-		    " and type='hometree'"))
+		    " and \"type\"='hometree'"))
 	    of
 		{selected, RItems} ->
 		    [raw_to_node(Host, Item) || Item <- RItems];
@@ -264,7 +264,7 @@ delete_node(Host, Node) ->
     catch ejabberd_sql:sql_query_t(
             ?SQL("delete from pubsub_node where host=%(H)s"
                " and (node=%(Node)s"
-                 " or (type = 'hometree' and node like %(N)s escape '^'))")),
+                 " or (\"type\"='hometree' and node like %(N)s escape '^'))")),
     Removed.
 
 %% helpers
