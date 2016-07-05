@@ -484,17 +484,28 @@ compile_deps(_Module, _Spec, DestDir) ->
     filelib:ensure_dir(filename:join(Ebin, ".")),
     Result = lists:foldl(fun(Dep, Acc) ->
                 Inc = filename:join(Dep, "include"),
+                Lib = filename:join(Dep, "lib"),
                 Src = filename:join(Dep, "src"),
                 Options = [{outdir, Ebin}, {i, Inc}],
                 [file:copy(App, Ebin) || App <- filelib:wildcard(Src++"/*.app")],
-                Acc++[case compile:file(File, Options) of
+
+                %% Compile erlang files
+                Acc1 = Acc ++ [case compile:file(File, Options) of
                         {ok, _} -> ok;
                         {ok, _, _} -> ok;
                         {ok, _, _, _} -> ok;
                         error -> {error, {compilation_failed, File}};
                         Error -> Error
                     end
-                     || File <- filelib:wildcard(Src++"/*.erl")]
+                     || File <- filelib:wildcard(Src++"/*.erl")],
+
+                %% Compile elixir files
+                Acc1 ++ [case compile_elixir_file(Ebin, File) of
+                  {ok, _} -> ok;
+                  {error, File} -> {error, {compilation_failed, File}}
+                end
+                 || File <- filelib:wildcard(Lib ++ "/*.ex")]
+
         end, [], filelib:wildcard("deps/*")),
     case lists:dropwhile(
             fun(ok) -> true;
@@ -515,6 +526,8 @@ compile(_Module, _Spec, DestDir) ->
                verbose, report_errors, report_warnings]
               ++ ExtLib,
     [file:copy(App, Ebin) || App <- filelib:wildcard("src/*.app")],
+
+    %% Compile erlang files
     Result = [case compile:file(File, Options) of
             {ok, _} -> ok;
             {ok, _, _} -> ok;
@@ -523,13 +536,31 @@ compile(_Module, _Spec, DestDir) ->
             Error -> Error
         end
         || File <- filelib:wildcard("src/*.erl")],
+
+    %% Compile elixir files
+    Result1 = Result ++ [case compile_elixir_file(Ebin, File) of
+      {ok, _} -> ok;
+      {error, File} -> {error, {compilation_failed, File}}
+    end
+    || File <- filelib:wildcard("lib/*.ex")],
+
     case lists:dropwhile(
             fun(ok) -> true;
                 (_) -> false
-            end, Result) of
+            end, Result1) of
         [] -> ok;
         [Error|_] -> Error
     end.
+
+compile_elixir_file(Dest, File) when is_list(Dest) and is_list(File) ->
+  compile_elixir_file(list_to_binary(Dest), list_to_binary(File));
+
+compile_elixir_file(Dest, File) ->
+  try 'Elixir.Kernel.ParallelCompiler':files_to_path([File], Dest, []) of
+    [Module] -> {ok, Module}
+  catch
+    _ -> {error, File}
+  end.
 
 install(Module, Spec, DestDir) ->
     Errors = lists:dropwhile(fun({_, {ok, _}}) -> true;
