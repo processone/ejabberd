@@ -365,21 +365,22 @@ get_entity_subscriptions(Host, Owner) ->
     H = encode_host(Host),
     SJ = encode_jid(SubKey),
     GJ = encode_jid(GenKey),
-    GJLike = <<(encode_jid_like(GenKey))/binary, "%">>,
+    GJLike = <<(encode_jid_like(GenKey))/binary, "/%">>,
     Query =
         case SubKey of
             GenKey ->
                 ?SQL("select @(node)s, @(type)s, @(i.nodeid)d,"
                      " @(jid)s, @(subscriptions)s "
                      "from pubsub_state i, pubsub_node n "
-                     "where i.nodeid = n.nodeid and jid like %(GJLike)s"
-                     " escape '^' and host=%(H)s");
+                     "where i.nodeid = n.nodeid and "
+                     "(jid=%(GJ)s or jid like %(GJLike)s escape '^')"
+                     " and host=%(H)s");
             _ ->
                 ?SQL("select @(node)s, @(type)s, @(i.nodeid)d,"
                      " @(jid)s, @(subscriptions)s "
                      "from pubsub_state i, pubsub_node n "
-                     "where i.nodeid = n.nodeid and jid in"
-                     " (%(SJ)s, %(GJ)s) and host=%(H)s")
+                     "where i.nodeid = n.nodeid and"
+                     " jid in (%(SJ)s, %(GJ)s) and host=%(H)s")
         end,
     Reply = case catch ejabberd_sql:sql_query_t(Query) of
 	{selected, RItems} ->
@@ -423,8 +424,9 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
                      " @(jid)s, @(subscriptions)s "
                      "from pubsub_state i, pubsub_node n, pubsub_node_option o "
                      "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and name='send_last_published_item' "
-                     "and val='on_sub_and_presence' and jid like %(GJLike)s"
-                     " escape '^' and host=%(H)s");
+                     "and val='on_sub_and_presence' and "
+                     "(jid=%(GJ)s or jid like %(GJLike)s escape '^')"
+                     " and host=%(H)s");
             _ ->
                 ?SQL("select @(node)s, @(type)s, @(i.nodeid)d,"
                      " @(jid)s, @(subscriptions)s "
@@ -912,11 +914,12 @@ first_in_list(Pred, [H | T]) ->
     end.
 
 itemids(Nidx, {_U, _S, _R} = JID) ->
-    SJID = <<(ejabberd_sql:escape(encode_jid_like(JID)))/binary, "%">>,
+    SJID = <<(ejabberd_sql:escape(encode_jid_like(JID)))/binary, "/%">>,
     case catch
 	ejabberd_sql:sql_query_t(
           ?SQL("select @(itemid)s from pubsub_item where "
-               "nodeid=%(Nidx)d and publisher like %(SJID)s escape '^' "
+               "nodeid=%(Nidx)d and (publisher=%(JID)s"
+               " or publisher like %(SJID)s escape '^') "
                "order by modification desc"))
     of
 	{selected, RItems} ->

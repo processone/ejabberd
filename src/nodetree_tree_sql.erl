@@ -191,18 +191,25 @@ get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).
 
 get_subnodes_tree(Host, Node) ->
-    H = node_flat_sql:encode_host(Host),
-    N = <<(ejabberd_sql:escape_like_arg_circumflex(Node))/binary, "%">>,
-    case catch
-	ejabberd_sql:sql_query_t(
-          ?SQL("select @(node)s, @(parent)s, @(type)s, @(nodeid)d from "
-               "pubsub_node where host=%(H)s"
-               " and node like %(N)s escape '^'"))
-    of
-	{selected, RItems} ->
-	    [raw_to_node(Host, Item) || Item <- RItems];
-	_ ->
-	    []
+    case get_node(Host, Node) of
+	{error, _} ->
+	    [];
+	Rec ->
+	    H = node_flat_sql:encode_host(Host),
+	    N = <<(ejabberd_sql:escape_like_arg_circumflex(Node))/binary, "/%">>,
+	    Sub = case catch
+		ejabberd_sql:sql_query_t(
+		?SQL("select @(node)s, @(parent)s, @(type)s, @(nodeid)d from "
+		    "pubsub_node where host=%(H)s"
+		    " and node like %(N)s escape '^'"
+		    " and type='hometree'"))
+	    of
+		{selected, RItems} ->
+		    [raw_to_node(Host, Item) || Item <- RItems];
+		_ ->
+		    []
+	    end,
+	    [Rec|Sub]
     end.
 
 create_node(Host, Node, Type, Owner, Options, Parents) ->
@@ -252,11 +259,12 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 
 delete_node(Host, Node) ->
     H = node_flat_sql:encode_host(Host),
-    N = <<(ejabberd_sql:escape_like_arg_circumflex(Node))/binary, "%">>,
+    N = <<(ejabberd_sql:escape_like_arg_circumflex(Node))/binary, "/%">>,
     Removed = get_subnodes_tree(Host, Node),
     catch ejabberd_sql:sql_query_t(
             ?SQL("delete from pubsub_node where host=%(H)s"
-               " and node like %(N)s escape '^'")),
+               " and (node=%(Node)s"
+                 " or (type = 'hometree' and node like %(N)s escape '^'))")),
     Removed.
 
 %% helpers
