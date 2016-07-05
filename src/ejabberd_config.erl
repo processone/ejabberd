@@ -33,6 +33,7 @@
          get_option/2, get_option/3, add_option/2, has_option/1,
          get_vh_by_auth_method/1, is_file_readable/1,
          get_version/0, get_myhosts/0, get_mylang/0,
+         get_ejabberd_config_path/0,
          prepare_opt_val/4, convert_table_to_binary/5,
          transform_options/1, collect_options/1, default_db/2,
          convert_to_yaml/1, convert_to_yaml/2, v_db/2,
@@ -57,7 +58,13 @@
 start() ->
     mnesia_init(),
     Config = get_ejabberd_config_path(),
-    State0 = read_file(Config),
+    State0 = case 'Elixir.Ejabberd.ConfigUtil':is_elixir_config(Config) of
+      true ->
+        'Elixir.Ejabberd.Config':init(),
+        'Elixir.Ejabberd.Config':get_ejabberd_opts();
+      false ->
+        read_file(Config)
+    end,
     State1 = hosts_to_start(State0),
     State2 = validate_opts(State1),
     %% This start time is used by mod_last:
