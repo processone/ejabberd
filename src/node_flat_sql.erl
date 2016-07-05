@@ -914,12 +914,13 @@ first_in_list(Pred, [H | T]) ->
     end.
 
 itemids(Nidx, {_U, _S, _R} = JID) ->
-    SJID = <<(ejabberd_sql:escape(encode_jid_like(JID)))/binary, "/%">>,
+    SJID = encode_jid(JID),
+    SJIDLike = <<(ejabberd_sql:escape(encode_jid_like(JID)))/binary, "/%">>,
     case catch
 	ejabberd_sql:sql_query_t(
           ?SQL("select @(itemid)s from pubsub_item where "
-               "nodeid=%(Nidx)d and (publisher=%(JID)s"
-               " or publisher like %(SJID)s escape '^') "
+               "nodeid=%(Nidx)d and (publisher=%(SJID)s"
+               " or publisher like %(SJIDLike)s escape '^') "
                "order by modification desc"))
     of
 	{selected, RItems} ->
