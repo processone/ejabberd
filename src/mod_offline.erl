@@ -793,7 +793,7 @@ get_messages_subset(User, Host, MsgsAll) ->
                                     fun(A) when is_atom(A) -> A end,
 				    max_user_offline_messages),
     MaxOfflineMsgs = case get_max_user_messages(Access,
-						{User, Host}, Host)
+						User, Host)
 			 of
 		       Number when is_integer(Number) -> Number;
 		       _ -> 100
