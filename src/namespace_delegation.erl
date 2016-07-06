@@ -20,7 +20,6 @@ attribute_tag(Attrs) ->
 
 delegations(Id, Delegations) ->
     Elem0 = lists:map(fun({Ns, FilterAttr}) ->
-    	                  ets:insert(delegated_namespaces, {Ns}),
                           #xmlel{name = <<"delegated">>, 
                                  attrs = [{<<"namespace">>, Ns}],
                                  children = attribute_tag(FilterAttr)}
@@ -40,13 +39,6 @@ delegation_ns_debug(Host, Delegations) ->
     	          end, Delegations).
 advertise_delegations(#state{delegations = []}) -> ok;
 advertise_delegations(StateData) ->
-    case ets:info(delegated_namespaces) of
-        undefined ->
-            %% table contains {Namespace}
-            ets:new(delegated_namespaces, [named_table, public]);
-        _ ->
-            ok
-    end,
     Delegated = delegations(StateData#state.streamid, StateData#state.delegations),
     lists:foreach(fun(H) ->
     	              Attrs =
@@ -94,7 +86,7 @@ forward_iq(Server, Service, Packet) ->
     %                          if (From == Service ) -> 
 
     % ejabberd_hooks:add(binary_to_atom(Hook, 'latin1'), Server, Process_ent_result, 10),
-    ?INFO_MSG("send iq ~p~n", [Elem2]),
+    % ?INFO_MSG("send iq ~p~n", [Elem2]),
 
     From = jid:make(<<"">>, Server, <<"">>),
     To = jid:make(<<"">>, Service, <<"">>),
@@ -126,38 +118,40 @@ forward_iq(Server, Service, Packet) ->
 process_packet(#xmlel{name = <<"iq">>, attrs = Attrs} = Packet, _C2SState, From, To) ->
     Type = fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs),
     IQ = jlib:iq_query_info(Packet),
+    CheckTab = 
+        case ets:info(registered_services) of
+            undefined ->
+                false;
+            _ ->
+                true
+        end,
     %% check if stanza directed to server
     %% or directed to the bare JID of the sender
     case ((From#jid.user == To#jid.user) and
        	  (From#jid.server == To#jid.server) or
           lists:member(To#jid.server, ?MYHOSTS)) and
-         ((Type == <<"get">>) or (Type == <<"set">>)) of
+         ((Type == <<"get">>) or (Type == <<"set">>)) and CheckTab of
         true ->
-            case lists:member({IQ#iq.xmlns}, ets:tab2list(delegated_namespaces)) of
-            	true ->
-            	    lists:foreach(fun({ServiceHost, Pid}) -> 
-            	    	              Delegations = 
-            	    	                  ejabberd_service:get_delegated_ns(Pid),
-                                      case check_delegation(Delegations,
-                                      	                    IQ#iq.xmlns,
-                                      	                    IQ#iq.sub_el) of
-                                          true ->
-                                              
-                                              % AttrsNew = 
-                                              %   jlib:replace_from_to_attrs(
-                                              %   	jid:to_string(From),
-                                              %     	jid:to_string(To), Attrs),
-                                              AttrsNew = 
-                                                Attrs ++ [{<<"xmlns">>, 
-                                                              <<"jabber:client">>}],
-                                              forward_iq(?MYNAME, ServiceHost,
-                                                         Packet#xmlel{attrs = AttrsNew});
-                                          _ -> ok
-                                      end
-                                  end,
-                                  ets:tab2list(registered_services));
-            	_ -> ok
-            end,
+            lists:foreach(fun({ServiceHost, Pid}) -> 
+            	    	      Delegations = 
+            	    	        ejabberd_service:get_delegated_ns(Pid),
+                                case check_delegation(Delegations,
+                                      	              IQ#iq.xmlns,
+                                      	              IQ#iq.sub_el) of
+                                    true ->
+                                        AttrsNew = 
+                                            Attrs ++ [{<<"xmlns">>, 
+                                                       <<"jabber:client">>}],
+                                        AttrsNew2 = 
+                                            jlib:replace_from_to_attrs(
+                                                jid:to_string(From),
+                                                jid:to_string(To), AttrsNew),
+                                        forward_iq(From#jid.server, ServiceHost,
+                                                   Packet#xmlel{attrs = AttrsNew2});
+                                    _ -> ok
+                                end
+                          end,
+                          ets:tab2list(registered_services)),
             Packet;
         _ -> Packet
     end;
