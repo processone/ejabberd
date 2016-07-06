@@ -416,7 +416,7 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
     H = encode_host(Host),
     SJ = encode_jid(SubKey),
     GJ = encode_jid(GenKey),
-    GJLike = <<(encode_jid_like(GenKey))/binary, "%">>,
+    GJLike = <<(encode_jid_like(GenKey))/binary, "/%">>,
     Query =
         case SubKey of
             GenKey ->
