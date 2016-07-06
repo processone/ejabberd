@@ -55,7 +55,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process/2, mod_opt_type/1]).
+-export([start/2, stop/1, process/2, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -75,6 +75,9 @@ start(_Host, _Opts) ->
     ok.
 
 stop(_Host) -> ok.
+
+depends(_Host, _Opts) ->
+    [{mod_register, hard}].
 
 %%%----------------------------------------------------------------------
 %%% HTTP handlers

@@ -39,6 +39,7 @@
 -export([start_link/3,
 	 start/2,
 	 stop/1,
+	 depends/2,
 	 mod_opt_type/1]).
 
 %% gen_server callbacks.
@@ -108,6 +109,11 @@ mod_opt_type(max_days) ->
     end;
 mod_opt_type(_) ->
     [access_soft_quota, access_hard_quota, max_days].
+
+-spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
+
+depends(_Host, _Opts) ->
+    [].
 
 %%--------------------------------------------------------------------
 %% gen_server callbacks.

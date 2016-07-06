@@ -37,7 +37,7 @@
 	 unauthenticated_iq_register/4, try_register/5,
 	 process_iq/3, send_registration_notifications/3,
 	 transform_options/1, transform_module_options/1,
-	 mod_opt_type/1, opt_type/1]).
+	 mod_opt_type/1, opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -71,6 +71,9 @@ stop(Host) ->
 				     ?NS_REGISTER),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_REGISTER).
+
+depends(_Host, _Opts) ->
+    [].
 
 stream_feature_register(Acc, Host) ->
     AF = gen_mod:get_module_opt(Host, ?MODULE, access_from,

@@ -41,7 +41,7 @@
          import_start/2, import_stop/2]).
 
 %% gen_mod callbacks
--export([start/2, start_link/2, stop/1]).
+-export([start/2, start_link/2, stop/1, depends/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_info/2, handle_call/3,
@@ -305,6 +305,9 @@ c2s_broadcast_recipients(InAcc, Host, C2SState,
       _ -> InAcc
     end;
 c2s_broadcast_recipients(Acc, _, _, _, _, _) -> Acc.
+
+depends(_Host, _Opts) ->
+    [].
 
 init([Host, Opts]) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),

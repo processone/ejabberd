@@ -41,7 +41,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1, opt_type/1]).
+	 mod_opt_type/1, opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -108,6 +108,9 @@ transform_module_options(Opts) ->
          (Opt) ->
               Opt
       end, Opts).
+
+depends(_Host, _Opts) ->
+    [{mod_muc, hard}].
 
 %%====================================================================
 %% gen_server callbacks

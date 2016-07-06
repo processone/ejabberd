@@ -66,7 +66,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, depends/2]).
 
 -deprecated({get_queue_length,2}).
 
@@ -125,6 +125,8 @@ stop(Host) ->
     supervisor:delete_child(ejabberd_sup, Proc),
     ok.
 
+depends(_Host, _Opts) ->
+    [].
 
 %%====================================================================
 %% gen_server callbacks

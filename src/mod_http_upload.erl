@@ -68,6 +68,7 @@
 -export([start_link/3,
 	 start/2,
 	 stop/1,
+	 depends/2,
 	 mod_opt_type/1]).
 
 %% gen_server callbacks.
@@ -221,6 +222,11 @@ mod_opt_type(_) ->
     [host, name, access, max_size, secret_length, jid_in_url, file_mode,
      dir_mode, docroot, put_url, get_url, service_url, custom_headers,
      rm_on_unregister, thumbnail].
+
+-spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
+
+depends(_Host, _Opts) ->
+    [].
 
 %%--------------------------------------------------------------------
 %% gen_server callbacks.

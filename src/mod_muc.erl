@@ -53,7 +53,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -104,6 +104,9 @@ stop(Host) ->
     gen_server:call(Proc, stop),
     supervisor:delete_child(ejabberd_sup, Proc),
     {wait, Rooms}.
+
+depends(_Host, _Opts) ->
+    [{mod_mam, soft}].
 
 shutdown_rooms(Host) ->
     MyHost = gen_mod:get_module_opt_host(Host, mod_muc,

@@ -45,11 +45,13 @@
     get_pending_nodes/2, get_states/1, get_state/2,
     set_state/1, get_items/7, get_items/3, get_item/7,
     get_item/2, set_item/1, get_item_name/3, node_to_path/1,
-    path_to_node/1]).
+    path_to_node/1, depends/3]).
+
+depends(_Host, _ServerHost, _Opts) ->
+    [{mod_caps, hard}].
 
 init(Host, ServerHost, Opts) ->
     node_flat:init(Host, ServerHost, Opts),
-    complain_if_modcaps_disabled(ServerHost),
     ok.
 
 terminate(Host, ServerHost) ->
@@ -245,21 +247,3 @@ node_to_path(Node) ->
 
 path_to_node(Path) ->
     node_flat:path_to_node(Path).
-
-%%%
-%%% Internal
-%%%
-
-%% @doc Check mod_caps is enabled, otherwise show warning.
-%% The PEP plugin for mod_pubsub requires mod_caps to be enabled in the host.
-%% Check that the mod_caps module is enabled in that Jabber Host
-%% If not, show a warning message in the ejabberd log file.
-complain_if_modcaps_disabled(ServerHost) ->
-    case gen_mod:is_loaded(ServerHost, mod_caps) of
-	false ->
-	    ?WARNING_MSG("The PEP plugin is enabled in mod_pubsub "
-		"of host ~p. This plugin requires mod_caps "
-		"but it does not seems enabled, please check config.",
-		[ServerHost]);
-	true -> ok
-    end.

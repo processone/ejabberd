@@ -30,7 +30,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, log_user_send/4,
-	 log_user_receive/5, mod_opt_type/1]).
+	 log_user_receive/5, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -50,6 +50,9 @@ stop(Host) ->
     ejabberd_hooks:delete(user_receive_packet, Host,
 			  ?MODULE, log_user_receive, 50),
     ok.
+
+depends(_Host, _Opts) ->
+    [].
 
 log_user_send(Packet, _C2SState, From, To) ->
     log_packet(From, To, Packet, From#jid.lserver),

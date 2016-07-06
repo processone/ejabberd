@@ -49,7 +49,7 @@
 	 get_jid_info/4, item_to_xml/1, webadmin_page/3,
 	 webadmin_user/4, get_versioning_feature/2,
 	 roster_versioning_enabled/1, roster_version/2,
-	 mod_opt_type/1, set_roster/1]).
+	 mod_opt_type/1, set_roster/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -135,6 +135,9 @@ stop(Host) ->
 			  webadmin_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_ROSTER).
+
+depends(_Host, _Opts) ->
+    [].
 
 process_iq(From, To, IQ) when ((From#jid.luser == <<"">>) andalso (From#jid.resource == <<"">>)) ->
     process_iq_manager(From, To, IQ);

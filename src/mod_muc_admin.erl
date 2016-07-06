@@ -11,7 +11,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, muc_online_rooms/1,
+-export([start/2, stop/1, depends/2, muc_online_rooms/1,
 	 muc_unregister_nick/1, create_room/3, destroy_room/2,
 	 create_rooms_file/1, destroy_rooms_file/1,
 	 rooms_unused_list/2, rooms_unused_destroy/2,
@@ -48,6 +48,9 @@ stop(Host) ->
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, web_page_host, 50).
+
+depends(_Host, _Opts) ->
+    [{mod_muc, hard}].
 
 %%%
 %%% Register commands

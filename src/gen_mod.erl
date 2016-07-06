@@ -53,6 +53,7 @@
 -callback start(binary(), opts()) -> any().
 -callback stop(binary()) -> any().
 -callback mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
+-callback depends(binary(), opts()) -> [{module(), hard | soft}].
 
 -export_type([opts/0]).
 -export_type([db_type/0]).
@@ -77,18 +78,49 @@ start_modules() ->
 
 get_modules_options(Host) ->
     ejabberd_config:get_option(
-	{modules, Host},
-	fun(Mods) ->
-	    lists:map(
+      {modules, Host},
+      fun(Mods) ->
+	      lists:map(
 		fun({M, A}) when is_atom(M), is_list(A) ->
-		    {M, A}
+			{M, A}
 		end, Mods)
-	end, []).
+      end, []).
+
+sort_modules(Host, ModOpts) ->
+    G = digraph:new([acyclic]),
+    lists:foreach(
+      fun({Mod, Opts}) ->
+	      digraph:add_vertex(G, Mod, Opts),
+	      Deps = try Mod:depends(Host, Opts) catch _:undef -> [] end,
+	      lists:foreach(
+		fun({DepMod, Type}) ->
+			case lists:keyfind(DepMod, 1, ModOpts) of
+			    false when Type == hard ->
+				ErrTxt = io_lib:format(
+					   "failed to load module '~s' "
+					   "because it depends on module '~s' "
+					   "which is not found in the config",
+					   [Mod, DepMod]),
+				?ERROR_MSG(ErrTxt, []),
+				digraph:del_vertex(G, Mod),
+				maybe_halt_ejabberd(ErrTxt);
+			    false when Type == soft ->
+				?WARNING_MSG("module '~s' is recommended for "
+					     "module '~s' but is not found in "
+					     "the config",
+					     [DepMod, Mod]);
+			    {DepMod, DepOpts} ->
+				digraph:add_vertex(G, DepMod, DepOpts),
+				digraph:add_edge(G, DepMod, Mod)
+			end
+		end, Deps)
+      end, ModOpts),
+    [digraph:vertex(G, V) || V <- digraph_utils:topsort(G)].
 
 -spec start_modules(binary()) -> any().
 
 start_modules(Host) ->
-    Modules = get_modules_options(Host),
+    Modules = sort_modules(Host, get_modules_options(Host)),
     lists:foreach(
 	fun({Module, Opts}) ->
 	    start_module(Host, Module, Opts)
@@ -121,16 +153,20 @@ start_module(Host, Module, Opts0) ->
 			    [Module, Host, Opts, Class, Reason,
 			     erlang:get_stacktrace()]),
 	  ?CRITICAL_MSG(ErrorText, []),
-	  case is_app_running(ejabberd) of
-	    true ->
-		erlang:raise(Class, Reason, erlang:get_stacktrace());
-	    false ->
-		?CRITICAL_MSG("ejabberd initialization was aborted "
-			      "because a module start failed.",
-			      []),
-		timer:sleep(3000),
-		erlang:halt(string:substr(lists:flatten(ErrorText), 1, 199))
-	  end
+          maybe_halt_ejabberd(ErrorText),
+	  erlang:raise(Class, Reason, erlang:get_stacktrace())
+    end.
+
+maybe_halt_ejabberd(ErrorText) ->
+    case is_app_running(ejabberd) of
+	false ->
+	    ?CRITICAL_MSG("ejabberd initialization was aborted "
+			  "because a module start failed.",
+			  []),
+	    timer:sleep(3000),
+	    erlang:halt(string:substr(lists:flatten(ErrorText), 1, 199));
+	true ->
+	    ok
     end.
 
 is_app_running(AppName) ->

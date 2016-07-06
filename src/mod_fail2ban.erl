@@ -33,7 +33,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, depends/2]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("ejabberd.hrl").
@@ -119,6 +119,9 @@ stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
+
+depends(_Host, _Opts) ->
+    [].
 
 %%%===================================================================
 %%% gen_server callbacks

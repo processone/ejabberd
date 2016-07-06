@@ -37,7 +37,7 @@
 	 process_sm_iq/3, on_presence_update/4, import/1,
 	 import/3, store_last_info/4, get_last_info/2,
 	 remove_user/2, transform_options/1, mod_opt_type/1,
-	 opt_type/1, register_user/2]).
+	 opt_type/1, register_user/2, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -254,6 +254,9 @@ transform_options({node_start, {_, _, _} = Now}, Opts) ->
     [{node_start, now_to_seconds(Now)}|Opts];
 transform_options(Opt, Opts) ->
     [Opt|Opts].
+
+depends(_Host, _Opts) ->
+    [].
 
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;

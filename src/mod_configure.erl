@@ -35,7 +35,8 @@
 	 get_local_features/5, get_local_items/5,
 	 adhoc_local_items/4, adhoc_local_commands/4,
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
-	 adhoc_sm_items/4, adhoc_sm_commands/4, mod_opt_type/1]).
+	 adhoc_sm_items/4, adhoc_sm_commands/4, mod_opt_type/1,
+	 depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -94,6 +95,9 @@ stop(Host) ->
 				     ?NS_COMMANDS),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_COMMANDS).
+
+depends(_Host, _Opts) ->
+    [{mod_adhoc, hard}, {mod_last, soft}].
 
 %%%-----------------------------------------------------------------------
 

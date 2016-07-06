@@ -47,7 +47,7 @@
 	 srg_delete/2, srg_list/1, srg_get_info/2,
 	 srg_get_members/2, srg_user_add/4, srg_user_del/4,
 	 send_message/5, send_stanza/3, send_stanza_c2s/4, privacy_set/3,
-	 stats/1, stats/2, mod_opt_type/1, get_commands_spec/0]).
+	 stats/1, stats/2, mod_opt_type/1, get_commands_spec/0, depends/2]).
 
 
 -include("ejabberd.hrl").
@@ -66,6 +66,8 @@ start(_Host, _Opts) ->
 stop(_Host) ->
     ejabberd_commands:unregister_commands(get_commands_spec()).
 
+depends(_Host, _Opts) ->
+    [].
 
 %%%
 %%% Register commands

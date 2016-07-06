@@ -39,7 +39,8 @@
                 s2s_send_packet, s2s_receive_packet,
                 remove_user, register_user]).
 
--export([start/2, stop/1, send_metrics/4, opt_type/1, mod_opt_type/1]).
+-export([start/2, stop/1, send_metrics/4, opt_type/1, mod_opt_type/1,
+	 depends/2]).
 
 -export([offline_message_hook/3,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
@@ -58,6 +59,9 @@ start(Host, _Opts) ->
 stop(Host) ->
     [ejabberd_hooks:delete(Hook, Host, ?MODULE, Hook, 20)
      || Hook <- ?HOOKS].
+
+depends(_Host, _Opts) ->
+    [].
 
 %%====================================================================
 %% Hooks handlers
