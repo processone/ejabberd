@@ -111,7 +111,14 @@ sort_modules(Host, ModOpts) ->
 					     [DepMod, Mod]);
 			    {DepMod, DepOpts} ->
 				digraph:add_vertex(G, DepMod, DepOpts),
-				digraph:add_edge(G, DepMod, Mod)
+				case digraph:add_edge(G, DepMod, Mod) of
+				    {error, {bad_edge, Path}} ->
+					?WARNING_MSG("cyclic dependency detected "
+						     "between modules: ~p",
+						     [Path]);
+				    _ ->
+					ok
+				end
 			end
 		end, Deps)
       end, ModOpts),
