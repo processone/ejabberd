@@ -186,7 +186,7 @@ delete(LServer, Table, ConvertFun) ->
                 mnesia:write_lock_table(Table),
                 {_N, SQLs} =
                     mnesia:foldl(
-                      fun(R, {N, SQLs} = Acc) ->
+                      fun(R, Acc) ->
                               case ConvertFun(LServer, R) of
                                   [] ->
                                       Acc;

@@ -55,7 +55,7 @@
 	 handle_cast/2, handle_info/2, code_change/3]).
 
 -export([iq_ping/3, user_online/3, user_offline/3,
-	 user_send/4, mod_opt_type/1]).
+	 user_send/4, mod_opt_type/1, depends/2]).
 
 -record(state,
 	{host = <<"">>,
@@ -252,6 +252,9 @@ cancel_timer(TRef) ->
 	  receive {timeout, TRef, _} -> ok after 0 -> ok end;
       _ -> ok
     end.
+
+depends(_Host, _Opts) ->
+    [].
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(ping_interval) ->

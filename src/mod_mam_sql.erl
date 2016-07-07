@@ -295,25 +295,3 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
     {QueryPage,
      [<<"SELECT COUNT(*) FROM archive WHERE username='">>,
       SUser, <<"'">>, WithClause, StartClause, EndClause, <<";">>]}.
-
-update(LServer, Table, Fields, Vals, Where) ->
-    UPairs = lists:zipwith(fun (A, B) ->
-				   <<A/binary, "='", B/binary, "'">>
-			   end,
-			   Fields, Vals),
-    case ejabberd_sql:sql_query(LServer,
-				 [<<"update ">>, Table, <<" set ">>,
-				  join(UPairs, <<", ">>), <<" where ">>, Where,
-				  <<";">>])
-	of
-	{updated, 1} -> {updated, 1};
-	_ ->
-	    ejabberd_sql:sql_query(LServer,
-				    [<<"insert into ">>, Table, <<"(">>,
-				     join(Fields, <<", ">>), <<") values ('">>,
-				     join(Vals, <<"', '">>), <<"');">>])
-    end.
-
-%% Almost a copy of string:join/2.
-join([], _Sep) -> [];
-join([H | T], Sep) -> [H, [[Sep, X] || X <- T]].

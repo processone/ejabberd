@@ -31,7 +31,7 @@
 -behavior(gen_mod).
 
 %% gen_mod callbacks.
--export([start/2, stop/1, mod_opt_type/1]).
+-export([start/2, stop/1, mod_opt_type/1, depends/2]).
 
 %% ejabberd_hooks callbacks.
 -export([filter_presence/3, filter_chat_states/3, filter_pep/3, filter_other/3,
@@ -141,6 +141,11 @@ mod_opt_type(queue_chat_states) ->
 mod_opt_type(queue_pep) ->
     fun(B) when is_boolean(B) -> B end;
 mod_opt_type(_) -> [queue_presence, queue_chat_states, queue_pep].
+
+-spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
+
+depends(_Host, _Opts) ->
+    [].
 
 %%--------------------------------------------------------------------
 %% ejabberd_hooks callbacks.

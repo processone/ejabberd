@@ -1037,13 +1037,6 @@ encode_subscriptions(Subscriptions) ->
 
 %%% record getter/setter
 
-state_to_raw(Nidx, State) ->
-    {JID, _} = State#pubsub_state.stateid,
-    J = ejabberd_sql:escape(encode_jid(JID)),
-    A = encode_affiliation(State#pubsub_state.affiliation),
-    S = encode_subscriptions(State#pubsub_state.subscriptions),
-    [<<"'">>, Nidx, <<"', '">>, J, <<"', '">>, A, <<"', '">>, S, <<"'">>].
-
 raw_to_item(Nidx, [ItemId, SJID, Creation, Modification, XML]) ->
     raw_to_item(Nidx, {ItemId, SJID, Creation, Modification, XML});
 raw_to_item(Nidx, {ItemId, SJID, Creation, Modification, XML}) ->

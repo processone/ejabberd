@@ -244,31 +244,6 @@ raw_to_record(LServer,
 		  askmessage = SAskMessage}
     end.
 
-record_to_string(#roster{us = {User, _Server},
-			 jid = JID, name = Name, subscription = Subscription,
-			 ask = Ask, askmessage = AskMessage}) ->
-    Username = ejabberd_sql:escape(User),
-    SJID =
-	ejabberd_sql:escape(jid:to_string(jid:tolower(JID))),
-    Nick = ejabberd_sql:escape(Name),
-    SSubscription = case Subscription of
-		      both -> <<"B">>;
-		      to -> <<"T">>;
-		      from -> <<"F">>;
-		      none -> <<"N">>
-		    end,
-    SAsk = case Ask of
-	     subscribe -> <<"S">>;
-	     unsubscribe -> <<"U">>;
-	     both -> <<"B">>;
-	     out -> <<"O">>;
-	     in -> <<"I">>;
-	     none -> <<"N">>
-	   end,
-    SAskMessage = ejabberd_sql:escape(AskMessage),
-    [Username, SJID, Nick, SSubscription, SAsk, SAskMessage,
-     <<"N">>, <<"">>, <<"item">>].
-
 record_to_row(
   #roster{us = {LUser, _LServer},
           jid = JID, name = Name, subscription = Subscription,
