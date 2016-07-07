@@ -429,6 +429,18 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 							iq_get_vcard(Lang)}]},
 			    ejabberd_router:route(To, From,
 						  jlib:iq_to_xml(Res));
+			#iq{type = get, xmlns = ?NS_MUCSUB,
+			    sub_el = #xmlel{name = <<"subscriptions">>} = SubEl} = IQ ->
+			      RoomJIDs = get_subscribed_rooms(ServerHost, Host, From),
+			      Subs = lists:map(
+				       fun(J) ->
+					       #xmlel{name = <<"subscription">>,
+						      attrs = [{<<"jid">>,
+								jid:to_string(J)}]}
+				       end, RoomJIDs),
+			      Res = IQ#iq{type = result,
+					  sub_el = [SubEl#xmlel{children = Subs}]},
+			      ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
 			#iq{type = get, xmlns = ?NS_MUC_UNIQUE} = IQ ->
 			    Res = IQ#iq{type = result,
 					sub_el =
@@ -697,6 +709,19 @@ get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
 	    #rsm_out{first = F, last = Last, count = Count,
 		     index = NewIndex}}
     end.
+
+get_subscribed_rooms(ServerHost, Host, From) ->
+    Rooms = get_rooms(ServerHost, Host),
+    lists:flatmap(
+      fun(#muc_room{name_host = {Name, _}, opts = Opts}) ->
+	      Subscribers = proplists:get_value(subscribers, Opts, []),
+	      case lists:keymember(From, 1, Subscribers) of
+		  true -> [jid:make(Name, Host, <<>>)];
+		  false -> []
+	      end;
+	 (_) ->
+	      []
+      end, Rooms).
 
 %% @doc Return the position of desired room in the list of rooms.
 %% The room must exist in the list. The count starts in 0.
