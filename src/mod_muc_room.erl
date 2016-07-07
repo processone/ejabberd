@@ -2367,7 +2367,7 @@ send_new_presence1(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
 							| StatusEls]}]),
 	      Node1 = case is_ra_changed(NJID, IsInitialPresence, StateData, OldStateData) of
 			  true -> ?NS_MUCSUB_NODES_AFFILIATIONS;
-			  false -> ?NS_MUCSUB_NODES_PRESENCES
+			  false -> ?NS_MUCSUB_NODES_PRESENCE
 		      end,
 	      send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
 			   Info#user.jid, Packet, Node1, StateData),
@@ -2445,7 +2445,7 @@ send_existing_presences1(ToJID, StateData) ->
 						     =
 							 []}]}]),
 		      send_wrapped(jid:replace_resource(StateData#state.jid, FromNick),
-				   RealToJID, Packet, ?NS_MUCSUB_NODES_PRESENCES, StateData)
+				   RealToJID, Packet, ?NS_MUCSUB_NODES_PRESENCE, StateData)
 	      end
       end,
       (?DICT):to_list(StateData#state.nicks)).
@@ -2581,7 +2581,7 @@ send_nick_changing(JID, OldNick, StateData,
 				  send_wrapped(jid:replace_resource(StateData#state.jid,
 								    OldNick),
 					       Info#user.jid, Packet1,
-					       ?NS_MUCSUB_NODES_PRESENCES,
+					       ?NS_MUCSUB_NODES_PRESENCE,
 					       StateData);
 			     true -> ok
 			  end,
@@ -2589,7 +2589,7 @@ send_nick_changing(JID, OldNick, StateData,
 				  send_wrapped(jid:replace_resource(StateData#state.jid,
 								    Nick),
 					       Info#user.jid, Packet2,
-					       ?NS_MUCSUB_NODES_PRESENCES,
+					       ?NS_MUCSUB_NODES_PRESENCE,
 					       StateData);
 			     true -> ok
 			  end;
@@ -4642,7 +4642,7 @@ get_subscription_nodes(#xmlel{name = <<"iq">>} = Packet) ->
 	    lists:flatmap(
 	      fun(#xmlel{name = <<"event">>, attrs = Attrs}) ->
 		      Node = fxml:get_attr_s(<<"node">>, Attrs),
-		      case lists:member(Node, [?NS_MUCSUB_NODES_PRESENCES,
+		      case lists:member(Node, [?NS_MUCSUB_NODES_PRESENCE,
 					       ?NS_MUCSUB_NODES_MESSAGES,
 					       ?NS_MUCSUB_NODES_AFFILIATIONS,
 					       ?NS_MUCSUB_NODES_SUBJECT,
