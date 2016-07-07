@@ -601,6 +601,8 @@ iq_disco_info(ServerHost, Lang) ->
      #xmlel{name = <<"feature">>,
 	    attrs = [{<<"var">>, ?NS_RSM}], children = []},
      #xmlel{name = <<"feature">>,
+	    attrs = [{<<"var">>, ?NS_MUCSUB}], children = []},
+     #xmlel{name = <<"feature">>,
 	    attrs = [{<<"var">>, ?NS_VCARD}], children = []}] ++
 	case gen_mod:is_loaded(ServerHost, mod_mam) of
 	    true ->
