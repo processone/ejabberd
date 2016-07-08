@@ -418,7 +418,8 @@ send_loop(State) ->
 				    {_, Node} = NodeRec#pubsub_node.nodeid,
 				    Nidx = NodeRec#pubsub_node.id,
 				    Options = NodeRec#pubsub_node.options,
-				    send_items(Host, Node, Nidx, PType, Options, SubJID, last)
+				    [send_items(Host, Node, Nidx, PType, Options, SubJID, last)
+				     || NodeRec#pubsub_node.type == PType]
 			    end,
 			    lists:usort(Subs))
 		end,
