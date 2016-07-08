@@ -113,7 +113,7 @@ mod_opt_type(_) ->
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 
 depends(_Host, _Opts) ->
-    [].
+    [{mod_http_upload, hard}].
 
 %%--------------------------------------------------------------------
 %% gen_server callbacks.
