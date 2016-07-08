@@ -141,12 +141,12 @@ defmodule Ejabberd.ConfigFile do
 
   # Example of how to define a hook, called when the event
   # specified is triggered.
-  # The format is:
+  #
   # @event: Name of the event
   # @opts: Params are optional. Available: :host and :priority.
   #        If missing, defaults are used. (host: :global | priority: 50)
   # @callback Could be an anonymous function or a callback from a module,
-  #           use the format &ModuleName.function/arity format for that.
+  #           use the &ModuleName.function/arity format for that.
   hook :register_user, [host: "localhost"], fn(user, server) ->
     IO.puts "[info] User registered: #{user} on #{server}"
   end
