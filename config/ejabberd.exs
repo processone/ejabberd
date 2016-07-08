@@ -55,28 +55,43 @@ defmodule Ejabberd.ConfigFile do
     @opts [port: 5280, web_admin: true, http_poll: true, http_bind: true, captcha: true]
   end
 
-  module :mod_adhoc
+  module :mod_adhoc do
+  end
 
   module :mod_announce do
     @opts [access: :announce]
   end
 
-  module :mod_blocking
-  module :mod_caps
-  module :mod_carboncopy
+  module :mod_blocking do
+  end
+
+  module :mod_caps do
+  end
+
+  module :mod_carboncopy do
+  end
 
   module :mod_client_state do
     @opts [drop_chat_states: true, queue_presence: false]
   end
 
-  module :mod_configure
-  module :mod_disco
-  module :mod_irc
-  module :mod_http_bind
-  module :mod_last
+  module :mod_configure do
+  end
+
+  module :mod_disco do
+  end
+
+  module :mod_irc do
+  end
+
+  module :mod_http_bind do
+  end
+
+  module :mod_last do
+  end
 
   module :mod_muc do
-    @opts [access: :muc, access_create: :muc_create, 
+    @opts [access: :muc, access_create: :muc_create,
      access_persistent: :muc_create, access_admin: :muc_admin]
   end
 
@@ -84,9 +99,14 @@ defmodule Ejabberd.ConfigFile do
     @opts [access_max_user_messages: :max_user_offline_messages]
   end
 
-  module :mod_ping
-  module :mod_privacy
-  module :mod_private
+  module :mod_ping do
+  end
+
+  module :mod_privacy do
+  end
+
+  module :mod_private do
+  end
 
   module :mod_pubsub do
     @opts [access_createnode: :pubsub_createnode, ignore_pep_from_offline: true,
@@ -95,16 +115,27 @@ defmodule Ejabberd.ConfigFile do
 
   module :mod_register do
     @opts [welcome_message: [
-      subject: "Welcome!", 
-      body: "Hi.\nWelcome to this XMPP Server", 
+      subject: "Welcome!",
+      body: "Hi.\nWelcome to this XMPP Server",
       ip_access: :trusted_network,
       access: :register]]
   end
 
-  module :mod_roster
-  module :mod_shared_roster
-  module :mod_stats
-  module :mod_time
-  module :mod_version
-  module :mod_version
+  module :mod_roster do
+  end
+
+  module :mod_shared_roster do
+  end
+
+  module :mod_stats do
+  end
+
+  module :mod_time do
+  end
+
+  module :mod_version do
+  end
+
+  module :mod_version do
+  end
 end

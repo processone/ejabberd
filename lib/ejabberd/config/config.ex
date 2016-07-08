@@ -69,15 +69,7 @@ defmodule Ejabberd.Config do
     end
   end
 
-  defmacro module(module) do
-    do_module(module, do: nil)
-  end
-
-  defmacro module(module, block) do
-    do_module(module, block)
-  end
-
-  defp do_module(module, do: block) do
+  defmacro module(module, do: block) do
     attrs = Attr.extract_attrs_from_block_with_defaults(block)
 
     quote do
