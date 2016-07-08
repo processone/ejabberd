@@ -46,8 +46,6 @@ defmodule Ejabberd.Config do
     end
   end
 
-  # TODO: Start modules parsed ? Ejabberd needs that?
-  # (For now it seems to work because gen_mod uses mods stored in ets)
   @doc """
   Returns a list with all the opts, formatted for ejabberd.
   """
@@ -57,6 +55,15 @@ defmodule Ejabberd.Config do
     |> Dict.put(:listeners, get_listeners_parsed_in_order())
     |> Ejabberd.Config.OptsFormatter.format_opts_for_ejabberd
   end
+
+  def start_hooks do
+    Ejabberd.Config.Store.get(:hooks)
+    |> Enum.each(&Ejabberd.Config.EjabberdHook.start/1)
+  end
+
+  ###
+  ### MACROS
+  ###
 
   defmacro listen(module, do: block) do
     attrs = Attr.extract_attrs_from_block_with_defaults(block)
@@ -76,6 +83,16 @@ defmodule Ejabberd.Config do
       Ejabberd.Config.Store.put(:modules, %EjabberdModule{
         module: unquote(module),
         attrs: unquote(attrs)
+      })
+    end
+  end
+
+  defmacro hook(hook_name, opts, fun) do
+    quote do
+      Ejabberd.Config.Store.put(:hooks, %Ejabberd.Config.EjabberdHook{
+        hook: unquote(hook_name),
+        opts: unquote(opts),
+        fun: unquote(fun)
       })
     end
   end
