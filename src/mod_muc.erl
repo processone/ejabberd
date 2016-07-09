@@ -150,17 +150,9 @@ restore_room(ServerHost, Host, Name) ->
 
 forget_room(ServerHost, Host, Name) ->
     LServer = jid:nameprep(ServerHost),
-    remove_room_mam(LServer, Host, Name),
+    ejabberd_hooks:run(remove_room, LServer, [LServer, Name, Host]),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:forget_room(LServer, Host, Name).
-
-remove_room_mam(LServer, Host, Name) ->
-    case gen_mod:is_loaded(LServer, mod_mam) of
-	true ->
-	    mod_mam:remove_room(LServer, Name, Host);
-	false ->
-	    ok
-    end.
 
 process_iq_disco_items(Host, From, To,
 		       #iq{lang = Lang} = IQ) ->

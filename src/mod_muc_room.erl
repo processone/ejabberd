@@ -3860,14 +3860,6 @@ get_config(Lang, StateData, From) ->
 				   (Config#config.captcha_protected))];
 		  false -> []
 		end ++
-	        case gen_mod:is_loaded(StateData#state.server_host, mod_mam) of
-		    true ->
-			[?BOOLXFIELD(<<"Enable message archiving">>,
-				     <<"muc#roomconfig_mam">>,
-				     (Config#config.mam))];
-		    false -> []
-		end
-		  ++
 		  [?JIDMULTIXFIELD(<<"Exclude Jabber IDs from CAPTCHA challenge">>,
 				   <<"muc#roomconfig_captcha_whitelist">>,
 				   ((?SETS):to_list(Config#config.captcha_whitelist)))]
@@ -3882,6 +3874,10 @@ get_config(Lang, StateData, From) ->
 				       (Config#config.logging))];
 		      _ -> []
 		    end,
+    X = ejabberd_hooks:run_fold(get_room_config,
+				StateData#state.server_host,
+				Res,
+				[StateData, From, Lang]),
     {result,
      [#xmlel{name = <<"instructions">>, attrs = [],
 	     children =
@@ -3892,7 +3888,7 @@ get_config(Lang, StateData, From) ->
       #xmlel{name = <<"x">>,
 	     attrs =
 		 [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"form">>}],
-	     children = Res}],
+	     children = X}],
      StateData}.
 
 set_config(XEl, StateData, Lang) ->
@@ -3900,7 +3896,8 @@ set_config(XEl, StateData, Lang) ->
     case XData of
       invalid -> {error, ?ERRT_BAD_REQUEST(Lang, <<"Incorrect data form">>)};
       _ ->
-	  case set_xoption(XData, StateData#state.config) of
+	  case set_xoption(XData, StateData#state.config,
+			   StateData#state.server_host, Lang) of
 	    #config{} = Config ->
 		Res = change_config(Config, StateData),
 		{result, _, NSD} = Res,
@@ -3922,30 +3919,30 @@ set_config(XEl, StateData, Lang) ->
 -define(SET_BOOL_XOPT(Opt, Val),
 	case Val of
 	  <<"0">> ->
-	      set_xoption(Opts, Config#config{Opt = false});
+	      set_xoption(Opts, Config#config{Opt = false}, ServerHost, Lang);
 	  <<"false">> ->
-	      set_xoption(Opts, Config#config{Opt = false});
-	  <<"1">> -> set_xoption(Opts, Config#config{Opt = true});
+	      set_xoption(Opts, Config#config{Opt = false}, ServerHost, Lang);
+	  <<"1">> -> set_xoption(Opts, Config#config{Opt = true}, ServerHost, Lang);
 	  <<"true">> ->
-	      set_xoption(Opts, Config#config{Opt = true});
+	      set_xoption(Opts, Config#config{Opt = true}, ServerHost, Lang);
 	  _ ->
 	      Txt = <<"Value of '~s' should be boolean">>,
 	      ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-	      {error, ?ERRT_BAD_REQUEST(?MYLANG, ErrTxt)}
+	      {error, ?ERRT_BAD_REQUEST(Lang, ErrTxt)}
 	end).
 
 -define(SET_NAT_XOPT(Opt, Val),
 	case catch jlib:binary_to_integer(Val) of
 	  I when is_integer(I), I > 0 ->
-	      set_xoption(Opts, Config#config{Opt = I});
+	      set_xoption(Opts, Config#config{Opt = I}, ServerHost, Lang);
 	  _ ->
 	      Txt = <<"Value of '~s' should be integer">>,
 	      ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-	      {error, ?ERRT_BAD_REQUEST(?MYLANG, ErrTxt)}
+	      {error, ?ERRT_BAD_REQUEST(Lang, ErrTxt)}
 	end).
 
 -define(SET_STRING_XOPT(Opt, Val),
-	set_xoption(Opts, Config#config{Opt = Val})).
+	set_xoption(Opts, Config#config{Opt = Val}, ServerHost, Lang)).
 
 -define(SET_JIDMULTI_XOPT(Opt, Vals),
 	begin
@@ -3957,33 +3954,33 @@ set_config(XEl, StateData, Lang) ->
 				(_, Set1) -> Set1
 			    end,
 			    (?SETS):empty(), Vals),
-	  set_xoption(Opts, Config#config{Opt = Set})
+	  set_xoption(Opts, Config#config{Opt = Set}, ServerHost, Lang)
 	end).
 
-set_xoption([], Config) -> Config;
+set_xoption([], Config, _ServerHost, _Lang) -> Config;
 set_xoption([{<<"muc#roomconfig_roomname">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_STRING_XOPT(title, Val);
 set_xoption([{<<"muc#roomconfig_roomdesc">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_STRING_XOPT(description, Val);
 set_xoption([{<<"muc#roomconfig_changesubject">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(allow_change_subj, Val);
 set_xoption([{<<"allow_query_users">>, [Val]} | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(allow_query_users, Val);
 set_xoption([{<<"allow_private_messages">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(allow_private_messages, Val);
 set_xoption([{<<"allow_private_messages_from_visitors">>,
 	      [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     case Val of
       <<"anyone">> ->
 	  ?SET_STRING_XOPT(allow_private_messages_from_visitors,
@@ -3997,66 +3994,66 @@ set_xoption([{<<"allow_private_messages_from_visitors">>,
       _ ->
 	  Txt = <<"Value of 'allow_private_messages_from_visitors' "
 		  "should be anyone|moderators|nobody">>,
-	  {error, ?ERRT_BAD_REQUEST(?MYLANG, Txt)}
+	  {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
     end;
 set_xoption([{<<"muc#roomconfig_allowvisitorstatus">>,
 	      [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(allow_visitor_status, Val);
 set_xoption([{<<"muc#roomconfig_allowvisitornickchange">>,
 	      [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(allow_visitor_nickchange, Val);
 set_xoption([{<<"muc#roomconfig_publicroom">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(public, Val);
 set_xoption([{<<"public_list">>, [Val]} | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(public_list, Val);
 set_xoption([{<<"muc#roomconfig_persistentroom">>,
 	      [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(persistent, Val);
 set_xoption([{<<"muc#roomconfig_moderatedroom">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(moderated, Val);
 set_xoption([{<<"members_by_default">>, [Val]} | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(members_by_default, Val);
 set_xoption([{<<"muc#roomconfig_membersonly">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(members_only, Val);
 set_xoption([{<<"captcha_protected">>, [Val]} | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(captcha_protected, Val);
 set_xoption([{<<"muc#roomconfig_allowinvites">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(allow_user_invites, Val);
 set_xoption([{<<"muc#roomconfig_allow_subscription">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(allow_subscription, Val);
 set_xoption([{<<"muc#roomconfig_passwordprotectedroom">>,
 	      [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(password_protected, Val);
 set_xoption([{<<"muc#roomconfig_roomsecret">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_STRING_XOPT(password, Val);
 set_xoption([{<<"anonymous">>, [Val]} | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(anonymous, Val);
 set_xoption([{<<"muc#roomconfig_presencebroadcast">>, Vals} | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     Roles =
         lists:foldl(
           fun(_S, error) -> error;
@@ -4072,27 +4069,28 @@ set_xoption([{<<"muc#roomconfig_presencebroadcast">>, Vals} | Opts],
         error ->
 	    Txt = <<"Value of 'muc#roomconfig_presencebroadcast' should "
 		    "be moderator|participant|visitor">>,
-	    {error, ?ERRT_BAD_REQUEST(?MYLANG, Txt)};
+	    {error, ?ERRT_BAD_REQUEST(Lang, Txt)};
         {M, P, V} ->
             Res =
                 if M -> [moderator]; true -> [] end ++
                 if P -> [participant]; true -> [] end ++
                 if V -> [visitor]; true -> [] end,
-            set_xoption(Opts, Config#config{presence_broadcast = Res})
+            set_xoption(Opts, Config#config{presence_broadcast = Res},
+			ServerHost, Lang)
     end;
 set_xoption([{<<"muc#roomconfig_allowvoicerequests">>,
 	      [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(allow_voice_requests, Val);
 set_xoption([{<<"muc#roomconfig_voicerequestmininterval">>,
 	      [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_NAT_XOPT(voice_request_min_interval, Val);
 set_xoption([{<<"muc#roomconfig_whois">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     case Val of
       <<"moderators">> ->
 	  ?SET_BOOL_XOPT(anonymous,
@@ -4103,33 +4101,40 @@ set_xoption([{<<"muc#roomconfig_whois">>, [Val]}
       _ ->
 	  Txt = <<"Value of 'muc#roomconfig_whois' should be "
 		  "moderators|anyone">>,
-	  {error, ?ERRT_BAD_REQUEST(?MYLANG, Txt)}
+	  {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
     end;
 set_xoption([{<<"muc#roomconfig_maxusers">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     case Val of
       <<"none">> -> ?SET_STRING_XOPT(max_users, none);
       _ -> ?SET_NAT_XOPT(max_users, Val)
     end;
 set_xoption([{<<"muc#roomconfig_enablelogging">>, [Val]}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     ?SET_BOOL_XOPT(logging, Val);
-set_xoption([{<<"muc#roomconfig_mam">>, [Val]}|Opts], Config) ->
-    ?SET_BOOL_XOPT(mam, Val);
 set_xoption([{<<"muc#roomconfig_captcha_whitelist">>,
 	      Vals}
 	     | Opts],
-	    Config) ->
+	    Config, ServerHost, Lang) ->
     JIDs = [jid:from_string(Val) || Val <- Vals],
     ?SET_JIDMULTI_XOPT(captcha_whitelist, JIDs);
-set_xoption([{<<"FORM_TYPE">>, _} | Opts], Config) ->
-    set_xoption(Opts, Config);
-set_xoption([{Opt, _Vals} | _Opts], _Config) ->
+set_xoption([{<<"FORM_TYPE">>, _} | Opts], Config, ServerHost, Lang) ->
+    set_xoption(Opts, Config, ServerHost, Lang);
+set_xoption([{Opt, Vals} | Opts], Config, ServerHost, Lang) ->
     Txt = <<"Unknown option '~s'">>,
     ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-    {error, ?ERRT_BAD_REQUEST(?MYLANG, ErrTxt)}.
+    Err = {error, ?ERRT_BAD_REQUEST(Lang, ErrTxt)},
+    case ejabberd_hooks:run_fold(set_room_option,
+				 ServerHost,
+				 Err,
+				 [Opt, Vals, Lang]) of
+	{error, Reason} ->
+	    {error, Reason};
+	{Pos, Val} ->
+	    set_xoption(Opts, setelement(Pos, Config, Val), ServerHost, Lang)
+    end.
 
 change_config(Config, StateData) ->
     send_config_change_info(Config, StateData),

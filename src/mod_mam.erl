@@ -37,7 +37,7 @@
 	 process_iq_v0_2/3, process_iq_v0_3/3, disco_sm_features/5,
 	 remove_user/2, remove_room/3, mod_opt_type/1, muc_process_iq/4,
 	 muc_filter_message/5, message_is_archived/5, delete_old_messages/2,
-	 get_commands_spec/0, msg_to_el/4]).
+	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/4]).
 
 -include("jlib.hrl").
 -include("logger.hrl").
@@ -102,6 +102,12 @@ start(Host, Opts) ->
 		       disco_sm_features, 50),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50),
+    ejabberd_hooks:add(remove_room, Host, ?MODULE,
+		       remove_room, 50),
+    ejabberd_hooks:add(get_room_config, Host, ?MODULE,
+		       get_room_config, 50),
+    ejabberd_hooks:add(set_room_option, Host, ?MODULE,
+		       set_room_option, 50),
     ejabberd_hooks:add(anonymous_purge_hook, Host, ?MODULE,
 		       remove_user, 50),
     case gen_mod:get_opt(assume_mam_usage, Opts,
@@ -149,6 +155,12 @@ stop(Host) ->
 			  disco_sm_features, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50),
+    ejabberd_hooks:delete(remove_room, Host, ?MODULE,
+			  remove_room, 50),
+    ejabberd_hooks:delete(get_room_config, Host, ?MODULE,
+			  get_room_config, 50),
+    ejabberd_hooks:delete(set_room_option, Host, ?MODULE,
+			  set_room_option, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, Host,
 			  ?MODULE, remove_user, 50),
     case gen_mod:get_module_opt(Host, ?MODULE, assume_mam_usage,
@@ -179,6 +191,41 @@ remove_room(LServer, Name, Host) ->
     LHost = jid:nameprep(Host),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_room(LServer, LName, LHost).
+
+get_room_config(X, RoomState, _From, Lang) ->
+    Config = RoomState#state.config,
+    Label = <<"Enable message archiving">>,
+    Var = <<"muc#roomconfig_mam">>,
+    Val = case Config#config.mam of
+	      true -> <<"1">>;
+	      _ -> <<"0">>
+	  end,
+    XField = #xmlel{name = <<"field">>,
+		    attrs =
+			[{<<"type">>, <<"boolean">>},
+			 {<<"label">>, translate:translate(Lang, Label)},
+			 {<<"var">>, Var}],
+		    children =
+			[#xmlel{name = <<"value">>, attrs = [],
+				children = [{xmlcdata, Val}]}]},
+    X ++ [XField].
+
+set_room_option(_Acc, <<"muc#roomconfig_mam">>, Vals, Lang) ->
+    try
+	Val = case Vals of
+		  [<<"0">>|_] -> false;
+		  [<<"false">>|_] -> false;
+		  [<<"1">>|_] -> true;
+		  [<<"true">>|_] -> true
+	      end,
+	{#config.mam, Val}
+    catch _:{case_clause, _} ->
+	    Txt = <<"Value of '~s' should be boolean">>,
+	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
+	    {error, ?ERRT_BAD_REQUEST(Lang, ErrTxt)}
+    end;
+set_room_option(Acc, _Opt, _Vals, _Lang) ->
+    Acc.
 
 user_receive_packet(Pkt, C2SState, JID, Peer, To) ->
     LUser = JID#jid.luser,
