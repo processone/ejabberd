@@ -596,7 +596,7 @@ advertise_perm(StateData) ->
     end.
 
 process_iq(StateData, FromJID, ToJID, Packet) ->
-    IQ = jlib:iq_query_info(Packet),
+    IQ = jlib:iq_query_or_response_info(Packet),
     case IQ of 
         #iq{xmlns = ?NS_ROSTER} ->
             case (ToJID#jid.luser /= <<"">>) and
@@ -605,13 +605,13 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
                  (FromJID#jid.luser == <<"">>) of 
                 true ->
                     AccessType = get_prop(roster, StateData#state.privilege_access),
-                    Type = fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs),
+                    Type = IQ#iq.type,
                     case {Type, AccessType} of
-                        {<<"get">>, T} when ( (T == <<"both">>) or (T == <<"get">>)) -> 
+                        {get, T} when ( (T == <<"both">>) or (T == <<"get">>)) -> 
                             Roster = mod_roster:process_iq(ToJID,ToJID, IQ),
                             send_iq_result(StateData, ToJID,
                                            FromJID, jlib:iq_to_xml(Roster));
-                        {<<"set">>, T} when ( (T == <<"both">>) or (T == <<"set">>)) ->
+                        {set, T} when ( (T == <<"both">>) or (T == <<"set">>)) ->
                             %% check if user ToJID  exist
                             #jid{lserver= Server, luser = User} = ToJID,
                             case ejabberd_auth:is_user_exists(User,Server) of

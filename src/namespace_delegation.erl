@@ -53,19 +53,21 @@ advertise_delegations(StateData) ->
 %%%  Delegated namespaces hook
 %%%--------------------------------------------------------------------------------------
 
-check_filter_attr([], _StanzaAttr) -> true;
+check_filter_attr([], _Children) -> true;
 check_filter_attr(_FilterAttr, []) -> false;
-check_filter_attr(FilterAttr, StanzaAttr) ->
+check_filter_attr(FilterAttr, [#xmlel{} = Stanza|_]) ->
+    Attrs = proplists:get_keys(Stanza#xmlel.attrs),
     lists:all(fun(Attr) ->
-                  lists:member(Attr, StanzaAttr)
-              end, FilterAttr).
+                  lists:member(Attr, Attrs)
+              end, FilterAttr);
+check_filter_attr(_FilterAttr, _Children) -> false.
 
-check_delegation([], _Ns, _StanzaAttr) -> false;
-check_delegation(Delegations, Ns, StanzaAttr) ->
+check_delegation([], _Ns, _Children) -> false;
+check_delegation(Delegations, Ns, Children) ->
     case lists:keysearch(Ns, 1, Delegations) of
         {value, {Ns, FilterAttr}} ->
-            check_filter_attr(FilterAttr, StanzaAttr);
-    	false-> false
+            check_filter_attr(FilterAttr, Children);
+    	  false-> false
     end.
 
  -spec forward_iq(binary(), binary(), #xmlel{}) -> ok.   
@@ -112,44 +114,41 @@ forward_iq(Server, Service, Packet) ->
 %                             children = Children}]) -> Children;
 % decapsulate_result1(Packet) -> ok.
 
-
+check_tab() ->
+    case ets:info(registered_services) of
+      undefined ->
+          false;
+      _ ->
+          true
+    end.
 
 %% hook user_send_packet(Packet, C2SState, From, To) -> Packet
-process_packet(#xmlel{name = <<"iq">>, attrs = Attrs} = Packet, _C2SState, From, To) ->
+process_packet(#xmlel{name = <<"iq">>, attrs = Attrs,
+                      children = Children} = Packet, _C2SState, From, To) ->
     Type = fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs),
-    IQ = jlib:iq_query_info(Packet),
-    CheckTab = 
-        case ets:info(registered_services) of
-            undefined ->
-                false;
-            _ ->
-                true
-        end,
     %% check if stanza directed to server
     %% or directed to the bare JID of the sender
     case ((From#jid.user == To#jid.user) and
        	  (From#jid.server == To#jid.server) or
           lists:member(To#jid.server, ?MYHOSTS)) and
-         ((Type == <<"get">>) or (Type == <<"set">>)) and CheckTab of
+         ((Type == <<"get">>) or (Type == <<"set">>)) and check_tab() of
         true ->
+            AttrsNew = [{<<"xmlns">>, <<"jabber:client">>} | 
+                        lists:keydelete(<<"xmlns">>, 1, Attrs)],
+            AttrsNew2 = jlib:replace_from_to_attrs(jid:to_string(From),
+                                                   jid:to_string(To), AttrsNew),
+            Ns = jlib:get_iq_namespace(Packet),
             lists:foreach(fun({ServiceHost, Pid}) -> 
-            	    	      Delegations = 
-            	    	        ejabberd_service:get_delegated_ns(Pid),
-                                case check_delegation(Delegations,
-                                      	              IQ#iq.xmlns,
-                                      	              IQ#iq.sub_el) of
-                                    true ->
-                                        AttrsNew = 
-                                            Attrs ++ [{<<"xmlns">>, 
-                                                       <<"jabber:client">>}],
-                                        AttrsNew2 = 
-                                            jlib:replace_from_to_attrs(
-                                                jid:to_string(From),
-                                                jid:to_string(To), AttrsNew),
-                                        forward_iq(From#jid.server, ServiceHost,
-                                                   Packet#xmlel{attrs = AttrsNew2});
-                                    _ -> ok
-                                end
+            	    	          Delegations = 
+            	    	              ejabberd_service:get_delegated_ns(Pid),
+                              case check_delegation(Delegations,
+                                                    Ns,
+                                                    Children) of
+                                  true ->
+                                      forward_iq(From#jid.server, ServiceHost,
+                                                 Packet#xmlel{attrs = AttrsNew2});
+                                  _ -> ok
+                              end
                           end,
                           ets:tab2list(registered_services)),
             Packet;
