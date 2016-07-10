@@ -27,22 +27,17 @@ defmodule Ejabberd.Config do
   end
 
   @doc """
-  Retrieves the path of the configuration file
-  and tries to evaluate it.
+  Given the path of the config file, it evaluates it.
   """
-  def init do
+  def init(file_path) do
     # File evaluation
-    Application.get_env(:ejabberd, :file)
-    |> case do
-      nil -> IO.puts "[ ERR ] Missing :file for ejabberd configuration."
-      path -> Code.eval_file(path) |> extract_and_store_module_name()
-    end
+    Code.eval_file(file_path) |> extract_and_store_module_name()
 
     # Getting start/0 config
-    Ejabberd.Config.Store.get(:config_module)
+    Ejabberd.Config.Store.get(:module_name)
     |> case do
       nil -> IO.puts "[ ERR ] Configuration module not found."
-      [module] -> call_start_on_config_and_store_data(module)
+      [module] -> call_start_func_and_store_data(module)
     end
   end
 
@@ -113,13 +108,13 @@ defmodule Ejabberd.Config do
 
   # Gets the general ejabberd options calling
   # the start/0 function and stores them.
-  defp call_start_on_config_and_store_data(module) do
+  defp call_start_func_and_store_data(module) do
     opts = apply(module, :start, [])
     Ejabberd.Config.Store.put(:general, opts)
   end
 
   # Stores the configuration module name
   defp extract_and_store_module_name({{:module, mod, _, :ok}, _}) do
-    Ejabberd.Config.Store.put(:config_module, mod)
+    Ejabberd.Config.Store.put(:module_name, mod)
   end
 end

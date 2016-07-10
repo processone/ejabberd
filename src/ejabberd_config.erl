@@ -60,7 +60,7 @@ start() ->
     Config = get_ejabberd_config_path(),
     State0 = case 'Elixir.Ejabberd.ConfigUtil':is_elixir_config(Config) of
       true ->
-        'Elixir.Ejabberd.Config':init(),
+        'Elixir.Ejabberd.Config':init(Config),
         'Elixir.Ejabberd.Config':get_ejabberd_opts();
       false ->
         read_file(Config)
