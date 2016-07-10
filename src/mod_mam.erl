@@ -210,7 +210,7 @@ get_room_config(X, RoomState, _From, Lang) ->
 				children = [{xmlcdata, Val}]}]},
     X ++ [XField].
 
-set_room_option(_Acc, <<"muc#roomconfig_mam">>, Vals, Lang) ->
+set_room_option(_Acc, <<"muc#roomconfig_mam">> = Opt, Vals, Lang) ->
     try
 	Val = case Vals of
 		  [<<"0">>|_] -> false;
