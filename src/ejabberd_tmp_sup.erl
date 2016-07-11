@@ -36,6 +36,17 @@ start_link(Name, Module) ->
 
 
 init(Module) ->
+    if
+    	Module == ejabberd_service ->
+    		case ets:info(registered_services) of
+                undefined ->
+                    %% table contains {service domain, Pid}
+                    ets:new(registered_services, [named_table, public]);
+                _ ->
+                    ok
+            end;
+        true -> ok
+    end,
     {ok, {{simple_one_for_one, 10, 1},
           [{undefined, {Module, start_link, []}, temporary,
 	          1000, worker, [Module]}]}}.

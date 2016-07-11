@@ -168,16 +168,8 @@ init([{SockMod, Socket}, Opts]) ->
                 end,
     SockMod:change_shaper(Socket, Shaper),
 
-    %% add host option to config file
     add_hooks(ServerHosts),
 
-    case ets:info(registered_services) of
-        undefined ->
-            %% table contains {service domain, Pid}
-            ets:new(registered_services, [named_table, public]);
-        _ ->
-            ok
-    end,
     {ok, wait_for_stream,
      #state{socket = Socket, sockmod = SockMod,
             streamid = new_id(), host_opts = HostOpts, access = Access,
