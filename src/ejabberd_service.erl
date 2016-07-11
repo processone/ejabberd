@@ -639,10 +639,27 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
                     Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN), 
                     send_element(StateData, Err)
             end;
+        #iq{type = Type, id = Id} when (Type == error) or (Type == result) ->
+            case (ToJID#jid.luser == <<"">>) and
+                 lists:member(ToJID#jid.lserver, StateData#state.server_hosts) and
+                 (FromJID#jid.luser == <<"">>) of
+                true ->
+                    Hook = hook_name(Type, Id),
+                    ejabberd_hooks:run(Hook, ToJID#jid.lserver, [Packet]);
+                _ ->
+                    ejabberd_router:route(FromJID, ToJID, Packet)
+            end;
         _ ->
             
             ejabberd_router:route(FromJID, ToJID, Packet)
     end.
+
+-spec hook_name(atom(), binary()) -> atom().
+
+hook_name(Type, Id) ->
+    Hook0 =  atom_to_binary(Type, 'latin1'),
+    Hook = << <<"iq_">>/binary, Hook0/binary, Id/binary >>,
+    binary_to_atom(Hook, 'latin1').
 
 send_iq_result(StateData, From, To, #xmlel{attrs = Attrs } = Packet) ->
     Attrs2 = jlib:replace_from_to_attrs(jid:to_string(From),
