@@ -122,10 +122,10 @@ decapsulate_result2(_Children) -> ok.
 
 check_iq(#xmlel{attrs = Attrs} = Packet,
          #xmlel{attrs = AttrsOrigin} = OriginPacket) ->
-    % Id attribute of OriginPacket Must be equile to Packet Id attribute
+    % Id attribute of OriginPacket Must be equil to Packet Id attribute
     Id1 = fxml:get_attr_s(<<"id">>, Attrs),
     Id2 = fxml:get_attr_s(<<"id">>, AttrsOrigin),
-    % From attribute of OriginPacket Must be equile to Packet To attribute
+    % From attribute of OriginPacket Must be equil to Packet To attribute
     From = fxml:get_attr_s(<<"from">>, AttrsOrigin),
     To = fxml:get_attr_s(<<"from">>, Attrs),
     % Type attribute Must be error or result
@@ -158,7 +158,7 @@ manage_service_result(HookRes, HookErr, Service, OriginPacket) ->
                               manage_service_error(HookRes, HookErr,
                                                    Service, OriginPacket), 10),
         % Check Packet from attribute
-        % It Must be equile to current service host
+        % It Must be equil to current service host
         From = fxml:get_attr_s(<<"from">> , Packet#xmlel.attrs),
         if
           From == Service  ->
