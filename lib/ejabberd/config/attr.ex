@@ -16,7 +16,11 @@ defmodule Ejabberd.Config.Attr do
   @attr_supported [
     active:
       [type: :boolean, default: true],
+    git:
+      [type: :string, default: ""],
     version:
+      [type: :string, default: ""],
+    name:
       [type: :string, default: ""],
     opts:
       [type: :list, default: []],
@@ -119,6 +123,7 @@ defmodule Ejabberd.Config.Attr do
   defp is_of_type?(param, type) when type == :boolean and is_boolean(param), do: true
   defp is_of_type?(param, type) when type == :string and is_bitstring(param), do: true
   defp is_of_type?(param, type) when type == :list and is_list(param), do: true
+  defp is_of_type?(param, type) when type == :atom and is_atom(param), do: true
   defp is_of_type?(_param, type) when type == :any, do: true
   defp is_of_type?(_, _), do: false
 end
