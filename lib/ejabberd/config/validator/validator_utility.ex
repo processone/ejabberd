@@ -1,4 +1,4 @@
-defmodule Ejabberd.Config.Validator do
+defmodule Ejabberd.Config.ValidatorUtility do
   @moduledoc """
   Module used as a base validator for validation modules.
   Imports utility functions for working with validation structures.

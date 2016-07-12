@@ -6,7 +6,7 @@ defmodule Ejabberd.Config.Validator.Dependencies do
 
   # TODO: Duplicated from validator.ex !!!
   @type mod_validation :: {[EjabberdModule.t], EjabberdModule.t, map}
-  import Ejabberd.Config.Validator
+  import Ejabberd.Config.ValidatorUtility
 
   @doc """
   Given a module (with the form used for validation)

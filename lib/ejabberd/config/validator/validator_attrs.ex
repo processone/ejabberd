@@ -6,7 +6,7 @@ defmodule Ejabberd.Config.Validator.Attrs do
   # TODO: Duplicated from validator.ex !!!
   @type mod_validation :: {[EjabberdModule.t], EjabberdModule.t, map}
 
-  import Ejabberd.Config.Validator
+  import Ejabberd.Config.ValidatorUtility
   alias Ejabberd.Config.{Attr}
 
   @doc """
