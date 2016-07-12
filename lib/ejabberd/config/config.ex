@@ -110,37 +110,9 @@ defmodule Ejabberd.Config do
     end
 
     # Fetching git modules and install them
-    Ejabberd.Config.Store.get(:modules)
-    |> Enum.filter(&is_git_module?/1)
-    |> Enum.each(&fetch_and_install_git_module/1)
+    get_modules_parsed_in_order()
+    |> EjabberdModule.fetch_git_repos
   end
-
-  defp is_git_module?(%EjabberdModule{attrs: attrs}) do
-    case Keyword.get(attrs, :git) do
-      nil -> false
-      repo -> String.match?(repo, ~r/((git|ssh|http(s)?)|(git@[\w\.]+))(:(\/\/)?)([\w\.@\:\/\-~]+)(\.git)(\/)?/)
-    end
-  end
-
-  defp fetch_and_install_git_module(%EjabberdModule{attrs: attrs}) do
-    repo = Keyword.get(attrs, :git)
-    mod_name = case Keyword.get(attrs, :name) do
-      "" -> infer_mod_name_from_git_url(repo)
-      name -> name
-    end
-
-    path = "#{:ext_mod.modules_dir()}/sources/ejabberd-contrib\/#{mod_name}"
-
-    unless File.exists?(path) do
-      IO.puts "[info] Fetching: #{repo}"
-      :os.cmd('git clone #{repo} #{path}')
-    end
-
-    :ext_mod.install(mod_name) # Have to check if overwrites an already present mod
-  end
-
-  defp infer_mod_name_from_git_url(repo),
-    do: String.split(repo, "/") |> List.last |> String.replace(".git", "")
 
   # Returns the modules from the store
   defp get_modules_parsed_in_order,
