@@ -23,21 +23,6 @@ defmodule Ejabberd.Config.EjabberdModule do
   end
 
   @doc """
-  Start each module in the order specified in the list,
-  also call the before/after hook if specified.
-  """
-  def start_modules(modules) when is_list(modules), do:
-    Enum.each(modules, &start_modules/1)
-
-  def start_modules(%EjabberdModule{module: mod, attrs: attrs}) do
-    opts = attrs[:opts]
-
-    invoke_hook(attrs[:before_hook])
-    apply(mod, :start, ["localhost", opts])
-    invoke_hook(attrs[:after_hook])
-  end
-
-  @doc """
   Given a list of modules, it takes only the ones with
   a git attribute and tries to fetch the repo,
   then, it install them through :ext_mod.install/1
@@ -50,9 +35,6 @@ defmodule Ejabberd.Config.EjabberdModule do
   end
 
   # Private API
-
-  defp invoke_hook(nil), do: nil
-  defp invoke_hook(func), do: func.()
 
   defp is_git_module?(%EjabberdModule{attrs: attrs}) do
     case Keyword.get(attrs, :git) do
