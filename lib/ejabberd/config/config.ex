@@ -29,15 +29,16 @@ defmodule Ejabberd.Config do
   @doc """
   Given the path of the config file, it evaluates it.
   """
-  def init(file_path) do
-    # File evaluation
-    Code.eval_file(file_path) |> extract_and_store_module_name()
+  def init(file_path, force \\ false) do
+    init_already_executed = Ejabberd.Config.Store.get(:module_name) != []
 
-    # Getting start/0 config
-    Ejabberd.Config.Store.get(:module_name)
-    |> case do
-      nil -> IO.puts "[ ERR ] Configuration module not found."
-      [module] -> call_start_func_and_store_data(module)
+    case force do
+      true ->
+        Process.whereis(Ejabberd.Config.Store) |> Process.exit(:stop)
+        Ejabberd.Config.Store.start_link
+        do_init(file_path)
+      false ->
+        if not init_already_executed, do: do_init(file_path)
     end
   end
 
@@ -51,6 +52,9 @@ defmodule Ejabberd.Config do
     |> Ejabberd.Config.OptsFormatter.format_opts_for_ejabberd
   end
 
+  @doc """
+  Register the hooks defined inside the elixir config file.
+  """
   def start_hooks do
     Ejabberd.Config.Store.get(:hooks)
     |> Enum.each(&Ejabberd.Config.EjabberdHook.start/1)
@@ -93,6 +97,18 @@ defmodule Ejabberd.Config do
   end
 
   # Private API
+
+  defp do_init(file_path) do
+    # File evaluation
+    Code.eval_file(file_path) |> extract_and_store_module_name()
+
+    # Getting start/0 config
+    Ejabberd.Config.Store.get(:module_name)
+    |> case do
+      nil -> IO.puts "[ ERR ] Configuration module not found."
+      [module] -> call_start_func_and_store_data(module)
+    end
+  end
 
   # Returns the modules from the store
   defp get_modules_parsed_in_order,

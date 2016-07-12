@@ -58,13 +58,7 @@
 start() ->
     mnesia_init(),
     Config = get_ejabberd_config_path(),
-    State0 = case 'Elixir.Ejabberd.ConfigUtil':is_elixir_config(Config) of
-      true ->
-        'Elixir.Ejabberd.Config':init(Config),
-        'Elixir.Ejabberd.Config':get_ejabberd_opts();
-      false ->
-        read_file(Config)
-    end,
+    State0 = read_file(Config),
     State1 = hosts_to_start(State0),
     State2 = validate_opts(State1),
     %% This start time is used by mod_last:
@@ -154,7 +148,13 @@ read_file(File) ->
                      {include_modules_configs, true}]).
 
 read_file(File, Opts) ->
-    Terms1 = get_plain_terms_file(File, Opts),
+    Terms1 = case 'Elixir.Ejabberd.ConfigUtil':is_elixir_config(File) of
+      true ->
+        'Elixir.Ejabberd.Config':init(File),
+        'Elixir.Ejabberd.Config':get_ejabberd_opts();
+      false ->
+        get_plain_terms_file(File, Opts)
+    end,
     Terms_macros = case proplists:get_bool(replace_macros, Opts) of
                        true -> replace_macros(Terms1);
                        false -> Terms1
