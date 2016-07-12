@@ -18,7 +18,9 @@ defmodule Ejabberd.ConfigFile do
   end
 
   defp shaper do
-    [normal: 1000, fast: 50000, max_fsm_queue: 1000]
+    [normal: 1000,
+      fast: 50000,
+      max_fsm_queue: 1000]
   end
 
   defp acl do
@@ -44,7 +46,11 @@ defmodule Ejabberd.ConfigFile do
   end
 
   listen :ejabberd_c2s do
-    @opts [port: 5222, max_stanza_size: 65536, shaper: :c2s_shaper, access: :c2s]
+    @opts [
+      port: 5222,
+      max_stanza_size: 65536,
+      shaper: :c2s_shaper,
+      access: :c2s]
   end
 
   listen :ejabberd_s2s_in do
@@ -52,7 +58,12 @@ defmodule Ejabberd.ConfigFile do
   end
 
   listen :ejabberd_http do
-    @opts [port: 5280, web_admin: true, http_poll: true, http_bind: true, captcha: true]
+    @opts [
+      port: 5280,
+      web_admin: true,
+      http_poll: true,
+      http_bind: true,
+      captcha: true]
   end
 
   module :mod_adhoc do
@@ -72,7 +83,9 @@ defmodule Ejabberd.ConfigFile do
   end
 
   module :mod_client_state do
-    @opts [drop_chat_states: true, queue_presence: false]
+    @opts [
+      drop_chat_states: true,
+      queue_presence: false]
   end
 
   module :mod_configure do
@@ -91,8 +104,11 @@ defmodule Ejabberd.ConfigFile do
   end
 
   module :mod_muc do
-    @opts [access: :muc, access_create: :muc_create,
-     access_persistent: :muc_create, access_admin: :muc_admin]
+    @opts [
+      access: :muc,
+      access_create: :muc_create,
+      access_persistent: :muc_create,
+      access_admin: :muc_admin]
   end
 
   module :mod_offline do
@@ -109,8 +125,11 @@ defmodule Ejabberd.ConfigFile do
   end
 
   module :mod_pubsub do
-    @opts [access_createnode: :pubsub_createnode, ignore_pep_from_offline: true,
-      last_item_cache: true, plugins: ["flat", "hometree", "pep"]]
+    @opts [
+      access_createnode: :pubsub_createnode,
+      ignore_pep_from_offline: true,
+      last_item_cache: true,
+      plugins: ["flat", "hometree", "pep"]]
   end
 
   module :mod_register do
