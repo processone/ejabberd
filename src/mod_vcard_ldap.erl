@@ -40,7 +40,7 @@
 -export([start/2, start_link/2, stop/1,
 	 get_sm_features/5, process_local_iq/3, process_sm_iq/3,
 	 remove_user/1, route/4, transform_module_options/1,
-	 mod_opt_type/1, opt_type/1]).
+	 mod_opt_type/1, opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -137,6 +137,9 @@ stop(Host) ->
     gen_server:call(Proc, stop),
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
+
+depends(_Host, _Opts) ->
+    [].
 
 terminate(_Reason, State) ->
     Host = State#state.serverhost,

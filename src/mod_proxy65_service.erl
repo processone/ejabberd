@@ -260,7 +260,7 @@ parse_options(ServerHost, Opts) ->
     Port = gen_mod:get_opt(port, Opts,
                            fun(P) when is_integer(P), P>0, P<65536 -> P end,
                            7777),
-    ACL = gen_mod:get_opt(access, Opts, fun(A) when is_atom(A) -> A end,
+    ACL = gen_mod:get_opt(access, Opts, fun acl:access_rules_validator/1,
                           all),
     Name = gen_mod:get_opt(name, Opts, fun iolist_to_binary/1,
 			   <<"SOCKS5 Bytestreams">>),

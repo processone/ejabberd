@@ -37,7 +37,7 @@
 
 -export([user_send_packet/4, user_receive_packet/5,
 	 iq_handler2/3, iq_handler1/3, remove_connection/4,
-	 is_carbon_copy/1, mod_opt_type/1]).
+	 is_carbon_copy/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -277,6 +277,9 @@ has_non_empty_body(Packet) ->
 list(User, Server) ->
     Mod = gen_mod:db_mod(Server, ?MODULE),
     Mod:list(User, Server).
+
+depends(_Host, _Opts) ->
+    [].
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;

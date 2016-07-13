@@ -118,16 +118,15 @@ store_type() -> external.
 
 check_password(User, AuthzId, Server, Password) ->
     if AuthzId /= <<>> andalso AuthzId /= User ->
-        false;
-    true ->
-    if Password == <<"">> -> false;
+	    false;
        true ->
-	   case catch check_password_ldap(User, Server, Password)
-	       of
-	     {'EXIT', _} -> false;
-	     Result -> Result
-	   end
-        end
+	    if Password == <<"">> -> false;
+	       true ->
+		    case catch check_password_ldap(User, Server, Password) of
+		      {'EXIT', _} -> false;
+		      Result -> Result
+		    end
+	    end
     end.
 
 check_password(User, AuthzId, Server, Password, _Digest,

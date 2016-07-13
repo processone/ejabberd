@@ -35,7 +35,7 @@
 	 process_sm_iq/3, get_local_commands/5,
 	 get_local_identity/5, get_local_features/5,
 	 get_sm_commands/5, get_sm_identity/5, get_sm_features/5,
-	 ping_item/4, ping_command/4, mod_opt_type/1]).
+	 ping_item/4, ping_command/4, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -283,6 +283,9 @@ ping_command(_Acc, _From, _To,
 	    {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
     end;
 ping_command(Acc, _From, _To, _Request) -> Acc.
+
+depends(_Host, _Opts) ->
+    [].
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(report_commands_node) ->

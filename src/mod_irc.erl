@@ -38,7 +38,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -99,6 +99,9 @@ stop(Host) ->
     gen_server:call(Proc, stop),
     supervisor:delete_child(ejabberd_sup, Proc).
 
+depends(_Host, _Opts) ->
+    [].
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -117,7 +120,7 @@ init([Host, Opts]) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     Access = gen_mod:get_opt(access, Opts,
-                             fun(A) when is_atom(A) -> A end,
+                             fun acl:access_rules_validator/1,
                              all),
     catch ets:new(irc_connection,
 		  [named_table, public,
@@ -1252,7 +1255,7 @@ import(LServer, DBType, Data) ->
     Mod:import(LServer, Data).
 
 mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default_encoding) ->
     fun iolist_to_binary/1;

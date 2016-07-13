@@ -127,6 +127,8 @@ defmodule EjabberdCommandsMockTest do
 
 
 	test "API command can be registered and executed" do
+		mock_commands_config
+
 		# Create & register a mocked command test() -> :result
 		command_name = :test
 		function = :test_command
@@ -142,6 +144,8 @@ defmodule EjabberdCommandsMockTest do
 	end
 
 	test "API command with versions can be registered and executed" do
+		mock_commands_config
+
 		command_name = :test
 
 		function1 = :test_command1
@@ -409,13 +413,13 @@ defmodule EjabberdCommandsMockTest do
 		:meck.expect(:ejabberd_config, :get_myhosts,
 			fn() -> [@domain]	end)
 		:meck.new :acl
-		:meck.expect(:acl, :match_rule,
-			fn(@domain, :commands_admin_access, user) ->
-				case :jlib.make_jid(@admin, @domain, "") do
-					^user -> :allow
-					_ -> :deny
-				end
-				(@domain, :all, _user) ->
+		:meck.expect(:acl, :access_matches,
+			fn(:commands_admin_access, info, _scope) ->
+        case info do
+          %{usr: {@admin, @domain, _}} -> :allow
+          _ -> :deny
+        end;
+			  (:all, _, _scope) ->
 					:allow
 			end)
 	end

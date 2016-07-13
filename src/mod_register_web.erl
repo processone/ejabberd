@@ -55,7 +55,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process/2, mod_opt_type/1]).
+-export([start/2, stop/1, process/2, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -75,6 +75,9 @@ start(_Host, _Opts) ->
     ok.
 
 stop(_Host) -> ok.
+
+depends(_Host, _Opts) ->
+    [{mod_register, hard}].
 
 %%%----------------------------------------------------------------------
 %%% HTTP handlers
@@ -491,7 +494,7 @@ form_del_get(Host, Lang) ->
 %%                                    {error, invalid_jid}
 register_account(Username, Host, Password) ->
     Access = gen_mod:get_module_opt(Host, mod_register, access,
-                                    fun(A) when is_atom(A) -> A end,
+                                    fun(A) -> A end,
                                     all),
     case jid:make(Username, Host, <<"">>) of
       error -> {error, invalid_jid};

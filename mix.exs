@@ -3,7 +3,7 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "16.04.0",
+     version: "16.06.0",
      description: description,
      elixir: "~> 1.2",
      elixirc_paths: ["lib"],
@@ -38,7 +38,7 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp deps do
-    [{:lager, "~> 3.0"},
+    [{:lager, "~> 3.0.0"},
      {:p1_utils, "~> 1.0"},
      {:cache_tab, "~> 1.0"},
      {:stringprep, "~> 1.0"},
@@ -51,7 +51,7 @@ defmodule Ejabberd.Mixfile do
      {:p1_oauth2, "~> 0.6.1"},
      {:p1_xmlrpc, "~> 1.15"},
      {:p1_mysql, "~> 1.0"},
-     {:p1_pgsql, "~> 1.0"},
+     {:p1_pgsql, "~> 1.1"},
      {:sqlite3, "~> 1.1"},
      {:ezlib, "~> 1.0"},
      {:iconv, "~> 1.0"},

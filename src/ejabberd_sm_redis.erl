@@ -21,48 +21,12 @@
 -include("logger.hrl").
 -include("jlib.hrl").
 
--define(PROCNAME, 'ejabberd_redis_client').
-
 %%%===================================================================
 %%% API
 %%%===================================================================
 -spec init() -> ok | {error, any()}.
 init() ->
-    Server = ejabberd_config:get_option(redis_server,
-					fun iolist_to_list/1,
-					"localhost"),
-    Port = ejabberd_config:get_option(redis_port,
-				      fun(P) when is_integer(P),
-						  P>0, P<65536 ->
-					      P
-				      end, 6379),
-    DB = ejabberd_config:get_option(redis_db,
-				    fun(I) when is_integer(I), I >= 0 ->
-					    I
-				    end, 0),
-    Pass = ejabberd_config:get_option(redis_password,
-				      fun iolist_to_list/1,
-				      ""),
-    ReconnTimeout = timer:seconds(
-		      ejabberd_config:get_option(
-			redis_reconnect_timeout,
-			fun(I) when is_integer(I), I>0 -> I end,
-			1)),
-    ConnTimeout = timer:seconds(
-		    ejabberd_config:get_option(
-		      redis_connect_timeout,
-		      fun(I) when is_integer(I), I>0 -> I end,
-		      1)),
-    case eredis:start_link(Server, Port, DB, Pass,
-			   ReconnTimeout, ConnTimeout) of
-	{ok, Client} ->
-	    register(?PROCNAME, Client),
-	    clean_table(),
-	    ok;
-	{error, _} = Err ->
-	    ?ERROR_MSG("failed to start redis client: ~p", [Err]),
-	    Err
-    end.
+    clean_table().
 
 -spec set_session(#session{}) -> ok.
 set_session(Session) ->
@@ -71,8 +35,8 @@ set_session(Session) ->
     SIDKey = sid_to_key(Session#session.sid),
     ServKey = server_to_key(element(2, Session#session.us)),
     USSIDKey = us_sid_to_key(Session#session.us, Session#session.sid),
-    case eredis:qp(?PROCNAME, [["HSET", USKey, SIDKey, T],
-			       ["HSET", ServKey, USSIDKey, T]]) of
+    case ejabberd_redis:qp([["HSET", USKey, SIDKey, T],
+			    ["HSET", ServKey, USSIDKey, T]]) of
 	[{ok, _}, {ok, _}] ->
 	    ok;
 	Err ->
@@ -83,7 +47,7 @@ set_session(Session) ->
 			    {ok, #session{}} | {error, notfound}.
 delete_session(LUser, LServer, _LResource, SID) ->
     USKey = us_to_key({LUser, LServer}),
-    case eredis:q(?PROCNAME, ["HGETALL", USKey]) of
+    case ejabberd_redis:q(["HGETALL", USKey]) of
 	{ok, Vals} ->
 	    Ss = decode_session_list(Vals),
 	    case lists:keyfind(SID, #session.sid, Ss) of
@@ -93,8 +57,8 @@ delete_session(LUser, LServer, _LResource, SID) ->
 		    SIDKey = sid_to_key(SID),
 		    ServKey = server_to_key(element(2, Session#session.us)),
 		    USSIDKey = us_sid_to_key(Session#session.us, SID),
-		    eredis:qp(?PROCNAME, [["HDEL", USKey, SIDKey],
-					  ["HDEL", ServKey, USSIDKey]]),
+		    ejabberd_redis:qp([["HDEL", USKey, SIDKey],
+				       ["HDEL", ServKey, USSIDKey]]),
 		    {ok, Session}
 	    end;
 	Err ->
@@ -112,7 +76,7 @@ get_sessions() ->
 -spec get_sessions(binary()) -> [#session{}].
 get_sessions(LServer) ->
     ServKey = server_to_key(LServer),
-    case eredis:q(?PROCNAME, ["HGETALL", ServKey]) of
+    case ejabberd_redis:q(["HGETALL", ServKey]) of
 	{ok, Vals} ->
 	    decode_session_list(Vals);
 	Err ->
@@ -123,7 +87,7 @@ get_sessions(LServer) ->
 -spec get_sessions(binary(), binary()) -> [#session{}].
 get_sessions(LUser, LServer) ->
     USKey = us_to_key({LUser, LServer}),
-    case eredis:q(?PROCNAME, ["HGETALL", USKey]) of
+    case ejabberd_redis:q(["HGETALL", USKey]) of
 	{ok, Vals} when is_list(Vals) ->
 	    decode_session_list(Vals);
 	Err ->
@@ -135,7 +99,7 @@ get_sessions(LUser, LServer) ->
     [#session{}].
 get_sessions(LUser, LServer, LResource) ->
     USKey = us_to_key({LUser, LServer}),
-    case eredis:q(?PROCNAME, ["HGETALL", USKey]) of
+    case ejabberd_redis:q(["HGETALL", USKey]) of
 	{ok, Vals} when is_list(Vals) ->
 	    [S || S <- decode_session_list(Vals),
 		  element(3, S#session.usr) == LResource];
@@ -172,7 +136,7 @@ clean_table() ->
     lists:foreach(
       fun(LServer) ->
 	      ServKey = server_to_key(LServer),
-	      case eredis:q(?PROCNAME, ["HKEYS", ServKey]) of
+	      case ejabberd_redis:q(["HKEYS", ServKey]) of
 		  {ok, []} ->
 		      ok;
 		  {ok, Vals} ->
@@ -189,7 +153,7 @@ clean_table() ->
 				     SIDKey = sid_to_key(SID),
 				     ["HDEL", USKey, SIDKey]
 			     end, Vals1),
-		      Res = eredis:qp(?PROCNAME, [Q1|Q2]),
+		      Res = ejabberd_redis:qp([Q1|Q2]),
 		      case lists:filter(
 			     fun({ok, _}) -> false;
 				(_) -> true

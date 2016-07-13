@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_local_iq/3,
-	 process_sm_iq/3, mod_opt_type/1]).
+	 process_sm_iq/3, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -54,6 +54,9 @@ stop(Host) ->
 				     ?NS_SIC),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_SIC).
+
+depends(_Host, _Opts) ->
+    [].
 
 process_local_iq(#jid{user = User, server = Server,
 		      resource = Resource},

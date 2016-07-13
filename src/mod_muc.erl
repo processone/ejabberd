@@ -53,7 +53,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -105,6 +105,9 @@ stop(Host) ->
     supervisor:delete_child(ejabberd_sup, Proc),
     {wait, Rooms}.
 
+depends(_Host, _Opts) ->
+    [{mod_mam, soft}].
+
 shutdown_rooms(Host) ->
     MyHost = gen_mod:get_module_opt_host(Host, mod_muc,
 					 <<"conference.@HOST@">>),
@@ -147,17 +150,9 @@ restore_room(ServerHost, Host, Name) ->
 
 forget_room(ServerHost, Host, Name) ->
     LServer = jid:nameprep(ServerHost),
-    remove_room_mam(LServer, Host, Name),
+    ejabberd_hooks:run(remove_room, LServer, [LServer, Name, Host]),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:forget_room(LServer, Host, Name).
-
-remove_room_mam(LServer, Host, Name) ->
-    case gen_mod:is_loaded(LServer, mod_mam) of
-	true ->
-	    mod_mam:remove_room(LServer, Name, Host);
-	false ->
-	    ok
-    end.
 
 process_iq_disco_items(Host, From, To,
 		       #iq{lang = Lang} = IQ) ->
@@ -193,14 +188,14 @@ init([Host, Opts]) ->
     clean_table_from_bad_node(node(), MyHost),
     mnesia:subscribe(system),
     Access = gen_mod:get_opt(access, Opts,
-                             fun(A) when is_atom(A) -> A end, all),
+                             fun acl:access_rules_validator/1, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts,
-                                   fun(A) when is_atom(A) -> A end, all),
+                                   fun acl:access_rules_validator/1, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts,
-                                  fun(A) when is_atom(A) -> A end,
+                                  fun acl:access_rules_validator/1,
                                   none),
     AccessPersistent = gen_mod:get_opt(access_persistent, Opts,
-				       fun(A) when is_atom(A) -> A end,
+				       fun acl:access_rules_validator/1,
                                        all),
     HistorySize = gen_mod:get_opt(history_size, Opts,
                                   fun(I) when is_integer(I), I>=0 -> I end,
@@ -426,6 +421,18 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 							iq_get_vcard(Lang)}]},
 			    ejabberd_router:route(To, From,
 						  jlib:iq_to_xml(Res));
+			#iq{type = get, xmlns = ?NS_MUCSUB,
+			    sub_el = #xmlel{name = <<"subscriptions">>} = SubEl} = IQ ->
+			      RoomJIDs = get_subscribed_rooms(ServerHost, Host, From),
+			      Subs = lists:map(
+				       fun(J) ->
+					       #xmlel{name = <<"subscription">>,
+						      attrs = [{<<"jid">>,
+								jid:to_string(J)}]}
+				       end, RoomJIDs),
+			      Res = IQ#iq{type = result,
+					  sub_el = [SubEl#xmlel{children = Subs}]},
+			      ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
 			#iq{type = get, xmlns = ?NS_MUC_UNIQUE} = IQ ->
 			    Res = IQ#iq{type = result,
 					sub_el =
@@ -598,6 +605,8 @@ iq_disco_info(ServerHost, Lang) ->
      #xmlel{name = <<"feature">>,
 	    attrs = [{<<"var">>, ?NS_RSM}], children = []},
      #xmlel{name = <<"feature">>,
+	    attrs = [{<<"var">>, ?NS_MUCSUB}], children = []},
+     #xmlel{name = <<"feature">>,
 	    attrs = [{<<"var">>, ?NS_VCARD}], children = []}] ++
 	case gen_mod:is_loaded(ServerHost, mod_mam) of
 	    true ->
@@ -692,6 +701,19 @@ get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
 	    #rsm_out{first = F, last = Last, count = Count,
 		     index = NewIndex}}
     end.
+
+get_subscribed_rooms(ServerHost, Host, From) ->
+    Rooms = get_rooms(ServerHost, Host),
+    lists:flatmap(
+      fun(#muc_room{name_host = {Name, _}, opts = Opts}) ->
+	      Subscribers = proplists:get_value(subscribers, Opts, []),
+	      case lists:keymember(From, 1, Subscribers) of
+		  true -> [jid:make(Name, Host, <<>>)];
+		  false -> []
+	      end;
+	 (_) ->
+	      []
+      end, Rooms).
 
 %% @doc Return the position of desired room in the list of rooms.
 %% The room must exist in the list. The count starts in 0.
@@ -925,13 +947,13 @@ import(LServer, DBType, Data) ->
     Mod:import(LServer, Data).
 
 mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(access_admin) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(access_create) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(access_persistent) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default_room_options) ->
     fun (L) when is_list(L) -> L end;

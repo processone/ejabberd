@@ -66,7 +66,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, depends/2]).
 
 -deprecated({get_queue_length,2}).
 
@@ -125,6 +125,8 @@ stop(Host) ->
     supervisor:delete_child(ejabberd_sup, Proc),
     ok.
 
+depends(_Host, _Opts) ->
+    [].
 
 %%====================================================================
 %% gen_server callbacks
@@ -162,7 +164,7 @@ init([Host, Opts]) ->
 				  ?MODULE, handle_offline_query, IQDisc),
     AccessMaxOfflineMsgs =
 	gen_mod:get_opt(access_max_user_messages, Opts,
-			fun(A) when is_atom(A) -> A end,
+			fun acl:shaper_rules_validator/1,
 			max_user_offline_messages),
     {ok,
      #state{host = Host,
@@ -866,7 +868,7 @@ import(LServer, DBType, Data) ->
     Mod:import(LServer, Data).
 
 mod_opt_type(access_max_user_messages) ->
-    fun (A) -> A end;
+    fun acl:shaper_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(store_empty_body) ->
     fun (V) when is_boolean(V) -> V;

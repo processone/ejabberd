@@ -28,7 +28,7 @@
 -behavior(gen_mod).
 
 -export([start/2, stop/1, check_packet/6,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -47,6 +47,9 @@ stop(Host) ->
     ejabberd_hooks:delete(privacy_check_packet, Host,
 			  ?MODULE, check_packet, 25),
     ok.
+
+depends(_Host, _Opts) ->
+    [].
 
 check_packet(_, _User, Server, _PrivacyList,
 	     {From, To, #xmlel{name = Name, attrs = Attrs}}, Dir) ->

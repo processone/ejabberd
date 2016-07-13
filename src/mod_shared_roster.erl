@@ -39,7 +39,7 @@
 	 delete_group/2, get_group_opts/2, set_group_opts/3,
 	 get_group_users/2, get_group_explicit_users/2,
 	 is_user_in_group/3, add_user_to_group/3, opts_to_binary/1,
-	 remove_user_from_group/3, mod_opt_type/1]).
+	 remove_user_from_group/3, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -131,6 +131,9 @@ stop(Host) ->
 			  50).
     %%ejabberd_hooks:delete(remove_user, Host,
     %%    		  ?MODULE, remove_user, 50),
+
+depends(_Host, _Opts) ->
+    [].
 
 get_user_roster(Items, US) ->
     {U, S} = US,

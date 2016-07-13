@@ -8,6 +8,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_vcard_xupdate_riak).
 
+-behaviour(mod_vcard_xupdate).
+
 %% API
 -export([init/2, import/2, add_xupdate/3, get_xupdate/2, remove_xupdate/2]).
 

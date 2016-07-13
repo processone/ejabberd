@@ -162,23 +162,23 @@ init_per_testcase(TestCase, OrigConfig) ->
     IsMaster = lists:suffix("_master", Test),
     IsSlave = lists:suffix("_slave", Test),
     IsCarbons = lists:prefix("carbons_", Test),
-    User = if IsMaster or IsCarbons -> <<"test_master">>;
-              IsSlave -> <<"test_slave">>;
-              true -> <<"test_single">>
+    User = if IsMaster or IsCarbons -> <<"test_master!#$%^*()`~+-;_=[]{}|\\">>;
+              IsSlave -> <<"test_slave!#$%^*()`~+-;_=[]{}|\\">>;
+              true -> <<"test_single!#$%^*()`~+-;_=[]{}|\\">>
            end,
     MyResource = if IsMaster and IsCarbons -> MasterResource;
 		    IsSlave and IsCarbons -> SlaveResource;
 		    true -> Resource
 		 end,
     Slave = if IsCarbons ->
-		    jid:make(<<"test_master">>, Server, SlaveResource);
+		    jid:make(<<"test_master!#$%^*()`~+-;_=[]{}|\\">>, Server, SlaveResource);
 	       true ->
-		    jid:make(<<"test_slave">>, Server, Resource)
+		    jid:make(<<"test_slave!#$%^*()`~+-;_=[]{}|\\">>, Server, Resource)
 	    end,
     Master = if IsCarbons ->
-		     jid:make(<<"test_master">>, Server, MasterResource);
+		     jid:make(<<"test_master!#$%^*()`~+-;_=[]{}|\\">>, Server, MasterResource);
 		true ->
-		     jid:make(<<"test_master">>, Server, Resource)
+		     jid:make(<<"test_master!#$%^*()`~+-;_=[]{}|\\">>, Server, Resource)
 	     end,
     Config = set_opt(user, User,
                      set_opt(slave, Slave,
@@ -202,6 +202,8 @@ init_per_testcase(TestCase, OrigConfig) ->
         test_bind ->
             auth(connect(Config));
 	sm_resume ->
+	    auth(connect(Config));
+	sm_resume_failed ->
 	    auth(connect(Config));
         test_open_session ->
             bind(auth(connect(Config)));
@@ -231,6 +233,7 @@ no_db_tests() ->
        stats,
        sm,
        sm_resume,
+       sm_resume_failed,
        disco]},
      {test_proxy65, [parallel],
       [proxy65_master, proxy65_slave]}].
@@ -303,6 +306,8 @@ db_tests(DB) when DB == mnesia; DB == redis ->
       [client_state_master, client_state_slave]},
      {test_muc, [parallel],
       [muc_master, muc_slave]},
+     {test_muc_mam, [parallel],
+      [muc_mam_master, muc_mam_slave]},
      {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_vcard_xupdate, [parallel],
@@ -343,6 +348,8 @@ db_tests(_) ->
       [mam_new_master, mam_new_slave]},
      {test_muc, [parallel],
       [muc_master, muc_slave]},
+     {test_muc_mam, [parallel],
+      [muc_mam_master, muc_mam_slave]},
      {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_vcard_xupdate, [parallel],
@@ -603,7 +610,9 @@ disco(Config) ->
 sm(Config) ->
     Server = ?config(server, Config),
     ServerJID = jid:make(<<"">>, Server, <<"">>),
-    Msg = #message{to = ServerJID, body = [#text{data = <<"body">>}]},
+    %% Send messages of type 'headline' so the server discards them silently
+    Msg = #message{to = ServerJID, type = headline,
+		   body = [#text{data = <<"body">>}]},
     true = ?config(sm, Config),
     %% Enable the session management with resumption enabled
     send(Config, #sm_enable{resume = true, xmlns = ?NS_STREAM_MGMT_3}),
@@ -635,6 +644,17 @@ sm_resume(Config) ->
     ?recv1(#message{from = ServerJID, to = MyJID, body = [Txt]}),
     ?recv1(#sm_r{}),
     send(Config, #sm_a{h = 1, xmlns = ?NS_STREAM_MGMT_3}),
+    %% Send another stanza to increment the server's 'h' for sm_resume_failed.
+    send(Config, #presence{to = ServerJID}),
+    close_socket(Config),
+    {save_config, set_opt(sm_previd, ID, Config)}.
+
+sm_resume_failed(Config) ->
+    {sm_resume, SMConfig} = ?config(saved_config, Config),
+    ID = ?config(sm_previd, SMConfig),
+    ct:sleep(5000), % Wait for session to time out.
+    send(Config, #sm_resume{previd = ID, h = 1, xmlns = ?NS_STREAM_MGMT_3}),
+    ?recv1(#sm_failed{reason = 'item-not-found', h = 4}),
     disconnect(Config).
 
 private(Config) ->
@@ -862,7 +882,7 @@ pubsub(Config) ->
     true = lists:member(?NS_PUBSUB, Features),
     %% Publish <presence/> element within node "presence"
     ItemID = randoms:get_string(),
-    Node = <<"presence">>,
+    Node = <<"presence!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>,
     Item = #pubsub_item{id = ItemID,
                         xml_els = [xmpp_codec:encode(#presence{})]},
     #iq{type = result,
@@ -1189,6 +1209,92 @@ proxy65_slave(Config) ->
     socks5_recv(Socks5, Data),
     disconnect(Config).
 
+send_messages_to_room(Config, Range) ->
+    MyNick = ?config(master_nick, Config),
+    Room = muc_room_jid(Config),
+    MyNickJID = jid:replace_resource(Room, MyNick),
+    lists:foreach(
+      fun(N) ->
+              Text = #text{data = integer_to_binary(N)},
+              I = send(Config, #message{to = Room, body = [Text],
+					type = groupchat}),
+	      ?recv1(#message{from = MyNickJID, id = I,
+			      type = groupchat,
+			      body = [Text]})
+      end, Range).
+
+retrieve_messages_from_room_via_mam(Config, Range) ->
+    MyNick = ?config(master_nick, Config),
+    Room = muc_room_jid(Config),
+    MyNickJID = jid:replace_resource(Room, MyNick),
+    QID = randoms:get_string(),
+    I = send(Config, #iq{type = set, to = Room,
+			 sub_els = [#mam_query{xmlns = ?NS_MAM_1, id = QID}]}),
+    lists:foreach(
+      fun(N) ->
+	      Text = #text{data = integer_to_binary(N)},
+	      ?recv1(#message{
+			to = MyJID, from = Room,
+			sub_els =
+			    [#mam_result{
+				xmlns = ?NS_MAM_1,
+				queryid = QID,
+				sub_els =
+				    [#forwarded{
+					delay = #delay{},
+					sub_els = [#message{
+						      from = MyNickJID,
+						      type = groupchat,
+						      body = [Text]}]}]}]})
+      end, Range),
+    ?recv1(#iq{from = Room, id = I, type = result, sub_els = []}).
+
+muc_mam_master(Config) ->
+    MyJID = my_jid(Config),
+    MyNick = ?config(master_nick, Config),
+    Room = muc_room_jid(Config),
+    MyNickJID = jid:replace_resource(Room, MyNick),
+    %% Joining
+    send(Config, #presence{to = MyNickJID, sub_els = [#muc{}]}),
+    %% Receive self-presence
+    ?recv1(#presence{from = MyNickJID}),
+    %% MAM feature should not be advertised at this point,
+    %% because MAM is not enabled so far
+    false = is_feature_advertised(Config, ?NS_MAM_1, Room),
+    %% Fill in some history
+    send_messages_to_room(Config, lists:seq(1, 21)),
+    %% We now should be able to retrieve those via MAM, even though
+    %% MAM is disabled. However, only last 20 messages should be received.
+    retrieve_messages_from_room_via_mam(Config, lists:seq(2, 21)),
+    %% Now enable MAM for the conference
+    %% Retrieve config first
+    #iq{type = result, sub_els = [#muc_owner{config = #xdata{} = RoomCfg}]} =
+        send_recv(Config, #iq{type = get, sub_els = [#muc_owner{}],
+                              to = Room}),
+    %% Find the MAM field in the config and enable it
+    NewFields = lists:flatmap(
+		  fun(#xdata_field{var = <<"muc#roomconfig_mam">> = Var}) ->
+			  [#xdata_field{var = Var, values = [<<"1">>]}];
+		     (_) ->
+			  []
+		  end, RoomCfg#xdata.fields),
+    NewRoomCfg = #xdata{type = submit, fields = NewFields},
+    I1 = send(Config, #iq{type = set, to = Room,
+			  sub_els = [#muc_owner{config = NewRoomCfg}]}),
+    ?recv2(#iq{type = result, id = I1},
+	   #message{from = Room, type = groupchat,
+		    sub_els = [#muc_user{status_codes = [104]}]}),
+    %% Check if MAM has been enabled
+    true = is_feature_advertised(Config, ?NS_MAM_1, Room),
+    %% We now sending some messages again
+    send_messages_to_room(Config, lists:seq(1, 5)),
+    %% And retrieve them via MAM again.
+    retrieve_messages_from_room_via_mam(Config, lists:seq(1, 5)),
+    disconnect(Config).
+
+muc_mam_slave(Config) ->
+    disconnect(Config).
+
 muc_master(Config) ->
     MyJID = my_jid(Config),
     PeerJID = ?config(slave, Config),
@@ -1343,6 +1449,11 @@ muc_master(Config) ->
 			    items = [#muc_item{affiliation = member,
 					       jid = PeerJID,
 					       role = participant}]}]}),
+    ?recv1(#message{from = Room,
+	      sub_els = [#muc_user{
+			    items = [#muc_item{affiliation = member,
+					       jid = Localhost,
+					       role = none}]}]}),
     %% BUG: We should not receive any sub_els!
     ?recv1(#iq{type = result, id = I1, sub_els = [_|_]}),
     %% Receive groupchat message from the peer
@@ -2163,15 +2274,46 @@ client_state_master(Config) ->
     ChatState = #message{to = Peer, thread = <<"1">>,
 			 sub_els = [#chatstate{type = active}]},
     Message = ChatState#message{body = [#text{data = <<"body">>}]},
+    PepPayload = xmpp_codec:encode(#presence{}),
+    PepOne = #message{
+		to = Peer,
+		sub_els =
+		    [#pubsub_event{
+			items =
+			    [#pubsub_event_items{
+				node = <<"foo-1">>,
+				items =
+				    [#pubsub_event_item{
+					id = <<"pep-1">>,
+					xml_els = [PepPayload]}]}]}]},
+    PepTwo = #message{
+		to = Peer,
+		sub_els =
+		    [#pubsub_event{
+			items =
+			    [#pubsub_event_items{
+				node = <<"foo-2">>,
+				items =
+				    [#pubsub_event_item{
+					id = <<"pep-2">>,
+					xml_els = [PepPayload]}]}]}]},
     %% Wait for the slave to become inactive.
     wait_for_slave(Config),
-    %% Should be dropped:
-    send(Config, ChatState),
     %% Should be queued (but see below):
     send(Config, Presence),
     %% Should replace the previous presence in the queue:
     send(Config, Presence#presence{type = unavailable}),
-    %% Should be sent immediately, together with the previous presence:
+    %% The following two PEP stanzas should be queued (but see below):
+    send(Config, PepOne),
+    send(Config, PepTwo),
+    %% The following two PEP stanzas should replace the previous two:
+    send(Config, PepOne),
+    send(Config, PepTwo),
+    %% Should be queued (but see below):
+    send(Config, ChatState),
+    %% Should replace the previous chat state in the queue:
+    send(Config, ChatState#message{sub_els = [#chatstate{type = composing}]}),
+    %% Should be sent immediately, together with the queued stanzas:
     send(Config, Message),
     %% Wait for the slave to become active.
     wait_for_slave(Config),
@@ -2185,6 +2327,31 @@ client_state_slave(Config) ->
     wait_for_master(Config),
     ?recv1(#presence{from = Peer, type = unavailable,
 		     sub_els = [#delay{}]}),
+    #message{
+       from = Peer,
+       sub_els =
+	   [#pubsub_event{
+	       items =
+		   [#pubsub_event_items{
+		       node = <<"foo-1">>,
+		       items =
+			   [#pubsub_event_item{
+			       id = <<"pep-1">>}]}]},
+	    #delay{}]} = recv(),
+    #message{
+       from = Peer,
+       sub_els =
+	   [#pubsub_event{
+	       items =
+		   [#pubsub_event_items{
+		       node = <<"foo-2">>,
+		       items =
+			   [#pubsub_event_item{
+			       id = <<"pep-2">>}]}]},
+	    #delay{}]} = recv(),
+    ?recv1(#message{from = Peer, thread = <<"1">>,
+		    sub_els = [#chatstate{type = composing},
+			       #delay{}]}),
     ?recv1(#message{from = Peer, thread = <<"1">>,
 		    body = [#text{data = <<"body">>}],
 		    sub_els = [#chatstate{type = active}]}),

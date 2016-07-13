@@ -8,6 +8,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_privacy_sql).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -behaviour(mod_privacy).
 
 %% API
@@ -29,6 +31,7 @@
 -include("jlib.hrl").
 -include("mod_privacy.hrl").
 -include("logger.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 %%%===================================================================
 %%% API
@@ -208,38 +211,38 @@ export(Server) ->
       fun(Host, #privacy{us = {LUser, LServer}, lists = Lists,
                          default = Default})
             when LServer == Host ->
-              Username = ejabberd_sql:escape(LUser),
               if Default /= none ->
-                      SDefault = ejabberd_sql:escape(Default),
-                      [[<<"delete from privacy_default_list where ">>,
-                        <<"username='">>, Username, <<"';">>],
-                       [<<"insert into privacy_default_list(username, "
-                          "name) ">>,
-                        <<"values ('">>, Username, <<"', '">>,
-                        SDefault, <<"');">>]];
+                      [?SQL("delete from privacy_default_list where"
+                            " username=%(LUser)s;"),
+                       ?SQL("insert into privacy_default_list(username, name) "
+                            "values (%(LUser)s, %(Default)s);")];
                  true ->
                       []
               end ++
                   lists:flatmap(
                     fun({Name, List}) ->
-                            SName = ejabberd_sql:escape(Name),
                             RItems = lists:map(fun item_to_raw/1, List),
-                            ID = jlib:integer_to_binary(get_id()),
-                            [[<<"delete from privacy_list where username='">>,
-                              Username, <<"' and name='">>,
-                              SName, <<"';">>],
-                             [<<"insert into privacy_list(username, "
-                                "name, id) values ('">>,
-                              Username, <<"', '">>, SName,
-                              <<"', '">>, ID, <<"');">>],
-                             [<<"delete from privacy_list_data where "
-                                "id='">>, ID, <<"';">>]] ++
-                                [[<<"insert into privacy_list_data(id, t, "
-                                    "value, action, ord, match_all, match_iq, "
-                                    "match_message, match_presence_in, "
-                                    "match_presence_out) values ('">>,
-                                  ID, <<"', '">>, str:join(Items, <<"', '">>),
-                                  <<"');">>] || Items <- RItems]
+                            ID = get_id(),
+                            [?SQL("delete from privacy_list where"
+                                  " username=%(LUser)s and"
+                                  " name=%(Name)s;"),
+                             ?SQL("insert into privacy_list(username, "
+                                  "name, id) values ("
+                                  "%(LUser)s, %(Name)s, %(ID)d);"),
+                             ?SQL("delete from privacy_list_data where"
+                                  " id=%(ID)d;")] ++
+                                [?SQL("insert into privacy_list_data(id, t, "
+                                      "value, action, ord, match_all, match_iq, "
+                                      "match_message, match_presence_in, "
+                                      "match_presence_out) "
+                                      "values (%(ID)d, %(SType)s, %(SValue)s, %(SAction)s,"
+                                      " %(Order)d, %(MatchAll)b, %(MatchIQ)b,"
+                                      " %(MatchMessage)b, %(MatchPresenceIn)b,"
+                                      " %(MatchPresenceOut)b)")
+                                 || {SType, SValue, SAction, Order,
+                                     MatchAll, MatchIQ,
+                                     MatchMessage, MatchPresenceIn,
+                                     MatchPresenceOut} <- RItems]
                     end,
                     Lists);
          (_Host, _R) ->
@@ -327,10 +330,8 @@ item_to_raw(#listitem{type = Type, value = Value,
 		      match_presence_out = MatchPresenceOut}) ->
     {SType, SValue} = case Type of
 			none -> {<<"n">>, <<"">>};
-			jid ->
-			    {<<"j">>,
-			     ejabberd_sql:escape(jid:to_string(Value))};
-			group -> {<<"g">>, ejabberd_sql:escape(Value)};
+			jid -> {<<"j">>, jid:to_string(Value)};
+			group -> {<<"g">>, Value};
 			subscription ->
 			    case Value of
 			      none -> {<<"s">>, <<"none">>};
@@ -368,9 +369,7 @@ sql_get_privacy_list_data(LUser, LServer, Name) ->
     sql_queries:get_privacy_list_data(LServer, LUser, Name).
 
 sql_get_privacy_list_data_t(LUser, Name) ->
-    Username = ejabberd_sql:escape(LUser),
-    SName = ejabberd_sql:escape(Name),
-    sql_queries:get_privacy_list_data_t(Username, SName).
+    sql_queries:get_privacy_list_data_t(LUser, Name).
 
 sql_get_privacy_list_data_by_id(ID, LServer) ->
     sql_queries:get_privacy_list_data_by_id(LServer, ID).

@@ -73,54 +73,34 @@
 
 init() -> ok = create_table().
 
--spec(subscribe_node/3 ::
-    (
-	_JID    :: _,
-	_NodeId :: _,
-	Options :: [] | mod_pubsub:subOptions())
-    -> {result, mod_pubsub:subId()}
-    ).
+-spec subscribe_node(_JID :: _, _NodeId :: _, Options :: [] | mod_pubsub:subOptions()) ->
+			    {result, mod_pubsub:subId()}.
+
 subscribe_node(_JID, _NodeId, Options) ->
     SubID = make_subid(),
     (?DB_MOD):add_subscription(#pubsub_subscription{subid = SubID, options = Options}),
     {result, SubID}.
 
--spec(unsubscribe_node/3 ::
-    (
-	_JID :: _,
-	_NodeId :: _,
-	SubID :: mod_pubsub:subId())
-    -> {result, mod_pubsub:subscription()}
-    | {error, notfound}
-    ).
+-spec unsubscribe_node(_JID :: _, _NodeId :: _, SubID :: mod_pubsub:subId()) ->
+			      {result, mod_pubsub:subscription()} | {error, notfound}.
+
 unsubscribe_node(_JID, _NodeId, SubID) ->
     case (?DB_MOD):read_subscription(SubID) of
 	{ok, Sub} -> (?DB_MOD):delete_subscription(SubID), {result, Sub};
 	notfound -> {error, notfound}
     end.
 
--spec(get_subscription/3 ::
-    (
-	_JID    :: _,
-	_NodeId :: _,
-	SubId   :: mod_pubsub:subId())
-    -> {result, mod_pubsub:subscription()}
-    | {error, notfound}
-    ).
+-spec get_subscription(_JID :: _, _NodeId :: _, SubId :: mod_pubsub:subId()) ->
+			      {result, mod_pubsub:subscription()} | {error, notfound}.
+
 get_subscription(_JID, _NodeId, SubID) ->
     case (?DB_MOD):read_subscription(SubID) of
 	{ok, Sub} -> {result, Sub};
 	notfound -> {error, notfound}
     end.
 
--spec(set_subscription/4 ::
-    (
-	_JID    :: _,
-	_NodeId :: _,
-	SubId   :: mod_pubsub:subId(),
-	Options :: mod_pubsub:subOptions())
-    -> {result, ok}
-    ).
+-spec set_subscription(_JID :: _, _NodeId :: _, SubId :: mod_pubsub:subId(),
+		       Options :: mod_pubsub:subOptions()) -> {result, ok}.
 set_subscription(_JID, _NodeId, SubID, Options) ->
     case (?DB_MOD):read_subscription(SubID) of
 	{ok, _} ->
@@ -167,7 +147,7 @@ parse_options_xform(XFields) ->
 %%====================================================================
 create_table() -> ok.
 
--spec(make_subid/0 :: () -> mod_pubsub:subId()).
+-spec make_subid() -> mod_pubsub:subId().
 make_subid() ->
     {T1, T2, T3} = p1_time_compat:timestamp(),
     iolist_to_binary(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).

@@ -39,6 +39,7 @@ defmodule ModHttpApiTest do
   end
 
   test "We can expose several commands to API at a time" do
+    setup_mocks()
     :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:open_cmd, :user_cmd]}]])
     commands = :ejabberd_commands.get_commands()
     assert Enum.member?(commands, :open_cmd)
@@ -46,21 +47,24 @@ defmodule ModHttpApiTest do
   end
 
   test "We can call open commands without authentication" do
+    setup_mocks()
     :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:open_cmd]}]])
-    request = request(method: :POST, data: "[]")
+    request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "[]")
     {200, _, _} = :mod_http_api.process(["open_cmd"], request)
   end
 
   # This related to the commands config file option
   test "Attempting to access a command that is not exposed as HTTP API returns 401" do
+    setup_mocks()
     :ejabberd_config.add_local_option(:commands, [])
-    request = request(method: :POST, data: "[]")
+    request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "[]")
     {401, _, _} = :mod_http_api.process(["open_cmd"], request)
   end
 
   test "Call to user, admin or restricted commands without authentication are rejected" do
+    setup_mocks()
     :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:user_cmd, :admin_cmd, :restricted]}]])
-    request = request(method: :POST, data: "[]")
+    request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "[]")
     {401, _, _} = :mod_http_api.process(["user_cmd"], request)
     {401, _, _} = :mod_http_api.process(["admin_cmd"], request)
     {401, _, _} = :mod_http_api.process(["restricted_cmd"], request)
@@ -68,6 +72,7 @@ defmodule ModHttpApiTest do
 
   @tag pending: true
   test "If admin_ip_access is enabled, we can call restricted API without authentication from that IP" do
+    setup_mocks()
   end
 
   # Define a set of test commands that we expose through API
@@ -86,9 +91,26 @@ defmodule ModHttpApiTest do
   end
 
   def open_cmd, do: :ok
-  def user_cmd, do: :ok
+  def user_cmd(_, _), do: :ok
   def admin_cmd, do: :ok
   def restricted_cmd, do: :ok
+
+  defp setup_mocks() do
+    :meck.unload
+    mock(:gen_mod, :get_module_opt,
+      fn (_server, :mod_http_api, admin_ip_access, _, _)  ->
+        [{:allow, [{:ip, {{127,0,0,2}, 32}}]}]
+      end)
+  end
+
+  defp mock(module, function, fun) do
+    try do
+      :meck.new(module)
+    catch
+      :error, {:already_started, _pid} -> :ok
+    end
+    :meck.expect(module, function, fun)
+  end
 
   defp unregister_commands(commands) do
     try do

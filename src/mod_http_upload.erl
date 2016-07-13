@@ -68,6 +68,7 @@
 -export([start_link/3,
 	 start/2,
 	 stop/1,
+	 depends/2,
 	 mod_opt_type/1]).
 
 %% gen_server callbacks.
@@ -178,7 +179,7 @@ mod_opt_type(host) ->
 mod_opt_type(name) ->
     fun iolist_to_binary/1;
 mod_opt_type(access) ->
-    fun(A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(max_size) ->
     fun(I) when is_integer(I), I > 0 -> I;
        (infinity) -> infinity
@@ -222,6 +223,11 @@ mod_opt_type(_) ->
      dir_mode, docroot, put_url, get_url, service_url, custom_headers,
      rm_on_unregister, thumbnail].
 
+-spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
+
+depends(_Host, _Opts) ->
+    [].
+
 %%--------------------------------------------------------------------
 %% gen_server callbacks.
 %%--------------------------------------------------------------------
@@ -235,7 +241,7 @@ init({ServerHost, Opts}) ->
 			   fun iolist_to_binary/1,
 			   <<"HTTP File Upload">>),
     Access = gen_mod:get_opt(access, Opts,
-			     fun(A) when is_atom(A) -> A end,
+			     fun acl:access_rules_validator/1,
 			     local),
     MaxSize = gen_mod:get_opt(max_size, Opts,
 			      fun(I) when is_integer(I), I > 0 -> I;
@@ -321,22 +327,24 @@ init({ServerHost, Opts}) ->
       -> {reply, {ok, pos_integer(), binary(),
 		      pos_integer() | undefined,
 		      pos_integer() | undefined}, state()} |
-	 {reply, {error, binary()}, state()} | {noreply, state()}.
+	 {reply, {error, atom()}, state()} | {noreply, state()}.
 
-handle_call({use_slot, Slot}, _From, #state{file_mode = FileMode,
-					    dir_mode = DirMode,
-					    get_url = GetPrefix,
-					    thumbnail = Thumbnail,
-					    docroot = DocRoot} = State) ->
+handle_call({use_slot, Slot, Size}, _From, #state{file_mode = FileMode,
+						  dir_mode = DirMode,
+						  get_url = GetPrefix,
+						  thumbnail = Thumbnail,
+						  docroot = DocRoot} = State) ->
     case get_slot(Slot, State) of
 	{ok, {Size, Timer}} ->
 	    timer:cancel(Timer),
 	    NewState = del_slot(Slot, State),
 	    Path = str:join([DocRoot | Slot], <<$/>>),
-	    {reply, {ok, Size, Path, FileMode, DirMode, GetPrefix, Thumbnail},
+	    {reply, {ok, Path, FileMode, DirMode, GetPrefix, Thumbnail},
 	     NewState};
+	{ok, {_WrongSize, _Timer}} ->
+	    {reply, {error, size_mismatch}, State};
 	error ->
-	    {reply, {error, <<"Invalid slot">>}, State}
+	    {reply, {error, invalid_slot}, State}
     end;
 handle_call(get_docroot, _From, #state{docroot = DocRoot} = State) ->
     {reply, {ok, DocRoot}, State};
@@ -406,9 +414,8 @@ process(LocalPath, #request{method = Method, host = Host, ip = IP})
 process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 			     data = Data} = Request) ->
     {Proc, Slot} = parse_http_request(Request),
-    case catch gen_server:call(Proc, {use_slot, Slot}) of
-	{ok, Size, Path, FileMode, DirMode, GetPrefix, Thumbnail}
-	    when byte_size(Data) == Size ->
+    case catch gen_server:call(Proc, {use_slot, Slot, byte_size(Data)}) of
+	{ok, Path, FileMode, DirMode, GetPrefix, Thumbnail} ->
 	    ?DEBUG("Storing file from ~s for ~s: ~s",
 		   [?ADDR_TO_STR(IP), Host, Path]),
 	    case store_file(Path, Data, FileMode, DirMode,
@@ -422,13 +429,13 @@ process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 			       [Path, ?ADDR_TO_STR(IP), Host, ?FORMAT(Error)]),
 		    http_response(Host, 500)
 	    end;
-	{ok, Size, Path, _FileMode, _DirMode, _GetPrefix, _Thumbnail} ->
-	    ?INFO_MSG("Rejecting file ~s from ~s for ~s: Size is ~B, not ~B",
-		      [Path, ?ADDR_TO_STR(IP), Host, byte_size(Data), Size]),
+	{error, size_mismatch} ->
+	    ?INFO_MSG("Rejecting file from ~s for ~s: Unexpected size (~B)",
+		      [?ADDR_TO_STR(IP), Host, byte_size(Data)]),
 	    http_response(Host, 413);
-	{error, Error} ->
-	    ?INFO_MSG("Rejecting file from ~s for ~s: ~p",
-		      [?ADDR_TO_STR(IP), Host, Error]),
+	{error, invalid_slot} ->
+	    ?INFO_MSG("Rejecting file from ~s for ~s: Invalid slot",
+		      [?ADDR_TO_STR(IP), Host]),
 	    http_response(Host, 403);
 	Error ->
 	    ?ERROR_MSG("Cannot handle PUT request from ~s for ~s: ~p",

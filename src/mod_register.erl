@@ -37,7 +37,7 @@
 	 unauthenticated_iq_register/4, try_register/5,
 	 process_iq/3, send_registration_notifications/3,
 	 transform_options/1, transform_module_options/1,
-	 mod_opt_type/1, opt_type/1]).
+	 mod_opt_type/1, opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -72,9 +72,12 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_REGISTER).
 
+depends(_Host, _Opts) ->
+    [].
+
 stream_feature_register(Acc, Host) ->
     AF = gen_mod:get_module_opt(Host, ?MODULE, access_from,
-                                          fun(A) when is_atom(A) -> A end,
+                                          fun(A) -> A end,
 					  all),
     case (AF /= none) and lists:keymember(<<"mechanisms">>, 2, Acc) of
 	true ->
@@ -126,7 +129,7 @@ process_iq(From, To,
 	  RTag = fxml:get_subtag(SubEl, <<"remove">>),
 	  Server = To#jid.lserver,
 	  Access = gen_mod:get_module_opt(Server, ?MODULE, access,
-                                          fun(A) when is_atom(A) -> A end,
+                                          fun(A) -> A end,
 					  all),
 	  AllowRemove = allow ==
 			  acl:match_rule(Server, Access, From),
@@ -386,6 +389,10 @@ try_set_password(User, Server, Password, IQ, SubEl,
 		IQ#iq{type = error,
 		      sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
 	  end;
+      error_preparing_password ->
+	  ErrText = <<"The password contains unacceptable characters">>,
+	  IQ#iq{type = error,
+		sub_el = [SubEl, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)]};
       false ->
 	  ErrText = <<"The password is too weak">>,
 	  IQ#iq{type = error,
@@ -398,7 +405,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
       _ ->
 	  JID = jid:make(User, Server, <<"">>),
 	  Access = gen_mod:get_module_opt(Server, ?MODULE, access,
-                                          fun(A) when is_atom(A) -> A end,
+                                          fun(A) -> A end,
 					  all),
 	  IPAccess = get_ip_access(Server),
 	  case {acl:match_rule(Server, Access, JID),
@@ -440,7 +447,12 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 					{error, ?ERR_INTERNAL_SERVER_ERROR}
 				  end
 			    end;
+			error_preparing_password ->
+			    remove_timeout(Source),
+			    ErrText = <<"The password contains unacceptable characters">>,
+			    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)};
 			false ->
+			    remove_timeout(Source),
 			    ErrText = <<"The password is too weak">>,
 			    {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)}
 		      end;
@@ -519,7 +531,7 @@ check_from(#jid{user = <<"">>, server = <<"">>},
     allow;
 check_from(JID, Server) ->
     Access = gen_mod:get_module_opt(Server, ?MODULE, access_from,
-                                    fun(A) when is_atom(A) -> A end,
+                                    fun(A) -> A end,
                                     none),
     acl:match_rule(Server, Access, JID).
 
@@ -635,6 +647,14 @@ process_xdata_submit(El) ->
     end.
 
 is_strong_password(Server, Password) ->
+    case jid:resourceprep(Password) of
+	PP when is_binary(PP) ->
+	    is_strong_password2(Server, Password);
+	error ->
+	    error_preparing_password
+    end.
+
+is_strong_password2(Server, Password) ->
     LServer = jid:nameprep(Server),
     case gen_mod:get_module_opt(LServer, ?MODULE, password_strength,
                                 fun(N) when is_number(N), N>=0 -> N end,
@@ -719,13 +739,13 @@ check_ip_access(IPAddress, IPAccess) ->
     acl:match_rule(global, IPAccess, IPAddress).
 
 mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(access_from) ->
     fun (A) when is_atom(A) -> A end;
 mod_opt_type(captcha_protected) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(ip_access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(password_strength) ->
     fun (N) when is_number(N), N >= 0 -> N end;

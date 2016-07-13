@@ -35,7 +35,8 @@
 	 get_local_features/5, get_local_items/5,
 	 adhoc_local_items/4, adhoc_local_commands/4,
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
-	 adhoc_sm_items/4, adhoc_sm_commands/4, mod_opt_type/1]).
+	 adhoc_sm_items/4, adhoc_sm_commands/4, mod_opt_type/1,
+	 depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -94,6 +95,9 @@ stop(Host) ->
 				     ?NS_COMMANDS),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_COMMANDS).
+
+depends(_Host, _Opts) ->
+    [{mod_adhoc, hard}, {mod_last, soft}].
 
 %%%-----------------------------------------------------------------------
 
@@ -1368,10 +1372,9 @@ get_form(Host, [<<"config">>, <<"access">>], Lang) ->
 							  [{xmlcdata, S}]}
 				       end,
 				       str:tokens(iolist_to_binary(io_lib:format("~p.",
-										 [ets:select(local_config,
-											     [{{local_config,
-												{access,
-												 '$1',
+										 [ets:select(access,
+											     [{{access,
+												{'$1',
 												 '$2'},
 												'$3'},
 											       [{'==',
@@ -1826,10 +1829,9 @@ set_form(_From, Host, [<<"config">>, <<"access">>],
 	 Lang, XData) ->
     SetAccess = fun (Rs) ->
 			mnesia:transaction(fun () ->
-						   Os = mnesia:select(local_config,
-								      [{{local_config,
-									 {access,
-									  '$1',
+						   Os = mnesia:select(access,
+								      [{{access,
+									 {'$1',
 									  '$2'},
 									 '$3'},
 									[{'==',
@@ -1843,9 +1845,8 @@ set_form(_From, Host, [<<"config">>, <<"access">>],
 						   lists:foreach(fun ({access,
 								       Name,
 								       Rules}) ->
-									 mnesia:write({local_config,
-										       {access,
-											Name,
+									 mnesia:write({access,
+										       {Name,
 											Host},
 										       Rules})
 								 end,
@@ -1917,17 +1918,19 @@ set_form(From, Host, ?NS_ADMINL(<<"end-user-session">>),
     case JID#jid.lresource of
       <<>> ->
 	  SIDs = mnesia:dirty_select(session,
-				     [{#session{sid = '$1',
+				     [{#session{sid = {'$1', '$2'},
 						usr = {LUser, LServer, '_'},
 						_ = '_'},
-				       [], ['$1']}]),
+				       [{is_pid, '$2'}],
+				       [{{'$1', '$2'}}]}]),
 	  [Pid ! {kick, kicked_by_admin, Xmlelement} || {_, Pid} <- SIDs];
       R ->
 	  [{_, Pid}] = mnesia:dirty_select(session,
-					   [{#session{sid = '$1',
+					   [{#session{sid = {'$1', '$2'},
 						      usr = {LUser, LServer, R},
 						      _ = '_'},
-					     [], ['$1']}]),
+					     [{is_pid, '$2'}],
+					     [{{'$1', '$2'}}]}]),
 	  Pid ! {kick, kicked_by_admin, Xmlelement}
     end,
     {result, []};

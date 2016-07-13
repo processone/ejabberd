@@ -43,7 +43,7 @@
 	 get_iq_namespace/1, iq_query_info/1,
 	 iq_query_or_response_info/1, is_iq_request_type/1,
 	 iq_to_xml/1, parse_xdata_submit/1,
-	 is_standalone_chat_state/1,
+	 unwrap_carbon/1, is_standalone_chat_state/1,
 	 add_delay_info/3, add_delay_info/4,
 	 timestamp_to_legacy/1, timestamp_to_iso_basic/1, timestamp_to_iso/2,
 	 now_to_utc_string/1, now_to_local_string/1,
@@ -54,7 +54,8 @@
 	 binary_to_integer/1, binary_to_integer/2,
 	 integer_to_binary/1, integer_to_binary/2,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
-	 l2i/1, i2l/1, i2l/2, queue_drop_while/2]).
+	 l2i/1, i2l/1, i2l/2, queue_drop_while/2,
+	 expr_to_term/1, term_to_expr/1]).
 
 %% The following functions are deprecated and will be removed soon
 %% Use corresponding functions from jid.erl instead
@@ -306,21 +307,16 @@ get_iq_namespace(#xmlel{name = <<"iq">>, children = Els}) ->
 get_iq_namespace(_) -> <<"">>.
 
 %%
--spec(iq_query_info/1 ::
-(
-  Xmlel :: xmlel())
-    -> iq_request() | 'reply' | 'invalid' | 'not_iq'
-).
+-spec iq_query_info(Xmlel :: xmlel()) ->
+			   iq_request() | 'reply' | 'invalid' | 'not_iq'.
 
 %% @spec (xmlelement()) -> iq() | reply | invalid | not_iq
 iq_query_info(El) -> iq_info_internal(El, request).
 
 %%
--spec(iq_query_or_response_info/1 ::
-(
-  Xmlel :: xmlel())
-    -> iq_request() | iq_reply() | 'reply' | 'invalid' | 'not_iq'
-).
+-spec iq_query_or_response_info(Xmlel :: xmlel()) ->
+				       iq_request() | iq_reply() |
+				       'reply' | 'invalid' | 'not_iq'.
 
 iq_query_or_response_info(El) ->
     iq_info_internal(El, any).
@@ -372,11 +368,7 @@ iq_type_to_string(get) -> <<"get">>;
 iq_type_to_string(result) -> <<"result">>;
 iq_type_to_string(error) -> <<"error">>.
 
--spec(iq_to_xml/1 ::
-(
-  IQ :: iq())
-    -> xmlel()
-).
+-spec iq_to_xml(IQ :: iq()) -> xmlel().
 
 iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
     if ID /= <<"">> ->
@@ -390,13 +382,8 @@ iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
 		  children = SubEl}
     end.
 
--spec(parse_xdata_submit/1 ::
-(
-  El :: xmlel())
-    -> [{Var::binary(), Values::[binary()]}]
-    %%
-     | 'invalid'
-).
+-spec parse_xdata_submit(El :: xmlel()) ->
+				[{Var::binary(), Values::[binary()]}] | 'invalid'.
 
 parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
     case fxml:get_attr_s(<<"type">>, Attrs) of
@@ -408,12 +395,9 @@ parse_xdata_submit(#xmlel{attrs = Attrs, children = Els}) ->
             invalid
     end.
 
--spec(parse_xdata_fields/2 ::
-(
-  Xmlels :: [xmlel() | cdata()],
-  Res    :: [{Var::binary(), Values :: [binary()]}])
-    -> [{Var::binary(), Values::[binary()]}]
-).
+-spec parse_xdata_fields(Xmlels :: [xmlel() | cdata()],
+			 Res :: [{Var::binary(), Values :: [binary()]}]) ->
+				[{Var::binary(), Values::[binary()]}].
 
 parse_xdata_fields([], Res) -> Res;
 parse_xdata_fields([#xmlel{name = <<"field">>, attrs = Attrs, children = SubEls}
@@ -428,12 +412,8 @@ parse_xdata_fields([#xmlel{name = <<"field">>, attrs = Attrs, children = SubEls}
 parse_xdata_fields([_ | Els], Res) ->
     parse_xdata_fields(Els, Res).
 
--spec(parse_xdata_values/2 ::
-(
-  Xmlels :: [xmlel() | cdata()],
-  Res    :: [binary()])
-    -> [binary()]
-).
+-spec parse_xdata_values(Xmlels :: [xmlel() | cdata()],
+			 Res :: [binary()]) -> [binary()].
 
 parse_xdata_values([], Res) -> Res;
 parse_xdata_values([#xmlel{name = <<"value">>, children = SubEls} | Els], Res) ->
@@ -528,14 +508,64 @@ rsm_encode_count(Count, Arr) ->
 	    children = [{xmlcdata, i2l(Count)}]}
      | Arr].
 
+-spec unwrap_carbon(xmlel()) -> xmlel().
+
+unwrap_carbon(#xmlel{name = <<"message">>} = Stanza) ->
+    case unwrap_carbon(Stanza, <<"sent">>) of
+      #xmlel{} = Payload ->
+	  Payload;
+      false ->
+	  case unwrap_carbon(Stanza, <<"received">>) of
+	    #xmlel{} = Payload ->
+		Payload;
+	    false ->
+		Stanza
+	  end
+    end;
+unwrap_carbon(Stanza) -> Stanza.
+
+-spec unwrap_carbon(xmlel(), binary()) -> xmlel() | false.
+
+unwrap_carbon(Stanza, Direction) ->
+    case fxml:get_subtag(Stanza, Direction) of
+      #xmlel{name = Direction, attrs = Attrs} = El ->
+	  case fxml:get_attr_s(<<"xmlns">>, Attrs) of
+	    NS when NS == ?NS_CARBONS_2;
+		    NS == ?NS_CARBONS_1 ->
+		case fxml:get_subtag_with_xmlns(El, <<"forwarded">>,
+						?NS_FORWARD) of
+		  #xmlel{children = Els} ->
+		      case fxml:remove_cdata(Els) of
+			[#xmlel{} = Payload] ->
+			    Payload;
+			_ ->
+			    false
+		      end;
+		  false ->
+		      false
+		end;
+	    _NS ->
+		false
+	  end;
+      false ->
+	  false
+    end.
+
 -spec is_standalone_chat_state(xmlel()) -> boolean().
 
-is_standalone_chat_state(#xmlel{name = <<"message">>, children = Els}) ->
-    Stripped = [El || #xmlel{name = Name, attrs = Attrs} = El <- Els,
-		      fxml:get_attr_s(<<"xmlns">>, Attrs) /= ?NS_CHATSTATES,
-		      Name /= <<"thread">>],
-    Stripped == [];
-is_standalone_chat_state(_El) -> false.
+is_standalone_chat_state(Stanza) ->
+    case unwrap_carbon(Stanza) of
+      #xmlel{name = <<"message">>, children = Els} ->
+	  IgnoreNS = [?NS_CHATSTATES, ?NS_DELAY],
+	  Stripped = [El || #xmlel{name = Name, attrs = Attrs} = El <- Els,
+			    not lists:member(fxml:get_attr_s(<<"xmlns">>,
+							     Attrs),
+					     IgnoreNS),
+			    Name /= <<"thread">>],
+	  Stripped == [];
+      #xmlel{} ->
+	  false
+    end.
 
 -spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp())
 		     -> xmlel().
@@ -890,6 +920,14 @@ tuple_to_binary(T) ->
 atom_to_binary(A) ->
     erlang:atom_to_binary(A, utf8).
 
+expr_to_term(Expr) ->
+    Str = binary_to_list(<<Expr/binary, ".">>),
+    {ok, Tokens, _} = erl_scan:string(Str),
+    {ok, Term} = erl_parse:parse_term(Tokens),
+    Term.
+
+term_to_expr(Term) ->
+    list_to_binary(io_lib:print(Term)).
 
 l2i(I) when is_integer(I) -> I;
 l2i(L) when is_binary(L) -> binary_to_integer(L).

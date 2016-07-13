@@ -25,6 +25,8 @@
 
 -module(ejabberd_auth_mnesia).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
@@ -43,6 +45,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 -record(passwd, {us = {<<"">>, <<"">>} :: {binary(), binary()} | '$1',
                  password = <<"">> :: binary() | scram() | '_'}).
@@ -88,51 +91,48 @@ store_type() ->
 
 check_password(User, AuthzId, Server, Password) ->
     if AuthzId /= <<>> andalso AuthzId /= User ->
-        false;
-    true ->
-        LUser = jid:nodeprep(User),
-        LServer = jid:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_read({passwd, US}) of
-      [#passwd{password = Password}]
-	  when is_binary(Password) ->
-	  Password /= <<"">>;
-      [#passwd{password = Scram}]
-	  when is_record(Scram, scram) ->
-	  is_password_scram_valid(Password, Scram);
-      _ -> false
-        end
+	    false;
+       true ->
+	    LUser = jid:nodeprep(User),
+	    LServer = jid:nameprep(Server),
+	    US = {LUser, LServer},
+	    case catch mnesia:dirty_read({passwd, US}) of
+	      [#passwd{password = Password}] when is_binary(Password) ->
+		  Password /= <<"">>;
+	      [#passwd{password = Scram}] when is_record(Scram, scram) ->
+		  is_password_scram_valid(Password, Scram);
+	      _ -> false
+	    end
     end.
 
 check_password(User, AuthzId, Server, Password, Digest,
 	       DigestGen) ->
     if AuthzId /= <<>> andalso AuthzId /= User ->
-        false;
-    true ->
-        LUser = jid:nodeprep(User),
-        LServer = jid:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_read({passwd, US}) of
-      [#passwd{password = Passwd}] when is_binary(Passwd) ->
-	  DigRes = if Digest /= <<"">> ->
-			  Digest == DigestGen(Passwd);
-		      true -> false
-		   end,
-	  if DigRes -> true;
-	     true -> (Passwd == Password) and (Password /= <<"">>)
-	  end;
-      [#passwd{password = Scram}]
-	  when is_record(Scram, scram) ->
-	  Passwd = jlib:decode_base64(Scram#scram.storedkey),
-	  DigRes = if Digest /= <<"">> ->
-			  Digest == DigestGen(Passwd);
-		      true -> false
-		   end,
-	  if DigRes -> true;
-	     true -> (Passwd == Password) and (Password /= <<"">>)
-	  end;
-      _ -> false
-        end
+	    false;
+       true ->
+	    LUser = jid:nodeprep(User),
+	    LServer = jid:nameprep(Server),
+	    US = {LUser, LServer},
+	    case catch mnesia:dirty_read({passwd, US}) of
+	      [#passwd{password = Passwd}] when is_binary(Passwd) ->
+		  DigRes = if Digest /= <<"">> ->
+				   Digest == DigestGen(Passwd);
+			      true -> false
+			   end,
+		  if DigRes -> true;
+		     true -> (Passwd == Password) and (Password /= <<"">>)
+		  end;
+	      [#passwd{password = Scram}] when is_record(Scram, scram) ->
+		  Passwd = jlib:decode_base64(Scram#scram.storedkey),
+		  DigRes = if Digest /= <<"">> ->
+				   Digest == DigestGen(Passwd);
+			      true -> false
+			   end,
+		  if DigRes -> true;
+		     true -> (Passwd == Password) and (Password /= <<"">>)
+		  end;
+	      _ -> false
+	    end
     end.
 
 %% @spec (User::string(), Server::string(), Password::string()) ->
@@ -473,12 +473,22 @@ is_password_scram_valid(Password, Scram) ->
 export(_Server) ->
     [{passwd,
       fun(Host, #passwd{us = {LUser, LServer}, password = Password})
+            when LServer == Host,
+                 is_binary(Password) ->
+              [?SQL("delete from users where username=%(LUser)s;"),
+               ?SQL("insert into users(username, password) "
+                    "values (%(LUser)s, %(Password)s);")];
+         (Host, #passwd{us = {LUser, LServer}, password = #scram{} = Scram})
             when LServer == Host ->
-              Username = ejabberd_sql:escape(LUser),
-              Pass = ejabberd_sql:escape(Password),
-              [[<<"delete from users where username='">>, Username, <<"';">>],
-               [<<"insert into users(username, password) "
-                  "values ('">>, Username, <<"', '">>, Pass, <<"');">>]];
+              StoredKey = Scram#scram.storedkey,
+              ServerKey = Scram#scram.serverkey,
+              Salt = Scram#scram.salt,
+              IterationCount = Scram#scram.iterationcount,
+              [?SQL("delete from users where username=%(LUser)s;"),
+               ?SQL("insert into users(username, password, serverkey, salt, "
+                    "iterationcount) "
+                    "values (%(LUser)s, %(StoredKey)s, %(ServerKey)s,"
+                    " %(Salt)s, %(IterationCount)d);")];
          (_Host, _R) ->
               []
       end}].

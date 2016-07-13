@@ -75,7 +75,7 @@ defmodule ModHttpApiMockTest do
 		:meck.expect(:ejabberd_commands, :get_commands,
 			fn () -> [@acommand] end)
 		:meck.expect(:ejabberd_commands, :execute_command,
-			fn (:undefined, {@user, @domain, @userpass, false}, @acommand, [], @version) ->
+			fn (:undefined, {@user, @domain, @userpass, false}, @acommand, [], @version, _) ->
 				:ok
 			end)
 
@@ -129,7 +129,7 @@ defmodule ModHttpApiMockTest do
 			fn () -> [@acommand] end)
 		:meck.expect(:ejabberd_commands, :execute_command,
 			fn (:undefined, {@user, @domain, {:oauth, _token}, false},
-					@acommand, [], @version) ->
+					@acommand, [], @version, _) ->
 					:ok
 			end)
 

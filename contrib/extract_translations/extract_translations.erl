@@ -242,9 +242,7 @@ print_usage() ->
 print_po_header(File) ->
     MsgProps = get_msg_header_props(File),
     {Language, [LastT | AddT]} = prepare_props(MsgProps),
-    application:load(ejabberd),
-    {ok, Version} = application:get_key(ejabberd, vsn),
-    print_po_header(Version, Language, LastT, AddT).
+    print_po_header(Language, LastT, AddT).
 
 get_msg_header_props(File) ->
     {ok, F} = file:open(File, [read]),
@@ -274,12 +272,11 @@ prepare_props(MsgProps) ->
     Authors = proplists:get_all_values("Author:", MsgProps),
     {Language, Authors}.
 
-print_po_header(Version, Language, LastTranslator, AdditionalTranslatorsList) ->
+print_po_header(Language, LastTranslator, AdditionalTranslatorsList) ->
     AdditionalTranslatorsString = build_additional_translators(AdditionalTranslatorsList),
     HeaderString =
 	"msgid \"\"\n"
 	"msgstr \"\"\n"
-	"\"Project-Id-Version: " ++ Version ++ "\\n\"\n"
 	++ "\"X-Language: " ++ Language ++ "\\n\"\n"
 	"\"Last-Translator: " ++ LastTranslator ++ "\\n\"\n"
 	++ AdditionalTranslatorsString ++

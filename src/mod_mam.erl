@@ -25,19 +25,19 @@
 %%%-------------------------------------------------------------------
 -module(mod_mam).
 
--protocol({xep, 313, '0.4'}).
+-protocol({xep, 313, '0.5.1'}).
 -protocol({xep, 334, '0.2'}).
 
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1]).
+-export([start/2, stop/1, depends/2]).
 
--export([user_send_packet/4, user_receive_packet/5,
+-export([user_send_packet/4, user_send_packet_strip_tag/4, user_receive_packet/5,
 	 process_iq_v0_2/3, process_iq_v0_3/3, disco_sm_features/5,
 	 remove_user/2, remove_room/3, mod_opt_type/1, muc_process_iq/4,
 	 muc_filter_message/5, message_is_archived/5, delete_old_messages/2,
-	 get_commands_spec/0, msg_to_el/4]).
+	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/4]).
 
 -include("jlib.hrl").
 -include("logger.hrl").
@@ -89,9 +89,11 @@ start(Host, Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_MAM_1, ?MODULE, process_iq_v0_3, IQDisc),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
-		       user_receive_packet, 500),
+		       user_receive_packet, 88),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-		       user_send_packet, 500),
+		       user_send_packet, 88),
+    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
+               user_send_packet_strip_tag, 500),
     ejabberd_hooks:add(muc_filter_message, Host, ?MODULE,
 		       muc_filter_message, 50),
     ejabberd_hooks:add(muc_process_iq, Host, ?MODULE,
@@ -100,6 +102,12 @@ start(Host, Opts) ->
 		       disco_sm_features, 50),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50),
+    ejabberd_hooks:add(remove_room, Host, ?MODULE,
+		       remove_room, 50),
+    ejabberd_hooks:add(get_room_config, Host, ?MODULE,
+		       get_room_config, 50),
+    ejabberd_hooks:add(set_room_option, Host, ?MODULE,
+		       set_room_option, 50),
     ejabberd_hooks:add(anonymous_purge_hook, Host, ?MODULE,
 		       remove_user, 50),
     case gen_mod:get_opt(assume_mam_usage, Opts,
@@ -128,9 +136,11 @@ init_cache(Opts) ->
 
 stop(Host) ->
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-			  user_send_packet, 500),
+			  user_send_packet, 88),
     ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE,
-			  user_receive_packet, 500),
+			  user_receive_packet, 88),
+    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
+              user_send_packet_strip_tag, 500),
     ejabberd_hooks:delete(muc_filter_message, Host, ?MODULE,
 			  muc_filter_message, 50),
     ejabberd_hooks:delete(muc_process_iq, Host, ?MODULE,
@@ -145,6 +155,12 @@ stop(Host) ->
 			  disco_sm_features, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50),
+    ejabberd_hooks:delete(remove_room, Host, ?MODULE,
+			  remove_room, 50),
+    ejabberd_hooks:delete(get_room_config, Host, ?MODULE,
+			  get_room_config, 50),
+    ejabberd_hooks:delete(set_room_option, Host, ?MODULE,
+			  set_room_option, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, Host,
 			  ?MODULE, remove_user, 50),
     case gen_mod:get_module_opt(Host, ?MODULE, assume_mam_usage,
@@ -161,6 +177,9 @@ stop(Host) ->
     ejabberd_commands:unregister_commands(get_commands_spec()),
     ok.
 
+depends(_Host, _Opts) ->
+    [].
+
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -172,6 +191,41 @@ remove_room(LServer, Name, Host) ->
     LHost = jid:nameprep(Host),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_room(LServer, LName, LHost).
+
+get_room_config(X, RoomState, _From, Lang) ->
+    Config = RoomState#state.config,
+    Label = <<"Enable message archiving">>,
+    Var = <<"muc#roomconfig_mam">>,
+    Val = case Config#config.mam of
+	      true -> <<"1">>;
+	      _ -> <<"0">>
+	  end,
+    XField = #xmlel{name = <<"field">>,
+		    attrs =
+			[{<<"type">>, <<"boolean">>},
+			 {<<"label">>, translate:translate(Lang, Label)},
+			 {<<"var">>, Var}],
+		    children =
+			[#xmlel{name = <<"value">>, attrs = [],
+				children = [{xmlcdata, Val}]}]},
+    X ++ [XField].
+
+set_room_option(_Acc, <<"muc#roomconfig_mam">> = Opt, Vals, Lang) ->
+    try
+	Val = case Vals of
+		  [<<"0">>|_] -> false;
+		  [<<"false">>|_] -> false;
+		  [<<"1">>|_] -> true;
+		  [<<"true">>|_] -> true
+	      end,
+	{#config.mam, Val}
+    catch _:{case_clause, _} ->
+	    Txt = <<"Value of '~s' should be boolean">>,
+	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
+	    {error, ?ERRT_BAD_REQUEST(Lang, ErrTxt)}
+    end;
+set_room_option(Acc, _Opt, _Vals, _Lang) ->
+    Acc.
 
 user_receive_packet(Pkt, C2SState, JID, Peer, To) ->
     LUser = JID#jid.luser,
@@ -205,12 +259,29 @@ user_send_packet(Pkt, C2SState, JID, Peer) ->
     case should_archive(Pkt, LServer) of
 	true ->
 	    NewPkt = strip_my_archived_tag(Pkt, LServer),
-	    store_msg(C2SState, jlib:replace_from_to(JID, Peer, NewPkt),
-		      LUser, LServer, Peer, send),
-	    NewPkt;
+	    case store_msg(C2SState, jlib:replace_from_to(JID, Peer, NewPkt),
+		      LUser, LServer, Peer, send) of
+              {ok, ID} ->
+      		    Archived = #xmlel{name = <<"archived">>,
+      				      attrs = [{<<"by">>, LServer},
+      					       {<<"xmlns">>, ?NS_MAM_TMP},
+      					       {<<"id">>, ID}]},
+      		    StanzaID = #xmlel{name = <<"stanza-id">>,
+      				      attrs = [{<<"by">>, LServer},
+      					       {<<"xmlns">>, ?NS_SID_0},
+      					       {<<"id">>, ID}]},
+                          NewEls = [Archived, StanzaID|NewPkt#xmlel.children],
+      		    NewPkt#xmlel{children = NewEls};
+            _ ->
+                NewPkt
+        end;
 	false ->
 	    Pkt
     end.
+
+user_send_packet_strip_tag(Pkt, _C2SState, JID, _Peer) ->
+    LServer = JID#jid.lserver,
+    strip_my_archived_tag(Pkt, LServer).
 
 muc_filter_message(Pkt, #state{config = Config} = MUCState,
 		   RoomJID, From, FromNick) ->
@@ -316,7 +387,12 @@ message_is_archived(false, C2SState, Peer,
 					 (never) -> never
 				      end, never) of
 	      if_enabled ->
-		  get_prefs(LUser, LServer);
+		  case get_prefs(LUser, LServer) of
+		      #archive_prefs{} = P ->
+			  {ok, P};
+		      error ->
+			  error
+		  end;
 	      on_request ->
 		  Mod = gen_mod:db_mod(LServer, ?MODULE),
 		  cache_tab:lookup(archive_prefs, {LUser, LServer},
@@ -812,9 +888,10 @@ select(_LServer, JidRequestor, JidArchive, Start, End, _With, RSM,
 	_ ->
 	    {Msgs, true, L}
     end;
-select(LServer, From, From, Start, End, With, RSM, MsgType) ->
+select(LServer, JidRequestor, JidArchive, Start, End, With, RSM, MsgType) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:select(LServer, From, From, Start, End, With, RSM, MsgType).
+    Mod:select(LServer, JidRequestor, JidArchive, Start, End, With, RSM,
+	       MsgType).
 
 msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
 	  MsgType, JidRequestor, #jid{lserver = LServer} = JidArchive) ->

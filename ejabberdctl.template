@@ -13,7 +13,7 @@ ERLANG_NODE=ejabberd@localhost
 SCRIPT_DIR=`cd ${0%/*} && pwd`
 ERL={{erl}}
 IEX={{bindir}}/iex
-EPMD={{bindir}}/epmd
+EPMD={{epmd}}
 INSTALLUSER={{installuser}}
 ERL_LIBS={{libdir}}
 
@@ -212,7 +212,7 @@ iexdebug()
          --erl `shell_escape \"$ERLANG_OPTS\"` \
          --erl `shell_escape \"${ARGS[@]}\"` \
          --erl `shell_escape_str \"$@\"`"
-    $EXEC_CMD "ERL_PATH=$\"$ERL\" $CMD"
+    $EXEC_CMD "ERL_PATH=\"$ERL\" $CMD"
 }
 
 # start interactive server
@@ -441,6 +441,6 @@ case "${ARGS[0]}" in
     'ping'*) ping ${ARGS[1]};;
     'etop') etop;;
     'started') wait_for_status 0 30 2;; # wait 30x2s before timeout
-    'stopped') wait_for_status 3 15 2 && stop_epmd;; # wait 15x2s before timeout
+    'stopped') wait_for_status 3 30 2 && stop_epmd;; # wait 30x2s before timeout
     *) ctl "${ARGS[@]}";;
 esac

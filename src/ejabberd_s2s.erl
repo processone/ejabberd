@@ -539,7 +539,7 @@ allow_host2(MyServer, S2SHost) ->
 allow_host1(MyHost, S2SHost) ->
     Rule = ejabberd_config:get_option(
              s2s_access,
-             fun(A) when is_atom(A) -> A end,
+             fun(A) -> A end,
              all),
     JID = jid:make(<<"">>, S2SHost, <<"">>),
     case acl:match_rule(MyHost, Rule, JID) of
@@ -738,5 +738,5 @@ opt_type(route_subdomains) ->
 	(local) -> local
     end;
 opt_type(s2s_access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 opt_type(_) -> [route_subdomains, s2s_access].

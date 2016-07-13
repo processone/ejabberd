@@ -30,6 +30,7 @@ fi
 
 AC_PATH_TOOL(ERL, erl, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(ERLC, erlc, , [${extra_erl_path}$PATH])
+AC_PATH_TOOL(EPMD, epmd, , [${extra_erl_path}$PATH])
 
 AC_ERLANG_NEED_ERL
 AC_ERLANG_NEED_ERLC

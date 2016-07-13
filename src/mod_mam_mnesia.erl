@@ -16,6 +16,7 @@
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("jlib.hrl").
+-include("logger.hrl").
 -include("mod_mam.hrl").
 
 -define(BIN_GREATER_THAN(A, B),
@@ -24,6 +25,8 @@
 -define(BIN_LESS_THAN(A, B),
 	((A < B andalso byte_size(A) == byte_size(B))
 	 orelse byte_size(A) < byte_size(B))).
+
+-define(TABLE_SIZE_LIMIT, 2000000000). % A bit less than 2 GiB.
 
 %%%===================================================================
 %%% API
@@ -49,37 +52,71 @@ remove_room(_LServer, LName, LHost) ->
     remove_user(LName, LHost).
 
 delete_old_messages(global, TimeStamp, Type) ->
-    MS = ets:fun2ms(fun(#archive_msg{timestamp = MsgTS,
-				     type = MsgType} = Msg)
-			  when MsgTS < TimeStamp,
-			       MsgType == Type orelse Type == all ->
-			    Msg
-		    end),
-    OldMsgs = mnesia:dirty_select(archive_msg, MS),
-    lists:foreach(fun(Rec) ->
-			  ok = mnesia:dirty_delete_object(Rec)
-		  end, OldMsgs).
+    mnesia:change_table_copy_type(archive_msg, node(), disc_copies),
+    Result = delete_old_user_messages(mnesia:dirty_first(archive_msg), TimeStamp, Type),
+    mnesia:change_table_copy_type(archive_msg, node(), disc_only_copies),
+    Result.
+
+delete_old_user_messages('$end_of_table', _TimeStamp, _Type) ->
+    ok;
+delete_old_user_messages(User, TimeStamp, Type) ->
+    F = fun() ->
+		Msgs = mnesia:read(archive_msg, User),
+		Keep = lists:filter(
+			 fun(#archive_msg{timestamp = MsgTS,
+					  type = MsgType}) ->
+				 MsgTS >= TimeStamp orelse (Type /= all andalso
+							    Type /= MsgType)
+			 end, Msgs),
+		if length(Keep) < length(Msgs) ->
+			mnesia:delete({archive_msg, User}),
+			lists:foreach(fun(Msg) -> mnesia:write(Msg) end, Keep);
+		   true ->
+			ok
+		end
+	end,
+    case mnesia:transaction(F) of
+	{atomic, ok} ->
+	    delete_old_user_messages(mnesia:dirty_next(archive_msg, User),
+				     TimeStamp, Type);
+	{aborted, Err} ->
+	    ?ERROR_MSG("Cannot delete old MAM messages: ~s", [Err]),
+	    Err
+    end.
 
 extended_fields() ->
     [].
 
 store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir) ->
-    LPeer = {PUser, PServer, _} = jid:tolower(Peer),
-    TS = p1_time_compat:timestamp(),
-    ID = jlib:integer_to_binary(now_to_usec(TS)),
-    case mnesia:dirty_write(
-	   #archive_msg{us = {LUser, LServer},
-			id = ID,
-			timestamp = TS,
-			peer = LPeer,
-			bare_peer = {PUser, PServer, <<>>},
-			type = Type,
-			nick = Nick,
-			packet = Pkt}) of
-	ok ->
-	    {ok, ID};
-	Err ->
-	    Err
+    case {mnesia:table_info(archive_msg, disc_only_copies),
+	  mnesia:table_info(archive_msg, memory)} of
+	{[_|_], TableSize} when TableSize > ?TABLE_SIZE_LIMIT ->
+	    ?ERROR_MSG("MAM archives too large, won't store message for ~s@~s",
+		       [LUser, LServer]),
+	    {error, overflow};
+	_ ->
+	    LPeer = {PUser, PServer, _} = jid:tolower(Peer),
+	    TS = p1_time_compat:timestamp(),
+	    ID = jlib:integer_to_binary(now_to_usec(TS)),
+	    F = fun() ->
+			mnesia:write(
+			  #archive_msg{us = {LUser, LServer},
+				       id = ID,
+				       timestamp = TS,
+				       peer = LPeer,
+				       bare_peer = {PUser, PServer, <<>>},
+				       type = Type,
+				       nick = Nick,
+				       packet = Pkt})
+		end,
+	    case mnesia:transaction(F) of
+		{atomic, ok} ->
+		    {ok, ID};
+		{aborted, Err} ->
+		    ?ERROR_MSG("Cannot add message to MAM archive of ~s@~s: ~s",
+			       [LUser, LServer, Err]),
+		    Err
+	    end
     end.
 
 write_prefs(_LUser, _LServer, Prefs, _ServerHost) ->
@@ -101,12 +138,15 @@ select(_LServer, JidRequestor,
     SortedMsgs = lists:keysort(#archive_msg.timestamp, Msgs),
     {FilteredMsgs, IsComplete} = filter_by_rsm(SortedMsgs, RSM),
     Count = length(Msgs),
-    {lists:map(
-       fun(Msg) ->
-	       {Msg#archive_msg.id,
-		jlib:binary_to_integer(Msg#archive_msg.id),
-		mod_mam:msg_to_el(Msg, MsgType, JidRequestor, JidArchive)}
-       end, FilteredMsgs), IsComplete, Count}.
+    Result = {lists:map(
+		fun(Msg) ->
+			{Msg#archive_msg.id,
+			 jlib:binary_to_integer(Msg#archive_msg.id),
+			 mod_mam:msg_to_el(Msg, MsgType, JidRequestor,
+					   JidArchive)}
+		end, FilteredMsgs), IsComplete, Count},
+    erlang:garbage_collect(),
+    Result.
 
 %%%===================================================================
 %%% Internal functions

@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_local_iq/3,
-	 mod_opt_type/1, opt_type/1]).
+	 mod_opt_type/1, opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -200,6 +200,9 @@ process_get(#xmlel{name = <<"last">>, attrs = Attrs}, Lang) ->
 %%process_get({xmlelement, Name, Attrs, SubEls}) ->
 %%    {result, };
 process_get(_, _) -> {error, ?ERR_BAD_REQUEST}.
+
+depends(_Host, _Opts) ->
+    [].
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(_) -> [iqdisc].

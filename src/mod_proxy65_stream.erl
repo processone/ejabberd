@@ -83,7 +83,7 @@ init([Socket, Host, Opts]) ->
                                   (anonymous) -> anonymous
                                end, anonymous),
     Shaper = gen_mod:get_opt(shaper, Opts,
-                             fun(A) when is_atom(A) -> A end,
+                             fun acl:shaper_rules_validator/1,
                              none),
     RecvBuf = gen_mod:get_opt(recbuf, Opts,
                               fun(I) when is_integer(I), I>0 -> I end,

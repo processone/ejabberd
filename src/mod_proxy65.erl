@@ -39,7 +39,7 @@
 %% supervisor callbacks.
 -export([init/1]).
 
--export([start_link/2, mod_opt_type/1]).
+-export([start_link/2, mod_opt_type/1, depends/2]).
 
 -define(PROCNAME, ejabberd_mod_proxy65).
 
@@ -83,6 +83,9 @@ init([Host, Opts]) ->
     {ok,
      {{one_for_one, 10, 1},
       [StreamManager, StreamSupervisor, Service]}}.
+
+depends(_Host, _Opts) ->
+    [].
 
 mod_opt_type(auth_type) ->
     fun (plain) -> plain;

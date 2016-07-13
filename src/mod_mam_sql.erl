@@ -8,6 +8,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_mam_sql).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -behaviour(mod_mam).
 
 %% API
@@ -18,6 +20,7 @@
 -include("jlib.hrl").
 -include("mod_mam.hrl").
 -include("logger.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 %%%===================================================================
 %%% API
@@ -26,13 +29,12 @@ init(_Host, _Opts) ->
     ok.
 
 remove_user(LUser, LServer) ->
-    SUser = ejabberd_sql:escape(LUser),
     ejabberd_sql:sql_query(
       LServer,
-      [<<"delete from archive where username='">>, SUser, <<"';">>]),
+      ?SQL("delete from archive where username=%(LUser)s")),
     ejabberd_sql:sql_query(
       LServer,
-      [<<"delete from archive_prefs where username='">>, SUser, <<"';">>]).
+      ?SQL("delete from archive_prefs where username=%(LUser)s")).
 
 remove_room(LServer, LName, LHost) ->
     LUser = jid:to_string({LName, LHost, <<>>}),
@@ -55,7 +57,7 @@ extended_fields() ->
 
 store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
     TSinteger = p1_time_compat:system_time(micro_seconds),
-    ID = TS = jlib:integer_to_binary(TSinteger),
+    ID = jlib:integer_to_binary(TSinteger),
     SUser = case Type of
 		chat -> LUser;
 		groupchat -> jid:to_string({LUser, LHost, <<>>})
@@ -67,18 +69,19 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
 	      jid:tolower(Peer)),
     XML = fxml:element_to_binary(Pkt),
     Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
+    SType = jlib:atom_to_binary(Type),
     case ejabberd_sql:sql_query(
-	    LServer,
-	    [<<"insert into archive (username, timestamp, "
-		    "peer, bare_peer, xml, txt, kind, nick) values (">>,
-		<<"'">>, ejabberd_sql:escape(SUser), <<"', ">>,
-		<<"'">>, TS, <<"', ">>,
-		<<"'">>, ejabberd_sql:escape(LPeer), <<"', ">>,
-		<<"'">>, ejabberd_sql:escape(BarePeer), <<"', ">>,
-		<<"'">>, ejabberd_sql:escape(XML), <<"', ">>,
-		<<"'">>, ejabberd_sql:escape(Body), <<"', ">>,
-		<<"'">>, jlib:atom_to_binary(Type), <<"', ">>,
-		<<"'">>, ejabberd_sql:escape(Nick), <<"');">>]) of
+           LServer,
+           ?SQL("insert into archive (username, timestamp,"
+                " peer, bare_peer, xml, txt, kind, nick) values ("
+		"%(SUser)s, "
+		"%(TSinteger)d, "
+		"%(LPeer)s, "
+		"%(BarePeer)s, "
+		"%(XML)s, "
+		"%(Body)s, "
+		"%(SType)s, "
+		"%(Nick)s)")) of
 	{updated, _} ->
 	    {ok, ID};
 	Err ->
@@ -89,14 +92,16 @@ write_prefs(LUser, _LServer, #archive_prefs{default = Default,
 					   never = Never,
 					   always = Always},
 	    ServerHost) ->
-    SUser = ejabberd_sql:escape(LUser),
     SDefault = erlang:atom_to_binary(Default, utf8),
-    SAlways = ejabberd_sql:encode_term(Always),
-    SNever = ejabberd_sql:encode_term(Never),
-    case update(ServerHost, <<"archive_prefs">>,
-		[<<"username">>, <<"def">>, <<"always">>, <<"never">>],
-		[SUser, SDefault, SAlways, SNever],
-		[<<"username='">>, SUser, <<"'">>]) of
+    SAlways = jlib:term_to_expr(Always),
+    SNever = jlib:term_to_expr(Never),
+    case ?SQL_UPSERT(
+            ServerHost,
+            "archive_prefs",
+            ["!username=%(LUser)s",
+             "def=%(SDefault)s",
+             "always=%(SAlways)s",
+             "never=%(SNever)s"]) of
 	{updated, _} ->
 	    ok;
 	Err ->
@@ -106,10 +111,9 @@ write_prefs(LUser, _LServer, #archive_prefs{default = Default,
 get_prefs(LUser, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
-	   [<<"select def, always, never from archive_prefs ">>,
-	    <<"where username='">>,
-	    ejabberd_sql:escape(LUser), <<"';">>]) of
-	{selected, _, [[SDefault, SAlways, SNever]]} ->
+	   ?SQL("select @(def)s, @(always)s, @(never)s from archive_prefs"
+                " where username=%(LUser)s")) of
+	{selected, [{SDefault, SAlways, SNever}]} ->
 	    Default = erlang:binary_to_existing_atom(SDefault, utf8),
 	    Always = ejabberd_sql:decode_term(SAlways),
 	    Never = ejabberd_sql:decode_term(SNever),
@@ -208,6 +212,12 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
     ODBCType = ejabberd_config:get_option(
 		 {sql_type, LServer},
 		 ejabberd_sql:opt_type(sql_type)),
+    Escape =
+        case ODBCType of
+            mssql -> fun ejabberd_sql:standard_escape/1;
+            sqlite -> fun ejabberd_sql:standard_escape/1;
+            _ -> fun ejabberd_sql:escape/1
+        end,
     LimitClause = if is_integer(Max), Max >= 0, ODBCType /= mssql ->
 			  [<<" limit ">>, jlib:integer_to_binary(Max+1)];
 		     true ->
@@ -223,14 +233,14 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
 			 [];
 		     {text, Txt} ->
 			 [<<" and match (txt) against ('">>,
-			  ejabberd_sql:escape(Txt), <<"')">>];
+			  Escape(Txt), <<"')">>];
 		     {_, _, <<>>} ->
 			 [<<" and bare_peer='">>,
-			  ejabberd_sql:escape(jid:to_string(With)),
+			  Escape(jid:to_string(With)),
 			  <<"'">>];
 		     {_, _, _} ->
 			 [<<" and peer='">>,
-			  ejabberd_sql:escape(jid:to_string(With)),
+			  Escape(jid:to_string(With)),
 			  <<"'">>];
 		     none ->
 			 []
@@ -262,7 +272,7 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
 		    _ ->
 			[]
 		end,
-    SUser = ejabberd_sql:escape(User),
+    SUser = Escape(User),
 
     Query = [<<"SELECT ">>, TopClause, <<" timestamp, xml, peer, kind, nick"
 	      " FROM archive WHERE username='">>,
@@ -285,25 +295,3 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
     {QueryPage,
      [<<"SELECT COUNT(*) FROM archive WHERE username='">>,
       SUser, <<"'">>, WithClause, StartClause, EndClause, <<";">>]}.
-
-update(LServer, Table, Fields, Vals, Where) ->
-    UPairs = lists:zipwith(fun (A, B) ->
-				   <<A/binary, "='", B/binary, "'">>
-			   end,
-			   Fields, Vals),
-    case ejabberd_sql:sql_query(LServer,
-				 [<<"update ">>, Table, <<" set ">>,
-				  join(UPairs, <<", ">>), <<" where ">>, Where,
-				  <<";">>])
-	of
-	{updated, 1} -> {updated, 1};
-	_ ->
-	    ejabberd_sql:sql_query(LServer,
-				    [<<"insert into ">>, Table, <<"(">>,
-				     join(Fields, <<", ">>), <<") values ('">>,
-				     join(Vals, <<"', '">>), <<"');">>])
-    end.
-
-%% Almost a copy of string:join/2.
-join([], _Sep) -> [];
-join([H | T], Sep) -> [H, [[Sep, X] || X <- T]].

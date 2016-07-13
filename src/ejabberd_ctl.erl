@@ -239,7 +239,7 @@ process2(["--auth", User, Server, Pass | Args], AccessCommands, Version) ->
     process2(Args, AccessCommands, {list_to_binary(User), list_to_binary(Server),
 				    list_to_binary(Pass), true}, Version);
 process2(Args, AccessCommands, Version) ->
-    process2(Args, AccessCommands, admin, Version).
+    process2(Args, AccessCommands, noauth, Version).
 
 
 

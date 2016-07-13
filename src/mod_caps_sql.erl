@@ -9,10 +9,13 @@
 -module(mod_caps_sql).
 -behaviour(mod_caps).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 %% API
 -export([init/2, caps_read/2, caps_write/3, export/1]).
 
 -include("mod_caps.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 %%%===================================================================
 %%% API
@@ -21,21 +24,19 @@ init(_Host, _Opts) ->
     ok.
 
 caps_read(LServer, {Node, SubNode}) ->
-    SNode = ejabberd_sql:escape(Node),
-    SSubNode = ejabberd_sql:escape(SubNode),
     case ejabberd_sql:sql_query(
-	   LServer, [<<"select feature from caps_features where ">>,
-		     <<"node='">>, SNode, <<"' and subnode='">>,
-		     SSubNode, <<"';">>]) of
-	{selected, [<<"feature">>], [[H]|_] = Fs} ->
-	    case catch jlib:binary_to_integer(H) of
-		Int when is_integer(Int), Int>=0 ->
-		    {ok, Int};
-		_ ->
-		    {ok, lists:flatten(Fs)}
-	    end;
-	_ ->
-	    error
+           LServer,
+           ?SQL("select @(feature)s from caps_features where"
+                " node=%(Node)s and subnode=%(SubNode)s")) of
+        {selected, [{H}|_] = Fs} ->
+            case catch jlib:binary_to_integer(H) of
+                Int when is_integer(Int), Int>=0 ->
+                    {ok, Int};
+                _ ->
+                    {ok, [F || {F} <- Fs]}
+            end;
+        _ ->
+            error
     end.
 
 caps_write(LServer, NodePair, Features) ->
@@ -56,16 +57,13 @@ export(_Server) ->
 %%% Internal functions
 %%%===================================================================
 sql_write_features_t({Node, SubNode}, Features) ->
-    SNode = ejabberd_sql:escape(Node),
-    SSubNode = ejabberd_sql:escape(SubNode),
     NewFeatures = if is_integer(Features) ->
                           [jlib:integer_to_binary(Features)];
                      true ->
                           Features
                   end,
-    [[<<"delete from caps_features where node='">>,
-      SNode, <<"' and subnode='">>, SSubNode, <<"';">>]|
-     [[<<"insert into caps_features(node, subnode, feature) ">>,
-       <<"values ('">>, SNode, <<"', '">>, SSubNode, <<"', '">>,
-       ejabberd_sql:escape(F), <<"');">>] || F <- NewFeatures]].
+    [?SQL("delete from caps_features where node=%(Node)s"
+          " and subnode=%(SubNode)s;") |
+     [?SQL("insert into caps_features(node, subnode, feature)"
+           " values (%(Node)s, %(SubNode)s, %(F)s);") || F <- NewFeatures]].
 

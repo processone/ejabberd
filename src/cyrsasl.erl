@@ -88,13 +88,8 @@ start() ->
     ok.
 
 %%
--spec(register_mechanism/3 ::
-(
-  Mechanim     :: mechanism(),
-  Module       :: module(),
-  PasswordType :: password_type())
-    -> any()
-).
+-spec register_mechanism(Mechanim :: mechanism(), Module :: module(),
+			 PasswordType :: password_type()) -> any().
 
 register_mechanism(Mechanism, Module, PasswordType) ->
     case is_disabled(Mechanism) of
@@ -139,11 +134,7 @@ check_credentials(_State, Props) ->
       _LUser -> ok
     end.
 
--spec(listmech/1 ::
-(
-  Host ::binary())
-    -> Mechanisms::mechanisms()
-).
+-spec listmech(Host ::binary()) -> Mechanisms::mechanisms().
 
 listmech(Host) ->
     Mechs = ets:select(sasl_mechanism,
@@ -213,12 +204,7 @@ server_step(State, ClientIn) ->
 %% Remove the anonymous mechanism from the list if not enabled for the given
 %% host
 %%
--spec(filter_anonymous/2 ::
-(
-  Host  :: binary(),
-  Mechs :: mechanisms())
-    -> mechanisms()
-).
+-spec filter_anonymous(Host :: binary(), Mechs :: mechanisms()) -> mechanisms().
 
 filter_anonymous(Host, Mechs) ->
     case ejabberd_auth_anonymous:is_sasl_anonymous_enabled(Host) of
@@ -226,11 +212,7 @@ filter_anonymous(Host, Mechs) ->
       false -> Mechs -- [<<"ANONYMOUS">>]
     end.
 
--spec(is_disabled/1 ::
-(
-  Mechanism :: mechanism())
-    -> boolean()
-).
+-spec is_disabled(Mechanism :: mechanism()) -> boolean().
 
 is_disabled(Mechanism) ->
     Disabled = ejabberd_config:get_option(

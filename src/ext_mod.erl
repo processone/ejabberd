@@ -271,7 +271,7 @@ geturl(Url, Hdrs, UsrOpts) ->
         [U, Pass] -> [{proxy_user, U}, {proxy_password, Pass}];
         _ -> []
     end,
-    case httpc:request(get, {Url, Hdrs}, Host++User++UsrOpts, []) of
+    case httpc:request(get, {Url, Hdrs}, Host++User++UsrOpts++[{version, "HTTP/1.0"}], []) of
         {ok, {{_, 200, _}, Headers, Response}} ->
             {ok, Headers, Response};
         {ok, {{_, Code, _}, _Headers, Response}} ->

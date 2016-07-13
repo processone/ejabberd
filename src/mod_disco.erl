@@ -39,7 +39,7 @@
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
 	 get_info/5, register_feature/2, unregister_feature/2,
 	 register_extra_domain/2, unregister_extra_domain/2,
-	 transform_module_options/1, mod_opt_type/1]).
+	 transform_module_options/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -533,6 +533,9 @@ values_to_xml(Values) ->
 			     children = [{xmlcdata, Value}]}
 	      end,
 	      Values).
+
+depends(_Host, _Opts) ->
+    [].
 
 mod_opt_type(extra_domains) ->
     fun (Hs) -> [iolist_to_binary(H) || H <- Hs] end;

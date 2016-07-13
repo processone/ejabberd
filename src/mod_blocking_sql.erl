@@ -25,7 +25,12 @@ process_blocklist_block(LUser, LServer, Filter) ->
 		Default = case mod_privacy_sql:sql_get_default_privacy_list_t(LUser) of
 			      {selected, []} ->
 				  Name = <<"Blocked contacts">>,
-				  mod_privacy_sql:sql_add_privacy_list(LUser, Name),
+				  case mod_privacy_sql:sql_get_privacy_list_id_t(LUser, Name) of
+				      {selected, []} ->
+					  mod_privacy_sql:sql_add_privacy_list(LUser, Name);
+				      {selected, [{_ID}]} ->
+					  ok
+				  end,
 				  mod_privacy_sql:sql_set_default_privacy_list(LUser, Name),
 				  Name;
 			      {selected, [{Name}]} -> Name

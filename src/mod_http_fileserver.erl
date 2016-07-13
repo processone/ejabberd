@@ -46,7 +46,7 @@
 %% utility for other http modules
 -export([content_type/3]).
 
--export([reopen_log/1, mod_opt_type/1]).
+-export([reopen_log/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -108,6 +108,9 @@ stop(Host) ->
     gen_server:call(Proc, stop),
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
+
+depends(_Host, _Opts) ->
+    [].
 
 %%====================================================================
 %% API

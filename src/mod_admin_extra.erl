@@ -47,7 +47,7 @@
 	 srg_delete/2, srg_list/1, srg_get_info/2,
 	 srg_get_members/2, srg_user_add/4, srg_user_del/4,
 	 send_message/5, send_stanza/3, send_stanza_c2s/4, privacy_set/3,
-	 stats/1, stats/2, mod_opt_type/1, get_commands_spec/0]).
+	 stats/1, stats/2, mod_opt_type/1, get_commands_spec/0, depends/2]).
 
 
 -include("ejabberd.hrl").
@@ -66,6 +66,8 @@ start(_Host, _Opts) ->
 stop(_Host) ->
     ejabberd_commands:unregister_commands(get_commands_spec()).
 
+depends(_Host, _Opts) ->
+    [].
 
 %%%
 %%% Register commands
@@ -863,26 +865,36 @@ connected_users_vhost(Host) ->
 dirty_get_sessions_list2() ->
     mnesia:dirty_select(
       session,
-      [{#session{usr = '$1', sid = '$2', priority = '$3', info = '$4', _ = '_'},
-	[],
-	[['$1', '$2', '$3', '$4']]}]).
+      [{#session{usr = '$1', sid = {'$2', '$3'}, priority = '$4', info = '$5',
+		 _ = '_'},
+	[{is_pid, '$3'}],
+	[['$1', {{'$2', '$3'}}, '$4', '$5']]}]).
 
 %% Make string more print-friendly
 stringize(String) ->
     %% Replace newline characters with other code
     ejabberd_regexp:greplace(String, <<"\n">>, <<"\\n">>).
 
+set_presence(User, Host, Resource, Type, Show, Status, Priority)
+        when is_integer(Priority) ->
+    BPriority = integer_to_binary(Priority),
+    set_presence(User, Host, Resource, Type, Show, Status, BPriority);
 set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
-    Pid = ejabberd_sm:get_session_pid(User, Host, Resource),
-    USR = jid:to_string(jid:make(User, Host, Resource)),
-    US = jid:to_string(jid:make(User, Host, <<>>)),
-    Message = {route_xmlstreamelement,
-	       {xmlel, <<"presence">>,
-		[{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
-		[{xmlel, <<"show">>, [], [{xmlcdata, Show}]},
-		 {xmlel, <<"status">>, [], [{xmlcdata, Status}]},
-		 {xmlel, <<"priority">>, [], [{xmlcdata, Priority}]}]}},
-    Pid ! Message.
+    case ejabberd_sm:get_session_pid(User, Host, Resource) of
+	none ->
+	    error;
+	Pid ->
+	    USR = jid:to_string(jid:make(User, Host, Resource)),
+	    US = jid:to_string(jid:make(User, Host, <<>>)),
+	    Message = {route_xmlstreamelement,
+		    {xmlel, <<"presence">>,
+			[{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
+			[{xmlel, <<"show">>, [], [{xmlcdata, Show}]},
+			{xmlel, <<"status">>, [], [{xmlcdata, Status}]},
+			{xmlel, <<"priority">>, [], [{xmlcdata, Priority}]}]}},
+	    Pid ! Message,
+	    ok
+    end.
 
 user_sessions_info(User, Host) ->
     CurrentSec = calendar:datetime_to_gregorian_seconds({date(), time()}),
@@ -891,7 +903,9 @@ user_sessions_info(User, Host) ->
 		   {'EXIT', _Reason} ->
 		       [];
 		   Ss ->
-		       Ss
+		       lists:filter(fun(#session{sid = {_, Pid}}) ->
+					    is_pid(Pid)
+				    end, Ss)
 	       end,
     lists:map(
       fun(Session) ->
@@ -1154,7 +1168,8 @@ subscribe_roster({Name, Server, Group, Nick}, [{Name, Server, _, _} | Roster]) -
     subscribe_roster({Name, Server, Group, Nick}, Roster);
 %% Subscribe Name2 to Name1
 subscribe_roster({Name1, Server1, Group1, Nick1}, [{Name2, Server2, Group2, Nick2} | Roster]) ->
-    subscribe(Name1, Server1, Name2, Server2, Nick2, Group2, <<"both">>, []),
+    subscribe(Name1, Server1, list_to_binary(Name2), list_to_binary(Server2),
+	list_to_binary(Nick2), list_to_binary(Group2), <<"both">>, []),
     subscribe_roster({Name1, Server1, Group1, Nick1}, Roster).
 
 push_alltoall(S, G) ->

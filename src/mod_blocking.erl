@@ -30,7 +30,7 @@
 -protocol({xep, 191, '1.2'}).
 
 -export([start/2, stop/1, process_iq/3,
-	 process_iq_set/4, process_iq_get/5, mod_opt_type/1]).
+	 process_iq_set/4, process_iq_get/5, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -62,6 +62,9 @@ stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_BLOCKING),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_BLOCKING).
+
+depends(_Host, _Opts) ->
+    [{mod_privacy, hard}].
 
 process_iq(_From, _To, IQ) ->
     SubEl = IQ#iq.sub_el,

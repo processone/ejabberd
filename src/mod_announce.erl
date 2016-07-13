@@ -33,7 +33,7 @@
 
 -export([start/2, init/0, stop/1, export/1, import/1,
 	 import/3, announce/3, send_motd/1, disco_identity/5,
-	 disco_features/5, disco_items/5,
+	 disco_features/5, disco_items/5, depends/2,
 	 send_announcement_to_all/3, announce_commands/4,
 	 announce_items/4, mod_opt_type/1]).
 
@@ -73,6 +73,9 @@ start(Host, Opts) ->
 		       ?MODULE, send_motd, 50),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     proc_lib:spawn(?MODULE, init, [])).
+
+depends(_Host, _Opts) ->
+    [{mod_adhoc, hard}].
 
 init() ->
     loop().
@@ -903,7 +906,7 @@ send_announcement_to_all(Host, SubjectS, BodyS) ->
 
 get_access(Host) ->
     gen_mod:get_module_opt(Host, ?MODULE, access,
-                           fun(A) when is_atom(A) -> A end,
+                           fun(A) -> A end,
                            none).
 
 %%-------------------------------------------------------------------------
@@ -920,6 +923,6 @@ import(LServer, DBType, LA) ->
     Mod:import(LServer, LA).
 
 mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(_) -> [access, db_type].

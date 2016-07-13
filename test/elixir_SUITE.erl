@@ -18,6 +18,7 @@
 -compile(export_all).
 
 init_per_suite(Config) ->
+    suite:setup_ejabberd_lib_path(Config),
     check_meck(),
     code:add_pathz(filename:join(test_dir(), "../include")),
     Config.
