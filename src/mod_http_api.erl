@@ -366,28 +366,33 @@ format_args(Args, ArgsFormat) ->
       L when is_list(L) -> exit({additional_unused_args, L})
     end.
 
-format_arg({array, Elements},
-	   {list, {ElementDefName, ElementDefFormat}})
+format_arg(Elements,
+	   {list, {_ElementDefName, ElementDefFormat}})
     when is_list(Elements) ->
-    lists:map(fun ({struct, [{ElementName, ElementValue}]}) when
-                        ElementDefName == ElementName ->
-		      format_arg(ElementValue, ElementDefFormat)
-	      end,
-	      Elements);
-format_arg({array, [{struct, Elements}]},
-	   {list, {ElementDefName, ElementDefFormat}})
-    when is_list(Elements) ->
-    lists:map(fun ({ElementName, ElementValue}) ->
-		      true = ElementDefName == ElementName,
-		      format_arg(ElementValue, ElementDefFormat)
-	      end,
-	      Elements);
-format_arg({array, [{struct, Elements}]},
+    [format_arg(Element, ElementDefFormat)
+     || Element <- Elements];
+format_arg({[{Name, Value}]},
+	   {tuple, [{_Tuple1N, Tuple1S}, {_Tuple2N, Tuple2S}]})
+  when Tuple1S == binary;
+       Tuple1S == string ->
+    {format_arg(Name, Tuple1S), format_arg(Value, Tuple2S)};
+format_arg({Elements},
 	   {tuple, ElementsDef})
     when is_list(Elements) ->
-    FormattedList = format_args(Elements, ElementsDef),
-    list_to_tuple(FormattedList);
-format_arg({array, Elements}, {list, ElementsDef})
+    F = lists:map(fun({TElName, TElDef}) ->
+			  case lists:keyfind(atom_to_binary(TElName, latin1), 1, Elements) of
+			      {_, Value} ->
+				  format_arg(Value, TElDef);
+			      _ when TElDef == binary; TElDef == string ->
+				  <<"">>;
+			      _ ->
+				  ?ERROR_MSG("missing field ~p in tuple ~p", [TElName, Elements]),
+				  throw({invalid_parameter,
+					 io_lib:format("Missing field ~w in tuple ~w", [TElName, Elements])})
+			  end
+		  end, ElementsDef),
+    list_to_tuple(F);
+format_arg(Elements, {list, ElementsDef})
     when is_list(Elements) and is_atom(ElementsDef) ->
     [format_arg(Element, ElementsDef)
      || Element <- Elements];
@@ -401,7 +406,7 @@ format_arg(undefined, string) -> <<>>;
 format_arg(Arg, Format) ->
     ?ERROR_MSG("don't know how to format Arg ~p for format ~p", [Arg, Format]),
     throw({invalid_parameter,
-	   io_lib:format("Arg ~p is not in format ~p",
+	   io_lib:format("Arg ~w is not in format ~w",
 			 [Arg, Format])}).
 
 process_unicode_codepoints(Str) ->
