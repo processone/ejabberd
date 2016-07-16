@@ -379,67 +379,54 @@ disco_info(Delegations, Sep) ->
 
               end, Delegations).
 
+
+disco_features(Acc, Bare) ->
+    case check_tab(delegated_namespaces) of
+        true ->
+            Fun = fun(Feat) ->
+                      ets:foldl(fun({Ns, _Pid, _Feats, _FeatsBare}, A) ->  
+                                    (A or str:prefix(Ns, Feat))
+                                end, false, delegated_namespaces)
+                  end,
+            % delete feature namespace which is delegated to service
+            Features =
+                lists:filter(fun ({{Feature, _Host}}) ->
+                                     not Fun(Feature);
+                                 (Feature) when is_binary(Feature) ->
+                                     not Fun(Feature)
+                             end, Acc),
+            % add service features
+            FeaturesList = ets:foldl(fun({_Ns, _Pid, Feats, FeatsBare}, A) ->
+                                         if
+                                           Bare ->
+                                             A ++ FeatsBare;
+                                           true ->
+                                             A ++ Feats
+                                         end
+                                     end, Features, delegated_namespaces),
+            {result, FeaturesList};
+        _ ->
+            {result, Acc}
+    end.
+
 %% 7.2.1 General Case
 
-disco_local_features(Acc, _From, _To, <<>>, _Lang) ->
+disco_local_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
+    Acc; %% ?
+disco_local_features(Acc, _From, _To, _Node, _Lang) ->
     FeatsOld = case Acc of
                    {result, I} -> I;
                    _ -> []
                end,
-    case check_tab(delegated_namespaces) of
-      true ->
-          Fun = fun(Feat) ->
-                    ets:foldl(fun({Ns, _Pid, _Feats, _FeatsBare}, A) ->  
-                                    (A or str:prefix(Ns, Feat))
-                              end, false, delegated_namespaces)
-                end,
-          % delete feature namespace which is delegated to service
-          Features =
-              lists:filter(fun ({{Feature, _Host}}) ->
-                                   not Fun(Feature);
-                               (Feature) when is_binary(Feature) ->
-                                   not Fun(Feature)
-                           end, FeatsOld),
-          % add service features
-          FeaturesList = ets:foldl(fun({_Ns, _Pid, Feats, _FeatsBare}, A) -> 
-                                         A ++ Feats
-                                   end, Features, delegated_namespaces),
-          {result, FeaturesList};
-      _ ->
-        {result, FeatsOld}
-    end;
-
-disco_local_features(Acc, _From, _To, _Node, _Lang) ->
-    Acc.
+    disco_features(FeatsOld, false).
 
 %% 7.2.2 Rediction Of Bare JID Disco Info
 
-disco_sm_features(empty, From, To, Node, Lang) ->
-    disco_sm_features({result, []}, From, To, Node, Lang);
-disco_sm_features({result, OtherFeatures} = _Acc, _From, _To, _Node, _Lang) ->
-    case check_tab(delegated_namespaces) of
-      true ->
-          Fun = fun(Feat) ->
-                    ets:foldl(fun({Ns, _Pid, _Feats, _FeatsBare}, A) ->  
-                                    (A or str:prefix(Ns, Feat))
-                              end, false, delegated_namespaces)
-                end,
-          % delete feature namespace which is delegated to service
-          Features =
-              lists:filter(fun ({{Feature, _Host}}) ->
-                                   not Fun(Feature);
-                               (Feature) when is_binary(Feature) ->
-                                   not Fun(Feature)
-                           end, OtherFeatures),
-          % add service features
-          FeaturesList = ets:foldl(fun({_Ns, _Pid, _Feats, FeatsBare}, A) -> 
-                                       A ++ FeatsBare
-                                   end, Features, delegated_namespaces),
-          {result, FeaturesList};
-      _ ->
-        {result, OtherFeatures}
-    end;
-
-disco_sm_features(Acc, _From, _To, _Node, _Lang) -> Acc.
-
-
+disco_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
+    Acc;
+disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
+    FeatsOld = case Acc of
+                   {result, I} -> I;
+                   _ -> []
+               end,
+    disco_features(FeatsOld, true).
