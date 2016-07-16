@@ -30,6 +30,7 @@
 -export([start_link/2, init/1]).
 
 -include("ejabberd.hrl").
+-include("logger.hrl").
 
 start_link(Name, Module) ->
     supervisor:start_link({local, Name}, ?MODULE, Module).
@@ -38,13 +39,10 @@ start_link(Name, Module) ->
 init(Module) ->
     if
     	Module == ejabberd_service ->
-    		case ets:info(registered_services) of
-                undefined ->
-                    %% table contains {service domain, Pid}
-                    ets:new(registered_services, [named_table, public]);
-                _ ->
-                    ok
-            end;
+            %% table contains {Pid, service domain}
+            catch ets:new(registered_services, [named_table, public]),
+            %% table for delegated namespaces {namespace, [feature list]}
+            catch ets:new(delegated_namespaces, [named_table, public]);
         true -> ok
     end,
     {ok, {{simple_one_for_one, 10, 1},

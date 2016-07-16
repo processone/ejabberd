@@ -152,9 +152,16 @@ init([{SockMod, Socket}, Opts]) ->
                       {delegations, Del} ->
                           lists:foldl(
                             fun({Ns, FiltAttr}, D) ->
-                                Attr = proplists:get_value(filtering,
-                                                           FiltAttr, []),
-                                D ++ [{Ns, Attr}]
+                                case ets:lookup(delegated_namespaces, Ns) of
+                                  [{Ns, _Pid, _Feat, _FeatBare}] -> % this namespace was already delegated
+                                      D;
+                                  [] ->
+                                      ets:insert(delegated_namespaces,
+                                                 {Ns, self(), [], []}),
+                                      Attr = proplists:get_value(filtering,
+                                                                 FiltAttr, []),
+                                      D ++ [{Ns, Attr}]
+                                end
                             end, [], Del); 
                       false -> []
                   end, 
@@ -244,7 +251,7 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                                 end, dict:fetch_keys(StateData#state.host_opts)),
 
                             advertise_perm(StateData),
-                            namespace_delegation:advertise_delegations(StateData),
+                            mod_delegation:advertise_delegations(StateData),
                             %% send initial presences from all server users
                             case get_prop(presence, StateData#state.privilege_access) of
                                 Priv when (Priv == <<"managed_entity">>) or
@@ -252,7 +259,8 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                                         initial_presence(StateData);
                                 _ -> ok
                             end,
-                            ets:insert(registered_services, {StateData#state.host, self()}), 
+                            ets:insert(registered_services, {self(), StateData#state.host}), 
+
                             {next_state, stream_established, StateData}; 
                         _ ->
 
@@ -276,7 +284,7 @@ wait_for_handshake(closed, StateData) ->
     {stop, normal, StateData}.
 
 stream_established({xmlstreamelement, El}, StateData) ->
-    % ?INFO_MSG(" message from comp ~p~n" , [El]),
+    ?INFO_MSG(" message from comp ~p~n" , [El]),
     NewEl = jlib:remove_attr(<<"xmlns">>, El),
     #xmlel{name = Name, attrs = Attrs} = NewEl,
     From = fxml:get_attr_s(<<"from">>, Attrs),
@@ -360,7 +368,7 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
 handle_sync_event({get_delegated_ns}, _From, stream_established, StateData) ->
-    Reply =  StateData#state.delegations,
+    Reply =  {StateData#state.host, StateData#state.delegations},
     {reply, Reply, stream_established, StateData};
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
@@ -459,13 +467,16 @@ handle_info(Info, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
     ?INFO_MSG("terminated: ~p", [Reason]),
+    lists:foreach(fun({Ns, _FilterAttr}) ->
+                      ets:delete(delegated_namespaces, Ns)
+                  end, StateData#state.delegations),
     case StateName of
       stream_established ->
           lists:foreach(fun (H) ->
                             ejabberd_router:unregister_route(H)
                         end,
                         dict:fetch_keys(StateData#state.host_opts)),
-          ets:delete(registered_services, StateData#state.host);
+          ets:delete(registered_services, self());
       _ -> ok
     end,
     (StateData#state.sockmod):close(StateData#state.socket),
@@ -554,8 +565,6 @@ add_hooks2(Host) ->
     %% these hooks are used for receiving presences for privilege services XEP-0356
     ejabberd_hooks:add(user_send_packet, Host,
                        ?MODULE, process_presence, 10),
-    ejabberd_hooks:add(user_send_packet, Host,
-                       namespace_delegation, process_packet, 10),
     ejabberd_hooks:add(s2s_receive_packet, Host,
                        ejabberd_service, process_roster_presence, 10).
 
@@ -650,7 +659,7 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
 
 hook_name(Type, Id) ->
     Hook0 =  atom_to_binary(Type, 'latin1'),
-    Hook = << <<"iq_">>/binary, Hook0/binary, Id/binary >>,
+    Hook = << "iq_", Hook0/binary, Id/binary >>,
     binary_to_atom(Hook, 'latin1').
 
 send_iq_result(StateData, From, To, #xmlel{attrs = Attrs } = Packet) ->
@@ -812,7 +821,7 @@ process_presence(#xmlel{name = <<"presence">>} = Packet, _C2SState, From, _To) -
             case ets:info(registered_services) of
                 undefined -> ok;
                 _ ->
-                    lists:foreach(fun({_ServiceHost, Pid}) -> 
+                    lists:foreach(fun({Pid, _ServiceHost}) -> 
                                       Pid ! {user_presence, Packet, From} 
                                   end,
                                   ets:tab2list(registered_services))
@@ -840,7 +849,7 @@ process_roster_presence(From, To, #xmlel{name = <<"presence">>} = Packet) ->
                     case privacy_check_packet(Server, User, PrivList,
                                               From, To, Packet, in) of
                         allow ->
-                            lists:foreach(fun({_ServiceHost, Pid}) -> 
+                            lists:foreach(fun({Pid, _ServiceHost}) -> 
                                               Pid ! {roster_presence, From, Packet}
                                   end,
                                   ets:tab2list(registered_services));
