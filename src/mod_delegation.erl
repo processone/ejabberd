@@ -9,7 +9,7 @@
 -export([start/2, stop/1, depends/2, mod_opt_type/1]).
 
 -export([advertise_delegations/1, process_packet/4,
-         disco_local_features/5]).
+         disco_local_features/5, disco_sm_features/5]).
 
 -include("ejabberd_service.hrl").
 
@@ -18,14 +18,19 @@
 %%%--------------------------------------------------------------------------------------
 
 start(Host, _Opts) ->
+    mod_disco:register_feature(Host, ?NS_DELEGATION),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
                        disco_local_features, 500), %% This hook should be last 
+    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, 
+                       disco_sm_features, 500),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
                        process_packet, 10).
 
 stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE,
                           disco_local_features, 500),
+    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, 
+                          disco_sm_features, 500),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
                           process_packet, 10).
 
@@ -56,11 +61,11 @@ delegations(Id, Delegations) ->
 
 delegation_ns_debug(Host, Delegations) ->
     lists:foreach(fun({Ns, []}) ->
-    	              ?DEBUG("namespace ~s is delegated to ~s with"
-    	                     " no filtering attributes",[Ns, Host]);
+    	                ?DEBUG("namespace ~s is delegated to ~s with"
+    	                       " no filtering attributes",[Ns, Host]);
     	               ({Ns, Attr}) ->
                       ?DEBUG("namespace ~s is delegated to ~s with"
-    	                     " ~p filtering attributes ~n",[Ns, Host, Attr])
+    	                       " ~p filtering attributes ~n",[Ns, Host, Attr])
     	            end, Delegations).
 
 send_element(StateData, From, To, #xmlel{attrs = Attrs} = Packet) ->
@@ -297,12 +302,13 @@ process_packet(Packet, _C2SState, _From, _To) ->
 %%%--------------------------------------------------------------------------------------
 
 decapsulate_features(#xmlel{attrs = Attrs} = Packet, Node) ->
-  PREFIX = << ?NS_DELEGATION/binary, <<"::">>/binary >>,
-  Size = byte_size(PREFIX),
-  BARE_PREFIX = << ?NS_DELEGATION/binary, <<":bare:">>/binary >>,
-  SizeBare = byte_size(BARE_PREFIX),
   case fxml:get_attr_s(<<"node">>, Attrs) of 
       Node ->
+          PREFIX = << ?NS_DELEGATION/binary, <<"::">>/binary >>,
+          Size = byte_size(PREFIX),
+          BARE_PREFIX = << ?NS_DELEGATION/binary, <<":bare:">>/binary >>,
+          SizeBare = byte_size(BARE_PREFIX),
+
           Features = [Feat || #xmlel{attrs = [{<<"var">>, Feat}]} <-
                               fxml:get_subtags(Packet, <<"feature">>)],
           case Node of
@@ -373,12 +379,67 @@ disco_info(Delegations, Sep) ->
 
               end, Delegations).
 
-% disco_local_features(Acc, _From, To, <<>>, _Lang) ->
-%     Host = host(To#jid.lserver),
-%     Feats = case Acc of
-%   {result, I} -> I;
-%   _ -> []
-%     end,
-%     {result, Feats ++ [feature(F) || F <- features(Host, <<>>)]};
+%% 7.2.1 General Case
+
+disco_local_features(Acc, _From, _To, <<>>, _Lang) ->
+    FeatsOld = case Acc of
+                   {result, I} -> I;
+                   _ -> []
+               end,
+    case check_tab(delegated_namespaces) of
+      true ->
+          Fun = fun(Feat) ->
+                    ets:foldl(fun({Ns, _Pid, _Feats, _FeatsBare}, A) ->  
+                                    (A or str:prefix(Ns, Feat))
+                              end, false, delegated_namespaces)
+                end,
+          % delete feature namespace which is delegated to service
+          Features =
+              lists:filter(fun ({{Feature, _Host}}) ->
+                                   not Fun(Feature);
+                               (Feature) when is_binary(Feature) ->
+                                   not Fun(Feature)
+                           end, FeatsOld),
+          % add service features
+          FeaturesList = ets:foldl(fun({_Ns, _Pid, Feats, _FeatsBare}, A) -> 
+                                         A ++ Feats
+                                   end, Features, delegated_namespaces),
+          {result, FeaturesList};
+      _ ->
+        {result, FeatsOld}
+    end;
+
 disco_local_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
+
+%% 7.2.2 Rediction Of Bare JID Disco Info
+
+disco_sm_features(empty, From, To, Node, Lang) ->
+    disco_sm_features({result, []}, From, To, Node, Lang);
+disco_sm_features({result, OtherFeatures} = _Acc, _From, _To, _Node, _Lang) ->
+    case check_tab(delegated_namespaces) of
+      true ->
+          Fun = fun(Feat) ->
+                    ets:foldl(fun({Ns, _Pid, _Feats, _FeatsBare}, A) ->  
+                                    (A or str:prefix(Ns, Feat))
+                              end, false, delegated_namespaces)
+                end,
+          % delete feature namespace which is delegated to service
+          Features =
+              lists:filter(fun ({{Feature, _Host}}) ->
+                                   not Fun(Feature);
+                               (Feature) when is_binary(Feature) ->
+                                   not Fun(Feature)
+                           end, OtherFeatures),
+          % add service features
+          FeaturesList = ets:foldl(fun({_Ns, _Pid, _Feats, FeatsBare}, A) -> 
+                                       A ++ FeatsBare
+                                   end, Features, delegated_namespaces),
+          {result, FeaturesList};
+      _ ->
+        {result, OtherFeatures}
+    end;
+
+disco_sm_features(Acc, _From, _To, _Node, _Lang) -> Acc.
+
+
