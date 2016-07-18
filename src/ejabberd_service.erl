@@ -224,8 +224,10 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
 			    fun (H) ->
 				    ejabberd_router:register_route(H, ?MYNAME),
 				    ?INFO_MSG("Route registered for service ~p~n",
-					      [H])
-			    end, dict:fetch_keys(StateData#state.host_opts)),
+					      [H]),
+				    ejabberd_hooks:run(component_connected,
+			     		[H])
+			    end, dict:fetch_keys(StateData#state.host_opts)),			  
 			  {next_state, stream_established, StateData};
 		      _ ->
 			  send_text(StateData, ?INVALID_HANDSHAKE_ERR),
@@ -288,13 +290,19 @@ stream_established({xmlstreamelement, El}, StateData) ->
     end,
     {next_state, stream_established, StateData};
 stream_established({xmlstreamend, _Name}, StateData) ->
+	ejabberd_hooks:run(component_disconnected,
+		[StateData#state.host]),
     {stop, normal, StateData};
 stream_established({xmlstreamerror, _}, StateData) ->
+	ejabberd_hooks:run(component_disconnected,
+		[StateData#state.host]),
     send_text(StateData,
 	      <<(?INVALID_XML_ERR)/binary,
 		(?STREAM_TRAILER)/binary>>),
     {stop, normal, StateData};
 stream_established(closed, StateData) ->
+	ejabberd_hooks:run(component_disconnected,
+		[StateData#state.host]),
     {stop, normal, StateData}.
 
 %%----------------------------------------------------------------------
