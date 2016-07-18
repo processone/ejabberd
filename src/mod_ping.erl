@@ -36,7 +36,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -define(SUPERVISOR, ejabberd_sup).
 
@@ -54,7 +54,7 @@
 -export([init/1, terminate/2, handle_call/3,
 	 handle_cast/2, handle_info/2, code_change/3]).
 
--export([iq_ping/3, user_online/3, user_offline/3,
+-export([iq_ping/1, user_online/3, user_offline/3,
 	 user_send/4, mod_opt_type/1, depends/2]).
 
 -record(state,
@@ -73,10 +73,12 @@ start_link(Host, Opts) ->
     gen_server:start_link({local, Proc}, ?MODULE,
 			  [Host, Opts], []).
 
+-spec start_ping(binary(), jid()) -> ok.
 start_ping(Host, JID) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     gen_server:cast(Proc, {start_ping, JID}).
 
+-spec stop_ping(binary(), jid()) -> ok.
 stop_ping(Host, JID) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     gen_server:cast(Proc, {stop_ping, JID}).
@@ -181,10 +183,7 @@ handle_cast({iq_pong, JID, timeout}, State) ->
 handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info({timeout, _TRef, {ping, JID}}, State) ->
-    IQ = #iq{type = get,
-	     sub_el =
-		 [#xmlel{name = <<"ping">>,
-			 attrs = [{<<"xmlns">>, ?NS_PING}], children = []}]},
+    IQ = #iq{type = get, sub_els = [#ping{}]},
     Pid = self(),
     F = fun (Response) ->
 		gen_server:cast(Pid, {iq_pong, JID, Response})
@@ -201,23 +200,22 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%====================================================================
 %% Hook callbacks
 %%====================================================================
-iq_ping(_From, _To,
-	#iq{type = Type, sub_el = SubEl, lang = Lang} = IQ) ->
-    case {Type, SubEl} of
-      {get, #xmlel{name = <<"ping">>}} ->
-	  IQ#iq{type = result, sub_el = []};
-      _ ->
-	  Txt = <<"Ping query is incorrect">>,
-	  IQ#iq{type = error,
-		sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]}
-    end.
+-spec iq_ping(iq()) -> iq().
+iq_ping(#iq{type = get, sub_els = [#ping{}]} = IQ) ->
+    xmpp:make_iq_result(IQ);
+iq_ping(#iq{lang = Lang} = IQ) ->
+    Txt = <<"Ping query is incorrect">>,
+    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang)).
 
+-spec user_online(ejabberd_sm:sid(), jid(), any()) -> ok.
 user_online(_SID, JID, _Info) ->
     start_ping(JID#jid.lserver, JID).
 
+-spec user_offline(ejabberd_sm:sid(), jid(), any()) -> ok.
 user_offline(_SID, JID, _Info) ->
     stop_ping(JID#jid.lserver, JID).
 
+-spec user_send(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
 user_send(Packet, _C2SState, JID, _From) ->
     start_ping(JID#jid.lserver, JID),
     Packet.
@@ -225,6 +223,7 @@ user_send(Packet, _C2SState, JID, _From) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
+-spec add_timer(jid(), non_neg_integer(), map()) -> map().
 add_timer(JID, Interval, Timers) ->
     LJID = jid:tolower(JID),
     NewTimers = case maps:find(LJID, Timers) of
@@ -237,6 +236,7 @@ add_timer(JID, Interval, Timers) ->
 			      {ping, JID}),
     maps:put(LJID, TRef, NewTimers).
 
+-spec del_timer(jid(), map()) -> map().
 del_timer(JID, Timers) ->
     LJID = jid:tolower(JID),
     case maps:find(LJID, Timers) of
@@ -246,6 +246,7 @@ del_timer(JID, Timers) ->
       _ -> Timers
     end.
 
+-spec cancel_timer(reference()) -> ok.
 cancel_timer(TRef) ->
     case erlang:cancel_timer(TRef) of
       false ->

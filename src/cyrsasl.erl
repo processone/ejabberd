@@ -73,8 +73,8 @@
 -callback mech_step(any(), binary()) -> {ok, props()} |
                                         {ok, props(), binary()} |
                                         {continue, binary(), any()} |
-                                        {error, binary()} |
-                                        {error, binary(), binary()}.
+                                        {error, atom()} |
+                                        {error, atom(), binary()}.
 
 start() ->
     ets:new(sasl_mechanism,
@@ -129,8 +129,8 @@ register_mechanism(Mechanism, Module, PasswordType) ->
 check_credentials(_State, Props) ->
     User = proplists:get_value(authzid, Props, <<>>),
     case jid:nodeprep(User) of
-      error -> {error, <<"not-authorized">>};
-      <<"">> -> {error, <<"not-authorized">>};
+      error -> {error, 'not-authorized'};
+      <<"">> -> {error, 'not-authorized'};
       _LUser -> ok
     end.
 
@@ -159,6 +159,8 @@ server_new(Service, ServerFQDN, UserRealm, _SecFlags,
 		check_password = CheckPassword,
 		check_password_digest = CheckPasswordDigest}.
 
+server_start(State, Mech, undefined) ->
+    server_start(State, Mech, <<"">>);
 server_start(State, Mech, ClientIn) ->
     case lists:member(Mech,
 		      listmech(State#sasl_state.myname))
@@ -174,11 +176,13 @@ server_start(State, Mech, ClientIn) ->
 		server_step(State#sasl_state{mech_mod = Module,
 					     mech_state = MechState},
 			    ClientIn);
-	    _ -> {error, <<"no-mechanism">>}
+	    _ -> {error, 'no-mechanism'}
 	  end;
-      false -> {error, <<"no-mechanism">>}
+      false -> {error, 'no-mechanism'}
     end.
 
+server_step(State, undefined) ->
+    server_step(State, <<"">>);
 server_step(State, ClientIn) ->
     Module = State#sasl_state.mech_mod,
     MechState = State#sasl_state.mech_state,

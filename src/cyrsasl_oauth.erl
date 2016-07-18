@@ -52,9 +52,9 @@ mech_step(State, ClientIn) ->
                      [{username, User}, {authzid, AuthzId},
                       {auth_module, ejabberd_oauth}]};
                 false ->
-                    {error, <<"not-authorized">>, User}
+                    {error, 'not-authorized', User}
             end;
-        _ -> {error, <<"bad-protocol">>}
+        _ -> {error, 'bad-protocol'}
     end.
 
 prepare(ClientIn) ->

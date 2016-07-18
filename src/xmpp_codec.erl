@@ -8,13 +8,44 @@
 	   {enc_int, 1}, {get_attr, 2}, {enc_enum, 1}]}).
 
 -export([pp/1, format_error/1, decode/1, decode/2,
-	 is_known_tag/1, encode/1, get_ns/1]).
+	 is_known_tag/1, encode/1, get_name/1, get_ns/1]).
 
 decode(_el) -> decode(_el, []).
 
 decode({xmlel, _name, _attrs, _} = _el, Opts) ->
     IgnoreEls = proplists:get_bool(ignore_els, Opts),
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"query">>, <<"jabber:iq:search">>} ->
+	  decode_search(<<"jabber:iq:search">>, IgnoreEls, _el);
+      {<<"item">>, <<"jabber:iq:search">>} ->
+	  decode_search_item(<<"jabber:iq:search">>, IgnoreEls,
+			     _el);
+      {<<"email">>, <<"jabber:iq:search">>} ->
+	  decode_search_email(<<"jabber:iq:search">>, IgnoreEls,
+			      _el);
+      {<<"nick">>, <<"jabber:iq:search">>} ->
+	  decode_search_nick(<<"jabber:iq:search">>, IgnoreEls,
+			     _el);
+      {<<"last">>, <<"jabber:iq:search">>} ->
+	  decode_search_last(<<"jabber:iq:search">>, IgnoreEls,
+			     _el);
+      {<<"first">>, <<"jabber:iq:search">>} ->
+	  decode_search_first(<<"jabber:iq:search">>, IgnoreEls,
+			      _el);
+      {<<"instructions">>, <<"jabber:iq:search">>} ->
+	  decode_search_instructions(<<"jabber:iq:search">>,
+				     IgnoreEls, _el);
+      {<<"no-permanent-store">>, <<"urn:xmpp:hints">>} ->
+	  decode_hint_no_permanent_store(<<"urn:xmpp:hints">>,
+					 IgnoreEls, _el);
+      {<<"store">>, <<"urn:xmpp:hints">>} ->
+	  decode_hint_store(<<"urn:xmpp:hints">>, IgnoreEls, _el);
+      {<<"no-store">>, <<"urn:xmpp:hints">>} ->
+	  decode_hint_no_store(<<"urn:xmpp:hints">>, IgnoreEls,
+			       _el);
+      {<<"no-copy">>, <<"urn:xmpp:hints">>} ->
+	  decode_hint_no_copy(<<"urn:xmpp:hints">>, IgnoreEls,
+			      _el);
       {<<"participant">>, <<"urn:xmpp:mix:0">>} ->
 	  decode_mix_participant(<<"urn:xmpp:mix:0">>, IgnoreEls,
 				 _el);
@@ -382,7 +413,7 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 	  decode_vcard_xupdate_photo(<<"vcard-temp:x:update">>,
 				     IgnoreEls, _el);
       {<<"vCard">>, <<"vcard-temp">>} ->
-	  decode_vcard(<<"vcard-temp">>, IgnoreEls, _el);
+	  decode_vcard_temp(<<"vcard-temp">>, IgnoreEls, _el);
       {<<"CLASS">>, <<"vcard-temp">>} ->
 	  decode_vcard_CLASS(<<"vcard-temp">>, IgnoreEls, _el);
       {<<"CATEGORIES">>, <<"vcard-temp">>} ->
@@ -658,6 +689,10 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
        <<"urn:ietf:params:xml:ns:xmpp-session">>} ->
 	  decode_session(<<"urn:ietf:params:xml:ns:xmpp-session">>,
 			 IgnoreEls, _el);
+      {<<"optional">>,
+       <<"urn:ietf:params:xml:ns:xmpp-session">>} ->
+	  decode_session_optional(<<"urn:ietf:params:xml:ns:xmpp-session">>,
+				  IgnoreEls, _el);
       {<<"query">>, <<"jabber:iq:register">>} ->
 	  decode_register(<<"jabber:iq:register">>, IgnoreEls,
 			  _el);
@@ -806,6 +841,10 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_temporary_auth_failure(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 						     IgnoreEls, _el);
+      {<<"bad-protocol">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  decode_sasl_failure_bad_protocol(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+					   IgnoreEls, _el);
       {<<"not-authorized">>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
@@ -867,6 +906,21 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
       {<<"auth">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_auth(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 			   IgnoreEls, _el);
+      {<<"query">>, <<"jabber:iq:auth">>} ->
+	  decode_legacy_auth(<<"jabber:iq:auth">>, IgnoreEls,
+			     _el);
+      {<<"resource">>, <<"jabber:iq:auth">>} ->
+	  decode_legacy_auth_resource(<<"jabber:iq:auth">>,
+				      IgnoreEls, _el);
+      {<<"digest">>, <<"jabber:iq:auth">>} ->
+	  decode_legacy_auth_digest(<<"jabber:iq:auth">>,
+				    IgnoreEls, _el);
+      {<<"password">>, <<"jabber:iq:auth">>} ->
+	  decode_legacy_auth_password(<<"jabber:iq:auth">>,
+				      IgnoreEls, _el);
+      {<<"username">>, <<"jabber:iq:auth">>} ->
+	  decode_legacy_auth_username(<<"jabber:iq:auth">>,
+				      IgnoreEls, _el);
       {<<"bind">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
 	  decode_bind(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
 		      IgnoreEls, _el);
@@ -1077,8 +1131,12 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
       {<<"message">>, <<"jabber:iq:privacy">>} ->
 	  decode_privacy_message(<<"jabber:iq:privacy">>,
 				 IgnoreEls, _el);
+      {<<"ver">>, <<"urn:xmpp:features:rosterver">>} ->
+	  decode_rosterver_feature(<<"urn:xmpp:features:rosterver">>,
+				   IgnoreEls, _el);
       {<<"query">>, <<"jabber:iq:roster">>} ->
-	  decode_roster(<<"jabber:iq:roster">>, IgnoreEls, _el);
+	  decode_roster_query(<<"jabber:iq:roster">>, IgnoreEls,
+			      _el);
       {<<"item">>, <<"jabber:iq:roster">>} ->
 	  decode_roster_item(<<"jabber:iq:roster">>, IgnoreEls,
 			     _el);
@@ -1104,6 +1162,18 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 
 is_known_tag({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"query">>, <<"jabber:iq:search">>} -> true;
+      {<<"item">>, <<"jabber:iq:search">>} -> true;
+      {<<"email">>, <<"jabber:iq:search">>} -> true;
+      {<<"nick">>, <<"jabber:iq:search">>} -> true;
+      {<<"last">>, <<"jabber:iq:search">>} -> true;
+      {<<"first">>, <<"jabber:iq:search">>} -> true;
+      {<<"instructions">>, <<"jabber:iq:search">>} -> true;
+      {<<"no-permanent-store">>, <<"urn:xmpp:hints">>} ->
+	  true;
+      {<<"store">>, <<"urn:xmpp:hints">>} -> true;
+      {<<"no-store">>, <<"urn:xmpp:hints">>} -> true;
+      {<<"no-copy">>, <<"urn:xmpp:hints">>} -> true;
       {<<"participant">>, <<"urn:xmpp:mix:0">>} -> true;
       {<<"leave">>, <<"urn:xmpp:mix:0">>} -> true;
       {<<"join">>, <<"urn:xmpp:mix:0">>} -> true;
@@ -1491,6 +1561,9 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
       {<<"session">>,
        <<"urn:ietf:params:xml:ns:xmpp-session">>} ->
 	  true;
+      {<<"optional">>,
+       <<"urn:ietf:params:xml:ns:xmpp-session">>} ->
+	  true;
       {<<"query">>, <<"jabber:iq:register">>} -> true;
       {<<"key">>, <<"jabber:iq:register">>} -> true;
       {<<"text">>, <<"jabber:iq:register">>} -> true;
@@ -1574,6 +1647,9 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
       {<<"temporary-auth-failure">>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
+      {<<"bad-protocol">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
       {<<"not-authorized">>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
@@ -1619,6 +1695,11 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
 	  true;
       {<<"auth">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
+      {<<"query">>, <<"jabber:iq:auth">>} -> true;
+      {<<"resource">>, <<"jabber:iq:auth">>} -> true;
+      {<<"digest">>, <<"jabber:iq:auth">>} -> true;
+      {<<"password">>, <<"jabber:iq:auth">>} -> true;
+      {<<"username">>, <<"jabber:iq:auth">>} -> true;
       {<<"bind">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
 	  true;
       {<<"resource">>,
@@ -1745,6 +1826,7 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
       {<<"presence-in">>, <<"jabber:iq:privacy">>} -> true;
       {<<"iq">>, <<"jabber:iq:privacy">>} -> true;
       {<<"message">>, <<"jabber:iq:privacy">>} -> true;
+      {<<"ver">>, <<"urn:xmpp:features:rosterver">>} -> true;
       {<<"query">>, <<"jabber:iq:roster">>} -> true;
       {<<"item">>, <<"jabber:iq:roster">>} -> true;
       {<<"group">>, <<"jabber:iq:roster">>} -> true;
@@ -1766,16 +1848,20 @@ encode({version, _, _, _} = Query) ->
 encode({roster_item, _, _, _, _, _} = Item) ->
     encode_roster_item(Item,
 		       [{<<"xmlns">>, <<"jabber:iq:roster">>}]);
-encode({roster, _, _} = Query) ->
-    encode_roster(Query,
-		  [{<<"xmlns">>, <<"jabber:iq:roster">>}]);
-encode({privacy_item, _, _, _, _, _} = Item) ->
+encode({roster_query, _, _} = Query) ->
+    encode_roster_query(Query,
+			[{<<"xmlns">>, <<"jabber:iq:roster">>}]);
+encode({rosterver_feature} = Ver) ->
+    encode_rosterver_feature(Ver,
+			     [{<<"xmlns">>,
+			       <<"urn:xmpp:features:rosterver">>}]);
+encode({privacy_item, _, _, _, _, _, _, _, _} = Item) ->
     encode_privacy_item(Item,
 			[{<<"xmlns">>, <<"jabber:iq:privacy">>}]);
 encode({privacy_list, _, _} = List) ->
     encode_privacy_list(List,
 			[{<<"xmlns">>, <<"jabber:iq:privacy">>}]);
-encode({privacy, _, _, _} = Query) ->
+encode({privacy_query, _, _, _} = Query) ->
     encode_privacy(Query,
 		   [{<<"xmlns">>, <<"jabber:iq:privacy">>}]);
 encode({block, _} = Block) ->
@@ -1842,13 +1928,16 @@ encode({redirect, _} = Redirect) ->
     encode_error_redirect(Redirect,
 			  [{<<"xmlns">>,
 			    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}]);
-encode({error, _, _, _, _} = Error) ->
+encode({error, _, _, _, _, _} = Error) ->
     encode_error(Error,
 		 [{<<"xmlns">>, <<"jabber:client">>}]);
 encode({bind, _, _} = Bind) ->
     encode_bind(Bind,
 		[{<<"xmlns">>,
 		  <<"urn:ietf:params:xml:ns:xmpp-bind">>}]);
+encode({legacy_auth, _, _, _, _} = Query) ->
+    encode_legacy_auth(Query,
+		       [{<<"xmlns">>, <<"jabber:iq:auth">>}]);
 encode({sasl_auth, _, _} = Auth) ->
     encode_sasl_auth(Auth,
 		     [{<<"xmlns">>,
@@ -1915,7 +2004,7 @@ encode({p1_rebind} = Rebind) ->
 		     [{<<"xmlns">>, <<"p1:rebind">>}]);
 encode({p1_ack} = Ack) ->
     encode_p1_ack(Ack, [{<<"xmlns">>, <<"p1:ack">>}]);
-encode({caps, _, _, _} = C) ->
+encode({caps, _, _, _, _} = C) ->
     encode_caps(C,
 		[{<<"xmlns">>, <<"http://jabber.org/protocol/caps">>}]);
 encode({feature_register} = Register) ->
@@ -1927,7 +2016,7 @@ encode({register, _, _, _, _, _, _, _, _, _, _, _, _, _,
 	   Query) ->
     encode_register(Query,
 		    [{<<"xmlns">>, <<"jabber:iq:register">>}]);
-encode({session} = Session) ->
+encode({xmpp_session, _} = Session) ->
     encode_session(Session,
 		   [{<<"xmlns">>,
 		     <<"urn:ietf:params:xml:ns:xmpp-session">>}]);
@@ -1981,11 +2070,12 @@ encode({vcard_sound, _, _, _} = Sound) ->
 encode({vcard_key, _, _} = Key) ->
     encode_vcard_KEY(Key,
 		     [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
-	_, _, _, _, _, _, _, _, _, _, _, _, _, _, _} =
+encode({vcard_temp, _, _, _, _, _, _, _, _, _, _, _, _,
+	_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _} =
 	   Vcard) ->
-    encode_vcard(Vcard, [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard_xupdate, _} = X) ->
+    encode_vcard_temp(Vcard,
+		      [{<<"xmlns">>, <<"vcard-temp">>}]);
+encode({vcard_xupdate, undefined, _} = X) ->
     encode_vcard_xupdate(X,
 			 [{<<"xmlns">>, <<"vcard-temp:x:update">>}]);
 encode({xdata_field, _, _, _, _, _, _, _} = Field) ->
@@ -2069,7 +2159,7 @@ encode({chatstate, paused} = Paused) ->
     encode_chatstate_paused(Paused,
 			    [{<<"xmlns">>,
 			      <<"http://jabber.org/protocol/chatstates">>}]);
-encode({delay, _, _} = Delay) ->
+encode({delay, _, _, _} = Delay) ->
     encode_delay(Delay,
 		 [{<<"xmlns">>, <<"urn:xmpp:delay">>}]);
 encode({streamhost, _, _, _} = Streamhost) ->
@@ -2192,17 +2282,202 @@ encode({mix_leave} = Leave) ->
 		     [{<<"xmlns">>, <<"urn:xmpp:mix:0">>}]);
 encode({mix_participant, _, _} = Participant) ->
     encode_mix_participant(Participant,
-			   [{<<"xmlns">>, <<"urn:xmpp:mix:0">>}]).
+			   [{<<"xmlns">>, <<"urn:xmpp:mix:0">>}]);
+encode({hint, 'no-copy'} = No_copy) ->
+    encode_hint_no_copy(No_copy,
+			[{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
+encode({hint, 'no-store'} = No_store) ->
+    encode_hint_no_store(No_store,
+			 [{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
+encode({hint, store} = Store) ->
+    encode_hint_store(Store,
+		      [{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
+encode({hint, 'no-permanent-store'} =
+	   No_permanent_store) ->
+    encode_hint_no_permanent_store(No_permanent_store,
+				   [{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
+encode({search_item, _, _, _, _, _} = Item) ->
+    encode_search_item(Item,
+		       [{<<"xmlns">>, <<"jabber:iq:search">>}]);
+encode({search, _, _, _, _, _, _, _} = Query) ->
+    encode_search(Query,
+		  [{<<"xmlns">>, <<"jabber:iq:search">>}]).
+
+get_name({last, _, _}) -> <<"query">>;
+get_name({version, _, _, _}) -> <<"query">>;
+get_name({roster_item, _, _, _, _, _}) -> <<"item">>;
+get_name({roster_query, _, _}) -> <<"query">>;
+get_name({rosterver_feature}) -> <<"ver">>;
+get_name({privacy_item, _, _, _, _, _, _, _, _}) ->
+    <<"item">>;
+get_name({privacy_list, _, _}) -> <<"list">>;
+get_name({privacy_query, _, _, _}) -> <<"query">>;
+get_name({block, _}) -> <<"block">>;
+get_name({unblock, _}) -> <<"unblock">>;
+get_name({block_list}) -> <<"blocklist">>;
+get_name({identity, _, _, _, _}) -> <<"identity">>;
+get_name({disco_info, _, _, _, _}) -> <<"query">>;
+get_name({disco_item, _, _, _}) -> <<"item">>;
+get_name({disco_items, _, _}) -> <<"query">>;
+get_name({private, _}) -> <<"query">>;
+get_name({bookmark_conference, _, _, _, _, _}) ->
+    <<"conference">>;
+get_name({bookmark_url, _, _}) -> <<"url">>;
+get_name({bookmark_storage, _, _}) -> <<"storage">>;
+get_name({stat, _, _, _, _}) -> <<"stat">>;
+get_name({stats, _}) -> <<"query">>;
+get_name({iq, _, _, _, _, _, _, _}) -> <<"iq">>;
+get_name({message, _, _, _, _, _, _, _, _, _, _}) ->
+    <<"message">>;
+get_name({presence, _, _, _, _, _, _, _, _, _, _}) ->
+    <<"presence">>;
+get_name({gone, _}) -> <<"gone">>;
+get_name({redirect, _}) -> <<"redirect">>;
+get_name({error, _, _, _, _, _}) -> <<"error">>;
+get_name({bind, _, _}) -> <<"bind">>;
+get_name({legacy_auth, _, _, _, _}) -> <<"query">>;
+get_name({sasl_auth, _, _}) -> <<"auth">>;
+get_name({sasl_abort}) -> <<"abort">>;
+get_name({sasl_challenge, _}) -> <<"challenge">>;
+get_name({sasl_response, _}) -> <<"response">>;
+get_name({sasl_success, _}) -> <<"success">>;
+get_name({sasl_failure, _, _}) -> <<"failure">>;
+get_name({sasl_mechanisms, _}) -> <<"mechanisms">>;
+get_name({starttls, _}) -> <<"starttls">>;
+get_name({starttls_proceed}) -> <<"proceed">>;
+get_name({starttls_failure}) -> <<"failure">>;
+get_name({compress_failure, _}) -> <<"failure">>;
+get_name({compress, _}) -> <<"compress">>;
+get_name({compressed}) -> <<"compressed">>;
+get_name({compression, _}) -> <<"compression">>;
+get_name({stream_features, _}) -> <<"stream:features">>;
+get_name({p1_push}) -> <<"push">>;
+get_name({p1_rebind}) -> <<"rebind">>;
+get_name({p1_ack}) -> <<"ack">>;
+get_name({caps, _, _, _, _}) -> <<"c">>;
+get_name({feature_register}) -> <<"register">>;
+get_name({register, _, _, _, _, _, _, _, _, _, _, _, _,
+	  _, _, _, _, _, _, _, _, _}) ->
+    <<"query">>;
+get_name({xmpp_session, _}) -> <<"session">>;
+get_name({ping}) -> <<"ping">>;
+get_name({time, _, _}) -> <<"time">>;
+get_name({text, _, _}) -> <<"text">>;
+get_name({'see-other-host', _}) -> <<"see-other-host">>;
+get_name({stream_error, _, _}) -> <<"stream:error">>;
+get_name({vcard_name, _, _, _, _, _}) -> <<"N">>;
+get_name({vcard_adr, _, _, _, _, _, _, _, _, _, _, _, _,
+	  _, _}) ->
+    <<"ADR">>;
+get_name({vcard_label, _, _, _, _, _, _, _, _}) ->
+    <<"LABEL">>;
+get_name({vcard_tel, _, _, _, _, _, _, _, _, _, _, _, _,
+	  _, _}) ->
+    <<"TEL">>;
+get_name({vcard_email, _, _, _, _, _, _}) ->
+    <<"EMAIL">>;
+get_name({vcard_geo, _, _}) -> <<"GEO">>;
+get_name({vcard_logo, _, _, _}) -> <<"LOGO">>;
+get_name({vcard_photo, _, _, _}) -> <<"PHOTO">>;
+get_name({vcard_org, _, _}) -> <<"ORG">>;
+get_name({vcard_sound, _, _, _}) -> <<"SOUND">>;
+get_name({vcard_key, _, _}) -> <<"KEY">>;
+get_name({vcard_temp, _, _, _, _, _, _, _, _, _, _, _,
+	  _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+	  _}) ->
+    <<"vCard">>;
+get_name({vcard_xupdate, undefined, _}) -> <<"x">>;
+get_name({xdata_field, _, _, _, _, _, _, _}) ->
+    <<"field">>;
+get_name({xdata, _, _, _, _, _, _}) -> <<"x">>;
+get_name({pubsub_subscription, _, _, _, _}) ->
+    <<"subscription">>;
+get_name({pubsub_affiliation, _, _}) ->
+    <<"affiliation">>;
+get_name({pubsub_item, _, _}) -> <<"item">>;
+get_name({pubsub_items, _, _, _, _}) -> <<"items">>;
+get_name({pubsub_event_item, _, _, _, _}) -> <<"item">>;
+get_name({pubsub_event_items, _, _, _}) -> <<"items">>;
+get_name({pubsub_event, _}) -> <<"event">>;
+get_name({pubsub_subscribe, _, _}) -> <<"subscribe">>;
+get_name({pubsub_unsubscribe, _, _, _}) ->
+    <<"unsubscribe">>;
+get_name({pubsub_publish, _, _}) -> <<"publish">>;
+get_name({pubsub_options, _, _, _, _}) -> <<"options">>;
+get_name({pubsub_retract, _, _, _}) -> <<"retract">>;
+get_name({pubsub, _, _, _, _, _, _, _, _}) ->
+    <<"pubsub">>;
+get_name({shim, _}) -> <<"headers">>;
+get_name({chatstate, active}) -> <<"active">>;
+get_name({chatstate, composing}) -> <<"composing">>;
+get_name({chatstate, gone}) -> <<"gone">>;
+get_name({chatstate, inactive}) -> <<"inactive">>;
+get_name({chatstate, paused}) -> <<"paused">>;
+get_name({delay, _, _, _}) -> <<"delay">>;
+get_name({streamhost, _, _, _}) -> <<"streamhost">>;
+get_name({bytestreams, _, _, _, _, _, _}) ->
+    <<"query">>;
+get_name({muc_history, _, _, _, _}) -> <<"history">>;
+get_name({muc_decline, _, _, _}) -> <<"decline">>;
+get_name({muc_user_destroy, _, _}) -> <<"destroy">>;
+get_name({muc_invite, _, _, _}) -> <<"invite">>;
+get_name({muc_user, _, _, _, _, _, _}) -> <<"x">>;
+get_name({muc_owner_destroy, _, _, _}) -> <<"destroy">>;
+get_name({muc_owner, _, _}) -> <<"query">>;
+get_name({muc_item, _, _, _, _, _, _, _}) -> <<"item">>;
+get_name({muc_actor, _, _}) -> <<"actor">>;
+get_name({muc_admin, _}) -> <<"query">>;
+get_name({muc, _, _}) -> <<"x">>;
+get_name({rsm_first, _, _}) -> <<"first">>;
+get_name({rsm_set, _, _, _, _, _, _, _}) -> <<"set">>;
+get_name({mam_query, _, _, _, _, _, _, _}) ->
+    <<"query">>;
+get_name({mam_archived, _, _}) -> <<"archived">>;
+get_name({mam_result, _, _, _, _}) -> <<"result">>;
+get_name({mam_prefs, _, _, _, _}) -> <<"prefs">>;
+get_name({mam_fin, _, _, _, _}) -> <<"fin">>;
+get_name({forwarded, _, _}) -> <<"forwarded">>;
+get_name({carbons_disable}) -> <<"disable">>;
+get_name({carbons_enable}) -> <<"enable">>;
+get_name({carbons_private}) -> <<"private">>;
+get_name({carbons_received, _}) -> <<"received">>;
+get_name({carbons_sent, _}) -> <<"sent">>;
+get_name({feature_csi, _}) -> <<"csi">>;
+get_name({csi, active}) -> <<"active">>;
+get_name({csi, inactive}) -> <<"inactive">>;
+get_name({feature_sm, _}) -> <<"sm">>;
+get_name({sm_enable, _, _, _}) -> <<"enable">>;
+get_name({sm_enabled, _, _, _, _, _}) -> <<"enabled">>;
+get_name({sm_resume, _, _, _}) -> <<"resume">>;
+get_name({sm_resumed, _, _, _}) -> <<"resumed">>;
+get_name({sm_r, _}) -> <<"r">>;
+get_name({sm_a, _, _}) -> <<"a">>;
+get_name({sm_failed, _, _, _}) -> <<"failed">>;
+get_name({offline_item, _, _}) -> <<"item">>;
+get_name({offline, _, _, _}) -> <<"offline">>;
+get_name({mix_join, _, _}) -> <<"join">>;
+get_name({mix_leave}) -> <<"leave">>;
+get_name({mix_participant, _, _}) -> <<"participant">>;
+get_name({hint, 'no-copy'}) -> <<"no-copy">>;
+get_name({hint, 'no-store'}) -> <<"no-store">>;
+get_name({hint, store}) -> <<"store">>;
+get_name({hint, 'no-permanent-store'}) ->
+    <<"no-permanent-store">>;
+get_name({search_item, _, _, _, _, _}) -> <<"item">>;
+get_name({search, _, _, _, _, _, _, _}) -> <<"query">>.
 
 get_ns({last, _, _}) -> <<"jabber:iq:last">>;
 get_ns({version, _, _, _}) -> <<"jabber:iq:version">>;
 get_ns({roster_item, _, _, _, _, _}) ->
     <<"jabber:iq:roster">>;
-get_ns({roster, _, _}) -> <<"jabber:iq:roster">>;
-get_ns({privacy_item, _, _, _, _, _}) ->
+get_ns({roster_query, _, _}) -> <<"jabber:iq:roster">>;
+get_ns({rosterver_feature}) ->
+    <<"urn:xmpp:features:rosterver">>;
+get_ns({privacy_item, _, _, _, _, _, _, _, _}) ->
     <<"jabber:iq:privacy">>;
 get_ns({privacy_list, _, _}) -> <<"jabber:iq:privacy">>;
-get_ns({privacy, _, _, _}) -> <<"jabber:iq:privacy">>;
+get_ns({privacy_query, _, _, _}) ->
+    <<"jabber:iq:privacy">>;
 get_ns({block, _}) -> <<"urn:xmpp:blocking">>;
 get_ns({unblock, _}) -> <<"urn:xmpp:blocking">>;
 get_ns({block_list}) -> <<"urn:xmpp:blocking">>;
@@ -2234,9 +2509,11 @@ get_ns({gone, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>;
 get_ns({redirect, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>;
-get_ns({error, _, _, _, _}) -> <<"jabber:client">>;
+get_ns({error, _, _, _, _, _}) -> <<"jabber:client">>;
 get_ns({bind, _, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-bind">>;
+get_ns({legacy_auth, _, _, _, _}) ->
+    <<"jabber:iq:auth">>;
 get_ns({sasl_auth, _, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
 get_ns({sasl_abort}) ->
@@ -2270,14 +2547,14 @@ get_ns({stream_features, _}) ->
 get_ns({p1_push}) -> <<"p1:push">>;
 get_ns({p1_rebind}) -> <<"p1:rebind">>;
 get_ns({p1_ack}) -> <<"p1:ack">>;
-get_ns({caps, _, _, _}) ->
+get_ns({caps, _, _, _, _}) ->
     <<"http://jabber.org/protocol/caps">>;
 get_ns({feature_register}) ->
     <<"http://jabber.org/features/iq-register">>;
 get_ns({register, _, _, _, _, _, _, _, _, _, _, _, _, _,
 	_, _, _, _, _, _, _, _}) ->
     <<"jabber:iq:register">>;
-get_ns({session}) ->
+get_ns({xmpp_session, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-session">>;
 get_ns({ping}) -> <<"urn:xmpp:ping">>;
 get_ns({time, _, _}) -> <<"urn:xmpp:time">>;
@@ -2302,10 +2579,11 @@ get_ns({vcard_photo, _, _, _}) -> <<"vcard-temp">>;
 get_ns({vcard_org, _, _}) -> <<"vcard-temp">>;
 get_ns({vcard_sound, _, _, _}) -> <<"vcard-temp">>;
 get_ns({vcard_key, _, _}) -> <<"vcard-temp">>;
-get_ns({vcard, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
-	_, _, _, _, _, _, _, _, _, _, _, _, _, _, _}) ->
+get_ns({vcard_temp, _, _, _, _, _, _, _, _, _, _, _, _,
+	_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}) ->
     <<"vcard-temp">>;
-get_ns({vcard_xupdate, _}) -> <<"vcard-temp:x:update">>;
+get_ns({vcard_xupdate, undefined, _}) ->
+    <<"vcard-temp:x:update">>;
 get_ns({xdata_field, _, _, _, _, _, _, _}) ->
     <<"jabber:x:data">>;
 get_ns({xdata, _, _, _, _, _, _}) ->
@@ -2348,7 +2626,7 @@ get_ns({chatstate, inactive}) ->
     <<"http://jabber.org/protocol/chatstates">>;
 get_ns({chatstate, paused}) ->
     <<"http://jabber.org/protocol/chatstates">>;
-get_ns({delay, _, _}) -> <<"urn:xmpp:delay">>;
+get_ns({delay, _, _, _}) -> <<"urn:xmpp:delay">>;
 get_ns({streamhost, _, _, _}) ->
     <<"http://jabber.org/protocol/bytestreams">>;
 get_ns({bytestreams, _, _, _, _, _, _}) ->
@@ -2375,7 +2653,10 @@ get_ns({rsm_first, _, _}) ->
     <<"http://jabber.org/protocol/rsm">>;
 get_ns({rsm_set, _, _, _, _, _, _, _}) ->
     <<"http://jabber.org/protocol/rsm">>;
+get_ns({mam_query, Xmlns, _, _, _, _, _, _}) -> Xmlns;
 get_ns({mam_archived, _, _}) -> <<"urn:xmpp:mam:tmp">>;
+get_ns({mam_result, Xmlns, _, _, _}) -> Xmlns;
+get_ns({mam_prefs, Xmlns, _, _, _}) -> Xmlns;
 get_ns({mam_fin, _, _, _, _}) -> <<"urn:xmpp:mam:0">>;
 get_ns({forwarded, _, _}) -> <<"urn:xmpp:forward:0">>;
 get_ns({carbons_disable}) -> <<"urn:xmpp:carbons:2">>;
@@ -2384,9 +2665,17 @@ get_ns({carbons_private}) -> <<"urn:xmpp:carbons:2">>;
 get_ns({carbons_received, _}) ->
     <<"urn:xmpp:carbons:2">>;
 get_ns({carbons_sent, _}) -> <<"urn:xmpp:carbons:2">>;
-get_ns({feature_csi, _}) -> <<"urn:xmpp:csi:0">>;
+get_ns({feature_csi, Xmlns}) -> Xmlns;
 get_ns({csi, active}) -> <<"urn:xmpp:csi:0">>;
 get_ns({csi, inactive}) -> <<"urn:xmpp:csi:0">>;
+get_ns({feature_sm, Xmlns}) -> Xmlns;
+get_ns({sm_enable, _, _, Xmlns}) -> Xmlns;
+get_ns({sm_enabled, _, _, _, _, Xmlns}) -> Xmlns;
+get_ns({sm_resume, _, _, Xmlns}) -> Xmlns;
+get_ns({sm_resumed, _, _, Xmlns}) -> Xmlns;
+get_ns({sm_r, Xmlns}) -> Xmlns;
+get_ns({sm_a, _, Xmlns}) -> Xmlns;
+get_ns({sm_failed, _, _, Xmlns}) -> Xmlns;
 get_ns({offline_item, _, _}) ->
     <<"http://jabber.org/protocol/offline">>;
 get_ns({offline, _, _, _}) ->
@@ -2394,7 +2683,15 @@ get_ns({offline, _, _, _}) ->
 get_ns({mix_join, _, _}) -> <<"urn:xmpp:mix:0">>;
 get_ns({mix_leave}) -> <<"urn:xmpp:mix:0">>;
 get_ns({mix_participant, _, _}) -> <<"urn:xmpp:mix:0">>;
-get_ns(_) -> <<>>.
+get_ns({hint, 'no-copy'}) -> <<"urn:xmpp:hints">>;
+get_ns({hint, 'no-store'}) -> <<"urn:xmpp:hints">>;
+get_ns({hint, store}) -> <<"urn:xmpp:hints">>;
+get_ns({hint, 'no-permanent-store'}) ->
+    <<"urn:xmpp:hints">>;
+get_ns({search_item, _, _, _, _, _}) ->
+    <<"jabber:iq:search">>;
+get_ns({search, _, _, _, _, _, _, _}) ->
+    <<"jabber:iq:search">>.
 
 dec_int(Val) -> dec_int(Val, infinity, infinity).
 
@@ -2443,15 +2740,17 @@ get_attr(Attr, Attrs) ->
 
 pp(Term) -> io_lib_pretty:print(Term, fun pp/2).
 
-pp(last, 2) -> [seconds, text];
+pp(last, 2) -> [seconds, status];
 pp(version, 3) -> [name, ver, os];
 pp(roster_item, 5) ->
     [jid, name, groups, subscription, ask];
-pp(roster, 2) -> [items, ver];
-pp(privacy_item, 5) ->
-    [order, action, type, value, kinds];
+pp(roster_query, 2) -> [items, ver];
+pp(rosterver_feature, 0) -> [];
+pp(privacy_item, 8) ->
+    [order, action, type, value, message, iq, presence_in,
+     presence_out];
 pp(privacy_list, 2) -> [name, items];
-pp(privacy, 3) -> [lists, default, active];
+pp(privacy_query, 3) -> [lists, default, active];
 pp(block, 1) -> [items];
 pp(unblock, 1) -> [items];
 pp(block_list, 0) -> [];
@@ -2476,8 +2775,10 @@ pp(presence, 10) ->
      error, sub_els];
 pp(gone, 1) -> [uri];
 pp(redirect, 1) -> [uri];
-pp(error, 4) -> [type, by, reason, text];
+pp(error, 5) -> [type, code, by, reason, text];
 pp(bind, 2) -> [jid, resource];
+pp(legacy_auth, 4) ->
+    [username, password, digest, resource];
 pp(sasl_auth, 2) -> [mechanism, text];
 pp(sasl_abort, 0) -> [];
 pp(sasl_challenge, 1) -> [text];
@@ -2496,13 +2797,13 @@ pp(stream_features, 1) -> [sub_els];
 pp(p1_push, 0) -> [];
 pp(p1_rebind, 0) -> [];
 pp(p1_ack, 0) -> [];
-pp(caps, 3) -> [hash, node, ver];
+pp(caps, 4) -> [node, version, hash, exts];
 pp(feature_register, 0) -> [];
 pp(register, 21) ->
     [registered, remove, instructions, username, nick,
      password, name, first, last, email, address, city,
      state, zip, phone, url, date, misc, text, key, xdata];
-pp(session, 0) -> [];
+pp(xmpp_session, 1) -> [optional];
 pp(ping, 0) -> [];
 pp(time, 2) -> [tzo, utc];
 pp(text, 2) -> [lang, data];
@@ -2526,12 +2827,12 @@ pp(vcard_photo, 3) -> [type, binval, extval];
 pp(vcard_org, 2) -> [name, units];
 pp(vcard_sound, 3) -> [phonetic, binval, extval];
 pp(vcard_key, 2) -> [type, cred];
-pp(vcard, 29) ->
+pp(vcard_temp, 29) ->
     [version, fn, n, nickname, photo, bday, adr, label, tel,
      email, jabberid, mailer, tz, geo, title, role, logo,
      org, categories, note, prodid, rev, sort_string, sound,
      uid, url, class, key, desc];
-pp(vcard_xupdate, 1) -> [photo];
+pp(vcard_xupdate, 2) -> [us, hash];
 pp(xdata_field, 7) ->
     [label, type, var, required, desc, values, options];
 pp(xdata, 6) ->
@@ -2554,7 +2855,7 @@ pp(pubsub, 8) ->
      unsubscribe, options, items, retract];
 pp(shim, 1) -> [headers];
 pp(chatstate, 1) -> [type];
-pp(delay, 2) -> [stamp, from];
+pp(delay, 3) -> [stamp, from, desc];
 pp(streamhost, 3) -> [jid, host, port];
 pp(bytestreams, 6) ->
     [hosts, used, activate, dstaddr, mode, sid];
@@ -2603,7 +2904,15 @@ pp(offline, 3) -> [items, purge, fetch];
 pp(mix_join, 2) -> [jid, subscribe];
 pp(mix_leave, 0) -> [];
 pp(mix_participant, 2) -> [jid, nick];
+pp(hint, 1) -> [type];
+pp(search_item, 5) -> [jid, first, last, nick, email];
+pp(search, 7) ->
+    [instructions, first, last, nick, email, items, xdata];
 pp(_, _) -> no.
+
+join([], _Sep) -> <<>>;
+join([H | T], Sep) ->
+    <<H/binary, << <<Sep, X/binary>>  || X <- T >>/binary>>.
 
 enc_bool(false) -> <<"false">>;
 enc_bool(true) -> <<"true">>.
@@ -2644,6 +2953,530 @@ dec_tzo(Val) ->
     H = jlib:binary_to_integer(H1),
     M = jlib:binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
+
+decode_search(__TopXMLNS, __IgnoreEls,
+	      {xmlel, <<"query">>, _attrs, _els}) ->
+    {Xdata, Items, Instructions, Last, First, Nick, Email} =
+	decode_search_els(__TopXMLNS, __IgnoreEls, _els,
+			  undefined, [], undefined, undefined, undefined,
+			  undefined, undefined),
+    {search, Instructions, First, Last, Nick, Email, Items,
+     Xdata}.
+
+decode_search_els(__TopXMLNS, __IgnoreEls, [], Xdata,
+		  Items, Instructions, Last, First, Nick, Email) ->
+    {Xdata, lists:reverse(Items), Instructions, Last, First,
+     Nick, Email};
+decode_search_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"instructions">>, _attrs, _} = _el | _els],
+		  Xdata, Items, Instructions, Last, First, Nick, Email) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items,
+			    decode_search_instructions(__TopXMLNS, __IgnoreEls,
+						       _el),
+			    Last, First, Nick, Email);
+      <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items,
+			    decode_search_instructions(<<"jabber:iq:search">>,
+						       __IgnoreEls, _el),
+			    Last, First, Nick, Email);
+      _ ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last, First, Nick, Email)
+    end;
+decode_search_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"first">>, _attrs, _} = _el | _els], Xdata,
+		  Items, Instructions, Last, First, Nick, Email) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last,
+			    decode_search_first(__TopXMLNS, __IgnoreEls, _el),
+			    Nick, Email);
+      <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last,
+			    decode_search_first(<<"jabber:iq:search">>,
+						__IgnoreEls, _el),
+			    Nick, Email);
+      _ ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last, First, Nick, Email)
+    end;
+decode_search_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"last">>, _attrs, _} = _el | _els], Xdata,
+		  Items, Instructions, Last, First, Nick, Email) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions,
+			    decode_search_last(__TopXMLNS, __IgnoreEls, _el),
+			    First, Nick, Email);
+      <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions,
+			    decode_search_last(<<"jabber:iq:search">>,
+					       __IgnoreEls, _el),
+			    First, Nick, Email);
+      _ ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last, First, Nick, Email)
+    end;
+decode_search_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"nick">>, _attrs, _} = _el | _els], Xdata,
+		  Items, Instructions, Last, First, Nick, Email) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last, First,
+			    decode_search_nick(__TopXMLNS, __IgnoreEls, _el),
+			    Email);
+      <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last, First,
+			    decode_search_nick(<<"jabber:iq:search">>,
+					       __IgnoreEls, _el),
+			    Email);
+      _ ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last, First, Nick, Email)
+    end;
+decode_search_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"email">>, _attrs, _} = _el | _els], Xdata,
+		  Items, Instructions, Last, First, Nick, Email) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last, First, Nick,
+			    decode_search_email(__TopXMLNS, __IgnoreEls, _el));
+      <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last, First, Nick,
+			    decode_search_email(<<"jabber:iq:search">>,
+						__IgnoreEls, _el));
+      _ ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last, First, Nick, Email)
+    end;
+decode_search_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"item">>, _attrs, _} = _el | _els], Xdata,
+		  Items, Instructions, Last, First, Nick, Email) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    [decode_search_item(__TopXMLNS, __IgnoreEls, _el)
+			     | Items],
+			    Instructions, Last, First, Nick, Email);
+      <<"jabber:iq:search">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    [decode_search_item(<<"jabber:iq:search">>,
+						__IgnoreEls, _el)
+			     | Items],
+			    Instructions, Last, First, Nick, Email);
+      _ ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last, First, Nick, Email)
+    end;
+decode_search_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"x">>, _attrs, _} = _el | _els], Xdata,
+		  Items, Instructions, Last, First, Nick, Email) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els,
+			    decode_xdata(<<"jabber:x:data">>, __IgnoreEls, _el),
+			    Items, Instructions, Last, First, Nick, Email);
+      _ ->
+	  decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+			    Items, Instructions, Last, First, Nick, Email)
+    end;
+decode_search_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		  Xdata, Items, Instructions, Last, First, Nick, Email) ->
+    decode_search_els(__TopXMLNS, __IgnoreEls, _els, Xdata,
+		      Items, Instructions, Last, First, Nick, Email).
+
+encode_search({search, Instructions, First, Last, Nick,
+	       Email, Items, Xdata},
+	      _xmlns_attrs) ->
+    _els = lists:reverse('encode_search_$xdata'(Xdata,
+						'encode_search_$items'(Items,
+								       'encode_search_$instructions'(Instructions,
+												     'encode_search_$last'(Last,
+															   'encode_search_$first'(First,
+																		  'encode_search_$nick'(Nick,
+																					'encode_search_$email'(Email,
+																							       [])))))))),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"query">>, _attrs, _els}.
+
+'encode_search_$xdata'(undefined, _acc) -> _acc;
+'encode_search_$xdata'(Xdata, _acc) ->
+    [encode_xdata(Xdata,
+		  [{<<"xmlns">>, <<"jabber:x:data">>}])
+     | _acc].
+
+'encode_search_$items'([], _acc) -> _acc;
+'encode_search_$items'([Items | _els], _acc) ->
+    'encode_search_$items'(_els,
+			   [encode_search_item(Items, []) | _acc]).
+
+'encode_search_$instructions'(undefined, _acc) -> _acc;
+'encode_search_$instructions'(Instructions, _acc) ->
+    [encode_search_instructions(Instructions, []) | _acc].
+
+'encode_search_$last'(undefined, _acc) -> _acc;
+'encode_search_$last'(Last, _acc) ->
+    [encode_search_last(Last, []) | _acc].
+
+'encode_search_$first'(undefined, _acc) -> _acc;
+'encode_search_$first'(First, _acc) ->
+    [encode_search_first(First, []) | _acc].
+
+'encode_search_$nick'(undefined, _acc) -> _acc;
+'encode_search_$nick'(Nick, _acc) ->
+    [encode_search_nick(Nick, []) | _acc].
+
+'encode_search_$email'(undefined, _acc) -> _acc;
+'encode_search_$email'(Email, _acc) ->
+    [encode_search_email(Email, []) | _acc].
+
+decode_search_item(__TopXMLNS, __IgnoreEls,
+		   {xmlel, <<"item">>, _attrs, _els}) ->
+    {Last, First, Nick, Email} =
+	decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+			       undefined, undefined, undefined, undefined),
+    Jid = decode_search_item_attrs(__TopXMLNS, _attrs,
+				   undefined),
+    {search_item, Jid, First, Last, Nick, Email}.
+
+decode_search_item_els(__TopXMLNS, __IgnoreEls, [],
+		       Last, First, Nick, Email) ->
+    {Last, First, Nick, Email};
+decode_search_item_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlel, <<"first">>, _attrs, _} = _el | _els], Last,
+		       First, Nick, Email) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:search">> ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 Last,
+				 decode_search_first(__TopXMLNS, __IgnoreEls,
+						     _el),
+				 Nick, Email);
+      <<"jabber:iq:search">> ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 Last,
+				 decode_search_first(<<"jabber:iq:search">>,
+						     __IgnoreEls, _el),
+				 Nick, Email);
+      _ ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 Last, First, Nick, Email)
+    end;
+decode_search_item_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlel, <<"last">>, _attrs, _} = _el | _els], Last,
+		       First, Nick, Email) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:search">> ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_search_last(__TopXMLNS, __IgnoreEls,
+						    _el),
+				 First, Nick, Email);
+      <<"jabber:iq:search">> ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_search_last(<<"jabber:iq:search">>,
+						    __IgnoreEls, _el),
+				 First, Nick, Email);
+      _ ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 Last, First, Nick, Email)
+    end;
+decode_search_item_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlel, <<"nick">>, _attrs, _} = _el | _els], Last,
+		       First, Nick, Email) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:search">> ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 Last, First,
+				 decode_search_nick(__TopXMLNS, __IgnoreEls,
+						    _el),
+				 Email);
+      <<"jabber:iq:search">> ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 Last, First,
+				 decode_search_nick(<<"jabber:iq:search">>,
+						    __IgnoreEls, _el),
+				 Email);
+      _ ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 Last, First, Nick, Email)
+    end;
+decode_search_item_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlel, <<"email">>, _attrs, _} = _el | _els], Last,
+		       First, Nick, Email) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:search">> ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 Last, First, Nick,
+				 decode_search_email(__TopXMLNS, __IgnoreEls,
+						     _el));
+      <<"jabber:iq:search">> ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 Last, First, Nick,
+				 decode_search_email(<<"jabber:iq:search">>,
+						     __IgnoreEls, _el));
+      _ ->
+	  decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 Last, First, Nick, Email)
+    end;
+decode_search_item_els(__TopXMLNS, __IgnoreEls,
+		       [_ | _els], Last, First, Nick, Email) ->
+    decode_search_item_els(__TopXMLNS, __IgnoreEls, _els,
+			   Last, First, Nick, Email).
+
+decode_search_item_attrs(__TopXMLNS,
+			 [{<<"jid">>, _val} | _attrs], _Jid) ->
+    decode_search_item_attrs(__TopXMLNS, _attrs, _val);
+decode_search_item_attrs(__TopXMLNS, [_ | _attrs],
+			 Jid) ->
+    decode_search_item_attrs(__TopXMLNS, _attrs, Jid);
+decode_search_item_attrs(__TopXMLNS, [], Jid) ->
+    decode_search_item_attr_jid(__TopXMLNS, Jid).
+
+encode_search_item({search_item, Jid, First, Last, Nick,
+		    Email},
+		   _xmlns_attrs) ->
+    _els = lists:reverse('encode_search_item_$last'(Last,
+						    'encode_search_item_$first'(First,
+										'encode_search_item_$nick'(Nick,
+													   'encode_search_item_$email'(Email,
+																       []))))),
+    _attrs = encode_search_item_attr_jid(Jid, _xmlns_attrs),
+    {xmlel, <<"item">>, _attrs, _els}.
+
+'encode_search_item_$last'(undefined, _acc) -> _acc;
+'encode_search_item_$last'(Last, _acc) ->
+    [encode_search_last(Last, []) | _acc].
+
+'encode_search_item_$first'(undefined, _acc) -> _acc;
+'encode_search_item_$first'(First, _acc) ->
+    [encode_search_first(First, []) | _acc].
+
+'encode_search_item_$nick'(undefined, _acc) -> _acc;
+'encode_search_item_$nick'(Nick, _acc) ->
+    [encode_search_nick(Nick, []) | _acc].
+
+'encode_search_item_$email'(undefined, _acc) -> _acc;
+'encode_search_item_$email'(Email, _acc) ->
+    [encode_search_email(Email, []) | _acc].
+
+decode_search_item_attr_jid(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"item">>, __TopXMLNS}});
+decode_search_item_attr_jid(__TopXMLNS, _val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"item">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_search_item_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_search_email(__TopXMLNS, __IgnoreEls,
+		    {xmlel, <<"email">>, _attrs, _els}) ->
+    Cdata = decode_search_email_els(__TopXMLNS, __IgnoreEls,
+				    _els, <<>>),
+    Cdata.
+
+decode_search_email_els(__TopXMLNS, __IgnoreEls, [],
+			Cdata) ->
+    decode_search_email_cdata(__TopXMLNS, Cdata);
+decode_search_email_els(__TopXMLNS, __IgnoreEls,
+			[{xmlcdata, _data} | _els], Cdata) ->
+    decode_search_email_els(__TopXMLNS, __IgnoreEls, _els,
+			    <<Cdata/binary, _data/binary>>);
+decode_search_email_els(__TopXMLNS, __IgnoreEls,
+			[_ | _els], Cdata) ->
+    decode_search_email_els(__TopXMLNS, __IgnoreEls, _els,
+			    Cdata).
+
+encode_search_email(Cdata, _xmlns_attrs) ->
+    _els = encode_search_email_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"email">>, _attrs, _els}.
+
+decode_search_email_cdata(__TopXMLNS, <<>>) -> <<>>;
+decode_search_email_cdata(__TopXMLNS, _val) -> _val.
+
+encode_search_email_cdata(<<>>, _acc) -> _acc;
+encode_search_email_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_search_nick(__TopXMLNS, __IgnoreEls,
+		   {xmlel, <<"nick">>, _attrs, _els}) ->
+    Cdata = decode_search_nick_els(__TopXMLNS, __IgnoreEls,
+				   _els, <<>>),
+    Cdata.
+
+decode_search_nick_els(__TopXMLNS, __IgnoreEls, [],
+		       Cdata) ->
+    decode_search_nick_cdata(__TopXMLNS, Cdata);
+decode_search_nick_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlcdata, _data} | _els], Cdata) ->
+    decode_search_nick_els(__TopXMLNS, __IgnoreEls, _els,
+			   <<Cdata/binary, _data/binary>>);
+decode_search_nick_els(__TopXMLNS, __IgnoreEls,
+		       [_ | _els], Cdata) ->
+    decode_search_nick_els(__TopXMLNS, __IgnoreEls, _els,
+			   Cdata).
+
+encode_search_nick(Cdata, _xmlns_attrs) ->
+    _els = encode_search_nick_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"nick">>, _attrs, _els}.
+
+decode_search_nick_cdata(__TopXMLNS, <<>>) -> <<>>;
+decode_search_nick_cdata(__TopXMLNS, _val) -> _val.
+
+encode_search_nick_cdata(<<>>, _acc) -> _acc;
+encode_search_nick_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_search_last(__TopXMLNS, __IgnoreEls,
+		   {xmlel, <<"last">>, _attrs, _els}) ->
+    Cdata = decode_search_last_els(__TopXMLNS, __IgnoreEls,
+				   _els, <<>>),
+    Cdata.
+
+decode_search_last_els(__TopXMLNS, __IgnoreEls, [],
+		       Cdata) ->
+    decode_search_last_cdata(__TopXMLNS, Cdata);
+decode_search_last_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlcdata, _data} | _els], Cdata) ->
+    decode_search_last_els(__TopXMLNS, __IgnoreEls, _els,
+			   <<Cdata/binary, _data/binary>>);
+decode_search_last_els(__TopXMLNS, __IgnoreEls,
+		       [_ | _els], Cdata) ->
+    decode_search_last_els(__TopXMLNS, __IgnoreEls, _els,
+			   Cdata).
+
+encode_search_last(Cdata, _xmlns_attrs) ->
+    _els = encode_search_last_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"last">>, _attrs, _els}.
+
+decode_search_last_cdata(__TopXMLNS, <<>>) -> <<>>;
+decode_search_last_cdata(__TopXMLNS, _val) -> _val.
+
+encode_search_last_cdata(<<>>, _acc) -> _acc;
+encode_search_last_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_search_first(__TopXMLNS, __IgnoreEls,
+		    {xmlel, <<"first">>, _attrs, _els}) ->
+    Cdata = decode_search_first_els(__TopXMLNS, __IgnoreEls,
+				    _els, <<>>),
+    Cdata.
+
+decode_search_first_els(__TopXMLNS, __IgnoreEls, [],
+			Cdata) ->
+    decode_search_first_cdata(__TopXMLNS, Cdata);
+decode_search_first_els(__TopXMLNS, __IgnoreEls,
+			[{xmlcdata, _data} | _els], Cdata) ->
+    decode_search_first_els(__TopXMLNS, __IgnoreEls, _els,
+			    <<Cdata/binary, _data/binary>>);
+decode_search_first_els(__TopXMLNS, __IgnoreEls,
+			[_ | _els], Cdata) ->
+    decode_search_first_els(__TopXMLNS, __IgnoreEls, _els,
+			    Cdata).
+
+encode_search_first(Cdata, _xmlns_attrs) ->
+    _els = encode_search_first_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"first">>, _attrs, _els}.
+
+decode_search_first_cdata(__TopXMLNS, <<>>) -> <<>>;
+decode_search_first_cdata(__TopXMLNS, _val) -> _val.
+
+encode_search_first_cdata(<<>>, _acc) -> _acc;
+encode_search_first_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_search_instructions(__TopXMLNS, __IgnoreEls,
+			   {xmlel, <<"instructions">>, _attrs, _els}) ->
+    Cdata = decode_search_instructions_els(__TopXMLNS,
+					   __IgnoreEls, _els, <<>>),
+    Cdata.
+
+decode_search_instructions_els(__TopXMLNS, __IgnoreEls,
+			       [], Cdata) ->
+    decode_search_instructions_cdata(__TopXMLNS, Cdata);
+decode_search_instructions_els(__TopXMLNS, __IgnoreEls,
+			       [{xmlcdata, _data} | _els], Cdata) ->
+    decode_search_instructions_els(__TopXMLNS, __IgnoreEls,
+				   _els, <<Cdata/binary, _data/binary>>);
+decode_search_instructions_els(__TopXMLNS, __IgnoreEls,
+			       [_ | _els], Cdata) ->
+    decode_search_instructions_els(__TopXMLNS, __IgnoreEls,
+				   _els, Cdata).
+
+encode_search_instructions(Cdata, _xmlns_attrs) ->
+    _els = encode_search_instructions_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"instructions">>, _attrs, _els}.
+
+decode_search_instructions_cdata(__TopXMLNS, <<>>) ->
+    undefined;
+decode_search_instructions_cdata(__TopXMLNS, _val) ->
+    _val.
+
+encode_search_instructions_cdata(undefined, _acc) ->
+    _acc;
+encode_search_instructions_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_hint_no_permanent_store(__TopXMLNS, __IgnoreEls,
+			       {xmlel, <<"no-permanent-store">>, _attrs,
+				_els}) ->
+    {hint, 'no-permanent-store'}.
+
+encode_hint_no_permanent_store({hint,
+				'no-permanent-store'},
+			       _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"no-permanent-store">>, _attrs, _els}.
+
+decode_hint_store(__TopXMLNS, __IgnoreEls,
+		  {xmlel, <<"store">>, _attrs, _els}) ->
+    {hint, store}.
+
+encode_hint_store({hint, store}, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"store">>, _attrs, _els}.
+
+decode_hint_no_store(__TopXMLNS, __IgnoreEls,
+		     {xmlel, <<"no-store">>, _attrs, _els}) ->
+    {hint, 'no-store'}.
+
+encode_hint_no_store({hint, 'no-store'},
+		     _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"no-store">>, _attrs, _els}.
+
+decode_hint_no_copy(__TopXMLNS, __IgnoreEls,
+		    {xmlel, <<"no-copy">>, _attrs, _els}) ->
+    {hint, 'no-copy'}.
+
+encode_hint_no_copy({hint, 'no-copy'}, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"no-copy">>, _attrs, _els}.
 
 decode_mix_participant(__TopXMLNS, __IgnoreEls,
 		       {xmlel, <<"participant">>, _attrs, _els}) ->
@@ -2727,15 +3560,20 @@ decode_mix_join_els(__TopXMLNS, __IgnoreEls, [],
 decode_mix_join_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"subscribe">>, _attrs, _} = _el | _els],
 		    Subscribe) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_mix_join_els(__TopXMLNS, __IgnoreEls, _els,
-			       [decode_mix_subscribe(__TopXMLNS, __IgnoreEls,
-						     _el)
-				| Subscribe]);
-       true ->
-	   decode_mix_join_els(__TopXMLNS, __IgnoreEls, _els,
-			       Subscribe)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:mix:0">> ->
+	  decode_mix_join_els(__TopXMLNS, __IgnoreEls, _els,
+			      [decode_mix_subscribe(__TopXMLNS, __IgnoreEls,
+						    _el)
+			       | Subscribe]);
+      <<"urn:xmpp:mix:0">> ->
+	  decode_mix_join_els(__TopXMLNS, __IgnoreEls, _els,
+			      [decode_mix_subscribe(<<"urn:xmpp:mix:0">>,
+						    __IgnoreEls, _el)
+			       | Subscribe]);
+      _ ->
+	  decode_mix_join_els(__TopXMLNS, __IgnoreEls, _els,
+			      Subscribe)
     end;
 decode_mix_join_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		    Subscribe) ->
@@ -2822,41 +3660,62 @@ decode_offline_els(__TopXMLNS, __IgnoreEls, [], Items,
 decode_offline_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"purge">>, _attrs, _} = _el | _els], Items,
 		   Purge, Fetch) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			      decode_offline_purge(__TopXMLNS, __IgnoreEls,
-						   _el),
-			      Fetch);
-       true ->
-	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			      Purge, Fetch)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/offline">> ->
+	  decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			     decode_offline_purge(__TopXMLNS, __IgnoreEls, _el),
+			     Fetch);
+      <<"http://jabber.org/protocol/offline">> ->
+	  decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			     decode_offline_purge(<<"http://jabber.org/protocol/offline">>,
+						  __IgnoreEls, _el),
+			     Fetch);
+      _ ->
+	  decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			     Purge, Fetch)
     end;
 decode_offline_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"fetch">>, _attrs, _} = _el | _els], Items,
 		   Purge, Fetch) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			      Purge,
-			      decode_offline_fetch(__TopXMLNS, __IgnoreEls,
-						   _el));
-       true ->
-	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			      Purge, Fetch)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/offline">> ->
+	  decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			     Purge,
+			     decode_offline_fetch(__TopXMLNS, __IgnoreEls,
+						  _el));
+      <<"http://jabber.org/protocol/offline">> ->
+	  decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			     Purge,
+			     decode_offline_fetch(<<"http://jabber.org/protocol/offline">>,
+						  __IgnoreEls, _el));
+      _ ->
+	  decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			     Purge, Fetch)
     end;
 decode_offline_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"item">>, _attrs, _} = _el | _els], Items,
 		   Purge, Fetch) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els,
-			      [decode_offline_item(__TopXMLNS, __IgnoreEls, _el)
-			       | Items],
-			      Purge, Fetch);
-       true ->
-	   decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			      Purge, Fetch)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/offline">> ->
+	  decode_offline_els(__TopXMLNS, __IgnoreEls, _els,
+			     [decode_offline_item(__TopXMLNS, __IgnoreEls, _el)
+			      | Items],
+			     Purge, Fetch);
+      <<"http://jabber.org/protocol/offline">> ->
+	  decode_offline_els(__TopXMLNS, __IgnoreEls, _els,
+			     [decode_offline_item(<<"http://jabber.org/protocol/offline">>,
+						  __IgnoreEls, _el)
+			      | Items],
+			     Purge, Fetch);
+      _ ->
+	  decode_offline_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			     Purge, Fetch)
     end;
 decode_offline_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		   Items, Purge, Fetch) ->
@@ -2973,311 +3832,289 @@ decode_sm_failed_els(__TopXMLNS, __IgnoreEls, [],
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"bad-request">>, _attrs, _} = _el | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_bad_request(_xmlns, __IgnoreEls,
-							 _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_bad_request(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							__IgnoreEls, _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"conflict">>, _attrs, _} = _el | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_conflict(_xmlns, __IgnoreEls,
-						      _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_conflict(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						     __IgnoreEls, _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"feature-not-implemented">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_feature_not_implemented(_xmlns,
-								     __IgnoreEls,
-								     _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_feature_not_implemented(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								    __IgnoreEls,
+								    _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"forbidden">>, _attrs, _} = _el | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_forbidden(_xmlns, __IgnoreEls,
-						       _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_forbidden(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						      __IgnoreEls, _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"gone">>, _attrs, _} = _el | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_gone(_xmlns, __IgnoreEls, _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_gone(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						 __IgnoreEls, _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"internal-server-error">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_internal_server_error(_xmlns,
-								   __IgnoreEls,
-								   _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_internal_server_error(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								  __IgnoreEls,
+								  _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"item-not-found">>, _attrs, _} = _el | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_item_not_found(_xmlns, __IgnoreEls,
-							    _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_item_not_found(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							   __IgnoreEls, _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"jid-malformed">>, _attrs, _} = _el | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_jid_malformed(_xmlns, __IgnoreEls,
-							   _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_jid_malformed(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							  __IgnoreEls, _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"not-acceptable">>, _attrs, _} = _el | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_not_acceptable(_xmlns, __IgnoreEls,
-							    _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_not_acceptable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							   __IgnoreEls, _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"not-allowed">>, _attrs, _} = _el | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_not_allowed(_xmlns, __IgnoreEls,
-							 _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_not_allowed(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							__IgnoreEls, _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"not-authorized">>, _attrs, _} = _el | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_not_authorized(_xmlns, __IgnoreEls,
-							    _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							   __IgnoreEls, _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"policy-violation">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_policy_violation(_xmlns,
-							      __IgnoreEls,
-							      _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_policy_violation(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							     __IgnoreEls, _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"recipient-unavailable">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_recipient_unavailable(_xmlns,
-								   __IgnoreEls,
-								   _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_recipient_unavailable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								  __IgnoreEls,
+								  _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"redirect">>, _attrs, _} = _el | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_redirect(_xmlns, __IgnoreEls,
-						      _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_redirect(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						     __IgnoreEls, _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"registration-required">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_registration_required(_xmlns,
-								   __IgnoreEls,
-								   _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_registration_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								  __IgnoreEls,
+								  _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"remote-server-not-found">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_remote_server_not_found(_xmlns,
-								     __IgnoreEls,
-								     _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_remote_server_not_found(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								    __IgnoreEls,
+								    _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"remote-server-timeout">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_remote_server_timeout(_xmlns,
-								   __IgnoreEls,
-								   _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_remote_server_timeout(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								  __IgnoreEls,
+								  _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"resource-constraint">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_resource_constraint(_xmlns,
-								 __IgnoreEls,
-								 _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_resource_constraint(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								__IgnoreEls,
+								_el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"service-unavailable">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_service_unavailable(_xmlns,
-								 __IgnoreEls,
-								 _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_service_unavailable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								__IgnoreEls,
+								_el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"subscription-required">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_subscription_required(_xmlns,
-								   __IgnoreEls,
-								   _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_subscription_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								  __IgnoreEls,
+								  _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"undefined-condition">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_undefined_condition(_xmlns,
-								 __IgnoreEls,
-								 _el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_undefined_condition(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								__IgnoreEls,
+								_el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"unexpected-request">>, _attrs, _} = _el
 		      | _els],
 		     Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_error_unexpected_request(_xmlns,
-								__IgnoreEls,
-								_el));
-       true ->
-	   decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
-				Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_error_unexpected_request(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							       __IgnoreEls,
+							       _el));
+      _ ->
+	  decode_sm_failed_els(__TopXMLNS, __IgnoreEls, _els,
+			       Reason)
     end;
 decode_sm_failed_els(__TopXMLNS, __IgnoreEls,
 		     [_ | _els], Reason) ->
@@ -3963,15 +4800,15 @@ decode_carbons_sent_els(__TopXMLNS, __IgnoreEls, [],
 decode_carbons_sent_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"forwarded">>, _attrs, _} = _el | _els],
 			Forwarded) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<"urn:xmpp:forward:0">> ->
-	   decode_carbons_sent_els(__TopXMLNS, __IgnoreEls, _els,
-				   {value,
-				    decode_forwarded(_xmlns, __IgnoreEls,
-						     _el)});
-       true ->
-	   decode_carbons_sent_els(__TopXMLNS, __IgnoreEls, _els,
-				   Forwarded)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:xmpp:forward:0">> ->
+	  decode_carbons_sent_els(__TopXMLNS, __IgnoreEls, _els,
+				  {value,
+				   decode_forwarded(<<"urn:xmpp:forward:0">>,
+						    __IgnoreEls, _el)});
+      _ ->
+	  decode_carbons_sent_els(__TopXMLNS, __IgnoreEls, _els,
+				  Forwarded)
     end;
 decode_carbons_sent_els(__TopXMLNS, __IgnoreEls,
 			[_ | _els], Forwarded) ->
@@ -4008,16 +4845,16 @@ decode_carbons_received_els(__TopXMLNS, __IgnoreEls, [],
 decode_carbons_received_els(__TopXMLNS, __IgnoreEls,
 			    [{xmlel, <<"forwarded">>, _attrs, _} = _el | _els],
 			    Forwarded) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<"urn:xmpp:forward:0">> ->
-	   decode_carbons_received_els(__TopXMLNS, __IgnoreEls,
-				       _els,
-				       {value,
-					decode_forwarded(_xmlns, __IgnoreEls,
-							 _el)});
-       true ->
-	   decode_carbons_received_els(__TopXMLNS, __IgnoreEls,
-				       _els, Forwarded)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:xmpp:forward:0">> ->
+	  decode_carbons_received_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      {value,
+				       decode_forwarded(<<"urn:xmpp:forward:0">>,
+							__IgnoreEls, _el)});
+      _ ->
+	  decode_carbons_received_els(__TopXMLNS, __IgnoreEls,
+				      _els, Forwarded)
     end;
 decode_carbons_received_els(__TopXMLNS, __IgnoreEls,
 			    [_ | _els], Forwarded) ->
@@ -4078,13 +4915,15 @@ decode_forwarded_els(__TopXMLNS, __IgnoreEls, [], Delay,
 decode_forwarded_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"delay">>, _attrs, _} = _el | _els], Delay,
 		     __Els) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<"urn:xmpp:delay">> ->
-	   decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_delay(_xmlns, __IgnoreEls, _el), __Els);
-       true ->
-	   decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
-				Delay, __Els)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:xmpp:delay">> ->
+	  decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_delay(<<"urn:xmpp:delay">>, __IgnoreEls,
+					    _el),
+			       __Els);
+      _ ->
+	  decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
+			       Delay, __Els)
     end;
 decode_forwarded_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, _, _, _} = _el | _els], Delay, __Els) ->
@@ -4132,12 +4971,13 @@ decode_mam_fin_els(__TopXMLNS, __IgnoreEls, [], Rsm) ->
     Rsm;
 decode_mam_fin_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"set">>, _attrs, _} = _el | _els], Rsm) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<"http://jabber.org/protocol/rsm">> ->
-	   decode_mam_fin_els(__TopXMLNS, __IgnoreEls, _els,
-			      decode_rsm_set(_xmlns, __IgnoreEls, _el));
-       true ->
-	   decode_mam_fin_els(__TopXMLNS, __IgnoreEls, _els, Rsm)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"http://jabber.org/protocol/rsm">> ->
+	  decode_mam_fin_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_rsm_set(<<"http://jabber.org/protocol/rsm">>,
+					    __IgnoreEls, _el));
+      _ ->
+	  decode_mam_fin_els(__TopXMLNS, __IgnoreEls, _els, Rsm)
     end;
 decode_mam_fin_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		   Rsm) ->
@@ -4234,27 +5074,36 @@ decode_mam_prefs_els(__TopXMLNS, __IgnoreEls, [], Never,
 decode_mam_prefs_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"always">>, _attrs, _} = _el | _els], Never,
 		     Always) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_mam_prefs_els(__TopXMLNS, __IgnoreEls, _els,
-				Never,
-				decode_mam_always(__TopXMLNS, __IgnoreEls,
-						  _el));
-       true ->
-	   decode_mam_prefs_els(__TopXMLNS, __IgnoreEls, _els,
-				Never, Always)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_prefs_els(__TopXMLNS, __IgnoreEls, _els,
+			       Never,
+			       decode_mam_always(__TopXMLNS, __IgnoreEls, _el));
+      <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_prefs_els(__TopXMLNS, __IgnoreEls, _els,
+			       Never,
+			       decode_mam_always(<<"urn:xmpp:mam:tmp">>,
+						 __IgnoreEls, _el));
+      _ ->
+	  decode_mam_prefs_els(__TopXMLNS, __IgnoreEls, _els,
+			       Never, Always)
     end;
 decode_mam_prefs_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"never">>, _attrs, _} = _el | _els], Never,
 		     Always) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_mam_prefs_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_mam_never(__TopXMLNS, __IgnoreEls, _el),
-				Always);
-       true ->
-	   decode_mam_prefs_els(__TopXMLNS, __IgnoreEls, _els,
-				Never, Always)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_prefs_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_mam_never(__TopXMLNS, __IgnoreEls, _el),
+			       Always);
+      <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_prefs_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_mam_never(<<"urn:xmpp:mam:tmp">>,
+						__IgnoreEls, _el),
+			       Always);
+      _ ->
+	  decode_mam_prefs_els(__TopXMLNS, __IgnoreEls, _els,
+			       Never, Always)
     end;
 decode_mam_prefs_els(__TopXMLNS, __IgnoreEls,
 		     [_ | _els], Never, Always) ->
@@ -4290,15 +5139,11 @@ encode_mam_prefs({mam_prefs, Xmlns, Default, Always,
 
 'encode_mam_prefs_$never'([], _acc) -> _acc;
 'encode_mam_prefs_$never'(Never, _acc) ->
-    [encode_mam_never(Never,
-		      [{<<"xmlns">>, <<"urn:xmpp:mam:tmp">>}])
-     | _acc].
+    [encode_mam_never(Never, []) | _acc].
 
 'encode_mam_prefs_$always'([], _acc) -> _acc;
 'encode_mam_prefs_$always'(Always, _acc) ->
-    [encode_mam_always(Always,
-		       [{<<"xmlns">>, <<"urn:xmpp:mam:tmp">>}])
-     | _acc].
+    [encode_mam_always(Always, []) | _acc].
 
 decode_mam_prefs_attr_default(__TopXMLNS, undefined) ->
     undefined;
@@ -4334,18 +5179,26 @@ decode_mam_always_els(__TopXMLNS, __IgnoreEls, [],
     lists:reverse(Jids);
 decode_mam_always_els(__TopXMLNS, __IgnoreEls,
 		      [{xmlel, <<"jid">>, _attrs, _} = _el | _els], Jids) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_mam_always_els(__TopXMLNS, __IgnoreEls, _els,
-				 case decode_mam_jid(__TopXMLNS, __IgnoreEls,
-						     _el)
-				     of
-				   [] -> Jids;
-				   _new_el -> [_new_el | Jids]
-				 end);
-       true ->
-	   decode_mam_always_els(__TopXMLNS, __IgnoreEls, _els,
-				 Jids)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_always_els(__TopXMLNS, __IgnoreEls, _els,
+				case decode_mam_jid(__TopXMLNS, __IgnoreEls,
+						    _el)
+				    of
+				  [] -> Jids;
+				  _new_el -> [_new_el | Jids]
+				end);
+      <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_always_els(__TopXMLNS, __IgnoreEls, _els,
+				case decode_mam_jid(<<"urn:xmpp:mam:tmp">>,
+						    __IgnoreEls, _el)
+				    of
+				  [] -> Jids;
+				  _new_el -> [_new_el | Jids]
+				end);
+      _ ->
+	  decode_mam_always_els(__TopXMLNS, __IgnoreEls, _els,
+				Jids)
     end;
 decode_mam_always_els(__TopXMLNS, __IgnoreEls,
 		      [_ | _els], Jids) ->
@@ -4374,18 +5227,25 @@ decode_mam_never_els(__TopXMLNS, __IgnoreEls, [],
     lists:reverse(Jids);
 decode_mam_never_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"jid">>, _attrs, _} = _el | _els], Jids) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_mam_never_els(__TopXMLNS, __IgnoreEls, _els,
-				case decode_mam_jid(__TopXMLNS, __IgnoreEls,
-						    _el)
-				    of
-				  [] -> Jids;
-				  _new_el -> [_new_el | Jids]
-				end);
-       true ->
-	   decode_mam_never_els(__TopXMLNS, __IgnoreEls, _els,
-				Jids)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_never_els(__TopXMLNS, __IgnoreEls, _els,
+			       case decode_mam_jid(__TopXMLNS, __IgnoreEls, _el)
+				   of
+				 [] -> Jids;
+				 _new_el -> [_new_el | Jids]
+			       end);
+      <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_never_els(__TopXMLNS, __IgnoreEls, _els,
+			       case decode_mam_jid(<<"urn:xmpp:mam:tmp">>,
+						   __IgnoreEls, _el)
+				   of
+				 [] -> Jids;
+				 _new_el -> [_new_el | Jids]
+			       end);
+      _ ->
+	  decode_mam_never_els(__TopXMLNS, __IgnoreEls, _els,
+			       Jids)
     end;
 decode_mam_never_els(__TopXMLNS, __IgnoreEls,
 		     [_ | _els], Jids) ->
@@ -4596,65 +5456,85 @@ decode_mam_query_els(__TopXMLNS, __IgnoreEls, [], Xdata,
 decode_mam_query_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"start">>, _attrs, _} = _el | _els], Xdata,
 		     End, Start, With, Rsm) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
-				Xdata, End,
-				decode_mam_start(__TopXMLNS, __IgnoreEls, _el),
-				With, Rsm);
-       true ->
-	   decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
-				Xdata, End, Start, With, Rsm)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata, End,
+			       decode_mam_start(__TopXMLNS, __IgnoreEls, _el),
+			       With, Rsm);
+      <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata, End,
+			       decode_mam_start(<<"urn:xmpp:mam:tmp">>,
+						__IgnoreEls, _el),
+			       With, Rsm);
+      _ ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata, End, Start, With, Rsm)
     end;
 decode_mam_query_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"end">>, _attrs, _} = _el | _els], Xdata,
 		     End, Start, With, Rsm) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
-				Xdata,
-				decode_mam_end(__TopXMLNS, __IgnoreEls, _el),
-				Start, With, Rsm);
-       true ->
-	   decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
-				Xdata, End, Start, With, Rsm)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata,
+			       decode_mam_end(__TopXMLNS, __IgnoreEls, _el),
+			       Start, With, Rsm);
+      <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata,
+			       decode_mam_end(<<"urn:xmpp:mam:tmp">>,
+					      __IgnoreEls, _el),
+			       Start, With, Rsm);
+      _ ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata, End, Start, With, Rsm)
     end;
 decode_mam_query_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"with">>, _attrs, _} = _el | _els], Xdata,
 		     End, Start, With, Rsm) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
-				Xdata, End, Start,
-				decode_mam_with(__TopXMLNS, __IgnoreEls, _el),
-				Rsm);
-       true ->
-	   decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
-				Xdata, End, Start, With, Rsm)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata, End, Start,
+			       decode_mam_with(__TopXMLNS, __IgnoreEls, _el),
+			       Rsm);
+      <<"urn:xmpp:mam:tmp">> ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata, End, Start,
+			       decode_mam_with(<<"urn:xmpp:mam:tmp">>,
+					       __IgnoreEls, _el),
+			       Rsm);
+      _ ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata, End, Start, With, Rsm)
     end;
 decode_mam_query_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"set">>, _attrs, _} = _el | _els], Xdata,
 		     End, Start, With, Rsm) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<"http://jabber.org/protocol/rsm">> ->
-	   decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
-				Xdata, End, Start, With,
-				decode_rsm_set(_xmlns, __IgnoreEls, _el));
-       true ->
-	   decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
-				Xdata, End, Start, With, Rsm)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"http://jabber.org/protocol/rsm">> ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata, End, Start, With,
+			       decode_rsm_set(<<"http://jabber.org/protocol/rsm">>,
+					      __IgnoreEls, _el));
+      _ ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata, End, Start, With, Rsm)
     end;
 decode_mam_query_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"x">>, _attrs, _} = _el | _els], Xdata, End,
 		     Start, With, Rsm) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<"jabber:x:data">> ->
-	   decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_xdata(_xmlns, __IgnoreEls, _el), End,
-				Start, With, Rsm);
-       true ->
-	   decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
-				Xdata, End, Start, With, Rsm)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_xdata(<<"jabber:x:data">>, __IgnoreEls,
+					    _el),
+			       End, Start, With, Rsm);
+      _ ->
+	  decode_mam_query_els(__TopXMLNS, __IgnoreEls, _els,
+			       Xdata, End, Start, With, Rsm)
     end;
 decode_mam_query_els(__TopXMLNS, __IgnoreEls,
 		     [_ | _els], Xdata, End, Start, With, Rsm) ->
@@ -4696,21 +5576,15 @@ encode_mam_query({mam_query, Xmlns, Id, Start, End,
 
 'encode_mam_query_$end'(undefined, _acc) -> _acc;
 'encode_mam_query_$end'(End, _acc) ->
-    [encode_mam_end(End,
-		    [{<<"xmlns">>, <<"urn:xmpp:mam:tmp">>}])
-     | _acc].
+    [encode_mam_end(End, []) | _acc].
 
 'encode_mam_query_$start'(undefined, _acc) -> _acc;
 'encode_mam_query_$start'(Start, _acc) ->
-    [encode_mam_start(Start,
-		      [{<<"xmlns">>, <<"urn:xmpp:mam:tmp">>}])
-     | _acc].
+    [encode_mam_start(Start, []) | _acc].
 
 'encode_mam_query_$with'(undefined, _acc) -> _acc;
 'encode_mam_query_$with'(With, _acc) ->
-    [encode_mam_with(With,
-		     [{<<"xmlns">>, <<"urn:xmpp:mam:tmp">>}])
-     | _acc].
+    [encode_mam_with(With, []) | _acc].
 
 'encode_mam_query_$rsm'(undefined, _acc) -> _acc;
 'encode_mam_query_$rsm'(Rsm, _acc) ->
@@ -4860,90 +5734,143 @@ decode_rsm_set_els(__TopXMLNS, __IgnoreEls, [], After,
 decode_rsm_set_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"after">>, _attrs, _} = _el | _els], After,
 		   Last, First, Count, Before, Max, Index) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els,
-			      decode_rsm_after(__TopXMLNS, __IgnoreEls, _el),
-			      Last, First, Count, Before, Max, Index);
-       true ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last, First, Count, Before, Max, Index)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_rsm_after(__TopXMLNS, __IgnoreEls, _el),
+			     Last, First, Count, Before, Max, Index);
+      <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_rsm_after(<<"http://jabber.org/protocol/rsm">>,
+					      __IgnoreEls, _el),
+			     Last, First, Count, Before, Max, Index);
+      _ ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count, Before, Max, Index)
     end;
 decode_rsm_set_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"before">>, _attrs, _} = _el | _els], After,
 		   Last, First, Count, Before, Max, Index) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last, First, Count,
-			      decode_rsm_before(__TopXMLNS, __IgnoreEls, _el),
-			      Max, Index);
-       true ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last, First, Count, Before, Max, Index)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count,
+			     decode_rsm_before(__TopXMLNS, __IgnoreEls, _el),
+			     Max, Index);
+      <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count,
+			     decode_rsm_before(<<"http://jabber.org/protocol/rsm">>,
+					       __IgnoreEls, _el),
+			     Max, Index);
+      _ ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count, Before, Max, Index)
     end;
 decode_rsm_set_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"count">>, _attrs, _} = _el | _els], After,
 		   Last, First, Count, Before, Max, Index) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last, First,
-			      decode_rsm_count(__TopXMLNS, __IgnoreEls, _el),
-			      Before, Max, Index);
-       true ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last, First, Count, Before, Max, Index)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First,
+			     decode_rsm_count(__TopXMLNS, __IgnoreEls, _el),
+			     Before, Max, Index);
+      <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First,
+			     decode_rsm_count(<<"http://jabber.org/protocol/rsm">>,
+					      __IgnoreEls, _el),
+			     Before, Max, Index);
+      _ ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count, Before, Max, Index)
     end;
 decode_rsm_set_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"first">>, _attrs, _} = _el | _els], After,
 		   Last, First, Count, Before, Max, Index) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last,
-			      decode_rsm_first(__TopXMLNS, __IgnoreEls, _el),
-			      Count, Before, Max, Index);
-       true ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last, First, Count, Before, Max, Index)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last,
+			     decode_rsm_first(__TopXMLNS, __IgnoreEls, _el),
+			     Count, Before, Max, Index);
+      <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last,
+			     decode_rsm_first(<<"http://jabber.org/protocol/rsm">>,
+					      __IgnoreEls, _el),
+			     Count, Before, Max, Index);
+      _ ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count, Before, Max, Index)
     end;
 decode_rsm_set_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"index">>, _attrs, _} = _el | _els], After,
 		   Last, First, Count, Before, Max, Index) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last, First, Count, Before, Max,
-			      decode_rsm_index(__TopXMLNS, __IgnoreEls, _el));
-       true ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last, First, Count, Before, Max, Index)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count, Before, Max,
+			     decode_rsm_index(__TopXMLNS, __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count, Before, Max,
+			     decode_rsm_index(<<"http://jabber.org/protocol/rsm">>,
+					      __IgnoreEls, _el));
+      _ ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count, Before, Max, Index)
     end;
 decode_rsm_set_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"last">>, _attrs, _} = _el | _els], After,
 		   Last, First, Count, Before, Max, Index) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      decode_rsm_last(__TopXMLNS, __IgnoreEls, _el),
-			      First, Count, Before, Max, Index);
-       true ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last, First, Count, Before, Max, Index)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     decode_rsm_last(__TopXMLNS, __IgnoreEls, _el),
+			     First, Count, Before, Max, Index);
+      <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     decode_rsm_last(<<"http://jabber.org/protocol/rsm">>,
+					     __IgnoreEls, _el),
+			     First, Count, Before, Max, Index);
+      _ ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count, Before, Max, Index)
     end;
 decode_rsm_set_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"max">>, _attrs, _} = _el | _els], After,
 		   Last, First, Count, Before, Max, Index) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last, First, Count, Before,
-			      decode_rsm_max(__TopXMLNS, __IgnoreEls, _el),
-			      Index);
-       true ->
-	   decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
-			      Last, First, Count, Before, Max, Index)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count, Before,
+			     decode_rsm_max(__TopXMLNS, __IgnoreEls, _el),
+			     Index);
+      <<"http://jabber.org/protocol/rsm">> ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count, Before,
+			     decode_rsm_max(<<"http://jabber.org/protocol/rsm">>,
+					    __IgnoreEls, _el),
+			     Index);
+      _ ->
+	  decode_rsm_set_els(__TopXMLNS, __IgnoreEls, _els, After,
+			     Last, First, Count, Before, Max, Index)
     end;
 decode_rsm_set_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		   After, Last, First, Count, Before, Max, Index) ->
@@ -5261,12 +6188,18 @@ decode_muc_els(__TopXMLNS, __IgnoreEls, [], History) ->
 decode_muc_els(__TopXMLNS, __IgnoreEls,
 	       [{xmlel, <<"history">>, _attrs, _} = _el | _els],
 	       History) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_els(__TopXMLNS, __IgnoreEls, _els,
-			  decode_muc_history(__TopXMLNS, __IgnoreEls, _el));
-       true ->
-	   decode_muc_els(__TopXMLNS, __IgnoreEls, _els, History)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc">> ->
+	  decode_muc_els(__TopXMLNS, __IgnoreEls, _els,
+			 decode_muc_history(__TopXMLNS, __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/muc">> ->
+	  decode_muc_els(__TopXMLNS, __IgnoreEls, _els,
+			 decode_muc_history(<<"http://jabber.org/protocol/muc">>,
+					    __IgnoreEls, _el));
+      _ ->
+	  decode_muc_els(__TopXMLNS, __IgnoreEls, _els, History)
     end;
 decode_muc_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 	       History) ->
@@ -5310,15 +6243,22 @@ decode_muc_admin_els(__TopXMLNS, __IgnoreEls, [],
     lists:reverse(Items);
 decode_muc_admin_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"item">>, _attrs, _} = _el | _els], Items) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_admin_els(__TopXMLNS, __IgnoreEls, _els,
-				[decode_muc_admin_item(__TopXMLNS, __IgnoreEls,
-						       _el)
-				 | Items]);
-       true ->
-	   decode_muc_admin_els(__TopXMLNS, __IgnoreEls, _els,
-				Items)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#admin">> ->
+	  decode_muc_admin_els(__TopXMLNS, __IgnoreEls, _els,
+			       [decode_muc_admin_item(__TopXMLNS, __IgnoreEls,
+						      _el)
+				| Items]);
+      <<"http://jabber.org/protocol/muc#admin">> ->
+	  decode_muc_admin_els(__TopXMLNS, __IgnoreEls, _els,
+			       [decode_muc_admin_item(<<"http://jabber.org/protocol/muc#admin">>,
+						      __IgnoreEls, _el)
+				| Items]);
+      _ ->
+	  decode_muc_admin_els(__TopXMLNS, __IgnoreEls, _els,
+			       Items)
     end;
 decode_muc_admin_els(__TopXMLNS, __IgnoreEls,
 		     [_ | _els], Items) ->
@@ -5480,43 +6420,64 @@ decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, [],
 decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls,
 			  [{xmlel, <<"actor">>, _attrs, _} = _el | _els], Actor,
 			  Continue, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
-				     decode_muc_admin_actor(__TopXMLNS,
-							    __IgnoreEls, _el),
-				     Continue, Reason);
-       true ->
-	   decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
-				     Actor, Continue, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#admin">> ->
+	  decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
+				    decode_muc_admin_actor(__TopXMLNS,
+							   __IgnoreEls, _el),
+				    Continue, Reason);
+      <<"http://jabber.org/protocol/muc#admin">> ->
+	  decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
+				    decode_muc_admin_actor(<<"http://jabber.org/protocol/muc#admin">>,
+							   __IgnoreEls, _el),
+				    Continue, Reason);
+      _ ->
+	  decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
+				    Actor, Continue, Reason)
     end;
 decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls,
 			  [{xmlel, <<"continue">>, _attrs, _} = _el | _els],
 			  Actor, Continue, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
-				     Actor,
-				     decode_muc_admin_continue(__TopXMLNS,
-							       __IgnoreEls,
-							       _el),
-				     Reason);
-       true ->
-	   decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
-				     Actor, Continue, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#admin">> ->
+	  decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
+				    Actor,
+				    decode_muc_admin_continue(__TopXMLNS,
+							      __IgnoreEls, _el),
+				    Reason);
+      <<"http://jabber.org/protocol/muc#admin">> ->
+	  decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
+				    Actor,
+				    decode_muc_admin_continue(<<"http://jabber.org/protocol/muc#admin">>,
+							      __IgnoreEls, _el),
+				    Reason);
+      _ ->
+	  decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
+				    Actor, Continue, Reason)
     end;
 decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls,
 			  [{xmlel, <<"reason">>, _attrs, _} = _el | _els],
 			  Actor, Continue, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
-				     Actor, Continue,
-				     decode_muc_admin_reason(__TopXMLNS,
-							     __IgnoreEls, _el));
-       true ->
-	   decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
-				     Actor, Continue, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#admin">> ->
+	  decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
+				    Actor, Continue,
+				    decode_muc_admin_reason(__TopXMLNS,
+							    __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/muc#admin">> ->
+	  decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
+				    Actor, Continue,
+				    decode_muc_admin_reason(<<"http://jabber.org/protocol/muc#admin">>,
+							    __IgnoreEls, _el));
+      _ ->
+	  decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls, _els,
+				    Actor, Continue, Reason)
     end;
 decode_muc_admin_item_els(__TopXMLNS, __IgnoreEls,
 			  [_ | _els], Actor, Continue, Reason) ->
@@ -5661,27 +6622,35 @@ decode_muc_owner_els(__TopXMLNS, __IgnoreEls, [],
 decode_muc_owner_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"destroy">>, _attrs, _} = _el | _els],
 		     Config, Destroy) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_owner_els(__TopXMLNS, __IgnoreEls, _els,
-				Config,
-				decode_muc_owner_destroy(__TopXMLNS,
-							 __IgnoreEls, _el));
-       true ->
-	   decode_muc_owner_els(__TopXMLNS, __IgnoreEls, _els,
-				Config, Destroy)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#owner">> ->
+	  decode_muc_owner_els(__TopXMLNS, __IgnoreEls, _els,
+			       Config,
+			       decode_muc_owner_destroy(__TopXMLNS, __IgnoreEls,
+							_el));
+      <<"http://jabber.org/protocol/muc#owner">> ->
+	  decode_muc_owner_els(__TopXMLNS, __IgnoreEls, _els,
+			       Config,
+			       decode_muc_owner_destroy(<<"http://jabber.org/protocol/muc#owner">>,
+							__IgnoreEls, _el));
+      _ ->
+	  decode_muc_owner_els(__TopXMLNS, __IgnoreEls, _els,
+			       Config, Destroy)
     end;
 decode_muc_owner_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"x">>, _attrs, _} = _el | _els], Config,
 		     Destroy) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<"jabber:x:data">> ->
-	   decode_muc_owner_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_xdata(_xmlns, __IgnoreEls, _el),
-				Destroy);
-       true ->
-	   decode_muc_owner_els(__TopXMLNS, __IgnoreEls, _els,
-				Config, Destroy)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_muc_owner_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_xdata(<<"jabber:x:data">>, __IgnoreEls,
+					    _el),
+			       Destroy);
+      _ ->
+	  decode_muc_owner_els(__TopXMLNS, __IgnoreEls, _els,
+			       Config, Destroy)
     end;
 decode_muc_owner_els(__TopXMLNS, __IgnoreEls,
 		     [_ | _els], Config, Destroy) ->
@@ -5721,31 +6690,48 @@ decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
 decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
 			     [{xmlel, <<"password">>, _attrs, _} = _el | _els],
 			     Password, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
-					_els,
-					decode_muc_owner_password(__TopXMLNS,
-								  __IgnoreEls,
-								  _el),
-					Reason);
-       true ->
-	   decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
-					_els, Password, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#owner">> ->
+	  decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
+				       _els,
+				       decode_muc_owner_password(__TopXMLNS,
+								 __IgnoreEls,
+								 _el),
+				       Reason);
+      <<"http://jabber.org/protocol/muc#owner">> ->
+	  decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
+				       _els,
+				       decode_muc_owner_password(<<"http://jabber.org/protocol/muc#owner">>,
+								 __IgnoreEls,
+								 _el),
+				       Reason);
+      _ ->
+	  decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
+				       _els, Password, Reason)
     end;
 decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
 			     [{xmlel, <<"reason">>, _attrs, _} = _el | _els],
 			     Password, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
-					_els, Password,
-					decode_muc_owner_reason(__TopXMLNS,
-								__IgnoreEls,
-								_el));
-       true ->
-	   decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
-					_els, Password, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#owner">> ->
+	  decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
+				       _els, Password,
+				       decode_muc_owner_reason(__TopXMLNS,
+							       __IgnoreEls,
+							       _el));
+      <<"http://jabber.org/protocol/muc#owner">> ->
+	  decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
+				       _els, Password,
+				       decode_muc_owner_reason(<<"http://jabber.org/protocol/muc#owner">>,
+							       __IgnoreEls,
+							       _el));
+      _ ->
+	  decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
+				       _els, Password, Reason)
     end;
 decode_muc_owner_destroy_els(__TopXMLNS, __IgnoreEls,
 			     [_ | _els], Password, Reason) ->
@@ -5881,76 +6867,121 @@ decode_muc_user_els(__TopXMLNS, __IgnoreEls, [],
 decode_muc_user_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"decline">>, _attrs, _} = _el | _els],
 		    Status_codes, Items, Invites, Decline, Destroy) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
-			       Status_codes, Items, Invites,
-			       decode_muc_user_decline(__TopXMLNS, __IgnoreEls,
-						       _el),
-			       Destroy);
-       true ->
-	   decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
-			       Status_codes, Items, Invites, Decline, Destroy)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes, Items, Invites,
+			      decode_muc_user_decline(__TopXMLNS, __IgnoreEls,
+						      _el),
+			      Destroy);
+      <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes, Items, Invites,
+			      decode_muc_user_decline(<<"http://jabber.org/protocol/muc#user">>,
+						      __IgnoreEls, _el),
+			      Destroy);
+      _ ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes, Items, Invites, Decline, Destroy)
     end;
 decode_muc_user_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"destroy">>, _attrs, _} = _el | _els],
 		    Status_codes, Items, Invites, Decline, Destroy) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
-			       Status_codes, Items, Invites, Decline,
-			       decode_muc_user_destroy(__TopXMLNS, __IgnoreEls,
-						       _el));
-       true ->
-	   decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
-			       Status_codes, Items, Invites, Decline, Destroy)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes, Items, Invites, Decline,
+			      decode_muc_user_destroy(__TopXMLNS, __IgnoreEls,
+						      _el));
+      <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes, Items, Invites, Decline,
+			      decode_muc_user_destroy(<<"http://jabber.org/protocol/muc#user">>,
+						      __IgnoreEls, _el));
+      _ ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes, Items, Invites, Decline, Destroy)
     end;
 decode_muc_user_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"invite">>, _attrs, _} = _el | _els],
 		    Status_codes, Items, Invites, Decline, Destroy) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
-			       Status_codes, Items,
-			       [decode_muc_user_invite(__TopXMLNS, __IgnoreEls,
-						       _el)
-				| Invites],
-			       Decline, Destroy);
-       true ->
-	   decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
-			       Status_codes, Items, Invites, Decline, Destroy)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes, Items,
+			      [decode_muc_user_invite(__TopXMLNS, __IgnoreEls,
+						      _el)
+			       | Invites],
+			      Decline, Destroy);
+      <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes, Items,
+			      [decode_muc_user_invite(<<"http://jabber.org/protocol/muc#user">>,
+						      __IgnoreEls, _el)
+			       | Invites],
+			      Decline, Destroy);
+      _ ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes, Items, Invites, Decline, Destroy)
     end;
 decode_muc_user_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"item">>, _attrs, _} = _el | _els],
 		    Status_codes, Items, Invites, Decline, Destroy) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
-			       Status_codes,
-			       [decode_muc_user_item(__TopXMLNS, __IgnoreEls,
-						     _el)
-				| Items],
-			       Invites, Decline, Destroy);
-       true ->
-	   decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
-			       Status_codes, Items, Invites, Decline, Destroy)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes,
+			      [decode_muc_user_item(__TopXMLNS, __IgnoreEls,
+						    _el)
+			       | Items],
+			      Invites, Decline, Destroy);
+      <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes,
+			      [decode_muc_user_item(<<"http://jabber.org/protocol/muc#user">>,
+						    __IgnoreEls, _el)
+			       | Items],
+			      Invites, Decline, Destroy);
+      _ ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes, Items, Invites, Decline, Destroy)
     end;
 decode_muc_user_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"status">>, _attrs, _} = _el | _els],
 		    Status_codes, Items, Invites, Decline, Destroy) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
-			       case decode_muc_user_status(__TopXMLNS,
-							   __IgnoreEls, _el)
-				   of
-				 undefined -> Status_codes;
-				 _new_el -> [_new_el | Status_codes]
-			       end,
-			       Items, Invites, Decline, Destroy);
-       true ->
-	   decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
-			       Status_codes, Items, Invites, Decline, Destroy)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      case decode_muc_user_status(__TopXMLNS,
+							  __IgnoreEls, _el)
+				  of
+				undefined -> Status_codes;
+				_new_el -> [_new_el | Status_codes]
+			      end,
+			      Items, Invites, Decline, Destroy);
+      <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      case
+				decode_muc_user_status(<<"http://jabber.org/protocol/muc#user">>,
+						       __IgnoreEls, _el)
+				  of
+				undefined -> Status_codes;
+				_new_el -> [_new_el | Status_codes]
+			      end,
+			      Items, Invites, Decline, Destroy);
+      _ ->
+	  decode_muc_user_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status_codes, Items, Invites, Decline, Destroy)
     end;
 decode_muc_user_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		    Status_codes, Items, Invites, Decline, Destroy) ->
@@ -6030,42 +7061,64 @@ decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, [],
 decode_muc_user_item_els(__TopXMLNS, __IgnoreEls,
 			 [{xmlel, <<"actor">>, _attrs, _} = _el | _els], Actor,
 			 Continue, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
-				    decode_muc_user_actor(__TopXMLNS,
-							  __IgnoreEls, _el),
-				    Continue, Reason);
-       true ->
-	   decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
-				    Actor, Continue, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
+				   decode_muc_user_actor(__TopXMLNS,
+							 __IgnoreEls, _el),
+				   Continue, Reason);
+      <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
+				   decode_muc_user_actor(<<"http://jabber.org/protocol/muc#user">>,
+							 __IgnoreEls, _el),
+				   Continue, Reason);
+      _ ->
+	  decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
+				   Actor, Continue, Reason)
     end;
 decode_muc_user_item_els(__TopXMLNS, __IgnoreEls,
 			 [{xmlel, <<"continue">>, _attrs, _} = _el | _els],
 			 Actor, Continue, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
-				    Actor,
-				    decode_muc_user_continue(__TopXMLNS,
-							     __IgnoreEls, _el),
-				    Reason);
-       true ->
-	   decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
-				    Actor, Continue, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
+				   Actor,
+				   decode_muc_user_continue(__TopXMLNS,
+							    __IgnoreEls, _el),
+				   Reason);
+      <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
+				   Actor,
+				   decode_muc_user_continue(<<"http://jabber.org/protocol/muc#user">>,
+							    __IgnoreEls, _el),
+				   Reason);
+      _ ->
+	  decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
+				   Actor, Continue, Reason)
     end;
 decode_muc_user_item_els(__TopXMLNS, __IgnoreEls,
 			 [{xmlel, <<"reason">>, _attrs, _} = _el | _els], Actor,
 			 Continue, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
-				    Actor, Continue,
-				    decode_muc_user_reason(__TopXMLNS,
-							   __IgnoreEls, _el));
-       true ->
-	   decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
-				    Actor, Continue, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
+				   Actor, Continue,
+				   decode_muc_user_reason(__TopXMLNS,
+							  __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
+				   Actor, Continue,
+				   decode_muc_user_reason(<<"http://jabber.org/protocol/muc#user">>,
+							  __IgnoreEls, _el));
+      _ ->
+	  decode_muc_user_item_els(__TopXMLNS, __IgnoreEls, _els,
+				   Actor, Continue, Reason)
     end;
 decode_muc_user_item_els(__TopXMLNS, __IgnoreEls,
 			 [_ | _els], Actor, Continue, Reason) ->
@@ -6337,15 +7390,22 @@ decode_muc_user_invite_els(__TopXMLNS, __IgnoreEls, [],
 decode_muc_user_invite_els(__TopXMLNS, __IgnoreEls,
 			   [{xmlel, <<"reason">>, _attrs, _} = _el | _els],
 			   Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_user_invite_els(__TopXMLNS, __IgnoreEls,
-				      _els,
-				      decode_muc_user_reason(__TopXMLNS,
-							     __IgnoreEls, _el));
-       true ->
-	   decode_muc_user_invite_els(__TopXMLNS, __IgnoreEls,
-				      _els, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_invite_els(__TopXMLNS, __IgnoreEls,
+				     _els,
+				     decode_muc_user_reason(__TopXMLNS,
+							    __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_invite_els(__TopXMLNS, __IgnoreEls,
+				     _els,
+				     decode_muc_user_reason(<<"http://jabber.org/protocol/muc#user">>,
+							    __IgnoreEls, _el));
+      _ ->
+	  decode_muc_user_invite_els(__TopXMLNS, __IgnoreEls,
+				     _els, Reason)
     end;
 decode_muc_user_invite_els(__TopXMLNS, __IgnoreEls,
 			   [_ | _els], Reason) ->
@@ -6429,16 +7489,22 @@ decode_muc_user_destroy_els(__TopXMLNS, __IgnoreEls, [],
 decode_muc_user_destroy_els(__TopXMLNS, __IgnoreEls,
 			    [{xmlel, <<"reason">>, _attrs, _} = _el | _els],
 			    Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_user_destroy_els(__TopXMLNS, __IgnoreEls,
-				       _els,
-				       decode_muc_user_reason(__TopXMLNS,
-							      __IgnoreEls,
-							      _el));
-       true ->
-	   decode_muc_user_destroy_els(__TopXMLNS, __IgnoreEls,
-				       _els, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_destroy_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      decode_muc_user_reason(__TopXMLNS,
+							     __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_destroy_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      decode_muc_user_reason(<<"http://jabber.org/protocol/muc#user">>,
+							     __IgnoreEls, _el));
+      _ ->
+	  decode_muc_user_destroy_els(__TopXMLNS, __IgnoreEls,
+				      _els, Reason)
     end;
 decode_muc_user_destroy_els(__TopXMLNS, __IgnoreEls,
 			    [_ | _els], Reason) ->
@@ -6499,16 +7565,22 @@ decode_muc_user_decline_els(__TopXMLNS, __IgnoreEls, [],
 decode_muc_user_decline_els(__TopXMLNS, __IgnoreEls,
 			    [{xmlel, <<"reason">>, _attrs, _} = _el | _els],
 			    Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_muc_user_decline_els(__TopXMLNS, __IgnoreEls,
-				       _els,
-				       decode_muc_user_reason(__TopXMLNS,
-							      __IgnoreEls,
-							      _el));
-       true ->
-	   decode_muc_user_decline_els(__TopXMLNS, __IgnoreEls,
-				       _els, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_decline_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      decode_muc_user_reason(__TopXMLNS,
+							     __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/muc#user">> ->
+	  decode_muc_user_decline_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      decode_muc_user_reason(<<"http://jabber.org/protocol/muc#user">>,
+							     __IgnoreEls, _el));
+      _ ->
+	  decode_muc_user_decline_els(__TopXMLNS, __IgnoreEls,
+				      _els, Reason)
     end;
 decode_muc_user_decline_els(__TopXMLNS, __IgnoreEls,
 			    [_ | _els], Reason) ->
@@ -6744,47 +7816,71 @@ decode_bytestreams_els(__TopXMLNS, __IgnoreEls, [],
 decode_bytestreams_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"streamhost">>, _attrs, _} = _el | _els],
 		       Hosts, Used, Activate) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
-				  [decode_bytestreams_streamhost(__TopXMLNS,
-								 __IgnoreEls,
-								 _el)
-				   | Hosts],
-				  Used, Activate);
-       true ->
-	   decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
-				  Hosts, Used, Activate)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/bytestreams">> ->
+	  decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
+				 [decode_bytestreams_streamhost(__TopXMLNS,
+								__IgnoreEls,
+								_el)
+				  | Hosts],
+				 Used, Activate);
+      <<"http://jabber.org/protocol/bytestreams">> ->
+	  decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
+				 [decode_bytestreams_streamhost(<<"http://jabber.org/protocol/bytestreams">>,
+								__IgnoreEls,
+								_el)
+				  | Hosts],
+				 Used, Activate);
+      _ ->
+	  decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
+				 Hosts, Used, Activate)
     end;
 decode_bytestreams_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"streamhost-used">>, _attrs, _} = _el
 			| _els],
 		       Hosts, Used, Activate) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
-				  Hosts,
-				  decode_bytestreams_streamhost_used(__TopXMLNS,
-								     __IgnoreEls,
-								     _el),
-				  Activate);
-       true ->
-	   decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
-				  Hosts, Used, Activate)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/bytestreams">> ->
+	  decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
+				 Hosts,
+				 decode_bytestreams_streamhost_used(__TopXMLNS,
+								    __IgnoreEls,
+								    _el),
+				 Activate);
+      <<"http://jabber.org/protocol/bytestreams">> ->
+	  decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
+				 Hosts,
+				 decode_bytestreams_streamhost_used(<<"http://jabber.org/protocol/bytestreams">>,
+								    __IgnoreEls,
+								    _el),
+				 Activate);
+      _ ->
+	  decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
+				 Hosts, Used, Activate)
     end;
 decode_bytestreams_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"activate">>, _attrs, _} = _el | _els],
 		       Hosts, Used, Activate) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
-				  Hosts, Used,
-				  decode_bytestreams_activate(__TopXMLNS,
-							      __IgnoreEls,
-							      _el));
-       true ->
-	   decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
-				  Hosts, Used, Activate)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/bytestreams">> ->
+	  decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
+				 Hosts, Used,
+				 decode_bytestreams_activate(__TopXMLNS,
+							     __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/bytestreams">> ->
+	  decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
+				 Hosts, Used,
+				 decode_bytestreams_activate(<<"http://jabber.org/protocol/bytestreams">>,
+							     __IgnoreEls, _el));
+      _ ->
+	  decode_bytestreams_els(__TopXMLNS, __IgnoreEls, _els,
+				 Hosts, Used, Activate)
     end;
 decode_bytestreams_els(__TopXMLNS, __IgnoreEls,
 		       [_ | _els], Hosts, Used, Activate) ->
@@ -7055,9 +8151,21 @@ encode_bytestreams_streamhost_attr_port(_val, _acc) ->
 
 decode_delay(__TopXMLNS, __IgnoreEls,
 	     {xmlel, <<"delay">>, _attrs, _els}) ->
+    Desc = decode_delay_els(__TopXMLNS, __IgnoreEls, _els,
+			    <<>>),
     {Stamp, From} = decode_delay_attrs(__TopXMLNS, _attrs,
 				       undefined, undefined),
-    {delay, Stamp, From}.
+    {delay, Stamp, From, Desc}.
+
+decode_delay_els(__TopXMLNS, __IgnoreEls, [], Desc) ->
+    decode_delay_cdata(__TopXMLNS, Desc);
+decode_delay_els(__TopXMLNS, __IgnoreEls,
+		 [{xmlcdata, _data} | _els], Desc) ->
+    decode_delay_els(__TopXMLNS, __IgnoreEls, _els,
+		     <<Desc/binary, _data/binary>>);
+decode_delay_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		 Desc) ->
+    decode_delay_els(__TopXMLNS, __IgnoreEls, _els, Desc).
 
 decode_delay_attrs(__TopXMLNS,
 		   [{<<"stamp">>, _val} | _attrs], _Stamp, From) ->
@@ -7072,8 +8180,9 @@ decode_delay_attrs(__TopXMLNS, [], Stamp, From) ->
     {decode_delay_attr_stamp(__TopXMLNS, Stamp),
      decode_delay_attr_from(__TopXMLNS, From)}.
 
-encode_delay({delay, Stamp, From}, _xmlns_attrs) ->
-    _els = [],
+encode_delay({delay, Stamp, From, Desc},
+	     _xmlns_attrs) ->
+    _els = encode_delay_cdata(Desc, []),
     _attrs = encode_delay_attr_from(From,
 				    encode_delay_attr_stamp(Stamp,
 							    _xmlns_attrs)),
@@ -7107,6 +8216,13 @@ decode_delay_attr_from(__TopXMLNS, _val) ->
 encode_delay_attr_from(undefined, _acc) -> _acc;
 encode_delay_attr_from(_val, _acc) ->
     [{<<"from">>, enc_jid(_val)} | _acc].
+
+decode_delay_cdata(__TopXMLNS, <<>>) -> <<>>;
+decode_delay_cdata(__TopXMLNS, _val) -> _val.
+
+encode_delay_cdata(<<>>, _acc) -> _acc;
+encode_delay_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
 
 decode_chatstate_paused(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"paused">>, _attrs, _els}) ->
@@ -7170,15 +8286,22 @@ decode_shim_headers_els(__TopXMLNS, __IgnoreEls, [],
 decode_shim_headers_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"header">>, _attrs, _} = _el | _els],
 			Headers) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_shim_headers_els(__TopXMLNS, __IgnoreEls, _els,
-				   [decode_shim_header(__TopXMLNS, __IgnoreEls,
-						       _el)
-				    | Headers]);
-       true ->
-	   decode_shim_headers_els(__TopXMLNS, __IgnoreEls, _els,
-				   Headers)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/shim">> ->
+	  decode_shim_headers_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_shim_header(__TopXMLNS, __IgnoreEls,
+						      _el)
+				   | Headers]);
+      <<"http://jabber.org/protocol/shim">> ->
+	  decode_shim_headers_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_shim_header(<<"http://jabber.org/protocol/shim">>,
+						      __IgnoreEls, _el)
+				   | Headers]);
+      _ ->
+	  decode_shim_headers_els(__TopXMLNS, __IgnoreEls, _els,
+				  Headers)
     end;
 decode_shim_headers_els(__TopXMLNS, __IgnoreEls,
 			[_ | _els], Headers) ->
@@ -7267,130 +8390,194 @@ decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"subscriptions">>, _attrs, _} = _el | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations,
-			     decode_pubsub_subscriptions(__TopXMLNS,
-							 __IgnoreEls, _el),
-			     Retract, Unsubscribe, Subscribe, Publish);
-       true ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions, Retract,
-			     Unsubscribe, Subscribe, Publish)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations,
+			    decode_pubsub_subscriptions(__TopXMLNS, __IgnoreEls,
+							_el),
+			    Retract, Unsubscribe, Subscribe, Publish);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations,
+			    decode_pubsub_subscriptions(<<"http://jabber.org/protocol/pubsub">>,
+							__IgnoreEls, _el),
+			    Retract, Unsubscribe, Subscribe, Publish);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe, Publish)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"affiliations">>, _attrs, _} = _el | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options,
-			     decode_pubsub_affiliations(__TopXMLNS, __IgnoreEls,
-							_el),
-			     Subscriptions, Retract, Unsubscribe, Subscribe,
-			     Publish);
-       true ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions, Retract,
-			     Unsubscribe, Subscribe, Publish)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options,
+			    decode_pubsub_affiliations(__TopXMLNS, __IgnoreEls,
+						       _el),
+			    Subscriptions, Retract, Unsubscribe, Subscribe,
+			    Publish);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options,
+			    decode_pubsub_affiliations(<<"http://jabber.org/protocol/pubsub">>,
+						       __IgnoreEls, _el),
+			    Subscriptions, Retract, Unsubscribe, Subscribe,
+			    Publish);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe, Publish)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"subscribe">>, _attrs, _} = _el | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions, Retract,
-			     Unsubscribe,
-			     decode_pubsub_subscribe(__TopXMLNS, __IgnoreEls,
-						     _el),
-			     Publish);
-       true ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions, Retract,
-			     Unsubscribe, Subscribe, Publish)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe,
+			    decode_pubsub_subscribe(__TopXMLNS, __IgnoreEls,
+						    _el),
+			    Publish);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe,
+			    decode_pubsub_subscribe(<<"http://jabber.org/protocol/pubsub">>,
+						    __IgnoreEls, _el),
+			    Publish);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe, Publish)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"unsubscribe">>, _attrs, _} = _el | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions, Retract,
-			     decode_pubsub_unsubscribe(__TopXMLNS, __IgnoreEls,
-						       _el),
-			     Subscribe, Publish);
-       true ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions, Retract,
-			     Unsubscribe, Subscribe, Publish)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    decode_pubsub_unsubscribe(__TopXMLNS, __IgnoreEls,
+						      _el),
+			    Subscribe, Publish);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    decode_pubsub_unsubscribe(<<"http://jabber.org/protocol/pubsub">>,
+						      __IgnoreEls, _el),
+			    Subscribe, Publish);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe, Publish)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"options">>, _attrs, _} = _el | _els], Items,
 		  Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     decode_pubsub_options(__TopXMLNS, __IgnoreEls,
-						   _el),
-			     Affiliations, Subscriptions, Retract, Unsubscribe,
-			     Subscribe, Publish);
-       true ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions, Retract,
-			     Unsubscribe, Subscribe, Publish)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    decode_pubsub_options(__TopXMLNS, __IgnoreEls, _el),
+			    Affiliations, Subscriptions, Retract, Unsubscribe,
+			    Subscribe, Publish);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    decode_pubsub_options(<<"http://jabber.org/protocol/pubsub">>,
+						  __IgnoreEls, _el),
+			    Affiliations, Subscriptions, Retract, Unsubscribe,
+			    Subscribe, Publish);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe, Publish)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"items">>, _attrs, _} = _el | _els], Items,
 		  Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
-			     decode_pubsub_items(__TopXMLNS, __IgnoreEls, _el),
-			     Options, Affiliations, Subscriptions, Retract,
-			     Unsubscribe, Subscribe, Publish);
-       true ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions, Retract,
-			     Unsubscribe, Subscribe, Publish)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    decode_pubsub_items(__TopXMLNS, __IgnoreEls, _el),
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe, Publish);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    decode_pubsub_items(<<"http://jabber.org/protocol/pubsub">>,
+						__IgnoreEls, _el),
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe, Publish);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe, Publish)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"retract">>, _attrs, _} = _el | _els], Items,
 		  Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions,
-			     decode_pubsub_retract(__TopXMLNS, __IgnoreEls,
-						   _el),
-			     Unsubscribe, Subscribe, Publish);
-       true ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions, Retract,
-			     Unsubscribe, Subscribe, Publish)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions,
+			    decode_pubsub_retract(__TopXMLNS, __IgnoreEls, _el),
+			    Unsubscribe, Subscribe, Publish);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions,
+			    decode_pubsub_retract(<<"http://jabber.org/protocol/pubsub">>,
+						  __IgnoreEls, _el),
+			    Unsubscribe, Subscribe, Publish);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe, Publish)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"publish">>, _attrs, _} = _el | _els], Items,
 		  Options, Affiliations, Subscriptions, Retract,
 		  Unsubscribe, Subscribe, Publish) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions, Retract,
-			     Unsubscribe, Subscribe,
-			     decode_pubsub_publish(__TopXMLNS, __IgnoreEls,
-						   _el));
-       true ->
-	   decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			     Options, Affiliations, Subscriptions, Retract,
-			     Unsubscribe, Subscribe, Publish)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe,
+			    decode_pubsub_publish(__TopXMLNS, __IgnoreEls,
+						  _el));
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe,
+			    decode_pubsub_publish(<<"http://jabber.org/protocol/pubsub">>,
+						  __IgnoreEls, _el));
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+			    Options, Affiliations, Subscriptions, Retract,
+			    Unsubscribe, Subscribe, Publish)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		  Items, Options, Affiliations, Subscriptions, Retract,
@@ -7461,15 +8648,22 @@ decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls, [],
 decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls,
 			  [{xmlel, <<"item">>, _attrs, _} = _el | _els],
 			  Items) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls, _els,
-				     [decode_pubsub_item(__TopXMLNS,
-							 __IgnoreEls, _el)
-				      | Items]);
-       true ->
-	   decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls, _els,
-				     Items)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls, _els,
+				    [decode_pubsub_item(__TopXMLNS, __IgnoreEls,
+							_el)
+				     | Items]);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls, _els,
+				    [decode_pubsub_item(<<"http://jabber.org/protocol/pubsub">>,
+							__IgnoreEls, _el)
+				     | Items]);
+      _ ->
+	  decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls, _els,
+				    Items)
     end;
 decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls,
 			  [_ | _els], Items) ->
@@ -7549,13 +8743,14 @@ decode_pubsub_options_els(__TopXMLNS, __IgnoreEls, [],
     Xdata;
 decode_pubsub_options_els(__TopXMLNS, __IgnoreEls,
 			  [{xmlel, <<"x">>, _attrs, _} = _el | _els], Xdata) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<"jabber:x:data">> ->
-	   decode_pubsub_options_els(__TopXMLNS, __IgnoreEls, _els,
-				     decode_xdata(_xmlns, __IgnoreEls, _el));
-       true ->
-	   decode_pubsub_options_els(__TopXMLNS, __IgnoreEls, _els,
-				     Xdata)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_pubsub_options_els(__TopXMLNS, __IgnoreEls, _els,
+				    decode_xdata(<<"jabber:x:data">>,
+						 __IgnoreEls, _el));
+      _ ->
+	  decode_pubsub_options_els(__TopXMLNS, __IgnoreEls, _els,
+				    Xdata)
     end;
 decode_pubsub_options_els(__TopXMLNS, __IgnoreEls,
 			  [_ | _els], Xdata) ->
@@ -7654,15 +8849,22 @@ decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls, [],
 decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls,
 			  [{xmlel, <<"item">>, _attrs, _} = _el | _els],
 			  Items) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls, _els,
-				     [decode_pubsub_item(__TopXMLNS,
-							 __IgnoreEls, _el)
-				      | Items]);
-       true ->
-	   decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls, _els,
-				     Items)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls, _els,
+				    [decode_pubsub_item(__TopXMLNS, __IgnoreEls,
+							_el)
+				     | Items]);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls, _els,
+				    [decode_pubsub_item(<<"http://jabber.org/protocol/pubsub">>,
+							__IgnoreEls, _el)
+				     | Items]);
+      _ ->
+	  decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls, _els,
+				    Items)
     end;
 decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls,
 			  [_ | _els], Items) ->
@@ -7857,17 +9059,26 @@ decode_pubsub_affiliations_els(__TopXMLNS, __IgnoreEls,
 			       [{xmlel, <<"affiliation">>, _attrs, _} = _el
 				| _els],
 			       Affiliations) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_affiliations_els(__TopXMLNS, __IgnoreEls,
-					  _els,
-					  [decode_pubsub_affiliation(__TopXMLNS,
-								     __IgnoreEls,
-								     _el)
-					   | Affiliations]);
-       true ->
-	   decode_pubsub_affiliations_els(__TopXMLNS, __IgnoreEls,
-					  _els, Affiliations)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_affiliations_els(__TopXMLNS, __IgnoreEls,
+					 _els,
+					 [decode_pubsub_affiliation(__TopXMLNS,
+								    __IgnoreEls,
+								    _el)
+					  | Affiliations]);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_affiliations_els(__TopXMLNS, __IgnoreEls,
+					 _els,
+					 [decode_pubsub_affiliation(<<"http://jabber.org/protocol/pubsub">>,
+								    __IgnoreEls,
+								    _el)
+					  | Affiliations]);
+      _ ->
+	  decode_pubsub_affiliations_els(__TopXMLNS, __IgnoreEls,
+					 _els, Affiliations)
     end;
 decode_pubsub_affiliations_els(__TopXMLNS, __IgnoreEls,
 			       [_ | _els], Affiliations) ->
@@ -7908,17 +9119,26 @@ decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
 				[{xmlel, <<"subscription">>, _attrs, _} = _el
 				 | _els],
 				Subscriptions) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
-					   _els,
-					   [decode_pubsub_subscription(__TopXMLNS,
-								       __IgnoreEls,
-								       _el)
-					    | Subscriptions]);
-       true ->
-	   decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
-					   _els, Subscriptions)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
+					  _els,
+					  [decode_pubsub_subscription(__TopXMLNS,
+								      __IgnoreEls,
+								      _el)
+					   | Subscriptions]);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
+					  _els,
+					  [decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub">>,
+								      __IgnoreEls,
+								      _el)
+					   | Subscriptions]);
+      _ ->
+	  decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
+					  _els, Subscriptions)
     end;
 decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
 				[_ | _els], Subscriptions) ->
@@ -7981,15 +9201,22 @@ decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, [],
 decode_pubsub_event_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"items">>, _attrs, _} = _el | _els],
 			Items) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
-				   [decode_pubsub_event_items(__TopXMLNS,
-							      __IgnoreEls, _el)
-				    | Items]);
-       true ->
-	   decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
-				   Items)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_pubsub_event_items(__TopXMLNS,
+							     __IgnoreEls, _el)
+				   | Items]);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_pubsub_event_items(<<"http://jabber.org/protocol/pubsub#event">>,
+							     __IgnoreEls, _el)
+				   | Items]);
+      _ ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items)
     end;
 decode_pubsub_event_els(__TopXMLNS, __IgnoreEls,
 			[_ | _els], Items) ->
@@ -8023,33 +9250,52 @@ decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
 decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
 			      [{xmlel, <<"retract">>, _attrs, _} = _el | _els],
 			      Items, Retract) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-					 _els, Items,
-					 [decode_pubsub_event_retract(__TopXMLNS,
-								      __IgnoreEls,
-								      _el)
-					  | Retract]);
-       true ->
-	   decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-					 _els, Items, Retract)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
+					_els, Items,
+					[decode_pubsub_event_retract(__TopXMLNS,
+								     __IgnoreEls,
+								     _el)
+					 | Retract]);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
+					_els, Items,
+					[decode_pubsub_event_retract(<<"http://jabber.org/protocol/pubsub#event">>,
+								     __IgnoreEls,
+								     _el)
+					 | Retract]);
+      _ ->
+	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
+					_els, Items, Retract)
     end;
 decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
 			      [{xmlel, <<"item">>, _attrs, _} = _el | _els],
 			      Items, Retract) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-					 _els,
-					 [decode_pubsub_event_item(__TopXMLNS,
-								   __IgnoreEls,
-								   _el)
-					  | Items],
-					 Retract);
-       true ->
-	   decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-					 _els, Items, Retract)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
+					_els,
+					[decode_pubsub_event_item(__TopXMLNS,
+								  __IgnoreEls,
+								  _el)
+					 | Items],
+					Retract);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
+					_els,
+					[decode_pubsub_event_item(<<"http://jabber.org/protocol/pubsub#event">>,
+								  __IgnoreEls,
+								  _el)
+					 | Items],
+					Retract);
+      _ ->
+	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
+					_els, Items, Retract)
     end;
 decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
 			      [_ | _els], Items, Retract) ->
@@ -8243,15 +9489,22 @@ decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, [],
     lists:reverse(Items);
 decode_pubsub_items_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"item">>, _attrs, _} = _el | _els], Items) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
-				   [decode_pubsub_item(__TopXMLNS, __IgnoreEls,
-						       _el)
-				    | Items]);
-       true ->
-	   decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
-				   Items)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_pubsub_item(__TopXMLNS, __IgnoreEls,
+						      _el)
+				   | Items]);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_pubsub_item(<<"http://jabber.org/protocol/pubsub">>,
+						      __IgnoreEls, _el)
+				   | Items]);
+      _ ->
+	  decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items)
     end;
 decode_pubsub_items_els(__TopXMLNS, __IgnoreEls,
 			[_ | _els], Items) ->
@@ -8580,71 +9833,104 @@ decode_xdata_els(__TopXMLNS, __IgnoreEls, [], Fields,
 decode_xdata_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"instructions">>, _attrs, _} = _el | _els],
 		 Fields, Items, Instructions, Reported, Title) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
-			    Items,
-			    case decode_xdata_instructions(__TopXMLNS,
-							   __IgnoreEls, _el)
-				of
-			      undefined -> Instructions;
-			      _new_el -> [_new_el | Instructions]
-			    end,
-			    Reported, Title);
-       true ->
-	   decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
-			    Items, Instructions, Reported, Title)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   Items,
+			   case decode_xdata_instructions(__TopXMLNS,
+							  __IgnoreEls, _el)
+			       of
+			     undefined -> Instructions;
+			     _new_el -> [_new_el | Instructions]
+			   end,
+			   Reported, Title);
+      <<"jabber:x:data">> ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   Items,
+			   case decode_xdata_instructions(<<"jabber:x:data">>,
+							  __IgnoreEls, _el)
+			       of
+			     undefined -> Instructions;
+			     _new_el -> [_new_el | Instructions]
+			   end,
+			   Reported, Title);
+      _ ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   Items, Instructions, Reported, Title)
     end;
 decode_xdata_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"title">>, _attrs, _} = _el | _els], Fields,
 		 Items, Instructions, Reported, Title) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
-			    Items, Instructions, Reported,
-			    decode_xdata_title(__TopXMLNS, __IgnoreEls, _el));
-       true ->
-	   decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
-			    Items, Instructions, Reported, Title)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   Items, Instructions, Reported,
+			   decode_xdata_title(__TopXMLNS, __IgnoreEls, _el));
+      <<"jabber:x:data">> ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   Items, Instructions, Reported,
+			   decode_xdata_title(<<"jabber:x:data">>, __IgnoreEls,
+					      _el));
+      _ ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   Items, Instructions, Reported, Title)
     end;
 decode_xdata_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"reported">>, _attrs, _} = _el | _els],
 		 Fields, Items, Instructions, Reported, Title) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
-			    Items, Instructions,
-			    decode_xdata_reported(__TopXMLNS, __IgnoreEls, _el),
-			    Title);
-       true ->
-	   decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
-			    Items, Instructions, Reported, Title)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   Items, Instructions,
+			   decode_xdata_reported(__TopXMLNS, __IgnoreEls, _el),
+			   Title);
+      <<"jabber:x:data">> ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   Items, Instructions,
+			   decode_xdata_reported(<<"jabber:x:data">>,
+						 __IgnoreEls, _el),
+			   Title);
+      _ ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   Items, Instructions, Reported, Title)
     end;
 decode_xdata_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"item">>, _attrs, _} = _el | _els], Fields,
 		 Items, Instructions, Reported, Title) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
-			    [decode_xdata_item(__TopXMLNS, __IgnoreEls, _el)
-			     | Items],
-			    Instructions, Reported, Title);
-       true ->
-	   decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
-			    Items, Instructions, Reported, Title)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   [decode_xdata_item(__TopXMLNS, __IgnoreEls, _el)
+			    | Items],
+			   Instructions, Reported, Title);
+      <<"jabber:x:data">> ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   [decode_xdata_item(<<"jabber:x:data">>, __IgnoreEls,
+					      _el)
+			    | Items],
+			   Instructions, Reported, Title);
+      _ ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   Items, Instructions, Reported, Title)
     end;
 decode_xdata_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"field">>, _attrs, _} = _el | _els], Fields,
 		 Items, Instructions, Reported, Title) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_els(__TopXMLNS, __IgnoreEls, _els,
-			    [decode_xdata_field(__TopXMLNS, __IgnoreEls, _el)
-			     | Fields],
-			    Items, Instructions, Reported, Title);
-       true ->
-	   decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
-			    Items, Instructions, Reported, Title)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els,
+			   [decode_xdata_field(__TopXMLNS, __IgnoreEls, _el)
+			    | Fields],
+			   Items, Instructions, Reported, Title);
+      <<"jabber:x:data">> ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els,
+			   [decode_xdata_field(<<"jabber:x:data">>, __IgnoreEls,
+					       _el)
+			    | Fields],
+			   Items, Instructions, Reported, Title);
+      _ ->
+	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
+			   Items, Instructions, Reported, Title)
     end;
 decode_xdata_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		 Fields, Items, Instructions, Reported, Title) ->
@@ -8724,15 +10010,20 @@ decode_xdata_item_els(__TopXMLNS, __IgnoreEls, [],
 decode_xdata_item_els(__TopXMLNS, __IgnoreEls,
 		      [{xmlel, <<"field">>, _attrs, _} = _el | _els],
 		      Fields) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_item_els(__TopXMLNS, __IgnoreEls, _els,
-				 [decode_xdata_field(__TopXMLNS, __IgnoreEls,
-						     _el)
-				  | Fields]);
-       true ->
-	   decode_xdata_item_els(__TopXMLNS, __IgnoreEls, _els,
-				 Fields)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_item_els(__TopXMLNS, __IgnoreEls, _els,
+				[decode_xdata_field(__TopXMLNS, __IgnoreEls,
+						    _el)
+				 | Fields]);
+      <<"jabber:x:data">> ->
+	  decode_xdata_item_els(__TopXMLNS, __IgnoreEls, _els,
+				[decode_xdata_field(<<"jabber:x:data">>,
+						    __IgnoreEls, _el)
+				 | Fields]);
+      _ ->
+	  decode_xdata_item_els(__TopXMLNS, __IgnoreEls, _els,
+				Fields)
     end;
 decode_xdata_item_els(__TopXMLNS, __IgnoreEls,
 		      [_ | _els], Fields) ->
@@ -8762,15 +10053,20 @@ decode_xdata_reported_els(__TopXMLNS, __IgnoreEls, [],
 decode_xdata_reported_els(__TopXMLNS, __IgnoreEls,
 			  [{xmlel, <<"field">>, _attrs, _} = _el | _els],
 			  Fields) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_reported_els(__TopXMLNS, __IgnoreEls, _els,
-				     [decode_xdata_field(__TopXMLNS,
-							 __IgnoreEls, _el)
-				      | Fields]);
-       true ->
-	   decode_xdata_reported_els(__TopXMLNS, __IgnoreEls, _els,
-				     Fields)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_reported_els(__TopXMLNS, __IgnoreEls, _els,
+				    [decode_xdata_field(__TopXMLNS, __IgnoreEls,
+							_el)
+				     | Fields]);
+      <<"jabber:x:data">> ->
+	  decode_xdata_reported_els(__TopXMLNS, __IgnoreEls, _els,
+				    [decode_xdata_field(<<"jabber:x:data">>,
+							__IgnoreEls, _el)
+				     | Fields]);
+      _ ->
+	  decode_xdata_reported_els(__TopXMLNS, __IgnoreEls, _els,
+				    Fields)
     end;
 decode_xdata_reported_els(__TopXMLNS, __IgnoreEls,
 			  [_ | _els], Fields) ->
@@ -8871,67 +10167,97 @@ decode_xdata_field_els(__TopXMLNS, __IgnoreEls, [],
 decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"required">>, _attrs, _} = _el | _els],
 		       Options, Values, Desc, Required) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				  Options, Values, Desc,
-				  decode_xdata_field_required(__TopXMLNS,
-							      __IgnoreEls,
-							      _el));
-       true ->
-	   decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				  Options, Values, Desc, Required)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 Options, Values, Desc,
+				 decode_xdata_field_required(__TopXMLNS,
+							     __IgnoreEls, _el));
+      <<"jabber:x:data">> ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 Options, Values, Desc,
+				 decode_xdata_field_required(<<"jabber:x:data">>,
+							     __IgnoreEls, _el));
+      _ ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 Options, Values, Desc, Required)
     end;
 decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"desc">>, _attrs, _} = _el | _els], Options,
 		       Values, Desc, Required) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				  Options, Values,
-				  decode_xdata_field_desc(__TopXMLNS,
-							  __IgnoreEls, _el),
-				  Required);
-       true ->
-	   decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				  Options, Values, Desc, Required)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 Options, Values,
+				 decode_xdata_field_desc(__TopXMLNS,
+							 __IgnoreEls, _el),
+				 Required);
+      <<"jabber:x:data">> ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 Options, Values,
+				 decode_xdata_field_desc(<<"jabber:x:data">>,
+							 __IgnoreEls, _el),
+				 Required);
+      _ ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 Options, Values, Desc, Required)
     end;
 decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"value">>, _attrs, _} = _el | _els], Options,
 		       Values, Desc, Required) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				  Options,
-				  case decode_xdata_field_value(__TopXMLNS,
-								__IgnoreEls,
-								_el)
-				      of
-				    undefined -> Values;
-				    _new_el -> [_new_el | Values]
-				  end,
-				  Desc, Required);
-       true ->
-	   decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				  Options, Values, Desc, Required)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 Options,
+				 case decode_xdata_field_value(__TopXMLNS,
+							       __IgnoreEls, _el)
+				     of
+				   undefined -> Values;
+				   _new_el -> [_new_el | Values]
+				 end,
+				 Desc, Required);
+      <<"jabber:x:data">> ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 Options,
+				 case
+				   decode_xdata_field_value(<<"jabber:x:data">>,
+							    __IgnoreEls, _el)
+				     of
+				   undefined -> Values;
+				   _new_el -> [_new_el | Values]
+				 end,
+				 Desc, Required);
+      _ ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 Options, Values, Desc, Required)
     end;
 decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"option">>, _attrs, _} = _el | _els],
 		       Options, Values, Desc, Required) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				  case decode_xdata_field_option(__TopXMLNS,
-								 __IgnoreEls,
-								 _el)
-				      of
-				    undefined -> Options;
-				    _new_el -> [_new_el | Options]
-				  end,
-				  Values, Desc, Required);
-       true ->
-	   decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				  Options, Values, Desc, Required)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 case decode_xdata_field_option(__TopXMLNS,
+								__IgnoreEls,
+								_el)
+				     of
+				   undefined -> Options;
+				   _new_el -> [_new_el | Options]
+				 end,
+				 Values, Desc, Required);
+      <<"jabber:x:data">> ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 case
+				   decode_xdata_field_option(<<"jabber:x:data">>,
+							     __IgnoreEls, _el)
+				     of
+				   undefined -> Options;
+				   _new_el -> [_new_el | Options]
+				 end,
+				 Values, Desc, Required);
+      _ ->
+	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				 Options, Values, Desc, Required)
     end;
 decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 		       [_ | _els], Options, Values, Desc, Required) ->
@@ -9045,17 +10371,24 @@ decode_xdata_field_option_els(__TopXMLNS, __IgnoreEls,
 decode_xdata_field_option_els(__TopXMLNS, __IgnoreEls,
 			      [{xmlel, <<"value">>, _attrs, _} = _el | _els],
 			      Value) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_xdata_field_option_els(__TopXMLNS, __IgnoreEls,
-					 _els,
-					 {value,
-					  decode_xdata_field_value(__TopXMLNS,
-								   __IgnoreEls,
-								   _el)});
-       true ->
-	   decode_xdata_field_option_els(__TopXMLNS, __IgnoreEls,
-					 _els, Value)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
+	  decode_xdata_field_option_els(__TopXMLNS, __IgnoreEls,
+					_els,
+					{value,
+					 decode_xdata_field_value(__TopXMLNS,
+								  __IgnoreEls,
+								  _el)});
+      <<"jabber:x:data">> ->
+	  decode_xdata_field_option_els(__TopXMLNS, __IgnoreEls,
+					_els,
+					{value,
+					 decode_xdata_field_value(<<"jabber:x:data">>,
+								  __IgnoreEls,
+								  _el)});
+      _ ->
+	  decode_xdata_field_option_els(__TopXMLNS, __IgnoreEls,
+					_els, Value)
     end;
 decode_xdata_field_option_els(__TopXMLNS, __IgnoreEls,
 			      [_ | _els], Value) ->
@@ -9146,41 +10479,46 @@ encode_xdata_field_required(true, _xmlns_attrs) ->
 
 decode_vcard_xupdate(__TopXMLNS, __IgnoreEls,
 		     {xmlel, <<"x">>, _attrs, _els}) ->
-    Photo = decode_vcard_xupdate_els(__TopXMLNS,
-				     __IgnoreEls, _els, undefined),
-    {vcard_xupdate, Photo}.
+    Hash = decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls,
+				    _els, undefined),
+    {vcard_xupdate, undefined, Hash}.
 
 decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, [],
-			 Photo) ->
-    Photo;
+			 Hash) ->
+    Hash;
 decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls,
 			 [{xmlel, <<"photo">>, _attrs, _} = _el | _els],
-			 Photo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, _els,
-				    decode_vcard_xupdate_photo(__TopXMLNS,
-							       __IgnoreEls,
-							       _el));
-       true ->
-	   decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, _els,
-				    Photo)
+			 Hash) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp:x:update">> ->
+	  decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, _els,
+				   decode_vcard_xupdate_photo(__TopXMLNS,
+							      __IgnoreEls,
+							      _el));
+      <<"vcard-temp:x:update">> ->
+	  decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, _els,
+				   decode_vcard_xupdate_photo(<<"vcard-temp:x:update">>,
+							      __IgnoreEls,
+							      _el));
+      _ ->
+	  decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, _els,
+				   Hash)
     end;
 decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls,
-			 [_ | _els], Photo) ->
+			 [_ | _els], Hash) ->
     decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, _els,
-			     Photo).
+			     Hash).
 
-encode_vcard_xupdate({vcard_xupdate, Photo},
+encode_vcard_xupdate({vcard_xupdate, undefined, Hash},
 		     _xmlns_attrs) ->
-    _els =
-	lists:reverse('encode_vcard_xupdate_$photo'(Photo, [])),
+    _els = lists:reverse('encode_vcard_xupdate_$hash'(Hash,
+						      [])),
     _attrs = _xmlns_attrs,
     {xmlel, <<"x">>, _attrs, _els}.
 
-'encode_vcard_xupdate_$photo'(undefined, _acc) -> _acc;
-'encode_vcard_xupdate_$photo'(Photo, _acc) ->
-    [encode_vcard_xupdate_photo(Photo, []) | _acc].
+'encode_vcard_xupdate_$hash'(undefined, _acc) -> _acc;
+'encode_vcard_xupdate_$hash'(Hash, _acc) ->
+    [encode_vcard_xupdate_photo(Hash, []) | _acc].
 
 decode_vcard_xupdate_photo(__TopXMLNS, __IgnoreEls,
 			   {xmlel, <<"photo">>, _attrs, _els}) ->
@@ -9215,833 +10553,1153 @@ encode_vcard_xupdate_photo_cdata(undefined, _acc) ->
 encode_vcard_xupdate_photo_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
-decode_vcard(__TopXMLNS, __IgnoreEls,
-	     {xmlel, <<"vCard">>, _attrs, _els}) ->
+decode_vcard_temp(__TopXMLNS, __IgnoreEls,
+		  {xmlel, <<"vCard">>, _attrs, _els}) ->
     {Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
      Jabberid, Sound, Note, Role, Title, Nickname, Rev,
      Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
      Fn, Version, N, Photo, Logo, Geo} =
-	decode_vcard_els(__TopXMLNS, __IgnoreEls, _els,
-			 undefined, [], undefined, [], undefined, undefined,
-			 undefined, undefined, undefined, undefined, undefined,
-			 undefined, undefined, undefined, undefined, undefined,
-			 undefined, undefined, undefined, undefined, [], [], [],
-			 undefined, undefined, undefined, undefined, undefined,
-			 undefined),
-    {vcard, Version, Fn, N, Nickname, Photo, Bday, Adr,
+	decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+			      undefined, [], undefined, [], undefined,
+			      undefined, undefined, undefined, undefined,
+			      undefined, undefined, undefined, undefined,
+			      undefined, undefined, undefined, undefined,
+			      undefined, undefined, undefined, [], [], [],
+			      undefined, undefined, undefined, undefined,
+			      undefined, undefined),
+    {vcard_temp, Version, Fn, N, Nickname, Photo, Bday, Adr,
      Label, Tel, Email, Jabberid, Mailer, Tz, Geo, Title,
      Role, Logo, Org, Categories, Note, Prodid, Rev,
      Sort_string, Sound, Uid, Url, Class, Key, Desc}.
 
-decode_vcard_els(__TopXMLNS, __IgnoreEls, [], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, [],
+		      Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
+		      Jabberid, Sound, Note, Role, Title, Nickname, Rev,
+		      Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
+		      Fn, Version, N, Photo, Logo, Geo) ->
     {Mailer, lists:reverse(Adr), Class, Categories, Desc,
      Uid, Prodid, Jabberid, Sound, Note, Role, Title,
      Nickname, Rev, Sort_string, Org, Bday, Key, Tz, Url,
      lists:reverse(Email), lists:reverse(Tel),
      lists:reverse(Label), Fn, Version, N, Photo, Logo, Geo};
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"N">>, _attrs, _} = _el | _els], Mailer, Adr,
-		 Class, Categories, Desc, Uid, Prodid, Jabberid, Sound,
-		 Note, Role, Title, Nickname, Rev, Sort_string, Org,
-		 Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version, N,
-		 Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version,
-			    decode_vcard_N(__TopXMLNS, __IgnoreEls, _el), Photo,
-			    Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"N">>, _attrs, _} = _el | _els], Mailer, Adr,
+		      Class, Categories, Desc, Uid, Prodid, Jabberid, Sound,
+		      Note, Role, Title, Nickname, Rev, Sort_string, Org,
+		      Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version, N,
+		      Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version,
+				decode_vcard_N(__TopXMLNS, __IgnoreEls, _el),
+				Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version,
+				decode_vcard_N(<<"vcard-temp">>, __IgnoreEls,
+					       _el),
+				Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"ADR">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    [decode_vcard_ADR(__TopXMLNS, __IgnoreEls, _el)
-			     | Adr],
-			    Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"ADR">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer,
+				[decode_vcard_ADR(__TopXMLNS, __IgnoreEls, _el)
+				 | Adr],
+				Class, Categories, Desc, Uid, Prodid, Jabberid,
+				Sound, Note, Role, Title, Nickname, Rev,
+				Sort_string, Org, Bday, Key, Tz, Url, Email,
+				Tel, Label, Fn, Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer,
+				[decode_vcard_ADR(<<"vcard-temp">>, __IgnoreEls,
+						  _el)
+				 | Adr],
+				Class, Categories, Desc, Uid, Prodid, Jabberid,
+				Sound, Note, Role, Title, Nickname, Rev,
+				Sort_string, Org, Bday, Key, Tz, Url, Email,
+				Tel, Label, Fn, Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"LABEL">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    [decode_vcard_LABEL(__TopXMLNS, __IgnoreEls, _el)
-			     | Label],
-			    Fn, Version, N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"LABEL">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel,
+				[decode_vcard_LABEL(__TopXMLNS, __IgnoreEls,
+						    _el)
+				 | Label],
+				Fn, Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel,
+				[decode_vcard_LABEL(<<"vcard-temp">>,
+						    __IgnoreEls, _el)
+				 | Label],
+				Fn, Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"TEL">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email,
-			    [decode_vcard_TEL(__TopXMLNS, __IgnoreEls, _el)
-			     | Tel],
-			    Label, Fn, Version, N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"TEL">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email,
+				[decode_vcard_TEL(__TopXMLNS, __IgnoreEls, _el)
+				 | Tel],
+				Label, Fn, Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email,
+				[decode_vcard_TEL(<<"vcard-temp">>, __IgnoreEls,
+						  _el)
+				 | Tel],
+				Label, Fn, Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"EMAIL">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url,
-			    [decode_vcard_EMAIL(__TopXMLNS, __IgnoreEls, _el)
-			     | Email],
-			    Tel, Label, Fn, Version, N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"EMAIL">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url,
+				[decode_vcard_EMAIL(__TopXMLNS, __IgnoreEls,
+						    _el)
+				 | Email],
+				Tel, Label, Fn, Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url,
+				[decode_vcard_EMAIL(<<"vcard-temp">>,
+						    __IgnoreEls, _el)
+				 | Email],
+				Tel, Label, Fn, Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"GEO">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo,
-			    decode_vcard_GEO(__TopXMLNS, __IgnoreEls, _el));
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"GEO">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo,
+				decode_vcard_GEO(__TopXMLNS, __IgnoreEls, _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo,
+				decode_vcard_GEO(<<"vcard-temp">>, __IgnoreEls,
+						 _el));
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"LOGO">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo,
-			    decode_vcard_LOGO(__TopXMLNS, __IgnoreEls, _el),
-			    Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"LOGO">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				decode_vcard_LOGO(__TopXMLNS, __IgnoreEls, _el),
+				Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				decode_vcard_LOGO(<<"vcard-temp">>, __IgnoreEls,
+						  _el),
+				Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"PHOTO">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N,
-			    decode_vcard_PHOTO(__TopXMLNS, __IgnoreEls, _el),
-			    Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"PHOTO">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N,
+				decode_vcard_PHOTO(__TopXMLNS, __IgnoreEls,
+						   _el),
+				Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N,
+				decode_vcard_PHOTO(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"ORG">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string,
-			    decode_vcard_ORG(__TopXMLNS, __IgnoreEls, _el),
-			    Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-			    N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"ORG">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string,
+				decode_vcard_ORG(__TopXMLNS, __IgnoreEls, _el),
+				Bday, Key, Tz, Url, Email, Tel, Label, Fn,
+				Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string,
+				decode_vcard_ORG(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+				Bday, Key, Tz, Url, Email, Tel, Label, Fn,
+				Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"SOUND">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    decode_vcard_SOUND(__TopXMLNS, __IgnoreEls, _el),
-			    Note, Role, Title, Nickname, Rev, Sort_string, Org,
-			    Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-			    N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"SOUND">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid,
+				decode_vcard_SOUND(__TopXMLNS, __IgnoreEls,
+						   _el),
+				Note, Role, Title, Nickname, Rev, Sort_string,
+				Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn,
+				Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid,
+				decode_vcard_SOUND(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				Note, Role, Title, Nickname, Rev, Sort_string,
+				Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn,
+				Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"KEY">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday,
-			    decode_vcard_KEY(__TopXMLNS, __IgnoreEls, _el), Tz,
-			    Url, Email, Tel, Label, Fn, Version, N, Photo, Logo,
-			    Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"KEY">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday,
+				decode_vcard_KEY(__TopXMLNS, __IgnoreEls, _el),
+				Tz, Url, Email, Tel, Label, Fn, Version, N,
+				Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday,
+				decode_vcard_KEY(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+				Tz, Url, Email, Tel, Label, Fn, Version, N,
+				Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"VERSION">>, _attrs, _} = _el | _els],
-		 Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
-		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
-		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
-		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn,
-			    decode_vcard_VERSION(__TopXMLNS, __IgnoreEls, _el),
-			    N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"FN">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label,
-			    decode_vcard_FN(__TopXMLNS, __IgnoreEls, _el),
-			    Version, N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"NICKNAME">>, _attrs, _} = _el | _els],
-		 Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
-		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
-		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
-		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title,
-			    decode_vcard_NICKNAME(__TopXMLNS, __IgnoreEls, _el),
-			    Rev, Sort_string, Org, Bday, Key, Tz, Url, Email,
-			    Tel, Label, Fn, Version, N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"BDAY">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org,
-			    decode_vcard_BDAY(__TopXMLNS, __IgnoreEls, _el),
-			    Key, Tz, Url, Email, Tel, Label, Fn, Version, N,
-			    Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"JABBERID">>, _attrs, _} = _el | _els],
-		 Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
-		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
-		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
-		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid,
-			    decode_vcard_JABBERID(__TopXMLNS, __IgnoreEls, _el),
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"MAILER">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els,
-			    decode_vcard_MAILER(__TopXMLNS, __IgnoreEls, _el),
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"TZ">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key,
-			    decode_vcard_TZ(__TopXMLNS, __IgnoreEls, _el), Url,
-			    Email, Tel, Label, Fn, Version, N, Photo, Logo,
-			    Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"TITLE">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role,
-			    decode_vcard_TITLE(__TopXMLNS, __IgnoreEls, _el),
-			    Nickname, Rev, Sort_string, Org, Bday, Key, Tz, Url,
-			    Email, Tel, Label, Fn, Version, N, Photo, Logo,
-			    Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"ROLE">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note,
-			    decode_vcard_ROLE(__TopXMLNS, __IgnoreEls, _el),
-			    Title, Nickname, Rev, Sort_string, Org, Bday, Key,
-			    Tz, Url, Email, Tel, Label, Fn, Version, N, Photo,
-			    Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"NOTE">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound,
-			    decode_vcard_NOTE(__TopXMLNS, __IgnoreEls, _el),
-			    Role, Title, Nickname, Rev, Sort_string, Org, Bday,
-			    Key, Tz, Url, Email, Tel, Label, Fn, Version, N,
-			    Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"PRODID">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid,
-			    decode_vcard_PRODID(__TopXMLNS, __IgnoreEls, _el),
-			    Jabberid, Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"REV">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname,
-			    decode_vcard_REV(__TopXMLNS, __IgnoreEls, _el),
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
-    end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"SORT-STRING">>, _attrs, _} = _el | _els],
-		 Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
-		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
-		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
-		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    decode_vcard_SORT_STRING(__TopXMLNS, __IgnoreEls,
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"VERSION">>, _attrs, _} = _el | _els],
+		      Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
+		      Jabberid, Sound, Note, Role, Title, Nickname, Rev,
+		      Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
+		      Fn, Version, N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn,
+				decode_vcard_VERSION(__TopXMLNS, __IgnoreEls,
 						     _el),
-			    Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn,
-			    Version, N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+				N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn,
+				decode_vcard_VERSION(<<"vcard-temp">>,
+						     __IgnoreEls, _el),
+				N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"UID">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc,
-			    decode_vcard_UID(__TopXMLNS, __IgnoreEls, _el),
-			    Prodid, Jabberid, Sound, Note, Role, Title,
-			    Nickname, Rev, Sort_string, Org, Bday, Key, Tz, Url,
-			    Email, Tel, Label, Fn, Version, N, Photo, Logo,
-			    Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"FN">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label,
+				decode_vcard_FN(__TopXMLNS, __IgnoreEls, _el),
+				Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label,
+				decode_vcard_FN(<<"vcard-temp">>, __IgnoreEls,
+						_el),
+				Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"URL">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz,
-			    decode_vcard_URL(__TopXMLNS, __IgnoreEls, _el),
-			    Email, Tel, Label, Fn, Version, N, Photo, Logo,
-			    Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"NICKNAME">>, _attrs, _} = _el | _els],
+		      Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
+		      Jabberid, Sound, Note, Role, Title, Nickname, Rev,
+		      Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
+		      Fn, Version, N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				decode_vcard_NICKNAME(__TopXMLNS, __IgnoreEls,
+						      _el),
+				Rev, Sort_string, Org, Bday, Key, Tz, Url,
+				Email, Tel, Label, Fn, Version, N, Photo, Logo,
+				Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				decode_vcard_NICKNAME(<<"vcard-temp">>,
+						      __IgnoreEls, _el),
+				Rev, Sort_string, Org, Bday, Key, Tz, Url,
+				Email, Tel, Label, Fn, Version, N, Photo, Logo,
+				Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"DESC">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories,
-			    decode_vcard_DESC(__TopXMLNS, __IgnoreEls, _el),
-			    Uid, Prodid, Jabberid, Sound, Note, Role, Title,
-			    Nickname, Rev, Sort_string, Org, Bday, Key, Tz, Url,
-			    Email, Tel, Label, Fn, Version, N, Photo, Logo,
-			    Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"BDAY">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org,
+				decode_vcard_BDAY(__TopXMLNS, __IgnoreEls, _el),
+				Key, Tz, Url, Email, Tel, Label, Fn, Version, N,
+				Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org,
+				decode_vcard_BDAY(<<"vcard-temp">>, __IgnoreEls,
+						  _el),
+				Key, Tz, Url, Email, Tel, Label, Fn, Version, N,
+				Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"CATEGORIES">>, _attrs, _} = _el | _els],
-		 Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
-		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
-		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
-		 Fn, Version, N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class,
-			    decode_vcard_CATEGORIES(__TopXMLNS, __IgnoreEls,
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"JABBERID">>, _attrs, _} = _el | _els],
+		      Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
+		      Jabberid, Sound, Note, Role, Title, Nickname, Rev,
+		      Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
+		      Fn, Version, N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid,
+				decode_vcard_JABBERID(__TopXMLNS, __IgnoreEls,
+						      _el),
+				Sound, Note, Role, Title, Nickname, Rev,
+				Sort_string, Org, Bday, Key, Tz, Url, Email,
+				Tel, Label, Fn, Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid,
+				decode_vcard_JABBERID(<<"vcard-temp">>,
+						      __IgnoreEls, _el),
+				Sound, Note, Role, Title, Nickname, Rev,
+				Sort_string, Org, Bday, Key, Tz, Url, Email,
+				Tel, Label, Fn, Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"MAILER">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				decode_vcard_MAILER(__TopXMLNS, __IgnoreEls,
 						    _el),
-			    Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
-			    Title, Nickname, Rev, Sort_string, Org, Bday, Key,
-			    Tz, Url, Email, Tel, Label, Fn, Version, N, Photo,
-			    Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+				Adr, Class, Categories, Desc, Uid, Prodid,
+				Jabberid, Sound, Note, Role, Title, Nickname,
+				Rev, Sort_string, Org, Bday, Key, Tz, Url,
+				Email, Tel, Label, Fn, Version, N, Photo, Logo,
+				Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				decode_vcard_MAILER(<<"vcard-temp">>,
+						    __IgnoreEls, _el),
+				Adr, Class, Categories, Desc, Uid, Prodid,
+				Jabberid, Sound, Note, Role, Title, Nickname,
+				Rev, Sort_string, Org, Bday, Key, Tz, Url,
+				Email, Tel, Label, Fn, Version, N, Photo, Logo,
+				Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"CLASS">>, _attrs, _} = _el | _els], Mailer,
-		 Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		 Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		 Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		 N, Photo, Logo, Geo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr,
-			    decode_vcard_CLASS(__TopXMLNS, __IgnoreEls, _el),
-			    Categories, Desc, Uid, Prodid, Jabberid, Sound,
-			    Note, Role, Title, Nickname, Rev, Sort_string, Org,
-			    Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-			    N, Photo, Logo, Geo);
-       true ->
-	   decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-			    Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-			    Sound, Note, Role, Title, Nickname, Rev,
-			    Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
-			    Label, Fn, Version, N, Photo, Logo, Geo)
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"TZ">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key,
+				decode_vcard_TZ(__TopXMLNS, __IgnoreEls, _el),
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key,
+				decode_vcard_TZ(<<"vcard-temp">>, __IgnoreEls,
+						_el),
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
     end;
-decode_vcard_els(__TopXMLNS, __IgnoreEls, [_ | _els],
-		 Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
-		 Jabberid, Sound, Note, Role, Title, Nickname, Rev,
-		 Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
-		 Fn, Version, N, Photo, Logo, Geo) ->
-    decode_vcard_els(__TopXMLNS, __IgnoreEls, _els, Mailer,
-		     Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
-		     Sound, Note, Role, Title, Nickname, Rev, Sort_string,
-		     Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
-		     N, Photo, Logo, Geo).
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"TITLE">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role,
+				decode_vcard_TITLE(__TopXMLNS, __IgnoreEls,
+						   _el),
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role,
+				decode_vcard_TITLE(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"ROLE">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note,
+				decode_vcard_ROLE(__TopXMLNS, __IgnoreEls, _el),
+				Title, Nickname, Rev, Sort_string, Org, Bday,
+				Key, Tz, Url, Email, Tel, Label, Fn, Version, N,
+				Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note,
+				decode_vcard_ROLE(<<"vcard-temp">>, __IgnoreEls,
+						  _el),
+				Title, Nickname, Rev, Sort_string, Org, Bday,
+				Key, Tz, Url, Email, Tel, Label, Fn, Version, N,
+				Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"NOTE">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound,
+				decode_vcard_NOTE(__TopXMLNS, __IgnoreEls, _el),
+				Role, Title, Nickname, Rev, Sort_string, Org,
+				Bday, Key, Tz, Url, Email, Tel, Label, Fn,
+				Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound,
+				decode_vcard_NOTE(<<"vcard-temp">>, __IgnoreEls,
+						  _el),
+				Role, Title, Nickname, Rev, Sort_string, Org,
+				Bday, Key, Tz, Url, Email, Tel, Label, Fn,
+				Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"PRODID">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				decode_vcard_PRODID(__TopXMLNS, __IgnoreEls,
+						    _el),
+				Jabberid, Sound, Note, Role, Title, Nickname,
+				Rev, Sort_string, Org, Bday, Key, Tz, Url,
+				Email, Tel, Label, Fn, Version, N, Photo, Logo,
+				Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				decode_vcard_PRODID(<<"vcard-temp">>,
+						    __IgnoreEls, _el),
+				Jabberid, Sound, Note, Role, Title, Nickname,
+				Rev, Sort_string, Org, Bday, Key, Tz, Url,
+				Email, Tel, Label, Fn, Version, N, Photo, Logo,
+				Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"REV">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname,
+				decode_vcard_REV(__TopXMLNS, __IgnoreEls, _el),
+				Sort_string, Org, Bday, Key, Tz, Url, Email,
+				Tel, Label, Fn, Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname,
+				decode_vcard_REV(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+				Sort_string, Org, Bday, Key, Tz, Url, Email,
+				Tel, Label, Fn, Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"SORT-STRING">>, _attrs, _} = _el | _els],
+		      Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
+		      Jabberid, Sound, Note, Role, Title, Nickname, Rev,
+		      Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
+		      Fn, Version, N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev,
+				decode_vcard_SORT_STRING(__TopXMLNS,
+							 __IgnoreEls, _el),
+				Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn,
+				Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev,
+				decode_vcard_SORT_STRING(<<"vcard-temp">>,
+							 __IgnoreEls, _el),
+				Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn,
+				Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"UID">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc,
+				decode_vcard_UID(__TopXMLNS, __IgnoreEls, _el),
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc,
+				decode_vcard_UID(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"URL">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				decode_vcard_URL(__TopXMLNS, __IgnoreEls, _el),
+				Email, Tel, Label, Fn, Version, N, Photo, Logo,
+				Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				decode_vcard_URL(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+				Email, Tel, Label, Fn, Version, N, Photo, Logo,
+				Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"DESC">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories,
+				decode_vcard_DESC(__TopXMLNS, __IgnoreEls, _el),
+				Uid, Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories,
+				decode_vcard_DESC(<<"vcard-temp">>, __IgnoreEls,
+						  _el),
+				Uid, Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"CATEGORIES">>, _attrs, _} = _el | _els],
+		      Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
+		      Jabberid, Sound, Note, Role, Title, Nickname, Rev,
+		      Sort_string, Org, Bday, Key, Tz, Url, Email, Tel, Label,
+		      Fn, Version, N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class,
+				decode_vcard_CATEGORIES(__TopXMLNS, __IgnoreEls,
+							_el),
+				Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
+				Title, Nickname, Rev, Sort_string, Org, Bday,
+				Key, Tz, Url, Email, Tel, Label, Fn, Version, N,
+				Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class,
+				decode_vcard_CATEGORIES(<<"vcard-temp">>,
+							__IgnoreEls, _el),
+				Desc, Uid, Prodid, Jabberid, Sound, Note, Role,
+				Title, Nickname, Rev, Sort_string, Org, Bday,
+				Key, Tz, Url, Email, Tel, Label, Fn, Version, N,
+				Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"CLASS">>, _attrs, _} = _el | _els], Mailer,
+		      Adr, Class, Categories, Desc, Uid, Prodid, Jabberid,
+		      Sound, Note, Role, Title, Nickname, Rev, Sort_string,
+		      Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn, Version,
+		      N, Photo, Logo, Geo) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr,
+				decode_vcard_CLASS(__TopXMLNS, __IgnoreEls,
+						   _el),
+				Categories, Desc, Uid, Prodid, Jabberid, Sound,
+				Note, Role, Title, Nickname, Rev, Sort_string,
+				Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn,
+				Version, N, Photo, Logo, Geo);
+      <<"vcard-temp">> ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr,
+				decode_vcard_CLASS(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				Categories, Desc, Uid, Prodid, Jabberid, Sound,
+				Note, Role, Title, Nickname, Rev, Sort_string,
+				Org, Bday, Key, Tz, Url, Email, Tel, Label, Fn,
+				Version, N, Photo, Logo, Geo);
+      _ ->
+	  decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+				Mailer, Adr, Class, Categories, Desc, Uid,
+				Prodid, Jabberid, Sound, Note, Role, Title,
+				Nickname, Rev, Sort_string, Org, Bday, Key, Tz,
+				Url, Email, Tel, Label, Fn, Version, N, Photo,
+				Logo, Geo)
+    end;
+decode_vcard_temp_els(__TopXMLNS, __IgnoreEls,
+		      [_ | _els], Mailer, Adr, Class, Categories, Desc, Uid,
+		      Prodid, Jabberid, Sound, Note, Role, Title, Nickname,
+		      Rev, Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
+		      Label, Fn, Version, N, Photo, Logo, Geo) ->
+    decode_vcard_temp_els(__TopXMLNS, __IgnoreEls, _els,
+			  Mailer, Adr, Class, Categories, Desc, Uid, Prodid,
+			  Jabberid, Sound, Note, Role, Title, Nickname, Rev,
+			  Sort_string, Org, Bday, Key, Tz, Url, Email, Tel,
+			  Label, Fn, Version, N, Photo, Logo, Geo).
 
-encode_vcard({vcard, Version, Fn, N, Nickname, Photo,
-	      Bday, Adr, Label, Tel, Email, Jabberid, Mailer, Tz, Geo,
-	      Title, Role, Logo, Org, Categories, Note, Prodid, Rev,
-	      Sort_string, Sound, Uid, Url, Class, Key, Desc},
-	     _xmlns_attrs) ->
-    _els = lists:reverse('encode_vcard_$mailer'(Mailer,
-						'encode_vcard_$adr'(Adr,
-								    'encode_vcard_$class'(Class,
-											  'encode_vcard_$categories'(Categories,
-														     'encode_vcard_$desc'(Desc,
-																	  'encode_vcard_$uid'(Uid,
-																			      'encode_vcard_$prodid'(Prodid,
-																						     'encode_vcard_$jabberid'(Jabberid,
-																									      'encode_vcard_$sound'(Sound,
-																												    'encode_vcard_$note'(Note,
-																															 'encode_vcard_$role'(Role,
-																																	      'encode_vcard_$title'(Title,
-																																				    'encode_vcard_$nickname'(Nickname,
-																																							     'encode_vcard_$rev'(Rev,
-																																										 'encode_vcard_$sort_string'(Sort_string,
-																																													     'encode_vcard_$org'(Org,
-																																																 'encode_vcard_$bday'(Bday,
-																																																		      'encode_vcard_$key'(Key,
-																																																					  'encode_vcard_$tz'(Tz,
-																																																							     'encode_vcard_$url'(Url,
-																																																										 'encode_vcard_$email'(Email,
-																																																												       'encode_vcard_$tel'(Tel,
-																																																															   'encode_vcard_$label'(Label,
-																																																																		 'encode_vcard_$fn'(Fn,
-																																																																				    'encode_vcard_$version'(Version,
-																																																																							    'encode_vcard_$n'(N,
-																																																																									      'encode_vcard_$photo'(Photo,
-																																																																												    'encode_vcard_$logo'(Logo,
-																																																																															 'encode_vcard_$geo'(Geo,
-																																																																																	     [])))))))))))))))))))))))))))))),
+encode_vcard_temp({vcard_temp, Version, Fn, N, Nickname,
+		   Photo, Bday, Adr, Label, Tel, Email, Jabberid, Mailer,
+		   Tz, Geo, Title, Role, Logo, Org, Categories, Note,
+		   Prodid, Rev, Sort_string, Sound, Uid, Url, Class, Key,
+		   Desc},
+		  _xmlns_attrs) ->
+    _els = lists:reverse('encode_vcard_temp_$mailer'(Mailer,
+						     'encode_vcard_temp_$adr'(Adr,
+									      'encode_vcard_temp_$class'(Class,
+													 'encode_vcard_temp_$categories'(Categories,
+																	 'encode_vcard_temp_$desc'(Desc,
+																				   'encode_vcard_temp_$uid'(Uid,
+																							    'encode_vcard_temp_$prodid'(Prodid,
+																											'encode_vcard_temp_$jabberid'(Jabberid,
+																														      'encode_vcard_temp_$sound'(Sound,
+																																		 'encode_vcard_temp_$note'(Note,
+																																					   'encode_vcard_temp_$role'(Role,
+																																								     'encode_vcard_temp_$title'(Title,
+																																												'encode_vcard_temp_$nickname'(Nickname,
+																																															      'encode_vcard_temp_$rev'(Rev,
+																																																		       'encode_vcard_temp_$sort_string'(Sort_string,
+																																																							'encode_vcard_temp_$org'(Org,
+																																																										 'encode_vcard_temp_$bday'(Bday,
+																																																													   'encode_vcard_temp_$key'(Key,
+																																																																    'encode_vcard_temp_$tz'(Tz,
+																																																																			    'encode_vcard_temp_$url'(Url,
+																																																																						     'encode_vcard_temp_$email'(Email,
+																																																																										'encode_vcard_temp_$tel'(Tel,
+																																																																													 'encode_vcard_temp_$label'(Label,
+																																																																																    'encode_vcard_temp_$fn'(Fn,
+																																																																																			    'encode_vcard_temp_$version'(Version,
+																																																																																							 'encode_vcard_temp_$n'(N,
+																																																																																										'encode_vcard_temp_$photo'(Photo,
+																																																																																													   'encode_vcard_temp_$logo'(Logo,
+																																																																																																     'encode_vcard_temp_$geo'(Geo,
+																																																																																																			      [])))))))))))))))))))))))))))))),
     _attrs = _xmlns_attrs,
     {xmlel, <<"vCard">>, _attrs, _els}.
 
-'encode_vcard_$mailer'(undefined, _acc) -> _acc;
-'encode_vcard_$mailer'(Mailer, _acc) ->
+'encode_vcard_temp_$mailer'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$mailer'(Mailer, _acc) ->
     [encode_vcard_MAILER(Mailer, []) | _acc].
 
-'encode_vcard_$adr'([], _acc) -> _acc;
-'encode_vcard_$adr'([Adr | _els], _acc) ->
-    'encode_vcard_$adr'(_els,
-			[encode_vcard_ADR(Adr, []) | _acc]).
+'encode_vcard_temp_$adr'([], _acc) -> _acc;
+'encode_vcard_temp_$adr'([Adr | _els], _acc) ->
+    'encode_vcard_temp_$adr'(_els,
+			     [encode_vcard_ADR(Adr, []) | _acc]).
 
-'encode_vcard_$class'(undefined, _acc) -> _acc;
-'encode_vcard_$class'(Class, _acc) ->
+'encode_vcard_temp_$class'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$class'(Class, _acc) ->
     [encode_vcard_CLASS(Class, []) | _acc].
 
-'encode_vcard_$categories'([], _acc) -> _acc;
-'encode_vcard_$categories'(Categories, _acc) ->
+'encode_vcard_temp_$categories'([], _acc) -> _acc;
+'encode_vcard_temp_$categories'(Categories, _acc) ->
     [encode_vcard_CATEGORIES(Categories, []) | _acc].
 
-'encode_vcard_$desc'(undefined, _acc) -> _acc;
-'encode_vcard_$desc'(Desc, _acc) ->
+'encode_vcard_temp_$desc'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$desc'(Desc, _acc) ->
     [encode_vcard_DESC(Desc, []) | _acc].
 
-'encode_vcard_$uid'(undefined, _acc) -> _acc;
-'encode_vcard_$uid'(Uid, _acc) ->
+'encode_vcard_temp_$uid'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$uid'(Uid, _acc) ->
     [encode_vcard_UID(Uid, []) | _acc].
 
-'encode_vcard_$prodid'(undefined, _acc) -> _acc;
-'encode_vcard_$prodid'(Prodid, _acc) ->
+'encode_vcard_temp_$prodid'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$prodid'(Prodid, _acc) ->
     [encode_vcard_PRODID(Prodid, []) | _acc].
 
-'encode_vcard_$jabberid'(undefined, _acc) -> _acc;
-'encode_vcard_$jabberid'(Jabberid, _acc) ->
+'encode_vcard_temp_$jabberid'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$jabberid'(Jabberid, _acc) ->
     [encode_vcard_JABBERID(Jabberid, []) | _acc].
 
-'encode_vcard_$sound'(undefined, _acc) -> _acc;
-'encode_vcard_$sound'(Sound, _acc) ->
+'encode_vcard_temp_$sound'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$sound'(Sound, _acc) ->
     [encode_vcard_SOUND(Sound, []) | _acc].
 
-'encode_vcard_$note'(undefined, _acc) -> _acc;
-'encode_vcard_$note'(Note, _acc) ->
+'encode_vcard_temp_$note'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$note'(Note, _acc) ->
     [encode_vcard_NOTE(Note, []) | _acc].
 
-'encode_vcard_$role'(undefined, _acc) -> _acc;
-'encode_vcard_$role'(Role, _acc) ->
+'encode_vcard_temp_$role'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$role'(Role, _acc) ->
     [encode_vcard_ROLE(Role, []) | _acc].
 
-'encode_vcard_$title'(undefined, _acc) -> _acc;
-'encode_vcard_$title'(Title, _acc) ->
+'encode_vcard_temp_$title'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$title'(Title, _acc) ->
     [encode_vcard_TITLE(Title, []) | _acc].
 
-'encode_vcard_$nickname'(undefined, _acc) -> _acc;
-'encode_vcard_$nickname'(Nickname, _acc) ->
+'encode_vcard_temp_$nickname'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$nickname'(Nickname, _acc) ->
     [encode_vcard_NICKNAME(Nickname, []) | _acc].
 
-'encode_vcard_$rev'(undefined, _acc) -> _acc;
-'encode_vcard_$rev'(Rev, _acc) ->
+'encode_vcard_temp_$rev'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$rev'(Rev, _acc) ->
     [encode_vcard_REV(Rev, []) | _acc].
 
-'encode_vcard_$sort_string'(undefined, _acc) -> _acc;
-'encode_vcard_$sort_string'(Sort_string, _acc) ->
+'encode_vcard_temp_$sort_string'(undefined, _acc) ->
+    _acc;
+'encode_vcard_temp_$sort_string'(Sort_string, _acc) ->
     [encode_vcard_SORT_STRING(Sort_string, []) | _acc].
 
-'encode_vcard_$org'(undefined, _acc) -> _acc;
-'encode_vcard_$org'(Org, _acc) ->
+'encode_vcard_temp_$org'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$org'(Org, _acc) ->
     [encode_vcard_ORG(Org, []) | _acc].
 
-'encode_vcard_$bday'(undefined, _acc) -> _acc;
-'encode_vcard_$bday'(Bday, _acc) ->
+'encode_vcard_temp_$bday'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$bday'(Bday, _acc) ->
     [encode_vcard_BDAY(Bday, []) | _acc].
 
-'encode_vcard_$key'(undefined, _acc) -> _acc;
-'encode_vcard_$key'(Key, _acc) ->
+'encode_vcard_temp_$key'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$key'(Key, _acc) ->
     [encode_vcard_KEY(Key, []) | _acc].
 
-'encode_vcard_$tz'(undefined, _acc) -> _acc;
-'encode_vcard_$tz'(Tz, _acc) ->
+'encode_vcard_temp_$tz'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$tz'(Tz, _acc) ->
     [encode_vcard_TZ(Tz, []) | _acc].
 
-'encode_vcard_$url'(undefined, _acc) -> _acc;
-'encode_vcard_$url'(Url, _acc) ->
+'encode_vcard_temp_$url'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$url'(Url, _acc) ->
     [encode_vcard_URL(Url, []) | _acc].
 
-'encode_vcard_$email'([], _acc) -> _acc;
-'encode_vcard_$email'([Email | _els], _acc) ->
-    'encode_vcard_$email'(_els,
-			  [encode_vcard_EMAIL(Email, []) | _acc]).
+'encode_vcard_temp_$email'([], _acc) -> _acc;
+'encode_vcard_temp_$email'([Email | _els], _acc) ->
+    'encode_vcard_temp_$email'(_els,
+			       [encode_vcard_EMAIL(Email, []) | _acc]).
 
-'encode_vcard_$tel'([], _acc) -> _acc;
-'encode_vcard_$tel'([Tel | _els], _acc) ->
-    'encode_vcard_$tel'(_els,
-			[encode_vcard_TEL(Tel, []) | _acc]).
+'encode_vcard_temp_$tel'([], _acc) -> _acc;
+'encode_vcard_temp_$tel'([Tel | _els], _acc) ->
+    'encode_vcard_temp_$tel'(_els,
+			     [encode_vcard_TEL(Tel, []) | _acc]).
 
-'encode_vcard_$label'([], _acc) -> _acc;
-'encode_vcard_$label'([Label | _els], _acc) ->
-    'encode_vcard_$label'(_els,
-			  [encode_vcard_LABEL(Label, []) | _acc]).
+'encode_vcard_temp_$label'([], _acc) -> _acc;
+'encode_vcard_temp_$label'([Label | _els], _acc) ->
+    'encode_vcard_temp_$label'(_els,
+			       [encode_vcard_LABEL(Label, []) | _acc]).
 
-'encode_vcard_$fn'(undefined, _acc) -> _acc;
-'encode_vcard_$fn'(Fn, _acc) ->
+'encode_vcard_temp_$fn'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$fn'(Fn, _acc) ->
     [encode_vcard_FN(Fn, []) | _acc].
 
-'encode_vcard_$version'(undefined, _acc) -> _acc;
-'encode_vcard_$version'(Version, _acc) ->
+'encode_vcard_temp_$version'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$version'(Version, _acc) ->
     [encode_vcard_VERSION(Version, []) | _acc].
 
-'encode_vcard_$n'(undefined, _acc) -> _acc;
-'encode_vcard_$n'(N, _acc) ->
+'encode_vcard_temp_$n'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$n'(N, _acc) ->
     [encode_vcard_N(N, []) | _acc].
 
-'encode_vcard_$photo'(undefined, _acc) -> _acc;
-'encode_vcard_$photo'(Photo, _acc) ->
+'encode_vcard_temp_$photo'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$photo'(Photo, _acc) ->
     [encode_vcard_PHOTO(Photo, []) | _acc].
 
-'encode_vcard_$logo'(undefined, _acc) -> _acc;
-'encode_vcard_$logo'(Logo, _acc) ->
+'encode_vcard_temp_$logo'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$logo'(Logo, _acc) ->
     [encode_vcard_LOGO(Logo, []) | _acc].
 
-'encode_vcard_$geo'(undefined, _acc) -> _acc;
-'encode_vcard_$geo'(Geo, _acc) ->
+'encode_vcard_temp_$geo'(undefined, _acc) -> _acc;
+'encode_vcard_temp_$geo'(Geo, _acc) ->
     [encode_vcard_GEO(Geo, []) | _acc].
 
 decode_vcard_CLASS(__TopXMLNS, __IgnoreEls,
@@ -10056,38 +11714,50 @@ decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, [],
 decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"PUBLIC">>, _attrs, _} = _el | _els],
 		       Class) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
-				  decode_vcard_PUBLIC(__TopXMLNS, __IgnoreEls,
-						      _el));
-       true ->
-	   decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
-				  Class)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_PUBLIC(__TopXMLNS, __IgnoreEls,
+						     _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_PUBLIC(<<"vcard-temp">>,
+						     __IgnoreEls, _el));
+      _ ->
+	  decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
+				 Class)
     end;
 decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"PRIVATE">>, _attrs, _} = _el | _els],
 		       Class) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
-				  decode_vcard_PRIVATE(__TopXMLNS, __IgnoreEls,
-						       _el));
-       true ->
-	   decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
-				  Class)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_PRIVATE(__TopXMLNS, __IgnoreEls,
+						      _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_PRIVATE(<<"vcard-temp">>,
+						      __IgnoreEls, _el));
+      _ ->
+	  decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
+				 Class)
     end;
 decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"CONFIDENTIAL">>, _attrs, _} = _el | _els],
 		       Class) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
-				  decode_vcard_CONFIDENTIAL(__TopXMLNS,
-							    __IgnoreEls, _el));
-       true ->
-	   decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
-				  Class)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_CONFIDENTIAL(__TopXMLNS,
+							   __IgnoreEls, _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_CONFIDENTIAL(<<"vcard-temp">>,
+							   __IgnoreEls, _el));
+      _ ->
+	  decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
+				 Class)
     end;
 decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls,
 		       [_ | _els], Class) ->
@@ -10121,20 +11791,30 @@ decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls, [],
 decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
 			    [{xmlel, <<"KEYWORD">>, _attrs, _} = _el | _els],
 			    Keywords) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
-				       _els,
-				       case decode_vcard_KEYWORD(__TopXMLNS,
-								 __IgnoreEls,
-								 _el)
-					   of
-					 undefined -> Keywords;
-					 _new_el -> [_new_el | Keywords]
-				       end);
-       true ->
-	   decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
-				       _els, Keywords)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      case decode_vcard_KEYWORD(__TopXMLNS,
+								__IgnoreEls,
+								_el)
+					  of
+					undefined -> Keywords;
+					_new_el -> [_new_el | Keywords]
+				      end);
+      <<"vcard-temp">> ->
+	  decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      case
+					decode_vcard_KEYWORD(<<"vcard-temp">>,
+							     __IgnoreEls, _el)
+					  of
+					undefined -> Keywords;
+					_new_el -> [_new_el | Keywords]
+				      end);
+      _ ->
+	  decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
+				      _els, Keywords)
     end;
 decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
 			    [_ | _els], Keywords) ->
@@ -10168,27 +11848,36 @@ decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, [], Cred,
 decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"TYPE">>, _attrs, _} = _el | _els], Cred,
 		     Type) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, _els,
-				Cred,
-				decode_vcard_TYPE(__TopXMLNS, __IgnoreEls,
-						  _el));
-       true ->
-	   decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, _els,
-				Cred, Type)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, _els,
+			       Cred,
+			       decode_vcard_TYPE(__TopXMLNS, __IgnoreEls, _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, _els,
+			       Cred,
+			       decode_vcard_TYPE(<<"vcard-temp">>, __IgnoreEls,
+						 _el));
+      _ ->
+	  decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, _els,
+			       Cred, Type)
     end;
 decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"CRED">>, _attrs, _} = _el | _els], Cred,
 		     Type) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_vcard_CRED(__TopXMLNS, __IgnoreEls, _el),
-				Type);
-       true ->
-	   decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, _els,
-				Cred, Type)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_vcard_CRED(__TopXMLNS, __IgnoreEls, _el),
+			       Type);
+      <<"vcard-temp">> ->
+	  decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_vcard_CRED(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			       Type);
+      _ ->
+	  decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, _els,
+			       Cred, Type)
     end;
 decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls,
 		     [_ | _els], Cred, Type) ->
@@ -10224,42 +11913,58 @@ decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, [],
 decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"BINVAL">>, _attrs, _} = _el | _els],
 		       Phonetic, Extval, Binval) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
-				  Phonetic, Extval,
-				  decode_vcard_BINVAL(__TopXMLNS, __IgnoreEls,
-						      _el));
-       true ->
-	   decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
-				  Phonetic, Extval, Binval)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
+				 Phonetic, Extval,
+				 decode_vcard_BINVAL(__TopXMLNS, __IgnoreEls,
+						     _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
+				 Phonetic, Extval,
+				 decode_vcard_BINVAL(<<"vcard-temp">>,
+						     __IgnoreEls, _el));
+      _ ->
+	  decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
+				 Phonetic, Extval, Binval)
     end;
 decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"EXTVAL">>, _attrs, _} = _el | _els],
 		       Phonetic, Extval, Binval) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
-				  Phonetic,
-				  decode_vcard_EXTVAL(__TopXMLNS, __IgnoreEls,
-						      _el),
-				  Binval);
-       true ->
-	   decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
-				  Phonetic, Extval, Binval)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
+				 Phonetic,
+				 decode_vcard_EXTVAL(__TopXMLNS, __IgnoreEls,
+						     _el),
+				 Binval);
+      <<"vcard-temp">> ->
+	  decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
+				 Phonetic,
+				 decode_vcard_EXTVAL(<<"vcard-temp">>,
+						     __IgnoreEls, _el),
+				 Binval);
+      _ ->
+	  decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
+				 Phonetic, Extval, Binval)
     end;
 decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"PHONETIC">>, _attrs, _} = _el | _els],
 		       Phonetic, Extval, Binval) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
-				  decode_vcard_PHONETIC(__TopXMLNS, __IgnoreEls,
-							_el),
-				  Extval, Binval);
-       true ->
-	   decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
-				  Phonetic, Extval, Binval)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_PHONETIC(__TopXMLNS, __IgnoreEls,
+						       _el),
+				 Extval, Binval);
+      <<"vcard-temp">> ->
+	  decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_PHONETIC(<<"vcard-temp">>,
+						       __IgnoreEls, _el),
+				 Extval, Binval);
+      _ ->
+	  decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls, _els,
+				 Phonetic, Extval, Binval)
     end;
 decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls,
 		       [_ | _els], Phonetic, Extval, Binval) ->
@@ -10301,32 +12006,46 @@ decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, [], Units,
 decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"ORGNAME">>, _attrs, _} = _el | _els], Units,
 		     Name) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
-				Units,
-				decode_vcard_ORGNAME(__TopXMLNS, __IgnoreEls,
-						     _el));
-       true ->
-	   decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
-				Units, Name)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
+			       Units,
+			       decode_vcard_ORGNAME(__TopXMLNS, __IgnoreEls,
+						    _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
+			       Units,
+			       decode_vcard_ORGNAME(<<"vcard-temp">>,
+						    __IgnoreEls, _el));
+      _ ->
+	  decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
+			       Units, Name)
     end;
 decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"ORGUNIT">>, _attrs, _} = _el | _els], Units,
 		     Name) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
-				case decode_vcard_ORGUNIT(__TopXMLNS,
-							  __IgnoreEls, _el)
-				    of
-				  undefined -> Units;
-				  _new_el -> [_new_el | Units]
-				end,
-				Name);
-       true ->
-	   decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
-				Units, Name)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
+			       case decode_vcard_ORGUNIT(__TopXMLNS,
+							 __IgnoreEls, _el)
+				   of
+				 undefined -> Units;
+				 _new_el -> [_new_el | Units]
+			       end,
+			       Name);
+      <<"vcard-temp">> ->
+	  decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
+			       case decode_vcard_ORGUNIT(<<"vcard-temp">>,
+							 __IgnoreEls, _el)
+				   of
+				 undefined -> Units;
+				 _new_el -> [_new_el | Units]
+			       end,
+			       Name);
+      _ ->
+	  decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
+			       Units, Name)
     end;
 decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls,
 		     [_ | _els], Units, Name) ->
@@ -10363,42 +12082,58 @@ decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, [],
 decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"TYPE">>, _attrs, _} = _el | _els], Type,
 		       Extval, Binval) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
-				  decode_vcard_TYPE(__TopXMLNS, __IgnoreEls,
-						    _el),
-				  Extval, Binval);
-       true ->
-	   decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
-				  Type, Extval, Binval)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_TYPE(__TopXMLNS, __IgnoreEls,
+						   _el),
+				 Extval, Binval);
+      <<"vcard-temp">> ->
+	  decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_TYPE(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				 Extval, Binval);
+      _ ->
+	  decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
+				 Type, Extval, Binval)
     end;
 decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"BINVAL">>, _attrs, _} = _el | _els], Type,
 		       Extval, Binval) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
-				  Type, Extval,
-				  decode_vcard_BINVAL(__TopXMLNS, __IgnoreEls,
-						      _el));
-       true ->
-	   decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
-				  Type, Extval, Binval)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
+				 Type, Extval,
+				 decode_vcard_BINVAL(__TopXMLNS, __IgnoreEls,
+						     _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
+				 Type, Extval,
+				 decode_vcard_BINVAL(<<"vcard-temp">>,
+						     __IgnoreEls, _el));
+      _ ->
+	  decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
+				 Type, Extval, Binval)
     end;
 decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"EXTVAL">>, _attrs, _} = _el | _els], Type,
 		       Extval, Binval) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
-				  Type,
-				  decode_vcard_EXTVAL(__TopXMLNS, __IgnoreEls,
-						      _el),
-				  Binval);
-       true ->
-	   decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
-				  Type, Extval, Binval)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
+				 Type,
+				 decode_vcard_EXTVAL(__TopXMLNS, __IgnoreEls,
+						     _el),
+				 Binval);
+      <<"vcard-temp">> ->
+	  decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
+				 Type,
+				 decode_vcard_EXTVAL(<<"vcard-temp">>,
+						     __IgnoreEls, _el),
+				 Binval);
+      _ ->
+	  decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls, _els,
+				 Type, Extval, Binval)
     end;
 decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls,
 		       [_ | _els], Type, Extval, Binval) ->
@@ -10439,42 +12174,57 @@ decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, [], Type,
 decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls,
 		      [{xmlel, <<"TYPE">>, _attrs, _} = _el | _els], Type,
 		      Extval, Binval) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
-				 decode_vcard_TYPE(__TopXMLNS, __IgnoreEls,
-						   _el),
-				 Extval, Binval);
-       true ->
-	   decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
-				 Type, Extval, Binval)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
+				decode_vcard_TYPE(__TopXMLNS, __IgnoreEls, _el),
+				Extval, Binval);
+      <<"vcard-temp">> ->
+	  decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
+				decode_vcard_TYPE(<<"vcard-temp">>, __IgnoreEls,
+						  _el),
+				Extval, Binval);
+      _ ->
+	  decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
+				Type, Extval, Binval)
     end;
 decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls,
 		      [{xmlel, <<"BINVAL">>, _attrs, _} = _el | _els], Type,
 		      Extval, Binval) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
-				 Type, Extval,
-				 decode_vcard_BINVAL(__TopXMLNS, __IgnoreEls,
-						     _el));
-       true ->
-	   decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
-				 Type, Extval, Binval)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
+				Type, Extval,
+				decode_vcard_BINVAL(__TopXMLNS, __IgnoreEls,
+						    _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
+				Type, Extval,
+				decode_vcard_BINVAL(<<"vcard-temp">>,
+						    __IgnoreEls, _el));
+      _ ->
+	  decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
+				Type, Extval, Binval)
     end;
 decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls,
 		      [{xmlel, <<"EXTVAL">>, _attrs, _} = _el | _els], Type,
 		      Extval, Binval) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
-				 Type,
-				 decode_vcard_EXTVAL(__TopXMLNS, __IgnoreEls,
-						     _el),
-				 Binval);
-       true ->
-	   decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
-				 Type, Extval, Binval)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
+				Type,
+				decode_vcard_EXTVAL(__TopXMLNS, __IgnoreEls,
+						    _el),
+				Binval);
+      <<"vcard-temp">> ->
+	  decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
+				Type,
+				decode_vcard_EXTVAL(<<"vcard-temp">>,
+						    __IgnoreEls, _el),
+				Binval);
+      _ ->
+	  decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls, _els,
+				Type, Extval, Binval)
     end;
 decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls,
 		      [_ | _els], Type, Extval, Binval) ->
@@ -10551,25 +12301,34 @@ decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, [], Lat,
 decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"LAT">>, _attrs, _} = _el | _els], Lat,
 		     Lon) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_vcard_LAT(__TopXMLNS, __IgnoreEls, _el),
-				Lon);
-       true ->
-	   decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, _els, Lat,
-				Lon)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_vcard_LAT(__TopXMLNS, __IgnoreEls, _el),
+			       Lon);
+      <<"vcard-temp">> ->
+	  decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_vcard_LAT(<<"vcard-temp">>, __IgnoreEls,
+						_el),
+			       Lon);
+      _ ->
+	  decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, _els, Lat,
+			       Lon)
     end;
 decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"LON">>, _attrs, _} = _el | _els], Lat,
 		     Lon) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, _els, Lat,
-				decode_vcard_LON(__TopXMLNS, __IgnoreEls, _el));
-       true ->
-	   decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, _els, Lat,
-				Lon)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, _els, Lat,
+			       decode_vcard_LON(__TopXMLNS, __IgnoreEls, _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, _els, Lat,
+			       decode_vcard_LON(<<"vcard-temp">>, __IgnoreEls,
+						_el));
+      _ ->
+	  decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, _els, Lat,
+			       Lon)
     end;
 decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls,
 		     [_ | _els], Lat, Lon) ->
@@ -10604,84 +12363,118 @@ decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, [],
 decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"HOME">>, _attrs, _} = _el | _els], X400,
 		       Userid, Internet, Home, Pref, Work) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  X400, Userid, Internet,
-				  decode_vcard_HOME(__TopXMLNS, __IgnoreEls,
-						    _el),
-				  Pref, Work);
-       true ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  X400, Userid, Internet, Home, Pref, Work)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet,
+				 decode_vcard_HOME(__TopXMLNS, __IgnoreEls,
+						   _el),
+				 Pref, Work);
+      <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet,
+				 decode_vcard_HOME(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				 Pref, Work);
+      _ ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet, Home, Pref, Work)
     end;
 decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"WORK">>, _attrs, _} = _el | _els], X400,
 		       Userid, Internet, Home, Pref, Work) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  X400, Userid, Internet, Home, Pref,
-				  decode_vcard_WORK(__TopXMLNS, __IgnoreEls,
-						    _el));
-       true ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  X400, Userid, Internet, Home, Pref, Work)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet, Home, Pref,
+				 decode_vcard_WORK(__TopXMLNS, __IgnoreEls,
+						   _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet, Home, Pref,
+				 decode_vcard_WORK(<<"vcard-temp">>,
+						   __IgnoreEls, _el));
+      _ ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet, Home, Pref, Work)
     end;
 decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"INTERNET">>, _attrs, _} = _el | _els], X400,
 		       Userid, Internet, Home, Pref, Work) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  X400, Userid,
-				  decode_vcard_INTERNET(__TopXMLNS, __IgnoreEls,
-							_el),
-				  Home, Pref, Work);
-       true ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  X400, Userid, Internet, Home, Pref, Work)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid,
+				 decode_vcard_INTERNET(__TopXMLNS, __IgnoreEls,
+						       _el),
+				 Home, Pref, Work);
+      <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid,
+				 decode_vcard_INTERNET(<<"vcard-temp">>,
+						       __IgnoreEls, _el),
+				 Home, Pref, Work);
+      _ ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet, Home, Pref, Work)
     end;
 decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"PREF">>, _attrs, _} = _el | _els], X400,
 		       Userid, Internet, Home, Pref, Work) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  X400, Userid, Internet, Home,
-				  decode_vcard_PREF(__TopXMLNS, __IgnoreEls,
-						    _el),
-				  Work);
-       true ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  X400, Userid, Internet, Home, Pref, Work)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet, Home,
+				 decode_vcard_PREF(__TopXMLNS, __IgnoreEls,
+						   _el),
+				 Work);
+      <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet, Home,
+				 decode_vcard_PREF(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				 Work);
+      _ ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet, Home, Pref, Work)
     end;
 decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"X400">>, _attrs, _} = _el | _els], X400,
 		       Userid, Internet, Home, Pref, Work) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  decode_vcard_X400(__TopXMLNS, __IgnoreEls,
-						    _el),
-				  Userid, Internet, Home, Pref, Work);
-       true ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  X400, Userid, Internet, Home, Pref, Work)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_X400(__TopXMLNS, __IgnoreEls,
+						   _el),
+				 Userid, Internet, Home, Pref, Work);
+      <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_vcard_X400(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				 Userid, Internet, Home, Pref, Work);
+      _ ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet, Home, Pref, Work)
     end;
 decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"USERID">>, _attrs, _} = _el | _els], X400,
 		       Userid, Internet, Home, Pref, Work) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  X400,
-				  decode_vcard_USERID(__TopXMLNS, __IgnoreEls,
-						      _el),
-				  Internet, Home, Pref, Work);
-       true ->
-	   decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
-				  X400, Userid, Internet, Home, Pref, Work)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400,
+				 decode_vcard_USERID(__TopXMLNS, __IgnoreEls,
+						     _el),
+				 Internet, Home, Pref, Work);
+      <<"vcard-temp">> ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400,
+				 decode_vcard_USERID(<<"vcard-temp">>,
+						     __IgnoreEls, _el),
+				 Internet, Home, Pref, Work);
+      _ ->
+	  decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls, _els,
+				 X400, Userid, Internet, Home, Pref, Work)
     end;
 decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls,
 		       [_ | _els], X400, Userid, Internet, Home, Pref, Work) ->
@@ -10745,224 +12538,313 @@ decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"HOME">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice,
-				decode_vcard_HOME(__TopXMLNS, __IgnoreEls, _el),
-				Pref, Msg, Fax, Work, Cell, Modem, Isdn, Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice,
+			       decode_vcard_HOME(__TopXMLNS, __IgnoreEls, _el),
+			       Pref, Msg, Fax, Work, Cell, Modem, Isdn, Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice,
+			       decode_vcard_HOME(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			       Pref, Msg, Fax, Work, Cell, Modem, Isdn, Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"WORK">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax,
-				decode_vcard_WORK(__TopXMLNS, __IgnoreEls, _el),
-				Cell, Modem, Isdn, Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax,
+			       decode_vcard_WORK(__TopXMLNS, __IgnoreEls, _el),
+			       Cell, Modem, Isdn, Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax,
+			       decode_vcard_WORK(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			       Cell, Modem, Isdn, Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"VOICE">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs,
-				decode_vcard_VOICE(__TopXMLNS, __IgnoreEls,
-						   _el),
-				Home, Pref, Msg, Fax, Work, Cell, Modem, Isdn,
-				Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs,
+			       decode_vcard_VOICE(__TopXMLNS, __IgnoreEls, _el),
+			       Home, Pref, Msg, Fax, Work, Cell, Modem, Isdn,
+			       Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs,
+			       decode_vcard_VOICE(<<"vcard-temp">>, __IgnoreEls,
+						  _el),
+			       Home, Pref, Msg, Fax, Work, Cell, Modem, Isdn,
+			       Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"FAX">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				decode_vcard_FAX(__TopXMLNS, __IgnoreEls, _el),
-				Work, Cell, Modem, Isdn, Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       decode_vcard_FAX(__TopXMLNS, __IgnoreEls, _el),
+			       Work, Cell, Modem, Isdn, Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       decode_vcard_FAX(<<"vcard-temp">>, __IgnoreEls,
+						_el),
+			       Work, Cell, Modem, Isdn, Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"PAGER">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number,
-				decode_vcard_PAGER(__TopXMLNS, __IgnoreEls,
-						   _el),
-				Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
-				Cell, Modem, Isdn, Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number,
+			       decode_vcard_PAGER(__TopXMLNS, __IgnoreEls, _el),
+			       Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
+			       Cell, Modem, Isdn, Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number,
+			       decode_vcard_PAGER(<<"vcard-temp">>, __IgnoreEls,
+						  _el),
+			       Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
+			       Cell, Modem, Isdn, Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"MSG">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref,
-				decode_vcard_MSG(__TopXMLNS, __IgnoreEls, _el),
-				Fax, Work, Cell, Modem, Isdn, Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref,
+			       decode_vcard_MSG(__TopXMLNS, __IgnoreEls, _el),
+			       Fax, Work, Cell, Modem, Isdn, Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref,
+			       decode_vcard_MSG(<<"vcard-temp">>, __IgnoreEls,
+						_el),
+			       Fax, Work, Cell, Modem, Isdn, Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"CELL">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work,
-				decode_vcard_CELL(__TopXMLNS, __IgnoreEls, _el),
-				Modem, Isdn, Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work,
+			       decode_vcard_CELL(__TopXMLNS, __IgnoreEls, _el),
+			       Modem, Isdn, Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work,
+			       decode_vcard_CELL(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			       Modem, Isdn, Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"VIDEO">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn,
-				decode_vcard_VIDEO(__TopXMLNS, __IgnoreEls,
-						   _el));
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn,
+			       decode_vcard_VIDEO(__TopXMLNS, __IgnoreEls,
+						  _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn,
+			       decode_vcard_VIDEO(<<"vcard-temp">>, __IgnoreEls,
+						  _el));
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"BBS">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs,
-				decode_vcard_BBS(__TopXMLNS, __IgnoreEls, _el),
-				Voice, Home, Pref, Msg, Fax, Work, Cell, Modem,
-				Isdn, Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs,
+			       decode_vcard_BBS(__TopXMLNS, __IgnoreEls, _el),
+			       Voice, Home, Pref, Msg, Fax, Work, Cell, Modem,
+			       Isdn, Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs,
+			       decode_vcard_BBS(<<"vcard-temp">>, __IgnoreEls,
+						_el),
+			       Voice, Home, Pref, Msg, Fax, Work, Cell, Modem,
+			       Isdn, Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"MODEM">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell,
-				decode_vcard_MODEM(__TopXMLNS, __IgnoreEls,
-						   _el),
-				Isdn, Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell,
+			       decode_vcard_MODEM(__TopXMLNS, __IgnoreEls, _el),
+			       Isdn, Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell,
+			       decode_vcard_MODEM(<<"vcard-temp">>, __IgnoreEls,
+						  _el),
+			       Isdn, Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"ISDN">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem,
-				decode_vcard_ISDN(__TopXMLNS, __IgnoreEls, _el),
-				Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem,
+			       decode_vcard_ISDN(__TopXMLNS, __IgnoreEls, _el),
+			       Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem,
+			       decode_vcard_ISDN(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			       Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"PCS">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager,
-				decode_vcard_PCS(__TopXMLNS, __IgnoreEls, _el),
-				Bbs, Voice, Home, Pref, Msg, Fax, Work, Cell,
-				Modem, Isdn, Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager,
+			       decode_vcard_PCS(__TopXMLNS, __IgnoreEls, _el),
+			       Bbs, Voice, Home, Pref, Msg, Fax, Work, Cell,
+			       Modem, Isdn, Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager,
+			       decode_vcard_PCS(<<"vcard-temp">>, __IgnoreEls,
+						_el),
+			       Bbs, Voice, Home, Pref, Msg, Fax, Work, Cell,
+			       Modem, Isdn, Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"PREF">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home,
-				decode_vcard_PREF(__TopXMLNS, __IgnoreEls, _el),
-				Msg, Fax, Work, Cell, Modem, Isdn, Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home,
+			       decode_vcard_PREF(__TopXMLNS, __IgnoreEls, _el),
+			       Msg, Fax, Work, Cell, Modem, Isdn, Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home,
+			       decode_vcard_PREF(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			       Msg, Fax, Work, Cell, Modem, Isdn, Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"NUMBER">>, _attrs, _} = _el | _els], Number,
 		     Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax, Work,
 		     Cell, Modem, Isdn, Video) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_vcard_NUMBER(__TopXMLNS, __IgnoreEls,
-						    _el),
-				Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
-				Work, Cell, Modem, Isdn, Video);
-       true ->
-	   decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
-				Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
-				Fax, Work, Cell, Modem, Isdn, Video)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_vcard_NUMBER(__TopXMLNS, __IgnoreEls,
+						   _el),
+			       Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
+			       Work, Cell, Modem, Isdn, Video);
+      <<"vcard-temp">> ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_vcard_NUMBER(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+			       Pager, Pcs, Bbs, Voice, Home, Pref, Msg, Fax,
+			       Work, Cell, Modem, Isdn, Video);
+      _ ->
+	  decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls, _els,
+			       Number, Pager, Pcs, Bbs, Voice, Home, Pref, Msg,
+			       Fax, Work, Cell, Modem, Isdn, Video)
     end;
 decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 		     [_ | _els], Number, Pager, Pcs, Bbs, Voice, Home, Pref,
@@ -11065,124 +12947,174 @@ decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, [],
 decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"HOME">>, _attrs, _} = _el | _els], Line,
 		       Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line,
-				  decode_vcard_HOME(__TopXMLNS, __IgnoreEls,
-						    _el),
-				  Pref, Work, Intl, Parcel, Postal, Dom);
-       true ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work, Intl, Parcel, Postal,
-				  Dom)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line,
+				 decode_vcard_HOME(__TopXMLNS, __IgnoreEls,
+						   _el),
+				 Pref, Work, Intl, Parcel, Postal, Dom);
+      <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line,
+				 decode_vcard_HOME(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				 Pref, Work, Intl, Parcel, Postal, Dom);
+      _ ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel, Postal,
+				 Dom)
     end;
 decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"WORK">>, _attrs, _} = _el | _els], Line,
 		       Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref,
-				  decode_vcard_WORK(__TopXMLNS, __IgnoreEls,
-						    _el),
-				  Intl, Parcel, Postal, Dom);
-       true ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work, Intl, Parcel, Postal,
-				  Dom)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref,
+				 decode_vcard_WORK(__TopXMLNS, __IgnoreEls,
+						   _el),
+				 Intl, Parcel, Postal, Dom);
+      <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref,
+				 decode_vcard_WORK(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				 Intl, Parcel, Postal, Dom);
+      _ ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel, Postal,
+				 Dom)
     end;
 decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"POSTAL">>, _attrs, _} = _el | _els], Line,
 		       Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work, Intl, Parcel,
-				  decode_vcard_POSTAL(__TopXMLNS, __IgnoreEls,
-						      _el),
-				  Dom);
-       true ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work, Intl, Parcel, Postal,
-				  Dom)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel,
+				 decode_vcard_POSTAL(__TopXMLNS, __IgnoreEls,
+						     _el),
+				 Dom);
+      <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel,
+				 decode_vcard_POSTAL(<<"vcard-temp">>,
+						     __IgnoreEls, _el),
+				 Dom);
+      _ ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel, Postal,
+				 Dom)
     end;
 decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"PARCEL">>, _attrs, _} = _el | _els], Line,
 		       Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work, Intl,
-				  decode_vcard_PARCEL(__TopXMLNS, __IgnoreEls,
-						      _el),
-				  Postal, Dom);
-       true ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work, Intl, Parcel, Postal,
-				  Dom)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl,
+				 decode_vcard_PARCEL(__TopXMLNS, __IgnoreEls,
+						     _el),
+				 Postal, Dom);
+      <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl,
+				 decode_vcard_PARCEL(<<"vcard-temp">>,
+						     __IgnoreEls, _el),
+				 Postal, Dom);
+      _ ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel, Postal,
+				 Dom)
     end;
 decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"DOM">>, _attrs, _} = _el | _els], Line,
 		       Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work, Intl, Parcel, Postal,
-				  decode_vcard_DOM(__TopXMLNS, __IgnoreEls,
-						   _el));
-       true ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work, Intl, Parcel, Postal,
-				  Dom)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel, Postal,
+				 decode_vcard_DOM(__TopXMLNS, __IgnoreEls,
+						  _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel, Postal,
+				 decode_vcard_DOM(<<"vcard-temp">>, __IgnoreEls,
+						  _el));
+      _ ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel, Postal,
+				 Dom)
     end;
 decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"INTL">>, _attrs, _} = _el | _els], Line,
 		       Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work,
-				  decode_vcard_INTL(__TopXMLNS, __IgnoreEls,
-						    _el),
-				  Parcel, Postal, Dom);
-       true ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work, Intl, Parcel, Postal,
-				  Dom)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work,
+				 decode_vcard_INTL(__TopXMLNS, __IgnoreEls,
+						   _el),
+				 Parcel, Postal, Dom);
+      <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work,
+				 decode_vcard_INTL(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				 Parcel, Postal, Dom);
+      _ ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel, Postal,
+				 Dom)
     end;
 decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"PREF">>, _attrs, _} = _el | _els], Line,
 		       Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home,
-				  decode_vcard_PREF(__TopXMLNS, __IgnoreEls,
-						    _el),
-				  Work, Intl, Parcel, Postal, Dom);
-       true ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work, Intl, Parcel, Postal,
-				  Dom)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home,
+				 decode_vcard_PREF(__TopXMLNS, __IgnoreEls,
+						   _el),
+				 Work, Intl, Parcel, Postal, Dom);
+      <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home,
+				 decode_vcard_PREF(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+				 Work, Intl, Parcel, Postal, Dom);
+      _ ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel, Postal,
+				 Dom)
     end;
 decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"LINE">>, _attrs, _} = _el | _els], Line,
 		       Home, Pref, Work, Intl, Parcel, Postal, Dom) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  case decode_vcard_LINE(__TopXMLNS,
-							 __IgnoreEls, _el)
-				      of
-				    undefined -> Line;
-				    _new_el -> [_new_el | Line]
-				  end,
-				  Home, Pref, Work, Intl, Parcel, Postal, Dom);
-       true ->
-	   decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				  Line, Home, Pref, Work, Intl, Parcel, Postal,
-				  Dom)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 case decode_vcard_LINE(__TopXMLNS, __IgnoreEls,
+							_el)
+				     of
+				   undefined -> Line;
+				   _new_el -> [_new_el | Line]
+				 end,
+				 Home, Pref, Work, Intl, Parcel, Postal, Dom);
+      <<"vcard-temp">> ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 case decode_vcard_LINE(<<"vcard-temp">>,
+							__IgnoreEls, _el)
+				     of
+				   undefined -> Line;
+				   _new_el -> [_new_el | Line]
+				 end,
+				 Home, Pref, Work, Intl, Parcel, Postal, Dom);
+      _ ->
+	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
+				 Line, Home, Pref, Work, Intl, Parcel, Postal,
+				 Dom)
     end;
 decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls,
 		       [_ | _els], Line, Home, Pref, Work, Intl, Parcel,
@@ -11258,245 +13190,337 @@ decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"HOME">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode,
-				decode_vcard_HOME(__TopXMLNS, __IgnoreEls, _el),
-				Pref, Pobox, Ctry, Locality, Work, Intl, Parcel,
-				Postal, Dom, Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode,
+			       decode_vcard_HOME(__TopXMLNS, __IgnoreEls, _el),
+			       Pref, Pobox, Ctry, Locality, Work, Intl, Parcel,
+			       Postal, Dom, Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode,
+			       decode_vcard_HOME(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			       Pref, Pobox, Ctry, Locality, Work, Intl, Parcel,
+			       Postal, Dom, Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"WORK">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality,
-				decode_vcard_WORK(__TopXMLNS, __IgnoreEls, _el),
-				Intl, Parcel, Postal, Dom, Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality,
+			       decode_vcard_WORK(__TopXMLNS, __IgnoreEls, _el),
+			       Intl, Parcel, Postal, Dom, Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality,
+			       decode_vcard_WORK(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			       Intl, Parcel, Postal, Dom, Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"POSTAL">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel,
-				decode_vcard_POSTAL(__TopXMLNS, __IgnoreEls,
-						    _el),
-				Dom, Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel,
+			       decode_vcard_POSTAL(__TopXMLNS, __IgnoreEls,
+						   _el),
+			       Dom, Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel,
+			       decode_vcard_POSTAL(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+			       Dom, Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"PARCEL">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl,
-				decode_vcard_PARCEL(__TopXMLNS, __IgnoreEls,
-						    _el),
-				Postal, Dom, Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl,
+			       decode_vcard_PARCEL(__TopXMLNS, __IgnoreEls,
+						   _el),
+			       Postal, Dom, Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl,
+			       decode_vcard_PARCEL(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+			       Postal, Dom, Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"DOM">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal,
-				decode_vcard_DOM(__TopXMLNS, __IgnoreEls, _el),
-				Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal,
+			       decode_vcard_DOM(__TopXMLNS, __IgnoreEls, _el),
+			       Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal,
+			       decode_vcard_DOM(<<"vcard-temp">>, __IgnoreEls,
+						_el),
+			       Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"INTL">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work,
-				decode_vcard_INTL(__TopXMLNS, __IgnoreEls, _el),
-				Parcel, Postal, Dom, Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work,
+			       decode_vcard_INTL(__TopXMLNS, __IgnoreEls, _el),
+			       Parcel, Postal, Dom, Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work,
+			       decode_vcard_INTL(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			       Parcel, Postal, Dom, Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"PREF">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home,
-				decode_vcard_PREF(__TopXMLNS, __IgnoreEls, _el),
-				Pobox, Ctry, Locality, Work, Intl, Parcel,
-				Postal, Dom, Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home,
+			       decode_vcard_PREF(__TopXMLNS, __IgnoreEls, _el),
+			       Pobox, Ctry, Locality, Work, Intl, Parcel,
+			       Postal, Dom, Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home,
+			       decode_vcard_PREF(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			       Pobox, Ctry, Locality, Work, Intl, Parcel,
+			       Postal, Dom, Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"POBOX">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref,
-				decode_vcard_POBOX(__TopXMLNS, __IgnoreEls,
-						   _el),
-				Ctry, Locality, Work, Intl, Parcel, Postal, Dom,
-				Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref,
+			       decode_vcard_POBOX(__TopXMLNS, __IgnoreEls, _el),
+			       Ctry, Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref,
+			       decode_vcard_POBOX(<<"vcard-temp">>, __IgnoreEls,
+						  _el),
+			       Ctry, Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"EXTADD">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street,
-				decode_vcard_EXTADD(__TopXMLNS, __IgnoreEls,
-						    _el),
-				Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
-				Intl, Parcel, Postal, Dom, Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street,
+			       decode_vcard_EXTADD(__TopXMLNS, __IgnoreEls,
+						   _el),
+			       Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
+			       Intl, Parcel, Postal, Dom, Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street,
+			       decode_vcard_EXTADD(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+			       Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
+			       Intl, Parcel, Postal, Dom, Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"STREET">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				decode_vcard_STREET(__TopXMLNS, __IgnoreEls,
-						    _el),
-				Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_vcard_STREET(__TopXMLNS, __IgnoreEls,
+						   _el),
+			       Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality,
+			       Work, Intl, Parcel, Postal, Dom, Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       decode_vcard_STREET(<<"vcard-temp">>,
+						   __IgnoreEls, _el),
+			       Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality,
+			       Work, Intl, Parcel, Postal, Dom, Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"LOCALITY">>, _attrs, _} = _el | _els],
 		     Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
 		     Locality, Work, Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				decode_vcard_LOCALITY(__TopXMLNS, __IgnoreEls,
-						      _el),
-				Work, Intl, Parcel, Postal, Dom, Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       decode_vcard_LOCALITY(__TopXMLNS, __IgnoreEls,
+						     _el),
+			       Work, Intl, Parcel, Postal, Dom, Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       decode_vcard_LOCALITY(<<"vcard-temp">>,
+						     __IgnoreEls, _el),
+			       Work, Intl, Parcel, Postal, Dom, Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"REGION">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				decode_vcard_REGION(__TopXMLNS, __IgnoreEls,
-						    _el));
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       decode_vcard_REGION(__TopXMLNS, __IgnoreEls,
+						   _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       decode_vcard_REGION(<<"vcard-temp">>,
+						   __IgnoreEls, _el));
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"PCODE">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd,
-				decode_vcard_PCODE(__TopXMLNS, __IgnoreEls,
-						   _el),
-				Home, Pref, Pobox, Ctry, Locality, Work, Intl,
-				Parcel, Postal, Dom, Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd,
+			       decode_vcard_PCODE(__TopXMLNS, __IgnoreEls, _el),
+			       Home, Pref, Pobox, Ctry, Locality, Work, Intl,
+			       Parcel, Postal, Dom, Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd,
+			       decode_vcard_PCODE(<<"vcard-temp">>, __IgnoreEls,
+						  _el),
+			       Home, Pref, Pobox, Ctry, Locality, Work, Intl,
+			       Parcel, Postal, Dom, Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"CTRY">>, _attrs, _} = _el | _els], Street,
 		     Extadd, Pcode, Home, Pref, Pobox, Ctry, Locality, Work,
 		     Intl, Parcel, Postal, Dom, Region) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox,
-				decode_vcard_CTRY(__TopXMLNS, __IgnoreEls, _el),
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region);
-       true ->
-	   decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
-				Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
-				Locality, Work, Intl, Parcel, Postal, Dom,
-				Region)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox,
+			       decode_vcard_CTRY(__TopXMLNS, __IgnoreEls, _el),
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region);
+      <<"vcard-temp">> ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox,
+			       decode_vcard_CTRY(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region);
+      _ ->
+	  decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls, _els,
+			       Street, Extadd, Pcode, Home, Pref, Pobox, Ctry,
+			       Locality, Work, Intl, Parcel, Postal, Dom,
+			       Region)
     end;
 decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 		     [_ | _els], Street, Extadd, Pcode, Home, Pref, Pobox,
@@ -11598,65 +13622,93 @@ decode_vcard_N_els(__TopXMLNS, __IgnoreEls, [], Middle,
 decode_vcard_N_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"FAMILY">>, _attrs, _} = _el | _els], Middle,
 		   Suffix, Prefix, Family, Given) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
-			      Middle, Suffix, Prefix,
-			      decode_vcard_FAMILY(__TopXMLNS, __IgnoreEls, _el),
-			      Given);
-       true ->
-	   decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
-			      Middle, Suffix, Prefix, Family, Given)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle, Suffix, Prefix,
+			     decode_vcard_FAMILY(__TopXMLNS, __IgnoreEls, _el),
+			     Given);
+      <<"vcard-temp">> ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle, Suffix, Prefix,
+			     decode_vcard_FAMILY(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			     Given);
+      _ ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle, Suffix, Prefix, Family, Given)
     end;
 decode_vcard_N_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"GIVEN">>, _attrs, _} = _el | _els], Middle,
 		   Suffix, Prefix, Family, Given) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
-			      Middle, Suffix, Prefix, Family,
-			      decode_vcard_GIVEN(__TopXMLNS, __IgnoreEls, _el));
-       true ->
-	   decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
-			      Middle, Suffix, Prefix, Family, Given)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle, Suffix, Prefix, Family,
+			     decode_vcard_GIVEN(__TopXMLNS, __IgnoreEls, _el));
+      <<"vcard-temp">> ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle, Suffix, Prefix, Family,
+			     decode_vcard_GIVEN(<<"vcard-temp">>, __IgnoreEls,
+						_el));
+      _ ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle, Suffix, Prefix, Family, Given)
     end;
 decode_vcard_N_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"MIDDLE">>, _attrs, _} = _el | _els], Middle,
 		   Suffix, Prefix, Family, Given) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
-			      decode_vcard_MIDDLE(__TopXMLNS, __IgnoreEls, _el),
-			      Suffix, Prefix, Family, Given);
-       true ->
-	   decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
-			      Middle, Suffix, Prefix, Family, Given)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_vcard_MIDDLE(__TopXMLNS, __IgnoreEls, _el),
+			     Suffix, Prefix, Family, Given);
+      <<"vcard-temp">> ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_vcard_MIDDLE(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			     Suffix, Prefix, Family, Given);
+      _ ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle, Suffix, Prefix, Family, Given)
     end;
 decode_vcard_N_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"PREFIX">>, _attrs, _} = _el | _els], Middle,
 		   Suffix, Prefix, Family, Given) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
-			      Middle, Suffix,
-			      decode_vcard_PREFIX(__TopXMLNS, __IgnoreEls, _el),
-			      Family, Given);
-       true ->
-	   decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
-			      Middle, Suffix, Prefix, Family, Given)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle, Suffix,
+			     decode_vcard_PREFIX(__TopXMLNS, __IgnoreEls, _el),
+			     Family, Given);
+      <<"vcard-temp">> ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle, Suffix,
+			     decode_vcard_PREFIX(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			     Family, Given);
+      _ ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle, Suffix, Prefix, Family, Given)
     end;
 decode_vcard_N_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"SUFFIX">>, _attrs, _} = _el | _els], Middle,
 		   Suffix, Prefix, Family, Given) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
-			      Middle,
-			      decode_vcard_SUFFIX(__TopXMLNS, __IgnoreEls, _el),
-			      Prefix, Family, Given);
-       true ->
-	   decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
-			      Middle, Suffix, Prefix, Family, Given)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"vcard-temp">> ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle,
+			     decode_vcard_SUFFIX(__TopXMLNS, __IgnoreEls, _el),
+			     Prefix, Family, Given);
+      <<"vcard-temp">> ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle,
+			     decode_vcard_SUFFIX(<<"vcard-temp">>, __IgnoreEls,
+						 _el),
+			     Prefix, Family, Given);
+      _ ->
+	  decode_vcard_N_els(__TopXMLNS, __IgnoreEls, _els,
+			     Middle, Suffix, Prefix, Family, Given)
     end;
 decode_vcard_N_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		   Middle, Suffix, Prefix, Family, Given) ->
@@ -13128,405 +15180,379 @@ decode_stream_error_els(__TopXMLNS, __IgnoreEls, [],
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"text">>, _attrs, _} = _el | _els], Text,
 			Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   decode_stream_error_text(_xmlns, __IgnoreEls,
-							    _el),
-				   Reason);
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  decode_stream_error_text(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+							   __IgnoreEls, _el),
+				  Reason);
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"bad-format">>, _attrs, _} = _el | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_bad_format(_xmlns,
-								  __IgnoreEls,
-								  _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_bad_format(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								 __IgnoreEls,
+								 _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"bad-namespace-prefix">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_bad_namespace_prefix(_xmlns,
-									    __IgnoreEls,
-									    _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_bad_namespace_prefix(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+									   __IgnoreEls,
+									   _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"conflict">>, _attrs, _} = _el | _els], Text,
 			Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_conflict(_xmlns,
-								__IgnoreEls,
-								_el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_conflict(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+							       __IgnoreEls,
+							       _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"connection-timeout">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_connection_timeout(_xmlns,
-									  __IgnoreEls,
-									  _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_connection_timeout(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+									 __IgnoreEls,
+									 _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"host-gone">>, _attrs, _} = _el | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_host_gone(_xmlns,
-								 __IgnoreEls,
-								 _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_host_gone(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								__IgnoreEls,
+								_el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"host-unknown">>, _attrs, _} = _el | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_host_unknown(_xmlns,
-								    __IgnoreEls,
-								    _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_host_unknown(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								   __IgnoreEls,
+								   _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"improper-addressing">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_improper_addressing(_xmlns,
-									   __IgnoreEls,
-									   _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_improper_addressing(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+									  __IgnoreEls,
+									  _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"internal-server-error">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_internal_server_error(_xmlns,
-									     __IgnoreEls,
-									     _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_internal_server_error(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+									    __IgnoreEls,
+									    _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"invalid-from">>, _attrs, _} = _el | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_invalid_from(_xmlns,
-								    __IgnoreEls,
-								    _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_invalid_from(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								   __IgnoreEls,
+								   _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"invalid-id">>, _attrs, _} = _el | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_invalid_id(_xmlns,
-								  __IgnoreEls,
-								  _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_invalid_id(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								 __IgnoreEls,
+								 _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"invalid-namespace">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_invalid_namespace(_xmlns,
-									 __IgnoreEls,
-									 _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_invalid_namespace(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+									__IgnoreEls,
+									_el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"invalid-xml">>, _attrs, _} = _el | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_invalid_xml(_xmlns,
-								   __IgnoreEls,
-								   _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_invalid_xml(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								  __IgnoreEls,
+								  _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"not-authorized">>, _attrs, _} = _el | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_not_authorized(_xmlns,
-								      __IgnoreEls,
-								      _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								     __IgnoreEls,
+								     _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"not-well-formed">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_not_well_formed(_xmlns,
-								       __IgnoreEls,
-								       _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_not_well_formed(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								      __IgnoreEls,
+								      _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"policy-violation">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_policy_violation(_xmlns,
-									__IgnoreEls,
-									_el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_policy_violation(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								       __IgnoreEls,
+								       _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"remote-connection-failed">>, _attrs, _} =
 			     _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_remote_connection_failed(_xmlns,
-										__IgnoreEls,
-										_el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_remote_connection_failed(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+									       __IgnoreEls,
+									       _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"reset">>, _attrs, _} = _el | _els], Text,
 			Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_reset(_xmlns,
-							     __IgnoreEls, _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_reset(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+							    __IgnoreEls, _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"resource-constraint">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_resource_constraint(_xmlns,
-									   __IgnoreEls,
-									   _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_resource_constraint(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+									  __IgnoreEls,
+									  _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"restricted-xml">>, _attrs, _} = _el | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_restricted_xml(_xmlns,
-								      __IgnoreEls,
-								      _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_restricted_xml(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								     __IgnoreEls,
+								     _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"see-other-host">>, _attrs, _} = _el | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_see_other_host(_xmlns,
-								      __IgnoreEls,
-								      _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_see_other_host(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								     __IgnoreEls,
+								     _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"system-shutdown">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_system_shutdown(_xmlns,
-								       __IgnoreEls,
-								       _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_system_shutdown(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+								      __IgnoreEls,
+								      _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"undefined-condition">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_undefined_condition(_xmlns,
-									   __IgnoreEls,
-									   _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_undefined_condition(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+									  __IgnoreEls,
+									  _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"unsupported-encoding">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_unsupported_encoding(_xmlns,
-									    __IgnoreEls,
-									    _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_unsupported_encoding(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+									   __IgnoreEls,
+									   _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"unsupported-stanza-type">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_unsupported_stanza_type(_xmlns,
-									       __IgnoreEls,
-									       _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_unsupported_stanza_type(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+									      __IgnoreEls,
+									      _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"unsupported-version">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_stream_error_unsupported_version(_xmlns,
-									   __IgnoreEls,
-									   _el));
-       true ->
-	   decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-streams">> ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_stream_error_unsupported_version(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+									  __IgnoreEls,
+									  _el));
+      _ ->
+	  decode_stream_error_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			[_ | _els], Text, Reason) ->
@@ -14105,22 +16131,31 @@ decode_time_els(__TopXMLNS, __IgnoreEls, [], Utc,
 decode_time_els(__TopXMLNS, __IgnoreEls,
 		[{xmlel, <<"tzo">>, _attrs, _} = _el | _els], Utc,
 		Tzo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_time_els(__TopXMLNS, __IgnoreEls, _els, Utc,
-			   decode_time_tzo(__TopXMLNS, __IgnoreEls, _el));
-       true ->
-	   decode_time_els(__TopXMLNS, __IgnoreEls, _els, Utc, Tzo)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:time">> ->
+	  decode_time_els(__TopXMLNS, __IgnoreEls, _els, Utc,
+			  decode_time_tzo(__TopXMLNS, __IgnoreEls, _el));
+      <<"urn:xmpp:time">> ->
+	  decode_time_els(__TopXMLNS, __IgnoreEls, _els, Utc,
+			  decode_time_tzo(<<"urn:xmpp:time">>, __IgnoreEls,
+					  _el));
+      _ ->
+	  decode_time_els(__TopXMLNS, __IgnoreEls, _els, Utc, Tzo)
     end;
 decode_time_els(__TopXMLNS, __IgnoreEls,
 		[{xmlel, <<"utc">>, _attrs, _} = _el | _els], Utc,
 		Tzo) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_time_els(__TopXMLNS, __IgnoreEls, _els,
-			   decode_time_utc(__TopXMLNS, __IgnoreEls, _el), Tzo);
-       true ->
-	   decode_time_els(__TopXMLNS, __IgnoreEls, _els, Utc, Tzo)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:time">> ->
+	  decode_time_els(__TopXMLNS, __IgnoreEls, _els,
+			  decode_time_utc(__TopXMLNS, __IgnoreEls, _el), Tzo);
+      <<"urn:xmpp:time">> ->
+	  decode_time_els(__TopXMLNS, __IgnoreEls, _els,
+			  decode_time_utc(<<"urn:xmpp:time">>, __IgnoreEls,
+					  _el),
+			  Tzo);
+      _ ->
+	  decode_time_els(__TopXMLNS, __IgnoreEls, _els, Utc, Tzo)
     end;
 decode_time_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		Utc, Tzo) ->
@@ -14224,12 +16259,55 @@ encode_ping({ping}, _xmlns_attrs) ->
 
 decode_session(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"session">>, _attrs, _els}) ->
-    {session}.
+    Optional = decode_session_els(__TopXMLNS, __IgnoreEls,
+				  _els, false),
+    {xmpp_session, Optional}.
 
-encode_session({session}, _xmlns_attrs) ->
-    _els = [],
+decode_session_els(__TopXMLNS, __IgnoreEls, [],
+		   Optional) ->
+    Optional;
+decode_session_els(__TopXMLNS, __IgnoreEls,
+		   [{xmlel, <<"optional">>, _attrs, _} = _el | _els],
+		   Optional) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-session">> ->
+	  decode_session_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_session_optional(__TopXMLNS, __IgnoreEls,
+						     _el));
+      <<"urn:ietf:params:xml:ns:xmpp-session">> ->
+	  decode_session_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_session_optional(<<"urn:ietf:params:xml:ns:xmpp-session">>,
+						     __IgnoreEls, _el));
+      _ ->
+	  decode_session_els(__TopXMLNS, __IgnoreEls, _els,
+			     Optional)
+    end;
+decode_session_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		   Optional) ->
+    decode_session_els(__TopXMLNS, __IgnoreEls, _els,
+		       Optional).
+
+encode_session({xmpp_session, Optional},
+	       _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_session_$optional'(Optional, [])),
     _attrs = _xmlns_attrs,
     {xmlel, <<"session">>, _attrs, _els}.
+
+'encode_session_$optional'(false, _acc) -> _acc;
+'encode_session_$optional'(Optional, _acc) ->
+    [encode_session_optional(Optional, []) | _acc].
+
+decode_session_optional(__TopXMLNS, __IgnoreEls,
+			{xmlel, <<"optional">>, _attrs, _els}) ->
+    true.
+
+encode_session_optional(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"optional">>, _attrs, _els}.
 
 decode_register(__TopXMLNS, __IgnoreEls,
 		{xmlel, <<"query">>, _attrs, _els}) ->
@@ -14258,436 +16336,591 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 		    Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<"jabber:x:data">> ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       decode_xdata(_xmlns, __IgnoreEls, _el), Misc,
-			       Address, Instructions, Text, Last, First,
-			       Password, Registered, Date, Phone, State, Name,
-			       Username, Remove, Key, City, Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      decode_xdata(<<"jabber:x:data">>, __IgnoreEls,
+					   _el),
+			      Misc, Address, Instructions, Text, Last, First,
+			      Password, Registered, Date, Phone, State, Name,
+			      Username, Remove, Key, City, Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"registered">>, _attrs, _} = _el | _els],
 		    Zip, Xdata, Misc, Address, Instructions, Text, Last,
 		    First, Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password,
-			       decode_register_registered(__TopXMLNS,
-							  __IgnoreEls, _el),
-			       Date, Phone, State, Name, Username, Remove, Key,
-			       City, Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password,
+			      decode_register_registered(__TopXMLNS,
+							 __IgnoreEls, _el),
+			      Date, Phone, State, Name, Username, Remove, Key,
+			      City, Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password,
+			      decode_register_registered(<<"jabber:iq:register">>,
+							 __IgnoreEls, _el),
+			      Date, Phone, State, Name, Username, Remove, Key,
+			      City, Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"remove">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username,
-			       decode_register_remove(__TopXMLNS, __IgnoreEls,
-						      _el),
-			       Key, City, Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username,
+			      decode_register_remove(__TopXMLNS, __IgnoreEls,
+						     _el),
+			      Key, City, Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username,
+			      decode_register_remove(<<"jabber:iq:register">>,
+						     __IgnoreEls, _el),
+			      Key, City, Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"instructions">>, _attrs, _} = _el | _els],
 		    Zip, Xdata, Misc, Address, Instructions, Text, Last,
 		    First, Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address,
-			       decode_register_instructions(__TopXMLNS,
-							    __IgnoreEls, _el),
-			       Text, Last, First, Password, Registered, Date,
-			       Phone, State, Name, Username, Remove, Key, City,
-			       Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address,
+			      decode_register_instructions(__TopXMLNS,
+							   __IgnoreEls, _el),
+			      Text, Last, First, Password, Registered, Date,
+			      Phone, State, Name, Username, Remove, Key, City,
+			      Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address,
+			      decode_register_instructions(<<"jabber:iq:register">>,
+							   __IgnoreEls, _el),
+			      Text, Last, First, Password, Registered, Date,
+			      Phone, State, Name, Username, Remove, Key, City,
+			      Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"username">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name,
-			       decode_register_username(__TopXMLNS, __IgnoreEls,
-							_el),
-			       Remove, Key, City, Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name,
+			      decode_register_username(__TopXMLNS, __IgnoreEls,
+						       _el),
+			      Remove, Key, City, Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name,
+			      decode_register_username(<<"jabber:iq:register">>,
+						       __IgnoreEls, _el),
+			      Remove, Key, City, Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"nick">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City,
-			       decode_register_nick(__TopXMLNS, __IgnoreEls,
-						    _el),
-			       Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City,
+			      decode_register_nick(__TopXMLNS, __IgnoreEls,
+						   _el),
+			      Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City,
+			      decode_register_nick(<<"jabber:iq:register">>,
+						   __IgnoreEls, _el),
+			      Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"password">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First,
-			       decode_register_password(__TopXMLNS, __IgnoreEls,
-							_el),
-			       Registered, Date, Phone, State, Name, Username,
-			       Remove, Key, City, Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First,
+			      decode_register_password(__TopXMLNS, __IgnoreEls,
+						       _el),
+			      Registered, Date, Phone, State, Name, Username,
+			      Remove, Key, City, Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First,
+			      decode_register_password(<<"jabber:iq:register">>,
+						       __IgnoreEls, _el),
+			      Registered, Date, Phone, State, Name, Username,
+			      Remove, Key, City, Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"name">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       decode_register_name(__TopXMLNS, __IgnoreEls,
-						    _el),
-			       Username, Remove, Key, City, Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      decode_register_name(__TopXMLNS, __IgnoreEls,
+						   _el),
+			      Username, Remove, Key, City, Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      decode_register_name(<<"jabber:iq:register">>,
+						   __IgnoreEls, _el),
+			      Username, Remove, Key, City, Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"first">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       decode_register_first(__TopXMLNS, __IgnoreEls,
-						     _el),
-			       Password, Registered, Date, Phone, State, Name,
-			       Username, Remove, Key, City, Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      decode_register_first(__TopXMLNS, __IgnoreEls,
+						    _el),
+			      Password, Registered, Date, Phone, State, Name,
+			      Username, Remove, Key, City, Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      decode_register_first(<<"jabber:iq:register">>,
+						    __IgnoreEls, _el),
+			      Password, Registered, Date, Phone, State, Name,
+			      Username, Remove, Key, City, Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"last">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text,
-			       decode_register_last(__TopXMLNS, __IgnoreEls,
-						    _el),
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text,
+			      decode_register_last(__TopXMLNS, __IgnoreEls,
+						   _el),
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text,
+			      decode_register_last(<<"jabber:iq:register">>,
+						   __IgnoreEls, _el),
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"email">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       decode_register_email(__TopXMLNS, __IgnoreEls,
-						     _el));
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      decode_register_email(__TopXMLNS, __IgnoreEls,
+						    _el));
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      decode_register_email(<<"jabber:iq:register">>,
+						    __IgnoreEls, _el));
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"address">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc,
-			       decode_register_address(__TopXMLNS, __IgnoreEls,
-						       _el),
-			       Instructions, Text, Last, First, Password,
-			       Registered, Date, Phone, State, Name, Username,
-			       Remove, Key, City, Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc,
+			      decode_register_address(__TopXMLNS, __IgnoreEls,
+						      _el),
+			      Instructions, Text, Last, First, Password,
+			      Registered, Date, Phone, State, Name, Username,
+			      Remove, Key, City, Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc,
+			      decode_register_address(<<"jabber:iq:register">>,
+						      __IgnoreEls, _el),
+			      Instructions, Text, Last, First, Password,
+			      Registered, Date, Phone, State, Name, Username,
+			      Remove, Key, City, Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"city">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key,
-			       decode_register_city(__TopXMLNS, __IgnoreEls,
-						    _el),
-			       Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key,
+			      decode_register_city(__TopXMLNS, __IgnoreEls,
+						   _el),
+			      Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key,
+			      decode_register_city(<<"jabber:iq:register">>,
+						   __IgnoreEls, _el),
+			      Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"state">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone,
-			       decode_register_state(__TopXMLNS, __IgnoreEls,
-						     _el),
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone,
+			      decode_register_state(__TopXMLNS, __IgnoreEls,
+						    _el),
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone,
+			      decode_register_state(<<"jabber:iq:register">>,
+						    __IgnoreEls, _el),
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"zip">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els,
-			       decode_register_zip(__TopXMLNS, __IgnoreEls,
-						   _el),
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els,
+			      decode_register_zip(__TopXMLNS, __IgnoreEls, _el),
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els,
+			      decode_register_zip(<<"jabber:iq:register">>,
+						  __IgnoreEls, _el),
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"phone">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date,
-			       decode_register_phone(__TopXMLNS, __IgnoreEls,
-						     _el),
-			       State, Name, Username, Remove, Key, City, Nick,
-			       Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date,
+			      decode_register_phone(__TopXMLNS, __IgnoreEls,
+						    _el),
+			      State, Name, Username, Remove, Key, City, Nick,
+			      Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date,
+			      decode_register_phone(<<"jabber:iq:register">>,
+						    __IgnoreEls, _el),
+			      State, Name, Username, Remove, Key, City, Nick,
+			      Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"url">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick,
-			       decode_register_url(__TopXMLNS, __IgnoreEls,
-						   _el),
-			       Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick,
+			      decode_register_url(__TopXMLNS, __IgnoreEls, _el),
+			      Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick,
+			      decode_register_url(<<"jabber:iq:register">>,
+						  __IgnoreEls, _el),
+			      Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"date">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered,
-			       decode_register_date(__TopXMLNS, __IgnoreEls,
-						    _el),
-			       Phone, State, Name, Username, Remove, Key, City,
-			       Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered,
+			      decode_register_date(__TopXMLNS, __IgnoreEls,
+						   _el),
+			      Phone, State, Name, Username, Remove, Key, City,
+			      Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered,
+			      decode_register_date(<<"jabber:iq:register">>,
+						   __IgnoreEls, _el),
+			      Phone, State, Name, Username, Remove, Key, City,
+			      Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"misc">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata,
-			       decode_register_misc(__TopXMLNS, __IgnoreEls,
-						    _el),
-			       Address, Instructions, Text, Last, First,
-			       Password, Registered, Date, Phone, State, Name,
-			       Username, Remove, Key, City, Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata,
+			      decode_register_misc(__TopXMLNS, __IgnoreEls,
+						   _el),
+			      Address, Instructions, Text, Last, First,
+			      Password, Registered, Date, Phone, State, Name,
+			      Username, Remove, Key, City, Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata,
+			      decode_register_misc(<<"jabber:iq:register">>,
+						   __IgnoreEls, _el),
+			      Address, Instructions, Text, Last, First,
+			      Password, Registered, Date, Phone, State, Name,
+			      Username, Remove, Key, City, Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"text">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions,
-			       decode_register_text(__TopXMLNS, __IgnoreEls,
-						    _el),
-			       Last, First, Password, Registered, Date, Phone,
-			       State, Name, Username, Remove, Key, City, Nick,
-			       Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions,
+			      decode_register_text(__TopXMLNS, __IgnoreEls,
+						   _el),
+			      Last, First, Password, Registered, Date, Phone,
+			      State, Name, Username, Remove, Key, City, Nick,
+			      Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions,
+			      decode_register_text(<<"jabber:iq:register">>,
+						   __IgnoreEls, _el),
+			      Last, First, Password, Registered, Date, Phone,
+			      State, Name, Username, Remove, Key, City, Nick,
+			      Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"key">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
 		    Username, Remove, Key, City, Nick, Url, Email) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove,
-			       decode_register_key(__TopXMLNS, __IgnoreEls,
-						   _el),
-			       City, Nick, Url, Email);
-       true ->
-	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
-			       Xdata, Misc, Address, Instructions, Text, Last,
-			       First, Password, Registered, Date, Phone, State,
-			       Name, Username, Remove, Key, City, Nick, Url,
-			       Email)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove,
+			      decode_register_key(__TopXMLNS, __IgnoreEls, _el),
+			      City, Nick, Url, Email);
+      <<"jabber:iq:register">> ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove,
+			      decode_register_key(<<"jabber:iq:register">>,
+						  __IgnoreEls, _el),
+			      City, Nick, Url, Email);
+      _ ->
+	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			      Xdata, Misc, Address, Instructions, Text, Last,
+			      First, Password, Registered, Date, Phone, State,
+			      Name, Username, Remove, Key, City, Nick, Url,
+			      Email)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		    Zip, Xdata, Misc, Address, Instructions, Text, Last,
@@ -15394,34 +17627,50 @@ encode_feature_register({feature_register},
 
 decode_caps(__TopXMLNS, __IgnoreEls,
 	    {xmlel, <<"c">>, _attrs, _els}) ->
-    {Hash, Node, Ver} = decode_caps_attrs(__TopXMLNS,
-					  _attrs, undefined, undefined,
-					  undefined),
-    {caps, Hash, Node, Ver}.
+    {Hash, Node, Exts, Version} =
+	decode_caps_attrs(__TopXMLNS, _attrs, undefined,
+			  undefined, undefined, undefined),
+    {caps, Node, Version, Hash, Exts}.
 
 decode_caps_attrs(__TopXMLNS,
-		  [{<<"hash">>, _val} | _attrs], _Hash, Node, Ver) ->
-    decode_caps_attrs(__TopXMLNS, _attrs, _val, Node, Ver);
+		  [{<<"hash">>, _val} | _attrs], _Hash, Node, Exts,
+		  Version) ->
+    decode_caps_attrs(__TopXMLNS, _attrs, _val, Node, Exts,
+		      Version);
 decode_caps_attrs(__TopXMLNS,
-		  [{<<"node">>, _val} | _attrs], Hash, _Node, Ver) ->
-    decode_caps_attrs(__TopXMLNS, _attrs, Hash, _val, Ver);
+		  [{<<"node">>, _val} | _attrs], Hash, _Node, Exts,
+		  Version) ->
+    decode_caps_attrs(__TopXMLNS, _attrs, Hash, _val, Exts,
+		      Version);
 decode_caps_attrs(__TopXMLNS,
-		  [{<<"ver">>, _val} | _attrs], Hash, Node, _Ver) ->
-    decode_caps_attrs(__TopXMLNS, _attrs, Hash, Node, _val);
+		  [{<<"ext">>, _val} | _attrs], Hash, Node, _Exts,
+		  Version) ->
+    decode_caps_attrs(__TopXMLNS, _attrs, Hash, Node, _val,
+		      Version);
+decode_caps_attrs(__TopXMLNS,
+		  [{<<"ver">>, _val} | _attrs], Hash, Node, Exts,
+		  _Version) ->
+    decode_caps_attrs(__TopXMLNS, _attrs, Hash, Node, Exts,
+		      _val);
 decode_caps_attrs(__TopXMLNS, [_ | _attrs], Hash, Node,
-		  Ver) ->
-    decode_caps_attrs(__TopXMLNS, _attrs, Hash, Node, Ver);
-decode_caps_attrs(__TopXMLNS, [], Hash, Node, Ver) ->
+		  Exts, Version) ->
+    decode_caps_attrs(__TopXMLNS, _attrs, Hash, Node, Exts,
+		      Version);
+decode_caps_attrs(__TopXMLNS, [], Hash, Node, Exts,
+		  Version) ->
     {decode_caps_attr_hash(__TopXMLNS, Hash),
      decode_caps_attr_node(__TopXMLNS, Node),
-     decode_caps_attr_ver(__TopXMLNS, Ver)}.
+     decode_caps_attr_ext(__TopXMLNS, Exts),
+     decode_caps_attr_ver(__TopXMLNS, Version)}.
 
-encode_caps({caps, Hash, Node, Ver}, _xmlns_attrs) ->
+encode_caps({caps, Node, Version, Hash, Exts},
+	    _xmlns_attrs) ->
     _els = [],
-    _attrs = encode_caps_attr_ver(Ver,
-				  encode_caps_attr_node(Node,
-							encode_caps_attr_hash(Hash,
-									      _xmlns_attrs))),
+    _attrs = encode_caps_attr_ver(Version,
+				  encode_caps_attr_ext(Exts,
+						       encode_caps_attr_node(Node,
+									     encode_caps_attr_hash(Hash,
+												   _xmlns_attrs)))),
     {xmlel, <<"c">>, _attrs, _els}.
 
 decode_caps_attr_hash(__TopXMLNS, undefined) ->
@@ -15440,19 +17689,26 @@ encode_caps_attr_node(undefined, _acc) -> _acc;
 encode_caps_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
-decode_caps_attr_ver(__TopXMLNS, undefined) ->
-    undefined;
-decode_caps_attr_ver(__TopXMLNS, _val) ->
-    case catch base64:decode(_val) of
+decode_caps_attr_ext(__TopXMLNS, undefined) -> [];
+decode_caps_attr_ext(__TopXMLNS, _val) ->
+    case catch re:split(_val, "\\h+") of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
-			{bad_attr_value, <<"ver">>, <<"c">>, __TopXMLNS}});
+			{bad_attr_value, <<"ext">>, <<"c">>, __TopXMLNS}});
       _res -> _res
     end.
 
+encode_caps_attr_ext([], _acc) -> _acc;
+encode_caps_attr_ext(_val, _acc) ->
+    [{<<"ext">>, join(_val, 32)} | _acc].
+
+decode_caps_attr_ver(__TopXMLNS, undefined) ->
+    undefined;
+decode_caps_attr_ver(__TopXMLNS, _val) -> _val.
+
 encode_caps_attr_ver(undefined, _acc) -> _acc;
 encode_caps_attr_ver(_val, _acc) ->
-    [{<<"ver">>, base64:encode(_val)} | _acc].
+    [{<<"ver">>, _val} | _acc].
 
 decode_p1_ack(__TopXMLNS, __IgnoreEls,
 	      {xmlel, <<"ack">>, _attrs, _els}) ->
@@ -15528,19 +17784,30 @@ decode_compression_els(__TopXMLNS, __IgnoreEls, [],
 decode_compression_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"method">>, _attrs, _} = _el | _els],
 		       Methods) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_compression_els(__TopXMLNS, __IgnoreEls, _els,
-				  case decode_compression_method(__TopXMLNS,
-								 __IgnoreEls,
-								 _el)
-				      of
-				    undefined -> Methods;
-				    _new_el -> [_new_el | Methods]
-				  end);
-       true ->
-	   decode_compression_els(__TopXMLNS, __IgnoreEls, _els,
-				  Methods)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/features/compress">> ->
+	  decode_compression_els(__TopXMLNS, __IgnoreEls, _els,
+				 case decode_compression_method(__TopXMLNS,
+								__IgnoreEls,
+								_el)
+				     of
+				   undefined -> Methods;
+				   _new_el -> [_new_el | Methods]
+				 end);
+      <<"http://jabber.org/features/compress">> ->
+	  decode_compression_els(__TopXMLNS, __IgnoreEls, _els,
+				 case
+				   decode_compression_method(<<"http://jabber.org/features/compress">>,
+							     __IgnoreEls, _el)
+				     of
+				   undefined -> Methods;
+				   _new_el -> [_new_el | Methods]
+				 end);
+      _ ->
+	  decode_compression_els(__TopXMLNS, __IgnoreEls, _els,
+				 Methods)
     end;
 decode_compression_els(__TopXMLNS, __IgnoreEls,
 		       [_ | _els], Methods) ->
@@ -15615,18 +17882,29 @@ decode_compress_els(__TopXMLNS, __IgnoreEls, [],
 decode_compress_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"method">>, _attrs, _} = _el | _els],
 		    Methods) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_compress_els(__TopXMLNS, __IgnoreEls, _els,
-			       case decode_compress_method(__TopXMLNS,
-							   __IgnoreEls, _el)
-				   of
-				 undefined -> Methods;
-				 _new_el -> [_new_el | Methods]
-			       end);
-       true ->
-	   decode_compress_els(__TopXMLNS, __IgnoreEls, _els,
-			       Methods)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/compress">> ->
+	  decode_compress_els(__TopXMLNS, __IgnoreEls, _els,
+			      case decode_compress_method(__TopXMLNS,
+							  __IgnoreEls, _el)
+				  of
+				undefined -> Methods;
+				_new_el -> [_new_el | Methods]
+			      end);
+      <<"http://jabber.org/protocol/compress">> ->
+	  decode_compress_els(__TopXMLNS, __IgnoreEls, _els,
+			      case
+				decode_compress_method(<<"http://jabber.org/protocol/compress">>,
+						       __IgnoreEls, _el)
+				  of
+				undefined -> Methods;
+				_new_el -> [_new_el | Methods]
+			      end);
+      _ ->
+	  decode_compress_els(__TopXMLNS, __IgnoreEls, _els,
+			      Methods)
     end;
 decode_compress_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		    Methods) ->
@@ -15688,46 +17966,70 @@ decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
 			    [{xmlel, <<"setup-failed">>, _attrs, _} = _el
 			     | _els],
 			    Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
-				       _els,
-				       decode_compress_failure_setup_failed(__TopXMLNS,
-									    __IgnoreEls,
-									    _el));
-       true ->
-	   decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
-				       _els, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/compress">> ->
+	  decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      decode_compress_failure_setup_failed(__TopXMLNS,
+									   __IgnoreEls,
+									   _el));
+      <<"http://jabber.org/protocol/compress">> ->
+	  decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      decode_compress_failure_setup_failed(<<"http://jabber.org/protocol/compress">>,
+									   __IgnoreEls,
+									   _el));
+      _ ->
+	  decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
+				      _els, Reason)
     end;
 decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
 			    [{xmlel, <<"processing-failed">>, _attrs, _} = _el
 			     | _els],
 			    Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
-				       _els,
-				       decode_compress_failure_processing_failed(__TopXMLNS,
-										 __IgnoreEls,
-										 _el));
-       true ->
-	   decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
-				       _els, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/compress">> ->
+	  decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      decode_compress_failure_processing_failed(__TopXMLNS,
+										__IgnoreEls,
+										_el));
+      <<"http://jabber.org/protocol/compress">> ->
+	  decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      decode_compress_failure_processing_failed(<<"http://jabber.org/protocol/compress">>,
+										__IgnoreEls,
+										_el));
+      _ ->
+	  decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
+				      _els, Reason)
     end;
 decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
 			    [{xmlel, <<"unsupported-method">>, _attrs, _} = _el
 			     | _els],
 			    Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
-				       _els,
-				       decode_compress_failure_unsupported_method(__TopXMLNS,
-										  __IgnoreEls,
-										  _el));
-       true ->
-	   decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
-				       _els, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/compress">> ->
+	  decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      decode_compress_failure_unsupported_method(__TopXMLNS,
+										 __IgnoreEls,
+										 _el));
+      <<"http://jabber.org/protocol/compress">> ->
+	  decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      decode_compress_failure_unsupported_method(<<"http://jabber.org/protocol/compress">>,
+										 __IgnoreEls,
+										 _el));
+      _ ->
+	  decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
+				      _els, Reason)
     end;
 decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
 			    [_ | _els], Reason) ->
@@ -15828,14 +18130,20 @@ decode_starttls_els(__TopXMLNS, __IgnoreEls, [],
 decode_starttls_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"required">>, _attrs, _} = _el | _els],
 		    Required) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_starttls_els(__TopXMLNS, __IgnoreEls, _els,
-			       decode_starttls_required(__TopXMLNS, __IgnoreEls,
-							_el));
-       true ->
-	   decode_starttls_els(__TopXMLNS, __IgnoreEls, _els,
-			       Required)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-tls">> ->
+	  decode_starttls_els(__TopXMLNS, __IgnoreEls, _els,
+			      decode_starttls_required(__TopXMLNS, __IgnoreEls,
+						       _el));
+      <<"urn:ietf:params:xml:ns:xmpp-tls">> ->
+	  decode_starttls_els(__TopXMLNS, __IgnoreEls, _els,
+			      decode_starttls_required(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
+						       __IgnoreEls, _el));
+      _ ->
+	  decode_starttls_els(__TopXMLNS, __IgnoreEls, _els,
+			      Required)
     end;
 decode_starttls_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		    Required) ->
@@ -15874,20 +18182,32 @@ decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls, [],
 decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
 			   [{xmlel, <<"mechanism">>, _attrs, _} = _el | _els],
 			   List) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
-				      _els,
-				      case decode_sasl_mechanism(__TopXMLNS,
-								 __IgnoreEls,
-								 _el)
-					  of
-					undefined -> List;
-					_new_el -> [_new_el | List]
-				      end);
-       true ->
-	   decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
-				      _els, List)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
+				     _els,
+				     case decode_sasl_mechanism(__TopXMLNS,
+								__IgnoreEls,
+								_el)
+					 of
+				       undefined -> List;
+				       _new_el -> [_new_el | List]
+				     end);
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
+				     _els,
+				     case
+				       decode_sasl_mechanism(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+							     __IgnoreEls, _el)
+					 of
+				       undefined -> List;
+				       _new_el -> [_new_el | List]
+				     end);
+      _ ->
+	  decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
+				     _els, List)
     end;
 decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
 			   [_ | _els], List) ->
@@ -15949,179 +18269,297 @@ decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, [],
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"text">>, _attrs, _} = _el | _els], Text,
 			Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   [decode_sasl_failure_text(__TopXMLNS,
-							     __IgnoreEls, _el)
-				    | Text],
-				   Reason);
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_sasl_failure_text(__TopXMLNS,
+							    __IgnoreEls, _el)
+				   | Text],
+				  Reason);
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_sasl_failure_text(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+							    __IgnoreEls, _el)
+				   | Text],
+				  Reason);
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"aborted">>, _attrs, _} = _el | _els], Text,
 			Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_sasl_failure_aborted(__TopXMLNS,
-							       __IgnoreEls,
-							       _el));
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_aborted(__TopXMLNS,
+							      __IgnoreEls,
+							      _el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_aborted(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+							      __IgnoreEls,
+							      _el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"account-disabled">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_sasl_failure_account_disabled(__TopXMLNS,
-									__IgnoreEls,
-									_el));
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_account_disabled(__TopXMLNS,
+								       __IgnoreEls,
+								       _el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_account_disabled(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+								       __IgnoreEls,
+								       _el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"credentials-expired">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_sasl_failure_credentials_expired(__TopXMLNS,
-									   __IgnoreEls,
-									   _el));
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_credentials_expired(__TopXMLNS,
+									  __IgnoreEls,
+									  _el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_credentials_expired(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+									  __IgnoreEls,
+									  _el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"encryption-required">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_sasl_failure_encryption_required(__TopXMLNS,
-									   __IgnoreEls,
-									   _el));
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_encryption_required(__TopXMLNS,
+									  __IgnoreEls,
+									  _el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_encryption_required(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+									  __IgnoreEls,
+									  _el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"incorrect-encoding">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_sasl_failure_incorrect_encoding(__TopXMLNS,
-									  __IgnoreEls,
-									  _el));
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_incorrect_encoding(__TopXMLNS,
+									 __IgnoreEls,
+									 _el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_incorrect_encoding(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+									 __IgnoreEls,
+									 _el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"invalid-authzid">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_sasl_failure_invalid_authzid(__TopXMLNS,
-								       __IgnoreEls,
-								       _el));
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_invalid_authzid(__TopXMLNS,
+								      __IgnoreEls,
+								      _el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_invalid_authzid(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+								      __IgnoreEls,
+								      _el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"invalid-mechanism">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_sasl_failure_invalid_mechanism(__TopXMLNS,
-									 __IgnoreEls,
-									 _el));
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_invalid_mechanism(__TopXMLNS,
+									__IgnoreEls,
+									_el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_invalid_mechanism(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+									__IgnoreEls,
+									_el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"malformed-request">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_sasl_failure_malformed_request(__TopXMLNS,
-									 __IgnoreEls,
-									 _el));
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_malformed_request(__TopXMLNS,
+									__IgnoreEls,
+									_el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_malformed_request(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+									__IgnoreEls,
+									_el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"mechanism-too-weak">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_sasl_failure_mechanism_too_weak(__TopXMLNS,
-									  __IgnoreEls,
-									  _el));
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_mechanism_too_weak(__TopXMLNS,
+									 __IgnoreEls,
+									 _el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_mechanism_too_weak(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+									 __IgnoreEls,
+									 _el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"not-authorized">>, _attrs, _} = _el | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_sasl_failure_not_authorized(__TopXMLNS,
-								      __IgnoreEls,
-								      _el));
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_not_authorized(__TopXMLNS,
+								     __IgnoreEls,
+								     _el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+								     __IgnoreEls,
+								     _el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
+    end;
+decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"bad-protocol">>, _attrs, _} = _el | _els],
+			Text, Reason) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_bad_protocol(__TopXMLNS,
+								   __IgnoreEls,
+								   _el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_bad_protocol(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+								   __IgnoreEls,
+								   _el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"temporary-auth-failure">>, _attrs, _} = _el
 			 | _els],
 			Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text,
-				   decode_sasl_failure_temporary_auth_failure(__TopXMLNS,
-									      __IgnoreEls,
-									      _el));
-       true ->
-	   decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
-				   Text, Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_temporary_auth_failure(__TopXMLNS,
+									     __IgnoreEls,
+									     _el));
+      <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text,
+				  decode_sasl_failure_temporary_auth_failure(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+									     __IgnoreEls,
+									     _el));
+      _ ->
+	  decode_sasl_failure_els(__TopXMLNS, __IgnoreEls, _els,
+				  Text, Reason)
     end;
 decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			[_ | _els], Text, Reason) ->
@@ -16187,6 +18625,9 @@ encode_sasl_failure({sasl_failure, Reason, Text},
 'encode_sasl_failure_$reason'('not-authorized' = Reason,
 			      _acc) ->
     [encode_sasl_failure_not_authorized(Reason, []) | _acc];
+'encode_sasl_failure_$reason'('bad-protocol' = Reason,
+			      _acc) ->
+    [encode_sasl_failure_bad_protocol(Reason, []) | _acc];
 'encode_sasl_failure_$reason'('temporary-auth-failure' =
 				  Reason,
 			      _acc) ->
@@ -16204,6 +18645,17 @@ encode_sasl_failure_temporary_auth_failure('temporary-auth-failure',
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"temporary-auth-failure">>, _attrs, _els}.
+
+decode_sasl_failure_bad_protocol(__TopXMLNS,
+				 __IgnoreEls,
+				 {xmlel, <<"bad-protocol">>, _attrs, _els}) ->
+    'bad-protocol'.
+
+encode_sasl_failure_bad_protocol('bad-protocol',
+				 _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"bad-protocol">>, _attrs, _els}.
 
 decode_sasl_failure_not_authorized(__TopXMLNS,
 				   __IgnoreEls,
@@ -16566,6 +19018,253 @@ encode_sasl_auth_cdata(undefined, _acc) -> _acc;
 encode_sasl_auth_cdata(_val, _acc) ->
     [{xmlcdata, base64:encode(_val)} | _acc].
 
+decode_legacy_auth(__TopXMLNS, __IgnoreEls,
+		   {xmlel, <<"query">>, _attrs, _els}) ->
+    {Digest, Password, Resource, Username} =
+	decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+			       undefined, undefined, undefined, undefined),
+    {legacy_auth, Username, Password, Digest, Resource}.
+
+decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, [],
+		       Digest, Password, Resource, Username) ->
+    {Digest, Password, Resource, Username};
+decode_legacy_auth_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlel, <<"username">>, _attrs, _} = _el | _els],
+		       Digest, Password, Resource, Username) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:auth">> ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 Digest, Password, Resource,
+				 decode_legacy_auth_username(__TopXMLNS,
+							     __IgnoreEls, _el));
+      <<"jabber:iq:auth">> ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 Digest, Password, Resource,
+				 decode_legacy_auth_username(<<"jabber:iq:auth">>,
+							     __IgnoreEls, _el));
+      _ ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 Digest, Password, Resource, Username)
+    end;
+decode_legacy_auth_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlel, <<"password">>, _attrs, _} = _el | _els],
+		       Digest, Password, Resource, Username) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:auth">> ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 Digest,
+				 decode_legacy_auth_password(__TopXMLNS,
+							     __IgnoreEls, _el),
+				 Resource, Username);
+      <<"jabber:iq:auth">> ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 Digest,
+				 decode_legacy_auth_password(<<"jabber:iq:auth">>,
+							     __IgnoreEls, _el),
+				 Resource, Username);
+      _ ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 Digest, Password, Resource, Username)
+    end;
+decode_legacy_auth_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlel, <<"digest">>, _attrs, _} = _el | _els], Digest,
+		       Password, Resource, Username) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:auth">> ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_legacy_auth_digest(__TopXMLNS,
+							   __IgnoreEls, _el),
+				 Password, Resource, Username);
+      <<"jabber:iq:auth">> ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_legacy_auth_digest(<<"jabber:iq:auth">>,
+							   __IgnoreEls, _el),
+				 Password, Resource, Username);
+      _ ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 Digest, Password, Resource, Username)
+    end;
+decode_legacy_auth_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlel, <<"resource">>, _attrs, _} = _el | _els],
+		       Digest, Password, Resource, Username) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:auth">> ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 Digest, Password,
+				 decode_legacy_auth_resource(__TopXMLNS,
+							     __IgnoreEls, _el),
+				 Username);
+      <<"jabber:iq:auth">> ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 Digest, Password,
+				 decode_legacy_auth_resource(<<"jabber:iq:auth">>,
+							     __IgnoreEls, _el),
+				 Username);
+      _ ->
+	  decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+				 Digest, Password, Resource, Username)
+    end;
+decode_legacy_auth_els(__TopXMLNS, __IgnoreEls,
+		       [_ | _els], Digest, Password, Resource, Username) ->
+    decode_legacy_auth_els(__TopXMLNS, __IgnoreEls, _els,
+			   Digest, Password, Resource, Username).
+
+encode_legacy_auth({legacy_auth, Username, Password,
+		    Digest, Resource},
+		   _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_legacy_auth_$digest'(Digest,
+						   'encode_legacy_auth_$password'(Password,
+										  'encode_legacy_auth_$resource'(Resource,
+														 'encode_legacy_auth_$username'(Username,
+																		[]))))),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"query">>, _attrs, _els}.
+
+'encode_legacy_auth_$digest'(undefined, _acc) -> _acc;
+'encode_legacy_auth_$digest'(Digest, _acc) ->
+    [encode_legacy_auth_digest(Digest, []) | _acc].
+
+'encode_legacy_auth_$password'(undefined, _acc) -> _acc;
+'encode_legacy_auth_$password'(Password, _acc) ->
+    [encode_legacy_auth_password(Password, []) | _acc].
+
+'encode_legacy_auth_$resource'(undefined, _acc) -> _acc;
+'encode_legacy_auth_$resource'(Resource, _acc) ->
+    [encode_legacy_auth_resource(Resource, []) | _acc].
+
+'encode_legacy_auth_$username'(undefined, _acc) -> _acc;
+'encode_legacy_auth_$username'(Username, _acc) ->
+    [encode_legacy_auth_username(Username, []) | _acc].
+
+decode_legacy_auth_resource(__TopXMLNS, __IgnoreEls,
+			    {xmlel, <<"resource">>, _attrs, _els}) ->
+    Cdata = decode_legacy_auth_resource_els(__TopXMLNS,
+					    __IgnoreEls, _els, <<>>),
+    Cdata.
+
+decode_legacy_auth_resource_els(__TopXMLNS, __IgnoreEls,
+				[], Cdata) ->
+    decode_legacy_auth_resource_cdata(__TopXMLNS, Cdata);
+decode_legacy_auth_resource_els(__TopXMLNS, __IgnoreEls,
+				[{xmlcdata, _data} | _els], Cdata) ->
+    decode_legacy_auth_resource_els(__TopXMLNS, __IgnoreEls,
+				    _els, <<Cdata/binary, _data/binary>>);
+decode_legacy_auth_resource_els(__TopXMLNS, __IgnoreEls,
+				[_ | _els], Cdata) ->
+    decode_legacy_auth_resource_els(__TopXMLNS, __IgnoreEls,
+				    _els, Cdata).
+
+encode_legacy_auth_resource(Cdata, _xmlns_attrs) ->
+    _els = encode_legacy_auth_resource_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"resource">>, _attrs, _els}.
+
+decode_legacy_auth_resource_cdata(__TopXMLNS, <<>>) ->
+    none;
+decode_legacy_auth_resource_cdata(__TopXMLNS, _val) ->
+    _val.
+
+encode_legacy_auth_resource_cdata(none, _acc) -> _acc;
+encode_legacy_auth_resource_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_legacy_auth_digest(__TopXMLNS, __IgnoreEls,
+			  {xmlel, <<"digest">>, _attrs, _els}) ->
+    Cdata = decode_legacy_auth_digest_els(__TopXMLNS,
+					  __IgnoreEls, _els, <<>>),
+    Cdata.
+
+decode_legacy_auth_digest_els(__TopXMLNS, __IgnoreEls,
+			      [], Cdata) ->
+    decode_legacy_auth_digest_cdata(__TopXMLNS, Cdata);
+decode_legacy_auth_digest_els(__TopXMLNS, __IgnoreEls,
+			      [{xmlcdata, _data} | _els], Cdata) ->
+    decode_legacy_auth_digest_els(__TopXMLNS, __IgnoreEls,
+				  _els, <<Cdata/binary, _data/binary>>);
+decode_legacy_auth_digest_els(__TopXMLNS, __IgnoreEls,
+			      [_ | _els], Cdata) ->
+    decode_legacy_auth_digest_els(__TopXMLNS, __IgnoreEls,
+				  _els, Cdata).
+
+encode_legacy_auth_digest(Cdata, _xmlns_attrs) ->
+    _els = encode_legacy_auth_digest_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"digest">>, _attrs, _els}.
+
+decode_legacy_auth_digest_cdata(__TopXMLNS, <<>>) ->
+    none;
+decode_legacy_auth_digest_cdata(__TopXMLNS, _val) ->
+    _val.
+
+encode_legacy_auth_digest_cdata(none, _acc) -> _acc;
+encode_legacy_auth_digest_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_legacy_auth_password(__TopXMLNS, __IgnoreEls,
+			    {xmlel, <<"password">>, _attrs, _els}) ->
+    Cdata = decode_legacy_auth_password_els(__TopXMLNS,
+					    __IgnoreEls, _els, <<>>),
+    Cdata.
+
+decode_legacy_auth_password_els(__TopXMLNS, __IgnoreEls,
+				[], Cdata) ->
+    decode_legacy_auth_password_cdata(__TopXMLNS, Cdata);
+decode_legacy_auth_password_els(__TopXMLNS, __IgnoreEls,
+				[{xmlcdata, _data} | _els], Cdata) ->
+    decode_legacy_auth_password_els(__TopXMLNS, __IgnoreEls,
+				    _els, <<Cdata/binary, _data/binary>>);
+decode_legacy_auth_password_els(__TopXMLNS, __IgnoreEls,
+				[_ | _els], Cdata) ->
+    decode_legacy_auth_password_els(__TopXMLNS, __IgnoreEls,
+				    _els, Cdata).
+
+encode_legacy_auth_password(Cdata, _xmlns_attrs) ->
+    _els = encode_legacy_auth_password_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"password">>, _attrs, _els}.
+
+decode_legacy_auth_password_cdata(__TopXMLNS, <<>>) ->
+    none;
+decode_legacy_auth_password_cdata(__TopXMLNS, _val) ->
+    _val.
+
+encode_legacy_auth_password_cdata(none, _acc) -> _acc;
+encode_legacy_auth_password_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_legacy_auth_username(__TopXMLNS, __IgnoreEls,
+			    {xmlel, <<"username">>, _attrs, _els}) ->
+    Cdata = decode_legacy_auth_username_els(__TopXMLNS,
+					    __IgnoreEls, _els, <<>>),
+    Cdata.
+
+decode_legacy_auth_username_els(__TopXMLNS, __IgnoreEls,
+				[], Cdata) ->
+    decode_legacy_auth_username_cdata(__TopXMLNS, Cdata);
+decode_legacy_auth_username_els(__TopXMLNS, __IgnoreEls,
+				[{xmlcdata, _data} | _els], Cdata) ->
+    decode_legacy_auth_username_els(__TopXMLNS, __IgnoreEls,
+				    _els, <<Cdata/binary, _data/binary>>);
+decode_legacy_auth_username_els(__TopXMLNS, __IgnoreEls,
+				[_ | _els], Cdata) ->
+    decode_legacy_auth_username_els(__TopXMLNS, __IgnoreEls,
+				    _els, Cdata).
+
+encode_legacy_auth_username(Cdata, _xmlns_attrs) ->
+    _els = encode_legacy_auth_username_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"username">>, _attrs, _els}.
+
+decode_legacy_auth_username_cdata(__TopXMLNS, <<>>) ->
+    none;
+decode_legacy_auth_username_cdata(__TopXMLNS, _val) ->
+    _val.
+
+encode_legacy_auth_username_cdata(none, _acc) -> _acc;
+encode_legacy_auth_username_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
 decode_bind(__TopXMLNS, __IgnoreEls,
 	    {xmlel, <<"bind">>, _attrs, _els}) ->
     {Jid, Resource} = decode_bind_els(__TopXMLNS,
@@ -16578,25 +19277,38 @@ decode_bind_els(__TopXMLNS, __IgnoreEls, [], Jid,
 decode_bind_els(__TopXMLNS, __IgnoreEls,
 		[{xmlel, <<"jid">>, _attrs, _} = _el | _els], Jid,
 		Resource) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_bind_els(__TopXMLNS, __IgnoreEls, _els,
-			   decode_bind_jid(__TopXMLNS, __IgnoreEls, _el),
-			   Resource);
-       true ->
-	   decode_bind_els(__TopXMLNS, __IgnoreEls, _els, Jid,
-			   Resource)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-bind">> ->
+	  decode_bind_els(__TopXMLNS, __IgnoreEls, _els,
+			  decode_bind_jid(__TopXMLNS, __IgnoreEls, _el),
+			  Resource);
+      <<"urn:ietf:params:xml:ns:xmpp-bind">> ->
+	  decode_bind_els(__TopXMLNS, __IgnoreEls, _els,
+			  decode_bind_jid(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
+					  __IgnoreEls, _el),
+			  Resource);
+      _ ->
+	  decode_bind_els(__TopXMLNS, __IgnoreEls, _els, Jid,
+			  Resource)
     end;
 decode_bind_els(__TopXMLNS, __IgnoreEls,
 		[{xmlel, <<"resource">>, _attrs, _} = _el | _els], Jid,
 		Resource) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_bind_els(__TopXMLNS, __IgnoreEls, _els, Jid,
-			   decode_bind_resource(__TopXMLNS, __IgnoreEls, _el));
-       true ->
-	   decode_bind_els(__TopXMLNS, __IgnoreEls, _els, Jid,
-			   Resource)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"urn:ietf:params:xml:ns:xmpp-bind">> ->
+	  decode_bind_els(__TopXMLNS, __IgnoreEls, _els, Jid,
+			  decode_bind_resource(__TopXMLNS, __IgnoreEls, _el));
+      <<"urn:ietf:params:xml:ns:xmpp-bind">> ->
+	  decode_bind_els(__TopXMLNS, __IgnoreEls, _els, Jid,
+			  decode_bind_resource(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
+					       __IgnoreEls, _el));
+      _ ->
+	  decode_bind_els(__TopXMLNS, __IgnoreEls, _els, Jid,
+			  Resource)
     end;
 decode_bind_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		Jid, Resource) ->
@@ -16695,9 +19407,10 @@ decode_error(__TopXMLNS, __IgnoreEls,
 	     {xmlel, <<"error">>, _attrs, _els}) ->
     {Text, Reason} = decode_error_els(__TopXMLNS,
 				      __IgnoreEls, _els, undefined, undefined),
-    {Type, By} = decode_error_attrs(__TopXMLNS, _attrs,
-				    undefined, undefined),
-    {error, Type, By, Reason, Text}.
+    {Type, Code, By} = decode_error_attrs(__TopXMLNS,
+					  _attrs, undefined, undefined,
+					  undefined),
+    {error, Type, Code, By, Reason, Text}.
 
 decode_error_els(__TopXMLNS, __IgnoreEls, [], Text,
 		 Reason) ->
@@ -16705,314 +19418,298 @@ decode_error_els(__TopXMLNS, __IgnoreEls, [], Text,
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"text">>, _attrs, _} = _el | _els], Text,
 		 Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els,
-			    decode_error_text(_xmlns, __IgnoreEls, _el),
-			    Reason);
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els,
+			   decode_error_text(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					     __IgnoreEls, _el),
+			   Reason);
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"bad-request">>, _attrs, _} = _el | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_bad_request(_xmlns, __IgnoreEls, _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_bad_request(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						    __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"conflict">>, _attrs, _} = _el | _els], Text,
 		 Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_conflict(_xmlns, __IgnoreEls, _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_conflict(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						 __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"feature-not-implemented">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_feature_not_implemented(_xmlns,
-								 __IgnoreEls,
-								 _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_feature_not_implemented(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								__IgnoreEls,
+								_el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"forbidden">>, _attrs, _} = _el | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_forbidden(_xmlns, __IgnoreEls, _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_forbidden(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						  __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"gone">>, _attrs, _} = _el | _els], Text,
 		 Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_gone(_xmlns, __IgnoreEls, _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_gone(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					     __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"internal-server-error">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_internal_server_error(_xmlns,
-							       __IgnoreEls,
-							       _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_internal_server_error(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							      __IgnoreEls,
+							      _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"item-not-found">>, _attrs, _} = _el | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_item_not_found(_xmlns, __IgnoreEls,
-							_el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_item_not_found(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						       __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"jid-malformed">>, _attrs, _} = _el | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_jid_malformed(_xmlns, __IgnoreEls,
-						       _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_jid_malformed(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						      __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"not-acceptable">>, _attrs, _} = _el | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_not_acceptable(_xmlns, __IgnoreEls,
-							_el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_not_acceptable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						       __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"not-allowed">>, _attrs, _} = _el | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_not_allowed(_xmlns, __IgnoreEls, _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_not_allowed(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						    __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"not-authorized">>, _attrs, _} = _el | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_not_authorized(_xmlns, __IgnoreEls,
-							_el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						       __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"policy-violation">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_policy_violation(_xmlns, __IgnoreEls,
-							  _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_policy_violation(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							 __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"recipient-unavailable">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_recipient_unavailable(_xmlns,
-							       __IgnoreEls,
-							       _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_recipient_unavailable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							      __IgnoreEls,
+							      _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"redirect">>, _attrs, _} = _el | _els], Text,
 		 Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_redirect(_xmlns, __IgnoreEls, _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_redirect(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+						 __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"registration-required">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_registration_required(_xmlns,
-							       __IgnoreEls,
-							       _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_registration_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							      __IgnoreEls,
+							      _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"remote-server-not-found">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_remote_server_not_found(_xmlns,
-								 __IgnoreEls,
-								 _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_remote_server_not_found(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+								__IgnoreEls,
+								_el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"remote-server-timeout">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_remote_server_timeout(_xmlns,
-							       __IgnoreEls,
-							       _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_remote_server_timeout(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							      __IgnoreEls,
+							      _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"resource-constraint">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_resource_constraint(_xmlns,
-							     __IgnoreEls, _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_resource_constraint(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							    __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"service-unavailable">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_service_unavailable(_xmlns,
-							     __IgnoreEls, _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_service_unavailable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							    __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"subscription-required">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_subscription_required(_xmlns,
-							       __IgnoreEls,
-							       _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_subscription_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							      __IgnoreEls,
+							      _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"undefined-condition">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_undefined_condition(_xmlns,
-							     __IgnoreEls, _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_undefined_condition(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							    __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"unexpected-request">>, _attrs, _} = _el
 		  | _els],
 		 Text, Reason) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns ==
-	 <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    decode_error_unexpected_request(_xmlns, __IgnoreEls,
-							    _el));
-       true ->
-	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			    Reason)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   decode_error_unexpected_request(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+							   __IgnoreEls, _el));
+      _ ->
+	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			   Reason)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		 Text, Reason) ->
@@ -17020,25 +19717,32 @@ decode_error_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		     Reason).
 
 decode_error_attrs(__TopXMLNS,
-		   [{<<"type">>, _val} | _attrs], _Type, By) ->
-    decode_error_attrs(__TopXMLNS, _attrs, _val, By);
+		   [{<<"type">>, _val} | _attrs], _Type, Code, By) ->
+    decode_error_attrs(__TopXMLNS, _attrs, _val, Code, By);
 decode_error_attrs(__TopXMLNS,
-		   [{<<"by">>, _val} | _attrs], Type, _By) ->
-    decode_error_attrs(__TopXMLNS, _attrs, Type, _val);
-decode_error_attrs(__TopXMLNS, [_ | _attrs], Type,
+		   [{<<"code">>, _val} | _attrs], Type, _Code, By) ->
+    decode_error_attrs(__TopXMLNS, _attrs, Type, _val, By);
+decode_error_attrs(__TopXMLNS,
+		   [{<<"by">>, _val} | _attrs], Type, Code, _By) ->
+    decode_error_attrs(__TopXMLNS, _attrs, Type, Code,
+		       _val);
+decode_error_attrs(__TopXMLNS, [_ | _attrs], Type, Code,
 		   By) ->
-    decode_error_attrs(__TopXMLNS, _attrs, Type, By);
-decode_error_attrs(__TopXMLNS, [], Type, By) ->
+    decode_error_attrs(__TopXMLNS, _attrs, Type, Code, By);
+decode_error_attrs(__TopXMLNS, [], Type, Code, By) ->
     {decode_error_attr_type(__TopXMLNS, Type),
+     decode_error_attr_code(__TopXMLNS, Code),
      decode_error_attr_by(__TopXMLNS, By)}.
 
-encode_error({error, Type, By, Reason, Text},
+encode_error({error, Type, Code, By, Reason, Text},
 	     _xmlns_attrs) ->
     _els = lists:reverse('encode_error_$text'(Text,
 					      'encode_error_$reason'(Reason,
 								     []))),
     _attrs = encode_error_attr_by(By,
-				  encode_error_attr_type(Type, _xmlns_attrs)),
+				  encode_error_attr_code(Code,
+							 encode_error_attr_type(Type,
+										_xmlns_attrs))),
     {xmlel, <<"error">>, _attrs, _els}.
 
 'encode_error_$text'(undefined, _acc) -> _acc;
@@ -17193,6 +19897,20 @@ decode_error_attr_type(__TopXMLNS, _val) ->
 
 encode_error_attr_type(_val, _acc) ->
     [{<<"type">>, enc_enum(_val)} | _acc].
+
+decode_error_attr_code(__TopXMLNS, undefined) ->
+    undefined;
+decode_error_attr_code(__TopXMLNS, _val) ->
+    case catch dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"code">>, <<"error">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_error_attr_code(undefined, _acc) -> _acc;
+encode_error_attr_code(_val, _acc) ->
+    [{<<"code">>, enc_int(_val)} | _acc].
 
 decode_error_attr_by(__TopXMLNS, undefined) ->
     undefined;
@@ -17551,57 +20269,81 @@ decode_presence_els(__TopXMLNS, __IgnoreEls, [], Error,
 decode_presence_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"error">>, _attrs, _} = _el | _els], Error,
 		    Status, Show, Priority, __Els) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			       decode_error(__TopXMLNS, __IgnoreEls, _el),
-			       Status, Show, Priority, __Els);
-       true ->
-	   decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			       Error, Status, Show, Priority, __Els)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      decode_error(__TopXMLNS, __IgnoreEls, _el),
+			      Status, Show, Priority, __Els);
+      <<"jabber:client">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      decode_error(<<"jabber:client">>, __IgnoreEls,
+					   _el),
+			      Status, Show, Priority, __Els);
+      _ ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Error, Status, Show, Priority, __Els)
     end;
 decode_presence_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"show">>, _attrs, _} = _el | _els], Error,
 		    Status, Show, Priority, __Els) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			       Error, Status,
-			       decode_presence_show(__TopXMLNS, __IgnoreEls,
-						    _el),
-			       Priority, __Els);
-       true ->
-	   decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			       Error, Status, Show, Priority, __Els)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Error, Status,
+			      decode_presence_show(__TopXMLNS, __IgnoreEls,
+						   _el),
+			      Priority, __Els);
+      <<"jabber:client">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Error, Status,
+			      decode_presence_show(<<"jabber:client">>,
+						   __IgnoreEls, _el),
+			      Priority, __Els);
+      _ ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Error, Status, Show, Priority, __Els)
     end;
 decode_presence_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"status">>, _attrs, _} = _el | _els], Error,
 		    Status, Show, Priority, __Els) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			       Error,
-			       [decode_presence_status(__TopXMLNS, __IgnoreEls,
-						       _el)
-				| Status],
-			       Show, Priority, __Els);
-       true ->
-	   decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			       Error, Status, Show, Priority, __Els)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Error,
+			      [decode_presence_status(__TopXMLNS, __IgnoreEls,
+						      _el)
+			       | Status],
+			      Show, Priority, __Els);
+      <<"jabber:client">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Error,
+			      [decode_presence_status(<<"jabber:client">>,
+						      __IgnoreEls, _el)
+			       | Status],
+			      Show, Priority, __Els);
+      _ ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Error, Status, Show, Priority, __Els)
     end;
 decode_presence_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"priority">>, _attrs, _} = _el | _els],
 		    Error, Status, Show, Priority, __Els) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			       Error, Status, Show,
-			       decode_presence_priority(__TopXMLNS, __IgnoreEls,
-							_el),
-			       __Els);
-       true ->
-	   decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			       Error, Status, Show, Priority, __Els)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Error, Status, Show,
+			      decode_presence_priority(__TopXMLNS, __IgnoreEls,
+						       _el),
+			      __Els);
+      <<"jabber:client">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Error, Status, Show,
+			      decode_presence_priority(<<"jabber:client">>,
+						       __IgnoreEls, _el),
+			      __Els);
+      _ ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Error, Status, Show, Priority, __Els)
     end;
 decode_presence_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, _, _, _} = _el | _els], Error, Status, Show,
@@ -17705,11 +20447,11 @@ encode_presence_attr_id(_val, _acc) ->
     [{<<"id">>, _val} | _acc].
 
 decode_presence_attr_type(__TopXMLNS, undefined) ->
-    undefined;
+    available;
 decode_presence_attr_type(__TopXMLNS, _val) ->
     case catch dec_enum(_val,
 			[unavailable, subscribe, subscribed, unsubscribe,
-			 unsubscribed, probe, error])
+			 unsubscribed, available, probe, error])
 	of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
@@ -17718,7 +20460,7 @@ decode_presence_attr_type(__TopXMLNS, _val) ->
       _res -> _res
     end.
 
-encode_presence_attr_type(undefined, _acc) -> _acc;
+encode_presence_attr_type(available, _acc) -> _acc;
 encode_presence_attr_type(_val, _acc) ->
     [{<<"type">>, enc_enum(_val)} | _acc].
 
@@ -17913,56 +20655,80 @@ decode_message_els(__TopXMLNS, __IgnoreEls, [], Error,
 decode_message_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"error">>, _attrs, _} = _el | _els], Error,
 		   Thread, Subject, Body, __Els) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_message_els(__TopXMLNS, __IgnoreEls, _els,
-			      decode_error(__TopXMLNS, __IgnoreEls, _el),
-			      Thread, Subject, Body, __Els);
-       true ->
-	   decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
-			      Thread, Subject, Body, __Els)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_error(__TopXMLNS, __IgnoreEls, _el), Thread,
+			     Subject, Body, __Els);
+      <<"jabber:client">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_error(<<"jabber:client">>, __IgnoreEls,
+					  _el),
+			     Thread, Subject, Body, __Els);
+      _ ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+			     Thread, Subject, Body, __Els)
     end;
 decode_message_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"subject">>, _attrs, _} = _el | _els], Error,
 		   Thread, Subject, Body, __Els) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
-			      Thread,
-			      [decode_message_subject(__TopXMLNS, __IgnoreEls,
-						      _el)
-			       | Subject],
-			      Body, __Els);
-       true ->
-	   decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
-			      Thread, Subject, Body, __Els)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+			     Thread,
+			     [decode_message_subject(__TopXMLNS, __IgnoreEls,
+						     _el)
+			      | Subject],
+			     Body, __Els);
+      <<"jabber:client">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+			     Thread,
+			     [decode_message_subject(<<"jabber:client">>,
+						     __IgnoreEls, _el)
+			      | Subject],
+			     Body, __Els);
+      _ ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+			     Thread, Subject, Body, __Els)
     end;
 decode_message_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"thread">>, _attrs, _} = _el | _els], Error,
 		   Thread, Subject, Body, __Els) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
-			      decode_message_thread(__TopXMLNS, __IgnoreEls,
-						    _el),
-			      Subject, Body, __Els);
-       true ->
-	   decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
-			      Thread, Subject, Body, __Els)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+			     decode_message_thread(__TopXMLNS, __IgnoreEls,
+						   _el),
+			     Subject, Body, __Els);
+      <<"jabber:client">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+			     decode_message_thread(<<"jabber:client">>,
+						   __IgnoreEls, _el),
+			     Subject, Body, __Els);
+      _ ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+			     Thread, Subject, Body, __Els)
     end;
 decode_message_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"body">>, _attrs, _} = _el | _els], Error,
 		   Thread, Subject, Body, __Els) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
-			      Thread, Subject,
-			      [decode_message_body(__TopXMLNS, __IgnoreEls, _el)
-			       | Body],
-			      __Els);
-       true ->
-	   decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
-			      Thread, Subject, Body, __Els)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+			     Thread, Subject,
+			     [decode_message_body(__TopXMLNS, __IgnoreEls, _el)
+			      | Body],
+			     __Els);
+      <<"jabber:client">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+			     Thread, Subject,
+			     [decode_message_body(<<"jabber:client">>,
+						  __IgnoreEls, _el)
+			      | Body],
+			     __Els);
+      _ ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+			     Thread, Subject, Body, __Els)
     end;
 decode_message_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, _, _, _} = _el | _els], Error, Thread, Subject,
@@ -18280,13 +21046,17 @@ decode_iq_els(__TopXMLNS, __IgnoreEls, [], Error,
 decode_iq_els(__TopXMLNS, __IgnoreEls,
 	      [{xmlel, <<"error">>, _attrs, _} = _el | _els], Error,
 	      __Els) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_iq_els(__TopXMLNS, __IgnoreEls, _els,
-			 decode_error(__TopXMLNS, __IgnoreEls, _el), __Els);
-       true ->
-	   decode_iq_els(__TopXMLNS, __IgnoreEls, _els, Error,
-			 __Els)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+	  decode_iq_els(__TopXMLNS, __IgnoreEls, _els,
+			decode_error(__TopXMLNS, __IgnoreEls, _el), __Els);
+      <<"jabber:client">> ->
+	  decode_iq_els(__TopXMLNS, __IgnoreEls, _els,
+			decode_error(<<"jabber:client">>, __IgnoreEls, _el),
+			__Els);
+      _ ->
+	  decode_iq_els(__TopXMLNS, __IgnoreEls, _els, Error,
+			__Els)
     end;
 decode_iq_els(__TopXMLNS, __IgnoreEls,
 	      [{xmlel, _, _, _} = _el | _els], Error, __Els) ->
@@ -18425,12 +21195,19 @@ decode_stats_els(__TopXMLNS, __IgnoreEls, [], Stat) ->
     lists:reverse(Stat);
 decode_stats_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"stat">>, _attrs, _} = _el | _els], Stat) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_stats_els(__TopXMLNS, __IgnoreEls, _els,
-			    [decode_stat(__TopXMLNS, __IgnoreEls, _el) | Stat]);
-       true ->
-	   decode_stats_els(__TopXMLNS, __IgnoreEls, _els, Stat)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/stats">> ->
+	  decode_stats_els(__TopXMLNS, __IgnoreEls, _els,
+			   [decode_stat(__TopXMLNS, __IgnoreEls, _el) | Stat]);
+      <<"http://jabber.org/protocol/stats">> ->
+	  decode_stats_els(__TopXMLNS, __IgnoreEls, _els,
+			   [decode_stat(<<"http://jabber.org/protocol/stats">>,
+					__IgnoreEls, _el)
+			    | Stat]);
+      _ ->
+	  decode_stats_els(__TopXMLNS, __IgnoreEls, _els, Stat)
     end;
 decode_stats_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		 Stat) ->
@@ -18460,13 +21237,20 @@ decode_stat_els(__TopXMLNS, __IgnoreEls, [], Error) ->
 decode_stat_els(__TopXMLNS, __IgnoreEls,
 		[{xmlel, <<"error">>, _attrs, _} = _el | _els],
 		Error) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_stat_els(__TopXMLNS, __IgnoreEls, _els,
-			   [decode_stat_error(__TopXMLNS, __IgnoreEls, _el)
-			    | Error]);
-       true ->
-	   decode_stat_els(__TopXMLNS, __IgnoreEls, _els, Error)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/stats">> ->
+	  decode_stat_els(__TopXMLNS, __IgnoreEls, _els,
+			  [decode_stat_error(__TopXMLNS, __IgnoreEls, _el)
+			   | Error]);
+      <<"http://jabber.org/protocol/stats">> ->
+	  decode_stat_els(__TopXMLNS, __IgnoreEls, _els,
+			  [decode_stat_error(<<"http://jabber.org/protocol/stats">>,
+					     __IgnoreEls, _el)
+			   | Error]);
+      _ ->
+	  decode_stat_els(__TopXMLNS, __IgnoreEls, _els, Error)
     end;
 decode_stat_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		Error) ->
@@ -18601,32 +21385,46 @@ decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
 			     [{xmlel, <<"conference">>, _attrs, _} = _el
 			      | _els],
 			     Conference, Url) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
-					_els,
-					[decode_bookmark_conference(__TopXMLNS,
-								    __IgnoreEls,
-								    _el)
-					 | Conference],
-					Url);
-       true ->
-	   decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
-					_els, Conference, Url)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"storage:bookmarks">> ->
+	  decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
+				       _els,
+				       [decode_bookmark_conference(__TopXMLNS,
+								   __IgnoreEls,
+								   _el)
+					| Conference],
+				       Url);
+      <<"storage:bookmarks">> ->
+	  decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
+				       _els,
+				       [decode_bookmark_conference(<<"storage:bookmarks">>,
+								   __IgnoreEls,
+								   _el)
+					| Conference],
+				       Url);
+      _ ->
+	  decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
+				       _els, Conference, Url)
     end;
 decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
 			     [{xmlel, <<"url">>, _attrs, _} = _el | _els],
 			     Conference, Url) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
-					_els, Conference,
-					[decode_bookmark_url(__TopXMLNS,
-							     __IgnoreEls, _el)
-					 | Url]);
-       true ->
-	   decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
-					_els, Conference, Url)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"storage:bookmarks">> ->
+	  decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
+				       _els, Conference,
+				       [decode_bookmark_url(__TopXMLNS,
+							    __IgnoreEls, _el)
+					| Url]);
+      <<"storage:bookmarks">> ->
+	  decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
+				       _els, Conference,
+				       [decode_bookmark_url(<<"storage:bookmarks">>,
+							    __IgnoreEls, _el)
+					| Url]);
+      _ ->
+	  decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
+				       _els, Conference, Url)
     end;
 decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
 			     [_ | _els], Conference, Url) ->
@@ -18721,32 +21519,45 @@ decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
 decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
 			       [{xmlel, <<"nick">>, _attrs, _} = _el | _els],
 			       Password, Nick) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
-					  _els, Password,
-					  decode_conference_nick(__TopXMLNS,
-								 __IgnoreEls,
-								 _el));
-       true ->
-	   decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
-					  _els, Password, Nick)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"storage:bookmarks">> ->
+	  decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
+					 _els, Password,
+					 decode_conference_nick(__TopXMLNS,
+								__IgnoreEls,
+								_el));
+      <<"storage:bookmarks">> ->
+	  decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
+					 _els, Password,
+					 decode_conference_nick(<<"storage:bookmarks">>,
+								__IgnoreEls,
+								_el));
+      _ ->
+	  decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
+					 _els, Password, Nick)
     end;
 decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
 			       [{xmlel, <<"password">>, _attrs, _} = _el
 				| _els],
 			       Password, Nick) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
-					  _els,
-					  decode_conference_password(__TopXMLNS,
-								     __IgnoreEls,
-								     _el),
-					  Nick);
-       true ->
-	   decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
-					  _els, Password, Nick)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"storage:bookmarks">> ->
+	  decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
+					 _els,
+					 decode_conference_password(__TopXMLNS,
+								    __IgnoreEls,
+								    _el),
+					 Nick);
+      <<"storage:bookmarks">> ->
+	  decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
+					 _els,
+					 decode_conference_password(<<"storage:bookmarks">>,
+								    __IgnoreEls,
+								    _el),
+					 Nick);
+      _ ->
+	  decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
+					 _els, Password, Nick)
     end;
 decode_bookmark_conference_els(__TopXMLNS, __IgnoreEls,
 			       [_ | _els], Password, Nick) ->
@@ -18952,15 +21763,22 @@ decode_disco_items_els(__TopXMLNS, __IgnoreEls, [],
     lists:reverse(Items);
 decode_disco_items_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"item">>, _attrs, _} = _el | _els], Items) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_disco_items_els(__TopXMLNS, __IgnoreEls, _els,
-				  [decode_disco_item(__TopXMLNS, __IgnoreEls,
-						     _el)
-				   | Items]);
-       true ->
-	   decode_disco_items_els(__TopXMLNS, __IgnoreEls, _els,
-				  Items)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/disco#items">> ->
+	  decode_disco_items_els(__TopXMLNS, __IgnoreEls, _els,
+				 [decode_disco_item(__TopXMLNS, __IgnoreEls,
+						    _el)
+				  | Items]);
+      <<"http://jabber.org/protocol/disco#items">> ->
+	  decode_disco_items_els(__TopXMLNS, __IgnoreEls, _els,
+				 [decode_disco_item(<<"http://jabber.org/protocol/disco#items">>,
+						    __IgnoreEls, _el)
+				  | Items]);
+      _ ->
+	  decode_disco_items_els(__TopXMLNS, __IgnoreEls, _els,
+				 Items)
     end;
 decode_disco_items_els(__TopXMLNS, __IgnoreEls,
 		       [_ | _els], Items) ->
@@ -19081,44 +21899,62 @@ decode_disco_info_els(__TopXMLNS, __IgnoreEls, [],
 decode_disco_info_els(__TopXMLNS, __IgnoreEls,
 		      [{xmlel, <<"identity">>, _attrs, _} = _el | _els],
 		      Xdata, Features, Identities) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
-				 Xdata, Features,
-				 [decode_disco_identity(__TopXMLNS, __IgnoreEls,
-							_el)
-				  | Identities]);
-       true ->
-	   decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
-				 Xdata, Features, Identities)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/disco#info">> ->
+	  decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
+				Xdata, Features,
+				[decode_disco_identity(__TopXMLNS, __IgnoreEls,
+						       _el)
+				 | Identities]);
+      <<"http://jabber.org/protocol/disco#info">> ->
+	  decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
+				Xdata, Features,
+				[decode_disco_identity(<<"http://jabber.org/protocol/disco#info">>,
+						       __IgnoreEls, _el)
+				 | Identities]);
+      _ ->
+	  decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
+				Xdata, Features, Identities)
     end;
 decode_disco_info_els(__TopXMLNS, __IgnoreEls,
 		      [{xmlel, <<"feature">>, _attrs, _} = _el | _els], Xdata,
 		      Features, Identities) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
-				 Xdata,
-				 [decode_disco_feature(__TopXMLNS, __IgnoreEls,
-						       _el)
-				  | Features],
-				 Identities);
-       true ->
-	   decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
-				 Xdata, Features, Identities)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/disco#info">> ->
+	  decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
+				Xdata,
+				[decode_disco_feature(__TopXMLNS, __IgnoreEls,
+						      _el)
+				 | Features],
+				Identities);
+      <<"http://jabber.org/protocol/disco#info">> ->
+	  decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
+				Xdata,
+				[decode_disco_feature(<<"http://jabber.org/protocol/disco#info">>,
+						      __IgnoreEls, _el)
+				 | Features],
+				Identities);
+      _ ->
+	  decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
+				Xdata, Features, Identities)
     end;
 decode_disco_info_els(__TopXMLNS, __IgnoreEls,
 		      [{xmlel, <<"x">>, _attrs, _} = _el | _els], Xdata,
 		      Features, Identities) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<"jabber:x:data">> ->
-	   decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
-				 [decode_xdata(_xmlns, __IgnoreEls, _el)
-				  | Xdata],
-				 Features, Identities);
-       true ->
-	   decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
-				 Xdata, Features, Identities)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
+				[decode_xdata(<<"jabber:x:data">>, __IgnoreEls,
+					      _el)
+				 | Xdata],
+				Features, Identities);
+      _ ->
+	  decode_disco_info_els(__TopXMLNS, __IgnoreEls, _els,
+				Xdata, Features, Identities)
     end;
 decode_disco_info_els(__TopXMLNS, __IgnoreEls,
 		      [_ | _els], Xdata, Features, Identities) ->
@@ -19319,17 +22155,25 @@ decode_unblock_els(__TopXMLNS, __IgnoreEls, [],
     lists:reverse(Items);
 decode_unblock_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"item">>, _attrs, _} = _el | _els], Items) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_unblock_els(__TopXMLNS, __IgnoreEls, _els,
-			      case decode_block_item(__TopXMLNS, __IgnoreEls,
-						     _el)
-				  of
-				undefined -> Items;
-				_new_el -> [_new_el | Items]
-			      end);
-       true ->
-	   decode_unblock_els(__TopXMLNS, __IgnoreEls, _els, Items)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:blocking">> ->
+	  decode_unblock_els(__TopXMLNS, __IgnoreEls, _els,
+			     case decode_block_item(__TopXMLNS, __IgnoreEls,
+						    _el)
+				 of
+			       undefined -> Items;
+			       _new_el -> [_new_el | Items]
+			     end);
+      <<"urn:xmpp:blocking">> ->
+	  decode_unblock_els(__TopXMLNS, __IgnoreEls, _els,
+			     case decode_block_item(<<"urn:xmpp:blocking">>,
+						    __IgnoreEls, _el)
+				 of
+			       undefined -> Items;
+			       _new_el -> [_new_el | Items]
+			     end);
+      _ ->
+	  decode_unblock_els(__TopXMLNS, __IgnoreEls, _els, Items)
     end;
 decode_unblock_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		   Items) ->
@@ -19357,16 +22201,24 @@ decode_block_els(__TopXMLNS, __IgnoreEls, [], Items) ->
     lists:reverse(Items);
 decode_block_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"item">>, _attrs, _} = _el | _els], Items) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_block_els(__TopXMLNS, __IgnoreEls, _els,
-			    case decode_block_item(__TopXMLNS, __IgnoreEls, _el)
-				of
-			      undefined -> Items;
-			      _new_el -> [_new_el | Items]
-			    end);
-       true ->
-	   decode_block_els(__TopXMLNS, __IgnoreEls, _els, Items)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:blocking">> ->
+	  decode_block_els(__TopXMLNS, __IgnoreEls, _els,
+			   case decode_block_item(__TopXMLNS, __IgnoreEls, _el)
+			       of
+			     undefined -> Items;
+			     _new_el -> [_new_el | Items]
+			   end);
+      <<"urn:xmpp:blocking">> ->
+	  decode_block_els(__TopXMLNS, __IgnoreEls, _els,
+			   case decode_block_item(<<"urn:xmpp:blocking">>,
+						  __IgnoreEls, _el)
+			       of
+			     undefined -> Items;
+			     _new_el -> [_new_el | Items]
+			   end);
+      _ ->
+	  decode_block_els(__TopXMLNS, __IgnoreEls, _els, Items)
     end;
 decode_block_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		 Items) ->
@@ -19421,7 +22273,7 @@ decode_privacy(__TopXMLNS, __IgnoreEls,
     {Lists, Default, Active} =
 	decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, [],
 			   undefined, undefined),
-    {privacy, Lists, Default, Active}.
+    {privacy_query, Lists, Default, Active}.
 
 decode_privacy_els(__TopXMLNS, __IgnoreEls, [], Lists,
 		   Default, Active) ->
@@ -19429,48 +22281,64 @@ decode_privacy_els(__TopXMLNS, __IgnoreEls, [], Lists,
 decode_privacy_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"list">>, _attrs, _} = _el | _els], Lists,
 		   Default, Active) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_privacy_els(__TopXMLNS, __IgnoreEls, _els,
-			      [decode_privacy_list(__TopXMLNS, __IgnoreEls, _el)
-			       | Lists],
-			      Default, Active);
-       true ->
-	   decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
-			      Default, Active)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:privacy">> ->
+	  decode_privacy_els(__TopXMLNS, __IgnoreEls, _els,
+			     [decode_privacy_list(__TopXMLNS, __IgnoreEls, _el)
+			      | Lists],
+			     Default, Active);
+      <<"jabber:iq:privacy">> ->
+	  decode_privacy_els(__TopXMLNS, __IgnoreEls, _els,
+			     [decode_privacy_list(<<"jabber:iq:privacy">>,
+						  __IgnoreEls, _el)
+			      | Lists],
+			     Default, Active);
+      _ ->
+	  decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
+			     Default, Active)
     end;
 decode_privacy_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"default">>, _attrs, _} = _el | _els], Lists,
 		   Default, Active) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
-			      decode_privacy_default_list(__TopXMLNS,
-							  __IgnoreEls, _el),
-			      Active);
-       true ->
-	   decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
-			      Default, Active)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:privacy">> ->
+	  decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
+			     decode_privacy_default_list(__TopXMLNS,
+							 __IgnoreEls, _el),
+			     Active);
+      <<"jabber:iq:privacy">> ->
+	  decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
+			     decode_privacy_default_list(<<"jabber:iq:privacy">>,
+							 __IgnoreEls, _el),
+			     Active);
+      _ ->
+	  decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
+			     Default, Active)
     end;
 decode_privacy_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"active">>, _attrs, _} = _el | _els], Lists,
 		   Default, Active) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
-			      Default,
-			      decode_privacy_active_list(__TopXMLNS,
-							 __IgnoreEls, _el));
-       true ->
-	   decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
-			      Default, Active)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:privacy">> ->
+	  decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
+			     Default,
+			     decode_privacy_active_list(__TopXMLNS, __IgnoreEls,
+							_el));
+      <<"jabber:iq:privacy">> ->
+	  decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
+			     Default,
+			     decode_privacy_active_list(<<"jabber:iq:privacy">>,
+							__IgnoreEls, _el));
+      _ ->
+	  decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
+			     Default, Active)
     end;
 decode_privacy_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		   Lists, Default, Active) ->
     decode_privacy_els(__TopXMLNS, __IgnoreEls, _els, Lists,
 		       Default, Active).
 
-encode_privacy({privacy, Lists, Default, Active},
+encode_privacy({privacy_query, Lists, Default, Active},
 	       _xmlns_attrs) ->
     _els = lists:reverse('encode_privacy_$lists'(Lists,
 						 'encode_privacy_$default'(Default,
@@ -19577,15 +22445,20 @@ decode_privacy_list_els(__TopXMLNS, __IgnoreEls, [],
     lists:reverse(Items);
 decode_privacy_list_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"item">>, _attrs, _} = _el | _els], Items) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_privacy_list_els(__TopXMLNS, __IgnoreEls, _els,
-				   [decode_privacy_item(__TopXMLNS, __IgnoreEls,
-							_el)
-				    | Items]);
-       true ->
-	   decode_privacy_list_els(__TopXMLNS, __IgnoreEls, _els,
-				   Items)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:privacy">> ->
+	  decode_privacy_list_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_privacy_item(__TopXMLNS, __IgnoreEls,
+						       _el)
+				   | Items]);
+      <<"jabber:iq:privacy">> ->
+	  decode_privacy_list_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_privacy_item(<<"jabber:iq:privacy">>,
+						       __IgnoreEls, _el)
+				   | Items]);
+      _ ->
+	  decode_privacy_list_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items)
     end;
 decode_privacy_list_els(__TopXMLNS, __IgnoreEls,
 			[_ | _els], Items) ->
@@ -19624,63 +22497,98 @@ encode_privacy_list_attr_name(_val, _acc) ->
 
 decode_privacy_item(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"item">>, _attrs, _els}) ->
-    Kinds = decode_privacy_item_els(__TopXMLNS, __IgnoreEls,
-				    _els, []),
+    {Iq, Presence_out, Message, Presence_in} =
+	decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				false, false, false, false),
     {Action, Order, Type, Value} =
 	decode_privacy_item_attrs(__TopXMLNS, _attrs, undefined,
 				  undefined, undefined, undefined),
-    {privacy_item, Order, Action, Type, Value, Kinds}.
+    {privacy_item, Order, Action, Type, Value, Message, Iq,
+     Presence_in, Presence_out}.
 
-decode_privacy_item_els(__TopXMLNS, __IgnoreEls, [],
-			Kinds) ->
-    lists:reverse(Kinds);
+decode_privacy_item_els(__TopXMLNS, __IgnoreEls, [], Iq,
+			Presence_out, Message, Presence_in) ->
+    {Iq, Presence_out, Message, Presence_in};
 decode_privacy_item_els(__TopXMLNS, __IgnoreEls,
-			[{xmlel, <<"message">>, _attrs, _} = _el | _els],
-			Kinds) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
-				   Kinds);
-       true ->
-	   decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
-				   Kinds)
+			[{xmlel, <<"message">>, _attrs, _} = _el | _els], Iq,
+			Presence_out, Message, Presence_in) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:privacy">> ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  Iq, Presence_out,
+				  decode_privacy_message(__TopXMLNS,
+							 __IgnoreEls, _el),
+				  Presence_in);
+      <<"jabber:iq:privacy">> ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  Iq, Presence_out,
+				  decode_privacy_message(<<"jabber:iq:privacy">>,
+							 __IgnoreEls, _el),
+				  Presence_in);
+      _ ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  Iq, Presence_out, Message, Presence_in)
     end;
 decode_privacy_item_els(__TopXMLNS, __IgnoreEls,
-			[{xmlel, <<"iq">>, _attrs, _} = _el | _els], Kinds) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
-				   Kinds);
-       true ->
-	   decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
-				   Kinds)
+			[{xmlel, <<"iq">>, _attrs, _} = _el | _els], Iq,
+			Presence_out, Message, Presence_in) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:privacy">> ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  decode_privacy_iq(__TopXMLNS, __IgnoreEls,
+						    _el),
+				  Presence_out, Message, Presence_in);
+      <<"jabber:iq:privacy">> ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  decode_privacy_iq(<<"jabber:iq:privacy">>,
+						    __IgnoreEls, _el),
+				  Presence_out, Message, Presence_in);
+      _ ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  Iq, Presence_out, Message, Presence_in)
     end;
 decode_privacy_item_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"presence-in">>, _attrs, _} = _el | _els],
-			Kinds) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
-				   Kinds);
-       true ->
-	   decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
-				   Kinds)
+			Iq, Presence_out, Message, Presence_in) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:privacy">> ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  Iq, Presence_out, Message,
+				  decode_privacy_presence_in(__TopXMLNS,
+							     __IgnoreEls, _el));
+      <<"jabber:iq:privacy">> ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  Iq, Presence_out, Message,
+				  decode_privacy_presence_in(<<"jabber:iq:privacy">>,
+							     __IgnoreEls, _el));
+      _ ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  Iq, Presence_out, Message, Presence_in)
     end;
 decode_privacy_item_els(__TopXMLNS, __IgnoreEls,
 			[{xmlel, <<"presence-out">>, _attrs, _} = _el | _els],
-			Kinds) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
-				   Kinds);
-       true ->
-	   decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
-				   Kinds)
+			Iq, Presence_out, Message, Presence_in) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:privacy">> ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  Iq,
+				  decode_privacy_presence_out(__TopXMLNS,
+							      __IgnoreEls, _el),
+				  Message, Presence_in);
+      <<"jabber:iq:privacy">> ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  Iq,
+				  decode_privacy_presence_out(<<"jabber:iq:privacy">>,
+							      __IgnoreEls, _el),
+				  Message, Presence_in);
+      _ ->
+	  decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
+				  Iq, Presence_out, Message, Presence_in)
     end;
 decode_privacy_item_els(__TopXMLNS, __IgnoreEls,
-			[_ | _els], Kinds) ->
+			[_ | _els], Iq, Presence_out, Message, Presence_in) ->
     decode_privacy_item_els(__TopXMLNS, __IgnoreEls, _els,
-			    Kinds).
+			    Iq, Presence_out, Message, Presence_in).
 
 decode_privacy_item_attrs(__TopXMLNS,
 			  [{<<"action">>, _val} | _attrs], _Action, Order, Type,
@@ -19714,10 +22622,13 @@ decode_privacy_item_attrs(__TopXMLNS, [], Action, Order,
      decode_privacy_item_attr_value(__TopXMLNS, Value)}.
 
 encode_privacy_item({privacy_item, Order, Action, Type,
-		     Value, Kinds},
+		     Value, Message, Iq, Presence_in, Presence_out},
 		    _xmlns_attrs) ->
-    _els = lists:reverse('encode_privacy_item_$kinds'(Kinds,
-						      [])),
+    _els = lists:reverse('encode_privacy_item_$iq'(Iq,
+						   'encode_privacy_item_$presence_out'(Presence_out,
+										       'encode_privacy_item_$message'(Message,
+														      'encode_privacy_item_$presence_in'(Presence_in,
+																			 []))))),
     _attrs = encode_privacy_item_attr_value(Value,
 					    encode_privacy_item_attr_type(Type,
 									  encode_privacy_item_attr_order(Order,
@@ -19725,27 +22636,23 @@ encode_privacy_item({privacy_item, Order, Action, Type,
 																	 _xmlns_attrs)))),
     {xmlel, <<"item">>, _attrs, _els}.
 
-'encode_privacy_item_$kinds'([], _acc) -> _acc;
-'encode_privacy_item_$kinds'([message = Kinds | _els],
-			     _acc) ->
-    'encode_privacy_item_$kinds'(_els,
-				 [encode_privacy_message(Kinds, []) | _acc]);
-'encode_privacy_item_$kinds'([iq = Kinds | _els],
-			     _acc) ->
-    'encode_privacy_item_$kinds'(_els,
-				 [encode_privacy_iq(Kinds, []) | _acc]);
-'encode_privacy_item_$kinds'(['presence-in' = Kinds
-			      | _els],
-			     _acc) ->
-    'encode_privacy_item_$kinds'(_els,
-				 [encode_privacy_presence_in(Kinds, [])
-				  | _acc]);
-'encode_privacy_item_$kinds'(['presence-out' = Kinds
-			      | _els],
-			     _acc) ->
-    'encode_privacy_item_$kinds'(_els,
-				 [encode_privacy_presence_out(Kinds, [])
-				  | _acc]).
+'encode_privacy_item_$iq'(false, _acc) -> _acc;
+'encode_privacy_item_$iq'(Iq, _acc) ->
+    [encode_privacy_iq(Iq, []) | _acc].
+
+'encode_privacy_item_$presence_out'(false, _acc) ->
+    _acc;
+'encode_privacy_item_$presence_out'(Presence_out,
+				    _acc) ->
+    [encode_privacy_presence_out(Presence_out, []) | _acc].
+
+'encode_privacy_item_$message'(false, _acc) -> _acc;
+'encode_privacy_item_$message'(Message, _acc) ->
+    [encode_privacy_message(Message, []) | _acc].
+
+'encode_privacy_item_$presence_in'(false, _acc) -> _acc;
+'encode_privacy_item_$presence_in'(Presence_in, _acc) ->
+    [encode_privacy_presence_in(Presence_in, []) | _acc].
 
 decode_privacy_item_attr_action(__TopXMLNS,
 				undefined) ->
@@ -19802,90 +22709,111 @@ encode_privacy_item_attr_value(_val, _acc) ->
 
 decode_privacy_presence_out(__TopXMLNS, __IgnoreEls,
 			    {xmlel, <<"presence-out">>, _attrs, _els}) ->
-    'presence-out'.
+    true.
 
-encode_privacy_presence_out('presence-out',
-			    _xmlns_attrs) ->
+encode_privacy_presence_out(true, _xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"presence-out">>, _attrs, _els}.
 
 decode_privacy_presence_in(__TopXMLNS, __IgnoreEls,
 			   {xmlel, <<"presence-in">>, _attrs, _els}) ->
-    'presence-in'.
+    true.
 
-encode_privacy_presence_in('presence-in',
-			   _xmlns_attrs) ->
+encode_privacy_presence_in(true, _xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"presence-in">>, _attrs, _els}.
 
 decode_privacy_iq(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"iq">>, _attrs, _els}) ->
-    iq.
+    true.
 
-encode_privacy_iq(iq, _xmlns_attrs) ->
+encode_privacy_iq(true, _xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"iq">>, _attrs, _els}.
 
 decode_privacy_message(__TopXMLNS, __IgnoreEls,
 		       {xmlel, <<"message">>, _attrs, _els}) ->
-    message.
+    true.
 
-encode_privacy_message(message, _xmlns_attrs) ->
+encode_privacy_message(true, _xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"message">>, _attrs, _els}.
 
-decode_roster(__TopXMLNS, __IgnoreEls,
-	      {xmlel, <<"query">>, _attrs, _els}) ->
-    Items = decode_roster_els(__TopXMLNS, __IgnoreEls, _els,
-			      []),
-    Ver = decode_roster_attrs(__TopXMLNS, _attrs,
-			      undefined),
-    {roster, Items, Ver}.
+decode_rosterver_feature(__TopXMLNS, __IgnoreEls,
+			 {xmlel, <<"ver">>, _attrs, _els}) ->
+    {rosterver_feature}.
 
-decode_roster_els(__TopXMLNS, __IgnoreEls, [], Items) ->
+encode_rosterver_feature({rosterver_feature},
+			 _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"ver">>, _attrs, _els}.
+
+decode_roster_query(__TopXMLNS, __IgnoreEls,
+		    {xmlel, <<"query">>, _attrs, _els}) ->
+    Items = decode_roster_query_els(__TopXMLNS, __IgnoreEls,
+				    _els, []),
+    Ver = decode_roster_query_attrs(__TopXMLNS, _attrs,
+				    undefined),
+    {roster_query, Items, Ver}.
+
+decode_roster_query_els(__TopXMLNS, __IgnoreEls, [],
+			Items) ->
     lists:reverse(Items);
-decode_roster_els(__TopXMLNS, __IgnoreEls,
-		  [{xmlel, <<"item">>, _attrs, _} = _el | _els], Items) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_roster_els(__TopXMLNS, __IgnoreEls, _els,
-			     [decode_roster_item(__TopXMLNS, __IgnoreEls, _el)
-			      | Items]);
-       true ->
-	   decode_roster_els(__TopXMLNS, __IgnoreEls, _els, Items)
+decode_roster_query_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"item">>, _attrs, _} = _el | _els], Items) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:roster">> ->
+	  decode_roster_query_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_roster_item(__TopXMLNS, __IgnoreEls,
+						      _el)
+				   | Items]);
+      <<"jabber:iq:roster">> ->
+	  decode_roster_query_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_roster_item(<<"jabber:iq:roster">>,
+						      __IgnoreEls, _el)
+				   | Items]);
+      _ ->
+	  decode_roster_query_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items)
     end;
-decode_roster_els(__TopXMLNS, __IgnoreEls, [_ | _els],
-		  Items) ->
-    decode_roster_els(__TopXMLNS, __IgnoreEls, _els, Items).
+decode_roster_query_els(__TopXMLNS, __IgnoreEls,
+			[_ | _els], Items) ->
+    decode_roster_query_els(__TopXMLNS, __IgnoreEls, _els,
+			    Items).
 
-decode_roster_attrs(__TopXMLNS,
-		    [{<<"ver">>, _val} | _attrs], _Ver) ->
-    decode_roster_attrs(__TopXMLNS, _attrs, _val);
-decode_roster_attrs(__TopXMLNS, [_ | _attrs], Ver) ->
-    decode_roster_attrs(__TopXMLNS, _attrs, Ver);
-decode_roster_attrs(__TopXMLNS, [], Ver) ->
-    decode_roster_attr_ver(__TopXMLNS, Ver).
+decode_roster_query_attrs(__TopXMLNS,
+			  [{<<"ver">>, _val} | _attrs], _Ver) ->
+    decode_roster_query_attrs(__TopXMLNS, _attrs, _val);
+decode_roster_query_attrs(__TopXMLNS, [_ | _attrs],
+			  Ver) ->
+    decode_roster_query_attrs(__TopXMLNS, _attrs, Ver);
+decode_roster_query_attrs(__TopXMLNS, [], Ver) ->
+    decode_roster_query_attr_ver(__TopXMLNS, Ver).
 
-encode_roster({roster, Items, Ver}, _xmlns_attrs) ->
-    _els = lists:reverse('encode_roster_$items'(Items, [])),
-    _attrs = encode_roster_attr_ver(Ver, _xmlns_attrs),
+encode_roster_query({roster_query, Items, Ver},
+		    _xmlns_attrs) ->
+    _els = lists:reverse('encode_roster_query_$items'(Items,
+						      [])),
+    _attrs = encode_roster_query_attr_ver(Ver,
+					  _xmlns_attrs),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_roster_$items'([], _acc) -> _acc;
-'encode_roster_$items'([Items | _els], _acc) ->
-    'encode_roster_$items'(_els,
-			   [encode_roster_item(Items, []) | _acc]).
+'encode_roster_query_$items'([], _acc) -> _acc;
+'encode_roster_query_$items'([Items | _els], _acc) ->
+    'encode_roster_query_$items'(_els,
+				 [encode_roster_item(Items, []) | _acc]).
 
-decode_roster_attr_ver(__TopXMLNS, undefined) ->
+decode_roster_query_attr_ver(__TopXMLNS, undefined) ->
     undefined;
-decode_roster_attr_ver(__TopXMLNS, _val) -> _val.
+decode_roster_query_attr_ver(__TopXMLNS, _val) -> _val.
 
-encode_roster_attr_ver(undefined, _acc) -> _acc;
-encode_roster_attr_ver(_val, _acc) ->
+encode_roster_query_attr_ver(undefined, _acc) -> _acc;
+encode_roster_query_attr_ver(_val, _acc) ->
     [{<<"ver">>, _val} | _acc].
 
 decode_roster_item(__TopXMLNS, __IgnoreEls,
@@ -19903,15 +22831,20 @@ decode_roster_item_els(__TopXMLNS, __IgnoreEls, [],
 decode_roster_item_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"group">>, _attrs, _} = _el | _els],
 		       Groups) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_roster_item_els(__TopXMLNS, __IgnoreEls, _els,
-				  [decode_roster_group(__TopXMLNS, __IgnoreEls,
-						       _el)
-				   | Groups]);
-       true ->
-	   decode_roster_item_els(__TopXMLNS, __IgnoreEls, _els,
-				  Groups)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:roster">> ->
+	  decode_roster_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 [decode_roster_group(__TopXMLNS, __IgnoreEls,
+						      _el)
+				  | Groups]);
+      <<"jabber:iq:roster">> ->
+	  decode_roster_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 [decode_roster_group(<<"jabber:iq:roster">>,
+						      __IgnoreEls, _el)
+				  | Groups]);
+      _ ->
+	  decode_roster_item_els(__TopXMLNS, __IgnoreEls, _els,
+				 Groups)
     end;
 decode_roster_item_els(__TopXMLNS, __IgnoreEls,
 		       [_ | _els], Groups) ->
@@ -19982,10 +22915,10 @@ encode_roster_item_attr_jid(_val, _acc) ->
     [{<<"jid">>, enc_jid(_val)} | _acc].
 
 decode_roster_item_attr_name(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_roster_item_attr_name(__TopXMLNS, _val) -> _val.
 
-encode_roster_item_attr_name(undefined, _acc) -> _acc;
+encode_roster_item_attr_name(<<>>, _acc) -> _acc;
 encode_roster_item_attr_name(_val, _acc) ->
     [{<<"name">>, _val} | _acc].
 
@@ -20067,39 +23000,53 @@ decode_version_els(__TopXMLNS, __IgnoreEls, [], Ver, Os,
 decode_version_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"name">>, _attrs, _} = _el | _els], Ver, Os,
 		   Name) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
-			      Os,
-			      decode_version_name(__TopXMLNS, __IgnoreEls,
-						  _el));
-       true ->
-	   decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
-			      Os, Name)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:version">> ->
+	  decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
+			     Os,
+			     decode_version_name(__TopXMLNS, __IgnoreEls, _el));
+      <<"jabber:iq:version">> ->
+	  decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
+			     Os,
+			     decode_version_name(<<"jabber:iq:version">>,
+						 __IgnoreEls, _el));
+      _ ->
+	  decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
+			     Os, Name)
     end;
 decode_version_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"version">>, _attrs, _} = _el | _els], Ver,
 		   Os, Name) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_version_els(__TopXMLNS, __IgnoreEls, _els,
-			      decode_version_ver(__TopXMLNS, __IgnoreEls, _el),
-			      Os, Name);
-       true ->
-	   decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
-			      Os, Name)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:version">> ->
+	  decode_version_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_version_ver(__TopXMLNS, __IgnoreEls, _el),
+			     Os, Name);
+      <<"jabber:iq:version">> ->
+	  decode_version_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_version_ver(<<"jabber:iq:version">>,
+						__IgnoreEls, _el),
+			     Os, Name);
+      _ ->
+	  decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
+			     Os, Name)
     end;
 decode_version_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"os">>, _attrs, _} = _el | _els], Ver, Os,
 		   Name) ->
-    _xmlns = get_attr(<<"xmlns">>, _attrs),
-    if _xmlns == <<>>; _xmlns == __TopXMLNS ->
-	   decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
-			      decode_version_os(__TopXMLNS, __IgnoreEls, _el),
-			      Name);
-       true ->
-	   decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
-			      Os, Name)
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:iq:version">> ->
+	  decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
+			     decode_version_os(__TopXMLNS, __IgnoreEls, _el),
+			     Name);
+      <<"jabber:iq:version">> ->
+	  decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
+			     decode_version_os(<<"jabber:iq:version">>,
+					       __IgnoreEls, _el),
+			     Name);
+      _ ->
+	  decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
+			     Os, Name)
     end;
 decode_version_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		   Ver, Os, Name) ->
@@ -20222,21 +23169,21 @@ encode_version_name_cdata(_val, _acc) ->
 
 decode_last(__TopXMLNS, __IgnoreEls,
 	    {xmlel, <<"query">>, _attrs, _els}) ->
-    Text = decode_last_els(__TopXMLNS, __IgnoreEls, _els,
-			   <<>>),
+    Status = decode_last_els(__TopXMLNS, __IgnoreEls, _els,
+			     <<>>),
     Seconds = decode_last_attrs(__TopXMLNS, _attrs,
 				undefined),
-    {last, Seconds, Text}.
+    {last, Seconds, Status}.
 
-decode_last_els(__TopXMLNS, __IgnoreEls, [], Text) ->
-    decode_last_cdata(__TopXMLNS, Text);
+decode_last_els(__TopXMLNS, __IgnoreEls, [], Status) ->
+    decode_last_cdata(__TopXMLNS, Status);
 decode_last_els(__TopXMLNS, __IgnoreEls,
-		[{xmlcdata, _data} | _els], Text) ->
+		[{xmlcdata, _data} | _els], Status) ->
     decode_last_els(__TopXMLNS, __IgnoreEls, _els,
-		    <<Text/binary, _data/binary>>);
+		    <<Status/binary, _data/binary>>);
 decode_last_els(__TopXMLNS, __IgnoreEls, [_ | _els],
-		Text) ->
-    decode_last_els(__TopXMLNS, __IgnoreEls, _els, Text).
+		Status) ->
+    decode_last_els(__TopXMLNS, __IgnoreEls, _els, Status).
 
 decode_last_attrs(__TopXMLNS,
 		  [{<<"seconds">>, _val} | _attrs], _Seconds) ->
@@ -20246,8 +23193,8 @@ decode_last_attrs(__TopXMLNS, [_ | _attrs], Seconds) ->
 decode_last_attrs(__TopXMLNS, [], Seconds) ->
     decode_last_attr_seconds(__TopXMLNS, Seconds).
 
-encode_last({last, Seconds, Text}, _xmlns_attrs) ->
-    _els = encode_last_cdata(Text, []),
+encode_last({last, Seconds, Status}, _xmlns_attrs) ->
+    _els = encode_last_cdata(Status, []),
     _attrs = encode_last_attr_seconds(Seconds,
 				      _xmlns_attrs),
     {xmlel, <<"query">>, _attrs, _els}.
@@ -20267,9 +23214,9 @@ encode_last_attr_seconds(undefined, _acc) -> _acc;
 encode_last_attr_seconds(_val, _acc) ->
     [{<<"seconds">>, enc_int(_val)} | _acc].
 
-decode_last_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_last_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_last_cdata(__TopXMLNS, _val) -> _val.
 
-encode_last_cdata(undefined, _acc) -> _acc;
+encode_last_cdata(<<>>, _acc) -> _acc;
 encode_last_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].

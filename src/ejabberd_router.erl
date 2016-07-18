@@ -39,6 +39,7 @@
 	 register_route/3,
 	 register_routes/1,
 	 host_of_route/1,
+	 process_iq/3,
 	 unregister_route/1,
 	 unregister_routes/1,
 	 dirty_get_all_routes/0,
@@ -53,7 +54,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -type local_hint() :: undefined | integer() | {apply, atom(), atom()}.
 
@@ -71,7 +72,7 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec route(jid(), jid(), xmlel()) -> ok.
+-spec route(jid(), jid(), xmlel() | xmpp_element()) -> ok.
 
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
@@ -236,6 +237,28 @@ host_of_route(Domain) ->
 	    end
     end.
 
+-spec process_iq(jid(), jid(), iq() | xmlel()) -> any().
+process_iq(From, To, #iq{} = IQ) ->
+    if To#jid.luser == <<"">> ->
+	    ejabberd_local:process_iq(From, To, IQ);
+       true ->
+	    ejabberd_sm:process_iq(From, To, IQ)
+    end;
+process_iq(From, To, El) ->
+    try xmpp:decode(El, [ignore_els]) of
+	IQ -> process_iq(From, To, IQ)
+    catch _:{xmpp_codec, Why} ->
+	    Type = xmpp:get_type(El),
+	    if Type == <<"get">>; Type == <<"set">> ->
+		    Txt = xmpp:format_error(Why),
+		    Lang = xmpp:get_lang(El),
+		    Err = xmpp:make_error(El, xmpp:err_bad_request(Txt, Lang)),
+		    ejabberd_router:route(To, From, Err);
+	       true ->
+		    ok
+	    end
+    end.
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -347,6 +370,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+-spec do_route(jid(), jid(), xmlel() | xmpp_element()) -> any().
 do_route(OrigFrom, OrigTo, OrigPacket) ->
     ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket "
 	   "~p~n",
@@ -359,67 +383,66 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 	  case mnesia:dirty_read(route, LDstDomain) of
 	    [] -> ejabberd_s2s:route(From, To, Packet);
 	    [R] ->
-		Pid = R#route.pid,
-		if node(Pid) == node() ->
-		       case R#route.local_hint of
-			 {apply, Module, Function} ->
-			     Module:Function(From, To, Packet);
-			 _ -> Pid ! {route, From, To, Packet}
-		       end;
-		   is_pid(Pid) -> Pid ! {route, From, To, Packet};
-		   true -> drop
-		end;
+		do_route(From, To, Packet, R);
 	    Rs ->
-		Value = case
-			  ejabberd_config:get_option({domain_balancing,
-						      LDstDomain}, fun(D) when is_atom(D) -> D end)
-			    of
-			  undefined -> p1_time_compat:monotonic_time();
-			  random -> p1_time_compat:monotonic_time();
-			  source -> jid:tolower(From);
-			  destination -> jid:tolower(To);
-			  bare_source ->
-			      jid:remove_resource(jid:tolower(From));
-			  bare_destination ->
-			      jid:remove_resource(jid:tolower(To))
-			end,
+		Value = get_domain_balancing(From, To, LDstDomain),
 		case get_component_number(LDstDomain) of
 		  undefined ->
 		      case [R || R <- Rs, node(R#route.pid) == node()] of
 			[] ->
 			    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
-			    Pid = R#route.pid,
-			    if is_pid(Pid) -> Pid ! {route, From, To, Packet};
-			       true -> drop
-			    end;
+			    do_route(From, To, Packet, R);
 			LRs ->
-			    R = lists:nth(erlang:phash(Value, length(LRs)),
-					  LRs),
-			    Pid = R#route.pid,
-			    case R#route.local_hint of
-			      {apply, Module, Function} ->
-				  Module:Function(From, To, Packet);
-			      _ -> Pid ! {route, From, To, Packet}
-			    end
+			    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
+			    do_route(From, To, Packet, R)
 		      end;
 		  _ ->
 		      SRs = lists:ukeysort(#route.local_hint, Rs),
 		      R = lists:nth(erlang:phash(Value, length(SRs)), SRs),
-		      Pid = R#route.pid,
-		      if is_pid(Pid) -> Pid ! {route, From, To, Packet};
-			 true -> drop
-		      end
+		      do_route(From, To, Packet, R)
 		end
 	  end;
       drop -> ok
     end.
 
+-spec do_route(jid(), jid(), xmlel() | xmpp_element(), #route{}) -> any().
+do_route(From, To, Packet,
+	 #route{local_hint = {apply, Module, Function}, pid = Pid})
+  when is_pid(Pid) andalso node(Pid) == node() ->
+    try
+	Module:Function(From, To, xmpp:decode(Packet, [ignore_els]))
+    catch error:{xmpp_codec, Why} ->
+	    ?ERROR_MSG("failed to decode xml element ~p when "
+		       "routing from ~s to ~s: ~s",
+		       [Packet, jid:to_string(From), jid:to_string(To),
+			xmpp:format_error(Why)]),
+	    drop
+    end;
+do_route(From, To, Packet, #route{pid = Pid}) when is_pid(Pid) ->
+    Pid ! {route, From, To, xmpp:encode(Packet)};
+do_route(_From, _To, _Packet, _Route) ->
+    drop.
+
+-spec get_component_number(binary()) -> pos_integer() | undefined.
 get_component_number(LDomain) ->
     ejabberd_config:get_option(
       {domain_balancing_component_number, LDomain},
       fun(N) when is_integer(N), N > 1 -> N end,
       undefined).
 
+-spec get_domain_balancing(jid(), jid(), binary()) -> any().
+get_domain_balancing(From, To, LDomain) ->
+    case ejabberd_config:get_option(
+	   {domain_balancing, LDomain}, fun(D) when is_atom(D) -> D end) of
+	undefined -> p1_time_compat:monotonic_time();
+	random -> p1_time_compat:monotonic_time();
+	source -> jid:tolower(From);
+	destination -> jid:tolower(To);
+	bare_source -> jid:remove_resource(jid:tolower(From));
+	bare_destination -> jid:remove_resource(jid:tolower(To))
+    end.
+
+-spec update_tables() -> ok.
 update_tables() ->
     try
 	mnesia:transform_table(route, ignore, record_info(fields, route))

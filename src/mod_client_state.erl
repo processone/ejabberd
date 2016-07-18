@@ -39,7 +39,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -define(CSI_QUEUE_MAX, 100).
 
@@ -151,66 +151,62 @@ depends(_Host, _Opts) ->
 %% ejabberd_hooks callbacks.
 %%--------------------------------------------------------------------
 
--spec filter_presence({term(), [xmlel()]}, binary(), xmlel())
-      -> {term(), [xmlel()]} | {stop, {term(), [xmlel()]}}.
+-spec filter_presence({term(), [stanza()]}, binary(), stanza())
+      -> {term(), [stanza()]} | {stop, {term(), [stanza()]}}.
 
 filter_presence({C2SState, _OutStanzas} = Acc, Host,
-		#xmlel{name = <<"presence">>, attrs = Attrs} = Stanza) ->
-    case fxml:get_attr(<<"type">>, Attrs) of
-      {value, Type} when Type /= <<"unavailable">> ->
-	  Acc;
-      _ ->
-	  ?DEBUG("Got availability presence stanza", []),
-	  queue_add(presence, Stanza, Host, C2SState)
+		#presence{type = Type} = Stanza) ->
+    if Type == available, Type == unavailable ->
+	    ?DEBUG("Got availability presence stanza", []),
+	    queue_add(presence, Stanza, Host, C2SState);
+       true ->
+	    Acc
     end;
 filter_presence(Acc, _Host, _Stanza) -> Acc.
 
--spec filter_chat_states({term(), [xmlel()]}, binary(), xmlel())
-      -> {term(), [xmlel()]} | {stop, {term(), [xmlel()]}}.
+-spec filter_chat_states({term(), [stanza()]}, binary(), stanza())
+      -> {term(), [stanza()]} | {stop, {term(), [stanza()]}}.
 
 filter_chat_states({C2SState, _OutStanzas} = Acc, Host,
-		   #xmlel{name = <<"message">>} = Stanza) ->
-    case jlib:is_standalone_chat_state(Stanza) of
-      true ->
-	  From = fxml:get_tag_attr_s(<<"from">>, Stanza),
-	  To = fxml:get_tag_attr_s(<<"to">>, Stanza),
-	  case {jid:from_string(From), jid:from_string(To)} of
-	    {#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}} ->
-		%% Don't queue (carbon copies of) chat states from other
-		%% resources, as they might be used to sync the state of
-		%% conversations across clients.
-		Acc;
-	    _ ->
-		?DEBUG("Got standalone chat state notification", []),
-		queue_add(chatstate, Stanza, Host, C2SState)
-	  end;
-      false ->
-	  Acc
+		   #message{from = From, to = To} = Stanza) ->
+    case xmpp_util:is_standalone_chat_state(Stanza) of
+	true ->
+	    case {From, To} of
+		{#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}} ->
+		    %% Don't queue (carbon copies of) chat states from other
+		    %% resources, as they might be used to sync the state of
+		    %% conversations across clients.
+		    Acc;
+		_ ->
+		    ?DEBUG("Got standalone chat state notification", []),
+		    queue_add(chatstate, Stanza, Host, C2SState)
+	    end;
+	false ->
+	    Acc
     end;
 filter_chat_states(Acc, _Host, _Stanza) -> Acc.
 
--spec filter_pep({term(), [xmlel()]}, binary(), xmlel())
-      -> {term(), [xmlel()]} | {stop, {term(), [xmlel()]}}.
+-spec filter_pep({term(), [stanza()]}, binary(), stanza())
+      -> {term(), [stanza()]} | {stop, {term(), [stanza()]}}.
 
-filter_pep({C2SState, _OutStanzas} = Acc, Host,
-	   #xmlel{name = <<"message">>} = Stanza) ->
+filter_pep({C2SState, _OutStanzas} = Acc, Host, #message{} = Stanza) ->
     case get_pep_node(Stanza) of
-      {value, Node} ->
-	  ?DEBUG("Got PEP notification", []),
-	  queue_add({pep, Node}, Stanza, Host, C2SState);
-      false ->
-	  Acc
+	undefined ->
+	    Acc;
+	Node ->
+	    ?DEBUG("Got PEP notification", []),
+	    queue_add({pep, Node}, Stanza, Host, C2SState)
     end;
 filter_pep(Acc, _Host, _Stanza) -> Acc.
 
--spec filter_other({term(), [xmlel()]}, binary(), xmlel())
-      -> {stop, {term(), [xmlel()]}}.
+-spec filter_other({term(), [stanza()]}, binary(), stanza())
+      -> {stop, {term(), [stanza()]}}.
 
 filter_other({C2SState, _OutStanzas}, Host, Stanza) ->
     ?DEBUG("Won't add stanza to CSI queue", []),
     queue_take(Stanza, Host, C2SState).
 
--spec flush_queue({term(), [xmlel()]}, binary()) -> {term(), [xmlel()]}.
+-spec flush_queue({term(), [stanza()]}, binary()) -> {term(), [stanza()]}.
 
 flush_queue({C2SState, _OutStanzas}, Host) ->
     ?DEBUG("Going to flush CSI queue", []),
@@ -218,20 +214,17 @@ flush_queue({C2SState, _OutStanzas}, Host) ->
     NewState = set_queue([], C2SState),
     {NewState, get_stanzas(Queue, Host)}.
 
--spec add_stream_feature([xmlel()], binary) -> [xmlel()].
+-spec add_stream_feature([stanza()], binary) -> [stanza()].
 
 add_stream_feature(Features, _Host) ->
-    Feature = #xmlel{name = <<"csi">>,
-		     attrs = [{<<"xmlns">>, ?NS_CLIENT_STATE}],
-		     children = []},
-    [Feature | Features].
+    [#feature_csi{xmlns = <<"urn:xmpp:csi:0">>} | Features].
 
 %%--------------------------------------------------------------------
 %% Internal functions.
 %%--------------------------------------------------------------------
 
--spec queue_add(csi_type(), xmlel(), binary(), term())
-      -> {stop, {term(), [xmlel()]}}.
+-spec queue_add(csi_type(), stanza(), binary(), term())
+      -> {stop, {term(), [stanza()]}}.
 
 queue_add(Type, Stanza, Host, C2SState) ->
     case get_queue(C2SState) of
@@ -241,19 +234,19 @@ queue_add(Type, Stanza, Host, C2SState) ->
 	  {stop, {NewState, get_stanzas(Queue, Host) ++ [Stanza]}};
       Queue ->
 	  ?DEBUG("Adding stanza to CSI queue", []),
-	  From = fxml:get_tag_attr_s(<<"from">>, Stanza),
-	  Key = {jid:tolower(jid:from_string(From)), Type},
+	  From = xmpp:get_from(Stanza),
+	  Key = {jid:tolower(From), Type},
 	  Entry = {Key, p1_time_compat:timestamp(), Stanza},
 	  NewQueue = lists:keystore(Key, 1, Queue, Entry),
 	  NewState = set_queue(NewQueue, C2SState),
 	  {stop, {NewState, []}}
     end.
 
--spec queue_take(xmlel(), binary(), term()) -> {stop, {term(), [xmlel()]}}.
+-spec queue_take(stanza(), binary(), term()) -> {stop, {term(), [stanza()]}}.
 
 queue_take(Stanza, Host, C2SState) ->
-    From = fxml:get_tag_attr_s(<<"from">>, Stanza),
-    {LUser, LServer, _LResource} = jid:tolower(jid:from_string(From)),
+    From = xmpp:get_from(Stanza),
+    {LUser, LServer, _LResource} = jid:tolower(From),
     {Selected, Rest} = lists:partition(
 			 fun({{{U, S, _R}, _Type}, _Time, _Stanza}) ->
 				 U == LUser andalso S == LServer
@@ -276,32 +269,23 @@ get_queue(C2SState) ->
 	      []
     end.
 
--spec get_stanzas(csi_queue(), binary()) -> [xmlel()].
+-spec get_stanzas(csi_queue(), binary()) -> [stanza()].
 
 get_stanzas(Queue, Host) ->
     lists:map(fun({_Key, Time, Stanza}) ->
-		      jlib:add_delay_info(Stanza, Host, Time,
-					  <<"Client Inactive">>)
+		      xmpp_util:add_delay_info(Stanza, Host, Time,
+					       <<"Client Inactive">>)
 	      end, Queue).
 
--spec get_pep_node(xmlel()) -> {value, binary()} | false.
+-spec get_pep_node(message()) -> binary() | undefined.
 
-get_pep_node(#xmlel{name = <<"message">>} = Stanza) ->
-    From = fxml:get_tag_attr_s(<<"from">>, Stanza),
-    case jid:from_string(From) of
-      #jid{luser = <<>>} -> % It's not PEP.
-	  false;
-      _ ->
-	  case fxml:get_subtag_with_xmlns(Stanza, <<"event">>,
-					  ?NS_PUBSUB_EVENT) of
-	    #xmlel{children = Els} ->
-		case fxml:remove_cdata(Els) of
-		  [#xmlel{name = <<"items">>, attrs = ItemsAttrs}] ->
-		      fxml:get_attr(<<"node">>, ItemsAttrs);
-		  _ ->
-		      false
-		end;
-	    false ->
-		false
-	  end
+get_pep_node(#message{from = #jid{luser = <<>>}}) ->
+    %% It's not PEP.
+    undefined;
+get_pep_node(#message{} = Msg) ->
+    case xmpp:get_subtag(Msg, #pubsub_event{}) of
+	#pubsub_event{items = [#pubsub_event_item{node = Node}]} ->
+	    Node;
+	_ ->
+	    undefined
     end.

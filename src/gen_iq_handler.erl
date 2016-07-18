@@ -40,7 +40,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -record(state, {host, module, function}).
 
@@ -58,6 +58,8 @@
 start_link(Host, Module, Function) ->
     gen_server:start_link(?MODULE, [Host, Module, Function],
 			  []).
+
+-spec add_iq_handler(module(), binary(), binary(), module(), atom(), type()) -> any().
 
 add_iq_handler(Component, Host, NS, Module, Function,
 	       Type) ->
@@ -124,14 +126,49 @@ handle(Host, Module, Function, Opts, From, To, IQ) ->
 
 -spec process_iq(binary(), atom(), atom(), jid(), jid(), iq()) -> any().
 
-process_iq(_Host, Module, Function, From, To, IQ) ->
-    case catch Module:Function(From, To, IQ) of
-      {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
-      ResIQ ->
-	  if ResIQ /= ignore ->
-		 ejabberd_router:route(To, From, jlib:iq_to_xml(ResIQ));
-	     true -> ok
-	  end
+process_iq(_Host, Module, Function, From, To, IQ0) ->
+    IQ = xmpp:set_from_to(IQ0, From, To),
+    try
+	ResIQ = case erlang:function_exported(Module, Function, 1) of
+		    true ->
+			process_iq(Module, Function, IQ);
+		    false ->
+			process_iq(Module, Function, From, To,
+				   jlib:iq_query_info(xmpp:encode(IQ)))
+		end,
+	if ResIQ /= ignore ->
+		ejabberd_router:route(To, From, ResIQ);
+	   true ->
+		ok
+	end
+    catch E:R ->
+	    ?ERROR_MSG("failed to process iq:~n~s~nReason = ~p",
+		       [xmpp_codec:pp(IQ), {E, {R, erlang:get_stacktrace()}}]),
+	    Txt = <<"Module failed to handle the query">>,
+	    Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
+	    ejabberd_router:route(To, From, xmpp:make_error(IQ, Err))
+    end.
+
+-spec process_iq(module(), atom(), iq()) -> ignore | iq().
+process_iq(Module, Function, #iq{lang = Lang, sub_els = [El]} = IQ) ->
+    try
+	%% TODO: move this 'conditional' decoding somewhere
+	%% IQ handler should know *nothing* about vCards.
+	Pkt = case xmpp:get_ns(El) of
+		  ?NS_VCARD -> El;
+		  _ -> xmpp:decode(El)
+	      end,
+	Module:Function(IQ#iq{sub_els = [Pkt]})
+    catch error:{xmpp_codec, Why} ->
+	    Txt = xmpp:format_error(Why),
+	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
+    end.
+
+-spec process_iq(module(), atom(), jid(), jid(), term()) -> iq().
+process_iq(Module, Function, From, To, IQ) ->
+    case Module:Function(From, To, IQ) of
+	ignore -> ignore;
+	ResIQ -> xmpp:decode(jlib:iq_to_xml(ResIQ), [ignore_els])
     end.
 
 -spec check_type(type()) -> type().

@@ -31,12 +31,7 @@ init(_Host, _Opts) ->
 process_lists_get(LUser, LServer) ->
     case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
         {ok, #privacy{default = Default, lists = Lists}} ->
-            LItems = lists:map(fun ({N, _}) ->
-                                       #xmlel{name = <<"list">>,
-                                              attrs = [{<<"name">>, N}],
-                                              children = []}
-                               end,
-                               Lists),
+            LItems = lists:map(fun ({N, _}) -> N end, Lists),
             {Default, LItems};
         {error, notfound} ->
             {none, []};
@@ -57,7 +52,15 @@ process_list_get(LUser, LServer, Name) ->
             error
     end.
 
-process_default_set(LUser, LServer, {value, Name}) ->
+process_default_set(LUser, LServer, none) ->
+    {atomic,
+     case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
+         {ok, R} ->
+             ejabberd_riak:put(R#privacy{default = none}, privacy_schema());
+         {error, _} ->
+             ok
+     end};
+process_default_set(LUser, LServer, Name) ->
     {atomic,
      case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
          {ok, #privacy{lists = Lists} = P} ->
@@ -71,14 +74,6 @@ process_default_set(LUser, LServer, {value, Name}) ->
              end;
          {error, _} ->
              not_found
-     end};
-process_default_set(LUser, LServer, false) ->
-    {atomic,
-     case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
-         {ok, R} ->
-             ejabberd_riak:put(R#privacy{default = none}, privacy_schema());
-         {error, _} ->
-             ok
      end}.
 
 process_active_set(LUser, LServer, Name) ->

@@ -22,9 +22,11 @@
                   default = none        :: none | binary(),
                   lists = []            :: [{binary(), [listitem()]}]}).
 
--record(listitem, {type = none :: none | jid | group | subscription,
-                   value = none :: none | both | from | to | ljid() | binary(),
-                   action = allow :: allow | deny,
+-type privacy() :: #privacy{}.
+
+-record(listitem, {type = none :: listitem_type(),
+                   value = none :: listitem_value(),
+                   action = allow :: listitem_action(),
                    order = 0 :: integer(),
                    match_all = false :: boolean(),
                    match_iq = false :: boolean(),
@@ -33,6 +35,9 @@
                    match_presence_out = false :: boolean()}).
 
 -type listitem() :: #listitem{}.
+-type listitem_type() :: none | jid | group | subscription.
+-type listitem_value() :: none | both | from | to | ljid() | binary().
+-type listitem_action() :: allow | deny.
 
 -record(userlist, {name = none :: none | binary(),
                    list = [] :: [listitem()],

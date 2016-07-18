@@ -35,11 +35,7 @@ process_lists_get(LUser, LServer) ->
 	{'EXIT', _Reason} -> error;
 	[] -> {none, []};
 	[#privacy{default = Default, lists = Lists}] ->
-	    LItems = lists:map(fun ({N, _}) ->
-				       #xmlel{name = <<"list">>,
-					      attrs = [{<<"name">>, N}],
-					      children = []}
-			       end, Lists),
+	    LItems = lists:map(fun ({N, _}) -> N end, Lists),
 	    {Default, LItems}
     end.
 
@@ -54,7 +50,15 @@ process_list_get(LUser, LServer, Name) ->
 	    end
     end.
 
-process_default_set(LUser, LServer, {value, Name}) ->
+process_default_set(LUser, LServer, none) ->
+    F = fun () ->
+		case mnesia:read({privacy, {LUser, LServer}}) of
+		    [] -> ok;
+		    [R] -> mnesia:write(R#privacy{default = none})
+		end
+	end,
+    mnesia:transaction(F);
+process_default_set(LUser, LServer, Name) ->
     F = fun () ->
 		case mnesia:read({privacy, {LUser, LServer}}) of
 		    [] -> not_found;
@@ -66,14 +70,6 @@ process_default_set(LUser, LServer, {value, Name}) ->
 				ok;
 			    false -> not_found
 			end
-		end
-	end,
-    mnesia:transaction(F);
-process_default_set(LUser, LServer, false) ->
-    F = fun () ->
-		case mnesia:read({privacy, {LUser, LServer}}) of
-		    [] -> ok;
-		    [R] -> mnesia:write(R#privacy{default = none})
 		end
 	end,
     mnesia:transaction(F).

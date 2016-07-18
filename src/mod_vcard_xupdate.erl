@@ -17,8 +17,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("mod_vcard_xupdate.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), #vcard_xupdate{}) -> ok | pass.
@@ -53,12 +52,8 @@ depends(_Host, _Opts) ->
 %% Hooks
 %%====================================================================
 
-update_presence(#xmlel{name = <<"presence">>, attrs = Attrs} = Packet,
-  User, Host) ->
-    case fxml:get_attr_s(<<"type">>, Attrs) of
-      <<>> -> presence_with_xupdate(Packet, User, Host);
-      _ -> Packet
-    end;
+update_presence(#presence{type = undefined} = Packet, User, Host) ->
+    presence_with_xupdate(Packet, User, Host);
 update_presence(Packet, _User, _Host) -> Packet.
 
 vcard_set(LUser, LServer, VCARD) ->
@@ -93,36 +88,10 @@ remove_xupdate(LUser, LServer) ->
 %%% Presence stanza rebuilding
 %%%----------------------------------------------------------------------
 
-presence_with_xupdate(#xmlel{name = <<"presence">>,
-			     attrs = Attrs, children = Els},
-		      User, Host) ->
-    XPhotoEl = build_xphotoel(User, Host),
-    Els2 = presence_with_xupdate2(Els, [], XPhotoEl),
-    #xmlel{name = <<"presence">>, attrs = Attrs,
-	   children = Els2}.
-
-presence_with_xupdate2([], Els2, XPhotoEl) ->
-    lists:reverse([XPhotoEl | Els2]);
-%% This clause assumes that the x element contains only the XMLNS attribute:
-presence_with_xupdate2([#xmlel{name = <<"x">>,
-			       attrs = [{<<"xmlns">>, ?NS_VCARD_UPDATE}]}
-			| Els],
-		       Els2, XPhotoEl) ->
-    presence_with_xupdate2(Els, Els2, XPhotoEl);
-presence_with_xupdate2([El | Els], Els2, XPhotoEl) ->
-    presence_with_xupdate2(Els, [El | Els2], XPhotoEl).
-
-build_xphotoel(User, Host) ->
+presence_with_xupdate(Presence, User, Host) ->
     Hash = get_xupdate(User, Host),
-    PhotoSubEls = case Hash of
-		    Hash when is_binary(Hash) -> [{xmlcdata, Hash}];
-		    _ -> []
-		  end,
-    PhotoEl = [#xmlel{name = <<"photo">>, attrs = [],
-		      children = PhotoSubEls}],
-    #xmlel{name = <<"x">>,
-	   attrs = [{<<"xmlns">>, ?NS_VCARD_UPDATE}],
-	   children = PhotoEl}.
+    Presence1 = xmpp:remove_subtag(Presence, #vcard_xupdate{}),
+    xmpp:set_subtag(Presence1, #vcard_xupdate{hash = Hash}).
 
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),

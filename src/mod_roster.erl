@@ -41,12 +41,12 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_iq/3, export/1,
-	 import/1, process_local_iq/3, get_user_roster/2,
+-export([start/2, stop/1, process_iq/1, export/1,
+	 import/1, process_local_iq/1, get_user_roster/2,
 	 import/3, get_subscription_lists/3, get_roster/2,
 	 get_in_pending_subscriptions/3, in_subscription/6,
 	 out_subscription/4, set_items/3, remove_user/2,
-	 get_jid_info/4, item_to_xml/1, webadmin_page/3,
+	 get_jid_info/4, encode_item/1, webadmin_page/3,
 	 webadmin_user/4, get_versioning_feature/2,
 	 roster_versioning_enabled/1, roster_version/2,
 	 mod_opt_type/1, set_roster/1, depends/2]).
@@ -54,7 +54,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("mod_roster.hrl").
 
@@ -139,24 +139,23 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
-process_iq(From, To, IQ) when ((From#jid.luser == <<"">>) andalso (From#jid.resource == <<"">>)) ->
-    process_iq_manager(From, To, IQ);
+process_iq(#iq{from = #jid{luser = <<"">>},
+	       to = #jid{resource = <<"">>}} = IQ) ->
+    process_iq_manager(IQ);
 
-process_iq(From, To, IQ) ->
-    #iq{sub_el = SubEl, lang = Lang} = IQ,
+process_iq(#iq{from = From, lang = Lang} = IQ) ->
     #jid{lserver = LServer} = From,
     case lists:member(LServer, ?MYHOSTS) of
-      true -> process_local_iq(From, To, IQ);
+      true -> process_local_iq(IQ);
       _ ->
 	  Txt = <<"The query is only allowed from local users">>,
-	  IQ#iq{type = error,
-		sub_el = [SubEl, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)]}
+	  xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang))
     end.
 
-process_local_iq(From, To, #iq{type = Type} = IQ) ->
+process_local_iq(#iq{type = Type} = IQ) ->
     case Type of
-      set -> try_process_iq_set(From, To, IQ);
-      get -> process_iq_get(From, To, IQ)
+      set -> try_process_iq_set(IQ);
+      get -> process_iq_get(IQ)
     end.
 
 roster_hash(Items) ->
@@ -179,10 +178,7 @@ roster_version_on_db(Host) ->
 get_versioning_feature(Acc, Host) ->
     case roster_versioning_enabled(Host) of
       true ->
-	  Feature = #xmlel{name = <<"ver">>,
-			   attrs = [{<<"xmlns">>, ?NS_ROSTER_VER}],
-			   children = []},
-	  [Feature | Acc];
+	  [#rosterver_feature{}|Acc];
       false -> []
     end.
 
@@ -221,82 +217,61 @@ write_roster_version(LUser, LServer, InTransaction) ->
 %%     - roster versioning is not used by the client OR
 %%     - roster versioning is used by server and client, BUT the server isn't storing versions on db OR
 %%     - the roster version from client don't match current version.
-process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
+process_iq_get(#iq{from = From, to = To, lang = Lang,
+		   sub_els = [#roster_query{ver = RequestedVersion}]} = IQ) ->
     LUser = From#jid.luser,
     LServer = From#jid.lserver,
     US = {LUser, LServer},
-    try {ItemsToSend, VersionToSend} = case
-					 {fxml:get_tag_attr(<<"ver">>, SubEl),
-					  roster_versioning_enabled(LServer),
-					  roster_version_on_db(LServer)}
-					   of
-					 {{value, RequestedVersion}, true,
-					  true} ->
-					     case read_roster_version(LUser,
-								      LServer)
-						 of
-					       error ->
-						   RosterVersion =
-						       write_roster_version(LUser,
-									    LServer),
-						   {lists:map(fun item_to_xml/1,
-							      ejabberd_hooks:run_fold(roster_get,
-										      To#jid.lserver,
-										      [],
-										      [US])),
-						    RosterVersion};
-					       RequestedVersion ->
-						   {false, false};
-					       NewVersion ->
-						   {lists:map(fun item_to_xml/1,
-							      ejabberd_hooks:run_fold(roster_get,
-										      To#jid.lserver,
-										      [],
-										      [US])),
-						    NewVersion}
-					     end;
-					 {{value, RequestedVersion}, true,
-					  false} ->
-					     RosterItems =
-						 ejabberd_hooks:run_fold(roster_get,
-									 To#jid.lserver,
-									 [],
-									 [US]),
-					     case roster_hash(RosterItems) of
-					       RequestedVersion ->
-						   {false, false};
-					       New ->
-						   {lists:map(fun item_to_xml/1,
-							      RosterItems),
-						    New}
-					     end;
-					 _ ->
-					     {lists:map(fun item_to_xml/1,
-							ejabberd_hooks:run_fold(roster_get,
-										To#jid.lserver,
-										[],
-										[US])),
-					      false}
-				       end,
-	IQ#iq{type = result,
-	      sub_el =
-		  case {ItemsToSend, VersionToSend} of
-		    {false, false} -> [];
-		    {Items, false} ->
-			[#xmlel{name = <<"query">>,
-				attrs = [{<<"xmlns">>, ?NS_ROSTER}],
-				children = Items}];
-		    {Items, Version} ->
-			[#xmlel{name = <<"query">>,
-				attrs =
-				    [{<<"xmlns">>, ?NS_ROSTER},
-				     {<<"ver">>, Version}],
-				children = Items}]
-		  end}
-    catch
-      _:_ ->
-	  IQ#iq{type = error,
-		sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
+    try {ItemsToSend, VersionToSend} =
+	     case {roster_versioning_enabled(LServer),
+		   roster_version_on_db(LServer)} of
+		 {true, true} when RequestedVersion /= undefined ->
+		     case read_roster_version(LUser, LServer) of
+			 error ->
+			     RosterVersion = write_roster_version(LUser, LServer),
+			     {lists:map(fun encode_item/1,
+					ejabberd_hooks:run_fold(
+					  roster_get, To#jid.lserver, [], [US])),
+			      RosterVersion};
+			 RequestedVersion ->
+			     {false, false};
+			 NewVersion ->
+			     {lists:map(fun encode_item/1,
+					ejabberd_hooks:run_fold(
+					  roster_get, To#jid.lserver, [], [US])),
+			      NewVersion}
+		     end;
+		 {true, false} when RequestedVersion /= undefined ->
+		     RosterItems = ejabberd_hooks:run_fold(
+				     roster_get, To#jid.lserver, [], [US]),
+		     case roster_hash(RosterItems) of
+			 RequestedVersion ->
+			     {false, false};
+			 New ->
+			     {lists:map(fun encode_item/1, RosterItems), New}
+		     end;
+		 _ ->
+		     {lists:map(fun encode_item/1,
+				ejabberd_hooks:run_fold(
+				  roster_get, To#jid.lserver, [], [US])),
+		      false}
+	     end,
+	 xmpp:make_iq_result(
+	   IQ,
+	   case {ItemsToSend, VersionToSend} of
+	       {false, false} ->
+		   undefined;
+	       {Items, false} ->
+		   #roster_query{items = Items};
+	       {Items, Version} ->
+		   #roster_query{items = Items,
+				 ver = Version}
+	   end)
+    catch E:R ->
+	    ?ERROR_MSG("failed to process roster get for ~s: ~p",
+		       [jid:to_string(From), {E, {R, erlang:get_stacktrace()}}]),
+	    Txt = <<"Roster module has failed">>,
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
 get_user_roster(Acc, {LUser, LServer}) ->
@@ -320,143 +295,82 @@ set_roster(#roster{us = {LUser, LServer}, jid = LJID} = Item) ->
 	      roster_subscribe_t(LUser, LServer, LJID, Item)
       end).
 
-item_to_xml(Item) ->
-    Attrs1 = [{<<"jid">>,
-	       jid:to_string(Item#roster.jid)}],
-    Attrs2 = case Item#roster.name of
-	       <<"">> -> Attrs1;
-	       Name -> [{<<"name">>, Name} | Attrs1]
-	     end,
-    Attrs3 = case Item#roster.subscription of
-	       none -> [{<<"subscription">>, <<"none">>} | Attrs2];
-	       from -> [{<<"subscription">>, <<"from">>} | Attrs2];
-	       to -> [{<<"subscription">>, <<"to">>} | Attrs2];
-	       both -> [{<<"subscription">>, <<"both">>} | Attrs2];
-	       remove -> [{<<"subscription">>, <<"remove">>} | Attrs2]
-	     end,
-    Attrs4 = case ask_to_pending(Item#roster.ask) of
-	       out -> [{<<"ask">>, <<"subscribe">>} | Attrs3];
-	       both -> [{<<"ask">>, <<"subscribe">>} | Attrs3];
-	       _ -> Attrs3
-	     end,
-    SubEls1 = lists:map(fun (G) ->
-				#xmlel{name = <<"group">>, attrs = [],
-				       children = [{xmlcdata, G}]}
-			end,
-			Item#roster.groups),
-    SubEls = SubEls1 ++ Item#roster.xs,
-    #xmlel{name = <<"item">>, attrs = Attrs4,
-	   children = SubEls}.
+encode_item(Item) ->
+    #roster_item{jid = jid:make(Item#roster.jid),
+		 name = Item#roster.name,
+		 subscription = Item#roster.subscription,
+		 ask = case ask_to_pending(Item#roster.ask) of
+			   out -> subscribe;
+			   both -> subscribe;
+			   _ -> undefined
+		       end,
+		 groups = Item#roster.groups}.
+
+decode_item(#roster_item{} = Item, R, Managed) ->
+    R#roster{jid = jid:tolower(Item#roster_item.jid),
+	     name = Item#roster_item.name,
+	     subscription = case Item#roster_item.subscription of
+				remove -> remove;
+				Sub when Managed -> Sub;
+				_ -> undefined
+			    end,
+	     groups = Item#roster_item.groups}.
 
 get_roster_by_jid_t(LUser, LServer, LJID) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:get_roster_by_jid(LUser, LServer, LJID).
 
-try_process_iq_set(From, To, #iq{sub_el = SubEl, lang = Lang} = IQ) ->
+try_process_iq_set(#iq{from = From, lang = Lang} = IQ) ->
     #jid{server = Server} = From,
     Access = gen_mod:get_module_opt(Server, ?MODULE, access, fun(A) -> A end, all),
     case acl:match_rule(Server, Access, From) of
 	deny ->
 	    Txt = <<"Denied by ACL">>,
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
+	    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 	allow ->
-	    process_iq_set(From, To, IQ)
+	    process_iq_set(IQ)
     end.
 
-process_iq_set(From, To, #iq{sub_el = SubEl, id = Id} = IQ) ->
-    #xmlel{children = Els} = SubEl,
+process_iq_set(#iq{from = From, to = To, id = Id,
+		   sub_els = [#roster_query{items = Items}]} = IQ) ->
     Managed = is_managed_from_id(Id),
-    lists:foreach(fun (El) -> process_item_set(From, To, El, Managed)
+    lists:foreach(fun (Item) -> process_item_set(From, To, Item, Managed)
 		  end,
-		  Els),
-    IQ#iq{type = result, sub_el = []}.
+		  Items),
+    xmpp:make_iq_result(IQ).
 
-process_item_set(From, To,
-		 #xmlel{attrs = Attrs, children = Els}, Managed) ->
-    JID1 = jid:from_string(fxml:get_attr_s(<<"jid">>,
-					     Attrs)),
-    #jid{user = User, luser = LUser, lserver = LServer} =
-	From,
-    case JID1 of
-      error -> ok;
-      _ ->
-	  LJID = jid:tolower(JID1),
-	  F = fun () ->
-		      Item = get_roster_by_jid_t(LUser, LServer, LJID),
-		      Item1 = process_item_attrs_managed(Item, Attrs, Managed),
-		      Item2 = process_item_els(Item1, Els),
-		      Item3 = ejabberd_hooks:run_fold(roster_process_item,
-						      LServer, Item2,
-						      [LServer]),
-		      case Item3#roster.subscription of
-			remove -> del_roster_t(LUser, LServer, LJID);
-			_ -> update_roster_t(LUser, LServer, LJID, Item3)
-		      end,
-                      send_itemset_to_managers(From, Item3, Managed),
-		      case roster_version_on_db(LServer) of
-			true -> write_roster_version_t(LUser, LServer);
-			false -> ok
-		      end,
-		      {Item, Item3}
-	      end,
-	  case transaction(LServer, F) of
-	    {atomic, {OldItem, Item}} ->
-		push_item(User, LServer, To, Item),
-		case Item#roster.subscription of
-		  remove ->
-		      send_unsubscribing_presence(From, OldItem), ok;
-		  _ -> ok
-		end;
-	    E ->
-		?DEBUG("ROSTER: roster item set error: ~p~n", [E]), ok
-	  end
+process_item_set(From, To, #roster_item{jid = JID1} = QueryItem, Managed) ->
+    #jid{user = User, luser = LUser, lserver = LServer} = From,
+    LJID = jid:tolower(JID1),
+    F = fun () ->
+		Item = get_roster_by_jid_t(LUser, LServer, LJID),
+		Item2 = decode_item(QueryItem, Item, Managed),
+		Item3 = ejabberd_hooks:run_fold(roster_process_item,
+						LServer, Item2,
+						[LServer]),
+		case Item3#roster.subscription of
+		    remove -> del_roster_t(LUser, LServer, LJID);
+		    _ -> update_roster_t(LUser, LServer, LJID, Item3)
+		end,
+		send_itemset_to_managers(From, Item3, Managed),
+		case roster_version_on_db(LServer) of
+		    true -> write_roster_version_t(LUser, LServer);
+		    false -> ok
+		end,
+		{Item, Item3}
+	end,
+    case transaction(LServer, F) of
+	{atomic, {OldItem, Item}} ->
+	    push_item(User, LServer, To, Item),
+	    case Item#roster.subscription of
+		remove ->
+		    send_unsubscribing_presence(From, OldItem), ok;
+		_ -> ok
+	    end;
+	E ->
+	    ?DEBUG("ROSTER: roster item set error: ~p~n", [E]), ok
     end;
 process_item_set(_From, _To, _, _Managed) -> ok.
-
-process_item_attrs(Item, [{Attr, Val} | Attrs]) ->
-    case Attr of
-      <<"jid">> ->
-	  case jid:from_string(Val) of
-	    error -> process_item_attrs(Item, Attrs);
-	    JID1 ->
-		JID = {JID1#jid.luser, JID1#jid.lserver,
-		       JID1#jid.lresource},
-		process_item_attrs(Item#roster{jid = JID}, Attrs)
-	  end;
-      <<"name">> ->
-	  process_item_attrs(Item#roster{name = Val}, Attrs);
-      <<"subscription">> ->
-	  case Val of
-	    <<"remove">> ->
-		process_item_attrs(Item#roster{subscription = remove},
-				   Attrs);
-	    _ -> process_item_attrs(Item, Attrs)
-	  end;
-      <<"ask">> -> process_item_attrs(Item, Attrs);
-      _ -> process_item_attrs(Item, Attrs)
-    end;
-process_item_attrs(Item, []) -> Item.
-
-process_item_els(Item,
-		 [#xmlel{name = Name, attrs = Attrs, children = SEls}
-		  | Els]) ->
-    case Name of
-      <<"group">> ->
-	  Groups = [fxml:get_cdata(SEls) | Item#roster.groups],
-	  process_item_els(Item#roster{groups = Groups}, Els);
-      _ ->
-	  case fxml:get_attr_s(<<"xmlns">>, Attrs) of
-	    <<"">> -> process_item_els(Item, Els);
-	    _ ->
-		XEls = [#xmlel{name = Name, attrs = Attrs,
-			       children = SEls}
-			| Item#roster.xs],
-		process_item_els(Item#roster{xs = XEls}, Els)
-	  end
-    end;
-process_item_els(Item, [{xmlcdata, _} | Els]) ->
-    process_item_els(Item, Els);
-process_item_els(Item, []) -> Item.
 
 push_item(User, Server, From, Item) ->
     ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
@@ -480,21 +394,19 @@ push_item(User, Server, Resource, From, Item) ->
 
 push_item(User, Server, Resource, From, Item,
 	  RosterVersion) ->
-    ExtraAttrs = case RosterVersion of
-		   not_found -> [];
-		   _ -> [{<<"ver">>, RosterVersion}]
-		 end,
-    ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
+    Ver = case RosterVersion of
+	      not_found -> undefined;
+	      _ -> RosterVersion
+	  end,
+    ResIQ = #iq{type = set,
 %% @doc Roster push, calculate and include the version attribute.
 %% TODO: don't push to those who didn't load roster
 		id = <<"push", (randoms:get_string())/binary>>,
-		sub_el =
-		    [#xmlel{name = <<"query">>,
-			    attrs = [{<<"xmlns">>, ?NS_ROSTER} | ExtraAttrs],
-			    children = [item_to_xml(Item)]}]},
+		sub_els = [#roster_query{ver = Ver,
+					 items = [encode_item(Item)]}]},
     ejabberd_router:route(From,
 			  jid:make(User, Server, Resource),
-			  jlib:iq_to_xml(ResIQ)).
+			  ResIQ).
 
 push_item_version(Server, User, From, Item,
 		  RosterVersion) ->
@@ -598,16 +510,8 @@ process_subscription(Direction, User, Server, JID1,
 	  case AutoReply of
 	    none -> ok;
 	    _ ->
-		T = case AutoReply of
-		      subscribed -> <<"subscribed">>;
-		      unsubscribed -> <<"unsubscribed">>
-		    end,
-		ejabberd_router:route(jid:make(User, Server,
-						    <<"">>),
-				      JID1,
-				      #xmlel{name = <<"presence">>,
-					     attrs = [{<<"type">>, T}],
-					     children = []})
+		ejabberd_router:route(jid:make(User, Server, <<"">>),
+				      JID1, #presence{type = AutoReply})
 	  end,
 	  case Push of
 	    {push, Item} ->
@@ -769,23 +673,18 @@ send_unsubscribing_presence(From, Item) ->
 	       _ -> false
 	     end,
     if IsTo ->
-	   send_presence_type(jid:remove_resource(From),
-			      jid:make(Item#roster.jid),
-			      <<"unsubscribe">>);
+	    ejabberd_router:route(jid:remove_resource(From),
+				  jid:make(Item#roster.jid),
+				  #presence{type = unsubscribe});
        true -> ok
     end,
     if IsFrom ->
-	   send_presence_type(jid:remove_resource(From),
-			      jid:make(Item#roster.jid),
-			      <<"unsubscribed">>);
+	    ejabberd_router:route(jid:remove_resource(From),
+				  jid:make(Item#roster.jid),
+				  #presence{type = unsubscribed});
        true -> ok
     end,
     ok.
-
-send_presence_type(From, To, Type) ->
-    ejabberd_router:route(From, To,
-			  #xmlel{name = <<"presence">>,
-				 attrs = [{<<"type">>, Type}], children = []}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -809,64 +708,19 @@ del_roster_t(LUser, LServer, LJID) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:del_roster(LUser, LServer, LJID).
 
-process_item_set_t(LUser, LServer,
-		   #xmlel{attrs = Attrs, children = Els}) ->
-    JID1 = jid:from_string(fxml:get_attr_s(<<"jid">>,
-					     Attrs)),
-    case JID1 of
-      error -> ok;
-      _ ->
-	  JID = {JID1#jid.user, JID1#jid.server,
-		 JID1#jid.resource},
-	  LJID = {JID1#jid.luser, JID1#jid.lserver,
-		  JID1#jid.lresource},
-	  Item = #roster{usj = {LUser, LServer, LJID},
-			 us = {LUser, LServer}, jid = JID},
-	  Item1 = process_item_attrs_ws(Item, Attrs),
-	  Item2 = process_item_els(Item1, Els),
-	  case Item2#roster.subscription of
-	    remove -> del_roster_t(LUser, LServer, LJID);
-	    _ -> update_roster_t(LUser, LServer, LJID, Item2)
-	  end
+process_item_set_t(LUser, LServer, #roster_item{jid = JID1} = QueryItem) ->
+    JID = {JID1#jid.user, JID1#jid.server,
+	   JID1#jid.resource},
+    LJID = {JID1#jid.luser, JID1#jid.lserver,
+	    JID1#jid.lresource},
+    Item = #roster{usj = {LUser, LServer, LJID},
+		   us = {LUser, LServer}, jid = JID},
+    Item2 = decode_item(QueryItem, Item, _Managed = true),
+    case Item2#roster.subscription of
+	remove -> del_roster_t(LUser, LServer, LJID);
+	_ -> update_roster_t(LUser, LServer, LJID, Item2)
     end;
 process_item_set_t(_LUser, _LServer, _) -> ok.
-
-process_item_attrs_ws(Item, [{Attr, Val} | Attrs]) ->
-    case Attr of
-      <<"jid">> ->
-	  case jid:from_string(Val) of
-	    error -> process_item_attrs_ws(Item, Attrs);
-	    JID1 ->
-		JID = {JID1#jid.luser, JID1#jid.lserver,
-		       JID1#jid.lresource},
-		process_item_attrs_ws(Item#roster{jid = JID}, Attrs)
-	  end;
-      <<"name">> ->
-	  process_item_attrs_ws(Item#roster{name = Val}, Attrs);
-      <<"subscription">> ->
-	  case Val of
-	    <<"remove">> ->
-		process_item_attrs_ws(Item#roster{subscription =
-						      remove},
-				      Attrs);
-	    <<"none">> ->
-		process_item_attrs_ws(Item#roster{subscription = none},
-				      Attrs);
-	    <<"both">> ->
-		process_item_attrs_ws(Item#roster{subscription = both},
-				      Attrs);
-	    <<"from">> ->
-		process_item_attrs_ws(Item#roster{subscription = from},
-				      Attrs);
-	    <<"to">> ->
-		process_item_attrs_ws(Item#roster{subscription = to},
-				      Attrs);
-	    _ -> process_item_attrs_ws(Item, Attrs)
-	  end;
-      <<"ask">> -> process_item_attrs_ws(Item, Attrs);
-      _ -> process_item_attrs_ws(Item, Attrs)
-    end;
-process_item_attrs_ws(Item, []) -> Item.
 
 get_in_pending_subscriptions(Ls, User, Server) ->
     LServer = jid:nameprep(Server),
@@ -876,31 +730,18 @@ get_in_pending_subscriptions(Ls, User, Server) ->
 get_in_pending_subscriptions(Ls, User, Server, Mod) ->
     JID = jid:make(User, Server, <<"">>),
     Result = Mod:get_only_items(JID#jid.luser, JID#jid.lserver),
-    Ls ++ lists:map(fun (R) ->
-                            Message = R#roster.askmessage,
-                            Status = if is_binary(Message) -> (Message);
-                                        true -> <<"">>
-                                     end,
-                            #xmlel{name = <<"presence">>,
-                                   attrs =
-                                       [{<<"from">>,
-                                         jid:to_string(R#roster.jid)},
-                                        {<<"to">>, jid:to_string(JID)},
-                                        {<<"type">>, <<"subscribe">>}],
-                                   children =
-                                       [#xmlel{name = <<"status">>,
-                                               attrs = [],
-                                               children =
-                                                   [{xmlcdata, Status}]}]}
-                    end,
-                    lists:filter(fun (R) ->
-                                         case R#roster.ask of
-                                             in -> true;
-                                             both -> true;
-                                             _ -> false
-                                         end
-                                 end,
-                                 Result)).
+    Ls ++ lists:flatmap(
+	    fun(#roster{ask = Ask} = R) when Ask == in; Ask == both ->
+		    Message = R#roster.askmessage,
+		    Status = if is_binary(Message) -> (Message);
+				true -> <<"">>
+			     end,
+		    [#presence{from = R#roster.jid, to = JID,
+			       type = subscribe,
+			       status = xmpp:mk_text(Status)}];
+	       (_) ->
+		    []
+	    end, Result).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1070,10 +911,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 user_roster_subscribe_jid(User, Server, JID) ->
     out_subscription(User, Server, JID, subscribe),
     UJID = jid:make(User, Server, <<"">>),
-    ejabberd_router:route(UJID, JID,
-			  #xmlel{name = <<"presence">>,
-				 attrs = [{<<"type">>, <<"subscribe">>}],
-				 children = []}).
+    ejabberd_router:route(UJID, JID, #presence{type = subscribe}).
 
 user_roster_item_parse_query(User, Server, Items,
 			     Query) ->
@@ -1089,12 +927,7 @@ user_roster_item_parse_query(User, Server, Items,
 						 subscribed),
 				UJID = jid:make(User, Server, <<"">>),
 				ejabberd_router:route(UJID, JID1,
-						      #xmlel{name =
-								 <<"presence">>,
-							     attrs =
-								 [{<<"type">>,
-								   <<"subscribed">>}],
-							     children = []}),
+						      #presence{type = subscribed}),
 				throw(submitted);
 			    false ->
 				case lists:keysearch(<<"remove",
@@ -1102,29 +935,17 @@ user_roster_item_parse_query(User, Server, Items,
 						     1, Query)
 				    of
 				  {value, _} ->
-				      UJID = jid:make(User, Server,
-							   <<"">>),
-				      process_iq_set(UJID, UJID,
-						 #iq{type = set,
-						     sub_el =
-							 #xmlel{name =
-								    <<"query">>,
-								attrs =
-								    [{<<"xmlns">>,
-								      ?NS_ROSTER}],
-								children =
-								    [#xmlel{name
-										=
-										<<"item">>,
-									    attrs
-										=
-										[{<<"jid">>,
-										  jid:to_string(JID)},
-										 {<<"subscription">>,
-										  <<"remove">>}],
-									    children
-										=
-										[]}]}}),
+				      UJID = jid:make(User, Server),
+				      RosterItem = #roster_item{
+						      jid = jid:make(JID),
+						      subscription = remove},
+				      process_iq_set(
+					#iq{type = set,
+					    from = UJID,
+					    to = UJID,
+					    id = randoms:get_string(),
+					    sub_els = [#roster_query{
+							  items = [RosterItem]}]}),
 				      throw(submitted);
 				  false -> ok
 				end
@@ -1144,24 +965,24 @@ webadmin_user(Acc, _User, _Server, Lang) ->
 
 %% Implement XEP-0321 Remote Roster Management
 
-process_iq_manager(From, To, IQ) ->
+process_iq_manager(#iq{from = From, to = To, lang = Lang} = IQ) ->
     %% Check what access is allowed for From to To
     MatchDomain = From#jid.lserver,
     case is_domain_managed(MatchDomain, To#jid.lserver) of
 	true ->
-	    process_iq_manager2(MatchDomain, To, IQ);
+	    process_iq_manager2(MatchDomain, IQ);
 	false ->
-	    #iq{sub_el = SubEl, lang = Lang} = IQ,
 	    Txt = <<"Roster management is not allowed from this domain">>,
-	    IQ#iq{type = error, sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]}
+	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
     end.
 
-process_iq_manager2(MatchDomain, To, IQ) ->
+process_iq_manager2(MatchDomain, #iq{to = To} = IQ) ->
     %% If IQ is SET, filter the input IQ
     IQFiltered = maybe_filter_request(MatchDomain, IQ),
     %% Call the standard function with reversed JIDs
     IdInitial = IQFiltered#iq.id,
-    ResIQ = process_iq(To, To, IQFiltered#iq{id = <<"roster-remotely-managed">>}),
+    ResIQ = process_iq(IQFiltered#iq{from = To, to = To,
+				     id = <<"roster-remotely-managed">>}),
     %% Filter the output IQ
     filter_stanza(MatchDomain, ResIQ#iq{id = IdInitial}).
 
@@ -1176,37 +997,13 @@ maybe_filter_request(MatchDomain, IQ) when IQ#iq.type == set ->
 maybe_filter_request(_MatchDomain, IQ) ->
     IQ.
 
-filter_stanza(_MatchDomain, #iq{sub_el = []} = IQ) ->
-    IQ;
-filter_stanza(MatchDomain, #iq{sub_el = [SubEl | _]} = IQ) ->
-    #iq{sub_el = SubElFiltered} = IQRes =
-	filter_stanza(MatchDomain, IQ#iq{sub_el = SubEl}),
-    IQRes#iq{sub_el = [SubElFiltered]};
-filter_stanza(MatchDomain, #iq{sub_el = SubEl} = IQ) ->
-    #xmlel{name = Type, attrs = Attrs, children = Items} = SubEl,
+filter_stanza(MatchDomain,
+	      #iq{sub_els = [#roster_query{items = Items} = R]} = IQ) ->
     ItemsFiltered = lists:filter(
-		      fun(Item) ->
-			      is_item_of_domain(MatchDomain, Item) end, Items),
-    SubElFiltered = #xmlel{name=Type, attrs = Attrs, children = ItemsFiltered},
-    IQ#iq{sub_el = SubElFiltered}.
-
-is_item_of_domain(MatchDomain, #xmlel{} = El) ->
-    lists:any(fun(Attr) -> is_jid_of_domain(MatchDomain, Attr) end, El#xmlel.attrs);
-is_item_of_domain(_MatchDomain, {xmlcdata, _}) ->
-    false.
-
-is_jid_of_domain(MatchDomain, {<<"jid">>, JIDString}) ->
-    case jid:from_string(JIDString) of
-	JID when JID#jid.lserver == MatchDomain -> true;
-	_ -> false
-    end;
-is_jid_of_domain(_, _) ->
-    false.
-
-process_item_attrs_managed(Item, Attrs, true) ->
-    process_item_attrs_ws(Item, Attrs);
-process_item_attrs_managed(Item, _Attrs, false) ->
-    process_item_attrs(Item, _Attrs).
+		      fun(#roster_item{jid = #jid{lserver = S}}) ->
+			      S == MatchDomain
+		      end, Items),
+    IQ#iq{sub_els = [R#roster_query{items = ItemsFiltered}]}.
 
 send_itemset_to_managers(_From, _Item, true) ->
     ok;

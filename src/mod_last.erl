@@ -33,8 +33,8 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/3, export/1,
-	 process_sm_iq/3, on_presence_update/4, import/1,
+-export([start/2, stop/1, process_local_iq/1, export/1,
+	 process_sm_iq/1, on_presence_update/4, import/1,
 	 import/3, store_last_info/4, get_last_info/2,
 	 remove_user/2, transform_options/1, mod_opt_type/1,
 	 opt_type/1, register_user/2, depends/2]).
@@ -42,7 +42,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("mod_privacy.hrl").
 -include("mod_last.hrl").
@@ -87,25 +87,14 @@ stop(Host) ->
 %%% Uptime of ejabberd node
 %%%
 
-process_local_iq(_From, _To,
-		 #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
-    case Type of
-      set ->
-	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
-      get ->
-	  Sec = get_node_uptime(),
-	  IQ#iq{type = result,
-		sub_el =
-		    [#xmlel{name = <<"query">>,
-			    attrs =
-				[{<<"xmlns">>, ?NS_LAST},
-				 {<<"seconds">>,
-				  iolist_to_binary(integer_to_list(Sec))}],
-			    children = []}]}
-    end.
+-spec process_local_iq(iq()) -> iq().
+process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_local_iq(#iq{type = get} = IQ) ->
+    xmpp:make_iq_result(IQ, #last{seconds = get_node_uptime()}).
 
-%% @spec () -> integer()
+-spec get_node_uptime() -> non_neg_integer().
 %% @doc Get the uptime of the ejabberd node, expressed in seconds.
 %% When ejabberd is starting, ejabberd_config:start/0 stores the datetime.
 get_node_uptime() ->
@@ -118,6 +107,7 @@ get_node_uptime() ->
             p1_time_compat:system_time(seconds) - Now
     end.
 
+-spec now_to_seconds(erlang:timestamp()) -> non_neg_integer().
 now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
     MegaSecs * 1000000 + Secs.
 
@@ -125,83 +115,63 @@ now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
 %%% Serve queries about user last online
 %%%
 
-process_sm_iq(From, To,
-	      #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
-    case Type of
-      set ->
-	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
-      get ->
-	  User = To#jid.luser,
-	  Server = To#jid.lserver,
-	  {Subscription, _Groups} =
-	      ejabberd_hooks:run_fold(roster_get_jid_info, Server,
-				      {none, []}, [User, Server, From]),
-	  if (Subscription == both) or (Subscription == from) or
-	       (From#jid.luser == To#jid.luser) and
-		 (From#jid.lserver == To#jid.lserver) ->
-		 UserListRecord =
-		     ejabberd_hooks:run_fold(privacy_get_user_list, Server,
-					     #userlist{}, [User, Server]),
-		 case ejabberd_hooks:run_fold(privacy_check_packet,
-					      Server, allow,
-					      [User, Server, UserListRecord,
-					       {To, From,
-						#xmlel{name = <<"presence">>,
-						       attrs = [],
-						       children = []}},
-					       out])
-		     of
-		   allow -> get_last_iq(IQ, SubEl, User, Server);
-		   deny ->
-		       IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
-		 end;
-	     true ->
-		 Txt = <<"Not subscribed">>,
-		 IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]}
-	  end
+-spec process_sm_iq(iq()) -> iq().
+process_sm_iq(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_sm_iq(#iq{from = From, to = To, lang = Lang} = IQ) ->
+    User = To#jid.luser,
+    Server = To#jid.lserver,
+    {Subscription, _Groups} =
+	ejabberd_hooks:run_fold(roster_get_jid_info, Server,
+				{none, []}, [User, Server, From]),
+    if (Subscription == both) or (Subscription == from) or
+       (From#jid.luser == To#jid.luser) and
+       (From#jid.lserver == To#jid.lserver) ->
+	    UserListRecord =
+		ejabberd_hooks:run_fold(privacy_get_user_list, Server,
+					#userlist{}, [User, Server]),
+	    case ejabberd_hooks:run_fold(privacy_check_packet,
+					 Server, allow,
+					 [User, Server, UserListRecord,
+					  {To, From, #presence{}}, out]) of
+		allow -> get_last_iq(IQ, User, Server);
+		deny -> xmpp:make_error(IQ, xmpp:err_forbidden())
+	    end;
+       true ->
+	    Txt = <<"Not subscribed">>,
+	    xmpp:make_error(IQ, xmpp:err_not_subscribed(Txt, Lang))
     end.
 
 %% @spec (LUser::string(), LServer::string()) ->
 %%      {ok, TimeStamp::integer(), Status::string()} | not_found | {error, Reason}
+-spec get_last(binary(), binary()) -> {ok, non_neg_integer(), binary()} |
+				      not_found | {error, any()}.
 get_last(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:get_last(LUser, LServer).
 
-get_last_iq(#iq{lang = Lang} = IQ, SubEl, LUser, LServer) ->
+-spec get_last_iq(iq(), binary(), binary()) -> iq().
+get_last_iq(#iq{lang = Lang} = IQ, LUser, LServer) ->
     case ejabberd_sm:get_user_resources(LUser, LServer) of
       [] ->
 	  case get_last(LUser, LServer) of
 	    {error, _Reason} ->
 		Txt = <<"Database failure">>,
-		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt)]};
+		xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
 	    not_found ->
 		Txt = <<"No info about last activity found">>,
-		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)]};
+		xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang));
 	    {ok, TimeStamp, Status} ->
 		TimeStamp2 = p1_time_compat:system_time(seconds),
 		Sec = TimeStamp2 - TimeStamp,
-		IQ#iq{type = result,
-		      sub_el =
-			  [#xmlel{name = <<"query">>,
-				  attrs =
-				      [{<<"xmlns">>, ?NS_LAST},
-				       {<<"seconds">>,
-					iolist_to_binary(integer_to_list(Sec))}],
-				  children = [{xmlcdata, Status}]}]}
+		xmpp:make_iq_result(IQ, #last{seconds = Sec, status = Status})
 	  end;
       _ ->
-	  IQ#iq{type = result,
-		sub_el =
-		    [#xmlel{name = <<"query">>,
-			    attrs =
-				[{<<"xmlns">>, ?NS_LAST},
-				 {<<"seconds">>, <<"0">>}],
-			    children = []}]}
+	  xmpp:make_iq_result(IQ, #last{seconds = 0})
     end.
 
+-spec register_user(binary(), binary()) -> {atomic, any()}.
 register_user(User, Server) ->
     on_presence_update(
        User,
@@ -209,18 +179,21 @@ register_user(User, Server) ->
        <<"RegisterResource">>,
        <<"Registered but didn't login">>).
 
+-spec on_presence_update(binary(), binary(), binary(), binary()) -> {atomic, any()}.
 on_presence_update(User, Server, _Resource, Status) ->
     TimeStamp = p1_time_compat:system_time(seconds),
     store_last_info(User, Server, TimeStamp, Status).
 
+-spec store_last_info(binary(), binary(), non_neg_integer(), binary()) ->
+			     {atomic, any()}.
 store_last_info(User, Server, TimeStamp, Status) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:store_last_info(LUser, LServer, TimeStamp, Status).
 
-%% @spec (LUser::string(), LServer::string()) ->
-%%      {ok, TimeStamp::integer(), Status::string()} | not_found
+-spec get_last_info(binary(), binary()) -> {ok, non_neg_integer(), binary()} |
+					   not_found.
 get_last_info(LUser, LServer) ->
     case get_last(LUser, LServer) of
       {error, _Reason} -> not_found;

@@ -42,7 +42,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -record(state, {host = <<"">> :: binary()}).
 
@@ -118,10 +118,10 @@ handle_cast(_Msg, State) -> {noreply, State}.
 handle_info({route, From, To, Packet}, State) ->
     Packet2 = case From#jid.user of
 		<<"">> ->
-		    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+		    Lang = xmpp:get_lang(Packet),
 		    Txt = <<"User part of JID in 'from' is empty">>,
-		    jlib:make_error_reply(
-		      Packet, ?ERRT_BAD_REQUEST(Lang, Txt));
+		    xmpp:make_error(
+		      Packet, xmpp:err_bad_request(Txt, Lang));
 		_ -> Packet
 	      end,
     do_client_version(disabled, To, From),
@@ -168,37 +168,27 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %% using exactly the same JID. We add a (mostly) random resource to
 %% try to guarantee that the received response matches the request sent.
 %% Finally, the received response is printed in the ejabberd log file.
+
+%% THIS IS **NOT** HOW TO WRITE ejabberd CODE. THIS CODE IS RETARDED.
+
 do_client_version(disabled, _From, _To) -> ok;
 do_client_version(enabled, From, To) ->
-    ToS = jid:to_string(To),
-    Random_resource =
-	iolist_to_binary(integer_to_list(random:uniform(100000))),
+    Random_resource = randoms:get_string(),
     From2 = From#jid{resource = Random_resource,
 		     lresource = Random_resource},
-    Packet = #xmlel{name = <<"iq">>,
-		    attrs = [{<<"to">>, ToS}, {<<"type">>, <<"get">>}],
-		    children =
-			[#xmlel{name = <<"query">>,
-				attrs = [{<<"xmlns">>, ?NS_VERSION}],
-				children = []}]},
+    ID = randoms:get_string(),
+    Packet = #iq{from = From, to = To, type = get,
+		 id = randoms:get_string(),
+		 sub_els = [#version{}]},
     ejabberd_router:route(From2, To, Packet),
-    Els = receive
-	    {route, To, From2, IQ} ->
-		#xmlel{name = <<"query">>, children = List} =
-		    fxml:get_subtag(IQ, <<"query">>),
-		List
-	    after 5000 -> % Timeout in miliseconds: 5 seconds
-		      []
-	  end,
-    Values = [{Name, Value}
-	      || #xmlel{name = Name, attrs = [],
-			children = [{xmlcdata, Value}]}
-		     <- Els],
-    Values_string1 = [io_lib:format("~n~s: ~p", [N, V])
-		      || {N, V} <- Values],
-    Values_string2 = iolist_to_binary(Values_string1),
-    ?INFO_MSG("Information of the client: ~s~s",
-	      [ToS, Values_string2]).
+    receive
+	{route, To, From2,
+	 #iq{id = ID, type = result, sub_els = [#version{} = V]}} ->
+	    ?INFO_MSG("Version of the client ~s:~n~s",
+		      [jid:to_string(To), xmpp:pp(V)])
+    after 5000 -> % Timeout in miliseconds: 5 seconds
+	    []
+    end.
 
 depends(_Host, _Opts) ->
     [].

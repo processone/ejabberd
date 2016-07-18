@@ -32,13 +32,13 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/3,
+-export([start/2, stop/1, process_local_iq/1,
 	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
@@ -50,41 +50,18 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_TIME).
 
-process_local_iq(_From, _To,
-		 #iq{type = Type, sub_el = SubEl, lang = Lang} = IQ) ->
-    case Type of
-      set ->
-	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
-      get ->
-	  Now_universal = calendar:universal_time(),
-	  Now_local = calendar:universal_time_to_local_time(Now_universal),
-	  {UTC, UTC_diff} = jlib:timestamp_to_iso(Now_universal,
-						  utc),
-	  Seconds_diff =
-	      calendar:datetime_to_gregorian_seconds(Now_local) -
-		calendar:datetime_to_gregorian_seconds(Now_universal),
-	  {Hd, Md, _} =
-	      calendar:seconds_to_time(abs(Seconds_diff)),
-	  {_, TZO_diff} = jlib:timestamp_to_iso({{0, 1, 1},
-						 {0, 0, 0}},
-						{sign(Seconds_diff), {Hd, Md}}),
-	  IQ#iq{type = result,
-		sub_el =
-		    [#xmlel{name = <<"time">>,
-			    attrs = [{<<"xmlns">>, ?NS_TIME}],
-			    children =
-				[#xmlel{name = <<"tzo">>, attrs = [],
-					children = [{xmlcdata, TZO_diff}]},
-				 #xmlel{name = <<"utc">>, attrs = [],
-					children =
-					    [{xmlcdata,
-                                              <<UTC/binary,
-                                                UTC_diff/binary>>}]}]}]}
-    end.
-
-sign(N) when N < 0 -> <<"-">>;
-sign(_) -> <<"+">>.
+process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_local_iq(#iq{type = get} = IQ) ->
+    Now = p1_time_compat:timestamp(),
+    Now_universal = calendar:now_to_universal_time(Now),
+    Now_local = calendar:universal_time_to_local_time(Now_universal),
+    Seconds_diff =
+	calendar:datetime_to_gregorian_seconds(Now_local) -
+	calendar:datetime_to_gregorian_seconds(Now_universal),
+    {Hd, Md, _} = calendar:seconds_to_time(abs(Seconds_diff)),
+    xmpp:make_iq_result(IQ, #time{tzo = {Hd, Md}, utc = Now}).
 
 depends(_Host, _Opts) ->
     [].

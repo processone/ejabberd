@@ -28,6 +28,7 @@
 %% API
 -export([start/0,
 	 make/1,
+	 make/2,
 	 make/3,
 	 split/1,
 	 from_string/1,
@@ -40,7 +41,7 @@
 	 remove_resource/1,
 	 replace_resource/2]).
 
--include("jlib.hrl").
+-include("jid.hrl").
 
 -export_type([jid/0]).
 
@@ -74,10 +75,16 @@ make(User, Server, Resource) ->
 	  end
     end.
 
--spec make({binary(), binary(), binary()}) -> jid() | error.
+-spec make(binary(), binary()) -> jid() | error.
+make(User, Server) ->
+    make(User, Server, <<"">>).
+
+-spec make({binary(), binary(), binary()} | binary()) -> jid() | error.
 
 make({User, Server, Resource}) ->
-    make(User, Server, Resource).
+    make(User, Server, Resource);
+make(Server) ->
+    make(<<"">>, Server, <<"">>).
 
 %% This is the reverse of make_jid/1
 -spec split(jid()) -> {binary(), binary(), binary()} | error.
@@ -93,6 +100,8 @@ from_string(S) when is_list(S) ->
     %% using binaries for string. However, we do not let it crash to avoid
     %% losing associated ets table.
     {error, need_jid_as_binary};
+from_string(<<>>) ->
+    error;
 from_string(S) when is_binary(S) ->
     SplitPattern = ets:lookup_element(jlib, string_to_jid_pattern, 2),
     Size = size(S),

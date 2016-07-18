@@ -32,10 +32,10 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq_items/3,
-	 process_local_iq_info/3, get_local_identity/5,
+-export([start/2, stop/1, process_local_iq_items/1,
+	 process_local_iq_info/1, get_local_identity/5,
 	 get_local_features/5, get_local_services/5,
-	 process_sm_iq_items/3, process_sm_iq_info/3,
+	 process_sm_iq_items/1, process_sm_iq_info/1,
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
 	 get_info/5, register_feature/2, unregister_feature/2,
 	 register_extra_domain/2, unregister_extra_domain/2,
@@ -44,8 +44,8 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
-
+-include("xmpp.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 -include("mod_roster.hrl").
 
 start(Host, Opts) ->
@@ -126,158 +126,133 @@ stop(Host) ->
 			   {{'_', Host}}),
     ok.
 
+-spec register_feature(binary(), binary()) -> true.
 register_feature(Host, Feature) ->
     catch ets:new(disco_features,
 		  [named_table, ordered_set, public]),
     ets:insert(disco_features, {{Feature, Host}}).
 
+-spec unregister_feature(binary(), binary()) -> true.
 unregister_feature(Host, Feature) ->
     catch ets:new(disco_features,
 		  [named_table, ordered_set, public]),
     ets:delete(disco_features, {Feature, Host}).
 
+-spec register_extra_domain(binary(), binary()) -> true.
 register_extra_domain(Host, Domain) ->
     catch ets:new(disco_extra_domains,
 		  [named_table, ordered_set, public]),
     ets:insert(disco_extra_domains, {{Domain, Host}}).
 
+-spec unregister_extra_domain(binary(), binary()) -> true.
 unregister_extra_domain(Host, Domain) ->
     catch ets:new(disco_extra_domains,
 		  [named_table, ordered_set, public]),
     ets:delete(disco_extra_domains, {Domain, Host}).
 
-process_local_iq_items(From, To,
-		       #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
-    case Type of
-      set ->
-	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
-      get ->
-	  Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
-	  Host = To#jid.lserver,
-	  case ejabberd_hooks:run_fold(disco_local_items, Host,
-				       empty, [From, To, Node, Lang])
-	      of
-	    {result, Items} ->
-		ANode = case Node of
-			  <<"">> -> [];
-			  _ -> [{<<"node">>, Node}]
-			end,
-		IQ#iq{type = result,
-		      sub_el =
-			  [#xmlel{name = <<"query">>,
-				  attrs =
-				      [{<<"xmlns">>, ?NS_DISCO_ITEMS} | ANode],
-				  children = Items}]};
-	    {error, Error} ->
-		IQ#iq{type = error, sub_el = [SubEl, Error]}
-	  end
+-spec process_local_iq_items(iq()) -> iq().
+process_local_iq_items(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_local_iq_items(#iq{type = get, lang = Lang,
+			   from = From, to = To,
+			   sub_els = [#disco_items{node = Node}]} = IQ) ->
+    Host = To#jid.lserver,
+    case ejabberd_hooks:run_fold(disco_local_items, Host,
+				 empty, [From, To, Node, Lang]) of
+	{result, Items} ->
+	    xmpp:make_iq_result(IQ, #disco_items{node = Node, items = Items});
+	{error, Error} ->
+	    xmpp:make_error(IQ, Error)
     end.
 
-process_local_iq_info(From, To,
-		      #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
-    case Type of
-      set ->
-	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
-      get ->
-	  Host = To#jid.lserver,
-	  Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
-	  Identity = ejabberd_hooks:run_fold(disco_local_identity,
-					     Host, [], [From, To, Node, Lang]),
-	  Info = ejabberd_hooks:run_fold(disco_info, Host, [],
-					 [Host, ?MODULE, Node, Lang]),
-	  case ejabberd_hooks:run_fold(disco_local_features, Host,
-				       empty, [From, To, Node, Lang])
-	      of
-	    {result, Features} ->
-		ANode = case Node of
-			  <<"">> -> [];
-			  _ -> [{<<"node">>, Node}]
-			end,
-		IQ#iq{type = result,
-		      sub_el =
-			  [#xmlel{name = <<"query">>,
-				  attrs =
-				      [{<<"xmlns">>, ?NS_DISCO_INFO} | ANode],
-				  children =
-				      Identity ++
-					Info ++ features_to_xml(Features)}]};
-	    {error, Error} ->
-		IQ#iq{type = error, sub_el = [SubEl, Error]}
-	  end
+-spec process_local_iq_info(iq()) -> iq().
+process_local_iq_info(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_local_iq_info(#iq{type = get, lang = Lang,
+			  from = From, to = To,
+			  sub_els = [#disco_info{node = Node}]} = IQ) ->
+    Host = To#jid.lserver,
+    Identity = ejabberd_hooks:run_fold(disco_local_identity,
+				       Host, [], [From, To, Node, Lang]),
+    Info = ejabberd_hooks:run_fold(disco_info, Host, [],
+				   [Host, ?MODULE, Node, Lang]),
+    case ejabberd_hooks:run_fold(disco_local_features, Host,
+				 empty, [From, To, Node, Lang]) of
+	{result, Features} ->
+	    xmpp:make_iq_result(IQ, #disco_info{node = Node,
+						identities = Identity,
+						xdata = Info,
+						features = Features});
+	{error, Error} ->
+	    xmpp:make_error(IQ, Error)
     end.
 
-get_local_identity(Acc, _From, _To, <<>>, _Lang) ->
-    Acc ++
-      [#xmlel{name = <<"identity">>,
-	      attrs =
-		  [{<<"category">>, <<"server">>}, {<<"type">>, <<"im">>},
-		   {<<"name">>, <<"ejabberd">>}],
-	      children = []}];
+-spec get_local_identity([identity()], jid(), jid(),
+			 undefined | binary(), undefined | binary()) ->
+				[identity()].
+get_local_identity(Acc, _From, _To, undefined, _Lang) ->
+    Acc ++ [#identity{category = <<"server">>,
+		      type = <<"im">>,
+		      name = <<"ejabberd">>}];
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
+-spec get_local_features({error, error()} | {result, [binary()]} | empty,
+			 jid(), jid(),
+			 undefined | binary(), undefined | binary()) ->
+				{error, error()} | {result, [binary()]}.
 get_local_features({error, _Error} = Acc, _From, _To,
 		   _Node, _Lang) ->
     Acc;
-get_local_features(Acc, _From, To, <<>>, _Lang) ->
+get_local_features(Acc, _From, To, undefined, _Lang) ->
     Feats = case Acc of
-	      {result, Features} -> Features;
-	      empty -> []
+		{result, Features} -> Features;
+		empty -> []
 	    end,
     Host = To#jid.lserver,
     {result,
      ets:select(disco_features,
-		[{{{'_', Host}}, [], ['$_']}])
-       ++ Feats};
+		ets:fun2ms(fun({{F, H}}) when H == Host -> F end))
+     ++ Feats};
 get_local_features(Acc, _From, _To, _Node, Lang) ->
     case Acc of
       {result, _Features} -> Acc;
       empty ->
 	    Txt = <<"No features available">>,
-	    {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)}
+	    {error, xmpp:err_item_not_found(Txt, Lang)}
     end.
 
-features_to_xml(FeatureList) ->
-    [#xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, Feat}], children = []}
-     || Feat
-	    <- lists:usort(lists:map(fun ({{Feature, _Host}}) ->
-					     Feature;
-					 (Feature) when is_binary(Feature) ->
-					     Feature
-				     end,
-				     FeatureList))].
-
-domain_to_xml({Domain}) ->
-    #xmlel{name = <<"item">>, attrs = [{<<"jid">>, Domain}],
-	   children = []};
-domain_to_xml(Domain) ->
-    #xmlel{name = <<"item">>, attrs = [{<<"jid">>, Domain}],
-	   children = []}.
-
+-spec get_local_services({error, error()} | {result, [disco_item()]} | empty,
+			 jid(), jid(),
+			 undefined | binary(), undefined | binary()) ->
+				{error, error()} | {result, [disco_item()]}.
 get_local_services({error, _Error} = Acc, _From, _To,
 		   _Node, _Lang) ->
     Acc;
-get_local_services(Acc, _From, To, <<>>, _Lang) ->
+get_local_services(Acc, _From, To, undefined, _Lang) ->
     Items = case Acc of
 	      {result, Its} -> Its;
 	      empty -> []
 	    end,
     Host = To#jid.lserver,
     {result,
-     lists:usort(lists:map(fun domain_to_xml/1,
-			   get_vh_services(Host) ++
-			     ets:select(disco_extra_domains,
-					[{{{'$1', Host}}, [], ['$1']}])))
-       ++ Items};
+     lists:usort(
+       lists:map(
+	 fun(Domain) -> #disco_item{jid = jid:make(Domain)} end,
+	 get_vh_services(Host) ++
+	     ets:select(disco_extra_domains,
+			ets:fun2ms(
+			  fun({{D, H}}) when H == Host -> D end))))
+     ++ Items};
 get_local_services({result, _} = Acc, _From, _To, _Node,
 		   _Lang) ->
     Acc;
 get_local_services(empty, _From, _To, _Node, Lang) ->
-    {error, ?ERRT_ITEM_NOT_FOUND(Lang, <<"No services available">>)}.
+    {error, xmpp:err_item_not_found(<<"No services available">>, Lang)}.
 
+-spec get_vh_services(binary()) -> [binary()].
 get_vh_services(Host) ->
     Hosts = lists:sort(fun (H1, H2) ->
 			       byte_size(H1) >= byte_size(H2)
@@ -300,47 +275,38 @@ get_vh_services(Host) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-process_sm_iq_items(From, To,
-		    #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
-    case Type of
-      set ->
-	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
-      get ->
-	  case is_presence_subscribed(From, To) of
-	    true ->
-		Host = To#jid.lserver,
-		Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
-		case ejabberd_hooks:run_fold(disco_sm_items, Host,
-					     empty, [From, To, Node, Lang])
-		    of
-		  {result, Items} ->
-		      ANode = case Node of
-				<<"">> -> [];
-				_ -> [{<<"node">>, Node}]
-			      end,
-		      IQ#iq{type = result,
-			    sub_el =
-				[#xmlel{name = <<"query">>,
-					attrs =
-					    [{<<"xmlns">>, ?NS_DISCO_ITEMS}
-					     | ANode],
-					children = Items}]};
-		  {error, Error} ->
-		      IQ#iq{type = error, sub_el = [SubEl, Error]}
-		end;
-	    false ->
-		Txt = <<"Not subscribed">>,
-		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)]}
-	  end
+-spec process_sm_iq_items(iq()) -> iq().
+process_sm_iq_items(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_sm_iq_items(#iq{type = get, lang = Lang,
+			from = From, to = To,
+			sub_els = [#disco_items{node = Node}]} = IQ) ->
+    case is_presence_subscribed(From, To) of
+	true ->
+	    Host = To#jid.lserver,
+	    case ejabberd_hooks:run_fold(disco_sm_items, Host,
+					 empty, [From, To, Node, Lang]) of
+		{result, Items} ->
+		    xmpp:make_iq_result(
+		      IQ, #disco_items{node = Node, items = Items});
+		{error, Error} ->
+		    xmpp:make_error(IQ, Error)
+	    end;
+	false ->
+	    Txt = <<"Not subscribed">>,
+	    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang))
     end.
 
+-spec get_sm_items({error, error()} | {result, [disco_item()]} | empty,
+		   jid(), jid(),
+		   undefined | binary(), undefined | binary()) ->
+			  {error, error()} | {result, [disco_item()]}.
 get_sm_items({error, _Error} = Acc, _From, _To, _Node,
 	     _Lang) ->
     Acc;
 get_sm_items(Acc, From,
-	     #jid{user = User, server = Server} = To, <<>>, _Lang) ->
+	     #jid{user = User, server = Server} = To, undefined, _Lang) ->
     Items = case Acc of
 	      {result, Its} -> Its;
 	      empty -> []
@@ -357,12 +323,13 @@ get_sm_items(empty, From, To, _Node, Lang) ->
     #jid{luser = LFrom, lserver = LSFrom} = From,
     #jid{luser = LTo, lserver = LSTo} = To,
     case {LFrom, LSFrom} of
-      {LTo, LSTo} -> {error, ?ERR_ITEM_NOT_FOUND};
+      {LTo, LSTo} -> {error, xmpp:err_item_not_found()};
       _ ->
 	    Txt = <<"Query to another users is forbidden">>,
-	    {error, ?ERRT_NOT_ALLOWED(Lang, Txt)}
+	    {error, xmpp:err_not_allowed(Txt, Lang)}
     end.
 
+-spec is_presence_subscribed(jid(), jid()) -> boolean().
 is_presence_subscribed(#jid{luser = User, lserver = Server},
 		       #jid{luser = User, lserver = Server}) -> true;
 is_presence_subscribed(#jid{luser = FromUser, lserver = FromServer},
@@ -377,86 +344,70 @@ is_presence_subscribed(#jid{luser = FromUser, lserver = FromServer},
 	      ejabberd_hooks:run_fold(roster_get, ToServer, [],
 				      [{ToUser, ToServer}])).
 
-process_sm_iq_info(From, To,
-		   #iq{type = Type, lang = Lang, sub_el = SubEl} = IQ) ->
-    case Type of
-      set ->
-	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
-      get ->
-	  case is_presence_subscribed(From, To) of
-	    true ->
-		Host = To#jid.lserver,
-		Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
-		Identity = ejabberd_hooks:run_fold(disco_sm_identity,
-						   Host, [],
-						   [From, To, Node, Lang]),
-		Info = ejabberd_hooks:run_fold(disco_info, Host, [],
+-spec process_sm_iq_info(iq()) -> iq().
+process_sm_iq_info(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_sm_iq_info(#iq{type = get, lang = Lang,
+		       from = From, to = To,
+		       sub_els = [#disco_info{node = Node}]} = IQ) ->
+    case is_presence_subscribed(From, To) of
+	true ->
+	    Host = To#jid.lserver,
+	    Identity = ejabberd_hooks:run_fold(disco_sm_identity,
+					       Host, [],
 					       [From, To, Node, Lang]),
-		case ejabberd_hooks:run_fold(disco_sm_features, Host,
-					     empty, [From, To, Node, Lang])
-		    of
-		  {result, Features} ->
-		      ANode = case Node of
-				<<"">> -> [];
-				_ -> [{<<"node">>, Node}]
-			      end,
-		      IQ#iq{type = result,
-			    sub_el =
-				[#xmlel{name = <<"query">>,
-					attrs =
-					    [{<<"xmlns">>, ?NS_DISCO_INFO}
-					     | ANode],
-					children =
-					    Identity ++ Info ++
-					      features_to_xml(Features)}]};
-		  {error, Error} ->
-		      IQ#iq{type = error, sub_el = [SubEl, Error]}
-		end;
-	    false ->
-		Txt = <<"Not subscribed">>,
-		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)]}
-	  end
+	    Info = ejabberd_hooks:run_fold(disco_info, Host, [],
+					   [From, To, Node, Lang]),
+	    case ejabberd_hooks:run_fold(disco_sm_features, Host,
+					 empty, [From, To, Node, Lang]) of
+		{result, Features} ->
+		    xmpp:make_iq_result(IQ, #disco_info{node = Node,
+							identities = Identity,
+							xdata = Info,
+							features = Features});
+		{error, Error} ->
+		    xmpp:make_error(IQ, Error)
+	    end;
+	false ->
+	    Txt = <<"Not subscribed">>,
+	    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang))
     end.
 
+-spec get_sm_identity([identity()], jid(), jid(),
+		      undefined | binary(), undefined | binary()) ->
+			     [identity()].
 get_sm_identity(Acc, _From,
 		#jid{luser = LUser, lserver = LServer}, _Node, _Lang) ->
     Acc ++
       case ejabberd_auth:is_user_exists(LUser, LServer) of
 	true ->
-	    [#xmlel{name = <<"identity">>,
-		    attrs =
-			[{<<"category">>, <<"account">>},
-			 {<<"type">>, <<"registered">>}],
-		    children = []}];
+	    [#identity{category = <<"account">>, type = <<"registered">>}];
 	_ -> []
       end.
 
+-spec get_sm_features({error, error()} | {result, [binary()]} | empty,
+		      jid(), jid(),
+		      undefined | binary(), undefined | binary()) ->
+			     {error, error()} | {result, [binary()]}.
 get_sm_features(empty, From, To, _Node, Lang) ->
     #jid{luser = LFrom, lserver = LSFrom} = From,
     #jid{luser = LTo, lserver = LSTo} = To,
     case {LFrom, LSFrom} of
-      {LTo, LSTo} -> {error, ?ERR_ITEM_NOT_FOUND};
+      {LTo, LSTo} -> {error, xmpp:err_item_not_found()};
       _ ->
 	    Txt = <<"Query to another users is forbidden">>,
-	    {error, ?ERRT_NOT_ALLOWED(Lang, Txt)}
+	    {error, xmpp:err_not_allowed(Txt, Lang)}
     end;
 get_sm_features(Acc, _From, _To, _Node, _Lang) -> Acc.
 
+-spec get_user_resources(binary(), binary()) -> [disco_item()].
 get_user_resources(User, Server) ->
     Rs = ejabberd_sm:get_user_resources(User, Server),
-    lists:map(fun (R) ->
-		      #xmlel{name = <<"item">>,
-			     attrs =
-				 [{<<"jid">>,
-				   <<User/binary, "@", Server/binary, "/",
-				     R/binary>>},
-				  {<<"name">>, User}],
-			     children = []}
-	      end,
-	      lists:sort(Rs)).
+    [#disco_item{jid = jid:make(User, Server, Resource), name = User}
+     || Resource <- lists:sort(Rs)].
 
+-spec transform_module_options(gen_mod:opts()) -> gen_mod:opts().
 transform_module_options(Opts) ->
     lists:map(
       fun({server_info, Infos}) ->
@@ -477,27 +428,23 @@ transform_module_options(Opts) ->
 
 %%% Support for: XEP-0157 Contact Addresses for XMPP Services
 
-get_info(_A, Host, Mod, Node, _Lang) when Node == <<>> ->
+-spec get_info([xdata()], binary(), module(),
+	       undefined | binary(), undefined | binary()) ->
+		      [xdata()].
+get_info(_A, Host, Mod, Node, _Lang) when Node == undefined ->
     Module = case Mod of
 	       undefined -> ?MODULE;
 	       _ -> Mod
 	     end,
-    Serverinfo_fields = get_fields_xml(Host, Module),
-    [#xmlel{name = <<"x">>,
-	    attrs =
-		[{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"result">>}],
-	    children =
-		[#xmlel{name = <<"field">>,
-			attrs =
-			    [{<<"var">>, <<"FORM_TYPE">>},
-			     {<<"type">>, <<"hidden">>}],
-			children =
-			    [#xmlel{name = <<"value">>, attrs = [],
-				    children = [{xmlcdata, ?NS_SERVERINFO}]}]}]
-		  ++ Serverinfo_fields}];
+    [#xdata{type = result,
+	    fields = [#xdata_field{type = hidden,
+				   var = <<"FORM_TYPE">>,
+				   values = [?NS_SERVERINFO]}
+		      | get_fields(Host, Module)]}];
 get_info(Acc, _, _, _Node, _) -> Acc.
 
-get_fields_xml(Host, Module) ->
+-spec get_fields(binary(), module()) -> [xdata_field()].
+get_fields(Host, Module) ->
     Fields = gen_mod:get_module_opt(
                Host, ?MODULE, server_info,
                fun(L) ->
@@ -509,31 +456,17 @@ get_fields_xml(Host, Module) ->
                                  {Mods, Name, URLs}
                          end, L)
                end, []),
-    Fields_good = lists:filter(fun ({Modules, _, _}) ->
-				       case Modules of
-					 all -> true;
-					 Modules ->
-					     lists:member(Module, Modules)
-				       end
-			       end,
-			       Fields),
-    fields_to_xml(Fields_good).
+    Fields1 = lists:filter(fun ({Modules, _, _}) ->
+				   case Modules of
+				       all -> true;
+				       Modules ->
+					   lists:member(Module, Modules)
+				   end
+			   end,
+			   Fields),
+    [#xdata_field{var = Var, values = Values} || {_, Var, Values} <- Fields1].
 
-fields_to_xml(Fields) ->
-    [field_to_xml(Field) || Field <- Fields].
-
-field_to_xml({_, Var, Values}) ->
-    Values_xml = values_to_xml(Values),
-    #xmlel{name = <<"field">>, attrs = [{<<"var">>, Var}],
-	   children = Values_xml}.
-
-values_to_xml(Values) ->
-    lists:map(fun (Value) ->
-		      #xmlel{name = <<"value">>, attrs = [],
-			     children = [{xmlcdata, Value}]}
-	      end,
-	      Values).
-
+-spec depends(binary(), gen_mod:opts()) -> [].
 depends(_Host, _Opts) ->
     [].
 

@@ -31,14 +31,14 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_sm_iq/3, import/3,
+-export([start/2, stop/1, process_sm_iq/1, import/3,
 	 remove_user/2, get_data/2, export/1, import/1,
 	 mod_opt_type/1, set_data/3, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_private.hrl").
 
 -callback init(binary(), gen_mod:opts()) -> any().
@@ -46,10 +46,7 @@
 -callback set_data(binary(), binary(), [{binary(), xmlel()}]) -> {atomic, any()}.
 -callback get_data(binary(), binary(), binary()) -> {ok, xmlel()} | error.
 -callback get_all_data(binary(), binary()) -> [xmlel()].
-    
--define(Xmlel_Query(Attrs, Children),
-	#xmlel{name = <<"query">>, attrs = Attrs,
-	       children = Children}).
+-callback remove_user(binary(), binary()) -> {atomic, any()}.
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
@@ -67,90 +64,55 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_PRIVATE).
 
-process_sm_iq(#jid{luser = LUser, lserver = LServer},
-	      #jid{luser = LUser, lserver = LServer}, #iq{lang = Lang} = IQ)
-    when IQ#iq.type == set ->
-    case IQ#iq.sub_el of
-      #xmlel{name = <<"query">>, children = Xmlels} ->
-	  case filter_xmlels(Xmlels) of
-	    [] ->
-		Txt = <<"No private data found in this query">>,
-		IQ#iq{type = error,
-		      sub_el = [IQ#iq.sub_el, ?ERRT_NOT_ACCEPTABLE(Lang, Txt)]};
-	    Data ->
-		set_data(LUser, LServer, Data),
-		IQ#iq{type = result, sub_el = []}
-	  end;
-      _ ->
-	  Txt = <<"No query found">>,
-	  IQ#iq{type = error,
-		sub_el = [IQ#iq.sub_el, ?ERRT_NOT_ACCEPTABLE(Lang, Txt)]}
+-spec process_sm_iq(iq()) -> iq().
+process_sm_iq(#iq{type = Type, lang = Lang,
+		  from = #jid{luser = LUser, lserver = LServer},
+		  to = #jid{luser = LUser, lserver = LServer},
+		  sub_els = [#private{xml_els = Els0}]} = IQ) ->
+    case filter_xmlels(Els0) of
+	[] ->
+	    Txt = <<"No private data found in this query">>,
+	    xmpp:make_error(IQ, xmpp:err_bad_format(Txt, Lang));
+	Data when Type == set ->
+	    set_data(LUser, LServer, Data),
+	    xmpp:make_iq_result(IQ);
+	Data when Type == get ->
+	    StorageEls = get_data(LUser, LServer, Data),
+	    xmpp:make_iq_result(IQ, #private{xml_els = StorageEls})
     end;
-%%
-process_sm_iq(#jid{luser = LUser, lserver = LServer},
-	      #jid{luser = LUser, lserver = LServer}, #iq{lang = Lang} = IQ)
-    when IQ#iq.type == get ->
-    case IQ#iq.sub_el of
-      #xmlel{name = <<"query">>, attrs = Attrs,
-	     children = Xmlels} ->
-	  case filter_xmlels(Xmlels) of
-	    [] ->
-		Txt = <<"No private data found in this query">>,
-		IQ#iq{type = error,
-		      sub_el = [IQ#iq.sub_el, ?ERRT_BAD_FORMAT(Lang, Txt)]};
-	    Data ->
-		case catch get_data(LUser, LServer, Data) of
-		  {'EXIT', _Reason} ->
-		      Txt = <<"Database failure">>,
-		      IQ#iq{type = error,
-			    sub_el =
-				[IQ#iq.sub_el, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt)]};
-		  Storage_Xmlels ->
-		      IQ#iq{type = result,
-			    sub_el = [?Xmlel_Query(Attrs, Storage_Xmlels)]}
-		end
-	  end;
-      _ ->
-	  Txt = <<"No query found">>,
-	  IQ#iq{type = error,
-		sub_el = [IQ#iq.sub_el, ?ERRT_BAD_FORMAT(Lang, Txt)]}
-    end;
-%%
-process_sm_iq(_From, _To, #iq{lang = Lang} = IQ) ->
+process_sm_iq(#iq{lang = Lang} = IQ) ->
     Txt = <<"Query to another users is forbidden">>,
-    IQ#iq{type = error,
-	  sub_el = [IQ#iq.sub_el, ?ERRT_FORBIDDEN(Lang, Txt)]}.
+    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang)).
 
-filter_xmlels(Xmlels) -> filter_xmlels(Xmlels, []).
+-spec filter_xmlels([xmlel()]) -> [{binary(), xmlel()}].
+filter_xmlels(Els) ->
+    lists:flatmap(
+      fun(#xmlel{} = El) ->
+	      case fxml:get_tag_attr_s(<<"xmlns">>, El) of
+		  <<"">> -> [];
+		  NS -> [{NS, El}]
+	      end
+      end, Els).
 
-filter_xmlels([], Data) -> lists:reverse(Data);
-filter_xmlels([#xmlel{attrs = Attrs} = Xmlel | Xmlels],
-	      Data) ->
-    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
-      <<"">> -> [];
-      XmlNS -> filter_xmlels(Xmlels, [{XmlNS, Xmlel} | Data])
-    end;
-filter_xmlels([_ | Xmlels], Data) ->
-    filter_xmlels(Xmlels, Data).
-
+-spec set_data(binary(), binary(), [{binary(), xmlel()}]) -> {atomic, any()}.
 set_data(LUser, LServer, Data) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:set_data(LUser, LServer, Data).
 
+-spec get_data(binary(), binary(), [{binary(), xmlel()}]) -> [xmlel()].
 get_data(LUser, LServer, Data) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    get_data(LUser, LServer, Data, Mod, []).
+    lists:map(
+      fun({NS, El}) ->
+	      case Mod:get_data(LUser, LServer, NS) of
+		  {ok, StorageEl} ->
+		      StorageEl;
+		  error ->
+		      El
+	      end
+      end, Data).
 
-get_data(_LUser, _LServer, [], _Mod, Storage_Xmlels) ->
-    lists:reverse(Storage_Xmlels);
-get_data(LUser, LServer, [{XmlNS, Xmlel} | Data], Mod, Storage_Xmlels) ->
-    case Mod:get_data(LUser, LServer, XmlNS) of
-	{ok, Storage_Xmlel} ->
-	    get_data(LUser, LServer, Data, Mod, [Storage_Xmlel | Storage_Xmlels]);
-	error ->
-	    get_data(LUser, LServer, Data, Mod, [Xmlel | Storage_Xmlels])
-    end.
-
+-spec get_data(binary(), binary()) -> [xmlel()].
 get_data(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:get_all_data(LUser, LServer).

@@ -41,6 +41,7 @@
 	 change_shaper/2,
 	 monitor/1,
 	 get_sockmod/1,
+	 get_transport/1,
 	 get_peer_certificate/1,
 	 get_verify_result/1,
 	 close/1,
@@ -214,6 +215,20 @@ monitor(SocketData)
 
 get_sockmod(SocketData) ->
     SocketData#socket_state.sockmod.
+
+get_transport(#socket_state{sockmod = SockMod,
+			    socket = Socket}) ->
+    case SockMod of
+	gen_tcp -> tcp;
+	fast_tls -> tls;
+	ezlib ->
+	    case ezlib:get_sockmod(Socket) of
+		tcp -> tcp_zlib;
+		tls -> tls_zlib
+	    end;
+	ejabberd_http_bind -> http_bind;
+	ejabberd_http_ws -> websocket
+    end.
 
 get_peer_certificate(SocketData) ->
     fast_tls:get_peer_certificate(SocketData#socket_state.socket).

@@ -78,7 +78,8 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+%%-include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("ejabberd_commands.hrl").
 -include("mod_privacy.hrl").
@@ -98,6 +99,15 @@
 %% default value for the maximum number of user connections
 -define(MAX_USER_SESSIONS, infinity).
 
+-type broadcast() :: {broadcast, broadcast_data()}.
+
+-type broadcast_data() ::
+        {rebind, pid(), binary()} | %% ejabberd_c2s
+        {item, ljid(), mod_roster:subscription()} | %% mod_roster/mod_shared_roster
+        {exit, binary()} | %% mod_roster/mod_shared_roster
+        {privacy_list, mod_privacy:userlist(), binary()} | %% mod_privacy
+        {blocking, unblock_all | {block | unblock, [ljid()]}}. %% mod_blocking
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -111,7 +121,7 @@ start() ->
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec route(jid(), jid(), xmlel() | broadcast()) -> ok.
+-spec route(jid(), jid(), stanza() | broadcast()) -> ok.
 
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
@@ -162,10 +172,10 @@ check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
 -spec bounce_offline_message(jid(), jid(), xmlel()) -> stop.
 
 bounce_offline_message(From, To, Packet) ->
-    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
+    Lang = xmpp:get_lang(Packet),
     Txt = <<"User session not found">>,
-    Err = jlib:make_error_reply(
-	    Packet, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)),
+    Err = xmpp:make_error(
+	    Packet, xmpp:err_service_unavailable(Txt, Lang)),
     ejabberd_router:route(To, From, Err),
     stop.
 
@@ -432,7 +442,7 @@ online(Sessions) ->
 		 end, Sessions).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+-spec do_route(jid(), jid(), stanza() | broadcast()) -> any().
 do_route(From, To, {broadcast, _} = Packet) ->
     case To#jid.lresource of
         <<"">> ->
@@ -455,25 +465,20 @@ do_route(From, To, {broadcast, _} = Packet) ->
                     Pid ! {route, From, To, Packet}
             end
     end;
-do_route(From, To, #xmlel{} = Packet) ->
+do_route(From, To, Packet) ->
     ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket "
 	   "~P~n",
 	   [From, To, Packet, 8]),
     #jid{user = User, server = Server,
 	 luser = LUser, lserver = LServer, lresource = LResource} = To,
-    #xmlel{name = Name, attrs = Attrs} = Packet,
-    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
+    Lang = xmpp:get_lang(Packet),
     case LResource of
       <<"">> ->
-	  case Name of
-	    <<"presence">> ->
-		{Pass, _Subsc} = case fxml:get_attr_s(<<"type">>, Attrs)
-				     of
-				   <<"subscribe">> ->
-				       Reason = fxml:get_path_s(Packet,
-							       [{elem,
-								 <<"status">>},
-								cdata]),
+	  case Packet of
+	    #presence{type = T, status = Status} ->
+		{Pass, _Subsc} = case T of
+				   subscribe ->
+				       Reason = xmpp:get_text(Status),
 				       {is_privacy_allow(From, To, Packet)
 					  andalso
 					  ejabberd_hooks:run_fold(roster_in_subscription,
@@ -484,7 +489,7 @@ do_route(From, To, #xmlel{} = Packet) ->
 								   subscribe,
 								   Reason]),
 					true};
-				   <<"subscribed">> ->
+				   subscribed ->
 				       {is_privacy_allow(From, To, Packet)
 					  andalso
 					  ejabberd_hooks:run_fold(roster_in_subscription,
@@ -495,7 +500,7 @@ do_route(From, To, #xmlel{} = Packet) ->
 								   subscribed,
 								   <<"">>]),
 					true};
-				   <<"unsubscribe">> ->
+				   unsubscribe ->
 				       {is_privacy_allow(From, To, Packet)
 					  andalso
 					  ejabberd_hooks:run_fold(roster_in_subscription,
@@ -506,7 +511,7 @@ do_route(From, To, #xmlel{} = Packet) ->
 								   unsubscribe,
 								   <<"">>]),
 					true};
-				   <<"unsubscribed">> ->
+				   unsubscribed ->
 				       {is_privacy_allow(From, To, Packet)
 					  andalso
 					  ejabberd_hooks:run_fold(roster_in_subscription,
@@ -530,53 +535,36 @@ do_route(From, To, #xmlel{} = Packet) ->
 				     PResources);
 		   true -> ok
 		end;
-	    <<"message">> ->
-		case fxml:get_attr_s(<<"type">>, Attrs) of
-		  <<"chat">> -> route_message(From, To, Packet, chat);
-		  <<"headline">> -> route_message(From, To, Packet, headline);
-		  <<"error">> -> ok;
-		  <<"groupchat">> ->
-		      ErrTxt = <<"User session not found">>,
-		      Err = jlib:make_error_reply(
-			      Packet, ?ERRT_SERVICE_UNAVAILABLE(Lang, ErrTxt)),
-		      ejabberd_router:route(To, From, Err);
-		  _ ->
-		      route_message(From, To, Packet, normal)
-		end;
-	    <<"iq">> -> process_iq(From, To, Packet);
-	    _ -> ok
+	      #message{type = T} when T == chat; T == headline; T == normal ->
+		  route_message(From, To, Packet, T);
+	      #message{type = groupchat} ->
+		  ErrTxt = <<"User session not found">>,
+		  Err = xmpp:make_error(
+			  Packet, xmpp:err_service_unavailable(ErrTxt, Lang)),
+		  ejabberd_router:route(To, From, Err);
+	      #iq{} -> process_iq(From, To, Packet);
+	      _ -> ok
 	  end;
       _ ->
 	Mod = get_sm_backend(LServer),
 	case online(Mod:get_sessions(LUser, LServer, LResource)) of
 	    [] ->
-		case Name of
-		  <<"message">> ->
-		      case fxml:get_attr_s(<<"type">>, Attrs) of
-			<<"chat">> -> route_message(From, To, Packet, chat);
-			<<"headline">> -> ok;
-			<<"error">> -> ok;
-			<<"groupchat">> ->
-			    ErrTxt = <<"User session not found">>,
-			    Err = jlib:make_error_reply(
-				    Packet,
-				    ?ERRT_SERVICE_UNAVAILABLE(Lang, ErrTxt)),
-			    ejabberd_router:route(To, From, Err);
-			_ ->
-			    route_message(From, To, Packet, normal)
-		      end;
-		  <<"iq">> ->
-		      case fxml:get_attr_s(<<"type">>, Attrs) of
-			<<"error">> -> ok;
-			<<"result">> -> ok;
-			_ ->
-			    ErrTxt = <<"User session not found">>,
-			    Err = jlib:make_error_reply(
-				    Packet,
-				    ?ERRT_SERVICE_UNAVAILABLE(Lang, ErrTxt)),
-			    ejabberd_router:route(To, From, Err)
-		      end;
-		  _ -> ?DEBUG("packet dropped~n", [])
+		case Packet of
+		    #message{type = T} when T == chat; T == normal ->
+			route_message(From, To, Packet, T);
+		    #message{type = groupchat} ->
+			ErrTxt = <<"User session not found">>,
+			Err = xmpp:make_error(
+				Packet,
+				xmpp:err_service_unavailable(ErrTxt, Lang)),
+			ejabberd_router:route(To, From, Err);
+		    #iq{type = T} when T == get; T == set ->
+			ErrTxt = <<"User session not found">>,
+			Err = xmpp:make_error(
+				Packet,
+				xmpp:err_service_unavailable(ErrTxt, Lang)),
+			ejabberd_router:route(To, From, Err);
+		    _ -> ?DEBUG("packet dropped~n", [])
 		end;
 	    Ss ->
 		Session = lists:max(Ss),
@@ -590,6 +578,7 @@ do_route(From, To, #xmlel{} = Packet) ->
 %% and is processed if there is no active list set
 %% for the target session/resource to which a stanza is addressed,
 %% or if there are no current sessions for the user.
+-spec is_privacy_allow(jid(), jid(), stanza()) -> boolean().
 is_privacy_allow(From, To, Packet) ->
     User = To#jid.user,
     Server = To#jid.server,
@@ -600,6 +589,7 @@ is_privacy_allow(From, To, Packet) ->
 
 %% Check if privacy rules allow this delivery
 %% Function copied from ejabberd_c2s.erl
+-spec is_privacy_allow(jid(), jid(), stanza(), #userlist{}) -> boolean().
 is_privacy_allow(From, To, Packet, PrivacyList) ->
     User = To#jid.user,
     Server = To#jid.server,
@@ -609,6 +599,7 @@ is_privacy_allow(From, To, Packet, PrivacyList) ->
 			      [User, Server, PrivacyList, {From, To, Packet},
 			       in]).
 
+-spec route_message(jid(), jid(), message(), message_type()) -> any().
 route_message(From, To, Packet, Type) ->
     LUser = To#jid.luser,
     LServer = To#jid.lserver,
@@ -644,18 +635,19 @@ route_message(From, To, Packet, Type) ->
 		      ejabberd_hooks:run(offline_message_hook, LServer,
 					 [From, To, Packet]);
 		  false ->
-		      Err = jlib:make_error_reply(Packet,
-						  ?ERR_SERVICE_UNAVAILABLE),
+		      Err = xmpp:make_error(Packet,
+					    xmpp:err_service_unavailable()),
 		      ejabberd_router:route(To, From, Err)
 		end
 	  end
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+-spec clean_session_list([#session{}]) -> [#session{}].
 clean_session_list(Ss) ->
     clean_session_list(lists:keysort(#session.usr, Ss), []).
 
+-spec clean_session_list([#session{}], [#session{}]) -> [#session{}].
 clean_session_list([], Res) -> Res;
 clean_session_list([S], Res) -> [S | Res];
 clean_session_list([S1, S2 | Rest], Res) ->
@@ -670,6 +662,7 @@ clean_session_list([S1, S2 | Rest], Res) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% On new session, check if some existing connections need to be replace
+-spec check_for_sessions_to_replace(binary(), binary(), binary()) -> ok | replaced.
 check_for_sessions_to_replace(User, Server, Resource) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -677,6 +670,7 @@ check_for_sessions_to_replace(User, Server, Resource) ->
     check_existing_resources(LUser, LServer, LResource),
     check_max_sessions(LUser, LServer).
 
+-spec check_existing_resources(binary(), binary(), binary()) -> ok.
 check_existing_resources(LUser, LServer, LResource) ->
     SIDs = get_resource_sessions(LUser, LServer, LResource),
     if SIDs == [] -> ok;
@@ -698,6 +692,7 @@ check_existing_resources(LUser, LServer, LResource) ->
 is_existing_resource(LUser, LServer, LResource) ->
     [] /= get_resource_sessions(LUser, LServer, LResource).
 
+-spec get_resource_sessions(binary(), binary(), binary()) -> [sid()].
 get_resource_sessions(User, Server, Resource) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -705,6 +700,7 @@ get_resource_sessions(User, Server, Resource) ->
     Mod = get_sm_backend(LServer),
     [S#session.sid || S <- online(Mod:get_sessions(LUser, LServer, LResource))].
 
+-spec check_max_sessions(binary(), binary()) -> ok | replaced.
 check_max_sessions(LUser, LServer) ->
     Mod = get_sm_backend(LServer),
     SIDs = [S#session.sid || S <- online(Mod:get_sessions(LUser, LServer))],
@@ -717,6 +713,7 @@ check_max_sessions(LUser, LServer) ->
 %% This option defines the max number of time a given users are allowed to
 %% log in
 %% Defaults to infinity
+-spec get_max_user_sessions(binary(), binary()) -> infinity | non_neg_integer().
 get_max_user_sessions(LUser, Host) ->
     case acl:match_rule(Host, max_user_sessions,
 			jid:make(LUser, Host, <<"">>))
@@ -728,34 +725,31 @@ get_max_user_sessions(LUser, Host) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-process_iq(From, To, Packet) ->
-    IQ = jlib:iq_query_info(Packet),
-    case IQ of
-      #iq{xmlns = XMLNS, lang = Lang} ->
-	  Host = To#jid.lserver,
-	  case ets:lookup(sm_iqtable, {XMLNS, Host}) of
-	    [{_, Module, Function}] ->
-		ResIQ = Module:Function(From, To, IQ),
-		if ResIQ /= ignore ->
-		       ejabberd_router:route(To, From, jlib:iq_to_xml(ResIQ));
-		   true -> ok
-		end;
-	    [{_, Module, Function, Opts}] ->
-		gen_iq_handler:handle(Host, Module, Function, Opts,
-				      From, To, IQ);
-	    [] ->
-		Txt = <<"No module is handling this query">>,
-		Err = jlib:make_error_reply(
-			Packet,
-			?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)),
-		ejabberd_router:route(To, From, Err)
-	  end;
-      reply -> ok;
-      _ ->
-	  Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
-	  ejabberd_router:route(To, From, Err),
-	  ok
-    end.
+-spec process_iq(jid(), jid(), iq()) -> any().
+process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
+  when T == get; T == set ->
+    XMLNS = xmpp:get_ns(El),
+    Host = To#jid.lserver,
+    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
+	[{_, Module, Function}] ->
+	    gen_iq_handler:handle(Host, Module, Function, no_queue,
+				  From, To, Packet);
+	[{_, Module, Function, Opts}] ->
+	    gen_iq_handler:handle(Host, Module, Function, Opts,
+				  From, To, Packet);
+	[] ->
+	    Txt = <<"No module is handling this query">>,
+	    Err = xmpp:make_error(
+		    Packet,
+		    xmpp:err_service_unavailable(Txt, Lang)),
+	    ejabberd_router:route(To, From, Err)
+    end;
+process_iq(From, To, #iq{type = T} = Packet) when T == get; T == set ->
+    Err = xmpp:make_error(Packet, xmpp:err_bad_request()),
+    ejabberd_router:route(To, From, Err),
+    ok;
+process_iq(_From, _To, #iq{}) ->
+    ok.
 
 -spec force_update_presence({binary(), binary()}) -> any().
 
