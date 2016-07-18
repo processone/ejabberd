@@ -577,33 +577,8 @@ add_delay_info(El, From, Time) ->
 		     binary()) -> xmlel().
 
 add_delay_info(El, From, Time, Desc) ->
-    case fxml:get_subtag_with_xmlns(El, <<"delay">>, ?NS_DELAY) of
-      false ->
-	  %% Add new tag
-	  DelayTag = create_delay_tag(Time, From, Desc),
-	  fxml:append_subtags(El, [DelayTag]);
-      DelayTag ->
-	  %% Update existing tag
-	  NewDelayTag =
-	      case {fxml:get_tag_cdata(DelayTag), Desc} of
-		{<<"">>, <<"">>} ->
-		    DelayTag;
-		{OldDesc, <<"">>} ->
-		    DelayTag#xmlel{children = [{xmlcdata, OldDesc}]};
-		{<<"">>, NewDesc} ->
-		    DelayTag#xmlel{children = [{xmlcdata, NewDesc}]};
-		{OldDesc, NewDesc} ->
-		    case binary:match(OldDesc, NewDesc) of
-		      nomatch ->
-			  FinalDesc = <<OldDesc/binary, ", ", NewDesc/binary>>,
-			  DelayTag#xmlel{children = [{xmlcdata, FinalDesc}]};
-		      _ ->
-			  DelayTag#xmlel{children = [{xmlcdata, OldDesc}]}
-		    end
-	      end,
-	  NewEl = fxml:remove_subtags(El, <<"delay">>, {<<"xmlns">>, ?NS_DELAY}),
-	  fxml:append_subtags(NewEl, [NewDelayTag])
-    end.
+    DelayTag = create_delay_tag(Time, From, Desc),
+    fxml:append_subtags(El, [DelayTag]).
 
 -spec create_delay_tag(erlang:timestamp(), jid() | ljid() | binary(), binary())
 		       -> xmlel() | error.
