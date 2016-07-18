@@ -162,8 +162,6 @@ check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _)
                 case oauth_check_token(Call, Token) of
                     {ok, user, {User, Server}} ->
                         {ok, {User, Server, {oauth, Token}, Admin}};
-                    {ok, server_admin} ->  %% token whas generated using issue_token command line
-                        {ok, admin};
                     false ->
                         false
                 end;

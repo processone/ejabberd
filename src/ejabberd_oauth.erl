@@ -48,7 +48,7 @@
          process/2,
          opt_type/1]).
 
--export([oauth_issue_token/1, oauth_list_tokens/0, oauth_revoke_token/1, oauth_list_scopes/0]).
+-export([oauth_issue_token/2, oauth_list_tokens/0, oauth_revoke_token/1, oauth_list_scopes/0]).
 
 -include("jlib.hrl").
 
@@ -67,7 +67,7 @@
 %%    (as it has access to ejabberd command line).
 -record(oauth_token, {
           token = {<<"">>, <<"">>} :: {binary(), binary()},
-          us = {<<"">>, <<"">>}    :: {binary(), binary()} | server_admin,
+          us = {<<"">>, <<"">>}    :: {binary(), binary()},
           scope = []               :: [binary()],
           expire                   :: integer()
          }).
@@ -92,18 +92,18 @@ get_commands_spec() ->
      #ejabberd_commands{name = oauth_issue_token, tags = [oauth],
                         desc = "Issue an oauth token. Available scopes are the ones usable by ejabberd admins",
                         module = ?MODULE, function = oauth_issue_token,
-                        args = [{scopes, string}],
+                        args = [{jid, string},{scopes, string}],
                         policy = restricted,
-                        args_example = ["connected_users_number;muc_online_rooms"],
+                        args_example = ["user@server.com", "connected_users_number;muc_online_rooms"],
                         args_desc = ["List of scopes to allow, separated by ';'"],
                         result = {result, {tuple, [{token, string}, {scopes, string}, {expires_in, string}]}}
                        },
      #ejabberd_commands{name = oauth_list_tokens, tags = [oauth],
-                        desc = "List oauth tokens, their scope, and how many seconds remain until expirity",
+                        desc = "List oauth tokens, their user and scope, and how many seconds remain until expirity",
                         module = ?MODULE, function = oauth_list_tokens,
                         args = [],
                         policy = restricted,
-                        result = {tokens, {list, {token, {tuple, [{token, string}, {scope, string}, {expires_in, string}]}}}}
+                        result = {tokens, {list, {token, {tuple, [{token, string}, {user, string}, {scope, string}, {expires_in, string}]}}}}
                        },
      #ejabberd_commands{name = oauth_list_scopes, tags = [oauth],
                         desc = "List scopes that can be granted to tokens generated through the command line",
@@ -122,25 +122,30 @@ get_commands_spec() ->
                        }
     ].
 
-oauth_issue_token(ScopesString) ->
+oauth_issue_token(Jid, ScopesString) ->
     Scopes = [list_to_binary(Scope) || Scope <- string:tokens(ScopesString, ";")],
-    case oauth2:authorize_client_credentials(ejabberd_ctl, Scopes, none) of
-        {ok, {_AppCtx, Authorization}} ->
-            {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, none),
-            {ok, AccessToken} = oauth2_response:access_token(Response),
-            {ok, Expires} = oauth2_response:expires_in(Response),
-            {ok, VerifiedScope} = oauth2_response:scope(Response),
-            {AccessToken, VerifiedScope, integer_to_list(Expires) ++ " seconds"};
-        {error, Error} ->
-            {error, Error}
+    case jid:from_string(list_to_binary(Jid)) of
+        #jid{luser =Username, lserver = Server} ->
+            case oauth2:authorize_password({Username, Server},  Scopes, admin_generated) of
+                {ok, {Ctx,Authorization}} ->
+                    {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, Ctx),
+                    {ok, AccessToken} = oauth2_response:access_token(Response),
+                    {ok, Expires} = oauth2_response:expires_in(Response),
+                    {ok, VerifiedScope} = oauth2_response:scope(Response),
+                    {AccessToken, VerifiedScope, integer_to_list(Expires) ++ " seconds"};
+                {error, Error} ->
+                    {error, Error}
+            end;
+        error ->
+            {error, "Invalid JID: " ++ Jid}
     end.
 
 oauth_list_tokens() ->
-    Tokens = mnesia:dirty_match_object(#oauth_token{us = server_admin, _ = '_'}),
+    Tokens = mnesia:dirty_match_object(#oauth_token{_ = '_'}),
     {MegaSecs, Secs, _MiniSecs} = os:timestamp(),
     TS = 1000000 * MegaSecs + Secs,
-    [{Token, Scope, integer_to_list(Expires - TS) ++ " seconds"} ||
-        #oauth_token{token=Token, scope=Scope, expire=Expires} <- Tokens].
+    [{Token, jid:to_string(jid:make(U,S,<<>>)), Scope, integer_to_list(Expires - TS) ++ " seconds"} ||
+        #oauth_token{token=Token, scope=Scope, us= {U,S},expire=Expires} <- Tokens].
 
 
 oauth_revoke_token(Token) ->
@@ -203,7 +208,7 @@ get_client_identity(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
 
 verify_redirection_uri(_, _, Ctx) -> {ok, Ctx}.
 
-authenticate_user({User, Server}, {password, Password} = Ctx) ->
+authenticate_user({User, Server}, Ctx) ->
     case jid:make(User, Server, <<"">>) of
         #jid{} = JID ->
             Access =
@@ -213,11 +218,16 @@ authenticate_user({User, Server}, {password, Password} = Ctx) ->
                   none),
             case acl:match_rule(JID#jid.lserver, Access, JID) of
                 allow ->
-                    case ejabberd_auth:check_password(User, <<"">>, Server, Password) of
-                        true ->
-                            {ok, {Ctx, {user, User, Server}}};
-                        false ->
-                            {error, badpass}
+                    case Ctx of
+                        {password, Password} ->
+                            case ejabberd_auth:check_password(User, <<"">>, Server, Password) of
+                                true ->
+                                    {ok, {Ctx, {user, User, Server}}};
+                                false ->
+                                    {error, badpass}
+                            end;
+                        admin_generated ->
+                            {ok, {Ctx, {user, User, Server}}}
                     end;
                 deny ->
                     {error, badpass}
@@ -272,17 +282,12 @@ associate_access_code(_AccessCode, _Context, AppContext) ->
     {ok, AppContext}.
 
 associate_access_token(AccessToken, Context, AppContext) ->
-    %% Tokens generated using the API/WEB belongs to users and always include the user, server pair.
-    %% Tokens generated form command line aren't tied to an user, and instead belongs to the ejabberd sysadmin
-    US = case proplists:get_value(<<"resource_owner">>, Context, <<"">>) of
-                               {user, User, Server} -> {jid:nodeprep(User), jid:nodeprep(Server)};
-                               undefined -> server_admin
-                           end,
+    {user, User, Server} = proplists:get_value(<<"resource_owner">>, Context, <<"">>),
     Scope = proplists:get_value(<<"scope">>, Context, []),
     Expire = proplists:get_value(<<"expiry_time">>, Context, 0),
     R = #oauth_token{
       token = AccessToken,
-      us = US,
+      us = {jid:nodeprep(User), jid:nodeprep(Server)},
       scope = Scope,
       expire = Expire
      },
@@ -320,10 +325,7 @@ check_token(Scope, Token) ->
             case oauth2_priv_set:is_member(
                    Scope, oauth2_priv_set:new(TokenScope)) andalso
                 Expire > TS of
-                true -> case US of
-                            {LUser, LServer} -> {ok, user, {LUser, LServer}};
-                            server_admin -> {ok, server_admin}
-                        end;
+                true -> {ok, user, US};
                 false -> false
             end;
         _ ->
