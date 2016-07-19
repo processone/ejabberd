@@ -90,7 +90,7 @@ start() ->
 get_commands_spec() ->
     [
      #ejabberd_commands{name = oauth_issue_token, tags = [oauth],
-                        desc = "Issue an oauth token. Available scopes are the ones usable by ejabberd admins",
+                        desc = "Issue an oauth token for the given jid",
                         module = ?MODULE, function = oauth_issue_token,
                         args = [{jid, string},{scopes, string}],
                         policy = restricted,
@@ -106,11 +106,11 @@ get_commands_spec() ->
                         result = {tokens, {list, {token, {tuple, [{token, string}, {user, string}, {scope, string}, {expires_in, string}]}}}}
                        },
      #ejabberd_commands{name = oauth_list_scopes, tags = [oauth],
-                        desc = "List scopes that can be granted to tokens generated through the command line",
+                        desc = "List scopes that can be granted to tokens generated through the command line, together with the commands they allow",
                         module = ?MODULE, function = oauth_list_scopes,
                         args = [],
                         policy = restricted,
-                        result = {scopes, {list, {scope, string}}}
+                        result = {scopes, {list, {scope, {tuple, [{scope, string}, {commands, string}]}}}}
                        },
      #ejabberd_commands{name = oauth_revoke_token, tags = [oauth],
                         desc = "Revoke authorization for a token",
@@ -153,7 +153,7 @@ oauth_revoke_token(Token) ->
     oauth_list_tokens().
 
 oauth_list_scopes() ->
-    get_cmd_scopes().
+    [ {Scope, string:join([atom_to_list(Cmd) || Cmd <- Cmds], ",")}   || {Scope, Cmds} <- dict:to_list(get_cmd_scopes())].
 
 
 
@@ -240,7 +240,7 @@ authenticate_client(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
 
 verify_resowner_scope({user, _User, _Server}, Scope, Ctx) ->
     Cmds = ejabberd_commands:get_commands(),
-    Cmds1 = [sasl_auth | Cmds],
+    Cmds1 = ['ejabberd:user', 'ejabberd:admin', sasl_auth | Cmds],
     RegisteredScope = [atom_to_binary(C, utf8) || C <- Cmds1],
     case oauth2_priv_set:is_subset(oauth2_priv_set:new(Scope),
                                    oauth2_priv_set:new(RegisteredScope)) of
@@ -254,17 +254,27 @@ verify_resowner_scope(_, _, _) ->
 
 
 get_cmd_scopes() ->
-    Cmds = lists:filter(fun(Cmd) -> case ejabberd_commands:get_command_policy(Cmd) of
-                                        {ok, Policy} when Policy =/= restricted -> true;
-                                        _ -> false
-                                    end end,
-                        ejabberd_commands:get_commands()),
-    [atom_to_binary(C, utf8) || C <- Cmds].
+    ScopeMap = lists:foldl(fun(Cmd, Accum) ->
+                        case ejabberd_commands:get_command_policy_and_scope(Cmd) of
+                            {ok, Policy, Scopes} when Policy =/= restricted ->
+                                lists:foldl(fun(Scope, Accum2) ->
+                                                    dict:append(Scope, Cmd, Accum2)
+                                            end, Accum, Scopes);
+                            _ -> Accum
+                        end end, dict:new(), ejabberd_commands:get_commands()),
+    ScopeMap.
+
+    %Scps = lists:flatmap(fun(Cmd) -> case ejabberd_commands:get_command_policy_and_scope(Cmd) of
+    %                                    {ok, Policy, Scopes} when Policy =/= restricted -> Scopes;
+    %                                    _ -> []
+    %                                end end,
+    %                    ejabberd_commands:get_commands()),
+    %lists:usort(Scps).
 
 %% This is callback for oauth tokens generated through the command line.  Only open and admin commands are
 %% made available.
 verify_client_scope({client, ejabberd_ctl}, Scope, Ctx) ->
-    RegisteredScope = get_cmd_scopes(),
+    RegisteredScope = dict:fetch_keys(get_cmd_scopes()),
     case oauth2_priv_set:is_subset(oauth2_priv_set:new(Scope),
                                    oauth2_priv_set:new(RegisteredScope)) of
         true ->
@@ -299,7 +309,7 @@ associate_refresh_token(_RefreshToken, _Context, AppContext) ->
     {ok, AppContext}.
 
 
-check_token(User, Server, Scope, Token) ->
+check_token(User, Server, ScopeList, Token) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     case catch mnesia:dirty_read(oauth_token, Token) of
@@ -308,23 +318,25 @@ check_token(User, Server, Scope, Token) ->
                       expire = Expire}] ->
             {MegaSecs, Secs, _} = os:timestamp(),
             TS = 1000000 * MegaSecs + Secs,
-            oauth2_priv_set:is_member(
-              Scope, oauth2_priv_set:new(TokenScope)) andalso
-                Expire > TS;
+            TokenScopeSet = oauth2_priv_set:new(TokenScope),
+            lists:any(fun(Scope) ->
+                oauth2_priv_set:is_member(Scope, TokenScopeSet) end,
+                ScopeList) andalso Expire > TS;
         _ ->
             false
     end.
 
-check_token(Scope, Token) ->
+check_token(ScopeList, Token) ->
     case catch mnesia:dirty_read(oauth_token, Token) of
         [#oauth_token{us = US,
                       scope = TokenScope,
                       expire = Expire}] ->
             {MegaSecs, Secs, _} = os:timestamp(),
             TS = 1000000 * MegaSecs + Secs,
-            case oauth2_priv_set:is_member(
-                   Scope, oauth2_priv_set:new(TokenScope)) andalso
-                Expire > TS of
+            TokenScopeSet = oauth2_priv_set:new(TokenScope),
+            case lists:any(fun(Scope) ->
+                oauth2_priv_set:is_member(Scope, TokenScopeSet) end,
+                ScopeList) andalso Expire > TS of
                 true -> {ok, user, US};
                 false -> false
             end;

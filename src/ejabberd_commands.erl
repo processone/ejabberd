@@ -218,7 +218,7 @@
 	 get_command_format/1,
 	 get_command_format/2,
 	 get_command_format/3,
-         get_command_policy/1,
+         get_command_policy_and_scope/1,
 	 get_command_definition/1,
 	 get_command_definition/2,
 	 get_tags_commands/0,
@@ -366,16 +366,22 @@ get_command_format(Name, Auth, Version) ->
 	    {Args, Result}
     end.
 
--spec get_command_policy(atom()) -> {ok, open|user|admin|restricted} | {error, command_not_found}.
+-spec get_command_policy_and_scope(atom()) -> {ok, open|user|admin|restricted, [oauth_scope()]} | {error, command_not_found}.
 
 %% @doc return command policy.
-get_command_policy(Name) ->
+get_command_policy_and_scope(Name) ->
     case get_command_definition(Name) of
-        #ejabberd_commands{policy = Policy} ->
-            {ok, Policy};
+        #ejabberd_commands{policy = Policy} = Cmd ->
+            {ok, Policy, cmd_scope(Cmd)};
         command_not_found ->
             {error, command_not_found}
     end.
+
+%% The oauth scopes for a command are the command name itself,
+%% also might include either 'ejabberd:user' or 'ejabberd:admin'
+cmd_scope(#ejabberd_commands{policy = Policy, name = Name}) ->
+    [erlang:atom_to_binary(Name,utf8)] ++ [<<"ejabberd:user">> || Policy == user] ++ [<<"ejabberd:admin">> || Policy == admin].
+
 
 -spec get_command_definition(atom()) -> ejabberd_commands().
 
@@ -627,8 +633,8 @@ check_access_commands(AccessCommands, Auth, Method, Command1, Arguments, CallerI
 check_auth(_Command, noauth) ->
     no_auth_provided;
 check_auth(Command, {User, Server, {oauth, Token}, _}) ->
-    Scope = erlang:atom_to_binary(Command#ejabberd_commands.name, utf8),
-    case ejabberd_oauth:check_token(User, Server, Scope, Token) of
+    ScopeList = cmd_scope(Command),
+    case ejabberd_oauth:check_token(User, Server, ScopeList, Token) of
         true ->
             {ok, User, Server};
         false ->

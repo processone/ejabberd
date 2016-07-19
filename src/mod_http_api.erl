@@ -133,13 +133,13 @@ depends(_Host, _Opts) ->
 check_permissions(Request, Command) ->
     case catch binary_to_existing_atom(Command, utf8) of
         Call when is_atom(Call) ->
-            {ok, CommandPolicy} = ejabberd_commands:get_command_policy(Call),
-            check_permissions2(Request, Call, CommandPolicy);
+            {ok, CommandPolicy, Scope} = ejabberd_commands:get_command_policy_and_scope(Call),
+            check_permissions2(Request, Call, CommandPolicy, Scope);
         _ ->
             unauthorized_response()
     end.
 
-check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _)
+check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _, ScopeList)
   when HTTPAuth /= undefined ->
     Admin =
         case lists:keysearch(<<"X-Admin">>, 1, Headers) of
@@ -159,7 +159,7 @@ check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _)
                         false
                 end;
             {oauth, Token, _} ->
-                case oauth_check_token(Call, Token) of
+                case oauth_check_token(ScopeList, Token) of
                     {ok, user, {User, Server}} ->
                         {ok, {User, Server, {oauth, Token}, Admin}};
                     false ->
@@ -172,9 +172,9 @@ check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _)
         {ok, A} -> {allowed, Call, A};
         _ -> unauthorized_response()
     end;
-check_permissions2(_Request, Call, open) ->
+check_permissions2(_Request, Call, open, _Scope) ->
     {allowed, Call, noauth};
-check_permissions2(#request{ip={IP, _Port}}, Call, _Policy) ->
+check_permissions2(#request{ip={IP, _Port}}, Call, _Policy, _Scope) ->
     Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access,
                                     fun(V) -> V end,
                                     none),
@@ -194,13 +194,11 @@ check_permissions2(#request{ip={IP, _Port}}, Call, _Policy) ->
         _E ->
             {allowed, Call, noauth}
     end;
-check_permissions2(_Request, _Call, _Policy) ->
+check_permissions2(_Request, _Call, _Policy, _Scope) ->
     unauthorized_response().
 
-oauth_check_token(Scope, Token) when is_atom(Scope) ->
-    oauth_check_token(atom_to_binary(Scope, utf8), Token);
-oauth_check_token(Scope, Token) ->
-    ejabberd_oauth:check_token(Scope, Token).
+oauth_check_token(ScopeList, Token) when is_list(ScopeList) ->
+    ejabberd_oauth:check_token(ScopeList, Token).
 
 %% ------------------
 %% command processing

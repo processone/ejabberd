@@ -70,8 +70,8 @@ defmodule ModHttpApiMockTest do
 			fn (@acommand, {@user, @domain, @userpass, false}, @version) ->
 				{[], {:res, :rescode}}
 			end)
-    :meck.expect(:ejabberd_commands, :get_command_policy,
-			fn (@acommand) -> {:ok, :user} end)
+    :meck.expect(:ejabberd_commands, :get_command_policy_and_scope,
+			fn (@acommand) -> {:ok, :user, [:erlang.atom_to_binary(@acommand,:utf8)]} end)
 		:meck.expect(:ejabberd_commands, :get_commands,
 			fn () -> [@acommand] end)
 		:meck.expect(:ejabberd_commands, :execute_command,
@@ -123,8 +123,8 @@ defmodule ModHttpApiMockTest do
 			fn (@acommand, {@user, @domain, {:oauth, _token}, false}, @version) ->
 					{[], {:res, :rescode}}
 			end)
-    :meck.expect(:ejabberd_commands, :get_command_policy,
-			fn (@acommand) -> {:ok, :user} end)
+    :meck.expect(:ejabberd_commands, :get_command_policy_and_scope,
+			fn (@acommand) -> {:ok, :user, [:erlang.atom_to_binary(@acommand,:utf8), "ejabberd:user"]} end)
 		:meck.expect(:ejabberd_commands, :get_commands,
 			fn () -> [@acommand] end)
 		:meck.expect(:ejabberd_commands, :execute_command,
@@ -134,8 +134,21 @@ defmodule ModHttpApiMockTest do
 			end)
 
 
-		# Correct OAuth call
+		# Correct OAuth call using specific scope
 		token = EjabberdOauthMock.get_token @user, @domain, @command
+		req = request(method: :GET,
+									path: ["api", @command],
+									q: [nokey: ""],
+									# OAuth
+									auth: {:oauth, token, []},
+									ip: {{127,0,0,1},60000},
+									host: @domain)
+		result = :mod_http_api.process([@command], req)
+		assert 200 == elem(result, 0) # HTTP code
+		assert "0" == elem(result, 2) # command result
+
+		# Correct OAuth call using specific ejabberd:user scope
+		token = EjabberdOauthMock.get_token @user, @domain, "ejabberd:user"
 		req = request(method: :GET,
 									path: ["api", @command],
 									q: [nokey: ""],
@@ -184,8 +197,8 @@ defmodule ModHttpApiMockTest do
 		result = :mod_http_api.process([@command], req)
 		assert 401 == elem(result, 0) # HTTP code
 
-		# Check that the command was executed only once
-		assert 1 ==
+		# Check that the command was executed twice
+		assert 2 ==
 			:meck.num_calls(:ejabberd_commands, :execute_command, :_)
 
 		assert :meck.validate :ejabberd_auth
