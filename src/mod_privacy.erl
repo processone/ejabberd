@@ -100,7 +100,7 @@ stop(Host) ->
 process_iq(IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed()).
 
--spec process_iq_get({error, error()} | iq(),
+-spec process_iq_get({error, error()} | {result, xmpp_element() | undefined},
 		     iq(), userlist()) -> {error, error()} | {result, privacy_query()}.
 process_iq_get(_, #iq{from = From, lang = Lang,
 		      sub_els = [#privacy_query{lists = Lists}]},
@@ -215,7 +215,8 @@ decode_value(Type, Value) ->
     end.
 
 -spec process_iq_set({error, error()} |
-		     {result, privacy_query() | undefined, userlist()},
+		     {result, xmpp_element() | undefined} |
+		     {result, xmpp_element() | undefined, userlist()},
 		     iq()) -> {error, error()} |
 			      {result, undefined, userlist()}.
 process_iq_set(_, #iq{from = From, lang = Lang,

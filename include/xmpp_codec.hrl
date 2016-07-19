@@ -347,7 +347,7 @@
                        text = [] :: [#text{}]}).
 -type sasl_failure() :: #sasl_failure{}.
 
--record(block_list, {}).
+-record(block_list, {items = [] :: [any()]}).
 -type block_list() :: #block_list{}.
 
 -record(xdata_field, {label :: binary(),

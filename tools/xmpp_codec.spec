@@ -176,7 +176,9 @@
 -xml(block_list,
      #elem{name = <<"blocklist">>,
            xmlns = <<"urn:xmpp:blocking">>,
-           result = {block_list}}).
+           result = {block_list, '$items'},
+	   refs = [#ref{name = block_item,
+                        label = '$items'}]}).
 
 -xml(disco_identity,
      #elem{name = <<"identity">>,

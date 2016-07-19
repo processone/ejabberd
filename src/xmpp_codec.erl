@@ -1899,7 +1899,7 @@ encode({block, _} = Block) ->
 encode({unblock, _} = Unblock) ->
     encode_unblock(Unblock,
 		   [{<<"xmlns">>, <<"urn:xmpp:blocking">>}]);
-encode({block_list} = Blocklist) ->
+encode({block_list, _} = Blocklist) ->
     encode_block_list(Blocklist,
 		      [{<<"xmlns">>, <<"urn:xmpp:blocking">>}]);
 encode({identity, _, _, _, _} = Identity) ->
@@ -2351,7 +2351,7 @@ get_name({privacy_list, _, _}) -> <<"list">>;
 get_name({privacy_query, _, _, _}) -> <<"query">>;
 get_name({block, _}) -> <<"block">>;
 get_name({unblock, _}) -> <<"unblock">>;
-get_name({block_list}) -> <<"blocklist">>;
+get_name({block_list, _}) -> <<"blocklist">>;
 get_name({identity, _, _, _, _}) -> <<"identity">>;
 get_name({disco_info, _, _, _, _}) -> <<"query">>;
 get_name({disco_item, _, _, _}) -> <<"item">>;
@@ -2520,7 +2520,7 @@ get_ns({privacy_query, _, _, _}) ->
     <<"jabber:iq:privacy">>;
 get_ns({block, _}) -> <<"urn:xmpp:blocking">>;
 get_ns({unblock, _}) -> <<"urn:xmpp:blocking">>;
-get_ns({block_list}) -> <<"urn:xmpp:blocking">>;
+get_ns({block_list, _}) -> <<"urn:xmpp:blocking">>;
 get_ns({identity, _, _, _, _}) ->
     <<"http://jabber.org/protocol/disco#info">>;
 get_ns({disco_info, _, _, _, _}) ->
@@ -2796,7 +2796,7 @@ pp(privacy_list, 2) -> [name, items];
 pp(privacy_query, 3) -> [lists, default, active];
 pp(block, 1) -> [items];
 pp(unblock, 1) -> [items];
-pp(block_list, 0) -> [];
+pp(block_list, 1) -> [items];
 pp(identity, 4) -> [category, type, lang, name];
 pp(disco_info, 4) ->
     [node, identities, features, xdata];
@@ -22454,12 +22454,51 @@ encode_disco_identity_attr_name(_val, _acc) ->
 
 decode_block_list(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"blocklist">>, _attrs, _els}) ->
-    {block_list}.
+    Items = decode_block_list_els(__TopXMLNS, __IgnoreEls,
+				  _els, []),
+    {block_list, Items}.
 
-encode_block_list({block_list}, _xmlns_attrs) ->
-    _els = [],
+decode_block_list_els(__TopXMLNS, __IgnoreEls, [],
+		      Items) ->
+    lists:reverse(Items);
+decode_block_list_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"item">>, _attrs, _} = _el | _els], Items) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:blocking">> ->
+	  decode_block_list_els(__TopXMLNS, __IgnoreEls, _els,
+				case decode_block_item(__TopXMLNS, __IgnoreEls,
+						       _el)
+				    of
+				  undefined -> Items;
+				  _new_el -> [_new_el | Items]
+				end);
+      <<"urn:xmpp:blocking">> ->
+	  decode_block_list_els(__TopXMLNS, __IgnoreEls, _els,
+				case decode_block_item(<<"urn:xmpp:blocking">>,
+						       __IgnoreEls, _el)
+				    of
+				  undefined -> Items;
+				  _new_el -> [_new_el | Items]
+				end);
+      _ ->
+	  decode_block_list_els(__TopXMLNS, __IgnoreEls, _els,
+				Items)
+    end;
+decode_block_list_els(__TopXMLNS, __IgnoreEls,
+		      [_ | _els], Items) ->
+    decode_block_list_els(__TopXMLNS, __IgnoreEls, _els,
+			  Items).
+
+encode_block_list({block_list, Items}, _xmlns_attrs) ->
+    _els = lists:reverse('encode_block_list_$items'(Items,
+						    [])),
     _attrs = _xmlns_attrs,
     {xmlel, <<"blocklist">>, _attrs, _els}.
+
+'encode_block_list_$items'([], _acc) -> _acc;
+'encode_block_list_$items'([Items | _els], _acc) ->
+    'encode_block_list_$items'(_els,
+			       [encode_block_item(Items, []) | _acc]).
 
 decode_unblock(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"unblock">>, _attrs, _els}) ->

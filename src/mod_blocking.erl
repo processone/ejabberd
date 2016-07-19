@@ -29,19 +29,21 @@
 
 -protocol({xep, 191, '1.2'}).
 
--export([start/2, stop/1, process_iq/3,
-	 process_iq_set/4, process_iq_get/5, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, process_iq/1,
+	 process_iq_set/2, process_iq_get/3, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("mod_privacy.hrl").
 
 -callback process_blocklist_block(binary(), binary(), function()) -> {atomic, any()}.
 -callback unblock_by_filter(binary(), binary(), function()) -> {atomic, any()}.
 -callback process_blocklist_get(binary(), binary()) -> [listitem()] | error.
+
+-type block_event() :: {block, [jid()]} | {unblock, [jid()]} | unblock_all.
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
@@ -66,55 +68,65 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [{mod_privacy, hard}].
 
-process_iq(_From, _To, IQ) ->
-    SubEl = IQ#iq.sub_el,
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
+-spec process_iq(iq()) -> iq().
+process_iq(IQ) ->
+    xmpp:make_error(IQ, xmpp:err_not_allowed()).
 
-process_iq_get(_, From, _To,
-	       #iq{xmlns = ?NS_BLOCKING, lang = Lang,
-		   sub_el = #xmlel{name = <<"blocklist">>}},
-	       _) ->
+-spec process_iq_get({error, error()} | {result, xmpp_element() | undefined},
+		     iq(), userlist()) ->
+			    {error, error()} | {result, block_list()}.
+process_iq_get(_, #iq{lang = Lang, from = From,
+		      sub_els = [#block_list{}]}, _) ->
     #jid{luser = LUser, lserver = LServer} = From,
     {stop, process_blocklist_get(LUser, LServer, Lang)};
-process_iq_get(Acc, _, _, _, _) -> Acc.
+process_iq_get(Acc, _, _) -> Acc.
 
-process_iq_set(_, From, _To,
-	       #iq{xmlns = ?NS_BLOCKING, lang = Lang,
-		   sub_el =
-		       #xmlel{name = SubElName, children = SubEls}}) ->
+-spec process_iq_set({error, error()} |
+		     {result, xmpp_element() | undefined} |
+		     {result, xmpp_element() | undefined, userlist()},
+		     iq()) -> {error, error()} |
+			      {result, undefined} |
+			      {result, undefined, userlist()}.
+process_iq_set(_, #iq{from = From, lang = Lang, sub_els = [SubEl]}) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    Res = case {SubElName, fxml:remove_cdata(SubEls)} of
-	    {<<"block">>, []} ->
-		Txt = <<"No items found in this query">>,
-		{error, ?ERRT_BAD_REQUEST(Lang, Txt)};
-	    {<<"block">>, Els} ->
-		JIDs = parse_blocklist_items(Els, []),
-		process_blocklist_block(LUser, LServer, JIDs, Lang);
-	    {<<"unblock">>, []} ->
-		process_blocklist_unblock_all(LUser, LServer, Lang);
-	    {<<"unblock">>, Els} ->
-		JIDs = parse_blocklist_items(Els, []),
-		process_blocklist_unblock(LUser, LServer, JIDs, Lang);
-	    _ ->
-		Txt = <<"Unknown blocking command">>,
-		{error, ?ERRT_BAD_REQUEST(Lang, Txt)}
+    Res = case SubEl of
+	      #block{items = []} ->
+		  Txt = <<"No items found in this query">>,
+		  {error, xmpp:err_bad_request(Txt, Lang)};
+	      #block{items = Items} ->
+		  JIDs = [jid:tolower(Item) || Item <- Items],
+		  process_blocklist_block(LUser, LServer, JIDs, Lang);
+	      #unblock{items = []} ->
+		  process_blocklist_unblock_all(LUser, LServer, Lang);
+	      #unblock{items = Items} ->
+		  JIDs = [jid:tolower(Item) || Item <- Items],
+		  process_blocklist_unblock(LUser, LServer, JIDs, Lang);
+	      _ ->
+		  Txt = <<"Only <block/> and <unblock/> are allowed "
+			  "in this request">>,
+		  {error, xmpp:err_bad_request(Txt, Lang)}
 	  end,
     {stop, Res};
-process_iq_set(Acc, _, _, _) -> Acc.
+process_iq_set(Acc, _) -> Acc.
 
+-spec list_to_blocklist_jids([listitem()], [ljid()]) -> [ljid()].
 list_to_blocklist_jids([], JIDs) -> JIDs;
 list_to_blocklist_jids([#listitem{type = jid,
 				  action = deny, value = JID} =
 			    Item
 			| Items],
 		       JIDs) ->
-    case Item of
-      #listitem{match_all = true} -> Match = true;
-      #listitem{match_iq = true, match_message = true,
-		match_presence_in = true, match_presence_out = true} ->
-	  Match = true;
-      _ -> Match = false
-    end,
+    Match = case Item of
+		#listitem{match_all = true} ->
+		    true;
+		#listitem{match_iq = true,
+			  match_message = true,
+			  match_presence_in = true,
+			  match_presence_out = true} ->
+		    true;
+		_ ->
+		    false
+	    end,
     if Match -> list_to_blocklist_jids(Items, [JID | JIDs]);
        true -> list_to_blocklist_jids(Items, JIDs)
     end;
@@ -122,20 +134,10 @@ list_to_blocklist_jids([#listitem{type = jid,
 list_to_blocklist_jids([_ | Items], JIDs) ->
     list_to_blocklist_jids(Items, JIDs).
 
-parse_blocklist_items([], JIDs) -> JIDs;
-parse_blocklist_items([#xmlel{name = <<"item">>,
-			      attrs = Attrs}
-		       | Els],
-		      JIDs) ->
-    case fxml:get_attr(<<"jid">>, Attrs) of
-      {value, JID1} ->
-	  JID = jid:tolower(jid:from_string(JID1)),
-	  parse_blocklist_items(Els, [JID | JIDs]);
-      false -> parse_blocklist_items(Els, JIDs)
-    end;
-parse_blocklist_items([_ | Els], JIDs) ->
-    parse_blocklist_items(Els, JIDs).
-
+-spec process_blocklist_block(binary(), binary(), [ljid()],
+			      undefined | binary()) ->
+				     {error, error()} |
+				     {result, undefined, userlist()}.
 process_blocklist_block(LUser, LServer, JIDs, Lang) ->
     Filter = fun (List) ->
 		     AlreadyBlocked = list_to_blocklist_jids(List, []),
@@ -161,13 +163,17 @@ process_blocklist_block(LUser, LServer, JIDs, Lang) ->
 	  broadcast_list_update(LUser, LServer, Default,
 				UserList),
 	  broadcast_blocklist_event(LUser, LServer,
-				    {block, JIDs}),
-	  {result, [], UserList};
+				    {block, [jid:make(J) || J <- JIDs]}),
+	  {result, undefined, UserList};
       _Err ->
 	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer, JIDs}, _Err]),
-	    {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, Lang)}
     end.
 
+-spec process_blocklist_unblock_all(binary(), binary(), undefined | binary()) ->
+					   {error, error()} |
+					   {result, undefined} |
+					   {result, undefined, userlist()}.
 process_blocklist_unblock_all(LUser, LServer, Lang) ->
     Filter = fun (List) ->
 		     lists:filter(fun (#listitem{action = A}) -> A =/= deny
@@ -176,18 +182,23 @@ process_blocklist_unblock_all(LUser, LServer, Lang) ->
 	     end,
     Mod = db_mod(LServer),
     case Mod:unblock_by_filter(LUser, LServer, Filter) of
-      {atomic, ok} -> {result, []};
+      {atomic, ok} -> {result, undefined};
       {atomic, {ok, Default, List}} ->
 	  UserList = make_userlist(Default, List),
 	  broadcast_list_update(LUser, LServer, Default,
 				UserList),
 	  broadcast_blocklist_event(LUser, LServer, unblock_all),
-	  {result, [], UserList};
+	  {result, undefined, UserList};
       _Err ->
 	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer}, _Err]),
-	    {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, Lang)}
     end.
 
+-spec process_blocklist_unblock(binary(), binary(), [ljid()],
+				undefined | binary()) ->
+				       {error, error()} |
+				       {result, undefined} |
+				       {result, undefined, userlist()}.
 process_blocklist_unblock(LUser, LServer, JIDs, Lang) ->
     Filter = fun (List) ->
 		     lists:filter(fun (#listitem{action = deny, type = jid,
@@ -199,56 +210,53 @@ process_blocklist_unblock(LUser, LServer, JIDs, Lang) ->
 	     end,
     Mod = db_mod(LServer),
     case Mod:unblock_by_filter(LUser, LServer, Filter) of
-      {atomic, ok} -> {result, []};
+      {atomic, ok} -> {result, undefined};
       {atomic, {ok, Default, List}} ->
 	  UserList = make_userlist(Default, List),
 	  broadcast_list_update(LUser, LServer, Default,
 				UserList),
 	  broadcast_blocklist_event(LUser, LServer,
-				    {unblock, JIDs}),
-	  {result, [], UserList};
+				    {unblock, [jid:make(J) || J <- JIDs]}),
+	  {result, undefined, UserList};
       _Err ->
 	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer, JIDs}, _Err]),
-	    {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, Lang)}
     end.
 
+-spec make_userlist(binary(), [listitem()]) -> userlist().
 make_userlist(Name, List) ->
     NeedDb = mod_privacy:is_list_needdb(List),
     #userlist{name = Name, list = List, needdb = NeedDb}.
 
+-spec broadcast_list_update(binary(), binary(), binary(), userlist()) ->
+				   {broadcast,
+				    {privacy_list, userlist(), binary() | none}}.
 broadcast_list_update(LUser, LServer, Name, UserList) ->
-    ejabberd_sm:route(jid:make(LUser, LServer,
-                                    <<"">>),
+    ejabberd_sm:route(jid:make(LUser, LServer, <<"">>),
                       jid:make(LUser, LServer, <<"">>),
                       {broadcast, {privacy_list, UserList, Name}}).
 
+-spec broadcast_blocklist_event(binary(), binary(), block_event()) ->
+				       {broadcast, {blocking, block_event()}}.
 broadcast_blocklist_event(LUser, LServer, Event) ->
     JID = jid:make(LUser, LServer, <<"">>),
     ejabberd_sm:route(JID, JID,
                       {broadcast, {blocking, Event}}).
 
+-spec process_blocklist_get(binary(), binary(), undefined | binary()) ->
+				   {error, error()} | {result, block_list()}.
 process_blocklist_get(LUser, LServer, Lang) ->
     Mod = db_mod(LServer),
     case Mod:process_blocklist_get(LUser, LServer) of
       error ->
-	  {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)};
+	  {error, xmpp:err_internal_server_error(<<"Database failure">>, Lang)};
       List ->
-	  JIDs = list_to_blocklist_jids(List, []),
-	  Items = lists:map(fun (JID) ->
-				    ?DEBUG("JID: ~p", [JID]),
-				    #xmlel{name = <<"item">>,
-					   attrs =
-					       [{<<"jid">>,
-						 jid:to_string(JID)}],
-					   children = []}
-			    end,
-			    JIDs),
-	  {result,
-	   [#xmlel{name = <<"blocklist">>,
-		   attrs = [{<<"xmlns">>, ?NS_BLOCKING}],
-		   children = Items}]}
+	  LJIDs = list_to_blocklist_jids(List, []),
+	  Items = [jid:make(J) || J <- LJIDs],
+	  {result, #block_list{items = Items}}
     end.
 
+-spec db_mod(binary()) -> module().
 db_mod(LServer) ->
     DBType = gen_mod:db_type(LServer, mod_privacy),
     gen_mod:db_mod(DBType, ?MODULE).
