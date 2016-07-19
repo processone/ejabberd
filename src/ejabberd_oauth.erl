@@ -39,7 +39,6 @@
          authenticate_user/2,
          authenticate_client/2,
          verify_resowner_scope/3,
-         verify_client_scope/3,
          associate_access_code/3,
          associate_access_token/3,
          associate_refresh_token/3,
@@ -48,7 +47,7 @@
          process/2,
          opt_type/1]).
 
--export([oauth_issue_token/2, oauth_list_tokens/0, oauth_revoke_token/1, oauth_list_scopes/0]).
+-export([oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1, oauth_list_scopes/0]).
 
 -include("jlib.hrl").
 
@@ -92,7 +91,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = oauth_issue_token, tags = [oauth],
                         desc = "Issue an oauth token for the given jid",
                         module = ?MODULE, function = oauth_issue_token,
-                        args = [{jid, string},{scopes, string}],
+                        args = [{jid, string},{ttl, integer}, {scopes, string}],
                         policy = restricted,
                         args_example = ["user@server.com", "connected_users_number;muc_online_rooms"],
                         args_desc = ["List of scopes to allow, separated by ';'"],
@@ -122,17 +121,16 @@ get_commands_spec() ->
                        }
     ].
 
-oauth_issue_token(Jid, ScopesString) ->
+oauth_issue_token(Jid, TTLSeconds, ScopesString) ->
     Scopes = [list_to_binary(Scope) || Scope <- string:tokens(ScopesString, ";")],
     case jid:from_string(list_to_binary(Jid)) of
         #jid{luser =Username, lserver = Server} ->
             case oauth2:authorize_password({Username, Server},  Scopes, admin_generated) of
-                {ok, {Ctx,Authorization}} ->
-                    {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, Ctx),
+                {ok, {_Ctx,Authorization}} ->
+                    {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, [{expiry_time, seconds_since_epoch(TTLSeconds)}]),
                     {ok, AccessToken} = oauth2_response:access_token(Response),
-                    {ok, Expires} = oauth2_response:expires_in(Response),
                     {ok, VerifiedScope} = oauth2_response:scope(Response),
-                    {AccessToken, VerifiedScope, integer_to_list(Expires) ++ " seconds"};
+                    {AccessToken, VerifiedScope, integer_to_list(TTLSeconds) ++ " seconds"};
                 {error, Error} ->
                     {error, Error}
             end;
@@ -154,7 +152,6 @@ oauth_revoke_token(Token) ->
 
 oauth_list_scopes() ->
     [ {Scope, string:join([atom_to_list(Cmd) || Cmd <- Cmds], ",")}   || {Scope, Cmds} <- dict:to_list(get_cmd_scopes())].
-
 
 
 
@@ -264,27 +261,25 @@ get_cmd_scopes() ->
                         end end, dict:new(), ejabberd_commands:get_commands()),
     ScopeMap.
 
-    %Scps = lists:flatmap(fun(Cmd) -> case ejabberd_commands:get_command_policy_and_scope(Cmd) of
-    %                                    {ok, Policy, Scopes} when Policy =/= restricted -> Scopes;
-    %                                    _ -> []
-    %                                end end,
-    %                    ejabberd_commands:get_commands()),
-    %lists:usort(Scps).
-
 %% This is callback for oauth tokens generated through the command line.  Only open and admin commands are
 %% made available.
-verify_client_scope({client, ejabberd_ctl}, Scope, Ctx) ->
-    RegisteredScope = dict:fetch_keys(get_cmd_scopes()),
-    case oauth2_priv_set:is_subset(oauth2_priv_set:new(Scope),
-                                   oauth2_priv_set:new(RegisteredScope)) of
-        true ->
-            {ok, {Ctx, Scope}};
-        false ->
-            {error, badscope}
-    end.
+%verify_client_scope({client, ejabberd_ctl}, Scope, Ctx) ->
+%    RegisteredScope = dict:fetch_keys(get_cmd_scopes()),
+%    case oauth2_priv_set:is_subset(oauth2_priv_set:new(Scope),
+%                                   oauth2_priv_set:new(RegisteredScope)) of
+%        true ->
+%            {ok, {Ctx, Scope}};
+%        false ->
+%            {error, badscope}
+%    end.
 
 
 
+
+-spec seconds_since_epoch(integer()) -> non_neg_integer().
+seconds_since_epoch(Diff) ->
+    {Mega, Secs, _} = os:timestamp(),
+    Mega * 1000000 + Secs + Diff.
 
 
 associate_access_code(_AccessCode, _Context, AppContext) ->
@@ -293,8 +288,17 @@ associate_access_code(_AccessCode, _Context, AppContext) ->
 
 associate_access_token(AccessToken, Context, AppContext) ->
     {user, User, Server} = proplists:get_value(<<"resource_owner">>, Context, <<"">>),
+    Expire = case proplists:get_value(expiry_time, AppContext, undefined) of
+        undefined ->
+            proplists:get_value(<<"expiry_time">>, Context, 0);
+        E ->
+            %% There is no clean way in oauth2 lib to actually override the TTL of the generated token.
+            %% It always pass the global configured value.  Here we use the app context to pass the per-case
+            %% ttl if we want to override it.
+            E
+    end,
+    {user, User, Server} = proplists:get_value(<<"resource_owner">>, Context, <<"">>),
     Scope = proplists:get_value(<<"scope">>, Context, []),
-    Expire = proplists:get_value(<<"expiry_time">>, Context, 0),
     R = #oauth_token{
       token = AccessToken,
       us = {jid:nodeprep(User), jid:nodeprep(Server)},
@@ -307,7 +311,6 @@ associate_access_token(AccessToken, Context, AppContext) ->
 associate_refresh_token(_RefreshToken, _Context, AppContext) ->
     %put(?REFRESH_TOKEN_TABLE, RefreshToken, Context),
     {ok, AppContext}.
-
 
 check_token(User, Server, ScopeList, Token) ->
     LUser = jid:nodeprep(User),
@@ -386,6 +389,17 @@ process(_Handlers,
               ?INPUT(<<"hidden">>, <<"scope">>, Scope),
               ?INPUT(<<"hidden">>, <<"state">>, State),
               ?BR,
+              ?LABEL(<<"ttl">>, [?CT(<<"Token TTL">>), ?CT(<<": ">>)]),
+              ?XAE(<<"select">>, [{<<"name">>, <<"ttl">>}],
+                   [
+                   ?XAC(<<"option">>, [{<<"selected">>, <<"selected">>},
+                                       {<<"value">>, jlib:integer_to_binary(expire())}],<<"Default (", (integer_to_binary(expire()))/binary, " seconds)">>),
+                   ?XAC(<<"option">>, [{<<"value">>, <<"3600">>}],<<"1 Hour">>),
+                   ?XAC(<<"option">>, [{<<"value">>, <<"86400">>}],<<"1 Day">>),
+                   ?XAC(<<"option">>, [{<<"value">>, <<"2592000">>}],<<"1 Month">>),
+                   ?XAC(<<"option">>, [{<<"value">>, <<"31536000">>}],<<"1 Year">>),
+                   ?XAC(<<"option">>, [{<<"value">>, <<"315360000">>}],<<"10 Years">>)]),
+              ?BR,
               ?INPUTT(<<"submit">>, <<"">>, <<"Accept">>)
              ]),
     Top =
@@ -434,6 +448,11 @@ process(_Handlers,
     Password = proplists:get_value(<<"password">>, Q, <<"">>),
     State = proplists:get_value(<<"state">>, Q, <<"">>),
     Scope = str:tokens(SScope, <<" ">>),
+    TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
+    ExpiresIn = case TTL of
+                    <<>> -> undefined;
+                    _ -> seconds_since_epoch(jlib:binary_to_integer(TTL))
+                end,
     case oauth2:authorize_password({Username, Server},
                                    ClientId,
                                    RedirectURI,
@@ -441,10 +460,18 @@ process(_Handlers,
                                    {password, Password}) of
         {ok, {_AppContext, Authorization}} ->
             {ok, {_AppContext2, Response}} =
-                oauth2:issue_token(Authorization, none),
+                oauth2:issue_token(Authorization, [{expiry_time, ExpiresIn} || ExpiresIn /= undefined ]),
             {ok, AccessToken} = oauth2_response:access_token(Response),
             {ok, Type} = oauth2_response:token_type(Response),
-            {ok, Expires} = oauth2_response:expires_in(Response),
+            %%Ugly: workardound to return the correct expirity time, given than oauth2 lib doesn't really have
+            %%per-case expirity time.
+            Expires = case ExpiresIn of
+                          undefined ->
+                             {ok, Ex} = oauth2_response:expires_in(Response),
+                             Ex;
+                          _ ->
+                            ExpiresIn
+                      end,
             {ok, VerifiedScope} = oauth2_response:scope(Response),
             %oauth2_wrq:redirected_access_token_response(ReqData,
             %                                            RedirectURI,
