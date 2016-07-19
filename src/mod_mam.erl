@@ -1032,12 +1032,12 @@ filter_by_max(_Msgs, _Junk) ->
 
 limit_max(RSM, ?NS_MAM_TMP) ->
     RSM; % XEP-0313 v0.2 doesn't require clients to support RSM.
+limit_max(none, _NS) ->
+    #rsm_in{max = ?DEF_PAGE_SIZE};
 limit_max(#rsm_in{max = Max} = RSM, _NS) when not is_integer(Max) ->
     RSM#rsm_in{max = ?DEF_PAGE_SIZE};
 limit_max(#rsm_in{max = Max} = RSM, _NS) when Max > ?MAX_PAGE_SIZE ->
-    RSM#rsm_in{max = ?MAX_PAGE_SIZE};
-limit_max(RSM, _NS) ->
-    RSM.
+    RSM#rsm_in{max = ?MAX_PAGE_SIZE}.
 
 match_interval(Now, Start, End) ->
     (Now >= Start) and (Now =< End).
