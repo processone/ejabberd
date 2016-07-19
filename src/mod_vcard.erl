@@ -115,9 +115,9 @@ loop(Host, ServerHost) ->
 	  loop(Host, ServerHost);
       stop ->
 	    ejabberd_router:unregister_route(Host),
-	    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 50),
-	    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 50),
-	    ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, disco_identity, 50),
+	    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 100),
+	    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 100),
+	    ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, disco_identity, 100),
 	    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_SEARCH),
 	    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
 	    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
