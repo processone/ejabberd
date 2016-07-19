@@ -117,7 +117,7 @@ get_commands_spec() ->
                         module = ?MODULE, function = oauth_revoke_token,
                         args = [{token, string}],
                         policy = restricted,
-                        result = {tokens, {list, {token, {tuple, [{token, string}, {scope, string}, {expires_in, string}]}}}},
+                        result = {tokens, {list, {token, {tuple, [{token, string}, {user, string}, {scope, string}, {expires_in, string}]}}}},
                         result_desc = "List of remaining tokens"
                        }
     ].
