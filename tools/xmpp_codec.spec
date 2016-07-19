@@ -2536,7 +2536,8 @@
 		    #attr{name = <<"nick">>,
 			  label = '$nick'}]}).
 
--record(hint, {type :: 'no-copy' | 'no-store' | 'store' | 'no-permanent-store'}).
+-record(hint, {type :: 'no-copy' | 'no-store' | 'no-storage' |
+		       'store' | 'no-permanent-store'}).
 -type hint() :: #hint{}.
 
 -xml(hint_no_copy,
@@ -2548,6 +2549,11 @@
      #elem{name = <<"no-store">>,
 	   xmlns = <<"urn:xmpp:hints">>,
 	   result = {hint, 'no-store'}}).
+
+-xml(hint_no_storage,
+     #elem{name = <<"no-storage">>,
+	   xmlns = <<"urn:xmpp:hints">>,
+	   result = {hint, 'no-storage'}}).
 
 -xml(hint_store,
      #elem{name = <<"store">>,
@@ -2620,6 +2626,56 @@
 		   #ref{name = search_item, label = '$items'},
 		   #ref{name = xdata, min = 0, max = 1,
 			label = '$xdata'}]}).
+
+-xml(xevent_offline,
+     #elem{name = <<"offline">>,
+	   xmlns = <<"jabber:x:event">>,
+	   result = true}).
+-xml(xevent_delivered,
+     #elem{name = <<"delivered">>,
+	   xmlns = <<"jabber:x:event">>,
+	   result = true}).
+-xml(xevent_displayed,
+     #elem{name = <<"displayed">>,
+	   xmlns = <<"jabber:x:event">>,
+	   result = true}).
+-xml(xevent_composing,
+     #elem{name = <<"composing">>,
+	   xmlns = <<"jabber:x:event">>,
+	   result = true}).
+-xml(xevent_id,
+     #elem{name = <<"id">>,
+	   xmlns = <<"jabber:x:event">>,
+	   cdata = #cdata{},
+           result = '$cdata'}).
+
+-xml(xevent,
+     #elem{name = <<"x">>,
+	   xmlns = <<"jabber:x:event">>,
+	   result = {xevent, '$offline', '$delivered', '$displayed',
+		     '$composing', '$id'},
+	   refs = [#ref{name = xevent_offline, min = 0, max = 1,
+			label = '$offline', default = false},
+		   #ref{name = xevent_delivered, min = 0, max = 1,
+			label = '$delivered', default = false},
+		   #ref{name = xevent_displayed, min = 0, max = 1,
+			label = '$displayed', default = false},
+		   #ref{name = xevent_composing, min = 0, max = 1,
+			label = '$composing', default = false},
+		   #ref{name = xevent_id, min = 0, max = 1,
+			label = '$id'}]}).
+
+-xml(expire,
+     #elem{name = <<"x">>,
+	   xmlns = <<"jabber:x:expire">>,
+	   result = {expire, '$seconds', '$stored'},
+	   attrs = [#attr{name = <<"seconds">>,
+			  required = true,
+			  dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}},
+		    #attr{name = <<"stored">>,
+			  dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}}]}).
 
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),

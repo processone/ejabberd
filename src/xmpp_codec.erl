@@ -15,6 +15,24 @@ decode(_el) -> decode(_el, []).
 decode({xmlel, _name, _attrs, _} = _el, Opts) ->
     IgnoreEls = proplists:get_bool(ignore_els, Opts),
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"x">>, <<"jabber:x:expire">>} ->
+	  decode_expire(<<"jabber:x:expire">>, IgnoreEls, _el);
+      {<<"x">>, <<"jabber:x:event">>} ->
+	  decode_xevent(<<"jabber:x:event">>, IgnoreEls, _el);
+      {<<"id">>, <<"jabber:x:event">>} ->
+	  decode_xevent_id(<<"jabber:x:event">>, IgnoreEls, _el);
+      {<<"composing">>, <<"jabber:x:event">>} ->
+	  decode_xevent_composing(<<"jabber:x:event">>, IgnoreEls,
+				  _el);
+      {<<"displayed">>, <<"jabber:x:event">>} ->
+	  decode_xevent_displayed(<<"jabber:x:event">>, IgnoreEls,
+				  _el);
+      {<<"delivered">>, <<"jabber:x:event">>} ->
+	  decode_xevent_delivered(<<"jabber:x:event">>, IgnoreEls,
+				  _el);
+      {<<"offline">>, <<"jabber:x:event">>} ->
+	  decode_xevent_offline(<<"jabber:x:event">>, IgnoreEls,
+				_el);
       {<<"query">>, <<"jabber:iq:search">>} ->
 	  decode_search(<<"jabber:iq:search">>, IgnoreEls, _el);
       {<<"item">>, <<"jabber:iq:search">>} ->
@@ -40,6 +58,9 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 					 IgnoreEls, _el);
       {<<"store">>, <<"urn:xmpp:hints">>} ->
 	  decode_hint_store(<<"urn:xmpp:hints">>, IgnoreEls, _el);
+      {<<"no-storage">>, <<"urn:xmpp:hints">>} ->
+	  decode_hint_no_storage(<<"urn:xmpp:hints">>, IgnoreEls,
+				 _el);
       {<<"no-store">>, <<"urn:xmpp:hints">>} ->
 	  decode_hint_no_store(<<"urn:xmpp:hints">>, IgnoreEls,
 			       _el);
@@ -1162,6 +1183,13 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 
 is_known_tag({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"x">>, <<"jabber:x:expire">>} -> true;
+      {<<"x">>, <<"jabber:x:event">>} -> true;
+      {<<"id">>, <<"jabber:x:event">>} -> true;
+      {<<"composing">>, <<"jabber:x:event">>} -> true;
+      {<<"displayed">>, <<"jabber:x:event">>} -> true;
+      {<<"delivered">>, <<"jabber:x:event">>} -> true;
+      {<<"offline">>, <<"jabber:x:event">>} -> true;
       {<<"query">>, <<"jabber:iq:search">>} -> true;
       {<<"item">>, <<"jabber:iq:search">>} -> true;
       {<<"email">>, <<"jabber:iq:search">>} -> true;
@@ -1172,6 +1200,7 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
       {<<"no-permanent-store">>, <<"urn:xmpp:hints">>} ->
 	  true;
       {<<"store">>, <<"urn:xmpp:hints">>} -> true;
+      {<<"no-storage">>, <<"urn:xmpp:hints">>} -> true;
       {<<"no-store">>, <<"urn:xmpp:hints">>} -> true;
       {<<"no-copy">>, <<"urn:xmpp:hints">>} -> true;
       {<<"participant">>, <<"urn:xmpp:mix:0">>} -> true;
@@ -2289,6 +2318,9 @@ encode({hint, 'no-copy'} = No_copy) ->
 encode({hint, 'no-store'} = No_store) ->
     encode_hint_no_store(No_store,
 			 [{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
+encode({hint, 'no-storage'} = No_storage) ->
+    encode_hint_no_storage(No_storage,
+			   [{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
 encode({hint, store} = Store) ->
     encode_hint_store(Store,
 		      [{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
@@ -2301,7 +2333,12 @@ encode({search_item, _, _, _, _, _} = Item) ->
 		       [{<<"xmlns">>, <<"jabber:iq:search">>}]);
 encode({search, _, _, _, _, _, _, _} = Query) ->
     encode_search(Query,
-		  [{<<"xmlns">>, <<"jabber:iq:search">>}]).
+		  [{<<"xmlns">>, <<"jabber:iq:search">>}]);
+encode({xevent, _, _, _, _, _} = X) ->
+    encode_xevent(X, [{<<"xmlns">>, <<"jabber:x:event">>}]);
+encode({expire, _, _} = X) ->
+    encode_expire(X,
+		  [{<<"xmlns">>, <<"jabber:x:expire">>}]).
 
 get_name({last, _, _}) -> <<"query">>;
 get_name({version, _, _, _}) -> <<"query">>;
@@ -2460,11 +2497,14 @@ get_name({mix_leave}) -> <<"leave">>;
 get_name({mix_participant, _, _}) -> <<"participant">>;
 get_name({hint, 'no-copy'}) -> <<"no-copy">>;
 get_name({hint, 'no-store'}) -> <<"no-store">>;
+get_name({hint, 'no-storage'}) -> <<"no-storage">>;
 get_name({hint, store}) -> <<"store">>;
 get_name({hint, 'no-permanent-store'}) ->
     <<"no-permanent-store">>;
 get_name({search_item, _, _, _, _, _}) -> <<"item">>;
-get_name({search, _, _, _, _, _, _, _}) -> <<"query">>.
+get_name({search, _, _, _, _, _, _, _}) -> <<"query">>;
+get_name({xevent, _, _, _, _, _}) -> <<"x">>;
+get_name({expire, _, _}) -> <<"x">>.
 
 get_ns({last, _, _}) -> <<"jabber:iq:last">>;
 get_ns({version, _, _, _}) -> <<"jabber:iq:version">>;
@@ -2685,13 +2725,16 @@ get_ns({mix_leave}) -> <<"urn:xmpp:mix:0">>;
 get_ns({mix_participant, _, _}) -> <<"urn:xmpp:mix:0">>;
 get_ns({hint, 'no-copy'}) -> <<"urn:xmpp:hints">>;
 get_ns({hint, 'no-store'}) -> <<"urn:xmpp:hints">>;
+get_ns({hint, 'no-storage'}) -> <<"urn:xmpp:hints">>;
 get_ns({hint, store}) -> <<"urn:xmpp:hints">>;
 get_ns({hint, 'no-permanent-store'}) ->
     <<"urn:xmpp:hints">>;
 get_ns({search_item, _, _, _, _, _}) ->
     <<"jabber:iq:search">>;
 get_ns({search, _, _, _, _, _, _, _}) ->
-    <<"jabber:iq:search">>.
+    <<"jabber:iq:search">>;
+get_ns({xevent, _, _, _, _, _}) -> <<"jabber:x:event">>;
+get_ns({expire, _, _}) -> <<"jabber:x:expire">>.
 
 dec_int(Val) -> dec_int(Val, infinity, infinity).
 
@@ -2908,6 +2951,9 @@ pp(hint, 1) -> [type];
 pp(search_item, 5) -> [jid, first, last, nick, email];
 pp(search, 7) ->
     [instructions, first, last, nick, email, items, xdata];
+pp(xevent, 5) ->
+    [offline, delivered, displayed, composing, id];
+pp(expire, 2) -> [seconds, stored];
 pp(_, _) -> no.
 
 join([], _Sep) -> <<>>;
@@ -2953,6 +2999,267 @@ dec_tzo(Val) ->
     H = jlib:binary_to_integer(H1),
     M = jlib:binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
+
+decode_expire(__TopXMLNS, __IgnoreEls,
+	      {xmlel, <<"x">>, _attrs, _els}) ->
+    {Seconds, Stored} = decode_expire_attrs(__TopXMLNS,
+					    _attrs, undefined, undefined),
+    {expire, Seconds, Stored}.
+
+decode_expire_attrs(__TopXMLNS,
+		    [{<<"seconds">>, _val} | _attrs], _Seconds, Stored) ->
+    decode_expire_attrs(__TopXMLNS, _attrs, _val, Stored);
+decode_expire_attrs(__TopXMLNS,
+		    [{<<"stored">>, _val} | _attrs], Seconds, _Stored) ->
+    decode_expire_attrs(__TopXMLNS, _attrs, Seconds, _val);
+decode_expire_attrs(__TopXMLNS, [_ | _attrs], Seconds,
+		    Stored) ->
+    decode_expire_attrs(__TopXMLNS, _attrs, Seconds,
+			Stored);
+decode_expire_attrs(__TopXMLNS, [], Seconds, Stored) ->
+    {decode_expire_attr_seconds(__TopXMLNS, Seconds),
+     decode_expire_attr_stored(__TopXMLNS, Stored)}.
+
+encode_expire({expire, Seconds, Stored},
+	      _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_expire_attr_stored(Stored,
+				       encode_expire_attr_seconds(Seconds,
+								  _xmlns_attrs)),
+    {xmlel, <<"x">>, _attrs, _els}.
+
+decode_expire_attr_seconds(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"seconds">>, <<"x">>, __TopXMLNS}});
+decode_expire_attr_seconds(__TopXMLNS, _val) ->
+    case catch dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"seconds">>, <<"x">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_expire_attr_seconds(_val, _acc) ->
+    [{<<"seconds">>, enc_int(_val)} | _acc].
+
+decode_expire_attr_stored(__TopXMLNS, undefined) ->
+    undefined;
+decode_expire_attr_stored(__TopXMLNS, _val) ->
+    case catch dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"stored">>, <<"x">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_expire_attr_stored(undefined, _acc) -> _acc;
+encode_expire_attr_stored(_val, _acc) ->
+    [{<<"stored">>, enc_int(_val)} | _acc].
+
+decode_xevent(__TopXMLNS, __IgnoreEls,
+	      {xmlel, <<"x">>, _attrs, _els}) ->
+    {Id, Displayed, Delivered, Offline, Composing} =
+	decode_xevent_els(__TopXMLNS, __IgnoreEls, _els,
+			  undefined, false, false, false, false),
+    {xevent, Offline, Delivered, Displayed, Composing, Id}.
+
+decode_xevent_els(__TopXMLNS, __IgnoreEls, [], Id,
+		  Displayed, Delivered, Offline, Composing) ->
+    {Id, Displayed, Delivered, Offline, Composing};
+decode_xevent_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"offline">>, _attrs, _} = _el | _els], Id,
+		  Displayed, Delivered, Offline, Composing) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:event">> ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    Displayed, Delivered,
+			    decode_xevent_offline(__TopXMLNS, __IgnoreEls, _el),
+			    Composing);
+      <<"jabber:x:event">> ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    Displayed, Delivered,
+			    decode_xevent_offline(<<"jabber:x:event">>,
+						  __IgnoreEls, _el),
+			    Composing);
+      _ ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    Displayed, Delivered, Offline, Composing)
+    end;
+decode_xevent_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"delivered">>, _attrs, _} = _el | _els], Id,
+		  Displayed, Delivered, Offline, Composing) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:event">> ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    Displayed,
+			    decode_xevent_delivered(__TopXMLNS, __IgnoreEls,
+						    _el),
+			    Offline, Composing);
+      <<"jabber:x:event">> ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    Displayed,
+			    decode_xevent_delivered(<<"jabber:x:event">>,
+						    __IgnoreEls, _el),
+			    Offline, Composing);
+      _ ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    Displayed, Delivered, Offline, Composing)
+    end;
+decode_xevent_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"displayed">>, _attrs, _} = _el | _els], Id,
+		  Displayed, Delivered, Offline, Composing) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:event">> ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    decode_xevent_displayed(__TopXMLNS, __IgnoreEls,
+						    _el),
+			    Delivered, Offline, Composing);
+      <<"jabber:x:event">> ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    decode_xevent_displayed(<<"jabber:x:event">>,
+						    __IgnoreEls, _el),
+			    Delivered, Offline, Composing);
+      _ ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    Displayed, Delivered, Offline, Composing)
+    end;
+decode_xevent_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"composing">>, _attrs, _} = _el | _els], Id,
+		  Displayed, Delivered, Offline, Composing) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:event">> ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    Displayed, Delivered, Offline,
+			    decode_xevent_composing(__TopXMLNS, __IgnoreEls,
+						    _el));
+      <<"jabber:x:event">> ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    Displayed, Delivered, Offline,
+			    decode_xevent_composing(<<"jabber:x:event">>,
+						    __IgnoreEls, _el));
+      _ ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    Displayed, Delivered, Offline, Composing)
+    end;
+decode_xevent_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"id">>, _attrs, _} = _el | _els], Id,
+		  Displayed, Delivered, Offline, Composing) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:event">> ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els,
+			    decode_xevent_id(__TopXMLNS, __IgnoreEls, _el),
+			    Displayed, Delivered, Offline, Composing);
+      <<"jabber:x:event">> ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els,
+			    decode_xevent_id(<<"jabber:x:event">>, __IgnoreEls,
+					     _el),
+			    Displayed, Delivered, Offline, Composing);
+      _ ->
+	  decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+			    Displayed, Delivered, Offline, Composing)
+    end;
+decode_xevent_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		  Id, Displayed, Delivered, Offline, Composing) ->
+    decode_xevent_els(__TopXMLNS, __IgnoreEls, _els, Id,
+		      Displayed, Delivered, Offline, Composing).
+
+encode_xevent({xevent, Offline, Delivered, Displayed,
+	       Composing, Id},
+	      _xmlns_attrs) ->
+    _els = lists:reverse('encode_xevent_$id'(Id,
+					     'encode_xevent_$displayed'(Displayed,
+									'encode_xevent_$delivered'(Delivered,
+												   'encode_xevent_$offline'(Offline,
+															    'encode_xevent_$composing'(Composing,
+																		       [])))))),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"x">>, _attrs, _els}.
+
+'encode_xevent_$id'(undefined, _acc) -> _acc;
+'encode_xevent_$id'(Id, _acc) ->
+    [encode_xevent_id(Id, []) | _acc].
+
+'encode_xevent_$displayed'(false, _acc) -> _acc;
+'encode_xevent_$displayed'(Displayed, _acc) ->
+    [encode_xevent_displayed(Displayed, []) | _acc].
+
+'encode_xevent_$delivered'(false, _acc) -> _acc;
+'encode_xevent_$delivered'(Delivered, _acc) ->
+    [encode_xevent_delivered(Delivered, []) | _acc].
+
+'encode_xevent_$offline'(false, _acc) -> _acc;
+'encode_xevent_$offline'(Offline, _acc) ->
+    [encode_xevent_offline(Offline, []) | _acc].
+
+'encode_xevent_$composing'(false, _acc) -> _acc;
+'encode_xevent_$composing'(Composing, _acc) ->
+    [encode_xevent_composing(Composing, []) | _acc].
+
+decode_xevent_id(__TopXMLNS, __IgnoreEls,
+		 {xmlel, <<"id">>, _attrs, _els}) ->
+    Cdata = decode_xevent_id_els(__TopXMLNS, __IgnoreEls,
+				 _els, <<>>),
+    Cdata.
+
+decode_xevent_id_els(__TopXMLNS, __IgnoreEls, [],
+		     Cdata) ->
+    decode_xevent_id_cdata(__TopXMLNS, Cdata);
+decode_xevent_id_els(__TopXMLNS, __IgnoreEls,
+		     [{xmlcdata, _data} | _els], Cdata) ->
+    decode_xevent_id_els(__TopXMLNS, __IgnoreEls, _els,
+			 <<Cdata/binary, _data/binary>>);
+decode_xevent_id_els(__TopXMLNS, __IgnoreEls,
+		     [_ | _els], Cdata) ->
+    decode_xevent_id_els(__TopXMLNS, __IgnoreEls, _els,
+			 Cdata).
+
+encode_xevent_id(Cdata, _xmlns_attrs) ->
+    _els = encode_xevent_id_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"id">>, _attrs, _els}.
+
+decode_xevent_id_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_xevent_id_cdata(__TopXMLNS, _val) -> _val.
+
+encode_xevent_id_cdata(undefined, _acc) -> _acc;
+encode_xevent_id_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_xevent_composing(__TopXMLNS, __IgnoreEls,
+			{xmlel, <<"composing">>, _attrs, _els}) ->
+    true.
+
+encode_xevent_composing(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"composing">>, _attrs, _els}.
+
+decode_xevent_displayed(__TopXMLNS, __IgnoreEls,
+			{xmlel, <<"displayed">>, _attrs, _els}) ->
+    true.
+
+encode_xevent_displayed(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"displayed">>, _attrs, _els}.
+
+decode_xevent_delivered(__TopXMLNS, __IgnoreEls,
+			{xmlel, <<"delivered">>, _attrs, _els}) ->
+    true.
+
+encode_xevent_delivered(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"delivered">>, _attrs, _els}.
+
+decode_xevent_offline(__TopXMLNS, __IgnoreEls,
+		      {xmlel, <<"offline">>, _attrs, _els}) ->
+    true.
+
+encode_xevent_offline(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"offline">>, _attrs, _els}.
 
 decode_search(__TopXMLNS, __IgnoreEls,
 	      {xmlel, <<"query">>, _attrs, _els}) ->
@@ -3458,6 +3765,16 @@ encode_hint_store({hint, store}, _xmlns_attrs) ->
     _els = [],
     _attrs = _xmlns_attrs,
     {xmlel, <<"store">>, _attrs, _els}.
+
+decode_hint_no_storage(__TopXMLNS, __IgnoreEls,
+		       {xmlel, <<"no-storage">>, _attrs, _els}) ->
+    {hint, 'no-storage'}.
+
+encode_hint_no_storage({hint, 'no-storage'},
+		       _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"no-storage">>, _attrs, _els}.
 
 decode_hint_no_store(__TopXMLNS, __IgnoreEls,
 		     {xmlel, <<"no-store">>, _attrs, _els}) ->

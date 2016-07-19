@@ -11,7 +11,8 @@
 -record(csi, {type :: active | inactive}).
 -type csi() :: #csi{}.
 
--record(hint, {type :: 'no-copy' | 'no-store' | 'store' | 'no-permanent-store'}).
+-record(hint, {type :: 'no-copy' | 'no-store' | 'no-storage' |
+		       'store' | 'no-permanent-store'}).
 -type hint() :: #hint{}.
 
 -record(feature_register, {}).
@@ -49,6 +50,10 @@
 
 -record(carbons_private, {}).
 -type carbons_private() :: #carbons_private{}.
+
+-record(expire, {seconds :: non_neg_integer(),
+                 stored :: non_neg_integer()}).
+-type expire() :: #expire{}.
 
 -record(pubsub_unsubscribe, {node :: binary(),
                              jid :: any(),
@@ -303,6 +308,13 @@
 
 -record(sasl_abort, {}).
 -type sasl_abort() :: #sasl_abort{}.
+
+-record(xevent, {offline = false :: boolean(),
+                 delivered = false :: boolean(),
+                 displayed = false :: boolean(),
+                 composing = false :: boolean(),
+                 id :: binary()}).
+-type xevent() :: #xevent{}.
 
 -record(vcard_email, {home = false :: boolean(),
                       work = false :: boolean(),
@@ -717,6 +729,7 @@
                         starttls_proceed() |
                         sm_resumed() |
                         forwarded() |
+                        xevent() |
                         privacy_list() |
                         text() |
                         vcard_org() |
@@ -735,12 +748,12 @@
                         pubsub_options() |
                         compress() |
                         bytestreams() |
+                        muc_history() |
                         identity() |
                         feature_csi() |
                         muc_user_destroy() |
                         privacy_query() |
                         delay() |
-                        muc_history() |
                         vcard_tel() |
                         vcard_logo() |
                         disco_info() |
@@ -780,6 +793,7 @@
                         vcard_name() |
                         sm_resume() |
                         carbons_enable() |
+                        expire() |
                         pubsub_unsubscribe() |
                         muc_decline() |
                         chatstate() |

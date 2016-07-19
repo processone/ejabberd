@@ -156,10 +156,12 @@ get_error(#iq{error = E}) -> E;
 get_error(#message{error = E}) -> E;
 get_error(#presence{error = E}) -> E.
 
--spec get_els(iq() | message() | presence()) -> [xmpp_element() | xmlel()].
+-spec get_els(iq() | message() | presence()) -> [xmpp_element() | xmlel()];
+	     (xmlel()) -> [xmlel()].
 get_els(#iq{sub_els = Els}) -> Els;
 get_els(#message{sub_els = Els}) -> Els;
-get_els(#presence{sub_els = Els}) -> Els.
+get_els(#presence{sub_els = Els}) -> Els;
+get_els(#xmlel{children = Els}) -> [El || El = #xmlel{} <- Els].
 
 -spec set_id(iq(), binary()) -> iq();
 	    (message(), binary()) -> message();
