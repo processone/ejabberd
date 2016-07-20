@@ -127,7 +127,7 @@ oauth_issue_token(Jid, TTLSeconds, ScopesString) ->
         #jid{luser =Username, lserver = Server} ->
             case oauth2:authorize_password({Username, Server},  Scopes, admin_generated) of
                 {ok, {_Ctx,Authorization}} ->
-                    {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, [{expiry_time, seconds_since_epoch(TTLSeconds)}]),
+                    {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, [{expiry_time, TTLSeconds}]),
                     {ok, AccessToken} = oauth2_response:access_token(Response),
                     {ok, VerifiedScope} = oauth2_response:scope(Response),
                     {AccessToken, VerifiedScope, integer_to_list(TTLSeconds) ++ " seconds"};
@@ -291,11 +291,11 @@ associate_access_token(AccessToken, Context, AppContext) ->
     Expire = case proplists:get_value(expiry_time, AppContext, undefined) of
         undefined ->
             proplists:get_value(<<"expiry_time">>, Context, 0);
-        E ->
+        ExpiresIn ->
             %% There is no clean way in oauth2 lib to actually override the TTL of the generated token.
             %% It always pass the global configured value.  Here we use the app context to pass the per-case
             %% ttl if we want to override it.
-            E
+            seconds_since_epoch(ExpiresIn)
     end,
     {user, User, Server} = proplists:get_value(<<"resource_owner">>, Context, <<"">>),
     Scope = proplists:get_value(<<"scope">>, Context, []),
@@ -451,7 +451,7 @@ process(_Handlers,
     TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
     ExpiresIn = case TTL of
                     <<>> -> undefined;
-                    _ -> seconds_since_epoch(jlib:binary_to_integer(TTL))
+                    _ -> jlib:binary_to_integer(TTL)
                 end,
     case oauth2:authorize_password({Username, Server},
                                    ClientId,
