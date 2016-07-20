@@ -19,7 +19,7 @@ ModCfg0 = fun(F, Cfg, [Key|Tail], Op, Default) ->
                          [{Key, F(F, OldVal, Tail, Op, Default)} | PartCfg]
                  end
          end,
-ModCfg = fun(Cfg, Keys, Op, Default) -> ModCfg0(ModCfg0, Cfg, Keys, Op, Default) end.
+ModCfg = fun(Cfg, Keys, Op, Default) -> ModCfg0(ModCfg0, Cfg, Keys, Op, Default) end,
 
 Cfg = case file:consult(filename:join(filename:dirname(SCRIPT), "vars.config")) of
           {ok, Terms} ->
@@ -27,6 +27,13 @@ Cfg = case file:consult(filename:join(filename:dirname(SCRIPT), "vars.config")) 
           _Err ->
               []
       end,
+
+ProcessSingleVar = fun(F, Var, Tail) ->
+			   case F(F, [Var], []) of
+			       [] -> Tail;
+			       [Val] -> [Val | Tail]
+			   end
+		   end,
 
 ProcessVars = fun(_F, [], Acc) ->
                       lists:reverse(Acc);
@@ -40,7 +47,7 @@ ProcessVars = fun(_F, [], Acc) ->
 					SysVer < Ver
 				end,
 		      if Include ->
-                              F(F, Tail, [Value | Acc]);
+                              F(F, Tail, ProcessSingleVar(F, Value, Acc));
 			 true ->
                               F(F, Tail, Acc)
 		      end;
@@ -50,7 +57,7 @@ ProcessVars = fun(_F, [], Acc) ->
                       Flag = Type == if_var_true,
                       case proplists:get_bool(Var, Cfg) of
                           V when V == Flag ->
-                              F(F, Tail, [Value | Acc]);
+                              F(F, Tail, ProcessSingleVar(F, Value, Acc));
                           _ ->
                               F(F, Tail, Acc)
                       end;
@@ -59,7 +66,7 @@ ProcessVars = fun(_F, [], Acc) ->
                         Type == if_var_no_match ->
                       case proplists:get_value(Var, Cfg) of
                           V when V == Match ->
-                              F(F, Tail, [Value | Acc]);
+                              F(F, Tail, ProcessSingleVar(F, Value, Acc));
                           _ ->
                               F(F, Tail, Acc)
                       end;
