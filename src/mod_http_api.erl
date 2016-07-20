@@ -220,8 +220,12 @@ process([Call], #request{method = 'POST', data = Data, ip = {IP, _} = IPPort} = 
         log(Call, Args, IPPort),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                {Code, Result} = handle(Cmd, Auth, Args, Version, IP),
-                json_response(Code, jiffy:encode(Result));
+                case handle(Cmd, Auth, Args, Version, IP) of
+                    {Code, Result} ->
+                        json_response(Code, jiffy:encode(Result));
+                    {HTMLCode, JSONErrorCode, Message} ->
+                        json_error(HTMLCode, JSONErrorCode, Message)
+                    end;
             %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
                 ErrorResponse
@@ -278,6 +282,8 @@ get_api_version([]) ->
 %% command handlers
 %% ----------------
 
+%% TODO Check accept types of request before decided format of reply.
+
 % generic ejabberd command handler
 handle(Call, Auth, Args, Version, IP) when is_atom(Call), is_list(Args) ->
     case ejabberd_commands:get_command_format(Call, Auth, Version) of
@@ -309,8 +315,8 @@ handle(Call, Auth, Args, Version, IP) when is_atom(Call), is_list(Args) ->
 		    {401, jlib:atom_to_binary(Why)};
 		  throw:{not_allowed, Msg} ->
 		    {401, iolist_to_binary(Msg)};
-                  throw:{error, account_unprivileged} ->
-                    {401, iolist_to_binary(<<"Unauthorized: Account Unpriviledged">>)};
+      throw:{error, account_unprivileged} ->
+        {403, 31, <<"Command need to be run with admin priviledge.">>};
 		  throw:{invalid_parameter, Msg} ->
 		    {400, iolist_to_binary(Msg)};
 		  throw:{error, Why} when is_atom(Why) ->
@@ -490,9 +496,7 @@ format_result(404, {_Name, _}) ->
     "not_found".
 
 unauthorized_response() ->
-    unauthorized_response(<<"401 Unauthorized">>).
-unauthorized_response(Body) ->
-    json_response(401, jiffy:encode(Body)).
+    json_error(401, 10, <<"Oauth Token is invalid or expired.">>).
 
 badrequest_response() ->
     badrequest_response(<<"400 Bad Request">>).
@@ -501,6 +505,15 @@ badrequest_response(Body) ->
 
 json_response(Code, Body) when is_integer(Code) ->
     {Code, ?HEADER(?CT_JSON), Body}.
+
+%% HTTPCode, JSONCode = integers
+%% message is binary
+json_error(HTTPCode, JSONCode, Message) ->
+    {HTTPCode, ?HEADER(?CT_JSON),
+     jiffy:encode({[{<<"status">>, <<"error">>},
+                    {<<"code">>, JSONCode},
+                    {<<"message">>, Message}]})
+    }.
 
 log(Call, Args, {Addr, Port}) ->
     AddrS = jlib:ip_to_list({Addr, Port}),
