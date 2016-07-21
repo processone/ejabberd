@@ -24,7 +24,7 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, 
                        disco_sm_features, 500),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-                       process_packet, 10).
+                       process_packet, 500).
 
 stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE,
@@ -32,14 +32,14 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, 
                           disco_sm_features, 500),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-                          process_packet, 10).
+                          process_packet, 500).
 
 depends(_Host, _Opts) -> [].
 
 mod_opt_type(_Opt) -> [].
 
 %%%--------------------------------------------------------------------------------------
-%%%  server advertise delegated namespaces 4.2
+%%%  server advertises delegated namespaces 4.2
 %%%--------------------------------------------------------------------------------------
 attribute_tag([]) -> [];
 attribute_tag(Attrs) ->
@@ -51,7 +51,7 @@ attribute_tag(Attrs) ->
 delegations(Id, Delegations) ->
     Elem0 = lists:map(fun({Ns, FilterAttr}) ->
                           #xmlel{name = <<"delegated">>, 
-                                 attrs = [{<<"xmlns">>, Ns}],
+                                 attrs = [{<<"namespace">>, Ns}],
                                  children = attribute_tag(FilterAttr)}
                       end, Delegations),
     Elem1 = #xmlel{name = <<"delegation">>, 
@@ -311,6 +311,9 @@ decapsulate_features(#xmlel{attrs = Attrs} = Packet, Node) ->
 
           Features = [Feat || #xmlel{attrs = [{<<"var">>, Feat}]} <-
                               fxml:get_subtags(Packet, <<"feature">>)],
+                              
+          % Identity = [Feat || #xmlel{attrs = [{<<"var">>, Feat}]} <-
+          %                     fxml:get_subtags(Packet, <<"feature">>)],
           case Node of
               << PREFIX:Size/binary, NS/binary >> ->
                   ets:update_element(delegated_namespaces, NS, {3, Features});
@@ -398,7 +401,7 @@ disco_features(Acc, Bare) ->
             % add service features
             FeaturesList = ets:foldl(fun({_Ns, _Pid, Feats, FeatsBare}, A) ->
                                          if
-                                           Bare ->
+                                           Bare == true ->
                                              A ++ FeatsBare;
                                            true ->
                                              A ++ Feats
