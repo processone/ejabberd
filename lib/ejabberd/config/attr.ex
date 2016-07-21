@@ -25,11 +25,7 @@ defmodule Ejabberd.Config.Attr do
     opts:
       [type: :list, default: []],
     dependency:
-      [type: :list, default: []],
-    before_hook:
-      [type: :any, default: nil],
-    after_hook:
-      [type: :any, default: nil]
+      [type: :list, default: []]
   ]
 
   @doc """
