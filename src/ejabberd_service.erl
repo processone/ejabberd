@@ -224,8 +224,10 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
 			    fun (H) ->
 				    ejabberd_router:register_route(H, ?MYNAME),
 				    ?INFO_MSG("Route registered for service ~p~n",
-					      [H])
-			    end, dict:fetch_keys(StateData#state.host_opts)),
+					      [H]),
+				    ejabberd_hooks:run(component_connected,
+			     		[H])
+			    end, dict:fetch_keys(StateData#state.host_opts)),			  
 			  {next_state, stream_established, StateData};
 		      _ ->
 			  send_text(StateData, ?INVALID_HANDSHAKE_ERR),
@@ -382,7 +384,9 @@ terminate(Reason, StateName, StateData) ->
     case StateName of
       stream_established ->
 	  lists:foreach(fun (H) ->
-				ejabberd_router:unregister_route(H)
+				ejabberd_router:unregister_route(H),
+				ejabberd_hooks:run(component_disconnected,
+					[StateData#state.host, Reason])
 			end,
 			dict:fetch_keys(StateData#state.host_opts));
       _ -> ok
