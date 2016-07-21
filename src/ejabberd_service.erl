@@ -290,19 +290,13 @@ stream_established({xmlstreamelement, El}, StateData) ->
     end,
     {next_state, stream_established, StateData};
 stream_established({xmlstreamend, _Name}, StateData) ->
-	ejabberd_hooks:run(component_disconnected,
-		[StateData#state.host]),
     {stop, normal, StateData};
 stream_established({xmlstreamerror, _}, StateData) ->
-	ejabberd_hooks:run(component_disconnected,
-		[StateData#state.host]),
     send_text(StateData,
 	      <<(?INVALID_XML_ERR)/binary,
 		(?STREAM_TRAILER)/binary>>),
     {stop, normal, StateData};
 stream_established(closed, StateData) ->
-	ejabberd_hooks:run(component_disconnected,
-		[StateData#state.host]),
     {stop, normal, StateData}.
 
 %%----------------------------------------------------------------------
@@ -390,7 +384,9 @@ terminate(Reason, StateName, StateData) ->
     case StateName of
       stream_established ->
 	  lists:foreach(fun (H) ->
-				ejabberd_router:unregister_route(H)
+				ejabberd_router:unregister_route(H),
+				ejabberd_hooks:run(component_disconnected,
+					[StateData#state.host, Reason])
 			end,
 			dict:fetch_keys(StateData#state.host_opts));
       _ -> ok
