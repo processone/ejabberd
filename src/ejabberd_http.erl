@@ -763,7 +763,8 @@ parse_auth(<<"Basic ", Auth64/binary>>) ->
             undefined;
         Pos ->
             {User, <<$:, Pass/binary>>} = erlang:split_binary(Auth, Pos-1),
-            {User, Pass}
+            PassUtf8 = unicode:characters_to_binary(binary_to_list(Pass), utf8),
+            {User, PassUtf8}
     end;
 parse_auth(<<"Bearer ", SToken/binary>>) ->
     Token = str:strip(SToken),
