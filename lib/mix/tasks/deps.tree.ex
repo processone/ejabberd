@@ -14,7 +14,7 @@ defmodule Mix.Tasks.Ejabberd.Deps.Tree do
     # First we need to start manually the store to be available
     # during the compilation of the config file.
     Ejabberd.Config.Store.start_link
-    Ejabberd.Config.init
+    Ejabberd.Config.init(:ejabberd_config.get_ejabberd_config_path())
 
     Mix.shell.info "ejabberd modules"
 
