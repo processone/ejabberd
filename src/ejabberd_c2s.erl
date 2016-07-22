@@ -2951,6 +2951,9 @@ handle_unacked_stanzas(#state{mgmt_state = MgmtState} = StateData)
 						   [StateData, From,
 						    StateData#state.jid, El]) of
 			true ->
+			    ?DEBUG("Dropping archived message stanza from ~s",
+				   [fxml:get_attr_s(<<"from">>,
+						    El#xmlel.attrs)]),
 			    ok;
 			false ->
 			    ReRoute(From, To, El, Time)
