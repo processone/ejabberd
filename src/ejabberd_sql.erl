@@ -790,7 +790,7 @@ pgsql_connect(Server, Port, DB, Username, Password) ->
                         {port, Port},
                         {as_binary, true}]) of
         {ok, Ref} ->
-            pgsql:squery(Ref, [<<"alter database ">>, DB, <<" set ">>,
+            pgsql:squery(Ref, [<<"alter database \"">>, DB, <<"\" set ">>,
                                <<"standard_conforming_strings='off';">>]),
             pgsql:squery(Ref, [<<"set standard_conforming_strings to 'off';">>]),
             {ok, Ref};
