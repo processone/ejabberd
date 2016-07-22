@@ -18,8 +18,6 @@ defmodule Ejabberd.Config.Attr do
       [type: :boolean, default: true],
     git:
       [type: :string, default: ""],
-    version:
-      [type: :string, default: ""],
     name:
       [type: :string, default: ""],
     opts:
