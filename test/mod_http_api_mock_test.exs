@@ -58,6 +58,7 @@ defmodule ModHttpApiMockTest do
 	setup do
 		:meck.unload
 		:meck.new :ejabberd_commands
+		:meck.new(:acl, [:passthrough])  # Need to fake acl to allow oauth
 		EjabberdAuthMock.init
 		:ok
 	end
@@ -206,5 +207,69 @@ defmodule ModHttpApiMockTest do
 		#assert :ok = :meck.history(:ejabberd_commands)
 	end
 
+	test "Request oauth token, resource owner password credentials" do
+		EjabberdAuthMock.create_user @user, @domain, @userpass
+    :application.set_env(:oauth2, :backend, :ejabberd_oauth)
+    :application.start(:oauth2)
+
+		# Mock a simple command() -> :ok
+		:meck.expect(:ejabberd_commands, :get_command_format,
+			fn (@acommand, {@user, @domain, {:oauth, _token}, false}, @version) ->
+					{[], {:res, :rescode}}
+			end)
+    :meck.expect(:ejabberd_commands, :get_command_policy_and_scope,
+			fn (@acommand) -> {:ok, :user, [:erlang.atom_to_binary(@acommand,:utf8), "ejabberd:user"]} end)
+		:meck.expect(:ejabberd_commands, :get_commands,
+			fn () -> [@acommand] end)
+		:meck.expect(:ejabberd_commands, :execute_command,
+			fn (:undefined, {@user, @domain, {:oauth, _token}, false},
+					@acommand, [], @version, _) ->
+					:ok
+			end)
+
+   #Mock acl  to allow oauth authorizations
+   :meck.expect(:acl, :match_rule, fn(_Server, _Access, _Jid) -> :allow end)
+
+
+    # Correct password
+    req = request(method: :POST,
+            path: ["oauth", "token"],
+            q: [{"grant_type", "password"}, {"scope", @command}, {"username",  @user<>"@"<>@domain}, {"ttl", "4000"}, {"password", @userpass}],
+            ip: {{127,0,0,1},60000},
+            host: @domain)
+    result = :ejabberd_oauth.process([], req)
+    assert 200 = elem(result, 0) #http code
+    {kv} = :jiffy.decode(elem(result,2))
+    assert {_, "bearer"} = List.keyfind(kv, "token_type", 0) 
+    assert {_, @command} = List.keyfind(kv, "scope", 0) 
+    assert {_, 4000} = List.keyfind(kv, "expires_in", 0) 
+    {"access_token", _token} = List.keyfind(kv, "access_token", 0) 
+
+    #missing grant_type
+    req = request(method: :POST,
+            path: ["oauth", "token"],
+            q: [{"scope", @command}, {"username",  @user<>"@"<>@domain}, {"password", @userpass}],
+            ip: {{127,0,0,1},60000},
+            host: @domain)
+    result = :ejabberd_oauth.process([], req)
+    assert 400 = elem(result, 0) #http code
+    {kv} = :jiffy.decode(elem(result,2))
+    assert {_, "unsupported_grant_type"} = List.keyfind(kv, "error", 0) 
+
+
+		# incorrect user/pass
+    req = request(method: :POST,
+            path: ["oauth", "token"],
+            q: [{"grant_type", "password"}, {"scope", @command}, {"username",  @user<>"@"<>@domain}, {"password", @userpass<>"aa"}],
+            ip: {{127,0,0,1},60000},
+            host: @domain)
+    result = :ejabberd_oauth.process([], req)
+    assert 400 = elem(result, 0) #http code
+    {kv} = :jiffy.decode(elem(result,2))
+    assert {_, "invalid_grant"} = List.keyfind(kv, "error", 0) 
+
+		assert :meck.validate :ejabberd_auth
+		assert :meck.validate :ejabberd_commands
+	end
 
 end

@@ -497,9 +497,64 @@ process(_Handlers,
                    }],
              ejabberd_web:make_xhtml([?XC(<<"h1">>, <<"302 Found">>)])}
     end;
+process(_Handlers,
+	#request{method = 'POST', q = Q, lang = _Lang,
+		 path = [_, <<"token">>]}) ->
+    case proplists:get_value(<<"grant_type">>, Q, <<"">>) of 
+      <<"password">> ->
+        SScope = proplists:get_value(<<"scope">>, Q, <<"">>),
+        StringJID = proplists:get_value(<<"username">>, Q, <<"">>),
+        #jid{user = Username, server = Server} = jid:from_string(StringJID),
+        Password = proplists:get_value(<<"password">>, Q, <<"">>),
+        Scope = str:tokens(SScope, <<" ">>),
+        TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
+        ExpiresIn = case TTL of
+                        <<>> -> undefined;
+                        _ -> jlib:binary_to_integer(TTL)
+                    end,
+        case oauth2:authorize_password({Username, Server},
+                                       Scope,
+                                       {password, Password}) of
+            {ok, {_AppContext, Authorization}} ->
+                {ok, {_AppContext2, Response}} =
+                    oauth2:issue_token(Authorization, [{expiry_time, ExpiresIn} || ExpiresIn /= undefined ]),
+                {ok, AccessToken} = oauth2_response:access_token(Response),
+                {ok, Type} = oauth2_response:token_type(Response),
+                %%Ugly: workardound to return the correct expirity time, given than oauth2 lib doesn't really have
+                %%per-case expirity time.
+                Expires = case ExpiresIn of
+                              undefined ->
+                                 {ok, Ex} = oauth2_response:expires_in(Response),
+                                 Ex;
+                              _ ->
+                                ExpiresIn
+                          end,
+                {ok, VerifiedScope} = oauth2_response:scope(Response),
+                json_response(200, {[
+                   {<<"access_token">>, AccessToken},
+                   {<<"token_type">>, Type},
+                   {<<"scope">>, str:join(VerifiedScope, <<" ">>)},
+                   {<<"expires_in">>, Expires}]});
+            {error, Error} when is_atom(Error) ->
+                json_response(400, {[
+                  {<<"error">>, <<"invalid_grant">>},
+                  {<<"error_description">>, Error}]})
+        end;
+     _OtherGrantType ->
+                json_response(400, {[
+                  {<<"error">>, <<"unsupported_grant_type">>}]})
+  end;
+
 process(_Handlers, _Request) ->
     ejabberd_web:error(not_found).
 
+
+%% Headers as per RFC 6749 
+json_response(Code, Body) ->
+    {Code, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>},
+           {<<"Cache-Control">>, <<"no-store">>}, 
+           {<<"Pragma">>, <<"no-cache">>}], 
+     jiffy:encode(Body)}.
 
 
 
