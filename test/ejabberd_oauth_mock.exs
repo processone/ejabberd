@@ -40,7 +40,7 @@ defmodule EjabberdOauthMock do
 																												{:user, user, domain}},
 																											 {"scope", [to_string command]},
 																											 {"expiry_time", expire}],
-																											:undefined)
+																											[])
 		token
 	end
 

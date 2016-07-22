@@ -19,7 +19,7 @@ ModCfg0 = fun(F, Cfg, [Key|Tail], Op, Default) ->
                          [{Key, F(F, OldVal, Tail, Op, Default)} | PartCfg]
                  end
          end,
-ModCfg = fun(Cfg, Keys, Op, Default) -> ModCfg0(ModCfg0, Cfg, Keys, Op, Default) end.
+ModCfg = fun(Cfg, Keys, Op, Default) -> ModCfg0(ModCfg0, Cfg, Keys, Op, Default) end,
 
 Cfg = case file:consult(filename:join(filename:dirname(SCRIPT), "vars.config")) of
           {ok, Terms} ->
@@ -27,6 +27,13 @@ Cfg = case file:consult(filename:join(filename:dirname(SCRIPT), "vars.config")) 
           _Err ->
               []
       end,
+
+ProcessSingleVar = fun(F, Var, Tail) ->
+			   case F(F, [Var], []) of
+			       [] -> Tail;
+			       [Val] -> [Val | Tail]
+			   end
+		   end,
 
 ProcessVars = fun(_F, [], Acc) ->
                       lists:reverse(Acc);
@@ -40,9 +47,23 @@ ProcessVars = fun(_F, [], Acc) ->
 					SysVer < Ver
 				end,
 		      if Include ->
-                              F(F, Tail, [Value | Acc]);
+                              F(F, Tail, ProcessSingleVar(F, Value, Acc));
 			 true ->
                               F(F, Tail, Acc)
+		      end;
+                 (F, [{Type, Ver, Value, ElseValue} | Tail], Acc) when
+                        Type == if_version_above orelse
+                        Type == if_version_below ->
+		      SysVer = erlang:system_info(otp_release),
+		      Include = if Type == if_version_above ->
+					SysVer > Ver;
+				   true ->
+					SysVer < Ver
+				end,
+		      if Include ->
+                              F(F, Tail, ProcessSingleVar(F, Value, Acc));
+			 true ->
+                              F(F, Tail, ProcessSingleVar(F, ElseValue, Acc))
 		      end;
                  (F, [{Type, Var, Value} | Tail], Acc) when
                         Type == if_var_true orelse
@@ -50,7 +71,7 @@ ProcessVars = fun(_F, [], Acc) ->
                       Flag = Type == if_var_true,
                       case proplists:get_bool(Var, Cfg) of
                           V when V == Flag ->
-                              F(F, Tail, [Value | Acc]);
+                              F(F, Tail, ProcessSingleVar(F, Value, Acc));
                           _ ->
                               F(F, Tail, Acc)
                       end;
@@ -59,7 +80,7 @@ ProcessVars = fun(_F, [], Acc) ->
                         Type == if_var_no_match ->
                       case proplists:get_value(Var, Cfg) of
                           V when V == Match ->
-                              F(F, Tail, [Value | Acc]);
+                              F(F, Tail, ProcessSingleVar(F, Value, Acc));
                           _ ->
                               F(F, Tail, Acc)
                       end;
@@ -146,7 +167,7 @@ Conf6 = case {lists:keyfind(cover_enabled, 1, Conf5), os:getenv("TRAVIS")} of
                 Conf5
         end,
 
-%io:format("ejabberd configuration:~n  ~p~n", [Conf5]),
+%io:format("ejabberd configuration:~n  ~p~n", [Conf6]),
 
 Conf6.
 

@@ -56,7 +56,10 @@ defmodule Ejabberd.Mixfile do
      {:ezlib, "~> 1.0"},
      {:iconv, "~> 1.0"},
      {:eredis, "~> 1.0"},
-     {:exrm, "~> 1.0.0-rc7", only: :dev}]
+     {:exrm, "~> 1.0.0", only: :dev},
+     # relx is used by exrm. Lock version as for now, ejabberd doesn not compile fine with
+     # version 3.20:
+     {:relx, "~> 3.19.0", only: :dev}]
   end
 
   defp package do

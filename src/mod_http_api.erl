@@ -133,13 +133,13 @@ depends(_Host, _Opts) ->
 check_permissions(Request, Command) ->
     case catch binary_to_existing_atom(Command, utf8) of
         Call when is_atom(Call) ->
-            {ok, CommandPolicy} = ejabberd_commands:get_command_policy(Call),
-            check_permissions2(Request, Call, CommandPolicy);
+            {ok, CommandPolicy, Scope} = ejabberd_commands:get_command_policy_and_scope(Call),
+            check_permissions2(Request, Call, CommandPolicy, Scope);
         _ ->
             unauthorized_response()
     end.
 
-check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _)
+check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _, ScopeList)
   when HTTPAuth /= undefined ->
     Admin =
         case lists:keysearch(<<"X-Admin">>, 1, Headers) of
@@ -159,11 +159,9 @@ check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _)
                         false
                 end;
             {oauth, Token, _} ->
-                case oauth_check_token(Call, Token) of
+                case oauth_check_token(ScopeList, Token) of
                     {ok, user, {User, Server}} ->
                         {ok, {User, Server, {oauth, Token}, Admin}};
-                    {ok, server_admin} ->  %% token whas generated using issue_token command line
-                        {ok, admin};
                     false ->
                         false
                 end;
@@ -174,9 +172,9 @@ check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _)
         {ok, A} -> {allowed, Call, A};
         _ -> unauthorized_response()
     end;
-check_permissions2(_Request, Call, open) ->
+check_permissions2(_Request, Call, open, _Scope) ->
     {allowed, Call, noauth};
-check_permissions2(#request{ip={IP, _Port}}, Call, _Policy) ->
+check_permissions2(#request{ip={IP, _Port}}, Call, _Policy, _Scope) ->
     Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access,
                                     fun(V) -> V end,
                                     none),
@@ -196,13 +194,11 @@ check_permissions2(#request{ip={IP, _Port}}, Call, _Policy) ->
         _E ->
             {allowed, Call, noauth}
     end;
-check_permissions2(_Request, _Call, _Policy) ->
+check_permissions2(_Request, _Call, _Policy, _Scope) ->
     unauthorized_response().
 
-oauth_check_token(Scope, Token) when is_atom(Scope) ->
-    oauth_check_token(atom_to_binary(Scope, utf8), Token);
-oauth_check_token(Scope, Token) ->
-    ejabberd_oauth:check_token(Scope, Token).
+oauth_check_token(ScopeList, Token) when is_list(ScopeList) ->
+    ejabberd_oauth:check_token(ScopeList, Token).
 
 %% ------------------
 %% command processing
@@ -370,28 +366,33 @@ format_args(Args, ArgsFormat) ->
       L when is_list(L) -> exit({additional_unused_args, L})
     end.
 
-format_arg({array, Elements},
-	   {list, {ElementDefName, ElementDefFormat}})
+format_arg(Elements,
+	   {list, {_ElementDefName, ElementDefFormat}})
     when is_list(Elements) ->
-    lists:map(fun ({struct, [{ElementName, ElementValue}]}) when
-                        ElementDefName == ElementName ->
-		      format_arg(ElementValue, ElementDefFormat)
-	      end,
-	      Elements);
-format_arg({array, [{struct, Elements}]},
-	   {list, {ElementDefName, ElementDefFormat}})
-    when is_list(Elements) ->
-    lists:map(fun ({ElementName, ElementValue}) ->
-		      true = ElementDefName == ElementName,
-		      format_arg(ElementValue, ElementDefFormat)
-	      end,
-	      Elements);
-format_arg({array, [{struct, Elements}]},
+    [format_arg(Element, ElementDefFormat)
+     || Element <- Elements];
+format_arg({[{Name, Value}]},
+	   {tuple, [{_Tuple1N, Tuple1S}, {_Tuple2N, Tuple2S}]})
+  when Tuple1S == binary;
+       Tuple1S == string ->
+    {format_arg(Name, Tuple1S), format_arg(Value, Tuple2S)};
+format_arg({Elements},
 	   {tuple, ElementsDef})
     when is_list(Elements) ->
-    FormattedList = format_args(Elements, ElementsDef),
-    list_to_tuple(FormattedList);
-format_arg({array, Elements}, {list, ElementsDef})
+    F = lists:map(fun({TElName, TElDef}) ->
+			  case lists:keyfind(atom_to_binary(TElName, latin1), 1, Elements) of
+			      {_, Value} ->
+				  format_arg(Value, TElDef);
+			      _ when TElDef == binary; TElDef == string ->
+				  <<"">>;
+			      _ ->
+				  ?ERROR_MSG("missing field ~p in tuple ~p", [TElName, Elements]),
+				  throw({invalid_parameter,
+					 io_lib:format("Missing field ~w in tuple ~w", [TElName, Elements])})
+			  end
+		  end, ElementsDef),
+    list_to_tuple(F);
+format_arg(Elements, {list, ElementsDef})
     when is_list(Elements) and is_atom(ElementsDef) ->
     [format_arg(Element, ElementsDef)
      || Element <- Elements];
@@ -405,7 +406,7 @@ format_arg(undefined, string) -> <<>>;
 format_arg(Arg, Format) ->
     ?ERROR_MSG("don't know how to format Arg ~p for format ~p", [Arg, Format]),
     throw({invalid_parameter,
-	   io_lib:format("Arg ~p is not in format ~p",
+	   io_lib:format("Arg ~w is not in format ~w",
 			 [Arg, Format])}).
 
 process_unicode_codepoints(Str) ->

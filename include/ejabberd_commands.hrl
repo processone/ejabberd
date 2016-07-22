@@ -26,6 +26,8 @@
                  {tuple, [rterm()]} | {list, rterm()} |
                  rescode | restuple.
 
+-type oauth_scope() :: atom().
+
 -record(ejabberd_commands,
 	{name                    :: atom(),
          tags = []               :: [atom()] | '_' | '$2',
