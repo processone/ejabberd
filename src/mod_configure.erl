@@ -1917,21 +1917,29 @@ set_form(From, Host, ?NS_ADMINL(<<"end-user-session">>),
     Xmlelement = ?SERRT_POLICY_VIOLATION(Lang, <<"has been kicked">>),
     case JID#jid.lresource of
       <<>> ->
-	  SIDs = mnesia:dirty_select(session,
-				     [{#session{sid = {'$1', '$2'},
-						usr = {LUser, LServer, '_'},
-						_ = '_'},
-				       [{is_pid, '$2'}],
-				       [{{'$1', '$2'}}]}]),
-	  [Pid ! {kick, kicked_by_admin, Xmlelement} || {_, Pid} <- SIDs];
+	  SIs = mnesia:dirty_select(session,
+				    [{#session{usr = {LUser, LServer, '_'},
+					       sid = '$1',
+					       info = '$2',
+					       _ = '_'},
+				      [], [{{'$1', '$2'}}]}]),
+	  Pids = [P || {{_, P}, Info} <- SIs,
+		       not proplists:get_bool(offline, Info)],
+	  lists:foreach(fun(Pid) ->
+				Pid ! {kick, kicked_by_admin, Xmlelement}
+			end, Pids);
       R ->
-	  [{_, Pid}] = mnesia:dirty_select(session,
-					   [{#session{sid = {'$1', '$2'},
-						      usr = {LUser, LServer, R},
-						      _ = '_'},
-					     [{is_pid, '$2'}],
-					     [{{'$1', '$2'}}]}]),
-	  Pid ! {kick, kicked_by_admin, Xmlelement}
+	  [{{_, Pid}, Info}] = mnesia:dirty_select(
+				 session,
+				 [{#session{usr = {LUser, LServer, R},
+					    sid = '$1',
+					    info = '$2',
+					    _ = '_'},
+				   [], [{{'$1', '$2'}}]}]),
+	  case proplists:get_bool(offline, Info) of
+	    true -> ok;
+	    false -> Pid ! {kick, kicked_by_admin, Xmlelement}
+	  end
     end,
     {result, []};
 set_form(From, Host,
