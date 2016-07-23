@@ -71,7 +71,7 @@
           expire                   :: integer()
          }).
 
--define(EXPIRE, 3600).
+-define(EXPIRE, 31536000).
 
 start() ->
     init_db(mnesia, ?MYNAME),
@@ -389,12 +389,10 @@ process(_Handlers,
               ?LABEL(<<"ttl">>, [?CT(<<"Token TTL">>), ?CT(<<": ">>)]),
               ?XAE(<<"select">>, [{<<"name">>, <<"ttl">>}],
                    [
-                   ?XAC(<<"option">>, [{<<"selected">>, <<"selected">>},
-                                       {<<"value">>, jlib:integer_to_binary(expire())}],<<"Default (", (integer_to_binary(expire()))/binary, " seconds)">>),
                    ?XAC(<<"option">>, [{<<"value">>, <<"3600">>}],<<"1 Hour">>),
                    ?XAC(<<"option">>, [{<<"value">>, <<"86400">>}],<<"1 Day">>),
                    ?XAC(<<"option">>, [{<<"value">>, <<"2592000">>}],<<"1 Month">>),
-                   ?XAC(<<"option">>, [{<<"value">>, <<"31536000">>}],<<"1 Year">>),
+                   ?XAC(<<"option">>, [{<<"selected">>, <<"selected">>},{<<"value">>, <<"31536000">>}],<<"1 Year">>),
                    ?XAC(<<"option">>, [{<<"value">>, <<"315360000">>}],<<"10 Years">>)]),
               ?BR,
               ?INPUTT(<<"submit">>, <<"">>, <<"Accept">>)
@@ -500,7 +498,7 @@ process(_Handlers,
 process(_Handlers,
 	#request{method = 'POST', q = Q, lang = _Lang,
 		 path = [_, <<"token">>]}) ->
-    case proplists:get_value(<<"grant_type">>, Q, <<"">>) of 
+    case proplists:get_value(<<"grant_type">>, Q, <<"">>) of
       <<"password">> ->
         SScope = proplists:get_value(<<"scope">>, Q, <<"">>),
         StringJID = proplists:get_value(<<"username">>, Q, <<"">>),
@@ -549,11 +547,11 @@ process(_Handlers, _Request) ->
     ejabberd_web:error(not_found).
 
 
-%% Headers as per RFC 6749 
+%% Headers as per RFC 6749
 json_response(Code, Body) ->
     {Code, [{<<"Content-Type">>, <<"application/json;charset=UTF-8">>},
-           {<<"Cache-Control">>, <<"no-store">>}, 
-           {<<"Pragma">>, <<"no-cache">>}], 
+           {<<"Cache-Control">>, <<"no-store">>},
+           {<<"Pragma">>, <<"no-cache">>}],
      jiffy:encode(Body)}.
 
 
@@ -670,7 +668,7 @@ css() ->
             text-decoration: underline;
           }
 
-      .container > .section { 
+      .container > .section {
           background: #424A55;
       }
 
