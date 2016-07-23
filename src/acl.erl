@@ -31,7 +31,7 @@
 
 -export([add_access/3, clear/0]).
 -export([start/0, add/3, add_list/3, add_local/3, add_list_local/3,
-	 load_from_config/0, match_rule/3,
+	 load_from_config/0, match_rule/3, any_rules_allowed/3,
 	 transform_options/1, opt_type/1, acl_rule_matches/3,
 	 acl_rule_verify/1, access_matches/3,
 	 transform_access_rules_config/1,
@@ -273,6 +273,15 @@ normalize_spec(Spec) ->
                     none
             end
     end.
+
+-spec any_rules_allowed(global | binary(), access_name(),
+                           jid() | ljid() | inet:ip_address()) -> boolean().
+
+any_rules_allowed(Host, Access, Entity) ->
+    lists:any(fun (Rule) ->
+                      allow == acl:match_rule(Host, Rule, Entity)
+              end,
+              Access).
 
 -spec match_rule(global | binary(), access_name(),
                  jid() | ljid() | inet:ip_address()) -> any().

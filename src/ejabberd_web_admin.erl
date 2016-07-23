@@ -96,12 +96,6 @@ get_acl_rule(_RPath, 'POST') ->
 				access, fun(A) -> A end, configure),
     {global, [AC]}.
 
-is_acl_match(Host, Rules, Jid) ->
-    lists:any(fun (Rule) ->
-		      allow == acl:match_rule(Host, Rule, Jid)
-	      end,
-	      Rules).
-
 %%%==================================
 %%%% Menu Items Access
 
@@ -151,7 +145,7 @@ is_allowed_path([<<"admin">> | Path], JID) ->
     is_allowed_path(Path, JID);
 is_allowed_path(Path, JID) ->
     {HostOfRule, AccessRule} = get_acl_rule(Path, 'GET'),
-    is_acl_match(HostOfRule, AccessRule, JID).
+    acl:any_rules_allowed(HostOfRule, AccessRule, JID).
 
 %% @spec(Path) -> URL
 %% where Path = [string()]
@@ -279,8 +273,8 @@ get_auth_account(HostOfRule, AccessRule, User, Server,
 		 Pass) ->
     case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
       true ->
-	  case is_acl_match(HostOfRule, AccessRule,
-			    jid:make(User, Server, <<"">>))
+	  case acl:any_rules_allowed(HostOfRule, AccessRule,
+                               jid:make(User, Server, <<"">>))
 	      of
 	    false -> {unauthorized, <<"unprivileged-account">>};
 	    true -> {ok, {User, Server}}
@@ -1346,7 +1340,7 @@ parse_access_rule(Text) ->
 list_vhosts(Lang, JID) ->
     Hosts = (?MYHOSTS),
     HostsAllowed = lists:filter(fun (Host) ->
-					is_acl_match(Host,
+					acl:any_rules_allowed(Host,
 						     [configure, webadmin_view],
 						     JID)
 				end,
