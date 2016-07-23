@@ -54,20 +54,20 @@ defmodule ModHttpApiTest do
   end
 
   # This related to the commands config file option
-  test "Attempting to access a command that is not exposed as HTTP API returns 401" do
+  test "Attempting to access a command that is not exposed as HTTP API returns 403" do
     setup_mocks()
     :ejabberd_config.add_local_option(:commands, [])
     request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "[]")
-    {401, _, _} = :mod_http_api.process(["open_cmd"], request)
+    {403, _, _} = :mod_http_api.process(["open_cmd"], request)
   end
 
   test "Call to user, admin or restricted commands without authentication are rejected" do
     setup_mocks()
     :ejabberd_config.add_local_option(:commands, [[{:add_commands, [:user_cmd, :admin_cmd, :restricted]}]])
     request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "[]")
-    {401, _, _} = :mod_http_api.process(["user_cmd"], request)
-    {401, _, _} = :mod_http_api.process(["admin_cmd"], request)
-    {401, _, _} = :mod_http_api.process(["restricted_cmd"], request)
+    {403, _, _} = :mod_http_api.process(["user_cmd"], request)
+    {403, _, _} = :mod_http_api.process(["admin_cmd"], request)
+    {403, _, _} = :mod_http_api.process(["restricted_cmd"], request)
   end
 
   @tag pending: true
