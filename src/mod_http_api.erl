@@ -136,6 +136,7 @@ check_permissions(Request, Command) ->
             {ok, CommandPolicy, Scope} = ejabberd_commands:get_command_policy_and_scope(Call),
             check_permissions2(Request, Call, CommandPolicy, Scope);
         _ ->
+            %% TODO Should this be a 404 or 400 instead of 401 ?
             unauthorized_response()
     end.
 

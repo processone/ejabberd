@@ -38,19 +38,24 @@
          function                :: atom() | '_',
          args = []               :: [aterm()] | '_' | '$1' | '$2',
          policy = restricted     :: open | restricted | admin | user,
+         access_rules = []       :: [atom()],
          result = {res, rescode} :: rterm() | '_' | '$2',
          args_desc = none        :: none | [string()] | '_',
          result_desc = none      :: none | string() | '_',
          args_example = none     :: none | [any()] | '_',
          result_example = none   :: any()}).
 
+%% TODO Fix me: Type is not up to date
 -type ejabberd_commands() :: #ejabberd_commands{name :: atom(),
                                                 tags :: [atom()],
                                                 desc :: string(),
                                                 longdesc :: string(),
+                                                version :: integer(),
                                                 module :: atom(),
                                                 function :: atom(),
                                                 args :: [aterm()],
+                                                policy :: open | restricted | admin | user,
+                                                access_rules :: [atom()],
                                                 result :: rterm()}.
 
 %% @type ejabberd_commands() = #ejabberd_commands{

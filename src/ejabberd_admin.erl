@@ -129,6 +129,8 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = register, tags = [accounts],
 			desc = "Register a user",
+			policy = admin,
+			access_rules = [configure],
 			module = ?MODULE, function = register,
 			args = [{user, binary}, {host, binary}, {password, binary}],
 			result = {res, restuple}},
@@ -166,7 +168,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = list_cluster, tags = [cluster],
 			desc = "List nodes that are part of the cluster handled by Node",
 			module = ?MODULE, function = list_cluster,
-			args = [], 
+			args = [],
 			result = {nodes, {list, {node, atom}}}},
 
      #ejabberd_commands{name = import_file, tags = [mnesia],
@@ -220,7 +222,7 @@ get_commands_spec() ->
 			desc = "Delete offline messages older than DAYS",
 			module = ?MODULE, function = delete_old_messages,
 			args = [{days, integer}], result = {res, rescode}},
-	 
+
      #ejabberd_commands{name = export2sql, tags = [mnesia],
 			desc = "Export virtual host information from Mnesia tables to SQL files",
 			module = ejd2sql, function = export,

@@ -494,7 +494,7 @@ execute_command(AccessCommands, Auth, Name, Arguments) ->
 %%
 %% @doc Execute a command in a given API version
 %% Can return the following exceptions:
-%% command_unknown | account_unprivileged | invalid_account_data | no_auth_provided
+%% command_unknown | account_unprivileged | invalid_account_data | no_auth_provided | access_rules_unauthorized
 execute_command(AccessCommands1, Auth1, Name, Arguments, Version) ->
 execute_command(AccessCommands1, Auth1, Name, Arguments, Version, #{}).
 
@@ -503,32 +503,45 @@ execute_command(AccessCommands1, Auth1, Name, Arguments, Version, CallerInfo) ->
                true -> admin;
                false -> Auth1
            end,
+    TokenJID = oauth_token_user(Auth1),
     Command = get_command_definition(Name, Version),
     AccessCommands = get_access_commands(AccessCommands1, Version),
     case check_access_commands(AccessCommands, Auth, Name, Command, Arguments, CallerInfo) of
-	ok -> execute_command2(Auth, Command, Arguments)
+        ok -> execute_check_policy(Auth, TokenJID, Command, Arguments)
     end.
 
-execute_command2(
-  _Auth, #ejabberd_commands{policy = open} = Command, Arguments) ->
-    execute_command2(Command, Arguments);
-execute_command2(
-  _Auth, #ejabberd_commands{policy = restricted} = Command, Arguments) ->
-    execute_command2(Command, Arguments);
-execute_command2(
-  _Auth, #ejabberd_commands{policy = admin} = Command, Arguments) ->
-    execute_command2(Command, Arguments);
-execute_command2(
-  admin, #ejabberd_commands{policy = user} = Command, Arguments) ->
-    execute_command2(Command, Arguments);
-execute_command2(
-  noauth, #ejabberd_commands{policy = user} = Command, Arguments) ->
-    execute_command2(Command, Arguments);
-execute_command2(
-  {User, Server, _, _}, #ejabberd_commands{policy = user} = Command, Arguments) ->
-    execute_command2(Command, [User, Server | Arguments]).
 
-execute_command2(Command, Arguments) ->
+execute_check_policy(
+  _Auth, _JID, #ejabberd_commands{policy = open} = Command, Arguments) ->
+    do_execute_command(Command, Arguments);
+execute_check_policy(
+  _Auth, _JID, #ejabberd_commands{policy = restricted} = Command, Arguments) ->
+    do_execute_command(Command, Arguments);
+execute_check_policy(
+  _Auth, JID, #ejabberd_commands{policy = admin} = Command, Arguments) ->
+    execute_check_access(JID, Command, Arguments);
+execute_check_policy(
+  admin, JID, #ejabberd_commands{policy = user} = Command, Arguments) ->
+    execute_check_access(JID, Command, Arguments);
+execute_check_policy(
+  noauth, _JID, #ejabberd_commands{policy = user} = Command, Arguments) ->
+    do_execute_command(Command, Arguments);
+execute_check_policy(
+  {User, Server, _, _}, JID, #ejabberd_commands{policy = user} = Command, Arguments) ->
+    execute_check_access(JID, Command, [User, Server | Arguments]).
+
+execute_check_access(_FromJID, #ejabberd_commands{access_rules = []} = Command, Arguments) ->
+    do_execute_command(Command, Arguments);
+execute_check_access(FromJID, #ejabberd_commands{access_rules = Rules} = Command, Arguments) ->
+    %% TODO Review: Do we have smarter / better way to check rule on other Host than global ?
+    case acl:any_rules_allowed(global, Rules, FromJID) of
+        true ->
+            do_execute_command(Command, Arguments);
+        false ->
+            {error, access_rules_unauthorized}
+    end.
+
+do_execute_command(Command, Arguments) ->
     Module = Command#ejabberd_commands.module,
     Function = Command#ejabberd_commands.function,
     ?DEBUG("Executing command ~p:~p with Args=~p", [Module, Function, Arguments]),
@@ -753,6 +766,13 @@ get_commands(Version) ->
              (_, Acc) -> Acc
           end, AdminCmds ++ UserCmds, Opts),
     Cmds.
+
+oauth_token_user(noauth) ->
+    undefined;
+oauth_token_user(admin) ->
+    undefined;
+oauth_token_user({User, Server, _, _}) ->
+    jid:make(User, Server, <<>>).
 
 is_admin(_Name, admin, _Extra) ->
     true;
