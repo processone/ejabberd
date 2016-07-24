@@ -534,13 +534,10 @@ process(_Handlers,
                    {<<"scope">>, str:join(VerifiedScope, <<" ">>)},
                    {<<"expires_in">>, Expires}]});
             {error, Error} when is_atom(Error) ->
-                json_response(400, {[
-                  {<<"error">>, <<"invalid_grant">>},
-                  {<<"error_description">>, Error}]})
+                json_error(400, <<"invalid_grant">>, Error)
         end;
-     _OtherGrantType ->
-                json_response(400, {[
-                  {<<"error">>, <<"unsupported_grant_type">>}]})
+        _OtherGrantType ->
+            json_error(400, <<"unsupported_grant_type">>, unsupported_grant_type)
   end;
 
 process(_Handlers, _Request) ->
@@ -554,7 +551,17 @@ json_response(Code, Body) ->
            {<<"Pragma">>, <<"no-cache">>}],
      jiffy:encode(Body)}.
 
+%% OAauth error are defined in:
+%% https://tools.ietf.org/html/draft-ietf-oauth-v2-25#section-5.2
+json_error(Code, Error, Reason) ->
+    Desc = json_error_desc(Reason),
+    Body = {[{<<"error">>, Error},
+             {<<"error_description">>, Desc}]},
+    json_response(Code, Body).
 
+json_error_desc(access_denied)          -> <<"Access denied">>;
+json_error_desc(unsupported_grant_type) -> <<"Unsupported grant type">>;
+json_error_desc(invalid_scope)          -> <<"Invalid scope">>.
 
 web_head() ->
     [?XA(<<"meta">>, [{<<"http-equiv">>, <<"X-UA-Compatible">>},
