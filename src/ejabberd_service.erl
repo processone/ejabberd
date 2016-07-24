@@ -44,8 +44,7 @@
          handle_event/3, handle_sync_event/4, code_change/4,
          handle_info/3, terminate/3, print_state/1, opt_type/1]).
 
--export([process_presence/4, process_roster_presence/3,
-         get_delegated_ns/1]).
+-export([get_delegated_ns/1]).
 
 
 -include("ejabberd_service.hrl").
@@ -157,7 +156,7 @@ init([{SockMod, Socket}, Opts]) ->
                                       D;
                                   [] ->
                                       ets:insert(delegated_namespaces,
-                                                 {Ns, self(), [], []}),
+                                                 {Ns, self(), {}, {}}),
                                       Attr = proplists:get_value(filtering,
                                                                  FiltAttr, []),
                                       D ++ [{Ns, Attr}]
@@ -174,8 +173,6 @@ init([{SockMod, Socket}, Opts]) ->
                     _ -> true
                 end,
     SockMod:change_shaper(Socket, Shaper),
-
-    add_hooks(ServerHosts),
 
     {ok, wait_for_stream,
      #state{socket = Socket, sockmod = SockMod,
@@ -250,16 +247,17 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                                   ?INFO_MSG("Route registered for service ~p~n", [H])
                                 end, dict:fetch_keys(StateData#state.host_opts)),
 
-                            advertise_perm(StateData),
+                            mod_privilege:advertise_perm(StateData),
                             mod_delegation:advertise_delegations(StateData),
                             %% send initial presences from all server users
                             case get_prop(presence, StateData#state.privilege_access) of
                                 Priv when (Priv == <<"managed_entity">>) or
                                           (Priv == <<"roster">>) ->
-                                        initial_presence(StateData);
+                                        mod_privilege:initial_presence(StateData);
                                 _ -> ok
                             end,
-                            ets:insert(registered_services, {self(), StateData#state.host}), 
+                            ets:insert(registered_services,
+                                       {self(), StateData#state.host}), 
 
                             {next_state, stream_established, StateData}; 
                         _ ->
@@ -284,7 +282,7 @@ wait_for_handshake(closed, StateData) ->
     {stop, normal, StateData}.
 
 stream_established({xmlstreamelement, El}, StateData) ->
-    ?INFO_MSG(" message from comp ~p~n" , [El]),
+    % ?INFO_MSG("message from comp ~p~n", [El]),
     NewEl = jlib:remove_attr(<<"xmlns">>, El),
     #xmlel{name = Name, attrs = Attrs} = NewEl,
     From = fxml:get_attr_s(<<"from">>, Attrs),
@@ -414,12 +412,9 @@ handle_info({user_presence, Packet, FromJID},
     case AccessType of
         T when (T == <<"managed_entity">>) or
                (T == <<"roster">> ) ->
-            lists:foreach(fun (H) ->
-                            ToJID = jid:from_string(H),
-                            PacketNew = 
-                                jlib:replace_from_to(FromJID, ToJID, Packet),
-                            send_element(StateData, PacketNew)
-                          end, dict:fetch_keys(StateData#state.host_opts));
+            ToJID = jid:from_string(StateData#state.host),
+            PacketNew = jlib:replace_from_to(FromJID, ToJID, Packet),
+            send_element(StateData, PacketNew);
         _ -> ok
     end,
     {next_state, stream_established, StateData};
@@ -439,13 +434,10 @@ handle_info({roster_presence, From, Packet},
                 catch _:_ -> 
                     undefined
                 end,
-            case compare_presences(LastPresence, NewPacket) of
+            case mod_privilege:compare_presences(LastPresence, NewPacket) of
                 false ->
-                    lists:foreach(fun (H) ->
-                                    PacketNew = replace_to(H, Packet),
-                                    send_element(StateData, PacketNew)
-                                  end, 
-                                  dict:fetch_keys(StateData#state.host_opts));
+                    PacketNew = replace_to(StateData#state.host, Packet),
+                    send_element(StateData, PacketNew);
                 _ ->
                     ok
             end,
@@ -557,44 +549,6 @@ replace_to(To, #xmlel{name = Name, attrs = Attrs, children = Els}) ->
 
 %%------------------------------------------------------------------------
 %% XEP-0356
-
-add_hooks(Hosts) ->
-    lists:foreach(fun(Host) -> add_hooks2(Host) end, Hosts).
-
-add_hooks2(Host) ->
-    %% these hooks are used for receiving presences for privilege services XEP-0356
-    ejabberd_hooks:add(user_send_packet, Host,
-                       ?MODULE, process_presence, 10),
-    ejabberd_hooks:add(s2s_receive_packet, Host,
-                       ejabberd_service, process_roster_presence, 10).
-
--spec permissions(binary(), list()) -> #xmlel{}.
-permissions(Id, PrivAccess) ->
-    Perms = lists:map(fun({Access, Type}) -> 
-                          #xmlel{name = <<"perm">>, 
-                                 attrs = [{<<"access">>, 
-                                           atom_to_binary(Access,latin1)},
-                                          {<<"type">>, Type}]}
-                      end, PrivAccess),
-    Stanza = #xmlel{name = <<"privilege">>, 
-                    attrs = [{<<"xmlns">> ,?NS_PRIVILEGE}],
-                    children = Perms},
-    #xmlel{name = <<"message">>, attrs = [{<<"id">>, Id}], children = [Stanza]}.
-    
-advertise_perm(StateData) ->
-    case StateData#state.privilege_access of 
-        [] -> ok;
-        PrivAccess ->
-            Stanza = permissions(StateData#state.streamid, PrivAccess),
-            lists:foreach(fun (Host) ->
-                            #xmlel{attrs = Attrs} = Stanza,
-                            Attrs2 =
-                                jlib:replace_from_to_attrs(hd(StateData#state.server_hosts),
-                                                           Host, Attrs),
-                            send_element(StateData, Stanza#xmlel{attrs = Attrs2}),
-                            ?INFO_MSG("Advertise service of allowed permissions ~p~n",[Host])
-                          end, dict:fetch_keys(StateData#state.host_opts))
-    end.
 
 process_iq(StateData, FromJID, ToJID, Packet) ->
     IQ = jlib:iq_query_or_response_info(Packet),
@@ -731,8 +685,8 @@ forward_subscribe(StateData, Presence, PrivAccess, Packet) ->
                                 (User /= ToJ#jid.luser) ->
                                     %% 0356 server MUST NOT allow the privileged entity
                                     %% to do anything that the managed entity could not do
-                                    try_roster_subscribe(Server,User, FromJ,
-                                                         ToJ, Presence);   
+                                    mod_privilege:try_roster_subscribe(Server,User, FromJ,
+                                                                       ToJ, Presence);   
                                 true -> %% we don't want presence sent to self
                                     ok
                             end;
@@ -773,8 +727,8 @@ forward_message(StateData, Message, PrivAccess, Packet) ->
                             PrivList = ejabberd_hooks:run_fold(privacy_get_user_list,
                                                                Server, #userlist{},
                                                                [User, Server]),
-                            check_privacy_route(Server, User, PrivList,
-                                                FromJ, ToJ, Message);
+                            mod_privilege:check_privacy_route(Server, User, PrivList,
+                                                              FromJ, ToJ, Message);
                         _ ->
                             Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
                             send_element(StateData, Err)
@@ -790,146 +744,4 @@ forward_message(StateData, Message, PrivAccess, Packet) ->
         true ->
             Err = jlib:make_error_reply(Packet,?ERR_FORBIDDEN),
             send_element(StateData, Err)
-    end.
-
-initial_presence(StateData) ->
-    Pids = ejabberd_sm:get_all_pids(),
-    lists:foreach(fun(Pid) ->
-                    {User, Server, Resource, PresenceLast} = 
-                        ejabberd_c2s:get_last_presence(Pid),
-                    case lists:member(Server, StateData#state.server_hosts) of
-                        true ->
-                            From = #jid{user = User,
-                                        server = Server,
-                                        resource = Resource},
-                            lists:foreach(fun (H) ->
-                                            To = jid:from_string(H),
-                                            PacketNew = 
-                                                jlib:replace_from_to(From,To, PresenceLast),
-                                            send_element(StateData, PacketNew)
-                                          end, 
-                                          dict:fetch_keys(StateData#state.host_opts));
-                        _ -> ok
-                    end
-                  end, Pids).
-
-%% hook user_send_packet(Packet, C2SState, From, To) -> Packet
-%% for Managed Entity Presence
-process_presence(#xmlel{name = <<"presence">>} = Packet, _C2SState, From, _To) ->
-    case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
-        T when (T == <<"">>) or (T == <<"unavailable">>) ->
-            case ets:info(registered_services) of
-                undefined -> ok;
-                _ ->
-                    lists:foreach(fun({Pid, _ServiceHost}) -> 
-                                      Pid ! {user_presence, Packet, From} 
-                                  end,
-                                  ets:tab2list(registered_services))
-            end;                   
-        _ -> ok
-    end,
-    Packet;
-process_presence(Packet, _C2SState, _From, _To) ->
-    Packet.
-
-%% s2s_receive_packet(From, To, Packet) -> ok
-%% for Roster Presence
-%% From subscription "from" or "both"
-process_roster_presence(From, To, #xmlel{name = <<"presence">>} = Packet) ->
-    case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
-        T when (T == <<"">>) or (T == <<"unavailable">>) ->
-            case ets:info(registered_services) of
-                undefined -> ok;
-                _ ->
-                    Server = To#jid.server,
-                    User = To#jid.user,
-                    PrivList = ejabberd_hooks:run_fold(privacy_get_user_list,
-                                                       Server, #userlist{},
-                                                       [User, Server]),
-                    case privacy_check_packet(Server, User, PrivList,
-                                              From, To, Packet, in) of
-                        allow ->
-                            lists:foreach(fun({Pid, _ServiceHost}) -> 
-                                              Pid ! {roster_presence, From, Packet}
-                                  end,
-                                  ets:tab2list(registered_services));
-                        _ -> ok
-
-                    end
-            end;
-        _ -> ok
-    end;
-process_roster_presence(_From, _To, _Packet) -> ok.
-               
-compare_presences(undefined, _Presence) -> false;                       
-compare_presences(#xmlel{attrs = Attrs, children = Child},
-                  #xmlel{attrs = Attrs2, children = Child2}) ->
-    Id1 = fxml:get_attr_s(<<"id">>, Attrs),
-    Id2 = fxml:get_attr_s(<<"id">>, Attrs2),
-    case not compare_arrts(Attrs, Attrs2) of
-        true -> false;
-        _ -> 
-            case (Id1 /= <<"">>) and (Id1 == Id2) of
-                true -> true;
-                _ -> 
-                    compare_elements(Child, Child2)
-            end
-    end.
-
-compare_elements([],[]) -> true;
-compare_elements(Tags1, Tags2) when length(Tags1) == length(Tags2) ->
-    compare_tags(Tags1,Tags2);
-compare_elements(_Tags1, _Tags2) -> false.
-
-compare_tags([],[]) -> true;
-compare_tags([{xmlcdata, CData}|Tags1], [{xmlcdata, CData}|Tags2]) ->
-    compare_tags(Tags1, Tags2);
-compare_tags([{xmlcdata, _CData1}|_Tags1], [{xmlcdata, _CData2}|_Tags2]) ->
-    false;
-compare_tags([#xmlel{} = Stanza1|Tags1], [#xmlel{} = Stanza2|Tags2]) ->
-    case (Stanza1#xmlel.name == Stanza2#xmlel.name) and
-        compare_arrts(Stanza1#xmlel.attrs, Stanza2#xmlel.attrs) and
-        compare_tags(Stanza1#xmlel.children, Stanza2#xmlel.children) of
-        true -> 
-            compare_tags(Tags1,Tags2);
-        false ->
-            false
-    end.
-
-%% attr() :: {Name, Value}
--spec compare_arrts([attr()], [attr()]) -> boolean().
-compare_arrts([],[]) -> true;
-compare_arrts(Attrs1, Attrs2) when length(Attrs1) == length(Attrs2) ->
-    lists:foldl(fun(Attr,Acc) -> lists:member(Attr, Attrs2) and Acc end, true, Attrs1);
-compare_arrts(_Attrs1, _Attrs2) -> false.
-
-%% Check if privacy rules allow this delivery
-%% from ejabberd_c2s.erl
-privacy_check_packet(Server, User, PrivList, From, To, Packet , Dir) ->
-    ejabberd_hooks:run_fold(privacy_check_packet,
-                            Server, allow, [User, Server, PrivList, 
-                            {From, To, Packet}, Dir]).
-
-check_privacy_route(Server, User, PrivList, From, To, Packet) ->
-    case privacy_check_packet(Server, User, PrivList, From, To, Packet, out) of
-        allow ->
-            ejabberd_router:route(From, To, Packet);
-        _ -> ok %% who should receive error : service or user?
-    end.
-
-try_roster_subscribe(Server,User, From, To, Packet) ->
-    Access = 
-      gen_mod:get_module_opt(Server, mod_roster, access,
-                             fun(A) when is_atom(A) -> A end, all),
-    case acl:match_rule(Server, Access, From) of
-        deny ->
-            ok;
-        allow ->
-            ejabberd_hooks:run(roster_out_subscription, Server,
-                               [User, Server, To, subscribe]),
-            PrivList = ejabberd_hooks:run_fold(privacy_get_user_list,
-                                               Server,
-                                               #userlist{},
-                                               [User, Server]),
-            check_privacy_route(Server, User, PrivList, From, To, Packet)            
     end.
