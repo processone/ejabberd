@@ -496,7 +496,7 @@ execute_command(AccessCommands, Auth, Name, Arguments) ->
 %% Can return the following exceptions:
 %% command_unknown | account_unprivileged | invalid_account_data | no_auth_provided | access_rules_unauthorized
 execute_command(AccessCommands1, Auth1, Name, Arguments, Version) ->
-execute_command(AccessCommands1, Auth1, Name, Arguments, Version, #{}).
+    execute_command(AccessCommands1, Auth1, Name, Arguments, Version, #{}).
 
 execute_command(AccessCommands1, Auth1, Name, Arguments, Version, CallerInfo) ->
     Auth = case is_admin(Name, Auth1, CallerInfo) of
@@ -506,6 +506,7 @@ execute_command(AccessCommands1, Auth1, Name, Arguments, Version, CallerInfo) ->
     TokenJID = oauth_token_user(Auth1),
     Command = get_command_definition(Name, Version),
     AccessCommands = get_all_access_commands(AccessCommands1),
+
     case check_access_commands(AccessCommands, Auth, Name, Command, Arguments, CallerInfo) of
         ok -> execute_check_policy(Auth, TokenJID, Command, Arguments)
     end.
@@ -766,19 +767,15 @@ get_commands(Version) ->
           end, [], Opts),
     Cmds.
 
+%% This is used to allow mixing command policy (like open, user, admin, restricted), with command entry
 expand_commands(L, OpenCmds, UserCmds, AdminCmds, RestrictedCmds) when is_list(L) ->
-    lists:foldl(fun(El, Acc) ->
-                        expand_commands(El, OpenCmds, UserCmds, AdminCmds, RestrictedCmds) ++ Acc
-                end, [], L);
-expand_commands(El, OpenCmds, UserCmds, AdminCmds, RestrictedCmds) ->
-    case El of
-        open -> OpenCmds;
-        restricted -> RestrictedCmds;
-        admin -> AdminCmds;
-        user -> UserCmds;
-        _ -> [El]
-    end.
-
+    lists:foldl(fun(open, Acc) -> OpenCmds ++ Acc;
+                   (user, Acc) -> UserCmds ++ Acc;
+                   (admin, Acc) -> AdminCmds ++ Acc;
+                   (restricted, Acc) -> RestrictedCmds ++ Acc;
+                   (Command, Acc) when is_atom(Command) ->
+                        [Command, Acc]
+                end, [], L).
 
 oauth_token_user(noauth) ->
     undefined;
