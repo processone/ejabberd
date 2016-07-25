@@ -130,7 +130,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = register, tags = [accounts],
 			desc = "Register a user",
 			policy = admin,
-			access_rules = [configure],
+      access = [{mod_register, access, configure}],
 			module = ?MODULE, function = register,
 			args = [{user, binary}, {host, binary}, {password, binary}],
 			result = {res, restuple}},

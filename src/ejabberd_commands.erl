@@ -319,8 +319,8 @@ list_commands() ->
 list_commands(Version) ->
     Commands = get_commands_definition(Version),
     [{Name, Args, Desc} || #ejabberd_commands{name = Name,
-					      args = Args,
-					      desc = Desc} <- Commands].
+                                              args = Args,
+                                              desc = Desc} <- Commands].
 
 
 -spec list_commands_policy(integer()) ->
@@ -331,10 +331,10 @@ list_commands(Version) ->
 list_commands_policy(Version) ->
     Commands = get_commands_definition(Version),
     [{Name, Args, Desc, Policy} ||
-	#ejabberd_commands{name = Name,
-			   args = Args,
-			   desc = Desc,
-			   policy = Policy} <- Commands].
+        #ejabberd_commands{name = Name,
+                           args = Args,
+                           desc = Desc,
+                           policy = Policy} <- Commands].
 
 -spec get_command_format(atom()) -> {[aterm()], rterm()}.
 
@@ -356,14 +356,14 @@ get_command_format(Name, Auth, Version) ->
     Admin = is_admin(Name, Auth, #{}),
     #ejabberd_commands{args = Args,
 		       result = Result,
-		       policy = Policy} =
-	get_command_definition(Name, Version),
+                       policy = Policy} =
+        get_command_definition(Name, Version),
     case Policy of
-	user when Admin;
-		  Auth == noauth ->
-	    {[{user, binary}, {server, binary} | Args], Result};
-	_ ->
-	    {Args, Result}
+        user when Admin;
+                  Auth == noauth ->
+            {[{user, binary}, {server, binary} | Args], Result};
+        _ ->
+            {Args, Result}
     end.
 
 -spec get_command_policy_and_scope(atom()) -> {ok, open|user|admin|restricted, [oauth_scope()]} | {error, command_not_found}.
@@ -394,16 +394,16 @@ get_command_definition(Name) ->
 %% @doc Get the definition record of a command in a given API version.
 get_command_definition(Name, Version) ->
     case lists:reverse(
-	   lists:sort(
-	     mnesia:dirty_select(
-	       ejabberd_commands,
-	       ets:fun2ms(
-		 fun(#ejabberd_commands{name = N, version = V} = C)
-		       when N == Name, V =< Version ->
-			 {V, C}
-		 end)))) of
-	[{_, Command} | _ ] -> Command;
-	_E -> throw(unknown_command)
+           lists:sort(
+             mnesia:dirty_select(
+               ejabberd_commands,
+               ets:fun2ms(
+                 fun(#ejabberd_commands{name = N, version = V} = C)
+                       when N == Name, V =< Version ->
+                         {V, C}
+                 end)))) of
+        [{_, Command} | _ ] -> Command;
+        _E -> throw(unknown_command)
     end.
 
 -spec get_commands_definition(integer()) -> [ejabberd_commands()].
@@ -411,20 +411,20 @@ get_command_definition(Name, Version) ->
 % @doc Returns all commands for a given API version
 get_commands_definition(Version) ->
     L = lists:reverse(
-	  lists:sort(
-	    mnesia:dirty_select(
-	      ejabberd_commands,
-	      ets:fun2ms(
-		fun(#ejabberd_commands{name = Name, version = V} = C)
-		      when V =< Version ->
-			{Name, V, C}
-		end)))),
+          lists:sort(
+            mnesia:dirty_select(
+              ejabberd_commands,
+              ets:fun2ms(
+                fun(#ejabberd_commands{name = Name, version = V} = C)
+                      when V =< Version ->
+                        {Name, V, C}
+                end)))),
     F = fun({_Name, _V, Command}, []) ->
-		[Command];
-	   ({Name, _V, _Command}, [#ejabberd_commands{name=Name}|_T] = Acc) ->
-		Acc;
-	   ({_Name, _V, Command}, Acc) -> [Command | Acc]
-	end,
+                [Command];
+           ({Name, _V, _Command}, [#ejabberd_commands{name=Name}|_T] = Acc) ->
+                Acc;
+           ({_Name, _V, Command}, Acc) -> [Command | Acc]
+        end,
     lists:foldl(F, [], L).
 
 %% @spec (Name::atom(), Arguments) -> ResultTerm
@@ -433,7 +433,7 @@ get_commands_definition(Version) ->
 %% @doc Execute a command.
 %% Can return the following exceptions:
 %% command_unknown | account_unprivileged | invalid_account_data |
-%% no_auth_provided
+%% no_auth_provided | access_rules_unauthorized
 execute_command(Name, Arguments) ->
     execute_command(Name, Arguments, ?DEFAULT_VERSION).
 
@@ -505,7 +505,7 @@ execute_command(AccessCommands1, Auth1, Name, Arguments, Version, CallerInfo) ->
            end,
     TokenJID = oauth_token_user(Auth1),
     Command = get_command_definition(Name, Version),
-    AccessCommands = get_access_commands(AccessCommands1, Version),
+    AccessCommands = get_all_access_commands(AccessCommands1),
     case check_access_commands(AccessCommands, Auth, Name, Command, Arguments, CallerInfo) of
         ok -> execute_check_policy(Auth, TokenJID, Command, Arguments)
     end.
@@ -530,15 +530,22 @@ execute_check_policy(
   {User, Server, _, _}, JID, #ejabberd_commands{policy = user} = Command, Arguments) ->
     execute_check_access(JID, Command, [User, Server | Arguments]).
 
-execute_check_access(_FromJID, #ejabberd_commands{access_rules = []} = Command, Arguments) ->
+execute_check_access(_FromJID, #ejabberd_commands{access = []} = Command, Arguments) ->
     do_execute_command(Command, Arguments);
-execute_check_access(FromJID, #ejabberd_commands{access_rules = Rules} = Command, Arguments) ->
+execute_check_access(FromJID, #ejabberd_commands{access = AccessRefs} = Command, Arguments) ->
     %% TODO Review: Do we have smarter / better way to check rule on other Host than global ?
-    case acl:any_rules_allowed(global, Rules, FromJID) of
+    Host = global,
+    Rules = lists:map(fun({Mod, AccessName, Default}) ->
+                              gen_mod:get_module_opt(Host, Mod,
+                                                     AccessName, fun(A) -> A end, Default);
+                         (Default) ->
+                              Default
+                      end, AccessRefs),
+    case acl:any_rules_allowed(Host, Rules, FromJID) of
         true ->
             do_execute_command(Command, Arguments);
         false ->
-            {error, access_rules_unauthorized}
+            throw({error, access_rules_unauthorized})
     end.
 
 do_execute_command(Command, Arguments) ->
@@ -611,31 +618,31 @@ check_access_commands(AccessCommands, Auth, Method, Command1, Arguments, CallerI
                 Command1
         end,
     AccessCommandsAllowed =
-	lists:filter(
-	  fun({Access, Commands, ArgumentRestrictions}) ->
-		  case check_access(Command, Access, Auth, CallerInfo) of
-		      true ->
-			  check_access_command(Commands, Command,
-					       ArgumentRestrictions,
-					       Method, Arguments);
-		      false ->
-			  false
-		  end;
-	      ({Access, Commands}) ->
-		  ArgumentRestrictions = [],
-		  case check_access(Command, Access, Auth, CallerInfo) of
-		      true ->
-			  check_access_command(Commands, Command,
-					       ArgumentRestrictions,
-					       Method, Arguments);
-		      false ->
-			  false
-		  end
-	  end,
-	  AccessCommands),
+        lists:filter(
+          fun({Access, Commands, ArgumentRestrictions}) ->
+                  case check_access(Command, Access, Auth, CallerInfo) of
+                      true ->
+                          check_access_command(Commands, Command,
+                                               ArgumentRestrictions,
+                                               Method, Arguments);
+                      false ->
+                          false
+                  end;
+             ({Access, Commands}) ->
+                  ArgumentRestrictions = [],
+                  case check_access(Command, Access, Auth, CallerInfo) of
+                      true ->
+                          check_access_command(Commands, Command,
+                                               ArgumentRestrictions,
+                                               Method, Arguments);
+                      false ->
+                          false
+                  end
+          end,
+          AccessCommands),
     case AccessCommandsAllowed of
-	[] -> throw({error, account_unprivileged});
-	L when is_list(L) -> ok
+        [] -> throw({error, account_unprivileged});
+        L when is_list(L) -> ok
     end.
 
 -spec check_auth(ejabberd_commands(), noauth) -> noauth_provided;
@@ -699,9 +706,9 @@ check_access2(Access, AccessInfo, Server) ->
 check_access_command(Commands, Command, ArgumentRestrictions,
 		     Method, Arguments) ->
     case Commands==all orelse lists:member(Method, Commands) of
-	true -> check_access_arguments(Command, ArgumentRestrictions,
-				       Arguments);
-	false -> false
+        true -> check_access_arguments(Command, ArgumentRestrictions,
+                                       Arguments);
+        false -> false
     end.
 
 check_access_arguments(Command, ArgumentRestrictions, Arguments) ->
@@ -724,6 +731,10 @@ tag_arguments(ArgsDefs, Args) ->
       Args).
 
 
+%% Get commands for all version
+get_all_access_commands(AccessCommands) ->
+    get_access_commands(AccessCommands, ?DEFAULT_VERSION).
+
 get_access_commands(undefined, Version) ->
     Cmds = get_commands(Version),
     [{?POLICY_ACCESS, Cmds, []}];
@@ -736,7 +747,7 @@ get_commands(Version) ->
     Opts0 = ejabberd_config:get_option(
              commands,
              fun(V) when is_list(V) -> V end,
-             []),
+              []),
     Opts = lists:map(fun(V) when is_tuple(V) -> [V]; (V) -> V end, Opts0),
     CommandsList = list_commands_policy(Version),
     OpenCmds = [N || {N, _, _, open} <- CommandsList],
@@ -746,26 +757,28 @@ get_commands(Version) ->
     Cmds =
         lists:foldl(
           fun([{add_commands, L}], Acc) ->
-                  Cmds = case L of
-                             open -> OpenCmds;
-                             restricted -> RestrictedCmds;
-                             admin -> AdminCmds;
-                             user -> UserCmds;
-                             _ when is_list(L) -> L
-                         end,
+                  Cmds = expand_commands(L, OpenCmds, UserCmds, AdminCmds, RestrictedCmds),
                   lists:usort(Cmds ++ Acc);
              ([{remove_commands, L}], Acc) ->
-                  Cmds = case L of
-                             open -> OpenCmds;
-                             restricted -> RestrictedCmds;
-                             admin -> AdminCmds;
-                             user -> UserCmds;
-                             _ when is_list(L) -> L
-                         end,
+                  Cmds = expand_commands(L, OpenCmds, UserCmds, AdminCmds, RestrictedCmds),
                   Acc -- Cmds;
              (_, Acc) -> Acc
-          end, AdminCmds ++ UserCmds, Opts),
+          end, [], Opts),
     Cmds.
+
+expand_commands(L, OpenCmds, UserCmds, AdminCmds, RestrictedCmds) when is_list(L) ->
+    lists:foldl(fun(El, Acc) ->
+                        expand_commands(El, OpenCmds, UserCmds, AdminCmds, RestrictedCmds) ++ Acc
+                end, [], L);
+expand_commands(El, OpenCmds, UserCmds, AdminCmds, RestrictedCmds) ->
+    case El of
+        open -> OpenCmds;
+        restricted -> RestrictedCmds;
+        admin -> AdminCmds;
+        user -> UserCmds;
+        _ -> [El]
+    end.
+
 
 oauth_token_user(noauth) ->
     undefined;

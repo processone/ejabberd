@@ -18,6 +18,8 @@
 #
 # ----------------------------------------------------------------------
 
+## TODO Fix next test error: add admin user ACL
+
 defmodule EjabberdCommandsMockTest do
 	use ExUnit.Case, async: false
 
@@ -44,6 +46,9 @@ defmodule EjabberdCommandsMockTest do
 			_ -> :ok
 		end
 		:mnesia.start
+    :ok = :jid.start
+    :ok = :ejabberd_config.start(["domain1", "domain2"], [])
+    :ok = :acl.start
 		EjabberdOauthMock.init
 		:ok
 	end
@@ -313,7 +318,6 @@ defmodule EjabberdCommandsMockTest do
 	end
 
 
-
 	test "API command with admin policy" do
 		mock_commands_config
 
@@ -393,6 +397,40 @@ defmodule EjabberdCommandsMockTest do
 		assert :meck.validate @module
 	end
 
+  test "Commands can perform extra check on access" do
+    mock_commands_config
+
+		command_name = :test
+		function = :test_command
+		command = ejabberd_commands(name: command_name,
+			args: [{:user, :binary}, {:host, :binary}],
+      access: [:basic_rule_1],
+			module: @module,
+			function: function,
+			policy: :open)
+		:meck.expect(@module, function,
+			fn(user, domain) when is_binary(user) and is_binary(domain) ->
+				{user, domain}
+			end)
+		assert :ok == :ejabberd_commands.register_commands [command]
+
+    :acl.add(:global, :basic_acl_1, {:user, @user})
+    :acl.add_access(:global, :basic_rule_1, [{:allow, [{:acl, :basic_acl_1}]}])
+
+    assert {@user, @domain} ==
+			:ejabberd_commands.execute_command(:undefined,
+        {@user, @domain,
+				 @userpass, false},
+				command_name,
+				[@user, @domain])
+    assert {@user, @domain} ==
+			:ejabberd_commands.execute_command(:undefined,
+        {@admin, @domain,
+				 @adminpass, false},
+				command_name,
+				[@user, @domain])
+
+  end
 
 	##########################################################
 	# Utils
@@ -412,7 +450,7 @@ defmodule EjabberdCommandsMockTest do
 			end)
 		:meck.expect(:ejabberd_config, :get_myhosts,
 			fn() -> [@domain]	end)
-		:meck.new :acl
+		:meck.new :acl #, [:passthrough]
 		:meck.expect(:acl, :access_matches,
 			fn(:commands_admin_access, info, _scope) ->
         case info do

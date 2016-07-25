@@ -28,6 +28,23 @@
 
 -type oauth_scope() :: atom().
 
+%% ejabberd_commands OAuth ReST ACL definition:
+%% Two fields exist that are used to control access on a command from ReST API:
+%% 1. Policy
+%% If policy is:
+%%  - restricted: command is not exposed as OAuth Rest API.
+%%  - admin: Command is allowed for user that have Admin Rest command enabled by access rule: commands_admin_access
+%%  - user: Command might be called by any server user.
+%%  - open: Command can be called by anyone.
+%%
+%% Policy is just used to control who can call the command. A specific additional access rules can be performed, as
+%% defined by access option.
+%% Access option can be a list of:
+%% - {Module, accessName, DefaultValue}: Reference and existing module access to limit who can use the command.
+%% - AccessRule name: direct name of the access rule to check in config file.
+%% TODO: Access option could be atom command (not a list). In the case, User performing the command, will be added as first parameter
+%% to command, so that the command can perform additional check.
+
 -record(ejabberd_commands,
 	{name                    :: atom(),
          tags = []               :: [atom()] | '_' | '$2',
@@ -38,7 +55,8 @@
          function                :: atom() | '_',
          args = []               :: [aterm()] | '_' | '$1' | '$2',
          policy = restricted     :: open | restricted | admin | user,
-         access_rules = []       :: [atom()],
+        %% access is: [accessRuleName] or [{Module, AccessOption, DefaultAccessRuleName}]
+         access = []             :: [{atom(),atom(),atom()}|atom()],
          result = {res, rescode} :: rterm() | '_' | '$2',
          args_desc = none        :: none | [string()] | '_',
          result_desc = none      :: none | string() | '_',
@@ -55,7 +73,7 @@
                                                 function :: atom(),
                                                 args :: [aterm()],
                                                 policy :: open | restricted | admin | user,
-                                                access_rules :: [atom()],
+                                                access :: [{atom(),atom(),atom()}|atom()],
                                                 result :: rterm()}.
 
 %% @type ejabberd_commands() = #ejabberd_commands{
