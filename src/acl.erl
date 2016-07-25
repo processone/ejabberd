@@ -35,6 +35,7 @@
 	 transform_options/1, opt_type/1, acl_rule_matches/3,
 	 acl_rule_verify/1, access_matches/3,
 	 transform_access_rules_config/1,
+	 parse_ip_netmask/1,
 	 access_rules_validator/1, shaper_rules_validator/1]).
 
 -include("ejabberd.hrl").
