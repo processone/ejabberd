@@ -11,12 +11,19 @@
 -record(csi, {type :: active | inactive}).
 -type csi() :: #csi{}.
 
--record(hint, {type :: 'no-copy' | 'no-store' | 'no-storage' |
-		       'store' | 'no-permanent-store'}).
+-record(hint, {type :: 'no-copy' | 'no-store' | 'no-storage' | 'store' |
+		       'no-permanent-store' | 'no-permanent-storage'}).
 -type hint() :: #hint{}.
 
 -record(feature_register, {}).
 -type feature_register() :: #feature_register{}.
+
+-record(address, {type :: 'bcc' | 'cc' | 'noreply' | 'ofrom' | 'replyroom' | 'replyto' | 'to',
+                  jid :: any(),
+                  desc :: binary(),
+                  node :: binary(),
+                  delivered :: any()}).
+-type address() :: #address{}.
 
 -record(sasl_success, {text :: any()}).
 -type sasl_success() :: #sasl_success{}.
@@ -55,6 +62,9 @@
                  stored :: non_neg_integer()}).
 -type expire() :: #expire{}.
 
+-record(muc_unsubscribe, {}).
+-type muc_unsubscribe() :: #muc_unsubscribe{}.
+
 -record(pubsub_unsubscribe, {node :: binary(),
                              jid :: any(),
                              subid :: binary()}).
@@ -81,7 +91,7 @@
                              type :: 'member' | 'none' | 'outcast' | 'owner' | 'publish-only' | 'publisher'}).
 -type pubsub_affiliation() :: #pubsub_affiliation{}.
 
--record(muc_decline, {reason :: binary(),
+-record(muc_decline, {reason = <<>> :: 'undefined' | binary(),
                       from :: any(),
                       to :: any()}).
 -type muc_decline() :: #muc_decline{}.
@@ -90,8 +100,19 @@
                xmlns :: binary()}).
 -type sm_a() :: #sm_a{}.
 
+-record(muc_subscribe, {nick :: binary(),
+                        events = [] :: [binary()]}).
+-type muc_subscribe() :: #muc_subscribe{}.
+
+-record(stanza_id, {by :: any(),
+                    id :: binary()}).
+-type stanza_id() :: #stanza_id{}.
+
 -record(starttls_proceed, {}).
 -type starttls_proceed() :: #starttls_proceed{}.
+
+-record(client_id, {id :: binary()}).
+-type client_id() :: #client_id{}.
 
 -record(sm_resumed, {h :: non_neg_integer(),
                      previd :: binary(),
@@ -116,8 +137,18 @@
 -record(gone, {uri :: binary()}).
 -type gone() :: #gone{}.
 
+-record(x_conference, {jid :: any(),
+                       password = <<>> :: binary(),
+                       reason = <<>> :: binary(),
+                       continue :: any(),
+                       thread = <<>> :: binary()}).
+-type x_conference() :: #x_conference{}.
+
 -record(private, {xml_els = [] :: [any()]}).
 -type private() :: #private{}.
+
+-record(nick, {name :: binary()}).
+-type nick() :: #nick{}.
 
 -record(p1_ack, {}).
 -type p1_ack() :: #p1_ack{}.
@@ -163,6 +194,9 @@
                error = [] :: [{integer(),'undefined' | binary()}]}).
 -type stat() :: #stat{}.
 
+-record(addresses, {list = [] :: [#address{}]}).
+-type addresses() :: #addresses{}.
+
 -record('see-other-host', {host :: binary()}).
 -type 'see-other-host'() :: #'see-other-host'{}.
 
@@ -194,6 +228,9 @@
 -record(pubsub_event, {items = [] :: [#pubsub_event_items{}]}).
 -type pubsub_event() :: #pubsub_event{}.
 
+-record(muc_unique, {name = <<>> :: binary()}).
+-type muc_unique() :: #muc_unique{}.
+
 -record(sasl_response, {text :: any()}).
 -type sasl_response() :: #sasl_response{}.
 
@@ -217,18 +254,10 @@
 -record(feature_csi, {xmlns :: binary()}).
 -type feature_csi() :: #feature_csi{}.
 
--record(muc_user_destroy, {reason :: binary(),
-                           jid :: any()}).
--type muc_user_destroy() :: #muc_user_destroy{}.
-
 -record(disco_item, {jid :: any(),
                      name :: binary(),
                      node :: binary()}).
 -type disco_item() :: #disco_item{}.
-
--record(disco_items, {node :: binary(),
-                      items = [] :: [#disco_item{}]}).
--type disco_items() :: #disco_items{}.
 
 -record(unblock, {items = [] :: [any()]}).
 -type unblock() :: #unblock{}.
@@ -239,10 +268,8 @@
 -record(compression, {methods = [] :: [binary()]}).
 -type compression() :: #compression{}.
 
--record(muc_owner_destroy, {jid :: any(),
-                            reason :: binary(),
-                            password :: binary()}).
--type muc_owner_destroy() :: #muc_owner_destroy{}.
+-record(muc_subscriptions, {list = [] :: [any()]}).
+-type muc_subscriptions() :: #muc_subscriptions{}.
 
 -record(pubsub_subscription, {jid :: any(),
                               node :: binary(),
@@ -252,7 +279,7 @@
 
 -record(muc_item, {actor :: #muc_actor{},
                    continue :: binary(),
-                   reason :: binary(),
+                   reason = <<>> :: 'undefined' | binary(),
                    affiliation :: 'admin' | 'member' | 'none' | 'outcast' | 'owner',
                    role :: 'moderator' | 'none' | 'participant' | 'visitor',
                    jid :: any(),
@@ -267,8 +294,8 @@
 
 -record(mam_prefs, {xmlns :: binary(),
                     default :: 'always' | 'never' | 'roster',
-                    always = [] :: [any()],
-                    never = [] :: [any()]}).
+                    always :: [any()],
+                    never :: [any()]}).
 -type mam_prefs() :: #mam_prefs{}.
 
 -record(caps, {node :: binary(),
@@ -350,24 +377,23 @@
 -record(block_list, {items = [] :: [any()]}).
 -type block_list() :: #block_list{}.
 
+-record(xdata_option, {label :: binary(),
+                       value :: binary()}).
+-type xdata_option() :: #xdata_option{}.
+
 -record(xdata_field, {label :: binary(),
                       type :: 'boolean' | 'fixed' | 'hidden' | 'jid-multi' | 'jid-single' | 'list-multi' | 'list-single' | 'text-multi' | 'text-private' | 'text-single',
                       var :: binary(),
                       required = false :: boolean(),
                       desc :: binary(),
                       values = [] :: [binary()],
-                      options = [] :: [binary()]}).
+                      options = [] :: [#xdata_option{}]}).
 -type xdata_field() :: #xdata_field{}.
 
 -record(version, {name :: binary(),
                   ver :: binary(),
                   os :: binary()}).
 -type version() :: #version{}.
-
--record(muc_invite, {reason :: binary(),
-                     from :: any(),
-                     to :: any()}).
--type muc_invite() :: #muc_invite{}.
 
 -record(bind, {jid :: any(),
                resource :: any()}).
@@ -376,13 +402,11 @@
 -record(rosterver_feature, {}).
 -type rosterver_feature() :: #rosterver_feature{}.
 
--record(muc_user, {decline :: #muc_decline{},
-                   destroy :: #muc_user_destroy{},
-                   invites = [] :: [#muc_invite{}],
-                   items = [] :: [#muc_item{}],
-                   status_codes = [] :: [pos_integer()],
-                   password :: binary()}).
--type muc_user() :: #muc_user{}.
+-record(muc_invite, {reason = <<>> :: 'undefined' | binary(),
+                     from :: any(),
+                     to :: any(),
+                     continue :: binary()}).
+-type muc_invite() :: #muc_invite{}.
 
 -record(carbons_disable, {}).
 -type carbons_disable() :: #carbons_disable{}.
@@ -400,7 +424,7 @@
 -type vcard_org() :: #vcard_org{}.
 
 -record(rsm_set, {'after' :: binary(),
-                  before :: 'none' | binary(),
+                  before :: binary(),
                   count :: non_neg_integer(),
                   first :: #rsm_first{},
                   index :: non_neg_integer(),
@@ -413,6 +437,11 @@
                   stable :: any(),
                   complete :: any()}).
 -type mam_fin() :: #mam_fin{}.
+
+-record(disco_items, {node :: binary(),
+                      items = [] :: [#disco_item{}],
+                      rsm :: #rsm_set{}}).
+-type disco_items() :: #disco_items{}.
 
 -record(vcard_tel, {home = false :: boolean(),
                     work = false :: boolean(),
@@ -429,6 +458,20 @@
                     pref = false :: boolean(),
                     number :: binary()}).
 -type vcard_tel() :: #vcard_tel{}.
+
+-record(muc_destroy, {xmlns :: binary(),
+                      jid :: any(),
+                      reason = <<>> :: 'undefined' | binary(),
+                      password :: binary()}).
+-type muc_destroy() :: #muc_destroy{}.
+
+-record(muc_user, {decline :: #muc_decline{},
+                   destroy :: #muc_destroy{},
+                   invites = [] :: [#muc_invite{}],
+                   items = [] :: [#muc_item{}],
+                   status_codes = [] :: [pos_integer()],
+                   password :: binary()}).
+-type muc_user() :: #muc_user{}.
 
 -record(vcard_key, {type :: binary(),
                     cred :: binary()}).
@@ -530,13 +573,10 @@
                     start :: any(),
                     'end' :: any(),
                     with :: any(),
+                    withtext :: binary(),
                     rsm :: #rsm_set{},
                     xdata :: #xdata{}}).
 -type mam_query() :: #mam_query{}.
-
--record(muc_owner, {destroy :: #muc_owner_destroy{},
-                    config :: #xdata{}}).
--type muc_owner() :: #muc_owner{}.
 
 -record(pubsub_options, {node :: binary(),
                          jid :: any(),
@@ -591,6 +631,11 @@
                   purge = false :: boolean(),
                   fetch = false :: boolean()}).
 -type offline() :: #offline{}.
+
+-record(muc_owner, {destroy :: #muc_destroy{},
+                    config :: #xdata{},
+                    items = [] :: [#muc_item{}]}).
+-type muc_owner() :: #muc_owner{}.
 
 -record(sasl_mechanisms, {list = [] :: [binary()]}).
 -type sasl_mechanisms() :: #sasl_mechanisms{}.
@@ -709,6 +754,7 @@
 
 -type xmpp_element() :: compression() |
                         pubsub_subscription() |
+                        xdata_option() |
                         version() |
                         pubsub_affiliation() |
                         muc_admin() |
@@ -726,7 +772,9 @@
                         rsm_set() |
                         'see-other-host'() |
                         hint() |
+                        stanza_id() |
                         starttls_proceed() |
+                        client_id() |
                         sm_resumed() |
                         forwarded() |
                         xevent() |
@@ -742,8 +790,11 @@
                         pubsub_event_item() |
                         muc_item() |
                         vcard_temp() |
+                        address() |
                         sasl_success() |
+                        addresses() |
                         pubsub_event_items() |
+                        muc_subscriptions() |
                         disco_items() |
                         pubsub_options() |
                         compress() |
@@ -751,33 +802,25 @@
                         muc_history() |
                         identity() |
                         feature_csi() |
-                        muc_user_destroy() |
                         privacy_query() |
                         delay() |
                         vcard_tel() |
-                        vcard_logo() |
-                        disco_info() |
                         vcard_geo() |
                         vcard_photo() |
-                        feature_register() |
-                        register() |
-                        muc_owner() |
                         pubsub() |
-                        sm_r() |
+                        muc_owner() |
                         muc_actor() |
-                        error() |
-                        stream_error() |
-                        muc_user() |
-                        vcard_adr() |
                         carbons_private() |
                         mix_leave() |
-                        muc_invite() |
+                        muc_subscribe() |
                         rosterver_feature() |
+                        muc_invite() |
                         vcard_xupdate() |
                         carbons_disable() |
                         bookmark_conference() |
                         offline() |
                         time() |
+                        muc_unique() |
                         sasl_response() |
                         pubsub_subscribe() |
                         presence() |
@@ -786,6 +829,7 @@
                         starttls_failure() |
                         sasl_challenge() |
                         gone() |
+                        x_conference() |
                         private() |
                         compress_failure() |
                         sasl_failure() |
@@ -794,6 +838,7 @@
                         sm_resume() |
                         carbons_enable() |
                         expire() |
+                        muc_unsubscribe() |
                         pubsub_unsubscribe() |
                         muc_decline() |
                         chatstate() |
@@ -803,6 +848,7 @@
                         search() |
                         pubsub_publish() |
                         unblock() |
+                        nick() |
                         p1_ack() |
                         block() |
                         mix_join() |
@@ -832,11 +878,20 @@
                         starttls() |
                         mam_prefs() |
                         sasl_mechanisms() |
+                        muc_destroy() |
                         vcard_key() |
                         csi() |
                         roster_query() |
-                        muc_owner_destroy() |
                         mam_query() |
                         bookmark_url() |
                         vcard_email() |
-                        vcard_label().
+                        vcard_label() |
+                        vcard_logo() |
+                        disco_info() |
+                        feature_register() |
+                        register() |
+                        sm_r() |
+                        error() |
+                        stream_error() |
+                        muc_user() |
+                        vcard_adr().

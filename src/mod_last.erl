@@ -140,7 +140,7 @@ process_sm_iq(#iq{from = From, to = To, lang = Lang} = IQ) ->
 	    end;
        true ->
 	    Txt = <<"Not subscribed">>,
-	    xmpp:make_error(IQ, xmpp:err_not_subscribed(Txt, Lang))
+	    xmpp:make_error(IQ, xmpp:err_subscription_required(Txt, Lang))
     end.
 
 %% @spec (LUser::string(), LServer::string()) ->

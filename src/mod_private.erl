@@ -72,7 +72,7 @@ process_sm_iq(#iq{type = Type, lang = Lang,
     case filter_xmlels(Els0) of
 	[] ->
 	    Txt = <<"No private data found in this query">>,
-	    xmpp:make_error(IQ, xmpp:err_bad_format(Txt, Lang));
+	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	Data when Type == set ->
 	    set_data(LUser, LServer, Data),
 	    xmpp:make_iq_result(IQ);

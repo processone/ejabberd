@@ -10,7 +10,8 @@
 
 %% API
 -export([add_delay_info/3, add_delay_info/4, unwrap_carbon/1,
-	 is_standalone_chat_state/1]).
+	 is_standalone_chat_state/1, get_xdata_values/2,
+	 has_xdata_var/2]).
 
 -include("xmpp.hrl").
 
@@ -75,6 +76,17 @@ is_standalone_chat_state(Stanza) ->
 	_ ->
 	    false
     end.
+
+-spec get_xdata_values(binary(), xdata()) -> [binary()].
+get_xdata_values(Var, #xdata{fields = Fields}) ->
+    case lists:keyfind(Var, #xdata_field.var, Fields) of
+	#xdata_field{values = Vals} -> Vals;
+	false -> []
+    end.
+
+-spec has_xdata_var(binary(), xdata()) -> boolean().
+has_xdata_var(Var, #xdata{fields = Fields}) ->
+    lists:keymember(Var, #xdata_field.var, Fields).
 
 %%%===================================================================
 %%% Internal functions

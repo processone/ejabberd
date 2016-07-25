@@ -12,10 +12,10 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/8]).
+	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/5]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("logger.hrl").
 -include("mod_mam.hrl").
 
@@ -132,7 +132,8 @@ get_prefs(LUser, LServer) ->
 
 select(_LServer, JidRequestor,
        #jid{luser = LUser, lserver = LServer} = JidArchive,
-       Start, End, With, RSM, MsgType) ->
+       #mam_query{start = Start, 'end' = End,
+		  with = With, rsm = RSM}, MsgType) ->
     MS = make_matchspec(LUser, LServer, Start, End, With),
     Msgs = mnesia:dirty_select(archive_msg, MS),
     SortedMsgs = lists:keysort(#archive_msg.timestamp, Msgs),
@@ -174,7 +175,7 @@ make_matchspec(LUser, LServer, Start, End, {_, _, _} = With) ->
 		 Peer == With ->
 	      Msg
       end);
-make_matchspec(LUser, LServer, Start, End, none) ->
+make_matchspec(LUser, LServer, Start, End, undefined) ->
     ets:fun2ms(
       fun(#archive_msg{timestamp = TS,
 		       us = US,
@@ -184,28 +185,27 @@ make_matchspec(LUser, LServer, Start, End, none) ->
 	      Msg
       end).
 
-filter_by_rsm(Msgs, none) ->
+filter_by_rsm(Msgs, undefined) ->
     {Msgs, true};
-filter_by_rsm(_Msgs, #rsm_in{max = Max}) when Max < 0 ->
+filter_by_rsm(_Msgs, #rsm_set{max = Max}) when Max < 0 ->
     {[], true};
-filter_by_rsm(Msgs, #rsm_in{max = Max, direction = Direction, id = ID}) ->
-    NewMsgs = case Direction of
-		  aft when ID /= <<"">> ->
+filter_by_rsm(Msgs, #rsm_set{max = Max, before = Before, 'after' = After}) ->
+    NewMsgs = if is_binary(After), After /= <<"">> ->
 		      lists:filter(
 			fun(#archive_msg{id = I}) ->
-				?BIN_GREATER_THAN(I, ID)
+				?BIN_GREATER_THAN(I, After)
 			end, Msgs);
-		  before when ID /= <<"">> ->
+		 is_binary(Before), Before /= <<"">> ->
 		      lists:foldl(
 			fun(#archive_msg{id = I} = Msg, Acc)
-				when ?BIN_LESS_THAN(I, ID) ->
+				when ?BIN_LESS_THAN(I, Before) ->
 				[Msg|Acc];
 			   (_, Acc) ->
 				Acc
 			end, [], Msgs);
-		  before when ID == <<"">> ->
+		 is_binary(Before), Before == <<"">> ->
 		      lists:reverse(Msgs);
-		  _ ->
+		 true ->
 		      Msgs
 	      end,
     filter_by_max(NewMsgs, Max).

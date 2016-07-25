@@ -71,6 +71,7 @@
 -type config() :: #config{}.
 
 -type role() :: moderator | participant | visitor | none.
+-type affiliation() :: admin | member | outcast | owner | none.
 
 -record(user,
 {
@@ -120,5 +121,3 @@
                            host = <<>> :: binary() | '_' | '$2'}).
 
 -type muc_online_users() :: #muc_online_users{}.
-
--type muc_room_state() :: #state{}.

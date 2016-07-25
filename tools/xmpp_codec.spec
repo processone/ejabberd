@@ -224,10 +224,12 @@
 -xml(disco_items,
      #elem{name = <<"query">>,
            xmlns = <<"http://jabber.org/protocol/disco#items">>,
-           result = {disco_items, '$node', '$items'},
+           result = {disco_items, '$node', '$items', '$rsm'},
            attrs = [#attr{name = <<"node">>}],
            refs = [#ref{name = disco_item,
-                        label = '$items'}]}).
+                        label = '$items'},
+		   #ref{name = rsm_set, min = 0, max = 1,
+			label = '$rsm'}]}).
 
 -xml(private,
      #elem{name = <<"query">>,
@@ -468,6 +470,10 @@
      #elem{name = <<"not-authorized">>,
            xmlns = <<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
            result = 'not-authorized'}).
+-xml(error_payment_required,
+     #elem{name = <<"payment-required">>,
+           xmlns = <<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+           result = 'payment-required'}).
 -xml(error_policy_violation,
      #elem{name = <<"policy-violation">>,
            xmlns = <<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
@@ -560,6 +566,8 @@
                    #ref{name = error_not_allowed,
                         min = 0, max = 1, label = '$reason'},
                    #ref{name = error_not_authorized,
+                        min = 0, max = 1, label = '$reason'},
+		   #ref{name = error_payment_required,
                         min = 0, max = 1, label = '$reason'},
                    #ref{name = error_policy_violation,
                         min = 0, max = 1, label = '$reason'},
@@ -1582,7 +1590,8 @@
 -xml(xdata_field_option,
      #elem{name = <<"option">>,
            xmlns = <<"jabber:x:data">>,
-           result = '$value',
+           result = {xdata_option, '$label', '$value'},
+	   attrs = [#attr{name = <<"label">>}],
            refs = [#ref{name = xdata_field_value,
                         label = '$value',
                         min = 1, max = 1}]}).
@@ -1945,9 +1954,11 @@
                           dec = {dec_utc, []},
                           enc = {enc_utc, []}}]}).
 
--xml(muc_user_reason,
+-xml(muc_reason,
      #elem{name = <<"reason">>,
-           xmlns = <<"http://jabber.org/protocol/muc#user">>,
+           xmlns = [<<"http://jabber.org/protocol/muc#user">>,
+		    <<"http://jabber.org/protocol/muc#admin">>,
+		    <<"http://jabber.org/protocol/muc#owner">>],
            result = '$cdata'}).
 
 -xml(muc_user_decline,
@@ -1960,31 +1971,39 @@
                     #attr{name = <<"from">>,
                           dec = {dec_jid, []},
                           enc = {enc_jid, []}}],
-           refs = [#ref{name = muc_user_reason, min = 0,
+           refs = [#ref{name = muc_reason, min = 0,
+			default = <<"">>,
                         max = 1, label = '$reason'}]}).
 
--xml(muc_user_destroy,
+-xml(muc_destroy,
      #elem{name = <<"destroy">>,
-           xmlns = <<"http://jabber.org/protocol/muc#user">>,
-           result = {muc_user_destroy, '$reason', '$jid'},
-           attrs = [#attr{name = <<"jid">>,
+	   xmlns = [<<"http://jabber.org/protocol/muc#user">>,
+		    <<"http://jabber.org/protocol/muc#owner">>],
+	   result = {muc_destroy, '$xmlns', '$jid', '$reason', '$password'},
+	   attrs = [#attr{name = <<"jid">>,
                           dec = {dec_jid, []},
-                          enc = {enc_jid, []}}],
-           refs = [#ref{name = muc_user_reason, min = 0,
-                        max = 1, label = '$reason'}]}).
+                          enc = {enc_jid, []}},
+		    #attr{name = <<"xmlns">>}],
+	   refs = [#ref{name = muc_reason, min = 0,
+			default = <<"">>,
+                        max = 1, label = '$reason'},
+		   #ref{name = muc_password, min = 0, max = 1,
+			label = '$password'}]}).
 
 -xml(muc_user_invite,
      #elem{name = <<"invite">>,
            xmlns = <<"http://jabber.org/protocol/muc#user">>,
-           result = {muc_invite, '$reason', '$from', '$to'},
+           result = {muc_invite, '$reason', '$from', '$to', '$continue'},
            attrs = [#attr{name = <<"to">>,
                           dec = {dec_jid, []},
                           enc = {enc_jid, []}},
                     #attr{name = <<"from">>,
                           dec = {dec_jid, []},
                           enc = {enc_jid, []}}],
-           refs = [#ref{name = muc_user_reason, min = 0,
-                        max = 1, label = '$reason'}]}).
+           refs = [#ref{name = muc_reason, min = 0, default = <<"">>,
+                        max = 1, label = '$reason'},
+		   #ref{name = muc_user_continue, min = 0, max = 1,
+			label = '$continue'}]}).
 
 -xml(muc_user_actor,
      #elem{name = <<"actor">>,
@@ -2018,7 +2037,7 @@
                         min = 0, max = 1, label = '$actor'},
                    #ref{name = muc_user_continue,
                         min = 0, max = 1, label = '$continue'},
-                   #ref{name = muc_user_reason,
+                   #ref{name = muc_reason, default = <<"">>,
                         min = 0, max = 1, label = '$reason'}],
            attrs = [#attr{name = <<"affiliation">>,
                           dec = {dec_enum, [[admin, member, none,
@@ -2038,44 +2057,56 @@
            xmlns = <<"http://jabber.org/protocol/muc#user">>,
            result = {muc_user, '$decline', '$destroy', '$invites',
                      '$items', '$status_codes', '$password'},
-           attrs = [#attr{name = <<"password">>}],
            refs = [#ref{name = muc_user_decline, min = 0,
                         max = 1, label = '$decline'},
-                   #ref{name = muc_user_destroy, min = 0, max = 1,
+                   #ref{name = muc_destroy, min = 0, max = 1,
                         label = '$destroy'},
+		   #ref{name = muc_password, min = 0, max = 1,
+			label = '$password'},
                    #ref{name = muc_user_invite, label = '$invites'},
                    #ref{name = muc_user_item, label = '$items'},
                    #ref{name = muc_user_status, label = '$status_codes'}]}).
 
--xml(muc_owner_password,
+-xml(muc_password,
      #elem{name = <<"password">>,
-           xmlns = <<"http://jabber.org/protocol/muc#owner">>,
+           xmlns = [<<"http://jabber.org/protocol/muc#owner">>,
+		    <<"http://jabber.org/protocol/muc#user">>,
+		    <<"http://jabber.org/protocol/muc">>],
            result = '$cdata'}).
-
--xml(muc_owner_reason,
-     #elem{name = <<"reason">>,
-           xmlns = <<"http://jabber.org/protocol/muc#owner">>,
-           result = '$cdata'}).
-
--xml(muc_owner_destroy,
-     #elem{name = <<"destroy">>,
-           xmlns = <<"http://jabber.org/protocol/muc#owner">>,
-           result = {muc_owner_destroy, '$jid', '$reason', '$password'},
-           attrs = [#attr{name = <<"jid">>,
-                          dec = {dec_jid, []},
-                          enc = {enc_jid, []}}],
-           refs = [#ref{name = muc_owner_password, min = 0, max = 1,
-                        label = '$password'},
-                   #ref{name = muc_owner_reason, min = 0, max = 1,
-                        label = '$reason'}]}).
 
 -xml(muc_owner,
      #elem{name = <<"query">>,
            xmlns = <<"http://jabber.org/protocol/muc#owner">>,
-           result = {muc_owner, '$destroy', '$config'},
-           refs = [#ref{name = muc_owner_destroy, min = 0, max = 1,
-                        label = '$destroy'},
-                   #ref{name = xdata, min = 0, max = 1, label = '$config'}]}).
+           result = {muc_owner, '$destroy', '$config', '$items'},
+           refs = [#ref{name = muc_destroy, min = 0, max = 1,
+			label = '$destroy'},
+                   #ref{name = xdata, min = 0, max = 1,
+			label = '$config'},
+		   #ref{name = muc_owner_item, label = '$items'}]}).
+
+-xml(muc_owner_item,
+     #elem{name = <<"item">>,
+           xmlns = <<"http://jabber.org/protocol/muc#owner">>,
+           result = {muc_item, '$actor', '$continue', '$reason',
+                     '$affiliation', '$role', '$jid', '$nick'},
+           refs = [#ref{name = muc_admin_actor,
+                        min = 0, max = 1, label = '$actor'},
+                   #ref{name = muc_admin_continue,
+                        min = 0, max = 1, label = '$continue'},
+                   #ref{name = muc_reason, default = <<"">>,
+                        min = 0, max = 1, label = '$reason'}],
+           attrs = [#attr{name = <<"affiliation">>,
+                          dec = {dec_enum, [[admin, member, none,
+                                             outcast, owner]]},
+                          enc = {enc_enum, []}},
+                    #attr{name = <<"role">>,
+                          dec = {dec_enum, [[moderator, none,
+                                             participant, visitor]]},
+                          enc = {enc_enum, []}},
+                    #attr{name = <<"jid">>,
+                          dec = {dec_jid, []},
+                          enc = {enc_jid, []}},
+                    #attr{name = <<"nick">>}]}).
 
 -xml(muc_admin_item,
      #elem{name = <<"item">>,
@@ -2086,7 +2117,7 @@
                         min = 0, max = 1, label = '$actor'},
                    #ref{name = muc_admin_continue,
                         min = 0, max = 1, label = '$continue'},
-                   #ref{name = muc_admin_reason,
+                   #ref{name = muc_reason, default = <<"">>,
                         min = 0, max = 1, label = '$reason'}],
            attrs = [#attr{name = <<"affiliation">>,
                           dec = {dec_enum, [[admin, member, none,
@@ -2116,11 +2147,6 @@
            result = '$thread',
            attrs = [#attr{name = <<"thread">>}]}).
 
--xml(muc_admin_reason,
-     #elem{name = <<"reason">>,
-           xmlns = <<"http://jabber.org/protocol/muc#admin">>,
-           result = '$cdata'}).
-
 -xml(muc_admin,
      #elem{name = <<"query">>,
 	   xmlns = <<"http://jabber.org/protocol/muc#admin">>,
@@ -2131,9 +2157,66 @@
      #elem{name = <<"x">>,
            xmlns = <<"http://jabber.org/protocol/muc">>,
            result = {muc, '$history', '$password'},
-           attrs = [#attr{name = <<"password">>}],
            refs = [#ref{name = muc_history, min = 0, max = 1,
-                        label = '$history'}]}).
+                        label = '$history'},
+		   #ref{name = muc_password, min = 0, max = 1,
+			label = '$password'}]}).
+
+-xml(muc_unique,
+     #elem{name = <<"unique">>,
+	   xmlns = <<"http://jabber.org/protocol/muc#unique">>,
+	   result = {muc_unique, '$name'},
+	   cdata = #cdata{default = <<"">>,
+			  label = '$name'}}).
+
+-xml(x_conference,
+     #elem{name = <<"x">>,
+	   xmlns = <<"jabber:x:conference">>,
+	   result = {x_conference, '$jid', '$password', '$reason',
+		     '$continue', '$thread'},
+	   attrs = [#attr{name = <<"jid">>,
+			  required = true,
+			  dec = {dec_jid, []},
+                          enc = {enc_jid, []}},
+		    #attr{name = <<"password">>, default = <<"">>},
+		    #attr{name = <<"reason">>, default = <<"">>},
+		    #attr{name = <<"thread">>, default = <<"">>},
+		    #attr{name = <<"continue">>,
+			  dec = {dec_bool, []},
+			  enc = {enc_bool, []}}]}).
+
+-xml(muc_subscription,
+     #elem{name = <<"subscription">>,
+	   xmlns = <<"urn:xmpp:mucsub:0">>,
+	   result = '$jid',
+           attrs = [#attr{name = <<"jid">>,
+                          required = true,
+                          dec = {dec_jid, []},
+                          enc = {enc_jid, []}}]}).
+
+-xml(muc_subscriptions,
+     #elem{name = <<"subscriptions">>,
+	   xmlns = <<"urn:xmpp:mucsub:0">>,
+	   result = {muc_subscriptions, '$list'},
+	   refs = [#ref{name = muc_subscription, label = '$list'}]}).
+
+-xml(muc_subscribe_event,
+     #elem{name = <<"event">>,
+	   xmlns = <<"urn:xmpp:mucsub:0">>,
+	   result = '$node',
+	   attrs = [#attr{name = <<"node">>, required = true}]}).
+
+-xml(muc_subscribe,
+     #elem{name = <<"subscribe">>,
+	   xmlns = <<"urn:xmpp:mucsub:0">>,
+	   result = {muc_subscribe, '$nick', '$events'},
+	   attrs = [#attr{name = <<"nick">>, required = true}],
+	   refs = [#ref{name = muc_subscribe_event, label = '$events'}]}).
+
+-xml(muc_unsubscribe,
+     #elem{name = <<"unsubscribe">>,
+	   xmlns = <<"urn:xmpp:mucsub:0">>,
+	   result = {muc_unsubscribe}}).
 
 -xml(rsm_after,
      #elem{name = <<"after">>,
@@ -2143,7 +2226,7 @@
 -xml(rsm_before,
      #elem{name = <<"before">>,
            xmlns = <<"http://jabber.org/protocol/rsm">>,
-	   cdata = #cdata{default = none},
+	   cdata = #cdata{default = <<"">>},
            result = '$cdata'}).
 
 -xml(rsm_last,
@@ -2215,16 +2298,23 @@
                           dec = {dec_jid, []},
                           enc = {enc_jid, []}}}).
 
+-xml(mam_withtext,
+     #elem{name = <<"withtext">>,
+	   xmlns = <<"urn:xmpp:mam:tmp">>,
+	   result = '$cdata',
+	   cdata = #cdata{required = true}}).
+
 -xml(mam_query,
      #elem{name = <<"query">>,
            xmlns = [<<"urn:xmpp:mam:0">>, <<"urn:xmpp:mam:1">>, <<"urn:xmpp:mam:tmp">>],
            result = {mam_query, '$xmlns', '$id', '$start', '$end', '$with',
-		     '$rsm', '$xdata'},
+		     '$withtext', '$rsm', '$xdata'},
            attrs = [#attr{name = <<"queryid">>, label = '$id'},
 		    #attr{name = <<"xmlns">>}],
            refs = [#ref{name = mam_start, min = 0, max = 1, label = '$start'},
                    #ref{name = mam_end, min = 0, max = 1, label = '$end'},
                    #ref{name = mam_with, min = 0, max = 1, label = '$with'},
+		   #ref{name = mam_withtext, min = 0, max = 1, label = '$withtext'},
                    #ref{name = rsm_set, min = 0, max = 1, label = '$rsm'},
 		   #ref{name = xdata, min = 0, max = 1, label = '$xdata'}]}).
 
@@ -2248,7 +2338,7 @@
 
 -xml(mam_jid,
      #elem{name = <<"jid">>,
-           xmlns = <<"urn:xmpp:mam:tmp">>,
+           xmlns = [<<"urn:xmpp:mam:0">>, <<"urn:xmpp:mam:1">>, <<"urn:xmpp:mam:tmp">>],
            result = '$cdata',
            cdata = #cdata{required = true,
                           dec = {dec_jid, []},
@@ -2256,15 +2346,15 @@
 
 -xml(mam_never,
      #elem{name = <<"never">>,
-           xmlns = <<"urn:xmpp:mam:tmp">>,
+           xmlns = [<<"urn:xmpp:mam:0">>, <<"urn:xmpp:mam:1">>, <<"urn:xmpp:mam:tmp">>],
            result = '$jids',
-           refs = [#ref{name = mam_jid, label = '$jids', default = []}]}).
+           refs = [#ref{name = mam_jid, label = '$jids'}]}).
 
 -xml(mam_always,
      #elem{name = <<"always">>,
-           xmlns = <<"urn:xmpp:mam:tmp">>,
+           xmlns = [<<"urn:xmpp:mam:0">>, <<"urn:xmpp:mam:1">>, <<"urn:xmpp:mam:tmp">>],
            result = '$jids',
-           refs = [#ref{name = mam_jid, label = '$jids', default = []}]}).
+           refs = [#ref{name = mam_jid, label = '$jids'}]}).
 
 -xml(mam_prefs,
      #elem{name = <<"prefs">>,
@@ -2275,9 +2365,9 @@
                           enc = {enc_enum, []}},
 		    #attr{name = <<"xmlns">>}],
            refs = [#ref{name = mam_always, label = '$always',
-                        min = 0, max = 1, default = []},
+                        min = 0, max = 1},
                    #ref{name = mam_never, label = '$never',
-                        min = 0, max = 1, default = []}]}).
+                        min = 0, max = 1}]}).
 
 -xml(mam_fin,
      #elem{name = <<"fin">>,
@@ -2538,8 +2628,8 @@
 		    #attr{name = <<"nick">>,
 			  label = '$nick'}]}).
 
--record(hint, {type :: 'no-copy' | 'no-store' | 'no-storage' |
-		       'store' | 'no-permanent-store'}).
+-record(hint, {type :: 'no-copy' | 'no-store' | 'no-storage' | 'store' |
+		       'no-permanent-store' | 'no-permanent-storage'}).
 -type hint() :: #hint{}.
 
 -xml(hint_no_copy,
@@ -2566,6 +2656,11 @@
      #elem{name = <<"no-permanent-store">>,
 	   xmlns = <<"urn:xmpp:hints">>,
 	   result = {hint, 'no-permanent-store'}}).
+
+-xml(hint_no_permanent_storage,
+     #elem{name = <<"no-permanent-storage">>,
+	   xmlns = <<"urn:xmpp:hints">>,
+	   result = {hint, 'no-permanent-storage'}}).
 
 -xml(search_instructions,
      #elem{name = <<"instructions">>,
@@ -2678,6 +2773,53 @@
 		    #attr{name = <<"stored">>,
 			  dec = {dec_int, [0, infinity]},
                           enc = {enc_int, []}}]}).
+
+-xml(nick,
+     #elem{name = <<"nick">>,
+	   xmlns = <<"http://jabber.org/protocol/nick">>,
+	   result = {nick, '$name'},
+	   cdata = #cdata{label = '$name',
+			  required = true}}).
+
+-xml(address,
+     #elem{name = <<"address">>,
+	   xmlns = <<"http://jabber.org/protocol/address">>,
+	   result = {address, '$type', '$jid', '$desc', '$node', '$delivered'},
+	   attrs = [#attr{name = <<"type">>,
+			  required = true,
+			  dec = {dec_enum, [[bcc, cc, noreply, ofrom,
+					     replyroom, replyto, to]]},
+			  enc = {enc_enum, []}},
+		    #attr{name = <<"jid">>,
+			  enc = {enc_jid, []},
+			  dec = {dec_jid, []}},
+		    #attr{name = <<"desc">>},
+		    #attr{name = <<"node">>},
+		    #attr{name = <<"delivered">>,
+			  enc = {enc_bool, []},
+			  dec = {dec_bool, []}}]}).
+
+-xml(addresses,
+     #elem{name = <<"addresses">>,
+	   xmlns = <<"http://jabber.org/protocol/address">>,
+	   result = {addresses, '$list'},
+	   %% TODO: 'min' should be '1', but this is not implemented
+	   refs = [#ref{name = address, label = '$list'}]}).
+
+-xml(stanza_id,
+     #elem{name = <<"stanza-id">>,
+	   xmlns = <<"urn:xmpp:sid:0">>,
+	   result = {stanza_id, '$by', '$id'},
+	   attrs = [#attr{name = <<"id">>, required = true},
+		    #attr{name = <<"by">>, required = true,
+			  enc = {enc_jid, []},
+			  dec = {dec_jid, []}}]}).
+
+-xml(client_id,
+     #elem{name = <<"client-id">>,
+	   xmlns = <<"urn:xmpp:sid:0">>,
+	   result = {client_id, '$id'},
+	   attrs = [#attr{name = <<"id">>, required = true}]}).
 
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),

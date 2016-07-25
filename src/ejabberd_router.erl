@@ -72,7 +72,7 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec route(jid(), jid(), xmlel() | xmpp_element()) -> ok.
+-spec route(jid(), jid(), xmlel() | stanza()) -> ok.
 
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
@@ -85,13 +85,21 @@ route(From, To, Packet) ->
 
 %% Route the error packet only if the originating packet is not an error itself.
 %% RFC3920 9.3.1
--spec route_error(jid(), jid(), xmlel(), xmlel()) -> ok.
+-spec route_error(jid(), jid(), xmlel(), xmlel()) -> ok;
+		 (jid(), jid(), stanza(), error()) -> ok.
 
-route_error(From, To, ErrPacket, OrigPacket) ->
+route_error(From, To, #xmlel{} = ErrPacket, #xmlel{} = OrigPacket) ->
     #xmlel{attrs = Attrs} = OrigPacket,
     case <<"error">> == fxml:get_attr_s(<<"type">>, Attrs) of
       false -> route(From, To, ErrPacket);
       true -> ok
+    end;
+route_error(From, To, Packet, #error{} = Err) ->
+    Type = xmpp:get_type(Packet),
+    if Type == error; Type == result ->
+	    ok;
+       true ->
+	    ejabberd_router:route(From, To, xmpp:make_error(Packet, Err))
     end.
 
 -spec register_route(binary()) -> term().
@@ -406,11 +414,16 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
     end.
 
 -spec do_route(jid(), jid(), xmlel() | xmpp_element(), #route{}) -> any().
-do_route(From, To, Packet,
-	 #route{local_hint = {apply, Module, Function}, pid = Pid})
-  when is_pid(Pid) andalso node(Pid) == node() ->
-    try
-	Module:Function(From, To, xmpp:decode(Packet, [ignore_els]))
+do_route(From, To, Packet, #route{local_hint = LocalHint,
+				  pid = Pid}) when is_pid(Pid) ->
+    try xmpp:decode(Packet, [ignore_els]) of
+	Pkt ->
+	    case LocalHint of
+		{apply, Module, Function} when node(Pid) == node() ->
+		    Module:Function(From, To, Pkt);
+		_ ->
+		    Pid ! {route, From, To, Pkt}
+	    end
     catch error:{xmpp_codec, Why} ->
 	    ?ERROR_MSG("failed to decode xml element ~p when "
 		       "routing from ~s to ~s: ~s",
@@ -418,8 +431,6 @@ do_route(From, To, Packet,
 			xmpp:format_error(Why)]),
 	    drop
     end;
-do_route(From, To, Packet, #route{pid = Pid}) when is_pid(Pid) ->
-    Pid ! {route, From, To, xmpp:encode(Packet)};
 do_route(_From, _To, _Packet, _Route) ->
     drop.
 

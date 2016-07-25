@@ -295,7 +295,7 @@ process_sm_iq_items(#iq{type = get, lang = Lang,
 	    end;
 	false ->
 	    Txt = <<"Not subscribed">>,
-	    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang))
+	    xmpp:make_error(IQ, xmpp:err_subscription_required(Txt, Lang))
     end.
 
 -spec get_sm_items({error, error()} | {result, [disco_item()]} | empty,
@@ -371,7 +371,7 @@ process_sm_iq_info(#iq{type = get, lang = Lang,
 	    end;
 	false ->
 	    Txt = <<"Not subscribed">>,
-	    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang))
+	    xmpp:make_error(IQ, xmpp:err_subscription_required(Txt, Lang))
     end.
 
 -spec get_sm_identity([identity()], jid(), jid(),

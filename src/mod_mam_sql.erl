@@ -14,10 +14,10 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/8]).
+	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/5]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_mam.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -51,9 +51,7 @@ delete_old_messages(ServerHost, TimeStamp, Type) ->
     ok.
 
 extended_fields() ->
-    [#xmlel{name = <<"field">>,
-	    attrs = [{<<"type">>, <<"text-single">>},
-		     {<<"var">>, <<"withtext">>}]}].
+    [#xdata_field{type = 'text-single', var = <<"withtext">>}].
 
 store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
     TSinteger = p1_time_compat:system_time(micro_seconds),
@@ -126,13 +124,12 @@ get_prefs(LUser, LServer) ->
     end.
 
 select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
-       Start, End, With, RSM, MsgType) ->
+       MAMQuery, MsgType) ->
     User = case MsgType of
 	       chat -> LUser;
 	       {groupchat, _Role, _MUCState} -> jid:to_string(JidArchive)
 	   end,
-    {Query, CountQuery} = make_sql_query(User, LServer,
-					 Start, End, With, RSM),
+    {Query, CountQuery} = make_sql_query(User, LServer, MAMQuery),
     % TODO from XEP-0313 v0.2: "To conserve resources, a server MAY place a
     % reasonable limit on how many stanzas may be pushed to a client in one
     % request. If a query returns a number of stanzas greater than this limit
@@ -142,10 +139,7 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
     case {ejabberd_sql:sql_query(LServer, Query),
 	  ejabberd_sql:sql_query(LServer, CountQuery)} of
 	{{selected, _, Res}, {selected, _, [[Count]]}} ->
-	    {Max, Direction} = case RSM of
-				   #rsm_in{max = M, direction = D} -> {M, D};
-				   _ -> {undefined, undefined}
-			       end,
+	    {Max, Direction, _} = get_max_direction_id(MAMQuery#mam_query.rsm),
 	    {Res1, IsComplete} =
 		if Max >= 0 andalso Max /= undefined andalso length(Res) > Max ->
 			if Direction == before ->
@@ -200,15 +194,10 @@ usec_to_now(Int) ->
     Sec = Secs rem 1000000,
     {MSec, Sec, USec}.
 
-make_sql_query(User, LServer, Start, End, With, RSM) ->
-    {Max, Direction, ID} = case RSM of
-	#rsm_in{} ->
-	    {RSM#rsm_in.max,
-		RSM#rsm_in.direction,
-		RSM#rsm_in.id};
-	none ->
-	    {none, none, <<>>}
-    end,
+make_sql_query(User, LServer,
+	       #mam_query{start = Start, 'end' = End, with = With,
+			  withtext = WithText, rsm = RSM}) ->
+    {Max, Direction, ID} = get_max_direction_id(RSM),
     ODBCType = ejabberd_config:get_option(
 		 {sql_type, LServer},
 		 ejabberd_sql:opt_type(sql_type)),
@@ -228,12 +217,16 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
 		     true ->
 			  []
 		  end,
-    WithClause = case With of
-		     {text, <<>>} ->
-			 [];
-		     {text, Txt} ->
-			 [<<" and match (txt) against ('">>,
-			  Escape(Txt), <<"')">>];
+    WithTextClause = case WithText of
+			 {text, <<>>} ->
+			     [];
+			 {text, Txt} ->
+			     [<<" and match (txt) against ('">>,
+			      Escape(Txt), <<"')">>];
+			 undefined ->
+			     []
+		     end,
+    WithClause = case catch jid:tolower(With) of
 		     {_, _, <<>>} ->
 			 [<<" and bare_peer='">>,
 			  Escape(jid:to_string(With)),
@@ -242,7 +235,7 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
 			 [<<" and peer='">>,
 			  Escape(jid:to_string(With)),
 			  <<"'">>];
-		     none ->
+		     _ ->
 			 []
 		 end,
     PageClause = case catch jlib:binary_to_integer(ID) of
@@ -250,7 +243,7 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
 			 case Direction of
 			     before ->
 				 [<<" AND timestamp < ">>, ID];
-			     aft ->
+			     'after' ->
 				 [<<" AND timestamp > ">>, ID];
 			     _ ->
 				 []
@@ -276,7 +269,7 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
 
     Query = [<<"SELECT ">>, TopClause, <<" timestamp, xml, peer, kind, nick"
 	      " FROM archive WHERE username='">>,
-	     SUser, <<"'">>, WithClause, StartClause, EndClause,
+	     SUser, <<"'">>, WithClause, WithTextClause, StartClause, EndClause,
 	     PageClause],
 
     QueryPage =
@@ -294,4 +287,20 @@ make_sql_query(User, LServer, Start, End, With, RSM) ->
 	end,
     {QueryPage,
      [<<"SELECT COUNT(*) FROM archive WHERE username='">>,
-      SUser, <<"'">>, WithClause, StartClause, EndClause, <<";">>]}.
+      SUser, <<"'">>, WithClause, WithTextClause, StartClause, EndClause, <<";">>]}.
+
+-spec get_max_direction_id(rsm_set() | undefined) ->
+				  {integer() | undefined,
+				   before | 'after' | undefined,
+				   binary()}.
+get_max_direction_id(RSM) ->
+    case RSM of
+	#rsm_set{max = Max, before = Before} when is_binary(Before) ->
+	    {Max, before, Before};
+	#rsm_set{max = Max, 'after' = After} when is_binary(After) ->
+	    {Max, 'after', After};
+	#rsm_set{max = Max} ->
+	    {Max, undefined, <<>>};
+	_ ->
+	    {undefined, undefined, <<>>}
+    end.

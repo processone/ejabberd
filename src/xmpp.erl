@@ -16,22 +16,33 @@
 	 set_type/2, set_to/2, set_from/2, set_id/2,
 	 set_lang/2, set_error/2, set_els/2, set_from_to/3,
 	 format_error/1, is_stanza/1, set_subtag/2, get_subtag/2,
-	 remove_subtag/2, has_subtag/2, decode_els/1, pp/1,
-	 get_name/1, get_text/1, mk_text/1, mk_text/2]).
+	 remove_subtag/2, has_subtag/2, decode_els/1, decode_els/2,
+	 pp/1, get_name/1, get_text/1, mk_text/1, mk_text/2]).
 
 %% XMPP errors
 -export([err_bad_request/0, err_bad_request/2,
-	 err_bad_format/0, err_bad_format/2,
-	 err_not_allowed/0, err_not_allowed/2,
-	 err_conflict/0, err_conflict/2,
-	 err_forbidden/0, err_forbidden/2,
-	 err_not_acceptable/0, err_not_acceptable/2,
-	 err_internal_server_error/0, err_internal_server_error/2,
-	 err_service_unavailable/0, err_service_unavailable/2,
-	 err_item_not_found/0, err_item_not_found/2,
-	 err_jid_malformed/0, err_jid_malformed/2,
-	 err_not_authorized/0, err_not_authorized/2,
-	 err_feature_not_implemented/0, err_feature_not_implemented/2]).
+         err_conflict/0, err_conflict/2,
+         err_feature_not_implemented/0, err_feature_not_implemented/2,
+         err_forbidden/0, err_forbidden/2,
+         err_gone/0, err_gone/2,
+         err_internal_server_error/0, err_internal_server_error/2,
+         err_item_not_found/0, err_item_not_found/2,
+         err_jid_malformed/0, err_jid_malformed/2,
+         err_not_acceptable/0, err_not_acceptable/2,
+         err_not_allowed/0, err_not_allowed/2,
+         err_not_authorized/0, err_not_authorized/2,
+	 err_payment_required/0, err_payment_required/2,
+         err_policy_violation/0, err_policy_violation/2,
+         err_recipient_unavailable/0, err_recipient_unavailable/2,
+         err_redirect/0, err_redirect/2,
+         err_registration_required/0, err_registration_required/2,
+         err_remote_server_not_found/0, err_remote_server_not_found/2,
+         err_remote_server_timeout/0, err_remote_server_timeout/2,
+         err_resource_constraint/0, err_resource_constraint/2,
+         err_service_unavailable/0, err_service_unavailable/2,
+         err_subscription_required/0, err_subscription_required/2,
+         err_undefined_condition/0, err_undefined_condition/2,
+         err_unexpected_request/0, err_unexpected_request/2]).
 
 %% XMPP stream errors
 -export([serr_bad_format/0, serr_bad_format/2,
@@ -246,9 +257,12 @@ decode(Pkt, _Opts) ->
 		(message()) -> message();
 		(presence()) -> presence().
 decode_els(Stanza) ->
+    decode_els(Stanza, fun xmpp_codec:is_known_tag/1).
+
+decode_els(Stanza, MatchFun) ->
     Els = lists:map(
 	    fun(#xmlel{} = El) ->
-		    case xmpp_codec:is_known_tag(El) of
+		    case MatchFun(El) of
 			true ->	decode(El);
 			false -> El
 		    end;
@@ -287,10 +301,10 @@ set_subtag(Stanza, Tag) ->
     set_els(Stanza, NewEls).
 
 set_subtag([El|Els], Tag, TagName, XMLNS) ->
-    case {get_name(El), get_ns(El)} of
-	{TagName, XMLNS} ->
+    case match_tag(El, TagName, XMLNS) of
+	true ->
 	    [Tag|Els];
-	_ ->
+	false ->
 	    [El|set_subtag(Els, Tag, TagName, XMLNS)]
     end;
 set_subtag([], Tag, _, _) ->
@@ -304,14 +318,14 @@ get_subtag(Stanza, Tag) ->
     get_subtag(Els, TagName, XMLNS).
 
 get_subtag([El|Els], TagName, XMLNS) ->
-    case {get_name(El), get_ns(El)} of
-	{TagName, XMLNS} ->
+    case match_tag(El, TagName, XMLNS) of
+	true ->
 	    try
 		decode(El)
 	    catch _:{xmpp_codec, _Why} ->
 		    get_subtag(Els, TagName, XMLNS)
 	    end;
-	_ ->
+	false ->
 	    get_subtag(Els, TagName, XMLNS)
     end;
 get_subtag([], _, _) ->
@@ -328,10 +342,10 @@ remove_subtag(Stanza, Tag) ->
     set_els(Stanza, NewEls).
 
 remove_subtag([El|Els], TagName, XMLNS) ->
-    case {get_name(El), get_ns(El)} of
-	{TagName, XMLNS} ->
+    case match_tag(El, TagName, XMLNS) of
+	true ->
 	    remove_subtag(Els, TagName, XMLNS);
-	_ ->
+	false ->
 	    [El|remove_subtag(Els, TagName, XMLNS)]
     end;
 remove_subtag([], _, _) ->
@@ -345,10 +359,10 @@ has_subtag(Stanza, Tag) ->
     has_subtag(Els, TagName, XMLNS).
 
 has_subtag([El|Els], TagName, XMLNS) ->
-    case {get_name(El), get_ns(El)} of
-	{TagName, XMLNS} ->
+    case match_tag(El, TagName, XMLNS) of
+	true ->
 	    true;
-	_ ->
+	false ->
 	    has_subtag(Els, TagName, XMLNS)
     end;
 has_subtag([], _, _) ->
@@ -385,14 +399,6 @@ err_bad_request() ->
 err_bad_request(Text, Lang) ->
     err(modify, 'bad-request', 400, Text, Lang).
 
--spec err_bad_format() -> error().
-err_bad_format() ->
-    err(modify, 'bad-format', 406).
-
--spec err_bad_format(binary(), binary() | undefined) -> error().
-err_bad_format(Text, Lang) ->
-    err(modify, 'bad-format', 406, Text, Lang).
-
 -spec err_conflict() -> error().
 err_conflict() ->
     err(cancel, 'conflict', 409).
@@ -400,14 +406,6 @@ err_conflict() ->
 -spec err_conflict(binary(), binary() | undefined) -> error().
 err_conflict(Text, Lang) ->
     err(cancel, 'conflict', 409, Text, Lang).
-
--spec err_not_allowed() -> error().
-err_not_allowed() ->
-    err(cancel, 'not-allowed', 405).
-
--spec err_not_allowed(binary(), binary() | undefined) -> error().
-err_not_allowed(Text, Lang) ->
-    err(cancel, 'not-allowed', 405, Text, Lang).
 
 -spec err_feature_not_implemented() -> error().
 err_feature_not_implemented() ->
@@ -417,14 +415,6 @@ err_feature_not_implemented() ->
 err_feature_not_implemented(Text, Lang) ->
     err(cancel, 'feature-not-implemented', 501, Text, Lang).
 
--spec err_item_not_found() -> error().
-err_item_not_found() ->
-    err(cancel, 'item-not-found', 404).
-
--spec err_item_not_found(binary(), binary() | undefined) -> error().
-err_item_not_found(Text, Lang) ->
-    err(cancel, 'item-not-found', 404, Text, Lang).
-
 -spec err_forbidden() -> error().
 err_forbidden() ->
     err(auth, 'forbidden', 403).
@@ -433,14 +423,18 @@ err_forbidden() ->
 err_forbidden(Text, Lang) ->
     err(auth, 'forbidden', 403, Text, Lang).
 
--spec err_not_acceptable() -> error().
-err_not_acceptable() ->
-    err(modify, 'not-acceptable', 406).
+%% RFC 6120 says error type SHOULD be "cancel".
+%% RFC 3920 and XEP-0082 says it SHOULD be "modify".
+-spec err_gone() -> error().
+err_gone() ->
+    err(modify, 'gone', 302).
 
--spec err_not_acceptable(binary(), binary() | undefined) -> error().
-err_not_acceptable(Text, Lang) ->
-    err(modify, 'not-acceptable', 406, Text, Lang).
+-spec err_gone(binary(), binary() | undefined) -> error().
+err_gone(Text, Lang) ->
+    err(modify, 'gone', 302, Text, Lang).
 
+%% RFC 6120 sasy error type SHOULD be "cancel".
+%% RFC 3920 and XEP-0082 says it SHOULD be "wait".
 -spec err_internal_server_error() -> error().
 err_internal_server_error() ->
     err(wait, 'internal-server-error', 500).
@@ -449,13 +443,13 @@ err_internal_server_error() ->
 err_internal_server_error(Text, Lang) ->
     err(wait, 'internal-server-error', 500, Text, Lang).
 
--spec err_service_unavailable() -> error().
-err_service_unavailable() ->
-    err(cancel, 'service-unavailable', 503).
+-spec err_item_not_found() -> error().
+err_item_not_found() ->
+    err(cancel, 'item-not-found', 404).
 
--spec err_service_unavailable(binary(), binary() | undefined) -> error().
-err_service_unavailable(Text, Lang) ->
-    err(cancel, 'service-unavailable', 503, Text, Lang).
+-spec err_item_not_found(binary(), binary() | undefined) -> error().
+err_item_not_found(Text, Lang) ->
+    err(cancel, 'item-not-found', 404, Text, Lang).
 
 -spec err_jid_malformed() -> error().
 err_jid_malformed() ->
@@ -465,6 +459,22 @@ err_jid_malformed() ->
 err_jid_malformed(Text, Lang) ->
     err(modify, 'jid-malformed', 400, Text, Lang).
 
+-spec err_not_acceptable() -> error().
+err_not_acceptable() ->
+    err(modify, 'not-acceptable', 406).
+
+-spec err_not_acceptable(binary(), binary() | undefined) -> error().
+err_not_acceptable(Text, Lang) ->
+    err(modify, 'not-acceptable', 406, Text, Lang).
+
+-spec err_not_allowed() -> error().
+err_not_allowed() ->
+    err(cancel, 'not-allowed', 405).
+
+-spec err_not_allowed(binary(), binary() | undefined) -> error().
+err_not_allowed(Text, Lang) ->
+    err(cancel, 'not-allowed', 405, Text, Lang).
+
 -spec err_not_authorized() -> error().
 err_not_authorized() ->
     err(auth, 'not-authorized', 401).
@@ -472,6 +482,108 @@ err_not_authorized() ->
 -spec err_not_authorized(binary(), binary() | undefined) -> error().
 err_not_authorized(Text, Lang) ->
     err(auth, 'not-authorized', 401, Text, Lang).
+
+-spec err_payment_required() -> error().
+err_payment_required() ->
+    err(auth, 'not-authorized', 402).
+
+-spec err_payment_required(binary(), binary() | undefined) -> error().
+err_payment_required(Text, Lang) ->
+    err(auth, 'not-authorized', 402, Text, Lang).
+
+%% <policy-violation/> is defined in neither RFC 3920 nor XEP-0086.
+%% We choose '403' error code (as in <forbidden/>).
+-spec err_policy_violation() -> error().
+err_policy_violation() ->
+    err(modify, 'policy-violation', 403).
+
+-spec err_policy_violation(binary(), binary() | undefined) -> error().
+err_policy_violation(Text, Lang) ->
+    err(modify, 'policy-violation', 403, Text, Lang).
+
+-spec err_recipient_unavailable() -> error().
+err_recipient_unavailable() ->
+    err(wait, 'recipient-unavailable', 404).
+
+-spec err_recipient_unavailable(binary(), binary() | undefined) -> error().
+err_recipient_unavailable(Text, Lang) ->
+    err(wait, 'recipient-unavailable', 404, Text, Lang).
+
+-spec err_redirect() -> error().
+err_redirect() ->
+    err(modify, 'redirect', 302).
+
+-spec err_redirect(binary(), binary() | undefined) -> error().
+err_redirect(Text, Lang) ->
+    err(modify, 'redirect', 302, Text, Lang).
+
+-spec err_registration_required() -> error().
+err_registration_required() ->
+    err(auth, 'registration-required', 407).
+
+-spec err_registration_required(binary(), binary() | undefined) -> error().
+err_registration_required(Text, Lang) ->
+    err(auth, 'registration-required', 407, Text, Lang).
+
+-spec err_remote_server_not_found() -> error().
+err_remote_server_not_found() ->
+    err(cancel, 'remote-server-not-found', 404).
+
+-spec err_remote_server_not_found(binary(), binary() | undefined) -> error().
+err_remote_server_not_found(Text, Lang) ->
+    err(cancel, 'remote-server-not-found', 404, Text, Lang).
+
+-spec err_remote_server_timeout() -> error().
+err_remote_server_timeout() ->
+    err(wait, 'remote-server-timeout', 504).
+
+-spec err_remote_server_timeout(binary(), binary() | undefined) -> error().
+err_remote_server_timeout(Text, Lang) ->
+    err(wait, 'remote-server-timeout', 504, Text, Lang).
+
+-spec err_resource_constraint() -> error().
+err_resource_constraint() ->
+    err(wait, 'resource-constraint', 500).
+
+-spec err_resource_constraint(binary(), binary() | undefined) -> error().
+err_resource_constraint(Text, Lang) ->
+    err(wait, 'resource-constraint', 500, Text, Lang).
+
+-spec err_service_unavailable() -> error().
+err_service_unavailable() ->
+    err(cancel, 'service-unavailable', 503).
+
+-spec err_service_unavailable(binary(), binary() | undefined) -> error().
+err_service_unavailable(Text, Lang) ->
+    err(cancel, 'service-unavailable', 503, Text, Lang).
+
+-spec err_subscription_required() -> error().
+err_subscription_required() ->
+    err(auth, 'subscription-required', 407).
+
+-spec err_subscription_required(binary(), binary() | undefined) -> error().
+err_subscription_required(Text, Lang) ->
+    err(auth, 'subscription-required', 407, Text, Lang).
+
+%% No error type is defined for <undefined-confition/>.
+%% We choose "modify" as it's used in RFC 6120 example.
+-spec err_undefined_condition() -> error().
+err_undefined_condition() ->
+    err(modify, 'undefined-condition', 500).
+
+-spec err_undefined_condition(binary(), binary() | undefined) -> error().
+err_undefined_condition(Text, Lang) ->
+    err(modify, 'undefined-condition', 500, Text, Lang).
+
+%% RFC 6120 says error type SHOULD be "wait" or "modify".
+%% RFC 3920 and XEP-0082 says it SHOULD be "wait".
+-spec err_unexpected_request() -> error().
+err_unexpected_request() ->
+    err(wait, 'unexpected-request', 400).
+
+-spec err_unexpected_request(binary(), binary() | undefined) -> error().
+err_unexpected_request(Text, Lang) ->
+    err(wait, 'unexpected-request', 400, Text, Lang).
 
 %%%===================================================================
 %%% Functions to construct stream errors
@@ -712,3 +824,7 @@ add_ns(#xmlel{name = Name} = El) when Name == <<"message">>;
     El#xmlel{attrs = Attrs};
 add_ns(El) ->
     El.
+
+-spec match_tag(xmlel() | xmpp_element(), binary(), binary()) -> boolean().
+match_tag(El, TagName, XMLNS) ->
+    get_name(El) == TagName andalso get_ns(El) == XMLNS.
