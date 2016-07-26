@@ -8,7 +8,7 @@
 
 -export([start/2, stop/1, depends/2, mod_opt_type/1]).
 
--export([advertise_delegations/1, process_packet/4,
+-export([advertise_delegations/1, process_packet/3,
          disco_local_features/5, disco_sm_features/5,
          disco_local_identity/5, disco_sm_identity/5, disco_info/5]).
 
@@ -29,9 +29,9 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, 
                        disco_sm_features, 500),
     ejabberd_hooks:add(disco_info, Host, ?MODULE,
-                       disco_info, 500),
-    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-                       process_packet, 500).
+                       disco_info, 500).
+    % ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
+    %                    process_packet, 500).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_DELEGATION),
@@ -44,9 +44,9 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, 
                           disco_sm_features, 500),
     ejabberd_hooks:delete(disco_info, Host, ?MODULE,
-                          disco_info, 500),
-    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-                          process_packet, 500).
+                          disco_info, 500).
+    % ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
+    %                       process_packet, 500).
 
 depends(_Host, _Opts) -> [].
 
@@ -82,6 +82,16 @@ delegation_ns_debug(Host, Delegations) ->
     	                       " ~p filtering attributes ~n",[Ns, Host, Attr])
     	            end, Delegations).
 
+add_iq_handlers(Ns) ->
+    lists:foreach(fun(Host) -> 
+                    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
+                                                  Ns, ?MODULE, 
+                                                  process_packet, one_queue),
+                    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
+                                                  Ns, ?MODULE,
+                                                  process_packet, one_queue)
+                  end, ?MYHOSTS).
+
 send_element(StateData, From, To, #xmlel{attrs = Attrs} = Packet) ->
     AttrsNew = jlib:replace_from_to_attrs(From, To, Attrs),
     ejabberd_service:send_element(StateData, Packet#xmlel{attrs = AttrsNew}).
@@ -95,6 +105,11 @@ advertise_delegations(StateData) ->
                     send_element(StateData, ?MYNAME, StateData#state.host, IQ)
                   end, Reqs),
     send_element(StateData, ?MYNAME, StateData#state.host, Delegated),
+    
+    lists:foreach(fun({Ns, _}) ->
+                      add_iq_handlers(Ns)
+                  end, StateData#state.delegations),
+
     delegation_ns_debug(StateData#state.host, StateData#state.delegations).
 
 %%%--------------------------------------------------------------------------------------
@@ -177,7 +192,7 @@ check_iq(#xmlel{attrs = Attrs} = Packet,
     Id2 = fxml:get_attr_s(<<"id">>, AttrsOrigin),
     % From attribute of OriginPacket Must be equil to Packet To attribute
     From = fxml:get_attr_s(<<"from">>, AttrsOrigin),
-    To = fxml:get_attr_s(<<"from">>, Attrs),
+    To = fxml:get_attr_s(<<"to">>, Attrs),
     % Type attribute Must be error or result
     Type = fxml:get_attr_s(<<"type">>, Attrs),
     if
@@ -193,7 +208,6 @@ check_iq(#xmlel{attrs = Attrs} = Packet,
         Err
     end;
 check_iq(_Packet, _OriginPacket) -> ignore.
-
 
 -spec manage_service_result(atom(), atom(), binary(), xmlel()) -> ok.
 
@@ -217,7 +231,6 @@ manage_service_result(HookRes, HookErr, Service, OriginPacket) ->
               ServResponse = check_iq(ResultIQ, OriginPacket),
               if
                 ServResponse /= ignore ->
-                  ?INFO_MSG("fail~p ~n", [{ServerJID, ClientJID, ServResponse}]),
                   ejabberd_router:route(ServerJID, ClientJID, ServResponse);
                 true -> ok
               end;
@@ -269,12 +282,11 @@ forward_iq(Server, Service, Packet) ->
 
     From = jid:make(<<"">>, Server, <<"">>),
     To = jid:make(<<"">>, Service, <<"">>),
-    ?INFO_MSG("forward~p~n", [{From, To, Elem2}]),
     ejabberd_router:route(From, To, Elem2).
 
-%% hook user_send_packet(Packet, C2SState, From, To) -> Packet
-process_packet(#xmlel{name = <<"iq">>, attrs = Attrs,
-                      children = Children} = Packet, _C2SState, From, To) ->
+process_packet(From, To, IQ) ->
+    Packet = jlib:iq_to_xml(IQ),
+    #xmlel{name = <<"iq">>, attrs = Attrs, children = Children} = Packet,
     Type = fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs),
     %% check if stanza directed to server
     %% or directed to the bare JID of the sender
@@ -300,12 +312,10 @@ process_packet(#xmlel{name = <<"iq">>, attrs = Attrs,
                 end;
               [] -> ok
             end, 
-            Packet;
+            ignore;
         _ -> 
-            Packet
-    end;
-process_packet(Packet, _C2SState, _From, _To) ->
-    Packet.
+            ignore
+    end.
 
 %%%--------------------------------------------------------------------------------------
 %%%  7. Discovering Support
