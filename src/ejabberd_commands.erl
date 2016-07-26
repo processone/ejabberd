@@ -774,7 +774,7 @@ expand_commands(L, OpenCmds, UserCmds, AdminCmds, RestrictedCmds) when is_list(L
                    (admin, Acc) -> AdminCmds ++ Acc;
                    (restricted, Acc) -> RestrictedCmds ++ Acc;
                    (Command, Acc) when is_atom(Command) ->
-                        [Command, Acc]
+                        [Command|Acc]
                 end, [], L).
 
 oauth_token_user(noauth) ->
