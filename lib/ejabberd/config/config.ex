@@ -11,6 +11,8 @@ defmodule Ejabberd.Config do
   defmacro __using__(_opts) do
     quote do
       import Ejabberd.Config, only: :macros
+      import Ejabberd.Logger
+
       @before_compile Ejabberd.Config
     end
   end

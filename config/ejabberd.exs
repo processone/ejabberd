@@ -164,6 +164,6 @@ defmodule Ejabberd.ConfigFile do
   # @callback Could be an anonymous function or a callback from a module,
   #           use the &ModuleName.function/arity format for that.
   hook :register_user, [host: "localhost"], fn(user, server) ->
-    IO.puts "[info] User registered: #{user} on #{server}"
+    info("User registered: #{user} on #{server}")
   end
 end
