@@ -236,7 +236,7 @@ authenticate_user({User, Server}, Ctx) ->
 authenticate_client(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
 
 verify_resowner_scope({user, _User, _Server}, Scope, Ctx) ->
-    Cmds = ejabberd_commands:get_commands(),
+    Cmds = ejabberd_commands:get_exposed_commands(),
     Cmds1 = ['ejabberd:user', 'ejabberd:admin', sasl_auth | Cmds],
     RegisteredScope = [atom_to_binary(C, utf8) || C <- Cmds1],
     case oauth2_priv_set:is_subset(oauth2_priv_set:new(Scope),
@@ -258,7 +258,7 @@ get_cmd_scopes() ->
                                                     dict:append(Scope, Cmd, Accum2)
                                             end, Accum, Scopes);
                             _ -> Accum
-                        end end, dict:new(), ejabberd_commands:get_commands()),
+                        end end, dict:new(), ejabberd_commands:get_exposed_commands()),
     ScopeMap.
 
 %% This is callback for oauth tokens generated through the command line.  Only open and admin commands are

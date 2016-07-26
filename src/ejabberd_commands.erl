@@ -223,9 +223,10 @@
 	 get_command_definition/2,
 	 get_tags_commands/0,
 	 get_tags_commands/1,
-         get_commands/0,
+         get_exposed_commands/0,
 	 register_commands/1,
-	 unregister_commands/1,
+   unregister_commands/1,
+   expose_commands/1,
 	 execute_command/2,
 	 execute_command/3,
 	 execute_command/4,
@@ -275,10 +276,10 @@ get_commands_spec() ->
 init() ->
     mnesia:delete_table(ejabberd_commands),
     mnesia:create_table(ejabberd_commands,
-			[{ram_copies, [node()]},
+                        [{ram_copies, [node()]},
                          {local_content, true},
-			 {attributes, record_info(fields, ejabberd_commands)},
-			 {type, bag}]),
+                         {attributes, record_info(fields, ejabberd_commands)},
+                         {type, bag}]),
     mnesia:add_table_copy(ejabberd_commands, node(), ram_copies),
     register_commands(get_commands_spec()).
 
@@ -287,12 +288,14 @@ init() ->
 %% @doc Register ejabberd commands.
 %% If a command is already registered, a warning is printed and the
 %% old command is preserved.
+%% A registered command is not directly available to be called through
+%% ejabberd ReST API. It need to be exposed to be available through API.
 register_commands(Commands) ->
     lists:foreach(
       fun(Command) ->
-	      % XXX check if command exists
-	      mnesia:dirty_write(Command)
-	      % ?DEBUG("This command is already defined:~n~p", [Command])
+              %% XXX check if command exists
+              mnesia:dirty_write(Command)
+              %% ?DEBUG("This command is already defined:~n~p", [Command])
       end,
       Commands).
 
@@ -305,6 +308,25 @@ unregister_commands(Commands) ->
 	      mnesia:dirty_delete_object(Command)
       end,
       Commands).
+
+%% @doc Expose command through ejabberd ReST API.
+%% Pass a list of command names or policy to expose.
+-spec expose_commands([ejabberd_commands()|atom()|open|user|admin|restricted]) -> ok | {error, atom()}.
+
+expose_commands(Commands) ->
+    Names = lists:map(fun(#ejabberd_commands{name = Name}) ->
+                              Name;
+                         (Name) when is_atom(Name) ->
+                              Name
+                      end,
+                      Commands),
+
+    case ejabberd_config:add_local_option(commands, [{add_commands, Names}]) of
+        {aborted, Reason} ->
+            {error, Reason};
+        {atomic, Result} ->
+            Result
+    end.
 
 -spec list_commands() -> [{atom(), [aterm()], string()}].
 
@@ -737,14 +759,14 @@ get_all_access_commands(AccessCommands) ->
     get_access_commands(AccessCommands, ?DEFAULT_VERSION).
 
 get_access_commands(undefined, Version) ->
-    Cmds = get_commands(Version),
+    Cmds = get_exposed_commands(Version),
     [{?POLICY_ACCESS, Cmds, []}];
 get_access_commands(AccessCommands, _Version) ->
     AccessCommands.
 
-get_commands() ->
-    get_commands(?DEFAULT_VERSION).
-get_commands(Version) ->
+get_exposed_commands() ->
+    get_exposed_commands(?DEFAULT_VERSION).
+get_exposed_commands(Version) ->
     Opts0 = ejabberd_config:get_option(
              commands,
              fun(V) when is_list(V) -> V end,
