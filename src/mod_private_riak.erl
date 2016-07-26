@@ -14,7 +14,7 @@
 -export([init/2, set_data/3, get_data/3, get_all_data/2, remove_user/2,
 	 import/2]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_private.hrl").
 
 %%%===================================================================

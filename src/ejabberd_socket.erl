@@ -49,7 +49,6 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
 
 -type sockmod() :: ejabberd_http_bind |
                    ejabberd_http_ws |
@@ -189,7 +188,7 @@ send(SocketData, Data) ->
 %% Can only be called when in c2s StateData#state.xml_socket is true
 %% This function is used for HTTP bind
 %% sockmod=ejabberd_http_ws|ejabberd_http_bind or any custom module
--spec send_xml(socket_state(), xmlel()) -> any().
+-spec send_xml(socket_state(), fxml:xmlel()) -> any().
 
 send_xml(SocketData, Data) ->
     catch

@@ -102,30 +102,6 @@ register_mechanism(Mechanism, Module, PasswordType) ->
 	  true
     end.
 
-%%% TODO: use callbacks
-%%-include("ejabberd.hrl").
-%%-include("jlib.hrl").
-%%check_authzid(_State, Props) ->
-%%    AuthzId = fxml:get_attr_s(authzid, Props),
-%%    case jid:from_string(AuthzId) of
-%%	error ->
-%%	    {error, "invalid-authzid"};
-%%	JID ->
-%%	    LUser = jid:nodeprep(fxml:get_attr_s(username, Props)),
-%%	    {U, S, R} = jid:tolower(JID),
-%%	    case R of
-%%		"" ->
-%%		    {error, "invalid-authzid"};
-%%		_ ->
-%%		    case {LUser, ?MYNAME} of
-%%			{U, S} ->
-%%			    ok;
-%%			_ ->
-%%			    {error, "invalid-authzid"}
-%%		    end
-%%	    end
-%%    end.
-
 check_credentials(_State, Props) ->
     User = proplists:get_value(authzid, Props, <<>>),
     case jid:nodeprep(User) of

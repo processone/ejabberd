@@ -24,7 +24,6 @@
 -include("ejabberd.hrl").
 -include("ejabberd_sm.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
 -include("ejabberd_sql_pt.hrl").
 
 %%%===================================================================

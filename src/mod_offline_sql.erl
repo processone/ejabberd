@@ -18,7 +18,7 @@
 	 remove_all_messages/2, count_messages/2, import/1, import/2,
 	 export/1]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_offline.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").

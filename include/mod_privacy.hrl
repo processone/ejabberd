@@ -36,7 +36,7 @@
 
 -type listitem() :: #listitem{}.
 -type listitem_type() :: none | jid | group | subscription.
--type listitem_value() :: none | both | from | to | ljid() | binary().
+-type listitem_value() :: none | both | from | to | jid:ljid() | binary().
 -type listitem_action() :: allow | deny.
 
 -record(userlist, {name = none :: none | binary(),

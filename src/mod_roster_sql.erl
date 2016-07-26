@@ -20,7 +20,6 @@
 	 read_subscription_and_groups/3, get_only_items/2,
 	 import/1, import/2, export/1]).
 
--include("jlib.hrl").
 -include("mod_roster.hrl").
 -include("ejabberd_sql_pt.hrl").
 

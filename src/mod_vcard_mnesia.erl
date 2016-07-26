@@ -14,7 +14,7 @@
 -export([init/2, import/2, get_vcard/2, set_vcard/4, search/4, remove_user/2]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_vcard.hrl").
 -include("logger.hrl").
 

@@ -13,7 +13,7 @@
 -export([init/2, set_motd_users/2, set_motd/2, delete_motd/1,
 	 get_motd/1, is_motd_user/2, set_motd_user/2, import/2]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_announce.hrl").
 -include("logger.hrl").
 

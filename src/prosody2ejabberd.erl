@@ -12,7 +12,7 @@
 -export([from_dir/1]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("logger.hrl").
 -include("mod_roster.hrl").
 -include("mod_offline.hrl").

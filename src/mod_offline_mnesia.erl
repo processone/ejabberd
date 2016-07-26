@@ -15,7 +15,7 @@
 	 read_message/3, remove_message/3, read_all_messages/2,
 	 remove_all_messages/2, count_messages/2, import/2]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_offline.hrl").
 -include("logger.hrl").
 

@@ -28,7 +28,7 @@
 	 sql_get_privacy_list_id_t/2,
 	 sql_set_default_privacy_list/2, sql_set_privacy_list/2]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").

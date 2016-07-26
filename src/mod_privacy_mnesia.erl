@@ -17,7 +17,7 @@
 	 set_privacy_list/4, get_user_list/2, get_user_lists/2,
 	 remove_user/2, import/2]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("logger.hrl").
 

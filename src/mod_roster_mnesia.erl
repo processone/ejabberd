@@ -17,7 +17,6 @@
 	 remove_user/2, update_roster/4, del_roster/3, transaction/2,
 	 read_subscription_and_groups/3, import/2]).
 
--include("jlib.hrl").
 -include("mod_roster.hrl").
 -include("logger.hrl").
 

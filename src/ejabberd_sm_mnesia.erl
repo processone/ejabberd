@@ -26,7 +26,6 @@
 
 -include("ejabberd.hrl").
 -include("ejabberd_sm.hrl").
--include("jlib.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
 -record(state, {}).
