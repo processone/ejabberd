@@ -10,7 +10,10 @@ defmodule Ejabberd.Config.EjabberdModule do
   @type t :: %{module: atom, attrs: [Attr.t]}
 
   defstruct [:module, :attrs]
-  alias Ejabberd.Config.{EjabberdModule, Attr, Validation}
+
+  alias Ejabberd.Config.EjabberdModule
+  alias Ejabberd.Config.Attr
+  alias Ejabberd.Config.Validation
 
   @doc """
   Given a list of modules / single module
