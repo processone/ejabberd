@@ -225,6 +225,7 @@ init([Host, Opts]) ->
 			     public -> Bool;
 			     public_list -> Bool;
 			     mam -> Bool;
+			     allow_subscription -> Bool;
 			     password -> fun iolist_to_binary/1;
 			     title -> fun iolist_to_binary/1;
 			     allow_private_messages_from_visitors ->
