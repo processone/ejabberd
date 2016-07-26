@@ -39,7 +39,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("jid.hrl").
 
 -record(acl, {aclname, aclspec}).
 -record(access, {name       :: aclname(),
@@ -531,7 +531,7 @@ parse_ip_netmask(S) ->
 	    _ -> error
 	  end;
       [IPStr, MaskStr] ->
-	  case catch jlib:binary_to_integer(MaskStr) of
+	  case catch binary_to_integer(MaskStr) of
 	    Mask when is_integer(Mask), Mask >= 0 ->
 		case inet_parse:address(binary_to_list(IPStr)) of
 		  {ok, {_, _, _, _} = IP} when Mask =< 32 ->
