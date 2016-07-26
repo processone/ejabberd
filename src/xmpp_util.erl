@@ -11,7 +11,7 @@
 %% API
 -export([add_delay_info/3, add_delay_info/4, unwrap_carbon/1,
 	 is_standalone_chat_state/1, get_xdata_values/2,
-	 has_xdata_var/2]).
+	 has_xdata_var/2, make_adhoc_response/1, make_adhoc_response/2]).
 
 -include("xmpp.hrl").
 
@@ -87,6 +87,18 @@ get_xdata_values(Var, #xdata{fields = Fields}) ->
 -spec has_xdata_var(binary(), xdata()) -> boolean().
 has_xdata_var(Var, #xdata{fields = Fields}) ->
     lists:keymember(Var, #xdata_field.var, Fields).
+
+-spec make_adhoc_response(adhoc_command(), adhoc_command()) -> adhoc_command().
+make_adhoc_response(#adhoc_command{lang = Lang, node = Node, sid = SID},
+		    Command) ->
+    Command#adhoc_command{lang = Lang, node = Node, sid = SID}.
+
+-spec make_adhoc_response(adhoc_command()) -> adhoc_command().
+make_adhoc_response(#adhoc_command{sid = undefined} = Command) ->
+    SID = jlib:now_to_utc_string(p1_time_compat:timestamp()),
+    Command#adhoc_command{sid = SID};
+make_adhoc_response(Command) ->
+    Command.
 
 %%%===================================================================
 %%% Internal functions

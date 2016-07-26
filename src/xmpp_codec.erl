@@ -15,6 +15,30 @@ decode(_el) -> decode(_el, []).
 decode({xmlel, _name, _attrs, _} = _el, Opts) ->
     IgnoreEls = proplists:get_bool(ignore_els, Opts),
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"command">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  decode_adhoc_command(<<"http://jabber.org/protocol/commands">>,
+			       IgnoreEls, _el);
+      {<<"note">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  decode_adhoc_command_notes(<<"http://jabber.org/protocol/commands">>,
+				     IgnoreEls, _el);
+      {<<"actions">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  decode_adhoc_command_actions(<<"http://jabber.org/protocol/commands">>,
+				       IgnoreEls, _el);
+      {<<"complete">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  decode_adhoc_command_complete(<<"http://jabber.org/protocol/commands">>,
+					IgnoreEls, _el);
+      {<<"next">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  decode_adhoc_command_next(<<"http://jabber.org/protocol/commands">>,
+				    IgnoreEls, _el);
+      {<<"prev">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  decode_adhoc_command_prev(<<"http://jabber.org/protocol/commands">>,
+				    IgnoreEls, _el);
       {<<"client-id">>, <<"urn:xmpp:sid:0">>} ->
 	  decode_client_id(<<"urn:xmpp:sid:0">>, IgnoreEls, _el);
       {<<"stanza-id">>, <<"urn:xmpp:sid:0">>} ->
@@ -1254,6 +1278,24 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 
 is_known_tag({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"command">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  true;
+      {<<"note">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  true;
+      {<<"actions">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  true;
+      {<<"complete">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  true;
+      {<<"next">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  true;
+      {<<"prev">>,
+       <<"http://jabber.org/protocol/commands">>} ->
+	  true;
       {<<"client-id">>, <<"urn:xmpp:sid:0">>} -> true;
       {<<"stanza-id">>, <<"urn:xmpp:sid:0">>} -> true;
       {<<"addresses">>,
@@ -2483,7 +2525,20 @@ encode({stanza_id, _, _} = Stanza_id) ->
 		     [{<<"xmlns">>, <<"urn:xmpp:sid:0">>}]);
 encode({client_id, _} = Client_id) ->
     encode_client_id(Client_id,
-		     [{<<"xmlns">>, <<"urn:xmpp:sid:0">>}]).
+		     [{<<"xmlns">>, <<"urn:xmpp:sid:0">>}]);
+encode({adhoc_actions, _, _, _, _} = Actions) ->
+    encode_adhoc_command_actions(Actions,
+				 [{<<"xmlns">>,
+				   <<"http://jabber.org/protocol/commands">>}]);
+encode({adhoc_note, _, _} = Note) ->
+    encode_adhoc_command_notes(Note,
+			       [{<<"xmlns">>,
+				 <<"http://jabber.org/protocol/commands">>}]);
+encode({adhoc_command, _, _, _, _, _, _, _, _} =
+	   Command) ->
+    encode_adhoc_command(Command,
+			 [{<<"xmlns">>,
+			   <<"http://jabber.org/protocol/commands">>}]).
 
 get_name({last, _, _}) -> <<"query">>;
 get_name({version, _, _, _}) -> <<"query">>;
@@ -2661,7 +2716,11 @@ get_name({nick, _}) -> <<"nick">>;
 get_name({address, _, _, _, _, _}) -> <<"address">>;
 get_name({addresses, _}) -> <<"addresses">>;
 get_name({stanza_id, _, _}) -> <<"stanza-id">>;
-get_name({client_id, _}) -> <<"client-id">>.
+get_name({client_id, _}) -> <<"client-id">>;
+get_name({adhoc_actions, _, _, _, _}) -> <<"actions">>;
+get_name({adhoc_note, _, _}) -> <<"note">>;
+get_name({adhoc_command, _, _, _, _, _, _, _, _}) ->
+    <<"command">>.
 
 get_ns({last, _, _}) -> <<"jabber:iq:last">>;
 get_ns({version, _, _, _}) -> <<"jabber:iq:version">>;
@@ -2909,7 +2968,13 @@ get_ns({address, _, _, _, _, _}) ->
 get_ns({addresses, _}) ->
     <<"http://jabber.org/protocol/address">>;
 get_ns({stanza_id, _, _}) -> <<"urn:xmpp:sid:0">>;
-get_ns({client_id, _}) -> <<"urn:xmpp:sid:0">>.
+get_ns({client_id, _}) -> <<"urn:xmpp:sid:0">>;
+get_ns({adhoc_actions, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/commands">>;
+get_ns({adhoc_note, _, _}) ->
+    <<"http://jabber.org/protocol/commands">>;
+get_ns({adhoc_command, _, _, _, _, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/commands">>.
 
 dec_int(Val) -> dec_int(Val, infinity, infinity).
 
@@ -3140,6 +3205,11 @@ pp(address, 5) -> [type, jid, desc, node, delivered];
 pp(addresses, 1) -> [list];
 pp(stanza_id, 2) -> [by, id];
 pp(client_id, 1) -> [id];
+pp(adhoc_actions, 4) -> [execute, prev, next, complete];
+pp(adhoc_note, 2) -> [type, data];
+pp(adhoc_command, 8) ->
+    [node, action, sid, status, lang, actions, notes,
+     xdata];
 pp(_, _) -> no.
 
 join([], _Sep) -> <<>>;
@@ -3185,6 +3255,474 @@ dec_tzo(Val) ->
     H = jlib:binary_to_integer(H1),
     M = jlib:binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
+
+decode_adhoc_command(__TopXMLNS, __IgnoreEls,
+		     {xmlel, <<"command">>, _attrs, _els}) ->
+    {Xdata, Notes, Actions} =
+	decode_adhoc_command_els(__TopXMLNS, __IgnoreEls, _els,
+				 undefined, [], undefined),
+    {Node, Lang, Sid, Status, Action} =
+	decode_adhoc_command_attrs(__TopXMLNS, _attrs,
+				   undefined, undefined, undefined, undefined,
+				   undefined),
+    {adhoc_command, Node, Action, Sid, Status, Lang,
+     Actions, Notes, Xdata}.
+
+decode_adhoc_command_els(__TopXMLNS, __IgnoreEls, [],
+			 Xdata, Notes, Actions) ->
+    {Xdata, lists:reverse(Notes), Actions};
+decode_adhoc_command_els(__TopXMLNS, __IgnoreEls,
+			 [{xmlel, <<"actions">>, _attrs, _} = _el | _els],
+			 Xdata, Notes, Actions) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/commands">> ->
+	  decode_adhoc_command_els(__TopXMLNS, __IgnoreEls, _els,
+				   Xdata, Notes,
+				   decode_adhoc_command_actions(__TopXMLNS,
+								__IgnoreEls,
+								_el));
+      <<"http://jabber.org/protocol/commands">> ->
+	  decode_adhoc_command_els(__TopXMLNS, __IgnoreEls, _els,
+				   Xdata, Notes,
+				   decode_adhoc_command_actions(<<"http://jabber.org/protocol/commands">>,
+								__IgnoreEls,
+								_el));
+      _ ->
+	  decode_adhoc_command_els(__TopXMLNS, __IgnoreEls, _els,
+				   Xdata, Notes, Actions)
+    end;
+decode_adhoc_command_els(__TopXMLNS, __IgnoreEls,
+			 [{xmlel, <<"x">>, _attrs, _} = _el | _els], Xdata,
+			 Notes, Actions) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_adhoc_command_els(__TopXMLNS, __IgnoreEls, _els,
+				   decode_xdata(<<"jabber:x:data">>,
+						__IgnoreEls, _el),
+				   Notes, Actions);
+      _ ->
+	  decode_adhoc_command_els(__TopXMLNS, __IgnoreEls, _els,
+				   Xdata, Notes, Actions)
+    end;
+decode_adhoc_command_els(__TopXMLNS, __IgnoreEls,
+			 [{xmlel, <<"note">>, _attrs, _} = _el | _els], Xdata,
+			 Notes, Actions) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/commands">> ->
+	  decode_adhoc_command_els(__TopXMLNS, __IgnoreEls, _els,
+				   Xdata,
+				   [decode_adhoc_command_notes(__TopXMLNS,
+							       __IgnoreEls, _el)
+				    | Notes],
+				   Actions);
+      <<"http://jabber.org/protocol/commands">> ->
+	  decode_adhoc_command_els(__TopXMLNS, __IgnoreEls, _els,
+				   Xdata,
+				   [decode_adhoc_command_notes(<<"http://jabber.org/protocol/commands">>,
+							       __IgnoreEls, _el)
+				    | Notes],
+				   Actions);
+      _ ->
+	  decode_adhoc_command_els(__TopXMLNS, __IgnoreEls, _els,
+				   Xdata, Notes, Actions)
+    end;
+decode_adhoc_command_els(__TopXMLNS, __IgnoreEls,
+			 [_ | _els], Xdata, Notes, Actions) ->
+    decode_adhoc_command_els(__TopXMLNS, __IgnoreEls, _els,
+			     Xdata, Notes, Actions).
+
+decode_adhoc_command_attrs(__TopXMLNS,
+			   [{<<"node">>, _val} | _attrs], _Node, Lang, Sid,
+			   Status, Action) ->
+    decode_adhoc_command_attrs(__TopXMLNS, _attrs, _val,
+			       Lang, Sid, Status, Action);
+decode_adhoc_command_attrs(__TopXMLNS,
+			   [{<<"xml:lang">>, _val} | _attrs], Node, _Lang, Sid,
+			   Status, Action) ->
+    decode_adhoc_command_attrs(__TopXMLNS, _attrs, Node,
+			       _val, Sid, Status, Action);
+decode_adhoc_command_attrs(__TopXMLNS,
+			   [{<<"sessionid">>, _val} | _attrs], Node, Lang, _Sid,
+			   Status, Action) ->
+    decode_adhoc_command_attrs(__TopXMLNS, _attrs, Node,
+			       Lang, _val, Status, Action);
+decode_adhoc_command_attrs(__TopXMLNS,
+			   [{<<"status">>, _val} | _attrs], Node, Lang, Sid,
+			   _Status, Action) ->
+    decode_adhoc_command_attrs(__TopXMLNS, _attrs, Node,
+			       Lang, Sid, _val, Action);
+decode_adhoc_command_attrs(__TopXMLNS,
+			   [{<<"action">>, _val} | _attrs], Node, Lang, Sid,
+			   Status, _Action) ->
+    decode_adhoc_command_attrs(__TopXMLNS, _attrs, Node,
+			       Lang, Sid, Status, _val);
+decode_adhoc_command_attrs(__TopXMLNS, [_ | _attrs],
+			   Node, Lang, Sid, Status, Action) ->
+    decode_adhoc_command_attrs(__TopXMLNS, _attrs, Node,
+			       Lang, Sid, Status, Action);
+decode_adhoc_command_attrs(__TopXMLNS, [], Node, Lang,
+			   Sid, Status, Action) ->
+    {decode_adhoc_command_attr_node(__TopXMLNS, Node),
+     'decode_adhoc_command_attr_xml:lang'(__TopXMLNS, Lang),
+     decode_adhoc_command_attr_sessionid(__TopXMLNS, Sid),
+     decode_adhoc_command_attr_status(__TopXMLNS, Status),
+     decode_adhoc_command_attr_action(__TopXMLNS, Action)}.
+
+encode_adhoc_command({adhoc_command, Node, Action, Sid,
+		      Status, Lang, Actions, Notes, Xdata},
+		     _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_adhoc_command_$xdata'(Xdata,
+						    'encode_adhoc_command_$notes'(Notes,
+										  'encode_adhoc_command_$actions'(Actions,
+														  [])))),
+    _attrs = encode_adhoc_command_attr_action(Action,
+					      encode_adhoc_command_attr_status(Status,
+									       encode_adhoc_command_attr_sessionid(Sid,
+														   'encode_adhoc_command_attr_xml:lang'(Lang,
+																			encode_adhoc_command_attr_node(Node,
+																						       _xmlns_attrs))))),
+    {xmlel, <<"command">>, _attrs, _els}.
+
+'encode_adhoc_command_$xdata'(undefined, _acc) -> _acc;
+'encode_adhoc_command_$xdata'(Xdata, _acc) ->
+    [encode_xdata(Xdata,
+		  [{<<"xmlns">>, <<"jabber:x:data">>}])
+     | _acc].
+
+'encode_adhoc_command_$notes'([], _acc) -> _acc;
+'encode_adhoc_command_$notes'([Notes | _els], _acc) ->
+    'encode_adhoc_command_$notes'(_els,
+				  [encode_adhoc_command_notes(Notes, [])
+				   | _acc]).
+
+'encode_adhoc_command_$actions'(undefined, _acc) ->
+    _acc;
+'encode_adhoc_command_$actions'(Actions, _acc) ->
+    [encode_adhoc_command_actions(Actions, []) | _acc].
+
+decode_adhoc_command_attr_node(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"node">>, <<"command">>, __TopXMLNS}});
+decode_adhoc_command_attr_node(__TopXMLNS, _val) ->
+    _val.
+
+encode_adhoc_command_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
+
+'decode_adhoc_command_attr_xml:lang'(__TopXMLNS,
+				     undefined) ->
+    undefined;
+'decode_adhoc_command_attr_xml:lang'(__TopXMLNS,
+				     _val) ->
+    _val.
+
+'encode_adhoc_command_attr_xml:lang'(undefined, _acc) ->
+    _acc;
+'encode_adhoc_command_attr_xml:lang'(_val, _acc) ->
+    [{<<"xml:lang">>, _val} | _acc].
+
+decode_adhoc_command_attr_sessionid(__TopXMLNS,
+				    undefined) ->
+    undefined;
+decode_adhoc_command_attr_sessionid(__TopXMLNS, _val) ->
+    _val.
+
+encode_adhoc_command_attr_sessionid(undefined, _acc) ->
+    _acc;
+encode_adhoc_command_attr_sessionid(_val, _acc) ->
+    [{<<"sessionid">>, _val} | _acc].
+
+decode_adhoc_command_attr_status(__TopXMLNS,
+				 undefined) ->
+    undefined;
+decode_adhoc_command_attr_status(__TopXMLNS, _val) ->
+    case catch dec_enum(_val,
+			[canceled, completed, executing])
+	of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"status">>, <<"command">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_adhoc_command_attr_status(undefined, _acc) ->
+    _acc;
+encode_adhoc_command_attr_status(_val, _acc) ->
+    [{<<"status">>, enc_enum(_val)} | _acc].
+
+decode_adhoc_command_attr_action(__TopXMLNS,
+				 undefined) ->
+    execute;
+decode_adhoc_command_attr_action(__TopXMLNS, _val) ->
+    case catch dec_enum(_val,
+			[cancel, complete, execute, next, prev])
+	of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"action">>, <<"command">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_adhoc_command_attr_action(execute, _acc) -> _acc;
+encode_adhoc_command_attr_action(_val, _acc) ->
+    [{<<"action">>, enc_enum(_val)} | _acc].
+
+decode_adhoc_command_notes(__TopXMLNS, __IgnoreEls,
+			   {xmlel, <<"note">>, _attrs, _els}) ->
+    Data = decode_adhoc_command_notes_els(__TopXMLNS,
+					  __IgnoreEls, _els, <<>>),
+    Type = decode_adhoc_command_notes_attrs(__TopXMLNS,
+					    _attrs, undefined),
+    {adhoc_note, Type, Data}.
+
+decode_adhoc_command_notes_els(__TopXMLNS, __IgnoreEls,
+			       [], Data) ->
+    decode_adhoc_command_notes_cdata(__TopXMLNS, Data);
+decode_adhoc_command_notes_els(__TopXMLNS, __IgnoreEls,
+			       [{xmlcdata, _data} | _els], Data) ->
+    decode_adhoc_command_notes_els(__TopXMLNS, __IgnoreEls,
+				   _els, <<Data/binary, _data/binary>>);
+decode_adhoc_command_notes_els(__TopXMLNS, __IgnoreEls,
+			       [_ | _els], Data) ->
+    decode_adhoc_command_notes_els(__TopXMLNS, __IgnoreEls,
+				   _els, Data).
+
+decode_adhoc_command_notes_attrs(__TopXMLNS,
+				 [{<<"type">>, _val} | _attrs], _Type) ->
+    decode_adhoc_command_notes_attrs(__TopXMLNS, _attrs,
+				     _val);
+decode_adhoc_command_notes_attrs(__TopXMLNS,
+				 [_ | _attrs], Type) ->
+    decode_adhoc_command_notes_attrs(__TopXMLNS, _attrs,
+				     Type);
+decode_adhoc_command_notes_attrs(__TopXMLNS, [],
+				 Type) ->
+    decode_adhoc_command_notes_attr_type(__TopXMLNS, Type).
+
+encode_adhoc_command_notes({adhoc_note, Type, Data},
+			   _xmlns_attrs) ->
+    _els = encode_adhoc_command_notes_cdata(Data, []),
+    _attrs = encode_adhoc_command_notes_attr_type(Type,
+						  _xmlns_attrs),
+    {xmlel, <<"note">>, _attrs, _els}.
+
+decode_adhoc_command_notes_attr_type(__TopXMLNS,
+				     undefined) ->
+    info;
+decode_adhoc_command_notes_attr_type(__TopXMLNS,
+				     _val) ->
+    case catch dec_enum(_val, [info, warn, error]) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"type">>, <<"note">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_adhoc_command_notes_attr_type(info, _acc) ->
+    _acc;
+encode_adhoc_command_notes_attr_type(_val, _acc) ->
+    [{<<"type">>, enc_enum(_val)} | _acc].
+
+decode_adhoc_command_notes_cdata(__TopXMLNS, <<>>) ->
+    <<>>;
+decode_adhoc_command_notes_cdata(__TopXMLNS, _val) ->
+    _val.
+
+encode_adhoc_command_notes_cdata(<<>>, _acc) -> _acc;
+encode_adhoc_command_notes_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_adhoc_command_actions(__TopXMLNS, __IgnoreEls,
+			     {xmlel, <<"actions">>, _attrs, _els}) ->
+    {Next, Complete, Prev} =
+	decode_adhoc_command_actions_els(__TopXMLNS,
+					 __IgnoreEls, _els, false, false,
+					 false),
+    Execute = decode_adhoc_command_actions_attrs(__TopXMLNS,
+						 _attrs, undefined),
+    {adhoc_actions, Execute, Prev, Next, Complete}.
+
+decode_adhoc_command_actions_els(__TopXMLNS,
+				 __IgnoreEls, [], Next, Complete, Prev) ->
+    {Next, Complete, Prev};
+decode_adhoc_command_actions_els(__TopXMLNS,
+				 __IgnoreEls,
+				 [{xmlel, <<"prev">>, _attrs, _} = _el | _els],
+				 Next, Complete, Prev) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/commands">> ->
+	  decode_adhoc_command_actions_els(__TopXMLNS,
+					   __IgnoreEls, _els, Next, Complete,
+					   decode_adhoc_command_prev(__TopXMLNS,
+								     __IgnoreEls,
+								     _el));
+      <<"http://jabber.org/protocol/commands">> ->
+	  decode_adhoc_command_actions_els(__TopXMLNS,
+					   __IgnoreEls, _els, Next, Complete,
+					   decode_adhoc_command_prev(<<"http://jabber.org/protocol/commands">>,
+								     __IgnoreEls,
+								     _el));
+      _ ->
+	  decode_adhoc_command_actions_els(__TopXMLNS,
+					   __IgnoreEls, _els, Next, Complete,
+					   Prev)
+    end;
+decode_adhoc_command_actions_els(__TopXMLNS,
+				 __IgnoreEls,
+				 [{xmlel, <<"next">>, _attrs, _} = _el | _els],
+				 Next, Complete, Prev) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/commands">> ->
+	  decode_adhoc_command_actions_els(__TopXMLNS,
+					   __IgnoreEls, _els,
+					   decode_adhoc_command_next(__TopXMLNS,
+								     __IgnoreEls,
+								     _el),
+					   Complete, Prev);
+      <<"http://jabber.org/protocol/commands">> ->
+	  decode_adhoc_command_actions_els(__TopXMLNS,
+					   __IgnoreEls, _els,
+					   decode_adhoc_command_next(<<"http://jabber.org/protocol/commands">>,
+								     __IgnoreEls,
+								     _el),
+					   Complete, Prev);
+      _ ->
+	  decode_adhoc_command_actions_els(__TopXMLNS,
+					   __IgnoreEls, _els, Next, Complete,
+					   Prev)
+    end;
+decode_adhoc_command_actions_els(__TopXMLNS,
+				 __IgnoreEls,
+				 [{xmlel, <<"complete">>, _attrs, _} = _el
+				  | _els],
+				 Next, Complete, Prev) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/commands">> ->
+	  decode_adhoc_command_actions_els(__TopXMLNS,
+					   __IgnoreEls, _els, Next,
+					   decode_adhoc_command_complete(__TopXMLNS,
+									 __IgnoreEls,
+									 _el),
+					   Prev);
+      <<"http://jabber.org/protocol/commands">> ->
+	  decode_adhoc_command_actions_els(__TopXMLNS,
+					   __IgnoreEls, _els, Next,
+					   decode_adhoc_command_complete(<<"http://jabber.org/protocol/commands">>,
+									 __IgnoreEls,
+									 _el),
+					   Prev);
+      _ ->
+	  decode_adhoc_command_actions_els(__TopXMLNS,
+					   __IgnoreEls, _els, Next, Complete,
+					   Prev)
+    end;
+decode_adhoc_command_actions_els(__TopXMLNS,
+				 __IgnoreEls, [_ | _els], Next, Complete,
+				 Prev) ->
+    decode_adhoc_command_actions_els(__TopXMLNS,
+				     __IgnoreEls, _els, Next, Complete, Prev).
+
+decode_adhoc_command_actions_attrs(__TopXMLNS,
+				   [{<<"execute">>, _val} | _attrs],
+				   _Execute) ->
+    decode_adhoc_command_actions_attrs(__TopXMLNS, _attrs,
+				       _val);
+decode_adhoc_command_actions_attrs(__TopXMLNS,
+				   [_ | _attrs], Execute) ->
+    decode_adhoc_command_actions_attrs(__TopXMLNS, _attrs,
+				       Execute);
+decode_adhoc_command_actions_attrs(__TopXMLNS, [],
+				   Execute) ->
+    decode_adhoc_command_actions_attr_execute(__TopXMLNS,
+					      Execute).
+
+encode_adhoc_command_actions({adhoc_actions, Execute,
+			      Prev, Next, Complete},
+			     _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_adhoc_command_actions_$next'(Next,
+							   'encode_adhoc_command_actions_$complete'(Complete,
+												    'encode_adhoc_command_actions_$prev'(Prev,
+																	 [])))),
+    _attrs =
+	encode_adhoc_command_actions_attr_execute(Execute,
+						  _xmlns_attrs),
+    {xmlel, <<"actions">>, _attrs, _els}.
+
+'encode_adhoc_command_actions_$next'(false, _acc) ->
+    _acc;
+'encode_adhoc_command_actions_$next'(Next, _acc) ->
+    [encode_adhoc_command_next(Next, []) | _acc].
+
+'encode_adhoc_command_actions_$complete'(false, _acc) ->
+    _acc;
+'encode_adhoc_command_actions_$complete'(Complete,
+					 _acc) ->
+    [encode_adhoc_command_complete(Complete, []) | _acc].
+
+'encode_adhoc_command_actions_$prev'(false, _acc) ->
+    _acc;
+'encode_adhoc_command_actions_$prev'(Prev, _acc) ->
+    [encode_adhoc_command_prev(Prev, []) | _acc].
+
+decode_adhoc_command_actions_attr_execute(__TopXMLNS,
+					  undefined) ->
+    undefined;
+decode_adhoc_command_actions_attr_execute(__TopXMLNS,
+					  _val) ->
+    case catch dec_enum(_val, [complete, next, prev]) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"execute">>, <<"actions">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_adhoc_command_actions_attr_execute(undefined,
+					  _acc) ->
+    _acc;
+encode_adhoc_command_actions_attr_execute(_val, _acc) ->
+    [{<<"execute">>, enc_enum(_val)} | _acc].
+
+decode_adhoc_command_complete(__TopXMLNS, __IgnoreEls,
+			      {xmlel, <<"complete">>, _attrs, _els}) ->
+    true.
+
+encode_adhoc_command_complete(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"complete">>, _attrs, _els}.
+
+decode_adhoc_command_next(__TopXMLNS, __IgnoreEls,
+			  {xmlel, <<"next">>, _attrs, _els}) ->
+    true.
+
+encode_adhoc_command_next(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"next">>, _attrs, _els}.
+
+decode_adhoc_command_prev(__TopXMLNS, __IgnoreEls,
+			  {xmlel, <<"prev">>, _attrs, _els}) ->
+    true.
+
+encode_adhoc_command_prev(true, _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"prev">>, _attrs, _els}.
 
 decode_client_id(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"client-id">>, _attrs, _els}) ->

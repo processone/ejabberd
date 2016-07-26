@@ -2821,6 +2821,62 @@
 	   result = {client_id, '$id'},
 	   attrs = [#attr{name = <<"id">>, required = true}]}).
 
+-xml(adhoc_command_prev,
+     #elem{name = <<"prev">>,
+	   xmlns = <<"http://jabber.org/protocol/commands">>,
+	   result = true}).
+-xml(adhoc_command_next,
+     #elem{name = <<"next">>,
+	   xmlns = <<"http://jabber.org/protocol/commands">>,
+	   result = true}).
+-xml(adhoc_command_complete,
+     #elem{name = <<"complete">>,
+	   xmlns = <<"http://jabber.org/protocol/commands">>,
+	   result = true}).
+
+-xml(adhoc_command_actions,
+     #elem{name = <<"actions">>,
+	   xmlns = <<"http://jabber.org/protocol/commands">>,
+	   result = {adhoc_actions, '$execute', '$prev', '$next', '$complete'},
+	   attrs = [#attr{name = <<"execute">>,
+			  dec = {dec_enum, [[complete, next, prev]]},
+			  enc = {enc_enum, []}}],
+	   refs = [#ref{name = adhoc_command_prev, min = 0, max = 1,
+			default = false, label = '$prev'},
+		   #ref{name = adhoc_command_next, min = 0, max = 1,
+			default = false, label = '$next'},
+		   #ref{name = adhoc_command_complete, min = 0, max = 1,
+			default = false, label = '$complete'}]}).
+
+-xml(adhoc_command_notes,
+     #elem{name = <<"note">>,
+	   xmlns = <<"http://jabber.org/protocol/commands">>,
+	   result = {adhoc_note, '$type', '$data'},
+	   attrs = [#attr{name = <<"type">>, default = info,
+			  dec = {dec_enum, [[info, warn, error]]},
+			  enc = {enc_enum, []}}],
+	   cdata = #cdata{default = <<"">>, label = '$data'}}).
+
+-xml(adhoc_command,
+     #elem{name = <<"command">>,
+	   xmlns = <<"http://jabber.org/protocol/commands">>,
+	   result = {adhoc_command, '$node', '$action', '$sid',
+		     '$status', '$lang', '$actions', '$notes', '$xdata'},
+	   attrs = [#attr{name = <<"node">>, required = true},
+		    #attr{name = <<"xml:lang">>, label = '$lang'},
+		    #attr{name = <<"sessionid">>, label = '$sid'},
+		    #attr{name = <<"status">>,
+			  dec = {dec_enum, [[canceled, completed, executing]]},
+			  enc = {enc_enum, []}},
+		    #attr{name = <<"action">>, default = execute,
+			  dec = {dec_enum, [[cancel, complete,
+					     execute, next, prev]]},
+			  enc = {enc_enum, []}}],
+	   refs = [#ref{name = adhoc_command_actions, min = 0, max = 1,
+			label = '$actions'},
+		   #ref{name = xdata, min = 0, max = 1},
+		   #ref{name = adhoc_command_notes, label = '$notes'}]}).
+
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),
     H = jlib:binary_to_integer(H1),

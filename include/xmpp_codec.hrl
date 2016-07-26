@@ -18,6 +18,10 @@
 -record(feature_register, {}).
 -type feature_register() :: #feature_register{}.
 
+-record(adhoc_note, {type = info :: 'error' | 'info' | 'warn',
+                     data = <<>> :: binary()}).
+-type adhoc_note() :: #adhoc_note{}.
+
 -record(address, {type :: 'bcc' | 'cc' | 'noreply' | 'ofrom' | 'replyroom' | 'replyto' | 'to',
                   jid :: any(),
                   desc :: binary(),
@@ -419,6 +423,12 @@
                       sid :: binary()}).
 -type bytestreams() :: #bytestreams{}.
 
+-record(adhoc_actions, {execute :: 'complete' | 'next' | 'prev',
+                        prev = false :: boolean(),
+                        next = false :: boolean(),
+                        complete = false :: boolean()}).
+-type adhoc_actions() :: #adhoc_actions{}.
+
 -record(vcard_org, {name :: binary(),
                     units = [] :: [binary()]}).
 -type vcard_org() :: #vcard_org{}.
@@ -558,6 +568,16 @@
                 items = [] :: [[#xdata_field{}]],
                 fields = [] :: [#xdata_field{}]}).
 -type xdata() :: #xdata{}.
+
+-record(adhoc_command, {node :: binary(),
+                        action = execute :: 'cancel' | 'complete' | 'execute' | 'next' | 'prev',
+                        sid :: binary(),
+                        status :: 'canceled' | 'completed' | 'executing',
+                        lang :: binary(),
+                        actions :: #adhoc_actions{},
+                        notes = [] :: [#adhoc_note{}],
+                        xdata :: #xdata{}}).
+-type adhoc_command() :: #adhoc_command{}.
 
 -record(search, {instructions :: binary(),
                  first :: binary(),
@@ -799,6 +819,7 @@
                         pubsub_options() |
                         compress() |
                         bytestreams() |
+                        adhoc_actions() |
                         muc_history() |
                         identity() |
                         feature_csi() |
@@ -810,9 +831,7 @@
                         pubsub() |
                         muc_owner() |
                         muc_actor() |
-                        carbons_private() |
-                        mix_leave() |
-                        muc_subscribe() |
+                        adhoc_note() |
                         rosterver_feature() |
                         muc_invite() |
                         vcard_xupdate() |
@@ -820,28 +839,16 @@
                         bookmark_conference() |
                         offline() |
                         time() |
-                        muc_unique() |
-                        sasl_response() |
-                        pubsub_subscribe() |
-                        presence() |
-                        message() |
                         sm_enable() |
                         starttls_failure() |
                         sasl_challenge() |
-                        gone() |
                         x_conference() |
                         private() |
                         compress_failure() |
                         sasl_failure() |
                         bookmark_storage() |
                         vcard_name() |
-                        sm_resume() |
-                        carbons_enable() |
-                        expire() |
-                        muc_unsubscribe() |
-                        pubsub_unsubscribe() |
                         muc_decline() |
-                        chatstate() |
                         sasl_auth() |
                         p1_push() |
                         legacy_auth() |
@@ -866,10 +873,11 @@
                         rsm_first() |
                         stat() |
                         xdata_field() |
+                        adhoc_command() |
                         sm_failed() |
                         ping() |
-                        disco_item() |
                         privacy_item() |
+                        disco_item() |
                         caps() |
                         muc() |
                         stream_features() |
@@ -894,4 +902,19 @@
                         error() |
                         stream_error() |
                         muc_user() |
-                        vcard_adr().
+                        vcard_adr() |
+                        carbons_private() |
+                        mix_leave() |
+                        muc_subscribe() |
+                        muc_unique() |
+                        sasl_response() |
+                        pubsub_subscribe() |
+                        presence() |
+                        message() |
+                        gone() |
+                        sm_resume() |
+                        carbons_enable() |
+                        expire() |
+                        muc_unsubscribe() |
+                        pubsub_unsubscribe() |
+                        chatstate().

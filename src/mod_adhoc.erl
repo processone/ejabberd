@@ -31,18 +31,15 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/3,
-	 process_sm_iq/3, get_local_commands/5,
+-export([start/2, stop/1, process_local_iq/1,
+	 process_sm_iq/1, get_local_commands/5,
 	 get_local_identity/5, get_local_features/5,
 	 get_sm_commands/5, get_sm_identity/5, get_sm_features/5,
 	 ping_item/4, ping_command/4, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
--include("jlib.hrl").
-
--include("adhoc.hrl").
+-include("xmpp.hrl").
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
@@ -94,7 +91,7 @@ stop(Host) ->
 %-------------------------------------------------------------------------
 
 get_local_commands(Acc, _From,
-		   #jid{server = Server, lserver = LServer} = _To, <<"">>,
+		   #jid{server = Server, lserver = LServer} = _To, undefined,
 		   Lang) ->
     Display = gen_mod:get_module_opt(LServer, ?MODULE,
 				     report_commands_node,
@@ -107,12 +104,9 @@ get_local_commands(Acc, _From,
 		    {result, I} -> I;
 		    _ -> []
 		  end,
-	  Nodes = [#xmlel{name = <<"item">>,
-			  attrs =
-			      [{<<"jid">>, Server}, {<<"node">>, ?NS_COMMANDS},
-			       {<<"name">>,
-				translate:translate(Lang, <<"Commands">>)}],
-			  children = []}],
+	  Nodes = [#disco_item{jid = jid:make(Server),
+			       node = ?NS_COMMANDS,
+			       name = translate:translate(Lang, <<"Commands">>)}],
 	  {result, Items ++ Nodes}
     end;
 get_local_commands(_Acc, From,
@@ -128,7 +122,7 @@ get_local_commands(Acc, _From, _To, _Node, _Lang) ->
 %-------------------------------------------------------------------------
 
 get_sm_commands(Acc, _From,
-		#jid{lserver = LServer} = To, <<"">>, Lang) ->
+		#jid{lserver = LServer} = To, undefined, Lang) ->
     Display = gen_mod:get_module_opt(LServer, ?MODULE,
 				     report_commands_node,
                                      fun(B) when is_boolean(B) -> B end,
@@ -140,13 +134,9 @@ get_sm_commands(Acc, _From,
 		    {result, I} -> I;
 		    _ -> []
 		  end,
-	  Nodes = [#xmlel{name = <<"item">>,
-			  attrs =
-			      [{<<"jid">>, jid:to_string(To)},
-			       {<<"node">>, ?NS_COMMANDS},
-			       {<<"name">>,
-				translate:translate(Lang, <<"Commands">>)}],
-			  children = []}],
+	  Nodes = [#disco_item{jid = To,
+			       node = ?NS_COMMANDS,
+			       name = translate:translate(Lang, <<"Commands">>)}],
 	  {result, Items ++ Nodes}
     end;
 get_sm_commands(_Acc, From,
@@ -160,21 +150,14 @@ get_sm_commands(Acc, _From, _To, _Node, _Lang) -> Acc.
 %% On disco info request to the ad-hoc node, return automation/command-list.
 get_local_identity(Acc, _From, _To, ?NS_COMMANDS,
 		   Lang) ->
-    [#xmlel{name = <<"identity">>,
-	    attrs =
-		[{<<"category">>, <<"automation">>},
-		 {<<"type">>, <<"command-list">>},
-		 {<<"name">>,
-		  translate:translate(Lang, <<"Commands">>)}],
-	    children = []}
+    [#identity{category = <<"automation">>,
+	       type = <<"command-list">>,
+	       name = translate:translate(Lang, <<"Commands">>)}
      | Acc];
 get_local_identity(Acc, _From, _To, <<"ping">>, Lang) ->
-    [#xmlel{name = <<"identity">>,
-	    attrs =
-		[{<<"category">>, <<"automation">>},
-		 {<<"type">>, <<"command-node">>},
-		 {<<"name">>, translate:translate(Lang, <<"Ping">>)}],
-	    children = []}
+    [#identity{category = <<"automation">>,
+	       type = <<"command-node">>,
+	       name = translate:translate(Lang, <<"Ping">>)}
      | Acc];
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -183,13 +166,9 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
 
 %% On disco info request to the ad-hoc node, return automation/command-list.
 get_sm_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
-    [#xmlel{name = <<"identity">>,
-	    attrs =
-		[{<<"category">>, <<"automation">>},
-		 {<<"type">>, <<"command-list">>},
-		 {<<"name">>,
-		  translate:translate(Lang, <<"Commands">>)}],
-	    children = []}
+    [#identity{category = <<"automation">>,
+	       type = <<"command-list">>,
+	       name = translate:translate(Lang, <<"Commands">>)}
      | Acc];
 get_sm_identity(Acc, _From, _To, _Node, _Lang) -> Acc.
 
@@ -225,34 +204,29 @@ get_sm_features(Acc, _From, _To, _Node, _Lang) -> Acc.
 
 %-------------------------------------------------------------------------
 
-process_local_iq(From, To, IQ) ->
-    process_adhoc_request(From, To, IQ,
-			  adhoc_local_commands).
+process_local_iq(IQ) ->
+    process_adhoc_request(IQ, adhoc_local_commands).
 
-process_sm_iq(From, To, IQ) ->
-    process_adhoc_request(From, To, IQ, adhoc_sm_commands).
+process_sm_iq(IQ) ->
+    process_adhoc_request(IQ, adhoc_sm_commands).
 
-process_adhoc_request(From, To,
-		      #iq{sub_el = SubEl, lang = Lang} = IQ, Hook) ->
-    ?DEBUG("About to parse ~p...", [IQ]),
-    case adhoc:parse_request(IQ) of
-      {error, Error} ->
-	  IQ#iq{type = error, sub_el = [SubEl, Error]};
-      #adhoc_request{} = AdhocRequest ->
-	  Host = To#jid.lserver,
-	  case ejabberd_hooks:run_fold(Hook, Host, empty,
-				       [From, To, AdhocRequest])
-	      of
-	    ignore -> ignore;
-	    empty ->
-		Txt = <<"No hook has processed this command">>,
-		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)]};
-	    {error, Error} ->
-		IQ#iq{type = error, sub_el = [SubEl, Error]};
-	    Command -> IQ#iq{type = result, sub_el = [Command]}
-	  end
-    end.
+process_adhoc_request(#iq{from = From, to = To,
+			  type = set, lang = Lang,
+			  sub_els = [#adhoc_command{} = SubEl]} = IQ, Hook) ->
+    Host = To#jid.lserver,
+    case ejabberd_hooks:run_fold(Hook, Host, empty, [From, To, SubEl]) of
+	ignore ->
+	    ignore;
+	empty ->
+	    Txt = <<"No hook has processed this command">>,
+	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
+	{error, Error} ->
+	    xmpp:make_error(IQ, Error);
+	Command ->
+	    xmpp:make_iq_result(IQ, Command)
+    end;
+process_adhoc_request(#iq{} = IQ, _Hooks) ->
+    xmpp:make_error(IQ, xmpp:err_bad_request()).
 
 ping_item(Acc, _From, #jid{server = Server} = _To,
 	  Lang) ->
@@ -260,27 +234,25 @@ ping_item(Acc, _From, #jid{server = Server} = _To,
 	      {result, I} -> I;
 	      _ -> []
 	    end,
-    Nodes = [#xmlel{name = <<"item">>,
-		    attrs =
-			[{<<"jid">>, Server}, {<<"node">>, <<"ping">>},
-			 {<<"name">>, translate:translate(Lang, <<"Ping">>)}],
-		    children = []}],
+    Nodes = [#disco_item{jid = jid:make(Server),
+			 node = <<"ping">>,
+			 name = translate:translate(Lang, <<"Ping">>)}],
     {result, Items ++ Nodes}.
 
 ping_command(_Acc, _From, _To,
-	     #adhoc_request{lang = Lang, node = <<"ping">>,
-			    sessionid = _Sessionid, action = Action} =
-		 Request) ->
-    if Action == <<"">>; Action == <<"execute">> ->
-	   adhoc:produce_response(Request,
-				  #adhoc_response{status = completed,
-						  notes =
-						      [{<<"info">>,
-							translate:translate(Lang,
-									    <<"Pong">>)}]});
+	     #adhoc_command{lang = Lang, node = <<"ping">>,
+			    action = Action} = Request) ->
+    if Action == execute ->
+	    xmpp_util:make_adhoc_response(
+	      Request,
+	      #adhoc_command{
+		 status = completed,
+		 notes = [#adhoc_note{
+			     type = info,
+			     data = translate:translate(Lang, <<"Pong">>)}]});
        true ->
 	    Txt = <<"Incorrect value of 'action' attribute">>,
-	    {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
+	    {error, xmpp:err_bad_request(Txt, Lang)}
     end;
 ping_command(Acc, _From, _To, _Request) -> Acc.
 
