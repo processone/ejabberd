@@ -10,8 +10,6 @@ defmodule Ejabberd.Config do
 
   defmacro __using__(_opts) do
     quote do
-      Ejabberd.Config.Store.start_link
-
       import Ejabberd.Config, only: :macros
       @before_compile Ejabberd.Config
     end
