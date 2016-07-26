@@ -23,6 +23,8 @@
 defmodule EjabberdCommandsMockTest do
 	use ExUnit.Case, async: false
 
+  require EjabberdOauthMock
+
 	@author "jsautret@process-one.net"
 
 	# mocked callback module
@@ -50,7 +52,7 @@ defmodule EjabberdCommandsMockTest do
     :ok = :ejabberd_config.start(["domain1", "domain2"], [])
     :ok = :acl.start
 		EjabberdOauthMock.init
-		:ok
+    on_exit fn -> :meck.unload end
 	end
 
 	setup do

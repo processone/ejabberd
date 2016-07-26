@@ -71,8 +71,8 @@ defmodule EjabberdCyrsaslTest do
     response = "username=\"#{user}\",realm=\"#{domain}\",nonce=\"#{nonce}\",cnonce=\"#{cnonce}\"," <>
       "nc=\"#{nc}\",qop=auth,digest-uri=\"#{digest_uri}\",response=\"#{response_hash}\"," <>
       "charset=utf-8,algorithm=md5-sess"
-    assert {:continue, calc_str, state3} = :cyrsasl.server_step(state1, response)
-    assert {:ok, list} = :cyrsasl.server_step(state3, "")
+    assert {:continue, _calc_str, state3} = :cyrsasl.server_step(state1, response)
+    assert {:ok, _list} = :cyrsasl.server_step(state3, "")
   end
 
   defp calc_digest_sha(user, domain, pass, nc, nonce, cnonce) do
@@ -94,7 +94,7 @@ defmodule EjabberdCyrsaslTest do
   defp setup_anonymous_mocks() do
     :meck.unload
     mock(:ejabberd_auth_anonymous, :is_sasl_anonymous_enabled,
-      fn (host) ->
+      fn (_host) ->
         true
       end)
     mock(:ejabberd_auth, :is_user_exists,
@@ -119,7 +119,7 @@ defmodule EjabberdCyrsaslTest do
     end
   end
 
-  defp check_password(user, authzid, pass) do
+  defp check_password(_user, authzid, pass) do
     case get_password(authzid) do
       {^pass, mod} ->
         {true, mod}
@@ -128,7 +128,7 @@ defmodule EjabberdCyrsaslTest do
     end
   end
 
-  defp check_password_digest(user, authzid, pass, digest, digest_gen) do
+  defp check_password_digest(_user, authzid, _pass, digest, digest_gen) do
     case get_password(authzid) do
       {spass, mod} ->
         v = digest_gen.(spass)

@@ -22,6 +22,9 @@ defmodule EjabberdModAdminExtraTest do
 	use ExUnit.Case, async: false
 
   require EjabberdAuthMock
+  require EjabberdSmMock
+  require ModLastMock
+  require ModRosterMock
 
 	@author "jsautret@process-one.net"
 
