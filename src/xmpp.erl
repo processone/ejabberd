@@ -205,9 +205,9 @@ set_to(#iq{} = IQ, J) -> IQ#iq{to = J};
 set_to(#message{} = Msg, J) -> Msg#message{to = J};
 set_to(#presence{} = Pres, J) -> Pres#presence{to = J}.
 
--spec set_from_to(iq(), jid:jid(), jid:jid()) -> iq();
-		 (message(), jid:jid(), jid:jid()) -> message();
-		 (presence(), jid:jid(), jid:jid()) -> presence().
+-spec set_from_to(iq(), undefined | jid:jid(), undefined | jid:jid()) -> iq();
+		 (message(), undefined | jid:jid(), undefined | jid:jid()) -> message();
+		 (presence(), undefined | jid:jid(), undefined | jid:jid()) -> presence().
 set_from_to(#iq{} = IQ, F, T) -> IQ#iq{from = F, to = T};
 set_from_to(#message{} = Msg, F, T) -> Msg#message{from = F, to = T};
 set_from_to(#presence{} = Pres, F, T) -> Pres#presence{from = F, to = T}.
