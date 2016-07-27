@@ -30,8 +30,7 @@ start(Host, _Opts) ->
                        disco_sm_features, 500),
     ejabberd_hooks:add(disco_info, Host, ?MODULE,
                        disco_info, 500).
-    % ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-    %                    process_packet, 500).
+
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_DELEGATION),
@@ -45,8 +44,6 @@ stop(Host) ->
                           disco_sm_features, 500),
     ejabberd_hooks:delete(disco_info, Host, ?MODULE,
                           disco_info, 500).
-    % ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-    %                       process_packet, 500).
 
 depends(_Host, _Opts) -> [].
 
@@ -92,20 +89,16 @@ add_iq_handlers(Ns) ->
                                                   process_packet, one_queue)
                   end, ?MYHOSTS).
 
-send_element(StateData, From, To, #xmlel{attrs = Attrs} = Packet) ->
-    AttrsNew = jlib:replace_from_to_attrs(From, To, Attrs),
-    ejabberd_service:send_element(StateData, Packet#xmlel{attrs = AttrsNew}).
-
 advertise_delegations(#state{delegations = []}) -> ok;
 advertise_delegations(StateData) ->
     Delegated = delegations(StateData#state.streamid, StateData#state.delegations),
-    Reqs = disco_info(StateData#state.delegations),
     % server asks available features for delegated namespaces 
-    lists:foreach(fun(IQ) ->
-                    send_element(StateData, ?MYNAME, StateData#state.host, IQ)
-                  end, Reqs),
-    send_element(StateData, ?MYNAME, StateData#state.host, Delegated),
-    
+    disco_info(StateData),
+    Attrs = 
+      jlib:replace_from_to_attrs(?MYNAME, StateData#state.host, Delegated#xmlel.attrs),
+
+    ejabberd_service:send_element(StateData, Delegated#xmlel{attrs = Attrs}),
+
     lists:foreach(fun({Ns, _}) ->
                       add_iq_handlers(Ns)
                   end, StateData#state.delegations),
@@ -197,8 +190,8 @@ check_iq(#xmlel{attrs = Attrs} = Packet,
     Type = fxml:get_attr_s(<<"type">>, Attrs),
     if
       ((Type == <<"result">>) or (Type == <<"error">>)),
-        Id1 == Id2,  
-        To == From ->
+      Id1 == Id2,  
+      To == From ->
         NewPacket = jlib:remove_attr(<<"xmlns">>, Packet),
         %% We can send the decapsulated stanza from Server to Client (To)
         NewPacket;
@@ -291,7 +284,8 @@ process_packet(From, To, IQ) ->
     %% check if stanza directed to server
     %% or directed to the bare JID of the sender
     case ((From#jid.user == To#jid.user) and
-       	  (From#jid.lserver == To#jid.lserver)) and
+       	  (From#jid.lserver == To#jid.lserver) or
+         (To#jid.luser == <<"">>)) and
          ((Type == <<"get">>) or (Type == <<"set">>)) and
          check_tab(delegated_namespaces) of
         true ->
@@ -304,6 +298,7 @@ process_packet(From, To, IQ) ->
             case ets:lookup(delegated_namespaces, Ns) of
               [{Ns, Pid, _, _}] ->
                 {ServiceHost, Delegations} = ejabberd_service:get_delegated_ns(Pid),
+                {} = lists:keysearch(Ns, 1, Delegations),
                 case check_delegation(Delegations, Ns, Children) of
                     true ->
                         forward_iq(From#jid.server, ServiceHost,
@@ -331,18 +326,18 @@ decapsulate_features(#xmlel{attrs = Attrs} = Packet, Node) ->
 
           Features = [Feat || #xmlel{attrs = [{<<"var">>, Feat}]} <-
                               fxml:get_subtags(Packet, <<"feature">>)],
-                              
+                       
           Identity = [I || I <- fxml:get_subtags(Packet, <<"identity">>)],
 
-          Info = [I || I <- fxml:get_subtags_with_xmlns(Packet, <<"x">>, ?NS_XDATA)],
+          Exten = [I || I <- fxml:get_subtags_with_xmlns(Packet, <<"x">>, ?NS_XDATA)],
 
           case Node of
             << PREFIX:Size/binary, NS/binary >> ->
               ets:update_element(delegated_namespaces, NS,
-                                 {3, {Features, Identity, Info}});
+                                 {3, {Features, Identity, Exten}});
             << BARE_PREFIX:SizeBare/binary, NS/binary >> ->
               ets:update_element(delegated_namespaces, NS,
-                                 {4, {Features, Identity, Info}});
+                                 {4, {Features, Identity}});
                _ -> ok
           end;
       _ -> ok %% error ?
@@ -373,38 +368,40 @@ disco_error(HookRes, HookErr, Node) ->
                               disco_error(HookRes, HookErr, Node), 10)
     end.
 
--spec disco_info([filter_attr()]) -> [xmlel()].
+-spec disco_info(state()) -> ok.
 
-disco_info(Delegations) -> 
-    disco_info(Delegations, <<"::">>)
-     ++
-    disco_info(Delegations, <<":bare:">>).
+disco_info(StateData) -> 
+    disco_info(StateData, <<"::">>),
+    disco_info(StateData, <<":bare:">>).
 
--spec disco_info([filter_attr()], binary()) -> [xmlel()].
+-spec disco_info(state(), binary()) -> ok.
 
-disco_info(Delegations, Sep) ->
-    lists:map(fun({Ns, _FilterAttr}) ->
-                Id = randoms:get_string(),
-                Node = << ?NS_DELEGATION/binary, Sep/binary, Ns/binary >>,
+disco_info(StateData, Sep) ->
+    lists:foreach(fun({Ns, _FilterAttr}) ->
+                    Id = randoms:get_string(),
+                    Node = << ?NS_DELEGATION/binary, Sep/binary, Ns/binary >>,
 
-                HookRes = hook_name(<<"iq_result">>, Id),
-                HookErr = hook_name(<<"iq_error">>, Id),
+                    HookRes = hook_name(<<"iq_result">>, Id),
+                    HookErr = hook_name(<<"iq_error">>, Id),
                 
-                FunRes = disco_result(HookRes, HookErr, Node),
-                FunErr = disco_error(HookRes, HookErr, Node),
+                    FunRes = disco_result(HookRes, HookErr, Node),
+                    FunErr = disco_error(HookRes, HookErr, Node),
 
-                ejabberd_hooks:add(HookRes, ?MYNAME, FunRes, 10),
-                ejabberd_hooks:add(HookErr, ?MYNAME, FunErr, 10),
+                    ejabberd_hooks:add(HookRes, ?MYNAME, FunRes, 10),
+                    ejabberd_hooks:add(HookErr, ?MYNAME, FunErr, 10),
 
-                Tag = #xmlel{name = <<"query">>,
-                             attrs = [{<<"xmlns">>, ?NS_DISCO_INFO}, 
-                                      {<<"node">>, Node}],
-                             children = []},
-                #xmlel{name = <<"iq">>,
-                       attrs = [{<<"type">>, <<"get">>}, {<<"id">>, Id}],
-                       children = [Tag]}
+                    Tag = #xmlel{name = <<"query">>,
+                                 attrs = [{<<"xmlns">>, ?NS_DISCO_INFO}, 
+                                          {<<"node">>, Node}],
+                                 children = []},
+                    DiscoReq = #xmlel{name = <<"iq">>,
+                                      attrs = [{<<"type">>, <<"get">>}, {<<"id">>, Id},
+                                               {<<"from">>, ?MYNAME},
+                                               {<<"to">>, StateData#state.host }],
+                                      children = [Tag]},
+                    ejabberd_service:send_element(StateData, DiscoReq)
 
-              end, Delegations).
+              end, StateData#state.delegations).
 
 
 disco_features(Acc, Bare) ->
@@ -424,12 +421,10 @@ disco_features(Acc, Bare) ->
                            end, Acc),
             % add service features
             FeaturesList =
-              ets:foldl(fun({_Ns, _Pid, {Feats, _, _}, {FeatsBare, _, _}}, A) ->
+              ets:foldl(fun({_Ns, _Pid, {Feats, _, _}, {FeatsBare, _}}, A) ->
                           if
-                            Bare == true ->
-                              A ++ FeatsBare;
-                            true ->
-                              A ++ Feats
+                            Bare -> A ++ FeatsBare;
+                            true -> A ++ Feats
                           end
                         end, Features, delegated_namespaces),
             {result, FeaturesList};
@@ -442,7 +437,7 @@ disco_identity(Acc, Bare) ->
       true ->
         % filter delegated identites
         Fun = fun(Ident) ->
-                ets:foldl(fun({_, _, {_ , I, _}, {_ , IBare, _}}, A) ->
+                ets:foldl(fun({_, _, {_ , I, _}, {_ , IBare}}, A) ->
                             Identity = 
                               if
                                 Bare -> IBare;
@@ -460,18 +455,15 @@ disco_identity(Acc, Bare) ->
                           not Fun(Attrs)
                        end, Acc),
         % add service features
-        ets:foldl(fun({_, _, {_, I, _}, {_, IBare, _}}, A) ->
+        ets:foldl(fun({_, _, {_, I, _}, {_, IBare}}, A) ->
                         if
-                          Bare ->
-                            A ++ IBare;
-                          true ->
-                            A ++ I
+                          Bare -> A ++ IBare;
+                          true -> A ++ I
                         end
                   end, Identities, delegated_namespaces);
       _ ->
         Acc
     end.
-
 %% return xmlns from value element
 
 -spec get_field_value([xmlel()]) -> binary().
@@ -484,15 +476,15 @@ get_field_value([Elem| Elems]) ->
          (Ns /= <<"">>) of
       true -> Ns;
       _ -> get_field_value(Elems)
-    end.
+end.
 
 get_info(Acc) ->
     Fun = fun(Feat) ->
-            ets:foldl(fun({Ns, _, _, _}, A) ->  
+            ets:foldl(fun({Ns, _, _, _, _}, A) ->  
                         (A or str:prefix(Ns, Feat))
                       end, false, delegated_namespaces)
-          end,
-    Info =
+          end, 
+    Exten =
       lists:filter(fun(Xmlel) ->
                      Tags = fxml:get_subtags(Xmlel, <<"field">>),
                      Value = get_field_value(Tags),
@@ -502,24 +494,27 @@ get_info(Acc) ->
                      end
                    end, Acc),
 
-    ets:foldl(fun({_, _, {_, _, I}, {_, _, IBare}}, A) ->
-                A ++ I
-              end, Info, delegated_namespaces).
-
+    ets:foldl(fun({_, _, {_, _, Ext}, _}, A) ->
+                A ++ Ext
+              end, Exten, delegated_namespaces).
 
 %% 7.2.1 General Case
 
 disco_local_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
-disco_local_features(Acc, _From, _To, _Node, _Lang) ->
+disco_local_features(Acc, _From, _To, <<>>, _Lang) ->
     FeatsOld = case Acc of
                  {result, I} -> I;
                  _ -> []
                end,
-    disco_features(FeatsOld, false).
+    disco_features(FeatsOld, false);
+disco_local_features(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
 
+disco_local_identity(Acc, _From, _To, <<>>, _Lang) ->
+    disco_identity(Acc, false);
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
-    disco_identity(Acc, false).
+    Acc.
 
 %% 7.2.2 Rediction Of Bare JID Disco Info
 

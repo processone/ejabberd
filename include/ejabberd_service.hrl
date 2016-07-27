@@ -17,3 +17,5 @@
          privilege_access          :: [attr()],
          delegations               :: [filter_attr()],
          last_pres = dict:new()    :: ?TDICT}).
+
+-type(state() :: #state{} ).
