@@ -389,7 +389,13 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
       {From, To, Packet} ->
 	  LDstDomain = To#jid.lserver,
 	  case mnesia:dirty_read(route, LDstDomain) of
-	    [] -> ejabberd_s2s:route(From, To, Packet);
+	    [] ->
+		  try xmpp:decode(Packet, [ignore_els]) of
+		      Pkt ->
+			  ejabberd_s2s:route(From, To, Pkt)
+		  catch _:{xmpp_codec, Why} ->
+			  log_decoding_error(From, To, Packet, Why)
+		  end;
 	    [R] ->
 		do_route(From, To, Packet, R);
 	    Rs ->
@@ -425,14 +431,17 @@ do_route(From, To, Packet, #route{local_hint = LocalHint,
 		    Pid ! {route, From, To, Pkt}
 	    end
     catch error:{xmpp_codec, Why} ->
-	    ?ERROR_MSG("failed to decode xml element ~p when "
-		       "routing from ~s to ~s: ~s",
-		       [Packet, jid:to_string(From), jid:to_string(To),
-			xmpp:format_error(Why)]),
-	    drop
+	    log_decoding_error(From, To, Packet, Why)
     end;
 do_route(_From, _To, _Packet, _Route) ->
     drop.
+
+-spec log_decoding_error(jid(), jid(), xmlel() | xmpp_element(), term()) -> ok.
+log_decoding_error(From, To, Packet, Reason) ->
+    ?ERROR_MSG("failed to decode xml element ~p when "
+	       "routing from ~s to ~s: ~s",
+	       [Packet, jid:to_string(From), jid:to_string(To),
+		xmpp:format_error(Reason)]).
 
 -spec get_component_number(binary()) -> pos_integer() | undefined.
 get_component_number(LDomain) ->

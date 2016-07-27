@@ -15,6 +15,21 @@ decode(_el) -> decode(_el, []).
 decode({xmlel, _name, _attrs, _} = _el, Opts) ->
     IgnoreEls = proplists:get_bool(ignore_els, Opts),
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"stream:stream">>, <<"jabber:client">>} ->
+	  decode_stream_start(<<"jabber:client">>, IgnoreEls,
+			      _el);
+      {<<"stream:stream">>, <<"jabber:server">>} ->
+	  decode_stream_start(<<"jabber:server">>, IgnoreEls,
+			      _el);
+      {<<"stream:stream">>, <<"jabber:component:accept">>} ->
+	  decode_stream_start(<<"jabber:component:accept">>,
+			      IgnoreEls, _el);
+      {<<"handshake">>, <<"jabber:client">>} ->
+	  decode_handshake(<<"jabber:client">>, IgnoreEls, _el);
+      {<<"db:verify">>, <<"jabber:client">>} ->
+	  decode_db_verify(<<"jabber:client">>, IgnoreEls, _el);
+      {<<"db:result">>, <<"jabber:client">>} ->
+	  decode_db_result(<<"jabber:client">>, IgnoreEls, _el);
       {<<"command">>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  decode_adhoc_command(<<"http://jabber.org/protocol/commands">>,
@@ -1278,6 +1293,13 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 
 is_known_tag({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"stream:stream">>, <<"jabber:client">>} -> true;
+      {<<"stream:stream">>, <<"jabber:server">>} -> true;
+      {<<"stream:stream">>, <<"jabber:component:accept">>} ->
+	  true;
+      {<<"handshake">>, <<"jabber:client">>} -> true;
+      {<<"db:verify">>, <<"jabber:client">>} -> true;
+      {<<"db:result">>, <<"jabber:client">>} -> true;
       {<<"command">>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  true;
@@ -2538,7 +2560,19 @@ encode({adhoc_command, _, _, _, _, _, _, _, _} =
 	   Command) ->
     encode_adhoc_command(Command,
 			 [{<<"xmlns">>,
-			   <<"http://jabber.org/protocol/commands">>}]).
+			   <<"http://jabber.org/protocol/commands">>}]);
+encode({db_result, _, _, _, _, _} = Db_result) ->
+    encode_db_result(Db_result,
+		     [{<<"xmlns">>, <<"jabber:client">>}]);
+encode({db_verify, _, _, _, _, _, _} = Db_verify) ->
+    encode_db_verify(Db_verify,
+		     [{<<"xmlns">>, <<"jabber:client">>}]);
+encode({handshake, _} = Handshake) ->
+    encode_handshake(Handshake,
+		     [{<<"xmlns">>, <<"jabber:client">>}]);
+encode({stream_start, _, _, _, _, _, _, _, _} =
+	   Stream_stream) ->
+    encode_stream_start(Stream_stream, []).
 
 get_name({last, _, _}) -> <<"query">>;
 get_name({version, _, _, _}) -> <<"query">>;
@@ -2720,7 +2754,13 @@ get_name({client_id, _}) -> <<"client-id">>;
 get_name({adhoc_actions, _, _, _, _}) -> <<"actions">>;
 get_name({adhoc_note, _, _}) -> <<"note">>;
 get_name({adhoc_command, _, _, _, _, _, _, _, _}) ->
-    <<"command">>.
+    <<"command">>;
+get_name({db_result, _, _, _, _, _}) -> <<"db:result">>;
+get_name({db_verify, _, _, _, _, _, _}) ->
+    <<"db:verify">>;
+get_name({handshake, _}) -> <<"handshake">>;
+get_name({stream_start, _, _, _, _, _, _, _, _}) ->
+    <<"stream:stream">>.
 
 get_ns({last, _, _}) -> <<"jabber:iq:last">>;
 get_ns({version, _, _, _}) -> <<"jabber:iq:version">>;
@@ -2974,7 +3014,14 @@ get_ns({adhoc_actions, _, _, _, _}) ->
 get_ns({adhoc_note, _, _}) ->
     <<"http://jabber.org/protocol/commands">>;
 get_ns({adhoc_command, _, _, _, _, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/commands">>.
+    <<"http://jabber.org/protocol/commands">>;
+get_ns({db_result, _, _, _, _, _}) ->
+    <<"jabber:client">>;
+get_ns({db_verify, _, _, _, _, _, _}) ->
+    <<"jabber:client">>;
+get_ns({handshake, _}) -> <<"jabber:client">>;
+get_ns({stream_start, _, _, _, _, Xmlns, _, _, _}) ->
+    Xmlns.
 
 dec_int(Val) -> dec_int(Val, infinity, infinity).
 
@@ -3210,6 +3257,12 @@ pp(adhoc_note, 2) -> [type, data];
 pp(adhoc_command, 8) ->
     [node, action, sid, status, lang, actions, notes,
      xdata];
+pp(db_result, 5) -> [from, to, type, key, error];
+pp(db_verify, 6) -> [from, to, id, type, key, error];
+pp(handshake, 1) -> [data];
+pp(stream_start, 8) ->
+    [from, to, id, version, xmlns, stream_xmlns, db_xmlns,
+     lang];
 pp(_, _) -> no.
 
 join([], _Sep) -> <<>>;
@@ -3255,6 +3308,478 @@ dec_tzo(Val) ->
     H = jlib:binary_to_integer(H1),
     M = jlib:binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
+
+decode_stream_start(__TopXMLNS, __IgnoreEls,
+		    {xmlel, <<"stream:stream">>, _attrs, _els}) ->
+    {From, To, Xmlns, Stream_xmlns, Db_xmlns, Lang, Version,
+     Id} =
+	decode_stream_start_attrs(__TopXMLNS, _attrs, undefined,
+				  undefined, undefined, undefined, undefined,
+				  undefined, undefined, undefined),
+    {stream_start, From, To, Id, Version, Xmlns,
+     Stream_xmlns, Db_xmlns, Lang}.
+
+decode_stream_start_attrs(__TopXMLNS,
+			  [{<<"from">>, _val} | _attrs], _From, To, Xmlns,
+			  Stream_xmlns, Db_xmlns, Lang, Version, Id) ->
+    decode_stream_start_attrs(__TopXMLNS, _attrs, _val, To,
+			      Xmlns, Stream_xmlns, Db_xmlns, Lang, Version, Id);
+decode_stream_start_attrs(__TopXMLNS,
+			  [{<<"to">>, _val} | _attrs], From, _To, Xmlns,
+			  Stream_xmlns, Db_xmlns, Lang, Version, Id) ->
+    decode_stream_start_attrs(__TopXMLNS, _attrs, From,
+			      _val, Xmlns, Stream_xmlns, Db_xmlns, Lang,
+			      Version, Id);
+decode_stream_start_attrs(__TopXMLNS,
+			  [{<<"xmlns">>, _val} | _attrs], From, To, _Xmlns,
+			  Stream_xmlns, Db_xmlns, Lang, Version, Id) ->
+    decode_stream_start_attrs(__TopXMLNS, _attrs, From, To,
+			      _val, Stream_xmlns, Db_xmlns, Lang, Version, Id);
+decode_stream_start_attrs(__TopXMLNS,
+			  [{<<"xmlns:stream">>, _val} | _attrs], From, To,
+			  Xmlns, _Stream_xmlns, Db_xmlns, Lang, Version, Id) ->
+    decode_stream_start_attrs(__TopXMLNS, _attrs, From, To,
+			      Xmlns, _val, Db_xmlns, Lang, Version, Id);
+decode_stream_start_attrs(__TopXMLNS,
+			  [{<<"xmlns:db">>, _val} | _attrs], From, To, Xmlns,
+			  Stream_xmlns, _Db_xmlns, Lang, Version, Id) ->
+    decode_stream_start_attrs(__TopXMLNS, _attrs, From, To,
+			      Xmlns, Stream_xmlns, _val, Lang, Version, Id);
+decode_stream_start_attrs(__TopXMLNS,
+			  [{<<"xml:lang">>, _val} | _attrs], From, To, Xmlns,
+			  Stream_xmlns, Db_xmlns, _Lang, Version, Id) ->
+    decode_stream_start_attrs(__TopXMLNS, _attrs, From, To,
+			      Xmlns, Stream_xmlns, Db_xmlns, _val, Version, Id);
+decode_stream_start_attrs(__TopXMLNS,
+			  [{<<"version">>, _val} | _attrs], From, To, Xmlns,
+			  Stream_xmlns, Db_xmlns, Lang, _Version, Id) ->
+    decode_stream_start_attrs(__TopXMLNS, _attrs, From, To,
+			      Xmlns, Stream_xmlns, Db_xmlns, Lang, _val, Id);
+decode_stream_start_attrs(__TopXMLNS,
+			  [{<<"id">>, _val} | _attrs], From, To, Xmlns,
+			  Stream_xmlns, Db_xmlns, Lang, Version, _Id) ->
+    decode_stream_start_attrs(__TopXMLNS, _attrs, From, To,
+			      Xmlns, Stream_xmlns, Db_xmlns, Lang, Version,
+			      _val);
+decode_stream_start_attrs(__TopXMLNS, [_ | _attrs],
+			  From, To, Xmlns, Stream_xmlns, Db_xmlns, Lang,
+			  Version, Id) ->
+    decode_stream_start_attrs(__TopXMLNS, _attrs, From, To,
+			      Xmlns, Stream_xmlns, Db_xmlns, Lang, Version, Id);
+decode_stream_start_attrs(__TopXMLNS, [], From, To,
+			  Xmlns, Stream_xmlns, Db_xmlns, Lang, Version, Id) ->
+    {decode_stream_start_attr_from(__TopXMLNS, From),
+     decode_stream_start_attr_to(__TopXMLNS, To),
+     decode_stream_start_attr_xmlns(__TopXMLNS, Xmlns),
+     'decode_stream_start_attr_xmlns:stream'(__TopXMLNS,
+					     Stream_xmlns),
+     'decode_stream_start_attr_xmlns:db'(__TopXMLNS,
+					 Db_xmlns),
+     'decode_stream_start_attr_xml:lang'(__TopXMLNS, Lang),
+     decode_stream_start_attr_version(__TopXMLNS, Version),
+     decode_stream_start_attr_id(__TopXMLNS, Id)}.
+
+encode_stream_start({stream_start, From, To, Id,
+		     Version, Xmlns, Stream_xmlns, Db_xmlns, Lang},
+		    _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_stream_start_attr_id(Id,
+					 encode_stream_start_attr_version(Version,
+									  'encode_stream_start_attr_xml:lang'(Lang,
+													      'encode_stream_start_attr_xmlns:db'(Db_xmlns,
+																		  'encode_stream_start_attr_xmlns:stream'(Stream_xmlns,
+																							  encode_stream_start_attr_xmlns(Xmlns,
+																											 encode_stream_start_attr_to(To,
+																														     encode_stream_start_attr_from(From,
+																																		   _xmlns_attrs)))))))),
+    {xmlel, <<"stream:stream">>, _attrs, _els}.
+
+decode_stream_start_attr_from(__TopXMLNS, undefined) ->
+    undefined;
+decode_stream_start_attr_from(__TopXMLNS, _val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"from">>, <<"stream:stream">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_stream_start_attr_from(undefined, _acc) -> _acc;
+encode_stream_start_attr_from(_val, _acc) ->
+    [{<<"from">>, enc_jid(_val)} | _acc].
+
+decode_stream_start_attr_to(__TopXMLNS, undefined) ->
+    undefined;
+decode_stream_start_attr_to(__TopXMLNS, _val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"to">>, <<"stream:stream">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_stream_start_attr_to(undefined, _acc) -> _acc;
+encode_stream_start_attr_to(_val, _acc) ->
+    [{<<"to">>, enc_jid(_val)} | _acc].
+
+decode_stream_start_attr_xmlns(__TopXMLNS, undefined) ->
+    undefined;
+decode_stream_start_attr_xmlns(__TopXMLNS, _val) ->
+    _val.
+
+encode_stream_start_attr_xmlns(undefined, _acc) -> _acc;
+encode_stream_start_attr_xmlns(_val, _acc) ->
+    [{<<"xmlns">>, _val} | _acc].
+
+'decode_stream_start_attr_xmlns:stream'(__TopXMLNS,
+					undefined) ->
+    <<>>;
+'decode_stream_start_attr_xmlns:stream'(__TopXMLNS,
+					_val) ->
+    _val.
+
+'encode_stream_start_attr_xmlns:stream'(<<>>, _acc) ->
+    _acc;
+'encode_stream_start_attr_xmlns:stream'(_val, _acc) ->
+    [{<<"xmlns:stream">>, _val} | _acc].
+
+'decode_stream_start_attr_xmlns:db'(__TopXMLNS,
+				    undefined) ->
+    <<>>;
+'decode_stream_start_attr_xmlns:db'(__TopXMLNS, _val) ->
+    _val.
+
+'encode_stream_start_attr_xmlns:db'(<<>>, _acc) -> _acc;
+'encode_stream_start_attr_xmlns:db'(_val, _acc) ->
+    [{<<"xmlns:db">>, _val} | _acc].
+
+'decode_stream_start_attr_xml:lang'(__TopXMLNS,
+				    undefined) ->
+    <<>>;
+'decode_stream_start_attr_xml:lang'(__TopXMLNS, _val) ->
+    _val.
+
+'encode_stream_start_attr_xml:lang'(<<>>, _acc) -> _acc;
+'encode_stream_start_attr_xml:lang'(_val, _acc) ->
+    [{<<"xml:lang">>, _val} | _acc].
+
+decode_stream_start_attr_version(__TopXMLNS,
+				 undefined) ->
+    <<>>;
+decode_stream_start_attr_version(__TopXMLNS, _val) ->
+    _val.
+
+encode_stream_start_attr_version(<<>>, _acc) -> _acc;
+encode_stream_start_attr_version(_val, _acc) ->
+    [{<<"version">>, _val} | _acc].
+
+decode_stream_start_attr_id(__TopXMLNS, undefined) ->
+    <<>>;
+decode_stream_start_attr_id(__TopXMLNS, _val) -> _val.
+
+encode_stream_start_attr_id(<<>>, _acc) -> _acc;
+encode_stream_start_attr_id(_val, _acc) ->
+    [{<<"id">>, _val} | _acc].
+
+decode_handshake(__TopXMLNS, __IgnoreEls,
+		 {xmlel, <<"handshake">>, _attrs, _els}) ->
+    Data = decode_handshake_els(__TopXMLNS, __IgnoreEls,
+				_els, <<>>),
+    {handshake, Data}.
+
+decode_handshake_els(__TopXMLNS, __IgnoreEls, [],
+		     Data) ->
+    decode_handshake_cdata(__TopXMLNS, Data);
+decode_handshake_els(__TopXMLNS, __IgnoreEls,
+		     [{xmlcdata, _data} | _els], Data) ->
+    decode_handshake_els(__TopXMLNS, __IgnoreEls, _els,
+			 <<Data/binary, _data/binary>>);
+decode_handshake_els(__TopXMLNS, __IgnoreEls,
+		     [_ | _els], Data) ->
+    decode_handshake_els(__TopXMLNS, __IgnoreEls, _els,
+			 Data).
+
+encode_handshake({handshake, Data}, _xmlns_attrs) ->
+    _els = encode_handshake_cdata(Data, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"handshake">>, _attrs, _els}.
+
+decode_handshake_cdata(__TopXMLNS, <<>>) -> <<>>;
+decode_handshake_cdata(__TopXMLNS, _val) -> _val.
+
+encode_handshake_cdata(<<>>, _acc) -> _acc;
+encode_handshake_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_db_verify(__TopXMLNS, __IgnoreEls,
+		 {xmlel, <<"db:verify">>, _attrs, _els}) ->
+    {Key, Error} = decode_db_verify_els(__TopXMLNS,
+					__IgnoreEls, _els, <<>>, undefined),
+    {From, To, Id, Type} =
+	decode_db_verify_attrs(__TopXMLNS, _attrs, undefined,
+			       undefined, undefined, undefined),
+    {db_verify, From, To, Id, Type, Key, Error}.
+
+decode_db_verify_els(__TopXMLNS, __IgnoreEls, [], Key,
+		     Error) ->
+    {decode_db_verify_cdata(__TopXMLNS, Key), Error};
+decode_db_verify_els(__TopXMLNS, __IgnoreEls,
+		     [{xmlcdata, _data} | _els], Key, Error) ->
+    decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els,
+			 <<Key/binary, _data/binary>>, Error);
+decode_db_verify_els(__TopXMLNS, __IgnoreEls,
+		     [{xmlel, <<"error">>, _attrs, _} = _el | _els], Key,
+		     Error) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+	  decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
+			       decode_error(__TopXMLNS, __IgnoreEls, _el));
+      <<"jabber:client">> ->
+	  decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
+			       decode_error(<<"jabber:client">>, __IgnoreEls,
+					    _el));
+      _ ->
+	  decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
+			       Error)
+    end;
+decode_db_verify_els(__TopXMLNS, __IgnoreEls,
+		     [_ | _els], Key, Error) ->
+    decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
+			 Error).
+
+decode_db_verify_attrs(__TopXMLNS,
+		       [{<<"from">>, _val} | _attrs], _From, To, Id, Type) ->
+    decode_db_verify_attrs(__TopXMLNS, _attrs, _val, To, Id,
+			   Type);
+decode_db_verify_attrs(__TopXMLNS,
+		       [{<<"to">>, _val} | _attrs], From, _To, Id, Type) ->
+    decode_db_verify_attrs(__TopXMLNS, _attrs, From, _val,
+			   Id, Type);
+decode_db_verify_attrs(__TopXMLNS,
+		       [{<<"id">>, _val} | _attrs], From, To, _Id, Type) ->
+    decode_db_verify_attrs(__TopXMLNS, _attrs, From, To,
+			   _val, Type);
+decode_db_verify_attrs(__TopXMLNS,
+		       [{<<"type">>, _val} | _attrs], From, To, Id, _Type) ->
+    decode_db_verify_attrs(__TopXMLNS, _attrs, From, To, Id,
+			   _val);
+decode_db_verify_attrs(__TopXMLNS, [_ | _attrs], From,
+		       To, Id, Type) ->
+    decode_db_verify_attrs(__TopXMLNS, _attrs, From, To, Id,
+			   Type);
+decode_db_verify_attrs(__TopXMLNS, [], From, To, Id,
+		       Type) ->
+    {decode_db_verify_attr_from(__TopXMLNS, From),
+     decode_db_verify_attr_to(__TopXMLNS, To),
+     decode_db_verify_attr_id(__TopXMLNS, Id),
+     decode_db_verify_attr_type(__TopXMLNS, Type)}.
+
+encode_db_verify({db_verify, From, To, Id, Type, Key,
+		  Error},
+		 _xmlns_attrs) ->
+    _els = lists:reverse(encode_db_verify_cdata(Key,
+						'encode_db_verify_$error'(Error,
+									  []))),
+    _attrs = encode_db_verify_attr_type(Type,
+					encode_db_verify_attr_id(Id,
+								 encode_db_verify_attr_to(To,
+											  encode_db_verify_attr_from(From,
+														     _xmlns_attrs)))),
+    {xmlel, <<"db:verify">>, _attrs, _els}.
+
+'encode_db_verify_$error'(undefined, _acc) -> _acc;
+'encode_db_verify_$error'(Error, _acc) ->
+    [encode_error(Error, []) | _acc].
+
+decode_db_verify_attr_from(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"from">>, <<"db:verify">>,
+		   __TopXMLNS}});
+decode_db_verify_attr_from(__TopXMLNS, _val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"from">>, <<"db:verify">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_db_verify_attr_from(_val, _acc) ->
+    [{<<"from">>, enc_jid(_val)} | _acc].
+
+decode_db_verify_attr_to(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"to">>, <<"db:verify">>, __TopXMLNS}});
+decode_db_verify_attr_to(__TopXMLNS, _val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"to">>, <<"db:verify">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_db_verify_attr_to(_val, _acc) ->
+    [{<<"to">>, enc_jid(_val)} | _acc].
+
+decode_db_verify_attr_id(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"id">>, <<"db:verify">>, __TopXMLNS}});
+decode_db_verify_attr_id(__TopXMLNS, _val) -> _val.
+
+encode_db_verify_attr_id(_val, _acc) ->
+    [{<<"id">>, _val} | _acc].
+
+decode_db_verify_attr_type(__TopXMLNS, undefined) ->
+    undefined;
+decode_db_verify_attr_type(__TopXMLNS, _val) ->
+    case catch dec_enum(_val, [valid, invalid, error]) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"type">>, <<"db:verify">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_db_verify_attr_type(undefined, _acc) -> _acc;
+encode_db_verify_attr_type(_val, _acc) ->
+    [{<<"type">>, enc_enum(_val)} | _acc].
+
+decode_db_verify_cdata(__TopXMLNS, <<>>) -> <<>>;
+decode_db_verify_cdata(__TopXMLNS, _val) -> _val.
+
+encode_db_verify_cdata(<<>>, _acc) -> _acc;
+encode_db_verify_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_db_result(__TopXMLNS, __IgnoreEls,
+		 {xmlel, <<"db:result">>, _attrs, _els}) ->
+    {Key, Error} = decode_db_result_els(__TopXMLNS,
+					__IgnoreEls, _els, <<>>, undefined),
+    {From, To, Type} = decode_db_result_attrs(__TopXMLNS,
+					      _attrs, undefined, undefined,
+					      undefined),
+    {db_result, From, To, Type, Key, Error}.
+
+decode_db_result_els(__TopXMLNS, __IgnoreEls, [], Key,
+		     Error) ->
+    {decode_db_result_cdata(__TopXMLNS, Key), Error};
+decode_db_result_els(__TopXMLNS, __IgnoreEls,
+		     [{xmlcdata, _data} | _els], Key, Error) ->
+    decode_db_result_els(__TopXMLNS, __IgnoreEls, _els,
+			 <<Key/binary, _data/binary>>, Error);
+decode_db_result_els(__TopXMLNS, __IgnoreEls,
+		     [{xmlel, <<"error">>, _attrs, _} = _el | _els], Key,
+		     Error) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+	  decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
+			       decode_error(__TopXMLNS, __IgnoreEls, _el));
+      <<"jabber:client">> ->
+	  decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
+			       decode_error(<<"jabber:client">>, __IgnoreEls,
+					    _el));
+      _ ->
+	  decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
+			       Error)
+    end;
+decode_db_result_els(__TopXMLNS, __IgnoreEls,
+		     [_ | _els], Key, Error) ->
+    decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
+			 Error).
+
+decode_db_result_attrs(__TopXMLNS,
+		       [{<<"from">>, _val} | _attrs], _From, To, Type) ->
+    decode_db_result_attrs(__TopXMLNS, _attrs, _val, To,
+			   Type);
+decode_db_result_attrs(__TopXMLNS,
+		       [{<<"to">>, _val} | _attrs], From, _To, Type) ->
+    decode_db_result_attrs(__TopXMLNS, _attrs, From, _val,
+			   Type);
+decode_db_result_attrs(__TopXMLNS,
+		       [{<<"type">>, _val} | _attrs], From, To, _Type) ->
+    decode_db_result_attrs(__TopXMLNS, _attrs, From, To,
+			   _val);
+decode_db_result_attrs(__TopXMLNS, [_ | _attrs], From,
+		       To, Type) ->
+    decode_db_result_attrs(__TopXMLNS, _attrs, From, To,
+			   Type);
+decode_db_result_attrs(__TopXMLNS, [], From, To,
+		       Type) ->
+    {decode_db_result_attr_from(__TopXMLNS, From),
+     decode_db_result_attr_to(__TopXMLNS, To),
+     decode_db_result_attr_type(__TopXMLNS, Type)}.
+
+encode_db_result({db_result, From, To, Type, Key,
+		  Error},
+		 _xmlns_attrs) ->
+    _els = lists:reverse(encode_db_result_cdata(Key,
+						'encode_db_result_$error'(Error,
+									  []))),
+    _attrs = encode_db_result_attr_type(Type,
+					encode_db_result_attr_to(To,
+								 encode_db_result_attr_from(From,
+											    _xmlns_attrs))),
+    {xmlel, <<"db:result">>, _attrs, _els}.
+
+'encode_db_result_$error'(undefined, _acc) -> _acc;
+'encode_db_result_$error'(Error, _acc) ->
+    [encode_error(Error, []) | _acc].
+
+decode_db_result_attr_from(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"from">>, <<"db:result">>,
+		   __TopXMLNS}});
+decode_db_result_attr_from(__TopXMLNS, _val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"from">>, <<"db:result">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_db_result_attr_from(_val, _acc) ->
+    [{<<"from">>, enc_jid(_val)} | _acc].
+
+decode_db_result_attr_to(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"to">>, <<"db:result">>, __TopXMLNS}});
+decode_db_result_attr_to(__TopXMLNS, _val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"to">>, <<"db:result">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_db_result_attr_to(_val, _acc) ->
+    [{<<"to">>, enc_jid(_val)} | _acc].
+
+decode_db_result_attr_type(__TopXMLNS, undefined) ->
+    undefined;
+decode_db_result_attr_type(__TopXMLNS, _val) ->
+    case catch dec_enum(_val, [valid, invalid, error]) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"type">>, <<"db:result">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_db_result_attr_type(undefined, _acc) -> _acc;
+encode_db_result_attr_type(_val, _acc) ->
+    [{<<"type">>, enc_enum(_val)} | _acc].
+
+decode_db_result_cdata(__TopXMLNS, <<>>) -> <<>>;
+decode_db_result_cdata(__TopXMLNS, _val) -> _val.
+
+encode_db_result_cdata(<<>>, _acc) -> _acc;
+encode_db_result_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
 
 decode_adhoc_command(__TopXMLNS, __IgnoreEls,
 		     {xmlel, <<"command">>, _attrs, _els}) ->

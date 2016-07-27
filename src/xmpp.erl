@@ -71,10 +71,6 @@
          serr_unsupported_stanza_type/0, serr_unsupported_stanza_type/2,
          serr_unsupported_version/0, serr_unsupported_version/2]).
 
--ifndef(NS_CLIENT).
--define(NS_CLIENT, <<"jabber:client">>).
--endif.
-
 -include("xmpp.hrl").
 
 %%%===================================================================
@@ -246,9 +242,14 @@ get_name(Pkt) ->
 decode(El) ->
     decode(El, []).
 
--spec decode(xmlel() | xmpp_element(), [proplists:property()]) ->
+-spec decode(xmlel() | xmpp_element(),
+	     [proplists:property()] |
+	     fun((xmlel() | xmpp_element()) -> boolean())) ->
 		    {ok, xmpp_element()} | {error, any()}.
-decode(#xmlel{} = El, Opts) ->
+decode(#xmlel{} = El, MatchFun) when is_function(MatchFun) ->
+    Pkt = xmpp_codec:decode(add_ns(El), [ignore_els]),
+    decode_els(Pkt, MatchFun);
+decode(#xmlel{} = El, Opts) when is_list(Opts) ->
     xmpp_codec:decode(add_ns(El), Opts);
 decode(Pkt, _Opts) ->
     Pkt.

@@ -320,42 +320,46 @@ get_subscribed(FsmRef) ->
     (?GEN_FSM):sync_send_all_state_event(FsmRef,
 					 get_subscribed, 1000).
 
-wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
-    DefaultLang = ?MYLANG,
-    case fxml:get_attr_s(<<"xmlns:stream">>, Attrs) of
-	?NS_STREAM ->
-	    Server =
-		case StateData#state.server of
-		<<"">> ->
-		    jid:nameprep(fxml:get_attr_s(<<"to">>, Attrs));
-		S -> S
-	    end,
-	    Lang = case fxml:get_attr_s(<<"xml:lang">>, Attrs) of
-		Lang1 when byte_size(Lang1) =< 35 ->
-		    %% As stated in BCP47, 4.4.1:
-		    %% Protocols or specifications that
-		    %% specify limited buffer sizes for
-		    %% language tags MUST allow for
-		    %% language tags of at least 35 characters.
-		    Lang1;
-		_ ->
-		    %% Do not store long language tag to
-		    %% avoid possible DoS/flood attacks
-		    <<"">>
-	    end,
-	    StreamVersion = case fxml:get_attr_s(<<"version">>, Attrs) of
-			      <<"1.0">> ->
-				  <<"1.0">>;
-			      _ ->
-				  <<"">>
-			  end,
+wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
+    try xmpp:decode(#xmlel{name = Name, attrs = Attrs}) of
+	#stream_start{xmlns = NS_CLIENT, stream_xmlns = NS_STREAM, lang = Lang}
+          when NS_CLIENT /= ?NS_CLIENT; NS_STREAM /= ?NS_STREAM ->
+	    send_header(StateData, ?MYNAME, <<"">>, Lang),
+            send_element(StateData, xmpp:serr_invalid_namespace()),
+            {stop, normal, StateData};
+	#stream_start{lang = Lang} when byte_size(Lang) > 35 ->
+	    %% As stated in BCP47, 4.4.1:
+	    %% Protocols or specifications that specify limited buffer sizes for
+	    %% language tags MUST allow for language tags of at least 35 characters.
+	    %% Do not store long language tag to avoid possible DoS/flood attacks
+	    send_header(StateData, ?MYNAME, <<"">>, ?MYLANG),
+	    Txt = <<"Too long value of 'xml:lang' attribute">>,
+	    send_element(StateData,
+			 xmpp:serr_policy_violation(Txt, ?MYLANG)),
+	    {stop, normal, StateData};
+	#stream_start{to = undefined, lang = Lang} ->
+	    Txt = <<"Missing 'to' attribute">>,
+	    send_header(StateData, ?MYNAME, <<"">>, Lang),
+	    send_element(StateData,
+			 xmpp:serr_improper_addressing(Txt, Lang)),
+	    {stop, normal, StateData};
+	#stream_start{to = #jid{lserver = To}, lang = Lang,
+		      version = Version} ->
+	    Server = case StateData#state.server of
+			 <<"">> -> To;
+			 S -> S
+		     end,
+	    StreamVersion = case Version of
+				<<"1.0">> -> <<"1.0">>;
+				_ -> <<"">>
+			    end,
 	    IsBlacklistedIP = is_ip_blacklisted(StateData#state.ip, Lang),
 	    case lists:member(Server, ?MYHOSTS) of
 		true when IsBlacklistedIP == false ->
 		    change_shaper(StateData, jid:make(<<"">>, Server, <<"">>)),
 		    case StreamVersion of
 			<<"1.0">> ->
-			    send_header(StateData, Server, <<"1.0">>, DefaultLang),
+			    send_header(StateData, Server, <<"1.0">>, ?MYLANG),
 			    case StateData#state.authenticated of
 				false ->
 				    TLS = StateData#state.tls,
@@ -458,7 +462,7 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 				    end
 			    end;
 			_ ->
-			    send_header(StateData, Server, <<"">>, DefaultLang),
+			    send_header(StateData, Server, <<"">>, ?MYLANG),
 			    if not StateData#state.tls_enabled and
 					StateData#state.tls_required ->
 				    send_element(
@@ -477,17 +481,18 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
 		    {true, LogReason, ReasonT} = IsBlacklistedIP,
 		    ?INFO_MSG("Connection attempt from blacklisted IP ~s: ~s",
 			[jlib:ip_to_list(IP), LogReason]),
-		    send_header(StateData, Server, StreamVersion, DefaultLang),
+		    send_header(StateData, Server, StreamVersion, ?MYLANG),
 		    send_element(StateData, xmpp:serr_policy_violation(ReasonT, Lang)),
 		    {stop, normal, StateData};
 		_ ->
-		    send_header(StateData, ?MYNAME, StreamVersion, DefaultLang),
+		    send_header(StateData, ?MYNAME, StreamVersion, ?MYLANG),
 		    send_element(StateData, xmpp:serr_host_unknown()),
 		    {stop, normal, StateData}
-	    end;
-	_ ->
-	    send_header(StateData, ?MYNAME, <<"">>, DefaultLang),
-	    send_element(StateData, xmpp:serr_invalid_namespace()),
+	    end
+    catch _:{xmpp_codec, Why} ->
+	    Txt = xmpp:format_error(Why),
+	    send_header(StateData, ?MYNAME, <<"">>, ?MYLANG),
+	    send_element(StateData, xmpp:serr_not_well_formed(Txt, ?MYLANG)),
 	    {stop, normal, StateData}
     end;
 wait_for_stream(timeout, StateData) ->
@@ -854,38 +859,36 @@ resource_conflict_action(U, S, R) ->
 	  {accept_resource, Rnew}
     end.
 
--spec decode_subels(stanza()) -> stanza().
-decode_subels(#iq{sub_els = [El], type = T} = IQ) when T == set; T == get ->
-    NewEl = case xmpp:get_ns(El) of
-		?NS_BIND when T == set -> xmpp:decode(El);
-		?NS_AUTH -> xmpp:decode(El);
-		?NS_PRIVACY -> xmpp:decode(El);
-		?NS_BLOCKING -> xmpp:decode(El);
-		_ -> El
-	    end,
-    IQ#iq{sub_els = [NewEl]};
-decode_subels(Pkt) ->
-    Pkt.
-
--spec decode_element(xmlel(), state_name(), state()) -> fsm_next().
+-spec decode_element(xmlel(), state_name(), state()) -> fsm_transition().
 decode_element(#xmlel{} = El, StateName, StateData) ->
-    try
-	Pkt0 = xmpp:decode(El, [ignore_els]),
-	Pkt = decode_subels(Pkt0),
-	?MODULE:StateName(Pkt, StateData)
+    try case xmpp:decode(El, [ignore_els]) of
+	    #iq{sub_els = [_], type = T} = Pkt when T == set; T == get ->
+		NewPkt = xmpp:decode_els(
+			   Pkt,
+			   fun(SubEl) when StateName == session_established ->
+				   case xmpp:get_ns(SubEl) of
+				       ?NS_PRIVACY -> true;
+				       ?NS_BLOCKING -> true;
+				       _ -> false
+				   end;
+			      (SubEl) ->
+				   xmpp_codec:is_known_tag(SubEl)
+			   end),
+		?MODULE:StateName(NewPkt, StateData);
+	    Pkt ->
+		?MODULE:StateName(Pkt, StateData)
+	end
     catch error:{xmpp_codec, Why} ->
-	    Type = xmpp:get_type(El),
 	    NS = xmpp:get_ns(El),
 	    case xmpp:is_stanza(El) of
-		true when Type /= <<"result">>, Type /= <<"error">> ->
+		true ->
 		    Lang = xmpp:get_lang(El),
 		    Txt = xmpp:format_error(Why),
-		    Err = xmpp:make_error(El, xmpp:err_bad_request(Txt, Lang)),
-		    send_element(StateData, Err);
-		_ when NS == ?NS_STREAM_MGMT_2; NS == ?NS_STREAM_MGMT_3 ->
+		    send_error(StateData, El, xmpp:err_bad_request(Txt, Lang));
+		false when NS == ?NS_STREAM_MGMT_2; NS == ?NS_STREAM_MGMT_3 ->
 		    Err = #sm_failed{reason = 'bad-request', xmlns = NS},
 		    send_element(StateData, Err);
-		_ ->
+		false ->
 		    ok
 	    end,
 	    fsm_next_state(StateName, StateData)
@@ -951,13 +954,7 @@ wait_for_bind(stop, StateData) ->
 wait_for_bind(Pkt, StateData) ->
     case xmpp:is_stanza(Pkt) of
 	true ->
-	    Type = xmpp:get_type(Pkt),
-	    if Type /= error, Type /= result ->
-		    Err = xmpp:make_error(Pkt, xmpp:err_not_acceptable()),
-		    send_element(StateData, Err);
-	       true ->
-		    ok
-	    end;
+	    send_error(StateData, Pkt, xmpp:err_not_acceptable());
 	false ->
 	    ok
     end,
@@ -1046,7 +1043,7 @@ session_established(closed, StateData) ->
     {stop, normal, StateData};
 session_established(stop, StateData) ->
     {stop, normal, StateData};
-session_established(Pkt, StateData) ->
+session_established(Pkt, StateData) when ?is_stanza(Pkt) ->
     FromJID = StateData#state.jid,
     case check_from(Pkt, FromJID) of
 	'invalid-from' ->
@@ -1055,11 +1052,13 @@ session_established(Pkt, StateData) ->
 	_ ->
 	    NewStateData = update_num_stanzas_in(StateData, Pkt),
 	    session_established2(Pkt, NewStateData)
-    end.
+    end;
+session_established(_Pkt, StateData) ->
+    fsm_next_state(session_established, StateData).
 
 -spec session_established2(xmpp_element(), state()) -> fsm_next().
 %% Process packets sent by user (coming from user on c2s XMPP connection)
-session_established2(Pkt, StateData) when ?is_stanza(Pkt) ->
+session_established2(Pkt, StateData) ->
     User = StateData#state.user,
     Server = StateData#state.server,
     FromJID = StateData#state.jid,
@@ -1116,11 +1115,7 @@ session_established2(Pkt, StateData) when ?is_stanza(Pkt) ->
 	end,
     ejabberd_hooks:run(c2s_loop_debug,
 		       [{xmlstreamelement, Pkt}]),
-    fsm_next_state(session_established, NewState);
-session_established2(Pkt, StateData) ->
-    ejabberd_hooks:run(c2s_loop_debug,
-		       [{xmlstreamelement, Pkt}]),
-    fsm_next_state(session_established, StateData).
+    fsm_next_state(session_established, NewState).
 
 wait_for_resume({xmlstreamelement, _El} = Event, StateData) ->
     Result = session_established(Event, StateData),
@@ -1572,6 +1567,16 @@ send_element(StateData, #xmlel{} = El) ->
     send_text(StateData, fxml:element_to_binary(El));
 send_element(StateData, Pkt) ->
     send_element(StateData, xmpp:encode(Pkt)).
+
+-spec send_error(state(), xmlel() | stanza(), error()) -> ok.
+send_error(StateData, Stanza, Error) ->
+    Type = xmpp:get_type(Stanza),
+    if Type == error; Type == result;
+       Type == <<"error">>; Type == <<"result">> ->
+	    ok;
+       true ->
+	    send_element(StateData, xmpp:make_error(Stanza, Error))
+    end.
 
 -spec send_stanza(state(), xmpp_element()) -> state().
 send_stanza(StateData, Stanza) when StateData#state.csi_state == inactive ->
@@ -2136,28 +2141,24 @@ is_ip_blacklisted({IP, _Port}, Lang) ->
 
 %% Check from attributes
 %% returns invalid-from|NewElement
+-spec check_from(stanza(), jid()) -> 'invalid-from' | stanza().
 check_from(Pkt, FromJID) ->
-    case xmpp:is_stanza(Pkt) of
-	false ->
+    JID = xmpp:get_from(Pkt),
+    case JID of
+	undefined ->
 	    Pkt;
-	true ->
-	    JID = xmpp:get_from(Pkt),
-	    case JID of
-		undefined ->
+	#jid{} ->
+	    if
+		(JID#jid.luser == FromJID#jid.luser) and
+		(JID#jid.lserver == FromJID#jid.lserver) and
+		(JID#jid.lresource == FromJID#jid.lresource) ->
 		    Pkt;
-		#jid{} ->
-		    if
-			(JID#jid.luser == FromJID#jid.luser) and
-			(JID#jid.lserver == FromJID#jid.lserver) and
-			(JID#jid.lresource == FromJID#jid.lresource) ->
-			    Pkt;
-			(JID#jid.luser == FromJID#jid.luser) and
-			(JID#jid.lserver == FromJID#jid.lserver) and
-			(JID#jid.lresource == <<"">>) ->
-			    Pkt;
-			true ->
-			    'invalid-from'
-		    end
+		(JID#jid.luser == FromJID#jid.luser) and
+		(JID#jid.lserver == FromJID#jid.lserver) and
+		(JID#jid.lresource == <<"">>) ->
+		    Pkt;
+		true ->
+		    'invalid-from'
 	    end
     end.
 

@@ -18,6 +18,10 @@
 %%%
 %%%----------------------------------------------------------------------
 
+-define(NS_COMPONENT, <<"jabber:component:accept">>).
+-define(NS_SERVER, <<"jabber:server">>).
+-define(NS_SERVER_DIALBACK, <<"jabber:server:dialback">>).
+-define(NS_CLIENT, <<"jabber:client">>).
 -define(NS_DISCO_ITEMS,
 	<<"http://jabber.org/protocol/disco#items">>).
 -define(NS_DISCO_INFO,

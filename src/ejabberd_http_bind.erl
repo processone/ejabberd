@@ -125,8 +125,6 @@
 %% Wait 100ms before continue processing, to allow the client provide more related stanzas.
 -define(BOSH_VERSION, <<"1.8">>).
 
--define(NS_CLIENT, <<"jabber:client">>).
-
 -define(NS_BOSH, <<"urn:xmpp:xbosh">>).
 
 -define(NS_HTTP_BIND,

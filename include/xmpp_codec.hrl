@@ -104,6 +104,16 @@
                xmlns :: binary()}).
 -type sm_a() :: #sm_a{}.
 
+-record(stream_start, {from :: any(),
+                       to :: any(),
+                       id = <<>> :: binary(),
+                       version = <<>> :: binary(),
+                       xmlns :: binary(),
+                       stream_xmlns = <<>> :: binary(),
+                       db_xmlns = <<>> :: binary(),
+                       lang = <<>> :: binary()}).
+-type stream_start() :: #stream_start{}.
+
 -record(muc_subscribe, {nick :: binary(),
                         events = [] :: [binary()]}).
 -type muc_subscribe() :: #muc_subscribe{}.
@@ -137,6 +147,9 @@
 
 -record(sasl_challenge, {text :: any()}).
 -type sasl_challenge() :: #sasl_challenge{}.
+
+-record(handshake, {data = <<>> :: binary()}).
+-type handshake() :: #handshake{}.
 
 -record(gone, {uri :: binary()}).
 -type gone() :: #gone{}.
@@ -672,6 +685,21 @@
                 text :: #text{}}).
 -type error() :: #error{}.
 
+-record(db_verify, {from :: any(),
+                    to :: any(),
+                    id :: binary(),
+                    type :: 'error' | 'invalid' | 'valid',
+                    key = <<>> :: binary(),
+                    error :: #error{}}).
+-type db_verify() :: #db_verify{}.
+
+-record(db_result, {from :: any(),
+                    to :: any(),
+                    type :: 'error' | 'invalid' | 'valid',
+                    key = <<>> :: binary(),
+                    error :: #error{}}).
+-type db_result() :: #db_result{}.
+
 -record(presence, {id :: binary(),
                    type = available :: 'available' | 'error' | 'probe' | 'subscribe' | 'subscribed' | 'unavailable' | 'unsubscribe' | 'unsubscribed',
                    lang :: binary(),
@@ -772,12 +800,12 @@
                utc :: any()}).
 -type time() :: #time{}.
 
--type xmpp_element() :: compression() |
+-type xmpp_element() :: muc_admin() |
+                        compression() |
                         pubsub_subscription() |
                         xdata_option() |
                         version() |
                         pubsub_affiliation() |
-                        muc_admin() |
                         mam_fin() |
                         sm_a() |
                         carbons_sent() |
@@ -790,8 +818,10 @@
                         compressed() |
                         block_list() |
                         rsm_set() |
+                        db_result() |
                         'see-other-host'() |
                         hint() |
+                        stream_start() |
                         stanza_id() |
                         starttls_proceed() |
                         client_id() |
@@ -831,6 +861,7 @@
                         pubsub() |
                         muc_owner() |
                         muc_actor() |
+                        vcard_name() |
                         adhoc_note() |
                         rosterver_feature() |
                         muc_invite() |
@@ -842,12 +873,12 @@
                         sm_enable() |
                         starttls_failure() |
                         sasl_challenge() |
+                        handshake() |
                         x_conference() |
                         private() |
                         compress_failure() |
                         sasl_failure() |
                         bookmark_storage() |
-                        vcard_name() |
                         muc_decline() |
                         sasl_auth() |
                         p1_push() |
@@ -891,6 +922,7 @@
                         csi() |
                         roster_query() |
                         mam_query() |
+                        db_verify() |
                         bookmark_url() |
                         vcard_email() |
                         vcard_label() |
