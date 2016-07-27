@@ -213,7 +213,7 @@ set_room_option(_Acc, <<"muc#roomconfig_mam">> = Opt, Vals, Lang) ->
     catch _:{case_clause, _} ->
 	    Txt = <<"Value of '~s' should be boolean">>,
 	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-	    {error, xmpp:err_bad_request(Lang, ErrTxt)}
+	    {error, xmpp:err_bad_request(ErrTxt, Lang)}
     end;
 set_room_option(Acc, _Opt, _Vals, _Lang) ->
     Acc.
