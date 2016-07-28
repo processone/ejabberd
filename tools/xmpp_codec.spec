@@ -1010,7 +1010,7 @@
                      '$username', '$nick', '$password', '$name',
                      '$first', '$last', '$email', '$address',
                      '$city', '$state', '$zip', '$phone', '$url',
-                     '$date', '$misc', '$text', '$key', '$xdata'},
+                     '$date', '$misc', '$text', '$key', '$xdata', '$_els'},
            refs = [#ref{name = xdata, min = 0, max = 1,
 			label = '$xdata'},
 		   #ref{name = register_registered, min = 0, max = 1,
@@ -1600,7 +1600,7 @@
      #elem{name = <<"field">>,
            xmlns = <<"jabber:x:data">>,
            result = {xdata_field, '$label', '$type', '$var',
-                     '$required', '$desc', '$values', '$options'},
+                     '$required', '$desc', '$values', '$options', '$_els'},
            attrs = [#attr{name = <<"label">>},
                     #attr{name = <<"type">>,
                           enc = {enc_enum, []},
@@ -2936,6 +2936,66 @@
 			  default = <<"">>},
 		    #attr{name = <<"version">>, default = <<"">>},
 		    #attr{name = <<"id">>, default = <<"">>}]}).
+
+-xml(bob_data,
+     #elem{name = <<"data">>,
+	   xmlns = <<"urn:xmpp:bob">>,
+	   result = {bob_data, '$cid', '$max-age', '$type', '$data'},
+	   attrs = [#attr{name = <<"cid">>, required = true},
+		    #attr{name = <<"max-age">>,
+			  dec = {dec_int, [0, infinity]},
+			  enc = {enc_int, []}},
+		    #attr{name = <<"type">>}],
+	   cdata = #cdata{label = '$data', default = <<"">>,
+			  dec = {base64, decode, []},
+			  enc = {base64, encode, []}}}).
+
+-xml(captcha,
+     #elem{name = <<"captcha">>,
+	   xmlns = <<"urn:xmpp:captcha">>,
+	   result = {xcaptcha, '$xdata'},
+	   refs = [#ref{name = xdata, min = 1, max = 1}]}).
+
+-xml(media_uri,
+     #elem{name = <<"uri">>,
+	   xmlns = <<"urn:xmpp:media-element">>,
+	   result = {media_uri, '$type', '$uri'},
+	   attrs = [#attr{name = <<"type">>, required = true}],
+	   cdata = #cdata{label = '$uri', default = <<"">>}}).
+
+-xml(media,
+     #elem{name = <<"media">>,
+	   xmlns = <<"urn:xmpp:media-element">>,
+	   result = {media, '$height', '$width', '$uri'},
+	   attrs = [#attr{name = <<"height">>,
+			  dec = {dec_int, [0, infinity]},
+			  enc = {enc_int, []}},
+		    #attr{name = <<"width">>,
+			  dec = {dec_int, [0, inifinity]},
+			  enc = {enc_int, []}}],
+	   refs = [#ref{name = media_uri, label = '$uri'}]}).
+
+-xml(oob_url,
+     #elem{name = <<"url">>,
+	   xmlns = <<"jabber:x:oob">>,
+	   result = '$cdata',
+	   cdata = #cdata{required = true}}).
+
+-xml(oob_desc,
+     #elem{name = <<"desc">>,
+	   xmlns = <<"jabber:x:oob">>,
+	   result = '$cdata',
+	   cdata = #cdata{default = <<"">>}}).
+
+-xml(oob_x,
+     #elem{name = <<"x">>,
+	   xmlns = <<"jabber:x:oob">>,
+	   result = {oob_x, '$url', '$desc', '$sid'},
+	   attrs = [#attr{name = <<"sid">>, default = <<"">>}],
+	   refs = [#ref{name = oob_url, min = 1, max = 1,
+			label = '$url'},
+		   #ref{name = oob_desc, default = <<"">>,
+			min = 0, max = 1, label = '$desc'}]}).
 
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),

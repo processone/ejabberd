@@ -15,6 +15,22 @@ decode(_el) -> decode(_el, []).
 decode({xmlel, _name, _attrs, _} = _el, Opts) ->
     IgnoreEls = proplists:get_bool(ignore_els, Opts),
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"x">>, <<"jabber:x:oob">>} ->
+	  decode_oob_x(<<"jabber:x:oob">>, IgnoreEls, _el);
+      {<<"desc">>, <<"jabber:x:oob">>} ->
+	  decode_oob_desc(<<"jabber:x:oob">>, IgnoreEls, _el);
+      {<<"url">>, <<"jabber:x:oob">>} ->
+	  decode_oob_url(<<"jabber:x:oob">>, IgnoreEls, _el);
+      {<<"media">>, <<"urn:xmpp:media-element">>} ->
+	  decode_media(<<"urn:xmpp:media-element">>, IgnoreEls,
+		       _el);
+      {<<"uri">>, <<"urn:xmpp:media-element">>} ->
+	  decode_media_uri(<<"urn:xmpp:media-element">>,
+			   IgnoreEls, _el);
+      {<<"captcha">>, <<"urn:xmpp:captcha">>} ->
+	  decode_captcha(<<"urn:xmpp:captcha">>, IgnoreEls, _el);
+      {<<"data">>, <<"urn:xmpp:bob">>} ->
+	  decode_bob_data(<<"urn:xmpp:bob">>, IgnoreEls, _el);
       {<<"stream:stream">>, <<"jabber:client">>} ->
 	  decode_stream_start(<<"jabber:client">>, IgnoreEls,
 			      _el);
@@ -1293,6 +1309,13 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 
 is_known_tag({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"x">>, <<"jabber:x:oob">>} -> true;
+      {<<"desc">>, <<"jabber:x:oob">>} -> true;
+      {<<"url">>, <<"jabber:x:oob">>} -> true;
+      {<<"media">>, <<"urn:xmpp:media-element">>} -> true;
+      {<<"uri">>, <<"urn:xmpp:media-element">>} -> true;
+      {<<"captcha">>, <<"urn:xmpp:captcha">>} -> true;
+      {<<"data">>, <<"urn:xmpp:bob">>} -> true;
       {<<"stream:stream">>, <<"jabber:client">>} -> true;
       {<<"stream:stream">>, <<"jabber:server">>} -> true;
       {<<"stream:stream">>, <<"jabber:component:accept">>} ->
@@ -2216,7 +2239,7 @@ encode({feature_register} = Register) ->
 			    [{<<"xmlns">>,
 			      <<"http://jabber.org/features/iq-register">>}]);
 encode({register, _, _, _, _, _, _, _, _, _, _, _, _, _,
-	_, _, _, _, _, _, _, _} =
+	_, _, _, _, _, _, _, _, _} =
 	   Query) ->
     encode_register(Query,
 		    [{<<"xmlns">>, <<"jabber:iq:register">>}]);
@@ -2285,7 +2308,7 @@ encode({vcard_xupdate, undefined, _} = X) ->
 encode({xdata_option, _, _} = Option) ->
     encode_xdata_field_option(Option,
 			      [{<<"xmlns">>, <<"jabber:x:data">>}]);
-encode({xdata_field, _, _, _, _, _, _, _} = Field) ->
+encode({xdata_field, _, _, _, _, _, _, _, _} = Field) ->
     encode_xdata_field(Field,
 		       [{<<"xmlns">>, <<"jabber:x:data">>}]);
 encode({xdata, _, _, _, _, _, _} = X) ->
@@ -2572,7 +2595,21 @@ encode({handshake, _} = Handshake) ->
 		     [{<<"xmlns">>, <<"jabber:client">>}]);
 encode({stream_start, _, _, _, _, _, _, _, _} =
 	   Stream_stream) ->
-    encode_stream_start(Stream_stream, []).
+    encode_stream_start(Stream_stream, []);
+encode({bob_data, _, _, _, _} = Data) ->
+    encode_bob_data(Data,
+		    [{<<"xmlns">>, <<"urn:xmpp:bob">>}]);
+encode({xcaptcha, _} = Captcha) ->
+    encode_captcha(Captcha,
+		   [{<<"xmlns">>, <<"urn:xmpp:captcha">>}]);
+encode({media_uri, _, _} = Uri) ->
+    encode_media_uri(Uri,
+		     [{<<"xmlns">>, <<"urn:xmpp:media-element">>}]);
+encode({media, _, _, _} = Media) ->
+    encode_media(Media,
+		 [{<<"xmlns">>, <<"urn:xmpp:media-element">>}]);
+encode({oob_x, _, _, _} = X) ->
+    encode_oob_x(X, [{<<"xmlns">>, <<"jabber:x:oob">>}]).
 
 get_name({last, _, _}) -> <<"query">>;
 get_name({version, _, _, _}) -> <<"query">>;
@@ -2628,7 +2665,7 @@ get_name({p1_ack}) -> <<"ack">>;
 get_name({caps, _, _, _, _}) -> <<"c">>;
 get_name({feature_register}) -> <<"register">>;
 get_name({register, _, _, _, _, _, _, _, _, _, _, _, _,
-	  _, _, _, _, _, _, _, _, _}) ->
+	  _, _, _, _, _, _, _, _, _, _}) ->
     <<"query">>;
 get_name({xmpp_session, _}) -> <<"session">>;
 get_name({ping}) -> <<"ping">>;
@@ -2659,7 +2696,7 @@ get_name({vcard_temp, _, _, _, _, _, _, _, _, _, _, _,
     <<"vCard">>;
 get_name({vcard_xupdate, undefined, _}) -> <<"x">>;
 get_name({xdata_option, _, _}) -> <<"option">>;
-get_name({xdata_field, _, _, _, _, _, _, _}) ->
+get_name({xdata_field, _, _, _, _, _, _, _, _}) ->
     <<"field">>;
 get_name({xdata, _, _, _, _, _, _}) -> <<"x">>;
 get_name({pubsub_subscription, _, _, _, _}) ->
@@ -2760,7 +2797,12 @@ get_name({db_verify, _, _, _, _, _, _}) ->
     <<"db:verify">>;
 get_name({handshake, _}) -> <<"handshake">>;
 get_name({stream_start, _, _, _, _, _, _, _, _}) ->
-    <<"stream:stream">>.
+    <<"stream:stream">>;
+get_name({bob_data, _, _, _, _}) -> <<"data">>;
+get_name({xcaptcha, _}) -> <<"captcha">>;
+get_name({media_uri, _, _}) -> <<"uri">>;
+get_name({media, _, _, _}) -> <<"media">>;
+get_name({oob_x, _, _, _}) -> <<"x">>.
 
 get_ns({last, _, _}) -> <<"jabber:iq:last">>;
 get_ns({version, _, _, _}) -> <<"jabber:iq:version">>;
@@ -2848,7 +2890,7 @@ get_ns({caps, _, _, _, _}) ->
 get_ns({feature_register}) ->
     <<"http://jabber.org/features/iq-register">>;
 get_ns({register, _, _, _, _, _, _, _, _, _, _, _, _, _,
-	_, _, _, _, _, _, _, _}) ->
+	_, _, _, _, _, _, _, _, _}) ->
     <<"jabber:iq:register">>;
 get_ns({xmpp_session, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-session">>;
@@ -2881,7 +2923,7 @@ get_ns({vcard_temp, _, _, _, _, _, _, _, _, _, _, _, _,
 get_ns({vcard_xupdate, undefined, _}) ->
     <<"vcard-temp:x:update">>;
 get_ns({xdata_option, _, _}) -> <<"jabber:x:data">>;
-get_ns({xdata_field, _, _, _, _, _, _, _}) ->
+get_ns({xdata_field, _, _, _, _, _, _, _, _}) ->
     <<"jabber:x:data">>;
 get_ns({xdata, _, _, _, _, _, _}) ->
     <<"jabber:x:data">>;
@@ -3021,7 +3063,14 @@ get_ns({db_verify, _, _, _, _, _, _}) ->
     <<"jabber:client">>;
 get_ns({handshake, _}) -> <<"jabber:client">>;
 get_ns({stream_start, _, _, _, _, Xmlns, _, _, _}) ->
-    Xmlns.
+    Xmlns;
+get_ns({bob_data, _, _, _, _}) -> <<"urn:xmpp:bob">>;
+get_ns({xcaptcha, _}) -> <<"urn:xmpp:captcha">>;
+get_ns({media_uri, _, _}) ->
+    <<"urn:xmpp:media-element">>;
+get_ns({media, _, _, _}) ->
+    <<"urn:xmpp:media-element">>;
+get_ns({oob_x, _, _, _}) -> <<"jabber:x:oob">>.
 
 dec_int(Val) -> dec_int(Val, infinity, infinity).
 
@@ -3129,10 +3178,11 @@ pp(p1_rebind, 0) -> [];
 pp(p1_ack, 0) -> [];
 pp(caps, 4) -> [node, version, hash, exts];
 pp(feature_register, 0) -> [];
-pp(register, 21) ->
+pp(register, 22) ->
     [registered, remove, instructions, username, nick,
      password, name, first, last, email, address, city,
-     state, zip, phone, url, date, misc, text, key, xdata];
+     state, zip, phone, url, date, misc, text, key, xdata,
+     sub_els];
 pp(xmpp_session, 1) -> [optional];
 pp(ping, 0) -> [];
 pp(time, 2) -> [tzo, utc];
@@ -3164,8 +3214,9 @@ pp(vcard_temp, 29) ->
      uid, url, class, key, desc];
 pp(vcard_xupdate, 2) -> [us, hash];
 pp(xdata_option, 2) -> [label, value];
-pp(xdata_field, 7) ->
-    [label, type, var, required, desc, values, options];
+pp(xdata_field, 8) ->
+    [label, type, var, required, desc, values, options,
+     sub_els];
 pp(xdata, 6) ->
     [type, instructions, title, reported, items, fields];
 pp(pubsub_subscription, 4) -> [jid, node, subid, type];
@@ -3263,6 +3314,11 @@ pp(handshake, 1) -> [data];
 pp(stream_start, 8) ->
     [from, to, id, version, xmlns, stream_xmlns, db_xmlns,
      lang];
+pp(bob_data, 4) -> [cid, 'max-age', type, data];
+pp(xcaptcha, 1) -> [xdata];
+pp(media_uri, 2) -> [type, uri];
+pp(media, 3) -> [height, width, uri];
+pp(oob_x, 3) -> [url, desc, sid];
 pp(_, _) -> no.
 
 join([], _Sep) -> <<>>;
@@ -3308,6 +3364,423 @@ dec_tzo(Val) ->
     H = jlib:binary_to_integer(H1),
     M = jlib:binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
+
+decode_oob_x(__TopXMLNS, __IgnoreEls,
+	     {xmlel, <<"x">>, _attrs, _els}) ->
+    {Desc, Url} = decode_oob_x_els(__TopXMLNS, __IgnoreEls,
+				   _els, <<>>, error),
+    Sid = decode_oob_x_attrs(__TopXMLNS, _attrs, undefined),
+    {oob_x, Url, Desc, Sid}.
+
+decode_oob_x_els(__TopXMLNS, __IgnoreEls, [], Desc,
+		 Url) ->
+    {Desc,
+     case Url of
+       error ->
+	   erlang:error({xmpp_codec,
+			 {missing_tag, <<"url">>, __TopXMLNS}});
+       {value, Url1} -> Url1
+     end};
+decode_oob_x_els(__TopXMLNS, __IgnoreEls,
+		 [{xmlel, <<"url">>, _attrs, _} = _el | _els], Desc,
+		 Url) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:oob">> ->
+	  decode_oob_x_els(__TopXMLNS, __IgnoreEls, _els, Desc,
+			   {value,
+			    decode_oob_url(__TopXMLNS, __IgnoreEls, _el)});
+      <<"jabber:x:oob">> ->
+	  decode_oob_x_els(__TopXMLNS, __IgnoreEls, _els, Desc,
+			   {value,
+			    decode_oob_url(<<"jabber:x:oob">>, __IgnoreEls,
+					   _el)});
+      _ ->
+	  decode_oob_x_els(__TopXMLNS, __IgnoreEls, _els, Desc,
+			   Url)
+    end;
+decode_oob_x_els(__TopXMLNS, __IgnoreEls,
+		 [{xmlel, <<"desc">>, _attrs, _} = _el | _els], Desc,
+		 Url) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"jabber:x:oob">> ->
+	  decode_oob_x_els(__TopXMLNS, __IgnoreEls, _els,
+			   decode_oob_desc(__TopXMLNS, __IgnoreEls, _el), Url);
+      <<"jabber:x:oob">> ->
+	  decode_oob_x_els(__TopXMLNS, __IgnoreEls, _els,
+			   decode_oob_desc(<<"jabber:x:oob">>, __IgnoreEls,
+					   _el),
+			   Url);
+      _ ->
+	  decode_oob_x_els(__TopXMLNS, __IgnoreEls, _els, Desc,
+			   Url)
+    end;
+decode_oob_x_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		 Desc, Url) ->
+    decode_oob_x_els(__TopXMLNS, __IgnoreEls, _els, Desc,
+		     Url).
+
+decode_oob_x_attrs(__TopXMLNS,
+		   [{<<"sid">>, _val} | _attrs], _Sid) ->
+    decode_oob_x_attrs(__TopXMLNS, _attrs, _val);
+decode_oob_x_attrs(__TopXMLNS, [_ | _attrs], Sid) ->
+    decode_oob_x_attrs(__TopXMLNS, _attrs, Sid);
+decode_oob_x_attrs(__TopXMLNS, [], Sid) ->
+    decode_oob_x_attr_sid(__TopXMLNS, Sid).
+
+encode_oob_x({oob_x, Url, Desc, Sid}, _xmlns_attrs) ->
+    _els = lists:reverse('encode_oob_x_$desc'(Desc,
+					      'encode_oob_x_$url'(Url, []))),
+    _attrs = encode_oob_x_attr_sid(Sid, _xmlns_attrs),
+    {xmlel, <<"x">>, _attrs, _els}.
+
+'encode_oob_x_$desc'(<<>>, _acc) -> _acc;
+'encode_oob_x_$desc'(Desc, _acc) ->
+    [encode_oob_desc(Desc, []) | _acc].
+
+'encode_oob_x_$url'(Url, _acc) ->
+    [encode_oob_url(Url, []) | _acc].
+
+decode_oob_x_attr_sid(__TopXMLNS, undefined) -> <<>>;
+decode_oob_x_attr_sid(__TopXMLNS, _val) -> _val.
+
+encode_oob_x_attr_sid(<<>>, _acc) -> _acc;
+encode_oob_x_attr_sid(_val, _acc) ->
+    [{<<"sid">>, _val} | _acc].
+
+decode_oob_desc(__TopXMLNS, __IgnoreEls,
+		{xmlel, <<"desc">>, _attrs, _els}) ->
+    Cdata = decode_oob_desc_els(__TopXMLNS, __IgnoreEls,
+				_els, <<>>),
+    Cdata.
+
+decode_oob_desc_els(__TopXMLNS, __IgnoreEls, [],
+		    Cdata) ->
+    decode_oob_desc_cdata(__TopXMLNS, Cdata);
+decode_oob_desc_els(__TopXMLNS, __IgnoreEls,
+		    [{xmlcdata, _data} | _els], Cdata) ->
+    decode_oob_desc_els(__TopXMLNS, __IgnoreEls, _els,
+			<<Cdata/binary, _data/binary>>);
+decode_oob_desc_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		    Cdata) ->
+    decode_oob_desc_els(__TopXMLNS, __IgnoreEls, _els,
+			Cdata).
+
+encode_oob_desc(Cdata, _xmlns_attrs) ->
+    _els = encode_oob_desc_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"desc">>, _attrs, _els}.
+
+decode_oob_desc_cdata(__TopXMLNS, <<>>) -> <<>>;
+decode_oob_desc_cdata(__TopXMLNS, _val) -> _val.
+
+encode_oob_desc_cdata(<<>>, _acc) -> _acc;
+encode_oob_desc_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_oob_url(__TopXMLNS, __IgnoreEls,
+	       {xmlel, <<"url">>, _attrs, _els}) ->
+    Cdata = decode_oob_url_els(__TopXMLNS, __IgnoreEls,
+			       _els, <<>>),
+    Cdata.
+
+decode_oob_url_els(__TopXMLNS, __IgnoreEls, [],
+		   Cdata) ->
+    decode_oob_url_cdata(__TopXMLNS, Cdata);
+decode_oob_url_els(__TopXMLNS, __IgnoreEls,
+		   [{xmlcdata, _data} | _els], Cdata) ->
+    decode_oob_url_els(__TopXMLNS, __IgnoreEls, _els,
+		       <<Cdata/binary, _data/binary>>);
+decode_oob_url_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		   Cdata) ->
+    decode_oob_url_els(__TopXMLNS, __IgnoreEls, _els,
+		       Cdata).
+
+encode_oob_url(Cdata, _xmlns_attrs) ->
+    _els = encode_oob_url_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"url">>, _attrs, _els}.
+
+decode_oob_url_cdata(__TopXMLNS, <<>>) ->
+    erlang:error({xmpp_codec,
+		  {missing_cdata, <<>>, <<"url">>, __TopXMLNS}});
+decode_oob_url_cdata(__TopXMLNS, _val) -> _val.
+
+encode_oob_url_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_media(__TopXMLNS, __IgnoreEls,
+	     {xmlel, <<"media">>, _attrs, _els}) ->
+    Uri = decode_media_els(__TopXMLNS, __IgnoreEls, _els,
+			   []),
+    {Height, Width} = decode_media_attrs(__TopXMLNS, _attrs,
+					 undefined, undefined),
+    {media, Height, Width, Uri}.
+
+decode_media_els(__TopXMLNS, __IgnoreEls, [], Uri) ->
+    lists:reverse(Uri);
+decode_media_els(__TopXMLNS, __IgnoreEls,
+		 [{xmlel, <<"uri">>, _attrs, _} = _el | _els], Uri) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS == <<"urn:xmpp:media-element">> ->
+	  decode_media_els(__TopXMLNS, __IgnoreEls, _els,
+			   [decode_media_uri(__TopXMLNS, __IgnoreEls, _el)
+			    | Uri]);
+      <<"urn:xmpp:media-element">> ->
+	  decode_media_els(__TopXMLNS, __IgnoreEls, _els,
+			   [decode_media_uri(<<"urn:xmpp:media-element">>,
+					     __IgnoreEls, _el)
+			    | Uri]);
+      _ ->
+	  decode_media_els(__TopXMLNS, __IgnoreEls, _els, Uri)
+    end;
+decode_media_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		 Uri) ->
+    decode_media_els(__TopXMLNS, __IgnoreEls, _els, Uri).
+
+decode_media_attrs(__TopXMLNS,
+		   [{<<"height">>, _val} | _attrs], _Height, Width) ->
+    decode_media_attrs(__TopXMLNS, _attrs, _val, Width);
+decode_media_attrs(__TopXMLNS,
+		   [{<<"width">>, _val} | _attrs], Height, _Width) ->
+    decode_media_attrs(__TopXMLNS, _attrs, Height, _val);
+decode_media_attrs(__TopXMLNS, [_ | _attrs], Height,
+		   Width) ->
+    decode_media_attrs(__TopXMLNS, _attrs, Height, Width);
+decode_media_attrs(__TopXMLNS, [], Height, Width) ->
+    {decode_media_attr_height(__TopXMLNS, Height),
+     decode_media_attr_width(__TopXMLNS, Width)}.
+
+encode_media({media, Height, Width, Uri},
+	     _xmlns_attrs) ->
+    _els = lists:reverse('encode_media_$uri'(Uri, [])),
+    _attrs = encode_media_attr_width(Width,
+				     encode_media_attr_height(Height,
+							      _xmlns_attrs)),
+    {xmlel, <<"media">>, _attrs, _els}.
+
+'encode_media_$uri'([], _acc) -> _acc;
+'encode_media_$uri'([Uri | _els], _acc) ->
+    'encode_media_$uri'(_els,
+			[encode_media_uri(Uri, []) | _acc]).
+
+decode_media_attr_height(__TopXMLNS, undefined) ->
+    undefined;
+decode_media_attr_height(__TopXMLNS, _val) ->
+    case catch dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"height">>, <<"media">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_media_attr_height(undefined, _acc) -> _acc;
+encode_media_attr_height(_val, _acc) ->
+    [{<<"height">>, enc_int(_val)} | _acc].
+
+decode_media_attr_width(__TopXMLNS, undefined) ->
+    undefined;
+decode_media_attr_width(__TopXMLNS, _val) ->
+    case catch dec_int(_val, 0, inifinity) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"width">>, <<"media">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_media_attr_width(undefined, _acc) -> _acc;
+encode_media_attr_width(_val, _acc) ->
+    [{<<"width">>, enc_int(_val)} | _acc].
+
+decode_media_uri(__TopXMLNS, __IgnoreEls,
+		 {xmlel, <<"uri">>, _attrs, _els}) ->
+    Uri = decode_media_uri_els(__TopXMLNS, __IgnoreEls,
+			       _els, <<>>),
+    Type = decode_media_uri_attrs(__TopXMLNS, _attrs,
+				  undefined),
+    {media_uri, Type, Uri}.
+
+decode_media_uri_els(__TopXMLNS, __IgnoreEls, [],
+		     Uri) ->
+    decode_media_uri_cdata(__TopXMLNS, Uri);
+decode_media_uri_els(__TopXMLNS, __IgnoreEls,
+		     [{xmlcdata, _data} | _els], Uri) ->
+    decode_media_uri_els(__TopXMLNS, __IgnoreEls, _els,
+			 <<Uri/binary, _data/binary>>);
+decode_media_uri_els(__TopXMLNS, __IgnoreEls,
+		     [_ | _els], Uri) ->
+    decode_media_uri_els(__TopXMLNS, __IgnoreEls, _els,
+			 Uri).
+
+decode_media_uri_attrs(__TopXMLNS,
+		       [{<<"type">>, _val} | _attrs], _Type) ->
+    decode_media_uri_attrs(__TopXMLNS, _attrs, _val);
+decode_media_uri_attrs(__TopXMLNS, [_ | _attrs],
+		       Type) ->
+    decode_media_uri_attrs(__TopXMLNS, _attrs, Type);
+decode_media_uri_attrs(__TopXMLNS, [], Type) ->
+    decode_media_uri_attr_type(__TopXMLNS, Type).
+
+encode_media_uri({media_uri, Type, Uri},
+		 _xmlns_attrs) ->
+    _els = encode_media_uri_cdata(Uri, []),
+    _attrs = encode_media_uri_attr_type(Type, _xmlns_attrs),
+    {xmlel, <<"uri">>, _attrs, _els}.
+
+decode_media_uri_attr_type(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"type">>, <<"uri">>, __TopXMLNS}});
+decode_media_uri_attr_type(__TopXMLNS, _val) -> _val.
+
+encode_media_uri_attr_type(_val, _acc) ->
+    [{<<"type">>, _val} | _acc].
+
+decode_media_uri_cdata(__TopXMLNS, <<>>) -> <<>>;
+decode_media_uri_cdata(__TopXMLNS, _val) -> _val.
+
+encode_media_uri_cdata(<<>>, _acc) -> _acc;
+encode_media_uri_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_captcha(__TopXMLNS, __IgnoreEls,
+	       {xmlel, <<"captcha">>, _attrs, _els}) ->
+    Xdata = decode_captcha_els(__TopXMLNS, __IgnoreEls,
+			       _els, error),
+    {xcaptcha, Xdata}.
+
+decode_captcha_els(__TopXMLNS, __IgnoreEls, [],
+		   Xdata) ->
+    case Xdata of
+      error ->
+	  erlang:error({xmpp_codec,
+			{missing_tag, <<"x">>, __TopXMLNS}});
+      {value, Xdata1} -> Xdata1
+    end;
+decode_captcha_els(__TopXMLNS, __IgnoreEls,
+		   [{xmlel, <<"x">>, _attrs, _} = _el | _els], Xdata) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_captcha_els(__TopXMLNS, __IgnoreEls, _els,
+			     {value,
+			      decode_xdata(<<"jabber:x:data">>, __IgnoreEls,
+					   _el)});
+      _ ->
+	  decode_captcha_els(__TopXMLNS, __IgnoreEls, _els, Xdata)
+    end;
+decode_captcha_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		   Xdata) ->
+    decode_captcha_els(__TopXMLNS, __IgnoreEls, _els,
+		       Xdata).
+
+encode_captcha({xcaptcha, Xdata}, _xmlns_attrs) ->
+    _els = lists:reverse('encode_captcha_$xdata'(Xdata,
+						 [])),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"captcha">>, _attrs, _els}.
+
+'encode_captcha_$xdata'(Xdata, _acc) ->
+    [encode_xdata(Xdata,
+		  [{<<"xmlns">>, <<"jabber:x:data">>}])
+     | _acc].
+
+decode_bob_data(__TopXMLNS, __IgnoreEls,
+		{xmlel, <<"data">>, _attrs, _els}) ->
+    Data = decode_bob_data_els(__TopXMLNS, __IgnoreEls,
+			       _els, <<>>),
+    {Cid, Max_age, Type} = decode_bob_data_attrs(__TopXMLNS,
+						 _attrs, undefined, undefined,
+						 undefined),
+    {bob_data, Cid, Max_age, Type, Data}.
+
+decode_bob_data_els(__TopXMLNS, __IgnoreEls, [],
+		    Data) ->
+    decode_bob_data_cdata(__TopXMLNS, Data);
+decode_bob_data_els(__TopXMLNS, __IgnoreEls,
+		    [{xmlcdata, _data} | _els], Data) ->
+    decode_bob_data_els(__TopXMLNS, __IgnoreEls, _els,
+			<<Data/binary, _data/binary>>);
+decode_bob_data_els(__TopXMLNS, __IgnoreEls, [_ | _els],
+		    Data) ->
+    decode_bob_data_els(__TopXMLNS, __IgnoreEls, _els,
+			Data).
+
+decode_bob_data_attrs(__TopXMLNS,
+		      [{<<"cid">>, _val} | _attrs], _Cid, Max_age, Type) ->
+    decode_bob_data_attrs(__TopXMLNS, _attrs, _val, Max_age,
+			  Type);
+decode_bob_data_attrs(__TopXMLNS,
+		      [{<<"max-age">>, _val} | _attrs], Cid, _Max_age,
+		      Type) ->
+    decode_bob_data_attrs(__TopXMLNS, _attrs, Cid, _val,
+			  Type);
+decode_bob_data_attrs(__TopXMLNS,
+		      [{<<"type">>, _val} | _attrs], Cid, Max_age, _Type) ->
+    decode_bob_data_attrs(__TopXMLNS, _attrs, Cid, Max_age,
+			  _val);
+decode_bob_data_attrs(__TopXMLNS, [_ | _attrs], Cid,
+		      Max_age, Type) ->
+    decode_bob_data_attrs(__TopXMLNS, _attrs, Cid, Max_age,
+			  Type);
+decode_bob_data_attrs(__TopXMLNS, [], Cid, Max_age,
+		      Type) ->
+    {decode_bob_data_attr_cid(__TopXMLNS, Cid),
+     'decode_bob_data_attr_max-age'(__TopXMLNS, Max_age),
+     decode_bob_data_attr_type(__TopXMLNS, Type)}.
+
+encode_bob_data({bob_data, Cid, Max_age, Type, Data},
+		_xmlns_attrs) ->
+    _els = encode_bob_data_cdata(Data, []),
+    _attrs = encode_bob_data_attr_type(Type,
+				       'encode_bob_data_attr_max-age'(Max_age,
+								      encode_bob_data_attr_cid(Cid,
+											       _xmlns_attrs))),
+    {xmlel, <<"data">>, _attrs, _els}.
+
+decode_bob_data_attr_cid(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"cid">>, <<"data">>, __TopXMLNS}});
+decode_bob_data_attr_cid(__TopXMLNS, _val) -> _val.
+
+encode_bob_data_attr_cid(_val, _acc) ->
+    [{<<"cid">>, _val} | _acc].
+
+'decode_bob_data_attr_max-age'(__TopXMLNS, undefined) ->
+    undefined;
+'decode_bob_data_attr_max-age'(__TopXMLNS, _val) ->
+    case catch dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"max-age">>, <<"data">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+'encode_bob_data_attr_max-age'(undefined, _acc) -> _acc;
+'encode_bob_data_attr_max-age'(_val, _acc) ->
+    [{<<"max-age">>, enc_int(_val)} | _acc].
+
+decode_bob_data_attr_type(__TopXMLNS, undefined) ->
+    undefined;
+decode_bob_data_attr_type(__TopXMLNS, _val) -> _val.
+
+encode_bob_data_attr_type(undefined, _acc) -> _acc;
+encode_bob_data_attr_type(_val, _acc) ->
+    [{<<"type">>, _val} | _acc].
+
+decode_bob_data_cdata(__TopXMLNS, <<>>) -> <<>>;
+decode_bob_data_cdata(__TopXMLNS, _val) ->
+    case catch base64:decode(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"data">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_bob_data_cdata(<<>>, _acc) -> _acc;
+encode_bob_data_cdata(_val, _acc) ->
+    [{xmlcdata, base64:encode(_val)} | _acc].
 
 decode_stream_start(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"stream:stream">>, _attrs, _els}) ->
@@ -12727,60 +13200,62 @@ encode_xdata_instructions_cdata(_val, _acc) ->
 
 decode_xdata_field(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"field">>, _attrs, _els}) ->
-    {Options, Values, Desc, Required} =
+    {Options, Values, Desc, Required, __Els} =
 	decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-			       [], [], undefined, false),
+			       [], [], undefined, false, []),
     {Label, Type, Var} =
 	decode_xdata_field_attrs(__TopXMLNS, _attrs, undefined,
 				 undefined, undefined),
     {xdata_field, Label, Type, Var, Required, Desc, Values,
-     Options}.
+     Options, __Els}.
 
 decode_xdata_field_els(__TopXMLNS, __IgnoreEls, [],
-		       Options, Values, Desc, Required) ->
+		       Options, Values, Desc, Required, __Els) ->
     {lists:reverse(Options), lists:reverse(Values), Desc,
-     Required};
+     Required, lists:reverse(__Els)};
 decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"required">>, _attrs, _} = _el | _els],
-		       Options, Values, Desc, Required) ->
+		       Options, Values, Desc, Required, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
 				 Options, Values, Desc,
 				 decode_xdata_field_required(__TopXMLNS,
-							     __IgnoreEls, _el));
+							     __IgnoreEls, _el),
+				 __Els);
       <<"jabber:x:data">> ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
 				 Options, Values, Desc,
 				 decode_xdata_field_required(<<"jabber:x:data">>,
-							     __IgnoreEls, _el));
+							     __IgnoreEls, _el),
+				 __Els);
       _ ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				 Options, Values, Desc, Required)
+				 Options, Values, Desc, Required, __Els)
     end;
 decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"desc">>, _attrs, _} = _el | _els], Options,
-		       Values, Desc, Required) ->
+		       Values, Desc, Required, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
 				 Options, Values,
 				 decode_xdata_field_desc(__TopXMLNS,
 							 __IgnoreEls, _el),
-				 Required);
+				 Required, __Els);
       <<"jabber:x:data">> ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
 				 Options, Values,
 				 decode_xdata_field_desc(<<"jabber:x:data">>,
 							 __IgnoreEls, _el),
-				 Required);
+				 Required, __Els);
       _ ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				 Options, Values, Desc, Required)
+				 Options, Values, Desc, Required, __Els)
     end;
 decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"value">>, _attrs, _} = _el | _els], Options,
-		       Values, Desc, Required) ->
+		       Values, Desc, Required, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
@@ -12791,7 +13266,7 @@ decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 				   undefined -> Values;
 				   _new_el -> [_new_el | Values]
 				 end,
-				 Desc, Required);
+				 Desc, Required, __Els);
       <<"jabber:x:data">> ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
 				 Options,
@@ -12802,35 +13277,53 @@ decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 				   undefined -> Values;
 				   _new_el -> [_new_el | Values]
 				 end,
-				 Desc, Required);
+				 Desc, Required, __Els);
       _ ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				 Options, Values, Desc, Required)
+				 Options, Values, Desc, Required, __Els)
     end;
 decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 		       [{xmlel, <<"option">>, _attrs, _} = _el | _els],
-		       Options, Values, Desc, Required) ->
+		       Options, Values, Desc, Required, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
 				 [decode_xdata_field_option(__TopXMLNS,
 							    __IgnoreEls, _el)
 				  | Options],
-				 Values, Desc, Required);
+				 Values, Desc, Required, __Els);
       <<"jabber:x:data">> ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
 				 [decode_xdata_field_option(<<"jabber:x:data">>,
 							    __IgnoreEls, _el)
 				  | Options],
-				 Values, Desc, Required);
+				 Values, Desc, Required, __Els);
       _ ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-				 Options, Values, Desc, Required)
+				 Options, Values, Desc, Required, __Els)
     end;
 decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
-		       [_ | _els], Options, Values, Desc, Required) ->
+		       [{xmlel, _, _, _} = _el | _els], Options, Values, Desc,
+		       Required, __Els) ->
+    if __IgnoreEls ->
+	   decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+				  Options, Values, Desc, Required,
+				  [_el | __Els]);
+       true ->
+	   case is_known_tag(_el) of
+	     true ->
+		 decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+					Options, Values, Desc, Required,
+					[decode(_el) | __Els]);
+	     false ->
+		 decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
+					Options, Values, Desc, Required, __Els)
+	   end
+    end;
+decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
+		       [_ | _els], Options, Values, Desc, Required, __Els) ->
     decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-			   Options, Values, Desc, Required).
+			   Options, Values, Desc, Required, __Els).
 
 decode_xdata_field_attrs(__TopXMLNS,
 			 [{<<"label">>, _val} | _attrs], _Label, Type, Var) ->
@@ -12855,14 +13348,14 @@ decode_xdata_field_attrs(__TopXMLNS, [], Label, Type,
      decode_xdata_field_attr_var(__TopXMLNS, Var)}.
 
 encode_xdata_field({xdata_field, Label, Type, Var,
-		    Required, Desc, Values, Options},
+		    Required, Desc, Values, Options, __Els},
 		   _xmlns_attrs) ->
-    _els =
-	lists:reverse('encode_xdata_field_$options'(Options,
-						    'encode_xdata_field_$values'(Values,
-										 'encode_xdata_field_$desc'(Desc,
-													    'encode_xdata_field_$required'(Required,
-																	   []))))),
+    _els = [encode(_el) || _el <- __Els] ++
+	     lists:reverse('encode_xdata_field_$options'(Options,
+							 'encode_xdata_field_$values'(Values,
+										      'encode_xdata_field_$desc'(Desc,
+														 'encode_xdata_field_$required'(Required,
+																		[]))))),
     _attrs = encode_xdata_field_attr_var(Var,
 					 encode_xdata_field_attr_type(Type,
 								      encode_xdata_field_attr_label(Label,
@@ -18909,29 +19402,31 @@ decode_register(__TopXMLNS, __IgnoreEls,
 		{xmlel, <<"query">>, _attrs, _els}) ->
     {Zip, Xdata, Misc, Address, Instructions, Text, Last,
      First, Password, Registered, Date, Phone, State, Name,
-     Username, Remove, Key, City, Nick, Url, Email} =
+     Username, Remove, Key, City, Nick, Url, Email, __Els} =
 	decode_register_els(__TopXMLNS, __IgnoreEls, _els,
 			    undefined, undefined, undefined, undefined,
 			    undefined, undefined, undefined, undefined,
 			    undefined, false, undefined, undefined, undefined,
 			    undefined, undefined, false, undefined, undefined,
-			    undefined, undefined, undefined),
+			    undefined, undefined, undefined, []),
     {register, Registered, Remove, Instructions, Username,
      Nick, Password, Name, First, Last, Email, Address, City,
-     State, Zip, Phone, Url, Date, Misc, Text, Key, Xdata}.
+     State, Zip, Phone, Url, Date, Misc, Text, Key, Xdata,
+     __Els}.
 
 decode_register_els(__TopXMLNS, __IgnoreEls, [], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     {Zip, Xdata, Misc, Address, Instructions, Text, Last,
      First, Password, Registered, Date, Phone, State, Name,
-     Username, Remove, Key, City, Nick, Url, Email};
+     Username, Remove, Key, City, Nick, Url, Email,
+     lists:reverse(__Els)};
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"x">>, _attrs, _} = _el | _els], Zip, Xdata,
 		    Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"jabber:x:data">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -18939,19 +19434,20 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 					   _el),
 			      Misc, Address, Instructions, Text, Last, First,
 			      Password, Registered, Date, Phone, State, Name,
-			      Username, Remove, Key, City, Nick, Url, Email);
+			      Username, Remove, Key, City, Nick, Url, Email,
+			      __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"registered">>, _attrs, _} = _el | _els],
 		    Zip, Xdata, Misc, Address, Instructions, Text, Last,
 		    First, Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -18960,7 +19456,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      decode_register_registered(__TopXMLNS,
 							 __IgnoreEls, _el),
 			      Date, Phone, State, Name, Username, Remove, Key,
-			      City, Nick, Url, Email);
+			      City, Nick, Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
@@ -18968,19 +19464,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      decode_register_registered(<<"jabber:iq:register">>,
 							 __IgnoreEls, _el),
 			      Date, Phone, State, Name, Username, Remove, Key,
-			      City, Nick, Url, Email);
+			      City, Nick, Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"remove">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -18989,7 +19485,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Name, Username,
 			      decode_register_remove(__TopXMLNS, __IgnoreEls,
 						     _el),
-			      Key, City, Nick, Url, Email);
+			      Key, City, Nick, Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
@@ -18997,19 +19493,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Name, Username,
 			      decode_register_remove(<<"jabber:iq:register">>,
 						     __IgnoreEls, _el),
-			      Key, City, Nick, Url, Email);
+			      Key, City, Nick, Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"instructions">>, _attrs, _} = _el | _els],
 		    Zip, Xdata, Misc, Address, Instructions, Text, Last,
 		    First, Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19018,7 +19514,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 							   __IgnoreEls, _el),
 			      Text, Last, First, Password, Registered, Date,
 			      Phone, State, Name, Username, Remove, Key, City,
-			      Nick, Url, Email);
+			      Nick, Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address,
@@ -19026,19 +19522,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 							   __IgnoreEls, _el),
 			      Text, Last, First, Password, Registered, Date,
 			      Phone, State, Name, Username, Remove, Key, City,
-			      Nick, Url, Email);
+			      Nick, Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"username">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19047,7 +19543,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Name,
 			      decode_register_username(__TopXMLNS, __IgnoreEls,
 						       _el),
-			      Remove, Key, City, Nick, Url, Email);
+			      Remove, Key, City, Nick, Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
@@ -19055,19 +19551,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Name,
 			      decode_register_username(<<"jabber:iq:register">>,
 						       __IgnoreEls, _el),
-			      Remove, Key, City, Nick, Url, Email);
+			      Remove, Key, City, Nick, Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"nick">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19076,7 +19572,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Name, Username, Remove, Key, City,
 			      decode_register_nick(__TopXMLNS, __IgnoreEls,
 						   _el),
-			      Url, Email);
+			      Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
@@ -19084,19 +19580,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Name, Username, Remove, Key, City,
 			      decode_register_nick(<<"jabber:iq:register">>,
 						   __IgnoreEls, _el),
-			      Url, Email);
+			      Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"password">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19105,7 +19601,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      decode_register_password(__TopXMLNS, __IgnoreEls,
 						       _el),
 			      Registered, Date, Phone, State, Name, Username,
-			      Remove, Key, City, Nick, Url, Email);
+			      Remove, Key, City, Nick, Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
@@ -19113,19 +19609,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      decode_register_password(<<"jabber:iq:register">>,
 						       __IgnoreEls, _el),
 			      Registered, Date, Phone, State, Name, Username,
-			      Remove, Key, City, Nick, Url, Email);
+			      Remove, Key, City, Nick, Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"name">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19133,26 +19629,28 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      First, Password, Registered, Date, Phone, State,
 			      decode_register_name(__TopXMLNS, __IgnoreEls,
 						   _el),
-			      Username, Remove, Key, City, Nick, Url, Email);
+			      Username, Remove, Key, City, Nick, Url, Email,
+			      __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      decode_register_name(<<"jabber:iq:register">>,
 						   __IgnoreEls, _el),
-			      Username, Remove, Key, City, Nick, Url, Email);
+			      Username, Remove, Key, City, Nick, Url, Email,
+			      __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"first">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19160,26 +19658,28 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      decode_register_first(__TopXMLNS, __IgnoreEls,
 						    _el),
 			      Password, Registered, Date, Phone, State, Name,
-			      Username, Remove, Key, City, Nick, Url, Email);
+			      Username, Remove, Key, City, Nick, Url, Email,
+			      __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      decode_register_first(<<"jabber:iq:register">>,
 						    __IgnoreEls, _el),
 			      Password, Registered, Date, Phone, State, Name,
-			      Username, Remove, Key, City, Nick, Url, Email);
+			      Username, Remove, Key, City, Nick, Url, Email,
+			      __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"last">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19188,7 +19688,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 						   _el),
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email);
+			      Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text,
@@ -19196,19 +19696,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 						   __IgnoreEls, _el),
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email);
+			      Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"email">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19216,26 +19716,28 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
 			      decode_register_email(__TopXMLNS, __IgnoreEls,
-						    _el));
+						    _el),
+			      __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
 			      decode_register_email(<<"jabber:iq:register">>,
-						    __IgnoreEls, _el));
+						    __IgnoreEls, _el),
+			      __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"address">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19244,7 +19746,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 						      _el),
 			      Instructions, Text, Last, First, Password,
 			      Registered, Date, Phone, State, Name, Username,
-			      Remove, Key, City, Nick, Url, Email);
+			      Remove, Key, City, Nick, Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc,
@@ -19252,19 +19754,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 						      __IgnoreEls, _el),
 			      Instructions, Text, Last, First, Password,
 			      Registered, Date, Phone, State, Name, Username,
-			      Remove, Key, City, Nick, Url, Email);
+			      Remove, Key, City, Nick, Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"city">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19273,7 +19775,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Name, Username, Remove, Key,
 			      decode_register_city(__TopXMLNS, __IgnoreEls,
 						   _el),
-			      Nick, Url, Email);
+			      Nick, Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
@@ -19281,19 +19783,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Name, Username, Remove, Key,
 			      decode_register_city(<<"jabber:iq:register">>,
 						   __IgnoreEls, _el),
-			      Nick, Url, Email);
+			      Nick, Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"state">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19302,7 +19804,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      decode_register_state(__TopXMLNS, __IgnoreEls,
 						    _el),
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email);
+			      Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
@@ -19310,19 +19812,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      decode_register_state(<<"jabber:iq:register">>,
 						    __IgnoreEls, _el),
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email);
+			      Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"zip">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els,
@@ -19330,7 +19832,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email);
+			      Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els,
 			      decode_register_zip(<<"jabber:iq:register">>,
@@ -19338,19 +19840,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email);
+			      Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"phone">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19359,7 +19861,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      decode_register_phone(__TopXMLNS, __IgnoreEls,
 						    _el),
 			      State, Name, Username, Remove, Key, City, Nick,
-			      Url, Email);
+			      Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
@@ -19367,19 +19869,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      decode_register_phone(<<"jabber:iq:register">>,
 						    __IgnoreEls, _el),
 			      State, Name, Username, Remove, Key, City, Nick,
-			      Url, Email);
+			      Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"url">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19387,7 +19889,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick,
 			      decode_register_url(__TopXMLNS, __IgnoreEls, _el),
-			      Email);
+			      Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
@@ -19395,19 +19897,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Name, Username, Remove, Key, City, Nick,
 			      decode_register_url(<<"jabber:iq:register">>,
 						  __IgnoreEls, _el),
-			      Email);
+			      Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"date">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19416,7 +19918,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      decode_register_date(__TopXMLNS, __IgnoreEls,
 						   _el),
 			      Phone, State, Name, Username, Remove, Key, City,
-			      Nick, Url, Email);
+			      Nick, Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
@@ -19424,19 +19926,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      decode_register_date(<<"jabber:iq:register">>,
 						   __IgnoreEls, _el),
 			      Phone, State, Name, Username, Remove, Key, City,
-			      Nick, Url, Email);
+			      Nick, Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"misc">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19445,7 +19947,8 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 						   _el),
 			      Address, Instructions, Text, Last, First,
 			      Password, Registered, Date, Phone, State, Name,
-			      Username, Remove, Key, City, Nick, Url, Email);
+			      Username, Remove, Key, City, Nick, Url, Email,
+			      __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata,
@@ -19453,19 +19956,20 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 						   __IgnoreEls, _el),
 			      Address, Instructions, Text, Last, First,
 			      Password, Registered, Date, Phone, State, Name,
-			      Username, Remove, Key, City, Nick, Url, Email);
+			      Username, Remove, Key, City, Nick, Url, Email,
+			      __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"text">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19474,7 +19978,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 						   _el),
 			      Last, First, Password, Registered, Date, Phone,
 			      State, Name, Username, Remove, Key, City, Nick,
-			      Url, Email);
+			      Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions,
@@ -19482,19 +19986,19 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 						   __IgnoreEls, _el),
 			      Last, First, Password, Registered, Date, Phone,
 			      State, Name, Username, Remove, Key, City, Nick,
-			      Url, Email);
+			      Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"key">>, _attrs, _} = _el | _els], Zip,
 		    Xdata, Misc, Address, Instructions, Text, Last, First,
 		    Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
@@ -19502,7 +20006,7 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove,
 			      decode_register_key(__TopXMLNS, __IgnoreEls, _el),
-			      City, Nick, Url, Email);
+			      City, Nick, Url, Email, __Els);
       <<"jabber:iq:register">> ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
@@ -19510,50 +20014,79 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			      Name, Username, Remove,
 			      decode_register_key(<<"jabber:iq:register">>,
 						  __IgnoreEls, _el),
-			      City, Nick, Url, Email);
+			      City, Nick, Url, Email, __Els);
       _ ->
 	  decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			      Xdata, Misc, Address, Instructions, Text, Last,
 			      First, Password, Registered, Date, Phone, State,
 			      Name, Username, Remove, Key, City, Nick, Url,
-			      Email)
+			      Email, __Els)
+    end;
+decode_register_els(__TopXMLNS, __IgnoreEls,
+		    [{xmlel, _, _, _} = _el | _els], Zip, Xdata, Misc,
+		    Address, Instructions, Text, Last, First, Password,
+		    Registered, Date, Phone, State, Name, Username, Remove,
+		    Key, City, Nick, Url, Email, __Els) ->
+    if __IgnoreEls ->
+	   decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+			       Xdata, Misc, Address, Instructions, Text, Last,
+			       First, Password, Registered, Date, Phone, State,
+			       Name, Username, Remove, Key, City, Nick, Url,
+			       Email, [_el | __Els]);
+       true ->
+	   case is_known_tag(_el) of
+	     true ->
+		 decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+				     Xdata, Misc, Address, Instructions, Text,
+				     Last, First, Password, Registered, Date,
+				     Phone, State, Name, Username, Remove, Key,
+				     City, Nick, Url, Email,
+				     [decode(_el) | __Els]);
+	     false ->
+		 decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
+				     Xdata, Misc, Address, Instructions, Text,
+				     Last, First, Password, Registered, Date,
+				     Phone, State, Name, Username, Remove, Key,
+				     City, Nick, Url, Email, __Els)
+	   end
     end;
 decode_register_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		    Zip, Xdata, Misc, Address, Instructions, Text, Last,
 		    First, Password, Registered, Date, Phone, State, Name,
-		    Username, Remove, Key, City, Nick, Url, Email) ->
+		    Username, Remove, Key, City, Nick, Url, Email, __Els) ->
     decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 			Xdata, Misc, Address, Instructions, Text, Last, First,
 			Password, Registered, Date, Phone, State, Name,
-			Username, Remove, Key, City, Nick, Url, Email).
+			Username, Remove, Key, City, Nick, Url, Email, __Els).
 
 encode_register({register, Registered, Remove,
 		 Instructions, Username, Nick, Password, Name, First,
 		 Last, Email, Address, City, State, Zip, Phone, Url,
-		 Date, Misc, Text, Key, Xdata},
+		 Date, Misc, Text, Key, Xdata, __Els},
 		_xmlns_attrs) ->
-    _els = lists:reverse('encode_register_$zip'(Zip,
-						'encode_register_$xdata'(Xdata,
-									 'encode_register_$misc'(Misc,
-												 'encode_register_$address'(Address,
-															    'encode_register_$instructions'(Instructions,
-																			    'encode_register_$text'(Text,
-																						    'encode_register_$last'(Last,
-																									    'encode_register_$first'(First,
-																												     'encode_register_$password'(Password,
-																																 'encode_register_$registered'(Registered,
-																																			       'encode_register_$date'(Date,
-																																						       'encode_register_$phone'(Phone,
-																																										'encode_register_$state'(State,
-																																													 'encode_register_$name'(Name,
-																																																 'encode_register_$username'(Username,
-																																																			     'encode_register_$remove'(Remove,
-																																																						       'encode_register_$key'(Key,
-																																																									      'encode_register_$city'(City,
-																																																												      'encode_register_$nick'(Nick,
-																																																															      'encode_register_$url'(Url,
-																																																																		     'encode_register_$email'(Email,
-																																																																					      [])))))))))))))))))))))),
+    _els = [encode(_el) || _el <- __Els] ++
+	     lists:reverse('encode_register_$zip'(Zip,
+						  'encode_register_$xdata'(Xdata,
+									   'encode_register_$misc'(Misc,
+												   'encode_register_$address'(Address,
+															      'encode_register_$instructions'(Instructions,
+																			      'encode_register_$text'(Text,
+																						      'encode_register_$last'(Last,
+																									      'encode_register_$first'(First,
+																												       'encode_register_$password'(Password,
+																																   'encode_register_$registered'(Registered,
+																																				 'encode_register_$date'(Date,
+																																							 'encode_register_$phone'(Phone,
+																																										  'encode_register_$state'(State,
+																																													   'encode_register_$name'(Name,
+																																																   'encode_register_$username'(Username,
+																																																			       'encode_register_$remove'(Remove,
+																																																							 'encode_register_$key'(Key,
+																																																										'encode_register_$city'(City,
+																																																													'encode_register_$nick'(Nick,
+																																																																'encode_register_$url'(Url,
+																																																																		       'encode_register_$email'(Email,
+																																																																						[])))))))))))))))))))))),
     _attrs = _xmlns_attrs,
     {xmlel, <<"query">>, _attrs, _els}.
 

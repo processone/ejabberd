@@ -294,6 +294,12 @@
                               type :: 'none' | 'pending' | 'subscribed' | 'unconfigured'}).
 -type pubsub_subscription() :: #pubsub_subscription{}.
 
+-record(bob_data, {cid :: binary(),
+                   'max-age' :: non_neg_integer(),
+                   type :: binary(),
+                   data = <<>> :: any()}).
+-type bob_data() :: #bob_data{}.
+
 -record(muc_item, {actor :: #muc_actor{},
                    continue :: binary(),
                    reason = <<>> :: 'undefined' | binary(),
@@ -404,7 +410,8 @@
                       required = false :: boolean(),
                       desc :: binary(),
                       values = [] :: [binary()],
-                      options = [] :: [#xdata_option{}]}).
+                      options = [] :: [#xdata_option{}],
+                      sub_els = [] :: [any()]}).
 -type xdata_field() :: #xdata_field{}.
 
 -record(version, {name :: binary(),
@@ -482,6 +489,15 @@
                     number :: binary()}).
 -type vcard_tel() :: #vcard_tel{}.
 
+-record(media_uri, {type :: binary(),
+                    uri = <<>> :: binary()}).
+-type media_uri() :: #media_uri{}.
+
+-record(media, {height :: non_neg_integer(),
+                width :: non_neg_integer(),
+                uri = [] :: [#media_uri{}]}).
+-type media() :: #media{}.
+
 -record(muc_destroy, {xmlns :: binary(),
                       jid :: any(),
                       reason = <<>> :: 'undefined' | binary(),
@@ -530,6 +546,11 @@
 -record(bookmark_storage, {conference = [] :: [#bookmark_conference{}],
                            url = [] :: [#bookmark_url{}]}).
 -type bookmark_storage() :: #bookmark_storage{}.
+
+-record(oob_x, {url :: binary(),
+                desc = <<>> :: binary(),
+                sid = <<>> :: binary()}).
+-type oob_x() :: #oob_x{}.
 
 -record(vcard_sound, {phonetic :: binary(),
                       binval :: any(),
@@ -581,6 +602,9 @@
                 items = [] :: [[#xdata_field{}]],
                 fields = [] :: [#xdata_field{}]}).
 -type xdata() :: #xdata{}.
+
+-record(xcaptcha, {xdata :: #xdata{}}).
+-type xcaptcha() :: #xcaptcha{}.
 
 -record(adhoc_command, {node :: binary(),
                         action = execute :: 'cancel' | 'complete' | 'execute' | 'next' | 'prev',
@@ -647,7 +671,8 @@
                    misc :: 'none' | binary(),
                    text :: 'none' | binary(),
                    key :: 'none' | binary(),
-                   xdata :: #xdata{}}).
+                   xdata :: #xdata{},
+                   sub_els = [] :: [any()]}).
 -type register() :: #register{}.
 
 -record(disco_info, {node :: binary(),
@@ -807,6 +832,8 @@
                         version() |
                         pubsub_affiliation() |
                         mam_fin() |
+                        bob_data() |
+                        media() |
                         sm_a() |
                         carbons_sent() |
                         mam_archived() |
@@ -880,11 +907,8 @@
                         sasl_failure() |
                         bookmark_storage() |
                         muc_decline() |
-                        sasl_auth() |
-                        p1_push() |
                         legacy_auth() |
                         search() |
-                        pubsub_publish() |
                         unblock() |
                         nick() |
                         p1_ack() |
@@ -892,6 +916,7 @@
                         mix_join() |
                         xmpp_session() |
                         xdata() |
+                        xcaptcha() |
                         iq() |
                         streamhost() |
                         bind() |
@@ -917,6 +942,7 @@
                         starttls() |
                         mam_prefs() |
                         sasl_mechanisms() |
+                        media_uri() |
                         muc_destroy() |
                         vcard_key() |
                         csi() |
@@ -949,4 +975,8 @@
                         expire() |
                         muc_unsubscribe() |
                         pubsub_unsubscribe() |
-                        chatstate().
+                        chatstate() |
+                        sasl_auth() |
+                        p1_push() |
+                        oob_x() |
+                        pubsub_publish().

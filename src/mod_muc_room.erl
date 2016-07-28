@@ -1824,8 +1824,9 @@ add_new_user(From, Nick, Packet, StateData) ->
 		case ejabberd_captcha:create_captcha(SID, RoomJID, To,
 						     Lang, Limiter, From)
                    of
-		  {ok, ID, CaptchaEls} ->
-		      MsgPkt = #message{id = ID, sub_els = CaptchaEls},
+		  {ok, ID, Body, CaptchaEls} ->
+		      MsgPkt = #message{id = ID, body = Body,
+					sub_els = CaptchaEls},
 		      Robots = (?DICT):store(From, {Nick, Packet},
 					     StateData#state.robots),
 		      ejabberd_router:route(RoomJID, From, MsgPkt),

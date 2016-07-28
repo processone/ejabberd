@@ -218,10 +218,10 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
 	    X = #xdata{type = form, instructions = [Instr],
 		       fields = [UField, PField]},
 	    case ejabberd_captcha:create_captcha_x(ID, To, Lang, Source, X) of
-		{ok, Captcha} ->
+		{ok, CaptchaEls} ->
 		    xmpp:make_iq_result(
 		      IQ, #register{instructions = TopInstr,
-				    xdata = Captcha});
+				    sub_els = CaptchaEls});
 		{error, limit} ->
 		    ErrText = <<"Too many CAPTCHA requests">>,
 		    xmpp:make_error(

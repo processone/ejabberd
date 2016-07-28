@@ -41,31 +41,17 @@
 -export([create_captcha/6, build_captcha_html/2,
 	 check_captcha/2, process_reply/1, process/2,
 	 is_feature_available/0, create_captcha_x/5,
-	 create_captcha_x/6, opt_type/1]).
+	 opt_type/1]).
 
--include("jlib.hrl").
-
+-include("xmpp.hrl").
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
 -include("ejabberd_http.hrl").
 
--define(VFIELD(Type, Var, Value),
-	#xmlel{name = <<"field">>,
-	       attrs = [{<<"type">>, Type}, {<<"var">>, Var}],
-	       children =
-		   [#xmlel{name = <<"value">>, attrs = [],
-			   children = [Value]}]}).
-
--define(CAPTCHA_TEXT(Lang),
-	translate:translate(Lang,
-			    <<"Enter the text you see">>)).
-
 -define(CAPTCHA_LIFETIME, 120000).
-
 -define(LIMIT_PERIOD, 60*1000*1000).
 
--type error() :: efbig | enodata | limit | malformed_image | timeout.
+-type image_error() :: efbig | enodata | limit | malformed_image | timeout.
 
 -record(state, {limits = treap:empty() :: treap:treap()}).
 
@@ -79,188 +65,82 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
 
+-spec captcha_text(undefined | binary()) -> binary().
+captcha_text(Lang) ->
+    translate:translate(Lang, <<"Enter the text you see">>).
+
+-spec mk_ocr_field(binary() | undefined, binary(), binary()) -> xdata_field().
+mk_ocr_field(Lang, CID, Type) ->
+    URI = #media_uri{type = Type, uri = <<"cid:", CID/binary>>},
+    #xdata_field{var = <<"ocr">>,
+		 label = captcha_text(Lang),
+		 required = true,
+		 sub_els = [#media{uri = [URI]}]}.
+
+mk_field(Type, Var, Value) ->
+    #xdata_field{type = Type, var = Var, values = [Value]}.
+
 -spec create_captcha(binary(), jid(), jid(),
-                     binary(), any(), any()) -> {error, error()} |
-                                                {ok, binary(), [xmlel()]}.
+                     binary(), any(), any()) -> {error, image_error()} |
+                                                {ok, binary(), [text()], [xmlel()]}.
 
 create_captcha(SID, From, To, Lang, Limiter, Args) ->
     case create_image(Limiter) of
       {ok, Type, Key, Image} ->
 	  Id = <<(randoms:get_string())/binary>>,
-	  B64Image = jlib:encode_base64((Image)),
 	  JID = jid:to_string(From),
-	  CID = <<"sha1+", (p1_sha:sha(Image))/binary,
-		  "@bob.xmpp.org">>,
-	  Data = #xmlel{name = <<"data">>,
-			attrs =
-			    [{<<"xmlns">>, ?NS_BOB}, {<<"cid">>, CID},
-			     {<<"max-age">>, <<"0">>}, {<<"type">>, Type}],
-			children = [{xmlcdata, B64Image}]},
-	  Captcha = #xmlel{name = <<"captcha">>,
-			   attrs = [{<<"xmlns">>, ?NS_CAPTCHA}],
-			   children =
-			       [#xmlel{name = <<"x">>,
-				       attrs =
-					   [{<<"xmlns">>, ?NS_XDATA},
-					    {<<"type">>, <<"form">>}],
-				       children =
-					   [?VFIELD(<<"hidden">>,
-						    <<"FORM_TYPE">>,
-						    {xmlcdata, ?NS_CAPTCHA}),
-					    ?VFIELD(<<"hidden">>, <<"from">>,
-						    {xmlcdata,
-						     jid:to_string(To)}),
-					    ?VFIELD(<<"hidden">>,
-						    <<"challenge">>,
-						    {xmlcdata, Id}),
-					    ?VFIELD(<<"hidden">>, <<"sid">>,
-						    {xmlcdata, SID}),
-					    #xmlel{name = <<"field">>,
-						   attrs =
-						       [{<<"var">>, <<"ocr">>},
-							{<<"label">>,
-							 ?CAPTCHA_TEXT(Lang)}],
-						   children =
-						       [#xmlel{name =
-								   <<"required">>,
-							       attrs = [],
-							       children = []},
-							#xmlel{name =
-								   <<"media">>,
-							       attrs =
-								   [{<<"xmlns">>,
-								     ?NS_MEDIA}],
-							       children =
-								   [#xmlel{name
-									       =
-									       <<"uri">>,
-									   attrs
-									       =
-									       [{<<"type">>,
-										 Type}],
-									   children
-									       =
-									       [{xmlcdata,
-										 <<"cid:",
-										   CID/binary>>}]}]}]}]}]},
+	  CID = <<"sha1+", (p1_sha:sha(Image))/binary, "@bob.xmpp.org">>,
+	  Data = #bob_data{cid = CID, 'max-age' = 0, type = Type,
+			   data = Image},
+	  Fs = [mk_field(hidden, <<"FORM_TYPE">>, ?NS_CAPTCHA),
+		mk_field(hidden, <<"from">>, jid:to_string(To)),
+		mk_field(hidden, <<"challenge">>, Id),
+		mk_field(hidden, <<"sid">>, SID),
+		mk_ocr_field(Lang, CID, Type)],
+	  X = #xdata{type = form, fields = Fs},
+	  Captcha = #xcaptcha{xdata = X},
 	  BodyString1 = translate:translate(Lang,
 					    <<"Your messages to ~s are being blocked. "
 					      "To unblock them, visit ~s">>),
 	  BodyString = iolist_to_binary(io_lib:format(BodyString1,
                                                       [JID, get_url(Id)])),
-	  Body = #xmlel{name = <<"body">>, attrs = [],
-			children = [{xmlcdata, BodyString}]},
-	  OOB = #xmlel{name = <<"x">>,
-		       attrs = [{<<"xmlns">>, ?NS_OOB}],
-		       children =
-			   [#xmlel{name = <<"url">>, attrs = [],
-				   children = [{xmlcdata, get_url(Id)}]}]},
+	  Body = xmpp:mk_text(BodyString, Lang),
+	  OOB = #oob_x{url = get_url(Id)},
 	  Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE,
 				   {remove_id, Id}),
 	  ets:insert(captcha,
 		     #captcha{id = Id, pid = self(), key = Key, tref = Tref,
 			      args = Args}),
-	  {ok, Id, [Body, OOB, Captcha, Data]};
+	  {ok, Id, Body, [OOB, Captcha, Data]};
       Err -> Err
     end.
 
--spec create_captcha_x(binary(), jid(), binary(),
-                       any(), [xmlel()]) -> {ok, [xmlel()]} |
-                                            {error, error()}.
+-spec create_captcha_x(binary(), jid(), binary(), any(), xdata()) ->
+			      {ok, xdata()} | {error, image_error()}.
 
-create_captcha_x(SID, To, Lang, Limiter, HeadEls) ->
-    create_captcha_x(SID, To, Lang, Limiter, HeadEls, []).
-
--spec create_captcha_x(binary(), jid(), binary(),
-                       any(), [xmlel()], [xmlel()]) -> {ok, [xmlel()]} |
-                                                       {error, error()}.
-
-create_captcha_x(SID, To, Lang, Limiter, HeadEls,
-		 TailEls) ->
+create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
     case create_image(Limiter) of
       {ok, Type, Key, Image} ->
 	  Id = <<(randoms:get_string())/binary>>,
-	  B64Image = jlib:encode_base64((Image)),
-	  CID = <<"sha1+", (p1_sha:sha(Image))/binary,
-		  "@bob.xmpp.org">>,
-	  Data = #xmlel{name = <<"data">>,
-			attrs =
-			    [{<<"xmlns">>, ?NS_BOB}, {<<"cid">>, CID},
-			     {<<"max-age">>, <<"0">>}, {<<"type">>, Type}],
-			children = [{xmlcdata, B64Image}]},
+	  CID = <<"sha1+", (p1_sha:sha(Image))/binary, "@bob.xmpp.org">>,
+	  Data = #bob_data{cid = CID, 'max-age' = 0, type = Type, data = Image},
 	  HelpTxt = translate:translate(Lang,
 					<<"If you don't see the CAPTCHA image here, "
 					  "visit the web page.">>),
 	  Imageurl = get_url(<<Id/binary, "/image">>),
-	  Captcha = #xmlel{name = <<"x">>,
-			   attrs =
-			       [{<<"xmlns">>, ?NS_XDATA},
-				{<<"type">>, <<"form">>}],
-			   children =
-			       [?VFIELD(<<"hidden">>, <<"FORM_TYPE">>,
-					{xmlcdata, ?NS_CAPTCHA})
-				| HeadEls]
-				 ++
-				 [#xmlel{name = <<"field">>,
-					 attrs = [{<<"type">>, <<"fixed">>}],
-					 children =
-					     [#xmlel{name = <<"value">>,
-						     attrs = [],
-						     children =
-							 [{xmlcdata,
-							   HelpTxt}]}]},
-				  #xmlel{name = <<"field">>,
-					 attrs =
-					     [{<<"type">>, <<"hidden">>},
-					      {<<"var">>, <<"captchahidden">>}],
-					 children =
-					     [#xmlel{name = <<"value">>,
-						     attrs = [],
-						     children =
-							 [{xmlcdata,
-							   <<"workaround-for-psi">>}]}]},
-				  #xmlel{name = <<"field">>,
-					 attrs =
-					     [{<<"type">>, <<"text-single">>},
-					      {<<"label">>,
-					       translate:translate(Lang,
-								   <<"CAPTCHA web page">>)},
-					      {<<"var">>, <<"url">>}],
-					 children =
-					     [#xmlel{name = <<"value">>,
-						     attrs = [],
-						     children =
-							 [{xmlcdata,
-							   Imageurl}]}]},
-				  ?VFIELD(<<"hidden">>, <<"from">>,
-					  {xmlcdata, jid:to_string(To)}),
-				  ?VFIELD(<<"hidden">>, <<"challenge">>,
-					  {xmlcdata, Id}),
-				  ?VFIELD(<<"hidden">>, <<"sid">>,
-					  {xmlcdata, SID}),
-				  #xmlel{name = <<"field">>,
-					 attrs =
-					     [{<<"var">>, <<"ocr">>},
-					      {<<"label">>,
-					       ?CAPTCHA_TEXT(Lang)}],
-					 children =
-					     [#xmlel{name = <<"required">>,
-						     attrs = [], children = []},
-					      #xmlel{name = <<"media">>,
-						     attrs =
-							 [{<<"xmlns">>,
-							   ?NS_MEDIA}],
-						     children =
-							 [#xmlel{name =
-								     <<"uri">>,
-								 attrs =
-								     [{<<"type">>,
-								       Type}],
-								 children =
-								     [{xmlcdata,
-								       <<"cid:",
-									 CID/binary>>}]}]}]}]
-				   ++ TailEls},
+	  NewFs = [mk_field(hidden, <<"FORM_TYPE">>, ?NS_CAPTCHA)|Fs] ++
+		[#xdata_field{type = fixed, values = [HelpTxt]},
+		 #xdata_field{type = hidden, var = <<"captchahidden">>,
+			      values = [<<"workaround-for-psi">>]},
+		 #xdata_field{type = 'text-single', var = <<"url">>,
+			      label = translate:translate(
+					Lang, <<"CAPTCHA web page">>),
+			      values = [Imageurl]},
+		 mk_field(hidden, <<"from">>, jid:to_string(To)),
+		 mk_field(hidden, <<"challenge">>, Id),
+		 mk_field(hidden, <<"sid">>, SID),
+		 mk_ocr_field(Lang, CID, Type)],
+	  Captcha = X#xdata{type = form, fields = NewFs},
 	  Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE,
 				   {remove_id, Id}),
 	  ets:insert(captcha,
@@ -281,7 +161,7 @@ build_captcha_html(Id, Lang) ->
 			 attrs =
 			     [{<<"src">>, get_url(<<Id/binary, "/image">>)}],
 			 children = []},
-	  TextEl = {xmlcdata, ?CAPTCHA_TEXT(Lang)},
+	  TextEl = {xmlcdata, captcha_text(Lang)},
 	  IdEl = #xmlel{name = <<"input">>,
 			attrs =
 			    [{<<"type">>, <<"hidden">>}, {<<"name">>, <<"id">>},
@@ -317,27 +197,24 @@ build_captcha_html(Id, Lang) ->
       _ -> captcha_not_found
     end.
 
--spec process_reply(xmlel()) -> ok | {error, bad_match | not_found | malformed}.
+-spec process_reply(xmpp_element()) -> ok | {error, bad_match | not_found | malformed}.
 
-process_reply(#xmlel{} = El) ->
-    case fxml:get_subtag(El, <<"x">>) of
-      false -> {error, malformed};
-      Xdata ->
-	  Fields = jlib:parse_xdata_submit(Xdata),
-	  case catch {proplists:get_value(<<"challenge">>,
-					  Fields),
-		      proplists:get_value(<<"ocr">>, Fields)}
-	      of
-	    {[Id | _], [OCR | _]} ->
-		case check_captcha(Id, OCR) of
-		  captcha_valid -> ok;
-		  captcha_non_valid -> {error, bad_match};
-		  captcha_not_found -> {error, not_found}
-		end;
-	    _ -> {error, malformed}
-	  end
+process_reply(#xdata{} = X) ->
+    case {xmpp_util:get_xdata_values(<<"challenge">>, X),
+	  xmpp_util:get_xdata_values(<<"ocr">>, X)} of
+	{[Id], [OCR]} ->
+	    case check_captcha(Id, OCR) of
+		captcha_valid -> ok;
+		captcha_non_valid -> {error, bad_match};
+		captcha_not_found -> {error, not_found}
+	    end;
+	_ ->
+	    {error, malformed}
     end;
-process_reply(_) -> {error, malformed}.
+process_reply(#xcaptcha{xdata = #xdata{} = X}) ->
+    process_reply(X);
+process_reply(_) ->
+    {error, malformed}.
 
 process(_Handlers,
 	#request{method = 'GET', lang = Lang,
