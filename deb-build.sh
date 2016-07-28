@@ -36,10 +36,10 @@ if [[ $? -ne 0 ]]; then
 fi
 
 rm -rf $INSTDIR
-sudo make install
+make install
 
 #build the package
 pushd $INSTDIR
 # Debian has issues with package version numbers NOT starting with a number. Below I prepend a version number to TAG
-$FPM -s dir -t deb -n ejabberd -v 0-${TAG} -C $INSTDIR --description "Erlang XMPP Server" -p testbot-VERSION_ARCH.deb --prefix /opt --deb-user $USER --deb-group $GROUP --license gpl2 --url http://www.layered.com/ --vendor process-one ejabberd
+$FPM -s dir -t deb -n ejabberd -v 0-${TAG} -C $INSTDIR --description "Erlang XMPP Server" -p erlang-VERSION_ARCH.deb --prefix / --deb-user $USER --deb-group $GROUP --license gpl2 --url http://www.ejabberd.im --vendor process-one .
 popd
