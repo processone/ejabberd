@@ -45,6 +45,7 @@ start(normal, _Args) ->
     write_pid_file(),
     jid:start(),
     start_apps(),
+    start_elixir_application(),
     ejabberd:check_app(ejabberd),
     randoms:start(),
     db_init(),
@@ -237,3 +238,9 @@ opt_type(modules) ->
 		      Mods)
     end;
 opt_type(_) -> [cluster_nodes, loglevel, modules, net_ticktime].
+
+start_elixir_application() ->
+  case application:ensure_started(elixir) of
+    ok -> ok;
+    {error, Msg} -> ?ERROR_MSG("Elixir application not started.", [])
+  end.
