@@ -3,7 +3,7 @@ defmodule ExUnit.CTFormatter do
 
   use GenEvent
 
-  import ExUnit.Formatter, only: [format_time: 2, format_filters: 2, format_test_failure: 5,
+  import ExUnit.Formatter, only: [format_time: 2, format_test_failure: 5,
                                   format_test_case_failure: 5]
 
   def init(opts) do

@@ -136,7 +136,7 @@ check_permissions(Request, Command) ->
             {ok, CommandPolicy, Scope} = ejabberd_commands:get_command_policy_and_scope(Call),
             check_permissions2(Request, Call, CommandPolicy, Scope);
         _ ->
-            unauthorized_response()
+            json_error(404, 40, <<"Endpoint not found.">>)
     end.
 
 check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _, ScopeList)
@@ -220,8 +220,12 @@ process([Call], #request{method = 'POST', data = Data, ip = {IP, _} = IPPort} = 
         log(Call, Args, IPPort),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                {Code, Result} = handle(Cmd, Auth, Args, Version, IP),
-                json_response(Code, jiffy:encode(Result));
+                case handle(Cmd, Auth, Args, Version, IP) of
+                    {Code, Result} ->
+                        json_response(Code, jiffy:encode(Result));
+                    {HTMLCode, JSONErrorCode, Message} ->
+                        json_error(HTMLCode, JSONErrorCode, Message)
+                    end;
             %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
                 ErrorResponse
@@ -264,10 +268,10 @@ get_api_version(#request{path = Path}) ->
     get_api_version(lists:reverse(Path));
 get_api_version([<<"v", String/binary>> | Tail]) ->
     case catch jlib:binary_to_integer(String) of
-	N when is_integer(N) ->
-	    N;
-	_ ->
-	    get_api_version(Tail)
+        N when is_integer(N) ->
+            N;
+        _ ->
+            get_api_version(Tail)
     end;
 get_api_version([_Head | Tail]) ->
     get_api_version(Tail);
@@ -277,6 +281,8 @@ get_api_version([]) ->
 %% ----------------
 %% command handlers
 %% ----------------
+
+%% TODO Check accept types of request before decided format of reply.
 
 % generic ejabberd command handler
 handle(Call, Auth, Args, Version, IP) when is_atom(Call), is_list(Args) ->
@@ -309,8 +315,10 @@ handle(Call, Auth, Args, Version, IP) when is_atom(Call), is_list(Args) ->
 		    {401, jlib:atom_to_binary(Why)};
 		  throw:{not_allowed, Msg} ->
 		    {401, iolist_to_binary(Msg)};
-                  throw:{error, account_unprivileged} ->
-                    {401, iolist_to_binary(<<"Unauthorized: Account Unpriviledged">>)};
+      throw:{error, account_unprivileged} ->
+        {403, 31, <<"Command need to be run with admin priviledge.">>};
+      throw:{error, access_rules_unauthorized} ->
+        {403, 32, <<"AccessRules: Account associated to token does not have the right to perform the operation.">>};
 		  throw:{invalid_parameter, Msg} ->
 		    {400, iolist_to_binary(Msg)};
 		  throw:{error, Why} when is_atom(Why) ->
@@ -490,9 +498,7 @@ format_result(404, {_Name, _}) ->
     "not_found".
 
 unauthorized_response() ->
-    unauthorized_response(<<"401 Unauthorized">>).
-unauthorized_response(Body) ->
-    json_response(401, jiffy:encode(Body)).
+    json_error(401, 10, <<"Oauth Token is invalid or expired.">>).
 
 badrequest_response() ->
     badrequest_response(<<"400 Bad Request">>).
@@ -501,6 +507,15 @@ badrequest_response(Body) ->
 
 json_response(Code, Body) when is_integer(Code) ->
     {Code, ?HEADER(?CT_JSON), Body}.
+
+%% HTTPCode, JSONCode = integers
+%% message is binary
+json_error(HTTPCode, JSONCode, Message) ->
+    {HTTPCode, ?HEADER(?CT_JSON),
+     jiffy:encode({[{<<"status">>, <<"error">>},
+                    {<<"code">>, JSONCode},
+                    {<<"message">>, Message}]})
+    }.
 
 log(Call, Args, {Addr, Port}) ->
     AddrS = jlib:ip_to_list({Addr, Port}),
