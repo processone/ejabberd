@@ -1862,6 +1862,7 @@ send_text(StateData, Text) ->
 send_element(StateData, El) when StateData#state.mgmt_state == pending ->
     ?DEBUG("Cannot send element while waiting for resumption: ~p", [El]);
 send_element(StateData, El) when StateData#state.xml_socket ->
+    ?DEBUG("Send XML on stream = ~p", [fxml:element_to_binary(El)]),
     (StateData#state.sockmod):send_xml(StateData#state.socket,
 				       {xmlstreamelement, El});
 send_element(StateData, El) ->
