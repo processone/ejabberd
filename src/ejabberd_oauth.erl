@@ -76,7 +76,7 @@ start() ->
     application:set_env(oauth2, expiry_time, Expire),
     application:start(oauth2),
     ChildSpec = {?MODULE, {?MODULE, start_link, []},
-		 temporary, 1000, worker, [?MODULE]},
+		 transient, 1000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec),
     ejabberd_commands:register_commands(get_commands_spec()),
     ok.
