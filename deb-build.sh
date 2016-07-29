@@ -39,7 +39,6 @@ rm -rf $INSTDIR
 make install
 
 #build the package
-pushd $INSTDIR
+cd $INSTDIR
 # Debian has issues with package version numbers NOT starting with a number. Below I prepend a version number to TAG
-$FPM -s dir -t deb -n ejabberd -v 0-${TAG} -C $INSTDIR --description "Erlang XMPP Server" -p ejabberd-VERSION_ARCH.deb --prefix / --deb-user $USER --deb-group $GROUP --license gpl2 --url http://www.ejabberd.im --vendor process-one .
-popd
+$FPM -s dir -t deb -n ejabberd -v 0-${TAG} --description "Erlang XMPP Server" -p ejabberd-VERSION_ARCH.deb --prefix / --deb-user $USER --deb-group $GROUP --license gpl2 --url http://www.ejabberd.im --vendor process-one .
