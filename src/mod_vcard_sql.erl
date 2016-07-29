@@ -13,8 +13,8 @@
 -behaviour(mod_vcard).
 
 %% API
--export([init/2, get_vcard/2, set_vcard/4, search/4, remove_user/2,
-	 import/1, import/2, export/1]).
+-export([init/2, stop/1, get_vcard/2, set_vcard/4, search/4, remove_user/2,
+	 search_fields/1, search_reported/1, import/1, import/2, export/1]).
 
 -include("xmpp.hrl").
 -include("mod_vcard.hrl").
@@ -25,6 +25,9 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
+    ok.
+
+stop(_Host) ->
     ok.
 
 get_vcard(LUser, LServer) ->
@@ -93,11 +96,39 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
 		 <<"middle">>, <<"nickname">>, <<"bday">>, <<"ctry">>,
 		 <<"locality">>, <<"email">>, <<"orgname">>,
 		 <<"orgunit">>], Rs} when is_list(Rs) ->
-		   Rs;
+		   [row_to_item(LServer, R) || R <- Rs];
 	       Error ->
 		   ?ERROR_MSG("~p", [Error]), []
 	   end
     end.
+
+search_fields(_LServer) ->
+    [{<<"User">>, <<"user">>},
+     {<<"Full Name">>, <<"fn">>},
+     {<<"Name">>, <<"first">>},
+     {<<"Middle Name">>, <<"middle">>},
+     {<<"Family Name">>, <<"last">>},
+     {<<"Nickname">>, <<"nick">>},
+     {<<"Birthday">>, <<"bday">>},
+     {<<"Country">>, <<"ctry">>},
+     {<<"City">>, <<"locality">>},
+     {<<"Email">>, <<"email">>},
+     {<<"Organization Name">>, <<"orgname">>},
+     {<<"Organization Unit">>, <<"orgunit">>}].
+
+search_reported(_LServer) ->
+    [{<<"Jabber ID">>, <<"jid">>},
+     {<<"Full Name">>, <<"fn">>},
+     {<<"Name">>, <<"first">>},
+     {<<"Middle Name">>, <<"middle">>},
+     {<<"Family Name">>, <<"last">>},
+     {<<"Nickname">>, <<"nick">>},
+     {<<"Birthday">>, <<"bday">>},
+     {<<"Country">>, <<"ctry">>},
+     {<<"City">>, <<"locality">>},
+     {<<"Email">>, <<"email">>},
+     {<<"Organization Name">>, <<"orgname">>},
+     {<<"Organization Unit">>, <<"orgunit">>}].
 
 remove_user(LUser, LServer) ->
     ejabberd_sql:sql_transaction(
@@ -240,3 +271,18 @@ make_val(Match, Field, Val) ->
       <<"">> -> Condition;
       _ -> [Match, <<" and ">>, Condition]
     end.
+
+row_to_item(LServer, [Username, FN, Family, Given, Middle, Nickname, BDay,
+		      CTRY, Locality, EMail, OrgName, OrgUnit]) ->
+    [{<<"jid">>, <<Username/binary, $@, LServer/binary>>},
+     {<<"fn">>, FN},
+     {<<"last">>, Family},
+     {<<"first">>, Given},
+     {<<"middle">>, Middle},
+     {<<"nick">>, Nickname},
+     {<<"bday">>, BDay},
+     {<<"ctry">>, CTRY},
+     {<<"locality">>, Locality},
+     {<<"email">>, EMail},
+     {<<"orgname">>, OrgName},
+     {<<"orgunit">>, OrgUnit}].

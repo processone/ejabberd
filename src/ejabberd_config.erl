@@ -1010,6 +1010,7 @@ replace_module(mod_private_odbc) -> {mod_private, sql};
 replace_module(mod_roster_odbc) -> {mod_roster, sql};
 replace_module(mod_shared_roster_odbc) -> {mod_shared_roster, sql};
 replace_module(mod_vcard_odbc) -> {mod_vcard, sql};
+replace_module(mod_vcard_ldap) -> {mod_vcard, ldap};
 replace_module(mod_vcard_xupdate_odbc) -> {mod_vcard_xupdate, sql};
 replace_module(mod_pubsub_odbc) -> {mod_pubsub, sql};
 replace_module(Module) ->

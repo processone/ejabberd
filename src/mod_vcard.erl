@@ -49,12 +49,15 @@
 -define(PROCNAME, ejabberd_mod_vcard).
 
 -callback init(binary(), gen_mod:opts()) -> any().
+-callback stop(binary()) -> any().
 -callback import(binary(), #vcard{} | #vcard_search{}) -> ok | pass.
 -callback get_vcard(binary(), binary()) -> [xmlel()] | error.
 -callback set_vcard(binary(), binary(),
 		    xmlel(), #vcard_search{}) -> {atomic, any()}.
+-callback search_fields(binary()) -> [{binary(), binary()}].
+-callback search_reported(binary()) -> [{binary(), binary()}].
 -callback search(binary(), [{binary(), [binary()]}], boolean(),
-		 infinity | pos_integer()) -> [binary()].
+		 infinity | pos_integer()) -> [{binary(), binary()}].
 -callback remove_user(binary(), binary()) -> {atomic, any()}.
 
 start(Host, Opts) ->
@@ -134,6 +137,8 @@ stop(Host) ->
 				     ?NS_VCARD),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
 			  get_sm_features, 50),
+    Mod = gen_mod:db_type(Host, ?MODULE),
+    Mod:stop(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Proc ! stop,
     {wait, Proc}.
@@ -214,7 +219,8 @@ process_vcard(#iq{type = get, lang = Lang} = IQ) ->
 
 -spec process_search(iq()) -> iq().
 process_search(#iq{type = get, to = To, lang = Lang} = IQ) ->
-    xmpp:make_iq_result(IQ, mk_search_form(To, Lang));
+    ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
+    xmpp:make_iq_result(IQ, mk_search_form(To, ServerHost, Lang));
 process_search(#iq{type = set, to = To, lang = Lang,
 		   sub_els = [#search{xdata = #xdata{type = submit,
 						     fields = Fs}}]} = IQ) ->
@@ -366,22 +372,13 @@ mk_tfield(Label, Var, Lang) ->
 mk_field(Var, Val) ->
     #xdata_field{var = Var, values = [Val]}.
 
--spec mk_search_form(jid(), undefined | binary()) -> search().
-mk_search_form(JID, Lang) ->
+-spec mk_search_form(jid(), binary(), undefined | binary()) -> search().
+mk_search_form(JID, ServerHost, Lang) ->
     Title = <<(translate:translate(Lang, <<"Search users in ">>))/binary,
 	      (jid:to_string(JID))/binary>>,
-    Fs = [mk_tfield(<<"User">>, <<"user">>, Lang),
-	  mk_tfield(<<"Full Name">>, <<"fn">>, Lang),
-	  mk_tfield(<<"Name">>, <<"first">>, Lang),
-	  mk_tfield(<<"Middle Name">>, <<"middle">>, Lang),
-	  mk_tfield(<<"Family Name">>, <<"last">>, Lang),
-	  mk_tfield(<<"Nickname">>, <<"nick">>, Lang),
-	  mk_tfield(<<"Birthday">>, <<"bday">>, Lang),
-	  mk_tfield(<<"Country">>, <<"ctry">>, Lang),
-	  mk_tfield(<<"City">>, <<"locality">>, Lang),
-	  mk_tfield(<<"Email">>, <<"email">>, Lang),
-	  mk_tfield(<<"Organization Name">>, <<"orgname">>, Lang),
-	  mk_tfield(<<"Organization Unit">>, <<"orgunit">>, Lang)],
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    SearchFields = Mod:search_fields(ServerHost),
+    Fs = [mk_tfield(Label, Var, Lang) || {Label, Var} <- SearchFields],
     X = #xdata{type = form,
 	       title = Title,
 	       instructions =
@@ -398,55 +395,20 @@ mk_search_form(JID, Lang) ->
 
 -spec search_result(undefined | binary(), jid(), binary(), [xdata_field()]) -> xdata().
 search_result(Lang, JID, ServerHost, XFields) ->
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    Reported = [mk_tfield(Label, Var, Lang) ||
+		   {Label, Var} <- Mod:search_reported(ServerHost)],
     #xdata{type = result,
 	   title = <<(translate:translate(Lang,
 					  <<"Search Results for ">>))/binary,
 		     (jid:to_string(JID))/binary>>,
-	   reported = [mk_tfield(<<"Jabber ID">>, <<"jid">>, Lang),
-		       mk_tfield(<<"Full Name">>, <<"fn">>, Lang),
-		       mk_tfield(<<"Name">>, <<"first">>, Lang),
-		       mk_tfield(<<"Middle Name">>, <<"middle">>, Lang),
-		       mk_tfield(<<"Family Name">>, <<"last">>, Lang),
-		       mk_tfield(<<"Nickname">>, <<"nick">>, Lang),
-		       mk_tfield(<<"Birthday">>, <<"bday">>, Lang),
-		       mk_tfield(<<"Country">>, <<"ctry">>, Lang),
-		       mk_tfield(<<"City">>, <<"locality">>, Lang),
-		       mk_tfield(<<"Email">>, <<"email">>, Lang),
-		       mk_tfield(<<"Organization Name">>, <<"orgname">>, Lang),
-		       mk_tfield(<<"Organization Unit">>, <<"orgunit">>, Lang)],
-	   items = lists:map(fun (R) -> record_to_item(ServerHost, R) end,
+	   reported = Reported,
+	   items = lists:map(fun (Item) -> item_to_field(Item) end,
 			     search(ServerHost, XFields))}.
 
--spec record_to_item(binary(), [binary()] | #vcard_search{}) -> [xdata_field()].
-record_to_item(LServer,
-	       [Username, FN, Family, Given, Middle, Nickname, BDay,
-		CTRY, Locality, EMail, OrgName, OrgUnit]) ->
-    [mk_field(<<"jid">>, <<Username/binary, "@", LServer/binary>>),
-     mk_field(<<"fn">>, FN),
-     mk_field(<<"last">>, Family),
-     mk_field(<<"first">>, Given),
-     mk_field(<<"middle">>, Middle),
-     mk_field(<<"nick">>, Nickname),
-     mk_field(<<"bday">>, BDay),
-     mk_field(<<"ctry">>, CTRY),
-     mk_field(<<"locality">>, Locality),
-     mk_field(<<"email">>, EMail),
-     mk_field(<<"orgname">>, OrgName),
-     mk_field(<<"orgunit">>, OrgUnit)];
-record_to_item(_LServer, #vcard_search{} = R) ->
-    {User, Server} = R#vcard_search.user,
-    [mk_field(<<"jid">>, <<User/binary, "@", Server/binary>>),
-     mk_field(<<"fn">>, (R#vcard_search.fn)),
-     mk_field(<<"last">>, (R#vcard_search.family)),
-     mk_field(<<"first">>, (R#vcard_search.given)),
-     mk_field(<<"middle">>, (R#vcard_search.middle)),
-     mk_field(<<"nick">>, (R#vcard_search.nickname)),
-     mk_field(<<"bday">>, (R#vcard_search.bday)),
-     mk_field(<<"ctry">>, (R#vcard_search.ctry)),
-     mk_field(<<"locality">>, (R#vcard_search.locality)),
-     mk_field(<<"email">>, (R#vcard_search.email)),
-     mk_field(<<"orgname">>, (R#vcard_search.orgname)),
-     mk_field(<<"orgunit">>, (R#vcard_search.orgunit))].
+-spec item_to_field([{binary(), binary()}]) -> [xdata_field()].
+item_to_field(Items) ->
+    [mk_field(Var, Value) || {Var, Value} <- Items].
 
 -spec search(binary(), [xdata_field()]) -> [binary()].
 search(LServer, XFields) ->

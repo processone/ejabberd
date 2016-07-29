@@ -48,7 +48,7 @@
          opts = [] :: opts() | '_' | '$2'}).
 
 -type opts() :: [{atom(), any()}].
--type db_type() :: sql | mnesia | riak.
+-type db_type() :: sql | mnesia | riak | ldap.
 
 -callback start(binary(), opts()) -> any().
 -callback stop(binary()) -> any().
@@ -147,7 +147,7 @@ start_module(Host, Module) ->
 -spec start_module(binary(), atom(), opts()) -> any().
 
 start_module(Host, Module, Opts0) ->
-    Opts = validate_opts(Module, Opts0),
+    Opts = validate_opts(Host, Module, Opts0),
     ets:insert(ejabberd_modules,
 	       #ejabberd_module{module_host = {Module, Host},
 				opts = Opts}),
@@ -308,10 +308,10 @@ get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, fun iolist_to_binary/1, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
-validate_opts(Module, Opts) ->
+validate_opts(Host, Module, Opts) ->
     lists:filtermap(
       fun({Opt, Val}) ->
-	      case catch Module:mod_opt_type(Opt) of
+	      case catch validate_opt(Host, Module, Opt, Opts) of
 		  VFun when is_function(VFun) ->
 		      try VFun(Val) of
 			  _ ->
@@ -345,6 +345,22 @@ validate_opts(Module, Opts) ->
 			 [Junk, Module]),
 	      false
       end, Opts).
+
+validate_opt(Host, Module, Opt, Opts) ->
+    case Module:mod_opt_type(Opt) of
+	VFun1 when is_function(VFun1) ->
+	    VFun1;
+	L1 when is_list(L1) ->
+	    DBModule = db_mod(Host, Opts, Module),
+	    try DBModule:mod_opt_type(Opt) of
+		VFun2 when is_function(VFun2) ->
+		    VFun2;
+		L2 when is_list(L2) ->
+		    lists:usort(L1 ++ L2)
+	    catch _:undef ->
+		    L1
+	    end
+    end.
 
 -spec db_type(binary() | global, module()) -> db_type();
 	     (opts(), module()) -> db_type().

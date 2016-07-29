@@ -12,7 +12,7 @@
 
 %% API
 -export([init/2, get_vcard/2, set_vcard/4, search/4, remove_user/2,
-	 import/2]).
+	 search_fields/1, search_reported/1, import/2, stop/1]).
 
 -include("xmpp.hrl").
 -include("mod_vcard.hrl").
@@ -21,6 +21,9 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
+    ok.
+
+stop(_Host) ->
     ok.
 
 get_vcard(LUser, LServer) ->
@@ -87,6 +90,12 @@ set_vcard(LUser, LServer, VCARD,
 				{<<"lorgunit">>, LOrgUnit}]}])}.
 
 search(_LServer, _Data, _AllowReturnAll, _MaxMatch) ->
+    [].
+
+search_fields(_LServer) ->
+    [].
+
+search_reported(_LServer) ->
     [].
 
 remove_user(LUser, LServer) ->
