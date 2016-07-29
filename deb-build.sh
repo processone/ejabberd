@@ -6,7 +6,7 @@
 USER=ejabberd
 GROUP=ejabberd
 
-INSTDIR=/
+INSTDIR=$(pwd)/installdir
 FPM=$(gem which fpm | sed 's/\/lib\/fpm.rb/\/bin\/fpm/g')
 TAG=$(git describe --always --tag)
 
@@ -36,6 +36,7 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
+export DESTDIR=$INSTDIR
 DESTDIR=$INSTDIR make install DESTDIR=$INSTDIR 
 
 #build the package
