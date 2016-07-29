@@ -29,14 +29,14 @@ rm -rf $INSTDIR
 ./autogen.sh
 ./configure --prefix=$INSTDIR --sysconfdir=/etc
 make clean
-PREFIX=$INSTDIR make --prefix=$INSTDIR --sysconfdir=/etc
+PREFIX=$INSTDIR make
 
 if [[ $? -ne 0 ]]; then
     echo "Please check dependencies, compelation went wrong"
     exit 1
 fi
 
-PREFIX=$INSTDIR make install --prefix=$INSTDIR --sysconfdir=/etc
+PREFIX=$INSTDIR make install
 
 #build the package
 cd $INSTDIR
