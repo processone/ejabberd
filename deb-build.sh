@@ -6,7 +6,7 @@
 USER=ejabberd
 GROUP=ejabberd
 
-INSTDIR=$(pwd)/installdir
+INSTDIR=/
 FPM=$(gem which fpm | sed 's/\/lib\/fpm.rb/\/bin\/fpm/g')
 TAG=$(git describe --always --tag)
 
