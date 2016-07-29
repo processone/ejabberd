@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# define default configuration
+# define default configuration PRINT
 POLL=true
 SMP=auto
 ERL_MAX_PORTS=32000
