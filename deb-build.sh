@@ -27,16 +27,16 @@ fi
 #clean compile and make the package
 rm -rf $INSTDIR
 ./autogen.sh
-./configure --prefix=$INSTDIR --sysconfdir=/etc
+./configure --prefix=/
 make clean
-PREFIX=$INSTDIR make
+DESTDIR=$INSTDIR make DESTDIR=$INSTDIR 
 
 if [[ $? -ne 0 ]]; then
     echo "Please check dependencies, compelation went wrong"
     exit 1
 fi
 
-PREFIX=$INSTDIR make install
+DESTDIR=$INSTDIR make install DESTDIR=$INSTDIR 
 
 #build the package
 cd $INSTDIR
