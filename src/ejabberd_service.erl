@@ -118,6 +118,7 @@ get_delegated_ns(FsmRef) ->
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
     ?INFO_MSG("(~w) External service connected", [Socket]),
+    ?INFO_MSG("pid ~p~n", [self()]),
     Access = case lists:keysearch(access, 1, Opts) of
                  {value, {_, A}} -> A;
                  _ -> all
@@ -359,9 +360,9 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
-handle_sync_event({get_delegated_ns}, _From, stream_established, StateData) ->
+handle_sync_event({get_delegated_ns}, _From, StateName, StateData) ->
     Reply =  {StateData#state.host, StateData#state.delegations},
-    {reply, Reply, stream_established, StateData};
+    {reply, Reply, StateName, StateData};
 
 handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok, {reply, Reply, StateName, StateData}.

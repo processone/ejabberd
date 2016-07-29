@@ -42,9 +42,9 @@ mod_opt_type(_Opt) -> [].
 %%%  server advertises entity of allowed permission
 %%%--------------------------------------------------------------------------------------
 
--spec permissions(binary(), list()) -> xmlel().
+-spec permissions(binary(), list(), binary(), binary()) -> xmlel().
 
-permissions(Id, PrivAccess) ->
+permissions(Id, PrivAccess, From, To) ->
     Perms = lists:map(fun({Access, Type}) -> 
                           #xmlel{name = <<"perm">>, 
                                  attrs = [{<<"access">>, 
@@ -54,15 +54,16 @@ permissions(Id, PrivAccess) ->
     Stanza = #xmlel{name = <<"privilege">>, 
                     attrs = [{<<"xmlns">> ,?NS_PRIVILEGE}],
                     children = Perms},
-    #xmlel{name = <<"message">>, attrs = [{<<"id">>, Id}], children = [Stanza]}.
+    #xmlel{name = <<"message">>, 
+           attrs = [{<<"id">>, Id}, {<<"from">>, From}, {<<"to">>, To}],
+           children = [Stanza]}.
 
 advertise_perm(#state{privilege_access = []}) -> ok;
 advertise_perm(StateData) ->
-    Stanza = permissions(StateData#state.streamid, StateData#state.privilege_access),
-    #xmlel{attrs = Attrs} = Stanza,
-    AttrsNew = jlib:replace_from_to_attrs(?MYNAME, StateData#state.host, Attrs),
-    ejabberd_service:send_element(StateData, Stanza#xmlel{attrs = AttrsNew}),
-    ?INFO_MSG("Advertise service ~s of allowed permissions~n",[StateData#state.host]).
+    Stanza = permissions(StateData#state.streamid, StateData#state.privilege_access,
+                         ?MYNAME, StateData#state.host),
+    ejabberd_service:send_element(StateData, Stanza),
+    ?INFO_MSG("Advertise service ~s of allowed permissions~n", [StateData#state.host]).
 
 %%%--------------------------------------------------------------------------------------
 %%%  Process presences

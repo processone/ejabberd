@@ -59,7 +59,7 @@ attribute_tag(Attrs) ->
                          attrs = [{<<"name">> , Attr}]}
               end, Attrs).
 
-delegations(Id, Delegations) ->
+delegations(Id, Delegations, From, To) ->
     Elem0 = lists:map(fun({Ns, FilterAttr}) ->
                           #xmlel{name = <<"delegated">>, 
                                  attrs = [{<<"namespace">>, Ns}],
@@ -68,7 +68,9 @@ delegations(Id, Delegations) ->
     Elem1 = #xmlel{name = <<"delegation">>, 
                    attrs = [{<<"xmlns">>, ?NS_DELEGATION}],
                    children = Elem0},
-    #xmlel{name = <<"message">>, attrs = [{<<"id">>, Id}], children = [Elem1]}.
+    #xmlel{name = <<"message">>, 
+           attrs = [{<<"id">>, Id}, {<<"from">>, From}, {<<"to">>, To}],
+           children = [Elem1]}.
 
 delegation_ns_debug(Host, Delegations) ->
     lists:foreach(fun({Ns, []}) ->
@@ -91,14 +93,12 @@ add_iq_handlers(Ns) ->
 
 advertise_delegations(#state{delegations = []}) -> ok;
 advertise_delegations(StateData) ->
-    Delegated = delegations(StateData#state.streamid, StateData#state.delegations),
+    Delegated = delegations(StateData#state.streamid, StateData#state.delegations,
+                            ?MYNAME, StateData#state.host),
+    ejabberd_service:send_element(StateData, Delegated),
     % server asks available features for delegated namespaces 
     disco_info(StateData),
-    Attrs = 
-      jlib:replace_from_to_attrs(?MYNAME, StateData#state.host, Delegated#xmlel.attrs),
-
-    ejabberd_service:send_element(StateData, Delegated#xmlel{attrs = Attrs}),
-
+    
     lists:foreach(fun({Ns, _}) ->
                       add_iq_handlers(Ns)
                   end, StateData#state.delegations),
@@ -277,29 +277,27 @@ forward_iq(Server, Service, Packet) ->
     To = jid:make(<<"">>, Service, <<"">>),
     ejabberd_router:route(From, To, Elem2).
 
-process_packet(From, To, IQ) ->
-    Packet = jlib:iq_to_xml(IQ),
-    #xmlel{name = <<"iq">>, attrs = Attrs, children = Children} = Packet,
-    Type = fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs),
+process_packet(From, To, #iq{type = Type, xmlns = XMLNS} = IQ) ->
     %% check if stanza directed to server
     %% or directed to the bare JID of the sender
-    case ((From#jid.user == To#jid.user) and
-       	  (From#jid.lserver == To#jid.lserver) or
-         (To#jid.luser == <<"">>)) and
-         ((Type == <<"get">>) or (Type == <<"set">>)) and
+    case %((From#jid.user == To#jid.user) and
+       	 % (From#jid.lserver == To#jid.lserver) or
+        % (To#jid.luser == <<"">>)) and
+         ((Type == get) or (Type == set)) and
          check_tab(delegated_namespaces) of
         true ->
-            AttrsNew = [{<<"xmlns">>, <<"jabber:client">>} | 
-                        lists:keydelete(<<"xmlns">>, 1, Attrs)],
+            Packet = jlib:iq_to_xml(IQ),
+            #xmlel{name = <<"iq">>, attrs = Attrs, children = Children} = Packet,
+
+            AttrsNew = [{<<"xmlns">>, <<"jabber:client">>} | Attrs],
+
             AttrsNew2 = jlib:replace_from_to_attrs(jid:to_string(From),
                                                    jid:to_string(To), AttrsNew),
-            Ns = jlib:get_iq_namespace(Packet),
 
-            case ets:lookup(delegated_namespaces, Ns) of
-              [{Ns, Pid, _, _}] ->
+            case ets:lookup(delegated_namespaces, XMLNS) of
+              [{XMLNS, Pid, _, _}] ->
                 {ServiceHost, Delegations} = ejabberd_service:get_delegated_ns(Pid),
-                {} = lists:keysearch(Ns, 1, Delegations),
-                case check_delegation(Delegations, Ns, Children) of
+                case check_delegation(Delegations, XMLNS, Children) of
                     true ->
                         forward_iq(From#jid.server, ServiceHost,
                                    Packet#xmlel{attrs = AttrsNew2});
@@ -480,7 +478,7 @@ end.
 
 get_info(Acc) ->
     Fun = fun(Feat) ->
-            ets:foldl(fun({Ns, _, _, _, _}, A) ->  
+            ets:foldl(fun({Ns, _, _, _}, A) ->  
                         (A or str:prefix(Ns, Feat))
                       end, false, delegated_namespaces)
           end, 
@@ -536,3 +534,7 @@ disco_sm_identity(Acc, _From, _To, _Node, _Lang) ->
 
 disco_info(Acc, _Host, _Mod, _Node, _Lang) ->
     get_info(Acc).
+
+%%%--------------------------------------------------------------------------------------
+%%%  7. Client mode
+%%%--------------------------------------------------------------------------------------
