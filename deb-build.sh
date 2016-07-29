@@ -25,6 +25,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 #clean compile and make the package
+rm -rf $INSTDIR
 ./autogen.sh
 ./configure --prefix=$INSTDIR
 make clean
