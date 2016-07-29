@@ -28,15 +28,14 @@ fi
 ./autogen.sh
 ./configure --prefix=$INSTDIR
 make clean
-make 
+PREFIX=$INSTDIR make 
 
 if [[ $? -ne 0 ]]; then
     echo "Please check dependencies, compelation went wrong"
     exit 1
 fi
 
-rm -rf $INSTDIR
-make install
+PREFIX=$INSTDIR make install
 
 #build the package
 cd $INSTDIR
