@@ -35,7 +35,7 @@
 -export([start/2, init/3, stop/1, get_sm_features/5,
 	 process_local_iq/1, process_sm_iq/1, string2lower/1,
 	 remove_user/2, export/1, import/1, import/3, depends/2,
-	 process_search/1, process_vcard/1,
+	 process_search/1, process_vcard/1, get_vcard/2,
 	 disco_items/5, disco_features/5, disco_identity/5,
 	 mod_opt_type/1, set_vcard/3, make_vcard_search/4]).
 
@@ -336,7 +336,7 @@ make_vcard_search(User, LUser, LServer, VCARD) ->
 		  orgunit = OrgUnit,
 		  lorgunit = LOrgUnit}.
 
--spec set_vcard(binary(), binary(), xmlel()) -> any().
+-spec set_vcard(binary(), binary(), xmlel()) -> {error, badarg} | ok.
 set_vcard(User, LServer, VCARD) ->
     case jid:nodeprep(User) of
 	error ->

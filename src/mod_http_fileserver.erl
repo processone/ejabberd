@@ -51,9 +51,6 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
-
--include("jlib.hrl").
-
 -include_lib("kernel/include/file.hrl").
 
 -record(state,

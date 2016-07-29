@@ -38,14 +38,12 @@
 
 -record(state, {max_connections = infinity :: non_neg_integer() | infinity}).
 
--include("jlib.hrl").
-
 -record(bytestream,
 	{sha1 = <<"">> :: binary() | '$1',
          target :: pid() | '_',
          initiator :: pid() | '_',
          active = false :: boolean() | '_',
-         jid_i = {<<"">>, <<"">>, <<"">>} :: ljid() | '_'}).
+         jid_i = {<<"">>, <<"">>, <<"">>} :: jid:ljid() | '_'}).
 
 -define(PROCNAME, ejabberd_mod_proxy65_sm).
 

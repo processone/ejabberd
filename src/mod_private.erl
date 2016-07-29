@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_sm_iq/1, import/3,
-	 remove_user/2, get_data/2, export/1, import/1,
+	 remove_user/2, get_data/2, get_data/3, export/1, import/1,
 	 mod_opt_type/1, set_data/3, depends/2]).
 
 -include("ejabberd.hrl").

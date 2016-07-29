@@ -54,7 +54,7 @@
 -include("ejabberd_commands.hrl").
 -include("mod_roster.hrl").
 -include("ejabberd_sm.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 %%%
 %%% gen_mod
@@ -879,20 +879,22 @@ set_presence(User, Host, Resource, Type, Show, Status, Priority)
         when is_integer(Priority) ->
     BPriority = integer_to_binary(Priority),
     set_presence(User, Host, Resource, Type, Show, Status, BPriority);
-set_presence(User, Host, Resource, Type, Show, Status, Priority) ->
+set_presence(User, Host, Resource, Type, Show, Status, Priority0) ->
+    Priority = if is_integer(Priority0) -> Priority0;
+		  true -> binary_to_integer(Priority0)
+	       end,
     case ejabberd_sm:get_session_pid(User, Host, Resource) of
 	none ->
 	    error;
 	Pid ->
-	    USR = jid:to_string(jid:make(User, Host, Resource)),
-	    US = jid:to_string(jid:make(User, Host, <<>>)),
-	    Message = {route_xmlstreamelement,
-		    {xmlel, <<"presence">>,
-			[{<<"from">>, USR}, {<<"to">>, US}, {<<"type">>, Type}],
-			[{xmlel, <<"show">>, [], [{xmlcdata, Show}]},
-			{xmlel, <<"status">>, [], [{xmlcdata, Status}]},
-			{xmlel, <<"priority">>, [], [{xmlcdata, Priority}]}]}},
-	    Pid ! Message,
+	    From = jid:make(User, Host, Resource),
+	    To = jid:make(User, Host),
+	    Presence = #presence{from = From, to = To,
+				 type = jlib:binary_to_atom(Type),
+				 show = jlib:binary_to_atom(Show),
+				 status = xmpp:mk_text(Status),
+				 priority = Priority},
+	    Pid ! {route, From, To, Presence},
 	    ok
     end.
 
@@ -930,20 +932,12 @@ user_sessions_info(User, Host) ->
 %%%
 
 set_nickname(User, Host, Nickname) ->
-    R = mod_vcard:process_sm_iq(
-	  {jid, User, Host, <<>>, User, Host, <<>>},
-	  {jid, User, Host, <<>>, User, Host, <<>>},
-	  {iq, <<>>, set, <<>>, <<"en">>,
-	   {xmlel, <<"vCard">>, [
-	     {<<"xmlns">>, <<"vcard-temp">>}], [
-		{xmlel, <<"NICKNAME">>, [], [{xmlcdata, Nickname}]}
-            ]
-	  }}),
-    case R of
-	{iq, <<>>, result, <<>>, _L, []} ->
-	    ok;
-	_ ->
-	    error
+    VCard = xmpp:encode(#vcard_temp{nickname = Nickname}),
+    case mod_vcard:set_vcard(User, jid:nameprep(Host), VCard) of
+	{error, badarg} ->
+	    error;
+	ok ->
+	    ok
     end.
 
 get_vcard(User, Host, Name) ->
@@ -967,26 +961,17 @@ set_vcard(User, Host, Name, Subname, SomeContent) ->
 %%
 %% Internal vcard
 
-get_module_resource(Server) ->
-    case gen_mod:get_module_opt(Server, ?MODULE, module_resource, fun(A) -> A end, none) of
-	none -> list_to_binary(atom_to_list(?MODULE));
-	R when is_binary(R) -> R
-    end.
-
 get_vcard_content(User, Server, Data) ->
-    [{_, Module, Function, _Opts}] = ets:lookup(sm_iqtable, {?NS_VCARD, Server}),
-    JID = jid:make(User, Server, get_module_resource(Server)),
-    IQ = #iq{type = get, xmlns = ?NS_VCARD},
-    IQr = Module:Function(JID, JID, IQ),
-    [A1] = IQr#iq.sub_el,
-    case A1#xmlel.children of
-	[_|_] ->
-	    case get_vcard(Data, A1) of
+    case mod_vcard:get_vcard(jid:nodeprep(User), jid:nameprep(Server)) of
+	[_|_] = Els ->
+	    case get_vcard(Data, Els) of
 		[false] -> throw(error_no_value_found_in_vcard);
 		ElemList -> ?DEBUG("ELS ~p", [ElemList]), [fxml:get_tag_cdata(Elem) || Elem <- ElemList]
 	    end;
 	[] ->
-	    throw(error_no_vcard_found)
+	    throw(error_no_vcard_found);
+	error ->
+	    throw(database_failure)
     end.
 
 get_vcard([<<"TEL">>, TelType], {_, _, _, OldEls}) ->
@@ -1011,25 +996,19 @@ set_vcard_content(User, Server, Data, SomeContent) ->
 	[Bin | _] when is_binary(Bin) -> SomeContent;
 	Bin when is_binary(Bin) -> [SomeContent]
     end,
-    [{_, Module, Function, _Opts}] = ets:lookup(sm_iqtable, {?NS_VCARD, Server}),
-    JID = jid:make(User, Server, get_module_resource(Server)),
-    IQ = #iq{type = get, xmlns = ?NS_VCARD},
-    IQr = Module:Function(JID, JID, IQ),
-
     %% Get old vcard
-    A4 = case IQr#iq.sub_el of
+    A4 = case mod_vcard:get_vcard(jid:nodeprep(User), jid:nameprep(Server)) of
 	     [A1] ->
 		 {_, _, _, A2} = A1,
 		 update_vcard_els(Data, ContentList, A2);
 	     [] ->
-		 update_vcard_els(Data, ContentList, [])
+		 update_vcard_els(Data, ContentList, []);
+	     error ->
+		 throw(database_failure)
 	 end,
-
     %% Build new vcard
     SubEl = {xmlel, <<"vCard">>, [{<<"xmlns">>,<<"vcard-temp">>}], A4},
-    IQ2 = #iq{type=set, sub_el = SubEl},
-
-    Module:Function(JID, JID, IQ2),
+    mod_vcard:set_vcard(User, jid:nameprep(Server), SubEl),
     ok.
 
 take_vcard_tel(TelType, [{xmlel, <<"TEL">>, _, SubEls}=OldEl | OldEls], NewEls, Taken) ->
@@ -1090,11 +1069,7 @@ add_rosteritem(LU, LS, User, Server, Nick, Group, Subscription, Xattrs) ->
 
 subscribe(LU, LS, User, Server, Nick, Group, Subscription, _Xattrs) ->
     ItemEl = build_roster_item(User, Server, {add, Nick, Subscription, Group}),
-    mod_roster:set_items(
-	LU, LS,
-	{xmlel, <<"query">>,
-            [{<<"xmlns">>, ?NS_ROSTER}],
-            [ItemEl]}).
+    mod_roster:set_items(LU, LS, #roster_query{items = [ItemEl]}).
 
 delete_rosteritem(LocalUser, LocalServer, User, Server) ->
     case unsubscribe(LocalUser, LocalServer, User, Server) of
@@ -1107,11 +1082,7 @@ delete_rosteritem(LocalUser, LocalServer, User, Server) ->
 
 unsubscribe(LU, LS, User, Server) ->
     ItemEl = build_roster_item(User, Server, remove),
-    mod_roster:set_items(
-	LU, LS,
-	{xmlel, <<"query">>,
-            [{<<"xmlns">>, ?NS_ROSTER}],
-            [ItemEl]}).
+    mod_roster:set_items(LU, LS, #roster_query{items = [ItemEl]}).
 
 %% -----------------------------
 %% Get Roster
@@ -1201,28 +1172,16 @@ push_roster_item(LU, LS, R, U, S, Action) ->
     ejabberd_router:route(jid:remove_resource(LJID), LJID, ResIQ).
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
-    {xmlel, <<"item">>,
-     [{<<"jid">>, jid:to_string(jid:make(U, S, <<>>))},
-      {<<"name">>, Nick},
-      {<<"subscription">>, Subs}],
-     [{xmlel, <<"group">>, [], [{xmlcdata, Group}]}]
-    };
+    #roster_item{jid = jid:make(U, S),
+		 name = Nick,
+		 subscription = jlib:binary_to_atom(Subs),
+		 groups = [Group]};
 build_roster_item(U, S, remove) ->
-    {xmlel, <<"item">>,
-     [{<<"jid">>, jid:to_string(jid:make(U, S, <<>>))},
-      {<<"subscription">>, <<"remove">>}],
-     []
-    }.
+    #roster_item{jid = jid:make(U, S), subscription = remove}.
 
 build_iq_roster_push(Item) ->
-    {xmlel, <<"iq">>,
-     [{<<"type">>, <<"set">>}, {<<"id">>, <<"push">>}],
-     [{xmlel, <<"query">>,
-       [{<<"xmlns">>, ?NS_ROSTER}],
-       [Item]
-      }
-     ]
-    }.
+    #iq{type = set, id = <<"push">>,
+	sub_els = [#roster_query{items = [Item]}]}.
 
 build_broadcast(U, S, {add, _Nick, Subs, _Group}) ->
     build_broadcast(U, S, list_to_atom(binary_to_list(Subs)));
@@ -1268,17 +1227,9 @@ get_last(User, Server) ->
 %% <aa xmlns='bb'>Cluth</aa>
 
 private_get(Username, Host, Element, Ns) ->
-    From = jid:make(Username, Host, <<>>),
-    To = jid:make(Username, Host, <<>>),
-    IQ = {iq, <<>>, get, ?NS_PRIVATE, <<>>,
-	  {xmlel, <<"query">>,
-	   [{<<"xmlns">>,?NS_PRIVATE}],
-	   [{xmlel, Element, [{<<"xmlns">>, Ns}], []}]}},
-    ResIq = mod_private:process_sm_iq(From, To, IQ),
-    [{xmlel, <<"query">>,
-      [{<<"xmlns">>, ?NS_PRIVATE}],
-      [SubEl]}] = ResIq#iq.sub_el,
-    binary_to_list(fxml:element_to_binary(SubEl)).
+    Els = mod_private:get_data(jid:nodeprep(Username), jid:nameprep(Host),
+			       [Ns, Element]),
+    binary_to_list(fxml:element_to_binary(xmpp:encode(#private{xml_els = Els}))).
 
 private_set(Username, Host, ElementString) ->
     case fxml_stream:parse_element(ElementString) of
@@ -1291,13 +1242,9 @@ private_set(Username, Host, ElementString) ->
     end.
 
 private_set2(Username, Host, Xml) ->
-    From = jid:make(Username, Host, <<>>),
-    To = jid:make(Username, Host, <<>>),
-    IQ = {iq, <<>>, set, ?NS_PRIVATE, <<>>,
-	  {xmlel, <<"query">>,
-	   [{<<"xmlns">>, ?NS_PRIVATE}],
-	   [Xml]}},
-    mod_private:process_sm_iq(From, To, IQ),
+    NS = fxml:get_tag_attr_s(<<"xmlns">>, Xml),
+    mod_private:set_data(jid:nodeprep(Username), jid:nameprep(Host),
+			 [{NS, Xml}]),
     ok.
 
 %%%
@@ -1395,23 +1342,25 @@ send_packet_all_resources(FromJID, ToU, ToS, ToR, Packet) ->
     ejabberd_router:route(FromJID, ToJID, Packet).
 
 build_packet(Type, Subject, Body) ->
-    Tail = if Subject == <<"">>; Type == <<"chat">> -> [];
-	      true -> [{xmlel, <<"subject">>, [], [{xmlcdata, Subject}]}]
-	   end,
-    {xmlel, <<"message">>,
-     [{<<"type">>, Type}, {<<"id">>, randoms:get_string()}],
-     [{xmlel, <<"body">>, [], [{xmlcdata, Body}]} | Tail]
-    }.
+    #message{type = jlib:binary_to_atom(Type),
+	     body = xmpp:mk_text(Body),
+	     subject = xmpp:mk_text(Subject)}.
 
 send_stanza(FromString, ToString, Stanza) ->
-    case fxml_stream:parse_element(Stanza) of
-	{error, Error} ->
-	    {error, Error};
-	XmlEl ->
-	    #xmlel{attrs = Attrs} = XmlEl,
-	    From = jid:from_string(proplists:get_value(<<"from">>, Attrs, FromString)),
-	    To = jid:from_string(proplists:get_value(<<"to">>, Attrs, ToString)),
-	    ejabberd_router:route(From, To, XmlEl)
+    try
+	#xmlel{} = El = fxml_stream:parse_element(Stanza),
+	#jid{} = From = jid:from_string(FromString),
+	#jid{} = To = jid:to_string(ToString),
+	Pkt = xmpp:decode(El, [ignore_els]),
+	ejabberd_router:route(From, To, Pkt)
+    catch _:{xmpp_codec, Why} ->
+	    io:format("incorrect stanza: ~s~n", [xmpp:format_error(Why)]),
+	    {error, Why};
+	  _:{badmatch, {error, Why}} ->
+	    io:format("invalid xml: ~p~n", [Why]),
+	    {error, Why};
+	  _:{badmatch, error} ->
+	    {error, "JID malformed"}
     end.
 
 send_stanza_c2s(Username, Host, Resource, Stanza) ->
@@ -1427,17 +1376,15 @@ send_stanza_c2s(Username, Host, Resource, Stanza) ->
     end.
 
 privacy_set(Username, Host, QueryS) ->
-    From = jid:make(Username, Host, <<"">>),
-    To = jid:make(<<"">>, Host, <<"">>),
+    From = jid:make(Username, Host),
+    To = jid:make(Host),
     QueryEl = fxml_stream:parse_element(QueryS),
-    StanzaEl = {xmlel, <<"iq">>, [{<<"type">>, <<"set">>}], [QueryEl]},
-    IQ = jlib:iq_query_info(StanzaEl),
-    ejabberd_hooks:run_fold(
-		     privacy_iq_set,
-		     Host,
-		     {error, ?ERR_FEATURE_NOT_IMPLEMENTED},
-		     [From, To, IQ]
-		    ),
+    SubEl = xmpp:decode(QueryEl),
+    IQ = #iq{type = set, id = <<"push">>, sub_els = [SubEl]},
+    ejabberd_hooks:run_fold(privacy_iq_set,
+			    Host,
+			    {error, xmpp:err_feature_not_implemented()},
+			    [From, To, IQ]),
     ok.
 
 %%%
@@ -1618,5 +1565,4 @@ is_glob_match(String, <<"!", Glob/binary>>) ->
 is_glob_match(String, Glob) ->
     is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
 
-mod_opt_type(module_resource) -> fun (A) -> A end;
-mod_opt_type(_) -> [module_resource].
+mod_opt_type(_) -> [].

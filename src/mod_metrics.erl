@@ -31,7 +31,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("jid.hrl").
 
 -define(HOOKS, [offline_message_hook,
                 sm_register_connection_hook, sm_remove_connection_hook,

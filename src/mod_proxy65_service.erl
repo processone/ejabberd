@@ -33,24 +33,17 @@
 -export([init/1, handle_info/2, handle_call/3,
 	 handle_cast/2, terminate/2, code_change/3]).
 
--export([start_link/2, add_listener/2,
+-export([start_link/2, add_listener/2, process_disco_info/1,
+	 process_disco_items/1, process_vcard/1, process_bytestreams/1,
 	 transform_module_options/1, delete_listener/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -define(PROCNAME, ejabberd_mod_proxy65_service).
 
--record(state,
-	{myhost = <<"">>     :: binary(),
-         serverhost = <<"">> :: binary(),
-         name = <<"">>       :: binary(),
-         stream_addr = []    :: [attr()],
-         port = 0            :: inet:port_number(),
-         ip = {127,0,0,1}    :: inet:ip_address(),
-         acl = none          :: atom()}).
+-record(state, {myhost = <<"">> :: binary()}).
 
 %%%------------------------
 %%% gen_server callbacks
@@ -62,34 +55,32 @@ start_link(Host, Opts) ->
 			  [Host, Opts], []).
 
 init([Host, Opts]) ->
-    State = parse_options(Host, Opts),
-    ejabberd_router:register_route(State#state.myhost, Host),
-    {ok, State}.
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
+                             one_queue),
+    MyHost = gen_mod:get_opt_host(Host, Opts, <<"proxy.@HOST@">>),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
+				  ?MODULE, process_disco_info, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS,
+				  ?MODULE, process_disco_items, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_VCARD,
+				  ?MODULE, process_vcard, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_BYTESTREAMS,
+				  ?MODULE, process_bytestreams, IQDisc),
+    ejabberd_router:register_route(MyHost, Host),
+    {ok, #state{myhost = MyHost}}.
 
 terminate(_Reason, #state{myhost = MyHost}) ->
-    ejabberd_router:unregister_route(MyHost), ok.
+    ejabberd_router:unregister_route(MyHost),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_BYTESTREAMS).
 
-handle_info({route, From, To,
-	     #xmlel{name = <<"iq">>} = Packet},
-	    State) ->
-    IQ = jlib:iq_query_info(Packet),
-    case catch process_iq(From, IQ, State) of
-      Result when is_record(Result, iq) ->
-	  ejabberd_router:route(To, From, jlib:iq_to_xml(Result));
-      {'EXIT', Reason} ->
-	  ?ERROR_MSG("Error when processing IQ stanza: ~p",
-		     [Reason]),
-	  Err = jlib:make_error_reply(Packet,
-				      ?ERR_INTERNAL_SERVER_ERROR),
-	  ejabberd_router:route(To, From, Err);
-      _ -> ok
-    end,
+handle_info({route, From, To, #iq{} = Packet}, State) ->
+    ejabberd_router:process_iq(From, To, Packet),
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
-handle_call(get_port_ip, _From, State) ->
-    {reply, {port_ip, State#state.port, State#state.ip},
-     State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
@@ -102,185 +93,122 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%%------------------------
 
 add_listener(Host, Opts) ->
-    State = parse_options(Host, Opts),
     NewOpts = [Host | Opts],
-    ejabberd_listener:add_listener({State#state.port,
-				    State#state.ip},
+    ejabberd_listener:add_listener(get_port_ip(Host),
 				   mod_proxy65_stream, NewOpts).
 
 delete_listener(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    {port_ip, Port, IP} = gen_server:call(Proc,
-					  get_port_ip),
-    catch ejabberd_listener:delete_listener({Port, IP},
+    catch ejabberd_listener:delete_listener(get_port_ip(Host),
 					    mod_proxy65_stream).
 
 %%%------------------------
 %%% IQ Processing
 %%%------------------------
+-spec process_disco_info(iq()) -> iq().
+process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_info(#iq{type = get, to = To, lang = Lang} = IQ) ->
+    Host = ejabberd_router:host_of_route(To#jid.lserver),
+    Name = gen_mod:get_module_opt(Host, mod_proxy65, name,
+				  fun iolist_to_binary/1,
+				  <<"SOCKS5 Bytestreams">>),
+    Info = ejabberd_hooks:run_fold(disco_info, Host,
+				   [], [Host, ?MODULE, <<"">>, <<"">>]),
+    xmpp:make_iq_result(
+      IQ, #disco_info{xdata = Info,
+		      identities = [#identity{category = <<"proxy">>,
+					      type = <<"bytestreams">>,
+					      name =  translate:translate(Lang, Name)}],
+		      features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
+				  ?NS_VCARD, ?NS_BYTESTREAMS]}).
 
-%% disco#info request
-process_iq(_,
-	   #iq{type = get, xmlns = ?NS_DISCO_INFO, lang = Lang} =
-	       IQ,
-	   #state{name = Name, serverhost = ServerHost}) ->
-    Info = ejabberd_hooks:run_fold(disco_info, ServerHost,
-				   [], [ServerHost, ?MODULE, <<"">>, <<"">>]),
-    IQ#iq{type = result,
-	  sub_el =
-	      [#xmlel{name = <<"query">>,
-		      attrs = [{<<"xmlns">>, ?NS_DISCO_INFO}],
-		      children = iq_disco_info(Lang, Name) ++ Info}]};
-%% disco#items request
-process_iq(_,
-	   #iq{type = get, xmlns = ?NS_DISCO_ITEMS} = IQ, _) ->
-    IQ#iq{type = result,
-	  sub_el =
-	      [#xmlel{name = <<"query">>,
-		      attrs = [{<<"xmlns">>, ?NS_DISCO_ITEMS}],
-		      children = []}]};
-%% vCard request
-process_iq(_,
-	   #iq{type = get, xmlns = ?NS_VCARD, lang = Lang} = IQ,
-	   _) ->
-    IQ#iq{type = result,
-	  sub_el =
-	      [#xmlel{name = <<"vCard">>,
-		      attrs = [{<<"xmlns">>, ?NS_VCARD}],
-		      children = iq_vcard(Lang)}]};
-%% bytestreams info request
-process_iq(JID,
-	   #iq{type = get, sub_el = SubEl, lang = Lang,
-	       xmlns = ?NS_BYTESTREAMS} =
-	       IQ,
-	   #state{acl = ACL, stream_addr = StreamAddr,
-		  serverhost = ServerHost}) ->
+-spec process_disco_items(iq()) -> iq().
+process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_items(#iq{type = get} = IQ) ->
+    xmpp:make_iq_result(IQ, #disco_items{}).
+
+-spec process_vcard(iq()) -> iq().
+process_vcard(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_vcard(#iq{type = get, lang = Lang} = IQ) ->
+    Desc = translate:translate(Lang, <<"ejabberd SOCKS5 Bytestreams module">>),
+    Copyright = <<"Copyright (c) 2003-2016 ProcessOne">>,
+    xmpp:make_iq_result(
+      IQ, #vcard_temp{fn = <<"ejabberd/mod_proxy65">>,
+		      url = ?EJABBERD_URI,
+		      desc = <<Desc/binary, $\n, Copyright/binary>>}).
+
+-spec process_bytestreams(iq()) -> iq().
+process_bytestreams(#iq{type = get, from = JID, to = To, lang = Lang} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    ACL = gen_mod:get_module_opt(ServerHost, mod_proxy65, access,
+				 fun acl:access_rules_validator/1,
+				 all),
     case acl:match_rule(ServerHost, ACL, JID) of
-      allow ->
-	  StreamHostEl = [#xmlel{name = <<"streamhost">>,
-				 attrs = StreamAddr, children = []}],
-	  IQ#iq{type = result,
-		sub_el =
-		    [#xmlel{name = <<"query">>,
-			    attrs = [{<<"xmlns">>, ?NS_BYTESTREAMS}],
-			    children = StreamHostEl}]};
-      deny ->
-	  Txt = <<"Denied by ACL">>,
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]}
+	allow ->
+	    StreamHost = get_streamhost(Host, ServerHost),
+	    xmpp:make_iq_result(IQ, #bytestreams{hosts = [StreamHost]});
+	deny ->
+	    xmpp:make_error(IQ, xmpp:err_forbidden(<<"Denied by ACL">>, Lang))
     end;
-%% bytestream activation request
-process_iq(InitiatorJID,
-	   #iq{type = set, sub_el = SubEl, lang = Lang,
-	       xmlns = ?NS_BYTESTREAMS} =
-	       IQ,
-	   #state{acl = ACL, serverhost = ServerHost}) ->
+process_bytestreams(#iq{type = set, lang = Lang,
+			sub_els = [#bytestreams{sid = undefined}]} = IQ) ->
+    Why = {missing_attr, <<"sid">>, <<"query">>, ?NS_BYTESTREAMS},
+    Txt = xmpp:format_error(Why),
+    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
+process_bytestreams(#iq{type = set, lang = Lang,
+			sub_els = [#bytestreams{sid = SID}]} = IQ)
+  when SID == <<"">> orelse length(SID) > 128 ->
+    Why = {bad_attr_value, <<"sid">>, <<"query">>, ?NS_BYTESTREAMS},
+    Txt = xmpp:format_error(Why),
+    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
+process_bytestreams(#iq{type = set, lang = Lang, 
+			sub_els = [#bytestreams{activate = undefined}]} = IQ) ->
+    Why = {missing_cdata, <<"">>, <<"activate">>, ?NS_BYTESTREAMS},
+    Txt = xmpp:format_error(Why),
+    xmpp:make_error(IQ, xmpp:err_jid_malformed(Txt, Lang));
+process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
+			sub_els = [#bytestreams{activate = TargetJID,
+						sid = SID}]} = IQ) ->
+    ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
+    ACL = gen_mod:get_module_opt(ServerHost, mod_proxy65, access,
+				 fun acl:access_rules_validator/1,
+				 all),
     case acl:match_rule(ServerHost, ACL, InitiatorJID) of
-      allow ->
-	  ActivateEl = fxml:get_path_s(SubEl,
-				      [{elem, <<"activate">>}]),
-	  SID = fxml:get_tag_attr_s(<<"sid">>, SubEl),
-	  case catch
-		 jid:from_string(fxml:get_tag_cdata(ActivateEl))
-	      of
-	    TargetJID
-		when is_record(TargetJID, jid), SID /= <<"">>,
-		     byte_size(SID) =< 128, TargetJID /= InitiatorJID ->
-		Target =
-		    jid:to_string(jid:tolower(TargetJID)),
-		Initiator =
-		    jid:to_string(jid:tolower(InitiatorJID)),
-		SHA1 = p1_sha:sha(<<SID/binary, Initiator/binary, Target/binary>>),
-		case mod_proxy65_sm:activate_stream(SHA1, InitiatorJID,
-						    TargetJID, ServerHost)
-		    of
-		  ok -> IQ#iq{type = result, sub_el = []};
-		  false ->
-		      Txt = <<"Failed to activate bytestream">>,
-		      IQ#iq{type = error,
-			    sub_el = [SubEl, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)]};
-		  limit ->
-		      Txt = <<"Too many active bytestreams">>,
-		      IQ#iq{type = error,
-			    sub_el = [SubEl, ?ERRT_RESOURCE_CONSTRAINT(Lang, Txt)]};
-		  conflict ->
-		      Txt = <<"Bytestream already activated">>,
-		      IQ#iq{type = error, sub_el = [SubEl, ?ERRT_CONFLICT(Lang, Txt)]};
-		  _ ->
-		      IQ#iq{type = error,
-			    sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
-		end;
-	    _ ->
-		Txt = <<"Malformed JID">>,
-		IQ#iq{type = error, sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]}
-	  end;
-      deny ->
-	  Txt = <<"Denied by ACL">>,
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_FORBIDDEN(Lang, Txt)]}
-    end;
-%% Unknown "set" or "get" request
-process_iq(_, #iq{type = Type, sub_el = SubEl} = IQ, _)
-    when Type == get; Type == set ->
-    IQ#iq{type = error,
-	  sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
-%% IQ "result" or "error".
-process_iq(_, _, _) -> ok.
-
+	allow ->
+	    Target = jid:to_string(jid:tolower(TargetJID)),
+	    Initiator = jid:to_string(jid:tolower(InitiatorJID)),
+	    SHA1 = p1_sha:sha(<<SID/binary, Initiator/binary, Target/binary>>),
+	    case mod_proxy65_sm:activate_stream(SHA1, InitiatorJID,
+						TargetJID, ServerHost) of
+		ok ->
+		    xmpp:make_iq_result(IQ);
+		false ->
+		    Txt = <<"Failed to activate bytestream">>,
+		    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
+		limit ->
+		    Txt = <<"Too many active bytestreams">>,
+		    xmpp:make_error(IQ, xmpp:err_resource_constraint(Txt, Lang));
+		conflict ->
+		    Txt = <<"Bytestream already activated">>,
+		    xmpp:make_error(IQ, xmpp:err_conflict(Txt, Lang));
+		Err ->
+		    ?ERROR_MSG("failed to activate bytestream from ~s to ~s: ~p",
+			       [Initiator, Target, Err]),
+		    xmpp:make_error(IQ, xmpp:err_internal_server_error())
+	    end;
+	deny ->
+	    Txt = <<"Denied by ACL">>,
+	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
+    end.
 %%%-------------------------
 %%% Auxiliary functions.
 %%%-------------------------
--define(FEATURE(Feat),
-	#xmlel{name = <<"feature">>,
-	       attrs = [{<<"var">>, Feat}], children = []}).
-
-iq_disco_info(Lang, Name) ->
-    [#xmlel{name = <<"identity">>,
-	    attrs =
-		[{<<"category">>, <<"proxy">>},
-		 {<<"type">>, <<"bytestreams">>},
-		 {<<"name">>, translate:translate(Lang, Name)}],
-	    children = []},
-     ?FEATURE((?NS_DISCO_INFO)), ?FEATURE((?NS_VCARD)),
-     ?FEATURE((?NS_BYTESTREAMS))].
-
-iq_vcard(Lang) ->
-    [#xmlel{name = <<"FN">>, attrs = [],
-	    children = [{xmlcdata, <<"ejabberd/mod_proxy65">>}]},
-     #xmlel{name = <<"URL">>, attrs = [],
-	    children = [{xmlcdata, ?EJABBERD_URI}]},
-     #xmlel{name = <<"DESC">>, attrs = [],
-	    children =
-		[{xmlcdata,
-		  <<(translate:translate(Lang,
-					 <<"ejabberd SOCKS5 Bytestreams module">>))/binary,
-		    "\nCopyright (c) 2003-2016 ProcessOne">>}]}].
-
-parse_options(ServerHost, Opts) ->
-    MyHost = gen_mod:get_opt_host(ServerHost, Opts,
-				  <<"proxy.@HOST@">>),
-    Port = gen_mod:get_opt(port, Opts,
-                           fun(P) when is_integer(P), P>0, P<65536 -> P end,
-                           7777),
-    ACL = gen_mod:get_opt(access, Opts, fun acl:access_rules_validator/1,
-                          all),
-    Name = gen_mod:get_opt(name, Opts, fun iolist_to_binary/1,
-			   <<"SOCKS5 Bytestreams">>),
-    IP = gen_mod:get_opt(ip, Opts,
-                         fun(S) ->
-                                 {ok, Addr} = inet_parse:address(
-                                                binary_to_list(
-                                                  iolist_to_binary(S))),
-                                 Addr
-                         end, get_my_ip()),
-    HostName = gen_mod:get_opt(hostname, Opts,
-                               fun iolist_to_binary/1,
-                               jlib:ip_to_list(IP)),
-    StreamAddr = [{<<"jid">>, MyHost},
-		  {<<"host">>, HostName},
-		  {<<"port">>, jlib:integer_to_binary(Port)}],
-    #state{myhost = MyHost, serverhost = ServerHost,
-	   name = Name, port = Port, ip = IP,
-	   stream_addr = StreamAddr, acl = ACL}.
-
 transform_module_options(Opts) ->
     lists:map(
       fun({ip, IP}) when is_tuple(IP) ->
@@ -291,6 +219,33 @@ transform_module_options(Opts) ->
               Opt
       end, Opts).
 
+-spec get_streamhost(binary(), binary()) -> streamhost().
+get_streamhost(Host, ServerHost) ->
+    {Port, IP} = get_port_ip(ServerHost),
+    HostName = gen_mod:get_module_opt(ServerHost, mod_proxy65, hostname,
+				      fun iolist_to_binary/1,
+				      jlib:ip_to_list(IP)),
+    #streamhost{jid = jid:make(Host),
+		host = HostName,
+		port = Port}.
+
+-spec get_port_ip(binary()) -> {pos_integer(), inet:ip_address()}.
+get_port_ip(Host) ->
+    Port = gen_mod:get_module_opt(Host, mod_proxy65, port,
+				  fun(P) when is_integer(P), P>0, P<65536 ->
+					  P
+				  end,
+				  7777),
+    IP = gen_mod:get_module_opt(Host, mod_proxy65, ip,
+				fun(S) ->
+					{ok, Addr} = inet_parse:address(
+						       binary_to_list(
+							 iolist_to_binary(S))),
+					Addr
+				end, get_my_ip()),
+    {Port, IP}.
+
+-spec get_my_ip() -> inet:ip_address().
 get_my_ip() ->
     {ok, MyHostName} = inet:gethostname(),
     case inet:getaddr(MyHostName, inet) of
