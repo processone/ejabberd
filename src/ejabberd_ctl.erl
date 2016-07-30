@@ -439,7 +439,8 @@ format_result(404, {_Name, _}) ->
 
 make_status(ok) -> ?STATUS_SUCCESS;
 make_status(true) -> ?STATUS_SUCCESS;
-make_status(Code) when is_integer(Code) -> Code;
+make_status(Code) when is_integer(Code), Code > 255 -> ?STATUS_ERROR;
+make_status(Code) when is_integer(Code), Code > 0 -> Code;
 make_status(_Error) -> ?STATUS_ERROR.
 
 get_list_commands(Version) ->
