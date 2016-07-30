@@ -555,6 +555,8 @@ execute_check_policy(
 
 execute_check_access(_FromJID, #ejabberd_commands{access = []} = Command, Arguments) ->
     do_execute_command(Command, Arguments);
+execute_check_access(undefined, _Command, _Arguments) ->
+    throw({error, access_rules_unauthorized});
 execute_check_access(FromJID, #ejabberd_commands{access = AccessRefs} = Command, Arguments) ->
     %% TODO Review: Do we have smarter / better way to check rule on other Host than global ?
     Host = global,
