@@ -2997,6 +2997,30 @@
 		   #ref{name = oob_desc, default = <<"">>,
 			min = 0, max = 1, label = '$desc'}]}).
 
+-xml(sic_ip,
+     #elem{name = <<"ip">>,
+	   xmlns = [<<"urn:xmpp:sic:0">>, <<"urn:xmpp:sic:1">>],
+	   result = '$cdata',
+	   cdata = #cdata{required = true,
+			  dec = {dec_ip, []},
+			  enc = {enc_ip, []}}}).
+
+-xml(sip_port,
+     #elem{name = <<"port">>,
+	   xmlns = <<"urn:xmpp:sic:1">>,
+	   result = '$cdata',
+	   cdata = #cdata{required = true,
+			  dec = {dec_int, [0, 65535]},
+			  enc = {enc_int, []}}}).
+
+-xml(sic,
+     #elem{name = <<"address">>,
+	   xmlns = [<<"urn:xmpp:sic:0">>, <<"urn:xmpp:sic:1">>],
+	   result = {sic, '$ip', '$port', '$xmlns'},
+	   attrs = [#attr{name = <<"xmlns">>}],
+	   refs = [#ref{name = sic_ip, min = 0, max = 1, label = '$ip'},
+		   #ref{name = sip_port, min = 0, max = 1, label = '$port'}]}).
+
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),
     H = jlib:binary_to_integer(H1),
@@ -3049,6 +3073,16 @@ enc_bool(true) -> <<"true">>.
 join([], _Sep) -> <<>>;
 join([H | T], Sep) ->
     <<H/binary, (<< <<Sep, X/binary>> || X <- T >>)/binary>>.
+
+dec_ip(S) ->
+    {ok, Addr} = inet_parse:address(binary_to_list(S)),
+    Addr.
+
+enc_ip({0,0,0,0,0,16#ffff,A,B}) ->
+    enc_ip({(A bsr 8) band 16#ff, A band 16#ff,
+	    (B bsr 8) band 16#ff, B band 16#ff});
+enc_ip(Addr) ->
+    list_to_binary(inet_parse:ntoa(Addr)).
 
 %% Local Variables:
 %% mode: erlang

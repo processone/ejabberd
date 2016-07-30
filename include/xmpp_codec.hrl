@@ -343,6 +343,11 @@
                        items = [] :: [#pubsub_item{}]}).
 -type pubsub_items() :: #pubsub_items{}.
 
+-record(sic, {ip :: any(),
+              port :: non_neg_integer(),
+              xmlns :: binary()}).
+-type sic() :: #sic{}.
+
 -record(carbons_sent, {forwarded :: #forwarded{}}).
 -type carbons_sent() :: #carbons_sent{}.
 
@@ -909,7 +914,6 @@
                         muc_decline() |
                         legacy_auth() |
                         search() |
-                        unblock() |
                         nick() |
                         p1_ack() |
                         block() |
@@ -939,6 +943,7 @@
                         stream_features() |
                         stats() |
                         pubsub_items() |
+                        sic() |
                         starttls() |
                         mam_prefs() |
                         sasl_mechanisms() |
@@ -979,4 +984,5 @@
                         sasl_auth() |
                         p1_push() |
                         oob_x() |
-                        pubsub_publish().
+                        pubsub_publish() |
+                        unblock().
