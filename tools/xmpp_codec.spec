@@ -3021,6 +3021,78 @@
 	   refs = [#ref{name = sic_ip, min = 0, max = 1, label = '$ip'},
 		   #ref{name = sip_port, min = 0, max = 1, label = '$port'}]}).
 
+-xml(upload_filename,
+     #elem{name = <<"filename">>,
+	   xmlns = [<<"urn:xmpp:http:upload">>,
+		    <<"eu:siacs:conversations:http:upload">>],
+	   result = '$cdata',
+	   cdata = #cdata{required = true}}).
+
+-xml(upload_size,
+     #elem{name = <<"size">>,
+	   xmlns = [<<"urn:xmpp:http:upload">>,
+		    <<"eu:siacs:conversations:http:upload">>],
+	   result = '$cdata',
+	   cdata = #cdata{required = true,
+			  dec = {dec_int, [0, infinity]},
+			  enc = {enc_int, []}}}).
+
+-xml(upload_content_type,
+     #elem{name = <<"content-type">>,
+	   xmlns = [<<"urn:xmpp:http:upload">>,
+		    <<"eu:siacs:conversations:http:upload">>],
+	   result = '$cdata',
+	   cdata = #cdata{default = <<"">>}}).
+
+-xml(upload_request,
+     #elem{name = <<"request">>,
+	   xmlns = [<<"urn:xmpp:http:upload">>,
+		    <<"eu:siacs:conversations:http:upload">>],
+	   result = {upload_request, '$filename', '$size',
+		     '$content-type', '$xmlns'},
+	   attrs = [#attr{name = <<"xmlns">>}],
+	   refs = [#ref{name = upload_filename, label = '$filename',
+			min = 1, max = 1},
+		   #ref{name = upload_size, label = '$size', min = 1, max = 1},
+		   #ref{name = upload_content_type, label = '$content-type',
+			min = 0, max = 1, default = <<"">>}]}).
+
+-xml(upload_get,
+     #elem{name = <<"get">>,
+	   xmlns = [<<"urn:xmpp:http:upload">>,
+		    <<"eu:siacs:conversations:http:upload">>],
+	   result = '$cdata',
+	   cdata = #cdata{required = true}}).
+
+-xml(upload_put,
+     #elem{name = <<"put">>,
+	   xmlns = [<<"urn:xmpp:http:upload">>,
+		    <<"eu:siacs:conversations:http:upload">>],
+	   result = '$cdata',
+	   cdata = #cdata{required = true}}).
+
+-xml(upload_slot,
+     #elem{name = <<"slot">>,
+	   xmlns = [<<"urn:xmpp:http:upload">>,
+		    <<"eu:siacs:conversations:http:upload">>],
+	   result = {upload_slot, '$get', '$put', '$xmlns'},
+	   attrs = [#attr{name = <<"xmlns">>}],
+	   refs = [#ref{name = upload_get, min = 0, max = 1, label = '$get'},
+		   #ref{name = upload_put, min = 0, max = 1, label = '$put'}]}).
+
+-xml(thumbnail,
+     #elem{name = <<"thumbnail">>,
+	   xmlns = <<"urn:xmpp:thumbs:1">>,
+	   result = {thumbnail, '$uri', '$media-type', '$width', '$height'},
+	   attrs = [#attr{name = <<"uri">>, required = true},
+		    #attr{name = <<"media-type">>, default = <<"">>},
+		    #attr{name = <<"width">>,
+			  dec = {dec_int, [0, infinity]},
+			  enc = {enc_int, []}},
+		    #attr{name = <<"height">>,
+			  dec = {dec_int, [0, infinity]},
+			  enc = {enc_int, []}}]}).
+
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),
     H = jlib:binary_to_integer(H1),

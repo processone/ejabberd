@@ -91,6 +91,12 @@
                       since :: any()}).
 -type muc_history() :: #muc_history{}.
 
+-record(thumbnail, {uri :: binary(),
+                    'media-type' = <<>> :: binary(),
+                    width :: non_neg_integer(),
+                    height :: non_neg_integer()}).
+-type thumbnail() :: #thumbnail{}.
+
 -record(pubsub_affiliation, {node :: binary(),
                              type :: 'member' | 'none' | 'outcast' | 'owner' | 'publish-only' | 'publisher'}).
 -type pubsub_affiliation() :: #pubsub_affiliation{}.
@@ -387,6 +393,11 @@
                          items = [] :: [#pubsub_item{}]}).
 -type pubsub_retract() :: #pubsub_retract{}.
 
+-record(upload_slot, {get :: binary(),
+                      put :: binary(),
+                      xmlns :: binary()}).
+-type upload_slot() :: #upload_slot{}.
+
 -record(mix_participant, {jid :: any(),
                           nick :: binary()}).
 -type mix_participant() :: #mix_participant{}.
@@ -404,6 +415,12 @@
 
 -record(block_list, {items = [] :: [any()]}).
 -type block_list() :: #block_list{}.
+
+-record(upload_request, {filename :: binary(),
+                         size :: non_neg_integer(),
+                         'content-type' = <<>> :: binary(),
+                         xmlns :: binary()}).
+-type upload_request() :: #upload_request{}.
 
 -record(xdata_option, {label :: binary(),
                        value :: binary()}).
@@ -837,15 +854,16 @@
                         version() |
                         pubsub_affiliation() |
                         mam_fin() |
+                        sm_a() |
                         bob_data() |
                         media() |
-                        sm_a() |
                         carbons_sent() |
                         mam_archived() |
                         p1_rebind() |
                         sasl_abort() |
                         carbons_received() |
                         pubsub_retract() |
+                        upload_slot() |
                         mix_participant() |
                         compressed() |
                         block_list() |
@@ -887,6 +905,7 @@
                         feature_csi() |
                         privacy_query() |
                         delay() |
+                        thumbnail() |
                         vcard_tel() |
                         vcard_geo() |
                         vcard_photo() |
@@ -932,6 +951,7 @@
                         mam_result() |
                         rsm_first() |
                         stat() |
+                        upload_request() |
                         xdata_field() |
                         adhoc_command() |
                         sm_failed() |

@@ -15,6 +15,56 @@ decode(_el) -> decode(_el, []).
 decode({xmlel, _name, _attrs, _} = _el, Opts) ->
     IgnoreEls = proplists:get_bool(ignore_els, Opts),
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"thumbnail">>, <<"urn:xmpp:thumbs:1">>} ->
+	  decode_thumbnail(<<"urn:xmpp:thumbs:1">>, IgnoreEls,
+			   _el);
+      {<<"slot">>, <<"urn:xmpp:http:upload">>} ->
+	  decode_upload_slot(<<"urn:xmpp:http:upload">>,
+			     IgnoreEls, _el);
+      {<<"slot">>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  decode_upload_slot(<<"eu:siacs:conversations:http:upload">>,
+			     IgnoreEls, _el);
+      {<<"put">>, <<"urn:xmpp:http:upload">>} ->
+	  decode_upload_put(<<"urn:xmpp:http:upload">>, IgnoreEls,
+			    _el);
+      {<<"put">>, <<"eu:siacs:conversations:http:upload">>} ->
+	  decode_upload_put(<<"eu:siacs:conversations:http:upload">>,
+			    IgnoreEls, _el);
+      {<<"get">>, <<"urn:xmpp:http:upload">>} ->
+	  decode_upload_get(<<"urn:xmpp:http:upload">>, IgnoreEls,
+			    _el);
+      {<<"get">>, <<"eu:siacs:conversations:http:upload">>} ->
+	  decode_upload_get(<<"eu:siacs:conversations:http:upload">>,
+			    IgnoreEls, _el);
+      {<<"request">>, <<"urn:xmpp:http:upload">>} ->
+	  decode_upload_request(<<"urn:xmpp:http:upload">>,
+				IgnoreEls, _el);
+      {<<"request">>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  decode_upload_request(<<"eu:siacs:conversations:http:upload">>,
+				IgnoreEls, _el);
+      {<<"content-type">>, <<"urn:xmpp:http:upload">>} ->
+	  decode_upload_content_type(<<"urn:xmpp:http:upload">>,
+				     IgnoreEls, _el);
+      {<<"content-type">>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  decode_upload_content_type(<<"eu:siacs:conversations:http:upload">>,
+				     IgnoreEls, _el);
+      {<<"size">>, <<"urn:xmpp:http:upload">>} ->
+	  decode_upload_size(<<"urn:xmpp:http:upload">>,
+			     IgnoreEls, _el);
+      {<<"size">>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  decode_upload_size(<<"eu:siacs:conversations:http:upload">>,
+			     IgnoreEls, _el);
+      {<<"filename">>, <<"urn:xmpp:http:upload">>} ->
+	  decode_upload_filename(<<"urn:xmpp:http:upload">>,
+				 IgnoreEls, _el);
+      {<<"filename">>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  decode_upload_filename(<<"eu:siacs:conversations:http:upload">>,
+				 IgnoreEls, _el);
       {<<"address">>, <<"urn:xmpp:sic:0">>} ->
 	  decode_sic(<<"urn:xmpp:sic:0">>, IgnoreEls, _el);
       {<<"address">>, <<"urn:xmpp:sic:1">>} ->
@@ -1319,6 +1369,34 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 
 is_known_tag({xmlel, _name, _attrs, _} = _el) ->
     case {_name, get_attr(<<"xmlns">>, _attrs)} of
+      {<<"thumbnail">>, <<"urn:xmpp:thumbs:1">>} -> true;
+      {<<"slot">>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"slot">>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  true;
+      {<<"put">>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"put">>, <<"eu:siacs:conversations:http:upload">>} ->
+	  true;
+      {<<"get">>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"get">>, <<"eu:siacs:conversations:http:upload">>} ->
+	  true;
+      {<<"request">>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"request">>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  true;
+      {<<"content-type">>, <<"urn:xmpp:http:upload">>} ->
+	  true;
+      {<<"content-type">>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  true;
+      {<<"size">>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"size">>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  true;
+      {<<"filename">>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"filename">>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  true;
       {<<"address">>, <<"urn:xmpp:sic:0">>} -> true;
       {<<"address">>, <<"urn:xmpp:sic:1">>} -> true;
       {<<"port">>, <<"urn:xmpp:sic:1">>} -> true;
@@ -2626,7 +2704,14 @@ encode({media, _, _, _} = Media) ->
 encode({oob_x, _, _, _} = X) ->
     encode_oob_x(X, [{<<"xmlns">>, <<"jabber:x:oob">>}]);
 encode({sic, _, _, _} = Address) ->
-    encode_sic(Address, []).
+    encode_sic(Address, []);
+encode({upload_request, _, _, _, _} = Request) ->
+    encode_upload_request(Request, []);
+encode({upload_slot, _, _, _} = Slot) ->
+    encode_upload_slot(Slot, []);
+encode({thumbnail, _, _, _, _} = Thumbnail) ->
+    encode_thumbnail(Thumbnail,
+		     [{<<"xmlns">>, <<"urn:xmpp:thumbs:1">>}]).
 
 get_name({last, _, _}) -> <<"query">>;
 get_name({version, _, _, _}) -> <<"query">>;
@@ -2820,7 +2905,10 @@ get_name({xcaptcha, _}) -> <<"captcha">>;
 get_name({media_uri, _, _}) -> <<"uri">>;
 get_name({media, _, _, _}) -> <<"media">>;
 get_name({oob_x, _, _, _}) -> <<"x">>;
-get_name({sic, _, _, _}) -> <<"address">>.
+get_name({sic, _, _, _}) -> <<"address">>;
+get_name({upload_request, _, _, _, _}) -> <<"request">>;
+get_name({upload_slot, _, _, _}) -> <<"slot">>;
+get_name({thumbnail, _, _, _, _}) -> <<"thumbnail">>.
 
 get_ns({last, _, _}) -> <<"jabber:iq:last">>;
 get_ns({version, _, _, _}) -> <<"jabber:iq:version">>;
@@ -3089,7 +3177,11 @@ get_ns({media_uri, _, _}) ->
 get_ns({media, _, _, _}) ->
     <<"urn:xmpp:media-element">>;
 get_ns({oob_x, _, _, _}) -> <<"jabber:x:oob">>;
-get_ns({sic, _, _, Xmlns}) -> Xmlns.
+get_ns({sic, _, _, Xmlns}) -> Xmlns;
+get_ns({upload_request, _, _, _, Xmlns}) -> Xmlns;
+get_ns({upload_slot, _, _, Xmlns}) -> Xmlns;
+get_ns({thumbnail, _, _, _, _}) ->
+    <<"urn:xmpp:thumbs:1">>.
 
 dec_int(Val) -> dec_int(Val, infinity, infinity).
 
@@ -3339,6 +3431,10 @@ pp(media_uri, 2) -> [type, uri];
 pp(media, 3) -> [height, width, uri];
 pp(oob_x, 3) -> [url, desc, sid];
 pp(sic, 3) -> [ip, port, xmlns];
+pp(upload_request, 4) ->
+    [filename, size, 'content-type', xmlns];
+pp(upload_slot, 3) -> [get, put, xmlns];
+pp(thumbnail, 4) -> [uri, 'media-type', width, height];
 pp(_, _) -> no.
 
 enc_ip({0, 0, 0, 0, 0, 65535, A, B}) ->
@@ -3393,6 +3489,533 @@ dec_tzo(Val) ->
     H = jlib:binary_to_integer(H1),
     M = jlib:binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
+
+decode_thumbnail(__TopXMLNS, __IgnoreEls,
+		 {xmlel, <<"thumbnail">>, _attrs, _els}) ->
+    {Uri, Media_type, Width, Height} =
+	decode_thumbnail_attrs(__TopXMLNS, _attrs, undefined,
+			       undefined, undefined, undefined),
+    {thumbnail, Uri, Media_type, Width, Height}.
+
+decode_thumbnail_attrs(__TopXMLNS,
+		       [{<<"uri">>, _val} | _attrs], _Uri, Media_type, Width,
+		       Height) ->
+    decode_thumbnail_attrs(__TopXMLNS, _attrs, _val,
+			   Media_type, Width, Height);
+decode_thumbnail_attrs(__TopXMLNS,
+		       [{<<"media-type">>, _val} | _attrs], Uri, _Media_type,
+		       Width, Height) ->
+    decode_thumbnail_attrs(__TopXMLNS, _attrs, Uri, _val,
+			   Width, Height);
+decode_thumbnail_attrs(__TopXMLNS,
+		       [{<<"width">>, _val} | _attrs], Uri, Media_type, _Width,
+		       Height) ->
+    decode_thumbnail_attrs(__TopXMLNS, _attrs, Uri,
+			   Media_type, _val, Height);
+decode_thumbnail_attrs(__TopXMLNS,
+		       [{<<"height">>, _val} | _attrs], Uri, Media_type, Width,
+		       _Height) ->
+    decode_thumbnail_attrs(__TopXMLNS, _attrs, Uri,
+			   Media_type, Width, _val);
+decode_thumbnail_attrs(__TopXMLNS, [_ | _attrs], Uri,
+		       Media_type, Width, Height) ->
+    decode_thumbnail_attrs(__TopXMLNS, _attrs, Uri,
+			   Media_type, Width, Height);
+decode_thumbnail_attrs(__TopXMLNS, [], Uri, Media_type,
+		       Width, Height) ->
+    {decode_thumbnail_attr_uri(__TopXMLNS, Uri),
+     'decode_thumbnail_attr_media-type'(__TopXMLNS,
+					Media_type),
+     decode_thumbnail_attr_width(__TopXMLNS, Width),
+     decode_thumbnail_attr_height(__TopXMLNS, Height)}.
+
+encode_thumbnail({thumbnail, Uri, Media_type, Width,
+		  Height},
+		 _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_thumbnail_attr_height(Height,
+					  encode_thumbnail_attr_width(Width,
+								      'encode_thumbnail_attr_media-type'(Media_type,
+													 encode_thumbnail_attr_uri(Uri,
+																   _xmlns_attrs)))),
+    {xmlel, <<"thumbnail">>, _attrs, _els}.
+
+decode_thumbnail_attr_uri(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"uri">>, <<"thumbnail">>,
+		   __TopXMLNS}});
+decode_thumbnail_attr_uri(__TopXMLNS, _val) -> _val.
+
+encode_thumbnail_attr_uri(_val, _acc) ->
+    [{<<"uri">>, _val} | _acc].
+
+'decode_thumbnail_attr_media-type'(__TopXMLNS,
+				   undefined) ->
+    <<>>;
+'decode_thumbnail_attr_media-type'(__TopXMLNS, _val) ->
+    _val.
+
+'encode_thumbnail_attr_media-type'(<<>>, _acc) -> _acc;
+'encode_thumbnail_attr_media-type'(_val, _acc) ->
+    [{<<"media-type">>, _val} | _acc].
+
+decode_thumbnail_attr_width(__TopXMLNS, undefined) ->
+    undefined;
+decode_thumbnail_attr_width(__TopXMLNS, _val) ->
+    case catch dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"width">>, <<"thumbnail">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_thumbnail_attr_width(undefined, _acc) -> _acc;
+encode_thumbnail_attr_width(_val, _acc) ->
+    [{<<"width">>, enc_int(_val)} | _acc].
+
+decode_thumbnail_attr_height(__TopXMLNS, undefined) ->
+    undefined;
+decode_thumbnail_attr_height(__TopXMLNS, _val) ->
+    case catch dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"height">>, <<"thumbnail">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_thumbnail_attr_height(undefined, _acc) -> _acc;
+encode_thumbnail_attr_height(_val, _acc) ->
+    [{<<"height">>, enc_int(_val)} | _acc].
+
+decode_upload_slot(__TopXMLNS, __IgnoreEls,
+		   {xmlel, <<"slot">>, _attrs, _els}) ->
+    {Put, Get} = decode_upload_slot_els(__TopXMLNS,
+					__IgnoreEls, _els, undefined,
+					undefined),
+    Xmlns = decode_upload_slot_attrs(__TopXMLNS, _attrs,
+				     undefined),
+    {upload_slot, Get, Put, Xmlns}.
+
+decode_upload_slot_els(__TopXMLNS, __IgnoreEls, [], Put,
+		       Get) ->
+    {Put, Get};
+decode_upload_slot_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlel, <<"get">>, _attrs, _} = _el | _els], Put,
+		       Get) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"eu:siacs:conversations:http:upload">>;
+	       __TopXMLNS == <<"urn:xmpp:http:upload">> ->
+	  decode_upload_slot_els(__TopXMLNS, __IgnoreEls, _els,
+				 Put,
+				 decode_upload_get(__TopXMLNS, __IgnoreEls,
+						   _el));
+      <<"urn:xmpp:http:upload">> ->
+	  decode_upload_slot_els(__TopXMLNS, __IgnoreEls, _els,
+				 Put,
+				 decode_upload_get(<<"urn:xmpp:http:upload">>,
+						   __IgnoreEls, _el));
+      <<"eu:siacs:conversations:http:upload">> ->
+	  decode_upload_slot_els(__TopXMLNS, __IgnoreEls, _els,
+				 Put,
+				 decode_upload_get(<<"eu:siacs:conversations:http:upload">>,
+						   __IgnoreEls, _el));
+      _ ->
+	  decode_upload_slot_els(__TopXMLNS, __IgnoreEls, _els,
+				 Put, Get)
+    end;
+decode_upload_slot_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlel, <<"put">>, _attrs, _} = _el | _els], Put,
+		       Get) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"eu:siacs:conversations:http:upload">>;
+	       __TopXMLNS == <<"urn:xmpp:http:upload">> ->
+	  decode_upload_slot_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_upload_put(__TopXMLNS, __IgnoreEls,
+						   _el),
+				 Get);
+      <<"urn:xmpp:http:upload">> ->
+	  decode_upload_slot_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_upload_put(<<"urn:xmpp:http:upload">>,
+						   __IgnoreEls, _el),
+				 Get);
+      <<"eu:siacs:conversations:http:upload">> ->
+	  decode_upload_slot_els(__TopXMLNS, __IgnoreEls, _els,
+				 decode_upload_put(<<"eu:siacs:conversations:http:upload">>,
+						   __IgnoreEls, _el),
+				 Get);
+      _ ->
+	  decode_upload_slot_els(__TopXMLNS, __IgnoreEls, _els,
+				 Put, Get)
+    end;
+decode_upload_slot_els(__TopXMLNS, __IgnoreEls,
+		       [_ | _els], Put, Get) ->
+    decode_upload_slot_els(__TopXMLNS, __IgnoreEls, _els,
+			   Put, Get).
+
+decode_upload_slot_attrs(__TopXMLNS,
+			 [{<<"xmlns">>, _val} | _attrs], _Xmlns) ->
+    decode_upload_slot_attrs(__TopXMLNS, _attrs, _val);
+decode_upload_slot_attrs(__TopXMLNS, [_ | _attrs],
+			 Xmlns) ->
+    decode_upload_slot_attrs(__TopXMLNS, _attrs, Xmlns);
+decode_upload_slot_attrs(__TopXMLNS, [], Xmlns) ->
+    decode_upload_slot_attr_xmlns(__TopXMLNS, Xmlns).
+
+encode_upload_slot({upload_slot, Get, Put, Xmlns},
+		   _xmlns_attrs) ->
+    _els = lists:reverse('encode_upload_slot_$put'(Put,
+						   'encode_upload_slot_$get'(Get,
+									     []))),
+    _attrs = encode_upload_slot_attr_xmlns(Xmlns,
+					   _xmlns_attrs),
+    {xmlel, <<"slot">>, _attrs, _els}.
+
+'encode_upload_slot_$put'(undefined, _acc) -> _acc;
+'encode_upload_slot_$put'(Put, _acc) ->
+    [encode_upload_put(Put, []) | _acc].
+
+'encode_upload_slot_$get'(undefined, _acc) -> _acc;
+'encode_upload_slot_$get'(Get, _acc) ->
+    [encode_upload_get(Get, []) | _acc].
+
+decode_upload_slot_attr_xmlns(__TopXMLNS, undefined) ->
+    undefined;
+decode_upload_slot_attr_xmlns(__TopXMLNS, _val) -> _val.
+
+encode_upload_slot_attr_xmlns(undefined, _acc) -> _acc;
+encode_upload_slot_attr_xmlns(_val, _acc) ->
+    [{<<"xmlns">>, _val} | _acc].
+
+decode_upload_put(__TopXMLNS, __IgnoreEls,
+		  {xmlel, <<"put">>, _attrs, _els}) ->
+    Cdata = decode_upload_put_els(__TopXMLNS, __IgnoreEls,
+				  _els, <<>>),
+    Cdata.
+
+decode_upload_put_els(__TopXMLNS, __IgnoreEls, [],
+		      Cdata) ->
+    decode_upload_put_cdata(__TopXMLNS, Cdata);
+decode_upload_put_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlcdata, _data} | _els], Cdata) ->
+    decode_upload_put_els(__TopXMLNS, __IgnoreEls, _els,
+			  <<Cdata/binary, _data/binary>>);
+decode_upload_put_els(__TopXMLNS, __IgnoreEls,
+		      [_ | _els], Cdata) ->
+    decode_upload_put_els(__TopXMLNS, __IgnoreEls, _els,
+			  Cdata).
+
+encode_upload_put(Cdata, _xmlns_attrs) ->
+    _els = encode_upload_put_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"put">>, _attrs, _els}.
+
+decode_upload_put_cdata(__TopXMLNS, <<>>) ->
+    erlang:error({xmpp_codec,
+		  {missing_cdata, <<>>, <<"put">>, __TopXMLNS}});
+decode_upload_put_cdata(__TopXMLNS, _val) -> _val.
+
+encode_upload_put_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_upload_get(__TopXMLNS, __IgnoreEls,
+		  {xmlel, <<"get">>, _attrs, _els}) ->
+    Cdata = decode_upload_get_els(__TopXMLNS, __IgnoreEls,
+				  _els, <<>>),
+    Cdata.
+
+decode_upload_get_els(__TopXMLNS, __IgnoreEls, [],
+		      Cdata) ->
+    decode_upload_get_cdata(__TopXMLNS, Cdata);
+decode_upload_get_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlcdata, _data} | _els], Cdata) ->
+    decode_upload_get_els(__TopXMLNS, __IgnoreEls, _els,
+			  <<Cdata/binary, _data/binary>>);
+decode_upload_get_els(__TopXMLNS, __IgnoreEls,
+		      [_ | _els], Cdata) ->
+    decode_upload_get_els(__TopXMLNS, __IgnoreEls, _els,
+			  Cdata).
+
+encode_upload_get(Cdata, _xmlns_attrs) ->
+    _els = encode_upload_get_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"get">>, _attrs, _els}.
+
+decode_upload_get_cdata(__TopXMLNS, <<>>) ->
+    erlang:error({xmpp_codec,
+		  {missing_cdata, <<>>, <<"get">>, __TopXMLNS}});
+decode_upload_get_cdata(__TopXMLNS, _val) -> _val.
+
+encode_upload_get_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_upload_request(__TopXMLNS, __IgnoreEls,
+		      {xmlel, <<"request">>, _attrs, _els}) ->
+    {Content_type, Size, Filename} =
+	decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				  <<>>, error, error),
+    Xmlns = decode_upload_request_attrs(__TopXMLNS, _attrs,
+					undefined),
+    {upload_request, Filename, Size, Content_type, Xmlns}.
+
+decode_upload_request_els(__TopXMLNS, __IgnoreEls, [],
+			  Content_type, Size, Filename) ->
+    {Content_type,
+     case Size of
+       error ->
+	   erlang:error({xmpp_codec,
+			 {missing_tag, <<"size">>, __TopXMLNS}});
+       {value, Size1} -> Size1
+     end,
+     case Filename of
+       error ->
+	   erlang:error({xmpp_codec,
+			 {missing_tag, <<"filename">>, __TopXMLNS}});
+       {value, Filename1} -> Filename1
+     end};
+decode_upload_request_els(__TopXMLNS, __IgnoreEls,
+			  [{xmlel, <<"filename">>, _attrs, _} = _el | _els],
+			  Content_type, Size, Filename) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"eu:siacs:conversations:http:upload">>;
+	       __TopXMLNS == <<"urn:xmpp:http:upload">> ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    Content_type, Size,
+				    {value,
+				     decode_upload_filename(__TopXMLNS,
+							    __IgnoreEls, _el)});
+      <<"urn:xmpp:http:upload">> ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    Content_type, Size,
+				    {value,
+				     decode_upload_filename(<<"urn:xmpp:http:upload">>,
+							    __IgnoreEls, _el)});
+      <<"eu:siacs:conversations:http:upload">> ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    Content_type, Size,
+				    {value,
+				     decode_upload_filename(<<"eu:siacs:conversations:http:upload">>,
+							    __IgnoreEls, _el)});
+      _ ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    Content_type, Size, Filename)
+    end;
+decode_upload_request_els(__TopXMLNS, __IgnoreEls,
+			  [{xmlel, <<"size">>, _attrs, _} = _el | _els],
+			  Content_type, Size, Filename) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"eu:siacs:conversations:http:upload">>;
+	       __TopXMLNS == <<"urn:xmpp:http:upload">> ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    Content_type,
+				    {value,
+				     decode_upload_size(__TopXMLNS, __IgnoreEls,
+							_el)},
+				    Filename);
+      <<"urn:xmpp:http:upload">> ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    Content_type,
+				    {value,
+				     decode_upload_size(<<"urn:xmpp:http:upload">>,
+							__IgnoreEls, _el)},
+				    Filename);
+      <<"eu:siacs:conversations:http:upload">> ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    Content_type,
+				    {value,
+				     decode_upload_size(<<"eu:siacs:conversations:http:upload">>,
+							__IgnoreEls, _el)},
+				    Filename);
+      _ ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    Content_type, Size, Filename)
+    end;
+decode_upload_request_els(__TopXMLNS, __IgnoreEls,
+			  [{xmlel, <<"content-type">>, _attrs, _} = _el | _els],
+			  Content_type, Size, Filename) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"eu:siacs:conversations:http:upload">>;
+	       __TopXMLNS == <<"urn:xmpp:http:upload">> ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    decode_upload_content_type(__TopXMLNS,
+							       __IgnoreEls,
+							       _el),
+				    Size, Filename);
+      <<"urn:xmpp:http:upload">> ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    decode_upload_content_type(<<"urn:xmpp:http:upload">>,
+							       __IgnoreEls,
+							       _el),
+				    Size, Filename);
+      <<"eu:siacs:conversations:http:upload">> ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    decode_upload_content_type(<<"eu:siacs:conversations:http:upload">>,
+							       __IgnoreEls,
+							       _el),
+				    Size, Filename);
+      _ ->
+	  decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+				    Content_type, Size, Filename)
+    end;
+decode_upload_request_els(__TopXMLNS, __IgnoreEls,
+			  [_ | _els], Content_type, Size, Filename) ->
+    decode_upload_request_els(__TopXMLNS, __IgnoreEls, _els,
+			      Content_type, Size, Filename).
+
+decode_upload_request_attrs(__TopXMLNS,
+			    [{<<"xmlns">>, _val} | _attrs], _Xmlns) ->
+    decode_upload_request_attrs(__TopXMLNS, _attrs, _val);
+decode_upload_request_attrs(__TopXMLNS, [_ | _attrs],
+			    Xmlns) ->
+    decode_upload_request_attrs(__TopXMLNS, _attrs, Xmlns);
+decode_upload_request_attrs(__TopXMLNS, [], Xmlns) ->
+    decode_upload_request_attr_xmlns(__TopXMLNS, Xmlns).
+
+encode_upload_request({upload_request, Filename, Size,
+		       Content_type, Xmlns},
+		      _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_upload_request_$content-type'(Content_type,
+							    'encode_upload_request_$size'(Size,
+											  'encode_upload_request_$filename'(Filename,
+															    [])))),
+    _attrs = encode_upload_request_attr_xmlns(Xmlns,
+					      _xmlns_attrs),
+    {xmlel, <<"request">>, _attrs, _els}.
+
+'encode_upload_request_$content-type'(<<>>, _acc) ->
+    _acc;
+'encode_upload_request_$content-type'(Content_type,
+				      _acc) ->
+    [encode_upload_content_type(Content_type, []) | _acc].
+
+'encode_upload_request_$size'(Size, _acc) ->
+    [encode_upload_size(Size, []) | _acc].
+
+'encode_upload_request_$filename'(Filename, _acc) ->
+    [encode_upload_filename(Filename, []) | _acc].
+
+decode_upload_request_attr_xmlns(__TopXMLNS,
+				 undefined) ->
+    undefined;
+decode_upload_request_attr_xmlns(__TopXMLNS, _val) ->
+    _val.
+
+encode_upload_request_attr_xmlns(undefined, _acc) ->
+    _acc;
+encode_upload_request_attr_xmlns(_val, _acc) ->
+    [{<<"xmlns">>, _val} | _acc].
+
+decode_upload_content_type(__TopXMLNS, __IgnoreEls,
+			   {xmlel, <<"content-type">>, _attrs, _els}) ->
+    Cdata = decode_upload_content_type_els(__TopXMLNS,
+					   __IgnoreEls, _els, <<>>),
+    Cdata.
+
+decode_upload_content_type_els(__TopXMLNS, __IgnoreEls,
+			       [], Cdata) ->
+    decode_upload_content_type_cdata(__TopXMLNS, Cdata);
+decode_upload_content_type_els(__TopXMLNS, __IgnoreEls,
+			       [{xmlcdata, _data} | _els], Cdata) ->
+    decode_upload_content_type_els(__TopXMLNS, __IgnoreEls,
+				   _els, <<Cdata/binary, _data/binary>>);
+decode_upload_content_type_els(__TopXMLNS, __IgnoreEls,
+			       [_ | _els], Cdata) ->
+    decode_upload_content_type_els(__TopXMLNS, __IgnoreEls,
+				   _els, Cdata).
+
+encode_upload_content_type(Cdata, _xmlns_attrs) ->
+    _els = encode_upload_content_type_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"content-type">>, _attrs, _els}.
+
+decode_upload_content_type_cdata(__TopXMLNS, <<>>) ->
+    <<>>;
+decode_upload_content_type_cdata(__TopXMLNS, _val) ->
+    _val.
+
+encode_upload_content_type_cdata(<<>>, _acc) -> _acc;
+encode_upload_content_type_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
+
+decode_upload_size(__TopXMLNS, __IgnoreEls,
+		   {xmlel, <<"size">>, _attrs, _els}) ->
+    Cdata = decode_upload_size_els(__TopXMLNS, __IgnoreEls,
+				   _els, <<>>),
+    Cdata.
+
+decode_upload_size_els(__TopXMLNS, __IgnoreEls, [],
+		       Cdata) ->
+    decode_upload_size_cdata(__TopXMLNS, Cdata);
+decode_upload_size_els(__TopXMLNS, __IgnoreEls,
+		       [{xmlcdata, _data} | _els], Cdata) ->
+    decode_upload_size_els(__TopXMLNS, __IgnoreEls, _els,
+			   <<Cdata/binary, _data/binary>>);
+decode_upload_size_els(__TopXMLNS, __IgnoreEls,
+		       [_ | _els], Cdata) ->
+    decode_upload_size_els(__TopXMLNS, __IgnoreEls, _els,
+			   Cdata).
+
+encode_upload_size(Cdata, _xmlns_attrs) ->
+    _els = encode_upload_size_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"size">>, _attrs, _els}.
+
+decode_upload_size_cdata(__TopXMLNS, <<>>) ->
+    erlang:error({xmpp_codec,
+		  {missing_cdata, <<>>, <<"size">>, __TopXMLNS}});
+decode_upload_size_cdata(__TopXMLNS, _val) ->
+    case catch dec_int(_val, 0, infinity) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"size">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_upload_size_cdata(_val, _acc) ->
+    [{xmlcdata, enc_int(_val)} | _acc].
+
+decode_upload_filename(__TopXMLNS, __IgnoreEls,
+		       {xmlel, <<"filename">>, _attrs, _els}) ->
+    Cdata = decode_upload_filename_els(__TopXMLNS,
+				       __IgnoreEls, _els, <<>>),
+    Cdata.
+
+decode_upload_filename_els(__TopXMLNS, __IgnoreEls, [],
+			   Cdata) ->
+    decode_upload_filename_cdata(__TopXMLNS, Cdata);
+decode_upload_filename_els(__TopXMLNS, __IgnoreEls,
+			   [{xmlcdata, _data} | _els], Cdata) ->
+    decode_upload_filename_els(__TopXMLNS, __IgnoreEls,
+			       _els, <<Cdata/binary, _data/binary>>);
+decode_upload_filename_els(__TopXMLNS, __IgnoreEls,
+			   [_ | _els], Cdata) ->
+    decode_upload_filename_els(__TopXMLNS, __IgnoreEls,
+			       _els, Cdata).
+
+encode_upload_filename(Cdata, _xmlns_attrs) ->
+    _els = encode_upload_filename_cdata(Cdata, []),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"filename">>, _attrs, _els}.
+
+decode_upload_filename_cdata(__TopXMLNS, <<>>) ->
+    erlang:error({xmpp_codec,
+		  {missing_cdata, <<>>, <<"filename">>, __TopXMLNS}});
+decode_upload_filename_cdata(__TopXMLNS, _val) -> _val.
+
+encode_upload_filename_cdata(_val, _acc) ->
+    [{xmlcdata, _val} | _acc].
 
 decode_sic(__TopXMLNS, __IgnoreEls,
 	   {xmlel, <<"address">>, _attrs, _els}) ->
