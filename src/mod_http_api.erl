@@ -444,22 +444,24 @@ ejabberd_command(Auth, Cmd, Args, Version, IP) ->
 format_command_result(Cmd, Auth, Result, Version) ->
     {_, ResultFormat} = ejabberd_commands:get_command_format(Cmd, Auth, Version),
     case {ResultFormat, Result} of
-	{{_, rescode}, V} when V == true; V == ok ->
-	    {200, 0};
-	{{_, rescode}, _} ->
-	    {200, 1};
-	{{_, restuple}, {V1, Text1}} when V1 == true; V1 == ok ->
-	    {200, iolist_to_binary(Text1)};
-	{{_, restuple}, {_, Text2}} ->
-	    {500, iolist_to_binary(Text2)};
-	{{_, {list, _}}, _V} ->
-	    {_, L} = format_result(Result, ResultFormat),
-	    {200, L};
-	{{_, {tuple, _}}, _V} ->
-	    {_, T} = format_result(Result, ResultFormat),
-	    {200, T};
-	_ ->
-	    {200, {[format_result(Result, ResultFormat)]}}
+        {{_, rescode}, V} when V == true; V == ok ->
+            {200, 0};
+        {{_, rescode}, _} ->
+            {200, 1};
+        {{_, restuple}, {V, Text}} when V == true; V == ok ->
+            {200, iolist_to_binary(Text)};
+        {{_, restuple}, {V, Text}} when V == conflict ->
+            {409, iolist_to_binary(Text)};
+        {{_, restuple}, {_, Text2}} ->
+            {500, iolist_to_binary(Text2)};
+        {{_, {list, _}}, _V} ->
+            {_, L} = format_result(Result, ResultFormat),
+            {200, L};
+        {{_, {tuple, _}}, _V} ->
+            {_, T} = format_result(Result, ResultFormat),
+            {200, T};
+        _ ->
+            {200, {[format_result(Result, ResultFormat)]}}
     end.
 
 format_result(Atom, {Name, atom}) ->

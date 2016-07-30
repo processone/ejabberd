@@ -382,7 +382,7 @@ register(User, Host, Password) ->
 	{atomic, exists} ->
 	    String = io_lib:format("User ~s@~s already registered at node ~p",
 				   [User, Host, node()]),
-	    {exists, String};
+	    {conflict, String};
 	{error, Reason} ->
 	    String = io_lib:format("Can't register user ~s@~s at node ~p: ~p",
 				   [User, Host, node(), Reason]),
