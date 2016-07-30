@@ -220,12 +220,8 @@ process([Call], #request{method = 'POST', data = Data, ip = {IP, _} = IPPort} = 
         log(Call, Args, IPPort),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                case handle(Cmd, Auth, Args, Version, IP) of
-                    {Code, Result} ->
-                        json_response(Code, jiffy:encode(Result));
-                    {HTMLCode, JSONErrorCode, Message} ->
-                        json_error(HTMLCode, JSONErrorCode, Message)
-                    end;
+                Result = handle(Cmd, Auth, Args, Version, IP),
+                json_format(Result);
             %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
                 ErrorResponse
@@ -247,8 +243,8 @@ process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
         log(Call, Args, IP),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                {Code, Result} = handle(Cmd, Auth, Args, Version, IP),
-                json_response(Code, jiffy:encode(Result));
+                Result = handle(Cmd, Auth, Args, Version, IP),
+                json_format(Result);
             %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
                 ErrorResponse
@@ -302,7 +298,7 @@ handle(Call, Auth, Args, Version, IP) when is_atom(Call), is_list(Args) ->
                             [{Key, undefined}|Acc]
                     end, [], ArgsSpec),
 	    try
-		handle2(Call, Auth, match(Args2, Spec), Version, IP)
+          handle2(Call, Auth, match(Args2, Spec), Version, IP)
 	    catch throw:not_found ->
 		    {404, <<"not_found">>};
 		  throw:{not_found, Why} when is_atom(Why) ->
@@ -448,12 +444,12 @@ format_command_result(Cmd, Auth, Result, Version) ->
             {200, 0};
         {{_, rescode}, _} ->
             {200, 1};
+        {_, {error, ErrorAtom, Code, Msg}} ->
+            format_error_result(ErrorAtom, Code, Msg);
         {{_, restuple}, {V, Text}} when V == true; V == ok ->
             {200, iolist_to_binary(Text)};
-        {{_, restuple}, {V, Text}} when V == conflict ->
-            {409, iolist_to_binary(Text)};
-        {{_, restuple}, {_, Text2}} ->
-            {500, iolist_to_binary(Text2)};
+        {{_, restuple}, {ErrorAtom, Msg}} ->
+            format_error_result(ErrorAtom, 0, Msg);
         {{_, {list, _}}, _V} ->
             {_, L} = format_result(Result, ResultFormat),
             {200, L};
@@ -499,6 +495,11 @@ format_result(Tuple, {Name, {tuple, Def}}) ->
 format_result(404, {_Name, _}) ->
     "not_found".
 
+format_error_result(conflict, Code, Msg) ->
+    {409, Code, iolist_to_binary(Msg)};
+format_error_result(_ErrorAtom, Code, Msg) ->
+    {500, Code, iolist_to_binary(Msg)}.
+
 unauthorized_response() ->
     json_error(401, 10, <<"Oauth Token is invalid or expired.">>).
 
@@ -506,6 +507,11 @@ badrequest_response() ->
     badrequest_response(<<"400 Bad Request">>).
 badrequest_response(Body) ->
     json_response(400, jiffy:encode(Body)).
+
+json_format({Code, Result}) ->
+    json_response(Code, jiffy:encode(Result));
+json_format({HTMLCode, JSONErrorCode, Message}) ->
+    json_error(HTMLCode, JSONErrorCode, Message).
 
 json_response(Code, Body) when is_integer(Code) ->
     {Code, ?HEADER(?CT_JSON), Body}.

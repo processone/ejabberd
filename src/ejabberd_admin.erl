@@ -380,13 +380,12 @@ register(User, Host, Password) ->
 	{atomic, ok} ->
 	    {ok, io_lib:format("User ~s@~s successfully registered", [User, Host])};
 	{atomic, exists} ->
-	    String = io_lib:format("User ~s@~s already registered at node ~p",
-				   [User, Host, node()]),
-	    {conflict, String};
+	    Msg = io_lib:format("User ~s@~s already registered", [User, Host]),
+	    {error, conflict, 10090, Msg};
 	{error, Reason} ->
 	    String = io_lib:format("Can't register user ~s@~s at node ~p: ~p",
 				   [User, Host, node(), Reason]),
-	    {cannot_register, String}
+	    {error, cannot_register, 10001, String}
     end.
 
 unregister(User, Host) ->
