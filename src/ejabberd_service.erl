@@ -145,7 +145,7 @@ init([{SockMod, Socket}, Opts]) ->
     Delegations = case lists:keyfind(delegations, 1, Opts) of
                       {delegations, Del} ->
                           lists:foldl(
-                            fun({Ns, FiltAttr}, D) ->
+                            fun({Ns, FiltAttr}, D) when Ns /= ?NS_DELEGATION ->
                                 case ets:lookup(delegated_namespaces, Ns) of
                                   [{Ns, _Pid, _Feat, _FeatBare}] -> % this namespace was already delegated
                                       D;
@@ -155,7 +155,8 @@ init([{SockMod, Socket}, Opts]) ->
                                       Attr = proplists:get_value(filtering,
                                                                  FiltAttr, []),
                                       D ++ [{Ns, Attr}]
-                                end
+                                end;
+                               (_Deleg, D) -> D
                             end, [], Del); 
                       false -> []
                   end, 
