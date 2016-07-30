@@ -17,7 +17,6 @@
 	 get_user_displayed_groups/3, is_user_in_group/3,
 	 add_user_to_group/3, remove_user_from_group/3, import/2]).
 
--include("jlib.hrl").
 -include("mod_roster.hrl").
 -include("mod_shared_roster.hrl").
 -include("logger.hrl").
