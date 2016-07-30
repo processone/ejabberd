@@ -682,7 +682,7 @@ check_auth(Command, {User, Server, {oauth, Token}, _}) ->
     case ejabberd_oauth:check_token(User, Server, ScopeList, Token) of
         true ->
             {ok, User, Server};
-        false ->
+        _ ->
             throw({error, invalid_account_data})
     end;
 check_auth(_Command, {User, Server, Password, _}) when is_binary(Password) ->
