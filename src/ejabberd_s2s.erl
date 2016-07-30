@@ -473,28 +473,34 @@ send_element(Pid, El) ->
 %%% ejabberd commands
 
 get_commands_spec() ->
-    [#ejabberd_commands{name = incoming_s2s_number,
-			tags = [stats, s2s],
-			desc =
-			    "Number of incoming s2s connections on "
-			    "the node",
-                        policy = admin,
-			module = ?MODULE, function = incoming_s2s_number,
-			args = [], result = {s2s_incoming, integer}},
-     #ejabberd_commands{name = outgoing_s2s_number,
-			tags = [stats, s2s],
-			desc =
-			    "Number of outgoing s2s connections on "
-			    "the node",
-                        policy = admin,
-			module = ?MODULE, function = outgoing_s2s_number,
-			args = [], result = {s2s_outgoing, integer}}].
+    [#ejabberd_commands{
+        name = incoming_s2s_number,
+        tags = [stats, s2s],
+        desc = "Number of incoming s2s connections on the node",
+        policy = admin,
+        module = ?MODULE, function = incoming_s2s_number,
+        args = [], result = {s2s_incoming, integer}},
+     #ejabberd_commands{
+        name = outgoing_s2s_number,
+        tags = [stats, s2s],
+        desc = "Number of outgoing s2s connections on the node",
+        policy = admin,
+        module = ?MODULE, function = outgoing_s2s_number,
+        args = [], result = {s2s_outgoing, integer}}].
 
+%% TODO Move those stats commands to ejabberd stats command ?
 incoming_s2s_number() ->
-    length(supervisor:which_children(ejabberd_s2s_in_sup)).
+    supervisor_count(ejabberd_s2s_in_sup).
 
 outgoing_s2s_number() ->
-    length(supervisor:which_children(ejabberd_s2s_out_sup)).
+    supervisor_count(ejabberd_s2s_out_sup).
+
+supervisor_count(Supervisor) ->
+    case catch supervisor:which_children(Supervisor) of
+        {'EXIT', _} -> 0;
+        Result ->
+            length(Result)
+    end.
 
 %%%----------------------------------------------------------------------
 %%% Update Mnesia tables
