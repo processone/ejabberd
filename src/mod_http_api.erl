@@ -206,7 +206,7 @@ oauth_check_token(ScopeList, Token) when is_list(ScopeList) ->
 
 %process(Call, Request) ->
 %    ?DEBUG("~p~n~p", [Call, Request]), ok;
-process(_, #request{method = 'POST', data = <<>>}) ->
+process(_, #request{method = 'POST', data = <<"/">>}) ->
     ?DEBUG("Bad Request: no data", []),
     badrequest_response(<<"Missing POST data">>);
 process([Call], #request{method = 'POST', data = Data, ip = {IP, _} = IPPort} = Req) ->
