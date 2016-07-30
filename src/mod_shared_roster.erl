@@ -29,7 +29,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, item_to_xml/1, export/1,
+-export([start/2, stop/1, export/1,
 	 import/1, webadmin_menu/3, webadmin_page/3,
 	 get_user_roster/2, get_subscription_lists/3,
 	 get_jid_info/4, import/3, process_item/2,
@@ -44,7 +44,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("mod_roster.hrl").
 
@@ -172,53 +172,33 @@ get_user_roster(Items, US) ->
 						      end
 					      end,
 					      SRUsers, Items),
-    ModVcard = get_vcard_module(S),
     SRItems = [#roster{usj = {U, S, {U1, S1, <<"">>}},
 		       us = US, jid = {U1, S1, <<"">>},
-		       name = get_rosteritem_name(ModVcard, U1, S1),
+		       name = get_rosteritem_name(U1, S1),
 		       subscription = both, ask = none, groups = GroupNames}
 	       || {{U1, S1}, GroupNames} <- dict:to_list(SRUsersRest)],
     SRItems ++ NewItems1.
 
-get_vcard_module(Server) ->
-    Modules = gen_mod:loaded_modules(Server),
-    [M
-     || M <- Modules,
-	(M == mod_vcard) or (M == mod_vcard_ldap)].
-
-get_rosteritem_name([], _, _) -> <<"">>;
-get_rosteritem_name([ModVcard], U, S) ->
-    From = jid:make(<<"">>, S, jlib:atom_to_binary(?MODULE)),
-    To = jid:make(U, S, <<"">>),
-    case lists:member(To#jid.lserver, ?MYHOSTS) of
+get_rosteritem_name(U, S) ->
+    case gen_mod:is_loaded(S, mod_vcard) of
         true ->
-            IQ = {iq, <<"">>, get, <<"vcard-temp">>, <<"">>,
-                  #xmlel{name = <<"vCard">>,
-                         attrs = [{<<"xmlns">>, <<"vcard-temp">>}],
-                         children = []}},
-            IQ_Vcard = ModVcard:process_sm_iq(From, To, IQ),
-            case catch get_rosteritem_name_vcard(IQ_Vcard#iq.sub_el) of
-                {'EXIT', Err} ->
-                    ?ERROR_MSG("Error found when trying to get the "
-                               "vCard of ~s@~s in ~p:~n ~p",
-                               [U, S, ModVcard, Err]),
-                    <<"">>;
-                NickName ->
-                    NickName
-            end;
+	    SubEls = mod_vcard:get_vcard(U, S),
+	    get_rosteritem_name_vcard(SubEls);
         false ->
             <<"">>
     end.
 
-get_rosteritem_name_vcard([]) -> <<"">>;
-get_rosteritem_name_vcard([Vcard]) ->
+-spec get_rosteritem_name_vcard([xmlel()]) -> binary().
+get_rosteritem_name_vcard([Vcard|_]) ->
     case fxml:get_path_s(Vcard,
 			[{elem, <<"NICKNAME">>}, cdata])
 	of
       <<"">> ->
 	  fxml:get_path_s(Vcard, [{elem, <<"FN">>}, cdata]);
       Nickname -> Nickname
-    end.
+    end;
+get_rosteritem_name_vcard(_) ->
+    <<"">>.
 
 %% This function rewrites the roster entries when moving or renaming
 %% them in the user contact list.
@@ -305,16 +285,12 @@ set_new_rosteritems(UserFrom, ServerFrom, UserTo,
     RIFrom.
 
 set_item(User, Server, Resource, Item) ->
-    ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
-		id = <<"push", (randoms:get_string())/binary>>,
-		sub_el =
-		    [#xmlel{name = <<"query">>,
-			    attrs = [{<<"xmlns">>, ?NS_ROSTER}],
-			    children = [mod_roster:item_to_xml(Item)]}]},
-    ejabberd_router:route(jid:make(User, Server,
-					Resource),
-			  jid:make(<<"">>, Server, <<"">>),
-			  jlib:iq_to_xml(ResIQ)).
+    ResIQ = #iq{type = set, id = <<"push", (randoms:get_string())/binary>>,
+		sub_els = [#roster_query{
+			      items = [mod_roster:encode_item(Item)]}]},
+    ejabberd_router:route(jid:make(User, Server, Resource),
+			  jid:make(Server),
+			  ResIQ).
 
 get_subscription_lists({F, T}, User, Server) ->
     LUser = jid:nodeprep(User),
@@ -574,13 +550,13 @@ add_user_to_group(Host, US, Group) ->
     {LUser, LServer} = US,
     case ejabberd_regexp:run(LUser, <<"^@.+@\$">>) of
       match ->
-	  GroupOpts = (?MODULE):get_group_opts(Host, Group),
+	  GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
 	  MoreGroupOpts = case LUser of
 			    <<"@all@">> -> [{all_users, true}];
 			    <<"@online@">> -> [{online_users, true}];
 			    _ -> []
 			  end,
-	  (?MODULE):set_group_opts(Host, Group,
+	  mod_shared_roster:set_group_opts(Host, Group,
 				   GroupOpts ++ MoreGroupOpts);
       nomatch ->
 	  DisplayedToGroups = displayed_to_groups(Group, Host),
@@ -612,7 +588,7 @@ remove_user_from_group(Host, US, Group) ->
     {LUser, LServer} = US,
     case ejabberd_regexp:run(LUser, <<"^@.+@\$">>) of
       match ->
-	  GroupOpts = (?MODULE):get_group_opts(Host, Group),
+	  GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
 	  NewGroupOpts = case LUser of
 			   <<"@all@">> ->
 			       lists:filter(fun (X) -> X /= {all_users, true}
@@ -623,7 +599,7 @@ remove_user_from_group(Host, US, Group) ->
 					    end,
 					    GroupOpts)
 			 end,
-	  (?MODULE):set_group_opts(Host, Group, NewGroupOpts);
+	  mod_shared_roster:set_group_opts(Host, Group, NewGroupOpts);
       nomatch ->
 	  Mod = gen_mod:db_mod(Host, ?MODULE),
 	  Result = Mod:remove_user_from_group(Host, US, Group),
@@ -730,13 +706,9 @@ displayed_to_groups(GroupName, LServer) ->
     [Name || {Name, _} <- Gs].
 
 push_item(User, Server, Item) ->
-    Stanza = jlib:iq_to_xml(#iq{type = set,
-				xmlns = ?NS_ROSTER,
-				id = <<"push", (randoms:get_string())/binary>>,
-				sub_el =
-				    [#xmlel{name = <<"query">>,
-					    attrs = [{<<"xmlns">>, ?NS_ROSTER}],
-					    children = [item_to_xml(Item)]}]}),
+    Stanza = #iq{type = set, id = <<"push", (randoms:get_string())/binary>>,
+		 sub_els = [#roster_query{
+			       items = [mod_roster:encode_item(Item)]}]},
     lists:foreach(fun (Resource) ->
 			  JID = jid:make(User, Server, Resource),
 			  ejabberd_router:route(jid:remove_resource(JID), JID, Stanza)
@@ -751,38 +723,6 @@ push_roster_item(User, Server, ContactU, ContactS,
 		   name = <<"">>, subscription = Subscription, ask = none,
 		   groups = [GroupName]},
     push_item(User, Server, Item).
-
-item_to_xml(Item) ->
-    Attrs1 = [{<<"jid">>,
-	       jid:to_string(Item#roster.jid)}],
-    Attrs2 = case Item#roster.name of
-	       <<"">> -> Attrs1;
-	       Name -> [{<<"name">>, Name} | Attrs1]
-	     end,
-    Attrs3 = case Item#roster.subscription of
-	       none -> [{<<"subscription">>, <<"none">>} | Attrs2];
-	       from -> [{<<"subscription">>, <<"from">>} | Attrs2];
-	       to -> [{<<"subscription">>, <<"to">>} | Attrs2];
-	       both -> [{<<"subscription">>, <<"both">>} | Attrs2];
-	       remove -> [{<<"subscription">>, <<"remove">>} | Attrs2]
-	     end,
-    Attrs4 = case ask_to_pending(Item#roster.ask) of
-	       out -> [{<<"ask">>, <<"subscribe">>} | Attrs3];
-	       both -> [{<<"ask">>, <<"subscribe">>} | Attrs3];
-	       _ -> Attrs3
-	     end,
-    SubEls1 = lists:map(fun (G) ->
-				#xmlel{name = <<"group">>, attrs = [],
-				       children = [{xmlcdata, G}]}
-			end,
-			Item#roster.groups),
-    SubEls = SubEls1 ++ Item#roster.xs,
-    #xmlel{name = <<"item">>, attrs = Attrs4,
-	   children = SubEls}.
-
-ask_to_pending(subscribe) -> out;
-ask_to_pending(unsubscribe) -> none;
-ask_to_pending(Ask) -> Ask.
 
 user_available(New) ->
     LUser = New#jid.luser,
@@ -850,7 +790,7 @@ webadmin_page(Acc, _, _) -> Acc.
 
 list_shared_roster_groups(Host, Query, Lang) ->
     Res = list_sr_groups_parse_query(Host, Query),
-    SRGroups = (?MODULE):list_groups(Host),
+    SRGroups = mod_shared_roster:list_groups(Host),
     FGroups = (?XAE(<<"table">>, [],
 		    [?XE(<<"tbody">>,
 			 (lists:map(fun (Group) ->
@@ -901,15 +841,15 @@ list_sr_groups_parse_query(Host, Query) ->
 list_sr_groups_parse_addnew(Host, Query) ->
     case lists:keysearch(<<"namenew">>, 1, Query) of
       {value, {_, Group}} when Group /= <<"">> ->
-	  (?MODULE):create_group(Host, Group), ok;
+	  mod_shared_roster:create_group(Host, Group), ok;
       _ -> error
     end.
 
 list_sr_groups_parse_delete(Host, Query) ->
-    SRGroups = (?MODULE):list_groups(Host),
+    SRGroups = mod_shared_roster:list_groups(Host),
     lists:foreach(fun (Group) ->
 			  case lists:member({<<"selected">>, Group}, Query) of
-			    true -> (?MODULE):delete_group(Host, Group);
+			    true -> mod_shared_roster:delete_group(Host, Group);
 			    _ -> ok
 			  end
 		  end,
@@ -919,14 +859,14 @@ list_sr_groups_parse_delete(Host, Query) ->
 shared_roster_group(Host, Group, Query, Lang) ->
     Res = shared_roster_group_parse_query(Host, Group,
 					  Query),
-    GroupOpts = (?MODULE):get_group_opts(Host, Group),
+    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
     Name = get_opt(GroupOpts, name, <<"">>),
     Description = get_opt(GroupOpts, description, <<"">>),
     AllUsers = get_opt(GroupOpts, all_users, false),
     OnlineUsers = get_opt(GroupOpts, online_users, false),
     DisplayedGroups = get_opt(GroupOpts, displayed_groups,
 			      []),
-    Members = (?MODULE):get_group_explicit_users(Host,
+    Members = mod_shared_roster:get_group_explicit_users(Host,
 						 Group),
     FMembers = iolist_to_binary(
                  [if AllUsers -> <<"@all@\n">>;
@@ -1003,7 +943,7 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 	  DispGroupsOpt = if DispGroups == [] -> [];
 			     true -> [{displayed_groups, DispGroups}]
 			  end,
-	  OldMembers = (?MODULE):get_group_explicit_users(Host,
+	  OldMembers = mod_shared_roster:get_group_explicit_users(Host,
 							  Group),
 	  SJIDs = str:tokens(SMembers, <<", \r\n">>),
 	  NewMembers = lists:foldl(fun (_SJID, error) -> error;
@@ -1040,7 +980,7 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 	  RemovedDisplayedGroups = CurrentDisplayedGroups -- DispGroups,
 	  displayed_groups_update(OldMembers, RemovedDisplayedGroups, remove),
 	  displayed_groups_update(OldMembers, AddedDisplayedGroups, both),
-	  (?MODULE):set_group_opts(Host, Group,
+	  mod_shared_roster:set_group_opts(Host, Group,
 				   NameOpt ++
 				     DispGroupsOpt ++
 				       DescriptionOpt ++
@@ -1050,13 +990,13 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 		 AddedMembers = NewMembers -- OldMembers,
 		 RemovedMembers = OldMembers -- NewMembers,
 		 lists:foreach(fun (US) ->
-				       (?MODULE):remove_user_from_group(Host,
+				       mod_shared_roster:remove_user_from_group(Host,
 									US,
 									Group)
 			       end,
 			       RemovedMembers),
 		 lists:foreach(fun (US) ->
-				       (?MODULE):add_user_to_group(Host, US,
+				       mod_shared_roster:add_user_to_group(Host, US,
 								   Group)
 			       end,
 			       AddedMembers),
