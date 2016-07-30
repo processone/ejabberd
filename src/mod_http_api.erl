@@ -253,7 +253,7 @@ process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
         ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
         badrequest_response()
     end;
-process([], #request{method = 'OPTIONS', data = <<>>}) ->
+process([], #request{method = 'OPTIONS', data = <<"/">>}) ->
     {200, ?OPTIONS_HEADER, []};
 process(_Path, Request) ->
     ?DEBUG("Bad Request: no handler ~p", [Request]),
