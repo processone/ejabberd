@@ -28,7 +28,6 @@
 -author('ecestari@process-one.net').
 
 -include("pubsub.hrl").
--include("jlib.hrl").
 
 %%% @doc The module <strong>{@module}</strong> is the pep microblog PubSub plugin.
 %%% <p>To be used, mod_pubsub must be configured:<pre>
