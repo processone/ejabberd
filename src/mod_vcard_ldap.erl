@@ -75,8 +75,9 @@ get_vcard(LUser, LServer) ->
     VCardMap = State#state.vcard_map,
     case find_ldap_user(LUser, State) of
 	#eldap_entry{attributes = Attributes} ->
-	    ldap_attributes_to_vcard(Attributes, VCardMap,
-				     {LUser, LServer});
+	    VCard = ldap_attributes_to_vcard(Attributes, VCardMap,
+					     {LUser, LServer}),
+	    [xmpp:encode(VCard)];
 	_ ->
 	    []
     end.
@@ -218,108 +219,47 @@ ldap_attributes_to_vcard(Attributes, VCardMap, UD) ->
 					      UD)}
 		      end,
 		      VCardMap),
-    Elts = [ldap_attribute_to_vcard(vCard, Attr)
-	    || Attr <- Attrs],
-    NElts = [ldap_attribute_to_vcard(vCardN, Attr)
-	     || Attr <- Attrs],
-    OElts = [ldap_attribute_to_vcard(vCardO, Attr)
-	     || Attr <- Attrs],
-    AElts = [ldap_attribute_to_vcard(vCardA, Attr)
-	     || Attr <- Attrs],
-    [#xmlel{name = <<"vCard">>,
-	    attrs = [{<<"xmlns">>, ?NS_VCARD}],
-	    children =
-		lists:append([X || X <- Elts, X /= none],
-			     [#xmlel{name = <<"N">>, attrs = [],
-				     children = [X || X <- NElts, X /= none]},
-			      #xmlel{name = <<"ORG">>, attrs = [],
-				     children = [X || X <- OElts, X /= none]},
-			      #xmlel{name = <<"ADR">>, attrs = [],
-				     children =
-					 [X || X <- AElts, X /= none]}])}].
+    lists:foldl(fun ldap_attribute_to_vcard/2, #vcard_temp{}, Attrs).
 
-ldap_attribute_to_vcard(vCard, {<<"fn">>, Value}) ->
-    #xmlel{name = <<"FN">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCard,
-			{<<"nickname">>, Value}) ->
-    #xmlel{name = <<"NICKNAME">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCard, {<<"title">>, Value}) ->
-    #xmlel{name = <<"TITLE">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCard, {<<"bday">>, Value}) ->
-    #xmlel{name = <<"BDAY">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCard, {<<"url">>, Value}) ->
-    #xmlel{name = <<"URL">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCard, {<<"desc">>, Value}) ->
-    #xmlel{name = <<"DESC">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCard, {<<"role">>, Value}) ->
-    #xmlel{name = <<"ROLE">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCard, {<<"tel">>, Value}) ->
-    #xmlel{name = <<"TEL">>, attrs = [],
-	   children =
-	       [#xmlel{name = <<"VOICE">>, attrs = [], children = []},
-		#xmlel{name = <<"WORK">>, attrs = [], children = []},
-		#xmlel{name = <<"NUMBER">>, attrs = [],
-		       children = [{xmlcdata, Value}]}]};
-ldap_attribute_to_vcard(vCard, {<<"email">>, Value}) ->
-    #xmlel{name = <<"EMAIL">>, attrs = [],
-	   children =
-	       [#xmlel{name = <<"INTERNET">>, attrs = [],
-		       children = []},
-		#xmlel{name = <<"PREF">>, attrs = [], children = []},
-		#xmlel{name = <<"USERID">>, attrs = [],
-		       children = [{xmlcdata, Value}]}]};
-ldap_attribute_to_vcard(vCard, {<<"photo">>, Value}) ->
-    #xmlel{name = <<"PHOTO">>, attrs = [],
-	   children =
-	       [#xmlel{name = <<"TYPE">>, attrs = [],
-		       children = [{xmlcdata, <<"image/jpeg">>}]},
-		#xmlel{name = <<"BINVAL">>, attrs = [],
-		       children = [{xmlcdata, jlib:encode_base64(Value)}]}]};
-ldap_attribute_to_vcard(vCardN,
-			{<<"family">>, Value}) ->
-    #xmlel{name = <<"FAMILY">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCardN, {<<"given">>, Value}) ->
-    #xmlel{name = <<"GIVEN">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCardN,
-			{<<"middle">>, Value}) ->
-    #xmlel{name = <<"MIDDLE">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCardO,
-			{<<"orgname">>, Value}) ->
-    #xmlel{name = <<"ORGNAME">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCardO,
-			{<<"orgunit">>, Value}) ->
-    #xmlel{name = <<"ORGUNIT">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCardA,
-			{<<"locality">>, Value}) ->
-    #xmlel{name = <<"LOCALITY">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCardA,
-			{<<"street">>, Value}) ->
-    #xmlel{name = <<"STREET">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCardA, {<<"ctry">>, Value}) ->
-    #xmlel{name = <<"CTRY">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCardA,
-			{<<"region">>, Value}) ->
-    #xmlel{name = <<"REGION">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(vCardA, {<<"pcode">>, Value}) ->
-    #xmlel{name = <<"PCODE">>, attrs = [],
-	   children = [{xmlcdata, Value}]};
-ldap_attribute_to_vcard(_, _) -> none.
+-spec ldap_attribute_to_vcard({binary(), binary()}, vcard_temp()) -> vcard_temp().
+ldap_attribute_to_vcard({Attr, Value}, V) ->
+    Ts = V#vcard_temp.tel,
+    Es = V#vcard_temp.email,
+    N = case V#vcard_temp.n of
+	    undefined -> #vcard_name{};
+	    _ -> V#vcard_temp.n
+	end,
+    O = case V#vcard_temp.org of
+	    undefined -> #vcard_org{};
+	    _ -> V#vcard_temp.org
+	end,
+    A = case V#vcard_temp.adr of
+	    [] -> #vcard_adr{};
+	    As -> hd(As)
+	end,
+    case Attr of
+	<<"fn">> -> V#vcard_temp{fn = Value};
+	<<"nickname">> -> V#vcard_temp{nickname = Value};
+	<<"title">> -> V#vcard_temp{title = Value};
+	<<"bday">> -> V#vcard_temp{bday = Value};
+	<<"url">> -> V#vcard_temp{url = Value};
+	<<"desc">> -> V#vcard_temp{desc = Value};
+	<<"role">> -> V#vcard_temp{role = Value};
+	<<"tel">> -> V#vcard_temp{tel = [#vcard_tel{number = Value}|Ts]};
+	<<"email">> -> V#vcard_temp{email = [#vcard_email{userid = Value}|Es]};
+	<<"photo">> -> V#vcard_temp{photo = #vcard_photo{binval = Value}};
+	<<"family">> -> V#vcard_temp{n = N#vcard_name{family = V}};
+	<<"given">> -> V#vcard_temp{n = N#vcard_name{given = V}};
+	<<"middle">> -> V#vcard_temp{n = N#vcard_name{middle = V}};
+	<<"orgname">> -> V#vcard_temp{org = O#vcard_org{name = V}};
+	<<"orgunit">> -> V#vcard_temp{org = O#vcard_org{units = [Value]}};
+	<<"locality">> -> V#vcard_temp{adr = [A#vcard_adr{locality = Value}]};
+	<<"street">> -> V#vcard_temp{adr = [A#vcard_adr{street = Value}]};
+	<<"ctry">> -> V#vcard_temp{adr = [A#vcard_adr{ctry = Value}]};
+	<<"region">> -> V#vcard_temp{adr = [A#vcard_adr{region = Value}]};
+	<<"pcode">> -> V#vcard_temp{adr = [A#vcard_adr{pcode = Value}]};
+	_ -> V
+    end.
 
 map_vcard_attr(VCardName, Attributes, Pattern, UD) ->
     Res = lists:filter(fun ({Name, _, _}) ->
