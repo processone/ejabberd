@@ -87,6 +87,7 @@ get_commands_spec() ->
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = reopen_log, tags = [logs, server],
 			desc = "Reopen the log files",
+			policy = admin,
 			module = ?MODULE, function = reopen_log,
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = rotate_log, tags = [logs, server],

@@ -425,7 +425,7 @@ get_command_definition(Name, Version) ->
                          {V, C}
                  end)))) of
         [{_, Command} | _ ] -> Command;
-        _E -> throw(unknown_command)
+        _E -> throw({error, unknown_command})
     end.
 
 -spec get_commands_definition(integer()) -> [ejabberd_commands()].
