@@ -88,10 +88,10 @@ make_iq_result(#iq{type = Type, from = From, to = To} = IQ, El)
 	     end,
     IQ#iq{type = result, to = From, from = To, sub_els = SubEls}.
 
--spec make_error(message(), error()) -> message();
-		(presence(), error()) -> presence();
-		(iq(), error()) -> iq();
-		(xmlel(), error()) -> xmlel().
+-spec make_error(message(), error() | xmlel()) -> message();
+		(presence(), error() | xmlel()) -> presence();
+		(iq(), error() | xmlel()) -> iq();
+		(xmlel(), error() | xmlel()) -> xmlel().
 make_error(#message{type = Type, from = From, to = To, sub_els = Els} = Msg,
 	   Err) when Type /= error ->
     Msg#message{type = error, from = To, to = From, sub_els = Els ++ [Err]};
@@ -159,9 +159,11 @@ get_to(#message{to = J}) -> J;
 get_to(#presence{to = J}) -> J.
 
 -spec get_error(iq() | message() | presence()) -> undefined | error().
-get_error(#iq{error = E}) -> E;
-get_error(#message{error = E}) -> E;
-get_error(#presence{error = E}) -> E.
+get_error(Stanza) ->
+    case get_subtag(Stanza, #error{}) of
+	false -> undefined;
+	Error -> Error
+    end.
 
 -spec get_els(iq() | message() | presence()) -> [xmpp_element() | xmlel()];
 	     (xmlel()) -> [xmlel()].
@@ -215,9 +217,7 @@ set_from_to(#presence{} = Pres, F, T) -> Pres#presence{from = F, to = T}.
 -spec set_error(iq(), error()) -> iq();
 	       (message(), error()) -> message();
 	       (presence(), error()) -> presence().
-set_error(#iq{} = IQ, E) -> IQ#iq{error = E};
-set_error(#message{} = Msg, E) -> Msg#message{error = E};
-set_error(#presence{} = Pres, E) -> Pres#presence{error = E}.
+set_error(Stanza, E) -> set_subtag(Stanza, E).
 
 -spec set_els(iq(), [xmpp_element() | xmlel()]) -> iq();
 	     (message(), [xmpp_element() | xmlel()]) -> message();

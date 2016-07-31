@@ -15,6 +15,14 @@
 		       'no-permanent-store' | 'no-permanent-storage'}).
 -type hint() :: #hint{}.
 
+-record(iq, {id :: binary(),
+             type :: 'error' | 'get' | 'result' | 'set',
+             lang :: binary(),
+             from :: any(),
+             to :: any(),
+             sub_els = [] :: [any()]}).
+-type iq() :: #iq{}.
+
 -record(feature_register, {}).
 -type feature_register() :: #feature_register{}.
 
@@ -170,6 +178,14 @@
 -record(private, {xml_els = [] :: [any()]}).
 -type private() :: #private{}.
 
+-record(db_verify, {from :: any(),
+                    to :: any(),
+                    id :: binary(),
+                    type :: 'error' | 'invalid' | 'valid',
+                    key = <<>> :: binary(),
+                    sub_els = [] :: [any()]}).
+-type db_verify() :: #db_verify{}.
+
 -record(nick, {name :: binary()}).
 -type nick() :: #nick{}.
 
@@ -267,6 +283,17 @@
                            jid :: any()}).
 -type pubsub_subscribe() :: #pubsub_subscribe{}.
 
+-record(message, {id :: binary(),
+                  type = normal :: 'chat' | 'error' | 'groupchat' | 'headline' | 'normal',
+                  lang :: binary(),
+                  from :: any(),
+                  to :: any(),
+                  subject = [] :: [#text{}],
+                  body = [] :: [#text{}],
+                  thread :: binary(),
+                  sub_els = [] :: [any()]}).
+-type message() :: #message{}.
+
 -record(sasl_auth, {mechanism :: binary(),
                     text :: any()}).
 -type sasl_auth() :: #sasl_auth{}.
@@ -349,6 +376,17 @@
                        items = [] :: [#pubsub_item{}]}).
 -type pubsub_items() :: #pubsub_items{}.
 
+-record(presence, {id :: binary(),
+                   type = available :: 'available' | 'error' | 'probe' | 'subscribe' | 'subscribed' | 'unavailable' | 'unsubscribe' | 'unsubscribed',
+                   lang :: binary(),
+                   from :: any(),
+                   to :: any(),
+                   show :: 'away' | 'chat' | 'dnd' | 'xa',
+                   status = [] :: [#text{}],
+                   priority :: integer(),
+                   sub_els = [] :: [any()]}).
+-type presence() :: #presence{}.
+
 -record(sic, {ip :: any(),
               port :: non_neg_integer(),
               xmlns :: binary()}).
@@ -384,6 +422,13 @@
                       x400 = false :: boolean(),
                       userid :: binary()}).
 -type vcard_email() :: #vcard_email{}.
+
+-record(db_result, {from :: any(),
+                    to :: any(),
+                    type :: 'error' | 'invalid' | 'valid',
+                    key = <<>> :: binary(),
+                    sub_els = [] :: [any()]}).
+-type db_result() :: #db_result{}.
 
 -record(carbons_received, {forwarded :: #forwarded{}}).
 -type carbons_received() :: #carbons_received{}.
@@ -729,56 +774,9 @@
                 code :: non_neg_integer(),
                 by :: binary(),
                 reason :: atom() | #gone{} | #redirect{},
-                text :: #text{}}).
+                text :: #text{},
+                sub_els = [] :: [any()]}).
 -type error() :: #error{}.
-
--record(db_verify, {from :: any(),
-                    to :: any(),
-                    id :: binary(),
-                    type :: 'error' | 'invalid' | 'valid',
-                    key = <<>> :: binary(),
-                    error :: #error{}}).
--type db_verify() :: #db_verify{}.
-
--record(db_result, {from :: any(),
-                    to :: any(),
-                    type :: 'error' | 'invalid' | 'valid',
-                    key = <<>> :: binary(),
-                    error :: #error{}}).
--type db_result() :: #db_result{}.
-
--record(presence, {id :: binary(),
-                   type = available :: 'available' | 'error' | 'probe' | 'subscribe' | 'subscribed' | 'unavailable' | 'unsubscribe' | 'unsubscribed',
-                   lang :: binary(),
-                   from :: any(),
-                   to :: any(),
-                   show :: 'away' | 'chat' | 'dnd' | 'xa',
-                   status = [] :: [#text{}],
-                   priority :: integer(),
-                   error :: #error{},
-                   sub_els = [] :: [any()]}).
--type presence() :: #presence{}.
-
--record(message, {id :: binary(),
-                  type = normal :: 'chat' | 'error' | 'groupchat' | 'headline' | 'normal',
-                  lang :: binary(),
-                  from :: any(),
-                  to :: any(),
-                  subject = [] :: [#text{}],
-                  body = [] :: [#text{}],
-                  thread :: binary(),
-                  error :: #error{},
-                  sub_els = [] :: [any()]}).
--type message() :: #message{}.
-
--record(iq, {id :: binary(),
-             type :: 'error' | 'get' | 'result' | 'set',
-             lang :: binary(),
-             from :: any(),
-             to :: any(),
-             error :: #error{},
-             sub_els = [] :: [any()]}).
--type iq() :: #iq{}.
 
 -record(mix_join, {jid :: any(),
                    subscribe = [] :: [binary()]}).
@@ -861,6 +859,7 @@
                         mam_archived() |
                         p1_rebind() |
                         sasl_abort() |
+                        db_result() |
                         carbons_received() |
                         pubsub_retract() |
                         upload_slot() |
@@ -868,7 +867,6 @@
                         compressed() |
                         block_list() |
                         rsm_set() |
-                        db_result() |
                         'see-other-host'() |
                         hint() |
                         stream_start() |
@@ -939,8 +937,8 @@
                         mix_join() |
                         xmpp_session() |
                         xdata() |
-                        xcaptcha() |
                         iq() |
+                        xcaptcha() |
                         streamhost() |
                         bind() |
                         last() |
@@ -971,9 +969,9 @@
                         muc_destroy() |
                         vcard_key() |
                         csi() |
+                        db_verify() |
                         roster_query() |
                         mam_query() |
-                        db_verify() |
                         bookmark_url() |
                         vcard_email() |
                         vcard_label() |
@@ -992,8 +990,8 @@
                         muc_unique() |
                         sasl_response() |
                         pubsub_subscribe() |
-                        presence() |
                         message() |
+                        presence() |
                         gone() |
                         sm_resume() |
                         carbons_enable() |

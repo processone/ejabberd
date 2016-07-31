@@ -1110,8 +1110,9 @@ change_stanzaid(ToJID, #iq{id = PreviousId} = Packet) ->
 -spec decide_fate_message(message(), jid(), state()) ->
 				 continue_delivery | forget_message |
 				 {expulse_sender, binary()}.
-decide_fate_message(#message{type = error, error = Err},
+decide_fate_message(#message{type = error} = Msg,
 		    From, StateData) ->
+    Err = xmpp:get_error(Msg),
     PD = case check_error_kick(Err) of
 	   %% If this is an error stanza and its condition matches a criteria
 	   true ->

@@ -12,7 +12,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2, start/2, stop/1, process_iq/3,
+-export([start_link/2, start/2, stop/1, process_iq/1,
 	 disco_items/5, disco_identity/5, disco_info/5,
 	 disco_features/5, mod_opt_type/1, depends/2]).
 
@@ -21,8 +21,7 @@
 	 terminate/2, code_change/3]).
 
 -include("logger.hrl").
--include("jlib.hrl").
--include("pubsub.hrl").
+-include("xmpp.hrl").
 
 -define(PROCNAME, ejabberd_mod_mix).
 -define(NODES, [?NS_MIX_NODES_MESSAGES,
@@ -57,84 +56,59 @@ disco_features(_Acc, _From, _To, _Node, _Lang) ->
     {result, [?NS_MIX_0]}.
 
 disco_items(_Acc, _From, To, _Node, _Lang) when To#jid.luser /= <<"">> ->
-    To_s = jid:to_string(jid:remove_resource(To)),
-    {result, [#xmlel{name = <<"item">>,
-		     attrs = [{<<"jid">>, To_s},
-			      {<<"node">>, Node}]} || Node <- ?NODES]};
+    BareTo = jid:remove_resource(To),
+    {result, [#disco_item{jid = BareTo, node = Node} || Node <- ?NODES]};
 disco_items(_Acc, _From, _To, _Node, _Lang) ->
     {result, []}.
 
 disco_identity(Acc, _From, To, _Node, _Lang) when To#jid.luser == <<"">> ->
-    Acc ++ [#xmlel{name = <<"identity">>,
-		   attrs =
-		       [{<<"category">>, <<"conference">>},
-			{<<"name">>, <<"MIX service">>},
-			{<<"type">>, <<"text">>}]}];
+    Acc ++ [#identity{category = <<"conference">>,
+		      name = <<"MIX service">>,
+		      type = <<"text">>}];
 disco_identity(Acc, _From, _To, _Node, _Lang) ->
-    Acc ++ [#xmlel{name = <<"identity">>,
-		   attrs =
-		       [{<<"category">>, <<"conference">>},
-			{<<"type">>, <<"mix">>}]}].
+    Acc ++ [#identity{category = <<"conference">>,
+		      type = <<"mix">>}].
 
 disco_info(_Acc, _From, To, _Node, _Lang) when is_atom(To) ->
-    [#xmlel{name = <<"x">>,
-	    attrs = [{<<"xmlns">>, ?NS_XDATA},
-		     {<<"type">>, <<"result">>}],
-	    children = [#xmlel{name = <<"field">>,
-			       attrs = [{<<"var">>, <<"FORM_TYPE">>},
-					{<<"type">>, <<"hidden">>}],
-			       children = [#xmlel{name = <<"value">>,
-						  children = [{xmlcdata,
-							       ?NS_MIX_SERVICEINFO_0}]}]}]}];
+    [#xdata{type = result,
+	    fields = [#xdata_field{var = <<"FORM_TYPE">>,
+				   type = hidden,
+				   values = [?NS_MIX_SERVICEINFO_0]}]}];
 disco_info(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-process_iq(From, To,
-	   #iq{type = set, sub_el = #xmlel{name = <<"join">>} = SubEl} = IQ) ->
-    Nodes = lists:flatmap(
-	      fun(#xmlel{name = <<"subscribe">>, attrs = Attrs}) ->
-		      Node = fxml:get_attr_s(<<"node">>, Attrs),
-		      case lists:member(Node, ?NODES) of
-			  true -> [Node];
-			  false -> []
-		      end;
-		 (_) ->
-		      []
-	      end, SubEl#xmlel.children),
+process_iq(#iq{type = set, from = From, to = To,
+	       sub_els = [#mix_join{subscribe = SubNodes}]} = IQ) ->
+    Nodes = [Node || Node <- SubNodes, lists:member(Node, ?NODES)],
     case subscribe_nodes(From, To, Nodes) of
 	{result, _} ->
 	    case publish_participant(From, To) of
 		{result, _} ->
-		    LFrom_s = jid:to_string(jid:tolower(jid:remove_resource(From))),
-		    Subscribe = [#xmlel{name = <<"subscribe">>,
-					attrs = [{<<"node">>, Node}]} || Node <- Nodes],
-		    IQ#iq{type = result,
-			  sub_el = [#xmlel{name = <<"join">>,
-					   attrs = [{<<"jid">>, LFrom_s},
-						    {<<"xmlns">>, ?NS_MIX_0}],
-					   children = Subscribe}]};
+		    BareFrom = jid:remove_resource(From),
+		    xmpp:make_iq_result(
+		      IQ, #mix_join{jid = BareFrom, subscribe = Nodes});
 		{error, Err} ->
-		    IQ#iq{type = error, sub_el = [SubEl, Err]}
+		    xmpp:make_error(IQ, Err)
 	    end;
 	{error, Err} ->
-	    IQ#iq{type = error, sub_el = [SubEl, Err]}
+	    xmpp:make_error(IQ, Err)
     end;
-process_iq(From, To,
-	   #iq{type = set, sub_el = #xmlel{name = <<"leave">>} = SubEl} = IQ) ->
+process_iq(#iq{type = set, from = From, to = To,
+	       sub_els = [#mix_leave{}]} = IQ) ->
     case delete_participant(From, To) of
 	{result, _} ->
 	    case unsubscribe_nodes(From, To, ?NODES) of
 		{result, _} ->
-		    IQ#iq{type = result, sub_el = []};
+		    xmpp:make_iq_result(IQ);
 		{error, Err} ->
-		    IQ#iq{type = error, sub_el = [SubEl, Err]}
+		    xmpp:make_error(IQ, Err)
 	    end;
 	{error, Err} ->
-	    IQ#iq{type = error, sub_el = [SubEl, Err]}
+	    xmpp:make_error(IQ, Err)
     end;
-process_iq(_From, _To, #iq{sub_el = SubEl, lang = Lang} = IQ) ->
+process_iq(#iq{lang = Lang} = IQ) ->
     Txt = <<"Unsupported MIX query">>,
-    IQ#iq{type = error, sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt)]}.
+    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang)).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -185,8 +159,8 @@ handle_info({route, From, To, Packet}, State) ->
 	    try
 		?ERROR_MSG("failed to route packet ~p from '~s' to '~s': ~p",
 			   [Packet, jid:to_string(From), jid:to_string(To), Err]),
-		ErrPkt = jlib:make_error_reply(Packet, ?ERR_INTERNAL_SERVER_ERROR),
-		ejabberd_router:route_error(To, From, ErrPkt, Packet)
+		Error = xmpp:err_internal_server_error(),
+		ejabberd_router:route_error(To, From, Packet, Error)
 	    catch _:_ ->
 		    ok
 	    end;
@@ -220,20 +194,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-do_route(_State, From, To, #xmlel{name = <<"iq">>} = Packet) ->
-    if To#jid.luser == <<"">> ->
-	    ejabberd_local:process_iq(From, To, Packet);
-       true ->
-	    ejabberd_sm:process_iq(From, To, Packet)
-    end;
-do_route(_State, From, To, #xmlel{name = <<"presence">>} = Packet)
+do_route(_State, From, To, #iq{} = Packet) ->
+    ejabberd_router:process_iq(From, To, Packet);
+do_route(_State, From, To, #presence{type = unavailable})
   when To#jid.luser /= <<"">> ->
-    case fxml:get_tag_attr_s(<<"type">>, Packet) of
-	<<"unavailable">> ->
-	    delete_presence(From, To);
-	_ ->
-	    ok
-    end;
+    delete_presence(From, To);
 do_route(_State, _From, _To, _Packet) ->
     ok.
 
@@ -284,15 +249,14 @@ unsubscribe_nodes(From, To, Nodes) ->
       end, {result, []}, Nodes).
 
 publish_participant(From, To) ->
-    LFrom = jid:tolower(jid:remove_resource(From)),
+    BareFrom = jid:remove_resource(From),
+    LFrom = jid:tolower(BareFrom),
     LTo = jid:tolower(jid:remove_resource(To)),
-    Participant = #xmlel{name = <<"participant">>,
-			 attrs = [{<<"xmlns">>, ?NS_MIX_0},
-				  {<<"jid">>, jid:to_string(LFrom)}]},
+    Participant = #mix_participant{jid = BareFrom},
     ItemID = p1_sha:sha(jid:to_string(LFrom)),
     mod_pubsub:publish_item(
       LTo, To#jid.lserver, ?NS_MIX_NODES_PARTICIPANTS,
-      From, ItemID, [Participant]).
+      From, ItemID, [xmpp:encode(Participant)]).
 
 delete_presence(From, To) ->
     LFrom = jid:tolower(From),
@@ -300,8 +264,8 @@ delete_presence(From, To) ->
     case mod_pubsub:get_items(LTo, ?NS_MIX_NODES_PRESENCE) of
 	Items when is_list(Items) ->
 	    lists:foreach(
-	      fun(#pubsub_item{modification = {_, LJID},
-			       itemid = {ItemID, _}}) when LJID == LFrom ->
+	      fun({pubsub_item, {ItemID, _}, _, {_, LJID}, _})
+		    when LJID == LFrom ->
 		      delete_item(From, To, ?NS_MIX_NODES_PRESENCE, ItemID);
 		 (_) ->
 		      ok

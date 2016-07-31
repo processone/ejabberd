@@ -2230,13 +2230,13 @@ encode({stats, _} = Query) ->
     encode_stats(Query,
 		 [{<<"xmlns">>,
 		   <<"http://jabber.org/protocol/stats">>}]);
-encode({iq, _, _, _, _, _, _, _} = Iq) ->
+encode({iq, _, _, _, _, _, _} = Iq) ->
     encode_iq(Iq, [{<<"xmlns">>, <<"jabber:client">>}]);
-encode({message, _, _, _, _, _, _, _, _, _, _} =
+encode({message, _, _, _, _, _, _, _, _, _} =
 	   Message) ->
     encode_message(Message,
 		   [{<<"xmlns">>, <<"jabber:client">>}]);
-encode({presence, _, _, _, _, _, _, _, _, _, _} =
+encode({presence, _, _, _, _, _, _, _, _, _} =
 	   Presence) ->
     encode_presence(Presence,
 		    [{<<"xmlns">>, <<"jabber:client">>}]);
@@ -2248,7 +2248,7 @@ encode({redirect, _} = Redirect) ->
     encode_error_redirect(Redirect,
 			  [{<<"xmlns">>,
 			    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}]);
-encode({error, _, _, _, _, _} = Error) ->
+encode({error, _, _, _, _, _, _} = Error) ->
     encode_error(Error,
 		 [{<<"xmlns">>, <<"jabber:client">>}]);
 encode({bind, _, _} = Bind) ->
@@ -2736,14 +2736,14 @@ get_name({bookmark_url, _, _}) -> <<"url">>;
 get_name({bookmark_storage, _, _}) -> <<"storage">>;
 get_name({stat, _, _, _, _}) -> <<"stat">>;
 get_name({stats, _}) -> <<"query">>;
-get_name({iq, _, _, _, _, _, _, _}) -> <<"iq">>;
-get_name({message, _, _, _, _, _, _, _, _, _, _}) ->
+get_name({iq, _, _, _, _, _, _}) -> <<"iq">>;
+get_name({message, _, _, _, _, _, _, _, _, _}) ->
     <<"message">>;
-get_name({presence, _, _, _, _, _, _, _, _, _, _}) ->
+get_name({presence, _, _, _, _, _, _, _, _, _}) ->
     <<"presence">>;
 get_name({gone, _}) -> <<"gone">>;
 get_name({redirect, _}) -> <<"redirect">>;
-get_name({error, _, _, _, _, _}) -> <<"error">>;
+get_name({error, _, _, _, _, _, _}) -> <<"error">>;
 get_name({bind, _, _}) -> <<"bind">>;
 get_name({legacy_auth, _, _, _, _}) -> <<"query">>;
 get_name({sasl_auth, _, _}) -> <<"auth">>;
@@ -2943,17 +2943,17 @@ get_ns({stat, _, _, _, _}) ->
     <<"http://jabber.org/protocol/stats">>;
 get_ns({stats, _}) ->
     <<"http://jabber.org/protocol/stats">>;
-get_ns({iq, _, _, _, _, _, _, _}) ->
+get_ns({iq, _, _, _, _, _, _}) -> <<"jabber:client">>;
+get_ns({message, _, _, _, _, _, _, _, _, _}) ->
     <<"jabber:client">>;
-get_ns({message, _, _, _, _, _, _, _, _, _, _}) ->
-    <<"jabber:client">>;
-get_ns({presence, _, _, _, _, _, _, _, _, _, _}) ->
+get_ns({presence, _, _, _, _, _, _, _, _, _}) ->
     <<"jabber:client">>;
 get_ns({gone, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>;
 get_ns({redirect, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>;
-get_ns({error, _, _, _, _, _}) -> <<"jabber:client">>;
+get_ns({error, _, _, _, _, _, _}) ->
+    <<"jabber:client">>;
 get_ns({bind, _, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-bind">>;
 get_ns({legacy_auth, _, _, _, _}) ->
@@ -3256,16 +3256,16 @@ pp(bookmark_url, 2) -> [name, url];
 pp(bookmark_storage, 2) -> [conference, url];
 pp(stat, 4) -> [name, units, value, error];
 pp(stats, 1) -> [stat];
-pp(iq, 7) -> [id, type, lang, from, to, error, sub_els];
-pp(message, 10) ->
-    [id, type, lang, from, to, subject, body, thread, error,
+pp(iq, 6) -> [id, type, lang, from, to, sub_els];
+pp(message, 9) ->
+    [id, type, lang, from, to, subject, body, thread,
      sub_els];
-pp(presence, 10) ->
+pp(presence, 9) ->
     [id, type, lang, from, to, show, status, priority,
-     error, sub_els];
+     sub_els];
 pp(gone, 1) -> [uri];
 pp(redirect, 1) -> [uri];
-pp(error, 5) -> [type, code, by, reason, text];
+pp(error, 6) -> [type, code, by, reason, text, sub_els];
 pp(bind, 2) -> [jid, resource];
 pp(legacy_auth, 4) ->
     [username, password, digest, resource];
@@ -3419,8 +3419,8 @@ pp(adhoc_note, 2) -> [type, data];
 pp(adhoc_command, 8) ->
     [node, action, sid, status, lang, actions, notes,
      xdata];
-pp(db_result, 5) -> [from, to, type, key, error];
-pp(db_verify, 6) -> [from, to, id, type, key, error];
+pp(db_result, 5) -> [from, to, type, key, sub_els];
+pp(db_verify, 6) -> [from, to, id, type, key, sub_els];
 pp(handshake, 1) -> [data];
 pp(stream_start, 8) ->
     [from, to, id, version, xmlns, stream_xmlns, db_xmlns,
@@ -4789,39 +4789,36 @@ encode_handshake_cdata(_val, _acc) ->
 
 decode_db_verify(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"db:verify">>, _attrs, _els}) ->
-    {Key, Error} = decode_db_verify_els(__TopXMLNS,
-					__IgnoreEls, _els, <<>>, undefined),
+    {Key, __Els} = decode_db_verify_els(__TopXMLNS,
+					__IgnoreEls, _els, <<>>, []),
     {From, To, Id, Type} =
 	decode_db_verify_attrs(__TopXMLNS, _attrs, undefined,
 			       undefined, undefined, undefined),
-    {db_verify, From, To, Id, Type, Key, Error}.
+    {db_verify, From, To, Id, Type, Key, __Els}.
 
 decode_db_verify_els(__TopXMLNS, __IgnoreEls, [], Key,
-		     Error) ->
-    {decode_db_verify_cdata(__TopXMLNS, Key), Error};
+		     __Els) ->
+    {decode_db_verify_cdata(__TopXMLNS, Key),
+     lists:reverse(__Els)};
 decode_db_verify_els(__TopXMLNS, __IgnoreEls,
-		     [{xmlcdata, _data} | _els], Key, Error) ->
+		     [{xmlcdata, _data} | _els], Key, __Els) ->
     decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els,
-			 <<Key/binary, _data/binary>>, Error);
+			 <<Key/binary, _data/binary>>, __Els);
 decode_db_verify_els(__TopXMLNS, __IgnoreEls,
-		     [{xmlel, <<"error">>, _attrs, _} = _el | _els], Key,
-		     Error) ->
-    case get_attr(<<"xmlns">>, _attrs) of
-      <<"">> when __TopXMLNS == <<"jabber:client">> ->
-	  decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
-			       decode_error(__TopXMLNS, __IgnoreEls, _el));
-      <<"jabber:client">> ->
-	  decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
-			       decode_error(<<"jabber:client">>, __IgnoreEls,
-					    _el));
-      _ ->
-	  decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
-			       Error)
-    end;
-decode_db_verify_els(__TopXMLNS, __IgnoreEls,
-		     [_ | _els], Key, Error) ->
-    decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
-			 Error).
+		     [{xmlel, _, _, _} = _el | _els], Key, __Els) ->
+    if __IgnoreEls ->
+	   decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
+				[_el | __Els]);
+       true ->
+	   case is_known_tag(_el) of
+	     true ->
+		 decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
+				      [decode(_el) | __Els]);
+	     false ->
+		 decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
+				      __Els)
+	   end
+    end.
 
 decode_db_verify_attrs(__TopXMLNS,
 		       [{<<"from">>, _val} | _attrs], _From, To, Id, Type) ->
@@ -4851,21 +4848,16 @@ decode_db_verify_attrs(__TopXMLNS, [], From, To, Id,
      decode_db_verify_attr_type(__TopXMLNS, Type)}.
 
 encode_db_verify({db_verify, From, To, Id, Type, Key,
-		  Error},
+		  __Els},
 		 _xmlns_attrs) ->
-    _els = lists:reverse(encode_db_verify_cdata(Key,
-						'encode_db_verify_$error'(Error,
-									  []))),
+    _els = [encode(_el) || _el <- __Els] ++
+	     encode_db_verify_cdata(Key, []),
     _attrs = encode_db_verify_attr_type(Type,
 					encode_db_verify_attr_id(Id,
 								 encode_db_verify_attr_to(To,
 											  encode_db_verify_attr_from(From,
 														     _xmlns_attrs)))),
     {xmlel, <<"db:verify">>, _attrs, _els}.
-
-'encode_db_verify_$error'(undefined, _acc) -> _acc;
-'encode_db_verify_$error'(Error, _acc) ->
-    [encode_error(Error, []) | _acc].
 
 decode_db_verify_attr_from(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -4930,39 +4922,36 @@ encode_db_verify_cdata(_val, _acc) ->
 
 decode_db_result(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"db:result">>, _attrs, _els}) ->
-    {Key, Error} = decode_db_result_els(__TopXMLNS,
-					__IgnoreEls, _els, <<>>, undefined),
+    {Key, __Els} = decode_db_result_els(__TopXMLNS,
+					__IgnoreEls, _els, <<>>, []),
     {From, To, Type} = decode_db_result_attrs(__TopXMLNS,
 					      _attrs, undefined, undefined,
 					      undefined),
-    {db_result, From, To, Type, Key, Error}.
+    {db_result, From, To, Type, Key, __Els}.
 
 decode_db_result_els(__TopXMLNS, __IgnoreEls, [], Key,
-		     Error) ->
-    {decode_db_result_cdata(__TopXMLNS, Key), Error};
+		     __Els) ->
+    {decode_db_result_cdata(__TopXMLNS, Key),
+     lists:reverse(__Els)};
 decode_db_result_els(__TopXMLNS, __IgnoreEls,
-		     [{xmlcdata, _data} | _els], Key, Error) ->
+		     [{xmlcdata, _data} | _els], Key, __Els) ->
     decode_db_result_els(__TopXMLNS, __IgnoreEls, _els,
-			 <<Key/binary, _data/binary>>, Error);
+			 <<Key/binary, _data/binary>>, __Els);
 decode_db_result_els(__TopXMLNS, __IgnoreEls,
-		     [{xmlel, <<"error">>, _attrs, _} = _el | _els], Key,
-		     Error) ->
-    case get_attr(<<"xmlns">>, _attrs) of
-      <<"">> when __TopXMLNS == <<"jabber:client">> ->
-	  decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
-			       decode_error(__TopXMLNS, __IgnoreEls, _el));
-      <<"jabber:client">> ->
-	  decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
-			       decode_error(<<"jabber:client">>, __IgnoreEls,
-					    _el));
-      _ ->
-	  decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
-			       Error)
-    end;
-decode_db_result_els(__TopXMLNS, __IgnoreEls,
-		     [_ | _els], Key, Error) ->
-    decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
-			 Error).
+		     [{xmlel, _, _, _} = _el | _els], Key, __Els) ->
+    if __IgnoreEls ->
+	   decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
+				[_el | __Els]);
+       true ->
+	   case is_known_tag(_el) of
+	     true ->
+		 decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
+				      [decode(_el) | __Els]);
+	     false ->
+		 decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
+				      __Els)
+	   end
+    end.
 
 decode_db_result_attrs(__TopXMLNS,
 		       [{<<"from">>, _val} | _attrs], _From, To, Type) ->
@@ -4987,20 +4976,15 @@ decode_db_result_attrs(__TopXMLNS, [], From, To,
      decode_db_result_attr_type(__TopXMLNS, Type)}.
 
 encode_db_result({db_result, From, To, Type, Key,
-		  Error},
+		  __Els},
 		 _xmlns_attrs) ->
-    _els = lists:reverse(encode_db_result_cdata(Key,
-						'encode_db_result_$error'(Error,
-									  []))),
+    _els = [encode(_el) || _el <- __Els] ++
+	     encode_db_result_cdata(Key, []),
     _attrs = encode_db_result_attr_type(Type,
 					encode_db_result_attr_to(To,
 								 encode_db_result_attr_from(From,
 											    _xmlns_attrs))),
     {xmlel, <<"db:result">>, _attrs, _els}.
-
-'encode_db_result_$error'(undefined, _acc) -> _acc;
-'encode_db_result_$error'(Error, _acc) ->
-    [encode_error(Error, []) | _acc].
 
 decode_db_result_attr_from(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -23335,329 +23319,363 @@ encode_bind_jid_cdata(_val, _acc) ->
 
 decode_error(__TopXMLNS, __IgnoreEls,
 	     {xmlel, <<"error">>, _attrs, _els}) ->
-    {Text, Reason} = decode_error_els(__TopXMLNS,
-				      __IgnoreEls, _els, undefined, undefined),
+    {Text, Reason, __Els} = decode_error_els(__TopXMLNS,
+					     __IgnoreEls, _els, undefined,
+					     undefined, []),
     {Type, Code, By} = decode_error_attrs(__TopXMLNS,
 					  _attrs, undefined, undefined,
 					  undefined),
-    {error, Type, Code, By, Reason, Text}.
+    {error, Type, Code, By, Reason, Text, __Els}.
 
 decode_error_els(__TopXMLNS, __IgnoreEls, [], Text,
-		 Reason) ->
-    {Text, Reason};
+		 Reason, __Els) ->
+    {Text, Reason, lists:reverse(__Els)};
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"text">>, _attrs, _} = _el | _els], Text,
-		 Reason) ->
+		 Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els,
 			   decode_error_text(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					     __IgnoreEls, _el),
-			   Reason);
+			   Reason, __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"bad-request">>, _attrs, _} = _el | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_bad_request(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-						    __IgnoreEls, _el));
+						    __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"conflict">>, _attrs, _} = _el | _els], Text,
-		 Reason) ->
+		 Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_conflict(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-						 __IgnoreEls, _el));
+						 __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"feature-not-implemented">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_feature_not_implemented(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 								__IgnoreEls,
-								_el));
+								_el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"forbidden">>, _attrs, _} = _el | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_forbidden(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-						  __IgnoreEls, _el));
+						  __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"gone">>, _attrs, _} = _el | _els], Text,
-		 Reason) ->
+		 Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_gone(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-					     __IgnoreEls, _el));
+					     __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"internal-server-error">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_internal_server_error(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-							      __IgnoreEls,
-							      _el));
+							      __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"item-not-found">>, _attrs, _} = _el | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_item_not_found(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-						       __IgnoreEls, _el));
+						       __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"jid-malformed">>, _attrs, _} = _el | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_jid_malformed(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-						      __IgnoreEls, _el));
+						      __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"not-acceptable">>, _attrs, _} = _el | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_not_acceptable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-						       __IgnoreEls, _el));
+						       __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"not-allowed">>, _attrs, _} = _el | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_not_allowed(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-						    __IgnoreEls, _el));
+						    __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"not-authorized">>, _attrs, _} = _el | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-						       __IgnoreEls, _el));
+						       __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"payment-required">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_payment_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-							 __IgnoreEls, _el));
+							 __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"policy-violation">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_policy_violation(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-							 __IgnoreEls, _el));
+							 __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"recipient-unavailable">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_recipient_unavailable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-							      __IgnoreEls,
-							      _el));
+							      __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"redirect">>, _attrs, _} = _el | _els], Text,
-		 Reason) ->
+		 Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_redirect(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-						 __IgnoreEls, _el));
+						 __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"registration-required">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_registration_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-							      __IgnoreEls,
-							      _el));
+							      __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"remote-server-not-found">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_remote_server_not_found(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 								__IgnoreEls,
-								_el));
+								_el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"remote-server-timeout">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_remote_server_timeout(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-							      __IgnoreEls,
-							      _el));
+							      __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"resource-constraint">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_resource_constraint(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-							    __IgnoreEls, _el));
+							    __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"service-unavailable">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_service_unavailable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-							    __IgnoreEls, _el));
+							    __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"subscription-required">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_subscription_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-							      __IgnoreEls,
-							      _el));
+							      __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"undefined-condition">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_undefined_condition(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-							    __IgnoreEls, _el));
+							    __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls,
 		 [{xmlel, <<"unexpected-request">>, _attrs, _} = _el
 		  | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:ietf:params:xml:ns:xmpp-stanzas">> ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			   decode_error_unexpected_request(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
-							   __IgnoreEls, _el));
+							   __IgnoreEls, _el),
+			   __Els);
       _ ->
 	  decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-			   Reason)
+			   Reason, __Els)
+    end;
+decode_error_els(__TopXMLNS, __IgnoreEls,
+		 [{xmlel, _, _, _} = _el | _els], Text, Reason, __Els) ->
+    if __IgnoreEls ->
+	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+			    Reason, [_el | __Els]);
+       true ->
+	   case is_known_tag(_el) of
+	     true ->
+		 decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+				  Reason, [decode(_el) | __Els]);
+	     false ->
+		 decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
+				  Reason, __Els)
+	   end
     end;
 decode_error_els(__TopXMLNS, __IgnoreEls, [_ | _els],
-		 Text, Reason) ->
+		 Text, Reason, __Els) ->
     decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-		     Reason).
+		     Reason, __Els).
 
 decode_error_attrs(__TopXMLNS,
 		   [{<<"type">>, _val} | _attrs], _Type, Code, By) ->
@@ -23677,11 +23695,13 @@ decode_error_attrs(__TopXMLNS, [], Type, Code, By) ->
      decode_error_attr_code(__TopXMLNS, Code),
      decode_error_attr_by(__TopXMLNS, By)}.
 
-encode_error({error, Type, Code, By, Reason, Text},
+encode_error({error, Type, Code, By, Reason, Text,
+	      __Els},
 	     _xmlns_attrs) ->
-    _els = lists:reverse('encode_error_$text'(Text,
-					      'encode_error_$reason'(Reason,
-								     []))),
+    _els = [encode(_el) || _el <- __Els] ++
+	     lists:reverse('encode_error_$text'(Text,
+						'encode_error_$reason'(Reason,
+								       []))),
     _attrs = encode_error_attr_by(By,
 				  encode_error_attr_code(Code,
 							 encode_error_attr_type(Type,
@@ -24212,119 +24232,100 @@ encode_error_bad_request('bad-request', _xmlns_attrs) ->
 
 decode_presence(__TopXMLNS, __IgnoreEls,
 		{xmlel, <<"presence">>, _attrs, _els}) ->
-    {Error, Status, Show, Priority, __Els} =
-	decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			    undefined, [], undefined, undefined, []),
+    {Status, Show, Priority, __Els} =
+	decode_presence_els(__TopXMLNS, __IgnoreEls, _els, [],
+			    undefined, undefined, []),
     {Id, Type, From, To, Lang} =
 	decode_presence_attrs(__TopXMLNS, _attrs, undefined,
 			      undefined, undefined, undefined, undefined),
     {presence, Id, Type, Lang, From, To, Show, Status,
-     Priority, Error, __Els}.
+     Priority, __Els}.
 
-decode_presence_els(__TopXMLNS, __IgnoreEls, [], Error,
-		    Status, Show, Priority, __Els) ->
-    {Error, lists:reverse(Status), Show, Priority,
+decode_presence_els(__TopXMLNS, __IgnoreEls, [], Status,
+		    Show, Priority, __Els) ->
+    {lists:reverse(Status), Show, Priority,
      lists:reverse(__Els)};
 decode_presence_els(__TopXMLNS, __IgnoreEls,
-		    [{xmlel, <<"error">>, _attrs, _} = _el | _els], Error,
-		    Status, Show, Priority, __Els) ->
+		    [{xmlel, <<"show">>, _attrs, _} = _el | _els], Status,
+		    Show, Priority, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:client">> ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      decode_error(__TopXMLNS, __IgnoreEls, _el),
-			      Status, Show, Priority, __Els);
-      <<"jabber:client">> ->
-	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      decode_error(<<"jabber:client">>, __IgnoreEls,
-					   _el),
-			      Status, Show, Priority, __Els);
-      _ ->
-	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      Error, Status, Show, Priority, __Els)
-    end;
-decode_presence_els(__TopXMLNS, __IgnoreEls,
-		    [{xmlel, <<"show">>, _attrs, _} = _el | _els], Error,
-		    Status, Show, Priority, __Els) ->
-    case get_attr(<<"xmlns">>, _attrs) of
-      <<"">> when __TopXMLNS == <<"jabber:client">> ->
-	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      Error, Status,
+			      Status,
 			      decode_presence_show(__TopXMLNS, __IgnoreEls,
 						   _el),
 			      Priority, __Els);
       <<"jabber:client">> ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      Error, Status,
+			      Status,
 			      decode_presence_show(<<"jabber:client">>,
 						   __IgnoreEls, _el),
 			      Priority, __Els);
       _ ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      Error, Status, Show, Priority, __Els)
+			      Status, Show, Priority, __Els)
     end;
 decode_presence_els(__TopXMLNS, __IgnoreEls,
-		    [{xmlel, <<"status">>, _attrs, _} = _el | _els], Error,
-		    Status, Show, Priority, __Els) ->
+		    [{xmlel, <<"status">>, _attrs, _} = _el | _els], Status,
+		    Show, Priority, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:client">> ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      Error,
 			      [decode_presence_status(__TopXMLNS, __IgnoreEls,
 						      _el)
 			       | Status],
 			      Show, Priority, __Els);
       <<"jabber:client">> ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      Error,
 			      [decode_presence_status(<<"jabber:client">>,
 						      __IgnoreEls, _el)
 			       | Status],
 			      Show, Priority, __Els);
       _ ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      Error, Status, Show, Priority, __Els)
+			      Status, Show, Priority, __Els)
     end;
 decode_presence_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"priority">>, _attrs, _} = _el | _els],
-		    Error, Status, Show, Priority, __Els) ->
+		    Status, Show, Priority, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:client">> ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      Error, Status, Show,
+			      Status, Show,
 			      decode_presence_priority(__TopXMLNS, __IgnoreEls,
 						       _el),
 			      __Els);
       <<"jabber:client">> ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      Error, Status, Show,
+			      Status, Show,
 			      decode_presence_priority(<<"jabber:client">>,
 						       __IgnoreEls, _el),
 			      __Els);
       _ ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			      Error, Status, Show, Priority, __Els)
+			      Status, Show, Priority, __Els)
     end;
 decode_presence_els(__TopXMLNS, __IgnoreEls,
-		    [{xmlel, _, _, _} = _el | _els], Error, Status, Show,
-		    Priority, __Els) ->
+		    [{xmlel, _, _, _} = _el | _els], Status, Show, Priority,
+		    __Els) ->
     if __IgnoreEls ->
 	   decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			       Error, Status, Show, Priority, [_el | __Els]);
+			       Status, Show, Priority, [_el | __Els]);
        true ->
 	   case is_known_tag(_el) of
 	     true ->
 		 decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-				     Error, Status, Show, Priority,
+				     Status, Show, Priority,
 				     [decode(_el) | __Els]);
 	     false ->
 		 decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-				     Error, Status, Show, Priority, __Els)
+				     Status, Show, Priority, __Els)
 	   end
     end;
 decode_presence_els(__TopXMLNS, __IgnoreEls, [_ | _els],
-		    Error, Status, Show, Priority, __Els) ->
+		    Status, Show, Priority, __Els) ->
     decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
-			Error, Status, Show, Priority, __Els).
+			Status, Show, Priority, __Els).
 
 decode_presence_attrs(__TopXMLNS,
 		      [{<<"id">>, _val} | _attrs], _Id, Type, From, To,
@@ -24364,14 +24365,13 @@ decode_presence_attrs(__TopXMLNS, [], Id, Type, From,
      'decode_presence_attr_xml:lang'(__TopXMLNS, Lang)}.
 
 encode_presence({presence, Id, Type, Lang, From, To,
-		 Show, Status, Priority, Error, __Els},
+		 Show, Status, Priority, __Els},
 		_xmlns_attrs) ->
     _els = [encode(_el) || _el <- __Els] ++
-	     lists:reverse('encode_presence_$error'(Error,
-						    'encode_presence_$status'(Status,
-									      'encode_presence_$show'(Show,
-												      'encode_presence_$priority'(Priority,
-																  []))))),
+	     lists:reverse('encode_presence_$status'(Status,
+						     'encode_presence_$show'(Show,
+									     'encode_presence_$priority'(Priority,
+													 [])))),
     _attrs = 'encode_presence_attr_xml:lang'(Lang,
 					     encode_presence_attr_to(To,
 								     encode_presence_attr_from(From,
@@ -24379,10 +24379,6 @@ encode_presence({presence, Id, Type, Lang, From, To,
 															 encode_presence_attr_id(Id,
 																		 _xmlns_attrs))))),
     {xmlel, <<"presence">>, _attrs, _els}.
-
-'encode_presence_$error'(undefined, _acc) -> _acc;
-'encode_presence_$error'(Error, _acc) ->
-    [encode_error(Error, []) | _acc].
 
 'encode_presence_$status'([], _acc) -> _acc;
 'encode_presence_$status'([Status | _els], _acc) ->
@@ -24598,117 +24594,100 @@ encode_presence_show_cdata(_val, _acc) ->
 
 decode_message(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"message">>, _attrs, _els}) ->
-    {Error, Thread, Subject, Body, __Els} =
+    {Thread, Subject, Body, __Els} =
 	decode_message_els(__TopXMLNS, __IgnoreEls, _els,
-			   undefined, undefined, [], [], []),
+			   undefined, [], [], []),
     {Id, Type, From, To, Lang} =
 	decode_message_attrs(__TopXMLNS, _attrs, undefined,
 			     undefined, undefined, undefined, undefined),
     {message, Id, Type, Lang, From, To, Subject, Body,
-     Thread, Error, __Els}.
+     Thread, __Els}.
 
-decode_message_els(__TopXMLNS, __IgnoreEls, [], Error,
-		   Thread, Subject, Body, __Els) ->
-    {Error, Thread, lists:reverse(Subject),
-     lists:reverse(Body), lists:reverse(__Els)};
+decode_message_els(__TopXMLNS, __IgnoreEls, [], Thread,
+		   Subject, Body, __Els) ->
+    {Thread, lists:reverse(Subject), lists:reverse(Body),
+     lists:reverse(__Els)};
 decode_message_els(__TopXMLNS, __IgnoreEls,
-		   [{xmlel, <<"error">>, _attrs, _} = _el | _els], Error,
+		   [{xmlel, <<"subject">>, _attrs, _} = _el | _els],
 		   Thread, Subject, Body, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:client">> ->
 	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
-			     decode_error(__TopXMLNS, __IgnoreEls, _el), Thread,
-			     Subject, Body, __Els);
-      <<"jabber:client">> ->
-	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
-			     decode_error(<<"jabber:client">>, __IgnoreEls,
-					  _el),
-			     Thread, Subject, Body, __Els);
-      _ ->
-	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
-			     Thread, Subject, Body, __Els)
-    end;
-decode_message_els(__TopXMLNS, __IgnoreEls,
-		   [{xmlel, <<"subject">>, _attrs, _} = _el | _els], Error,
-		   Thread, Subject, Body, __Els) ->
-    case get_attr(<<"xmlns">>, _attrs) of
-      <<"">> when __TopXMLNS == <<"jabber:client">> ->
-	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
 			     Thread,
 			     [decode_message_subject(__TopXMLNS, __IgnoreEls,
 						     _el)
 			      | Subject],
 			     Body, __Els);
       <<"jabber:client">> ->
-	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     Thread,
 			     [decode_message_subject(<<"jabber:client">>,
 						     __IgnoreEls, _el)
 			      | Subject],
 			     Body, __Els);
       _ ->
-	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     Thread, Subject, Body, __Els)
     end;
 decode_message_els(__TopXMLNS, __IgnoreEls,
-		   [{xmlel, <<"thread">>, _attrs, _} = _el | _els], Error,
-		   Thread, Subject, Body, __Els) ->
+		   [{xmlel, <<"thread">>, _attrs, _} = _el | _els], Thread,
+		   Subject, Body, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:client">> ->
-	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     decode_message_thread(__TopXMLNS, __IgnoreEls,
 						   _el),
 			     Subject, Body, __Els);
       <<"jabber:client">> ->
-	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     decode_message_thread(<<"jabber:client">>,
 						   __IgnoreEls, _el),
 			     Subject, Body, __Els);
       _ ->
-	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     Thread, Subject, Body, __Els)
     end;
 decode_message_els(__TopXMLNS, __IgnoreEls,
-		   [{xmlel, <<"body">>, _attrs, _} = _el | _els], Error,
-		   Thread, Subject, Body, __Els) ->
+		   [{xmlel, <<"body">>, _attrs, _} = _el | _els], Thread,
+		   Subject, Body, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"jabber:client">> ->
-	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     Thread, Subject,
 			     [decode_message_body(__TopXMLNS, __IgnoreEls, _el)
 			      | Body],
 			     __Els);
       <<"jabber:client">> ->
-	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     Thread, Subject,
 			     [decode_message_body(<<"jabber:client">>,
 						  __IgnoreEls, _el)
 			      | Body],
 			     __Els);
       _ ->
-	  decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     Thread, Subject, Body, __Els)
     end;
 decode_message_els(__TopXMLNS, __IgnoreEls,
-		   [{xmlel, _, _, _} = _el | _els], Error, Thread, Subject,
-		   Body, __Els) ->
+		   [{xmlel, _, _, _} = _el | _els], Thread, Subject, Body,
+		   __Els) ->
     if __IgnoreEls ->
-	   decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+	   decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			      Thread, Subject, Body, [_el | __Els]);
        true ->
 	   case is_known_tag(_el) of
 	     true ->
-		 decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+		 decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 				    Thread, Subject, Body,
 				    [decode(_el) | __Els]);
 	     false ->
-		 decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+		 decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 				    Thread, Subject, Body, __Els)
 	   end
     end;
 decode_message_els(__TopXMLNS, __IgnoreEls, [_ | _els],
-		   Error, Thread, Subject, Body, __Els) ->
-    decode_message_els(__TopXMLNS, __IgnoreEls, _els, Error,
+		   Thread, Subject, Body, __Els) ->
+    decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 		       Thread, Subject, Body, __Els).
 
 decode_message_attrs(__TopXMLNS,
@@ -24749,14 +24728,13 @@ decode_message_attrs(__TopXMLNS, [], Id, Type, From, To,
      'decode_message_attr_xml:lang'(__TopXMLNS, Lang)}.
 
 encode_message({message, Id, Type, Lang, From, To,
-		Subject, Body, Thread, Error, __Els},
+		Subject, Body, Thread, __Els},
 	       _xmlns_attrs) ->
     _els = [encode(_el) || _el <- __Els] ++
-	     lists:reverse('encode_message_$error'(Error,
-						   'encode_message_$thread'(Thread,
-									    'encode_message_$subject'(Subject,
-												      'encode_message_$body'(Body,
-															     []))))),
+	     lists:reverse('encode_message_$thread'(Thread,
+						    'encode_message_$subject'(Subject,
+									      'encode_message_$body'(Body,
+												     [])))),
     _attrs = 'encode_message_attr_xml:lang'(Lang,
 					    encode_message_attr_to(To,
 								   encode_message_attr_from(From,
@@ -24764,10 +24742,6 @@ encode_message({message, Id, Type, Lang, From, To,
 														     encode_message_attr_id(Id,
 																	    _xmlns_attrs))))),
     {xmlel, <<"message">>, _attrs, _els}.
-
-'encode_message_$error'(undefined, _acc) -> _acc;
-'encode_message_$error'(Error, _acc) ->
-    [encode_error(Error, []) | _acc].
 
 'encode_message_$thread'(undefined, _acc) -> _acc;
 'encode_message_$thread'(Thread, _acc) ->
@@ -24991,51 +24965,33 @@ encode_message_subject_cdata(_val, _acc) ->
 
 decode_iq(__TopXMLNS, __IgnoreEls,
 	  {xmlel, <<"iq">>, _attrs, _els}) ->
-    {Error, __Els} = decode_iq_els(__TopXMLNS, __IgnoreEls,
-				   _els, undefined, []),
+    __Els = decode_iq_els(__TopXMLNS, __IgnoreEls, _els,
+			  []),
     {Id, Type, From, To, Lang} = decode_iq_attrs(__TopXMLNS,
 						 _attrs, undefined, undefined,
 						 undefined, undefined,
 						 undefined),
-    {iq, Id, Type, Lang, From, To, Error, __Els}.
+    {iq, Id, Type, Lang, From, To, __Els}.
 
-decode_iq_els(__TopXMLNS, __IgnoreEls, [], Error,
-	      __Els) ->
-    {Error, lists:reverse(__Els)};
+decode_iq_els(__TopXMLNS, __IgnoreEls, [], __Els) ->
+    lists:reverse(__Els);
 decode_iq_els(__TopXMLNS, __IgnoreEls,
-	      [{xmlel, <<"error">>, _attrs, _} = _el | _els], Error,
-	      __Els) ->
-    case get_attr(<<"xmlns">>, _attrs) of
-      <<"">> when __TopXMLNS == <<"jabber:client">> ->
-	  decode_iq_els(__TopXMLNS, __IgnoreEls, _els,
-			decode_error(__TopXMLNS, __IgnoreEls, _el), __Els);
-      <<"jabber:client">> ->
-	  decode_iq_els(__TopXMLNS, __IgnoreEls, _els,
-			decode_error(<<"jabber:client">>, __IgnoreEls, _el),
-			__Els);
-      _ ->
-	  decode_iq_els(__TopXMLNS, __IgnoreEls, _els, Error,
-			__Els)
-    end;
-decode_iq_els(__TopXMLNS, __IgnoreEls,
-	      [{xmlel, _, _, _} = _el | _els], Error, __Els) ->
+	      [{xmlel, _, _, _} = _el | _els], __Els) ->
     if __IgnoreEls ->
-	   decode_iq_els(__TopXMLNS, __IgnoreEls, _els, Error,
+	   decode_iq_els(__TopXMLNS, __IgnoreEls, _els,
 			 [_el | __Els]);
        true ->
 	   case is_known_tag(_el) of
 	     true ->
-		 decode_iq_els(__TopXMLNS, __IgnoreEls, _els, Error,
+		 decode_iq_els(__TopXMLNS, __IgnoreEls, _els,
 			       [decode(_el) | __Els]);
 	     false ->
-		 decode_iq_els(__TopXMLNS, __IgnoreEls, _els, Error,
-			       __Els)
+		 decode_iq_els(__TopXMLNS, __IgnoreEls, _els, __Els)
 	   end
     end;
 decode_iq_els(__TopXMLNS, __IgnoreEls, [_ | _els],
-	      Error, __Els) ->
-    decode_iq_els(__TopXMLNS, __IgnoreEls, _els, Error,
-		  __Els).
+	      __Els) ->
+    decode_iq_els(__TopXMLNS, __IgnoreEls, _els, __Els).
 
 decode_iq_attrs(__TopXMLNS, [{<<"id">>, _val} | _attrs],
 		_Id, Type, From, To, Lang) ->
@@ -25072,10 +25028,9 @@ decode_iq_attrs(__TopXMLNS, [], Id, Type, From, To,
      decode_iq_attr_to(__TopXMLNS, To),
      'decode_iq_attr_xml:lang'(__TopXMLNS, Lang)}.
 
-encode_iq({iq, Id, Type, Lang, From, To, Error, __Els},
+encode_iq({iq, Id, Type, Lang, From, To, __Els},
 	  _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els] ++
-	     lists:reverse('encode_iq_$error'(Error, [])),
+    _els = [encode(_el) || _el <- __Els],
     _attrs = 'encode_iq_attr_xml:lang'(Lang,
 				       encode_iq_attr_to(To,
 							 encode_iq_attr_from(From,
@@ -25083,10 +25038,6 @@ encode_iq({iq, Id, Type, Lang, From, To, Error, __Els},
 												 encode_iq_attr_id(Id,
 														   _xmlns_attrs))))),
     {xmlel, <<"iq">>, _attrs, _els}.
-
-'encode_iq_$error'(undefined, _acc) -> _acc;
-'encode_iq_$error'(Error, _acc) ->
-    [encode_error(Error, []) | _acc].
 
 decode_iq_attr_id(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
