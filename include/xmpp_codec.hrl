@@ -227,10 +227,14 @@
                     nick :: binary()}).
 -type muc_actor() :: #muc_actor{}.
 
+-record(stat_error, {code :: integer(),
+                     reason = <<>> :: binary()}).
+-type stat_error() :: #stat_error{}.
+
 -record(stat, {name :: binary(),
-               units :: binary(),
-               value :: binary(),
-               error = [] :: [{integer(),'undefined' | binary()}]}).
+               units = <<>> :: binary(),
+               value = <<>> :: binary(),
+               error :: #stat_error{}}).
 -type stat() :: #stat{}.
 
 -record(addresses, {list = [] :: [#address{}]}).
@@ -367,7 +371,8 @@
 -record(stream_features, {sub_els = [] :: [any()]}).
 -type stream_features() :: #stream_features{}.
 
--record(stats, {stat = [] :: [#stat{}]}).
+-record(stats, {list = [] :: [#stat{}],
+                node = <<>> :: binary()}).
 -type stats() :: #stats{}.
 
 -record(pubsub_items, {node :: binary(),
@@ -980,6 +985,7 @@
                         feature_register() |
                         register() |
                         sm_r() |
+                        stat_error() |
                         error() |
                         stream_error() |
                         muc_user() |

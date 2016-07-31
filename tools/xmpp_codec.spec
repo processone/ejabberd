@@ -289,7 +289,8 @@
 -xml(stat_error,
      #elem{name = <<"error">>,
            xmlns = <<"http://jabber.org/protocol/stats">>,
-           result = {'$code', '$cdata'},
+           result = {stat_error, '$code', '$reason'},
+	   cdata = #cdata{default = <<"">>, label = '$reason'},
            attrs = [#attr{name = <<"code">>,
                           required = true,
                           enc = {enc_int, []},
@@ -301,17 +302,17 @@
            result = {stat, '$name', '$units', '$value', '$error'},
            attrs = [#attr{name = <<"name">>,
                           required = true},
-                    #attr{name = <<"units">>},
-                    #attr{name = <<"value">>}],
-           refs = [#ref{name = stat_error,
-                        label = '$error'}]}).
+                    #attr{name = <<"units">>, default = <<"">>},
+                    #attr{name = <<"value">>, default = <<"">>}],
+           refs = [#ref{name = stat_error, label = '$error',
+			min = 0, max = 1}]}).
 
 -xml(stats,
      #elem{name = <<"query">>,
            xmlns = <<"http://jabber.org/protocol/stats">>,
-           result = {stats, '$stat'},
-           refs = [#ref{name = stat,
-                        label = '$stat'}]}).
+           result = {stats, '$list', '$node'},
+	   attrs = [#attr{name = <<"node">>, default = <<"">>}],
+           refs = [#ref{name = stat, label = '$list'}]}).
 
 -xml(iq,
      #elem{name = <<"iq">>,

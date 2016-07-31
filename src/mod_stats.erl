@@ -31,65 +31,39 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/3,
-	 mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, process_iq/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_STATS, ?MODULE, process_local_iq, IQDisc).
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_STATS,
+				  ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
-				     ?NS_STATS).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_STATS).
 
 depends(_Host, _Opts) ->
     [].
 
-process_local_iq(_From, To,
-		 #iq{id = _ID, type = Type, xmlns = XMLNS,
-		     sub_el = SubEl, lang = Lang} =
-		     IQ) ->
-    case Type of
-      set ->
-	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
-      get ->
-	  #xmlel{children = Els} = SubEl,
-	  Node = str:tokens(fxml:get_tag_attr_s(<<"node">>, SubEl),
-			    <<"/">>),
-	  Names = get_names(Els, []),
-	  case get_local_stats(To#jid.server, Node, Names, Lang) of
-	    {result, Res} ->
-		IQ#iq{type = result,
-		      sub_el =
-			  [#xmlel{name = <<"query">>,
-				  attrs = [{<<"xmlns">>, XMLNS}],
-				  children = Res}]};
-	    {error, Error} ->
-		IQ#iq{type = error, sub_el = [SubEl, Error]}
-	  end
+process_iq(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_iq(#iq{type = get, to = To, lang = Lang,
+	       sub_els = [#stats{} = Stats]} = IQ) ->
+    Node = str:tokens(Stats#stats.node, <<"/">>),
+    Names = [Name || #stat{name = Name} <- Stats#stats.list],
+    case get_local_stats(To#jid.server, Node, Names, Lang) of
+	{result, List} ->
+	    xmpp:make_iq_result(IQ, Stats#stats{list = List});
+	{error, Error} ->
+	    xmpp:make_error(IQ, Error)
     end.
 
-get_names([], Res) -> Res;
-get_names([#xmlel{name = <<"stat">>, attrs = Attrs}
-	   | Els],
-	  Res) ->
-    Name = fxml:get_attr_s(<<"name">>, Attrs),
-    case Name of
-      <<"">> -> get_names(Els, Res);
-      _ -> get_names(Els, [Name | Res])
-    end;
-get_names([_ | Els], Res) -> get_names(Els, Res).
-
--define(STAT(Name),
-	#xmlel{name = <<"stat">>, attrs = [{<<"name">>, Name}],
-	       children = []}).
+-define(STAT(Name), #stat{name = Name}).
 
 get_local_stats(_Server, [], [], _Lang) ->
     {result,
@@ -115,7 +89,7 @@ get_local_stats(_Server, [<<"running nodes">>, ENode],
     case search_running_node(ENode) of
       false ->
 	    Txt = <<"No running node found">>,
-	    {error, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)};
+	    {error, xmpp:err_item_not_found(Txt, Lang)};
       Node ->
 	  {result,
 	   lists:map(fun (Name) -> get_node_stat(Node, Name) end,
@@ -123,27 +97,19 @@ get_local_stats(_Server, [<<"running nodes">>, ENode],
     end;
 get_local_stats(_Server, _, _, Lang) ->
     Txt = <<"No statistics found for this item">>,
-    {error, ?ERRT_FEATURE_NOT_IMPLEMENTED(Lang, Txt)}.
+    {error, xmpp:err_feature_not_implemented(Txt, Lang)}.
 
--define(STATVAL(Val, Unit),
-	#xmlel{name = <<"stat">>,
-	       attrs =
-		   [{<<"name">>, Name}, {<<"units">>, Unit},
-		    {<<"value">>, Val}],
-	       children = []}).
+-define(STATVAL(Val, Unit), #stat{name = Name, units = Unit, value = Val}).
 
 -define(STATERR(Code, Desc),
-	#xmlel{name = <<"stat">>, attrs = [{<<"name">>, Name}],
-	       children =
-		   [#xmlel{name = <<"error">>,
-			   attrs = [{<<"code">>, Code}],
-			   children = [{xmlcdata, Desc}]}]}).
+	#stat{name = Name,
+	      error = #stat_error{code = Code, reason = Desc}}).
 
 get_local_stat(Server, [], Name)
     when Name == <<"users/online">> ->
     case catch ejabberd_sm:get_vh_session_list(Server) of
       {'EXIT', _Reason} ->
-	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
+	  ?STATERR(500, <<"Internal Server Error">>);
       Users ->
 	  ?STATVAL((iolist_to_binary(integer_to_list(length(Users)))),
 		   <<"users">>)
@@ -154,7 +120,7 @@ get_local_stat(Server, [], Name)
 	   ejabberd_auth:get_vh_registered_users_number(Server)
 	of
       {'EXIT', _Reason} ->
-	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
+	  ?STATERR(500, <<"Internal Server Error">>);
       NUsers ->
 	  ?STATVAL((iolist_to_binary(integer_to_list(NUsers))),
 		   <<"users">>)
@@ -163,7 +129,7 @@ get_local_stat(_Server, [], Name)
     when Name == <<"users/all-hosts/online">> ->
     case catch mnesia:table_info(session, size) of
       {'EXIT', _Reason} ->
-	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
+	  ?STATERR(500, <<"Internal Server Error">>);
       Users ->
 	  ?STATVAL((iolist_to_binary(integer_to_list(Users))),
 		   <<"users">>)
@@ -178,7 +144,7 @@ get_local_stat(_Server, [], Name)
     ?STATVAL((iolist_to_binary(integer_to_list(NumUsers))),
 	     <<"users">>);
 get_local_stat(_Server, _, Name) ->
-    ?STATERR(<<"404">>, <<"Not Found">>).
+    ?STATERR(404, <<"Not Found">>).
 
 get_node_stat(Node, Name)
     when Name == <<"time/uptime">> ->
@@ -186,7 +152,7 @@ get_node_stat(Node, Name)
 			[wall_clock])
 	of
       {badrpc, _Reason} ->
-	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
+	  ?STATERR(500, <<"Internal Server Error">>);
       CPUTime ->
 	  ?STATVAL(list_to_binary(
                      io_lib:format("~.3f",
@@ -198,7 +164,7 @@ get_node_stat(Node, Name)
     case catch ejabberd_cluster:call(Node, erlang, statistics, [runtime])
 	of
       {badrpc, _Reason} ->
-	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
+	  ?STATERR(500, <<"Internal Server Error">>);
       RunTime ->
 	  ?STATVAL(list_to_binary(
                      io_lib:format("~.3f",
@@ -211,7 +177,7 @@ get_node_stat(Node, Name)
 			dirty_get_my_sessions_list, [])
 	of
       {badrpc, _Reason} ->
-	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
+	  ?STATERR(500, <<"Internal Server Error">>);
       Users ->
 	  ?STATVAL((iolist_to_binary(integer_to_list(length(Users)))),
 		   <<"users">>)
@@ -222,7 +188,7 @@ get_node_stat(Node, Name)
 			[transaction_commits])
 	of
       {badrpc, _Reason} ->
-	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
+	  ?STATERR(500, <<"Internal Server Error">>);
       Transactions ->
 	  ?STATVAL((iolist_to_binary(integer_to_list(Transactions))),
 		   <<"transactions">>)
@@ -233,7 +199,7 @@ get_node_stat(Node, Name)
 			[transaction_failures])
 	of
       {badrpc, _Reason} ->
-	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
+	  ?STATERR(500, <<"Internal Server Error">>);
       Transactions ->
 	  ?STATVAL((iolist_to_binary(integer_to_list(Transactions))),
 		   <<"transactions">>)
@@ -244,7 +210,7 @@ get_node_stat(Node, Name)
 			[transaction_restarts])
 	of
       {badrpc, _Reason} ->
-	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
+	  ?STATERR(500, <<"Internal Server Error">>);
       Transactions ->
 	  ?STATVAL((iolist_to_binary(integer_to_list(Transactions))),
 		   <<"transactions">>)
@@ -255,13 +221,13 @@ get_node_stat(Node, Name)
 			[transaction_log_writes])
 	of
       {badrpc, _Reason} ->
-	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
+	  ?STATERR(500, <<"Internal Server Error">>);
       Transactions ->
 	  ?STATVAL((iolist_to_binary(integer_to_list(Transactions))),
 		   <<"transactions">>)
     end;
 get_node_stat(_, Name) ->
-    ?STATERR(<<"404">>, <<"Not Found">>).
+    ?STATERR(404, <<"Not Found">>).
 
 search_running_node(SNode) ->
     search_running_node(SNode,

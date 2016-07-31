@@ -2222,11 +2222,15 @@ encode({bookmark_url, _, _} = Url) ->
 encode({bookmark_storage, _, _} = Storage) ->
     encode_bookmarks_storage(Storage,
 			     [{<<"xmlns">>, <<"storage:bookmarks">>}]);
+encode({stat_error, _, _} = Error) ->
+    encode_stat_error(Error,
+		      [{<<"xmlns">>,
+			<<"http://jabber.org/protocol/stats">>}]);
 encode({stat, _, _, _, _} = Stat) ->
     encode_stat(Stat,
 		[{<<"xmlns">>,
 		  <<"http://jabber.org/protocol/stats">>}]);
-encode({stats, _} = Query) ->
+encode({stats, _, _} = Query) ->
     encode_stats(Query,
 		 [{<<"xmlns">>,
 		   <<"http://jabber.org/protocol/stats">>}]);
@@ -2734,8 +2738,9 @@ get_name({bookmark_conference, _, _, _, _, _}) ->
     <<"conference">>;
 get_name({bookmark_url, _, _}) -> <<"url">>;
 get_name({bookmark_storage, _, _}) -> <<"storage">>;
+get_name({stat_error, _, _}) -> <<"error">>;
 get_name({stat, _, _, _, _}) -> <<"stat">>;
-get_name({stats, _}) -> <<"query">>;
+get_name({stats, _, _}) -> <<"query">>;
 get_name({iq, _, _, _, _, _, _}) -> <<"iq">>;
 get_name({message, _, _, _, _, _, _, _, _, _}) ->
     <<"message">>;
@@ -2939,9 +2944,11 @@ get_ns({bookmark_conference, _, _, _, _, _}) ->
 get_ns({bookmark_url, _, _}) -> <<"storage:bookmarks">>;
 get_ns({bookmark_storage, _, _}) ->
     <<"storage:bookmarks">>;
+get_ns({stat_error, _, _}) ->
+    <<"http://jabber.org/protocol/stats">>;
 get_ns({stat, _, _, _, _}) ->
     <<"http://jabber.org/protocol/stats">>;
-get_ns({stats, _}) ->
+get_ns({stats, _, _}) ->
     <<"http://jabber.org/protocol/stats">>;
 get_ns({iq, _, _, _, _, _, _}) -> <<"jabber:client">>;
 get_ns({message, _, _, _, _, _, _, _, _, _}) ->
@@ -3254,8 +3261,9 @@ pp(bookmark_conference, 5) ->
     [name, jid, autojoin, nick, password];
 pp(bookmark_url, 2) -> [name, url];
 pp(bookmark_storage, 2) -> [conference, url];
+pp(stat_error, 2) -> [code, reason];
 pp(stat, 4) -> [name, units, value, error];
-pp(stats, 1) -> [stat];
+pp(stats, 2) -> [list, node];
 pp(iq, 6) -> [id, type, lang, from, to, sub_els];
 pp(message, 9) ->
     [id, type, lang, from, to, subject, body, thread,
@@ -25097,53 +25105,70 @@ encode_iq_attr_to(_val, _acc) ->
 
 decode_stats(__TopXMLNS, __IgnoreEls,
 	     {xmlel, <<"query">>, _attrs, _els}) ->
-    Stat = decode_stats_els(__TopXMLNS, __IgnoreEls, _els,
+    List = decode_stats_els(__TopXMLNS, __IgnoreEls, _els,
 			    []),
-    {stats, Stat}.
+    Node = decode_stats_attrs(__TopXMLNS, _attrs,
+			      undefined),
+    {stats, List, Node}.
 
-decode_stats_els(__TopXMLNS, __IgnoreEls, [], Stat) ->
-    lists:reverse(Stat);
+decode_stats_els(__TopXMLNS, __IgnoreEls, [], List) ->
+    lists:reverse(List);
 decode_stats_els(__TopXMLNS, __IgnoreEls,
-		 [{xmlel, <<"stat">>, _attrs, _} = _el | _els], Stat) ->
+		 [{xmlel, <<"stat">>, _attrs, _} = _el | _els], List) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/stats">> ->
 	  decode_stats_els(__TopXMLNS, __IgnoreEls, _els,
-			   [decode_stat(__TopXMLNS, __IgnoreEls, _el) | Stat]);
+			   [decode_stat(__TopXMLNS, __IgnoreEls, _el) | List]);
       <<"http://jabber.org/protocol/stats">> ->
 	  decode_stats_els(__TopXMLNS, __IgnoreEls, _els,
 			   [decode_stat(<<"http://jabber.org/protocol/stats">>,
 					__IgnoreEls, _el)
-			    | Stat]);
+			    | List]);
       _ ->
-	  decode_stats_els(__TopXMLNS, __IgnoreEls, _els, Stat)
+	  decode_stats_els(__TopXMLNS, __IgnoreEls, _els, List)
     end;
 decode_stats_els(__TopXMLNS, __IgnoreEls, [_ | _els],
-		 Stat) ->
-    decode_stats_els(__TopXMLNS, __IgnoreEls, _els, Stat).
+		 List) ->
+    decode_stats_els(__TopXMLNS, __IgnoreEls, _els, List).
 
-encode_stats({stats, Stat}, _xmlns_attrs) ->
-    _els = lists:reverse('encode_stats_$stat'(Stat, [])),
-    _attrs = _xmlns_attrs,
+decode_stats_attrs(__TopXMLNS,
+		   [{<<"node">>, _val} | _attrs], _Node) ->
+    decode_stats_attrs(__TopXMLNS, _attrs, _val);
+decode_stats_attrs(__TopXMLNS, [_ | _attrs], Node) ->
+    decode_stats_attrs(__TopXMLNS, _attrs, Node);
+decode_stats_attrs(__TopXMLNS, [], Node) ->
+    decode_stats_attr_node(__TopXMLNS, Node).
+
+encode_stats({stats, List, Node}, _xmlns_attrs) ->
+    _els = lists:reverse('encode_stats_$list'(List, [])),
+    _attrs = encode_stats_attr_node(Node, _xmlns_attrs),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_stats_$stat'([], _acc) -> _acc;
-'encode_stats_$stat'([Stat | _els], _acc) ->
-    'encode_stats_$stat'(_els,
-			 [encode_stat(Stat, []) | _acc]).
+'encode_stats_$list'([], _acc) -> _acc;
+'encode_stats_$list'([List | _els], _acc) ->
+    'encode_stats_$list'(_els,
+			 [encode_stat(List, []) | _acc]).
+
+decode_stats_attr_node(__TopXMLNS, undefined) -> <<>>;
+decode_stats_attr_node(__TopXMLNS, _val) -> _val.
+
+encode_stats_attr_node(<<>>, _acc) -> _acc;
+encode_stats_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
 
 decode_stat(__TopXMLNS, __IgnoreEls,
 	    {xmlel, <<"stat">>, _attrs, _els}) ->
     Error = decode_stat_els(__TopXMLNS, __IgnoreEls, _els,
-			    []),
+			    undefined),
     {Name, Units, Value} = decode_stat_attrs(__TopXMLNS,
 					     _attrs, undefined, undefined,
 					     undefined),
     {stat, Name, Units, Value, Error}.
 
 decode_stat_els(__TopXMLNS, __IgnoreEls, [], Error) ->
-    lists:reverse(Error);
+    Error;
 decode_stat_els(__TopXMLNS, __IgnoreEls,
 		[{xmlel, <<"error">>, _attrs, _} = _el | _els],
 		Error) ->
@@ -25152,13 +25177,11 @@ decode_stat_els(__TopXMLNS, __IgnoreEls,
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/stats">> ->
 	  decode_stat_els(__TopXMLNS, __IgnoreEls, _els,
-			  [decode_stat_error(__TopXMLNS, __IgnoreEls, _el)
-			   | Error]);
+			  decode_stat_error(__TopXMLNS, __IgnoreEls, _el));
       <<"http://jabber.org/protocol/stats">> ->
 	  decode_stat_els(__TopXMLNS, __IgnoreEls, _els,
-			  [decode_stat_error(<<"http://jabber.org/protocol/stats">>,
-					     __IgnoreEls, _el)
-			   | Error]);
+			  decode_stat_error(<<"http://jabber.org/protocol/stats">>,
+					    __IgnoreEls, _el));
       _ ->
 	  decode_stat_els(__TopXMLNS, __IgnoreEls, _els, Error)
     end;
@@ -25196,10 +25219,9 @@ encode_stat({stat, Name, Units, Value, Error},
 										 _xmlns_attrs))),
     {xmlel, <<"stat">>, _attrs, _els}.
 
-'encode_stat_$error'([], _acc) -> _acc;
-'encode_stat_$error'([Error | _els], _acc) ->
-    'encode_stat_$error'(_els,
-			 [encode_stat_error(Error, []) | _acc]).
+'encode_stat_$error'(undefined, _acc) -> _acc;
+'encode_stat_$error'(Error, _acc) ->
+    [encode_stat_error(Error, []) | _acc].
 
 decode_stat_attr_name(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -25209,41 +25231,39 @@ decode_stat_attr_name(__TopXMLNS, _val) -> _val.
 encode_stat_attr_name(_val, _acc) ->
     [{<<"name">>, _val} | _acc].
 
-decode_stat_attr_units(__TopXMLNS, undefined) ->
-    undefined;
+decode_stat_attr_units(__TopXMLNS, undefined) -> <<>>;
 decode_stat_attr_units(__TopXMLNS, _val) -> _val.
 
-encode_stat_attr_units(undefined, _acc) -> _acc;
+encode_stat_attr_units(<<>>, _acc) -> _acc;
 encode_stat_attr_units(_val, _acc) ->
     [{<<"units">>, _val} | _acc].
 
-decode_stat_attr_value(__TopXMLNS, undefined) ->
-    undefined;
+decode_stat_attr_value(__TopXMLNS, undefined) -> <<>>;
 decode_stat_attr_value(__TopXMLNS, _val) -> _val.
 
-encode_stat_attr_value(undefined, _acc) -> _acc;
+encode_stat_attr_value(<<>>, _acc) -> _acc;
 encode_stat_attr_value(_val, _acc) ->
     [{<<"value">>, _val} | _acc].
 
 decode_stat_error(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"error">>, _attrs, _els}) ->
-    Cdata = decode_stat_error_els(__TopXMLNS, __IgnoreEls,
-				  _els, <<>>),
+    Reason = decode_stat_error_els(__TopXMLNS, __IgnoreEls,
+				   _els, <<>>),
     Code = decode_stat_error_attrs(__TopXMLNS, _attrs,
 				   undefined),
-    {Code, Cdata}.
+    {stat_error, Code, Reason}.
 
 decode_stat_error_els(__TopXMLNS, __IgnoreEls, [],
-		      Cdata) ->
-    decode_stat_error_cdata(__TopXMLNS, Cdata);
+		      Reason) ->
+    decode_stat_error_cdata(__TopXMLNS, Reason);
 decode_stat_error_els(__TopXMLNS, __IgnoreEls,
-		      [{xmlcdata, _data} | _els], Cdata) ->
+		      [{xmlcdata, _data} | _els], Reason) ->
     decode_stat_error_els(__TopXMLNS, __IgnoreEls, _els,
-			  <<Cdata/binary, _data/binary>>);
+			  <<Reason/binary, _data/binary>>);
 decode_stat_error_els(__TopXMLNS, __IgnoreEls,
-		      [_ | _els], Cdata) ->
+		      [_ | _els], Reason) ->
     decode_stat_error_els(__TopXMLNS, __IgnoreEls, _els,
-			  Cdata).
+			  Reason).
 
 decode_stat_error_attrs(__TopXMLNS,
 			[{<<"code">>, _val} | _attrs], _Code) ->
@@ -25254,8 +25274,9 @@ decode_stat_error_attrs(__TopXMLNS, [_ | _attrs],
 decode_stat_error_attrs(__TopXMLNS, [], Code) ->
     decode_stat_error_attr_code(__TopXMLNS, Code).
 
-encode_stat_error({Code, Cdata}, _xmlns_attrs) ->
-    _els = encode_stat_error_cdata(Cdata, []),
+encode_stat_error({stat_error, Code, Reason},
+		  _xmlns_attrs) ->
+    _els = encode_stat_error_cdata(Reason, []),
     _attrs = encode_stat_error_attr_code(Code,
 					 _xmlns_attrs),
     {xmlel, <<"error">>, _attrs, _els}.
@@ -25274,10 +25295,10 @@ decode_stat_error_attr_code(__TopXMLNS, _val) ->
 encode_stat_error_attr_code(_val, _acc) ->
     [{<<"code">>, enc_int(_val)} | _acc].
 
-decode_stat_error_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_stat_error_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_stat_error_cdata(__TopXMLNS, _val) -> _val.
 
-encode_stat_error_cdata(undefined, _acc) -> _acc;
+encode_stat_error_cdata(<<>>, _acc) -> _acc;
 encode_stat_error_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
