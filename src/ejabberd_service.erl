@@ -118,7 +118,6 @@ get_delegated_ns(FsmRef) ->
 %%----------------------------------------------------------------------
 init([{SockMod, Socket}, Opts]) ->
     ?INFO_MSG("(~w) External service connected", [Socket]),
-    ?INFO_MSG("pid ~p~n", [self()]),
     Access = case lists:keysearch(access, 1, Opts) of
                  {value, {_, A}} -> A;
                  _ -> all
@@ -456,7 +455,8 @@ handle_info(Info, StateName, StateData) ->
 terminate(Reason, StateName, StateData) ->
     ?INFO_MSG("terminated: ~p", [Reason]),
     lists:foreach(fun({Ns, _FilterAttr}) ->
-                      ets:delete(delegated_namespaces, Ns)
+                      ets:delete(delegated_namespaces, Ns),
+                      remove_iq_handlers(Ns)
                   end, StateData#state.delegations),
     case StateName of
       stream_established ->
@@ -542,3 +542,9 @@ replace_to(To, #xmlel{name = Name, attrs = Attrs, children = Els}) ->
     NewAttrs = 
         replace_to_attr(To, Attrs),
     #xmlel{name = Name, attrs = NewAttrs, children = Els}.
+
+remove_iq_handlers(Ns) ->
+    lists:foreach(fun(Host) ->
+                      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, Ns),
+                      gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, Ns)
+                  end, ?MYHOSTS).

@@ -39,13 +39,15 @@ depends(_Host, _Opts) -> [].
 mod_opt_type(_Opt) -> [].
 
 %%%--------------------------------------------------------------------------------------
-%%%  server advertises entity of allowed permission
+%%% Functions to advertise services of allowed permission
 %%%--------------------------------------------------------------------------------------
 
 -spec permissions(binary(), list(), binary(), binary()) -> xmlel().
 
 permissions(Id, PrivAccess, From, To) ->
-    Perms = lists:map(fun({Access, Type}) -> 
+    Perms = lists:map(fun({Access, Type}) ->
+                          ?DEBUG("Advertise service ~s of allowed permission: ~s = ~s~n",
+                                 [To, Access, Type]),
                           #xmlel{name = <<"perm">>, 
                                  attrs = [{<<"access">>, 
                                            atom_to_binary(Access,latin1)},
@@ -62,8 +64,7 @@ advertise_perm(#state{privilege_access = []}) -> ok;
 advertise_perm(StateData) ->
     Stanza = permissions(StateData#state.streamid, StateData#state.privilege_access,
                          ?MYNAME, StateData#state.host),
-    ejabberd_service:send_element(StateData, Stanza),
-    ?INFO_MSG("Advertise service ~s of allowed permissions~n", [StateData#state.host]).
+    ejabberd_service:send_element(StateData, Stanza).
 
 %%%--------------------------------------------------------------------------------------
 %%%  Process presences

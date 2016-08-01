@@ -50,9 +50,8 @@ depends(_Host, _Opts) -> [].
 mod_opt_type(_Opt) -> [].
 
 %%%--------------------------------------------------------------------------------------
-%%%  server advertises delegated namespaces 4.2
+%%% 4.2 Functions to advertise service of delegated namespaces
 %%%--------------------------------------------------------------------------------------
-attribute_tag([]) -> [];
 attribute_tag(Attrs) ->
     lists:map(fun(Attr) ->
                   #xmlel{name = <<"attribute">>, 
@@ -60,7 +59,17 @@ attribute_tag(Attrs) ->
               end, Attrs).
 
 delegations(Id, Delegations, From, To) ->
-    Elem0 = lists:map(fun({Ns, FilterAttr}) ->
+    Elem0 = lists:map(fun({Ns, []}) ->
+                          ?DEBUG("namespace ~s is delegated to ~s with"
+                                 " no filtering attributes ~n",[Ns, To]),
+                          add_iq_handlers(Ns),
+                          #xmlel{name = <<"delegated">>, 
+                                 attrs = [{<<"namespace">>, Ns}],
+                                 children = []};
+                         ({Ns, FilterAttr}) ->
+                          ?DEBUG("namespace ~s is delegated to ~s with"
+                                 " ~p filtering attributes ~n",[Ns, To, FilterAttr]),
+                          add_iq_handlers(Ns),
                           #xmlel{name = <<"delegated">>, 
                                  attrs = [{<<"namespace">>, Ns}],
                                  children = attribute_tag(FilterAttr)}
@@ -71,15 +80,6 @@ delegations(Id, Delegations, From, To) ->
     #xmlel{name = <<"message">>, 
            attrs = [{<<"id">>, Id}, {<<"from">>, From}, {<<"to">>, To}],
            children = [Elem1]}.
-
-delegation_ns_debug(Host, Delegations) ->
-    lists:foreach(fun({Ns, []}) ->
-    	                ?DEBUG("namespace ~s is delegated to ~s with"
-    	                       " no filtering attributes ~n",[Ns, Host]);
-    	               ({Ns, Attr}) ->
-                      ?DEBUG("namespace ~s is delegated to ~s with"
-    	                       " ~p filtering attributes ~n",[Ns, Host, Attr])
-    	            end, Delegations).
 
 add_iq_handlers(Ns) ->
     lists:foreach(fun(Host) -> 
@@ -97,13 +97,7 @@ advertise_delegations(StateData) ->
                             ?MYNAME, StateData#state.host),
     ejabberd_service:send_element(StateData, Delegated),
     % server asks available features for delegated namespaces 
-    disco_info(StateData),
-    
-    lists:foreach(fun({Ns, _}) ->
-                      add_iq_handlers(Ns)
-                  end, StateData#state.delegations),
-
-    delegation_ns_debug(StateData#state.host, StateData#state.delegations).
+    disco_info(StateData).
 
 %%%--------------------------------------------------------------------------------------
 %%%  Delegated namespaces hook
@@ -156,7 +150,7 @@ decapsulate_result(#xmlel{children = Children}) ->
 
 decapsulate_result0([]) -> ok;
 decapsulate_result0([#xmlel{name = <<"delegation">>, 
-                          attrs = [{<<"xmlns">>, ?NS_DELEGATION}]} = Packet]) ->
+                            attrs = [{<<"xmlns">>, ?NS_DELEGATION}]} = Packet]) ->
     decapsulate_result1(Packet#xmlel.children);
 decapsulate_result0(_Children) -> ok.
 
@@ -277,13 +271,11 @@ forward_iq(Server, Service, Packet) ->
     To = jid:make(<<"">>, Service, <<"">>),
     ejabberd_router:route(From, To, Elem2).
 
-process_packet(From, To, #iq{type = Type, xmlns = XMLNS} = IQ) ->
+process_packet(From, #jid{lresource = <<"">>} = To, 
+               #iq{type = Type, xmlns = XMLNS} = IQ) ->
     %% check if stanza directed to server
     %% or directed to the bare JID of the sender
-    case %((From#jid.user == To#jid.user) and
-       	 % (From#jid.lserver == To#jid.lserver) or
-        % (To#jid.luser == <<"">>)) and
-         ((Type == get) or (Type == set)) and
+    case ((Type == get) or (Type == set)) and
          check_tab(delegated_namespaces) of
         true ->
             Packet = jlib:iq_to_xml(IQ),
@@ -308,7 +300,8 @@ process_packet(From, To, #iq{type = Type, xmlns = XMLNS} = IQ) ->
             ignore;
         _ -> 
             ignore
-    end.
+    end;
+process_packet(_From, _To, _IQ) -> ignore.
 
 %%%--------------------------------------------------------------------------------------
 %%%  7. Discovering Support
@@ -516,9 +509,12 @@ disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
 
 %% 7.2.2 Rediction Of Bare JID Disco Info
 
+disco_sm_features({error, ?ERR_ITEM_NOT_FOUND}, _From,
+                  #jid{lresource = <<"">>}, <<>>, _Lang) ->
+    disco_features([], true);
 disco_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
-disco_sm_features(Acc, _From, #jid{lresource = <<"">>}, _Node, _Lang) ->
+disco_sm_features(Acc, _From, #jid{lresource = <<"">>}, <<>>, _Lang) ->
     FeatsOld = case Acc of
                  {result, I} -> I;
                  _ -> []
@@ -527,14 +523,17 @@ disco_sm_features(Acc, _From, #jid{lresource = <<"">>}, _Node, _Lang) ->
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-disco_sm_identity(Acc, _From, #jid{lresource = <<"">>}, _Node, _Lang) ->
+disco_sm_identity(Acc, _From, #jid{lresource = <<"">>}, <<>>, _Lang) ->
     disco_identity(Acc, true);
 disco_sm_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
+disco_info(Acc, _Host, _Mod, <<>>, _Lang) ->
+    get_info(Acc);
 disco_info(Acc, _Host, _Mod, _Node, _Lang) ->
-    get_info(Acc).
+    Acc.
 
 %%%--------------------------------------------------------------------------------------
 %%%  7. Client mode
 %%%--------------------------------------------------------------------------------------
+
