@@ -425,7 +425,7 @@ get_command_definition(Name, Version) ->
                          {V, C}
                  end)))) of
         [{_, Command} | _ ] -> Command;
-        _E -> throw(unknown_command)
+        _E -> throw({error, unknown_command})
     end.
 
 -spec get_commands_definition(integer()) -> [ejabberd_commands()].
@@ -682,7 +682,7 @@ check_auth(Command, {User, Server, {oauth, Token}, _}) ->
     case ejabberd_oauth:check_token(User, Server, ScopeList, Token) of
         true ->
             {ok, User, Server};
-        false ->
+        _ ->
             throw({error, invalid_account_data})
     end;
 check_auth(_Command, {User, Server, Password, _}) when is_binary(Password) ->

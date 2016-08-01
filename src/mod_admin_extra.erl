@@ -535,7 +535,7 @@ get_commands_spec() ->
                         policy = user,
 			module = mod_offline, function = count_offline_messages,
 			args = [],
-			result = {res, integer}},
+			result = {value, integer}},
      #ejabberd_commands{name = send_message, tags = [stanza],
 			desc = "Send a message to a local or remote bare of full JID",
 			module = ?MODULE, function = send_message,

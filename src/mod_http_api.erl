@@ -162,14 +162,15 @@ check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _, ScopeL
                 case oauth_check_token(ScopeList, Token) of
                     {ok, user, {User, Server}} ->
                         {ok, {User, Server, {oauth, Token}, Admin}};
-                    false ->
-                        false
+                    {false, Reason} ->
+                        {false, Reason}
                 end;
             _ ->
                 false
         end,
     case Auth of
         {ok, A} -> {allowed, Call, A};
+        {false, no_matching_scope} -> outofscope_response();
         _ -> unauthorized_response()
     end;
 check_permissions2(_Request, Call, open, _Scope) ->
@@ -189,7 +190,7 @@ check_permissions2(#request{ip={IP, _Port}}, Call, _Policy, _Scope) ->
         Commands when is_list(Commands) ->
             case lists:member(Call, Commands) of
                 true -> {allowed, Call, admin};
-                _ -> unauthorized_response()
+                _ -> outofscope_response()
             end;
         _E ->
             {allowed, Call, noauth}
@@ -212,28 +213,24 @@ process(_, #request{method = 'POST', data = <<>>}) ->
 process([Call], #request{method = 'POST', data = Data, ip = {IP, _} = IPPort} = Req) ->
     Version = get_api_version(Req),
     try
-        Args = case jiffy:decode(Data) of
-            List when is_list(List) -> List;
-            {List} when is_list(List) -> List;
-            Other -> [Other]
-        end,
+        Args = extract_args(Data),
         log(Call, Args, IPPort),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                case handle(Cmd, Auth, Args, Version, IP) of
-                    {Code, Result} ->
-                        json_response(Code, jiffy:encode(Result));
-                    {HTMLCode, JSONErrorCode, Message} ->
-                        json_error(HTMLCode, JSONErrorCode, Message)
-                    end;
+                Result = handle(Cmd, Auth, Args, Version, IP),
+                json_format(Result);
             %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
                 ErrorResponse
         end
-    catch _:{error,{_,invalid_json}} = _Err ->
-	    ?DEBUG("Bad Request: ~p", [_Err]),
-	    badrequest_response(<<"Invalid JSON input">>);
-	  _:_Error ->
+    catch
+        %% TODO We need to refactor to remove redundant error return formatting
+        throw:{error, unknown_command} ->
+            {404, 40, <<"Command not found.">>};
+        _:{error,{_,invalid_json}} = _Err ->
+            ?DEBUG("Bad Request: ~p", [_Err]),
+            badrequest_response(<<"Invalid JSON input">>);
+          _:_Error ->
             ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
             badrequest_response()
     end;
@@ -247,13 +244,18 @@ process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
         log(Call, Args, IP),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                {Code, Result} = handle(Cmd, Auth, Args, Version, IP),
-                json_response(Code, jiffy:encode(Result));
+                Result = handle(Cmd, Auth, Args, Version, IP),
+                json_format(Result);
             %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
                 ErrorResponse
         end
-    catch _:_Error ->
+    catch
+        %% TODO We need to refactor to remove redundant error return formatting
+        throw:{error, unknown_command} ->
+            json_format({404, 44, <<"Command not found.">>});
+        _:_Error ->
+
         ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
         badrequest_response()
     end;
@@ -261,7 +263,16 @@ process([], #request{method = 'OPTIONS', data = <<>>}) ->
     {200, ?OPTIONS_HEADER, []};
 process(_Path, Request) ->
     ?DEBUG("Bad Request: no handler ~p", [Request]),
-    badrequest_response().
+    json_error(400, 40, <<"Missing command name.">>).
+
+%% Be tolerant to make API more easily usable from command-line pipe.
+extract_args(<<"\n">>) -> [];
+extract_args(Data) ->
+    case jiffy:decode(Data) of
+        List when is_list(List) -> List;
+        {List} when is_list(List) -> List;
+        Other -> [Other]
+    end.
 
 % get API version N from last "vN" element in URL path
 get_api_version(#request{path = Path}) ->
@@ -302,7 +313,7 @@ handle(Call, Auth, Args, Version, IP) when is_atom(Call), is_list(Args) ->
                             [{Key, undefined}|Acc]
                     end, [], ArgsSpec),
 	    try
-		handle2(Call, Auth, match(Args2, Spec), Version, IP)
+          handle2(Call, Auth, match(Args2, Spec), Version, IP)
 	    catch throw:not_found ->
 		    {404, <<"not_found">>};
 		  throw:{not_found, Why} when is_atom(Why) ->
@@ -444,22 +455,24 @@ ejabberd_command(Auth, Cmd, Args, Version, IP) ->
 format_command_result(Cmd, Auth, Result, Version) ->
     {_, ResultFormat} = ejabberd_commands:get_command_format(Cmd, Auth, Version),
     case {ResultFormat, Result} of
-	{{_, rescode}, V} when V == true; V == ok ->
-	    {200, 0};
-	{{_, rescode}, _} ->
-	    {200, 1};
-	{{_, restuple}, {V1, Text1}} when V1 == true; V1 == ok ->
-	    {200, iolist_to_binary(Text1)};
-	{{_, restuple}, {_, Text2}} ->
-	    {500, iolist_to_binary(Text2)};
-	{{_, {list, _}}, _V} ->
-	    {_, L} = format_result(Result, ResultFormat),
-	    {200, L};
-	{{_, {tuple, _}}, _V} ->
-	    {_, T} = format_result(Result, ResultFormat),
-	    {200, T};
-	_ ->
-	    {200, {[format_result(Result, ResultFormat)]}}
+        {{_, rescode}, V} when V == true; V == ok ->
+            {200, 0};
+        {{_, rescode}, _} ->
+            {200, 1};
+        {_, {error, ErrorAtom, Code, Msg}} ->
+            format_error_result(ErrorAtom, Code, Msg);
+        {{_, restuple}, {V, Text}} when V == true; V == ok ->
+            {200, iolist_to_binary(Text)};
+        {{_, restuple}, {ErrorAtom, Msg}} ->
+            format_error_result(ErrorAtom, 0, Msg);
+        {{_, {list, _}}, _V} ->
+            {_, L} = format_result(Result, ResultFormat),
+            {200, L};
+        {{_, {tuple, _}}, _V} ->
+            {_, T} = format_result(Result, ResultFormat),
+            {200, T};
+        _ ->
+            {200, {[format_result(Result, ResultFormat)]}}
     end.
 
 format_result(Atom, {Name, atom}) ->
@@ -497,13 +510,27 @@ format_result(Tuple, {Name, {tuple, Def}}) ->
 format_result(404, {_Name, _}) ->
     "not_found".
 
+
+format_error_result(conflict, Code, Msg) ->
+    {409, Code, iolist_to_binary(Msg)};
+format_error_result(_ErrorAtom, Code, Msg) ->
+    {500, Code, iolist_to_binary(Msg)}.
+
 unauthorized_response() ->
     json_error(401, 10, <<"Oauth Token is invalid or expired.">>).
+
+outofscope_response() ->
+    json_error(401, 11, <<"Token does not grant usage to command required scope.">>).
 
 badrequest_response() ->
     badrequest_response(<<"400 Bad Request">>).
 badrequest_response(Body) ->
     json_response(400, jiffy:encode(Body)).
+
+json_format({Code, Result}) ->
+    json_response(Code, jiffy:encode(Result));
+json_format({HTMLCode, JSONErrorCode, Message}) ->
+    json_error(HTMLCode, JSONErrorCode, Message).
 
 json_response(Code, Body) when is_integer(Code) ->
     {Code, ?HEADER(?CT_JSON), Body}.

@@ -174,7 +174,7 @@ defmodule EjabberdCommandsMockTest do
 		# default version is latest one
 		assert :result3 == :ejabberd_commands.execute_command(command_name, [])
 		# no such command in APIv0
-		assert :unknown_command ==
+		assert {:error, :unknown_command} ==
 			catch_throw :ejabberd_commands.execute_command(command_name, [], 0)
 		assert :result1 == :ejabberd_commands.execute_command(command_name, [], 1)
 		assert :result1 == :ejabberd_commands.execute_command(command_name, [], 2)

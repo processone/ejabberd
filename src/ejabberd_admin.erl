@@ -87,6 +87,7 @@ get_commands_spec() ->
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = reopen_log, tags = [logs, server],
 			desc = "Reopen the log files",
+			policy = admin,
 			module = ?MODULE, function = reopen_log,
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = rotate_log, tags = [logs, server],
@@ -380,13 +381,12 @@ register(User, Host, Password) ->
 	{atomic, ok} ->
 	    {ok, io_lib:format("User ~s@~s successfully registered", [User, Host])};
 	{atomic, exists} ->
-	    String = io_lib:format("User ~s@~s already registered at node ~p",
-				   [User, Host, node()]),
-	    {exists, String};
+	    Msg = io_lib:format("User ~s@~s already registered", [User, Host]),
+	    {error, conflict, 10090, Msg};
 	{error, Reason} ->
 	    String = io_lib:format("Can't register user ~s@~s at node ~p: ~p",
 				   [User, Host, node(), Reason]),
-	    {cannot_register, String}
+	    {error, cannot_register, 10001, String}
     end.
 
 unregister(User, Host) ->

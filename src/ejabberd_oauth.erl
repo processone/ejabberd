@@ -302,12 +302,17 @@ check_token(User, Server, ScopeList, Token) ->
                      expire = Expire} ->
             {MegaSecs, Secs, _} = os:timestamp(),
             TS = 1000000 * MegaSecs + Secs,
-            TokenScopeSet = oauth2_priv_set:new(TokenScope),
-            lists:any(fun(Scope) ->
-                oauth2_priv_set:is_member(Scope, TokenScopeSet) end,
-                ScopeList) andalso Expire > TS;
+            if
+                Expire > TS ->
+                    TokenScopeSet = oauth2_priv_set:new(TokenScope),
+                    lists:any(fun(Scope) ->
+                                      oauth2_priv_set:is_member(Scope, TokenScopeSet) end,
+                              ScopeList);
+                true ->
+                    {false, expired}
+            end;
         _ ->
-            false
+            {false, not_found}
     end.
 
 check_token(ScopeList, Token) ->
@@ -318,15 +323,20 @@ check_token(ScopeList, Token) ->
                      expire = Expire} ->
             {MegaSecs, Secs, _} = os:timestamp(),
             TS = 1000000 * MegaSecs + Secs,
-            TokenScopeSet = oauth2_priv_set:new(TokenScope),
-            case lists:any(fun(Scope) ->
-                oauth2_priv_set:is_member(Scope, TokenScopeSet) end,
-                ScopeList) andalso Expire > TS of
-                true -> {ok, user, US};
-                false -> false
+            if
+                Expire > TS ->
+                    TokenScopeSet = oauth2_priv_set:new(TokenScope),
+                    case lists:any(fun(Scope) ->
+                                           oauth2_priv_set:is_member(Scope, TokenScopeSet) end,
+                                   ScopeList) of
+                        true -> {ok, user, US};
+                        false -> {false, no_matching_scope}
+                    end;
+                true ->
+                    {false, expired}
             end;
         _ ->
-            false
+            {false, not_found}
     end.
 
 
