@@ -6,6 +6,7 @@
 .#*
 .edts
 *.dump
+/installdir
 /Makefile
 /config.log
 /config.status
