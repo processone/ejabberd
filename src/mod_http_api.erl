@@ -253,7 +253,7 @@ process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
     catch
         %% TODO We need to refactor to remove redundant error return formatting
         throw:{error, unknown_command} ->
-            {404, 40, <<"Command not found.">>};
+            json_format({404, 40, <<"Command not found.">>});
         _:_Error ->
 
         ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
