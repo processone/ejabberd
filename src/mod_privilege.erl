@@ -8,7 +8,7 @@
 
 -export([start/2, stop/1, depends/2, mod_opt_type/1]).
 
--export([advertise_perm/1, initial_presence/1, process_presence/4, 
+-export([advertise_permissions/1, initial_presences/1, process_presence/4, 
          process_roster_presence/3, compare_presences/2, 
          try_roster_subscribe/5, check_privacy_route/6,
          process_message/4, process_iq/4]).
@@ -44,7 +44,7 @@ mod_opt_type(_Opt) -> [].
 
 -spec permissions(binary(), list(), binary(), binary()) -> xmlel().
 
-permissions(Id, PrivAccess, From, To) ->
+permissions(From, To, Id, PrivAccess) ->
     Perms = lists:map(fun({Access, Type}) ->
                           ?DEBUG("Advertise service ~s of allowed permission: ~s = ~s~n",
                                  [To, Access, Type]),
@@ -60,24 +60,25 @@ permissions(Id, PrivAccess, From, To) ->
            attrs = [{<<"id">>, Id}, {<<"from">>, From}, {<<"to">>, To}],
            children = [Stanza]}.
 
-advertise_perm(#state{privilege_access = []}) -> ok;
-advertise_perm(StateData) ->
-    Stanza = permissions(StateData#state.streamid, StateData#state.privilege_access,
-                         ?MYNAME, StateData#state.host),
+advertise_permissions(#state{privilege_access = []}) -> ok;
+advertise_permissions(StateData) ->
+    Id = randoms:get_string(),
+    Stanza =
+      permissions(?MYNAME, StateData#state.host, Id, StateData#state.privilege_access),
     ejabberd_service:send_element(StateData, Stanza).
 
 %%%--------------------------------------------------------------------------------------
 %%%  Process presences
 %%%--------------------------------------------------------------------------------------
 
-initial_presence(StateData) ->
+initial_presences(StateData) ->
     Pids = ejabberd_sm:get_all_pids(),
     lists:foreach(
       fun(Pid) ->
           {User, Server, Resource, PresenceLast} = ejabberd_c2s:get_last_presence(Pid),
           From = #jid{user = User, server = Server, resource = Resource},
           To = jid:from_string(StateData#state.host),
-          PacketNew = jlib:replace_from_to(From,To, PresenceLast),
+          PacketNew = jlib:replace_from_to(From, To, PresenceLast),
           ejabberd_service:send_element(StateData, PacketNew)
       end, Pids).
 
@@ -143,13 +144,13 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
           true ->
             AccessType = 
               proplists:get_value(roster, StateData#state.privilege_access, none),
-            case {IQ#iq.type, AccessType} of
-              {get, T} when ( (T == <<"both">>) or (T == <<"get">>)) -> 
+            case IQ#iq.type of
+              get when (AccessType == <<"both">>) or (AccessType == <<"get">>) -> 
                 RosterIQ = roster_management(ToJID, FromJID, IQ),
                 ejabberd_service:send_element(StateData, RosterIQ);
-              {set, T} when ( (T == <<"both">>) or (T == <<"set">>)) ->
+              set when (AccessType == <<"both">>) or (AccessType == <<"set">>) ->
                 %% check if user ToJID  exist
-                #jid{lserver= Server, luser = User} = ToJID,
+                #jid{lserver = Server, luser = User} = ToJID,
                 case ejabberd_auth:is_user_exists(User,Server) of
                   true ->
                     ResIQ = roster_management(ToJID, FromJID, IQ),
@@ -164,12 +165,14 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
             ejabberd_router:route(FromJID, ToJID, Packet)
         end;
       #iq{type = Type, id = Id} when (Type == error) or (Type == result) -> % for XEP-0355
+        Hook = hook_name(Type, Id),
+        Host = ToJID#jid.lserver,
         case (ToJID#jid.luser == <<"">>) and
              (FromJID#jid.luser == <<"">>) and
-             lists:member(ToJID#jid.lserver, ?MYHOSTS) of
+             lists:member(ToJID#jid.lserver, ?MYHOSTS) and
+             (ets:lookup(hooks, {Hook, Host}) /= []) of
           true ->
-            Hook = hook_name(Type, Id),
-            ejabberd_hooks:run(Hook, ToJID#jid.lserver, [Packet]);
+            ejabberd_hooks:run(Hook, Host, [Packet]);
           _ ->
             ejabberd_router:route(FromJID, ToJID, Packet)
         end;
@@ -177,13 +180,10 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
         ejabberd_router:route(FromJID, ToJID, Packet)
     end.
 
-roster_management(From, To, IQ) ->
-    ResIQ = mod_roster:process_iq(From, From, IQ),
+roster_management(FromJID, ToJID, IQ) ->
+    ResIQ = mod_roster:process_iq(FromJID, FromJID, IQ),
     ResXml = jlib:iq_to_xml(ResIQ),
-    Attrs = jlib:replace_from_to_attrs(jid:to_string(From),
-                                       jid:to_string(To),
-                                       ResXml#xmlel.attrs),
-    ResXml#xmlel{attrs = Attrs}.
+    jlib:replace_from_to(FromJID, ToJID, ResXml).
 
 hook_name(Type, Id) ->
     Hook0 =  atom_to_binary(Type, 'latin1'),

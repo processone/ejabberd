@@ -242,13 +242,13 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                                   ?INFO_MSG("Route registered for service ~p~n", [H])
                                 end, dict:fetch_keys(StateData#state.host_opts)),
 
-                            mod_privilege:advertise_perm(StateData),
+                            mod_privilege:advertise_permissions(StateData),
                             mod_delegation:advertise_delegations(StateData),
                             %% send initial presences from all server users
                             case get_prop(presence, StateData#state.privilege_access) of
                                 Priv when (Priv == <<"managed_entity">>) or
                                           (Priv == <<"roster">>) ->
-                                        mod_privilege:initial_presence(StateData);
+                                        mod_privilege:initial_presences(StateData);
                                 _ -> ok
                             end,
                             ets:insert(registered_services,
