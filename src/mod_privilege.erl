@@ -9,8 +9,7 @@
 -export([start/2, stop/1, depends/2, mod_opt_type/1]).
 
 -export([advertise_permissions/1, initial_presences/1, process_presence/4, 
-         process_roster_presence/3, compare_presences/2, 
-         try_roster_subscribe/5, check_privacy_route/6,
+         process_roster_presence/3, compare_presences/2,
          process_message/4, process_iq/4]).
 
 -include("ejabberd_service.hrl").
@@ -172,7 +171,7 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
              lists:member(ToJID#jid.lserver, ?MYHOSTS) and
              (ets:lookup(hooks, {Hook, Host}) /= []) of
           true ->
-            ejabberd_hooks:run(Hook, Host, [Packet])
+            ejabberd_hooks:run(Hook, Host, [Packet]);
           _ ->
             ejabberd_router:route(FromJID, ToJID, Packet)
         end;
@@ -256,7 +255,7 @@ forward_subscribe(StateData, Presence, PrivAccess, Packet) ->
                   (User /= ToJ#jid.luser) ->
                     %% 0356 server MUST NOT allow the privileged entity
                     %% to do anything that the managed entity could not do
-                    mod_privilege:try_roster_subscribe(Server,User, FromJ, ToJ, Presence);   
+                    try_roster_subscribe(Server,User, FromJ, ToJ, Presence);   
                   true -> %% we don't want presence sent to self
                     ok
                 end;
@@ -297,7 +296,7 @@ forward_message(StateData, Message, PrivAccess, Packet) ->
                 PrivList = ejabberd_hooks:run_fold(privacy_get_user_list,
                                                    Server, #userlist{},
                                                    [User, Server]),
-                mod_privilege:check_privacy_route(Server, User, PrivList,
+                check_privacy_route(Server, User, PrivList,
                                                   FromJ, ToJ, Message);
               _ ->
                 Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
@@ -323,15 +322,19 @@ compare_presences(#xmlel{attrs = Attrs, children = Child},
                   #xmlel{attrs = Attrs2, children = Child2}) ->
     Id1 = fxml:get_attr_s(<<"id">>, Attrs),
     Id2 = fxml:get_attr_s(<<"id">>, Attrs2),
-    case not compare_arrts(Attrs, Attrs2) of
-        true -> false;
-        _ -> 
-            case (Id1 /= <<"">>) and (Id1 == Id2) of
-                true -> true;
-                _ -> 
-                    compare_elements(Child, Child2)
-            end
+    if
+      (Id1 /= Id2) ->
+        false;
+      (Id1 /= <<"">>) and (Id1 == Id2) -> 
+        true;
+      true -> 
+        case not compare_attrs(Attrs, Attrs2) of
+          true -> false;
+          _ -> 
+            compare_elements(Child, Child2)
+        end
     end.
+
 
 compare_elements([],[]) -> true;
 compare_elements(Tags1, Tags2) when length(Tags1) == length(Tags2) ->
@@ -345,20 +348,20 @@ compare_tags([{xmlcdata, _CData1}|_Tags1], [{xmlcdata, _CData2}|_Tags2]) ->
     false;
 compare_tags([#xmlel{} = Stanza1|Tags1], [#xmlel{} = Stanza2|Tags2]) ->
     case (Stanza1#xmlel.name == Stanza2#xmlel.name) and
-        compare_arrts(Stanza1#xmlel.attrs, Stanza2#xmlel.attrs) and
-        compare_tags(Stanza1#xmlel.children, Stanza2#xmlel.children) of
-        true -> 
-            compare_tags(Tags1,Tags2);
-        false ->
-            false
+         compare_attrs(Stanza1#xmlel.attrs, Stanza2#xmlel.attrs) and
+         compare_tags(Stanza1#xmlel.children, Stanza2#xmlel.children) of
+      true -> 
+        compare_tags(Tags1,Tags2);
+      false ->
+        false
     end.
 
 %% attr() :: {Name, Value}
--spec compare_arrts([attr()], [attr()]) -> boolean().
-compare_arrts([],[]) -> true;
-compare_arrts(Attrs1, Attrs2) when length(Attrs1) == length(Attrs2) ->
+-spec compare_attrs([attr()], [attr()]) -> boolean().
+compare_attrs([],[]) -> true;
+compare_attrs(Attrs1, Attrs2) when length(Attrs1) == length(Attrs2) ->
     lists:foldl(fun(Attr,Acc) -> lists:member(Attr, Attrs2) and Acc end, true, Attrs1);
-compare_arrts(_Attrs1, _Attrs2) -> false.
+compare_attrs(_Attrs1, _Attrs2) -> false.
 
 %% Check if privacy rules allow this delivery
 %% from ejabberd_c2s.erl

@@ -405,12 +405,12 @@ handle_info({user_presence, Packet, FromJID},
             stream_established, StateData) ->
     AccessType = get_prop(presence, StateData#state.privilege_access),
     case AccessType of
-        T when (T == <<"managed_entity">>) or
-               (T == <<"roster">> ) ->
-            ToJID = jid:from_string(StateData#state.host),
-            PacketNew = jlib:replace_from_to(FromJID, ToJID, Packet),
-            send_element(StateData, PacketNew);
-        _ -> ok
+      T when (T == <<"managed_entity">>) or
+             (T == <<"roster">> ) ->
+        ToJID = jid:from_string(StateData#state.host),
+        PacketNew = jlib:replace_from_to(FromJID, ToJID, Packet),
+        send_element(StateData, PacketNew);
+      _ -> ok
     end,
     {next_state, stream_established, StateData};
 
@@ -418,29 +418,29 @@ handle_info({roster_presence, From, Packet},
             stream_established, StateData) ->
     AccessType = get_prop(presence, StateData#state.privilege_access),
     RosterAccessType = get_prop(roster, StateData#state.privilege_access),
-    case {AccessType, RosterAccessType} of
-        {P, R} when (P == <<"roster">>) and 
-                    ((R == <<"both">>) or (R == <<"get">>)) ->
-            %% check that current presence stanza is equivalent to last
-            NewPacket = jlib:remove_attr(<<"to">>, Packet),
-            Dict = StateData#state.last_pres,
-            LastPresence = 
-                try dict:fetch(From, Dict)
-                catch _:_ -> 
-                    undefined
-                end,
-            case mod_privilege:compare_presences(LastPresence, NewPacket) of
-                false ->
-                    PacketNew = replace_to(StateData#state.host, Packet),
-                    send_element(StateData, PacketNew);
-                _ ->
-                    ok
-            end,
-            DictNew = dict:store(From, NewPacket, Dict),
-            StateDataNew = StateData#state{last_pres = DictNew},
-            {next_state, stream_established, StateDataNew};
-        _ -> 
-            {next_state, stream_established, StateData}    
+    case AccessType of
+      <<"roster">> when (RosterAccessType == <<"both">>) or
+                        (RosterAccessType == <<"get">>) ->
+        %% check that current presence stanza is equivalent to last
+        NewPacket = jlib:remove_attr(<<"to">>, Packet),
+        Dict = StateData#state.last_pres,
+        LastPresence = 
+          try dict:fetch(From, Dict)
+          catch _:_ -> 
+              undefined
+          end,
+        case mod_privilege:compare_presences(LastPresence, NewPacket) of
+          false ->
+            PacketNew = replace_to(StateData#state.host, Packet),
+            send_element(StateData, PacketNew);
+          _ ->
+            ok
+        end,
+        DictNew = dict:store(From, NewPacket, Dict),
+        StateDataNew = StateData#state{last_pres = DictNew},
+        {next_state, stream_established, StateDataNew};
+      _ -> 
+        {next_state, stream_established, StateData}    
     end;
 
 handle_info(Info, StateName, StateData) ->
