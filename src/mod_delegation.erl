@@ -392,7 +392,7 @@ disco_info(StateData, Sep) ->
                                       children = [Tag]},
                     ejabberd_service:send_element(StateData, DiscoReq)
 
-              end, StateData#state.delegations).
+                  end, StateData#state.delegations).
 
 
 disco_features(Acc, Bare) ->
@@ -413,10 +413,11 @@ disco_features(Acc, Bare) ->
             % add service features
             FeaturesList =
               ets:foldl(fun({_Ns, _Pid, {Feats, _, _}, {FeatsBare, _}}, A) ->
-                          if
-                            Bare -> A ++ FeatsBare;
-                            true -> A ++ Feats
-                          end
+                            if
+                              Bare -> A ++ FeatsBare;
+                              true -> A ++ Feats
+                            end;
+                           (_, A) -> A
                         end, Features, delegated_namespaces),
             {result, FeaturesList};
         _ ->
@@ -429,15 +430,16 @@ disco_identity(Acc, Bare) ->
         % filter delegated identites
         Fun = fun(Ident) ->
                 ets:foldl(fun({_, _, {_ , I, _}, {_ , IBare}}, A) ->
-                            Identity = 
-                              if
-                                Bare -> IBare;
-                                true -> I
-                              end,
-                            (fxml:get_attr_s(<<"category">> , Ident) ==
-                             fxml:get_attr_s(<<"category">>, Identity)) and
-                            (fxml:get_attr_s(<<"type">> , Ident) ==
-                             fxml:get_attr_s(<<"type">>, Identity)) or A
+                               Identity = 
+                                 if
+                                   Bare -> IBare;
+                                   true -> I
+                                 end,
+                                 (fxml:get_attr_s(<<"category">> , Ident) ==
+                                  fxml:get_attr_s(<<"category">>, Identity)) and
+                                 (fxml:get_attr_s(<<"type">> , Ident) ==
+                                  fxml:get_attr_s(<<"type">>, Identity)) or A;
+                             (_, A) -> A
                           end, false, delegated_namespaces)
               end,
 
@@ -450,7 +452,8 @@ disco_identity(Acc, Bare) ->
                         if
                           Bare -> A ++ IBare;
                           true -> A ++ I
-                        end
+                        end;
+                     (_, A) -> A
                   end, Identities, delegated_namespaces);
       _ ->
         Acc
@@ -486,7 +489,8 @@ get_info(Acc) ->
                    end, Acc),
 
     ets:foldl(fun({_, _, {_, _, Ext}, _}, A) ->
-                A ++ Ext
+                   A ++ Ext;
+                 (_, A) -> A
               end, Exten, delegated_namespaces).
 
 %% 7.2.1 General Case

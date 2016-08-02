@@ -172,7 +172,7 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
              lists:member(ToJID#jid.lserver, ?MYHOSTS) and
              (ets:lookup(hooks, {Hook, Host}) /= []) of
           true ->
-            ejabberd_hooks:run(Hook, Host, [Packet]);
+            ejabberd_hooks:run(Hook, Host, [Packet])
           _ ->
             ejabberd_router:route(FromJID, ToJID, Packet)
         end;
