@@ -34,7 +34,8 @@
 %% API
 -export([start_link/2, start/2, stop/1, export/1, import/1,
 	 import/3, closed_connection/3, get_connection_params/3,
-	 data_to_binary/2]).
+	 data_to_binary/2, process_disco_info/1, process_disco_items/1,
+	 process_register/1, process_vcard/1, process_command/1]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
@@ -42,11 +43,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
--include("jlib.hrl").
-
--include("adhoc.hrl").
-
+-include("xmpp.hrl").
 -include("mod_irc.hrl").
 
 -define(DEFAULT_IRC_ENCODING, <<"iso8859-15">>).
@@ -125,6 +122,18 @@ init([Host, Opts]) ->
     catch ets:new(irc_connection,
 		  [named_table, public,
 		   {keypos, #irc_connection.jid_server_host}]),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
+                             one_queue),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
+				  ?MODULE, process_disco_info, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS,
+				  ?MODULE, process_disco_items, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_REGISTER,
+				  ?MODULE, process_register, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_VCARD,
+				  ?MODULE, process_vcard, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_COMMANDS,
+				  ?MODULE, process_command, IQDisc),
     ejabberd_router:register_route(MyHost, Host),
     {ok,
      #state{host = MyHost, server_host = Host,
@@ -176,8 +185,13 @@ handle_info(_Info, State) -> {noreply, State}.
 %% cleaning up. When it returns, the gen_server terminates with Reason.
 %% The return value is ignored.
 %%--------------------------------------------------------------------
-terminate(_Reason, State) ->
-    ejabberd_router:unregister_route(State#state.host), ok.
+terminate(_Reason, #state{host = MyHost}) ->
+    ejabberd_router:unregister_route(MyHost),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_REGISTER),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_COMMANDS).
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
@@ -203,287 +217,222 @@ stop_supervisor(Host) ->
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
-do_route(Host, ServerHost, Access, From, To, Packet) ->
+do_route(Host, ServerHost, Access, From,
+	 #jid{luser = LUser, lresource = LResource} = To, Packet) ->
     case acl:match_rule(ServerHost, Access, From) of
-      allow -> do_route1(Host, ServerHost, From, To, Packet);
-      _ ->
-	  #xmlel{attrs = Attrs} = Packet,
-	  Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
-	  ErrText = <<"Access denied by service policy">>,
-	  Err = jlib:make_error_reply(Packet,
-				      ?ERRT_FORBIDDEN(Lang, ErrText)),
-	  ejabberd_router:route(To, From, Err)
+	allow ->
+	    case Packet of
+		#iq{} when LUser == <<"">>, LResource == <<"">> ->
+		    ejabberd_router:process_iq(From, To, Packet);
+		#iq{} when LUser == <<"">>, LResource /= <<"">> ->
+		    Err = xmpp:err_service_unavailable(),
+		    ejabberd_router:route_error(To, From, Packet, Err);
+		_ ->
+		    sm_route(Host, ServerHost, From, To, Packet)
+	    end;
+	deny ->
+	    Lang = xmpp:get_lang(Packet),
+	    Err = xmpp:err_forbidden(<<"Denied by ACL">>, Lang),
+	    ejabberd_router:route_error(To, From, Packet, Err)
     end.
 
-do_route1(Host, ServerHost, From, To, Packet) ->
+process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_info(#iq{type = get, lang = Lang, to = To,
+		       sub_els = [#disco_info{node = Node}]} = IQ) ->
+    ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
+    Info = ejabberd_hooks:run_fold(disco_info, ServerHost,
+				   [], [ServerHost, ?MODULE, <<"">>, <<"">>]),
+    case iq_disco(ServerHost, Node, Lang) of
+	undefined ->
+	    xmpp:make_iq_result(IQ, #disco_info{});
+	DiscoInfo ->
+	    xmpp:make_iq_result(IQ, DiscoInfo#disco_info{xdata = Info})
+    end.
+
+process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_items(#iq{type = get, lang = Lang, to = To,
+			sub_els = [#disco_items{node = Node}]} = IQ) ->
+    case Node of
+	undefined ->
+	    xmpp:make_iq_result(IQ, #disco_items{});
+	<<"join">> ->
+	    xmpp:make_iq_result(IQ, #disco_items{});
+	<<"register">> ->
+	    xmpp:make_iq_result(IQ, #disco_items{});
+	?NS_COMMANDS ->
+	    Host = To#jid.lserver,
+	    ServerHost = ejabberd_router:host_of_route(Host),
+	    xmpp:make_iq_result(
+	      IQ, #disco_items{node = Node,
+			       items = command_items(ServerHost, Host, Lang)});
+	_ ->
+	    Txt = <<"Node not found">>,
+	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang))
+    end.
+
+process_register(#iq{type = get, to = To, from = From, lang = Lang} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    case get_form(ServerHost, Host, From, Lang) of
+	{result, Res} ->
+	    xmpp:make_iq_result(IQ, Res);
+	{error, Error} ->
+	    xmpp:make_error(IQ, Error)
+    end;
+process_register(#iq{type = set, lang = Lang, to = To, from = From,
+		     sub_els = [#register{xdata = #xdata{} = X}]} = IQ) ->
+    case X#xdata.type of
+	cancel ->
+	    xmpp:make_iq_result(IQ, #register{});
+	submit ->
+	    Host = To#jid.lserver,
+	    ServerHost = ejabberd_router:host_of_route(Host),
+	    case set_form(ServerHost, Host, From, Lang, X) of
+		{result, Res} ->
+		    xmpp:make_iq_result(IQ, Res);
+		{error, Error} ->
+		    xmpp:make_error(IQ, Error)
+	    end;
+	_ ->
+	    Txt = <<"Incorrect value of 'type' attribute">>,
+	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
+    end;
+process_register(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"No data form found">>,
+    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang)).
+
+process_vcard(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_vcard(#iq{type = get, lang = Lang} = IQ) ->
+    xmpp:make_iq_result(IQ, iq_get_vcard(Lang)).
+
+process_command(#iq{type = get, lang = Lang} = IQ) ->
+    Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_command(#iq{type = set, lang = Lang, to = To, from = From,
+		    sub_els = [#adhoc_command{node = Node} = Request]} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    case lists:keyfind(Node, 1, commands(ServerHost)) of
+	{_, _, Function} ->
+	    try Function(From, To, Request) of
+		ignore ->
+		    ignore;
+		{error, Error} ->
+		    xmpp:make_error(IQ, Error);
+		Command ->
+		    xmpp:make_iq_result(IQ, Command)
+	    catch E:R ->
+		    ?ERROR_MSG("ad-hoc handler failed: ~p",
+			       [{E, {R, erlang:get_stacktrace()}}]),
+		    xmpp:make_error(IQ, xmpp:internal_server_error())
+	    end;
+	_ ->
+	    Txt = <<"Node not found">>,
+	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang))
+    end.
+
+sm_route(Host, ServerHost, From, To, Packet) ->
     #jid{user = ChanServ, resource = Resource} = To,
-    #xmlel{} = Packet,
-    case ChanServ of
-      <<"">> ->
-	  case Resource of
-	    <<"">> ->
-		case jlib:iq_query_info(Packet) of
-		  #iq{type = get, xmlns = (?NS_DISCO_INFO) = XMLNS,
-		      sub_el = SubEl, lang = Lang} =
-		      IQ ->
-		      Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
-		      Info = ejabberd_hooks:run_fold(disco_info, ServerHost,
-						     [],
-						     [ServerHost, ?MODULE,
-						      <<"">>, <<"">>]),
-		      case iq_disco(ServerHost, Node, Lang) of
-			[] ->
-			    Res = IQ#iq{type = result,
-					sub_el =
-					    [#xmlel{name = <<"query">>,
-						    attrs =
-							[{<<"xmlns">>, XMLNS}],
-						    children = []}]},
-			    ejabberd_router:route(To, From,
-						  jlib:iq_to_xml(Res));
-			DiscoInfo ->
-			    Res = IQ#iq{type = result,
-					sub_el =
-					    [#xmlel{name = <<"query">>,
-						    attrs =
-							[{<<"xmlns">>, XMLNS}],
-						    children =
-							DiscoInfo ++ Info}]},
-			    ejabberd_router:route(To, From, jlib:iq_to_xml(Res))
-		      end;
-		  #iq{type = get, xmlns = (?NS_DISCO_ITEMS) = XMLNS,
-		      sub_el = SubEl, lang = Lang} =
-		      IQ ->
-		      Node = fxml:get_tag_attr_s(<<"node">>, SubEl),
-		      case Node of
-			<<>> ->
-			    ResIQ = IQ#iq{type = result,
-					  sub_el =
-					      [#xmlel{name = <<"query">>,
-						      attrs =
-							  [{<<"xmlns">>,
-							    XMLNS}],
-						      children = []}]},
-			    Res = jlib:iq_to_xml(ResIQ);
-			<<"join">> ->
-			    ResIQ = IQ#iq{type = result,
-					  sub_el =
-					      [#xmlel{name = <<"query">>,
-						      attrs =
-							  [{<<"xmlns">>,
-							    XMLNS}],
-						      children = []}]},
-			    Res = jlib:iq_to_xml(ResIQ);
-			<<"register">> ->
-			    ResIQ = IQ#iq{type = result,
-					  sub_el =
-					      [#xmlel{name = <<"query">>,
-						      attrs =
-							  [{<<"xmlns">>,
-							    XMLNS}],
-						      children = []}]},
-			    Res = jlib:iq_to_xml(ResIQ);
-			?NS_COMMANDS ->
-			    ResIQ = IQ#iq{type = result,
-					  sub_el =
-					      [#xmlel{name = <<"query">>,
-						      attrs =
-							  [{<<"xmlns">>, XMLNS},
-							   {<<"node">>, Node}],
-						      children =
-							  command_items(ServerHost,
-									Host,
-									Lang)}]},
-			    Res = jlib:iq_to_xml(ResIQ);
-			_ ->
-			    Txt = <<"Node not found">>,
-			    Res = jlib:make_error_reply(
-				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, Txt))
-		      end,
-		      ejabberd_router:route(To, From, Res);
-		  #iq{xmlns = ?NS_REGISTER} = IQ ->
-		      process_register(ServerHost, Host, From, To, IQ);
-		  #iq{type = get, xmlns = (?NS_VCARD) = XMLNS,
-		      lang = Lang} =
-		      IQ ->
-		      Res = IQ#iq{type = result,
-				  sub_el =
-				      [#xmlel{name = <<"vCard">>,
-					      attrs = [{<<"xmlns">>, XMLNS}],
-					      children = iq_get_vcard(Lang)}]},
-		      ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
-		  #iq{type = set, xmlns = ?NS_COMMANDS, lang = Lang,
-		      sub_el = SubEl} =
-		      IQ ->
-		      Request = adhoc:parse_request(IQ),
-		      case lists:keysearch(Request#adhoc_request.node, 1,
-					   commands(ServerHost))
-			  of
-			{value, {_, _, Function}} ->
-			    case catch Function(From, To, Request) of
-			      {'EXIT', Reason} ->
-				  ?ERROR_MSG("~p~nfor ad-hoc handler of ~p",
-					     [Reason, {From, To, IQ}]),
-				  Res = IQ#iq{type = error,
-					      sub_el =
-						  [SubEl,
-						   ?ERR_INTERNAL_SERVER_ERROR]};
-			      ignore -> Res = ignore;
-			      {error, Error} ->
-				  Res = IQ#iq{type = error,
-					      sub_el = [SubEl, Error]};
-			      Command ->
-				  Res = IQ#iq{type = result, sub_el = [Command]}
-			    end,
-			    if Res /= ignore ->
-				   ejabberd_router:route(To, From,
-							 jlib:iq_to_xml(Res));
-			       true -> ok
-			    end;
-			_ ->
-			    Txt = <<"Node not found">>,
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_ITEM_NOT_FOUND(Lang, Txt)),
-			    ejabberd_router:route(To, From, Err)
-		      end;
-		  #iq{} = _IQ ->
-		      Err = jlib:make_error_reply(Packet,
-						  ?ERR_FEATURE_NOT_IMPLEMENTED),
-		      ejabberd_router:route(To, From, Err);
-		  _ -> ok
-		end;
-	    _ ->
-		Err = jlib:make_error_reply(Packet, ?ERR_BAD_REQUEST),
-		ejabberd_router:route(To, From, Err)
-	  end;
-      _ ->
-	  case str:tokens(ChanServ, <<"%">>) of
-	    [<<_, _/binary>> = Channel, <<_, _/binary>> = Server] ->
-		case ets:lookup(irc_connection, {From, Server, Host}) of
-		  [] ->
-		      ?DEBUG("open new connection~n", []),
-		      {Username, Encoding, Port, Password} =
-			  get_connection_params(Host, ServerHost, From, Server),
-		      ConnectionUsername = case Packet of
+    case str:tokens(ChanServ, <<"%">>) of
+	[<<_, _/binary>> = Channel, <<_, _/binary>> = Server] ->
+	    case ets:lookup(irc_connection, {From, Server, Host}) of
+		[] ->
+		    ?DEBUG("open new connection~n", []),
+		    {Username, Encoding, Port, Password} =
+			get_connection_params(Host, ServerHost, From, Server),
+		    ConnectionUsername = case Packet of
 					     %% If the user tries to join a
 					     %% chatroom, the packet for sure
 					     %% contains the desired username.
-					     #xmlel{name = <<"presence">>} ->
-						 Resource;
+					     #presence{} -> Resource;
 					     %% Otherwise, there is no firm
 					     %% conclusion from the packet.
 					     %% Better to use the configured
 					     %% username (which defaults to the
 					     %% username part of the JID).
 					     _ -> Username
-					   end,
-		      Ident = extract_ident(Packet),
-		      RemoteAddr = extract_ip_address(Packet),
-		      RealName = get_realname(ServerHost),
-		      WebircPassword = get_webirc_password(ServerHost),
-		      {ok, Pid} = mod_irc_connection:start(From, Host,
-							   ServerHost, Server,
-							   ConnectionUsername,
-							   Encoding, Port,
-							   Password, Ident, RemoteAddr, RealName, WebircPassword, ?MODULE),
-		      ets:insert(irc_connection,
-				 #irc_connection{jid_server_host =
-						     {From, Server, Host},
-						 pid = Pid}),
-		      mod_irc_connection:route_chan(Pid, Channel, Resource,
-						    Packet),
-		      ok;
-		  [R] ->
-		      Pid = R#irc_connection.pid,
-		      ?DEBUG("send to process ~p~n", [Pid]),
-		      mod_irc_connection:route_chan(Pid, Channel, Resource,
-						    Packet),
-		      ok
-		end;
-	    _ ->
-		Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
-		case str:tokens(ChanServ, <<"!">>) of
-		  [<<_, _/binary>> = Nick, <<_, _/binary>> = Server] ->
-		      case ets:lookup(irc_connection, {From, Server, Host}) of
+					 end,
+		    Ident = extract_ident(Packet),
+		    RemoteAddr = extract_ip_address(Packet),
+		    RealName = get_realname(ServerHost),
+		    WebircPassword = get_webirc_password(ServerHost),
+		    {ok, Pid} = mod_irc_connection:start(
+				  From, Host, ServerHost, Server,
+				  ConnectionUsername, Encoding, Port,
+				  Password, Ident, RemoteAddr, RealName,
+				  WebircPassword, ?MODULE),
+		    ets:insert(irc_connection,
+			       #irc_connection{
+				  jid_server_host = {From, Server, Host},
+				  pid = Pid}),
+		    mod_irc_connection:route_chan(Pid, Channel, Resource, Packet);
+		[R] ->
+		    Pid = R#irc_connection.pid,
+		    ?DEBUG("send to process ~p~n", [Pid]),
+		    mod_irc_connection:route_chan(Pid, Channel, Resource, Packet)
+	    end;
+	_ ->
+	    Lang = xmpp:get_lang(Packet),
+	    case str:tokens(ChanServ, <<"!">>) of
+		[<<_, _/binary>> = Nick, <<_, _/binary>> = Server] ->
+		    case ets:lookup(irc_connection, {From, Server, Host}) of
 			[] ->
 			    Txt = <<"IRC connection not found">>,
-			    Err = jlib:make_error_reply(
-				    Packet, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)),
-			    ejabberd_router:route(To, From, Err);
+			    Err = xmpp:err_service_unavailable(Txt, Lang),
+			    ejabberd_router:route_error(To, From, Packet, Err);
 			[R] ->
 			    Pid = R#irc_connection.pid,
 			    ?DEBUG("send to process ~p~n", [Pid]),
-			    mod_irc_connection:route_nick(Pid, Nick, Packet),
-			    ok
-		      end;
-		  _ ->
-		      Txt = <<"Failed to parse chanserv">>,
-		      Err = jlib:make_error_reply(
-			      Packet, ?ERRT_BAD_REQUEST(Lang, Txt)),
-		      ejabberd_router:route(To, From, Err)
-		end
-	  end
+			    mod_irc_connection:route_nick(Pid, Nick, Packet)
+		    end;
+		_ ->
+		    Txt = <<"Failed to parse chanserv">>,
+		    Err = xmpp:err_bad_request(Txt, Lang),
+		    ejabberd_router:route_error(To, From, Packet, Err)
+	    end
     end.
 
 closed_connection(Host, From, Server) ->
     ets:delete(irc_connection, {From, Server, Host}).
 
-iq_disco(_ServerHost, <<>>, Lang) ->
-    [#xmlel{name = <<"identity">>,
-	    attrs =
-		[{<<"category">>, <<"conference">>},
-		 {<<"type">>, <<"irc">>},
-		 {<<"name">>,
-		  translate:translate(Lang, <<"IRC Transport">>)}],
-	    children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_DISCO_INFO}], children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_MUC}], children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_REGISTER}], children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_VCARD}], children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_COMMANDS}], children = []}];
+iq_disco(_ServerHost, undefined, Lang) ->
+    #disco_info{
+       identities = [#identity{category = <<"conference">>,
+			       type = <<"irc">>,
+			       name = translate:translate(Lang, <<"IRC Transport">>)}],
+       features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_MUC,
+		   ?NS_REGISTER, ?NS_VCARD, ?NS_COMMANDS]};
 iq_disco(ServerHost, Node, Lang) ->
-    case lists:keysearch(Node, 1, commands(ServerHost)) of
-      {value, {_, Name, _}} ->
-	  [#xmlel{name = <<"identity">>,
-		  attrs =
-		      [{<<"category">>, <<"automation">>},
-		       {<<"type">>, <<"command-node">>},
-		       {<<"name">>, translate:translate(Lang, Name)}],
-		  children = []},
-	   #xmlel{name = <<"feature">>,
-		  attrs = [{<<"var">>, ?NS_COMMANDS}], children = []},
-	   #xmlel{name = <<"feature">>,
-		  attrs = [{<<"var">>, ?NS_XDATA}], children = []}];
-      _ -> []
+    case lists:keyfind(Node, commands(ServerHost)) of
+	{_, Name, _} ->
+	    #disco_info{
+	       identities = [#identity{category = <<"automation">>,
+				       type = <<"command-node">>,
+				       name = translate:translate(Lang, Name)}],
+	       features = [?NS_COMMANDS, ?NS_XDATA]};
+	_ ->
+	    undefined
     end.
 
 iq_get_vcard(Lang) ->
-    [#xmlel{name = <<"FN">>, attrs = [],
-	    children = [{xmlcdata, <<"ejabberd/mod_irc">>}]},
-     #xmlel{name = <<"URL">>, attrs = [],
-	    children = [{xmlcdata, ?EJABBERD_URI}]},
-     #xmlel{name = <<"DESC">>, attrs = [],
-	    children =
-		[{xmlcdata,
-		  <<(translate:translate(Lang,
-					 <<"ejabberd IRC module">>))/binary,
-		    "\nCopyright (c) 2003-2016 ProcessOne">>}]}].
+    Desc = translate:translate(Lang, <<"ejabberd IRC module">>),
+    Copyright = <<"Copyright (c) 2003-2016 ProcessOne">>,
+    #vcard_temp{fn = <<"ejabberd/mod_irc">>,
+		url = ?EJABBERD_URI,
+		desc = <<Desc/binary, $\n, Copyright/binary>>}.
 
 command_items(ServerHost, Host, Lang) ->
-    lists:map(fun ({Node, Name, _Function}) ->
-		      #xmlel{name = <<"item">>,
-			     attrs =
-				 [{<<"jid">>, Host}, {<<"node">>, Node},
-				  {<<"name">>,
-				   translate:translate(Lang, Name)}],
-			     children = []}
-	      end,
-	      commands(ServerHost)).
+    lists:map(fun({Node, Name, _Function}) ->
+		      #disco_item{jid = jid:make(Host),
+				  node = Node,
+				  name = translate:translate(Lang, Name)}
+	      end, commands(ServerHost)).
 
 commands(ServerHost) ->
     [{<<"join">>, <<"Join channel">>, fun adhoc_join/3},
@@ -494,243 +443,120 @@ commands(ServerHost) ->
 	      adhoc_register(ServerHost, From, To, Request)
       end}].
 
-process_register(ServerHost, Host, From, To,
-		 #iq{} = IQ) ->
-    case catch process_irc_register(ServerHost, Host, From,
-				    To, IQ)
-	of
-      {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
-      ResIQ ->
-	  if ResIQ /= ignore ->
-		 ejabberd_router:route(To, From, jlib:iq_to_xml(ResIQ));
-	     true -> ok
-	  end
-    end.
-
-find_xdata_el(#xmlel{children = SubEls}) ->
-    find_xdata_el1(SubEls).
-
-find_xdata_el1([]) -> false;
-find_xdata_el1([#xmlel{name = Name, attrs = Attrs,
-		       children = SubEls}
-		| Els]) ->
-    case fxml:get_attr_s(<<"xmlns">>, Attrs) of
-      ?NS_XDATA ->
-	  #xmlel{name = Name, attrs = Attrs, children = SubEls};
-      _ -> find_xdata_el1(Els)
-    end;
-find_xdata_el1([_ | Els]) -> find_xdata_el1(Els).
-
-process_irc_register(ServerHost, Host, From, _To,
-		     #iq{type = Type, xmlns = XMLNS, lang = Lang,
-			 sub_el = SubEl} =
-			 IQ) ->
-    case Type of
-      set ->
-	  XDataEl = find_xdata_el(SubEl),
-	  case XDataEl of
-	    false ->
-		Txt1 = <<"No data form found">>,
-		IQ#iq{type = error,
-		      sub_el = [SubEl, ?ERRT_NOT_ACCEPTABLE(Lang, Txt1)]};
-	    #xmlel{attrs = Attrs} ->
-		case fxml:get_attr_s(<<"type">>, Attrs) of
-		  <<"cancel">> ->
-		      IQ#iq{type = result,
-			    sub_el =
-				[#xmlel{name = <<"query">>,
-					attrs = [{<<"xmlns">>, XMLNS}],
-					children = []}]};
-		  <<"submit">> ->
-		      XData = jlib:parse_xdata_submit(XDataEl),
-		      case XData of
-			invalid ->
-			    Txt2 = <<"Incorrect data form">>,
-			    IQ#iq{type = error,
-				  sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt2)]};
-			_ ->
-			    Node = str:tokens(fxml:get_tag_attr_s(<<"node">>,
-								 SubEl),
-					      <<"/">>),
-			    case set_form(ServerHost, Host, From, Node, Lang,
-					  XData)
-				of
-			      {result, Res} ->
-				  IQ#iq{type = result,
-					sub_el =
-					    [#xmlel{name = <<"query">>,
-						    attrs =
-							[{<<"xmlns">>, XMLNS}],
-						    children = Res}]};
-			      {error, Error} ->
-				  IQ#iq{type = error, sub_el = [SubEl, Error]}
-			    end
-		      end;
-		  _ ->
-		      Txt3 = <<"Incorrect value of 'type' attribute">>,
-		      IQ#iq{type = error,
-			    sub_el = [SubEl, ?ERRT_BAD_REQUEST(Lang, Txt3)]}
-		end
-	  end;
-      get ->
-	  Node = str:tokens(fxml:get_tag_attr_s(<<"node">>, SubEl),
-			    <<"/">>),
-	  case get_form(ServerHost, Host, From, Node, Lang) of
-	    {result, Res} ->
-		IQ#iq{type = result,
-		      sub_el =
-			  [#xmlel{name = <<"query">>,
-				  attrs = [{<<"xmlns">>, XMLNS}],
-				  children = Res}]};
-	    {error, Error} ->
-		IQ#iq{type = error, sub_el = [SubEl, Error]}
-	  end
-    end.
-
 get_data(ServerHost, Host, From) ->
     LServer = jid:nameprep(ServerHost),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:get_data(LServer, Host, From).
 
-get_form(ServerHost, Host, From, [], Lang) ->
+get_form(ServerHost, Host, From, Lang) ->
     #jid{user = User, server = Server} = From,
     DefaultEncoding = get_default_encoding(Host),
     Customs = case get_data(ServerHost, Host, From) of
-		error ->
+		  error ->
 		      Txt1 = <<"Database failure">>,
-		      {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt1)};
-		empty -> {User, []};
-		Data -> get_username_and_connection_params(Data)
+		      {error, xmpp:err_internal_server_error(Txt1, Lang)};
+		  empty -> {User, []};
+		  Data -> get_username_and_connection_params(Data)
 	      end,
     case Customs of
-      {error, _Error} -> Customs;
-      {Username, ConnectionsParams} ->
-	  {result,
-	   [#xmlel{name = <<"instructions">>, attrs = [],
-		   children =
-		       [{xmlcdata,
-			 translate:translate(Lang,
-					     <<"You need an x:data capable client to "
-					       "configure mod_irc settings">>)}]},
-	    #xmlel{name = <<"x">>,
-		   attrs = [{<<"xmlns">>, ?NS_XDATA}],
-		   children =
-		       [#xmlel{name = <<"title">>, attrs = [],
-			       children =
-				   [{xmlcdata,
-				     <<(translate:translate(Lang,
-							    <<"Registration in mod_irc for ">>))/binary,
-				       User/binary, "@", Server/binary>>}]},
-			#xmlel{name = <<"instructions">>, attrs = [],
-			       children =
-				   [{xmlcdata,
-				     translate:translate(Lang,
-							 <<"Enter username, encodings, ports and "
-							   "passwords you wish to use for connecting "
-							   "to IRC servers">>)}]},
-			#xmlel{name = <<"field">>,
-			       attrs =
-				   [{<<"type">>, <<"text-single">>},
-				    {<<"label">>,
-				     translate:translate(Lang,
-							 <<"IRC Username">>)},
-				    {<<"var">>, <<"username">>}],
-			       children =
-				   [#xmlel{name = <<"value">>, attrs = [],
-					   children = [{xmlcdata, Username}]}]},
-			#xmlel{name = <<"field">>,
-			       attrs = [{<<"type">>, <<"fixed">>}],
-			       children =
-				   [#xmlel{name = <<"value">>, attrs = [],
-					   children =
-					       [{xmlcdata,
-						 iolist_to_binary(
-                                                   io_lib:format(
-                                                     translate:translate(
-                                                       Lang,
-                                                       <<"If you want to specify"
-                                                         " different ports, "
-                                                         "passwords, encodings "
-                                                         "for IRC servers, "
-                                                         "fill this list with "
-                                                         "values in format "
-                                                         "'{\"irc server\", "
-                                                         "\"encoding\", port, "
-                                                         "\"password\"}'.  "
-                                                         "By default this "
-                                                         "service use \"~s\" "
-                                                         "encoding, port ~p, "
-                                                         "empty password.">>),
-                                                     [DefaultEncoding,
-                                                      ?DEFAULT_IRC_PORT]))}]}]},
-			#xmlel{name = <<"field">>,
-			       attrs = [{<<"type">>, <<"fixed">>}],
-			       children =
-				   [#xmlel{name = <<"value">>, attrs = [],
-					   children =
-					       [{xmlcdata,
-						 translate:translate(Lang,
-								     <<"Example: [{\"irc.lucky.net\", \"koi8-r\", "
-								       "6667, \"secret\"}, {\"vendetta.fef.net\", "
-								       "\"iso8859-1\", 7000}, {\"irc.sometestserver.n"
-								       "et\", \"utf-8\"}].">>)}]}]},
-			#xmlel{name = <<"field">>,
-			       attrs =
-				   [{<<"type">>, <<"text-multi">>},
-				    {<<"label">>,
-				     translate:translate(Lang,
-							 <<"Connections parameters">>)},
-				    {<<"var">>, <<"connections_params">>}],
-			       children =
-				   lists:map(fun (S) ->
-						     #xmlel{name = <<"value">>,
-							    attrs = [],
-							    children =
-								[{xmlcdata, S}]}
-					     end,
-					     str:tokens(list_to_binary(
-                                                          io_lib:format(
-                                                            "~p.",
-                                                            [conn_params_to_list(
-                                                               ConnectionsParams)])),
-							<<"\n">>))}]}]}
-    end;
-get_form(_ServerHost, _Host, _, _, _Lang) ->
-    {error, ?ERR_SERVICE_UNAVAILABLE}.
+	{error, _Error} ->
+	    Customs;
+	{Username, ConnectionsParams} ->
+	    Fs = [#xdata_field{type = 'text-single',
+			       label =  translate:translate(Lang, <<"IRC Username">>),
+			       var = <<"username">>,
+			       values = [Username]},
+		  #xdata_field{type = fixed,
+			       values = [iolist_to_binary(
+					   io_lib:format(
+					     translate:translate(
+					       Lang,
+					       <<"If you want to specify"
+						 " different ports, "
+						 "passwords, encodings "
+						 "for IRC servers, "
+						 "fill this list with "
+						 "values in format "
+						 "'{\"irc server\", "
+						 "\"encoding\", port, "
+						 "\"password\"}'.  "
+						 "By default this "
+						 "service use \"~s\" "
+						 "encoding, port ~p, "
+						 "empty password.">>),
+					     [DefaultEncoding, ?DEFAULT_IRC_PORT]))]},
+		  #xdata_field{type = fixed,
+			       values = [translate:translate(
+					   Lang,
+					   <<"Example: [{\"irc.lucky.net\", \"koi8-r\", "
+					     "6667, \"secret\"}, {\"vendetta.fef.net\", "
+					     "\"iso8859-1\", 7000}, {\"irc.sometestserver.n"
+					     "et\", \"utf-8\"}].">>)]},
+		  #xdata_field{type = 'text-multi',
+			       label = translate:translate(
+					 Lang, <<"Connections parameters">>),
+			       var = <<"connections_params">>,
+			       values = str:tokens(list_to_binary(
+						     io_lib:format(
+						       "~p.",
+						       [conn_params_to_list(
+							  ConnectionsParams)])),
+						   <<"\n">>)}],
+	    X = #xdata{type = form,
+		       title = <<(translate:translate(
+				    Lang, <<"Registration in mod_irc for ">>))/binary,
+				 User/binary, "@", Server/binary>>,
+		       instructions =
+			   [translate:translate(
+			      Lang,
+			      <<"Enter username, encodings, ports and "
+				"passwords you wish to use for connecting "
+				"to IRC servers">>)],
+		       fields = Fs},
+	    {result,
+	     #register{instructions = 
+			   translate:translate(Lang,
+					       <<"You need an x:data capable client to "
+						 "configure mod_irc settings">>),
+		       xdata = X}}
+    end.
 
 set_data(ServerHost, Host, From, Data) ->
     LServer = jid:nameprep(ServerHost),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:set_data(LServer, Host, From, data_to_binary(From, Data)).
 
-set_form(ServerHost, Host, From, [], Lang, XData) ->
-    case {lists:keysearch(<<"username">>, 1, XData),
-	  lists:keysearch(<<"connections_params">>, 1, XData)}
-	of
-      {{value, {_, [Username]}}, {value, {_, Strings}}} ->
-	  EncString = lists:foldl(fun (S, Res) ->
-					  <<Res/binary, S/binary, "\n">>
-				  end,
-				  <<"">>, Strings),
-	  case erl_scan:string(binary_to_list(EncString)) of
-	    {ok, Tokens, _} ->
-		case erl_parse:parse_term(Tokens) of
-		  {ok, ConnectionsParams} ->
-		      case set_data(ServerHost, Host, From,
-				    [{username, Username},
-				     {connections_params, ConnectionsParams}])
-			  of
-			{atomic, _} -> {result, []};
-			_ -> {error, ?ERRT_NOT_ACCEPTABLE(Lang, <<"Database failure">>)}
-		      end;
-		  _ -> {error, ?ERRT_NOT_ACCEPTABLE(Lang, <<"Parse error">>)}
-		end;
-	    _ -> {error, ?ERRT_NOT_ACCEPTABLE(Lang, <<"Scan error">>)}
-	  end;
-      _ -> {error, ?ERR_NOT_ACCEPTABLE}
-    end;
-set_form(_ServerHost, _Host, _, _, _Lang, _XData) ->
-    {error, ?ERR_SERVICE_UNAVAILABLE}.
+set_form(ServerHost, Host, From, Lang, XData) ->
+    case {xmpp_util:get_xdata_values(<<"username">>, XData),
+	  xmpp_util:get_xdata_values(<<"connections_params">>, XData)} of
+	{[Username], [_|_] = Strings} ->
+	    EncString = lists:foldl(fun (S, Res) ->
+					    <<Res/binary, S/binary, "\n">>
+				    end, <<"">>, Strings),
+	    case erl_scan:string(binary_to_list(EncString)) of
+		{ok, Tokens, _} ->
+		    case erl_parse:parse_term(Tokens) of
+			{ok, ConnectionsParams} ->
+			    case set_data(ServerHost, Host, From,
+					  [{username, Username},
+					   {connections_params, ConnectionsParams}]) of
+				{atomic, _} ->
+				    {result, undefined};
+				_ ->
+				    Txt = <<"Database failure">>,
+				    {error, xmpp:err_internal_server_error(Txt, Lang)}
+			    end;
+			_ ->
+			    Txt = <<"Parse error">>,
+			    {error, xmpp:err_not_acceptable(Txt, Lang)}
+		    end;
+		_ ->
+		    {error, xmpp:err_not_acceptable(<<"Scan error">>, Lang)}
+	    end;
+	_ ->
+	    Txt = <<"Incorrect value in data form">>,
+	    {error, xmpp:err_not_acceptable(Txt, Lang)}
+    end.
 
 get_connection_params(Host, From, IRCServer) ->
     [_ | HostTail] = str:tokens(Host, <<".">>),
@@ -805,212 +631,118 @@ get_connection_params(Host, ServerHost, From,
 	   iolist_to_binary(NewPassword)}
     end.
 
-adhoc_join(_From, _To,
-	   #adhoc_request{action = <<"cancel">>} = Request) ->
-    adhoc:produce_response(Request,
-			   #adhoc_response{status = canceled});
-adhoc_join(From, To,
-	   #adhoc_request{lang = Lang, node = _Node,
-			  action = _Action, xdata = XData} =
-	       Request) ->
-    if XData == false ->
-	   Form = #xmlel{name = <<"x">>,
-			 attrs =
-			     [{<<"xmlns">>, ?NS_XDATA},
-			      {<<"type">>, <<"form">>}],
-			 children =
-			     [#xmlel{name = <<"title">>, attrs = [],
-				     children =
-					 [{xmlcdata,
-					   translate:translate(Lang,
-							       <<"Join IRC channel">>)}]},
-			      #xmlel{name = <<"field">>,
-				     attrs =
-					 [{<<"var">>, <<"channel">>},
-					  {<<"type">>, <<"text-single">>},
-					  {<<"label">>,
-					   translate:translate(Lang,
-							       <<"IRC channel (don't put the first #)">>)}],
-				     children =
-					 [#xmlel{name = <<"required">>,
-						 attrs = [], children = []}]},
-			      #xmlel{name = <<"field">>,
-				     attrs =
-					 [{<<"var">>, <<"server">>},
-					  {<<"type">>, <<"text-single">>},
-					  {<<"label">>,
-					   translate:translate(Lang,
-							       <<"IRC server">>)}],
-				     children =
-					 [#xmlel{name = <<"required">>,
-						 attrs = [], children = []}]}]},
-	   adhoc:produce_response(Request,
-				  #adhoc_response{status = executing,
-						  elements = [Form]});
+adhoc_join(_From, _To, #adhoc_command{action = cancel} = Request) ->
+    xmpp_util:make_adhoc_response(Request, #adhoc_command{status = canceled});
+adhoc_join(_From, _To, #adhoc_command{lang = Lang, xdata = undefined} = Request) ->
+    X = #xdata{type = form,
+	       title = translate:translate(Lang, <<"Join IRC channel">>),
+	       fields = [#xdata_field{var = <<"channel">>,
+				      type = 'text-single',
+				      label = translate:translate(
+						Lang, <<"IRC channel (don't put the first #)">>),
+				      required = true},
+			 #xdata_field{var = <<"server">>,
+				      type = 'text-single',
+				      label = translate:translate(Lang, <<"IRC server">>),
+				      required = true}]},
+    xmpp_utils:make_adhoc_response(
+      Request, #adhoc_command{status = executing, xdata = X});
+adhoc_join(From, To, #adhoc_command{lang = Lang, xdata = X} = Request) ->
+    Channel = case xmpp_util:get_xdata_values(<<"channel">>, X) of
+		  [C] -> C;
+		  _ -> false
+	      end,
+    Server = case xmpp_util:get_xdata_values(<<"server">>, X) of
+		 [S] -> S;
+		 _ -> false
+	     end,
+    if Channel /= false, Server /= false ->
+	    RoomJID = jid:make(<<Channel/binary, "%", Server/binary>>,
+			       To#jid.server),
+	    Reason = translate:translate(Lang, <<"Join the IRC channel here.">>),
+	    Body = iolist_to_binary(
+		     io_lib:format(
+		       translate:translate(
+			 Lang, <<"Join the IRC channel in this Jabber ID: ~s">>),
+		       [jid:to_string(RoomJID)])),
+	    Invite = #message{
+			body = xmpp:mk_text(Body, Lang),
+			sub_els = [#muc_user{
+				      invites = [#muc_invite{from = From,
+							     reason = Reason}]},
+				   #x_conference{reason = Reason,
+						 jid = RoomJID}]},
+	    ejabberd_router:route(RoomJID, From, Invite),
+	    xmpp_util:make_adhoc_response(
+	      Request, #adhoc_command{status = completed});
        true ->
-	   case jlib:parse_xdata_submit(XData) of
-	     invalid ->
-		 Txt1 = <<"Incorrect data form">>,
-		 {error, ?ERRT_BAD_REQUEST(Lang, Txt1)};
-	     Fields ->
-		 Channel = case lists:keysearch(<<"channel">>, 1, Fields)
-			       of
-			     {value, {<<"channel">>, [C]}} -> C;
-			     _ -> false
-			   end,
-		 Server = case lists:keysearch(<<"server">>, 1, Fields)
-			      of
-			    {value, {<<"server">>, [S]}} -> S;
-			    _ -> false
-			  end,
-		 if Channel /= false, Server /= false ->
-			RoomJID = <<Channel/binary, "%", Server/binary, "@",
-				    (To#jid.server)/binary>>,
-			Invite = #xmlel{name = <<"message">>, attrs = [],
-					children =
-					    [#xmlel{name = <<"x">>,
-						    attrs =
-							[{<<"xmlns">>,
-							  ?NS_MUC_USER}],
-						    children =
-							[#xmlel{name =
-								    <<"invite">>,
-								attrs =
-								    [{<<"from">>,
-								      jid:to_string(From)}],
-								children =
-								    [#xmlel{name
-										=
-										<<"reason">>,
-									    attrs
-										=
-										[],
-									    children
-										=
-										[{xmlcdata,
-										  translate:translate(Lang,
-												      <<"Join the IRC channel here.">>)}]}]}]},
-					     #xmlel{name = <<"x">>,
-						    attrs =
-							[{<<"xmlns">>,
-							  ?NS_XCONFERENCE}],
-						    children =
-							[{xmlcdata,
-							  translate:translate(Lang,
-									      <<"Join the IRC channel here.">>)}]},
-					     #xmlel{name = <<"body">>,
-						    attrs = [],
-						    children =
-							[{xmlcdata,
-							  iolist_to_binary(
-                                                            io_lib:format(
-                                                              translate:translate(
-                                                                Lang,
-                                                                <<"Join the IRC channel in this Jabber ID: ~s">>),
-                                                              [RoomJID]))}]}]},
-			ejabberd_router:route(jid:from_string(RoomJID), From,
-					      Invite),
-			adhoc:produce_response(Request,
-					       #adhoc_response{status =
-								   completed});
-		    true -> {error, ?ERR_BAD_REQUEST}
-		 end
-	   end
+	    Txt = <<"Missing 'channel' or 'server' in the data form">>,
+	    {error, xmpp:err_bad_request(Txt, Lang)}
     end.
 
+-spec adhoc_register(binary(), jid(), jid(), adhoc_command()) ->
+			    adhoc_command() | {error, error()}.
 adhoc_register(_ServerHost, _From, _To,
-	       #adhoc_request{action = <<"cancel">>} = Request) ->
-    adhoc:produce_response(Request,
-			   #adhoc_response{status = canceled});
+	       #adhoc_command{action = cancel} = Request) ->
+    xmpp_util:make_adhoc_response(Request, #adhoc_command{status = canceled});
 adhoc_register(ServerHost, From, To,
-	       #adhoc_request{lang = Lang, node = _Node, xdata = XData,
-			      action = Action} =
-		   Request) ->
+	       #adhoc_command{lang = Lang, xdata = X,
+			      action = Action} = Request) ->
     #jid{user = User} = From,
     #jid{lserver = Host} = To,
-    if XData == false ->
-	   case get_data(ServerHost, Host, From) of
-	     error -> Username = User, ConnectionsParams = [];
-	     empty -> Username = User, ConnectionsParams = [];
-	     Data ->
-		 {Username, ConnectionsParams} =
-                       get_username_and_connection_params(Data)
-	   end,
-	   Error = false;
+    {Username, ConnectionsParams} =
+	if X == undefined ->
+		case get_data(ServerHost, Host, From) of
+		    error -> {User, []};
+		    empty -> {User, []};
+		    Data -> get_username_and_connection_params(Data)
+		end;
+	   true ->
+		{case xmpp_util:get_xdata_values(<<"username">>, X) of
+		     [U] -> U;
+		     _ -> User
+		 end, parse_connections_params(X)}
+	end,
+    if Action == complete ->
+	    case set_data(ServerHost, Host, From,
+			  [{username, Username},
+			   {connections_params, ConnectionsParams}]) of
+		{atomic, _} ->
+		    xmpp_util:make_adhoc_response(
+		      Request, #adhoc_command{status = completed});
+		_ ->
+		    Txt = <<"Database failure">>,
+		    {error, xmpp:err_internal_server_error(Txt, Lang)}
+	    end;
        true ->
-	   case jlib:parse_xdata_submit(XData) of
-	     invalid ->
-		 Txt1 = <<"Incorrect data form">>,
-		 Error = {error, ?ERRT_BAD_REQUEST(Lang, Txt1)},
-		 Username = false,
-		 ConnectionsParams = false;
-	     Fields ->
-		 Username = case lists:keysearch(<<"username">>, 1,
-						 Fields)
-				of
-			      {value, {<<"username">>, U}} -> U;
-			      _ -> User
-			    end,
-		 ConnectionsParams = parse_connections_params(Fields),
-		 Error = false
-	   end
-    end,
-    if Error /= false -> Error;
-       Action == <<"complete">> ->
-	   case set_data(ServerHost, Host, From,
-			 [{username, Username},
-			  {connections_params, ConnectionsParams}])
-	       of
-	     {atomic, _} ->
-		 adhoc:produce_response(Request,
-					#adhoc_response{status = completed});
-	     _ ->
-		 Txt2 = <<"Database failure">>,
-		 {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt2)}
-	   end;
-       true ->
-	   Form = generate_adhoc_register_form(Lang, Username,
-					       ConnectionsParams),
-	   adhoc:produce_response(Request,
-				  #adhoc_response{status = executing,
-						  elements = [Form],
-						  actions =
-						      [<<"next">>,
-						       <<"complete">>]})
+	    Form = generate_adhoc_register_form(Lang, Username,
+						ConnectionsParams),
+	    xmpp_util:make_adhoc_response(
+	      Request, #adhoc_command{
+			  status = executing,
+			  xdata = Form,
+			  actions = #adhoc_actions{next = true,
+						   complete = true}})
     end.
 
 generate_adhoc_register_form(Lang, Username,
 			     ConnectionsParams) ->
-    #xmlel{name = <<"x">>,
-	   attrs =
-	       [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"form">>}],
-	   children =
-	       [#xmlel{name = <<"title">>, attrs = [],
-		       children =
-			   [{xmlcdata,
-			     translate:translate(Lang, <<"IRC settings">>)}]},
-		#xmlel{name = <<"instructions">>, attrs = [],
-		       children =
-			   [{xmlcdata,
-			     translate:translate(Lang,
-						 <<"Enter username and encodings you wish "
-						   "to use for connecting to IRC servers. "
-						   " Press 'Next' to get more fields to "
-						   "fill in.  Press 'Complete' to save settings.">>)}]},
-		#xmlel{name = <<"field">>,
-		       attrs =
-			   [{<<"var">>, <<"username">>},
-			    {<<"type">>, <<"text-single">>},
-			    {<<"label">>,
-			     translate:translate(Lang, <<"IRC username">>)}],
-		       children =
-			   [#xmlel{name = <<"required">>, attrs = [],
-				   children = []},
-			    #xmlel{name = <<"value">>, attrs = [],
-				   children = [{xmlcdata, Username}]}]}]
-		 ++
-		 generate_connection_params_fields(Lang,
-						   ConnectionsParams, 1, [])}.
+    #xdata{type = form,
+	   title = translate:translate(Lang, <<"IRC settings">>),
+	   instructions = [translate:translate(
+			     Lang,
+			     <<"Enter username and encodings you wish "
+			       "to use for connecting to IRC servers. "
+			       " Press 'Next' to get more fields to "
+			       "fill in.  Press 'Complete' to save settings.">>)],
+	   fields = [#xdata_field{
+			var = <<"username">>,
+			type = 'text-single',
+			label = translate:translate(Lang, <<"IRC username">>),
+			required = true,
+			values = [Username]}
+		     | generate_connection_params_fields(
+			 Lang, ConnectionsParams, 1, [])]}.
 
 generate_connection_params_fields(Lang, [], Number,
 				  Acc) ->
@@ -1061,91 +793,67 @@ generate_connection_params_field(Lang, Server, Encoding,
 		   end,
     NumberString =
 	iolist_to_binary(integer_to_list(Number)),
-    [#xmlel{name = <<"field">>,
-	    attrs =
-		[{<<"var">>, <<"password", NumberString/binary>>},
-		 {<<"type">>, <<"text-single">>},
-		 {<<"label">>,
-		  iolist_to_binary(
-                    io_lib:format(
-                      translate:translate(Lang, <<"Password ~b">>),
-                      [Number]))}],
-	    children =
-		[#xmlel{name = <<"value">>, attrs = [],
-			children = [{xmlcdata, PasswordUsed}]}]},
-     #xmlel{name = <<"field">>,
-	    attrs =
-		[{<<"var">>, <<"port", NumberString/binary>>},
-		 {<<"type">>, <<"text-single">>},
-		 {<<"label">>,
-		  iolist_to_binary(
-                    io_lib:format(translate:translate(Lang, <<"Port ~b">>),
-                                  [Number]))}],
-	    children =
-		[#xmlel{name = <<"value">>, attrs = [],
-			children = [{xmlcdata, PortUsed}]}]},
-     #xmlel{name = <<"field">>,
-	    attrs =
-		[{<<"var">>, <<"encoding", NumberString/binary>>},
-		 {<<"type">>, <<"list-single">>},
-		 {<<"label">>,
-		  list_to_binary(
-                    io_lib:format(translate:translate(
-                                    Lang,
-                                    <<"Encoding for server ~b">>),
-                                  [Number]))}],
-	    children =
-		[#xmlel{name = <<"value">>, attrs = [],
-			children = [{xmlcdata, EncodingUsed}]}
-		 | lists:map(fun (E) ->
-				     #xmlel{name = <<"option">>,
-					    attrs = [{<<"label">>, E}],
-					    children =
-						[#xmlel{name = <<"value">>,
-							attrs = [],
-							children =
-							    [{xmlcdata, E}]}]}
-			     end,
-			     ?POSSIBLE_ENCODINGS)]},
-     #xmlel{name = <<"field">>,
-	    attrs =
-		[{<<"var">>, <<"server", NumberString/binary>>},
-		 {<<"type">>, <<"text-single">>},
-		 {<<"label">>,
-		  list_to_binary(
-                    io_lib:format(translate:translate(Lang, <<"Server ~b">>),
-                                  [Number]))}],
-	    children =
-		[#xmlel{name = <<"value">>, attrs = [],
-			children = [{xmlcdata, Server}]}]}].
+    [#xdata_field{var = <<"password", NumberString/binary>>,
+		  type = 'text-single',
+		  label =  iolist_to_binary(
+			     io_lib:format(
+			       translate:translate(Lang, <<"Password ~b">>),
+			       [Number])),
+		  values = [PasswordUsed]},
+     #xdata_field{var = <<"port", NumberString/binary>>,
+		  type = 'text-single',
+		  label = iolist_to_binary(
+			    io_lib:format(
+			      translate:translate(Lang, <<"Port ~b">>),
+			      [Number])),
+		  values = [PortUsed]},
+     #xdata_field{var = <<"encoding", NumberString/binary>>,
+		  type = 'list-single',
+		  label = list_to_binary(
+			    io_lib:format(
+			      translate:translate(Lang, <<"Encoding for server ~b">>),
+			      [Number])),
+		  values = [EncodingUsed],
+		  options = [#xdata_option{label = E, value = E}
+			     || E <- ?POSSIBLE_ENCODINGS]},
+     #xdata_field{var = <<"server", NumberString/binary>>,
+		  type = 'text-single',
+		  label = list_to_binary(
+			    io_lib:format(
+			      translate:translate(Lang, <<"Server ~b">>),
+			      [Number])),
+		  values = [Server]}].
 
-parse_connections_params(Fields) ->
+parse_connections_params(#xdata{fields = Fields}) ->
     Servers = lists:flatmap(
-                fun({<<"server", Var/binary>>, Value}) ->
-                        [{Var, Value}];
+                fun(#xdata_field{var = <<"server", Var/binary>>,
+				 values = Values}) ->
+                        [{Var, Values}];
                    (_) ->
                         []
                 end, Fields),
     Encodings = lists:flatmap(
-                  fun({<<"encoding", Var/binary>>, Value}) ->
-                          [{Var, Value}];
+                  fun(#xdata_field{var = <<"encoding", Var/binary>>,
+				   values = Values}) ->
+                          [{Var, Values}];
                      (_) ->
                           []
                   end, Fields),
     Ports = lists:flatmap(
-              fun({<<"port", Var/binary>>, Value}) ->
-                      [{Var, Value}];
+              fun(#xdata_field{var = <<"port", Var/binary>>,
+			       values = Values}) ->
+                      [{Var, Values}];
                  (_) ->
                       []
               end, Fields),
     Passwords = lists:flatmap(
-                  fun({<<"password", Var/binary>>, Value}) ->
-                          [{Var, Value}];
+                  fun(#xdata_field{var = <<"password", Var/binary>>,
+				   values = Values}) ->
+                          [{Var, Values}];
                      (_) ->
                           []
                   end, Fields),
-    parse_connections_params(Servers, Encodings, Ports,
-			     Passwords).
+    parse_connections_params(Servers, Encodings, Ports, Passwords).
 
 retrieve_connections_params(ConnectionParams,
 			    ServerN) ->
@@ -1263,28 +971,19 @@ mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(_) ->
     [access, db_type, default_encoding, host].
 
+-spec extract_ident(stanza()) -> binary().
 extract_ident(Packet) ->
-    case fxml:get_subtag(Packet, <<"headers">>) of
-	{xmlel, _Name, _Attrs, Headers} ->
-	    extract_header(<<"X-Irc-Ident">>, Headers);
-	_ ->
-	    "chatmovil"
-    end.
+    Hdrs = extract_headers(Packet),
+    proplists:get_value(<<"X-Irc-Ident">>, Hdrs, <<"chatmovil">>).
 
+-spec extract_ip_address(stanza()) -> binary().
 extract_ip_address(Packet) ->
-    case fxml:get_subtag(Packet, <<"headers">>) of
-	{xmlel, _Name, _Attrs, Headers} ->
-	    extract_header(<<"X-Forwarded-For">>, Headers);
-	_ ->
-	    "127.0.0.1"
-    end.
+    Hdrs = extract_headers(Packet),
+    proplists:get_value(<<"X-Forwarded-For">>, Hdrs, <<"127.0.0.1">>).
 
-extract_header(HeaderName, [{xmlel, _Name, _Attrs, [{xmlcdata, Value}]} | Tail]) ->
-    case fxml:get_attr(<<"name">>, _Attrs) of
-	{value, HeaderName} ->
-	    binary_to_list(Value);
-	_ ->
-	    extract_header(HeaderName, Tail)
-    end;
-extract_header(_HeaderName, _Headers) ->
-	false.
+-spec extract_headers(stanza()) -> [{binary(), binary()}].
+extract_headers(Packet) ->
+    case xmpp:get_subtag(Packet, #shim{}) of
+	#shim{headers = Hs} -> Hs;
+	false -> []
+    end.

@@ -41,7 +41,7 @@
          err_resource_constraint/0, err_resource_constraint/2,
          err_service_unavailable/0, err_service_unavailable/2,
          err_subscription_required/0, err_subscription_required/2,
-         err_undefined_condition/0, err_undefined_condition/2,
+         err_undefined_condition/1, err_undefined_condition/3,
          err_unexpected_request/0, err_unexpected_request/2]).
 
 %% XMPP stream errors
@@ -567,14 +567,16 @@ err_subscription_required(Text, Lang) ->
     err(auth, 'subscription-required', 407, Text, Lang).
 
 %% No error type is defined for <undefined-confition/>.
-%% We choose "modify" as it's used in RFC 6120 example.
--spec err_undefined_condition() -> error().
-err_undefined_condition() ->
-    err(modify, 'undefined-condition', 500).
+%% Let user provide the type.
+-spec err_undefined_condition('auth' | 'cancel' | 'continue' |
+			      'modify' | 'wait') -> error().
+err_undefined_condition(Type) ->
+    err(Type, 'undefined-condition', 500).
 
--spec err_undefined_condition(binary(), binary() | undefined) -> error().
-err_undefined_condition(Text, Lang) ->
-    err(modify, 'undefined-condition', 500, Text, Lang).
+-spec err_undefined_condition('auth' | 'cancel' | 'continue' | 'modify' | 'wait',
+			      binary(), binary() | undefined) -> error().
+err_undefined_condition(Type, Text, Lang) ->
+    err(Type, 'undefined-condition', 500, Text, Lang).
 
 %% RFC 6120 says error type SHOULD be "wait" or "modify".
 %% RFC 3920 and XEP-0082 says it SHOULD be "wait".
