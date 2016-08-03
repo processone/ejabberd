@@ -71,6 +71,18 @@
 start() ->
     DBMod = get_db_backend(),
     DBMod:init(),
+    MaxSize =
+        ejabberd_config:get_option(
+          oauth_cache_size,
+          fun(I) when is_integer(I), I>0 -> I end,
+          1000),
+    LifeTime =
+        ejabberd_config:get_option(
+          oauth_cache_life_time,
+          fun(I) when is_integer(I), I>0 -> I end,
+          timer:hours(1) div 1000),
+    cache_tab:new(oauth_token,
+		  [{max_size, MaxSize}, {life_time, LifeTime}]),
     Expire = expire(),
     application:set_env(oauth2, backend, ejabberd_oauth),
     application:set_env(oauth2, expiry_time, Expire),
@@ -284,8 +296,7 @@ associate_access_token(AccessToken, Context, AppContext) ->
       scope = Scope,
       expire = Expire
      },
-    DBMod = get_db_backend(),
-    DBMod:store(R),
+    store(R),
     {ok, AppContext}.
 
 associate_refresh_token(_RefreshToken, _Context, AppContext) ->
@@ -295,11 +306,10 @@ associate_refresh_token(_RefreshToken, _Context, AppContext) ->
 check_token(User, Server, ScopeList, Token) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    DBMod = get_db_backend(),
-    case DBMod:lookup(Token) of
-        #oauth_token{us = {LUser, LServer},
-                     scope = TokenScope,
-                     expire = Expire} ->
+    case lookup(Token) of
+        {ok, #oauth_token{us = {LUser, LServer},
+                          scope = TokenScope,
+                          expire = Expire}} ->
             {MegaSecs, Secs, _} = os:timestamp(),
             TS = 1000000 * MegaSecs + Secs,
             if
@@ -316,11 +326,10 @@ check_token(User, Server, ScopeList, Token) ->
     end.
 
 check_token(ScopeList, Token) ->
-    DBMod = get_db_backend(),
-    case DBMod:lookup(Token) of
-        #oauth_token{us = US,
-                     scope = TokenScope,
-                     expire = Expire} ->
+    case lookup(Token) of
+        {ok, #oauth_token{us = US,
+                          scope = TokenScope,
+                          expire = Expire}} ->
             {MegaSecs, Secs, _} = os:timestamp(),
             TS = 1000000 * MegaSecs + Secs,
             if
@@ -338,6 +347,26 @@ check_token(ScopeList, Token) ->
         _ ->
             {false, not_found}
     end.
+
+
+store(R) ->
+    cache_tab:insert(
+      oauth_token, R#oauth_token.token, R,
+      fun() ->
+              DBMod = get_db_backend(),
+              DBMod:store(R)
+      end).
+
+lookup(Token) ->
+    cache_tab:lookup(
+      oauth_token, Token,
+      fun() ->
+              DBMod = get_db_backend(),
+              case DBMod:lookup(Token) of
+                  #oauth_token{} = R -> {ok, R};
+                  _ -> error
+              end
+      end).
 
 
 expire() ->
@@ -696,4 +725,8 @@ opt_type(oauth_access) ->
     fun acl:access_rules_validator/1;
 opt_type(oauth_db_type) ->
     fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+opt_type(oauth_cache_life_time) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(oauth_cache_size) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(_) -> [oauth_expire, oauth_access, oauth_db_type].
