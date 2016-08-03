@@ -3059,7 +3059,7 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
     end.
 
 resume_session({Time, PID}) ->
-    (?GEN_FSM):sync_send_all_state_event(PID, {resume_session, Time}, 5000).
+    (?GEN_FSM):sync_send_all_state_event(PID, {resume_session, Time}, 15000).
 
 make_resume_id(StateData) ->
     {Time, _} = StateData#state.sid,
