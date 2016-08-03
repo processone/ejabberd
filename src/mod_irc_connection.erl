@@ -1167,7 +1167,7 @@ iq_admin(StateData, Channel, From, To,
 	    ?ERROR_MSG("failed to process admin query from ~s: ~p",
 		       [jid:to_string(From), {E, {R, erlang:get_stacktrace()}}]),
 	    ejabberd_router:route_error(
-	      To, From, IQ, xmpp:internal_server_error())
+	      To, From, IQ, xmpp:err_internal_server_error())
     end.
 
 process_iq_admin(_StateData, _Channel, set, #muc_admin{items = []}) ->

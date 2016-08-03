@@ -330,7 +330,7 @@ process_command(#iq{type = set, lang = Lang, to = To, from = From,
 	    catch E:R ->
 		    ?ERROR_MSG("ad-hoc handler failed: ~p",
 			       [{E, {R, erlang:get_stacktrace()}}]),
-		    xmpp:make_error(IQ, xmpp:internal_server_error())
+		    xmpp:make_error(IQ, xmpp:err_internal_server_error())
 	    end;
 	_ ->
 	    Txt = <<"Node not found">>,
@@ -409,7 +409,7 @@ iq_disco(_ServerHost, undefined, Lang) ->
        features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_MUC,
 		   ?NS_REGISTER, ?NS_VCARD, ?NS_COMMANDS]};
 iq_disco(ServerHost, Node, Lang) ->
-    case lists:keyfind(Node, commands(ServerHost)) of
+    case lists:keyfind(Node, 1, commands(ServerHost)) of
 	{_, Name, _} ->
 	    #disco_info{
 	       identities = [#identity{category = <<"automation">>,
@@ -645,7 +645,7 @@ adhoc_join(_From, _To, #adhoc_command{lang = Lang, xdata = undefined} = Request)
 				      type = 'text-single',
 				      label = translate:translate(Lang, <<"IRC server">>),
 				      required = true}]},
-    xmpp_utils:make_adhoc_response(
+    xmpp_util:make_adhoc_response(
       Request, #adhoc_command{status = executing, xdata = X});
 adhoc_join(From, To, #adhoc_command{lang = Lang, xdata = X} = Request) ->
     Channel = case xmpp_util:get_xdata_values(<<"channel">>, X) of
