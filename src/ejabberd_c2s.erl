@@ -1318,7 +1318,7 @@ handle_sync_event({resume_session, Time}, _From, _StateName,
 			      StateData#state.user,
 			      StateData#state.server,
 			      StateData#state.resource),
-    {stop, normal, {ok, StateData}, StateData#state{mgmt_state = resumed}};
+    {stop, normal, {resume, StateData}, StateData#state{mgmt_state = resumed}};
 handle_sync_event({resume_session, _Time}, _From, StateName,
 		  StateData) ->
     {reply, {error, <<"Previous session not found">>}, StateName, StateData};
@@ -1745,6 +1745,13 @@ handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
     fsm_next_state(StateName, StateData);
 handle_info(dont_ask_offline, StateName, StateData) ->
     fsm_next_state(StateName, StateData#state{ask_offline = false});
+handle_info({_Ref, {resume, OldStateData}}, StateName, StateData) ->
+    %% This happens if the resume_session/1 request timed out; the new session
+    %% now receives the late response.
+    ?DEBUG("Received old session state for ~s after failed resumption",
+	   [jid:to_string(OldStateData#state.jid)]),
+    handle_unacked_stanzas(OldStateData#state{mgmt_resend = false}),
+    fsm_next_state(StateName, StateData);
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     fsm_next_state(StateName, StateData).
@@ -3017,7 +3024,7 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 	    OldPID ->
 		OldSID = {Time, OldPID},
 		case catch resume_session(OldSID) of
-		  {ok, OldStateData} ->
+		  {resume, OldStateData} ->
 		      NewSID = {Time, self()}, % Old time, new PID
 		      Priority = case OldStateData#state.pres_last of
 				   undefined ->
