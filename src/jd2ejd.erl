@@ -32,8 +32,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -112,7 +111,9 @@ process_xdb(User, Server,
 
 xdb_data(_User, _Server, {xmlcdata, _CData}) -> ok;
 xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
-    From = jid:make(User, Server, <<"">>),
+    From = jid:make(User, Server),
+    LUser = From#jid.luser,
+    LServer = From#jid.lserver,
     case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       ?NS_AUTH ->
 	  Password = fxml:get_tag_cdata(El),
@@ -128,29 +129,21 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
 					 Status),
 	  ok;
       ?NS_VCARD ->
-	  catch mod_vcard:process_sm_iq(From,
-					jid:make(<<"">>, Server, <<"">>),
-					#iq{type = set, xmlns = ?NS_VCARD,
-					    sub_el = El}),
+	  catch mod_vcard:set_vcard(User, LServer, El),
 	  ok;
       <<"jabber:x:offline">> ->
 	  process_offline(Server, From, El), ok;
       XMLNS ->
 	  case fxml:get_attr_s(<<"j_private_flag">>, Attrs) of
 	    <<"1">> ->
-		catch mod_private:process_sm_iq(From,
-						jid:make(<<"">>, Server,
-							      <<"">>),
-						#iq{type = set,
-						    xmlns = ?NS_PRIVATE,
-						    sub_el =
-							#xmlel{name =
-								   <<"query">>,
-							       attrs = [],
-							       children =
-								   [jlib:remove_attr(<<"j_private_flag">>,
-										     jlib:remove_attr(<<"xdbns">>,
-												      El))]}});
+		NewAttrs = lists:filter(
+			     fun({<<"j_private_flag">>, _}) -> false;
+				({<<"xdbns">>, _}) -> false;
+				(_) -> true
+			     end, Attrs),
+		catch mod_private:set_data(
+			LUser, LServer,
+			[{XMLNS, El#xmlel{attrs = NewAttrs}}]);
 	    _ ->
 		?DEBUG("jd2ejd: Unknown namespace \"~s\"~n", [XMLNS])
 	  end,
@@ -159,18 +152,21 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
 
 process_offline(Server, To, #xmlel{children = Els}) ->
     LServer = jid:nameprep(Server),
-    lists:foreach(fun (#xmlel{attrs = Attrs} = El) ->
-			  FromS = fxml:get_attr_s(<<"from">>, Attrs),
-			  From = case FromS of
-				   <<"">> ->
-				       jid:make(<<"">>, Server, <<"">>);
-				   _ -> jid:from_string(FromS)
-				 end,
-			  case From of
-			    error -> ok;
-			    _ ->
-				ejabberd_hooks:run(offline_message_hook,
-						   LServer, [From, To, El])
-			  end
-		  end,
-		  Els).
+    lists:foreach(
+      fun(#xmlel{} = El) ->
+	      try xmpp:decode(El, [ignore_els]) of
+		  #message{from = JID} ->
+		      From = case JID of
+				 undefined -> jid:make(Server);
+				 _ -> JID
+			     end,
+		      ejabberd_hooks:run(offline_message_hook,
+					 LServer, [From, To, El]);
+		  _ ->
+		      ok
+	      catch _:{xmpp_codec, Why} ->
+		      Txt = xmpp:format_error(Why),
+		      ?ERROR_MSG("failed to decode XML '~s': ~s",
+				 [fxml:element_to_binary(El), Txt])
+	      end
+      end, Els).
