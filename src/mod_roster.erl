@@ -688,15 +688,14 @@ send_unsubscribing_presence(From, Item) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-set_items(User, Server, SubEl) ->
-    #xmlel{children = Els} = SubEl,
+-spec set_items(binary(), binary(), roster_query()) -> any().
+set_items(User, Server, #roster_query{items = Items}) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     F = fun () ->
-		lists:foreach(fun (El) ->
-				      process_item_set_t(LUser, LServer, El)
-			      end,
-			      Els)
+		lists:foreach(fun (Item) ->
+				      process_item_set_t(LUser, LServer, Item)
+			      end, Items)
 	end,
     transaction(LServer, F).
 

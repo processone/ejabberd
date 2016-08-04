@@ -120,7 +120,8 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
 	  ejabberd_auth:set_password(User, Server, Password),
 	  ok;
       ?NS_ROSTER ->
-	  catch mod_roster:set_items(User, Server, El), ok;
+	  catch mod_roster:set_items(User, Server, xmpp:decode(El)),
+	  ok;
       ?NS_LAST ->
 	  TimeStamp = fxml:get_attr_s(<<"last">>, Attrs),
 	  Status = fxml:get_tag_cdata(El),

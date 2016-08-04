@@ -48,7 +48,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("mod_roster.hrl").
 
@@ -209,31 +209,28 @@ parse_scram_password(PassData) ->
     iterationcount = list_to_integer(binary_to_list(IterationCountBin))
   }.
 
+-spec get_vcard(binary(), binary()) -> [xmlel()].
 get_vcard(User, Server) ->
-    JID = jid:make(User, Server, <<>>),
-    case mod_vcard:process_sm_iq(JID, JID, #iq{type = get}) of
-        #iq{type = result, sub_el = [_|_] = VCardEls} ->
-            VCardEls;
-        _ ->
-            []
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    case mod_vcard:get_vcard(LUser, LServer) of
+	error -> [];
+	Els -> Els
     end.
 
+-spec get_offline(binary(), binary()) -> [xmlel()].
 get_offline(User, Server) ->
-    case mod_offline:get_offline_els(User, Server) of
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    case mod_offline:get_offline_els(LUser, LServer) of
         [] ->
             [];
         Els ->
-            NewEls = lists:map(
-                       fun(#xmlel{attrs = Attrs} = El) ->
-                               NewAttrs = lists:keystore(<<"xmlns">>, 1,
-                                                         Attrs,
-                                                         {<<"xmlns">>,
-                                                          <<"jabber:client">>}),
-                               El#xmlel{attrs = NewAttrs}
-                       end, Els),
+            NewEls = lists:map(fun xmpp:encode/1, Els),
             [#xmlel{name = <<"offline-messages">>, children = NewEls}]
     end.
 
+-spec get_privacy(binary(), binary()) -> [xmlel()].
 get_privacy(User, Server) ->
     case mod_privacy:get_user_lists(User, Server) of
         {ok, #privacy{default = Default,
@@ -241,25 +238,16 @@ get_privacy(User, Server) ->
             XLists = lists:map(
                        fun({Name, Items}) ->
                                XItems = lists:map(
-                                          fun mod_privacy:item_to_xml/1, Items),
-                               #xmlel{name = <<"list">>,
-                                      attrs = [{<<"name">>, Name}],
-                                      children = XItems}
+					  fun mod_privacy:encode_list_item/1,
+					  Items),
+			       #privacy_list{name = Name, items = XItems}
                        end, Lists),
-            DefaultEl = case Default of
-                            none ->
-                                [];
-                            _ ->
-                                [#xmlel{name = <<"default">>,
-                                        attrs = [{<<"name">>, Default}]}]
-                        end,
-            [#xmlel{name = <<"query">>,
-                    attrs = [{<<"xmlns">>, ?NS_PRIVACY}],
-                    children = DefaultEl ++ XLists}];
+	    [xmpp:encode(#privacy_query{default = Default, lists = XLists})];
         _ ->
             []
     end.
 
+-spec get_roster(binary(), binary()) -> [xmlel()].
 get_roster(User, Server) ->
     JID = jid:make(User, Server, <<>>),
     case mod_roster:get_roster(User, Server) of
@@ -272,18 +260,11 @@ get_roster(User, Server) ->
                           Status = if is_binary(Msg) -> (Msg);
                                       true -> <<"">>
                                    end,
-                          [#xmlel{name = <<"presence">>,
-                                  attrs =
-                                      [{<<"from">>,
-                                        jid:to_string(R#roster.jid)},
-                                       {<<"to">>, jid:to_string(JID)},
-                                       {<<"xmlns">>, <<"jabber:client">>},
-                                       {<<"type">>, <<"subscribe">>}],
-                                  children =
-                                      [#xmlel{name = <<"status">>,
-                                              attrs = [],
-                                              children =
-                                                  [{xmlcdata, Status}]}]}];
+			  [xmpp:encode(
+			     #presence{from = jid:make(R#roster.jid),
+				       to = JID,
+				       type = subscribe,
+				       status = xmpp:mk_text(Status)})];
                      (_) ->
                           []
                   end, Items),
@@ -291,21 +272,18 @@ get_roster(User, Server) ->
                    fun(#roster{ask = in, subscription = none}) ->
                            [];
                       (R) ->
-                           [mod_roster:item_to_xml(R)]
+                           [mod_roster:encode_item(R)]
                    end, Items),
-            [#xmlel{name = <<"query">>,
-                    attrs = [{<<"xmlns">>, ?NS_ROSTER}],
-                    children = Rs} | Subs];
+	    [xmpp:encode(#roster_query{items = Rs}) | Subs];
         _ ->
             []
     end.
 
+-spec get_private(binary(), binary()) -> [xmlel()].
 get_private(User, Server) ->
     case mod_private:get_data(User, Server) of
         [_|_] = Els ->
-            [#xmlel{name = <<"query">>,
-                    attrs = [{<<"xmlns">>, ?NS_PRIVATE}],
-                    children = Els}];
+	    [xmpp:encode(#private{xml_els = Els})];
         _ ->
             []
     end.
@@ -451,129 +429,124 @@ process_user_els([], State) ->
 
 process_user_el(#xmlel{name = Name, attrs = Attrs, children = Els} = El,
                 State) ->
-    case {Name, fxml:get_attr_s(<<"xmlns">>, Attrs)} of
-        {<<"query">>, ?NS_ROSTER} ->
-            process_roster(El, State);
-        {<<"query">>, ?NS_PRIVACY} ->
-            %% Make sure <list/> elements go before <active/> and <default/>
-            NewEls = lists:reverse(lists:keysort(#xmlel.name, Els)),
-            process_privacy_el(El#xmlel{children = NewEls}, State);
-        {<<"query">>, ?NS_PRIVATE} ->
-            process_private(El, State);
-        {<<"vCard">>, ?NS_VCARD} ->
-            process_vcard(El, State);
-        {<<"offline-messages">>, _} ->
-            process_offline_msgs(Els, State);
-        {<<"presence">>, <<"jabber:client">>} ->
-            process_presence(El, State);
-        _ ->
-            {ok, State}
+    try
+	case {Name, fxml:get_attr_s(<<"xmlns">>, Attrs)} of
+	    {<<"query">>, ?NS_ROSTER} ->
+		process_roster(xmpp:decode(El), State);
+	    {<<"query">>, ?NS_PRIVACY} ->
+		%% Make sure <list/> elements go before <active/> and <default/>
+		process_privacy(xmpp:decode(El), State);
+	    {<<"query">>, ?NS_PRIVATE} ->
+		process_private(xmpp:decode(El), State);
+	    {<<"vCard">>, ?NS_VCARD} ->
+		process_vcard(El, State);
+	    {<<"offline-messages">>, _} ->
+		Msgs = [xmpp:decode(E, [ignore_els]) || E <- Els],
+		process_offline_msgs(Msgs, State);
+	    {<<"presence">>, <<"jabber:client">>} ->
+		process_presence(xmpp:decode(El, [ignore_els]), State);
+	    _ ->
+		{ok, State}
+	end
+    catch _:{xmpp_codec, Why} ->
+	    ErrTxt = xmpp:format_error(Why),
+	    stop("failed to decode XML '~s': ~s",
+		 [fxml:element_to_binary(El), ErrTxt])
     end.
 
-process_privacy_el(#xmlel{children = [#xmlel{} = SubEl|SubEls]} = El, State) ->
-    case process_privacy(#xmlel{children = [SubEl]}, State) of
+-spec process_offline_msgs([stanza()], state()) -> {ok, state()} | {error, _}.
+process_offline_msgs([#message{} = Msg|Msgs], State) ->
+    case process_offline_msg(Msg, State) of
         {ok, NewState} ->
-            process_privacy_el(El#xmlel{children = SubEls}, NewState);
+            process_offline_msgs(Msgs, NewState);
         Err ->
             Err
     end;
-process_privacy_el(#xmlel{children = [_|SubEls]} = El, State) ->
-    process_privacy_el(El#xmlel{children = SubEls}, State);
-process_privacy_el(#xmlel{children = []}, State) ->
-    {ok, State}.
-
-process_offline_msgs([#xmlel{} = El|Els], State) ->
-    case process_offline_msg(El, State) of
-        {ok, NewState} ->
-            process_offline_msgs(Els, NewState);
-        Err ->
-            Err
-    end;
-process_offline_msgs([_|Els], State) ->
-    process_offline_msgs(Els, State);
+process_offline_msgs([_|Msgs], State) ->
+    process_offline_msgs(Msgs, State);
 process_offline_msgs([], State) ->
     {ok, State}.
 
-process_roster(El, State = #state{user = U, server = S}) ->
-    case mod_roster:set_items(U, S, El) of
+-spec process_roster(roster_query(), state()) -> {ok, state()} | {error, _}.
+process_roster(RosterQuery, State = #state{user = U, server = S}) ->
+    case mod_roster:set_items(U, S, RosterQuery) of
         {atomic, _} ->
             {ok, State};
         Err ->
             stop("Failed to write roster: ~p", [Err])
     end.
 
-process_privacy(El, State = #state{user = U, server = S}) ->
-    JID = jid:make(U, S, <<"">>),
-    case mod_privacy:process_iq_set(
-           [], JID, JID, #iq{type = set, sub_el = El}) of
-        {error, Error} = Err ->
-            #xmlel{children = Els} = El,
-            Name = case fxml:remove_cdata(Els) of
-              [#xmlel{name = N}] -> N;
-              _ -> undefined
-            end,
-            #xmlel{attrs = Attrs} = Error,
-            ErrorCode = case lists:keysearch(<<"code">>, 1, Attrs) of
-              {value, {_, V}} -> V;
-              false -> undefined
-            end,
-            if 
-              ErrorCode == <<"404">>, Name == <<"default">> ->
-                {ok, State};
-              true ->
-                stop("Failed to write privacy: ~p", [Err])
+-spec process_privacy(privacy_query(), state()) -> {ok, state()} | {error, _}.
+process_privacy(#privacy_query{lists = Lists,
+			       default = Default,
+			       active = Active} = PrivacyQuery,
+		State = #state{user = U, server = S}) ->
+    JID = jid:make(U, S),
+    IQ = #iq{type = set, id = randoms:get_string(),
+	     from = JID, to = JID, sub_els = [PrivacyQuery]},
+    Txt = <<"No module is handling this query">>,
+    Error = {error, xmpp:err_feature_not_implemented(Txt, ?MYLANG)},
+    case mod_privacy:process_iq_set(Error, IQ) of
+        {error, #error{reason = Reason}} = Err ->
+	    if Reason == 'item-not-found', Lists == [],
+	       Active == undefined, Default /= undefined ->
+		    %% Failed to set default list because there is no
+		    %% list with such name. We shouldn't stop here.
+		    {ok, State};
+	       true ->
+		    stop("Failed to write privacy: ~p", [Err])
             end;
         _ ->
             {ok, State}
     end.
 
-process_private(El, State = #state{user = U, server = S}) ->
-    JID = jid:make(U, S, <<"">>),
-    case mod_private:process_sm_iq(
-           JID, JID, #iq{type = set, sub_el = El}) of
+-spec process_private(private(), state()) -> {ok, state()} | {error, _}.
+process_private(Private, State = #state{user = U, server = S}) ->
+    JID = jid:make(U, S),
+    IQ = #iq{type = set, id = randoms:get_string(),
+	     from = JID, to = JID, sub_els = [Private]},
+    case mod_private:process_sm_iq(IQ) of
         #iq{type = result} ->
             {ok, State};
         Err ->
             stop("Failed to write private: ~p", [Err])
     end.
 
+-spec process_vcard(xmlel(), state()) -> {ok, state()} | {error, _}.
 process_vcard(El, State = #state{user = U, server = S}) ->
-    JID = jid:make(U, S, <<"">>),
-    case mod_vcard:process_sm_iq(
-           JID, JID, #iq{type = set, sub_el = El}) of
+    JID = jid:make(U, S),
+    IQ = #iq{type = set, id = randoms:get_string(),
+	     from = JID, to = JID, sub_els = [El]},
+    case mod_vcard:process_sm_iq(IQ) of
         #iq{type = result} ->
             {ok, State};
         Err ->
             stop("Failed to write vcard: ~p", [Err])
     end.
 
-process_offline_msg(El, State = #state{user = U, server = S}) ->
-    FromS = fxml:get_attr_s(<<"from">>, El#xmlel.attrs),
-    case jid:from_string(FromS) of
-        #jid{} = From ->
-            To = jid:make(U, S, <<>>),
-            NewEl = jlib:replace_from_to(From, To, El),
-            case catch mod_offline:store_packet(From, To, NewEl) of
-                {'EXIT', _} = Err ->
-                    stop("Failed to store offline message: ~p", [Err]);
-                _ ->
-                    {ok, State}
-            end;
-        _ ->
-            stop("Invalid 'from' = ~s", [FromS])
+-spec process_offline_msg(message(), state()) -> {ok, state()} | {error, _}.
+process_offline_msg(#message{from = undefined}, _State) ->
+    stop("No 'from' attribute found", []);
+process_offline_msg(Msg, State = #state{user = U, server = S}) ->
+    From = xmpp:get_from(Msg),
+    To = jid:make(U, S, <<>>),
+    NewMsg = xmpp:set_from_to(Msg, From, To),
+    case catch mod_offline:store_packet(From, To, NewMsg) of
+	{'EXIT', _} = Err ->
+	    stop("Failed to store offline message: ~p", [Err]);
+	_ ->
+	    {ok, State}
     end.
 
-process_presence(El, #state{user = U, server = S} = State) ->
-    FromS = fxml:get_attr_s(<<"from">>, El#xmlel.attrs),
-    case jid:from_string(FromS) of
-        #jid{} = From ->
-            To = jid:make(U, S, <<>>),
-            NewEl = jlib:replace_from_to(From, To, El),
-            ejabberd_router:route(From, To, NewEl),
-            {ok, State};
-        _ ->
-            stop("Invalid 'from' = ~s", [FromS])
-    end.
+-spec process_presence(presence(), state()) -> {ok, state()} | {error, _}.
+process_presence(#presence{from = undefined}, _State) ->
+    stop("No 'from' attribute found", []);
+process_presence(Pres, #state{user = U, server = S} = State) ->
+    From = xmpp:get_from(Pres),
+    To = jid:make(U, S, <<>>),
+    NewPres = xmpp:set_from_to(Pres, From, To),
+    ejabberd_router:route(From, To, NewPres),
+    {ok, State}.
 
 stop(Fmt, Args) ->
     ?ERROR_MSG(Fmt, Args),
