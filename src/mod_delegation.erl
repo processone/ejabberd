@@ -4,11 +4,11 @@
 
 -behaviour(gen_mod).
 
--protocol({xep, 0355, '0.2.1'}).
+-protocol({xep, 0355, '0.3'}).
 
 -export([start/2, stop/1, depends/2, mod_opt_type/1]).
 
--export([advertise_delegations/1, process_packet/3,
+-export([advertise_delegations/1, process_iq/3,
          disco_local_features/5, disco_sm_features/5,
          disco_local_identity/5, disco_sm_identity/5, disco_info/5]).
 
@@ -54,26 +54,34 @@ mod_opt_type(_Opt) -> [].
 %%%--------------------------------------------------------------------------------------
 attribute_tag(Attrs) ->
     lists:map(fun(Attr) ->
-                  #xmlel{name = <<"attribute">>, 
-                         attrs = [{<<"name">> , Attr}]}
+                #xmlel{name = <<"attribute">>, attrs = [{<<"name">> , Attr}]}
               end, Attrs).
 
-delegations(Id, Delegations, From, To) ->
-    Elem0 = lists:map(fun({Ns, []}) ->
-                          ?DEBUG("namespace ~s is delegated to ~s with"
-                                 " no filtering attributes ~n",[Ns, To]),
-                          add_iq_handlers(Ns),
-                          #xmlel{name = <<"delegated">>, 
-                                 attrs = [{<<"namespace">>, Ns}],
-                                 children = []};
-                         ({Ns, FilterAttr}) ->
-                          ?DEBUG("namespace ~s is delegated to ~s with"
-                                 " ~p filtering attributes ~n",[Ns, To, FilterAttr]),
-                          add_iq_handlers(Ns),
-                          #xmlel{name = <<"delegated">>, 
-                                 attrs = [{<<"namespace">>, Ns}],
-                                 children = attribute_tag(FilterAttr)}
-                      end, Delegations),
+delegations(From, To, Id, Delegations) ->
+    Elem0 = 
+      lists:foldl(fun({Ns, FiltAttr}, Acc) ->
+                    case ets:lookup(delegated_namespaces, Ns) of
+                      [] ->
+                        ets:insert(delegated_namespaces, 
+                                   {Ns, FiltAttr, self(), To, {}, {}}),
+                        Attrs = 
+                          if
+                            FiltAttr == [] ->
+                              ?DEBUG("namespace ~s is delegated to ~s with"
+                                     " no filtering attributes ~n",[Ns, To]),
+                              [];
+                            true ->
+                              ?DEBUG("namespace ~s is delegated to ~s with"
+                                     " ~p filtering attributes ~n",[Ns, To, FiltAttr]),
+                              attribute_tag(FiltAttr)
+                          end,
+                        add_iq_handlers(Ns),
+                        [#xmlel{name = <<"delegated">>, 
+                                attrs = [{<<"namespace">>, Ns}],
+                                children = Attrs}| Acc];
+                      _ -> Acc
+                    end
+                  end, [], Delegations),
     Elem1 = #xmlel{name = <<"delegation">>, 
                    attrs = [{<<"xmlns">>, ?NS_DELEGATION}],
                    children = Elem0},
@@ -85,16 +93,17 @@ add_iq_handlers(Ns) ->
     lists:foreach(fun(Host) -> 
                     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
                                                   Ns, ?MODULE, 
-                                                  process_packet, one_queue),
+                                                  process_iq, one_queue),
                     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
                                                   Ns, ?MODULE,
-                                                  process_packet, one_queue)
+                                                  process_iq, one_queue)
                   end, ?MYHOSTS).
 
 advertise_delegations(#state{delegations = []}) -> ok;
 advertise_delegations(StateData) ->
-    Delegated = delegations(StateData#state.streamid, StateData#state.delegations,
-                            ?MYNAME, StateData#state.host),
+    Id = randoms:get_string(),
+    Delegated = 
+      delegations(?MYNAME, StateData#state.host, Id, StateData#state.delegations),
     ejabberd_service:send_element(StateData, Delegated),
     % server asks available features for delegated namespaces 
     disco_info(StateData).
@@ -111,24 +120,6 @@ check_filter_attr(FilterAttr, [#xmlel{} = Stanza|_]) ->
                   lists:member(Attr, Attrs)
               end, FilterAttr);
 check_filter_attr(_FilterAttr, _Children) -> false.
-
-check_delegation([], _Ns, _Children) -> false;
-check_delegation(Delegations, Ns, Children) ->
-    case lists:keysearch(Ns, 1, Delegations) of
-        {value, {Ns, FilterAttr}} ->
-            check_filter_attr(FilterAttr, Children);
-    	  false-> false
-    end.
-
--spec check_tab(atom()) -> boolean().
-
-check_tab(Name) ->
-    case ets:info(Name) of
-      undefined ->
-          false;
-      _ ->
-          true
-    end.
 
 -spec get_client_server([attr()]) -> {jid(), jid()}. 
 
@@ -183,9 +174,7 @@ check_iq(#xmlel{attrs = Attrs} = Packet,
     % Type attribute Must be error or result
     Type = fxml:get_attr_s(<<"type">>, Attrs),
     if
-      ((Type == <<"result">>) or (Type == <<"error">>)),
-      Id1 == Id2,  
-      To == From ->
+      Type == <<"result">>, Id1 == Id2, To == From ->
         NewPacket = jlib:remove_attr(<<"xmlns">>, Packet),
         %% We can send the decapsulated stanza from Server to Client (To)
         NewPacket;
@@ -271,25 +260,20 @@ forward_iq(Server, Service, Packet) ->
     To = jid:make(<<"">>, Service, <<"">>),
     ejabberd_router:route(From, To, Elem2).
 
-process_packet(From, #jid{lresource = <<"">>} = To, 
+process_iq(From, #jid{lresource = <<"">>} = To, 
                #iq{type = Type, xmlns = XMLNS} = IQ) ->
     %% check if stanza directed to server
     %% or directed to the bare JID of the sender
-    case ((Type == get) or (Type == set)) and
-         check_tab(delegated_namespaces) of
+    case ((Type == get) or (Type == set)) of
         true ->
             Packet = jlib:iq_to_xml(IQ),
             #xmlel{name = <<"iq">>, attrs = Attrs, children = Children} = Packet,
-
             AttrsNew = [{<<"xmlns">>, <<"jabber:client">>} | Attrs],
-
             AttrsNew2 = jlib:replace_from_to_attrs(jid:to_string(From),
                                                    jid:to_string(To), AttrsNew),
-
             case ets:lookup(delegated_namespaces, XMLNS) of
-              [{XMLNS, Pid, _, _}] ->
-                {ServiceHost, Delegations} = ejabberd_service:get_delegated_ns(Pid),
-                case check_delegation(Delegations, XMLNS, Children) of
+              [{XMLNS, FiltAttr, _Pid, ServiceHost, _, _}] ->
+                case check_filter_attr(FiltAttr, Children) of
                     true ->
                         forward_iq(From#jid.server, ServiceHost,
                                    Packet#xmlel{attrs = AttrsNew2});
@@ -301,11 +285,20 @@ process_packet(From, #jid{lresource = <<"">>} = To,
         _ -> 
             ignore
     end;
-process_packet(_From, _To, _IQ) -> ignore.
+process_iq(_From, _To, _IQ) -> ignore.
 
 %%%--------------------------------------------------------------------------------------
 %%%  7. Discovering Support
 %%%--------------------------------------------------------------------------------------
+-spec check_tab(atom()) -> boolean().
+
+check_tab(Name) ->
+    case ets:info(Name) of
+      undefined ->
+          false;
+      _ ->
+          true
+    end.
 
 decapsulate_features(#xmlel{attrs = Attrs} = Packet, Node) ->
   case fxml:get_attr_s(<<"node">>, Attrs) of 
@@ -325,10 +318,10 @@ decapsulate_features(#xmlel{attrs = Attrs} = Packet, Node) ->
           case Node of
             << PREFIX:Size/binary, NS/binary >> ->
               ets:update_element(delegated_namespaces, NS,
-                                 {3, {Features, Identity, Exten}});
+                                 {5, {Features, Identity, Exten}});
             << BARE_PREFIX:SizeBare/binary, NS/binary >> ->
               ets:update_element(delegated_namespaces, NS,
-                                 {4, {Features, Identity}});
+                                 {6, {Features, Identity}});
                _ -> ok
           end;
       _ -> ok %% error ?
@@ -399,8 +392,8 @@ disco_features(Acc, Bare) ->
     case check_tab(delegated_namespaces) of
         true ->
             Fun = fun(Feat) ->
-                      ets:foldl(fun({Ns, _Pid, _, _}, A) ->  
-                                    (A or str:prefix(Ns, Feat))
+                      ets:foldl(fun({Ns, _, _, _, _, _}, A) ->  
+                                  A or str:prefix(Ns, Feat)
                                 end, false, delegated_namespaces)
                   end,
             % delete feature namespace which is delegated to service
@@ -412,7 +405,7 @@ disco_features(Acc, Bare) ->
                            end, Acc),
             % add service features
             FeaturesList =
-              ets:foldl(fun({_Ns, _Pid, {Feats, _, _}, {FeatsBare, _}}, A) ->
+              ets:foldl(fun({_, _, _, _, {Feats, _, _}, {FeatsBare, _}}, A) ->
                             if
                               Bare -> A ++ FeatsBare;
                               true -> A ++ Feats
@@ -429,26 +422,26 @@ disco_identity(Acc, Bare) ->
       true ->
         % filter delegated identites
         Fun = fun(Ident) ->
-                ets:foldl(fun({_, _, {_ , I, _}, {_ , IBare}}, A) ->
+                ets:foldl(fun({_, _, _, _, {_ , I, _}, {_ , IBare}}, A) ->
                                Identity = 
                                  if
                                    Bare -> IBare;
                                    true -> I
                                  end,
-                                 (fxml:get_attr_s(<<"category">> , Ident) ==
-                                  fxml:get_attr_s(<<"category">>, Identity)) and
-                                 (fxml:get_attr_s(<<"type">> , Ident) ==
-                                  fxml:get_attr_s(<<"type">>, Identity)) or A;
+                                (fxml:get_attr_s(<<"category">> , Ident) ==
+                                 fxml:get_attr_s(<<"category">>, Identity)) and
+                                (fxml:get_attr_s(<<"type">> , Ident) ==
+                                 fxml:get_attr_s(<<"type">>, Identity)) or A;
                              (_, A) -> A
                           end, false, delegated_namespaces)
               end,
 
         Identities =
           lists:filter(fun (#xmlel{attrs = Attrs}) ->
-                          not Fun(Attrs)
+                         not Fun(Attrs)
                        end, Acc),
         % add service features
-        ets:foldl(fun({_, _, {_, I, _}, {_, IBare}}, A) ->
+        ets:foldl(fun({_, _, _, _, {_, I, _}, {_, IBare}}, A) ->
                         if
                           Bare -> A ++ IBare;
                           true -> A ++ I
@@ -464,34 +457,38 @@ disco_identity(Acc, Bare) ->
 
 get_field_value([]) -> <<"">>;
 get_field_value([Elem| Elems]) ->
-    Ns = fxml:get_subtag_cdata(Elem, <<"value">>),
     case (fxml:get_attr_s(<<"var">>, Elem#xmlel.attrs) == <<"FORM_TYPE">>) and
-         (fxml:get_attr_s(<<"type">>, Elem#xmlel.attrs) == <<"hidden">>) and 
-         (Ns /= <<"">>) of
-      true -> Ns;
+         (fxml:get_attr_s(<<"type">>, Elem#xmlel.attrs) == <<"hidden">>) of
+      true ->
+        Ns = fxml:get_subtag_cdata(Elem, <<"value">>),
+        if
+          Ns /= <<"">> -> Ns;
+          true -> get_field_value(Elems)
+        end;
       _ -> get_field_value(Elems)
-end.
+    end.
 
 get_info(Acc) ->
-    Fun = fun(Feat) ->
-            ets:foldl(fun({Ns, _, _, _}, A) ->  
-                        (A or str:prefix(Ns, Feat))
-                      end, false, delegated_namespaces)
-          end, 
-    Exten =
-      lists:filter(fun(Xmlel) ->
-                     Tags = fxml:get_subtags(Xmlel, <<"field">>),
-                     Value = get_field_value(Tags),
-                     case Value of
-                       <<"">> -> true;
-                       _ -> not Fun(Value)
-                     end
-                   end, Acc),
-
-    ets:foldl(fun({_, _, {_, _, Ext}, _}, A) ->
-                   A ++ Ext;
-                 (_, A) -> A
-              end, Exten, delegated_namespaces).
+    case check_tab(delegated_namespaces) of
+      true ->
+        Fun = fun(Feat) ->
+                ets:foldl(fun({Ns, _, _, _,_,_}, A) ->  
+                            (A or str:prefix(Ns, Feat))
+                          end, false, delegated_namespaces)
+              end,
+        Exten = lists:filter(fun(Xmlel) ->
+                               Tags = fxml:get_subtags(Xmlel, <<"field">>),
+                               case get_field_value(Tags) of
+                                 <<"">> -> true;
+                                 Value -> not Fun(Value)
+                               end
+                             end, Acc),
+        ets:foldl(fun({_, _, _, _, {_, _, Ext}, _}, A) ->
+                        A ++ Ext;
+                     (_, A) -> A
+                  end, Exten, delegated_namespaces);
+      _ -> Acc
+    end.
 
 %% 7.2.1 General Case
 
@@ -536,8 +533,3 @@ disco_info(Acc, _Host, _Mod, <<>>, _Lang) ->
     get_info(Acc);
 disco_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.
-
-%%%--------------------------------------------------------------------------------------
-%%%  7. Client mode
-%%%--------------------------------------------------------------------------------------
-

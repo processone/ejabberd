@@ -146,14 +146,11 @@ init([{SockMod, Socket}, Opts]) ->
                           lists:foldl(
                             fun({Ns, FiltAttr}, D) when Ns /= ?NS_DELEGATION ->
                                 case ets:lookup(delegated_namespaces, Ns) of
-                                  [{Ns, _Pid, _Feat, _FeatBare}] -> % this namespace was already delegated
-                                      D;
                                   [] ->
-                                      ets:insert(delegated_namespaces,
-                                                 {Ns, self(), {}, {}}),
-                                      Attr = proplists:get_value(filtering,
-                                                                 FiltAttr, []),
-                                      D ++ [{Ns, Attr}]
+                                    Attr = proplists:get_value(filtering, FiltAttr, []),
+                                    D ++ [{Ns, Attr}];
+                                  _ -> 
+                                    D
                                 end;
                                (_Deleg, D) -> D
                             end, [], Del); 
@@ -454,16 +451,16 @@ handle_info(Info, StateName, StateData) ->
 %%----------------------------------------------------------------------
 terminate(Reason, StateName, StateData) ->
     ?INFO_MSG("terminated: ~p", [Reason]),
-    lists:foreach(fun({Ns, _FilterAttr}) ->
-                      ets:delete(delegated_namespaces, Ns),
-                      remove_iq_handlers(Ns)
-                  end, StateData#state.delegations),
     case StateName of
       stream_established ->
           lists:foreach(fun (H) ->
-                            ejabberd_router:unregister_route(H)
+                          ejabberd_router:unregister_route(H)
                         end,
                         dict:fetch_keys(StateData#state.host_opts)),
+          lists:foreach(fun({Ns, _FilterAttr}) ->
+                          ets:delete(delegated_namespaces, Ns),
+                          remove_iq_handlers(Ns)
+                        end, StateData#state.delegations),
           ets:delete(registered_services, self());
       _ -> ok
     end,

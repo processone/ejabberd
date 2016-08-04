@@ -23,15 +23,15 @@
 start(Host, _Opts) -> 
     %% these hooks are used for receiving presences for privilege services
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-                       process_presence, 10),
+                       process_presence, 100),
     ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE,
-                       process_roster_presence, 10).
+                       process_roster_presence, 100).
 
 stop(Host) -> 
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-                          process_presence, 10),
+                          process_presence, 100),
     ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE,
-                          process_roster_presence, 10).
+                          process_roster_presence, 100).
 
 depends(_Host, _Opts) -> [].
 
