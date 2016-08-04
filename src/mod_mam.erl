@@ -111,15 +111,12 @@ start(Host, Opts) ->
     ejabberd_hooks:add(anonymous_purge_hook, Host, ?MODULE,
 		       remove_user, 50),
     case gen_mod:get_opt(assume_mam_usage, Opts,
-			 fun(if_enabled) -> if_enabled;
-			    (on_request) -> on_request;
-			    (never) -> never
-			 end, never) of
-	never ->
-	    ok;
-	_ ->
+			 fun(B) when is_boolean(B) -> B end, false) of
+	true ->
 	    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
-			       message_is_archived, 50)
+			       message_is_archived, 50);
+	false ->
+	    ok
     end,
     ejabberd_commands:register_commands(get_commands_spec()),
     ok.
@@ -164,15 +161,12 @@ stop(Host) ->
     ejabberd_hooks:delete(anonymous_purge_hook, Host,
 			  ?MODULE, remove_user, 50),
     case gen_mod:get_module_opt(Host, ?MODULE, assume_mam_usage,
-				fun(if_enabled) -> if_enabled;
-				   (on_request) -> on_request;
-				   (never) -> never
-				end, never) of
-	never ->
-	    ok;
-	_ ->
+				fun(B) when is_boolean(B) -> B end, false) of
+	true ->
 	    ejabberd_hooks:delete(message_is_archived, Host, ?MODULE,
-				  message_is_archived, 50)
+				  message_is_archived, 50);
+	false ->
+	    ok
     end,
     ejabberd_commands:unregister_commands(get_commands_spec()),
     ok.
@@ -381,32 +375,13 @@ message_is_archived(true, _C2SState, _Peer, _JID, _Pkt) ->
     true;
 message_is_archived(false, C2SState, Peer,
 		    #jid{luser = LUser, lserver = LServer}, Pkt) ->
-    Res = case gen_mod:get_module_opt(LServer, ?MODULE, assume_mam_usage,
-				      fun(if_enabled) -> if_enabled;
-					 (on_request) -> on_request;
-					 (never) -> never
-				      end, never) of
-	      if_enabled ->
-		  case get_prefs(LUser, LServer) of
-		      #archive_prefs{} = P ->
-			  {ok, P};
-		      error ->
-			  error
-		  end;
-	      on_request ->
-		  Mod = gen_mod:db_mod(LServer, ?MODULE),
-		  cache_tab:lookup(archive_prefs, {LUser, LServer},
-				   fun() ->
-					   Mod:get_prefs(LUser, LServer)
-				   end);
-	      never ->
-		  error
-	  end,
-    case Res of
-	{ok, Prefs} ->
+    case gen_mod:get_module_opt(LServer, ?MODULE, assume_mam_usage,
+				fun(B) when is_boolean(B) -> B end, false) of
+	true ->
 	    should_archive(strip_my_archived_tag(Pkt, LServer), LServer)
-		andalso should_archive_peer(C2SState, Prefs, Peer);
-	error ->
+		andalso should_archive_peer(C2SState, get_prefs(LUser, LServer),
+					    Peer);
+	false ->
 	    false
     end.
 
@@ -1088,10 +1063,7 @@ get_commands_spec() ->
 			result = {res, rescode}}].
 
 mod_opt_type(assume_mam_usage) ->
-    fun(if_enabled) -> if_enabled;
-       (on_request) -> on_request;
-       (never) -> never
-    end;
+    fun (B) when is_boolean(B) -> B end;
 mod_opt_type(cache_life_time) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(cache_size) ->
