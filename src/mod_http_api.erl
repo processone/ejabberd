@@ -387,6 +387,20 @@ format_args(Args, ArgsFormat) ->
       L when is_list(L) -> exit({additional_unused_args, L})
     end.
 
+format_arg({Elements},
+	   {list, {_ElementDefName, {tuple, [{_Tuple1N, Tuple1S}, {_Tuple2N, Tuple2S}]} = Tuple}})
+    when is_list(Elements) andalso
+	 (Tuple1S == binary orelse Tuple1S == string) ->
+    lists:map(fun({F1, F2}) ->
+		      {format_arg(F1, Tuple1S), format_arg(F2, Tuple2S)};
+		 ({Val}) when is_list(Val) ->
+		      format_arg({Val}, Tuple)
+	      end, Elements);
+format_arg(Elements,
+	   {list, {_ElementDefName, {list, _} = ElementDefFormat}})
+    when is_list(Elements) ->
+    [{format_arg(Element, ElementDefFormat)}
+     || Element <- Elements];
 format_arg(Elements,
 	   {list, {_ElementDefName, ElementDefFormat}})
     when is_list(Elements) ->
@@ -493,6 +507,11 @@ format_result({Code, Text}, {Name, restuple}) ->
     {jlib:atom_to_binary(Name),
      {[{<<"res">>, Code == true orelse Code == ok},
        {<<"text">>, iolist_to_binary(Text)}]}};
+
+format_result(Code, {Name, restuple}) ->
+    {jlib:atom_to_binary(Name),
+     {[{<<"res">>, Code == true orelse Code == ok},
+       {<<"text">>, <<"">>}]}};
 
 format_result(Els, {Name, {list, {_, {tuple, [{_, atom}, _]}} = Fmt}}) ->
     {jlib:atom_to_binary(Name), {[format_result(El, Fmt) || El <- Els]}};
