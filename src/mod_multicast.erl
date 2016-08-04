@@ -45,16 +45,20 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -record(state,
 	{lserver, lservice, access, service_limits}).
+-type state() :: #state{}.
 
 -record(multicastc, {rserver, response, ts}).
 
 %% ts: timestamp (in seconds) when the cache item was last updated
 
--record(dest, {jid_string, jid_jid, type, full_xml}).
+-record(dest, {jid_string = none :: binary(),
+	       jid_jid :: jid(),
+	       type :: atom(),
+	       full_xml :: address()}).
 
 %% jid_string = string()
 %% jid_jid = jid()
@@ -168,10 +172,8 @@ handle_cast(_Msg, State) -> {noreply, State}.
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 
-handle_info({route, From, To,
-	     #xmlel{name = <<"iq">>, attrs = Attrs} = Packet},
-	    State) ->
-    case catch handle_iq(From, To, #xmlel{attrs = Attrs} = Packet, State) of
+handle_info({route, From, To, #iq{} = Packet}, State) ->
+    case catch handle_iq(From, To, Packet, State) of
         {'EXIT', Reason} ->
             ?ERROR_MSG("Error when processing IQ stanza: ~p",
                        [Reason]);
@@ -179,13 +181,10 @@ handle_info({route, From, To,
     end,
     {noreply, State};
 %% XEP33 allows only 'message' and 'presence' stanza type
-handle_info({route, From, To,
-	     #xmlel{name = Stanza_type} = Packet},
+handle_info({route, From, To, Packet},
 	    #state{lservice = LServiceS, lserver = LServerS,
 		   access = Access, service_limits = SLimits} =
-		State)
-    when (Stanza_type == <<"message">>) or
-	   (Stanza_type == <<"presence">>) ->
+		State) when ?is_stanza(Packet) ->
     route_untrusted(LServiceS, LServerS, Access, SLimits,
 		    From, To, Packet),
     {noreply, State};
@@ -220,91 +219,59 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%% IQ Request Processing
 %%%------------------------
 
-handle_iq(From, To, #xmlel{attrs = Attrs} = Packet, State) ->
-    IQ = jlib:iq_query_info(Packet),
-    case catch process_iq(From, IQ, State) of
-        Result when is_record(Result, iq) ->
-            ejabberd_router:route(To, From, jlib:iq_to_xml(Result));
-        {'EXIT', Reason} ->
-            ?ERROR_MSG("Error when processing IQ stanza: ~p",
-                       [Reason]),
-            Err = jlib:make_error_reply(Packet,
-                                        ?ERR_INTERNAL_SERVER_ERROR),
-            ejabberd_router:route(To, From, Err);
-        reply ->
-            LServiceS = jts(To),
-            case fxml:get_attr_s(<<"type">>, Attrs) of
-                <<"result">> ->
-                    process_iqreply_result(From, LServiceS, Packet, State);
-                <<"error">> ->
-                    process_iqreply_error(From, LServiceS, Packet)
-            end;
-        ok -> ok
+handle_iq(From, To, Packet, State) ->
+    try
+	IQ = xmpp:decode_els(Packet),
+	case process_iq(From, IQ, State) of
+	    {result, SubEl} ->
+		ejabberd_router:route(To, From, xmpp:make_iq_result(Packet, SubEl));
+	    {error, Error} ->
+		ejabberd_router:route_error(To, From, Packet, Error);
+	    reply ->
+		LServiceS = jid:to_string(To),
+		case Packet#iq.type of
+		    result ->
+			process_iqreply_result(From, LServiceS, IQ);
+		    error ->
+			process_iqreply_error(From, LServiceS, IQ)
+		end
+	end
+    catch _:{xmpp_codec, Why} ->
+	    Lang = xmpp:get_lang(Packet),
+	    Err = xmpp:err_bad_request(xmpp:format_error(Why), Lang),
+	    ejabberd_router:route_error(To, From, Packet, Err)
     end.
 
-process_iq(From,
-	   #iq{type = get, xmlns = ?NS_DISCO_INFO, lang = Lang} =
-	       IQ,
-	   State) ->
-    IQ#iq{type = result,
-	  sub_el =
-	      [#xmlel{name = <<"query">>,
-		      attrs = [{<<"xmlns">>, ?NS_DISCO_INFO}],
-		      children = iq_disco_info(From, Lang, State)}]};
-%% disco#items request
-process_iq(_,
-	   #iq{type = get, xmlns = ?NS_DISCO_ITEMS} = IQ, _) ->
-    IQ#iq{type = result,
-	  sub_el =
-	      [#xmlel{name = <<"query">>,
-		      attrs = [{<<"xmlns">>, ?NS_DISCO_ITEMS}],
-		      children = []}]};
-%% vCard request
-process_iq(_,
-	   #iq{type = get, xmlns = ?NS_VCARD, lang = Lang} = IQ,
-	   _) ->
-    IQ#iq{type = result,
-	  sub_el =
-	      [#xmlel{name = <<"vCard">>,
-		      attrs = [{<<"xmlns">>, ?NS_VCARD}],
-		      children = iq_vcard(Lang)}]};
-%% Unknown "set" or "get" request
-process_iq(_, #iq{type = Type, sub_el = SubEl} = IQ, _)
-    when Type == get; Type == set ->
-    IQ#iq{type = error,
-	  sub_el = [SubEl, ?ERR_SERVICE_UNAVAILABLE]};
-%% IQ "result" or "error".
-process_iq(_, reply, _) -> reply;
-%% IQ "result" or "error".
-process_iq(_, _, _) -> ok.
+-spec process_iq(jid(), iq(), state()) -> {result, xmpp_element()} |
+					  {error, error()} | reply.
+process_iq(From, #iq{type = get, lang = Lang,
+		     sub_els = [#disco_info{}]}, State) ->
+    {result, iq_disco_info(From, Lang, State)};
+process_iq(_, #iq{type = get, sub_els = [#disco_items{}]}, _) ->
+    {result, #disco_items{}};
+process_iq(_, #iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]}, _) ->
+    {result, iq_vcard(Lang)};
+process_iq(_, #iq{type = T}, _) when T == set; T == get ->
+    {error, xmpp:err_service_unavailable()};
+process_iq(_, _, _) ->
+    reply.
 
--define(FEATURE(Feat),
-	#xmlel{name = <<"feature">>,
-	       attrs = [{<<"var">>, Feat}], children = []}).
+-define(FEATURE(Feat), Feat).
 
 iq_disco_info(From, Lang, State) ->
-    [#xmlel{name = <<"identity">>,
-	    attrs =
-		[{<<"category">>, <<"service">>},
-		 {<<"type">>, <<"multicast">>},
-		 {<<"name">>,
-		  translate:translate(Lang, <<"Multicast">>)}],
-	    children = []},
-     ?FEATURE((?NS_DISCO_INFO)), ?FEATURE((?NS_DISCO_ITEMS)),
-     ?FEATURE((?NS_VCARD)), ?FEATURE((?NS_ADDRESS))]
-      ++ iq_disco_info_extras(From, State).
+    #disco_info{
+       identities = [#identity{category = <<"service">>,
+			       type = <<"multicast">>,
+			       name = translate:translate(Lang, <<"Multicast">>)}],
+       features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_VCARD, ?NS_ADDRESS],
+       xdata = iq_disco_info_extras(From, State)}.
 
 iq_vcard(Lang) ->
-    [#xmlel{name = <<"FN">>, attrs = [],
-	    children = [{xmlcdata, <<"ejabberd/mod_multicast">>}]},
-     #xmlel{name = <<"URL">>, attrs = [],
-	    children = [{xmlcdata, ?EJABBERD_URI}]},
-     #xmlel{name = <<"DESC">>, attrs = [],
-	    children =
-		[{xmlcdata,
-                  <<(translate:translate(Lang,
-                                      <<"ejabberd Multicast service">>))/binary,
-                                        "\nCopyright (c) 2002-2016 ProcessOne">>}]}].
+    Desc = translate:translate(Lang, <<"ejabberd Multicast service">>),
+    Copyright = <<"Copyright (c) 2002-2016 ProcessOne">>,
+    #vcard_temp{fn = <<"ejabberd/mod_multicast">>,
+		url = ?EJABBERD_URI,
+		desc = <<Desc/binary, $\n, Copyright/binary>>}.
 
 %%%-------------------------
 %%% Route
@@ -313,19 +280,14 @@ iq_vcard(Lang) ->
 route_trusted(LServiceS, LServerS, FromJID,
 	      Destinations, Packet) ->
     Packet_stripped = Packet,
-    AAttrs = [{<<"xmlns">>, ?NS_ADDRESS}],
+    AAttrs = [],
     Delivereds = [],
-    Dests2 = lists:map(fun (D) ->
-			       DS = jts(D),
-			       XML = #xmlel{name = <<"address">>,
-					    attrs =
-						[{<<"type">>, <<"bcc">>},
-						 {<<"jid">>, DS}],
-					    children = []},
-			       #dest{jid_string = DS, jid_jid = D,
-				     type = <<"bcc">>, full_xml = XML}
-		       end,
-		       Destinations),
+    Dests2 = lists:map(
+	       fun(D) ->
+		       #dest{jid_string = jid:to_string(D),
+			     jid_jid = D, type = bcc,
+			     full_xml = #address{type = bcc, jid = D}}
+	       end, Destinations),
     Groups = group_dests(Dests2),
     route_common(LServerS, LServiceS, FromJID, Groups,
 		 Delivereds, Packet_stripped, AAttrs).
@@ -363,20 +325,19 @@ route_untrusted(LServiceS, LServerS, Access, SLimits,
 route_untrusted2(LServiceS, LServerS, Access, SLimits,
 		 FromJID, Packet) ->
     ok = check_access(LServerS, Access, FromJID),
-    {ok, Packet_stripped, AAttrs, Addresses} =
-	strip_addresses_element(Packet),
-    {To_deliver, Delivereds} =
-	split_addresses_todeliver(Addresses),
+    {ok, Packet_stripped, Addresses} = strip_addresses_element(Packet),
+    {To_deliver, Delivereds} = split_addresses_todeliver(Addresses),
     Dests = convert_dest_record(To_deliver),
     {Dests2, Not_jids} = split_dests_jid(Dests),
     report_not_jid(FromJID, Packet, Not_jids),
-    ok = check_limit_dests(SLimits, FromJID, Packet,
-			   Dests2),
+    ok = check_limit_dests(SLimits, FromJID, Packet, Dests2),
     Groups = group_dests(Dests2),
     ok = check_relay(FromJID#jid.server, LServerS, Groups),
     route_common(LServerS, LServiceS, FromJID, Groups,
-		 Delivereds, Packet_stripped, AAttrs).
+		 Delivereds, Packet_stripped, []).
 
+-spec route_common(binary(), binary(), jid(), [#group{}],
+		   [address()], stanza(), list()) -> any().
 route_common(LServerS, LServiceS, FromJID, Groups,
 	     Delivereds, Packet_stripped, AAttrs) ->
     Groups2 = look_cached_servers(LServerS, Groups),
@@ -435,52 +396,39 @@ check_access(LServerS, Access, From) ->
 %%% Strip 'addresses' XML element
 %%%-------------------------
 
+-spec strip_addresses_element(stanza()) -> {ok, stanza(), [address()]}.
 strip_addresses_element(Packet) ->
-    case fxml:get_subtag(Packet, <<"addresses">>) of
-      #xmlel{name = <<"addresses">>, attrs = AAttrs,
-	     children = Addresses} ->
-	  case fxml:get_attr_s(<<"xmlns">>, AAttrs) of
-	    ?NS_ADDRESS ->
-		#xmlel{name = Name, attrs = Attrs, children = Els} =
-		    Packet,
-		Els_stripped = lists:keydelete(<<"addresses">>, 2, Els),
-		Packet_stripped = #xmlel{name = Name, attrs = Attrs,
-					 children = Els_stripped},
-		{ok, Packet_stripped, AAttrs, fxml:remove_cdata(Addresses)};
-	    _ -> throw(ewxmlns)
-	  end;
-      _ -> throw(eadsele)
+    case xmpp:get_subtag(Packet, #addresses{}) of
+	#addresses{list = Addrs} ->
+	    PacketStripped = xmpp:remove_subtag(Packet, #addresses{}),
+	    {ok, PacketStripped, Addrs};
+	undefined ->
+	    throw(eadsele)
     end.
 
 %%%-------------------------
 %%% Split Addresses
 %%%-------------------------
 
+-spec split_addresses_todeliver([address()]) -> {[address()], [address()]}.
 split_addresses_todeliver(Addresses) ->
-    lists:partition(fun (XML) ->
-			    case XML of
-			      #xmlel{name = <<"address">>, attrs = Attrs} ->
-				  case fxml:get_attr_s(<<"delivered">>, Attrs) of
-				    <<"true">> -> false;
-				    _ ->
-					Type = fxml:get_attr_s(<<"type">>,
-							      Attrs),
-					case Type of
-					  <<"to">> -> true;
-					  <<"cc">> -> true;
-					  <<"bcc">> -> true;
-					  _ -> false
-					end
-				  end;
-			      _ -> false
-			    end
-		    end,
-		    Addresses).
+    lists:partition(
+      fun(#address{delivered = true}) ->
+	      false;
+	 (#address{type = Type}) ->
+	      case Type of
+		  to -> true;
+		  cc -> true;
+		  bcc -> true;
+		  _ -> false
+	      end
+      end, Addresses).
 
 %%%-------------------------
 %%% Check does not exceed limit of destinations
 %%%-------------------------
 
+-spec check_limit_dests(_, jid(), stanza(), [address()]) -> ok.
 check_limit_dests(SLimits, FromJID, Packet,
 		  Addresses) ->
     SenderT = sender_type(FromJID),
@@ -497,24 +445,22 @@ check_limit_dests(SLimits, FromJID, Packet,
 %%% Convert Destination XML to record
 %%%-------------------------
 
-convert_dest_record(XMLs) ->
-    lists:map(fun (XML) ->
-		      case fxml:get_tag_attr_s(<<"jid">>, XML) of
-			<<"">> -> #dest{jid_string = none, full_xml = XML};
-			JIDS ->
-			    Type = fxml:get_tag_attr_s(<<"type">>, XML),
-			    JIDJ = stj(JIDS),
-			    #dest{jid_string = JIDS, jid_jid = JIDJ,
-				  type = Type, full_xml = XML}
-		      end
-	      end,
-	      XMLs).
+-spec convert_dest_record([address()]) -> [#dest{}].
+convert_dest_record(Addrs) ->
+    lists:map(
+      fun(#address{jid = undefined} = Addr) ->
+	      #dest{jid_string = none, full_xml = Addr};
+	 (#address{jid = JID, type = Type} = Addr) ->
+	      #dest{jid_string = jid:to_string(JID), jid_jid = JID,
+		    type = Type, full_xml = Addr}
+      end, Addrs).
 
 %%%-------------------------
 %%% Split destinations by existence of JID
 %%% and send error messages for other dests
 %%%-------------------------
 
+-spec split_dests_jid([#dest{}]) -> {[#dest{}], [#dest{}]}.
 split_dests_jid(Dests) ->
     lists:partition(fun (Dest) ->
 			    case Dest#dest.jid_string of
@@ -524,8 +470,9 @@ split_dests_jid(Dests) ->
 		    end,
 		    Dests).
 
+-spec report_not_jid(jid(), stanza(), #dest{}) -> any().
 report_not_jid(From, Packet, Dests) ->
-    Dests2 = [fxml:element_to_binary(Dest#dest.full_xml)
+    Dests2 = [fxml:element_to_binary(xmpp:encode(Dest#dest.full_xml))
 	      || Dest <- Dests],
     [route_error(From, From, Packet, jid_malformed,
 		 <<"This service can not process the address: ",
@@ -536,6 +483,7 @@ report_not_jid(From, Packet, Dests) ->
 %%% Group destinations by their servers
 %%%-------------------------
 
+-spec group_dests([#dest{}]) -> [#group{}].
 group_dests(Dests) ->
     D = lists:foldl(fun (Dest, Dict) ->
 			    ServerS = (Dest#dest.jid_jid)#jid.server,
@@ -575,18 +523,17 @@ build_other_xml(Dests) ->
     lists:foldl(fun (Dest, R) ->
 			XML = Dest#dest.full_xml,
 			case Dest#dest.type of
-			  <<"to">> -> [add_delivered(XML) | R];
-			  <<"cc">> -> [add_delivered(XML) | R];
-			  <<"bcc">> -> R;
+			  to -> [add_delivered(XML) | R];
+			  cc -> [add_delivered(XML) | R];
+			  bcc -> R;
 			  _ -> [XML | R]
 			end
 		end,
 		[], Dests).
 
-add_delivered(#xmlel{name = Name, attrs = Attrs,
-		     children = Els}) ->
-    Attrs2 = [{<<"delivered">>, <<"true">>} | Attrs],
-    #xmlel{name = Name, attrs = Attrs2, children = Els}.
+-spec add_delivered(address()) -> address().
+add_delivered(Addr) ->
+    Addr#address{delivered = true}.
 
 %%%-------------------------
 %%% Add preliminary packets
@@ -636,7 +583,7 @@ decide_action_group(Group) ->
 
 route_packet(From, ToDest, Packet, AAttrs, Others, Addresses) ->
     Dests = case ToDest#dest.type of
-	      <<"bcc">> -> [];
+	      bcc -> [];
 	      _ -> [ToDest]
 	    end,
     route_packet2(From, ToDest#dest.jid_string, Dests,
@@ -652,20 +599,20 @@ route_packet_multicast(From, ToS, Packet, AAttrs, Dests,
 		   Addresses)
      || DFragment <- Fragmented_dests].
 
-route_packet2(From, ToS, Dests, Packet, AAttrs,
+-spec route_packet2(jid(), binary(), [#dest{}], stanza(), list(), [address()]) -> ok.
+route_packet2(From, ToS, Dests, Packet, _AAttrs,
 	      Addresses) ->
-    #xmlel{name = T, attrs = A, children = C} = Packet,
-    C2 = case append_dests(Dests, Addresses) of
-	   [] -> C;
-	   ACs ->
-	       [#xmlel{name = <<"addresses">>, attrs = AAttrs,
-		       children = ACs}
-		| C]
-	 end,
-    Packet2 = #xmlel{name = T, attrs = A, children = C2},
+    Els = case append_dests(Dests, Addresses) of
+	      [] ->
+		  xmpp:get_els(Packet);
+	      ACs ->
+		  [#addresses{list = ACs}|xmpp:get_els(Packet)]
+	  end,
+    Packet2 = xmpp:set_els(Packet, Els),
     ToJID = stj(ToS),
     ejabberd_router:route(From, ToJID, Packet2).
 
+-spec append_dests([#dest{}], {[address()], [address()]} | [address()]) -> [address()].
 append_dests(_Dests, {Others, Addresses}) ->
     Addresses++Others;
 append_dests([], Addresses) -> Addresses;
@@ -676,12 +623,14 @@ append_dests([Dest | Dests], Addresses) ->
 %%% Check relay
 %%%-------------------------
 
+-spec check_relay(binary(), binary(), [#group{}]) -> ok.
 check_relay(RS, LS, Gs) ->
     case check_relay_required(RS, LS, Gs) of
       false -> ok;
       true -> throw(edrelay)
     end.
 
+-spec check_relay_required(binary(), binary(), [#group{}]) -> boolean().
 check_relay_required(RServer, LServerS, Groups) ->
     case lists:suffix(str:tokens(LServerS, <<".">>),
                       str:tokens(RServer, <<".">>)) of
@@ -689,6 +638,7 @@ check_relay_required(RServer, LServerS, Groups) ->
       false -> check_relay_required(LServerS, Groups)
     end.
 
+-spec check_relay_required(binary(), [#group{}]) -> boolean().
 check_relay_required(LServerS, Groups) ->
     lists:any(fun (Group) -> Group#group.server /= LServerS
 	      end,
@@ -701,19 +651,16 @@ check_relay_required(LServerS, Groups) ->
 send_query_info(RServerS, LServiceS) ->
     case str:str(RServerS, <<"echo.">>) of
       1 -> false;
-      _ -> send_query(RServerS, LServiceS, ?NS_DISCO_INFO)
+      _ -> send_query(RServerS, LServiceS, #disco_info{})
     end.
 
 send_query_items(RServerS, LServiceS) ->
-    send_query(RServerS, LServiceS, ?NS_DISCO_ITEMS).
+    send_query(RServerS, LServiceS, #disco_items{}).
 
-send_query(RServerS, LServiceS, XMLNS) ->
-    Packet = #xmlel{name = <<"iq">>,
-		    attrs = [{<<"to">>, RServerS}, {<<"type">>, <<"get">>}],
-		    children =
-			[#xmlel{name = <<"query">>,
-				attrs = [{<<"xmlns">>, XMLNS}],
-				children = []}]},
+-spec send_query(binary(), binary(), [disco_info()|disco_items()]) -> ok.
+send_query(RServerS, LServiceS, SubEl) ->
+    Packet = #iq{id = randoms:get_string(),
+		 type = get, sub_els = [SubEl]},
     ejabberd_router:route(stj(LServiceS), stj(RServerS),
 			  Packet).
 
@@ -733,49 +680,40 @@ process_iqreply_error(From, LServiceS, _Packet) ->
 %%% Check protocol support: Receive response: Disco
 %%%-------------------------
 
-process_iqreply_result(From, LServiceS, Packet, State) ->
-    #xmlel{name = <<"query">>, attrs = Attrs2,
-	   children = Els2} =
-	fxml:get_subtag(Packet, <<"query">>),
-    case fxml:get_attr_s(<<"xmlns">>, Attrs2) of
-      ?NS_DISCO_INFO ->
-	  process_discoinfo_result(From, LServiceS, Els2, State);
-      ?NS_DISCO_ITEMS ->
-	  process_discoitems_result(From, LServiceS, Els2)
+-spec process_iqreply_result(jid(), binary(), iq()) -> any().
+process_iqreply_result(From, LServiceS, #iq{sub_els = [SubEl]}) ->
+    case SubEl of
+	#disco_info{} ->
+	    process_discoinfo_result(From, LServiceS, SubEl);
+	#disco_items{} ->
+	    process_discoitems_result(From, LServiceS, SubEl);
+	_ ->
+	    ok
     end.
 
 %%%-------------------------
 %%% Check protocol support: Receive response: Disco Info
 %%%-------------------------
 
-process_discoinfo_result(From, LServiceS, Els,
-			 _State) ->
+process_discoinfo_result(From, LServiceS, DiscoInfo) ->
     FromS = jts(From),
     case search_waiter(FromS, LServiceS, info) of
       {found_waiter, Waiter} ->
-	  process_discoinfo_result2(From, FromS, LServiceS, Els,
+	  process_discoinfo_result2(From, FromS, LServiceS, DiscoInfo,
 				    Waiter);
       _ -> ok
     end.
 
-process_discoinfo_result2(From, FromS, LServiceS, Els,
+process_discoinfo_result2(From, FromS, LServiceS,
+			  #disco_info{features = Feats} = DiscoInfo,
 			  Waiter) ->
-    Multicast_support =
-	lists:any(
-	    fun(XML) ->
-		    case XML of
-			#xmlel{name = <<"feature">>, attrs = Attrs} ->
-			    (?NS_ADDRESS) == fxml:get_attr_s(<<"var">>, Attrs);
-			_ -> false
-		    end
-	    end,
-	    Els),
+    Multicast_support = lists:member(?NS_ADDRESS, Feats),
     Group = Waiter#waiter.group,
     RServer = Group#group.server,
     case Multicast_support of
 	true ->
 	    SenderT = sender_type(From),
-	    RLimits = get_limits_xml(Els, SenderT),
+	    RLimits = get_limits_xml(DiscoInfo, SenderT),
 	    add_response(RServer, {multicast_supported, FromS, RLimits}),
 	    FromM = Waiter#waiter.sender,
 	    DestsM = Group#group.dests,
@@ -799,90 +737,58 @@ process_discoinfo_result2(From, FromS, LServiceS, Els,
 	  end
     end.
 
-get_limits_xml(Els, SenderT) ->
-    LimitOpts = get_limits_els(Els),
+get_limits_xml(DiscoInfo, SenderT) ->
+    LimitOpts = get_limits_els(DiscoInfo),
     build_remote_limit_record(LimitOpts, SenderT).
 
-get_limits_els(Els) ->
-    lists:foldl(fun (XML, R) ->
-			case XML of
-			  #xmlel{name = <<"x">>, attrs = Attrs,
-				 children = SubEls} ->
-			      case ((?NS_XDATA) ==
-				      fxml:get_attr_s(<<"xmlns">>, Attrs))
-				     and
-				     (<<"result">> ==
-					fxml:get_attr_s(<<"type">>, Attrs))
-				  of
-				true -> get_limits_fields(SubEls) ++ R;
-				false -> R
-			      end;
-			  _ -> R
-			end
-		end,
-		[], Els).
+-spec get_limits_els(disco_info()) -> [{atom(), integer()}].
+get_limits_els(DiscoInfo) ->
+    lists:flatmap(
+      fun(#xdata{type = result} = X) ->
+	      get_limits_fields(X);
+	 (_) ->
+	      []
+      end, DiscoInfo#disco_info.xdata).
 
-get_limits_fields(Fields) ->
-    {Head, Tail} = lists:partition(fun (Field) ->
-					   case Field of
-					     #xmlel{name = <<"field">>,
-						    attrs = Attrs} ->
-						 (<<"FORM_TYPE">> ==
-						    fxml:get_attr_s(<<"var">>,
-								   Attrs))
-						   and
-						   (<<"hidden">> ==
-						      fxml:get_attr_s(<<"type">>,
-								     Attrs));
-					     _ -> false
-					   end
-				   end,
-				   Fields),
+-spec get_limits_fields(xdata()) -> [{atom(), integer()}].
+get_limits_fields(X) ->
+    {Head, Tail} = lists:partition(
+		     fun(#xdata_field{var = Var, type = Type}) ->
+			     Var == <<"FORM_TYPE">> andalso Type == hidden
+		     end, X#xdata.fields),
     case Head of
       [] -> [];
       _ -> get_limits_values(Tail)
     end.
 
-get_limits_values(Values) ->
-    lists:foldl(fun (Value, R) ->
-			case Value of
-			  #xmlel{name = <<"field">>, attrs = Attrs,
-				 children = SubEls} ->
-			      [#xmlel{name = <<"value">>, children = SubElsV}] =
-				  SubEls,
-			      Number = fxml:get_cdata(SubElsV),
-			      Name = fxml:get_attr_s(<<"var">>, Attrs),
-			      [{jlib:binary_to_atom(Name),
-				jlib:binary_to_integer(Number)}
-			       | R];
-			  _ -> R
-			end
-		end,
-		[], Values).
+-spec get_limits_values([xdata_field()]) -> [{atom(), integer()}].
+get_limits_values(Fields) ->
+    lists:flatmap(
+      fun(#xdata_field{var = Name, values = [Number]}) ->
+	      try
+		  [{binary_to_atom(Name, utf8), binary_to_integer(Number)}]
+	      catch _:badarg ->
+		      []
+	      end;
+	 (_) ->
+	      []
+      end, Fields).
 
 %%%-------------------------
 %%% Check protocol support: Receive response: Disco Items
 %%%-------------------------
 
-process_discoitems_result(From, LServiceS, Els) ->
+process_discoitems_result(From, LServiceS, #disco_items{items = Items}) ->
     FromS = jts(From),
     case search_waiter(FromS, LServiceS, items) of
         {found_waiter, Waiter} ->
-            List = lists:foldl(
-                     fun(XML, Res) ->
-                             case XML of
-                                 #xmlel{name = <<"item">>, attrs = Attrs} ->
-                                     SJID = fxml:get_attr_s(<<"jid">>, Attrs),
-                                     case jid:from_string(SJID) of
-                                         #jid{luser = <<"">>,
-                                              lresource = <<"">>} ->
-                                             [SJID | Res];
-                                         _ -> Res
-                                     end;
-                                 _ -> Res
-                             end
-                     end,
-                     [], Els),
+            List = lists:flatmap(
+		     fun(#disco_item{jid = #jid{luser = <<"">>,
+						lresource = <<"">>} = J}) ->
+			     [J];
+			(_) ->
+			     []
+		     end, Items),
             case List of
                 [] ->
                     received_awaiter(FromS, Waiter, LServiceS);
@@ -1109,9 +1015,7 @@ get_limit_value(Name, Default, LimitOpts) ->
       false -> {default, Default}
     end.
 
-type_of_stanza(#xmlel{name = <<"message">>}) -> message;
-type_of_stanza(#xmlel{name = <<"presence">>}) ->
-    presence.
+type_of_stanza(Stanza) -> element(1, Stanza).
 
 get_limit_number(message, Limits) ->
     Limits#limits.message;
@@ -1144,17 +1048,10 @@ fragment_dests(Dests, Limit_number) ->
 %% Some parts of code are borrowed from mod_muc_room.erl
 
 -define(RFIELDT(Type, Var, Val),
-	#xmlel{name = <<"field">>,
-	       attrs = [{<<"var">>, Var}, {<<"type">>, Type}],
-	       children =
-		   [#xmlel{name = <<"value">>, attrs = [],
-			   children = [{xmlcdata, Val}]}]}).
+	#xdata_field{type = Type, var = Var, values = [Val]}).
 
 -define(RFIELDV(Var, Val),
-	#xmlel{name = <<"field">>, attrs = [{<<"var">>, Var}],
-	       children =
-		   [#xmlel{name = <<"value">>, attrs = [],
-			   children = [{xmlcdata, Val}]}]}).
+	#xdata_field{var = Var, values = [Val]}).
 
 iq_disco_info_extras(From, State) ->
     SenderT = sender_type(From),
@@ -1162,12 +1059,9 @@ iq_disco_info_extras(From, State) ->
     case iq_disco_info_extras2(SenderT, Service_limits) of
       [] -> [];
       List_limits_xmpp ->
-	  [#xmlel{name = <<"x">>,
-		  attrs =
-		      [{<<"xmlns">>, ?NS_XDATA}, {<<"type">>, <<"result">>}],
-		  children =
-		      [?RFIELDT(<<"hidden">>, <<"FORM_TYPE">>, (?NS_ADDRESS))]
-			++ List_limits_xmpp}]
+	    #xdata{type = result,
+		   fields = [?RFIELDT(hidden, <<"FORM_TYPE">>, ?NS_ADDRESS)
+			     | List_limits_xmpp]}
     end.
 
 sender_type(From) ->
@@ -1198,22 +1092,20 @@ to_binary(A) -> list_to_binary(hd(io_lib:format("~p", [A]))).
 %%%-------------------------
 
 route_error(From, To, Packet, ErrType, ErrText) ->
-    #xmlel{attrs = Attrs} = Packet,
-    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
-    Reply = make_reply(ErrType, Lang, ErrText),
-    Err = jlib:make_error_reply(Packet, Reply),
-    ejabberd_router:route(From, To, Err).
+    Lang = xmpp:get_lang(Packet),
+    Err = make_reply(ErrType, Lang, ErrText),
+    ejabberd_router:route_error(From, To, Packet, Err).
 
 make_reply(bad_request, Lang, ErrText) ->
-    ?ERRT_BAD_REQUEST(Lang, ErrText);
+    xmpp:err_bad_request(ErrText, Lang);
 make_reply(jid_malformed, Lang, ErrText) ->
-    ?ERRT_JID_MALFORMED(Lang, ErrText);
+    xmpp:err_jid_malformed(ErrText, Lang);
 make_reply(not_acceptable, Lang, ErrText) ->
-    ?ERRT_NOT_ACCEPTABLE(Lang, ErrText);
+    xmpp:err_not_acceptable(ErrText, Lang);
 make_reply(internal_server_error, Lang, ErrText) ->
-    ?ERRT_INTERNAL_SERVER_ERROR(Lang, ErrText);
+    xmpp:err_internal_server_error(ErrText, Lang);
 make_reply(forbidden, Lang, ErrText) ->
-    ?ERRT_FORBIDDEN(Lang, ErrText).
+    xmpp:err_forbidden(ErrText, Lang).
 
 stj(String) -> jid:from_string(String).
 
