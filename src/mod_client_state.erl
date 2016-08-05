@@ -34,8 +34,8 @@
 -export([start/2, stop/1, mod_opt_type/1, depends/2]).
 
 %% ejabberd_hooks callbacks.
--export([filter_presence/3, filter_chat_states/3, filter_pep/3, filter_other/3,
-	 flush_queue/2, add_stream_feature/2]).
+-export([filter_presence/4, filter_chat_states/4, filter_pep/4, filter_other/4,
+	 flush_queue/3, add_stream_feature/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -151,69 +151,70 @@ depends(_Host, _Opts) ->
 %% ejabberd_hooks callbacks.
 %%--------------------------------------------------------------------
 
--spec filter_presence({term(), [xmlel()]}, binary(), xmlel())
+-spec filter_presence({term(), [xmlel()]}, binary(), jid(), xmlel())
       -> {term(), [xmlel()]} | {stop, {term(), [xmlel()]}}.
 
-filter_presence({C2SState, _OutStanzas} = Acc, Host,
+filter_presence({C2SState, _OutStanzas} = Acc, Host, To,
 		#xmlel{name = <<"presence">>, attrs = Attrs} = Stanza) ->
     case fxml:get_attr(<<"type">>, Attrs) of
       {value, Type} when Type /= <<"unavailable">> ->
 	  Acc;
       _ ->
-	  ?DEBUG("Got availability presence stanza", []),
+	  ?DEBUG("Got availability presence stanza for ~s",
+		 [jid:to_string(To)]),
 	  queue_add(presence, Stanza, Host, C2SState)
     end;
-filter_presence(Acc, _Host, _Stanza) -> Acc.
+filter_presence(Acc, _Host, _To, _Stanza) -> Acc.
 
--spec filter_chat_states({term(), [xmlel()]}, binary(), xmlel())
+-spec filter_chat_states({term(), [xmlel()]}, binary(), jid(), xmlel())
       -> {term(), [xmlel()]} | {stop, {term(), [xmlel()]}}.
 
-filter_chat_states({C2SState, _OutStanzas} = Acc, Host,
+filter_chat_states({C2SState, _OutStanzas} = Acc, Host, To,
 		   #xmlel{name = <<"message">>} = Stanza) ->
     case jlib:is_standalone_chat_state(Stanza) of
       true ->
 	  From = fxml:get_tag_attr_s(<<"from">>, Stanza),
-	  To = fxml:get_tag_attr_s(<<"to">>, Stanza),
-	  case {jid:from_string(From), jid:from_string(To)} of
+	  case {jid:from_string(From), To} of
 	    {#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}} ->
 		%% Don't queue (carbon copies of) chat states from other
 		%% resources, as they might be used to sync the state of
 		%% conversations across clients.
 		Acc;
 	    _ ->
-		?DEBUG("Got standalone chat state notification", []),
+		?DEBUG("Got standalone chat state notification for ~s",
+		       [jid:to_string(To)]),
 		queue_add(chatstate, Stanza, Host, C2SState)
 	  end;
       false ->
 	  Acc
     end;
-filter_chat_states(Acc, _Host, _Stanza) -> Acc.
+filter_chat_states(Acc, _Host, _To, _Stanza) -> Acc.
 
--spec filter_pep({term(), [xmlel()]}, binary(), xmlel())
+-spec filter_pep({term(), [xmlel()]}, binary(), jid(), xmlel())
       -> {term(), [xmlel()]} | {stop, {term(), [xmlel()]}}.
 
-filter_pep({C2SState, _OutStanzas} = Acc, Host,
+filter_pep({C2SState, _OutStanzas} = Acc, Host, To,
 	   #xmlel{name = <<"message">>} = Stanza) ->
     case get_pep_node(Stanza) of
       {value, Node} ->
-	  ?DEBUG("Got PEP notification", []),
+	  ?DEBUG("Got PEP notification for ~s", [jid:to_string(To)]),
 	  queue_add({pep, Node}, Stanza, Host, C2SState);
       false ->
 	  Acc
     end;
-filter_pep(Acc, _Host, _Stanza) -> Acc.
+filter_pep(Acc, _Host, _To, _Stanza) -> Acc.
 
--spec filter_other({term(), [xmlel()]}, binary(), xmlel())
+-spec filter_other({term(), [xmlel()]}, binary(), jid(), xmlel())
       -> {stop, {term(), [xmlel()]}}.
 
-filter_other({C2SState, _OutStanzas}, Host, Stanza) ->
-    ?DEBUG("Won't add stanza to CSI queue", []),
+filter_other({C2SState, _OutStanzas}, Host, To, Stanza) ->
+    ?DEBUG("Won't add stanza for ~s to CSI queue", [jid:to_string(To)]),
     queue_take(Stanza, Host, C2SState).
 
--spec flush_queue({term(), [xmlel()]}, binary()) -> {term(), [xmlel()]}.
+-spec flush_queue({term(), [xmlel()]}, binary(), jid()) -> {term(), [xmlel()]}.
 
-flush_queue({C2SState, _OutStanzas}, Host) ->
-    ?DEBUG("Going to flush CSI queue", []),
+flush_queue({C2SState, _OutStanzas}, Host, JID) ->
+    ?DEBUG("Going to flush CSI queue of ~s", [jid:to_string(JID)]),
     Queue = get_queue(C2SState),
     NewState = set_queue([], C2SState),
     {NewState, get_stanzas(Queue, Host)}.

@@ -3080,20 +3080,22 @@ add_resent_delay_info(#state{server = From}, El, Time) ->
 %%% XEP-0352
 %%%----------------------------------------------------------------------
 
-csi_filter_stanza(#state{csi_state = CsiState, server = Server} = StateData,
-		  Stanza) ->
+csi_filter_stanza(#state{csi_state = CsiState, jid = JID, server = Server} =
+		  StateData, Stanza) ->
     {StateData1, Stanzas} = ejabberd_hooks:run_fold(csi_filter_stanza, Server,
 						    {StateData, [Stanza]},
-						    [Server, Stanza]),
+						    [Server, JID, Stanza]),
     StateData2 = lists:foldl(fun(CurStanza, AccState) ->
 				     send_stanza(AccState, CurStanza)
 			     end, StateData1#state{csi_state = active},
 			     Stanzas),
     StateData2#state{csi_state = CsiState}.
 
-csi_flush_queue(#state{csi_state = CsiState, server = Server} = StateData) ->
+csi_flush_queue(#state{csi_state = CsiState, jid = JID, server = Server} =
+		StateData) ->
     {StateData1, Stanzas} = ejabberd_hooks:run_fold(csi_flush_queue, Server,
-						    {StateData, []}, [Server]),
+						    {StateData, []},
+						    [Server, JID]),
     StateData2 = lists:foldl(fun(CurStanza, AccState) ->
 				     send_stanza(AccState, CurStanza)
 			     end, StateData1#state{csi_state = active},
