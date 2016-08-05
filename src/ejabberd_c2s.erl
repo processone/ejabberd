@@ -2800,8 +2800,7 @@ handle_resume(StateData, Attrs) ->
 		       #xmlel{name = <<"r">>,
 			      attrs = [{<<"xmlns">>, AttrXmlns}],
 			      children = []}),
-	  FlushedState = csi_flush_queue(NewState),
-	  NewStateData = FlushedState#state{csi_state = active},
+	  NewStateData = csi_flush_queue(NewState),
 	  ?INFO_MSG("Resumed session for ~s",
 		    [jid:to_string(NewStateData#state.jid)]),
 	  {ok, NewStateData};
@@ -3048,13 +3047,13 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 					   pres_timestamp = OldStateData#state.pres_timestamp,
 					   privacy_list = OldStateData#state.privacy_list,
 					   aux_fields = OldStateData#state.aux_fields,
-					   csi_state = OldStateData#state.csi_state,
 					   mgmt_xmlns = OldStateData#state.mgmt_xmlns,
 					   mgmt_queue = OldStateData#state.mgmt_queue,
 					   mgmt_timeout = OldStateData#state.mgmt_timeout,
 					   mgmt_stanzas_in = OldStateData#state.mgmt_stanzas_in,
 					   mgmt_stanzas_out = OldStateData#state.mgmt_stanzas_out,
-					   mgmt_state = active}};
+					   mgmt_state = active,
+					   csi_state = active}};
 		  {error, Msg} ->
 		      {error, Msg};
 		  _ ->
