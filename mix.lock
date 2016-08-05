@@ -15,7 +15,7 @@
   "jiffy": {:hex, :jiffy, "0.14.7", "9f33b893edd6041ceae03bc1e50b412e858cc80b46f3d7535a7a9940a79a1c37", [:rebar, :make], []},
   "lager": {:hex, :lager, "3.0.2", "25dc81bc3659b62f5ab9bd073e97ddd894fc4c242019fccef96f3889d7366c97", [:rebar3], [{:goldrush, "0.1.7", [hex: :goldrush, optional: false]}]},
   "meck": {:hex, :meck, "0.8.4", "59ca1cd971372aa223138efcf9b29475bde299e1953046a0c727184790ab1520", [:rebar, :make], []},
-  "moka": {:git, "https://github.com/processone/moka.git", "768efea96443c57125e6247dbebee687f17be149", [tag: "1.0.5b"]},
+  "moka": {:git, "https://github.com/processone/moka.git", "3eed3a6dd7dedb70a6cd18f86c7561a18626eb3b", [tag: "1.0.5c"]},
   "p1_mysql": {:hex, :p1_mysql, "1.0.1", "d2be1cfc71bb4f1391090b62b74c3f5cb8e7a45b0076b8cb290cd6b2856c581b", [:rebar3], []},
   "p1_oauth2": {:hex, :p1_oauth2, "0.6.1", "4e021250cc198c538b097393671a41e7cebf463c248980320e038fe0316eb56b", [:rebar3], []},
   "p1_pgsql": {:hex, :p1_pgsql, "1.1.0", "ca525c42878eac095e5feb19563acc9915c845648f48fdec7ba6266c625d4ac7", [:rebar3], []},
@@ -23,7 +23,7 @@
   "p1_xmlrpc": {:hex, :p1_xmlrpc, "1.15.1", "a382b62dc21bb372281c2488f99294d84f2b4020ed0908a1c4ad710ace3cf35a", [:rebar3], []},
   "providers": {:hex, :providers, "1.6.0", "db0e2f9043ae60c0155205fcd238d68516331d0e5146155e33d1e79dc452964a", [:rebar3], [{:getopt, "0.8.2", [hex: :getopt, optional: false]}]},
   "relx": {:hex, :relx, "3.19.0", "286dd5244b4786f56aac75d5c8e2d1fb4cfd306810d4ec8548f3ae1b3aadb8f7", [:rebar3], [{:bbmustache, "1.0.4", [hex: :bbmustache, optional: false]}, {:cf, "0.2.1", [hex: :cf, optional: false]}, {:erlware_commons, "0.19.0", [hex: :erlware_commons, optional: false]}, {:getopt, "0.8.2", [hex: :getopt, optional: false]}, {:providers, "1.6.0", [hex: :providers, optional: false]}]},
-  "samerlib": {:git, "https://github.com/processone/samerlib", "9158f65d18ec63f8b409543b6fb46dd5fce46160", [tag: "0.8.0b"]},
+  "samerlib": {:git, "https://github.com/processone/samerlib", "fbbba035b1548ac4e681df00d61bf609645333a0", [tag: "0.8.0c"]},
   "sqlite3": {:hex, :sqlite3, "1.1.5", "794738b6d07b6d36ec6d42492cb9d629bad9cf3761617b8b8d728e765db19840", [:rebar3], []},
   "stringprep": {:hex, :stringprep, "1.0.5", "f29395275c35af5051b29bf875b44ac632dc4d0287880f0e143b536c61fd0ed5", [:rebar3], [{:p1_utils, "1.0.4", [hex: :p1_utils, optional: false]}]},
   "stun": {:hex, :stun, "1.0.6", "1ca9dea574e09f60971bd8de9cb7e34f327cbf435462cf56aa30f05c1ee2f231", [:rebar3], [{:fast_tls, "1.0.6", [hex: :fast_tls, optional: false]}, {:p1_utils, "1.0.4", [hex: :p1_utils, optional: false]}]}}
