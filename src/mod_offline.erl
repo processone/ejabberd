@@ -250,7 +250,7 @@ receive_all(US, Msgs, DBType) ->
 		end
     end.
 
-get_sm_features(Acc, _From, _To, undefined, _Lang) ->
+get_sm_features(Acc, _From, _To, <<"">>, _Lang) ->
     Feats = case Acc of
 		{result, I} -> I;
 		_ -> []
@@ -297,8 +297,7 @@ get_sm_items(_Acc, #jid{luser = U, lserver = S, lresource = R} = JID,
 get_sm_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec get_info([xdata()], jid(), jid(),
-	       undefined | binary(), undefined | binary()) -> [xdata()].
+-spec get_info([xdata()], jid(), jid(), binary(), binary()) -> [xdata()].
 get_info(_Acc, #jid{luser = U, lserver = S, lresource = R},
 	 #jid{luser = U, lserver = S}, ?NS_FLEX_OFFLINE, _Lang) ->
     N = jlib:integer_to_binary(count_offline_messages(U, S)),

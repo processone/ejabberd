@@ -151,15 +151,14 @@ do_route(_, _, _) ->
     ok.
 
 -spec get_sm_features({error, error()} | empty | {result, [binary()]},
-		      jid(), jid(),
-		      undefined | binary(), undefined | binary()) ->
+		      jid(), jid(), binary(), binary()) ->
 			     {error, error()} | empty | {result, [binary()]}.
 get_sm_features({error, _Error} = Acc, _From, _To,
 		_Node, _Lang) ->
     Acc;
 get_sm_features(Acc, _From, _To, Node, _Lang) ->
     case Node of
-      undefined ->
+      <<"">> ->
 	  case Acc of
 	    {result, Features} ->
 		{result, [?NS_DISCO_INFO, ?NS_VCARD | Features]};
@@ -232,10 +231,9 @@ process_search(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang)).
 
 -spec disco_items({error, error()} | {result, [disco_item()]} | empty,
-		  jid(), jid(),
-		  undefined | binary(), undefined | binary()) ->
+		  jid(), jid(), binary(), binary()) ->
 			 {error, error()} | {result, [disco_item()]}.
-disco_items(empty, _From, _To, undefined, _Lang) ->
+disco_items(empty, _From, _To, <<"">>, _Lang) ->
     {result, []};
 disco_items(empty, _From, _To, _Node, Lang) ->
     {error, xmpp:err_item_not_found(<<"No services available">>, Lang)};
@@ -243,12 +241,11 @@ disco_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 -spec disco_features({error, error()} | {result, [binary()]} | empty,
-		     jid(), jid(),
-		     undefined | binary(), undefined | binary()) ->
+		     jid(), jid(), binary(), binary()) ->
 			    {error, error()} | {result, [binary()]}.
 disco_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
-disco_features(Acc, _From, _To, undefined, _Lang) ->
+disco_features(Acc, _From, _To, <<"">>, _Lang) ->
     Features = case Acc of
 		   {result, Fs} -> Fs;
 		   empty -> []
@@ -261,9 +258,9 @@ disco_features(empty, _From, _To, _Node, Lang) ->
 disco_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec disco_identity([identity()], jid(), jid(), undefined | binary(),
-		     undefined | binary()) -> [identity()].
-disco_identity(Acc, _From, _To, undefined, Lang) ->
+-spec disco_identity([identity()], jid(), jid(),
+		     binary(),  binary()) -> [identity()].
+disco_identity(Acc, _From, _To, <<"">>, Lang) ->
     [#identity{category = <<"directory">>,
 	       type = <<"user">>,
 	       name = translate:translate(Lang, <<"vCard User Search">>)}|Acc];
@@ -362,7 +359,7 @@ string2lower(String) ->
       error -> str:to_lower(String)
     end.
 
--spec mk_tfield(binary(), binary(), undefined | binary()) -> xdata_field().
+-spec mk_tfield(binary(), binary(), binary()) -> xdata_field().
 mk_tfield(Label, Var, Lang) ->
     #xdata_field{type = 'text-single',
 		 label = translate:translate(Lang, Label),
@@ -372,7 +369,7 @@ mk_tfield(Label, Var, Lang) ->
 mk_field(Var, Val) ->
     #xdata_field{var = Var, values = [Val]}.
 
--spec mk_search_form(jid(), binary(), undefined | binary()) -> search().
+-spec mk_search_form(jid(), binary(), binary()) -> search().
 mk_search_form(JID, ServerHost, Lang) ->
     Title = <<(translate:translate(Lang, <<"Search users in ">>))/binary,
 	      (jid:to_string(JID))/binary>>,
@@ -393,7 +390,7 @@ mk_search_form(JID, ServerHost, Lang) ->
 		  Lang, <<"You need an x:data capable client to search">>),
 	    xdata = X}.
 
--spec search_result(undefined | binary(), jid(), binary(), [xdata_field()]) -> xdata().
+-spec search_result(binary(), jid(), binary(), [xdata_field()]) -> xdata().
 search_result(Lang, JID, ServerHost, XFields) ->
     Mod = gen_mod:db_mod(ServerHost, ?MODULE),
     Reported = [mk_tfield(Label, Var, Lang) ||

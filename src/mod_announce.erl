@@ -56,7 +56,6 @@
 -define(NS_ADMINL(Sub), [<<"http:">>, <<"jabber.org">>, <<"protocol">>,
                          <<"admin">>, <<Sub>>]).
 
-tokenize(undefined) -> [];
 tokenize(Node) -> str:tokens(Node, <<"/#">>).
 
 start(Host, Opts) ->
@@ -280,7 +279,7 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To, Node, Lang) ->
 		{result, Items}
 	end).
 
-disco_items(Acc, From, #jid{lserver = LServer, server = Server} = _To, undefined, Lang) ->
+disco_items(Acc, From, #jid{lserver = LServer, server = Server} = _To, <<"">>, Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
 	false ->
 	    Acc;

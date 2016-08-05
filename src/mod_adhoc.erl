@@ -91,7 +91,7 @@ stop(Host) ->
 %-------------------------------------------------------------------------
 
 get_local_commands(Acc, _From,
-		   #jid{server = Server, lserver = LServer} = _To, undefined,
+		   #jid{server = Server, lserver = LServer} = _To, <<"">>,
 		   Lang) ->
     Display = gen_mod:get_module_opt(LServer, ?MODULE,
 				     report_commands_node,
@@ -122,7 +122,7 @@ get_local_commands(Acc, _From, _To, _Node, _Lang) ->
 %-------------------------------------------------------------------------
 
 get_sm_commands(Acc, _From,
-		#jid{lserver = LServer} = To, undefined, Lang) ->
+		#jid{lserver = LServer} = To, <<"">>, Lang) ->
     Display = gen_mod:get_module_opt(LServer, ?MODULE,
 				     report_commands_node,
                                      fun(B) when is_boolean(B) -> B end,

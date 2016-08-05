@@ -94,7 +94,7 @@ make_adhoc_response(#adhoc_command{lang = Lang, node = Node, sid = SID},
     Command#adhoc_command{lang = Lang, node = Node, sid = SID}.
 
 -spec make_adhoc_response(adhoc_command()) -> adhoc_command().
-make_adhoc_response(#adhoc_command{sid = undefined} = Command) ->
+make_adhoc_response(#adhoc_command{sid = <<"">>} = Command) ->
     SID = jlib:now_to_utc_string(p1_time_compat:timestamp()),
     Command#adhoc_command{sid = SID};
 make_adhoc_response(Command) ->

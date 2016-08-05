@@ -157,11 +157,6 @@ process_bytestreams(#iq{type = get, from = JID, to = To, lang = Lang} = IQ) ->
 	    xmpp:make_error(IQ, xmpp:err_forbidden(<<"Denied by ACL">>, Lang))
     end;
 process_bytestreams(#iq{type = set, lang = Lang,
-			sub_els = [#bytestreams{sid = undefined}]} = IQ) ->
-    Why = {missing_attr, <<"sid">>, <<"query">>, ?NS_BYTESTREAMS},
-    Txt = xmpp:format_error(Why),
-    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
-process_bytestreams(#iq{type = set, lang = Lang,
 			sub_els = [#bytestreams{sid = SID}]} = IQ)
   when SID == <<"">> orelse length(SID) > 128 ->
     Why = {bad_attr_value, <<"sid">>, <<"query">>, ?NS_BYTESTREAMS},

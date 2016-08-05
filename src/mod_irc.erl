@@ -257,7 +257,7 @@ process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
 process_disco_items(#iq{type = get, lang = Lang, to = To,
 			sub_els = [#disco_items{node = Node}]} = IQ) ->
     case Node of
-	undefined ->
+	<<"">> ->
 	    xmpp:make_iq_result(IQ, #disco_items{});
 	<<"join">> ->
 	    xmpp:make_iq_result(IQ, #disco_items{});
@@ -401,7 +401,7 @@ sm_route(Host, ServerHost, From, To, Packet) ->
 closed_connection(Host, From, Server) ->
     ets:delete(irc_connection, {From, Server, Host}).
 
-iq_disco(_ServerHost, undefined, Lang) ->
+iq_disco(_ServerHost, <<"">>, Lang) ->
     #disco_info{
        identities = [#identity{category = <<"conference">>,
 			       type = <<"irc">>,

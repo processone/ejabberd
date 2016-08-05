@@ -519,10 +519,10 @@ wait_for_auth(Pkt, StateData) when ?IS_STREAM_MGMT_PACKET(Pkt) ->
 wait_for_auth(#iq{type = get,
 		  sub_els = [#legacy_auth{username = U}]} = IQ, StateData) ->
     Username = case U of
-		   undefined -> none;
+		   undefined -> <<"">>;
 		   _ -> U
 	       end,
-    Auth = #legacy_auth{username = Username, password = none, resource = none},
+    Auth = #legacy_auth{username = Username, password = <<>>, resource = <<>>},
     Res = case ejabberd_auth:plain_password_required(StateData#state.server) of
 	      false ->
 		  xmpp:make_iq_result(IQ, Auth#legacy_auth{digest = none});

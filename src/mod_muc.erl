@@ -450,10 +450,10 @@ process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_info(#iq{type = get, to = To, lang = Lang,
-		       sub_els = [#disco_info{node = undefined}]} = IQ) ->
+		       sub_els = [#disco_info{node = <<"">>}]} = IQ) ->
     ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
     X = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
-				[ServerHost, ?MODULE, undefined, Lang]),
+				[ServerHost, ?MODULE, <<"">>, Lang]),
     MAMFeatures = case gen_mod:is_loaded(ServerHost, mod_mam) of
 		      true -> [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1];
 		      false -> []
@@ -562,7 +562,7 @@ register_room(Host, Room, Pid) ->
     end,
     mnesia:transaction(F).
 
-iq_disco_items(Host, From, Lang, undefined, undefined) ->
+iq_disco_items(Host, From, Lang, <<"">>, undefined) ->
     Rooms = get_vh_rooms(Host),
     case erlang:length(Rooms) < ?MAX_ROOMS_DISCOITEMS of
 	true ->

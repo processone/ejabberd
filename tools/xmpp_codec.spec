@@ -69,7 +69,7 @@
      #elem{name = <<"query">>,
            xmlns = <<"jabber:iq:roster">>,
            result = {roster_query, '$items', '$ver'},
-           attrs = [#attr{name = <<"ver">>}],
+           attrs = [#attr{name = <<"ver">>, default = undefined}],
            refs = [#ref{name = roster_item, label = '$items'}]}).
 
 -xml(rosterver_feature,
@@ -616,22 +616,18 @@
 -xml(legacy_auth_username,
      #elem{name = <<"username">>,
 	   xmlns = <<"jabber:iq:auth">>,
-	   cdata = #cdata{default = none},
 	   result = '$cdata'}).
 -xml(legacy_auth_password,
      #elem{name = <<"password">>,
 	   xmlns = <<"jabber:iq:auth">>,
-	   cdata = #cdata{default = none},
 	   result = '$cdata'}).
 -xml(legacy_auth_digest,
      #elem{name = <<"digest">>,
 	   xmlns = <<"jabber:iq:auth">>,
-	   cdata = #cdata{default = none},
 	   result = '$cdata'}).
 -xml(legacy_auth_resource,
      #elem{name = <<"resource">>,
 	   xmlns = <<"jabber:iq:auth">>,
-	   cdata = #cdata{default = none},
 	   result = '$cdata'}).
 
 -xml(legacy_auth,
@@ -917,87 +913,70 @@
 -xml(register_username,
      #elem{name = <<"username">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_nick,
      #elem{name = <<"nick">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_password,
      #elem{name = <<"password">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_name,
      #elem{name = <<"name">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_first,
      #elem{name = <<"first">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_last,
      #elem{name = <<"last">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_email,
      #elem{name = <<"email">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_address,
      #elem{name = <<"address">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_city,
      #elem{name = <<"city">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_state,
      #elem{name = <<"state">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_zip,
      #elem{name = <<"zip">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_phone,
      #elem{name = <<"phone">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_url,
      #elem{name = <<"url">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_date,
      #elem{name = <<"date">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_misc,
      #elem{name = <<"misc">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_text,
      #elem{name = <<"text">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 -xml(register_key,
      #elem{name = <<"key">>,
            xmlns = <<"jabber:iq:register">>,
-           cdata = #cdata{default = none},
            result = '$cdata'}).
 
 -xml(register,
@@ -1180,7 +1159,9 @@
            xmlns = <<"urn:ietf:params:xml:ns:xmpp-streams">>}).
 -xml(stream_error_see_other_host,
      #elem{name = <<"see-other-host">>,
-           cdata = #cdata{required = true, label = '$host'},
+           cdata = #cdata{required = true, label = '$host',
+			  dec = {dec_host_port, []},
+			  enc = {enc_host_port, []}},
            result = {'see-other-host', '$host'},
            xmlns = <<"urn:ietf:params:xml:ns:xmpp-streams">>}).
 -xml(stream_error_system_shutdown,
@@ -1562,14 +1543,14 @@
 	   xmlns = <<"vcard-temp:x:update">>,
 	   result = '$cdata'}).
 
--record(vcard_xupdate, {us :: {binary(), binary()},
+-record(vcard_xupdate, {us = {<<>>, <<>>} :: {binary(), binary()},
 			hash :: binary()}).
 -type vcard_xupdate() :: #vcard_xupdate{}.
 
 -xml(vcard_xupdate,
      #elem{name = <<"x">>,
 	   xmlns = <<"vcard-temp:x:update">>,
-	   result = {vcard_xupdate, undefined, '$hash'},
+	   result = {vcard_xupdate, '$_', '$hash'},
 	   refs = [#ref{name = vcard_xupdate_photo, min = 0, max = 1,
 			label = '$hash'}]}).
 
@@ -1745,8 +1726,7 @@
      #elem{name = <<"subscriptions">>,
            xmlns = <<"http://jabber.org/protocol/pubsub">>,
            result = {'$node', '$subscriptions'},
-           attrs = [#attr{name = <<"node">>,
-                          default = none}],
+           attrs = [#attr{name = <<"node">>}],
            refs = [#ref{name = pubsub_subscription, label = '$subscriptions'}]}).
 
 -xml(pubsub_affiliations,
@@ -3088,6 +3068,7 @@
 			  dec = {dec_int, [0, infinity]},
 			  enc = {enc_int, []}}]}).
 
+-spec dec_tzo(_) -> {integer(), integer()}.
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),
     H = jlib:binary_to_integer(H1),
@@ -3104,12 +3085,14 @@ enc_tzo({H, M}) ->
            end,
     list_to_binary([Sign, io_lib:format("~2..0w:~2..0w", [H, M])]).
 
+-spec dec_utc(_) -> erlang:timestamp().
 dec_utc(Val) ->
     {_, _, _} = jlib:datetime_string_to_timestamp(Val).
 
 enc_utc(Val) ->
     jlib:now_to_utc_string(Val).
 
+-spec dec_jid(_) -> jid:jid().
 dec_jid(Val) ->
     case jid:from_string(Val) of
         error ->
@@ -3121,6 +3104,7 @@ dec_jid(Val) ->
 enc_jid(J) ->            
     jid:to_string(J).
 
+-spec resourceprep(_) -> binary().
 resourceprep(R) ->
     case jid:resourceprep(R) of
         error ->
@@ -3129,6 +3113,7 @@ resourceprep(R) ->
             R1
     end.
 
+-spec dec_bool(_) -> boolean().
 dec_bool(<<"false">>) -> false;
 dec_bool(<<"0">>) -> false;
 dec_bool(<<"true">>) -> true;
@@ -3141,6 +3126,7 @@ join([], _Sep) -> <<>>;
 join([H | T], Sep) ->
     <<H/binary, (<< <<Sep, X/binary>> || X <- T >>)/binary>>.
 
+-spec dec_ip(_) -> inet:ip_address().
 dec_ip(S) ->
     {ok, Addr} = inet_parse:address(binary_to_list(S)),
     Addr.
@@ -3150,6 +3136,33 @@ enc_ip({0,0,0,0,0,16#ffff,A,B}) ->
 	    (B bsr 8) band 16#ff, B band 16#ff});
 enc_ip(Addr) ->
     list_to_binary(inet_parse:ntoa(Addr)).
+
+-spec re:split(_, _) -> binary().
+-spec base64:decode(_) -> binary().
+
+-spec dec_host_port(_) -> binary() | inet:ip_address() |
+			  {binary() | inet:ip_address(), non_neg_integer()}.
+dec_host_port(<<$[, T/binary>>) ->
+    [IP, <<$:, Port/binary>>] = binary:split(T, <<$]>>),
+    {dec_ip(IP), dec_int(Port, 0, 65535)};
+dec_host_port(S) ->
+    case binary:split(S, <<$:>>) of
+	[S] ->
+	    try dec_ip(S) catch _:_ -> S end;
+	[S, P] ->
+	    {try dec_ip(S) catch _:_ -> S end, dec_int(P, 0, 65535)}
+    end.
+
+enc_host_port(Host) when is_binary(Host) ->
+    Host;
+enc_host_port({{_,_,_,_,_,_,_,_} = IPv6, Port}) ->
+    enc_host_port({<<$[, (enc_ip(IPv6))/binary, $]>>, Port});
+enc_host_port({{_,_,_,_} = IPv4, Port}) ->
+    enc_host_port({enc_ip(IPv4), Port});
+enc_host_port({Host, Port}) ->
+    <<Host/binary, $:, (integer_to_binary(Port))/binary>>;
+enc_host_port(Addr) ->
+    enc_ip(Addr).
 
 %% Local Variables:
 %% mode: erlang

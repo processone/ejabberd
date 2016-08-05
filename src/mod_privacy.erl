@@ -116,7 +116,7 @@ process_iq_get(_, #iq{from = From, lang = Lang,
 	    {error, xmpp:err_bad_request(Txt, Lang)}
     end.
 
--spec process_lists_get(binary(), binary(), binary(), undefined | binary()) ->
+-spec process_lists_get(binary(), binary(), binary(), binary()) ->
 			       {error, error()} | {result, privacy_query()}.
 process_lists_get(LUser, LServer, Active, Lang) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
@@ -134,7 +134,7 @@ process_lists_get(LUser, LServer, Active, Lang) ->
 				     || ListName <- ListNames]}}
     end.
 
--spec process_list_get(binary(), binary(), binary(), undefined | binary()) ->
+-spec process_list_get(binary(), binary(), binary(), binary()) ->
 			      {error, error()} | {result, privacy_query()}.
 process_list_get(LUser, LServer, Name, Lang) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
@@ -183,7 +183,7 @@ encode_list_item(#listitem{action = Action,
 			      presence_out = MatchPresenceOut}
     end.
 
--spec encode_value(listitem_type(), listitem_value()) -> undefined | binary().
+-spec encode_value(listitem_type(), listitem_value()) -> binary().
 encode_value(Type, Val) ->
     case Type of
 	jid -> jid:to_string(Val);
@@ -195,7 +195,7 @@ encode_value(Type, Val) ->
 		from -> <<"from">>;
 		none -> <<"none">>
 	    end;
-	none -> undefined
+	none -> <<"">>
     end.
 
 -spec decode_value(jid | subscription | group | undefined, binary()) ->
@@ -239,8 +239,7 @@ process_iq_set(_, #iq{from = From, lang = Lang,
     end.
 
 -spec process_default_set(binary(), binary(), none | binary(),
-			  undefined | binary()) -> {error, error()} |
-						   {result, undefined}.			 
+			  binary()) -> {error, error()} | {result, undefined}.
 process_default_set(LUser, LServer, Value, Lang) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:process_default_set(LUser, LServer, Value) of
@@ -258,8 +257,7 @@ process_default_set(LUser, LServer, Value, Lang) ->
 	    {error, xmpp:err_internal_server_error()}
     end.
 
--spec process_active_set(binary(), binary(), none | binary(),
-			 undefined | binary()) ->
+-spec process_active_set(binary(), binary(), none | binary(), binary()) ->
 				{error, error()} |
 				{result, undefined, userlist()}.
 process_active_set(_LUser, _LServer, none, _Lang) ->
@@ -282,8 +280,7 @@ set_privacy_list(#privacy{us = {_, LServer}} = Privacy) ->
     Mod:set_privacy_list(Privacy).
 
 -spec process_lists_set(binary(), binary(), binary(), [privacy_item()],
-			undefined | binary()) -> {error, error()} |
-						 {result, undefined}.
+			binary()) -> {error, error()} | {result, undefined}.
 process_lists_set(LUser, LServer, Name, [], Lang) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:remove_privacy_list(LUser, LServer, Name) of

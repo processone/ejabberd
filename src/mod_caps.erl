@@ -35,8 +35,6 @@
 
 -behaviour(gen_mod).
 
--compile(export_all).
-
 -export([read_caps/1, caps_stream_features/2,
 	 disco_features/5, disco_identity/5, disco_info/5,
 	 get_features/2, export/1, import_info/0, import/5,
@@ -162,38 +160,38 @@ caps_stream_features(Acc, MyHost) ->
 
 -spec disco_features({error, error()} | {result, [binary()]} | empty,
 		     jid(), jid(),
-		     undefined | binary(), undefined | binary()) ->
+		     binary(), binary()) ->
 			    {error, error()} | {result, [binary()]}.
 disco_features(Acc, From, To, Node, Lang) ->
     case is_valid_node(Node) of
         true ->
             ejabberd_hooks:run_fold(disco_local_features,
                                     To#jid.lserver, empty,
-                                    [From, To, undefined, Lang]);
+                                    [From, To, <<"">>, Lang]);
         false ->
             Acc
     end.
 
 -spec disco_identity([identity()], jid(), jid(),
-		     undefined | binary(), undefined | binary()) ->
+		     binary(), binary()) ->
 			    [identity()].
 disco_identity(Acc, From, To, Node, Lang) ->
     case is_valid_node(Node) of
         true ->
             ejabberd_hooks:run_fold(disco_local_identity,
                                     To#jid.lserver, [],
-                                    [From, To, undefined, Lang]);
+                                    [From, To, <<"">>, Lang]);
         false ->
             Acc
     end.
 
 -spec disco_info([xdata()], binary(), module(),
-		 undefined | binary(), undefined | binary()) ->	[xdata()].
+		 binary(), binary()) -> [xdata()].
 disco_info(Acc, Host, Module, Node, Lang) ->
     case is_valid_node(Node) of
         true ->
             ejabberd_hooks:run_fold(disco_info, Host, [],
-                                    [Host, Module, undefined, Lang]);
+                                    [Host, Module, <<"">>, Lang]);
         false ->
             Acc
     end.
@@ -485,7 +483,7 @@ concat_info(#disco_info{xdata = Xs}) ->
       [concat_xdata_fields(Fs) || #xdata{type = result, fields = Fs} <- Xs]).
 
 concat_xdata_fields(Fields) ->
-    Form = case lists:keysearch(<<"FORM_TYPE">>, #xdata_field.var, Fields) of
+    Form = case lists:keyfind(<<"FORM_TYPE">>, #xdata_field.var, Fields) of
 	       #xdata_field{values = Values} -> Values;
 	       false -> []
 	   end,
@@ -509,9 +507,7 @@ gb_trees_fold_iter(F, Acc, Iter) ->
 now_ts() ->
     p1_time_compat:system_time(seconds).
 
--spec is_valid_node(undefined | binary()) -> boolean().
-is_valid_node(undefined) ->
-    false;
+-spec is_valid_node(binary()) -> boolean().
 is_valid_node(Node) ->
     case str:tokens(Node, <<"#">>) of
         [?EJABBERD_URI|_] ->

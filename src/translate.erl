@@ -126,10 +126,8 @@ load_file_loop(Fd, Line, File, Lang) ->
             ok
     end.
 
--spec translate(binary() | undefined, binary()) -> binary().
+-spec translate(binary(), binary()) -> binary().
 
-translate(undefined, Msg) ->
-    translate(?MYLANG, Msg);
 translate(Lang, Msg) ->
     LLang = ascii_tolower(Lang),
     case ets:lookup(translations, {LLang, Msg}) of

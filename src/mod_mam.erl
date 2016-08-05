@@ -363,7 +363,7 @@ disco_sm_features(empty, From, To, Node, Lang) ->
     disco_sm_features({result, []}, From, To, Node, Lang);
 disco_sm_features({result, OtherFeatures},
 		  #jid{luser = U, lserver = S},
-		  #jid{luser = U, lserver = S}, undefined, _Lang) ->
+		  #jid{luser = U, lserver = S}, <<"">>, _Lang) ->
     {result, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1 | OtherFeatures]};
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.

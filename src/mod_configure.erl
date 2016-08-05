@@ -121,7 +121,6 @@ depends(_Host, _Opts) ->
 	[<<"http:">>, <<"jabber.org">>, <<"protocol">>,
 	 <<"admin">>, Sub]).
 
-tokenize(undefined) -> [];
 tokenize(Node) -> str:tokens(Node, <<"/#">>).
 
 get_sm_identity(Acc, _From, _To, Node, Lang) ->
@@ -300,7 +299,7 @@ get_sm_items(Acc, From,
 		    empty -> []
 		  end,
 	  case {acl:match_rule(LServer, configure, From), Node} of
-	    {allow, undefined} ->
+	    {allow, <<"">>} ->
 		Nodes = [?NODEJID(To, <<"Configuration">>,
 				  <<"config">>),
 			 ?NODEJID(To, <<"User Management">>, <<"user">>)],
@@ -399,7 +398,7 @@ get_permission_level(JID) ->
 	end).
 
 get_local_items(Acc, From, #jid{lserver = LServer} = To,
-		undefined, Lang) ->
+		<<"">>, Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
       false -> Acc;
       _ ->

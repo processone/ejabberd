@@ -2399,7 +2399,7 @@ encode({vcard_temp, _, _, _, _, _, _, _, _, _, _, _, _,
 	   Vcard) ->
     encode_vcard_temp(Vcard,
 		      [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard_xupdate, undefined, _} = X) ->
+encode({vcard_xupdate, _, _} = X) ->
     encode_vcard_xupdate(X,
 			 [{<<"xmlns">>, <<"vcard-temp:x:update">>}]);
 encode({xdata_option, _, _} = Option) ->
@@ -2801,7 +2801,7 @@ get_name({vcard_temp, _, _, _, _, _, _, _, _, _, _, _,
 	  _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
 	  _}) ->
     <<"vCard">>;
-get_name({vcard_xupdate, undefined, _}) -> <<"x">>;
+get_name({vcard_xupdate, _, _}) -> <<"x">>;
 get_name({xdata_option, _, _}) -> <<"option">>;
 get_name({xdata_field, _, _, _, _, _, _, _, _}) ->
     <<"field">>;
@@ -3033,7 +3033,7 @@ get_ns({vcard_key, _, _}) -> <<"vcard-temp">>;
 get_ns({vcard_temp, _, _, _, _, _, _, _, _, _, _, _, _,
 	_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}) ->
     <<"vcard-temp">>;
-get_ns({vcard_xupdate, undefined, _}) ->
+get_ns({vcard_xupdate, _, _}) ->
     <<"vcard-temp:x:update">>;
 get_ns({xdata_option, _, _}) -> <<"jabber:x:data">>;
 get_ns({xdata_field, _, _, _, _, _, _, _, _}) ->
@@ -3331,7 +3331,6 @@ pp(vcard_temp, 29) ->
      email, jabberid, mailer, tz, geo, title, role, logo,
      org, categories, note, prodid, rev, sort_string, sound,
      uid, url, class, key, desc];
-pp(vcard_xupdate, 2) -> [us, hash];
 pp(xdata_option, 2) -> [label, value];
 pp(xdata_field, 8) ->
     [label, type, var, required, desc, values, options,
@@ -3355,7 +3354,6 @@ pp(pubsub, 8) ->
     [subscriptions, affiliations, publish, subscribe,
      unsubscribe, options, items, retract];
 pp(shim, 1) -> [headers];
-pp(chatstate, 1) -> [type];
 pp(delay, 3) -> [stamp, from, desc];
 pp(streamhost, 3) -> [jid, host, port];
 pp(bytestreams, 6) ->
@@ -3396,7 +3394,6 @@ pp(carbons_private, 0) -> [];
 pp(carbons_received, 1) -> [forwarded];
 pp(carbons_sent, 1) -> [forwarded];
 pp(feature_csi, 1) -> [xmlns];
-pp(csi, 1) -> [type];
 pp(feature_sm, 1) -> [xmlns];
 pp(sm_enable, 3) -> [max, resume, xmlns];
 pp(sm_enabled, 5) -> [id, location, max, resume, xmlns];
@@ -3410,7 +3407,6 @@ pp(offline, 3) -> [items, purge, fetch];
 pp(mix_join, 2) -> [jid, subscribe];
 pp(mix_leave, 0) -> [];
 pp(mix_participant, 2) -> [jid, nick];
-pp(hint, 1) -> [type];
 pp(search_item, 5) -> [jid, first, last, nick, email];
 pp(search, 7) ->
     [instructions, first, last, nick, email, items, xdata];
@@ -3444,6 +3440,27 @@ pp(upload_request, 4) ->
 pp(upload_slot, 3) -> [get, put, xmlns];
 pp(thumbnail, 4) -> [uri, 'media-type', width, height];
 pp(_, _) -> no.
+
+enc_host_port(Host) when is_binary(Host) -> Host;
+enc_host_port({{_, _, _, _, _, _, _, _} = IPv6,
+	       Port}) ->
+    enc_host_port({<<$[, (enc_ip(IPv6))/binary, $]>>,
+		   Port});
+enc_host_port({{_, _, _, _} = IPv4, Port}) ->
+    enc_host_port({enc_ip(IPv4), Port});
+enc_host_port({Host, Port}) ->
+    <<Host/binary, $:, (integer_to_binary(Port))/binary>>;
+enc_host_port(Addr) -> enc_ip(Addr).
+
+dec_host_port(<<$[, T/binary>>) ->
+    [IP, <<$:, Port/binary>>] = binary:split(T, <<$]>>),
+    {dec_ip(IP), dec_int(Port, 0, 65535)};
+dec_host_port(S) ->
+    case binary:split(S, <<$:>>) of
+      [S] -> try dec_ip(S) catch _:_ -> S end;
+      [S, P] ->
+	  {try dec_ip(S) catch _:_ -> S end, dec_int(P, 0, 65535)}
+    end.
 
 enc_ip({0, 0, 0, 0, 0, 65535, A, B}) ->
     enc_ip({(A bsr 8) band 255, A band 255,
@@ -3693,10 +3710,10 @@ encode_upload_slot({upload_slot, Get, Put, Xmlns},
     [encode_upload_get(Get, []) | _acc].
 
 decode_upload_slot_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_upload_slot_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_upload_slot_attr_xmlns(undefined, _acc) -> _acc;
+encode_upload_slot_attr_xmlns(<<>>, _acc) -> _acc;
 encode_upload_slot_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -3916,12 +3933,11 @@ encode_upload_request({upload_request, Filename, Size,
 
 decode_upload_request_attr_xmlns(__TopXMLNS,
 				 undefined) ->
-    undefined;
+    <<>>;
 decode_upload_request_attr_xmlns(__TopXMLNS, _val) ->
     _val.
 
-encode_upload_request_attr_xmlns(undefined, _acc) ->
-    _acc;
+encode_upload_request_attr_xmlns(<<>>, _acc) -> _acc;
 encode_upload_request_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -4094,11 +4110,10 @@ encode_sic({sic, Ip, Port, Xmlns}, _xmlns_attrs) ->
 'encode_sic_$port'(Port, _acc) ->
     [encode_sip_port(Port, []) | _acc].
 
-decode_sic_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+decode_sic_attr_xmlns(__TopXMLNS, undefined) -> <<>>;
 decode_sic_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_sic_attr_xmlns(undefined, _acc) -> _acc;
+encode_sic_attr_xmlns(<<>>, _acc) -> _acc;
 encode_sic_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -4571,10 +4586,10 @@ encode_bob_data_attr_cid(_val, _acc) ->
     [{<<"max-age">>, enc_int(_val)} | _acc].
 
 decode_bob_data_attr_type(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_bob_data_attr_type(__TopXMLNS, _val) -> _val.
 
-encode_bob_data_attr_type(undefined, _acc) -> _acc;
+encode_bob_data_attr_type(<<>>, _acc) -> _acc;
 encode_bob_data_attr_type(_val, _acc) ->
     [{<<"type">>, _val} | _acc].
 
@@ -4707,11 +4722,11 @@ encode_stream_start_attr_to(_val, _acc) ->
     [{<<"to">>, enc_jid(_val)} | _acc].
 
 decode_stream_start_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_stream_start_attr_xmlns(__TopXMLNS, _val) ->
     _val.
 
-encode_stream_start_attr_xmlns(undefined, _acc) -> _acc;
+encode_stream_start_attr_xmlns(<<>>, _acc) -> _acc;
 encode_stream_start_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -5207,24 +5222,23 @@ encode_adhoc_command_attr_node(_val, _acc) ->
 
 'decode_adhoc_command_attr_xml:lang'(__TopXMLNS,
 				     undefined) ->
-    undefined;
+    <<>>;
 'decode_adhoc_command_attr_xml:lang'(__TopXMLNS,
 				     _val) ->
     _val.
 
-'encode_adhoc_command_attr_xml:lang'(undefined, _acc) ->
+'encode_adhoc_command_attr_xml:lang'(<<>>, _acc) ->
     _acc;
 'encode_adhoc_command_attr_xml:lang'(_val, _acc) ->
     [{<<"xml:lang">>, _val} | _acc].
 
 decode_adhoc_command_attr_sessionid(__TopXMLNS,
 				    undefined) ->
-    undefined;
+    <<>>;
 decode_adhoc_command_attr_sessionid(__TopXMLNS, _val) ->
     _val.
 
-encode_adhoc_command_attr_sessionid(undefined, _acc) ->
-    _acc;
+encode_adhoc_command_attr_sessionid(<<>>, _acc) -> _acc;
 encode_adhoc_command_attr_sessionid(_val, _acc) ->
     [{<<"sessionid">>, _val} | _acc].
 
@@ -5723,19 +5737,17 @@ encode_address_attr_jid(undefined, _acc) -> _acc;
 encode_address_attr_jid(_val, _acc) ->
     [{<<"jid">>, enc_jid(_val)} | _acc].
 
-decode_address_attr_desc(__TopXMLNS, undefined) ->
-    undefined;
+decode_address_attr_desc(__TopXMLNS, undefined) -> <<>>;
 decode_address_attr_desc(__TopXMLNS, _val) -> _val.
 
-encode_address_attr_desc(undefined, _acc) -> _acc;
+encode_address_attr_desc(<<>>, _acc) -> _acc;
 encode_address_attr_desc(_val, _acc) ->
     [{<<"desc">>, _val} | _acc].
 
-decode_address_attr_node(__TopXMLNS, undefined) ->
-    undefined;
+decode_address_attr_node(__TopXMLNS, undefined) -> <<>>;
 decode_address_attr_node(__TopXMLNS, _val) -> _val.
 
-encode_address_attr_node(undefined, _acc) -> _acc;
+encode_address_attr_node(<<>>, _acc) -> _acc;
 encode_address_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
@@ -6001,10 +6013,10 @@ encode_xevent_id(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"id">>, _attrs, _els}.
 
-decode_xevent_id_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_xevent_id_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_xevent_id_cdata(__TopXMLNS, _val) -> _val.
 
-encode_xevent_id_cdata(undefined, _acc) -> _acc;
+encode_xevent_id_cdata(<<>>, _acc) -> _acc;
 encode_xevent_id_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -6519,12 +6531,11 @@ encode_search_instructions(Cdata, _xmlns_attrs) ->
     {xmlel, <<"instructions">>, _attrs, _els}.
 
 decode_search_instructions_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+    <<>>;
 decode_search_instructions_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_search_instructions_cdata(undefined, _acc) ->
-    _acc;
+encode_search_instructions_cdata(<<>>, _acc) -> _acc;
 encode_search_instructions_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -6641,12 +6652,11 @@ encode_mix_participant_attr_jid(_val, _acc) ->
 
 decode_mix_participant_attr_nick(__TopXMLNS,
 				 undefined) ->
-    undefined;
+    <<>>;
 decode_mix_participant_attr_nick(__TopXMLNS, _val) ->
     _val.
 
-encode_mix_participant_attr_nick(undefined, _acc) ->
-    _acc;
+encode_mix_participant_attr_nick(<<>>, _acc) -> _acc;
 encode_mix_participant_attr_nick(_val, _acc) ->
     [{<<"nick">>, _val} | _acc].
 
@@ -6889,10 +6899,10 @@ encode_offline_item({offline_item, Node, Action},
     {xmlel, <<"item">>, _attrs, _els}.
 
 decode_offline_item_attr_node(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_offline_item_attr_node(__TopXMLNS, _val) -> _val.
 
-encode_offline_item_attr_node(undefined, _acc) -> _acc;
+encode_offline_item_attr_node(<<>>, _acc) -> _acc;
 encode_offline_item_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
@@ -7413,10 +7423,10 @@ encode_sm_failed_attr_h(_val, _acc) ->
     [{<<"h">>, enc_int(_val)} | _acc].
 
 decode_sm_failed_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_sm_failed_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_sm_failed_attr_xmlns(undefined, _acc) -> _acc;
+encode_sm_failed_attr_xmlns(<<>>, _acc) -> _acc;
 encode_sm_failed_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -7458,11 +7468,10 @@ decode_sm_a_attr_h(__TopXMLNS, _val) ->
 encode_sm_a_attr_h(_val, _acc) ->
     [{<<"h">>, enc_int(_val)} | _acc].
 
-decode_sm_a_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+decode_sm_a_attr_xmlns(__TopXMLNS, undefined) -> <<>>;
 decode_sm_a_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_sm_a_attr_xmlns(undefined, _acc) -> _acc;
+encode_sm_a_attr_xmlns(<<>>, _acc) -> _acc;
 encode_sm_a_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -7485,11 +7494,10 @@ encode_sm_r({sm_r, Xmlns}, _xmlns_attrs) ->
     _attrs = encode_sm_r_attr_xmlns(Xmlns, _xmlns_attrs),
     {xmlel, <<"r">>, _attrs, _els}.
 
-decode_sm_r_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+decode_sm_r_attr_xmlns(__TopXMLNS, undefined) -> <<>>;
 decode_sm_r_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_sm_r_attr_xmlns(undefined, _acc) -> _acc;
+encode_sm_r_attr_xmlns(<<>>, _acc) -> _acc;
 encode_sm_r_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -7546,10 +7554,10 @@ encode_sm_resumed_attr_h(_val, _acc) ->
     [{<<"h">>, enc_int(_val)} | _acc].
 
 decode_sm_resumed_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_sm_resumed_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_sm_resumed_attr_xmlns(undefined, _acc) -> _acc;
+encode_sm_resumed_attr_xmlns(<<>>, _acc) -> _acc;
 encode_sm_resumed_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -7615,10 +7623,10 @@ encode_sm_resume_attr_h(_val, _acc) ->
     [{<<"h">>, enc_int(_val)} | _acc].
 
 decode_sm_resume_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_sm_resume_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_sm_resume_attr_xmlns(undefined, _acc) -> _acc;
+encode_sm_resume_attr_xmlns(<<>>, _acc) -> _acc;
 encode_sm_resume_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -7688,29 +7696,28 @@ encode_sm_enabled({sm_enabled, Id, Location, Max,
     {xmlel, <<"enabled">>, _attrs, _els}.
 
 decode_sm_enabled_attr_id(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_sm_enabled_attr_id(__TopXMLNS, _val) -> _val.
 
-encode_sm_enabled_attr_id(undefined, _acc) -> _acc;
+encode_sm_enabled_attr_id(<<>>, _acc) -> _acc;
 encode_sm_enabled_attr_id(_val, _acc) ->
     [{<<"id">>, _val} | _acc].
 
 decode_sm_enabled_attr_location(__TopXMLNS,
 				undefined) ->
-    undefined;
+    <<>>;
 decode_sm_enabled_attr_location(__TopXMLNS, _val) ->
     _val.
 
-encode_sm_enabled_attr_location(undefined, _acc) ->
-    _acc;
+encode_sm_enabled_attr_location(<<>>, _acc) -> _acc;
 encode_sm_enabled_attr_location(_val, _acc) ->
     [{<<"location">>, _val} | _acc].
 
 decode_sm_enabled_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_sm_enabled_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_sm_enabled_attr_xmlns(undefined, _acc) -> _acc;
+encode_sm_enabled_attr_xmlns(<<>>, _acc) -> _acc;
 encode_sm_enabled_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -7797,10 +7804,10 @@ encode_sm_enable_attr_max(_val, _acc) ->
     [{<<"max">>, enc_int(_val)} | _acc].
 
 decode_sm_enable_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_sm_enable_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_sm_enable_attr_xmlns(undefined, _acc) -> _acc;
+encode_sm_enable_attr_xmlns(<<>>, _acc) -> _acc;
 encode_sm_enable_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -7841,10 +7848,10 @@ encode_feature_sm({feature_sm, Xmlns}, _xmlns_attrs) ->
     {xmlel, <<"sm">>, _attrs, _els}.
 
 decode_feature_sm_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_feature_sm_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_feature_sm_attr_xmlns(undefined, _acc) -> _acc;
+encode_feature_sm_attr_xmlns(<<>>, _acc) -> _acc;
 encode_feature_sm_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -7889,10 +7896,10 @@ encode_feature_csi({feature_csi, Xmlns},
     {xmlel, <<"csi">>, _attrs, _els}.
 
 decode_feature_csi_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_feature_csi_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_feature_csi_attr_xmlns(undefined, _acc) -> _acc;
+encode_feature_csi_attr_xmlns(<<>>, _acc) -> _acc;
 encode_feature_csi_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -8137,10 +8144,10 @@ encode_mam_fin({mam_fin, Id, Rsm, Stable, Complete},
      | _acc].
 
 decode_mam_fin_attr_queryid(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_mam_fin_attr_queryid(__TopXMLNS, _val) -> _val.
 
-encode_mam_fin_attr_queryid(undefined, _acc) -> _acc;
+encode_mam_fin_attr_queryid(<<>>, _acc) -> _acc;
 encode_mam_fin_attr_queryid(_val, _acc) ->
     [{<<"queryid">>, _val} | _acc].
 
@@ -8301,10 +8308,10 @@ encode_mam_prefs_attr_default(_val, _acc) ->
     [{<<"default">>, enc_enum(_val)} | _acc].
 
 decode_mam_prefs_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_mam_prefs_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_mam_prefs_attr_xmlns(undefined, _acc) -> _acc;
+encode_mam_prefs_attr_xmlns(<<>>, _acc) -> _acc;
 encode_mam_prefs_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -8325,36 +8332,23 @@ decode_mam_always_els(__TopXMLNS, __IgnoreEls,
 	       __TopXMLNS == <<"urn:xmpp:mam:0">>;
 	       __TopXMLNS == <<"urn:xmpp:mam:tmp">> ->
 	  decode_mam_always_els(__TopXMLNS, __IgnoreEls, _els,
-				case decode_mam_jid(__TopXMLNS, __IgnoreEls,
-						    _el)
-				    of
-				  undefined -> Jids;
-				  _new_el -> [_new_el | Jids]
-				end);
+				[decode_mam_jid(__TopXMLNS, __IgnoreEls, _el)
+				 | Jids]);
       <<"urn:xmpp:mam:0">> ->
 	  decode_mam_always_els(__TopXMLNS, __IgnoreEls, _els,
-				case decode_mam_jid(<<"urn:xmpp:mam:0">>,
-						    __IgnoreEls, _el)
-				    of
-				  undefined -> Jids;
-				  _new_el -> [_new_el | Jids]
-				end);
+				[decode_mam_jid(<<"urn:xmpp:mam:0">>,
+						__IgnoreEls, _el)
+				 | Jids]);
       <<"urn:xmpp:mam:1">> ->
 	  decode_mam_always_els(__TopXMLNS, __IgnoreEls, _els,
-				case decode_mam_jid(<<"urn:xmpp:mam:1">>,
-						    __IgnoreEls, _el)
-				    of
-				  undefined -> Jids;
-				  _new_el -> [_new_el | Jids]
-				end);
+				[decode_mam_jid(<<"urn:xmpp:mam:1">>,
+						__IgnoreEls, _el)
+				 | Jids]);
       <<"urn:xmpp:mam:tmp">> ->
 	  decode_mam_always_els(__TopXMLNS, __IgnoreEls, _els,
-				case decode_mam_jid(<<"urn:xmpp:mam:tmp">>,
-						    __IgnoreEls, _el)
-				    of
-				  undefined -> Jids;
-				  _new_el -> [_new_el | Jids]
-				end);
+				[decode_mam_jid(<<"urn:xmpp:mam:tmp">>,
+						__IgnoreEls, _el)
+				 | Jids]);
       _ ->
 	  decode_mam_always_els(__TopXMLNS, __IgnoreEls, _els,
 				Jids)
@@ -8392,35 +8386,23 @@ decode_mam_never_els(__TopXMLNS, __IgnoreEls,
 	       __TopXMLNS == <<"urn:xmpp:mam:0">>;
 	       __TopXMLNS == <<"urn:xmpp:mam:tmp">> ->
 	  decode_mam_never_els(__TopXMLNS, __IgnoreEls, _els,
-			       case decode_mam_jid(__TopXMLNS, __IgnoreEls, _el)
-				   of
-				 undefined -> Jids;
-				 _new_el -> [_new_el | Jids]
-			       end);
+			       [decode_mam_jid(__TopXMLNS, __IgnoreEls, _el)
+				| Jids]);
       <<"urn:xmpp:mam:0">> ->
 	  decode_mam_never_els(__TopXMLNS, __IgnoreEls, _els,
-			       case decode_mam_jid(<<"urn:xmpp:mam:0">>,
-						   __IgnoreEls, _el)
-				   of
-				 undefined -> Jids;
-				 _new_el -> [_new_el | Jids]
-			       end);
+			       [decode_mam_jid(<<"urn:xmpp:mam:0">>,
+					       __IgnoreEls, _el)
+				| Jids]);
       <<"urn:xmpp:mam:1">> ->
 	  decode_mam_never_els(__TopXMLNS, __IgnoreEls, _els,
-			       case decode_mam_jid(<<"urn:xmpp:mam:1">>,
-						   __IgnoreEls, _el)
-				   of
-				 undefined -> Jids;
-				 _new_el -> [_new_el | Jids]
-			       end);
+			       [decode_mam_jid(<<"urn:xmpp:mam:1">>,
+					       __IgnoreEls, _el)
+				| Jids]);
       <<"urn:xmpp:mam:tmp">> ->
 	  decode_mam_never_els(__TopXMLNS, __IgnoreEls, _els,
-			       case decode_mam_jid(<<"urn:xmpp:mam:tmp">>,
-						   __IgnoreEls, _el)
-				   of
-				 undefined -> Jids;
-				 _new_el -> [_new_el | Jids]
-			       end);
+			       [decode_mam_jid(<<"urn:xmpp:mam:tmp">>,
+					       __IgnoreEls, _el)
+				| Jids]);
       _ ->
 	  decode_mam_never_els(__TopXMLNS, __IgnoreEls, _els,
 			       Jids)
@@ -8544,27 +8526,27 @@ encode_mam_result({mam_result, Xmlns, Queryid, Id,
     {xmlel, <<"result">>, _attrs, _els}.
 
 decode_mam_result_attr_queryid(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_mam_result_attr_queryid(__TopXMLNS, _val) ->
     _val.
 
-encode_mam_result_attr_queryid(undefined, _acc) -> _acc;
+encode_mam_result_attr_queryid(<<>>, _acc) -> _acc;
 encode_mam_result_attr_queryid(_val, _acc) ->
     [{<<"queryid">>, _val} | _acc].
 
 decode_mam_result_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_mam_result_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_mam_result_attr_xmlns(undefined, _acc) -> _acc;
+encode_mam_result_attr_xmlns(<<>>, _acc) -> _acc;
 encode_mam_result_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
 decode_mam_result_attr_id(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_mam_result_attr_id(__TopXMLNS, _val) -> _val.
 
-encode_mam_result_attr_id(undefined, _acc) -> _acc;
+encode_mam_result_attr_id(<<>>, _acc) -> _acc;
 encode_mam_result_attr_id(_val, _acc) ->
     [{<<"id">>, _val} | _acc].
 
@@ -8596,10 +8578,10 @@ encode_mam_archived({mam_archived, By, Id},
     {xmlel, <<"archived">>, _attrs, _els}.
 
 decode_mam_archived_attr_id(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_mam_archived_attr_id(__TopXMLNS, _val) -> _val.
 
-encode_mam_archived_attr_id(undefined, _acc) -> _acc;
+encode_mam_archived_attr_id(<<>>, _acc) -> _acc;
 encode_mam_archived_attr_id(_val, _acc) ->
     [{<<"id">>, _val} | _acc].
 
@@ -8797,18 +8779,18 @@ encode_mam_query({mam_query, Xmlns, Id, Start, End,
      | _acc].
 
 decode_mam_query_attr_queryid(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_mam_query_attr_queryid(__TopXMLNS, _val) -> _val.
 
-encode_mam_query_attr_queryid(undefined, _acc) -> _acc;
+encode_mam_query_attr_queryid(<<>>, _acc) -> _acc;
 encode_mam_query_attr_queryid(_val, _acc) ->
     [{<<"queryid">>, _val} | _acc].
 
 decode_mam_query_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_mam_query_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_mam_query_attr_xmlns(undefined, _acc) -> _acc;
+encode_mam_query_attr_xmlns(<<>>, _acc) -> _acc;
 encode_mam_query_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -9205,10 +9187,10 @@ encode_rsm_first_attr_index(undefined, _acc) -> _acc;
 encode_rsm_first_attr_index(_val, _acc) ->
     [{<<"index">>, enc_int(_val)} | _acc].
 
-decode_rsm_first_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_rsm_first_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_rsm_first_cdata(__TopXMLNS, _val) -> _val.
 
-encode_rsm_first_cdata(undefined, _acc) -> _acc;
+encode_rsm_first_cdata(<<>>, _acc) -> _acc;
 encode_rsm_first_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -9343,10 +9325,10 @@ encode_rsm_last(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"last">>, _attrs, _els}.
 
-decode_rsm_last_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_rsm_last_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_rsm_last_cdata(__TopXMLNS, _val) -> _val.
 
-encode_rsm_last_cdata(undefined, _acc) -> _acc;
+encode_rsm_last_cdata(<<>>, _acc) -> _acc;
 encode_rsm_last_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -9403,10 +9385,10 @@ encode_rsm_after(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"after">>, _attrs, _els}.
 
-decode_rsm_after_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_rsm_after_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_rsm_after_cdata(__TopXMLNS, _val) -> _val.
 
-encode_rsm_after_cdata(undefined, _acc) -> _acc;
+encode_rsm_after_cdata(<<>>, _acc) -> _acc;
 encode_rsm_after_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -9540,24 +9522,17 @@ decode_muc_subscriptions_els(__TopXMLNS, __IgnoreEls,
       <<"">> when __TopXMLNS == <<"urn:xmpp:mucsub:0">> ->
 	  decode_muc_subscriptions_els(__TopXMLNS, __IgnoreEls,
 				       _els,
-				       case decode_muc_subscription(__TopXMLNS,
-								    __IgnoreEls,
-								    _el)
-					   of
-					 undefined -> List;
-					 _new_el -> [_new_el | List]
-				       end);
+				       [decode_muc_subscription(__TopXMLNS,
+								__IgnoreEls,
+								_el)
+					| List]);
       <<"urn:xmpp:mucsub:0">> ->
 	  decode_muc_subscriptions_els(__TopXMLNS, __IgnoreEls,
 				       _els,
-				       case
-					 decode_muc_subscription(<<"urn:xmpp:mucsub:0">>,
-								 __IgnoreEls,
-								 _el)
-					   of
-					 undefined -> List;
-					 _new_el -> [_new_el | List]
-				       end);
+				       [decode_muc_subscription(<<"urn:xmpp:mucsub:0">>,
+								__IgnoreEls,
+								_el)
+					| List]);
       _ ->
 	  decode_muc_subscriptions_els(__TopXMLNS, __IgnoreEls,
 				       _els, List)
@@ -9913,13 +9888,12 @@ encode_muc_admin_continue(Thread, _xmlns_attrs) ->
 
 decode_muc_admin_continue_attr_thread(__TopXMLNS,
 				      undefined) ->
-    undefined;
+    <<>>;
 decode_muc_admin_continue_attr_thread(__TopXMLNS,
 				      _val) ->
     _val.
 
-encode_muc_admin_continue_attr_thread(undefined,
-				      _acc) ->
+encode_muc_admin_continue_attr_thread(<<>>, _acc) ->
     _acc;
 encode_muc_admin_continue_attr_thread(_val, _acc) ->
     [{<<"thread">>, _val} | _acc].
@@ -9973,12 +9947,11 @@ encode_muc_admin_actor_attr_jid(_val, _acc) ->
 
 decode_muc_admin_actor_attr_nick(__TopXMLNS,
 				 undefined) ->
-    undefined;
+    <<>>;
 decode_muc_admin_actor_attr_nick(__TopXMLNS, _val) ->
     _val.
 
-encode_muc_admin_actor_attr_nick(undefined, _acc) ->
-    _acc;
+encode_muc_admin_actor_attr_nick(<<>>, _acc) -> _acc;
 encode_muc_admin_actor_attr_nick(_val, _acc) ->
     [{<<"nick">>, _val} | _acc].
 
@@ -10188,12 +10161,11 @@ encode_muc_admin_item_attr_jid(_val, _acc) ->
 
 decode_muc_admin_item_attr_nick(__TopXMLNS,
 				undefined) ->
-    undefined;
+    <<>>;
 decode_muc_admin_item_attr_nick(__TopXMLNS, _val) ->
     _val.
 
-encode_muc_admin_item_attr_nick(undefined, _acc) ->
-    _acc;
+encode_muc_admin_item_attr_nick(<<>>, _acc) -> _acc;
 encode_muc_admin_item_attr_nick(_val, _acc) ->
     [{<<"nick">>, _val} | _acc].
 
@@ -10394,12 +10366,11 @@ encode_muc_owner_item_attr_jid(_val, _acc) ->
 
 decode_muc_owner_item_attr_nick(__TopXMLNS,
 				undefined) ->
-    undefined;
+    <<>>;
 decode_muc_owner_item_attr_nick(__TopXMLNS, _val) ->
     _val.
 
-encode_muc_owner_item_attr_nick(undefined, _acc) ->
-    _acc;
+encode_muc_owner_item_attr_nick(<<>>, _acc) -> _acc;
 encode_muc_owner_item_attr_nick(_val, _acc) ->
     [{<<"nick">>, _val} | _acc].
 
@@ -10526,11 +10497,10 @@ encode_muc_password(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"password">>, _attrs, _els}.
 
-decode_muc_password_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_muc_password_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_muc_password_cdata(__TopXMLNS, _val) -> _val.
 
-encode_muc_password_cdata(undefined, _acc) -> _acc;
+encode_muc_password_cdata(<<>>, _acc) -> _acc;
 encode_muc_password_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -10969,11 +10939,11 @@ encode_muc_user_item_attr_jid(_val, _acc) ->
     [{<<"jid">>, enc_jid(_val)} | _acc].
 
 decode_muc_user_item_attr_nick(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_muc_user_item_attr_nick(__TopXMLNS, _val) ->
     _val.
 
-encode_muc_user_item_attr_nick(undefined, _acc) -> _acc;
+encode_muc_user_item_attr_nick(<<>>, _acc) -> _acc;
 encode_muc_user_item_attr_nick(_val, _acc) ->
     [{<<"nick">>, _val} | _acc].
 
@@ -11042,12 +11012,12 @@ encode_muc_user_continue(Thread, _xmlns_attrs) ->
 
 decode_muc_user_continue_attr_thread(__TopXMLNS,
 				     undefined) ->
-    undefined;
+    <<>>;
 decode_muc_user_continue_attr_thread(__TopXMLNS,
 				     _val) ->
     _val.
 
-encode_muc_user_continue_attr_thread(undefined, _acc) ->
+encode_muc_user_continue_attr_thread(<<>>, _acc) ->
     _acc;
 encode_muc_user_continue_attr_thread(_val, _acc) ->
     [{<<"thread">>, _val} | _acc].
@@ -11099,12 +11069,11 @@ encode_muc_user_actor_attr_jid(_val, _acc) ->
 
 decode_muc_user_actor_attr_nick(__TopXMLNS,
 				undefined) ->
-    undefined;
+    <<>>;
 decode_muc_user_actor_attr_nick(__TopXMLNS, _val) ->
     _val.
 
-encode_muc_user_actor_attr_nick(undefined, _acc) ->
-    _acc;
+encode_muc_user_actor_attr_nick(<<>>, _acc) -> _acc;
 encode_muc_user_actor_attr_nick(_val, _acc) ->
     [{<<"nick">>, _val} | _acc].
 
@@ -11378,10 +11347,10 @@ encode_muc_destroy_attr_jid(_val, _acc) ->
     [{<<"jid">>, enc_jid(_val)} | _acc].
 
 decode_muc_destroy_attr_xmlns(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_muc_destroy_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_muc_destroy_attr_xmlns(undefined, _acc) -> _acc;
+encode_muc_destroy_attr_xmlns(<<>>, _acc) -> _acc;
 encode_muc_destroy_attr_xmlns(_val, _acc) ->
     [{<<"xmlns">>, _val} | _acc].
 
@@ -11518,10 +11487,10 @@ encode_muc_reason(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"reason">>, _attrs, _els}.
 
-decode_muc_reason_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_muc_reason_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_muc_reason_cdata(__TopXMLNS, _val) -> _val.
 
-encode_muc_reason_cdata(undefined, _acc) -> _acc;
+encode_muc_reason_cdata(<<>>, _acc) -> _acc;
 encode_muc_reason_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -11781,20 +11750,19 @@ encode_bytestreams({bytestreams, Hosts, Used, Activate,
 
 decode_bytestreams_attr_dstaddr(__TopXMLNS,
 				undefined) ->
-    undefined;
+    <<>>;
 decode_bytestreams_attr_dstaddr(__TopXMLNS, _val) ->
     _val.
 
-encode_bytestreams_attr_dstaddr(undefined, _acc) ->
-    _acc;
+encode_bytestreams_attr_dstaddr(<<>>, _acc) -> _acc;
 encode_bytestreams_attr_dstaddr(_val, _acc) ->
     [{<<"dstaddr">>, _val} | _acc].
 
 decode_bytestreams_attr_sid(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_bytestreams_attr_sid(__TopXMLNS, _val) -> _val.
 
-encode_bytestreams_attr_sid(undefined, _acc) -> _acc;
+encode_bytestreams_attr_sid(<<>>, _acc) -> _acc;
 encode_bytestreams_attr_sid(_val, _acc) ->
     [{<<"sid">>, _val} | _acc].
 
@@ -12206,10 +12174,10 @@ decode_shim_header_attr_name(__TopXMLNS, _val) -> _val.
 encode_shim_header_attr_name(_val, _acc) ->
     [{<<"name">>, _val} | _acc].
 
-decode_shim_header_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_shim_header_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_shim_header_cdata(__TopXMLNS, _val) -> _val.
 
-encode_shim_header_cdata(undefined, _acc) -> _acc;
+encode_shim_header_cdata(<<>>, _acc) -> _acc;
 encode_shim_header_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -12642,23 +12610,21 @@ encode_pubsub_options({pubsub_options, Node, Jid, Subid,
 
 decode_pubsub_options_attr_node(__TopXMLNS,
 				undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_options_attr_node(__TopXMLNS, _val) ->
     _val.
 
-encode_pubsub_options_attr_node(undefined, _acc) ->
-    _acc;
+encode_pubsub_options_attr_node(<<>>, _acc) -> _acc;
 encode_pubsub_options_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
 decode_pubsub_options_attr_subid(__TopXMLNS,
 				 undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_options_attr_subid(__TopXMLNS, _val) ->
     _val.
 
-encode_pubsub_options_attr_subid(undefined, _acc) ->
-    _acc;
+encode_pubsub_options_attr_subid(<<>>, _acc) -> _acc;
 encode_pubsub_options_attr_subid(_val, _acc) ->
     [{<<"subid">>, _val} | _acc].
 
@@ -12790,23 +12756,22 @@ encode_pubsub_unsubscribe({pubsub_unsubscribe, Node,
 
 decode_pubsub_unsubscribe_attr_node(__TopXMLNS,
 				    undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_unsubscribe_attr_node(__TopXMLNS, _val) ->
     _val.
 
-encode_pubsub_unsubscribe_attr_node(undefined, _acc) ->
-    _acc;
+encode_pubsub_unsubscribe_attr_node(<<>>, _acc) -> _acc;
 encode_pubsub_unsubscribe_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
 decode_pubsub_unsubscribe_attr_subid(__TopXMLNS,
 				     undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_unsubscribe_attr_subid(__TopXMLNS,
 				     _val) ->
     _val.
 
-encode_pubsub_unsubscribe_attr_subid(undefined, _acc) ->
+encode_pubsub_unsubscribe_attr_subid(<<>>, _acc) ->
     _acc;
 encode_pubsub_unsubscribe_attr_subid(_val, _acc) ->
     [{<<"subid">>, _val} | _acc].
@@ -12861,12 +12826,11 @@ encode_pubsub_subscribe({pubsub_subscribe, Node, Jid},
 
 decode_pubsub_subscribe_attr_node(__TopXMLNS,
 				  undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_subscribe_attr_node(__TopXMLNS, _val) ->
     _val.
 
-encode_pubsub_subscribe_attr_node(undefined, _acc) ->
-    _acc;
+encode_pubsub_subscribe_attr_node(<<>>, _acc) -> _acc;
 encode_pubsub_subscribe_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
@@ -13021,12 +12985,12 @@ encode_pubsub_subscriptions({Node, Subscriptions},
 
 decode_pubsub_subscriptions_attr_node(__TopXMLNS,
 				      undefined) ->
-    none;
+    <<>>;
 decode_pubsub_subscriptions_attr_node(__TopXMLNS,
 				      _val) ->
     _val.
 
-encode_pubsub_subscriptions_attr_node(none, _acc) ->
+encode_pubsub_subscriptions_attr_node(<<>>, _acc) ->
     _acc;
 encode_pubsub_subscriptions_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
@@ -13251,35 +13215,32 @@ encode_pubsub_event_item({pubsub_event_item, Id, Node,
 
 decode_pubsub_event_item_attr_id(__TopXMLNS,
 				 undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_event_item_attr_id(__TopXMLNS, _val) ->
     _val.
 
-encode_pubsub_event_item_attr_id(undefined, _acc) ->
-    _acc;
+encode_pubsub_event_item_attr_id(<<>>, _acc) -> _acc;
 encode_pubsub_event_item_attr_id(_val, _acc) ->
     [{<<"id">>, _val} | _acc].
 
 decode_pubsub_event_item_attr_node(__TopXMLNS,
 				   undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_event_item_attr_node(__TopXMLNS, _val) ->
     _val.
 
-encode_pubsub_event_item_attr_node(undefined, _acc) ->
-    _acc;
+encode_pubsub_event_item_attr_node(<<>>, _acc) -> _acc;
 encode_pubsub_event_item_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
 decode_pubsub_event_item_attr_publisher(__TopXMLNS,
 					undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_event_item_attr_publisher(__TopXMLNS,
 					_val) ->
     _val.
 
-encode_pubsub_event_item_attr_publisher(undefined,
-					_acc) ->
+encode_pubsub_event_item_attr_publisher(<<>>, _acc) ->
     _acc;
 encode_pubsub_event_item_attr_publisher(_val, _acc) ->
     [{<<"publisher">>, _val} | _acc].
@@ -13421,11 +13382,11 @@ encode_pubsub_items_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
 decode_pubsub_items_attr_subid(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_items_attr_subid(__TopXMLNS, _val) ->
     _val.
 
-encode_pubsub_items_attr_subid(undefined, _acc) -> _acc;
+encode_pubsub_items_attr_subid(<<>>, _acc) -> _acc;
 encode_pubsub_items_attr_subid(_val, _acc) ->
     [{<<"subid">>, _val} | _acc].
 
@@ -13465,10 +13426,10 @@ encode_pubsub_item({pubsub_item, Id, __Xmls},
     {xmlel, <<"item">>, _attrs, _els}.
 
 decode_pubsub_item_attr_id(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_item_attr_id(__TopXMLNS, _val) -> _val.
 
-encode_pubsub_item_attr_id(undefined, _acc) -> _acc;
+encode_pubsub_item_attr_id(<<>>, _acc) -> _acc;
 encode_pubsub_item_attr_id(_val, _acc) ->
     [{<<"id">>, _val} | _acc].
 
@@ -13613,25 +13574,24 @@ encode_pubsub_subscription_attr_jid(_val, _acc) ->
 
 decode_pubsub_subscription_attr_node(__TopXMLNS,
 				     undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_subscription_attr_node(__TopXMLNS,
 				     _val) ->
     _val.
 
-encode_pubsub_subscription_attr_node(undefined, _acc) ->
+encode_pubsub_subscription_attr_node(<<>>, _acc) ->
     _acc;
 encode_pubsub_subscription_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
 decode_pubsub_subscription_attr_subid(__TopXMLNS,
 				      undefined) ->
-    undefined;
+    <<>>;
 decode_pubsub_subscription_attr_subid(__TopXMLNS,
 				      _val) ->
     _val.
 
-encode_pubsub_subscription_attr_subid(undefined,
-				      _acc) ->
+encode_pubsub_subscription_attr_subid(<<>>, _acc) ->
     _acc;
 encode_pubsub_subscription_attr_subid(_val, _acc) ->
     [{<<"subid">>, _val} | _acc].
@@ -13679,22 +13639,16 @@ decode_xdata_els(__TopXMLNS, __IgnoreEls,
       <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
 	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
 			   Items,
-			   case decode_xdata_instructions(__TopXMLNS,
-							  __IgnoreEls, _el)
-			       of
-			     undefined -> Instructions;
-			     _new_el -> [_new_el | Instructions]
-			   end,
+			   [decode_xdata_instructions(__TopXMLNS, __IgnoreEls,
+						      _el)
+			    | Instructions],
 			   Reported, Title);
       <<"jabber:x:data">> ->
 	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
 			   Items,
-			   case decode_xdata_instructions(<<"jabber:x:data">>,
-							  __IgnoreEls, _el)
-			       of
-			     undefined -> Instructions;
-			     _new_el -> [_new_el | Instructions]
-			   end,
+			   [decode_xdata_instructions(<<"jabber:x:data">>,
+						      __IgnoreEls, _el)
+			    | Instructions],
 			   Reported, Title);
       _ ->
 	  decode_xdata_els(__TopXMLNS, __IgnoreEls, _els, Fields,
@@ -13951,10 +13905,10 @@ encode_xdata_title(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"title">>, _attrs, _els}.
 
-decode_xdata_title_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_xdata_title_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_xdata_title_cdata(__TopXMLNS, _val) -> _val.
 
-encode_xdata_title_cdata(undefined, _acc) -> _acc;
+encode_xdata_title_cdata(<<>>, _acc) -> _acc;
 encode_xdata_title_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -13982,12 +13936,11 @@ encode_xdata_instructions(Cdata, _xmlns_attrs) ->
     {xmlel, <<"instructions">>, _attrs, _els}.
 
 decode_xdata_instructions_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+    <<>>;
 decode_xdata_instructions_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_xdata_instructions_cdata(undefined, _acc) ->
-    _acc;
+encode_xdata_instructions_cdata(<<>>, _acc) -> _acc;
 encode_xdata_instructions_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -14053,23 +14006,16 @@ decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
       <<"">> when __TopXMLNS == <<"jabber:x:data">> ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
 				 Options,
-				 case decode_xdata_field_value(__TopXMLNS,
-							       __IgnoreEls, _el)
-				     of
-				   undefined -> Values;
-				   _new_el -> [_new_el | Values]
-				 end,
+				 [decode_xdata_field_value(__TopXMLNS,
+							   __IgnoreEls, _el)
+				  | Values],
 				 Desc, Required, __Els);
       <<"jabber:x:data">> ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
 				 Options,
-				 case
-				   decode_xdata_field_value(<<"jabber:x:data">>,
-							    __IgnoreEls, _el)
-				     of
-				   undefined -> Values;
-				   _new_el -> [_new_el | Values]
-				 end,
+				 [decode_xdata_field_value(<<"jabber:x:data">>,
+							   __IgnoreEls, _el)
+				  | Values],
 				 Desc, Required, __Els);
       _ ->
 	  decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
@@ -14175,10 +14121,10 @@ encode_xdata_field({xdata_field, Label, Type, Var,
     [encode_xdata_field_required(Required, []) | _acc].
 
 decode_xdata_field_attr_label(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_xdata_field_attr_label(__TopXMLNS, _val) -> _val.
 
-encode_xdata_field_attr_label(undefined, _acc) -> _acc;
+encode_xdata_field_attr_label(<<>>, _acc) -> _acc;
 encode_xdata_field_attr_label(_val, _acc) ->
     [{<<"label">>, _val} | _acc].
 
@@ -14201,10 +14147,10 @@ encode_xdata_field_attr_type(_val, _acc) ->
     [{<<"type">>, enc_enum(_val)} | _acc].
 
 decode_xdata_field_attr_var(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_xdata_field_attr_var(__TopXMLNS, _val) -> _val.
 
-encode_xdata_field_attr_var(undefined, _acc) -> _acc;
+encode_xdata_field_attr_var(<<>>, _acc) -> _acc;
 encode_xdata_field_attr_var(_val, _acc) ->
     [{<<"var">>, _val} | _acc].
 
@@ -14277,12 +14223,12 @@ encode_xdata_field_option({xdata_option, Label, Value},
 
 decode_xdata_field_option_attr_label(__TopXMLNS,
 				     undefined) ->
-    undefined;
+    <<>>;
 decode_xdata_field_option_attr_label(__TopXMLNS,
 				     _val) ->
     _val.
 
-encode_xdata_field_option_attr_label(undefined, _acc) ->
+encode_xdata_field_option_attr_label(<<>>, _acc) ->
     _acc;
 encode_xdata_field_option_attr_label(_val, _acc) ->
     [{<<"label">>, _val} | _acc].
@@ -14311,11 +14257,11 @@ encode_xdata_field_value(Cdata, _xmlns_attrs) ->
     {xmlel, <<"value">>, _attrs, _els}.
 
 decode_xdata_field_value_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+    <<>>;
 decode_xdata_field_value_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_xdata_field_value_cdata(undefined, _acc) -> _acc;
+encode_xdata_field_value_cdata(<<>>, _acc) -> _acc;
 encode_xdata_field_value_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -14342,11 +14288,10 @@ encode_xdata_field_desc(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"desc">>, _attrs, _els}.
 
-decode_xdata_field_desc_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_xdata_field_desc_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_xdata_field_desc_cdata(__TopXMLNS, _val) -> _val.
 
-encode_xdata_field_desc_cdata(undefined, _acc) -> _acc;
+encode_xdata_field_desc_cdata(<<>>, _acc) -> _acc;
 encode_xdata_field_desc_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -14363,7 +14308,7 @@ decode_vcard_xupdate(__TopXMLNS, __IgnoreEls,
 		     {xmlel, <<"x">>, _attrs, _els}) ->
     Hash = decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls,
 				    _els, undefined),
-    {vcard_xupdate, undefined, Hash}.
+    {vcard_xupdate, {<<>>, <<>>}, Hash}.
 
 decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, [],
 			 Hash) ->
@@ -14391,7 +14336,7 @@ decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls, _els,
 			     Hash).
 
-encode_vcard_xupdate({vcard_xupdate, undefined, Hash},
+encode_vcard_xupdate({vcard_xupdate, _, Hash},
 		     _xmlns_attrs) ->
     _els = lists:reverse('encode_vcard_xupdate_$hash'(Hash,
 						      [])),
@@ -14426,12 +14371,11 @@ encode_vcard_xupdate_photo(Cdata, _xmlns_attrs) ->
     {xmlel, <<"photo">>, _attrs, _els}.
 
 decode_vcard_xupdate_photo_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+    <<>>;
 decode_vcard_xupdate_photo_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_vcard_xupdate_photo_cdata(undefined, _acc) ->
-    _acc;
+encode_vcard_xupdate_photo_cdata(<<>>, _acc) -> _acc;
 encode_vcard_xupdate_photo_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -15677,23 +15621,15 @@ decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
       <<"">> when __TopXMLNS == <<"vcard-temp">> ->
 	  decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
 				      _els,
-				      case decode_vcard_KEYWORD(__TopXMLNS,
-								__IgnoreEls,
-								_el)
-					  of
-					undefined -> Keywords;
-					_new_el -> [_new_el | Keywords]
-				      end);
+				      [decode_vcard_KEYWORD(__TopXMLNS,
+							    __IgnoreEls, _el)
+				       | Keywords]);
       <<"vcard-temp">> ->
 	  decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
 				      _els,
-				      case
-					decode_vcard_KEYWORD(<<"vcard-temp">>,
-							     __IgnoreEls, _el)
-					  of
-					undefined -> Keywords;
-					_new_el -> [_new_el | Keywords]
-				      end);
+				      [decode_vcard_KEYWORD(<<"vcard-temp">>,
+							    __IgnoreEls, _el)
+				       | Keywords]);
       _ ->
 	  decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
 				      _els, Keywords)
@@ -15909,21 +15845,15 @@ decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls,
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"vcard-temp">> ->
 	  decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
-			       case decode_vcard_ORGUNIT(__TopXMLNS,
-							 __IgnoreEls, _el)
-				   of
-				 undefined -> Units;
-				 _new_el -> [_new_el | Units]
-			       end,
+			       [decode_vcard_ORGUNIT(__TopXMLNS, __IgnoreEls,
+						     _el)
+				| Units],
 			       Name);
       <<"vcard-temp">> ->
 	  decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
-			       case decode_vcard_ORGUNIT(<<"vcard-temp">>,
-							 __IgnoreEls, _el)
-				   of
-				 undefined -> Units;
-				 _new_el -> [_new_el | Units]
-			       end,
+			       [decode_vcard_ORGUNIT(<<"vcard-temp">>,
+						     __IgnoreEls, _el)
+				| Units],
 			       Name);
       _ ->
 	  decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls, _els,
@@ -16157,8 +16087,7 @@ encode_vcard_BINVAL(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"BINVAL">>, _attrs, _els}.
 
-decode_vcard_BINVAL_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_BINVAL_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_BINVAL_cdata(__TopXMLNS, _val) ->
     case catch base64:decode(_val) of
       {'EXIT', _} ->
@@ -16167,7 +16096,7 @@ decode_vcard_BINVAL_cdata(__TopXMLNS, _val) ->
       _res -> _res
     end.
 
-encode_vcard_BINVAL_cdata(undefined, _acc) -> _acc;
+encode_vcard_BINVAL_cdata(<<>>, _acc) -> _acc;
 encode_vcard_BINVAL_cdata(_val, _acc) ->
     [{xmlcdata, base64:encode(_val)} | _acc].
 
@@ -16977,21 +16906,15 @@ decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls,
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"vcard-temp">> ->
 	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				 case decode_vcard_LINE(__TopXMLNS, __IgnoreEls,
-							_el)
-				     of
-				   undefined -> Line;
-				   _new_el -> [_new_el | Line]
-				 end,
+				 [decode_vcard_LINE(__TopXMLNS, __IgnoreEls,
+						    _el)
+				  | Line],
 				 Home, Pref, Work, Intl, Parcel, Postal, Dom);
       <<"vcard-temp">> ->
 	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
-				 case decode_vcard_LINE(<<"vcard-temp">>,
-							__IgnoreEls, _el)
-				     of
-				   undefined -> Line;
-				   _new_el -> [_new_el | Line]
-				 end,
+				 [decode_vcard_LINE(<<"vcard-temp">>,
+						    __IgnoreEls, _el)
+				  | Line],
 				 Home, Pref, Work, Intl, Parcel, Postal, Dom);
       _ ->
 	  decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls, _els,
@@ -17679,11 +17602,10 @@ encode_vcard_EXTVAL(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"EXTVAL">>, _attrs, _els}.
 
-decode_vcard_EXTVAL_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_EXTVAL_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_EXTVAL_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_EXTVAL_cdata(undefined, _acc) -> _acc;
+encode_vcard_EXTVAL_cdata(<<>>, _acc) -> _acc;
 encode_vcard_EXTVAL_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -17710,10 +17632,10 @@ encode_vcard_TYPE(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"TYPE">>, _attrs, _els}.
 
-decode_vcard_TYPE_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_TYPE_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_TYPE_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_TYPE_cdata(undefined, _acc) -> _acc;
+encode_vcard_TYPE_cdata(<<>>, _acc) -> _acc;
 encode_vcard_TYPE_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -17740,10 +17662,10 @@ encode_vcard_DESC(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"DESC">>, _attrs, _els}.
 
-decode_vcard_DESC_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_DESC_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_DESC_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_DESC_cdata(undefined, _acc) -> _acc;
+encode_vcard_DESC_cdata(<<>>, _acc) -> _acc;
 encode_vcard_DESC_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -17770,10 +17692,10 @@ encode_vcard_URL(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"URL">>, _attrs, _els}.
 
-decode_vcard_URL_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_URL_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_URL_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_URL_cdata(undefined, _acc) -> _acc;
+encode_vcard_URL_cdata(<<>>, _acc) -> _acc;
 encode_vcard_URL_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -17800,10 +17722,10 @@ encode_vcard_UID(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"UID">>, _attrs, _els}.
 
-decode_vcard_UID_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_UID_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_UID_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_UID_cdata(undefined, _acc) -> _acc;
+encode_vcard_UID_cdata(<<>>, _acc) -> _acc;
 encode_vcard_UID_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -17831,11 +17753,11 @@ encode_vcard_SORT_STRING(Cdata, _xmlns_attrs) ->
     {xmlel, <<"SORT-STRING">>, _attrs, _els}.
 
 decode_vcard_SORT_STRING_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+    <<>>;
 decode_vcard_SORT_STRING_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_vcard_SORT_STRING_cdata(undefined, _acc) -> _acc;
+encode_vcard_SORT_STRING_cdata(<<>>, _acc) -> _acc;
 encode_vcard_SORT_STRING_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -17862,10 +17784,10 @@ encode_vcard_REV(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"REV">>, _attrs, _els}.
 
-decode_vcard_REV_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_REV_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_REV_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_REV_cdata(undefined, _acc) -> _acc;
+encode_vcard_REV_cdata(<<>>, _acc) -> _acc;
 encode_vcard_REV_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -17892,11 +17814,10 @@ encode_vcard_PRODID(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"PRODID">>, _attrs, _els}.
 
-decode_vcard_PRODID_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_PRODID_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_PRODID_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_PRODID_cdata(undefined, _acc) -> _acc;
+encode_vcard_PRODID_cdata(<<>>, _acc) -> _acc;
 encode_vcard_PRODID_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -17923,10 +17844,10 @@ encode_vcard_NOTE(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"NOTE">>, _attrs, _els}.
 
-decode_vcard_NOTE_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_NOTE_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_NOTE_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_NOTE_cdata(undefined, _acc) -> _acc;
+encode_vcard_NOTE_cdata(<<>>, _acc) -> _acc;
 encode_vcard_NOTE_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -17953,11 +17874,10 @@ encode_vcard_KEYWORD(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"KEYWORD">>, _attrs, _els}.
 
-decode_vcard_KEYWORD_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_KEYWORD_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_KEYWORD_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_KEYWORD_cdata(undefined, _acc) -> _acc;
+encode_vcard_KEYWORD_cdata(<<>>, _acc) -> _acc;
 encode_vcard_KEYWORD_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -17984,10 +17904,10 @@ encode_vcard_ROLE(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"ROLE">>, _attrs, _els}.
 
-decode_vcard_ROLE_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_ROLE_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_ROLE_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_ROLE_cdata(undefined, _acc) -> _acc;
+encode_vcard_ROLE_cdata(<<>>, _acc) -> _acc;
 encode_vcard_ROLE_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18014,10 +17934,10 @@ encode_vcard_TITLE(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"TITLE">>, _attrs, _els}.
 
-decode_vcard_TITLE_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_TITLE_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_TITLE_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_TITLE_cdata(undefined, _acc) -> _acc;
+encode_vcard_TITLE_cdata(<<>>, _acc) -> _acc;
 encode_vcard_TITLE_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18044,10 +17964,10 @@ encode_vcard_TZ(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"TZ">>, _attrs, _els}.
 
-decode_vcard_TZ_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_TZ_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_TZ_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_TZ_cdata(undefined, _acc) -> _acc;
+encode_vcard_TZ_cdata(<<>>, _acc) -> _acc;
 encode_vcard_TZ_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18074,11 +17994,10 @@ encode_vcard_MAILER(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"MAILER">>, _attrs, _els}.
 
-decode_vcard_MAILER_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_MAILER_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_MAILER_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_MAILER_cdata(undefined, _acc) -> _acc;
+encode_vcard_MAILER_cdata(<<>>, _acc) -> _acc;
 encode_vcard_MAILER_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18105,11 +18024,10 @@ encode_vcard_JABBERID(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"JABBERID">>, _attrs, _els}.
 
-decode_vcard_JABBERID_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_JABBERID_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_JABBERID_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_JABBERID_cdata(undefined, _acc) -> _acc;
+encode_vcard_JABBERID_cdata(<<>>, _acc) -> _acc;
 encode_vcard_JABBERID_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18136,10 +18054,10 @@ encode_vcard_BDAY(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"BDAY">>, _attrs, _els}.
 
-decode_vcard_BDAY_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_BDAY_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_BDAY_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_BDAY_cdata(undefined, _acc) -> _acc;
+encode_vcard_BDAY_cdata(<<>>, _acc) -> _acc;
 encode_vcard_BDAY_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18166,11 +18084,10 @@ encode_vcard_NICKNAME(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"NICKNAME">>, _attrs, _els}.
 
-decode_vcard_NICKNAME_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_NICKNAME_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_NICKNAME_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_NICKNAME_cdata(undefined, _acc) -> _acc;
+encode_vcard_NICKNAME_cdata(<<>>, _acc) -> _acc;
 encode_vcard_NICKNAME_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18197,10 +18114,10 @@ encode_vcard_FN(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"FN">>, _attrs, _els}.
 
-decode_vcard_FN_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_FN_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_FN_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_FN_cdata(undefined, _acc) -> _acc;
+encode_vcard_FN_cdata(<<>>, _acc) -> _acc;
 encode_vcard_FN_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18227,11 +18144,10 @@ encode_vcard_VERSION(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"VERSION">>, _attrs, _els}.
 
-decode_vcard_VERSION_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_VERSION_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_VERSION_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_VERSION_cdata(undefined, _acc) -> _acc;
+encode_vcard_VERSION_cdata(<<>>, _acc) -> _acc;
 encode_vcard_VERSION_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18258,10 +18174,10 @@ encode_vcard_CRED(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"CRED">>, _attrs, _els}.
 
-decode_vcard_CRED_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_CRED_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_CRED_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_CRED_cdata(undefined, _acc) -> _acc;
+encode_vcard_CRED_cdata(<<>>, _acc) -> _acc;
 encode_vcard_CRED_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18288,11 +18204,10 @@ encode_vcard_PHONETIC(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"PHONETIC">>, _attrs, _els}.
 
-decode_vcard_PHONETIC_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_PHONETIC_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_PHONETIC_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_PHONETIC_cdata(undefined, _acc) -> _acc;
+encode_vcard_PHONETIC_cdata(<<>>, _acc) -> _acc;
 encode_vcard_PHONETIC_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18319,11 +18234,10 @@ encode_vcard_ORGUNIT(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"ORGUNIT">>, _attrs, _els}.
 
-decode_vcard_ORGUNIT_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_ORGUNIT_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_ORGUNIT_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_ORGUNIT_cdata(undefined, _acc) -> _acc;
+encode_vcard_ORGUNIT_cdata(<<>>, _acc) -> _acc;
 encode_vcard_ORGUNIT_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18350,11 +18264,10 @@ encode_vcard_ORGNAME(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"ORGNAME">>, _attrs, _els}.
 
-decode_vcard_ORGNAME_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_ORGNAME_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_ORGNAME_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_ORGNAME_cdata(undefined, _acc) -> _acc;
+encode_vcard_ORGNAME_cdata(<<>>, _acc) -> _acc;
 encode_vcard_ORGNAME_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18381,10 +18294,10 @@ encode_vcard_LON(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"LON">>, _attrs, _els}.
 
-decode_vcard_LON_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_LON_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_LON_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_LON_cdata(undefined, _acc) -> _acc;
+encode_vcard_LON_cdata(<<>>, _acc) -> _acc;
 encode_vcard_LON_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18411,10 +18324,10 @@ encode_vcard_LAT(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"LAT">>, _attrs, _els}.
 
-decode_vcard_LAT_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_LAT_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_LAT_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_LAT_cdata(undefined, _acc) -> _acc;
+encode_vcard_LAT_cdata(<<>>, _acc) -> _acc;
 encode_vcard_LAT_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18441,11 +18354,10 @@ encode_vcard_USERID(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"USERID">>, _attrs, _els}.
 
-decode_vcard_USERID_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_USERID_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_USERID_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_USERID_cdata(undefined, _acc) -> _acc;
+encode_vcard_USERID_cdata(<<>>, _acc) -> _acc;
 encode_vcard_USERID_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18472,11 +18384,10 @@ encode_vcard_NUMBER(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"NUMBER">>, _attrs, _els}.
 
-decode_vcard_NUMBER_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_NUMBER_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_NUMBER_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_NUMBER_cdata(undefined, _acc) -> _acc;
+encode_vcard_NUMBER_cdata(<<>>, _acc) -> _acc;
 encode_vcard_NUMBER_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18503,10 +18414,10 @@ encode_vcard_LINE(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"LINE">>, _attrs, _els}.
 
-decode_vcard_LINE_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_LINE_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_LINE_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_LINE_cdata(undefined, _acc) -> _acc;
+encode_vcard_LINE_cdata(<<>>, _acc) -> _acc;
 encode_vcard_LINE_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18533,10 +18444,10 @@ encode_vcard_CTRY(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"CTRY">>, _attrs, _els}.
 
-decode_vcard_CTRY_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_CTRY_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_CTRY_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_CTRY_cdata(undefined, _acc) -> _acc;
+encode_vcard_CTRY_cdata(<<>>, _acc) -> _acc;
 encode_vcard_CTRY_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18563,10 +18474,10 @@ encode_vcard_PCODE(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"PCODE">>, _attrs, _els}.
 
-decode_vcard_PCODE_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_PCODE_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_PCODE_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_PCODE_cdata(undefined, _acc) -> _acc;
+encode_vcard_PCODE_cdata(<<>>, _acc) -> _acc;
 encode_vcard_PCODE_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18593,11 +18504,10 @@ encode_vcard_REGION(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"REGION">>, _attrs, _els}.
 
-decode_vcard_REGION_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_REGION_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_REGION_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_REGION_cdata(undefined, _acc) -> _acc;
+encode_vcard_REGION_cdata(<<>>, _acc) -> _acc;
 encode_vcard_REGION_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18624,11 +18534,10 @@ encode_vcard_LOCALITY(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"LOCALITY">>, _attrs, _els}.
 
-decode_vcard_LOCALITY_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_LOCALITY_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_LOCALITY_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_LOCALITY_cdata(undefined, _acc) -> _acc;
+encode_vcard_LOCALITY_cdata(<<>>, _acc) -> _acc;
 encode_vcard_LOCALITY_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18655,11 +18564,10 @@ encode_vcard_STREET(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"STREET">>, _attrs, _els}.
 
-decode_vcard_STREET_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_STREET_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_STREET_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_STREET_cdata(undefined, _acc) -> _acc;
+encode_vcard_STREET_cdata(<<>>, _acc) -> _acc;
 encode_vcard_STREET_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18686,11 +18594,10 @@ encode_vcard_EXTADD(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"EXTADD">>, _attrs, _els}.
 
-decode_vcard_EXTADD_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_EXTADD_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_EXTADD_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_EXTADD_cdata(undefined, _acc) -> _acc;
+encode_vcard_EXTADD_cdata(<<>>, _acc) -> _acc;
 encode_vcard_EXTADD_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18717,10 +18624,10 @@ encode_vcard_POBOX(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"POBOX">>, _attrs, _els}.
 
-decode_vcard_POBOX_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_POBOX_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_POBOX_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_POBOX_cdata(undefined, _acc) -> _acc;
+encode_vcard_POBOX_cdata(<<>>, _acc) -> _acc;
 encode_vcard_POBOX_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18747,11 +18654,10 @@ encode_vcard_SUFFIX(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"SUFFIX">>, _attrs, _els}.
 
-decode_vcard_SUFFIX_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_SUFFIX_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_SUFFIX_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_SUFFIX_cdata(undefined, _acc) -> _acc;
+encode_vcard_SUFFIX_cdata(<<>>, _acc) -> _acc;
 encode_vcard_SUFFIX_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18778,11 +18684,10 @@ encode_vcard_PREFIX(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"PREFIX">>, _attrs, _els}.
 
-decode_vcard_PREFIX_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_PREFIX_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_PREFIX_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_PREFIX_cdata(undefined, _acc) -> _acc;
+encode_vcard_PREFIX_cdata(<<>>, _acc) -> _acc;
 encode_vcard_PREFIX_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18809,11 +18714,10 @@ encode_vcard_MIDDLE(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"MIDDLE">>, _attrs, _els}.
 
-decode_vcard_MIDDLE_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_MIDDLE_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_MIDDLE_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_MIDDLE_cdata(undefined, _acc) -> _acc;
+encode_vcard_MIDDLE_cdata(<<>>, _acc) -> _acc;
 encode_vcard_MIDDLE_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18840,10 +18744,10 @@ encode_vcard_GIVEN(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"GIVEN">>, _attrs, _els}.
 
-decode_vcard_GIVEN_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_vcard_GIVEN_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_GIVEN_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_GIVEN_cdata(undefined, _acc) -> _acc;
+encode_vcard_GIVEN_cdata(<<>>, _acc) -> _acc;
 encode_vcard_GIVEN_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -18870,11 +18774,10 @@ encode_vcard_FAMILY(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"FAMILY">>, _attrs, _els}.
 
-decode_vcard_FAMILY_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_vcard_FAMILY_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_vcard_FAMILY_cdata(__TopXMLNS, _val) -> _val.
 
-encode_vcard_FAMILY_cdata(undefined, _acc) -> _acc;
+encode_vcard_FAMILY_cdata(<<>>, _acc) -> _acc;
 encode_vcard_FAMILY_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -19722,10 +19625,16 @@ decode_stream_error_see_other_host_cdata(__TopXMLNS,
 		   __TopXMLNS}});
 decode_stream_error_see_other_host_cdata(__TopXMLNS,
 					 _val) ->
-    _val.
+    case catch dec_host_port(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_cdata_value, <<>>, <<"see-other-host">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
 
 encode_stream_error_see_other_host_cdata(_val, _acc) ->
-    [{xmlcdata, _val} | _acc].
+    [{xmlcdata, enc_host_port(_val)} | _acc].
 
 decode_stream_error_restricted_xml(__TopXMLNS,
 				   __IgnoreEls,
@@ -19981,23 +19890,22 @@ encode_stream_error_text({text, Lang, Data},
 
 'decode_stream_error_text_attr_xml:lang'(__TopXMLNS,
 					 undefined) ->
-    undefined;
+    <<>>;
 'decode_stream_error_text_attr_xml:lang'(__TopXMLNS,
 					 _val) ->
     _val.
 
-'encode_stream_error_text_attr_xml:lang'(undefined,
-					 _acc) ->
+'encode_stream_error_text_attr_xml:lang'(<<>>, _acc) ->
     _acc;
 'encode_stream_error_text_attr_xml:lang'(_val, _acc) ->
     [{<<"xml:lang">>, _val} | _acc].
 
 decode_stream_error_text_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+    <<>>;
 decode_stream_error_text_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_stream_error_text_cdata(undefined, _acc) -> _acc;
+encode_stream_error_text_cdata(<<>>, _acc) -> _acc;
 encode_stream_error_text_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -20993,10 +20901,10 @@ encode_register_key(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"key">>, _attrs, _els}.
 
-decode_register_key_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_key_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_key_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_key_cdata(none, _acc) -> _acc;
+encode_register_key_cdata(<<>>, _acc) -> _acc;
 encode_register_key_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21023,10 +20931,10 @@ encode_register_text(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"text">>, _attrs, _els}.
 
-decode_register_text_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_text_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_text_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_text_cdata(none, _acc) -> _acc;
+encode_register_text_cdata(<<>>, _acc) -> _acc;
 encode_register_text_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21053,10 +20961,10 @@ encode_register_misc(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"misc">>, _attrs, _els}.
 
-decode_register_misc_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_misc_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_misc_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_misc_cdata(none, _acc) -> _acc;
+encode_register_misc_cdata(<<>>, _acc) -> _acc;
 encode_register_misc_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21083,10 +20991,10 @@ encode_register_date(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"date">>, _attrs, _els}.
 
-decode_register_date_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_date_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_date_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_date_cdata(none, _acc) -> _acc;
+encode_register_date_cdata(<<>>, _acc) -> _acc;
 encode_register_date_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21113,10 +21021,10 @@ encode_register_url(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"url">>, _attrs, _els}.
 
-decode_register_url_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_url_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_url_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_url_cdata(none, _acc) -> _acc;
+encode_register_url_cdata(<<>>, _acc) -> _acc;
 encode_register_url_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21143,10 +21051,10 @@ encode_register_phone(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"phone">>, _attrs, _els}.
 
-decode_register_phone_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_phone_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_phone_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_phone_cdata(none, _acc) -> _acc;
+encode_register_phone_cdata(<<>>, _acc) -> _acc;
 encode_register_phone_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21173,10 +21081,10 @@ encode_register_zip(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"zip">>, _attrs, _els}.
 
-decode_register_zip_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_zip_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_zip_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_zip_cdata(none, _acc) -> _acc;
+encode_register_zip_cdata(<<>>, _acc) -> _acc;
 encode_register_zip_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21203,10 +21111,10 @@ encode_register_state(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"state">>, _attrs, _els}.
 
-decode_register_state_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_state_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_state_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_state_cdata(none, _acc) -> _acc;
+encode_register_state_cdata(<<>>, _acc) -> _acc;
 encode_register_state_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21233,10 +21141,10 @@ encode_register_city(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"city">>, _attrs, _els}.
 
-decode_register_city_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_city_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_city_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_city_cdata(none, _acc) -> _acc;
+encode_register_city_cdata(<<>>, _acc) -> _acc;
 encode_register_city_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21263,10 +21171,10 @@ encode_register_address(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"address">>, _attrs, _els}.
 
-decode_register_address_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_address_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_address_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_address_cdata(none, _acc) -> _acc;
+encode_register_address_cdata(<<>>, _acc) -> _acc;
 encode_register_address_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21293,10 +21201,10 @@ encode_register_email(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"email">>, _attrs, _els}.
 
-decode_register_email_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_email_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_email_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_email_cdata(none, _acc) -> _acc;
+encode_register_email_cdata(<<>>, _acc) -> _acc;
 encode_register_email_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21323,10 +21231,10 @@ encode_register_last(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"last">>, _attrs, _els}.
 
-decode_register_last_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_last_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_last_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_last_cdata(none, _acc) -> _acc;
+encode_register_last_cdata(<<>>, _acc) -> _acc;
 encode_register_last_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21353,10 +21261,10 @@ encode_register_first(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"first">>, _attrs, _els}.
 
-decode_register_first_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_first_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_first_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_first_cdata(none, _acc) -> _acc;
+encode_register_first_cdata(<<>>, _acc) -> _acc;
 encode_register_first_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21383,10 +21291,10 @@ encode_register_name(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"name">>, _attrs, _els}.
 
-decode_register_name_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_name_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_name_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_name_cdata(none, _acc) -> _acc;
+encode_register_name_cdata(<<>>, _acc) -> _acc;
 encode_register_name_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21414,11 +21322,11 @@ encode_register_password(Cdata, _xmlns_attrs) ->
     {xmlel, <<"password">>, _attrs, _els}.
 
 decode_register_password_cdata(__TopXMLNS, <<>>) ->
-    none;
+    <<>>;
 decode_register_password_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_register_password_cdata(none, _acc) -> _acc;
+encode_register_password_cdata(<<>>, _acc) -> _acc;
 encode_register_password_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21445,10 +21353,10 @@ encode_register_nick(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"nick">>, _attrs, _els}.
 
-decode_register_nick_cdata(__TopXMLNS, <<>>) -> none;
+decode_register_nick_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_register_nick_cdata(__TopXMLNS, _val) -> _val.
 
-encode_register_nick_cdata(none, _acc) -> _acc;
+encode_register_nick_cdata(<<>>, _acc) -> _acc;
 encode_register_nick_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21476,11 +21384,11 @@ encode_register_username(Cdata, _xmlns_attrs) ->
     {xmlel, <<"username">>, _attrs, _els}.
 
 decode_register_username_cdata(__TopXMLNS, <<>>) ->
-    none;
+    <<>>;
 decode_register_username_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_register_username_cdata(none, _acc) -> _acc;
+encode_register_username_cdata(<<>>, _acc) -> _acc;
 encode_register_username_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21510,12 +21418,11 @@ encode_register_instructions(Cdata, _xmlns_attrs) ->
     {xmlel, <<"instructions">>, _attrs, _els}.
 
 decode_register_instructions_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+    <<>>;
 decode_register_instructions_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_register_instructions_cdata(undefined, _acc) ->
-    _acc;
+encode_register_instructions_cdata(<<>>, _acc) -> _acc;
 encode_register_instructions_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21595,19 +21502,17 @@ encode_caps({caps, Node, Version, Hash, Exts},
 												   _xmlns_attrs)))),
     {xmlel, <<"c">>, _attrs, _els}.
 
-decode_caps_attr_hash(__TopXMLNS, undefined) ->
-    undefined;
+decode_caps_attr_hash(__TopXMLNS, undefined) -> <<>>;
 decode_caps_attr_hash(__TopXMLNS, _val) -> _val.
 
-encode_caps_attr_hash(undefined, _acc) -> _acc;
+encode_caps_attr_hash(<<>>, _acc) -> _acc;
 encode_caps_attr_hash(_val, _acc) ->
     [{<<"hash">>, _val} | _acc].
 
-decode_caps_attr_node(__TopXMLNS, undefined) ->
-    undefined;
+decode_caps_attr_node(__TopXMLNS, undefined) -> <<>>;
 decode_caps_attr_node(__TopXMLNS, _val) -> _val.
 
-encode_caps_attr_node(undefined, _acc) -> _acc;
+encode_caps_attr_node(<<>>, _acc) -> _acc;
 encode_caps_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
@@ -21624,11 +21529,10 @@ encode_caps_attr_ext([], _acc) -> _acc;
 encode_caps_attr_ext(_val, _acc) ->
     [{<<"ext">>, join(_val, 32)} | _acc].
 
-decode_caps_attr_ver(__TopXMLNS, undefined) ->
-    undefined;
+decode_caps_attr_ver(__TopXMLNS, undefined) -> <<>>;
 decode_caps_attr_ver(__TopXMLNS, _val) -> _val.
 
-encode_caps_attr_ver(undefined, _acc) -> _acc;
+encode_caps_attr_ver(<<>>, _acc) -> _acc;
 encode_caps_attr_ver(_val, _acc) ->
     [{<<"ver">>, _val} | _acc].
 
@@ -21711,22 +21615,14 @@ decode_compression_els(__TopXMLNS, __IgnoreEls,
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/features/compress">> ->
 	  decode_compression_els(__TopXMLNS, __IgnoreEls, _els,
-				 case decode_compression_method(__TopXMLNS,
-								__IgnoreEls,
-								_el)
-				     of
-				   undefined -> Methods;
-				   _new_el -> [_new_el | Methods]
-				 end);
+				 [decode_compression_method(__TopXMLNS,
+							    __IgnoreEls, _el)
+				  | Methods]);
       <<"http://jabber.org/features/compress">> ->
 	  decode_compression_els(__TopXMLNS, __IgnoreEls, _els,
-				 case
-				   decode_compression_method(<<"http://jabber.org/features/compress">>,
-							     __IgnoreEls, _el)
-				     of
-				   undefined -> Methods;
-				   _new_el -> [_new_el | Methods]
-				 end);
+				 [decode_compression_method(<<"http://jabber.org/features/compress">>,
+							    __IgnoreEls, _el)
+				  | Methods]);
       _ ->
 	  decode_compression_els(__TopXMLNS, __IgnoreEls, _els,
 				 Methods)
@@ -21774,12 +21670,11 @@ encode_compression_method(Cdata, _xmlns_attrs) ->
     {xmlel, <<"method">>, _attrs, _els}.
 
 decode_compression_method_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+    <<>>;
 decode_compression_method_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_compression_method_cdata(undefined, _acc) ->
-    _acc;
+encode_compression_method_cdata(<<>>, _acc) -> _acc;
 encode_compression_method_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -21809,21 +21704,14 @@ decode_compress_els(__TopXMLNS, __IgnoreEls,
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/compress">> ->
 	  decode_compress_els(__TopXMLNS, __IgnoreEls, _els,
-			      case decode_compress_method(__TopXMLNS,
-							  __IgnoreEls, _el)
-				  of
-				undefined -> Methods;
-				_new_el -> [_new_el | Methods]
-			      end);
+			      [decode_compress_method(__TopXMLNS, __IgnoreEls,
+						      _el)
+			       | Methods]);
       <<"http://jabber.org/protocol/compress">> ->
 	  decode_compress_els(__TopXMLNS, __IgnoreEls, _els,
-			      case
-				decode_compress_method(<<"http://jabber.org/protocol/compress">>,
-						       __IgnoreEls, _el)
-				  of
-				undefined -> Methods;
-				_new_el -> [_new_el | Methods]
-			      end);
+			      [decode_compress_method(<<"http://jabber.org/protocol/compress">>,
+						      __IgnoreEls, _el)
+			       | Methods]);
       _ ->
 	  decode_compress_els(__TopXMLNS, __IgnoreEls, _els,
 			      Methods)
@@ -21867,11 +21755,10 @@ encode_compress_method(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"method">>, _attrs, _els}.
 
-decode_compress_method_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_compress_method_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_compress_method_cdata(__TopXMLNS, _val) -> _val.
 
-encode_compress_method_cdata(undefined, _acc) -> _acc;
+encode_compress_method_cdata(<<>>, _acc) -> _acc;
 encode_compress_method_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -22110,23 +21997,15 @@ decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
 		 <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	  decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
 				     _els,
-				     case decode_sasl_mechanism(__TopXMLNS,
-								__IgnoreEls,
-								_el)
-					 of
-				       undefined -> List;
-				       _new_el -> [_new_el | List]
-				     end);
+				     [decode_sasl_mechanism(__TopXMLNS,
+							    __IgnoreEls, _el)
+				      | List]);
       <<"urn:ietf:params:xml:ns:xmpp-sasl">> ->
 	  decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
 				     _els,
-				     case
-				       decode_sasl_mechanism(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
-							     __IgnoreEls, _el)
-					 of
-				       undefined -> List;
-				       _new_el -> [_new_el | List]
-				     end);
+				     [decode_sasl_mechanism(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+							    __IgnoreEls, _el)
+				      | List]);
       _ ->
 	  decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
 				     _els, List)
@@ -22171,11 +22050,10 @@ encode_sasl_mechanism(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"mechanism">>, _attrs, _els}.
 
-decode_sasl_mechanism_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_sasl_mechanism_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_sasl_mechanism_cdata(__TopXMLNS, _val) -> _val.
 
-encode_sasl_mechanism_cdata(undefined, _acc) -> _acc;
+encode_sasl_mechanism_cdata(<<>>, _acc) -> _acc;
 encode_sasl_mechanism_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -22737,23 +22615,22 @@ encode_sasl_failure_text({text, Lang, Data},
 
 'decode_sasl_failure_text_attr_xml:lang'(__TopXMLNS,
 					 undefined) ->
-    undefined;
+    <<>>;
 'decode_sasl_failure_text_attr_xml:lang'(__TopXMLNS,
 					 _val) ->
     _val.
 
-'encode_sasl_failure_text_attr_xml:lang'(undefined,
-					 _acc) ->
+'encode_sasl_failure_text_attr_xml:lang'(<<>>, _acc) ->
     _acc;
 'encode_sasl_failure_text_attr_xml:lang'(_val, _acc) ->
     [{<<"xml:lang">>, _val} | _acc].
 
 decode_sasl_failure_text_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+    <<>>;
 decode_sasl_failure_text_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_sasl_failure_text_cdata(undefined, _acc) -> _acc;
+encode_sasl_failure_text_cdata(<<>>, _acc) -> _acc;
 encode_sasl_failure_text_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -22781,8 +22658,7 @@ encode_sasl_success({sasl_success, Text},
     _attrs = _xmlns_attrs,
     {xmlel, <<"success">>, _attrs, _els}.
 
-decode_sasl_success_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_sasl_success_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_sasl_success_cdata(__TopXMLNS, _val) ->
     case catch base64:decode(_val) of
       {'EXIT', _} ->
@@ -22791,7 +22667,7 @@ decode_sasl_success_cdata(__TopXMLNS, _val) ->
       _res -> _res
     end.
 
-encode_sasl_success_cdata(undefined, _acc) -> _acc;
+encode_sasl_success_cdata(<<>>, _acc) -> _acc;
 encode_sasl_success_cdata(_val, _acc) ->
     [{xmlcdata, base64:encode(_val)} | _acc].
 
@@ -22819,8 +22695,7 @@ encode_sasl_response({sasl_response, Text},
     _attrs = _xmlns_attrs,
     {xmlel, <<"response">>, _attrs, _els}.
 
-decode_sasl_response_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_sasl_response_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_sasl_response_cdata(__TopXMLNS, _val) ->
     case catch base64:decode(_val) of
       {'EXIT', _} ->
@@ -22829,7 +22704,7 @@ decode_sasl_response_cdata(__TopXMLNS, _val) ->
       _res -> _res
     end.
 
-encode_sasl_response_cdata(undefined, _acc) -> _acc;
+encode_sasl_response_cdata(<<>>, _acc) -> _acc;
 encode_sasl_response_cdata(_val, _acc) ->
     [{xmlcdata, base64:encode(_val)} | _acc].
 
@@ -22857,8 +22732,7 @@ encode_sasl_challenge({sasl_challenge, Text},
     _attrs = _xmlns_attrs,
     {xmlel, <<"challenge">>, _attrs, _els}.
 
-decode_sasl_challenge_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_sasl_challenge_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_sasl_challenge_cdata(__TopXMLNS, _val) ->
     case catch base64:decode(_val) of
       {'EXIT', _} ->
@@ -22867,7 +22741,7 @@ decode_sasl_challenge_cdata(__TopXMLNS, _val) ->
       _res -> _res
     end.
 
-encode_sasl_challenge_cdata(undefined, _acc) -> _acc;
+encode_sasl_challenge_cdata(<<>>, _acc) -> _acc;
 encode_sasl_challenge_cdata(_val, _acc) ->
     [{xmlcdata, base64:encode(_val)} | _acc].
 
@@ -22927,7 +22801,7 @@ decode_sasl_auth_attr_mechanism(__TopXMLNS, _val) ->
 encode_sasl_auth_attr_mechanism(_val, _acc) ->
     [{<<"mechanism">>, _val} | _acc].
 
-decode_sasl_auth_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_sasl_auth_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_sasl_auth_cdata(__TopXMLNS, _val) ->
     case catch base64:decode(_val) of
       {'EXIT', _} ->
@@ -22936,7 +22810,7 @@ decode_sasl_auth_cdata(__TopXMLNS, _val) ->
       _res -> _res
     end.
 
-encode_sasl_auth_cdata(undefined, _acc) -> _acc;
+encode_sasl_auth_cdata(<<>>, _acc) -> _acc;
 encode_sasl_auth_cdata(_val, _acc) ->
     [{xmlcdata, base64:encode(_val)} | _acc].
 
@@ -23083,11 +22957,11 @@ encode_legacy_auth_resource(Cdata, _xmlns_attrs) ->
     {xmlel, <<"resource">>, _attrs, _els}.
 
 decode_legacy_auth_resource_cdata(__TopXMLNS, <<>>) ->
-    none;
+    <<>>;
 decode_legacy_auth_resource_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_legacy_auth_resource_cdata(none, _acc) -> _acc;
+encode_legacy_auth_resource_cdata(<<>>, _acc) -> _acc;
 encode_legacy_auth_resource_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -23115,11 +22989,11 @@ encode_legacy_auth_digest(Cdata, _xmlns_attrs) ->
     {xmlel, <<"digest">>, _attrs, _els}.
 
 decode_legacy_auth_digest_cdata(__TopXMLNS, <<>>) ->
-    none;
+    <<>>;
 decode_legacy_auth_digest_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_legacy_auth_digest_cdata(none, _acc) -> _acc;
+encode_legacy_auth_digest_cdata(<<>>, _acc) -> _acc;
 encode_legacy_auth_digest_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -23147,11 +23021,11 @@ encode_legacy_auth_password(Cdata, _xmlns_attrs) ->
     {xmlel, <<"password">>, _attrs, _els}.
 
 decode_legacy_auth_password_cdata(__TopXMLNS, <<>>) ->
-    none;
+    <<>>;
 decode_legacy_auth_password_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_legacy_auth_password_cdata(none, _acc) -> _acc;
+encode_legacy_auth_password_cdata(<<>>, _acc) -> _acc;
 encode_legacy_auth_password_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -23179,11 +23053,11 @@ encode_legacy_auth_username(Cdata, _xmlns_attrs) ->
     {xmlel, <<"username">>, _attrs, _els}.
 
 decode_legacy_auth_username_cdata(__TopXMLNS, <<>>) ->
-    none;
+    <<>>;
 decode_legacy_auth_username_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_legacy_auth_username_cdata(none, _acc) -> _acc;
+encode_legacy_auth_username_cdata(<<>>, _acc) -> _acc;
 encode_legacy_auth_username_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -23275,8 +23149,7 @@ encode_bind_resource(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"resource">>, _attrs, _els}.
 
-decode_bind_resource_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_bind_resource_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_bind_resource_cdata(__TopXMLNS, _val) ->
     case catch resourceprep(_val) of
       {'EXIT', _} ->
@@ -23285,7 +23158,7 @@ decode_bind_resource_cdata(__TopXMLNS, _val) ->
       _res -> _res
     end.
 
-encode_bind_resource_cdata(undefined, _acc) -> _acc;
+encode_bind_resource_cdata(<<>>, _acc) -> _acc;
 encode_bind_resource_cdata(_val, _acc) ->
     [{xmlcdata, resourceprep(_val)} | _acc].
 
@@ -23889,11 +23762,10 @@ encode_error_attr_code(undefined, _acc) -> _acc;
 encode_error_attr_code(_val, _acc) ->
     [{<<"code">>, enc_int(_val)} | _acc].
 
-decode_error_attr_by(__TopXMLNS, undefined) ->
-    undefined;
+decode_error_attr_by(__TopXMLNS, undefined) -> <<>>;
 decode_error_attr_by(__TopXMLNS, _val) -> _val.
 
-encode_error_attr_by(undefined, _acc) -> _acc;
+encode_error_attr_by(<<>>, _acc) -> _acc;
 encode_error_attr_by(_val, _acc) ->
     [{<<"by">>, _val} | _acc].
 
@@ -23934,19 +23806,18 @@ encode_error_text({text, Lang, Data}, _xmlns_attrs) ->
 
 'decode_error_text_attr_xml:lang'(__TopXMLNS,
 				  undefined) ->
-    undefined;
+    <<>>;
 'decode_error_text_attr_xml:lang'(__TopXMLNS, _val) ->
     _val.
 
-'encode_error_text_attr_xml:lang'(undefined, _acc) ->
-    _acc;
+'encode_error_text_attr_xml:lang'(<<>>, _acc) -> _acc;
 'encode_error_text_attr_xml:lang'(_val, _acc) ->
     [{<<"xml:lang">>, _val} | _acc].
 
-decode_error_text_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_error_text_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_error_text_cdata(__TopXMLNS, _val) -> _val.
 
-encode_error_text_cdata(undefined, _acc) -> _acc;
+encode_error_text_cdata(<<>>, _acc) -> _acc;
 encode_error_text_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -24068,11 +23939,10 @@ encode_error_redirect({redirect, Uri}, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"redirect">>, _attrs, _els}.
 
-decode_error_redirect_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_error_redirect_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_error_redirect_cdata(__TopXMLNS, _val) -> _val.
 
-encode_error_redirect_cdata(undefined, _acc) -> _acc;
+encode_error_redirect_cdata(<<>>, _acc) -> _acc;
 encode_error_redirect_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -24192,10 +24062,10 @@ encode_error_gone({gone, Uri}, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"gone">>, _attrs, _els}.
 
-decode_error_gone_cdata(__TopXMLNS, <<>>) -> undefined;
+decode_error_gone_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_error_gone_cdata(__TopXMLNS, _val) -> _val.
 
-encode_error_gone_cdata(undefined, _acc) -> _acc;
+encode_error_gone_cdata(<<>>, _acc) -> _acc;
 encode_error_gone_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -24401,11 +24271,10 @@ encode_presence({presence, Id, Type, Lang, From, To,
 'encode_presence_$priority'(Priority, _acc) ->
     [encode_presence_priority(Priority, []) | _acc].
 
-decode_presence_attr_id(__TopXMLNS, undefined) ->
-    undefined;
+decode_presence_attr_id(__TopXMLNS, undefined) -> <<>>;
 decode_presence_attr_id(__TopXMLNS, _val) -> _val.
 
-encode_presence_attr_id(undefined, _acc) -> _acc;
+encode_presence_attr_id(<<>>, _acc) -> _acc;
 encode_presence_attr_id(_val, _acc) ->
     [{<<"id">>, _val} | _acc].
 
@@ -24459,12 +24328,11 @@ encode_presence_attr_to(_val, _acc) ->
 
 'decode_presence_attr_xml:lang'(__TopXMLNS,
 				undefined) ->
-    undefined;
+    <<>>;
 'decode_presence_attr_xml:lang'(__TopXMLNS, _val) ->
     _val.
 
-'encode_presence_attr_xml:lang'(undefined, _acc) ->
-    _acc;
+'encode_presence_attr_xml:lang'(<<>>, _acc) -> _acc;
 'encode_presence_attr_xml:lang'(_val, _acc) ->
     [{<<"xml:lang">>, _val} | _acc].
 
@@ -24544,22 +24412,20 @@ encode_presence_status({text, Lang, Data},
 
 'decode_presence_status_attr_xml:lang'(__TopXMLNS,
 				       undefined) ->
-    undefined;
+    <<>>;
 'decode_presence_status_attr_xml:lang'(__TopXMLNS,
 				       _val) ->
     _val.
 
-'encode_presence_status_attr_xml:lang'(undefined,
-				       _acc) ->
+'encode_presence_status_attr_xml:lang'(<<>>, _acc) ->
     _acc;
 'encode_presence_status_attr_xml:lang'(_val, _acc) ->
     [{<<"xml:lang">>, _val} | _acc].
 
-decode_presence_status_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_presence_status_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_presence_status_cdata(__TopXMLNS, _val) -> _val.
 
-encode_presence_status_cdata(undefined, _acc) -> _acc;
+encode_presence_status_cdata(<<>>, _acc) -> _acc;
 encode_presence_status_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -24765,11 +24631,10 @@ encode_message({message, Id, Type, Lang, From, To,
     'encode_message_$body'(_els,
 			   [encode_message_body(Body, []) | _acc]).
 
-decode_message_attr_id(__TopXMLNS, undefined) ->
-    undefined;
+decode_message_attr_id(__TopXMLNS, undefined) -> <<>>;
 decode_message_attr_id(__TopXMLNS, _val) -> _val.
 
-encode_message_attr_id(undefined, _acc) -> _acc;
+encode_message_attr_id(<<>>, _acc) -> _acc;
 encode_message_attr_id(_val, _acc) ->
     [{<<"id">>, _val} | _acc].
 
@@ -24820,11 +24685,11 @@ encode_message_attr_to(_val, _acc) ->
     [{<<"to">>, enc_jid(_val)} | _acc].
 
 'decode_message_attr_xml:lang'(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 'decode_message_attr_xml:lang'(__TopXMLNS, _val) ->
     _val.
 
-'encode_message_attr_xml:lang'(undefined, _acc) -> _acc;
+'encode_message_attr_xml:lang'(<<>>, _acc) -> _acc;
 'encode_message_attr_xml:lang'(_val, _acc) ->
     [{<<"xml:lang">>, _val} | _acc].
 
@@ -24851,11 +24716,10 @@ encode_message_thread(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"thread">>, _attrs, _els}.
 
-decode_message_thread_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_message_thread_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_message_thread_cdata(__TopXMLNS, _val) -> _val.
 
-encode_message_thread_cdata(undefined, _acc) -> _acc;
+encode_message_thread_cdata(<<>>, _acc) -> _acc;
 encode_message_thread_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -24896,20 +24760,18 @@ encode_message_body({text, Lang, Data}, _xmlns_attrs) ->
 
 'decode_message_body_attr_xml:lang'(__TopXMLNS,
 				    undefined) ->
-    undefined;
+    <<>>;
 'decode_message_body_attr_xml:lang'(__TopXMLNS, _val) ->
     _val.
 
-'encode_message_body_attr_xml:lang'(undefined, _acc) ->
-    _acc;
+'encode_message_body_attr_xml:lang'(<<>>, _acc) -> _acc;
 'encode_message_body_attr_xml:lang'(_val, _acc) ->
     [{<<"xml:lang">>, _val} | _acc].
 
-decode_message_body_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_message_body_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_message_body_cdata(__TopXMLNS, _val) -> _val.
 
-encode_message_body_cdata(undefined, _acc) -> _acc;
+encode_message_body_cdata(<<>>, _acc) -> _acc;
 encode_message_body_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -24952,22 +24814,20 @@ encode_message_subject({text, Lang, Data},
 
 'decode_message_subject_attr_xml:lang'(__TopXMLNS,
 				       undefined) ->
-    undefined;
+    <<>>;
 'decode_message_subject_attr_xml:lang'(__TopXMLNS,
 				       _val) ->
     _val.
 
-'encode_message_subject_attr_xml:lang'(undefined,
-				       _acc) ->
+'encode_message_subject_attr_xml:lang'(<<>>, _acc) ->
     _acc;
 'encode_message_subject_attr_xml:lang'(_val, _acc) ->
     [{<<"xml:lang">>, _val} | _acc].
 
-decode_message_subject_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_message_subject_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_message_subject_cdata(__TopXMLNS, _val) -> _val.
 
-encode_message_subject_cdata(undefined, _acc) -> _acc;
+encode_message_subject_cdata(<<>>, _acc) -> _acc;
 encode_message_subject_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -25096,10 +24956,10 @@ encode_iq_attr_to(_val, _acc) ->
     [{<<"to">>, enc_jid(_val)} | _acc].
 
 'decode_iq_attr_xml:lang'(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 'decode_iq_attr_xml:lang'(__TopXMLNS, _val) -> _val.
 
-'encode_iq_attr_xml:lang'(undefined, _acc) -> _acc;
+'encode_iq_attr_xml:lang'(<<>>, _acc) -> _acc;
 'encode_iq_attr_xml:lang'(_val, _acc) ->
     [{<<"xml:lang">>, _val} | _acc].
 
@@ -25618,12 +25478,11 @@ encode_conference_password(Cdata, _xmlns_attrs) ->
     {xmlel, <<"password">>, _attrs, _els}.
 
 decode_conference_password_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+    <<>>;
 decode_conference_password_cdata(__TopXMLNS, _val) ->
     _val.
 
-encode_conference_password_cdata(undefined, _acc) ->
-    _acc;
+encode_conference_password_cdata(<<>>, _acc) -> _acc;
 encode_conference_password_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -25650,11 +25509,10 @@ encode_conference_nick(Cdata, _xmlns_attrs) ->
     _attrs = _xmlns_attrs,
     {xmlel, <<"nick">>, _attrs, _els}.
 
-decode_conference_nick_cdata(__TopXMLNS, <<>>) ->
-    undefined;
+decode_conference_nick_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_conference_nick_cdata(__TopXMLNS, _val) -> _val.
 
-encode_conference_nick_cdata(undefined, _acc) -> _acc;
+encode_conference_nick_cdata(<<>>, _acc) -> _acc;
 encode_conference_nick_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
@@ -25762,10 +25620,10 @@ encode_disco_items({disco_items, Node, Items, Rsm},
      | _acc].
 
 decode_disco_items_attr_node(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_disco_items_attr_node(__TopXMLNS, _val) -> _val.
 
-encode_disco_items_attr_node(undefined, _acc) -> _acc;
+encode_disco_items_attr_node(<<>>, _acc) -> _acc;
 encode_disco_items_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
@@ -25822,18 +25680,18 @@ encode_disco_item_attr_jid(_val, _acc) ->
     [{<<"jid">>, enc_jid(_val)} | _acc].
 
 decode_disco_item_attr_name(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_disco_item_attr_name(__TopXMLNS, _val) -> _val.
 
-encode_disco_item_attr_name(undefined, _acc) -> _acc;
+encode_disco_item_attr_name(<<>>, _acc) -> _acc;
 encode_disco_item_attr_name(_val, _acc) ->
     [{<<"name">>, _val} | _acc].
 
 decode_disco_item_attr_node(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_disco_item_attr_node(__TopXMLNS, _val) -> _val.
 
-encode_disco_item_attr_node(undefined, _acc) -> _acc;
+encode_disco_item_attr_node(<<>>, _acc) -> _acc;
 encode_disco_item_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
@@ -25957,10 +25815,10 @@ encode_disco_info({disco_info, Node, Identities,
 				     | _acc]).
 
 decode_disco_info_attr_node(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_disco_info_attr_node(__TopXMLNS, _val) -> _val.
 
-encode_disco_info_attr_node(undefined, _acc) -> _acc;
+encode_disco_info_attr_node(<<>>, _acc) -> _acc;
 encode_disco_info_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
 
@@ -26067,25 +25925,23 @@ encode_disco_identity_attr_type(_val, _acc) ->
 
 'decode_disco_identity_attr_xml:lang'(__TopXMLNS,
 				      undefined) ->
-    undefined;
+    <<>>;
 'decode_disco_identity_attr_xml:lang'(__TopXMLNS,
 				      _val) ->
     _val.
 
-'encode_disco_identity_attr_xml:lang'(undefined,
-				      _acc) ->
+'encode_disco_identity_attr_xml:lang'(<<>>, _acc) ->
     _acc;
 'encode_disco_identity_attr_xml:lang'(_val, _acc) ->
     [{<<"xml:lang">>, _val} | _acc].
 
 decode_disco_identity_attr_name(__TopXMLNS,
 				undefined) ->
-    undefined;
+    <<>>;
 decode_disco_identity_attr_name(__TopXMLNS, _val) ->
     _val.
 
-encode_disco_identity_attr_name(undefined, _acc) ->
-    _acc;
+encode_disco_identity_attr_name(<<>>, _acc) -> _acc;
 encode_disco_identity_attr_name(_val, _acc) ->
     [{<<"name">>, _val} | _acc].
 
@@ -26103,20 +25959,13 @@ decode_block_list_els(__TopXMLNS, __IgnoreEls,
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"urn:xmpp:blocking">> ->
 	  decode_block_list_els(__TopXMLNS, __IgnoreEls, _els,
-				case decode_block_item(__TopXMLNS, __IgnoreEls,
-						       _el)
-				    of
-				  undefined -> Items;
-				  _new_el -> [_new_el | Items]
-				end);
+				[decode_block_item(__TopXMLNS, __IgnoreEls, _el)
+				 | Items]);
       <<"urn:xmpp:blocking">> ->
 	  decode_block_list_els(__TopXMLNS, __IgnoreEls, _els,
-				case decode_block_item(<<"urn:xmpp:blocking">>,
-						       __IgnoreEls, _el)
-				    of
-				  undefined -> Items;
-				  _new_el -> [_new_el | Items]
-				end);
+				[decode_block_item(<<"urn:xmpp:blocking">>,
+						   __IgnoreEls, _el)
+				 | Items]);
       _ ->
 	  decode_block_list_els(__TopXMLNS, __IgnoreEls, _els,
 				Items)
@@ -26151,20 +26000,13 @@ decode_unblock_els(__TopXMLNS, __IgnoreEls,
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"urn:xmpp:blocking">> ->
 	  decode_unblock_els(__TopXMLNS, __IgnoreEls, _els,
-			     case decode_block_item(__TopXMLNS, __IgnoreEls,
-						    _el)
-				 of
-			       undefined -> Items;
-			       _new_el -> [_new_el | Items]
-			     end);
+			     [decode_block_item(__TopXMLNS, __IgnoreEls, _el)
+			      | Items]);
       <<"urn:xmpp:blocking">> ->
 	  decode_unblock_els(__TopXMLNS, __IgnoreEls, _els,
-			     case decode_block_item(<<"urn:xmpp:blocking">>,
-						    __IgnoreEls, _el)
-				 of
-			       undefined -> Items;
-			       _new_el -> [_new_el | Items]
-			     end);
+			     [decode_block_item(<<"urn:xmpp:blocking">>,
+						__IgnoreEls, _el)
+			      | Items]);
       _ ->
 	  decode_unblock_els(__TopXMLNS, __IgnoreEls, _els, Items)
     end;
@@ -26197,19 +26039,13 @@ decode_block_els(__TopXMLNS, __IgnoreEls,
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">> when __TopXMLNS == <<"urn:xmpp:blocking">> ->
 	  decode_block_els(__TopXMLNS, __IgnoreEls, _els,
-			   case decode_block_item(__TopXMLNS, __IgnoreEls, _el)
-			       of
-			     undefined -> Items;
-			     _new_el -> [_new_el | Items]
-			   end);
+			   [decode_block_item(__TopXMLNS, __IgnoreEls, _el)
+			    | Items]);
       <<"urn:xmpp:blocking">> ->
 	  decode_block_els(__TopXMLNS, __IgnoreEls, _els,
-			   case decode_block_item(<<"urn:xmpp:blocking">>,
-						  __IgnoreEls, _el)
-			       of
-			     undefined -> Items;
-			     _new_el -> [_new_el | Items]
-			   end);
+			   [decode_block_item(<<"urn:xmpp:blocking">>,
+					      __IgnoreEls, _el)
+			    | Items]);
       _ ->
 	  decode_block_els(__TopXMLNS, __IgnoreEls, _els, Items)
     end;
@@ -26692,11 +26528,11 @@ encode_privacy_item_attr_type(_val, _acc) ->
     [{<<"type">>, enc_enum(_val)} | _acc].
 
 decode_privacy_item_attr_value(__TopXMLNS, undefined) ->
-    undefined;
+    <<>>;
 decode_privacy_item_attr_value(__TopXMLNS, _val) ->
     _val.
 
-encode_privacy_item_attr_value(undefined, _acc) -> _acc;
+encode_privacy_item_attr_value(<<>>, _acc) -> _acc;
 encode_privacy_item_attr_value(_val, _acc) ->
     [{<<"value">>, _val} | _acc].
 

@@ -277,7 +277,7 @@ normal_state({route, From, <<"">>,
 			       process_iq_admin(From, IQ, StateData);
 			   ?NS_MUC_OWNER ->
 			       process_iq_owner(From, IQ, StateData);
-			   ?NS_DISCO_INFO when SubEl#disco_info.node == undefined ->
+			   ?NS_DISCO_INFO when SubEl#disco_info.node == <<>> ->
 			       process_iq_disco_info(From, IQ, StateData);
 			   ?NS_DISCO_INFO ->
 			       Txt = <<"Disco info is not available for this node">>,
@@ -2146,11 +2146,7 @@ send_new_presence1(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
 			  true -> Item0#muc_item{jid = RealJID};
 			  false -> Item0
 		      end,
-	      Item = if is_binary(Reason), Reason /= <<"">> ->
-			     Item1#muc_item{reason = Reason};
-			true ->
-			     Item1
-		     end,
+	      Item = Item1#muc_item{reason = Reason},
 	      StatusCodes = status_codes(IsInitialPresence, NJID, Info,
 					 StateData),
 	      Pres = if Presence == undefined -> #presence{};
@@ -2526,11 +2522,7 @@ items_with_affiliation(SAffiliation, StateData) ->
     lists:map(
       fun({JID, {Affiliation, Reason}}) ->
 	      #muc_item{affiliation = Affiliation, jid = JID,
-			reason = if is_binary(Reason), Reason /= <<"">> ->
-					 Reason;
-				    true ->
-					 undefined
-				 end};
+			reason = Reason};
 	 ({JID, Affiliation}) ->
 	      #muc_item{affiliation = Affiliation, jid = JID}
       end,
@@ -2563,7 +2555,7 @@ search_affiliation(Affiliation, StateData) ->
 		 end,
 		 (?DICT):to_list(StateData#state.affiliations)).
 
--spec process_admin_items_set(jid(), [muc_item()], binary() | undefined,
+-spec process_admin_items_set(jid(), [muc_item()], binary(),
 			      #state{}) -> {result, undefined, #state{}} |
 					   {error, error()}.
 process_admin_items_set(UJID, Items, Lang, StateData) ->
@@ -2666,13 +2658,13 @@ find_changed_items(_UJID, _UAffiliation, _URole,
     Txt = <<"Neither 'role' nor 'affiliation' attribute found">>,
     throw({error, xmpp:err_bad_request(Txt, Lang)});
 find_changed_items(UJID, UAffiliation, URole,
-		   [#muc_item{jid = J, nick = Nick, reason = Reason0,
+		   [#muc_item{jid = J, nick = Nick, reason = Reason,
 			      role = Role, affiliation = Affiliation}|Items],
 		   Lang, StateData, Res) ->
     [JID | _] = JIDs = 
 	if J /= undefined ->
 		[J];
-	   Nick /= undefined ->
+	   Nick /= <<"">> ->
 		case find_jids_by_nick(Nick, StateData) of
 		    [] ->
 			ErrText = iolist_to_binary(
@@ -2717,9 +2709,6 @@ find_changed_items(UJID, UAffiliation, URole,
 			       Items, Lang, StateData,
 			       Res);
 	true ->
-	    Reason = if is_binary(Reason0) -> Reason0;
-			true -> <<"">>
-		     end,
 	    MoreRes = [{jid:remove_resource(Jidx),
 			RoleOrAff, RoleOrAffValue, Reason}
 		       || Jidx <- JIDs],
@@ -2914,11 +2903,7 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 			  true -> Item0#muc_item{jid = RealJID};
 			  false -> Item0
 		      end,
-	      Item2 = if is_binary(Reason), Reason /= <<"">> ->
-			      Item1#muc_item{reason = Reason};
-			 true ->
-			      Item1
-		      end,
+	      Item2 = Item1#muc_item{reason = Reason},
 	      Item = case ActorNick of
 			 <<"">> -> Item2;
 			 _ -> Item2#muc_item{actor = #muc_actor{nick = ActorNick}}

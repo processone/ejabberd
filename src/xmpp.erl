@@ -119,15 +119,11 @@ make_error(#xmlel{attrs = Attrs, children = Els} = El, Err) ->
     Attrs3 = lists:keystore(<<"type">>, 1, Attrs2, {<<"type">>, <<"error">>}),
     El#xmlel{attrs = Attrs3, children = Els ++ [encode(Err)]}.
 
--spec get_id(iq() | message() | presence() | xmlel()) -> undefined | binary().
+-spec get_id(iq() | message() | presence() | xmlel()) -> binary().
 get_id(#iq{id = ID}) -> ID;
 get_id(#message{id = ID}) -> ID;
 get_id(#presence{id = ID}) -> ID;
-get_id(#xmlel{attrs = Attrs}) ->
-    case fxml:get_attr(<<"id">>, Attrs) of
-	{value, ID} -> ID;
-	false -> undefined
-    end.
+get_id(#xmlel{attrs = Attrs}) -> fxml:get_attr_s(<<"id">>, Attrs).
 
 -spec get_type(iq()) -> iq_type();
 	      (message()) -> message_type();
@@ -138,15 +134,11 @@ get_type(#message{type = T}) -> T;
 get_type(#presence{type = T}) -> T;
 get_type(#xmlel{attrs = Attrs}) -> fxml:get_attr_s(<<"type">>, Attrs).
 
--spec get_lang(iq() | message() | presence()) -> undefined | binary().
+-spec get_lang(iq() | message() | presence()) -> binary().
 get_lang(#iq{lang = L}) -> L;
 get_lang(#message{lang = L}) -> L;
 get_lang(#presence{lang = L}) -> L;
-get_lang(#xmlel{attrs = Attrs}) ->
-    case fxml:get_attr(<<"xml:lang">>, Attrs) of
-	{value, L} -> L;
-	false -> undefined
-    end.
+get_lang(#xmlel{attrs = Attrs}) -> fxml:get_attr_s(<<"xml:lang">>, Attrs).
 
 -spec get_from(iq() | message() | presence()) -> undefined | jid:jid().
 get_from(#iq{from = J}) -> J;
@@ -371,14 +363,13 @@ has_subtag([], _, _) ->
 
 -spec get_text([text()]) -> binary().
 get_text([]) -> <<"">>;
-get_text([#text{data = undefined}|_]) -> <<"">>;
 get_text([#text{data = Data}|_]) -> Data.
 
 -spec mk_text(binary()) -> [text()].
 mk_text(Text) ->
-    mk_text(Text, undefined).
+    mk_text(Text, <<"">>).
 
--spec mk_text(binary(), binary() | undefined) -> [text()].
+-spec mk_text(binary(), binary()) -> [text()].
 mk_text(<<"">>, _) ->
     [];
 mk_text(Text, Lang) ->
@@ -396,7 +387,7 @@ pp(Term) ->
 err_bad_request() ->
     err(modify, 'bad-request', 400).
 
--spec err_bad_request(binary(), binary() | undefined) -> error().
+-spec err_bad_request(binary(), binary()) -> error().
 err_bad_request(Text, Lang) ->
     err(modify, 'bad-request', 400, Text, Lang).
 
@@ -404,7 +395,7 @@ err_bad_request(Text, Lang) ->
 err_conflict() ->
     err(cancel, 'conflict', 409).
 
--spec err_conflict(binary(), binary() | undefined) -> error().
+-spec err_conflict(binary(), binary()) -> error().
 err_conflict(Text, Lang) ->
     err(cancel, 'conflict', 409, Text, Lang).
 
@@ -412,7 +403,7 @@ err_conflict(Text, Lang) ->
 err_feature_not_implemented() ->
     err(cancel, 'feature-not-implemented', 501).
 
--spec err_feature_not_implemented(binary(), binary() | undefined) -> error().
+-spec err_feature_not_implemented(binary(), binary()) -> error().
 err_feature_not_implemented(Text, Lang) ->
     err(cancel, 'feature-not-implemented', 501, Text, Lang).
 
@@ -420,7 +411,7 @@ err_feature_not_implemented(Text, Lang) ->
 err_forbidden() ->
     err(auth, 'forbidden', 403).
 
--spec err_forbidden(binary(), binary() | undefined) -> error().
+-spec err_forbidden(binary(), binary()) -> error().
 err_forbidden(Text, Lang) ->
     err(auth, 'forbidden', 403, Text, Lang).
 
@@ -430,7 +421,7 @@ err_forbidden(Text, Lang) ->
 err_gone() ->
     err(modify, 'gone', 302).
 
--spec err_gone(binary(), binary() | undefined) -> error().
+-spec err_gone(binary(), binary()) -> error().
 err_gone(Text, Lang) ->
     err(modify, 'gone', 302, Text, Lang).
 
@@ -440,7 +431,7 @@ err_gone(Text, Lang) ->
 err_internal_server_error() ->
     err(wait, 'internal-server-error', 500).
 
--spec err_internal_server_error(binary(), binary() | undefined) -> error().
+-spec err_internal_server_error(binary(), binary()) -> error().
 err_internal_server_error(Text, Lang) ->
     err(wait, 'internal-server-error', 500, Text, Lang).
 
@@ -448,7 +439,7 @@ err_internal_server_error(Text, Lang) ->
 err_item_not_found() ->
     err(cancel, 'item-not-found', 404).
 
--spec err_item_not_found(binary(), binary() | undefined) -> error().
+-spec err_item_not_found(binary(), binary()) -> error().
 err_item_not_found(Text, Lang) ->
     err(cancel, 'item-not-found', 404, Text, Lang).
 
@@ -456,7 +447,7 @@ err_item_not_found(Text, Lang) ->
 err_jid_malformed() ->
     err(modify, 'jid-malformed', 400).
 
--spec err_jid_malformed(binary(), binary() | undefined) -> error().
+-spec err_jid_malformed(binary(), binary()) -> error().
 err_jid_malformed(Text, Lang) ->
     err(modify, 'jid-malformed', 400, Text, Lang).
 
@@ -464,7 +455,7 @@ err_jid_malformed(Text, Lang) ->
 err_not_acceptable() ->
     err(modify, 'not-acceptable', 406).
 
--spec err_not_acceptable(binary(), binary() | undefined) -> error().
+-spec err_not_acceptable(binary(), binary()) -> error().
 err_not_acceptable(Text, Lang) ->
     err(modify, 'not-acceptable', 406, Text, Lang).
 
@@ -472,7 +463,7 @@ err_not_acceptable(Text, Lang) ->
 err_not_allowed() ->
     err(cancel, 'not-allowed', 405).
 
--spec err_not_allowed(binary(), binary() | undefined) -> error().
+-spec err_not_allowed(binary(), binary()) -> error().
 err_not_allowed(Text, Lang) ->
     err(cancel, 'not-allowed', 405, Text, Lang).
 
@@ -480,7 +471,7 @@ err_not_allowed(Text, Lang) ->
 err_not_authorized() ->
     err(auth, 'not-authorized', 401).
 
--spec err_not_authorized(binary(), binary() | undefined) -> error().
+-spec err_not_authorized(binary(), binary()) -> error().
 err_not_authorized(Text, Lang) ->
     err(auth, 'not-authorized', 401, Text, Lang).
 
@@ -488,7 +479,7 @@ err_not_authorized(Text, Lang) ->
 err_payment_required() ->
     err(auth, 'not-authorized', 402).
 
--spec err_payment_required(binary(), binary() | undefined) -> error().
+-spec err_payment_required(binary(), binary()) -> error().
 err_payment_required(Text, Lang) ->
     err(auth, 'not-authorized', 402, Text, Lang).
 
@@ -498,7 +489,7 @@ err_payment_required(Text, Lang) ->
 err_policy_violation() ->
     err(modify, 'policy-violation', 403).
 
--spec err_policy_violation(binary(), binary() | undefined) -> error().
+-spec err_policy_violation(binary(), binary()) -> error().
 err_policy_violation(Text, Lang) ->
     err(modify, 'policy-violation', 403, Text, Lang).
 
@@ -506,7 +497,7 @@ err_policy_violation(Text, Lang) ->
 err_recipient_unavailable() ->
     err(wait, 'recipient-unavailable', 404).
 
--spec err_recipient_unavailable(binary(), binary() | undefined) -> error().
+-spec err_recipient_unavailable(binary(), binary()) -> error().
 err_recipient_unavailable(Text, Lang) ->
     err(wait, 'recipient-unavailable', 404, Text, Lang).
 
@@ -514,7 +505,7 @@ err_recipient_unavailable(Text, Lang) ->
 err_redirect() ->
     err(modify, 'redirect', 302).
 
--spec err_redirect(binary(), binary() | undefined) -> error().
+-spec err_redirect(binary(), binary()) -> error().
 err_redirect(Text, Lang) ->
     err(modify, 'redirect', 302, Text, Lang).
 
@@ -522,7 +513,7 @@ err_redirect(Text, Lang) ->
 err_registration_required() ->
     err(auth, 'registration-required', 407).
 
--spec err_registration_required(binary(), binary() | undefined) -> error().
+-spec err_registration_required(binary(), binary()) -> error().
 err_registration_required(Text, Lang) ->
     err(auth, 'registration-required', 407, Text, Lang).
 
@@ -530,7 +521,7 @@ err_registration_required(Text, Lang) ->
 err_remote_server_not_found() ->
     err(cancel, 'remote-server-not-found', 404).
 
--spec err_remote_server_not_found(binary(), binary() | undefined) -> error().
+-spec err_remote_server_not_found(binary(), binary()) -> error().
 err_remote_server_not_found(Text, Lang) ->
     err(cancel, 'remote-server-not-found', 404, Text, Lang).
 
@@ -538,7 +529,7 @@ err_remote_server_not_found(Text, Lang) ->
 err_remote_server_timeout() ->
     err(wait, 'remote-server-timeout', 504).
 
--spec err_remote_server_timeout(binary(), binary() | undefined) -> error().
+-spec err_remote_server_timeout(binary(), binary()) -> error().
 err_remote_server_timeout(Text, Lang) ->
     err(wait, 'remote-server-timeout', 504, Text, Lang).
 
@@ -546,7 +537,7 @@ err_remote_server_timeout(Text, Lang) ->
 err_resource_constraint() ->
     err(wait, 'resource-constraint', 500).
 
--spec err_resource_constraint(binary(), binary() | undefined) -> error().
+-spec err_resource_constraint(binary(), binary()) -> error().
 err_resource_constraint(Text, Lang) ->
     err(wait, 'resource-constraint', 500, Text, Lang).
 
@@ -554,7 +545,7 @@ err_resource_constraint(Text, Lang) ->
 err_service_unavailable() ->
     err(cancel, 'service-unavailable', 503).
 
--spec err_service_unavailable(binary(), binary() | undefined) -> error().
+-spec err_service_unavailable(binary(), binary()) -> error().
 err_service_unavailable(Text, Lang) ->
     err(cancel, 'service-unavailable', 503, Text, Lang).
 
@@ -562,7 +553,7 @@ err_service_unavailable(Text, Lang) ->
 err_subscription_required() ->
     err(auth, 'subscription-required', 407).
 
--spec err_subscription_required(binary(), binary() | undefined) -> error().
+-spec err_subscription_required(binary(), binary()) -> error().
 err_subscription_required(Text, Lang) ->
     err(auth, 'subscription-required', 407, Text, Lang).
 
@@ -574,7 +565,7 @@ err_undefined_condition(Type) ->
     err(Type, 'undefined-condition', 500).
 
 -spec err_undefined_condition('auth' | 'cancel' | 'continue' | 'modify' | 'wait',
-			      binary(), binary() | undefined) -> error().
+			      binary(), binary()) -> error().
 err_undefined_condition(Type, Text, Lang) ->
     err(Type, 'undefined-condition', 500, Text, Lang).
 
@@ -584,7 +575,7 @@ err_undefined_condition(Type, Text, Lang) ->
 err_unexpected_request() ->
     err(wait, 'unexpected-request', 400).
 
--spec err_unexpected_request(binary(), binary() | undefined) -> error().
+-spec err_unexpected_request(binary(), binary()) -> error().
 err_unexpected_request(Text, Lang) ->
     err(wait, 'unexpected-request', 400, Text, Lang).
 
@@ -595,7 +586,7 @@ err_unexpected_request(Text, Lang) ->
 serr_bad_format() ->
     serr('bad-format').
 
--spec serr_bad_format(binary(), binary() | undefined) -> stream_error().
+-spec serr_bad_format(binary(), binary()) -> stream_error().
 serr_bad_format(Text, Lang) ->
     serr('bad-format', Text, Lang).
 
@@ -603,7 +594,7 @@ serr_bad_format(Text, Lang) ->
 serr_bad_namespace_prefix() ->
     serr('bad-namespace-prefix').
 
--spec serr_bad_namespace_prefix(binary(), binary() | undefined) -> stream_error().
+-spec serr_bad_namespace_prefix(binary(), binary()) -> stream_error().
 serr_bad_namespace_prefix(Text, Lang) ->
     serr('bad-namespace-prefix', Text, Lang).
 
@@ -611,7 +602,7 @@ serr_bad_namespace_prefix(Text, Lang) ->
 serr_conflict() ->
     serr('conflict').
 
--spec serr_conflict(binary(), binary() | undefined) -> stream_error().
+-spec serr_conflict(binary(), binary()) -> stream_error().
 serr_conflict(Text, Lang) ->
     serr('conflict', Text, Lang).
 
@@ -619,7 +610,7 @@ serr_conflict(Text, Lang) ->
 serr_connection_timeout() ->
     serr('connection-timeout').
 
--spec serr_connection_timeout(binary(), binary() | undefined) -> stream_error().
+-spec serr_connection_timeout(binary(), binary()) -> stream_error().
 serr_connection_timeout(Text, Lang) ->
     serr('connection-timeout', Text, Lang).
 
@@ -627,7 +618,7 @@ serr_connection_timeout(Text, Lang) ->
 serr_host_gone() ->
     serr('host-gone').
 
--spec serr_host_gone(binary(), binary() | undefined) -> stream_error().
+-spec serr_host_gone(binary(), binary()) -> stream_error().
 serr_host_gone(Text, Lang) ->
     serr('host-gone', Text, Lang).
 
@@ -635,7 +626,7 @@ serr_host_gone(Text, Lang) ->
 serr_host_unknown() ->
     serr('host-unknown').
 
--spec serr_host_unknown(binary(), binary() | undefined) -> stream_error().
+-spec serr_host_unknown(binary(), binary()) -> stream_error().
 serr_host_unknown(Text, Lang) ->
     serr('host-unknown', Text, Lang).
 
@@ -643,7 +634,7 @@ serr_host_unknown(Text, Lang) ->
 serr_improper_addressing() ->
     serr('improper-addressing').
 
--spec serr_improper_addressing(binary(), binary() | undefined) -> stream_error().
+-spec serr_improper_addressing(binary(), binary()) -> stream_error().
 serr_improper_addressing(Text, Lang) ->
     serr('improper-addressing', Text, Lang).
 
@@ -651,7 +642,7 @@ serr_improper_addressing(Text, Lang) ->
 serr_internal_server_error() ->
     serr('internal-server-error').
 
--spec serr_internal_server_error(binary(), binary() | undefined) -> stream_error().
+-spec serr_internal_server_error(binary(), binary()) -> stream_error().
 serr_internal_server_error(Text, Lang) ->
     serr('internal-server-error', Text, Lang).
 
@@ -659,7 +650,7 @@ serr_internal_server_error(Text, Lang) ->
 serr_invalid_from() ->
     serr('invalid-from').
 
--spec serr_invalid_from(binary(), binary() | undefined) -> stream_error().
+-spec serr_invalid_from(binary(), binary()) -> stream_error().
 serr_invalid_from(Text, Lang) ->
     serr('invalid-from', Text, Lang).
 
@@ -667,7 +658,7 @@ serr_invalid_from(Text, Lang) ->
 serr_invalid_id() ->
     serr('invalid-id').
 
--spec serr_invalid_id(binary(), binary() | undefined) -> stream_error().
+-spec serr_invalid_id(binary(), binary()) -> stream_error().
 serr_invalid_id(Text, Lang) ->
     serr('invalid-id', Text, Lang).
 
@@ -675,7 +666,7 @@ serr_invalid_id(Text, Lang) ->
 serr_invalid_namespace() ->
     serr('invalid-namespace').
 
--spec serr_invalid_namespace(binary(), binary() | undefined) -> stream_error().
+-spec serr_invalid_namespace(binary(), binary()) -> stream_error().
 serr_invalid_namespace(Text, Lang) ->
     serr('invalid-namespace', Text, Lang).
 
@@ -683,7 +674,7 @@ serr_invalid_namespace(Text, Lang) ->
 serr_invalid_xml() ->
     serr('invalid-xml').
 
--spec serr_invalid_xml(binary(), binary() | undefined) -> stream_error().
+-spec serr_invalid_xml(binary(), binary()) -> stream_error().
 serr_invalid_xml(Text, Lang) ->
     serr('invalid-xml', Text, Lang).
 
@@ -691,7 +682,7 @@ serr_invalid_xml(Text, Lang) ->
 serr_not_authorized() ->
     serr('not-authorized').
 
--spec serr_not_authorized(binary(), binary() | undefined) -> stream_error().
+-spec serr_not_authorized(binary(), binary()) -> stream_error().
 serr_not_authorized(Text, Lang) ->
     serr('not-authorized', Text, Lang).
 
@@ -699,7 +690,7 @@ serr_not_authorized(Text, Lang) ->
 serr_not_well_formed() ->
     serr('not-well-formed').
 
--spec serr_not_well_formed(binary(), binary() | undefined) -> stream_error().
+-spec serr_not_well_formed(binary(), binary()) -> stream_error().
 serr_not_well_formed(Text, Lang) ->
     serr('not-well-formed', Text, Lang).
 
@@ -707,7 +698,7 @@ serr_not_well_formed(Text, Lang) ->
 serr_policy_violation() ->
     serr('policy-violation').
 
--spec serr_policy_violation(binary(), binary() | undefined) -> stream_error().
+-spec serr_policy_violation(binary(), binary()) -> stream_error().
 serr_policy_violation(Text, Lang) ->
     serr('policy-violation', Text, Lang).
 
@@ -715,7 +706,7 @@ serr_policy_violation(Text, Lang) ->
 serr_remote_connection_failed() ->
     serr('remote-connection-failed').
 
--spec serr_remote_connection_failed(binary(), binary() | undefined) -> stream_error().
+-spec serr_remote_connection_failed(binary(), binary()) -> stream_error().
 serr_remote_connection_failed(Text, Lang) ->
     serr('remote-connection-failed', Text, Lang).
 
@@ -723,7 +714,7 @@ serr_remote_connection_failed(Text, Lang) ->
 serr_reset() ->
     serr('reset').
 
--spec serr_reset(binary(), binary() | undefined) -> stream_error().
+-spec serr_reset(binary(), binary()) -> stream_error().
 serr_reset(Text, Lang) ->
     serr('reset', Text, Lang).
 
@@ -731,7 +722,7 @@ serr_reset(Text, Lang) ->
 serr_resource_constraint() ->
     serr('resource-constraint').
 
--spec serr_resource_constraint(binary(), binary() | undefined) -> stream_error().
+-spec serr_resource_constraint(binary(), binary()) -> stream_error().
 serr_resource_constraint(Text, Lang) ->
     serr('resource-constraint', Text, Lang).
 
@@ -739,7 +730,7 @@ serr_resource_constraint(Text, Lang) ->
 serr_restricted_xml() ->
     serr('restricted-xml').
 
--spec serr_restricted_xml(binary(), binary() | undefined) -> stream_error().
+-spec serr_restricted_xml(binary(), binary()) -> stream_error().
 serr_restricted_xml(Text, Lang) ->
     serr('restricted-xml', Text, Lang).
 
@@ -747,7 +738,7 @@ serr_restricted_xml(Text, Lang) ->
 serr_see_other_host() ->
     serr('see-other-host').
 
--spec serr_see_other_host(binary(), binary() | undefined) -> stream_error().
+-spec serr_see_other_host(binary(), binary()) -> stream_error().
 serr_see_other_host(Text, Lang) ->
     serr('see-other-host', Text, Lang).
 
@@ -755,7 +746,7 @@ serr_see_other_host(Text, Lang) ->
 serr_system_shutdown() ->
     serr('system-shutdown').
 
--spec serr_system_shutdown(binary(), binary() | undefined) -> stream_error().
+-spec serr_system_shutdown(binary(), binary()) -> stream_error().
 serr_system_shutdown(Text, Lang) ->
     serr('system-shutdown', Text, Lang).
 
@@ -763,7 +754,7 @@ serr_system_shutdown(Text, Lang) ->
 serr_undefined_condition() ->
     serr('undefined-condition').
 
--spec serr_undefined_condition(binary(), binary() | undefined) -> stream_error().
+-spec serr_undefined_condition(binary(), binary()) -> stream_error().
 serr_undefined_condition(Text, Lang) ->
     serr('undefined-condition', Text, Lang).
 
@@ -771,7 +762,7 @@ serr_undefined_condition(Text, Lang) ->
 serr_unsupported_encoding() ->
     serr('unsupported-encoding').
 
--spec serr_unsupported_encoding(binary(), binary() | undefined) -> stream_error().
+-spec serr_unsupported_encoding(binary(), binary()) -> stream_error().
 serr_unsupported_encoding(Text, Lang) ->
     serr('unsupported-encoding', Text, Lang).
 
@@ -779,7 +770,7 @@ serr_unsupported_encoding(Text, Lang) ->
 serr_unsupported_stanza_type() ->
     serr('unsupported-stanza-type').
 
--spec serr_unsupported_stanza_type(binary(), binary() | undefined) -> stream_error().
+-spec serr_unsupported_stanza_type(binary(), binary()) -> stream_error().
 serr_unsupported_stanza_type(Text, Lang) ->
     serr('unsupported-stanza-type', Text, Lang).
 
@@ -787,7 +778,7 @@ serr_unsupported_stanza_type(Text, Lang) ->
 serr_unsupported_version() ->
     serr('unsupported-version').
 
--spec serr_unsupported_version(binary(), binary() | undefined) -> stream_error().
+-spec serr_unsupported_version(binary(), binary()) -> stream_error().
 serr_unsupported_version(Text, Lang) ->
     serr('unsupported-version', Text, Lang).
 
@@ -801,7 +792,7 @@ err(Type, Reason, Code) ->
 
 -spec err('auth' | 'cancel' | 'continue' | 'modify' | 'wait',
 	  atom() | gone() | redirect(), non_neg_integer(),
-	  binary(), binary() | undefined) -> error().
+	  binary(), binary()) -> error().
 err(Type, Reason, Code, Text, Lang) ->
     #error{type = Type, reason = Reason, code = Code,
 	   text = #text{lang = Lang,
@@ -812,7 +803,7 @@ serr(Reason) ->
     #stream_error{reason = Reason}.
 
 -spec serr(atom() | 'see-other-host'(), binary(),
-	   binary() | undefined) -> stream_error().
+	   binary()) -> stream_error().
 serr(Reason, Text, Lang) ->
     #stream_error{reason = Reason,
 		  text = #text{lang = Lang,

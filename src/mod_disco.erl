@@ -190,9 +190,8 @@ process_local_iq_info(#iq{type = get, lang = Lang,
     end.
 
 -spec get_local_identity([identity()], jid(), jid(),
-			 undefined | binary(), undefined | binary()) ->
-				[identity()].
-get_local_identity(Acc, _From, _To, undefined, _Lang) ->
+			 binary(), binary()) ->	[identity()].
+get_local_identity(Acc, _From, _To, <<"">>, _Lang) ->
     Acc ++ [#identity{category = <<"server">>,
 		      type = <<"im">>,
 		      name = <<"ejabberd">>}];
@@ -200,13 +199,12 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 -spec get_local_features({error, error()} | {result, [binary()]} | empty,
-			 jid(), jid(),
-			 undefined | binary(), undefined | binary()) ->
+			 jid(), jid(), binary(), binary()) ->
 				{error, error()} | {result, [binary()]}.
 get_local_features({error, _Error} = Acc, _From, _To,
 		   _Node, _Lang) ->
     Acc;
-get_local_features(Acc, _From, To, undefined, _Lang) ->
+get_local_features(Acc, _From, To, <<"">>, _Lang) ->
     Feats = case Acc of
 		{result, Features} -> Features;
 		empty -> []
@@ -226,12 +224,12 @@ get_local_features(Acc, _From, _To, _Node, Lang) ->
 
 -spec get_local_services({error, error()} | {result, [disco_item()]} | empty,
 			 jid(), jid(),
-			 undefined | binary(), undefined | binary()) ->
+			 binary(), binary()) ->
 				{error, error()} | {result, [disco_item()]}.
 get_local_services({error, _Error} = Acc, _From, _To,
 		   _Node, _Lang) ->
     Acc;
-get_local_services(Acc, _From, To, undefined, _Lang) ->
+get_local_services(Acc, _From, To, <<"">>, _Lang) ->
     Items = case Acc of
 	      {result, Its} -> Its;
 	      empty -> []
@@ -300,13 +298,13 @@ process_sm_iq_items(#iq{type = get, lang = Lang,
 
 -spec get_sm_items({error, error()} | {result, [disco_item()]} | empty,
 		   jid(), jid(),
-		   undefined | binary(), undefined | binary()) ->
+		   binary(), binary()) ->
 			  {error, error()} | {result, [disco_item()]}.
 get_sm_items({error, _Error} = Acc, _From, _To, _Node,
 	     _Lang) ->
     Acc;
 get_sm_items(Acc, From,
-	     #jid{user = User, server = Server} = To, undefined, _Lang) ->
+	     #jid{user = User, server = Server} = To, <<"">>, _Lang) ->
     Items = case Acc of
 	      {result, Its} -> Its;
 	      empty -> []
@@ -375,8 +373,7 @@ process_sm_iq_info(#iq{type = get, lang = Lang,
     end.
 
 -spec get_sm_identity([identity()], jid(), jid(),
-		      undefined | binary(), undefined | binary()) ->
-			     [identity()].
+		      binary(), binary()) -> [identity()].
 get_sm_identity(Acc, _From,
 		#jid{luser = LUser, lserver = LServer}, _Node, _Lang) ->
     Acc ++
@@ -387,8 +384,7 @@ get_sm_identity(Acc, _From,
       end.
 
 -spec get_sm_features({error, error()} | {result, [binary()]} | empty,
-		      jid(), jid(),
-		      undefined | binary(), undefined | binary()) ->
+		      jid(), jid(), binary(), binary()) ->
 			     {error, error()} | {result, [binary()]}.
 get_sm_features(empty, From, To, _Node, Lang) ->
     #jid{luser = LFrom, lserver = LSFrom} = From,
@@ -428,10 +424,8 @@ transform_module_options(Opts) ->
 
 %%% Support for: XEP-0157 Contact Addresses for XMPP Services
 
--spec get_info([xdata()], binary(), module(),
-	       undefined | binary(), undefined | binary()) ->
-		      [xdata()].
-get_info(_A, Host, Mod, Node, _Lang) when Node == undefined ->
+-spec get_info([xdata()], binary(), module(), binary(), binary()) -> [xdata()].
+get_info(_A, Host, Mod, Node, _Lang) when Node == <<"">> ->
     Module = case Mod of
 	       undefined -> ?MODULE;
 	       _ -> Mod

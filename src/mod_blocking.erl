@@ -135,7 +135,7 @@ list_to_blocklist_jids([_ | Items], JIDs) ->
     list_to_blocklist_jids(Items, JIDs).
 
 -spec process_blocklist_block(binary(), binary(), [ljid()],
-			      undefined | binary()) ->
+			      binary()) ->
 				     {error, error()} |
 				     {result, undefined, userlist()}.
 process_blocklist_block(LUser, LServer, JIDs, Lang) ->
@@ -170,7 +170,7 @@ process_blocklist_block(LUser, LServer, JIDs, Lang) ->
 	    {error, xmpp:err_internal_server_error(<<"Database failure">>, Lang)}
     end.
 
--spec process_blocklist_unblock_all(binary(), binary(), undefined | binary()) ->
+-spec process_blocklist_unblock_all(binary(), binary(), binary()) ->
 					   {error, error()} |
 					   {result, undefined} |
 					   {result, undefined, userlist()}.
@@ -194,8 +194,7 @@ process_blocklist_unblock_all(LUser, LServer, Lang) ->
 	    {error, xmpp:err_internal_server_error(<<"Database failure">>, Lang)}
     end.
 
--spec process_blocklist_unblock(binary(), binary(), [ljid()],
-				undefined | binary()) ->
+-spec process_blocklist_unblock(binary(), binary(), [ljid()], binary()) ->
 				       {error, error()} |
 				       {result, undefined} |
 				       {result, undefined, userlist()}.
@@ -243,7 +242,7 @@ broadcast_blocklist_event(LUser, LServer, Event) ->
     ejabberd_sm:route(JID, JID,
                       {broadcast, {blocking, Event}}).
 
--spec process_blocklist_get(binary(), binary(), undefined | binary()) ->
+-spec process_blocklist_get(binary(), binary(), binary()) ->
 				   {error, error()} | {result, block_list()}.
 process_blocklist_get(LUser, LServer, Lang) ->
     Mod = db_mod(LServer),
