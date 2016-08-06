@@ -60,10 +60,9 @@ attribute_tag(Attrs) ->
 delegations(From, To, Id, Delegations) ->
     Elem0 = 
       lists:foldl(fun({Ns, FiltAttr}, Acc) ->
-                    case ets:lookup(delegated_namespaces, Ns) of
-                      [] ->
-                        ets:insert(delegated_namespaces, 
-                                   {Ns, FiltAttr, self(), To, {}, {}}),
+                    case ets:insert_new(delegated_namespaces, 
+                                        {Ns, FiltAttr, self(), To, {}, {}}) of
+                      true ->
                         Attrs = 
                           if
                             FiltAttr == [] ->
@@ -79,7 +78,7 @@ delegations(From, To, Id, Delegations) ->
                         [#xmlel{name = <<"delegated">>, 
                                 attrs = [{<<"namespace">>, Ns}],
                                 children = Attrs}| Acc];
-                      _ -> Acc
+                      false -> Acc
                     end
                   end, [], Delegations),
     Elem1 = #xmlel{name = <<"delegation">>, 
@@ -90,13 +89,16 @@ delegations(From, To, Id, Delegations) ->
            children = [Elem1]}.
 
 add_iq_handlers(Ns) ->
-    lists:foreach(fun(Host) -> 
+    lists:foreach(fun(Host) ->
+                    IQDisc = 
+                      gen_mod:get_module_opt(Host, ?MODULE, iqdisc,
+                                             fun gen_iq_handler:check_type/1, one_queue),
                     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
                                                   Ns, ?MODULE, 
-                                                  process_iq, one_queue),
+                                                  process_iq, IQDisc),
                     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
                                                   Ns, ?MODULE,
-                                                  process_iq, one_queue)
+                                                  process_iq, IQDisc)
                   end, ?MYHOSTS).
 
 advertise_delegations(#state{delegations = []}) -> ok;
@@ -321,7 +323,7 @@ decapsulate_features(#xmlel{attrs = Attrs} = Packet, Node) ->
                                  {5, {Features, Identity, Exten}});
             << BARE_PREFIX:SizeBare/binary, NS/binary >> ->
               ets:update_element(delegated_namespaces, NS,
-                                 {6, {Features, Identity}});
+                                 {6, {Features, Identity, Exten}});
                _ -> ok
           end;
       _ -> ok %% error ?
@@ -405,7 +407,7 @@ disco_features(Acc, Bare) ->
                            end, Acc),
             % add service features
             FeaturesList =
-              ets:foldl(fun({_, _, _, _, {Feats, _, _}, {FeatsBare, _}}, A) ->
+              ets:foldl(fun({_, _, _, _, {Feats, _, _}, {FeatsBare, _, _}}, A) ->
                             if
                               Bare -> A ++ FeatsBare;
                               true -> A ++ Feats
@@ -422,7 +424,7 @@ disco_identity(Acc, Bare) ->
       true ->
         % filter delegated identites
         Fun = fun(Ident) ->
-                ets:foldl(fun({_, _, _, _, {_ , I, _}, {_ , IBare}}, A) ->
+                ets:foldl(fun({_, _, _, _, {_ , I, _}, {_ , IBare, _}}, A) ->
                                Identity = 
                                  if
                                    Bare -> IBare;
@@ -441,7 +443,7 @@ disco_identity(Acc, Bare) ->
                          not Fun(Attrs)
                        end, Acc),
         % add service features
-        ets:foldl(fun({_, _, _, _, {_, I, _}, {_, IBare}}, A) ->
+        ets:foldl(fun({_, _, _, _, {_, I, _}, {_, IBare, _}}, A) ->
                         if
                           Bare -> A ++ IBare;
                           true -> A ++ I
@@ -468,11 +470,11 @@ get_field_value([Elem| Elems]) ->
       _ -> get_field_value(Elems)
     end.
 
-get_info(Acc) ->
+get_info(Acc, Bare) ->
     case check_tab(delegated_namespaces) of
       true ->
         Fun = fun(Feat) ->
-                ets:foldl(fun({Ns, _, _, _,_,_}, A) ->  
+                ets:foldl(fun({Ns, _, _, _, _, _}, A) ->  
                             (A or str:prefix(Ns, Feat))
                           end, false, delegated_namespaces)
               end,
@@ -483,8 +485,11 @@ get_info(Acc) ->
                                  Value -> not Fun(Value)
                                end
                              end, Acc),
-        ets:foldl(fun({_, _, _, _, {_, _, Ext}, _}, A) ->
-                        A ++ Ext;
+        ets:foldl(fun({_, _, _, _, {_, _, Ext}, {_, _, ExtBare}}, A) ->
+                        if
+                          Bare -> A ++ ExtBare;
+                          true -> A ++ Ext
+                        end;
                      (_, A) -> A
                   end, Exten, delegated_namespaces);
       _ -> Acc
@@ -529,7 +534,9 @@ disco_sm_identity(Acc, _From, #jid{lresource = <<"">>}, <<>>, _Lang) ->
 disco_sm_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
+disco_info(Acc, #jid{}, #jid{lresource = <<"">>}, <<>>, _Lang) ->
+    get_info(Acc, true);
 disco_info(Acc, _Host, _Mod, <<>>, _Lang) ->
-    get_info(Acc);
+    get_info(Acc, false);
 disco_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.
