@@ -205,7 +205,7 @@ filter_pep({C2SState, _OutStanzas} = Acc, Host, To,
 filter_pep(Acc, _Host, _To, _Stanza) -> Acc.
 
 -spec filter_other({term(), [xmlel()]}, binary(), jid(), xmlel())
-      -> {stop, {term(), [xmlel()]}}.
+      -> {term(), [xmlel()]}.
 
 filter_other({C2SState, _OutStanzas}, Host, To, Stanza) ->
     ?DEBUG("Won't add stanza for ~s to CSI queue", [jid:to_string(To)]),
@@ -250,7 +250,7 @@ queue_add(Type, Stanza, Host, C2SState) ->
 	  {stop, {NewState, []}}
     end.
 
--spec queue_take(xmlel(), binary(), term()) -> {stop, {term(), [xmlel()]}}.
+-spec queue_take(xmlel(), binary(), term()) -> {term(), [xmlel()]}.
 
 queue_take(Stanza, Host, C2SState) ->
     From = fxml:get_tag_attr_s(<<"from">>, Stanza),
@@ -260,7 +260,7 @@ queue_take(Stanza, Host, C2SState) ->
 				 U == LUser andalso S == LServer
 			 end, get_queue(C2SState)),
     NewState = set_queue(Rest, C2SState),
-    {stop, {NewState, get_stanzas(Selected, Host) ++ [Stanza]}}.
+    {NewState, get_stanzas(Selected, Host) ++ [Stanza]}.
 
 -spec set_queue(csi_queue(), term()) -> term().
 
