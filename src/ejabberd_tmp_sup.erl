@@ -39,8 +39,6 @@ start_link(Name, Module) ->
 init(Module) ->
     if
     	Module == ejabberd_service ->
-            %% table contains {Pid, service domain}
-            catch ets:new(registered_services, [named_table, public]),
             %% table for delegated namespaces {namespace, [feature list]}
             catch ets:new(delegated_namespaces, [named_table, public]);
         true -> ok

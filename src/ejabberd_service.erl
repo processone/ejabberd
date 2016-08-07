@@ -241,16 +241,26 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
 
                             mod_privilege:advertise_permissions(StateData),
                             mod_delegation:advertise_delegations(StateData),
-                            %% send initial presences from all server users
-                            case get_prop(presence, StateData#state.privilege_access) of
-                                Priv when (Priv == <<"managed_entity">>) or
-                                          (Priv == <<"roster">>) ->
-                                        mod_privilege:initial_presences(StateData);
-                                _ -> ok
-                            end,
-                            ets:insert(registered_services,
-                                       {self(), StateData#state.host}), 
 
+                            RosterAccess = 
+                              proplists:get_value(roster, 
+                                                  StateData#state.privilege_access),
+                            
+                            case proplists:get_value(presence, 
+                                                     StateData#state.privilege_access) of
+                              <<"managed_entity">> ->
+                                mod_privilege:initial_presences(StateData),
+                                Fun = mod_privilege:process_presence(self()),
+                                add_hooks(user_send_packet, Fun);
+                              <<"roster">> when (RosterAccess == <<"both">>) or 
+                                                (RosterAccess == <<"get">>) ->
+                                mod_privilege:initial_presences(StateData),
+                                Fun = mod_privilege:process_presence(self()),
+                                add_hooks(user_send_packet, Fun),
+                                Fun2 = mod_privilege:process_roster_presence(self()),
+                                add_hooks(s2s_receive_packet, Fun2);
+                              _ -> ok
+                            end,
                             {next_state, stream_established, StateData}; 
                         _ ->
 
@@ -398,47 +408,34 @@ handle_info({route, From, To, Packet}, StateName,
     end,
     {next_state, StateName, StateData};
 
-handle_info({user_presence, Packet, FromJID}, 
+handle_info({user_presence, Packet, From}, 
             stream_established, StateData) ->
-    AccessType = get_prop(presence, StateData#state.privilege_access),
-    case AccessType of
-      T when (T == <<"managed_entity">>) or
-             (T == <<"roster">> ) ->
-        ToJID = jid:from_string(StateData#state.host),
-        PacketNew = jlib:replace_from_to(FromJID, ToJID, Packet),
-        send_element(StateData, PacketNew);
-      _ -> ok
-    end,
+    To = jid:from_string(StateData#state.host),
+    PacketNew = jlib:replace_from_to(From, To, Packet),
+    send_element(StateData, PacketNew),
     {next_state, stream_established, StateData};
 
-handle_info({roster_presence, From, Packet}, 
+handle_info({roster_presence, Packet, From}, 
             stream_established, StateData) ->
-    AccessType = get_prop(presence, StateData#state.privilege_access),
-    RosterAccessType = get_prop(roster, StateData#state.privilege_access),
-    case AccessType of
-      <<"roster">> when (RosterAccessType == <<"both">>) or
-                        (RosterAccessType == <<"get">>) ->
-        %% check that current presence stanza is equivalent to last
-        NewPacket = jlib:remove_attr(<<"to">>, Packet),
-        Dict = StateData#state.last_pres,
-        LastPresence = 
-          try dict:fetch(From, Dict)
-          catch _:_ -> 
-              undefined
-          end,
-        case mod_privilege:compare_presences(LastPresence, NewPacket) of
-          false ->
-            PacketNew = replace_to(StateData#state.host, Packet),
-            send_element(StateData, PacketNew);
-          _ ->
-            ok
-        end,
-        DictNew = dict:store(From, NewPacket, Dict),
-        StateDataNew = StateData#state{last_pres = DictNew},
-        {next_state, stream_established, StateDataNew};
-      _ -> 
-        {next_state, stream_established, StateData}    
-    end;
+  %% check that current presence stanza is equivalent to last
+  PresenceNew = jlib:remove_attr(<<"to">>, Packet),
+  Dict = StateData#state.last_pres,
+  LastPresence = 
+    try dict:fetch(From, Dict)
+    catch _:_ -> 
+        undefined
+    end,
+  case mod_privilege:compare_presences(LastPresence, PresenceNew) of
+    false ->
+      #xmlel{attrs = Attrs} = PresenceNew,
+      Presence = PresenceNew#xmlel{attrs = [{<<"to">>, StateData#state.host} | Attrs]},
+      send_element(StateData, Presence),
+      DictNew = dict:store(From, PresenceNew, Dict),
+      StateDataNew = StateData#state{last_pres = DictNew},
+      {next_state, stream_established, StateDataNew};
+    _ ->
+      {next_state, stream_established, StateData}
+  end;
 
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
@@ -461,7 +458,20 @@ terminate(Reason, StateName, StateData) ->
                           ets:delete(delegated_namespaces, Ns),
                           remove_iq_handlers(Ns)
                         end, StateData#state.delegations),
-          ets:delete(registered_services, self());
+          RosterAccess = 
+            proplists:get_value(roster, StateData#state.privilege_access),
+          case proplists:get_value(presence, StateData#state.privilege_access) of
+            <<"managed_entity">> ->
+              Fun = mod_privilege:process_presence(self()),
+              remove_hooks(user_send_packet, Fun);
+            <<"roster">> when (RosterAccess == <<"both">>) or 
+                              (RosterAccess == <<"get">>) ->
+              Fun = mod_privilege:process_presence(self()),
+              remove_hooks(user_send_packet, Fun),
+              Fun2 = mod_privilege:process_roster_presence(self()),
+              remove_hooks(s2s_receive_packet, Fun2);
+            _ -> ok
+          end;
       _ -> ok
     end,
     (StateData#state.sockmod):close(StateData#state.socket),
@@ -521,27 +531,18 @@ opt_type(max_fsm_queue) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(_) -> [max_fsm_queue].
 
--spec get_prop(atom(), list()) -> atom().
-get_prop(Prop, Props ) ->
-    proplists:get_value(Prop, Props, none).
-
-%% add to jlib 
--spec replace_to_attr(binary(), [attr()]) -> [attr()].
-
-replace_to_attr(To, Attrs) ->
-    Attrs1 = lists:keydelete(<<"to">>, 1, Attrs),
-    Attrs2 = [{<<"to">>, To} | Attrs1],
-    Attrs2.
-
--spec replace_to(binary(), xmlel()) -> xmlel().
-
-replace_to(To, #xmlel{name = Name, attrs = Attrs, children = Els}) ->
-    NewAttrs = 
-        replace_to_attr(To, Attrs),
-    #xmlel{name = Name, attrs = NewAttrs, children = Els}.
-
 remove_iq_handlers(Ns) ->
     lists:foreach(fun(Host) ->
                       gen_iq_handler:remove_iq_handler(ejabberd_local, Host, Ns),
                       gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, Ns)
                   end, ?MYHOSTS).
+
+add_hooks(Hook, Fun) ->
+  lists:foreach(fun(Host) ->
+                    ejabberd_hooks:add(Hook, Host,Fun, 100)
+                end, ?MYHOSTS).
+
+remove_hooks(Hook, Fun) ->
+  lists:foreach(fun(Host) ->
+                    ejabberd_hooks:delete(Hook, Host, Fun, 100)
+                end, ?MYHOSTS).

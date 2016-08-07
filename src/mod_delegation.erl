@@ -176,7 +176,8 @@ check_iq(#xmlel{attrs = Attrs} = Packet,
     % Type attribute Must be error or result
     Type = fxml:get_attr_s(<<"type">>, Attrs),
     if
-      Type == <<"result">>, Id1 == Id2, To == From ->
+      ((Type == <<"result">>) or (Type == <<"error">>)),
+      Id1 == Id2, To == From ->
         NewPacket = jlib:remove_attr(<<"xmlns">>, Packet),
         %% We can send the decapsulated stanza from Server to Client (To)
         NewPacket;

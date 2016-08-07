@@ -2,40 +2,15 @@
 
 -author('amuhar3@gmail.com').
 
--behaviour(gen_mod).
-
 -protocol({xep, 0356, '0.2.1'}).
 
--export([start/2, stop/1, depends/2, mod_opt_type/1]).
-
--export([advertise_permissions/1, initial_presences/1, process_presence/4, 
-         process_roster_presence/3, compare_presences/2,
+-export([advertise_permissions/1, initial_presences/1, process_presence/1, 
+         process_roster_presence/1, compare_presences/2,
          process_message/4, process_iq/4]).
 
 -include("ejabberd_service.hrl").
 
 -include("mod_privacy.hrl").
-
-%%%--------------------------------------------------------------------------------------
-%%%  API
-%%%--------------------------------------------------------------------------------------
-
-start(Host, _Opts) -> 
-    %% these hooks are used for receiving presences for privilege services
-    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-                       process_presence, 100),
-    ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE,
-                       process_roster_presence, 100).
-
-stop(Host) -> 
-    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-                          process_presence, 100),
-    ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE,
-                          process_roster_presence, 100).
-
-depends(_Host, _Opts) -> [].
-
-mod_opt_type(_Opt) -> [].
 
 %%%--------------------------------------------------------------------------------------
 %%% Functions to advertise services of allowed permission
@@ -83,51 +58,38 @@ initial_presences(StateData) ->
 
 %% hook user_send_packet(Packet, C2SState, From, To) -> Packet
 %% for Managed Entity Presence
-process_presence(#xmlel{name = <<"presence">>} = Packet, _C2SState, From, _To) ->
-    case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
-        T when (T == <<"">>) or (T == <<"unavailable">>) ->
-            case ets:info(registered_services) of
-                undefined -> ok;
-                _ ->
-                    lists:foreach(fun({Pid, _ServiceHost}) -> 
-                                      Pid ! {user_presence, Packet, From} 
-                                  end,
-                                  ets:tab2list(registered_services))
-            end;                   
-        _ -> ok
-    end,
-    Packet;
-process_presence(Packet, _C2SState, _From, _To) ->
-    Packet.
-
+process_presence(Pid) ->
+    fun(#xmlel{name = <<"presence">>} = Packet, _C2SState, From, _To) ->
+          case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
+            T when (T == <<"">>) or (T == <<"unavailable">>) ->
+              Pid ! {user_presence, Packet, From};   
+            _ -> ok
+          end,
+          Packet;
+       (Packet, _C2SState, _From, _To) ->
+          Packet
+    end.
 %% s2s_receive_packet(From, To, Packet) -> ok
 %% for Roster Presence
 %% From subscription "from" or "both"
-process_roster_presence(From, To, #xmlel{name = <<"presence">>} = Packet) ->
-    case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
-        T when (T == <<"">>) or (T == <<"unavailable">>) ->
-            case ets:info(registered_services) of
-                undefined -> ok;
-                _ ->
-                    Server = To#jid.server,
-                    User = To#jid.user,
-                    PrivList = ejabberd_hooks:run_fold(privacy_get_user_list,
-                                                       Server, #userlist{},
-                                                       [User, Server]),
-                    case privacy_check_packet(Server, User, PrivList,
-                                              From, To, Packet, in) of
-                        allow ->
-                            lists:foreach(fun({Pid, _ServiceHost}) -> 
-                                              Pid ! {roster_presence, From, Packet}
-                                          end,
-                                          ets:tab2list(registered_services));
-                        _ -> ok
-
-                    end
-            end;
-        _ -> ok
-    end;
-process_roster_presence(_From, _To, _Packet) -> ok.
+process_roster_presence(Pid) ->  
+    fun(From, To, #xmlel{name = <<"presence">>} = Packet) ->
+          case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
+            T when (T == <<"">>) or (T == <<"unavailable">>) ->
+              Server = To#jid.server,
+              User = To#jid.user,
+              PrivList = ejabberd_hooks:run_fold(privacy_get_user_list,
+                                                 Server, #userlist{}, [User, Server]),
+              case privacy_check_packet(Server, User, PrivList, From, To, Packet, in) of
+                allow ->
+                  Pid ! {roster_presence, Packet, From};
+                _ -> ok
+              end,
+              ok;
+            _ -> ok
+          end;
+       (_From, _To, _Packet) -> ok
+    end.
 
 %%%--------------------------------------------------------------------------------------
 %%%  Manage Roster
