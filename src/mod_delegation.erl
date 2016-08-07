@@ -293,15 +293,6 @@ process_iq(_From, _To, _IQ) -> ignore.
 %%%--------------------------------------------------------------------------------------
 %%%  7. Discovering Support
 %%%--------------------------------------------------------------------------------------
--spec check_tab(atom()) -> boolean().
-
-check_tab(Name) ->
-    case ets:info(Name) of
-      undefined ->
-          false;
-      _ ->
-          true
-    end.
 
 decapsulate_features(#xmlel{attrs = Attrs} = Packet, Node) ->
   case fxml:get_attr_s(<<"node">>, Attrs) of 
@@ -392,37 +383,38 @@ disco_info(StateData, Sep) ->
 
 
 disco_features(Acc, Bare) ->
-    case check_tab(delegated_namespaces) of
-        true ->
-            Fun = fun(Feat) ->
-                      ets:foldl(fun({Ns, _, _, _, _, _}, A) ->  
-                                  A or str:prefix(Ns, Feat)
-                                end, false, delegated_namespaces)
-                  end,
-            % delete feature namespace which is delegated to service
-            Features =
-              lists:filter(fun ({{Feature, _Host}}) ->
-                                 not Fun(Feature);
-                               (Feature) when is_binary(Feature) ->
-                                 not Fun(Feature)
-                           end, Acc),
-            % add service features
-            FeaturesList =
-              ets:foldl(fun({_, _, _, _, {Feats, _, _}, {FeatsBare, _, _}}, A) ->
-                            if
-                              Bare -> A ++ FeatsBare;
-                              true -> A ++ Feats
-                            end;
-                           (_, A) -> A
-                        end, Features, delegated_namespaces),
-            {result, FeaturesList};
-        _ ->
-            {result, Acc}
+    case ets:info(delegated_namespaces) of
+      undefined ->
+        {result, Acc};
+      _ ->
+        Fun = fun(Feat) ->
+                ets:foldl(fun({Ns, _, _, _, _, _}, A) ->  
+                              A or str:prefix(Ns, Feat)
+                          end, false, delegated_namespaces)
+              end,
+        % delete feature namespace which is delegated to service
+        Features = lists:filter(fun ({{Feature, _Host}}) ->
+                                      not Fun(Feature);
+                                    (Feature) when is_binary(Feature) ->
+                                      not Fun(Feature)
+                                end, Acc),
+        % add service features
+        FeaturesList =
+          ets:foldl(fun({_, _, _, _, {Feats, _, _}, {FeatsBare, _, _}}, A) ->
+                          if
+                            Bare -> A ++ FeatsBare;
+                            true -> A ++ Feats
+                          end;
+                       (_, A) -> A
+                    end, Features, delegated_namespaces),
+        {result, FeaturesList}
     end.
 
 disco_identity(Acc, Bare) ->
-    case check_tab(delegated_namespaces) of
-      true ->
+    case ets:info(delegated_namespaces) of
+      undefined ->
+        Acc;
+      _ ->
         % filter delegated identites
         Fun = fun(Ident) ->
                 ets:foldl(fun({_, _, _, _, {_ , I, _}, {_ , IBare, _}}, A) ->
@@ -450,9 +442,7 @@ disco_identity(Acc, Bare) ->
                           true -> A ++ I
                         end;
                      (_, A) -> A
-                  end, Identities, delegated_namespaces);
-      _ ->
-        Acc
+                  end, Identities, delegated_namespaces)
     end.
 %% return xmlns from value element
 
@@ -472,8 +462,10 @@ get_field_value([Elem| Elems]) ->
     end.
 
 get_info(Acc, Bare) ->
-    case check_tab(delegated_namespaces) of
-      true ->
+    case ets:info(delegated_namespaces) of
+      undefined ->
+        Acc;
+      _ ->
         Fun = fun(Feat) ->
                 ets:foldl(fun({Ns, _, _, _, _, _}, A) ->  
                             (A or str:prefix(Ns, Feat))
@@ -492,8 +484,7 @@ get_info(Acc, Bare) ->
                           true -> A ++ Ext
                         end;
                      (_, A) -> A
-                  end, Exten, delegated_namespaces);
-      _ -> Acc
+                  end, Exten, delegated_namespaces)
     end.
 
 %% 7.2.1 General Case
