@@ -63,7 +63,7 @@ defmodule Ejabberd.Mixfile do
      # version 3.20:
      {:relx, "~> 3.19.0", only: :dev},
      {:meck, "~> 0.8.4", only: :test},
-     {:moka, github: "processone/moka", tag: "1.0.5b", only: :test}]
+     {:moka, github: "processone/moka", tag: "1.0.5c", only: :test}]
   end
 
   defp package do
