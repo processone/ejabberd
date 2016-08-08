@@ -151,6 +151,11 @@ listen:
   ##      roster: "both"
   ##      message: "outgoing"
   ##      presence: "roster"
+  ##   delegations:
+  ##      "urn:xmpp:mam:1":
+  ##        filtering: ["node"]
+  ##      "http://jabber.org/protocol/pubsub":
+  ##        filtering: []
   ##   hosts:
   ##     "icq.example.org":
   ##       password: "secret"
@@ -584,6 +589,7 @@ modules:
   mod_carboncopy: {}
   mod_client_state: {}
   mod_configure: {} # requires mod_adhoc
+  ##mod_delegation: {} # for xep0356
   mod_disco: {}
   ## mod_echo: {}
   mod_irc: {}
