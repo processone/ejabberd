@@ -9,10 +9,6 @@ defmodule Ejabberd.Config.Attr do
 
   @type attr :: {atom(), any()}
 
-  # TODO: Problems:
-  #   Why @after throws an error? Already defined as a hook in elixir?
-  #   Currently, the annotation val is an ast rep. So functions are not recognized
-  #   using is_function/1. Find a way to resolve this issue.
   @attr_supported [
     active:
       [type: :boolean, default: true],
@@ -30,7 +26,7 @@ defmodule Ejabberd.Config.Attr do
   Takes a block with annotations and extracts the list
   of attributes.
   """
-  @spec extract_attrs_from_block(any()) :: [attr]
+  @spec extract_attrs_from_block_with_defaults(any()) :: [attr]
   def extract_attrs_from_block_with_defaults(block) do
     block
     |> extract_attrs_from_block
@@ -87,10 +83,10 @@ defmodule Ejabberd.Config.Attr do
   # default value.
   @spec insert_default_attrs_if_missing([attr]) :: [attr]
   defp insert_default_attrs_if_missing(attrs) do
-    Enum.map @attr_supported, fn {attr_name, _} ->
-      case Keyword.has_key?(attrs, attr_name) do
-        true -> {attr_name, attrs[attr_name]}
-        false -> {attr_name, get_default_for_attr(attr_name)}
+    Enum.reduce @attr_supported, attrs, fn({attr_name, _}, acc) ->
+      case Keyword.has_key?(acc, attr_name) do
+        true -> acc
+        false -> Keyword.put(acc, attr_name, get_default_for_attr(attr_name))
       end
     end
   end
