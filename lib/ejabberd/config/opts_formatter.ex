@@ -6,7 +6,7 @@ defmodule Ejabberd.Config.OptsFormatter do
 
   alias Ejabberd.Config.{EjabberdModule}
 
-  @spec format_opts_for_ejabberd([{atom(), any()}]) :: tuple()
+  @spec format_opts_for_ejabberd([{atom(), any()}]) :: list()
   def format_opts_for_ejabberd(opts) do
     opts
     |> format_attrs_for_ejabberd
@@ -34,9 +34,5 @@ defmodule Ejabberd.Config.OptsFormatter do
     Enum.map mods, fn %EjabberdModule{module: mod, attrs: attrs} ->
       Keyword.put(attrs[:opts], :module, mod)
     end
-  end
-
-  defp into_root_element(opts) do
-    {:state, opts, ["localhost"], false, false, false}
   end
 end
