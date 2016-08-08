@@ -6,7 +6,9 @@ defmodule Ejabberd.Config do
   for working/starting the configuration parsed.
   """
 
-  alias Ejabberd.Config.{EjabberdModule, Attr, EjabberdLogger}
+  alias Ejabberd.Config.EjabberdModule
+  alias Ejabberd.Config.Attr
+  alias Ejabberd.Config.EjabberdLogger
 
   defmacro __using__(_opts) do
     quote do
