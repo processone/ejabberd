@@ -141,6 +141,9 @@ init([{SockMod, Socket}, Opts]) ->
                      {value, {_, PrivAcc}} -> PrivAcc;
                      _ -> []
                  end,
+    %% table for delegated namespaces {namespace, [feature list]}
+    catch ets:new(delegated_namespaces, [named_table, public]),
+    
     Delegations = case lists:keyfind(delegations, 1, Opts) of
                       {delegations, Del} ->
                           lists:foldl(

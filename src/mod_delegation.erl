@@ -297,9 +297,9 @@ process_iq(_From, _To, _IQ) -> ignore.
 decapsulate_features(#xmlel{attrs = Attrs} = Packet, Node) ->
   case fxml:get_attr_s(<<"node">>, Attrs) of 
       Node ->
-          PREFIX = << ?NS_DELEGATION/binary, <<"::">>/binary >>,
+          PREFIX = << ?NS_DELEGATION/binary, "::" >>,
           Size = byte_size(PREFIX),
-          BARE_PREFIX = << ?NS_DELEGATION/binary, <<":bare:">>/binary >>,
+          BARE_PREFIX = << ?NS_DELEGATION/binary, ":bare:" >>,
           SizeBare = byte_size(BARE_PREFIX),
 
           Features = [Feat || #xmlel{attrs = [{<<"var">>, Feat}]} <-

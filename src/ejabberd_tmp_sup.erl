@@ -37,12 +37,6 @@ start_link(Name, Module) ->
 
 
 init(Module) ->
-    if
-    	Module == ejabberd_service ->
-            %% table for delegated namespaces {namespace, [feature list]}
-            catch ets:new(delegated_namespaces, [named_table, public]);
-        true -> ok
-    end,
     {ok, {{simple_one_for_one, 10, 1},
           [{undefined, {Module, start_link, []}, temporary,
 	          1000, worker, [Module]}]}}.
