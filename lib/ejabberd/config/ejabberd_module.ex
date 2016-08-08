@@ -41,7 +41,7 @@ defmodule Ejabberd.Config.EjabberdModule do
 
   defp is_git_module?(%EjabberdModule{attrs: attrs}) do
     case Keyword.get(attrs, :git) do
-      nil -> false
+      "" -> false
       repo -> String.match?(repo, ~r/((git|ssh|http(s)?)|(git@[\w\.]+))(:(\/\/)?)([\w\.@\:\/\-~]+)(\.git)(\/)?/)
     end
   end
