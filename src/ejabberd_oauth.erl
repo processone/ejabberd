@@ -102,7 +102,9 @@ get_commands_spec() ->
                         args = [{jid, string},{ttl, integer}, {scopes, string}],
                         policy = restricted,
                         args_example = ["user@server.com", "connected_users_number;muc_online_rooms"],
-                        args_desc = ["List of scopes to allow, separated by ';'"],
+                        args_desc = ["Jid for which issue token",
+				     "Time to live of generated token in seconds",
+				     "List of scopes to allow, separated by ';'"],
                         result = {result, {tuple, [{token, string}, {scopes, string}, {expires_in, string}]}}
                        },
      #ejabberd_commands{name = oauth_list_tokens, tags = [oauth],
