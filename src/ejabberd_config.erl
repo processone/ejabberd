@@ -877,7 +877,7 @@ v_db(Mod, Type) ->
 	[] -> erlang:error(badarg)
     end.
 
--spec default_db(binary(), module()) -> atom().
+-spec default_db(global | binary(), module()) -> atom().
 
 default_db(Host, Module) ->
     case ejabberd_config:get_option(

@@ -57,6 +57,7 @@ terminate(Host, ServerHost) ->
 			  ?MODULE, user_offline, 75),
     ok.
 
+-spec user_offline(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> _.
 user_offline(_SID, #jid{luser=LUser,lserver=LServer}, _Info) ->
     mod_pubsub:remove_user(LUser, LServer).
 

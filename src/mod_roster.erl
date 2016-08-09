@@ -452,6 +452,9 @@ in_subscription(_, User, Server, JID, Type, Reason) ->
     process_subscription(in, User, Server, JID, Type,
 			 Reason).
 
+-spec out_subscription(
+	binary(), binary(), jid(),
+	subscribed | unsubscribed | subscribe | unsubscribe) -> boolean().
 out_subscription(User, Server, JID, Type) ->
     process_subscription(out, User, Server, JID, Type, <<"">>).
 
@@ -643,12 +646,14 @@ in_auto_reply(from, out, unsubscribe) -> unsubscribed;
 in_auto_reply(both, none, unsubscribe) -> unsubscribed;
 in_auto_reply(_, _, _) -> none.
 
+-spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     send_unsubscription_to_rosteritems(LUser, LServer),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:remove_user(LUser, LServer).
+    Mod:remove_user(LUser, LServer),
+    ok.
 
 %% For each contact with Subscription:
 %% Both or From, send a "unsubscribed" presence stanza;

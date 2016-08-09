@@ -336,6 +336,9 @@ in_subscription(Acc, User, Server, JID, Type,
 		_Reason) ->
     process_subscription(in, User, Server, JID, Type, Acc).
 
+-spec out_subscription(
+	binary(), binary(), jid(),
+	subscribed | unsubscribed | subscribe | unsubscribe) -> boolean().
 out_subscription(UserFrom, ServerFrom, JIDTo,
 		 unsubscribed) ->
     #jid{luser = UserTo, lserver = ServerTo} = JIDTo,
@@ -629,12 +632,15 @@ broadcast_members_to_user(LUser, LServer, Group, Host, Subscription) ->
 	      broadcast_subscription(U, S, {LUser, LServer, <<"">>}, Subscription)
       end, Members).
 
+-spec register_user(binary(), binary()) -> ok.
 register_user(User, Server) ->
     Groups = get_user_groups({User, Server}),
     [push_user_to_displayed(User, Server, Group, Server,
 			    both, displayed_to_groups(Group, Server))
-     || Group <- Groups].
+     || Group <- Groups],
+    ok.
 
+-spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
     push_user_to_members(User, Server, remove).
 
@@ -724,6 +730,7 @@ push_roster_item(User, Server, ContactU, ContactS,
 		   groups = [GroupName]},
     push_item(User, Server, Item).
 
+-spec user_available(jid()) -> ok.
 user_available(New) ->
     LUser = New#jid.luser,
     LServer = New#jid.lserver,
@@ -747,6 +754,7 @@ user_available(New) ->
       _ -> ok
     end.
 
+-spec unset_presence(binary(), binary(), binary(), binary()) -> ok.
 unset_presence(LUser, LServer, Resource, Status) ->
     Resources = ejabberd_sm:get_user_resources(LUser,
 					       LServer),

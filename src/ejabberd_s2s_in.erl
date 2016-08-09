@@ -62,7 +62,7 @@
 	 connections = (?DICT):new() :: ?TDICT,
          timer = make_ref()          :: reference()}).
 
--type state_name() :: wait_for_stream | wait_for_features | stream_established.
+-type state_name() :: wait_for_stream | wait_for_feature_request | stream_established.
 -type state() :: #state{}.
 -type fsm_next() :: {next_state, state_name(), state()}.
 -type fsm_stop() :: {stop, normal, state()}.
@@ -287,7 +287,8 @@ wait_for_feature_request(#starttls{},
 		      end,
 	    TLSSocket = (StateData#state.sockmod):starttls(
 			  Socket, TLSOpts,
-			  fxml:element_to_binary(#starttls_proceed{})),
+			  fxml:element_to_binary(
+			    xmpp:encode(#starttls_proceed{}))),
 	    {next_state, wait_for_stream,
 	     StateData#state{socket = TLSSocket, streamid = new_id(),
 			     tls_enabled = true, tls_options = TLSOpts}};
@@ -342,19 +343,17 @@ stream_established({xmlstreamelement, El}, StateData) ->
 stream_established(#db_result{to = To, from = From, key = Key},
 		   StateData) ->
     ?DEBUG("GET KEY: ~p", [{To, From, Key}]),
-    LTo = To#jid.lserver,
-    LFrom = From#jid.lserver,
-    case {ejabberd_s2s:allow_host(LTo, LFrom),
-	  lists:member(LTo, ejabberd_router:dirty_get_all_domains())} of
+    case {ejabberd_s2s:allow_host(To, From),
+	  lists:member(To, ejabberd_router:dirty_get_all_domains())} of
 	{true, true} ->
-	    ejabberd_s2s_out:terminate_if_waiting_delay(LTo, LFrom),
-	    ejabberd_s2s_out:start(LTo, LFrom,
+	    ejabberd_s2s_out:terminate_if_waiting_delay(To, From),
+	    ejabberd_s2s_out:start(To, From,
 				   {verify, self(), Key,
 				    StateData#state.streamid}),
-	    Conns = (?DICT):store({LFrom, LTo},
+	    Conns = (?DICT):store({From, To},
 				  wait_for_verification,
 				  StateData#state.connections),
-	    change_shaper(StateData, LTo, jid:make(LFrom)),
+	    change_shaper(StateData, To, jid:make(From)),
 	    {next_state, stream_established,
 	     StateData#state{connections = Conns}};
 	{_, false} ->
@@ -367,9 +366,7 @@ stream_established(#db_result{to = To, from = From, key = Key},
 stream_established(#db_verify{to = To, from = From, id = Id, key = Key},
 		   StateData) ->
     ?DEBUG("VERIFY KEY: ~p", [{To, From, Id, Key}]),
-    LTo = jid:nameprep(To),
-    LFrom = jid:nameprep(From),
-    Type = case ejabberd_s2s:make_key({LTo, LFrom}, Id) of
+    Type = case ejabberd_s2s:make_key({To, From}, Id) of
 	       Key -> valid;
 	       _ -> invalid
 	   end,
@@ -412,19 +409,15 @@ stream_established({valid, From, To}, StateData) ->
 		 #db_result{from = To, to = From, type = valid}),
     ?INFO_MSG("Accepted s2s dialback authentication for ~s (TLS=~p)",
 	      [From, StateData#state.tls_enabled]),
-    LFrom = jid:nameprep(From),
-    LTo = jid:nameprep(To),
     NSD = StateData#state{connections =
-			      (?DICT):store({LFrom, LTo}, established,
+			      (?DICT):store({From, To}, established,
 					    StateData#state.connections)},
     {next_state, stream_established, NSD};
 stream_established({invalid, From, To}, StateData) ->
     send_element(StateData,
 		 #db_result{from = To, to = From, type = invalid}),
-    LFrom = jid:nameprep(From),
-    LTo = jid:nameprep(To),
     NSD = StateData#state{connections =
-			      (?DICT):erase({LFrom, LTo},
+			      (?DICT):erase({From, To},
 					    StateData#state.connections)},
     {next_state, stream_established, NSD};
 stream_established({xmlstreamend, _Name}, StateData) ->

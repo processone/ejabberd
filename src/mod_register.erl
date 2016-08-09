@@ -74,6 +74,7 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
+-spec stream_feature_register([xmpp_element()], binary()) -> [xmpp_element()].
 stream_feature_register(Acc, Host) ->
     AF = gen_mod:get_module_opt(Host, ?MODULE, access_from,
                                           fun(A) -> A end,
@@ -85,6 +86,9 @@ stream_feature_register(Acc, Host) ->
 	    Acc
     end.
 
+-spec unauthenticated_iq_register(empty | iq(), binary(), iq(),
+				  {inet:ip_address(), non_neg_integer()}) ->
+					 empty | iq().
 unauthenticated_iq_register(_Acc, Server,
 			    #iq{sub_els = [#register{}]} = IQ, IP) ->
     Address = case IP of

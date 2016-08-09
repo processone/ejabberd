@@ -270,7 +270,10 @@ get_local_features(Acc, From,
     end.
 
 %%%-----------------------------------------------------------------------
-
+-spec adhoc_sm_items(empty | {error, error()} | {result, [disco_item()]},
+		     jid(), jid(), binary()) -> {error, error()} |
+						{result, [disco_item()]} |
+						empty.
 adhoc_sm_items(Acc, From, #jid{lserver = LServer} = To,
 	       Lang) ->
     case acl:match_rule(LServer, configure, From) of
@@ -322,6 +325,10 @@ get_user_resources(User, Server) ->
 
 %%%-----------------------------------------------------------------------
 
+-spec adhoc_local_items(empty | {error, error()} | {result, [disco_item()]},
+			jid(), jid(), binary()) -> {error, error()} |
+						   {result, [disco_item()]} |
+						   empty.
 adhoc_local_items(Acc, From,
 		  #jid{lserver = LServer, server = Server} = To, Lang) ->
     case acl:match_rule(LServer, configure, From) of
@@ -765,6 +772,8 @@ get_stopped_nodes(_Lang) ->
 	  allow -> adhoc_local_commands(From, To, Request)
 	end).
 
+-spec adhoc_local_commands(adhoc_command(), jid(), jid(), adhoc_command()) ->
+				  adhoc_command() | {error, error()}.
 adhoc_local_commands(Acc, From,
 		     #jid{lserver = LServer} = To,
 		     #adhoc_command{node = Node, lang = Lang} = Request) ->
@@ -1672,8 +1681,7 @@ set_form(_From, _Host, _, _Lang, _XData) ->
 get_value(Field, XData) -> hd(get_values(Field, XData)).
 
 get_values(Field, XData) ->
-    [_|_] = Values = xmpp_util:get_xdata_values(Field, XData),
-    Values.
+    xmpp_util:get_xdata_values(Field, XData).
 
 search_running_node(SNode) ->
     search_running_node(SNode,
@@ -1723,7 +1731,7 @@ get_last_info(User, Server) ->
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+-spec adhoc_sm_commands(adhoc_command(), jid(), jid(), adhoc_command()) -> adhoc_command().
 adhoc_sm_commands(_Acc, From,
 		  #jid{user = User, server = Server, lserver = LServer},
 		  #adhoc_command{lang = Lang, node = <<"config">>,

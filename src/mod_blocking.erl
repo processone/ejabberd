@@ -227,16 +227,13 @@ make_userlist(Name, List) ->
     NeedDb = mod_privacy:is_list_needdb(List),
     #userlist{name = Name, list = List, needdb = NeedDb}.
 
--spec broadcast_list_update(binary(), binary(), binary(), userlist()) ->
-				   {broadcast,
-				    {privacy_list, userlist(), binary() | none}}.
+-spec broadcast_list_update(binary(), binary(), binary(), userlist()) -> ok.
 broadcast_list_update(LUser, LServer, Name, UserList) ->
     ejabberd_sm:route(jid:make(LUser, LServer, <<"">>),
                       jid:make(LUser, LServer, <<"">>),
                       {broadcast, {privacy_list, UserList, Name}}).
 
--spec broadcast_blocklist_event(binary(), binary(), block_event()) ->
-				       {broadcast, {blocking, block_event()}}.
+-spec broadcast_blocklist_event(binary(), binary(), block_event()) -> ok.
 broadcast_blocklist_event(LUser, LServer, Event) ->
     JID = jid:make(LUser, LServer, <<"">>),
     ejabberd_sm:route(JID, JID,

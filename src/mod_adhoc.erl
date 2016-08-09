@@ -173,7 +173,9 @@ get_sm_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
 get_sm_identity(Acc, _From, _To, _Node, _Lang) -> Acc.
 
 %-------------------------------------------------------------------------
-
+-spec get_local_features({error, error()} | {result, [binary()]} | empty,
+			 jid(), jid(), binary(), binary()) ->
+				{error, error()} | {result, [binary()]} | empty.
 get_local_features(Acc, _From, _To, <<"">>, _Lang) ->
     Feats = case Acc of
 	      {result, I} -> I;
@@ -205,16 +207,24 @@ get_sm_features(Acc, _From, _To, _Node, _Lang) -> Acc.
 %-------------------------------------------------------------------------
 
 process_local_iq(IQ) ->
-    process_adhoc_request(IQ, adhoc_local_commands).
+    process_adhoc_request(IQ, local).
 
 process_sm_iq(IQ) ->
-    process_adhoc_request(IQ, adhoc_sm_commands).
+    process_adhoc_request(IQ, sm).
 
 process_adhoc_request(#iq{from = From, to = To,
 			  type = set, lang = Lang,
-			  sub_els = [#adhoc_command{} = SubEl]} = IQ, Hook) ->
+			  sub_els = [#adhoc_command{} = SubEl]} = IQ, Type) ->
     Host = To#jid.lserver,
-    case ejabberd_hooks:run_fold(Hook, Host, empty, [From, To, SubEl]) of
+    Res = case Type of
+	      local ->
+		  ejabberd_hooks:run_fold(adhoc_local_commands, Host, empty,
+					  [From, To, SubEl]);
+	      sm ->
+		  ejabberd_hooks:run_fold(adhoc_sm_commands, Host, empty,
+					  [From, To, SubEl])
+	  end,
+    case Res of
 	ignore ->
 	    ignore;
 	empty ->
@@ -228,6 +238,8 @@ process_adhoc_request(#iq{from = From, to = To,
 process_adhoc_request(#iq{} = IQ, _Hooks) ->
     xmpp:make_error(IQ, xmpp:err_bad_request()).
 
+-spec ping_item(empty | {error, error()} | {result, [disco_item()]},
+		jid(), jid(), binary()) -> {result, [disco_item()]}.
 ping_item(Acc, _From, #jid{server = Server} = _To,
 	  Lang) ->
     Items = case Acc of
@@ -239,6 +251,8 @@ ping_item(Acc, _From, #jid{server = Server} = _To,
 			 name = translate:translate(Lang, <<"Ping">>)}],
     {result, Items ++ Nodes}.
 
+-spec ping_command(adhoc_command(), jid(), jid(), adhoc_command()) ->
+			  adhoc_command() | {error, error()}.
 ping_command(_Acc, _From, _To,
 	     #adhoc_command{lang = Lang, node = <<"ping">>,
 			    action = Action} = Request) ->

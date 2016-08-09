@@ -66,10 +66,8 @@
 
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), #irc_custom{}) -> ok | pass.
--callback get_data(binary(), binary(), {binary(), binary()}) ->
-    error | empty | irc_data().
--callback set_data(binary(), binary(), {binary(), binary()}, irc_data()) ->
-    {atomic, any()}.
+-callback get_data(binary(), binary(), jid()) -> error | empty | irc_data().
+-callback set_data(binary(), binary(), jid(), irc_data()) -> {atomic, any()}.
 
 %%====================================================================
 %% API

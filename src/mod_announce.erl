@@ -130,42 +130,34 @@ stop(Host) ->
     {wait, Proc}.
 
 %% Announcing via messages to a custom resource
+-spec announce(jid(), jid(), stanza()) -> ok.
 announce(From, #jid{luser = <<>>} = To, #message{} = Packet) ->
     Proc = gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME),
     case To#jid.lresource of
         <<"announce/all">> ->
-            Proc ! {announce_all, From, To, Packet},
-            stop;
+            Proc ! {announce_all, From, To, Packet};
         <<"announce/all-hosts/all">> ->
-            Proc ! {announce_all_hosts_all, From, To, Packet},
-            stop;
+            Proc ! {announce_all_hosts_all, From, To, Packet};
         <<"announce/online">> ->
-            Proc ! {announce_online, From, To, Packet},
-            stop;
+            Proc ! {announce_online, From, To, Packet};
         <<"announce/all-hosts/online">> ->
-            Proc ! {announce_all_hosts_online, From, To, Packet},
-            stop;
+            Proc ! {announce_all_hosts_online, From, To, Packet};
         <<"announce/motd">> ->
-            Proc ! {announce_motd, From, To, Packet},
-            stop;
+            Proc ! {announce_motd, From, To, Packet};
         <<"announce/all-hosts/motd">> ->
-            Proc ! {announce_all_hosts_motd, From, To, Packet},
-            stop;
+            Proc ! {announce_all_hosts_motd, From, To, Packet};
         <<"announce/motd/update">> ->
-            Proc ! {announce_motd_update, From, To, Packet},
-            stop;
+            Proc ! {announce_motd_update, From, To, Packet};
         <<"announce/all-hosts/motd/update">> ->
-            Proc ! {announce_all_hosts_motd_update, From, To, Packet},
-            stop;
+            Proc ! {announce_all_hosts_motd_update, From, To, Packet};
         <<"announce/motd/delete">> ->
-            Proc ! {announce_motd_delete, From, To, Packet},
-            stop;
+            Proc ! {announce_motd_delete, From, To, Packet};
         <<"announce/all-hosts/motd/delete">> ->
-            Proc ! {announce_all_hosts_motd_delete, From, To, Packet},
-            stop;
+            Proc ! {announce_all_hosts_motd_delete, From, To, Packet};
         _ ->
             ok
-    end;
+    end,
+    ok;
 announce(_From, _To, _Packet) ->
     ok.
 
@@ -344,7 +336,10 @@ disco_items(Acc, From, #jid{lserver = LServer} = _To, Node, Lang) ->
     end.
 
 %%-------------------------------------------------------------------------
-
+-spec announce_items(empty | {error, error()} | {result, [disco_item()]},
+			jid(), jid(), binary()) -> {error, error()} |
+						   {result, [disco_item()]} |
+						   empty.
 announce_items(Acc, From, #jid{lserver = LServer, server = Server} = _To, Lang) ->
     Access1 = get_access(LServer),
     Nodes1 = case acl:match_rule(LServer, Access1, From) of
@@ -390,7 +385,8 @@ commands_result(Allow, From, To, Request) ->
 	    announce_commands(From, To, Request)
     end.
 
-
+-spec announce_commands(adhoc_command(), jid(), jid(), adhoc_command()) ->
+			       adhoc_command() | {error, error()}.
 announce_commands(Acc, From, #jid{lserver = LServer} = To,
 		  #adhoc_command{node = Node} = Request) ->
     LNode = tokenize(Node),
@@ -764,6 +760,7 @@ announce_motd_delete(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:delete_motd(LServer).
 
+-spec send_motd(jid()) -> ok | {atomic, any()}.
 send_motd(#jid{luser = LUser, lserver = LServer} = JID) when LUser /= <<>> ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:get_motd(LServer) of

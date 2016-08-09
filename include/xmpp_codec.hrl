@@ -178,8 +178,8 @@
 -record(private, {xml_els = [] :: [fxml:xmlel()]}).
 -type private() :: #private{}.
 
--record(db_verify, {from :: jid:jid(),
-                    to :: jid:jid(),
+-record(db_verify, {from = <<>> :: binary(),
+                    to = <<>> :: binary(),
                     id = <<>> :: binary(),
                     type :: 'error' | 'invalid' | 'valid',
                     key = <<>> :: binary(),
@@ -361,7 +361,7 @@
 -record(caps, {node = <<>> :: binary(),
                version = <<>> :: binary(),
                hash = <<>> :: binary(),
-               exts = [] :: binary() | []}).
+               exts = [] :: [binary()]}).
 -type caps() :: #caps{}.
 
 -record(muc, {history :: #muc_history{},
@@ -428,8 +428,8 @@
                       userid :: binary()}).
 -type vcard_email() :: #vcard_email{}.
 
--record(db_result, {from :: jid:jid(),
-                    to :: jid:jid(),
+-record(db_result, {from = <<>> :: binary(),
+                    to = <<>> :: binary(),
                     type :: 'error' | 'invalid' | 'valid',
                     key = <<>> :: binary(),
                     sub_els = [] :: [xmpp_element() | fxml:xmlel()]}).

@@ -52,6 +52,8 @@ stop(Host) ->
     supervisor:delete_child(ejabberd_sup, Proc),
     ok.
 
+-spec disco_features({error, error()} | {result, [binary()]} | empty,
+		     jid(), jid(), binary(), binary()) -> {result, [binary()]}.
 disco_features(_Acc, _From, _To, _Node, _Lang) ->
     {result, [?NS_MIX_0]}.
 
@@ -69,6 +71,8 @@ disco_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc ++ [#identity{category = <<"conference">>,
 		      type = <<"mix">>}].
 
+-spec disco_info([xdata()], binary(), module(), binary(), binary()) -> [xdata()];
+		([xdata()], jid(), jid(), binary(), binary()) -> [xdata()].
 disco_info(_Acc, _From, To, _Node, _Lang) when is_atom(To) ->
     [#xdata{type = result,
 	    fields = [#xdata_field{var = <<"FORM_TYPE">>,

@@ -191,6 +191,9 @@ in_subscription(Acc, User, Server, JID, Type,
 		_Reason) ->
     process_subscription(in, User, Server, JID, Type, Acc).
 
+-spec out_subscription(
+	binary(), binary(), jid(),
+	subscribed | unsubscribed | subscribe | unsubscribe) -> boolean().
 out_subscription(User, Server, JID, Type) ->
     process_subscription(out, User, Server, JID, Type,
 			 false).

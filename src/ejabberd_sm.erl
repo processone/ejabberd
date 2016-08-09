@@ -110,7 +110,7 @@
 %%====================================================================
 %% API
 %%====================================================================
--export_type([sid/0]).
+-export_type([sid/0, info/0]).
 
 start() ->
     ChildSpec = {?MODULE, {?MODULE, start_link, []},
@@ -168,7 +168,7 @@ check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
       false -> {stop, false}
     end.
 
--spec bounce_offline_message(jid(), jid(), xmlel()) -> stop.
+-spec bounce_offline_message(jid(), jid(), message()) -> stop.
 
 bounce_offline_message(From, To, Packet) ->
     Lang = xmpp:get_lang(Packet),
@@ -234,7 +234,7 @@ get_user_info(User, Server, Resource) ->
     end.
 
 -spec set_presence(sid(), binary(), binary(), binary(),
-                   prio(), xmlel(), info()) -> ok.
+                   prio(), presence(), info()) -> ok.
 
 set_presence(SID, User, Server, Resource, Priority,
 	     Presence, Info) ->
@@ -750,7 +750,7 @@ process_iq(From, To, #iq{type = T} = Packet) when T == get; T == set ->
 process_iq(_From, _To, #iq{}) ->
     ok.
 
--spec force_update_presence({binary(), binary()}) -> any().
+-spec force_update_presence({binary(), binary()}) -> ok.
 
 force_update_presence({LUser, LServer}) ->
     Mod = get_sm_backend(LServer),

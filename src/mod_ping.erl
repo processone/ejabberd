@@ -207,11 +207,11 @@ iq_ping(#iq{lang = Lang} = IQ) ->
     Txt = <<"Ping query is incorrect">>,
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang)).
 
--spec user_online(ejabberd_sm:sid(), jid(), any()) -> ok.
+-spec user_online(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> ok.
 user_online(_SID, JID, _Info) ->
     start_ping(JID#jid.lserver, JID).
 
--spec user_offline(ejabberd_sm:sid(), jid(), any()) -> ok.
+-spec user_offline(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> ok.
 user_offline(_SID, JID, _Info) ->
     stop_ping(JID#jid.lserver, JID).
 

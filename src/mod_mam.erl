@@ -175,17 +175,21 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
+-spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:remove_user(LUser, LServer).
+    Mod:remove_user(LUser, LServer),
+    ok.
 
+-spec remove_room(binary(), binary(), binary()) -> ok.
 remove_room(LServer, Name, Host) ->
     LName = jid:nodeprep(Name),
     LHost = jid:nameprep(Host),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:remove_room(LServer, LName, LHost).
+    Mod:remove_room(LServer, LName, LHost),
+    ok.
 
 get_room_config(X, RoomState, _From, Lang) ->
     Config = RoomState#state.config,
@@ -621,9 +625,7 @@ should_archive_muc(#message{type = groupchat,
 		    end;
 		_ ->
 		    true
-	    end;
-	_ ->
-	    false
+	    end
     end;
 should_archive_muc(_) ->
     false.

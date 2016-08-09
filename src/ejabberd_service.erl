@@ -127,7 +127,7 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
     try xmpp:decode(#xmlel{name = Name, attrs = Attrs}) of
 	#stream_start{xmlns = ?NS_COMPONENT, to = To} when is_record(To, jid) ->
 	    Host = To#jid.lserver,
-	    send_header(StateData, To),
+	    send_header(StateData, Host),
 	    HostOpts = case dict:is_key(Host, StateData#state.host_opts) of
 			   true ->
 			       StateData#state.host_opts;

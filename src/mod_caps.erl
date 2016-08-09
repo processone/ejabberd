@@ -161,7 +161,7 @@ caps_stream_features(Acc, MyHost) ->
 -spec disco_features({error, error()} | {result, [binary()]} | empty,
 		     jid(), jid(),
 		     binary(), binary()) ->
-			    {error, error()} | {result, [binary()]}.
+			    {error, error()} | {result, [binary()]} | empty.
 disco_features(Acc, From, To, Node, Lang) ->
     case is_valid_node(Node) of
         true ->
@@ -185,16 +185,18 @@ disco_identity(Acc, From, To, Node, Lang) ->
             Acc
     end.
 
--spec disco_info([xdata()], binary(), module(),
-		 binary(), binary()) -> [xdata()].
-disco_info(Acc, Host, Module, Node, Lang) ->
+-spec disco_info([xdata()], binary(), module(), binary(), binary()) -> [xdata()];
+		([xdata()], jid(), jid(), binary(), binary()) -> [xdata()].
+disco_info(Acc, Host, Module, Node, Lang) when is_atom(Module) ->
     case is_valid_node(Node) of
         true ->
             ejabberd_hooks:run_fold(disco_info, Host, [],
                                     [Host, Module, <<"">>, Lang]);
         false ->
             Acc
-    end.
+    end;
+disco_info(Acc, _, _, _Node, _Lang) ->
+    Acc.
 
 -spec c2s_presence_in(ejabberd_c2s:state(), {jid(), jid(), presence()}) ->
 			     ejabberd_c2s:state().
@@ -277,6 +279,7 @@ c2s_broadcast_recipients(InAcc, Host, C2SState,
     end;
 c2s_broadcast_recipients(Acc, _, _, _, _, _) -> Acc.
 
+-spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->
     [].
 
@@ -403,13 +406,13 @@ feature_response(_IQResult, Host, From, Caps,
 		 [_SubNode | SubNodes]) ->
     feature_request(Host, From, Caps, SubNodes).
 
--spec caps_read_fun(binary(), binary()) -> function().
+-spec caps_read_fun(binary(), {binary(), binary()}) -> function().
 caps_read_fun(Host, Node) ->
     LServer = jid:nameprep(Host),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     fun() -> Mod:caps_read(LServer, Node) end.
 
--spec caps_write_fun(binary(), binary(), [binary()]) -> function().
+-spec caps_write_fun(binary(), {binary(), binary()}, [binary()]) -> function().
 caps_write_fun(Host, Node, Features) ->
     LServer = jid:nameprep(Host),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
@@ -437,8 +440,8 @@ make_my_disco_hash(Host) ->
       _Err -> <<"">>
     end.
 
--spec make_disco_hash(disco_info(), crypto:digest_type()) -> binary().
-
+-type digest_type() :: md5 | sha | sha224 | sha256 | sha384 | sha512.
+-spec make_disco_hash(disco_info(), digest_type()) -> binary().
 make_disco_hash(DiscoInfo, Algo) ->
     Concat = list_to_binary([concat_identities(DiscoInfo),
                              concat_features(DiscoInfo), concat_info(DiscoInfo)]),
@@ -469,19 +472,23 @@ check_hash(Caps, DiscoInfo) ->
       _ -> true
     end.
 
+-spec concat_features(disco_info()) -> iolist().
 concat_features(#disco_info{features = Features}) ->
     lists:usort([[Feat, $<] || Feat <- Features]).
 
+-spec concat_identities(disco_info()) -> iolist().
 concat_identities(#disco_info{identities = Identities}) ->
     lists:sort(
       [[Cat, $/, T, $/, Lang, $/, Name, $<] ||
 	  #identity{category = Cat, type = T,
 		    lang = Lang, name = Name} <- Identities]).
 
+-spec concat_info(disco_info()) -> iolist().
 concat_info(#disco_info{xdata = Xs}) ->
     lists:sort(
       [concat_xdata_fields(Fs) || #xdata{type = result, fields = Fs} <- Xs]).
 
+-spec concat_xdata_fields([xdata_field()]) -> iolist().
 concat_xdata_fields(Fields) ->
     Form = case lists:keyfind(<<"FORM_TYPE">>, #xdata_field.var, Fields) of
 	       #xdata_field{values = Values} -> Values;
@@ -492,10 +499,12 @@ concat_xdata_fields(Fields) ->
 	      is_binary(Var), Var /= <<"FORM_TYPE">>],
     [Form, $<, lists:sort(Res)].
 
+-spec gb_trees_fold(fun((_, _, T) -> T), T, gb_trees:tree()) -> T.
 gb_trees_fold(F, Acc, Tree) ->
     Iter = gb_trees:iterator(Tree),
     gb_trees_fold_iter(F, Acc, Iter).
 
+-spec gb_trees_fold_iter(fun((_, _, T) -> T), T, gb_trees:iter()) -> T.
 gb_trees_fold_iter(F, Acc, Iter) ->
     case gb_trees:next(Iter) of
       {Key, Val, NewIter} ->
@@ -504,6 +513,7 @@ gb_trees_fold_iter(F, Acc, Iter) ->
       _ -> Acc
     end.
 
+-spec now_ts() -> integer().
 now_ts() ->
     p1_time_compat:system_time(seconds).
 

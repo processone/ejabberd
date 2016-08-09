@@ -297,7 +297,8 @@ get_sm_items(_Acc, #jid{luser = U, lserver = S, lresource = R} = JID,
 get_sm_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec get_info([xdata()], jid(), jid(), binary(), binary()) -> [xdata()].
+-spec get_info([xdata()], binary(), module(), binary(), binary()) -> [xdata()];
+	      ([xdata()], jid(), jid(), binary(), binary()) -> [xdata()].
 get_info(_Acc, #jid{luser = U, lserver = S, lresource = R},
 	 #jid{luser = U, lserver = S}, ?NS_FLEX_OFFLINE, _Lang) ->
     N = jlib:integer_to_binary(count_offline_messages(U, S)),
@@ -570,11 +571,13 @@ remove_old_messages(Days, Server) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_old_messages(Days, LServer).
 
+-spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:remove_user(LUser, LServer).
+    Mod:remove_user(LUser, LServer),
+    ok.
 
 %% Helper functions:
 

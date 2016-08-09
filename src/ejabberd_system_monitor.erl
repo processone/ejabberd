@@ -61,6 +61,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, Opts,
 			  []).
 
+-spec process_command(jid(), jid(), stanza()) -> ok.
 process_command(From, To, Packet) ->
     case To of
       #jid{luser = <<"">>, lresource = <<"watchdog">>} ->
@@ -75,7 +76,7 @@ process_command(From, To, Packet) ->
 				    process_flag(priority, high),
 				    process_command1(From, To, BodyText)
 			    end),
-		      stop;
+		      ok;
 		  false -> ok
 		end;
 	    _ -> ok

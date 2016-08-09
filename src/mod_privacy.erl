@@ -515,6 +515,7 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
       group -> lists:member(Value, Groups)
     end.
 
+-spec remove_user(binary(), binary()) -> any().
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),

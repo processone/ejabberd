@@ -3483,6 +3483,12 @@ dec_bool(<<"0">>) -> false;
 dec_bool(<<"true">>) -> true;
 dec_bool(<<"1">>) -> true.
 
+nameprep(S) ->
+    case jid:nameprep(S) of
+      error -> erlang:error(badarg);
+      S1 -> S1
+    end.
+
 resourceprep(R) ->
     case jid:resourceprep(R) of
       error -> erlang:error(badarg);
@@ -4887,7 +4893,7 @@ decode_db_verify_attr_from(__TopXMLNS, undefined) ->
 		  {missing_attr, <<"from">>, <<"db:verify">>,
 		   __TopXMLNS}});
 decode_db_verify_attr_from(__TopXMLNS, _val) ->
-    case catch dec_jid(_val) of
+    case catch nameprep(_val) of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
 			{bad_attr_value, <<"from">>, <<"db:verify">>,
@@ -4896,13 +4902,13 @@ decode_db_verify_attr_from(__TopXMLNS, _val) ->
     end.
 
 encode_db_verify_attr_from(_val, _acc) ->
-    [{<<"from">>, enc_jid(_val)} | _acc].
+    [{<<"from">>, nameprep(_val)} | _acc].
 
 decode_db_verify_attr_to(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
 		  {missing_attr, <<"to">>, <<"db:verify">>, __TopXMLNS}});
 decode_db_verify_attr_to(__TopXMLNS, _val) ->
-    case catch dec_jid(_val) of
+    case catch nameprep(_val) of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
 			{bad_attr_value, <<"to">>, <<"db:verify">>,
@@ -4911,7 +4917,7 @@ decode_db_verify_attr_to(__TopXMLNS, _val) ->
     end.
 
 encode_db_verify_attr_to(_val, _acc) ->
-    [{<<"to">>, enc_jid(_val)} | _acc].
+    [{<<"to">>, nameprep(_val)} | _acc].
 
 decode_db_verify_attr_id(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -5014,7 +5020,7 @@ decode_db_result_attr_from(__TopXMLNS, undefined) ->
 		  {missing_attr, <<"from">>, <<"db:result">>,
 		   __TopXMLNS}});
 decode_db_result_attr_from(__TopXMLNS, _val) ->
-    case catch dec_jid(_val) of
+    case catch nameprep(_val) of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
 			{bad_attr_value, <<"from">>, <<"db:result">>,
@@ -5023,13 +5029,13 @@ decode_db_result_attr_from(__TopXMLNS, _val) ->
     end.
 
 encode_db_result_attr_from(_val, _acc) ->
-    [{<<"from">>, enc_jid(_val)} | _acc].
+    [{<<"from">>, nameprep(_val)} | _acc].
 
 decode_db_result_attr_to(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
 		  {missing_attr, <<"to">>, <<"db:result">>, __TopXMLNS}});
 decode_db_result_attr_to(__TopXMLNS, _val) ->
-    case catch dec_jid(_val) of
+    case catch nameprep(_val) of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
 			{bad_attr_value, <<"to">>, <<"db:result">>,
@@ -5038,7 +5044,7 @@ decode_db_result_attr_to(__TopXMLNS, _val) ->
     end.
 
 encode_db_result_attr_to(_val, _acc) ->
-    [{<<"to">>, enc_jid(_val)} | _acc].
+    [{<<"to">>, nameprep(_val)} | _acc].
 
 decode_db_result_attr_type(__TopXMLNS, undefined) ->
     undefined;

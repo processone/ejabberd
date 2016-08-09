@@ -125,6 +125,7 @@
 -type state() :: #state{}.
 -type fsm_stop() :: {stop, normal, state()}.
 -type fsm_next() :: {next_state, state_name(), state(), non_neg_integer()}.
+-type fsm_reply() :: {reply, any(), state_name(), state(), non_neg_integer()}.
 -type fsm_transition() :: fsm_stop() | fsm_next().
 -export_type([state/0]).
 
@@ -184,9 +185,9 @@ get_presence(FsmRef) ->
 
 -spec get_aux_field(any(), state()) -> {ok, any()} | error.
 get_aux_field(Key, #state{aux_fields = Opts}) ->
-    case lists:keysearch(Key, 1, Opts) of
-      {value, {_, Val}} -> {ok, Val};
-      _ -> error
+    case lists:keyfind(Key, 1, Opts) of
+	{_, Val} -> {ok, Val};
+	false -> error
     end.
 
 -spec set_aux_field(any(), any(), state()) -> state().
@@ -525,7 +526,7 @@ wait_for_auth(#iq{type = get,
     Auth = #legacy_auth{username = Username, password = <<>>, resource = <<>>},
     Res = case ejabberd_auth:plain_password_required(StateData#state.server) of
 	      false ->
-		  xmpp:make_iq_result(IQ, Auth#legacy_auth{digest = none});
+		  xmpp:make_iq_result(IQ, Auth#legacy_auth{digest = <<>>});
 	      true ->
 		  xmpp:make_iq_result(IQ, Auth)
 	  end,
@@ -1067,7 +1068,6 @@ session_established2(Pkt, StateData) ->
 		J -> J
 	    end,
     Lang = case xmpp:get_lang(Pkt) of
-	       undefined -> StateData#state.lang;
 	       <<"">> -> StateData#state.lang;
 	       L -> L
 	   end,
@@ -1252,7 +1252,7 @@ handle_info({route, From, To, Packet}, StateName, StateData) when ?is_stanza(Pac
 			process_presence_probe(From, To, NewStateData),
 			{false, NewStateData};
 		    error ->
-			NewA = remove_element(jid:tolower(From), State#state.pres_a),
+			NewA = ?SETS:del_element(jid:tolower(From), State#state.pres_a),
 			{true, State#state{pres_a = NewA}};
 		    subscribe ->
 			SRes = is_privacy_allow(State, From, To, Packet, in),
@@ -1666,6 +1666,7 @@ get_conn_type(StateData) ->
 	websocket -> websocket
     end.
 
+-spec process_presence_probe(jid(), jid(), state()) -> ok.
 process_presence_probe(From, To, StateData) ->
     LFrom = jid:tolower(From),
     LBFrom = setelement(3, LFrom, <<"">>),
@@ -1702,6 +1703,7 @@ process_presence_probe(From, To, StateData) ->
     end.
 
 %% User updates his presence (non-directed presence packet)
+-spec presence_update(jid(), presence(), state()) -> state().
 presence_update(From, Packet, StateData) ->
     #presence{type = Type} = Packet,
     case Type of
@@ -1761,6 +1763,7 @@ presence_update(From, Packet, StateData) ->
     end.
 
 %% User sends a directed presence packet
+-spec presence_track(jid(), jid(), presence(), state()) -> state().
 presence_track(From, To, Packet, StateData) ->
     #presence{type = Type} = Packet,
     LTo = jid:tolower(To),
@@ -1768,7 +1771,7 @@ presence_track(From, To, Packet, StateData) ->
     Server = StateData#state.server,
     case Type of
       unavailable ->
-	  A = remove_element(LTo, StateData#state.pres_a),
+	  A = ?SETS:del_element(LTo, StateData#state.pres_a),
 	  check_privacy_route(From, StateData#state{pres_a = A}, From, To, Packet);
       subscribe ->
 	  try_roster_subscribe(subscribe, User, Server, From, To, Packet, StateData);
@@ -1793,6 +1796,7 @@ presence_track(From, To, Packet, StateData) ->
 	  check_privacy_route(From, StateData#state{pres_a = A}, From, To, Packet)
     end.
 
+-spec check_privacy_route(jid(), state(), jid(), jid(), stanza()) -> state().
 check_privacy_route(From, StateData, FromRoute, To,
 		    Packet) ->
     case privacy_check_packet(StateData, From, To, Packet,
@@ -1812,6 +1816,7 @@ check_privacy_route(From, StateData, FromRoute, To,
     end.
 
 %% Check if privacy rules allow this delivery
+-spec privacy_check_packet(state(), jid(), jid(), stanza(), in | out) -> allow | deny.
 privacy_check_packet(StateData, From, To, Packet,
 		     Dir) ->
     ejabberd_hooks:run_fold(privacy_check_packet,
@@ -1820,11 +1825,14 @@ privacy_check_packet(StateData, From, To, Packet,
 			     StateData#state.privacy_list, {From, To, Packet},
 			     Dir]).
 
+-spec is_privacy_allow(state(), jid(), jid(), stanza(), in | out) -> boolean().
 is_privacy_allow(StateData, From, To, Packet, Dir) ->
     allow ==
       privacy_check_packet(StateData, From, To, Packet, Dir).
 
 %%% Check ACL before allowing to send a subscription stanza
+-spec try_roster_subscribe(subscribe | unsubscribe, binary(), binary(),
+			   jid(), jid(), presence(), state()) -> state().
 try_roster_subscribe(Type, User, Server, From, To, Packet, StateData) ->
     JID1 = jid:make(User, Server, <<"">>),
     Access = gen_mod:get_module_opt(Server, mod_roster, access, fun(A) when is_atom(A) -> A end, all),
@@ -1841,21 +1849,24 @@ try_roster_subscribe(Type, User, Server, From, To, Packet, StateData) ->
     end.
 
 %% Send presence when disconnecting
+-spec presence_broadcast(state(), jid(), ?SETS:set(), presence()) -> ok.
 presence_broadcast(StateData, From, JIDSet, Packet) ->
     JIDs = ?SETS:to_list(JIDSet),
     JIDs2 = format_and_check_privacy(From, StateData, Packet, JIDs, out),
     Server = StateData#state.server,
     send_multiple(From, Server, JIDs2, Packet).
 
+-spec presence_broadcast_to_trusted(
+	state(), jid(), ?SETS:set(), ?SETS:set(), presence()) -> ok.
 %% Send presence when updating presence
 presence_broadcast_to_trusted(StateData, From, Trusted, JIDSet, Packet) ->
-    JIDs = ?SETS:to_list(JIDSet),
-    JIDs_trusted = [JID || JID <- JIDs, ?SETS:is_element(JID, Trusted)],
-    JIDs2 = format_and_check_privacy(From, StateData, Packet, JIDs_trusted, out),
+    JIDs = ?SETS:to_list(?SETS:intersection(Trusted, JIDSet)),
+    JIDs2 = format_and_check_privacy(From, StateData, Packet, JIDs, out),
     Server = StateData#state.server,
     send_multiple(From, Server, JIDs2, Packet).
 
 %% Send presence when connecting
+-spec presence_broadcast_first(jid(), state(), presence()) -> state().
 presence_broadcast_first(From, StateData, Packet) ->
     JIDsProbe =
 	?SETS:fold(
@@ -1877,6 +1888,8 @@ presence_broadcast_first(From, StateData, Packet) ->
     send_multiple(From, Server, JIDs2, Packet),
     StateData#state{pres_a = As}.
 
+-spec format_and_check_privacy(
+	jid(), state(), stanza(), [ljid()], in | out) -> [jid()].
 format_and_check_privacy(From, StateData, Packet, JIDs, Dir) ->
     FJIDs = [jid:make(JID) || JID <- JIDs],
     lists:filter(
@@ -1895,15 +1908,11 @@ format_and_check_privacy(From, StateData, Packet, JIDs, Dir) ->
       end,
       FJIDs).
 
+-spec send_multiple(jid(), binary(), [jid()], stanza()) -> ok.
 send_multiple(From, Server, JIDs, Packet) ->
     ejabberd_router_multicast:route_multicast(From, Server, JIDs, Packet).
 
-remove_element(E, Set) ->
-    case (?SETS):is_element(E, Set) of
-      true -> (?SETS):del_element(E, Set);
-      _ -> Set
-    end.
-
+-spec roster_change(jid(), both | from | none | remove | to, state()) -> state().
 roster_change(IJID, ISubscription, StateData) ->
     LIJID = jid:tolower(IJID),
     IsFrom = (ISubscription == both) or (ISubscription == from),
@@ -1911,11 +1920,11 @@ roster_change(IJID, ISubscription, StateData) ->
     OldIsFrom = (?SETS):is_element(LIJID, StateData#state.pres_f),
     FSet = if
 	       IsFrom -> (?SETS):add_element(LIJID, StateData#state.pres_f);
-	       true -> remove_element(LIJID, StateData#state.pres_f)
+	       true -> ?SETS:del_element(LIJID, StateData#state.pres_f)
 	   end,
     TSet = if
 	       IsTo -> (?SETS):add_element(LIJID, StateData#state.pres_t);
-	       true -> remove_element(LIJID, StateData#state.pres_t)
+	       true -> ?SETS:del_element(LIJID, StateData#state.pres_t)
 	   end,
     case StateData#state.pres_last of
       undefined ->
@@ -1946,13 +1955,14 @@ roster_change(IJID, ISubscription, StateData) ->
 		   deny -> ok;
 		   allow -> ejabberd_router:route(From, To, PU)
 		 end,
-		 A = remove_element(LIJID, StateData#state.pres_a),
+		 A = ?SETS:del_element(LIJID, StateData#state.pres_a),
 		 StateData#state{pres_a = A, pres_f = FSet,
 				 pres_t = TSet};
 	     true -> StateData#state{pres_f = FSet, pres_t = TSet}
 	  end
     end.
 
+-spec update_priority(integer(), presence(), state()) -> ok.
 update_priority(Priority, Packet, StateData) ->
     Info = [{ip, StateData#state.ip}, {conn, StateData#state.conn},
 	    {auth_module, StateData#state.auth_module}],
@@ -1960,12 +1970,14 @@ update_priority(Priority, Packet, StateData) ->
 			     StateData#state.user, StateData#state.server,
 			     StateData#state.resource, Priority, Packet, Info).
 
+-spec get_priority_from_presence(presence()) -> integer().
 get_priority_from_presence(#presence{priority = Prio}) ->
     case Prio of
 	undefined -> 0;
 	_ -> Prio
     end.
 
+-spec process_privacy_iq(iq(), state()) -> state().
 process_privacy_iq(#iq{from = From, to = To,
 		       type = Type, lang = Lang} = IQ, StateData) ->
     Txt = <<"No module is handling this query">>,
@@ -2001,6 +2013,7 @@ process_privacy_iq(#iq{from = From, to = To,
     ejabberd_router:route(To, From, IQRes),
     NewStateData.
 
+-spec resend_offline_messages(state()) -> ok.
 resend_offline_messages(#state{ask_offline = true} = StateData) ->
     case ejabberd_hooks:run_fold(resend_offline_messages_hook,
 				 StateData#state.server, [],
@@ -2025,6 +2038,7 @@ resend_offline_messages(#state{ask_offline = true} = StateData) ->
 resend_offline_messages(_StateData) ->
     ok.
 
+-spec resend_subscription_requests(state()) -> state().
 resend_subscription_requests(#state{user = User,
 				    server = Server} = StateData) ->
     PendingSubscriptions =
@@ -2036,13 +2050,16 @@ resend_subscription_requests(#state{user = User,
 		StateData,
 		PendingSubscriptions).
 
+-spec get_showtag(undefined | presence()) -> binary().
 get_showtag(undefined) -> <<"unavailable">>;
 get_showtag(#presence{show = undefined}) -> <<"available">>;
 get_showtag(#presence{show = Show}) -> atom_to_binary(Show, utf8).
 
-get_statustag(#presence{status = [#text{data = Status}|_]}) -> Status;
-get_statustag(_) -> <<"">>.
+-spec get_statustag(undefined | presence()) -> binary().
+get_statustag(#presence{status = Status}) -> xmpp:get_text(Status);
+get_statustag(undefined) -> <<"">>.
 
+-spec process_unauthenticated_stanza(state(), iq()) -> ok | {error, any()}.
 process_unauthenticated_stanza(StateData, #iq{type = T, lang = L} = IQ)
   when T == set; T == get ->
     Lang = if L == undefined; L == <<"">> -> StateData#state.lang;
@@ -2067,6 +2084,9 @@ process_unauthenticated_stanza(_StateData, _) ->
     %% Drop any stanza, which isn't IQ stanza
     ok.
 
+-spec peerip(ejabberd_socket:sockmod(),
+	     ejabberd_socket:socket()) ->
+		    {inet:ip_address(), non_neg_integer()} | undefined.
 peerip(SockMod, Socket) ->
     IP = case SockMod of
 	   gen_tcp -> inet:peername(Socket);
@@ -2124,6 +2144,7 @@ fsm_next_state(StateName, StateData) ->
 
 %% fsm_reply: Generate the reply FSM tuple with different timeout,
 %% depending on the future state
+-spec fsm_reply(_, state_name(), state()) -> fsm_reply().
 fsm_reply(Reply, session_established, StateData) ->
     {reply, Reply, session_established, StateData,
      ?C2S_HIBERNATE_TIMEOUT};
@@ -2135,6 +2156,8 @@ fsm_reply(Reply, StateName, StateData) ->
     {reply, Reply, StateName, StateData, ?C2S_OPEN_TIMEOUT}.
 
 %% Used by c2s blacklist plugins
+-spec is_ip_blacklisted(undefined | {inet:ip_address(), non_neg_integer()},
+			binary()) -> false | {true, binary(), binary()}.
 is_ip_blacklisted(undefined, _Lang) -> false;
 is_ip_blacklisted({IP, _Port}, Lang) ->
     ejabberd_hooks:run_fold(check_bl_c2s, false, [IP, Lang]).
@@ -2174,6 +2197,7 @@ fsm_limit_opts(Opts) ->
 	  end
     end.
 
+-spec bounce_messages() -> ok.
 bounce_messages() ->
     receive
       {route, From, To, El} ->
@@ -2181,6 +2205,7 @@ bounce_messages() ->
       after 0 -> ok
     end.
 
+-spec process_compression_request(compress(), state_name(), state()) -> fsm_next().
 process_compression_request(#compress{methods = []}, StateName, StateData) ->
     send_element(StateData, #compress_failure{reason = 'setup-failed'}),
     fsm_next_state(StateName, StateData);
@@ -2203,6 +2228,8 @@ process_compression_request(#compress{methods = Ms}, StateName, StateData) ->
 %%% XEP-0191
 %%%----------------------------------------------------------------------
 
+-spec route_blocking(
+	{block, [jid()]} | {unblock, [jid()]} | unblock_all, state()) -> state().
 route_blocking(What, StateData) ->
     SubEl = case What of
 		{block, JIDs} ->
@@ -2223,12 +2250,13 @@ route_blocking(What, StateData) ->
 %%%----------------------------------------------------------------------
 %%% XEP-0198
 %%%----------------------------------------------------------------------
-
+-spec stream_mgmt_enabled(state()) -> boolean().
 stream_mgmt_enabled(#state{mgmt_state = disabled}) ->
     false;
 stream_mgmt_enabled(_StateData) ->
     true.
 
+-spec dispatch_stream_mgmt(xmpp_element(), state()) -> state().
 dispatch_stream_mgmt(El, #state{mgmt_state = MgmtState} = StateData)
     when MgmtState == active;
 	 MgmtState == pending ->
@@ -2236,6 +2264,7 @@ dispatch_stream_mgmt(El, #state{mgmt_state = MgmtState} = StateData)
 dispatch_stream_mgmt(El, StateData) ->
     negotiate_stream_mgmt(El, StateData).
 
+-spec negotiate_stream_mgmt(xmpp_element(), state()) -> state().
 negotiate_stream_mgmt(_El, #state{resource = <<"">>} = StateData) ->
     %% XEP-0198 says: "For client-to-server connections, the client MUST NOT
     %% attempt to enable stream management until after it has completed Resource
@@ -2272,6 +2301,7 @@ negotiate_stream_mgmt(Pkt, StateData) ->
 	    StateData
     end.
 
+-spec perform_stream_mgmt(xmpp_element(), state()) -> state().
 perform_stream_mgmt(Pkt, StateData) ->
     case xmpp:get_ns(Pkt) of
 	Xmlns when Xmlns == StateData#state.mgmt_xmlns ->
@@ -2298,6 +2328,7 @@ perform_stream_mgmt(Pkt, StateData) ->
 				    xmlns = StateData#state.mgmt_xmlns})
     end.
 
+-spec handle_enable(state(), sm_enable()) -> state().
 handle_enable(#state{mgmt_timeout = DefaultTimeout,
 		     mgmt_max_timeout = MaxTimeout} = StateData,
 	      #sm_enable{resume = Resume, max = Max}) ->
@@ -2325,15 +2356,18 @@ handle_enable(#state{mgmt_timeout = DefaultTimeout,
 		    mgmt_queue = queue:new(),
 		    mgmt_timeout = Timeout * 1000}.
 
+-spec handle_r(state()) -> state().
 handle_r(StateData) ->
     Res = #sm_a{xmlns = StateData#state.mgmt_xmlns,
 		h = StateData#state.mgmt_stanzas_in},
     send_element(StateData, Res),
     StateData.
 
+-spec handle_a(state(), sm_a()) -> state().
 handle_a(StateData, #sm_a{h = H}) ->
     check_h_attribute(StateData, H).
 
+-spec handle_resume(state(), sm_resume()) -> {ok, state()} | error.
 handle_resume(StateData, #sm_resume{h = H, previd = PrevID, xmlns = Xmlns}) ->
     R = case stream_mgmt_enabled(StateData) of
 	    true ->
@@ -2379,6 +2413,7 @@ handle_resume(StateData, #sm_resume{h = H, previd = PrevID, xmlns = Xmlns}) ->
 	  error
     end.
 
+-spec check_h_attribute(state(), non_neg_integer()) -> state().
 check_h_attribute(#state{mgmt_stanzas_out = NumStanzasOut} = StateData, H)
     when H > NumStanzasOut ->
     ?DEBUG("~s acknowledged ~B stanzas, but only ~B were sent",
@@ -2389,6 +2424,7 @@ check_h_attribute(#state{mgmt_stanzas_out = NumStanzasOut} = StateData, H) ->
 	   [jid:to_string(StateData#state.jid), H, NumStanzasOut]),
     mgmt_queue_drop(StateData, H).
 
+-spec update_num_stanzas_in(state(), xmpp_element()) -> state().
 update_num_stanzas_in(#state{mgmt_state = MgmtState} = StateData, El)
     when MgmtState == active;
 	 MgmtState == pending ->
@@ -2404,6 +2440,7 @@ update_num_stanzas_in(#state{mgmt_state = MgmtState} = StateData, El)
 update_num_stanzas_in(StateData, _El) ->
     StateData.
 
+-spec send_stanza_and_ack_req(state(), stanza()) -> state().
 send_stanza_and_ack_req(StateData, Stanza) ->
     AckReq = #sm_r{xmlns = StateData#state.mgmt_xmlns},
     case send_element(StateData, Stanza) == ok andalso
@@ -2414,6 +2451,7 @@ send_stanza_and_ack_req(StateData, Stanza) ->
 	  StateData#state{mgmt_state = pending}
     end.
 
+-spec mgmt_queue_add(state(), xmpp_element()) -> state().
 mgmt_queue_add(StateData, El) ->
     NewNum = case StateData#state.mgmt_stanzas_out of
 	       4294967295 ->
@@ -2426,11 +2464,13 @@ mgmt_queue_add(StateData, El) ->
 			       mgmt_stanzas_out = NewNum},
     check_queue_length(NewState).
 
+-spec mgmt_queue_drop(state(), non_neg_integer()) -> state().
 mgmt_queue_drop(StateData, NumHandled) ->
     NewQueue = jlib:queue_drop_while(fun({N, _T, _E}) -> N =< NumHandled end,
 				     StateData#state.mgmt_queue),
     StateData#state{mgmt_queue = NewQueue}.
 
+-spec check_queue_length(state()) -> state().
 check_queue_length(#state{mgmt_max_queue = Limit} = StateData)
     when Limit == infinity;
 	 Limit == exceeded ->
@@ -2444,6 +2484,7 @@ check_queue_length(#state{mgmt_queue = Queue,
 	  StateData
     end.
 
+-spec handle_unacked_stanzas(state(), fun((_, _, _, _) -> _)) -> ok.
 handle_unacked_stanzas(#state{mgmt_state = MgmtState} = StateData, F)
     when MgmtState == active;
 	 MgmtState == pending;
@@ -2465,6 +2506,7 @@ handle_unacked_stanzas(#state{mgmt_state = MgmtState} = StateData, F)
 handle_unacked_stanzas(_StateData, _F) ->
     ok.
 
+-spec handle_unacked_stanzas(state()) -> ok.
 handle_unacked_stanzas(#state{mgmt_state = MgmtState} = StateData)
     when MgmtState == active;
 	 MgmtState == pending;
@@ -2537,6 +2579,7 @@ handle_unacked_stanzas(#state{mgmt_state = MgmtState} = StateData)
 handle_unacked_stanzas(_StateData) ->
     ok.
 
+-spec is_encapsulated_forward(stanza()) -> boolean().
 is_encapsulated_forward(#message{} = Msg) ->
     xmpp:has_subtag(Msg, #forwarded{}) orelse
 	xmpp:has_subtag(Msg, #carbons_sent{}) orelse
@@ -2544,6 +2587,9 @@ is_encapsulated_forward(#message{} = Msg) ->
 is_encapsulated_forward(_El) ->
     false.
 
+-spec inherit_session_state(state(), binary()) -> {ok, state()} |
+						  {error, binary()} |
+						  {error, binary(), non_neg_integer()}.
 inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
     case jlib:base64_to_term(ResumeID) of
       {term, {R, Time}} ->
@@ -2604,13 +2650,16 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 	  {error, <<"Invalid 'previd' value">>}
     end.
 
+-spec resume_session({integer(), pid()}) -> any().
 resume_session({Time, PID}) ->
     (?GEN_FSM):sync_send_all_state_event(PID, {resume_session, Time}, 5000).
 
+-spec make_resume_id(state()) -> binary().
 make_resume_id(StateData) ->
     {Time, _} = StateData#state.sid,
     jlib:term_to_base64({StateData#state.resource, Time}).
 
+-spec add_resent_delay_info(state(), stanza(), erlang:timestamp()) -> stanza().
 add_resent_delay_info(_State, #iq{} = El, _Time) ->
     El;
 add_resent_delay_info(#state{server = From}, El, Time) ->
@@ -2619,7 +2668,7 @@ add_resent_delay_info(#state{server = From}, El, Time) ->
 %%%----------------------------------------------------------------------
 %%% XEP-0352
 %%%----------------------------------------------------------------------
-
+-spec csi_filter_stanza(state(), stanza()) -> state().
 csi_filter_stanza(#state{csi_state = CsiState, server = Server} = StateData,
 		  Stanza) ->
     {StateData1, Stanzas} = ejabberd_hooks:run_fold(csi_filter_stanza, Server,
@@ -2631,6 +2680,7 @@ csi_filter_stanza(#state{csi_state = CsiState, server = Server} = StateData,
 			     Stanzas),
     StateData2#state{csi_state = CsiState}.
 
+-spec csi_flush_queue(state()) -> state().
 csi_flush_queue(#state{csi_state = CsiState, server = Server} = StateData) ->
     {StateData1, Stanzas} = ejabberd_hooks:run_fold(csi_flush_queue, Server,
 						    {StateData, []}, [Server]),
@@ -2646,6 +2696,7 @@ csi_flush_queue(#state{csi_state = CsiState, server = Server} = StateData) ->
 
 %% Try to reduce the heap footprint of the four presence sets
 %% by ensuring that we re-use strings and Jids wherever possible.
+-spec pack(state()) -> state().
 pack(S = #state{pres_a = A, pres_f = F,
 		pres_t = T}) ->
     {NewA, Pack2} = pack_jid_set(A, gb_trees:empty()),
@@ -2682,6 +2733,7 @@ pack_string(String, Pack) ->
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
+-spec identity([{atom(), binary()}]) -> binary().
 identity(Props) ->
     case proplists:get_value(authzid, Props, <<>>) of
 	<<>> -> proplists:get_value(username, Props, <<>>);

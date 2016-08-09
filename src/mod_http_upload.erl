@@ -553,8 +553,8 @@ process_iq(From, #iq{type = get, lang = Lang,
 						   {slot_timed_out,
 						    Slot}),
 		    NewState = add_slot(Slot, Size, Timer, State),
-		    Slot = mk_slot(Slot, State, XMLNS),
-		    {xmpp:make_iq_result(IQ, Slot), NewState};
+		    NewSlot = mk_slot(Slot, State, XMLNS),
+		    {xmpp:make_iq_result(IQ, NewSlot), NewState};
 		{ok, PutURL, GetURL} ->
 		    Slot = mk_slot(PutURL, GetURL, XMLNS),
 		    xmpp:make_iq_result(IQ, Slot);
@@ -668,11 +668,14 @@ del_slot(Slot, #state{slots = Slots} = State) ->
     NewSlots = maps:remove(Slot, Slots),
     State#state{slots = NewSlots}.
 
--spec mk_slot(slot() | binary(), state() | binary(), binary()) -> xmlel().
+-spec mk_slot(slot(), state(), binary()) -> upload_slot();
+	     (binary(), binary(), binary()) -> upload_slot().
 
 mk_slot(Slot, #state{put_url = PutPrefix, get_url = GetPrefix}, XMLNS) ->
     PutURL = str:join([PutPrefix | Slot], <<$/>>),
     GetURL = str:join([GetPrefix | Slot], <<$/>>),
+    mk_slot(PutURL, GetURL, XMLNS);
+mk_slot(PutURL, GetURL, XMLNS) ->
     #upload_slot{get = GetURL, put = PutURL, xmlns = XMLNS}.
 
 -spec make_user_string(jid(), sha1 | node) -> binary().

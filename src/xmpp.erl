@@ -134,7 +134,7 @@ get_type(#message{type = T}) -> T;
 get_type(#presence{type = T}) -> T;
 get_type(#xmlel{attrs = Attrs}) -> fxml:get_attr_s(<<"type">>, Attrs).
 
--spec get_lang(iq() | message() | presence()) -> binary().
+-spec get_lang(iq() | message() | presence() | xmlel()) -> binary().
 get_lang(#iq{lang = L}) -> L;
 get_lang(#message{lang = L}) -> L;
 get_lang(#presence{lang = L}) -> L;

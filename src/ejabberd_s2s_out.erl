@@ -832,15 +832,15 @@ send_db_request(StateData) ->
 		       {StateData#state.myname, Server},
 		       StateData#state.remote_streamid),
 	      send_element(StateData,
-			   #db_result{from = jid:make(StateData#state.myname),
-				      to = jid:make(Server),
+			   #db_result{from = StateData#state.myname,
+				      to = Server,
 				      key = Key1})
 	end,
 	case StateData#state.verify of
 	  false -> ok;
 	  {_Pid, Key2, SID} ->
 	      send_element(StateData,
-			   #db_verify{from = jid:make(StateData#state.myname),
+			   #db_verify{from = StateData#state.myname,
 				      to = StateData#state.server,
 				      id = SID,
 				      key = Key2})
@@ -1067,7 +1067,7 @@ get_max_retry_delay() ->
     end.
 
 %% Terminate s2s_out connections that are in state wait_before_retry
--spec terminate_if_waiting_delay(ljid(), ljid()) -> ok.
+-spec terminate_if_waiting_delay(binary(), binary()) -> ok.
 terminate_if_waiting_delay(From, To) ->
     FromTo = {From, To},
     Pids = ejabberd_s2s:get_connections_pids(FromTo),

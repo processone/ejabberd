@@ -45,7 +45,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 
--record(route_multicast, {domain = <<"">> :: binary(),
+-record(route_multicast, {domain = <<"">> :: binary() | '_',
 			  pid = self() :: pid()}).
 -record(state, {}).
 

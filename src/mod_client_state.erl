@@ -151,12 +151,13 @@ depends(_Host, _Opts) ->
 %% ejabberd_hooks callbacks.
 %%--------------------------------------------------------------------
 
--spec filter_presence({term(), [stanza()]}, binary(), stanza())
-      -> {term(), [stanza()]} | {stop, {term(), [stanza()]}}.
+-spec filter_presence({ejabberd_c2s:state(), [stanza()]}, binary(), stanza())
+      -> {ejabberd_c2s:state(), [stanza()]} |
+	 {stop, {ejabberd_c2s:state(), [stanza()]}}.
 
 filter_presence({C2SState, _OutStanzas} = Acc, Host,
 		#presence{type = Type} = Stanza) ->
-    if Type == available, Type == unavailable ->
+    if Type == available; Type == unavailable ->
 	    ?DEBUG("Got availability presence stanza", []),
 	    queue_add(presence, Stanza, Host, C2SState);
        true ->
@@ -164,8 +165,9 @@ filter_presence({C2SState, _OutStanzas} = Acc, Host,
     end;
 filter_presence(Acc, _Host, _Stanza) -> Acc.
 
--spec filter_chat_states({term(), [stanza()]}, binary(), stanza())
-      -> {term(), [stanza()]} | {stop, {term(), [stanza()]}}.
+-spec filter_chat_states({ejabberd_c2s:state(), [stanza()]}, binary(), stanza())
+      -> {ejabberd_c2s:state(), [stanza()]} |
+	 {stop, {ejabberd_c2s:state(), [stanza()]}}.
 
 filter_chat_states({C2SState, _OutStanzas} = Acc, Host,
 		   #message{from = From, to = To} = Stanza) ->
@@ -186,8 +188,9 @@ filter_chat_states({C2SState, _OutStanzas} = Acc, Host,
     end;
 filter_chat_states(Acc, _Host, _Stanza) -> Acc.
 
--spec filter_pep({term(), [stanza()]}, binary(), stanza())
-      -> {term(), [stanza()]} | {stop, {term(), [stanza()]}}.
+-spec filter_pep({ejabberd_c2s:state(), [stanza()]}, binary(), stanza())
+      -> {ejabberd_c2s:state(), [stanza()]} |
+	 {stop, {ejabberd_c2s:state(), [stanza()]}}.
 
 filter_pep({C2SState, _OutStanzas} = Acc, Host, #message{} = Stanza) ->
     case get_pep_node(Stanza) of
@@ -199,14 +202,15 @@ filter_pep({C2SState, _OutStanzas} = Acc, Host, #message{} = Stanza) ->
     end;
 filter_pep(Acc, _Host, _Stanza) -> Acc.
 
--spec filter_other({term(), [stanza()]}, binary(), stanza())
-      -> {stop, {term(), [stanza()]}}.
+-spec filter_other({ejabberd_c2s:state(), [stanza()]}, binary(), stanza())
+      -> {stop, {ejabberd_c2s:state(), [stanza()]}}.
 
 filter_other({C2SState, _OutStanzas}, Host, Stanza) ->
     ?DEBUG("Won't add stanza to CSI queue", []),
     queue_take(Stanza, Host, C2SState).
 
--spec flush_queue({term(), [stanza()]}, binary()) -> {term(), [stanza()]}.
+-spec flush_queue({ejabberd_c2s:state(), [stanza()]}, binary())
+      -> {ejabberd_c2s:state(), [stanza()]}.
 
 flush_queue({C2SState, _OutStanzas}, Host) ->
     ?DEBUG("Going to flush CSI queue", []),
@@ -284,7 +288,7 @@ get_pep_node(#message{from = #jid{luser = <<>>}}) ->
     undefined;
 get_pep_node(#message{} = Msg) ->
     case xmpp:get_subtag(Msg, #pubsub_event{}) of
-	#pubsub_event{items = [#pubsub_event_item{node = Node}]} ->
+	#pubsub_event{items = [#pubsub_event_items{node = Node}]} ->
 	    Node;
 	_ ->
 	    undefined

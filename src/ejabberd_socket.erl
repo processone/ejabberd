@@ -65,7 +65,7 @@
 
 -type socket_state() :: #socket_state{}.
 
--export_type([socket_state/0, sockmod/0]).
+-export_type([socket/0, socket_state/0, sockmod/0]).
 
 
 %%====================================================================

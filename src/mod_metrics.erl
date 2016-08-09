@@ -31,13 +31,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jid.hrl").
-
--define(HOOKS, [offline_message_hook,
-                sm_register_connection_hook, sm_remove_connection_hook,
-                user_send_packet, user_receive_packet,
-                s2s_send_packet, s2s_receive_packet,
-                remove_user, register_user]).
+-include("xmpp.hrl").
 
 -export([start/2, stop/1, send_metrics/4, opt_type/1, mod_opt_type/1,
 	 depends/2]).
@@ -53,12 +47,26 @@
 %%====================================================================
 
 start(Host, _Opts) ->
-    [ejabberd_hooks:add(Hook, Host, ?MODULE, Hook, 20)
-     || Hook <- ?HOOKS].
+    ejabberd_hooks:add(offline_message_hook, Host, ?MODULE, offline_message_hook, 20),
+    ejabberd_hooks:add(sm_register_connection_hook, Host, ?MODULE, sm_register_connection_hook, 20),
+    ejabberd_hooks:add(sm_remove_connection_hook, Host, ?MODULE, sm_remove_connection_hook, 20),
+    ejabberd_hooks:add(user_send_packet, Host, ?MODULE, user_send_packet, 20),
+    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE, user_receive_packet, 20),
+    ejabberd_hooks:add(s2s_send_packet, Host, ?MODULE, s2s_send_packet, 20),
+    ejabberd_hooks:add(s2s_receive_packet, Host, ?MODULE, s2s_receive_packet, 20),
+    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 20),
+    ejabberd_hooks:add(register_user, Host, ?MODULE, register_user, 20).
 
 stop(Host) ->
-    [ejabberd_hooks:delete(Hook, Host, ?MODULE, Hook, 20)
-     || Hook <- ?HOOKS].
+    ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE, offline_message_hook, 20),
+    ejabberd_hooks:delete(sm_register_connection_hook, Host, ?MODULE, sm_register_connection_hook, 20),
+    ejabberd_hooks:delete(sm_remove_connection_hook, Host, ?MODULE, sm_remove_connection_hook, 20),
+    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE, user_send_packet, 20),
+    ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE, user_receive_packet, 20),
+    ejabberd_hooks:delete(s2s_send_packet, Host, ?MODULE, s2s_send_packet, 20),
+    ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE, s2s_receive_packet, 20),
+    ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 20),
+    ejabberd_hooks:delete(register_user, Host, ?MODULE, register_user, 20).
 
 depends(_Host, _Opts) ->
     [].
@@ -66,12 +74,15 @@ depends(_Host, _Opts) ->
 %%====================================================================
 %% Hooks handlers
 %%====================================================================
-
+-spec offline_message_hook(jid(), jid(), message()) -> any().
 offline_message_hook(_From, #jid{lserver=LServer}, _Packet) ->
     push(LServer, offline_message).
 
+-spec sm_register_connection_hook(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> any().
 sm_register_connection_hook(_SID, #jid{lserver=LServer}, _Info) ->
     push(LServer, sm_register_connection).
+
+-spec sm_remove_connection_hook(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> any().
 sm_remove_connection_hook(_SID, #jid{lserver=LServer}, _Info) ->
     push(LServer, sm_remove_connection).
 
@@ -82,13 +93,19 @@ user_receive_packet(Packet, _C2SState, _JID, _From, #jid{lserver=LServer}) ->
     push(LServer, user_receive_packet),
     Packet.
 
+-spec s2s_send_packet(jid(), jid(), stanza()) -> any().
 s2s_send_packet(#jid{lserver=LServer}, _To, _Packet) ->
     push(LServer, s2s_send_packet).
+
+-spec s2s_receive_packet(jid(), jid(), stanza()) -> any().
 s2s_receive_packet(_From, #jid{lserver=LServer}, _Packet) ->
     push(LServer, s2s_receive_packet).
 
+-spec remove_user(binary(), binary()) -> any().
 remove_user(_User, Server) ->
     push(jid:nameprep(Server), remove_user).
+
+-spec register_user(binary(), binary()) -> any().
 register_user(_User, Server) ->
     push(jid:nameprep(Server), register_user).
 

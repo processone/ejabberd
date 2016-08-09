@@ -660,6 +660,7 @@ disco_items(Host, Node, From) ->
 %% presence hooks handling functions
 %%
 
+-spec caps_add(jid(), jid(), [binary()]) -> ok.
 caps_add(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = Host} = JID, _Features)
 	when Host =/= S ->
     %% When a remote contact goes online while the local user is offline, the
@@ -675,9 +676,11 @@ caps_add(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = Host} = JID
 caps_add(_From, _To, _Feature) ->
     ok.
 
+-spec caps_update(jid(), jid(), [binary()]) -> ok.
 caps_update(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = Host} = JID, _Features) ->
     presence(Host, {presence, U, S, [R], JID}).
 
+-spec presence_probe(jid(), jid(), pid()) -> ok.
 presence_probe(#jid{luser = U, lserver = S, lresource = R} = JID, JID, Pid) ->
     presence(S, {presence, JID, Pid}),
     presence(S, {presence, U, S, [R], JID});
@@ -697,12 +700,16 @@ presence(ServerHost, Presence) ->
 	undefined -> init_send_loop(ServerHost);
 	Pid -> {Pid, undefined}
     end,
-    SendLoop ! Presence.
+    SendLoop ! Presence,
+    ok.
 
 %% -------
 %% subscription hooks handling functions
 %%
 
+-spec out_subscription(
+	binary(), binary(), jid(),
+	subscribed | unsubscribed | subscribe | unsubscribe) -> boolean().
 out_subscription(User, Server, JID, subscribed) ->
     Owner = jid:make(User, Server, <<>>),
     {PUser, PServer, PResource} = jid:tolower(JID),
@@ -763,6 +770,7 @@ unsubscribe_user(Host, Entity, Owner) ->
 %% user remove hook handling function
 %%
 
+-spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -802,7 +810,8 @@ remove_user(User, Server) ->
 				Affs)
 		    end,
 		    plugins(Host))
-	end).
+	  end),
+    ok.
 
 handle_call(server_host, _From, State) ->
     {reply, State#state.server_host, State};
@@ -4224,11 +4233,12 @@ extended_headers(Jids) ->
 	    attrs = [{<<"type">>, <<"replyto">>}, {<<"jid">>, Jid}]}
 	|| Jid <- Jids].
 
+-spec on_user_offline(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> ok.
 on_user_offline(_, JID, _) ->
     {User, Server, Resource} = jid:tolower(JID),
     case user_resources(User, Server) of
 	[] -> purge_offline({User, Server, Resource});
-	_ -> true
+	_ -> ok
     end.
 
 purge_offline(LJID) ->

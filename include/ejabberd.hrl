@@ -64,7 +64,7 @@
 
 -define(TDICT, dict:dict()).
 -define(TGB_TREE, gb_trees:tree()).
--define(TGB_SET, gb_set:set()).
+-define(TGB_SET, gb_sets:set()).
 -define(TQUEUE, queue:queue()).
 
 -endif.

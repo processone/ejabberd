@@ -139,6 +139,7 @@ remove_connection(SID, LUser, LServer) ->
     mnesia:transaction(F).
 
 %% Register connection
+-spec register_connection(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> ok.
 register_connection(SID,
 		    #jid{luser = LUser, lserver = LServer}, Info) ->
     AuthModule = proplists:get_value(auth_module, Info, undefined),
@@ -155,6 +156,7 @@ register_connection(SID,
     end.
 
 %% Remove an anonymous user from the anonymous users table
+-spec unregister_connection(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> any().
 unregister_connection(SID,
 		      #jid{luser = LUser, lserver = LServer}, _) ->
     purge_hook(anonymous_user_exist(LUser, LServer), LUser,

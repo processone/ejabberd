@@ -183,14 +183,13 @@ unregister_iq_handler(Host, XMLNS) ->
 refresh_iq_handlers() ->
     ejabberd_local ! refresh_iq_handlers.
 
--spec bounce_resource_packet(jid(), jid(), stanza()) -> stop.
+-spec bounce_resource_packet(jid(), jid(), stanza()) -> ok.
 bounce_resource_packet(From, To, Packet) ->
     Lang = xmpp:get_lang(Packet),
     Txt = <<"No available resource found">>,
     Err = xmpp:make_error(Packet,
 			  xmpp:err_item_not_found(Txt, Lang)),
-    ejabberd_router:route(To, From, Err),
-    stop.
+    ejabberd_router:route(To, From, Err).
 
 %%====================================================================
 %% gen_server callbacks

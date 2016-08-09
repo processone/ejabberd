@@ -424,8 +424,9 @@ transform_module_options(Opts) ->
 
 %%% Support for: XEP-0157 Contact Addresses for XMPP Services
 
--spec get_info([xdata()], binary(), module(), binary(), binary()) -> [xdata()].
-get_info(_A, Host, Mod, Node, _Lang) when Node == <<"">> ->
+-spec get_info([xdata()], binary(), module(), binary(), binary()) -> [xdata()];
+	      ([xdata()], jid(), jid(), binary(), binary()) -> [xdata()].
+get_info(_A, Host, Mod, Node, _Lang) when is_atom(Mod), Node == <<"">> ->
     Module = case Mod of
 	       undefined -> ?MODULE;
 	       _ -> Mod

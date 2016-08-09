@@ -117,6 +117,7 @@ get_data(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:get_all_data(LUser, LServer).
 
+-spec remove_user(binary(), binary()) -> any().
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),

@@ -3317,28 +3317,34 @@ set_config(#xdata{fields = Fields}, StateData, Lang) ->
 	Err -> Err
     end.
 
+get_config_opt_name(Pos) ->
+    Fs = [config|record_info(fields, config)],
+    lists:nth(Pos, Fs).
+
 -define(SET_BOOL_XOPT(Opt, Val),
 	case Val of
 	  <<"0">> ->
-	      set_xoption(Opts, Config#config{Opt = false}, ServerHost, Lang);
+	      set_xoption(Opts, setelement(Opt, Config, false), ServerHost, Lang);
 	  <<"false">> ->
-	      set_xoption(Opts, Config#config{Opt = false}, ServerHost, Lang);
-	  <<"1">> -> set_xoption(Opts, Config#config{Opt = true}, ServerHost, Lang);
+	      set_xoption(Opts, setelement(Opt, Config, false), ServerHost, Lang);
+	  <<"1">> -> set_xoption(Opts, setelement(Opt, Config, true), ServerHost, Lang);
 	  <<"true">> ->
-	      set_xoption(Opts, Config#config{Opt = true}, ServerHost, Lang);
+	      set_xoption(Opts, setelement(Opt, Config, true), ServerHost, Lang);
 	  _ ->
 	      Txt = <<"Value of '~s' should be boolean">>,
-	      ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
+	      OptName = get_config_opt_name(Opt),
+	      ErrTxt = iolist_to_binary(io_lib:format(Txt, [OptName])),
 	      {error, xmpp:err_bad_request(ErrTxt, Lang)}
 	end).
 
 -define(SET_NAT_XOPT(Opt, Val),
 	case catch binary_to_integer(Val) of
 	  I when is_integer(I), I > 0 ->
-	      set_xoption(Opts, Config#config{Opt = I}, ServerHost, Lang);
+	      set_xoption(Opts, setelement(Opt, Config, I), ServerHost, Lang);
 	  _ ->
 	      Txt = <<"Value of '~s' should be integer">>,
-	      ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
+	      OptName = get_config_opt_name(Opt),
+	      ErrTxt = iolist_to_binary(io_lib:format(Txt, [OptName])),
 	      {error, xmpp:err_bad_request(ErrTxt, Lang)}
 	end).
 
@@ -3349,10 +3355,11 @@ set_config(#xdata{fields = Fields}, StateData, Lang) ->
 		    [Val] -> Val;
 		    _ when is_atom(Vals) -> Vals
 		end,
-	    set_xoption(Opts, Config#config{Opt = V}, ServerHost, Lang)
+	    set_xoption(Opts, setelement(Opt, Config, V), ServerHost, Lang)
 	catch _:_ ->
 		Txt = <<"Incorrect value of option '~s'">>,
-		ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
+		OptName = get_config_opt_name(Opt),
+		ErrTxt = iolist_to_binary(io_lib:format(Txt, [OptName])),
 		{error, xmpp:err_bad_request(ErrTxt, Lang)}
 	end).
 
@@ -3366,7 +3373,7 @@ set_config(#xdata{fields = Fields}, StateData, Lang) ->
 				(_, Set1) -> Set1
 			    end,
 			    (?SETS):empty(), Vals),
-	  set_xoption(Opts, Config#config{Opt = Set}, ServerHost, Lang)
+	  set_xoption(Opts, setelement(Opt, Config, Set), ServerHost, Lang)
 	end).
 
 -spec set_xoption([{binary(), [binary()]}], #config{},
@@ -3375,35 +3382,35 @@ set_xoption([], Config, _ServerHost, _Lang) -> Config;
 set_xoption([{<<"muc#roomconfig_roomname">>, Vals}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_STRING_XOPT(title, Vals);
+    ?SET_STRING_XOPT(#config.title, Vals);
 set_xoption([{<<"muc#roomconfig_roomdesc">>, Vals}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_STRING_XOPT(description, Vals);
+    ?SET_STRING_XOPT(#config.description, Vals);
 set_xoption([{<<"muc#roomconfig_changesubject">>, [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(allow_change_subj, Val);
+    ?SET_BOOL_XOPT(#config.allow_change_subj, Val);
 set_xoption([{<<"allow_query_users">>, [Val]} | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(allow_query_users, Val);
+    ?SET_BOOL_XOPT(#config.allow_query_users, Val);
 set_xoption([{<<"allow_private_messages">>, [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(allow_private_messages, Val);
+    ?SET_BOOL_XOPT(#config.allow_private_messages, Val);
 set_xoption([{<<"allow_private_messages_from_visitors">>,
 	      [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
     case Val of
       <<"anyone">> ->
-	  ?SET_STRING_XOPT(allow_private_messages_from_visitors,
+	  ?SET_STRING_XOPT(#config.allow_private_messages_from_visitors,
 			   anyone);
       <<"moderators">> ->
-	  ?SET_STRING_XOPT(allow_private_messages_from_visitors,
+	  ?SET_STRING_XOPT(#config.allow_private_messages_from_visitors,
 			   moderators);
       <<"nobody">> ->
-	  ?SET_STRING_XOPT(allow_private_messages_from_visitors,
+	  ?SET_STRING_XOPT(#config.allow_private_messages_from_visitors,
 			   nobody);
       _ ->
 	  Txt = <<"Value of 'allow_private_messages_from_visitors' "
@@ -3414,58 +3421,58 @@ set_xoption([{<<"muc#roomconfig_allowvisitorstatus">>,
 	      [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(allow_visitor_status, Val);
+    ?SET_BOOL_XOPT(#config.allow_visitor_status, Val);
 set_xoption([{<<"muc#roomconfig_allowvisitornickchange">>,
 	      [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(allow_visitor_nickchange, Val);
+    ?SET_BOOL_XOPT(#config.allow_visitor_nickchange, Val);
 set_xoption([{<<"muc#roomconfig_publicroom">>, [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(public, Val);
+    ?SET_BOOL_XOPT(#config.public, Val);
 set_xoption([{<<"public_list">>, [Val]} | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(public_list, Val);
+    ?SET_BOOL_XOPT(#config.public_list, Val);
 set_xoption([{<<"muc#roomconfig_persistentroom">>,
 	      [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(persistent, Val);
+    ?SET_BOOL_XOPT(#config.persistent, Val);
 set_xoption([{<<"muc#roomconfig_moderatedroom">>, [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(moderated, Val);
+    ?SET_BOOL_XOPT(#config.moderated, Val);
 set_xoption([{<<"members_by_default">>, [Val]} | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(members_by_default, Val);
+    ?SET_BOOL_XOPT(#config.members_by_default, Val);
 set_xoption([{<<"muc#roomconfig_membersonly">>, [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(members_only, Val);
+    ?SET_BOOL_XOPT(#config.members_only, Val);
 set_xoption([{<<"captcha_protected">>, [Val]} | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(captcha_protected, Val);
+    ?SET_BOOL_XOPT(#config.captcha_protected, Val);
 set_xoption([{<<"muc#roomconfig_allowinvites">>, [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(allow_user_invites, Val);
+    ?SET_BOOL_XOPT(#config.allow_user_invites, Val);
 set_xoption([{<<"muc#roomconfig_allow_subscription">>, [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(allow_subscription, Val);
+    ?SET_BOOL_XOPT(#config.allow_subscription, Val);
 set_xoption([{<<"muc#roomconfig_passwordprotectedroom">>,
 	      [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(password_protected, Val);
+    ?SET_BOOL_XOPT(#config.password_protected, Val);
 set_xoption([{<<"muc#roomconfig_roomsecret">>, Vals}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_STRING_XOPT(password, Vals);
+    ?SET_STRING_XOPT(#config.password, Vals);
 set_xoption([{<<"anonymous">>, [Val]} | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(anonymous, Val);
+    ?SET_BOOL_XOPT(#config.anonymous, Val);
 set_xoption([{<<"muc#roomconfig_presencebroadcast">>, Vals} | Opts],
 	    Config, ServerHost, Lang) ->
     Roles =
@@ -3496,21 +3503,21 @@ set_xoption([{<<"muc#roomconfig_allowvoicerequests">>,
 	      [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(allow_voice_requests, Val);
+    ?SET_BOOL_XOPT(#config.allow_voice_requests, Val);
 set_xoption([{<<"muc#roomconfig_voicerequestmininterval">>,
 	      [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_NAT_XOPT(voice_request_min_interval, Val);
+    ?SET_NAT_XOPT(#config.voice_request_min_interval, Val);
 set_xoption([{<<"muc#roomconfig_whois">>, [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
     case Val of
       <<"moderators">> ->
-	  ?SET_BOOL_XOPT(anonymous,
+	  ?SET_BOOL_XOPT(#config.anonymous,
 			 (iolist_to_binary(integer_to_list(1))));
       <<"anyone">> ->
-	  ?SET_BOOL_XOPT(anonymous,
+	  ?SET_BOOL_XOPT(#config.anonymous,
 			 (iolist_to_binary(integer_to_list(0))));
       _ ->
 	  Txt = <<"Value of 'muc#roomconfig_whois' should be "
@@ -3521,19 +3528,19 @@ set_xoption([{<<"muc#roomconfig_maxusers">>, [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
     case Val of
-      <<"none">> -> ?SET_STRING_XOPT(max_users, none);
-      _ -> ?SET_NAT_XOPT(max_users, Val)
+      <<"none">> -> ?SET_STRING_XOPT(#config.max_users, none);
+      _ -> ?SET_NAT_XOPT(#config.max_users, Val)
     end;
 set_xoption([{<<"muc#roomconfig_enablelogging">>, [Val]}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(logging, Val);
+    ?SET_BOOL_XOPT(#config.logging, Val);
 set_xoption([{<<"muc#roomconfig_captcha_whitelist">>,
 	      Vals}
 	     | Opts],
 	    Config, ServerHost, Lang) ->
     JIDs = [jid:from_string(Val) || Val <- Vals],
-    ?SET_JIDMULTI_XOPT(captcha_whitelist, JIDs);
+    ?SET_JIDMULTI_XOPT(#config.captcha_whitelist, JIDs);
 set_xoption([{<<"FORM_TYPE">>, _} | Opts], Config, ServerHost, Lang) ->
     set_xoption(Opts, Config, ServerHost, Lang);
 set_xoption([{Opt, Vals} | Opts], Config, ServerHost, Lang) ->
@@ -3752,7 +3759,8 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	  end,
     set_opts(Opts, NSD).
 
--define(MAKE_CONFIG_OPT(Opt), {Opt, Config#config.Opt}).
+-define(MAKE_CONFIG_OPT(Opt),
+	{get_config_opt_name(Opt), element(Opt, Config)}).
 
 -spec make_opts(state()) -> [{atom(), any()}].
 make_opts(StateData) ->
@@ -3764,27 +3772,27 @@ make_opts(StateData) ->
 		       (_, _, Acc) ->
 			    Acc
 		    end, [], StateData#state.users),
-    [?MAKE_CONFIG_OPT(title), ?MAKE_CONFIG_OPT(description),
-     ?MAKE_CONFIG_OPT(allow_change_subj),
-     ?MAKE_CONFIG_OPT(allow_query_users),
-     ?MAKE_CONFIG_OPT(allow_private_messages),
-     ?MAKE_CONFIG_OPT(allow_private_messages_from_visitors),
-     ?MAKE_CONFIG_OPT(allow_visitor_status),
-     ?MAKE_CONFIG_OPT(allow_visitor_nickchange),
-     ?MAKE_CONFIG_OPT(public), ?MAKE_CONFIG_OPT(public_list),
-     ?MAKE_CONFIG_OPT(persistent),
-     ?MAKE_CONFIG_OPT(moderated),
-     ?MAKE_CONFIG_OPT(members_by_default),
-     ?MAKE_CONFIG_OPT(members_only),
-     ?MAKE_CONFIG_OPT(allow_user_invites),
-     ?MAKE_CONFIG_OPT(password_protected),
-     ?MAKE_CONFIG_OPT(captcha_protected),
-     ?MAKE_CONFIG_OPT(password), ?MAKE_CONFIG_OPT(anonymous),
-     ?MAKE_CONFIG_OPT(logging), ?MAKE_CONFIG_OPT(max_users),
-     ?MAKE_CONFIG_OPT(allow_voice_requests),
-     ?MAKE_CONFIG_OPT(mam),
-     ?MAKE_CONFIG_OPT(voice_request_min_interval),
-     ?MAKE_CONFIG_OPT(vcard),
+    [?MAKE_CONFIG_OPT(#config.title), ?MAKE_CONFIG_OPT(#config.description),
+     ?MAKE_CONFIG_OPT(#config.allow_change_subj),
+     ?MAKE_CONFIG_OPT(#config.allow_query_users),
+     ?MAKE_CONFIG_OPT(#config.allow_private_messages),
+     ?MAKE_CONFIG_OPT(#config.allow_private_messages_from_visitors),
+     ?MAKE_CONFIG_OPT(#config.allow_visitor_status),
+     ?MAKE_CONFIG_OPT(#config.allow_visitor_nickchange),
+     ?MAKE_CONFIG_OPT(#config.public), ?MAKE_CONFIG_OPT(#config.public_list),
+     ?MAKE_CONFIG_OPT(#config.persistent),
+     ?MAKE_CONFIG_OPT(#config.moderated),
+     ?MAKE_CONFIG_OPT(#config.members_by_default),
+     ?MAKE_CONFIG_OPT(#config.members_only),
+     ?MAKE_CONFIG_OPT(#config.allow_user_invites),
+     ?MAKE_CONFIG_OPT(#config.password_protected),
+     ?MAKE_CONFIG_OPT(#config.captcha_protected),
+     ?MAKE_CONFIG_OPT(#config.password), ?MAKE_CONFIG_OPT(#config.anonymous),
+     ?MAKE_CONFIG_OPT(#config.logging), ?MAKE_CONFIG_OPT(#config.max_users),
+     ?MAKE_CONFIG_OPT(#config.allow_voice_requests),
+     ?MAKE_CONFIG_OPT(#config.mam),
+     ?MAKE_CONFIG_OPT(#config.voice_request_min_interval),
+     ?MAKE_CONFIG_OPT(#config.vcard),
      {captcha_whitelist,
       (?SETS):to_list((StateData#state.config)#config.captcha_whitelist)},
      {affiliations,

@@ -584,12 +584,12 @@ handle_info({ircstring, <<$:, String/binary>>},
 		     [From, <<"MODE">>, <<$#, Chan/binary>>, <<"+o">>, Nick
 		      | _] ->
 			 process_mode_o(StateData, Chan, From, Nick,
-					<<"admin">>, <<"moderator">>),
+					admin, moderator),
 			 StateData;
 		     [From, <<"MODE">>, <<$#, Chan/binary>>, <<"-o">>, Nick
 		      | _] ->
 			 process_mode_o(StateData, Chan, From, Nick,
-					<<"member">>, <<"participant">>),
+					member, participant),
 			 StateData;
 		     [From, <<"KICK">>, <<$#, Chan/binary>>, Nick | _] ->
 			 process_kick(StateData, Chan, From, Nick, String),
@@ -756,16 +756,16 @@ process_channel_list_user(StateData, Chan, User) ->
 	    end,
     {User2, Affiliation, Role} = case User1 of
 				   <<$@, U2/binary>> ->
-				       {U2, <<"admin">>, <<"moderator">>};
+				       {U2, admin, moderator};
 				   <<$+, U2/binary>> ->
-				       {U2, <<"member">>, <<"participant">>};
+				       {U2, member, participant};
 				   <<$%, U2/binary>> ->
-				       {U2, <<"admin">>, <<"moderator">>};
+				       {U2, admin, moderator};
 				   <<$&, U2/binary>> ->
-				       {U2, <<"admin">>, <<"moderator">>};
+				       {U2, admin, moderator};
 				   <<$~, U2/binary>> ->
-				       {U2, <<"admin">>, <<"moderator">>};
-				   _ -> {User1, <<"member">>, <<"participant">>}
+				       {U2, admin, moderator};
+				   _ -> {User1, member, participant}
 				 end,
     ejabberd_router:route(
       jid:make(iolist_to_binary([Chan, <<"%">>, StateData#state.server]),
@@ -1157,8 +1157,6 @@ remove_element(E, Set) ->
 iq_admin(StateData, Channel, From, To,
 	 #iq{type = Type, sub_els = [SubEl]} = IQ) ->
     try process_iq_admin(StateData, Channel, Type, SubEl) of
-	ignore ->
-	    ignore;
 	{result, Result} ->
 	    ejabberd_router:route(To, From, xmpp:make_iq_result(IQ, Result));
 	{error, Error} ->

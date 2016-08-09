@@ -378,7 +378,7 @@ db_type(Host, Module) when is_atom(Module) ->
 	    undefined
     end.
 
--spec db_type(binary(), opts(), module()) -> db_type().
+-spec db_type(global | binary(), opts(), module()) -> db_type().
 
 db_type(Host, Opts, Module) ->
     case catch Module:mod_opt_type(db_type) of

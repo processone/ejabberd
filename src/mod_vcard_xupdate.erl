@@ -51,11 +51,12 @@ depends(_Host, _Opts) ->
 %%====================================================================
 %% Hooks
 %%====================================================================
-
+-spec update_presence(presence(), binary(), binary()) -> presence().
 update_presence(#presence{type = undefined} = Packet, User, Host) ->
     presence_with_xupdate(Packet, User, Host);
 update_presence(Packet, _User, _Host) -> Packet.
 
+-spec vcard_set(binary(), binary(), xmlel()) -> ok.
 vcard_set(LUser, LServer, VCARD) ->
     US = {LUser, LServer},
     case fxml:get_path_s(VCARD,

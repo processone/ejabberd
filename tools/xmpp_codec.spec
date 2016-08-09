@@ -2860,9 +2860,9 @@
 	   result = {db_result, '$from', '$to', '$type', '$key', '$_els'},
 	   cdata = #cdata{default = <<"">>, label = '$key'},
 	   attrs = [#attr{name = <<"from">>, required = true,
-			  dec = {dec_jid, []}, enc = {enc_jid, []}},
+			  dec = {nameprep, []}, enc = {nameprep, []}},
 		    #attr{name = <<"to">>, required = true,
-			  dec = {dec_jid, []}, enc = {enc_jid, []}},
+			  dec = {nameprep, []}, enc = {nameprep, []}},
 		    #attr{name = <<"type">>,
 			  dec = {dec_enum, [[valid, invalid, error]]},
 			  enc = {enc_enum, []}}]}).
@@ -2873,9 +2873,9 @@
 	   result = {db_verify, '$from', '$to', '$id', '$type', '$key', '$_els'},
 	   cdata = #cdata{default = <<"">>, label = '$key'},
 	   attrs = [#attr{name = <<"from">>, required = true,
-			  dec = {dec_jid, []}, enc = {enc_jid, []}},
+			  dec = {nameprep, []}, enc = {nameprep, []}},
 		    #attr{name = <<"to">>, required = true,
-			  dec = {dec_jid, []}, enc = {enc_jid, []}},
+			  dec = {nameprep, []}, enc = {nameprep, []}},
 		    #attr{name = <<"id">>, required = true},
 		    #attr{name = <<"type">>,
 			  dec = {dec_enum, [[valid, invalid, error]]},
@@ -3113,6 +3113,15 @@ resourceprep(R) ->
             R1
     end.
 
+-spec nameprep(_) -> binary().
+nameprep(S) ->
+    case jid:nameprep(S) of
+	error ->
+	    erlang:error(badarg);
+	S1 ->
+	    S1
+    end.
+
 -spec dec_bool(_) -> boolean().
 dec_bool(<<"false">>) -> false;
 dec_bool(<<"0">>) -> false;
@@ -3137,7 +3146,7 @@ enc_ip({0,0,0,0,0,16#ffff,A,B}) ->
 enc_ip(Addr) ->
     list_to_binary(inet_parse:ntoa(Addr)).
 
--spec re:split(_, _) -> binary().
+-spec re:split(_, _) -> [binary()].
 -spec base64:decode(_) -> binary().
 
 -spec dec_host_port(_) -> binary() | inet:ip_address() |

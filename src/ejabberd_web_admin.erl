@@ -1045,17 +1045,21 @@ process_admin(Host,
 process_admin(Host,
 	      #request{lang = Lang, auth = {_, _Auth, AJID}} =
 		  Request) ->
-    {Hook, Opts} = case Host of
-		     global -> {webadmin_page_main, [Request]};
-		     Host -> {webadmin_page_host, [Host, Request]}
-		   end,
-    case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
+    Res = case Host of
+	      global ->
+		  ejabberd_hooks:run_fold(
+		    webadmin_page_main, Host, [], [Request]);
+	      _ ->
+		  ejabberd_hooks:run_fold(
+		    webadmin_page_host, Host, [], [Host, Request])
+	  end,
+    case Res of
       [] ->
 	  setelement(1,
 		     make_xhtml([?XC(<<"h1">>, <<"Not Found">>)], Host, Lang,
 				AJID),
 		     404);
-      Res -> make_xhtml(Res, Host, Lang, AJID)
+      _ -> make_xhtml(Res, Host, Lang, AJID)
     end.
 
 %%%==================================
@@ -2269,16 +2273,17 @@ get_node(global, Node, [<<"update">>], Query, Lang) ->
 	       ?BR,
 	       ?INPUTT(<<"submit">>, <<"update">>, <<"Update">>)])];
 get_node(Host, Node, NPath, Query, Lang) ->
-    {Hook, Opts} = case Host of
-		     global ->
-			 {webadmin_page_node, [Node, NPath, Query, Lang]};
-		     Host ->
-			 {webadmin_page_hostnode,
-			  [Host, Node, NPath, Query, Lang]}
-		   end,
-    case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
+    Res = case Host of
+	      global ->
+		  ejabberd_hooks:run_fold(webadmin_page_node, Host, [],
+					  [Node, NPath, Query, Lang]);
+	      _ ->
+		  ejabberd_hooks:run_fold(webadmin_page_hostnode, Host, [],
+					  [Host, Node, NPath, Query, Lang])
+	  end,
+    case Res of
       [] -> [?XC(<<"h1">>, <<"Not Found">>)];
-      Res -> Res
+      _ -> Res
     end.
 
 %%%==================================

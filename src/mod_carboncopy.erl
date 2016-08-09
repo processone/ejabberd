@@ -197,7 +197,7 @@ send_copies(JID, To, Packet, Direction)->
 
 -spec build_forward_packet(jid(), message(), jid(), jid(), direction()) -> message().
 build_forward_packet(JID, #message{type = T} = Msg, Sender, Dest, Direction) ->
-    Forwarded = #forwarded{sub_els = complete_packet(JID, Msg, Direction)},
+    Forwarded = #forwarded{sub_els = [complete_packet(JID, Msg, Direction)]},
     Carbon = case Direction of
 		 sent -> #carbons_sent{forwarded = Forwarded};
 		 received -> #carbons_received{forwarded = Forwarded}
