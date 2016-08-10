@@ -157,7 +157,7 @@ get_commands_spec() ->
 			module = ?MODULE, function = subscribe_room,
 			args = [{user, binary}, {nick, binary}, {room, binary},
 				{nodes, binary}],
-			result = {list, {node, string}}},
+			result = {nodes, {list, {node, string}}}},
      #ejabberd_commands{name = unsubscribe_room, tags = [muc_room],
 			desc = "Unsubscribe from a MUC conference",
 			module = ?MODULE, function = unsubscribe_room,
