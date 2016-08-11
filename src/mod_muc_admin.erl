@@ -908,8 +908,9 @@ subscribe_room(User, Nick, Room, Nodes) ->
 	    case jid:from_string(User) of
 		error ->
 		    throw({error, "Malformed user JID"});
-		JID ->
-		    UserJID = jid:replace_resource(JID, Nick),
+		#jid{lresource = <<"">>} ->
+		    throw({error, "User's JID should have a resource"});
+		UserJID ->
 		    case get_room_pid(Name, Host) of
 			Pid when is_pid(Pid) ->
 			    case gen_fsm:sync_send_all_state_event(
