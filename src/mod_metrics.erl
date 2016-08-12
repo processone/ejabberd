@@ -86,9 +86,12 @@ sm_register_connection_hook(_SID, #jid{lserver=LServer}, _Info) ->
 sm_remove_connection_hook(_SID, #jid{lserver=LServer}, _Info) ->
     push(LServer, sm_remove_connection).
 
+-spec user_send_packet(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
 user_send_packet(Packet, _C2SState, #jid{lserver=LServer}, _To) ->
     push(LServer, user_send_packet),
     Packet.
+
+-spec user_receive_packet(stanza(), ejabberd_c2s:state(), jid(), jid(), jid()) -> stanza().
 user_receive_packet(Packet, _C2SState, _JID, _From, #jid{lserver=LServer}) ->
     push(LServer, user_receive_packet),
     Packet.

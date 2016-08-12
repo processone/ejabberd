@@ -263,8 +263,8 @@ code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
 %% ejabberd_hooks callback.
 %%--------------------------------------------------------------------
 
--spec handle_slot_request(term(), jid(), binary(), non_neg_integer(), binary())
-      -> term().
+-spec handle_slot_request(allow | deny, jid(), binary(),
+			  non_neg_integer(), binary()) -> allow | deny.
 
 handle_slot_request(allow, #jid{lserver = ServerHost} = JID, Path, Size,
 		    _Lang) ->

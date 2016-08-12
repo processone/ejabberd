@@ -159,9 +159,9 @@ close_session(SID, User, Server, Resource) ->
     ejabberd_hooks:run(sm_remove_connection_hook,
 		       JID#jid.lserver, [SID, JID, Info]).
 
--spec check_in_subscription(any(), binary(), binary(),
-                            any(), any(), any()) -> any().
-
+-spec check_in_subscription(boolean(), binary(), binary(), jid(),
+			    subscribe | subscribed | unsubscribe | unsubscribed,
+			    binary()) -> boolean() | {stop, false}.
 check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
     case ejabberd_auth:is_user_exists(User, Server) of
       true -> Acc;

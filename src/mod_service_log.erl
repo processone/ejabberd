@@ -54,14 +54,17 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
+-spec log_user_send(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
 log_user_send(Packet, _C2SState, From, To) ->
     log_packet(From, To, Packet, From#jid.lserver),
     Packet.
 
+-spec log_user_receive(stanza(), ejabberd_c2s:state(), jid(), jid(), jid()) -> stanza().
 log_user_receive(Packet, _C2SState, _JID, From, To) ->
     log_packet(From, To, Packet, To#jid.lserver),
     Packet.
 
+-spec log_packet(jid(), jid(), stanza(), binary()) -> ok.
 log_packet(From, To, Packet, Host) ->
     Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers,
                                      fun(L) ->

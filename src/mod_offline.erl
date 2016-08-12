@@ -533,6 +533,9 @@ resend_offline_messages(User, Server) ->
       _ -> ok
     end.
 
+-spec pop_offline_messages([{route, jid(), jid(), message()}],
+			   binary(), binary()) ->
+      [{route, jid(), jid(), message()}].
 pop_offline_messages(Ls, User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),

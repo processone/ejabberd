@@ -200,6 +200,7 @@ get_last_info(LUser, LServer) ->
       Res -> Res
     end.
 
+-spec remove_user(binary(), binary()) -> any().
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),

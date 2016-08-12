@@ -111,6 +111,7 @@ depends(_Host, _Opts) ->
 %%--------------------------------------------------------------------
 %% Hooks
 %%--------------------------------------------------------------------
+-spec get_user_roster([#roster{}], {binary(), binary()}) -> [#roster{}].
 get_user_roster(Items, {U, S} = US) ->
     SRUsers = get_user_to_groups_map(US, true),
     {NewItems1, SRUsersRest} = lists:mapfoldl(fun (Item,
@@ -143,6 +144,7 @@ get_user_roster(Items, {U, S} = US) ->
 
 %% This function in use to rewrite the roster entries when moving or renaming
 %% them in the user contact list.
+-spec process_item(#roster{}, binary()) -> #roster{}.
 process_item(RosterItem, _Host) ->
     USFrom = RosterItem#roster.us,
     {User, Server, _Resource} = RosterItem#roster.jid,
@@ -158,6 +160,8 @@ process_item(RosterItem, _Host) ->
       _ -> RosterItem#roster{subscription = both, ask = none}
     end.
 
+-spec get_subscription_lists({[ljid()], [ljid()]}, binary(), binary())
+      -> {[ljid()], [ljid()]}.
 get_subscription_lists({F, T}, User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -170,6 +174,8 @@ get_subscription_lists({F, T}, User, Server) ->
     SRJIDs = [{U1, S1, <<"">>} || {U1, S1} <- SRUsers],
     {lists:usort(SRJIDs ++ F), lists:usort(SRJIDs ++ T)}.
 
+-spec get_jid_info({subscription(), [binary()]}, binary(), binary(), jid())
+      -> {subscription(), [binary()]}.
 get_jid_info({Subscription, Groups}, User, Server,
 	     JID) ->
     LUser = jid:nodeprep(User),
@@ -187,6 +193,9 @@ get_jid_info({Subscription, Groups}, User, Server,
       error -> {Subscription, Groups}
     end.
 
+-spec in_subscription(boolean(), binary(), binary(), jid(),
+		      subscribe | subscribed | unsubscribe | unsubscribed,
+		      binary()) -> boolean().
 in_subscription(Acc, User, Server, JID, Type,
 		_Reason) ->
     process_subscription(in, User, Server, JID, Type, Acc).

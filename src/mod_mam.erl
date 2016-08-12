@@ -191,7 +191,9 @@ remove_room(LServer, Name, Host) ->
     Mod:remove_room(LServer, LName, LHost),
     ok.
 
-get_room_config(X, RoomState, _From, Lang) ->
+-spec get_room_config([xdata_field()], mod_muc_room:state(), jid(), binary())
+      -> [xdata_field()].			     
+get_room_config(XFields, RoomState, _From, Lang) ->
     Config = RoomState#state.config,
     Label = <<"Enable message archiving">>,
     Var = <<"muc#roomconfig_mam">>,
@@ -203,8 +205,10 @@ get_room_config(X, RoomState, _From, Lang) ->
 			  label = translate:translate(Lang, Label),
 			  var = Var,
 			  values = [Val]},
-    X ++ [XField].
+    XFields ++ [XField].
 
+-spec set_room_option({pos_integer(), _}, binary(), [binary()], binary())
+      -> {pos_integer(), _}.
 set_room_option(_Acc, <<"muc#roomconfig_mam">> = Opt, Vals, Lang) ->
     try
 	Val = case Vals of
@@ -222,6 +226,7 @@ set_room_option(_Acc, <<"muc#roomconfig_mam">> = Opt, Vals, Lang) ->
 set_room_option(Acc, _Opt, _Vals, _Lang) ->
     Acc.
 
+-spec user_receive_packet(stanza(), ejabberd_c2s:state(), jid(), jid(), jid()) -> stanza().
 user_receive_packet(Pkt, C2SState, JID, Peer, To) ->
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
@@ -239,6 +244,7 @@ user_receive_packet(Pkt, C2SState, JID, Peer, To) ->
 	    Pkt
     end.
 
+-spec user_send_packet(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
 user_send_packet(Pkt, C2SState, JID, Peer) ->
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
@@ -256,10 +262,14 @@ user_send_packet(Pkt, C2SState, JID, Peer) ->
 	    Pkt
     end.
 
+-spec user_send_packet_strip_tag(stanza(), ejabberd_c2s:state(),
+				 jid(), jid()) -> stanza().
 user_send_packet_strip_tag(Pkt, _C2SState, JID, _Peer) ->
     LServer = JID#jid.lserver,
     strip_my_archived_tag(Pkt, LServer).
 
+-spec muc_filter_message(message(), mod_muc_room:state(),
+			 jid(), jid(), binary()) -> message().
 muc_filter_message(Pkt, #state{config = Config} = MUCState,
 		   RoomJID, From, FromNick) ->
     if Config#config.mam ->
@@ -302,6 +312,7 @@ process_iq_v0_3(#iq{from = #jid{lserver = LServer},
 process_iq_v0_3(IQ) ->
     process_iq(IQ).
 
+-spec muc_process_iq(ignore | iq(), mod_muc_room:state()) -> ignore | iq().
 muc_process_iq(#iq{type = T, lang = Lang,
 		   from = From,
 		   sub_els = [#mam_query{xmlns = NS}]} = IQ,
@@ -372,6 +383,8 @@ disco_sm_features({result, OtherFeatures},
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
+-spec message_is_archived(boolean(), ejabberd_c2s:state(),
+			  jid(), jid(), message()) -> boolean().
 message_is_archived(true, _C2SState, _Peer, _JID, _Pkt) ->
     true;
 message_is_archived(false, C2SState, Peer,

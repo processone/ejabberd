@@ -51,6 +51,8 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
+-spec check_packet(allow | deny, binary(), binary(), _,
+		   {jid(), jid(), stanza()}, in | out) -> allow | deny.
 check_packet(_, _User, Server, _PrivacyList,
 	     {From, To, #presence{type = Type}}, Dir) ->
     IsSubscription = case Type of

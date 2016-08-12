@@ -175,6 +175,7 @@ roster_version_on_db(Host) ->
 			   false).
 
 %% Returns a list that may contain an xmlelement with the XEP-237 feature if it's enabled.
+-spec get_versioning_feature([xmpp_element()], binary()) -> [xmpp_element()].
 get_versioning_feature(Acc, Host) ->
     case roster_versioning_enabled(Host) of
       true ->
@@ -274,6 +275,7 @@ process_iq_get(#iq{from = From, to = To, lang = Lang,
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
+-spec get_user_roster([#roster{}], {binary(), binary()}) -> [#roster{}].
 get_user_roster(Acc, {LUser, LServer}) ->
     Items = get_roster(LUser, LServer),
     lists:filter(fun (#roster{subscription = none,
@@ -416,6 +418,8 @@ push_item_version(Server, User, From, Item,
 		  end,
 		  ejabberd_sm:get_user_resources(User, Server)).
 
+-spec get_subscription_lists({[ljid()], [ljid()]}, binary(), binary())
+      -> {[ljid()], [ljid()]}.
 get_subscription_lists(_Acc, User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -448,6 +452,9 @@ transaction(LServer, F) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:transaction(LServer, F).
 
+-spec in_subscription(boolean(), binary(), binary(), jid(),
+		      subscribe | subscribed | unsubscribe | unsubscribed,
+		      binary()) -> boolean().
 in_subscription(_, User, Server, JID, Type, Reason) ->
     process_subscription(in, User, Server, JID, Type,
 			 Reason).
@@ -726,6 +733,7 @@ process_item_set_t(LUser, LServer, #roster_item{jid = JID1} = QueryItem) ->
     end;
 process_item_set_t(_LUser, _LServer, _) -> ok.
 
+-spec get_in_pending_subscriptions([presence()], binary(), binary()) -> [presence()].
 get_in_pending_subscriptions(Ls, User, Server) ->
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
@@ -755,6 +763,8 @@ read_subscription_and_groups(User, Server, LJID) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:read_subscription_and_groups(LUser, LServer, LJID).
 
+-spec get_jid_info({subscription(), [binary()]}, binary(), binary(), jid())
+      -> {subscription(), [binary()]}.
 get_jid_info(_, User, Server, JID) ->
     LJID = jid:tolower(JID),
     case read_subscription_and_groups(User, Server, LJID) of

@@ -423,6 +423,7 @@ search(LServer, XFields) ->
     Mod:search(LServer, Data, AllowReturnAll, MaxMatch).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec remove_user(binary(), binary()) -> any().
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),

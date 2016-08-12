@@ -722,6 +722,9 @@ out_subscription(User, Server, JID, subscribed) ->
 out_subscription(_, _, _, _) ->
     true.
 
+-spec in_subscription(boolean(), binary(), binary(), jid(),
+		      subscribe | subscribed | unsubscribe | unsubscribed,
+		      binary()) -> true.
 in_subscription(_, User, Server, Owner, unsubscribed, _) ->
     unsubscribe_user(jid:make(User, Server, <<>>), Owner),
     true;
