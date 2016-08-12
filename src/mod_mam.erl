@@ -555,31 +555,29 @@ parse_query_v0_2(Query) ->
       end, Query#xmlel.children).
 
 should_archive(#xmlel{name = <<"message">>} = Pkt, LServer) ->
-    case fxml:get_attr_s(<<"type">>, Pkt#xmlel.attrs) of
-	<<"error">> ->
+    case is_resent(Pkt, LServer) of
+	true ->
 	    false;
-	<<"groupchat">> ->
-	    false;
-	<<"headline">> ->
-	    false;
-	_ ->
-	    case is_resent(Pkt, LServer) of
-		true ->
+	false ->
+	    case {check_store_hint(Pkt),
+		  fxml:get_attr_s(<<"type">>, Pkt#xmlel.attrs)} of
+		{_Hint, <<"error">>} ->
 		    false;
-		false ->
-		    case check_store_hint(Pkt) of
-			store ->
-			    true;
-			no_store ->
+		{store, _Type} ->
+		    true;
+		{no_store, _Type} ->
+		    false;
+		{none, <<"groupchat">>} ->
+		    false;
+		{none, <<"headline">>} ->
+		    false;
+		{none, _Type} ->
+		    case fxml:get_subtag_cdata(Pkt, <<"body">>) of
+			<<>> ->
+			    %% Empty body
 			    false;
-			none ->
-			    case fxml:get_subtag_cdata(Pkt, <<"body">>) of
-				<<>> ->
-				    %% Empty body
-				    false;
-				_ ->
-				    true
-			    end
+			_ ->
+			    true
 		    end
 	    end
     end;
