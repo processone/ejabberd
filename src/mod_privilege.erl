@@ -1,3 +1,9 @@
+%%%--------------------------------------------------------------------------------------
+%%% File    : mod_privilege.erl
+%%% Author  : Anna Mukharram <amuhar3@gmail.com>
+%%% Purpose : This module is an implementation for XEP-0356: Privileged Entity
+%%%--------------------------------------------------------------------------------------
+
 -module(mod_privilege).
 
 -author('amuhar3@gmail.com').

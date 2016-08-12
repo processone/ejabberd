@@ -1,3 +1,9 @@
+%%%--------------------------------------------------------------------------------------
+%%% File    : mod_delegation.erl
+%%% Author  : Anna Mukharram <amuhar3@gmail.com>
+%%% Purpose : This module is an implementation for XEP-0355: Namespace Delegation
+%%%--------------------------------------------------------------------------------------
+
 -module(mod_delegation).
 
 -author('amuhar3@gmail.com').
@@ -383,68 +389,59 @@ disco_info(StateData, Sep) ->
 
 
 disco_features(Acc, Bare) ->
-    case ets:info(delegated_namespaces) of
-      undefined ->
-        {result, Acc};
-      _ ->
-        Fun = fun(Feat) ->
-                ets:foldl(fun({Ns, _, _, _, _, _}, A) ->  
-                              A or str:prefix(Ns, Feat)
-                          end, false, delegated_namespaces)
-              end,
-        % delete feature namespace which is delegated to service
-        Features = lists:filter(fun ({{Feature, _Host}}) ->
-                                      not Fun(Feature);
-                                    (Feature) when is_binary(Feature) ->
-                                      not Fun(Feature)
-                                end, Acc),
-        % add service features
-        FeaturesList =
-          ets:foldl(fun({_, _, _, _, {Feats, _, _}, {FeatsBare, _, _}}, A) ->
-                          if
-                            Bare -> A ++ FeatsBare;
-                            true -> A ++ Feats
-                          end;
-                       (_, A) -> A
-                    end, Features, delegated_namespaces),
-        {result, FeaturesList}
-    end.
+    Fun = fun(Feat) ->
+            ets:foldl(fun({Ns, _, _, _, _, _}, A) ->  
+                          A or str:prefix(Ns, Feat)
+                      end, false, delegated_namespaces)
+          end,
+    % delete feature namespace which is delegated to service
+    Features = lists:filter(fun ({{Feature, _Host}}) ->
+                                  not Fun(Feature);
+                                (Feature) when is_binary(Feature) ->
+                                  not Fun(Feature)
+                            end, Acc),
+    % add service features
+    FeaturesList =
+      ets:foldl(fun({_, _, _, _, {Feats, _, _}, {FeatsBare, _, _}}, A) ->
+                      if
+                        Bare -> A ++ FeatsBare;
+                        true -> A ++ Feats
+                      end;
+                   (_, A) -> A
+                end, Features, delegated_namespaces),
+    {result, FeaturesList}.
 
 disco_identity(Acc, Bare) ->
-    case ets:info(delegated_namespaces) of
-      undefined ->
-        Acc;
-      _ ->
-        % filter delegated identites
-        Fun = fun(Ident) ->
-                ets:foldl(fun({_, _, _, _, {_ , I, _}, {_ , IBare, _}}, A) ->
-                               Identity = 
-                                 if
-                                   Bare -> IBare;
-                                   true -> I
-                                 end,
-                                (fxml:get_attr_s(<<"category">> , Ident) ==
-                                 fxml:get_attr_s(<<"category">>, Identity)) and
-                                (fxml:get_attr_s(<<"type">> , Ident) ==
-                                 fxml:get_attr_s(<<"type">>, Identity)) or A;
-                             (_, A) -> A
-                          end, false, delegated_namespaces)
-              end,
+    % filter delegated identites
+    Fun = fun(Ident) ->
+            ets:foldl(fun({_, _, _, _, {_ , I, _}, {_ , IBare, _}}, A) ->
+                            Identity = 
+                              if
+                                Bare -> IBare;
+                                true -> I
+                              end,
+                            (fxml:get_attr_s(<<"category">> , Ident) ==
+                             fxml:get_attr_s(<<"category">>, Identity)) and
+                            (fxml:get_attr_s(<<"type">> , Ident) ==
+                              fxml:get_attr_s(<<"type">>, Identity)) or A;
+                            (_, A) -> A
+                      end, false, delegated_namespaces)
+          end,
 
-        Identities =
-          lists:filter(fun (#xmlel{attrs = Attrs}) ->
-                         not Fun(Attrs)
-                       end, Acc),
-        % add service features
-        ets:foldl(fun({_, _, _, _, {_, I, _}, {_, IBare, _}}, A) ->
-                        if
-                          Bare -> A ++ IBare;
-                          true -> A ++ I
-                        end;
-                     (_, A) -> A
-                  end, Identities, delegated_namespaces)
-    end.
-%% return xmlns from value element
+    Identities =
+      lists:filter(fun (#xmlel{attrs = Attrs}) ->
+                      not Fun(Attrs)
+                   end, Acc),
+    % add service features
+    ets:foldl(fun({_, _, _, _, {_, I, _}, {_, IBare, _}}, A) ->
+                    if
+                      Bare -> A ++ IBare;
+                      true -> A ++ I
+                    end;
+                  (_, A) -> A
+              end, Identities, delegated_namespaces).
+
+%% xmlns from value element
 
 -spec get_field_value([xmlel()]) -> binary().
 
@@ -462,31 +459,26 @@ get_field_value([Elem| Elems]) ->
     end.
 
 get_info(Acc, Bare) ->
-    case ets:info(delegated_namespaces) of
-      undefined ->
-        Acc;
-      _ ->
-        Fun = fun(Feat) ->
-                ets:foldl(fun({Ns, _, _, _, _, _}, A) ->  
-                            (A or str:prefix(Ns, Feat))
-                          end, false, delegated_namespaces)
-              end,
-        Exten = lists:filter(fun(Xmlel) ->
-                               Tags = fxml:get_subtags(Xmlel, <<"field">>),
-                               case get_field_value(Tags) of
-                                 <<"">> -> true;
-                                 Value -> not Fun(Value)
-                               end
-                             end, Acc),
-        ets:foldl(fun({_, _, _, _, {_, _, Ext}, {_, _, ExtBare}}, A) ->
-                        if
-                          Bare -> A ++ ExtBare;
-                          true -> A ++ Ext
-                        end;
-                     (_, A) -> A
-                  end, Exten, delegated_namespaces)
-    end.
-
+    Fun = fun(Feat) ->
+            ets:foldl(fun({Ns, _, _, _, _, _}, A) ->  
+                        (A or str:prefix(Ns, Feat))
+                      end, false, delegated_namespaces)
+          end,
+    Exten = lists:filter(fun(Xmlel) ->
+                           Tags = fxml:get_subtags(Xmlel, <<"field">>),
+                           case get_field_value(Tags) of
+                             <<"">> -> true;
+                             Value -> not Fun(Value)
+                           end
+                         end, Acc),
+    ets:foldl(fun({_, _, _, _, {_, _, Ext}, {_, _, ExtBare}}, A) ->
+                    if
+                      Bare -> A ++ ExtBare;
+                      true -> A ++ Ext
+                      end;
+                 (_, A) -> A
+              end, Exten, delegated_namespaces).
+    
 %% 7.2.1 General Case
 
 disco_local_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->

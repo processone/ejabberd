@@ -36,7 +36,7 @@
 -behaviour(?GEN_FSM).
 
 %% External exports
--export([start/2, start_link/2, send_text/2,
+-export([start/0, start/2, start_link/2, send_text/2,
          send_element/2, socket_type/0, transform_listen_option/2]).
 
 -export([init/1, wait_for_stream/2,
@@ -92,6 +92,14 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+
+%% for xep-0355
+%% table contans records like {namespace, fitering attributes, pid(), 
+%% host, disco info for general case, bare jid disco info }
+
+start() ->
+  ets:new(delegated_namespaces, [named_table, public]).
+
 start(SockData, Opts) ->
     supervisor:start_child(ejabberd_service_sup,
                            [SockData, Opts]).
@@ -141,8 +149,6 @@ init([{SockMod, Socket}, Opts]) ->
                      {value, {_, PrivAcc}} -> PrivAcc;
                      _ -> []
                  end,
-    %% table for delegated namespaces {namespace, [feature list]}
-    catch ets:new(delegated_namespaces, [named_table, public]),
     
     Delegations = case lists:keyfind(delegations, 1, Opts) of
                       {delegations, Del} ->
