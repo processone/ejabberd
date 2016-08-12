@@ -31,4 +31,8 @@ defmodule Ejabberd.Config.Store do
   def get(key) do
     Agent.get @name, &Map.get(&1, key, [])
   end
+
+  def stop do
+    Agent.stop @name
+  end
 end

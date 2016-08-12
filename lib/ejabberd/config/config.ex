@@ -36,7 +36,7 @@ defmodule Ejabberd.Config do
 
     case force do
       true ->
-        Process.whereis(Ejabberd.Config.Store) |> Process.exit(:stop)
+        Ejabberd.Config.Store.stop
         Ejabberd.Config.Store.start_link
         do_init(file_path)
       false ->
@@ -136,7 +136,7 @@ defmodule Ejabberd.Config do
   end
 
   # Stores the configuration module name
-  defp extract_and_store_module_name({{:module, mod, _, :ok}, _}) do
+  defp extract_and_store_module_name({{:module, mod, _bytes, _}, _}) do
     Ejabberd.Config.Store.put(:module_name, mod)
   end
 end
