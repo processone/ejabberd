@@ -4,7 +4,7 @@ defmodule Ejabberd.Config.ValidatorUtility do
   Imports utility functions for working with validation structures.
   """
 
-  alias Ejabberd.Config.{EjabberdModule}
+  alias Ejabberd.Config.EjabberdModule
 
   @doc """
   Inserts an error inside the errors collection, for the given key.

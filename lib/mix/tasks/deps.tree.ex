@@ -1,6 +1,7 @@
 defmodule Mix.Tasks.Ejabberd.Deps.Tree do
   use Mix.Task
-  alias Ejabberd.Config.{EjabberdModule}
+
+  alias Ejabberd.Config.EjabberdModule
 
   @shortdoc "Lists all ejabberd modules and their dependencies"
 

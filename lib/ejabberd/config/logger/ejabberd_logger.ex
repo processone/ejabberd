@@ -4,7 +4,7 @@ defmodule Ejabberd.Config.EjabberdLogger do
   given validated modules.
   """
 
-  alias Ejabberd.Config.{EjabberdModule}
+  alias Ejabberd.Config.EjabberdModule
 
   @doc """
   Given a list of modules validated, in the form of {:ok, mod} or

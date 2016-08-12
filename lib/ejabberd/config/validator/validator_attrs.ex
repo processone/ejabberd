@@ -7,7 +7,7 @@ defmodule Ejabberd.Config.Validator.Attrs do
   @type mod_validation :: {[EjabberdModule.t], EjabberdModule.t, map}
 
   import Ejabberd.Config.ValidatorUtility
-  alias Ejabberd.Config.{Attr}
+  alias Ejabberd.Config.Attr
 
   @doc """
   Given a module (with the form used for validation)

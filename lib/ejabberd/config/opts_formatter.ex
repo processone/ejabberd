@@ -4,7 +4,7 @@ defmodule Ejabberd.Config.OptsFormatter do
   ejabberd uses.
   """
 
-  alias Ejabberd.Config.{EjabberdModule}
+  alias Ejabberd.Config.EjabberdModule
 
   @spec format_opts_for_ejabberd([{atom(), any()}]) :: list()
   def format_opts_for_ejabberd(opts) do
