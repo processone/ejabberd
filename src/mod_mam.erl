@@ -560,6 +560,8 @@ should_archive(#xmlel{name = <<"message">>} = Pkt, LServer) ->
 	    false;
 	<<"groupchat">> ->
 	    false;
+	<<"headline">> ->
+	    false;
 	_ ->
 	    case is_resent(Pkt, LServer) of
 		true ->
