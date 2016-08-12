@@ -58,7 +58,7 @@ defmodule Ejabberd.Config do
   Register the hooks defined inside the elixir config file.
   """
   def start_hooks do
-    Ejabberd.Config.Store.get(:hooks)
+    get_hooks_parsed_in_order()
     |> Enum.each(&Ejabberd.Config.EjabberdHook.start/1)
   end
 
@@ -123,6 +123,9 @@ defmodule Ejabberd.Config do
   # Returns the listeners from the store
   defp get_listeners_parsed_in_order,
     do: Ejabberd.Config.Store.get(:listeners) |> Enum.reverse
+
+  defp get_hooks_parsed_in_order,
+    do: Ejabberd.Config.Store.get(:hooks) |> Enum.reverse
 
   # Returns the general config options
   defp get_general_opts,
