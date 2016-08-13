@@ -154,13 +154,8 @@ init([{SockMod, Socket}, Opts]) ->
                       {delegations, Del} ->
                           lists:foldl(
                             fun({Ns, FiltAttr}, D) when Ns /= ?NS_DELEGATION ->
-                                case ets:lookup(delegated_namespaces, Ns) of
-                                  [] ->
-                                    Attr = proplists:get_value(filtering, FiltAttr, []),
-                                    D ++ [{Ns, Attr}];
-                                  _ -> 
-                                    D
-                                end;
+                                 Attr = proplists:get_value(filtering, FiltAttr, []),
+                                 D ++ [{Ns, Attr}];
                                (_Deleg, D) -> D
                             end, [], Del); 
                       false -> []
@@ -249,7 +244,8 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                                 end, dict:fetch_keys(StateData#state.host_opts)),
 
                             mod_privilege:advertise_permissions(StateData),
-                            mod_delegation:advertise_delegations(StateData),
+                            DelegatedNs = 
+                              mod_delegation:advertise_delegations(StateData),
 
                             RosterAccess = 
                               proplists:get_value(roster, 
@@ -270,7 +266,8 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                                 add_hooks(s2s_receive_packet, Fun2);
                               _ -> ok
                             end,
-                            {next_state, stream_established, StateData}; 
+                            {next_state, stream_established, 
+                             StateData#state{delegations = DelegatedNs}}; 
                         _ ->
 
                             send_text(StateData, ?INVALID_HANDSHAKE_ERR),
@@ -463,10 +460,12 @@ terminate(Reason, StateName, StateData) ->
                           ejabberd_router:unregister_route(H)
                         end,
                         dict:fetch_keys(StateData#state.host_opts)),
+
           lists:foreach(fun({Ns, _FilterAttr}) ->
-                          ets:delete(delegated_namespaces, Ns),
-                          remove_iq_handlers(Ns)
+                             ets:delete(delegated_namespaces, Ns),
+                             remove_iq_handlers(Ns)
                         end, StateData#state.delegations),
+
           RosterAccess = 
             proplists:get_value(roster, StateData#state.privilege_access),
           case proplists:get_value(presence, StateData#state.privilege_access) of

@@ -64,8 +64,8 @@ attribute_tag(Attrs) ->
               end, Attrs).
 
 delegations(From, To, Delegations) ->
-    Elem0 = 
-      lists:foldl(fun({Ns, FiltAttr}, Acc) ->
+    {Elem0, DelegatedNs} = 
+      lists:foldl(fun({Ns, FiltAttr}, {Acc, AccNs}) ->
                     case ets:insert_new(delegated_namespaces, 
                                         {Ns, FiltAttr, self(), To, {}, {}}) of
                       true ->
@@ -81,19 +81,23 @@ delegations(From, To, Delegations) ->
                               attribute_tag(FiltAttr)
                           end,
                         add_iq_handlers(Ns),
-                        [#xmlel{name = <<"delegated">>, 
+                        {[#xmlel{name = <<"delegated">>, 
                                 attrs = [{<<"namespace">>, Ns}],
-                                children = Attrs}| Acc];
-                      false -> Acc
+                                children = Attrs}| Acc], [{Ns, FiltAttr}|AccNs]};
+                      false -> {Acc, AccNs}
                     end
-                  end, [], Delegations),
-    Elem1 = #xmlel{name = <<"delegation">>, 
-                   attrs = [{<<"xmlns">>, ?NS_DELEGATION}],
-                   children = Elem0},
-    Id = randoms:get_string(),
-    #xmlel{name = <<"message">>, 
-           attrs = [{<<"id">>, Id}, {<<"from">>, From}, {<<"to">>, To}],
-           children = [Elem1]}.
+                  end, {[], []}, Delegations),
+    case Elem0 of
+      [] -> {ignore, DelegatedNs};
+      _ -> 
+        Elem1 = #xmlel{name = <<"delegation">>, 
+                       attrs = [{<<"xmlns">>, ?NS_DELEGATION}],
+                       children = Elem0},
+        Id = randoms:get_string(),
+        {#xmlel{name = <<"message">>, 
+                attrs = [{<<"id">>, Id}, {<<"from">>, From}, {<<"to">>, To}],
+                children = [Elem1]}, DelegatedNs}
+    end.
 
 add_iq_handlers(Ns) ->
     lists:foreach(fun(Host) ->
@@ -110,11 +114,16 @@ add_iq_handlers(Ns) ->
 
 advertise_delegations(#state{delegations = []}) -> ok;
 advertise_delegations(StateData) ->
-    Delegated = 
+    {Delegated, DelegatedNs} = 
       delegations(?MYNAME, StateData#state.host, StateData#state.delegations),
-    ejabberd_service:send_element(StateData, Delegated),
-    % server asks available features for delegated namespaces 
-    disco_info(StateData).
+    if 
+      Delegated /= ignore ->
+        ejabberd_service:send_element(StateData, Delegated),
+        % server asks available features for delegated namespaces 
+        disco_info(StateData#state{delegations = DelegatedNs});
+      true -> ok
+    end,
+    DelegatedNs.
 
 %%%--------------------------------------------------------------------------------------
 %%%  Delegated namespaces hook
