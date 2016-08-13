@@ -35,6 +35,7 @@
 	 add/5,
 	 add_dist/5,
 	 add_dist/6,
+     delete/2,
 	 delete/3,
 	 delete/4,
 	 delete/5,
@@ -97,6 +98,11 @@ add_dist(Hook, Node, Module, Function, Seq) ->
 
 add_dist(Hook, Host, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {add, Hook, Host, Node, Module, Function, Seq}).
+
+-spec delete(atom(), binary()) -> ok.
+
+delete(Hook, Host) ->
+  gen_server:call(ejabberd_hooks, {delete_event, Hook, Host}).
 
 -spec delete(atom(), fun(), number()) -> ok.
 
@@ -228,6 +234,11 @@ handle_call({get_handlers, Hook, Host}, _From, State) ->
 
 handle_call({delete_all}, _From, State) ->
     Reply = ets:delete_all_objects(hooks),
+    {reply, Reply, State};
+
+handle_call({delete_event, Hook, Host}, _From, State) ->
+    ets:delete(hooks, {Hook, Host}),
+    Reply = ok,
     {reply, Reply, State};
 
 handle_call(_Request, _From, State) ->

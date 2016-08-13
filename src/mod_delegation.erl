@@ -209,12 +209,8 @@ manage_service_result(HookRes, HookErr, Service, OriginPacket) ->
     fun(Packet) ->
         {ClientJID, ServerJID} = get_client_server(OriginPacket#xmlel.attrs),
         Server = ClientJID#jid.lserver,
-        ejabberd_hooks:delete(HookRes, Server, 
-                              manage_service_result(HookRes, HookErr,
-                                                    Service, OriginPacket), 10),
-        ejabberd_hooks:delete(HookErr, Server, 
-                              manage_service_error(HookRes, HookErr,
-                                                   Service, OriginPacket), 10),
+        ejabberd_hooks:delete(HookRes, Server),
+        ejabberd_hooks:delete(HookErr, Server),
         % Check Packet "from" attribute
         % It Must be equil to current service host
         From = fxml:get_attr_s(<<"from">> , Packet#xmlel.attrs),
@@ -235,18 +231,14 @@ manage_service_result(HookRes, HookErr, Service, OriginPacket) ->
         end       
     end.
 
--spec manage_service_error(atom(), atom(), binary(), xmlel()) -> ok.
+-spec manage_service_error(atom(), atom(), xmlel()) -> ok.
 
-manage_service_error(HookRes, HookErr, Service, OriginPacket) ->
+manage_service_error(HookRes, HookErr, OriginPacket) ->
     fun(_Packet) ->
         {ClientJID, ServerJID} = get_client_server(OriginPacket#xmlel.attrs),
         Server = ClientJID#jid.lserver,
-        ejabberd_hooks:delete(HookRes, Server, 
-                              manage_service_result(HookRes, HookErr,
-                                                    Service, OriginPacket), 10),
-        ejabberd_hooks:delete(HookErr, Server, 
-                              manage_service_error(HookRes, HookErr,
-                                                   Service, OriginPacket), 10),
+        ejabberd_hooks:delete(HookRes, Server),
+        ejabberd_hooks:delete(HookErr, Server),
         Err = jlib:make_error_reply(OriginPacket, ?ERR_SERVICE_UNAVAILABLE),
         ejabberd_router:route(ServerJID, ClientJID, Err)        
     end.
@@ -269,7 +261,7 @@ forward_iq(Server, Service, Packet) ->
     HookErr = hook_name(<<"iq_error">>, Id),
 
     FunRes = manage_service_result(HookRes, HookErr, Service, Packet),
-    FunErr = manage_service_error(HookRes, HookErr, Service, Packet),
+    FunErr = manage_service_error(HookRes, HookErr, Packet),
 
     ejabberd_hooks:add(HookRes, Server, FunRes, 10),
     ejabberd_hooks:add(HookErr, Server, FunErr, 10),
@@ -344,21 +336,17 @@ disco_result(HookRes, HookErr, Node) ->
         Server = fxml:get_attr_s(<<"to">>, Packet#xmlel.attrs),
         Tag = fxml:get_subtag_with_xmlns(Packet, <<"query">>, ?NS_DISCO_INFO),
         decapsulate_features(Tag, Node),
-        ejabberd_hooks:delete(HookRes, Server, 
-                              disco_result(HookRes, HookErr, Node), 10),
-        ejabberd_hooks:delete(HookErr, Server, 
-                              disco_error(HookRes, HookErr, Node), 10)
+        ejabberd_hooks:delete(HookRes, Server),
+        ejabberd_hooks:delete(HookErr, Server)
     end.
 
--spec disco_error(atom(), atom(), binary()) -> ok.
+-spec disco_error(atom(), atom()) -> ok.
 
-disco_error(HookRes, HookErr, Node) ->
+disco_error(HookRes, HookErr) ->
     fun(Packet) ->
         Server = fxml:get_attr_s(<<"to">>, Packet#xmlel.attrs),
-        ejabberd_hooks:delete(HookRes, Server, 
-                              disco_result(HookRes, HookErr, Node), 10),
-        ejabberd_hooks:delete(HookErr, Server, 
-                              disco_error(HookRes, HookErr, Node), 10)
+        ejabberd_hooks:delete(HookRes, Server),
+        ejabberd_hooks:delete(HookErr, Server)
     end.
 
 -spec disco_info(state()) -> ok.
@@ -378,7 +366,7 @@ disco_info(StateData, Sep) ->
                     HookErr = hook_name(<<"iq_error">>, Id),
                 
                     FunRes = disco_result(HookRes, HookErr, Node),
-                    FunErr = disco_error(HookRes, HookErr, Node),
+                    FunErr = disco_error(HookRes, HookErr),
 
                     ejabberd_hooks:add(HookRes, ?MYNAME, FunRes, 10),
                     ejabberd_hooks:add(HookErr, ?MYNAME, FunErr, 10),
