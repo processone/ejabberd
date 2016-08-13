@@ -82,8 +82,8 @@ delegations(From, To, Delegations) ->
                           end,
                         add_iq_handlers(Ns),
                         {[#xmlel{name = <<"delegated">>, 
-                                attrs = [{<<"namespace">>, Ns}],
-                                children = Attrs}| Acc], [{Ns, FiltAttr}|AccNs]};
+                                 attrs = [{<<"namespace">>, Ns}],
+                                 children = Attrs}| Acc], [{Ns, FiltAttr}|AccNs]};
                       false -> {Acc, AccNs}
                     end
                   end, {[], []}, Delegations),

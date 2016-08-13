@@ -163,7 +163,6 @@ hook_name(Type, Id) ->
 
 process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet) ->
     %% if presence was send from service to server,
-    PrivAccess = StateData#state.privilege_access,
     case lists:member(ToJID#jid.lserver, ?MYHOSTS) and
          (ToJID#jid.luser == <<"">>) and
          (FromJID#jid.luser == <<"">>) of %% service
@@ -182,9 +181,9 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
               case Children2 of
                 %% it isn't case of 0356 extension
                 [#xmlel{name = <<"presence">>} = Child] ->
-                    forward_subscribe(StateData, Child, PrivAccess , Packet);
+                    forward_subscribe(StateData, Child, Packet);
                 [#xmlel{name = <<"message">>} = Child] -> %% xep-0356
-                    forward_message(StateData, Child, PrivAccess , Packet);
+                    forward_message(StateData, Child, Packet);
                 _ -> 
                     Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
                     Txt = <<"invalid forwarded element">>,
@@ -199,7 +198,8 @@ process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet)
         ejabberd_router:route(FromJID, ToJID, Packet)
     end.
 
-forward_subscribe(StateData, Presence, PrivAccess, Packet) ->
+forward_subscribe(StateData, Presence, Packet) ->
+    PrivAccess = StateData#state.privilege_access,
     T = proplists:get_value(roster, PrivAccess, none),
     Type = fxml:get_attr_s(<<"type">>, Presence#xmlel.attrs),
     if
@@ -242,7 +242,8 @@ forward_subscribe(StateData, Presence, PrivAccess, Packet) ->
         ejabberd_service:send_element(StateData, Err)
     end.
 
-forward_message(StateData, Message, PrivAccess, Packet) ->
+forward_message(StateData, Message, Packet) ->
+    PrivAccess = StateData#state.privilege_access,
     T = proplists:get_value(message, PrivAccess, none),
     if  
       (T == <<"outgoing">>) ->            
