@@ -22,9 +22,9 @@
 %%% Functions to advertise services of allowed permission
 %%%--------------------------------------------------------------------------------------
 
--spec permissions(binary(), list(), binary(), binary()) -> xmlel().
+-spec permissions(binary(), binary(), list()) -> xmlel().
 
-permissions(From, To, Id, PrivAccess) ->
+permissions(From, To, PrivAccess) ->
     Perms = lists:map(fun({Access, Type}) ->
                           ?DEBUG("Advertise service ~s of allowed permission: ~s = ~s~n",
                                  [To, Access, Type]),
@@ -36,15 +36,15 @@ permissions(From, To, Id, PrivAccess) ->
     Stanza = #xmlel{name = <<"privilege">>, 
                     attrs = [{<<"xmlns">> ,?NS_PRIVILEGE}],
                     children = Perms},
+    Id = randoms:get_string(),
     #xmlel{name = <<"message">>, 
            attrs = [{<<"id">>, Id}, {<<"from">>, From}, {<<"to">>, To}],
            children = [Stanza]}.
 
 advertise_permissions(#state{privilege_access = []}) -> ok;
 advertise_permissions(StateData) ->
-    Id = randoms:get_string(),
     Stanza =
-      permissions(?MYNAME, StateData#state.host, Id, StateData#state.privilege_access),
+      permissions(?MYNAME, StateData#state.host, StateData#state.privilege_access),
     ejabberd_service:send_element(StateData, Stanza).
 
 %%%--------------------------------------------------------------------------------------

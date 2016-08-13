@@ -63,7 +63,7 @@ attribute_tag(Attrs) ->
                 #xmlel{name = <<"attribute">>, attrs = [{<<"name">> , Attr}]}
               end, Attrs).
 
-delegations(From, To, Id, Delegations) ->
+delegations(From, To, Delegations) ->
     Elem0 = 
       lists:foldl(fun({Ns, FiltAttr}, Acc) ->
                     case ets:insert_new(delegated_namespaces, 
@@ -90,6 +90,7 @@ delegations(From, To, Id, Delegations) ->
     Elem1 = #xmlel{name = <<"delegation">>, 
                    attrs = [{<<"xmlns">>, ?NS_DELEGATION}],
                    children = Elem0},
+    Id = randoms:get_string(),
     #xmlel{name = <<"message">>, 
            attrs = [{<<"id">>, Id}, {<<"from">>, From}, {<<"to">>, To}],
            children = [Elem1]}.
@@ -109,9 +110,8 @@ add_iq_handlers(Ns) ->
 
 advertise_delegations(#state{delegations = []}) -> ok;
 advertise_delegations(StateData) ->
-    Id = randoms:get_string(),
     Delegated = 
-      delegations(?MYNAME, StateData#state.host, Id, StateData#state.delegations),
+      delegations(?MYNAME, StateData#state.host, StateData#state.delegations),
     ejabberd_service:send_element(StateData, Delegated),
     % server asks available features for delegated namespaces 
     disco_info(StateData).
