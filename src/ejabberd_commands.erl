@@ -274,7 +274,6 @@ get_commands_spec() ->
                            args_example = ["/home/me/docs/api.html", "mod_admin", "java,json"],
                            result_example = ok}].
 init() ->
-    mnesia:delete_table(ejabberd_commands),
     mnesia:create_table(ejabberd_commands,
                         [{ram_copies, [node()]},
                          {local_content, true},
