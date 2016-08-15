@@ -476,14 +476,22 @@ store_packet(From, To, Packet) ->
 	    case check_event(From, To, Packet) of
 		true ->
 		    #jid{luser = LUser, lserver = LServer} = To,
-		    TimeStamp = p1_time_compat:timestamp(),
-		    #xmlel{children = Els} = Packet,
-		    Expire = find_x_expire(TimeStamp, Els),
-		    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
-		      #offline_msg{us = {LUser, LServer},
-				   timestamp = TimeStamp, expire = Expire,
-				   from = From, to = To, packet = Packet},
-		    stop;
+		    case ejabberd_hooks:run_fold(store_offline_message, LServer,
+						 Packet, [From, To]) of
+			drop ->
+			    ok;
+			NewPacket ->
+			    TimeStamp = p1_time_compat:timestamp(),
+			    #xmlel{children = Els} = NewPacket,
+			    Expire = find_x_expire(TimeStamp, Els),
+			    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
+			      #offline_msg{us = {LUser, LServer},
+					   timestamp = TimeStamp,
+					   expire = Expire,
+					   from = From, to = To,
+					   packet = NewPacket},
+			    stop
+		    end;
 		_ -> ok
 	    end;
 	false -> ok
