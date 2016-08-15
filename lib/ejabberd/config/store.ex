@@ -22,16 +22,33 @@ defmodule Ejabberd.Config.Store do
     Agent.start_link(fn -> %{} end, name: @name)
   end
 
+  @doc """
+  Stores a value based on the key. If the key already exists,
+  then it inserts the new element, maintaining all the others.
+  It uses a list for this.
+  """
+  @spec put(atom, any) :: :ok
   def put(key, val) do
     Agent.update @name, &Map.update(&1, key, [val], fn coll ->
       [val | coll]
     end)
   end
 
+  @doc """
+  Gets a value based on the key passed.
+  Returns always a list.
+  """
+  @spec get(atom) :: [any]
   def get(key) do
     Agent.get @name, &Map.get(&1, key, [])
   end
 
+  @doc """
+  Stops the store.
+  It uses Agent.stop underneath, so be aware that exit
+  could be called.
+  """
+  @spec stop() :: :ok
   def stop do
     Agent.stop @name
   end

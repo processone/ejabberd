@@ -6,6 +6,14 @@ defmodule Ejabberd.Config.OptsFormatter do
 
   alias Ejabberd.Config.EjabberdModule
 
+  @doc """
+  Takes a keyword list with keys corresponding to
+  the keys requested by the ejabberd config (ex: modules: mods)
+  and formats them to be correctly evaluated by ejabberd.
+
+  Look at how Config.get_ejabberd_opts/0 is constructed for
+  more informations.
+  """
   @spec format_opts_for_ejabberd([{atom(), any()}]) :: list()
   def format_opts_for_ejabberd(opts) do
     opts
