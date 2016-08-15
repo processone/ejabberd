@@ -1315,11 +1315,11 @@ srg_create(Group, Host, Name, Description, Display) ->
     Opts = [{name, Name},
 	    {displayed_groups, DisplayList},
 	    {description, Description}],
-    {atomic, ok} = mod_shared_roster:create_group(Host, Group, Opts),
+    {atomic, _} = mod_shared_roster:create_group(Host, Group, Opts),
     ok.
 
 srg_delete(Group, Host) ->
-    {atomic, ok} = mod_shared_roster:delete_group(Host, Group),
+    {atomic, _} = mod_shared_roster:delete_group(Host, Group),
     ok.
 
 srg_list(Host) ->
@@ -1342,11 +1342,11 @@ srg_get_members(Group, Host) ->
      || {MUser, MServer} <- Members].
 
 srg_user_add(User, Host, Group, GroupHost) ->
-    {atomic, ok} = mod_shared_roster:add_user_to_group(GroupHost, {User, Host}, Group),
+    {atomic, _} = mod_shared_roster:add_user_to_group(GroupHost, {User, Host}, Group),
     ok.
 
 srg_user_del(User, Host, Group, GroupHost) ->
-    {atomic, ok} = mod_shared_roster:remove_user_from_group(GroupHost, {User, Host}, Group),
+    {atomic, _} = mod_shared_roster:remove_user_from_group(GroupHost, {User, Host}, Group),
     ok.
 
 
