@@ -718,8 +718,14 @@ store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
     case should_archive_peer(C2SState, Prefs, Peer) of
 	true ->
 	    US = {LUser, LServer},
-	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    Mod:store(Pkt, LServer, US, chat, Peer, <<"">>, Dir);
+	    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,
+					 [LUser, LServer, Peer, chat, Dir]) of
+		drop ->
+		    pass;
+		NewPkt ->
+		    Mod = gen_mod:db_mod(LServer, ?MODULE),
+		    Mod:store(NewPkt, LServer, US, chat, Peer, <<"">>, Dir)
+	    end;
 	false ->
 	    pass
     end.
@@ -727,10 +733,16 @@ store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
 store_muc(MUCState, Pkt, RoomJID, Peer, Nick) ->
     case should_archive_muc(Pkt) of
 	true ->
-	    LServer = MUCState#state.server_host,
 	    {U, S, _} = jid:tolower(RoomJID),
-	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    Mod:store(Pkt, LServer, {U, S}, groupchat, Peer, Nick, recv);
+	    LServer = MUCState#state.server_host,
+	    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,
+					 [U, S, Peer, groupchat, recv]) of
+		drop ->
+		    pass;
+		NewPkt ->
+		    Mod = gen_mod:db_mod(LServer, ?MODULE),
+		    Mod:store(NewPkt, LServer, {U, S}, groupchat, Peer, Nick, recv)
+	    end;
 	false ->
 	    pass
     end.
