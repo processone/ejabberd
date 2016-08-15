@@ -16,9 +16,13 @@
 
 -export([advertise_delegations/1, process_iq/3,
          disco_local_features/5, disco_sm_features/5,
-         disco_local_identity/5, disco_sm_identity/5, disco_info/5]).
+         disco_local_identity/5, disco_sm_identity/5, disco_info/5, clean/0]).
+
+-include_lib("stdlib/include/ms_transform.hrl").
 
 -include("ejabberd_service.hrl").
+
+-define(CLEAN_INTERVAL, timer:minutes(10)).
 
 %%%--------------------------------------------------------------------------------------
 %%%  API
@@ -26,6 +30,10 @@
 
 start(Host, _Opts) ->
     mod_disco:register_feature(Host, ?NS_DELEGATION),
+
+    %% start timer for hooks_tmp table cleaning 
+    timer:apply_after(?CLEAN_INTERVAL, ?MODULE, clean, []),
+
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
                        disco_local_features, 500), %% This hook should be the last
     ejabberd_hooks:add(disco_local_identity, Host, ?MODULE,
@@ -257,9 +265,10 @@ forward_iq(Server, Service, Packet) ->
 
     FunRes = manage_service_result(HookRes, HookErr, Service, Packet),
     FunErr = manage_service_error(HookRes, HookErr, Packet),
-
-    ets:insert(hooks_tmp, {{HookRes, Server}, FunRes, now()}),
-    ets:insert(hooks_tmp, {{HookErr, Server}, FunErr, now()}),
+    
+    Timestamp = p1_time_compat:system_time(seconds),
+    ets:insert(hooks_tmp, {{HookRes, Server}, FunRes, Timestamp}),
+    ets:insert(hooks_tmp, {{HookErr, Server}, FunErr, Timestamp}),
 
     From = jid:make(<<"">>, Server, <<"">>),
     To = jid:make(<<"">>, Service, <<"">>),
@@ -362,8 +371,9 @@ disco_info(StateData, Sep) ->
                     FunRes = disco_result(HookRes, HookErr, Node),
                     FunErr = disco_error(HookRes, HookErr),
 
-                    ets:insert(hooks_tmp, {{HookRes, ?MYNAME}, FunRes, now()}),
-                    ets:insert(hooks_tmp, {{HookErr, ?MYNAME}, FunErr, now()}),
+                    Timestamp = p1_time_compat:system_time(seconds),
+                    ets:insert(hooks_tmp, {{HookRes, ?MYNAME}, FunRes, Timestamp}),
+                    ets:insert(hooks_tmp, {{HookErr, ?MYNAME}, FunErr, Timestamp}),
 
                     Tag = #xmlel{name = <<"query">>,
                                  attrs = [{<<"xmlns">>, ?NS_DISCO_INFO}, 
@@ -515,3 +525,15 @@ disco_info(Acc, _Host, _Mod, <<>>, _Lang) ->
     get_info(Acc, false);
 disco_info(Acc, _Host, _Mod, _Node, _Lang) ->
     Acc.
+
+%% clean hooks_tmp table
+
+clean() ->
+    ?DEBUG("cleaning ~p ETS table~n", [hooks_tmp]),
+    Now = p1_time_compat:system_time(seconds),
+    catch ets:select_delete(hooks_tmp, 
+                            ets:fun2ms(fun({_, _, Timestamp}) -> 
+                                         Now - 300 >= Timestamp
+                                       end)),
+    %% start timer for table cleaning 
+    timer:apply_after(?CLEAN_INTERVAL, ?MODULE, clean, []).
