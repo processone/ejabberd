@@ -2495,13 +2495,19 @@ fsm_next_state(session_established, StateData) ->
      ?C2S_HIBERNATE_TIMEOUT};
 fsm_next_state(wait_for_resume, #state{mgmt_timeout = 0} = StateData) ->
     {stop, normal, StateData};
-fsm_next_state(wait_for_resume, #state{mgmt_pending_since = undefined} =
-	       StateData) ->
+fsm_next_state(wait_for_resume, #state{mgmt_pending_since = undefined,
+				       sid = SID, jid = JID, ip = IP,
+				       conn = Conn, auth_module = AuthModule,
+				       server = Host} = StateData) ->
     ?INFO_MSG("Waiting for resumption of stream for ~s",
-	      [jid:to_string(StateData#state.jid)]),
+	      [jid:to_string(JID)]),
+    Info = [{ip, IP}, {conn, Conn}, {auth_module, AuthModule}],
+    NewStateData = ejabberd_hooks:run_fold(c2s_session_pending, Host, StateData,
+					   [SID, JID, Info]),
     {next_state, wait_for_resume,
-     StateData#state{mgmt_state = pending, mgmt_pending_since = os:timestamp()},
-     StateData#state.mgmt_timeout};
+     NewStateData#state{mgmt_state = pending,
+			mgmt_pending_since = os:timestamp()},
+     NewStateData#state.mgmt_timeout};
 fsm_next_state(wait_for_resume, StateData) ->
     Diff = timer:now_diff(os:timestamp(), StateData#state.mgmt_pending_since),
     Timeout = max(StateData#state.mgmt_timeout - Diff div 1000, 1),
@@ -2790,8 +2796,8 @@ handle_resume(StateData, Attrs) ->
 			of
 		      {{value, PrevID}, H} when is_integer(H), H >= 0 ->
 			  case inherit_session_state(StateData, PrevID) of
-			    {ok, InheritedState} ->
-				{ok, InheritedState, H};
+			    {ok, InheritedState, Info} ->
+				{ok, InheritedState, Info, H};
 			    {error, Err, InH} ->
 				{error, ?MGMT_ITEM_NOT_FOUND_H(Xmlns, InH), Err};
 			    {error, Err} ->
@@ -2810,7 +2816,7 @@ handle_resume(StateData, Attrs) ->
 	       <<"Invalid XMLNS">>}
 	end,
     case R of
-      {ok, ResumedState, NumHandled} ->
+      {ok, ResumedState, ResumedInfo, NumHandled} ->
 	  NewState = check_h_attribute(ResumedState, NumHandled),
 	  AttrXmlns = NewState#state.mgmt_xmlns,
 	  AttrId = make_resume_id(NewState),
@@ -2830,10 +2836,16 @@ handle_resume(StateData, Attrs) ->
 		       #xmlel{name = <<"r">>,
 			      attrs = [{<<"xmlns">>, AttrXmlns}],
 			      children = []}),
-	  NewStateData = csi_flush_queue(NewState),
+	  NewState1 = csi_flush_queue(NewState),
+	  NewState2 = ejabberd_hooks:run_fold(c2s_session_resumed,
+					      StateData#state.server,
+					      NewState1,
+					      [NewState1#state.sid,
+					       NewState1#state.jid,
+					       ResumedInfo]),
 	  ?INFO_MSG("Resumed session for ~s",
-		    [jid:to_string(NewStateData#state.jid)]),
-	  {ok, NewStateData};
+		    [jid:to_string(NewState2#state.jid)]),
+	  {ok, NewState2};
       {error, El, Msg} ->
 	  send_element(StateData, El),
 	  ?INFO_MSG("Cannot resume session for ~s@~s: ~s",
@@ -3083,7 +3095,7 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 					   mgmt_stanzas_in = OldStateData#state.mgmt_stanzas_in,
 					   mgmt_stanzas_out = OldStateData#state.mgmt_stanzas_out,
 					   mgmt_state = active,
-					   csi_state = active}};
+					   csi_state = active}, Info};
 		  {error, Msg} ->
 		      {error, Msg};
 		  _ ->
