@@ -132,14 +132,18 @@ process_iq(StateData, FromJID, ToJID, Packet) ->
             ejabberd_router:route(FromJID, ToJID, Packet)
         end;
       #iq{type = Type, id = Id} when (Type == error) or (Type == result) -> % for XEP-0355
-        Hook = hook_name(Type, Id),
+        Hook = {iq, Type, Id},
         Host = ToJID#jid.lserver,
         case (ToJID#jid.luser == <<"">>) and
              (FromJID#jid.luser == <<"">>) and
-             lists:member(ToJID#jid.lserver, ?MYHOSTS) and
-             (ets:lookup(hooks, {Hook, Host}) /= []) of
+             lists:member(ToJID#jid.lserver, ?MYHOSTS) of
           true ->
-            ejabberd_hooks:run(Hook, Host, [Packet]);
+            case ets:lookup(hooks_tmp, {Hook, Host}) of
+              [{_, Function, _Timestamp}] -> 
+                catch apply(Function, [Packet]);
+              [] -> 
+                ejabberd_router:route(FromJID, ToJID, Packet)
+            end;
           _ ->
             ejabberd_router:route(FromJID, ToJID, Packet)
         end;
@@ -151,11 +155,6 @@ roster_management(FromJID, ToJID, IQ) ->
     ResIQ = mod_roster:process_iq(FromJID, FromJID, IQ),
     ResXml = jlib:iq_to_xml(ResIQ),
     jlib:replace_from_to(FromJID, ToJID, ResXml).
-
-hook_name(Type, Id) ->
-    Hook0 =  atom_to_binary(Type, 'latin1'),
-    Hook = << "iq_", Hook0/binary, Id/binary >>,
-    binary_to_atom(Hook, 'latin1').
 
 %%%--------------------------------------------------------------------------------------
 %%%  Message permission

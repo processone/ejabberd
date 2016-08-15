@@ -146,12 +146,6 @@ get_client_server(Attrs) ->
     ServerJID = jid:from_string(ClientJID#jid.lserver),
     {ClientJID, ServerJID}.
 
--spec hook_name(binary(), binary()) -> atom().
-
-hook_name(Name, Id) ->
-    Hook = << Name/binary, Id/binary >>,
-    binary_to_atom(Hook, 'latin1').
-
 decapsulate_result(#xmlel{children = []}) -> ok;
 decapsulate_result(#xmlel{children = Children}) ->
     decapsulate_result0(Children).
@@ -209,8 +203,9 @@ manage_service_result(HookRes, HookErr, Service, OriginPacket) ->
     fun(Packet) ->
         {ClientJID, ServerJID} = get_client_server(OriginPacket#xmlel.attrs),
         Server = ClientJID#jid.lserver,
-        ejabberd_hooks:delete(HookRes, Server),
-        ejabberd_hooks:delete(HookErr, Server),
+
+        ets:delete(hooks_tmp, {HookRes, Server}),
+        ets:delete(hooks_tmp, {HookErr, Server}),
         % Check Packet "from" attribute
         % It Must be equil to current service host
         From = fxml:get_attr_s(<<"from">> , Packet#xmlel.attrs),
@@ -237,8 +232,8 @@ manage_service_error(HookRes, HookErr, OriginPacket) ->
     fun(_Packet) ->
         {ClientJID, ServerJID} = get_client_server(OriginPacket#xmlel.attrs),
         Server = ClientJID#jid.lserver,
-        ejabberd_hooks:delete(HookRes, Server),
-        ejabberd_hooks:delete(HookErr, Server),
+        ets:delete(hooks_tmp, {HookRes, Server}),
+        ets:delete(hooks_tmp, {HookErr, Server}),
         Err = jlib:make_error_reply(OriginPacket, ?ERR_SERVICE_UNAVAILABLE),
         ejabberd_router:route(ServerJID, ClientJID, Err)        
     end.
@@ -257,14 +252,14 @@ forward_iq(Server, Service, Packet) ->
                             {<<"type">>, <<"set">>}, {<<"id">>, Id}],
                    children = [Elem1]},
 
-    HookRes = hook_name(<<"iq_result">>, Id),
-    HookErr = hook_name(<<"iq_error">>, Id),
+    HookRes = {iq, result, Id},
+    HookErr = {iq, error, Id},
 
     FunRes = manage_service_result(HookRes, HookErr, Service, Packet),
     FunErr = manage_service_error(HookRes, HookErr, Packet),
 
-    ejabberd_hooks:add(HookRes, Server, FunRes, 10),
-    ejabberd_hooks:add(HookErr, Server, FunErr, 10),
+    ets:insert(hooks_tmp, {{HookRes, Server}, FunRes, now()}),
+    ets:insert(hooks_tmp, {{HookErr, Server}, FunErr, now()}),
 
     From = jid:make(<<"">>, Server, <<"">>),
     To = jid:make(<<"">>, Service, <<"">>),
@@ -325,28 +320,27 @@ decapsulate_features(#xmlel{attrs = Attrs} = Packet, Node) ->
                                  {6, {Features, Identity, Exten}});
                _ -> ok
           end;
-      _ -> ok %% error ?
+      _ -> ok 
   end;
-decapsulate_features(_Packet, _Node) -> ok. %% send error ? from = ?MYHOSTS, to = ?
+decapsulate_features(_Packet, _Node) -> ok.
     
 -spec disco_result(atom(), atom(), binary()) -> ok.
 
 disco_result(HookRes, HookErr, Node) ->
     fun(Packet) ->
-        Server = fxml:get_attr_s(<<"to">>, Packet#xmlel.attrs),
         Tag = fxml:get_subtag_with_xmlns(Packet, <<"query">>, ?NS_DISCO_INFO),
         decapsulate_features(Tag, Node),
-        ejabberd_hooks:delete(HookRes, Server),
-        ejabberd_hooks:delete(HookErr, Server)
+        
+        ets:delete(hooks_tmp, {HookRes, ?MYNAME}),
+        ets:delete(hooks_tmp, {HookErr, ?MYNAME})
     end.
 
 -spec disco_error(atom(), atom()) -> ok.
 
 disco_error(HookRes, HookErr) ->
-    fun(Packet) ->
-        Server = fxml:get_attr_s(<<"to">>, Packet#xmlel.attrs),
-        ejabberd_hooks:delete(HookRes, Server),
-        ejabberd_hooks:delete(HookErr, Server)
+    fun(_Packet) ->
+        ets:delete(hooks_tmp, {HookRes, ?MYNAME}),
+        ets:delete(hooks_tmp, {HookErr, ?MYNAME})
     end.
 
 -spec disco_info(state()) -> ok.
@@ -362,14 +356,14 @@ disco_info(StateData, Sep) ->
                     Id = randoms:get_string(),
                     Node = << ?NS_DELEGATION/binary, Sep/binary, Ns/binary >>,
 
-                    HookRes = hook_name(<<"iq_result">>, Id),
-                    HookErr = hook_name(<<"iq_error">>, Id),
-                
+                    HookRes = {iq, result, Id},
+                    HookErr = {iq, error, Id},
+
                     FunRes = disco_result(HookRes, HookErr, Node),
                     FunErr = disco_error(HookRes, HookErr),
 
-                    ejabberd_hooks:add(HookRes, ?MYNAME, FunRes, 10),
-                    ejabberd_hooks:add(HookErr, ?MYNAME, FunErr, 10),
+                    ets:insert(hooks_tmp, {{HookRes, ?MYNAME}, FunRes, now()}),
+                    ets:insert(hooks_tmp, {{HookErr, ?MYNAME}, FunErr, now()}),
 
                     Tag = #xmlel{name = <<"query">>,
                                  attrs = [{<<"xmlns">>, ?NS_DISCO_INFO}, 

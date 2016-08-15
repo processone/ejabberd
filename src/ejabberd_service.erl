@@ -98,7 +98,8 @@
 %% host, disco info for general case, bare jid disco info }
 
 start() ->
-  ets:new(delegated_namespaces, [named_table, public]).
+  ets:new(delegated_namespaces, [named_table, public]),
+  ets:new(hooks_tmp, [named_table, public]).
 
 start(SockData, Opts) ->
     supervisor:start_child(ejabberd_service_sup,
