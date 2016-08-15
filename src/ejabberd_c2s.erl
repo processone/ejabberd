@@ -52,6 +52,11 @@
 	 set_aux_field/3,
 	 del_aux_field/2,
 	 get_subscription/2,
+	 get_queued_stanzas/1,
+	 get_csi_state/1,
+	 set_csi_state/2,
+	 get_resume_timeout/1,
+	 set_resume_timeout/2,
 	 send_filtered/5,
 	 broadcast/4,
 	 get_subscribed/1,
@@ -243,6 +248,27 @@ get_subscription(LFrom, StateData) ->
        T -> to;
        true -> none
     end.
+
+get_queued_stanzas(#state{mgmt_queue = Queue} = StateData) ->
+    lists:map(fun({_N, Time, El}) ->
+		      add_resent_delay_info(StateData, El, Time)
+	      end, queue:to_list(Queue)).
+
+get_csi_state(#state{csi_state = CsiState}) ->
+    CsiState.
+
+set_csi_state(#state{} = StateData, CsiState) ->
+    StateData#state{csi_state = CsiState};
+set_csi_state(FsmRef, CsiState) ->
+    FsmRef ! {set_csi_state, CsiState}.
+
+get_resume_timeout(#state{mgmt_timeout = Timeout}) ->
+    Timeout.
+
+set_resume_timeout(#state{} = StateData, Timeout) ->
+    StateData#state{mgmt_timeout = Timeout};
+set_resume_timeout(FsmRef, Timeout) ->
+    FsmRef ! {set_resume_timeout, Timeout}.
 
 send_filtered(FsmRef, Feature, From, To, Packet) ->
     FsmRef ! {send_filtered, Feature, From, To, Packet}.
@@ -1743,6 +1769,10 @@ handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
 		From, jid:make(USR), Packet)
       end, lists:usort(Recipients)),
     fsm_next_state(StateName, StateData);
+handle_info({set_csi_state, CsiState}, StateName, StateData) ->
+    fsm_next_state(StateName, StateData#state{csi_state = CsiState});
+handle_info({set_resume_timeout, Timeout}, StateName, StateData) ->
+    fsm_next_state(StateName, StateData#state{mgmt_timeout = Timeout});
 handle_info(dont_ask_offline, StateName, StateData) ->
     fsm_next_state(StateName, StateData#state{ask_offline = false});
 handle_info({_Ref, {resume, OldStateData}}, StateName, StateData) ->
