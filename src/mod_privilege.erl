@@ -104,7 +104,7 @@ process_roster_presence(Pid) ->
 process_iq(StateData, FromJID, ToJID, Packet) ->
     IQ = jlib:iq_query_or_response_info(Packet),
     case IQ of
-      #iq{xmlns = ?NS_ROSTER} -> % XEP-0356
+      #iq{xmlns = ?NS_ROSTER} -> 
         case (ToJID#jid.luser /= <<"">>) and
              (FromJID#jid.luser == <<"">>) and
              lists:member(ToJID#jid.lserver, ?MYHOSTS) of
@@ -275,7 +275,7 @@ forward_message(StateData, Message, Packet) ->
             Txt = <<"Incorrect stanza from/to JID">>,
             Err = jlib:make_error_reply(Packet, ?ERRT_BAD_REQUEST(Lang, Txt)),
             ejabberd_service:send_element(StateData, Err)
-            end;
+        end;
       true ->
         Err = jlib:make_error_reply(Packet,?ERR_FORBIDDEN),
         ejabberd_service:send_element(StateData, Err)

@@ -320,11 +320,11 @@ stream_established({xmlstreamelement, El}, StateData) ->
             end,
 
     if  (Name == <<"iq">>) and (ToJID /= error) and (FromJID /= error) ->
-            mod_privilege:process_iq(StateData, FromJID,ToJID, NewEl);                  
+            mod_privilege:process_iq(StateData, FromJID, ToJID, NewEl);                  
         (Name == <<"presence">>) and (ToJID /= error) and (FromJID /= error) ->
             ejabberd_router:route(FromJID, ToJID, NewEl);
         (Name == <<"message">>) and (ToJID /= error) and (FromJID /= error) ->
-            mod_privilege:process_message(StateData, FromJID,ToJID, NewEl);
+            mod_privilege:process_message(StateData, FromJID, ToJID, NewEl);
         true ->
             Lang = fxml:get_tag_attr_s(<<"xml:lang">>, El),
             Txt = <<"Incorrect stanza name or from/to JID">>,

@@ -30,7 +30,6 @@
 
 start(Host, _Opts) ->
     mod_disco:register_feature(Host, ?NS_DELEGATION),
-
     %% start timer for hooks_tmp table cleaning 
     timer:apply_after(?CLEAN_INTERVAL, ?MODULE, clean, []),
 
@@ -120,7 +119,7 @@ add_iq_handlers(Ns) ->
                                                   process_iq, IQDisc)
                   end, ?MYHOSTS).
 
-advertise_delegations(#state{delegations = []}) -> ok;
+advertise_delegations(#state{delegations = []}) -> [];
 advertise_delegations(StateData) ->
     {Delegated, DelegatedNs} = 
       delegations(?MYNAME, StateData#state.host, StateData#state.delegations),
