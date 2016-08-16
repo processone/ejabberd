@@ -292,7 +292,6 @@ wait_for_handshake(closed, StateData) ->
     {stop, normal, StateData}.
 
 stream_established({xmlstreamelement, El}, StateData) ->
-    % ?INFO_MSG("message from comp ~p~n", [El]),
     NewEl = jlib:remove_attr(<<"xmlns">>, El),
     #xmlel{name = Name, attrs = Attrs} = NewEl,
     From = fxml:get_attr_s(<<"from">>, Attrs),
@@ -461,7 +460,7 @@ terminate(Reason, StateName, StateData) ->
           lists:foreach(fun (H) ->
                           ejabberd_router:unregister_route(H),
                           ejabberd_hooks:run(component_disconnected,
-					                         [StateData#state.host, Reason])
+                          	               [StateData#state.host, Reason])
                         end,
                         dict:fetch_keys(StateData#state.host_opts)),
 
