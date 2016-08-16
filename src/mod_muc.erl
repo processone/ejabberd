@@ -95,7 +95,7 @@ start_link(Host, Opts) ->
 start(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 temporary, 1000, worker, [?MODULE]},
+		 transient, 1000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->
@@ -225,6 +225,7 @@ init([Host, Opts]) ->
 			     public -> Bool;
 			     public_list -> Bool;
 			     mam -> Bool;
+			     allow_subscription -> Bool;
 			     password -> fun iolist_to_binary/1;
 			     title -> fun iolist_to_binary/1;
 			     allow_private_messages_from_visitors ->

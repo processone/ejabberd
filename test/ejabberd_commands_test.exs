@@ -28,13 +28,25 @@ defmodule EjabberdCommandsTest do
 
   setup_all do
     :mnesia.start
+    :stringprep.start
+    :ok = :ejabberd_config.start(["localhost"], [])
+
     :ejabberd_commands.init
+    :ok
   end
 
   test "Check that we can register a command" do
     :ok = :ejabberd_commands.register_commands([user_test_command])
     commands = :ejabberd_commands.list_commands
     assert Enum.member?(commands, {:test_user, [], "Test user"})
+  end
+
+  test "get_exposed_commands/0 returns registered commands" do
+    commands = [open_test_command]
+    :ok = :ejabberd_commands.register_commands(commands)
+    :ok = :ejabberd_commands.expose_commands(commands)
+    exposed_commands = :ejabberd_commands.get_exposed_commands
+    assert Enum.member?(exposed_commands, :test_open)
   end
 
   test "Check that admin commands are rejected with noauth credentials" do
@@ -68,6 +80,16 @@ defmodule EjabberdCommandsTest do
                                                                  {:jid, :string},
                                                                  {:nick, :string}
                                                                ]}}}})
+  end
+
+  defp open_test_command do
+    ejabberd_commands(name: :test_open, tags: [:test],
+                      desc: "Test open",
+                      policy: :open,
+                      module: __MODULE__,
+                      function: :test_open,
+                      args: [],
+                      result: {:res, :rescode})
   end
 
   defp admin_test_command do

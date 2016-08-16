@@ -313,3 +313,10 @@ CREATE TABLE sm (
 CREATE UNIQUE INDEX i_sm_sid ON sm(usec, pid);
 CREATE INDEX i_sm_node ON sm(node);
 CREATE INDEX i_sm_username ON sm(username);
+
+CREATE TABLE oauth_token (
+    token text NOT NULL PRIMARY KEY,
+    jid text NOT NULL,
+    scope text NOT NULL,
+    expire bigint NOT NULL
+);

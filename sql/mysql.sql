@@ -328,3 +328,10 @@ CREATE TABLE sm (
 CREATE UNIQUE INDEX i_sid ON sm(usec, pid(75));
 CREATE INDEX i_node ON sm(node(75));
 CREATE INDEX i_username ON sm(username);
+
+CREATE TABLE oauth_token (
+    token varchar(191) NOT NULL PRIMARY KEY,
+    jid text NOT NULL,
+    scope text NOT NULL,
+    expire bigint NOT NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

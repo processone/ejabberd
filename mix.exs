@@ -11,6 +11,8 @@ defmodule Ejabberd.Mixfile do
      compilers: [:asn1] ++ Mix.compilers,
      erlc_options: erlc_options,
      erlc_paths: ["asn1", "src"],
+     # Elixir tests are starting the part of ejabberd they need
+     aliases: [test: "test --no-start"],
      package: package,
      deps: deps]
   end
@@ -56,7 +58,12 @@ defmodule Ejabberd.Mixfile do
      {:ezlib, "~> 1.0"},
      {:iconv, "~> 1.0"},
      {:eredis, "~> 1.0"},
-     {:exrm, "~> 1.0.0-rc7", only: :dev}]
+     {:exrm, "~> 1.0.0", only: :dev},
+     # relx is used by exrm. Lock version as for now, ejabberd doesn not compile fine with
+     # version 3.20:
+     {:relx, "~> 3.19.0", only: :dev},
+     {:meck, "~> 0.8.4", only: :test},
+     {:moka, github: "processone/moka", tag: "1.0.5c", only: :test}]
   end
 
   defp package do

@@ -437,35 +437,36 @@ remove_msg_by_node(To, Seq) ->
     end.
 
 need_to_store(LServer, Packet) ->
-    Type = fxml:get_tag_attr_s(<<"type">>, Packet),
-    if (Type /= <<"error">>) and (Type /= <<"groupchat">>)
-       and (Type /= <<"headline">>) ->
-	    case has_offline_tag(Packet) of
-		false ->
-		    case check_store_hint(Packet) of
-			store ->
+    case has_offline_tag(Packet) of
+	false ->
+	    case {check_store_hint(Packet),
+		  fxml:get_tag_attr_s(<<"type">>, Packet)} of
+		{_Hint, <<"error">>} ->
+		    false;
+		{store, _Type} ->
+		    true;
+		{no_store, _Type} ->
+		    false;
+		{none, <<"groupchat">>} ->
+		    false;
+		{none, <<"headline">>} ->
+		    false;
+		{none, _Type} ->
+		    case gen_mod:get_module_opt(
+			   LServer, ?MODULE, store_empty_body,
+			   fun(V) when is_boolean(V) -> V;
+			      (unless_chat_state) -> unless_chat_state
+			   end,
+			   unless_chat_state) of
+			true ->
 			    true;
-			no_store ->
-			    false;
-			none ->
-			    case gen_mod:get_module_opt(
-				   LServer, ?MODULE, store_empty_body,
-				   fun(V) when is_boolean(V) -> V;
-				      (unless_chat_state) -> unless_chat_state
-				   end,
-				   unless_chat_state) of
-				false ->
-				    fxml:get_subtag(Packet, <<"body">>) /= false;
-				unless_chat_state ->
-				    not jlib:is_standalone_chat_state(Packet);
-				true ->
-				    true
-			    end
-		    end;
-		true ->
-		    false
+			false ->
+			    fxml:get_subtag(Packet, <<"body">>) /= false;
+			unless_chat_state ->
+			    not jlib:is_standalone_chat_state(Packet)
+		    end
 	    end;
-       true ->
+	true ->
 	    false
     end.
 

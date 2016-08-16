@@ -133,13 +133,13 @@ depends(_Host, _Opts) ->
 check_permissions(Request, Command) ->
     case catch binary_to_existing_atom(Command, utf8) of
         Call when is_atom(Call) ->
-            {ok, CommandPolicy} = ejabberd_commands:get_command_policy(Call),
-            check_permissions2(Request, Call, CommandPolicy);
+            {ok, CommandPolicy, Scope} = ejabberd_commands:get_command_policy_and_scope(Call),
+            check_permissions2(Request, Call, CommandPolicy, Scope);
         _ ->
-            unauthorized_response()
+            json_error(404, 40, <<"Endpoint not found.">>)
     end.
 
-check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _)
+check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _, ScopeList)
   when HTTPAuth /= undefined ->
     Admin =
         case lists:keysearch(<<"X-Admin">>, 1, Headers) of
@@ -159,24 +159,23 @@ check_permissions2(#request{auth = HTTPAuth, headers = Headers}, Call, _)
                         false
                 end;
             {oauth, Token, _} ->
-                case oauth_check_token(Call, Token) of
+                case oauth_check_token(ScopeList, Token) of
                     {ok, user, {User, Server}} ->
                         {ok, {User, Server, {oauth, Token}, Admin}};
-                    {ok, server_admin} ->  %% token whas generated using issue_token command line
-                        {ok, admin};
-                    false ->
-                        false
+                    {false, Reason} ->
+                        {false, Reason}
                 end;
             _ ->
                 false
         end,
     case Auth of
         {ok, A} -> {allowed, Call, A};
+        {false, no_matching_scope} -> outofscope_response();
         _ -> unauthorized_response()
     end;
-check_permissions2(_Request, Call, open) ->
+check_permissions2(_Request, Call, open, _Scope) ->
     {allowed, Call, noauth};
-check_permissions2(#request{ip={IP, _Port}}, Call, _Policy) ->
+check_permissions2(#request{ip={IP, _Port}}, Call, _Policy, _Scope) ->
     Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access,
                                     fun(V) -> V end,
                                     none),
@@ -191,18 +190,16 @@ check_permissions2(#request{ip={IP, _Port}}, Call, _Policy) ->
         Commands when is_list(Commands) ->
             case lists:member(Call, Commands) of
                 true -> {allowed, Call, admin};
-                _ -> unauthorized_response()
+                _ -> outofscope_response()
             end;
         _E ->
             {allowed, Call, noauth}
     end;
-check_permissions2(_Request, _Call, _Policy) ->
+check_permissions2(_Request, _Call, _Policy, _Scope) ->
     unauthorized_response().
 
-oauth_check_token(Scope, Token) when is_atom(Scope) ->
-    oauth_check_token(atom_to_binary(Scope, utf8), Token);
-oauth_check_token(Scope, Token) ->
-    ejabberd_oauth:check_token(Scope, Token).
+oauth_check_token(ScopeList, Token) when is_list(ScopeList) ->
+    ejabberd_oauth:check_token(ScopeList, Token).
 
 %% ------------------
 %% command processing
@@ -216,24 +213,24 @@ process(_, #request{method = 'POST', data = <<>>}) ->
 process([Call], #request{method = 'POST', data = Data, ip = {IP, _} = IPPort} = Req) ->
     Version = get_api_version(Req),
     try
-        Args = case jiffy:decode(Data) of
-            List when is_list(List) -> List;
-            {List} when is_list(List) -> List;
-            Other -> [Other]
-        end,
+        Args = extract_args(Data),
         log(Call, Args, IPPort),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                {Code, Result} = handle(Cmd, Auth, Args, Version, IP),
-                json_response(Code, jiffy:encode(Result));
+                Result = handle(Cmd, Auth, Args, Version, IP),
+                json_format(Result);
             %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
                 ErrorResponse
         end
-    catch _:{error,{_,invalid_json}} = _Err ->
-	    ?DEBUG("Bad Request: ~p", [_Err]),
-	    badrequest_response(<<"Invalid JSON input">>);
-	  _:_Error ->
+    catch
+        %% TODO We need to refactor to remove redundant error return formatting
+        throw:{error, unknown_command} ->
+            {404, 40, <<"Command not found.">>};
+        _:{error,{_,invalid_json}} = _Err ->
+            ?DEBUG("Bad Request: ~p", [_Err]),
+            badrequest_response(<<"Invalid JSON input">>);
+          _:_Error ->
             ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
             badrequest_response()
     end;
@@ -247,13 +244,18 @@ process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
         log(Call, Args, IP),
         case check_permissions(Req, Call) of
             {allowed, Cmd, Auth} ->
-                {Code, Result} = handle(Cmd, Auth, Args, Version, IP),
-                json_response(Code, jiffy:encode(Result));
+                Result = handle(Cmd, Auth, Args, Version, IP),
+                json_format(Result);
             %% Warning: check_permission direcly formats 401 reply if not authorized
             ErrorResponse ->
                 ErrorResponse
         end
-    catch _:_Error ->
+    catch
+        %% TODO We need to refactor to remove redundant error return formatting
+        throw:{error, unknown_command} ->
+            json_format({404, 44, <<"Command not found.">>});
+        _:_Error ->
+
         ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
         badrequest_response()
     end;
@@ -261,17 +263,26 @@ process([], #request{method = 'OPTIONS', data = <<>>}) ->
     {200, ?OPTIONS_HEADER, []};
 process(_Path, Request) ->
     ?DEBUG("Bad Request: no handler ~p", [Request]),
-    badrequest_response().
+    json_error(400, 40, <<"Missing command name.">>).
+
+%% Be tolerant to make API more easily usable from command-line pipe.
+extract_args(<<"\n">>) -> [];
+extract_args(Data) ->
+    case jiffy:decode(Data) of
+        List when is_list(List) -> List;
+        {List} when is_list(List) -> List;
+        Other -> [Other]
+    end.
 
 % get API version N from last "vN" element in URL path
 get_api_version(#request{path = Path}) ->
     get_api_version(lists:reverse(Path));
 get_api_version([<<"v", String/binary>> | Tail]) ->
     case catch jlib:binary_to_integer(String) of
-	N when is_integer(N) ->
-	    N;
-	_ ->
-	    get_api_version(Tail)
+        N when is_integer(N) ->
+            N;
+        _ ->
+            get_api_version(Tail)
     end;
 get_api_version([_Head | Tail]) ->
     get_api_version(Tail);
@@ -281,6 +292,8 @@ get_api_version([]) ->
 %% ----------------
 %% command handlers
 %% ----------------
+
+%% TODO Check accept types of request before decided format of reply.
 
 % generic ejabberd command handler
 handle(Call, Auth, Args, Version, IP) when is_atom(Call), is_list(Args) ->
@@ -300,7 +313,7 @@ handle(Call, Auth, Args, Version, IP) when is_atom(Call), is_list(Args) ->
                             [{Key, undefined}|Acc]
                     end, [], ArgsSpec),
 	    try
-		handle2(Call, Auth, match(Args2, Spec), Version, IP)
+          handle2(Call, Auth, match(Args2, Spec), Version, IP)
 	    catch throw:not_found ->
 		    {404, <<"not_found">>};
 		  throw:{not_found, Why} when is_atom(Why) ->
@@ -313,8 +326,10 @@ handle(Call, Auth, Args, Version, IP) when is_atom(Call), is_list(Args) ->
 		    {401, jlib:atom_to_binary(Why)};
 		  throw:{not_allowed, Msg} ->
 		    {401, iolist_to_binary(Msg)};
-                  throw:{error, account_unprivileged} ->
-                    {401, iolist_to_binary(<<"Unauthorized: Account Unpriviledged">>)};
+      throw:{error, account_unprivileged} ->
+        {403, 31, <<"Command need to be run with admin priviledge.">>};
+      throw:{error, access_rules_unauthorized} ->
+        {403, 32, <<"AccessRules: Account associated to token does not have the right to perform the operation.">>};
 		  throw:{invalid_parameter, Msg} ->
 		    {400, iolist_to_binary(Msg)};
 		  throw:{error, Why} when is_atom(Why) ->
@@ -370,28 +385,33 @@ format_args(Args, ArgsFormat) ->
       L when is_list(L) -> exit({additional_unused_args, L})
     end.
 
-format_arg({array, Elements},
-	   {list, {ElementDefName, ElementDefFormat}})
+format_arg(Elements,
+	   {list, {_ElementDefName, ElementDefFormat}})
     when is_list(Elements) ->
-    lists:map(fun ({struct, [{ElementName, ElementValue}]}) when
-                        ElementDefName == ElementName ->
-		      format_arg(ElementValue, ElementDefFormat)
-	      end,
-	      Elements);
-format_arg({array, [{struct, Elements}]},
-	   {list, {ElementDefName, ElementDefFormat}})
-    when is_list(Elements) ->
-    lists:map(fun ({ElementName, ElementValue}) ->
-		      true = ElementDefName == ElementName,
-		      format_arg(ElementValue, ElementDefFormat)
-	      end,
-	      Elements);
-format_arg({array, [{struct, Elements}]},
+    [format_arg(Element, ElementDefFormat)
+     || Element <- Elements];
+format_arg({[{Name, Value}]},
+	   {tuple, [{_Tuple1N, Tuple1S}, {_Tuple2N, Tuple2S}]})
+  when Tuple1S == binary;
+       Tuple1S == string ->
+    {format_arg(Name, Tuple1S), format_arg(Value, Tuple2S)};
+format_arg({Elements},
 	   {tuple, ElementsDef})
     when is_list(Elements) ->
-    FormattedList = format_args(Elements, ElementsDef),
-    list_to_tuple(FormattedList);
-format_arg({array, Elements}, {list, ElementsDef})
+    F = lists:map(fun({TElName, TElDef}) ->
+			  case lists:keyfind(atom_to_binary(TElName, latin1), 1, Elements) of
+			      {_, Value} ->
+				  format_arg(Value, TElDef);
+			      _ when TElDef == binary; TElDef == string ->
+				  <<"">>;
+			      _ ->
+				  ?ERROR_MSG("missing field ~p in tuple ~p", [TElName, Elements]),
+				  throw({invalid_parameter,
+					 io_lib:format("Missing field ~w in tuple ~w", [TElName, Elements])})
+			  end
+		  end, ElementsDef),
+    list_to_tuple(F);
+format_arg(Elements, {list, ElementsDef})
     when is_list(Elements) and is_atom(ElementsDef) ->
     [format_arg(Element, ElementsDef)
      || Element <- Elements];
@@ -405,7 +425,7 @@ format_arg(undefined, string) -> <<>>;
 format_arg(Arg, Format) ->
     ?ERROR_MSG("don't know how to format Arg ~p for format ~p", [Arg, Format]),
     throw({invalid_parameter,
-	   io_lib:format("Arg ~p is not in format ~p",
+	   io_lib:format("Arg ~w is not in format ~w",
 			 [Arg, Format])}).
 
 process_unicode_codepoints(Str) ->
@@ -435,22 +455,24 @@ ejabberd_command(Auth, Cmd, Args, Version, IP) ->
 format_command_result(Cmd, Auth, Result, Version) ->
     {_, ResultFormat} = ejabberd_commands:get_command_format(Cmd, Auth, Version),
     case {ResultFormat, Result} of
-	{{_, rescode}, V} when V == true; V == ok ->
-	    {200, 0};
-	{{_, rescode}, _} ->
-	    {200, 1};
-	{{_, restuple}, {V1, Text1}} when V1 == true; V1 == ok ->
-	    {200, iolist_to_binary(Text1)};
-	{{_, restuple}, {_, Text2}} ->
-	    {500, iolist_to_binary(Text2)};
-	{{_, {list, _}}, _V} ->
-	    {_, L} = format_result(Result, ResultFormat),
-	    {200, L};
-	{{_, {tuple, _}}, _V} ->
-	    {_, T} = format_result(Result, ResultFormat),
-	    {200, T};
-	_ ->
-	    {200, {[format_result(Result, ResultFormat)]}}
+        {{_, rescode}, V} when V == true; V == ok ->
+            {200, 0};
+        {{_, rescode}, _} ->
+            {200, 1};
+        {_, {error, ErrorAtom, Code, Msg}} ->
+            format_error_result(ErrorAtom, Code, Msg);
+        {{_, restuple}, {V, Text}} when V == true; V == ok ->
+            {200, iolist_to_binary(Text)};
+        {{_, restuple}, {ErrorAtom, Msg}} ->
+            format_error_result(ErrorAtom, 0, Msg);
+        {{_, {list, _}}, _V} ->
+            {_, L} = format_result(Result, ResultFormat),
+            {200, L};
+        {{_, {tuple, _}}, _V} ->
+            {_, T} = format_result(Result, ResultFormat),
+            {200, T};
+        _ ->
+            {200, {[format_result(Result, ResultFormat)]}}
     end.
 
 format_result(Atom, {Name, atom}) ->
@@ -488,18 +510,39 @@ format_result(Tuple, {Name, {tuple, Def}}) ->
 format_result(404, {_Name, _}) ->
     "not_found".
 
+
+format_error_result(conflict, Code, Msg) ->
+    {409, Code, iolist_to_binary(Msg)};
+format_error_result(_ErrorAtom, Code, Msg) ->
+    {500, Code, iolist_to_binary(Msg)}.
+
 unauthorized_response() ->
-    unauthorized_response(<<"401 Unauthorized">>).
-unauthorized_response(Body) ->
-    json_response(401, jiffy:encode(Body)).
+    json_error(401, 10, <<"Oauth Token is invalid or expired.">>).
+
+outofscope_response() ->
+    json_error(401, 11, <<"Token does not grant usage to command required scope.">>).
 
 badrequest_response() ->
     badrequest_response(<<"400 Bad Request">>).
 badrequest_response(Body) ->
     json_response(400, jiffy:encode(Body)).
 
+json_format({Code, Result}) ->
+    json_response(Code, jiffy:encode(Result));
+json_format({HTMLCode, JSONErrorCode, Message}) ->
+    json_error(HTMLCode, JSONErrorCode, Message).
+
 json_response(Code, Body) when is_integer(Code) ->
     {Code, ?HEADER(?CT_JSON), Body}.
+
+%% HTTPCode, JSONCode = integers
+%% message is binary
+json_error(HTTPCode, JSONCode, Message) ->
+    {HTTPCode, ?HEADER(?CT_JSON),
+     jiffy:encode({[{<<"status">>, <<"error">>},
+                    {<<"code">>, JSONCode},
+                    {<<"message">>, Message}]})
+    }.
 
 log(Call, Args, {Addr, Port}) ->
     AddrS = jlib:ip_to_list({Addr, Port}),

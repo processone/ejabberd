@@ -1333,7 +1333,7 @@ handle_sync_event({resume_session, Time}, _From, _StateName,
 			      StateData#state.user,
 			      StateData#state.server,
 			      StateData#state.resource),
-    {stop, normal, {ok, StateData}, StateData#state{mgmt_state = resumed}};
+    {stop, normal, {resume, StateData}, StateData#state{mgmt_state = resumed}};
 handle_sync_event({resume_session, _Time}, _From, StateName,
 		  StateData) ->
     {reply, {error, <<"Previous session not found">>}, StateName, StateData};
@@ -1647,11 +1647,18 @@ handle_info({route, From, To,
                                                    <<"groupchat">> -> ok;
                                                    <<"headline">> -> ok;
                                                    _ ->
-                                                       Err =
-                                                           jlib:make_error_reply(Packet,
-                                                                                 ?ERR_SERVICE_UNAVAILABLE),
-                                                       ejabberd_router:route(To, From,
-                                                                             Err)
+						       case fxml:get_subtag_with_xmlns(Packet,
+										       <<"x">>,
+										       ?NS_MUC_USER)
+							   of
+							 false ->
+							     Err =
+								 jlib:make_error_reply(Packet,
+										       ?ERR_SERVICE_UNAVAILABLE),
+							     ejabberd_router:route(To, From,
+										   Err);
+							 _ -> ok
+						       end
                                                end,
                                                {false, Attrs, StateData}
 				       end;
@@ -1753,6 +1760,13 @@ handle_info({broadcast, Type, From, Packet}, StateName, StateData) ->
     fsm_next_state(StateName, StateData);
 handle_info(dont_ask_offline, StateName, StateData) ->
     fsm_next_state(StateName, StateData#state{ask_offline = false});
+handle_info({_Ref, {resume, OldStateData}}, StateName, StateData) ->
+    %% This happens if the resume_session/1 request timed out; the new session
+    %% now receives the late response.
+    ?DEBUG("Received old session state for ~s after failed resumption",
+	   [jid:to_string(OldStateData#state.jid)]),
+    handle_unacked_stanzas(OldStateData#state{mgmt_resend = false}),
+    fsm_next_state(StateName, StateData);
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     fsm_next_state(StateName, StateData).
@@ -1870,6 +1884,7 @@ send_text(StateData, Text) ->
 send_element(StateData, El) when StateData#state.mgmt_state == pending ->
     ?DEBUG("Cannot send element while waiting for resumption: ~p", [El]);
 send_element(StateData, El) when StateData#state.xml_socket ->
+    ?DEBUG("Send XML on stream = ~p", [fxml:element_to_binary(El)]),
     (StateData#state.sockmod):send_xml(StateData#state.socket,
 				       {xmlstreamelement, El});
 send_element(StateData, El) ->
@@ -2800,8 +2815,7 @@ handle_resume(StateData, Attrs) ->
 		       #xmlel{name = <<"r">>,
 			      attrs = [{<<"xmlns">>, AttrXmlns}],
 			      children = []}),
-	  FlushedState = csi_flush_queue(NewState),
-	  NewStateData = FlushedState#state{csi_state = active},
+	  NewStateData = csi_flush_queue(NewState),
 	  ?INFO_MSG("Resumed session for ~s",
 		    [jid:to_string(NewStateData#state.jid)]),
 	  {ok, NewStateData};
@@ -2966,6 +2980,9 @@ handle_unacked_stanzas(#state{mgmt_state = MgmtState} = StateData)
 						   [StateData, From,
 						    StateData#state.jid, El]) of
 			true ->
+			    ?DEBUG("Dropping archived message stanza from ~s",
+				   [fxml:get_attr_s(<<"from">>,
+						    El#xmlel.attrs)]),
 			    ok;
 			false ->
 			    ReRoute(From, To, El, Time)
@@ -3021,7 +3038,7 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 	    OldPID ->
 		OldSID = {Time, OldPID},
 		case catch resume_session(OldSID) of
-		  {ok, OldStateData} ->
+		  {resume, OldStateData} ->
 		      NewSID = {Time, self()}, % Old time, new PID
 		      Priority = case OldStateData#state.pres_last of
 				   undefined ->
@@ -3045,13 +3062,13 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
 					   pres_timestamp = OldStateData#state.pres_timestamp,
 					   privacy_list = OldStateData#state.privacy_list,
 					   aux_fields = OldStateData#state.aux_fields,
-					   csi_state = OldStateData#state.csi_state,
 					   mgmt_xmlns = OldStateData#state.mgmt_xmlns,
 					   mgmt_queue = OldStateData#state.mgmt_queue,
 					   mgmt_timeout = OldStateData#state.mgmt_timeout,
 					   mgmt_stanzas_in = OldStateData#state.mgmt_stanzas_in,
 					   mgmt_stanzas_out = OldStateData#state.mgmt_stanzas_out,
-					   mgmt_state = active}};
+					   mgmt_state = active,
+					   csi_state = active}};
 		  {error, Msg} ->
 		      {error, Msg};
 		  _ ->
@@ -3063,7 +3080,7 @@ inherit_session_state(#state{user = U, server = S} = StateData, ResumeID) ->
     end.
 
 resume_session({Time, PID}) ->
-    (?GEN_FSM):sync_send_all_state_event(PID, {resume_session, Time}, 5000).
+    (?GEN_FSM):sync_send_all_state_event(PID, {resume_session, Time}, 15000).
 
 make_resume_id(StateData) ->
     {Time, _} = StateData#state.sid,
@@ -3078,20 +3095,22 @@ add_resent_delay_info(#state{server = From}, El, Time) ->
 %%% XEP-0352
 %%%----------------------------------------------------------------------
 
-csi_filter_stanza(#state{csi_state = CsiState, server = Server} = StateData,
-		  Stanza) ->
+csi_filter_stanza(#state{csi_state = CsiState, jid = JID, server = Server} =
+		  StateData, Stanza) ->
     {StateData1, Stanzas} = ejabberd_hooks:run_fold(csi_filter_stanza, Server,
 						    {StateData, [Stanza]},
-						    [Server, Stanza]),
+						    [Server, JID, Stanza]),
     StateData2 = lists:foldl(fun(CurStanza, AccState) ->
 				     send_stanza(AccState, CurStanza)
 			     end, StateData1#state{csi_state = active},
 			     Stanzas),
     StateData2#state{csi_state = CsiState}.
 
-csi_flush_queue(#state{csi_state = CsiState, server = Server} = StateData) ->
+csi_flush_queue(#state{csi_state = CsiState, jid = JID, server = Server} =
+		StateData) ->
     {StateData1, Stanzas} = ejabberd_hooks:run_fold(csi_flush_queue, Server,
-						    {StateData, []}, [Server]),
+						    {StateData, []},
+						    [Server, JID]),
     StateData2 = lists:foldl(fun(CurStanza, AccState) ->
 				     send_stanza(AccState, CurStanza)
 			     end, StateData1#state{csi_state = active},

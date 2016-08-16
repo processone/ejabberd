@@ -90,7 +90,7 @@ start(Host, Opts) ->
     start_supervisor(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 temporary, 1000, worker, [?MODULE]},
+		 transient, 1000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->

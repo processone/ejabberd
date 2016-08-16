@@ -696,7 +696,7 @@ announce_all(From, To, Packet) ->
 	    lists:foreach(
 	      fun({User, Server}) ->
 		      Dest = jid:make(User, Server, <<>>),
-		      ejabberd_router:route(Local, Dest, Packet)
+		      ejabberd_router:route(Local, Dest, add_store_hint(Packet))
 	      end, ejabberd_auth:get_vh_registered_users(Host))
     end.
 
@@ -713,7 +713,7 @@ announce_all_hosts_all(From, To, Packet) ->
 	    lists:foreach(
 	      fun({User, Server}) ->
 		      Dest = jid:make(User, Server, <<>>),
-		      ejabberd_router:route(Local, Dest, Packet)
+		      ejabberd_router:route(Local, Dest, add_store_hint(Packet))
 	      end, ejabberd_auth:dirty_get_registered_users())
     end.
 
@@ -899,7 +899,7 @@ send_announcement_to_all(Host, SubjectS, BodyS) ->
     lists:foreach(
       fun({U, S, R}) ->
 	      Dest = jid:make(U, S, R),
-	      ejabberd_router:route(Local, Dest, Packet)
+	      ejabberd_router:route(Local, Dest, add_store_hint(Packet))
       end, Sessions).
 
 -spec get_access(global | binary()) -> atom().
@@ -908,6 +908,12 @@ get_access(Host) ->
     gen_mod:get_module_opt(Host, ?MODULE, access,
                            fun(A) -> A end,
                            none).
+
+-spec add_store_hint(xmlel()) -> xmlel().
+
+add_store_hint(El) ->
+    Hint = #xmlel{name = <<"store">>, attrs = [{<<"xmlns">>, ?NS_HINTS}]},
+    fxml:append_subtags(El, [Hint]).
 
 %%-------------------------------------------------------------------------
 export(LServer) ->

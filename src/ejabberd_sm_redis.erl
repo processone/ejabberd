@@ -145,7 +145,10 @@ clean_table() ->
 					{_, SID} = binary_to_term(USSIDKey),
 					node(element(2, SID)) == node()
 				end, Vals),
-		      Q1 = ["HDEL", ServKey | Vals1],
+				Q1 = case Vals1 of
+					[] -> [];
+					_ -> ["HDEL", ServKey | Vals1]
+				end,
 		      Q2 = lists:map(
 			     fun(USSIDKey) ->
 				     {US, SID} = binary_to_term(USSIDKey),
@@ -153,7 +156,7 @@ clean_table() ->
 				     SIDKey = sid_to_key(SID),
 				     ["HDEL", USKey, SIDKey]
 			     end, Vals1),
-		      Res = ejabberd_redis:qp([Q1|Q2]),
+		      Res = ejabberd_redis:qp(lists:delete([], [Q1|Q2])),
 		      case lists:filter(
 			     fun({ok, _}) -> false;
 				(_) -> true

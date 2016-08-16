@@ -74,20 +74,27 @@ get_acl_rule([<<"vhosts">>], _) ->
 %% The pages of a vhost are only accesible if the user is admin of that vhost:
 get_acl_rule([<<"server">>, VHost | _RPath], Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
-    {VHost, [configure, webadmin_view]};
+    AC = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
+				access, fun(A) -> A end, configure),
+    ACR = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
+				 access_readonly, fun(A) -> A end, webadmin_view),
+    {VHost, [AC, ACR]};
 get_acl_rule([<<"server">>, VHost | _RPath], 'POST') ->
-    {VHost, [configure]};
+    AC = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
+				access, fun(A) -> A end, configure),
+    {VHost, [AC]};
 %% Default rule: only global admins can access any other random page
 get_acl_rule(_RPath, Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
-    {global, [configure, webadmin_view]};
-get_acl_rule(_RPath, 'POST') -> {global, [configure]}.
-
-is_acl_match(Host, Rules, Jid) ->
-    lists:any(fun (Rule) ->
-		      allow == acl:match_rule(Host, Rule, Jid)
-	      end,
-	      Rules).
+    AC = gen_mod:get_module_opt(global, ejabberd_web_admin,
+				access, fun(A) -> A end, configure),
+    ACR = gen_mod:get_module_opt(global, ejabberd_web_admin,
+				 access_readonly, fun(A) -> A end, webadmin_view),
+    {global, [AC, ACR]};
+get_acl_rule(_RPath, 'POST') ->
+    AC = gen_mod:get_module_opt(global, ejabberd_web_admin,
+				access, fun(A) -> A end, configure),
+    {global, [AC]}.
 
 %%%==================================
 %%%% Menu Items Access
@@ -138,7 +145,7 @@ is_allowed_path([<<"admin">> | Path], JID) ->
     is_allowed_path(Path, JID);
 is_allowed_path(Path, JID) ->
     {HostOfRule, AccessRule} = get_acl_rule(Path, 'GET'),
-    is_acl_match(HostOfRule, AccessRule, JID).
+    acl:any_rules_allowed(HostOfRule, AccessRule, JID).
 
 %% @spec(Path) -> URL
 %% where Path = [string()]
@@ -266,8 +273,8 @@ get_auth_account(HostOfRule, AccessRule, User, Server,
 		 Pass) ->
     case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
       true ->
-	  case is_acl_match(HostOfRule, AccessRule,
-			    jid:make(User, Server, <<"">>))
+	  case acl:any_rules_allowed(HostOfRule, AccessRule,
+                               jid:make(User, Server, <<"">>))
 	      of
 	    false -> {unauthorized, <<"unprivileged-account">>};
 	    true -> {ok, {User, Server}}
@@ -1333,7 +1340,7 @@ parse_access_rule(Text) ->
 list_vhosts(Lang, JID) ->
     Hosts = (?MYHOSTS),
     HostsAllowed = lists:filter(fun (Host) ->
-					is_acl_match(Host,
+					acl:any_rules_allowed(Host,
 						     [configure, webadmin_view],
 						     JID)
 				end,
@@ -2965,7 +2972,8 @@ make_menu_item(item, 3, URI, Name, Lang) ->
 %%%==================================
 
 
-opt_type(access) -> fun (V) -> V end;
-opt_type(_) -> [access].
+opt_type(access) -> fun acl:access_rules_validator/1;
+opt_type(access_readonly) -> fun acl:access_rules_validator/1;
+opt_type(_) -> [access, access_readonly].
 
 %%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:

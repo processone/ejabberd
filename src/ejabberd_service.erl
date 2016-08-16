@@ -231,6 +231,7 @@ wait_for_stream(closed, StateData) ->
 wait_for_handshake({xmlstreamelement, El}, StateData) ->
     #xmlel{name = Name, children = Els} = El,
     case {Name, fxml:get_cdata(Els)} of
+<<<<<<< HEAD
         {<<"handshake">>, Digest} ->
             case dict:find(StateData#state.host, StateData#state.host_opts) of
                 {ok, Password} ->
@@ -241,7 +242,8 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
                             lists:foreach(
                                 fun (H) ->
                                   ejabberd_router:register_route(H, ?MYNAME),
-                                  ?INFO_MSG("Route registered for service ~p~n", [H])
+                                  ?INFO_MSG("Route registered for service ~p~n", [H]),
+                                  ejabberd_hooks:run(component_connected, [H])
                                 end, dict:fetch_keys(StateData#state.host_opts)),
 
                             mod_privilege:advertise_permissions(StateData),
@@ -458,7 +460,9 @@ terminate(Reason, StateName, StateData) ->
     case StateName of
       stream_established ->
           lists:foreach(fun (H) ->
-                          ejabberd_router:unregister_route(H)
+                          ejabberd_router:unregister_route(H),
+                          ejabberd_hooks:run(component_disconnected,
+					                         [StateData#state.host, Reason])
                         end,
                         dict:fetch_keys(StateData#state.host_opts)),
 

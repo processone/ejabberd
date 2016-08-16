@@ -749,6 +749,60 @@ handle_sync_event({change_state, NewStateData}, _From,
 handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData) ->
     NSD = process_item_change(Item, StateData, UJID),
     {reply, {ok, NSD}, StateName, NSD};
+handle_sync_event({muc_subscribe, From, Nick, Nodes}, _From,
+		  StateName, StateData) ->
+    SubEl = #xmlel{name = <<"subscribe">>,
+		   attrs = [{<<"xmlns">>, ?NS_MUCSUB}, {<<"nick">>, Nick}],
+		   children = [#xmlel{name = <<"event">>,
+				      attrs = [{<<"node">>, Node}]}
+			       || Node <- Nodes]},
+    IQ = #iq{type = set, id = randoms:get_string(),
+	     xmlns = ?NS_MUCSUB, sub_el = SubEl},
+    Packet = jlib:iq_to_xml(IQ#iq{sub_el = [SubEl]}),
+    Config = StateData#state.config,
+    CaptchaRequired = Config#config.captcha_protected,
+    PasswordProtected = Config#config.password_protected,
+    TmpConfig = Config#config{captcha_protected = false,
+			       password_protected = false},
+    TmpState = StateData#state{config = TmpConfig},
+    case process_iq_mucsub(From, Packet, IQ, TmpState) of
+	{result, _, NewState} ->
+	    NewConfig = (NewState#state.config)#config{
+			  captcha_protected = CaptchaRequired,
+			  password_protected = PasswordProtected},
+	    {reply, {ok, get_subscription_nodes(Packet)}, StateName,
+	     NewState#state{config = NewConfig}};
+	{ignore, NewState} ->
+	    NewConfig = (NewState#state.config)#config{
+			  captcha_protected = CaptchaRequired,
+			  password_protected = PasswordProtected},
+	    {reply, {error, <<"Requrest is ignored">>},
+	     NewState#state{config = NewConfig}};
+	{error, Err, NewState} ->
+	    NewConfig = (NewState#state.config)#config{
+			  captcha_protected = CaptchaRequired,
+			  password_protected = PasswordProtected},
+	    {reply, {error, get_error_text(Err)}, StateName,
+	     NewState#state{config = NewConfig}};
+	{error, Err} ->
+	    {reply, {error, get_error_text(Err)}, StateName, StateData}
+    end;
+handle_sync_event({muc_unsubscribe, From}, _From, StateName, StateData) ->
+    SubEl = #xmlel{name = <<"unsubscribe">>,
+		   attrs = [{<<"xmlns">>, ?NS_MUCSUB}]},
+    IQ = #iq{type = set, id = randoms:get_string(),
+	     xmlns = ?NS_MUCSUB, sub_el = SubEl},
+    Packet = jlib:iq_to_xml(IQ),
+    case process_iq_mucsub(From, Packet, IQ, StateData) of
+	{result, _, NewState} ->
+	    {reply, ok, StateName, NewState};
+	{ignore, NewState} ->
+	    {reply, {error, <<"Requrest is ignored">>}, NewState};
+	{error, Err, NewState} ->
+	    {reply, {error, get_error_text(Err)}, StateName, NewState};
+	{error, Err} ->
+	    {reply, {error, get_error_text(Err)}, StateName, StateData}
+    end;
 handle_sync_event(_Event, _From, StateName,
 		  StateData) ->
     Reply = ok, {reply, Reply, StateName, StateData}.
@@ -1345,6 +1399,14 @@ get_error_condition2(Packet) ->
 			     children = []}
 			  <- EEls],
     {condition, Condition}.
+
+get_error_text(Error) ->
+    case fxml:get_subtag_with_xmlns(Error, <<"text">>, ?NS_STANZAS) of
+	#xmlel{} = Tag ->
+	    fxml:get_tag_cdata(Tag);
+	false ->
+	    <<"">>
+    end.
 
 make_reason(Packet, From, StateData, Reason1) ->
     {ok, #user{nick = FromNick}} = (?DICT):find(jid:tolower(From), StateData#state.users),
@@ -4606,6 +4668,18 @@ process_iq_mucsub(From, _Packet,
     case ?DICT:find(LJID, StateData#state.users) of
 	{ok, #user{is_subscriber = true} = User} ->
 	    NewStateData = remove_subscription(From, User, StateData),
+	    store_room(NewStateData),
+	    {result, [], NewStateData};
+	error when From#jid.lresource == <<"">> ->
+	    {LUser, LServer, _} = LJID,
+	    NewStateData =
+		dict:fold(
+		  fun({U, S, _}, #user{jid = J, is_subscriber = true} = User,
+		      AccState) when U == LUser, S == LServer ->
+			  remove_subscription(J, User, AccState);
+		     (_, _, AccState) ->
+			  AccState
+		  end, StateData, StateData#state.users),
 	    store_room(NewStateData),
 	    {result, [], NewStateData};
 	_ ->
