@@ -66,7 +66,7 @@
 %%   * Using the command line and oauth_issue_token command, the token is generated in behalf of ejabberd' sysadmin
 %%    (as it has access to ejabberd command line).
 
--define(EXPIRE, 31536000).
+-define(EXPIRE, 4294967).
 
 start() ->
     DBMod = get_db_backend(),
