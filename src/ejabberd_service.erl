@@ -231,7 +231,6 @@ wait_for_stream(closed, StateData) ->
 wait_for_handshake({xmlstreamelement, El}, StateData) ->
     #xmlel{name = Name, children = Els} = El,
     case {Name, fxml:get_cdata(Els)} of
-<<<<<<< HEAD
         {<<"handshake">>, Digest} ->
             case dict:find(StateData#state.host, StateData#state.host_opts) of
                 {ok, Password} ->
