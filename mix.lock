@@ -20,7 +20,6 @@
   "p1_oauth2": {:hex, :p1_oauth2, "0.6.1", "4e021250cc198c538b097393671a41e7cebf463c248980320e038fe0316eb56b", [:rebar3], []},
   "p1_pgsql": {:hex, :p1_pgsql, "1.1.0", "ca525c42878eac095e5feb19563acc9915c845648f48fdec7ba6266c625d4ac7", [:rebar3], []},
   "p1_utils": {:hex, :p1_utils, "1.0.5", "3e698354fdc1fea5491d991457b0cb986c0a00a47d224feb841dc3ec82b9f721", [:rebar3], []},
-  "p1_xmlrpc": {:hex, :p1_xmlrpc, "1.15.1", "a382b62dc21bb372281c2488f99294d84f2b4020ed0908a1c4ad710ace3cf35a", [:rebar3], []},
   "pc": {:hex, :pc, "1.2.0", "5e07731d1f8bf997a8d0271510983e570f910b42cd59bf612e664ad6dc35742e", [:rebar3], []},
   "providers": {:hex, :providers, "1.6.0", "db0e2f9043ae60c0155205fcd238d68516331d0e5146155e33d1e79dc452964a", [:rebar3], [{:getopt, "0.8.2", [hex: :getopt, optional: false]}]},
   "relx": {:hex, :relx, "3.19.0", "286dd5244b4786f56aac75d5c8e2d1fb4cfd306810d4ec8548f3ae1b3aadb8f7", [:rebar3], [{:bbmustache, "1.0.4", [hex: :bbmustache, optional: false]}, {:cf, "0.2.1", [hex: :cf, optional: false]}, {:erlware_commons, "0.19.0", [hex: :erlware_commons, optional: false]}, {:getopt, "0.8.2", [hex: :getopt, optional: false]}, {:providers, "1.6.0", [hex: :providers, optional: false]}]},
