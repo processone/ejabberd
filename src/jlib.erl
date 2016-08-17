@@ -371,7 +371,6 @@ iq_type_to_string(error) -> <<"error">>.
 -spec iq_to_xml(IQ :: iq()) -> xmlel().
 
 iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
-    %% fix it!
     Children = 
         if
           is_list(SubEl) ->

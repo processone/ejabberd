@@ -361,3 +361,4 @@ try_roster_subscribe(Server,User, From, To, Packet) ->
                                                [User, Server]),
             check_privacy_route(Server, User, PrivList, From, To, Packet)            
     end.
+    

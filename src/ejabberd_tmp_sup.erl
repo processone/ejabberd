@@ -29,9 +29,6 @@
 
 -export([start_link/2, init/1]).
 
--include("ejabberd.hrl").
--include("logger.hrl").
-
 start_link(Name, Module) ->
     supervisor:start_link({local, Name}, ?MODULE, Module).
 

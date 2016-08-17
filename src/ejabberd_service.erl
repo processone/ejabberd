@@ -557,3 +557,4 @@ remove_hooks(Hook, Fun) ->
   lists:foreach(fun(Host) ->
                     ejabberd_hooks:delete(Hook, Host, Fun, 100)
                 end, ?MYHOSTS).
+  
