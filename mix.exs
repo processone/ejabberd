@@ -29,7 +29,7 @@ defmodule Ejabberd.Mixfile do
      included_applications: [:lager, :mnesia, :p1_utils, :cache_tab,
                              :fast_tls, :stringprep, :fast_xml,
                              :stun, :fast_yaml, :ezlib, :iconv,
-                             :esip, :jiffy, :p1_oauth2, :p1_xmlrpc, :eredis,
+                             :esip, :jiffy, :p1_oauth2, :eredis,
                              :p1_mysql, :p1_pgsql, :sqlite3]]
   end
 
@@ -51,7 +51,6 @@ defmodule Ejabberd.Mixfile do
      {:esip, "~> 1.0"},
      {:jiffy, "~> 0.14.7"},
      {:p1_oauth2, "~> 0.6.1"},
-     {:p1_xmlrpc, "~> 1.15"},
      {:p1_mysql, "~> 1.0"},
      {:p1_pgsql, "~> 1.1"},
      {:sqlite3, "~> 1.1"},
