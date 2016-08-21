@@ -800,6 +800,7 @@ change_option(Option, Value, Config) ->
 	allow_private_messages -> Config#config{allow_private_messages = Value};
 	allow_private_messages_from_visitors -> Config#config{allow_private_messages_from_visitors = Value};
 	allow_query_users -> Config#config{allow_query_users = Value};
+	allow_subscription -> Config#config{allow_subscription = Value};
 	allow_user_invites -> Config#config{allow_user_invites = Value};
 	allow_visitor_nickchange -> Config#config{allow_visitor_nickchange = Value};
 	allow_visitor_status -> Config#config{allow_visitor_status = Value};
