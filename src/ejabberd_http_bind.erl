@@ -338,7 +338,7 @@ handle_session_start(Pid, XmppDomain, Sid, Rid, Attrs,
 init([Sid, Key, IP, HOpts]) ->
     ?DEBUG("started: ~p", [{Sid, Key, IP}]),
     Opts1 = ejabberd_c2s_config:get_c2s_limits(),
-    SOpts = lists:filtermap(fun({stream_managment, _}) -> true;
+    SOpts = lists:filtermap(fun({stream_management, _}) -> true;
                                ({max_ack_queue, _}) -> true;
                                ({resume_timeout, _}) -> true;
                                ({max_resume_timeout, _}) -> true;
