@@ -112,7 +112,7 @@ socket_handoff(LocalPath, Request, Socket, SockMod, Buf, Opts) ->
 %%% Internal
 
 init([{#ws{ip = IP, http_opts = HOpts}, _} = WS]) ->
-    SOpts = lists:filtermap(fun({stream_managment, _}) -> true;
+    SOpts = lists:filtermap(fun({stream_management, _}) -> true;
                                ({max_ack_queue, _}) -> true;
                                ({resume_timeout, _}) -> true;
                                ({max_resume_timeout, _}) -> true;
