@@ -520,10 +520,166 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
       {<<"header">>, <<"http://jabber.org/protocol/shim">>} ->
 	  decode_shim_header(<<"http://jabber.org/protocol/shim">>,
 			     IgnoreEls, _el);
+      {<<"unsupported-access-model">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_unsupported_access_model(<<"http://jabber.org/protocol/pubsub#errors">>,
+						       IgnoreEls, _el);
+      {<<"unsupported">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_unsupported(<<"http://jabber.org/protocol/pubsub#errors">>,
+					  IgnoreEls, _el);
+      {<<"too-many-subscriptions">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_too_many_subscriptions(<<"http://jabber.org/protocol/pubsub#errors">>,
+						     IgnoreEls, _el);
+      {<<"subid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_subid_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+					     IgnoreEls, _el);
+      {<<"presence-subscription-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_presence_subscription_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+							     IgnoreEls, _el);
+      {<<"pending-subscription">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_pending_subscription(<<"http://jabber.org/protocol/pubsub#errors">>,
+						   IgnoreEls, _el);
+      {<<"payload-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_payload_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+					       IgnoreEls, _el);
+      {<<"payload-too-big">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_payload_too_big(<<"http://jabber.org/protocol/pubsub#errors">>,
+					      IgnoreEls, _el);
+      {<<"not-subscribed">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_not_subscribed(<<"http://jabber.org/protocol/pubsub#errors">>,
+					     IgnoreEls, _el);
+      {<<"not-in-roster-group">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_not_in_roster_group(<<"http://jabber.org/protocol/pubsub#errors">>,
+						  IgnoreEls, _el);
+      {<<"nodeid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_nodeid_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+					      IgnoreEls, _el);
+      {<<"max-nodes-exceeded">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_max_nodes_exceeded(<<"http://jabber.org/protocol/pubsub#errors">>,
+						 IgnoreEls, _el);
+      {<<"max-items-exceeded">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_max_items_exceeded(<<"http://jabber.org/protocol/pubsub#errors">>,
+						 IgnoreEls, _el);
+      {<<"jid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_jid_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+					   IgnoreEls, _el);
+      {<<"item-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_item_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+					    IgnoreEls, _el);
+      {<<"item-forbidden">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_item_forbidden(<<"http://jabber.org/protocol/pubsub#errors">>,
+					     IgnoreEls, _el);
+      {<<"invalid-subid">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_invalid_subid(<<"http://jabber.org/protocol/pubsub#errors">>,
+					    IgnoreEls, _el);
+      {<<"invalid-payload">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_invalid_payload(<<"http://jabber.org/protocol/pubsub#errors">>,
+					      IgnoreEls, _el);
+      {<<"invalid-options">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_invalid_options(<<"http://jabber.org/protocol/pubsub#errors">>,
+					      IgnoreEls, _el);
+      {<<"invalid-jid">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_invalid_jid(<<"http://jabber.org/protocol/pubsub#errors">>,
+					  IgnoreEls, _el);
+      {<<"configuration-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_configuration_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+						     IgnoreEls, _el);
+      {<<"closed-node">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  decode_pubsub_error_closed_node(<<"http://jabber.org/protocol/pubsub#errors">>,
+					  IgnoreEls, _el);
+      {<<"pubsub">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  decode_pubsub_owner(<<"http://jabber.org/protocol/pubsub#owner">>,
+			      IgnoreEls, _el);
       {<<"pubsub">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub(<<"http://jabber.org/protocol/pubsub">>,
 			IgnoreEls, _el);
+      {<<"purge">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub">>,
+			      IgnoreEls, _el);
+      {<<"purge">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#owner">>,
+			      IgnoreEls, _el);
+      {<<"purge">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#event">>,
+			      IgnoreEls, _el);
+      {<<"delete">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub">>,
+			       IgnoreEls, _el);
+      {<<"delete">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#owner">>,
+			       IgnoreEls, _el);
+      {<<"delete">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#event">>,
+			       IgnoreEls, _el);
+      {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub">>,
+				 IgnoreEls, _el);
+      {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub#owner">>,
+				 IgnoreEls, _el);
+      {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub#event">>,
+				 IgnoreEls, _el);
+      {<<"default">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  decode_pubsub_default(<<"http://jabber.org/protocol/pubsub">>,
+				IgnoreEls, _el);
+      {<<"default">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  decode_pubsub_default(<<"http://jabber.org/protocol/pubsub#owner">>,
+				IgnoreEls, _el);
+      {<<"publish-options">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  decode_pubsub_publish_options(<<"http://jabber.org/protocol/pubsub">>,
+					IgnoreEls, _el);
+      {<<"configure">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  decode_pubsub_configure(<<"http://jabber.org/protocol/pubsub">>,
+				  IgnoreEls, _el);
+      {<<"configure">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  decode_pubsub_configure(<<"http://jabber.org/protocol/pubsub#owner">>,
+				  IgnoreEls, _el);
+      {<<"create">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  decode_pubsub_create(<<"http://jabber.org/protocol/pubsub">>,
+			       IgnoreEls, _el);
+      {<<"create">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  decode_pubsub_create(<<"http://jabber.org/protocol/pubsub#event">>,
+			       IgnoreEls, _el);
       {<<"retract">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_retract(<<"http://jabber.org/protocol/pubsub">>,
@@ -545,6 +701,10 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 	  decode_pubsub_subscribe(<<"http://jabber.org/protocol/pubsub">>,
 				  IgnoreEls, _el);
       {<<"affiliations">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  decode_pubsub_owner_affiliations(<<"http://jabber.org/protocol/pubsub#owner">>,
+					   IgnoreEls, _el);
+      {<<"affiliations">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_affiliations(<<"http://jabber.org/protocol/pubsub">>,
 				     IgnoreEls, _el);
@@ -552,29 +712,41 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_subscriptions(<<"http://jabber.org/protocol/pubsub">>,
 				      IgnoreEls, _el);
+      {<<"subscriptions">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  decode_pubsub_subscriptions(<<"http://jabber.org/protocol/pubsub#owner">>,
+				      IgnoreEls, _el);
       {<<"event">>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  decode_pubsub_event(<<"http://jabber.org/protocol/pubsub#event">>,
 			      IgnoreEls, _el);
       {<<"items">>,
-       <<"http://jabber.org/protocol/pubsub#event">>} ->
-	  decode_pubsub_event_items(<<"http://jabber.org/protocol/pubsub#event">>,
-				    IgnoreEls, _el);
-      {<<"item">>,
-       <<"http://jabber.org/protocol/pubsub#event">>} ->
-	  decode_pubsub_event_item(<<"http://jabber.org/protocol/pubsub#event">>,
-				   IgnoreEls, _el);
-      {<<"retract">>,
-       <<"http://jabber.org/protocol/pubsub#event">>} ->
-	  decode_pubsub_event_retract(<<"http://jabber.org/protocol/pubsub#event">>,
-				      IgnoreEls, _el);
-      {<<"items">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_items(<<"http://jabber.org/protocol/pubsub">>,
+			      IgnoreEls, _el);
+      {<<"items">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  decode_pubsub_items(<<"http://jabber.org/protocol/pubsub#event">>,
 			      IgnoreEls, _el);
       {<<"item">>, <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_item(<<"http://jabber.org/protocol/pubsub">>,
 			     IgnoreEls, _el);
+      {<<"item">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  decode_pubsub_item(<<"http://jabber.org/protocol/pubsub#event">>,
+			     IgnoreEls, _el);
+      {<<"retract">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  decode_pubsub_event_retract(<<"http://jabber.org/protocol/pubsub#event">>,
+				      IgnoreEls, _el);
+      {<<"configuration">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  decode_pubsub_event_configuration(<<"http://jabber.org/protocol/pubsub#event">>,
+					    IgnoreEls, _el);
+      {<<"affiliation">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  decode_pubsub_owner_affiliation(<<"http://jabber.org/protocol/pubsub#owner">>,
+					  IgnoreEls, _el);
       {<<"affiliation">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_affiliation(<<"http://jabber.org/protocol/pubsub">>,
@@ -582,6 +754,14 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
       {<<"subscription">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub">>,
+				     IgnoreEls, _el);
+      {<<"subscription">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#owner">>,
+				     IgnoreEls, _el);
+      {<<"subscription">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#event">>,
 				     IgnoreEls, _el);
       {<<"x">>, <<"jabber:x:data">>} ->
 	  decode_xdata(<<"jabber:x:data">>, IgnoreEls, _el);
@@ -1654,8 +1834,125 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
 	  true;
       {<<"header">>, <<"http://jabber.org/protocol/shim">>} ->
 	  true;
+      {<<"unsupported-access-model">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"unsupported">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"too-many-subscriptions">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"subid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"presence-subscription-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"pending-subscription">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"payload-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"payload-too-big">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"not-subscribed">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"not-in-roster-group">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"nodeid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"max-nodes-exceeded">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"max-items-exceeded">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"jid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"item-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"item-forbidden">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"invalid-subid">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"invalid-payload">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"invalid-options">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"invalid-jid">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"configuration-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"closed-node">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>} ->
+	  true;
+      {<<"pubsub">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  true;
       {<<"pubsub">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"purge">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"purge">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  true;
+      {<<"purge">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  true;
+      {<<"delete">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"delete">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  true;
+      {<<"delete">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  true;
+      {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  true;
+      {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  true;
+      {<<"default">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"default">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  true;
+      {<<"publish-options">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"configure">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"configure">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  true;
+      {<<"create">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"create">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
       {<<"retract">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
@@ -1673,16 +1970,27 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"affiliations">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  true;
+      {<<"affiliations">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"subscriptions">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
+      {<<"subscriptions">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  true;
       {<<"event">>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
       {<<"items">>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"items">>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  true;
+      {<<"item">>, <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"item">>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
@@ -1690,16 +1998,23 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
       {<<"retract">>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
-      {<<"items">>,
-       <<"http://jabber.org/protocol/pubsub">>} ->
+      {<<"configuration">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
-      {<<"item">>, <<"http://jabber.org/protocol/pubsub">>} ->
+      {<<"affiliation">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  true;
       {<<"affiliation">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"subscription">>,
        <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"subscription">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>} ->
+	  true;
+      {<<"subscription">>,
+       <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
       {<<"x">>, <<"jabber:x:data">>} -> true;
       {<<"item">>, <<"jabber:x:data">>} -> true;
@@ -2410,59 +2725,162 @@ encode({xdata_field, _, _, _, _, _, _, _, _} = Field) ->
 		       [{<<"xmlns">>, <<"jabber:x:data">>}]);
 encode({xdata, _, _, _, _, _, _} = X) ->
     encode_xdata(X, [{<<"xmlns">>, <<"jabber:x:data">>}]);
-encode({pubsub_subscription, _, _, _, _} =
+encode({ps_subscription, _, _, _, _, _, _} =
 	   Subscription) ->
-    encode_pubsub_subscription(Subscription,
-			       [{<<"xmlns">>,
-				 <<"http://jabber.org/protocol/pubsub">>}]);
-encode({pubsub_affiliation, _, _} = Affiliation) ->
-    encode_pubsub_affiliation(Affiliation,
-			      [{<<"xmlns">>,
-				<<"http://jabber.org/protocol/pubsub">>}]);
-encode({pubsub_item, _, _} = Item) ->
-    encode_pubsub_item(Item,
-		       [{<<"xmlns">>,
-			 <<"http://jabber.org/protocol/pubsub">>}]);
-encode({pubsub_items, _, _, _, _} = Items) ->
-    encode_pubsub_items(Items,
-			[{<<"xmlns">>,
-			  <<"http://jabber.org/protocol/pubsub">>}]);
-encode({pubsub_event_item, _, _, _, _} = Item) ->
-    encode_pubsub_event_item(Item,
-			     [{<<"xmlns">>,
-			       <<"http://jabber.org/protocol/pubsub#event">>}]);
-encode({pubsub_event_items, _, _, _} = Items) ->
-    encode_pubsub_event_items(Items,
-			      [{<<"xmlns">>,
-				<<"http://jabber.org/protocol/pubsub#event">>}]);
-encode({pubsub_event, _} = Event) ->
+    encode_pubsub_subscription(Subscription, []);
+encode({ps_affiliation,
+	<<"http://jabber.org/protocol/pubsub">>, _, _, _} =
+	   Affiliation) ->
+    encode_pubsub_affiliation(Affiliation, []);
+encode({ps_affiliation,
+	<<"http://jabber.org/protocol/pubsub#owner">>, _, _,
+	_} =
+	   Affiliation) ->
+    encode_pubsub_owner_affiliation(Affiliation, []);
+encode({ps_item, _, _, _, _, _} = Item) ->
+    encode_pubsub_item(Item, []);
+encode({ps_items, _, _, _, _, _, _} = Items) ->
+    encode_pubsub_items(Items, []);
+encode({ps_event, _, _, _, _, _, _} = Event) ->
     encode_pubsub_event(Event,
 			[{<<"xmlns">>,
 			  <<"http://jabber.org/protocol/pubsub#event">>}]);
-encode({pubsub_subscribe, _, _} = Subscribe) ->
+encode({ps_subscribe, _, _} = Subscribe) ->
     encode_pubsub_subscribe(Subscribe,
 			    [{<<"xmlns">>,
 			      <<"http://jabber.org/protocol/pubsub">>}]);
-encode({pubsub_unsubscribe, _, _, _} = Unsubscribe) ->
+encode({ps_unsubscribe, _, _, _} = Unsubscribe) ->
     encode_pubsub_unsubscribe(Unsubscribe,
 			      [{<<"xmlns">>,
 				<<"http://jabber.org/protocol/pubsub">>}]);
-encode({pubsub_publish, _, _} = Publish) ->
+encode({ps_publish, _, _} = Publish) ->
     encode_pubsub_publish(Publish,
 			  [{<<"xmlns">>,
 			    <<"http://jabber.org/protocol/pubsub">>}]);
-encode({pubsub_options, _, _, _, _} = Options) ->
+encode({ps_options, _, _, _, _} = Options) ->
     encode_pubsub_options(Options,
 			  [{<<"xmlns">>,
 			    <<"http://jabber.org/protocol/pubsub">>}]);
-encode({pubsub_retract, _, _, _} = Retract) ->
+encode({ps_retract, _, _, _} = Retract) ->
     encode_pubsub_retract(Retract,
 			  [{<<"xmlns">>,
 			    <<"http://jabber.org/protocol/pubsub">>}]);
-encode({pubsub, _, _, _, _, _, _, _, _} = Pubsub) ->
+encode({pubsub, _, _, _, _, _, _, _, _, _, _, _, _, _,
+	_, _, _} =
+	   Pubsub) ->
     encode_pubsub(Pubsub,
 		  [{<<"xmlns">>,
 		    <<"http://jabber.org/protocol/pubsub">>}]);
+encode({pubsub_owner, _, _, _, _, _, _} = Pubsub) ->
+    encode_pubsub_owner(Pubsub,
+			[{<<"xmlns">>,
+			  <<"http://jabber.org/protocol/pubsub#owner">>}]);
+encode({ps_error, 'closed-node', _} = Closed_node) ->
+    encode_pubsub_error_closed_node(Closed_node,
+				    [{<<"xmlns">>,
+				      <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'configuration-required', _} =
+	   Configuration_required) ->
+    encode_pubsub_error_configuration_required(Configuration_required,
+					       [{<<"xmlns">>,
+						 <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'invalid-jid', _} = Invalid_jid) ->
+    encode_pubsub_error_invalid_jid(Invalid_jid,
+				    [{<<"xmlns">>,
+				      <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'invalid-options', _} =
+	   Invalid_options) ->
+    encode_pubsub_error_invalid_options(Invalid_options,
+					[{<<"xmlns">>,
+					  <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'invalid-payload', _} =
+	   Invalid_payload) ->
+    encode_pubsub_error_invalid_payload(Invalid_payload,
+					[{<<"xmlns">>,
+					  <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'invalid-subid', _} =
+	   Invalid_subid) ->
+    encode_pubsub_error_invalid_subid(Invalid_subid,
+				      [{<<"xmlns">>,
+					<<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'item-forbidden', _} =
+	   Item_forbidden) ->
+    encode_pubsub_error_item_forbidden(Item_forbidden,
+				       [{<<"xmlns">>,
+					 <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'item-required', _} =
+	   Item_required) ->
+    encode_pubsub_error_item_required(Item_required,
+				      [{<<"xmlns">>,
+					<<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'jid-required', _} = Jid_required) ->
+    encode_pubsub_error_jid_required(Jid_required,
+				     [{<<"xmlns">>,
+				       <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'max-items-exceeded', _} =
+	   Max_items_exceeded) ->
+    encode_pubsub_error_max_items_exceeded(Max_items_exceeded,
+					   [{<<"xmlns">>,
+					     <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'max-nodes-exceeded', _} =
+	   Max_nodes_exceeded) ->
+    encode_pubsub_error_max_nodes_exceeded(Max_nodes_exceeded,
+					   [{<<"xmlns">>,
+					     <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'nodeid-required', _} =
+	   Nodeid_required) ->
+    encode_pubsub_error_nodeid_required(Nodeid_required,
+					[{<<"xmlns">>,
+					  <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'not-in-roster-group', _} =
+	   Not_in_roster_group) ->
+    encode_pubsub_error_not_in_roster_group(Not_in_roster_group,
+					    [{<<"xmlns">>,
+					      <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'not-subscribed', _} =
+	   Not_subscribed) ->
+    encode_pubsub_error_not_subscribed(Not_subscribed,
+				       [{<<"xmlns">>,
+					 <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'payload-too-big', _} =
+	   Payload_too_big) ->
+    encode_pubsub_error_payload_too_big(Payload_too_big,
+					[{<<"xmlns">>,
+					  <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'payload-required', _} =
+	   Payload_required) ->
+    encode_pubsub_error_payload_required(Payload_required,
+					 [{<<"xmlns">>,
+					   <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'pending-subscription', _} =
+	   Pending_subscription) ->
+    encode_pubsub_error_pending_subscription(Pending_subscription,
+					     [{<<"xmlns">>,
+					       <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'presence-subscription-required', _} =
+	   Presence_subscription_required) ->
+    encode_pubsub_error_presence_subscription_required(Presence_subscription_required,
+						       [{<<"xmlns">>,
+							 <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'subid-required', _} =
+	   Subid_required) ->
+    encode_pubsub_error_subid_required(Subid_required,
+				       [{<<"xmlns">>,
+					 <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'too-many-subscriptions', _} =
+	   Too_many_subscriptions) ->
+    encode_pubsub_error_too_many_subscriptions(Too_many_subscriptions,
+					       [{<<"xmlns">>,
+						 <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, unsupported, _} = Unsupported) ->
+    encode_pubsub_error_unsupported(Unsupported,
+				    [{<<"xmlns">>,
+				      <<"http://jabber.org/protocol/pubsub#errors">>}]);
+encode({ps_error, 'unsupported-access-model', _} =
+	   Unsupported_access_model) ->
+    encode_pubsub_error_unsupported_access_model(Unsupported_access_model,
+						 [{<<"xmlns">>,
+						   <<"http://jabber.org/protocol/pubsub#errors">>}]);
 encode({shim, _} = Headers) ->
     encode_shim_headers(Headers,
 			[{<<"xmlns">>, <<"http://jabber.org/protocol/shim">>}]);
@@ -2581,7 +2999,7 @@ encode({carbons_received, _} = Received) ->
 encode({carbons_sent, _} = Sent) ->
     encode_carbons_sent(Sent,
 			[{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
-encode({feature_csi, _} = Csi) ->
+encode({feature_csi, <<"urn:xmpp:csi:0">>} = Csi) ->
     encode_feature_csi(Csi, []);
 encode({csi, active} = Active) ->
     encode_csi_active(Active,
@@ -2717,357 +3135,280 @@ encode({thumbnail, _, _, _, _} = Thumbnail) ->
     encode_thumbnail(Thumbnail,
 		     [{<<"xmlns">>, <<"urn:xmpp:thumbs:1">>}]).
 
-get_name({last, _, _}) -> <<"query">>;
-get_name({version, _, _, _}) -> <<"query">>;
-get_name({roster_item, _, _, _, _, _}) -> <<"item">>;
-get_name({roster_query, _, _}) -> <<"query">>;
-get_name({rosterver_feature}) -> <<"ver">>;
-get_name({privacy_item, _, _, _, _, _, _, _, _}) ->
-    <<"item">>;
-get_name({privacy_list, _, _}) -> <<"list">>;
-get_name({privacy_query, _, _, _}) -> <<"query">>;
+get_name({address, _, _, _, _, _}) -> <<"address">>;
+get_name({addresses, _}) -> <<"addresses">>;
+get_name({adhoc_actions, _, _, _, _}) -> <<"actions">>;
+get_name({adhoc_command, _, _, _, _, _, _, _, _}) ->
+    <<"command">>;
+get_name({adhoc_note, _, _}) -> <<"note">>;
+get_name({bind, _, _}) -> <<"bind">>;
 get_name({block, _}) -> <<"block">>;
-get_name({unblock, _}) -> <<"unblock">>;
 get_name({block_list, _}) -> <<"blocklist">>;
-get_name({identity, _, _, _, _}) -> <<"identity">>;
-get_name({disco_info, _, _, _, _}) -> <<"query">>;
-get_name({disco_item, _, _, _}) -> <<"item">>;
-get_name({disco_items, _, _, _}) -> <<"query">>;
-get_name({private, _}) -> <<"query">>;
+get_name({bob_data, _, _, _, _}) -> <<"data">>;
 get_name({bookmark_conference, _, _, _, _, _}) ->
     <<"conference">>;
-get_name({bookmark_url, _, _}) -> <<"url">>;
 get_name({bookmark_storage, _, _}) -> <<"storage">>;
-get_name({stat_error, _, _}) -> <<"error">>;
-get_name({stat, _, _, _, _}) -> <<"stat">>;
-get_name({stats, _, _}) -> <<"query">>;
-get_name({iq, _, _, _, _, _, _}) -> <<"iq">>;
-get_name({message, _, _, _, _, _, _, _, _, _}) ->
-    <<"message">>;
-get_name({presence, _, _, _, _, _, _, _, _, _}) ->
-    <<"presence">>;
-get_name({gone, _}) -> <<"gone">>;
-get_name({redirect, _}) -> <<"redirect">>;
-get_name({error, _, _, _, _, _, _}) -> <<"error">>;
-get_name({bind, _, _}) -> <<"bind">>;
-get_name({legacy_auth, _, _, _, _}) -> <<"query">>;
-get_name({sasl_auth, _, _}) -> <<"auth">>;
-get_name({sasl_abort}) -> <<"abort">>;
-get_name({sasl_challenge, _}) -> <<"challenge">>;
-get_name({sasl_response, _}) -> <<"response">>;
-get_name({sasl_success, _}) -> <<"success">>;
-get_name({sasl_failure, _, _}) -> <<"failure">>;
-get_name({sasl_mechanisms, _}) -> <<"mechanisms">>;
-get_name({starttls, _}) -> <<"starttls">>;
-get_name({starttls_proceed}) -> <<"proceed">>;
-get_name({starttls_failure}) -> <<"failure">>;
-get_name({compress_failure, _}) -> <<"failure">>;
-get_name({compress, _}) -> <<"compress">>;
-get_name({compressed}) -> <<"compressed">>;
-get_name({compression, _}) -> <<"compression">>;
-get_name({stream_features, _}) -> <<"stream:features">>;
-get_name({p1_push}) -> <<"push">>;
-get_name({p1_rebind}) -> <<"rebind">>;
-get_name({p1_ack}) -> <<"ack">>;
-get_name({caps, _, _, _, _}) -> <<"c">>;
-get_name({feature_register}) -> <<"register">>;
-get_name({register, _, _, _, _, _, _, _, _, _, _, _, _,
-	  _, _, _, _, _, _, _, _, _, _}) ->
-    <<"query">>;
-get_name({xmpp_session, _}) -> <<"session">>;
-get_name({ping}) -> <<"ping">>;
-get_name({time, _, _}) -> <<"time">>;
-get_name({text, _, _}) -> <<"text">>;
-get_name({'see-other-host', _}) -> <<"see-other-host">>;
-get_name({stream_error, _, _}) -> <<"stream:error">>;
-get_name({vcard_name, _, _, _, _, _}) -> <<"N">>;
-get_name({vcard_adr, _, _, _, _, _, _, _, _, _, _, _, _,
-	  _, _}) ->
-    <<"ADR">>;
-get_name({vcard_label, _, _, _, _, _, _, _, _}) ->
-    <<"LABEL">>;
-get_name({vcard_tel, _, _, _, _, _, _, _, _, _, _, _, _,
-	  _, _}) ->
-    <<"TEL">>;
-get_name({vcard_email, _, _, _, _, _, _}) ->
-    <<"EMAIL">>;
-get_name({vcard_geo, _, _}) -> <<"GEO">>;
-get_name({vcard_logo, _, _, _}) -> <<"LOGO">>;
-get_name({vcard_photo, _, _, _}) -> <<"PHOTO">>;
-get_name({vcard_org, _, _}) -> <<"ORG">>;
-get_name({vcard_sound, _, _, _}) -> <<"SOUND">>;
-get_name({vcard_key, _, _}) -> <<"KEY">>;
-get_name({vcard_temp, _, _, _, _, _, _, _, _, _, _, _,
-	  _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
-	  _}) ->
-    <<"vCard">>;
-get_name({vcard_xupdate, _, _}) -> <<"x">>;
-get_name({xdata_option, _, _}) -> <<"option">>;
-get_name({xdata_field, _, _, _, _, _, _, _, _}) ->
-    <<"field">>;
-get_name({xdata, _, _, _, _, _, _}) -> <<"x">>;
-get_name({pubsub_subscription, _, _, _, _}) ->
-    <<"subscription">>;
-get_name({pubsub_affiliation, _, _}) ->
-    <<"affiliation">>;
-get_name({pubsub_item, _, _}) -> <<"item">>;
-get_name({pubsub_items, _, _, _, _}) -> <<"items">>;
-get_name({pubsub_event_item, _, _, _, _}) -> <<"item">>;
-get_name({pubsub_event_items, _, _, _}) -> <<"items">>;
-get_name({pubsub_event, _}) -> <<"event">>;
-get_name({pubsub_subscribe, _, _}) -> <<"subscribe">>;
-get_name({pubsub_unsubscribe, _, _, _}) ->
-    <<"unsubscribe">>;
-get_name({pubsub_publish, _, _}) -> <<"publish">>;
-get_name({pubsub_options, _, _, _, _}) -> <<"options">>;
-get_name({pubsub_retract, _, _, _}) -> <<"retract">>;
-get_name({pubsub, _, _, _, _, _, _, _, _}) ->
-    <<"pubsub">>;
-get_name({shim, _}) -> <<"headers">>;
-get_name({chatstate, active}) -> <<"active">>;
-get_name({chatstate, composing}) -> <<"composing">>;
-get_name({chatstate, gone}) -> <<"gone">>;
-get_name({chatstate, inactive}) -> <<"inactive">>;
-get_name({chatstate, paused}) -> <<"paused">>;
-get_name({delay, _, _, _}) -> <<"delay">>;
-get_name({streamhost, _, _, _}) -> <<"streamhost">>;
+get_name({bookmark_url, _, _}) -> <<"url">>;
 get_name({bytestreams, _, _, _, _, _, _}) ->
     <<"query">>;
-get_name({muc_history, _, _, _, _}) -> <<"history">>;
-get_name({muc_decline, _, _, _}) -> <<"decline">>;
-get_name({muc_destroy, _, _, _, _}) -> <<"destroy">>;
-get_name({muc_invite, _, _, _, _}) -> <<"invite">>;
-get_name({muc_user, _, _, _, _, _, _}) -> <<"x">>;
-get_name({muc_owner, _, _, _}) -> <<"query">>;
-get_name({muc_item, _, _, _, _, _, _, _}) -> <<"item">>;
-get_name({muc_actor, _, _}) -> <<"actor">>;
-get_name({muc_admin, _}) -> <<"query">>;
-get_name({muc, _, _}) -> <<"x">>;
-get_name({muc_unique, _}) -> <<"unique">>;
-get_name({x_conference, _, _, _, _, _}) -> <<"x">>;
-get_name({muc_subscriptions, _}) -> <<"subscriptions">>;
-get_name({muc_subscribe, _, _}) -> <<"subscribe">>;
-get_name({muc_unsubscribe}) -> <<"unsubscribe">>;
-get_name({rsm_first, _, _}) -> <<"first">>;
-get_name({rsm_set, _, _, _, _, _, _, _}) -> <<"set">>;
-get_name({mam_query, _, _, _, _, _, _, _, _}) ->
-    <<"query">>;
-get_name({mam_archived, _, _}) -> <<"archived">>;
-get_name({mam_result, _, _, _, _}) -> <<"result">>;
-get_name({mam_prefs, _, _, _, _}) -> <<"prefs">>;
-get_name({mam_fin, _, _, _, _}) -> <<"fin">>;
-get_name({forwarded, _, _}) -> <<"forwarded">>;
+get_name({caps, _, _, _, _}) -> <<"c">>;
 get_name({carbons_disable}) -> <<"disable">>;
 get_name({carbons_enable}) -> <<"enable">>;
 get_name({carbons_private}) -> <<"private">>;
 get_name({carbons_received, _}) -> <<"received">>;
 get_name({carbons_sent, _}) -> <<"sent">>;
-get_name({feature_csi, _}) -> <<"csi">>;
+get_name({chatstate, active}) -> <<"active">>;
+get_name({chatstate, composing}) -> <<"composing">>;
+get_name({chatstate, gone}) -> <<"gone">>;
+get_name({chatstate, inactive}) -> <<"inactive">>;
+get_name({chatstate, paused}) -> <<"paused">>;
+get_name({client_id, _}) -> <<"client-id">>;
+get_name({compress, _}) -> <<"compress">>;
+get_name({compress_failure, _}) -> <<"failure">>;
+get_name({compressed}) -> <<"compressed">>;
+get_name({compression, _}) -> <<"compression">>;
 get_name({csi, active}) -> <<"active">>;
 get_name({csi, inactive}) -> <<"inactive">>;
-get_name({feature_sm, _}) -> <<"sm">>;
-get_name({sm_enable, _, _, _}) -> <<"enable">>;
-get_name({sm_enabled, _, _, _, _, _}) -> <<"enabled">>;
-get_name({sm_resume, _, _, _}) -> <<"resume">>;
-get_name({sm_resumed, _, _, _}) -> <<"resumed">>;
-get_name({sm_r, _}) -> <<"r">>;
-get_name({sm_a, _, _}) -> <<"a">>;
-get_name({sm_failed, _, _, _}) -> <<"failed">>;
-get_name({offline_item, _, _}) -> <<"item">>;
-get_name({offline, _, _, _}) -> <<"offline">>;
-get_name({mix_join, _, _}) -> <<"join">>;
-get_name({mix_leave}) -> <<"leave">>;
-get_name({mix_participant, _, _}) -> <<"participant">>;
-get_name({hint, 'no-copy'}) -> <<"no-copy">>;
-get_name({hint, 'no-store'}) -> <<"no-store">>;
-get_name({hint, 'no-storage'}) -> <<"no-storage">>;
-get_name({hint, store}) -> <<"store">>;
-get_name({hint, 'no-permanent-store'}) ->
-    <<"no-permanent-store">>;
-get_name({hint, 'no-permanent-storage'}) ->
-    <<"no-permanent-storage">>;
-get_name({search_item, _, _, _, _, _}) -> <<"item">>;
-get_name({search, _, _, _, _, _, _, _}) -> <<"query">>;
-get_name({xevent, _, _, _, _, _}) -> <<"x">>;
-get_name({expire, _, _}) -> <<"x">>;
-get_name({nick, _}) -> <<"nick">>;
-get_name({address, _, _, _, _, _}) -> <<"address">>;
-get_name({addresses, _}) -> <<"addresses">>;
-get_name({stanza_id, _, _}) -> <<"stanza-id">>;
-get_name({client_id, _}) -> <<"client-id">>;
-get_name({adhoc_actions, _, _, _, _}) -> <<"actions">>;
-get_name({adhoc_note, _, _}) -> <<"note">>;
-get_name({adhoc_command, _, _, _, _, _, _, _, _}) ->
-    <<"command">>;
 get_name({db_result, _, _, _, _, _}) -> <<"db:result">>;
 get_name({db_verify, _, _, _, _, _, _}) ->
     <<"db:verify">>;
+get_name({delay, _, _, _}) -> <<"delay">>;
+get_name({disco_info, _, _, _, _}) -> <<"query">>;
+get_name({disco_item, _, _, _}) -> <<"item">>;
+get_name({disco_items, _, _, _}) -> <<"query">>;
+get_name({error, _, _, _, _, _, _}) -> <<"error">>;
+get_name({expire, _, _}) -> <<"x">>;
+get_name({feature_csi, _}) -> <<"csi">>;
+get_name({feature_register}) -> <<"register">>;
+get_name({feature_sm, _}) -> <<"sm">>;
+get_name({forwarded, _, _}) -> <<"forwarded">>;
+get_name({gone, _}) -> <<"gone">>;
 get_name({handshake, _}) -> <<"handshake">>;
+get_name({hint, 'no-copy'}) -> <<"no-copy">>;
+get_name({hint, 'no-permanent-storage'}) ->
+    <<"no-permanent-storage">>;
+get_name({hint, 'no-permanent-store'}) ->
+    <<"no-permanent-store">>;
+get_name({hint, 'no-storage'}) -> <<"no-storage">>;
+get_name({hint, 'no-store'}) -> <<"no-store">>;
+get_name({hint, store}) -> <<"store">>;
+get_name({identity, _, _, _, _}) -> <<"identity">>;
+get_name({iq, _, _, _, _, _, _}) -> <<"iq">>;
+get_name({last, _, _}) -> <<"query">>;
+get_name({legacy_auth, _, _, _, _}) -> <<"query">>;
+get_name({mam_archived, _, _}) -> <<"archived">>;
+get_name({mam_fin, _, _, _, _}) -> <<"fin">>;
+get_name({mam_prefs, _, _, _, _}) -> <<"prefs">>;
+get_name({mam_query, _, _, _, _, _, _, _, _}) ->
+    <<"query">>;
+get_name({mam_result, _, _, _, _}) -> <<"result">>;
+get_name({media, _, _, _}) -> <<"media">>;
+get_name({media_uri, _, _}) -> <<"uri">>;
+get_name({message, _, _, _, _, _, _, _, _, _}) ->
+    <<"message">>;
+get_name({mix_join, _, _}) -> <<"join">>;
+get_name({mix_leave}) -> <<"leave">>;
+get_name({mix_participant, _, _}) -> <<"participant">>;
+get_name({muc, _, _}) -> <<"x">>;
+get_name({muc_actor, _, _}) -> <<"actor">>;
+get_name({muc_admin, _}) -> <<"query">>;
+get_name({muc_decline, _, _, _}) -> <<"decline">>;
+get_name({muc_destroy, _, _, _, _}) -> <<"destroy">>;
+get_name({muc_history, _, _, _, _}) -> <<"history">>;
+get_name({muc_invite, _, _, _, _}) -> <<"invite">>;
+get_name({muc_item, _, _, _, _, _, _, _}) -> <<"item">>;
+get_name({muc_owner, _, _, _}) -> <<"query">>;
+get_name({muc_subscribe, _, _}) -> <<"subscribe">>;
+get_name({muc_subscriptions, _}) -> <<"subscriptions">>;
+get_name({muc_unique, _}) -> <<"unique">>;
+get_name({muc_unsubscribe}) -> <<"unsubscribe">>;
+get_name({muc_user, _, _, _, _, _, _}) -> <<"x">>;
+get_name({nick, _}) -> <<"nick">>;
+get_name({offline, _, _, _}) -> <<"offline">>;
+get_name({offline_item, _, _}) -> <<"item">>;
+get_name({oob_x, _, _, _}) -> <<"x">>;
+get_name({p1_ack}) -> <<"ack">>;
+get_name({p1_push}) -> <<"push">>;
+get_name({p1_rebind}) -> <<"rebind">>;
+get_name({ping}) -> <<"ping">>;
+get_name({presence, _, _, _, _, _, _, _, _, _}) ->
+    <<"presence">>;
+get_name({privacy_item, _, _, _, _, _, _, _, _}) ->
+    <<"item">>;
+get_name({privacy_list, _, _}) -> <<"list">>;
+get_name({privacy_query, _, _, _}) -> <<"query">>;
+get_name({private, _}) -> <<"query">>;
+get_name({ps_affiliation, _, _, _, _}) ->
+    <<"affiliation">>;
+get_name({ps_error, 'closed-node', _}) ->
+    <<"closed-node">>;
+get_name({ps_error, 'configuration-required', _}) ->
+    <<"configuration-required">>;
+get_name({ps_error, 'invalid-jid', _}) ->
+    <<"invalid-jid">>;
+get_name({ps_error, 'invalid-options', _}) ->
+    <<"invalid-options">>;
+get_name({ps_error, 'invalid-payload', _}) ->
+    <<"invalid-payload">>;
+get_name({ps_error, 'invalid-subid', _}) ->
+    <<"invalid-subid">>;
+get_name({ps_error, 'item-forbidden', _}) ->
+    <<"item-forbidden">>;
+get_name({ps_error, 'item-required', _}) ->
+    <<"item-required">>;
+get_name({ps_error, 'jid-required', _}) ->
+    <<"jid-required">>;
+get_name({ps_error, 'max-items-exceeded', _}) ->
+    <<"max-items-exceeded">>;
+get_name({ps_error, 'max-nodes-exceeded', _}) ->
+    <<"max-nodes-exceeded">>;
+get_name({ps_error, 'nodeid-required', _}) ->
+    <<"nodeid-required">>;
+get_name({ps_error, 'not-in-roster-group', _}) ->
+    <<"not-in-roster-group">>;
+get_name({ps_error, 'not-subscribed', _}) ->
+    <<"not-subscribed">>;
+get_name({ps_error, 'payload-required', _}) ->
+    <<"payload-required">>;
+get_name({ps_error, 'payload-too-big', _}) ->
+    <<"payload-too-big">>;
+get_name({ps_error, 'pending-subscription', _}) ->
+    <<"pending-subscription">>;
+get_name({ps_error, 'presence-subscription-required',
+	  _}) ->
+    <<"presence-subscription-required">>;
+get_name({ps_error, 'subid-required', _}) ->
+    <<"subid-required">>;
+get_name({ps_error, 'too-many-subscriptions', _}) ->
+    <<"too-many-subscriptions">>;
+get_name({ps_error, unsupported, _}) ->
+    <<"unsupported">>;
+get_name({ps_error, 'unsupported-access-model', _}) ->
+    <<"unsupported-access-model">>;
+get_name({ps_event, _, _, _, _, _, _}) -> <<"event">>;
+get_name({ps_item, _, _, _, _, _}) -> <<"item">>;
+get_name({ps_items, _, _, _, _, _, _}) -> <<"items">>;
+get_name({ps_options, _, _, _, _}) -> <<"options">>;
+get_name({ps_publish, _, _}) -> <<"publish">>;
+get_name({ps_retract, _, _, _}) -> <<"retract">>;
+get_name({ps_subscribe, _, _}) -> <<"subscribe">>;
+get_name({ps_subscription, _, _, _, _, _, _}) ->
+    <<"subscription">>;
+get_name({ps_unsubscribe, _, _, _}) ->
+    <<"unsubscribe">>;
+get_name({pubsub, _, _, _, _, _, _, _, _, _, _, _, _, _,
+	  _, _, _}) ->
+    <<"pubsub">>;
+get_name({pubsub_owner, _, _, _, _, _, _}) ->
+    <<"pubsub">>;
+get_name({redirect, _}) -> <<"redirect">>;
+get_name({register, _, _, _, _, _, _, _, _, _, _, _, _,
+	  _, _, _, _, _, _, _, _, _, _}) ->
+    <<"query">>;
+get_name({roster_item, _, _, _, _, _}) -> <<"item">>;
+get_name({roster_query, _, _}) -> <<"query">>;
+get_name({rosterver_feature}) -> <<"ver">>;
+get_name({rsm_first, _, _}) -> <<"first">>;
+get_name({rsm_set, _, _, _, _, _, _, _}) -> <<"set">>;
+get_name({sasl_abort}) -> <<"abort">>;
+get_name({sasl_auth, _, _}) -> <<"auth">>;
+get_name({sasl_challenge, _}) -> <<"challenge">>;
+get_name({sasl_failure, _, _}) -> <<"failure">>;
+get_name({sasl_mechanisms, _}) -> <<"mechanisms">>;
+get_name({sasl_response, _}) -> <<"response">>;
+get_name({sasl_success, _}) -> <<"success">>;
+get_name({search, _, _, _, _, _, _, _}) -> <<"query">>;
+get_name({search_item, _, _, _, _, _}) -> <<"item">>;
+get_name({'see-other-host', _}) -> <<"see-other-host">>;
+get_name({shim, _}) -> <<"headers">>;
+get_name({sic, _, _, _}) -> <<"address">>;
+get_name({sm_a, _, _}) -> <<"a">>;
+get_name({sm_enable, _, _, _}) -> <<"enable">>;
+get_name({sm_enabled, _, _, _, _, _}) -> <<"enabled">>;
+get_name({sm_failed, _, _, _}) -> <<"failed">>;
+get_name({sm_r, _}) -> <<"r">>;
+get_name({sm_resume, _, _, _}) -> <<"resume">>;
+get_name({sm_resumed, _, _, _}) -> <<"resumed">>;
+get_name({stanza_id, _, _}) -> <<"stanza-id">>;
+get_name({starttls, _}) -> <<"starttls">>;
+get_name({starttls_failure}) -> <<"failure">>;
+get_name({starttls_proceed}) -> <<"proceed">>;
+get_name({stat, _, _, _, _}) -> <<"stat">>;
+get_name({stat_error, _, _}) -> <<"error">>;
+get_name({stats, _, _}) -> <<"query">>;
+get_name({stream_error, _, _}) -> <<"stream:error">>;
+get_name({stream_features, _}) -> <<"stream:features">>;
 get_name({stream_start, _, _, _, _, _, _, _, _}) ->
     <<"stream:stream">>;
-get_name({bob_data, _, _, _, _}) -> <<"data">>;
-get_name({xcaptcha, _}) -> <<"captcha">>;
-get_name({media_uri, _, _}) -> <<"uri">>;
-get_name({media, _, _, _}) -> <<"media">>;
-get_name({oob_x, _, _, _}) -> <<"x">>;
-get_name({sic, _, _, _}) -> <<"address">>;
+get_name({streamhost, _, _, _}) -> <<"streamhost">>;
+get_name({text, _, _}) -> <<"text">>;
+get_name({thumbnail, _, _, _, _}) -> <<"thumbnail">>;
+get_name({time, _, _}) -> <<"time">>;
+get_name({unblock, _}) -> <<"unblock">>;
 get_name({upload_request, _, _, _, _}) -> <<"request">>;
 get_name({upload_slot, _, _, _}) -> <<"slot">>;
-get_name({thumbnail, _, _, _, _}) -> <<"thumbnail">>.
+get_name({vcard_adr, _, _, _, _, _, _, _, _, _, _, _, _,
+	  _, _}) ->
+    <<"ADR">>;
+get_name({vcard_email, _, _, _, _, _, _}) ->
+    <<"EMAIL">>;
+get_name({vcard_geo, _, _}) -> <<"GEO">>;
+get_name({vcard_key, _, _}) -> <<"KEY">>;
+get_name({vcard_label, _, _, _, _, _, _, _, _}) ->
+    <<"LABEL">>;
+get_name({vcard_logo, _, _, _}) -> <<"LOGO">>;
+get_name({vcard_name, _, _, _, _, _}) -> <<"N">>;
+get_name({vcard_org, _, _}) -> <<"ORG">>;
+get_name({vcard_photo, _, _, _}) -> <<"PHOTO">>;
+get_name({vcard_sound, _, _, _}) -> <<"SOUND">>;
+get_name({vcard_tel, _, _, _, _, _, _, _, _, _, _, _, _,
+	  _, _}) ->
+    <<"TEL">>;
+get_name({vcard_temp, _, _, _, _, _, _, _, _, _, _, _,
+	  _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+	  _}) ->
+    <<"vCard">>;
+get_name({vcard_xupdate, _, _}) -> <<"x">>;
+get_name({version, _, _, _}) -> <<"query">>;
+get_name({x_conference, _, _, _, _, _}) -> <<"x">>;
+get_name({xcaptcha, _}) -> <<"captcha">>;
+get_name({xdata, _, _, _, _, _, _}) -> <<"x">>;
+get_name({xdata_field, _, _, _, _, _, _, _, _}) ->
+    <<"field">>;
+get_name({xdata_option, _, _}) -> <<"option">>;
+get_name({xevent, _, _, _, _, _}) -> <<"x">>;
+get_name({xmpp_session, _}) -> <<"session">>.
 
-get_ns({last, _, _}) -> <<"jabber:iq:last">>;
-get_ns({version, _, _, _}) -> <<"jabber:iq:version">>;
-get_ns({roster_item, _, _, _, _, _}) ->
-    <<"jabber:iq:roster">>;
-get_ns({roster_query, _, _}) -> <<"jabber:iq:roster">>;
-get_ns({rosterver_feature}) ->
-    <<"urn:xmpp:features:rosterver">>;
-get_ns({privacy_item, _, _, _, _, _, _, _, _}) ->
-    <<"jabber:iq:privacy">>;
-get_ns({privacy_list, _, _}) -> <<"jabber:iq:privacy">>;
-get_ns({privacy_query, _, _, _}) ->
-    <<"jabber:iq:privacy">>;
-get_ns({block, _}) -> <<"urn:xmpp:blocking">>;
-get_ns({unblock, _}) -> <<"urn:xmpp:blocking">>;
-get_ns({block_list, _}) -> <<"urn:xmpp:blocking">>;
-get_ns({identity, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/disco#info">>;
-get_ns({disco_info, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/disco#info">>;
-get_ns({disco_item, _, _, _}) ->
-    <<"http://jabber.org/protocol/disco#items">>;
-get_ns({disco_items, _, _, _}) ->
-    <<"http://jabber.org/protocol/disco#items">>;
-get_ns({private, _}) -> <<"jabber:iq:private">>;
-get_ns({bookmark_conference, _, _, _, _, _}) ->
-    <<"storage:bookmarks">>;
-get_ns({bookmark_url, _, _}) -> <<"storage:bookmarks">>;
-get_ns({bookmark_storage, _, _}) ->
-    <<"storage:bookmarks">>;
-get_ns({stat_error, _, _}) ->
-    <<"http://jabber.org/protocol/stats">>;
-get_ns({stat, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/stats">>;
-get_ns({stats, _, _}) ->
-    <<"http://jabber.org/protocol/stats">>;
-get_ns({iq, _, _, _, _, _, _}) -> <<"jabber:client">>;
-get_ns({message, _, _, _, _, _, _, _, _, _}) ->
-    <<"jabber:client">>;
-get_ns({presence, _, _, _, _, _, _, _, _, _}) ->
-    <<"jabber:client">>;
-get_ns({gone, _}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>;
-get_ns({redirect, _}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>;
-get_ns({error, _, _, _, _, _, _}) ->
-    <<"jabber:client">>;
+get_ns({address, _, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/address">>;
+get_ns({addresses, _}) ->
+    <<"http://jabber.org/protocol/address">>;
+get_ns({adhoc_actions, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/commands">>;
+get_ns({adhoc_command, _, _, _, _, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/commands">>;
+get_ns({adhoc_note, _, _}) ->
+    <<"http://jabber.org/protocol/commands">>;
 get_ns({bind, _, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-bind">>;
-get_ns({legacy_auth, _, _, _, _}) ->
-    <<"jabber:iq:auth">>;
-get_ns({sasl_auth, _, _}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
-get_ns({sasl_abort}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
-get_ns({sasl_challenge, _}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
-get_ns({sasl_response, _}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
-get_ns({sasl_success, _}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
-get_ns({sasl_failure, _, _}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
-get_ns({sasl_mechanisms, _}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
-get_ns({starttls, _}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-tls">>;
-get_ns({starttls_proceed}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-tls">>;
-get_ns({starttls_failure}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-tls">>;
-get_ns({compress_failure, _}) ->
-    <<"http://jabber.org/protocol/compress">>;
-get_ns({compress, _}) ->
-    <<"http://jabber.org/protocol/compress">>;
-get_ns({compressed}) ->
-    <<"http://jabber.org/protocol/compress">>;
-get_ns({compression, _}) ->
-    <<"http://jabber.org/features/compress">>;
-get_ns({stream_features, _}) ->
-    <<"http://etherx.jabber.org/streams">>;
-get_ns({p1_push}) -> <<"p1:push">>;
-get_ns({p1_rebind}) -> <<"p1:rebind">>;
-get_ns({p1_ack}) -> <<"p1:ack">>;
+get_ns({block, _}) -> <<"urn:xmpp:blocking">>;
+get_ns({block_list, _}) -> <<"urn:xmpp:blocking">>;
+get_ns({bob_data, _, _, _, _}) -> <<"urn:xmpp:bob">>;
+get_ns({bookmark_conference, _, _, _, _, _}) ->
+    <<"storage:bookmarks">>;
+get_ns({bookmark_storage, _, _}) ->
+    <<"storage:bookmarks">>;
+get_ns({bookmark_url, _, _}) -> <<"storage:bookmarks">>;
+get_ns({bytestreams, _, _, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/bytestreams">>;
 get_ns({caps, _, _, _, _}) ->
     <<"http://jabber.org/protocol/caps">>;
-get_ns({feature_register}) ->
-    <<"http://jabber.org/features/iq-register">>;
-get_ns({register, _, _, _, _, _, _, _, _, _, _, _, _, _,
-	_, _, _, _, _, _, _, _, _}) ->
-    <<"jabber:iq:register">>;
-get_ns({xmpp_session, _}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-session">>;
-get_ns({ping}) -> <<"urn:xmpp:ping">>;
-get_ns({time, _, _}) -> <<"urn:xmpp:time">>;
-get_ns({'see-other-host', _}) ->
-    <<"urn:ietf:params:xml:ns:xmpp-streams">>;
-get_ns({stream_error, _, _}) ->
-    <<"http://etherx.jabber.org/streams">>;
-get_ns({vcard_name, _, _, _, _, _}) -> <<"vcard-temp">>;
-get_ns({vcard_adr, _, _, _, _, _, _, _, _, _, _, _, _,
-	_, _}) ->
-    <<"vcard-temp">>;
-get_ns({vcard_label, _, _, _, _, _, _, _, _}) ->
-    <<"vcard-temp">>;
-get_ns({vcard_tel, _, _, _, _, _, _, _, _, _, _, _, _,
-	_, _}) ->
-    <<"vcard-temp">>;
-get_ns({vcard_email, _, _, _, _, _, _}) ->
-    <<"vcard-temp">>;
-get_ns({vcard_geo, _, _}) -> <<"vcard-temp">>;
-get_ns({vcard_logo, _, _, _}) -> <<"vcard-temp">>;
-get_ns({vcard_photo, _, _, _}) -> <<"vcard-temp">>;
-get_ns({vcard_org, _, _}) -> <<"vcard-temp">>;
-get_ns({vcard_sound, _, _, _}) -> <<"vcard-temp">>;
-get_ns({vcard_key, _, _}) -> <<"vcard-temp">>;
-get_ns({vcard_temp, _, _, _, _, _, _, _, _, _, _, _, _,
-	_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}) ->
-    <<"vcard-temp">>;
-get_ns({vcard_xupdate, _, _}) ->
-    <<"vcard-temp:x:update">>;
-get_ns({xdata_option, _, _}) -> <<"jabber:x:data">>;
-get_ns({xdata_field, _, _, _, _, _, _, _, _}) ->
-    <<"jabber:x:data">>;
-get_ns({xdata, _, _, _, _, _, _}) ->
-    <<"jabber:x:data">>;
-get_ns({pubsub_subscription, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub">>;
-get_ns({pubsub_affiliation, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub">>;
-get_ns({pubsub_item, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub">>;
-get_ns({pubsub_items, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub">>;
-get_ns({pubsub_event_item, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub#event">>;
-get_ns({pubsub_event_items, _, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub#event">>;
-get_ns({pubsub_event, _}) ->
-    <<"http://jabber.org/protocol/pubsub#event">>;
-get_ns({pubsub_subscribe, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub">>;
-get_ns({pubsub_unsubscribe, _, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub">>;
-get_ns({pubsub_publish, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub">>;
-get_ns({pubsub_options, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub">>;
-get_ns({pubsub_retract, _, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub">>;
-get_ns({pubsub, _, _, _, _, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/pubsub">>;
-get_ns({shim, _}) ->
-    <<"http://jabber.org/protocol/shim">>;
+get_ns({carbons_disable}) -> <<"urn:xmpp:carbons:2">>;
+get_ns({carbons_enable}) -> <<"urn:xmpp:carbons:2">>;
+get_ns({carbons_private}) -> <<"urn:xmpp:carbons:2">>;
+get_ns({carbons_received, _}) ->
+    <<"urn:xmpp:carbons:2">>;
+get_ns({carbons_sent, _}) -> <<"urn:xmpp:carbons:2">>;
 get_ns({chatstate, active}) ->
     <<"http://jabber.org/protocol/chatstates">>;
 get_ns({chatstate, composing}) ->
@@ -3078,117 +3419,281 @@ get_ns({chatstate, inactive}) ->
     <<"http://jabber.org/protocol/chatstates">>;
 get_ns({chatstate, paused}) ->
     <<"http://jabber.org/protocol/chatstates">>;
-get_ns({delay, _, _, _}) -> <<"urn:xmpp:delay">>;
-get_ns({streamhost, _, _, _}) ->
-    <<"http://jabber.org/protocol/bytestreams">>;
-get_ns({bytestreams, _, _, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/bytestreams">>;
-get_ns({muc_history, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/muc">>;
-get_ns({muc_decline, _, _, _}) ->
-    <<"http://jabber.org/protocol/muc#user">>;
-get_ns({muc_destroy, Xmlns, _, _, _}) -> Xmlns;
-get_ns({muc_invite, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/muc#user">>;
-get_ns({muc_user, _, _, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/muc#user">>;
-get_ns({muc_owner, _, _, _}) ->
-    <<"http://jabber.org/protocol/muc#owner">>;
-get_ns({muc_admin, _}) ->
-    <<"http://jabber.org/protocol/muc#admin">>;
-get_ns({muc, _, _}) ->
-    <<"http://jabber.org/protocol/muc">>;
-get_ns({muc_unique, _}) ->
-    <<"http://jabber.org/protocol/muc#unique">>;
-get_ns({x_conference, _, _, _, _, _}) ->
-    <<"jabber:x:conference">>;
-get_ns({muc_subscriptions, _}) ->
-    <<"urn:xmpp:mucsub:0">>;
-get_ns({muc_subscribe, _, _}) ->
-    <<"urn:xmpp:mucsub:0">>;
-get_ns({muc_unsubscribe}) -> <<"urn:xmpp:mucsub:0">>;
-get_ns({rsm_first, _, _}) ->
-    <<"http://jabber.org/protocol/rsm">>;
-get_ns({rsm_set, _, _, _, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/rsm">>;
-get_ns({mam_query, Xmlns, _, _, _, _, _, _, _}) ->
-    Xmlns;
-get_ns({mam_archived, _, _}) -> <<"urn:xmpp:mam:tmp">>;
-get_ns({mam_result, Xmlns, _, _, _}) -> Xmlns;
-get_ns({mam_prefs, Xmlns, _, _, _}) -> Xmlns;
-get_ns({mam_fin, _, _, _, _}) -> <<"urn:xmpp:mam:0">>;
-get_ns({forwarded, _, _}) -> <<"urn:xmpp:forward:0">>;
-get_ns({carbons_disable}) -> <<"urn:xmpp:carbons:2">>;
-get_ns({carbons_enable}) -> <<"urn:xmpp:carbons:2">>;
-get_ns({carbons_private}) -> <<"urn:xmpp:carbons:2">>;
-get_ns({carbons_received, _}) ->
-    <<"urn:xmpp:carbons:2">>;
-get_ns({carbons_sent, _}) -> <<"urn:xmpp:carbons:2">>;
-get_ns({feature_csi, Xmlns}) -> Xmlns;
+get_ns({client_id, _}) -> <<"urn:xmpp:sid:0">>;
+get_ns({compress, _}) ->
+    <<"http://jabber.org/protocol/compress">>;
+get_ns({compress_failure, _}) ->
+    <<"http://jabber.org/protocol/compress">>;
+get_ns({compressed}) ->
+    <<"http://jabber.org/protocol/compress">>;
+get_ns({compression, _}) ->
+    <<"http://jabber.org/features/compress">>;
 get_ns({csi, active}) -> <<"urn:xmpp:csi:0">>;
 get_ns({csi, inactive}) -> <<"urn:xmpp:csi:0">>;
-get_ns({feature_sm, Xmlns}) -> Xmlns;
-get_ns({sm_enable, _, _, Xmlns}) -> Xmlns;
-get_ns({sm_enabled, _, _, _, _, Xmlns}) -> Xmlns;
-get_ns({sm_resume, _, _, Xmlns}) -> Xmlns;
-get_ns({sm_resumed, _, _, Xmlns}) -> Xmlns;
-get_ns({sm_r, Xmlns}) -> Xmlns;
-get_ns({sm_a, _, Xmlns}) -> Xmlns;
-get_ns({sm_failed, _, _, Xmlns}) -> Xmlns;
-get_ns({offline_item, _, _}) ->
-    <<"http://jabber.org/protocol/offline">>;
-get_ns({offline, _, _, _}) ->
-    <<"http://jabber.org/protocol/offline">>;
-get_ns({mix_join, _, _}) -> <<"urn:xmpp:mix:0">>;
-get_ns({mix_leave}) -> <<"urn:xmpp:mix:0">>;
-get_ns({mix_participant, _, _}) -> <<"urn:xmpp:mix:0">>;
-get_ns({hint, 'no-copy'}) -> <<"urn:xmpp:hints">>;
-get_ns({hint, 'no-store'}) -> <<"urn:xmpp:hints">>;
-get_ns({hint, 'no-storage'}) -> <<"urn:xmpp:hints">>;
-get_ns({hint, store}) -> <<"urn:xmpp:hints">>;
-get_ns({hint, 'no-permanent-store'}) ->
-    <<"urn:xmpp:hints">>;
-get_ns({hint, 'no-permanent-storage'}) ->
-    <<"urn:xmpp:hints">>;
-get_ns({search_item, _, _, _, _, _}) ->
-    <<"jabber:iq:search">>;
-get_ns({search, _, _, _, _, _, _, _}) ->
-    <<"jabber:iq:search">>;
-get_ns({xevent, _, _, _, _, _}) -> <<"jabber:x:event">>;
-get_ns({expire, _, _}) -> <<"jabber:x:expire">>;
-get_ns({nick, _}) ->
-    <<"http://jabber.org/protocol/nick">>;
-get_ns({address, _, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/address">>;
-get_ns({addresses, _}) ->
-    <<"http://jabber.org/protocol/address">>;
-get_ns({stanza_id, _, _}) -> <<"urn:xmpp:sid:0">>;
-get_ns({client_id, _}) -> <<"urn:xmpp:sid:0">>;
-get_ns({adhoc_actions, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/commands">>;
-get_ns({adhoc_note, _, _}) ->
-    <<"http://jabber.org/protocol/commands">>;
-get_ns({adhoc_command, _, _, _, _, _, _, _, _}) ->
-    <<"http://jabber.org/protocol/commands">>;
 get_ns({db_result, _, _, _, _, _}) ->
     <<"jabber:client">>;
 get_ns({db_verify, _, _, _, _, _, _}) ->
     <<"jabber:client">>;
+get_ns({delay, _, _, _}) -> <<"urn:xmpp:delay">>;
+get_ns({disco_info, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/disco#info">>;
+get_ns({disco_item, _, _, _}) ->
+    <<"http://jabber.org/protocol/disco#items">>;
+get_ns({disco_items, _, _, _}) ->
+    <<"http://jabber.org/protocol/disco#items">>;
+get_ns({error, _, _, _, _, _, _}) ->
+    <<"jabber:client">>;
+get_ns({expire, _, _}) -> <<"jabber:x:expire">>;
+get_ns({feature_csi, Xmlns}) -> Xmlns;
+get_ns({feature_register}) ->
+    <<"http://jabber.org/features/iq-register">>;
+get_ns({feature_sm, Xmlns}) -> Xmlns;
+get_ns({forwarded, _, _}) -> <<"urn:xmpp:forward:0">>;
+get_ns({gone, _}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>;
 get_ns({handshake, _}) -> <<"jabber:client">>;
-get_ns({stream_start, _, _, _, _, Xmlns, _, _, _}) ->
+get_ns({hint, 'no-copy'}) -> <<"urn:xmpp:hints">>;
+get_ns({hint, 'no-permanent-storage'}) ->
+    <<"urn:xmpp:hints">>;
+get_ns({hint, 'no-permanent-store'}) ->
+    <<"urn:xmpp:hints">>;
+get_ns({hint, 'no-storage'}) -> <<"urn:xmpp:hints">>;
+get_ns({hint, 'no-store'}) -> <<"urn:xmpp:hints">>;
+get_ns({hint, store}) -> <<"urn:xmpp:hints">>;
+get_ns({identity, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/disco#info">>;
+get_ns({iq, _, _, _, _, _, _}) -> <<"jabber:client">>;
+get_ns({last, _, _}) -> <<"jabber:iq:last">>;
+get_ns({legacy_auth, _, _, _, _}) ->
+    <<"jabber:iq:auth">>;
+get_ns({mam_archived, _, _}) -> <<"urn:xmpp:mam:tmp">>;
+get_ns({mam_fin, _, _, _, _}) -> <<"urn:xmpp:mam:0">>;
+get_ns({mam_prefs, Xmlns, _, _, _}) -> Xmlns;
+get_ns({mam_query, Xmlns, _, _, _, _, _, _, _}) ->
     Xmlns;
-get_ns({bob_data, _, _, _, _}) -> <<"urn:xmpp:bob">>;
-get_ns({xcaptcha, _}) -> <<"urn:xmpp:captcha">>;
-get_ns({media_uri, _, _}) ->
-    <<"urn:xmpp:media-element">>;
+get_ns({mam_result, Xmlns, _, _, _}) -> Xmlns;
 get_ns({media, _, _, _}) ->
     <<"urn:xmpp:media-element">>;
+get_ns({media_uri, _, _}) ->
+    <<"urn:xmpp:media-element">>;
+get_ns({message, _, _, _, _, _, _, _, _, _}) ->
+    <<"jabber:client">>;
+get_ns({mix_join, _, _}) -> <<"urn:xmpp:mix:0">>;
+get_ns({mix_leave}) -> <<"urn:xmpp:mix:0">>;
+get_ns({mix_participant, _, _}) -> <<"urn:xmpp:mix:0">>;
+get_ns({muc, _, _}) ->
+    <<"http://jabber.org/protocol/muc">>;
+get_ns({muc_admin, _}) ->
+    <<"http://jabber.org/protocol/muc#admin">>;
+get_ns({muc_decline, _, _, _}) ->
+    <<"http://jabber.org/protocol/muc#user">>;
+get_ns({muc_destroy, Xmlns, _, _, _}) -> Xmlns;
+get_ns({muc_history, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/muc">>;
+get_ns({muc_invite, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/muc#user">>;
+get_ns({muc_owner, _, _, _}) ->
+    <<"http://jabber.org/protocol/muc#owner">>;
+get_ns({muc_subscribe, _, _}) ->
+    <<"urn:xmpp:mucsub:0">>;
+get_ns({muc_subscriptions, _}) ->
+    <<"urn:xmpp:mucsub:0">>;
+get_ns({muc_unique, _}) ->
+    <<"http://jabber.org/protocol/muc#unique">>;
+get_ns({muc_unsubscribe}) -> <<"urn:xmpp:mucsub:0">>;
+get_ns({muc_user, _, _, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/muc#user">>;
+get_ns({nick, _}) ->
+    <<"http://jabber.org/protocol/nick">>;
+get_ns({offline, _, _, _}) ->
+    <<"http://jabber.org/protocol/offline">>;
+get_ns({offline_item, _, _}) ->
+    <<"http://jabber.org/protocol/offline">>;
 get_ns({oob_x, _, _, _}) -> <<"jabber:x:oob">>;
+get_ns({p1_ack}) -> <<"p1:ack">>;
+get_ns({p1_push}) -> <<"p1:push">>;
+get_ns({p1_rebind}) -> <<"p1:rebind">>;
+get_ns({ping}) -> <<"urn:xmpp:ping">>;
+get_ns({presence, _, _, _, _, _, _, _, _, _}) ->
+    <<"jabber:client">>;
+get_ns({privacy_item, _, _, _, _, _, _, _, _}) ->
+    <<"jabber:iq:privacy">>;
+get_ns({privacy_list, _, _}) -> <<"jabber:iq:privacy">>;
+get_ns({privacy_query, _, _, _}) ->
+    <<"jabber:iq:privacy">>;
+get_ns({private, _}) -> <<"jabber:iq:private">>;
+get_ns({ps_affiliation, Xmlns, _, _, _}) -> Xmlns;
+get_ns({ps_error, 'closed-node', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'configuration-required', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'invalid-jid', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'invalid-options', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'invalid-payload', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'invalid-subid', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'item-forbidden', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'item-required', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'jid-required', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'max-items-exceeded', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'max-nodes-exceeded', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'nodeid-required', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'not-in-roster-group', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'not-subscribed', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'payload-required', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'payload-too-big', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'pending-subscription', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'presence-subscription-required',
+	_}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'subid-required', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'too-many-subscriptions', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, unsupported, _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_error, 'unsupported-access-model', _}) ->
+    <<"http://jabber.org/protocol/pubsub#errors">>;
+get_ns({ps_event, _, _, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/pubsub#event">>;
+get_ns({ps_item, Xmlns, _, _, _, _}) -> Xmlns;
+get_ns({ps_items, Xmlns, _, _, _, _, _}) -> Xmlns;
+get_ns({ps_options, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/pubsub">>;
+get_ns({ps_publish, _, _}) ->
+    <<"http://jabber.org/protocol/pubsub">>;
+get_ns({ps_retract, _, _, _}) ->
+    <<"http://jabber.org/protocol/pubsub">>;
+get_ns({ps_subscribe, _, _}) ->
+    <<"http://jabber.org/protocol/pubsub">>;
+get_ns({ps_subscription, Xmlns, _, _, _, _, _}) ->
+    Xmlns;
+get_ns({ps_unsubscribe, _, _, _}) ->
+    <<"http://jabber.org/protocol/pubsub">>;
+get_ns({pubsub, _, _, _, _, _, _, _, _, _, _, _, _, _,
+	_, _, _}) ->
+    <<"http://jabber.org/protocol/pubsub">>;
+get_ns({pubsub_owner, _, _, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/pubsub#owner">>;
+get_ns({redirect, _}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>;
+get_ns({register, _, _, _, _, _, _, _, _, _, _, _, _, _,
+	_, _, _, _, _, _, _, _, _}) ->
+    <<"jabber:iq:register">>;
+get_ns({roster_item, _, _, _, _, _}) ->
+    <<"jabber:iq:roster">>;
+get_ns({roster_query, _, _}) -> <<"jabber:iq:roster">>;
+get_ns({rosterver_feature}) ->
+    <<"urn:xmpp:features:rosterver">>;
+get_ns({rsm_first, _, _}) ->
+    <<"http://jabber.org/protocol/rsm">>;
+get_ns({rsm_set, _, _, _, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/rsm">>;
+get_ns({sasl_abort}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
+get_ns({sasl_auth, _, _}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
+get_ns({sasl_challenge, _}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
+get_ns({sasl_failure, _, _}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
+get_ns({sasl_mechanisms, _}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
+get_ns({sasl_response, _}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
+get_ns({sasl_success, _}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-sasl">>;
+get_ns({search, _, _, _, _, _, _, _}) ->
+    <<"jabber:iq:search">>;
+get_ns({search_item, _, _, _, _, _}) ->
+    <<"jabber:iq:search">>;
+get_ns({'see-other-host', _}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-streams">>;
+get_ns({shim, _}) ->
+    <<"http://jabber.org/protocol/shim">>;
 get_ns({sic, _, _, Xmlns}) -> Xmlns;
+get_ns({sm_a, _, Xmlns}) -> Xmlns;
+get_ns({sm_enable, _, _, Xmlns}) -> Xmlns;
+get_ns({sm_enabled, _, _, _, _, Xmlns}) -> Xmlns;
+get_ns({sm_failed, _, _, Xmlns}) -> Xmlns;
+get_ns({sm_r, Xmlns}) -> Xmlns;
+get_ns({sm_resume, _, _, Xmlns}) -> Xmlns;
+get_ns({sm_resumed, _, _, Xmlns}) -> Xmlns;
+get_ns({stanza_id, _, _}) -> <<"urn:xmpp:sid:0">>;
+get_ns({starttls, _}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-tls">>;
+get_ns({starttls_failure}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-tls">>;
+get_ns({starttls_proceed}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-tls">>;
+get_ns({stat, _, _, _, _}) ->
+    <<"http://jabber.org/protocol/stats">>;
+get_ns({stat_error, _, _}) ->
+    <<"http://jabber.org/protocol/stats">>;
+get_ns({stats, _, _}) ->
+    <<"http://jabber.org/protocol/stats">>;
+get_ns({stream_error, _, _}) ->
+    <<"http://etherx.jabber.org/streams">>;
+get_ns({stream_features, _}) ->
+    <<"http://etherx.jabber.org/streams">>;
+get_ns({stream_start, _, _, _, _, Xmlns, _, _, _}) ->
+    Xmlns;
+get_ns({streamhost, _, _, _}) ->
+    <<"http://jabber.org/protocol/bytestreams">>;
+get_ns({thumbnail, _, _, _, _}) ->
+    <<"urn:xmpp:thumbs:1">>;
+get_ns({time, _, _}) -> <<"urn:xmpp:time">>;
+get_ns({unblock, _}) -> <<"urn:xmpp:blocking">>;
 get_ns({upload_request, _, _, _, Xmlns}) -> Xmlns;
 get_ns({upload_slot, _, _, Xmlns}) -> Xmlns;
-get_ns({thumbnail, _, _, _, _}) ->
-    <<"urn:xmpp:thumbs:1">>.
+get_ns({vcard_adr, _, _, _, _, _, _, _, _, _, _, _, _,
+	_, _}) ->
+    <<"vcard-temp">>;
+get_ns({vcard_email, _, _, _, _, _, _}) ->
+    <<"vcard-temp">>;
+get_ns({vcard_geo, _, _}) -> <<"vcard-temp">>;
+get_ns({vcard_key, _, _}) -> <<"vcard-temp">>;
+get_ns({vcard_label, _, _, _, _, _, _, _, _}) ->
+    <<"vcard-temp">>;
+get_ns({vcard_logo, _, _, _}) -> <<"vcard-temp">>;
+get_ns({vcard_name, _, _, _, _, _}) -> <<"vcard-temp">>;
+get_ns({vcard_org, _, _}) -> <<"vcard-temp">>;
+get_ns({vcard_photo, _, _, _}) -> <<"vcard-temp">>;
+get_ns({vcard_sound, _, _, _}) -> <<"vcard-temp">>;
+get_ns({vcard_tel, _, _, _, _, _, _, _, _, _, _, _, _,
+	_, _}) ->
+    <<"vcard-temp">>;
+get_ns({vcard_temp, _, _, _, _, _, _, _, _, _, _, _, _,
+	_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _}) ->
+    <<"vcard-temp">>;
+get_ns({vcard_xupdate, _, _}) ->
+    <<"vcard-temp:x:update">>;
+get_ns({version, _, _, _}) -> <<"jabber:iq:version">>;
+get_ns({x_conference, _, _, _, _, _}) ->
+    <<"jabber:x:conference">>;
+get_ns({xcaptcha, _}) -> <<"urn:xmpp:captcha">>;
+get_ns({xdata, _, _, _, _, _, _}) ->
+    <<"jabber:x:data">>;
+get_ns({xdata_field, _, _, _, _, _, _, _, _}) ->
+    <<"jabber:x:data">>;
+get_ns({xdata_option, _, _}) -> <<"jabber:x:data">>;
+get_ns({xevent, _, _, _, _, _}) -> <<"jabber:x:event">>;
+get_ns({xmpp_session, _}) ->
+    <<"urn:ietf:params:xml:ns:xmpp-session">>.
 
 dec_int(Val) -> dec_int(Val, infinity, infinity).
 
@@ -3337,22 +3842,27 @@ pp(xdata_field, 8) ->
      sub_els];
 pp(xdata, 6) ->
     [type, instructions, title, reported, items, fields];
-pp(pubsub_subscription, 4) -> [jid, node, subid, type];
-pp(pubsub_affiliation, 2) -> [node, type];
-pp(pubsub_item, 2) -> [id, xml_els];
-pp(pubsub_items, 4) -> [node, max_items, subid, items];
-pp(pubsub_event_item, 4) ->
-    [id, node, publisher, xml_els];
-pp(pubsub_event_items, 3) -> [node, retract, items];
-pp(pubsub_event, 1) -> [items];
-pp(pubsub_subscribe, 2) -> [node, jid];
-pp(pubsub_unsubscribe, 3) -> [node, jid, subid];
-pp(pubsub_publish, 2) -> [node, items];
-pp(pubsub_options, 4) -> [node, jid, subid, xdata];
-pp(pubsub_retract, 3) -> [node, notify, items];
-pp(pubsub, 8) ->
-    [subscriptions, affiliations, publish, subscribe,
-     unsubscribe, options, items, retract];
+pp(ps_subscription, 6) ->
+    [xmlns, jid, type, node, subid, expiry];
+pp(ps_item, 5) -> [xmlns, id, xml_els, node, publisher];
+pp(ps_items, 6) ->
+    [xmlns, node, items, max_items, subid, retract];
+pp(ps_event, 6) ->
+    [items, purge, subscription, delete, create,
+     configuration];
+pp(ps_subscribe, 2) -> [node, jid];
+pp(ps_unsubscribe, 3) -> [node, jid, subid];
+pp(ps_publish, 2) -> [node, items];
+pp(ps_options, 4) -> [node, jid, subid, xdata];
+pp(ps_retract, 3) -> [node, notify, items];
+pp(pubsub, 16) ->
+    [subscriptions, subscription, affiliations, publish,
+     publish_options, subscribe, unsubscribe, options, items,
+     retract, create, configure, default, delete, purge,
+     rsm];
+pp(pubsub_owner, 6) ->
+    [affiliations, configure, default, delete, purge,
+     subscriptions];
 pp(shim, 1) -> [headers];
 pp(delay, 3) -> [stamp, from, desc];
 pp(streamhost, 3) -> [jid, host, port];
@@ -12187,236 +12697,1243 @@ encode_shim_header_cdata(<<>>, _acc) -> _acc;
 encode_shim_header_cdata(_val, _acc) ->
     [{xmlcdata, _val} | _acc].
 
+decode_pubsub_error_unsupported_access_model(__TopXMLNS,
+					     __IgnoreEls,
+					     {xmlel,
+					      <<"unsupported-access-model">>,
+					      _attrs, _els}) ->
+    {ps_error, 'unsupported-access-model', undefined}.
+
+encode_pubsub_error_unsupported_access_model({ps_error,
+					      'unsupported-access-model', _},
+					     _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"unsupported-access-model">>, _attrs, _els}.
+
+decode_pubsub_error_unsupported(__TopXMLNS, __IgnoreEls,
+				{xmlel, <<"unsupported">>, _attrs, _els}) ->
+    Feature =
+	decode_pubsub_error_unsupported_attrs(__TopXMLNS,
+					      _attrs, undefined),
+    {ps_error, unsupported, Feature}.
+
+decode_pubsub_error_unsupported_attrs(__TopXMLNS,
+				      [{<<"feature">>, _val} | _attrs],
+				      _Feature) ->
+    decode_pubsub_error_unsupported_attrs(__TopXMLNS,
+					  _attrs, _val);
+decode_pubsub_error_unsupported_attrs(__TopXMLNS,
+				      [_ | _attrs], Feature) ->
+    decode_pubsub_error_unsupported_attrs(__TopXMLNS,
+					  _attrs, Feature);
+decode_pubsub_error_unsupported_attrs(__TopXMLNS, [],
+				      Feature) ->
+    decode_pubsub_error_unsupported_attr_feature(__TopXMLNS,
+						 Feature).
+
+encode_pubsub_error_unsupported({ps_error, unsupported,
+				 Feature},
+				_xmlns_attrs) ->
+    _els = [],
+    _attrs =
+	encode_pubsub_error_unsupported_attr_feature(Feature,
+						     _xmlns_attrs),
+    {xmlel, <<"unsupported">>, _attrs, _els}.
+
+decode_pubsub_error_unsupported_attr_feature(__TopXMLNS,
+					     undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"feature">>, <<"unsupported">>,
+		   __TopXMLNS}});
+decode_pubsub_error_unsupported_attr_feature(__TopXMLNS,
+					     _val) ->
+    case catch dec_enum(_val,
+			['access-authorize', 'access-open', 'access-presence',
+			 'access-roster', 'access-whitelist', 'auto-create',
+			 'auto-subscribe', collections, 'config-node',
+			 'create-and-configure', 'create-nodes', 'delete-items',
+			 'delete-nodes', 'filtered-notifications',
+			 'get-pending', 'instant-nodes', 'item-ids',
+			 'last-published', 'leased-subscription',
+			 'manage-subscriptions', 'member-affiliation',
+			 'meta-data', 'modify-affiliations', 'multi-collection',
+			 'multi-subscribe', 'outcast-affiliation',
+			 'persistent-items', 'presence-notifications',
+			 'presence-subscribe', publish, 'publish-options',
+			 'publish-only-affiliation', 'publisher-affiliation',
+			 'purge-nodes', 'retract-items',
+			 'retrieve-affiliations', 'retrieve-default',
+			 'retrieve-items', 'retrieve-subscriptions', subscribe,
+			 'subscription-options', 'subscription-notifications'])
+	of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"feature">>, <<"unsupported">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_pubsub_error_unsupported_attr_feature(_val,
+					     _acc) ->
+    [{<<"feature">>, enc_enum(_val)} | _acc].
+
+decode_pubsub_error_too_many_subscriptions(__TopXMLNS,
+					   __IgnoreEls,
+					   {xmlel, <<"too-many-subscriptions">>,
+					    _attrs, _els}) ->
+    {ps_error, 'too-many-subscriptions', undefined}.
+
+encode_pubsub_error_too_many_subscriptions({ps_error,
+					    'too-many-subscriptions', _},
+					   _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"too-many-subscriptions">>, _attrs, _els}.
+
+decode_pubsub_error_subid_required(__TopXMLNS,
+				   __IgnoreEls,
+				   {xmlel, <<"subid-required">>, _attrs,
+				    _els}) ->
+    {ps_error, 'subid-required', undefined}.
+
+encode_pubsub_error_subid_required({ps_error,
+				    'subid-required', _},
+				   _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"subid-required">>, _attrs, _els}.
+
+decode_pubsub_error_presence_subscription_required(__TopXMLNS,
+						   __IgnoreEls,
+						   {xmlel,
+						    <<"presence-subscription-required">>,
+						    _attrs, _els}) ->
+    {ps_error, 'presence-subscription-required', undefined}.
+
+encode_pubsub_error_presence_subscription_required({ps_error,
+						    'presence-subscription-required',
+						    _},
+						   _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"presence-subscription-required">>, _attrs,
+     _els}.
+
+decode_pubsub_error_pending_subscription(__TopXMLNS,
+					 __IgnoreEls,
+					 {xmlel, <<"pending-subscription">>,
+					  _attrs, _els}) ->
+    {ps_error, 'pending-subscription', undefined}.
+
+encode_pubsub_error_pending_subscription({ps_error,
+					  'pending-subscription', _},
+					 _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"pending-subscription">>, _attrs, _els}.
+
+decode_pubsub_error_payload_required(__TopXMLNS,
+				     __IgnoreEls,
+				     {xmlel, <<"payload-required">>, _attrs,
+				      _els}) ->
+    {ps_error, 'payload-required', undefined}.
+
+encode_pubsub_error_payload_required({ps_error,
+				      'payload-required', _},
+				     _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"payload-required">>, _attrs, _els}.
+
+decode_pubsub_error_payload_too_big(__TopXMLNS,
+				    __IgnoreEls,
+				    {xmlel, <<"payload-too-big">>, _attrs,
+				     _els}) ->
+    {ps_error, 'payload-too-big', undefined}.
+
+encode_pubsub_error_payload_too_big({ps_error,
+				     'payload-too-big', _},
+				    _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"payload-too-big">>, _attrs, _els}.
+
+decode_pubsub_error_not_subscribed(__TopXMLNS,
+				   __IgnoreEls,
+				   {xmlel, <<"not-subscribed">>, _attrs,
+				    _els}) ->
+    {ps_error, 'not-subscribed', undefined}.
+
+encode_pubsub_error_not_subscribed({ps_error,
+				    'not-subscribed', _},
+				   _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"not-subscribed">>, _attrs, _els}.
+
+decode_pubsub_error_not_in_roster_group(__TopXMLNS,
+					__IgnoreEls,
+					{xmlel, <<"not-in-roster-group">>,
+					 _attrs, _els}) ->
+    {ps_error, 'not-in-roster-group', undefined}.
+
+encode_pubsub_error_not_in_roster_group({ps_error,
+					 'not-in-roster-group', _},
+					_xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"not-in-roster-group">>, _attrs, _els}.
+
+decode_pubsub_error_nodeid_required(__TopXMLNS,
+				    __IgnoreEls,
+				    {xmlel, <<"nodeid-required">>, _attrs,
+				     _els}) ->
+    {ps_error, 'nodeid-required', undefined}.
+
+encode_pubsub_error_nodeid_required({ps_error,
+				     'nodeid-required', _},
+				    _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"nodeid-required">>, _attrs, _els}.
+
+decode_pubsub_error_max_nodes_exceeded(__TopXMLNS,
+				       __IgnoreEls,
+				       {xmlel, <<"max-nodes-exceeded">>, _attrs,
+					_els}) ->
+    {ps_error, 'max-nodes-exceeded', undefined}.
+
+encode_pubsub_error_max_nodes_exceeded({ps_error,
+					'max-nodes-exceeded', _},
+				       _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"max-nodes-exceeded">>, _attrs, _els}.
+
+decode_pubsub_error_max_items_exceeded(__TopXMLNS,
+				       __IgnoreEls,
+				       {xmlel, <<"max-items-exceeded">>, _attrs,
+					_els}) ->
+    {ps_error, 'max-items-exceeded', undefined}.
+
+encode_pubsub_error_max_items_exceeded({ps_error,
+					'max-items-exceeded', _},
+				       _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"max-items-exceeded">>, _attrs, _els}.
+
+decode_pubsub_error_jid_required(__TopXMLNS,
+				 __IgnoreEls,
+				 {xmlel, <<"jid-required">>, _attrs, _els}) ->
+    {ps_error, 'jid-required', undefined}.
+
+encode_pubsub_error_jid_required({ps_error,
+				  'jid-required', _},
+				 _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"jid-required">>, _attrs, _els}.
+
+decode_pubsub_error_item_required(__TopXMLNS,
+				  __IgnoreEls,
+				  {xmlel, <<"item-required">>, _attrs, _els}) ->
+    {ps_error, 'item-required', undefined}.
+
+encode_pubsub_error_item_required({ps_error,
+				   'item-required', _},
+				  _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"item-required">>, _attrs, _els}.
+
+decode_pubsub_error_item_forbidden(__TopXMLNS,
+				   __IgnoreEls,
+				   {xmlel, <<"item-forbidden">>, _attrs,
+				    _els}) ->
+    {ps_error, 'item-forbidden', undefined}.
+
+encode_pubsub_error_item_forbidden({ps_error,
+				    'item-forbidden', _},
+				   _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"item-forbidden">>, _attrs, _els}.
+
+decode_pubsub_error_invalid_subid(__TopXMLNS,
+				  __IgnoreEls,
+				  {xmlel, <<"invalid-subid">>, _attrs, _els}) ->
+    {ps_error, 'invalid-subid', undefined}.
+
+encode_pubsub_error_invalid_subid({ps_error,
+				   'invalid-subid', _},
+				  _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"invalid-subid">>, _attrs, _els}.
+
+decode_pubsub_error_invalid_payload(__TopXMLNS,
+				    __IgnoreEls,
+				    {xmlel, <<"invalid-payload">>, _attrs,
+				     _els}) ->
+    {ps_error, 'invalid-payload', undefined}.
+
+encode_pubsub_error_invalid_payload({ps_error,
+				     'invalid-payload', _},
+				    _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"invalid-payload">>, _attrs, _els}.
+
+decode_pubsub_error_invalid_options(__TopXMLNS,
+				    __IgnoreEls,
+				    {xmlel, <<"invalid-options">>, _attrs,
+				     _els}) ->
+    {ps_error, 'invalid-options', undefined}.
+
+encode_pubsub_error_invalid_options({ps_error,
+				     'invalid-options', _},
+				    _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"invalid-options">>, _attrs, _els}.
+
+decode_pubsub_error_invalid_jid(__TopXMLNS, __IgnoreEls,
+				{xmlel, <<"invalid-jid">>, _attrs, _els}) ->
+    {ps_error, 'invalid-jid', undefined}.
+
+encode_pubsub_error_invalid_jid({ps_error,
+				 'invalid-jid', _},
+				_xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"invalid-jid">>, _attrs, _els}.
+
+decode_pubsub_error_configuration_required(__TopXMLNS,
+					   __IgnoreEls,
+					   {xmlel, <<"configuration-required">>,
+					    _attrs, _els}) ->
+    {ps_error, 'configuration-required', undefined}.
+
+encode_pubsub_error_configuration_required({ps_error,
+					    'configuration-required', _},
+					   _xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"configuration-required">>, _attrs, _els}.
+
+decode_pubsub_error_closed_node(__TopXMLNS, __IgnoreEls,
+				{xmlel, <<"closed-node">>, _attrs, _els}) ->
+    {ps_error, 'closed-node', undefined}.
+
+encode_pubsub_error_closed_node({ps_error,
+				 'closed-node', _},
+				_xmlns_attrs) ->
+    _els = [],
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"closed-node">>, _attrs, _els}.
+
+decode_pubsub_owner(__TopXMLNS, __IgnoreEls,
+		    {xmlel, <<"pubsub">>, _attrs, _els}) ->
+    {Subscriptions, Affiliations, Default, Purge, Delete,
+     Configure} =
+	decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				undefined, undefined, undefined, undefined,
+				undefined, undefined),
+    {pubsub_owner, Affiliations, Configure, Default, Delete,
+     Purge, Subscriptions}.
+
+decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, [],
+			Subscriptions, Affiliations, Default, Purge, Delete,
+			Configure) ->
+    {Subscriptions, Affiliations, Default, Purge, Delete,
+     Configure};
+decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"affiliations">>, _attrs, _} = _el | _els],
+			Subscriptions, Affiliations, Default, Purge, Delete,
+			Configure) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions,
+				  decode_pubsub_owner_affiliations(__TopXMLNS,
+								   __IgnoreEls,
+								   _el),
+				  Default, Purge, Delete, Configure);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions,
+				  decode_pubsub_owner_affiliations(<<"http://jabber.org/protocol/pubsub#owner">>,
+								   __IgnoreEls,
+								   _el),
+				  Default, Purge, Delete, Configure);
+      _ ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  Delete, Configure)
+    end;
+decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"configure">>, _attrs, _} = _el | _els],
+			Subscriptions, Affiliations, Default, Purge, Delete,
+			Configure) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  Delete,
+				  decode_pubsub_configure(__TopXMLNS,
+							  __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  Delete,
+				  decode_pubsub_configure(<<"http://jabber.org/protocol/pubsub">>,
+							  __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  Delete,
+				  decode_pubsub_configure(<<"http://jabber.org/protocol/pubsub#owner">>,
+							  __IgnoreEls, _el));
+      _ ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  Delete, Configure)
+    end;
+decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"default">>, _attrs, _} = _el | _els],
+			Subscriptions, Affiliations, Default, Purge, Delete,
+			Configure) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations,
+				  decode_pubsub_default(__TopXMLNS, __IgnoreEls,
+							_el),
+				  Purge, Delete, Configure);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations,
+				  decode_pubsub_default(<<"http://jabber.org/protocol/pubsub">>,
+							__IgnoreEls, _el),
+				  Purge, Delete, Configure);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations,
+				  decode_pubsub_default(<<"http://jabber.org/protocol/pubsub#owner">>,
+							__IgnoreEls, _el),
+				  Purge, Delete, Configure);
+      _ ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  Delete, Configure)
+    end;
+decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"delete">>, _attrs, _} = _el | _els],
+			Subscriptions, Affiliations, Default, Purge, Delete,
+			Configure) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  decode_pubsub_delete(__TopXMLNS, __IgnoreEls,
+						       _el),
+				  Configure);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub">>,
+						       __IgnoreEls, _el),
+				  Configure);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#owner">>,
+						       __IgnoreEls, _el),
+				  Configure);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#event">>,
+						       __IgnoreEls, _el),
+				  Configure);
+      _ ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  Delete, Configure)
+    end;
+decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"purge">>, _attrs, _} = _el | _els],
+			Subscriptions, Affiliations, Default, Purge, Delete,
+			Configure) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default,
+				  decode_pubsub_purge(__TopXMLNS, __IgnoreEls,
+						      _el),
+				  Delete, Configure);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default,
+				  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub">>,
+						      __IgnoreEls, _el),
+				  Delete, Configure);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default,
+				  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#owner">>,
+						      __IgnoreEls, _el),
+				  Delete, Configure);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default,
+				  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#event">>,
+						      __IgnoreEls, _el),
+				  Delete, Configure);
+      _ ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  Delete, Configure)
+    end;
+decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"subscriptions">>, _attrs, _} = _el | _els],
+			Subscriptions, Affiliations, Default, Purge, Delete,
+			Configure) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  decode_pubsub_subscriptions(__TopXMLNS,
+							      __IgnoreEls, _el),
+				  Affiliations, Default, Purge, Delete,
+				  Configure);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  decode_pubsub_subscriptions(<<"http://jabber.org/protocol/pubsub">>,
+							      __IgnoreEls, _el),
+				  Affiliations, Default, Purge, Delete,
+				  Configure);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  decode_pubsub_subscriptions(<<"http://jabber.org/protocol/pubsub#owner">>,
+							      __IgnoreEls, _el),
+				  Affiliations, Default, Purge, Delete,
+				  Configure);
+      _ ->
+	  decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+				  Subscriptions, Affiliations, Default, Purge,
+				  Delete, Configure)
+    end;
+decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls,
+			[_ | _els], Subscriptions, Affiliations, Default, Purge,
+			Delete, Configure) ->
+    decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls, _els,
+			    Subscriptions, Affiliations, Default, Purge, Delete,
+			    Configure).
+
+encode_pubsub_owner({pubsub_owner, Affiliations,
+		     Configure, Default, Delete, Purge, Subscriptions},
+		    _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_pubsub_owner_$subscriptions'(Subscriptions,
+							   'encode_pubsub_owner_$affiliations'(Affiliations,
+											       'encode_pubsub_owner_$default'(Default,
+															      'encode_pubsub_owner_$purge'(Purge,
+																			   'encode_pubsub_owner_$delete'(Delete,
+																							 'encode_pubsub_owner_$configure'(Configure,
+																											  []))))))),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"pubsub">>, _attrs, _els}.
+
+'encode_pubsub_owner_$subscriptions'(undefined, _acc) ->
+    _acc;
+'encode_pubsub_owner_$subscriptions'(Subscriptions,
+				     _acc) ->
+    [encode_pubsub_subscriptions(Subscriptions, []) | _acc].
+
+'encode_pubsub_owner_$affiliations'(undefined, _acc) ->
+    _acc;
+'encode_pubsub_owner_$affiliations'(Affiliations,
+				    _acc) ->
+    [encode_pubsub_owner_affiliations(Affiliations, [])
+     | _acc].
+
+'encode_pubsub_owner_$default'(undefined, _acc) -> _acc;
+'encode_pubsub_owner_$default'(Default, _acc) ->
+    [encode_pubsub_default(Default, []) | _acc].
+
+'encode_pubsub_owner_$purge'(undefined, _acc) -> _acc;
+'encode_pubsub_owner_$purge'(Purge, _acc) ->
+    [encode_pubsub_purge(Purge, []) | _acc].
+
+'encode_pubsub_owner_$delete'(undefined, _acc) -> _acc;
+'encode_pubsub_owner_$delete'(Delete, _acc) ->
+    [encode_pubsub_delete(Delete, []) | _acc].
+
+'encode_pubsub_owner_$configure'(undefined, _acc) ->
+    _acc;
+'encode_pubsub_owner_$configure'(Configure, _acc) ->
+    [encode_pubsub_configure(Configure, []) | _acc].
+
 decode_pubsub(__TopXMLNS, __IgnoreEls,
 	      {xmlel, <<"pubsub">>, _attrs, _els}) ->
-    {Items, Options, Affiliations, Subscriptions, Retract,
-     Unsubscribe, Subscribe, Publish} =
+    {Publish_options, Items, Options, Affiliations,
+     Subscriptions, Default, Retract, Purge, Delete,
+     Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+     Subscription} =
 	decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
 			  undefined, undefined, undefined, undefined, undefined,
-			  undefined, undefined, undefined),
-    {pubsub, Subscriptions, Affiliations, Publish,
-     Subscribe, Unsubscribe, Options, Items, Retract}.
+			  undefined, undefined, undefined, undefined, undefined,
+			  undefined, undefined, undefined, undefined, undefined,
+			  undefined),
+    {pubsub, Subscriptions, Subscription, Affiliations,
+     Publish, Publish_options, Subscribe, Unsubscribe,
+     Options, Items, Retract, Create, Configure, Default,
+     Delete, Purge, Rsm}.
 
-decode_pubsub_els(__TopXMLNS, __IgnoreEls, [], Items,
-		  Options, Affiliations, Subscriptions, Retract,
-		  Unsubscribe, Subscribe, Publish) ->
-    {Items, Options, Affiliations, Subscriptions, Retract,
-     Unsubscribe, Subscribe, Publish};
+decode_pubsub_els(__TopXMLNS, __IgnoreEls, [],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
+    {Publish_options, Items, Options, Affiliations,
+     Subscriptions, Default, Retract, Purge, Delete,
+     Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+     Subscription};
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"subscriptions">>, _attrs, _} = _el | _els],
-		  Items, Options, Affiliations, Subscriptions, Retract,
-		  Unsubscribe, Subscribe, Publish) ->
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
 			    decode_pubsub_subscriptions(__TopXMLNS, __IgnoreEls,
 							_el),
-			    Retract, Unsubscribe, Subscribe, Publish);
+			    Default, Retract, Purge, Delete, Configure, Create,
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
       <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
 			    decode_pubsub_subscriptions(<<"http://jabber.org/protocol/pubsub">>,
 							__IgnoreEls, _el),
-			    Retract, Unsubscribe, Subscribe, Publish);
+			    Default, Retract, Purge, Delete, Configure, Create,
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    decode_pubsub_subscriptions(<<"http://jabber.org/protocol/pubsub#owner">>,
+							__IgnoreEls, _el),
+			    Default, Retract, Purge, Delete, Configure, Create,
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
       _ ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe, Publish)
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"affiliations">>, _attrs, _} = _el | _els],
-		  Items, Options, Affiliations, Subscriptions, Retract,
-		  Unsubscribe, Subscribe, Publish) ->
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options,
 			    decode_pubsub_affiliations(__TopXMLNS, __IgnoreEls,
 						       _el),
-			    Subscriptions, Retract, Unsubscribe, Subscribe,
-			    Publish);
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription);
       <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options,
 			    decode_pubsub_affiliations(<<"http://jabber.org/protocol/pubsub">>,
 						       __IgnoreEls, _el),
-			    Subscriptions, Retract, Unsubscribe, Subscribe,
-			    Publish);
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription);
       _ ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe, Publish)
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"subscribe">>, _attrs, _} = _el | _els],
-		  Items, Options, Affiliations, Subscriptions, Retract,
-		  Unsubscribe, Subscribe, Publish) ->
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe,
 			    decode_pubsub_subscribe(__TopXMLNS, __IgnoreEls,
 						    _el),
-			    Publish);
+			    Publish, Rsm, Subscription);
       <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe,
 			    decode_pubsub_subscribe(<<"http://jabber.org/protocol/pubsub">>,
 						    __IgnoreEls, _el),
-			    Publish);
+			    Publish, Rsm, Subscription);
       _ ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe, Publish)
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
 		  [{xmlel, <<"unsubscribe">>, _attrs, _} = _el | _els],
-		  Items, Options, Affiliations, Subscriptions, Retract,
-		  Unsubscribe, Subscribe, Publish) ->
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create,
 			    decode_pubsub_unsubscribe(__TopXMLNS, __IgnoreEls,
 						      _el),
-			    Subscribe, Publish);
+			    Subscribe, Publish, Rsm, Subscription);
       <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create,
 			    decode_pubsub_unsubscribe(<<"http://jabber.org/protocol/pubsub">>,
 						      __IgnoreEls, _el),
-			    Subscribe, Publish);
+			    Subscribe, Publish, Rsm, Subscription);
       _ ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe, Publish)
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
-		  [{xmlel, <<"options">>, _attrs, _} = _el | _els], Items,
-		  Options, Affiliations, Subscriptions, Retract,
-		  Unsubscribe, Subscribe, Publish) ->
+		  [{xmlel, <<"options">>, _attrs, _} = _el | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items,
 			    decode_pubsub_options(__TopXMLNS, __IgnoreEls, _el),
-			    Affiliations, Subscriptions, Retract, Unsubscribe,
-			    Subscribe, Publish);
+			    Affiliations, Subscriptions, Default, Retract,
+			    Purge, Delete, Configure, Create, Unsubscribe,
+			    Subscribe, Publish, Rsm, Subscription);
       <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items,
 			    decode_pubsub_options(<<"http://jabber.org/protocol/pubsub">>,
 						  __IgnoreEls, _el),
-			    Affiliations, Subscriptions, Retract, Unsubscribe,
-			    Subscribe, Publish);
+			    Affiliations, Subscriptions, Default, Retract,
+			    Purge, Delete, Configure, Create, Unsubscribe,
+			    Subscribe, Publish, Rsm, Subscription);
       _ ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe, Publish)
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
-		  [{xmlel, <<"items">>, _attrs, _} = _el | _els], Items,
-		  Options, Affiliations, Subscriptions, Retract,
-		  Unsubscribe, Subscribe, Publish) ->
+		  [{xmlel, <<"items">>, _attrs, _} = _el | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/pubsub">> ->
 	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options,
 			    decode_pubsub_items(__TopXMLNS, __IgnoreEls, _el),
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe, Publish);
+			    Options, Affiliations, Subscriptions, Default,
+			    Retract, Purge, Delete, Configure, Create,
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
       <<"http://jabber.org/protocol/pubsub">> ->
 	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options,
 			    decode_pubsub_items(<<"http://jabber.org/protocol/pubsub">>,
 						__IgnoreEls, _el),
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe, Publish);
+			    Options, Affiliations, Subscriptions, Default,
+			    Retract, Purge, Delete, Configure, Create,
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options,
+			    decode_pubsub_items(<<"http://jabber.org/protocol/pubsub#event">>,
+						__IgnoreEls, _el),
+			    Options, Affiliations, Subscriptions, Default,
+			    Retract, Purge, Delete, Configure, Create,
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
       _ ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe, Publish)
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
-		  [{xmlel, <<"retract">>, _attrs, _} = _el | _els], Items,
-		  Options, Affiliations, Subscriptions, Retract,
-		  Unsubscribe, Subscribe, Publish) ->
+		  [{xmlel, <<"retract">>, _attrs, _} = _el | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default,
 			    decode_pubsub_retract(__TopXMLNS, __IgnoreEls, _el),
-			    Unsubscribe, Subscribe, Publish);
+			    Purge, Delete, Configure, Create, Unsubscribe,
+			    Subscribe, Publish, Rsm, Subscription);
       <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions,
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default,
 			    decode_pubsub_retract(<<"http://jabber.org/protocol/pubsub">>,
 						  __IgnoreEls, _el),
-			    Unsubscribe, Subscribe, Publish);
+			    Purge, Delete, Configure, Create, Unsubscribe,
+			    Subscribe, Publish, Rsm, Subscription);
       _ ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe, Publish)
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls,
-		  [{xmlel, <<"publish">>, _attrs, _} = _el | _els], Items,
-		  Options, Affiliations, Subscriptions, Retract,
-		  Unsubscribe, Subscribe, Publish) ->
+		  [{xmlel, <<"create">>, _attrs, _} = _el | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe,
-			    decode_pubsub_publish(__TopXMLNS, __IgnoreEls,
-						  _el));
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure,
+			    decode_pubsub_create(__TopXMLNS, __IgnoreEls, _el),
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
       <<"http://jabber.org/protocol/pubsub">> ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe,
-			    decode_pubsub_publish(<<"http://jabber.org/protocol/pubsub">>,
-						  __IgnoreEls, _el));
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure,
+			    decode_pubsub_create(<<"http://jabber.org/protocol/pubsub">>,
+						 __IgnoreEls, _el),
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure,
+			    decode_pubsub_create(<<"http://jabber.org/protocol/pubsub#event">>,
+						 __IgnoreEls, _el),
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
       _ ->
-	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-			    Options, Affiliations, Subscriptions, Retract,
-			    Unsubscribe, Subscribe, Publish)
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
+    end;
+decode_pubsub_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"configure">>, _attrs, _} = _el | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    decode_pubsub_configure(__TopXMLNS, __IgnoreEls,
+						    _el),
+			    Create, Unsubscribe, Subscribe, Publish, Rsm,
+			    Subscription);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    decode_pubsub_configure(<<"http://jabber.org/protocol/pubsub">>,
+						    __IgnoreEls, _el),
+			    Create, Unsubscribe, Subscribe, Publish, Rsm,
+			    Subscription);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    decode_pubsub_configure(<<"http://jabber.org/protocol/pubsub#owner">>,
+						    __IgnoreEls, _el),
+			    Create, Unsubscribe, Subscribe, Publish, Rsm,
+			    Subscription);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
+    end;
+decode_pubsub_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"publish-options">>, _attrs, _} = _el
+		   | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    decode_pubsub_publish_options(__TopXMLNS,
+							  __IgnoreEls, _el),
+			    Items, Options, Affiliations, Subscriptions,
+			    Default, Retract, Purge, Delete, Configure, Create,
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    decode_pubsub_publish_options(<<"http://jabber.org/protocol/pubsub">>,
+							  __IgnoreEls, _el),
+			    Items, Options, Affiliations, Subscriptions,
+			    Default, Retract, Purge, Delete, Configure, Create,
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
+    end;
+decode_pubsub_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"default">>, _attrs, _} = _el | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions,
+			    decode_pubsub_default(__TopXMLNS, __IgnoreEls, _el),
+			    Retract, Purge, Delete, Configure, Create,
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions,
+			    decode_pubsub_default(<<"http://jabber.org/protocol/pubsub">>,
+						  __IgnoreEls, _el),
+			    Retract, Purge, Delete, Configure, Create,
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions,
+			    decode_pubsub_default(<<"http://jabber.org/protocol/pubsub#owner">>,
+						  __IgnoreEls, _el),
+			    Retract, Purge, Delete, Configure, Create,
+			    Unsubscribe, Subscribe, Publish, Rsm, Subscription);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
+    end;
+decode_pubsub_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"delete">>, _attrs, _} = _el | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge,
+			    decode_pubsub_delete(__TopXMLNS, __IgnoreEls, _el),
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge,
+			    decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub">>,
+						 __IgnoreEls, _el),
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge,
+			    decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#owner">>,
+						 __IgnoreEls, _el),
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge,
+			    decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#event">>,
+						 __IgnoreEls, _el),
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
+    end;
+decode_pubsub_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"purge">>, _attrs, _} = _el | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract,
+			    decode_pubsub_purge(__TopXMLNS, __IgnoreEls, _el),
+			    Delete, Configure, Create, Unsubscribe, Subscribe,
+			    Publish, Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract,
+			    decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub">>,
+						__IgnoreEls, _el),
+			    Delete, Configure, Create, Unsubscribe, Subscribe,
+			    Publish, Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract,
+			    decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#owner">>,
+						__IgnoreEls, _el),
+			    Delete, Configure, Create, Unsubscribe, Subscribe,
+			    Publish, Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract,
+			    decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#event">>,
+						__IgnoreEls, _el),
+			    Delete, Configure, Create, Unsubscribe, Subscribe,
+			    Publish, Rsm, Subscription);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
+    end;
+decode_pubsub_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"subscription">>, _attrs, _} = _el | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm,
+			    decode_pubsub_subscription(__TopXMLNS, __IgnoreEls,
+						       _el));
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm,
+			    decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub">>,
+						       __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm,
+			    decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#owner">>,
+						       __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm,
+			    decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#event">>,
+						       __IgnoreEls, _el));
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
+    end;
+decode_pubsub_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"set">>, _attrs, _} = _el | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"http://jabber.org/protocol/rsm">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    decode_rsm_set(<<"http://jabber.org/protocol/rsm">>,
+					   __IgnoreEls, _el),
+			    Subscription);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
+    end;
+decode_pubsub_els(__TopXMLNS, __IgnoreEls,
+		  [{xmlel, <<"publish">>, _attrs, _} = _el | _els],
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe,
+			    decode_pubsub_publish(__TopXMLNS, __IgnoreEls, _el),
+			    Rsm, Subscription);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe,
+			    decode_pubsub_publish(<<"http://jabber.org/protocol/pubsub">>,
+						  __IgnoreEls, _el),
+			    Rsm, Subscription);
+      _ ->
+	  decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+			    Publish_options, Items, Options, Affiliations,
+			    Subscriptions, Default, Retract, Purge, Delete,
+			    Configure, Create, Unsubscribe, Subscribe, Publish,
+			    Rsm, Subscription)
     end;
 decode_pubsub_els(__TopXMLNS, __IgnoreEls, [_ | _els],
-		  Items, Options, Affiliations, Subscriptions, Retract,
-		  Unsubscribe, Subscribe, Publish) ->
-    decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els, Items,
-		      Options, Affiliations, Subscriptions, Retract,
-		      Unsubscribe, Subscribe, Publish).
+		  Publish_options, Items, Options, Affiliations,
+		  Subscriptions, Default, Retract, Purge, Delete,
+		  Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		  Subscription) ->
+    decode_pubsub_els(__TopXMLNS, __IgnoreEls, _els,
+		      Publish_options, Items, Options, Affiliations,
+		      Subscriptions, Default, Retract, Purge, Delete,
+		      Configure, Create, Unsubscribe, Subscribe, Publish, Rsm,
+		      Subscription).
 
-encode_pubsub({pubsub, Subscriptions, Affiliations,
-	       Publish, Subscribe, Unsubscribe, Options, Items,
-	       Retract},
+encode_pubsub({pubsub, Subscriptions, Subscription,
+	       Affiliations, Publish, Publish_options, Subscribe,
+	       Unsubscribe, Options, Items, Retract, Create, Configure,
+	       Default, Delete, Purge, Rsm},
 	      _xmlns_attrs) ->
-    _els = lists:reverse('encode_pubsub_$items'(Items,
-						'encode_pubsub_$options'(Options,
-									 'encode_pubsub_$affiliations'(Affiliations,
-												       'encode_pubsub_$subscriptions'(Subscriptions,
-																      'encode_pubsub_$retract'(Retract,
-																			       'encode_pubsub_$unsubscribe'(Unsubscribe,
-																							    'encode_pubsub_$subscribe'(Subscribe,
-																										       'encode_pubsub_$publish'(Publish,
-																														[]))))))))),
+    _els =
+	lists:reverse('encode_pubsub_$publish_options'(Publish_options,
+						       'encode_pubsub_$items'(Items,
+									      'encode_pubsub_$options'(Options,
+												       'encode_pubsub_$affiliations'(Affiliations,
+																     'encode_pubsub_$subscriptions'(Subscriptions,
+																				    'encode_pubsub_$default'(Default,
+																							     'encode_pubsub_$retract'(Retract,
+																										      'encode_pubsub_$purge'(Purge,
+																													     'encode_pubsub_$delete'(Delete,
+																																     'encode_pubsub_$configure'(Configure,
+																																				'encode_pubsub_$create'(Create,
+																																							'encode_pubsub_$unsubscribe'(Unsubscribe,
+																																										     'encode_pubsub_$subscribe'(Subscribe,
+																																														'encode_pubsub_$publish'(Publish,
+																																																	 'encode_pubsub_$rsm'(Rsm,
+																																																			      'encode_pubsub_$subscription'(Subscription,
+																																																							    []))))))))))))))))),
     _attrs = _xmlns_attrs,
     {xmlel, <<"pubsub">>, _attrs, _els}.
+
+'encode_pubsub_$publish_options'(undefined, _acc) ->
+    _acc;
+'encode_pubsub_$publish_options'(Publish_options,
+				 _acc) ->
+    [encode_pubsub_publish_options(Publish_options, [])
+     | _acc].
 
 'encode_pubsub_$items'(undefined, _acc) -> _acc;
 'encode_pubsub_$items'(Items, _acc) ->
@@ -12434,9 +13951,29 @@ encode_pubsub({pubsub, Subscriptions, Affiliations,
 'encode_pubsub_$subscriptions'(Subscriptions, _acc) ->
     [encode_pubsub_subscriptions(Subscriptions, []) | _acc].
 
+'encode_pubsub_$default'(undefined, _acc) -> _acc;
+'encode_pubsub_$default'(Default, _acc) ->
+    [encode_pubsub_default(Default, []) | _acc].
+
 'encode_pubsub_$retract'(undefined, _acc) -> _acc;
 'encode_pubsub_$retract'(Retract, _acc) ->
     [encode_pubsub_retract(Retract, []) | _acc].
+
+'encode_pubsub_$purge'(undefined, _acc) -> _acc;
+'encode_pubsub_$purge'(Purge, _acc) ->
+    [encode_pubsub_purge(Purge, []) | _acc].
+
+'encode_pubsub_$delete'(undefined, _acc) -> _acc;
+'encode_pubsub_$delete'(Delete, _acc) ->
+    [encode_pubsub_delete(Delete, []) | _acc].
+
+'encode_pubsub_$configure'(undefined, _acc) -> _acc;
+'encode_pubsub_$configure'(Configure, _acc) ->
+    [encode_pubsub_configure(Configure, []) | _acc].
+
+'encode_pubsub_$create'(undefined, _acc) -> _acc;
+'encode_pubsub_$create'(Create, _acc) ->
+    [encode_pubsub_create(Create, []) | _acc].
 
 'encode_pubsub_$unsubscribe'(undefined, _acc) -> _acc;
 'encode_pubsub_$unsubscribe'(Unsubscribe, _acc) ->
@@ -12450,13 +13987,354 @@ encode_pubsub({pubsub, Subscriptions, Affiliations,
 'encode_pubsub_$publish'(Publish, _acc) ->
     [encode_pubsub_publish(Publish, []) | _acc].
 
+'encode_pubsub_$rsm'(undefined, _acc) -> _acc;
+'encode_pubsub_$rsm'(Rsm, _acc) ->
+    [encode_rsm_set(Rsm,
+		    [{<<"xmlns">>, <<"http://jabber.org/protocol/rsm">>}])
+     | _acc].
+
+'encode_pubsub_$subscription'(undefined, _acc) -> _acc;
+'encode_pubsub_$subscription'(Subscription, _acc) ->
+    [encode_pubsub_subscription(Subscription, []) | _acc].
+
+decode_pubsub_purge(__TopXMLNS, __IgnoreEls,
+		    {xmlel, <<"purge">>, _attrs, _els}) ->
+    Node = decode_pubsub_purge_attrs(__TopXMLNS, _attrs,
+				     undefined),
+    Node.
+
+decode_pubsub_purge_attrs(__TopXMLNS,
+			  [{<<"node">>, _val} | _attrs], _Node) ->
+    decode_pubsub_purge_attrs(__TopXMLNS, _attrs, _val);
+decode_pubsub_purge_attrs(__TopXMLNS, [_ | _attrs],
+			  Node) ->
+    decode_pubsub_purge_attrs(__TopXMLNS, _attrs, Node);
+decode_pubsub_purge_attrs(__TopXMLNS, [], Node) ->
+    decode_pubsub_purge_attr_node(__TopXMLNS, Node).
+
+encode_pubsub_purge(Node, _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_pubsub_purge_attr_node(Node,
+					   _xmlns_attrs),
+    {xmlel, <<"purge">>, _attrs, _els}.
+
+decode_pubsub_purge_attr_node(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"node">>, <<"purge">>, __TopXMLNS}});
+decode_pubsub_purge_attr_node(__TopXMLNS, _val) -> _val.
+
+encode_pubsub_purge_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
+
+decode_pubsub_delete(__TopXMLNS, __IgnoreEls,
+		     {xmlel, <<"delete">>, _attrs, _els}) ->
+    Uri = decode_pubsub_delete_els(__TopXMLNS, __IgnoreEls,
+				   _els, <<>>),
+    Node = decode_pubsub_delete_attrs(__TopXMLNS, _attrs,
+				      undefined),
+    {Node, Uri}.
+
+decode_pubsub_delete_els(__TopXMLNS, __IgnoreEls, [],
+			 Uri) ->
+    Uri;
+decode_pubsub_delete_els(__TopXMLNS, __IgnoreEls,
+			 [{xmlel, <<"redirect">>, _attrs, _} = _el | _els],
+			 Uri) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">>;
+	       __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#owner">>;
+	       __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_delete_els(__TopXMLNS, __IgnoreEls, _els,
+				   decode_pubsub_redirect(__TopXMLNS,
+							  __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_delete_els(__TopXMLNS, __IgnoreEls, _els,
+				   decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub">>,
+							  __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_delete_els(__TopXMLNS, __IgnoreEls, _els,
+				   decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub#owner">>,
+							  __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_delete_els(__TopXMLNS, __IgnoreEls, _els,
+				   decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub#event">>,
+							  __IgnoreEls, _el));
+      _ ->
+	  decode_pubsub_delete_els(__TopXMLNS, __IgnoreEls, _els,
+				   Uri)
+    end;
+decode_pubsub_delete_els(__TopXMLNS, __IgnoreEls,
+			 [_ | _els], Uri) ->
+    decode_pubsub_delete_els(__TopXMLNS, __IgnoreEls, _els,
+			     Uri).
+
+decode_pubsub_delete_attrs(__TopXMLNS,
+			   [{<<"node">>, _val} | _attrs], _Node) ->
+    decode_pubsub_delete_attrs(__TopXMLNS, _attrs, _val);
+decode_pubsub_delete_attrs(__TopXMLNS, [_ | _attrs],
+			   Node) ->
+    decode_pubsub_delete_attrs(__TopXMLNS, _attrs, Node);
+decode_pubsub_delete_attrs(__TopXMLNS, [], Node) ->
+    decode_pubsub_delete_attr_node(__TopXMLNS, Node).
+
+encode_pubsub_delete({Node, Uri}, _xmlns_attrs) ->
+    _els = lists:reverse('encode_pubsub_delete_$uri'(Uri,
+						     [])),
+    _attrs = encode_pubsub_delete_attr_node(Node,
+					    _xmlns_attrs),
+    {xmlel, <<"delete">>, _attrs, _els}.
+
+'encode_pubsub_delete_$uri'(<<>>, _acc) -> _acc;
+'encode_pubsub_delete_$uri'(Uri, _acc) ->
+    [encode_pubsub_redirect(Uri, []) | _acc].
+
+decode_pubsub_delete_attr_node(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"node">>, <<"delete">>, __TopXMLNS}});
+decode_pubsub_delete_attr_node(__TopXMLNS, _val) ->
+    _val.
+
+encode_pubsub_delete_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
+
+decode_pubsub_redirect(__TopXMLNS, __IgnoreEls,
+		       {xmlel, <<"redirect">>, _attrs, _els}) ->
+    Uri = decode_pubsub_redirect_attrs(__TopXMLNS, _attrs,
+				       undefined),
+    Uri.
+
+decode_pubsub_redirect_attrs(__TopXMLNS,
+			     [{<<"uri">>, _val} | _attrs], _Uri) ->
+    decode_pubsub_redirect_attrs(__TopXMLNS, _attrs, _val);
+decode_pubsub_redirect_attrs(__TopXMLNS, [_ | _attrs],
+			     Uri) ->
+    decode_pubsub_redirect_attrs(__TopXMLNS, _attrs, Uri);
+decode_pubsub_redirect_attrs(__TopXMLNS, [], Uri) ->
+    decode_pubsub_redirect_attr_uri(__TopXMLNS, Uri).
+
+encode_pubsub_redirect(Uri, _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_pubsub_redirect_attr_uri(Uri,
+					     _xmlns_attrs),
+    {xmlel, <<"redirect">>, _attrs, _els}.
+
+decode_pubsub_redirect_attr_uri(__TopXMLNS,
+				undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"uri">>, <<"redirect">>, __TopXMLNS}});
+decode_pubsub_redirect_attr_uri(__TopXMLNS, _val) ->
+    _val.
+
+encode_pubsub_redirect_attr_uri(_val, _acc) ->
+    [{<<"uri">>, _val} | _acc].
+
+decode_pubsub_default(__TopXMLNS, __IgnoreEls,
+		      {xmlel, <<"default">>, _attrs, _els}) ->
+    Xdata = decode_pubsub_default_els(__TopXMLNS,
+				      __IgnoreEls, _els, undefined),
+    Node = decode_pubsub_default_attrs(__TopXMLNS, _attrs,
+				       undefined),
+    {Node, Xdata}.
+
+decode_pubsub_default_els(__TopXMLNS, __IgnoreEls, [],
+			  Xdata) ->
+    Xdata;
+decode_pubsub_default_els(__TopXMLNS, __IgnoreEls,
+			  [{xmlel, <<"x">>, _attrs, _} = _el | _els], Xdata) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_pubsub_default_els(__TopXMLNS, __IgnoreEls, _els,
+				    decode_xdata(<<"jabber:x:data">>,
+						 __IgnoreEls, _el));
+      _ ->
+	  decode_pubsub_default_els(__TopXMLNS, __IgnoreEls, _els,
+				    Xdata)
+    end;
+decode_pubsub_default_els(__TopXMLNS, __IgnoreEls,
+			  [_ | _els], Xdata) ->
+    decode_pubsub_default_els(__TopXMLNS, __IgnoreEls, _els,
+			      Xdata).
+
+decode_pubsub_default_attrs(__TopXMLNS,
+			    [{<<"node">>, _val} | _attrs], _Node) ->
+    decode_pubsub_default_attrs(__TopXMLNS, _attrs, _val);
+decode_pubsub_default_attrs(__TopXMLNS, [_ | _attrs],
+			    Node) ->
+    decode_pubsub_default_attrs(__TopXMLNS, _attrs, Node);
+decode_pubsub_default_attrs(__TopXMLNS, [], Node) ->
+    decode_pubsub_default_attr_node(__TopXMLNS, Node).
+
+encode_pubsub_default({Node, Xdata}, _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_pubsub_default_$xdata'(Xdata,
+						     [])),
+    _attrs = encode_pubsub_default_attr_node(Node,
+					     _xmlns_attrs),
+    {xmlel, <<"default">>, _attrs, _els}.
+
+'encode_pubsub_default_$xdata'(undefined, _acc) -> _acc;
+'encode_pubsub_default_$xdata'(Xdata, _acc) ->
+    [encode_xdata(Xdata,
+		  [{<<"xmlns">>, <<"jabber:x:data">>}])
+     | _acc].
+
+decode_pubsub_default_attr_node(__TopXMLNS,
+				undefined) ->
+    <<>>;
+decode_pubsub_default_attr_node(__TopXMLNS, _val) ->
+    _val.
+
+encode_pubsub_default_attr_node(<<>>, _acc) -> _acc;
+encode_pubsub_default_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
+
+decode_pubsub_publish_options(__TopXMLNS, __IgnoreEls,
+			      {xmlel, <<"publish-options">>, _attrs, _els}) ->
+    Xdata = decode_pubsub_publish_options_els(__TopXMLNS,
+					      __IgnoreEls, _els, undefined),
+    Xdata.
+
+decode_pubsub_publish_options_els(__TopXMLNS,
+				  __IgnoreEls, [], Xdata) ->
+    Xdata;
+decode_pubsub_publish_options_els(__TopXMLNS,
+				  __IgnoreEls,
+				  [{xmlel, <<"x">>, _attrs, _} = _el | _els],
+				  Xdata) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_pubsub_publish_options_els(__TopXMLNS,
+					    __IgnoreEls, _els,
+					    decode_xdata(<<"jabber:x:data">>,
+							 __IgnoreEls, _el));
+      _ ->
+	  decode_pubsub_publish_options_els(__TopXMLNS,
+					    __IgnoreEls, _els, Xdata)
+    end;
+decode_pubsub_publish_options_els(__TopXMLNS,
+				  __IgnoreEls, [_ | _els], Xdata) ->
+    decode_pubsub_publish_options_els(__TopXMLNS,
+				      __IgnoreEls, _els, Xdata).
+
+encode_pubsub_publish_options(Xdata, _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_pubsub_publish_options_$xdata'(Xdata,
+							     [])),
+    _attrs = _xmlns_attrs,
+    {xmlel, <<"publish-options">>, _attrs, _els}.
+
+'encode_pubsub_publish_options_$xdata'(undefined,
+				       _acc) ->
+    _acc;
+'encode_pubsub_publish_options_$xdata'(Xdata, _acc) ->
+    [encode_xdata(Xdata,
+		  [{<<"xmlns">>, <<"jabber:x:data">>}])
+     | _acc].
+
+decode_pubsub_configure(__TopXMLNS, __IgnoreEls,
+			{xmlel, <<"configure">>, _attrs, _els}) ->
+    Xdata = decode_pubsub_configure_els(__TopXMLNS,
+					__IgnoreEls, _els, undefined),
+    Node = decode_pubsub_configure_attrs(__TopXMLNS, _attrs,
+					 undefined),
+    {Node, Xdata}.
+
+decode_pubsub_configure_els(__TopXMLNS, __IgnoreEls, [],
+			    Xdata) ->
+    Xdata;
+decode_pubsub_configure_els(__TopXMLNS, __IgnoreEls,
+			    [{xmlel, <<"x">>, _attrs, _} = _el | _els],
+			    Xdata) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_pubsub_configure_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      decode_xdata(<<"jabber:x:data">>,
+						   __IgnoreEls, _el));
+      _ ->
+	  decode_pubsub_configure_els(__TopXMLNS, __IgnoreEls,
+				      _els, Xdata)
+    end;
+decode_pubsub_configure_els(__TopXMLNS, __IgnoreEls,
+			    [_ | _els], Xdata) ->
+    decode_pubsub_configure_els(__TopXMLNS, __IgnoreEls,
+				_els, Xdata).
+
+decode_pubsub_configure_attrs(__TopXMLNS,
+			      [{<<"node">>, _val} | _attrs], _Node) ->
+    decode_pubsub_configure_attrs(__TopXMLNS, _attrs, _val);
+decode_pubsub_configure_attrs(__TopXMLNS, [_ | _attrs],
+			      Node) ->
+    decode_pubsub_configure_attrs(__TopXMLNS, _attrs, Node);
+decode_pubsub_configure_attrs(__TopXMLNS, [], Node) ->
+    decode_pubsub_configure_attr_node(__TopXMLNS, Node).
+
+encode_pubsub_configure({Node, Xdata}, _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_pubsub_configure_$xdata'(Xdata,
+						       [])),
+    _attrs = encode_pubsub_configure_attr_node(Node,
+					       _xmlns_attrs),
+    {xmlel, <<"configure">>, _attrs, _els}.
+
+'encode_pubsub_configure_$xdata'(undefined, _acc) ->
+    _acc;
+'encode_pubsub_configure_$xdata'(Xdata, _acc) ->
+    [encode_xdata(Xdata,
+		  [{<<"xmlns">>, <<"jabber:x:data">>}])
+     | _acc].
+
+decode_pubsub_configure_attr_node(__TopXMLNS,
+				  undefined) ->
+    <<>>;
+decode_pubsub_configure_attr_node(__TopXMLNS, _val) ->
+    _val.
+
+encode_pubsub_configure_attr_node(<<>>, _acc) -> _acc;
+encode_pubsub_configure_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
+
+decode_pubsub_create(__TopXMLNS, __IgnoreEls,
+		     {xmlel, <<"create">>, _attrs, _els}) ->
+    Node = decode_pubsub_create_attrs(__TopXMLNS, _attrs,
+				      undefined),
+    Node.
+
+decode_pubsub_create_attrs(__TopXMLNS,
+			   [{<<"node">>, _val} | _attrs], _Node) ->
+    decode_pubsub_create_attrs(__TopXMLNS, _attrs, _val);
+decode_pubsub_create_attrs(__TopXMLNS, [_ | _attrs],
+			   Node) ->
+    decode_pubsub_create_attrs(__TopXMLNS, _attrs, Node);
+decode_pubsub_create_attrs(__TopXMLNS, [], Node) ->
+    decode_pubsub_create_attr_node(__TopXMLNS, Node).
+
+encode_pubsub_create(Node, _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_pubsub_create_attr_node(Node,
+					    _xmlns_attrs),
+    {xmlel, <<"create">>, _attrs, _els}.
+
+decode_pubsub_create_attr_node(__TopXMLNS, undefined) ->
+    <<>>;
+decode_pubsub_create_attr_node(__TopXMLNS, _val) ->
+    _val.
+
+encode_pubsub_create_attr_node(<<>>, _acc) -> _acc;
+encode_pubsub_create_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
+
 decode_pubsub_retract(__TopXMLNS, __IgnoreEls,
 		      {xmlel, <<"retract">>, _attrs, _els}) ->
     Items = decode_pubsub_retract_els(__TopXMLNS,
 				      __IgnoreEls, _els, []),
     {Node, Notify} = decode_pubsub_retract_attrs(__TopXMLNS,
 						 _attrs, undefined, undefined),
-    {pubsub_retract, Node, Notify, Items}.
+    {ps_retract, Node, Notify, Items}.
 
 decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls, [],
 			  Items) ->
@@ -12475,6 +14353,11 @@ decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls,
       <<"http://jabber.org/protocol/pubsub">> ->
 	  decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls, _els,
 				    [decode_pubsub_item(<<"http://jabber.org/protocol/pubsub">>,
+							__IgnoreEls, _el)
+				     | Items]);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_retract_els(__TopXMLNS, __IgnoreEls, _els,
+				    [decode_pubsub_item(<<"http://jabber.org/protocol/pubsub#event">>,
 							__IgnoreEls, _el)
 				     | Items]);
       _ ->
@@ -12503,8 +14386,7 @@ decode_pubsub_retract_attrs(__TopXMLNS, [], Node,
     {decode_pubsub_retract_attr_node(__TopXMLNS, Node),
      decode_pubsub_retract_attr_notify(__TopXMLNS, Notify)}.
 
-encode_pubsub_retract({pubsub_retract, Node, Notify,
-		       Items},
+encode_pubsub_retract({ps_retract, Node, Notify, Items},
 		      _xmlns_attrs) ->
     _els =
 	lists:reverse('encode_pubsub_retract_$items'(Items,
@@ -12552,7 +14434,7 @@ decode_pubsub_options(__TopXMLNS, __IgnoreEls,
     {Node, Subid, Jid} =
 	decode_pubsub_options_attrs(__TopXMLNS, _attrs,
 				    undefined, undefined, undefined),
-    {pubsub_options, Node, Jid, Subid, Xdata}.
+    {ps_options, Node, Jid, Subid, Xdata}.
 
 decode_pubsub_options_els(__TopXMLNS, __IgnoreEls, [],
 			  Xdata) ->
@@ -12596,7 +14478,7 @@ decode_pubsub_options_attrs(__TopXMLNS, [], Node, Subid,
      decode_pubsub_options_attr_subid(__TopXMLNS, Subid),
      decode_pubsub_options_attr_jid(__TopXMLNS, Jid)}.
 
-encode_pubsub_options({pubsub_options, Node, Jid, Subid,
+encode_pubsub_options({ps_options, Node, Jid, Subid,
 		       Xdata},
 		      _xmlns_attrs) ->
     _els =
@@ -12655,7 +14537,7 @@ decode_pubsub_publish(__TopXMLNS, __IgnoreEls,
 				      __IgnoreEls, _els, []),
     Node = decode_pubsub_publish_attrs(__TopXMLNS, _attrs,
 				       undefined),
-    {pubsub_publish, Node, Items}.
+    {ps_publish, Node, Items}.
 
 decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls, [],
 			  Items) ->
@@ -12676,6 +14558,11 @@ decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls,
 				    [decode_pubsub_item(<<"http://jabber.org/protocol/pubsub">>,
 							__IgnoreEls, _el)
 				     | Items]);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls, _els,
+				    [decode_pubsub_item(<<"http://jabber.org/protocol/pubsub#event">>,
+							__IgnoreEls, _el)
+				     | Items]);
       _ ->
 	  decode_pubsub_publish_els(__TopXMLNS, __IgnoreEls, _els,
 				    Items)
@@ -12694,7 +14581,7 @@ decode_pubsub_publish_attrs(__TopXMLNS, [_ | _attrs],
 decode_pubsub_publish_attrs(__TopXMLNS, [], Node) ->
     decode_pubsub_publish_attr_node(__TopXMLNS, Node).
 
-encode_pubsub_publish({pubsub_publish, Node, Items},
+encode_pubsub_publish({ps_publish, Node, Items},
 		      _xmlns_attrs) ->
     _els =
 	lists:reverse('encode_pubsub_publish_$items'(Items,
@@ -12723,7 +14610,7 @@ decode_pubsub_unsubscribe(__TopXMLNS, __IgnoreEls,
     {Node, Subid, Jid} =
 	decode_pubsub_unsubscribe_attrs(__TopXMLNS, _attrs,
 					undefined, undefined, undefined),
-    {pubsub_unsubscribe, Node, Jid, Subid}.
+    {ps_unsubscribe, Node, Jid, Subid}.
 
 decode_pubsub_unsubscribe_attrs(__TopXMLNS,
 				[{<<"node">>, _val} | _attrs], _Node, Subid,
@@ -12750,8 +14637,8 @@ decode_pubsub_unsubscribe_attrs(__TopXMLNS, [], Node,
      decode_pubsub_unsubscribe_attr_subid(__TopXMLNS, Subid),
      decode_pubsub_unsubscribe_attr_jid(__TopXMLNS, Jid)}.
 
-encode_pubsub_unsubscribe({pubsub_unsubscribe, Node,
-			   Jid, Subid},
+encode_pubsub_unsubscribe({ps_unsubscribe, Node, Jid,
+			   Subid},
 			  _xmlns_attrs) ->
     _els = [],
     _attrs = encode_pubsub_unsubscribe_attr_jid(Jid,
@@ -12803,7 +14690,7 @@ decode_pubsub_subscribe(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"subscribe">>, _attrs, _els}) ->
     {Node, Jid} = decode_pubsub_subscribe_attrs(__TopXMLNS,
 						_attrs, undefined, undefined),
-    {pubsub_subscribe, Node, Jid}.
+    {ps_subscribe, Node, Jid}.
 
 decode_pubsub_subscribe_attrs(__TopXMLNS,
 			      [{<<"node">>, _val} | _attrs], _Node, Jid) ->
@@ -12822,7 +14709,7 @@ decode_pubsub_subscribe_attrs(__TopXMLNS, [], Node,
     {decode_pubsub_subscribe_attr_node(__TopXMLNS, Node),
      decode_pubsub_subscribe_attr_jid(__TopXMLNS, Jid)}.
 
-encode_pubsub_subscribe({pubsub_subscribe, Node, Jid},
+encode_pubsub_subscribe({ps_subscribe, Node, Jid},
 			_xmlns_attrs) ->
     _els = [],
     _attrs = encode_pubsub_subscribe_attr_jid(Jid,
@@ -12857,12 +14744,108 @@ decode_pubsub_subscribe_attr_jid(__TopXMLNS, _val) ->
 encode_pubsub_subscribe_attr_jid(_val, _acc) ->
     [{<<"jid">>, enc_jid(_val)} | _acc].
 
+decode_pubsub_owner_affiliations(__TopXMLNS,
+				 __IgnoreEls,
+				 {xmlel, <<"affiliations">>, _attrs, _els}) ->
+    Affiliations =
+	decode_pubsub_owner_affiliations_els(__TopXMLNS,
+					     __IgnoreEls, _els, []),
+    Node =
+	decode_pubsub_owner_affiliations_attrs(__TopXMLNS,
+					       _attrs, undefined),
+    {Node, Affiliations}.
+
+decode_pubsub_owner_affiliations_els(__TopXMLNS,
+				     __IgnoreEls, [], Affiliations) ->
+    lists:reverse(Affiliations);
+decode_pubsub_owner_affiliations_els(__TopXMLNS,
+				     __IgnoreEls,
+				     [{xmlel, <<"affiliation">>, _attrs, _} =
+					  _el
+				      | _els],
+				     Affiliations) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_affiliations_els(__TopXMLNS,
+					       __IgnoreEls, _els,
+					       [decode_pubsub_owner_affiliation(__TopXMLNS,
+										__IgnoreEls,
+										_el)
+						| Affiliations]);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_owner_affiliations_els(__TopXMLNS,
+					       __IgnoreEls, _els,
+					       [decode_pubsub_owner_affiliation(<<"http://jabber.org/protocol/pubsub#owner">>,
+										__IgnoreEls,
+										_el)
+						| Affiliations]);
+      _ ->
+	  decode_pubsub_owner_affiliations_els(__TopXMLNS,
+					       __IgnoreEls, _els, Affiliations)
+    end;
+decode_pubsub_owner_affiliations_els(__TopXMLNS,
+				     __IgnoreEls, [_ | _els], Affiliations) ->
+    decode_pubsub_owner_affiliations_els(__TopXMLNS,
+					 __IgnoreEls, _els, Affiliations).
+
+decode_pubsub_owner_affiliations_attrs(__TopXMLNS,
+				       [{<<"node">>, _val} | _attrs], _Node) ->
+    decode_pubsub_owner_affiliations_attrs(__TopXMLNS,
+					   _attrs, _val);
+decode_pubsub_owner_affiliations_attrs(__TopXMLNS,
+				       [_ | _attrs], Node) ->
+    decode_pubsub_owner_affiliations_attrs(__TopXMLNS,
+					   _attrs, Node);
+decode_pubsub_owner_affiliations_attrs(__TopXMLNS, [],
+				       Node) ->
+    decode_pubsub_owner_affiliations_attr_node(__TopXMLNS,
+					       Node).
+
+encode_pubsub_owner_affiliations({Node, Affiliations},
+				 _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_pubsub_owner_affiliations_$affiliations'(Affiliations,
+								       [])),
+    _attrs =
+	encode_pubsub_owner_affiliations_attr_node(Node,
+						   _xmlns_attrs),
+    {xmlel, <<"affiliations">>, _attrs, _els}.
+
+'encode_pubsub_owner_affiliations_$affiliations'([],
+						 _acc) ->
+    _acc;
+'encode_pubsub_owner_affiliations_$affiliations'([Affiliations
+						  | _els],
+						 _acc) ->
+    'encode_pubsub_owner_affiliations_$affiliations'(_els,
+						     [encode_pubsub_owner_affiliation(Affiliations,
+										      [])
+						      | _acc]).
+
+decode_pubsub_owner_affiliations_attr_node(__TopXMLNS,
+					   undefined) ->
+    <<>>;
+decode_pubsub_owner_affiliations_attr_node(__TopXMLNS,
+					   _val) ->
+    _val.
+
+encode_pubsub_owner_affiliations_attr_node(<<>>,
+					   _acc) ->
+    _acc;
+encode_pubsub_owner_affiliations_attr_node(_val,
+					   _acc) ->
+    [{<<"node">>, _val} | _acc].
+
 decode_pubsub_affiliations(__TopXMLNS, __IgnoreEls,
 			   {xmlel, <<"affiliations">>, _attrs, _els}) ->
     Affiliations =
 	decode_pubsub_affiliations_els(__TopXMLNS, __IgnoreEls,
 				       _els, []),
-    Affiliations.
+    Node = decode_pubsub_affiliations_attrs(__TopXMLNS,
+					    _attrs, undefined),
+    {Node, Affiliations}.
 
 decode_pubsub_affiliations_els(__TopXMLNS, __IgnoreEls,
 			       [], Affiliations) ->
@@ -12897,12 +14880,25 @@ decode_pubsub_affiliations_els(__TopXMLNS, __IgnoreEls,
     decode_pubsub_affiliations_els(__TopXMLNS, __IgnoreEls,
 				   _els, Affiliations).
 
-encode_pubsub_affiliations(Affiliations,
+decode_pubsub_affiliations_attrs(__TopXMLNS,
+				 [{<<"node">>, _val} | _attrs], _Node) ->
+    decode_pubsub_affiliations_attrs(__TopXMLNS, _attrs,
+				     _val);
+decode_pubsub_affiliations_attrs(__TopXMLNS,
+				 [_ | _attrs], Node) ->
+    decode_pubsub_affiliations_attrs(__TopXMLNS, _attrs,
+				     Node);
+decode_pubsub_affiliations_attrs(__TopXMLNS, [],
+				 Node) ->
+    decode_pubsub_affiliations_attr_node(__TopXMLNS, Node).
+
+encode_pubsub_affiliations({Node, Affiliations},
 			   _xmlns_attrs) ->
     _els =
 	lists:reverse('encode_pubsub_affiliations_$affiliations'(Affiliations,
 								 [])),
-    _attrs = _xmlns_attrs,
+    _attrs = encode_pubsub_affiliations_attr_node(Node,
+						  _xmlns_attrs),
     {xmlel, <<"affiliations">>, _attrs, _els}.
 
 'encode_pubsub_affiliations_$affiliations'([], _acc) ->
@@ -12914,6 +14910,18 @@ encode_pubsub_affiliations(Affiliations,
 					       [encode_pubsub_affiliation(Affiliations,
 									  [])
 						| _acc]).
+
+decode_pubsub_affiliations_attr_node(__TopXMLNS,
+				     undefined) ->
+    <<>>;
+decode_pubsub_affiliations_attr_node(__TopXMLNS,
+				     _val) ->
+    _val.
+
+encode_pubsub_affiliations_attr_node(<<>>, _acc) ->
+    _acc;
+encode_pubsub_affiliations_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
 
 decode_pubsub_subscriptions(__TopXMLNS, __IgnoreEls,
 			    {xmlel, <<"subscriptions">>, _attrs, _els}) ->
@@ -12934,7 +14942,9 @@ decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
-		 <<"http://jabber.org/protocol/pubsub">> ->
+		 <<"http://jabber.org/protocol/pubsub">>;
+	       __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#owner">> ->
 	  decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
 					  _els,
 					  [decode_pubsub_subscription(__TopXMLNS,
@@ -12945,6 +14955,20 @@ decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
 	  decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
 					  _els,
 					  [decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub">>,
+								      __IgnoreEls,
+								      _el)
+					   | Subscriptions]);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
+					  _els,
+					  [decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#owner">>,
+								      __IgnoreEls,
+								      _el)
+					   | Subscriptions]);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_subscriptions_els(__TopXMLNS, __IgnoreEls,
+					  _els,
+					  [decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#event">>,
 								      __IgnoreEls,
 								      _el)
 					   | Subscriptions]);
@@ -13003,364 +15027,387 @@ encode_pubsub_subscriptions_attr_node(_val, _acc) ->
 
 decode_pubsub_event(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"event">>, _attrs, _els}) ->
-    Items = decode_pubsub_event_els(__TopXMLNS, __IgnoreEls,
-				    _els, []),
-    {pubsub_event, Items}.
+    {Items, Create, Delete, Purge, Configuration,
+     Subscription} =
+	decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				undefined, undefined, undefined, undefined,
+				undefined, undefined),
+    {ps_event, Items, Purge, Subscription, Delete, Create,
+     Configuration}.
 
 decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, [],
-			Items) ->
-    lists:reverse(Items);
+			Items, Create, Delete, Purge, Configuration,
+			Subscription) ->
+    {Items, Create, Delete, Purge, Configuration,
+     Subscription};
 decode_pubsub_event_els(__TopXMLNS, __IgnoreEls,
-			[{xmlel, <<"items">>, _attrs, _} = _el | _els],
-			Items) ->
+			[{xmlel, <<"items">>, _attrs, _} = _el | _els], Items,
+			Create, Delete, Purge, Configuration, Subscription) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
 		 <<"http://jabber.org/protocol/pubsub#event">> ->
 	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
-				  [decode_pubsub_event_items(__TopXMLNS,
-							     __IgnoreEls, _el)
-				   | Items]);
+				  decode_pubsub_items(__TopXMLNS, __IgnoreEls,
+						      _el),
+				  Create, Delete, Purge, Configuration,
+				  Subscription);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  decode_pubsub_items(<<"http://jabber.org/protocol/pubsub">>,
+						      __IgnoreEls, _el),
+				  Create, Delete, Purge, Configuration,
+				  Subscription);
       <<"http://jabber.org/protocol/pubsub#event">> ->
 	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
-				  [decode_pubsub_event_items(<<"http://jabber.org/protocol/pubsub#event">>,
-							     __IgnoreEls, _el)
-				   | Items]);
+				  decode_pubsub_items(<<"http://jabber.org/protocol/pubsub#event">>,
+						      __IgnoreEls, _el),
+				  Create, Delete, Purge, Configuration,
+				  Subscription);
       _ ->
 	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
-				  Items)
+				  Items, Create, Delete, Purge, Configuration,
+				  Subscription)
     end;
 decode_pubsub_event_els(__TopXMLNS, __IgnoreEls,
-			[_ | _els], Items) ->
+			[{xmlel, <<"subscription">>, _attrs, _} = _el | _els],
+			Items, Create, Delete, Purge, Configuration,
+			Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete, Purge, Configuration,
+				  decode_pubsub_subscription(__TopXMLNS,
+							     __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete, Purge, Configuration,
+				  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub">>,
+							     __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete, Purge, Configuration,
+				  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#owner">>,
+							     __IgnoreEls, _el));
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete, Purge, Configuration,
+				  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#event">>,
+							     __IgnoreEls, _el));
+      _ ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete, Purge, Configuration,
+				  Subscription)
+    end;
+decode_pubsub_event_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"purge">>, _attrs, _} = _el | _els], Items,
+			Create, Delete, Purge, Configuration, Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete,
+				  decode_pubsub_purge(__TopXMLNS, __IgnoreEls,
+						      _el),
+				  Configuration, Subscription);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete,
+				  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub">>,
+						      __IgnoreEls, _el),
+				  Configuration, Subscription);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete,
+				  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#owner">>,
+						      __IgnoreEls, _el),
+				  Configuration, Subscription);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete,
+				  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#event">>,
+						      __IgnoreEls, _el),
+				  Configuration, Subscription);
+      _ ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete, Purge, Configuration,
+				  Subscription)
+    end;
+decode_pubsub_event_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"delete">>, _attrs, _} = _el | _els], Items,
+			Create, Delete, Purge, Configuration, Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create,
+				  decode_pubsub_delete(__TopXMLNS, __IgnoreEls,
+						       _el),
+				  Purge, Configuration, Subscription);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create,
+				  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub">>,
+						       __IgnoreEls, _el),
+				  Purge, Configuration, Subscription);
+      <<"http://jabber.org/protocol/pubsub#owner">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create,
+				  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#owner">>,
+						       __IgnoreEls, _el),
+				  Purge, Configuration, Subscription);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create,
+				  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#event">>,
+						       __IgnoreEls, _el),
+				  Purge, Configuration, Subscription);
+      _ ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete, Purge, Configuration,
+				  Subscription)
+    end;
+decode_pubsub_event_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"create">>, _attrs, _} = _el | _els], Items,
+			Create, Delete, Purge, Configuration, Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items,
+				  decode_pubsub_create(__TopXMLNS, __IgnoreEls,
+						       _el),
+				  Delete, Purge, Configuration, Subscription);
+      <<"http://jabber.org/protocol/pubsub">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items,
+				  decode_pubsub_create(<<"http://jabber.org/protocol/pubsub">>,
+						       __IgnoreEls, _el),
+				  Delete, Purge, Configuration, Subscription);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items,
+				  decode_pubsub_create(<<"http://jabber.org/protocol/pubsub#event">>,
+						       __IgnoreEls, _el),
+				  Delete, Purge, Configuration, Subscription);
+      _ ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete, Purge, Configuration,
+				  Subscription)
+    end;
+decode_pubsub_event_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"configuration">>, _attrs, _} = _el | _els],
+			Items, Create, Delete, Purge, Configuration,
+			Subscription) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete, Purge,
+				  decode_pubsub_event_configuration(__TopXMLNS,
+								    __IgnoreEls,
+								    _el),
+				  Subscription);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete, Purge,
+				  decode_pubsub_event_configuration(<<"http://jabber.org/protocol/pubsub#event">>,
+								    __IgnoreEls,
+								    _el),
+				  Subscription);
+      _ ->
+	  decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Create, Delete, Purge, Configuration,
+				  Subscription)
+    end;
+decode_pubsub_event_els(__TopXMLNS, __IgnoreEls,
+			[_ | _els], Items, Create, Delete, Purge, Configuration,
+			Subscription) ->
     decode_pubsub_event_els(__TopXMLNS, __IgnoreEls, _els,
-			    Items).
+			    Items, Create, Delete, Purge, Configuration,
+			    Subscription).
 
-encode_pubsub_event({pubsub_event, Items},
+encode_pubsub_event({ps_event, Items, Purge,
+		     Subscription, Delete, Create, Configuration},
 		    _xmlns_attrs) ->
     _els = lists:reverse('encode_pubsub_event_$items'(Items,
-						      [])),
+						      'encode_pubsub_event_$create'(Create,
+										    'encode_pubsub_event_$delete'(Delete,
+														  'encode_pubsub_event_$purge'(Purge,
+																	       'encode_pubsub_event_$configuration'(Configuration,
+																						    'encode_pubsub_event_$subscription'(Subscription,
+																											[]))))))),
     _attrs = _xmlns_attrs,
     {xmlel, <<"event">>, _attrs, _els}.
 
-'encode_pubsub_event_$items'([], _acc) -> _acc;
-'encode_pubsub_event_$items'([Items | _els], _acc) ->
-    'encode_pubsub_event_$items'(_els,
-				 [encode_pubsub_event_items(Items, []) | _acc]).
+'encode_pubsub_event_$items'(undefined, _acc) -> _acc;
+'encode_pubsub_event_$items'(Items, _acc) ->
+    [encode_pubsub_items(Items, []) | _acc].
 
-decode_pubsub_event_items(__TopXMLNS, __IgnoreEls,
-			  {xmlel, <<"items">>, _attrs, _els}) ->
-    {Items, Retract} =
-	decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-				      _els, [], []),
-    Node = decode_pubsub_event_items_attrs(__TopXMLNS,
-					   _attrs, undefined),
-    {pubsub_event_items, Node, Retract, Items}.
+'encode_pubsub_event_$create'(undefined, _acc) -> _acc;
+'encode_pubsub_event_$create'(Create, _acc) ->
+    [encode_pubsub_create(Create, []) | _acc].
 
-decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-			      [], Items, Retract) ->
-    {lists:reverse(Items), lists:reverse(Retract)};
-decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-			      [{xmlel, <<"retract">>, _attrs, _} = _el | _els],
-			      Items, Retract) ->
-    case get_attr(<<"xmlns">>, _attrs) of
-      <<"">>
-	  when __TopXMLNS ==
-		 <<"http://jabber.org/protocol/pubsub#event">> ->
-	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-					_els, Items,
-					[decode_pubsub_event_retract(__TopXMLNS,
-								     __IgnoreEls,
-								     _el)
-					 | Retract]);
-      <<"http://jabber.org/protocol/pubsub#event">> ->
-	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-					_els, Items,
-					[decode_pubsub_event_retract(<<"http://jabber.org/protocol/pubsub#event">>,
-								     __IgnoreEls,
-								     _el)
-					 | Retract]);
-      _ ->
-	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-					_els, Items, Retract)
-    end;
-decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-			      [{xmlel, <<"item">>, _attrs, _} = _el | _els],
-			      Items, Retract) ->
-    case get_attr(<<"xmlns">>, _attrs) of
-      <<"">>
-	  when __TopXMLNS ==
-		 <<"http://jabber.org/protocol/pubsub#event">> ->
-	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-					_els,
-					[decode_pubsub_event_item(__TopXMLNS,
-								  __IgnoreEls,
-								  _el)
-					 | Items],
-					Retract);
-      <<"http://jabber.org/protocol/pubsub#event">> ->
-	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-					_els,
-					[decode_pubsub_event_item(<<"http://jabber.org/protocol/pubsub#event">>,
-								  __IgnoreEls,
-								  _el)
-					 | Items],
-					Retract);
-      _ ->
-	  decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-					_els, Items, Retract)
-    end;
-decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-			      [_ | _els], Items, Retract) ->
-    decode_pubsub_event_items_els(__TopXMLNS, __IgnoreEls,
-				  _els, Items, Retract).
+'encode_pubsub_event_$delete'(undefined, _acc) -> _acc;
+'encode_pubsub_event_$delete'(Delete, _acc) ->
+    [encode_pubsub_delete(Delete, []) | _acc].
 
-decode_pubsub_event_items_attrs(__TopXMLNS,
-				[{<<"node">>, _val} | _attrs], _Node) ->
-    decode_pubsub_event_items_attrs(__TopXMLNS, _attrs,
-				    _val);
-decode_pubsub_event_items_attrs(__TopXMLNS,
-				[_ | _attrs], Node) ->
-    decode_pubsub_event_items_attrs(__TopXMLNS, _attrs,
-				    Node);
-decode_pubsub_event_items_attrs(__TopXMLNS, [], Node) ->
-    decode_pubsub_event_items_attr_node(__TopXMLNS, Node).
+'encode_pubsub_event_$purge'(undefined, _acc) -> _acc;
+'encode_pubsub_event_$purge'(Purge, _acc) ->
+    [encode_pubsub_purge(Purge, []) | _acc].
 
-encode_pubsub_event_items({pubsub_event_items, Node,
-			   Retract, Items},
-			  _xmlns_attrs) ->
-    _els =
-	lists:reverse('encode_pubsub_event_items_$items'(Items,
-							 'encode_pubsub_event_items_$retract'(Retract,
-											      []))),
-    _attrs = encode_pubsub_event_items_attr_node(Node,
-						 _xmlns_attrs),
-    {xmlel, <<"items">>, _attrs, _els}.
-
-'encode_pubsub_event_items_$items'([], _acc) -> _acc;
-'encode_pubsub_event_items_$items'([Items | _els],
-				   _acc) ->
-    'encode_pubsub_event_items_$items'(_els,
-				       [encode_pubsub_event_item(Items, [])
-					| _acc]).
-
-'encode_pubsub_event_items_$retract'([], _acc) -> _acc;
-'encode_pubsub_event_items_$retract'([Retract | _els],
-				     _acc) ->
-    'encode_pubsub_event_items_$retract'(_els,
-					 [encode_pubsub_event_retract(Retract,
-								      [])
-					  | _acc]).
-
-decode_pubsub_event_items_attr_node(__TopXMLNS,
-				    undefined) ->
-    erlang:error({xmpp_codec,
-		  {missing_attr, <<"node">>, <<"items">>, __TopXMLNS}});
-decode_pubsub_event_items_attr_node(__TopXMLNS, _val) ->
-    _val.
-
-encode_pubsub_event_items_attr_node(_val, _acc) ->
-    [{<<"node">>, _val} | _acc].
-
-decode_pubsub_event_item(__TopXMLNS, __IgnoreEls,
-			 {xmlel, <<"item">>, _attrs, _els}) ->
-    __Xmls = decode_pubsub_event_item_els(__TopXMLNS,
-					  __IgnoreEls, _els, []),
-    {Id, Node, Publisher} =
-	decode_pubsub_event_item_attrs(__TopXMLNS, _attrs,
-				       undefined, undefined, undefined),
-    {pubsub_event_item, Id, Node, Publisher, __Xmls}.
-
-decode_pubsub_event_item_els(__TopXMLNS, __IgnoreEls,
-			     [], __Xmls) ->
-    lists:reverse(__Xmls);
-decode_pubsub_event_item_els(__TopXMLNS, __IgnoreEls,
-			     [{xmlel, _, _, _} = _el | _els], __Xmls) ->
-    decode_pubsub_event_item_els(__TopXMLNS, __IgnoreEls,
-				 _els, [_el | __Xmls]);
-decode_pubsub_event_item_els(__TopXMLNS, __IgnoreEls,
-			     [_ | _els], __Xmls) ->
-    decode_pubsub_event_item_els(__TopXMLNS, __IgnoreEls,
-				 _els, __Xmls).
-
-decode_pubsub_event_item_attrs(__TopXMLNS,
-			       [{<<"id">>, _val} | _attrs], _Id, Node,
-			       Publisher) ->
-    decode_pubsub_event_item_attrs(__TopXMLNS, _attrs, _val,
-				   Node, Publisher);
-decode_pubsub_event_item_attrs(__TopXMLNS,
-			       [{<<"node">>, _val} | _attrs], Id, _Node,
-			       Publisher) ->
-    decode_pubsub_event_item_attrs(__TopXMLNS, _attrs, Id,
-				   _val, Publisher);
-decode_pubsub_event_item_attrs(__TopXMLNS,
-			       [{<<"publisher">>, _val} | _attrs], Id, Node,
-			       _Publisher) ->
-    decode_pubsub_event_item_attrs(__TopXMLNS, _attrs, Id,
-				   Node, _val);
-decode_pubsub_event_item_attrs(__TopXMLNS, [_ | _attrs],
-			       Id, Node, Publisher) ->
-    decode_pubsub_event_item_attrs(__TopXMLNS, _attrs, Id,
-				   Node, Publisher);
-decode_pubsub_event_item_attrs(__TopXMLNS, [], Id, Node,
-			       Publisher) ->
-    {decode_pubsub_event_item_attr_id(__TopXMLNS, Id),
-     decode_pubsub_event_item_attr_node(__TopXMLNS, Node),
-     decode_pubsub_event_item_attr_publisher(__TopXMLNS,
-					     Publisher)}.
-
-encode_pubsub_event_item({pubsub_event_item, Id, Node,
-			  Publisher, __Xmls},
-			 _xmlns_attrs) ->
-    _els = __Xmls,
-    _attrs =
-	encode_pubsub_event_item_attr_publisher(Publisher,
-						encode_pubsub_event_item_attr_node(Node,
-										   encode_pubsub_event_item_attr_id(Id,
-														    _xmlns_attrs))),
-    {xmlel, <<"item">>, _attrs, _els}.
-
-decode_pubsub_event_item_attr_id(__TopXMLNS,
-				 undefined) ->
-    <<>>;
-decode_pubsub_event_item_attr_id(__TopXMLNS, _val) ->
-    _val.
-
-encode_pubsub_event_item_attr_id(<<>>, _acc) -> _acc;
-encode_pubsub_event_item_attr_id(_val, _acc) ->
-    [{<<"id">>, _val} | _acc].
-
-decode_pubsub_event_item_attr_node(__TopXMLNS,
-				   undefined) ->
-    <<>>;
-decode_pubsub_event_item_attr_node(__TopXMLNS, _val) ->
-    _val.
-
-encode_pubsub_event_item_attr_node(<<>>, _acc) -> _acc;
-encode_pubsub_event_item_attr_node(_val, _acc) ->
-    [{<<"node">>, _val} | _acc].
-
-decode_pubsub_event_item_attr_publisher(__TopXMLNS,
-					undefined) ->
-    <<>>;
-decode_pubsub_event_item_attr_publisher(__TopXMLNS,
-					_val) ->
-    _val.
-
-encode_pubsub_event_item_attr_publisher(<<>>, _acc) ->
+'encode_pubsub_event_$configuration'(undefined, _acc) ->
     _acc;
-encode_pubsub_event_item_attr_publisher(_val, _acc) ->
-    [{<<"publisher">>, _val} | _acc].
+'encode_pubsub_event_$configuration'(Configuration,
+				     _acc) ->
+    [encode_pubsub_event_configuration(Configuration, [])
+     | _acc].
 
-decode_pubsub_event_retract(__TopXMLNS, __IgnoreEls,
-			    {xmlel, <<"retract">>, _attrs, _els}) ->
-    Id = decode_pubsub_event_retract_attrs(__TopXMLNS,
-					   _attrs, undefined),
-    Id.
-
-decode_pubsub_event_retract_attrs(__TopXMLNS,
-				  [{<<"id">>, _val} | _attrs], _Id) ->
-    decode_pubsub_event_retract_attrs(__TopXMLNS, _attrs,
-				      _val);
-decode_pubsub_event_retract_attrs(__TopXMLNS,
-				  [_ | _attrs], Id) ->
-    decode_pubsub_event_retract_attrs(__TopXMLNS, _attrs,
-				      Id);
-decode_pubsub_event_retract_attrs(__TopXMLNS, [], Id) ->
-    decode_pubsub_event_retract_attr_id(__TopXMLNS, Id).
-
-encode_pubsub_event_retract(Id, _xmlns_attrs) ->
-    _els = [],
-    _attrs = encode_pubsub_event_retract_attr_id(Id,
-						 _xmlns_attrs),
-    {xmlel, <<"retract">>, _attrs, _els}.
-
-decode_pubsub_event_retract_attr_id(__TopXMLNS,
-				    undefined) ->
-    erlang:error({xmpp_codec,
-		  {missing_attr, <<"id">>, <<"retract">>, __TopXMLNS}});
-decode_pubsub_event_retract_attr_id(__TopXMLNS, _val) ->
-    _val.
-
-encode_pubsub_event_retract_attr_id(_val, _acc) ->
-    [{<<"id">>, _val} | _acc].
+'encode_pubsub_event_$subscription'(undefined, _acc) ->
+    _acc;
+'encode_pubsub_event_$subscription'(Subscription,
+				    _acc) ->
+    [encode_pubsub_subscription(Subscription, []) | _acc].
 
 decode_pubsub_items(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"items">>, _attrs, _els}) ->
-    Items = decode_pubsub_items_els(__TopXMLNS, __IgnoreEls,
-				    _els, []),
-    {Max_items, Node, Subid} =
+    {Items, Retract} = decode_pubsub_items_els(__TopXMLNS,
+					       __IgnoreEls, _els, [],
+					       undefined),
+    {Xmlns, Max_items, Node, Subid} =
 	decode_pubsub_items_attrs(__TopXMLNS, _attrs, undefined,
-				  undefined, undefined),
-    {pubsub_items, Node, Max_items, Subid, Items}.
+				  undefined, undefined, undefined),
+    {ps_items, Xmlns, Node, Items, Max_items, Subid,
+     Retract}.
 
 decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, [],
-			Items) ->
-    lists:reverse(Items);
+			Items, Retract) ->
+    {lists:reverse(Items), Retract};
 decode_pubsub_items_els(__TopXMLNS, __IgnoreEls,
-			[{xmlel, <<"item">>, _attrs, _} = _el | _els], Items) ->
+			[{xmlel, <<"retract">>, _attrs, _} = _el | _els], Items,
+			Retract) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"">>
 	  when __TopXMLNS ==
-		 <<"http://jabber.org/protocol/pubsub">> ->
+		 <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items,
+				  decode_pubsub_event_retract(__TopXMLNS,
+							      __IgnoreEls,
+							      _el));
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items,
+				  decode_pubsub_event_retract(<<"http://jabber.org/protocol/pubsub#event">>,
+							      __IgnoreEls,
+							      _el));
+      _ ->
+	  decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
+				  Items, Retract)
+    end;
+decode_pubsub_items_els(__TopXMLNS, __IgnoreEls,
+			[{xmlel, <<"item">>, _attrs, _} = _el | _els], Items,
+			Retract) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">>
+	  when __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub">>;
+	       __TopXMLNS ==
+		 <<"http://jabber.org/protocol/pubsub#event">> ->
 	  decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
 				  [decode_pubsub_item(__TopXMLNS, __IgnoreEls,
 						      _el)
-				   | Items]);
+				   | Items],
+				  Retract);
       <<"http://jabber.org/protocol/pubsub">> ->
 	  decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
 				  [decode_pubsub_item(<<"http://jabber.org/protocol/pubsub">>,
 						      __IgnoreEls, _el)
-				   | Items]);
+				   | Items],
+				  Retract);
+      <<"http://jabber.org/protocol/pubsub#event">> ->
+	  decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
+				  [decode_pubsub_item(<<"http://jabber.org/protocol/pubsub#event">>,
+						      __IgnoreEls, _el)
+				   | Items],
+				  Retract);
       _ ->
 	  decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
-				  Items)
+				  Items, Retract)
     end;
 decode_pubsub_items_els(__TopXMLNS, __IgnoreEls,
-			[_ | _els], Items) ->
+			[_ | _els], Items, Retract) ->
     decode_pubsub_items_els(__TopXMLNS, __IgnoreEls, _els,
-			    Items).
+			    Items, Retract).
 
 decode_pubsub_items_attrs(__TopXMLNS,
-			  [{<<"max_items">>, _val} | _attrs], _Max_items, Node,
-			  Subid) ->
-    decode_pubsub_items_attrs(__TopXMLNS, _attrs, _val,
-			      Node, Subid);
-decode_pubsub_items_attrs(__TopXMLNS,
-			  [{<<"node">>, _val} | _attrs], Max_items, _Node,
-			  Subid) ->
-    decode_pubsub_items_attrs(__TopXMLNS, _attrs, Max_items,
-			      _val, Subid);
-decode_pubsub_items_attrs(__TopXMLNS,
-			  [{<<"subid">>, _val} | _attrs], Max_items, Node,
-			  _Subid) ->
-    decode_pubsub_items_attrs(__TopXMLNS, _attrs, Max_items,
-			      Node, _val);
-decode_pubsub_items_attrs(__TopXMLNS, [_ | _attrs],
-			  Max_items, Node, Subid) ->
-    decode_pubsub_items_attrs(__TopXMLNS, _attrs, Max_items,
-			      Node, Subid);
-decode_pubsub_items_attrs(__TopXMLNS, [], Max_items,
+			  [{<<"xmlns">>, _val} | _attrs], _Xmlns, Max_items,
 			  Node, Subid) ->
-    {decode_pubsub_items_attr_max_items(__TopXMLNS,
+    decode_pubsub_items_attrs(__TopXMLNS, _attrs, _val,
+			      Max_items, Node, Subid);
+decode_pubsub_items_attrs(__TopXMLNS,
+			  [{<<"max_items">>, _val} | _attrs], Xmlns, _Max_items,
+			  Node, Subid) ->
+    decode_pubsub_items_attrs(__TopXMLNS, _attrs, Xmlns,
+			      _val, Node, Subid);
+decode_pubsub_items_attrs(__TopXMLNS,
+			  [{<<"node">>, _val} | _attrs], Xmlns, Max_items,
+			  _Node, Subid) ->
+    decode_pubsub_items_attrs(__TopXMLNS, _attrs, Xmlns,
+			      Max_items, _val, Subid);
+decode_pubsub_items_attrs(__TopXMLNS,
+			  [{<<"subid">>, _val} | _attrs], Xmlns, Max_items,
+			  Node, _Subid) ->
+    decode_pubsub_items_attrs(__TopXMLNS, _attrs, Xmlns,
+			      Max_items, Node, _val);
+decode_pubsub_items_attrs(__TopXMLNS, [_ | _attrs],
+			  Xmlns, Max_items, Node, Subid) ->
+    decode_pubsub_items_attrs(__TopXMLNS, _attrs, Xmlns,
+			      Max_items, Node, Subid);
+decode_pubsub_items_attrs(__TopXMLNS, [], Xmlns,
+			  Max_items, Node, Subid) ->
+    {decode_pubsub_items_attr_xmlns(__TopXMLNS, Xmlns),
+     decode_pubsub_items_attr_max_items(__TopXMLNS,
 					Max_items),
      decode_pubsub_items_attr_node(__TopXMLNS, Node),
      decode_pubsub_items_attr_subid(__TopXMLNS, Subid)}.
 
-encode_pubsub_items({pubsub_items, Node, Max_items,
-		     Subid, Items},
+encode_pubsub_items({ps_items, Xmlns, Node, Items,
+		     Max_items, Subid, Retract},
 		    _xmlns_attrs) ->
     _els = lists:reverse('encode_pubsub_items_$items'(Items,
-						      [])),
+						      'encode_pubsub_items_$retract'(Retract,
+										     []))),
     _attrs = encode_pubsub_items_attr_subid(Subid,
 					    encode_pubsub_items_attr_node(Node,
 									  encode_pubsub_items_attr_max_items(Max_items,
-													     _xmlns_attrs))),
+													     encode_pubsub_items_attr_xmlns(Xmlns,
+																	    _xmlns_attrs)))),
     {xmlel, <<"items">>, _attrs, _els}.
 
 'encode_pubsub_items_$items'([], _acc) -> _acc;
 'encode_pubsub_items_$items'([Items | _els], _acc) ->
     'encode_pubsub_items_$items'(_els,
 				 [encode_pubsub_item(Items, []) | _acc]).
+
+'encode_pubsub_items_$retract'(undefined, _acc) -> _acc;
+'encode_pubsub_items_$retract'(Retract, _acc) ->
+    [encode_pubsub_event_retract(Retract, []) | _acc].
+
+decode_pubsub_items_attr_xmlns(__TopXMLNS, undefined) ->
+    <<>>;
+decode_pubsub_items_attr_xmlns(__TopXMLNS, _val) ->
+    _val.
+
+encode_pubsub_items_attr_xmlns(<<>>, _acc) -> _acc;
+encode_pubsub_items_attr_xmlns(_val, _acc) ->
+    [{<<"xmlns">>, _val} | _acc].
 
 decode_pubsub_items_attr_max_items(__TopXMLNS,
 				   undefined) ->
@@ -13400,9 +15447,10 @@ decode_pubsub_item(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"item">>, _attrs, _els}) ->
     __Xmls = decode_pubsub_item_els(__TopXMLNS, __IgnoreEls,
 				    _els, []),
-    Id = decode_pubsub_item_attrs(__TopXMLNS, _attrs,
-				  undefined),
-    {pubsub_item, Id, __Xmls}.
+    {Id, Xmlns, Node, Publisher} =
+	decode_pubsub_item_attrs(__TopXMLNS, _attrs, undefined,
+				 undefined, undefined, undefined),
+    {ps_item, Xmlns, Id, __Xmls, Node, Publisher}.
 
 decode_pubsub_item_els(__TopXMLNS, __IgnoreEls, [],
 		       __Xmls) ->
@@ -13417,18 +15465,46 @@ decode_pubsub_item_els(__TopXMLNS, __IgnoreEls,
 			   __Xmls).
 
 decode_pubsub_item_attrs(__TopXMLNS,
-			 [{<<"id">>, _val} | _attrs], _Id) ->
-    decode_pubsub_item_attrs(__TopXMLNS, _attrs, _val);
-decode_pubsub_item_attrs(__TopXMLNS, [_ | _attrs],
-			 Id) ->
-    decode_pubsub_item_attrs(__TopXMLNS, _attrs, Id);
-decode_pubsub_item_attrs(__TopXMLNS, [], Id) ->
-    decode_pubsub_item_attr_id(__TopXMLNS, Id).
+			 [{<<"id">>, _val} | _attrs], _Id, Xmlns, Node,
+			 Publisher) ->
+    decode_pubsub_item_attrs(__TopXMLNS, _attrs, _val,
+			     Xmlns, Node, Publisher);
+decode_pubsub_item_attrs(__TopXMLNS,
+			 [{<<"xmlns">>, _val} | _attrs], Id, _Xmlns, Node,
+			 Publisher) ->
+    decode_pubsub_item_attrs(__TopXMLNS, _attrs, Id, _val,
+			     Node, Publisher);
+decode_pubsub_item_attrs(__TopXMLNS,
+			 [{<<"node">>, _val} | _attrs], Id, Xmlns, _Node,
+			 Publisher) ->
+    decode_pubsub_item_attrs(__TopXMLNS, _attrs, Id, Xmlns,
+			     _val, Publisher);
+decode_pubsub_item_attrs(__TopXMLNS,
+			 [{<<"publisher">>, _val} | _attrs], Id, Xmlns, Node,
+			 _Publisher) ->
+    decode_pubsub_item_attrs(__TopXMLNS, _attrs, Id, Xmlns,
+			     Node, _val);
+decode_pubsub_item_attrs(__TopXMLNS, [_ | _attrs], Id,
+			 Xmlns, Node, Publisher) ->
+    decode_pubsub_item_attrs(__TopXMLNS, _attrs, Id, Xmlns,
+			     Node, Publisher);
+decode_pubsub_item_attrs(__TopXMLNS, [], Id, Xmlns,
+			 Node, Publisher) ->
+    {decode_pubsub_item_attr_id(__TopXMLNS, Id),
+     decode_pubsub_item_attr_xmlns(__TopXMLNS, Xmlns),
+     decode_pubsub_item_attr_node(__TopXMLNS, Node),
+     decode_pubsub_item_attr_publisher(__TopXMLNS,
+				       Publisher)}.
 
-encode_pubsub_item({pubsub_item, Id, __Xmls},
+encode_pubsub_item({ps_item, Xmlns, Id, __Xmls, Node,
+		    Publisher},
 		   _xmlns_attrs) ->
     _els = __Xmls,
-    _attrs = encode_pubsub_item_attr_id(Id, _xmlns_attrs),
+    _attrs = encode_pubsub_item_attr_publisher(Publisher,
+					       encode_pubsub_item_attr_node(Node,
+									    encode_pubsub_item_attr_xmlns(Xmlns,
+													  encode_pubsub_item_attr_id(Id,
+																     _xmlns_attrs)))),
     {xmlel, <<"item">>, _attrs, _els}.
 
 decode_pubsub_item_attr_id(__TopXMLNS, undefined) ->
@@ -13439,40 +15515,287 @@ encode_pubsub_item_attr_id(<<>>, _acc) -> _acc;
 encode_pubsub_item_attr_id(_val, _acc) ->
     [{<<"id">>, _val} | _acc].
 
+decode_pubsub_item_attr_xmlns(__TopXMLNS, undefined) ->
+    <<>>;
+decode_pubsub_item_attr_xmlns(__TopXMLNS, _val) -> _val.
+
+encode_pubsub_item_attr_xmlns(<<>>, _acc) -> _acc;
+encode_pubsub_item_attr_xmlns(_val, _acc) ->
+    [{<<"xmlns">>, _val} | _acc].
+
+decode_pubsub_item_attr_node(__TopXMLNS, undefined) ->
+    <<>>;
+decode_pubsub_item_attr_node(__TopXMLNS, _val) -> _val.
+
+encode_pubsub_item_attr_node(<<>>, _acc) -> _acc;
+encode_pubsub_item_attr_node(_val, _acc) ->
+    [{<<"node">>, _val} | _acc].
+
+decode_pubsub_item_attr_publisher(__TopXMLNS,
+				  undefined) ->
+    <<>>;
+decode_pubsub_item_attr_publisher(__TopXMLNS, _val) ->
+    _val.
+
+encode_pubsub_item_attr_publisher(<<>>, _acc) -> _acc;
+encode_pubsub_item_attr_publisher(_val, _acc) ->
+    [{<<"publisher">>, _val} | _acc].
+
+decode_pubsub_event_retract(__TopXMLNS, __IgnoreEls,
+			    {xmlel, <<"retract">>, _attrs, _els}) ->
+    Id = decode_pubsub_event_retract_attrs(__TopXMLNS,
+					   _attrs, undefined),
+    Id.
+
+decode_pubsub_event_retract_attrs(__TopXMLNS,
+				  [{<<"id">>, _val} | _attrs], _Id) ->
+    decode_pubsub_event_retract_attrs(__TopXMLNS, _attrs,
+				      _val);
+decode_pubsub_event_retract_attrs(__TopXMLNS,
+				  [_ | _attrs], Id) ->
+    decode_pubsub_event_retract_attrs(__TopXMLNS, _attrs,
+				      Id);
+decode_pubsub_event_retract_attrs(__TopXMLNS, [], Id) ->
+    decode_pubsub_event_retract_attr_id(__TopXMLNS, Id).
+
+encode_pubsub_event_retract(Id, _xmlns_attrs) ->
+    _els = [],
+    _attrs = encode_pubsub_event_retract_attr_id(Id,
+						 _xmlns_attrs),
+    {xmlel, <<"retract">>, _attrs, _els}.
+
+decode_pubsub_event_retract_attr_id(__TopXMLNS,
+				    undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"id">>, <<"retract">>, __TopXMLNS}});
+decode_pubsub_event_retract_attr_id(__TopXMLNS, _val) ->
+    _val.
+
+encode_pubsub_event_retract_attr_id(_val, _acc) ->
+    [{<<"id">>, _val} | _acc].
+
+decode_pubsub_event_configuration(__TopXMLNS,
+				  __IgnoreEls,
+				  {xmlel, <<"configuration">>, _attrs, _els}) ->
+    Xdata =
+	decode_pubsub_event_configuration_els(__TopXMLNS,
+					      __IgnoreEls, _els, undefined),
+    Node =
+	decode_pubsub_event_configuration_attrs(__TopXMLNS,
+						_attrs, undefined),
+    {Node, Xdata}.
+
+decode_pubsub_event_configuration_els(__TopXMLNS,
+				      __IgnoreEls, [], Xdata) ->
+    Xdata;
+decode_pubsub_event_configuration_els(__TopXMLNS,
+				      __IgnoreEls,
+				      [{xmlel, <<"x">>, _attrs, _} = _el
+				       | _els],
+				      Xdata) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"jabber:x:data">> ->
+	  decode_pubsub_event_configuration_els(__TopXMLNS,
+						__IgnoreEls, _els,
+						decode_xdata(<<"jabber:x:data">>,
+							     __IgnoreEls, _el));
+      _ ->
+	  decode_pubsub_event_configuration_els(__TopXMLNS,
+						__IgnoreEls, _els, Xdata)
+    end;
+decode_pubsub_event_configuration_els(__TopXMLNS,
+				      __IgnoreEls, [_ | _els], Xdata) ->
+    decode_pubsub_event_configuration_els(__TopXMLNS,
+					  __IgnoreEls, _els, Xdata).
+
+decode_pubsub_event_configuration_attrs(__TopXMLNS,
+					[{<<"node">>, _val} | _attrs], _Node) ->
+    decode_pubsub_event_configuration_attrs(__TopXMLNS,
+					    _attrs, _val);
+decode_pubsub_event_configuration_attrs(__TopXMLNS,
+					[_ | _attrs], Node) ->
+    decode_pubsub_event_configuration_attrs(__TopXMLNS,
+					    _attrs, Node);
+decode_pubsub_event_configuration_attrs(__TopXMLNS, [],
+					Node) ->
+    decode_pubsub_event_configuration_attr_node(__TopXMLNS,
+						Node).
+
+encode_pubsub_event_configuration({Node, Xdata},
+				  _xmlns_attrs) ->
+    _els =
+	lists:reverse('encode_pubsub_event_configuration_$xdata'(Xdata,
+								 [])),
+    _attrs =
+	encode_pubsub_event_configuration_attr_node(Node,
+						    _xmlns_attrs),
+    {xmlel, <<"configuration">>, _attrs, _els}.
+
+'encode_pubsub_event_configuration_$xdata'(undefined,
+					   _acc) ->
+    _acc;
+'encode_pubsub_event_configuration_$xdata'(Xdata,
+					   _acc) ->
+    [encode_xdata(Xdata,
+		  [{<<"xmlns">>, <<"jabber:x:data">>}])
+     | _acc].
+
+decode_pubsub_event_configuration_attr_node(__TopXMLNS,
+					    undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"node">>, <<"configuration">>,
+		   __TopXMLNS}});
+decode_pubsub_event_configuration_attr_node(__TopXMLNS,
+					    _val) ->
+    _val.
+
+encode_pubsub_event_configuration_attr_node(_val,
+					    _acc) ->
+    [{<<"node">>, _val} | _acc].
+
+decode_pubsub_owner_affiliation(__TopXMLNS, __IgnoreEls,
+				{xmlel, <<"affiliation">>, _attrs, _els}) ->
+    {Jid, Xmlns, Type} =
+	decode_pubsub_owner_affiliation_attrs(__TopXMLNS,
+					      _attrs, undefined, undefined,
+					      undefined),
+    {ps_affiliation, Xmlns, <<>>, Type, Jid}.
+
+decode_pubsub_owner_affiliation_attrs(__TopXMLNS,
+				      [{<<"jid">>, _val} | _attrs], _Jid, Xmlns,
+				      Type) ->
+    decode_pubsub_owner_affiliation_attrs(__TopXMLNS,
+					  _attrs, _val, Xmlns, Type);
+decode_pubsub_owner_affiliation_attrs(__TopXMLNS,
+				      [{<<"xmlns">>, _val} | _attrs], Jid,
+				      _Xmlns, Type) ->
+    decode_pubsub_owner_affiliation_attrs(__TopXMLNS,
+					  _attrs, Jid, _val, Type);
+decode_pubsub_owner_affiliation_attrs(__TopXMLNS,
+				      [{<<"affiliation">>, _val} | _attrs], Jid,
+				      Xmlns, _Type) ->
+    decode_pubsub_owner_affiliation_attrs(__TopXMLNS,
+					  _attrs, Jid, Xmlns, _val);
+decode_pubsub_owner_affiliation_attrs(__TopXMLNS,
+				      [_ | _attrs], Jid, Xmlns, Type) ->
+    decode_pubsub_owner_affiliation_attrs(__TopXMLNS,
+					  _attrs, Jid, Xmlns, Type);
+decode_pubsub_owner_affiliation_attrs(__TopXMLNS, [],
+				      Jid, Xmlns, Type) ->
+    {decode_pubsub_owner_affiliation_attr_jid(__TopXMLNS,
+					      Jid),
+     decode_pubsub_owner_affiliation_attr_xmlns(__TopXMLNS,
+						Xmlns),
+     decode_pubsub_owner_affiliation_attr_affiliation(__TopXMLNS,
+						      Type)}.
+
+encode_pubsub_owner_affiliation({ps_affiliation, Xmlns,
+				 _, Type, Jid},
+				_xmlns_attrs) ->
+    _els = [],
+    _attrs =
+	encode_pubsub_owner_affiliation_attr_affiliation(Type,
+							 encode_pubsub_owner_affiliation_attr_xmlns(Xmlns,
+												    encode_pubsub_owner_affiliation_attr_jid(Jid,
+																	     _xmlns_attrs))),
+    {xmlel, <<"affiliation">>, _attrs, _els}.
+
+decode_pubsub_owner_affiliation_attr_jid(__TopXMLNS,
+					 undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"jid">>, <<"affiliation">>,
+		   __TopXMLNS}});
+decode_pubsub_owner_affiliation_attr_jid(__TopXMLNS,
+					 _val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"jid">>, <<"affiliation">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_pubsub_owner_affiliation_attr_jid(_val, _acc) ->
+    [{<<"jid">>, enc_jid(_val)} | _acc].
+
+decode_pubsub_owner_affiliation_attr_xmlns(__TopXMLNS,
+					   undefined) ->
+    <<>>;
+decode_pubsub_owner_affiliation_attr_xmlns(__TopXMLNS,
+					   _val) ->
+    _val.
+
+encode_pubsub_owner_affiliation_attr_xmlns(<<>>,
+					   _acc) ->
+    _acc;
+encode_pubsub_owner_affiliation_attr_xmlns(_val,
+					   _acc) ->
+    [{<<"xmlns">>, _val} | _acc].
+
+decode_pubsub_owner_affiliation_attr_affiliation(__TopXMLNS,
+						 undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"affiliation">>, <<"affiliation">>,
+		   __TopXMLNS}});
+decode_pubsub_owner_affiliation_attr_affiliation(__TopXMLNS,
+						 _val) ->
+    case catch dec_enum(_val,
+			[member, none, outcast, owner, publisher,
+			 'publish-only'])
+	of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"affiliation">>, <<"affiliation">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_pubsub_owner_affiliation_attr_affiliation(_val,
+						 _acc) ->
+    [{<<"affiliation">>, enc_enum(_val)} | _acc].
+
 decode_pubsub_affiliation(__TopXMLNS, __IgnoreEls,
 			  {xmlel, <<"affiliation">>, _attrs, _els}) ->
-    {Node, Type} =
+    {Node, Xmlns, Type} =
 	decode_pubsub_affiliation_attrs(__TopXMLNS, _attrs,
-					undefined, undefined),
-    {pubsub_affiliation, Node, Type}.
+					undefined, undefined, undefined),
+    {ps_affiliation, Xmlns, Node, Type, undefined}.
 
 decode_pubsub_affiliation_attrs(__TopXMLNS,
-				[{<<"node">>, _val} | _attrs], _Node, Type) ->
+				[{<<"node">>, _val} | _attrs], _Node, Xmlns,
+				Type) ->
     decode_pubsub_affiliation_attrs(__TopXMLNS, _attrs,
-				    _val, Type);
+				    _val, Xmlns, Type);
+decode_pubsub_affiliation_attrs(__TopXMLNS,
+				[{<<"xmlns">>, _val} | _attrs], Node, _Xmlns,
+				Type) ->
+    decode_pubsub_affiliation_attrs(__TopXMLNS, _attrs,
+				    Node, _val, Type);
 decode_pubsub_affiliation_attrs(__TopXMLNS,
 				[{<<"affiliation">>, _val} | _attrs], Node,
-				_Type) ->
+				Xmlns, _Type) ->
     decode_pubsub_affiliation_attrs(__TopXMLNS, _attrs,
-				    Node, _val);
+				    Node, Xmlns, _val);
 decode_pubsub_affiliation_attrs(__TopXMLNS,
-				[_ | _attrs], Node, Type) ->
+				[_ | _attrs], Node, Xmlns, Type) ->
     decode_pubsub_affiliation_attrs(__TopXMLNS, _attrs,
-				    Node, Type);
+				    Node, Xmlns, Type);
 decode_pubsub_affiliation_attrs(__TopXMLNS, [], Node,
-				Type) ->
+				Xmlns, Type) ->
     {decode_pubsub_affiliation_attr_node(__TopXMLNS, Node),
+     decode_pubsub_affiliation_attr_xmlns(__TopXMLNS, Xmlns),
      decode_pubsub_affiliation_attr_affiliation(__TopXMLNS,
 						Type)}.
 
-encode_pubsub_affiliation({pubsub_affiliation, Node,
-			   Type},
+encode_pubsub_affiliation({ps_affiliation, Xmlns, Node,
+			   Type, _},
 			  _xmlns_attrs) ->
     _els = [],
     _attrs =
 	encode_pubsub_affiliation_attr_affiliation(Type,
-						   encode_pubsub_affiliation_attr_node(Node,
-										       _xmlns_attrs)),
+						   encode_pubsub_affiliation_attr_xmlns(Xmlns,
+											encode_pubsub_affiliation_attr_node(Node,
+															    _xmlns_attrs))),
     {xmlel, <<"affiliation">>, _attrs, _els}.
 
 decode_pubsub_affiliation_attr_node(__TopXMLNS,
@@ -13485,6 +15808,18 @@ decode_pubsub_affiliation_attr_node(__TopXMLNS, _val) ->
 
 encode_pubsub_affiliation_attr_node(_val, _acc) ->
     [{<<"node">>, _val} | _acc].
+
+decode_pubsub_affiliation_attr_xmlns(__TopXMLNS,
+				     undefined) ->
+    <<>>;
+decode_pubsub_affiliation_attr_xmlns(__TopXMLNS,
+				     _val) ->
+    _val.
+
+encode_pubsub_affiliation_attr_xmlns(<<>>, _acc) ->
+    _acc;
+encode_pubsub_affiliation_attr_xmlns(_val, _acc) ->
+    [{<<"xmlns">>, _val} | _acc].
 
 decode_pubsub_affiliation_attr_affiliation(__TopXMLNS,
 					   undefined) ->
@@ -13510,56 +15845,85 @@ encode_pubsub_affiliation_attr_affiliation(_val,
 
 decode_pubsub_subscription(__TopXMLNS, __IgnoreEls,
 			   {xmlel, <<"subscription">>, _attrs, _els}) ->
-    {Jid, Node, Subid, Type} =
+    {Xmlns, Jid, Node, Subid, Type, Expiry} =
 	decode_pubsub_subscription_attrs(__TopXMLNS, _attrs,
 					 undefined, undefined, undefined,
-					 undefined),
-    {pubsub_subscription, Jid, Node, Subid, Type}.
+					 undefined, undefined, undefined),
+    {ps_subscription, Xmlns, Jid, Type, Node, Subid,
+     Expiry}.
 
 decode_pubsub_subscription_attrs(__TopXMLNS,
-				 [{<<"jid">>, _val} | _attrs], _Jid, Node,
-				 Subid, Type) ->
+				 [{<<"xmlns">>, _val} | _attrs], _Xmlns, Jid,
+				 Node, Subid, Type, Expiry) ->
     decode_pubsub_subscription_attrs(__TopXMLNS, _attrs,
-				     _val, Node, Subid, Type);
+				     _val, Jid, Node, Subid, Type, Expiry);
 decode_pubsub_subscription_attrs(__TopXMLNS,
-				 [{<<"node">>, _val} | _attrs], Jid, _Node,
-				 Subid, Type) ->
+				 [{<<"jid">>, _val} | _attrs], Xmlns, _Jid,
+				 Node, Subid, Type, Expiry) ->
     decode_pubsub_subscription_attrs(__TopXMLNS, _attrs,
-				     Jid, _val, Subid, Type);
+				     Xmlns, _val, Node, Subid, Type, Expiry);
 decode_pubsub_subscription_attrs(__TopXMLNS,
-				 [{<<"subid">>, _val} | _attrs], Jid, Node,
-				 _Subid, Type) ->
+				 [{<<"node">>, _val} | _attrs], Xmlns, Jid,
+				 _Node, Subid, Type, Expiry) ->
     decode_pubsub_subscription_attrs(__TopXMLNS, _attrs,
-				     Jid, Node, _val, Type);
+				     Xmlns, Jid, _val, Subid, Type, Expiry);
 decode_pubsub_subscription_attrs(__TopXMLNS,
-				 [{<<"subscription">>, _val} | _attrs], Jid,
-				 Node, Subid, _Type) ->
+				 [{<<"subid">>, _val} | _attrs], Xmlns, Jid,
+				 Node, _Subid, Type, Expiry) ->
     decode_pubsub_subscription_attrs(__TopXMLNS, _attrs,
-				     Jid, Node, Subid, _val);
+				     Xmlns, Jid, Node, _val, Type, Expiry);
 decode_pubsub_subscription_attrs(__TopXMLNS,
-				 [_ | _attrs], Jid, Node, Subid, Type) ->
+				 [{<<"subscription">>, _val} | _attrs], Xmlns,
+				 Jid, Node, Subid, _Type, Expiry) ->
     decode_pubsub_subscription_attrs(__TopXMLNS, _attrs,
-				     Jid, Node, Subid, Type);
-decode_pubsub_subscription_attrs(__TopXMLNS, [], Jid,
-				 Node, Subid, Type) ->
-    {decode_pubsub_subscription_attr_jid(__TopXMLNS, Jid),
+				     Xmlns, Jid, Node, Subid, _val, Expiry);
+decode_pubsub_subscription_attrs(__TopXMLNS,
+				 [{<<"expiry">>, _val} | _attrs], Xmlns, Jid,
+				 Node, Subid, Type, _Expiry) ->
+    decode_pubsub_subscription_attrs(__TopXMLNS, _attrs,
+				     Xmlns, Jid, Node, Subid, Type, _val);
+decode_pubsub_subscription_attrs(__TopXMLNS,
+				 [_ | _attrs], Xmlns, Jid, Node, Subid, Type,
+				 Expiry) ->
+    decode_pubsub_subscription_attrs(__TopXMLNS, _attrs,
+				     Xmlns, Jid, Node, Subid, Type, Expiry);
+decode_pubsub_subscription_attrs(__TopXMLNS, [], Xmlns,
+				 Jid, Node, Subid, Type, Expiry) ->
+    {decode_pubsub_subscription_attr_xmlns(__TopXMLNS,
+					   Xmlns),
+     decode_pubsub_subscription_attr_jid(__TopXMLNS, Jid),
      decode_pubsub_subscription_attr_node(__TopXMLNS, Node),
      decode_pubsub_subscription_attr_subid(__TopXMLNS,
 					   Subid),
      decode_pubsub_subscription_attr_subscription(__TopXMLNS,
-						  Type)}.
+						  Type),
+     decode_pubsub_subscription_attr_expiry(__TopXMLNS,
+					    Expiry)}.
 
-encode_pubsub_subscription({pubsub_subscription, Jid,
-			    Node, Subid, Type},
+encode_pubsub_subscription({ps_subscription, Xmlns, Jid,
+			    Type, Node, Subid, Expiry},
 			   _xmlns_attrs) ->
     _els = [],
-    _attrs =
-	encode_pubsub_subscription_attr_subscription(Type,
-						     encode_pubsub_subscription_attr_subid(Subid,
-											   encode_pubsub_subscription_attr_node(Node,
-																encode_pubsub_subscription_attr_jid(Jid,
-																				    _xmlns_attrs)))),
+    _attrs = encode_pubsub_subscription_attr_expiry(Expiry,
+						    encode_pubsub_subscription_attr_subscription(Type,
+												 encode_pubsub_subscription_attr_subid(Subid,
+																       encode_pubsub_subscription_attr_node(Node,
+																					    encode_pubsub_subscription_attr_jid(Jid,
+																										encode_pubsub_subscription_attr_xmlns(Xmlns,
+																														      _xmlns_attrs)))))),
     {xmlel, <<"subscription">>, _attrs, _els}.
+
+decode_pubsub_subscription_attr_xmlns(__TopXMLNS,
+				      undefined) ->
+    <<>>;
+decode_pubsub_subscription_attr_xmlns(__TopXMLNS,
+				      _val) ->
+    _val.
+
+encode_pubsub_subscription_attr_xmlns(<<>>, _acc) ->
+    _acc;
+encode_pubsub_subscription_attr_xmlns(_val, _acc) ->
+    [{<<"xmlns">>, _val} | _acc].
 
 decode_pubsub_subscription_attr_jid(__TopXMLNS,
 				    undefined) ->
@@ -13623,6 +15987,25 @@ encode_pubsub_subscription_attr_subscription(undefined,
 encode_pubsub_subscription_attr_subscription(_val,
 					     _acc) ->
     [{<<"subscription">>, enc_enum(_val)} | _acc].
+
+decode_pubsub_subscription_attr_expiry(__TopXMLNS,
+				       undefined) ->
+    undefined;
+decode_pubsub_subscription_attr_expiry(__TopXMLNS,
+				       _val) ->
+    case catch dec_utc(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"expiry">>, <<"subscription">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_pubsub_subscription_attr_expiry(undefined,
+				       _acc) ->
+    _acc;
+encode_pubsub_subscription_attr_expiry(_val, _acc) ->
+    [{<<"expiry">>, enc_utc(_val)} | _acc].
 
 decode_xdata(__TopXMLNS, __IgnoreEls,
 	     {xmlel, <<"x">>, _attrs, _els}) ->

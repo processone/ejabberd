@@ -25,7 +25,7 @@
 
 -module(gen_pubsub_node).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -type(host() :: mod_pubsub:host()).
 -type(nodeId() :: mod_pubsub:nodeId()).
@@ -175,20 +175,13 @@
     ok |
     {error, xmlel()}.
 
--callback get_items(NodeIdx :: nodeIdx(),
-	JID :: jid(),
-	AccessModel :: accessModel(),
-	Presence_Subscription :: boolean(),
-	RosterGroup :: boolean(),
-	SubId :: subId(),
-	RSM :: none | rsm_in()) ->
-    {result, {[pubsubItem()], none | rsm_out()}} |
-    {error, xmlel()}.
+-callback get_items(nodeIdx(), jid(), accessModel(),
+		    boolean(), boolean(), binary(),
+		    undefined | rsm_set()) ->
+    {result, {[pubsubItem()], undefined | rsm_set()}} | {error, error()}.
 
--callback get_items(NodeIdx :: nodeIdx(),
-	From :: jid(),
-	RSM :: none | rsm_in()) ->
-    {result, {[pubsubItem()], none | rsm_out()}}.
+-callback get_items(nodeIdx(), jid(), undefined | rsm_set()) ->
+    {result, {[pubsubItem()], undefined | rsm_set()}}.
 
 -callback get_item(NodeIdx :: nodeIdx(),
 	ItemId :: itemId(),

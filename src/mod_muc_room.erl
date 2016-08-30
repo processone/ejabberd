@@ -4377,12 +4377,12 @@ send_wrapped(From, To, Packet, Node, State) ->
 wrap(From, To, Packet, Node) ->
     El = xmpp:encode(xmpp:set_from_to(Packet, From, To)),
     #message{
-       sub_els = [#pubsub_event{
-		     items = [#pubsub_event_items{
-				 node = Node,
-				 items = [#pubsub_event_item{
-					     id = randoms:get_string(),
-					     xml_els = [El]}]}]}]}.
+       sub_els = [#ps_event{
+		     items = #ps_items{
+				node = Node,
+				items = [#ps_item{
+					    id = randoms:get_string(),
+					    xml_els = [El]}]}}]}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Multicast

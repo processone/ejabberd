@@ -287,8 +287,8 @@ get_pep_node(#message{from = #jid{luser = <<>>}}) ->
     %% It's not PEP.
     undefined;
 get_pep_node(#message{} = Msg) ->
-    case xmpp:get_subtag(Msg, #pubsub_event{}) of
-	#pubsub_event{items = [#pubsub_event_items{node = Node}]} ->
+    case xmpp:get_subtag(Msg, #ps_event{}) of
+	#ps_event{items = #ps_items{node = Node}} ->
 	    Node;
 	_ ->
 	    undefined

@@ -5,6 +5,47 @@
 			hash :: binary()}).
 -type vcard_xupdate() :: #vcard_xupdate{}.
 
+-record(ps_affiliation, {xmlns = <<>> :: binary(),
+			 node = <<>> :: binary(),
+			 type :: member | none | outcast |
+				 owner | publisher | 'publish-only',
+			 jid :: jid:jid()}).
+-type ps_affiliation() :: #ps_affiliation{}.
+
+-type ps_error_type() :: 'closed-node' | 'configuration-required' |
+			 'invalid-jid' | 'invalid-options' |
+			 'invalid-payload' | 'invalid-subid' |
+			 'item-forbidden' | 'item-required' | 'jid-required' |
+			 'max-items-exceeded' | 'max-nodes-exceeded' |
+			 'nodeid-required' | 'not-in-roster-group' |
+			 'not-subscribed' | 'payload-too-big' |
+			 'payload-required' | 'pending-subscription' |
+			 'presence-subscription-required' | 'subid-required' |
+			 'too-many-subscriptions' | 'unsupported' |
+			 'unsupported-access-model'.
+-type ps_error_feature() :: 'access-authorize' | 'access-open' |
+			    'access-presence' | 'access-roster' |
+			    'access-whitelist' | 'auto-create' |
+			    'auto-subscribe' | 'collections' | 'config-node' |
+			    'create-and-configure' | 'create-nodes' |
+			    'delete-items' | 'delete-nodes' |
+			    'filtered-notifications' | 'get-pending' |
+			    'instant-nodes' | 'item-ids' | 'last-published' |
+			    'leased-subscription' | 'manage-subscriptions' |
+			    'member-affiliation' | 'meta-data' |
+			    'modify-affiliations' | 'multi-collection' |
+			    'multi-subscribe' | 'outcast-affiliation' |
+			    'persistent-items' | 'presence-notifications' |
+			    'presence-subscribe' | 'publish' |
+			    'publish-options' | 'publish-only-affiliation' |
+			    'publisher-affiliation' | 'purge-nodes' |
+			    'retract-items' | 'retrieve-affiliations' |
+			    'retrieve-default' | 'retrieve-items' |
+			    'retrieve-subscriptions' | 'subscribe' |
+			    'subscription-options' | 'subscription-notifications'.
+-record(ps_error, {type :: ps_error_type(), feature :: ps_error_feature()}).
+-type ps_error() :: #ps_error{}.
+
 -record(chatstate, {type :: active | composing | gone | inactive | paused}).
 -type chatstate() :: #chatstate{}.
 
@@ -77,10 +118,10 @@
 -record(muc_unsubscribe, {}).
 -type muc_unsubscribe() :: #muc_unsubscribe{}.
 
--record(pubsub_unsubscribe, {node = <<>> :: binary(),
-                             jid :: jid:jid(),
-                             subid = <<>> :: binary()}).
--type pubsub_unsubscribe() :: #pubsub_unsubscribe{}.
+-record(ps_unsubscribe, {node = <<>> :: binary(),
+                         jid :: jid:jid(),
+                         subid = <<>> :: binary()}).
+-type ps_unsubscribe() :: #ps_unsubscribe{}.
 
 -record(mix_leave, {}).
 -type mix_leave() :: #mix_leave{}.
@@ -104,10 +145,6 @@
                     width :: non_neg_integer(),
                     height :: non_neg_integer()}).
 -type thumbnail() :: #thumbnail{}.
-
--record(pubsub_affiliation, {node = <<>> :: binary(),
-                             type :: 'member' | 'none' | 'outcast' | 'owner' | 'publish-only' | 'publisher'}).
--type pubsub_affiliation() :: #pubsub_affiliation{}.
 
 -record(muc_decline, {reason = <<>> :: binary(),
                       from :: jid:jid(),
@@ -195,13 +232,16 @@
 -record(feature_sm, {xmlns = <<>> :: binary()}).
 -type feature_sm() :: #feature_sm{}.
 
--record(pubsub_item, {id = <<>> :: binary(),
-                      xml_els = [] :: [fxml:xmlel()]}).
--type pubsub_item() :: #pubsub_item{}.
+-record(ps_item, {xmlns = <<>> :: binary(),
+                  id = <<>> :: binary(),
+                  xml_els = [] :: [fxml:xmlel()],
+                  node = <<>> :: binary(),
+                  publisher = <<>> :: binary()}).
+-type ps_item() :: #ps_item{}.
 
--record(pubsub_publish, {node = <<>> :: binary(),
-                         items = [] :: [#pubsub_item{}]}).
--type pubsub_publish() :: #pubsub_publish{}.
+-record(ps_publish, {node = <<>> :: binary(),
+                     items = [] :: [#ps_item{}]}).
+-type ps_publish() :: #ps_publish{}.
 
 -record(roster_item, {jid :: jid:jid(),
                       name = <<>> :: binary(),
@@ -213,12 +253,6 @@
 -record(roster_query, {items = [] :: [#roster_item{}],
                        ver :: binary()}).
 -type roster_query() :: #roster_query{}.
-
--record(pubsub_event_item, {id = <<>> :: binary(),
-                            node = <<>> :: binary(),
-                            publisher = <<>> :: binary(),
-                            xml_els = [] :: [fxml:xmlel()]}).
--type pubsub_event_item() :: #pubsub_event_item{}.
 
 -record(sm_r, {xmlns = <<>> :: binary()}).
 -type sm_r() :: #sm_r{}.
@@ -263,14 +297,6 @@
                      xmlns = <<>> :: binary()}).
 -type sm_enabled() :: #sm_enabled{}.
 
--record(pubsub_event_items, {node = <<>> :: binary(),
-                             retract = [] :: [binary()],
-                             items = [] :: [#pubsub_event_item{}]}).
--type pubsub_event_items() :: #pubsub_event_items{}.
-
--record(pubsub_event, {items = [] :: [#pubsub_event_items{}]}).
--type pubsub_event() :: #pubsub_event{}.
-
 -record(muc_unique, {name = <<>> :: binary()}).
 -type muc_unique() :: #muc_unique{}.
 
@@ -283,9 +309,9 @@
                       resource :: binary()}).
 -type legacy_auth() :: #legacy_auth{}.
 
--record(pubsub_subscribe, {node = <<>> :: binary(),
-                           jid :: jid:jid()}).
--type pubsub_subscribe() :: #pubsub_subscribe{}.
+-record(ps_subscribe, {node = <<>> :: binary(),
+                       jid :: jid:jid()}).
+-type ps_subscribe() :: #ps_subscribe{}.
 
 -record(message, {id = <<>> :: binary(),
                   type = normal :: 'chat' | 'error' | 'groupchat' | 'headline' | 'normal',
@@ -325,11 +351,13 @@
 -record(muc_subscriptions, {list = [] :: [jid:jid()]}).
 -type muc_subscriptions() :: #muc_subscriptions{}.
 
--record(pubsub_subscription, {jid :: jid:jid(),
-                              node = <<>> :: binary(),
-                              subid = <<>> :: binary(),
-                              type :: 'none' | 'pending' | 'subscribed' | 'unconfigured'}).
--type pubsub_subscription() :: #pubsub_subscription{}.
+-record(ps_subscription, {xmlns = <<>> :: binary(),
+                          jid :: jid:jid(),
+                          type :: 'none' | 'pending' | 'subscribed' | 'unconfigured',
+                          node = <<>> :: binary(),
+                          subid = <<>> :: binary(),
+                          expiry :: erlang:timestamp()}).
+-type ps_subscription() :: #ps_subscription{}.
 
 -record(bob_data, {cid = <<>> :: binary(),
                    'max-age' :: non_neg_integer(),
@@ -375,11 +403,13 @@
                 node = <<>> :: binary()}).
 -type stats() :: #stats{}.
 
--record(pubsub_items, {node = <<>> :: binary(),
-                       max_items :: non_neg_integer(),
-                       subid = <<>> :: binary(),
-                       items = [] :: [#pubsub_item{}]}).
--type pubsub_items() :: #pubsub_items{}.
+-record(ps_items, {xmlns = <<>> :: binary(),
+                   node = <<>> :: binary(),
+                   items = [] :: [#ps_item{}],
+                   max_items :: non_neg_integer(),
+                   subid = <<>> :: binary(),
+                   retract :: binary()}).
+-type ps_items() :: #ps_items{}.
 
 -record(presence, {id = <<>> :: binary(),
                    type = available :: 'available' | 'error' | 'probe' | 'subscribe' | 'subscribed' | 'unavailable' | 'unsubscribe' | 'unsubscribed',
@@ -438,10 +468,10 @@
 -record(carbons_received, {forwarded :: #forwarded{}}).
 -type carbons_received() :: #carbons_received{}.
 
--record(pubsub_retract, {node = <<>> :: binary(),
-                         notify = false :: boolean(),
-                         items = [] :: [#pubsub_item{}]}).
--type pubsub_retract() :: #pubsub_retract{}.
+-record(ps_retract, {node = <<>> :: binary(),
+                     notify = false :: boolean(),
+                     items = [] :: [#ps_item{}]}).
+-type ps_retract() :: #ps_retract{}.
 
 -record(upload_slot, {get :: binary(),
                       put :: binary(),
@@ -707,21 +737,45 @@
                     xdata :: #xdata{}}).
 -type mam_query() :: #mam_query{}.
 
--record(pubsub_options, {node = <<>> :: binary(),
-                         jid :: jid:jid(),
-                         subid = <<>> :: binary(),
-                         xdata :: #xdata{}}).
--type pubsub_options() :: #pubsub_options{}.
+-record(pubsub_owner, {affiliations :: {binary(),[#ps_affiliation{}]},
+                       configure :: {binary(),'undefined' | #xdata{}},
+                       default :: {binary(),'undefined' | #xdata{}},
+                       delete :: {binary(),binary()},
+                       purge :: binary(),
+                       subscriptions :: {binary(),[#ps_subscription{}]}}).
+-type pubsub_owner() :: #pubsub_owner{}.
 
--record(pubsub, {subscriptions :: {binary(),[#pubsub_subscription{}]},
-                 affiliations :: [#pubsub_affiliation{}],
-                 publish :: #pubsub_publish{},
-                 subscribe :: #pubsub_subscribe{},
-                 unsubscribe :: #pubsub_unsubscribe{},
-                 options :: #pubsub_options{},
-                 items :: #pubsub_items{},
-                 retract :: #pubsub_retract{}}).
+-record(ps_options, {node = <<>> :: binary(),
+                     jid :: jid:jid(),
+                     subid = <<>> :: binary(),
+                     xdata :: #xdata{}}).
+-type ps_options() :: #ps_options{}.
+
+-record(pubsub, {subscriptions :: {binary(),[#ps_subscription{}]},
+                 subscription :: #ps_subscription{},
+                 affiliations :: {binary(),[#ps_affiliation{}]},
+                 publish :: #ps_publish{},
+                 publish_options :: #xdata{},
+                 subscribe :: #ps_subscribe{},
+                 unsubscribe :: #ps_unsubscribe{},
+                 options :: #ps_options{},
+                 items :: #ps_items{},
+                 retract :: #ps_retract{},
+                 create :: binary(),
+                 configure :: {binary(),'undefined' | #xdata{}},
+                 default :: {binary(),'undefined' | #xdata{}},
+                 delete :: {binary(),binary()},
+                 purge :: binary(),
+                 rsm :: #rsm_set{}}).
 -type pubsub() :: #pubsub{}.
+
+-record(ps_event, {items :: #ps_items{},
+                   purge :: binary(),
+                   subscription :: #ps_subscription{},
+                   delete :: {binary(),binary()},
+                   create :: binary(),
+                   configuration :: {binary(),'undefined' | #xdata{}}}).
+-type ps_event() :: #ps_event{}.
 
 -record(register, {registered = false :: boolean(),
                    remove = false :: boolean(),
@@ -852,21 +906,27 @@
 
 -type xmpp_element() :: muc_admin() |
                         compression() |
-                        pubsub_subscription() |
+                        ps_subscription() |
                         xdata_option() |
                         version() |
-                        pubsub_affiliation() |
+                        ps_affiliation() |
                         mam_fin() |
                         sm_a() |
                         bob_data() |
                         media() |
+                        stanza_id() |
+                        starttls_proceed() |
+                        client_id() |
+                        sm_resumed() |
+                        forwarded() |
+                        xevent() |
+                        privacy_list() |
                         carbons_sent() |
                         mam_archived() |
                         p1_rebind() |
                         sasl_abort() |
                         db_result() |
                         carbons_received() |
-                        pubsub_retract() |
                         upload_slot() |
                         mix_participant() |
                         compressed() |
@@ -875,31 +935,20 @@
                         'see-other-host'() |
                         hint() |
                         stream_start() |
-                        stanza_id() |
-                        starttls_proceed() |
-                        client_id() |
-                        sm_resumed() |
-                        forwarded() |
-                        xevent() |
-                        privacy_list() |
                         text() |
                         vcard_org() |
                         shim() |
                         search_item() |
                         offline_item() |
                         feature_sm() |
-                        pubsub_item() |
                         roster_item() |
-                        pubsub_event_item() |
                         muc_item() |
                         vcard_temp() |
                         address() |
                         sasl_success() |
                         addresses() |
-                        pubsub_event_items() |
                         muc_subscriptions() |
                         disco_items() |
-                        pubsub_options() |
                         compress() |
                         bytestreams() |
                         adhoc_actions() |
@@ -912,9 +961,16 @@
                         vcard_tel() |
                         vcard_geo() |
                         vcard_photo() |
+                        pubsub_owner() |
                         pubsub() |
                         muc_owner() |
                         muc_actor() |
+                        ps_error() |
+                        starttls_failure() |
+                        sasl_challenge() |
+                        x_conference() |
+                        private() |
+                        sasl_failure() |
                         vcard_name() |
                         adhoc_note() |
                         rosterver_feature() |
@@ -924,18 +980,15 @@
                         bookmark_conference() |
                         offline() |
                         time() |
+                        ps_subscribe() |
                         sm_enable() |
-                        starttls_failure() |
-                        sasl_challenge() |
                         handshake() |
-                        x_conference() |
-                        private() |
                         compress_failure() |
-                        sasl_failure() |
                         bookmark_storage() |
                         muc_decline() |
                         legacy_auth() |
                         search() |
+                        ps_publish() |
                         nick() |
                         p1_ack() |
                         block() |
@@ -946,11 +999,12 @@
                         xcaptcha() |
                         streamhost() |
                         bind() |
+                        ps_retract() |
                         last() |
                         redirect() |
                         sm_enabled() |
-                        pubsub_event() |
                         vcard_sound() |
+                        ps_event() |
                         mam_result() |
                         rsm_first() |
                         stat() |
@@ -961,15 +1015,17 @@
                         ping() |
                         privacy_item() |
                         disco_item() |
+                        ps_item() |
+                        mam_prefs() |
+                        sasl_mechanisms() |
                         caps() |
                         muc() |
                         stream_features() |
                         stats() |
-                        pubsub_items() |
+                        ps_items() |
                         sic() |
+                        ps_options() |
                         starttls() |
-                        mam_prefs() |
-                        sasl_mechanisms() |
                         media_uri() |
                         muc_destroy() |
                         vcard_key() |
@@ -990,23 +1046,21 @@
                         stream_error() |
                         muc_user() |
                         vcard_adr() |
+                        gone() |
                         carbons_private() |
                         mix_leave() |
                         muc_subscribe() |
                         muc_unique() |
                         sasl_response() |
-                        pubsub_subscribe() |
                         message() |
                         presence() |
-                        gone() |
                         sm_resume() |
                         carbons_enable() |
                         expire() |
                         muc_unsubscribe() |
-                        pubsub_unsubscribe() |
+                        ps_unsubscribe() |
                         chatstate() |
                         sasl_auth() |
                         p1_push() |
                         oob_x() |
-                        pubsub_publish() |
                         unblock().

@@ -406,13 +406,15 @@ feature_response(_IQResult, Host, From, Caps,
 		 [_SubNode | SubNodes]) ->
     feature_request(Host, From, Caps, SubNodes).
 
--spec caps_read_fun(binary(), {binary(), binary()}) -> function().
+-spec caps_read_fun(binary(), {binary(), binary()})
+      -> fun(() -> {ok, [binary()] | non_neg_integer()} | error).
 caps_read_fun(Host, Node) ->
     LServer = jid:nameprep(Host),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     fun() -> Mod:caps_read(LServer, Node) end.
 
--spec caps_write_fun(binary(), {binary(), binary()}, [binary()]) -> function().
+-spec caps_write_fun(binary(), {binary(), binary()},
+		     [binary()] | non_neg_integer()) -> fun().
 caps_write_fun(Host, Node, Features) ->
     LServer = jid:nameprep(Host),
     Mod = gen_mod:db_mod(LServer, ?MODULE),

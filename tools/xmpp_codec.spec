@@ -1646,27 +1646,40 @@
 
 -xml(pubsub_subscription,
      #elem{name = <<"subscription">>,
-           xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = {pubsub_subscription, '$jid', '$node', '$subid',
-                     '$type'},
-           attrs = [#attr{name = <<"jid">>,
-                          required = true,
+           xmlns = [<<"http://jabber.org/protocol/pubsub">>,
+		    <<"http://jabber.org/protocol/pubsub#owner">>,
+		    <<"http://jabber.org/protocol/pubsub#event">>],
+	   result = {ps_subscription, '$xmlns', '$jid', '$type',
+		     '$node', '$subid', '$expiry'},
+	   attrs = [#attr{name = <<"xmlns">>},
+		    #attr{name = <<"jid">>,
+			  required = true,
                           dec = {dec_jid, []},
                           enc = {enc_jid, []}},
-                    #attr{name = <<"node">>},
+		    #attr{name = <<"node">>},
                     #attr{name = <<"subid">>},
                     #attr{name = <<"subscription">>,
                           label = '$type',
                           dec = {dec_enum, [[none, pending, subscribed,
                                              unconfigured]]},
-                          enc = {enc_enum, []}}]}).
+                          enc = {enc_enum, []}},
+		    #attr{name = <<"expiry">>,
+			  dec = {dec_utc, []},
+			  enc = {enc_utc, []}}]}).
+
+-record(ps_affiliation, {xmlns = <<>> :: binary(),
+			 node = <<>> :: binary(),
+			 type :: member | none | outcast |
+				 owner | publisher | 'publish-only',
+			 jid :: jid:jid()}).
+-type ps_affiliation() :: #ps_affiliation{}.
 
 -xml(pubsub_affiliation,
      #elem{name = <<"affiliation">>,
            xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = {pubsub_affiliation, '$node', '$type'},
-           attrs = [#attr{name = <<"node">>,
-                          required = true},
+           result = {ps_affiliation, '$xmlns', '$node', '$type', '$_'},
+           attrs = [#attr{name = <<"node">>, required = true},
+		    #attr{name = <<"xmlns">>},
                     #attr{name = <<"affiliation">>,
                           label = '$type',
                           required = true,
@@ -1674,24 +1687,28 @@
                                              publisher, 'publish-only']]},
                           enc = {enc_enum, []}}]}).
 
--xml(pubsub_item,
-     #elem{name = <<"item">>,
-           xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = {pubsub_item, '$id', '$_xmls'},
-           attrs = [#attr{name = <<"id">>}]}).
+-xml(pubsub_owner_affiliation,
+     #elem{name = <<"affiliation">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#owner">>,
+           result = {ps_affiliation, '$xmlns', '$_', '$type', '$jid'},
+           attrs = [#attr{name = <<"jid">>,
+			  required = true,
+			  dec = {dec_jid, []},
+			  enc = {enc_jid, []}},
+		    #attr{name = <<"xmlns">>},
+                    #attr{name = <<"affiliation">>,
+                          label = '$type',
+                          required = true,
+                          dec = {dec_enum, [[member, none, outcast, owner,
+                                             publisher, 'publish-only']]},
+                          enc = {enc_enum, []}}]}).
 
--xml(pubsub_items,
-     #elem{name = <<"items">>,
-           xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = {pubsub_items, '$node', '$max_items',
-                     '$subid', '$items'},
-           attrs = [#attr{name = <<"max_items">>,
-                          dec = {dec_int, [0, infinity]},
-                          enc = {enc_int, []}},
-                    #attr{name = <<"node">>,
-                          required = true},
-                    #attr{name = <<"subid">>}],
-           refs = [#ref{name = pubsub_item, label = '$items'}]}).
+-xml(pubsub_event_configuration,
+     #elem{name = <<"configuration">>,
+	   xmlns = <<"http://jabber.org/protocol/pubsub#event">>,
+	   result = {'$node', '$xdata'},
+	   attrs = [#attr{name = <<"node">>, required = true}],
+	   refs = [#ref{name = xdata, min = 0, max = 1}]}).
 
 -xml(pubsub_event_retract,
      #elem{name = <<"retract">>,
@@ -1699,32 +1716,55 @@
            result = '$id',
            attrs = [#attr{name = <<"id">>, required = true}]}).
 
--xml(pubsub_event_item,
+-xml(pubsub_item,
      #elem{name = <<"item">>,
-           xmlns = <<"http://jabber.org/protocol/pubsub#event">>,
-           result = {pubsub_event_item, '$id', '$node', '$publisher', '$_xmls'},
+           xmlns = [<<"http://jabber.org/protocol/pubsub">>,
+		    <<"http://jabber.org/protocol/pubsub#event">>],
+           result = {ps_item, '$xmlns', '$id', '$_xmls', '$node', '$publisher'},
            attrs = [#attr{name = <<"id">>},
+		    #attr{name = <<"xmlns">>},
                     #attr{name = <<"node">>},
                     #attr{name = <<"publisher">>}]}).
 
--xml(pubsub_event_items,
+-xml(pubsub_items,
      #elem{name = <<"items">>,
-           xmlns = <<"http://jabber.org/protocol/pubsub#event">>,
-           result = {pubsub_event_items, '$node', '$retract', '$items'},
-           attrs = [#attr{name = <<"node">>,
-                          required = true}],
-           refs = [#ref{name = pubsub_event_retract, label = '$retract'},
-                   #ref{name = pubsub_event_item, label = '$items'}]}).
+           xmlns = [<<"http://jabber.org/protocol/pubsub">>,
+		    <<"http://jabber.org/protocol/pubsub#event">>],
+           result = {ps_items, '$xmlns', '$node', '$items', '$max_items',
+                     '$subid', '$retract'},
+           attrs = [#attr{name = <<"xmlns">>},
+		    #attr{name = <<"max_items">>,
+                          dec = {dec_int, [0, infinity]},
+                          enc = {enc_int, []}},
+                    #attr{name = <<"node">>,
+                          required = true},
+                    #attr{name = <<"subid">>}],
+           refs = [#ref{name = pubsub_event_retract, label = '$retract',
+			min = 0, max = 1},
+		   #ref{name = pubsub_item, label = '$items'}]}).
 
 -xml(pubsub_event,
      #elem{name = <<"event">>,
            xmlns = <<"http://jabber.org/protocol/pubsub#event">>,
-           result = {pubsub_event, '$items'},
-           refs = [#ref{name = pubsub_event_items, label = '$items'}]}).
+           result = {ps_event, '$items', '$purge', '$subscription', '$delete',
+		    '$create', '$configuration'},
+           refs = [#ref{name = pubsub_items, label = '$items',
+			min = 0, max = 1},
+		   #ref{name = pubsub_subscription, min = 0, max = 1,
+			label = '$subscription'},
+		   #ref{name = pubsub_purge, min = 0, max = 1,
+			label = '$purge'},
+		   #ref{name = pubsub_delete, min = 0, max = 1,
+			label = '$delete'},
+		   #ref{name = pubsub_create, min = 0, max = 1,
+			label = '$create'},
+		   #ref{name = pubsub_event_configuration, min = 0, max = 1,
+			label = '$configuration'}]}).
 
 -xml(pubsub_subscriptions,
      #elem{name = <<"subscriptions">>,
-           xmlns = <<"http://jabber.org/protocol/pubsub">>,
+           xmlns = [<<"http://jabber.org/protocol/pubsub">>,
+		    <<"http://jabber.org/protocol/pubsub#owner">>],
            result = {'$node', '$subscriptions'},
            attrs = [#attr{name = <<"node">>}],
            refs = [#ref{name = pubsub_subscription, label = '$subscriptions'}]}).
@@ -1732,13 +1772,21 @@
 -xml(pubsub_affiliations,
      #elem{name = <<"affiliations">>,
            xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = '$affiliations',
+           result = {'$node', '$affiliations'},
+	   attrs = [#attr{name = <<"node">>}],
            refs = [#ref{name = pubsub_affiliation, label = '$affiliations'}]}).
+
+-xml(pubsub_owner_affiliations,
+     #elem{name = <<"affiliations">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#owner">>,
+           result = {'$node', '$affiliations'},
+	   attrs = [#attr{name = <<"node">>}],
+           refs = [#ref{name = pubsub_owner_affiliation, label = '$affiliations'}]}).
 
 -xml(pubsub_subscribe,
      #elem{name = <<"subscribe">>,
            xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = {pubsub_subscribe, '$node', '$jid'},
+           result = {ps_subscribe, '$node', '$jid'},
            attrs = [#attr{name = <<"node">>},
                     #attr{name = <<"jid">>,
                           required = true,
@@ -1748,7 +1796,7 @@
 -xml(pubsub_unsubscribe,
      #elem{name = <<"unsubscribe">>,
            xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = {pubsub_unsubscribe, '$node', '$jid', '$subid'},
+           result = {ps_unsubscribe, '$node', '$jid', '$subid'},
            attrs = [#attr{name = <<"node">>},
                     #attr{name = <<"subid">>},
                     #attr{name = <<"jid">>,
@@ -1759,7 +1807,7 @@
 -xml(pubsub_publish,
      #elem{name = <<"publish">>,
            xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = {pubsub_publish, '$node', '$items'},
+           result = {ps_publish, '$node', '$items'},
            attrs = [#attr{name = <<"node">>,
                           required = true}],
            refs = [#ref{name = pubsub_item, label = '$items'}]}).
@@ -1767,7 +1815,7 @@
 -xml(pubsub_options,
      #elem{name = <<"options">>,
            xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = {pubsub_options, '$node', '$jid', '$subid', '$xdata'},
+           result = {ps_options, '$node', '$jid', '$subid', '$xdata'},
            attrs = [#attr{name = <<"node">>},
                     #attr{name = <<"subid">>},
                     #attr{name = <<"jid">>,
@@ -1780,7 +1828,7 @@
 -xml(pubsub_retract,
      #elem{name = <<"retract">>,
            xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = {pubsub_retract, '$node', '$notify', '$items'},
+           result = {ps_retract, '$node', '$notify', '$items'},
            attrs = [#attr{name = <<"node">>,
                           required = true},
                     #attr{name = <<"notify">>,
@@ -1789,12 +1837,69 @@
                           enc = {enc_bool, []}}],
            refs = [#ref{name = pubsub_item, label = '$items'}]}).
 
+-xml(pubsub_create,
+     #elem{name = <<"create">>,
+	   xmlns = [<<"http://jabber.org/protocol/pubsub">>,
+		    <<"http://jabber.org/protocol/pubsub#event">>],
+	   result = '$node',
+	   attrs = [#attr{name = <<"node">>}]}).
+
+-xml(pubsub_configure,
+     #elem{name = <<"configure">>,
+	   xmlns = [<<"http://jabber.org/protocol/pubsub">>,
+		    <<"http://jabber.org/protocol/pubsub#owner">>],
+	   result = {'$node', '$xdata'},
+	   attrs = [#attr{name = <<"node">>}],
+	   refs = [#ref{name = xdata, min = 0, max = 1}]}).
+
+-xml(pubsub_publish_options,
+     #elem{name = <<"publish-options">>,
+	   xmlns = <<"http://jabber.org/protocol/pubsub">>,
+	   result = '$xdata',
+	   refs = [#ref{name = xdata, min = 0, max = 1}]}).
+
+-xml(pubsub_default,
+     #elem{name = <<"default">>,
+	   xmlns = [<<"http://jabber.org/protocol/pubsub">>,
+		    <<"http://jabber.org/protocol/pubsub#owner">>],
+	   result = {'$node', '$xdata'},
+	   attrs = [#attr{name = <<"node">>}],
+	   refs = [#ref{name = xdata, min = 0, max = 1}]}).
+
+-xml(pubsub_redirect,
+     #elem{name = <<"redirect">>,
+	   xmlns = [<<"http://jabber.org/protocol/pubsub">>,
+		    <<"http://jabber.org/protocol/pubsub#owner">>,
+		    <<"http://jabber.org/protocol/pubsub#event">>],
+	   result = '$uri',
+	   attrs = [#attr{name = <<"uri">>, required = true}]}).
+
+-xml(pubsub_delete,
+     #elem{name = <<"delete">>,
+	   xmlns = [<<"http://jabber.org/protocol/pubsub">>,
+		    <<"http://jabber.org/protocol/pubsub#owner">>,
+		    <<"http://jabber.org/protocol/pubsub#event">>],
+	   result = {'$node', '$uri'},
+	   attrs = [#attr{name = <<"node">>, required = true}],
+	   refs = [#ref{name = pubsub_redirect, min = 0, max = 1,
+			label = '$uri', default = <<>>}]}).
+
+-xml(pubsub_purge,
+     #elem{name = <<"purge">>,
+	   xmlns = [<<"http://jabber.org/protocol/pubsub">>,
+		    <<"http://jabber.org/protocol/pubsub#owner">>,
+		    <<"http://jabber.org/protocol/pubsub#event">>],
+	   result = '$node',
+	   attrs = [#attr{name = <<"node">>, required = true}]}).
+
 -xml(pubsub,
      #elem{name = <<"pubsub">>,
            xmlns = <<"http://jabber.org/protocol/pubsub">>,
-           result = {pubsub, '$subscriptions', '$affiliations', '$publish',
-                     '$subscribe', '$unsubscribe', '$options', '$items',
-                     '$retract'},
+           result = {pubsub, '$subscriptions', '$subscription',
+		     '$affiliations', '$publish', '$publish_options',
+		     '$subscribe', '$unsubscribe', '$options', '$items',
+		     '$retract', '$create', '$configure', '$default', '$delete',
+		     '$purge', '$rsm'},
            refs = [#ref{name = pubsub_subscriptions, label = '$subscriptions',
                         min = 0, max = 1},
                    #ref{name = pubsub_affiliations, label = '$affiliations',
@@ -1809,8 +1914,208 @@
                         min = 0, max = 1},
                    #ref{name = pubsub_retract, label = '$retract',
                         min = 0, max = 1},
+		   #ref{name = pubsub_create, label = '$create',
+			min = 0, max = 1},
+		   #ref{name = pubsub_configure, label = '$configure',
+			min = 0, max = 1},
+		   #ref{name = pubsub_publish_options, min = 0, max = 1,
+			label = '$publish_options'},
+		   #ref{name = pubsub_default, label = '$default',
+			min = 0, max = 1},
+		   #ref{name = pubsub_delete, label = '$delete',
+			min = 0, max = 1},
+		   #ref{name = pubsub_purge, label = '$purge',
+			min = 0, max = 1},
+		   #ref{name = pubsub_subscription, label = '$subscription',
+			min = 0, max = 1},
+		   #ref{name = rsm_set, min = 0, max = 1, label = '$rsm'},
                    #ref{name = pubsub_publish, label = '$publish',
                         min = 0, max = 1}]}).
+
+-xml(pubsub_owner,
+     #elem{name = <<"pubsub">>,
+	   xmlns = <<"http://jabber.org/protocol/pubsub#owner">>,
+	   result = {pubsub_owner, '$affiliations', '$configure', '$default',
+		     '$delete', '$purge', '$subscriptions'},
+	   refs = [#ref{name = pubsub_owner_affiliations,
+			label = '$affiliations', min = 0, max = 1},
+		   #ref{name = pubsub_configure, label = '$configure',
+			min = 0, max = 1},
+		   #ref{name = pubsub_default, label = '$default',
+			min = 0, max = 1},
+		   #ref{name = pubsub_delete, label = '$delete',
+			min = 0, max = 1},
+		   #ref{name = pubsub_purge, label = '$purge',
+			min = 0, max = 1},
+		   #ref{name = pubsub_subscriptions,
+			label = '$subscriptions', min = 0, max = 1}]}).
+
+-type ps_error_type() :: 'closed-node' | 'configuration-required' |
+			 'invalid-jid' | 'invalid-options' |
+			 'invalid-payload' | 'invalid-subid' |
+			 'item-forbidden' | 'item-required' | 'jid-required' |
+			 'max-items-exceeded' | 'max-nodes-exceeded' |
+			 'nodeid-required' | 'not-in-roster-group' |
+			 'not-subscribed' | 'payload-too-big' |
+			 'payload-required' | 'pending-subscription' |
+			 'presence-subscription-required' | 'subid-required' |
+			 'too-many-subscriptions' | 'unsupported' |
+			 'unsupported-access-model'.
+-type ps_error_feature() :: 'access-authorize' | 'access-open' |
+			    'access-presence' | 'access-roster' |
+			    'access-whitelist' | 'auto-create' |
+			    'auto-subscribe' | 'collections' | 'config-node' |
+			    'create-and-configure' | 'create-nodes' |
+			    'delete-items' | 'delete-nodes' |
+			    'filtered-notifications' | 'get-pending' |
+			    'instant-nodes' | 'item-ids' | 'last-published' |
+			    'leased-subscription' | 'manage-subscriptions' |
+			    'member-affiliation' | 'meta-data' |
+			    'modify-affiliations' | 'multi-collection' |
+			    'multi-subscribe' | 'outcast-affiliation' |
+			    'persistent-items' | 'presence-notifications' |
+			    'presence-subscribe' | 'publish' |
+			    'publish-options' | 'publish-only-affiliation' |
+			    'publisher-affiliation' | 'purge-nodes' |
+			    'retract-items' | 'retrieve-affiliations' |
+			    'retrieve-default' | 'retrieve-items' |
+			    'retrieve-subscriptions' | 'subscribe' |
+			    'subscription-options' | 'subscription-notifications'.
+-record(ps_error, {type :: ps_error_type(), feature :: ps_error_feature()}).
+-type ps_error() :: #ps_error{}.
+
+-xml(pubsub_error_closed_node,
+     #elem{name = <<"closed-node">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'closed-node', '$_'}}).
+-xml(pubsub_error_configuration_required,
+     #elem{name = <<"configuration-required">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'configuration-required', '$_'}}).
+-xml(pubsub_error_invalid_jid,
+     #elem{name = <<"invalid-jid">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'invalid-jid', '$_'}}).
+-xml(pubsub_error_invalid_options,
+     #elem{name = <<"invalid-options">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'invalid-options', '$_'}}).
+-xml(pubsub_error_invalid_payload,
+     #elem{name = <<"invalid-payload">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'invalid-payload', '$_'}}).
+-xml(pubsub_error_invalid_subid,
+     #elem{name = <<"invalid-subid">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'invalid-subid', '$_'}}).
+-xml(pubsub_error_item_forbidden,
+     #elem{name = <<"item-forbidden">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'item-forbidden', '$_'}}).
+-xml(pubsub_error_item_required,
+     #elem{name = <<"item-required">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'item-required', '$_'}}).
+-xml(pubsub_error_jid_required,
+     #elem{name = <<"jid-required">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'jid-required', '$_'}}).
+-xml(pubsub_error_max_items_exceeded,
+     #elem{name = <<"max-items-exceeded">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'max-items-exceeded', '$_'}}).
+-xml(pubsub_error_max_nodes_exceeded,
+     #elem{name = <<"max-nodes-exceeded">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'max-nodes-exceeded', '$_'}}).
+-xml(pubsub_error_nodeid_required,
+     #elem{name = <<"nodeid-required">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'nodeid-required', '$_'}}).
+-xml(pubsub_error_not_in_roster_group,
+     #elem{name = <<"not-in-roster-group">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'not-in-roster-group', '$_'}}).
+-xml(pubsub_error_not_subscribed,
+     #elem{name = <<"not-subscribed">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'not-subscribed', '$_'}}).
+-xml(pubsub_error_payload_too_big,
+     #elem{name = <<"payload-too-big">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'payload-too-big', '$_'}}).
+-xml(pubsub_error_payload_required,
+     #elem{name = <<"payload-required">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'payload-required', '$_'}}).
+-xml(pubsub_error_pending_subscription,
+     #elem{name = <<"pending-subscription">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'pending-subscription', '$_'}}).
+-xml(pubsub_error_presence_subscription_required,
+     #elem{name = <<"presence-subscription-required">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'presence-subscription-required', '$_'}}).
+-xml(pubsub_error_subid_required,
+     #elem{name = <<"subid-required">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'subid-required', '$_'}}).
+-xml(pubsub_error_too_many_subscriptions,
+     #elem{name = <<"too-many-subscriptions">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'too-many-subscriptions', '$_'}}).
+-xml(pubsub_error_unsupported,
+     #elem{name = <<"unsupported">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'unsupported', '$feature'},
+	   attrs = [#attr{name = <<"feature">>, required = true,
+			  dec = {dec_enum, [['access-authorize',
+                                             'access-open',
+                                             'access-presence',
+                                             'access-roster',
+                                             'access-whitelist',
+                                             'auto-create',
+                                             'auto-subscribe',
+                                             'collections',
+                                             'config-node',
+                                             'create-and-configure',
+                                             'create-nodes',
+                                             'delete-items',
+                                             'delete-nodes',
+                                             'filtered-notifications',
+                                             'get-pending',
+                                             'instant-nodes',
+                                             'item-ids',
+                                             'last-published',
+                                             'leased-subscription',
+                                             'manage-subscriptions',
+                                             'member-affiliation',
+                                             'meta-data',
+                                             'modify-affiliations',
+                                             'multi-collection',
+                                             'multi-subscribe',
+                                             'outcast-affiliation',
+                                             'persistent-items',
+                                             'presence-notifications',
+                                             'presence-subscribe',
+                                             'publish',
+                                             'publish-options',
+                                             'publish-only-affiliation',
+                                             'publisher-affiliation',
+                                             'purge-nodes',
+                                             'retract-items',
+                                             'retrieve-affiliations',
+                                             'retrieve-default',
+                                             'retrieve-items',
+                                             'retrieve-subscriptions',
+                                             'subscribe',
+                                             'subscription-options',
+                                             'subscription-notifications']]},
+			  enc = {enc_enum, []}}]}).
+-xml(pubsub_error_unsupported_access_model,
+     #elem{name = <<"unsupported-access-model">>,
+           xmlns = <<"http://jabber.org/protocol/pubsub#errors">>,
+           result = {ps_error, 'unsupported-access-model', '$_'}}).
 
 -xml(shim_header,
      #elem{name = <<"header">>,

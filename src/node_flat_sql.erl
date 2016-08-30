@@ -36,7 +36,7 @@
 -compile([{parse_transform, ejabberd_sql_pt}]).
 
 -include("pubsub.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("ejabberd_sql_pt.hrl").
 
 -export([init/3, terminate/2, options/0, features/0,
@@ -81,27 +81,27 @@ create_node(Nidx, Owner) ->
     J = encode_jid(OwnerKey),
     A = encode_affiliation(owner),
     S = encode_subscriptions([]),
-    catch ejabberd_sql:sql_query_t(
-            ?SQL("insert into pubsub_state("
-                 "nodeid, jid, affiliation, subscriptions) "
-                 "values (%(Nidx)d, %(J)s, %(A)s, %(S)s)")),
+    ejabberd_sql:sql_query_t(
+      ?SQL("insert into pubsub_state("
+	   "nodeid, jid, affiliation, subscriptions) "
+	   "values (%(Nidx)d, %(J)s, %(A)s, %(S)s)")),
     {result, {default, broadcast}}.
 
 delete_node(Nodes) ->
-    Reply = lists:map(fun (#pubsub_node{id = Nidx} = PubsubNode) ->
-		    Subscriptions = case catch
-			ejabberd_sql:sql_query_t(
-                          ?SQL("select @(jid)s, @(subscriptions)s "
-                               "from pubsub_state where nodeid=%(Nidx)d"))
-		    of
-			{selected, RItems} ->
-			    [{decode_jid(SJID), decode_subscriptions(Subs)} ||
-                                {SJID, Subs} <- RItems];
-			_ ->
-			    []
-		    end,
-		    {PubsubNode, Subscriptions}
-	    end, Nodes),
+    Reply = lists:map(
+	      fun(#pubsub_node{id = Nidx} = PubsubNode) ->
+		      Subscriptions =
+			  case ejabberd_sql:sql_query_t(
+				 ?SQL("select @(jid)s, @(subscriptions)s "
+				      "from pubsub_state where nodeid=%(Nidx)d")) of
+			      {selected, RItems} ->
+				  [{decode_jid(SJID), decode_subscriptions(Subs)}
+				   || {SJID, Subs} <- RItems];
+			      _ ->
+				  []
+			  end,
+		      {PubsubNode, Subscriptions}
+	      end, Nodes),
     {result, {default, broadcast, Reply}}.
 
 subscribe_node(Nidx, Sender, Subscriber, AccessModel,
@@ -118,22 +118,25 @@ subscribe_node(Nidx, Sender, Subscriber, AccessModel,
 	    Subscriptions),
     Owner = Affiliation == owner,
     if not Authorized ->
-	    {error,
-		?ERR_EXTENDED((?ERR_BAD_REQUEST), <<"invalid-jid">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_bad_request(), mod_pubsub:err_invalid_jid())};
 	(Affiliation == outcast) or (Affiliation == publish_only) ->
-	    {error, ?ERR_FORBIDDEN};
+	    {error, xmpp:err_forbidden()};
 	PendingSubscription ->
-	    {error,
-		?ERR_EXTENDED((?ERR_NOT_AUTHORIZED), <<"pending-subscription">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_not_authorized(),
+		      mod_pubsub:err_pending_subscription())};
 	(AccessModel == presence) and (not PresenceSubscription) and (not Owner) ->
-	    {error,
-		?ERR_EXTENDED((?ERR_NOT_AUTHORIZED), <<"presence-subscription-required">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_not_authorized(),
+		      mod_pubsub:err_presence_subscription_required())};
 	(AccessModel == roster) and (not RosterGroup) and (not Owner) ->
-	    {error,
-		?ERR_EXTENDED((?ERR_NOT_AUTHORIZED), <<"not-in-roster-group">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_not_authorized(),
+		      mod_pubsub:err_not_in_roster_group())};
 	(AccessModel == whitelist) and (not Whitelisted) and (not Owner) ->
-	    {error,
-		?ERR_EXTENDED((?ERR_NOT_ALLOWED), <<"closed-node">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_not_allowed(), mod_pubsub:err_closed_node())};
 	%%MustPay ->
 	%%        % Payment is required for a subscription
 	%%        {error, ?ERR_PAYMENT_REQUIRED};
@@ -177,7 +180,7 @@ unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
     if
 	%% Requesting entity is prohibited from unsubscribing entity
 	not Authorized ->
-	    {error, ?ERR_FORBIDDEN};
+	    {error, xmpp:err_forbidden()};
 	%% Entity did not specify SubId
 	%%SubId == "", ?? ->
 	%%        {error, ?ERR_EXTENDED(?ERR_BAD_REQUEST, "subid-required")};
@@ -186,8 +189,9 @@ unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
 	%%        {error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	%% Requesting entity is not a subscriber
 	Subscriptions == [] ->
-	    {error,
-		?ERR_EXTENDED((?ERR_UNEXPECTED_REQUEST_CANCEL), <<"not-subscribed">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_unexpected_request(),
+		      mod_pubsub:err_not_subscribed())};
 	%% Subid supplied, so use that.
 	SubIdExists ->
 	    Sub = first_in_list(fun
@@ -200,8 +204,9 @@ unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
 		    delete_subscription(SubKey, Nidx, S, Affiliation, Subscriptions),
 		    {result, default};
 		false ->
-		    {error,
-			?ERR_EXTENDED((?ERR_UNEXPECTED_REQUEST_CANCEL), <<"not-subscribed">>)}
+		    {error, mod_pubsub:extended_error(
+			      xmpp:err_unexpected_request(),
+			      mod_pubsub:err_not_subscribed())}
 	    end;
 	%% Asking to remove all subscriptions to the given node
 	SubId == all ->
@@ -214,8 +219,8 @@ unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
 	    {result, default};
 	%% No subid and more than one possible subscription match.
 	true ->
-	    {error,
-		?ERR_EXTENDED((?ERR_BAD_REQUEST), <<"subid-required">>)}
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_bad_request(), mod_pubsub:err_subid_required())}
     end.
 
 delete_subscription(SubKey, Nidx, {Subscription, SubId}, Affiliation, Subscriptions) ->
@@ -241,7 +246,7 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 			 or (Affiliation == publisher)
 			 or (Affiliation == publish_only))
 		    or (Subscribed == true)) ->
-	    {error, ?ERR_FORBIDDEN};
+	    {error, xmpp:err_forbidden()};
 	true ->
 	    if MaxItems > 0 ->
 		    PubId = {p1_time_compat:timestamp(), SubKey},
@@ -277,11 +282,11 @@ delete_item(Nidx, Publisher, PublishModel, ItemId) ->
 	_ -> false
     end,
     if not Allowed ->
-	    {error, ?ERR_FORBIDDEN};
+	    {error, xmpp:err_forbidden()};
 	true ->
 	    case del_item(Nidx, ItemId) of
 		{updated, 1} -> {result, {default, broadcast}};
-		_ -> {error, ?ERR_ITEM_NOT_FOUND}
+		_ -> {error, xmpp:err_item_not_found()}
 	    end
     end.
 
@@ -299,7 +304,7 @@ purge_node(Nidx, Owner) ->
 		States),
 	    {result, {default, broadcast}};
 	_ ->
-	    {error, ?ERR_FORBIDDEN}
+	    {error, xmpp:err_forbidden()}
     end.
 
 get_entity_affiliations(Host, Owner) ->
@@ -307,48 +312,42 @@ get_entity_affiliations(Host, Owner) ->
     GenKey = jid:remove_resource(SubKey),
     H = encode_host(Host),
     J = encode_jid(GenKey),
-    Reply = case catch
-	ejabberd_sql:sql_query_t(
-          ?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(affiliation)s "
-               "from pubsub_state i, pubsub_node n where "
-               "i.nodeid = n.nodeid and jid=%(J)s and host=%(H)s"))
-    of
-	{selected, RItems} ->
-	    [{nodetree_tree_sql:raw_to_node(Host, {N, <<"">>, T, I}), decode_affiliation(A)}
-		|| {N, T, I, A} <- RItems];
-	_ ->
-	    []
-    end,
-    {result, Reply}.
+    {result,
+     case ejabberd_sql:sql_query_t(
+	    ?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(affiliation)s "
+		 "from pubsub_state i, pubsub_node n where "
+		 "i.nodeid = n.nodeid and jid=%(J)s and host=%(H)s")) of
+	 {selected, RItems} ->
+	     [{nodetree_tree_sql:raw_to_node(Host, {N, <<"">>, T, I}),
+	       decode_affiliation(A)} || {N, T, I, A} <- RItems];
+	 _ ->
+	     []
+     end}.
 
 get_node_affiliations(Nidx) ->
-    Reply = case catch
-	ejabberd_sql:sql_query_t(
-          ?SQL("select @(jid)s, @(affiliation)s from pubsub_state "
-               "where nodeid=%(Nidx)d"))
-    of
-	{selected, RItems} ->
-	    [{decode_jid(J), decode_affiliation(A)} || {J, A} <- RItems];
-	_ ->
-	    []
-    end,
-    {result, Reply}.
+    {result,
+     case ejabberd_sql:sql_query_t(
+	    ?SQL("select @(jid)s, @(affiliation)s from pubsub_state "
+		 "where nodeid=%(Nidx)d")) of
+	 {selected, RItems} ->
+	     [{decode_jid(J), decode_affiliation(A)} || {J, A} <- RItems];
+	 _ ->
+	     []
+     end}.
 
 get_affiliation(Nidx, Owner) ->
     SubKey = jid:tolower(Owner),
     GenKey = jid:remove_resource(SubKey),
     J = encode_jid(GenKey),
-    Reply = case catch
-	ejabberd_sql:sql_query_t(
-          ?SQL("select @(affiliation)s from pubsub_state "
-               "where nodeid=%(Nidx)d and jid=%(J)s"))
-    of
-	{selected, [{A}]} ->
-	    decode_affiliation(A);
-	_ ->
-	    none
-    end,
-    {result, Reply}.
+    {result,
+     case ejabberd_sql:sql_query_t(
+	    ?SQL("select @(affiliation)s from pubsub_state "
+		 "where nodeid=%(Nidx)d and jid=%(J)s")) of
+	 {selected, [{A}]} ->
+	     decode_affiliation(A);
+	 _ ->
+	     none
+     end}.
 
 set_affiliation(Nidx, Owner, Affiliation) ->
     SubKey = jid:tolower(Owner),
@@ -382,26 +381,26 @@ get_entity_subscriptions(Host, Owner) ->
                      "where i.nodeid = n.nodeid and"
                      " jid in (%(SJ)s, %(GJ)s) and host=%(H)s")
         end,
-    Reply = case catch ejabberd_sql:sql_query_t(Query) of
-	{selected, RItems} ->
-	    lists:foldl(fun ({N, T, I, J, S}, Acc) ->
-			Node = nodetree_tree_sql:raw_to_node(Host, {N, <<"">>, T, I}),
-			Jid = decode_jid(J),
-			case decode_subscriptions(S) of
-			    [] ->
-				[{Node, none, Jid} | Acc];
-			    Subs ->
-				lists:foldl(fun ({Sub, SubId}, Acc2) ->
-					    [{Node, Sub, SubId, Jid} | Acc2]
-				    end,
-				    Acc, Subs)
-			end
-		end,
-		[], RItems);
-	_ ->
-	    []
-    end,
-    {result, Reply}.
+    {result,
+     case ejabberd_sql:sql_query_t(Query) of
+	 {selected, RItems} ->
+	     lists:foldl(
+	       fun({N, T, I, J, S}, Acc) ->
+		       Node = nodetree_tree_sql:raw_to_node(Host, {N, <<"">>, T, I}),
+		       Jid = decode_jid(J),
+		       case decode_subscriptions(S) of
+			   [] ->
+			       [{Node, none, Jid} | Acc];
+			   Subs ->
+			       lists:foldl(
+				 fun({Sub, SubId}, Acc2) ->
+					 [{Node, Sub, SubId, Jid} | Acc2]
+				 end, Acc, Subs)
+		       end
+	       end, [], RItems);
+	 _ ->
+	     []
+     end}.
 
 -spec get_entity_subscriptions_for_send_last(Host :: mod_pubsub:hostPubsub(),
 					     Owner :: jid()) ->
@@ -435,66 +434,62 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
                      "and val='on_sub_and_presence' and"
                      " jid in (%(SJ)s, %(GJ)s) and host=%(H)s")
     end,
-    Reply = case catch ejabberd_sql:sql_query_t(Query) of
-	{selected, RItems} ->
-	    lists:foldl(fun ({N, T, I, J, S}, Acc) ->
-			Node = nodetree_tree_sql:raw_to_node(Host, {N, <<"">>, T, I}),
-			Jid = decode_jid(J),
-			case decode_subscriptions(S) of
-			    [] ->
-				[{Node, none, Jid} | Acc];
-			    Subs ->
-				lists:foldl(fun ({Sub, SubId}, Acc2) ->
-					    [{Node, Sub, SubId, Jid}| Acc2]
-				    end,
-				    Acc, Subs)
-			end
-		end,
-		[], RItems);
-	_ ->
-	    []
-    end,
-    {result, Reply}.
+    {result,
+     case ejabberd_sql:sql_query_t(Query) of
+	 {selected, RItems} ->
+	     lists:foldl(
+	       fun ({N, T, I, J, S}, Acc) ->
+		       Node = nodetree_tree_sql:raw_to_node(Host, {N, <<"">>, T, I}),
+		       Jid = decode_jid(J),
+		       case decode_subscriptions(S) of
+			   [] ->
+			       [{Node, none, Jid} | Acc];
+			   Subs ->
+			       lists:foldl(
+				 fun ({Sub, SubId}, Acc2) ->
+					 [{Node, Sub, SubId, Jid}| Acc2]
+				 end, Acc, Subs)
+		       end
+	       end, [], RItems);
+	 _ ->
+	     []
+     end}.
 
 get_node_subscriptions(Nidx) ->
-    Reply = case catch
-	ejabberd_sql:sql_query_t(
-          ?SQL("select @(jid)s, @(subscriptions)s from pubsub_state "
-               "where nodeid=%(Nidx)d"))
-    of
-	{selected, RItems} ->
-	    lists:foldl(fun ({J, S}, Acc) ->
-			Jid = decode_jid(J),
-			case decode_subscriptions(S) of
-			    [] ->
-				[{Jid, none} | Acc];
-			    Subs ->
-				lists:foldl(fun ({Sub, SubId}, Acc2) ->
-					    [{Jid, Sub, SubId} | Acc2]
-				    end,
-				    Acc, Subs)
-			end
-		end,
-		[], RItems);
-	_ ->
-	    []
-    end,
-    {result, Reply}.
+    {result,
+     case ejabberd_sql:sql_query_t(
+	    ?SQL("select @(jid)s, @(subscriptions)s from pubsub_state "
+		 "where nodeid=%(Nidx)d")) of
+	 {selected, RItems} ->
+	     lists:foldl(
+	       fun ({J, S}, Acc) ->
+		       Jid = decode_jid(J),
+		       case decode_subscriptions(S) of
+			   [] ->
+			       [{Jid, none} | Acc];
+			   Subs ->
+			       lists:foldl(
+				 fun ({Sub, SubId}, Acc2) ->
+					 [{Jid, Sub, SubId} | Acc2]
+				 end, Acc, Subs)
+		       end
+	       end, [], RItems);
+	 _ ->
+	     []
+     end}.
 
 get_subscriptions(Nidx, Owner) ->
     SubKey = jid:tolower(Owner),
     J = encode_jid(SubKey),
-    Reply = case catch
-	ejabberd_sql:sql_query_t(
-          ?SQL("select @(subscriptions)s from pubsub_state"
-               " where nodeid=%(Nidx)d and jid=%(J)s"))
-    of
-	{selected, [{S}]} ->
-	    decode_subscriptions(S);
-	_ ->
-	    []
-    end,
-    {result, Reply}.
+    {result,
+     case ejabberd_sql:sql_query_t(
+	    ?SQL("select @(subscriptions)s from pubsub_state"
+		 " where nodeid=%(Nidx)d and jid=%(J)s")) of
+	 {selected, [{S}]} ->
+	     decode_subscriptions(S);
+	 _ ->
+	     []
+     end}.
 
 set_subscriptions(Nidx, Owner, Subscription, SubId) ->
     SubKey = jid:tolower(Owner),
@@ -503,8 +498,9 @@ set_subscriptions(Nidx, Owner, Subscription, SubId) ->
 	{_, []} ->
 	    case Subscription of
 		none ->
-		    {error,
-			?ERR_EXTENDED((?ERR_BAD_REQUEST), <<"not-subscribed">>)};
+		    {error, mod_pubsub:extended_error(
+			      xmpp:err_bad_request(),
+			      mod_pubsub:err_not_subscribed())};
 		_ ->
 		    new_subscription(Nidx, Owner, Subscription, SubState)
 	    end;
@@ -514,8 +510,9 @@ set_subscriptions(Nidx, Owner, Subscription, SubId) ->
 		_ -> replace_subscription({Subscription, SID}, SubState)
 	    end;
 	{<<>>, [_ | _]} ->
-	    {error,
-		?ERR_EXTENDED((?ERR_BAD_REQUEST), <<"subid-required">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_bad_request(),
+		      mod_pubsub:err_subid_required())};
 	_ ->
 	    case Subscription of
 		none -> unsub_with_subid(Nidx, SubId, SubState);
@@ -585,21 +582,19 @@ get_nodes_helper(NodeTree, #pubsub_state{stateid = {_, N}, subscriptions = Subs}
     end.
 
 get_states(Nidx) ->
-    case catch
-	ejabberd_sql:sql_query_t(
-          ?SQL("select @(jid)s, @(affiliation)s, @(subscriptions)s "
-               "from pubsub_state where nodeid=%(Nidx)d"))
-    of
+    case ejabberd_sql:sql_query_t(
+	   ?SQL("select @(jid)s, @(affiliation)s, @(subscriptions)s "
+		"from pubsub_state where nodeid=%(Nidx)d")) of
 	{selected, RItems} ->
 	    {result,
-		lists:map(fun ({SJID, Aff, Subs}) ->
-                            JID = decode_jid(SJID),
-                            #pubsub_state{stateid = {JID, Nidx},
-				items = itemids(Nidx, JID),
-				affiliation = decode_affiliation(Aff),
-				subscriptions = decode_subscriptions(Subs)}
-		    end,
-		    RItems)};
+	     lists:map(
+	       fun({SJID, Aff, Subs}) ->
+		       JID = decode_jid(SJID),
+		       #pubsub_state{stateid = {JID, Nidx},
+				     items = itemids(Nidx, JID),
+				     affiliation = decode_affiliation(Aff),
+				     subscriptions = decode_subscriptions(Subs)}
+	       end, RItems)};
 	_ ->
 	    {result, []}
     end.
@@ -614,16 +609,14 @@ get_state(Nidx, JID) ->
 
 get_state_without_itemids(Nidx, JID) ->
     J = encode_jid(JID),
-    case catch
-	ejabberd_sql:sql_query_t(
-          ?SQL("select @(jid)s, @(affiliation)s, @(subscriptions)s "
-               "from pubsub_state "
-               "where nodeid=%(Nidx)d and jid=%(J)s"))
-    of
+    case ejabberd_sql:sql_query_t(
+	   ?SQL("select @(jid)s, @(affiliation)s, @(subscriptions)s "
+		"from pubsub_state "
+		"where nodeid=%(Nidx)d and jid=%(J)s")) of
 	{selected, [{SJID, Aff, Subs}]} ->
 	    #pubsub_state{stateid = {decode_jid(SJID), Nidx},
-		affiliation = decode_affiliation(Aff),
-		subscriptions = decode_subscriptions(Subs)};
+			  affiliation = decode_affiliation(Aff),
+			  subscriptions = decode_subscriptions(Subs)};
 	_ ->
 	    #pubsub_state{stateid = {JID, Nidx}}
     end.
@@ -653,73 +646,60 @@ del_state(Nidx, JID) ->
                  " where jid=%(J)s and nodeid=%(Nidx)d")),
     ok.
 
-%get_items(Nidx, _From) ->
-%    case catch
-%	ejabberd_sql:sql_query_t([<<"select itemid, publisher, creation, modification, payload "
-%		    "from pubsub_item where nodeid='">>, Nidx,
-%		<<"' order by modification desc;">>])
-%    of
-%	{selected,
-%		    [<<"itemid">>, <<"publisher">>, <<"creation">>, <<"modification">>, <<"payload">>], RItems} ->
-%	    {result, [raw_to_item(Nidx, RItem) || RItem <- RItems]};
-%	_ ->
-%	    {result, []}
-%    end.
-
-get_items(Nidx, From, none) ->
-    MaxItems = case catch
-	ejabberd_sql:sql_query_t(
-          ?SQL("select @(val)s from pubsub_node_option "
-               "where nodeid=%(Nidx)d and name='max_items'"))
-    of
-	{selected, [{Value}]} ->
-            jlib:expr_to_term(Value);
-	_ ->
-	    ?MAXITEMS
-    end,
-    get_items(Nidx, From, #rsm_in{max = MaxItems});
-get_items(Nidx, _From,
-	    #rsm_in{max = M, direction = Direction, id = I, index = IncIndex}) ->
-    Max = ejabberd_sql:escape(jlib:i2l(M)),
-    {Way, Order} = case Direction of
-	     aft when I == <<>> -> {<<"is not">>, <<"desc">>};
-	     aft -> {<<"<">>, <<"desc">>};
-	     before when I == <<>> -> {<<"is not">>, <<"asc">>};
-	     before -> {<<">">>, <<"asc">>};
-	     _ -> {<<"is not">>, <<"desc">>}
-    end,
+get_items(Nidx, From, undefined) ->
+    MaxItems = case ejabberd_sql:sql_query_t(
+		      ?SQL("select @(val)s from pubsub_node_option "
+			   "where nodeid=%(Nidx)d and name='max_items'")) of
+		   {selected, [{Value}]} ->
+		       jlib:expr_to_term(Value);
+		   _ ->
+		       ?MAXITEMS
+	       end,
+    get_items(Nidx, From, #rsm_set{max = MaxItems});
+get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
+				'after' = After, before = Before}) ->
+    {Way, Order} = if After == <<>> -> {<<"is not">>, <<"desc">>};
+		      After /= undefined -> {<<"<">>, <<"desc">>};
+		      Before == <<>> -> {<<"is not">>, <<"asc">>};
+		      Before /= undefined -> {<<">">>, <<"asc">>};
+		      true -> {<<"is not">>, <<"desc">>}
+		   end,
     SNidx = integer_to_binary(Nidx),
-    [AttrName, Id] = case I of
-	undefined when IncIndex =/= undefined ->
-	    case catch
-		ejabberd_sql:sql_query_t([<<"select modification from pubsub_item pi "
-			    "where exists ( select count(*) as count1 "
-			    "from pubsub_item where nodeid='">>, SNidx,
+    I = if After /= undefined -> After;
+	   Before /= undefined -> Before;
+	   true -> undefined
+	end,
+    [AttrName, Id] =
+	case I of
+	    undefined when IncIndex =/= undefined ->
+		case ejabberd_sql:sql_query_t(
+		       [<<"select modification from pubsub_item pi "
+			  "where exists ( select count(*) as count1 "
+			  "from pubsub_item where nodeid='">>, SNidx,
 			<<"' and modification > pi.modification having count1 = ">>,
-			ejabberd_sql:escape(jlib:i2l(IncIndex)), <<" );">>])
-	    of
-		{selected, [_], [[O]]} ->
-		    [<<"modification">>, <<"'", O/binary, "'">>];
-		_ ->
-		    [<<"modification">>, <<"null">>]
-	    end;
-	undefined ->
-	    [<<"modification">>, <<"null">>];
-	<<>> ->
-	    [<<"modification">>, <<"null">>];
-	I ->
-	    [A, B] = str:tokens(ejabberd_sql:escape(jlib:i2l(I)), <<"@">>),
-	    [A, <<"'", B/binary, "'">>]
-    end,
-    Count = case catch
-	ejabberd_sql:sql_query_t([<<"select count(*) from pubsub_item where nodeid='">>, SNidx, <<"';">>])
-    of
-	{selected, [_], [[C]]} -> C;
-	_ -> <<"0">>
-    end,
+			IncIndex, <<" );">>]) of
+		    {selected, [_], [[O]]} ->
+			[<<"modification">>, <<"'", O/binary, "'">>];
+		    _ ->
+			[<<"modification">>, <<"null">>]
+		end;
+	    undefined ->
+		[<<"modification">>, <<"null">>];
+	    <<>> ->
+		[<<"modification">>, <<"null">>];
+	    I ->
+		[A, B] = str:tokens(ejabberd_sql:escape(I), <<"@">>),
+		[A, <<"'", B/binary, "'">>]
+	end,
+    Count = case ejabberd_sql:sql_query_t(
+		   [<<"select count(*) from pubsub_item where nodeid='">>,
+		    SNidx, <<"';">>]) of
+		{selected, [_], [[C]]} -> binary_to_integer(C);
+		_ -> 0
+	    end,
     Query = fun(mssql, _) ->
 		    ejabberd_sql:sql_query_t(
-		      [<<"select top ">>, jlib:i2l(Max),
+		      [<<"select top ">>, Max,
 		       <<" itemid, publisher, creation, modification, payload "
 			 "from pubsub_item where nodeid='">>, SNidx,
 		       <<"' and ">>, AttrName, <<" ">>, Way, <<" ">>, Id, <<" order by ">>,
@@ -729,32 +709,33 @@ get_items(Nidx, _From,
 		      [<<"select itemid, publisher, creation, modification, payload "
 			 "from pubsub_item where nodeid='">>, SNidx,
 		       <<"' and ">>, AttrName, <<" ">>, Way, <<" ">>, Id, <<" order by ">>,
-		       AttrName, <<" ">>, Order, <<" limit ">>, jlib:i2l(Max), <<" ;">>])
+		       AttrName, <<" ">>, Order, <<" limit ">>, Max, <<" ;">>])
 	    end,
-    case catch ejabberd_sql:sql_query_t(Query) of
-	{selected,
-		    [<<"itemid">>, <<"publisher">>, <<"creation">>, <<"modification">>, <<"payload">>], RItems} ->
+    case ejabberd_sql:sql_query_t(Query) of
+	{selected, [<<"itemid">>, <<"publisher">>, <<"creation">>,
+		    <<"modification">>, <<"payload">>], RItems} ->
 	    case RItems of
 		[[_, _, _, F, _]|_] ->
-		    Index = case catch
-			ejabberd_sql:sql_query_t([<<"select count(*) from pubsub_item "
-				    "where nodeid='">>, SNidx, <<"' and ">>,
-				AttrName, <<" > '">>, F, <<"';">>])
-		    of
-			%{selected, [_], [{C}, {In}]} -> [string:strip(C, both, $"), string:strip(In, both, $")];
-			{selected, [_], [[In]]} -> In;
-			_ -> <<"0">>
-		    end,
+		    Index = case catch ejabberd_sql:sql_query_t(
+					 [<<"select count(*) from pubsub_item "
+					    "where nodeid='">>, SNidx, <<"' and ">>,
+					  AttrName, <<" > '">>, F, <<"';">>]) of
+				{selected, [_], [[In]]} -> binary_to_integer(In);
+				_ -> 0
+			    end,
 		    [_, _, _, L, _] = lists:last(RItems),
-		    RsmOut = #rsm_out{count = Count, index = Index,
-			    first = <<"modification@", F/binary>>,
-			    last = <<"modification@", (jlib:i2l(L))/binary>>},
+		    RsmOut = #rsm_set{count = Count,
+				      index = Index,
+				      first = #rsm_first{
+						 index = Index,
+						 data = <<"modification@", F/binary>>},
+				      last = <<"modification@", L/binary>>},
 		    {result, {[raw_to_item(Nidx, RItem) || RItem <- RItems], RsmOut}};
 		[] ->
-		    {result, {[], #rsm_out{count = Count}}}
+		    {result, {[], #rsm_set{count = Count}}}
 	    end;
 	_ ->
-	    {result, {[], none}}
+	    {result, {[], undefined}}
     end.
 
 get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM) ->
@@ -769,18 +750,20 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM
 	%% Entity is subscribed but specifies an invalid subscription ID
 	%{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	(Affiliation == outcast) or (Affiliation == publish_only) ->
-	    {error, ?ERR_FORBIDDEN};
+	    {error, xmpp:err_forbidden()};
 	(AccessModel == presence) and not PresenceSubscription ->
-	    {error,
-		?ERR_EXTENDED((?ERR_NOT_AUTHORIZED), <<"presence-subscription-required">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_not_authorized(),
+		      mod_pubsub:err_presence_subscription_required())};
 	(AccessModel == roster) and not RosterGroup ->
-	    {error,
-		?ERR_EXTENDED((?ERR_NOT_AUTHORIZED), <<"not-in-roster-group">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_not_authorized(),
+		      mod_pubsub:err_not_in_roster_group())};
 	(AccessModel == whitelist) and not Whitelisted ->
-	    {error,
-		?ERR_EXTENDED((?ERR_NOT_ALLOWED), <<"closed-node">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_not_allowed(), mod_pubsub:err_closed_node())};
 	(AccessModel == authorize) and not Whitelisted ->
-	    {error, ?ERR_FORBIDDEN};
+	    {error, xmpp:err_forbidden()};
 	%%MustPay ->
 	%%        % Payment is required for a subscription
 	%%        {error, ?ERR_PAYMENT_REQUIRED};
@@ -820,9 +803,9 @@ get_item(Nidx, ItemId) ->
 	{selected, [RItem]} ->
 	    {result, raw_to_item(Nidx, RItem)};
 	{selected, []} ->
-	    {error, ?ERR_ITEM_NOT_FOUND};
+	    {error, xmpp:err_item_not_found()};
 	{'EXIT', _} ->
-	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Database failure">>)}
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)}
     end.
 
 get_item(Nidx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->
@@ -837,18 +820,20 @@ get_item(Nidx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _Sub
 	%% Entity is subscribed but specifies an invalid subscription ID
 	%{error, ?ERR_EXTENDED(?ERR_NOT_ACCEPTABLE, "invalid-subid")};
 	(Affiliation == outcast) or (Affiliation == publish_only) ->
-	    {error, ?ERR_FORBIDDEN};
+	    {error, xmpp:err_forbidden()};
 	(AccessModel == presence) and not PresenceSubscription ->
-	    {error,
-		?ERR_EXTENDED((?ERR_NOT_AUTHORIZED), <<"presence-subscription-required">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_not_authorized(),
+		      mod_pubsub:err_presence_subscription_required())};
 	(AccessModel == roster) and not RosterGroup ->
-	    {error,
-		?ERR_EXTENDED((?ERR_NOT_AUTHORIZED), <<"not-in-roster-group">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_not_authorized(),
+		      mod_pubsub:err_not_in_roster_group())};
 	(AccessModel == whitelist) and not Whitelisted ->
-	    {error,
-		?ERR_EXTENDED((?ERR_NOT_ALLOWED), <<"closed-node">>)};
+	    {error, mod_pubsub:extended_error(
+		      xmpp:err_not_allowed(), mod_pubsub:err_closed_node())};
 	(AccessModel == authorize) and not Whitelisted ->
-	    {error, ?ERR_FORBIDDEN};
+	    {error, xmpp:err_forbidden()};
 	%%MustPay ->
 	%%        % Payment is required for a subscription
 	%%        {error, ?ERR_PAYMENT_REQUIRED};

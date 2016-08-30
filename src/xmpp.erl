@@ -10,7 +10,7 @@
 
 %% API
 -export([make_iq_result/1, make_iq_result/2, make_error/2,
-	 decode/1, decode/2, decode_tags_by_ns/2, encode/1,
+	 decode/1, decode/2, encode/1,
 	 get_type/1, get_to/1, get_from/1, get_id/1,
 	 get_lang/1, get_error/1, get_els/1, get_ns/1,
 	 set_type/2, set_to/2, set_from/2, set_id/2,
@@ -252,6 +252,10 @@ decode(Pkt, _Opts) ->
 decode_els(Stanza) ->
     decode_els(Stanza, fun xmpp_codec:is_known_tag/1).
 
+-type match_fun() :: fun((xmlel()) -> boolean()).
+-spec decode_els(iq(), match_fun()) -> iq();
+		(message(), match_fun()) -> message();
+		(presence(), match_fun()) -> presence().
 decode_els(Stanza, MatchFun) ->
     Els = lists:map(
 	    fun(#xmlel{} = El) ->
@@ -267,10 +271,6 @@ decode_els(Stanza, MatchFun) ->
 -spec encode(xmpp_element() | xmlel()) -> xmlel().
 encode(Pkt) ->
     xmpp_codec:encode(Pkt).
-
--spec decode_tags_by_ns([xmpp_element() | xmlel()], [binary()]) -> [xmpp_element()].
-decode_tags_by_ns(Els, NSList) ->
-    [xmpp_codec:decode(El) || El <- Els, lists:member(get_ns(El), NSList)].
 
 format_error(Reason) ->
     xmpp_codec:format_error(Reason).
