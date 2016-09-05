@@ -26,7 +26,10 @@ defmodule EjabberdOauthMock do
 		:mnesia.start
 		:mnesia.create_table(:oauth_token,
                          [ram_copies: [node],
-													attributes: [:oauth_token, :us, :scope, :expire]])
+                          attributes: [:oauth_token, :us, :scope, :expire]])
+    :application.start(:cache_tab)
+    :cache_tab.new(:oauth_token,
+                   [{:max_size, 1000}, {:life_time, 3600}])
 	end
 
 	def get_token(user, domain, command, expiration \\ 3600) do
