@@ -38,6 +38,7 @@
 %%%   plugins:
 %%%     - "flat"
 %%%     - "pep" # Requires mod_caps.
+%%%     - "mb"
 %%%   pep_mapping:
 %%%     "urn:xmpp:microblog:0": "mb"
 %%% </pre></p>
