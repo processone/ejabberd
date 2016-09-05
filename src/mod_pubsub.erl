@@ -363,8 +363,6 @@ depends(ServerHost, Opts) ->
 %% The default plugin module is implicit.
 %% <p>The Erlang code for the plugin is located in a module called
 %% <em>node_plugin</em>. The 'node_' prefix is mandatory.</p>
-%% <p>The modules are initialized in alphetical order and the list is checked
-%% and sorted to ensure that each module is initialized only once.</p>
 %% <p>See {@link node_hometree:init/1} for an example implementation.</p>
 init_plugins(Host, ServerHost, Opts) ->
     TreePlugin = tree(Host, gen_mod:get_opt(nodetree, Opts,
