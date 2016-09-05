@@ -58,6 +58,7 @@ defmodule EjabberdCommandsMockTest do
 	setup do
 		:meck.unload
 		:meck.new(@module, [:non_strict])
+    :mnesia.delete_table(:ejabberd_commands)
 		:ejabberd_commands.init
 	end
 
