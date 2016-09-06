@@ -145,9 +145,14 @@ init({SockMod, Socket}, Opts) ->
     DefinedHandlers = gen_mod:get_opt(
                         request_handlers, Opts,
                         fun(Hs) ->
+                                Hs1 = lists:map(fun
+                                  ({Mod, Path}) when is_atom(Mod) -> {Path, Mod};
+                                  ({Path, Mod}) -> {Path, Mod}
+                                end, Hs),
+
                                 [{str:tokens(
                                     iolist_to_binary(Path), <<"/">>),
-                                  Mod} || {Path, Mod} <- Hs]
+                                  Mod} || {Path, Mod} <- Hs1]
                         end, []),
     RequestHandlers = DefinedHandlers ++ Captcha ++ Register ++
         Admin ++ Bind ++ XMLRPC,
