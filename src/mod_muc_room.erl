@@ -4695,11 +4695,28 @@ process_iq_mucsub(From, _Packet,
 	_ ->
 	    {result, [], StateData}
     end;
-process_iq_mucsub(_From, _Packet, #iq{type = set, lang = Lang}, _StateData) ->
+process_iq_mucsub(From, _Packet,
+		  #iq{type = get, lang = Lang,
+		      sub_el = #xmlel{name = <<"subscriptions">>}},
+		  StateData) ->
+    FAffiliation = get_affiliation(From, StateData),
+    FRole = get_role(From, StateData),
+    if FRole == moderator; FAffiliation == owner; FAffiliation == admin ->
+	    Subs = dict:fold(
+		     fun(_, #user{is_subscriber = true, jid = J}, Acc) ->
+			     SJID = jid:to_string(jid:remove_resource(J)),
+			     [#xmlel{name = <<"subscription">>,
+				     attrs = [{<<"jid">>, SJID}]}|Acc];
+			(_, _, Acc) ->
+			     Acc
+		     end, [], StateData#state.users),
+	    {result, Subs, StateData};
+       true ->
+	    Txt = <<"Moderator privileges required">>,
+	    {error, ?ERRT_FORBIDDEN(Lang, Txt)}
+    end;
+process_iq_mucsub(_From, _Packet, #iq{lang = Lang}, _StateData) ->
     Txt = <<"Unrecognized subscription command">>,
-    {error, ?ERRT_BAD_REQUEST(Lang, Txt)};
-process_iq_mucsub(_From, _Packet, #iq{type = get, lang = Lang}, _StateData) ->
-    Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
     {error, ?ERRT_BAD_REQUEST(Lang, Txt)}.
 
 remove_subscription(JID, #user{is_subscriber = true} = User, StateData) ->
