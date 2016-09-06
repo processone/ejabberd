@@ -749,6 +749,14 @@ handle_sync_event({change_state, NewStateData}, _From,
 handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData) ->
     NSD = process_item_change(Item, StateData, UJID),
     {reply, {ok, NSD}, StateName, NSD};
+handle_sync_event(get_subscribers, _From, StateName, StateData) ->
+    JIDs = dict:fold(
+	     fun(_, #user{is_subscriber = true, jid = J}, Acc) ->
+		     [J|Acc];
+		(_, _, Acc) ->
+		     Acc
+	     end, [], StateData#state.users),
+    {reply, {ok, JIDs}, StateName, StateData};
 handle_sync_event({muc_subscribe, From, Nick, Nodes}, _From,
 		  StateName, StateData) ->
     SubEl = #xmlel{name = <<"subscribe">>,

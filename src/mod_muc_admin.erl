@@ -20,7 +20,7 @@
 	 change_room_option/4, get_room_options/2,
 	 set_room_affiliation/4, get_room_affiliations/2,
 	 web_menu_main/2, web_page_main/2, web_menu_host/3,
-	 subscribe_room/4, unsubscribe_room/2,
+	 subscribe_room/4, unsubscribe_room/2, get_subscribers/2,
 	 web_page_host/3, mod_opt_type/1, get_commands_spec/0]).
 
 -include("ejabberd.hrl").
@@ -163,6 +163,11 @@ get_commands_spec() ->
 			module = ?MODULE, function = unsubscribe_room,
 			args = [{user, binary}, {room, binary}],
 			result = {res, rescode}},
+     #ejabberd_commands{name = get_subscribers, tags = [muc_room],
+			desc = "List subscribers of a MUC conference",
+			module = ?MODULE, function = get_subscribers,
+			args = [{name, binary}, {service, binary}],
+			result = {subscribers, {list, {jid, string}}}},
      #ejabberd_commands{name = set_room_affiliation, tags = [muc_room],
 		       desc = "Change an affiliation in a MUC room",
 		       module = ?MODULE, function = set_room_affiliation,
@@ -953,6 +958,15 @@ unsubscribe_room(User, Room) ->
 	    end;
 	_ ->
 	    throw({error, "Malformed room JID"})
+    end.
+
+get_subscribers(Name, Host) ->
+    case get_room_pid(Name, Host) of
+	Pid when is_pid(Pid) ->
+	    {ok, JIDList} = gen_fsm:sync_send_all_state_event(Pid, get_subscribers),
+	    [jid:to_string(jid:remove_resource(J)) || J <- JIDList];
+	_ ->
+	    throw({error, "The room does not exist"})
     end.
 
 make_opts(StateData) ->
