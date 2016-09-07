@@ -75,6 +75,7 @@ start(normal, _Args) ->
     ejabberd_oauth:start(),
     gen_mod:start_modules(),
     ejabberd_listener:start_listeners(),
+    ejabberd_service:start(),
     ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
     Sup;
 start(_, _) ->

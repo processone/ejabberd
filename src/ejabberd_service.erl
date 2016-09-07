@@ -36,7 +36,7 @@
 -behaviour(?GEN_FSM).
 
 %% External exports
--export([start/2, start_link/2, send_text/2,
+-export([start/0, start/2, start_link/2, send_text/2,
 	 send_element/2, socket_type/0, transform_listen_option/2]).
 
 -export([init/1, wait_for_stream/2,
@@ -44,19 +44,10 @@
 	 handle_event/3, handle_sync_event/4, code_change/4,
 	 handle_info/3, terminate/3, print_state/1, opt_type/1]).
 
--include("ejabberd.hrl").
--include("logger.hrl").
+-include("ejabberd_service.hrl").
+-include("mod_privacy.hrl").
 
--include("jlib.hrl").
-
--record(state,
-	{socket                    :: ejabberd_socket:socket_state(),
-         sockmod = ejabberd_socket :: ejabberd_socket | ejabberd_frontend_socket,
-         streamid = <<"">>         :: binary(),
-         host_opts = dict:new()    :: ?TDICT,
-         host = <<"">>             :: binary(),
-         access                    :: atom(),
-	 check_from = true         :: boolean()}).
+-export([get_delegated_ns/1]).
 
 %-define(DBGFSM, true).
 
@@ -99,6 +90,15 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+
+%% for xep-0355
+%% table contans records like {namespace, fitering attributes, pid(),
+%% host, disco info for general case, bare jid disco info }
+
+start() ->
+  ets:new(delegated_namespaces, [named_table, public]),
+  ets:new(hooks_tmp, [named_table, public]).
+
 start(SockData, Opts) ->
     supervisor:start_child(ejabberd_service_sup,
 			   [SockData, Opts]).
@@ -108,6 +108,9 @@ start_link(SockData, Opts) ->
 			  [SockData, Opts], fsm_limit_opts(Opts) ++ (?FSMOPTS)).
 
 socket_type() -> xml_stream.
+
+get_delegated_ns(FsmRef) ->
+    (?GEN_FSM):sync_send_all_state_event(FsmRef, {get_delegated_ns}).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -141,6 +144,21 @@ init([{SockMod, Socket}, Opts]) ->
 				p1_sha:sha(crypto:rand_bytes(20))),
 		       dict:from_list([{global, Pass}])
 	       end,
+    %% privilege access to entities data
+    PrivAccess = case lists:keysearch(privilege_access, 1, Opts) of
+		     {value, {_, PrivAcc}} -> PrivAcc;
+		     _ -> []
+		 end,
+    Delegations = case lists:keyfind(delegations, 1, Opts) of
+		      {delegations, Del} ->
+			  lists:foldl(
+			    fun({Ns, FiltAttr}, D) when Ns /= ?NS_DELEGATION ->
+				    Attr = proplists:get_value(filtering, FiltAttr, []),
+				    D ++ [{Ns, Attr}];
+			       (_Deleg, D) -> D
+			    end, [], Del);
+		      false -> []
+		  end,
     Shaper = case lists:keysearch(shaper_rule, 1, Opts) of
 	       {value, {_, S}} -> S;
 	       _ -> none
@@ -154,8 +172,9 @@ init([{SockMod, Socket}, Opts]) ->
     SockMod:change_shaper(Socket, Shaper),
     {ok, wait_for_stream,
      #state{socket = Socket, sockmod = SockMod,
-	    streamid = new_id(), host_opts = HostOpts,
-	    access = Access, check_from = CheckFrom}}.
+	    streamid = new_id(), host_opts = HostOpts, access = Access,
+	    check_from = CheckFrom, privilege_access = PrivAccess,
+	    delegations = Delegations}}.
 
 %%----------------------------------------------------------------------
 %% Func: StateName/2
@@ -227,8 +246,31 @@ wait_for_handshake({xmlstreamelement, El}, StateData) ->
 					      [H]),
 				    ejabberd_hooks:run(component_connected,
 			     		[H])
-			    end, dict:fetch_keys(StateData#state.host_opts)),			  
-			  {next_state, stream_established, StateData};
+			    end, dict:fetch_keys(StateData#state.host_opts)),
+
+			  mod_privilege:advertise_permissions(StateData),
+			  DelegatedNs = mod_delegation:advertise_delegations(StateData),
+
+			  RosterAccess = proplists:get_value(roster,
+							     StateData#state.privilege_access),
+
+			  case proplists:get_value(presence,
+						   StateData#state.privilege_access) of
+				<<"managed_entity">> ->
+				    mod_privilege:initial_presences(StateData),
+				    Fun = mod_privilege:process_presence(self()),
+				    add_hooks(user_send_packet, Fun);
+				<<"roster">> when (RosterAccess == <<"both">>) or
+						  (RosterAccess == <<"get">>) ->
+				    mod_privilege:initial_presences(StateData),
+				    Fun = mod_privilege:process_presence(self()),
+				    add_hooks(user_send_packet, Fun),
+				    Fun2 = mod_privilege:process_roster_presence(self()),
+				    add_hooks(s2s_receive_packet, Fun2);
+				_ -> ok
+			    end,
+			    {next_state, stream_established,
+			     StateData#state{delegations = DelegatedNs}};
 		      _ ->
 			  send_text(StateData, ?INVALID_HANDSHAKE_ERR),
 			  {stop, normal, StateData}
@@ -276,11 +318,12 @@ stream_established({xmlstreamelement, El}, StateData) ->
 	      <<"">> -> error;
 	      _ -> jid:from_string(To)
 	    end,
-    if ((Name == <<"iq">>) or (Name == <<"message">>) or
-	  (Name == <<"presence">>))
-	 and (ToJID /= error)
-	 and (FromJID /= error) ->
-	   ejabberd_router:route(FromJID, ToJID, NewEl);
+    if  (Name == <<"iq">>) and (ToJID /= error) and (FromJID /= error) ->
+	    mod_privilege:process_iq(StateData, FromJID, ToJID, NewEl);
+	(Name == <<"presence">>) and (ToJID /= error) and (FromJID /= error) ->
+	    ejabberd_router:route(FromJID, ToJID, NewEl);
+	(Name == <<"message">>) and (ToJID /= error) and (FromJID /= error) ->
+	    mod_privilege:process_message(StateData, FromJID, ToJID, NewEl);
        true ->
 	   Lang = fxml:get_tag_attr_s(<<"xml:lang">>, El),
 	   Txt = <<"Incorrect stanza name or from/to JID">>,
@@ -330,8 +373,11 @@ handle_event(_Event, StateName, StateData) ->
 %%          {stop, Reason, NewStateData}                          |
 %%          {stop, Reason, Reply, NewStateData}
 %%----------------------------------------------------------------------
-handle_sync_event(_Event, _From, StateName,
-		  StateData) ->
+handle_sync_event({get_delegated_ns}, _From, StateName, StateData) ->
+    Reply =  {StateData#state.host, StateData#state.delegations},
+    {reply, Reply, StateName, StateData};
+
+handle_sync_event(_Event, _From, StateName, StateData) ->
     Reply = ok, {reply, Reply, StateName, StateData}.
 
 code_change(_OldVsn, StateName, StateData, _Extra) ->
@@ -370,6 +416,36 @@ handle_info({route, From, To, Packet}, StateName,
 	  ejabberd_router:route_error(To, From, Err, Packet)
     end,
     {next_state, StateName, StateData};
+
+handle_info({user_presence, Packet, From},
+	    stream_established, StateData) ->
+    To = jid:from_string(StateData#state.host),
+    PacketNew = jlib:replace_from_to(From, To, Packet),
+    send_element(StateData, PacketNew),
+    {next_state, stream_established, StateData};
+
+handle_info({roster_presence, Packet, From},
+	    stream_established, StateData) ->
+    %% check that current presence stanza is equivalent to last
+    PresenceNew = jlib:remove_attr(<<"to">>, Packet),
+    Dict = StateData#state.last_pres,
+    LastPresence =
+    try dict:fetch(From, Dict)
+    catch _:_ ->
+	      undefined
+    end,
+    case mod_privilege:compare_presences(LastPresence, PresenceNew) of
+	false ->
+	    #xmlel{attrs = Attrs} = PresenceNew,
+	    Presence = PresenceNew#xmlel{attrs = [{<<"to">>, StateData#state.host} | Attrs]},
+	    send_element(StateData, Presence),
+	    DictNew = dict:store(From, PresenceNew, Dict),
+	    StateDataNew = StateData#state{last_pres = DictNew},
+	    {next_state, stream_established, StateDataNew};
+	_ ->
+	    {next_state, stream_established, StateData}
+    end;
+
 handle_info(Info, StateName, StateData) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {next_state, StateName, StateData}.
@@ -388,7 +464,26 @@ terminate(Reason, StateName, StateData) ->
 				ejabberd_hooks:run(component_disconnected,
 					[StateData#state.host, Reason])
 			end,
-			dict:fetch_keys(StateData#state.host_opts));
+			dict:fetch_keys(StateData#state.host_opts)),
+
+	  lists:foreach(fun({Ns, _FilterAttr}) ->
+				ets:delete(delegated_namespaces, Ns),
+				remove_iq_handlers(Ns)
+			end, StateData#state.delegations),
+
+	  RosterAccess = proplists:get_value(roster, StateData#state.privilege_access),
+	  case proplists:get_value(presence, StateData#state.privilege_access) of
+	      <<"managed_entity">> ->
+		  Fun = mod_privilege:process_presence(self()),
+		  remove_hooks(user_send_packet, Fun);
+	      <<"roster">> when (RosterAccess == <<"both">>) or
+				(RosterAccess == <<"get">>) ->
+		  Fun = mod_privilege:process_presence(self()),
+		  remove_hooks(user_send_packet, Fun),
+		  Fun2 = mod_privilege:process_roster_presence(self()),
+		  remove_hooks(s2s_receive_packet, Fun2);
+	      _ -> ok
+	  end;
       _ -> ok
     end,
     (StateData#state.sockmod):close(StateData#state.socket),
@@ -448,3 +543,19 @@ fsm_limit_opts(Opts) ->
 opt_type(max_fsm_queue) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(_) -> [max_fsm_queue].
+
+remove_iq_handlers(Ns) ->
+    lists:foreach(fun(Host) ->
+                      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, Ns),
+                      gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, Ns)
+                  end, ?MYHOSTS).
+
+add_hooks(Hook, Fun) ->
+  lists:foreach(fun(Host) ->
+                    ejabberd_hooks:add(Hook, Host,Fun, 100)
+                end, ?MYHOSTS).
+
+remove_hooks(Hook, Fun) ->
+  lists:foreach(fun(Host) ->
+                    ejabberd_hooks:delete(Hook, Host, Fun, 100)
+                end, ?MYHOSTS).

@@ -371,15 +371,20 @@ iq_type_to_string(error) -> <<"error">>.
 -spec iq_to_xml(IQ :: iq()) -> xmlel().
 
 iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
+    Children = 
+        if
+	    is_list(SubEl) -> SubEl;
+	    true -> [SubEl]
+        end,
     if ID /= <<"">> ->
 	   #xmlel{name = <<"iq">>,
 		  attrs =
 		      [{<<"id">>, ID}, {<<"type">>, iq_type_to_string(Type)}],
-		  children = SubEl};
+		  children = Children};
        true ->
 	   #xmlel{name = <<"iq">>,
 		  attrs = [{<<"type">>, iq_type_to_string(Type)}],
-		  children = SubEl}
+		  children = Children}
     end.
 
 -spec parse_xdata_submit(El :: xmlel()) ->

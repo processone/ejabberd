@@ -32,6 +32,7 @@
 -protocol({xep, 78, '2.5'}).
 -protocol({xep, 138, '2.0'}).
 -protocol({xep, 198, '1.3'}).
+-protocol({xep, 356, '7.1'}).
 
 -update_info({update, 0}).
 
@@ -48,6 +49,7 @@
 	 send_element/2,
 	 socket_type/0,
 	 get_presence/1,
+	 get_last_presence/1,
 	 get_aux_field/2,
 	 set_aux_field/3,
 	 del_aux_field/2,
@@ -212,6 +214,9 @@ socket_type() -> xml_stream.
 get_presence(FsmRef) ->
     (?GEN_FSM):sync_send_all_state_event(FsmRef,
 					 {get_presence}, 1000).
+get_last_presence(FsmRef) ->
+    (?GEN_FSM):sync_send_all_state_event(FsmRef,
+					 {get_last_presence}, 1000).
 
 get_aux_field(Key, #state{aux_fields = Opts}) ->
     case lists:keysearch(Key, 1, Opts) of
@@ -1306,6 +1311,15 @@ handle_sync_event({get_presence}, _From, StateName,
     Resource = StateData#state.resource,
     Reply = {User, Resource, Show, Status},
     fsm_reply(Reply, StateName, StateData);
+handle_sync_event({get_last_presence}, _From, StateName,
+		  StateData) ->
+    User = StateData#state.user,
+    Server = StateData#state.server,
+    PresLast = StateData#state.pres_last,
+    Resource = StateData#state.resource,
+    Reply = {User, Server, Resource, PresLast},
+    fsm_reply(Reply, StateName, StateData);
+
 handle_sync_event(get_subscribed, _From, StateName,
 		  StateData) ->
     Subscribed = (?SETS):to_list(StateData#state.pres_f),
