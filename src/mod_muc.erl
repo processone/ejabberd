@@ -385,8 +385,8 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
     {Room, _, Nick} = jid:tolower(To),
     case mnesia:dirty_read(muc_online_room, {Room, Host}) of
 	[] ->
-	    case Packet of
-		#presence{type = available, lang = Lang} ->
+	    case is_create_request(Packet) of
+		true ->
 		    case check_user_can_create_room(
 			   ServerHost, AccessCreate, From, Room) and
 			check_create_roomid(ServerHost, Room) of
@@ -399,12 +399,13 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 			    mod_muc_room:route(Pid, From, Nick, Packet),
 			    ok;
 			false ->
+			    Lang = xmpp:get_lang(Packet),
 			    ErrText = <<"Room creation is denied by service policy">>,
 			    Err = xmpp:make_error(
 				    Packet, xmpp:err_forbidden(ErrText, Lang)),
 			    ejabberd_router:route(To, From, Err)
 		    end;
-		_ ->
+		false ->
 		    Lang = xmpp:get_lang(Packet),
 		    ErrText = <<"Conference room does not exist">>,
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
@@ -500,6 +501,16 @@ process_mucsub(#iq{type = get, from = From, to = To} = IQ) ->
     ServerHost = ejabberd_router:host_of_route(Host),
     RoomJIDs = get_subscribed_rooms(ServerHost, Host, From),
     xmpp:make_iq_result(IQ, #muc_subscriptions{list = RoomJIDs}).
+
+-spec is_create_request(stanza()) -> boolean().
+is_create_request(#presence{type = available}) ->
+    true;
+is_create_request(#iq{type = set} = IQ) ->
+    xmpp:has_subtag(IQ, #muc_subscribe{});
+is_create_request(#iq{type = get} = IQ) ->
+    #muc_owner{} == xmpp:get_subtag(IQ, #muc_owner{});
+is_create_request(_) ->
+    false.
 
 check_user_can_create_room(ServerHost, AccessCreate,
 			   From, _RoomID) ->
