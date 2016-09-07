@@ -318,7 +318,9 @@ get_absolute_path(File) ->
 	    File;
 	relative ->
 	    {ok, Dir} = file:get_cwd(),
-	    filename:absname_join(Dir, File)
+	    filename:absname_join(Dir, File);
+	volumerelative ->
+	    filename:absname(File)
     end.
 
 
