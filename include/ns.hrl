@@ -164,6 +164,8 @@
 -define(NS_MIX_NODES_PARTICIPANTS, <<"urn:xmpp:mix:nodes:participants">>).
 -define(NS_MIX_NODES_SUBJECT, <<"urn:xmpp:mix:nodes:subject">>).
 -define(NS_MIX_NODES_CONFIG, <<"urn:xmpp:mix:nodes:config">>).
+-define(NS_PRIVILEGE, <<"urn:xmpp:privilege:1">>).
+-define(NS_DELEGATION, <<"urn:xmpp:delegation:1">>).
 -define(NS_MUCSUB, <<"urn:xmpp:mucsub:0">>).
 -define(NS_MUCSUB_NODES_PRESENCE, <<"urn:xmpp:mucsub:nodes:presence">>).
 -define(NS_MUCSUB_NODES_MESSAGES, <<"urn:xmpp:mucsub:nodes:messages">>).
