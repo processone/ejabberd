@@ -262,6 +262,7 @@ normalize_spec(Spec) ->
         {server, S} -> {server, nameprep(S)};
         {resource, R} -> {resource, resourceprep(R)};
         {server_regexp, SR} -> {server_regexp, b(SR)};
+        {resource_regexp, R} -> {resource_regexp, b(R)};
         {server_glob, S} -> {server_glob, b(S)};
         {resource_glob, R} -> {resource_glob, b(R)};
         {ip, {Net, Mask}} -> {ip, {Net, Mask}};
@@ -687,6 +688,7 @@ transform_options({acl, Name, Type}, Opts) ->
             {server_glob, S} -> {server_glob, [b(S)]};
             {ip, S} -> {ip, [b(S)]};
             {resource_glob, R} -> {resource_glob, [b(R)]}
+            {resource_regexp, R} -> {resource_regexp, [b(R)]}
         end,
     [{acl, [{Name, [T]}]}|Opts];
 transform_options({access, Name, Rules}, Opts) ->
