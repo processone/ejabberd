@@ -1772,7 +1772,7 @@ handle_info(close, StateName, StateData) ->
     ?DEBUG("Timeout waiting for stream management acknowledgement of ~s",
 	   [jid:to_string(StateData#state.jid)]),
     close(self()),
-    fsm_next_state(StateName, StateData);
+    fsm_next_state(StateName, StateData#state{mgmt_ack_timer = undefined});
 handle_info({_Ref, {resume, OldStateData}}, StateName, StateData) ->
     %% This happens if the resume_session/1 request timed out; the new session
     %% now receives the late response.
@@ -2495,6 +2495,12 @@ fsm_next_state(wait_for_resume, #state{mgmt_timeout = 0} = StateData) ->
     {stop, normal, StateData};
 fsm_next_state(wait_for_resume, #state{mgmt_pending_since = undefined} =
 	       StateData) ->
+    case StateData of
+      #state{mgmt_ack_timer = undefined} ->
+	  ok;
+      #state{mgmt_ack_timer = Timer} ->
+	  erlang:cancel_timer(Timer)
+    end,
     ?INFO_MSG("Waiting for resumption of stream for ~s",
 	      [jid:to_string(StateData#state.jid)]),
     {next_state, wait_for_resume,
