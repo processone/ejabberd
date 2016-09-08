@@ -687,7 +687,7 @@ transform_options({acl, Name, Type}, Opts) ->
             {server_regexp, SR} -> {server_regexp, [b(SR)]};
             {server_glob, S} -> {server_glob, [b(S)]};
             {ip, S} -> {ip, [b(S)]};
-            {resource_glob, R} -> {resource_glob, [b(R)]}
+            {resource_glob, R} -> {resource_glob, [b(R)]};
             {resource_regexp, R} -> {resource_regexp, [b(R)]}
         end,
     [{acl, [{Name, [T]}]}|Opts];
