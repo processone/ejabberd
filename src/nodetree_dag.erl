@@ -30,7 +30,7 @@
 -include_lib("stdlib/include/qlc.hrl").
 
 -include("pubsub.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -export([init/3, terminate/2, options/0, set_node/1,
     get_node/3, get_node/2, get_node/1, get_nodes/2,
@@ -69,13 +69,13 @@ create_node(Key, Node, Type, Owner, Options, Parents) ->
 		Other -> Other
 	    end;
 	_ ->
-	    {error, ?ERRT_CONFLICT(?MYLANG, <<"Node already exists">>)}
+	    {error, xmpp:err_conflict(<<"Node already exists">>, ?MYLANG)}
     end.
 
 delete_node(Key, Node) ->
     case find_node(Key, Node) of
 	false ->
-	    {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"Node not found">>)};
+	    {error, xmpp:err_item_not_found(<<"Node not found">>, ?MYLANG)};
 	Record ->
 	    lists:foreach(fun (#pubsub_node{options = Opts} = Child) ->
 			NewOpts = remove_config_parent(Node, Opts),
@@ -99,7 +99,7 @@ get_node(Host, Node, _From) ->
 
 get_node(Host, Node) ->
     case find_node(Host, Node) of
-	false -> {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"Node not found">>)};
+	false -> {error, xmpp:err_item_not_found(<<"Node not found">>, ?MYLANG)};
 	Record -> Record
     end.
 
@@ -115,7 +115,7 @@ get_nodes(Key) ->
 get_parentnodes(Host, Node, _From) ->
     case find_node(Host, Node) of
 	false ->
-	    {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"Node not found">>)};
+	    {error, xmpp:err_item_not_found(<<"Node not found">>, ?MYLANG)};
 	#pubsub_node{parents = Parents} ->
 	    Q = qlc:q([N
 			|| #pubsub_node{nodeid = {NHost, NNode}} = N
@@ -139,7 +139,7 @@ get_subnodes(Host, <<>>) ->
     get_subnodes_helper(Host, <<>>);
 get_subnodes(Host, Node) ->
     case find_node(Host, Node) of
-	false -> {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"Node not found">>)};
+	false -> {error, xmpp:err_item_not_found(<<"Node not found">>, ?MYLANG)};
 	_ -> get_subnodes_helper(Host, Node)
     end.
 
@@ -226,13 +226,13 @@ validate_parentage(Key, Owners, [<<>> | T]) ->
 validate_parentage(Key, Owners, [ParentID | T]) ->
     case find_node(Key, ParentID) of
 	false ->
-	    {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"Node not found">>)};
+	    {error, xmpp:err_item_not_found(<<"Node not found">>, ?MYLANG)};
 	#pubsub_node{owners = POwners, options = POptions} ->
 	    NodeType = find_opt(node_type, ?DEFAULT_NODETYPE, POptions),
 	    MutualOwners = [O || O <- Owners, PO <- POwners, O == PO],
 	    case {MutualOwners, NodeType} of
-		{[], _} -> {error, ?ERR_FORBIDDEN};
+		{[], _} -> {error, xmpp:err_forbidden()};
 		{_, collection} -> validate_parentage(Key, Owners, T);
-		{_, _} -> {error, ?ERR_NOT_ALLOWED}
+		{_, _} -> {error, xmpp:err_not_allowed()}
 	    end
     end.

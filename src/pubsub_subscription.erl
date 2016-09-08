@@ -39,7 +39,7 @@
 
 -include("pubsub.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -define(PUBSUB_DELIVER, <<"pubsub#deliver">>).
 -define(PUBSUB_DIGEST, <<"pubsub#digest">>).
@@ -112,30 +112,15 @@ get_options_xform(Lang, Options) ->
     Keys = [deliver, show_values, subscription_type, subscription_depth],
     XFields = [get_option_xfield(Lang, Key, Options) || Key <- Keys],
     {result,
-	#xmlel{name = <<"x">>,
-	    attrs = [{<<"xmlns">>, ?NS_XDATA}],
-	    children =
-	    [#xmlel{name = <<"field">>,
-		    attrs =
-		    [{<<"var">>, <<"FORM_TYPE">>},
-			{<<"type">>, <<"hidden">>}],
-		    children =
-		    [#xmlel{name = <<"value">>, attrs = [],
-			    children =
-			    [{xmlcdata, ?NS_PUBSUB_SUB_OPTIONS}]}]}]
-	    ++ XFields}}.
+     #xdata{type = form,
+	    fields = [#xdata_field{type = hidden,
+				   var = <<"FORM_TYPE">>,
+				   values = [?NS_PUBSUB_SUB_OPTIONS]}|
+		      XFields]}}.
 
 parse_options_xform(XFields) ->
-    case fxml:remove_cdata(XFields) of
-	[#xmlel{name = <<"x">>} = XEl] ->
-	    case jlib:parse_xdata_submit(XEl) of
-		XData when is_list(XData) ->
-		    Opts = set_xoption(XData, []),
-		    {result, Opts};
-		Other -> Other
-	    end;
-	_ -> {result, []}
-    end.
+    Opts = set_xoption(XFields, []),
+    {result, Opts}.
 
 %%====================================================================
 %% Internal functions
@@ -223,9 +208,17 @@ val_xfield(digest_frequency = Opt, [Val]) ->
 	_ ->
 	    Txt = <<"Value of '~s' should be integer">>,
 	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-	    {error, ?ERRT_NOT_ACCEPTABLE(?MYLANG, ErrTxt)}
+	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
     end;
-val_xfield(expire, [Val]) -> jlib:datetime_string_to_timestamp(Val);
+val_xfield(expire = Opt, [Val]) ->
+    case jlib:datetime_string_to_timestamp(Val) of
+	undefined ->
+	    Txt = <<"Value of '~s' should be datetime string">>,
+	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
+	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)};
+	Timestamp ->
+	    Timestamp
+    end;
 val_xfield(include_body = Opt, [Val]) -> xopt_to_bool(Opt, Val);
 val_xfield(show_values, Vals) -> Vals;
 val_xfield(subscription_type, [<<"items">>]) -> items;
@@ -237,7 +230,7 @@ val_xfield(subscription_depth = Opt, [Depth]) ->
 	_ ->
 	    Txt = <<"Value of '~s' should be integer">>,
 	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-	    {error, ?ERRT_NOT_ACCEPTABLE(?MYLANG, ErrTxt)}
+	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
     end.
 
 %% Convert XForm booleans to Erlang booleans.
@@ -248,10 +241,7 @@ xopt_to_bool(_, <<"true">>) -> true;
 xopt_to_bool(Option, _) ->
     Txt = <<"Value of '~s' should be boolean">>,
     ErrTxt = iolist_to_binary(io_lib:format(Txt, [Option])),
-    {error, ?ERRT_NOT_ACCEPTABLE(?MYLANG, ErrTxt)}.
-
--spec get_option_xfield(Lang :: binary(), Key :: atom(),
-			Options :: mod_pubsub:subOptions()) -> xmlel().
+    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}.
 
 %% Return a field for an XForm for Key, with data filled in, if
 %% applicable, from Options.
@@ -261,33 +251,22 @@ get_option_xfield(Lang, Key, Options) ->
     {Type, OptEls} = type_and_options(xfield_type(Key), Lang),
     Vals = case lists:keysearch(Key, 1, Options) of
 	{value, {_, Val}} ->
-	    [tr_xfield_values(Vals)
-		|| Vals <- xfield_val(Key, Val)];
-	false -> []
+		   [xfield_val(Key, Val)];
+	       false ->
+		   []
     end,
-    #xmlel{name = <<"field">>,
-	attrs =
-	[{<<"var">>, Var}, {<<"type">>, Type},
-	    {<<"label">>, translate:translate(Lang, Label)}],
-	children = OptEls ++ Vals}.
+    #xdata_field{type = Type, var = Var,
+		 label = translate:translate(Lang, Label),
+		 values = Vals,
+		 options = OptEls}.
 
 type_and_options({Type, Options}, Lang) ->
     {Type, [tr_xfield_options(O, Lang) || O <- Options]};
 type_and_options(Type, _Lang) -> {Type, []}.
 
 tr_xfield_options({Value, Label}, Lang) ->
-    #xmlel{name = <<"option">>,
-	attrs =
-	[{<<"label">>, translate:translate(Lang, Label)}],
-	children =
-	[#xmlel{name = <<"value">>, attrs = [],
-		children = [{xmlcdata, Value}]}]}.
-
-tr_xfield_values(Value) ->
-    %% Return the XForm variable name for a subscription option key.
-    %% Return the XForm variable type for a subscription option key.
-    #xmlel{name = <<"value">>, attrs = [],
-	children = [{xmlcdata, Value}]}.
+    #xdata_option{label = translate:translate(Lang, Label),
+		  value = Value}.
 
 xfield_var(deliver) -> ?PUBSUB_DELIVER;
 %xfield_var(digest) -> ?PUBSUB_DIGEST;
@@ -298,24 +277,24 @@ xfield_var(show_values) -> ?PUBSUB_SHOW_VALUES;
 xfield_var(subscription_type) -> ?PUBSUB_SUBSCRIPTION_TYPE;
 xfield_var(subscription_depth) -> ?PUBSUB_SUBSCRIPTION_DEPTH.
 
-xfield_type(deliver) -> <<"boolean">>;
-%xfield_type(digest) -> <<"boolean">>;
-%xfield_type(digest_frequency) -> <<"text-single">>;
-%xfield_type(expire) -> <<"text-single">>;
-%xfield_type(include_body) -> <<"boolean">>;
+xfield_type(deliver) -> boolean;
+%xfield_type(digest) -> boolean;
+%xfield_type(digest_frequency) -> 'text-single';
+%xfield_type(expire) -> 'text-single';
+%xfield_type(include_body) -> boolean;
 xfield_type(show_values) ->
-    {<<"list-multi">>,
+    {'list-multi',
 	[{<<"away">>, ?SHOW_VALUE_AWAY_LABEL},
 	    {<<"chat">>, ?SHOW_VALUE_CHAT_LABEL},
 	    {<<"dnd">>, ?SHOW_VALUE_DND_LABEL},
 	    {<<"online">>, ?SHOW_VALUE_ONLINE_LABEL},
 	    {<<"xa">>, ?SHOW_VALUE_XA_LABEL}]};
 xfield_type(subscription_type) ->
-    {<<"list-single">>,
+    {'list-single',
 	[{<<"items">>, ?SUBSCRIPTION_TYPE_VALUE_ITEMS_LABEL},
 	    {<<"nodes">>, ?SUBSCRIPTION_TYPE_VALUE_NODES_LABEL}]};
 xfield_type(subscription_depth) ->
-    {<<"list-single">>,
+    {'list-single',
 	[{<<"1">>, ?SUBSCRIPTION_DEPTH_VALUE_ONE_LABEL},
 	    {<<"all">>, ?SUBSCRIPTION_DEPTH_VALUE_ALL_LABEL}]}.
 

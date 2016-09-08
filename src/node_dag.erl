@@ -28,7 +28,7 @@
 -author('bjc@kublai.com').
 
 -include("pubsub.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -export([init/3, terminate/2, options/0, features/0,
     create_node_permission/6, create_node/2, delete_node/1,
@@ -78,8 +78,9 @@ publish_item(Nidx, Publisher, Model, MaxItems, ItemId, Payload, PubOpts) ->
 	    case find_opt(node_type, Options) of
 		collection ->
 		    Txt = <<"Publishing items to collection node is not allowed">>,
-		    {error,
-		     ?ERR_EXTENDED(?ERRT_NOT_ALLOWED(?MYLANG, Txt), <<"publish">>)};
+		    {error, mod_pubsub:extended_error(
+			      xmpp:err_not_allowed(Txt, ?MYLANG),
+			      mod_pubsub:err_unsupported('publish'))};
 		_ ->
 		    node_hometree:publish_item(Nidx, Publisher, Model,
 			MaxItems, ItemId, Payload, PubOpts)

@@ -75,27 +75,27 @@ add_subscription(#pubsub_subscription{subid = SubId, options = Opts}) ->
 	Opts),
     ok.
 
-subscription_opt_from_sql({<<"DELIVER">>, Value}) ->
+subscription_opt_from_sql([<<"DELIVER">>, Value]) ->
     {deliver, sql_to_boolean(Value)};
-subscription_opt_from_sql({<<"DIGEST">>, Value}) ->
+subscription_opt_from_sql([<<"DIGEST">>, Value]) ->
     {digest, sql_to_boolean(Value)};
-subscription_opt_from_sql({<<"DIGEST_FREQUENCY">>, Value}) ->
+subscription_opt_from_sql([<<"DIGEST_FREQUENCY">>, Value]) ->
     {digest_frequency, sql_to_integer(Value)};
-subscription_opt_from_sql({<<"EXPIRE">>, Value}) ->
+subscription_opt_from_sql([<<"EXPIRE">>, Value]) ->
     {expire, sql_to_timestamp(Value)};
-subscription_opt_from_sql({<<"INCLUDE_BODY">>, Value}) ->
+subscription_opt_from_sql([<<"INCLUDE_BODY">>, Value]) ->
     {include_body, sql_to_boolean(Value)};
 %%TODO: might be > than 1 show_values value??.
 %%      need to use compact all in only 1 opt.
-subscription_opt_from_sql({<<"SHOW_VALUES">>, Value}) ->
+subscription_opt_from_sql([<<"SHOW_VALUES">>, Value]) ->
     {show_values, Value};
-subscription_opt_from_sql({<<"SUBSCRIPTION_TYPE">>, Value}) ->
+subscription_opt_from_sql([<<"SUBSCRIPTION_TYPE">>, Value]) ->
     {subscription_type,
 	case Value of
 	    <<"items">> -> items;
 	    <<"nodes">> -> nodes
 	end};
-subscription_opt_from_sql({<<"SUBSCRIPTION_DEPTH">>, Value}) ->
+subscription_opt_from_sql([<<"SUBSCRIPTION_DEPTH">>, Value]) ->
     {subscription_depth,
 	case Value of
 	    <<"all">> -> all;

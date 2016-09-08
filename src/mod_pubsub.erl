@@ -41,8 +41,6 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-%%-include("adhoc.hrl").
-%%-include("jlib.hrl").
 -include("xmpp.hrl").
 -include("pubsub.hrl").
 
@@ -1199,11 +1197,14 @@ iq_get_vcard(Lang) ->
 iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 			    sub_els = [SubEl]}) ->
     case {IQType, SubEl} of
-	{set, #pubsub{create = Node, configure = {_, XData},
+	{set, #pubsub{create = Node, configure = Configure,
 		      _ = undefined}} when is_binary(Node) ->
 	    ServerHost = serverhost(Host),
 	    Plugins = config(ServerHost, plugins),
-	    Config = get_xdata_fields(XData),
+	    Config = case Configure of
+			 {_, XData} -> get_xdata_fields(XData);
+			 undefined -> []
+		     end,
 	    Type = hd(Plugins),
 	    create_node(Host, ServerHost, Node, From, Type, Access, Config);
 	{set, #pubsub{publish = #ps_publish{node = Node, items = Items},
@@ -1223,7 +1224,12 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 		      _ = undefined}} ->
 	    case Items of
 		[#ps_item{id = ItemId}] ->
-		    delete_item(Host, Node, From, ItemId, Notify);
+		    if ItemId /= <<>> ->
+			    delete_item(Host, Node, From, ItemId, Notify);
+		       true ->
+			    {error, extended_error(xmpp:err_bad_request(),
+						   err_item_required())}
+		    end;
 		[] ->
 		    {error, extended_error(xmpp:err_bad_request(), err_item_required())};
 		_ ->
@@ -1259,11 +1265,14 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 					    jid = JID, xdata = XData},
 		      _ = undefined}} ->
 	    set_options(Host, Node, JID, SubId, get_xdata_fields(XData));
+	{set, #pubsub{}} ->
+	    {error, xmpp:err_bad_request()};
 	_ ->
 	    {error, xmpp:err_feature_not_implemented()}
     end.
 
--spec iq_pubsub_owner(binary() | ljid(), iq()) -> {result, pubsub()} | {error, error()}.
+-spec iq_pubsub_owner(binary() | ljid(), iq()) -> {result, pubsub_owner() | undefined} |
+						  {error, error()}.
 iq_pubsub_owner(Host, #iq{type = IQType, from = From,
 			  lang = Lang, sub_els = [SubEl]}) ->
     case {IQType, SubEl} of
@@ -1275,7 +1284,7 @@ iq_pubsub_owner(Host, #iq{type = IQType, from = From,
 		undefined ->
 		    {error, xmpp:err_bad_request(<<"No data form found">>, Lang)};
 		#xdata{type = cancel} ->
-		    {result, #pubsub{}};
+		    {result, #pubsub_owner{}};
 		#xdata{type = submit} ->
 		    Config = get_xdata_fields(XData),
 		    set_configure(Host, Node, From, Config, Lang);
@@ -1684,7 +1693,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 %%<li>The node is the root collection node, which cannot be deleted.</li>
 %%<li>The specified node does not exist.</li>
 %%</ul>
--spec delete_node(host(), binary(), jid()) -> {result, pubsub()} | {error, error()}.
+-spec delete_node(host(), binary(), jid()) -> {result, pubsub_owner()} | {error, error()}.
 delete_node(_Host, <<>>, _Owner) ->
     {error, xmpp:err_not_allowed(<<"No node specified">>, ?MYLANG)};
 delete_node(Host, Node, Owner) ->
@@ -1701,7 +1710,7 @@ delete_node(Host, Node, Owner) ->
 		    {error, xmpp:err_forbidden(<<"Owner privileges required">>, ?MYLANG)}
 	    end
     end,
-    Reply = [],
+    Reply = undefined,
     ServerHost = serverhost(Host),
     case transaction(Host, Node, Action, transaction) of
 	{result, {_, {SubsByDepth, {Result, broadcast, Removed}}}} ->
@@ -2566,8 +2575,8 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 	    Error
     end.
 
--spec get_subscriptions(binary(), binary(), jid()) -> {result, pubsub()} |
-						      {error, error()}.
+-spec get_subscriptions(host(), binary(), jid()) -> {result, pubsub_owner()} |
+						    {error, error()}.
 get_subscriptions(Host, Node, JID) ->
     Action = fun (#pubsub_node{type = Type, id = Nidx}) ->
 	    Features = plugin_features(Host, Type),
@@ -2595,7 +2604,7 @@ get_subscriptions(Host, Node, JID) ->
 			({AJID, Sub, SubId}) ->
 			  [#ps_subscription{jid = AJID, type = Sub, subid = SubId}]
 		  end, Subs),
-	    {result, #pubsub{subscriptions = {Node, Entities}}};
+	    {result, #pubsub_owner{subscriptions = {Node, Entities}}};
 	Error ->
 	    Error
     end.
@@ -2623,6 +2632,8 @@ get_subscriptions_for_send_last(Host, PType, sql, JID, LJID, BJID) ->
 get_subscriptions_for_send_last(_Host, _PType, _, _JID, _LJID, _BJID) ->
     [].
 
+-spec set_subscriptions(host(), binary(), jid(), [ps_subscription()]) ->
+			       {result, undefined} | {error, error()}.
 set_subscriptions(Host, Node, From, Entities) ->
     Owner = jid:tolower(jid:remove_resource(From)),
     Notify = fun(#ps_subscription{jid = JID, type = Sub}) ->
@@ -3152,7 +3163,7 @@ user_resource(_, _, Resource) ->
 
 %%%%%%% Configuration handling
 -spec get_configure(host(), binary(), binary(), jid(),
-		    binary()) -> {error, error()} | {result, pubsub()}.
+		    binary()) -> {error, error()} | {result, pubsub_owner()}.
 get_configure(Host, ServerHost, Node, From, Lang) ->
     Action = fun (#pubsub_node{options = Options, type = Type, id = Nidx}) ->
 	    case node_call(Host, Type, get_affiliation, [Nidx, From]) of
@@ -3171,7 +3182,7 @@ get_configure(Host, ServerHost, Node, From, Lang) ->
 	Other -> Other
     end.
 
--spec get_default(host(), binary(), jid(), binary()) -> {result, pubsub()}.
+-spec get_default(host(), binary(), jid(), binary()) -> {result, pubsub_owner()}.
 get_default(Host, Node, _From, Lang) ->
     Type = select_type(Host, Host, Node),
     Options = node_options(Host, Type),
@@ -3371,6 +3382,8 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
 %%</ul>
 -spec set_configure(host(), binary(), jid(), [{binary(), [binary()]}],
 		    binary()) -> {result, undefined} | {error, error()}.
+set_configure(_Host, <<>>, _From, _Config, _Lang) ->
+    {error, extended_error(xmpp:err_bad_request(), err_nodeid_required())};
 set_configure(Host, Node, From, Config, Lang) ->
     Action =
 	fun(#pubsub_node{options = Options, type = Type, id = Nidx} = N) ->
@@ -3664,26 +3677,28 @@ select_type(ServerHost, Host, Node, Type) ->
 select_type(ServerHost, Host, Node) ->
     select_type(ServerHost, Host, Node, hd(plugins(Host))).
 
+-spec feature(binary()) -> binary().
 feature(<<"rsm">>) -> ?NS_RSM;
 feature(Feature) -> <<(?NS_PUBSUB)/binary, "#", Feature/binary>>.
 
+-spec features() -> [binary()].
 features() ->
     [% see plugin "access-authorize",   % OPTIONAL
-	<<"access-open">>,   % OPTIONAL this relates to access_model option in node_hometree
-	<<"access-presence">>,   % OPTIONAL this relates to access_model option in node_pep
-	<<"access-whitelist">>,   % OPTIONAL
-	<<"collections">>,   % RECOMMENDED
-	<<"config-node">>,   % RECOMMENDED
-	<<"create-and-configure">>,   % RECOMMENDED
-	<<"item-ids">>,   % RECOMMENDED
-	<<"last-published">>,   % RECOMMENDED
-	<<"member-affiliation">>,   % RECOMMENDED
-	<<"presence-notifications">>,   % OPTIONAL
-	<<"presence-subscribe">>,   % RECOMMENDED
-	<<"publisher-affiliation">>,   % RECOMMENDED
-	<<"publish-only-affiliation">>,   % OPTIONAL
-	<<"retrieve-default">>,
-	<<"shim">>].   % RECOMMENDED
+     <<"access-open">>,   % OPTIONAL this relates to access_model option in node_hometree
+     <<"access-presence">>,   % OPTIONAL this relates to access_model option in node_pep
+     <<"access-whitelist">>,   % OPTIONAL
+     <<"collections">>,   % RECOMMENDED
+     <<"config-node">>,   % RECOMMENDED
+     <<"create-and-configure">>,   % RECOMMENDED
+     <<"item-ids">>,   % RECOMMENDED
+     <<"last-published">>,   % RECOMMENDED
+     <<"member-affiliation">>,   % RECOMMENDED
+     <<"presence-notifications">>,   % OPTIONAL
+     <<"presence-subscribe">>,   % RECOMMENDED
+     <<"publisher-affiliation">>,   % RECOMMENDED
+     <<"publish-only-affiliation">>,   % OPTIONAL
+     <<"retrieve-default">>,
+     <<"shim">>].   % RECOMMENDED
 
 % see plugin "retrieve-items",   % RECOMMENDED
 % see plugin "retrieve-subscriptions",   % RECOMMENDED
@@ -3920,7 +3935,7 @@ err_subid_required() ->
 err_too_many_subscriptions() ->
     #ps_error{type = 'too-many-subscriptions'}.
 
--spec err_unsupported(ps_error_feature()) -> ps_error().
+-spec err_unsupported(ps_feature()) -> ps_error().
 err_unsupported(Feature) ->
     #ps_error{type = 'unsupported', feature = Feature}.
 

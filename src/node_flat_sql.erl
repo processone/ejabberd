@@ -677,7 +677,7 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 			  "where exists ( select count(*) as count1 "
 			  "from pubsub_item where nodeid='">>, SNidx,
 			<<"' and modification > pi.modification having count1 = ">>,
-			IncIndex, <<" );">>]) of
+			integer_to_binary(IncIndex), <<" );">>]) of
 		    {selected, [_], [[O]]} ->
 			[<<"modification">>, <<"'", O/binary, "'">>];
 		    _ ->
@@ -699,7 +699,7 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 	    end,
     Query = fun(mssql, _) ->
 		    ejabberd_sql:sql_query_t(
-		      [<<"select top ">>, Max,
+		      [<<"select top ">>, integer_to_binary(Max),
 		       <<" itemid, publisher, creation, modification, payload "
 			 "from pubsub_item where nodeid='">>, SNidx,
 		       <<"' and ">>, AttrName, <<" ">>, Way, <<" ">>, Id, <<" order by ">>,
@@ -709,7 +709,8 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 		      [<<"select itemid, publisher, creation, modification, payload "
 			 "from pubsub_item where nodeid='">>, SNidx,
 		       <<"' and ">>, AttrName, <<" ">>, Way, <<" ">>, Id, <<" order by ">>,
-		       AttrName, <<" ">>, Order, <<" limit ">>, Max, <<" ;">>])
+		       AttrName, <<" ">>, Order, <<" limit ">>,
+		       integer_to_binary(Max), <<" ;">>])
 	    end,
     case ejabberd_sql:sql_query_t(Query) of
 	{selected, [<<"itemid">>, <<"publisher">>, <<"creation">>,

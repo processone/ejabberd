@@ -1961,27 +1961,27 @@
 			 'presence-subscription-required' | 'subid-required' |
 			 'too-many-subscriptions' | 'unsupported' |
 			 'unsupported-access-model'.
--type ps_error_feature() :: 'access-authorize' | 'access-open' |
-			    'access-presence' | 'access-roster' |
-			    'access-whitelist' | 'auto-create' |
-			    'auto-subscribe' | 'collections' | 'config-node' |
-			    'create-and-configure' | 'create-nodes' |
-			    'delete-items' | 'delete-nodes' |
-			    'filtered-notifications' | 'get-pending' |
-			    'instant-nodes' | 'item-ids' | 'last-published' |
-			    'leased-subscription' | 'manage-subscriptions' |
-			    'member-affiliation' | 'meta-data' |
-			    'modify-affiliations' | 'multi-collection' |
-			    'multi-subscribe' | 'outcast-affiliation' |
-			    'persistent-items' | 'presence-notifications' |
-			    'presence-subscribe' | 'publish' |
-			    'publish-options' | 'publish-only-affiliation' |
-			    'publisher-affiliation' | 'purge-nodes' |
-			    'retract-items' | 'retrieve-affiliations' |
-			    'retrieve-default' | 'retrieve-items' |
-			    'retrieve-subscriptions' | 'subscribe' |
-			    'subscription-options' | 'subscription-notifications'.
--record(ps_error, {type :: ps_error_type(), feature :: ps_error_feature()}).
+-type ps_feature() :: 'access-authorize' | 'access-open' |
+		      'access-presence' | 'access-roster' |
+		      'access-whitelist' | 'auto-create' |
+		      'auto-subscribe' | 'collections' | 'config-node' |
+		      'create-and-configure' | 'create-nodes' |
+		      'delete-items' | 'delete-nodes' |
+		      'filtered-notifications' | 'get-pending' |
+		      'instant-nodes' | 'item-ids' | 'last-published' |
+		      'leased-subscription' | 'manage-subscriptions' |
+		      'member-affiliation' | 'meta-data' |
+		      'modify-affiliations' | 'multi-collection' |
+		      'multi-subscribe' | 'outcast-affiliation' |
+		      'persistent-items' | 'presence-notifications' |
+		      'presence-subscribe' | 'publish' |
+		      'publish-options' | 'publish-only-affiliation' |
+		      'publisher-affiliation' | 'purge-nodes' |
+		      'retract-items' | 'retrieve-affiliations' |
+		      'retrieve-default' | 'retrieve-items' |
+		      'retrieve-subscriptions' | 'subscribe' |
+		      'subscription-options' | 'subscription-notifications'.
+-record(ps_error, {type :: ps_error_type(), feature :: ps_feature()}).
 -type ps_error() :: #ps_error{}.
 
 -xml(pubsub_error_closed_node,
