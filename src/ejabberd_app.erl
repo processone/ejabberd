@@ -56,6 +56,7 @@ start(normal, _Args) ->
     ejabberd_admin:start(),
     gen_mod:start(),
     ext_mod:start(),
+    setup_if_elixir_conf_used(),
     ejabberd_config:start(),
     set_settings_from_config(),
     acl:start(),
@@ -76,6 +77,7 @@ start(normal, _Args) ->
     gen_mod:start_modules(),
     ejabberd_listener:start_listeners(),
     ejabberd_service:start(),
+    register_elixir_config_hooks(),
     ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
     Sup;
 start(_, _) ->
@@ -239,6 +241,18 @@ opt_type(modules) ->
 		      Mods)
     end;
 opt_type(_) -> [cluster_nodes, loglevel, modules, net_ticktime].
+
+setup_if_elixir_conf_used() ->
+  case ejabberd_config:is_using_elixir_config() of
+    true -> 'Elixir.Ejabberd.Config.Store':start_link();
+    false -> ok
+  end.
+
+register_elixir_config_hooks() ->
+  case ejabberd_config:is_using_elixir_config() of
+    true -> 'Elixir.Ejabberd.Config':start_hooks();
+    false -> ok
+  end.
 
 start_elixir_application() ->
   case application:ensure_started(elixir) of
