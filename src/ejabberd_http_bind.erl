@@ -340,6 +340,7 @@ init([Sid, Key, IP, HOpts]) ->
     Opts1 = ejabberd_c2s_config:get_c2s_limits(),
     SOpts = lists:filtermap(fun({stream_management, _}) -> true;
                                ({max_ack_queue, _}) -> true;
+                               ({ack_timeout, _}) -> true;
                                ({resume_timeout, _}) -> true;
                                ({max_resume_timeout, _}) -> true;
                                ({resend_on_timeout, _}) -> true;
