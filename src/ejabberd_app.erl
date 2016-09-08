@@ -259,7 +259,7 @@ start_elixir_application() ->
 	true ->
 	    case application:ensure_started(elixir) of
 		ok -> ok;
-		{error, _Msg} -> ?ERROR_MSG("Elixir application not started.", [])
+		{error, _Msg} -> ?INFO_MSG("Elixir application not started.", [])
 	    end;
 	_ ->
 	    ok
