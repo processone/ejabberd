@@ -679,7 +679,7 @@ adhoc_join(From, To, #adhoc_command{lang = Lang, xdata = X} = Request) ->
     end.
 
 -spec adhoc_register(binary(), jid(), jid(), adhoc_command()) ->
-			    adhoc_command() | {error, error()}.
+			    adhoc_command() | {error, stanza_error()}.
 adhoc_register(_ServerHost, _From, _To,
 	       #adhoc_command{action = cancel} = Request) ->
     xmpp_util:make_adhoc_response(Request, #adhoc_command{status = canceled});

@@ -1136,8 +1136,8 @@ decide_fate_message(_, _, _) -> continue_delivery.
 %% Check if the elements of this error stanza indicate
 %% that the sender is a dead participant.
 %% If so, return true to kick the participant.
--spec check_error_kick(error()) -> boolean().
-check_error_kick(#error{reason = Reason}) ->
+-spec check_error_kick(stanza_error()) -> boolean().
+check_error_kick(#stanza_error{reason = Reason}) ->
     case Reason of
 	#gone{} -> true;
 	'internal-server-error' -> true;
@@ -1153,8 +1153,8 @@ check_error_kick(#error{reason = Reason}) ->
 check_error_kick(undefined) ->
     false.
 
--spec get_error_condition(error()) -> string().
-get_error_condition(#error{reason = Reason}) ->
+-spec get_error_condition(stanza_error()) -> string().
+get_error_condition(#stanza_error{reason = Reason}) ->
     case Reason of
 	#gone{} -> "gone";
 	#redirect{} -> "redirect";
@@ -1673,7 +1673,7 @@ nick_collision(User, Nick, StateData) ->
 
 -spec add_new_user(jid(), binary(), presence() | iq(), state()) ->
 			  state() |
-			  {error, error()} |
+			  {error, stanza_error()} |
 			  {ignore, state()} |
 			  {result, xmpp_element(), state()}.
 add_new_user(From, Nick, Packet, StateData) ->
@@ -2467,7 +2467,7 @@ can_change_subject(Role, StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Admin stuff
 
--spec process_iq_admin(jid(), iq(), #state{}) -> {error, error()} |
+-spec process_iq_admin(jid(), iq(), #state{}) -> {error, stanza_error()} |
 						 {result, undefined, #state{}} |
 						 {result, muc_admin()}.
 process_iq_admin(_From, #iq{lang = Lang, sub_els = [#muc_admin{items = []}]},
@@ -2557,7 +2557,7 @@ search_affiliation(Affiliation, StateData) ->
 
 -spec process_admin_items_set(jid(), [muc_item()], binary(),
 			      #state{}) -> {result, undefined, #state{}} |
-					   {error, error()}.
+					   {error, stanza_error()}.
 process_admin_items_set(UJID, Items, Lang, StateData) ->
     UAffiliation = get_affiliation(UJID, StateData),
     URole = get_role(UJID, StateData),
@@ -2939,7 +2939,7 @@ get_actor_nick(MJID, StateData) ->
 -spec process_iq_owner(jid(), iq(), state()) ->
 			      {result, undefined | muc_owner()} |
 			      {result, undefined | muc_owner(), state() | stop} |
-			      {error, error()}.
+			      {error, stanza_error()}.
 process_iq_owner(From, #iq{type = set, lang = Lang,
 			   sub_els = [#muc_owner{destroy = Destroy,
 						 config = Config,
@@ -3294,7 +3294,7 @@ get_config(Lang, StateData, From) ->
 				     [StateData, From, Lang]),
     #xdata{type = form, title = Title, fields = Fields}.
 
--spec set_config(xdata(), state(), binary()) -> {error, error()} |
+-spec set_config(xdata(), state(), binary()) -> {error, stanza_error()} |
 						{result, undefined, state()}.
 set_config(#xdata{fields = Fields}, StateData, Lang) ->
     Options = [{Var, Vals} || #xdata_field{var = Var, values = Vals} <- Fields],
@@ -3377,7 +3377,7 @@ get_config_opt_name(Pos) ->
 	end).
 
 -spec set_xoption([{binary(), [binary()]}], #config{},
-		  binary(), binary()) -> #config{} | {error, error()}.
+		  binary(), binary()) -> #config{} | {error, stanza_error()}.
 set_xoption([], Config, _ServerHost, _Lang) -> Config;
 set_xoption([{<<"muc#roomconfig_roomname">>, Vals}
 	     | Opts],
@@ -3836,7 +3836,7 @@ destroy_room(DEl, StateData) ->
 	end).
 
 -spec process_iq_disco_info(jid(), iq(), state()) ->
-				   {result, disco_info()} | {error, error()}.
+				   {result, disco_info()} | {error, stanza_error()}.
 process_iq_disco_info(_From, #iq{type = set, lang = Lang}, _StateData) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     {error, xmpp:err_not_allowed(Txt, Lang)};
@@ -3901,7 +3901,7 @@ iq_disco_info_extras(Lang, StateData) ->
 			       integer_to_binary(Len), Lang)]}.
 
 -spec process_iq_disco_items(jid(), iq(), state()) ->
-				    {error, error()} | {result, disco_items()}.
+				    {error, stanza_error()} | {result, disco_items()}.
 process_iq_disco_items(_From, #iq{type = set, lang = Lang}, _StateData) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     {error, xmpp:err_not_allowed(Txt, Lang)};
@@ -3919,7 +3919,7 @@ process_iq_disco_items(From, #iq{type = get, lang = Lang}, StateData) ->
 	  end
     end.
 
--spec process_iq_captcha(jid(), iq(), state()) -> {error, error()} |
+-spec process_iq_captcha(jid(), iq(), state()) -> {error, stanza_error()} |
 						  {result, undefined}.
 process_iq_captcha(_From, #iq{type = get, lang = Lang}, _StateData) ->
     Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
@@ -3939,7 +3939,7 @@ process_iq_captcha(_From, #iq{type = set, lang = Lang, sub_els = [SubEl]},
 -spec process_iq_vcard(jid(), iq(), state()) ->
 			      {result, vcard_temp() | xmlel()} |
 			      {result, undefined, state()} |
-			      {error, error()}.
+			      {error, stanza_error()}.
 process_iq_vcard(_From, #iq{type = get}, StateData) ->
     #state{config = #config{vcard = VCardRaw}} = StateData,
     case fxml_stream:parse_element(VCardRaw) of
@@ -3962,7 +3962,7 @@ process_iq_vcard(From, #iq{type = set, lang = Lang, sub_els = [SubEl]},
     end.
 
 -spec process_iq_mucsub(jid(), iq(), state()) ->
-			       {error, error()} |
+			       {error, stanza_error()} |
 			       {result, undefined | muc_subscribe(), state()} |
 			       {ignore, state()}.
 process_iq_mucsub(_From, #iq{type = set, lang = Lang,
@@ -4205,7 +4205,7 @@ is_invitation(Packet) ->
 	 (_) -> false
       end, Els).
 
--spec check_invitation(jid(), message(), state()) -> {error, error()} | jid().
+-spec check_invitation(jid(), message(), state()) -> {error, stanza_error()} | jid().
 check_invitation(From, Packet, StateData) ->
     Lang = xmpp:get_lang(Packet),
     FAffiliation = get_affiliation(From, StateData),

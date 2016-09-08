@@ -270,8 +270,8 @@ get_local_features(Acc, From,
     end.
 
 %%%-----------------------------------------------------------------------
--spec adhoc_sm_items(empty | {error, error()} | {result, [disco_item()]},
-		     jid(), jid(), binary()) -> {error, error()} |
+-spec adhoc_sm_items(empty | {error, stanza_error()} | {result, [disco_item()]},
+		     jid(), jid(), binary()) -> {error, stanza_error()} |
 						{result, [disco_item()]} |
 						empty.
 adhoc_sm_items(Acc, From, #jid{lserver = LServer} = To,
@@ -325,8 +325,8 @@ get_user_resources(User, Server) ->
 
 %%%-----------------------------------------------------------------------
 
--spec adhoc_local_items(empty | {error, error()} | {result, [disco_item()]},
-			jid(), jid(), binary()) -> {error, error()} |
+-spec adhoc_local_items(empty | {error, stanza_error()} | {result, [disco_item()]},
+			jid(), jid(), binary()) -> {error, stanza_error()} |
 						   {result, [disco_item()]} |
 						   empty.
 adhoc_local_items(Acc, From,
@@ -773,7 +773,7 @@ get_stopped_nodes(_Lang) ->
 	end).
 
 -spec adhoc_local_commands(adhoc_command(), jid(), jid(), adhoc_command()) ->
-				  adhoc_command() | {error, error()}.
+				  adhoc_command() | {error, stanza_error()}.
 adhoc_local_commands(Acc, From,
 		     #jid{lserver = LServer} = To,
 		     #adhoc_command{node = Node, lang = Lang} = Request) ->

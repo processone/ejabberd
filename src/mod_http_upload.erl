@@ -601,7 +601,7 @@ create_slot(#state{service_url = undefined,
 	    {ok, [UserStr, RandStr, FileStr]};
 	deny ->
 	    {error, xmpp:err_service_unavailable()};
-	#error{} = Error ->
+	#stanza_error{} = Error ->
 	    {error, Error}
     end;
 create_slot(#state{service_url = ServiceURL},

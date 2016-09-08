@@ -785,13 +785,13 @@ fix_ns(El) ->
     El.
 
 %% Bounce a single message (xmlelement)
--spec bounce_element(stanza(), error()) -> ok.
+-spec bounce_element(stanza(), stanza_error()) -> ok.
 bounce_element(El, Error) ->
     From = xmpp:get_from(El),
     To = xmpp:get_to(El),
     ejabberd_router:route_error(To, From, El, Error).
 
--spec bounce_queue(queue:queue(), error()) -> ok.
+-spec bounce_queue(queue:queue(), stanza_error()) -> ok.
 bounce_queue(Q, Error) ->
     case queue:out(Q) of
       {{value, El}, Q1} ->
@@ -807,7 +807,7 @@ cancel_timer(Timer) ->
     erlang:cancel_timer(Timer),
     receive {timeout, Timer, _} -> ok after 0 -> ok end.
 
--spec bounce_messages(error()) -> ok.
+-spec bounce_messages(stanza_error()) -> ok.
 bounce_messages(Error) ->
     receive
       {send_element, El} ->

@@ -525,9 +525,9 @@ disco_local_identity(Acc, _From, To, <<>>, _Lang) ->
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec disco_local_features({error, error()} | {result, [binary()]} | empty,
+-spec disco_local_features({error, stanza_error()} | {result, [binary()]} | empty,
 			   jid(), jid(), binary(), binary()) ->
-				  {error, error()} | {result, [binary()]} | empty.
+				  {error, stanza_error()} | {result, [binary()]} | empty.
 disco_local_features(Acc, _From, To, <<>>, _Lang) ->
     Host = host(To#jid.lserver),
     Feats = case Acc of
@@ -538,9 +538,9 @@ disco_local_features(Acc, _From, To, <<>>, _Lang) ->
 disco_local_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec disco_local_items({error, error()} | {result, [disco_item()]} | empty,
+-spec disco_local_items({error, stanza_error()} | {result, [disco_item()]} | empty,
 			jid(), jid(), binary(), binary()) ->
-			       {error, error()} | {result, [disco_item()]} | empty.
+			       {error, stanza_error()} | {result, [disco_item()]} | empty.
 disco_local_items(Acc, _From, _To, <<>>, _Lang) -> Acc;
 disco_local_items(Acc, _From, _To, _Node, _Lang) -> Acc.
 
@@ -578,9 +578,9 @@ disco_identity(Host, Node, From) ->
 	_ -> []
     end.
 
--spec disco_sm_features({error, error()} | {result, [binary()]} | empty,
+-spec disco_sm_features({error, stanza_error()} | {result, [binary()]} | empty,
 			jid(), jid(), binary(), binary()) ->
-			       {error, error()} | {result, [binary()]}.
+			       {error, stanza_error()} | {result, [binary()]}.
 disco_sm_features(empty, From, To, Node, Lang) ->
     disco_sm_features({result, []}, From, To, Node, Lang);
 disco_sm_features({result, OtherFeatures} = _Acc, From, To, Node, _Lang) ->
@@ -612,9 +612,9 @@ disco_features(Host, Node, From) ->
 	_ -> []
     end.
 
--spec disco_sm_items({error, error()} | {result, [disco_item()]} | empty,
+-spec disco_sm_items({error, stanza_error()} | {result, [disco_item()]} | empty,
 		     jid(), jid(), binary(), binary()) ->
-			    {error, error()} | {result, [disco_item()]}.
+			    {error, stanza_error()} | {result, [disco_item()]}.
 disco_sm_items(empty, From, To, Node, Lang) ->
     disco_sm_items({result, []}, From, To, Node, Lang);
 disco_sm_items({result, OtherItems}, From, To, Node, _Lang) ->
@@ -1052,12 +1052,12 @@ command_disco_info(_Host, ?NS_PUBSUB_GET_PENDING, _From) ->
 			 features = [?NS_COMMANDS]}}.
 
 -spec node_disco_info(binary(), binary(), jid()) -> {result, disco_info()} |
-						    {error, error()}.
+						    {error, stanza_error()}.
 node_disco_info(Host, Node, From) ->
     node_disco_info(Host, Node, From, true, true).
 
 -spec node_disco_info(binary(), binary(), jid(), boolean(), boolean()) ->
-			     {result, disco_info()} | {error, error()}.
+			     {result, disco_info()} | {error, stanza_error()}.
 node_disco_info(Host, Node, _From, _Identity, _Features) ->
     Action =
 	fun(#pubsub_node{type = Type, options = Options}) ->
@@ -1075,7 +1075,7 @@ node_disco_info(Host, Node, _From, _Identity, _Features) ->
     end.
 
 -spec iq_disco_info(binary(), binary(), jid(), binary())
-		   -> {result, disco_info()} | {error, error()}.
+		   -> {result, disco_info()} | {error, stanza_error()}.
 iq_disco_info(Host, SNode, From, Lang) ->
     [Node | _] = case SNode of
 		     <<>> -> [<<>>];
@@ -1105,7 +1105,7 @@ iq_disco_info(Host, SNode, From, Lang) ->
     end.
 
 -spec iq_disco_items(host(), binary(), jid(), undefined | rsm_set()) ->
-			    {result, disco_items()} | {error, error()}.
+			    {result, disco_items()} | {error, stanza_error()}.
 iq_disco_items(Host, <<>>, From, _RSM) ->
     Items = 
 	lists:map(
@@ -1193,7 +1193,7 @@ iq_get_vcard(Lang) ->
 		desc = <<Desc/binary, $\n, Copyright/binary>>}.
 
 -spec iq_pubsub(binary() | ljid(), atom(), iq()) ->
-		       {result, pubsub()} | {error, error()}.
+		       {result, pubsub()} | {error, stanza_error()}.
 iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 			    sub_els = [SubEl]}) ->
     case {IQType, SubEl} of
@@ -1272,7 +1272,7 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
     end.
 
 -spec iq_pubsub_owner(binary() | ljid(), iq()) -> {result, pubsub_owner() | undefined} |
-						  {error, error()}.
+						  {error, stanza_error()}.
 iq_pubsub_owner(Host, #iq{type = IQType, from = From,
 			  lang = Lang, sub_els = [SubEl]}) ->
     case {IQType, SubEl} of
@@ -1312,7 +1312,7 @@ iq_pubsub_owner(Host, #iq{type = IQType, from = From,
     end.
 
 -spec adhoc_request(binary(), binary(), jid(), adhoc_command(),
-		    atom(), [binary()]) -> adhoc_command() | {error, error()}.
+		    atom(), [binary()]) -> adhoc_command() | {error, stanza_error()}.
 adhoc_request(Host, _ServerHost, Owner,
 	      #adhoc_command{node = ?NS_PUBSUB_GET_PENDING, lang = Lang,
 			     action = execute, xdata = undefined},
@@ -1342,7 +1342,7 @@ adhoc_request(_Host, _ServerHost, _Owner, Other, _Access, _Plugins) ->
     {error, xmpp:err_item_not_found()}.
 
 -spec send_pending_node_form(binary(), jid(), binary(),
-			     [binary()]) -> adhoc_command() | {error, error()}.
+			     [binary()]) -> adhoc_command() | {error, stanza_error()}.
 send_pending_node_form(Host, Owner, _Lang, Plugins) ->
     Filter = fun (Type) ->
 	    lists:member(<<"get-pending">>, plugin_features(Host, Type))
@@ -1369,7 +1369,7 @@ send_pending_node_form(Host, Owner, _Lang, Plugins) ->
     end.
 
 -spec get_pending_nodes(binary(), jid(), [binary()]) -> {ok, [binary()]} |
-							{error, error()}.
+							{error, stanza_error()}.
 get_pending_nodes(Host, Owner, Plugins) ->
     Tr = fun (Type) ->
 	    case node_call(Host, Type, get_pending_nodes, [Host, Owner]) of
@@ -1386,7 +1386,7 @@ get_pending_nodes(Host, Owner, Plugins) ->
 %% @doc <p>Send a subscription approval form to Owner for all pending
 %% subscriptions on Host and Node.</p>
 -spec send_pending_auth_events(binary(), binary(), jid(),
-			       binary()) -> adhoc_command() | {error, error()}.
+			       binary()) -> adhoc_command() | {error, stanza_error()}.
 send_pending_auth_events(Host, Node, Owner, Lang) ->
     ?DEBUG("Sending pending auth events for ~s on ~s:~s",
 	   [jid:to_string(Owner), Host, Node]),
@@ -1520,7 +1520,7 @@ handle_authorization_response(Host, From, To, Packet, X) ->
     end.
 
 -spec update_auth(binary(), binary(), _, _, jid() | error, boolean(), _) ->
-			 {result, ok} | {error, error()}.
+			 {result, ok} | {error, stanza_error()}.
 update_auth(Host, Node, Type, Nidx, Subscriber, Allow, Subs) ->
     Sub= lists:filter(fun
 		({pending, _}) -> true;
@@ -1598,12 +1598,12 @@ update_auth(Host, Node, Type, Nidx, Subscriber, Allow, Subs) ->
 %%<li>node plugin create_node just sets default affiliation/subscription</li>
 %%</ul>
 -spec create_node(host(), binary(), binary(), jid(),
-		  binary()) -> {result, pubsub()} | {error, error()}.
+		  binary()) -> {result, pubsub()} | {error, stanza_error()}.
 create_node(Host, ServerHost, Node, Owner, Type) ->
     create_node(Host, ServerHost, Node, Owner, Type, all, []).
 
 -spec create_node(host(), binary(), binary(), jid(), binary(),
-		  atom(), [{binary(), [binary()]}]) -> {result, pubsub()} | {error, error()}.
+		  atom(), [{binary(), [binary()]}]) -> {result, pubsub()} | {error, stanza_error()}.
 create_node(Host, ServerHost, <<>>, Owner, Type, Access, Configuration) ->
     case lists:member(<<"instant-nodes">>, plugin_features(Host, Type)) of
 	true ->
@@ -1693,7 +1693,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 %%<li>The node is the root collection node, which cannot be deleted.</li>
 %%<li>The specified node does not exist.</li>
 %%</ul>
--spec delete_node(host(), binary(), jid()) -> {result, pubsub_owner()} | {error, error()}.
+-spec delete_node(host(), binary(), jid()) -> {result, pubsub_owner()} | {error, stanza_error()}.
 delete_node(_Host, <<>>, _Owner) ->
     {error, xmpp:err_not_allowed(<<"No node specified">>, ?MYLANG)};
 delete_node(Host, Node, Owner) ->
@@ -1770,7 +1770,7 @@ delete_node(Host, Node, Owner) ->
 %%<li>The node does not exist.</li>
 %%</ul>
 -spec subscribe_node(host(), binary(), jid(), binary(), [{binary(), [binary()]}]) ->
-			    {result, pubsub()} | {error, error()}.
+			    {result, pubsub()} | {error, stanza_error()}.
 subscribe_node(Host, Node, From, JID, Configuration) ->
     SubModule = subscription_plugin(Host),
     SubOpts = case SubModule:parse_options_xform(Configuration) of
@@ -1874,7 +1874,7 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 %%<li>The request specifies a subscription ID that is not valid or current.</li>
 %%</ul>
 -spec unsubscribe_node(host(), binary(), jid(), jid(), binary()) ->
-			      {result, undefined} | {error, error()}.
+			      {result, undefined} | {error, stanza_error()}.
 unsubscribe_node(Host, Node, From, JID, SubId) ->
     Subscriber = jid:tolower(JID),
     Action = fun (#pubsub_node{type = Type, id = Nidx}) ->
@@ -1901,7 +1901,7 @@ unsubscribe_node(Host, Node, From, JID, SubId) ->
 %%<li>The request does not match the node configuration.</li>
 %%</ul>
 -spec publish_item(host(), binary(), binary(), jid(), binary(),
-		   [xmlel()]) -> {result, pubsub()} | {error, error()}.
+		   [xmlel()]) -> {result, pubsub()} | {error, stanza_error()}.
 publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
     publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, [], all).
 publish_item(Host, ServerHost, Node, Publisher, <<>>, Payload, PubOpts, Access) ->
@@ -1984,7 +1984,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 	    {result, Reply};
 	{result, {_, Result}} ->
 	    {result, Result};
-	{error, #error{reason = 'item-not-found'}} ->
+	{error, #stanza_error{reason = 'item-not-found'}} ->
 	    Type = select_type(ServerHost, Host, Node),
 	    case lists:member(<<"auto-create">>, plugin_features(Host, Type)) of
 		true ->
@@ -2015,7 +2015,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 %%<li>The service does not support the deletion of items.</li>
 %%</ul>
 -spec delete_item(host(), binary(), jid(), binary()) -> {result, undefined} |
-							{error, error()}.
+							{error, stanza_error()}.
 delete_item(Host, Node, Publisher, ItemId) ->
     delete_item(Host, Node, Publisher, ItemId, false).
 delete_item(_, <<>>, _, _, _) ->
@@ -2071,7 +2071,7 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 %%<li>The specified node does not exist.</li>
 %%</ul>
 -spec purge_node(mod_pubsub:host(), binary(), jid()) -> {result, undefined} |
-							{error, error()}.
+							{error, stanza_error()}.
 purge_node(Host, Node, Owner) ->
     Action = fun (#pubsub_node{options = Options, type = Type, id = Nidx}) ->
 	    Features = plugin_features(Host, Type),
@@ -2117,7 +2117,7 @@ purge_node(Host, Node, Owner) ->
 %% to read the items.
 -spec get_items(host(), binary(), jid(), binary(),
 		binary(), [binary()], undefined | rsm_set()) ->
-		       {result, pubsub()} | {error, error()}.
+		       {result, pubsub()} | {error, stanza_error()}.
 get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
     MaxItems = if SMaxItems == undefined ->
 		       case get_max_items_node(Host) of
@@ -2270,7 +2270,7 @@ dispatch_items(From, To, _Node, Stanza) ->
 
 %% @doc <p>Return the list of affiliations as an XMPP response.</p>
 -spec get_affiliations(host(), binary(), jid(), [binary()]) ->
-			      {result, pubsub()} | {error, error()}.
+			      {result, pubsub()} | {error, stanza_error()}.
 get_affiliations(Host, Node, JID, Plugins) when is_list(Plugins) ->
     Result =
 	lists:foldl(
@@ -2310,7 +2310,7 @@ get_affiliations(Host, Node, JID, Plugins) when is_list(Plugins) ->
     end.
 
 -spec get_affiliations(host(), binary(), jid()) ->
-			      {result, pubsub_owner()} | {error, error()}.
+			      {result, pubsub_owner()} | {error, stanza_error()}.
 get_affiliations(Host, Node, JID) ->
     Action =
 	fun(#pubsub_node{type = Type, id = Nidx}) ->
@@ -2342,7 +2342,7 @@ get_affiliations(Host, Node, JID) ->
     end.
 
 -spec set_affiliations(host(), binary(), jid(), [ps_affiliation()]) ->
-			      {result, undefined} | {error, error()}.
+			      {result, undefined} | {error, stanza_error()}.
 set_affiliations(Host, Node, From, Affs) ->
     Owner = jid:tolower(jid:remove_resource(From)),
     Action =
@@ -2396,7 +2396,7 @@ set_affiliations(Host, Node, From, Affs) ->
     end.
 
 -spec get_options(binary(), binary(), jid(), binary(), binary()) ->
-			 {result, xdata()} | {error, error()}.
+			 {result, xdata()} | {error, stanza_error()}.
 get_options(Host, Node, JID, SubId, Lang) ->
     Action = fun (#pubsub_node{type = Type, id = Nidx}) ->
 	    case lists:member(<<"subscription-options">>, plugin_features(Host, Type)) of
@@ -2413,7 +2413,7 @@ get_options(Host, Node, JID, SubId, Lang) ->
     end.
 
 -spec get_options_helper(binary(), jid(), binary(), binary(), _, binary(),
-			 binary()) -> {result, pubsub()} | {error, error()}.
+			 binary()) -> {result, pubsub()} | {error, stanza_error()}.
 get_options_helper(Host, JID, Lang, Node, Nidx, SubId, Type) ->
     Subscriber = jid:tolower(JID),
     {result, Subs} = node_call(Host, Type, get_subscriptions, [Nidx, Subscriber]),
@@ -2454,7 +2454,7 @@ read_sub(Host, Node, Nidx, Subscriber, SubId, Lang) ->
 
 -spec set_options(binary(), binary(), jid(), binary(),
 		  [{binary(), [binary()]}]) ->
-			 {result, undefined} | {error, error()}.
+			 {result, undefined} | {error, stanza_error()}.
 set_options(Host, Node, JID, SubId, Configuration) ->
     Action = fun (#pubsub_node{type = Type, id = Nidx}) ->
 	    case lists:member(<<"subscription-options">>, plugin_features(Host, Type)) of
@@ -2472,7 +2472,7 @@ set_options(Host, Node, JID, SubId, Configuration) ->
 
 -spec set_options_helper(binary(), [{binary(), [binary()]}], jid(),
 			 nodeIdx(), binary(), binary()) ->
-				{result, undefined} | {error, error()}.
+				{result, undefined} | {error, stanza_error()}.
 set_options_helper(Host, Configuration, JID, Nidx, SubId, Type) ->
     SubModule = subscription_plugin(Host),
     SubOpts = case SubModule:parse_options_xform(Configuration) of
@@ -2494,7 +2494,7 @@ set_options_helper(Host, Configuration, JID, Nidx, SubId, Type) ->
     end.
 
 -spec write_sub(binary(), nodeIdx(), ljid(), binary(), _) -> {result, undefined} |
-							     {error, error()}.
+							     {error, stanza_error()}.
 write_sub(_Host, _Nidx, _Subscriber, _SubId, invalid) ->
     {error, extended_error(xmpp:err_bad_request(), err_invalid_options())};
 write_sub(_Host, _Nidx, _Subscriber, _SubId, []) ->
@@ -2509,7 +2509,7 @@ write_sub(Host, Nidx, Subscriber, SubId, Options) ->
 
 %% @doc <p>Return the list of subscriptions as an XMPP response.</p>
 -spec get_subscriptions(host(), binary(), jid(), [binary()]) ->
-			       {result, pubsub()} | {error, error()}.
+			       {result, pubsub()} | {error, stanza_error()}.
 get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
     Result = lists:foldl(fun (Type, {Status, Acc}) ->
 		    Features = plugin_features(Host, Type),
@@ -2576,7 +2576,7 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
     end.
 
 -spec get_subscriptions(host(), binary(), jid()) -> {result, pubsub_owner()} |
-						    {error, error()}.
+						    {error, stanza_error()}.
 get_subscriptions(Host, Node, JID) ->
     Action = fun (#pubsub_node{type = Type, id = Nidx}) ->
 	    Features = plugin_features(Host, Type),
@@ -2633,7 +2633,7 @@ get_subscriptions_for_send_last(_Host, _PType, _, _JID, _LJID, _BJID) ->
     [].
 
 -spec set_subscriptions(host(), binary(), jid(), [ps_subscription()]) ->
-			       {result, undefined} | {error, error()}.
+			       {result, undefined} | {error, stanza_error()}.
 set_subscriptions(Host, Node, From, Entities) ->
     Owner = jid:tolower(jid:remove_resource(From)),
     Notify = fun(#ps_subscription{jid = JID, type = Sub}) ->
@@ -3163,7 +3163,7 @@ user_resource(_, _, Resource) ->
 
 %%%%%%% Configuration handling
 -spec get_configure(host(), binary(), binary(), jid(),
-		    binary()) -> {error, error()} | {result, pubsub_owner()}.
+		    binary()) -> {error, stanza_error()} | {result, pubsub_owner()}.
 get_configure(Host, ServerHost, Node, From, Lang) ->
     Action = fun (#pubsub_node{options = Options, type = Type, id = Nidx}) ->
 	    case node_call(Host, Type, get_affiliation, [Nidx, From]) of
@@ -3381,7 +3381,7 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
 %%<li>The specified node does not exist.</li>
 %%</ul>
 -spec set_configure(host(), binary(), jid(), [{binary(), [binary()]}],
-		    binary()) -> {result, undefined} | {error, error()}.
+		    binary()) -> {result, undefined} | {error, stanza_error()}.
 set_configure(_Host, <<>>, _From, _Config, _Lang) ->
     {error, extended_error(xmpp:err_bad_request(), err_nodeid_required())};
 set_configure(Host, Node, From, Config, Lang) ->
@@ -3851,9 +3851,9 @@ transaction_retry(Host, ServerHost, Fun, Trans, DBType, Count) ->
 %%%% helpers
 
 %% Add pubsub-specific error element
--spec extended_error(error(), ps_error()) -> error().
+-spec extended_error(stanza_error(), ps_error()) -> stanza_error().
 extended_error(StanzaErr, PubSubErr) ->
-    StanzaErr#error{sub_els = [PubSubErr]}.
+    StanzaErr#stanza_error{sub_els = [PubSubErr]}.
 
 -spec err_closed_node() -> ps_error().
 err_closed_node() ->
@@ -4033,7 +4033,7 @@ purge_offline(LJID) ->
 	    ?DEBUG("on_user_offline ~p", [Error])
     end.
 
--spec purge_offline(host(), ljid(), binary()) -> ok | {error, error()}.
+-spec purge_offline(host(), ljid(), binary()) -> ok | {error, stanza_error()}.
 purge_offline(Host, LJID, Node) ->
     Nidx = Node#pubsub_node.id,
     Type = Node#pubsub_node.type,

@@ -150,9 +150,9 @@ do_route(From, To, #iq{} = IQ) ->
 do_route(_, _, _) ->
     ok.
 
--spec get_sm_features({error, error()} | empty | {result, [binary()]},
+-spec get_sm_features({error, stanza_error()} | empty | {result, [binary()]},
 		      jid(), jid(), binary(), binary()) ->
-			     {error, error()} | empty | {result, [binary()]}.
+			     {error, stanza_error()} | empty | {result, [binary()]}.
 get_sm_features({error, _Error} = Acc, _From, _To,
 		_Node, _Lang) ->
     Acc;
@@ -230,9 +230,9 @@ process_search(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Incorrect data form">>,
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang)).
 
--spec disco_items({error, error()} | {result, [disco_item()]} | empty,
+-spec disco_items({error, stanza_error()} | {result, [disco_item()]} | empty,
 		  jid(), jid(), binary(), binary()) ->
-			 {error, error()} | {result, [disco_item()]}.
+			 {error, stanza_error()} | {result, [disco_item()]}.
 disco_items(empty, _From, _To, <<"">>, _Lang) ->
     {result, []};
 disco_items(empty, _From, _To, _Node, Lang) ->
@@ -240,9 +240,9 @@ disco_items(empty, _From, _To, _Node, Lang) ->
 disco_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec disco_features({error, error()} | {result, [binary()]} | empty,
+-spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
 		     jid(), jid(), binary(), binary()) ->
-			    {error, error()} | {result, [binary()]}.
+			    {error, stanza_error()} | {result, [binary()]}.
 disco_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 disco_features(Acc, _From, _To, <<"">>, _Lang) ->

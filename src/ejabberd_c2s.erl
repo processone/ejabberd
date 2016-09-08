@@ -961,7 +961,7 @@ wait_for_bind(Pkt, StateData) ->
     end,
     fsm_next_state(wait_for_bind, StateData).
 
--spec open_session(state()) -> {ok, state()} | {error, error()}.
+-spec open_session(state()) -> {ok, state()} | {error, stanza_error()}.
 open_session(StateData) ->
     U = StateData#state.user,
     R = StateData#state.resource,
@@ -1568,7 +1568,7 @@ send_element(StateData, #xmlel{} = El) ->
 send_element(StateData, Pkt) ->
     send_element(StateData, xmpp:encode(Pkt)).
 
--spec send_error(state(), xmlel() | stanza(), error()) -> ok.
+-spec send_error(state(), xmlel() | stanza(), stanza_error()) -> ok.
 send_error(StateData, Stanza, Error) ->
     Type = xmpp:get_type(Stanza),
     if Type == error; Type == result;

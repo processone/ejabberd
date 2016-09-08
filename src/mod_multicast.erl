@@ -243,7 +243,7 @@ handle_iq(From, To, Packet, State) ->
     end.
 
 -spec process_iq(jid(), iq(), state()) -> {result, xmpp_element()} |
-					  {error, error()} | reply.
+					  {error, stanza_error()} | reply.
 process_iq(From, #iq{type = get, lang = Lang,
 		     sub_els = [#disco_info{}]}, State) ->
     {result, iq_disco_info(From, Lang, State)};

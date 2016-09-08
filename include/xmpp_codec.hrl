@@ -829,13 +829,13 @@
                     xmlns = <<>> :: binary()}).
 -type sm_failed() :: #sm_failed{}.
 
--record(error, {type :: 'auth' | 'cancel' | 'continue' | 'modify' | 'wait',
-                code :: non_neg_integer(),
-                by = <<>> :: binary(),
-                reason :: atom() | #gone{} | #redirect{},
-                text :: #text{},
-                sub_els = [] :: [xmpp_element() | fxml:xmlel()]}).
--type error() :: #error{}.
+-record(stanza_error, {type :: 'auth' | 'cancel' | 'continue' | 'modify' | 'wait',
+                       code :: non_neg_integer(),
+                       by = <<>> :: binary(),
+                       reason :: atom() | #gone{} | #redirect{},
+                       text :: #text{},
+                       sub_els = [] :: [xmpp_element() | fxml:xmlel()]}).
+-type stanza_error() :: #stanza_error{}.
 
 -record(mix_join, {jid :: jid:jid(),
                    subscribe = [] :: [binary()]}).
@@ -1042,7 +1042,7 @@
                         register() |
                         sm_r() |
                         stat_error() |
-                        error() |
+                        stanza_error() |
                         stream_error() |
                         muc_user() |
                         vcard_adr() |

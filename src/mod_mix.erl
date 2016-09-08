@@ -52,7 +52,7 @@ stop(Host) ->
     supervisor:delete_child(ejabberd_sup, Proc),
     ok.
 
--spec disco_features({error, error()} | {result, [binary()]} | empty,
+-spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
 		     jid(), jid(), binary(), binary()) -> {result, [binary()]}.
 disco_features(_Acc, _From, _To, _Node, _Lang) ->
     {result, [?NS_MIX_0]}.

@@ -86,7 +86,7 @@ route(From, To, Packet) ->
 %% Route the error packet only if the originating packet is not an error itself.
 %% RFC3920 9.3.1
 -spec route_error(jid(), jid(), xmlel(), xmlel()) -> ok;
-		 (jid(), jid(), stanza(), error()) -> ok.
+		 (jid(), jid(), stanza(), stanza_error()) -> ok.
 
 route_error(From, To, #xmlel{} = ErrPacket, #xmlel{} = OrigPacket) ->
     #xmlel{attrs = Attrs} = OrigPacket,
@@ -94,7 +94,7 @@ route_error(From, To, #xmlel{} = ErrPacket, #xmlel{} = OrigPacket) ->
       false -> route(From, To, ErrPacket);
       true -> ok
     end;
-route_error(From, To, Packet, #error{} = Err) ->
+route_error(From, To, Packet, #stanza_error{} = Err) ->
     Type = xmpp:get_type(Packet),
     if Type == error; Type == result ->
 	    ok;

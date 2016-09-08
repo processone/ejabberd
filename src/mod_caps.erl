@@ -158,10 +158,10 @@ caps_stream_features(Acc, MyHost) ->
 	  [#caps{hash = <<"sha-1">>, node = ?EJABBERD_URI, version = Hash}|Acc]
     end.
 
--spec disco_features({error, error()} | {result, [binary()]} | empty,
+-spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
 		     jid(), jid(),
 		     binary(), binary()) ->
-			    {error, error()} | {result, [binary()]} | empty.
+			    {error, stanza_error()} | {result, [binary()]} | empty.
 disco_features(Acc, From, To, Node, Lang) ->
     case is_valid_node(Node) of
         true ->

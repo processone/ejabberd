@@ -528,7 +528,7 @@
 -xml(error,
      #elem{name = <<"error">>,
            xmlns = <<"jabber:client">>,
-           result = {error, '$type', '$code', '$by', '$reason', '$text', '$_els'},
+           result = {stanza_error, '$type', '$code', '$by', '$reason', '$text', '$_els'},
            attrs = [#attr{name = <<"type">>,
                           label = '$type',
                           required = true,

@@ -487,7 +487,7 @@ process_privacy(#privacy_query{lists = Lists,
     Txt = <<"No module is handling this query">>,
     Error = {error, xmpp:err_feature_not_implemented(Txt, ?MYLANG)},
     case mod_privacy:process_iq_set(Error, IQ) of
-        {error, #error{reason = Reason}} = Err ->
+        {error, #stanza_error{reason = Reason}} = Err ->
 	    if Reason == 'item-not-found', Lists == [],
 	       Active == undefined, Default /= undefined ->
 		    %% Failed to set default list because there is no

@@ -2567,7 +2567,7 @@ encode({redirect, _} = Redirect) ->
     encode_error_redirect(Redirect,
 			  [{<<"xmlns">>,
 			    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}]);
-encode({error, _, _, _, _, _, _} = Error) ->
+encode({stanza_error, _, _, _, _, _, _} = Error) ->
     encode_error(Error,
 		 [{<<"xmlns">>, <<"jabber:client">>}]);
 encode({bind, _, _} = Bind) ->
@@ -3176,7 +3176,6 @@ get_name({delay, _, _, _}) -> <<"delay">>;
 get_name({disco_info, _, _, _, _}) -> <<"query">>;
 get_name({disco_item, _, _, _}) -> <<"item">>;
 get_name({disco_items, _, _, _}) -> <<"query">>;
-get_name({error, _, _, _, _, _, _}) -> <<"error">>;
 get_name({expire, _, _}) -> <<"x">>;
 get_name({feature_csi, _}) -> <<"csi">>;
 get_name({feature_register}) -> <<"register">>;
@@ -3329,6 +3328,8 @@ get_name({sm_failed, _, _, _}) -> <<"failed">>;
 get_name({sm_r, _}) -> <<"r">>;
 get_name({sm_resume, _, _, _}) -> <<"resume">>;
 get_name({sm_resumed, _, _, _}) -> <<"resumed">>;
+get_name({stanza_error, _, _, _, _, _, _}) ->
+    <<"error">>;
 get_name({stanza_id, _, _}) -> <<"stanza-id">>;
 get_name({starttls, _}) -> <<"starttls">>;
 get_name({starttls_failure}) -> <<"failure">>;
@@ -3441,8 +3442,6 @@ get_ns({disco_item, _, _, _}) ->
     <<"http://jabber.org/protocol/disco#items">>;
 get_ns({disco_items, _, _, _}) ->
     <<"http://jabber.org/protocol/disco#items">>;
-get_ns({error, _, _, _, _, _, _}) ->
-    <<"jabber:client">>;
 get_ns({expire, _, _}) -> <<"jabber:x:expire">>;
 get_ns({feature_csi, Xmlns}) -> Xmlns;
 get_ns({feature_register}) ->
@@ -3633,6 +3632,8 @@ get_ns({sm_failed, _, _, Xmlns}) -> Xmlns;
 get_ns({sm_r, Xmlns}) -> Xmlns;
 get_ns({sm_resume, _, _, Xmlns}) -> Xmlns;
 get_ns({sm_resumed, _, _, Xmlns}) -> Xmlns;
+get_ns({stanza_error, _, _, _, _, _, _}) ->
+    <<"jabber:client">>;
 get_ns({stanza_id, _, _}) -> <<"urn:xmpp:sid:0">>;
 get_ns({starttls, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-tls">>;
@@ -3778,7 +3779,8 @@ pp(presence, 9) ->
      sub_els];
 pp(gone, 1) -> [uri];
 pp(redirect, 1) -> [uri];
-pp(error, 6) -> [type, code, by, reason, text, sub_els];
+pp(stanza_error, 6) ->
+    [type, code, by, reason, text, sub_els];
 pp(bind, 2) -> [jid, resource];
 pp(legacy_auth, 4) ->
     [username, password, digest, resource];
@@ -25595,7 +25597,7 @@ decode_error(__TopXMLNS, __IgnoreEls,
     {Type, Code, By} = decode_error_attrs(__TopXMLNS,
 					  _attrs, undefined, undefined,
 					  undefined),
-    {error, Type, Code, By, Reason, Text, __Els}.
+    {stanza_error, Type, Code, By, Reason, Text, __Els}.
 
 decode_error_els(__TopXMLNS, __IgnoreEls, [], Text,
 		 Reason, __Els) ->
@@ -25965,8 +25967,8 @@ decode_error_attrs(__TopXMLNS, [], Type, Code, By) ->
      decode_error_attr_code(__TopXMLNS, Code),
      decode_error_attr_by(__TopXMLNS, By)}.
 
-encode_error({error, Type, Code, By, Reason, Text,
-	      __Els},
+encode_error({stanza_error, Type, Code, By, Reason,
+	      Text, __Els},
 	     _xmlns_attrs) ->
     _els = [encode(_el) || _el <- __Els] ++
 	     lists:reverse('encode_error_$text'(Text,

@@ -336,8 +336,8 @@ disco_items(Acc, From, #jid{lserver = LServer} = _To, Node, Lang) ->
     end.
 
 %%-------------------------------------------------------------------------
--spec announce_items(empty | {error, error()} | {result, [disco_item()]},
-			jid(), jid(), binary()) -> {error, error()} |
+-spec announce_items(empty | {error, stanza_error()} | {result, [disco_item()]},
+			jid(), jid(), binary()) -> {error, stanza_error()} |
 						   {result, [disco_item()]} |
 						   empty.
 announce_items(Acc, From, #jid{lserver = LServer, server = Server} = _To, Lang) ->
@@ -386,7 +386,7 @@ commands_result(Allow, From, To, Request) ->
     end.
 
 -spec announce_commands(adhoc_command(), jid(), jid(), adhoc_command()) ->
-			       adhoc_command() | {error, error()}.
+			       adhoc_command() | {error, stanza_error()}.
 announce_commands(Acc, From, #jid{lserver = LServer} = To,
 		  #adhoc_command{node = Node} = Request) ->
     LNode = tokenize(Node),

@@ -308,7 +308,7 @@ send_element(StateData, El) ->
     El1 = fix_ns(xmpp:encode(El)),
     send_text(StateData, fxml:element_to_binary(El1)).
 
--spec send_error(state(), xmlel() | stanza(), error()) -> ok.
+-spec send_error(state(), xmlel() | stanza(), stanza_error()) -> ok.
 send_error(StateData, Stanza, Error) ->
     Type = xmpp:get_type(Stanza),
     if Type == error; Type == result;

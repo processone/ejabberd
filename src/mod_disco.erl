@@ -198,9 +198,9 @@ get_local_identity(Acc, _From, _To, <<"">>, _Lang) ->
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec get_local_features({error, error()} | {result, [binary()]} | empty,
+-spec get_local_features({error, stanza_error()} | {result, [binary()]} | empty,
 			 jid(), jid(), binary(), binary()) ->
-				{error, error()} | {result, [binary()]}.
+				{error, stanza_error()} | {result, [binary()]}.
 get_local_features({error, _Error} = Acc, _From, _To,
 		   _Node, _Lang) ->
     Acc;
@@ -222,10 +222,10 @@ get_local_features(Acc, _From, _To, _Node, Lang) ->
 	    {error, xmpp:err_item_not_found(Txt, Lang)}
     end.
 
--spec get_local_services({error, error()} | {result, [disco_item()]} | empty,
+-spec get_local_services({error, stanza_error()} | {result, [disco_item()]} | empty,
 			 jid(), jid(),
 			 binary(), binary()) ->
-				{error, error()} | {result, [disco_item()]}.
+				{error, stanza_error()} | {result, [disco_item()]}.
 get_local_services({error, _Error} = Acc, _From, _To,
 		   _Node, _Lang) ->
     Acc;
@@ -296,10 +296,10 @@ process_sm_iq_items(#iq{type = get, lang = Lang,
 	    xmpp:make_error(IQ, xmpp:err_subscription_required(Txt, Lang))
     end.
 
--spec get_sm_items({error, error()} | {result, [disco_item()]} | empty,
+-spec get_sm_items({error, stanza_error()} | {result, [disco_item()]} | empty,
 		   jid(), jid(),
 		   binary(), binary()) ->
-			  {error, error()} | {result, [disco_item()]}.
+			  {error, stanza_error()} | {result, [disco_item()]}.
 get_sm_items({error, _Error} = Acc, _From, _To, _Node,
 	     _Lang) ->
     Acc;
@@ -383,9 +383,9 @@ get_sm_identity(Acc, _From,
 	_ -> []
       end.
 
--spec get_sm_features({error, error()} | {result, [binary()]} | empty,
+-spec get_sm_features({error, stanza_error()} | {result, [binary()]} | empty,
 		      jid(), jid(), binary(), binary()) ->
-			     {error, error()} | {result, [binary()]}.
+			     {error, stanza_error()} | {result, [binary()]}.
 get_sm_features(empty, From, To, _Node, Lang) ->
     #jid{luser = LFrom, lserver = LSFrom} = From,
     #jid{luser = LTo, lserver = LSTo} = To,

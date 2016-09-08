@@ -72,19 +72,19 @@ depends(_Host, _Opts) ->
 process_iq(IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed()).
 
--spec process_iq_get({error, error()} | {result, xmpp_element() | undefined},
+-spec process_iq_get({error, stanza_error()} | {result, xmpp_element() | undefined},
 		     iq(), userlist()) ->
-			    {error, error()} | {result, block_list()}.
+			    {error, stanza_error()} | {result, block_list()}.
 process_iq_get(_, #iq{lang = Lang, from = From,
 		      sub_els = [#block_list{}]}, _) ->
     #jid{luser = LUser, lserver = LServer} = From,
     {stop, process_blocklist_get(LUser, LServer, Lang)};
 process_iq_get(Acc, _, _) -> Acc.
 
--spec process_iq_set({error, error()} |
+-spec process_iq_set({error, stanza_error()} |
 		     {result, xmpp_element() | undefined} |
 		     {result, xmpp_element() | undefined, userlist()},
-		     iq()) -> {error, error()} |
+		     iq()) -> {error, stanza_error()} |
 			      {result, undefined} |
 			      {result, undefined, userlist()}.
 process_iq_set(_, #iq{from = From, lang = Lang, sub_els = [SubEl]}) ->
@@ -136,7 +136,7 @@ list_to_blocklist_jids([_ | Items], JIDs) ->
 
 -spec process_blocklist_block(binary(), binary(), [ljid()],
 			      binary()) ->
-				     {error, error()} |
+				     {error, stanza_error()} |
 				     {result, undefined, userlist()}.
 process_blocklist_block(LUser, LServer, JIDs, Lang) ->
     Filter = fun (List) ->
@@ -171,7 +171,7 @@ process_blocklist_block(LUser, LServer, JIDs, Lang) ->
     end.
 
 -spec process_blocklist_unblock_all(binary(), binary(), binary()) ->
-					   {error, error()} |
+					   {error, stanza_error()} |
 					   {result, undefined} |
 					   {result, undefined, userlist()}.
 process_blocklist_unblock_all(LUser, LServer, Lang) ->
@@ -195,7 +195,7 @@ process_blocklist_unblock_all(LUser, LServer, Lang) ->
     end.
 
 -spec process_blocklist_unblock(binary(), binary(), [ljid()], binary()) ->
-				       {error, error()} |
+				       {error, stanza_error()} |
 				       {result, undefined} |
 				       {result, undefined, userlist()}.
 process_blocklist_unblock(LUser, LServer, JIDs, Lang) ->
@@ -240,7 +240,7 @@ broadcast_blocklist_event(LUser, LServer, Event) ->
                       {broadcast, {blocking, Event}}).
 
 -spec process_blocklist_get(binary(), binary(), binary()) ->
-				   {error, error()} | {result, block_list()}.
+				   {error, stanza_error()} | {result, block_list()}.
 process_blocklist_get(LUser, LServer, Lang) ->
     Mod = db_mod(LServer),
     case Mod:process_blocklist_get(LUser, LServer) of

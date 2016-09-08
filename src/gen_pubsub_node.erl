@@ -178,7 +178,7 @@
 -callback get_items(nodeIdx(), jid(), accessModel(),
 		    boolean(), boolean(), binary(),
 		    undefined | rsm_set()) ->
-    {result, {[pubsubItem()], undefined | rsm_set()}} | {error, error()}.
+    {result, {[pubsubItem()], undefined | rsm_set()}} | {error, stanza_error()}.
 
 -callback get_items(nodeIdx(), jid(), undefined | rsm_set()) ->
     {result, {[pubsubItem()], undefined | rsm_set()}}.

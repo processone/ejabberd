@@ -173,9 +173,9 @@ get_sm_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
 get_sm_identity(Acc, _From, _To, _Node, _Lang) -> Acc.
 
 %-------------------------------------------------------------------------
--spec get_local_features({error, error()} | {result, [binary()]} | empty,
+-spec get_local_features({error, stanza_error()} | {result, [binary()]} | empty,
 			 jid(), jid(), binary(), binary()) ->
-				{error, error()} | {result, [binary()]} | empty.
+				{error, stanza_error()} | {result, [binary()]} | empty.
 get_local_features(Acc, _From, _To, <<"">>, _Lang) ->
     Feats = case Acc of
 	      {result, I} -> I;
@@ -238,7 +238,7 @@ process_adhoc_request(#iq{from = From, to = To,
 process_adhoc_request(#iq{} = IQ, _Hooks) ->
     xmpp:make_error(IQ, xmpp:err_bad_request()).
 
--spec ping_item(empty | {error, error()} | {result, [disco_item()]},
+-spec ping_item(empty | {error, stanza_error()} | {result, [disco_item()]},
 		jid(), jid(), binary()) -> {result, [disco_item()]}.
 ping_item(Acc, _From, #jid{server = Server} = _To,
 	  Lang) ->
@@ -252,7 +252,7 @@ ping_item(Acc, _From, #jid{server = Server} = _To,
     {result, Items ++ Nodes}.
 
 -spec ping_command(adhoc_command(), jid(), jid(), adhoc_command()) ->
-			  adhoc_command() | {error, error()}.
+			  adhoc_command() | {error, stanza_error()}.
 ping_command(_Acc, _From, _To,
 	     #adhoc_command{lang = Lang, node = <<"ping">>,
 			    action = Action} = Request) ->
