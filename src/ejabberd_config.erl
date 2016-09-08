@@ -37,7 +37,8 @@
          prepare_opt_val/4, convert_table_to_binary/5,
          transform_options/1, collect_options/1, default_db/2,
          convert_to_yaml/1, convert_to_yaml/2, v_db/2,
-         env_binary_to_list/2, opt_type/1, may_hide_data/1]).
+         env_binary_to_list/2, opt_type/1, may_hide_data/1,
+	 is_elixir_enabled/0]).
 
 -export([start/2]).
 
@@ -148,13 +149,18 @@ read_file(File) ->
                      {include_modules_configs, true}]).
 
 read_file(File, Opts) ->
-    Terms1 = case 'Elixir.Ejabberd.ConfigUtil':is_elixir_config(File) of
-      true ->
-        'Elixir.Ejabberd.Config':init(File),
-        'Elixir.Ejabberd.Config':get_ejabberd_opts();
-      false ->
-        get_plain_terms_file(File, Opts)
-    end,
+    Terms1 = case is_elixir_enabled() of
+		 true ->
+		     case 'Elixir.Ejabberd.ConfigUtil':is_elixir_config(File) of
+			 true ->
+			     'Elixir.Ejabberd.Config':init(File),
+			     'Elixir.Ejabberd.Config':get_ejabberd_opts();
+			 false ->
+			     get_plain_terms_file(File, Opts)
+		     end;
+		 false ->
+		     get_plain_terms_file(File, Opts)
+	     end,
     Terms_macros = case proplists:get_bool(replace_macros, Opts) of
                        true -> replace_macros(Terms1);
                        false -> Terms1
@@ -1049,9 +1055,22 @@ replace_modules(Modules) ->
 %% Elixir module naming
 %% ====================
 
+-ifdef(ELIXIR_ENABLED).
+is_elixir_enabled() ->
+    true.
+-else.
+is_elixir_enabled() ->
+    false.
+-endif.
+
 is_using_elixir_config() ->
-  Config = get_ejabberd_config_path(),
-  'Elixir.Ejabberd.ConfigUtil':is_elixir_config(Config).
+    case is_elixir_enabled() of
+	true ->
+	    Config = get_ejabberd_config_path(),
+	    'Elixir.Ejabberd.ConfigUtil':is_elixir_config(Config);
+       false ->
+	    false
+    end.
 
 %% If module name start with uppercase letter, this is an Elixir module:
 is_elixir_module(Module) ->

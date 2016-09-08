@@ -255,7 +255,12 @@ register_elixir_config_hooks() ->
   end.
 
 start_elixir_application() ->
-  case application:ensure_started(elixir) of
-    ok -> ok;
-    {error, _Msg} -> ?ERROR_MSG("Elixir application not started.", [])
-  end.
+    case ejabberd_config:is_elixir_enabled() of
+	true ->
+	    case application:ensure_started(elixir) of
+		ok -> ok;
+		{error, _Msg} -> ?ERROR_MSG("Elixir application not started.", [])
+	    end;
+	_ ->
+	    ok
+    end.
