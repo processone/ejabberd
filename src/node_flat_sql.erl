@@ -946,8 +946,9 @@ select_affiliation_subscriptions(Nidx, JID, JID) ->
     select_affiliation_subscriptions(Nidx, JID);
 select_affiliation_subscriptions(Nidx, GenKey, SubKey) ->
     {result, Affiliation} = get_affiliation(Nidx, GenKey),
-    {result, Subscriptions} = get_subscriptions(Nidx, SubKey),
-    {Affiliation, Subscriptions}.
+    {result, BareJidSubs} = get_subscriptions(Nidx, GenKey),
+    {result, FullJidSubs} = get_subscriptions(Nidx, SubKey),
+    {Affiliation, BareJidSubs++FullJidSubs};
 
 update_affiliation(Nidx, JID, Affiliation) ->
     J = encode_jid(JID),
