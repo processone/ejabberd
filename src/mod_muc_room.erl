@@ -253,20 +253,13 @@ normal_state({route, From, <<"">>,
 			     Err = jlib:make_error_reply(Packet, Error),
 			     ejabberd_router:route(StateData#state.jid, From, Err),
 			     {next_state, normal_state, StateData};
-			 IJID ->
+			 IJIDs ->
 			     Config = StateData#state.config,
 			     case Config#config.members_only of
 			       true ->
-				   case get_affiliation(IJID, StateData) of
-				     none ->
-					 NSD = set_affiliation(IJID, member,
-							       StateData),
-					 send_affiliation(IJID, member,
-							  StateData),
-					 store_room(NSD),
-					 {next_state, normal_state, NSD};
-				     _ -> {next_state, normal_state, StateData}
-				   end;
+				   NSD = process_invitees(IJIDs, StateData),
+				   store_room(NSD),
+			           {next_state, normal_state, NSD};
 			       false -> {next_state, normal_state, StateData}
 			     end
 		       end;
@@ -4914,18 +4907,35 @@ is_invitation(Els) ->
 		end,
 		false, Els).
 
+process_invitees(Invetees, StateDataIni) ->
+    lists:foldl(
+	fun(IJID, StateData) ->
+	   case get_affiliation(IJID, StateData) of
+	     none ->
+		 NSD = set_affiliation(IJID, member,
+				       StateData),
+		 send_affiliation(IJID, member,
+				  StateData),
+		 NSD;
+	     _ -> StateData
+	   end
+	end,
+	StateDataIni,
+	Invetees).
+
 check_invitation(From, Packet, Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     CanInvite =
 	(StateData#state.config)#config.allow_user_invites
 	  orelse
 	  FAffiliation == admin orelse FAffiliation == owner,
-    InviteEl = case fxml:get_subtag_with_xmlns(Packet, <<"x">>, ?NS_MUC_USER) of
+
+    InviteEls = case fxml:get_subtag_with_xmlns(Packet, <<"x">>, ?NS_MUC_USER) of
 		   false ->
 		       Txt1 = <<"No 'x' element found">>,
 		       throw({error, ?ERRT_BAD_REQUEST(Lang, Txt1)});
 		   XEl ->
-		       case fxml:get_subtag(XEl, <<"invite">>) of
+		       case fxml:get_subtags(XEl, <<"invite">>) of
 			   false ->
 			       Txt2 = <<"No 'invite' element found">>,
 			       throw({error, ?ERRT_BAD_REQUEST(Lang, Txt2)});
@@ -4933,20 +4943,17 @@ check_invitation(From, Packet, Lang, StateData) ->
 			       InviteEl1
 		       end
 	       end,
-    JID = case
-	    jid:from_string(fxml:get_tag_attr_s(<<"to">>,
-						  InviteEl))
-	      of
-	    error ->
-		  Txt = <<"Incorrect value of 'to' attribute">>,
-		  throw({error, ?ERRT_JID_MALFORMED(Lang, Txt)});
-	    JID1 -> JID1
-	  end,
     case CanInvite of
       false ->
 	  Txt3 = <<"Invitations are not allowed in this conference">>,
 	  throw({error, ?ERRT_NOT_ALLOWED(Lang, Txt3)});
       true ->
+	  process_invitations(From, InviteEls, Lang, StateData)
+    end.
+
+process_invitations(From, InviteEls, Lang, StateData) ->
+    lists:map(
+	fun(InviteEl) ->
 	  Reason = fxml:get_path_s(InviteEl,
 				  [{elem, <<"reason">>}, cdata]),
 	  ContinueEl = case fxml:get_path_s(InviteEl,
@@ -5015,9 +5022,19 @@ check_invitation(From, Packet, Lang, StateData) ->
 							     <<"">>})}],
 				   children = [{xmlcdata, Reason}]},
 			    Body]},
+	    JID = case
+		    jid:from_string(fxml:get_tag_attr_s(<<"to">>,
+							  InviteEl))
+		      of
+		    error ->
+			  Txt = <<"Incorrect value of 'to' attribute">>,
+			  throw({error, ?ERRT_JID_MALFORMED(Lang, Txt)});
+		    JID1 -> JID1
+		  end,
 	  ejabberd_router:route(StateData#state.jid, JID, Msg),
 	  JID
-    end.
+	end,
+	InviteEls).
 
 %% Handle a message sent to the room by a non-participant.
 %% If it is a decline, send to the inviter.
