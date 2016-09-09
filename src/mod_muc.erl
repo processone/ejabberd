@@ -720,10 +720,11 @@ get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
 
 get_subscribed_rooms(ServerHost, Host, From) ->
     Rooms = get_rooms(ServerHost, Host),
+    BareFrom = jid:remove_resource(From),
     lists:flatmap(
       fun(#muc_room{name_host = {Name, _}, opts = Opts}) ->
 	      Subscribers = proplists:get_value(subscribers, Opts, []),
-	      case lists:keymember(From, 1, Subscribers) of
+	      case lists:keymember(BareFrom, 1, Subscribers) of
 		  true -> [jid:make(Name, Host, <<>>)];
 		  false -> []
 	      end;
