@@ -1743,12 +1743,15 @@ update_online_user(JID, #user{nick = Nick} = User, StateData) ->
 
 set_subscriber(JID, Nick, Nodes, StateData) ->
     BareJID = jid:remove_resource(JID),
-    Subscribers = ?DICT:store(jid:tolower(BareJID),
+    LBareJID = jid:tolower(BareJID),
+    Subscribers = ?DICT:store(LBareJID,
 			      #subscriber{jid = BareJID,
 					  nick = Nick,
 					  nodes = Nodes},
 			      StateData#state.subscribers),
-    NewStateData = StateData#state{subscribers = Subscribers},
+    Nicks = ?DICT:store(Nick, [LBareJID], StateData#state.subscriber_nicks),
+    NewStateData = StateData#state{subscribers = Subscribers,
+				   subscriber_nicks = Nicks},
     store_room(NewStateData),
     NewStateData.
 
@@ -1833,10 +1836,13 @@ add_user_presence_un(JID, Presence, StateData) ->
 %% Find and return a list of the full JIDs of the users of Nick.
 %% Return jid record.
 find_jids_by_nick(Nick, StateData) ->
-    case (?DICT):find(Nick, StateData#state.nicks) of
-      {ok, [User]} -> [jid:make(User)];
-      {ok, Users} -> [jid:make(LJID) || LJID <- Users];
-      error -> false
+    Nicks = ?DICT:merge(fun(_, Val, _) -> Val end,
+			StateData#state.nicks,
+			StateData#state.subscriber_nicks),
+    case (?DICT):find(Nick, Nicks) of
+	{ok, [User]} -> [jid:make(User)];
+	{ok, Users} -> [jid:make(LJID) || LJID <- Users];
+	error -> false
     end.
 
 %% Find and return the full JID of the user of Nick with
@@ -1903,7 +1909,14 @@ is_nick_change(JID, Nick, StateData) ->
     end.
 
 nick_collision(User, Nick, StateData) ->
-    UserOfNick = find_jid_by_nick(Nick, StateData),
+    UserOfNick = case find_jid_by_nick(Nick, StateData) of
+		     false ->
+			 case ?DICT:find(Nick, StateData#state.subscriber_nicks) of
+			     {ok, [J]} -> J;
+			     error -> false
+			 end;
+		     J -> J
+		 end,
     (UserOfNick /= false andalso
       jid:remove_resource(jid:tolower(UserOfNick))
 	/= jid:remove_resource(jid:tolower(User))).
@@ -4646,10 +4659,17 @@ process_iq_mucsub(From, _Packet,
 		      sub_el = #xmlel{name = <<"unsubscribe">>}},
 		  StateData) ->
     LBareJID = jid:tolower(jid:remove_resource(From)),
-    Subscribers = ?DICT:erase(LBareJID, StateData#state.subscribers),
-    NewStateData = StateData#state{subscribers = Subscribers},
-    store_room(NewStateData),
-    {result, [], NewStateData};
+    case ?DICT:find(LBareJID, StateData#state.subscribers) of
+	{ok, #subscriber{nick = Nick}} ->
+	    Nicks = ?DICT:erase(Nick, StateData#state.subscriber_nicks),
+	    Subscribers = ?DICT:erase(LBareJID, StateData#state.subscribers),
+	    NewStateData = StateData#state{subscribers = Subscribers,
+					   subscriber_nicks = Nicks},
+	    store_room(NewStateData),
+	    {result, [], NewStateData};
+	error ->
+	    {result, [], StateData}
+    end;
 process_iq_mucsub(From, _Packet,
 		  #iq{type = get, lang = Lang,
 		      sub_el = #xmlel{name = <<"subscriptions">>}},
@@ -4674,7 +4694,8 @@ process_iq_mucsub(_From, _Packet, #iq{lang = Lang}, _StateData) ->
 
 remove_subscriptions(StateData) ->
     if not (StateData#state.config)#config.allow_subscription ->
-	    StateData#state{subscribers = ?DICT:new()};
+	    StateData#state{subscribers = ?DICT:new(),
+			    subscriber_nicks = ?DICT:new()};
        true ->
 	    StateData
     end.

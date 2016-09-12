@@ -106,6 +106,7 @@
     config                  = #config{} :: config(),
     users                   = (?DICT):new() :: ?TDICT,
     subscribers             = (?DICT):new() :: ?TDICT,
+    subscriber_nicks        = (?DICT):new() :: ?TDICT,
     last_voice_request_time = treap:empty() :: treap:treap(),
     robots                  = (?DICT):new() :: ?TDICT,
     nicks                   = (?DICT):new() :: ?TDICT,
