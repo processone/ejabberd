@@ -259,8 +259,10 @@ process([Call], #request{method = 'GET', q = Data, ip = IP} = Req) ->
         ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
         badrequest_response()
     end;
-process([], #request{method = 'OPTIONS', data = <<>>}) ->
+process([_Call], #request{method = 'OPTIONS', data = <<>>}) ->
     {200, ?OPTIONS_HEADER, []};
+process(_, #request{method = 'OPTIONS'}) ->
+    {400, ?OPTIONS_HEADER, []};
 process(_Path, Request) ->
     ?DEBUG("Bad Request: no handler ~p", [Request]),
     json_error(400, 40, <<"Missing command name.">>).
