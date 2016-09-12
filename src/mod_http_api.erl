@@ -101,7 +101,7 @@
 
 -define(AC_ALLOW_HEADERS,
         {<<"Access-Control-Allow-Headers">>,
-         <<"Content-Type">>}).
+         <<"Content-Type, Authorization, X-Admin">>}).
 
 -define(AC_MAX_AGE,
         {<<"Access-Control-Max-Age">>, <<"86400">>}).
