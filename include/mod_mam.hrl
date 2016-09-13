@@ -4,7 +4,7 @@
 	 timestamp = p1_time_compat:timestamp() :: erlang:timestamp() | '_' | '$1',
 	 peer = {<<"">>, <<"">>, <<"">>}      :: ljid() | '_' | '$3' | undefined,
 	 bare_peer = {<<"">>, <<"">>, <<"">>} :: ljid() | '_' | '$3',
-	 packet = #xmlel{}                    :: xmlel() | '_',
+	 packet = #xmlel{}                    :: xmlel() | message() | '_',
 	 nick = <<"">>                        :: binary(),
 	 type = chat                          :: chat | groupchat}).
 

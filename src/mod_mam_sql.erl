@@ -217,13 +217,10 @@ make_sql_query(User, LServer,
 		     true ->
 			  []
 		  end,
-    WithTextClause = case WithText of
-			 {text, <<>>} ->
-			     [];
-			 {text, Txt} ->
+    WithTextClause = if is_binary(WithText), WithText /= <<>> ->
 			     [<<" and match (txt) against ('">>,
-			      Escape(Txt), <<"')">>];
-			 undefined ->
+			      Escape(WithText), <<"')">>];
+			true ->
 			     []
 		     end,
     WithClause = case catch jid:tolower(With) of
