@@ -277,7 +277,7 @@ get_queue(C2SState) ->
 
 get_stanzas(Queue, Host) ->
     lists:map(fun({_Key, Time, Stanza}) ->
-		      xmpp_util:add_delay_info(Stanza, Host, Time,
+		      xmpp_util:add_delay_info(Stanza, jid:make(Host), Time,
 					       <<"Client Inactive">>)
 	      end, Queue).
 

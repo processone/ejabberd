@@ -134,7 +134,10 @@ select(_LServer, JidRequestor,
        #jid{luser = LUser, lserver = LServer} = JidArchive,
        #mam_query{start = Start, 'end' = End,
 		  with = With, rsm = RSM}, MsgType) ->
-    MS = make_matchspec(LUser, LServer, Start, End, With),
+    LWith = if With /= undefined -> jid:tolower(With);
+	       true -> undefined
+	    end,
+    MS = make_matchspec(LUser, LServer, Start, End, LWith),
     Msgs = mnesia:dirty_select(archive_msg, MS),
     SortedMsgs = lists:keysort(#archive_msg.timestamp, Msgs),
     {FilteredMsgs, IsComplete} = filter_by_rsm(SortedMsgs, RSM),
@@ -155,6 +158,9 @@ select(_LServer, JidRequestor,
 now_to_usec({MSec, Sec, USec}) ->
     (MSec*1000000 + Sec)*1000000 + USec.
 
+make_matchspec(LUser, LServer, Start, undefined, With) ->
+    %% List is always greater than a tuple
+    make_matchspec(LUser, LServer, Start, [], With);
 make_matchspec(LUser, LServer, Start, End, {_, _, <<>>} = With) ->
     ets:fun2ms(
       fun(#archive_msg{timestamp = TS,

@@ -707,7 +707,7 @@ del_state(Nidx, Key) ->
 %% relational database), or they can even decide not to persist any items.</p>
 get_items(Nidx, _From, _RSM) ->
     Items = mnesia:match_object(#pubsub_item{itemid = {'_', Nidx}, _ = '_'}),
-    {result, {lists:reverse(lists:keysort(#pubsub_item.modification, Items)), none}}.
+    {result, {lists:reverse(lists:keysort(#pubsub_item.modification, Items)), undefined}}.
 
 get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM) ->
     SubKey = jid:tolower(JID),

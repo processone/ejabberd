@@ -69,9 +69,7 @@
     tree_action/3, node_action/4, node_call/4]).
 
 %% general helpers for plugins
--export([subscription_to_string/1, affiliation_to_string/1,
-    string_to_subscription/1, string_to_affiliation/1,
-    extended_error/2, service_jid/1,
+-export([extended_error/2, service_jid/1,
     tree/1, tree/2, plugin/2, plugins/1, config/3,
     host/1, serverhost/1]).
 
@@ -2170,7 +2168,7 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
 
 get_items(Host, Node) ->
     Action = fun (#pubsub_node{type = Type, id = Nidx}) ->
-	    node_call(Host, Type, get_items, [Nidx, service_jid(Host), none])
+	    node_call(Host, Type, get_items, [Nidx, service_jid(Host), undefined])
     end,
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {_, {Items, _}}} -> Items;
@@ -2187,7 +2185,7 @@ get_item(Host, Node, ItemId) ->
     end.
 
 get_allowed_items_call(Host, Nidx, From, Type, Options, Owners) ->
-    case get_allowed_items_call(Host, Nidx, From, Type, Options, Owners, none) of
+    case get_allowed_items_call(Host, Nidx, From, Type, Options, Owners, undefined) of
 	{result, {Items, _RSM}} -> {result, Items};
 	Error -> Error
     end.
@@ -2203,7 +2201,7 @@ get_last_item(Host, Type, Nidx, LJID) ->
 	LastItem -> LastItem
     end.
 get_last_item(Host, Type, Nidx, LJID, mnesia) ->
-    case node_action(Host, Type, get_items, [Nidx, LJID, none]) of
+    case node_action(Host, Type, get_items, [Nidx, LJID, undefined]) of
 	{result, {[LastItem|_], _}} -> LastItem;
 	_ -> undefined
     end;
@@ -2218,7 +2216,7 @@ get_last_item(_Host, _Type, _Nidx, _LJID, _) ->
 get_last_items(Host, Type, Nidx, LJID, Number) ->
     get_last_items(Host, Type, Nidx, LJID, Number, gen_mod:db_type(serverhost(Host), ?MODULE)).
 get_last_items(Host, Type, Nidx, LJID, Number, mnesia) ->
-    case node_action(Host, Type, get_items, [Nidx, LJID, none]) of
+    case node_action(Host, Type, get_items, [Nidx, LJID, undefined]) of
 	{result, {Items, _}} -> lists:sublist(Items, Number);
 	_ -> []
     end;
@@ -2713,32 +2711,6 @@ get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, A
     {PresenceSubscription, RosterGroup};
 get_roster_info(OwnerUser, OwnerServer, JID, AllowedGroups) ->
     get_roster_info(OwnerUser, OwnerServer, jid:tolower(JID), AllowedGroups).
-
-string_to_affiliation(<<"owner">>) -> owner;
-string_to_affiliation(<<"publisher">>) -> publisher;
-string_to_affiliation(<<"publish-only">>) -> publish_only;
-string_to_affiliation(<<"member">>) -> member;
-string_to_affiliation(<<"outcast">>) -> outcast;
-string_to_affiliation(<<"none">>) -> none;
-string_to_affiliation(_) -> false.
-
-string_to_subscription(<<"subscribed">>) -> subscribed;
-string_to_subscription(<<"pending">>) -> pending;
-string_to_subscription(<<"unconfigured">>) -> unconfigured;
-string_to_subscription(<<"none">>) -> none;
-string_to_subscription(_) -> false.
-
-affiliation_to_string(owner) -> <<"owner">>;
-affiliation_to_string(publisher) -> <<"publisher">>;
-affiliation_to_string(publish_only) -> <<"publish-only">>;
-affiliation_to_string(member) -> <<"member">>;
-affiliation_to_string(outcast) -> <<"outcast">>;
-affiliation_to_string(_) -> <<"none">>.
-
-subscription_to_string(subscribed) -> <<"subscribed">>;
-subscription_to_string(pending) -> <<"pending">>;
-subscription_to_string(unconfigured) -> <<"unconfigured">>;
-subscription_to_string(_) -> <<"none">>.
 
 -spec service_jid(jid() | ljid() | binary()) -> jid().
 service_jid(#jid{} = Jid) -> Jid;

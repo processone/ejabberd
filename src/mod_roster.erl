@@ -308,13 +308,13 @@ encode_item(Item) ->
 		       end,
 		 groups = Item#roster.groups}.
 
-decode_item(#roster_item{} = Item, R, Managed) ->
+decode_item(Item, R, Managed) ->
     R#roster{jid = jid:tolower(Item#roster_item.jid),
 	     name = Item#roster_item.name,
 	     subscription = case Item#roster_item.subscription of
 				remove -> remove;
 				Sub when Managed -> Sub;
-				_ -> undefined
+				_ -> R#roster.subscription
 			    end,
 	     groups = Item#roster_item.groups}.
 
@@ -334,45 +334,48 @@ try_process_iq_set(#iq{from = From, lang = Lang} = IQ) ->
     end.
 
 process_iq_set(#iq{from = From, to = To, id = Id,
-		   sub_els = [#roster_query{items = Items}]} = IQ) ->
+		   sub_els = [#roster_query{items = QueryItems}]} = IQ) ->
     Managed = is_managed_from_id(Id),
-    lists:foreach(fun (Item) -> process_item_set(From, To, Item, Managed)
-		  end,
-		  Items),
-    xmpp:make_iq_result(IQ).
-
-process_item_set(From, To, #roster_item{jid = JID1} = QueryItem, Managed) ->
     #jid{user = User, luser = LUser, lserver = LServer} = From,
-    LJID = jid:tolower(JID1),
     F = fun () ->
-		Item = get_roster_by_jid_t(LUser, LServer, LJID),
-		Item2 = decode_item(QueryItem, Item, Managed),
-		Item3 = ejabberd_hooks:run_fold(roster_process_item,
-						LServer, Item2,
-						[LServer]),
-		case Item3#roster.subscription of
-		    remove -> del_roster_t(LUser, LServer, LJID);
-		    _ -> update_roster_t(LUser, LServer, LJID, Item3)
-		end,
-		send_itemset_to_managers(From, Item3, Managed),
-		case roster_version_on_db(LServer) of
-		    true -> write_roster_version_t(LUser, LServer);
-		    false -> ok
-		end,
-		{Item, Item3}
+		lists:map(
+		  fun(#roster_item{jid = JID1} = QueryItem) ->
+			  LJID = jid:tolower(JID1),
+			  Item = get_roster_by_jid_t(LUser, LServer, LJID),
+			  Item2 = decode_item(QueryItem, Item, Managed),
+			  Item3 = ejabberd_hooks:run_fold(roster_process_item,
+							  LServer, Item2,
+							  [LServer]),
+			  case Item3#roster.subscription of
+			      remove -> del_roster_t(LUser, LServer, LJID);
+			      _ -> update_roster_t(LUser, LServer, LJID, Item3)
+			  end,
+			  case roster_version_on_db(LServer) of
+			      true -> write_roster_version_t(LUser, LServer);
+			      false -> ok
+			  end,
+			  {Item, Item3}
+		  end, QueryItems)
 	end,
     case transaction(LServer, F) of
-	{atomic, {OldItem, Item}} ->
-	    push_item(User, LServer, To, Item),
-	    case Item#roster.subscription of
-		remove ->
-		    send_unsubscribing_presence(From, OldItem), ok;
-		_ -> ok
-	    end;
+	{atomic, ItemPairs} ->
+	    lists:foreach(
+	      fun({OldItem, Item}) ->
+		      send_itemset_to_managers(From, Item, Managed),
+		      push_item(User, LServer, To, Item),
+		      case Item#roster.subscription of
+			  remove ->
+			      send_unsubscribing_presence(From, OldItem);
+			  _ ->
+			      ok
+		      end
+	      end, ItemPairs),
+	    xmpp:make_iq_result(IQ);
 	E ->
-	    ?DEBUG("ROSTER: roster item set error: ~p~n", [E]), ok
-    end;
-process_item_set(_From, _To, _, _Managed) -> ok.
+	    ?ERROR_MSG("roster set failed:~nIQ = ~s~nError = ~p",
+		       [xmpp:pp(IQ), E]),
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error())
+    end.
 
 push_item(User, Server, From, Item) ->
     ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),

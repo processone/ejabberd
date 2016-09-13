@@ -834,6 +834,10 @@ msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
     #forwarded{sub_els = [Pkt2],
 	       delay = #delay{stamp = TS, from = jid:make(LServer)}}.
 
+maybe_update_from_to(#xmlel{} = El, JidRequestor, JidArchive, Peer,
+		     {groupchat, _, _} = MsgType, Nick) ->
+    Pkt = xmpp:decode(El, [ignore_els]),
+    maybe_update_from_to(Pkt, JidRequestor, JidArchive, Peer, MsgType, Nick);
 maybe_update_from_to(#message{sub_els = Els} = Pkt, JidRequestor, JidArchive,
 		     Peer, {groupchat, Role,
 			    #state{config = #config{anonymous = Anon}}},
@@ -908,7 +912,8 @@ send(Msgs, Count, IsComplete,
     Result = if NS == ?NS_MAM_TMP ->
 		     #mam_query{xmlns = NS, id = QID, rsm = RSMOut};
 		true ->
-		     #mam_fin{id = QID, rsm = RSMOut, complete = IsComplete}
+		     #mam_fin{xmlns = NS, id = QID, rsm = RSMOut,
+			      complete = IsComplete}
 	     end,
     if NS == ?NS_MAM_TMP; NS == ?NS_MAM_1 ->
 	    lists:foreach(
@@ -950,6 +955,8 @@ limit_max(#rsm_set{max = Max} = RSM, _NS) when Max > ?MAX_PAGE_SIZE ->
 limit_max(RSM, _NS) ->
     RSM.
 
+match_interval(Now, Start, undefined) ->
+    Now >= Start;
 match_interval(Now, Start, End) ->
     (Now >= Start) and (Now =< End).
 

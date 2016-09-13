@@ -52,7 +52,7 @@ depends(_Host, _Opts) ->
 %% Hooks
 %%====================================================================
 -spec update_presence(presence(), binary(), binary()) -> presence().
-update_presence(#presence{type = undefined} = Packet, User, Host) ->
+update_presence(#presence{type = available} = Packet, User, Host) ->
     presence_with_xupdate(Packet, User, Host);
 update_presence(Packet, _User, _Host) -> Packet.
 

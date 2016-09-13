@@ -564,7 +564,8 @@
                   max :: non_neg_integer()}).
 -type rsm_set() :: #rsm_set{}.
 
--record(mam_fin, {id = <<>> :: binary(),
+-record(mam_fin, {xmlns = <<>> :: binary(),
+                  id = <<>> :: binary(),
                   rsm :: #rsm_set{},
                   stable :: boolean(),
                   complete :: boolean()}).

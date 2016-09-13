@@ -101,7 +101,8 @@ process_iq(IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed()).
 
 -spec process_iq_get({error, stanza_error()} | {result, xmpp_element() | undefined},
-		     iq(), userlist()) -> {error, stanza_error()} | {result, privacy_query()}.
+		     iq(), userlist()) -> {error, stanza_error()} |
+					  {result, xmpp_element() | undefined}.
 process_iq_get(_, #iq{from = From, lang = Lang,
 		      sub_els = [#privacy_query{lists = Lists}]},
 	       #userlist{name = Active}) ->
@@ -114,7 +115,9 @@ process_iq_get(_, #iq{from = From, lang = Lang,
 	_ ->
 	    Txt = <<"Too many <list/> elements">>,
 	    {error, xmpp:err_bad_request(Txt, Lang)}
-    end.
+    end;
+process_iq_get(Acc, _, _) ->
+    Acc.
 
 -spec process_lists_get(binary(), binary(), binary(), binary()) ->
 			       {error, stanza_error()} | {result, privacy_query()}.
@@ -218,7 +221,8 @@ decode_value(Type, Value) ->
 		     {result, xmpp_element() | undefined} |
 		     {result, xmpp_element() | undefined, userlist()},
 		     iq()) -> {error, stanza_error()} |
-			      {result, undefined, userlist()}.
+			      {result, xmpp_element() | undefined} |
+			      {result, xmpp_element() | undefined, userlist()}.
 process_iq_set(_, #iq{from = From, lang = Lang,
 		      sub_els = [#privacy_query{default = Default,
 						active = Active,
@@ -236,7 +240,9 @@ process_iq_set(_, #iq{from = From, lang = Lang,
 	    Txt = <<"There should be exactly one element in this query: "
 		    "<list/>, <active/> or <default/>">>,
 	    {error, xmpp:err_bad_request(Txt, Lang)}
-    end.
+    end;
+process_iq_set(Acc, _) ->
+    Acc.
 
 -spec process_default_set(binary(), binary(), none | binary(),
 			  binary()) -> {error, stanza_error()} | {result, undefined}.

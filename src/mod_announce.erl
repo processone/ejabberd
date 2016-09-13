@@ -130,34 +130,37 @@ stop(Host) ->
     {wait, Proc}.
 
 %% Announcing via messages to a custom resource
--spec announce(jid(), jid(), stanza()) -> ok.
+-spec announce(jid(), jid(), stanza()) -> ok | stop.
 announce(From, #jid{luser = <<>>} = To, #message{} = Packet) ->
     Proc = gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME),
-    case To#jid.lresource of
-        <<"announce/all">> ->
-            Proc ! {announce_all, From, To, Packet};
-        <<"announce/all-hosts/all">> ->
-            Proc ! {announce_all_hosts_all, From, To, Packet};
-        <<"announce/online">> ->
-            Proc ! {announce_online, From, To, Packet};
-        <<"announce/all-hosts/online">> ->
-            Proc ! {announce_all_hosts_online, From, To, Packet};
-        <<"announce/motd">> ->
-            Proc ! {announce_motd, From, To, Packet};
-        <<"announce/all-hosts/motd">> ->
-            Proc ! {announce_all_hosts_motd, From, To, Packet};
-        <<"announce/motd/update">> ->
-            Proc ! {announce_motd_update, From, To, Packet};
-        <<"announce/all-hosts/motd/update">> ->
-            Proc ! {announce_all_hosts_motd_update, From, To, Packet};
-        <<"announce/motd/delete">> ->
-            Proc ! {announce_motd_delete, From, To, Packet};
-        <<"announce/all-hosts/motd/delete">> ->
-            Proc ! {announce_all_hosts_motd_delete, From, To, Packet};
-        _ ->
-            ok
-    end,
-    ok;
+    Res = case To#jid.lresource of
+	      <<"announce/all">> ->
+		  Proc ! {announce_all, From, To, Packet};
+	      <<"announce/all-hosts/all">> ->
+		  Proc ! {announce_all_hosts_all, From, To, Packet};
+	      <<"announce/online">> ->
+		  Proc ! {announce_online, From, To, Packet};
+	      <<"announce/all-hosts/online">> ->
+		  Proc ! {announce_all_hosts_online, From, To, Packet};
+	      <<"announce/motd">> ->
+		  Proc ! {announce_motd, From, To, Packet};
+	      <<"announce/all-hosts/motd">> ->
+		  Proc ! {announce_all_hosts_motd, From, To, Packet};
+	      <<"announce/motd/update">> ->
+		  Proc ! {announce_motd_update, From, To, Packet};
+	      <<"announce/all-hosts/motd/update">> ->
+		  Proc ! {announce_all_hosts_motd_update, From, To, Packet};
+	      <<"announce/motd/delete">> ->
+		  Proc ! {announce_motd_delete, From, To, Packet};
+	      <<"announce/all-hosts/motd/delete">> ->
+		  Proc ! {announce_all_hosts_motd_delete, From, To, Packet};
+	      _ ->
+		  ok
+	  end,
+    case Res of
+	ok -> ok;
+	_ -> stop
+    end;
 announce(_From, _To, _Packet) ->
     ok.
 

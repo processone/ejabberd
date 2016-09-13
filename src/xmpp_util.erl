@@ -68,7 +68,7 @@ unwrap_carbon(Stanza) -> Stanza.
 -spec is_standalone_chat_state(stanza()) -> boolean().
 is_standalone_chat_state(Stanza) ->
     case unwrap_carbon(Stanza) of
-	#message{sub_els = Els} ->
+	#message{body = [], subject = [], sub_els = Els} ->
 	    IgnoreNS = [?NS_CHATSTATES, ?NS_DELAY],
 	    Stripped = [El || El <- Els,
 			      not lists:member(xmpp:get_ns(El), IgnoreNS)],

@@ -137,7 +137,7 @@ stop(Host) ->
 				     ?NS_VCARD),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
 			  get_sm_features, 50),
-    Mod = gen_mod:db_type(Host, ?MODULE),
+    Mod = gen_mod:db_mod(Host, ?MODULE),
     Mod:stop(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     Proc ! stop,

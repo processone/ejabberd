@@ -248,10 +248,10 @@ ldap_attribute_to_vcard({Attr, Value}, V) ->
 	<<"tel">> -> V#vcard_temp{tel = [#vcard_tel{number = Value}|Ts]};
 	<<"email">> -> V#vcard_temp{email = [#vcard_email{userid = Value}|Es]};
 	<<"photo">> -> V#vcard_temp{photo = #vcard_photo{binval = Value}};
-	<<"family">> -> V#vcard_temp{n = N#vcard_name{family = V}};
-	<<"given">> -> V#vcard_temp{n = N#vcard_name{given = V}};
-	<<"middle">> -> V#vcard_temp{n = N#vcard_name{middle = V}};
-	<<"orgname">> -> V#vcard_temp{org = O#vcard_org{name = V}};
+	<<"family">> -> V#vcard_temp{n = N#vcard_name{family = Value}};
+	<<"given">> -> V#vcard_temp{n = N#vcard_name{given = Value}};
+	<<"middle">> -> V#vcard_temp{n = N#vcard_name{middle = Value}};
+	<<"orgname">> -> V#vcard_temp{org = O#vcard_org{name = Value}};
 	<<"orgunit">> -> V#vcard_temp{org = O#vcard_org{units = [Value]}};
 	<<"locality">> -> V#vcard_temp{adr = [A#vcard_adr{locality = Value}]};
 	<<"street">> -> V#vcard_temp{adr = [A#vcard_adr{street = Value}]};

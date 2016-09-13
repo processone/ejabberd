@@ -616,7 +616,7 @@ offline_msg_to_route(LServer, #offline_msg{} = R) ->
 	       undefined ->
 		   Pkt;
 	       TS ->
-		   xmpp_util:add_delay_info(Pkt, LServer, TS,
+		   xmpp_util:add_delay_info(Pkt, jid:make(LServer), TS,
 					    <<"Offline Storage">>)
 	   end,
     {route, R#offline_msg.from, R#offline_msg.to, Pkt1}.

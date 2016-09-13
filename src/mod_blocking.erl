@@ -74,39 +74,37 @@ process_iq(IQ) ->
 
 -spec process_iq_get({error, stanza_error()} | {result, xmpp_element() | undefined},
 		     iq(), userlist()) ->
-			    {error, stanza_error()} | {result, block_list()}.
+			    {error, stanza_error()} |
+			    {result, xmpp_element() | undefined}.
 process_iq_get(_, #iq{lang = Lang, from = From,
 		      sub_els = [#block_list{}]}, _) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    {stop, process_blocklist_get(LUser, LServer, Lang)};
+    process_blocklist_get(LUser, LServer, Lang);
 process_iq_get(Acc, _, _) -> Acc.
 
 -spec process_iq_set({error, stanza_error()} |
 		     {result, xmpp_element() | undefined} |
 		     {result, xmpp_element() | undefined, userlist()},
 		     iq()) -> {error, stanza_error()} |
-			      {result, undefined} |
-			      {result, undefined, userlist()}.
-process_iq_set(_, #iq{from = From, lang = Lang, sub_els = [SubEl]}) ->
+			      {result, xmpp_element() | undefined} |
+			      {result, xmpp_element() | undefined, userlist()}.
+process_iq_set(Acc, #iq{from = From, lang = Lang, sub_els = [SubEl]}) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    Res = case SubEl of
-	      #block{items = []} ->
-		  Txt = <<"No items found in this query">>,
-		  {error, xmpp:err_bad_request(Txt, Lang)};
-	      #block{items = Items} ->
-		  JIDs = [jid:tolower(Item) || Item <- Items],
-		  process_blocklist_block(LUser, LServer, JIDs, Lang);
-	      #unblock{items = []} ->
-		  process_blocklist_unblock_all(LUser, LServer, Lang);
-	      #unblock{items = Items} ->
-		  JIDs = [jid:tolower(Item) || Item <- Items],
-		  process_blocklist_unblock(LUser, LServer, JIDs, Lang);
-	      _ ->
-		  Txt = <<"Only <block/> and <unblock/> are allowed "
-			  "in this request">>,
-		  {error, xmpp:err_bad_request(Txt, Lang)}
-	  end,
-    {stop, Res};
+    case SubEl of
+	#block{items = []} ->
+	    Txt = <<"No items found in this query">>,
+	    {error, xmpp:err_bad_request(Txt, Lang)};
+	#block{items = Items} ->
+	    JIDs = [jid:tolower(Item) || Item <- Items],
+	    process_blocklist_block(LUser, LServer, JIDs, Lang);
+	#unblock{items = []} ->
+	    process_blocklist_unblock_all(LUser, LServer, Lang);
+	#unblock{items = Items} ->
+	    JIDs = [jid:tolower(Item) || Item <- Items],
+	    process_blocklist_unblock(LUser, LServer, JIDs, Lang);
+	_ ->
+	    Acc
+    end;
 process_iq_set(Acc, _) -> Acc.
 
 -spec list_to_blocklist_jids([listitem()], [ljid()]) -> [ljid()].

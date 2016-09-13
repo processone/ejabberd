@@ -2653,9 +2653,10 @@
 
 -xml(mam_fin,
      #elem{name = <<"fin">>,
-	   xmlns = <<"urn:xmpp:mam:0">>,
-	   result = {mam_fin, '$id', '$rsm', '$stable', '$complete'},
+	   xmlns = [<<"urn:xmpp:mam:0">>, <<"urn:xmpp:mam:1">>],
+	   result = {mam_fin, '$xmlns', '$id', '$rsm', '$stable', '$complete'},
 	   attrs = [#attr{name = <<"queryid">>, label = '$id'},
+		    #attr{name = <<"xmlns">>},
 		    #attr{name = <<"stable">>, label = '$stable',
 			  dec = {dec_bool, []},
 			  enc = {enc_bool, []}},

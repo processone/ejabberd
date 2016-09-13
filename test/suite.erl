@@ -199,7 +199,7 @@ bind(Config) ->
 
 open_session(Config) ->
     #iq{type = result, sub_els = []} =
-        send_recv(Config, #iq{type = set, sub_els = [#session{}]}),
+        send_recv(Config, #iq{type = set, sub_els = [#xmpp_session{}]}),
     Config.
 
 auth_SASL(Mech, Config) ->
@@ -252,10 +252,15 @@ match_failure(Received, Matches) ->
 recv() ->
     receive
         {'$gen_event', {xmlstreamelement, El}} ->
-            Pkt = xmpp_codec:decode(fix_ns(El)),
-            ct:pal("recv: ~p ->~n~s", [El, xmpp_codec:pp(Pkt)]),
-            Pkt;
-        {'$gen_event', Event} ->
+	    try
+		Pkt = xmpp:decode(El),
+		ct:pal("recv: ~p ->~n~s", [El, xmpp_codec:pp(Pkt)]),
+		Pkt
+	    catch _:{xmpp_codec, Why} ->
+		    ct:fail("recv failed: ~p->~n~s",
+			    [El, xmpp:format_error(Why)])
+	    end;
+	{'$gen_event', Event} ->
             Event
     end.
 
@@ -404,9 +409,9 @@ mix_room_jid(Config) ->
     jid:make(<<"test">>, <<"mix.", Server/binary>>, <<>>).
 
 id() ->
-    id(undefined).
+    id(<<>>).
 
-id(undefined) ->
+id(<<>>) ->
     randoms:get_string();
 id(ID) ->
     ID.

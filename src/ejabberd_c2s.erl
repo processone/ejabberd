@@ -2663,7 +2663,7 @@ make_resume_id(StateData) ->
 add_resent_delay_info(_State, #iq{} = El, _Time) ->
     El;
 add_resent_delay_info(#state{server = From}, El, Time) ->
-    xmpp_util:add_delay_info(El, From, Time, <<"Resent">>).
+    xmpp_util:add_delay_info(El, jid:make(From), Time, <<"Resent">>).
 
 %%%----------------------------------------------------------------------
 %%% XEP-0352

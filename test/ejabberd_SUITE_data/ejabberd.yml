@@ -337,7 +337,8 @@ Welcome to this XMPP server."
     ldap_base: "ou=users,dc=localhost"
     auth_method: ldap
     modules: 
-      mod_vcard_ldap: []
+      mod_vcard:
+        db_type: ldap
       mod_roster: [] # mod_roster is required by mod_shared_roster
       mod_shared_roster_ldap:
         ldap_auth_check: off

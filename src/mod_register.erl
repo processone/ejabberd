@@ -146,12 +146,10 @@ process_iq(#iq{type = set, lang = Lang, to = To, from = From,
 	    end;
        true ->
 	    case From of
-		#jid{user = User, lserver = Server, resource = Resource} ->
+		#jid{luser = LUser, lserver = Server} ->
 		    ResIQ = xmpp:make_iq_result(IQ),
-		    ejabberd_router:route(jid:make(User, Server, Resource),
-					  jid:make(User, Server, Resource),
-					  ResIQ),
-		    ejabberd_auth:remove_user(User, Server),
+		    ejabberd_router:route(From, From, ResIQ),
+		    ejabberd_auth:remove_user(LUser, Server),
 		    ignore;
 		_ ->
 		    Txt = <<"The query is only allowed from local users">>,

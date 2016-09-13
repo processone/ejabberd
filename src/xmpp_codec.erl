@@ -286,6 +286,8 @@ decode({xmlel, _name, _attrs, _} = _el, Opts) ->
 			   _el);
       {<<"fin">>, <<"urn:xmpp:mam:0">>} ->
 	  decode_mam_fin(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
+      {<<"fin">>, <<"urn:xmpp:mam:1">>} ->
+	  decode_mam_fin(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
       {<<"prefs">>, <<"urn:xmpp:mam:0">>} ->
 	  decode_mam_prefs(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
       {<<"prefs">>, <<"urn:xmpp:mam:1">>} ->
@@ -1688,6 +1690,7 @@ is_known_tag({xmlel, _name, _attrs, _} = _el) ->
       {<<"disable">>, <<"urn:xmpp:carbons:2">>} -> true;
       {<<"forwarded">>, <<"urn:xmpp:forward:0">>} -> true;
       {<<"fin">>, <<"urn:xmpp:mam:0">>} -> true;
+      {<<"fin">>, <<"urn:xmpp:mam:1">>} -> true;
       {<<"prefs">>, <<"urn:xmpp:mam:0">>} -> true;
       {<<"prefs">>, <<"urn:xmpp:mam:1">>} -> true;
       {<<"prefs">>, <<"urn:xmpp:mam:tmp">>} -> true;
@@ -2978,9 +2981,8 @@ encode({mam_result, _, _, _, _} = Result) ->
     encode_mam_result(Result, []);
 encode({mam_prefs, _, _, _, _} = Prefs) ->
     encode_mam_prefs(Prefs, []);
-encode({mam_fin, _, _, _, _} = Fin) ->
-    encode_mam_fin(Fin,
-		   [{<<"xmlns">>, <<"urn:xmpp:mam:0">>}]);
+encode({mam_fin, _, _, _, _, _} = Fin) ->
+    encode_mam_fin(Fin, []);
 encode({forwarded, _, _} = Forwarded) ->
     encode_forwarded(Forwarded,
 		     [{<<"xmlns">>, <<"urn:xmpp:forward:0">>}]);
@@ -3196,7 +3198,7 @@ get_name({iq, _, _, _, _, _, _}) -> <<"iq">>;
 get_name({last, _, _}) -> <<"query">>;
 get_name({legacy_auth, _, _, _, _}) -> <<"query">>;
 get_name({mam_archived, _, _}) -> <<"archived">>;
-get_name({mam_fin, _, _, _, _}) -> <<"fin">>;
+get_name({mam_fin, _, _, _, _, _}) -> <<"fin">>;
 get_name({mam_prefs, _, _, _, _}) -> <<"prefs">>;
 get_name({mam_query, _, _, _, _, _, _, _, _}) ->
     <<"query">>;
@@ -3466,7 +3468,7 @@ get_ns({last, _, _}) -> <<"jabber:iq:last">>;
 get_ns({legacy_auth, _, _, _, _}) ->
     <<"jabber:iq:auth">>;
 get_ns({mam_archived, _, _}) -> <<"urn:xmpp:mam:tmp">>;
-get_ns({mam_fin, _, _, _, _}) -> <<"urn:xmpp:mam:0">>;
+get_ns({mam_fin, Xmlns, _, _, _, _}) -> Xmlns;
 get_ns({mam_prefs, Xmlns, _, _, _}) -> Xmlns;
 get_ns({mam_query, Xmlns, _, _, _, _, _, _, _}) ->
     Xmlns;
@@ -3898,7 +3900,7 @@ pp(mam_query, 8) ->
 pp(mam_archived, 2) -> [by, id];
 pp(mam_result, 4) -> [xmlns, queryid, id, sub_els];
 pp(mam_prefs, 4) -> [xmlns, default, always, never];
-pp(mam_fin, 4) -> [id, rsm, stable, complete];
+pp(mam_fin, 5) -> [xmlns, id, rsm, stable, complete];
 pp(forwarded, 2) -> [delay, sub_els];
 pp(carbons_disable, 0) -> [];
 pp(carbons_enable, 0) -> [];
@@ -8600,10 +8602,10 @@ decode_mam_fin(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"fin">>, _attrs, _els}) ->
     Rsm = decode_mam_fin_els(__TopXMLNS, __IgnoreEls, _els,
 			     undefined),
-    {Id, Stable, Complete} =
+    {Id, Xmlns, Stable, Complete} =
 	decode_mam_fin_attrs(__TopXMLNS, _attrs, undefined,
-			     undefined, undefined),
-    {mam_fin, Id, Rsm, Stable, Complete}.
+			     undefined, undefined, undefined),
+    {mam_fin, Xmlns, Id, Rsm, Stable, Complete}.
 
 decode_mam_fin_els(__TopXMLNS, __IgnoreEls, [], Rsm) ->
     Rsm;
@@ -8622,37 +8624,45 @@ decode_mam_fin_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_mam_fin_els(__TopXMLNS, __IgnoreEls, _els, Rsm).
 
 decode_mam_fin_attrs(__TopXMLNS,
-		     [{<<"queryid">>, _val} | _attrs], _Id, Stable,
+		     [{<<"queryid">>, _val} | _attrs], _Id, Xmlns, Stable,
 		     Complete) ->
-    decode_mam_fin_attrs(__TopXMLNS, _attrs, _val, Stable,
-			 Complete);
+    decode_mam_fin_attrs(__TopXMLNS, _attrs, _val, Xmlns,
+			 Stable, Complete);
 decode_mam_fin_attrs(__TopXMLNS,
-		     [{<<"stable">>, _val} | _attrs], Id, _Stable,
+		     [{<<"xmlns">>, _val} | _attrs], Id, _Xmlns, Stable,
 		     Complete) ->
     decode_mam_fin_attrs(__TopXMLNS, _attrs, Id, _val,
-			 Complete);
+			 Stable, Complete);
 decode_mam_fin_attrs(__TopXMLNS,
-		     [{<<"complete">>, _val} | _attrs], Id, Stable,
+		     [{<<"stable">>, _val} | _attrs], Id, Xmlns, _Stable,
+		     Complete) ->
+    decode_mam_fin_attrs(__TopXMLNS, _attrs, Id, Xmlns,
+			 _val, Complete);
+decode_mam_fin_attrs(__TopXMLNS,
+		     [{<<"complete">>, _val} | _attrs], Id, Xmlns, Stable,
 		     _Complete) ->
-    decode_mam_fin_attrs(__TopXMLNS, _attrs, Id, Stable,
-			 _val);
+    decode_mam_fin_attrs(__TopXMLNS, _attrs, Id, Xmlns,
+			 Stable, _val);
 decode_mam_fin_attrs(__TopXMLNS, [_ | _attrs], Id,
-		     Stable, Complete) ->
-    decode_mam_fin_attrs(__TopXMLNS, _attrs, Id, Stable,
-			 Complete);
-decode_mam_fin_attrs(__TopXMLNS, [], Id, Stable,
+		     Xmlns, Stable, Complete) ->
+    decode_mam_fin_attrs(__TopXMLNS, _attrs, Id, Xmlns,
+			 Stable, Complete);
+decode_mam_fin_attrs(__TopXMLNS, [], Id, Xmlns, Stable,
 		     Complete) ->
     {decode_mam_fin_attr_queryid(__TopXMLNS, Id),
+     decode_mam_fin_attr_xmlns(__TopXMLNS, Xmlns),
      decode_mam_fin_attr_stable(__TopXMLNS, Stable),
      decode_mam_fin_attr_complete(__TopXMLNS, Complete)}.
 
-encode_mam_fin({mam_fin, Id, Rsm, Stable, Complete},
+encode_mam_fin({mam_fin, Xmlns, Id, Rsm, Stable,
+		Complete},
 	       _xmlns_attrs) ->
     _els = lists:reverse('encode_mam_fin_$rsm'(Rsm, [])),
     _attrs = encode_mam_fin_attr_complete(Complete,
 					  encode_mam_fin_attr_stable(Stable,
-								     encode_mam_fin_attr_queryid(Id,
-												 _xmlns_attrs))),
+								     encode_mam_fin_attr_xmlns(Xmlns,
+											       encode_mam_fin_attr_queryid(Id,
+															   _xmlns_attrs)))),
     {xmlel, <<"fin">>, _attrs, _els}.
 
 'encode_mam_fin_$rsm'(undefined, _acc) -> _acc;
@@ -8668,6 +8678,14 @@ decode_mam_fin_attr_queryid(__TopXMLNS, _val) -> _val.
 encode_mam_fin_attr_queryid(<<>>, _acc) -> _acc;
 encode_mam_fin_attr_queryid(_val, _acc) ->
     [{<<"queryid">>, _val} | _acc].
+
+decode_mam_fin_attr_xmlns(__TopXMLNS, undefined) ->
+    <<>>;
+decode_mam_fin_attr_xmlns(__TopXMLNS, _val) -> _val.
+
+encode_mam_fin_attr_xmlns(<<>>, _acc) -> _acc;
+encode_mam_fin_attr_xmlns(_val, _acc) ->
+    [{<<"xmlns">>, _val} | _acc].
 
 decode_mam_fin_attr_stable(__TopXMLNS, undefined) ->
     undefined;

@@ -668,17 +668,17 @@ get_nick(ServerHost, Host, From) ->
     Mod:get_nick(LServer, Host, From).
 
 iq_get_register_info(ServerHost, Host, From, Lang) ->
-    {Nick, Registered} = case get_nick(ServerHost, Host, From) of
-			     error -> {<<"">>, false};
-			     N -> {N, true}
-			 end,
+    {Nick, NickVals, Registered} = case get_nick(ServerHost, Host, From) of
+				       error -> {<<"">>, [], false};
+				       N -> {N, [N], true}
+				   end,
     Title = <<(translate:translate(
 		 Lang, <<"Nickname Registration at ">>))/binary, Host/binary>>,
     Inst = translate:translate(Lang, <<"Enter nickname you want to register">>),
     Field = #xdata_field{type = 'text-single',
 			 label = translate:translate(Lang, <<"Nickname">>),
 			 var = <<"nick">>,
-			 values = [Nick]},
+			 values = NickVals},
     X = #xdata{type = form, title = Title,
 	       instructions = [Inst], fields = [Field]},
     #register{nick = Nick,

@@ -209,19 +209,18 @@ do_route(_State, _From, _To, _Packet) ->
 subscribe_nodes(From, To, Nodes) ->
     LTo = jid:tolower(jid:remove_resource(To)),
     LFrom = jid:tolower(jid:remove_resource(From)),
-    From_s = jid:to_string(LFrom),
     lists:foldl(
       fun(_Node, {error, _} = Err) ->
 	      Err;
 	 (Node, {result, _}) ->
-	      case mod_pubsub:subscribe_node(LTo, Node, From, From_s, []) of
+	      case mod_pubsub:subscribe_node(LTo, Node, From, From, []) of
 		  {error, _} = Err ->
 		      case is_item_not_found(Err) of
 			  true ->
 			      case mod_pubsub:create_node(
 				     LTo, To#jid.lserver, Node, LFrom, <<"mix">>) of
 				  {result, _} ->
-				      mod_pubsub:subscribe_node(LTo, Node, From, From_s, []);
+				      mod_pubsub:subscribe_node(LTo, Node, From, From, []);
 				  Error ->
 				      Error
 			      end;
@@ -235,13 +234,12 @@ subscribe_nodes(From, To, Nodes) ->
 
 unsubscribe_nodes(From, To, Nodes) ->
     LTo = jid:tolower(jid:remove_resource(To)),
-    LFrom = jid:tolower(jid:remove_resource(From)),
-    From_s = jid:to_string(LFrom),
+    BareFrom = jid:remove_resource(From),
     lists:foldl(
       fun(_Node, {error, _} = Err) ->
 	      Err;
 	 (Node, {result, _} = Result) ->
-	      case mod_pubsub:unsubscribe_node(LTo, Node, From, From_s, <<"">>) of
+	      case mod_pubsub:unsubscribe_node(LTo, Node, From, BareFrom, <<"">>) of
 		  {error, _} = Err ->
 		      case is_not_subscribed(Err) of
 			  true -> Result;
@@ -297,19 +295,16 @@ delete_item(From, To, Node, ItemID) ->
 	    end
     end.
 
-is_item_not_found({error, ErrEl}) ->
-    case fxml:get_subtag_with_xmlns(
-	   ErrEl, <<"item-not-found">>, ?NS_STANZAS) of
-	#xmlel{} -> true;
-	_ -> false
-    end.
+-spec is_item_not_found({error, stanza_error()}) -> boolean().
+is_item_not_found({error, #stanza_error{reason = 'item-not-found'}}) -> true;
+is_item_not_found({error, _}) -> false.
 
-is_not_subscribed({error, ErrEl}) ->
-    case fxml:get_subtag_with_xmlns(
-	   ErrEl, <<"not-subscribed">>, ?NS_PUBSUB_ERRORS) of
-	#xmlel{} -> true;
-	_ -> false
-    end.
+-spec is_not_subscribed({error, stanza_error()}) -> boolean().
+is_not_subscribed({error, #stanza_error{sub_els = Els}}) ->
+    %% TODO: make xmpp:get_els function working for any XMPP element
+    %% with sub_els field
+    xmpp:has_subtag(#message{sub_els = Els},
+		    #ps_error{type = 'not-subscribed'}).
 
 depends(_Host, _Opts) ->
     [{mod_pubsub, hard}].
