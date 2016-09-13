@@ -13,6 +13,7 @@
 
 -export([start/2, stop/1, depends/2, muc_online_rooms/1,
 	 muc_unregister_nick/1, create_room/3, destroy_room/2,
+	 create_room_with_opts/4,
 	 create_rooms_file/1, destroy_rooms_file/1,
 	 rooms_unused_list/2, rooms_unused_destroy/2,
 	 get_user_rooms/2, get_room_occupants/2,
@@ -87,6 +88,18 @@ get_commands_spec() ->
 		       longdesc = "Provide one room JID per line. Rooms will be created after restart.",
 		       module = ?MODULE, function = create_rooms_file,
 		       args = [{file, string}],
+		       result = {res, rescode}},
+     #ejabberd_commands{name = create_room_with_opts, tags = [muc_room],
+		       desc = "Create a MUC room name@service in host with given options",
+		       module = ?MODULE, function = create_room_with_opts,
+		       args = [{name, binary}, {service, binary},
+			       {host, binary},
+			       {options, {list,
+					  {option, {tuple,
+						    [{name, binary},
+						     {value, binary}
+						    ]}}
+					 }}],
 		       result = {res, rescode}},
      #ejabberd_commands{name = destroy_rooms_file, tags = [muc],
 		       desc = "Destroy the rooms indicated in file",
@@ -416,15 +429,23 @@ prepare_room_info(Room_info) ->
 %%       ok | error
 %% @doc Create a room immediately with the default options.
 create_room(Name1, Host1, ServerHost) ->
+    create_room_with_opts(Name1, Host1, ServerHost, []).
+
+create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
     Name = jid:nodeprep(Name1),
     Host = jid:nodeprep(Host1),
 
     %% Get the default room options from the muc configuration
     DefRoomOpts = gen_mod:get_module_opt(ServerHost, mod_muc,
 					 default_room_options, fun(X) -> X end, []),
+    %% Change default room options as required
+    FormattedRoomOpts = [format_room_option(Opt, Val) || {Opt, Val}<-CustomRoomOpts],
+    RoomOpts = lists:ukeymerge(1,
+                               lists:keysort(1, FormattedRoomOpts),
+                               lists:keysort(1, DefRoomOpts)),
 
     %% Store the room on the server, it is not started yet though at this point
-    mod_muc:store_room(ServerHost, Host, Name, DefRoomOpts),
+    mod_muc:store_room(ServerHost, Host, Name, RoomOpts),
 
     %% Get all remaining mod_muc parameters that might be utilized
     Access = gen_mod:get_module_opt(ServerHost, mod_muc, access, fun(X) -> X end, all),
@@ -445,7 +466,7 @@ create_room(Name1, Host1, ServerHost) ->
 			  Name,
 			  HistorySize,
 			  RoomShaper,
-			  DefRoomOpts),
+			  RoomOpts),
 	    {atomic, ok} = register_room(Host, Name, Pid),
 	    ok;
 	_ ->
@@ -764,12 +785,20 @@ send_direct_invitation(FromJid, UserJid, XmlEl) ->
 %% the option to change (for example title or max_users),
 %% and the value to assign to the new option.
 %% For example:
-%%   change_room_option("testroom", "conference.localhost", "title", "Test Room")
-change_room_option(Name, Service, Option, Value) when is_atom(Option) ->
-    Pid = get_room_pid(Name, Service),
-    {ok, _} = change_room_option(Pid, Option, Value),
-    ok;
+%%   change_room_option(<<"testroom">>, <<"conference.localhost">>, <<"title">>, <<"Test Room">>)
 change_room_option(Name, Service, OptionString, ValueString) ->
+    case get_room_pid(Name, Service) of
+	room_not_found ->
+	    room_not_found;
+	Pid ->
+	    {Option, Value} = format_room_option(OptionString, ValueString),
+	    Config = get_room_config(Pid),
+	    Config2 = change_option(Option, Value, Config),
+	    {ok, _} = gen_fsm:sync_send_all_state_event(Pid, {change_config, Config2}),
+	    ok
+    end.
+
+format_room_option(OptionString, ValueString) ->
     Option = jlib:binary_to_atom(OptionString),
     Value = case Option of
 		title -> ValueString;
@@ -780,12 +809,7 @@ change_room_option(Name, Service, OptionString, ValueString) ->
 		max_users -> jlib:binary_to_integer(ValueString);
 		_ -> jlib:binary_to_atom(ValueString)
 	    end,
-    change_room_option(Name, Service, Option, Value).
-
-change_room_option(Pid, Option, Value) ->
-    Config = get_room_config(Pid),
-    Config2 = change_option(Option, Value, Config),
-    gen_fsm:sync_send_all_state_event(Pid, {change_config, Config2}).
+    {Option, Value}.
 
 %% @doc Get the Pid of an existing MUC room, or 'room_not_found'.
 get_room_pid(Name, Service) ->
