@@ -800,6 +800,14 @@ handle_sync_event({muc_unsubscribe, From}, _From, StateName, StateData) ->
 	{error, Err} ->
 	    {reply, {error, get_error_text(Err)}, StateName, StateData}
     end;
+handle_sync_event({is_subscribed, From}, _From, StateName, StateData) ->
+    Subscribers = (?DICT):fold(
+		    fun(_LJID, #user{is_subscriber = true} = User, Acc) ->
+			    [User#user.jid | Acc];
+		       (_, _, Acc) ->
+			    Acc
+		    end, [], StateData#state.users),
+    {reply, lists:member(From, Subscribers), StateName, StateData};
 handle_sync_event(_Event, _From, StateName,
 		  StateData) ->
     Reply = ok, {reply, Reply, StateName, StateData}.
