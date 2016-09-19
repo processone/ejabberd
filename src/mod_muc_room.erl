@@ -800,6 +800,9 @@ handle_sync_event({muc_unsubscribe, From}, _From, StateName, StateData) ->
 	{error, Err} ->
 	    {reply, {error, get_error_text(Err)}, StateName, StateData}
     end;
+handle_sync_event({is_subscribed, From}, _From, StateName, StateData) ->
+    IsSubs = ?DICT:is_key(jid:split(From), StateData#state.subscribers),
+    {reply, IsSubs, StateName, StateData};
 handle_sync_event(_Event, _From, StateName,
 		  StateData) ->
     Reply = ok, {reply, Reply, StateName, StateData}.

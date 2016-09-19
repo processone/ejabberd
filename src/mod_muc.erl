@@ -718,13 +718,12 @@ get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
 		     index = NewIndex}}
     end.
 
-get_subscribed_rooms(ServerHost, Host, From) ->
-    Rooms = get_rooms(ServerHost, Host),
+get_subscribed_rooms(_ServerHost, Host1, From) ->
+    Rooms = get_vh_rooms(Host1),
     BareFrom = jid:remove_resource(From),
     lists:flatmap(
-      fun(#muc_room{name_host = {Name, _}, opts = Opts}) ->
-	      Subscribers = proplists:get_value(subscribers, Opts, []),
-	      case lists:keymember(BareFrom, 1, Subscribers) of
+      fun(#muc_online_room{name_host = {Name, Host}, pid = Pid}) ->
+	      case gen_fsm:sync_send_all_state_event(Pid, {is_subscribed, BareFrom}) of
 		  true -> [jid:make(Name, Host, <<>>)];
 		  false -> []
 	      end;
