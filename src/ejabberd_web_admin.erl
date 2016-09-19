@@ -747,7 +747,7 @@ process_admin(Host,
 	    _ -> nothing
 	  end,
     ACLs = lists:keysort(2,
-			 ets:select(acl,
+			 mnesia:dirty_select(acl,
 				    [{{acl, {'$1', Host}, '$2'}, [],
 				      [{{acl, '$1', '$2'}}]}])),
     {NumLines, ACLsP} = term_to_paragraph(ACLs, 80),
@@ -784,7 +784,7 @@ process_admin(Host,
 	    _ -> nothing
 	  end,
     ACLs = lists:keysort(2,
-			 ets:select(acl,
+			 mnesia:dirty_select(acl,
 				    [{{acl, {'$1', Host}, '$2'}, [],
 				      [{{acl, '$1', '$2'}}]}])),
     make_xhtml((?H1GL((?T(<<"Access Control Lists">>)),
@@ -849,7 +849,7 @@ process_admin(Host,
 		end;
 	    _ -> nothing
 	  end,
-    Access = ets:select(access,
+    Access = mnesia:dirty_select(access,
 			[{{access, {'$1', Host}, '$2'}, [],
 			  [{{access, '$1', '$2'}}]}]),
     {NumLines, AccessP} = term_to_paragraph(lists:keysort(2,Access), 80),
@@ -883,7 +883,7 @@ process_admin(Host,
 		end;
 	    _ -> nothing
 	  end,
-    AccessRules = ets:select(access,
+    AccessRules = mnesia:dirty_select(access,
 			     [{{access, {'$1', Host}, '$2'}, [],
 			       [{{access, '$1', '$2'}}]}]),
     make_xhtml((?H1GL((?T(<<"Access Rules">>)),
@@ -1153,7 +1153,7 @@ term_to_paragraph(T, Cols) ->
 term_to_id(T) -> jlib:encode_base64((term_to_binary(T))).
 
 acl_parse_query(Host, Query) ->
-    ACLs = ets:select(acl,
+    ACLs = mnesia:dirty_select(acl,
 		      [{{acl, {'$1', Host}, '$2'}, [],
 			[{{acl, '$1', '$2'}}]}]),
     case lists:keysearch(<<"submit">>, 1, Query) of
@@ -1267,7 +1267,7 @@ access_rules_to_xhtml(AccessRules, Lang) ->
 				    <<"Add New">>)])])]))]).
 
 access_parse_query(Host, Query) ->
-    AccessRules = ets:select(access,
+    AccessRules = mnesia:dirty_select(access,
 			     [{{access, {'$1', Host}, '$2'}, [],
 			       [{{access, '$1', '$2'}}]}]),
     case lists:keysearch(<<"addnew">>, 1, Query) of

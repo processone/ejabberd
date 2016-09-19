@@ -1337,7 +1337,7 @@ get_form(Host, [<<"config">>, <<"acls">>], Lang) ->
 							  [{xmlcdata, S}]}
 				       end,
 				       str:tokens(iolist_to_binary(io_lib:format("~p.",
-										 [ets:select(acl,
+										 [mnesia:dirty_select(acl,
 											     [{{acl,
 												{'$1',
 												 '$2'},
@@ -1372,7 +1372,7 @@ get_form(Host, [<<"config">>, <<"access">>], Lang) ->
 							  [{xmlcdata, S}]}
 				       end,
 				       str:tokens(iolist_to_binary(io_lib:format("~p.",
-										 [ets:select(access,
+										 [mnesia:dirty_select(access,
 											     [{{access,
 												{'$1',
 												 '$2'},

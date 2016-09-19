@@ -449,9 +449,9 @@ access_matches(all, _Data, _Host) ->
 access_matches(none, _Data, _Host) ->
     deny;
 access_matches(Name, Data, Host) when is_atom(Name) ->
-    GAccess = ets:lookup(access, {Name, global}),
+    GAccess = mnesia:dirty_read(access, {Name, global}),
     LAccess =
-	if Host /= global -> ets:lookup(access, {Name, Host});
+	if Host /= global -> mnesia:dirty_read(access, {Name, Host});
 	    true -> []
 	end,
     case GAccess ++ LAccess of
@@ -484,7 +484,7 @@ access_rules_matches([], _Data, _Host, Default) ->
     Default.
 
 get_aclspecs(ACL, Host) ->
-    ets:lookup(acl, {ACL, Host}) ++ ets:lookup(acl, {ACL, global}).
+    mnesia:dirty_read(acl, {ACL, Host}) ++ mnesia:dirty_read(acl, {ACL, global}).
 
 is_regexp_match(String, RegExp) ->
     case ejabberd_regexp:run(String, RegExp) of
