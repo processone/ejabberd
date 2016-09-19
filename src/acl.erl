@@ -75,12 +75,6 @@
 -export_type([acl/0]).
 
 start() ->
-    case catch mnesia:table_info(acl, storage_type) of
-        disc_copies ->
-            mnesia:delete_table(acl);
-        _ ->
-            ok
-    end,
     mnesia:create_table(acl,
 			[{ram_copies, [node()]}, {type, bag},
                          {local_content, true},
