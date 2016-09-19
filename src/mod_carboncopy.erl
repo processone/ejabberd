@@ -131,8 +131,9 @@ user_receive_packet(Packet, _C2SState, JID, _From, To) ->
 %    - we also replicate "read" notifications
 check_and_forward(JID, To, Packet, Direction)->
     case is_chat_message(Packet) andalso
-	     fxml:get_subtag(Packet, <<"private">>) == false andalso
-		 fxml:get_subtag(Packet, <<"no-copy">>) == false of
+	     not is_muc_pm(To, Packet) andalso
+		 fxml:get_subtag(Packet, <<"private">>) == false andalso
+		     fxml:get_subtag(Packet, <<"no-copy">>) == false of
 	true ->
 	    case is_carbon_copy(Packet) of
 		false ->
@@ -269,6 +270,11 @@ is_chat_message(#xmlel{name = <<"message">>} = Packet) ->
 	_ -> false
     end;
 is_chat_message(_Packet) -> false.
+
+is_muc_pm(#jid{lresource = <<>>}, _Packet) ->
+    false;
+is_muc_pm(_To, Packet) ->
+    fxml:get_subtag_with_xmlns(Packet, <<"x">>, ?NS_MUC_USER) =/= false.
 
 has_non_empty_body(Packet) ->
     fxml:get_subtag_cdata(Packet, <<"body">>) =/= <<"">>.
