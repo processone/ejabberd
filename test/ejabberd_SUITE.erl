@@ -19,8 +19,9 @@
                 wait_for_master/1, wait_for_slave/1,
                 make_iq_result/1, start_event_relay/0,
                 stop_event_relay/1, put_event/2, get_event/1,
-                bind/1, auth/1, open_session/1, zlib/1, starttls/1,
-		close_socket/1]).
+                bind/1, auth/1, auth/2, open_session/1, open_session/2,
+		zlib/1, starttls/1, close_socket/1, init_stream/1,
+		auth_legacy/2, auth_legacy/3]).
 
 -include("suite.hrl").
 
@@ -154,15 +155,26 @@ init_per_testcase(stop_ejabberd, Config) ->
     open_session(bind(auth(connect(Config))));
 init_per_testcase(TestCase, OrigConfig) ->
     subscribe_to_events(OrigConfig),
+    TestGroup = proplists:get_value(
+		  name, ?config(tc_group_properties, OrigConfig)),
     Server = ?config(server, OrigConfig),
-    Resource = ?config(resource, OrigConfig),
+    Resource = case TestGroup of
+		   generic ->
+		       randoms:get_string();
+		   legacy_auth ->
+		       randoms:get_string();
+		   _ ->
+		       ?config(resource, OrigConfig)
+	       end,
     MasterResource = ?config(master_resource, OrigConfig),
     SlaveResource = ?config(slave_resource, OrigConfig),
     Test = atom_to_list(TestCase),
     IsMaster = lists:suffix("_master", Test),
     IsSlave = lists:suffix("_slave", Test),
     IsCarbons = lists:prefix("carbons_", Test),
-    User = if IsMaster or IsCarbons -> <<"test_master!#$%^*()`~+-;_=[]{}|\\">>;
+    IsReplaced = lists:prefix("replaced_", Test),
+    User = if IsReplaced -> <<"test_single!#$%^*()`~+-;_=[]{}|\\">>;
+	      IsMaster or IsCarbons -> <<"test_master!#$%^*()`~+-;_=[]{}|\\">>;
               IsSlave -> <<"test_slave!#$%^*()`~+-;_=[]{}|\\">>;
               true -> <<"test_single!#$%^*()`~+-;_=[]{}|\\">>
            end,
@@ -172,11 +184,15 @@ init_per_testcase(TestCase, OrigConfig) ->
 		 end,
     Slave = if IsCarbons ->
 		    jid:make(<<"test_master!#$%^*()`~+-;_=[]{}|\\">>, Server, SlaveResource);
+	       IsReplaced ->
+		    jid:make(User, Server, Resource);
 	       true ->
 		    jid:make(<<"test_slave!#$%^*()`~+-;_=[]{}|\\">>, Server, Resource)
 	    end,
     Master = if IsCarbons ->
 		     jid:make(<<"test_master!#$%^*()`~+-;_=[]{}|\\">>, Server, MasterResource);
+		IsReplaced ->
+		     jid:make(User, Server, Resource);
 		true ->
 		     jid:make(<<"test_master!#$%^*()`~+-;_=[]{}|\\">>, Server, Resource)
 	     end,
@@ -184,29 +200,35 @@ init_per_testcase(TestCase, OrigConfig) ->
                      set_opt(slave, Slave,
                              set_opt(master, Master,
 				     set_opt(resource, MyResource, OrigConfig)))),
-    case TestCase of
-        test_connect ->
+    case Test of
+        "test_connect" ++ _ ->
             Config;
-        test_auth ->
+	"test_legacy_auth" ++ _ ->
+	    init_stream(set_opt(stream_version, <<"">>, Config));
+        "test_auth" ++ _ ->
             connect(Config);
-        test_starttls ->
+        "test_starttls" ++ _ ->
             connect(Config);
-        test_zlib ->
+        "test_zlib" ->
             connect(Config);
-        test_register ->
+        "test_register" ->
             connect(Config);
-        auth_md5 ->
+        "auth_md5" ->
             connect(Config);
-        auth_plain ->
+        "auth_plain" ->
             connect(Config);
-        test_bind ->
+	"unauthenticated_" ++ _ ->
+	    connect(Config);
+        "test_bind" ->
             auth(connect(Config));
-	sm_resume ->
+	"sm_resume" ->
 	    auth(connect(Config));
-	sm_resume_failed ->
+	"sm_resume_failed" ->
 	    auth(connect(Config));
-        test_open_session ->
+        "test_open_session" ->
             bind(auth(connect(Config)));
+	"replaced" ++ _ ->
+	    auth(connect(Config));
         _ when IsMaster or IsSlave ->
             Password = ?config(password, Config),
             ejabberd_auth:try_register(User, Server, Password),
@@ -218,30 +240,56 @@ init_per_testcase(TestCase, OrigConfig) ->
 end_per_testcase(_TestCase, _Config) ->
     ok.
 
+legacy_auth_tests() ->
+    {legacy_auth, [parallel],
+     [test_legacy_auth,
+      test_legacy_auth_digest,
+      test_legacy_auth_no_resource,
+      test_legacy_auth_bad_jid,
+      test_legacy_auth_fail]}.
+
 no_db_tests() ->
-    [{generic, [sequence],
-      [test_connect,
+    [{generic, [parallel],
+      [test_connect_bad_xml,
+       test_connect_unknown_ns,
+       test_connect_bad_ns_client,
+       test_connect_bad_ns_stream,
+       test_connect_bad_lang,
+       test_connect_bad_to,
+       test_connect_missing_to,
+       test_connect,
+       unauthenticated_iq,
+       unauthenticated_stanza,
        test_starttls,
        test_zlib,
        test_auth,
+       test_auth_fail,
        test_bind,
        test_open_session,
-       presence,
+       codec_failure,
+       unsupported_query,
+       bad_nonza,
+       invalid_from,
        ping,
        version,
        time,
        stats,
-       sm,
-       sm_resume,
-       sm_resume_failed,
        disco]},
+     {presence, [sequence], [presence]},
+     {sm, [sequence],
+       [sm,
+	sm_resume,
+	sm_resume_failed]},
      {test_proxy65, [parallel],
-      [proxy65_master, proxy65_slave]}].
+      [proxy65_master, proxy65_slave]},
+     {replaced, [parallel],
+      [replaced_master, replaced_slave]}].
 
 db_tests(riak) ->
     %% No support for mod_pubsub
     [{single_user, [sequence],
       [test_register,
+       legacy_auth_tests(),
        auth_plain,
        auth_md5,
        presence_broadcast,
@@ -273,6 +321,7 @@ db_tests(riak) ->
 db_tests(DB) when DB == mnesia; DB == redis ->
     [{single_user, [sequence],
       [test_register,
+       legacy_auth_tests(),
        auth_plain,
        auth_md5,
        presence_broadcast,
@@ -319,6 +368,7 @@ db_tests(_) ->
     %% No support for carboncopy
     [{single_user, [sequence],
       [test_register,
+       legacy_auth_tests(),
        auth_plain,
        auth_md5,
        presence_broadcast,
@@ -361,12 +411,14 @@ db_tests(_) ->
 ldap_tests() ->
     [{ldap_tests, [sequence],
       [test_auth,
+       test_auth_fail,
        vcard_get,
        ldap_shared_roster_get]}].
 
 extauth_tests() ->
     [{extauth_tests, [sequence],
       [test_auth,
+       test_auth_fail,
        test_unregister]}].
 
 groups() ->
@@ -381,15 +433,15 @@ groups() ->
      {riak, [sequence], db_tests(riak)}].
 
 all() ->
-    [{group, ldap},
+    [%%{group, ldap},
      {group, no_db},
      {group, mnesia},
-     {group, redis},
-     {group, mysql},
-     {group, pgsql},
-     {group, sqlite},
-     {group, extauth},
-     {group, riak},
+     %%{group, redis},
+     %%{group, mysql},
+     %%{group, pgsql},
+     %%{group, sqlite},
+     %%{group, extauth},
+     %%{group, riak},
      stop_ejabberd].
 
 stop_ejabberd(Config) ->
@@ -397,6 +449,48 @@ stop_ejabberd(Config) ->
     ?recv1(#stream_error{reason = 'system-shutdown'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     Config.
+
+test_connect_bad_xml(Config) ->
+    Config0 = init_stream(set_opt(ns_client, <<"'">>, Config)),
+    ?recv1(#stream_error{reason = 'not-well-formed'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config0).
+
+test_connect_unknown_ns(Config) ->
+    Config0 = init_stream(set_opt(ns_client, <<"wrong">>, Config)),
+    ?recv1(#stream_error{reason = 'not-well-formed'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config0).
+
+test_connect_bad_ns_client(Config) ->
+    Config0 = init_stream(set_opt(ns_client, ?NS_SERVER, Config)),
+    ?recv1(#stream_error{reason = 'invalid-namespace'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config0).
+
+test_connect_bad_ns_stream(Config) ->
+    Config0 = init_stream(set_opt(ns_stream, <<"wrong">>, Config)),
+    ?recv1(#stream_error{reason = 'invalid-namespace'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config0).
+
+test_connect_bad_lang(Config) ->
+    Config0 = init_stream(set_opt(lang, lists:duplicate(36, $x), Config)),
+    ?recv1(#stream_error{reason = 'policy-violation'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config0).
+
+test_connect_bad_to(Config) ->
+    Config0 = init_stream(set_opt(server, <<"wrong.com">>, Config)),
+    ?recv1(#stream_error{reason = 'host-unknown'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config0).
+
+test_connect_missing_to(Config) ->
+    Config0 = init_stream(set_opt(server, <<"">>, Config)),
+    ?recv1(#stream_error{reason = 'improper-addressing'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config0).
 
 test_connect(Config) ->
     disconnect(connect(Config)).
@@ -462,6 +556,28 @@ try_unregister(Config) ->
     ?recv1(#stream_error{reason = conflict}),
     Config.
 
+unauthenticated_stanza(Config) ->
+    %% Unauthenticated stanza should be silently dropped.
+    send(Config, #message{to = server_jid(Config)}),
+    disconnect(Config).
+
+unauthenticated_iq(Config) ->
+    #iq{type = error} =
+	send_recv(Config, #iq{type = get, sub_els = [#disco_info{}]}),
+    disconnect(Config).
+
+bad_nonza(Config) ->
+    %% Unsupported and invalid nonza should be silently dropped.
+    send(Config, #caps{}),
+    send(Config, #stanza_error{type = wrong}),
+    disconnect(Config).
+
+invalid_from(Config) ->
+    send(Config, #message{from = jid:make(randoms:get_string())}),
+    ?recv1(#stream_error{reason = 'invalid-from'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config).
+
 auth_md5(Config) ->
     Mechs = ?config(mechs, Config),
     case lists:member(<<"DIGEST-MD5">>, Mechs) of
@@ -482,14 +598,37 @@ auth_plain(Config) ->
             {skipped, 'PLAIN_not_available'}
     end.
 
+test_legacy_auth(Config) ->
+    disconnect(auth_legacy(Config, _Digest = false)).
+
+test_legacy_auth_digest(Config) ->
+    ServerJID = server_jid(Config),
+    disconnect(auth_legacy(Config, _Digest = true)).
+
+test_legacy_auth_no_resource(Config0) ->
+    Config = set_opt(resource, <<"">>, Config0),
+    disconnect(auth_legacy(Config, _Digest = false, _ShouldFail = true)).
+
+test_legacy_auth_bad_jid(Config0) ->
+    Config = set_opt(user, <<"@">>, Config0),
+    disconnect(auth_legacy(Config, _Digest = false, _ShouldFail = true)).
+
+test_legacy_auth_fail(Config0) ->
+    Config = set_opt(user, <<"wrong">>, Config0),
+    disconnect(auth_legacy(Config, _Digest = false, _ShouldFail = true)).
+
 test_auth(Config) ->
     disconnect(auth(Config)).
+
+test_auth_fail(Config0) ->
+    Config = set_opt(user, <<"wrong">>, Config0),
+    disconnect(auth(Config, _ShouldFail = true)).
 
 test_bind(Config) ->
     disconnect(bind(Config)).
 
 test_open_session(Config) ->
-    disconnect(open_session(Config)).
+    disconnect(open_session(Config, true)).
 
 roster_get(Config) ->
     #iq{type = result, sub_els = [#roster_query{items = []}]} =
@@ -517,6 +656,21 @@ roster_ver(Config) ->
     #iq{type = result, sub_els = []} =
         send_recv(Config, #iq{type = get,
                               sub_els = [#roster_query{ver = Ver2}]}),
+    disconnect(Config).
+
+codec_failure(Config) ->
+    #iq{type = error} = send_recv(Config, #iq{type = wrong}),
+    disconnect(Config).
+
+unsupported_query(Config) ->
+    ServerJID = server_jid(Config),
+    #iq{type = error} = send_recv(Config, #iq{type = get, to = ServerJID}),
+    #iq{type = error} = send_recv(Config, #iq{type = get, to = ServerJID,
+					      sub_els = [#caps{}]}),
+    #iq{type = error} = send_recv(Config, #iq{type = get, to = ServerJID,
+					      sub_els = [#roster_query{},
+							 #disco_info{},
+							 #privacy_query{}]}),
     disconnect(Config).
 
 presence(Config) ->
@@ -602,6 +756,18 @@ disco(Config) ->
                             #iq{type = get, to = JID,
                                 sub_els = [#disco_info{node = Node}]})
       end, Items),
+    disconnect(Config).
+
+replaced_master(Config0) ->
+    Config = bind(Config0),
+    wait_for_slave(Config),
+    ?recv1(#stream_error{reason = conflict}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config).
+
+replaced_slave(Config0) ->
+    wait_for_master(Config0),
+    Config = bind(Config0),
     disconnect(Config).
 
 sm(Config) ->

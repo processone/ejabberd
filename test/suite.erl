@@ -32,7 +32,7 @@ init_config(Config) ->
     {ok, CfgContentTpl} = file:read_file(ConfigPathTpl),
     CfgContent = process_config_tpl(CfgContentTpl, [
                                                     {c2s_port, 5222},
-                                                    {loglevel, 4},
+                                                    {loglevel, 5},
                                                     {s2s_port, 5269},
                                                     {web_port, 5280},
                                                     {mysql_server, <<"localhost">>},
@@ -64,6 +64,12 @@ init_config(Config) ->
      {slave_nick, <<"slave_nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {room_subject, <<"hello, world!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {certfile, CertFile},
+     {ns_client, ?NS_CLIENT},
+     {ns_stream, ?NS_STREAM},
+     {stream_version, <<"1.0">>},
+     {stream_id, <<"">>},
+     {mechs, []},
+     {lang, <<"en">>},
      {base_dir, BaseDir},
      {resource, <<"resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {master_resource, <<"master_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
@@ -118,20 +124,36 @@ process_config_tpl(Content, [{Name, DefaultValue} | Rest]) ->
     NewContent = binary:replace(Content, <<"@@",(atom_to_binary(Name, latin1))/binary, "@@">>, Val),
     process_config_tpl(NewContent, Rest).
 
+stream_header(Config) ->
+    NSStream = ?config(ns_stream, Config),
+    NSClient = ?config(ns_client, Config),
+    Lang = ?config(lang, Config),
+    To = case ?config(server, Config) of
+	     <<"">> -> <<"">>;
+	     Server -> <<"to='", Server/binary, "'">>
+	 end,
+    Version = ?config(stream_version, Config),
+    io_lib:format("<?xml version='1.0'?><stream:stream "
+		  "xmlns:stream='~s' xmlns='~s' ~s "
+		  "version='~s' xml:lang='~s'>",
+		  [NSStream, NSClient, To, Version, Lang]).
 
 connect(Config) ->
+    process_stream_features(init_stream(Config)).
+
+init_stream(Config) ->
+    Version = ?config(stream_version, Config),
     {ok, Sock} = ejabberd_socket:connect(
                    ?config(server_host, Config),
                    ?config(server_port, Config),
                    [binary, {packet, 0}, {active, false}]),
-    init_stream(set_opt(socket, Sock, Config)).
+    NewConfig = set_opt(socket, Sock, Config),
+    ok = send_text(NewConfig, stream_header(NewConfig)),
+    #stream_start{id = ID, xmlns = ?NS_CLIENT,
+		  version = Version} = recv(),
+    set_opt(stream_id, ID, NewConfig).
 
-init_stream(Config) ->
-    ok = send_text(Config, io_lib:format(?STREAM_HEADER,
-                                          [?config(server, Config)])),
-    {xmlstreamstart, <<"stream:stream">>, Attrs} = recv(),
-    <<"jabber:client">> = fxml:get_attr_s(<<"xmlns">>, Attrs),
-    <<"1.0">> = fxml:get_attr_s(<<"version">>, Attrs),
+process_stream_features(Config) ->
     #stream_features{sub_els = Fs} = recv(),
     Mechs = lists:flatmap(
               fun(#sasl_mechanisms{list = Ms}) ->
@@ -169,24 +191,27 @@ starttls(Config) ->
                   ?config(socket, Config),
                   [{certfile, ?config(certfile, Config)},
                    connect]),
-    init_stream(set_opt(socket, TLSSocket, Config)).
+    process_stream_features(init_stream(set_opt(socket, TLSSocket, Config))).
 
 zlib(Config) ->
     send(Config, #compress{methods = [<<"zlib">>]}),
     #compressed{} = recv(),
     ZlibSocket = ejabberd_socket:compress(?config(socket, Config)),
-    init_stream(set_opt(socket, ZlibSocket, Config)).
+    process_stream_features(init_stream(set_opt(socket, ZlibSocket, Config))).
 
 auth(Config) ->
+    auth(Config, false).
+
+auth(Config, ShouldFail) ->
     Mechs = ?config(mechs, Config),
     HaveMD5 = lists:member(<<"DIGEST-MD5">>, Mechs),
     HavePLAIN = lists:member(<<"PLAIN">>, Mechs),
     if HavePLAIN ->
-            auth_SASL(<<"PLAIN">>, Config);
+            auth_SASL(<<"PLAIN">>, Config, ShouldFail);
        HaveMD5 ->
-            auth_SASL(<<"DIGEST-MD5">>, Config);
+            auth_SASL(<<"DIGEST-MD5">>, Config, ShouldFail);
        true ->
-            ct:fail(no_sasl_mechanisms_available)
+	    auth_legacy(Config, false, ShouldFail)
     end.
 
 bind(Config) ->
@@ -198,29 +223,83 @@ bind(Config) ->
     Config.
 
 open_session(Config) ->
-    #iq{type = result, sub_els = []} =
-        send_recv(Config, #iq{type = set, sub_els = [#xmpp_session{}]}),
+    open_session(Config, false).
+
+open_session(Config, Force) ->
+    if Force ->
+	    #iq{type = result, sub_els = []} =
+		send_recv(Config, #iq{type = set, sub_els = [#xmpp_session{}]});
+       true ->
+	    ok
+    end,
     Config.
 
+auth_legacy(Config, IsDigest) ->
+    auth_legacy(Config, IsDigest, false).
+
+auth_legacy(Config, IsDigest, ShouldFail) ->
+    ServerJID = server_jid(Config),
+    U = ?config(user, Config),
+    R = ?config(resource, Config),
+    P = ?config(password, Config),
+    #iq{type = result,
+	from = ServerJID,
+	sub_els = [#legacy_auth{username = <<"">>,
+				password = <<"">>,
+				resource = <<"">>} = Auth]} =
+	send_recv(Config,
+		  #iq{to = ServerJID, type = get,
+		      sub_els = [#legacy_auth{}]}),
+    Res = case Auth#legacy_auth.digest of
+	      <<"">> when IsDigest ->
+		  StreamID = ?config(stream_id, Config),
+		  D = p1_sha:sha(<<StreamID/binary, P/binary>>),
+		  send_recv(Config, #iq{to = ServerJID, type = set,
+					sub_els = [#legacy_auth{username = U,
+								resource = R,
+								digest = D}]});
+	      _ when not IsDigest ->
+		  send_recv(Config, #iq{to = ServerJID, type = set,
+					sub_els = [#legacy_auth{username = U,
+								resource = R,
+								password = P}]})
+	  end,
+    case Res of
+	#iq{from = ServerJID, type = result, sub_els = []} ->
+	    if ShouldFail ->
+		    ct:fail(legacy_auth_should_have_failed);
+	       true ->
+		    Config
+	    end;
+	#iq{from = ServerJID, type = error} ->
+	    if ShouldFail ->
+		    Config;
+	       true ->
+		    ct:fail(legacy_auth_failed)
+	    end
+    end.
+
 auth_SASL(Mech, Config) ->
+    auth_SASL(Mech, Config, false).
+
+auth_SASL(Mech, Config, ShouldFail) ->
     {Response, SASL} = sasl_new(Mech,
                                 ?config(user, Config),
                                 ?config(server, Config),
                                 ?config(password, Config)),
     send(Config, #sasl_auth{mechanism = Mech, text = Response}),
-    wait_auth_SASL_result(set_opt(sasl, SASL, Config)).
+    wait_auth_SASL_result(set_opt(sasl, SASL, Config), ShouldFail).
 
-wait_auth_SASL_result(Config) ->
+wait_auth_SASL_result(Config, ShouldFail) ->
     case recv() of
+	#sasl_success{} when ShouldFail ->
+	    ct:fail(sasl_auth_should_have_failed);
         #sasl_success{} ->
             ejabberd_socket:reset_stream(?config(socket, Config)),
-            send_text(Config,
-                      io_lib:format(?STREAM_HEADER,
-                                    [?config(server, Config)])),
-            {xmlstreamstart, <<"stream:stream">>, Attrs} = recv(),
-            <<"jabber:client">> = fxml:get_attr_s(<<"xmlns">>, Attrs),
-            <<"1.0">> = fxml:get_attr_s(<<"version">>, Attrs),
+            send_text(Config, stream_header(Config)),
+	    #stream_start{xmlns = ?NS_CLIENT, version = <<"1.0">>} = recv(),
             #stream_features{sub_els = Fs} = recv(),
+	    #xmpp_session{optional = true} = lists:keyfind(xmpp_session, 1, Fs),
 	    lists:foldl(
 	      fun(#feature_sm{}, ConfigAcc) ->
 		      set_opt(sm, true, ConfigAcc);
@@ -232,7 +311,9 @@ wait_auth_SASL_result(Config) ->
         #sasl_challenge{text = ClientIn} ->
             {Response, SASL} = (?config(sasl, Config))(ClientIn),
             send(Config, #sasl_response{text = Response}),
-            wait_auth_SASL_result(set_opt(sasl, SASL, Config));
+            wait_auth_SASL_result(set_opt(sasl, SASL, Config), ShouldFail);
+	#sasl_failure{} when ShouldFail ->
+	    Config;
         #sasl_failure{} ->
             ct:fail(sasl_auth_failed)
     end.
@@ -252,16 +333,21 @@ match_failure(Received, Matches) ->
 recv() ->
     receive
         {'$gen_event', {xmlstreamelement, El}} ->
-	    try
-		Pkt = xmpp:decode(El),
-		ct:pal("recv: ~p ->~n~s", [El, xmpp_codec:pp(Pkt)]),
-		Pkt
-	    catch _:{xmpp_codec, Why} ->
-		    ct:fail("recv failed: ~p->~n~s",
-			    [El, xmpp:format_error(Why)])
-	    end;
+	    decode(El);
+	{'$gen_event', {xmlstreamstart, Name, Attrs}} ->
+	    decode(#xmlel{name = Name, attrs = Attrs});
 	{'$gen_event', Event} ->
             Event
+    end.
+
+decode(El) ->
+    try
+	Pkt = xmpp:decode(El),
+	ct:pal("recv: ~p ->~n~s", [El, xmpp_codec:pp(Pkt)]),
+	Pkt
+    catch _:{xmpp_codec, Why} ->
+	    ct:fail("recv failed: ~p->~n~s",
+		    [El, xmpp:format_error(Why)])
     end.
 
 fix_ns(#xmlel{name = Tag, attrs = Attrs} = El)

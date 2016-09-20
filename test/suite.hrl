@@ -5,12 +5,6 @@
 -include("mod_proxy65.hrl").
 -include("xmpp_codec.hrl").
 
--define(STREAM_HEADER,
-	<<"<?xml version='1.0'?><stream:stream "
-	  "xmlns:stream='http://etherx.jabber.org/stream"
-	  "s' xmlns='jabber:client' to='~s' version='1.0"
-	  "'>">>).
-
 -define(STREAM_TRAILER, <<"</stream:stream>">>).
 
 -define(PUBSUB(Node), <<(?NS_PUBSUB)/binary, "#", Node>>).

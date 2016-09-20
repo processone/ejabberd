@@ -323,24 +323,25 @@ get_subscribed(FsmRef) ->
 
 wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
     try xmpp:decode(#xmlel{name = Name, attrs = Attrs}) of
-	#stream_start{xmlns = NS_CLIENT, stream_xmlns = NS_STREAM, lang = Lang}
+	#stream_start{xmlns = NS_CLIENT, stream_xmlns = NS_STREAM,
+		      version = Version, lang = Lang}
           when NS_CLIENT /= ?NS_CLIENT; NS_STREAM /= ?NS_STREAM ->
-	    send_header(StateData, ?MYNAME, <<"">>, Lang),
+	    send_header(StateData, ?MYNAME, Version, Lang),
             send_element(StateData, xmpp:serr_invalid_namespace()),
             {stop, normal, StateData};
-	#stream_start{lang = Lang} when byte_size(Lang) > 35 ->
+	#stream_start{lang = Lang, version = Version} when byte_size(Lang) > 35 ->
 	    %% As stated in BCP47, 4.4.1:
 	    %% Protocols or specifications that specify limited buffer sizes for
 	    %% language tags MUST allow for language tags of at least 35 characters.
 	    %% Do not store long language tag to avoid possible DoS/flood attacks
-	    send_header(StateData, ?MYNAME, <<"">>, ?MYLANG),
+	    send_header(StateData, ?MYNAME, Version, ?MYLANG),
 	    Txt = <<"Too long value of 'xml:lang' attribute">>,
 	    send_element(StateData,
 			 xmpp:serr_policy_violation(Txt, ?MYLANG)),
 	    {stop, normal, StateData};
-	#stream_start{to = undefined, lang = Lang} ->
+	#stream_start{to = undefined, lang = Lang, version = Version} ->
 	    Txt = <<"Missing 'to' attribute">>,
-	    send_header(StateData, ?MYNAME, <<"">>, Lang),
+	    send_header(StateData, ?MYNAME, Version, Lang),
 	    send_element(StateData,
 			 xmpp:serr_improper_addressing(Txt, Lang)),
 	    {stop, normal, StateData};
@@ -463,7 +464,7 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 				    end
 			    end;
 			_ ->
-			    send_header(StateData, Server, <<"">>, ?MYLANG),
+			    send_header(StateData, Server, StreamVersion, ?MYLANG),
 			    if not StateData#state.tls_enabled and
 					StateData#state.tls_required ->
 				    send_element(
@@ -492,7 +493,7 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	    end
     catch _:{xmpp_codec, Why} ->
 	    Txt = xmpp:format_error(Why),
-	    send_header(StateData, ?MYNAME, <<"">>, ?MYLANG),
+	    send_header(StateData, ?MYNAME, <<"1.0">>, ?MYLANG),
 	    send_element(StateData, xmpp:serr_not_well_formed(Txt, ?MYLANG)),
 	    {stop, normal, StateData}
     end;
@@ -517,13 +518,8 @@ wait_for_auth({xmlstreamelement, #xmlel{} = El}, StateData) ->
     decode_element(El, wait_for_auth, StateData);
 wait_for_auth(Pkt, StateData) when ?IS_STREAM_MGMT_PACKET(Pkt) ->
     fsm_next_state(wait_for_auth, dispatch_stream_mgmt(Pkt, StateData));
-wait_for_auth(#iq{type = get,
-		  sub_els = [#legacy_auth{username = U}]} = IQ, StateData) ->
-    Username = case U of
-		   undefined -> <<"">>;
-		   _ -> U
-	       end,
-    Auth = #legacy_auth{username = Username, password = <<>>, resource = <<>>},
+wait_for_auth(#iq{type = get, sub_els = [#legacy_auth{}]} = IQ, StateData) ->
+    Auth = #legacy_auth{username = <<>>, password = <<>>, resource = <<>>},
     Res = case ejabberd_auth:plain_password_required(StateData#state.server) of
 	      false ->
 		  xmpp:make_iq_result(IQ, Auth#legacy_auth{digest = <<>>});
