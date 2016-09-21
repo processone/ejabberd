@@ -494,7 +494,7 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
     catch _:{xmpp_codec, Why} ->
 	    Txt = xmpp:format_error(Why),
 	    send_header(StateData, ?MYNAME, <<"1.0">>, ?MYLANG),
-	    send_element(StateData, xmpp:serr_not_well_formed(Txt, ?MYLANG)),
+	    send_element(StateData, xmpp:serr_invalid_xml(Txt, ?MYLANG)),
 	    {stop, normal, StateData}
     end;
 wait_for_stream(timeout, StateData) ->

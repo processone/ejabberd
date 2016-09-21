@@ -125,7 +125,12 @@ init([{SockMod, Socket}, Opts]) ->
 
 wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
     try xmpp:decode(#xmlel{name = Name, attrs = Attrs}) of
-	#stream_start{xmlns = ?NS_COMPONENT, to = To} when is_record(To, jid) ->
+	#stream_start{xmlns = NS_COMPONENT, stream_xmlns = NS_STREAM}
+          when NS_COMPONENT /= ?NS_COMPONENT; NS_STREAM /= ?NS_STREAM ->
+            send_header(StateData, ?MYNAME),
+            send_element(StateData, xmpp:serr_invalid_namespace()),
+            {stop, normal, StateData};
+	#stream_start{to = To} when is_record(To, jid) ->
 	    Host = To#jid.lserver,
 	    send_header(StateData, Host),
 	    HostOpts = case dict:is_key(Host, StateData#state.host_opts) of
@@ -141,13 +146,9 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 		       end,
 	    {next_state, wait_for_handshake,
 	     StateData#state{host = Host, host_opts = HostOpts}};
-	#stream_start{xmlns = ?NS_COMPONENT} ->
-	    send_header(StateData, ?MYNAME),
-	    send_element(StateData, xmpp:serr_improper_addressing()),
-	    {stop, normal, StateData};
 	#stream_start{} ->
 	    send_header(StateData, ?MYNAME),
-	    send_element(StateData, xmpp:serr_invalid_namespace()),
+	    send_element(StateData, xmpp:serr_improper_addressing()),
 	    {stop, normal, StateData}
     catch _:{xmpp_codec, Why} ->
 	    Txt = xmpp:format_error(Why),
@@ -203,7 +204,8 @@ stream_established(El, StateData) when ?is_stanza(El) ->
     To = xmpp:get_to(El),
     Lang = xmpp:get_lang(El),
     if From == undefined orelse To == undefined ->
-	    send_error(StateData, El, xmpp:err_jid_malformed());
+	    Txt = <<"Missing 'from' or 'to' attribute">>,
+	    send_error(StateData, El, xmpp:err_jid_malformed(Txt, Lang));
        true ->
 	    FromJID = case StateData#state.check_from of
 			  false ->
@@ -214,19 +216,16 @@ stream_established(El, StateData) when ?is_stanza(El) ->
 			      From;
 			  _ ->
 			      %% The default is the standard behaviour in XEP-0114
-			      case From of
-				  #jid{lserver = Server} ->
-				      case dict:is_key(Server, StateData#state.host_opts) of
-					  true -> From;
-					  false -> error
-				      end;
-				  _ -> error
+			      Server = From#jid.lserver,
+			      case dict:is_key(Server, StateData#state.host_opts) of
+				  true -> From;
+				  false -> error
 			      end
 		      end,
 	    if FromJID /= error ->
 		    ejabberd_router:route(FromJID, To, El);
 	       true ->
-		    Txt = <<"Incorrect value of 'from' or 'to' attribute">>,
+		    Txt = <<"Improper domain part of 'from' attribute">>,
 		    send_error(StateData, El, xmpp:err_not_allowed(Txt, Lang))
 	    end
     end,

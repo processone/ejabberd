@@ -428,6 +428,11 @@ listen:
     port: @@web_port@@
     module: ejabberd_http
     captcha: true
+  - 
+    port: @@component_port@@
+    module: ejabberd_service
+    password: >-
+      @@password@@
 loglevel: @@loglevel@@
 max_fsm_queue: 1000
 modules: 

@@ -125,6 +125,15 @@ do_init_per_group(riak, Config) ->
 	Err ->
 	    {skip, {riak_not_available, Err}}
     end;
+do_init_per_group(component, Config) ->
+    Server = ?config(server, Config),
+    Port = ?config(component_port, Config),
+    set_opt(xmlns, ?NS_COMPONENT,
+            set_opt(server, <<"component.", Server/binary>>,
+                    set_opt(type, component,
+                            set_opt(server_port, Port,
+                                    set_opt(stream_version, <<"">>,
+                                            set_opt(lang, <<"">>, Config))))));
 do_init_per_group(_GroupName, Config) ->
     Pid = start_event_relay(),
     set_opt(event_relay, Pid, Config).
@@ -146,6 +155,8 @@ end_per_group(ldap, _Config) ->
 end_per_group(extauth, _Config) ->
     ok;
 end_per_group(riak, _Config) ->
+    ok;
+end_per_group(component, _Config) ->
     ok;
 end_per_group(_GroupName, Config) ->
     stop_event_relay(Config),
@@ -252,7 +263,7 @@ no_db_tests() ->
     [{generic, [parallel],
       [test_connect_bad_xml,
        test_connect_unknown_ns,
-       test_connect_bad_ns_client,
+       test_connect_bad_xmlns,
        test_connect_bad_ns_stream,
        test_connect_bad_lang,
        test_connect_bad_to,
@@ -421,10 +432,27 @@ extauth_tests() ->
        test_auth_fail,
        test_unregister]}].
 
+component_tests() ->
+    [{component_tests, [sequence],
+      [test_connect_bad_xml,
+       test_connect_unknown_ns,
+       test_connect_bad_xmlns,
+       test_connect_bad_ns_stream,
+       test_connect_missing_to,
+       test_connect,
+       test_auth,
+       test_auth_fail,
+       component_missing_address,
+       component_invalid_from,
+       component_send,
+       bad_nonza,
+       codec_failure]}].
+
 groups() ->
     [{ldap, [sequence], ldap_tests()},
      {extauth, [sequence], extauth_tests()},
      {no_db, [sequence], no_db_tests()},
+     {component, [sequence], component_tests()},
      {mnesia, [sequence], db_tests(mnesia)},
      {redis, [sequence], db_tests(redis)},
      {mysql, [sequence], db_tests(mysql)},
@@ -433,7 +461,8 @@ groups() ->
      {riak, [sequence], db_tests(riak)}].
 
 all() ->
-    [%%{group, ldap},
+    [{group, component},
+     %%{group, ldap},
      {group, no_db},
      {group, mnesia},
      %%{group, redis},
@@ -451,19 +480,19 @@ stop_ejabberd(Config) ->
     Config.
 
 test_connect_bad_xml(Config) ->
-    Config0 = init_stream(set_opt(ns_client, <<"'">>, Config)),
+    Config0 = init_stream(set_opt(xmlns, <<"'">>, Config)),
     ?recv1(#stream_error{reason = 'not-well-formed'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config0).
 
 test_connect_unknown_ns(Config) ->
-    Config0 = init_stream(set_opt(ns_client, <<"wrong">>, Config)),
-    ?recv1(#stream_error{reason = 'not-well-formed'}),
+    Config0 = init_stream(set_opt(xmlns, <<"wrong">>, Config)),
+    ?recv1(#stream_error{reason = 'invalid-xml'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config0).
 
-test_connect_bad_ns_client(Config) ->
-    Config0 = init_stream(set_opt(ns_client, ?NS_SERVER, Config)),
+test_connect_bad_xmlns(Config) ->
+    Config0 = init_stream(set_opt(xmlns, ?NS_SERVER, Config)),
     ?recv1(#stream_error{reason = 'invalid-namespace'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config0).
@@ -494,6 +523,12 @@ test_connect_missing_to(Config) ->
 
 test_connect(Config) ->
     disconnect(connect(Config)).
+
+test_component_connect(Config) ->
+    disconnect(component_connect(Config)).
+
+component_connect(Config) ->
+    init_stream(Config).
 
 test_starttls(Config) ->
     case ?config(starttls, Config) of
@@ -578,6 +613,25 @@ invalid_from(Config) ->
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config).
 
+component_missing_address(Config) ->
+    Server = server_jid(Config),
+    #iq{type = error} = send_recv(Config, #iq{type = get, from = Server}),
+    #iq{type = error} = send_recv(Config, #iq{type = get, to = Server}),
+    disconnect(Config).
+
+component_invalid_from(Config) ->
+    From = jid:make(randoms:get_string()),
+    To = jid:make(randoms:get_string()),
+    #iq{type = error} =
+	send_recv(Config, #iq{type = get, from = From, to = To}),
+    disconnect(Config).
+
+component_send(Config) ->
+    JID = my_jid(Config),
+    send(Config, #message{from = JID, to = JID}),
+    #message{from = JID, to = JID} = recv(),
+    disconnect(Config).
+
 auth_md5(Config) ->
     Mechs = ?config(mechs, Config),
     case lists:member(<<"DIGEST-MD5">>, Mechs) of
@@ -621,7 +675,8 @@ test_auth(Config) ->
     disconnect(auth(Config)).
 
 test_auth_fail(Config0) ->
-    Config = set_opt(user, <<"wrong">>, Config0),
+    Config = set_opt(user, <<"wrong">>,
+		     set_opt(password, <<"wrong">>, Config0)),
     disconnect(auth(Config, _ShouldFail = true)).
 
 test_bind(Config) ->
@@ -659,7 +714,9 @@ roster_ver(Config) ->
     disconnect(Config).
 
 codec_failure(Config) ->
-    #iq{type = error} = send_recv(Config, #iq{type = wrong}),
+    JID = my_jid(Config),
+    #iq{type = error} =
+	send_recv(Config, #iq{type = wrong, from = JID, to = JID}),
     disconnect(Config).
 
 unsupported_query(Config) ->
@@ -829,13 +886,14 @@ private(Config) ->
                                               <<>>)},
     Storage = #bookmark_storage{conference = [Conference]},
     StorageXMLOut = xmpp_codec:encode(Storage),
+    WrongEl = #xmlel{name = <<"wrong">>},
     #iq{type = error} =
-        send_recv(Config, #iq{type = get, sub_els = [#private{}],
-                              to = server_jid(Config)}),
+        send_recv(Config, #iq{type = get,
+			      sub_els = [#private{xml_els = [WrongEl]}]}),
     #iq{type = result, sub_els = []} =
         send_recv(
           Config, #iq{type = set,
-                      sub_els = [#private{xml_els = [StorageXMLOut]}]}),
+                      sub_els = [#private{xml_els = [WrongEl, StorageXMLOut]}]}),
     #iq{type = result,
         sub_els = [#private{xml_els = [StorageXMLIn]}]} =
         send_recv(

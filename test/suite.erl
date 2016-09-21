@@ -30,11 +30,14 @@ init_config(Config) ->
     {ok, CWD} = file:get_cwd(),
     {ok, _} = file:copy(CertFile, filename:join([CWD, "cert.pem"])),
     {ok, CfgContentTpl} = file:read_file(ConfigPathTpl),
+    Password = <<"password!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>,
     CfgContent = process_config_tpl(CfgContentTpl, [
                                                     {c2s_port, 5222},
                                                     {loglevel, 5},
                                                     {s2s_port, 5269},
+						    {component_port, 5270},
                                                     {web_port, 5280},
+						    {password, Password},
                                                     {mysql_server, <<"localhost">>},
                                                     {mysql_port, 3306},
                                                     {mysql_db, <<"ejabberd_test">>},
@@ -58,13 +61,15 @@ init_config(Config) ->
     application:set_env(mnesia, dir, MnesiaDir),
     [{server_port, ct:get_config(c2s_port, 5222)},
      {server_host, "localhost"},
+     {component_port, ct:get_config(component_port, 5270)},
      {server, ?COMMON_VHOST},
      {user, <<"test_single!#$%^*()`~+-;_=[]{}|\\">>},
      {master_nick, <<"master_nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {slave_nick, <<"slave_nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {room_subject, <<"hello, world!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {certfile, CertFile},
-     {ns_client, ?NS_CLIENT},
+     {type, client},
+     {xmlns, ?NS_CLIENT},
      {ns_stream, ?NS_STREAM},
      {stream_version, <<"1.0">>},
      {stream_id, <<"">>},
@@ -74,7 +79,7 @@ init_config(Config) ->
      {resource, <<"resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {master_resource, <<"master_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {slave_resource, <<"slave_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
-     {password, <<"password!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {password, Password},
      {backends, get_config_backends()}
      |Config].
 
@@ -126,20 +131,29 @@ process_config_tpl(Content, [{Name, DefaultValue} | Rest]) ->
 
 stream_header(Config) ->
     NSStream = ?config(ns_stream, Config),
-    NSClient = ?config(ns_client, Config),
-    Lang = ?config(lang, Config),
+    XMLNS = ?config(xmlns, Config),
+    Lang = case ?config(lang, Config) of
+	       <<"">> -> <<"">>;
+	       L -> iolist_to_binary(["xml:lang='", L, "'"])
+	   end,
     To = case ?config(server, Config) of
 	     <<"">> -> <<"">>;
 	     Server -> <<"to='", Server/binary, "'">>
 	 end,
-    Version = ?config(stream_version, Config),
+    Version = case ?config(stream_version, Config) of
+		  <<"">> -> <<"">>;
+		  V -> <<"version='", V/binary, "'">>
+	      end,
     io_lib:format("<?xml version='1.0'?><stream:stream "
-		  "xmlns:stream='~s' xmlns='~s' ~s "
-		  "version='~s' xml:lang='~s'>",
-		  [NSStream, NSClient, To, Version, Lang]).
+		  "xmlns:stream='~s' xmlns='~s' ~s ~s ~s>",
+		  [NSStream, XMLNS, To, Version, Lang]).
 
 connect(Config) ->
-    process_stream_features(init_stream(Config)).
+    NewConfig = init_stream(Config),
+    case ?config(type, NewConfig) of
+	client -> process_stream_features(NewConfig);
+	component -> NewConfig
+    end.
 
 init_stream(Config) ->
     Version = ?config(stream_version, Config),
@@ -149,8 +163,11 @@ init_stream(Config) ->
                    [binary, {packet, 0}, {active, false}]),
     NewConfig = set_opt(socket, Sock, Config),
     ok = send_text(NewConfig, stream_header(NewConfig)),
-    #stream_start{id = ID, xmlns = ?NS_CLIENT,
-		  version = Version} = recv(),
+    XMLNS = case ?config(type, Config) of
+		client -> ?NS_CLIENT;
+		component -> ?NS_COMPONENT
+	    end,
+    #stream_start{id = ID, xmlns = XMLNS, version = Version} = recv(),
     set_opt(stream_id, ID, NewConfig).
 
 process_stream_features(Config) ->
@@ -174,7 +191,11 @@ process_stream_features(Config) ->
 
 disconnect(Config) ->
     Socket = ?config(socket, Config),
-    ok = ejabberd_socket:send(Socket, ?STREAM_TRAILER),
+    try
+	ok = send_text(Config, ?STREAM_TRAILER)
+    catch exit:normal ->
+	    ok
+    end,
     {xmlstreamend, <<"stream:stream">>} = recv(),
     ejabberd_socket:close(Socket),
     Config.
@@ -203,6 +224,7 @@ auth(Config) ->
     auth(Config, false).
 
 auth(Config, ShouldFail) ->
+    Type = ?config(type, Config),
     Mechs = ?config(mechs, Config),
     HaveMD5 = lists:member(<<"DIGEST-MD5">>, Mechs),
     HavePLAIN = lists:member(<<"PLAIN">>, Mechs),
@@ -210,16 +232,23 @@ auth(Config, ShouldFail) ->
             auth_SASL(<<"PLAIN">>, Config, ShouldFail);
        HaveMD5 ->
             auth_SASL(<<"DIGEST-MD5">>, Config, ShouldFail);
-       true ->
-	    auth_legacy(Config, false, ShouldFail)
+       Type == client ->
+	    auth_legacy(Config, false, ShouldFail);
+       Type == component ->
+	    auth_component(Config, ShouldFail)
     end.
 
 bind(Config) ->
-    #iq{type = result, sub_els = [#bind{}]} =
-        send_recv(
-          Config,
-          #iq{type = set,
-              sub_els = [#bind{resource = ?config(resource, Config)}]}),
+    case ?config(type, Config) of
+	client ->
+	    #iq{type = result, sub_els = [#bind{}]} =
+		send_recv(
+		  Config,
+		  #iq{type = set,
+		      sub_els = [#bind{resource = ?config(resource, Config)}]});
+	component ->
+	    ok
+    end,
     Config.
 
 open_session(Config) ->
@@ -277,6 +306,22 @@ auth_legacy(Config, IsDigest, ShouldFail) ->
 	       true ->
 		    ct:fail(legacy_auth_failed)
 	    end
+    end.
+
+auth_component(Config, ShouldFail) ->
+    StreamID = ?config(stream_id, Config),
+    Password = ?config(password, Config),
+    Digest = p1_sha:sha(<<StreamID/binary, Password/binary>>),
+    send(Config, #handshake{data = Digest}),
+    case recv() of
+	#handshake{} when ShouldFail ->
+	    ct:fail(component_auth_should_have_failed);
+	#handshake{} ->
+	    Config;
+	#stream_error{reason = 'not-authorized'} when ShouldFail ->
+	    Config;
+	#stream_error{reason = 'not-authorized'} ->
+	    ct:fail(component_auth_failed)
     end.
 
 auth_SASL(Mech, Config) ->
