@@ -149,6 +149,10 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 	#stream_start{} ->
 	    send_header(StateData, ?MYNAME),
 	    send_element(StateData, xmpp:serr_improper_addressing()),
+	    {stop, normal, StateData};
+	_ ->
+	    send_header(StateData, ?MYNAME),
+	    send_element(StateData, xmpp:serr_invalid_xml()),
 	    {stop, normal, StateData}
     catch _:{xmpp_codec, Why} ->
 	    Txt = xmpp:format_error(Why),
@@ -319,13 +323,12 @@ send_error(StateData, Stanza, Error) ->
 
 -spec send_header(state(), binary()) -> ok.
 send_header(StateData, Host) ->
-    send_text(StateData,
-	      io_lib:format(
-		<<"<?xml version='1.0'?><stream:stream "
-		  "xmlns:stream='http://etherx.jabber.org/stream"
-		  "s' xmlns='jabber:component:accept' id='~s' "
-		  "from='~s'>">>,
-		[StateData#state.streamid, fxml:crypt(Host)])).
+    Header = xmpp:encode(
+	       #stream_start{xmlns = ?NS_COMPONENT,
+			     stream_xmlns = ?NS_STREAM,
+			     from = jid:make(Host),
+			     id = StateData#state.streamid}),
+    send_text(StateData, fxml:element_to_header(Header)).
 
 -spec send_trailer(state()) -> ok.
 send_trailer(StateData) ->

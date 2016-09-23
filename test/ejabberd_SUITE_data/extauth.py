@@ -7,7 +7,10 @@ def read():
     cmd = pkt[0]
     args_num = len(pkt) - 1
     if cmd == 'auth' and args_num >= 3:
-        write(True)
+        if pkt[1] == "wrong":
+            write(False)
+        else:
+            write(True)
     elif cmd == 'isuser' and args_num == 2:
         write(True)
     elif cmd == 'setpass' and args_num >= 3:

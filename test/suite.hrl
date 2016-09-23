@@ -75,6 +75,7 @@
 -define(LDAP_VHOST, <<"ldap.localhost">>).
 -define(EXTAUTH_VHOST, <<"extauth.localhost">>).
 -define(RIAK_VHOST, <<"riak.localhost">>).
+-define(S2S_VHOST, <<"s2s.localhost">>).
 
 insert(Val, N, Tuple) ->
     L = tuple_to_list(Tuple),

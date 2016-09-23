@@ -106,12 +106,6 @@
 %% Specified in miliseconds. Default value is 5 minutes.
 -define(MAX_RETRY_DELAY, 300000).
 
--define(STREAM_HEADER,
-	<<"<?xml version='1.0'?><stream:stream "
-	  "xmlns:stream='http://etherx.jabber.org/stream"
-	  "s' xmlns='jabber:server' xmlns:db='jabber:ser"
-	  "ver:dialback' from='~s' to='~s'~s>">>).
-
 -define(SOCKET_DEFAULT_RESULT, {error, badarg}).
 
 %%%----------------------------------------------------------------------
@@ -228,9 +222,8 @@ open_socket(init, StateData) ->
 		     ?SOCKET_DEFAULT_RESULT, AddrList)
 	of
       {ok, Socket} ->
-	  Version = if StateData#state.use_v10 ->
-			   <<" version='1.0'">>;
-		       true -> <<"">>
+	  Version = if StateData#state.use_v10 -> {1,0};
+		       true -> undefined
 		    end,
 	  NewStateData = StateData#state{socket = Socket,
 					 tls_enabled = false,
@@ -318,11 +311,10 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData0) ->
 	    {stop, normal, StateData};
 	#stream_start{xmlns = NS_SERVER, stream_xmlns = NS_STREAM}
 	  when NS_SERVER /= ?NS_SERVER; NS_STREAM /= ?NS_STREAM ->
-	    send_header(StateData, <<" version='1.0'">>),
 	    send_element(StateData, xmpp:serr_invalid_namespace()),
 	    {stop, normal, StateData};
 	#stream_start{db_xmlns = ?NS_SERVER_DIALBACK, id = ID,
-		      version = V} when V /= <<"1.0">> ->
+		      version = V} when V /= {1,0} ->
 	    send_db_request(StateData#state{remote_streamid = ID});
 	#stream_start{db_xmlns = ?NS_SERVER_DIALBACK, id = ID}
 	  when StateData#state.use_v10 ->
@@ -337,13 +329,14 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData0) ->
 	     StateData#state{db_enabled = false, remote_streamid = ID},
 	     ?FSMTIMEOUT};
 	#stream_start{} ->
-	    send_header(StateData, <<"">>),
 	    send_element(StateData, xmpp:serr_invalid_namespace()),
-	    {stop, normal, StateData}
+	    {stop, normal, StateData};
+	_ ->
+	    send_element(StateData, xmpp:serr_invalid_xml()),
+            {stop, normal, StateData}
     catch _:{xmpp_codec, Why} ->
 	    Txt = xmpp:format_error(Why),
-	    send_header(StateData, <<" version='1.0'">>),
-	    send_element(StateData, xmpp:serr_not_well_formed(Txt, ?MYLANG)),
+	    send_element(StateData, xmpp:serr_invalid_xml(Txt, ?MYLANG)),
 	    {stop, normal, StateData}
     end;
 wait_for_stream(Event, StateData) ->
@@ -469,7 +462,7 @@ wait_for_auth_result({xmlstreamelement, El}, StateData) ->
 wait_for_auth_result(#sasl_success{}, StateData) ->
     ?DEBUG("auth: ~p", [{StateData#state.myname, StateData#state.server}]),
     ejabberd_socket:reset_stream(StateData#state.socket),
-    send_header(StateData, <<" version='1.0'">>),
+    send_header(StateData, {1,0}),
     {next_state, wait_for_stream,
      StateData#state{streamid = new_id(), authenticated = true},
      ?FSMTIMEOUT};
@@ -500,7 +493,7 @@ wait_for_starttls_proceed(#starttls_proceed{}, StateData) ->
 				   streamid = new_id(),
 				   tls_enabled = true,
 				   tls_options = TLSOpts},
-    send_header(NewStateData, <<" version='1.0'">>),
+    send_header(NewStateData, {1,0}),
     {next_state, wait_for_stream, NewStateData, ?FSMTIMEOUT};
 wait_for_starttls_proceed(Event, StateData) ->
     handle_unexpected_event(Event, wait_for_starttls_proceed, StateData).
@@ -567,7 +560,8 @@ handle_unexpected_event(Event, StateName, StateData) ->
 	{xmlstreamend, _} ->
 	    ?INFO_MSG("Closing s2s connection ~s -> ~s in state ~s: "
 		      "XML stream closed by peer",
-		      [StateData#state.myname, StateData#state.server]),
+		      [StateData#state.myname, StateData#state.server,
+		       StateName]),
 	    {stop, normal, StateData};
 	timeout ->
 	    send_element(StateData, xmpp:serr_connection_timeout()),
@@ -741,6 +735,7 @@ print_state(State) -> State.
 
 -spec send_text(state(), iodata()) -> ok.
 send_text(StateData, Text) ->
+    ?DEBUG("Send Text on stream = ~s", [Text]),
     ejabberd_socket:send(StateData#state.socket, Text).
 
 -spec send_element(state(), xmpp_element()) -> ok.
@@ -748,15 +743,16 @@ send_element(StateData, El) ->
     El1 = fix_ns(xmpp:encode(El)),
     send_text(StateData, fxml:element_to_binary(El1)).
 
--spec send_header(state(), binary()) -> ok.
+-spec send_header(state(), undefined | {integer(), integer()}) -> ok.
 send_header(StateData, Version) ->
-    Txt = io_lib:format(
-	    "<?xml version='1.0'?><stream:stream "
-	    "xmlns:stream='http://etherx.jabber.org/stream"
-	    "s' xmlns='jabber:server' xmlns:db='jabber:ser"
-	    "ver:dialback' from='~s' to='~s'~s>",
-	    [StateData#state.myname, StateData#state.server, Version]),
-    send_text(StateData, Txt).
+    Header = xmpp:encode(
+	       #stream_start{xmlns = ?NS_SERVER,
+			     stream_xmlns = ?NS_STREAM,
+			     db_xmlns = ?NS_SERVER_DIALBACK,
+			     from = jid:make(StateData#state.myname),
+			     to = jid:make(StateData#state.server),
+			     version = Version}),
+    send_text(StateData, fxml:element_to_header(Header)).
 
 -spec send_trailer(state()) -> ok.
 send_trailer(StateData) ->

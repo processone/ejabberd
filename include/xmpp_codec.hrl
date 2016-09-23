@@ -158,7 +158,7 @@
 -record(stream_start, {from :: jid:jid(),
                        to :: jid:jid(),
                        id = <<>> :: binary(),
-                       version = <<>> :: binary(),
+                       version :: {non_neg_integer(),non_neg_integer()},
                        xmlns = <<>> :: binary(),
                        stream_xmlns = <<>> :: binary(),
                        db_xmlns = <<>> :: binary(),

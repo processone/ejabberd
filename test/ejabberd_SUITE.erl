@@ -20,13 +20,13 @@
                 make_iq_result/1, start_event_relay/0,
                 stop_event_relay/1, put_event/2, get_event/1,
                 bind/1, auth/1, auth/2, open_session/1, open_session/2,
-		zlib/1, starttls/1, close_socket/1, init_stream/1,
-		auth_legacy/2, auth_legacy/3]).
+		zlib/1, starttls/1, starttls/2, close_socket/1, init_stream/1,
+		auth_legacy/2, auth_legacy/3, tcp_connect/1, send_text/2]).
 
 -include("suite.hrl").
 
 suite() ->
-    [{timetrap, {seconds,10}}].
+    [{timetrap, {seconds,30}}].
 
 init_per_suite(Config) ->
     NewConfig = init_config(Config),
@@ -36,6 +36,10 @@ init_per_suite(Config) ->
     LDIFFile = filename:join([DataDir, "ejabberd.ldif"]),
     {ok, _} = file:copy(ExtAuthScript, filename:join([CWD, "extauth.py"])),
     {ok, _} = ldap_srv:start(LDIFFile),
+    inet_db:add_host({127,0,0,1}, [binary_to_list(?S2S_VHOST),
+				   binary_to_list(?MNESIA_VHOST)]),
+    inet_db:set_domain(binary_to_list(randoms:get_string())),
+    inet_db:set_lookup([file, native]),
     start_ejabberd(NewConfig),
     NewConfig.
 
@@ -125,6 +129,16 @@ do_init_per_group(riak, Config) ->
 	Err ->
 	    {skip, {riak_not_available, Err}}
     end;
+do_init_per_group(s2s, Config) ->
+    ejabberd_config:add_option(s2s_use_starttls, required_trusted),
+    ejabberd_config:add_option(domain_certfile, "cert.pem"),
+    Port = ?config(s2s_port, Config),
+    set_opt(server, ?COMMON_VHOST,
+	    set_opt(xmlns, ?NS_SERVER,
+		    set_opt(type, server,
+			    set_opt(server_port, Port,
+				    set_opt(stream_from, ?S2S_VHOST,
+					    set_opt(lang, <<"">>, Config))))));
 do_init_per_group(component, Config) ->
     Server = ?config(server, Config),
     Port = ?config(component_port, Config),
@@ -132,7 +146,7 @@ do_init_per_group(component, Config) ->
             set_opt(server, <<"component.", Server/binary>>,
                     set_opt(type, component,
                             set_opt(server_port, Port,
-                                    set_opt(stream_version, <<"">>,
+                                    set_opt(stream_version, undefined,
                                             set_opt(lang, <<"">>, Config))))));
 do_init_per_group(_GroupName, Config) ->
     Pid = start_event_relay(),
@@ -158,6 +172,8 @@ end_per_group(riak, _Config) ->
     ok;
 end_per_group(component, _Config) ->
     ok;
+end_per_group(s2s, _Config) ->
+    ejabberd_config:add_option(s2s_use_starttls, false);
 end_per_group(_GroupName, Config) ->
     stop_event_relay(Config),
     ok.
@@ -215,7 +231,7 @@ init_per_testcase(TestCase, OrigConfig) ->
         "test_connect" ++ _ ->
             Config;
 	"test_legacy_auth" ++ _ ->
-	    init_stream(set_opt(stream_version, <<"">>, Config));
+	    init_stream(set_opt(stream_version, undefined, Config));
         "test_auth" ++ _ ->
             connect(Config);
         "test_starttls" ++ _ ->
@@ -244,6 +260,8 @@ init_per_testcase(TestCase, OrigConfig) ->
             Password = ?config(password, Config),
             ejabberd_auth:try_register(User, Server, Password),
             open_session(bind(auth(connect(Config))));
+	_ when TestGroup == s2s_tests ->
+	    auth(connect(starttls(connect(Config))));
         _ ->
             open_session(bind(auth(connect(Config))))
     end.
@@ -262,6 +280,7 @@ legacy_auth_tests() ->
 no_db_tests() ->
     [{generic, [parallel],
       [test_connect_bad_xml,
+       test_connect_unexpected_xml,
        test_connect_unknown_ns,
        test_connect_bad_xmlns,
        test_connect_bad_ns_stream,
@@ -286,7 +305,12 @@ no_db_tests() ->
        time,
        stats,
        disco]},
-     {presence, [sequence], [presence]},
+     {presence_and_s2s, [sequence],
+      [presence,
+       s2s_dialback,
+       s2s_optional,
+       s2s_required,
+       s2s_required_trusted]},
      {sm, [sequence],
        [sm,
 	sm_resume,
@@ -433,18 +457,39 @@ extauth_tests() ->
        test_unregister]}].
 
 component_tests() ->
-    [{component_tests, [sequence],
+    [{component_connect, [parallel],
       [test_connect_bad_xml,
+       test_connect_unexpected_xml,
        test_connect_unknown_ns,
        test_connect_bad_xmlns,
        test_connect_bad_ns_stream,
        test_connect_missing_to,
        test_connect,
        test_auth,
-       test_auth_fail,
-       component_missing_address,
-       component_invalid_from,
-       component_send,
+       test_auth_fail]},
+     {component_tests, [sequence],
+      [test_missing_address,
+       test_invalid_from,
+       test_component_send,
+       bad_nonza,
+       codec_failure]}].
+
+s2s_tests() ->
+    [{s2s_connect, [parallel],
+      [test_connect_bad_xml,
+       test_connect_unexpected_xml,
+       test_connect_unknown_ns,
+       test_connect_bad_xmlns,
+       test_connect_bad_ns_stream,
+       test_connect,
+       test_connect_s2s_starttls_required,
+       test_starttls,
+       test_connect_missing_from,
+       test_connect_s2s_unauthenticated_iq,
+       test_auth_starttls]},
+     {s2s_tests, [sequence],
+      [test_missing_address,
+       test_invalid_from,
        bad_nonza,
        codec_failure]}].
 
@@ -453,6 +498,7 @@ groups() ->
      {extauth, [sequence], extauth_tests()},
      {no_db, [sequence], no_db_tests()},
      {component, [sequence], component_tests()},
+     {s2s, [sequence], s2s_tests()},
      {mnesia, [sequence], db_tests(mnesia)},
      {redis, [sequence], db_tests(redis)},
      {mysql, [sequence], db_tests(mysql)},
@@ -461,16 +507,17 @@ groups() ->
      {riak, [sequence], db_tests(riak)}].
 
 all() ->
-    [{group, component},
-     %%{group, ldap},
+    [{group, ldap},
      {group, no_db},
      {group, mnesia},
-     %%{group, redis},
-     %%{group, mysql},
-     %%{group, pgsql},
-     %%{group, sqlite},
-     %%{group, extauth},
-     %%{group, riak},
+     {group, redis},
+     {group, mysql},
+     {group, pgsql},
+     {group, sqlite},
+     {group, extauth},
+     {group, riak},
+     {group, component},
+     {group, s2s},
      stop_ejabberd].
 
 stop_ejabberd(Config) ->
@@ -480,8 +527,20 @@ stop_ejabberd(Config) ->
     Config.
 
 test_connect_bad_xml(Config) ->
-    Config0 = init_stream(set_opt(xmlns, <<"'">>, Config)),
+    Config0 = tcp_connect(Config),
+    send_text(Config0, <<"<'/>">>),
+    Version = ?config(stream_version, Config0),
+    ?recv1(#stream_start{version = Version}),
     ?recv1(#stream_error{reason = 'not-well-formed'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config0).
+
+test_connect_unexpected_xml(Config) ->
+    Config0 = tcp_connect(Config),
+    send(Config0, #caps{}),
+    Version = ?config(stream_version, Config0),
+    ?recv1(#stream_start{version = Version}),
+    ?recv1(#stream_error{reason = 'invalid-xml'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config0).
 
@@ -492,7 +551,11 @@ test_connect_unknown_ns(Config) ->
     close_socket(Config0).
 
 test_connect_bad_xmlns(Config) ->
-    Config0 = init_stream(set_opt(xmlns, ?NS_SERVER, Config)),
+    NS = case ?config(type, Config) of
+	     client -> ?NS_SERVER;
+	     _ -> ?NS_CLIENT
+	 end,
+    Config0 = init_stream(set_opt(xmlns, NS, Config)),
     ?recv1(#stream_error{reason = 'invalid-namespace'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config0).
@@ -521,19 +584,32 @@ test_connect_missing_to(Config) ->
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config0).
 
+test_connect_missing_from(Config) ->
+    Config1 = starttls(connect(Config)),
+    Config2 = set_opt(stream_from, <<"">>, Config1),
+    Config3 = init_stream(Config2),
+    ?recv1(#stream_error{reason = 'policy-violation'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config3).
+
 test_connect(Config) ->
     disconnect(connect(Config)).
 
-test_component_connect(Config) ->
-    disconnect(component_connect(Config)).
+test_connect_s2s_starttls_required(Config) ->
+    Config1 = connect(Config),
+    send(Config1, #caps{}),
+    ?recv1(#stream_error{reason = 'policy-violation'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config1).
 
-component_connect(Config) ->
-    init_stream(Config).
+test_connect_s2s_unauthenticated_iq(Config) ->
+    Config1 = connect(starttls(connect(Config))),
+    unauthenticated_iq(Config1).
 
 test_starttls(Config) ->
     case ?config(starttls, Config) of
         true ->
-            disconnect(starttls(Config));
+            disconnect(connect(starttls(Config)));
         _ ->
             {skipped, 'starttls_not_available'}
     end.
@@ -597,8 +673,11 @@ unauthenticated_stanza(Config) ->
     disconnect(Config).
 
 unauthenticated_iq(Config) ->
+    From = my_jid(Config),
+    To = server_jid(Config),
     #iq{type = error} =
-	send_recv(Config, #iq{type = get, sub_els = [#disco_info{}]}),
+	send_recv(Config, #iq{type = get, from = From, to = To,
+			      sub_els = [#disco_info{}]}),
     disconnect(Config).
 
 bad_nonza(Config) ->
@@ -613,23 +692,57 @@ invalid_from(Config) ->
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config).
 
-component_missing_address(Config) ->
+test_missing_address(Config) ->
     Server = server_jid(Config),
     #iq{type = error} = send_recv(Config, #iq{type = get, from = Server}),
     #iq{type = error} = send_recv(Config, #iq{type = get, to = Server}),
     disconnect(Config).
 
-component_invalid_from(Config) ->
+test_invalid_from(Config) ->
     From = jid:make(randoms:get_string()),
     To = jid:make(randoms:get_string()),
     #iq{type = error} =
 	send_recv(Config, #iq{type = get, from = From, to = To}),
     disconnect(Config).
 
-component_send(Config) ->
-    JID = my_jid(Config),
-    send(Config, #message{from = JID, to = JID}),
-    #message{from = JID, to = JID} = recv(),
+test_component_send(Config) ->
+    To = jid:make(?COMMON_VHOST),
+    From = server_jid(Config),
+    #iq{type = result, from = To, to = From} =
+	send_recv(Config, #iq{type = get, to = To, from = From,
+			      sub_els = [#ping{}]}),
+    disconnect(Config).
+
+s2s_dialback(Config) ->
+    ejabberd_s2s:stop_all_connections(),
+    ejabberd_config:add_option(s2s_use_starttls, false),
+    ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
+    s2s_ping(Config).
+
+s2s_optional(Config) ->
+    ejabberd_s2s:stop_all_connections(),
+    ejabberd_config:add_option(s2s_use_starttls, optional),
+    ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
+    s2s_ping(Config).
+
+s2s_required(Config) ->
+    ejabberd_s2s:stop_all_connections(),
+    ejabberd_config:add_option(s2s_use_starttls, required),
+    ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
+    s2s_ping(Config).
+
+s2s_required_trusted(Config) ->
+    ejabberd_s2s:stop_all_connections(),
+    ejabberd_config:add_option(s2s_use_starttls, required),
+    ejabberd_config:add_option(domain_certfile, "cert.pem"),
+    s2s_ping(Config).
+
+s2s_ping(Config) ->
+    From = my_jid(Config),
+    To = jid:make(?MNESIA_VHOST),
+    ID = randoms:get_string(),
+    ejabberd_s2s:route(From, To, #iq{id = ID, type = get, sub_els = [#ping{}]}),
+    ?recv1(#iq{type = result, id = ID, sub_els = []}),
     disconnect(Config).
 
 auth_md5(Config) ->
@@ -673,6 +786,9 @@ test_legacy_auth_fail(Config0) ->
 
 test_auth(Config) ->
     disconnect(auth(Config)).
+
+test_auth_starttls(Config) ->
+    disconnect(auth(connect(starttls(Config)))).
 
 test_auth_fail(Config0) ->
     Config = set_opt(user, <<"wrong">>,
@@ -1895,7 +2011,6 @@ announce_slave(Config) ->
 
 flex_offline_master(Config) ->
     Peer = ?config(slave, Config),
-    ct:log("hooks = ~p", [ets:tab2list(hooks)]),
     LPeer = jid:remove_resource(Peer),
     lists:foreach(
       fun(I) ->

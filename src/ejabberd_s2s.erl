@@ -39,6 +39,7 @@
 	 remove_connection/2, find_connection/2,
 	 dirty_get_connections/0, allow_host/2,
 	 incoming_s2s_number/0, outgoing_s2s_number/0,
+	 stop_all_connections/0,
 	 clean_temporarily_blocked_table/0,
 	 list_temporarily_blocked_hosts/0,
 	 external_host_overloaded/1, is_temporarly_blocked/1,
@@ -480,13 +481,28 @@ get_commands_spec() ->
 			    "the node",
                         policy = admin,
 			module = ?MODULE, function = outgoing_s2s_number,
-			args = [], result = {s2s_outgoing, integer}}].
+			args = [], result = {s2s_outgoing, integer}},
+     #ejabberd_commands{name = stop_all_connections,
+			tags = [s2s],
+			desc = "Stop all outgoing and incoming connections",
+			policy = admin,
+			module = ?MODULE, function = stop_all_connections,
+			args = [], result = {res, rescode}}].
 
 incoming_s2s_number() ->
     length(supervisor:which_children(ejabberd_s2s_in_sup)).
 
 outgoing_s2s_number() ->
     length(supervisor:which_children(ejabberd_s2s_out_sup)).
+
+stop_all_connections() ->
+    lists:foreach(
+      fun({_Id, Pid, _Type, _Module}) ->
+	      exit(Pid, kill)
+      end,
+      supervisor:which_children(ejabberd_s2s_in_sup) ++
+	  supervisor:which_children(ejabberd_s2s_out_sup)),
+    mnesia:clear_table(s2s).
 
 %%%----------------------------------------------------------------------
 %%% Update Mnesia tables

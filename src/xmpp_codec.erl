@@ -3955,6 +3955,14 @@ pp(upload_slot, 3) -> [get, put, xmlns];
 pp(thumbnail, 4) -> [uri, 'media-type', width, height];
 pp(_, _) -> no.
 
+enc_version({Maj, Min}) ->
+    <<(integer_to_binary(Maj))/binary, $.,
+      (integer_to_binary(Min))/binary>>.
+
+dec_version(S) ->
+    [Major, Minor] = binary:split(S, <<$.>>),
+    {binary_to_integer(Major), binary_to_integer(Minor)}.
+
 enc_host_port(Host) when is_binary(Host) -> Host;
 enc_host_port({{_, _, _, _, _, _, _, _} = IPv6,
 	       Port}) ->
@@ -5284,13 +5292,20 @@ encode_stream_start_attr_xmlns(_val, _acc) ->
 
 decode_stream_start_attr_version(__TopXMLNS,
 				 undefined) ->
-    <<>>;
+    undefined;
 decode_stream_start_attr_version(__TopXMLNS, _val) ->
-    _val.
+    case catch dec_version(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"version">>, <<"stream:stream">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
 
-encode_stream_start_attr_version(<<>>, _acc) -> _acc;
+encode_stream_start_attr_version(undefined, _acc) ->
+    _acc;
 encode_stream_start_attr_version(_val, _acc) ->
-    [{<<"version">>, _val} | _acc].
+    [{<<"version">>, enc_version(_val)} | _acc].
 
 decode_stream_start_attr_id(__TopXMLNS, undefined) ->
     <<>>;

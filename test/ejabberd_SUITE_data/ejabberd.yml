@@ -409,6 +409,7 @@ acl:
     user_regexp: ""
 define_macro: 
   CERTFILE: "cert.pem"
+  CAFILE: "ca.pem"
 language: "en"
 listen: 
   - 
@@ -450,6 +451,10 @@ Welcome to this XMPP server."
   mod_time: []
   mod_version: []
 registration_timeout: infinity
+route_subdomains: s2s
+domain_certfile: CERTFILE
+s2s_use_starttls: false
+s2s_cafile: CAFILE
 shaper: 
   fast: 50000
   normal: 1000

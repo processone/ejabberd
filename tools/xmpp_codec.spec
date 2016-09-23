@@ -3215,7 +3215,9 @@
 			  default = <<"">>},
 		    #attr{name = <<"xml:lang">>, label = '$lang',
 			  default = <<"">>},
-		    #attr{name = <<"version">>, default = <<"">>},
+		    #attr{name = <<"version">>,
+			  dec = {dec_version, []},
+			  enc = {enc_version, []}},
 		    #attr{name = <<"id">>, default = <<"">>}]}).
 
 -xml(bob_data,
@@ -3478,6 +3480,14 @@ enc_host_port({Host, Port}) ->
     <<Host/binary, $:, (integer_to_binary(Port))/binary>>;
 enc_host_port(Addr) ->
     enc_ip(Addr).
+
+-spec dec_version(_) -> {non_neg_integer(), non_neg_integer()}.
+dec_version(S) ->
+    [Major, Minor] = binary:split(S, <<$.>>),
+    {binary_to_integer(Major), binary_to_integer(Minor)}.
+
+enc_version({Maj, Min}) ->
+    <<(integer_to_binary(Maj))/binary, $., (integer_to_binary(Min))/binary>>.
 
 %% Local Variables:
 %% mode: erlang

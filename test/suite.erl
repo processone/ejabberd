@@ -27,13 +27,18 @@ init_config(Config) ->
     SASLPath = filename:join([PrivDir, "sasl.log"]),
     MnesiaDir = filename:join([PrivDir, "mnesia"]),
     CertFile = filename:join([DataDir, "cert.pem"]),
+    SelfSignedCertFile = filename:join([DataDir, "self-signed-cert.pem"]),
+    CAFile = filename:join([DataDir, "ca.pem"]),
     {ok, CWD} = file:get_cwd(),
     {ok, _} = file:copy(CertFile, filename:join([CWD, "cert.pem"])),
+    {ok, _} = file:copy(SelfSignedCertFile,
+			filename:join([CWD, "self-signed-cert.pem"])),
+    {ok, _} = file:copy(CAFile, filename:join([CWD, "ca.pem"])),
     {ok, CfgContentTpl} = file:read_file(ConfigPathTpl),
     Password = <<"password!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>,
     CfgContent = process_config_tpl(CfgContentTpl, [
                                                     {c2s_port, 5222},
-                                                    {loglevel, 5},
+                                                    {loglevel, 4},
                                                     {s2s_port, 5269},
 						    {component_port, 5270},
                                                     {web_port, 5280},
@@ -62,6 +67,7 @@ init_config(Config) ->
     [{server_port, ct:get_config(c2s_port, 5222)},
      {server_host, "localhost"},
      {component_port, ct:get_config(component_port, 5270)},
+     {s2s_port, ct:get_config(s2s_port, 5269)},
      {server, ?COMMON_VHOST},
      {user, <<"test_single!#$%^*()`~+-;_=[]{}|\\">>},
      {master_nick, <<"master_nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
@@ -71,11 +77,14 @@ init_config(Config) ->
      {type, client},
      {xmlns, ?NS_CLIENT},
      {ns_stream, ?NS_STREAM},
-     {stream_version, <<"1.0">>},
+     {stream_version, {1, 0}},
      {stream_id, <<"">>},
+     {stream_from, <<"">>},
+     {db_xmlns, <<"">>},
      {mechs, []},
      {lang, <<"en">>},
      {base_dir, BaseDir},
+     {socket, undefined},
      {resource, <<"resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {master_resource, <<"master_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {slave_resource, <<"slave_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
@@ -130,42 +139,50 @@ process_config_tpl(Content, [{Name, DefaultValue} | Rest]) ->
     process_config_tpl(NewContent, Rest).
 
 stream_header(Config) ->
-    NSStream = ?config(ns_stream, Config),
-    XMLNS = ?config(xmlns, Config),
-    Lang = case ?config(lang, Config) of
-	       <<"">> -> <<"">>;
-	       L -> iolist_to_binary(["xml:lang='", L, "'"])
-	   end,
     To = case ?config(server, Config) of
-	     <<"">> -> <<"">>;
-	     Server -> <<"to='", Server/binary, "'">>
+	     <<"">> -> undefined;
+	     Server -> jid:make(Server)
 	 end,
-    Version = case ?config(stream_version, Config) of
-		  <<"">> -> <<"">>;
-		  V -> <<"version='", V/binary, "'">>
-	      end,
-    io_lib:format("<?xml version='1.0'?><stream:stream "
-		  "xmlns:stream='~s' xmlns='~s' ~s ~s ~s>",
-		  [NSStream, XMLNS, To, Version, Lang]).
+    From = case ?config(stream_from, Config) of
+	       <<"">> -> undefined;
+	       Frm -> jid:make(Frm)
+	   end,
+    #stream_start{to = To,
+		  from = From,
+		  lang = ?config(lang, Config),
+		  version = ?config(stream_version, Config),
+		  xmlns = ?config(xmlns, Config),
+		  db_xmlns = ?config(db_xmlns, Config),
+		  stream_xmlns = ?config(ns_stream, Config)}.
 
 connect(Config) ->
     NewConfig = init_stream(Config),
     case ?config(type, NewConfig) of
 	client -> process_stream_features(NewConfig);
+	server -> process_stream_features(NewConfig);
 	component -> NewConfig
+    end.
+
+tcp_connect(Config) ->
+    case ?config(socket, Config) of
+	undefined ->
+	    {ok, Sock} = ejabberd_socket:connect(
+			   ?config(server_host, Config),
+			   ?config(server_port, Config),
+			   [binary, {packet, 0}, {active, false}]),
+	    set_opt(socket, Sock, Config);
+	_ ->
+	    Config
     end.
 
 init_stream(Config) ->
     Version = ?config(stream_version, Config),
-    {ok, Sock} = ejabberd_socket:connect(
-                   ?config(server_host, Config),
-                   ?config(server_port, Config),
-                   [binary, {packet, 0}, {active, false}]),
-    NewConfig = set_opt(socket, Sock, Config),
-    ok = send_text(NewConfig, stream_header(NewConfig)),
+    NewConfig = tcp_connect(Config),
+    send(NewConfig, stream_header(NewConfig)),
     XMLNS = case ?config(type, Config) of
 		client -> ?NS_CLIENT;
-		component -> ?NS_COMPONENT
+		component -> ?NS_COMPONENT;
+		server -> ?NS_SERVER
 	    end,
     #stream_start{id = ID, xmlns = XMLNS, version = Version} = recv(),
     set_opt(stream_id, ID, NewConfig).
@@ -206,13 +223,24 @@ close_socket(Config) ->
     Config.
 
 starttls(Config) ->
+    starttls(Config, false).
+
+starttls(Config, ShouldFail) ->
     send(Config, #starttls{}),
-    #starttls_proceed{} = recv(),
-    TLSSocket = ejabberd_socket:starttls(
-                  ?config(socket, Config),
-                  [{certfile, ?config(certfile, Config)},
-                   connect]),
-    process_stream_features(init_stream(set_opt(socket, TLSSocket, Config))).
+    case recv() of
+	#starttls_proceed{} when ShouldFail ->
+	    ct:fail(starttls_should_have_failed);
+	#starttls_failure{} when ShouldFail ->
+	    Config;
+	#starttls_failure{} ->
+	    ct:fail(starttls_failed);
+	#starttls_proceed{} ->
+	    TLSSocket = ejabberd_socket:starttls(
+			  ?config(socket, Config),
+			  [{certfile, ?config(certfile, Config)},
+			   connect]),
+	    set_opt(socket, TLSSocket, Config)
+    end.
 
 zlib(Config) ->
     send(Config, #compress{methods = [<<"zlib">>]}),
@@ -228,14 +256,19 @@ auth(Config, ShouldFail) ->
     Mechs = ?config(mechs, Config),
     HaveMD5 = lists:member(<<"DIGEST-MD5">>, Mechs),
     HavePLAIN = lists:member(<<"PLAIN">>, Mechs),
+    HaveExternal = lists:member(<<"EXTERNAL">>, Mechs),
     if HavePLAIN ->
             auth_SASL(<<"PLAIN">>, Config, ShouldFail);
        HaveMD5 ->
             auth_SASL(<<"DIGEST-MD5">>, Config, ShouldFail);
+       HaveExternal andalso Type == server ->
+	    auth_SASL(<<"EXTERNAL">>, Config, ShouldFail);
        Type == client ->
 	    auth_legacy(Config, false, ShouldFail);
        Type == component ->
-	    auth_component(Config, ShouldFail)
+	    auth_component(Config, ShouldFail);
+       true ->
+	    ct:fail(no_known_sasl_mechanism_available)
     end.
 
 bind(Config) ->
@@ -341,10 +374,19 @@ wait_auth_SASL_result(Config, ShouldFail) ->
 	    ct:fail(sasl_auth_should_have_failed);
         #sasl_success{} ->
             ejabberd_socket:reset_stream(?config(socket, Config)),
-            send_text(Config, stream_header(Config)),
-	    #stream_start{xmlns = ?NS_CLIENT, version = <<"1.0">>} = recv(),
+            send(Config, stream_header(Config)),
+	    Type = ?config(type, Config),
+	    NS = if Type == client -> ?NS_CLIENT;
+		    Type == server -> ?NS_SERVER
+		 end,
+	    #stream_start{xmlns = NS, version = {1,0}} = recv(),
             #stream_features{sub_els = Fs} = recv(),
-	    #xmpp_session{optional = true} = lists:keyfind(xmpp_session, 1, Fs),
+	    if Type == client ->
+		    #xmpp_session{optional = true} =
+			lists:keyfind(xmpp_session, 1, Fs);
+	       true ->
+		    ok
+	    end,
 	    lists:foldl(
 	      fun(#feature_sm{}, ConfigAcc) ->
 		      set_opt(sm, true, ConfigAcc);
@@ -427,7 +469,11 @@ send(State, Pkt) ->
                       end,
     El = xmpp_codec:encode(NewPkt),
     ct:pal("sent: ~p <-~n~s", [El, xmpp_codec:pp(NewPkt)]),
-    ok = send_text(State, fxml:element_to_binary(El)),
+    Data = case NewPkt of
+	       #stream_start{} -> fxml:element_to_header(El);
+	       _ -> fxml:element_to_binary(El)
+	   end,
+    ok = send_text(State, Data),
     NewID.
 
 send_recv(State, IQ) ->
@@ -437,6 +483,9 @@ send_recv(State, IQ) ->
 sasl_new(<<"PLAIN">>, User, Server, Password) ->
     {<<User/binary, $@, Server/binary, 0, User/binary, 0, Password/binary>>,
      fun (_) -> {error, <<"Invalid SASL challenge">>} end};
+sasl_new(<<"EXTERNAL">>, _User, _Server, _Password) ->
+    {<<"">>,
+     fun(_) -> ct:fail(sasl_challenge_is_not_expected) end};
 sasl_new(<<"DIGEST-MD5">>, User, Server, Password) ->
     {<<"">>,
      fun (ServerIn) ->
@@ -567,11 +616,21 @@ set_opt(Opt, Val, Config) ->
 
 wait_for_master(Config) ->
     put_event(Config, slave_ready),
-    master_ready = get_event(Config).
+    case get_event(Config) of
+	master_ready ->
+	    ok;
+	Other ->
+	    suite:match_failure([Other], [master_ready])
+    end.
 
 wait_for_slave(Config) ->
     put_event(Config, master_ready),
-    slave_ready = get_event(Config).
+    case get_event(Config) of
+	slave_ready ->
+	    ok;
+	Other ->
+	    suite:match_failure([Other], [slave_ready])
+    end.
 
 make_iq_result(#iq{from = From} = IQ) ->
     IQ#iq{type = result, to = From, from = undefined, sub_els = []}.
@@ -592,6 +651,7 @@ event_relay() ->
 event_relay(Events, Subscribers) ->
     receive
         {subscribe, From} ->
+	    erlang:monitor(process, From),
             From ! {ok, self()},
             lists:foreach(
               fun(Event) -> From ! {event, Event, self()}
@@ -605,7 +665,14 @@ event_relay(Events, Subscribers) ->
                  (_) ->
                       ok
               end, Subscribers),
-            event_relay([Event|Events], Subscribers)
+            event_relay([Event|Events], Subscribers);
+	{'DOWN', _MRef, process, Pid, _Info} ->
+	    NewSubscribers = lists:delete(Pid, Subscribers),
+	    lists:foreach(
+	      fun(Subscriber) ->
+		      Subscriber ! {event, peer_down, self()}
+	      end, NewSubscribers),
+	    event_relay(Events, NewSubscribers)
     end.
 
 subscribe_to_events(Config) ->

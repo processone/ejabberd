@@ -352,16 +352,16 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 			 S -> S
 		     end,
 	    StreamVersion = case Version of
-				<<"1.0">> -> <<"1.0">>;
-				_ -> <<"">>
+				{1,0} -> {1,0};
+				_ -> undefined
 			    end,
 	    IsBlacklistedIP = is_ip_blacklisted(StateData#state.ip, Lang),
 	    case lists:member(Server, ?MYHOSTS) of
 		true when IsBlacklistedIP == false ->
 		    change_shaper(StateData, jid:make(<<"">>, Server, <<"">>)),
 		    case StreamVersion of
-			<<"1.0">> ->
-			    send_header(StateData, Server, <<"1.0">>, ?MYLANG),
+			{1,0} ->
+			    send_header(StateData, Server, {1,0}, ?MYLANG),
 			    case StateData#state.authenticated of
 				false ->
 				    TLS = StateData#state.tls,
@@ -490,10 +490,14 @@ wait_for_stream({xmlstreamstart, Name, Attrs}, StateData) ->
 		    send_header(StateData, ?MYNAME, StreamVersion, ?MYLANG),
 		    send_element(StateData, xmpp:serr_host_unknown()),
 		    {stop, normal, StateData}
-	    end
+	    end;
+	_ ->
+	    send_header(StateData, ?MYNAME, {1,0}, ?MYLANG),
+	    send_element(StateData, xmpp:serr_invalid_xml()),
+	    {stop, normal, StateData}
     catch _:{xmpp_codec, Why} ->
 	    Txt = xmpp:format_error(Why),
-	    send_header(StateData, ?MYNAME, <<"1.0">>, ?MYLANG),
+	    send_header(StateData, ?MYNAME, {1,0}, ?MYLANG),
 	    send_element(StateData, xmpp:serr_invalid_xml(Txt, ?MYLANG)),
 	    {stop, normal, StateData}
     end;
@@ -506,7 +510,7 @@ wait_for_stream({xmlstreamend, _}, StateData) ->
     send_element(StateData, xmpp:serr_not_well_formed()),
     {stop, normal, StateData};
 wait_for_stream({xmlstreamerror, _}, StateData) ->
-    send_header(StateData, ?MYNAME, <<"1.0">>, <<"">>),
+    send_header(StateData, ?MYNAME, {1,0}, <<"">>),
     send_element(StateData, xmpp:serr_not_well_formed()),
     {stop, normal, StateData};
 wait_for_stream(closed, StateData) ->
@@ -1374,7 +1378,7 @@ handle_info({'DOWN', Monitor, _Type, _Object, _Info},
 handle_info(system_shutdown, StateName, StateData) ->
     case StateName of
       wait_for_stream ->
-	  send_header(StateData, ?MYNAME, <<"1.0">>, <<"en">>),
+	  send_header(StateData, ?MYNAME, {1,0}, <<"en">>),
 	  send_element(StateData, xmpp:serr_system_shutdown()),
 	  ok;
       _ ->
@@ -1597,39 +1601,20 @@ send_packet(StateData, Packet) ->
     end.
 
 -spec send_header(state(), binary(), binary(), binary()) -> ok | {error, any()}.
-send_header(StateData, Server, Version, Lang)
-    when StateData#state.xml_socket ->
-    VersionAttr = case Version of
-		    <<"">> -> [];
-		    _ -> [{<<"version">>, Version}]
-		  end,
-    LangAttr = case Lang of
-		 <<"">> -> [];
-		 _ -> [{<<"xml:lang">>, Lang}]
-	       end,
-    Header = {xmlstreamstart, <<"stream:stream">>,
-	      VersionAttr ++
-		LangAttr ++
-		  [{<<"xmlns">>, <<"jabber:client">>},
-		   {<<"xmlns:stream">>,
-		    <<"http://etherx.jabber.org/streams">>},
-		   {<<"id">>, StateData#state.streamid},
-		   {<<"from">>, Server}]},
-    (StateData#state.sockmod):send_xml(StateData#state.socket,
-				       Header);
 send_header(StateData, Server, Version, Lang) ->
-    VersionStr = case Version of
-		   <<"">> -> <<"">>;
-		   _ -> [<<" version='">>, Version, <<"'">>]
-		 end,
-    LangStr = case Lang of
-		<<"">> -> <<"">>;
-		_ -> [<<" xml:lang='">>, Lang, <<"'">>]
-	      end,
-    Header = io_lib:format(?STREAM_HEADER,
-			   [StateData#state.streamid, Server, VersionStr,
-			    LangStr]),
-    send_text(StateData, iolist_to_binary(Header)).
+    Header = #xmlel{name = Name, attrs = Attrs} =
+	xmpp:encode(#stream_start{version = Version,
+				  lang = Lang,
+				  xmlns = ?NS_CLIENT,
+				  stream_xmlns = ?NS_STREAM,
+				  id = StateData#state.streamid,
+				  from = jid:make(Server)}),
+    if StateData#state.xml_socket ->
+	    (StateData#state.sockmod):send_xml(StateData#state.socket,
+					       {xmlstreamstart, Name, Attrs});
+       true ->
+	    send_text(StateData, fxml:element_to_header(Header))
+    end.
 
 -spec send_trailer(state()) -> ok | {error, any()}.
 send_trailer(StateData)
