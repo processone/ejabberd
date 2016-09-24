@@ -147,7 +147,7 @@ timestamp_to_now(I) ->
     {MSec, Sec, USec}.
 
 dec_priority(Prio) ->
-    case catch jlib:binary_to_integer(Prio) of
+    case catch binary_to_integer(Prio) of
 	{'EXIT', _} ->
 	    undefined;
 	Int ->
@@ -157,7 +157,7 @@ dec_priority(Prio) ->
 enc_priority(undefined) ->
     <<"">>;
 enc_priority(Int) when is_integer(Int) ->
-    jlib:integer_to_binary(Int).
+    integer_to_binary(Int).
 
 row_to_session(LServer, {USec, PidS, User, Resource, PrioS, InfoS}) ->
     Now = timestamp_to_now(USec),

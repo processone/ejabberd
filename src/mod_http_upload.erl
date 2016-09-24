@@ -35,7 +35,7 @@
 -define(FORMAT(Error), file:format_error(Error)).
 -define(URL_ENC(URL), binary_to_list(ejabberd_http:url_encode(URL))).
 -define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(jlib:ip_to_list(IP))).
--define(STR_TO_INT(Str, B), jlib:binary_to_integer(iolist_to_binary(Str), B)).
+-define(STR_TO_INT(Str, B), binary_to_integer(iolist_to_binary(Str), B)).
 -define(DEFAULT_CONTENT_TYPE, <<"application/octet-stream">>).
 -define(CONTENT_TYPES,
 	[{<<".avi">>, <<"video/avi">>},
@@ -578,7 +578,7 @@ process_iq(_From, #iq{}, _State) ->
 create_slot(#state{service_url = undefined, max_size = MaxSize},
 	    JID, File, Size, _ContentType, Lang) when MaxSize /= infinity,
 						      Size > MaxSize ->
-    Text = <<"File larger than ", (jlib:integer_to_binary(MaxSize))/binary,
+    Text = <<"File larger than ", (integer_to_binary(MaxSize))/binary,
 	     " Bytes.">>,
     ?INFO_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
 	      [File, jid:to_string(JID), Size]),
@@ -609,7 +609,7 @@ create_slot(#state{service_url = ServiceURL},
 	    Lang) ->
     Options = [{body_format, binary}, {full_result, false}],
     HttpOptions = [{timeout, ?SERVICE_REQUEST_TIMEOUT}],
-    SizeStr = jlib:integer_to_binary(Size),
+    SizeStr = integer_to_binary(Size),
     GetRequest = binary_to_list(ServiceURL) ++
 		     "?jid=" ++ ?URL_ENC(jid:to_string({U, S, <<"">>})) ++
 		     "&name=" ++ ?URL_ENC(File) ++
@@ -727,7 +727,7 @@ iq_disco_info(Host, Lang, Name, AddInfo) ->
 	       infinity ->
 		   AddInfo;
 	       MaxSize ->
-		   MaxSizeStr = jlib:integer_to_binary(MaxSize),
+		   MaxSizeStr = integer_to_binary(MaxSize),
 		   Fields = [#xdata_field{type = hidden,
 					  var = <<"FORM_TYPE">>,
 					  values = [?NS_HTTP_UPLOAD]},

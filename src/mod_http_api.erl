@@ -267,7 +267,7 @@ process(_Path, Request) ->
 get_api_version(#request{path = Path}) ->
     get_api_version(lists:reverse(Path));
 get_api_version([<<"v", String/binary>> | Tail]) ->
-    case catch jlib:binary_to_integer(String) of
+    case catch binary_to_integer(String) of
 	N when is_integer(N) ->
 	    N;
 	_ ->

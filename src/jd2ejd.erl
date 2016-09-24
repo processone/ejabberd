@@ -126,7 +126,7 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
 	  TimeStamp = fxml:get_attr_s(<<"last">>, Attrs),
 	  Status = fxml:get_tag_cdata(El),
 	  catch mod_last:store_last_info(User, Server,
-					 jlib:binary_to_integer(TimeStamp),
+					 binary_to_integer(TimeStamp),
 					 Status),
 	  ok;
       ?NS_VCARD ->

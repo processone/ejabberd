@@ -300,7 +300,7 @@ process_command2([<<"showlh">>, SNode], From, To) ->
 process_command2([<<"setlh">>, SNode, NewValueString],
 		 From, To) ->
     Node = jlib:binary_to_atom(SNode),
-    NewValue = jlib:binary_to_integer(NewValueString),
+    NewValue = binary_to_integer(NewValueString),
     remote_command(Node, [setlh, NewValue], From, To);
 process_command2([<<"help">>], From, To) ->
     send_message(To, From, help());

@@ -768,7 +768,7 @@ sqlite_to_odbc(Host, {rowid, _}) ->
 sqlite_to_odbc(_Host, [{columns, Columns}, {rows, TRows}]) ->
     Rows = [lists:map(
 	      fun(I) when is_integer(I) ->
-		      jlib:integer_to_binary(I);
+		      integer_to_binary(I);
 		 (B) ->
 		      B
 	      end, tuple_to_list(Row)) || Row <- TRows],
@@ -813,11 +813,11 @@ pgsql_item_to_odbc({<<"FETCH", _/binary>>, Rows,
     {selected, [element(1, Row) || Row <- Rows], Recs};
 pgsql_item_to_odbc(<<"INSERT ", OIDN/binary>>) ->
     [_OID, N] = str:tokens(OIDN, <<" ">>),
-    {updated, jlib:binary_to_integer(N)};
+    {updated, binary_to_integer(N)};
 pgsql_item_to_odbc(<<"DELETE ", N/binary>>) ->
-    {updated, jlib:binary_to_integer(N)};
+    {updated, binary_to_integer(N)};
 pgsql_item_to_odbc(<<"UPDATE ", N/binary>>) ->
-    {updated, jlib:binary_to_integer(N)};
+    {updated, binary_to_integer(N)};
 pgsql_item_to_odbc({error, Error}) -> {error, Error};
 pgsql_item_to_odbc(_) -> {updated, undefined}.
 
@@ -875,7 +875,7 @@ mysql_item_to_odbc(Columns, Recs) ->
 to_odbc({selected, Columns, Recs}) ->
     Rows = [lists:map(
 	      fun(I) when is_integer(I) ->
-		      jlib:integer_to_binary(I);
+		      integer_to_binary(I);
 		 (B) ->
 		      B
 	      end, Row) || Row <- Recs],

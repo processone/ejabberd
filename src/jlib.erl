@@ -74,7 +74,9 @@
 	     {resourceprep, 1},
 	     {jid_tolower, 1},
 	     {jid_remove_resource, 1},
-	     {jid_replace_resource, 2}]).
+	     {jid_replace_resource, 2},
+	     {integer_to_binary, 1},
+	     {binary_to_integer, 1}]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").

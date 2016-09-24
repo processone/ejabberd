@@ -392,7 +392,7 @@ get_url(Str) ->
     end.
 
 get_transfer_protocol(PortString) ->
-    PortNumber = jlib:binary_to_integer(PortString),
+    PortNumber = binary_to_integer(PortString),
     PortListeners = get_port_listeners(PortNumber),
     get_captcha_transfer_protocol(PortListeners).
 

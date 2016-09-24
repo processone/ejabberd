@@ -168,7 +168,7 @@ var_xfield(_) -> {error, badarg}.
 val_xfield(deliver = Opt, [Val]) -> xopt_to_bool(Opt, Val);
 val_xfield(digest = Opt, [Val]) -> xopt_to_bool(Opt, Val);
 val_xfield(digest_frequency = Opt, [Val]) ->
-    case catch jlib:binary_to_integer(Val) of
+    case catch binary_to_integer(Val) of
 	N when is_integer(N) -> N;
 	_ ->
 	    Txt = <<"Value of '~s' should be integer">>,
@@ -190,7 +190,7 @@ val_xfield(subscription_type, [<<"items">>]) -> items;
 val_xfield(subscription_type, [<<"nodes">>]) -> nodes;
 val_xfield(subscription_depth, [<<"all">>]) -> all;
 val_xfield(subscription_depth = Opt, [Depth]) ->
-    case catch jlib:binary_to_integer(Depth) of
+    case catch binary_to_integer(Depth) of
 	N when is_integer(N) -> N;
 	_ ->
 	    Txt = <<"Value of '~s' should be integer">>,

@@ -853,7 +853,7 @@ rid_allow(OldRid, NewRid, Attrs, Hold, MaxPause) ->
       %% We did not miss any packet, we can process it immediately:
       NewRid == OldRid + 1 ->
 	  case catch
-		 jlib:binary_to_integer(fxml:get_attr_s(<<"pause">>,
+		 binary_to_integer(fxml:get_attr_s(<<"pause">>,
 							 Attrs))
 	      of
 	    {'EXIT', _} -> {true, 0};
@@ -1119,7 +1119,7 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
 	  if Xmlns /= (?NS_HTTP_BIND) -> {error, bad_request};
 	     true ->
 		 case catch
-			jlib:binary_to_integer(fxml:get_attr_s(<<"rid">>,
+			binary_to_integer(fxml:get_attr_s(<<"rid">>,
 								Attrs))
 		     of
 		   {'EXIT', _} -> {error, bad_request};

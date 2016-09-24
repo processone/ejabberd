@@ -36,5 +36,5 @@ start() ->
 
 get_string() ->
     R = crypto:rand_uniform(0, 16#10000000000000000),
-    jlib:integer_to_binary(R).
+    integer_to_binary(R).
 

@@ -6686,8 +6686,8 @@ enc_tzo({H, M}) ->
 
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),
-    H = jlib:binary_to_integer(H1),
-    M = jlib:binary_to_integer(M1),
+    H = binary_to_integer(H1),
+    M = binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
 
 decode_thumbnail(__TopXMLNS, __IgnoreEls,

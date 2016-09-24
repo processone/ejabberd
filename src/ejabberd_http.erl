@@ -252,7 +252,7 @@ process_header(State, Data) ->
 		      request_headers = add_header(Name, Auth, State)};
       {ok,
        {http_header, _, 'Content-Length' = Name, _, SLen}} ->
-	  case catch jlib:binary_to_integer(SLen) of
+	  case catch binary_to_integer(SLen) of
 	    Len when is_integer(Len) ->
 		State#state{request_content_length = Len,
 			    request_headers = add_header(Name, SLen, State)};
@@ -327,10 +327,10 @@ get_transfer_protocol(SockMod, HostPort) ->
     case {SockMod, PortList} of
       {gen_tcp, []} -> {Host, 80, http};
       {gen_tcp, [Port]} ->
-	  {Host, jlib:binary_to_integer(Port), http};
+	  {Host, binary_to_integer(Port), http};
       {fast_tls, []} -> {Host, 443, https};
       {fast_tls, [Port]} ->
-	  {Host, jlib:binary_to_integer(Port), https}
+	  {Host, binary_to_integer(Port), https}
     end.
 
 %% XXX bard: search through request handlers looking for one that
@@ -587,12 +587,12 @@ make_text_output(State, Status, Reason, Headers, Text) ->
 		   of
 		 {value, _} ->
 		     [{<<"Content-Length">>,
-		       jlib:integer_to_binary(byte_size(Data))}
+		       integer_to_binary(byte_size(Data))}
 		      | Headers];
 		 _ ->
 		     [{<<"Content-Type">>, <<"text/html; charset=utf-8">>},
 		      {<<"Content-Length">>,
-		       jlib:integer_to_binary(byte_size(Data))}
+		       integer_to_binary(byte_size(Data))}
 		      | Headers]
 	       end,
     HeadersOut = case {State#state.request_version,
@@ -617,7 +617,7 @@ make_text_output(State, Status, Reason, Headers, Text) ->
 		  _ -> Reason
 		end,
     SL = [Version,
-	  jlib:integer_to_binary(Status), <<" ">>,
+	  integer_to_binary(Status), <<" ">>,
 	  NewReason, <<"\r\n">>],
     Data2 = case State#state.request_method of
 	      'HEAD' -> <<"">>;

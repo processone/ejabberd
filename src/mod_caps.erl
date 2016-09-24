@@ -546,7 +546,7 @@ import_start(LServer, DBType) ->
 
 import(_LServer, {sql, _}, _DBType, <<"caps_features">>,
        [Node, SubNode, Feature, _TimeStamp]) ->
-    Feature1 = case catch jlib:binary_to_integer(Feature) of
+    Feature1 = case catch binary_to_integer(Feature) of
                    I when is_integer(I), I>0 -> I;
                    _ -> Feature
                end,

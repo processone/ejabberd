@@ -552,8 +552,8 @@ get_local_items({_, Host},
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     try
 	[S1, S2] = ejabberd_regexp:split(Diap, <<"-">>),
-	N1 = jlib:binary_to_integer(S1),
-	N2 = jlib:binary_to_integer(S2),
+	N1 = binary_to_integer(S1),
+	N2 = binary_to_integer(S2),
 	Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
 	{result, lists:map(
 		   fun({S, U}) ->
@@ -1659,11 +1659,11 @@ set_form(From, Host, ?NS_ADMINL(<<"user-stats">>), Lang,
     IPs1 = [ejabberd_sm:get_user_ip(User, Server, Resource)
 	    || Resource <- Resources],
     IPs = [<<(jlib:ip_to_list(IP))/binary, ":",
-             (jlib:integer_to_binary(Port))/binary>>
+             (integer_to_binary(Port))/binary>>
                || {IP, Port} <- IPs1],
     Items = ejabberd_hooks:run_fold(roster_get, Server, [],
 				    [{User, Server}]),
-    Rostersize = jlib:integer_to_binary(erlang:length(Items)),
+    Rostersize = integer_to_binary(erlang:length(Items)),
     {result,
      #xdata{type = form,
 	    fields = [?HFIELD(),
@@ -1695,7 +1695,7 @@ search_running_node(SNode, [Node | Nodes]) ->
     end.
 
 stop_node(From, Host, ENode, Action, XData) ->
-    Delay = jlib:binary_to_integer(get_value(<<"delay">>, XData)),
+    Delay = binary_to_integer(get_value(<<"delay">>, XData)),
     Subject = case get_value(<<"subject">>, XData) of
 		  <<"">> ->
 		      [];

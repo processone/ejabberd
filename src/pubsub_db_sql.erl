@@ -134,7 +134,7 @@ boolean_to_sql(false) -> <<"0">>.
 
 timestamp_to_sql(T) -> jlib:now_to_utc_string(T).
 
-sql_to_integer(N) -> jlib:binary_to_integer(N).
+sql_to_integer(N) -> binary_to_integer(N).
 
 sql_to_boolean(B) -> B == <<"1">>.
 

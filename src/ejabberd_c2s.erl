@@ -1633,7 +1633,7 @@ new_id() -> randoms:get_string().
 -spec new_uniq_id() -> binary().
 new_uniq_id() ->
     iolist_to_binary([randoms:get_string(),
-		      jlib:integer_to_binary(p1_time_compat:unique_integer([positive]))]).
+		      integer_to_binary(p1_time_compat:unique_integer([positive]))]).
 
 -spec get_conn_type(state()) -> c2s | c2s_tls | c2s_compressed | websocket |
 				c2s_compressed_tls | http_bind.

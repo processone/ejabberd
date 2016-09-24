@@ -301,7 +301,7 @@ get_sm_items(Acc, _From, _To, _Node, _Lang) ->
 	      ([xdata()], jid(), jid(), binary(), binary()) -> [xdata()].
 get_info(_Acc, #jid{luser = U, lserver = S, lresource = R},
 	 #jid{luser = U, lserver = S}, ?NS_FLEX_OFFLINE, _Lang) ->
-    N = jlib:integer_to_binary(count_offline_messages(U, S)),
+    N = integer_to_binary(count_offline_messages(U, S)),
     case ejabberd_sm:get_session_pid(U, S, R) of
 	Pid when is_pid(Pid) ->
 	    Pid ! dont_ask_offline;

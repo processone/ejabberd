@@ -761,7 +761,7 @@ change_room_option(Name, Service, OptionString, ValueString) ->
 		password -> ValueString;
 		subject ->ValueString;
 		subject_author ->ValueString;
-		max_users -> jlib:binary_to_integer(ValueString);
+		max_users -> binary_to_integer(ValueString);
 		_ -> jlib:binary_to_atom(ValueString)
 	    end,
     change_room_option(Name, Service, Option, Value).

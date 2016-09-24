@@ -55,7 +55,7 @@ extended_fields() ->
 
 store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
     TSinteger = p1_time_compat:system_time(micro_seconds),
-    ID = jlib:integer_to_binary(TSinteger),
+    ID = integer_to_binary(TSinteger),
     SUser = case Type of
 		chat -> LUser;
 		groupchat -> jid:to_string({LUser, LHost, <<>>})
@@ -154,14 +154,14 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 	       fun([TS, XML, PeerBin, Kind, Nick]) ->
 		       try
 			   #xmlel{} = El = fxml_stream:parse_element(XML),
-			   Now = usec_to_now(jlib:binary_to_integer(TS)),
+			   Now = usec_to_now(binary_to_integer(TS)),
 			   PeerJid = jid:tolower(jid:from_string(PeerBin)),
 			   T = case Kind of
 				   <<"">> -> chat;
 				   null -> chat;
 				   _ -> jlib:binary_to_atom(Kind)
 			       end,
-			   [{TS, jlib:binary_to_integer(TS),
+			   [{TS, binary_to_integer(TS),
 			     mod_mam:msg_to_el(#archive_msg{timestamp = Now,
 							    packet = El,
 							    type = T,
@@ -176,7 +176,7 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 					  [Err, TS, XML, PeerBin, Kind, Nick]),
 			       []
 		       end
-	       end, Res1), IsComplete, jlib:binary_to_integer(Count)};
+	       end, Res1), IsComplete, binary_to_integer(Count)};
 	_ ->
 	    {[], false, 0}
     end.
@@ -208,12 +208,12 @@ make_sql_query(User, LServer,
             _ -> fun ejabberd_sql:escape/1
         end,
     LimitClause = if is_integer(Max), Max >= 0, ODBCType /= mssql ->
-			  [<<" limit ">>, jlib:integer_to_binary(Max+1)];
+			  [<<" limit ">>, integer_to_binary(Max+1)];
 		     true ->
 			  []
 		  end,
     TopClause = if is_integer(Max), Max >= 0, ODBCType == mssql ->
-			  [<<" TOP ">>, jlib:integer_to_binary(Max+1)];
+			  [<<" TOP ">>, integer_to_binary(Max+1)];
 		     true ->
 			  []
 		  end,
@@ -235,7 +235,7 @@ make_sql_query(User, LServer,
 		     _ ->
 			 []
 		 end,
-    PageClause = case catch jlib:binary_to_integer(ID) of
+    PageClause = case catch binary_to_integer(ID) of
 		     I when is_integer(I), I >= 0 ->
 			 case Direction of
 			     before ->
@@ -251,14 +251,14 @@ make_sql_query(User, LServer,
     StartClause = case Start of
 		      {_, _, _} ->
 			  [<<" and timestamp >= ">>,
-			   jlib:integer_to_binary(now_to_usec(Start))];
+			   integer_to_binary(now_to_usec(Start))];
 		      _ ->
 			  []
 		  end,
     EndClause = case End of
 		    {_, _, _} ->
 			[<<" and timestamp <= ">>,
-			 jlib:integer_to_binary(now_to_usec(End))];
+			 integer_to_binary(now_to_usec(End))];
 		    _ ->
 			[]
 		end,

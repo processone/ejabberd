@@ -97,7 +97,7 @@ store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir) ->
 	_ ->
 	    LPeer = {PUser, PServer, _} = jid:tolower(Peer),
 	    TS = p1_time_compat:timestamp(),
-	    ID = jlib:integer_to_binary(now_to_usec(TS)),
+	    ID = integer_to_binary(now_to_usec(TS)),
 	    F = fun() ->
 			mnesia:write(
 			  #archive_msg{us = {LUser, LServer},
@@ -145,7 +145,7 @@ select(_LServer, JidRequestor,
     Result = {lists:map(
 		fun(Msg) ->
 			{Msg#archive_msg.id,
-			 jlib:binary_to_integer(Msg#archive_msg.id),
+			 binary_to_integer(Msg#archive_msg.id),
 			 mod_mam:msg_to_el(Msg, MsgType, JidRequestor,
 					   JidArchive)}
 		end, FilteredMsgs), IsComplete, Count},

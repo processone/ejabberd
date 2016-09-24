@@ -3279,7 +3279,7 @@ max_items(Host, Options) ->
 -define(INTEGER_CONFIG_FIELD(Label, Var),
     ?STRINGXFIELD(Label,
 	<<"pubsub#", (atom_to_binary(Var, latin1))/binary>>,
-	(jlib:integer_to_binary(get_option(Options, Var))))).
+	(integer_to_binary(get_option(Options, Var))))).
 
 -define(JLIST_CONFIG_FIELD(Label, Var, Opts),
     ?LISTXFIELD(Label,
@@ -3418,7 +3418,7 @@ add_opt(Key, Value, Opts) ->
     set_xoption(Host, Opts, add_opt(Opt, Val, NewOpts))).
 
 -define(SET_INTEGER_XOPT(Opt, Val, Min, Max),
-	case catch jlib:binary_to_integer(Val) of
+	case catch binary_to_integer(Val) of
 	    IVal when is_integer(IVal), IVal >= Min ->
 		if (Max =:= undefined) orelse (IVal =< Max) ->
 			set_xoption(Host, Opts, add_opt(Opt, IVal, NewOpts));

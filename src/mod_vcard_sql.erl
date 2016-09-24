@@ -82,7 +82,7 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
 			infinity ->
 			    <<"">>;
 			Val ->
-			    [<<" LIMIT ">>, jlib:integer_to_binary(Val)]
+			    [<<" LIMIT ">>, integer_to_binary(Val)]
 		    end,
 	   case catch ejabberd_sql:sql_query(
 			LServer,

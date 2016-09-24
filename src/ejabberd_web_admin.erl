@@ -1458,8 +1458,8 @@ list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
     Users = ejabberd_auth:get_vh_registered_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     [S1, S2] = ejabberd_regexp:split(Diap, <<"-">>),
-    N1 = jlib:binary_to_integer(S1),
-    N2 = jlib:binary_to_integer(S2),
+    N1 = binary_to_integer(S1),
+    N2 = binary_to_integer(S2),
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
     [list_given_users(Host, Sub, <<"../../">>, Lang,
 		      URLFunc)].
@@ -1648,7 +1648,7 @@ user_info(User, Server, Query, Lang) ->
                                                 "://",
                                                 (jlib:ip_to_list(IP))/binary,
                                                 ":",
-                                                (jlib:integer_to_binary(Port))/binary,
+                                                (integer_to_binary(Port))/binary,
                                                 "#",
                                                 (jlib:atom_to_binary(Node))/binary>>
                                       end,
@@ -2520,7 +2520,7 @@ make_netprot_html(NetProt) ->
 get_port_data(PortIP, Opts) ->
     {Port, IPT, IPS, _IPV, NetProt, OptsClean} =
 	ejabberd_listener:parse_listener_portip(PortIP, Opts),
-    SPort = jlib:integer_to_binary(Port),
+    SPort = integer_to_binary(Port),
     SSPort = list_to_binary(
                lists:map(fun (N) ->
                                  io_lib:format("~.16b", [N])
