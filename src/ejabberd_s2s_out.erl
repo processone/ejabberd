@@ -740,7 +740,7 @@ send_text(StateData, Text) ->
 
 -spec send_element(state(), xmpp_element()) -> ok.
 send_element(StateData, El) ->
-    El1 = fix_ns(xmpp:encode(El)),
+    El1 = xmpp:encode(El, ?NS_SERVER),
     send_text(StateData, fxml:element_to_binary(El1)).
 
 -spec send_header(state(), undefined | {integer(), integer()}) -> ok.
@@ -765,20 +765,6 @@ send_queue(StateData, Q) ->
 	  send_element(StateData, El), send_queue(StateData, Q1);
       {empty, _Q1} -> ok
     end.
-
--spec fix_ns(xmlel()) -> xmlel().
-fix_ns(#xmlel{name = Name} = El) when Name == <<"message">>;
-				      Name == <<"iq">>;
-				      Name == <<"presence">>;
-				      Name == <<"db:verify">>,
-				      Name == <<"db:result">> ->
-    Attrs = lists:filter(
-	      fun({<<"xmlns">>, _}) -> false;
-		 (_) -> true
-	      end, El#xmlel.attrs),
-    El#xmlel{attrs = Attrs};
-fix_ns(El) ->
-    El.
 
 %% Bounce a single message (xmlelement)
 -spec bounce_element(stanza(), stanza_error()) -> ok.
@@ -1083,7 +1069,12 @@ fsm_limit_opts() ->
 
 -spec decode_element(xmlel(), state_name(), state()) -> fsm_next().
 decode_element(#xmlel{} = El, StateName, StateData) ->
-    try xmpp:decode(El) of
+    Opts = if StateName == stream_established ->
+		   [ignore_els];
+	      true ->
+		   []
+	   end,
+    try xmpp:decode(El, ?NS_SERVER, Opts) of
 	Pkt -> ?MODULE:StateName(Pkt, StateData)
     catch error:{xmpp_codec, Why} ->
 	    Type = xmpp:get_type(El),

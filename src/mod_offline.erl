@@ -611,7 +611,7 @@ get_offline_els(LUser, LServer) ->
       end, Hdrs).
 
 offline_msg_to_route(LServer, #offline_msg{} = R) ->
-    Pkt = xmpp:decode(R#offline_msg.packet, [ignore_els]),
+    Pkt = xmpp:decode(R#offline_msg.packet, ?NS_CLIENT, [ignore_els]),
     Pkt1 = case R#offline_msg.timestamp of
 	       undefined ->
 		   Pkt;
@@ -626,7 +626,7 @@ read_message_headers(LUser, LServer) ->
     lists:map(
       fun({Seq, From, To, El}) ->
 	      Node = integer_to_binary(Seq),
-	      Packet = xmpp:decode(El, [ignore_els]),
+	      Packet = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
 	      {Node, From, To, Packet}
       end, Mod:read_message_headers(LUser, LServer)).
 

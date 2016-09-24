@@ -440,11 +440,11 @@ process_user_el(#xmlel{name = Name, attrs = Attrs, children = Els} = El,
 		process_private(xmpp:decode(El), State);
 	    {<<"vCard">>, ?NS_VCARD} ->
 		process_vcard(El, State);
-	    {<<"offline-messages">>, _} ->
-		Msgs = [xmpp:decode(E, [ignore_els]) || E <- Els],
+	    {<<"offline-messages">>, NS} ->
+		Msgs = [xmpp:decode(E, NS, [ignore_els]) || E <- Els],
 		process_offline_msgs(Msgs, State);
-	    {<<"presence">>, <<"jabber:client">>} ->
-		process_presence(xmpp:decode(El, [ignore_els]), State);
+	    {<<"presence">>, ?NS_CLIENT} ->
+		process_presence(xmpp:decode(El, ?NS_CLIENT, [ignore_els]), State);
 	    _ ->
 		{ok, State}
 	end

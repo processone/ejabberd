@@ -10,14 +10,15 @@
 
 %% API
 -export([make_iq_result/1, make_iq_result/2, make_error/2,
-	 decode/1, decode/2, encode/1,
+	 decode/1, decode/3, encode/1, encode/2,
 	 get_type/1, get_to/1, get_from/1, get_id/1,
 	 get_lang/1, get_error/1, get_els/1, get_ns/1,
 	 set_type/2, set_to/2, set_from/2, set_id/2,
 	 set_lang/2, set_error/2, set_els/2, set_from_to/3,
 	 format_error/1, is_stanza/1, set_subtag/2, get_subtag/2,
-	 remove_subtag/2, has_subtag/2, decode_els/1, decode_els/2,
-	 pp/1, get_name/1, get_text/1, mk_text/1, mk_text/2]).
+	 remove_subtag/2, has_subtag/2, decode_els/1, decode_els/3,
+	 pp/1, get_name/1, get_text/1, mk_text/1, mk_text/2,
+	 is_known_tag/1, is_known_tag/2]).
 
 %% XMPP errors
 -export([err_bad_request/0, err_bad_request/2,
@@ -117,7 +118,7 @@ make_error(#xmlel{attrs = Attrs, children = Els} = El, Err) ->
 		     Attrs
 	     end,
     Attrs3 = lists:keystore(<<"type">>, 1, Attrs2, {<<"type">>, <<"error">>}),
-    El#xmlel{attrs = Attrs3, children = Els ++ [encode(Err)]}.
+    El#xmlel{attrs = Attrs3, children = Els ++ [encode(Err, ?NS_CLIENT)]}.
 
 -spec get_id(iq() | message() | presence() | xmlel()) -> binary().
 get_id(#iq{id = ID}) -> ID;
@@ -232,35 +233,30 @@ get_name(Pkt) ->
 
 -spec decode(xmlel() | xmpp_element()) -> {ok, xmpp_element()} | {error, any()}.
 decode(El) ->
-    decode(El, []).
+    decode(El, ?NS_CLIENT, []).
 
--spec decode(xmlel() | xmpp_element(),
-	     [proplists:property()] |
-	     fun((xmlel() | xmpp_element()) -> boolean())) ->
+-spec decode(xmlel() | xmpp_element(), binary(), [proplists:property()]) ->
 		    {ok, xmpp_element()} | {error, any()}.
-decode(#xmlel{} = El, MatchFun) when is_function(MatchFun) ->
-    Pkt = xmpp_codec:decode(add_ns(El), [ignore_els]),
-    decode_els(Pkt, MatchFun);
-decode(#xmlel{} = El, Opts) when is_list(Opts) ->
-    xmpp_codec:decode(add_ns(El), Opts);
-decode(Pkt, _Opts) ->
+decode(#xmlel{} = El, TopXMLNS, Opts) ->
+    xmpp_codec:decode(El, TopXMLNS, Opts);
+decode(Pkt, _, _) ->
     Pkt.
 
 -spec decode_els(iq()) -> iq();
 		(message()) -> message();
 		(presence()) -> presence().
 decode_els(Stanza) ->
-    decode_els(Stanza, fun xmpp_codec:is_known_tag/1).
+    decode_els(Stanza, ?NS_CLIENT, fun is_known_tag/1).
 
 -type match_fun() :: fun((xmlel()) -> boolean()).
--spec decode_els(iq(), match_fun()) -> iq();
-		(message(), match_fun()) -> message();
-		(presence(), match_fun()) -> presence().
-decode_els(Stanza, MatchFun) ->
+-spec decode_els(iq(), binary(), match_fun()) -> iq();
+		(message(), binary(), match_fun()) -> message();
+		(presence(), binary(), match_fun()) -> presence().
+decode_els(Stanza, TopXMLNS, MatchFun) ->
     Els = lists:map(
 	    fun(#xmlel{} = El) ->
 		    case MatchFun(El) of
-			true ->	decode(El);
+			true ->	decode(El, TopXMLNS, []);
 			false -> El
 		    end;
 	       (Pkt) ->
@@ -270,7 +266,19 @@ decode_els(Stanza, MatchFun) ->
 
 -spec encode(xmpp_element() | xmlel()) -> xmlel().
 encode(Pkt) ->
-    xmpp_codec:encode(Pkt).
+    encode(Pkt, <<>>).
+
+-spec encode(xmpp_element() | xmlel(), binary()) -> xmlel().
+encode(Pkt, TopXMLNS) ->
+    xmpp_codec:encode(Pkt, TopXMLNS).
+
+-spec is_known_tag(xmlel()) -> boolean().
+is_known_tag(El) ->
+    is_known_tag(El, ?NS_CLIENT).
+
+-spec is_known_tag(xmlel(), binary()) -> boolean().
+is_known_tag(El, TopXMLNS) ->
+    xmpp_codec:is_known_tag(El, TopXMLNS).
 
 format_error(Reason) ->
     xmpp_codec:format_error(Reason).
@@ -808,16 +816,6 @@ serr(Reason, Text, Lang) ->
     #stream_error{reason = Reason,
 		  text = #text{lang = Lang,
 			       data = translate:translate(Lang, Text)}}.
-
--spec add_ns(xmlel()) -> xmlel().
-add_ns(#xmlel{name = Name} = El) when Name == <<"message">>;
-				      Name == <<"presence">>;
-				      Name == <<"iq">> ->
-    Attrs = lists:keystore(<<"xmlns">>, 1, El#xmlel.attrs,
-			   {<<"xmlns">>, ?NS_CLIENT}),
-    El#xmlel{attrs = Attrs};
-add_ns(El) ->
-    El.
 
 -spec match_tag(xmlel() | xmpp_element(), binary(), binary()) -> boolean().
 match_tag(El, TagName, XMLNS) ->

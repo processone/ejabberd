@@ -540,18 +540,20 @@ should_archive(#message{body = Body} = Pkt, LServer) ->
 should_archive(_, _LServer) ->
     false.
 
+-spec strip_my_archived_tag(stanza(), binary()) -> stanza().
 strip_my_archived_tag(Pkt, LServer) ->
     NewPkt = xmpp:decode_els(
-	       Pkt, fun(El) ->
-			    case xmpp:get_name(El) of
-				<<"archived">> ->
-				    xmpp:get_ns(El) == ?NS_MAM_TMP;
-				<<"stanza-id">> ->
-				    xmpp:get_ns(El) == ?NS_SID_0;
-				_ ->
-				    false
-			    end
-		    end),
+	       Pkt, ?NS_CLIENT,
+	       fun(El) ->
+		       case xmpp:get_name(El) of
+			   <<"archived">> ->
+			       xmpp:get_ns(El) == ?NS_MAM_TMP;
+			   <<"stanza-id">> ->
+			       xmpp:get_ns(El) == ?NS_SID_0;
+			   _ ->
+			       false
+		       end
+	       end),
     NewEls = lists:filter(
 	       fun(#mam_archived{by = #jid{luser = <<>>} = By}) ->
 		       By#jid.lserver /= LServer;
@@ -564,19 +566,20 @@ strip_my_archived_tag(Pkt, LServer) ->
 
 strip_x_jid_tags(Pkt) ->
     NewPkt = xmpp:decode_els(
-	       Pkt, fun(El) ->
-			    case xmpp:get_name(El) of
-				<<"x">> ->
-				    case xmpp:get_ns(El) of
-					?NS_MUC_USER -> true;
-					?NS_MUC_ADMIN -> true;
-					?NS_MUC_OWNER -> true;
-					_ -> false
-				    end;
-				_ ->
-				    false
-			    end
-		    end),
+	       Pkt, ?NS_CLIENT,
+	       fun(El) ->
+		       case xmpp:get_name(El) of
+			   <<"x">> ->
+			       case xmpp:get_ns(El) of
+				   ?NS_MUC_USER -> true;
+				   ?NS_MUC_ADMIN -> true;
+				   ?NS_MUC_OWNER -> true;
+				   _ -> false
+			       end;
+			   _ ->
+			       false
+		       end
+	       end),
     NewEls = lists:filter(
 	       fun(El) ->
 		       Items = case El of
@@ -836,7 +839,7 @@ msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
 
 maybe_update_from_to(#xmlel{} = El, JidRequestor, JidArchive, Peer,
 		     {groupchat, _, _} = MsgType, Nick) ->
-    Pkt = xmpp:decode(El, [ignore_els]),
+    Pkt = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
     maybe_update_from_to(Pkt, JidRequestor, JidArchive, Peer, MsgType, Nick);
 maybe_update_from_to(#message{sub_els = Els} = Pkt, JidRequestor, JidArchive,
 		     Peer, {groupchat, Role,

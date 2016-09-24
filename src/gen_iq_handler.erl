@@ -144,7 +144,7 @@ process_iq(_Host, Module, Function, From, To, IQ0) ->
 	end
     catch E:R ->
 	    ?ERROR_MSG("failed to process iq:~n~s~nReason = ~p",
-		       [xmpp_codec:pp(IQ), {E, {R, erlang:get_stacktrace()}}]),
+		       [xmpp:pp(IQ), {E, {R, erlang:get_stacktrace()}}]),
 	    Txt = <<"Module failed to handle the query">>,
 	    Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
 	    ejabberd_router:route(To, From, xmpp:make_error(IQ, Err))
@@ -169,7 +169,7 @@ process_iq(Module, Function, #iq{lang = Lang, sub_els = [El]} = IQ) ->
 process_iq(Module, Function, From, To, IQ) ->
     case Module:Function(From, To, IQ) of
 	ignore -> ignore;
-	ResIQ -> xmpp:decode(jlib:iq_to_xml(ResIQ), [ignore_els])
+	ResIQ -> xmpp:decode(jlib:iq_to_xml(ResIQ), ?NS_CLIENT, [ignore_els])
     end.
 
 -spec check_type(type()) -> type().

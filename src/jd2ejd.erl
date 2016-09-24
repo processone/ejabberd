@@ -155,7 +155,7 @@ process_offline(Server, To, #xmlel{children = Els}) ->
     LServer = jid:nameprep(Server),
     lists:foreach(
       fun(#xmlel{} = El) ->
-	      try xmpp:decode(El, [ignore_els]) of
+	      try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
 		  #message{from = JID} ->
 		      From = case JID of
 				 undefined -> jid:make(Server);

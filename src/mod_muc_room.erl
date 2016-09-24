@@ -4343,7 +4343,7 @@ tab_count_user(JID) ->
 
 -spec element_size(stanza()) -> non_neg_integer().
 element_size(El) ->
-    byte_size(fxml:element_to_binary(xmpp:encode(El))).
+    byte_size(fxml:element_to_binary(xmpp:encode(El, ?NS_CLIENT))).
 
 -spec store_room(state()) -> ok.
 store_room(StateData) ->

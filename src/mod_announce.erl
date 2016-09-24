@@ -768,7 +768,7 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID) when LUser /= <<>> ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:get_motd(LServer) of
 	{ok, Packet} ->
-	    try xmpp:decode(Packet, [ignore_els]) of
+	    try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
 		Msg ->
 		    case Mod:is_motd_user(LUser, LServer) of
 			false ->
@@ -792,7 +792,7 @@ get_stored_motd(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:get_motd(LServer) of
         {ok, Packet} ->
-	    try xmpp:decode(Packet, [ignore_els]) of
+	    try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
 		#message{body = Body, subject = Subject} ->
 		    {xmpp:get_text(Subject), xmpp:get_text(Body)}
 	    catch _:{xmpp_codec, Why} ->

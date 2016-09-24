@@ -5,3137 +5,5774 @@
 
 -compile({nowarn_unused_function,
 	  [{dec_int, 3}, {dec_int, 1}, {dec_enum, 2},
-	   {enc_int, 1}, {get_attr, 2}, {enc_enum, 1}]}).
+	   {enc_int, 1}, {get_attr, 2}, {enc_enum, 1},
+	   {choose_top_xmlns, 3}, {enc_xmlns_attrs, 2}]}).
 
 -export([pp/1, format_error/1, decode/1, decode/2,
-	 is_known_tag/1, encode/1, get_name/1, get_ns/1]).
+	 decode/3, is_known_tag/2, encode/1, encode/2,
+	 get_name/1, get_ns/1]).
 
-decode(_el) -> decode(_el, []).
+decode(_el) -> decode(_el, <<>>, []).
 
-decode({xmlel, _name, _attrs, _} = _el, Opts) ->
+decode(_el, Opts) -> decode(_el, <<>>, Opts).
+
+decode({xmlel, _name, _attrs, _} = _el, TopXMLNS,
+       Opts) ->
     IgnoreEls = proplists:get_bool(ignore_els, Opts),
-    case {_name, get_attr(<<"xmlns">>, _attrs)} of
-      {<<"thumbnail">>, <<"urn:xmpp:thumbs:1">>} ->
+    case {_name, get_attr(<<"xmlns">>, _attrs), TopXMLNS} of
+      {<<"thumbnail">>, <<"urn:xmpp:thumbs:1">>, _} ->
 	  decode_thumbnail(<<"urn:xmpp:thumbs:1">>, IgnoreEls,
 			   _el);
-      {<<"slot">>, <<"urn:xmpp:http:upload">>} ->
+      {<<"thumbnail">>, <<>>, <<"urn:xmpp:thumbs:1">>} ->
+	  decode_thumbnail(<<"urn:xmpp:thumbs:1">>, IgnoreEls,
+			   _el);
+      {<<"slot">>, <<"urn:xmpp:http:upload">>, _} ->
 	  decode_upload_slot(<<"urn:xmpp:http:upload">>,
 			     IgnoreEls, _el);
-      {<<"slot">>,
+      {<<"slot">>, <<>>, <<"urn:xmpp:http:upload">>} ->
+	  decode_upload_slot(<<"urn:xmpp:http:upload">>,
+			     IgnoreEls, _el);
+      {<<"slot">>, <<"eu:siacs:conversations:http:upload">>,
+       _} ->
+	  decode_upload_slot(<<"eu:siacs:conversations:http:upload">>,
+			     IgnoreEls, _el);
+      {<<"slot">>, <<>>,
        <<"eu:siacs:conversations:http:upload">>} ->
 	  decode_upload_slot(<<"eu:siacs:conversations:http:upload">>,
 			     IgnoreEls, _el);
-      {<<"put">>, <<"urn:xmpp:http:upload">>} ->
+      {<<"put">>, <<"urn:xmpp:http:upload">>, _} ->
 	  decode_upload_put(<<"urn:xmpp:http:upload">>, IgnoreEls,
 			    _el);
-      {<<"put">>, <<"eu:siacs:conversations:http:upload">>} ->
+      {<<"put">>, <<>>, <<"urn:xmpp:http:upload">>} ->
+	  decode_upload_put(<<"urn:xmpp:http:upload">>, IgnoreEls,
+			    _el);
+      {<<"put">>, <<"eu:siacs:conversations:http:upload">>,
+       _} ->
 	  decode_upload_put(<<"eu:siacs:conversations:http:upload">>,
 			    IgnoreEls, _el);
-      {<<"get">>, <<"urn:xmpp:http:upload">>} ->
+      {<<"put">>, <<>>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  decode_upload_put(<<"eu:siacs:conversations:http:upload">>,
+			    IgnoreEls, _el);
+      {<<"get">>, <<"urn:xmpp:http:upload">>, _} ->
 	  decode_upload_get(<<"urn:xmpp:http:upload">>, IgnoreEls,
 			    _el);
-      {<<"get">>, <<"eu:siacs:conversations:http:upload">>} ->
+      {<<"get">>, <<>>, <<"urn:xmpp:http:upload">>} ->
+	  decode_upload_get(<<"urn:xmpp:http:upload">>, IgnoreEls,
+			    _el);
+      {<<"get">>, <<"eu:siacs:conversations:http:upload">>,
+       _} ->
 	  decode_upload_get(<<"eu:siacs:conversations:http:upload">>,
 			    IgnoreEls, _el);
-      {<<"request">>, <<"urn:xmpp:http:upload">>} ->
+      {<<"get">>, <<>>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  decode_upload_get(<<"eu:siacs:conversations:http:upload">>,
+			    IgnoreEls, _el);
+      {<<"request">>, <<"urn:xmpp:http:upload">>, _} ->
+	  decode_upload_request(<<"urn:xmpp:http:upload">>,
+				IgnoreEls, _el);
+      {<<"request">>, <<>>, <<"urn:xmpp:http:upload">>} ->
 	  decode_upload_request(<<"urn:xmpp:http:upload">>,
 				IgnoreEls, _el);
       {<<"request">>,
+       <<"eu:siacs:conversations:http:upload">>, _} ->
+	  decode_upload_request(<<"eu:siacs:conversations:http:upload">>,
+				IgnoreEls, _el);
+      {<<"request">>, <<>>,
        <<"eu:siacs:conversations:http:upload">>} ->
 	  decode_upload_request(<<"eu:siacs:conversations:http:upload">>,
 				IgnoreEls, _el);
-      {<<"content-type">>, <<"urn:xmpp:http:upload">>} ->
+      {<<"content-type">>, <<"urn:xmpp:http:upload">>, _} ->
+	  decode_upload_content_type(<<"urn:xmpp:http:upload">>,
+				     IgnoreEls, _el);
+      {<<"content-type">>, <<>>,
+       <<"urn:xmpp:http:upload">>} ->
 	  decode_upload_content_type(<<"urn:xmpp:http:upload">>,
 				     IgnoreEls, _el);
       {<<"content-type">>,
+       <<"eu:siacs:conversations:http:upload">>, _} ->
+	  decode_upload_content_type(<<"eu:siacs:conversations:http:upload">>,
+				     IgnoreEls, _el);
+      {<<"content-type">>, <<>>,
        <<"eu:siacs:conversations:http:upload">>} ->
 	  decode_upload_content_type(<<"eu:siacs:conversations:http:upload">>,
 				     IgnoreEls, _el);
-      {<<"size">>, <<"urn:xmpp:http:upload">>} ->
+      {<<"size">>, <<"urn:xmpp:http:upload">>, _} ->
 	  decode_upload_size(<<"urn:xmpp:http:upload">>,
 			     IgnoreEls, _el);
-      {<<"size">>,
+      {<<"size">>, <<>>, <<"urn:xmpp:http:upload">>} ->
+	  decode_upload_size(<<"urn:xmpp:http:upload">>,
+			     IgnoreEls, _el);
+      {<<"size">>, <<"eu:siacs:conversations:http:upload">>,
+       _} ->
+	  decode_upload_size(<<"eu:siacs:conversations:http:upload">>,
+			     IgnoreEls, _el);
+      {<<"size">>, <<>>,
        <<"eu:siacs:conversations:http:upload">>} ->
 	  decode_upload_size(<<"eu:siacs:conversations:http:upload">>,
 			     IgnoreEls, _el);
-      {<<"filename">>, <<"urn:xmpp:http:upload">>} ->
+      {<<"filename">>, <<"urn:xmpp:http:upload">>, _} ->
+	  decode_upload_filename(<<"urn:xmpp:http:upload">>,
+				 IgnoreEls, _el);
+      {<<"filename">>, <<>>, <<"urn:xmpp:http:upload">>} ->
 	  decode_upload_filename(<<"urn:xmpp:http:upload">>,
 				 IgnoreEls, _el);
       {<<"filename">>,
+       <<"eu:siacs:conversations:http:upload">>, _} ->
+	  decode_upload_filename(<<"eu:siacs:conversations:http:upload">>,
+				 IgnoreEls, _el);
+      {<<"filename">>, <<>>,
        <<"eu:siacs:conversations:http:upload">>} ->
 	  decode_upload_filename(<<"eu:siacs:conversations:http:upload">>,
 				 IgnoreEls, _el);
-      {<<"address">>, <<"urn:xmpp:sic:0">>} ->
+      {<<"address">>, <<"urn:xmpp:sic:0">>, _} ->
 	  decode_sic(<<"urn:xmpp:sic:0">>, IgnoreEls, _el);
-      {<<"address">>, <<"urn:xmpp:sic:1">>} ->
+      {<<"address">>, <<>>, <<"urn:xmpp:sic:0">>} ->
+	  decode_sic(<<"urn:xmpp:sic:0">>, IgnoreEls, _el);
+      {<<"address">>, <<"urn:xmpp:sic:1">>, _} ->
 	  decode_sic(<<"urn:xmpp:sic:1">>, IgnoreEls, _el);
-      {<<"port">>, <<"urn:xmpp:sic:1">>} ->
+      {<<"address">>, <<>>, <<"urn:xmpp:sic:1">>} ->
+	  decode_sic(<<"urn:xmpp:sic:1">>, IgnoreEls, _el);
+      {<<"port">>, <<"urn:xmpp:sic:1">>, _} ->
 	  decode_sip_port(<<"urn:xmpp:sic:1">>, IgnoreEls, _el);
-      {<<"ip">>, <<"urn:xmpp:sic:0">>} ->
+      {<<"port">>, <<>>, <<"urn:xmpp:sic:1">>} ->
+	  decode_sip_port(<<"urn:xmpp:sic:1">>, IgnoreEls, _el);
+      {<<"ip">>, <<"urn:xmpp:sic:0">>, _} ->
 	  decode_sic_ip(<<"urn:xmpp:sic:0">>, IgnoreEls, _el);
-      {<<"ip">>, <<"urn:xmpp:sic:1">>} ->
+      {<<"ip">>, <<>>, <<"urn:xmpp:sic:0">>} ->
+	  decode_sic_ip(<<"urn:xmpp:sic:0">>, IgnoreEls, _el);
+      {<<"ip">>, <<"urn:xmpp:sic:1">>, _} ->
 	  decode_sic_ip(<<"urn:xmpp:sic:1">>, IgnoreEls, _el);
-      {<<"x">>, <<"jabber:x:oob">>} ->
+      {<<"ip">>, <<>>, <<"urn:xmpp:sic:1">>} ->
+	  decode_sic_ip(<<"urn:xmpp:sic:1">>, IgnoreEls, _el);
+      {<<"x">>, <<"jabber:x:oob">>, _} ->
 	  decode_oob_x(<<"jabber:x:oob">>, IgnoreEls, _el);
-      {<<"desc">>, <<"jabber:x:oob">>} ->
+      {<<"x">>, <<>>, <<"jabber:x:oob">>} ->
+	  decode_oob_x(<<"jabber:x:oob">>, IgnoreEls, _el);
+      {<<"desc">>, <<"jabber:x:oob">>, _} ->
 	  decode_oob_desc(<<"jabber:x:oob">>, IgnoreEls, _el);
-      {<<"url">>, <<"jabber:x:oob">>} ->
+      {<<"desc">>, <<>>, <<"jabber:x:oob">>} ->
+	  decode_oob_desc(<<"jabber:x:oob">>, IgnoreEls, _el);
+      {<<"url">>, <<"jabber:x:oob">>, _} ->
 	  decode_oob_url(<<"jabber:x:oob">>, IgnoreEls, _el);
-      {<<"media">>, <<"urn:xmpp:media-element">>} ->
+      {<<"url">>, <<>>, <<"jabber:x:oob">>} ->
+	  decode_oob_url(<<"jabber:x:oob">>, IgnoreEls, _el);
+      {<<"media">>, <<"urn:xmpp:media-element">>, _} ->
 	  decode_media(<<"urn:xmpp:media-element">>, IgnoreEls,
 		       _el);
-      {<<"uri">>, <<"urn:xmpp:media-element">>} ->
+      {<<"media">>, <<>>, <<"urn:xmpp:media-element">>} ->
+	  decode_media(<<"urn:xmpp:media-element">>, IgnoreEls,
+		       _el);
+      {<<"uri">>, <<"urn:xmpp:media-element">>, _} ->
 	  decode_media_uri(<<"urn:xmpp:media-element">>,
 			   IgnoreEls, _el);
-      {<<"captcha">>, <<"urn:xmpp:captcha">>} ->
+      {<<"uri">>, <<>>, <<"urn:xmpp:media-element">>} ->
+	  decode_media_uri(<<"urn:xmpp:media-element">>,
+			   IgnoreEls, _el);
+      {<<"captcha">>, <<"urn:xmpp:captcha">>, _} ->
 	  decode_captcha(<<"urn:xmpp:captcha">>, IgnoreEls, _el);
-      {<<"data">>, <<"urn:xmpp:bob">>} ->
+      {<<"captcha">>, <<>>, <<"urn:xmpp:captcha">>} ->
+	  decode_captcha(<<"urn:xmpp:captcha">>, IgnoreEls, _el);
+      {<<"data">>, <<"urn:xmpp:bob">>, _} ->
 	  decode_bob_data(<<"urn:xmpp:bob">>, IgnoreEls, _el);
-      {<<"stream:stream">>, <<"jabber:client">>} ->
+      {<<"data">>, <<>>, <<"urn:xmpp:bob">>} ->
+	  decode_bob_data(<<"urn:xmpp:bob">>, IgnoreEls, _el);
+      {<<"stream:stream">>, <<"jabber:client">>, _} ->
 	  decode_stream_start(<<"jabber:client">>, IgnoreEls,
 			      _el);
-      {<<"stream:stream">>, <<"jabber:server">>} ->
+      {<<"stream:stream">>, <<>>, <<"jabber:client">>} ->
+	  decode_stream_start(<<"jabber:client">>, IgnoreEls,
+			      _el);
+      {<<"stream:stream">>, <<"jabber:server">>, _} ->
 	  decode_stream_start(<<"jabber:server">>, IgnoreEls,
 			      _el);
-      {<<"stream:stream">>, <<"jabber:component:accept">>} ->
+      {<<"stream:stream">>, <<>>, <<"jabber:server">>} ->
+	  decode_stream_start(<<"jabber:server">>, IgnoreEls,
+			      _el);
+      {<<"stream:stream">>, <<"jabber:component:accept">>,
+       _} ->
 	  decode_stream_start(<<"jabber:component:accept">>,
 			      IgnoreEls, _el);
-      {<<"handshake">>, <<"jabber:client">>} ->
-	  decode_handshake(<<"jabber:client">>, IgnoreEls, _el);
-      {<<"db:verify">>, <<"jabber:client">>} ->
-	  decode_db_verify(<<"jabber:client">>, IgnoreEls, _el);
-      {<<"db:result">>, <<"jabber:client">>} ->
-	  decode_db_result(<<"jabber:client">>, IgnoreEls, _el);
+      {<<"stream:stream">>, <<>>,
+       <<"jabber:component:accept">>} ->
+	  decode_stream_start(<<"jabber:component:accept">>,
+			      IgnoreEls, _el);
+      {<<"handshake">>, <<"jabber:component:accept">>, _} ->
+	  decode_handshake(<<"jabber:component:accept">>,
+			   IgnoreEls, _el);
+      {<<"handshake">>, <<>>,
+       <<"jabber:component:accept">>} ->
+	  decode_handshake(<<"jabber:component:accept">>,
+			   IgnoreEls, _el);
+      {<<"db:verify">>, <<"jabber:server">>, _} ->
+	  decode_db_verify(<<"jabber:server">>, IgnoreEls, _el);
+      {<<"db:verify">>, <<>>, <<"jabber:server">>} ->
+	  decode_db_verify(<<"jabber:server">>, IgnoreEls, _el);
+      {<<"db:result">>, <<"jabber:server">>, _} ->
+	  decode_db_result(<<"jabber:server">>, IgnoreEls, _el);
+      {<<"db:result">>, <<>>, <<"jabber:server">>} ->
+	  decode_db_result(<<"jabber:server">>, IgnoreEls, _el);
       {<<"command">>,
+       <<"http://jabber.org/protocol/commands">>, _} ->
+	  decode_adhoc_command(<<"http://jabber.org/protocol/commands">>,
+			       IgnoreEls, _el);
+      {<<"command">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  decode_adhoc_command(<<"http://jabber.org/protocol/commands">>,
 			       IgnoreEls, _el);
-      {<<"note">>,
+      {<<"note">>, <<"http://jabber.org/protocol/commands">>,
+       _} ->
+	  decode_adhoc_command_notes(<<"http://jabber.org/protocol/commands">>,
+				     IgnoreEls, _el);
+      {<<"note">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  decode_adhoc_command_notes(<<"http://jabber.org/protocol/commands">>,
 				     IgnoreEls, _el);
       {<<"actions">>,
+       <<"http://jabber.org/protocol/commands">>, _} ->
+	  decode_adhoc_command_actions(<<"http://jabber.org/protocol/commands">>,
+				       IgnoreEls, _el);
+      {<<"actions">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  decode_adhoc_command_actions(<<"http://jabber.org/protocol/commands">>,
 				       IgnoreEls, _el);
       {<<"complete">>,
+       <<"http://jabber.org/protocol/commands">>, _} ->
+	  decode_adhoc_command_complete(<<"http://jabber.org/protocol/commands">>,
+					IgnoreEls, _el);
+      {<<"complete">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  decode_adhoc_command_complete(<<"http://jabber.org/protocol/commands">>,
 					IgnoreEls, _el);
-      {<<"next">>,
+      {<<"next">>, <<"http://jabber.org/protocol/commands">>,
+       _} ->
+	  decode_adhoc_command_next(<<"http://jabber.org/protocol/commands">>,
+				    IgnoreEls, _el);
+      {<<"next">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  decode_adhoc_command_next(<<"http://jabber.org/protocol/commands">>,
 				    IgnoreEls, _el);
-      {<<"prev">>,
+      {<<"prev">>, <<"http://jabber.org/protocol/commands">>,
+       _} ->
+	  decode_adhoc_command_prev(<<"http://jabber.org/protocol/commands">>,
+				    IgnoreEls, _el);
+      {<<"prev">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  decode_adhoc_command_prev(<<"http://jabber.org/protocol/commands">>,
 				    IgnoreEls, _el);
-      {<<"client-id">>, <<"urn:xmpp:sid:0">>} ->
+      {<<"client-id">>, <<"urn:xmpp:sid:0">>, _} ->
 	  decode_client_id(<<"urn:xmpp:sid:0">>, IgnoreEls, _el);
-      {<<"stanza-id">>, <<"urn:xmpp:sid:0">>} ->
+      {<<"client-id">>, <<>>, <<"urn:xmpp:sid:0">>} ->
+	  decode_client_id(<<"urn:xmpp:sid:0">>, IgnoreEls, _el);
+      {<<"stanza-id">>, <<"urn:xmpp:sid:0">>, _} ->
+	  decode_stanza_id(<<"urn:xmpp:sid:0">>, IgnoreEls, _el);
+      {<<"stanza-id">>, <<>>, <<"urn:xmpp:sid:0">>} ->
 	  decode_stanza_id(<<"urn:xmpp:sid:0">>, IgnoreEls, _el);
       {<<"addresses">>,
+       <<"http://jabber.org/protocol/address">>, _} ->
+	  decode_addresses(<<"http://jabber.org/protocol/address">>,
+			   IgnoreEls, _el);
+      {<<"addresses">>, <<>>,
        <<"http://jabber.org/protocol/address">>} ->
 	  decode_addresses(<<"http://jabber.org/protocol/address">>,
 			   IgnoreEls, _el);
       {<<"address">>,
+       <<"http://jabber.org/protocol/address">>, _} ->
+	  decode_address(<<"http://jabber.org/protocol/address">>,
+			 IgnoreEls, _el);
+      {<<"address">>, <<>>,
        <<"http://jabber.org/protocol/address">>} ->
 	  decode_address(<<"http://jabber.org/protocol/address">>,
 			 IgnoreEls, _el);
-      {<<"nick">>, <<"http://jabber.org/protocol/nick">>} ->
+      {<<"nick">>, <<"http://jabber.org/protocol/nick">>,
+       _} ->
 	  decode_nick(<<"http://jabber.org/protocol/nick">>,
 		      IgnoreEls, _el);
-      {<<"x">>, <<"jabber:x:expire">>} ->
+      {<<"nick">>, <<>>,
+       <<"http://jabber.org/protocol/nick">>} ->
+	  decode_nick(<<"http://jabber.org/protocol/nick">>,
+		      IgnoreEls, _el);
+      {<<"x">>, <<"jabber:x:expire">>, _} ->
 	  decode_expire(<<"jabber:x:expire">>, IgnoreEls, _el);
-      {<<"x">>, <<"jabber:x:event">>} ->
+      {<<"x">>, <<>>, <<"jabber:x:expire">>} ->
+	  decode_expire(<<"jabber:x:expire">>, IgnoreEls, _el);
+      {<<"x">>, <<"jabber:x:event">>, _} ->
 	  decode_xevent(<<"jabber:x:event">>, IgnoreEls, _el);
-      {<<"id">>, <<"jabber:x:event">>} ->
+      {<<"x">>, <<>>, <<"jabber:x:event">>} ->
+	  decode_xevent(<<"jabber:x:event">>, IgnoreEls, _el);
+      {<<"id">>, <<"jabber:x:event">>, _} ->
 	  decode_xevent_id(<<"jabber:x:event">>, IgnoreEls, _el);
-      {<<"composing">>, <<"jabber:x:event">>} ->
+      {<<"id">>, <<>>, <<"jabber:x:event">>} ->
+	  decode_xevent_id(<<"jabber:x:event">>, IgnoreEls, _el);
+      {<<"composing">>, <<"jabber:x:event">>, _} ->
 	  decode_xevent_composing(<<"jabber:x:event">>, IgnoreEls,
 				  _el);
-      {<<"displayed">>, <<"jabber:x:event">>} ->
+      {<<"composing">>, <<>>, <<"jabber:x:event">>} ->
+	  decode_xevent_composing(<<"jabber:x:event">>, IgnoreEls,
+				  _el);
+      {<<"displayed">>, <<"jabber:x:event">>, _} ->
 	  decode_xevent_displayed(<<"jabber:x:event">>, IgnoreEls,
 				  _el);
-      {<<"delivered">>, <<"jabber:x:event">>} ->
+      {<<"displayed">>, <<>>, <<"jabber:x:event">>} ->
+	  decode_xevent_displayed(<<"jabber:x:event">>, IgnoreEls,
+				  _el);
+      {<<"delivered">>, <<"jabber:x:event">>, _} ->
 	  decode_xevent_delivered(<<"jabber:x:event">>, IgnoreEls,
 				  _el);
-      {<<"offline">>, <<"jabber:x:event">>} ->
+      {<<"delivered">>, <<>>, <<"jabber:x:event">>} ->
+	  decode_xevent_delivered(<<"jabber:x:event">>, IgnoreEls,
+				  _el);
+      {<<"offline">>, <<"jabber:x:event">>, _} ->
 	  decode_xevent_offline(<<"jabber:x:event">>, IgnoreEls,
 				_el);
-      {<<"query">>, <<"jabber:iq:search">>} ->
+      {<<"offline">>, <<>>, <<"jabber:x:event">>} ->
+	  decode_xevent_offline(<<"jabber:x:event">>, IgnoreEls,
+				_el);
+      {<<"query">>, <<"jabber:iq:search">>, _} ->
 	  decode_search(<<"jabber:iq:search">>, IgnoreEls, _el);
-      {<<"item">>, <<"jabber:iq:search">>} ->
+      {<<"query">>, <<>>, <<"jabber:iq:search">>} ->
+	  decode_search(<<"jabber:iq:search">>, IgnoreEls, _el);
+      {<<"item">>, <<"jabber:iq:search">>, _} ->
 	  decode_search_item(<<"jabber:iq:search">>, IgnoreEls,
 			     _el);
-      {<<"email">>, <<"jabber:iq:search">>} ->
+      {<<"item">>, <<>>, <<"jabber:iq:search">>} ->
+	  decode_search_item(<<"jabber:iq:search">>, IgnoreEls,
+			     _el);
+      {<<"email">>, <<"jabber:iq:search">>, _} ->
 	  decode_search_email(<<"jabber:iq:search">>, IgnoreEls,
 			      _el);
-      {<<"nick">>, <<"jabber:iq:search">>} ->
+      {<<"email">>, <<>>, <<"jabber:iq:search">>} ->
+	  decode_search_email(<<"jabber:iq:search">>, IgnoreEls,
+			      _el);
+      {<<"nick">>, <<"jabber:iq:search">>, _} ->
 	  decode_search_nick(<<"jabber:iq:search">>, IgnoreEls,
 			     _el);
-      {<<"last">>, <<"jabber:iq:search">>} ->
+      {<<"nick">>, <<>>, <<"jabber:iq:search">>} ->
+	  decode_search_nick(<<"jabber:iq:search">>, IgnoreEls,
+			     _el);
+      {<<"last">>, <<"jabber:iq:search">>, _} ->
 	  decode_search_last(<<"jabber:iq:search">>, IgnoreEls,
 			     _el);
-      {<<"first">>, <<"jabber:iq:search">>} ->
+      {<<"last">>, <<>>, <<"jabber:iq:search">>} ->
+	  decode_search_last(<<"jabber:iq:search">>, IgnoreEls,
+			     _el);
+      {<<"first">>, <<"jabber:iq:search">>, _} ->
 	  decode_search_first(<<"jabber:iq:search">>, IgnoreEls,
 			      _el);
-      {<<"instructions">>, <<"jabber:iq:search">>} ->
+      {<<"first">>, <<>>, <<"jabber:iq:search">>} ->
+	  decode_search_first(<<"jabber:iq:search">>, IgnoreEls,
+			      _el);
+      {<<"instructions">>, <<"jabber:iq:search">>, _} ->
 	  decode_search_instructions(<<"jabber:iq:search">>,
 				     IgnoreEls, _el);
-      {<<"no-permanent-storage">>, <<"urn:xmpp:hints">>} ->
+      {<<"instructions">>, <<>>, <<"jabber:iq:search">>} ->
+	  decode_search_instructions(<<"jabber:iq:search">>,
+				     IgnoreEls, _el);
+      {<<"no-permanent-storage">>, <<"urn:xmpp:hints">>, _} ->
 	  decode_hint_no_permanent_storage(<<"urn:xmpp:hints">>,
 					   IgnoreEls, _el);
-      {<<"no-permanent-store">>, <<"urn:xmpp:hints">>} ->
+      {<<"no-permanent-storage">>, <<>>,
+       <<"urn:xmpp:hints">>} ->
+	  decode_hint_no_permanent_storage(<<"urn:xmpp:hints">>,
+					   IgnoreEls, _el);
+      {<<"no-permanent-store">>, <<"urn:xmpp:hints">>, _} ->
 	  decode_hint_no_permanent_store(<<"urn:xmpp:hints">>,
 					 IgnoreEls, _el);
-      {<<"store">>, <<"urn:xmpp:hints">>} ->
+      {<<"no-permanent-store">>, <<>>,
+       <<"urn:xmpp:hints">>} ->
+	  decode_hint_no_permanent_store(<<"urn:xmpp:hints">>,
+					 IgnoreEls, _el);
+      {<<"store">>, <<"urn:xmpp:hints">>, _} ->
 	  decode_hint_store(<<"urn:xmpp:hints">>, IgnoreEls, _el);
-      {<<"no-storage">>, <<"urn:xmpp:hints">>} ->
+      {<<"store">>, <<>>, <<"urn:xmpp:hints">>} ->
+	  decode_hint_store(<<"urn:xmpp:hints">>, IgnoreEls, _el);
+      {<<"no-storage">>, <<"urn:xmpp:hints">>, _} ->
 	  decode_hint_no_storage(<<"urn:xmpp:hints">>, IgnoreEls,
 				 _el);
-      {<<"no-store">>, <<"urn:xmpp:hints">>} ->
+      {<<"no-storage">>, <<>>, <<"urn:xmpp:hints">>} ->
+	  decode_hint_no_storage(<<"urn:xmpp:hints">>, IgnoreEls,
+				 _el);
+      {<<"no-store">>, <<"urn:xmpp:hints">>, _} ->
 	  decode_hint_no_store(<<"urn:xmpp:hints">>, IgnoreEls,
 			       _el);
-      {<<"no-copy">>, <<"urn:xmpp:hints">>} ->
+      {<<"no-store">>, <<>>, <<"urn:xmpp:hints">>} ->
+	  decode_hint_no_store(<<"urn:xmpp:hints">>, IgnoreEls,
+			       _el);
+      {<<"no-copy">>, <<"urn:xmpp:hints">>, _} ->
 	  decode_hint_no_copy(<<"urn:xmpp:hints">>, IgnoreEls,
 			      _el);
-      {<<"participant">>, <<"urn:xmpp:mix:0">>} ->
+      {<<"no-copy">>, <<>>, <<"urn:xmpp:hints">>} ->
+	  decode_hint_no_copy(<<"urn:xmpp:hints">>, IgnoreEls,
+			      _el);
+      {<<"participant">>, <<"urn:xmpp:mix:0">>, _} ->
 	  decode_mix_participant(<<"urn:xmpp:mix:0">>, IgnoreEls,
 				 _el);
-      {<<"leave">>, <<"urn:xmpp:mix:0">>} ->
+      {<<"participant">>, <<>>, <<"urn:xmpp:mix:0">>} ->
+	  decode_mix_participant(<<"urn:xmpp:mix:0">>, IgnoreEls,
+				 _el);
+      {<<"leave">>, <<"urn:xmpp:mix:0">>, _} ->
 	  decode_mix_leave(<<"urn:xmpp:mix:0">>, IgnoreEls, _el);
-      {<<"join">>, <<"urn:xmpp:mix:0">>} ->
+      {<<"leave">>, <<>>, <<"urn:xmpp:mix:0">>} ->
+	  decode_mix_leave(<<"urn:xmpp:mix:0">>, IgnoreEls, _el);
+      {<<"join">>, <<"urn:xmpp:mix:0">>, _} ->
 	  decode_mix_join(<<"urn:xmpp:mix:0">>, IgnoreEls, _el);
-      {<<"subscribe">>, <<"urn:xmpp:mix:0">>} ->
+      {<<"join">>, <<>>, <<"urn:xmpp:mix:0">>} ->
+	  decode_mix_join(<<"urn:xmpp:mix:0">>, IgnoreEls, _el);
+      {<<"subscribe">>, <<"urn:xmpp:mix:0">>, _} ->
+	  decode_mix_subscribe(<<"urn:xmpp:mix:0">>, IgnoreEls,
+			       _el);
+      {<<"subscribe">>, <<>>, <<"urn:xmpp:mix:0">>} ->
 	  decode_mix_subscribe(<<"urn:xmpp:mix:0">>, IgnoreEls,
 			       _el);
       {<<"offline">>,
+       <<"http://jabber.org/protocol/offline">>, _} ->
+	  decode_offline(<<"http://jabber.org/protocol/offline">>,
+			 IgnoreEls, _el);
+      {<<"offline">>, <<>>,
        <<"http://jabber.org/protocol/offline">>} ->
 	  decode_offline(<<"http://jabber.org/protocol/offline">>,
 			 IgnoreEls, _el);
-      {<<"item">>,
+      {<<"item">>, <<"http://jabber.org/protocol/offline">>,
+       _} ->
+	  decode_offline_item(<<"http://jabber.org/protocol/offline">>,
+			      IgnoreEls, _el);
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/offline">>} ->
 	  decode_offline_item(<<"http://jabber.org/protocol/offline">>,
 			      IgnoreEls, _el);
-      {<<"fetch">>,
+      {<<"fetch">>, <<"http://jabber.org/protocol/offline">>,
+       _} ->
+	  decode_offline_fetch(<<"http://jabber.org/protocol/offline">>,
+			       IgnoreEls, _el);
+      {<<"fetch">>, <<>>,
        <<"http://jabber.org/protocol/offline">>} ->
 	  decode_offline_fetch(<<"http://jabber.org/protocol/offline">>,
 			       IgnoreEls, _el);
-      {<<"purge">>,
+      {<<"purge">>, <<"http://jabber.org/protocol/offline">>,
+       _} ->
+	  decode_offline_purge(<<"http://jabber.org/protocol/offline">>,
+			       IgnoreEls, _el);
+      {<<"purge">>, <<>>,
        <<"http://jabber.org/protocol/offline">>} ->
 	  decode_offline_purge(<<"http://jabber.org/protocol/offline">>,
 			       IgnoreEls, _el);
-      {<<"failed">>, <<"urn:xmpp:sm:2">>} ->
+      {<<"failed">>, <<"urn:xmpp:sm:2">>, _} ->
 	  decode_sm_failed(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
-      {<<"failed">>, <<"urn:xmpp:sm:3">>} ->
+      {<<"failed">>, <<>>, <<"urn:xmpp:sm:2">>} ->
+	  decode_sm_failed(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
+      {<<"failed">>, <<"urn:xmpp:sm:3">>, _} ->
 	  decode_sm_failed(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
-      {<<"a">>, <<"urn:xmpp:sm:2">>} ->
+      {<<"failed">>, <<>>, <<"urn:xmpp:sm:3">>} ->
+	  decode_sm_failed(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
+      {<<"a">>, <<"urn:xmpp:sm:2">>, _} ->
 	  decode_sm_a(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
-      {<<"a">>, <<"urn:xmpp:sm:3">>} ->
+      {<<"a">>, <<>>, <<"urn:xmpp:sm:2">>} ->
+	  decode_sm_a(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
+      {<<"a">>, <<"urn:xmpp:sm:3">>, _} ->
 	  decode_sm_a(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
-      {<<"r">>, <<"urn:xmpp:sm:2">>} ->
+      {<<"a">>, <<>>, <<"urn:xmpp:sm:3">>} ->
+	  decode_sm_a(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
+      {<<"r">>, <<"urn:xmpp:sm:2">>, _} ->
 	  decode_sm_r(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
-      {<<"r">>, <<"urn:xmpp:sm:3">>} ->
+      {<<"r">>, <<>>, <<"urn:xmpp:sm:2">>} ->
+	  decode_sm_r(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
+      {<<"r">>, <<"urn:xmpp:sm:3">>, _} ->
 	  decode_sm_r(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
-      {<<"resumed">>, <<"urn:xmpp:sm:2">>} ->
+      {<<"r">>, <<>>, <<"urn:xmpp:sm:3">>} ->
+	  decode_sm_r(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
+      {<<"resumed">>, <<"urn:xmpp:sm:2">>, _} ->
 	  decode_sm_resumed(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
-      {<<"resumed">>, <<"urn:xmpp:sm:3">>} ->
+      {<<"resumed">>, <<>>, <<"urn:xmpp:sm:2">>} ->
+	  decode_sm_resumed(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
+      {<<"resumed">>, <<"urn:xmpp:sm:3">>, _} ->
 	  decode_sm_resumed(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
-      {<<"resume">>, <<"urn:xmpp:sm:2">>} ->
+      {<<"resumed">>, <<>>, <<"urn:xmpp:sm:3">>} ->
+	  decode_sm_resumed(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
+      {<<"resume">>, <<"urn:xmpp:sm:2">>, _} ->
 	  decode_sm_resume(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
-      {<<"resume">>, <<"urn:xmpp:sm:3">>} ->
+      {<<"resume">>, <<>>, <<"urn:xmpp:sm:2">>} ->
+	  decode_sm_resume(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
+      {<<"resume">>, <<"urn:xmpp:sm:3">>, _} ->
 	  decode_sm_resume(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
-      {<<"enabled">>, <<"urn:xmpp:sm:2">>} ->
+      {<<"resume">>, <<>>, <<"urn:xmpp:sm:3">>} ->
+	  decode_sm_resume(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
+      {<<"enabled">>, <<"urn:xmpp:sm:2">>, _} ->
 	  decode_sm_enabled(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
-      {<<"enabled">>, <<"urn:xmpp:sm:3">>} ->
+      {<<"enabled">>, <<>>, <<"urn:xmpp:sm:2">>} ->
+	  decode_sm_enabled(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
+      {<<"enabled">>, <<"urn:xmpp:sm:3">>, _} ->
 	  decode_sm_enabled(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
-      {<<"enable">>, <<"urn:xmpp:sm:2">>} ->
+      {<<"enabled">>, <<>>, <<"urn:xmpp:sm:3">>} ->
+	  decode_sm_enabled(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
+      {<<"enable">>, <<"urn:xmpp:sm:2">>, _} ->
 	  decode_sm_enable(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
-      {<<"enable">>, <<"urn:xmpp:sm:3">>} ->
+      {<<"enable">>, <<>>, <<"urn:xmpp:sm:2">>} ->
+	  decode_sm_enable(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
+      {<<"enable">>, <<"urn:xmpp:sm:3">>, _} ->
 	  decode_sm_enable(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
-      {<<"sm">>, <<"urn:xmpp:sm:2">>} ->
+      {<<"enable">>, <<>>, <<"urn:xmpp:sm:3">>} ->
+	  decode_sm_enable(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
+      {<<"sm">>, <<"urn:xmpp:sm:2">>, _} ->
 	  decode_feature_sm(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
-      {<<"sm">>, <<"urn:xmpp:sm:3">>} ->
+      {<<"sm">>, <<>>, <<"urn:xmpp:sm:2">>} ->
+	  decode_feature_sm(<<"urn:xmpp:sm:2">>, IgnoreEls, _el);
+      {<<"sm">>, <<"urn:xmpp:sm:3">>, _} ->
 	  decode_feature_sm(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
-      {<<"inactive">>, <<"urn:xmpp:csi:0">>} ->
+      {<<"sm">>, <<>>, <<"urn:xmpp:sm:3">>} ->
+	  decode_feature_sm(<<"urn:xmpp:sm:3">>, IgnoreEls, _el);
+      {<<"inactive">>, <<"urn:xmpp:csi:0">>, _} ->
 	  decode_csi_inactive(<<"urn:xmpp:csi:0">>, IgnoreEls,
 			      _el);
-      {<<"active">>, <<"urn:xmpp:csi:0">>} ->
+      {<<"inactive">>, <<>>, <<"urn:xmpp:csi:0">>} ->
+	  decode_csi_inactive(<<"urn:xmpp:csi:0">>, IgnoreEls,
+			      _el);
+      {<<"active">>, <<"urn:xmpp:csi:0">>, _} ->
 	  decode_csi_active(<<"urn:xmpp:csi:0">>, IgnoreEls, _el);
-      {<<"csi">>, <<"urn:xmpp:csi:0">>} ->
+      {<<"active">>, <<>>, <<"urn:xmpp:csi:0">>} ->
+	  decode_csi_active(<<"urn:xmpp:csi:0">>, IgnoreEls, _el);
+      {<<"csi">>, <<"urn:xmpp:csi:0">>, _} ->
 	  decode_feature_csi(<<"urn:xmpp:csi:0">>, IgnoreEls,
 			     _el);
-      {<<"sent">>, <<"urn:xmpp:carbons:2">>} ->
+      {<<"csi">>, <<>>, <<"urn:xmpp:csi:0">>} ->
+	  decode_feature_csi(<<"urn:xmpp:csi:0">>, IgnoreEls,
+			     _el);
+      {<<"sent">>, <<"urn:xmpp:carbons:2">>, _} ->
 	  decode_carbons_sent(<<"urn:xmpp:carbons:2">>, IgnoreEls,
 			      _el);
-      {<<"received">>, <<"urn:xmpp:carbons:2">>} ->
+      {<<"sent">>, <<>>, <<"urn:xmpp:carbons:2">>} ->
+	  decode_carbons_sent(<<"urn:xmpp:carbons:2">>, IgnoreEls,
+			      _el);
+      {<<"received">>, <<"urn:xmpp:carbons:2">>, _} ->
 	  decode_carbons_received(<<"urn:xmpp:carbons:2">>,
 				  IgnoreEls, _el);
-      {<<"private">>, <<"urn:xmpp:carbons:2">>} ->
+      {<<"received">>, <<>>, <<"urn:xmpp:carbons:2">>} ->
+	  decode_carbons_received(<<"urn:xmpp:carbons:2">>,
+				  IgnoreEls, _el);
+      {<<"private">>, <<"urn:xmpp:carbons:2">>, _} ->
 	  decode_carbons_private(<<"urn:xmpp:carbons:2">>,
 				 IgnoreEls, _el);
-      {<<"enable">>, <<"urn:xmpp:carbons:2">>} ->
+      {<<"private">>, <<>>, <<"urn:xmpp:carbons:2">>} ->
+	  decode_carbons_private(<<"urn:xmpp:carbons:2">>,
+				 IgnoreEls, _el);
+      {<<"enable">>, <<"urn:xmpp:carbons:2">>, _} ->
 	  decode_carbons_enable(<<"urn:xmpp:carbons:2">>,
 				IgnoreEls, _el);
-      {<<"disable">>, <<"urn:xmpp:carbons:2">>} ->
+      {<<"enable">>, <<>>, <<"urn:xmpp:carbons:2">>} ->
+	  decode_carbons_enable(<<"urn:xmpp:carbons:2">>,
+				IgnoreEls, _el);
+      {<<"disable">>, <<"urn:xmpp:carbons:2">>, _} ->
 	  decode_carbons_disable(<<"urn:xmpp:carbons:2">>,
 				 IgnoreEls, _el);
-      {<<"forwarded">>, <<"urn:xmpp:forward:0">>} ->
+      {<<"disable">>, <<>>, <<"urn:xmpp:carbons:2">>} ->
+	  decode_carbons_disable(<<"urn:xmpp:carbons:2">>,
+				 IgnoreEls, _el);
+      {<<"forwarded">>, <<"urn:xmpp:forward:0">>, _} ->
 	  decode_forwarded(<<"urn:xmpp:forward:0">>, IgnoreEls,
 			   _el);
-      {<<"fin">>, <<"urn:xmpp:mam:0">>} ->
+      {<<"forwarded">>, <<>>, <<"urn:xmpp:forward:0">>} ->
+	  decode_forwarded(<<"urn:xmpp:forward:0">>, IgnoreEls,
+			   _el);
+      {<<"fin">>, <<"urn:xmpp:mam:0">>, _} ->
 	  decode_mam_fin(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
-      {<<"fin">>, <<"urn:xmpp:mam:1">>} ->
+      {<<"fin">>, <<>>, <<"urn:xmpp:mam:0">>} ->
+	  decode_mam_fin(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
+      {<<"fin">>, <<"urn:xmpp:mam:1">>, _} ->
 	  decode_mam_fin(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
-      {<<"prefs">>, <<"urn:xmpp:mam:0">>} ->
+      {<<"fin">>, <<>>, <<"urn:xmpp:mam:1">>} ->
+	  decode_mam_fin(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
+      {<<"prefs">>, <<"urn:xmpp:mam:0">>, _} ->
 	  decode_mam_prefs(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
-      {<<"prefs">>, <<"urn:xmpp:mam:1">>} ->
+      {<<"prefs">>, <<>>, <<"urn:xmpp:mam:0">>} ->
+	  decode_mam_prefs(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
+      {<<"prefs">>, <<"urn:xmpp:mam:1">>, _} ->
 	  decode_mam_prefs(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
-      {<<"prefs">>, <<"urn:xmpp:mam:tmp">>} ->
+      {<<"prefs">>, <<>>, <<"urn:xmpp:mam:1">>} ->
+	  decode_mam_prefs(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
+      {<<"prefs">>, <<"urn:xmpp:mam:tmp">>, _} ->
 	  decode_mam_prefs(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
 			   _el);
-      {<<"always">>, <<"urn:xmpp:mam:0">>} ->
+      {<<"prefs">>, <<>>, <<"urn:xmpp:mam:tmp">>} ->
+	  decode_mam_prefs(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
+			   _el);
+      {<<"always">>, <<"urn:xmpp:mam:0">>, _} ->
 	  decode_mam_always(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
-      {<<"always">>, <<"urn:xmpp:mam:1">>} ->
+      {<<"always">>, <<>>, <<"urn:xmpp:mam:0">>} ->
+	  decode_mam_always(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
+      {<<"always">>, <<"urn:xmpp:mam:1">>, _} ->
 	  decode_mam_always(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
-      {<<"always">>, <<"urn:xmpp:mam:tmp">>} ->
+      {<<"always">>, <<>>, <<"urn:xmpp:mam:1">>} ->
+	  decode_mam_always(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
+      {<<"always">>, <<"urn:xmpp:mam:tmp">>, _} ->
 	  decode_mam_always(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
 			    _el);
-      {<<"never">>, <<"urn:xmpp:mam:0">>} ->
+      {<<"always">>, <<>>, <<"urn:xmpp:mam:tmp">>} ->
+	  decode_mam_always(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
+			    _el);
+      {<<"never">>, <<"urn:xmpp:mam:0">>, _} ->
 	  decode_mam_never(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
-      {<<"never">>, <<"urn:xmpp:mam:1">>} ->
+      {<<"never">>, <<>>, <<"urn:xmpp:mam:0">>} ->
+	  decode_mam_never(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
+      {<<"never">>, <<"urn:xmpp:mam:1">>, _} ->
 	  decode_mam_never(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
-      {<<"never">>, <<"urn:xmpp:mam:tmp">>} ->
+      {<<"never">>, <<>>, <<"urn:xmpp:mam:1">>} ->
+	  decode_mam_never(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
+      {<<"never">>, <<"urn:xmpp:mam:tmp">>, _} ->
 	  decode_mam_never(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
 			   _el);
-      {<<"jid">>, <<"urn:xmpp:mam:0">>} ->
+      {<<"never">>, <<>>, <<"urn:xmpp:mam:tmp">>} ->
+	  decode_mam_never(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
+			   _el);
+      {<<"jid">>, <<"urn:xmpp:mam:0">>, _} ->
 	  decode_mam_jid(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
-      {<<"jid">>, <<"urn:xmpp:mam:1">>} ->
+      {<<"jid">>, <<>>, <<"urn:xmpp:mam:0">>} ->
+	  decode_mam_jid(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
+      {<<"jid">>, <<"urn:xmpp:mam:1">>, _} ->
 	  decode_mam_jid(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
-      {<<"jid">>, <<"urn:xmpp:mam:tmp">>} ->
+      {<<"jid">>, <<>>, <<"urn:xmpp:mam:1">>} ->
+	  decode_mam_jid(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
+      {<<"jid">>, <<"urn:xmpp:mam:tmp">>, _} ->
 	  decode_mam_jid(<<"urn:xmpp:mam:tmp">>, IgnoreEls, _el);
-      {<<"result">>, <<"urn:xmpp:mam:0">>} ->
+      {<<"jid">>, <<>>, <<"urn:xmpp:mam:tmp">>} ->
+	  decode_mam_jid(<<"urn:xmpp:mam:tmp">>, IgnoreEls, _el);
+      {<<"result">>, <<"urn:xmpp:mam:0">>, _} ->
 	  decode_mam_result(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
-      {<<"result">>, <<"urn:xmpp:mam:1">>} ->
+      {<<"result">>, <<>>, <<"urn:xmpp:mam:0">>} ->
+	  decode_mam_result(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
+      {<<"result">>, <<"urn:xmpp:mam:1">>, _} ->
 	  decode_mam_result(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
-      {<<"result">>, <<"urn:xmpp:mam:tmp">>} ->
+      {<<"result">>, <<>>, <<"urn:xmpp:mam:1">>} ->
+	  decode_mam_result(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
+      {<<"result">>, <<"urn:xmpp:mam:tmp">>, _} ->
 	  decode_mam_result(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
 			    _el);
-      {<<"archived">>, <<"urn:xmpp:mam:tmp">>} ->
+      {<<"result">>, <<>>, <<"urn:xmpp:mam:tmp">>} ->
+	  decode_mam_result(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
+			    _el);
+      {<<"archived">>, <<"urn:xmpp:mam:tmp">>, _} ->
 	  decode_mam_archived(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
 			      _el);
-      {<<"query">>, <<"urn:xmpp:mam:0">>} ->
+      {<<"archived">>, <<>>, <<"urn:xmpp:mam:tmp">>} ->
+	  decode_mam_archived(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
+			      _el);
+      {<<"query">>, <<"urn:xmpp:mam:0">>, _} ->
 	  decode_mam_query(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
-      {<<"query">>, <<"urn:xmpp:mam:1">>} ->
+      {<<"query">>, <<>>, <<"urn:xmpp:mam:0">>} ->
+	  decode_mam_query(<<"urn:xmpp:mam:0">>, IgnoreEls, _el);
+      {<<"query">>, <<"urn:xmpp:mam:1">>, _} ->
 	  decode_mam_query(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
-      {<<"query">>, <<"urn:xmpp:mam:tmp">>} ->
+      {<<"query">>, <<>>, <<"urn:xmpp:mam:1">>} ->
+	  decode_mam_query(<<"urn:xmpp:mam:1">>, IgnoreEls, _el);
+      {<<"query">>, <<"urn:xmpp:mam:tmp">>, _} ->
 	  decode_mam_query(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
 			   _el);
-      {<<"withtext">>, <<"urn:xmpp:mam:tmp">>} ->
+      {<<"query">>, <<>>, <<"urn:xmpp:mam:tmp">>} ->
+	  decode_mam_query(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
+			   _el);
+      {<<"withtext">>, <<"urn:xmpp:mam:tmp">>, _} ->
 	  decode_mam_withtext(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
 			      _el);
-      {<<"with">>, <<"urn:xmpp:mam:tmp">>} ->
+      {<<"withtext">>, <<>>, <<"urn:xmpp:mam:tmp">>} ->
+	  decode_mam_withtext(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
+			      _el);
+      {<<"with">>, <<"urn:xmpp:mam:tmp">>, _} ->
 	  decode_mam_with(<<"urn:xmpp:mam:tmp">>, IgnoreEls, _el);
-      {<<"end">>, <<"urn:xmpp:mam:tmp">>} ->
+      {<<"with">>, <<>>, <<"urn:xmpp:mam:tmp">>} ->
+	  decode_mam_with(<<"urn:xmpp:mam:tmp">>, IgnoreEls, _el);
+      {<<"end">>, <<"urn:xmpp:mam:tmp">>, _} ->
 	  decode_mam_end(<<"urn:xmpp:mam:tmp">>, IgnoreEls, _el);
-      {<<"start">>, <<"urn:xmpp:mam:tmp">>} ->
+      {<<"end">>, <<>>, <<"urn:xmpp:mam:tmp">>} ->
+	  decode_mam_end(<<"urn:xmpp:mam:tmp">>, IgnoreEls, _el);
+      {<<"start">>, <<"urn:xmpp:mam:tmp">>, _} ->
 	  decode_mam_start(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
 			   _el);
-      {<<"set">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"start">>, <<>>, <<"urn:xmpp:mam:tmp">>} ->
+	  decode_mam_start(<<"urn:xmpp:mam:tmp">>, IgnoreEls,
+			   _el);
+      {<<"set">>, <<"http://jabber.org/protocol/rsm">>, _} ->
 	  decode_rsm_set(<<"http://jabber.org/protocol/rsm">>,
 			 IgnoreEls, _el);
-      {<<"first">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"set">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  decode_rsm_set(<<"http://jabber.org/protocol/rsm">>,
+			 IgnoreEls, _el);
+      {<<"first">>, <<"http://jabber.org/protocol/rsm">>,
+       _} ->
 	  decode_rsm_first(<<"http://jabber.org/protocol/rsm">>,
 			   IgnoreEls, _el);
-      {<<"max">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"first">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  decode_rsm_first(<<"http://jabber.org/protocol/rsm">>,
+			   IgnoreEls, _el);
+      {<<"max">>, <<"http://jabber.org/protocol/rsm">>, _} ->
 	  decode_rsm_max(<<"http://jabber.org/protocol/rsm">>,
 			 IgnoreEls, _el);
-      {<<"index">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"max">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  decode_rsm_max(<<"http://jabber.org/protocol/rsm">>,
+			 IgnoreEls, _el);
+      {<<"index">>, <<"http://jabber.org/protocol/rsm">>,
+       _} ->
 	  decode_rsm_index(<<"http://jabber.org/protocol/rsm">>,
 			   IgnoreEls, _el);
-      {<<"count">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"index">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  decode_rsm_index(<<"http://jabber.org/protocol/rsm">>,
+			   IgnoreEls, _el);
+      {<<"count">>, <<"http://jabber.org/protocol/rsm">>,
+       _} ->
 	  decode_rsm_count(<<"http://jabber.org/protocol/rsm">>,
 			   IgnoreEls, _el);
-      {<<"last">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"count">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  decode_rsm_count(<<"http://jabber.org/protocol/rsm">>,
+			   IgnoreEls, _el);
+      {<<"last">>, <<"http://jabber.org/protocol/rsm">>, _} ->
 	  decode_rsm_last(<<"http://jabber.org/protocol/rsm">>,
 			  IgnoreEls, _el);
-      {<<"before">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"last">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  decode_rsm_last(<<"http://jabber.org/protocol/rsm">>,
+			  IgnoreEls, _el);
+      {<<"before">>, <<"http://jabber.org/protocol/rsm">>,
+       _} ->
 	  decode_rsm_before(<<"http://jabber.org/protocol/rsm">>,
 			    IgnoreEls, _el);
-      {<<"after">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"before">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  decode_rsm_before(<<"http://jabber.org/protocol/rsm">>,
+			    IgnoreEls, _el);
+      {<<"after">>, <<"http://jabber.org/protocol/rsm">>,
+       _} ->
 	  decode_rsm_after(<<"http://jabber.org/protocol/rsm">>,
 			   IgnoreEls, _el);
-      {<<"unsubscribe">>, <<"urn:xmpp:mucsub:0">>} ->
+      {<<"after">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  decode_rsm_after(<<"http://jabber.org/protocol/rsm">>,
+			   IgnoreEls, _el);
+      {<<"unsubscribe">>, <<"urn:xmpp:mucsub:0">>, _} ->
 	  decode_muc_unsubscribe(<<"urn:xmpp:mucsub:0">>,
 				 IgnoreEls, _el);
-      {<<"subscribe">>, <<"urn:xmpp:mucsub:0">>} ->
+      {<<"unsubscribe">>, <<>>, <<"urn:xmpp:mucsub:0">>} ->
+	  decode_muc_unsubscribe(<<"urn:xmpp:mucsub:0">>,
+				 IgnoreEls, _el);
+      {<<"subscribe">>, <<"urn:xmpp:mucsub:0">>, _} ->
 	  decode_muc_subscribe(<<"urn:xmpp:mucsub:0">>, IgnoreEls,
 			       _el);
-      {<<"event">>, <<"urn:xmpp:mucsub:0">>} ->
+      {<<"subscribe">>, <<>>, <<"urn:xmpp:mucsub:0">>} ->
+	  decode_muc_subscribe(<<"urn:xmpp:mucsub:0">>, IgnoreEls,
+			       _el);
+      {<<"event">>, <<"urn:xmpp:mucsub:0">>, _} ->
 	  decode_muc_subscribe_event(<<"urn:xmpp:mucsub:0">>,
 				     IgnoreEls, _el);
-      {<<"subscriptions">>, <<"urn:xmpp:mucsub:0">>} ->
+      {<<"event">>, <<>>, <<"urn:xmpp:mucsub:0">>} ->
+	  decode_muc_subscribe_event(<<"urn:xmpp:mucsub:0">>,
+				     IgnoreEls, _el);
+      {<<"subscriptions">>, <<"urn:xmpp:mucsub:0">>, _} ->
 	  decode_muc_subscriptions(<<"urn:xmpp:mucsub:0">>,
 				   IgnoreEls, _el);
-      {<<"subscription">>, <<"urn:xmpp:mucsub:0">>} ->
+      {<<"subscriptions">>, <<>>, <<"urn:xmpp:mucsub:0">>} ->
+	  decode_muc_subscriptions(<<"urn:xmpp:mucsub:0">>,
+				   IgnoreEls, _el);
+      {<<"subscription">>, <<"urn:xmpp:mucsub:0">>, _} ->
 	  decode_muc_subscription(<<"urn:xmpp:mucsub:0">>,
 				  IgnoreEls, _el);
-      {<<"x">>, <<"jabber:x:conference">>} ->
+      {<<"subscription">>, <<>>, <<"urn:xmpp:mucsub:0">>} ->
+	  decode_muc_subscription(<<"urn:xmpp:mucsub:0">>,
+				  IgnoreEls, _el);
+      {<<"x">>, <<"jabber:x:conference">>, _} ->
+	  decode_x_conference(<<"jabber:x:conference">>,
+			      IgnoreEls, _el);
+      {<<"x">>, <<>>, <<"jabber:x:conference">>} ->
 	  decode_x_conference(<<"jabber:x:conference">>,
 			      IgnoreEls, _el);
       {<<"unique">>,
+       <<"http://jabber.org/protocol/muc#unique">>, _} ->
+	  decode_muc_unique(<<"http://jabber.org/protocol/muc#unique">>,
+			    IgnoreEls, _el);
+      {<<"unique">>, <<>>,
        <<"http://jabber.org/protocol/muc#unique">>} ->
 	  decode_muc_unique(<<"http://jabber.org/protocol/muc#unique">>,
 			    IgnoreEls, _el);
-      {<<"x">>, <<"http://jabber.org/protocol/muc">>} ->
+      {<<"x">>, <<"http://jabber.org/protocol/muc">>, _} ->
+	  decode_muc(<<"http://jabber.org/protocol/muc">>,
+		     IgnoreEls, _el);
+      {<<"x">>, <<>>, <<"http://jabber.org/protocol/muc">>} ->
 	  decode_muc(<<"http://jabber.org/protocol/muc">>,
 		     IgnoreEls, _el);
       {<<"query">>,
+       <<"http://jabber.org/protocol/muc#admin">>, _} ->
+	  decode_muc_admin(<<"http://jabber.org/protocol/muc#admin">>,
+			   IgnoreEls, _el);
+      {<<"query">>, <<>>,
        <<"http://jabber.org/protocol/muc#admin">>} ->
 	  decode_muc_admin(<<"http://jabber.org/protocol/muc#admin">>,
 			   IgnoreEls, _el);
       {<<"continue">>,
+       <<"http://jabber.org/protocol/muc#admin">>, _} ->
+	  decode_muc_admin_continue(<<"http://jabber.org/protocol/muc#admin">>,
+				    IgnoreEls, _el);
+      {<<"continue">>, <<>>,
        <<"http://jabber.org/protocol/muc#admin">>} ->
 	  decode_muc_admin_continue(<<"http://jabber.org/protocol/muc#admin">>,
 				    IgnoreEls, _el);
       {<<"actor">>,
+       <<"http://jabber.org/protocol/muc#admin">>, _} ->
+	  decode_muc_admin_actor(<<"http://jabber.org/protocol/muc#admin">>,
+				 IgnoreEls, _el);
+      {<<"actor">>, <<>>,
        <<"http://jabber.org/protocol/muc#admin">>} ->
 	  decode_muc_admin_actor(<<"http://jabber.org/protocol/muc#admin">>,
 				 IgnoreEls, _el);
-      {<<"item">>,
+      {<<"item">>, <<"http://jabber.org/protocol/muc#admin">>,
+       _} ->
+	  decode_muc_admin_item(<<"http://jabber.org/protocol/muc#admin">>,
+				IgnoreEls, _el);
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/muc#admin">>} ->
 	  decode_muc_admin_item(<<"http://jabber.org/protocol/muc#admin">>,
 				IgnoreEls, _el);
-      {<<"item">>,
+      {<<"item">>, <<"http://jabber.org/protocol/muc#owner">>,
+       _} ->
+	  decode_muc_owner_item(<<"http://jabber.org/protocol/muc#owner">>,
+				IgnoreEls, _el);
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  decode_muc_owner_item(<<"http://jabber.org/protocol/muc#owner">>,
 				IgnoreEls, _el);
       {<<"query">>,
+       <<"http://jabber.org/protocol/muc#owner">>, _} ->
+	  decode_muc_owner(<<"http://jabber.org/protocol/muc#owner">>,
+			   IgnoreEls, _el);
+      {<<"query">>, <<>>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  decode_muc_owner(<<"http://jabber.org/protocol/muc#owner">>,
 			   IgnoreEls, _el);
       {<<"password">>,
+       <<"http://jabber.org/protocol/muc#owner">>, _} ->
+	  decode_muc_password(<<"http://jabber.org/protocol/muc#owner">>,
+			      IgnoreEls, _el);
+      {<<"password">>, <<>>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  decode_muc_password(<<"http://jabber.org/protocol/muc#owner">>,
 			      IgnoreEls, _el);
       {<<"password">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  decode_muc_password(<<"http://jabber.org/protocol/muc#user">>,
+			      IgnoreEls, _el);
+      {<<"password">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  decode_muc_password(<<"http://jabber.org/protocol/muc#user">>,
 			      IgnoreEls, _el);
-      {<<"password">>,
+      {<<"password">>, <<"http://jabber.org/protocol/muc">>,
+       _} ->
+	  decode_muc_password(<<"http://jabber.org/protocol/muc">>,
+			      IgnoreEls, _el);
+      {<<"password">>, <<>>,
        <<"http://jabber.org/protocol/muc">>} ->
 	  decode_muc_password(<<"http://jabber.org/protocol/muc">>,
 			      IgnoreEls, _el);
-      {<<"x">>, <<"http://jabber.org/protocol/muc#user">>} ->
+      {<<"x">>, <<"http://jabber.org/protocol/muc#user">>,
+       _} ->
 	  decode_muc_user(<<"http://jabber.org/protocol/muc#user">>,
 			  IgnoreEls, _el);
-      {<<"item">>,
+      {<<"x">>, <<>>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  decode_muc_user(<<"http://jabber.org/protocol/muc#user">>,
+			  IgnoreEls, _el);
+      {<<"item">>, <<"http://jabber.org/protocol/muc#user">>,
+       _} ->
+	  decode_muc_user_item(<<"http://jabber.org/protocol/muc#user">>,
+			       IgnoreEls, _el);
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  decode_muc_user_item(<<"http://jabber.org/protocol/muc#user">>,
 			       IgnoreEls, _el);
       {<<"status">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  decode_muc_user_status(<<"http://jabber.org/protocol/muc#user">>,
+				 IgnoreEls, _el);
+      {<<"status">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  decode_muc_user_status(<<"http://jabber.org/protocol/muc#user">>,
 				 IgnoreEls, _el);
       {<<"continue">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  decode_muc_user_continue(<<"http://jabber.org/protocol/muc#user">>,
+				   IgnoreEls, _el);
+      {<<"continue">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  decode_muc_user_continue(<<"http://jabber.org/protocol/muc#user">>,
 				   IgnoreEls, _el);
-      {<<"actor">>,
+      {<<"actor">>, <<"http://jabber.org/protocol/muc#user">>,
+       _} ->
+	  decode_muc_user_actor(<<"http://jabber.org/protocol/muc#user">>,
+				IgnoreEls, _el);
+      {<<"actor">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  decode_muc_user_actor(<<"http://jabber.org/protocol/muc#user">>,
 				IgnoreEls, _el);
       {<<"invite">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  decode_muc_user_invite(<<"http://jabber.org/protocol/muc#user">>,
+				 IgnoreEls, _el);
+      {<<"invite">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  decode_muc_user_invite(<<"http://jabber.org/protocol/muc#user">>,
 				 IgnoreEls, _el);
       {<<"destroy">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  decode_muc_destroy(<<"http://jabber.org/protocol/muc#user">>,
+			     IgnoreEls, _el);
+      {<<"destroy">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  decode_muc_destroy(<<"http://jabber.org/protocol/muc#user">>,
 			     IgnoreEls, _el);
       {<<"destroy">>,
+       <<"http://jabber.org/protocol/muc#owner">>, _} ->
+	  decode_muc_destroy(<<"http://jabber.org/protocol/muc#owner">>,
+			     IgnoreEls, _el);
+      {<<"destroy">>, <<>>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  decode_muc_destroy(<<"http://jabber.org/protocol/muc#owner">>,
 			     IgnoreEls, _el);
       {<<"decline">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  decode_muc_user_decline(<<"http://jabber.org/protocol/muc#user">>,
+				  IgnoreEls, _el);
+      {<<"decline">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  decode_muc_user_decline(<<"http://jabber.org/protocol/muc#user">>,
 				  IgnoreEls, _el);
       {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  decode_muc_reason(<<"http://jabber.org/protocol/muc#user">>,
+			    IgnoreEls, _el);
+      {<<"reason">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  decode_muc_reason(<<"http://jabber.org/protocol/muc#user">>,
 			    IgnoreEls, _el);
       {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#admin">>, _} ->
+	  decode_muc_reason(<<"http://jabber.org/protocol/muc#admin">>,
+			    IgnoreEls, _el);
+      {<<"reason">>, <<>>,
        <<"http://jabber.org/protocol/muc#admin">>} ->
 	  decode_muc_reason(<<"http://jabber.org/protocol/muc#admin">>,
 			    IgnoreEls, _el);
       {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#owner">>, _} ->
+	  decode_muc_reason(<<"http://jabber.org/protocol/muc#owner">>,
+			    IgnoreEls, _el);
+      {<<"reason">>, <<>>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  decode_muc_reason(<<"http://jabber.org/protocol/muc#owner">>,
 			    IgnoreEls, _el);
-      {<<"history">>, <<"http://jabber.org/protocol/muc">>} ->
+      {<<"history">>, <<"http://jabber.org/protocol/muc">>,
+       _} ->
+	  decode_muc_history(<<"http://jabber.org/protocol/muc">>,
+			     IgnoreEls, _el);
+      {<<"history">>, <<>>,
+       <<"http://jabber.org/protocol/muc">>} ->
 	  decode_muc_history(<<"http://jabber.org/protocol/muc">>,
 			     IgnoreEls, _el);
       {<<"query">>,
+       <<"http://jabber.org/protocol/bytestreams">>, _} ->
+	  decode_bytestreams(<<"http://jabber.org/protocol/bytestreams">>,
+			     IgnoreEls, _el);
+      {<<"query">>, <<>>,
        <<"http://jabber.org/protocol/bytestreams">>} ->
 	  decode_bytestreams(<<"http://jabber.org/protocol/bytestreams">>,
 			     IgnoreEls, _el);
       {<<"activate">>,
+       <<"http://jabber.org/protocol/bytestreams">>, _} ->
+	  decode_bytestreams_activate(<<"http://jabber.org/protocol/bytestreams">>,
+				      IgnoreEls, _el);
+      {<<"activate">>, <<>>,
        <<"http://jabber.org/protocol/bytestreams">>} ->
 	  decode_bytestreams_activate(<<"http://jabber.org/protocol/bytestreams">>,
 				      IgnoreEls, _el);
       {<<"streamhost-used">>,
+       <<"http://jabber.org/protocol/bytestreams">>, _} ->
+	  decode_bytestreams_streamhost_used(<<"http://jabber.org/protocol/bytestreams">>,
+					     IgnoreEls, _el);
+      {<<"streamhost-used">>, <<>>,
        <<"http://jabber.org/protocol/bytestreams">>} ->
 	  decode_bytestreams_streamhost_used(<<"http://jabber.org/protocol/bytestreams">>,
 					     IgnoreEls, _el);
       {<<"streamhost">>,
+       <<"http://jabber.org/protocol/bytestreams">>, _} ->
+	  decode_bytestreams_streamhost(<<"http://jabber.org/protocol/bytestreams">>,
+					IgnoreEls, _el);
+      {<<"streamhost">>, <<>>,
        <<"http://jabber.org/protocol/bytestreams">>} ->
 	  decode_bytestreams_streamhost(<<"http://jabber.org/protocol/bytestreams">>,
 					IgnoreEls, _el);
-      {<<"delay">>, <<"urn:xmpp:delay">>} ->
+      {<<"delay">>, <<"urn:xmpp:delay">>, _} ->
+	  decode_delay(<<"urn:xmpp:delay">>, IgnoreEls, _el);
+      {<<"delay">>, <<>>, <<"urn:xmpp:delay">>} ->
 	  decode_delay(<<"urn:xmpp:delay">>, IgnoreEls, _el);
       {<<"paused">>,
+       <<"http://jabber.org/protocol/chatstates">>, _} ->
+	  decode_chatstate_paused(<<"http://jabber.org/protocol/chatstates">>,
+				  IgnoreEls, _el);
+      {<<"paused">>, <<>>,
        <<"http://jabber.org/protocol/chatstates">>} ->
 	  decode_chatstate_paused(<<"http://jabber.org/protocol/chatstates">>,
 				  IgnoreEls, _el);
       {<<"inactive">>,
+       <<"http://jabber.org/protocol/chatstates">>, _} ->
+	  decode_chatstate_inactive(<<"http://jabber.org/protocol/chatstates">>,
+				    IgnoreEls, _el);
+      {<<"inactive">>, <<>>,
        <<"http://jabber.org/protocol/chatstates">>} ->
 	  decode_chatstate_inactive(<<"http://jabber.org/protocol/chatstates">>,
 				    IgnoreEls, _el);
       {<<"gone">>,
+       <<"http://jabber.org/protocol/chatstates">>, _} ->
+	  decode_chatstate_gone(<<"http://jabber.org/protocol/chatstates">>,
+				IgnoreEls, _el);
+      {<<"gone">>, <<>>,
        <<"http://jabber.org/protocol/chatstates">>} ->
 	  decode_chatstate_gone(<<"http://jabber.org/protocol/chatstates">>,
 				IgnoreEls, _el);
       {<<"composing">>,
+       <<"http://jabber.org/protocol/chatstates">>, _} ->
+	  decode_chatstate_composing(<<"http://jabber.org/protocol/chatstates">>,
+				     IgnoreEls, _el);
+      {<<"composing">>, <<>>,
        <<"http://jabber.org/protocol/chatstates">>} ->
 	  decode_chatstate_composing(<<"http://jabber.org/protocol/chatstates">>,
 				     IgnoreEls, _el);
       {<<"active">>,
+       <<"http://jabber.org/protocol/chatstates">>, _} ->
+	  decode_chatstate_active(<<"http://jabber.org/protocol/chatstates">>,
+				  IgnoreEls, _el);
+      {<<"active">>, <<>>,
        <<"http://jabber.org/protocol/chatstates">>} ->
 	  decode_chatstate_active(<<"http://jabber.org/protocol/chatstates">>,
 				  IgnoreEls, _el);
-      {<<"headers">>,
+      {<<"headers">>, <<"http://jabber.org/protocol/shim">>,
+       _} ->
+	  decode_shim_headers(<<"http://jabber.org/protocol/shim">>,
+			      IgnoreEls, _el);
+      {<<"headers">>, <<>>,
        <<"http://jabber.org/protocol/shim">>} ->
 	  decode_shim_headers(<<"http://jabber.org/protocol/shim">>,
 			      IgnoreEls, _el);
-      {<<"header">>, <<"http://jabber.org/protocol/shim">>} ->
+      {<<"header">>, <<"http://jabber.org/protocol/shim">>,
+       _} ->
+	  decode_shim_header(<<"http://jabber.org/protocol/shim">>,
+			     IgnoreEls, _el);
+      {<<"header">>, <<>>,
+       <<"http://jabber.org/protocol/shim">>} ->
 	  decode_shim_header(<<"http://jabber.org/protocol/shim">>,
 			     IgnoreEls, _el);
       {<<"unsupported-access-model">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_unsupported_access_model(<<"http://jabber.org/protocol/pubsub#errors">>,
+						       IgnoreEls, _el);
+      {<<"unsupported-access-model">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_unsupported_access_model(<<"http://jabber.org/protocol/pubsub#errors">>,
 						       IgnoreEls, _el);
       {<<"unsupported">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_unsupported(<<"http://jabber.org/protocol/pubsub#errors">>,
+					  IgnoreEls, _el);
+      {<<"unsupported">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_unsupported(<<"http://jabber.org/protocol/pubsub#errors">>,
 					  IgnoreEls, _el);
       {<<"too-many-subscriptions">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_too_many_subscriptions(<<"http://jabber.org/protocol/pubsub#errors">>,
+						     IgnoreEls, _el);
+      {<<"too-many-subscriptions">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_too_many_subscriptions(<<"http://jabber.org/protocol/pubsub#errors">>,
 						     IgnoreEls, _el);
       {<<"subid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_subid_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+					     IgnoreEls, _el);
+      {<<"subid-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_subid_required(<<"http://jabber.org/protocol/pubsub#errors">>,
 					     IgnoreEls, _el);
       {<<"presence-subscription-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_presence_subscription_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+							     IgnoreEls, _el);
+      {<<"presence-subscription-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_presence_subscription_required(<<"http://jabber.org/protocol/pubsub#errors">>,
 							     IgnoreEls, _el);
       {<<"pending-subscription">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_pending_subscription(<<"http://jabber.org/protocol/pubsub#errors">>,
+						   IgnoreEls, _el);
+      {<<"pending-subscription">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_pending_subscription(<<"http://jabber.org/protocol/pubsub#errors">>,
 						   IgnoreEls, _el);
       {<<"payload-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_payload_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+					       IgnoreEls, _el);
+      {<<"payload-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_payload_required(<<"http://jabber.org/protocol/pubsub#errors">>,
 					       IgnoreEls, _el);
       {<<"payload-too-big">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_payload_too_big(<<"http://jabber.org/protocol/pubsub#errors">>,
+					      IgnoreEls, _el);
+      {<<"payload-too-big">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_payload_too_big(<<"http://jabber.org/protocol/pubsub#errors">>,
 					      IgnoreEls, _el);
       {<<"not-subscribed">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_not_subscribed(<<"http://jabber.org/protocol/pubsub#errors">>,
+					     IgnoreEls, _el);
+      {<<"not-subscribed">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_not_subscribed(<<"http://jabber.org/protocol/pubsub#errors">>,
 					     IgnoreEls, _el);
       {<<"not-in-roster-group">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_not_in_roster_group(<<"http://jabber.org/protocol/pubsub#errors">>,
+						  IgnoreEls, _el);
+      {<<"not-in-roster-group">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_not_in_roster_group(<<"http://jabber.org/protocol/pubsub#errors">>,
 						  IgnoreEls, _el);
       {<<"nodeid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_nodeid_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+					      IgnoreEls, _el);
+      {<<"nodeid-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_nodeid_required(<<"http://jabber.org/protocol/pubsub#errors">>,
 					      IgnoreEls, _el);
       {<<"max-nodes-exceeded">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_max_nodes_exceeded(<<"http://jabber.org/protocol/pubsub#errors">>,
+						 IgnoreEls, _el);
+      {<<"max-nodes-exceeded">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_max_nodes_exceeded(<<"http://jabber.org/protocol/pubsub#errors">>,
 						 IgnoreEls, _el);
       {<<"max-items-exceeded">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_max_items_exceeded(<<"http://jabber.org/protocol/pubsub#errors">>,
+						 IgnoreEls, _el);
+      {<<"max-items-exceeded">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_max_items_exceeded(<<"http://jabber.org/protocol/pubsub#errors">>,
 						 IgnoreEls, _el);
       {<<"jid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_jid_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+					   IgnoreEls, _el);
+      {<<"jid-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_jid_required(<<"http://jabber.org/protocol/pubsub#errors">>,
 					   IgnoreEls, _el);
       {<<"item-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_item_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+					    IgnoreEls, _el);
+      {<<"item-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_item_required(<<"http://jabber.org/protocol/pubsub#errors">>,
 					    IgnoreEls, _el);
       {<<"item-forbidden">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_item_forbidden(<<"http://jabber.org/protocol/pubsub#errors">>,
+					     IgnoreEls, _el);
+      {<<"item-forbidden">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_item_forbidden(<<"http://jabber.org/protocol/pubsub#errors">>,
 					     IgnoreEls, _el);
       {<<"invalid-subid">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_invalid_subid(<<"http://jabber.org/protocol/pubsub#errors">>,
+					    IgnoreEls, _el);
+      {<<"invalid-subid">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_invalid_subid(<<"http://jabber.org/protocol/pubsub#errors">>,
 					    IgnoreEls, _el);
       {<<"invalid-payload">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_invalid_payload(<<"http://jabber.org/protocol/pubsub#errors">>,
+					      IgnoreEls, _el);
+      {<<"invalid-payload">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_invalid_payload(<<"http://jabber.org/protocol/pubsub#errors">>,
 					      IgnoreEls, _el);
       {<<"invalid-options">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_invalid_options(<<"http://jabber.org/protocol/pubsub#errors">>,
+					      IgnoreEls, _el);
+      {<<"invalid-options">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_invalid_options(<<"http://jabber.org/protocol/pubsub#errors">>,
 					      IgnoreEls, _el);
       {<<"invalid-jid">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_invalid_jid(<<"http://jabber.org/protocol/pubsub#errors">>,
+					  IgnoreEls, _el);
+      {<<"invalid-jid">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_invalid_jid(<<"http://jabber.org/protocol/pubsub#errors">>,
 					  IgnoreEls, _el);
       {<<"configuration-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_configuration_required(<<"http://jabber.org/protocol/pubsub#errors">>,
+						     IgnoreEls, _el);
+      {<<"configuration-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_configuration_required(<<"http://jabber.org/protocol/pubsub#errors">>,
 						     IgnoreEls, _el);
       {<<"closed-node">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  decode_pubsub_error_closed_node(<<"http://jabber.org/protocol/pubsub#errors">>,
+					  IgnoreEls, _el);
+      {<<"closed-node">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  decode_pubsub_error_closed_node(<<"http://jabber.org/protocol/pubsub#errors">>,
 					  IgnoreEls, _el);
       {<<"pubsub">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  decode_pubsub_owner(<<"http://jabber.org/protocol/pubsub#owner">>,
+			      IgnoreEls, _el);
+      {<<"pubsub">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  decode_pubsub_owner(<<"http://jabber.org/protocol/pubsub#owner">>,
 			      IgnoreEls, _el);
-      {<<"pubsub">>,
+      {<<"pubsub">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  decode_pubsub(<<"http://jabber.org/protocol/pubsub">>,
+			IgnoreEls, _el);
+      {<<"pubsub">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub(<<"http://jabber.org/protocol/pubsub">>,
 			IgnoreEls, _el);
-      {<<"purge">>,
+      {<<"purge">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub">>,
+			      IgnoreEls, _el);
+      {<<"purge">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub">>,
 			      IgnoreEls, _el);
       {<<"purge">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#owner">>,
+			      IgnoreEls, _el);
+      {<<"purge">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#owner">>,
 			      IgnoreEls, _el);
       {<<"purge">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#event">>,
+			      IgnoreEls, _el);
+      {<<"purge">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  decode_pubsub_purge(<<"http://jabber.org/protocol/pubsub#event">>,
 			      IgnoreEls, _el);
-      {<<"delete">>,
+      {<<"delete">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub">>,
+			       IgnoreEls, _el);
+      {<<"delete">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub">>,
 			       IgnoreEls, _el);
       {<<"delete">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#owner">>,
+			       IgnoreEls, _el);
+      {<<"delete">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#owner">>,
 			       IgnoreEls, _el);
       {<<"delete">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#event">>,
+			       IgnoreEls, _el);
+      {<<"delete">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  decode_pubsub_delete(<<"http://jabber.org/protocol/pubsub#event">>,
 			       IgnoreEls, _el);
       {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub">>,
+				 IgnoreEls, _el);
+      {<<"redirect">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub">>,
 				 IgnoreEls, _el);
       {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub#owner">>,
+				 IgnoreEls, _el);
+      {<<"redirect">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub#owner">>,
 				 IgnoreEls, _el);
       {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub#event">>,
+				 IgnoreEls, _el);
+      {<<"redirect">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  decode_pubsub_redirect(<<"http://jabber.org/protocol/pubsub#event">>,
 				 IgnoreEls, _el);
-      {<<"default">>,
+      {<<"default">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  decode_pubsub_default(<<"http://jabber.org/protocol/pubsub">>,
+				IgnoreEls, _el);
+      {<<"default">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_default(<<"http://jabber.org/protocol/pubsub">>,
 				IgnoreEls, _el);
       {<<"default">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  decode_pubsub_default(<<"http://jabber.org/protocol/pubsub#owner">>,
+				IgnoreEls, _el);
+      {<<"default">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  decode_pubsub_default(<<"http://jabber.org/protocol/pubsub#owner">>,
 				IgnoreEls, _el);
       {<<"publish-options">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  decode_pubsub_publish_options(<<"http://jabber.org/protocol/pubsub">>,
+					IgnoreEls, _el);
+      {<<"publish-options">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_publish_options(<<"http://jabber.org/protocol/pubsub">>,
 					IgnoreEls, _el);
       {<<"configure">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  decode_pubsub_configure(<<"http://jabber.org/protocol/pubsub">>,
+				  IgnoreEls, _el);
+      {<<"configure">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_configure(<<"http://jabber.org/protocol/pubsub">>,
 				  IgnoreEls, _el);
       {<<"configure">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  decode_pubsub_configure(<<"http://jabber.org/protocol/pubsub#owner">>,
+				  IgnoreEls, _el);
+      {<<"configure">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  decode_pubsub_configure(<<"http://jabber.org/protocol/pubsub#owner">>,
 				  IgnoreEls, _el);
-      {<<"create">>,
+      {<<"create">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  decode_pubsub_create(<<"http://jabber.org/protocol/pubsub">>,
+			       IgnoreEls, _el);
+      {<<"create">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_create(<<"http://jabber.org/protocol/pubsub">>,
 			       IgnoreEls, _el);
       {<<"create">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  decode_pubsub_create(<<"http://jabber.org/protocol/pubsub#event">>,
+			       IgnoreEls, _el);
+      {<<"create">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  decode_pubsub_create(<<"http://jabber.org/protocol/pubsub#event">>,
 			       IgnoreEls, _el);
-      {<<"retract">>,
+      {<<"retract">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  decode_pubsub_retract(<<"http://jabber.org/protocol/pubsub">>,
+				IgnoreEls, _el);
+      {<<"retract">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_retract(<<"http://jabber.org/protocol/pubsub">>,
 				IgnoreEls, _el);
-      {<<"options">>,
+      {<<"options">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  decode_pubsub_options(<<"http://jabber.org/protocol/pubsub">>,
+				IgnoreEls, _el);
+      {<<"options">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_options(<<"http://jabber.org/protocol/pubsub">>,
 				IgnoreEls, _el);
-      {<<"publish">>,
+      {<<"publish">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  decode_pubsub_publish(<<"http://jabber.org/protocol/pubsub">>,
+				IgnoreEls, _el);
+      {<<"publish">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_publish(<<"http://jabber.org/protocol/pubsub">>,
 				IgnoreEls, _el);
       {<<"unsubscribe">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  decode_pubsub_unsubscribe(<<"http://jabber.org/protocol/pubsub">>,
+				    IgnoreEls, _el);
+      {<<"unsubscribe">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_unsubscribe(<<"http://jabber.org/protocol/pubsub">>,
 				    IgnoreEls, _el);
       {<<"subscribe">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  decode_pubsub_subscribe(<<"http://jabber.org/protocol/pubsub">>,
+				  IgnoreEls, _el);
+      {<<"subscribe">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_subscribe(<<"http://jabber.org/protocol/pubsub">>,
 				  IgnoreEls, _el);
       {<<"affiliations">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  decode_pubsub_owner_affiliations(<<"http://jabber.org/protocol/pubsub#owner">>,
+					   IgnoreEls, _el);
+      {<<"affiliations">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  decode_pubsub_owner_affiliations(<<"http://jabber.org/protocol/pubsub#owner">>,
 					   IgnoreEls, _el);
       {<<"affiliations">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  decode_pubsub_affiliations(<<"http://jabber.org/protocol/pubsub">>,
+				     IgnoreEls, _el);
+      {<<"affiliations">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_affiliations(<<"http://jabber.org/protocol/pubsub">>,
 				     IgnoreEls, _el);
       {<<"subscriptions">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  decode_pubsub_subscriptions(<<"http://jabber.org/protocol/pubsub">>,
+				      IgnoreEls, _el);
+      {<<"subscriptions">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_subscriptions(<<"http://jabber.org/protocol/pubsub">>,
 				      IgnoreEls, _el);
       {<<"subscriptions">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  decode_pubsub_subscriptions(<<"http://jabber.org/protocol/pubsub#owner">>,
+				      IgnoreEls, _el);
+      {<<"subscriptions">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  decode_pubsub_subscriptions(<<"http://jabber.org/protocol/pubsub#owner">>,
 				      IgnoreEls, _el);
       {<<"event">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  decode_pubsub_event(<<"http://jabber.org/protocol/pubsub#event">>,
+			      IgnoreEls, _el);
+      {<<"event">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  decode_pubsub_event(<<"http://jabber.org/protocol/pubsub#event">>,
 			      IgnoreEls, _el);
-      {<<"items">>,
+      {<<"items">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  decode_pubsub_items(<<"http://jabber.org/protocol/pubsub">>,
+			      IgnoreEls, _el);
+      {<<"items">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_items(<<"http://jabber.org/protocol/pubsub">>,
 			      IgnoreEls, _el);
       {<<"items">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  decode_pubsub_items(<<"http://jabber.org/protocol/pubsub#event">>,
+			      IgnoreEls, _el);
+      {<<"items">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  decode_pubsub_items(<<"http://jabber.org/protocol/pubsub#event">>,
 			      IgnoreEls, _el);
-      {<<"item">>, <<"http://jabber.org/protocol/pubsub">>} ->
+      {<<"item">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  decode_pubsub_item(<<"http://jabber.org/protocol/pubsub">>,
+			     IgnoreEls, _el);
+      {<<"item">>, <<>>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_item(<<"http://jabber.org/protocol/pubsub">>,
 			     IgnoreEls, _el);
       {<<"item">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  decode_pubsub_item(<<"http://jabber.org/protocol/pubsub#event">>,
+			     IgnoreEls, _el);
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  decode_pubsub_item(<<"http://jabber.org/protocol/pubsub#event">>,
 			     IgnoreEls, _el);
       {<<"retract">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  decode_pubsub_event_retract(<<"http://jabber.org/protocol/pubsub#event">>,
+				      IgnoreEls, _el);
+      {<<"retract">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  decode_pubsub_event_retract(<<"http://jabber.org/protocol/pubsub#event">>,
 				      IgnoreEls, _el);
       {<<"configuration">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  decode_pubsub_event_configuration(<<"http://jabber.org/protocol/pubsub#event">>,
+					    IgnoreEls, _el);
+      {<<"configuration">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  decode_pubsub_event_configuration(<<"http://jabber.org/protocol/pubsub#event">>,
 					    IgnoreEls, _el);
       {<<"affiliation">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  decode_pubsub_owner_affiliation(<<"http://jabber.org/protocol/pubsub#owner">>,
+					  IgnoreEls, _el);
+      {<<"affiliation">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  decode_pubsub_owner_affiliation(<<"http://jabber.org/protocol/pubsub#owner">>,
 					  IgnoreEls, _el);
       {<<"affiliation">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  decode_pubsub_affiliation(<<"http://jabber.org/protocol/pubsub">>,
+				    IgnoreEls, _el);
+      {<<"affiliation">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_affiliation(<<"http://jabber.org/protocol/pubsub">>,
 				    IgnoreEls, _el);
       {<<"subscription">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub">>,
+				     IgnoreEls, _el);
+      {<<"subscription">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub">>,
 				     IgnoreEls, _el);
       {<<"subscription">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#owner">>,
+				     IgnoreEls, _el);
+      {<<"subscription">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#owner">>,
 				     IgnoreEls, _el);
       {<<"subscription">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#event">>,
+				     IgnoreEls, _el);
+      {<<"subscription">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  decode_pubsub_subscription(<<"http://jabber.org/protocol/pubsub#event">>,
 				     IgnoreEls, _el);
-      {<<"x">>, <<"jabber:x:data">>} ->
+      {<<"x">>, <<"jabber:x:data">>, _} ->
 	  decode_xdata(<<"jabber:x:data">>, IgnoreEls, _el);
-      {<<"item">>, <<"jabber:x:data">>} ->
+      {<<"x">>, <<>>, <<"jabber:x:data">>} ->
+	  decode_xdata(<<"jabber:x:data">>, IgnoreEls, _el);
+      {<<"item">>, <<"jabber:x:data">>, _} ->
 	  decode_xdata_item(<<"jabber:x:data">>, IgnoreEls, _el);
-      {<<"reported">>, <<"jabber:x:data">>} ->
+      {<<"item">>, <<>>, <<"jabber:x:data">>} ->
+	  decode_xdata_item(<<"jabber:x:data">>, IgnoreEls, _el);
+      {<<"reported">>, <<"jabber:x:data">>, _} ->
 	  decode_xdata_reported(<<"jabber:x:data">>, IgnoreEls,
 				_el);
-      {<<"title">>, <<"jabber:x:data">>} ->
+      {<<"reported">>, <<>>, <<"jabber:x:data">>} ->
+	  decode_xdata_reported(<<"jabber:x:data">>, IgnoreEls,
+				_el);
+      {<<"title">>, <<"jabber:x:data">>, _} ->
 	  decode_xdata_title(<<"jabber:x:data">>, IgnoreEls, _el);
-      {<<"instructions">>, <<"jabber:x:data">>} ->
+      {<<"title">>, <<>>, <<"jabber:x:data">>} ->
+	  decode_xdata_title(<<"jabber:x:data">>, IgnoreEls, _el);
+      {<<"instructions">>, <<"jabber:x:data">>, _} ->
 	  decode_xdata_instructions(<<"jabber:x:data">>,
 				    IgnoreEls, _el);
-      {<<"field">>, <<"jabber:x:data">>} ->
+      {<<"instructions">>, <<>>, <<"jabber:x:data">>} ->
+	  decode_xdata_instructions(<<"jabber:x:data">>,
+				    IgnoreEls, _el);
+      {<<"field">>, <<"jabber:x:data">>, _} ->
 	  decode_xdata_field(<<"jabber:x:data">>, IgnoreEls, _el);
-      {<<"option">>, <<"jabber:x:data">>} ->
+      {<<"field">>, <<>>, <<"jabber:x:data">>} ->
+	  decode_xdata_field(<<"jabber:x:data">>, IgnoreEls, _el);
+      {<<"option">>, <<"jabber:x:data">>, _} ->
 	  decode_xdata_field_option(<<"jabber:x:data">>,
 				    IgnoreEls, _el);
-      {<<"value">>, <<"jabber:x:data">>} ->
+      {<<"option">>, <<>>, <<"jabber:x:data">>} ->
+	  decode_xdata_field_option(<<"jabber:x:data">>,
+				    IgnoreEls, _el);
+      {<<"value">>, <<"jabber:x:data">>, _} ->
 	  decode_xdata_field_value(<<"jabber:x:data">>, IgnoreEls,
 				   _el);
-      {<<"desc">>, <<"jabber:x:data">>} ->
+      {<<"value">>, <<>>, <<"jabber:x:data">>} ->
+	  decode_xdata_field_value(<<"jabber:x:data">>, IgnoreEls,
+				   _el);
+      {<<"desc">>, <<"jabber:x:data">>, _} ->
 	  decode_xdata_field_desc(<<"jabber:x:data">>, IgnoreEls,
 				  _el);
-      {<<"required">>, <<"jabber:x:data">>} ->
+      {<<"desc">>, <<>>, <<"jabber:x:data">>} ->
+	  decode_xdata_field_desc(<<"jabber:x:data">>, IgnoreEls,
+				  _el);
+      {<<"required">>, <<"jabber:x:data">>, _} ->
 	  decode_xdata_field_required(<<"jabber:x:data">>,
 				      IgnoreEls, _el);
-      {<<"x">>, <<"vcard-temp:x:update">>} ->
+      {<<"required">>, <<>>, <<"jabber:x:data">>} ->
+	  decode_xdata_field_required(<<"jabber:x:data">>,
+				      IgnoreEls, _el);
+      {<<"x">>, <<"vcard-temp:x:update">>, _} ->
 	  decode_vcard_xupdate(<<"vcard-temp:x:update">>,
 			       IgnoreEls, _el);
-      {<<"photo">>, <<"vcard-temp:x:update">>} ->
+      {<<"x">>, <<>>, <<"vcard-temp:x:update">>} ->
+	  decode_vcard_xupdate(<<"vcard-temp:x:update">>,
+			       IgnoreEls, _el);
+      {<<"photo">>, <<"vcard-temp:x:update">>, _} ->
 	  decode_vcard_xupdate_photo(<<"vcard-temp:x:update">>,
 				     IgnoreEls, _el);
-      {<<"vCard">>, <<"vcard-temp">>} ->
+      {<<"photo">>, <<>>, <<"vcard-temp:x:update">>} ->
+	  decode_vcard_xupdate_photo(<<"vcard-temp:x:update">>,
+				     IgnoreEls, _el);
+      {<<"vCard">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_temp(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"CLASS">>, <<"vcard-temp">>} ->
+      {<<"vCard">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_temp(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"CLASS">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_CLASS(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"CATEGORIES">>, <<"vcard-temp">>} ->
+      {<<"CLASS">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_CLASS(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"CATEGORIES">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_CATEGORIES(<<"vcard-temp">>, IgnoreEls,
 				  _el);
-      {<<"KEY">>, <<"vcard-temp">>} ->
+      {<<"CATEGORIES">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_CATEGORIES(<<"vcard-temp">>, IgnoreEls,
+				  _el);
+      {<<"KEY">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_KEY(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"SOUND">>, <<"vcard-temp">>} ->
+      {<<"KEY">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_KEY(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"SOUND">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_SOUND(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"ORG">>, <<"vcard-temp">>} ->
+      {<<"SOUND">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_SOUND(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"ORG">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_ORG(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"PHOTO">>, <<"vcard-temp">>} ->
+      {<<"ORG">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_ORG(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"PHOTO">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_PHOTO(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"LOGO">>, <<"vcard-temp">>} ->
+      {<<"PHOTO">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_PHOTO(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"LOGO">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_LOGO(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"BINVAL">>, <<"vcard-temp">>} ->
+      {<<"LOGO">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_LOGO(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"BINVAL">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_BINVAL(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"GEO">>, <<"vcard-temp">>} ->
+      {<<"BINVAL">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_BINVAL(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"GEO">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_GEO(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"EMAIL">>, <<"vcard-temp">>} ->
+      {<<"GEO">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_GEO(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"EMAIL">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_EMAIL(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"TEL">>, <<"vcard-temp">>} ->
+      {<<"EMAIL">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_EMAIL(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"TEL">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_TEL(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"LABEL">>, <<"vcard-temp">>} ->
+      {<<"TEL">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_TEL(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"LABEL">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_LABEL(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"ADR">>, <<"vcard-temp">>} ->
+      {<<"LABEL">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_LABEL(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"ADR">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_ADR(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"N">>, <<"vcard-temp">>} ->
+      {<<"ADR">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_ADR(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"N">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_N(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"CONFIDENTIAL">>, <<"vcard-temp">>} ->
+      {<<"N">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_N(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"CONFIDENTIAL">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_CONFIDENTIAL(<<"vcard-temp">>, IgnoreEls,
 				    _el);
-      {<<"PRIVATE">>, <<"vcard-temp">>} ->
+      {<<"CONFIDENTIAL">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_CONFIDENTIAL(<<"vcard-temp">>, IgnoreEls,
+				    _el);
+      {<<"PRIVATE">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_PRIVATE(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"PUBLIC">>, <<"vcard-temp">>} ->
+      {<<"PRIVATE">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_PRIVATE(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"PUBLIC">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_PUBLIC(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"EXTVAL">>, <<"vcard-temp">>} ->
+      {<<"PUBLIC">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_PUBLIC(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"EXTVAL">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_EXTVAL(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"TYPE">>, <<"vcard-temp">>} ->
+      {<<"EXTVAL">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_EXTVAL(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"TYPE">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_TYPE(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"DESC">>, <<"vcard-temp">>} ->
+      {<<"TYPE">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_TYPE(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"DESC">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_DESC(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"URL">>, <<"vcard-temp">>} ->
+      {<<"DESC">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_DESC(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"URL">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_URL(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"UID">>, <<"vcard-temp">>} ->
+      {<<"URL">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_URL(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"UID">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_UID(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"SORT-STRING">>, <<"vcard-temp">>} ->
+      {<<"UID">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_UID(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"SORT-STRING">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_SORT_STRING(<<"vcard-temp">>, IgnoreEls,
 				   _el);
-      {<<"REV">>, <<"vcard-temp">>} ->
+      {<<"SORT-STRING">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_SORT_STRING(<<"vcard-temp">>, IgnoreEls,
+				   _el);
+      {<<"REV">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_REV(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"PRODID">>, <<"vcard-temp">>} ->
+      {<<"REV">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_REV(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"PRODID">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_PRODID(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"NOTE">>, <<"vcard-temp">>} ->
+      {<<"PRODID">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_PRODID(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"NOTE">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_NOTE(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"KEYWORD">>, <<"vcard-temp">>} ->
+      {<<"NOTE">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_NOTE(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"KEYWORD">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_KEYWORD(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"ROLE">>, <<"vcard-temp">>} ->
+      {<<"KEYWORD">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_KEYWORD(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"ROLE">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_ROLE(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"TITLE">>, <<"vcard-temp">>} ->
+      {<<"ROLE">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_ROLE(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"TITLE">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_TITLE(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"TZ">>, <<"vcard-temp">>} ->
+      {<<"TITLE">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_TITLE(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"TZ">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_TZ(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"MAILER">>, <<"vcard-temp">>} ->
+      {<<"TZ">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_TZ(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"MAILER">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_MAILER(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"JABBERID">>, <<"vcard-temp">>} ->
+      {<<"MAILER">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_MAILER(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"JABBERID">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_JABBERID(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"BDAY">>, <<"vcard-temp">>} ->
+      {<<"JABBERID">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_JABBERID(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"BDAY">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_BDAY(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"NICKNAME">>, <<"vcard-temp">>} ->
+      {<<"BDAY">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_BDAY(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"NICKNAME">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_NICKNAME(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"FN">>, <<"vcard-temp">>} ->
+      {<<"NICKNAME">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_NICKNAME(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"FN">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_FN(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"VERSION">>, <<"vcard-temp">>} ->
+      {<<"FN">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_FN(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"VERSION">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_VERSION(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"CRED">>, <<"vcard-temp">>} ->
+      {<<"VERSION">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_VERSION(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"CRED">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_CRED(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"PHONETIC">>, <<"vcard-temp">>} ->
+      {<<"CRED">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_CRED(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"PHONETIC">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_PHONETIC(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"ORGUNIT">>, <<"vcard-temp">>} ->
+      {<<"PHONETIC">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_PHONETIC(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"ORGUNIT">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_ORGUNIT(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"ORGNAME">>, <<"vcard-temp">>} ->
+      {<<"ORGUNIT">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_ORGUNIT(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"ORGNAME">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_ORGNAME(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"LON">>, <<"vcard-temp">>} ->
+      {<<"ORGNAME">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_ORGNAME(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"LON">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_LON(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"LAT">>, <<"vcard-temp">>} ->
+      {<<"LON">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_LON(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"LAT">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_LAT(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"USERID">>, <<"vcard-temp">>} ->
+      {<<"LAT">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_LAT(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"USERID">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_USERID(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"NUMBER">>, <<"vcard-temp">>} ->
+      {<<"USERID">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_USERID(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"NUMBER">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_NUMBER(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"LINE">>, <<"vcard-temp">>} ->
+      {<<"NUMBER">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_NUMBER(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"LINE">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_LINE(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"CTRY">>, <<"vcard-temp">>} ->
+      {<<"LINE">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_LINE(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"CTRY">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_CTRY(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"PCODE">>, <<"vcard-temp">>} ->
+      {<<"CTRY">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_CTRY(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"PCODE">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_PCODE(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"REGION">>, <<"vcard-temp">>} ->
+      {<<"PCODE">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_PCODE(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"REGION">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_REGION(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"LOCALITY">>, <<"vcard-temp">>} ->
+      {<<"REGION">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_REGION(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"LOCALITY">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_LOCALITY(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"STREET">>, <<"vcard-temp">>} ->
+      {<<"LOCALITY">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_LOCALITY(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"STREET">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_STREET(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"EXTADD">>, <<"vcard-temp">>} ->
+      {<<"STREET">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_STREET(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"EXTADD">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_EXTADD(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"POBOX">>, <<"vcard-temp">>} ->
+      {<<"EXTADD">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_EXTADD(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"POBOX">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_POBOX(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"SUFFIX">>, <<"vcard-temp">>} ->
+      {<<"POBOX">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_POBOX(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"SUFFIX">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_SUFFIX(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"PREFIX">>, <<"vcard-temp">>} ->
+      {<<"SUFFIX">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_SUFFIX(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"PREFIX">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_PREFIX(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"MIDDLE">>, <<"vcard-temp">>} ->
+      {<<"PREFIX">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_PREFIX(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"MIDDLE">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_MIDDLE(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"GIVEN">>, <<"vcard-temp">>} ->
+      {<<"MIDDLE">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_MIDDLE(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"GIVEN">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_GIVEN(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"FAMILY">>, <<"vcard-temp">>} ->
+      {<<"GIVEN">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_GIVEN(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"FAMILY">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_FAMILY(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"X400">>, <<"vcard-temp">>} ->
+      {<<"FAMILY">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_FAMILY(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"X400">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_X400(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"INTERNET">>, <<"vcard-temp">>} ->
+      {<<"X400">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_X400(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"INTERNET">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_INTERNET(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"PREF">>, <<"vcard-temp">>} ->
+      {<<"INTERNET">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_INTERNET(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"PREF">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_PREF(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"INTL">>, <<"vcard-temp">>} ->
+      {<<"PREF">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_PREF(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"INTL">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_INTL(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"DOM">>, <<"vcard-temp">>} ->
+      {<<"INTL">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_INTL(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"DOM">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_DOM(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"PARCEL">>, <<"vcard-temp">>} ->
+      {<<"DOM">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_DOM(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"PARCEL">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_PARCEL(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"POSTAL">>, <<"vcard-temp">>} ->
+      {<<"PARCEL">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_PARCEL(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"POSTAL">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_POSTAL(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"PCS">>, <<"vcard-temp">>} ->
+      {<<"POSTAL">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_POSTAL(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"PCS">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_PCS(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"ISDN">>, <<"vcard-temp">>} ->
+      {<<"PCS">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_PCS(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"ISDN">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_ISDN(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"MODEM">>, <<"vcard-temp">>} ->
+      {<<"ISDN">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_ISDN(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"MODEM">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_MODEM(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"BBS">>, <<"vcard-temp">>} ->
+      {<<"MODEM">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_MODEM(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"BBS">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_BBS(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"VIDEO">>, <<"vcard-temp">>} ->
+      {<<"BBS">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_BBS(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"VIDEO">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_VIDEO(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"CELL">>, <<"vcard-temp">>} ->
+      {<<"VIDEO">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_VIDEO(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"CELL">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_CELL(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"MSG">>, <<"vcard-temp">>} ->
+      {<<"CELL">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_CELL(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"MSG">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_MSG(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"PAGER">>, <<"vcard-temp">>} ->
+      {<<"MSG">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_MSG(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"PAGER">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_PAGER(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"FAX">>, <<"vcard-temp">>} ->
+      {<<"PAGER">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_PAGER(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"FAX">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_FAX(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"VOICE">>, <<"vcard-temp">>} ->
+      {<<"FAX">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_FAX(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"VOICE">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_VOICE(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"WORK">>, <<"vcard-temp">>} ->
+      {<<"VOICE">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_VOICE(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"WORK">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_WORK(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"HOME">>, <<"vcard-temp">>} ->
+      {<<"WORK">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_WORK(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"HOME">>, <<"vcard-temp">>, _} ->
 	  decode_vcard_HOME(<<"vcard-temp">>, IgnoreEls, _el);
-      {<<"stream:error">>,
-       <<"http://etherx.jabber.org/streams">>} ->
-	  decode_stream_error(<<"http://etherx.jabber.org/streams">>,
+      {<<"HOME">>, <<>>, <<"vcard-temp">>} ->
+	  decode_vcard_HOME(<<"vcard-temp">>, IgnoreEls, _el);
+      {<<"stream:error">>, <<"jabber:client">>, _} ->
+	  decode_stream_error(<<"jabber:client">>, IgnoreEls,
+			      _el);
+      {<<"stream:error">>, <<>>, <<"jabber:client">>} ->
+	  decode_stream_error(<<"jabber:client">>, IgnoreEls,
+			      _el);
+      {<<"stream:error">>, <<"jabber:server">>, _} ->
+	  decode_stream_error(<<"jabber:server">>, IgnoreEls,
+			      _el);
+      {<<"stream:error">>, <<>>, <<"jabber:server">>} ->
+	  decode_stream_error(<<"jabber:server">>, IgnoreEls,
+			      _el);
+      {<<"stream:error">>, <<"jabber:component:accept">>,
+       _} ->
+	  decode_stream_error(<<"jabber:component:accept">>,
+			      IgnoreEls, _el);
+      {<<"stream:error">>, <<>>,
+       <<"jabber:component:accept">>} ->
+	  decode_stream_error(<<"jabber:component:accept">>,
 			      IgnoreEls, _el);
       {<<"unsupported-version">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_unsupported_version(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+						  IgnoreEls, _el);
+      {<<"unsupported-version">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_unsupported_version(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 						  IgnoreEls, _el);
       {<<"unsupported-stanza-type">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_unsupported_stanza_type(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+						      IgnoreEls, _el);
+      {<<"unsupported-stanza-type">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_unsupported_stanza_type(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 						      IgnoreEls, _el);
       {<<"unsupported-encoding">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_unsupported_encoding(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+						   IgnoreEls, _el);
+      {<<"unsupported-encoding">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_unsupported_encoding(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 						   IgnoreEls, _el);
       {<<"undefined-condition">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_undefined_condition(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+						  IgnoreEls, _el);
+      {<<"undefined-condition">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_undefined_condition(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 						  IgnoreEls, _el);
       {<<"system-shutdown">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_system_shutdown(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					      IgnoreEls, _el);
+      {<<"system-shutdown">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_system_shutdown(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					      IgnoreEls, _el);
       {<<"see-other-host">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_see_other_host(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					     IgnoreEls, _el);
+      {<<"see-other-host">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_see_other_host(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					     IgnoreEls, _el);
       {<<"restricted-xml">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_restricted_xml(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					     IgnoreEls, _el);
+      {<<"restricted-xml">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_restricted_xml(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					     IgnoreEls, _el);
       {<<"resource-constraint">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_resource_constraint(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+						  IgnoreEls, _el);
+      {<<"resource-constraint">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_resource_constraint(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 						  IgnoreEls, _el);
-      {<<"reset">>,
+      {<<"reset">>, <<"urn:ietf:params:xml:ns:xmpp-streams">>,
+       _} ->
+	  decode_stream_error_reset(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+				    IgnoreEls, _el);
+      {<<"reset">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_reset(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 				    IgnoreEls, _el);
       {<<"remote-connection-failed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_remote_connection_failed(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+						       IgnoreEls, _el);
+      {<<"remote-connection-failed">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_remote_connection_failed(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 						       IgnoreEls, _el);
       {<<"policy-violation">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_policy_violation(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					       IgnoreEls, _el);
+      {<<"policy-violation">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_policy_violation(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					       IgnoreEls, _el);
       {<<"not-well-formed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_not_well_formed(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					      IgnoreEls, _el);
+      {<<"not-well-formed">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_not_well_formed(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					      IgnoreEls, _el);
       {<<"not-authorized">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					     IgnoreEls, _el);
+      {<<"not-authorized">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					     IgnoreEls, _el);
       {<<"invalid-xml">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_invalid_xml(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					  IgnoreEls, _el);
+      {<<"invalid-xml">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_invalid_xml(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					  IgnoreEls, _el);
       {<<"invalid-namespace">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_invalid_namespace(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+						IgnoreEls, _el);
+      {<<"invalid-namespace">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_invalid_namespace(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 						IgnoreEls, _el);
       {<<"invalid-id">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_invalid_id(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					 IgnoreEls, _el);
+      {<<"invalid-id">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_invalid_id(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					 IgnoreEls, _el);
       {<<"invalid-from">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_invalid_from(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					   IgnoreEls, _el);
+      {<<"invalid-from">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_invalid_from(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					   IgnoreEls, _el);
       {<<"internal-server-error">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_internal_server_error(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+						    IgnoreEls, _el);
+      {<<"internal-server-error">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_internal_server_error(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 						    IgnoreEls, _el);
       {<<"improper-addressing">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_improper_addressing(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+						  IgnoreEls, _el);
+      {<<"improper-addressing">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_improper_addressing(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 						  IgnoreEls, _el);
       {<<"host-unknown">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_host_unknown(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					   IgnoreEls, _el);
+      {<<"host-unknown">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_host_unknown(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					   IgnoreEls, _el);
       {<<"host-gone">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_host_gone(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					IgnoreEls, _el);
+      {<<"host-gone">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_host_gone(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					IgnoreEls, _el);
       {<<"connection-timeout">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_connection_timeout(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+						 IgnoreEls, _el);
+      {<<"connection-timeout">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_connection_timeout(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 						 IgnoreEls, _el);
       {<<"conflict">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_conflict(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+				       IgnoreEls, _el);
+      {<<"conflict">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_conflict(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 				       IgnoreEls, _el);
       {<<"bad-namespace-prefix">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_bad_namespace_prefix(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+						   IgnoreEls, _el);
+      {<<"bad-namespace-prefix">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_bad_namespace_prefix(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 						   IgnoreEls, _el);
       {<<"bad-format">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  decode_stream_error_bad_format(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+					 IgnoreEls, _el);
+      {<<"bad-format">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_bad_format(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 					 IgnoreEls, _el);
-      {<<"text">>,
+      {<<"text">>, <<"urn:ietf:params:xml:ns:xmpp-streams">>,
+       _} ->
+	  decode_stream_error_text(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+				   IgnoreEls, _el);
+      {<<"text">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  decode_stream_error_text(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
 				   IgnoreEls, _el);
-      {<<"time">>, <<"urn:xmpp:time">>} ->
+      {<<"time">>, <<"urn:xmpp:time">>, _} ->
 	  decode_time(<<"urn:xmpp:time">>, IgnoreEls, _el);
-      {<<"tzo">>, <<"urn:xmpp:time">>} ->
+      {<<"time">>, <<>>, <<"urn:xmpp:time">>} ->
+	  decode_time(<<"urn:xmpp:time">>, IgnoreEls, _el);
+      {<<"tzo">>, <<"urn:xmpp:time">>, _} ->
 	  decode_time_tzo(<<"urn:xmpp:time">>, IgnoreEls, _el);
-      {<<"utc">>, <<"urn:xmpp:time">>} ->
+      {<<"tzo">>, <<>>, <<"urn:xmpp:time">>} ->
+	  decode_time_tzo(<<"urn:xmpp:time">>, IgnoreEls, _el);
+      {<<"utc">>, <<"urn:xmpp:time">>, _} ->
 	  decode_time_utc(<<"urn:xmpp:time">>, IgnoreEls, _el);
-      {<<"ping">>, <<"urn:xmpp:ping">>} ->
+      {<<"utc">>, <<>>, <<"urn:xmpp:time">>} ->
+	  decode_time_utc(<<"urn:xmpp:time">>, IgnoreEls, _el);
+      {<<"ping">>, <<"urn:xmpp:ping">>, _} ->
+	  decode_ping(<<"urn:xmpp:ping">>, IgnoreEls, _el);
+      {<<"ping">>, <<>>, <<"urn:xmpp:ping">>} ->
 	  decode_ping(<<"urn:xmpp:ping">>, IgnoreEls, _el);
       {<<"session">>,
+       <<"urn:ietf:params:xml:ns:xmpp-session">>, _} ->
+	  decode_session(<<"urn:ietf:params:xml:ns:xmpp-session">>,
+			 IgnoreEls, _el);
+      {<<"session">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-session">>} ->
 	  decode_session(<<"urn:ietf:params:xml:ns:xmpp-session">>,
 			 IgnoreEls, _el);
       {<<"optional">>,
+       <<"urn:ietf:params:xml:ns:xmpp-session">>, _} ->
+	  decode_session_optional(<<"urn:ietf:params:xml:ns:xmpp-session">>,
+				  IgnoreEls, _el);
+      {<<"optional">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-session">>} ->
 	  decode_session_optional(<<"urn:ietf:params:xml:ns:xmpp-session">>,
 				  IgnoreEls, _el);
-      {<<"query">>, <<"jabber:iq:register">>} ->
+      {<<"query">>, <<"jabber:iq:register">>, _} ->
 	  decode_register(<<"jabber:iq:register">>, IgnoreEls,
 			  _el);
-      {<<"key">>, <<"jabber:iq:register">>} ->
+      {<<"query">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register(<<"jabber:iq:register">>, IgnoreEls,
+			  _el);
+      {<<"key">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_key(<<"jabber:iq:register">>, IgnoreEls,
 			      _el);
-      {<<"text">>, <<"jabber:iq:register">>} ->
+      {<<"key">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_key(<<"jabber:iq:register">>, IgnoreEls,
+			      _el);
+      {<<"text">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_text(<<"jabber:iq:register">>,
 			       IgnoreEls, _el);
-      {<<"misc">>, <<"jabber:iq:register">>} ->
+      {<<"text">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_text(<<"jabber:iq:register">>,
+			       IgnoreEls, _el);
+      {<<"misc">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_misc(<<"jabber:iq:register">>,
 			       IgnoreEls, _el);
-      {<<"date">>, <<"jabber:iq:register">>} ->
+      {<<"misc">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_misc(<<"jabber:iq:register">>,
+			       IgnoreEls, _el);
+      {<<"date">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_date(<<"jabber:iq:register">>,
 			       IgnoreEls, _el);
-      {<<"url">>, <<"jabber:iq:register">>} ->
+      {<<"date">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_date(<<"jabber:iq:register">>,
+			       IgnoreEls, _el);
+      {<<"url">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_url(<<"jabber:iq:register">>, IgnoreEls,
 			      _el);
-      {<<"phone">>, <<"jabber:iq:register">>} ->
+      {<<"url">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_url(<<"jabber:iq:register">>, IgnoreEls,
+			      _el);
+      {<<"phone">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_phone(<<"jabber:iq:register">>,
 				IgnoreEls, _el);
-      {<<"zip">>, <<"jabber:iq:register">>} ->
+      {<<"phone">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_phone(<<"jabber:iq:register">>,
+				IgnoreEls, _el);
+      {<<"zip">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_zip(<<"jabber:iq:register">>, IgnoreEls,
 			      _el);
-      {<<"state">>, <<"jabber:iq:register">>} ->
+      {<<"zip">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_zip(<<"jabber:iq:register">>, IgnoreEls,
+			      _el);
+      {<<"state">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_state(<<"jabber:iq:register">>,
 				IgnoreEls, _el);
-      {<<"city">>, <<"jabber:iq:register">>} ->
+      {<<"state">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_state(<<"jabber:iq:register">>,
+				IgnoreEls, _el);
+      {<<"city">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_city(<<"jabber:iq:register">>,
 			       IgnoreEls, _el);
-      {<<"address">>, <<"jabber:iq:register">>} ->
+      {<<"city">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_city(<<"jabber:iq:register">>,
+			       IgnoreEls, _el);
+      {<<"address">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_address(<<"jabber:iq:register">>,
 				  IgnoreEls, _el);
-      {<<"email">>, <<"jabber:iq:register">>} ->
+      {<<"address">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_address(<<"jabber:iq:register">>,
+				  IgnoreEls, _el);
+      {<<"email">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_email(<<"jabber:iq:register">>,
 				IgnoreEls, _el);
-      {<<"last">>, <<"jabber:iq:register">>} ->
+      {<<"email">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_email(<<"jabber:iq:register">>,
+				IgnoreEls, _el);
+      {<<"last">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_last(<<"jabber:iq:register">>,
 			       IgnoreEls, _el);
-      {<<"first">>, <<"jabber:iq:register">>} ->
+      {<<"last">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_last(<<"jabber:iq:register">>,
+			       IgnoreEls, _el);
+      {<<"first">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_first(<<"jabber:iq:register">>,
 				IgnoreEls, _el);
-      {<<"name">>, <<"jabber:iq:register">>} ->
+      {<<"first">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_first(<<"jabber:iq:register">>,
+				IgnoreEls, _el);
+      {<<"name">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_name(<<"jabber:iq:register">>,
 			       IgnoreEls, _el);
-      {<<"password">>, <<"jabber:iq:register">>} ->
+      {<<"name">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_name(<<"jabber:iq:register">>,
+			       IgnoreEls, _el);
+      {<<"password">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_password(<<"jabber:iq:register">>,
 				   IgnoreEls, _el);
-      {<<"nick">>, <<"jabber:iq:register">>} ->
+      {<<"password">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_password(<<"jabber:iq:register">>,
+				   IgnoreEls, _el);
+      {<<"nick">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_nick(<<"jabber:iq:register">>,
 			       IgnoreEls, _el);
-      {<<"username">>, <<"jabber:iq:register">>} ->
+      {<<"nick">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_nick(<<"jabber:iq:register">>,
+			       IgnoreEls, _el);
+      {<<"username">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_username(<<"jabber:iq:register">>,
 				   IgnoreEls, _el);
-      {<<"instructions">>, <<"jabber:iq:register">>} ->
+      {<<"username">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_username(<<"jabber:iq:register">>,
+				   IgnoreEls, _el);
+      {<<"instructions">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_instructions(<<"jabber:iq:register">>,
 				       IgnoreEls, _el);
-      {<<"remove">>, <<"jabber:iq:register">>} ->
+      {<<"instructions">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_instructions(<<"jabber:iq:register">>,
+				       IgnoreEls, _el);
+      {<<"remove">>, <<"jabber:iq:register">>, _} ->
 	  decode_register_remove(<<"jabber:iq:register">>,
 				 IgnoreEls, _el);
-      {<<"registered">>, <<"jabber:iq:register">>} ->
+      {<<"remove">>, <<>>, <<"jabber:iq:register">>} ->
+	  decode_register_remove(<<"jabber:iq:register">>,
+				 IgnoreEls, _el);
+      {<<"registered">>, <<"jabber:iq:register">>, _} ->
+	  decode_register_registered(<<"jabber:iq:register">>,
+				     IgnoreEls, _el);
+      {<<"registered">>, <<>>, <<"jabber:iq:register">>} ->
 	  decode_register_registered(<<"jabber:iq:register">>,
 				     IgnoreEls, _el);
       {<<"register">>,
+       <<"http://jabber.org/features/iq-register">>, _} ->
+	  decode_feature_register(<<"http://jabber.org/features/iq-register">>,
+				  IgnoreEls, _el);
+      {<<"register">>, <<>>,
        <<"http://jabber.org/features/iq-register">>} ->
 	  decode_feature_register(<<"http://jabber.org/features/iq-register">>,
 				  IgnoreEls, _el);
-      {<<"c">>, <<"http://jabber.org/protocol/caps">>} ->
+      {<<"c">>, <<"http://jabber.org/protocol/caps">>, _} ->
 	  decode_caps(<<"http://jabber.org/protocol/caps">>,
 		      IgnoreEls, _el);
-      {<<"ack">>, <<"p1:ack">>} ->
+      {<<"c">>, <<>>,
+       <<"http://jabber.org/protocol/caps">>} ->
+	  decode_caps(<<"http://jabber.org/protocol/caps">>,
+		      IgnoreEls, _el);
+      {<<"ack">>, <<"p1:ack">>, _} ->
 	  decode_p1_ack(<<"p1:ack">>, IgnoreEls, _el);
-      {<<"rebind">>, <<"p1:rebind">>} ->
+      {<<"ack">>, <<>>, <<"p1:ack">>} ->
+	  decode_p1_ack(<<"p1:ack">>, IgnoreEls, _el);
+      {<<"rebind">>, <<"p1:rebind">>, _} ->
 	  decode_p1_rebind(<<"p1:rebind">>, IgnoreEls, _el);
-      {<<"push">>, <<"p1:push">>} ->
+      {<<"rebind">>, <<>>, <<"p1:rebind">>} ->
+	  decode_p1_rebind(<<"p1:rebind">>, IgnoreEls, _el);
+      {<<"push">>, <<"p1:push">>, _} ->
 	  decode_p1_push(<<"p1:push">>, IgnoreEls, _el);
-      {<<"stream:features">>,
-       <<"http://etherx.jabber.org/streams">>} ->
-	  decode_stream_features(<<"http://etherx.jabber.org/streams">>,
-				 IgnoreEls, _el);
+      {<<"push">>, <<>>, <<"p1:push">>} ->
+	  decode_p1_push(<<"p1:push">>, IgnoreEls, _el);
+      {<<"stream:features">>, <<"jabber:client">>, _} ->
+	  decode_stream_features(<<"jabber:client">>, IgnoreEls,
+				 _el);
+      {<<"stream:features">>, <<>>, <<"jabber:client">>} ->
+	  decode_stream_features(<<"jabber:client">>, IgnoreEls,
+				 _el);
+      {<<"stream:features">>, <<"jabber:server">>, _} ->
+	  decode_stream_features(<<"jabber:server">>, IgnoreEls,
+				 _el);
+      {<<"stream:features">>, <<>>, <<"jabber:server">>} ->
+	  decode_stream_features(<<"jabber:server">>, IgnoreEls,
+				 _el);
       {<<"compression">>,
+       <<"http://jabber.org/features/compress">>, _} ->
+	  decode_compression(<<"http://jabber.org/features/compress">>,
+			     IgnoreEls, _el);
+      {<<"compression">>, <<>>,
        <<"http://jabber.org/features/compress">>} ->
 	  decode_compression(<<"http://jabber.org/features/compress">>,
 			     IgnoreEls, _el);
       {<<"method">>,
+       <<"http://jabber.org/features/compress">>, _} ->
+	  decode_compression_method(<<"http://jabber.org/features/compress">>,
+				    IgnoreEls, _el);
+      {<<"method">>, <<>>,
        <<"http://jabber.org/features/compress">>} ->
 	  decode_compression_method(<<"http://jabber.org/features/compress">>,
 				    IgnoreEls, _el);
       {<<"compressed">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  decode_compressed(<<"http://jabber.org/protocol/compress">>,
+			    IgnoreEls, _el);
+      {<<"compressed">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  decode_compressed(<<"http://jabber.org/protocol/compress">>,
 			    IgnoreEls, _el);
       {<<"compress">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  decode_compress(<<"http://jabber.org/protocol/compress">>,
+			  IgnoreEls, _el);
+      {<<"compress">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  decode_compress(<<"http://jabber.org/protocol/compress">>,
 			  IgnoreEls, _el);
       {<<"method">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  decode_compress_method(<<"http://jabber.org/protocol/compress">>,
+				 IgnoreEls, _el);
+      {<<"method">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  decode_compress_method(<<"http://jabber.org/protocol/compress">>,
 				 IgnoreEls, _el);
       {<<"failure">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  decode_compress_failure(<<"http://jabber.org/protocol/compress">>,
+				  IgnoreEls, _el);
+      {<<"failure">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  decode_compress_failure(<<"http://jabber.org/protocol/compress">>,
 				  IgnoreEls, _el);
       {<<"unsupported-method">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  decode_compress_failure_unsupported_method(<<"http://jabber.org/protocol/compress">>,
+						     IgnoreEls, _el);
+      {<<"unsupported-method">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  decode_compress_failure_unsupported_method(<<"http://jabber.org/protocol/compress">>,
 						     IgnoreEls, _el);
       {<<"processing-failed">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  decode_compress_failure_processing_failed(<<"http://jabber.org/protocol/compress">>,
+						    IgnoreEls, _el);
+      {<<"processing-failed">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  decode_compress_failure_processing_failed(<<"http://jabber.org/protocol/compress">>,
 						    IgnoreEls, _el);
       {<<"setup-failed">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  decode_compress_failure_setup_failed(<<"http://jabber.org/protocol/compress">>,
+					       IgnoreEls, _el);
+      {<<"setup-failed">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  decode_compress_failure_setup_failed(<<"http://jabber.org/protocol/compress">>,
 					       IgnoreEls, _el);
-      {<<"failure">>,
+      {<<"failure">>, <<"urn:ietf:params:xml:ns:xmpp-tls">>,
+       _} ->
+	  decode_starttls_failure(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
+				  IgnoreEls, _el);
+      {<<"failure">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
 	  decode_starttls_failure(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
 				  IgnoreEls, _el);
-      {<<"proceed">>,
+      {<<"proceed">>, <<"urn:ietf:params:xml:ns:xmpp-tls">>,
+       _} ->
+	  decode_starttls_proceed(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
+				  IgnoreEls, _el);
+      {<<"proceed">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
 	  decode_starttls_proceed(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
 				  IgnoreEls, _el);
-      {<<"starttls">>,
+      {<<"starttls">>, <<"urn:ietf:params:xml:ns:xmpp-tls">>,
+       _} ->
+	  decode_starttls(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
+			  IgnoreEls, _el);
+      {<<"starttls">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
 	  decode_starttls(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
 			  IgnoreEls, _el);
-      {<<"required">>,
+      {<<"required">>, <<"urn:ietf:params:xml:ns:xmpp-tls">>,
+       _} ->
+	  decode_starttls_required(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
+				   IgnoreEls, _el);
+      {<<"required">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
 	  decode_starttls_required(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
 				   IgnoreEls, _el);
       {<<"mechanisms">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_mechanisms(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+				 IgnoreEls, _el);
+      {<<"mechanisms">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_mechanisms(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 				 IgnoreEls, _el);
       {<<"mechanism">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_mechanism(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+				IgnoreEls, _el);
+      {<<"mechanism">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_mechanism(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 				IgnoreEls, _el);
-      {<<"failure">>,
+      {<<"failure">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
+	  decode_sasl_failure(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			      IgnoreEls, _el);
+      {<<"failure">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 			      IgnoreEls, _el);
       {<<"temporary-auth-failure">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_failure_temporary_auth_failure(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+						     IgnoreEls, _el);
+      {<<"temporary-auth-failure">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_temporary_auth_failure(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 						     IgnoreEls, _el);
       {<<"bad-protocol">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_failure_bad_protocol(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+					   IgnoreEls, _el);
+      {<<"bad-protocol">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_bad_protocol(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 					   IgnoreEls, _el);
       {<<"not-authorized">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_failure_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+					     IgnoreEls, _el);
+      {<<"not-authorized">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 					     IgnoreEls, _el);
       {<<"mechanism-too-weak">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_failure_mechanism_too_weak(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+						 IgnoreEls, _el);
+      {<<"mechanism-too-weak">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_mechanism_too_weak(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 						 IgnoreEls, _el);
       {<<"malformed-request">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_failure_malformed_request(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+						IgnoreEls, _el);
+      {<<"malformed-request">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_malformed_request(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 						IgnoreEls, _el);
       {<<"invalid-mechanism">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_failure_invalid_mechanism(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+						IgnoreEls, _el);
+      {<<"invalid-mechanism">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_invalid_mechanism(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 						IgnoreEls, _el);
       {<<"invalid-authzid">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_failure_invalid_authzid(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+					      IgnoreEls, _el);
+      {<<"invalid-authzid">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_invalid_authzid(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 					      IgnoreEls, _el);
       {<<"incorrect-encoding">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_failure_incorrect_encoding(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+						 IgnoreEls, _el);
+      {<<"incorrect-encoding">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_incorrect_encoding(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 						 IgnoreEls, _el);
       {<<"encryption-required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_failure_encryption_required(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+						  IgnoreEls, _el);
+      {<<"encryption-required">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_encryption_required(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 						  IgnoreEls, _el);
       {<<"credentials-expired">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_failure_credentials_expired(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+						  IgnoreEls, _el);
+      {<<"credentials-expired">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_credentials_expired(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 						  IgnoreEls, _el);
       {<<"account-disabled">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_failure_account_disabled(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+					       IgnoreEls, _el);
+      {<<"account-disabled">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_account_disabled(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 					       IgnoreEls, _el);
-      {<<"aborted">>,
+      {<<"aborted">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
+	  decode_sasl_failure_aborted(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+				      IgnoreEls, _el);
+      {<<"aborted">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_failure_aborted(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 				      IgnoreEls, _el);
-      {<<"text">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+      {<<"text">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
 	  decode_sasl_failure_text(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 				   IgnoreEls, _el);
-      {<<"success">>,
+      {<<"text">>, <<>>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  decode_sasl_failure_text(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+				   IgnoreEls, _el);
+      {<<"success">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
+	  decode_sasl_success(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			      IgnoreEls, _el);
+      {<<"success">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_success(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 			      IgnoreEls, _el);
-      {<<"response">>,
+      {<<"response">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
+	  decode_sasl_response(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			       IgnoreEls, _el);
+      {<<"response">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_response(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 			       IgnoreEls, _el);
       {<<"challenge">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  decode_sasl_challenge(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+				IgnoreEls, _el);
+      {<<"challenge">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  decode_sasl_challenge(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 				IgnoreEls, _el);
-      {<<"abort">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+      {<<"abort">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
 	  decode_sasl_abort(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 			    IgnoreEls, _el);
-      {<<"auth">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+      {<<"abort">>, <<>>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  decode_sasl_abort(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			    IgnoreEls, _el);
+      {<<"auth">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
 	  decode_sasl_auth(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
 			   IgnoreEls, _el);
-      {<<"query">>, <<"jabber:iq:auth">>} ->
+      {<<"auth">>, <<>>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  decode_sasl_auth(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			   IgnoreEls, _el);
+      {<<"query">>, <<"jabber:iq:auth">>, _} ->
 	  decode_legacy_auth(<<"jabber:iq:auth">>, IgnoreEls,
 			     _el);
-      {<<"resource">>, <<"jabber:iq:auth">>} ->
+      {<<"query">>, <<>>, <<"jabber:iq:auth">>} ->
+	  decode_legacy_auth(<<"jabber:iq:auth">>, IgnoreEls,
+			     _el);
+      {<<"resource">>, <<"jabber:iq:auth">>, _} ->
 	  decode_legacy_auth_resource(<<"jabber:iq:auth">>,
 				      IgnoreEls, _el);
-      {<<"digest">>, <<"jabber:iq:auth">>} ->
+      {<<"resource">>, <<>>, <<"jabber:iq:auth">>} ->
+	  decode_legacy_auth_resource(<<"jabber:iq:auth">>,
+				      IgnoreEls, _el);
+      {<<"digest">>, <<"jabber:iq:auth">>, _} ->
 	  decode_legacy_auth_digest(<<"jabber:iq:auth">>,
 				    IgnoreEls, _el);
-      {<<"password">>, <<"jabber:iq:auth">>} ->
+      {<<"digest">>, <<>>, <<"jabber:iq:auth">>} ->
+	  decode_legacy_auth_digest(<<"jabber:iq:auth">>,
+				    IgnoreEls, _el);
+      {<<"password">>, <<"jabber:iq:auth">>, _} ->
 	  decode_legacy_auth_password(<<"jabber:iq:auth">>,
 				      IgnoreEls, _el);
-      {<<"username">>, <<"jabber:iq:auth">>} ->
+      {<<"password">>, <<>>, <<"jabber:iq:auth">>} ->
+	  decode_legacy_auth_password(<<"jabber:iq:auth">>,
+				      IgnoreEls, _el);
+      {<<"username">>, <<"jabber:iq:auth">>, _} ->
 	  decode_legacy_auth_username(<<"jabber:iq:auth">>,
 				      IgnoreEls, _el);
-      {<<"bind">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
+      {<<"username">>, <<>>, <<"jabber:iq:auth">>} ->
+	  decode_legacy_auth_username(<<"jabber:iq:auth">>,
+				      IgnoreEls, _el);
+      {<<"bind">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>,
+       _} ->
 	  decode_bind(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
 		      IgnoreEls, _el);
-      {<<"resource">>,
+      {<<"bind">>, <<>>,
+       <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
+	  decode_bind(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
+		      IgnoreEls, _el);
+      {<<"resource">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>,
+       _} ->
+	  decode_bind_resource(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
+			       IgnoreEls, _el);
+      {<<"resource">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
 	  decode_bind_resource(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
 			       IgnoreEls, _el);
-      {<<"jid">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
+      {<<"jid">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>,
+       _} ->
 	  decode_bind_jid(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
 			  IgnoreEls, _el);
-      {<<"error">>, <<"jabber:client">>} ->
+      {<<"jid">>, <<>>,
+       <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
+	  decode_bind_jid(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
+			  IgnoreEls, _el);
+      {<<"error">>, <<"jabber:client">>, _} ->
 	  decode_error(<<"jabber:client">>, IgnoreEls, _el);
-      {<<"text">>,
+      {<<"error">>, <<>>, <<"jabber:client">>} ->
+	  decode_error(<<"jabber:client">>, IgnoreEls, _el);
+      {<<"error">>, <<"jabber:server">>, _} ->
+	  decode_error(<<"jabber:server">>, IgnoreEls, _el);
+      {<<"error">>, <<>>, <<"jabber:server">>} ->
+	  decode_error(<<"jabber:server">>, IgnoreEls, _el);
+      {<<"error">>, <<"jabber:component:accept">>, _} ->
+	  decode_error(<<"jabber:component:accept">>, IgnoreEls,
+		       _el);
+      {<<"error">>, <<>>, <<"jabber:component:accept">>} ->
+	  decode_error(<<"jabber:component:accept">>, IgnoreEls,
+		       _el);
+      {<<"text">>, <<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+       _} ->
+	  decode_error_text(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			    IgnoreEls, _el);
+      {<<"text">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_text(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 			    IgnoreEls, _el);
       {<<"unexpected-request">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_unexpected_request(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					  IgnoreEls, _el);
+      {<<"unexpected-request">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_unexpected_request(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					  IgnoreEls, _el);
       {<<"undefined-condition">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_undefined_condition(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					   IgnoreEls, _el);
+      {<<"undefined-condition">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_undefined_condition(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					   IgnoreEls, _el);
       {<<"subscription-required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_subscription_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					     IgnoreEls, _el);
+      {<<"subscription-required">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_subscription_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					     IgnoreEls, _el);
       {<<"service-unavailable">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_service_unavailable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					   IgnoreEls, _el);
+      {<<"service-unavailable">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_service_unavailable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					   IgnoreEls, _el);
       {<<"resource-constraint">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_resource_constraint(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					   IgnoreEls, _el);
+      {<<"resource-constraint">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_resource_constraint(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					   IgnoreEls, _el);
       {<<"remote-server-timeout">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_remote_server_timeout(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					     IgnoreEls, _el);
+      {<<"remote-server-timeout">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_remote_server_timeout(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					     IgnoreEls, _el);
       {<<"remote-server-not-found">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_remote_server_not_found(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					       IgnoreEls, _el);
+      {<<"remote-server-not-found">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_remote_server_not_found(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					       IgnoreEls, _el);
       {<<"registration-required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_registration_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					     IgnoreEls, _el);
+      {<<"registration-required">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_registration_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					     IgnoreEls, _el);
       {<<"redirect">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_redirect(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+				IgnoreEls, _el);
+      {<<"redirect">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_redirect(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 				IgnoreEls, _el);
       {<<"recipient-unavailable">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_recipient_unavailable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					     IgnoreEls, _el);
+      {<<"recipient-unavailable">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_recipient_unavailable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					     IgnoreEls, _el);
       {<<"policy-violation">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_policy_violation(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					IgnoreEls, _el);
+      {<<"policy-violation">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_policy_violation(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					IgnoreEls, _el);
       {<<"payment-required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_payment_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					IgnoreEls, _el);
+      {<<"payment-required">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_payment_required(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					IgnoreEls, _el);
       {<<"not-authorized">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+				      IgnoreEls, _el);
+      {<<"not-authorized">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_not_authorized(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 				      IgnoreEls, _el);
       {<<"not-allowed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_not_allowed(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+				   IgnoreEls, _el);
+      {<<"not-allowed">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_not_allowed(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 				   IgnoreEls, _el);
       {<<"not-acceptable">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_not_acceptable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+				      IgnoreEls, _el);
+      {<<"not-acceptable">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_not_acceptable(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 				      IgnoreEls, _el);
       {<<"jid-malformed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_jid_malformed(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+				     IgnoreEls, _el);
+      {<<"jid-malformed">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_jid_malformed(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 				     IgnoreEls, _el);
       {<<"item-not-found">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_item_not_found(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+				      IgnoreEls, _el);
+      {<<"item-not-found">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_item_not_found(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 				      IgnoreEls, _el);
       {<<"internal-server-error">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_internal_server_error(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					     IgnoreEls, _el);
+      {<<"internal-server-error">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_internal_server_error(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					     IgnoreEls, _el);
-      {<<"gone">>,
+      {<<"gone">>, <<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+       _} ->
+	  decode_error_gone(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			    IgnoreEls, _el);
+      {<<"gone">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_gone(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 			    IgnoreEls, _el);
       {<<"forbidden">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_forbidden(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+				 IgnoreEls, _el);
+      {<<"forbidden">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_forbidden(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 				 IgnoreEls, _el);
       {<<"feature-not-implemented">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_feature_not_implemented(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+					       IgnoreEls, _el);
+      {<<"feature-not-implemented">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_feature_not_implemented(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 					       IgnoreEls, _el);
       {<<"conflict">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_conflict(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+				IgnoreEls, _el);
+      {<<"conflict">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_conflict(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 				IgnoreEls, _el);
       {<<"bad-request">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  decode_error_bad_request(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+				   IgnoreEls, _el);
+      {<<"bad-request">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  decode_error_bad_request(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
 				   IgnoreEls, _el);
-      {<<"presence">>, <<"jabber:client">>} ->
+      {<<"presence">>, <<"jabber:client">>, _} ->
 	  decode_presence(<<"jabber:client">>, IgnoreEls, _el);
-      {<<"priority">>, <<"jabber:client">>} ->
+      {<<"presence">>, <<>>, <<"jabber:client">>} ->
+	  decode_presence(<<"jabber:client">>, IgnoreEls, _el);
+      {<<"presence">>, <<"jabber:server">>, _} ->
+	  decode_presence(<<"jabber:server">>, IgnoreEls, _el);
+      {<<"presence">>, <<>>, <<"jabber:server">>} ->
+	  decode_presence(<<"jabber:server">>, IgnoreEls, _el);
+      {<<"presence">>, <<"jabber:component:accept">>, _} ->
+	  decode_presence(<<"jabber:component:accept">>,
+			  IgnoreEls, _el);
+      {<<"presence">>, <<>>, <<"jabber:component:accept">>} ->
+	  decode_presence(<<"jabber:component:accept">>,
+			  IgnoreEls, _el);
+      {<<"priority">>, <<"jabber:client">>, _} ->
 	  decode_presence_priority(<<"jabber:client">>, IgnoreEls,
 				   _el);
-      {<<"status">>, <<"jabber:client">>} ->
+      {<<"priority">>, <<>>, <<"jabber:client">>} ->
+	  decode_presence_priority(<<"jabber:client">>, IgnoreEls,
+				   _el);
+      {<<"priority">>, <<"jabber:server">>, _} ->
+	  decode_presence_priority(<<"jabber:server">>, IgnoreEls,
+				   _el);
+      {<<"priority">>, <<>>, <<"jabber:server">>} ->
+	  decode_presence_priority(<<"jabber:server">>, IgnoreEls,
+				   _el);
+      {<<"priority">>, <<"jabber:component:accept">>, _} ->
+	  decode_presence_priority(<<"jabber:component:accept">>,
+				   IgnoreEls, _el);
+      {<<"priority">>, <<>>, <<"jabber:component:accept">>} ->
+	  decode_presence_priority(<<"jabber:component:accept">>,
+				   IgnoreEls, _el);
+      {<<"status">>, <<"jabber:client">>, _} ->
 	  decode_presence_status(<<"jabber:client">>, IgnoreEls,
 				 _el);
-      {<<"show">>, <<"jabber:client">>} ->
+      {<<"status">>, <<>>, <<"jabber:client">>} ->
+	  decode_presence_status(<<"jabber:client">>, IgnoreEls,
+				 _el);
+      {<<"status">>, <<"jabber:server">>, _} ->
+	  decode_presence_status(<<"jabber:server">>, IgnoreEls,
+				 _el);
+      {<<"status">>, <<>>, <<"jabber:server">>} ->
+	  decode_presence_status(<<"jabber:server">>, IgnoreEls,
+				 _el);
+      {<<"status">>, <<"jabber:component:accept">>, _} ->
+	  decode_presence_status(<<"jabber:component:accept">>,
+				 IgnoreEls, _el);
+      {<<"status">>, <<>>, <<"jabber:component:accept">>} ->
+	  decode_presence_status(<<"jabber:component:accept">>,
+				 IgnoreEls, _el);
+      {<<"show">>, <<"jabber:client">>, _} ->
 	  decode_presence_show(<<"jabber:client">>, IgnoreEls,
 			       _el);
-      {<<"message">>, <<"jabber:client">>} ->
+      {<<"show">>, <<>>, <<"jabber:client">>} ->
+	  decode_presence_show(<<"jabber:client">>, IgnoreEls,
+			       _el);
+      {<<"show">>, <<"jabber:server">>, _} ->
+	  decode_presence_show(<<"jabber:server">>, IgnoreEls,
+			       _el);
+      {<<"show">>, <<>>, <<"jabber:server">>} ->
+	  decode_presence_show(<<"jabber:server">>, IgnoreEls,
+			       _el);
+      {<<"show">>, <<"jabber:component:accept">>, _} ->
+	  decode_presence_show(<<"jabber:component:accept">>,
+			       IgnoreEls, _el);
+      {<<"show">>, <<>>, <<"jabber:component:accept">>} ->
+	  decode_presence_show(<<"jabber:component:accept">>,
+			       IgnoreEls, _el);
+      {<<"message">>, <<"jabber:client">>, _} ->
 	  decode_message(<<"jabber:client">>, IgnoreEls, _el);
-      {<<"thread">>, <<"jabber:client">>} ->
+      {<<"message">>, <<>>, <<"jabber:client">>} ->
+	  decode_message(<<"jabber:client">>, IgnoreEls, _el);
+      {<<"message">>, <<"jabber:server">>, _} ->
+	  decode_message(<<"jabber:server">>, IgnoreEls, _el);
+      {<<"message">>, <<>>, <<"jabber:server">>} ->
+	  decode_message(<<"jabber:server">>, IgnoreEls, _el);
+      {<<"message">>, <<"jabber:component:accept">>, _} ->
+	  decode_message(<<"jabber:component:accept">>, IgnoreEls,
+			 _el);
+      {<<"message">>, <<>>, <<"jabber:component:accept">>} ->
+	  decode_message(<<"jabber:component:accept">>, IgnoreEls,
+			 _el);
+      {<<"thread">>, <<"jabber:client">>, _} ->
 	  decode_message_thread(<<"jabber:client">>, IgnoreEls,
 				_el);
-      {<<"body">>, <<"jabber:client">>} ->
+      {<<"thread">>, <<>>, <<"jabber:client">>} ->
+	  decode_message_thread(<<"jabber:client">>, IgnoreEls,
+				_el);
+      {<<"thread">>, <<"jabber:server">>, _} ->
+	  decode_message_thread(<<"jabber:server">>, IgnoreEls,
+				_el);
+      {<<"thread">>, <<>>, <<"jabber:server">>} ->
+	  decode_message_thread(<<"jabber:server">>, IgnoreEls,
+				_el);
+      {<<"thread">>, <<"jabber:component:accept">>, _} ->
+	  decode_message_thread(<<"jabber:component:accept">>,
+				IgnoreEls, _el);
+      {<<"thread">>, <<>>, <<"jabber:component:accept">>} ->
+	  decode_message_thread(<<"jabber:component:accept">>,
+				IgnoreEls, _el);
+      {<<"body">>, <<"jabber:client">>, _} ->
 	  decode_message_body(<<"jabber:client">>, IgnoreEls,
 			      _el);
-      {<<"subject">>, <<"jabber:client">>} ->
+      {<<"body">>, <<>>, <<"jabber:client">>} ->
+	  decode_message_body(<<"jabber:client">>, IgnoreEls,
+			      _el);
+      {<<"body">>, <<"jabber:server">>, _} ->
+	  decode_message_body(<<"jabber:server">>, IgnoreEls,
+			      _el);
+      {<<"body">>, <<>>, <<"jabber:server">>} ->
+	  decode_message_body(<<"jabber:server">>, IgnoreEls,
+			      _el);
+      {<<"body">>, <<"jabber:component:accept">>, _} ->
+	  decode_message_body(<<"jabber:component:accept">>,
+			      IgnoreEls, _el);
+      {<<"body">>, <<>>, <<"jabber:component:accept">>} ->
+	  decode_message_body(<<"jabber:component:accept">>,
+			      IgnoreEls, _el);
+      {<<"subject">>, <<"jabber:client">>, _} ->
 	  decode_message_subject(<<"jabber:client">>, IgnoreEls,
 				 _el);
-      {<<"iq">>, <<"jabber:client">>} ->
+      {<<"subject">>, <<>>, <<"jabber:client">>} ->
+	  decode_message_subject(<<"jabber:client">>, IgnoreEls,
+				 _el);
+      {<<"subject">>, <<"jabber:server">>, _} ->
+	  decode_message_subject(<<"jabber:server">>, IgnoreEls,
+				 _el);
+      {<<"subject">>, <<>>, <<"jabber:server">>} ->
+	  decode_message_subject(<<"jabber:server">>, IgnoreEls,
+				 _el);
+      {<<"subject">>, <<"jabber:component:accept">>, _} ->
+	  decode_message_subject(<<"jabber:component:accept">>,
+				 IgnoreEls, _el);
+      {<<"subject">>, <<>>, <<"jabber:component:accept">>} ->
+	  decode_message_subject(<<"jabber:component:accept">>,
+				 IgnoreEls, _el);
+      {<<"iq">>, <<"jabber:client">>, _} ->
 	  decode_iq(<<"jabber:client">>, IgnoreEls, _el);
-      {<<"query">>, <<"http://jabber.org/protocol/stats">>} ->
+      {<<"iq">>, <<>>, <<"jabber:client">>} ->
+	  decode_iq(<<"jabber:client">>, IgnoreEls, _el);
+      {<<"iq">>, <<"jabber:server">>, _} ->
+	  decode_iq(<<"jabber:server">>, IgnoreEls, _el);
+      {<<"iq">>, <<>>, <<"jabber:server">>} ->
+	  decode_iq(<<"jabber:server">>, IgnoreEls, _el);
+      {<<"iq">>, <<"jabber:component:accept">>, _} ->
+	  decode_iq(<<"jabber:component:accept">>, IgnoreEls,
+		    _el);
+      {<<"iq">>, <<>>, <<"jabber:component:accept">>} ->
+	  decode_iq(<<"jabber:component:accept">>, IgnoreEls,
+		    _el);
+      {<<"query">>, <<"http://jabber.org/protocol/stats">>,
+       _} ->
 	  decode_stats(<<"http://jabber.org/protocol/stats">>,
 		       IgnoreEls, _el);
-      {<<"stat">>, <<"http://jabber.org/protocol/stats">>} ->
+      {<<"query">>, <<>>,
+       <<"http://jabber.org/protocol/stats">>} ->
+	  decode_stats(<<"http://jabber.org/protocol/stats">>,
+		       IgnoreEls, _el);
+      {<<"stat">>, <<"http://jabber.org/protocol/stats">>,
+       _} ->
 	  decode_stat(<<"http://jabber.org/protocol/stats">>,
 		      IgnoreEls, _el);
-      {<<"error">>, <<"http://jabber.org/protocol/stats">>} ->
+      {<<"stat">>, <<>>,
+       <<"http://jabber.org/protocol/stats">>} ->
+	  decode_stat(<<"http://jabber.org/protocol/stats">>,
+		      IgnoreEls, _el);
+      {<<"error">>, <<"http://jabber.org/protocol/stats">>,
+       _} ->
 	  decode_stat_error(<<"http://jabber.org/protocol/stats">>,
 			    IgnoreEls, _el);
-      {<<"storage">>, <<"storage:bookmarks">>} ->
+      {<<"error">>, <<>>,
+       <<"http://jabber.org/protocol/stats">>} ->
+	  decode_stat_error(<<"http://jabber.org/protocol/stats">>,
+			    IgnoreEls, _el);
+      {<<"storage">>, <<"storage:bookmarks">>, _} ->
 	  decode_bookmarks_storage(<<"storage:bookmarks">>,
 				   IgnoreEls, _el);
-      {<<"url">>, <<"storage:bookmarks">>} ->
+      {<<"storage">>, <<>>, <<"storage:bookmarks">>} ->
+	  decode_bookmarks_storage(<<"storage:bookmarks">>,
+				   IgnoreEls, _el);
+      {<<"url">>, <<"storage:bookmarks">>, _} ->
 	  decode_bookmark_url(<<"storage:bookmarks">>, IgnoreEls,
 			      _el);
-      {<<"conference">>, <<"storage:bookmarks">>} ->
+      {<<"url">>, <<>>, <<"storage:bookmarks">>} ->
+	  decode_bookmark_url(<<"storage:bookmarks">>, IgnoreEls,
+			      _el);
+      {<<"conference">>, <<"storage:bookmarks">>, _} ->
 	  decode_bookmark_conference(<<"storage:bookmarks">>,
 				     IgnoreEls, _el);
-      {<<"password">>, <<"storage:bookmarks">>} ->
+      {<<"conference">>, <<>>, <<"storage:bookmarks">>} ->
+	  decode_bookmark_conference(<<"storage:bookmarks">>,
+				     IgnoreEls, _el);
+      {<<"password">>, <<"storage:bookmarks">>, _} ->
 	  decode_conference_password(<<"storage:bookmarks">>,
 				     IgnoreEls, _el);
-      {<<"nick">>, <<"storage:bookmarks">>} ->
+      {<<"password">>, <<>>, <<"storage:bookmarks">>} ->
+	  decode_conference_password(<<"storage:bookmarks">>,
+				     IgnoreEls, _el);
+      {<<"nick">>, <<"storage:bookmarks">>, _} ->
 	  decode_conference_nick(<<"storage:bookmarks">>,
 				 IgnoreEls, _el);
-      {<<"query">>, <<"jabber:iq:private">>} ->
+      {<<"nick">>, <<>>, <<"storage:bookmarks">>} ->
+	  decode_conference_nick(<<"storage:bookmarks">>,
+				 IgnoreEls, _el);
+      {<<"query">>, <<"jabber:iq:private">>, _} ->
+	  decode_private(<<"jabber:iq:private">>, IgnoreEls, _el);
+      {<<"query">>, <<>>, <<"jabber:iq:private">>} ->
 	  decode_private(<<"jabber:iq:private">>, IgnoreEls, _el);
       {<<"query">>,
+       <<"http://jabber.org/protocol/disco#items">>, _} ->
+	  decode_disco_items(<<"http://jabber.org/protocol/disco#items">>,
+			     IgnoreEls, _el);
+      {<<"query">>, <<>>,
        <<"http://jabber.org/protocol/disco#items">>} ->
 	  decode_disco_items(<<"http://jabber.org/protocol/disco#items">>,
 			     IgnoreEls, _el);
       {<<"item">>,
+       <<"http://jabber.org/protocol/disco#items">>, _} ->
+	  decode_disco_item(<<"http://jabber.org/protocol/disco#items">>,
+			    IgnoreEls, _el);
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/disco#items">>} ->
 	  decode_disco_item(<<"http://jabber.org/protocol/disco#items">>,
 			    IgnoreEls, _el);
       {<<"query">>,
+       <<"http://jabber.org/protocol/disco#info">>, _} ->
+	  decode_disco_info(<<"http://jabber.org/protocol/disco#info">>,
+			    IgnoreEls, _el);
+      {<<"query">>, <<>>,
        <<"http://jabber.org/protocol/disco#info">>} ->
 	  decode_disco_info(<<"http://jabber.org/protocol/disco#info">>,
 			    IgnoreEls, _el);
       {<<"feature">>,
+       <<"http://jabber.org/protocol/disco#info">>, _} ->
+	  decode_disco_feature(<<"http://jabber.org/protocol/disco#info">>,
+			       IgnoreEls, _el);
+      {<<"feature">>, <<>>,
        <<"http://jabber.org/protocol/disco#info">>} ->
 	  decode_disco_feature(<<"http://jabber.org/protocol/disco#info">>,
 			       IgnoreEls, _el);
       {<<"identity">>,
+       <<"http://jabber.org/protocol/disco#info">>, _} ->
+	  decode_disco_identity(<<"http://jabber.org/protocol/disco#info">>,
+				IgnoreEls, _el);
+      {<<"identity">>, <<>>,
        <<"http://jabber.org/protocol/disco#info">>} ->
 	  decode_disco_identity(<<"http://jabber.org/protocol/disco#info">>,
 				IgnoreEls, _el);
-      {<<"blocklist">>, <<"urn:xmpp:blocking">>} ->
+      {<<"blocklist">>, <<"urn:xmpp:blocking">>, _} ->
 	  decode_block_list(<<"urn:xmpp:blocking">>, IgnoreEls,
 			    _el);
-      {<<"unblock">>, <<"urn:xmpp:blocking">>} ->
+      {<<"blocklist">>, <<>>, <<"urn:xmpp:blocking">>} ->
+	  decode_block_list(<<"urn:xmpp:blocking">>, IgnoreEls,
+			    _el);
+      {<<"unblock">>, <<"urn:xmpp:blocking">>, _} ->
 	  decode_unblock(<<"urn:xmpp:blocking">>, IgnoreEls, _el);
-      {<<"block">>, <<"urn:xmpp:blocking">>} ->
+      {<<"unblock">>, <<>>, <<"urn:xmpp:blocking">>} ->
+	  decode_unblock(<<"urn:xmpp:blocking">>, IgnoreEls, _el);
+      {<<"block">>, <<"urn:xmpp:blocking">>, _} ->
 	  decode_block(<<"urn:xmpp:blocking">>, IgnoreEls, _el);
-      {<<"item">>, <<"urn:xmpp:blocking">>} ->
+      {<<"block">>, <<>>, <<"urn:xmpp:blocking">>} ->
+	  decode_block(<<"urn:xmpp:blocking">>, IgnoreEls, _el);
+      {<<"item">>, <<"urn:xmpp:blocking">>, _} ->
 	  decode_block_item(<<"urn:xmpp:blocking">>, IgnoreEls,
 			    _el);
-      {<<"query">>, <<"jabber:iq:privacy">>} ->
+      {<<"item">>, <<>>, <<"urn:xmpp:blocking">>} ->
+	  decode_block_item(<<"urn:xmpp:blocking">>, IgnoreEls,
+			    _el);
+      {<<"query">>, <<"jabber:iq:privacy">>, _} ->
 	  decode_privacy(<<"jabber:iq:privacy">>, IgnoreEls, _el);
-      {<<"active">>, <<"jabber:iq:privacy">>} ->
+      {<<"query">>, <<>>, <<"jabber:iq:privacy">>} ->
+	  decode_privacy(<<"jabber:iq:privacy">>, IgnoreEls, _el);
+      {<<"active">>, <<"jabber:iq:privacy">>, _} ->
 	  decode_privacy_active_list(<<"jabber:iq:privacy">>,
 				     IgnoreEls, _el);
-      {<<"default">>, <<"jabber:iq:privacy">>} ->
+      {<<"active">>, <<>>, <<"jabber:iq:privacy">>} ->
+	  decode_privacy_active_list(<<"jabber:iq:privacy">>,
+				     IgnoreEls, _el);
+      {<<"default">>, <<"jabber:iq:privacy">>, _} ->
 	  decode_privacy_default_list(<<"jabber:iq:privacy">>,
 				      IgnoreEls, _el);
-      {<<"list">>, <<"jabber:iq:privacy">>} ->
+      {<<"default">>, <<>>, <<"jabber:iq:privacy">>} ->
+	  decode_privacy_default_list(<<"jabber:iq:privacy">>,
+				      IgnoreEls, _el);
+      {<<"list">>, <<"jabber:iq:privacy">>, _} ->
 	  decode_privacy_list(<<"jabber:iq:privacy">>, IgnoreEls,
 			      _el);
-      {<<"item">>, <<"jabber:iq:privacy">>} ->
+      {<<"list">>, <<>>, <<"jabber:iq:privacy">>} ->
+	  decode_privacy_list(<<"jabber:iq:privacy">>, IgnoreEls,
+			      _el);
+      {<<"item">>, <<"jabber:iq:privacy">>, _} ->
 	  decode_privacy_item(<<"jabber:iq:privacy">>, IgnoreEls,
 			      _el);
-      {<<"presence-out">>, <<"jabber:iq:privacy">>} ->
+      {<<"item">>, <<>>, <<"jabber:iq:privacy">>} ->
+	  decode_privacy_item(<<"jabber:iq:privacy">>, IgnoreEls,
+			      _el);
+      {<<"presence-out">>, <<"jabber:iq:privacy">>, _} ->
 	  decode_privacy_presence_out(<<"jabber:iq:privacy">>,
 				      IgnoreEls, _el);
-      {<<"presence-in">>, <<"jabber:iq:privacy">>} ->
+      {<<"presence-out">>, <<>>, <<"jabber:iq:privacy">>} ->
+	  decode_privacy_presence_out(<<"jabber:iq:privacy">>,
+				      IgnoreEls, _el);
+      {<<"presence-in">>, <<"jabber:iq:privacy">>, _} ->
 	  decode_privacy_presence_in(<<"jabber:iq:privacy">>,
 				     IgnoreEls, _el);
-      {<<"iq">>, <<"jabber:iq:privacy">>} ->
+      {<<"presence-in">>, <<>>, <<"jabber:iq:privacy">>} ->
+	  decode_privacy_presence_in(<<"jabber:iq:privacy">>,
+				     IgnoreEls, _el);
+      {<<"iq">>, <<"jabber:iq:privacy">>, _} ->
 	  decode_privacy_iq(<<"jabber:iq:privacy">>, IgnoreEls,
 			    _el);
-      {<<"message">>, <<"jabber:iq:privacy">>} ->
+      {<<"iq">>, <<>>, <<"jabber:iq:privacy">>} ->
+	  decode_privacy_iq(<<"jabber:iq:privacy">>, IgnoreEls,
+			    _el);
+      {<<"message">>, <<"jabber:iq:privacy">>, _} ->
 	  decode_privacy_message(<<"jabber:iq:privacy">>,
 				 IgnoreEls, _el);
-      {<<"ver">>, <<"urn:xmpp:features:rosterver">>} ->
+      {<<"message">>, <<>>, <<"jabber:iq:privacy">>} ->
+	  decode_privacy_message(<<"jabber:iq:privacy">>,
+				 IgnoreEls, _el);
+      {<<"ver">>, <<"urn:xmpp:features:rosterver">>, _} ->
 	  decode_rosterver_feature(<<"urn:xmpp:features:rosterver">>,
 				   IgnoreEls, _el);
-      {<<"query">>, <<"jabber:iq:roster">>} ->
+      {<<"ver">>, <<>>, <<"urn:xmpp:features:rosterver">>} ->
+	  decode_rosterver_feature(<<"urn:xmpp:features:rosterver">>,
+				   IgnoreEls, _el);
+      {<<"query">>, <<"jabber:iq:roster">>, _} ->
 	  decode_roster_query(<<"jabber:iq:roster">>, IgnoreEls,
 			      _el);
-      {<<"item">>, <<"jabber:iq:roster">>} ->
+      {<<"query">>, <<>>, <<"jabber:iq:roster">>} ->
+	  decode_roster_query(<<"jabber:iq:roster">>, IgnoreEls,
+			      _el);
+      {<<"item">>, <<"jabber:iq:roster">>, _} ->
 	  decode_roster_item(<<"jabber:iq:roster">>, IgnoreEls,
 			     _el);
-      {<<"group">>, <<"jabber:iq:roster">>} ->
+      {<<"item">>, <<>>, <<"jabber:iq:roster">>} ->
+	  decode_roster_item(<<"jabber:iq:roster">>, IgnoreEls,
+			     _el);
+      {<<"group">>, <<"jabber:iq:roster">>, _} ->
 	  decode_roster_group(<<"jabber:iq:roster">>, IgnoreEls,
 			      _el);
-      {<<"query">>, <<"jabber:iq:version">>} ->
+      {<<"group">>, <<>>, <<"jabber:iq:roster">>} ->
+	  decode_roster_group(<<"jabber:iq:roster">>, IgnoreEls,
+			      _el);
+      {<<"query">>, <<"jabber:iq:version">>, _} ->
 	  decode_version(<<"jabber:iq:version">>, IgnoreEls, _el);
-      {<<"os">>, <<"jabber:iq:version">>} ->
+      {<<"query">>, <<>>, <<"jabber:iq:version">>} ->
+	  decode_version(<<"jabber:iq:version">>, IgnoreEls, _el);
+      {<<"os">>, <<"jabber:iq:version">>, _} ->
 	  decode_version_os(<<"jabber:iq:version">>, IgnoreEls,
 			    _el);
-      {<<"version">>, <<"jabber:iq:version">>} ->
+      {<<"os">>, <<>>, <<"jabber:iq:version">>} ->
+	  decode_version_os(<<"jabber:iq:version">>, IgnoreEls,
+			    _el);
+      {<<"version">>, <<"jabber:iq:version">>, _} ->
 	  decode_version_ver(<<"jabber:iq:version">>, IgnoreEls,
 			     _el);
-      {<<"name">>, <<"jabber:iq:version">>} ->
+      {<<"version">>, <<>>, <<"jabber:iq:version">>} ->
+	  decode_version_ver(<<"jabber:iq:version">>, IgnoreEls,
+			     _el);
+      {<<"name">>, <<"jabber:iq:version">>, _} ->
 	  decode_version_name(<<"jabber:iq:version">>, IgnoreEls,
 			      _el);
-      {<<"query">>, <<"jabber:iq:last">>} ->
+      {<<"name">>, <<>>, <<"jabber:iq:version">>} ->
+	  decode_version_name(<<"jabber:iq:version">>, IgnoreEls,
+			      _el);
+      {<<"query">>, <<"jabber:iq:last">>, _} ->
 	  decode_last(<<"jabber:iq:last">>, IgnoreEls, _el);
-      {_name, _xmlns} ->
+      {<<"query">>, <<>>, <<"jabber:iq:last">>} ->
+	  decode_last(<<"jabber:iq:last">>, IgnoreEls, _el);
+      {_name, <<>>, <<>>} ->
+	  erlang:error({xmpp_codec, {missing_tag_xmlns, _name}});
+      {_name, <<>>, _} ->
+	  erlang:error({xmpp_codec,
+			{unknown_tag, _name, TopXMLNS}});
+      {_name, _xmlns, _} ->
 	  erlang:error({xmpp_codec, {unknown_tag, _name, _xmlns}})
     end.
 
-is_known_tag({xmlel, _name, _attrs, _} = _el) ->
-    case {_name, get_attr(<<"xmlns">>, _attrs)} of
-      {<<"thumbnail">>, <<"urn:xmpp:thumbs:1">>} -> true;
-      {<<"slot">>, <<"urn:xmpp:http:upload">>} -> true;
-      {<<"slot">>,
+is_known_tag({xmlel, _name, _attrs, _} = _el,
+	     TopXMLNS) ->
+    case {_name, get_attr(<<"xmlns">>, _attrs), TopXMLNS} of
+      {<<"thumbnail">>, <<"urn:xmpp:thumbs:1">>, _} -> true;
+      {<<"thumbnail">>, <<>>, <<"urn:xmpp:thumbs:1">>} ->
+	  true;
+      {<<"slot">>, <<"urn:xmpp:http:upload">>, _} -> true;
+      {<<"slot">>, <<>>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"slot">>, <<"eu:siacs:conversations:http:upload">>,
+       _} ->
+	  true;
+      {<<"slot">>, <<>>,
        <<"eu:siacs:conversations:http:upload">>} ->
 	  true;
-      {<<"put">>, <<"urn:xmpp:http:upload">>} -> true;
-      {<<"put">>, <<"eu:siacs:conversations:http:upload">>} ->
+      {<<"put">>, <<"urn:xmpp:http:upload">>, _} -> true;
+      {<<"put">>, <<>>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"put">>, <<"eu:siacs:conversations:http:upload">>,
+       _} ->
 	  true;
-      {<<"get">>, <<"urn:xmpp:http:upload">>} -> true;
-      {<<"get">>, <<"eu:siacs:conversations:http:upload">>} ->
+      {<<"put">>, <<>>,
+       <<"eu:siacs:conversations:http:upload">>} ->
 	  true;
-      {<<"request">>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"get">>, <<"urn:xmpp:http:upload">>, _} -> true;
+      {<<"get">>, <<>>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"get">>, <<"eu:siacs:conversations:http:upload">>,
+       _} ->
+	  true;
+      {<<"get">>, <<>>,
+       <<"eu:siacs:conversations:http:upload">>} ->
+	  true;
+      {<<"request">>, <<"urn:xmpp:http:upload">>, _} -> true;
+      {<<"request">>, <<>>, <<"urn:xmpp:http:upload">>} ->
+	  true;
       {<<"request">>,
+       <<"eu:siacs:conversations:http:upload">>, _} ->
+	  true;
+      {<<"request">>, <<>>,
        <<"eu:siacs:conversations:http:upload">>} ->
 	  true;
-      {<<"content-type">>, <<"urn:xmpp:http:upload">>} ->
+      {<<"content-type">>, <<"urn:xmpp:http:upload">>, _} ->
+	  true;
+      {<<"content-type">>, <<>>,
+       <<"urn:xmpp:http:upload">>} ->
 	  true;
       {<<"content-type">>,
+       <<"eu:siacs:conversations:http:upload">>, _} ->
+	  true;
+      {<<"content-type">>, <<>>,
        <<"eu:siacs:conversations:http:upload">>} ->
 	  true;
-      {<<"size">>, <<"urn:xmpp:http:upload">>} -> true;
-      {<<"size">>,
+      {<<"size">>, <<"urn:xmpp:http:upload">>, _} -> true;
+      {<<"size">>, <<>>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"size">>, <<"eu:siacs:conversations:http:upload">>,
+       _} ->
+	  true;
+      {<<"size">>, <<>>,
        <<"eu:siacs:conversations:http:upload">>} ->
 	  true;
-      {<<"filename">>, <<"urn:xmpp:http:upload">>} -> true;
+      {<<"filename">>, <<"urn:xmpp:http:upload">>, _} -> true;
+      {<<"filename">>, <<>>, <<"urn:xmpp:http:upload">>} ->
+	  true;
       {<<"filename">>,
+       <<"eu:siacs:conversations:http:upload">>, _} ->
+	  true;
+      {<<"filename">>, <<>>,
        <<"eu:siacs:conversations:http:upload">>} ->
 	  true;
-      {<<"address">>, <<"urn:xmpp:sic:0">>} -> true;
-      {<<"address">>, <<"urn:xmpp:sic:1">>} -> true;
-      {<<"port">>, <<"urn:xmpp:sic:1">>} -> true;
-      {<<"ip">>, <<"urn:xmpp:sic:0">>} -> true;
-      {<<"ip">>, <<"urn:xmpp:sic:1">>} -> true;
-      {<<"x">>, <<"jabber:x:oob">>} -> true;
-      {<<"desc">>, <<"jabber:x:oob">>} -> true;
-      {<<"url">>, <<"jabber:x:oob">>} -> true;
-      {<<"media">>, <<"urn:xmpp:media-element">>} -> true;
-      {<<"uri">>, <<"urn:xmpp:media-element">>} -> true;
-      {<<"captcha">>, <<"urn:xmpp:captcha">>} -> true;
-      {<<"data">>, <<"urn:xmpp:bob">>} -> true;
-      {<<"stream:stream">>, <<"jabber:client">>} -> true;
-      {<<"stream:stream">>, <<"jabber:server">>} -> true;
-      {<<"stream:stream">>, <<"jabber:component:accept">>} ->
+      {<<"address">>, <<"urn:xmpp:sic:0">>, _} -> true;
+      {<<"address">>, <<>>, <<"urn:xmpp:sic:0">>} -> true;
+      {<<"address">>, <<"urn:xmpp:sic:1">>, _} -> true;
+      {<<"address">>, <<>>, <<"urn:xmpp:sic:1">>} -> true;
+      {<<"port">>, <<"urn:xmpp:sic:1">>, _} -> true;
+      {<<"port">>, <<>>, <<"urn:xmpp:sic:1">>} -> true;
+      {<<"ip">>, <<"urn:xmpp:sic:0">>, _} -> true;
+      {<<"ip">>, <<>>, <<"urn:xmpp:sic:0">>} -> true;
+      {<<"ip">>, <<"urn:xmpp:sic:1">>, _} -> true;
+      {<<"ip">>, <<>>, <<"urn:xmpp:sic:1">>} -> true;
+      {<<"x">>, <<"jabber:x:oob">>, _} -> true;
+      {<<"x">>, <<>>, <<"jabber:x:oob">>} -> true;
+      {<<"desc">>, <<"jabber:x:oob">>, _} -> true;
+      {<<"desc">>, <<>>, <<"jabber:x:oob">>} -> true;
+      {<<"url">>, <<"jabber:x:oob">>, _} -> true;
+      {<<"url">>, <<>>, <<"jabber:x:oob">>} -> true;
+      {<<"media">>, <<"urn:xmpp:media-element">>, _} -> true;
+      {<<"media">>, <<>>, <<"urn:xmpp:media-element">>} ->
 	  true;
-      {<<"handshake">>, <<"jabber:client">>} -> true;
-      {<<"db:verify">>, <<"jabber:client">>} -> true;
-      {<<"db:result">>, <<"jabber:client">>} -> true;
+      {<<"uri">>, <<"urn:xmpp:media-element">>, _} -> true;
+      {<<"uri">>, <<>>, <<"urn:xmpp:media-element">>} -> true;
+      {<<"captcha">>, <<"urn:xmpp:captcha">>, _} -> true;
+      {<<"captcha">>, <<>>, <<"urn:xmpp:captcha">>} -> true;
+      {<<"data">>, <<"urn:xmpp:bob">>, _} -> true;
+      {<<"data">>, <<>>, <<"urn:xmpp:bob">>} -> true;
+      {<<"stream:stream">>, <<"jabber:client">>, _} -> true;
+      {<<"stream:stream">>, <<>>, <<"jabber:client">>} ->
+	  true;
+      {<<"stream:stream">>, <<"jabber:server">>, _} -> true;
+      {<<"stream:stream">>, <<>>, <<"jabber:server">>} ->
+	  true;
+      {<<"stream:stream">>, <<"jabber:component:accept">>,
+       _} ->
+	  true;
+      {<<"stream:stream">>, <<>>,
+       <<"jabber:component:accept">>} ->
+	  true;
+      {<<"handshake">>, <<"jabber:component:accept">>, _} ->
+	  true;
+      {<<"handshake">>, <<>>,
+       <<"jabber:component:accept">>} ->
+	  true;
+      {<<"db:verify">>, <<"jabber:server">>, _} -> true;
+      {<<"db:verify">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"db:result">>, <<"jabber:server">>, _} -> true;
+      {<<"db:result">>, <<>>, <<"jabber:server">>} -> true;
       {<<"command">>,
+       <<"http://jabber.org/protocol/commands">>, _} ->
+	  true;
+      {<<"command">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  true;
-      {<<"note">>,
+      {<<"note">>, <<"http://jabber.org/protocol/commands">>,
+       _} ->
+	  true;
+      {<<"note">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  true;
       {<<"actions">>,
+       <<"http://jabber.org/protocol/commands">>, _} ->
+	  true;
+      {<<"actions">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  true;
       {<<"complete">>,
+       <<"http://jabber.org/protocol/commands">>, _} ->
+	  true;
+      {<<"complete">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  true;
-      {<<"next">>,
+      {<<"next">>, <<"http://jabber.org/protocol/commands">>,
+       _} ->
+	  true;
+      {<<"next">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  true;
-      {<<"prev">>,
+      {<<"prev">>, <<"http://jabber.org/protocol/commands">>,
+       _} ->
+	  true;
+      {<<"prev">>, <<>>,
        <<"http://jabber.org/protocol/commands">>} ->
 	  true;
-      {<<"client-id">>, <<"urn:xmpp:sid:0">>} -> true;
-      {<<"stanza-id">>, <<"urn:xmpp:sid:0">>} -> true;
+      {<<"client-id">>, <<"urn:xmpp:sid:0">>, _} -> true;
+      {<<"client-id">>, <<>>, <<"urn:xmpp:sid:0">>} -> true;
+      {<<"stanza-id">>, <<"urn:xmpp:sid:0">>, _} -> true;
+      {<<"stanza-id">>, <<>>, <<"urn:xmpp:sid:0">>} -> true;
       {<<"addresses">>,
+       <<"http://jabber.org/protocol/address">>, _} ->
+	  true;
+      {<<"addresses">>, <<>>,
        <<"http://jabber.org/protocol/address">>} ->
 	  true;
       {<<"address">>,
+       <<"http://jabber.org/protocol/address">>, _} ->
+	  true;
+      {<<"address">>, <<>>,
        <<"http://jabber.org/protocol/address">>} ->
 	  true;
-      {<<"nick">>, <<"http://jabber.org/protocol/nick">>} ->
+      {<<"nick">>, <<"http://jabber.org/protocol/nick">>,
+       _} ->
 	  true;
-      {<<"x">>, <<"jabber:x:expire">>} -> true;
-      {<<"x">>, <<"jabber:x:event">>} -> true;
-      {<<"id">>, <<"jabber:x:event">>} -> true;
-      {<<"composing">>, <<"jabber:x:event">>} -> true;
-      {<<"displayed">>, <<"jabber:x:event">>} -> true;
-      {<<"delivered">>, <<"jabber:x:event">>} -> true;
-      {<<"offline">>, <<"jabber:x:event">>} -> true;
-      {<<"query">>, <<"jabber:iq:search">>} -> true;
-      {<<"item">>, <<"jabber:iq:search">>} -> true;
-      {<<"email">>, <<"jabber:iq:search">>} -> true;
-      {<<"nick">>, <<"jabber:iq:search">>} -> true;
-      {<<"last">>, <<"jabber:iq:search">>} -> true;
-      {<<"first">>, <<"jabber:iq:search">>} -> true;
-      {<<"instructions">>, <<"jabber:iq:search">>} -> true;
-      {<<"no-permanent-storage">>, <<"urn:xmpp:hints">>} ->
+      {<<"nick">>, <<>>,
+       <<"http://jabber.org/protocol/nick">>} ->
 	  true;
-      {<<"no-permanent-store">>, <<"urn:xmpp:hints">>} ->
+      {<<"x">>, <<"jabber:x:expire">>, _} -> true;
+      {<<"x">>, <<>>, <<"jabber:x:expire">>} -> true;
+      {<<"x">>, <<"jabber:x:event">>, _} -> true;
+      {<<"x">>, <<>>, <<"jabber:x:event">>} -> true;
+      {<<"id">>, <<"jabber:x:event">>, _} -> true;
+      {<<"id">>, <<>>, <<"jabber:x:event">>} -> true;
+      {<<"composing">>, <<"jabber:x:event">>, _} -> true;
+      {<<"composing">>, <<>>, <<"jabber:x:event">>} -> true;
+      {<<"displayed">>, <<"jabber:x:event">>, _} -> true;
+      {<<"displayed">>, <<>>, <<"jabber:x:event">>} -> true;
+      {<<"delivered">>, <<"jabber:x:event">>, _} -> true;
+      {<<"delivered">>, <<>>, <<"jabber:x:event">>} -> true;
+      {<<"offline">>, <<"jabber:x:event">>, _} -> true;
+      {<<"offline">>, <<>>, <<"jabber:x:event">>} -> true;
+      {<<"query">>, <<"jabber:iq:search">>, _} -> true;
+      {<<"query">>, <<>>, <<"jabber:iq:search">>} -> true;
+      {<<"item">>, <<"jabber:iq:search">>, _} -> true;
+      {<<"item">>, <<>>, <<"jabber:iq:search">>} -> true;
+      {<<"email">>, <<"jabber:iq:search">>, _} -> true;
+      {<<"email">>, <<>>, <<"jabber:iq:search">>} -> true;
+      {<<"nick">>, <<"jabber:iq:search">>, _} -> true;
+      {<<"nick">>, <<>>, <<"jabber:iq:search">>} -> true;
+      {<<"last">>, <<"jabber:iq:search">>, _} -> true;
+      {<<"last">>, <<>>, <<"jabber:iq:search">>} -> true;
+      {<<"first">>, <<"jabber:iq:search">>, _} -> true;
+      {<<"first">>, <<>>, <<"jabber:iq:search">>} -> true;
+      {<<"instructions">>, <<"jabber:iq:search">>, _} -> true;
+      {<<"instructions">>, <<>>, <<"jabber:iq:search">>} ->
 	  true;
-      {<<"store">>, <<"urn:xmpp:hints">>} -> true;
-      {<<"no-storage">>, <<"urn:xmpp:hints">>} -> true;
-      {<<"no-store">>, <<"urn:xmpp:hints">>} -> true;
-      {<<"no-copy">>, <<"urn:xmpp:hints">>} -> true;
-      {<<"participant">>, <<"urn:xmpp:mix:0">>} -> true;
-      {<<"leave">>, <<"urn:xmpp:mix:0">>} -> true;
-      {<<"join">>, <<"urn:xmpp:mix:0">>} -> true;
-      {<<"subscribe">>, <<"urn:xmpp:mix:0">>} -> true;
+      {<<"no-permanent-storage">>, <<"urn:xmpp:hints">>, _} ->
+	  true;
+      {<<"no-permanent-storage">>, <<>>,
+       <<"urn:xmpp:hints">>} ->
+	  true;
+      {<<"no-permanent-store">>, <<"urn:xmpp:hints">>, _} ->
+	  true;
+      {<<"no-permanent-store">>, <<>>,
+       <<"urn:xmpp:hints">>} ->
+	  true;
+      {<<"store">>, <<"urn:xmpp:hints">>, _} -> true;
+      {<<"store">>, <<>>, <<"urn:xmpp:hints">>} -> true;
+      {<<"no-storage">>, <<"urn:xmpp:hints">>, _} -> true;
+      {<<"no-storage">>, <<>>, <<"urn:xmpp:hints">>} -> true;
+      {<<"no-store">>, <<"urn:xmpp:hints">>, _} -> true;
+      {<<"no-store">>, <<>>, <<"urn:xmpp:hints">>} -> true;
+      {<<"no-copy">>, <<"urn:xmpp:hints">>, _} -> true;
+      {<<"no-copy">>, <<>>, <<"urn:xmpp:hints">>} -> true;
+      {<<"participant">>, <<"urn:xmpp:mix:0">>, _} -> true;
+      {<<"participant">>, <<>>, <<"urn:xmpp:mix:0">>} -> true;
+      {<<"leave">>, <<"urn:xmpp:mix:0">>, _} -> true;
+      {<<"leave">>, <<>>, <<"urn:xmpp:mix:0">>} -> true;
+      {<<"join">>, <<"urn:xmpp:mix:0">>, _} -> true;
+      {<<"join">>, <<>>, <<"urn:xmpp:mix:0">>} -> true;
+      {<<"subscribe">>, <<"urn:xmpp:mix:0">>, _} -> true;
+      {<<"subscribe">>, <<>>, <<"urn:xmpp:mix:0">>} -> true;
       {<<"offline">>,
+       <<"http://jabber.org/protocol/offline">>, _} ->
+	  true;
+      {<<"offline">>, <<>>,
        <<"http://jabber.org/protocol/offline">>} ->
 	  true;
-      {<<"item">>,
+      {<<"item">>, <<"http://jabber.org/protocol/offline">>,
+       _} ->
+	  true;
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/offline">>} ->
 	  true;
-      {<<"fetch">>,
+      {<<"fetch">>, <<"http://jabber.org/protocol/offline">>,
+       _} ->
+	  true;
+      {<<"fetch">>, <<>>,
        <<"http://jabber.org/protocol/offline">>} ->
 	  true;
-      {<<"purge">>,
+      {<<"purge">>, <<"http://jabber.org/protocol/offline">>,
+       _} ->
+	  true;
+      {<<"purge">>, <<>>,
        <<"http://jabber.org/protocol/offline">>} ->
 	  true;
-      {<<"failed">>, <<"urn:xmpp:sm:2">>} -> true;
-      {<<"failed">>, <<"urn:xmpp:sm:3">>} -> true;
-      {<<"a">>, <<"urn:xmpp:sm:2">>} -> true;
-      {<<"a">>, <<"urn:xmpp:sm:3">>} -> true;
-      {<<"r">>, <<"urn:xmpp:sm:2">>} -> true;
-      {<<"r">>, <<"urn:xmpp:sm:3">>} -> true;
-      {<<"resumed">>, <<"urn:xmpp:sm:2">>} -> true;
-      {<<"resumed">>, <<"urn:xmpp:sm:3">>} -> true;
-      {<<"resume">>, <<"urn:xmpp:sm:2">>} -> true;
-      {<<"resume">>, <<"urn:xmpp:sm:3">>} -> true;
-      {<<"enabled">>, <<"urn:xmpp:sm:2">>} -> true;
-      {<<"enabled">>, <<"urn:xmpp:sm:3">>} -> true;
-      {<<"enable">>, <<"urn:xmpp:sm:2">>} -> true;
-      {<<"enable">>, <<"urn:xmpp:sm:3">>} -> true;
-      {<<"sm">>, <<"urn:xmpp:sm:2">>} -> true;
-      {<<"sm">>, <<"urn:xmpp:sm:3">>} -> true;
-      {<<"inactive">>, <<"urn:xmpp:csi:0">>} -> true;
-      {<<"active">>, <<"urn:xmpp:csi:0">>} -> true;
-      {<<"csi">>, <<"urn:xmpp:csi:0">>} -> true;
-      {<<"sent">>, <<"urn:xmpp:carbons:2">>} -> true;
-      {<<"received">>, <<"urn:xmpp:carbons:2">>} -> true;
-      {<<"private">>, <<"urn:xmpp:carbons:2">>} -> true;
-      {<<"enable">>, <<"urn:xmpp:carbons:2">>} -> true;
-      {<<"disable">>, <<"urn:xmpp:carbons:2">>} -> true;
-      {<<"forwarded">>, <<"urn:xmpp:forward:0">>} -> true;
-      {<<"fin">>, <<"urn:xmpp:mam:0">>} -> true;
-      {<<"fin">>, <<"urn:xmpp:mam:1">>} -> true;
-      {<<"prefs">>, <<"urn:xmpp:mam:0">>} -> true;
-      {<<"prefs">>, <<"urn:xmpp:mam:1">>} -> true;
-      {<<"prefs">>, <<"urn:xmpp:mam:tmp">>} -> true;
-      {<<"always">>, <<"urn:xmpp:mam:0">>} -> true;
-      {<<"always">>, <<"urn:xmpp:mam:1">>} -> true;
-      {<<"always">>, <<"urn:xmpp:mam:tmp">>} -> true;
-      {<<"never">>, <<"urn:xmpp:mam:0">>} -> true;
-      {<<"never">>, <<"urn:xmpp:mam:1">>} -> true;
-      {<<"never">>, <<"urn:xmpp:mam:tmp">>} -> true;
-      {<<"jid">>, <<"urn:xmpp:mam:0">>} -> true;
-      {<<"jid">>, <<"urn:xmpp:mam:1">>} -> true;
-      {<<"jid">>, <<"urn:xmpp:mam:tmp">>} -> true;
-      {<<"result">>, <<"urn:xmpp:mam:0">>} -> true;
-      {<<"result">>, <<"urn:xmpp:mam:1">>} -> true;
-      {<<"result">>, <<"urn:xmpp:mam:tmp">>} -> true;
-      {<<"archived">>, <<"urn:xmpp:mam:tmp">>} -> true;
-      {<<"query">>, <<"urn:xmpp:mam:0">>} -> true;
-      {<<"query">>, <<"urn:xmpp:mam:1">>} -> true;
-      {<<"query">>, <<"urn:xmpp:mam:tmp">>} -> true;
-      {<<"withtext">>, <<"urn:xmpp:mam:tmp">>} -> true;
-      {<<"with">>, <<"urn:xmpp:mam:tmp">>} -> true;
-      {<<"end">>, <<"urn:xmpp:mam:tmp">>} -> true;
-      {<<"start">>, <<"urn:xmpp:mam:tmp">>} -> true;
-      {<<"set">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"failed">>, <<"urn:xmpp:sm:2">>, _} -> true;
+      {<<"failed">>, <<>>, <<"urn:xmpp:sm:2">>} -> true;
+      {<<"failed">>, <<"urn:xmpp:sm:3">>, _} -> true;
+      {<<"failed">>, <<>>, <<"urn:xmpp:sm:3">>} -> true;
+      {<<"a">>, <<"urn:xmpp:sm:2">>, _} -> true;
+      {<<"a">>, <<>>, <<"urn:xmpp:sm:2">>} -> true;
+      {<<"a">>, <<"urn:xmpp:sm:3">>, _} -> true;
+      {<<"a">>, <<>>, <<"urn:xmpp:sm:3">>} -> true;
+      {<<"r">>, <<"urn:xmpp:sm:2">>, _} -> true;
+      {<<"r">>, <<>>, <<"urn:xmpp:sm:2">>} -> true;
+      {<<"r">>, <<"urn:xmpp:sm:3">>, _} -> true;
+      {<<"r">>, <<>>, <<"urn:xmpp:sm:3">>} -> true;
+      {<<"resumed">>, <<"urn:xmpp:sm:2">>, _} -> true;
+      {<<"resumed">>, <<>>, <<"urn:xmpp:sm:2">>} -> true;
+      {<<"resumed">>, <<"urn:xmpp:sm:3">>, _} -> true;
+      {<<"resumed">>, <<>>, <<"urn:xmpp:sm:3">>} -> true;
+      {<<"resume">>, <<"urn:xmpp:sm:2">>, _} -> true;
+      {<<"resume">>, <<>>, <<"urn:xmpp:sm:2">>} -> true;
+      {<<"resume">>, <<"urn:xmpp:sm:3">>, _} -> true;
+      {<<"resume">>, <<>>, <<"urn:xmpp:sm:3">>} -> true;
+      {<<"enabled">>, <<"urn:xmpp:sm:2">>, _} -> true;
+      {<<"enabled">>, <<>>, <<"urn:xmpp:sm:2">>} -> true;
+      {<<"enabled">>, <<"urn:xmpp:sm:3">>, _} -> true;
+      {<<"enabled">>, <<>>, <<"urn:xmpp:sm:3">>} -> true;
+      {<<"enable">>, <<"urn:xmpp:sm:2">>, _} -> true;
+      {<<"enable">>, <<>>, <<"urn:xmpp:sm:2">>} -> true;
+      {<<"enable">>, <<"urn:xmpp:sm:3">>, _} -> true;
+      {<<"enable">>, <<>>, <<"urn:xmpp:sm:3">>} -> true;
+      {<<"sm">>, <<"urn:xmpp:sm:2">>, _} -> true;
+      {<<"sm">>, <<>>, <<"urn:xmpp:sm:2">>} -> true;
+      {<<"sm">>, <<"urn:xmpp:sm:3">>, _} -> true;
+      {<<"sm">>, <<>>, <<"urn:xmpp:sm:3">>} -> true;
+      {<<"inactive">>, <<"urn:xmpp:csi:0">>, _} -> true;
+      {<<"inactive">>, <<>>, <<"urn:xmpp:csi:0">>} -> true;
+      {<<"active">>, <<"urn:xmpp:csi:0">>, _} -> true;
+      {<<"active">>, <<>>, <<"urn:xmpp:csi:0">>} -> true;
+      {<<"csi">>, <<"urn:xmpp:csi:0">>, _} -> true;
+      {<<"csi">>, <<>>, <<"urn:xmpp:csi:0">>} -> true;
+      {<<"sent">>, <<"urn:xmpp:carbons:2">>, _} -> true;
+      {<<"sent">>, <<>>, <<"urn:xmpp:carbons:2">>} -> true;
+      {<<"received">>, <<"urn:xmpp:carbons:2">>, _} -> true;
+      {<<"received">>, <<>>, <<"urn:xmpp:carbons:2">>} ->
 	  true;
-      {<<"first">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"private">>, <<"urn:xmpp:carbons:2">>, _} -> true;
+      {<<"private">>, <<>>, <<"urn:xmpp:carbons:2">>} -> true;
+      {<<"enable">>, <<"urn:xmpp:carbons:2">>, _} -> true;
+      {<<"enable">>, <<>>, <<"urn:xmpp:carbons:2">>} -> true;
+      {<<"disable">>, <<"urn:xmpp:carbons:2">>, _} -> true;
+      {<<"disable">>, <<>>, <<"urn:xmpp:carbons:2">>} -> true;
+      {<<"forwarded">>, <<"urn:xmpp:forward:0">>, _} -> true;
+      {<<"forwarded">>, <<>>, <<"urn:xmpp:forward:0">>} ->
 	  true;
-      {<<"max">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"fin">>, <<"urn:xmpp:mam:0">>, _} -> true;
+      {<<"fin">>, <<>>, <<"urn:xmpp:mam:0">>} -> true;
+      {<<"fin">>, <<"urn:xmpp:mam:1">>, _} -> true;
+      {<<"fin">>, <<>>, <<"urn:xmpp:mam:1">>} -> true;
+      {<<"prefs">>, <<"urn:xmpp:mam:0">>, _} -> true;
+      {<<"prefs">>, <<>>, <<"urn:xmpp:mam:0">>} -> true;
+      {<<"prefs">>, <<"urn:xmpp:mam:1">>, _} -> true;
+      {<<"prefs">>, <<>>, <<"urn:xmpp:mam:1">>} -> true;
+      {<<"prefs">>, <<"urn:xmpp:mam:tmp">>, _} -> true;
+      {<<"prefs">>, <<>>, <<"urn:xmpp:mam:tmp">>} -> true;
+      {<<"always">>, <<"urn:xmpp:mam:0">>, _} -> true;
+      {<<"always">>, <<>>, <<"urn:xmpp:mam:0">>} -> true;
+      {<<"always">>, <<"urn:xmpp:mam:1">>, _} -> true;
+      {<<"always">>, <<>>, <<"urn:xmpp:mam:1">>} -> true;
+      {<<"always">>, <<"urn:xmpp:mam:tmp">>, _} -> true;
+      {<<"always">>, <<>>, <<"urn:xmpp:mam:tmp">>} -> true;
+      {<<"never">>, <<"urn:xmpp:mam:0">>, _} -> true;
+      {<<"never">>, <<>>, <<"urn:xmpp:mam:0">>} -> true;
+      {<<"never">>, <<"urn:xmpp:mam:1">>, _} -> true;
+      {<<"never">>, <<>>, <<"urn:xmpp:mam:1">>} -> true;
+      {<<"never">>, <<"urn:xmpp:mam:tmp">>, _} -> true;
+      {<<"never">>, <<>>, <<"urn:xmpp:mam:tmp">>} -> true;
+      {<<"jid">>, <<"urn:xmpp:mam:0">>, _} -> true;
+      {<<"jid">>, <<>>, <<"urn:xmpp:mam:0">>} -> true;
+      {<<"jid">>, <<"urn:xmpp:mam:1">>, _} -> true;
+      {<<"jid">>, <<>>, <<"urn:xmpp:mam:1">>} -> true;
+      {<<"jid">>, <<"urn:xmpp:mam:tmp">>, _} -> true;
+      {<<"jid">>, <<>>, <<"urn:xmpp:mam:tmp">>} -> true;
+      {<<"result">>, <<"urn:xmpp:mam:0">>, _} -> true;
+      {<<"result">>, <<>>, <<"urn:xmpp:mam:0">>} -> true;
+      {<<"result">>, <<"urn:xmpp:mam:1">>, _} -> true;
+      {<<"result">>, <<>>, <<"urn:xmpp:mam:1">>} -> true;
+      {<<"result">>, <<"urn:xmpp:mam:tmp">>, _} -> true;
+      {<<"result">>, <<>>, <<"urn:xmpp:mam:tmp">>} -> true;
+      {<<"archived">>, <<"urn:xmpp:mam:tmp">>, _} -> true;
+      {<<"archived">>, <<>>, <<"urn:xmpp:mam:tmp">>} -> true;
+      {<<"query">>, <<"urn:xmpp:mam:0">>, _} -> true;
+      {<<"query">>, <<>>, <<"urn:xmpp:mam:0">>} -> true;
+      {<<"query">>, <<"urn:xmpp:mam:1">>, _} -> true;
+      {<<"query">>, <<>>, <<"urn:xmpp:mam:1">>} -> true;
+      {<<"query">>, <<"urn:xmpp:mam:tmp">>, _} -> true;
+      {<<"query">>, <<>>, <<"urn:xmpp:mam:tmp">>} -> true;
+      {<<"withtext">>, <<"urn:xmpp:mam:tmp">>, _} -> true;
+      {<<"withtext">>, <<>>, <<"urn:xmpp:mam:tmp">>} -> true;
+      {<<"with">>, <<"urn:xmpp:mam:tmp">>, _} -> true;
+      {<<"with">>, <<>>, <<"urn:xmpp:mam:tmp">>} -> true;
+      {<<"end">>, <<"urn:xmpp:mam:tmp">>, _} -> true;
+      {<<"end">>, <<>>, <<"urn:xmpp:mam:tmp">>} -> true;
+      {<<"start">>, <<"urn:xmpp:mam:tmp">>, _} -> true;
+      {<<"start">>, <<>>, <<"urn:xmpp:mam:tmp">>} -> true;
+      {<<"set">>, <<"http://jabber.org/protocol/rsm">>, _} ->
 	  true;
-      {<<"index">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"set">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
 	  true;
-      {<<"count">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"first">>, <<"http://jabber.org/protocol/rsm">>,
+       _} ->
 	  true;
-      {<<"last">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"first">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
 	  true;
-      {<<"before">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"max">>, <<"http://jabber.org/protocol/rsm">>, _} ->
 	  true;
-      {<<"after">>, <<"http://jabber.org/protocol/rsm">>} ->
+      {<<"max">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
 	  true;
-      {<<"unsubscribe">>, <<"urn:xmpp:mucsub:0">>} -> true;
-      {<<"subscribe">>, <<"urn:xmpp:mucsub:0">>} -> true;
-      {<<"event">>, <<"urn:xmpp:mucsub:0">>} -> true;
-      {<<"subscriptions">>, <<"urn:xmpp:mucsub:0">>} -> true;
-      {<<"subscription">>, <<"urn:xmpp:mucsub:0">>} -> true;
-      {<<"x">>, <<"jabber:x:conference">>} -> true;
+      {<<"index">>, <<"http://jabber.org/protocol/rsm">>,
+       _} ->
+	  true;
+      {<<"index">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  true;
+      {<<"count">>, <<"http://jabber.org/protocol/rsm">>,
+       _} ->
+	  true;
+      {<<"count">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  true;
+      {<<"last">>, <<"http://jabber.org/protocol/rsm">>, _} ->
+	  true;
+      {<<"last">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  true;
+      {<<"before">>, <<"http://jabber.org/protocol/rsm">>,
+       _} ->
+	  true;
+      {<<"before">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  true;
+      {<<"after">>, <<"http://jabber.org/protocol/rsm">>,
+       _} ->
+	  true;
+      {<<"after">>, <<>>,
+       <<"http://jabber.org/protocol/rsm">>} ->
+	  true;
+      {<<"unsubscribe">>, <<"urn:xmpp:mucsub:0">>, _} -> true;
+      {<<"unsubscribe">>, <<>>, <<"urn:xmpp:mucsub:0">>} ->
+	  true;
+      {<<"subscribe">>, <<"urn:xmpp:mucsub:0">>, _} -> true;
+      {<<"subscribe">>, <<>>, <<"urn:xmpp:mucsub:0">>} ->
+	  true;
+      {<<"event">>, <<"urn:xmpp:mucsub:0">>, _} -> true;
+      {<<"event">>, <<>>, <<"urn:xmpp:mucsub:0">>} -> true;
+      {<<"subscriptions">>, <<"urn:xmpp:mucsub:0">>, _} ->
+	  true;
+      {<<"subscriptions">>, <<>>, <<"urn:xmpp:mucsub:0">>} ->
+	  true;
+      {<<"subscription">>, <<"urn:xmpp:mucsub:0">>, _} ->
+	  true;
+      {<<"subscription">>, <<>>, <<"urn:xmpp:mucsub:0">>} ->
+	  true;
+      {<<"x">>, <<"jabber:x:conference">>, _} -> true;
+      {<<"x">>, <<>>, <<"jabber:x:conference">>} -> true;
       {<<"unique">>,
+       <<"http://jabber.org/protocol/muc#unique">>, _} ->
+	  true;
+      {<<"unique">>, <<>>,
        <<"http://jabber.org/protocol/muc#unique">>} ->
 	  true;
-      {<<"x">>, <<"http://jabber.org/protocol/muc">>} -> true;
+      {<<"x">>, <<"http://jabber.org/protocol/muc">>, _} ->
+	  true;
+      {<<"x">>, <<>>, <<"http://jabber.org/protocol/muc">>} ->
+	  true;
       {<<"query">>,
+       <<"http://jabber.org/protocol/muc#admin">>, _} ->
+	  true;
+      {<<"query">>, <<>>,
        <<"http://jabber.org/protocol/muc#admin">>} ->
 	  true;
       {<<"continue">>,
+       <<"http://jabber.org/protocol/muc#admin">>, _} ->
+	  true;
+      {<<"continue">>, <<>>,
        <<"http://jabber.org/protocol/muc#admin">>} ->
 	  true;
       {<<"actor">>,
+       <<"http://jabber.org/protocol/muc#admin">>, _} ->
+	  true;
+      {<<"actor">>, <<>>,
        <<"http://jabber.org/protocol/muc#admin">>} ->
 	  true;
-      {<<"item">>,
+      {<<"item">>, <<"http://jabber.org/protocol/muc#admin">>,
+       _} ->
+	  true;
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/muc#admin">>} ->
 	  true;
-      {<<"item">>,
+      {<<"item">>, <<"http://jabber.org/protocol/muc#owner">>,
+       _} ->
+	  true;
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  true;
       {<<"query">>,
+       <<"http://jabber.org/protocol/muc#owner">>, _} ->
+	  true;
+      {<<"query">>, <<>>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  true;
       {<<"password">>,
+       <<"http://jabber.org/protocol/muc#owner">>, _} ->
+	  true;
+      {<<"password">>, <<>>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  true;
       {<<"password">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  true;
+      {<<"password">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  true;
-      {<<"password">>,
+      {<<"password">>, <<"http://jabber.org/protocol/muc">>,
+       _} ->
+	  true;
+      {<<"password">>, <<>>,
        <<"http://jabber.org/protocol/muc">>} ->
 	  true;
-      {<<"x">>, <<"http://jabber.org/protocol/muc#user">>} ->
+      {<<"x">>, <<"http://jabber.org/protocol/muc#user">>,
+       _} ->
 	  true;
-      {<<"item">>,
+      {<<"x">>, <<>>,
+       <<"http://jabber.org/protocol/muc#user">>} ->
+	  true;
+      {<<"item">>, <<"http://jabber.org/protocol/muc#user">>,
+       _} ->
+	  true;
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  true;
       {<<"status">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  true;
+      {<<"status">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  true;
       {<<"continue">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  true;
+      {<<"continue">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  true;
-      {<<"actor">>,
+      {<<"actor">>, <<"http://jabber.org/protocol/muc#user">>,
+       _} ->
+	  true;
+      {<<"actor">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  true;
       {<<"invite">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  true;
+      {<<"invite">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  true;
       {<<"destroy">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  true;
+      {<<"destroy">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  true;
       {<<"destroy">>,
+       <<"http://jabber.org/protocol/muc#owner">>, _} ->
+	  true;
+      {<<"destroy">>, <<>>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  true;
       {<<"decline">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  true;
+      {<<"decline">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  true;
       {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#user">>, _} ->
+	  true;
+      {<<"reason">>, <<>>,
        <<"http://jabber.org/protocol/muc#user">>} ->
 	  true;
       {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#admin">>, _} ->
+	  true;
+      {<<"reason">>, <<>>,
        <<"http://jabber.org/protocol/muc#admin">>} ->
 	  true;
       {<<"reason">>,
+       <<"http://jabber.org/protocol/muc#owner">>, _} ->
+	  true;
+      {<<"reason">>, <<>>,
        <<"http://jabber.org/protocol/muc#owner">>} ->
 	  true;
-      {<<"history">>, <<"http://jabber.org/protocol/muc">>} ->
+      {<<"history">>, <<"http://jabber.org/protocol/muc">>,
+       _} ->
+	  true;
+      {<<"history">>, <<>>,
+       <<"http://jabber.org/protocol/muc">>} ->
 	  true;
       {<<"query">>,
+       <<"http://jabber.org/protocol/bytestreams">>, _} ->
+	  true;
+      {<<"query">>, <<>>,
        <<"http://jabber.org/protocol/bytestreams">>} ->
 	  true;
       {<<"activate">>,
+       <<"http://jabber.org/protocol/bytestreams">>, _} ->
+	  true;
+      {<<"activate">>, <<>>,
        <<"http://jabber.org/protocol/bytestreams">>} ->
 	  true;
       {<<"streamhost-used">>,
+       <<"http://jabber.org/protocol/bytestreams">>, _} ->
+	  true;
+      {<<"streamhost-used">>, <<>>,
        <<"http://jabber.org/protocol/bytestreams">>} ->
 	  true;
       {<<"streamhost">>,
+       <<"http://jabber.org/protocol/bytestreams">>, _} ->
+	  true;
+      {<<"streamhost">>, <<>>,
        <<"http://jabber.org/protocol/bytestreams">>} ->
 	  true;
-      {<<"delay">>, <<"urn:xmpp:delay">>} -> true;
+      {<<"delay">>, <<"urn:xmpp:delay">>, _} -> true;
+      {<<"delay">>, <<>>, <<"urn:xmpp:delay">>} -> true;
       {<<"paused">>,
+       <<"http://jabber.org/protocol/chatstates">>, _} ->
+	  true;
+      {<<"paused">>, <<>>,
        <<"http://jabber.org/protocol/chatstates">>} ->
 	  true;
       {<<"inactive">>,
+       <<"http://jabber.org/protocol/chatstates">>, _} ->
+	  true;
+      {<<"inactive">>, <<>>,
        <<"http://jabber.org/protocol/chatstates">>} ->
 	  true;
       {<<"gone">>,
+       <<"http://jabber.org/protocol/chatstates">>, _} ->
+	  true;
+      {<<"gone">>, <<>>,
        <<"http://jabber.org/protocol/chatstates">>} ->
 	  true;
       {<<"composing">>,
+       <<"http://jabber.org/protocol/chatstates">>, _} ->
+	  true;
+      {<<"composing">>, <<>>,
        <<"http://jabber.org/protocol/chatstates">>} ->
 	  true;
       {<<"active">>,
+       <<"http://jabber.org/protocol/chatstates">>, _} ->
+	  true;
+      {<<"active">>, <<>>,
        <<"http://jabber.org/protocol/chatstates">>} ->
 	  true;
-      {<<"headers">>,
+      {<<"headers">>, <<"http://jabber.org/protocol/shim">>,
+       _} ->
+	  true;
+      {<<"headers">>, <<>>,
        <<"http://jabber.org/protocol/shim">>} ->
 	  true;
-      {<<"header">>, <<"http://jabber.org/protocol/shim">>} ->
+      {<<"header">>, <<"http://jabber.org/protocol/shim">>,
+       _} ->
+	  true;
+      {<<"header">>, <<>>,
+       <<"http://jabber.org/protocol/shim">>} ->
 	  true;
       {<<"unsupported-access-model">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"unsupported-access-model">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"unsupported">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"unsupported">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"too-many-subscriptions">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"too-many-subscriptions">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"subid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"subid-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"presence-subscription-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"presence-subscription-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"pending-subscription">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"pending-subscription">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"payload-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"payload-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"payload-too-big">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"payload-too-big">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"not-subscribed">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"not-subscribed">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"not-in-roster-group">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"not-in-roster-group">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"nodeid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"nodeid-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"max-nodes-exceeded">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"max-nodes-exceeded">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"max-items-exceeded">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"max-items-exceeded">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"jid-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"jid-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"item-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"item-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"item-forbidden">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"item-forbidden">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"invalid-subid">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"invalid-subid">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"invalid-payload">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"invalid-payload">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"invalid-options">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"invalid-options">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"invalid-jid">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"invalid-jid">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"configuration-required">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"configuration-required">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"closed-node">>,
+       <<"http://jabber.org/protocol/pubsub#errors">>, _} ->
+	  true;
+      {<<"closed-node">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#errors">>} ->
 	  true;
       {<<"pubsub">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  true;
+      {<<"pubsub">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  true;
-      {<<"pubsub">>,
+      {<<"pubsub">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  true;
+      {<<"pubsub">>, <<>>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
+	  true;
+      {<<"purge">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  true;
+      {<<"purge">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"purge">>,
-       <<"http://jabber.org/protocol/pubsub">>} ->
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
 	  true;
-      {<<"purge">>,
+      {<<"purge">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  true;
       {<<"purge">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  true;
+      {<<"purge">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
-      {<<"delete">>,
+      {<<"delete">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  true;
+      {<<"delete">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"delete">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  true;
+      {<<"delete">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  true;
       {<<"delete">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  true;
+      {<<"delete">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
       {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  true;
+      {<<"redirect">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  true;
+      {<<"redirect">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  true;
       {<<"redirect">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  true;
+      {<<"redirect">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
+	  true;
+      {<<"default">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  true;
+      {<<"default">>, <<>>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"default">>,
-       <<"http://jabber.org/protocol/pubsub">>} ->
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
 	  true;
-      {<<"default">>,
+      {<<"default">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  true;
       {<<"publish-options">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  true;
+      {<<"publish-options">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"configure">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  true;
+      {<<"configure">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"configure">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  true;
+      {<<"configure">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  true;
-      {<<"create">>,
+      {<<"create">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  true;
+      {<<"create">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"create">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  true;
+      {<<"create">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
-      {<<"retract">>,
+      {<<"retract">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  true;
+      {<<"retract">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
-      {<<"options">>,
+      {<<"options">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  true;
+      {<<"options">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
-      {<<"publish">>,
+      {<<"publish">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  true;
+      {<<"publish">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"unsubscribe">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  true;
+      {<<"unsubscribe">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"subscribe">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  true;
+      {<<"subscribe">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"affiliations">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  true;
+      {<<"affiliations">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  true;
       {<<"affiliations">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  true;
+      {<<"affiliations">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"subscriptions">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  true;
+      {<<"subscriptions">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"subscriptions">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  true;
+      {<<"subscriptions">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  true;
       {<<"event">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  true;
+      {<<"event">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
-      {<<"items">>,
+      {<<"items">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  true;
+      {<<"items">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"items">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  true;
+      {<<"items">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
-      {<<"item">>, <<"http://jabber.org/protocol/pubsub">>} ->
+      {<<"item">>, <<"http://jabber.org/protocol/pubsub">>,
+       _} ->
+	  true;
+      {<<"item">>, <<>>,
+       <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"item">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  true;
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
       {<<"retract">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  true;
+      {<<"retract">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
       {<<"configuration">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  true;
+      {<<"configuration">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
       {<<"affiliation">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  true;
+      {<<"affiliation">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  true;
       {<<"affiliation">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  true;
+      {<<"affiliation">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"subscription">>,
+       <<"http://jabber.org/protocol/pubsub">>, _} ->
+	  true;
+      {<<"subscription">>, <<>>,
        <<"http://jabber.org/protocol/pubsub">>} ->
 	  true;
       {<<"subscription">>,
+       <<"http://jabber.org/protocol/pubsub#owner">>, _} ->
+	  true;
+      {<<"subscription">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#owner">>} ->
 	  true;
       {<<"subscription">>,
+       <<"http://jabber.org/protocol/pubsub#event">>, _} ->
+	  true;
+      {<<"subscription">>, <<>>,
        <<"http://jabber.org/protocol/pubsub#event">>} ->
 	  true;
-      {<<"x">>, <<"jabber:x:data">>} -> true;
-      {<<"item">>, <<"jabber:x:data">>} -> true;
-      {<<"reported">>, <<"jabber:x:data">>} -> true;
-      {<<"title">>, <<"jabber:x:data">>} -> true;
-      {<<"instructions">>, <<"jabber:x:data">>} -> true;
-      {<<"field">>, <<"jabber:x:data">>} -> true;
-      {<<"option">>, <<"jabber:x:data">>} -> true;
-      {<<"value">>, <<"jabber:x:data">>} -> true;
-      {<<"desc">>, <<"jabber:x:data">>} -> true;
-      {<<"required">>, <<"jabber:x:data">>} -> true;
-      {<<"x">>, <<"vcard-temp:x:update">>} -> true;
-      {<<"photo">>, <<"vcard-temp:x:update">>} -> true;
-      {<<"vCard">>, <<"vcard-temp">>} -> true;
-      {<<"CLASS">>, <<"vcard-temp">>} -> true;
-      {<<"CATEGORIES">>, <<"vcard-temp">>} -> true;
-      {<<"KEY">>, <<"vcard-temp">>} -> true;
-      {<<"SOUND">>, <<"vcard-temp">>} -> true;
-      {<<"ORG">>, <<"vcard-temp">>} -> true;
-      {<<"PHOTO">>, <<"vcard-temp">>} -> true;
-      {<<"LOGO">>, <<"vcard-temp">>} -> true;
-      {<<"BINVAL">>, <<"vcard-temp">>} -> true;
-      {<<"GEO">>, <<"vcard-temp">>} -> true;
-      {<<"EMAIL">>, <<"vcard-temp">>} -> true;
-      {<<"TEL">>, <<"vcard-temp">>} -> true;
-      {<<"LABEL">>, <<"vcard-temp">>} -> true;
-      {<<"ADR">>, <<"vcard-temp">>} -> true;
-      {<<"N">>, <<"vcard-temp">>} -> true;
-      {<<"CONFIDENTIAL">>, <<"vcard-temp">>} -> true;
-      {<<"PRIVATE">>, <<"vcard-temp">>} -> true;
-      {<<"PUBLIC">>, <<"vcard-temp">>} -> true;
-      {<<"EXTVAL">>, <<"vcard-temp">>} -> true;
-      {<<"TYPE">>, <<"vcard-temp">>} -> true;
-      {<<"DESC">>, <<"vcard-temp">>} -> true;
-      {<<"URL">>, <<"vcard-temp">>} -> true;
-      {<<"UID">>, <<"vcard-temp">>} -> true;
-      {<<"SORT-STRING">>, <<"vcard-temp">>} -> true;
-      {<<"REV">>, <<"vcard-temp">>} -> true;
-      {<<"PRODID">>, <<"vcard-temp">>} -> true;
-      {<<"NOTE">>, <<"vcard-temp">>} -> true;
-      {<<"KEYWORD">>, <<"vcard-temp">>} -> true;
-      {<<"ROLE">>, <<"vcard-temp">>} -> true;
-      {<<"TITLE">>, <<"vcard-temp">>} -> true;
-      {<<"TZ">>, <<"vcard-temp">>} -> true;
-      {<<"MAILER">>, <<"vcard-temp">>} -> true;
-      {<<"JABBERID">>, <<"vcard-temp">>} -> true;
-      {<<"BDAY">>, <<"vcard-temp">>} -> true;
-      {<<"NICKNAME">>, <<"vcard-temp">>} -> true;
-      {<<"FN">>, <<"vcard-temp">>} -> true;
-      {<<"VERSION">>, <<"vcard-temp">>} -> true;
-      {<<"CRED">>, <<"vcard-temp">>} -> true;
-      {<<"PHONETIC">>, <<"vcard-temp">>} -> true;
-      {<<"ORGUNIT">>, <<"vcard-temp">>} -> true;
-      {<<"ORGNAME">>, <<"vcard-temp">>} -> true;
-      {<<"LON">>, <<"vcard-temp">>} -> true;
-      {<<"LAT">>, <<"vcard-temp">>} -> true;
-      {<<"USERID">>, <<"vcard-temp">>} -> true;
-      {<<"NUMBER">>, <<"vcard-temp">>} -> true;
-      {<<"LINE">>, <<"vcard-temp">>} -> true;
-      {<<"CTRY">>, <<"vcard-temp">>} -> true;
-      {<<"PCODE">>, <<"vcard-temp">>} -> true;
-      {<<"REGION">>, <<"vcard-temp">>} -> true;
-      {<<"LOCALITY">>, <<"vcard-temp">>} -> true;
-      {<<"STREET">>, <<"vcard-temp">>} -> true;
-      {<<"EXTADD">>, <<"vcard-temp">>} -> true;
-      {<<"POBOX">>, <<"vcard-temp">>} -> true;
-      {<<"SUFFIX">>, <<"vcard-temp">>} -> true;
-      {<<"PREFIX">>, <<"vcard-temp">>} -> true;
-      {<<"MIDDLE">>, <<"vcard-temp">>} -> true;
-      {<<"GIVEN">>, <<"vcard-temp">>} -> true;
-      {<<"FAMILY">>, <<"vcard-temp">>} -> true;
-      {<<"X400">>, <<"vcard-temp">>} -> true;
-      {<<"INTERNET">>, <<"vcard-temp">>} -> true;
-      {<<"PREF">>, <<"vcard-temp">>} -> true;
-      {<<"INTL">>, <<"vcard-temp">>} -> true;
-      {<<"DOM">>, <<"vcard-temp">>} -> true;
-      {<<"PARCEL">>, <<"vcard-temp">>} -> true;
-      {<<"POSTAL">>, <<"vcard-temp">>} -> true;
-      {<<"PCS">>, <<"vcard-temp">>} -> true;
-      {<<"ISDN">>, <<"vcard-temp">>} -> true;
-      {<<"MODEM">>, <<"vcard-temp">>} -> true;
-      {<<"BBS">>, <<"vcard-temp">>} -> true;
-      {<<"VIDEO">>, <<"vcard-temp">>} -> true;
-      {<<"CELL">>, <<"vcard-temp">>} -> true;
-      {<<"MSG">>, <<"vcard-temp">>} -> true;
-      {<<"PAGER">>, <<"vcard-temp">>} -> true;
-      {<<"FAX">>, <<"vcard-temp">>} -> true;
-      {<<"VOICE">>, <<"vcard-temp">>} -> true;
-      {<<"WORK">>, <<"vcard-temp">>} -> true;
-      {<<"HOME">>, <<"vcard-temp">>} -> true;
-      {<<"stream:error">>,
-       <<"http://etherx.jabber.org/streams">>} ->
+      {<<"x">>, <<"jabber:x:data">>, _} -> true;
+      {<<"x">>, <<>>, <<"jabber:x:data">>} -> true;
+      {<<"item">>, <<"jabber:x:data">>, _} -> true;
+      {<<"item">>, <<>>, <<"jabber:x:data">>} -> true;
+      {<<"reported">>, <<"jabber:x:data">>, _} -> true;
+      {<<"reported">>, <<>>, <<"jabber:x:data">>} -> true;
+      {<<"title">>, <<"jabber:x:data">>, _} -> true;
+      {<<"title">>, <<>>, <<"jabber:x:data">>} -> true;
+      {<<"instructions">>, <<"jabber:x:data">>, _} -> true;
+      {<<"instructions">>, <<>>, <<"jabber:x:data">>} -> true;
+      {<<"field">>, <<"jabber:x:data">>, _} -> true;
+      {<<"field">>, <<>>, <<"jabber:x:data">>} -> true;
+      {<<"option">>, <<"jabber:x:data">>, _} -> true;
+      {<<"option">>, <<>>, <<"jabber:x:data">>} -> true;
+      {<<"value">>, <<"jabber:x:data">>, _} -> true;
+      {<<"value">>, <<>>, <<"jabber:x:data">>} -> true;
+      {<<"desc">>, <<"jabber:x:data">>, _} -> true;
+      {<<"desc">>, <<>>, <<"jabber:x:data">>} -> true;
+      {<<"required">>, <<"jabber:x:data">>, _} -> true;
+      {<<"required">>, <<>>, <<"jabber:x:data">>} -> true;
+      {<<"x">>, <<"vcard-temp:x:update">>, _} -> true;
+      {<<"x">>, <<>>, <<"vcard-temp:x:update">>} -> true;
+      {<<"photo">>, <<"vcard-temp:x:update">>, _} -> true;
+      {<<"photo">>, <<>>, <<"vcard-temp:x:update">>} -> true;
+      {<<"vCard">>, <<"vcard-temp">>, _} -> true;
+      {<<"vCard">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"CLASS">>, <<"vcard-temp">>, _} -> true;
+      {<<"CLASS">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"CATEGORIES">>, <<"vcard-temp">>, _} -> true;
+      {<<"CATEGORIES">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"KEY">>, <<"vcard-temp">>, _} -> true;
+      {<<"KEY">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"SOUND">>, <<"vcard-temp">>, _} -> true;
+      {<<"SOUND">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"ORG">>, <<"vcard-temp">>, _} -> true;
+      {<<"ORG">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"PHOTO">>, <<"vcard-temp">>, _} -> true;
+      {<<"PHOTO">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"LOGO">>, <<"vcard-temp">>, _} -> true;
+      {<<"LOGO">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"BINVAL">>, <<"vcard-temp">>, _} -> true;
+      {<<"BINVAL">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"GEO">>, <<"vcard-temp">>, _} -> true;
+      {<<"GEO">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"EMAIL">>, <<"vcard-temp">>, _} -> true;
+      {<<"EMAIL">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"TEL">>, <<"vcard-temp">>, _} -> true;
+      {<<"TEL">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"LABEL">>, <<"vcard-temp">>, _} -> true;
+      {<<"LABEL">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"ADR">>, <<"vcard-temp">>, _} -> true;
+      {<<"ADR">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"N">>, <<"vcard-temp">>, _} -> true;
+      {<<"N">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"CONFIDENTIAL">>, <<"vcard-temp">>, _} -> true;
+      {<<"CONFIDENTIAL">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"PRIVATE">>, <<"vcard-temp">>, _} -> true;
+      {<<"PRIVATE">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"PUBLIC">>, <<"vcard-temp">>, _} -> true;
+      {<<"PUBLIC">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"EXTVAL">>, <<"vcard-temp">>, _} -> true;
+      {<<"EXTVAL">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"TYPE">>, <<"vcard-temp">>, _} -> true;
+      {<<"TYPE">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"DESC">>, <<"vcard-temp">>, _} -> true;
+      {<<"DESC">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"URL">>, <<"vcard-temp">>, _} -> true;
+      {<<"URL">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"UID">>, <<"vcard-temp">>, _} -> true;
+      {<<"UID">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"SORT-STRING">>, <<"vcard-temp">>, _} -> true;
+      {<<"SORT-STRING">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"REV">>, <<"vcard-temp">>, _} -> true;
+      {<<"REV">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"PRODID">>, <<"vcard-temp">>, _} -> true;
+      {<<"PRODID">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"NOTE">>, <<"vcard-temp">>, _} -> true;
+      {<<"NOTE">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"KEYWORD">>, <<"vcard-temp">>, _} -> true;
+      {<<"KEYWORD">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"ROLE">>, <<"vcard-temp">>, _} -> true;
+      {<<"ROLE">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"TITLE">>, <<"vcard-temp">>, _} -> true;
+      {<<"TITLE">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"TZ">>, <<"vcard-temp">>, _} -> true;
+      {<<"TZ">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"MAILER">>, <<"vcard-temp">>, _} -> true;
+      {<<"MAILER">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"JABBERID">>, <<"vcard-temp">>, _} -> true;
+      {<<"JABBERID">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"BDAY">>, <<"vcard-temp">>, _} -> true;
+      {<<"BDAY">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"NICKNAME">>, <<"vcard-temp">>, _} -> true;
+      {<<"NICKNAME">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"FN">>, <<"vcard-temp">>, _} -> true;
+      {<<"FN">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"VERSION">>, <<"vcard-temp">>, _} -> true;
+      {<<"VERSION">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"CRED">>, <<"vcard-temp">>, _} -> true;
+      {<<"CRED">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"PHONETIC">>, <<"vcard-temp">>, _} -> true;
+      {<<"PHONETIC">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"ORGUNIT">>, <<"vcard-temp">>, _} -> true;
+      {<<"ORGUNIT">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"ORGNAME">>, <<"vcard-temp">>, _} -> true;
+      {<<"ORGNAME">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"LON">>, <<"vcard-temp">>, _} -> true;
+      {<<"LON">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"LAT">>, <<"vcard-temp">>, _} -> true;
+      {<<"LAT">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"USERID">>, <<"vcard-temp">>, _} -> true;
+      {<<"USERID">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"NUMBER">>, <<"vcard-temp">>, _} -> true;
+      {<<"NUMBER">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"LINE">>, <<"vcard-temp">>, _} -> true;
+      {<<"LINE">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"CTRY">>, <<"vcard-temp">>, _} -> true;
+      {<<"CTRY">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"PCODE">>, <<"vcard-temp">>, _} -> true;
+      {<<"PCODE">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"REGION">>, <<"vcard-temp">>, _} -> true;
+      {<<"REGION">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"LOCALITY">>, <<"vcard-temp">>, _} -> true;
+      {<<"LOCALITY">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"STREET">>, <<"vcard-temp">>, _} -> true;
+      {<<"STREET">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"EXTADD">>, <<"vcard-temp">>, _} -> true;
+      {<<"EXTADD">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"POBOX">>, <<"vcard-temp">>, _} -> true;
+      {<<"POBOX">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"SUFFIX">>, <<"vcard-temp">>, _} -> true;
+      {<<"SUFFIX">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"PREFIX">>, <<"vcard-temp">>, _} -> true;
+      {<<"PREFIX">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"MIDDLE">>, <<"vcard-temp">>, _} -> true;
+      {<<"MIDDLE">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"GIVEN">>, <<"vcard-temp">>, _} -> true;
+      {<<"GIVEN">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"FAMILY">>, <<"vcard-temp">>, _} -> true;
+      {<<"FAMILY">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"X400">>, <<"vcard-temp">>, _} -> true;
+      {<<"X400">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"INTERNET">>, <<"vcard-temp">>, _} -> true;
+      {<<"INTERNET">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"PREF">>, <<"vcard-temp">>, _} -> true;
+      {<<"PREF">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"INTL">>, <<"vcard-temp">>, _} -> true;
+      {<<"INTL">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"DOM">>, <<"vcard-temp">>, _} -> true;
+      {<<"DOM">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"PARCEL">>, <<"vcard-temp">>, _} -> true;
+      {<<"PARCEL">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"POSTAL">>, <<"vcard-temp">>, _} -> true;
+      {<<"POSTAL">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"PCS">>, <<"vcard-temp">>, _} -> true;
+      {<<"PCS">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"ISDN">>, <<"vcard-temp">>, _} -> true;
+      {<<"ISDN">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"MODEM">>, <<"vcard-temp">>, _} -> true;
+      {<<"MODEM">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"BBS">>, <<"vcard-temp">>, _} -> true;
+      {<<"BBS">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"VIDEO">>, <<"vcard-temp">>, _} -> true;
+      {<<"VIDEO">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"CELL">>, <<"vcard-temp">>, _} -> true;
+      {<<"CELL">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"MSG">>, <<"vcard-temp">>, _} -> true;
+      {<<"MSG">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"PAGER">>, <<"vcard-temp">>, _} -> true;
+      {<<"PAGER">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"FAX">>, <<"vcard-temp">>, _} -> true;
+      {<<"FAX">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"VOICE">>, <<"vcard-temp">>, _} -> true;
+      {<<"VOICE">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"WORK">>, <<"vcard-temp">>, _} -> true;
+      {<<"WORK">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"HOME">>, <<"vcard-temp">>, _} -> true;
+      {<<"HOME">>, <<>>, <<"vcard-temp">>} -> true;
+      {<<"stream:error">>, <<"jabber:client">>, _} -> true;
+      {<<"stream:error">>, <<>>, <<"jabber:client">>} -> true;
+      {<<"stream:error">>, <<"jabber:server">>, _} -> true;
+      {<<"stream:error">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"stream:error">>, <<"jabber:component:accept">>,
+       _} ->
+	  true;
+      {<<"stream:error">>, <<>>,
+       <<"jabber:component:accept">>} ->
 	  true;
       {<<"unsupported-version">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"unsupported-version">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"unsupported-stanza-type">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"unsupported-stanza-type">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"unsupported-encoding">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"unsupported-encoding">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"undefined-condition">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"undefined-condition">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"system-shutdown">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"system-shutdown">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"see-other-host">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"see-other-host">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"restricted-xml">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"restricted-xml">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"resource-constraint">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"resource-constraint">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
-      {<<"reset">>,
+      {<<"reset">>, <<"urn:ietf:params:xml:ns:xmpp-streams">>,
+       _} ->
+	  true;
+      {<<"reset">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"remote-connection-failed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"remote-connection-failed">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"policy-violation">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"policy-violation">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"not-well-formed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"not-well-formed">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"not-authorized">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"not-authorized">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"invalid-xml">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"invalid-xml">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"invalid-namespace">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"invalid-namespace">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"invalid-id">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"invalid-id">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"invalid-from">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"invalid-from">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"internal-server-error">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"internal-server-error">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"improper-addressing">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"improper-addressing">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"host-unknown">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"host-unknown">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"host-gone">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"host-gone">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"connection-timeout">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"connection-timeout">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"conflict">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"conflict">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"bad-namespace-prefix">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"bad-namespace-prefix">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
       {<<"bad-format">>,
+       <<"urn:ietf:params:xml:ns:xmpp-streams">>, _} ->
+	  true;
+      {<<"bad-format">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
-      {<<"text">>,
+      {<<"text">>, <<"urn:ietf:params:xml:ns:xmpp-streams">>,
+       _} ->
+	  true;
+      {<<"text">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-streams">>} ->
 	  true;
-      {<<"time">>, <<"urn:xmpp:time">>} -> true;
-      {<<"tzo">>, <<"urn:xmpp:time">>} -> true;
-      {<<"utc">>, <<"urn:xmpp:time">>} -> true;
-      {<<"ping">>, <<"urn:xmpp:ping">>} -> true;
+      {<<"time">>, <<"urn:xmpp:time">>, _} -> true;
+      {<<"time">>, <<>>, <<"urn:xmpp:time">>} -> true;
+      {<<"tzo">>, <<"urn:xmpp:time">>, _} -> true;
+      {<<"tzo">>, <<>>, <<"urn:xmpp:time">>} -> true;
+      {<<"utc">>, <<"urn:xmpp:time">>, _} -> true;
+      {<<"utc">>, <<>>, <<"urn:xmpp:time">>} -> true;
+      {<<"ping">>, <<"urn:xmpp:ping">>, _} -> true;
+      {<<"ping">>, <<>>, <<"urn:xmpp:ping">>} -> true;
       {<<"session">>,
+       <<"urn:ietf:params:xml:ns:xmpp-session">>, _} ->
+	  true;
+      {<<"session">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-session">>} ->
 	  true;
       {<<"optional">>,
+       <<"urn:ietf:params:xml:ns:xmpp-session">>, _} ->
+	  true;
+      {<<"optional">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-session">>} ->
 	  true;
-      {<<"query">>, <<"jabber:iq:register">>} -> true;
-      {<<"key">>, <<"jabber:iq:register">>} -> true;
-      {<<"text">>, <<"jabber:iq:register">>} -> true;
-      {<<"misc">>, <<"jabber:iq:register">>} -> true;
-      {<<"date">>, <<"jabber:iq:register">>} -> true;
-      {<<"url">>, <<"jabber:iq:register">>} -> true;
-      {<<"phone">>, <<"jabber:iq:register">>} -> true;
-      {<<"zip">>, <<"jabber:iq:register">>} -> true;
-      {<<"state">>, <<"jabber:iq:register">>} -> true;
-      {<<"city">>, <<"jabber:iq:register">>} -> true;
-      {<<"address">>, <<"jabber:iq:register">>} -> true;
-      {<<"email">>, <<"jabber:iq:register">>} -> true;
-      {<<"last">>, <<"jabber:iq:register">>} -> true;
-      {<<"first">>, <<"jabber:iq:register">>} -> true;
-      {<<"name">>, <<"jabber:iq:register">>} -> true;
-      {<<"password">>, <<"jabber:iq:register">>} -> true;
-      {<<"nick">>, <<"jabber:iq:register">>} -> true;
-      {<<"username">>, <<"jabber:iq:register">>} -> true;
-      {<<"instructions">>, <<"jabber:iq:register">>} -> true;
-      {<<"remove">>, <<"jabber:iq:register">>} -> true;
-      {<<"registered">>, <<"jabber:iq:register">>} -> true;
+      {<<"query">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"query">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"key">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"key">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"text">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"text">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"misc">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"misc">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"date">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"date">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"url">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"url">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"phone">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"phone">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"zip">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"zip">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"state">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"state">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"city">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"city">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"address">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"address">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"email">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"email">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"last">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"last">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"first">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"first">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"name">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"name">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"password">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"password">>, <<>>, <<"jabber:iq:register">>} ->
+	  true;
+      {<<"nick">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"nick">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"username">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"username">>, <<>>, <<"jabber:iq:register">>} ->
+	  true;
+      {<<"instructions">>, <<"jabber:iq:register">>, _} ->
+	  true;
+      {<<"instructions">>, <<>>, <<"jabber:iq:register">>} ->
+	  true;
+      {<<"remove">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"remove">>, <<>>, <<"jabber:iq:register">>} -> true;
+      {<<"registered">>, <<"jabber:iq:register">>, _} -> true;
+      {<<"registered">>, <<>>, <<"jabber:iq:register">>} ->
+	  true;
       {<<"register">>,
+       <<"http://jabber.org/features/iq-register">>, _} ->
+	  true;
+      {<<"register">>, <<>>,
        <<"http://jabber.org/features/iq-register">>} ->
 	  true;
-      {<<"c">>, <<"http://jabber.org/protocol/caps">>} ->
+      {<<"c">>, <<"http://jabber.org/protocol/caps">>, _} ->
 	  true;
-      {<<"ack">>, <<"p1:ack">>} -> true;
-      {<<"rebind">>, <<"p1:rebind">>} -> true;
-      {<<"push">>, <<"p1:push">>} -> true;
-      {<<"stream:features">>,
-       <<"http://etherx.jabber.org/streams">>} ->
+      {<<"c">>, <<>>,
+       <<"http://jabber.org/protocol/caps">>} ->
+	  true;
+      {<<"ack">>, <<"p1:ack">>, _} -> true;
+      {<<"ack">>, <<>>, <<"p1:ack">>} -> true;
+      {<<"rebind">>, <<"p1:rebind">>, _} -> true;
+      {<<"rebind">>, <<>>, <<"p1:rebind">>} -> true;
+      {<<"push">>, <<"p1:push">>, _} -> true;
+      {<<"push">>, <<>>, <<"p1:push">>} -> true;
+      {<<"stream:features">>, <<"jabber:client">>, _} -> true;
+      {<<"stream:features">>, <<>>, <<"jabber:client">>} ->
+	  true;
+      {<<"stream:features">>, <<"jabber:server">>, _} -> true;
+      {<<"stream:features">>, <<>>, <<"jabber:server">>} ->
 	  true;
       {<<"compression">>,
+       <<"http://jabber.org/features/compress">>, _} ->
+	  true;
+      {<<"compression">>, <<>>,
        <<"http://jabber.org/features/compress">>} ->
 	  true;
       {<<"method">>,
+       <<"http://jabber.org/features/compress">>, _} ->
+	  true;
+      {<<"method">>, <<>>,
        <<"http://jabber.org/features/compress">>} ->
 	  true;
       {<<"compressed">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  true;
+      {<<"compressed">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  true;
       {<<"compress">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  true;
+      {<<"compress">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  true;
       {<<"method">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  true;
+      {<<"method">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  true;
       {<<"failure">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  true;
+      {<<"failure">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  true;
       {<<"unsupported-method">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  true;
+      {<<"unsupported-method">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  true;
       {<<"processing-failed">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  true;
+      {<<"processing-failed">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  true;
       {<<"setup-failed">>,
+       <<"http://jabber.org/protocol/compress">>, _} ->
+	  true;
+      {<<"setup-failed">>, <<>>,
        <<"http://jabber.org/protocol/compress">>} ->
 	  true;
-      {<<"failure">>,
+      {<<"failure">>, <<"urn:ietf:params:xml:ns:xmpp-tls">>,
+       _} ->
+	  true;
+      {<<"failure">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
 	  true;
-      {<<"proceed">>,
+      {<<"proceed">>, <<"urn:ietf:params:xml:ns:xmpp-tls">>,
+       _} ->
+	  true;
+      {<<"proceed">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
 	  true;
-      {<<"starttls">>,
+      {<<"starttls">>, <<"urn:ietf:params:xml:ns:xmpp-tls">>,
+       _} ->
+	  true;
+      {<<"starttls">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
 	  true;
-      {<<"required">>,
+      {<<"required">>, <<"urn:ietf:params:xml:ns:xmpp-tls">>,
+       _} ->
+	  true;
+      {<<"required">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-tls">>} ->
 	  true;
       {<<"mechanisms">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"mechanisms">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"mechanism">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"mechanism">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
-      {<<"failure">>,
+      {<<"failure">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
+	  true;
+      {<<"failure">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"temporary-auth-failure">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"temporary-auth-failure">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"bad-protocol">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"bad-protocol">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"not-authorized">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"not-authorized">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"mechanism-too-weak">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"mechanism-too-weak">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"malformed-request">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"malformed-request">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"invalid-mechanism">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"invalid-mechanism">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"invalid-authzid">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"invalid-authzid">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"incorrect-encoding">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"incorrect-encoding">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"encryption-required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"encryption-required">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"credentials-expired">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"credentials-expired">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"account-disabled">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"account-disabled">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
-      {<<"aborted">>,
+      {<<"aborted">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
+	  true;
+      {<<"aborted">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
-      {<<"text">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+      {<<"text">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
 	  true;
-      {<<"success">>,
+      {<<"text">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
-      {<<"response">>,
+      {<<"success">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
+	  true;
+      {<<"success">>, <<>>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"response">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
+	  true;
+      {<<"response">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
       {<<"challenge">>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>, _} ->
+	  true;
+      {<<"challenge">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
-      {<<"abort">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+      {<<"abort">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
 	  true;
-      {<<"auth">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+      {<<"abort">>, <<>>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
 	  true;
-      {<<"query">>, <<"jabber:iq:auth">>} -> true;
-      {<<"resource">>, <<"jabber:iq:auth">>} -> true;
-      {<<"digest">>, <<"jabber:iq:auth">>} -> true;
-      {<<"password">>, <<"jabber:iq:auth">>} -> true;
-      {<<"username">>, <<"jabber:iq:auth">>} -> true;
-      {<<"bind">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
+      {<<"auth">>, <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+       _} ->
 	  true;
-      {<<"resource">>,
+      {<<"auth">>, <<>>,
+       <<"urn:ietf:params:xml:ns:xmpp-sasl">>} ->
+	  true;
+      {<<"query">>, <<"jabber:iq:auth">>, _} -> true;
+      {<<"query">>, <<>>, <<"jabber:iq:auth">>} -> true;
+      {<<"resource">>, <<"jabber:iq:auth">>, _} -> true;
+      {<<"resource">>, <<>>, <<"jabber:iq:auth">>} -> true;
+      {<<"digest">>, <<"jabber:iq:auth">>, _} -> true;
+      {<<"digest">>, <<>>, <<"jabber:iq:auth">>} -> true;
+      {<<"password">>, <<"jabber:iq:auth">>, _} -> true;
+      {<<"password">>, <<>>, <<"jabber:iq:auth">>} -> true;
+      {<<"username">>, <<"jabber:iq:auth">>, _} -> true;
+      {<<"username">>, <<>>, <<"jabber:iq:auth">>} -> true;
+      {<<"bind">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>,
+       _} ->
+	  true;
+      {<<"bind">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
 	  true;
-      {<<"jid">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
+      {<<"resource">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>,
+       _} ->
 	  true;
-      {<<"error">>, <<"jabber:client">>} -> true;
-      {<<"text">>,
+      {<<"resource">>, <<>>,
+       <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
+	  true;
+      {<<"jid">>, <<"urn:ietf:params:xml:ns:xmpp-bind">>,
+       _} ->
+	  true;
+      {<<"jid">>, <<>>,
+       <<"urn:ietf:params:xml:ns:xmpp-bind">>} ->
+	  true;
+      {<<"error">>, <<"jabber:client">>, _} -> true;
+      {<<"error">>, <<>>, <<"jabber:client">>} -> true;
+      {<<"error">>, <<"jabber:server">>, _} -> true;
+      {<<"error">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"error">>, <<"jabber:component:accept">>, _} -> true;
+      {<<"error">>, <<>>, <<"jabber:component:accept">>} ->
+	  true;
+      {<<"text">>, <<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+       _} ->
+	  true;
+      {<<"text">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"unexpected-request">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"unexpected-request">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"undefined-condition">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"undefined-condition">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"subscription-required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"subscription-required">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"service-unavailable">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"service-unavailable">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"resource-constraint">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"resource-constraint">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"remote-server-timeout">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"remote-server-timeout">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"remote-server-not-found">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"remote-server-not-found">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"registration-required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"registration-required">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"redirect">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"redirect">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"recipient-unavailable">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"recipient-unavailable">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"policy-violation">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"policy-violation">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"payment-required">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"payment-required">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"not-authorized">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"not-authorized">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"not-allowed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"not-allowed">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"not-acceptable">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"not-acceptable">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"jid-malformed">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"jid-malformed">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"item-not-found">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"item-not-found">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"internal-server-error">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"internal-server-error">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
-      {<<"gone">>,
+      {<<"gone">>, <<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+       _} ->
+	  true;
+      {<<"gone">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"forbidden">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"forbidden">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"feature-not-implemented">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"feature-not-implemented">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"conflict">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"conflict">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
       {<<"bad-request">>,
+       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>, _} ->
+	  true;
+      {<<"bad-request">>, <<>>,
        <<"urn:ietf:params:xml:ns:xmpp-stanzas">>} ->
 	  true;
-      {<<"presence">>, <<"jabber:client">>} -> true;
-      {<<"priority">>, <<"jabber:client">>} -> true;
-      {<<"status">>, <<"jabber:client">>} -> true;
-      {<<"show">>, <<"jabber:client">>} -> true;
-      {<<"message">>, <<"jabber:client">>} -> true;
-      {<<"thread">>, <<"jabber:client">>} -> true;
-      {<<"body">>, <<"jabber:client">>} -> true;
-      {<<"subject">>, <<"jabber:client">>} -> true;
-      {<<"iq">>, <<"jabber:client">>} -> true;
-      {<<"query">>, <<"http://jabber.org/protocol/stats">>} ->
+      {<<"presence">>, <<"jabber:client">>, _} -> true;
+      {<<"presence">>, <<>>, <<"jabber:client">>} -> true;
+      {<<"presence">>, <<"jabber:server">>, _} -> true;
+      {<<"presence">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"presence">>, <<"jabber:component:accept">>, _} ->
 	  true;
-      {<<"stat">>, <<"http://jabber.org/protocol/stats">>} ->
+      {<<"presence">>, <<>>, <<"jabber:component:accept">>} ->
 	  true;
-      {<<"error">>, <<"http://jabber.org/protocol/stats">>} ->
+      {<<"priority">>, <<"jabber:client">>, _} -> true;
+      {<<"priority">>, <<>>, <<"jabber:client">>} -> true;
+      {<<"priority">>, <<"jabber:server">>, _} -> true;
+      {<<"priority">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"priority">>, <<"jabber:component:accept">>, _} ->
 	  true;
-      {<<"storage">>, <<"storage:bookmarks">>} -> true;
-      {<<"url">>, <<"storage:bookmarks">>} -> true;
-      {<<"conference">>, <<"storage:bookmarks">>} -> true;
-      {<<"password">>, <<"storage:bookmarks">>} -> true;
-      {<<"nick">>, <<"storage:bookmarks">>} -> true;
-      {<<"query">>, <<"jabber:iq:private">>} -> true;
+      {<<"priority">>, <<>>, <<"jabber:component:accept">>} ->
+	  true;
+      {<<"status">>, <<"jabber:client">>, _} -> true;
+      {<<"status">>, <<>>, <<"jabber:client">>} -> true;
+      {<<"status">>, <<"jabber:server">>, _} -> true;
+      {<<"status">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"status">>, <<"jabber:component:accept">>, _} ->
+	  true;
+      {<<"status">>, <<>>, <<"jabber:component:accept">>} ->
+	  true;
+      {<<"show">>, <<"jabber:client">>, _} -> true;
+      {<<"show">>, <<>>, <<"jabber:client">>} -> true;
+      {<<"show">>, <<"jabber:server">>, _} -> true;
+      {<<"show">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"show">>, <<"jabber:component:accept">>, _} -> true;
+      {<<"show">>, <<>>, <<"jabber:component:accept">>} ->
+	  true;
+      {<<"message">>, <<"jabber:client">>, _} -> true;
+      {<<"message">>, <<>>, <<"jabber:client">>} -> true;
+      {<<"message">>, <<"jabber:server">>, _} -> true;
+      {<<"message">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"message">>, <<"jabber:component:accept">>, _} ->
+	  true;
+      {<<"message">>, <<>>, <<"jabber:component:accept">>} ->
+	  true;
+      {<<"thread">>, <<"jabber:client">>, _} -> true;
+      {<<"thread">>, <<>>, <<"jabber:client">>} -> true;
+      {<<"thread">>, <<"jabber:server">>, _} -> true;
+      {<<"thread">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"thread">>, <<"jabber:component:accept">>, _} ->
+	  true;
+      {<<"thread">>, <<>>, <<"jabber:component:accept">>} ->
+	  true;
+      {<<"body">>, <<"jabber:client">>, _} -> true;
+      {<<"body">>, <<>>, <<"jabber:client">>} -> true;
+      {<<"body">>, <<"jabber:server">>, _} -> true;
+      {<<"body">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"body">>, <<"jabber:component:accept">>, _} -> true;
+      {<<"body">>, <<>>, <<"jabber:component:accept">>} ->
+	  true;
+      {<<"subject">>, <<"jabber:client">>, _} -> true;
+      {<<"subject">>, <<>>, <<"jabber:client">>} -> true;
+      {<<"subject">>, <<"jabber:server">>, _} -> true;
+      {<<"subject">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"subject">>, <<"jabber:component:accept">>, _} ->
+	  true;
+      {<<"subject">>, <<>>, <<"jabber:component:accept">>} ->
+	  true;
+      {<<"iq">>, <<"jabber:client">>, _} -> true;
+      {<<"iq">>, <<>>, <<"jabber:client">>} -> true;
+      {<<"iq">>, <<"jabber:server">>, _} -> true;
+      {<<"iq">>, <<>>, <<"jabber:server">>} -> true;
+      {<<"iq">>, <<"jabber:component:accept">>, _} -> true;
+      {<<"iq">>, <<>>, <<"jabber:component:accept">>} -> true;
+      {<<"query">>, <<"http://jabber.org/protocol/stats">>,
+       _} ->
+	  true;
+      {<<"query">>, <<>>,
+       <<"http://jabber.org/protocol/stats">>} ->
+	  true;
+      {<<"stat">>, <<"http://jabber.org/protocol/stats">>,
+       _} ->
+	  true;
+      {<<"stat">>, <<>>,
+       <<"http://jabber.org/protocol/stats">>} ->
+	  true;
+      {<<"error">>, <<"http://jabber.org/protocol/stats">>,
+       _} ->
+	  true;
+      {<<"error">>, <<>>,
+       <<"http://jabber.org/protocol/stats">>} ->
+	  true;
+      {<<"storage">>, <<"storage:bookmarks">>, _} -> true;
+      {<<"storage">>, <<>>, <<"storage:bookmarks">>} -> true;
+      {<<"url">>, <<"storage:bookmarks">>, _} -> true;
+      {<<"url">>, <<>>, <<"storage:bookmarks">>} -> true;
+      {<<"conference">>, <<"storage:bookmarks">>, _} -> true;
+      {<<"conference">>, <<>>, <<"storage:bookmarks">>} ->
+	  true;
+      {<<"password">>, <<"storage:bookmarks">>, _} -> true;
+      {<<"password">>, <<>>, <<"storage:bookmarks">>} -> true;
+      {<<"nick">>, <<"storage:bookmarks">>, _} -> true;
+      {<<"nick">>, <<>>, <<"storage:bookmarks">>} -> true;
+      {<<"query">>, <<"jabber:iq:private">>, _} -> true;
+      {<<"query">>, <<>>, <<"jabber:iq:private">>} -> true;
       {<<"query">>,
+       <<"http://jabber.org/protocol/disco#items">>, _} ->
+	  true;
+      {<<"query">>, <<>>,
        <<"http://jabber.org/protocol/disco#items">>} ->
 	  true;
       {<<"item">>,
+       <<"http://jabber.org/protocol/disco#items">>, _} ->
+	  true;
+      {<<"item">>, <<>>,
        <<"http://jabber.org/protocol/disco#items">>} ->
 	  true;
       {<<"query">>,
+       <<"http://jabber.org/protocol/disco#info">>, _} ->
+	  true;
+      {<<"query">>, <<>>,
        <<"http://jabber.org/protocol/disco#info">>} ->
 	  true;
       {<<"feature">>,
+       <<"http://jabber.org/protocol/disco#info">>, _} ->
+	  true;
+      {<<"feature">>, <<>>,
        <<"http://jabber.org/protocol/disco#info">>} ->
 	  true;
       {<<"identity">>,
+       <<"http://jabber.org/protocol/disco#info">>, _} ->
+	  true;
+      {<<"identity">>, <<>>,
        <<"http://jabber.org/protocol/disco#info">>} ->
 	  true;
-      {<<"blocklist">>, <<"urn:xmpp:blocking">>} -> true;
-      {<<"unblock">>, <<"urn:xmpp:blocking">>} -> true;
-      {<<"block">>, <<"urn:xmpp:blocking">>} -> true;
-      {<<"item">>, <<"urn:xmpp:blocking">>} -> true;
-      {<<"query">>, <<"jabber:iq:privacy">>} -> true;
-      {<<"active">>, <<"jabber:iq:privacy">>} -> true;
-      {<<"default">>, <<"jabber:iq:privacy">>} -> true;
-      {<<"list">>, <<"jabber:iq:privacy">>} -> true;
-      {<<"item">>, <<"jabber:iq:privacy">>} -> true;
-      {<<"presence-out">>, <<"jabber:iq:privacy">>} -> true;
-      {<<"presence-in">>, <<"jabber:iq:privacy">>} -> true;
-      {<<"iq">>, <<"jabber:iq:privacy">>} -> true;
-      {<<"message">>, <<"jabber:iq:privacy">>} -> true;
-      {<<"ver">>, <<"urn:xmpp:features:rosterver">>} -> true;
-      {<<"query">>, <<"jabber:iq:roster">>} -> true;
-      {<<"item">>, <<"jabber:iq:roster">>} -> true;
-      {<<"group">>, <<"jabber:iq:roster">>} -> true;
-      {<<"query">>, <<"jabber:iq:version">>} -> true;
-      {<<"os">>, <<"jabber:iq:version">>} -> true;
-      {<<"version">>, <<"jabber:iq:version">>} -> true;
-      {<<"name">>, <<"jabber:iq:version">>} -> true;
-      {<<"query">>, <<"jabber:iq:last">>} -> true;
+      {<<"blocklist">>, <<"urn:xmpp:blocking">>, _} -> true;
+      {<<"blocklist">>, <<>>, <<"urn:xmpp:blocking">>} ->
+	  true;
+      {<<"unblock">>, <<"urn:xmpp:blocking">>, _} -> true;
+      {<<"unblock">>, <<>>, <<"urn:xmpp:blocking">>} -> true;
+      {<<"block">>, <<"urn:xmpp:blocking">>, _} -> true;
+      {<<"block">>, <<>>, <<"urn:xmpp:blocking">>} -> true;
+      {<<"item">>, <<"urn:xmpp:blocking">>, _} -> true;
+      {<<"item">>, <<>>, <<"urn:xmpp:blocking">>} -> true;
+      {<<"query">>, <<"jabber:iq:privacy">>, _} -> true;
+      {<<"query">>, <<>>, <<"jabber:iq:privacy">>} -> true;
+      {<<"active">>, <<"jabber:iq:privacy">>, _} -> true;
+      {<<"active">>, <<>>, <<"jabber:iq:privacy">>} -> true;
+      {<<"default">>, <<"jabber:iq:privacy">>, _} -> true;
+      {<<"default">>, <<>>, <<"jabber:iq:privacy">>} -> true;
+      {<<"list">>, <<"jabber:iq:privacy">>, _} -> true;
+      {<<"list">>, <<>>, <<"jabber:iq:privacy">>} -> true;
+      {<<"item">>, <<"jabber:iq:privacy">>, _} -> true;
+      {<<"item">>, <<>>, <<"jabber:iq:privacy">>} -> true;
+      {<<"presence-out">>, <<"jabber:iq:privacy">>, _} ->
+	  true;
+      {<<"presence-out">>, <<>>, <<"jabber:iq:privacy">>} ->
+	  true;
+      {<<"presence-in">>, <<"jabber:iq:privacy">>, _} -> true;
+      {<<"presence-in">>, <<>>, <<"jabber:iq:privacy">>} ->
+	  true;
+      {<<"iq">>, <<"jabber:iq:privacy">>, _} -> true;
+      {<<"iq">>, <<>>, <<"jabber:iq:privacy">>} -> true;
+      {<<"message">>, <<"jabber:iq:privacy">>, _} -> true;
+      {<<"message">>, <<>>, <<"jabber:iq:privacy">>} -> true;
+      {<<"ver">>, <<"urn:xmpp:features:rosterver">>, _} ->
+	  true;
+      {<<"ver">>, <<>>, <<"urn:xmpp:features:rosterver">>} ->
+	  true;
+      {<<"query">>, <<"jabber:iq:roster">>, _} -> true;
+      {<<"query">>, <<>>, <<"jabber:iq:roster">>} -> true;
+      {<<"item">>, <<"jabber:iq:roster">>, _} -> true;
+      {<<"item">>, <<>>, <<"jabber:iq:roster">>} -> true;
+      {<<"group">>, <<"jabber:iq:roster">>, _} -> true;
+      {<<"group">>, <<>>, <<"jabber:iq:roster">>} -> true;
+      {<<"query">>, <<"jabber:iq:version">>, _} -> true;
+      {<<"query">>, <<>>, <<"jabber:iq:version">>} -> true;
+      {<<"os">>, <<"jabber:iq:version">>, _} -> true;
+      {<<"os">>, <<>>, <<"jabber:iq:version">>} -> true;
+      {<<"version">>, <<"jabber:iq:version">>, _} -> true;
+      {<<"version">>, <<>>, <<"jabber:iq:version">>} -> true;
+      {<<"name">>, <<"jabber:iq:version">>, _} -> true;
+      {<<"name">>, <<>>, <<"jabber:iq:version">>} -> true;
+      {<<"query">>, <<"jabber:iq:last">>, _} -> true;
+      {<<"query">>, <<>>, <<"jabber:iq:last">>} -> true;
       _ -> false
     end.
 
-encode({xmlel, _, _, _} = El) -> El;
-encode({last, _, _} = Query) ->
-    encode_last(Query,
-		[{<<"xmlns">>, <<"jabber:iq:last">>}]);
-encode({version, _, _, _} = Query) ->
-    encode_version(Query,
-		   [{<<"xmlns">>, <<"jabber:iq:version">>}]);
-encode({roster_item, _, _, _, _, _} = Item) ->
-    encode_roster_item(Item,
-		       [{<<"xmlns">>, <<"jabber:iq:roster">>}]);
-encode({roster_query, _, _} = Query) ->
-    encode_roster_query(Query,
-			[{<<"xmlns">>, <<"jabber:iq:roster">>}]);
-encode({rosterver_feature} = Ver) ->
-    encode_rosterver_feature(Ver,
-			     [{<<"xmlns">>,
-			       <<"urn:xmpp:features:rosterver">>}]);
-encode({privacy_item, _, _, _, _, _, _, _, _} = Item) ->
-    encode_privacy_item(Item,
-			[{<<"xmlns">>, <<"jabber:iq:privacy">>}]);
-encode({privacy_list, _, _} = List) ->
-    encode_privacy_list(List,
-			[{<<"xmlns">>, <<"jabber:iq:privacy">>}]);
-encode({privacy_query, _, _, _} = Query) ->
-    encode_privacy(Query,
-		   [{<<"xmlns">>, <<"jabber:iq:privacy">>}]);
-encode({block, _} = Block) ->
-    encode_block(Block,
-		 [{<<"xmlns">>, <<"urn:xmpp:blocking">>}]);
-encode({unblock, _} = Unblock) ->
-    encode_unblock(Unblock,
-		   [{<<"xmlns">>, <<"urn:xmpp:blocking">>}]);
-encode({block_list, _} = Blocklist) ->
-    encode_block_list(Blocklist,
-		      [{<<"xmlns">>, <<"urn:xmpp:blocking">>}]);
-encode({identity, _, _, _, _} = Identity) ->
-    encode_disco_identity(Identity,
-			  [{<<"xmlns">>,
-			    <<"http://jabber.org/protocol/disco#info">>}]);
-encode({disco_info, _, _, _, _} = Query) ->
-    encode_disco_info(Query,
-		      [{<<"xmlns">>,
-			<<"http://jabber.org/protocol/disco#info">>}]);
-encode({disco_item, _, _, _} = Item) ->
-    encode_disco_item(Item,
-		      [{<<"xmlns">>,
-			<<"http://jabber.org/protocol/disco#items">>}]);
-encode({disco_items, _, _, _} = Query) ->
-    encode_disco_items(Query,
-		       [{<<"xmlns">>,
-			 <<"http://jabber.org/protocol/disco#items">>}]);
-encode({private, _} = Query) ->
-    encode_private(Query,
-		   [{<<"xmlns">>, <<"jabber:iq:private">>}]);
+encode(_el) -> encode(_el, <<>>).
+
+encode({xmlel, _, _, _} = El, _) -> El;
+encode({last, _, _} = Query, TopXMLNS) ->
+    encode_last(Query, TopXMLNS);
+encode({version, _, _, _} = Query, TopXMLNS) ->
+    encode_version(Query, TopXMLNS);
+encode({roster_item, _, _, _, _, _} = Item, TopXMLNS) ->
+    encode_roster_item(Item, TopXMLNS);
+encode({roster_query, _, _} = Query, TopXMLNS) ->
+    encode_roster_query(Query, TopXMLNS);
+encode({rosterver_feature} = Ver, TopXMLNS) ->
+    encode_rosterver_feature(Ver, TopXMLNS);
+encode({privacy_item, _, _, _, _, _, _, _, _} = Item,
+       TopXMLNS) ->
+    encode_privacy_item(Item, TopXMLNS);
+encode({privacy_list, _, _} = List, TopXMLNS) ->
+    encode_privacy_list(List, TopXMLNS);
+encode({privacy_query, _, _, _} = Query, TopXMLNS) ->
+    encode_privacy(Query, TopXMLNS);
+encode({block, _} = Block, TopXMLNS) ->
+    encode_block(Block, TopXMLNS);
+encode({unblock, _} = Unblock, TopXMLNS) ->
+    encode_unblock(Unblock, TopXMLNS);
+encode({block_list, _} = Blocklist, TopXMLNS) ->
+    encode_block_list(Blocklist, TopXMLNS);
+encode({identity, _, _, _, _} = Identity, TopXMLNS) ->
+    encode_disco_identity(Identity, TopXMLNS);
+encode({disco_info, _, _, _, _} = Query, TopXMLNS) ->
+    encode_disco_info(Query, TopXMLNS);
+encode({disco_item, _, _, _} = Item, TopXMLNS) ->
+    encode_disco_item(Item, TopXMLNS);
+encode({disco_items, _, _, _} = Query, TopXMLNS) ->
+    encode_disco_items(Query, TopXMLNS);
+encode({private, _} = Query, TopXMLNS) ->
+    encode_private(Query, TopXMLNS);
 encode({bookmark_conference, _, _, _, _, _} =
-	   Conference) ->
-    encode_bookmark_conference(Conference,
-			       [{<<"xmlns">>, <<"storage:bookmarks">>}]);
-encode({bookmark_url, _, _} = Url) ->
-    encode_bookmark_url(Url,
-			[{<<"xmlns">>, <<"storage:bookmarks">>}]);
-encode({bookmark_storage, _, _} = Storage) ->
-    encode_bookmarks_storage(Storage,
-			     [{<<"xmlns">>, <<"storage:bookmarks">>}]);
-encode({stat_error, _, _} = Error) ->
-    encode_stat_error(Error,
-		      [{<<"xmlns">>,
-			<<"http://jabber.org/protocol/stats">>}]);
-encode({stat, _, _, _, _} = Stat) ->
-    encode_stat(Stat,
-		[{<<"xmlns">>,
-		  <<"http://jabber.org/protocol/stats">>}]);
-encode({stats, _, _} = Query) ->
-    encode_stats(Query,
-		 [{<<"xmlns">>,
-		   <<"http://jabber.org/protocol/stats">>}]);
-encode({iq, _, _, _, _, _, _} = Iq) ->
-    encode_iq(Iq, [{<<"xmlns">>, <<"jabber:client">>}]);
-encode({message, _, _, _, _, _, _, _, _, _} =
-	   Message) ->
-    encode_message(Message,
-		   [{<<"xmlns">>, <<"jabber:client">>}]);
-encode({presence, _, _, _, _, _, _, _, _, _} =
-	   Presence) ->
-    encode_presence(Presence,
-		    [{<<"xmlns">>, <<"jabber:client">>}]);
-encode({gone, _} = Gone) ->
-    encode_error_gone(Gone,
-		      [{<<"xmlns">>,
-			<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}]);
-encode({redirect, _} = Redirect) ->
-    encode_error_redirect(Redirect,
-			  [{<<"xmlns">>,
-			    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}]);
-encode({stanza_error, _, _, _, _, _, _} = Error) ->
-    encode_error(Error,
-		 [{<<"xmlns">>, <<"jabber:client">>}]);
-encode({bind, _, _} = Bind) ->
-    encode_bind(Bind,
-		[{<<"xmlns">>,
-		  <<"urn:ietf:params:xml:ns:xmpp-bind">>}]);
-encode({legacy_auth, _, _, _, _} = Query) ->
-    encode_legacy_auth(Query,
-		       [{<<"xmlns">>, <<"jabber:iq:auth">>}]);
-encode({sasl_auth, _, _} = Auth) ->
-    encode_sasl_auth(Auth,
-		     [{<<"xmlns">>,
-		       <<"urn:ietf:params:xml:ns:xmpp-sasl">>}]);
-encode({sasl_abort} = Abort) ->
-    encode_sasl_abort(Abort,
-		      [{<<"xmlns">>,
-			<<"urn:ietf:params:xml:ns:xmpp-sasl">>}]);
-encode({sasl_challenge, _} = Challenge) ->
-    encode_sasl_challenge(Challenge,
-			  [{<<"xmlns">>,
-			    <<"urn:ietf:params:xml:ns:xmpp-sasl">>}]);
-encode({sasl_response, _} = Response) ->
-    encode_sasl_response(Response,
-			 [{<<"xmlns">>,
-			   <<"urn:ietf:params:xml:ns:xmpp-sasl">>}]);
-encode({sasl_success, _} = Success) ->
-    encode_sasl_success(Success,
-			[{<<"xmlns">>,
-			  <<"urn:ietf:params:xml:ns:xmpp-sasl">>}]);
-encode({sasl_failure, _, _} = Failure) ->
-    encode_sasl_failure(Failure,
-			[{<<"xmlns">>,
-			  <<"urn:ietf:params:xml:ns:xmpp-sasl">>}]);
-encode({sasl_mechanisms, _} = Mechanisms) ->
-    encode_sasl_mechanisms(Mechanisms,
-			   [{<<"xmlns">>,
-			     <<"urn:ietf:params:xml:ns:xmpp-sasl">>}]);
-encode({starttls, _} = Starttls) ->
-    encode_starttls(Starttls,
-		    [{<<"xmlns">>, <<"urn:ietf:params:xml:ns:xmpp-tls">>}]);
-encode({starttls_proceed} = Proceed) ->
-    encode_starttls_proceed(Proceed,
-			    [{<<"xmlns">>,
-			      <<"urn:ietf:params:xml:ns:xmpp-tls">>}]);
-encode({starttls_failure} = Failure) ->
-    encode_starttls_failure(Failure,
-			    [{<<"xmlns">>,
-			      <<"urn:ietf:params:xml:ns:xmpp-tls">>}]);
-encode({compress_failure, _} = Failure) ->
-    encode_compress_failure(Failure,
-			    [{<<"xmlns">>,
-			      <<"http://jabber.org/protocol/compress">>}]);
-encode({compress, _} = Compress) ->
-    encode_compress(Compress,
-		    [{<<"xmlns">>,
-		      <<"http://jabber.org/protocol/compress">>}]);
-encode({compressed} = Compressed) ->
-    encode_compressed(Compressed,
-		      [{<<"xmlns">>,
-			<<"http://jabber.org/protocol/compress">>}]);
-encode({compression, _} = Compression) ->
-    encode_compression(Compression,
-		       [{<<"xmlns">>,
-			 <<"http://jabber.org/features/compress">>}]);
-encode({stream_features, _} = Stream_features) ->
-    encode_stream_features(Stream_features,
-			   [{<<"xmlns">>,
-			     <<"http://etherx.jabber.org/streams">>}]);
-encode({p1_push} = Push) ->
-    encode_p1_push(Push, [{<<"xmlns">>, <<"p1:push">>}]);
-encode({p1_rebind} = Rebind) ->
-    encode_p1_rebind(Rebind,
-		     [{<<"xmlns">>, <<"p1:rebind">>}]);
-encode({p1_ack} = Ack) ->
-    encode_p1_ack(Ack, [{<<"xmlns">>, <<"p1:ack">>}]);
-encode({caps, _, _, _, _} = C) ->
-    encode_caps(C,
-		[{<<"xmlns">>, <<"http://jabber.org/protocol/caps">>}]);
-encode({feature_register} = Register) ->
-    encode_feature_register(Register,
-			    [{<<"xmlns">>,
-			      <<"http://jabber.org/features/iq-register">>}]);
+	   Conference,
+       TopXMLNS) ->
+    encode_bookmark_conference(Conference, TopXMLNS);
+encode({bookmark_url, _, _} = Url, TopXMLNS) ->
+    encode_bookmark_url(Url, TopXMLNS);
+encode({bookmark_storage, _, _} = Storage, TopXMLNS) ->
+    encode_bookmarks_storage(Storage, TopXMLNS);
+encode({stat_error, _, _} = Error, TopXMLNS) ->
+    encode_stat_error(Error, TopXMLNS);
+encode({stat, _, _, _, _} = Stat, TopXMLNS) ->
+    encode_stat(Stat, TopXMLNS);
+encode({stats, _, _} = Query, TopXMLNS) ->
+    encode_stats(Query, TopXMLNS);
+encode({iq, _, _, _, _, _, _} = Iq, TopXMLNS) ->
+    encode_iq(Iq, TopXMLNS);
+encode({message, _, _, _, _, _, _, _, _, _} = Message,
+       TopXMLNS) ->
+    encode_message(Message, TopXMLNS);
+encode({presence, _, _, _, _, _, _, _, _, _} = Presence,
+       TopXMLNS) ->
+    encode_presence(Presence, TopXMLNS);
+encode({gone, _} = Gone, TopXMLNS) ->
+    encode_error_gone(Gone, TopXMLNS);
+encode({redirect, _} = Redirect, TopXMLNS) ->
+    encode_error_redirect(Redirect, TopXMLNS);
+encode({stanza_error, _, _, _, _, _, _} = Error,
+       TopXMLNS) ->
+    encode_error(Error, TopXMLNS);
+encode({bind, _, _} = Bind, TopXMLNS) ->
+    encode_bind(Bind, TopXMLNS);
+encode({legacy_auth, _, _, _, _} = Query, TopXMLNS) ->
+    encode_legacy_auth(Query, TopXMLNS);
+encode({sasl_auth, _, _} = Auth, TopXMLNS) ->
+    encode_sasl_auth(Auth, TopXMLNS);
+encode({sasl_abort} = Abort, TopXMLNS) ->
+    encode_sasl_abort(Abort, TopXMLNS);
+encode({sasl_challenge, _} = Challenge, TopXMLNS) ->
+    encode_sasl_challenge(Challenge, TopXMLNS);
+encode({sasl_response, _} = Response, TopXMLNS) ->
+    encode_sasl_response(Response, TopXMLNS);
+encode({sasl_success, _} = Success, TopXMLNS) ->
+    encode_sasl_success(Success, TopXMLNS);
+encode({sasl_failure, _, _} = Failure, TopXMLNS) ->
+    encode_sasl_failure(Failure, TopXMLNS);
+encode({sasl_mechanisms, _} = Mechanisms, TopXMLNS) ->
+    encode_sasl_mechanisms(Mechanisms, TopXMLNS);
+encode({starttls, _} = Starttls, TopXMLNS) ->
+    encode_starttls(Starttls, TopXMLNS);
+encode({starttls_proceed} = Proceed, TopXMLNS) ->
+    encode_starttls_proceed(Proceed, TopXMLNS);
+encode({starttls_failure} = Failure, TopXMLNS) ->
+    encode_starttls_failure(Failure, TopXMLNS);
+encode({compress_failure, _} = Failure, TopXMLNS) ->
+    encode_compress_failure(Failure, TopXMLNS);
+encode({compress, _} = Compress, TopXMLNS) ->
+    encode_compress(Compress, TopXMLNS);
+encode({compressed} = Compressed, TopXMLNS) ->
+    encode_compressed(Compressed, TopXMLNS);
+encode({compression, _} = Compression, TopXMLNS) ->
+    encode_compression(Compression, TopXMLNS);
+encode({stream_features, _} = Stream_features,
+       TopXMLNS) ->
+    encode_stream_features(Stream_features, TopXMLNS);
+encode({p1_push} = Push, TopXMLNS) ->
+    encode_p1_push(Push, TopXMLNS);
+encode({p1_rebind} = Rebind, TopXMLNS) ->
+    encode_p1_rebind(Rebind, TopXMLNS);
+encode({p1_ack} = Ack, TopXMLNS) ->
+    encode_p1_ack(Ack, TopXMLNS);
+encode({caps, _, _, _, _} = C, TopXMLNS) ->
+    encode_caps(C, TopXMLNS);
+encode({feature_register} = Register, TopXMLNS) ->
+    encode_feature_register(Register, TopXMLNS);
 encode({register, _, _, _, _, _, _, _, _, _, _, _, _, _,
 	_, _, _, _, _, _, _, _, _} =
-	   Query) ->
-    encode_register(Query,
-		    [{<<"xmlns">>, <<"jabber:iq:register">>}]);
-encode({xmpp_session, _} = Session) ->
-    encode_session(Session,
-		   [{<<"xmlns">>,
-		     <<"urn:ietf:params:xml:ns:xmpp-session">>}]);
-encode({ping} = Ping) ->
-    encode_ping(Ping, [{<<"xmlns">>, <<"urn:xmpp:ping">>}]);
-encode({time, _, _} = Time) ->
-    encode_time(Time, [{<<"xmlns">>, <<"urn:xmpp:time">>}]);
-encode({text, _, _} = Text) ->
-    encode_stream_error_text(Text, []);
-encode({'see-other-host', _} = See_other_host) ->
+	   Query,
+       TopXMLNS) ->
+    encode_register(Query, TopXMLNS);
+encode({xmpp_session, _} = Session, TopXMLNS) ->
+    encode_session(Session, TopXMLNS);
+encode({ping} = Ping, TopXMLNS) ->
+    encode_ping(Ping, TopXMLNS);
+encode({time, _, _} = Time, TopXMLNS) ->
+    encode_time(Time, TopXMLNS);
+encode({text, _, _} = Text, TopXMLNS) ->
+    encode_stream_error_text(Text, TopXMLNS);
+encode({'see-other-host', _} = See_other_host,
+       TopXMLNS) ->
     encode_stream_error_see_other_host(See_other_host,
-				       [{<<"xmlns">>,
-					 <<"urn:ietf:params:xml:ns:xmpp-streams">>}]);
-encode({stream_error, _, _} = Stream_error) ->
-    encode_stream_error(Stream_error,
-			[{<<"xmlns">>,
-			  <<"http://etherx.jabber.org/streams">>}]);
-encode({vcard_name, _, _, _, _, _} = N) ->
-    encode_vcard_N(N, [{<<"xmlns">>, <<"vcard-temp">>}]);
+				       TopXMLNS);
+encode({stream_error, _, _} = Stream_error, TopXMLNS) ->
+    encode_stream_error(Stream_error, TopXMLNS);
+encode({vcard_name, _, _, _, _, _} = N, TopXMLNS) ->
+    encode_vcard_N(N, TopXMLNS);
 encode({vcard_adr, _, _, _, _, _, _, _, _, _, _, _, _,
 	_, _} =
-	   Adr) ->
-    encode_vcard_ADR(Adr,
-		     [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard_label, _, _, _, _, _, _, _, _} = Label) ->
-    encode_vcard_LABEL(Label,
-		       [{<<"xmlns">>, <<"vcard-temp">>}]);
+	   Adr,
+       TopXMLNS) ->
+    encode_vcard_ADR(Adr, TopXMLNS);
+encode({vcard_label, _, _, _, _, _, _, _, _} = Label,
+       TopXMLNS) ->
+    encode_vcard_LABEL(Label, TopXMLNS);
 encode({vcard_tel, _, _, _, _, _, _, _, _, _, _, _, _,
 	_, _} =
-	   Tel) ->
-    encode_vcard_TEL(Tel,
-		     [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard_email, _, _, _, _, _, _} = Email) ->
-    encode_vcard_EMAIL(Email,
-		       [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard_geo, _, _} = Geo) ->
-    encode_vcard_GEO(Geo,
-		     [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard_logo, _, _, _} = Logo) ->
-    encode_vcard_LOGO(Logo,
-		      [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard_photo, _, _, _} = Photo) ->
-    encode_vcard_PHOTO(Photo,
-		       [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard_org, _, _} = Org) ->
-    encode_vcard_ORG(Org,
-		     [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard_sound, _, _, _} = Sound) ->
-    encode_vcard_SOUND(Sound,
-		       [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard_key, _, _} = Key) ->
-    encode_vcard_KEY(Key,
-		     [{<<"xmlns">>, <<"vcard-temp">>}]);
+	   Tel,
+       TopXMLNS) ->
+    encode_vcard_TEL(Tel, TopXMLNS);
+encode({vcard_email, _, _, _, _, _, _} = Email,
+       TopXMLNS) ->
+    encode_vcard_EMAIL(Email, TopXMLNS);
+encode({vcard_geo, _, _} = Geo, TopXMLNS) ->
+    encode_vcard_GEO(Geo, TopXMLNS);
+encode({vcard_logo, _, _, _} = Logo, TopXMLNS) ->
+    encode_vcard_LOGO(Logo, TopXMLNS);
+encode({vcard_photo, _, _, _} = Photo, TopXMLNS) ->
+    encode_vcard_PHOTO(Photo, TopXMLNS);
+encode({vcard_org, _, _} = Org, TopXMLNS) ->
+    encode_vcard_ORG(Org, TopXMLNS);
+encode({vcard_sound, _, _, _} = Sound, TopXMLNS) ->
+    encode_vcard_SOUND(Sound, TopXMLNS);
+encode({vcard_key, _, _} = Key, TopXMLNS) ->
+    encode_vcard_KEY(Key, TopXMLNS);
 encode({vcard_temp, _, _, _, _, _, _, _, _, _, _, _, _,
 	_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _} =
-	   Vcard) ->
-    encode_vcard_temp(Vcard,
-		      [{<<"xmlns">>, <<"vcard-temp">>}]);
-encode({vcard_xupdate, _, _} = X) ->
-    encode_vcard_xupdate(X,
-			 [{<<"xmlns">>, <<"vcard-temp:x:update">>}]);
-encode({xdata_option, _, _} = Option) ->
-    encode_xdata_field_option(Option,
-			      [{<<"xmlns">>, <<"jabber:x:data">>}]);
-encode({xdata_field, _, _, _, _, _, _, _, _} = Field) ->
-    encode_xdata_field(Field,
-		       [{<<"xmlns">>, <<"jabber:x:data">>}]);
-encode({xdata, _, _, _, _, _, _} = X) ->
-    encode_xdata(X, [{<<"xmlns">>, <<"jabber:x:data">>}]);
+	   Vcard,
+       TopXMLNS) ->
+    encode_vcard_temp(Vcard, TopXMLNS);
+encode({vcard_xupdate, _, _} = X, TopXMLNS) ->
+    encode_vcard_xupdate(X, TopXMLNS);
+encode({xdata_option, _, _} = Option, TopXMLNS) ->
+    encode_xdata_field_option(Option, TopXMLNS);
+encode({xdata_field, _, _, _, _, _, _, _, _} = Field,
+       TopXMLNS) ->
+    encode_xdata_field(Field, TopXMLNS);
+encode({xdata, _, _, _, _, _, _} = X, TopXMLNS) ->
+    encode_xdata(X, TopXMLNS);
 encode({ps_subscription, _, _, _, _, _, _} =
-	   Subscription) ->
-    encode_pubsub_subscription(Subscription, []);
+	   Subscription,
+       TopXMLNS) ->
+    encode_pubsub_subscription(Subscription, TopXMLNS);
 encode({ps_affiliation,
 	<<"http://jabber.org/protocol/pubsub">>, _, _, _} =
-	   Affiliation) ->
-    encode_pubsub_affiliation(Affiliation, []);
+	   Affiliation,
+       TopXMLNS) ->
+    encode_pubsub_affiliation(Affiliation, TopXMLNS);
+encode({ps_affiliation, <<>>, _, _, _} = Affiliation,
+       TopXMLNS = <<"http://jabber.org/protocol/pubsub">>) ->
+    encode_pubsub_affiliation(Affiliation, TopXMLNS);
 encode({ps_affiliation,
 	<<"http://jabber.org/protocol/pubsub#owner">>, _, _,
 	_} =
-	   Affiliation) ->
-    encode_pubsub_owner_affiliation(Affiliation, []);
-encode({ps_item, _, _, _, _, _} = Item) ->
-    encode_pubsub_item(Item, []);
-encode({ps_items, _, _, _, _, _, _} = Items) ->
-    encode_pubsub_items(Items, []);
-encode({ps_event, _, _, _, _, _, _} = Event) ->
-    encode_pubsub_event(Event,
-			[{<<"xmlns">>,
-			  <<"http://jabber.org/protocol/pubsub#event">>}]);
-encode({ps_subscribe, _, _} = Subscribe) ->
-    encode_pubsub_subscribe(Subscribe,
-			    [{<<"xmlns">>,
-			      <<"http://jabber.org/protocol/pubsub">>}]);
-encode({ps_unsubscribe, _, _, _} = Unsubscribe) ->
-    encode_pubsub_unsubscribe(Unsubscribe,
-			      [{<<"xmlns">>,
-				<<"http://jabber.org/protocol/pubsub">>}]);
-encode({ps_publish, _, _} = Publish) ->
-    encode_pubsub_publish(Publish,
-			  [{<<"xmlns">>,
-			    <<"http://jabber.org/protocol/pubsub">>}]);
-encode({ps_options, _, _, _, _} = Options) ->
-    encode_pubsub_options(Options,
-			  [{<<"xmlns">>,
-			    <<"http://jabber.org/protocol/pubsub">>}]);
-encode({ps_retract, _, _, _} = Retract) ->
-    encode_pubsub_retract(Retract,
-			  [{<<"xmlns">>,
-			    <<"http://jabber.org/protocol/pubsub">>}]);
+	   Affiliation,
+       TopXMLNS) ->
+    encode_pubsub_owner_affiliation(Affiliation, TopXMLNS);
+encode({ps_affiliation, <<>>, _, _, _} = Affiliation,
+       TopXMLNS =
+	   <<"http://jabber.org/protocol/pubsub#owner">>) ->
+    encode_pubsub_owner_affiliation(Affiliation, TopXMLNS);
+encode({ps_item, _, _, _, _, _} = Item, TopXMLNS) ->
+    encode_pubsub_item(Item, TopXMLNS);
+encode({ps_items, _, _, _, _, _, _} = Items,
+       TopXMLNS) ->
+    encode_pubsub_items(Items, TopXMLNS);
+encode({ps_event, _, _, _, _, _, _} = Event,
+       TopXMLNS) ->
+    encode_pubsub_event(Event, TopXMLNS);
+encode({ps_subscribe, _, _} = Subscribe, TopXMLNS) ->
+    encode_pubsub_subscribe(Subscribe, TopXMLNS);
+encode({ps_unsubscribe, _, _, _} = Unsubscribe,
+       TopXMLNS) ->
+    encode_pubsub_unsubscribe(Unsubscribe, TopXMLNS);
+encode({ps_publish, _, _} = Publish, TopXMLNS) ->
+    encode_pubsub_publish(Publish, TopXMLNS);
+encode({ps_options, _, _, _, _} = Options, TopXMLNS) ->
+    encode_pubsub_options(Options, TopXMLNS);
+encode({ps_retract, _, _, _} = Retract, TopXMLNS) ->
+    encode_pubsub_retract(Retract, TopXMLNS);
 encode({pubsub, _, _, _, _, _, _, _, _, _, _, _, _, _,
 	_, _, _} =
-	   Pubsub) ->
-    encode_pubsub(Pubsub,
-		  [{<<"xmlns">>,
-		    <<"http://jabber.org/protocol/pubsub">>}]);
-encode({pubsub_owner, _, _, _, _, _, _} = Pubsub) ->
-    encode_pubsub_owner(Pubsub,
-			[{<<"xmlns">>,
-			  <<"http://jabber.org/protocol/pubsub#owner">>}]);
-encode({ps_error, 'closed-node', _} = Closed_node) ->
-    encode_pubsub_error_closed_node(Closed_node,
-				    [{<<"xmlns">>,
-				      <<"http://jabber.org/protocol/pubsub#errors">>}]);
+	   Pubsub,
+       TopXMLNS) ->
+    encode_pubsub(Pubsub, TopXMLNS);
+encode({pubsub_owner, _, _, _, _, _, _} = Pubsub,
+       TopXMLNS) ->
+    encode_pubsub_owner(Pubsub, TopXMLNS);
+encode({ps_error, 'closed-node', _} = Closed_node,
+       TopXMLNS) ->
+    encode_pubsub_error_closed_node(Closed_node, TopXMLNS);
 encode({ps_error, 'configuration-required', _} =
-	   Configuration_required) ->
+	   Configuration_required,
+       TopXMLNS) ->
     encode_pubsub_error_configuration_required(Configuration_required,
-					       [{<<"xmlns">>,
-						 <<"http://jabber.org/protocol/pubsub#errors">>}]);
-encode({ps_error, 'invalid-jid', _} = Invalid_jid) ->
-    encode_pubsub_error_invalid_jid(Invalid_jid,
-				    [{<<"xmlns">>,
-				      <<"http://jabber.org/protocol/pubsub#errors">>}]);
+					       TopXMLNS);
+encode({ps_error, 'invalid-jid', _} = Invalid_jid,
+       TopXMLNS) ->
+    encode_pubsub_error_invalid_jid(Invalid_jid, TopXMLNS);
 encode({ps_error, 'invalid-options', _} =
-	   Invalid_options) ->
+	   Invalid_options,
+       TopXMLNS) ->
     encode_pubsub_error_invalid_options(Invalid_options,
-					[{<<"xmlns">>,
-					  <<"http://jabber.org/protocol/pubsub#errors">>}]);
+					TopXMLNS);
 encode({ps_error, 'invalid-payload', _} =
-	   Invalid_payload) ->
+	   Invalid_payload,
+       TopXMLNS) ->
     encode_pubsub_error_invalid_payload(Invalid_payload,
-					[{<<"xmlns">>,
-					  <<"http://jabber.org/protocol/pubsub#errors">>}]);
-encode({ps_error, 'invalid-subid', _} =
-	   Invalid_subid) ->
+					TopXMLNS);
+encode({ps_error, 'invalid-subid', _} = Invalid_subid,
+       TopXMLNS) ->
     encode_pubsub_error_invalid_subid(Invalid_subid,
-				      [{<<"xmlns">>,
-					<<"http://jabber.org/protocol/pubsub#errors">>}]);
-encode({ps_error, 'item-forbidden', _} =
-	   Item_forbidden) ->
+				      TopXMLNS);
+encode({ps_error, 'item-forbidden', _} = Item_forbidden,
+       TopXMLNS) ->
     encode_pubsub_error_item_forbidden(Item_forbidden,
-				       [{<<"xmlns">>,
-					 <<"http://jabber.org/protocol/pubsub#errors">>}]);
-encode({ps_error, 'item-required', _} =
-	   Item_required) ->
+				       TopXMLNS);
+encode({ps_error, 'item-required', _} = Item_required,
+       TopXMLNS) ->
     encode_pubsub_error_item_required(Item_required,
-				      [{<<"xmlns">>,
-					<<"http://jabber.org/protocol/pubsub#errors">>}]);
-encode({ps_error, 'jid-required', _} = Jid_required) ->
+				      TopXMLNS);
+encode({ps_error, 'jid-required', _} = Jid_required,
+       TopXMLNS) ->
     encode_pubsub_error_jid_required(Jid_required,
-				     [{<<"xmlns">>,
-				       <<"http://jabber.org/protocol/pubsub#errors">>}]);
+				     TopXMLNS);
 encode({ps_error, 'max-items-exceeded', _} =
-	   Max_items_exceeded) ->
+	   Max_items_exceeded,
+       TopXMLNS) ->
     encode_pubsub_error_max_items_exceeded(Max_items_exceeded,
-					   [{<<"xmlns">>,
-					     <<"http://jabber.org/protocol/pubsub#errors">>}]);
+					   TopXMLNS);
 encode({ps_error, 'max-nodes-exceeded', _} =
-	   Max_nodes_exceeded) ->
+	   Max_nodes_exceeded,
+       TopXMLNS) ->
     encode_pubsub_error_max_nodes_exceeded(Max_nodes_exceeded,
-					   [{<<"xmlns">>,
-					     <<"http://jabber.org/protocol/pubsub#errors">>}]);
+					   TopXMLNS);
 encode({ps_error, 'nodeid-required', _} =
-	   Nodeid_required) ->
+	   Nodeid_required,
+       TopXMLNS) ->
     encode_pubsub_error_nodeid_required(Nodeid_required,
-					[{<<"xmlns">>,
-					  <<"http://jabber.org/protocol/pubsub#errors">>}]);
+					TopXMLNS);
 encode({ps_error, 'not-in-roster-group', _} =
-	   Not_in_roster_group) ->
+	   Not_in_roster_group,
+       TopXMLNS) ->
     encode_pubsub_error_not_in_roster_group(Not_in_roster_group,
-					    [{<<"xmlns">>,
-					      <<"http://jabber.org/protocol/pubsub#errors">>}]);
-encode({ps_error, 'not-subscribed', _} =
-	   Not_subscribed) ->
+					    TopXMLNS);
+encode({ps_error, 'not-subscribed', _} = Not_subscribed,
+       TopXMLNS) ->
     encode_pubsub_error_not_subscribed(Not_subscribed,
-				       [{<<"xmlns">>,
-					 <<"http://jabber.org/protocol/pubsub#errors">>}]);
+				       TopXMLNS);
 encode({ps_error, 'payload-too-big', _} =
-	   Payload_too_big) ->
+	   Payload_too_big,
+       TopXMLNS) ->
     encode_pubsub_error_payload_too_big(Payload_too_big,
-					[{<<"xmlns">>,
-					  <<"http://jabber.org/protocol/pubsub#errors">>}]);
+					TopXMLNS);
 encode({ps_error, 'payload-required', _} =
-	   Payload_required) ->
+	   Payload_required,
+       TopXMLNS) ->
     encode_pubsub_error_payload_required(Payload_required,
-					 [{<<"xmlns">>,
-					   <<"http://jabber.org/protocol/pubsub#errors">>}]);
+					 TopXMLNS);
 encode({ps_error, 'pending-subscription', _} =
-	   Pending_subscription) ->
+	   Pending_subscription,
+       TopXMLNS) ->
     encode_pubsub_error_pending_subscription(Pending_subscription,
-					     [{<<"xmlns">>,
-					       <<"http://jabber.org/protocol/pubsub#errors">>}]);
+					     TopXMLNS);
 encode({ps_error, 'presence-subscription-required', _} =
-	   Presence_subscription_required) ->
+	   Presence_subscription_required,
+       TopXMLNS) ->
     encode_pubsub_error_presence_subscription_required(Presence_subscription_required,
-						       [{<<"xmlns">>,
-							 <<"http://jabber.org/protocol/pubsub#errors">>}]);
-encode({ps_error, 'subid-required', _} =
-	   Subid_required) ->
+						       TopXMLNS);
+encode({ps_error, 'subid-required', _} = Subid_required,
+       TopXMLNS) ->
     encode_pubsub_error_subid_required(Subid_required,
-				       [{<<"xmlns">>,
-					 <<"http://jabber.org/protocol/pubsub#errors">>}]);
+				       TopXMLNS);
 encode({ps_error, 'too-many-subscriptions', _} =
-	   Too_many_subscriptions) ->
+	   Too_many_subscriptions,
+       TopXMLNS) ->
     encode_pubsub_error_too_many_subscriptions(Too_many_subscriptions,
-					       [{<<"xmlns">>,
-						 <<"http://jabber.org/protocol/pubsub#errors">>}]);
-encode({ps_error, unsupported, _} = Unsupported) ->
-    encode_pubsub_error_unsupported(Unsupported,
-				    [{<<"xmlns">>,
-				      <<"http://jabber.org/protocol/pubsub#errors">>}]);
+					       TopXMLNS);
+encode({ps_error, unsupported, _} = Unsupported,
+       TopXMLNS) ->
+    encode_pubsub_error_unsupported(Unsupported, TopXMLNS);
 encode({ps_error, 'unsupported-access-model', _} =
-	   Unsupported_access_model) ->
+	   Unsupported_access_model,
+       TopXMLNS) ->
     encode_pubsub_error_unsupported_access_model(Unsupported_access_model,
-						 [{<<"xmlns">>,
-						   <<"http://jabber.org/protocol/pubsub#errors">>}]);
-encode({shim, _} = Headers) ->
-    encode_shim_headers(Headers,
-			[{<<"xmlns">>, <<"http://jabber.org/protocol/shim">>}]);
-encode({chatstate, active} = Active) ->
-    encode_chatstate_active(Active,
-			    [{<<"xmlns">>,
-			      <<"http://jabber.org/protocol/chatstates">>}]);
-encode({chatstate, composing} = Composing) ->
-    encode_chatstate_composing(Composing,
-			       [{<<"xmlns">>,
-				 <<"http://jabber.org/protocol/chatstates">>}]);
-encode({chatstate, gone} = Gone) ->
-    encode_chatstate_gone(Gone,
-			  [{<<"xmlns">>,
-			    <<"http://jabber.org/protocol/chatstates">>}]);
-encode({chatstate, inactive} = Inactive) ->
-    encode_chatstate_inactive(Inactive,
-			      [{<<"xmlns">>,
-				<<"http://jabber.org/protocol/chatstates">>}]);
-encode({chatstate, paused} = Paused) ->
-    encode_chatstate_paused(Paused,
-			    [{<<"xmlns">>,
-			      <<"http://jabber.org/protocol/chatstates">>}]);
-encode({delay, _, _, _} = Delay) ->
-    encode_delay(Delay,
-		 [{<<"xmlns">>, <<"urn:xmpp:delay">>}]);
-encode({streamhost, _, _, _} = Streamhost) ->
-    encode_bytestreams_streamhost(Streamhost,
-				  [{<<"xmlns">>,
-				    <<"http://jabber.org/protocol/bytestreams">>}]);
-encode({bytestreams, _, _, _, _, _, _} = Query) ->
-    encode_bytestreams(Query,
-		       [{<<"xmlns">>,
-			 <<"http://jabber.org/protocol/bytestreams">>}]);
-encode({muc_history, _, _, _, _} = History) ->
-    encode_muc_history(History,
-		       [{<<"xmlns">>, <<"http://jabber.org/protocol/muc">>}]);
-encode({muc_decline, _, _, _} = Decline) ->
-    encode_muc_user_decline(Decline,
-			    [{<<"xmlns">>,
-			      <<"http://jabber.org/protocol/muc#user">>}]);
-encode({muc_destroy, _, _, _, _} = Destroy) ->
-    encode_muc_destroy(Destroy, []);
-encode({muc_invite, _, _, _, _} = Invite) ->
-    encode_muc_user_invite(Invite,
-			   [{<<"xmlns">>,
-			     <<"http://jabber.org/protocol/muc#user">>}]);
-encode({muc_user, _, _, _, _, _, _} = X) ->
-    encode_muc_user(X,
-		    [{<<"xmlns">>,
-		      <<"http://jabber.org/protocol/muc#user">>}]);
-encode({muc_owner, _, _, _} = Query) ->
-    encode_muc_owner(Query,
-		     [{<<"xmlns">>,
-		       <<"http://jabber.org/protocol/muc#owner">>}]);
-encode({muc_item, _, _, _, _, _, _, _} = Item) ->
-    encode_muc_admin_item(Item, []);
-encode({muc_actor, _, _} = Actor) ->
-    encode_muc_admin_actor(Actor, []);
-encode({muc_admin, _} = Query) ->
-    encode_muc_admin(Query,
-		     [{<<"xmlns">>,
-		       <<"http://jabber.org/protocol/muc#admin">>}]);
-encode({muc, _, _} = X) ->
-    encode_muc(X,
-	       [{<<"xmlns">>, <<"http://jabber.org/protocol/muc">>}]);
-encode({muc_unique, _} = Unique) ->
-    encode_muc_unique(Unique,
-		      [{<<"xmlns">>,
-			<<"http://jabber.org/protocol/muc#unique">>}]);
-encode({x_conference, _, _, _, _, _} = X) ->
-    encode_x_conference(X,
-			[{<<"xmlns">>, <<"jabber:x:conference">>}]);
-encode({muc_subscriptions, _} = Subscriptions) ->
-    encode_muc_subscriptions(Subscriptions,
-			     [{<<"xmlns">>, <<"urn:xmpp:mucsub:0">>}]);
-encode({muc_subscribe, _, _} = Subscribe) ->
-    encode_muc_subscribe(Subscribe,
-			 [{<<"xmlns">>, <<"urn:xmpp:mucsub:0">>}]);
-encode({muc_unsubscribe} = Unsubscribe) ->
-    encode_muc_unsubscribe(Unsubscribe,
-			   [{<<"xmlns">>, <<"urn:xmpp:mucsub:0">>}]);
-encode({rsm_first, _, _} = First) ->
-    encode_rsm_first(First,
-		     [{<<"xmlns">>, <<"http://jabber.org/protocol/rsm">>}]);
-encode({rsm_set, _, _, _, _, _, _, _} = Set) ->
-    encode_rsm_set(Set,
-		   [{<<"xmlns">>, <<"http://jabber.org/protocol/rsm">>}]);
-encode({mam_query, _, _, _, _, _, _, _, _} = Query) ->
-    encode_mam_query(Query, []);
-encode({mam_archived, _, _} = Archived) ->
-    encode_mam_archived(Archived,
-			[{<<"xmlns">>, <<"urn:xmpp:mam:tmp">>}]);
-encode({mam_result, _, _, _, _} = Result) ->
-    encode_mam_result(Result, []);
-encode({mam_prefs, _, _, _, _} = Prefs) ->
-    encode_mam_prefs(Prefs, []);
-encode({mam_fin, _, _, _, _, _} = Fin) ->
-    encode_mam_fin(Fin, []);
-encode({forwarded, _, _} = Forwarded) ->
-    encode_forwarded(Forwarded,
-		     [{<<"xmlns">>, <<"urn:xmpp:forward:0">>}]);
-encode({carbons_disable} = Disable) ->
-    encode_carbons_disable(Disable,
-			   [{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
-encode({carbons_enable} = Enable) ->
-    encode_carbons_enable(Enable,
-			  [{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
-encode({carbons_private} = Private) ->
-    encode_carbons_private(Private,
-			   [{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
-encode({carbons_received, _} = Received) ->
-    encode_carbons_received(Received,
-			    [{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
-encode({carbons_sent, _} = Sent) ->
-    encode_carbons_sent(Sent,
-			[{<<"xmlns">>, <<"urn:xmpp:carbons:2">>}]);
-encode({feature_csi, <<"urn:xmpp:csi:0">>} = Csi) ->
-    encode_feature_csi(Csi, []);
-encode({csi, active} = Active) ->
-    encode_csi_active(Active,
-		      [{<<"xmlns">>, <<"urn:xmpp:csi:0">>}]);
-encode({csi, inactive} = Inactive) ->
-    encode_csi_inactive(Inactive,
-			[{<<"xmlns">>, <<"urn:xmpp:csi:0">>}]);
-encode({feature_sm, _} = Sm) ->
-    encode_feature_sm(Sm, []);
-encode({sm_enable, _, _, _} = Enable) ->
-    encode_sm_enable(Enable, []);
-encode({sm_enabled, _, _, _, _, _} = Enabled) ->
-    encode_sm_enabled(Enabled, []);
-encode({sm_resume, _, _, _} = Resume) ->
-    encode_sm_resume(Resume, []);
-encode({sm_resumed, _, _, _} = Resumed) ->
-    encode_sm_resumed(Resumed, []);
-encode({sm_r, _} = R) -> encode_sm_r(R, []);
-encode({sm_a, _, _} = A) -> encode_sm_a(A, []);
-encode({sm_failed, _, _, _} = Failed) ->
-    encode_sm_failed(Failed, []);
-encode({offline_item, _, _} = Item) ->
-    encode_offline_item(Item,
-			[{<<"xmlns">>,
-			  <<"http://jabber.org/protocol/offline">>}]);
-encode({offline, _, _, _} = Offline) ->
-    encode_offline(Offline,
-		   [{<<"xmlns">>,
-		     <<"http://jabber.org/protocol/offline">>}]);
-encode({mix_join, _, _} = Join) ->
-    encode_mix_join(Join,
-		    [{<<"xmlns">>, <<"urn:xmpp:mix:0">>}]);
-encode({mix_leave} = Leave) ->
-    encode_mix_leave(Leave,
-		     [{<<"xmlns">>, <<"urn:xmpp:mix:0">>}]);
-encode({mix_participant, _, _} = Participant) ->
-    encode_mix_participant(Participant,
-			   [{<<"xmlns">>, <<"urn:xmpp:mix:0">>}]);
-encode({hint, 'no-copy'} = No_copy) ->
-    encode_hint_no_copy(No_copy,
-			[{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
-encode({hint, 'no-store'} = No_store) ->
-    encode_hint_no_store(No_store,
-			 [{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
-encode({hint, 'no-storage'} = No_storage) ->
-    encode_hint_no_storage(No_storage,
-			   [{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
-encode({hint, store} = Store) ->
-    encode_hint_store(Store,
-		      [{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
+						 TopXMLNS);
+encode({shim, _} = Headers, TopXMLNS) ->
+    encode_shim_headers(Headers, TopXMLNS);
+encode({chatstate, active} = Active, TopXMLNS) ->
+    encode_chatstate_active(Active, TopXMLNS);
+encode({chatstate, composing} = Composing, TopXMLNS) ->
+    encode_chatstate_composing(Composing, TopXMLNS);
+encode({chatstate, gone} = Gone, TopXMLNS) ->
+    encode_chatstate_gone(Gone, TopXMLNS);
+encode({chatstate, inactive} = Inactive, TopXMLNS) ->
+    encode_chatstate_inactive(Inactive, TopXMLNS);
+encode({chatstate, paused} = Paused, TopXMLNS) ->
+    encode_chatstate_paused(Paused, TopXMLNS);
+encode({delay, _, _, _} = Delay, TopXMLNS) ->
+    encode_delay(Delay, TopXMLNS);
+encode({streamhost, _, _, _} = Streamhost, TopXMLNS) ->
+    encode_bytestreams_streamhost(Streamhost, TopXMLNS);
+encode({bytestreams, _, _, _, _, _, _} = Query,
+       TopXMLNS) ->
+    encode_bytestreams(Query, TopXMLNS);
+encode({muc_history, _, _, _, _} = History, TopXMLNS) ->
+    encode_muc_history(History, TopXMLNS);
+encode({muc_decline, _, _, _} = Decline, TopXMLNS) ->
+    encode_muc_user_decline(Decline, TopXMLNS);
+encode({muc_destroy, _, _, _, _} = Destroy, TopXMLNS) ->
+    encode_muc_destroy(Destroy, TopXMLNS);
+encode({muc_invite, _, _, _, _} = Invite, TopXMLNS) ->
+    encode_muc_user_invite(Invite, TopXMLNS);
+encode({muc_user, _, _, _, _, _, _} = X, TopXMLNS) ->
+    encode_muc_user(X, TopXMLNS);
+encode({muc_owner, _, _, _} = Query, TopXMLNS) ->
+    encode_muc_owner(Query, TopXMLNS);
+encode({muc_item, _, _, _, _, _, _, _} = Item,
+       TopXMLNS) ->
+    encode_muc_admin_item(Item, TopXMLNS);
+encode({muc_actor, _, _} = Actor, TopXMLNS) ->
+    encode_muc_admin_actor(Actor, TopXMLNS);
+encode({muc_admin, _} = Query, TopXMLNS) ->
+    encode_muc_admin(Query, TopXMLNS);
+encode({muc, _, _} = X, TopXMLNS) ->
+    encode_muc(X, TopXMLNS);
+encode({muc_unique, _} = Unique, TopXMLNS) ->
+    encode_muc_unique(Unique, TopXMLNS);
+encode({x_conference, _, _, _, _, _} = X, TopXMLNS) ->
+    encode_x_conference(X, TopXMLNS);
+encode({muc_subscriptions, _} = Subscriptions,
+       TopXMLNS) ->
+    encode_muc_subscriptions(Subscriptions, TopXMLNS);
+encode({muc_subscribe, _, _} = Subscribe, TopXMLNS) ->
+    encode_muc_subscribe(Subscribe, TopXMLNS);
+encode({muc_unsubscribe} = Unsubscribe, TopXMLNS) ->
+    encode_muc_unsubscribe(Unsubscribe, TopXMLNS);
+encode({rsm_first, _, _} = First, TopXMLNS) ->
+    encode_rsm_first(First, TopXMLNS);
+encode({rsm_set, _, _, _, _, _, _, _} = Set,
+       TopXMLNS) ->
+    encode_rsm_set(Set, TopXMLNS);
+encode({mam_query, _, _, _, _, _, _, _, _} = Query,
+       TopXMLNS) ->
+    encode_mam_query(Query, TopXMLNS);
+encode({mam_archived, _, _} = Archived, TopXMLNS) ->
+    encode_mam_archived(Archived, TopXMLNS);
+encode({mam_result, _, _, _, _} = Result, TopXMLNS) ->
+    encode_mam_result(Result, TopXMLNS);
+encode({mam_prefs, _, _, _, _} = Prefs, TopXMLNS) ->
+    encode_mam_prefs(Prefs, TopXMLNS);
+encode({mam_fin, _, _, _, _, _} = Fin, TopXMLNS) ->
+    encode_mam_fin(Fin, TopXMLNS);
+encode({forwarded, _, _} = Forwarded, TopXMLNS) ->
+    encode_forwarded(Forwarded, TopXMLNS);
+encode({carbons_disable} = Disable, TopXMLNS) ->
+    encode_carbons_disable(Disable, TopXMLNS);
+encode({carbons_enable} = Enable, TopXMLNS) ->
+    encode_carbons_enable(Enable, TopXMLNS);
+encode({carbons_private} = Private, TopXMLNS) ->
+    encode_carbons_private(Private, TopXMLNS);
+encode({carbons_received, _} = Received, TopXMLNS) ->
+    encode_carbons_received(Received, TopXMLNS);
+encode({carbons_sent, _} = Sent, TopXMLNS) ->
+    encode_carbons_sent(Sent, TopXMLNS);
+encode({feature_csi, <<"urn:xmpp:csi:0">>} = Csi,
+       TopXMLNS) ->
+    encode_feature_csi(Csi, TopXMLNS);
+encode({feature_csi, <<>>} = Csi,
+       TopXMLNS = <<"urn:xmpp:csi:0">>) ->
+    encode_feature_csi(Csi, TopXMLNS);
+encode({csi, active} = Active, TopXMLNS) ->
+    encode_csi_active(Active, TopXMLNS);
+encode({csi, inactive} = Inactive, TopXMLNS) ->
+    encode_csi_inactive(Inactive, TopXMLNS);
+encode({feature_sm, _} = Sm, TopXMLNS) ->
+    encode_feature_sm(Sm, TopXMLNS);
+encode({sm_enable, _, _, _} = Enable, TopXMLNS) ->
+    encode_sm_enable(Enable, TopXMLNS);
+encode({sm_enabled, _, _, _, _, _} = Enabled,
+       TopXMLNS) ->
+    encode_sm_enabled(Enabled, TopXMLNS);
+encode({sm_resume, _, _, _} = Resume, TopXMLNS) ->
+    encode_sm_resume(Resume, TopXMLNS);
+encode({sm_resumed, _, _, _} = Resumed, TopXMLNS) ->
+    encode_sm_resumed(Resumed, TopXMLNS);
+encode({sm_r, _} = R, TopXMLNS) ->
+    encode_sm_r(R, TopXMLNS);
+encode({sm_a, _, _} = A, TopXMLNS) ->
+    encode_sm_a(A, TopXMLNS);
+encode({sm_failed, _, _, _} = Failed, TopXMLNS) ->
+    encode_sm_failed(Failed, TopXMLNS);
+encode({offline_item, _, _} = Item, TopXMLNS) ->
+    encode_offline_item(Item, TopXMLNS);
+encode({offline, _, _, _} = Offline, TopXMLNS) ->
+    encode_offline(Offline, TopXMLNS);
+encode({mix_join, _, _} = Join, TopXMLNS) ->
+    encode_mix_join(Join, TopXMLNS);
+encode({mix_leave} = Leave, TopXMLNS) ->
+    encode_mix_leave(Leave, TopXMLNS);
+encode({mix_participant, _, _} = Participant,
+       TopXMLNS) ->
+    encode_mix_participant(Participant, TopXMLNS);
+encode({hint, 'no-copy'} = No_copy, TopXMLNS) ->
+    encode_hint_no_copy(No_copy, TopXMLNS);
+encode({hint, 'no-store'} = No_store, TopXMLNS) ->
+    encode_hint_no_store(No_store, TopXMLNS);
+encode({hint, 'no-storage'} = No_storage, TopXMLNS) ->
+    encode_hint_no_storage(No_storage, TopXMLNS);
+encode({hint, store} = Store, TopXMLNS) ->
+    encode_hint_store(Store, TopXMLNS);
 encode({hint, 'no-permanent-store'} =
-	   No_permanent_store) ->
+	   No_permanent_store,
+       TopXMLNS) ->
     encode_hint_no_permanent_store(No_permanent_store,
-				   [{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
+				   TopXMLNS);
 encode({hint, 'no-permanent-storage'} =
-	   No_permanent_storage) ->
+	   No_permanent_storage,
+       TopXMLNS) ->
     encode_hint_no_permanent_storage(No_permanent_storage,
-				     [{<<"xmlns">>, <<"urn:xmpp:hints">>}]);
-encode({search_item, _, _, _, _, _} = Item) ->
-    encode_search_item(Item,
-		       [{<<"xmlns">>, <<"jabber:iq:search">>}]);
-encode({search, _, _, _, _, _, _, _} = Query) ->
-    encode_search(Query,
-		  [{<<"xmlns">>, <<"jabber:iq:search">>}]);
-encode({xevent, _, _, _, _, _} = X) ->
-    encode_xevent(X, [{<<"xmlns">>, <<"jabber:x:event">>}]);
-encode({expire, _, _} = X) ->
-    encode_expire(X,
-		  [{<<"xmlns">>, <<"jabber:x:expire">>}]);
-encode({nick, _} = Nick) ->
-    encode_nick(Nick,
-		[{<<"xmlns">>, <<"http://jabber.org/protocol/nick">>}]);
-encode({address, _, _, _, _, _} = Address) ->
-    encode_address(Address,
-		   [{<<"xmlns">>,
-		     <<"http://jabber.org/protocol/address">>}]);
-encode({addresses, _} = Addresses) ->
-    encode_addresses(Addresses,
-		     [{<<"xmlns">>,
-		       <<"http://jabber.org/protocol/address">>}]);
-encode({stanza_id, _, _} = Stanza_id) ->
-    encode_stanza_id(Stanza_id,
-		     [{<<"xmlns">>, <<"urn:xmpp:sid:0">>}]);
-encode({client_id, _} = Client_id) ->
-    encode_client_id(Client_id,
-		     [{<<"xmlns">>, <<"urn:xmpp:sid:0">>}]);
-encode({adhoc_actions, _, _, _, _} = Actions) ->
-    encode_adhoc_command_actions(Actions,
-				 [{<<"xmlns">>,
-				   <<"http://jabber.org/protocol/commands">>}]);
-encode({adhoc_note, _, _} = Note) ->
-    encode_adhoc_command_notes(Note,
-			       [{<<"xmlns">>,
-				 <<"http://jabber.org/protocol/commands">>}]);
+				     TopXMLNS);
+encode({search_item, _, _, _, _, _} = Item, TopXMLNS) ->
+    encode_search_item(Item, TopXMLNS);
+encode({search, _, _, _, _, _, _, _} = Query,
+       TopXMLNS) ->
+    encode_search(Query, TopXMLNS);
+encode({xevent, _, _, _, _, _} = X, TopXMLNS) ->
+    encode_xevent(X, TopXMLNS);
+encode({expire, _, _} = X, TopXMLNS) ->
+    encode_expire(X, TopXMLNS);
+encode({nick, _} = Nick, TopXMLNS) ->
+    encode_nick(Nick, TopXMLNS);
+encode({address, _, _, _, _, _} = Address, TopXMLNS) ->
+    encode_address(Address, TopXMLNS);
+encode({addresses, _} = Addresses, TopXMLNS) ->
+    encode_addresses(Addresses, TopXMLNS);
+encode({stanza_id, _, _} = Stanza_id, TopXMLNS) ->
+    encode_stanza_id(Stanza_id, TopXMLNS);
+encode({client_id, _} = Client_id, TopXMLNS) ->
+    encode_client_id(Client_id, TopXMLNS);
+encode({adhoc_actions, _, _, _, _} = Actions,
+       TopXMLNS) ->
+    encode_adhoc_command_actions(Actions, TopXMLNS);
+encode({adhoc_note, _, _} = Note, TopXMLNS) ->
+    encode_adhoc_command_notes(Note, TopXMLNS);
 encode({adhoc_command, _, _, _, _, _, _, _, _} =
-	   Command) ->
-    encode_adhoc_command(Command,
-			 [{<<"xmlns">>,
-			   <<"http://jabber.org/protocol/commands">>}]);
-encode({db_result, _, _, _, _, _} = Db_result) ->
-    encode_db_result(Db_result,
-		     [{<<"xmlns">>, <<"jabber:client">>}]);
-encode({db_verify, _, _, _, _, _, _} = Db_verify) ->
-    encode_db_verify(Db_verify,
-		     [{<<"xmlns">>, <<"jabber:client">>}]);
-encode({handshake, _} = Handshake) ->
-    encode_handshake(Handshake,
-		     [{<<"xmlns">>, <<"jabber:client">>}]);
+	   Command,
+       TopXMLNS) ->
+    encode_adhoc_command(Command, TopXMLNS);
+encode({db_result, _, _, _, _, _} = Db_result,
+       TopXMLNS) ->
+    encode_db_result(Db_result, TopXMLNS);
+encode({db_verify, _, _, _, _, _, _} = Db_verify,
+       TopXMLNS) ->
+    encode_db_verify(Db_verify, TopXMLNS);
+encode({handshake, _} = Handshake, TopXMLNS) ->
+    encode_handshake(Handshake, TopXMLNS);
 encode({stream_start, _, _, _, _, _, _, _, _} =
-	   Stream_stream) ->
-    encode_stream_start(Stream_stream, []);
-encode({bob_data, _, _, _, _} = Data) ->
-    encode_bob_data(Data,
-		    [{<<"xmlns">>, <<"urn:xmpp:bob">>}]);
-encode({xcaptcha, _} = Captcha) ->
-    encode_captcha(Captcha,
-		   [{<<"xmlns">>, <<"urn:xmpp:captcha">>}]);
-encode({media_uri, _, _} = Uri) ->
-    encode_media_uri(Uri,
-		     [{<<"xmlns">>, <<"urn:xmpp:media-element">>}]);
-encode({media, _, _, _} = Media) ->
-    encode_media(Media,
-		 [{<<"xmlns">>, <<"urn:xmpp:media-element">>}]);
-encode({oob_x, _, _, _} = X) ->
-    encode_oob_x(X, [{<<"xmlns">>, <<"jabber:x:oob">>}]);
-encode({sic, _, _, _} = Address) ->
-    encode_sic(Address, []);
-encode({upload_request, _, _, _, _} = Request) ->
-    encode_upload_request(Request, []);
-encode({upload_slot, _, _, _} = Slot) ->
-    encode_upload_slot(Slot, []);
-encode({thumbnail, _, _, _, _} = Thumbnail) ->
-    encode_thumbnail(Thumbnail,
-		     [{<<"xmlns">>, <<"urn:xmpp:thumbs:1">>}]).
+	   Stream_stream,
+       TopXMLNS) ->
+    encode_stream_start(Stream_stream, TopXMLNS);
+encode({bob_data, _, _, _, _} = Data, TopXMLNS) ->
+    encode_bob_data(Data, TopXMLNS);
+encode({xcaptcha, _} = Captcha, TopXMLNS) ->
+    encode_captcha(Captcha, TopXMLNS);
+encode({media_uri, _, _} = Uri, TopXMLNS) ->
+    encode_media_uri(Uri, TopXMLNS);
+encode({media, _, _, _} = Media, TopXMLNS) ->
+    encode_media(Media, TopXMLNS);
+encode({oob_x, _, _, _} = X, TopXMLNS) ->
+    encode_oob_x(X, TopXMLNS);
+encode({sic, _, _, _} = Address, TopXMLNS) ->
+    encode_sic(Address, TopXMLNS);
+encode({upload_request, _, _, _, _} = Request,
+       TopXMLNS) ->
+    encode_upload_request(Request, TopXMLNS);
+encode({upload_slot, _, _, _} = Slot, TopXMLNS) ->
+    encode_upload_slot(Slot, TopXMLNS);
+encode({thumbnail, _, _, _, _} = Thumbnail, TopXMLNS) ->
+    encode_thumbnail(Thumbnail, TopXMLNS).
 
 get_name({address, _, _, _, _, _}) -> <<"address">>;
 get_name({addresses, _}) -> <<"addresses">>;
@@ -3434,9 +6071,9 @@ get_ns({compression, _}) ->
 get_ns({csi, active}) -> <<"urn:xmpp:csi:0">>;
 get_ns({csi, inactive}) -> <<"urn:xmpp:csi:0">>;
 get_ns({db_result, _, _, _, _, _}) ->
-    <<"jabber:client">>;
+    <<"jabber:server">>;
 get_ns({db_verify, _, _, _, _, _, _}) ->
-    <<"jabber:client">>;
+    <<"jabber:server">>;
 get_ns({delay, _, _, _}) -> <<"urn:xmpp:delay">>;
 get_ns({disco_info, _, _, _, _}) ->
     <<"http://jabber.org/protocol/disco#info">>;
@@ -3452,7 +6089,7 @@ get_ns({feature_sm, Xmlns}) -> Xmlns;
 get_ns({forwarded, _, _}) -> <<"urn:xmpp:forward:0">>;
 get_ns({gone, _}) ->
     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>;
-get_ns({handshake, _}) -> <<"jabber:client">>;
+get_ns({handshake, _}) -> <<"jabber:component:accept">>;
 get_ns({hint, 'no-copy'}) -> <<"urn:xmpp:hints">>;
 get_ns({hint, 'no-permanent-storage'}) ->
     <<"urn:xmpp:hints">>;
@@ -3649,10 +6286,8 @@ get_ns({stat_error, _, _}) ->
     <<"http://jabber.org/protocol/stats">>;
 get_ns({stats, _, _}) ->
     <<"http://jabber.org/protocol/stats">>;
-get_ns({stream_error, _, _}) ->
-    <<"http://etherx.jabber.org/streams">>;
-get_ns({stream_features, _}) ->
-    <<"http://etherx.jabber.org/streams">>;
+get_ns({stream_error, _, _}) -> <<"jabber:client">>;
+get_ns({stream_features, _}) -> <<"jabber:client">>;
 get_ns({stream_start, _, _, _, _, Xmlns, _, _, _}) ->
     Xmlns;
 get_ns({streamhost, _, _, _}) ->
@@ -3735,13 +6370,25 @@ format_error({missing_cdata, <<>>, Tag, XMLNS}) ->
       "/> qualified by namespace '", XMLNS/binary, "'">>;
 format_error({unknown_tag, Tag, XMLNS}) ->
     <<"Unknown tag <", Tag/binary,
-      "/> qualified by namespace '", XMLNS/binary, "'">>.
+      "/> qualified by namespace '", XMLNS/binary, "'">>;
+format_error({missing_tag_xmlns, Tag}) ->
+    <<"Missing namespace for tag <", Tag/binary, "/>">>.
 
 get_attr(Attr, Attrs) ->
     case lists:keyfind(Attr, 1, Attrs) of
       {_, Val} -> Val;
       false -> <<>>
     end.
+
+enc_xmlns_attrs(XMLNS, XMLNS) -> [];
+enc_xmlns_attrs(XMLNS, _) -> [{<<"xmlns">>, XMLNS}].
+
+choose_top_xmlns(<<>>, NSList, TopXMLNS) ->
+    case lists:member(TopXMLNS, NSList) of
+      true -> TopXMLNS;
+      false -> hd(NSList)
+    end;
+choose_top_xmlns(XMLNS, _, _) -> XMLNS.
 
 pp(Term) -> io_lib_pretty:print(Term, fun pp/2).
 
@@ -4084,13 +6731,17 @@ decode_thumbnail_attrs(__TopXMLNS, [], Uri, Media_type,
 
 encode_thumbnail({thumbnail, Uri, Media_type, Width,
 		  Height},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:thumbs:1">>, [],
+			 __TopXMLNS),
     _els = [],
     _attrs = encode_thumbnail_attr_height(Height,
 					  encode_thumbnail_attr_width(Width,
 								      'encode_thumbnail_attr_media-type'(Media_type,
 													 encode_thumbnail_attr_uri(Uri,
-																   _xmlns_attrs)))),
+																   enc_xmlns_attrs(__NewTopXMLNS,
+																		   __TopXMLNS))))),
     {xmlel, <<"thumbnail">>, _attrs, _els}.
 
 decode_thumbnail_attr_uri(__TopXMLNS, undefined) ->
@@ -4221,29 +6872,34 @@ decode_upload_slot_attrs(__TopXMLNS, [], Xmlns) ->
     decode_upload_slot_attr_xmlns(__TopXMLNS, Xmlns).
 
 encode_upload_slot({upload_slot, Get, Put, Xmlns},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:http:upload">>,
+				      <<"eu:siacs:conversations:http:upload">>],
+				     __TopXMLNS),
     _els = lists:reverse('encode_upload_slot_$put'(Put,
+						   __NewTopXMLNS,
 						   'encode_upload_slot_$get'(Get,
+									     __NewTopXMLNS,
 									     []))),
-    _attrs = encode_upload_slot_attr_xmlns(Xmlns,
-					   _xmlns_attrs),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"slot">>, _attrs, _els}.
 
-'encode_upload_slot_$put'(undefined, _acc) -> _acc;
-'encode_upload_slot_$put'(Put, _acc) ->
-    [encode_upload_put(Put, []) | _acc].
+'encode_upload_slot_$put'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_upload_slot_$put'(Put, __TopXMLNS, _acc) ->
+    [encode_upload_put(Put, __TopXMLNS) | _acc].
 
-'encode_upload_slot_$get'(undefined, _acc) -> _acc;
-'encode_upload_slot_$get'(Get, _acc) ->
-    [encode_upload_get(Get, []) | _acc].
+'encode_upload_slot_$get'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_upload_slot_$get'(Get, __TopXMLNS, _acc) ->
+    [encode_upload_get(Get, __TopXMLNS) | _acc].
 
 decode_upload_slot_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_upload_slot_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_upload_slot_attr_xmlns(<<>>, _acc) -> _acc;
-encode_upload_slot_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_upload_put(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"put">>, _attrs, _els}) ->
@@ -4263,9 +6919,13 @@ decode_upload_put_els(__TopXMLNS, __IgnoreEls,
     decode_upload_put_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_upload_put(Cdata, _xmlns_attrs) ->
+encode_upload_put(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"urn:xmpp:http:upload">>,
+				      <<"eu:siacs:conversations:http:upload">>],
+				     __TopXMLNS),
     _els = encode_upload_put_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"put">>, _attrs, _els}.
 
 decode_upload_put_cdata(__TopXMLNS, <<>>) ->
@@ -4294,9 +6954,13 @@ decode_upload_get_els(__TopXMLNS, __IgnoreEls,
     decode_upload_get_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_upload_get(Cdata, _xmlns_attrs) ->
+encode_upload_get(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"urn:xmpp:http:upload">>,
+				      <<"eu:siacs:conversations:http:upload">>],
+				     __TopXMLNS),
     _els = encode_upload_get_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"get">>, _attrs, _els}.
 
 decode_upload_get_cdata(__TopXMLNS, <<>>) ->
@@ -4437,37 +7101,42 @@ decode_upload_request_attrs(__TopXMLNS, [], Xmlns) ->
 
 encode_upload_request({upload_request, Filename, Size,
 		       Content_type, Xmlns},
-		      _xmlns_attrs) ->
+		      __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:http:upload">>,
+				      <<"eu:siacs:conversations:http:upload">>],
+				     __TopXMLNS),
     _els =
 	lists:reverse('encode_upload_request_$content-type'(Content_type,
+							    __NewTopXMLNS,
 							    'encode_upload_request_$size'(Size,
+											  __NewTopXMLNS,
 											  'encode_upload_request_$filename'(Filename,
+															    __NewTopXMLNS,
 															    [])))),
-    _attrs = encode_upload_request_attr_xmlns(Xmlns,
-					      _xmlns_attrs),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"request">>, _attrs, _els}.
 
-'encode_upload_request_$content-type'(<<>>, _acc) ->
+'encode_upload_request_$content-type'(<<>>, __TopXMLNS,
+				      _acc) ->
     _acc;
 'encode_upload_request_$content-type'(Content_type,
-				      _acc) ->
-    [encode_upload_content_type(Content_type, []) | _acc].
+				      __TopXMLNS, _acc) ->
+    [encode_upload_content_type(Content_type, __TopXMLNS)
+     | _acc].
 
-'encode_upload_request_$size'(Size, _acc) ->
-    [encode_upload_size(Size, []) | _acc].
+'encode_upload_request_$size'(Size, __TopXMLNS, _acc) ->
+    [encode_upload_size(Size, __TopXMLNS) | _acc].
 
-'encode_upload_request_$filename'(Filename, _acc) ->
-    [encode_upload_filename(Filename, []) | _acc].
+'encode_upload_request_$filename'(Filename, __TopXMLNS,
+				  _acc) ->
+    [encode_upload_filename(Filename, __TopXMLNS) | _acc].
 
 decode_upload_request_attr_xmlns(__TopXMLNS,
 				 undefined) ->
     <<>>;
 decode_upload_request_attr_xmlns(__TopXMLNS, _val) ->
     _val.
-
-encode_upload_request_attr_xmlns(<<>>, _acc) -> _acc;
-encode_upload_request_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_upload_content_type(__TopXMLNS, __IgnoreEls,
 			   {xmlel, <<"content-type">>, _attrs, _els}) ->
@@ -4487,9 +7156,13 @@ decode_upload_content_type_els(__TopXMLNS, __IgnoreEls,
     decode_upload_content_type_els(__TopXMLNS, __IgnoreEls,
 				   _els, Cdata).
 
-encode_upload_content_type(Cdata, _xmlns_attrs) ->
+encode_upload_content_type(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"urn:xmpp:http:upload">>,
+				      <<"eu:siacs:conversations:http:upload">>],
+				     __TopXMLNS),
     _els = encode_upload_content_type_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"content-type">>, _attrs, _els}.
 
 decode_upload_content_type_cdata(__TopXMLNS, <<>>) ->
@@ -4519,9 +7192,13 @@ decode_upload_size_els(__TopXMLNS, __IgnoreEls,
     decode_upload_size_els(__TopXMLNS, __IgnoreEls, _els,
 			   Cdata).
 
-encode_upload_size(Cdata, _xmlns_attrs) ->
+encode_upload_size(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"urn:xmpp:http:upload">>,
+				      <<"eu:siacs:conversations:http:upload">>],
+				     __TopXMLNS),
     _els = encode_upload_size_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"size">>, _attrs, _els}.
 
 decode_upload_size_cdata(__TopXMLNS, <<>>) ->
@@ -4556,9 +7233,13 @@ decode_upload_filename_els(__TopXMLNS, __IgnoreEls,
     decode_upload_filename_els(__TopXMLNS, __IgnoreEls,
 			       _els, Cdata).
 
-encode_upload_filename(Cdata, _xmlns_attrs) ->
+encode_upload_filename(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"urn:xmpp:http:upload">>,
+				      <<"eu:siacs:conversations:http:upload">>],
+				     __TopXMLNS),
     _els = encode_upload_filename_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"filename">>, _attrs, _els}.
 
 decode_upload_filename_cdata(__TopXMLNS, <<>>) ->
@@ -4624,26 +7305,28 @@ decode_sic_attrs(__TopXMLNS, [_ | _attrs], Xmlns) ->
 decode_sic_attrs(__TopXMLNS, [], Xmlns) ->
     decode_sic_attr_xmlns(__TopXMLNS, Xmlns).
 
-encode_sic({sic, Ip, Port, Xmlns}, _xmlns_attrs) ->
-    _els = lists:reverse('encode_sic_$ip'(Ip,
-					  'encode_sic_$port'(Port, []))),
-    _attrs = encode_sic_attr_xmlns(Xmlns, _xmlns_attrs),
+encode_sic({sic, Ip, Port, Xmlns}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:sic:0">>,
+				      <<"urn:xmpp:sic:1">>],
+				     __TopXMLNS),
+    _els = lists:reverse('encode_sic_$ip'(Ip, __NewTopXMLNS,
+					  'encode_sic_$port'(Port,
+							     __NewTopXMLNS,
+							     []))),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"address">>, _attrs, _els}.
 
-'encode_sic_$ip'(undefined, _acc) -> _acc;
-'encode_sic_$ip'(Ip, _acc) ->
-    [encode_sic_ip(Ip, []) | _acc].
+'encode_sic_$ip'(undefined, __TopXMLNS, _acc) -> _acc;
+'encode_sic_$ip'(Ip, __TopXMLNS, _acc) ->
+    [encode_sic_ip(Ip, __TopXMLNS) | _acc].
 
-'encode_sic_$port'(undefined, _acc) -> _acc;
-'encode_sic_$port'(Port, _acc) ->
-    [encode_sip_port(Port, []) | _acc].
+'encode_sic_$port'(undefined, __TopXMLNS, _acc) -> _acc;
+'encode_sic_$port'(Port, __TopXMLNS, _acc) ->
+    [encode_sip_port(Port, __TopXMLNS) | _acc].
 
 decode_sic_attr_xmlns(__TopXMLNS, undefined) -> <<>>;
 decode_sic_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_sic_attr_xmlns(<<>>, _acc) -> _acc;
-encode_sic_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_sip_port(__TopXMLNS, __IgnoreEls,
 		{xmlel, <<"port">>, _attrs, _els}) ->
@@ -4663,9 +7346,11 @@ decode_sip_port_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_sip_port_els(__TopXMLNS, __IgnoreEls, _els,
 			Cdata).
 
-encode_sip_port(Cdata, _xmlns_attrs) ->
+encode_sip_port(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:sic:1">>,
+				     [], __TopXMLNS),
     _els = encode_sip_port_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"port">>, _attrs, _els}.
 
 decode_sip_port_cdata(__TopXMLNS, <<>>) ->
@@ -4698,9 +7383,13 @@ decode_sic_ip_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		  Cdata) ->
     decode_sic_ip_els(__TopXMLNS, __IgnoreEls, _els, Cdata).
 
-encode_sic_ip(Cdata, _xmlns_attrs) ->
+encode_sic_ip(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"urn:xmpp:sic:0">>,
+				      <<"urn:xmpp:sic:1">>],
+				     __TopXMLNS),
     _els = encode_sic_ip_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"ip">>, _attrs, _els}.
 
 decode_sic_ip_cdata(__TopXMLNS, <<>>) ->
@@ -4779,18 +7468,24 @@ decode_oob_x_attrs(__TopXMLNS, [_ | _attrs], Sid) ->
 decode_oob_x_attrs(__TopXMLNS, [], Sid) ->
     decode_oob_x_attr_sid(__TopXMLNS, Sid).
 
-encode_oob_x({oob_x, Url, Desc, Sid}, _xmlns_attrs) ->
+encode_oob_x({oob_x, Url, Desc, Sid}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:oob">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_oob_x_$desc'(Desc,
-					      'encode_oob_x_$url'(Url, []))),
-    _attrs = encode_oob_x_attr_sid(Sid, _xmlns_attrs),
+					      __NewTopXMLNS,
+					      'encode_oob_x_$url'(Url,
+								  __NewTopXMLNS,
+								  []))),
+    _attrs = encode_oob_x_attr_sid(Sid,
+				   enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS)),
     {xmlel, <<"x">>, _attrs, _els}.
 
-'encode_oob_x_$desc'(<<>>, _acc) -> _acc;
-'encode_oob_x_$desc'(Desc, _acc) ->
-    [encode_oob_desc(Desc, []) | _acc].
+'encode_oob_x_$desc'(<<>>, __TopXMLNS, _acc) -> _acc;
+'encode_oob_x_$desc'(Desc, __TopXMLNS, _acc) ->
+    [encode_oob_desc(Desc, __TopXMLNS) | _acc].
 
-'encode_oob_x_$url'(Url, _acc) ->
-    [encode_oob_url(Url, []) | _acc].
+'encode_oob_x_$url'(Url, __TopXMLNS, _acc) ->
+    [encode_oob_url(Url, __TopXMLNS) | _acc].
 
 decode_oob_x_attr_sid(__TopXMLNS, undefined) -> <<>>;
 decode_oob_x_attr_sid(__TopXMLNS, _val) -> _val.
@@ -4817,9 +7512,11 @@ decode_oob_desc_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_oob_desc_els(__TopXMLNS, __IgnoreEls, _els,
 			Cdata).
 
-encode_oob_desc(Cdata, _xmlns_attrs) ->
+encode_oob_desc(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:oob">>, [],
+				     __TopXMLNS),
     _els = encode_oob_desc_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"desc">>, _attrs, _els}.
 
 decode_oob_desc_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -4847,9 +7544,11 @@ decode_oob_url_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_oob_url_els(__TopXMLNS, __IgnoreEls, _els,
 		       Cdata).
 
-encode_oob_url(Cdata, _xmlns_attrs) ->
+encode_oob_url(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:oob">>, [],
+				     __TopXMLNS),
     _els = encode_oob_url_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"url">>, _attrs, _els}.
 
 decode_oob_url_cdata(__TopXMLNS, <<>>) ->
@@ -4903,18 +7602,22 @@ decode_media_attrs(__TopXMLNS, [], Height, Width) ->
     {decode_media_attr_height(__TopXMLNS, Height),
      decode_media_attr_width(__TopXMLNS, Width)}.
 
-encode_media({media, Height, Width, Uri},
-	     _xmlns_attrs) ->
-    _els = lists:reverse('encode_media_$uri'(Uri, [])),
+encode_media({media, Height, Width, Uri}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:media-element">>, [],
+			 __TopXMLNS),
+    _els = lists:reverse('encode_media_$uri'(Uri,
+					     __NewTopXMLNS, [])),
     _attrs = encode_media_attr_width(Width,
 				     encode_media_attr_height(Height,
-							      _xmlns_attrs)),
+							      enc_xmlns_attrs(__NewTopXMLNS,
+									      __TopXMLNS))),
     {xmlel, <<"media">>, _attrs, _els}.
 
-'encode_media_$uri'([], _acc) -> _acc;
-'encode_media_$uri'([Uri | _els], _acc) ->
-    'encode_media_$uri'(_els,
-			[encode_media_uri(Uri, []) | _acc]).
+'encode_media_$uri'([], __TopXMLNS, _acc) -> _acc;
+'encode_media_$uri'([Uri | _els], __TopXMLNS, _acc) ->
+    'encode_media_$uri'(_els, __TopXMLNS,
+			[encode_media_uri(Uri, __TopXMLNS) | _acc]).
 
 decode_media_attr_height(__TopXMLNS, undefined) ->
     undefined;
@@ -4975,10 +7678,14 @@ decode_media_uri_attrs(__TopXMLNS, [_ | _attrs],
 decode_media_uri_attrs(__TopXMLNS, [], Type) ->
     decode_media_uri_attr_type(__TopXMLNS, Type).
 
-encode_media_uri({media_uri, Type, Uri},
-		 _xmlns_attrs) ->
+encode_media_uri({media_uri, Type, Uri}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:media-element">>, [],
+			 __TopXMLNS),
     _els = encode_media_uri_cdata(Uri, []),
-    _attrs = encode_media_uri_attr_type(Type, _xmlns_attrs),
+    _attrs = encode_media_uri_attr_type(Type,
+					enc_xmlns_attrs(__NewTopXMLNS,
+							__TopXMLNS)),
     {xmlel, <<"uri">>, _attrs, _els}.
 
 decode_media_uri_attr_type(__TopXMLNS, undefined) ->
@@ -5026,16 +7733,16 @@ decode_captcha_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_captcha_els(__TopXMLNS, __IgnoreEls, _els,
 		       Xdata).
 
-encode_captcha({xcaptcha, Xdata}, _xmlns_attrs) ->
+encode_captcha({xcaptcha, Xdata}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:captcha">>,
+				     [], __TopXMLNS),
     _els = lists:reverse('encode_captcha_$xdata'(Xdata,
-						 [])),
-    _attrs = _xmlns_attrs,
+						 __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"captcha">>, _attrs, _els}.
 
-'encode_captcha_$xdata'(Xdata, _acc) ->
-    [encode_xdata(Xdata,
-		  [{<<"xmlns">>, <<"jabber:x:data">>}])
-     | _acc].
+'encode_captcha_$xdata'(Xdata, __TopXMLNS, _acc) ->
+    [encode_xdata(Xdata, __TopXMLNS) | _acc].
 
 decode_bob_data(__TopXMLNS, __IgnoreEls,
 		{xmlel, <<"data">>, _attrs, _els}) ->
@@ -5082,12 +7789,15 @@ decode_bob_data_attrs(__TopXMLNS, [], Cid, Max_age,
      decode_bob_data_attr_type(__TopXMLNS, Type)}.
 
 encode_bob_data({bob_data, Cid, Max_age, Type, Data},
-		_xmlns_attrs) ->
+		__TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:bob">>, [],
+				     __TopXMLNS),
     _els = encode_bob_data_cdata(Data, []),
     _attrs = encode_bob_data_attr_type(Type,
 				       'encode_bob_data_attr_max-age'(Max_age,
 								      encode_bob_data_attr_cid(Cid,
-											       _xmlns_attrs))),
+											       enc_xmlns_attrs(__NewTopXMLNS,
+													       __TopXMLNS)))),
     {xmlel, <<"data">>, _attrs, _els}.
 
 decode_bob_data_attr_cid(__TopXMLNS, undefined) ->
@@ -5206,17 +7916,21 @@ decode_stream_start_attrs(__TopXMLNS, [], From, To,
 
 encode_stream_start({stream_start, From, To, Id,
 		     Version, Xmlns, Stream_xmlns, Db_xmlns, Lang},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
     _els = [],
     _attrs = encode_stream_start_attr_id(Id,
 					 encode_stream_start_attr_version(Version,
 									  'encode_stream_start_attr_xml:lang'(Lang,
 													      'encode_stream_start_attr_xmlns:db'(Db_xmlns,
 																		  'encode_stream_start_attr_xmlns:stream'(Stream_xmlns,
-																							  encode_stream_start_attr_xmlns(Xmlns,
-																											 encode_stream_start_attr_to(To,
-																														     encode_stream_start_attr_from(From,
-																																		   _xmlns_attrs)))))))),
+																							  encode_stream_start_attr_to(To,
+																										      encode_stream_start_attr_from(From,
+																														    enc_xmlns_attrs(__NewTopXMLNS,
+																																    __TopXMLNS)))))))),
     {xmlel, <<"stream:stream">>, _attrs, _els}.
 
 decode_stream_start_attr_from(__TopXMLNS, undefined) ->
@@ -5253,10 +7967,6 @@ decode_stream_start_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_stream_start_attr_xmlns(__TopXMLNS, _val) ->
     _val.
-
-encode_stream_start_attr_xmlns(<<>>, _acc) -> _acc;
-encode_stream_start_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 'decode_stream_start_attr_xmlns:stream'(__TopXMLNS,
 					undefined) ->
@@ -5333,9 +8043,12 @@ decode_handshake_els(__TopXMLNS, __IgnoreEls,
     decode_handshake_els(__TopXMLNS, __IgnoreEls, _els,
 			 Data).
 
-encode_handshake({handshake, Data}, _xmlns_attrs) ->
+encode_handshake({handshake, Data}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:component:accept">>, [],
+			 __TopXMLNS),
     _els = encode_handshake_cdata(Data, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"handshake">>, _attrs, _els}.
 
 decode_handshake_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -5368,10 +8081,10 @@ decode_db_verify_els(__TopXMLNS, __IgnoreEls,
 	   decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
 				[_el | __Els]);
        true ->
-	   case is_known_tag(_el) of
+	   case is_known_tag(_el, __TopXMLNS) of
 	     true ->
 		 decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
-				      [decode(_el) | __Els]);
+				      [decode(_el, __TopXMLNS, []) | __Els]);
 	     false ->
 		 decode_db_verify_els(__TopXMLNS, __IgnoreEls, _els, Key,
 				      __Els)
@@ -5407,14 +8120,17 @@ decode_db_verify_attrs(__TopXMLNS, [], From, To, Id,
 
 encode_db_verify({db_verify, From, To, Id, Type, Key,
 		  __Els},
-		 _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els] ++
+		 __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:server">>,
+				     [], __TopXMLNS),
+    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els] ++
 	     encode_db_verify_cdata(Key, []),
     _attrs = encode_db_verify_attr_type(Type,
 					encode_db_verify_attr_id(Id,
 								 encode_db_verify_attr_to(To,
 											  encode_db_verify_attr_from(From,
-														     _xmlns_attrs)))),
+														     enc_xmlns_attrs(__NewTopXMLNS,
+																     __TopXMLNS))))),
     {xmlel, <<"db:verify">>, _attrs, _els}.
 
 decode_db_verify_attr_from(__TopXMLNS, undefined) ->
@@ -5501,10 +8217,10 @@ decode_db_result_els(__TopXMLNS, __IgnoreEls,
 	   decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
 				[_el | __Els]);
        true ->
-	   case is_known_tag(_el) of
+	   case is_known_tag(_el, __TopXMLNS) of
 	     true ->
 		 decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
-				      [decode(_el) | __Els]);
+				      [decode(_el, __TopXMLNS, []) | __Els]);
 	     false ->
 		 decode_db_result_els(__TopXMLNS, __IgnoreEls, _els, Key,
 				      __Els)
@@ -5535,13 +8251,16 @@ decode_db_result_attrs(__TopXMLNS, [], From, To,
 
 encode_db_result({db_result, From, To, Type, Key,
 		  __Els},
-		 _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els] ++
+		 __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:server">>,
+				     [], __TopXMLNS),
+    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els] ++
 	     encode_db_result_cdata(Key, []),
     _attrs = encode_db_result_attr_type(Type,
 					encode_db_result_attr_to(To,
 								 encode_db_result_attr_from(From,
-											    _xmlns_attrs))),
+											    enc_xmlns_attrs(__NewTopXMLNS,
+													    __TopXMLNS)))),
     {xmlel, <<"db:result">>, _attrs, _els}.
 
 decode_db_result_attr_from(__TopXMLNS, undefined) ->
@@ -5715,36 +8434,49 @@ decode_adhoc_command_attrs(__TopXMLNS, [], Node, Lang,
 
 encode_adhoc_command({adhoc_command, Node, Action, Sid,
 		      Status, Lang, Actions, Notes, Xdata},
-		     _xmlns_attrs) ->
+		     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/commands">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_adhoc_command_$xdata'(Xdata,
+						    __NewTopXMLNS,
 						    'encode_adhoc_command_$notes'(Notes,
+										  __NewTopXMLNS,
 										  'encode_adhoc_command_$actions'(Actions,
+														  __NewTopXMLNS,
 														  [])))),
     _attrs = encode_adhoc_command_attr_action(Action,
 					      encode_adhoc_command_attr_status(Status,
 									       encode_adhoc_command_attr_sessionid(Sid,
 														   'encode_adhoc_command_attr_xml:lang'(Lang,
 																			encode_adhoc_command_attr_node(Node,
-																						       _xmlns_attrs))))),
+																						       enc_xmlns_attrs(__NewTopXMLNS,
+																								       __TopXMLNS)))))),
     {xmlel, <<"command">>, _attrs, _els}.
 
-'encode_adhoc_command_$xdata'(undefined, _acc) -> _acc;
-'encode_adhoc_command_$xdata'(Xdata, _acc) ->
-    [encode_xdata(Xdata,
-		  [{<<"xmlns">>, <<"jabber:x:data">>}])
-     | _acc].
+'encode_adhoc_command_$xdata'(undefined, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_adhoc_command_$xdata'(Xdata, __TopXMLNS,
+			      _acc) ->
+    [encode_xdata(Xdata, __TopXMLNS) | _acc].
 
-'encode_adhoc_command_$notes'([], _acc) -> _acc;
-'encode_adhoc_command_$notes'([Notes | _els], _acc) ->
-    'encode_adhoc_command_$notes'(_els,
-				  [encode_adhoc_command_notes(Notes, [])
+'encode_adhoc_command_$notes'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_adhoc_command_$notes'([Notes | _els],
+			      __TopXMLNS, _acc) ->
+    'encode_adhoc_command_$notes'(_els, __TopXMLNS,
+				  [encode_adhoc_command_notes(Notes, __TopXMLNS)
 				   | _acc]).
 
-'encode_adhoc_command_$actions'(undefined, _acc) ->
+'encode_adhoc_command_$actions'(undefined, __TopXMLNS,
+				_acc) ->
     _acc;
-'encode_adhoc_command_$actions'(Actions, _acc) ->
-    [encode_adhoc_command_actions(Actions, []) | _acc].
+'encode_adhoc_command_$actions'(Actions, __TopXMLNS,
+				_acc) ->
+    [encode_adhoc_command_actions(Actions, __TopXMLNS)
+     | _acc].
 
 decode_adhoc_command_attr_node(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -5847,10 +8579,14 @@ decode_adhoc_command_notes_attrs(__TopXMLNS, [],
     decode_adhoc_command_notes_attr_type(__TopXMLNS, Type).
 
 encode_adhoc_command_notes({adhoc_note, Type, Data},
-			   _xmlns_attrs) ->
+			   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/commands">>,
+			 [], __TopXMLNS),
     _els = encode_adhoc_command_notes_cdata(Data, []),
     _attrs = encode_adhoc_command_notes_attr_type(Type,
-						  _xmlns_attrs),
+						  enc_xmlns_attrs(__NewTopXMLNS,
+								  __TopXMLNS)),
     {xmlel, <<"note">>, _attrs, _els}.
 
 decode_adhoc_command_notes_attr_type(__TopXMLNS,
@@ -5991,32 +8727,45 @@ decode_adhoc_command_actions_attrs(__TopXMLNS, [],
 
 encode_adhoc_command_actions({adhoc_actions, Execute,
 			      Prev, Next, Complete},
-			     _xmlns_attrs) ->
+			     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/commands">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_adhoc_command_actions_$next'(Next,
+							   __NewTopXMLNS,
 							   'encode_adhoc_command_actions_$complete'(Complete,
+												    __NewTopXMLNS,
 												    'encode_adhoc_command_actions_$prev'(Prev,
+																	 __NewTopXMLNS,
 																	 [])))),
     _attrs =
 	encode_adhoc_command_actions_attr_execute(Execute,
-						  _xmlns_attrs),
+						  enc_xmlns_attrs(__NewTopXMLNS,
+								  __TopXMLNS)),
     {xmlel, <<"actions">>, _attrs, _els}.
 
-'encode_adhoc_command_actions_$next'(false, _acc) ->
+'encode_adhoc_command_actions_$next'(false, __TopXMLNS,
+				     _acc) ->
     _acc;
-'encode_adhoc_command_actions_$next'(Next, _acc) ->
-    [encode_adhoc_command_next(Next, []) | _acc].
+'encode_adhoc_command_actions_$next'(Next, __TopXMLNS,
+				     _acc) ->
+    [encode_adhoc_command_next(Next, __TopXMLNS) | _acc].
 
-'encode_adhoc_command_actions_$complete'(false, _acc) ->
+'encode_adhoc_command_actions_$complete'(false,
+					 __TopXMLNS, _acc) ->
     _acc;
 'encode_adhoc_command_actions_$complete'(Complete,
-					 _acc) ->
-    [encode_adhoc_command_complete(Complete, []) | _acc].
+					 __TopXMLNS, _acc) ->
+    [encode_adhoc_command_complete(Complete, __TopXMLNS)
+     | _acc].
 
-'encode_adhoc_command_actions_$prev'(false, _acc) ->
+'encode_adhoc_command_actions_$prev'(false, __TopXMLNS,
+				     _acc) ->
     _acc;
-'encode_adhoc_command_actions_$prev'(Prev, _acc) ->
-    [encode_adhoc_command_prev(Prev, []) | _acc].
+'encode_adhoc_command_actions_$prev'(Prev, __TopXMLNS,
+				     _acc) ->
+    [encode_adhoc_command_prev(Prev, __TopXMLNS) | _acc].
 
 decode_adhoc_command_actions_attr_execute(__TopXMLNS,
 					  undefined) ->
@@ -6041,27 +8790,36 @@ decode_adhoc_command_complete(__TopXMLNS, __IgnoreEls,
 			      {xmlel, <<"complete">>, _attrs, _els}) ->
     true.
 
-encode_adhoc_command_complete(true, _xmlns_attrs) ->
+encode_adhoc_command_complete(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/commands">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"complete">>, _attrs, _els}.
 
 decode_adhoc_command_next(__TopXMLNS, __IgnoreEls,
 			  {xmlel, <<"next">>, _attrs, _els}) ->
     true.
 
-encode_adhoc_command_next(true, _xmlns_attrs) ->
+encode_adhoc_command_next(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/commands">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"next">>, _attrs, _els}.
 
 decode_adhoc_command_prev(__TopXMLNS, __IgnoreEls,
 			  {xmlel, <<"prev">>, _attrs, _els}) ->
     true.
 
-encode_adhoc_command_prev(true, _xmlns_attrs) ->
+encode_adhoc_command_prev(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/commands">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"prev">>, _attrs, _els}.
 
 decode_client_id(__TopXMLNS, __IgnoreEls,
@@ -6078,9 +8836,13 @@ decode_client_id_attrs(__TopXMLNS, [_ | _attrs], Id) ->
 decode_client_id_attrs(__TopXMLNS, [], Id) ->
     decode_client_id_attr_id(__TopXMLNS, Id).
 
-encode_client_id({client_id, Id}, _xmlns_attrs) ->
+encode_client_id({client_id, Id}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:sid:0">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = encode_client_id_attr_id(Id, _xmlns_attrs),
+    _attrs = encode_client_id_attr_id(Id,
+				      enc_xmlns_attrs(__NewTopXMLNS,
+						      __TopXMLNS)),
     {xmlel, <<"client-id">>, _attrs, _els}.
 
 decode_client_id_attr_id(__TopXMLNS, undefined) ->
@@ -6110,11 +8872,14 @@ decode_stanza_id_attrs(__TopXMLNS, [], Id, By) ->
     {decode_stanza_id_attr_id(__TopXMLNS, Id),
      decode_stanza_id_attr_by(__TopXMLNS, By)}.
 
-encode_stanza_id({stanza_id, By, Id}, _xmlns_attrs) ->
+encode_stanza_id({stanza_id, By, Id}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:sid:0">>,
+				     [], __TopXMLNS),
     _els = [],
     _attrs = encode_stanza_id_attr_by(By,
 				      encode_stanza_id_attr_id(Id,
-							       _xmlns_attrs)),
+							       enc_xmlns_attrs(__NewTopXMLNS,
+									       __TopXMLNS))),
     {xmlel, <<"stanza-id">>, _attrs, _els}.
 
 decode_stanza_id_attr_id(__TopXMLNS, undefined) ->
@@ -6173,16 +8938,20 @@ decode_addresses_els(__TopXMLNS, __IgnoreEls,
     decode_addresses_els(__TopXMLNS, __IgnoreEls, _els,
 			 List).
 
-encode_addresses({addresses, List}, _xmlns_attrs) ->
+encode_addresses({addresses, List}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/address">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_addresses_$list'(List,
-						  [])),
-    _attrs = _xmlns_attrs,
+						  __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"addresses">>, _attrs, _els}.
 
-'encode_addresses_$list'([], _acc) -> _acc;
-'encode_addresses_$list'([List | _els], _acc) ->
-    'encode_addresses_$list'(_els,
-			     [encode_address(List, []) | _acc]).
+'encode_addresses_$list'([], __TopXMLNS, _acc) -> _acc;
+'encode_addresses_$list'([List | _els], __TopXMLNS,
+			 _acc) ->
+    'encode_addresses_$list'(_els, __TopXMLNS,
+			     [encode_address(List, __TopXMLNS) | _acc]).
 
 decode_address(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"address">>, _attrs, _els}) ->
@@ -6230,14 +8999,18 @@ decode_address_attrs(__TopXMLNS, [], Type, Jid, Desc,
 
 encode_address({address, Type, Jid, Desc, Node,
 		Delivered},
-	       _xmlns_attrs) ->
+	       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/address">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_address_attr_delivered(Delivered,
 					   encode_address_attr_node(Node,
 								    encode_address_attr_desc(Desc,
 											     encode_address_attr_jid(Jid,
 														     encode_address_attr_type(Type,
-																	      _xmlns_attrs))))),
+																	      enc_xmlns_attrs(__NewTopXMLNS,
+																			      __TopXMLNS)))))),
     {xmlel, <<"address">>, _attrs, _els}.
 
 decode_address_attr_type(__TopXMLNS, undefined) ->
@@ -6317,9 +9090,12 @@ decode_nick_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		Name) ->
     decode_nick_els(__TopXMLNS, __IgnoreEls, _els, Name).
 
-encode_nick({nick, Name}, _xmlns_attrs) ->
+encode_nick({nick, Name}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/nick">>,
+			 [], __TopXMLNS),
     _els = encode_nick_cdata(Name, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"nick">>, _attrs, _els}.
 
 decode_nick_cdata(__TopXMLNS, <<>>) ->
@@ -6350,12 +9126,14 @@ decode_expire_attrs(__TopXMLNS, [], Seconds, Stored) ->
     {decode_expire_attr_seconds(__TopXMLNS, Seconds),
      decode_expire_attr_stored(__TopXMLNS, Stored)}.
 
-encode_expire({expire, Seconds, Stored},
-	      _xmlns_attrs) ->
+encode_expire({expire, Seconds, Stored}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:expire">>,
+				     [], __TopXMLNS),
     _els = [],
     _attrs = encode_expire_attr_stored(Stored,
 				       encode_expire_attr_seconds(Seconds,
-								  _xmlns_attrs)),
+								  enc_xmlns_attrs(__NewTopXMLNS,
+										  __TopXMLNS))),
     {xmlel, <<"x">>, _attrs, _els}.
 
 decode_expire_attr_seconds(__TopXMLNS, undefined) ->
@@ -6495,35 +9273,50 @@ decode_xevent_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 
 encode_xevent({xevent, Offline, Delivered, Displayed,
 	       Composing, Id},
-	      _xmlns_attrs) ->
+	      __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:event">>,
+				     [], __TopXMLNS),
     _els = lists:reverse('encode_xevent_$id'(Id,
+					     __NewTopXMLNS,
 					     'encode_xevent_$displayed'(Displayed,
+									__NewTopXMLNS,
 									'encode_xevent_$delivered'(Delivered,
+												   __NewTopXMLNS,
 												   'encode_xevent_$offline'(Offline,
+															    __NewTopXMLNS,
 															    'encode_xevent_$composing'(Composing,
+																		       __NewTopXMLNS,
 																		       [])))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"x">>, _attrs, _els}.
 
-'encode_xevent_$id'(undefined, _acc) -> _acc;
-'encode_xevent_$id'(Id, _acc) ->
-    [encode_xevent_id(Id, []) | _acc].
+'encode_xevent_$id'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_xevent_$id'(Id, __TopXMLNS, _acc) ->
+    [encode_xevent_id(Id, __TopXMLNS) | _acc].
 
-'encode_xevent_$displayed'(false, _acc) -> _acc;
-'encode_xevent_$displayed'(Displayed, _acc) ->
-    [encode_xevent_displayed(Displayed, []) | _acc].
+'encode_xevent_$displayed'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_xevent_$displayed'(Displayed, __TopXMLNS,
+			   _acc) ->
+    [encode_xevent_displayed(Displayed, __TopXMLNS) | _acc].
 
-'encode_xevent_$delivered'(false, _acc) -> _acc;
-'encode_xevent_$delivered'(Delivered, _acc) ->
-    [encode_xevent_delivered(Delivered, []) | _acc].
+'encode_xevent_$delivered'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_xevent_$delivered'(Delivered, __TopXMLNS,
+			   _acc) ->
+    [encode_xevent_delivered(Delivered, __TopXMLNS) | _acc].
 
-'encode_xevent_$offline'(false, _acc) -> _acc;
-'encode_xevent_$offline'(Offline, _acc) ->
-    [encode_xevent_offline(Offline, []) | _acc].
+'encode_xevent_$offline'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_xevent_$offline'(Offline, __TopXMLNS, _acc) ->
+    [encode_xevent_offline(Offline, __TopXMLNS) | _acc].
 
-'encode_xevent_$composing'(false, _acc) -> _acc;
-'encode_xevent_$composing'(Composing, _acc) ->
-    [encode_xevent_composing(Composing, []) | _acc].
+'encode_xevent_$composing'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_xevent_$composing'(Composing, __TopXMLNS,
+			   _acc) ->
+    [encode_xevent_composing(Composing, __TopXMLNS) | _acc].
 
 decode_xevent_id(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"id">>, _attrs, _els}) ->
@@ -6543,9 +9336,11 @@ decode_xevent_id_els(__TopXMLNS, __IgnoreEls,
     decode_xevent_id_els(__TopXMLNS, __IgnoreEls, _els,
 			 Cdata).
 
-encode_xevent_id(Cdata, _xmlns_attrs) ->
+encode_xevent_id(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:event">>,
+				     [], __TopXMLNS),
     _els = encode_xevent_id_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"id">>, _attrs, _els}.
 
 decode_xevent_id_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -6559,36 +9354,44 @@ decode_xevent_composing(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"composing">>, _attrs, _els}) ->
     true.
 
-encode_xevent_composing(true, _xmlns_attrs) ->
+encode_xevent_composing(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:event">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"composing">>, _attrs, _els}.
 
 decode_xevent_displayed(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"displayed">>, _attrs, _els}) ->
     true.
 
-encode_xevent_displayed(true, _xmlns_attrs) ->
+encode_xevent_displayed(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:event">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"displayed">>, _attrs, _els}.
 
 decode_xevent_delivered(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"delivered">>, _attrs, _els}) ->
     true.
 
-encode_xevent_delivered(true, _xmlns_attrs) ->
+encode_xevent_delivered(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:event">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"delivered">>, _attrs, _els}.
 
 decode_xevent_offline(__TopXMLNS, __IgnoreEls,
 		      {xmlel, <<"offline">>, _attrs, _els}) ->
     true.
 
-encode_xevent_offline(true, _xmlns_attrs) ->
+encode_xevent_offline(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:event">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"offline">>, _attrs, _els}.
 
 decode_search(__TopXMLNS, __IgnoreEls,
@@ -6736,48 +9539,65 @@ decode_search_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 
 encode_search({search, Instructions, First, Last, Nick,
 	       Email, Items, Xdata},
-	      _xmlns_attrs) ->
+	      __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:search">>,
+				     [], __TopXMLNS),
     _els = lists:reverse('encode_search_$xdata'(Xdata,
+						__NewTopXMLNS,
 						'encode_search_$items'(Items,
+								       __NewTopXMLNS,
 								       'encode_search_$instructions'(Instructions,
+												     __NewTopXMLNS,
 												     'encode_search_$last'(Last,
+															   __NewTopXMLNS,
 															   'encode_search_$first'(First,
+																		  __NewTopXMLNS,
 																		  'encode_search_$nick'(Nick,
+																					__NewTopXMLNS,
 																					'encode_search_$email'(Email,
+																							       __NewTopXMLNS,
 																							       [])))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_search_$xdata'(undefined, _acc) -> _acc;
-'encode_search_$xdata'(Xdata, _acc) ->
-    [encode_xdata(Xdata,
-		  [{<<"xmlns">>, <<"jabber:x:data">>}])
+'encode_search_$xdata'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_search_$xdata'(Xdata, __TopXMLNS, _acc) ->
+    [encode_xdata(Xdata, __TopXMLNS) | _acc].
+
+'encode_search_$items'([], __TopXMLNS, _acc) -> _acc;
+'encode_search_$items'([Items | _els], __TopXMLNS,
+		       _acc) ->
+    'encode_search_$items'(_els, __TopXMLNS,
+			   [encode_search_item(Items, __TopXMLNS) | _acc]).
+
+'encode_search_$instructions'(undefined, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_search_$instructions'(Instructions, __TopXMLNS,
+			      _acc) ->
+    [encode_search_instructions(Instructions, __TopXMLNS)
      | _acc].
 
-'encode_search_$items'([], _acc) -> _acc;
-'encode_search_$items'([Items | _els], _acc) ->
-    'encode_search_$items'(_els,
-			   [encode_search_item(Items, []) | _acc]).
+'encode_search_$last'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_search_$last'(Last, __TopXMLNS, _acc) ->
+    [encode_search_last(Last, __TopXMLNS) | _acc].
 
-'encode_search_$instructions'(undefined, _acc) -> _acc;
-'encode_search_$instructions'(Instructions, _acc) ->
-    [encode_search_instructions(Instructions, []) | _acc].
+'encode_search_$first'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_search_$first'(First, __TopXMLNS, _acc) ->
+    [encode_search_first(First, __TopXMLNS) | _acc].
 
-'encode_search_$last'(undefined, _acc) -> _acc;
-'encode_search_$last'(Last, _acc) ->
-    [encode_search_last(Last, []) | _acc].
+'encode_search_$nick'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_search_$nick'(Nick, __TopXMLNS, _acc) ->
+    [encode_search_nick(Nick, __TopXMLNS) | _acc].
 
-'encode_search_$first'(undefined, _acc) -> _acc;
-'encode_search_$first'(First, _acc) ->
-    [encode_search_first(First, []) | _acc].
-
-'encode_search_$nick'(undefined, _acc) -> _acc;
-'encode_search_$nick'(Nick, _acc) ->
-    [encode_search_nick(Nick, []) | _acc].
-
-'encode_search_$email'(undefined, _acc) -> _acc;
-'encode_search_$email'(Email, _acc) ->
-    [encode_search_email(Email, []) | _acc].
+'encode_search_$email'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_search_$email'(Email, __TopXMLNS, _acc) ->
+    [encode_search_email(Email, __TopXMLNS) | _acc].
 
 decode_search_item(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"item">>, _attrs, _els}) ->
@@ -6883,30 +9703,46 @@ decode_search_item_attrs(__TopXMLNS, [], Jid) ->
 
 encode_search_item({search_item, Jid, First, Last, Nick,
 		    Email},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:search">>,
+				     [], __TopXMLNS),
     _els = lists:reverse('encode_search_item_$last'(Last,
+						    __NewTopXMLNS,
 						    'encode_search_item_$first'(First,
+										__NewTopXMLNS,
 										'encode_search_item_$nick'(Nick,
+													   __NewTopXMLNS,
 													   'encode_search_item_$email'(Email,
+																       __NewTopXMLNS,
 																       []))))),
-    _attrs = encode_search_item_attr_jid(Jid, _xmlns_attrs),
+    _attrs = encode_search_item_attr_jid(Jid,
+					 enc_xmlns_attrs(__NewTopXMLNS,
+							 __TopXMLNS)),
     {xmlel, <<"item">>, _attrs, _els}.
 
-'encode_search_item_$last'(undefined, _acc) -> _acc;
-'encode_search_item_$last'(Last, _acc) ->
-    [encode_search_last(Last, []) | _acc].
+'encode_search_item_$last'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_search_item_$last'(Last, __TopXMLNS, _acc) ->
+    [encode_search_last(Last, __TopXMLNS) | _acc].
 
-'encode_search_item_$first'(undefined, _acc) -> _acc;
-'encode_search_item_$first'(First, _acc) ->
-    [encode_search_first(First, []) | _acc].
+'encode_search_item_$first'(undefined, __TopXMLNS,
+			    _acc) ->
+    _acc;
+'encode_search_item_$first'(First, __TopXMLNS, _acc) ->
+    [encode_search_first(First, __TopXMLNS) | _acc].
 
-'encode_search_item_$nick'(undefined, _acc) -> _acc;
-'encode_search_item_$nick'(Nick, _acc) ->
-    [encode_search_nick(Nick, []) | _acc].
+'encode_search_item_$nick'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_search_item_$nick'(Nick, __TopXMLNS, _acc) ->
+    [encode_search_nick(Nick, __TopXMLNS) | _acc].
 
-'encode_search_item_$email'(undefined, _acc) -> _acc;
-'encode_search_item_$email'(Email, _acc) ->
-    [encode_search_email(Email, []) | _acc].
+'encode_search_item_$email'(undefined, __TopXMLNS,
+			    _acc) ->
+    _acc;
+'encode_search_item_$email'(Email, __TopXMLNS, _acc) ->
+    [encode_search_email(Email, __TopXMLNS) | _acc].
 
 decode_search_item_attr_jid(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -6940,9 +9776,11 @@ decode_search_email_els(__TopXMLNS, __IgnoreEls,
     decode_search_email_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_search_email(Cdata, _xmlns_attrs) ->
+encode_search_email(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:search">>,
+				     [], __TopXMLNS),
     _els = encode_search_email_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"email">>, _attrs, _els}.
 
 decode_search_email_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -6970,9 +9808,11 @@ decode_search_nick_els(__TopXMLNS, __IgnoreEls,
     decode_search_nick_els(__TopXMLNS, __IgnoreEls, _els,
 			   Cdata).
 
-encode_search_nick(Cdata, _xmlns_attrs) ->
+encode_search_nick(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:search">>,
+				     [], __TopXMLNS),
     _els = encode_search_nick_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"nick">>, _attrs, _els}.
 
 decode_search_nick_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -7000,9 +9840,11 @@ decode_search_last_els(__TopXMLNS, __IgnoreEls,
     decode_search_last_els(__TopXMLNS, __IgnoreEls, _els,
 			   Cdata).
 
-encode_search_last(Cdata, _xmlns_attrs) ->
+encode_search_last(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:search">>,
+				     [], __TopXMLNS),
     _els = encode_search_last_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"last">>, _attrs, _els}.
 
 decode_search_last_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -7030,9 +9872,11 @@ decode_search_first_els(__TopXMLNS, __IgnoreEls,
     decode_search_first_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_search_first(Cdata, _xmlns_attrs) ->
+encode_search_first(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:search">>,
+				     [], __TopXMLNS),
     _els = encode_search_first_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"first">>, _attrs, _els}.
 
 decode_search_first_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -7060,9 +9904,11 @@ decode_search_instructions_els(__TopXMLNS, __IgnoreEls,
     decode_search_instructions_els(__TopXMLNS, __IgnoreEls,
 				   _els, Cdata).
 
-encode_search_instructions(Cdata, _xmlns_attrs) ->
+encode_search_instructions(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:search">>,
+				     [], __TopXMLNS),
     _els = encode_search_instructions_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"instructions">>, _attrs, _els}.
 
 decode_search_instructions_cdata(__TopXMLNS, <<>>) ->
@@ -7082,9 +9928,11 @@ decode_hint_no_permanent_storage(__TopXMLNS,
 
 encode_hint_no_permanent_storage({hint,
 				  'no-permanent-storage'},
-				 _xmlns_attrs) ->
+				 __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:hints">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"no-permanent-storage">>, _attrs, _els}.
 
 decode_hint_no_permanent_store(__TopXMLNS, __IgnoreEls,
@@ -7094,18 +9942,22 @@ decode_hint_no_permanent_store(__TopXMLNS, __IgnoreEls,
 
 encode_hint_no_permanent_store({hint,
 				'no-permanent-store'},
-			       _xmlns_attrs) ->
+			       __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:hints">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"no-permanent-store">>, _attrs, _els}.
 
 decode_hint_store(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"store">>, _attrs, _els}) ->
     {hint, store}.
 
-encode_hint_store({hint, store}, _xmlns_attrs) ->
+encode_hint_store({hint, store}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:hints">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"store">>, _attrs, _els}.
 
 decode_hint_no_storage(__TopXMLNS, __IgnoreEls,
@@ -7113,28 +9965,33 @@ decode_hint_no_storage(__TopXMLNS, __IgnoreEls,
     {hint, 'no-storage'}.
 
 encode_hint_no_storage({hint, 'no-storage'},
-		       _xmlns_attrs) ->
+		       __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:hints">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"no-storage">>, _attrs, _els}.
 
 decode_hint_no_store(__TopXMLNS, __IgnoreEls,
 		     {xmlel, <<"no-store">>, _attrs, _els}) ->
     {hint, 'no-store'}.
 
-encode_hint_no_store({hint, 'no-store'},
-		     _xmlns_attrs) ->
+encode_hint_no_store({hint, 'no-store'}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:hints">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"no-store">>, _attrs, _els}.
 
 decode_hint_no_copy(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"no-copy">>, _attrs, _els}) ->
     {hint, 'no-copy'}.
 
-encode_hint_no_copy({hint, 'no-copy'}, _xmlns_attrs) ->
+encode_hint_no_copy({hint, 'no-copy'}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:hints">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"no-copy">>, _attrs, _els}.
 
 decode_mix_participant(__TopXMLNS, __IgnoreEls,
@@ -7161,11 +10018,14 @@ decode_mix_participant_attrs(__TopXMLNS, [], Jid,
      decode_mix_participant_attr_nick(__TopXMLNS, Nick)}.
 
 encode_mix_participant({mix_participant, Jid, Nick},
-		       _xmlns_attrs) ->
+		       __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:mix:0">>,
+				     [], __TopXMLNS),
     _els = [],
     _attrs = encode_mix_participant_attr_nick(Nick,
 					      encode_mix_participant_attr_jid(Jid,
-									      _xmlns_attrs)),
+									      enc_xmlns_attrs(__NewTopXMLNS,
+											      __TopXMLNS))),
     {xmlel, <<"participant">>, _attrs, _els}.
 
 decode_mix_participant_attr_jid(__TopXMLNS,
@@ -7199,9 +10059,11 @@ decode_mix_leave(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"leave">>, _attrs, _els}) ->
     {mix_leave}.
 
-encode_mix_leave({mix_leave}, _xmlns_attrs) ->
+encode_mix_leave({mix_leave}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:mix:0">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"leave">>, _attrs, _els}.
 
 decode_mix_join(__TopXMLNS, __IgnoreEls,
@@ -7247,18 +10109,24 @@ decode_mix_join_attrs(__TopXMLNS, [], Jid) ->
     decode_mix_join_attr_jid(__TopXMLNS, Jid).
 
 encode_mix_join({mix_join, Jid, Subscribe},
-		_xmlns_attrs) ->
+		__TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:mix:0">>,
+				     [], __TopXMLNS),
     _els =
 	lists:reverse('encode_mix_join_$subscribe'(Subscribe,
-						   [])),
-    _attrs = encode_mix_join_attr_jid(Jid, _xmlns_attrs),
+						   __NewTopXMLNS, [])),
+    _attrs = encode_mix_join_attr_jid(Jid,
+				      enc_xmlns_attrs(__NewTopXMLNS,
+						      __TopXMLNS)),
     {xmlel, <<"join">>, _attrs, _els}.
 
-'encode_mix_join_$subscribe'([], _acc) -> _acc;
+'encode_mix_join_$subscribe'([], __TopXMLNS, _acc) ->
+    _acc;
 'encode_mix_join_$subscribe'([Subscribe | _els],
-			     _acc) ->
-    'encode_mix_join_$subscribe'(_els,
-				 [encode_mix_subscribe(Subscribe, []) | _acc]).
+			     __TopXMLNS, _acc) ->
+    'encode_mix_join_$subscribe'(_els, __TopXMLNS,
+				 [encode_mix_subscribe(Subscribe, __TopXMLNS)
+				  | _acc]).
 
 decode_mix_join_attr_jid(__TopXMLNS, undefined) ->
     undefined;
@@ -7289,10 +10157,13 @@ decode_mix_subscribe_attrs(__TopXMLNS, [_ | _attrs],
 decode_mix_subscribe_attrs(__TopXMLNS, [], Node) ->
     decode_mix_subscribe_attr_node(__TopXMLNS, Node).
 
-encode_mix_subscribe(Node, _xmlns_attrs) ->
+encode_mix_subscribe(Node, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:mix:0">>,
+				     [], __TopXMLNS),
     _els = [],
     _attrs = encode_mix_subscribe_attr_node(Node,
-					    _xmlns_attrs),
+					    enc_xmlns_attrs(__NewTopXMLNS,
+							    __TopXMLNS)),
     {xmlel, <<"subscribe">>, _attrs, _els}.
 
 decode_mix_subscribe_attr_node(__TopXMLNS, undefined) ->
@@ -7381,26 +10252,35 @@ decode_offline_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		       Purge, Fetch).
 
 encode_offline({offline, Items, Purge, Fetch},
-	       _xmlns_attrs) ->
+	       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/offline">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_offline_$items'(Items,
+						 __NewTopXMLNS,
 						 'encode_offline_$purge'(Purge,
+									 __NewTopXMLNS,
 									 'encode_offline_$fetch'(Fetch,
+												 __NewTopXMLNS,
 												 [])))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"offline">>, _attrs, _els}.
 
-'encode_offline_$items'([], _acc) -> _acc;
-'encode_offline_$items'([Items | _els], _acc) ->
-    'encode_offline_$items'(_els,
-			    [encode_offline_item(Items, []) | _acc]).
+'encode_offline_$items'([], __TopXMLNS, _acc) -> _acc;
+'encode_offline_$items'([Items | _els], __TopXMLNS,
+			_acc) ->
+    'encode_offline_$items'(_els, __TopXMLNS,
+			    [encode_offline_item(Items, __TopXMLNS) | _acc]).
 
-'encode_offline_$purge'(false, _acc) -> _acc;
-'encode_offline_$purge'(Purge, _acc) ->
-    [encode_offline_purge(Purge, []) | _acc].
+'encode_offline_$purge'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_offline_$purge'(Purge, __TopXMLNS, _acc) ->
+    [encode_offline_purge(Purge, __TopXMLNS) | _acc].
 
-'encode_offline_$fetch'(false, _acc) -> _acc;
-'encode_offline_$fetch'(Fetch, _acc) ->
-    [encode_offline_fetch(Fetch, []) | _acc].
+'encode_offline_$fetch'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_offline_$fetch'(Fetch, __TopXMLNS, _acc) ->
+    [encode_offline_fetch(Fetch, __TopXMLNS) | _acc].
 
 decode_offline_item(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"item">>, _attrs, _els}) ->
@@ -7426,11 +10306,15 @@ decode_offline_item_attrs(__TopXMLNS, [], Node,
      decode_offline_item_attr_action(__TopXMLNS, Action)}.
 
 encode_offline_item({offline_item, Node, Action},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/offline">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_offline_item_attr_action(Action,
 					     encode_offline_item_attr_node(Node,
-									   _xmlns_attrs)),
+									   enc_xmlns_attrs(__NewTopXMLNS,
+											   __TopXMLNS))),
     {xmlel, <<"item">>, _attrs, _els}.
 
 decode_offline_item_attr_node(__TopXMLNS, undefined) ->
@@ -7462,18 +10346,24 @@ decode_offline_fetch(__TopXMLNS, __IgnoreEls,
 		     {xmlel, <<"fetch">>, _attrs, _els}) ->
     true.
 
-encode_offline_fetch(true, _xmlns_attrs) ->
+encode_offline_fetch(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/offline">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"fetch">>, _attrs, _els}.
 
 decode_offline_purge(__TopXMLNS, __IgnoreEls,
 		     {xmlel, <<"purge">>, _attrs, _els}) ->
     true.
 
-encode_offline_purge(true, _xmlns_attrs) ->
+encode_offline_purge(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/offline">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"purge">>, _attrs, _els}.
 
 decode_sm_failed(__TopXMLNS, __IgnoreEls,
@@ -7793,154 +10683,113 @@ decode_sm_failed_attrs(__TopXMLNS, [], H, Xmlns) ->
      decode_sm_failed_attr_xmlns(__TopXMLNS, Xmlns)}.
 
 encode_sm_failed({sm_failed, Reason, H, Xmlns},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+				     __TopXMLNS),
     _els = lists:reverse('encode_sm_failed_$reason'(Reason,
-						    [])),
-    _attrs = encode_sm_failed_attr_xmlns(Xmlns,
-					 encode_sm_failed_attr_h(H,
-								 _xmlns_attrs)),
+						    __NewTopXMLNS, [])),
+    _attrs = encode_sm_failed_attr_h(H,
+				     enc_xmlns_attrs(__NewTopXMLNS,
+						     __TopXMLNS)),
     {xmlel, <<"failed">>, _attrs, _els}.
 
-'encode_sm_failed_$reason'(undefined, _acc) -> _acc;
-'encode_sm_failed_$reason'('bad-request' = Reason,
+'encode_sm_failed_$reason'(undefined, __TopXMLNS,
 			   _acc) ->
-    [encode_error_bad_request(Reason,
-			      [{<<"xmlns">>,
-				<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
-'encode_sm_failed_$reason'(conflict = Reason, _acc) ->
-    [encode_error_conflict(Reason,
-			   [{<<"xmlns">>,
-			     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
+    _acc;
+'encode_sm_failed_$reason'('bad-request' = Reason,
+			   __TopXMLNS, _acc) ->
+    [encode_error_bad_request(Reason, __TopXMLNS) | _acc];
+'encode_sm_failed_$reason'(conflict = Reason,
+			   __TopXMLNS, _acc) ->
+    [encode_error_conflict(Reason, __TopXMLNS) | _acc];
 'encode_sm_failed_$reason'('feature-not-implemented' =
 			       Reason,
-			   _acc) ->
+			   __TopXMLNS, _acc) ->
     [encode_error_feature_not_implemented(Reason,
-					  [{<<"xmlns">>,
-					    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+					  __TopXMLNS)
      | _acc];
-'encode_sm_failed_$reason'(forbidden = Reason, _acc) ->
-    [encode_error_forbidden(Reason,
-			    [{<<"xmlns">>,
-			      <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
-'encode_sm_failed_$reason'({gone, _} = Reason, _acc) ->
-    [encode_error_gone(Reason,
-		       [{<<"xmlns">>,
-			 <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
+'encode_sm_failed_$reason'(forbidden = Reason,
+			   __TopXMLNS, _acc) ->
+    [encode_error_forbidden(Reason, __TopXMLNS) | _acc];
+'encode_sm_failed_$reason'({gone, _} = Reason,
+			   __TopXMLNS, _acc) ->
+    [encode_error_gone(Reason, __TopXMLNS) | _acc];
 'encode_sm_failed_$reason'('internal-server-error' =
 			       Reason,
-			   _acc) ->
-    [encode_error_internal_server_error(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_internal_server_error(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('item-not-found' = Reason,
-			   _acc) ->
-    [encode_error_item_not_found(Reason,
-				 [{<<"xmlns">>,
-				   <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_item_not_found(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('jid-malformed' = Reason,
-			   _acc) ->
-    [encode_error_jid_malformed(Reason,
-				[{<<"xmlns">>,
-				  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
+			   __TopXMLNS, _acc) ->
+    [encode_error_jid_malformed(Reason, __TopXMLNS) | _acc];
 'encode_sm_failed_$reason'('not-acceptable' = Reason,
-			   _acc) ->
-    [encode_error_not_acceptable(Reason,
-				 [{<<"xmlns">>,
-				   <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_not_acceptable(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('not-allowed' = Reason,
-			   _acc) ->
-    [encode_error_not_allowed(Reason,
-			      [{<<"xmlns">>,
-				<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
+			   __TopXMLNS, _acc) ->
+    [encode_error_not_allowed(Reason, __TopXMLNS) | _acc];
 'encode_sm_failed_$reason'('not-authorized' = Reason,
-			   _acc) ->
-    [encode_error_not_authorized(Reason,
-				 [{<<"xmlns">>,
-				   <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_not_authorized(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('policy-violation' = Reason,
-			   _acc) ->
-    [encode_error_policy_violation(Reason,
-				   [{<<"xmlns">>,
-				     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_policy_violation(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('recipient-unavailable' =
 			       Reason,
-			   _acc) ->
-    [encode_error_recipient_unavailable(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_recipient_unavailable(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'({redirect, _} = Reason,
-			   _acc) ->
-    [encode_error_redirect(Reason,
-			   [{<<"xmlns">>,
-			     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
+			   __TopXMLNS, _acc) ->
+    [encode_error_redirect(Reason, __TopXMLNS) | _acc];
 'encode_sm_failed_$reason'('registration-required' =
 			       Reason,
-			   _acc) ->
-    [encode_error_registration_required(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_registration_required(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('remote-server-not-found' =
 			       Reason,
-			   _acc) ->
+			   __TopXMLNS, _acc) ->
     [encode_error_remote_server_not_found(Reason,
-					  [{<<"xmlns">>,
-					    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+					  __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('remote-server-timeout' =
 			       Reason,
-			   _acc) ->
-    [encode_error_remote_server_timeout(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_remote_server_timeout(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('resource-constraint' =
 			       Reason,
-			   _acc) ->
-    [encode_error_resource_constraint(Reason,
-				      [{<<"xmlns">>,
-					<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_resource_constraint(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('service-unavailable' =
 			       Reason,
-			   _acc) ->
-    [encode_error_service_unavailable(Reason,
-				      [{<<"xmlns">>,
-					<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_service_unavailable(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('subscription-required' =
 			       Reason,
-			   _acc) ->
-    [encode_error_subscription_required(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_subscription_required(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('undefined-condition' =
 			       Reason,
-			   _acc) ->
-    [encode_error_undefined_condition(Reason,
-				      [{<<"xmlns">>,
-					<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_undefined_condition(Reason, __TopXMLNS)
      | _acc];
 'encode_sm_failed_$reason'('unexpected-request' =
 			       Reason,
-			   _acc) ->
-    [encode_error_unexpected_request(Reason,
-				     [{<<"xmlns">>,
-				       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+			   __TopXMLNS, _acc) ->
+    [encode_error_unexpected_request(Reason, __TopXMLNS)
      | _acc].
 
 decode_sm_failed_attr_h(__TopXMLNS, undefined) ->
@@ -7961,10 +10810,6 @@ decode_sm_failed_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_sm_failed_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_sm_failed_attr_xmlns(<<>>, _acc) -> _acc;
-encode_sm_failed_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
-
 decode_sm_a(__TopXMLNS, __IgnoreEls,
 	    {xmlel, <<"a">>, _attrs, _els}) ->
     {H, Xmlns} = decode_sm_a_attrs(__TopXMLNS, _attrs,
@@ -7983,10 +10828,13 @@ decode_sm_a_attrs(__TopXMLNS, [], H, Xmlns) ->
     {decode_sm_a_attr_h(__TopXMLNS, H),
      decode_sm_a_attr_xmlns(__TopXMLNS, Xmlns)}.
 
-encode_sm_a({sm_a, H, Xmlns}, _xmlns_attrs) ->
+encode_sm_a({sm_a, H, Xmlns}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+				     __TopXMLNS),
     _els = [],
-    _attrs = encode_sm_a_attr_xmlns(Xmlns,
-				    encode_sm_a_attr_h(H, _xmlns_attrs)),
+    _attrs = encode_sm_a_attr_h(H,
+				enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS)),
     {xmlel, <<"a">>, _attrs, _els}.
 
 decode_sm_a_attr_h(__TopXMLNS, undefined) ->
@@ -8006,10 +10854,6 @@ encode_sm_a_attr_h(_val, _acc) ->
 decode_sm_a_attr_xmlns(__TopXMLNS, undefined) -> <<>>;
 decode_sm_a_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_sm_a_attr_xmlns(<<>>, _acc) -> _acc;
-encode_sm_a_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
-
 decode_sm_r(__TopXMLNS, __IgnoreEls,
 	    {xmlel, <<"r">>, _attrs, _els}) ->
     Xmlns = decode_sm_r_attrs(__TopXMLNS, _attrs,
@@ -8024,17 +10868,16 @@ decode_sm_r_attrs(__TopXMLNS, [_ | _attrs], Xmlns) ->
 decode_sm_r_attrs(__TopXMLNS, [], Xmlns) ->
     decode_sm_r_attr_xmlns(__TopXMLNS, Xmlns).
 
-encode_sm_r({sm_r, Xmlns}, _xmlns_attrs) ->
+encode_sm_r({sm_r, Xmlns}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+				     __TopXMLNS),
     _els = [],
-    _attrs = encode_sm_r_attr_xmlns(Xmlns, _xmlns_attrs),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"r">>, _attrs, _els}.
 
 decode_sm_r_attr_xmlns(__TopXMLNS, undefined) -> <<>>;
 decode_sm_r_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_sm_r_attr_xmlns(<<>>, _acc) -> _acc;
-encode_sm_r_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_sm_resumed(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"resumed">>, _attrs, _els}) ->
@@ -8066,12 +10909,15 @@ decode_sm_resumed_attrs(__TopXMLNS, [], H, Xmlns,
      decode_sm_resumed_attr_previd(__TopXMLNS, Previd)}.
 
 encode_sm_resumed({sm_resumed, H, Previd, Xmlns},
-		  _xmlns_attrs) ->
+		  __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+				     __TopXMLNS),
     _els = [],
     _attrs = encode_sm_resumed_attr_previd(Previd,
-					   encode_sm_resumed_attr_xmlns(Xmlns,
-									encode_sm_resumed_attr_h(H,
-												 _xmlns_attrs))),
+					   encode_sm_resumed_attr_h(H,
+								    enc_xmlns_attrs(__NewTopXMLNS,
+										    __TopXMLNS))),
     {xmlel, <<"resumed">>, _attrs, _els}.
 
 decode_sm_resumed_attr_h(__TopXMLNS, undefined) ->
@@ -8091,10 +10937,6 @@ encode_sm_resumed_attr_h(_val, _acc) ->
 decode_sm_resumed_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_sm_resumed_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_sm_resumed_attr_xmlns(<<>>, _acc) -> _acc;
-encode_sm_resumed_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_sm_resumed_attr_previd(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -8135,12 +10977,15 @@ decode_sm_resume_attrs(__TopXMLNS, [], H, Xmlns,
      decode_sm_resume_attr_previd(__TopXMLNS, Previd)}.
 
 encode_sm_resume({sm_resume, H, Previd, Xmlns},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+				     __TopXMLNS),
     _els = [],
     _attrs = encode_sm_resume_attr_previd(Previd,
-					  encode_sm_resume_attr_xmlns(Xmlns,
-								      encode_sm_resume_attr_h(H,
-											      _xmlns_attrs))),
+					  encode_sm_resume_attr_h(H,
+								  enc_xmlns_attrs(__NewTopXMLNS,
+										  __TopXMLNS))),
     {xmlel, <<"resume">>, _attrs, _els}.
 
 decode_sm_resume_attr_h(__TopXMLNS, undefined) ->
@@ -8160,10 +11005,6 @@ encode_sm_resume_attr_h(_val, _acc) ->
 decode_sm_resume_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_sm_resume_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_sm_resume_attr_xmlns(<<>>, _acc) -> _acc;
-encode_sm_resume_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_sm_resume_attr_previd(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -8220,14 +11061,17 @@ decode_sm_enabled_attrs(__TopXMLNS, [], Id, Location,
 
 encode_sm_enabled({sm_enabled, Id, Location, Max,
 		   Resume, Xmlns},
-		  _xmlns_attrs) ->
+		  __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+				     __TopXMLNS),
     _els = [],
     _attrs = encode_sm_enabled_attr_resume(Resume,
 					   encode_sm_enabled_attr_max(Max,
-								      encode_sm_enabled_attr_xmlns(Xmlns,
-												   encode_sm_enabled_attr_location(Location,
-																   encode_sm_enabled_attr_id(Id,
-																			     _xmlns_attrs))))),
+								      encode_sm_enabled_attr_location(Location,
+												      encode_sm_enabled_attr_id(Id,
+																enc_xmlns_attrs(__NewTopXMLNS,
+																		__TopXMLNS))))),
     {xmlel, <<"enabled">>, _attrs, _els}.
 
 decode_sm_enabled_attr_id(__TopXMLNS, undefined) ->
@@ -8251,10 +11095,6 @@ encode_sm_enabled_attr_location(_val, _acc) ->
 decode_sm_enabled_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_sm_enabled_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_sm_enabled_attr_xmlns(<<>>, _acc) -> _acc;
-encode_sm_enabled_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_sm_enabled_attr_max(__TopXMLNS, undefined) ->
     undefined;
@@ -8316,12 +11156,15 @@ decode_sm_enable_attrs(__TopXMLNS, [], Max, Xmlns,
      decode_sm_enable_attr_resume(__TopXMLNS, Resume)}.
 
 encode_sm_enable({sm_enable, Max, Resume, Xmlns},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+				     __TopXMLNS),
     _els = [],
     _attrs = encode_sm_enable_attr_resume(Resume,
-					  encode_sm_enable_attr_xmlns(Xmlns,
-								      encode_sm_enable_attr_max(Max,
-												_xmlns_attrs))),
+					  encode_sm_enable_attr_max(Max,
+								    enc_xmlns_attrs(__NewTopXMLNS,
+										    __TopXMLNS))),
     {xmlel, <<"enable">>, _attrs, _els}.
 
 decode_sm_enable_attr_max(__TopXMLNS, undefined) ->
@@ -8341,10 +11184,6 @@ encode_sm_enable_attr_max(_val, _acc) ->
 decode_sm_enable_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_sm_enable_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_sm_enable_attr_xmlns(<<>>, _acc) -> _acc;
-encode_sm_enable_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_sm_enable_attr_resume(__TopXMLNS, undefined) ->
     false;
@@ -8376,36 +11215,38 @@ decode_feature_sm_attrs(__TopXMLNS, [_ | _attrs],
 decode_feature_sm_attrs(__TopXMLNS, [], Xmlns) ->
     decode_feature_sm_attr_xmlns(__TopXMLNS, Xmlns).
 
-encode_feature_sm({feature_sm, Xmlns}, _xmlns_attrs) ->
+encode_feature_sm({feature_sm, Xmlns}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:sm:2">>, <<"urn:xmpp:sm:3">>],
+				     __TopXMLNS),
     _els = [],
-    _attrs = encode_feature_sm_attr_xmlns(Xmlns,
-					  _xmlns_attrs),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"sm">>, _attrs, _els}.
 
 decode_feature_sm_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_feature_sm_attr_xmlns(__TopXMLNS, _val) -> _val.
 
-encode_feature_sm_attr_xmlns(<<>>, _acc) -> _acc;
-encode_feature_sm_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
-
 decode_csi_inactive(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"inactive">>, _attrs, _els}) ->
     {csi, inactive}.
 
-encode_csi_inactive({csi, inactive}, _xmlns_attrs) ->
+encode_csi_inactive({csi, inactive}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:csi:0">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"inactive">>, _attrs, _els}.
 
 decode_csi_active(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"active">>, _attrs, _els}) ->
     {csi, active}.
 
-encode_csi_active({csi, active}, _xmlns_attrs) ->
+encode_csi_active({csi, active}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:csi:0">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"active">>, _attrs, _els}.
 
 decode_feature_csi(__TopXMLNS, __IgnoreEls,
@@ -8423,20 +11264,16 @@ decode_feature_csi_attrs(__TopXMLNS, [_ | _attrs],
 decode_feature_csi_attrs(__TopXMLNS, [], Xmlns) ->
     decode_feature_csi_attr_xmlns(__TopXMLNS, Xmlns).
 
-encode_feature_csi({feature_csi, Xmlns},
-		   _xmlns_attrs) ->
+encode_feature_csi({feature_csi, Xmlns}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:csi:0">>], __TopXMLNS),
     _els = [],
-    _attrs = encode_feature_csi_attr_xmlns(Xmlns,
-					   _xmlns_attrs),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"csi">>, _attrs, _els}.
 
 decode_feature_csi_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_feature_csi_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_feature_csi_attr_xmlns(<<>>, _acc) -> _acc;
-encode_feature_csi_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_carbons_sent(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"sent">>, _attrs, _els}) ->
@@ -8471,17 +11308,19 @@ decode_carbons_sent_els(__TopXMLNS, __IgnoreEls,
 			    Forwarded).
 
 encode_carbons_sent({carbons_sent, Forwarded},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:carbons:2">>, [],
+			 __TopXMLNS),
     _els =
 	lists:reverse('encode_carbons_sent_$forwarded'(Forwarded,
-						       [])),
-    _attrs = _xmlns_attrs,
+						       __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"sent">>, _attrs, _els}.
 
-'encode_carbons_sent_$forwarded'(Forwarded, _acc) ->
-    [encode_forwarded(Forwarded,
-		      [{<<"xmlns">>, <<"urn:xmpp:forward:0">>}])
-     | _acc].
+'encode_carbons_sent_$forwarded'(Forwarded, __TopXMLNS,
+				 _acc) ->
+    [encode_forwarded(Forwarded, __TopXMLNS) | _acc].
 
 decode_carbons_received(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"received">>, _attrs, _els}) ->
@@ -8517,45 +11356,54 @@ decode_carbons_received_els(__TopXMLNS, __IgnoreEls,
 				_els, Forwarded).
 
 encode_carbons_received({carbons_received, Forwarded},
-			_xmlns_attrs) ->
+			__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:carbons:2">>, [],
+			 __TopXMLNS),
     _els =
 	lists:reverse('encode_carbons_received_$forwarded'(Forwarded,
-							   [])),
-    _attrs = _xmlns_attrs,
+							   __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"received">>, _attrs, _els}.
 
-'encode_carbons_received_$forwarded'(Forwarded, _acc) ->
-    [encode_forwarded(Forwarded,
-		      [{<<"xmlns">>, <<"urn:xmpp:forward:0">>}])
-     | _acc].
+'encode_carbons_received_$forwarded'(Forwarded,
+				     __TopXMLNS, _acc) ->
+    [encode_forwarded(Forwarded, __TopXMLNS) | _acc].
 
 decode_carbons_private(__TopXMLNS, __IgnoreEls,
 		       {xmlel, <<"private">>, _attrs, _els}) ->
     {carbons_private}.
 
-encode_carbons_private({carbons_private},
-		       _xmlns_attrs) ->
+encode_carbons_private({carbons_private}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:carbons:2">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"private">>, _attrs, _els}.
 
 decode_carbons_enable(__TopXMLNS, __IgnoreEls,
 		      {xmlel, <<"enable">>, _attrs, _els}) ->
     {carbons_enable}.
 
-encode_carbons_enable({carbons_enable}, _xmlns_attrs) ->
+encode_carbons_enable({carbons_enable}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:carbons:2">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"enable">>, _attrs, _els}.
 
 decode_carbons_disable(__TopXMLNS, __IgnoreEls,
 		       {xmlel, <<"disable">>, _attrs, _els}) ->
     {carbons_disable}.
 
-encode_carbons_disable({carbons_disable},
-		       _xmlns_attrs) ->
+encode_carbons_disable({carbons_disable}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:carbons:2">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"disable">>, _attrs, _els}.
 
 decode_forwarded(__TopXMLNS, __IgnoreEls,
@@ -8586,10 +11434,11 @@ decode_forwarded_els(__TopXMLNS, __IgnoreEls,
 	   decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
 				Delay, [_el | __Els]);
        true ->
-	   case is_known_tag(_el) of
+	   case is_known_tag(_el, __TopXMLNS) of
 	     true ->
 		 decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
-				      Delay, [decode(_el) | __Els]);
+				      Delay,
+				      [decode(_el, __TopXMLNS, []) | __Els]);
 	     false ->
 		 decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
 				      Delay, __Els)
@@ -8601,17 +11450,21 @@ decode_forwarded_els(__TopXMLNS, __IgnoreEls,
 			 Delay, __Els).
 
 encode_forwarded({forwarded, Delay, __Els},
-		 _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els] ++
-	     lists:reverse('encode_forwarded_$delay'(Delay, [])),
-    _attrs = _xmlns_attrs,
+		 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:forward:0">>, [],
+			 __TopXMLNS),
+    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els] ++
+	     lists:reverse('encode_forwarded_$delay'(Delay,
+						     __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"forwarded">>, _attrs, _els}.
 
-'encode_forwarded_$delay'(undefined, _acc) -> _acc;
-'encode_forwarded_$delay'(Delay, _acc) ->
-    [encode_delay(Delay,
-		  [{<<"xmlns">>, <<"urn:xmpp:delay">>}])
-     | _acc].
+'encode_forwarded_$delay'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_forwarded_$delay'(Delay, __TopXMLNS, _acc) ->
+    [encode_delay(Delay, __TopXMLNS) | _acc].
 
 decode_mam_fin(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"fin">>, _attrs, _els}) ->
@@ -8671,20 +11524,24 @@ decode_mam_fin_attrs(__TopXMLNS, [], Id, Xmlns, Stable,
 
 encode_mam_fin({mam_fin, Xmlns, Id, Rsm, Stable,
 		Complete},
-	       _xmlns_attrs) ->
-    _els = lists:reverse('encode_mam_fin_$rsm'(Rsm, [])),
+	       __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:mam:0">>,
+				      <<"urn:xmpp:mam:1">>],
+				     __TopXMLNS),
+    _els = lists:reverse('encode_mam_fin_$rsm'(Rsm,
+					       __NewTopXMLNS, [])),
     _attrs = encode_mam_fin_attr_complete(Complete,
 					  encode_mam_fin_attr_stable(Stable,
-								     encode_mam_fin_attr_xmlns(Xmlns,
-											       encode_mam_fin_attr_queryid(Id,
-															   _xmlns_attrs)))),
+								     encode_mam_fin_attr_queryid(Id,
+												 enc_xmlns_attrs(__NewTopXMLNS,
+														 __TopXMLNS)))),
     {xmlel, <<"fin">>, _attrs, _els}.
 
-'encode_mam_fin_$rsm'(undefined, _acc) -> _acc;
-'encode_mam_fin_$rsm'(Rsm, _acc) ->
-    [encode_rsm_set(Rsm,
-		    [{<<"xmlns">>, <<"http://jabber.org/protocol/rsm">>}])
-     | _acc].
+'encode_mam_fin_$rsm'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_mam_fin_$rsm'(Rsm, __TopXMLNS, _acc) ->
+    [encode_rsm_set(Rsm, __TopXMLNS) | _acc].
 
 decode_mam_fin_attr_queryid(__TopXMLNS, undefined) ->
     <<>>;
@@ -8697,10 +11554,6 @@ encode_mam_fin_attr_queryid(_val, _acc) ->
 decode_mam_fin_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_mam_fin_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_mam_fin_attr_xmlns(<<>>, _acc) -> _acc;
-encode_mam_fin_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_mam_fin_attr_stable(__TopXMLNS, undefined) ->
     undefined;
@@ -8826,22 +11679,33 @@ decode_mam_prefs_attrs(__TopXMLNS, [], Default,
 
 encode_mam_prefs({mam_prefs, Xmlns, Default, Always,
 		  Never},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:mam:0">>,
+				      <<"urn:xmpp:mam:1">>,
+				      <<"urn:xmpp:mam:tmp">>],
+				     __TopXMLNS),
     _els = lists:reverse('encode_mam_prefs_$never'(Never,
+						   __NewTopXMLNS,
 						   'encode_mam_prefs_$always'(Always,
+									      __NewTopXMLNS,
 									      []))),
-    _attrs = encode_mam_prefs_attr_xmlns(Xmlns,
-					 encode_mam_prefs_attr_default(Default,
-								       _xmlns_attrs)),
+    _attrs = encode_mam_prefs_attr_default(Default,
+					   enc_xmlns_attrs(__NewTopXMLNS,
+							   __TopXMLNS)),
     {xmlel, <<"prefs">>, _attrs, _els}.
 
-'encode_mam_prefs_$never'(undefined, _acc) -> _acc;
-'encode_mam_prefs_$never'(Never, _acc) ->
-    [encode_mam_never(Never, []) | _acc].
+'encode_mam_prefs_$never'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_mam_prefs_$never'(Never, __TopXMLNS, _acc) ->
+    [encode_mam_never(Never, __TopXMLNS) | _acc].
 
-'encode_mam_prefs_$always'(undefined, _acc) -> _acc;
-'encode_mam_prefs_$always'(Always, _acc) ->
-    [encode_mam_always(Always, []) | _acc].
+'encode_mam_prefs_$always'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_mam_prefs_$always'(Always, __TopXMLNS, _acc) ->
+    [encode_mam_always(Always, __TopXMLNS) | _acc].
 
 decode_mam_prefs_attr_default(__TopXMLNS, undefined) ->
     undefined;
@@ -8861,10 +11725,6 @@ encode_mam_prefs_attr_default(_val, _acc) ->
 decode_mam_prefs_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_mam_prefs_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_mam_prefs_attr_xmlns(<<>>, _acc) -> _acc;
-encode_mam_prefs_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_mam_always(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"always">>, _attrs, _els}) ->
@@ -8909,16 +11769,22 @@ decode_mam_always_els(__TopXMLNS, __IgnoreEls,
     decode_mam_always_els(__TopXMLNS, __IgnoreEls, _els,
 			  Jids).
 
-encode_mam_always(Jids, _xmlns_attrs) ->
+encode_mam_always(Jids, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"urn:xmpp:mam:0">>,
+				      <<"urn:xmpp:mam:1">>,
+				      <<"urn:xmpp:mam:tmp">>],
+				     __TopXMLNS),
     _els = lists:reverse('encode_mam_always_$jids'(Jids,
-						   [])),
-    _attrs = _xmlns_attrs,
+						   __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"always">>, _attrs, _els}.
 
-'encode_mam_always_$jids'([], _acc) -> _acc;
-'encode_mam_always_$jids'([Jids | _els], _acc) ->
-    'encode_mam_always_$jids'(_els,
-			      [encode_mam_jid(Jids, []) | _acc]).
+'encode_mam_always_$jids'([], __TopXMLNS, _acc) -> _acc;
+'encode_mam_always_$jids'([Jids | _els], __TopXMLNS,
+			  _acc) ->
+    'encode_mam_always_$jids'(_els, __TopXMLNS,
+			      [encode_mam_jid(Jids, __TopXMLNS) | _acc]).
 
 decode_mam_never(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"never">>, _attrs, _els}) ->
@@ -8963,16 +11829,22 @@ decode_mam_never_els(__TopXMLNS, __IgnoreEls,
     decode_mam_never_els(__TopXMLNS, __IgnoreEls, _els,
 			 Jids).
 
-encode_mam_never(Jids, _xmlns_attrs) ->
+encode_mam_never(Jids, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"urn:xmpp:mam:0">>,
+				      <<"urn:xmpp:mam:1">>,
+				      <<"urn:xmpp:mam:tmp">>],
+				     __TopXMLNS),
     _els = lists:reverse('encode_mam_never_$jids'(Jids,
-						  [])),
-    _attrs = _xmlns_attrs,
+						  __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"never">>, _attrs, _els}.
 
-'encode_mam_never_$jids'([], _acc) -> _acc;
-'encode_mam_never_$jids'([Jids | _els], _acc) ->
-    'encode_mam_never_$jids'(_els,
-			     [encode_mam_jid(Jids, []) | _acc]).
+'encode_mam_never_$jids'([], __TopXMLNS, _acc) -> _acc;
+'encode_mam_never_$jids'([Jids | _els], __TopXMLNS,
+			 _acc) ->
+    'encode_mam_never_$jids'(_els, __TopXMLNS,
+			     [encode_mam_jid(Jids, __TopXMLNS) | _acc]).
 
 decode_mam_jid(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"jid">>, _attrs, _els}) ->
@@ -8992,9 +11864,14 @@ decode_mam_jid_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_mam_jid_els(__TopXMLNS, __IgnoreEls, _els,
 		       Cdata).
 
-encode_mam_jid(Cdata, _xmlns_attrs) ->
+encode_mam_jid(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"urn:xmpp:mam:0">>,
+				      <<"urn:xmpp:mam:1">>,
+				      <<"urn:xmpp:mam:tmp">>],
+				     __TopXMLNS),
     _els = encode_mam_jid_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"jid">>, _attrs, _els}.
 
 decode_mam_jid_cdata(__TopXMLNS, <<>>) ->
@@ -9029,10 +11906,10 @@ decode_mam_result_els(__TopXMLNS, __IgnoreEls,
 	   decode_mam_result_els(__TopXMLNS, __IgnoreEls, _els,
 				 [_el | __Els]);
        true ->
-	   case is_known_tag(_el) of
+	   case is_known_tag(_el, __TopXMLNS) of
 	     true ->
 		 decode_mam_result_els(__TopXMLNS, __IgnoreEls, _els,
-				       [decode(_el) | __Els]);
+				       [decode(_el, __TopXMLNS, []) | __Els]);
 	     false ->
 		 decode_mam_result_els(__TopXMLNS, __IgnoreEls, _els,
 				       __Els)
@@ -9068,12 +11945,17 @@ decode_mam_result_attrs(__TopXMLNS, [], Queryid, Xmlns,
 
 encode_mam_result({mam_result, Xmlns, Queryid, Id,
 		   __Els},
-		  _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els],
+		  __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:mam:0">>,
+				      <<"urn:xmpp:mam:1">>,
+				      <<"urn:xmpp:mam:tmp">>],
+				     __TopXMLNS),
+    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els],
     _attrs = encode_mam_result_attr_id(Id,
-				       encode_mam_result_attr_xmlns(Xmlns,
-								    encode_mam_result_attr_queryid(Queryid,
-												   _xmlns_attrs))),
+				       encode_mam_result_attr_queryid(Queryid,
+								      enc_xmlns_attrs(__NewTopXMLNS,
+										      __TopXMLNS))),
     {xmlel, <<"result">>, _attrs, _els}.
 
 decode_mam_result_attr_queryid(__TopXMLNS, undefined) ->
@@ -9088,10 +11970,6 @@ encode_mam_result_attr_queryid(_val, _acc) ->
 decode_mam_result_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_mam_result_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_mam_result_attr_xmlns(<<>>, _acc) -> _acc;
-encode_mam_result_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_mam_result_attr_id(__TopXMLNS, undefined) ->
     <<>>;
@@ -9121,11 +11999,14 @@ decode_mam_archived_attrs(__TopXMLNS, [], Id, By) ->
      decode_mam_archived_attr_by(__TopXMLNS, By)}.
 
 encode_mam_archived({mam_archived, By, Id},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:mam:tmp">>,
+				     [], __TopXMLNS),
     _els = [],
     _attrs = encode_mam_archived_attr_by(By,
 					 encode_mam_archived_attr_id(Id,
-								     _xmlns_attrs)),
+								     enc_xmlns_attrs(__NewTopXMLNS,
+										     __TopXMLNS))),
     {xmlel, <<"archived">>, _attrs, _els}.
 
 decode_mam_archived_attr_id(__TopXMLNS, undefined) ->
@@ -9288,46 +12169,63 @@ decode_mam_query_attrs(__TopXMLNS, [], Id, Xmlns) ->
 
 encode_mam_query({mam_query, Xmlns, Id, Start, End,
 		  With, Withtext, Rsm, Xdata},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"urn:xmpp:mam:0">>,
+				      <<"urn:xmpp:mam:1">>,
+				      <<"urn:xmpp:mam:tmp">>],
+				     __TopXMLNS),
     _els = lists:reverse('encode_mam_query_$xdata'(Xdata,
+						   __NewTopXMLNS,
 						   'encode_mam_query_$withtext'(Withtext,
+										__NewTopXMLNS,
 										'encode_mam_query_$end'(End,
+													__NewTopXMLNS,
 													'encode_mam_query_$start'(Start,
+																  __NewTopXMLNS,
 																  'encode_mam_query_$with'(With,
+																			   __NewTopXMLNS,
 																			   'encode_mam_query_$rsm'(Rsm,
+																						   __NewTopXMLNS,
 																						   []))))))),
-    _attrs = encode_mam_query_attr_xmlns(Xmlns,
-					 encode_mam_query_attr_queryid(Id,
-								       _xmlns_attrs)),
+    _attrs = encode_mam_query_attr_queryid(Id,
+					   enc_xmlns_attrs(__NewTopXMLNS,
+							   __TopXMLNS)),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_mam_query_$xdata'(undefined, _acc) -> _acc;
-'encode_mam_query_$xdata'(Xdata, _acc) ->
-    [encode_xdata(Xdata,
-		  [{<<"xmlns">>, <<"jabber:x:data">>}])
-     | _acc].
+'encode_mam_query_$xdata'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_mam_query_$xdata'(Xdata, __TopXMLNS, _acc) ->
+    [encode_xdata(Xdata, __TopXMLNS) | _acc].
 
-'encode_mam_query_$withtext'(undefined, _acc) -> _acc;
-'encode_mam_query_$withtext'(Withtext, _acc) ->
-    [encode_mam_withtext(Withtext, []) | _acc].
+'encode_mam_query_$withtext'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_mam_query_$withtext'(Withtext, __TopXMLNS,
+			     _acc) ->
+    [encode_mam_withtext(Withtext, __TopXMLNS) | _acc].
 
-'encode_mam_query_$end'(undefined, _acc) -> _acc;
-'encode_mam_query_$end'(End, _acc) ->
-    [encode_mam_end(End, []) | _acc].
+'encode_mam_query_$end'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_mam_query_$end'(End, __TopXMLNS, _acc) ->
+    [encode_mam_end(End, __TopXMLNS) | _acc].
 
-'encode_mam_query_$start'(undefined, _acc) -> _acc;
-'encode_mam_query_$start'(Start, _acc) ->
-    [encode_mam_start(Start, []) | _acc].
+'encode_mam_query_$start'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_mam_query_$start'(Start, __TopXMLNS, _acc) ->
+    [encode_mam_start(Start, __TopXMLNS) | _acc].
 
-'encode_mam_query_$with'(undefined, _acc) -> _acc;
-'encode_mam_query_$with'(With, _acc) ->
-    [encode_mam_with(With, []) | _acc].
+'encode_mam_query_$with'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_mam_query_$with'(With, __TopXMLNS, _acc) ->
+    [encode_mam_with(With, __TopXMLNS) | _acc].
 
-'encode_mam_query_$rsm'(undefined, _acc) -> _acc;
-'encode_mam_query_$rsm'(Rsm, _acc) ->
-    [encode_rsm_set(Rsm,
-		    [{<<"xmlns">>, <<"http://jabber.org/protocol/rsm">>}])
-     | _acc].
+'encode_mam_query_$rsm'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_mam_query_$rsm'(Rsm, __TopXMLNS, _acc) ->
+    [encode_rsm_set(Rsm, __TopXMLNS) | _acc].
 
 decode_mam_query_attr_queryid(__TopXMLNS, undefined) ->
     <<>>;
@@ -9340,10 +12238,6 @@ encode_mam_query_attr_queryid(_val, _acc) ->
 decode_mam_query_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_mam_query_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_mam_query_attr_xmlns(<<>>, _acc) -> _acc;
-encode_mam_query_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_mam_withtext(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"withtext">>, _attrs, _els}) ->
@@ -9363,9 +12257,11 @@ decode_mam_withtext_els(__TopXMLNS, __IgnoreEls,
     decode_mam_withtext_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_mam_withtext(Cdata, _xmlns_attrs) ->
+encode_mam_withtext(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:mam:tmp">>,
+				     [], __TopXMLNS),
     _els = encode_mam_withtext_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"withtext">>, _attrs, _els}.
 
 decode_mam_withtext_cdata(__TopXMLNS, <<>>) ->
@@ -9394,9 +12290,11 @@ decode_mam_with_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_mam_with_els(__TopXMLNS, __IgnoreEls, _els,
 			Cdata).
 
-encode_mam_with(Cdata, _xmlns_attrs) ->
+encode_mam_with(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:mam:tmp">>,
+				     [], __TopXMLNS),
     _els = encode_mam_with_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"with">>, _attrs, _els}.
 
 decode_mam_with_cdata(__TopXMLNS, <<>>) ->
@@ -9431,9 +12329,11 @@ decode_mam_end_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_mam_end_els(__TopXMLNS, __IgnoreEls, _els,
 		       Cdata).
 
-encode_mam_end(Cdata, _xmlns_attrs) ->
+encode_mam_end(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:mam:tmp">>,
+				     [], __TopXMLNS),
     _els = encode_mam_end_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"end">>, _attrs, _els}.
 
 decode_mam_end_cdata(__TopXMLNS, <<>>) ->
@@ -9468,9 +12368,11 @@ decode_mam_start_els(__TopXMLNS, __IgnoreEls,
     decode_mam_start_els(__TopXMLNS, __IgnoreEls, _els,
 			 Cdata).
 
-encode_mam_start(Cdata, _xmlns_attrs) ->
+encode_mam_start(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:mam:tmp">>,
+				     [], __TopXMLNS),
     _els = encode_mam_start_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"start">>, _attrs, _els}.
 
 decode_mam_start_cdata(__TopXMLNS, <<>>) ->
@@ -9647,45 +12549,62 @@ decode_rsm_set_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 
 encode_rsm_set({rsm_set, After, Before, Count, First,
 		Index, Last, Max},
-	       _xmlns_attrs) ->
+	       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/rsm">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_rsm_set_$after'(After,
+						 __NewTopXMLNS,
 						 'encode_rsm_set_$last'(Last,
+									__NewTopXMLNS,
 									'encode_rsm_set_$first'(First,
+												__NewTopXMLNS,
 												'encode_rsm_set_$count'(Count,
+															__NewTopXMLNS,
 															'encode_rsm_set_$before'(Before,
+																		 __NewTopXMLNS,
 																		 'encode_rsm_set_$max'(Max,
+																				       __NewTopXMLNS,
 																				       'encode_rsm_set_$index'(Index,
+																							       __NewTopXMLNS,
 																							       [])))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"set">>, _attrs, _els}.
 
-'encode_rsm_set_$after'(undefined, _acc) -> _acc;
-'encode_rsm_set_$after'(After, _acc) ->
-    [encode_rsm_after(After, []) | _acc].
+'encode_rsm_set_$after'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_rsm_set_$after'(After, __TopXMLNS, _acc) ->
+    [encode_rsm_after(After, __TopXMLNS) | _acc].
 
-'encode_rsm_set_$last'(undefined, _acc) -> _acc;
-'encode_rsm_set_$last'(Last, _acc) ->
-    [encode_rsm_last(Last, []) | _acc].
+'encode_rsm_set_$last'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_rsm_set_$last'(Last, __TopXMLNS, _acc) ->
+    [encode_rsm_last(Last, __TopXMLNS) | _acc].
 
-'encode_rsm_set_$first'(undefined, _acc) -> _acc;
-'encode_rsm_set_$first'(First, _acc) ->
-    [encode_rsm_first(First, []) | _acc].
+'encode_rsm_set_$first'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_rsm_set_$first'(First, __TopXMLNS, _acc) ->
+    [encode_rsm_first(First, __TopXMLNS) | _acc].
 
-'encode_rsm_set_$count'(undefined, _acc) -> _acc;
-'encode_rsm_set_$count'(Count, _acc) ->
-    [encode_rsm_count(Count, []) | _acc].
+'encode_rsm_set_$count'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_rsm_set_$count'(Count, __TopXMLNS, _acc) ->
+    [encode_rsm_count(Count, __TopXMLNS) | _acc].
 
-'encode_rsm_set_$before'(undefined, _acc) -> _acc;
-'encode_rsm_set_$before'(Before, _acc) ->
-    [encode_rsm_before(Before, []) | _acc].
+'encode_rsm_set_$before'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_rsm_set_$before'(Before, __TopXMLNS, _acc) ->
+    [encode_rsm_before(Before, __TopXMLNS) | _acc].
 
-'encode_rsm_set_$max'(undefined, _acc) -> _acc;
-'encode_rsm_set_$max'(Max, _acc) ->
-    [encode_rsm_max(Max, []) | _acc].
+'encode_rsm_set_$max'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_rsm_set_$max'(Max, __TopXMLNS, _acc) ->
+    [encode_rsm_max(Max, __TopXMLNS) | _acc].
 
-'encode_rsm_set_$index'(undefined, _acc) -> _acc;
-'encode_rsm_set_$index'(Index, _acc) ->
-    [encode_rsm_index(Index, []) | _acc].
+'encode_rsm_set_$index'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_rsm_set_$index'(Index, __TopXMLNS, _acc) ->
+    [encode_rsm_index(Index, __TopXMLNS) | _acc].
 
 decode_rsm_first(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"first">>, _attrs, _els}) ->
@@ -9717,10 +12636,14 @@ decode_rsm_first_attrs(__TopXMLNS, [], Index) ->
     decode_rsm_first_attr_index(__TopXMLNS, Index).
 
 encode_rsm_first({rsm_first, Index, Data},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/rsm">>,
+			 [], __TopXMLNS),
     _els = encode_rsm_first_cdata(Data, []),
     _attrs = encode_rsm_first_attr_index(Index,
-					 _xmlns_attrs),
+					 enc_xmlns_attrs(__NewTopXMLNS,
+							 __TopXMLNS)),
     {xmlel, <<"first">>, _attrs, _els}.
 
 decode_rsm_first_attr_index(__TopXMLNS, undefined) ->
@@ -9763,9 +12686,12 @@ decode_rsm_max_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_rsm_max_els(__TopXMLNS, __IgnoreEls, _els,
 		       Cdata).
 
-encode_rsm_max(Cdata, _xmlns_attrs) ->
+encode_rsm_max(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/rsm">>,
+			 [], __TopXMLNS),
     _els = encode_rsm_max_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"max">>, _attrs, _els}.
 
 decode_rsm_max_cdata(__TopXMLNS, <<>>) -> undefined;
@@ -9799,9 +12725,12 @@ decode_rsm_index_els(__TopXMLNS, __IgnoreEls,
     decode_rsm_index_els(__TopXMLNS, __IgnoreEls, _els,
 			 Cdata).
 
-encode_rsm_index(Cdata, _xmlns_attrs) ->
+encode_rsm_index(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/rsm">>,
+			 [], __TopXMLNS),
     _els = encode_rsm_index_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"index">>, _attrs, _els}.
 
 decode_rsm_index_cdata(__TopXMLNS, <<>>) -> undefined;
@@ -9835,9 +12764,12 @@ decode_rsm_count_els(__TopXMLNS, __IgnoreEls,
     decode_rsm_count_els(__TopXMLNS, __IgnoreEls, _els,
 			 Cdata).
 
-encode_rsm_count(Cdata, _xmlns_attrs) ->
+encode_rsm_count(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/rsm">>,
+			 [], __TopXMLNS),
     _els = encode_rsm_count_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"count">>, _attrs, _els}.
 
 decode_rsm_count_cdata(__TopXMLNS, <<>>) -> undefined;
@@ -9871,9 +12803,12 @@ decode_rsm_last_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_rsm_last_els(__TopXMLNS, __IgnoreEls, _els,
 			Cdata).
 
-encode_rsm_last(Cdata, _xmlns_attrs) ->
+encode_rsm_last(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/rsm">>,
+			 [], __TopXMLNS),
     _els = encode_rsm_last_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"last">>, _attrs, _els}.
 
 decode_rsm_last_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -9901,9 +12836,12 @@ decode_rsm_before_els(__TopXMLNS, __IgnoreEls,
     decode_rsm_before_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_rsm_before(Cdata, _xmlns_attrs) ->
+encode_rsm_before(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/rsm">>,
+			 [], __TopXMLNS),
     _els = encode_rsm_before_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"before">>, _attrs, _els}.
 
 decode_rsm_before_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -9931,9 +12869,12 @@ decode_rsm_after_els(__TopXMLNS, __IgnoreEls,
     decode_rsm_after_els(__TopXMLNS, __IgnoreEls, _els,
 			 Cdata).
 
-encode_rsm_after(Cdata, _xmlns_attrs) ->
+encode_rsm_after(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/rsm">>,
+			 [], __TopXMLNS),
     _els = encode_rsm_after_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"after">>, _attrs, _els}.
 
 decode_rsm_after_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -9947,10 +12888,12 @@ decode_muc_unsubscribe(__TopXMLNS, __IgnoreEls,
 		       {xmlel, <<"unsubscribe">>, _attrs, _els}) ->
     {muc_unsubscribe}.
 
-encode_muc_unsubscribe({muc_unsubscribe},
-		       _xmlns_attrs) ->
+encode_muc_unsubscribe({muc_unsubscribe}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:mucsub:0">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"unsubscribe">>, _attrs, _els}.
 
 decode_muc_subscribe(__TopXMLNS, __IgnoreEls,
@@ -9997,18 +12940,25 @@ decode_muc_subscribe_attrs(__TopXMLNS, [], Nick) ->
     decode_muc_subscribe_attr_nick(__TopXMLNS, Nick).
 
 encode_muc_subscribe({muc_subscribe, Nick, Events},
-		     _xmlns_attrs) ->
+		     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:mucsub:0">>, [],
+			 __TopXMLNS),
     _els =
 	lists:reverse('encode_muc_subscribe_$events'(Events,
-						     [])),
+						     __NewTopXMLNS, [])),
     _attrs = encode_muc_subscribe_attr_nick(Nick,
-					    _xmlns_attrs),
+					    enc_xmlns_attrs(__NewTopXMLNS,
+							    __TopXMLNS)),
     {xmlel, <<"subscribe">>, _attrs, _els}.
 
-'encode_muc_subscribe_$events'([], _acc) -> _acc;
-'encode_muc_subscribe_$events'([Events | _els], _acc) ->
-    'encode_muc_subscribe_$events'(_els,
-				   [encode_muc_subscribe_event(Events, [])
+'encode_muc_subscribe_$events'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_muc_subscribe_$events'([Events | _els],
+			       __TopXMLNS, _acc) ->
+    'encode_muc_subscribe_$events'(_els, __TopXMLNS,
+				   [encode_muc_subscribe_event(Events,
+							       __TopXMLNS)
 				    | _acc]).
 
 decode_muc_subscribe_attr_nick(__TopXMLNS, undefined) ->
@@ -10039,10 +12989,14 @@ decode_muc_subscribe_event_attrs(__TopXMLNS, [],
 				 Node) ->
     decode_muc_subscribe_event_attr_node(__TopXMLNS, Node).
 
-encode_muc_subscribe_event(Node, _xmlns_attrs) ->
+encode_muc_subscribe_event(Node, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:mucsub:0">>, [],
+			 __TopXMLNS),
     _els = [],
     _attrs = encode_muc_subscribe_event_attr_node(Node,
-						  _xmlns_attrs),
+						  enc_xmlns_attrs(__NewTopXMLNS,
+								  __TopXMLNS)),
     {xmlel, <<"event">>, _attrs, _els}.
 
 decode_muc_subscribe_event_attr_node(__TopXMLNS,
@@ -10094,17 +13048,23 @@ decode_muc_subscriptions_els(__TopXMLNS, __IgnoreEls,
 				 _els, List).
 
 encode_muc_subscriptions({muc_subscriptions, List},
-			 _xmlns_attrs) ->
+			 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:mucsub:0">>, [],
+			 __TopXMLNS),
     _els =
 	lists:reverse('encode_muc_subscriptions_$list'(List,
-						       [])),
-    _attrs = _xmlns_attrs,
+						       __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"subscriptions">>, _attrs, _els}.
 
-'encode_muc_subscriptions_$list'([], _acc) -> _acc;
-'encode_muc_subscriptions_$list'([List | _els], _acc) ->
-    'encode_muc_subscriptions_$list'(_els,
-				     [encode_muc_subscription(List, [])
+'encode_muc_subscriptions_$list'([], __TopXMLNS,
+				 _acc) ->
+    _acc;
+'encode_muc_subscriptions_$list'([List | _els],
+				 __TopXMLNS, _acc) ->
+    'encode_muc_subscriptions_$list'(_els, __TopXMLNS,
+				     [encode_muc_subscription(List, __TopXMLNS)
 				      | _acc]).
 
 decode_muc_subscription(__TopXMLNS, __IgnoreEls,
@@ -10122,10 +13082,14 @@ decode_muc_subscription_attrs(__TopXMLNS, [_ | _attrs],
 decode_muc_subscription_attrs(__TopXMLNS, [], Jid) ->
     decode_muc_subscription_attr_jid(__TopXMLNS, Jid).
 
-encode_muc_subscription(Jid, _xmlns_attrs) ->
+encode_muc_subscription(Jid, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:mucsub:0">>, [],
+			 __TopXMLNS),
     _els = [],
     _attrs = encode_muc_subscription_attr_jid(Jid,
-					      _xmlns_attrs),
+					      enc_xmlns_attrs(__NewTopXMLNS,
+							      __TopXMLNS)),
     {xmlel, <<"subscription">>, _attrs, _els}.
 
 decode_muc_subscription_attr_jid(__TopXMLNS,
@@ -10192,14 +13156,18 @@ decode_x_conference_attrs(__TopXMLNS, [], Jid, Password,
 
 encode_x_conference({x_conference, Jid, Password,
 		     Reason, Continue, Thread},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:x:conference">>, [],
+			 __TopXMLNS),
     _els = [],
     _attrs = encode_x_conference_attr_continue(Continue,
 					       encode_x_conference_attr_thread(Thread,
 									       encode_x_conference_attr_reason(Reason,
 													       encode_x_conference_attr_password(Password,
 																		 encode_x_conference_attr_jid(Jid,
-																					      _xmlns_attrs))))),
+																					      enc_xmlns_attrs(__NewTopXMLNS,
+																							      __TopXMLNS)))))),
     {xmlel, <<"x">>, _attrs, _els}.
 
 decode_x_conference_attr_jid(__TopXMLNS, undefined) ->
@@ -10280,9 +13248,12 @@ decode_muc_unique_els(__TopXMLNS, __IgnoreEls,
     decode_muc_unique_els(__TopXMLNS, __IgnoreEls, _els,
 			  Name).
 
-encode_muc_unique({muc_unique, Name}, _xmlns_attrs) ->
+encode_muc_unique({muc_unique, Name}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#unique">>,
+			 [], __TopXMLNS),
     _els = encode_muc_unique_cdata(Name, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"unique">>, _attrs, _els}.
 
 decode_muc_unique_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -10353,20 +13324,27 @@ decode_muc_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_muc_els(__TopXMLNS, __IgnoreEls, _els, Password,
 		   History).
 
-encode_muc({muc, History, Password}, _xmlns_attrs) ->
+encode_muc({muc, History, Password}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_muc_$password'(Password,
+						__NewTopXMLNS,
 						'encode_muc_$history'(History,
+								      __NewTopXMLNS,
 								      []))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"x">>, _attrs, _els}.
 
-'encode_muc_$password'(undefined, _acc) -> _acc;
-'encode_muc_$password'(Password, _acc) ->
-    [encode_muc_password(Password, []) | _acc].
+'encode_muc_$password'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_muc_$password'(Password, __TopXMLNS, _acc) ->
+    [encode_muc_password(Password, __TopXMLNS) | _acc].
 
-'encode_muc_$history'(undefined, _acc) -> _acc;
-'encode_muc_$history'(History, _acc) ->
-    [encode_muc_history(History, []) | _acc].
+'encode_muc_$history'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_muc_$history'(History, __TopXMLNS, _acc) ->
+    [encode_muc_history(History, __TopXMLNS) | _acc].
 
 decode_muc_admin(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"query">>, _attrs, _els}) ->
@@ -10401,16 +13379,21 @@ decode_muc_admin_els(__TopXMLNS, __IgnoreEls,
     decode_muc_admin_els(__TopXMLNS, __IgnoreEls, _els,
 			 Items).
 
-encode_muc_admin({muc_admin, Items}, _xmlns_attrs) ->
+encode_muc_admin({muc_admin, Items}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#admin">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_muc_admin_$items'(Items,
-						   [])),
-    _attrs = _xmlns_attrs,
+						   __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_muc_admin_$items'([], _acc) -> _acc;
-'encode_muc_admin_$items'([Items | _els], _acc) ->
-    'encode_muc_admin_$items'(_els,
-			      [encode_muc_admin_item(Items, []) | _acc]).
+'encode_muc_admin_$items'([], __TopXMLNS, _acc) -> _acc;
+'encode_muc_admin_$items'([Items | _els], __TopXMLNS,
+			  _acc) ->
+    'encode_muc_admin_$items'(_els, __TopXMLNS,
+			      [encode_muc_admin_item(Items, __TopXMLNS)
+			       | _acc]).
 
 decode_muc_admin_continue(__TopXMLNS, __IgnoreEls,
 			  {xmlel, <<"continue">>, _attrs, _els}) ->
@@ -10431,10 +13414,14 @@ decode_muc_admin_continue_attrs(__TopXMLNS, [],
     decode_muc_admin_continue_attr_thread(__TopXMLNS,
 					  Thread).
 
-encode_muc_admin_continue(Thread, _xmlns_attrs) ->
+encode_muc_admin_continue(Thread, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#admin">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_muc_admin_continue_attr_thread(Thread,
-						   _xmlns_attrs),
+						   enc_xmlns_attrs(__NewTopXMLNS,
+								   __TopXMLNS)),
     {xmlel, <<"continue">>, _attrs, _els}.
 
 decode_muc_admin_continue_attr_thread(__TopXMLNS,
@@ -10473,11 +13460,15 @@ decode_muc_admin_actor_attrs(__TopXMLNS, [], Jid,
      decode_muc_admin_actor_attr_nick(__TopXMLNS, Nick)}.
 
 encode_muc_admin_actor({muc_actor, Jid, Nick},
-		       _xmlns_attrs) ->
+		       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#admin">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_muc_admin_actor_attr_nick(Nick,
 					      encode_muc_admin_actor_attr_jid(Jid,
-									      _xmlns_attrs)),
+									      enc_xmlns_attrs(__NewTopXMLNS,
+											      __TopXMLNS))),
     {xmlel, <<"actor">>, _attrs, _els}.
 
 decode_muc_admin_actor_attr_jid(__TopXMLNS,
@@ -10631,31 +13622,47 @@ decode_muc_admin_item_attrs(__TopXMLNS, [], Affiliation,
 
 encode_muc_admin_item({muc_item, Actor, Continue,
 		       Reason, Affiliation, Role, Jid, Nick},
-		      _xmlns_attrs) ->
+		      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#admin">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_muc_admin_item_$actor'(Actor,
+						     __NewTopXMLNS,
 						     'encode_muc_admin_item_$continue'(Continue,
+										       __NewTopXMLNS,
 										       'encode_muc_admin_item_$reason'(Reason,
+														       __NewTopXMLNS,
 														       [])))),
     _attrs = encode_muc_admin_item_attr_nick(Nick,
 					     encode_muc_admin_item_attr_jid(Jid,
 									    encode_muc_admin_item_attr_role(Role,
 													    encode_muc_admin_item_attr_affiliation(Affiliation,
-																		   _xmlns_attrs)))),
+																		   enc_xmlns_attrs(__NewTopXMLNS,
+																				   __TopXMLNS))))),
     {xmlel, <<"item">>, _attrs, _els}.
 
-'encode_muc_admin_item_$actor'(undefined, _acc) -> _acc;
-'encode_muc_admin_item_$actor'(Actor, _acc) ->
-    [encode_muc_admin_actor(Actor, []) | _acc].
-
-'encode_muc_admin_item_$continue'(undefined, _acc) ->
+'encode_muc_admin_item_$actor'(undefined, __TopXMLNS,
+			       _acc) ->
     _acc;
-'encode_muc_admin_item_$continue'(Continue, _acc) ->
-    [encode_muc_admin_continue(Continue, []) | _acc].
+'encode_muc_admin_item_$actor'(Actor, __TopXMLNS,
+			       _acc) ->
+    [encode_muc_admin_actor(Actor, __TopXMLNS) | _acc].
 
-'encode_muc_admin_item_$reason'(<<>>, _acc) -> _acc;
-'encode_muc_admin_item_$reason'(Reason, _acc) ->
-    [encode_muc_reason(Reason, []) | _acc].
+'encode_muc_admin_item_$continue'(undefined, __TopXMLNS,
+				  _acc) ->
+    _acc;
+'encode_muc_admin_item_$continue'(Continue, __TopXMLNS,
+				  _acc) ->
+    [encode_muc_admin_continue(Continue, __TopXMLNS)
+     | _acc].
+
+'encode_muc_admin_item_$reason'(<<>>, __TopXMLNS,
+				_acc) ->
+    _acc;
+'encode_muc_admin_item_$reason'(Reason, __TopXMLNS,
+				_acc) ->
+    [encode_muc_reason(Reason, __TopXMLNS) | _acc].
 
 decode_muc_admin_item_attr_affiliation(__TopXMLNS,
 				       undefined) ->
@@ -10830,37 +13837,47 @@ decode_muc_owner_item_attrs(__TopXMLNS, [], Affiliation,
 
 encode_muc_owner_item({muc_item, Actor, Continue,
 		       Reason, Affiliation, Role, Jid, Nick},
-		      _xmlns_attrs) ->
+		      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#owner">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_muc_owner_item_$actor'(Actor,
+						     __NewTopXMLNS,
 						     'encode_muc_owner_item_$continue'(Continue,
+										       __NewTopXMLNS,
 										       'encode_muc_owner_item_$reason'(Reason,
+														       __NewTopXMLNS,
 														       [])))),
     _attrs = encode_muc_owner_item_attr_nick(Nick,
 					     encode_muc_owner_item_attr_jid(Jid,
 									    encode_muc_owner_item_attr_role(Role,
 													    encode_muc_owner_item_attr_affiliation(Affiliation,
-																		   _xmlns_attrs)))),
+																		   enc_xmlns_attrs(__NewTopXMLNS,
+																				   __TopXMLNS))))),
     {xmlel, <<"item">>, _attrs, _els}.
 
-'encode_muc_owner_item_$actor'(undefined, _acc) -> _acc;
-'encode_muc_owner_item_$actor'(Actor, _acc) ->
-    [encode_muc_admin_actor(Actor,
-			    [{<<"xmlns">>,
-			      <<"http://jabber.org/protocol/muc#admin">>}])
-     | _acc].
-
-'encode_muc_owner_item_$continue'(undefined, _acc) ->
+'encode_muc_owner_item_$actor'(undefined, __TopXMLNS,
+			       _acc) ->
     _acc;
-'encode_muc_owner_item_$continue'(Continue, _acc) ->
-    [encode_muc_admin_continue(Continue,
-			       [{<<"xmlns">>,
-				 <<"http://jabber.org/protocol/muc#admin">>}])
+'encode_muc_owner_item_$actor'(Actor, __TopXMLNS,
+			       _acc) ->
+    [encode_muc_admin_actor(Actor, __TopXMLNS) | _acc].
+
+'encode_muc_owner_item_$continue'(undefined, __TopXMLNS,
+				  _acc) ->
+    _acc;
+'encode_muc_owner_item_$continue'(Continue, __TopXMLNS,
+				  _acc) ->
+    [encode_muc_admin_continue(Continue, __TopXMLNS)
      | _acc].
 
-'encode_muc_owner_item_$reason'(<<>>, _acc) -> _acc;
-'encode_muc_owner_item_$reason'(Reason, _acc) ->
-    [encode_muc_reason(Reason, []) | _acc].
+'encode_muc_owner_item_$reason'(<<>>, __TopXMLNS,
+				_acc) ->
+    _acc;
+'encode_muc_owner_item_$reason'(Reason, __TopXMLNS,
+				_acc) ->
+    [encode_muc_reason(Reason, __TopXMLNS) | _acc].
 
 decode_muc_owner_item_attr_affiliation(__TopXMLNS,
 				       undefined) ->
@@ -11002,28 +14019,39 @@ decode_muc_owner_els(__TopXMLNS, __IgnoreEls,
 			 Items, Config, Destroy).
 
 encode_muc_owner({muc_owner, Destroy, Config, Items},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#owner">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_muc_owner_$items'(Items,
+						   __NewTopXMLNS,
 						   'encode_muc_owner_$config'(Config,
+									      __NewTopXMLNS,
 									      'encode_muc_owner_$destroy'(Destroy,
+													  __NewTopXMLNS,
 													  [])))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_muc_owner_$items'([], _acc) -> _acc;
-'encode_muc_owner_$items'([Items | _els], _acc) ->
-    'encode_muc_owner_$items'(_els,
-			      [encode_muc_owner_item(Items, []) | _acc]).
+'encode_muc_owner_$items'([], __TopXMLNS, _acc) -> _acc;
+'encode_muc_owner_$items'([Items | _els], __TopXMLNS,
+			  _acc) ->
+    'encode_muc_owner_$items'(_els, __TopXMLNS,
+			      [encode_muc_owner_item(Items, __TopXMLNS)
+			       | _acc]).
 
-'encode_muc_owner_$config'(undefined, _acc) -> _acc;
-'encode_muc_owner_$config'(Config, _acc) ->
-    [encode_xdata(Config,
-		  [{<<"xmlns">>, <<"jabber:x:data">>}])
-     | _acc].
+'encode_muc_owner_$config'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_muc_owner_$config'(Config, __TopXMLNS, _acc) ->
+    [encode_xdata(Config, __TopXMLNS) | _acc].
 
-'encode_muc_owner_$destroy'(undefined, _acc) -> _acc;
-'encode_muc_owner_$destroy'(Destroy, _acc) ->
-    [encode_muc_destroy(Destroy, []) | _acc].
+'encode_muc_owner_$destroy'(undefined, __TopXMLNS,
+			    _acc) ->
+    _acc;
+'encode_muc_owner_$destroy'(Destroy, __TopXMLNS,
+			    _acc) ->
+    [encode_muc_destroy(Destroy, __TopXMLNS) | _acc].
 
 decode_muc_password(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"password">>, _attrs, _els}) ->
@@ -11043,9 +14071,14 @@ decode_muc_password_els(__TopXMLNS, __IgnoreEls,
     decode_muc_password_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_muc_password(Cdata, _xmlns_attrs) ->
+encode_muc_password(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"http://jabber.org/protocol/muc#owner">>,
+				      <<"http://jabber.org/protocol/muc#user">>,
+				      <<"http://jabber.org/protocol/muc">>],
+				     __TopXMLNS),
     _els = encode_muc_password_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"password">>, _attrs, _els}.
 
 decode_muc_password_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -11246,46 +14279,68 @@ decode_muc_user_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 
 encode_muc_user({muc_user, Decline, Destroy, Invites,
 		 Items, Status_codes, Password},
-		_xmlns_attrs) ->
+		__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#user">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_muc_user_$status_codes'(Status_codes,
+						      __NewTopXMLNS,
 						      'encode_muc_user_$items'(Items,
+									       __NewTopXMLNS,
 									       'encode_muc_user_$invites'(Invites,
+													  __NewTopXMLNS,
 													  'encode_muc_user_$password'(Password,
+																      __NewTopXMLNS,
 																      'encode_muc_user_$decline'(Decline,
+																				 __NewTopXMLNS,
 																				 'encode_muc_user_$destroy'(Destroy,
+																							    __NewTopXMLNS,
 																							    []))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"x">>, _attrs, _els}.
 
-'encode_muc_user_$status_codes'([], _acc) -> _acc;
+'encode_muc_user_$status_codes'([], __TopXMLNS, _acc) ->
+    _acc;
 'encode_muc_user_$status_codes'([Status_codes | _els],
-				_acc) ->
-    'encode_muc_user_$status_codes'(_els,
-				    [encode_muc_user_status(Status_codes, [])
+				__TopXMLNS, _acc) ->
+    'encode_muc_user_$status_codes'(_els, __TopXMLNS,
+				    [encode_muc_user_status(Status_codes,
+							    __TopXMLNS)
 				     | _acc]).
 
-'encode_muc_user_$items'([], _acc) -> _acc;
-'encode_muc_user_$items'([Items | _els], _acc) ->
-    'encode_muc_user_$items'(_els,
-			     [encode_muc_user_item(Items, []) | _acc]).
+'encode_muc_user_$items'([], __TopXMLNS, _acc) -> _acc;
+'encode_muc_user_$items'([Items | _els], __TopXMLNS,
+			 _acc) ->
+    'encode_muc_user_$items'(_els, __TopXMLNS,
+			     [encode_muc_user_item(Items, __TopXMLNS) | _acc]).
 
-'encode_muc_user_$invites'([], _acc) -> _acc;
-'encode_muc_user_$invites'([Invites | _els], _acc) ->
-    'encode_muc_user_$invites'(_els,
-			       [encode_muc_user_invite(Invites, []) | _acc]).
+'encode_muc_user_$invites'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_muc_user_$invites'([Invites | _els], __TopXMLNS,
+			   _acc) ->
+    'encode_muc_user_$invites'(_els, __TopXMLNS,
+			       [encode_muc_user_invite(Invites, __TopXMLNS)
+				| _acc]).
 
-'encode_muc_user_$password'(undefined, _acc) -> _acc;
-'encode_muc_user_$password'(Password, _acc) ->
-    [encode_muc_password(Password, []) | _acc].
+'encode_muc_user_$password'(undefined, __TopXMLNS,
+			    _acc) ->
+    _acc;
+'encode_muc_user_$password'(Password, __TopXMLNS,
+			    _acc) ->
+    [encode_muc_password(Password, __TopXMLNS) | _acc].
 
-'encode_muc_user_$decline'(undefined, _acc) -> _acc;
-'encode_muc_user_$decline'(Decline, _acc) ->
-    [encode_muc_user_decline(Decline, []) | _acc].
+'encode_muc_user_$decline'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_muc_user_$decline'(Decline, __TopXMLNS, _acc) ->
+    [encode_muc_user_decline(Decline, __TopXMLNS) | _acc].
 
-'encode_muc_user_$destroy'(undefined, _acc) -> _acc;
-'encode_muc_user_$destroy'(Destroy, _acc) ->
-    [encode_muc_destroy(Destroy, []) | _acc].
+'encode_muc_user_$destroy'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_muc_user_$destroy'(Destroy, __TopXMLNS, _acc) ->
+    [encode_muc_destroy(Destroy, __TopXMLNS) | _acc].
 
 decode_muc_user_item(__TopXMLNS, __IgnoreEls,
 		     {xmlel, <<"item">>, _attrs, _els}) ->
@@ -11412,31 +14467,46 @@ decode_muc_user_item_attrs(__TopXMLNS, [], Affiliation,
 
 encode_muc_user_item({muc_item, Actor, Continue, Reason,
 		      Affiliation, Role, Jid, Nick},
-		     _xmlns_attrs) ->
+		     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#user">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_muc_user_item_$actor'(Actor,
+						    __NewTopXMLNS,
 						    'encode_muc_user_item_$continue'(Continue,
+										     __NewTopXMLNS,
 										     'encode_muc_user_item_$reason'(Reason,
+														    __NewTopXMLNS,
 														    [])))),
     _attrs = encode_muc_user_item_attr_nick(Nick,
 					    encode_muc_user_item_attr_jid(Jid,
 									  encode_muc_user_item_attr_role(Role,
 													 encode_muc_user_item_attr_affiliation(Affiliation,
-																	       _xmlns_attrs)))),
+																	       enc_xmlns_attrs(__NewTopXMLNS,
+																			       __TopXMLNS))))),
     {xmlel, <<"item">>, _attrs, _els}.
 
-'encode_muc_user_item_$actor'(undefined, _acc) -> _acc;
-'encode_muc_user_item_$actor'(Actor, _acc) ->
-    [encode_muc_user_actor(Actor, []) | _acc].
-
-'encode_muc_user_item_$continue'(undefined, _acc) ->
+'encode_muc_user_item_$actor'(undefined, __TopXMLNS,
+			      _acc) ->
     _acc;
-'encode_muc_user_item_$continue'(Continue, _acc) ->
-    [encode_muc_user_continue(Continue, []) | _acc].
+'encode_muc_user_item_$actor'(Actor, __TopXMLNS,
+			      _acc) ->
+    [encode_muc_user_actor(Actor, __TopXMLNS) | _acc].
 
-'encode_muc_user_item_$reason'(<<>>, _acc) -> _acc;
-'encode_muc_user_item_$reason'(Reason, _acc) ->
-    [encode_muc_reason(Reason, []) | _acc].
+'encode_muc_user_item_$continue'(undefined, __TopXMLNS,
+				 _acc) ->
+    _acc;
+'encode_muc_user_item_$continue'(Continue, __TopXMLNS,
+				 _acc) ->
+    [encode_muc_user_continue(Continue, __TopXMLNS) | _acc].
+
+'encode_muc_user_item_$reason'(<<>>, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_muc_user_item_$reason'(Reason, __TopXMLNS,
+			       _acc) ->
+    [encode_muc_reason(Reason, __TopXMLNS) | _acc].
 
 decode_muc_user_item_attr_affiliation(__TopXMLNS,
 				      undefined) ->
@@ -11513,10 +14583,14 @@ decode_muc_user_status_attrs(__TopXMLNS, [_ | _attrs],
 decode_muc_user_status_attrs(__TopXMLNS, [], Code) ->
     decode_muc_user_status_attr_code(__TopXMLNS, Code).
 
-encode_muc_user_status(Code, _xmlns_attrs) ->
+encode_muc_user_status(Code, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#user">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_muc_user_status_attr_code(Code,
-					      _xmlns_attrs),
+					      enc_xmlns_attrs(__NewTopXMLNS,
+							      __TopXMLNS)),
     {xmlel, <<"status">>, _attrs, _els}.
 
 decode_muc_user_status_attr_code(__TopXMLNS,
@@ -11555,10 +14629,14 @@ decode_muc_user_continue_attrs(__TopXMLNS, [],
     decode_muc_user_continue_attr_thread(__TopXMLNS,
 					 Thread).
 
-encode_muc_user_continue(Thread, _xmlns_attrs) ->
+encode_muc_user_continue(Thread, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#user">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_muc_user_continue_attr_thread(Thread,
-						  _xmlns_attrs),
+						  enc_xmlns_attrs(__NewTopXMLNS,
+								  __TopXMLNS)),
     {xmlel, <<"continue">>, _attrs, _els}.
 
 decode_muc_user_continue_attr_thread(__TopXMLNS,
@@ -11597,11 +14675,15 @@ decode_muc_user_actor_attrs(__TopXMLNS, [], Jid,
      decode_muc_user_actor_attr_nick(__TopXMLNS, Nick)}.
 
 encode_muc_user_actor({muc_actor, Jid, Nick},
-		      _xmlns_attrs) ->
+		      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#user">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_muc_user_actor_attr_nick(Nick,
 					     encode_muc_user_actor_attr_jid(Jid,
-									    _xmlns_attrs)),
+									    enc_xmlns_attrs(__NewTopXMLNS,
+											    __TopXMLNS))),
     {xmlel, <<"actor">>, _attrs, _els}.
 
 decode_muc_user_actor_attr_jid(__TopXMLNS, undefined) ->
@@ -11716,24 +14798,35 @@ decode_muc_user_invite_attrs(__TopXMLNS, [], To,
 
 encode_muc_user_invite({muc_invite, Reason, From, To,
 			Continue},
-		       _xmlns_attrs) ->
+		       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#user">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_muc_user_invite_$continue'(Continue,
+							 __NewTopXMLNS,
 							 'encode_muc_user_invite_$reason'(Reason,
+											  __NewTopXMLNS,
 											  []))),
     _attrs = encode_muc_user_invite_attr_from(From,
 					      encode_muc_user_invite_attr_to(To,
-									     _xmlns_attrs)),
+									     enc_xmlns_attrs(__NewTopXMLNS,
+											     __TopXMLNS))),
     {xmlel, <<"invite">>, _attrs, _els}.
 
-'encode_muc_user_invite_$continue'(undefined, _acc) ->
+'encode_muc_user_invite_$continue'(undefined,
+				   __TopXMLNS, _acc) ->
     _acc;
-'encode_muc_user_invite_$continue'(Continue, _acc) ->
-    [encode_muc_user_continue(Continue, []) | _acc].
+'encode_muc_user_invite_$continue'(Continue, __TopXMLNS,
+				   _acc) ->
+    [encode_muc_user_continue(Continue, __TopXMLNS) | _acc].
 
-'encode_muc_user_invite_$reason'(<<>>, _acc) -> _acc;
-'encode_muc_user_invite_$reason'(Reason, _acc) ->
-    [encode_muc_reason(Reason, []) | _acc].
+'encode_muc_user_invite_$reason'(<<>>, __TopXMLNS,
+				 _acc) ->
+    _acc;
+'encode_muc_user_invite_$reason'(Reason, __TopXMLNS,
+				 _acc) ->
+    [encode_muc_reason(Reason, __TopXMLNS) | _acc].
 
 decode_muc_user_invite_attr_to(__TopXMLNS, undefined) ->
     undefined;
@@ -11864,23 +14957,34 @@ decode_muc_destroy_attrs(__TopXMLNS, [], Jid, Xmlns) ->
 
 encode_muc_destroy({muc_destroy, Xmlns, Jid, Reason,
 		    Password},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"http://jabber.org/protocol/muc#user">>,
+				      <<"http://jabber.org/protocol/muc#owner">>],
+				     __TopXMLNS),
     _els =
 	lists:reverse('encode_muc_destroy_$password'(Password,
+						     __NewTopXMLNS,
 						     'encode_muc_destroy_$reason'(Reason,
+										  __NewTopXMLNS,
 										  []))),
-    _attrs = encode_muc_destroy_attr_xmlns(Xmlns,
-					   encode_muc_destroy_attr_jid(Jid,
-								       _xmlns_attrs)),
+    _attrs = encode_muc_destroy_attr_jid(Jid,
+					 enc_xmlns_attrs(__NewTopXMLNS,
+							 __TopXMLNS)),
     {xmlel, <<"destroy">>, _attrs, _els}.
 
-'encode_muc_destroy_$password'(undefined, _acc) -> _acc;
-'encode_muc_destroy_$password'(Password, _acc) ->
-    [encode_muc_password(Password, []) | _acc].
+'encode_muc_destroy_$password'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_muc_destroy_$password'(Password, __TopXMLNS,
+			       _acc) ->
+    [encode_muc_password(Password, __TopXMLNS) | _acc].
 
-'encode_muc_destroy_$reason'(<<>>, _acc) -> _acc;
-'encode_muc_destroy_$reason'(Reason, _acc) ->
-    [encode_muc_reason(Reason, []) | _acc].
+'encode_muc_destroy_$reason'(<<>>, __TopXMLNS, _acc) ->
+    _acc;
+'encode_muc_destroy_$reason'(Reason, __TopXMLNS,
+			     _acc) ->
+    [encode_muc_reason(Reason, __TopXMLNS) | _acc].
 
 decode_muc_destroy_attr_jid(__TopXMLNS, undefined) ->
     undefined;
@@ -11900,10 +15004,6 @@ encode_muc_destroy_attr_jid(_val, _acc) ->
 decode_muc_destroy_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_muc_destroy_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_muc_destroy_attr_xmlns(<<>>, _acc) -> _acc;
-encode_muc_destroy_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_muc_user_decline(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"decline">>, _attrs, _els}) ->
@@ -11969,18 +15069,25 @@ decode_muc_user_decline_attrs(__TopXMLNS, [], To,
      decode_muc_user_decline_attr_from(__TopXMLNS, From)}.
 
 encode_muc_user_decline({muc_decline, Reason, From, To},
-			_xmlns_attrs) ->
+			__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc#user">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_muc_user_decline_$reason'(Reason,
-							[])),
+							__NewTopXMLNS, [])),
     _attrs = encode_muc_user_decline_attr_from(From,
 					       encode_muc_user_decline_attr_to(To,
-									       _xmlns_attrs)),
+									       enc_xmlns_attrs(__NewTopXMLNS,
+											       __TopXMLNS))),
     {xmlel, <<"decline">>, _attrs, _els}.
 
-'encode_muc_user_decline_$reason'(<<>>, _acc) -> _acc;
-'encode_muc_user_decline_$reason'(Reason, _acc) ->
-    [encode_muc_reason(Reason, []) | _acc].
+'encode_muc_user_decline_$reason'(<<>>, __TopXMLNS,
+				  _acc) ->
+    _acc;
+'encode_muc_user_decline_$reason'(Reason, __TopXMLNS,
+				  _acc) ->
+    [encode_muc_reason(Reason, __TopXMLNS) | _acc].
 
 decode_muc_user_decline_attr_to(__TopXMLNS,
 				undefined) ->
@@ -12033,9 +15140,14 @@ decode_muc_reason_els(__TopXMLNS, __IgnoreEls,
     decode_muc_reason_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_muc_reason(Cdata, _xmlns_attrs) ->
+encode_muc_reason(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"http://jabber.org/protocol/muc#user">>,
+				      <<"http://jabber.org/protocol/muc#admin">>,
+				      <<"http://jabber.org/protocol/muc#owner">>],
+				     __TopXMLNS),
     _els = encode_muc_reason_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"reason">>, _attrs, _els}.
 
 decode_muc_reason_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -12086,13 +15198,17 @@ decode_muc_history_attrs(__TopXMLNS, [], Maxchars,
 
 encode_muc_history({muc_history, Maxchars, Maxstanzas,
 		    Seconds, Since},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/muc">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_muc_history_attr_since(Since,
 					   encode_muc_history_attr_seconds(Seconds,
 									   encode_muc_history_attr_maxstanzas(Maxstanzas,
 													      encode_muc_history_attr_maxchars(Maxchars,
-																	       _xmlns_attrs)))),
+																	       enc_xmlns_attrs(__NewTopXMLNS,
+																			       __TopXMLNS))))),
     {xmlel, <<"history">>, _attrs, _els}.
 
 decode_muc_history_attr_maxchars(__TopXMLNS,
@@ -12274,30 +15390,47 @@ decode_bytestreams_attrs(__TopXMLNS, [], Dstaddr, Sid,
 
 encode_bytestreams({bytestreams, Hosts, Used, Activate,
 		    Dstaddr, Mode, Sid},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/bytestreams">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_bytestreams_$hosts'(Hosts,
+						     __NewTopXMLNS,
 						     'encode_bytestreams_$used'(Used,
+										__NewTopXMLNS,
 										'encode_bytestreams_$activate'(Activate,
+													       __NewTopXMLNS,
 													       [])))),
     _attrs = encode_bytestreams_attr_mode(Mode,
 					  encode_bytestreams_attr_sid(Sid,
 								      encode_bytestreams_attr_dstaddr(Dstaddr,
-												      _xmlns_attrs))),
+												      enc_xmlns_attrs(__NewTopXMLNS,
+														      __TopXMLNS)))),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_bytestreams_$hosts'([], _acc) -> _acc;
-'encode_bytestreams_$hosts'([Hosts | _els], _acc) ->
-    'encode_bytestreams_$hosts'(_els,
-				[encode_bytestreams_streamhost(Hosts, [])
+'encode_bytestreams_$hosts'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_bytestreams_$hosts'([Hosts | _els], __TopXMLNS,
+			    _acc) ->
+    'encode_bytestreams_$hosts'(_els, __TopXMLNS,
+				[encode_bytestreams_streamhost(Hosts,
+							       __TopXMLNS)
 				 | _acc]).
 
-'encode_bytestreams_$used'(undefined, _acc) -> _acc;
-'encode_bytestreams_$used'(Used, _acc) ->
-    [encode_bytestreams_streamhost_used(Used, []) | _acc].
+'encode_bytestreams_$used'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_bytestreams_$used'(Used, __TopXMLNS, _acc) ->
+    [encode_bytestreams_streamhost_used(Used, __TopXMLNS)
+     | _acc].
 
-'encode_bytestreams_$activate'(undefined, _acc) -> _acc;
-'encode_bytestreams_$activate'(Activate, _acc) ->
-    [encode_bytestreams_activate(Activate, []) | _acc].
+'encode_bytestreams_$activate'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_bytestreams_$activate'(Activate, __TopXMLNS,
+			       _acc) ->
+    [encode_bytestreams_activate(Activate, __TopXMLNS)
+     | _acc].
 
 decode_bytestreams_attr_dstaddr(__TopXMLNS,
 				undefined) ->
@@ -12349,9 +15482,12 @@ decode_bytestreams_activate_els(__TopXMLNS, __IgnoreEls,
     decode_bytestreams_activate_els(__TopXMLNS, __IgnoreEls,
 				    _els, Cdata).
 
-encode_bytestreams_activate(Cdata, _xmlns_attrs) ->
+encode_bytestreams_activate(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/bytestreams">>,
+			 [], __TopXMLNS),
     _els = encode_bytestreams_activate_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"activate">>, _attrs, _els}.
 
 decode_bytestreams_activate_cdata(__TopXMLNS, <<>>) ->
@@ -12391,11 +15527,15 @@ decode_bytestreams_streamhost_used_attrs(__TopXMLNS, [],
     decode_bytestreams_streamhost_used_attr_jid(__TopXMLNS,
 						Jid).
 
-encode_bytestreams_streamhost_used(Jid, _xmlns_attrs) ->
+encode_bytestreams_streamhost_used(Jid, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/bytestreams">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs =
 	encode_bytestreams_streamhost_used_attr_jid(Jid,
-						    _xmlns_attrs),
+						    enc_xmlns_attrs(__NewTopXMLNS,
+								    __TopXMLNS)),
     {xmlel, <<"streamhost-used">>, _attrs, _els}.
 
 decode_bytestreams_streamhost_used_attr_jid(__TopXMLNS,
@@ -12454,12 +15594,16 @@ decode_bytestreams_streamhost_attrs(__TopXMLNS, [], Jid,
 
 encode_bytestreams_streamhost({streamhost, Jid, Host,
 			       Port},
-			      _xmlns_attrs) ->
+			      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/bytestreams">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_bytestreams_streamhost_attr_port(Port,
 						     encode_bytestreams_streamhost_attr_host(Host,
 											     encode_bytestreams_streamhost_attr_jid(Jid,
-																    _xmlns_attrs))),
+																    enc_xmlns_attrs(__NewTopXMLNS,
+																		    __TopXMLNS)))),
     {xmlel, <<"streamhost">>, _attrs, _els}.
 
 decode_bytestreams_streamhost_attr_jid(__TopXMLNS,
@@ -12541,12 +15685,14 @@ decode_delay_attrs(__TopXMLNS, [], Stamp, From) ->
     {decode_delay_attr_stamp(__TopXMLNS, Stamp),
      decode_delay_attr_from(__TopXMLNS, From)}.
 
-encode_delay({delay, Stamp, From, Desc},
-	     _xmlns_attrs) ->
+encode_delay({delay, Stamp, From, Desc}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:delay">>,
+				     [], __TopXMLNS),
     _els = encode_delay_cdata(Desc, []),
     _attrs = encode_delay_attr_from(From,
 				    encode_delay_attr_stamp(Stamp,
-							    _xmlns_attrs)),
+							    enc_xmlns_attrs(__NewTopXMLNS,
+									    __TopXMLNS))),
     {xmlel, <<"delay">>, _attrs, _els}.
 
 decode_delay_attr_stamp(__TopXMLNS, undefined) ->
@@ -12590,9 +15736,12 @@ decode_chatstate_paused(__TopXMLNS, __IgnoreEls,
     {chatstate, paused}.
 
 encode_chatstate_paused({chatstate, paused},
-			_xmlns_attrs) ->
+			__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/chatstates">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"paused">>, _attrs, _els}.
 
 decode_chatstate_inactive(__TopXMLNS, __IgnoreEls,
@@ -12600,19 +15749,24 @@ decode_chatstate_inactive(__TopXMLNS, __IgnoreEls,
     {chatstate, inactive}.
 
 encode_chatstate_inactive({chatstate, inactive},
-			  _xmlns_attrs) ->
+			  __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/chatstates">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"inactive">>, _attrs, _els}.
 
 decode_chatstate_gone(__TopXMLNS, __IgnoreEls,
 		      {xmlel, <<"gone">>, _attrs, _els}) ->
     {chatstate, gone}.
 
-encode_chatstate_gone({chatstate, gone},
-		      _xmlns_attrs) ->
+encode_chatstate_gone({chatstate, gone}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/chatstates">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"gone">>, _attrs, _els}.
 
 decode_chatstate_composing(__TopXMLNS, __IgnoreEls,
@@ -12620,9 +15774,12 @@ decode_chatstate_composing(__TopXMLNS, __IgnoreEls,
     {chatstate, composing}.
 
 encode_chatstate_composing({chatstate, composing},
-			   _xmlns_attrs) ->
+			   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/chatstates">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"composing">>, _attrs, _els}.
 
 decode_chatstate_active(__TopXMLNS, __IgnoreEls,
@@ -12630,9 +15787,12 @@ decode_chatstate_active(__TopXMLNS, __IgnoreEls,
     {chatstate, active}.
 
 encode_chatstate_active({chatstate, active},
-			_xmlns_attrs) ->
+			__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/chatstates">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"active">>, _attrs, _els}.
 
 decode_shim_headers(__TopXMLNS, __IgnoreEls,
@@ -12669,18 +15829,23 @@ decode_shim_headers_els(__TopXMLNS, __IgnoreEls,
     decode_shim_headers_els(__TopXMLNS, __IgnoreEls, _els,
 			    Headers).
 
-encode_shim_headers({shim, Headers}, _xmlns_attrs) ->
+encode_shim_headers({shim, Headers}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/shim">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_shim_headers_$headers'(Headers,
-						     [])),
-    _attrs = _xmlns_attrs,
+						     __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"headers">>, _attrs, _els}.
 
-'encode_shim_headers_$headers'([], _acc) -> _acc;
+'encode_shim_headers_$headers'([], __TopXMLNS, _acc) ->
+    _acc;
 'encode_shim_headers_$headers'([Headers | _els],
-			       _acc) ->
-    'encode_shim_headers_$headers'(_els,
-				   [encode_shim_header(Headers, []) | _acc]).
+			       __TopXMLNS, _acc) ->
+    'encode_shim_headers_$headers'(_els, __TopXMLNS,
+				   [encode_shim_header(Headers, __TopXMLNS)
+				    | _acc]).
 
 decode_shim_header(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"header">>, _attrs, _els}) ->
@@ -12711,10 +15876,14 @@ decode_shim_header_attrs(__TopXMLNS, [_ | _attrs],
 decode_shim_header_attrs(__TopXMLNS, [], Name) ->
     decode_shim_header_attr_name(__TopXMLNS, Name).
 
-encode_shim_header({Name, Cdata}, _xmlns_attrs) ->
+encode_shim_header({Name, Cdata}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/shim">>,
+			 [], __TopXMLNS),
     _els = encode_shim_header_cdata(Cdata, []),
     _attrs = encode_shim_header_attr_name(Name,
-					  _xmlns_attrs),
+					  enc_xmlns_attrs(__NewTopXMLNS,
+							  __TopXMLNS)),
     {xmlel, <<"header">>, _attrs, _els}.
 
 decode_shim_header_attr_name(__TopXMLNS, undefined) ->
@@ -12741,9 +15910,12 @@ decode_pubsub_error_unsupported_access_model(__TopXMLNS,
 
 encode_pubsub_error_unsupported_access_model({ps_error,
 					      'unsupported-access-model', _},
-					     _xmlns_attrs) ->
+					     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"unsupported-access-model">>, _attrs, _els}.
 
 decode_pubsub_error_unsupported(__TopXMLNS, __IgnoreEls,
@@ -12769,11 +15941,15 @@ decode_pubsub_error_unsupported_attrs(__TopXMLNS, [],
 
 encode_pubsub_error_unsupported({ps_error, unsupported,
 				 Feature},
-				_xmlns_attrs) ->
+				__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs =
 	encode_pubsub_error_unsupported_attr_feature(Feature,
-						     _xmlns_attrs),
+						     enc_xmlns_attrs(__NewTopXMLNS,
+								     __TopXMLNS)),
     {xmlel, <<"unsupported">>, _attrs, _els}.
 
 decode_pubsub_error_unsupported_attr_feature(__TopXMLNS,
@@ -12821,9 +15997,12 @@ decode_pubsub_error_too_many_subscriptions(__TopXMLNS,
 
 encode_pubsub_error_too_many_subscriptions({ps_error,
 					    'too-many-subscriptions', _},
-					   _xmlns_attrs) ->
+					   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"too-many-subscriptions">>, _attrs, _els}.
 
 decode_pubsub_error_subid_required(__TopXMLNS,
@@ -12834,9 +16013,12 @@ decode_pubsub_error_subid_required(__TopXMLNS,
 
 encode_pubsub_error_subid_required({ps_error,
 				    'subid-required', _},
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"subid-required">>, _attrs, _els}.
 
 decode_pubsub_error_presence_subscription_required(__TopXMLNS,
@@ -12849,9 +16031,12 @@ decode_pubsub_error_presence_subscription_required(__TopXMLNS,
 encode_pubsub_error_presence_subscription_required({ps_error,
 						    'presence-subscription-required',
 						    _},
-						   _xmlns_attrs) ->
+						   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"presence-subscription-required">>, _attrs,
      _els}.
 
@@ -12863,9 +16048,12 @@ decode_pubsub_error_pending_subscription(__TopXMLNS,
 
 encode_pubsub_error_pending_subscription({ps_error,
 					  'pending-subscription', _},
-					 _xmlns_attrs) ->
+					 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"pending-subscription">>, _attrs, _els}.
 
 decode_pubsub_error_payload_required(__TopXMLNS,
@@ -12876,9 +16064,12 @@ decode_pubsub_error_payload_required(__TopXMLNS,
 
 encode_pubsub_error_payload_required({ps_error,
 				      'payload-required', _},
-				     _xmlns_attrs) ->
+				     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"payload-required">>, _attrs, _els}.
 
 decode_pubsub_error_payload_too_big(__TopXMLNS,
@@ -12889,9 +16080,12 @@ decode_pubsub_error_payload_too_big(__TopXMLNS,
 
 encode_pubsub_error_payload_too_big({ps_error,
 				     'payload-too-big', _},
-				    _xmlns_attrs) ->
+				    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"payload-too-big">>, _attrs, _els}.
 
 decode_pubsub_error_not_subscribed(__TopXMLNS,
@@ -12902,9 +16096,12 @@ decode_pubsub_error_not_subscribed(__TopXMLNS,
 
 encode_pubsub_error_not_subscribed({ps_error,
 				    'not-subscribed', _},
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"not-subscribed">>, _attrs, _els}.
 
 decode_pubsub_error_not_in_roster_group(__TopXMLNS,
@@ -12915,9 +16112,12 @@ decode_pubsub_error_not_in_roster_group(__TopXMLNS,
 
 encode_pubsub_error_not_in_roster_group({ps_error,
 					 'not-in-roster-group', _},
-					_xmlns_attrs) ->
+					__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"not-in-roster-group">>, _attrs, _els}.
 
 decode_pubsub_error_nodeid_required(__TopXMLNS,
@@ -12928,9 +16128,12 @@ decode_pubsub_error_nodeid_required(__TopXMLNS,
 
 encode_pubsub_error_nodeid_required({ps_error,
 				     'nodeid-required', _},
-				    _xmlns_attrs) ->
+				    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"nodeid-required">>, _attrs, _els}.
 
 decode_pubsub_error_max_nodes_exceeded(__TopXMLNS,
@@ -12941,9 +16144,12 @@ decode_pubsub_error_max_nodes_exceeded(__TopXMLNS,
 
 encode_pubsub_error_max_nodes_exceeded({ps_error,
 					'max-nodes-exceeded', _},
-				       _xmlns_attrs) ->
+				       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"max-nodes-exceeded">>, _attrs, _els}.
 
 decode_pubsub_error_max_items_exceeded(__TopXMLNS,
@@ -12954,9 +16160,12 @@ decode_pubsub_error_max_items_exceeded(__TopXMLNS,
 
 encode_pubsub_error_max_items_exceeded({ps_error,
 					'max-items-exceeded', _},
-				       _xmlns_attrs) ->
+				       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"max-items-exceeded">>, _attrs, _els}.
 
 decode_pubsub_error_jid_required(__TopXMLNS,
@@ -12966,9 +16175,12 @@ decode_pubsub_error_jid_required(__TopXMLNS,
 
 encode_pubsub_error_jid_required({ps_error,
 				  'jid-required', _},
-				 _xmlns_attrs) ->
+				 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"jid-required">>, _attrs, _els}.
 
 decode_pubsub_error_item_required(__TopXMLNS,
@@ -12978,9 +16190,12 @@ decode_pubsub_error_item_required(__TopXMLNS,
 
 encode_pubsub_error_item_required({ps_error,
 				   'item-required', _},
-				  _xmlns_attrs) ->
+				  __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"item-required">>, _attrs, _els}.
 
 decode_pubsub_error_item_forbidden(__TopXMLNS,
@@ -12991,9 +16206,12 @@ decode_pubsub_error_item_forbidden(__TopXMLNS,
 
 encode_pubsub_error_item_forbidden({ps_error,
 				    'item-forbidden', _},
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"item-forbidden">>, _attrs, _els}.
 
 decode_pubsub_error_invalid_subid(__TopXMLNS,
@@ -13003,9 +16221,12 @@ decode_pubsub_error_invalid_subid(__TopXMLNS,
 
 encode_pubsub_error_invalid_subid({ps_error,
 				   'invalid-subid', _},
-				  _xmlns_attrs) ->
+				  __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"invalid-subid">>, _attrs, _els}.
 
 decode_pubsub_error_invalid_payload(__TopXMLNS,
@@ -13016,9 +16237,12 @@ decode_pubsub_error_invalid_payload(__TopXMLNS,
 
 encode_pubsub_error_invalid_payload({ps_error,
 				     'invalid-payload', _},
-				    _xmlns_attrs) ->
+				    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"invalid-payload">>, _attrs, _els}.
 
 decode_pubsub_error_invalid_options(__TopXMLNS,
@@ -13029,9 +16253,12 @@ decode_pubsub_error_invalid_options(__TopXMLNS,
 
 encode_pubsub_error_invalid_options({ps_error,
 				     'invalid-options', _},
-				    _xmlns_attrs) ->
+				    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"invalid-options">>, _attrs, _els}.
 
 decode_pubsub_error_invalid_jid(__TopXMLNS, __IgnoreEls,
@@ -13040,9 +16267,12 @@ decode_pubsub_error_invalid_jid(__TopXMLNS, __IgnoreEls,
 
 encode_pubsub_error_invalid_jid({ps_error,
 				 'invalid-jid', _},
-				_xmlns_attrs) ->
+				__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"invalid-jid">>, _attrs, _els}.
 
 decode_pubsub_error_configuration_required(__TopXMLNS,
@@ -13053,9 +16283,12 @@ decode_pubsub_error_configuration_required(__TopXMLNS,
 
 encode_pubsub_error_configuration_required({ps_error,
 					    'configuration-required', _},
-					   _xmlns_attrs) ->
+					   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"configuration-required">>, _attrs, _els}.
 
 decode_pubsub_error_closed_node(__TopXMLNS, __IgnoreEls,
@@ -13064,9 +16297,12 @@ decode_pubsub_error_closed_node(__TopXMLNS, __IgnoreEls,
 
 encode_pubsub_error_closed_node({ps_error,
 				 'closed-node', _},
-				_xmlns_attrs) ->
+				__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#errors">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"closed-node">>, _attrs, _els}.
 
 decode_pubsub_owner(__TopXMLNS, __IgnoreEls,
@@ -13281,47 +16517,70 @@ decode_pubsub_owner_els(__TopXMLNS, __IgnoreEls,
 
 encode_pubsub_owner({pubsub_owner, Affiliations,
 		     Configure, Default, Delete, Purge, Subscriptions},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#owner">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_owner_$subscriptions'(Subscriptions,
+							   __NewTopXMLNS,
 							   'encode_pubsub_owner_$affiliations'(Affiliations,
+											       __NewTopXMLNS,
 											       'encode_pubsub_owner_$default'(Default,
+															      __NewTopXMLNS,
 															      'encode_pubsub_owner_$purge'(Purge,
+																			   __NewTopXMLNS,
 																			   'encode_pubsub_owner_$delete'(Delete,
+																							 __NewTopXMLNS,
 																							 'encode_pubsub_owner_$configure'(Configure,
+																											  __NewTopXMLNS,
 																											  []))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"pubsub">>, _attrs, _els}.
 
-'encode_pubsub_owner_$subscriptions'(undefined, _acc) ->
+'encode_pubsub_owner_$subscriptions'(undefined,
+				     __TopXMLNS, _acc) ->
     _acc;
 'encode_pubsub_owner_$subscriptions'(Subscriptions,
-				     _acc) ->
-    [encode_pubsub_subscriptions(Subscriptions, []) | _acc].
-
-'encode_pubsub_owner_$affiliations'(undefined, _acc) ->
-    _acc;
-'encode_pubsub_owner_$affiliations'(Affiliations,
-				    _acc) ->
-    [encode_pubsub_owner_affiliations(Affiliations, [])
+				     __TopXMLNS, _acc) ->
+    [encode_pubsub_subscriptions(Subscriptions, __TopXMLNS)
      | _acc].
 
-'encode_pubsub_owner_$default'(undefined, _acc) -> _acc;
-'encode_pubsub_owner_$default'(Default, _acc) ->
-    [encode_pubsub_default(Default, []) | _acc].
-
-'encode_pubsub_owner_$purge'(undefined, _acc) -> _acc;
-'encode_pubsub_owner_$purge'(Purge, _acc) ->
-    [encode_pubsub_purge(Purge, []) | _acc].
-
-'encode_pubsub_owner_$delete'(undefined, _acc) -> _acc;
-'encode_pubsub_owner_$delete'(Delete, _acc) ->
-    [encode_pubsub_delete(Delete, []) | _acc].
-
-'encode_pubsub_owner_$configure'(undefined, _acc) ->
+'encode_pubsub_owner_$affiliations'(undefined,
+				    __TopXMLNS, _acc) ->
     _acc;
-'encode_pubsub_owner_$configure'(Configure, _acc) ->
-    [encode_pubsub_configure(Configure, []) | _acc].
+'encode_pubsub_owner_$affiliations'(Affiliations,
+				    __TopXMLNS, _acc) ->
+    [encode_pubsub_owner_affiliations(Affiliations,
+				      __TopXMLNS)
+     | _acc].
+
+'encode_pubsub_owner_$default'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_pubsub_owner_$default'(Default, __TopXMLNS,
+			       _acc) ->
+    [encode_pubsub_default(Default, __TopXMLNS) | _acc].
+
+'encode_pubsub_owner_$purge'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_pubsub_owner_$purge'(Purge, __TopXMLNS, _acc) ->
+    [encode_pubsub_purge(Purge, __TopXMLNS) | _acc].
+
+'encode_pubsub_owner_$delete'(undefined, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_pubsub_owner_$delete'(Delete, __TopXMLNS,
+			      _acc) ->
+    [encode_pubsub_delete(Delete, __TopXMLNS) | _acc].
+
+'encode_pubsub_owner_$configure'(undefined, __TopXMLNS,
+				 _acc) ->
+    _acc;
+'encode_pubsub_owner_$configure'(Configure, __TopXMLNS,
+				 _acc) ->
+    [encode_pubsub_configure(Configure, __TopXMLNS) | _acc].
 
 decode_pubsub(__TopXMLNS, __IgnoreEls,
 	      {xmlel, <<"pubsub">>, _attrs, _els}) ->
@@ -13941,96 +17200,146 @@ encode_pubsub({pubsub, Subscriptions, Subscription,
 	       Affiliations, Publish, Publish_options, Subscribe,
 	       Unsubscribe, Options, Items, Retract, Create, Configure,
 	       Default, Delete, Purge, Rsm},
-	      _xmlns_attrs) ->
+	      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_$publish_options'(Publish_options,
+						       __NewTopXMLNS,
 						       'encode_pubsub_$items'(Items,
+									      __NewTopXMLNS,
 									      'encode_pubsub_$options'(Options,
+												       __NewTopXMLNS,
 												       'encode_pubsub_$affiliations'(Affiliations,
+																     __NewTopXMLNS,
 																     'encode_pubsub_$subscriptions'(Subscriptions,
+																				    __NewTopXMLNS,
 																				    'encode_pubsub_$default'(Default,
+																							     __NewTopXMLNS,
 																							     'encode_pubsub_$retract'(Retract,
+																										      __NewTopXMLNS,
 																										      'encode_pubsub_$purge'(Purge,
+																													     __NewTopXMLNS,
 																													     'encode_pubsub_$delete'(Delete,
+																																     __NewTopXMLNS,
 																																     'encode_pubsub_$configure'(Configure,
+																																				__NewTopXMLNS,
 																																				'encode_pubsub_$create'(Create,
+																																							__NewTopXMLNS,
 																																							'encode_pubsub_$unsubscribe'(Unsubscribe,
+																																										     __NewTopXMLNS,
 																																										     'encode_pubsub_$subscribe'(Subscribe,
+																																														__NewTopXMLNS,
 																																														'encode_pubsub_$publish'(Publish,
+																																																	 __NewTopXMLNS,
 																																																	 'encode_pubsub_$rsm'(Rsm,
+																																																			      __NewTopXMLNS,
 																																																			      'encode_pubsub_$subscription'(Subscription,
+																																																							    __NewTopXMLNS,
 																																																							    []))))))))))))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"pubsub">>, _attrs, _els}.
 
-'encode_pubsub_$publish_options'(undefined, _acc) ->
+'encode_pubsub_$publish_options'(undefined, __TopXMLNS,
+				 _acc) ->
     _acc;
 'encode_pubsub_$publish_options'(Publish_options,
-				 _acc) ->
-    [encode_pubsub_publish_options(Publish_options, [])
+				 __TopXMLNS, _acc) ->
+    [encode_pubsub_publish_options(Publish_options,
+				   __TopXMLNS)
      | _acc].
 
-'encode_pubsub_$items'(undefined, _acc) -> _acc;
-'encode_pubsub_$items'(Items, _acc) ->
-    [encode_pubsub_items(Items, []) | _acc].
+'encode_pubsub_$items'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_$items'(Items, __TopXMLNS, _acc) ->
+    [encode_pubsub_items(Items, __TopXMLNS) | _acc].
 
-'encode_pubsub_$options'(undefined, _acc) -> _acc;
-'encode_pubsub_$options'(Options, _acc) ->
-    [encode_pubsub_options(Options, []) | _acc].
+'encode_pubsub_$options'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_$options'(Options, __TopXMLNS, _acc) ->
+    [encode_pubsub_options(Options, __TopXMLNS) | _acc].
 
-'encode_pubsub_$affiliations'(undefined, _acc) -> _acc;
-'encode_pubsub_$affiliations'(Affiliations, _acc) ->
-    [encode_pubsub_affiliations(Affiliations, []) | _acc].
-
-'encode_pubsub_$subscriptions'(undefined, _acc) -> _acc;
-'encode_pubsub_$subscriptions'(Subscriptions, _acc) ->
-    [encode_pubsub_subscriptions(Subscriptions, []) | _acc].
-
-'encode_pubsub_$default'(undefined, _acc) -> _acc;
-'encode_pubsub_$default'(Default, _acc) ->
-    [encode_pubsub_default(Default, []) | _acc].
-
-'encode_pubsub_$retract'(undefined, _acc) -> _acc;
-'encode_pubsub_$retract'(Retract, _acc) ->
-    [encode_pubsub_retract(Retract, []) | _acc].
-
-'encode_pubsub_$purge'(undefined, _acc) -> _acc;
-'encode_pubsub_$purge'(Purge, _acc) ->
-    [encode_pubsub_purge(Purge, []) | _acc].
-
-'encode_pubsub_$delete'(undefined, _acc) -> _acc;
-'encode_pubsub_$delete'(Delete, _acc) ->
-    [encode_pubsub_delete(Delete, []) | _acc].
-
-'encode_pubsub_$configure'(undefined, _acc) -> _acc;
-'encode_pubsub_$configure'(Configure, _acc) ->
-    [encode_pubsub_configure(Configure, []) | _acc].
-
-'encode_pubsub_$create'(undefined, _acc) -> _acc;
-'encode_pubsub_$create'(Create, _acc) ->
-    [encode_pubsub_create(Create, []) | _acc].
-
-'encode_pubsub_$unsubscribe'(undefined, _acc) -> _acc;
-'encode_pubsub_$unsubscribe'(Unsubscribe, _acc) ->
-    [encode_pubsub_unsubscribe(Unsubscribe, []) | _acc].
-
-'encode_pubsub_$subscribe'(undefined, _acc) -> _acc;
-'encode_pubsub_$subscribe'(Subscribe, _acc) ->
-    [encode_pubsub_subscribe(Subscribe, []) | _acc].
-
-'encode_pubsub_$publish'(undefined, _acc) -> _acc;
-'encode_pubsub_$publish'(Publish, _acc) ->
-    [encode_pubsub_publish(Publish, []) | _acc].
-
-'encode_pubsub_$rsm'(undefined, _acc) -> _acc;
-'encode_pubsub_$rsm'(Rsm, _acc) ->
-    [encode_rsm_set(Rsm,
-		    [{<<"xmlns">>, <<"http://jabber.org/protocol/rsm">>}])
+'encode_pubsub_$affiliations'(undefined, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_pubsub_$affiliations'(Affiliations, __TopXMLNS,
+			      _acc) ->
+    [encode_pubsub_affiliations(Affiliations, __TopXMLNS)
      | _acc].
 
-'encode_pubsub_$subscription'(undefined, _acc) -> _acc;
-'encode_pubsub_$subscription'(Subscription, _acc) ->
-    [encode_pubsub_subscription(Subscription, []) | _acc].
+'encode_pubsub_$subscriptions'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_pubsub_$subscriptions'(Subscriptions,
+			       __TopXMLNS, _acc) ->
+    [encode_pubsub_subscriptions(Subscriptions, __TopXMLNS)
+     | _acc].
+
+'encode_pubsub_$default'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_$default'(Default, __TopXMLNS, _acc) ->
+    [encode_pubsub_default(Default, __TopXMLNS) | _acc].
+
+'encode_pubsub_$retract'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_$retract'(Retract, __TopXMLNS, _acc) ->
+    [encode_pubsub_retract(Retract, __TopXMLNS) | _acc].
+
+'encode_pubsub_$purge'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_$purge'(Purge, __TopXMLNS, _acc) ->
+    [encode_pubsub_purge(Purge, __TopXMLNS) | _acc].
+
+'encode_pubsub_$delete'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_$delete'(Delete, __TopXMLNS, _acc) ->
+    [encode_pubsub_delete(Delete, __TopXMLNS) | _acc].
+
+'encode_pubsub_$configure'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_pubsub_$configure'(Configure, __TopXMLNS,
+			   _acc) ->
+    [encode_pubsub_configure(Configure, __TopXMLNS) | _acc].
+
+'encode_pubsub_$create'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_$create'(Create, __TopXMLNS, _acc) ->
+    [encode_pubsub_create(Create, __TopXMLNS) | _acc].
+
+'encode_pubsub_$unsubscribe'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_pubsub_$unsubscribe'(Unsubscribe, __TopXMLNS,
+			     _acc) ->
+    [encode_pubsub_unsubscribe(Unsubscribe, __TopXMLNS)
+     | _acc].
+
+'encode_pubsub_$subscribe'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_pubsub_$subscribe'(Subscribe, __TopXMLNS,
+			   _acc) ->
+    [encode_pubsub_subscribe(Subscribe, __TopXMLNS) | _acc].
+
+'encode_pubsub_$publish'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_$publish'(Publish, __TopXMLNS, _acc) ->
+    [encode_pubsub_publish(Publish, __TopXMLNS) | _acc].
+
+'encode_pubsub_$rsm'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_$rsm'(Rsm, __TopXMLNS, _acc) ->
+    [encode_rsm_set(Rsm, __TopXMLNS) | _acc].
+
+'encode_pubsub_$subscription'(undefined, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_pubsub_$subscription'(Subscription, __TopXMLNS,
+			      _acc) ->
+    [encode_pubsub_subscription(Subscription, __TopXMLNS)
+     | _acc].
 
 decode_pubsub_purge(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"purge">>, _attrs, _els}) ->
@@ -14047,10 +17356,16 @@ decode_pubsub_purge_attrs(__TopXMLNS, [_ | _attrs],
 decode_pubsub_purge_attrs(__TopXMLNS, [], Node) ->
     decode_pubsub_purge_attr_node(__TopXMLNS, Node).
 
-encode_pubsub_purge(Node, _xmlns_attrs) ->
+encode_pubsub_purge(Node, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"http://jabber.org/protocol/pubsub">>,
+				      <<"http://jabber.org/protocol/pubsub#owner">>,
+				      <<"http://jabber.org/protocol/pubsub#event">>],
+				     __TopXMLNS),
     _els = [],
     _attrs = encode_pubsub_purge_attr_node(Node,
-					   _xmlns_attrs),
+					   enc_xmlns_attrs(__NewTopXMLNS,
+							   __TopXMLNS)),
     {xmlel, <<"purge">>, _attrs, _els}.
 
 decode_pubsub_purge_attr_node(__TopXMLNS, undefined) ->
@@ -14116,16 +17431,23 @@ decode_pubsub_delete_attrs(__TopXMLNS, [_ | _attrs],
 decode_pubsub_delete_attrs(__TopXMLNS, [], Node) ->
     decode_pubsub_delete_attr_node(__TopXMLNS, Node).
 
-encode_pubsub_delete({Node, Uri}, _xmlns_attrs) ->
+encode_pubsub_delete({Node, Uri}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"http://jabber.org/protocol/pubsub">>,
+				      <<"http://jabber.org/protocol/pubsub#owner">>,
+				      <<"http://jabber.org/protocol/pubsub#event">>],
+				     __TopXMLNS),
     _els = lists:reverse('encode_pubsub_delete_$uri'(Uri,
-						     [])),
+						     __NewTopXMLNS, [])),
     _attrs = encode_pubsub_delete_attr_node(Node,
-					    _xmlns_attrs),
+					    enc_xmlns_attrs(__NewTopXMLNS,
+							    __TopXMLNS)),
     {xmlel, <<"delete">>, _attrs, _els}.
 
-'encode_pubsub_delete_$uri'(<<>>, _acc) -> _acc;
-'encode_pubsub_delete_$uri'(Uri, _acc) ->
-    [encode_pubsub_redirect(Uri, []) | _acc].
+'encode_pubsub_delete_$uri'(<<>>, __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_delete_$uri'(Uri, __TopXMLNS, _acc) ->
+    [encode_pubsub_redirect(Uri, __TopXMLNS) | _acc].
 
 decode_pubsub_delete_attr_node(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -14151,10 +17473,16 @@ decode_pubsub_redirect_attrs(__TopXMLNS, [_ | _attrs],
 decode_pubsub_redirect_attrs(__TopXMLNS, [], Uri) ->
     decode_pubsub_redirect_attr_uri(__TopXMLNS, Uri).
 
-encode_pubsub_redirect(Uri, _xmlns_attrs) ->
+encode_pubsub_redirect(Uri, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"http://jabber.org/protocol/pubsub">>,
+				      <<"http://jabber.org/protocol/pubsub#owner">>,
+				      <<"http://jabber.org/protocol/pubsub#event">>],
+				     __TopXMLNS),
     _els = [],
     _attrs = encode_pubsub_redirect_attr_uri(Uri,
-					     _xmlns_attrs),
+					     enc_xmlns_attrs(__NewTopXMLNS,
+							     __TopXMLNS)),
     {xmlel, <<"redirect">>, _attrs, _els}.
 
 decode_pubsub_redirect_attr_uri(__TopXMLNS,
@@ -14203,19 +17531,25 @@ decode_pubsub_default_attrs(__TopXMLNS, [_ | _attrs],
 decode_pubsub_default_attrs(__TopXMLNS, [], Node) ->
     decode_pubsub_default_attr_node(__TopXMLNS, Node).
 
-encode_pubsub_default({Node, Xdata}, _xmlns_attrs) ->
+encode_pubsub_default({Node, Xdata}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"http://jabber.org/protocol/pubsub">>,
+				      <<"http://jabber.org/protocol/pubsub#owner">>],
+				     __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_default_$xdata'(Xdata,
-						     [])),
+						     __NewTopXMLNS, [])),
     _attrs = encode_pubsub_default_attr_node(Node,
-					     _xmlns_attrs),
+					     enc_xmlns_attrs(__NewTopXMLNS,
+							     __TopXMLNS)),
     {xmlel, <<"default">>, _attrs, _els}.
 
-'encode_pubsub_default_$xdata'(undefined, _acc) -> _acc;
-'encode_pubsub_default_$xdata'(Xdata, _acc) ->
-    [encode_xdata(Xdata,
-		  [{<<"xmlns">>, <<"jabber:x:data">>}])
-     | _acc].
+'encode_pubsub_default_$xdata'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_pubsub_default_$xdata'(Xdata, __TopXMLNS,
+			       _acc) ->
+    [encode_xdata(Xdata, __TopXMLNS) | _acc].
 
 decode_pubsub_default_attr_node(__TopXMLNS,
 				undefined) ->
@@ -14255,20 +17589,23 @@ decode_pubsub_publish_options_els(__TopXMLNS,
     decode_pubsub_publish_options_els(__TopXMLNS,
 				      __IgnoreEls, _els, Xdata).
 
-encode_pubsub_publish_options(Xdata, _xmlns_attrs) ->
+encode_pubsub_publish_options(Xdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_publish_options_$xdata'(Xdata,
+							     __NewTopXMLNS,
 							     [])),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"publish-options">>, _attrs, _els}.
 
 'encode_pubsub_publish_options_$xdata'(undefined,
-				       _acc) ->
+				       __TopXMLNS, _acc) ->
     _acc;
-'encode_pubsub_publish_options_$xdata'(Xdata, _acc) ->
-    [encode_xdata(Xdata,
-		  [{<<"xmlns">>, <<"jabber:x:data">>}])
-     | _acc].
+'encode_pubsub_publish_options_$xdata'(Xdata,
+				       __TopXMLNS, _acc) ->
+    [encode_xdata(Xdata, __TopXMLNS) | _acc].
 
 decode_pubsub_configure(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"configure">>, _attrs, _els}) ->
@@ -14308,20 +17645,25 @@ decode_pubsub_configure_attrs(__TopXMLNS, [_ | _attrs],
 decode_pubsub_configure_attrs(__TopXMLNS, [], Node) ->
     decode_pubsub_configure_attr_node(__TopXMLNS, Node).
 
-encode_pubsub_configure({Node, Xdata}, _xmlns_attrs) ->
+encode_pubsub_configure({Node, Xdata}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"http://jabber.org/protocol/pubsub">>,
+				      <<"http://jabber.org/protocol/pubsub#owner">>],
+				     __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_configure_$xdata'(Xdata,
-						       [])),
+						       __NewTopXMLNS, [])),
     _attrs = encode_pubsub_configure_attr_node(Node,
-					       _xmlns_attrs),
+					       enc_xmlns_attrs(__NewTopXMLNS,
+							       __TopXMLNS)),
     {xmlel, <<"configure">>, _attrs, _els}.
 
-'encode_pubsub_configure_$xdata'(undefined, _acc) ->
+'encode_pubsub_configure_$xdata'(undefined, __TopXMLNS,
+				 _acc) ->
     _acc;
-'encode_pubsub_configure_$xdata'(Xdata, _acc) ->
-    [encode_xdata(Xdata,
-		  [{<<"xmlns">>, <<"jabber:x:data">>}])
-     | _acc].
+'encode_pubsub_configure_$xdata'(Xdata, __TopXMLNS,
+				 _acc) ->
+    [encode_xdata(Xdata, __TopXMLNS) | _acc].
 
 decode_pubsub_configure_attr_node(__TopXMLNS,
 				  undefined) ->
@@ -14348,10 +17690,15 @@ decode_pubsub_create_attrs(__TopXMLNS, [_ | _attrs],
 decode_pubsub_create_attrs(__TopXMLNS, [], Node) ->
     decode_pubsub_create_attr_node(__TopXMLNS, Node).
 
-encode_pubsub_create(Node, _xmlns_attrs) ->
+encode_pubsub_create(Node, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"http://jabber.org/protocol/pubsub">>,
+				      <<"http://jabber.org/protocol/pubsub#event">>],
+				     __TopXMLNS),
     _els = [],
     _attrs = encode_pubsub_create_attr_node(Node,
-					    _xmlns_attrs),
+					    enc_xmlns_attrs(__NewTopXMLNS,
+							    __TopXMLNS)),
     {xmlel, <<"create">>, _attrs, _els}.
 
 decode_pubsub_create_attr_node(__TopXMLNS, undefined) ->
@@ -14422,19 +17769,26 @@ decode_pubsub_retract_attrs(__TopXMLNS, [], Node,
      decode_pubsub_retract_attr_notify(__TopXMLNS, Notify)}.
 
 encode_pubsub_retract({ps_retract, Node, Notify, Items},
-		      _xmlns_attrs) ->
+		      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_retract_$items'(Items,
-						     [])),
+						     __NewTopXMLNS, [])),
     _attrs = encode_pubsub_retract_attr_notify(Notify,
 					       encode_pubsub_retract_attr_node(Node,
-									       _xmlns_attrs)),
+									       enc_xmlns_attrs(__NewTopXMLNS,
+											       __TopXMLNS))),
     {xmlel, <<"retract">>, _attrs, _els}.
 
-'encode_pubsub_retract_$items'([], _acc) -> _acc;
-'encode_pubsub_retract_$items'([Items | _els], _acc) ->
-    'encode_pubsub_retract_$items'(_els,
-				   [encode_pubsub_item(Items, []) | _acc]).
+'encode_pubsub_retract_$items'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_retract_$items'([Items | _els],
+			       __TopXMLNS, _acc) ->
+    'encode_pubsub_retract_$items'(_els, __TopXMLNS,
+				   [encode_pubsub_item(Items, __TopXMLNS)
+				    | _acc]).
 
 decode_pubsub_retract_attr_node(__TopXMLNS,
 				undefined) ->
@@ -14515,21 +17869,26 @@ decode_pubsub_options_attrs(__TopXMLNS, [], Node, Subid,
 
 encode_pubsub_options({ps_options, Node, Jid, Subid,
 		       Xdata},
-		      _xmlns_attrs) ->
+		      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_options_$xdata'(Xdata,
-						     [])),
+						     __NewTopXMLNS, [])),
     _attrs = encode_pubsub_options_attr_jid(Jid,
 					    encode_pubsub_options_attr_subid(Subid,
 									     encode_pubsub_options_attr_node(Node,
-													     _xmlns_attrs))),
+													     enc_xmlns_attrs(__NewTopXMLNS,
+															     __TopXMLNS)))),
     {xmlel, <<"options">>, _attrs, _els}.
 
-'encode_pubsub_options_$xdata'(undefined, _acc) -> _acc;
-'encode_pubsub_options_$xdata'(Xdata, _acc) ->
-    [encode_xdata(Xdata,
-		  [{<<"xmlns">>, <<"jabber:x:data">>}])
-     | _acc].
+'encode_pubsub_options_$xdata'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_pubsub_options_$xdata'(Xdata, __TopXMLNS,
+			       _acc) ->
+    [encode_xdata(Xdata, __TopXMLNS) | _acc].
 
 decode_pubsub_options_attr_node(__TopXMLNS,
 				undefined) ->
@@ -14617,18 +17976,25 @@ decode_pubsub_publish_attrs(__TopXMLNS, [], Node) ->
     decode_pubsub_publish_attr_node(__TopXMLNS, Node).
 
 encode_pubsub_publish({ps_publish, Node, Items},
-		      _xmlns_attrs) ->
+		      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_publish_$items'(Items,
-						     [])),
+						     __NewTopXMLNS, [])),
     _attrs = encode_pubsub_publish_attr_node(Node,
-					     _xmlns_attrs),
+					     enc_xmlns_attrs(__NewTopXMLNS,
+							     __TopXMLNS)),
     {xmlel, <<"publish">>, _attrs, _els}.
 
-'encode_pubsub_publish_$items'([], _acc) -> _acc;
-'encode_pubsub_publish_$items'([Items | _els], _acc) ->
-    'encode_pubsub_publish_$items'(_els,
-				   [encode_pubsub_item(Items, []) | _acc]).
+'encode_pubsub_publish_$items'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_publish_$items'([Items | _els],
+			       __TopXMLNS, _acc) ->
+    'encode_pubsub_publish_$items'(_els, __TopXMLNS,
+				   [encode_pubsub_item(Items, __TopXMLNS)
+				    | _acc]).
 
 decode_pubsub_publish_attr_node(__TopXMLNS,
 				undefined) ->
@@ -14674,12 +18040,16 @@ decode_pubsub_unsubscribe_attrs(__TopXMLNS, [], Node,
 
 encode_pubsub_unsubscribe({ps_unsubscribe, Node, Jid,
 			   Subid},
-			  _xmlns_attrs) ->
+			  __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_pubsub_unsubscribe_attr_jid(Jid,
 						encode_pubsub_unsubscribe_attr_subid(Subid,
 										     encode_pubsub_unsubscribe_attr_node(Node,
-															 _xmlns_attrs))),
+															 enc_xmlns_attrs(__NewTopXMLNS,
+																	 __TopXMLNS)))),
     {xmlel, <<"unsubscribe">>, _attrs, _els}.
 
 decode_pubsub_unsubscribe_attr_node(__TopXMLNS,
@@ -14745,11 +18115,15 @@ decode_pubsub_subscribe_attrs(__TopXMLNS, [], Node,
      decode_pubsub_subscribe_attr_jid(__TopXMLNS, Jid)}.
 
 encode_pubsub_subscribe({ps_subscribe, Node, Jid},
-			_xmlns_attrs) ->
+			__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_pubsub_subscribe_attr_jid(Jid,
 					      encode_pubsub_subscribe_attr_node(Node,
-										_xmlns_attrs)),
+										enc_xmlns_attrs(__NewTopXMLNS,
+												__TopXMLNS))),
     {xmlel, <<"subscribe">>, _attrs, _els}.
 
 decode_pubsub_subscribe_attr_node(__TopXMLNS,
@@ -14839,24 +18213,30 @@ decode_pubsub_owner_affiliations_attrs(__TopXMLNS, [],
 					       Node).
 
 encode_pubsub_owner_affiliations({Node, Affiliations},
-				 _xmlns_attrs) ->
+				 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#owner">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_owner_affiliations_$affiliations'(Affiliations,
+								       __NewTopXMLNS,
 								       [])),
     _attrs =
 	encode_pubsub_owner_affiliations_attr_node(Node,
-						   _xmlns_attrs),
+						   enc_xmlns_attrs(__NewTopXMLNS,
+								   __TopXMLNS)),
     {xmlel, <<"affiliations">>, _attrs, _els}.
 
 'encode_pubsub_owner_affiliations_$affiliations'([],
-						 _acc) ->
+						 __TopXMLNS, _acc) ->
     _acc;
 'encode_pubsub_owner_affiliations_$affiliations'([Affiliations
 						  | _els],
-						 _acc) ->
+						 __TopXMLNS, _acc) ->
     'encode_pubsub_owner_affiliations_$affiliations'(_els,
+						     __TopXMLNS,
 						     [encode_pubsub_owner_affiliation(Affiliations,
-										      [])
+										      __TopXMLNS)
 						      | _acc]).
 
 decode_pubsub_owner_affiliations_attr_node(__TopXMLNS,
@@ -14928,22 +18308,29 @@ decode_pubsub_affiliations_attrs(__TopXMLNS, [],
     decode_pubsub_affiliations_attr_node(__TopXMLNS, Node).
 
 encode_pubsub_affiliations({Node, Affiliations},
-			   _xmlns_attrs) ->
+			   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_affiliations_$affiliations'(Affiliations,
+								 __NewTopXMLNS,
 								 [])),
     _attrs = encode_pubsub_affiliations_attr_node(Node,
-						  _xmlns_attrs),
+						  enc_xmlns_attrs(__NewTopXMLNS,
+								  __TopXMLNS)),
     {xmlel, <<"affiliations">>, _attrs, _els}.
 
-'encode_pubsub_affiliations_$affiliations'([], _acc) ->
+'encode_pubsub_affiliations_$affiliations'([],
+					   __TopXMLNS, _acc) ->
     _acc;
 'encode_pubsub_affiliations_$affiliations'([Affiliations
 					    | _els],
-					   _acc) ->
+					   __TopXMLNS, _acc) ->
     'encode_pubsub_affiliations_$affiliations'(_els,
+					       __TopXMLNS,
 					       [encode_pubsub_affiliation(Affiliations,
-									  [])
+									  __TopXMLNS)
 						| _acc]).
 
 decode_pubsub_affiliations_attr_node(__TopXMLNS,
@@ -15029,23 +18416,30 @@ decode_pubsub_subscriptions_attrs(__TopXMLNS, [],
     decode_pubsub_subscriptions_attr_node(__TopXMLNS, Node).
 
 encode_pubsub_subscriptions({Node, Subscriptions},
-			    _xmlns_attrs) ->
+			    __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"http://jabber.org/protocol/pubsub">>,
+				      <<"http://jabber.org/protocol/pubsub#owner">>],
+				     __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_subscriptions_$subscriptions'(Subscriptions,
+								   __NewTopXMLNS,
 								   [])),
     _attrs = encode_pubsub_subscriptions_attr_node(Node,
-						   _xmlns_attrs),
+						   enc_xmlns_attrs(__NewTopXMLNS,
+								   __TopXMLNS)),
     {xmlel, <<"subscriptions">>, _attrs, _els}.
 
 'encode_pubsub_subscriptions_$subscriptions'([],
-					     _acc) ->
+					     __TopXMLNS, _acc) ->
     _acc;
 'encode_pubsub_subscriptions_$subscriptions'([Subscriptions
 					      | _els],
-					     _acc) ->
+					     __TopXMLNS, _acc) ->
     'encode_pubsub_subscriptions_$subscriptions'(_els,
+						 __TopXMLNS,
 						 [encode_pubsub_subscription(Subscriptions,
-									     [])
+									     __TopXMLNS)
 						  | _acc]).
 
 decode_pubsub_subscriptions_attr_node(__TopXMLNS,
@@ -15270,45 +18664,68 @@ decode_pubsub_event_els(__TopXMLNS, __IgnoreEls,
 
 encode_pubsub_event({ps_event, Items, Purge,
 		     Subscription, Delete, Create, Configuration},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#event">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_pubsub_event_$items'(Items,
+						      __NewTopXMLNS,
 						      'encode_pubsub_event_$create'(Create,
+										    __NewTopXMLNS,
 										    'encode_pubsub_event_$delete'(Delete,
+														  __NewTopXMLNS,
 														  'encode_pubsub_event_$purge'(Purge,
+																	       __NewTopXMLNS,
 																	       'encode_pubsub_event_$configuration'(Configuration,
+																						    __NewTopXMLNS,
 																						    'encode_pubsub_event_$subscription'(Subscription,
+																											__NewTopXMLNS,
 																											[]))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"event">>, _attrs, _els}.
 
-'encode_pubsub_event_$items'(undefined, _acc) -> _acc;
-'encode_pubsub_event_$items'(Items, _acc) ->
-    [encode_pubsub_items(Items, []) | _acc].
+'encode_pubsub_event_$items'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_pubsub_event_$items'(Items, __TopXMLNS, _acc) ->
+    [encode_pubsub_items(Items, __TopXMLNS) | _acc].
 
-'encode_pubsub_event_$create'(undefined, _acc) -> _acc;
-'encode_pubsub_event_$create'(Create, _acc) ->
-    [encode_pubsub_create(Create, []) | _acc].
+'encode_pubsub_event_$create'(undefined, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_pubsub_event_$create'(Create, __TopXMLNS,
+			      _acc) ->
+    [encode_pubsub_create(Create, __TopXMLNS) | _acc].
 
-'encode_pubsub_event_$delete'(undefined, _acc) -> _acc;
-'encode_pubsub_event_$delete'(Delete, _acc) ->
-    [encode_pubsub_delete(Delete, []) | _acc].
+'encode_pubsub_event_$delete'(undefined, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_pubsub_event_$delete'(Delete, __TopXMLNS,
+			      _acc) ->
+    [encode_pubsub_delete(Delete, __TopXMLNS) | _acc].
 
-'encode_pubsub_event_$purge'(undefined, _acc) -> _acc;
-'encode_pubsub_event_$purge'(Purge, _acc) ->
-    [encode_pubsub_purge(Purge, []) | _acc].
+'encode_pubsub_event_$purge'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_pubsub_event_$purge'(Purge, __TopXMLNS, _acc) ->
+    [encode_pubsub_purge(Purge, __TopXMLNS) | _acc].
 
-'encode_pubsub_event_$configuration'(undefined, _acc) ->
+'encode_pubsub_event_$configuration'(undefined,
+				     __TopXMLNS, _acc) ->
     _acc;
 'encode_pubsub_event_$configuration'(Configuration,
-				     _acc) ->
-    [encode_pubsub_event_configuration(Configuration, [])
+				     __TopXMLNS, _acc) ->
+    [encode_pubsub_event_configuration(Configuration,
+				       __TopXMLNS)
      | _acc].
 
-'encode_pubsub_event_$subscription'(undefined, _acc) ->
+'encode_pubsub_event_$subscription'(undefined,
+				    __TopXMLNS, _acc) ->
     _acc;
 'encode_pubsub_event_$subscription'(Subscription,
-				    _acc) ->
-    [encode_pubsub_subscription(Subscription, []) | _acc].
+				    __TopXMLNS, _acc) ->
+    [encode_pubsub_subscription(Subscription, __TopXMLNS)
+     | _acc].
 
 decode_pubsub_items(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"items">>, _attrs, _els}) ->
@@ -15415,34 +18832,43 @@ decode_pubsub_items_attrs(__TopXMLNS, [], Xmlns,
 
 encode_pubsub_items({ps_items, Xmlns, Node, Items,
 		     Max_items, Subid, Retract},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"http://jabber.org/protocol/pubsub">>,
+				      <<"http://jabber.org/protocol/pubsub#event">>],
+				     __TopXMLNS),
     _els = lists:reverse('encode_pubsub_items_$items'(Items,
+						      __NewTopXMLNS,
 						      'encode_pubsub_items_$retract'(Retract,
+										     __NewTopXMLNS,
 										     []))),
     _attrs = encode_pubsub_items_attr_subid(Subid,
 					    encode_pubsub_items_attr_node(Node,
 									  encode_pubsub_items_attr_max_items(Max_items,
-													     encode_pubsub_items_attr_xmlns(Xmlns,
-																	    _xmlns_attrs)))),
+													     enc_xmlns_attrs(__NewTopXMLNS,
+															     __TopXMLNS)))),
     {xmlel, <<"items">>, _attrs, _els}.
 
-'encode_pubsub_items_$items'([], _acc) -> _acc;
-'encode_pubsub_items_$items'([Items | _els], _acc) ->
-    'encode_pubsub_items_$items'(_els,
-				 [encode_pubsub_item(Items, []) | _acc]).
+'encode_pubsub_items_$items'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_pubsub_items_$items'([Items | _els], __TopXMLNS,
+			     _acc) ->
+    'encode_pubsub_items_$items'(_els, __TopXMLNS,
+				 [encode_pubsub_item(Items, __TopXMLNS)
+				  | _acc]).
 
-'encode_pubsub_items_$retract'(undefined, _acc) -> _acc;
-'encode_pubsub_items_$retract'(Retract, _acc) ->
-    [encode_pubsub_event_retract(Retract, []) | _acc].
+'encode_pubsub_items_$retract'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_pubsub_items_$retract'(Retract, __TopXMLNS,
+			       _acc) ->
+    [encode_pubsub_event_retract(Retract, __TopXMLNS)
+     | _acc].
 
 decode_pubsub_items_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_pubsub_items_attr_xmlns(__TopXMLNS, _val) ->
     _val.
-
-encode_pubsub_items_attr_xmlns(<<>>, _acc) -> _acc;
-encode_pubsub_items_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_pubsub_items_attr_max_items(__TopXMLNS,
 				   undefined) ->
@@ -15533,13 +18959,17 @@ decode_pubsub_item_attrs(__TopXMLNS, [], Id, Xmlns,
 
 encode_pubsub_item({ps_item, Xmlns, Id, __Xmls, Node,
 		    Publisher},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"http://jabber.org/protocol/pubsub">>,
+				      <<"http://jabber.org/protocol/pubsub#event">>],
+				     __TopXMLNS),
     _els = __Xmls,
     _attrs = encode_pubsub_item_attr_publisher(Publisher,
 					       encode_pubsub_item_attr_node(Node,
-									    encode_pubsub_item_attr_xmlns(Xmlns,
-													  encode_pubsub_item_attr_id(Id,
-																     _xmlns_attrs)))),
+									    encode_pubsub_item_attr_id(Id,
+												       enc_xmlns_attrs(__NewTopXMLNS,
+														       __TopXMLNS)))),
     {xmlel, <<"item">>, _attrs, _els}.
 
 decode_pubsub_item_attr_id(__TopXMLNS, undefined) ->
@@ -15553,10 +18983,6 @@ encode_pubsub_item_attr_id(_val, _acc) ->
 decode_pubsub_item_attr_xmlns(__TopXMLNS, undefined) ->
     <<>>;
 decode_pubsub_item_attr_xmlns(__TopXMLNS, _val) -> _val.
-
-encode_pubsub_item_attr_xmlns(<<>>, _acc) -> _acc;
-encode_pubsub_item_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_pubsub_item_attr_node(__TopXMLNS, undefined) ->
     <<>>;
@@ -15593,10 +19019,14 @@ decode_pubsub_event_retract_attrs(__TopXMLNS,
 decode_pubsub_event_retract_attrs(__TopXMLNS, [], Id) ->
     decode_pubsub_event_retract_attr_id(__TopXMLNS, Id).
 
-encode_pubsub_event_retract(Id, _xmlns_attrs) ->
+encode_pubsub_event_retract(Id, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#event">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_pubsub_event_retract_attr_id(Id,
-						 _xmlns_attrs),
+						 enc_xmlns_attrs(__NewTopXMLNS,
+								 __TopXMLNS)),
     {xmlel, <<"retract">>, _attrs, _els}.
 
 decode_pubsub_event_retract_attr_id(__TopXMLNS,
@@ -15657,23 +19087,26 @@ decode_pubsub_event_configuration_attrs(__TopXMLNS, [],
 						Node).
 
 encode_pubsub_event_configuration({Node, Xdata},
-				  _xmlns_attrs) ->
+				  __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/pubsub#event">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_pubsub_event_configuration_$xdata'(Xdata,
+								 __NewTopXMLNS,
 								 [])),
     _attrs =
 	encode_pubsub_event_configuration_attr_node(Node,
-						    _xmlns_attrs),
+						    enc_xmlns_attrs(__NewTopXMLNS,
+								    __TopXMLNS)),
     {xmlel, <<"configuration">>, _attrs, _els}.
 
 'encode_pubsub_event_configuration_$xdata'(undefined,
-					   _acc) ->
+					   __TopXMLNS, _acc) ->
     _acc;
 'encode_pubsub_event_configuration_$xdata'(Xdata,
-					   _acc) ->
-    [encode_xdata(Xdata,
-		  [{<<"xmlns">>, <<"jabber:x:data">>}])
-     | _acc].
+					   __TopXMLNS, _acc) ->
+    [encode_xdata(Xdata, __TopXMLNS) | _acc].
 
 decode_pubsub_event_configuration_attr_node(__TopXMLNS,
 					    undefined) ->
@@ -15726,13 +19159,16 @@ decode_pubsub_owner_affiliation_attrs(__TopXMLNS, [],
 
 encode_pubsub_owner_affiliation({ps_affiliation, Xmlns,
 				 _, Type, Jid},
-				_xmlns_attrs) ->
+				__TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"http://jabber.org/protocol/pubsub#owner">>],
+				     __TopXMLNS),
     _els = [],
     _attrs =
 	encode_pubsub_owner_affiliation_attr_affiliation(Type,
-							 encode_pubsub_owner_affiliation_attr_xmlns(Xmlns,
-												    encode_pubsub_owner_affiliation_attr_jid(Jid,
-																	     _xmlns_attrs))),
+							 encode_pubsub_owner_affiliation_attr_jid(Jid,
+												  enc_xmlns_attrs(__NewTopXMLNS,
+														  __TopXMLNS))),
     {xmlel, <<"affiliation">>, _attrs, _els}.
 
 decode_pubsub_owner_affiliation_attr_jid(__TopXMLNS,
@@ -15759,13 +19195,6 @@ decode_pubsub_owner_affiliation_attr_xmlns(__TopXMLNS,
 decode_pubsub_owner_affiliation_attr_xmlns(__TopXMLNS,
 					   _val) ->
     _val.
-
-encode_pubsub_owner_affiliation_attr_xmlns(<<>>,
-					   _acc) ->
-    _acc;
-encode_pubsub_owner_affiliation_attr_xmlns(_val,
-					   _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_pubsub_owner_affiliation_attr_affiliation(__TopXMLNS,
 						 undefined) ->
@@ -15824,13 +19253,16 @@ decode_pubsub_affiliation_attrs(__TopXMLNS, [], Node,
 
 encode_pubsub_affiliation({ps_affiliation, Xmlns, Node,
 			   Type, _},
-			  _xmlns_attrs) ->
+			  __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"http://jabber.org/protocol/pubsub">>],
+				     __TopXMLNS),
     _els = [],
     _attrs =
 	encode_pubsub_affiliation_attr_affiliation(Type,
-						   encode_pubsub_affiliation_attr_xmlns(Xmlns,
-											encode_pubsub_affiliation_attr_node(Node,
-															    _xmlns_attrs))),
+						   encode_pubsub_affiliation_attr_node(Node,
+										       enc_xmlns_attrs(__NewTopXMLNS,
+												       __TopXMLNS))),
     {xmlel, <<"affiliation">>, _attrs, _els}.
 
 decode_pubsub_affiliation_attr_node(__TopXMLNS,
@@ -15850,11 +19282,6 @@ decode_pubsub_affiliation_attr_xmlns(__TopXMLNS,
 decode_pubsub_affiliation_attr_xmlns(__TopXMLNS,
 				     _val) ->
     _val.
-
-encode_pubsub_affiliation_attr_xmlns(<<>>, _acc) ->
-    _acc;
-encode_pubsub_affiliation_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_pubsub_affiliation_attr_affiliation(__TopXMLNS,
 					   undefined) ->
@@ -15937,15 +19364,20 @@ decode_pubsub_subscription_attrs(__TopXMLNS, [], Xmlns,
 
 encode_pubsub_subscription({ps_subscription, Xmlns, Jid,
 			    Type, Node, Subid, Expiry},
-			   _xmlns_attrs) ->
+			   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(Xmlns,
+				     [<<"http://jabber.org/protocol/pubsub">>,
+				      <<"http://jabber.org/protocol/pubsub#owner">>,
+				      <<"http://jabber.org/protocol/pubsub#event">>],
+				     __TopXMLNS),
     _els = [],
     _attrs = encode_pubsub_subscription_attr_expiry(Expiry,
 						    encode_pubsub_subscription_attr_subscription(Type,
 												 encode_pubsub_subscription_attr_subid(Subid,
 																       encode_pubsub_subscription_attr_node(Node,
 																					    encode_pubsub_subscription_attr_jid(Jid,
-																										encode_pubsub_subscription_attr_xmlns(Xmlns,
-																														      _xmlns_attrs)))))),
+																										enc_xmlns_attrs(__NewTopXMLNS,
+																												__TopXMLNS)))))),
     {xmlel, <<"subscription">>, _attrs, _els}.
 
 decode_pubsub_subscription_attr_xmlns(__TopXMLNS,
@@ -15954,11 +19386,6 @@ decode_pubsub_subscription_attr_xmlns(__TopXMLNS,
 decode_pubsub_subscription_attr_xmlns(__TopXMLNS,
 				      _val) ->
     _val.
-
-encode_pubsub_subscription_attr_xmlns(<<>>, _acc) ->
-    _acc;
-encode_pubsub_subscription_attr_xmlns(_val, _acc) ->
-    [{<<"xmlns">>, _val} | _acc].
 
 decode_pubsub_subscription_attr_jid(__TopXMLNS,
 				    undefined) ->
@@ -16167,40 +19594,54 @@ decode_xdata_attrs(__TopXMLNS, [], Type) ->
 
 encode_xdata({xdata, Type, Instructions, Title,
 	      Reported, Items, Fields},
-	     _xmlns_attrs) ->
+	     __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:data">>,
+				     [], __TopXMLNS),
     _els = lists:reverse('encode_xdata_$fields'(Fields,
+						__NewTopXMLNS,
 						'encode_xdata_$items'(Items,
+								      __NewTopXMLNS,
 								      'encode_xdata_$instructions'(Instructions,
+												   __NewTopXMLNS,
 												   'encode_xdata_$reported'(Reported,
+															    __NewTopXMLNS,
 															    'encode_xdata_$title'(Title,
+																		  __NewTopXMLNS,
 																		  [])))))),
-    _attrs = encode_xdata_attr_type(Type, _xmlns_attrs),
+    _attrs = encode_xdata_attr_type(Type,
+				    enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS)),
     {xmlel, <<"x">>, _attrs, _els}.
 
-'encode_xdata_$fields'([], _acc) -> _acc;
-'encode_xdata_$fields'([Fields | _els], _acc) ->
-    'encode_xdata_$fields'(_els,
-			   [encode_xdata_field(Fields, []) | _acc]).
+'encode_xdata_$fields'([], __TopXMLNS, _acc) -> _acc;
+'encode_xdata_$fields'([Fields | _els], __TopXMLNS,
+		       _acc) ->
+    'encode_xdata_$fields'(_els, __TopXMLNS,
+			   [encode_xdata_field(Fields, __TopXMLNS) | _acc]).
 
-'encode_xdata_$items'([], _acc) -> _acc;
-'encode_xdata_$items'([Items | _els], _acc) ->
-    'encode_xdata_$items'(_els,
-			  [encode_xdata_item(Items, []) | _acc]).
+'encode_xdata_$items'([], __TopXMLNS, _acc) -> _acc;
+'encode_xdata_$items'([Items | _els], __TopXMLNS,
+		      _acc) ->
+    'encode_xdata_$items'(_els, __TopXMLNS,
+			  [encode_xdata_item(Items, __TopXMLNS) | _acc]).
 
-'encode_xdata_$instructions'([], _acc) -> _acc;
+'encode_xdata_$instructions'([], __TopXMLNS, _acc) ->
+    _acc;
 'encode_xdata_$instructions'([Instructions | _els],
-			     _acc) ->
-    'encode_xdata_$instructions'(_els,
-				 [encode_xdata_instructions(Instructions, [])
+			     __TopXMLNS, _acc) ->
+    'encode_xdata_$instructions'(_els, __TopXMLNS,
+				 [encode_xdata_instructions(Instructions,
+							    __TopXMLNS)
 				  | _acc]).
 
-'encode_xdata_$reported'(undefined, _acc) -> _acc;
-'encode_xdata_$reported'(Reported, _acc) ->
-    [encode_xdata_reported(Reported, []) | _acc].
+'encode_xdata_$reported'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_xdata_$reported'(Reported, __TopXMLNS, _acc) ->
+    [encode_xdata_reported(Reported, __TopXMLNS) | _acc].
 
-'encode_xdata_$title'(undefined, _acc) -> _acc;
-'encode_xdata_$title'(Title, _acc) ->
-    [encode_xdata_title(Title, []) | _acc].
+'encode_xdata_$title'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_xdata_$title'(Title, __TopXMLNS, _acc) ->
+    [encode_xdata_title(Title, __TopXMLNS) | _acc].
 
 decode_xdata_attr_type(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -16250,16 +19691,21 @@ decode_xdata_item_els(__TopXMLNS, __IgnoreEls,
     decode_xdata_item_els(__TopXMLNS, __IgnoreEls, _els,
 			  Fields).
 
-encode_xdata_item(Fields, _xmlns_attrs) ->
+encode_xdata_item(Fields, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:data">>,
+				     [], __TopXMLNS),
     _els = lists:reverse('encode_xdata_item_$fields'(Fields,
-						     [])),
-    _attrs = _xmlns_attrs,
+						     __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"item">>, _attrs, _els}.
 
-'encode_xdata_item_$fields'([], _acc) -> _acc;
-'encode_xdata_item_$fields'([Fields | _els], _acc) ->
-    'encode_xdata_item_$fields'(_els,
-				[encode_xdata_field(Fields, []) | _acc]).
+'encode_xdata_item_$fields'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_xdata_item_$fields'([Fields | _els], __TopXMLNS,
+			    _acc) ->
+    'encode_xdata_item_$fields'(_els, __TopXMLNS,
+				[encode_xdata_field(Fields, __TopXMLNS)
+				 | _acc]).
 
 decode_xdata_reported(__TopXMLNS, __IgnoreEls,
 		      {xmlel, <<"reported">>, _attrs, _els}) ->
@@ -16293,18 +19739,22 @@ decode_xdata_reported_els(__TopXMLNS, __IgnoreEls,
     decode_xdata_reported_els(__TopXMLNS, __IgnoreEls, _els,
 			      Fields).
 
-encode_xdata_reported(Fields, _xmlns_attrs) ->
+encode_xdata_reported(Fields, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:data">>,
+				     [], __TopXMLNS),
     _els =
 	lists:reverse('encode_xdata_reported_$fields'(Fields,
-						      [])),
-    _attrs = _xmlns_attrs,
+						      __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"reported">>, _attrs, _els}.
 
-'encode_xdata_reported_$fields'([], _acc) -> _acc;
+'encode_xdata_reported_$fields'([], __TopXMLNS, _acc) ->
+    _acc;
 'encode_xdata_reported_$fields'([Fields | _els],
-				_acc) ->
-    'encode_xdata_reported_$fields'(_els,
-				    [encode_xdata_field(Fields, []) | _acc]).
+				__TopXMLNS, _acc) ->
+    'encode_xdata_reported_$fields'(_els, __TopXMLNS,
+				    [encode_xdata_field(Fields, __TopXMLNS)
+				     | _acc]).
 
 decode_xdata_title(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"title">>, _attrs, _els}) ->
@@ -16324,9 +19774,11 @@ decode_xdata_title_els(__TopXMLNS, __IgnoreEls,
     decode_xdata_title_els(__TopXMLNS, __IgnoreEls, _els,
 			   Cdata).
 
-encode_xdata_title(Cdata, _xmlns_attrs) ->
+encode_xdata_title(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:data">>,
+				     [], __TopXMLNS),
     _els = encode_xdata_title_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"title">>, _attrs, _els}.
 
 decode_xdata_title_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -16354,9 +19806,11 @@ decode_xdata_instructions_els(__TopXMLNS, __IgnoreEls,
     decode_xdata_instructions_els(__TopXMLNS, __IgnoreEls,
 				  _els, Cdata).
 
-encode_xdata_instructions(Cdata, _xmlns_attrs) ->
+encode_xdata_instructions(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:data">>,
+				     [], __TopXMLNS),
     _els = encode_xdata_instructions_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"instructions">>, _attrs, _els}.
 
 decode_xdata_instructions_cdata(__TopXMLNS, <<>>) ->
@@ -16473,11 +19927,11 @@ decode_xdata_field_els(__TopXMLNS, __IgnoreEls,
 				  Options, Values, Desc, Required,
 				  [_el | __Els]);
        true ->
-	   case is_known_tag(_el) of
+	   case is_known_tag(_el, __TopXMLNS) of
 	     true ->
 		 decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
 					Options, Values, Desc, Required,
-					[decode(_el) | __Els]);
+					[decode(_el, __TopXMLNS, []) | __Els]);
 	     false ->
 		 decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
 					Options, Values, Desc, Required, __Els)
@@ -16512,37 +19966,56 @@ decode_xdata_field_attrs(__TopXMLNS, [], Label, Type,
 
 encode_xdata_field({xdata_field, Label, Type, Var,
 		    Required, Desc, Values, Options, __Els},
-		   _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els] ++
+		   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:data">>,
+				     [], __TopXMLNS),
+    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els] ++
 	     lists:reverse('encode_xdata_field_$options'(Options,
+							 __NewTopXMLNS,
 							 'encode_xdata_field_$values'(Values,
+										      __NewTopXMLNS,
 										      'encode_xdata_field_$desc'(Desc,
+														 __NewTopXMLNS,
 														 'encode_xdata_field_$required'(Required,
+																		__NewTopXMLNS,
 																		[]))))),
     _attrs = encode_xdata_field_attr_var(Var,
 					 encode_xdata_field_attr_type(Type,
 								      encode_xdata_field_attr_label(Label,
-												    _xmlns_attrs))),
+												    enc_xmlns_attrs(__NewTopXMLNS,
+														    __TopXMLNS)))),
     {xmlel, <<"field">>, _attrs, _els}.
 
-'encode_xdata_field_$options'([], _acc) -> _acc;
-'encode_xdata_field_$options'([Options | _els], _acc) ->
-    'encode_xdata_field_$options'(_els,
-				  [encode_xdata_field_option(Options, [])
+'encode_xdata_field_$options'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_xdata_field_$options'([Options | _els],
+			      __TopXMLNS, _acc) ->
+    'encode_xdata_field_$options'(_els, __TopXMLNS,
+				  [encode_xdata_field_option(Options,
+							     __TopXMLNS)
 				   | _acc]).
 
-'encode_xdata_field_$values'([], _acc) -> _acc;
-'encode_xdata_field_$values'([Values | _els], _acc) ->
-    'encode_xdata_field_$values'(_els,
-				 [encode_xdata_field_value(Values, []) | _acc]).
+'encode_xdata_field_$values'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_xdata_field_$values'([Values | _els],
+			     __TopXMLNS, _acc) ->
+    'encode_xdata_field_$values'(_els, __TopXMLNS,
+				 [encode_xdata_field_value(Values, __TopXMLNS)
+				  | _acc]).
 
-'encode_xdata_field_$desc'(undefined, _acc) -> _acc;
-'encode_xdata_field_$desc'(Desc, _acc) ->
-    [encode_xdata_field_desc(Desc, []) | _acc].
+'encode_xdata_field_$desc'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_xdata_field_$desc'(Desc, __TopXMLNS, _acc) ->
+    [encode_xdata_field_desc(Desc, __TopXMLNS) | _acc].
 
-'encode_xdata_field_$required'(false, _acc) -> _acc;
-'encode_xdata_field_$required'(Required, _acc) ->
-    [encode_xdata_field_required(Required, []) | _acc].
+'encode_xdata_field_$required'(false, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_xdata_field_$required'(Required, __TopXMLNS,
+			       _acc) ->
+    [encode_xdata_field_required(Required, __TopXMLNS)
+     | _acc].
 
 decode_xdata_field_attr_label(__TopXMLNS, undefined) ->
     <<>>;
@@ -16634,16 +20107,20 @@ decode_xdata_field_option_attrs(__TopXMLNS, [],
     decode_xdata_field_option_attr_label(__TopXMLNS, Label).
 
 encode_xdata_field_option({xdata_option, Label, Value},
-			  _xmlns_attrs) ->
+			  __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:data">>,
+				     [], __TopXMLNS),
     _els =
 	lists:reverse('encode_xdata_field_option_$value'(Value,
-							 [])),
+							 __NewTopXMLNS, [])),
     _attrs = encode_xdata_field_option_attr_label(Label,
-						  _xmlns_attrs),
+						  enc_xmlns_attrs(__NewTopXMLNS,
+								  __TopXMLNS)),
     {xmlel, <<"option">>, _attrs, _els}.
 
-'encode_xdata_field_option_$value'(Value, _acc) ->
-    [encode_xdata_field_value(Value, []) | _acc].
+'encode_xdata_field_option_$value'(Value, __TopXMLNS,
+				   _acc) ->
+    [encode_xdata_field_value(Value, __TopXMLNS) | _acc].
 
 decode_xdata_field_option_attr_label(__TopXMLNS,
 				     undefined) ->
@@ -16675,9 +20152,11 @@ decode_xdata_field_value_els(__TopXMLNS, __IgnoreEls,
     decode_xdata_field_value_els(__TopXMLNS, __IgnoreEls,
 				 _els, Cdata).
 
-encode_xdata_field_value(Cdata, _xmlns_attrs) ->
+encode_xdata_field_value(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:data">>,
+				     [], __TopXMLNS),
     _els = encode_xdata_field_value_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"value">>, _attrs, _els}.
 
 decode_xdata_field_value_cdata(__TopXMLNS, <<>>) ->
@@ -16707,9 +20186,11 @@ decode_xdata_field_desc_els(__TopXMLNS, __IgnoreEls,
     decode_xdata_field_desc_els(__TopXMLNS, __IgnoreEls,
 				_els, Cdata).
 
-encode_xdata_field_desc(Cdata, _xmlns_attrs) ->
+encode_xdata_field_desc(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:data">>,
+				     [], __TopXMLNS),
     _els = encode_xdata_field_desc_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"desc">>, _attrs, _els}.
 
 decode_xdata_field_desc_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -16723,9 +20204,11 @@ decode_xdata_field_required(__TopXMLNS, __IgnoreEls,
 			    {xmlel, <<"required">>, _attrs, _els}) ->
     true.
 
-encode_xdata_field_required(true, _xmlns_attrs) ->
+encode_xdata_field_required(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:x:data">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"required">>, _attrs, _els}.
 
 decode_vcard_xupdate(__TopXMLNS, __IgnoreEls,
@@ -16761,15 +20244,20 @@ decode_vcard_xupdate_els(__TopXMLNS, __IgnoreEls,
 			     Hash).
 
 encode_vcard_xupdate({vcard_xupdate, _, Hash},
-		     _xmlns_attrs) ->
+		     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"vcard-temp:x:update">>, [],
+			 __TopXMLNS),
     _els = lists:reverse('encode_vcard_xupdate_$hash'(Hash,
-						      [])),
-    _attrs = _xmlns_attrs,
+						      __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"x">>, _attrs, _els}.
 
-'encode_vcard_xupdate_$hash'(undefined, _acc) -> _acc;
-'encode_vcard_xupdate_$hash'(Hash, _acc) ->
-    [encode_vcard_xupdate_photo(Hash, []) | _acc].
+'encode_vcard_xupdate_$hash'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_vcard_xupdate_$hash'(Hash, __TopXMLNS, _acc) ->
+    [encode_vcard_xupdate_photo(Hash, __TopXMLNS) | _acc].
 
 decode_vcard_xupdate_photo(__TopXMLNS, __IgnoreEls,
 			   {xmlel, <<"photo">>, _attrs, _els}) ->
@@ -16789,9 +20277,12 @@ decode_vcard_xupdate_photo_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_xupdate_photo_els(__TopXMLNS, __IgnoreEls,
 				   _els, Cdata).
 
-encode_vcard_xupdate_photo(Cdata, _xmlns_attrs) ->
+encode_vcard_xupdate_photo(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"vcard-temp:x:update">>, [],
+			 __TopXMLNS),
     _els = encode_vcard_xupdate_photo_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"photo">>, _attrs, _els}.
 
 decode_vcard_xupdate_photo_cdata(__TopXMLNS, <<>>) ->
@@ -17797,160 +21288,243 @@ encode_vcard_temp({vcard_temp, Version, Fn, N, Nickname,
 		   Tz, Geo, Title, Role, Logo, Org, Categories, Note,
 		   Prodid, Rev, Sort_string, Sound, Uid, Url, Class, Key,
 		   Desc},
-		  _xmlns_attrs) ->
+		  __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_temp_$mailer'(Mailer,
+						     __NewTopXMLNS,
 						     'encode_vcard_temp_$adr'(Adr,
+									      __NewTopXMLNS,
 									      'encode_vcard_temp_$class'(Class,
+													 __NewTopXMLNS,
 													 'encode_vcard_temp_$categories'(Categories,
+																	 __NewTopXMLNS,
 																	 'encode_vcard_temp_$desc'(Desc,
+																				   __NewTopXMLNS,
 																				   'encode_vcard_temp_$uid'(Uid,
+																							    __NewTopXMLNS,
 																							    'encode_vcard_temp_$prodid'(Prodid,
+																											__NewTopXMLNS,
 																											'encode_vcard_temp_$jabberid'(Jabberid,
+																														      __NewTopXMLNS,
 																														      'encode_vcard_temp_$sound'(Sound,
+																																		 __NewTopXMLNS,
 																																		 'encode_vcard_temp_$note'(Note,
+																																					   __NewTopXMLNS,
 																																					   'encode_vcard_temp_$role'(Role,
+																																								     __NewTopXMLNS,
 																																								     'encode_vcard_temp_$title'(Title,
+																																												__NewTopXMLNS,
 																																												'encode_vcard_temp_$nickname'(Nickname,
+																																															      __NewTopXMLNS,
 																																															      'encode_vcard_temp_$rev'(Rev,
+																																																		       __NewTopXMLNS,
 																																																		       'encode_vcard_temp_$sort_string'(Sort_string,
+																																																							__NewTopXMLNS,
 																																																							'encode_vcard_temp_$org'(Org,
+																																																										 __NewTopXMLNS,
 																																																										 'encode_vcard_temp_$bday'(Bday,
+																																																													   __NewTopXMLNS,
 																																																													   'encode_vcard_temp_$key'(Key,
+																																																																    __NewTopXMLNS,
 																																																																    'encode_vcard_temp_$tz'(Tz,
+																																																																			    __NewTopXMLNS,
 																																																																			    'encode_vcard_temp_$url'(Url,
+																																																																						     __NewTopXMLNS,
 																																																																						     'encode_vcard_temp_$email'(Email,
+																																																																										__NewTopXMLNS,
 																																																																										'encode_vcard_temp_$tel'(Tel,
+																																																																													 __NewTopXMLNS,
 																																																																													 'encode_vcard_temp_$label'(Label,
+																																																																																    __NewTopXMLNS,
 																																																																																    'encode_vcard_temp_$fn'(Fn,
+																																																																																			    __NewTopXMLNS,
 																																																																																			    'encode_vcard_temp_$version'(Version,
+																																																																																							 __NewTopXMLNS,
 																																																																																							 'encode_vcard_temp_$n'(N,
+																																																																																										__NewTopXMLNS,
 																																																																																										'encode_vcard_temp_$photo'(Photo,
+																																																																																													   __NewTopXMLNS,
 																																																																																													   'encode_vcard_temp_$logo'(Logo,
+																																																																																																     __NewTopXMLNS,
 																																																																																																     'encode_vcard_temp_$geo'(Geo,
+																																																																																																			      __NewTopXMLNS,
 																																																																																																			      [])))))))))))))))))))))))))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"vCard">>, _attrs, _els}.
 
-'encode_vcard_temp_$mailer'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$mailer'(Mailer, _acc) ->
-    [encode_vcard_MAILER(Mailer, []) | _acc].
-
-'encode_vcard_temp_$adr'([], _acc) -> _acc;
-'encode_vcard_temp_$adr'([Adr | _els], _acc) ->
-    'encode_vcard_temp_$adr'(_els,
-			     [encode_vcard_ADR(Adr, []) | _acc]).
-
-'encode_vcard_temp_$class'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$class'(Class, _acc) ->
-    [encode_vcard_CLASS(Class, []) | _acc].
-
-'encode_vcard_temp_$categories'([], _acc) -> _acc;
-'encode_vcard_temp_$categories'(Categories, _acc) ->
-    [encode_vcard_CATEGORIES(Categories, []) | _acc].
-
-'encode_vcard_temp_$desc'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$desc'(Desc, _acc) ->
-    [encode_vcard_DESC(Desc, []) | _acc].
-
-'encode_vcard_temp_$uid'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$uid'(Uid, _acc) ->
-    [encode_vcard_UID(Uid, []) | _acc].
-
-'encode_vcard_temp_$prodid'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$prodid'(Prodid, _acc) ->
-    [encode_vcard_PRODID(Prodid, []) | _acc].
-
-'encode_vcard_temp_$jabberid'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$jabberid'(Jabberid, _acc) ->
-    [encode_vcard_JABBERID(Jabberid, []) | _acc].
-
-'encode_vcard_temp_$sound'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$sound'(Sound, _acc) ->
-    [encode_vcard_SOUND(Sound, []) | _acc].
-
-'encode_vcard_temp_$note'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$note'(Note, _acc) ->
-    [encode_vcard_NOTE(Note, []) | _acc].
-
-'encode_vcard_temp_$role'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$role'(Role, _acc) ->
-    [encode_vcard_ROLE(Role, []) | _acc].
-
-'encode_vcard_temp_$title'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$title'(Title, _acc) ->
-    [encode_vcard_TITLE(Title, []) | _acc].
-
-'encode_vcard_temp_$nickname'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$nickname'(Nickname, _acc) ->
-    [encode_vcard_NICKNAME(Nickname, []) | _acc].
-
-'encode_vcard_temp_$rev'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$rev'(Rev, _acc) ->
-    [encode_vcard_REV(Rev, []) | _acc].
-
-'encode_vcard_temp_$sort_string'(undefined, _acc) ->
+'encode_vcard_temp_$mailer'(undefined, __TopXMLNS,
+			    _acc) ->
     _acc;
-'encode_vcard_temp_$sort_string'(Sort_string, _acc) ->
-    [encode_vcard_SORT_STRING(Sort_string, []) | _acc].
+'encode_vcard_temp_$mailer'(Mailer, __TopXMLNS, _acc) ->
+    [encode_vcard_MAILER(Mailer, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$org'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$org'(Org, _acc) ->
-    [encode_vcard_ORG(Org, []) | _acc].
+'encode_vcard_temp_$adr'([], __TopXMLNS, _acc) -> _acc;
+'encode_vcard_temp_$adr'([Adr | _els], __TopXMLNS,
+			 _acc) ->
+    'encode_vcard_temp_$adr'(_els, __TopXMLNS,
+			     [encode_vcard_ADR(Adr, __TopXMLNS) | _acc]).
 
-'encode_vcard_temp_$bday'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$bday'(Bday, _acc) ->
-    [encode_vcard_BDAY(Bday, []) | _acc].
+'encode_vcard_temp_$class'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_vcard_temp_$class'(Class, __TopXMLNS, _acc) ->
+    [encode_vcard_CLASS(Class, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$key'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$key'(Key, _acc) ->
-    [encode_vcard_KEY(Key, []) | _acc].
+'encode_vcard_temp_$categories'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$categories'(Categories, __TopXMLNS,
+				_acc) ->
+    [encode_vcard_CATEGORIES(Categories, __TopXMLNS)
+     | _acc].
 
-'encode_vcard_temp_$tz'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$tz'(Tz, _acc) ->
-    [encode_vcard_TZ(Tz, []) | _acc].
+'encode_vcard_temp_$desc'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_vcard_temp_$desc'(Desc, __TopXMLNS, _acc) ->
+    [encode_vcard_DESC(Desc, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$url'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$url'(Url, _acc) ->
-    [encode_vcard_URL(Url, []) | _acc].
+'encode_vcard_temp_$uid'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$uid'(Uid, __TopXMLNS, _acc) ->
+    [encode_vcard_UID(Uid, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$email'([], _acc) -> _acc;
-'encode_vcard_temp_$email'([Email | _els], _acc) ->
-    'encode_vcard_temp_$email'(_els,
-			       [encode_vcard_EMAIL(Email, []) | _acc]).
+'encode_vcard_temp_$prodid'(undefined, __TopXMLNS,
+			    _acc) ->
+    _acc;
+'encode_vcard_temp_$prodid'(Prodid, __TopXMLNS, _acc) ->
+    [encode_vcard_PRODID(Prodid, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$tel'([], _acc) -> _acc;
-'encode_vcard_temp_$tel'([Tel | _els], _acc) ->
-    'encode_vcard_temp_$tel'(_els,
-			     [encode_vcard_TEL(Tel, []) | _acc]).
+'encode_vcard_temp_$jabberid'(undefined, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_vcard_temp_$jabberid'(Jabberid, __TopXMLNS,
+			      _acc) ->
+    [encode_vcard_JABBERID(Jabberid, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$label'([], _acc) -> _acc;
-'encode_vcard_temp_$label'([Label | _els], _acc) ->
-    'encode_vcard_temp_$label'(_els,
-			       [encode_vcard_LABEL(Label, []) | _acc]).
+'encode_vcard_temp_$sound'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_vcard_temp_$sound'(Sound, __TopXMLNS, _acc) ->
+    [encode_vcard_SOUND(Sound, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$fn'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$fn'(Fn, _acc) ->
-    [encode_vcard_FN(Fn, []) | _acc].
+'encode_vcard_temp_$note'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_vcard_temp_$note'(Note, __TopXMLNS, _acc) ->
+    [encode_vcard_NOTE(Note, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$version'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$version'(Version, _acc) ->
-    [encode_vcard_VERSION(Version, []) | _acc].
+'encode_vcard_temp_$role'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_vcard_temp_$role'(Role, __TopXMLNS, _acc) ->
+    [encode_vcard_ROLE(Role, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$n'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$n'(N, _acc) ->
-    [encode_vcard_N(N, []) | _acc].
+'encode_vcard_temp_$title'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_vcard_temp_$title'(Title, __TopXMLNS, _acc) ->
+    [encode_vcard_TITLE(Title, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$photo'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$photo'(Photo, _acc) ->
-    [encode_vcard_PHOTO(Photo, []) | _acc].
+'encode_vcard_temp_$nickname'(undefined, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_vcard_temp_$nickname'(Nickname, __TopXMLNS,
+			      _acc) ->
+    [encode_vcard_NICKNAME(Nickname, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$logo'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$logo'(Logo, _acc) ->
-    [encode_vcard_LOGO(Logo, []) | _acc].
+'encode_vcard_temp_$rev'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$rev'(Rev, __TopXMLNS, _acc) ->
+    [encode_vcard_REV(Rev, __TopXMLNS) | _acc].
 
-'encode_vcard_temp_$geo'(undefined, _acc) -> _acc;
-'encode_vcard_temp_$geo'(Geo, _acc) ->
-    [encode_vcard_GEO(Geo, []) | _acc].
+'encode_vcard_temp_$sort_string'(undefined, __TopXMLNS,
+				 _acc) ->
+    _acc;
+'encode_vcard_temp_$sort_string'(Sort_string,
+				 __TopXMLNS, _acc) ->
+    [encode_vcard_SORT_STRING(Sort_string, __TopXMLNS)
+     | _acc].
+
+'encode_vcard_temp_$org'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$org'(Org, __TopXMLNS, _acc) ->
+    [encode_vcard_ORG(Org, __TopXMLNS) | _acc].
+
+'encode_vcard_temp_$bday'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_vcard_temp_$bday'(Bday, __TopXMLNS, _acc) ->
+    [encode_vcard_BDAY(Bday, __TopXMLNS) | _acc].
+
+'encode_vcard_temp_$key'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$key'(Key, __TopXMLNS, _acc) ->
+    [encode_vcard_KEY(Key, __TopXMLNS) | _acc].
+
+'encode_vcard_temp_$tz'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$tz'(Tz, __TopXMLNS, _acc) ->
+    [encode_vcard_TZ(Tz, __TopXMLNS) | _acc].
+
+'encode_vcard_temp_$url'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$url'(Url, __TopXMLNS, _acc) ->
+    [encode_vcard_URL(Url, __TopXMLNS) | _acc].
+
+'encode_vcard_temp_$email'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$email'([Email | _els], __TopXMLNS,
+			   _acc) ->
+    'encode_vcard_temp_$email'(_els, __TopXMLNS,
+			       [encode_vcard_EMAIL(Email, __TopXMLNS) | _acc]).
+
+'encode_vcard_temp_$tel'([], __TopXMLNS, _acc) -> _acc;
+'encode_vcard_temp_$tel'([Tel | _els], __TopXMLNS,
+			 _acc) ->
+    'encode_vcard_temp_$tel'(_els, __TopXMLNS,
+			     [encode_vcard_TEL(Tel, __TopXMLNS) | _acc]).
+
+'encode_vcard_temp_$label'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$label'([Label | _els], __TopXMLNS,
+			   _acc) ->
+    'encode_vcard_temp_$label'(_els, __TopXMLNS,
+			       [encode_vcard_LABEL(Label, __TopXMLNS) | _acc]).
+
+'encode_vcard_temp_$fn'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$fn'(Fn, __TopXMLNS, _acc) ->
+    [encode_vcard_FN(Fn, __TopXMLNS) | _acc].
+
+'encode_vcard_temp_$version'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_vcard_temp_$version'(Version, __TopXMLNS,
+			     _acc) ->
+    [encode_vcard_VERSION(Version, __TopXMLNS) | _acc].
+
+'encode_vcard_temp_$n'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$n'(N, __TopXMLNS, _acc) ->
+    [encode_vcard_N(N, __TopXMLNS) | _acc].
+
+'encode_vcard_temp_$photo'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_vcard_temp_$photo'(Photo, __TopXMLNS, _acc) ->
+    [encode_vcard_PHOTO(Photo, __TopXMLNS) | _acc].
+
+'encode_vcard_temp_$logo'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_vcard_temp_$logo'(Logo, __TopXMLNS, _acc) ->
+    [encode_vcard_LOGO(Logo, __TopXMLNS) | _acc].
+
+'encode_vcard_temp_$geo'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_temp_$geo'(Geo, __TopXMLNS, _acc) ->
+    [encode_vcard_GEO(Geo, __TopXMLNS) | _acc].
 
 decode_vcard_CLASS(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"CLASS">>, _attrs, _els}) ->
@@ -18014,20 +21588,26 @@ decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_CLASS_els(__TopXMLNS, __IgnoreEls, _els,
 			   Class).
 
-encode_vcard_CLASS(Class, _xmlns_attrs) ->
+encode_vcard_CLASS(Class, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_CLASS_$class'(Class,
-						     [])),
-    _attrs = _xmlns_attrs,
+						     __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"CLASS">>, _attrs, _els}.
 
-'encode_vcard_CLASS_$class'(undefined, _acc) -> _acc;
-'encode_vcard_CLASS_$class'(public = Class, _acc) ->
-    [encode_vcard_PUBLIC(Class, []) | _acc];
-'encode_vcard_CLASS_$class'(private = Class, _acc) ->
-    [encode_vcard_PRIVATE(Class, []) | _acc];
-'encode_vcard_CLASS_$class'(confidential = Class,
+'encode_vcard_CLASS_$class'(undefined, __TopXMLNS,
 			    _acc) ->
-    [encode_vcard_CONFIDENTIAL(Class, []) | _acc].
+    _acc;
+'encode_vcard_CLASS_$class'(public = Class, __TopXMLNS,
+			    _acc) ->
+    [encode_vcard_PUBLIC(Class, __TopXMLNS) | _acc];
+'encode_vcard_CLASS_$class'(private = Class, __TopXMLNS,
+			    _acc) ->
+    [encode_vcard_PRIVATE(Class, __TopXMLNS) | _acc];
+'encode_vcard_CLASS_$class'(confidential = Class,
+			    __TopXMLNS, _acc) ->
+    [encode_vcard_CONFIDENTIAL(Class, __TopXMLNS) | _acc].
 
 decode_vcard_CATEGORIES(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"CATEGORIES">>, _attrs, _els}) ->
@@ -18063,18 +21643,23 @@ decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_CATEGORIES_els(__TopXMLNS, __IgnoreEls,
 				_els, Keywords).
 
-encode_vcard_CATEGORIES(Keywords, _xmlns_attrs) ->
+encode_vcard_CATEGORIES(Keywords, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els =
 	lists:reverse('encode_vcard_CATEGORIES_$keywords'(Keywords,
-							  [])),
-    _attrs = _xmlns_attrs,
+							  __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"CATEGORIES">>, _attrs, _els}.
 
-'encode_vcard_CATEGORIES_$keywords'([], _acc) -> _acc;
-'encode_vcard_CATEGORIES_$keywords'([Keywords | _els],
+'encode_vcard_CATEGORIES_$keywords'([], __TopXMLNS,
 				    _acc) ->
-    'encode_vcard_CATEGORIES_$keywords'(_els,
-					[encode_vcard_KEYWORD(Keywords, [])
+    _acc;
+'encode_vcard_CATEGORIES_$keywords'([Keywords | _els],
+				    __TopXMLNS, _acc) ->
+    'encode_vcard_CATEGORIES_$keywords'(_els, __TopXMLNS,
+					[encode_vcard_KEYWORD(Keywords,
+							      __TopXMLNS)
 					 | _acc]).
 
 decode_vcard_KEY(__TopXMLNS, __IgnoreEls,
@@ -18126,21 +21711,26 @@ decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_KEY_els(__TopXMLNS, __IgnoreEls, _els,
 			 Cred, Type).
 
-encode_vcard_KEY({vcard_key, Type, Cred},
-		 _xmlns_attrs) ->
+encode_vcard_KEY({vcard_key, Type, Cred}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_KEY_$cred'(Cred,
+						  __NewTopXMLNS,
 						  'encode_vcard_KEY_$type'(Type,
+									   __NewTopXMLNS,
 									   []))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"KEY">>, _attrs, _els}.
 
-'encode_vcard_KEY_$cred'(undefined, _acc) -> _acc;
-'encode_vcard_KEY_$cred'(Cred, _acc) ->
-    [encode_vcard_CRED(Cred, []) | _acc].
+'encode_vcard_KEY_$cred'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_KEY_$cred'(Cred, __TopXMLNS, _acc) ->
+    [encode_vcard_CRED(Cred, __TopXMLNS) | _acc].
 
-'encode_vcard_KEY_$type'(undefined, _acc) -> _acc;
-'encode_vcard_KEY_$type'(Type, _acc) ->
-    [encode_vcard_TYPE(Type, []) | _acc].
+'encode_vcard_KEY_$type'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_KEY_$type'(Type, __TopXMLNS, _acc) ->
+    [encode_vcard_TYPE(Type, __TopXMLNS) | _acc].
 
 decode_vcard_SOUND(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"SOUND">>, _attrs, _els}) ->
@@ -18215,26 +21805,40 @@ decode_vcard_SOUND_els(__TopXMLNS, __IgnoreEls,
 
 encode_vcard_SOUND({vcard_sound, Phonetic, Binval,
 		    Extval},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els =
 	lists:reverse('encode_vcard_SOUND_$phonetic'(Phonetic,
+						     __NewTopXMLNS,
 						     'encode_vcard_SOUND_$extval'(Extval,
+										  __NewTopXMLNS,
 										  'encode_vcard_SOUND_$binval'(Binval,
+													       __NewTopXMLNS,
 													       [])))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"SOUND">>, _attrs, _els}.
 
-'encode_vcard_SOUND_$phonetic'(undefined, _acc) -> _acc;
-'encode_vcard_SOUND_$phonetic'(Phonetic, _acc) ->
-    [encode_vcard_PHONETIC(Phonetic, []) | _acc].
+'encode_vcard_SOUND_$phonetic'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_vcard_SOUND_$phonetic'(Phonetic, __TopXMLNS,
+			       _acc) ->
+    [encode_vcard_PHONETIC(Phonetic, __TopXMLNS) | _acc].
 
-'encode_vcard_SOUND_$extval'(undefined, _acc) -> _acc;
-'encode_vcard_SOUND_$extval'(Extval, _acc) ->
-    [encode_vcard_EXTVAL(Extval, []) | _acc].
+'encode_vcard_SOUND_$extval'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_vcard_SOUND_$extval'(Extval, __TopXMLNS,
+			     _acc) ->
+    [encode_vcard_EXTVAL(Extval, __TopXMLNS) | _acc].
 
-'encode_vcard_SOUND_$binval'(undefined, _acc) -> _acc;
-'encode_vcard_SOUND_$binval'(Binval, _acc) ->
-    [encode_vcard_BINVAL(Binval, []) | _acc].
+'encode_vcard_SOUND_$binval'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_vcard_SOUND_$binval'(Binval, __TopXMLNS,
+			     _acc) ->
+    [encode_vcard_BINVAL(Binval, __TopXMLNS) | _acc].
 
 decode_vcard_ORG(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"ORG">>, _attrs, _els}) ->
@@ -18289,21 +21893,27 @@ decode_vcard_ORG_els(__TopXMLNS, __IgnoreEls,
 			 Units, Name).
 
 encode_vcard_ORG({vcard_org, Name, Units},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_ORG_$units'(Units,
+						   __NewTopXMLNS,
 						   'encode_vcard_ORG_$name'(Name,
+									    __NewTopXMLNS,
 									    []))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"ORG">>, _attrs, _els}.
 
-'encode_vcard_ORG_$units'([], _acc) -> _acc;
-'encode_vcard_ORG_$units'([Units | _els], _acc) ->
-    'encode_vcard_ORG_$units'(_els,
-			      [encode_vcard_ORGUNIT(Units, []) | _acc]).
+'encode_vcard_ORG_$units'([], __TopXMLNS, _acc) -> _acc;
+'encode_vcard_ORG_$units'([Units | _els], __TopXMLNS,
+			  _acc) ->
+    'encode_vcard_ORG_$units'(_els, __TopXMLNS,
+			      [encode_vcard_ORGUNIT(Units, __TopXMLNS) | _acc]).
 
-'encode_vcard_ORG_$name'(undefined, _acc) -> _acc;
-'encode_vcard_ORG_$name'(Name, _acc) ->
-    [encode_vcard_ORGNAME(Name, []) | _acc].
+'encode_vcard_ORG_$name'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_ORG_$name'(Name, __TopXMLNS, _acc) ->
+    [encode_vcard_ORGNAME(Name, __TopXMLNS) | _acc].
 
 decode_vcard_PHOTO(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"PHOTO">>, _attrs, _els}) ->
@@ -18377,25 +21987,38 @@ decode_vcard_PHOTO_els(__TopXMLNS, __IgnoreEls,
 			   Type, Extval, Binval).
 
 encode_vcard_PHOTO({vcard_photo, Type, Binval, Extval},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_PHOTO_$type'(Type,
+						    __NewTopXMLNS,
 						    'encode_vcard_PHOTO_$extval'(Extval,
+										 __NewTopXMLNS,
 										 'encode_vcard_PHOTO_$binval'(Binval,
+													      __NewTopXMLNS,
 													      [])))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"PHOTO">>, _attrs, _els}.
 
-'encode_vcard_PHOTO_$type'(undefined, _acc) -> _acc;
-'encode_vcard_PHOTO_$type'(Type, _acc) ->
-    [encode_vcard_TYPE(Type, []) | _acc].
+'encode_vcard_PHOTO_$type'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_vcard_PHOTO_$type'(Type, __TopXMLNS, _acc) ->
+    [encode_vcard_TYPE(Type, __TopXMLNS) | _acc].
 
-'encode_vcard_PHOTO_$extval'(undefined, _acc) -> _acc;
-'encode_vcard_PHOTO_$extval'(Extval, _acc) ->
-    [encode_vcard_EXTVAL(Extval, []) | _acc].
+'encode_vcard_PHOTO_$extval'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_vcard_PHOTO_$extval'(Extval, __TopXMLNS,
+			     _acc) ->
+    [encode_vcard_EXTVAL(Extval, __TopXMLNS) | _acc].
 
-'encode_vcard_PHOTO_$binval'(undefined, _acc) -> _acc;
-'encode_vcard_PHOTO_$binval'(Binval, _acc) ->
-    [encode_vcard_BINVAL(Binval, []) | _acc].
+'encode_vcard_PHOTO_$binval'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_vcard_PHOTO_$binval'(Binval, __TopXMLNS,
+			     _acc) ->
+    [encode_vcard_BINVAL(Binval, __TopXMLNS) | _acc].
 
 decode_vcard_LOGO(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"LOGO">>, _attrs, _els}) ->
@@ -18468,25 +22091,36 @@ decode_vcard_LOGO_els(__TopXMLNS, __IgnoreEls,
 			  Type, Extval, Binval).
 
 encode_vcard_LOGO({vcard_logo, Type, Binval, Extval},
-		  _xmlns_attrs) ->
+		  __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_LOGO_$type'(Type,
+						   __NewTopXMLNS,
 						   'encode_vcard_LOGO_$extval'(Extval,
+									       __NewTopXMLNS,
 									       'encode_vcard_LOGO_$binval'(Binval,
+													   __NewTopXMLNS,
 													   [])))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"LOGO">>, _attrs, _els}.
 
-'encode_vcard_LOGO_$type'(undefined, _acc) -> _acc;
-'encode_vcard_LOGO_$type'(Type, _acc) ->
-    [encode_vcard_TYPE(Type, []) | _acc].
+'encode_vcard_LOGO_$type'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_vcard_LOGO_$type'(Type, __TopXMLNS, _acc) ->
+    [encode_vcard_TYPE(Type, __TopXMLNS) | _acc].
 
-'encode_vcard_LOGO_$extval'(undefined, _acc) -> _acc;
-'encode_vcard_LOGO_$extval'(Extval, _acc) ->
-    [encode_vcard_EXTVAL(Extval, []) | _acc].
+'encode_vcard_LOGO_$extval'(undefined, __TopXMLNS,
+			    _acc) ->
+    _acc;
+'encode_vcard_LOGO_$extval'(Extval, __TopXMLNS, _acc) ->
+    [encode_vcard_EXTVAL(Extval, __TopXMLNS) | _acc].
 
-'encode_vcard_LOGO_$binval'(undefined, _acc) -> _acc;
-'encode_vcard_LOGO_$binval'(Binval, _acc) ->
-    [encode_vcard_BINVAL(Binval, []) | _acc].
+'encode_vcard_LOGO_$binval'(undefined, __TopXMLNS,
+			    _acc) ->
+    _acc;
+'encode_vcard_LOGO_$binval'(Binval, __TopXMLNS, _acc) ->
+    [encode_vcard_BINVAL(Binval, __TopXMLNS) | _acc].
 
 decode_vcard_BINVAL(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"BINVAL">>, _attrs, _els}) ->
@@ -18506,9 +22140,11 @@ decode_vcard_BINVAL_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_BINVAL_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_BINVAL(Cdata, _xmlns_attrs) ->
+encode_vcard_BINVAL(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_BINVAL_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"BINVAL">>, _attrs, _els}.
 
 decode_vcard_BINVAL_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -18570,20 +22206,26 @@ decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_GEO_els(__TopXMLNS, __IgnoreEls, _els, Lat,
 			 Lon).
 
-encode_vcard_GEO({vcard_geo, Lat, Lon}, _xmlns_attrs) ->
+encode_vcard_GEO({vcard_geo, Lat, Lon}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_GEO_$lat'(Lat,
+						 __NewTopXMLNS,
 						 'encode_vcard_GEO_$lon'(Lon,
+									 __NewTopXMLNS,
 									 []))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"GEO">>, _attrs, _els}.
 
-'encode_vcard_GEO_$lat'(undefined, _acc) -> _acc;
-'encode_vcard_GEO_$lat'(Lat, _acc) ->
-    [encode_vcard_LAT(Lat, []) | _acc].
+'encode_vcard_GEO_$lat'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_GEO_$lat'(Lat, __TopXMLNS, _acc) ->
+    [encode_vcard_LAT(Lat, __TopXMLNS) | _acc].
 
-'encode_vcard_GEO_$lon'(undefined, _acc) -> _acc;
-'encode_vcard_GEO_$lon'(Lon, _acc) ->
-    [encode_vcard_LON(Lon, []) | _acc].
+'encode_vcard_GEO_$lon'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_GEO_$lon'(Lon, __TopXMLNS, _acc) ->
+    [encode_vcard_LON(Lon, __TopXMLNS) | _acc].
 
 decode_vcard_EMAIL(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"EMAIL">>, _attrs, _els}) ->
@@ -18718,40 +22360,58 @@ decode_vcard_EMAIL_els(__TopXMLNS, __IgnoreEls,
 
 encode_vcard_EMAIL({vcard_email, Home, Work, Internet,
 		    Pref, X400, Userid},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_EMAIL_$x400'(X400,
+						    __NewTopXMLNS,
 						    'encode_vcard_EMAIL_$userid'(Userid,
+										 __NewTopXMLNS,
 										 'encode_vcard_EMAIL_$internet'(Internet,
+														__NewTopXMLNS,
 														'encode_vcard_EMAIL_$home'(Home,
+																	   __NewTopXMLNS,
 																	   'encode_vcard_EMAIL_$pref'(Pref,
+																				      __NewTopXMLNS,
 																				      'encode_vcard_EMAIL_$work'(Work,
+																								 __NewTopXMLNS,
 																								 []))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"EMAIL">>, _attrs, _els}.
 
-'encode_vcard_EMAIL_$x400'(false, _acc) -> _acc;
-'encode_vcard_EMAIL_$x400'(X400, _acc) ->
-    [encode_vcard_X400(X400, []) | _acc].
+'encode_vcard_EMAIL_$x400'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_EMAIL_$x400'(X400, __TopXMLNS, _acc) ->
+    [encode_vcard_X400(X400, __TopXMLNS) | _acc].
 
-'encode_vcard_EMAIL_$userid'(undefined, _acc) -> _acc;
-'encode_vcard_EMAIL_$userid'(Userid, _acc) ->
-    [encode_vcard_USERID(Userid, []) | _acc].
+'encode_vcard_EMAIL_$userid'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_vcard_EMAIL_$userid'(Userid, __TopXMLNS,
+			     _acc) ->
+    [encode_vcard_USERID(Userid, __TopXMLNS) | _acc].
 
-'encode_vcard_EMAIL_$internet'(false, _acc) -> _acc;
-'encode_vcard_EMAIL_$internet'(Internet, _acc) ->
-    [encode_vcard_INTERNET(Internet, []) | _acc].
+'encode_vcard_EMAIL_$internet'(false, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_vcard_EMAIL_$internet'(Internet, __TopXMLNS,
+			       _acc) ->
+    [encode_vcard_INTERNET(Internet, __TopXMLNS) | _acc].
 
-'encode_vcard_EMAIL_$home'(false, _acc) -> _acc;
-'encode_vcard_EMAIL_$home'(Home, _acc) ->
-    [encode_vcard_HOME(Home, []) | _acc].
+'encode_vcard_EMAIL_$home'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_EMAIL_$home'(Home, __TopXMLNS, _acc) ->
+    [encode_vcard_HOME(Home, __TopXMLNS) | _acc].
 
-'encode_vcard_EMAIL_$pref'(false, _acc) -> _acc;
-'encode_vcard_EMAIL_$pref'(Pref, _acc) ->
-    [encode_vcard_PREF(Pref, []) | _acc].
+'encode_vcard_EMAIL_$pref'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_EMAIL_$pref'(Pref, __TopXMLNS, _acc) ->
+    [encode_vcard_PREF(Pref, __TopXMLNS) | _acc].
 
-'encode_vcard_EMAIL_$work'(false, _acc) -> _acc;
-'encode_vcard_EMAIL_$work'(Work, _acc) ->
-    [encode_vcard_WORK(Work, []) | _acc].
+'encode_vcard_EMAIL_$work'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_EMAIL_$work'(Work, __TopXMLNS, _acc) ->
+    [encode_vcard_WORK(Work, __TopXMLNS) | _acc].
 
 decode_vcard_TEL(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"TEL">>, _attrs, _els}) ->
@@ -19091,80 +22751,111 @@ decode_vcard_TEL_els(__TopXMLNS, __IgnoreEls,
 encode_vcard_TEL({vcard_tel, Home, Work, Voice, Fax,
 		  Pager, Msg, Cell, Video, Bbs, Modem, Isdn, Pcs, Pref,
 		  Number},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_TEL_$number'(Number,
+						    __NewTopXMLNS,
 						    'encode_vcard_TEL_$pager'(Pager,
+									      __NewTopXMLNS,
 									      'encode_vcard_TEL_$pcs'(Pcs,
+												      __NewTopXMLNS,
 												      'encode_vcard_TEL_$bbs'(Bbs,
+															      __NewTopXMLNS,
 															      'encode_vcard_TEL_$voice'(Voice,
+																			__NewTopXMLNS,
 																			'encode_vcard_TEL_$home'(Home,
+																						 __NewTopXMLNS,
 																						 'encode_vcard_TEL_$pref'(Pref,
+																									  __NewTopXMLNS,
 																									  'encode_vcard_TEL_$msg'(Msg,
+																												  __NewTopXMLNS,
 																												  'encode_vcard_TEL_$fax'(Fax,
+																															  __NewTopXMLNS,
 																															  'encode_vcard_TEL_$work'(Work,
+																																		   __NewTopXMLNS,
 																																		   'encode_vcard_TEL_$cell'(Cell,
+																																					    __NewTopXMLNS,
 																																					    'encode_vcard_TEL_$modem'(Modem,
+																																								      __NewTopXMLNS,
 																																								      'encode_vcard_TEL_$isdn'(Isdn,
+																																											       __NewTopXMLNS,
 																																											       'encode_vcard_TEL_$video'(Video,
+																																															 __NewTopXMLNS,
 																																															 []))))))))))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"TEL">>, _attrs, _els}.
 
-'encode_vcard_TEL_$number'(undefined, _acc) -> _acc;
-'encode_vcard_TEL_$number'(Number, _acc) ->
-    [encode_vcard_NUMBER(Number, []) | _acc].
+'encode_vcard_TEL_$number'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_vcard_TEL_$number'(Number, __TopXMLNS, _acc) ->
+    [encode_vcard_NUMBER(Number, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$pager'(false, _acc) -> _acc;
-'encode_vcard_TEL_$pager'(Pager, _acc) ->
-    [encode_vcard_PAGER(Pager, []) | _acc].
+'encode_vcard_TEL_$pager'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$pager'(Pager, __TopXMLNS, _acc) ->
+    [encode_vcard_PAGER(Pager, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$pcs'(false, _acc) -> _acc;
-'encode_vcard_TEL_$pcs'(Pcs, _acc) ->
-    [encode_vcard_PCS(Pcs, []) | _acc].
+'encode_vcard_TEL_$pcs'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$pcs'(Pcs, __TopXMLNS, _acc) ->
+    [encode_vcard_PCS(Pcs, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$bbs'(false, _acc) -> _acc;
-'encode_vcard_TEL_$bbs'(Bbs, _acc) ->
-    [encode_vcard_BBS(Bbs, []) | _acc].
+'encode_vcard_TEL_$bbs'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$bbs'(Bbs, __TopXMLNS, _acc) ->
+    [encode_vcard_BBS(Bbs, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$voice'(false, _acc) -> _acc;
-'encode_vcard_TEL_$voice'(Voice, _acc) ->
-    [encode_vcard_VOICE(Voice, []) | _acc].
+'encode_vcard_TEL_$voice'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$voice'(Voice, __TopXMLNS, _acc) ->
+    [encode_vcard_VOICE(Voice, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$home'(false, _acc) -> _acc;
-'encode_vcard_TEL_$home'(Home, _acc) ->
-    [encode_vcard_HOME(Home, []) | _acc].
+'encode_vcard_TEL_$home'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$home'(Home, __TopXMLNS, _acc) ->
+    [encode_vcard_HOME(Home, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$pref'(false, _acc) -> _acc;
-'encode_vcard_TEL_$pref'(Pref, _acc) ->
-    [encode_vcard_PREF(Pref, []) | _acc].
+'encode_vcard_TEL_$pref'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$pref'(Pref, __TopXMLNS, _acc) ->
+    [encode_vcard_PREF(Pref, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$msg'(false, _acc) -> _acc;
-'encode_vcard_TEL_$msg'(Msg, _acc) ->
-    [encode_vcard_MSG(Msg, []) | _acc].
+'encode_vcard_TEL_$msg'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$msg'(Msg, __TopXMLNS, _acc) ->
+    [encode_vcard_MSG(Msg, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$fax'(false, _acc) -> _acc;
-'encode_vcard_TEL_$fax'(Fax, _acc) ->
-    [encode_vcard_FAX(Fax, []) | _acc].
+'encode_vcard_TEL_$fax'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$fax'(Fax, __TopXMLNS, _acc) ->
+    [encode_vcard_FAX(Fax, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$work'(false, _acc) -> _acc;
-'encode_vcard_TEL_$work'(Work, _acc) ->
-    [encode_vcard_WORK(Work, []) | _acc].
+'encode_vcard_TEL_$work'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$work'(Work, __TopXMLNS, _acc) ->
+    [encode_vcard_WORK(Work, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$cell'(false, _acc) -> _acc;
-'encode_vcard_TEL_$cell'(Cell, _acc) ->
-    [encode_vcard_CELL(Cell, []) | _acc].
+'encode_vcard_TEL_$cell'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$cell'(Cell, __TopXMLNS, _acc) ->
+    [encode_vcard_CELL(Cell, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$modem'(false, _acc) -> _acc;
-'encode_vcard_TEL_$modem'(Modem, _acc) ->
-    [encode_vcard_MODEM(Modem, []) | _acc].
+'encode_vcard_TEL_$modem'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$modem'(Modem, __TopXMLNS, _acc) ->
+    [encode_vcard_MODEM(Modem, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$isdn'(false, _acc) -> _acc;
-'encode_vcard_TEL_$isdn'(Isdn, _acc) ->
-    [encode_vcard_ISDN(Isdn, []) | _acc].
+'encode_vcard_TEL_$isdn'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$isdn'(Isdn, __TopXMLNS, _acc) ->
+    [encode_vcard_ISDN(Isdn, __TopXMLNS) | _acc].
 
-'encode_vcard_TEL_$video'(false, _acc) -> _acc;
-'encode_vcard_TEL_$video'(Video, _acc) ->
-    [encode_vcard_VIDEO(Video, []) | _acc].
+'encode_vcard_TEL_$video'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_TEL_$video'(Video, __TopXMLNS, _acc) ->
+    [encode_vcard_VIDEO(Video, __TopXMLNS) | _acc].
 
 decode_vcard_LABEL(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"LABEL">>, _attrs, _els}) ->
@@ -19353,51 +23044,72 @@ decode_vcard_LABEL_els(__TopXMLNS, __IgnoreEls,
 
 encode_vcard_LABEL({vcard_label, Home, Work, Postal,
 		    Parcel, Dom, Intl, Pref, Line},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_LABEL_$line'(Line,
+						    __NewTopXMLNS,
 						    'encode_vcard_LABEL_$home'(Home,
+									       __NewTopXMLNS,
 									       'encode_vcard_LABEL_$pref'(Pref,
+													  __NewTopXMLNS,
 													  'encode_vcard_LABEL_$work'(Work,
+																     __NewTopXMLNS,
 																     'encode_vcard_LABEL_$intl'(Intl,
+																				__NewTopXMLNS,
 																				'encode_vcard_LABEL_$parcel'(Parcel,
+																							     __NewTopXMLNS,
 																							     'encode_vcard_LABEL_$postal'(Postal,
+																											  __NewTopXMLNS,
 																											  'encode_vcard_LABEL_$dom'(Dom,
+																														    __NewTopXMLNS,
 																														    []))))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"LABEL">>, _attrs, _els}.
 
-'encode_vcard_LABEL_$line'([], _acc) -> _acc;
-'encode_vcard_LABEL_$line'([Line | _els], _acc) ->
-    'encode_vcard_LABEL_$line'(_els,
-			       [encode_vcard_LINE(Line, []) | _acc]).
+'encode_vcard_LABEL_$line'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_LABEL_$line'([Line | _els], __TopXMLNS,
+			   _acc) ->
+    'encode_vcard_LABEL_$line'(_els, __TopXMLNS,
+			       [encode_vcard_LINE(Line, __TopXMLNS) | _acc]).
 
-'encode_vcard_LABEL_$home'(false, _acc) -> _acc;
-'encode_vcard_LABEL_$home'(Home, _acc) ->
-    [encode_vcard_HOME(Home, []) | _acc].
+'encode_vcard_LABEL_$home'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_LABEL_$home'(Home, __TopXMLNS, _acc) ->
+    [encode_vcard_HOME(Home, __TopXMLNS) | _acc].
 
-'encode_vcard_LABEL_$pref'(false, _acc) -> _acc;
-'encode_vcard_LABEL_$pref'(Pref, _acc) ->
-    [encode_vcard_PREF(Pref, []) | _acc].
+'encode_vcard_LABEL_$pref'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_LABEL_$pref'(Pref, __TopXMLNS, _acc) ->
+    [encode_vcard_PREF(Pref, __TopXMLNS) | _acc].
 
-'encode_vcard_LABEL_$work'(false, _acc) -> _acc;
-'encode_vcard_LABEL_$work'(Work, _acc) ->
-    [encode_vcard_WORK(Work, []) | _acc].
+'encode_vcard_LABEL_$work'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_LABEL_$work'(Work, __TopXMLNS, _acc) ->
+    [encode_vcard_WORK(Work, __TopXMLNS) | _acc].
 
-'encode_vcard_LABEL_$intl'(false, _acc) -> _acc;
-'encode_vcard_LABEL_$intl'(Intl, _acc) ->
-    [encode_vcard_INTL(Intl, []) | _acc].
+'encode_vcard_LABEL_$intl'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_LABEL_$intl'(Intl, __TopXMLNS, _acc) ->
+    [encode_vcard_INTL(Intl, __TopXMLNS) | _acc].
 
-'encode_vcard_LABEL_$parcel'(false, _acc) -> _acc;
-'encode_vcard_LABEL_$parcel'(Parcel, _acc) ->
-    [encode_vcard_PARCEL(Parcel, []) | _acc].
+'encode_vcard_LABEL_$parcel'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_LABEL_$parcel'(Parcel, __TopXMLNS,
+			     _acc) ->
+    [encode_vcard_PARCEL(Parcel, __TopXMLNS) | _acc].
 
-'encode_vcard_LABEL_$postal'(false, _acc) -> _acc;
-'encode_vcard_LABEL_$postal'(Postal, _acc) ->
-    [encode_vcard_POSTAL(Postal, []) | _acc].
+'encode_vcard_LABEL_$postal'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_LABEL_$postal'(Postal, __TopXMLNS,
+			     _acc) ->
+    [encode_vcard_POSTAL(Postal, __TopXMLNS) | _acc].
 
-'encode_vcard_LABEL_$dom'(false, _acc) -> _acc;
-'encode_vcard_LABEL_$dom'(Dom, _acc) ->
-    [encode_vcard_DOM(Dom, []) | _acc].
+'encode_vcard_LABEL_$dom'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_LABEL_$dom'(Dom, __TopXMLNS, _acc) ->
+    [encode_vcard_DOM(Dom, __TopXMLNS) | _acc].
 
 decode_vcard_ADR(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"ADR">>, _attrs, _els}) ->
@@ -19762,80 +23474,117 @@ decode_vcard_ADR_els(__TopXMLNS, __IgnoreEls,
 encode_vcard_ADR({vcard_adr, Home, Work, Postal, Parcel,
 		  Dom, Intl, Pref, Pobox, Extadd, Street, Locality,
 		  Region, Pcode, Ctry},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_ADR_$street'(Street,
+						    __NewTopXMLNS,
 						    'encode_vcard_ADR_$extadd'(Extadd,
+									       __NewTopXMLNS,
 									       'encode_vcard_ADR_$pcode'(Pcode,
+													 __NewTopXMLNS,
 													 'encode_vcard_ADR_$home'(Home,
+																  __NewTopXMLNS,
 																  'encode_vcard_ADR_$pref'(Pref,
+																			   __NewTopXMLNS,
 																			   'encode_vcard_ADR_$pobox'(Pobox,
+																						     __NewTopXMLNS,
 																						     'encode_vcard_ADR_$ctry'(Ctry,
+																									      __NewTopXMLNS,
 																									      'encode_vcard_ADR_$locality'(Locality,
+																													   __NewTopXMLNS,
 																													   'encode_vcard_ADR_$work'(Work,
+																																    __NewTopXMLNS,
 																																    'encode_vcard_ADR_$intl'(Intl,
+																																			     __NewTopXMLNS,
 																																			     'encode_vcard_ADR_$parcel'(Parcel,
+																																							__NewTopXMLNS,
 																																							'encode_vcard_ADR_$postal'(Postal,
+																																										   __NewTopXMLNS,
 																																										   'encode_vcard_ADR_$dom'(Dom,
+																																													   __NewTopXMLNS,
 																																													   'encode_vcard_ADR_$region'(Region,
+																																																      __NewTopXMLNS,
 																																																      []))))))))))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"ADR">>, _attrs, _els}.
 
-'encode_vcard_ADR_$street'(undefined, _acc) -> _acc;
-'encode_vcard_ADR_$street'(Street, _acc) ->
-    [encode_vcard_STREET(Street, []) | _acc].
+'encode_vcard_ADR_$street'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_vcard_ADR_$street'(Street, __TopXMLNS, _acc) ->
+    [encode_vcard_STREET(Street, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$extadd'(undefined, _acc) -> _acc;
-'encode_vcard_ADR_$extadd'(Extadd, _acc) ->
-    [encode_vcard_EXTADD(Extadd, []) | _acc].
+'encode_vcard_ADR_$extadd'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_vcard_ADR_$extadd'(Extadd, __TopXMLNS, _acc) ->
+    [encode_vcard_EXTADD(Extadd, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$pcode'(undefined, _acc) -> _acc;
-'encode_vcard_ADR_$pcode'(Pcode, _acc) ->
-    [encode_vcard_PCODE(Pcode, []) | _acc].
+'encode_vcard_ADR_$pcode'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_vcard_ADR_$pcode'(Pcode, __TopXMLNS, _acc) ->
+    [encode_vcard_PCODE(Pcode, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$home'(false, _acc) -> _acc;
-'encode_vcard_ADR_$home'(Home, _acc) ->
-    [encode_vcard_HOME(Home, []) | _acc].
+'encode_vcard_ADR_$home'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_ADR_$home'(Home, __TopXMLNS, _acc) ->
+    [encode_vcard_HOME(Home, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$pref'(false, _acc) -> _acc;
-'encode_vcard_ADR_$pref'(Pref, _acc) ->
-    [encode_vcard_PREF(Pref, []) | _acc].
+'encode_vcard_ADR_$pref'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_ADR_$pref'(Pref, __TopXMLNS, _acc) ->
+    [encode_vcard_PREF(Pref, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$pobox'(undefined, _acc) -> _acc;
-'encode_vcard_ADR_$pobox'(Pobox, _acc) ->
-    [encode_vcard_POBOX(Pobox, []) | _acc].
+'encode_vcard_ADR_$pobox'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_vcard_ADR_$pobox'(Pobox, __TopXMLNS, _acc) ->
+    [encode_vcard_POBOX(Pobox, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$ctry'(undefined, _acc) -> _acc;
-'encode_vcard_ADR_$ctry'(Ctry, _acc) ->
-    [encode_vcard_CTRY(Ctry, []) | _acc].
+'encode_vcard_ADR_$ctry'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_ADR_$ctry'(Ctry, __TopXMLNS, _acc) ->
+    [encode_vcard_CTRY(Ctry, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$locality'(undefined, _acc) -> _acc;
-'encode_vcard_ADR_$locality'(Locality, _acc) ->
-    [encode_vcard_LOCALITY(Locality, []) | _acc].
+'encode_vcard_ADR_$locality'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_vcard_ADR_$locality'(Locality, __TopXMLNS,
+			     _acc) ->
+    [encode_vcard_LOCALITY(Locality, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$work'(false, _acc) -> _acc;
-'encode_vcard_ADR_$work'(Work, _acc) ->
-    [encode_vcard_WORK(Work, []) | _acc].
+'encode_vcard_ADR_$work'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_ADR_$work'(Work, __TopXMLNS, _acc) ->
+    [encode_vcard_WORK(Work, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$intl'(false, _acc) -> _acc;
-'encode_vcard_ADR_$intl'(Intl, _acc) ->
-    [encode_vcard_INTL(Intl, []) | _acc].
+'encode_vcard_ADR_$intl'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_ADR_$intl'(Intl, __TopXMLNS, _acc) ->
+    [encode_vcard_INTL(Intl, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$parcel'(false, _acc) -> _acc;
-'encode_vcard_ADR_$parcel'(Parcel, _acc) ->
-    [encode_vcard_PARCEL(Parcel, []) | _acc].
+'encode_vcard_ADR_$parcel'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_ADR_$parcel'(Parcel, __TopXMLNS, _acc) ->
+    [encode_vcard_PARCEL(Parcel, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$postal'(false, _acc) -> _acc;
-'encode_vcard_ADR_$postal'(Postal, _acc) ->
-    [encode_vcard_POSTAL(Postal, []) | _acc].
+'encode_vcard_ADR_$postal'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_ADR_$postal'(Postal, __TopXMLNS, _acc) ->
+    [encode_vcard_POSTAL(Postal, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$dom'(false, _acc) -> _acc;
-'encode_vcard_ADR_$dom'(Dom, _acc) ->
-    [encode_vcard_DOM(Dom, []) | _acc].
+'encode_vcard_ADR_$dom'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_ADR_$dom'(Dom, __TopXMLNS, _acc) ->
+    [encode_vcard_DOM(Dom, __TopXMLNS) | _acc].
 
-'encode_vcard_ADR_$region'(undefined, _acc) -> _acc;
-'encode_vcard_ADR_$region'(Region, _acc) ->
-    [encode_vcard_REGION(Region, []) | _acc].
+'encode_vcard_ADR_$region'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_vcard_ADR_$region'(Region, __TopXMLNS, _acc) ->
+    [encode_vcard_REGION(Region, __TopXMLNS) | _acc].
 
 decode_vcard_N(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"N">>, _attrs, _els}) ->
@@ -19946,61 +23695,79 @@ decode_vcard_N_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 
 encode_vcard_N({vcard_name, Family, Given, Middle,
 		Prefix, Suffix},
-	       _xmlns_attrs) ->
+	       __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = lists:reverse('encode_vcard_N_$middle'(Middle,
+						  __NewTopXMLNS,
 						  'encode_vcard_N_$suffix'(Suffix,
+									   __NewTopXMLNS,
 									   'encode_vcard_N_$prefix'(Prefix,
+												    __NewTopXMLNS,
 												    'encode_vcard_N_$family'(Family,
+															     __NewTopXMLNS,
 															     'encode_vcard_N_$given'(Given,
+																		     __NewTopXMLNS,
 																		     [])))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"N">>, _attrs, _els}.
 
-'encode_vcard_N_$middle'(undefined, _acc) -> _acc;
-'encode_vcard_N_$middle'(Middle, _acc) ->
-    [encode_vcard_MIDDLE(Middle, []) | _acc].
+'encode_vcard_N_$middle'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_N_$middle'(Middle, __TopXMLNS, _acc) ->
+    [encode_vcard_MIDDLE(Middle, __TopXMLNS) | _acc].
 
-'encode_vcard_N_$suffix'(undefined, _acc) -> _acc;
-'encode_vcard_N_$suffix'(Suffix, _acc) ->
-    [encode_vcard_SUFFIX(Suffix, []) | _acc].
+'encode_vcard_N_$suffix'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_N_$suffix'(Suffix, __TopXMLNS, _acc) ->
+    [encode_vcard_SUFFIX(Suffix, __TopXMLNS) | _acc].
 
-'encode_vcard_N_$prefix'(undefined, _acc) -> _acc;
-'encode_vcard_N_$prefix'(Prefix, _acc) ->
-    [encode_vcard_PREFIX(Prefix, []) | _acc].
+'encode_vcard_N_$prefix'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_N_$prefix'(Prefix, __TopXMLNS, _acc) ->
+    [encode_vcard_PREFIX(Prefix, __TopXMLNS) | _acc].
 
-'encode_vcard_N_$family'(undefined, _acc) -> _acc;
-'encode_vcard_N_$family'(Family, _acc) ->
-    [encode_vcard_FAMILY(Family, []) | _acc].
+'encode_vcard_N_$family'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_N_$family'(Family, __TopXMLNS, _acc) ->
+    [encode_vcard_FAMILY(Family, __TopXMLNS) | _acc].
 
-'encode_vcard_N_$given'(undefined, _acc) -> _acc;
-'encode_vcard_N_$given'(Given, _acc) ->
-    [encode_vcard_GIVEN(Given, []) | _acc].
+'encode_vcard_N_$given'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_vcard_N_$given'(Given, __TopXMLNS, _acc) ->
+    [encode_vcard_GIVEN(Given, __TopXMLNS) | _acc].
 
 decode_vcard_CONFIDENTIAL(__TopXMLNS, __IgnoreEls,
 			  {xmlel, <<"CONFIDENTIAL">>, _attrs, _els}) ->
     confidential.
 
-encode_vcard_CONFIDENTIAL(confidential, _xmlns_attrs) ->
+encode_vcard_CONFIDENTIAL(confidential, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"CONFIDENTIAL">>, _attrs, _els}.
 
 decode_vcard_PRIVATE(__TopXMLNS, __IgnoreEls,
 		     {xmlel, <<"PRIVATE">>, _attrs, _els}) ->
     private.
 
-encode_vcard_PRIVATE(private, _xmlns_attrs) ->
+encode_vcard_PRIVATE(private, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"PRIVATE">>, _attrs, _els}.
 
 decode_vcard_PUBLIC(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"PUBLIC">>, _attrs, _els}) ->
     public.
 
-encode_vcard_PUBLIC(public, _xmlns_attrs) ->
+encode_vcard_PUBLIC(public, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"PUBLIC">>, _attrs, _els}.
 
 decode_vcard_EXTVAL(__TopXMLNS, __IgnoreEls,
@@ -20021,9 +23788,11 @@ decode_vcard_EXTVAL_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_EXTVAL_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_EXTVAL(Cdata, _xmlns_attrs) ->
+encode_vcard_EXTVAL(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_EXTVAL_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"EXTVAL">>, _attrs, _els}.
 
 decode_vcard_EXTVAL_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20051,9 +23820,11 @@ decode_vcard_TYPE_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_TYPE_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_vcard_TYPE(Cdata, _xmlns_attrs) ->
+encode_vcard_TYPE(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_TYPE_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"TYPE">>, _attrs, _els}.
 
 decode_vcard_TYPE_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20081,9 +23852,11 @@ decode_vcard_DESC_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_DESC_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_vcard_DESC(Cdata, _xmlns_attrs) ->
+encode_vcard_DESC(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_DESC_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"DESC">>, _attrs, _els}.
 
 decode_vcard_DESC_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20111,9 +23884,11 @@ decode_vcard_URL_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_URL_els(__TopXMLNS, __IgnoreEls, _els,
 			 Cdata).
 
-encode_vcard_URL(Cdata, _xmlns_attrs) ->
+encode_vcard_URL(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_URL_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"URL">>, _attrs, _els}.
 
 decode_vcard_URL_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20141,9 +23916,11 @@ decode_vcard_UID_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_UID_els(__TopXMLNS, __IgnoreEls, _els,
 			 Cdata).
 
-encode_vcard_UID(Cdata, _xmlns_attrs) ->
+encode_vcard_UID(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_UID_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"UID">>, _attrs, _els}.
 
 decode_vcard_UID_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20171,9 +23948,11 @@ decode_vcard_SORT_STRING_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_SORT_STRING_els(__TopXMLNS, __IgnoreEls,
 				 _els, Cdata).
 
-encode_vcard_SORT_STRING(Cdata, _xmlns_attrs) ->
+encode_vcard_SORT_STRING(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_SORT_STRING_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"SORT-STRING">>, _attrs, _els}.
 
 decode_vcard_SORT_STRING_cdata(__TopXMLNS, <<>>) ->
@@ -20203,9 +23982,11 @@ decode_vcard_REV_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_REV_els(__TopXMLNS, __IgnoreEls, _els,
 			 Cdata).
 
-encode_vcard_REV(Cdata, _xmlns_attrs) ->
+encode_vcard_REV(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_REV_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"REV">>, _attrs, _els}.
 
 decode_vcard_REV_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20233,9 +24014,11 @@ decode_vcard_PRODID_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_PRODID_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_PRODID(Cdata, _xmlns_attrs) ->
+encode_vcard_PRODID(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_PRODID_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"PRODID">>, _attrs, _els}.
 
 decode_vcard_PRODID_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20263,9 +24046,11 @@ decode_vcard_NOTE_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_NOTE_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_vcard_NOTE(Cdata, _xmlns_attrs) ->
+encode_vcard_NOTE(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_NOTE_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"NOTE">>, _attrs, _els}.
 
 decode_vcard_NOTE_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20293,9 +24078,11 @@ decode_vcard_KEYWORD_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_KEYWORD_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_vcard_KEYWORD(Cdata, _xmlns_attrs) ->
+encode_vcard_KEYWORD(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_KEYWORD_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"KEYWORD">>, _attrs, _els}.
 
 decode_vcard_KEYWORD_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20323,9 +24110,11 @@ decode_vcard_ROLE_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_ROLE_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_vcard_ROLE(Cdata, _xmlns_attrs) ->
+encode_vcard_ROLE(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_ROLE_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"ROLE">>, _attrs, _els}.
 
 decode_vcard_ROLE_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20353,9 +24142,11 @@ decode_vcard_TITLE_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_TITLE_els(__TopXMLNS, __IgnoreEls, _els,
 			   Cdata).
 
-encode_vcard_TITLE(Cdata, _xmlns_attrs) ->
+encode_vcard_TITLE(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_TITLE_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"TITLE">>, _attrs, _els}.
 
 decode_vcard_TITLE_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20383,9 +24174,11 @@ decode_vcard_TZ_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_vcard_TZ_els(__TopXMLNS, __IgnoreEls, _els,
 			Cdata).
 
-encode_vcard_TZ(Cdata, _xmlns_attrs) ->
+encode_vcard_TZ(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_TZ_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"TZ">>, _attrs, _els}.
 
 decode_vcard_TZ_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20413,9 +24206,11 @@ decode_vcard_MAILER_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_MAILER_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_MAILER(Cdata, _xmlns_attrs) ->
+encode_vcard_MAILER(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_MAILER_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"MAILER">>, _attrs, _els}.
 
 decode_vcard_MAILER_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20443,9 +24238,11 @@ decode_vcard_JABBERID_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_JABBERID_els(__TopXMLNS, __IgnoreEls, _els,
 			      Cdata).
 
-encode_vcard_JABBERID(Cdata, _xmlns_attrs) ->
+encode_vcard_JABBERID(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_JABBERID_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"JABBERID">>, _attrs, _els}.
 
 decode_vcard_JABBERID_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20473,9 +24270,11 @@ decode_vcard_BDAY_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_BDAY_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_vcard_BDAY(Cdata, _xmlns_attrs) ->
+encode_vcard_BDAY(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_BDAY_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"BDAY">>, _attrs, _els}.
 
 decode_vcard_BDAY_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20503,9 +24302,11 @@ decode_vcard_NICKNAME_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_NICKNAME_els(__TopXMLNS, __IgnoreEls, _els,
 			      Cdata).
 
-encode_vcard_NICKNAME(Cdata, _xmlns_attrs) ->
+encode_vcard_NICKNAME(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_NICKNAME_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"NICKNAME">>, _attrs, _els}.
 
 decode_vcard_NICKNAME_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20533,9 +24334,11 @@ decode_vcard_FN_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_vcard_FN_els(__TopXMLNS, __IgnoreEls, _els,
 			Cdata).
 
-encode_vcard_FN(Cdata, _xmlns_attrs) ->
+encode_vcard_FN(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_FN_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"FN">>, _attrs, _els}.
 
 decode_vcard_FN_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20563,9 +24366,11 @@ decode_vcard_VERSION_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_VERSION_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_vcard_VERSION(Cdata, _xmlns_attrs) ->
+encode_vcard_VERSION(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_VERSION_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"VERSION">>, _attrs, _els}.
 
 decode_vcard_VERSION_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20593,9 +24398,11 @@ decode_vcard_CRED_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_CRED_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_vcard_CRED(Cdata, _xmlns_attrs) ->
+encode_vcard_CRED(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_CRED_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"CRED">>, _attrs, _els}.
 
 decode_vcard_CRED_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20623,9 +24430,11 @@ decode_vcard_PHONETIC_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_PHONETIC_els(__TopXMLNS, __IgnoreEls, _els,
 			      Cdata).
 
-encode_vcard_PHONETIC(Cdata, _xmlns_attrs) ->
+encode_vcard_PHONETIC(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_PHONETIC_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"PHONETIC">>, _attrs, _els}.
 
 decode_vcard_PHONETIC_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20653,9 +24462,11 @@ decode_vcard_ORGUNIT_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_ORGUNIT_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_vcard_ORGUNIT(Cdata, _xmlns_attrs) ->
+encode_vcard_ORGUNIT(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_ORGUNIT_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"ORGUNIT">>, _attrs, _els}.
 
 decode_vcard_ORGUNIT_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20683,9 +24494,11 @@ decode_vcard_ORGNAME_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_ORGNAME_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_vcard_ORGNAME(Cdata, _xmlns_attrs) ->
+encode_vcard_ORGNAME(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_ORGNAME_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"ORGNAME">>, _attrs, _els}.
 
 decode_vcard_ORGNAME_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20713,9 +24526,11 @@ decode_vcard_LON_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_LON_els(__TopXMLNS, __IgnoreEls, _els,
 			 Cdata).
 
-encode_vcard_LON(Cdata, _xmlns_attrs) ->
+encode_vcard_LON(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_LON_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"LON">>, _attrs, _els}.
 
 decode_vcard_LON_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20743,9 +24558,11 @@ decode_vcard_LAT_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_LAT_els(__TopXMLNS, __IgnoreEls, _els,
 			 Cdata).
 
-encode_vcard_LAT(Cdata, _xmlns_attrs) ->
+encode_vcard_LAT(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_LAT_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"LAT">>, _attrs, _els}.
 
 decode_vcard_LAT_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20773,9 +24590,11 @@ decode_vcard_USERID_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_USERID_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_USERID(Cdata, _xmlns_attrs) ->
+encode_vcard_USERID(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_USERID_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"USERID">>, _attrs, _els}.
 
 decode_vcard_USERID_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20803,9 +24622,11 @@ decode_vcard_NUMBER_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_NUMBER_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_NUMBER(Cdata, _xmlns_attrs) ->
+encode_vcard_NUMBER(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_NUMBER_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"NUMBER">>, _attrs, _els}.
 
 decode_vcard_NUMBER_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20833,9 +24654,11 @@ decode_vcard_LINE_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_LINE_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_vcard_LINE(Cdata, _xmlns_attrs) ->
+encode_vcard_LINE(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_LINE_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"LINE">>, _attrs, _els}.
 
 decode_vcard_LINE_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20863,9 +24686,11 @@ decode_vcard_CTRY_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_CTRY_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_vcard_CTRY(Cdata, _xmlns_attrs) ->
+encode_vcard_CTRY(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_CTRY_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"CTRY">>, _attrs, _els}.
 
 decode_vcard_CTRY_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20893,9 +24718,11 @@ decode_vcard_PCODE_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_PCODE_els(__TopXMLNS, __IgnoreEls, _els,
 			   Cdata).
 
-encode_vcard_PCODE(Cdata, _xmlns_attrs) ->
+encode_vcard_PCODE(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_PCODE_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"PCODE">>, _attrs, _els}.
 
 decode_vcard_PCODE_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20923,9 +24750,11 @@ decode_vcard_REGION_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_REGION_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_REGION(Cdata, _xmlns_attrs) ->
+encode_vcard_REGION(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_REGION_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"REGION">>, _attrs, _els}.
 
 decode_vcard_REGION_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20953,9 +24782,11 @@ decode_vcard_LOCALITY_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_LOCALITY_els(__TopXMLNS, __IgnoreEls, _els,
 			      Cdata).
 
-encode_vcard_LOCALITY(Cdata, _xmlns_attrs) ->
+encode_vcard_LOCALITY(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_LOCALITY_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"LOCALITY">>, _attrs, _els}.
 
 decode_vcard_LOCALITY_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -20983,9 +24814,11 @@ decode_vcard_STREET_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_STREET_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_STREET(Cdata, _xmlns_attrs) ->
+encode_vcard_STREET(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_STREET_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"STREET">>, _attrs, _els}.
 
 decode_vcard_STREET_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -21013,9 +24846,11 @@ decode_vcard_EXTADD_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_EXTADD_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_EXTADD(Cdata, _xmlns_attrs) ->
+encode_vcard_EXTADD(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_EXTADD_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"EXTADD">>, _attrs, _els}.
 
 decode_vcard_EXTADD_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -21043,9 +24878,11 @@ decode_vcard_POBOX_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_POBOX_els(__TopXMLNS, __IgnoreEls, _els,
 			   Cdata).
 
-encode_vcard_POBOX(Cdata, _xmlns_attrs) ->
+encode_vcard_POBOX(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_POBOX_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"POBOX">>, _attrs, _els}.
 
 decode_vcard_POBOX_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -21073,9 +24910,11 @@ decode_vcard_SUFFIX_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_SUFFIX_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_SUFFIX(Cdata, _xmlns_attrs) ->
+encode_vcard_SUFFIX(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_SUFFIX_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"SUFFIX">>, _attrs, _els}.
 
 decode_vcard_SUFFIX_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -21103,9 +24942,11 @@ decode_vcard_PREFIX_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_PREFIX_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_PREFIX(Cdata, _xmlns_attrs) ->
+encode_vcard_PREFIX(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_PREFIX_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"PREFIX">>, _attrs, _els}.
 
 decode_vcard_PREFIX_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -21133,9 +24974,11 @@ decode_vcard_MIDDLE_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_MIDDLE_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_MIDDLE(Cdata, _xmlns_attrs) ->
+encode_vcard_MIDDLE(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_MIDDLE_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"MIDDLE">>, _attrs, _els}.
 
 decode_vcard_MIDDLE_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -21163,9 +25006,11 @@ decode_vcard_GIVEN_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_GIVEN_els(__TopXMLNS, __IgnoreEls, _els,
 			   Cdata).
 
-encode_vcard_GIVEN(Cdata, _xmlns_attrs) ->
+encode_vcard_GIVEN(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_GIVEN_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"GIVEN">>, _attrs, _els}.
 
 decode_vcard_GIVEN_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -21193,9 +25038,11 @@ decode_vcard_FAMILY_els(__TopXMLNS, __IgnoreEls,
     decode_vcard_FAMILY_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_vcard_FAMILY(Cdata, _xmlns_attrs) ->
+encode_vcard_FAMILY(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = encode_vcard_FAMILY_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"FAMILY">>, _attrs, _els}.
 
 decode_vcard_FAMILY_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -21209,171 +25056,209 @@ decode_vcard_X400(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"X400">>, _attrs, _els}) ->
     true.
 
-encode_vcard_X400(true, _xmlns_attrs) ->
+encode_vcard_X400(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"X400">>, _attrs, _els}.
 
 decode_vcard_INTERNET(__TopXMLNS, __IgnoreEls,
 		      {xmlel, <<"INTERNET">>, _attrs, _els}) ->
     true.
 
-encode_vcard_INTERNET(true, _xmlns_attrs) ->
+encode_vcard_INTERNET(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"INTERNET">>, _attrs, _els}.
 
 decode_vcard_PREF(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"PREF">>, _attrs, _els}) ->
     true.
 
-encode_vcard_PREF(true, _xmlns_attrs) ->
+encode_vcard_PREF(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"PREF">>, _attrs, _els}.
 
 decode_vcard_INTL(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"INTL">>, _attrs, _els}) ->
     true.
 
-encode_vcard_INTL(true, _xmlns_attrs) ->
+encode_vcard_INTL(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"INTL">>, _attrs, _els}.
 
 decode_vcard_DOM(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"DOM">>, _attrs, _els}) ->
     true.
 
-encode_vcard_DOM(true, _xmlns_attrs) ->
+encode_vcard_DOM(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"DOM">>, _attrs, _els}.
 
 decode_vcard_PARCEL(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"PARCEL">>, _attrs, _els}) ->
     true.
 
-encode_vcard_PARCEL(true, _xmlns_attrs) ->
+encode_vcard_PARCEL(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"PARCEL">>, _attrs, _els}.
 
 decode_vcard_POSTAL(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"POSTAL">>, _attrs, _els}) ->
     true.
 
-encode_vcard_POSTAL(true, _xmlns_attrs) ->
+encode_vcard_POSTAL(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"POSTAL">>, _attrs, _els}.
 
 decode_vcard_PCS(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"PCS">>, _attrs, _els}) ->
     true.
 
-encode_vcard_PCS(true, _xmlns_attrs) ->
+encode_vcard_PCS(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"PCS">>, _attrs, _els}.
 
 decode_vcard_ISDN(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"ISDN">>, _attrs, _els}) ->
     true.
 
-encode_vcard_ISDN(true, _xmlns_attrs) ->
+encode_vcard_ISDN(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"ISDN">>, _attrs, _els}.
 
 decode_vcard_MODEM(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"MODEM">>, _attrs, _els}) ->
     true.
 
-encode_vcard_MODEM(true, _xmlns_attrs) ->
+encode_vcard_MODEM(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"MODEM">>, _attrs, _els}.
 
 decode_vcard_BBS(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"BBS">>, _attrs, _els}) ->
     true.
 
-encode_vcard_BBS(true, _xmlns_attrs) ->
+encode_vcard_BBS(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"BBS">>, _attrs, _els}.
 
 decode_vcard_VIDEO(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"VIDEO">>, _attrs, _els}) ->
     true.
 
-encode_vcard_VIDEO(true, _xmlns_attrs) ->
+encode_vcard_VIDEO(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"VIDEO">>, _attrs, _els}.
 
 decode_vcard_CELL(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"CELL">>, _attrs, _els}) ->
     true.
 
-encode_vcard_CELL(true, _xmlns_attrs) ->
+encode_vcard_CELL(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"CELL">>, _attrs, _els}.
 
 decode_vcard_MSG(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"MSG">>, _attrs, _els}) ->
     true.
 
-encode_vcard_MSG(true, _xmlns_attrs) ->
+encode_vcard_MSG(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"MSG">>, _attrs, _els}.
 
 decode_vcard_PAGER(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"PAGER">>, _attrs, _els}) ->
     true.
 
-encode_vcard_PAGER(true, _xmlns_attrs) ->
+encode_vcard_PAGER(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"PAGER">>, _attrs, _els}.
 
 decode_vcard_FAX(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"FAX">>, _attrs, _els}) ->
     true.
 
-encode_vcard_FAX(true, _xmlns_attrs) ->
+encode_vcard_FAX(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"FAX">>, _attrs, _els}.
 
 decode_vcard_VOICE(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"VOICE">>, _attrs, _els}) ->
     true.
 
-encode_vcard_VOICE(true, _xmlns_attrs) ->
+encode_vcard_VOICE(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"VOICE">>, _attrs, _els}.
 
 decode_vcard_WORK(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"WORK">>, _attrs, _els}) ->
     true.
 
-encode_vcard_WORK(true, _xmlns_attrs) ->
+encode_vcard_WORK(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"WORK">>, _attrs, _els}.
 
 decode_vcard_HOME(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"HOME">>, _attrs, _els}) ->
     true.
 
-encode_vcard_HOME(true, _xmlns_attrs) ->
+encode_vcard_HOME(true, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"vcard-temp">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"HOME">>, _attrs, _els}.
 
 decode_stream_error(__TopXMLNS, __IgnoreEls,
@@ -21769,184 +25654,153 @@ decode_stream_error_els(__TopXMLNS, __IgnoreEls,
 			    Text, Reason).
 
 encode_stream_error({stream_error, Reason, Text},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
     _els = lists:reverse('encode_stream_error_$text'(Text,
+						     __NewTopXMLNS,
 						     'encode_stream_error_$reason'(Reason,
+										   __NewTopXMLNS,
 										   []))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"stream:error">>, _attrs, _els}.
 
-'encode_stream_error_$text'(undefined, _acc) -> _acc;
-'encode_stream_error_$text'(Text, _acc) ->
-    [encode_stream_error_text(Text,
-			      [{<<"xmlns">>,
-				<<"urn:ietf:params:xml:ns:xmpp-streams">>}])
-     | _acc].
+'encode_stream_error_$text'(undefined, __TopXMLNS,
+			    _acc) ->
+    _acc;
+'encode_stream_error_$text'(Text, __TopXMLNS, _acc) ->
+    [encode_stream_error_text(Text, __TopXMLNS) | _acc].
 
-'encode_stream_error_$reason'(undefined, _acc) -> _acc;
-'encode_stream_error_$reason'('bad-format' = Reason,
+'encode_stream_error_$reason'(undefined, __TopXMLNS,
 			      _acc) ->
-    [encode_stream_error_bad_format(Reason,
-				    [{<<"xmlns">>,
-				      <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+    _acc;
+'encode_stream_error_$reason'('bad-format' = Reason,
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_bad_format(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('bad-namespace-prefix' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_bad_namespace_prefix(Reason,
-					      [{<<"xmlns">>,
-						<<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+					      __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'(conflict = Reason,
-			      _acc) ->
-    [encode_stream_error_conflict(Reason,
-				  [{<<"xmlns">>,
-				    <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_conflict(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('connection-timeout' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_connection_timeout(Reason,
-					    [{<<"xmlns">>,
-					      <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+					    __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('host-gone' = Reason,
-			      _acc) ->
-    [encode_stream_error_host_gone(Reason,
-				   [{<<"xmlns">>,
-				     <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_host_gone(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('host-unknown' = Reason,
-			      _acc) ->
-    [encode_stream_error_host_unknown(Reason,
-				      [{<<"xmlns">>,
-					<<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_host_unknown(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('improper-addressing' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_improper_addressing(Reason,
-					     [{<<"xmlns">>,
-					       <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+					     __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('internal-server-error' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_internal_server_error(Reason,
-					       [{<<"xmlns">>,
-						 <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+					       __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('invalid-from' = Reason,
-			      _acc) ->
-    [encode_stream_error_invalid_from(Reason,
-				      [{<<"xmlns">>,
-					<<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_invalid_from(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('invalid-id' = Reason,
-			      _acc) ->
-    [encode_stream_error_invalid_id(Reason,
-				    [{<<"xmlns">>,
-				      <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_invalid_id(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('invalid-namespace' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_invalid_namespace(Reason,
-					   [{<<"xmlns">>,
-					     <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+					   __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('invalid-xml' = Reason,
-			      _acc) ->
-    [encode_stream_error_invalid_xml(Reason,
-				     [{<<"xmlns">>,
-				       <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_invalid_xml(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('not-authorized' = Reason,
-			      _acc) ->
-    [encode_stream_error_not_authorized(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_not_authorized(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('not-well-formed' =
 				  Reason,
-			      _acc) ->
-    [encode_stream_error_not_well_formed(Reason,
-					 [{<<"xmlns">>,
-					   <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_not_well_formed(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('policy-violation' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_policy_violation(Reason,
-					  [{<<"xmlns">>,
-					    <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+					  __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('remote-connection-failed' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_remote_connection_failed(Reason,
-						  [{<<"xmlns">>,
-						    <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+						  __TopXMLNS)
      | _acc];
-'encode_stream_error_$reason'(reset = Reason, _acc) ->
-    [encode_stream_error_reset(Reason,
-			       [{<<"xmlns">>,
-				 <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
-     | _acc];
+'encode_stream_error_$reason'(reset = Reason,
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_reset(Reason, __TopXMLNS) | _acc];
 'encode_stream_error_$reason'('resource-constraint' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_resource_constraint(Reason,
-					     [{<<"xmlns">>,
-					       <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+					     __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('restricted-xml' = Reason,
-			      _acc) ->
-    [encode_stream_error_restricted_xml(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_restricted_xml(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'({'see-other-host', _} =
 				  Reason,
-			      _acc) ->
-    [encode_stream_error_see_other_host(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_see_other_host(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('system-shutdown' =
 				  Reason,
-			      _acc) ->
-    [encode_stream_error_system_shutdown(Reason,
-					 [{<<"xmlns">>,
-					   <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+			      __TopXMLNS, _acc) ->
+    [encode_stream_error_system_shutdown(Reason, __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('undefined-condition' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_undefined_condition(Reason,
-					     [{<<"xmlns">>,
-					       <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+					     __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('unsupported-encoding' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_unsupported_encoding(Reason,
-					      [{<<"xmlns">>,
-						<<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+					      __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('unsupported-stanza-type' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_unsupported_stanza_type(Reason,
-						 [{<<"xmlns">>,
-						   <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+						 __TopXMLNS)
      | _acc];
 'encode_stream_error_$reason'('unsupported-version' =
 				  Reason,
-			      _acc) ->
+			      __TopXMLNS, _acc) ->
     [encode_stream_error_unsupported_version(Reason,
-					     [{<<"xmlns">>,
-					       <<"urn:ietf:params:xml:ns:xmpp-streams">>}])
+					     __TopXMLNS)
      | _acc].
 
 decode_stream_error_unsupported_version(__TopXMLNS,
@@ -21956,9 +25810,12 @@ decode_stream_error_unsupported_version(__TopXMLNS,
     'unsupported-version'.
 
 encode_stream_error_unsupported_version('unsupported-version',
-					_xmlns_attrs) ->
+					__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"unsupported-version">>, _attrs, _els}.
 
 decode_stream_error_unsupported_stanza_type(__TopXMLNS,
@@ -21969,9 +25826,12 @@ decode_stream_error_unsupported_stanza_type(__TopXMLNS,
     'unsupported-stanza-type'.
 
 encode_stream_error_unsupported_stanza_type('unsupported-stanza-type',
-					    _xmlns_attrs) ->
+					    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"unsupported-stanza-type">>, _attrs, _els}.
 
 decode_stream_error_unsupported_encoding(__TopXMLNS,
@@ -21981,9 +25841,12 @@ decode_stream_error_unsupported_encoding(__TopXMLNS,
     'unsupported-encoding'.
 
 encode_stream_error_unsupported_encoding('unsupported-encoding',
-					 _xmlns_attrs) ->
+					 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"unsupported-encoding">>, _attrs, _els}.
 
 decode_stream_error_undefined_condition(__TopXMLNS,
@@ -21993,9 +25856,12 @@ decode_stream_error_undefined_condition(__TopXMLNS,
     'undefined-condition'.
 
 encode_stream_error_undefined_condition('undefined-condition',
-					_xmlns_attrs) ->
+					__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"undefined-condition">>, _attrs, _els}.
 
 decode_stream_error_system_shutdown(__TopXMLNS,
@@ -22005,9 +25871,12 @@ decode_stream_error_system_shutdown(__TopXMLNS,
     'system-shutdown'.
 
 encode_stream_error_system_shutdown('system-shutdown',
-				    _xmlns_attrs) ->
+				    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"system-shutdown">>, _attrs, _els}.
 
 decode_stream_error_see_other_host(__TopXMLNS,
@@ -22036,10 +25905,13 @@ decode_stream_error_see_other_host_els(__TopXMLNS,
 
 encode_stream_error_see_other_host({'see-other-host',
 				    Host},
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = encode_stream_error_see_other_host_cdata(Host,
 						    []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"see-other-host">>, _attrs, _els}.
 
 decode_stream_error_see_other_host_cdata(__TopXMLNS,
@@ -22067,9 +25939,12 @@ decode_stream_error_restricted_xml(__TopXMLNS,
     'restricted-xml'.
 
 encode_stream_error_restricted_xml('restricted-xml',
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"restricted-xml">>, _attrs, _els}.
 
 decode_stream_error_resource_constraint(__TopXMLNS,
@@ -22079,18 +25954,24 @@ decode_stream_error_resource_constraint(__TopXMLNS,
     'resource-constraint'.
 
 encode_stream_error_resource_constraint('resource-constraint',
-					_xmlns_attrs) ->
+					__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"resource-constraint">>, _attrs, _els}.
 
 decode_stream_error_reset(__TopXMLNS, __IgnoreEls,
 			  {xmlel, <<"reset">>, _attrs, _els}) ->
     reset.
 
-encode_stream_error_reset(reset, _xmlns_attrs) ->
+encode_stream_error_reset(reset, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"reset">>, _attrs, _els}.
 
 decode_stream_error_remote_connection_failed(__TopXMLNS,
@@ -22101,9 +25982,12 @@ decode_stream_error_remote_connection_failed(__TopXMLNS,
     'remote-connection-failed'.
 
 encode_stream_error_remote_connection_failed('remote-connection-failed',
-					     _xmlns_attrs) ->
+					     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"remote-connection-failed">>, _attrs, _els}.
 
 decode_stream_error_policy_violation(__TopXMLNS,
@@ -22113,9 +25997,12 @@ decode_stream_error_policy_violation(__TopXMLNS,
     'policy-violation'.
 
 encode_stream_error_policy_violation('policy-violation',
-				     _xmlns_attrs) ->
+				     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"policy-violation">>, _attrs, _els}.
 
 decode_stream_error_not_well_formed(__TopXMLNS,
@@ -22125,9 +26012,12 @@ decode_stream_error_not_well_formed(__TopXMLNS,
     'not-well-formed'.
 
 encode_stream_error_not_well_formed('not-well-formed',
-				    _xmlns_attrs) ->
+				    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"not-well-formed">>, _attrs, _els}.
 
 decode_stream_error_not_authorized(__TopXMLNS,
@@ -22137,9 +26027,12 @@ decode_stream_error_not_authorized(__TopXMLNS,
     'not-authorized'.
 
 encode_stream_error_not_authorized('not-authorized',
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"not-authorized">>, _attrs, _els}.
 
 decode_stream_error_invalid_xml(__TopXMLNS, __IgnoreEls,
@@ -22147,9 +26040,12 @@ decode_stream_error_invalid_xml(__TopXMLNS, __IgnoreEls,
     'invalid-xml'.
 
 encode_stream_error_invalid_xml('invalid-xml',
-				_xmlns_attrs) ->
+				__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"invalid-xml">>, _attrs, _els}.
 
 decode_stream_error_invalid_namespace(__TopXMLNS,
@@ -22159,9 +26055,12 @@ decode_stream_error_invalid_namespace(__TopXMLNS,
     'invalid-namespace'.
 
 encode_stream_error_invalid_namespace('invalid-namespace',
-				      _xmlns_attrs) ->
+				      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"invalid-namespace">>, _attrs, _els}.
 
 decode_stream_error_invalid_id(__TopXMLNS, __IgnoreEls,
@@ -22169,9 +26068,12 @@ decode_stream_error_invalid_id(__TopXMLNS, __IgnoreEls,
     'invalid-id'.
 
 encode_stream_error_invalid_id('invalid-id',
-			       _xmlns_attrs) ->
+			       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"invalid-id">>, _attrs, _els}.
 
 decode_stream_error_invalid_from(__TopXMLNS,
@@ -22180,9 +26082,12 @@ decode_stream_error_invalid_from(__TopXMLNS,
     'invalid-from'.
 
 encode_stream_error_invalid_from('invalid-from',
-				 _xmlns_attrs) ->
+				 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"invalid-from">>, _attrs, _els}.
 
 decode_stream_error_internal_server_error(__TopXMLNS,
@@ -22192,9 +26097,12 @@ decode_stream_error_internal_server_error(__TopXMLNS,
     'internal-server-error'.
 
 encode_stream_error_internal_server_error('internal-server-error',
-					  _xmlns_attrs) ->
+					  __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"internal-server-error">>, _attrs, _els}.
 
 decode_stream_error_improper_addressing(__TopXMLNS,
@@ -22204,9 +26112,12 @@ decode_stream_error_improper_addressing(__TopXMLNS,
     'improper-addressing'.
 
 encode_stream_error_improper_addressing('improper-addressing',
-					_xmlns_attrs) ->
+					__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"improper-addressing">>, _attrs, _els}.
 
 decode_stream_error_host_unknown(__TopXMLNS,
@@ -22215,9 +26126,12 @@ decode_stream_error_host_unknown(__TopXMLNS,
     'host-unknown'.
 
 encode_stream_error_host_unknown('host-unknown',
-				 _xmlns_attrs) ->
+				 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"host-unknown">>, _attrs, _els}.
 
 decode_stream_error_host_gone(__TopXMLNS, __IgnoreEls,
@@ -22225,9 +26139,12 @@ decode_stream_error_host_gone(__TopXMLNS, __IgnoreEls,
     'host-gone'.
 
 encode_stream_error_host_gone('host-gone',
-			      _xmlns_attrs) ->
+			      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"host-gone">>, _attrs, _els}.
 
 decode_stream_error_connection_timeout(__TopXMLNS,
@@ -22237,18 +26154,24 @@ decode_stream_error_connection_timeout(__TopXMLNS,
     'connection-timeout'.
 
 encode_stream_error_connection_timeout('connection-timeout',
-				       _xmlns_attrs) ->
+				       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"connection-timeout">>, _attrs, _els}.
 
 decode_stream_error_conflict(__TopXMLNS, __IgnoreEls,
 			     {xmlel, <<"conflict">>, _attrs, _els}) ->
     conflict.
 
-encode_stream_error_conflict(conflict, _xmlns_attrs) ->
+encode_stream_error_conflict(conflict, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"conflict">>, _attrs, _els}.
 
 decode_stream_error_bad_namespace_prefix(__TopXMLNS,
@@ -22258,9 +26181,12 @@ decode_stream_error_bad_namespace_prefix(__TopXMLNS,
     'bad-namespace-prefix'.
 
 encode_stream_error_bad_namespace_prefix('bad-namespace-prefix',
-					 _xmlns_attrs) ->
+					 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"bad-namespace-prefix">>, _attrs, _els}.
 
 decode_stream_error_bad_format(__TopXMLNS, __IgnoreEls,
@@ -22268,9 +26194,12 @@ decode_stream_error_bad_format(__TopXMLNS, __IgnoreEls,
     'bad-format'.
 
 encode_stream_error_bad_format('bad-format',
-			       _xmlns_attrs) ->
+			       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"bad-format">>, _attrs, _els}.
 
 decode_stream_error_text(__TopXMLNS, __IgnoreEls,
@@ -22306,10 +26235,14 @@ decode_stream_error_text_attrs(__TopXMLNS, [], Lang) ->
 					     Lang).
 
 encode_stream_error_text({text, Lang, Data},
-			 _xmlns_attrs) ->
+			 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-streams">>,
+			 [], __TopXMLNS),
     _els = encode_stream_error_text_cdata(Data, []),
     _attrs = 'encode_stream_error_text_attr_xml:lang'(Lang,
-						      _xmlns_attrs),
+						      enc_xmlns_attrs(__NewTopXMLNS,
+								      __TopXMLNS)),
     {xmlel, <<"text">>, _attrs, _els}.
 
 'decode_stream_error_text_attr_xml:lang'(__TopXMLNS,
@@ -22376,19 +26309,24 @@ decode_time_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_time_els(__TopXMLNS, __IgnoreEls, _els, Utc,
 		    Tzo).
 
-encode_time({time, Tzo, Utc}, _xmlns_attrs) ->
+encode_time({time, Tzo, Utc}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:time">>,
+				     [], __TopXMLNS),
     _els = lists:reverse('encode_time_$utc'(Utc,
-					    'encode_time_$tzo'(Tzo, []))),
-    _attrs = _xmlns_attrs,
+					    __NewTopXMLNS,
+					    'encode_time_$tzo'(Tzo,
+							       __NewTopXMLNS,
+							       []))),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"time">>, _attrs, _els}.
 
-'encode_time_$utc'(undefined, _acc) -> _acc;
-'encode_time_$utc'(Utc, _acc) ->
-    [encode_time_utc(Utc, []) | _acc].
+'encode_time_$utc'(undefined, __TopXMLNS, _acc) -> _acc;
+'encode_time_$utc'(Utc, __TopXMLNS, _acc) ->
+    [encode_time_utc(Utc, __TopXMLNS) | _acc].
 
-'encode_time_$tzo'(undefined, _acc) -> _acc;
-'encode_time_$tzo'(Tzo, _acc) ->
-    [encode_time_tzo(Tzo, []) | _acc].
+'encode_time_$tzo'(undefined, __TopXMLNS, _acc) -> _acc;
+'encode_time_$tzo'(Tzo, __TopXMLNS, _acc) ->
+    [encode_time_tzo(Tzo, __TopXMLNS) | _acc].
 
 decode_time_tzo(__TopXMLNS, __IgnoreEls,
 		{xmlel, <<"tzo">>, _attrs, _els}) ->
@@ -22408,9 +26346,11 @@ decode_time_tzo_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_time_tzo_els(__TopXMLNS, __IgnoreEls, _els,
 			Cdata).
 
-encode_time_tzo(Cdata, _xmlns_attrs) ->
+encode_time_tzo(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:time">>,
+				     [], __TopXMLNS),
     _els = encode_time_tzo_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"tzo">>, _attrs, _els}.
 
 decode_time_tzo_cdata(__TopXMLNS, <<>>) -> undefined;
@@ -22444,9 +26384,11 @@ decode_time_utc_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_time_utc_els(__TopXMLNS, __IgnoreEls, _els,
 			Cdata).
 
-encode_time_utc(Cdata, _xmlns_attrs) ->
+encode_time_utc(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:time">>,
+				     [], __TopXMLNS),
     _els = encode_time_utc_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"utc">>, _attrs, _els}.
 
 decode_time_utc_cdata(__TopXMLNS, <<>>) -> undefined;
@@ -22466,9 +26408,11 @@ decode_ping(__TopXMLNS, __IgnoreEls,
 	    {xmlel, <<"ping">>, _attrs, _els}) ->
     {ping}.
 
-encode_ping({ping}, _xmlns_attrs) ->
+encode_ping({ping}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"urn:xmpp:ping">>,
+				     [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"ping">>, _attrs, _els}.
 
 decode_session(__TopXMLNS, __IgnoreEls,
@@ -22503,24 +26447,32 @@ decode_session_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_session_els(__TopXMLNS, __IgnoreEls, _els,
 		       Optional).
 
-encode_session({xmpp_session, Optional},
-	       _xmlns_attrs) ->
+encode_session({xmpp_session, Optional}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-session">>,
+			 [], __TopXMLNS),
     _els =
-	lists:reverse('encode_session_$optional'(Optional, [])),
-    _attrs = _xmlns_attrs,
+	lists:reverse('encode_session_$optional'(Optional,
+						 __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"session">>, _attrs, _els}.
 
-'encode_session_$optional'(false, _acc) -> _acc;
-'encode_session_$optional'(Optional, _acc) ->
-    [encode_session_optional(Optional, []) | _acc].
+'encode_session_$optional'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_session_$optional'(Optional, __TopXMLNS,
+			   _acc) ->
+    [encode_session_optional(Optional, __TopXMLNS) | _acc].
 
 decode_session_optional(__TopXMLNS, __IgnoreEls,
 			{xmlel, <<"optional">>, _attrs, _els}) ->
     true.
 
-encode_session_optional(true, _xmlns_attrs) ->
+encode_session_optional(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-session">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"optional">>, _attrs, _els}.
 
 decode_register(__TopXMLNS, __IgnoreEls,
@@ -23159,14 +27111,14 @@ decode_register_els(__TopXMLNS, __IgnoreEls,
 			       Name, Username, Remove, Key, City, Nick, Url,
 			       Email, [_el | __Els]);
        true ->
-	   case is_known_tag(_el) of
+	   case is_known_tag(_el, __TopXMLNS) of
 	     true ->
 		 decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 				     Xdata, Misc, Address, Instructions, Text,
 				     Last, First, Password, Registered, Date,
 				     Phone, State, Name, Username, Remove, Key,
 				     City, Nick, Url, Email,
-				     [decode(_el) | __Els]);
+				     [decode(_el, __TopXMLNS, []) | __Els]);
 	     false ->
 		 decode_register_els(__TopXMLNS, __IgnoreEls, _els, Zip,
 				     Xdata, Misc, Address, Instructions, Text,
@@ -23188,119 +27140,171 @@ encode_register({register, Registered, Remove,
 		 Instructions, Username, Nick, Password, Name, First,
 		 Last, Email, Address, City, State, Zip, Phone, Url,
 		 Date, Misc, Text, Key, Xdata, __Els},
-		_xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els] ++
-	     lists:reverse('encode_register_$zip'(Zip,
+		__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
+    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els] ++
+	     lists:reverse('encode_register_$zip'(Zip, __NewTopXMLNS,
 						  'encode_register_$xdata'(Xdata,
+									   __NewTopXMLNS,
 									   'encode_register_$misc'(Misc,
+												   __NewTopXMLNS,
 												   'encode_register_$address'(Address,
+															      __NewTopXMLNS,
 															      'encode_register_$instructions'(Instructions,
+																			      __NewTopXMLNS,
 																			      'encode_register_$text'(Text,
+																						      __NewTopXMLNS,
 																						      'encode_register_$last'(Last,
+																									      __NewTopXMLNS,
 																									      'encode_register_$first'(First,
+																												       __NewTopXMLNS,
 																												       'encode_register_$password'(Password,
+																																   __NewTopXMLNS,
 																																   'encode_register_$registered'(Registered,
+																																				 __NewTopXMLNS,
 																																				 'encode_register_$date'(Date,
+																																							 __NewTopXMLNS,
 																																							 'encode_register_$phone'(Phone,
+																																										  __NewTopXMLNS,
 																																										  'encode_register_$state'(State,
+																																													   __NewTopXMLNS,
 																																													   'encode_register_$name'(Name,
+																																																   __NewTopXMLNS,
 																																																   'encode_register_$username'(Username,
+																																																			       __NewTopXMLNS,
 																																																			       'encode_register_$remove'(Remove,
+																																																							 __NewTopXMLNS,
 																																																							 'encode_register_$key'(Key,
+																																																										__NewTopXMLNS,
 																																																										'encode_register_$city'(City,
+																																																													__NewTopXMLNS,
 																																																													'encode_register_$nick'(Nick,
+																																																																__NewTopXMLNS,
 																																																																'encode_register_$url'(Url,
+																																																																		       __NewTopXMLNS,
 																																																																		       'encode_register_$email'(Email,
+																																																																						__NewTopXMLNS,
 																																																																						[])))))))))))))))))))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_register_$zip'(undefined, _acc) -> _acc;
-'encode_register_$zip'(Zip, _acc) ->
-    [encode_register_zip(Zip, []) | _acc].
+'encode_register_$zip'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$zip'(Zip, __TopXMLNS, _acc) ->
+    [encode_register_zip(Zip, __TopXMLNS) | _acc].
 
-'encode_register_$xdata'(undefined, _acc) -> _acc;
-'encode_register_$xdata'(Xdata, _acc) ->
-    [encode_xdata(Xdata,
-		  [{<<"xmlns">>, <<"jabber:x:data">>}])
+'encode_register_$xdata'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$xdata'(Xdata, __TopXMLNS, _acc) ->
+    [encode_xdata(Xdata, __TopXMLNS) | _acc].
+
+'encode_register_$misc'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$misc'(Misc, __TopXMLNS, _acc) ->
+    [encode_register_misc(Misc, __TopXMLNS) | _acc].
+
+'encode_register_$address'(undefined, __TopXMLNS,
+			   _acc) ->
+    _acc;
+'encode_register_$address'(Address, __TopXMLNS, _acc) ->
+    [encode_register_address(Address, __TopXMLNS) | _acc].
+
+'encode_register_$instructions'(undefined, __TopXMLNS,
+				_acc) ->
+    _acc;
+'encode_register_$instructions'(Instructions,
+				__TopXMLNS, _acc) ->
+    [encode_register_instructions(Instructions, __TopXMLNS)
      | _acc].
 
-'encode_register_$misc'(undefined, _acc) -> _acc;
-'encode_register_$misc'(Misc, _acc) ->
-    [encode_register_misc(Misc, []) | _acc].
-
-'encode_register_$address'(undefined, _acc) -> _acc;
-'encode_register_$address'(Address, _acc) ->
-    [encode_register_address(Address, []) | _acc].
-
-'encode_register_$instructions'(undefined, _acc) ->
+'encode_register_$text'(undefined, __TopXMLNS, _acc) ->
     _acc;
-'encode_register_$instructions'(Instructions, _acc) ->
-    [encode_register_instructions(Instructions, []) | _acc].
+'encode_register_$text'(Text, __TopXMLNS, _acc) ->
+    [encode_register_text(Text, __TopXMLNS) | _acc].
 
-'encode_register_$text'(undefined, _acc) -> _acc;
-'encode_register_$text'(Text, _acc) ->
-    [encode_register_text(Text, []) | _acc].
+'encode_register_$last'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$last'(Last, __TopXMLNS, _acc) ->
+    [encode_register_last(Last, __TopXMLNS) | _acc].
 
-'encode_register_$last'(undefined, _acc) -> _acc;
-'encode_register_$last'(Last, _acc) ->
-    [encode_register_last(Last, []) | _acc].
+'encode_register_$first'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$first'(First, __TopXMLNS, _acc) ->
+    [encode_register_first(First, __TopXMLNS) | _acc].
 
-'encode_register_$first'(undefined, _acc) -> _acc;
-'encode_register_$first'(First, _acc) ->
-    [encode_register_first(First, []) | _acc].
+'encode_register_$password'(undefined, __TopXMLNS,
+			    _acc) ->
+    _acc;
+'encode_register_$password'(Password, __TopXMLNS,
+			    _acc) ->
+    [encode_register_password(Password, __TopXMLNS) | _acc].
 
-'encode_register_$password'(undefined, _acc) -> _acc;
-'encode_register_$password'(Password, _acc) ->
-    [encode_register_password(Password, []) | _acc].
+'encode_register_$registered'(false, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_register_$registered'(Registered, __TopXMLNS,
+			      _acc) ->
+    [encode_register_registered(Registered, __TopXMLNS)
+     | _acc].
 
-'encode_register_$registered'(false, _acc) -> _acc;
-'encode_register_$registered'(Registered, _acc) ->
-    [encode_register_registered(Registered, []) | _acc].
+'encode_register_$date'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$date'(Date, __TopXMLNS, _acc) ->
+    [encode_register_date(Date, __TopXMLNS) | _acc].
 
-'encode_register_$date'(undefined, _acc) -> _acc;
-'encode_register_$date'(Date, _acc) ->
-    [encode_register_date(Date, []) | _acc].
+'encode_register_$phone'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$phone'(Phone, __TopXMLNS, _acc) ->
+    [encode_register_phone(Phone, __TopXMLNS) | _acc].
 
-'encode_register_$phone'(undefined, _acc) -> _acc;
-'encode_register_$phone'(Phone, _acc) ->
-    [encode_register_phone(Phone, []) | _acc].
+'encode_register_$state'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$state'(State, __TopXMLNS, _acc) ->
+    [encode_register_state(State, __TopXMLNS) | _acc].
 
-'encode_register_$state'(undefined, _acc) -> _acc;
-'encode_register_$state'(State, _acc) ->
-    [encode_register_state(State, []) | _acc].
+'encode_register_$name'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$name'(Name, __TopXMLNS, _acc) ->
+    [encode_register_name(Name, __TopXMLNS) | _acc].
 
-'encode_register_$name'(undefined, _acc) -> _acc;
-'encode_register_$name'(Name, _acc) ->
-    [encode_register_name(Name, []) | _acc].
+'encode_register_$username'(undefined, __TopXMLNS,
+			    _acc) ->
+    _acc;
+'encode_register_$username'(Username, __TopXMLNS,
+			    _acc) ->
+    [encode_register_username(Username, __TopXMLNS) | _acc].
 
-'encode_register_$username'(undefined, _acc) -> _acc;
-'encode_register_$username'(Username, _acc) ->
-    [encode_register_username(Username, []) | _acc].
+'encode_register_$remove'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$remove'(Remove, __TopXMLNS, _acc) ->
+    [encode_register_remove(Remove, __TopXMLNS) | _acc].
 
-'encode_register_$remove'(false, _acc) -> _acc;
-'encode_register_$remove'(Remove, _acc) ->
-    [encode_register_remove(Remove, []) | _acc].
+'encode_register_$key'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$key'(Key, __TopXMLNS, _acc) ->
+    [encode_register_key(Key, __TopXMLNS) | _acc].
 
-'encode_register_$key'(undefined, _acc) -> _acc;
-'encode_register_$key'(Key, _acc) ->
-    [encode_register_key(Key, []) | _acc].
+'encode_register_$city'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$city'(City, __TopXMLNS, _acc) ->
+    [encode_register_city(City, __TopXMLNS) | _acc].
 
-'encode_register_$city'(undefined, _acc) -> _acc;
-'encode_register_$city'(City, _acc) ->
-    [encode_register_city(City, []) | _acc].
+'encode_register_$nick'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$nick'(Nick, __TopXMLNS, _acc) ->
+    [encode_register_nick(Nick, __TopXMLNS) | _acc].
 
-'encode_register_$nick'(undefined, _acc) -> _acc;
-'encode_register_$nick'(Nick, _acc) ->
-    [encode_register_nick(Nick, []) | _acc].
+'encode_register_$url'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$url'(Url, __TopXMLNS, _acc) ->
+    [encode_register_url(Url, __TopXMLNS) | _acc].
 
-'encode_register_$url'(undefined, _acc) -> _acc;
-'encode_register_$url'(Url, _acc) ->
-    [encode_register_url(Url, []) | _acc].
-
-'encode_register_$email'(undefined, _acc) -> _acc;
-'encode_register_$email'(Email, _acc) ->
-    [encode_register_email(Email, []) | _acc].
+'encode_register_$email'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_register_$email'(Email, __TopXMLNS, _acc) ->
+    [encode_register_email(Email, __TopXMLNS) | _acc].
 
 decode_register_key(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"key">>, _attrs, _els}) ->
@@ -23320,9 +27324,12 @@ decode_register_key_els(__TopXMLNS, __IgnoreEls,
     decode_register_key_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_register_key(Cdata, _xmlns_attrs) ->
+encode_register_key(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_key_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"key">>, _attrs, _els}.
 
 decode_register_key_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23350,9 +27357,12 @@ decode_register_text_els(__TopXMLNS, __IgnoreEls,
     decode_register_text_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_register_text(Cdata, _xmlns_attrs) ->
+encode_register_text(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_text_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"text">>, _attrs, _els}.
 
 decode_register_text_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23380,9 +27390,12 @@ decode_register_misc_els(__TopXMLNS, __IgnoreEls,
     decode_register_misc_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_register_misc(Cdata, _xmlns_attrs) ->
+encode_register_misc(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_misc_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"misc">>, _attrs, _els}.
 
 decode_register_misc_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23410,9 +27423,12 @@ decode_register_date_els(__TopXMLNS, __IgnoreEls,
     decode_register_date_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_register_date(Cdata, _xmlns_attrs) ->
+encode_register_date(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_date_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"date">>, _attrs, _els}.
 
 decode_register_date_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23440,9 +27456,12 @@ decode_register_url_els(__TopXMLNS, __IgnoreEls,
     decode_register_url_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_register_url(Cdata, _xmlns_attrs) ->
+encode_register_url(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_url_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"url">>, _attrs, _els}.
 
 decode_register_url_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23470,9 +27489,12 @@ decode_register_phone_els(__TopXMLNS, __IgnoreEls,
     decode_register_phone_els(__TopXMLNS, __IgnoreEls, _els,
 			      Cdata).
 
-encode_register_phone(Cdata, _xmlns_attrs) ->
+encode_register_phone(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_phone_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"phone">>, _attrs, _els}.
 
 decode_register_phone_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23500,9 +27522,12 @@ decode_register_zip_els(__TopXMLNS, __IgnoreEls,
     decode_register_zip_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_register_zip(Cdata, _xmlns_attrs) ->
+encode_register_zip(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_zip_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"zip">>, _attrs, _els}.
 
 decode_register_zip_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23530,9 +27555,12 @@ decode_register_state_els(__TopXMLNS, __IgnoreEls,
     decode_register_state_els(__TopXMLNS, __IgnoreEls, _els,
 			      Cdata).
 
-encode_register_state(Cdata, _xmlns_attrs) ->
+encode_register_state(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_state_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"state">>, _attrs, _els}.
 
 decode_register_state_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23560,9 +27588,12 @@ decode_register_city_els(__TopXMLNS, __IgnoreEls,
     decode_register_city_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_register_city(Cdata, _xmlns_attrs) ->
+encode_register_city(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_city_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"city">>, _attrs, _els}.
 
 decode_register_city_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23590,9 +27621,12 @@ decode_register_address_els(__TopXMLNS, __IgnoreEls,
     decode_register_address_els(__TopXMLNS, __IgnoreEls,
 				_els, Cdata).
 
-encode_register_address(Cdata, _xmlns_attrs) ->
+encode_register_address(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_address_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"address">>, _attrs, _els}.
 
 decode_register_address_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23620,9 +27654,12 @@ decode_register_email_els(__TopXMLNS, __IgnoreEls,
     decode_register_email_els(__TopXMLNS, __IgnoreEls, _els,
 			      Cdata).
 
-encode_register_email(Cdata, _xmlns_attrs) ->
+encode_register_email(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_email_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"email">>, _attrs, _els}.
 
 decode_register_email_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23650,9 +27687,12 @@ decode_register_last_els(__TopXMLNS, __IgnoreEls,
     decode_register_last_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_register_last(Cdata, _xmlns_attrs) ->
+encode_register_last(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_last_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"last">>, _attrs, _els}.
 
 decode_register_last_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23680,9 +27720,12 @@ decode_register_first_els(__TopXMLNS, __IgnoreEls,
     decode_register_first_els(__TopXMLNS, __IgnoreEls, _els,
 			      Cdata).
 
-encode_register_first(Cdata, _xmlns_attrs) ->
+encode_register_first(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_first_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"first">>, _attrs, _els}.
 
 decode_register_first_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23710,9 +27753,12 @@ decode_register_name_els(__TopXMLNS, __IgnoreEls,
     decode_register_name_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_register_name(Cdata, _xmlns_attrs) ->
+encode_register_name(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_name_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"name">>, _attrs, _els}.
 
 decode_register_name_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23740,9 +27786,12 @@ decode_register_password_els(__TopXMLNS, __IgnoreEls,
     decode_register_password_els(__TopXMLNS, __IgnoreEls,
 				 _els, Cdata).
 
-encode_register_password(Cdata, _xmlns_attrs) ->
+encode_register_password(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_password_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"password">>, _attrs, _els}.
 
 decode_register_password_cdata(__TopXMLNS, <<>>) ->
@@ -23772,9 +27821,12 @@ decode_register_nick_els(__TopXMLNS, __IgnoreEls,
     decode_register_nick_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_register_nick(Cdata, _xmlns_attrs) ->
+encode_register_nick(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_nick_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"nick">>, _attrs, _els}.
 
 decode_register_nick_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -23802,9 +27854,12 @@ decode_register_username_els(__TopXMLNS, __IgnoreEls,
     decode_register_username_els(__TopXMLNS, __IgnoreEls,
 				 _els, Cdata).
 
-encode_register_username(Cdata, _xmlns_attrs) ->
+encode_register_username(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_username_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"username">>, _attrs, _els}.
 
 decode_register_username_cdata(__TopXMLNS, <<>>) ->
@@ -23836,9 +27891,12 @@ decode_register_instructions_els(__TopXMLNS,
     decode_register_instructions_els(__TopXMLNS,
 				     __IgnoreEls, _els, Cdata).
 
-encode_register_instructions(Cdata, _xmlns_attrs) ->
+encode_register_instructions(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = encode_register_instructions_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"instructions">>, _attrs, _els}.
 
 decode_register_instructions_cdata(__TopXMLNS, <<>>) ->
@@ -23854,18 +27912,24 @@ decode_register_remove(__TopXMLNS, __IgnoreEls,
 		       {xmlel, <<"remove">>, _attrs, _els}) ->
     true.
 
-encode_register_remove(true, _xmlns_attrs) ->
+encode_register_remove(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"remove">>, _attrs, _els}.
 
 decode_register_registered(__TopXMLNS, __IgnoreEls,
 			   {xmlel, <<"registered">>, _attrs, _els}) ->
     true.
 
-encode_register_registered(true, _xmlns_attrs) ->
+encode_register_registered(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:register">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"registered">>, _attrs, _els}.
 
 decode_feature_register(__TopXMLNS, __IgnoreEls,
@@ -23873,9 +27937,12 @@ decode_feature_register(__TopXMLNS, __IgnoreEls,
     {feature_register}.
 
 encode_feature_register({feature_register},
-			_xmlns_attrs) ->
+			__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/features/iq-register">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"register">>, _attrs, _els}.
 
 decode_caps(__TopXMLNS, __IgnoreEls,
@@ -23917,13 +27984,17 @@ decode_caps_attrs(__TopXMLNS, [], Hash, Node, Exts,
      decode_caps_attr_ver(__TopXMLNS, Version)}.
 
 encode_caps({caps, Node, Version, Hash, Exts},
-	    _xmlns_attrs) ->
+	    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/caps">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_caps_attr_ver(Version,
 				  encode_caps_attr_ext(Exts,
 						       encode_caps_attr_node(Node,
 									     encode_caps_attr_hash(Hash,
-												   _xmlns_attrs)))),
+												   enc_xmlns_attrs(__NewTopXMLNS,
+														   __TopXMLNS))))),
     {xmlel, <<"c">>, _attrs, _els}.
 
 decode_caps_attr_hash(__TopXMLNS, undefined) -> <<>>;
@@ -23964,27 +28035,33 @@ decode_p1_ack(__TopXMLNS, __IgnoreEls,
 	      {xmlel, <<"ack">>, _attrs, _els}) ->
     {p1_ack}.
 
-encode_p1_ack({p1_ack}, _xmlns_attrs) ->
+encode_p1_ack({p1_ack}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"p1:ack">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"ack">>, _attrs, _els}.
 
 decode_p1_rebind(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"rebind">>, _attrs, _els}) ->
     {p1_rebind}.
 
-encode_p1_rebind({p1_rebind}, _xmlns_attrs) ->
+encode_p1_rebind({p1_rebind}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"p1:rebind">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"rebind">>, _attrs, _els}.
 
 decode_p1_push(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"push">>, _attrs, _els}) ->
     {p1_push}.
 
-encode_p1_push({p1_push}, _xmlns_attrs) ->
+encode_p1_push({p1_push}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"p1:push">>, [],
+				     __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"push">>, _attrs, _els}.
 
 decode_stream_features(__TopXMLNS, __IgnoreEls,
@@ -24002,10 +28079,12 @@ decode_stream_features_els(__TopXMLNS, __IgnoreEls,
 	   decode_stream_features_els(__TopXMLNS, __IgnoreEls,
 				      _els, [_el | __Els]);
        true ->
-	   case is_known_tag(_el) of
+	   case is_known_tag(_el, __TopXMLNS) of
 	     true ->
 		 decode_stream_features_els(__TopXMLNS, __IgnoreEls,
-					    _els, [decode(_el) | __Els]);
+					    _els,
+					    [decode(_el, __TopXMLNS, [])
+					     | __Els]);
 	     false ->
 		 decode_stream_features_els(__TopXMLNS, __IgnoreEls,
 					    _els, __Els)
@@ -24017,9 +28096,12 @@ decode_stream_features_els(__TopXMLNS, __IgnoreEls,
 			       _els, __Els).
 
 encode_stream_features({stream_features, __Els},
-		       _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els],
-    _attrs = _xmlns_attrs,
+		       __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>],
+				     __TopXMLNS),
+    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els],
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"stream:features">>, _attrs, _els}.
 
 decode_compression(__TopXMLNS, __IgnoreEls,
@@ -24057,17 +28139,23 @@ decode_compression_els(__TopXMLNS, __IgnoreEls,
 			   Methods).
 
 encode_compression({compression, Methods},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/features/compress">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_compression_$methods'(Methods,
-						    [])),
-    _attrs = _xmlns_attrs,
+						    __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"compression">>, _attrs, _els}.
 
-'encode_compression_$methods'([], _acc) -> _acc;
-'encode_compression_$methods'([Methods | _els], _acc) ->
-    'encode_compression_$methods'(_els,
-				  [encode_compression_method(Methods, [])
+'encode_compression_$methods'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_compression_$methods'([Methods | _els],
+			      __TopXMLNS, _acc) ->
+    'encode_compression_$methods'(_els, __TopXMLNS,
+				  [encode_compression_method(Methods,
+							     __TopXMLNS)
 				   | _acc]).
 
 decode_compression_method(__TopXMLNS, __IgnoreEls,
@@ -24088,9 +28176,12 @@ decode_compression_method_els(__TopXMLNS, __IgnoreEls,
     decode_compression_method_els(__TopXMLNS, __IgnoreEls,
 				  _els, Cdata).
 
-encode_compression_method(Cdata, _xmlns_attrs) ->
+encode_compression_method(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/features/compress">>,
+			 [], __TopXMLNS),
     _els = encode_compression_method_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"method">>, _attrs, _els}.
 
 decode_compression_method_cdata(__TopXMLNS, <<>>) ->
@@ -24106,9 +28197,12 @@ decode_compressed(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"compressed">>, _attrs, _els}) ->
     {compressed}.
 
-encode_compressed({compressed}, _xmlns_attrs) ->
+encode_compressed({compressed}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/compress">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"compressed">>, _attrs, _els}.
 
 decode_compress(__TopXMLNS, __IgnoreEls,
@@ -24145,16 +28239,22 @@ decode_compress_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_compress_els(__TopXMLNS, __IgnoreEls, _els,
 			Methods).
 
-encode_compress({compress, Methods}, _xmlns_attrs) ->
+encode_compress({compress, Methods}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/compress">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_compress_$methods'(Methods,
-						    [])),
-    _attrs = _xmlns_attrs,
+						    __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"compress">>, _attrs, _els}.
 
-'encode_compress_$methods'([], _acc) -> _acc;
-'encode_compress_$methods'([Methods | _els], _acc) ->
-    'encode_compress_$methods'(_els,
-			       [encode_compress_method(Methods, []) | _acc]).
+'encode_compress_$methods'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_compress_$methods'([Methods | _els], __TopXMLNS,
+			   _acc) ->
+    'encode_compress_$methods'(_els, __TopXMLNS,
+			       [encode_compress_method(Methods, __TopXMLNS)
+				| _acc]).
 
 decode_compress_method(__TopXMLNS, __IgnoreEls,
 		       {xmlel, <<"method">>, _attrs, _els}) ->
@@ -24174,9 +28274,12 @@ decode_compress_method_els(__TopXMLNS, __IgnoreEls,
     decode_compress_method_els(__TopXMLNS, __IgnoreEls,
 			       _els, Cdata).
 
-encode_compress_method(Cdata, _xmlns_attrs) ->
+encode_compress_method(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/compress">>,
+			 [], __TopXMLNS),
     _els = encode_compress_method_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"method">>, _attrs, _els}.
 
 decode_compress_method_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -24270,29 +28373,36 @@ decode_compress_failure_els(__TopXMLNS, __IgnoreEls,
 				_els, Reason).
 
 encode_compress_failure({compress_failure, Reason},
-			_xmlns_attrs) ->
+			__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/compress">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_compress_failure_$reason'(Reason,
-							[])),
-    _attrs = _xmlns_attrs,
+							__NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"failure">>, _attrs, _els}.
 
-'encode_compress_failure_$reason'(undefined, _acc) ->
+'encode_compress_failure_$reason'(undefined, __TopXMLNS,
+				  _acc) ->
     _acc;
 'encode_compress_failure_$reason'('setup-failed' =
 				      Reason,
-				  _acc) ->
-    [encode_compress_failure_setup_failed(Reason, [])
+				  __TopXMLNS, _acc) ->
+    [encode_compress_failure_setup_failed(Reason,
+					  __TopXMLNS)
      | _acc];
 'encode_compress_failure_$reason'('processing-failed' =
 				      Reason,
-				  _acc) ->
-    [encode_compress_failure_processing_failed(Reason, [])
+				  __TopXMLNS, _acc) ->
+    [encode_compress_failure_processing_failed(Reason,
+					       __TopXMLNS)
      | _acc];
 'encode_compress_failure_$reason'('unsupported-method' =
 				      Reason,
-				  _acc) ->
-    [encode_compress_failure_unsupported_method(Reason, [])
+				  __TopXMLNS, _acc) ->
+    [encode_compress_failure_unsupported_method(Reason,
+						__TopXMLNS)
      | _acc].
 
 decode_compress_failure_unsupported_method(__TopXMLNS,
@@ -24302,9 +28412,12 @@ decode_compress_failure_unsupported_method(__TopXMLNS,
     'unsupported-method'.
 
 encode_compress_failure_unsupported_method('unsupported-method',
-					   _xmlns_attrs) ->
+					   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/compress">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"unsupported-method">>, _attrs, _els}.
 
 decode_compress_failure_processing_failed(__TopXMLNS,
@@ -24314,9 +28427,12 @@ decode_compress_failure_processing_failed(__TopXMLNS,
     'processing-failed'.
 
 encode_compress_failure_processing_failed('processing-failed',
-					  _xmlns_attrs) ->
+					  __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/compress">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"processing-failed">>, _attrs, _els}.
 
 decode_compress_failure_setup_failed(__TopXMLNS,
@@ -24326,9 +28442,12 @@ decode_compress_failure_setup_failed(__TopXMLNS,
     'setup-failed'.
 
 encode_compress_failure_setup_failed('setup-failed',
-				     _xmlns_attrs) ->
+				     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/compress">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"setup-failed">>, _attrs, _els}.
 
 decode_starttls_failure(__TopXMLNS, __IgnoreEls,
@@ -24336,9 +28455,12 @@ decode_starttls_failure(__TopXMLNS, __IgnoreEls,
     {starttls_failure}.
 
 encode_starttls_failure({starttls_failure},
-			_xmlns_attrs) ->
+			__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"failure">>, _attrs, _els}.
 
 decode_starttls_proceed(__TopXMLNS, __IgnoreEls,
@@ -24346,9 +28468,12 @@ decode_starttls_proceed(__TopXMLNS, __IgnoreEls,
     {starttls_proceed}.
 
 encode_starttls_proceed({starttls_proceed},
-			_xmlns_attrs) ->
+			__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"proceed">>, _attrs, _els}.
 
 decode_starttls(__TopXMLNS, __IgnoreEls,
@@ -24383,24 +28508,32 @@ decode_starttls_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_starttls_els(__TopXMLNS, __IgnoreEls, _els,
 			Required).
 
-encode_starttls({starttls, Required}, _xmlns_attrs) ->
+encode_starttls({starttls, Required}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
+			 [], __TopXMLNS),
     _els =
 	lists:reverse('encode_starttls_$required'(Required,
-						  [])),
-    _attrs = _xmlns_attrs,
+						  __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"starttls">>, _attrs, _els}.
 
-'encode_starttls_$required'(false, _acc) -> _acc;
-'encode_starttls_$required'(Required, _acc) ->
-    [encode_starttls_required(Required, []) | _acc].
+'encode_starttls_$required'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_starttls_$required'(Required, __TopXMLNS,
+			    _acc) ->
+    [encode_starttls_required(Required, __TopXMLNS) | _acc].
 
 decode_starttls_required(__TopXMLNS, __IgnoreEls,
 			 {xmlel, <<"required">>, _attrs, _els}) ->
     true.
 
-encode_starttls_required(true, _xmlns_attrs) ->
+encode_starttls_required(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-tls">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"required">>, _attrs, _els}.
 
 decode_sasl_mechanisms(__TopXMLNS, __IgnoreEls,
@@ -24440,16 +28573,23 @@ decode_sasl_mechanisms_els(__TopXMLNS, __IgnoreEls,
 			       _els, List).
 
 encode_sasl_mechanisms({sasl_mechanisms, List},
-		       _xmlns_attrs) ->
+		       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els =
-	lists:reverse('encode_sasl_mechanisms_$list'(List, [])),
-    _attrs = _xmlns_attrs,
+	lists:reverse('encode_sasl_mechanisms_$list'(List,
+						     __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"mechanisms">>, _attrs, _els}.
 
-'encode_sasl_mechanisms_$list'([], _acc) -> _acc;
-'encode_sasl_mechanisms_$list'([List | _els], _acc) ->
-    'encode_sasl_mechanisms_$list'(_els,
-				   [encode_sasl_mechanism(List, []) | _acc]).
+'encode_sasl_mechanisms_$list'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_sasl_mechanisms_$list'([List | _els],
+			       __TopXMLNS, _acc) ->
+    'encode_sasl_mechanisms_$list'(_els, __TopXMLNS,
+				   [encode_sasl_mechanism(List, __TopXMLNS)
+				    | _acc]).
 
 decode_sasl_mechanism(__TopXMLNS, __IgnoreEls,
 		      {xmlel, <<"mechanism">>, _attrs, _els}) ->
@@ -24469,9 +28609,12 @@ decode_sasl_mechanism_els(__TopXMLNS, __IgnoreEls,
     decode_sasl_mechanism_els(__TopXMLNS, __IgnoreEls, _els,
 			      Cdata).
 
-encode_sasl_mechanism(Cdata, _xmlns_attrs) ->
+encode_sasl_mechanism(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = encode_sasl_mechanism_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"mechanism">>, _attrs, _els}.
 
 decode_sasl_mechanism_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -24791,71 +28934,93 @@ decode_sasl_failure_els(__TopXMLNS, __IgnoreEls,
 			    Text, Reason).
 
 encode_sasl_failure({sasl_failure, Reason, Text},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_sasl_failure_$text'(Text,
+						     __NewTopXMLNS,
 						     'encode_sasl_failure_$reason'(Reason,
+										   __NewTopXMLNS,
 										   []))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"failure">>, _attrs, _els}.
 
-'encode_sasl_failure_$text'([], _acc) -> _acc;
-'encode_sasl_failure_$text'([Text | _els], _acc) ->
-    'encode_sasl_failure_$text'(_els,
-				[encode_sasl_failure_text(Text, []) | _acc]).
+'encode_sasl_failure_$text'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_sasl_failure_$text'([Text | _els], __TopXMLNS,
+			    _acc) ->
+    'encode_sasl_failure_$text'(_els, __TopXMLNS,
+				[encode_sasl_failure_text(Text, __TopXMLNS)
+				 | _acc]).
 
-'encode_sasl_failure_$reason'(undefined, _acc) -> _acc;
-'encode_sasl_failure_$reason'(aborted = Reason, _acc) ->
-    [encode_sasl_failure_aborted(Reason, []) | _acc];
+'encode_sasl_failure_$reason'(undefined, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_sasl_failure_$reason'(aborted = Reason,
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_aborted(Reason, __TopXMLNS)
+     | _acc];
 'encode_sasl_failure_$reason'('account-disabled' =
 				  Reason,
-			      _acc) ->
-    [encode_sasl_failure_account_disabled(Reason, [])
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_account_disabled(Reason,
+					  __TopXMLNS)
      | _acc];
 'encode_sasl_failure_$reason'('credentials-expired' =
 				  Reason,
-			      _acc) ->
-    [encode_sasl_failure_credentials_expired(Reason, [])
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_credentials_expired(Reason,
+					     __TopXMLNS)
      | _acc];
 'encode_sasl_failure_$reason'('encryption-required' =
 				  Reason,
-			      _acc) ->
-    [encode_sasl_failure_encryption_required(Reason, [])
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_encryption_required(Reason,
+					     __TopXMLNS)
      | _acc];
 'encode_sasl_failure_$reason'('incorrect-encoding' =
 				  Reason,
-			      _acc) ->
-    [encode_sasl_failure_incorrect_encoding(Reason, [])
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_incorrect_encoding(Reason,
+					    __TopXMLNS)
      | _acc];
 'encode_sasl_failure_$reason'('invalid-authzid' =
 				  Reason,
-			      _acc) ->
-    [encode_sasl_failure_invalid_authzid(Reason, [])
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_invalid_authzid(Reason, __TopXMLNS)
      | _acc];
 'encode_sasl_failure_$reason'('invalid-mechanism' =
 				  Reason,
-			      _acc) ->
-    [encode_sasl_failure_invalid_mechanism(Reason, [])
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_invalid_mechanism(Reason,
+					   __TopXMLNS)
      | _acc];
 'encode_sasl_failure_$reason'('malformed-request' =
 				  Reason,
-			      _acc) ->
-    [encode_sasl_failure_malformed_request(Reason, [])
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_malformed_request(Reason,
+					   __TopXMLNS)
      | _acc];
 'encode_sasl_failure_$reason'('mechanism-too-weak' =
 				  Reason,
-			      _acc) ->
-    [encode_sasl_failure_mechanism_too_weak(Reason, [])
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_mechanism_too_weak(Reason,
+					    __TopXMLNS)
      | _acc];
 'encode_sasl_failure_$reason'('not-authorized' = Reason,
-			      _acc) ->
-    [encode_sasl_failure_not_authorized(Reason, []) | _acc];
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_not_authorized(Reason, __TopXMLNS)
+     | _acc];
 'encode_sasl_failure_$reason'('bad-protocol' = Reason,
-			      _acc) ->
-    [encode_sasl_failure_bad_protocol(Reason, []) | _acc];
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_bad_protocol(Reason, __TopXMLNS)
+     | _acc];
 'encode_sasl_failure_$reason'('temporary-auth-failure' =
 				  Reason,
-			      _acc) ->
-    [encode_sasl_failure_temporary_auth_failure(Reason, [])
+			      __TopXMLNS, _acc) ->
+    [encode_sasl_failure_temporary_auth_failure(Reason,
+						__TopXMLNS)
      | _acc].
 
 decode_sasl_failure_temporary_auth_failure(__TopXMLNS,
@@ -24865,9 +29030,12 @@ decode_sasl_failure_temporary_auth_failure(__TopXMLNS,
     'temporary-auth-failure'.
 
 encode_sasl_failure_temporary_auth_failure('temporary-auth-failure',
-					   _xmlns_attrs) ->
+					   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"temporary-auth-failure">>, _attrs, _els}.
 
 decode_sasl_failure_bad_protocol(__TopXMLNS,
@@ -24876,9 +29044,12 @@ decode_sasl_failure_bad_protocol(__TopXMLNS,
     'bad-protocol'.
 
 encode_sasl_failure_bad_protocol('bad-protocol',
-				 _xmlns_attrs) ->
+				 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"bad-protocol">>, _attrs, _els}.
 
 decode_sasl_failure_not_authorized(__TopXMLNS,
@@ -24888,9 +29059,12 @@ decode_sasl_failure_not_authorized(__TopXMLNS,
     'not-authorized'.
 
 encode_sasl_failure_not_authorized('not-authorized',
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"not-authorized">>, _attrs, _els}.
 
 decode_sasl_failure_mechanism_too_weak(__TopXMLNS,
@@ -24900,9 +29074,12 @@ decode_sasl_failure_mechanism_too_weak(__TopXMLNS,
     'mechanism-too-weak'.
 
 encode_sasl_failure_mechanism_too_weak('mechanism-too-weak',
-				       _xmlns_attrs) ->
+				       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"mechanism-too-weak">>, _attrs, _els}.
 
 decode_sasl_failure_malformed_request(__TopXMLNS,
@@ -24912,9 +29089,12 @@ decode_sasl_failure_malformed_request(__TopXMLNS,
     'malformed-request'.
 
 encode_sasl_failure_malformed_request('malformed-request',
-				      _xmlns_attrs) ->
+				      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"malformed-request">>, _attrs, _els}.
 
 decode_sasl_failure_invalid_mechanism(__TopXMLNS,
@@ -24924,9 +29104,12 @@ decode_sasl_failure_invalid_mechanism(__TopXMLNS,
     'invalid-mechanism'.
 
 encode_sasl_failure_invalid_mechanism('invalid-mechanism',
-				      _xmlns_attrs) ->
+				      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"invalid-mechanism">>, _attrs, _els}.
 
 decode_sasl_failure_invalid_authzid(__TopXMLNS,
@@ -24936,9 +29119,12 @@ decode_sasl_failure_invalid_authzid(__TopXMLNS,
     'invalid-authzid'.
 
 encode_sasl_failure_invalid_authzid('invalid-authzid',
-				    _xmlns_attrs) ->
+				    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"invalid-authzid">>, _attrs, _els}.
 
 decode_sasl_failure_incorrect_encoding(__TopXMLNS,
@@ -24948,9 +29134,12 @@ decode_sasl_failure_incorrect_encoding(__TopXMLNS,
     'incorrect-encoding'.
 
 encode_sasl_failure_incorrect_encoding('incorrect-encoding',
-				       _xmlns_attrs) ->
+				       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"incorrect-encoding">>, _attrs, _els}.
 
 decode_sasl_failure_encryption_required(__TopXMLNS,
@@ -24960,9 +29149,12 @@ decode_sasl_failure_encryption_required(__TopXMLNS,
     'encryption-required'.
 
 encode_sasl_failure_encryption_required('encryption-required',
-					_xmlns_attrs) ->
+					__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"encryption-required">>, _attrs, _els}.
 
 decode_sasl_failure_credentials_expired(__TopXMLNS,
@@ -24972,9 +29164,12 @@ decode_sasl_failure_credentials_expired(__TopXMLNS,
     'credentials-expired'.
 
 encode_sasl_failure_credentials_expired('credentials-expired',
-					_xmlns_attrs) ->
+					__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"credentials-expired">>, _attrs, _els}.
 
 decode_sasl_failure_account_disabled(__TopXMLNS,
@@ -24984,18 +29179,24 @@ decode_sasl_failure_account_disabled(__TopXMLNS,
     'account-disabled'.
 
 encode_sasl_failure_account_disabled('account-disabled',
-				     _xmlns_attrs) ->
+				     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"account-disabled">>, _attrs, _els}.
 
 decode_sasl_failure_aborted(__TopXMLNS, __IgnoreEls,
 			    {xmlel, <<"aborted">>, _attrs, _els}) ->
     aborted.
 
-encode_sasl_failure_aborted(aborted, _xmlns_attrs) ->
+encode_sasl_failure_aborted(aborted, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"aborted">>, _attrs, _els}.
 
 decode_sasl_failure_text(__TopXMLNS, __IgnoreEls,
@@ -25031,10 +29232,14 @@ decode_sasl_failure_text_attrs(__TopXMLNS, [], Lang) ->
 					     Lang).
 
 encode_sasl_failure_text({text, Lang, Data},
-			 _xmlns_attrs) ->
+			 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = encode_sasl_failure_text_cdata(Data, []),
     _attrs = 'encode_sasl_failure_text_attr_xml:lang'(Lang,
-						      _xmlns_attrs),
+						      enc_xmlns_attrs(__NewTopXMLNS,
+								      __TopXMLNS)),
     {xmlel, <<"text">>, _attrs, _els}.
 
 'decode_sasl_failure_text_attr_xml:lang'(__TopXMLNS,
@@ -25076,10 +29281,12 @@ decode_sasl_success_els(__TopXMLNS, __IgnoreEls,
     decode_sasl_success_els(__TopXMLNS, __IgnoreEls, _els,
 			    Text).
 
-encode_sasl_success({sasl_success, Text},
-		    _xmlns_attrs) ->
+encode_sasl_success({sasl_success, Text}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = encode_sasl_success_cdata(Text, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"success">>, _attrs, _els}.
 
 decode_sasl_success_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -25114,9 +29321,12 @@ decode_sasl_response_els(__TopXMLNS, __IgnoreEls,
 			     Text).
 
 encode_sasl_response({sasl_response, Text},
-		     _xmlns_attrs) ->
+		     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = encode_sasl_response_cdata(Text, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"response">>, _attrs, _els}.
 
 decode_sasl_response_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -25151,9 +29361,12 @@ decode_sasl_challenge_els(__TopXMLNS, __IgnoreEls,
 			      Text).
 
 encode_sasl_challenge({sasl_challenge, Text},
-		      _xmlns_attrs) ->
+		      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = encode_sasl_challenge_cdata(Text, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"challenge">>, _attrs, _els}.
 
 decode_sasl_challenge_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -25173,9 +29386,12 @@ decode_sasl_abort(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"abort">>, _attrs, _els}) ->
     {sasl_abort}.
 
-encode_sasl_abort({sasl_abort}, _xmlns_attrs) ->
+encode_sasl_abort({sasl_abort}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"abort">>, _attrs, _els}.
 
 decode_sasl_auth(__TopXMLNS, __IgnoreEls,
@@ -25208,10 +29424,14 @@ decode_sasl_auth_attrs(__TopXMLNS, [], Mechanism) ->
     decode_sasl_auth_attr_mechanism(__TopXMLNS, Mechanism).
 
 encode_sasl_auth({sasl_auth, Mechanism, Text},
-		 _xmlns_attrs) ->
+		 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-sasl">>,
+			 [], __TopXMLNS),
     _els = encode_sasl_auth_cdata(Text, []),
     _attrs = encode_sasl_auth_attr_mechanism(Mechanism,
-					     _xmlns_attrs),
+					     enc_xmlns_attrs(__NewTopXMLNS,
+							     __TopXMLNS)),
     {xmlel, <<"auth">>, _attrs, _els}.
 
 decode_sasl_auth_attr_mechanism(__TopXMLNS,
@@ -25331,31 +29551,52 @@ decode_legacy_auth_els(__TopXMLNS, __IgnoreEls,
 
 encode_legacy_auth({legacy_auth, Username, Password,
 		    Digest, Resource},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:auth">>,
+				     [], __TopXMLNS),
     _els =
 	lists:reverse('encode_legacy_auth_$digest'(Digest,
+						   __NewTopXMLNS,
 						   'encode_legacy_auth_$password'(Password,
+										  __NewTopXMLNS,
 										  'encode_legacy_auth_$resource'(Resource,
+														 __NewTopXMLNS,
 														 'encode_legacy_auth_$username'(Username,
+																		__NewTopXMLNS,
 																		[]))))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_legacy_auth_$digest'(undefined, _acc) -> _acc;
-'encode_legacy_auth_$digest'(Digest, _acc) ->
-    [encode_legacy_auth_digest(Digest, []) | _acc].
+'encode_legacy_auth_$digest'(undefined, __TopXMLNS,
+			     _acc) ->
+    _acc;
+'encode_legacy_auth_$digest'(Digest, __TopXMLNS,
+			     _acc) ->
+    [encode_legacy_auth_digest(Digest, __TopXMLNS) | _acc].
 
-'encode_legacy_auth_$password'(undefined, _acc) -> _acc;
-'encode_legacy_auth_$password'(Password, _acc) ->
-    [encode_legacy_auth_password(Password, []) | _acc].
+'encode_legacy_auth_$password'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_legacy_auth_$password'(Password, __TopXMLNS,
+			       _acc) ->
+    [encode_legacy_auth_password(Password, __TopXMLNS)
+     | _acc].
 
-'encode_legacy_auth_$resource'(undefined, _acc) -> _acc;
-'encode_legacy_auth_$resource'(Resource, _acc) ->
-    [encode_legacy_auth_resource(Resource, []) | _acc].
+'encode_legacy_auth_$resource'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_legacy_auth_$resource'(Resource, __TopXMLNS,
+			       _acc) ->
+    [encode_legacy_auth_resource(Resource, __TopXMLNS)
+     | _acc].
 
-'encode_legacy_auth_$username'(undefined, _acc) -> _acc;
-'encode_legacy_auth_$username'(Username, _acc) ->
-    [encode_legacy_auth_username(Username, []) | _acc].
+'encode_legacy_auth_$username'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_legacy_auth_$username'(Username, __TopXMLNS,
+			       _acc) ->
+    [encode_legacy_auth_username(Username, __TopXMLNS)
+     | _acc].
 
 decode_legacy_auth_resource(__TopXMLNS, __IgnoreEls,
 			    {xmlel, <<"resource">>, _attrs, _els}) ->
@@ -25375,9 +29616,11 @@ decode_legacy_auth_resource_els(__TopXMLNS, __IgnoreEls,
     decode_legacy_auth_resource_els(__TopXMLNS, __IgnoreEls,
 				    _els, Cdata).
 
-encode_legacy_auth_resource(Cdata, _xmlns_attrs) ->
+encode_legacy_auth_resource(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:auth">>,
+				     [], __TopXMLNS),
     _els = encode_legacy_auth_resource_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"resource">>, _attrs, _els}.
 
 decode_legacy_auth_resource_cdata(__TopXMLNS, <<>>) ->
@@ -25407,9 +29650,11 @@ decode_legacy_auth_digest_els(__TopXMLNS, __IgnoreEls,
     decode_legacy_auth_digest_els(__TopXMLNS, __IgnoreEls,
 				  _els, Cdata).
 
-encode_legacy_auth_digest(Cdata, _xmlns_attrs) ->
+encode_legacy_auth_digest(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:auth">>,
+				     [], __TopXMLNS),
     _els = encode_legacy_auth_digest_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"digest">>, _attrs, _els}.
 
 decode_legacy_auth_digest_cdata(__TopXMLNS, <<>>) ->
@@ -25439,9 +29684,11 @@ decode_legacy_auth_password_els(__TopXMLNS, __IgnoreEls,
     decode_legacy_auth_password_els(__TopXMLNS, __IgnoreEls,
 				    _els, Cdata).
 
-encode_legacy_auth_password(Cdata, _xmlns_attrs) ->
+encode_legacy_auth_password(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:auth">>,
+				     [], __TopXMLNS),
     _els = encode_legacy_auth_password_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"password">>, _attrs, _els}.
 
 decode_legacy_auth_password_cdata(__TopXMLNS, <<>>) ->
@@ -25471,9 +29718,11 @@ decode_legacy_auth_username_els(__TopXMLNS, __IgnoreEls,
     decode_legacy_auth_username_els(__TopXMLNS, __IgnoreEls,
 				    _els, Cdata).
 
-encode_legacy_auth_username(Cdata, _xmlns_attrs) ->
+encode_legacy_auth_username(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:auth">>,
+				     [], __TopXMLNS),
     _els = encode_legacy_auth_username_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"username">>, _attrs, _els}.
 
 decode_legacy_auth_username_cdata(__TopXMLNS, <<>>) ->
@@ -25535,20 +29784,26 @@ decode_bind_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_bind_els(__TopXMLNS, __IgnoreEls, _els, Jid,
 		    Resource).
 
-encode_bind({bind, Jid, Resource}, _xmlns_attrs) ->
+encode_bind({bind, Jid, Resource}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_bind_$jid'(Jid,
+					    __NewTopXMLNS,
 					    'encode_bind_$resource'(Resource,
+								    __NewTopXMLNS,
 								    []))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"bind">>, _attrs, _els}.
 
-'encode_bind_$jid'(undefined, _acc) -> _acc;
-'encode_bind_$jid'(Jid, _acc) ->
-    [encode_bind_jid(Jid, []) | _acc].
+'encode_bind_$jid'(undefined, __TopXMLNS, _acc) -> _acc;
+'encode_bind_$jid'(Jid, __TopXMLNS, _acc) ->
+    [encode_bind_jid(Jid, __TopXMLNS) | _acc].
 
-'encode_bind_$resource'(undefined, _acc) -> _acc;
-'encode_bind_$resource'(Resource, _acc) ->
-    [encode_bind_resource(Resource, []) | _acc].
+'encode_bind_$resource'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_bind_$resource'(Resource, __TopXMLNS, _acc) ->
+    [encode_bind_resource(Resource, __TopXMLNS) | _acc].
 
 decode_bind_resource(__TopXMLNS, __IgnoreEls,
 		     {xmlel, <<"resource">>, _attrs, _els}) ->
@@ -25568,9 +29823,12 @@ decode_bind_resource_els(__TopXMLNS, __IgnoreEls,
     decode_bind_resource_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_bind_resource(Cdata, _xmlns_attrs) ->
+encode_bind_resource(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
+			 [], __TopXMLNS),
     _els = encode_bind_resource_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"resource">>, _attrs, _els}.
 
 decode_bind_resource_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -25604,9 +29862,12 @@ decode_bind_jid_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_bind_jid_els(__TopXMLNS, __IgnoreEls, _els,
 			Cdata).
 
-encode_bind_jid(Cdata, _xmlns_attrs) ->
+encode_bind_jid(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-bind">>,
+			 [], __TopXMLNS),
     _els = encode_bind_jid_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"jid">>, _attrs, _els}.
 
 decode_bind_jid_cdata(__TopXMLNS, <<>>) -> undefined;
@@ -25968,10 +30229,11 @@ decode_error_els(__TopXMLNS, __IgnoreEls,
 	   decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 			    Reason, [_el | __Els]);
        true ->
-	   case is_known_tag(_el) of
+	   case is_known_tag(_el, __TopXMLNS) of
 	     true ->
 		 decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
-				  Reason, [decode(_el) | __Els]);
+				  Reason,
+				  [decode(_el, __TopXMLNS, []) | __Els]);
 	     false ->
 		 decode_error_els(__TopXMLNS, __IgnoreEls, _els, Text,
 				  Reason, __Els)
@@ -26002,158 +30264,118 @@ decode_error_attrs(__TopXMLNS, [], Type, Code, By) ->
 
 encode_error({stanza_error, Type, Code, By, Reason,
 	      Text, __Els},
-	     _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els] ++
-	     lists:reverse('encode_error_$text'(Text,
+	     __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
+    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els] ++
+	     lists:reverse('encode_error_$text'(Text, __NewTopXMLNS,
 						'encode_error_$reason'(Reason,
+								       __NewTopXMLNS,
 								       []))),
     _attrs = encode_error_attr_by(By,
 				  encode_error_attr_code(Code,
 							 encode_error_attr_type(Type,
-										_xmlns_attrs))),
+										enc_xmlns_attrs(__NewTopXMLNS,
+												__TopXMLNS)))),
     {xmlel, <<"error">>, _attrs, _els}.
 
-'encode_error_$text'(undefined, _acc) -> _acc;
-'encode_error_$text'(Text, _acc) ->
-    [encode_error_text(Text,
-		       [{<<"xmlns">>,
-			 <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc].
+'encode_error_$text'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_error_$text'(Text, __TopXMLNS, _acc) ->
+    [encode_error_text(Text, __TopXMLNS) | _acc].
 
-'encode_error_$reason'(undefined, _acc) -> _acc;
-'encode_error_$reason'('bad-request' = Reason, _acc) ->
-    [encode_error_bad_request(Reason,
-			      [{<<"xmlns">>,
-				<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
-'encode_error_$reason'(conflict = Reason, _acc) ->
-    [encode_error_conflict(Reason,
-			   [{<<"xmlns">>,
-			     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
+'encode_error_$reason'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_error_$reason'('bad-request' = Reason,
+		       __TopXMLNS, _acc) ->
+    [encode_error_bad_request(Reason, __TopXMLNS) | _acc];
+'encode_error_$reason'(conflict = Reason, __TopXMLNS,
+		       _acc) ->
+    [encode_error_conflict(Reason, __TopXMLNS) | _acc];
 'encode_error_$reason'('feature-not-implemented' =
 			   Reason,
-		       _acc) ->
+		       __TopXMLNS, _acc) ->
     [encode_error_feature_not_implemented(Reason,
-					  [{<<"xmlns">>,
-					    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+					  __TopXMLNS)
      | _acc];
-'encode_error_$reason'(forbidden = Reason, _acc) ->
-    [encode_error_forbidden(Reason,
-			    [{<<"xmlns">>,
-			      <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
-'encode_error_$reason'({gone, _} = Reason, _acc) ->
-    [encode_error_gone(Reason,
-		       [{<<"xmlns">>,
-			 <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
-'encode_error_$reason'('internal-server-error' = Reason,
+'encode_error_$reason'(forbidden = Reason, __TopXMLNS,
 		       _acc) ->
-    [encode_error_internal_server_error(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+    [encode_error_forbidden(Reason, __TopXMLNS) | _acc];
+'encode_error_$reason'({gone, _} = Reason, __TopXMLNS,
+		       _acc) ->
+    [encode_error_gone(Reason, __TopXMLNS) | _acc];
+'encode_error_$reason'('internal-server-error' = Reason,
+		       __TopXMLNS, _acc) ->
+    [encode_error_internal_server_error(Reason, __TopXMLNS)
      | _acc];
 'encode_error_$reason'('item-not-found' = Reason,
-		       _acc) ->
-    [encode_error_item_not_found(Reason,
-				 [{<<"xmlns">>,
-				   <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_item_not_found(Reason, __TopXMLNS)
      | _acc];
 'encode_error_$reason'('jid-malformed' = Reason,
-		       _acc) ->
-    [encode_error_jid_malformed(Reason,
-				[{<<"xmlns">>,
-				  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
+		       __TopXMLNS, _acc) ->
+    [encode_error_jid_malformed(Reason, __TopXMLNS) | _acc];
 'encode_error_$reason'('not-acceptable' = Reason,
-		       _acc) ->
-    [encode_error_not_acceptable(Reason,
-				 [{<<"xmlns">>,
-				   <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_not_acceptable(Reason, __TopXMLNS)
      | _acc];
-'encode_error_$reason'('not-allowed' = Reason, _acc) ->
-    [encode_error_not_allowed(Reason,
-			      [{<<"xmlns">>,
-				<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
+'encode_error_$reason'('not-allowed' = Reason,
+		       __TopXMLNS, _acc) ->
+    [encode_error_not_allowed(Reason, __TopXMLNS) | _acc];
 'encode_error_$reason'('not-authorized' = Reason,
-		       _acc) ->
-    [encode_error_not_authorized(Reason,
-				 [{<<"xmlns">>,
-				   <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_not_authorized(Reason, __TopXMLNS)
      | _acc];
 'encode_error_$reason'('payment-required' = Reason,
-		       _acc) ->
-    [encode_error_payment_required(Reason,
-				   [{<<"xmlns">>,
-				     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_payment_required(Reason, __TopXMLNS)
      | _acc];
 'encode_error_$reason'('policy-violation' = Reason,
-		       _acc) ->
-    [encode_error_policy_violation(Reason,
-				   [{<<"xmlns">>,
-				     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_policy_violation(Reason, __TopXMLNS)
      | _acc];
 'encode_error_$reason'('recipient-unavailable' = Reason,
-		       _acc) ->
-    [encode_error_recipient_unavailable(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_recipient_unavailable(Reason, __TopXMLNS)
      | _acc];
-'encode_error_$reason'({redirect, _} = Reason, _acc) ->
-    [encode_error_redirect(Reason,
-			   [{<<"xmlns">>,
-			     <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
-     | _acc];
+'encode_error_$reason'({redirect, _} = Reason,
+		       __TopXMLNS, _acc) ->
+    [encode_error_redirect(Reason, __TopXMLNS) | _acc];
 'encode_error_$reason'('registration-required' = Reason,
-		       _acc) ->
-    [encode_error_registration_required(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_registration_required(Reason, __TopXMLNS)
      | _acc];
 'encode_error_$reason'('remote-server-not-found' =
 			   Reason,
-		       _acc) ->
+		       __TopXMLNS, _acc) ->
     [encode_error_remote_server_not_found(Reason,
-					  [{<<"xmlns">>,
-					    <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+					  __TopXMLNS)
      | _acc];
 'encode_error_$reason'('remote-server-timeout' = Reason,
-		       _acc) ->
-    [encode_error_remote_server_timeout(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_remote_server_timeout(Reason, __TopXMLNS)
      | _acc];
 'encode_error_$reason'('resource-constraint' = Reason,
-		       _acc) ->
-    [encode_error_resource_constraint(Reason,
-				      [{<<"xmlns">>,
-					<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_resource_constraint(Reason, __TopXMLNS)
      | _acc];
 'encode_error_$reason'('service-unavailable' = Reason,
-		       _acc) ->
-    [encode_error_service_unavailable(Reason,
-				      [{<<"xmlns">>,
-					<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_service_unavailable(Reason, __TopXMLNS)
      | _acc];
 'encode_error_$reason'('subscription-required' = Reason,
-		       _acc) ->
-    [encode_error_subscription_required(Reason,
-					[{<<"xmlns">>,
-					  <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_subscription_required(Reason, __TopXMLNS)
      | _acc];
 'encode_error_$reason'('undefined-condition' = Reason,
-		       _acc) ->
-    [encode_error_undefined_condition(Reason,
-				      [{<<"xmlns">>,
-					<<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_undefined_condition(Reason, __TopXMLNS)
      | _acc];
 'encode_error_$reason'('unexpected-request' = Reason,
-		       _acc) ->
-    [encode_error_unexpected_request(Reason,
-				     [{<<"xmlns">>,
-				       <<"urn:ietf:params:xml:ns:xmpp-stanzas">>}])
+		       __TopXMLNS, _acc) ->
+    [encode_error_unexpected_request(Reason, __TopXMLNS)
      | _acc].
 
 decode_error_attr_type(__TopXMLNS, undefined) ->
@@ -26222,10 +30444,14 @@ decode_error_text_attrs(__TopXMLNS, [_ | _attrs],
 decode_error_text_attrs(__TopXMLNS, [], Lang) ->
     'decode_error_text_attr_xml:lang'(__TopXMLNS, Lang).
 
-encode_error_text({text, Lang, Data}, _xmlns_attrs) ->
+encode_error_text({text, Lang, Data}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = encode_error_text_cdata(Data, []),
     _attrs = 'encode_error_text_attr_xml:lang'(Lang,
-					       _xmlns_attrs),
+					       enc_xmlns_attrs(__NewTopXMLNS,
+							       __TopXMLNS)),
     {xmlel, <<"text">>, _attrs, _els}.
 
 'decode_error_text_attr_xml:lang'(__TopXMLNS,
@@ -26251,9 +30477,12 @@ decode_error_unexpected_request(__TopXMLNS, __IgnoreEls,
     'unexpected-request'.
 
 encode_error_unexpected_request('unexpected-request',
-				_xmlns_attrs) ->
+				__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"unexpected-request">>, _attrs, _els}.
 
 decode_error_undefined_condition(__TopXMLNS,
@@ -26263,9 +30492,12 @@ decode_error_undefined_condition(__TopXMLNS,
     'undefined-condition'.
 
 encode_error_undefined_condition('undefined-condition',
-				 _xmlns_attrs) ->
+				 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"undefined-condition">>, _attrs, _els}.
 
 decode_error_subscription_required(__TopXMLNS,
@@ -26275,9 +30507,12 @@ decode_error_subscription_required(__TopXMLNS,
     'subscription-required'.
 
 encode_error_subscription_required('subscription-required',
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"subscription-required">>, _attrs, _els}.
 
 decode_error_service_unavailable(__TopXMLNS,
@@ -26287,9 +30522,12 @@ decode_error_service_unavailable(__TopXMLNS,
     'service-unavailable'.
 
 encode_error_service_unavailable('service-unavailable',
-				 _xmlns_attrs) ->
+				 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"service-unavailable">>, _attrs, _els}.
 
 decode_error_resource_constraint(__TopXMLNS,
@@ -26299,9 +30537,12 @@ decode_error_resource_constraint(__TopXMLNS,
     'resource-constraint'.
 
 encode_error_resource_constraint('resource-constraint',
-				 _xmlns_attrs) ->
+				 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"resource-constraint">>, _attrs, _els}.
 
 decode_error_remote_server_timeout(__TopXMLNS,
@@ -26311,9 +30552,12 @@ decode_error_remote_server_timeout(__TopXMLNS,
     'remote-server-timeout'.
 
 encode_error_remote_server_timeout('remote-server-timeout',
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"remote-server-timeout">>, _attrs, _els}.
 
 decode_error_remote_server_not_found(__TopXMLNS,
@@ -26323,9 +30567,12 @@ decode_error_remote_server_not_found(__TopXMLNS,
     'remote-server-not-found'.
 
 encode_error_remote_server_not_found('remote-server-not-found',
-				     _xmlns_attrs) ->
+				     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"remote-server-not-found">>, _attrs, _els}.
 
 decode_error_registration_required(__TopXMLNS,
@@ -26335,9 +30582,12 @@ decode_error_registration_required(__TopXMLNS,
     'registration-required'.
 
 encode_error_registration_required('registration-required',
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"registration-required">>, _attrs, _els}.
 
 decode_error_redirect(__TopXMLNS, __IgnoreEls,
@@ -26358,9 +30608,12 @@ decode_error_redirect_els(__TopXMLNS, __IgnoreEls,
     decode_error_redirect_els(__TopXMLNS, __IgnoreEls, _els,
 			      Uri).
 
-encode_error_redirect({redirect, Uri}, _xmlns_attrs) ->
+encode_error_redirect({redirect, Uri}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = encode_error_redirect_cdata(Uri, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"redirect">>, _attrs, _els}.
 
 decode_error_redirect_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -26377,9 +30630,12 @@ decode_error_recipient_unavailable(__TopXMLNS,
     'recipient-unavailable'.
 
 encode_error_recipient_unavailable('recipient-unavailable',
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"recipient-unavailable">>, _attrs, _els}.
 
 decode_error_policy_violation(__TopXMLNS, __IgnoreEls,
@@ -26387,9 +30643,12 @@ decode_error_policy_violation(__TopXMLNS, __IgnoreEls,
     'policy-violation'.
 
 encode_error_policy_violation('policy-violation',
-			      _xmlns_attrs) ->
+			      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"policy-violation">>, _attrs, _els}.
 
 decode_error_payment_required(__TopXMLNS, __IgnoreEls,
@@ -26397,9 +30656,12 @@ decode_error_payment_required(__TopXMLNS, __IgnoreEls,
     'payment-required'.
 
 encode_error_payment_required('payment-required',
-			      _xmlns_attrs) ->
+			      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"payment-required">>, _attrs, _els}.
 
 decode_error_not_authorized(__TopXMLNS, __IgnoreEls,
@@ -26407,18 +30669,24 @@ decode_error_not_authorized(__TopXMLNS, __IgnoreEls,
     'not-authorized'.
 
 encode_error_not_authorized('not-authorized',
-			    _xmlns_attrs) ->
+			    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"not-authorized">>, _attrs, _els}.
 
 decode_error_not_allowed(__TopXMLNS, __IgnoreEls,
 			 {xmlel, <<"not-allowed">>, _attrs, _els}) ->
     'not-allowed'.
 
-encode_error_not_allowed('not-allowed', _xmlns_attrs) ->
+encode_error_not_allowed('not-allowed', __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"not-allowed">>, _attrs, _els}.
 
 decode_error_not_acceptable(__TopXMLNS, __IgnoreEls,
@@ -26426,9 +30694,12 @@ decode_error_not_acceptable(__TopXMLNS, __IgnoreEls,
     'not-acceptable'.
 
 encode_error_not_acceptable('not-acceptable',
-			    _xmlns_attrs) ->
+			    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"not-acceptable">>, _attrs, _els}.
 
 decode_error_jid_malformed(__TopXMLNS, __IgnoreEls,
@@ -26436,9 +30707,12 @@ decode_error_jid_malformed(__TopXMLNS, __IgnoreEls,
     'jid-malformed'.
 
 encode_error_jid_malformed('jid-malformed',
-			   _xmlns_attrs) ->
+			   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"jid-malformed">>, _attrs, _els}.
 
 decode_error_item_not_found(__TopXMLNS, __IgnoreEls,
@@ -26446,9 +30720,12 @@ decode_error_item_not_found(__TopXMLNS, __IgnoreEls,
     'item-not-found'.
 
 encode_error_item_not_found('item-not-found',
-			    _xmlns_attrs) ->
+			    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"item-not-found">>, _attrs, _els}.
 
 decode_error_internal_server_error(__TopXMLNS,
@@ -26458,9 +30735,12 @@ decode_error_internal_server_error(__TopXMLNS,
     'internal-server-error'.
 
 encode_error_internal_server_error('internal-server-error',
-				   _xmlns_attrs) ->
+				   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"internal-server-error">>, _attrs, _els}.
 
 decode_error_gone(__TopXMLNS, __IgnoreEls,
@@ -26481,9 +30761,12 @@ decode_error_gone_els(__TopXMLNS, __IgnoreEls,
     decode_error_gone_els(__TopXMLNS, __IgnoreEls, _els,
 			  Uri).
 
-encode_error_gone({gone, Uri}, _xmlns_attrs) ->
+encode_error_gone({gone, Uri}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = encode_error_gone_cdata(Uri, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"gone">>, _attrs, _els}.
 
 decode_error_gone_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -26497,9 +30780,12 @@ decode_error_forbidden(__TopXMLNS, __IgnoreEls,
 		       {xmlel, <<"forbidden">>, _attrs, _els}) ->
     forbidden.
 
-encode_error_forbidden(forbidden, _xmlns_attrs) ->
+encode_error_forbidden(forbidden, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"forbidden">>, _attrs, _els}.
 
 decode_error_feature_not_implemented(__TopXMLNS,
@@ -26509,27 +30795,36 @@ decode_error_feature_not_implemented(__TopXMLNS,
     'feature-not-implemented'.
 
 encode_error_feature_not_implemented('feature-not-implemented',
-				     _xmlns_attrs) ->
+				     __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"feature-not-implemented">>, _attrs, _els}.
 
 decode_error_conflict(__TopXMLNS, __IgnoreEls,
 		      {xmlel, <<"conflict">>, _attrs, _els}) ->
     conflict.
 
-encode_error_conflict(conflict, _xmlns_attrs) ->
+encode_error_conflict(conflict, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"conflict">>, _attrs, _els}.
 
 decode_error_bad_request(__TopXMLNS, __IgnoreEls,
 			 {xmlel, <<"bad-request">>, _attrs, _els}) ->
     'bad-request'.
 
-encode_error_bad_request('bad-request', _xmlns_attrs) ->
+encode_error_bad_request('bad-request', __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:ietf:params:xml:ns:xmpp-stanzas">>,
+			 [], __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"bad-request">>, _attrs, _els}.
 
 decode_presence(__TopXMLNS, __IgnoreEls,
@@ -26551,7 +30846,10 @@ decode_presence_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"show">>, _attrs, _} = _el | _els], Status,
 		    Show, Priority, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
-      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+      <<"">>
+	  when __TopXMLNS == <<"jabber:server">>;
+	       __TopXMLNS == <<"jabber:component:accept">>;
+	       __TopXMLNS == <<"jabber:client">> ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
 			      Status,
 			      decode_presence_show(__TopXMLNS, __IgnoreEls,
@@ -26563,6 +30861,18 @@ decode_presence_els(__TopXMLNS, __IgnoreEls,
 			      decode_presence_show(<<"jabber:client">>,
 						   __IgnoreEls, _el),
 			      Priority, __Els);
+      <<"jabber:server">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status,
+			      decode_presence_show(<<"jabber:server">>,
+						   __IgnoreEls, _el),
+			      Priority, __Els);
+      <<"jabber:component:accept">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status,
+			      decode_presence_show(<<"jabber:component:accept">>,
+						   __IgnoreEls, _el),
+			      Priority, __Els);
       _ ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
 			      Status, Show, Priority, __Els)
@@ -26571,7 +30881,10 @@ decode_presence_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"status">>, _attrs, _} = _el | _els], Status,
 		    Show, Priority, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
-      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+      <<"">>
+	  when __TopXMLNS == <<"jabber:server">>;
+	       __TopXMLNS == <<"jabber:component:accept">>;
+	       __TopXMLNS == <<"jabber:client">> ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
 			      [decode_presence_status(__TopXMLNS, __IgnoreEls,
 						      _el)
@@ -26583,6 +30896,18 @@ decode_presence_els(__TopXMLNS, __IgnoreEls,
 						      __IgnoreEls, _el)
 			       | Status],
 			      Show, Priority, __Els);
+      <<"jabber:server">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      [decode_presence_status(<<"jabber:server">>,
+						      __IgnoreEls, _el)
+			       | Status],
+			      Show, Priority, __Els);
+      <<"jabber:component:accept">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      [decode_presence_status(<<"jabber:component:accept">>,
+						      __IgnoreEls, _el)
+			       | Status],
+			      Show, Priority, __Els);
       _ ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
 			      Status, Show, Priority, __Els)
@@ -26591,7 +30916,10 @@ decode_presence_els(__TopXMLNS, __IgnoreEls,
 		    [{xmlel, <<"priority">>, _attrs, _} = _el | _els],
 		    Status, Show, Priority, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
-      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+      <<"">>
+	  when __TopXMLNS == <<"jabber:server">>;
+	       __TopXMLNS == <<"jabber:component:accept">>;
+	       __TopXMLNS == <<"jabber:client">> ->
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
 			      Status, Show,
 			      decode_presence_priority(__TopXMLNS, __IgnoreEls,
@@ -26601,6 +30929,18 @@ decode_presence_els(__TopXMLNS, __IgnoreEls,
 	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
 			      Status, Show,
 			      decode_presence_priority(<<"jabber:client">>,
+						       __IgnoreEls, _el),
+			      __Els);
+      <<"jabber:server">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status, Show,
+			      decode_presence_priority(<<"jabber:server">>,
+						       __IgnoreEls, _el),
+			      __Els);
+      <<"jabber:component:accept">> ->
+	  decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
+			      Status, Show,
+			      decode_presence_priority(<<"jabber:component:accept">>,
 						       __IgnoreEls, _el),
 			      __Els);
       _ ->
@@ -26614,11 +30954,11 @@ decode_presence_els(__TopXMLNS, __IgnoreEls,
 	   decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
 			       Status, Show, Priority, [_el | __Els]);
        true ->
-	   case is_known_tag(_el) of
+	   case is_known_tag(_el, __TopXMLNS) of
 	     true ->
 		 decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
 				     Status, Show, Priority,
-				     [decode(_el) | __Els]);
+				     [decode(_el, __TopXMLNS, []) | __Els]);
 	     false ->
 		 decode_presence_els(__TopXMLNS, __IgnoreEls, _els,
 				     Status, Show, Priority, __Els)
@@ -26668,32 +31008,46 @@ decode_presence_attrs(__TopXMLNS, [], Id, Type, From,
 
 encode_presence({presence, Id, Type, Lang, From, To,
 		 Show, Status, Priority, __Els},
-		_xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els] ++
+		__TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
+    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els] ++
 	     lists:reverse('encode_presence_$status'(Status,
+						     __NewTopXMLNS,
 						     'encode_presence_$show'(Show,
+									     __NewTopXMLNS,
 									     'encode_presence_$priority'(Priority,
+													 __NewTopXMLNS,
 													 [])))),
     _attrs = 'encode_presence_attr_xml:lang'(Lang,
 					     encode_presence_attr_to(To,
 								     encode_presence_attr_from(From,
 											       encode_presence_attr_type(Type,
 															 encode_presence_attr_id(Id,
-																		 _xmlns_attrs))))),
+																		 enc_xmlns_attrs(__NewTopXMLNS,
+																				 __TopXMLNS)))))),
     {xmlel, <<"presence">>, _attrs, _els}.
 
-'encode_presence_$status'([], _acc) -> _acc;
-'encode_presence_$status'([Status | _els], _acc) ->
-    'encode_presence_$status'(_els,
-			      [encode_presence_status(Status, []) | _acc]).
+'encode_presence_$status'([], __TopXMLNS, _acc) -> _acc;
+'encode_presence_$status'([Status | _els], __TopXMLNS,
+			  _acc) ->
+    'encode_presence_$status'(_els, __TopXMLNS,
+			      [encode_presence_status(Status, __TopXMLNS)
+			       | _acc]).
 
-'encode_presence_$show'(undefined, _acc) -> _acc;
-'encode_presence_$show'(Show, _acc) ->
-    [encode_presence_show(Show, []) | _acc].
+'encode_presence_$show'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_presence_$show'(Show, __TopXMLNS, _acc) ->
+    [encode_presence_show(Show, __TopXMLNS) | _acc].
 
-'encode_presence_$priority'(undefined, _acc) -> _acc;
-'encode_presence_$priority'(Priority, _acc) ->
-    [encode_presence_priority(Priority, []) | _acc].
+'encode_presence_$priority'(undefined, __TopXMLNS,
+			    _acc) ->
+    _acc;
+'encode_presence_$priority'(Priority, __TopXMLNS,
+			    _acc) ->
+    [encode_presence_priority(Priority, __TopXMLNS) | _acc].
 
 decode_presence_attr_id(__TopXMLNS, undefined) -> <<>>;
 decode_presence_attr_id(__TopXMLNS, _val) -> _val.
@@ -26778,9 +31132,13 @@ decode_presence_priority_els(__TopXMLNS, __IgnoreEls,
     decode_presence_priority_els(__TopXMLNS, __IgnoreEls,
 				 _els, Cdata).
 
-encode_presence_priority(Cdata, _xmlns_attrs) ->
+encode_presence_priority(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
     _els = encode_presence_priority_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"priority">>, _attrs, _els}.
 
 decode_presence_priority_cdata(__TopXMLNS, <<>>) ->
@@ -26828,10 +31186,15 @@ decode_presence_status_attrs(__TopXMLNS, [], Lang) ->
 					   Lang).
 
 encode_presence_status({text, Lang, Data},
-		       _xmlns_attrs) ->
+		       __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
     _els = encode_presence_status_cdata(Data, []),
     _attrs = 'encode_presence_status_attr_xml:lang'(Lang,
-						    _xmlns_attrs),
+						    enc_xmlns_attrs(__NewTopXMLNS,
+								    __TopXMLNS)),
     {xmlel, <<"status">>, _attrs, _els}.
 
 'decode_presence_status_attr_xml:lang'(__TopXMLNS,
@@ -26871,9 +31234,13 @@ decode_presence_show_els(__TopXMLNS, __IgnoreEls,
     decode_presence_show_els(__TopXMLNS, __IgnoreEls, _els,
 			     Cdata).
 
-encode_presence_show(Cdata, _xmlns_attrs) ->
+encode_presence_show(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
     _els = encode_presence_show_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"show">>, _attrs, _els}.
 
 decode_presence_show_cdata(__TopXMLNS, <<>>) ->
@@ -26909,7 +31276,10 @@ decode_message_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"subject">>, _attrs, _} = _el | _els],
 		   Thread, Subject, Body, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
-      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+      <<"">>
+	  when __TopXMLNS == <<"jabber:server">>;
+	       __TopXMLNS == <<"jabber:component:accept">>;
+	       __TopXMLNS == <<"jabber:client">> ->
 	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     Thread,
 			     [decode_message_subject(__TopXMLNS, __IgnoreEls,
@@ -26923,6 +31293,20 @@ decode_message_els(__TopXMLNS, __IgnoreEls,
 						     __IgnoreEls, _el)
 			      | Subject],
 			     Body, __Els);
+      <<"jabber:server">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
+			     Thread,
+			     [decode_message_subject(<<"jabber:server">>,
+						     __IgnoreEls, _el)
+			      | Subject],
+			     Body, __Els);
+      <<"jabber:component:accept">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
+			     Thread,
+			     [decode_message_subject(<<"jabber:component:accept">>,
+						     __IgnoreEls, _el)
+			      | Subject],
+			     Body, __Els);
       _ ->
 	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     Thread, Subject, Body, __Els)
@@ -26931,7 +31315,10 @@ decode_message_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"thread">>, _attrs, _} = _el | _els], Thread,
 		   Subject, Body, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
-      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+      <<"">>
+	  when __TopXMLNS == <<"jabber:server">>;
+	       __TopXMLNS == <<"jabber:component:accept">>;
+	       __TopXMLNS == <<"jabber:client">> ->
 	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     decode_message_thread(__TopXMLNS, __IgnoreEls,
 						   _el),
@@ -26939,6 +31326,16 @@ decode_message_els(__TopXMLNS, __IgnoreEls,
       <<"jabber:client">> ->
 	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     decode_message_thread(<<"jabber:client">>,
+						   __IgnoreEls, _el),
+			     Subject, Body, __Els);
+      <<"jabber:server">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_message_thread(<<"jabber:server">>,
+						   __IgnoreEls, _el),
+			     Subject, Body, __Els);
+      <<"jabber:component:accept">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
+			     decode_message_thread(<<"jabber:component:accept">>,
 						   __IgnoreEls, _el),
 			     Subject, Body, __Els);
       _ ->
@@ -26949,7 +31346,10 @@ decode_message_els(__TopXMLNS, __IgnoreEls,
 		   [{xmlel, <<"body">>, _attrs, _} = _el | _els], Thread,
 		   Subject, Body, __Els) ->
     case get_attr(<<"xmlns">>, _attrs) of
-      <<"">> when __TopXMLNS == <<"jabber:client">> ->
+      <<"">>
+	  when __TopXMLNS == <<"jabber:server">>;
+	       __TopXMLNS == <<"jabber:component:accept">>;
+	       __TopXMLNS == <<"jabber:client">> ->
 	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     Thread, Subject,
 			     [decode_message_body(__TopXMLNS, __IgnoreEls, _el)
@@ -26959,6 +31359,20 @@ decode_message_els(__TopXMLNS, __IgnoreEls,
 	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			     Thread, Subject,
 			     [decode_message_body(<<"jabber:client">>,
+						  __IgnoreEls, _el)
+			      | Body],
+			     __Els);
+      <<"jabber:server">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
+			     Thread, Subject,
+			     [decode_message_body(<<"jabber:server">>,
+						  __IgnoreEls, _el)
+			      | Body],
+			     __Els);
+      <<"jabber:component:accept">> ->
+	  decode_message_els(__TopXMLNS, __IgnoreEls, _els,
+			     Thread, Subject,
+			     [decode_message_body(<<"jabber:component:accept">>,
 						  __IgnoreEls, _el)
 			      | Body],
 			     __Els);
@@ -26973,11 +31387,11 @@ decode_message_els(__TopXMLNS, __IgnoreEls,
 	   decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 			      Thread, Subject, Body, [_el | __Els]);
        true ->
-	   case is_known_tag(_el) of
+	   case is_known_tag(_el, __TopXMLNS) of
 	     true ->
 		 decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 				    Thread, Subject, Body,
-				    [decode(_el) | __Els]);
+				    [decode(_el, __TopXMLNS, []) | __Els]);
 	     false ->
 		 decode_message_els(__TopXMLNS, __IgnoreEls, _els,
 				    Thread, Subject, Body, __Els)
@@ -27027,33 +31441,45 @@ decode_message_attrs(__TopXMLNS, [], Id, Type, From, To,
 
 encode_message({message, Id, Type, Lang, From, To,
 		Subject, Body, Thread, __Els},
-	       _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els] ++
+	       __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
+    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els] ++
 	     lists:reverse('encode_message_$thread'(Thread,
+						    __NewTopXMLNS,
 						    'encode_message_$subject'(Subject,
+									      __NewTopXMLNS,
 									      'encode_message_$body'(Body,
+												     __NewTopXMLNS,
 												     [])))),
     _attrs = 'encode_message_attr_xml:lang'(Lang,
 					    encode_message_attr_to(To,
 								   encode_message_attr_from(From,
 											    encode_message_attr_type(Type,
 														     encode_message_attr_id(Id,
-																	    _xmlns_attrs))))),
+																	    enc_xmlns_attrs(__NewTopXMLNS,
+																			    __TopXMLNS)))))),
     {xmlel, <<"message">>, _attrs, _els}.
 
-'encode_message_$thread'(undefined, _acc) -> _acc;
-'encode_message_$thread'(Thread, _acc) ->
-    [encode_message_thread(Thread, []) | _acc].
+'encode_message_$thread'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_message_$thread'(Thread, __TopXMLNS, _acc) ->
+    [encode_message_thread(Thread, __TopXMLNS) | _acc].
 
-'encode_message_$subject'([], _acc) -> _acc;
-'encode_message_$subject'([Subject | _els], _acc) ->
-    'encode_message_$subject'(_els,
-			      [encode_message_subject(Subject, []) | _acc]).
+'encode_message_$subject'([], __TopXMLNS, _acc) -> _acc;
+'encode_message_$subject'([Subject | _els], __TopXMLNS,
+			  _acc) ->
+    'encode_message_$subject'(_els, __TopXMLNS,
+			      [encode_message_subject(Subject, __TopXMLNS)
+			       | _acc]).
 
-'encode_message_$body'([], _acc) -> _acc;
-'encode_message_$body'([Body | _els], _acc) ->
-    'encode_message_$body'(_els,
-			   [encode_message_body(Body, []) | _acc]).
+'encode_message_$body'([], __TopXMLNS, _acc) -> _acc;
+'encode_message_$body'([Body | _els], __TopXMLNS,
+		       _acc) ->
+    'encode_message_$body'(_els, __TopXMLNS,
+			   [encode_message_body(Body, __TopXMLNS) | _acc]).
 
 decode_message_attr_id(__TopXMLNS, undefined) -> <<>>;
 decode_message_attr_id(__TopXMLNS, _val) -> _val.
@@ -27135,9 +31561,13 @@ decode_message_thread_els(__TopXMLNS, __IgnoreEls,
     decode_message_thread_els(__TopXMLNS, __IgnoreEls, _els,
 			      Cdata).
 
-encode_message_thread(Cdata, _xmlns_attrs) ->
+encode_message_thread(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
     _els = encode_message_thread_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"thread">>, _attrs, _els}.
 
 decode_message_thread_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -27176,10 +31606,15 @@ decode_message_body_attrs(__TopXMLNS, [_ | _attrs],
 decode_message_body_attrs(__TopXMLNS, [], Lang) ->
     'decode_message_body_attr_xml:lang'(__TopXMLNS, Lang).
 
-encode_message_body({text, Lang, Data}, _xmlns_attrs) ->
+encode_message_body({text, Lang, Data}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
     _els = encode_message_body_cdata(Data, []),
     _attrs = 'encode_message_body_attr_xml:lang'(Lang,
-						 _xmlns_attrs),
+						 enc_xmlns_attrs(__NewTopXMLNS,
+								 __TopXMLNS)),
     {xmlel, <<"body">>, _attrs, _els}.
 
 'decode_message_body_attr_xml:lang'(__TopXMLNS,
@@ -27230,10 +31665,15 @@ decode_message_subject_attrs(__TopXMLNS, [], Lang) ->
 					   Lang).
 
 encode_message_subject({text, Lang, Data},
-		       _xmlns_attrs) ->
+		       __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
     _els = encode_message_subject_cdata(Data, []),
     _attrs = 'encode_message_subject_attr_xml:lang'(Lang,
-						    _xmlns_attrs),
+						    enc_xmlns_attrs(__NewTopXMLNS,
+								    __TopXMLNS)),
     {xmlel, <<"subject">>, _attrs, _els}.
 
 'decode_message_subject_attr_xml:lang'(__TopXMLNS,
@@ -27273,10 +31713,10 @@ decode_iq_els(__TopXMLNS, __IgnoreEls,
 	   decode_iq_els(__TopXMLNS, __IgnoreEls, _els,
 			 [_el | __Els]);
        true ->
-	   case is_known_tag(_el) of
+	   case is_known_tag(_el, __TopXMLNS) of
 	     true ->
 		 decode_iq_els(__TopXMLNS, __IgnoreEls, _els,
-			       [decode(_el) | __Els]);
+			       [decode(_el, __TopXMLNS, []) | __Els]);
 	     false ->
 		 decode_iq_els(__TopXMLNS, __IgnoreEls, _els, __Els)
 	   end
@@ -27321,14 +31761,19 @@ decode_iq_attrs(__TopXMLNS, [], Id, Type, From, To,
      'decode_iq_attr_xml:lang'(__TopXMLNS, Lang)}.
 
 encode_iq({iq, Id, Type, Lang, From, To, __Els},
-	  _xmlns_attrs) ->
-    _els = [encode(_el) || _el <- __Els],
+	  __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<>>,
+				     [<<"jabber:client">>, <<"jabber:server">>,
+				      <<"jabber:component:accept">>],
+				     __TopXMLNS),
+    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els],
     _attrs = 'encode_iq_attr_xml:lang'(Lang,
 				       encode_iq_attr_to(To,
 							 encode_iq_attr_from(From,
 									     encode_iq_attr_type(Type,
 												 encode_iq_attr_id(Id,
-														   _xmlns_attrs))))),
+														   enc_xmlns_attrs(__NewTopXMLNS,
+																   __TopXMLNS)))))),
     {xmlel, <<"iq">>, _attrs, _els}.
 
 decode_iq_attr_id(__TopXMLNS, undefined) ->
@@ -27425,15 +31870,20 @@ decode_stats_attrs(__TopXMLNS, [_ | _attrs], Node) ->
 decode_stats_attrs(__TopXMLNS, [], Node) ->
     decode_stats_attr_node(__TopXMLNS, Node).
 
-encode_stats({stats, List, Node}, _xmlns_attrs) ->
-    _els = lists:reverse('encode_stats_$list'(List, [])),
-    _attrs = encode_stats_attr_node(Node, _xmlns_attrs),
+encode_stats({stats, List, Node}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/stats">>,
+			 [], __TopXMLNS),
+    _els = lists:reverse('encode_stats_$list'(List,
+					      __NewTopXMLNS, [])),
+    _attrs = encode_stats_attr_node(Node,
+				    enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS)),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_stats_$list'([], _acc) -> _acc;
-'encode_stats_$list'([List | _els], _acc) ->
-    'encode_stats_$list'(_els,
-			 [encode_stat(List, []) | _acc]).
+'encode_stats_$list'([], __TopXMLNS, _acc) -> _acc;
+'encode_stats_$list'([List | _els], __TopXMLNS, _acc) ->
+    'encode_stats_$list'(_els, __TopXMLNS,
+			 [encode_stat(List, __TopXMLNS) | _acc]).
 
 decode_stats_attr_node(__TopXMLNS, undefined) -> <<>>;
 decode_stats_attr_node(__TopXMLNS, _val) -> _val.
@@ -27495,17 +31945,23 @@ decode_stat_attrs(__TopXMLNS, [], Name, Units, Value) ->
      decode_stat_attr_value(__TopXMLNS, Value)}.
 
 encode_stat({stat, Name, Units, Value, Error},
-	    _xmlns_attrs) ->
-    _els = lists:reverse('encode_stat_$error'(Error, [])),
+	    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/stats">>,
+			 [], __TopXMLNS),
+    _els = lists:reverse('encode_stat_$error'(Error,
+					      __NewTopXMLNS, [])),
     _attrs = encode_stat_attr_value(Value,
 				    encode_stat_attr_units(Units,
 							   encode_stat_attr_name(Name,
-										 _xmlns_attrs))),
+										 enc_xmlns_attrs(__NewTopXMLNS,
+												 __TopXMLNS)))),
     {xmlel, <<"stat">>, _attrs, _els}.
 
-'encode_stat_$error'(undefined, _acc) -> _acc;
-'encode_stat_$error'(Error, _acc) ->
-    [encode_stat_error(Error, []) | _acc].
+'encode_stat_$error'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_stat_$error'(Error, __TopXMLNS, _acc) ->
+    [encode_stat_error(Error, __TopXMLNS) | _acc].
 
 decode_stat_attr_name(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -27559,10 +32015,14 @@ decode_stat_error_attrs(__TopXMLNS, [], Code) ->
     decode_stat_error_attr_code(__TopXMLNS, Code).
 
 encode_stat_error({stat_error, Code, Reason},
-		  _xmlns_attrs) ->
+		  __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/stats">>,
+			 [], __TopXMLNS),
     _els = encode_stat_error_cdata(Reason, []),
     _attrs = encode_stat_error_attr_code(Code,
-					 _xmlns_attrs),
+					 enc_xmlns_attrs(__NewTopXMLNS,
+							 __TopXMLNS)),
     {xmlel, <<"error">>, _attrs, _els}.
 
 decode_stat_error_attr_code(__TopXMLNS, undefined) ->
@@ -27648,28 +32108,37 @@ decode_bookmarks_storage_els(__TopXMLNS, __IgnoreEls,
 
 encode_bookmarks_storage({bookmark_storage, Conference,
 			  Url},
-			 _xmlns_attrs) ->
+			 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"storage:bookmarks">>, [],
+			 __TopXMLNS),
     _els =
 	lists:reverse('encode_bookmarks_storage_$conference'(Conference,
+							     __NewTopXMLNS,
 							     'encode_bookmarks_storage_$url'(Url,
+											     __NewTopXMLNS,
 											     []))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"storage">>, _attrs, _els}.
 
-'encode_bookmarks_storage_$conference'([], _acc) ->
+'encode_bookmarks_storage_$conference'([], __TopXMLNS,
+				       _acc) ->
     _acc;
 'encode_bookmarks_storage_$conference'([Conference
 					| _els],
-				       _acc) ->
-    'encode_bookmarks_storage_$conference'(_els,
+				       __TopXMLNS, _acc) ->
+    'encode_bookmarks_storage_$conference'(_els, __TopXMLNS,
 					   [encode_bookmark_conference(Conference,
-								       [])
+								       __TopXMLNS)
 					    | _acc]).
 
-'encode_bookmarks_storage_$url'([], _acc) -> _acc;
-'encode_bookmarks_storage_$url'([Url | _els], _acc) ->
-    'encode_bookmarks_storage_$url'(_els,
-				    [encode_bookmark_url(Url, []) | _acc]).
+'encode_bookmarks_storage_$url'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_bookmarks_storage_$url'([Url | _els],
+				__TopXMLNS, _acc) ->
+    'encode_bookmarks_storage_$url'(_els, __TopXMLNS,
+				    [encode_bookmark_url(Url, __TopXMLNS)
+				     | _acc]).
 
 decode_bookmark_url(__TopXMLNS, __IgnoreEls,
 		    {xmlel, <<"url">>, _attrs, _els}) ->
@@ -27694,11 +32163,15 @@ decode_bookmark_url_attrs(__TopXMLNS, [], Name, Url) ->
      decode_bookmark_url_attr_url(__TopXMLNS, Url)}.
 
 encode_bookmark_url({bookmark_url, Name, Url},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"storage:bookmarks">>, [],
+			 __TopXMLNS),
     _els = [],
     _attrs = encode_bookmark_url_attr_url(Url,
 					  encode_bookmark_url_attr_name(Name,
-									_xmlns_attrs)),
+									enc_xmlns_attrs(__NewTopXMLNS,
+											__TopXMLNS))),
     {xmlel, <<"url">>, _attrs, _els}.
 
 decode_bookmark_url_attr_name(__TopXMLNS, undefined) ->
@@ -27807,29 +32280,38 @@ decode_bookmark_conference_attrs(__TopXMLNS, [], Name,
 
 encode_bookmark_conference({bookmark_conference, Name,
 			    Jid, Autojoin, Nick, Password},
-			   _xmlns_attrs) ->
+			   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"storage:bookmarks">>, [],
+			 __TopXMLNS),
     _els =
 	lists:reverse('encode_bookmark_conference_$password'(Password,
+							     __NewTopXMLNS,
 							     'encode_bookmark_conference_$nick'(Nick,
+												__NewTopXMLNS,
 												[]))),
     _attrs =
 	encode_bookmark_conference_attr_autojoin(Autojoin,
 						 encode_bookmark_conference_attr_jid(Jid,
 										     encode_bookmark_conference_attr_name(Name,
-															  _xmlns_attrs))),
+															  enc_xmlns_attrs(__NewTopXMLNS,
+																	  __TopXMLNS)))),
     {xmlel, <<"conference">>, _attrs, _els}.
 
 'encode_bookmark_conference_$password'(undefined,
-				       _acc) ->
+				       __TopXMLNS, _acc) ->
     _acc;
 'encode_bookmark_conference_$password'(Password,
-				       _acc) ->
-    [encode_conference_password(Password, []) | _acc].
+				       __TopXMLNS, _acc) ->
+    [encode_conference_password(Password, __TopXMLNS)
+     | _acc].
 
-'encode_bookmark_conference_$nick'(undefined, _acc) ->
+'encode_bookmark_conference_$nick'(undefined,
+				   __TopXMLNS, _acc) ->
     _acc;
-'encode_bookmark_conference_$nick'(Nick, _acc) ->
-    [encode_conference_nick(Nick, []) | _acc].
+'encode_bookmark_conference_$nick'(Nick, __TopXMLNS,
+				   _acc) ->
+    [encode_conference_nick(Nick, __TopXMLNS) | _acc].
 
 decode_bookmark_conference_attr_name(__TopXMLNS,
 				     undefined) ->
@@ -27896,9 +32378,12 @@ decode_conference_password_els(__TopXMLNS, __IgnoreEls,
     decode_conference_password_els(__TopXMLNS, __IgnoreEls,
 				   _els, Cdata).
 
-encode_conference_password(Cdata, _xmlns_attrs) ->
+encode_conference_password(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"storage:bookmarks">>, [],
+			 __TopXMLNS),
     _els = encode_conference_password_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"password">>, _attrs, _els}.
 
 decode_conference_password_cdata(__TopXMLNS, <<>>) ->
@@ -27928,9 +32413,12 @@ decode_conference_nick_els(__TopXMLNS, __IgnoreEls,
     decode_conference_nick_els(__TopXMLNS, __IgnoreEls,
 			       _els, Cdata).
 
-encode_conference_nick(Cdata, _xmlns_attrs) ->
+encode_conference_nick(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"storage:bookmarks">>, [],
+			 __TopXMLNS),
     _els = encode_conference_nick_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"nick">>, _attrs, _els}.
 
 decode_conference_nick_cdata(__TopXMLNS, <<>>) -> <<>>;
@@ -27958,9 +32446,12 @@ decode_private_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_private_els(__TopXMLNS, __IgnoreEls, _els,
 		       __Xmls).
 
-encode_private({private, __Xmls}, _xmlns_attrs) ->
+encode_private({private, __Xmls}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:private">>, [],
+			 __TopXMLNS),
     _els = __Xmls,
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"query">>, _attrs, _els}.
 
 decode_disco_items(__TopXMLNS, __IgnoreEls,
@@ -28024,24 +32515,32 @@ decode_disco_items_attrs(__TopXMLNS, [], Node) ->
     decode_disco_items_attr_node(__TopXMLNS, Node).
 
 encode_disco_items({disco_items, Node, Items, Rsm},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/disco#items">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_disco_items_$items'(Items,
+						     __NewTopXMLNS,
 						     'encode_disco_items_$rsm'(Rsm,
+									       __NewTopXMLNS,
 									       []))),
     _attrs = encode_disco_items_attr_node(Node,
-					  _xmlns_attrs),
+					  enc_xmlns_attrs(__NewTopXMLNS,
+							  __TopXMLNS)),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_disco_items_$items'([], _acc) -> _acc;
-'encode_disco_items_$items'([Items | _els], _acc) ->
-    'encode_disco_items_$items'(_els,
-				[encode_disco_item(Items, []) | _acc]).
+'encode_disco_items_$items'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_disco_items_$items'([Items | _els], __TopXMLNS,
+			    _acc) ->
+    'encode_disco_items_$items'(_els, __TopXMLNS,
+				[encode_disco_item(Items, __TopXMLNS) | _acc]).
 
-'encode_disco_items_$rsm'(undefined, _acc) -> _acc;
-'encode_disco_items_$rsm'(Rsm, _acc) ->
-    [encode_rsm_set(Rsm,
-		    [{<<"xmlns">>, <<"http://jabber.org/protocol/rsm">>}])
-     | _acc].
+'encode_disco_items_$rsm'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_disco_items_$rsm'(Rsm, __TopXMLNS, _acc) ->
+    [encode_rsm_set(Rsm, __TopXMLNS) | _acc].
 
 decode_disco_items_attr_node(__TopXMLNS, undefined) ->
     <<>>;
@@ -28081,12 +32580,16 @@ decode_disco_item_attrs(__TopXMLNS, [], Jid, Name,
      decode_disco_item_attr_node(__TopXMLNS, Node)}.
 
 encode_disco_item({disco_item, Jid, Name, Node},
-		  _xmlns_attrs) ->
+		  __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/disco#items">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_disco_item_attr_node(Node,
 					 encode_disco_item_attr_name(Name,
 								     encode_disco_item_attr_jid(Jid,
-												_xmlns_attrs))),
+												enc_xmlns_attrs(__NewTopXMLNS,
+														__TopXMLNS)))),
     {xmlel, <<"item">>, _attrs, _els}.
 
 decode_disco_item_attr_jid(__TopXMLNS, undefined) ->
@@ -28208,34 +32711,44 @@ decode_disco_info_attrs(__TopXMLNS, [], Node) ->
 
 encode_disco_info({disco_info, Node, Identities,
 		   Features, Xdata},
-		  _xmlns_attrs) ->
+		  __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/disco#info">>,
+			 [], __TopXMLNS),
     _els = lists:reverse('encode_disco_info_$xdata'(Xdata,
+						    __NewTopXMLNS,
 						    'encode_disco_info_$features'(Features,
+										  __NewTopXMLNS,
 										  'encode_disco_info_$identities'(Identities,
+														  __NewTopXMLNS,
 														  [])))),
     _attrs = encode_disco_info_attr_node(Node,
-					 _xmlns_attrs),
+					 enc_xmlns_attrs(__NewTopXMLNS,
+							 __TopXMLNS)),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_disco_info_$xdata'([], _acc) -> _acc;
-'encode_disco_info_$xdata'([Xdata | _els], _acc) ->
-    'encode_disco_info_$xdata'(_els,
-			       [encode_xdata(Xdata,
-					     [{<<"xmlns">>,
-					       <<"jabber:x:data">>}])
-				| _acc]).
+'encode_disco_info_$xdata'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_disco_info_$xdata'([Xdata | _els], __TopXMLNS,
+			   _acc) ->
+    'encode_disco_info_$xdata'(_els, __TopXMLNS,
+			       [encode_xdata(Xdata, __TopXMLNS) | _acc]).
 
-'encode_disco_info_$features'([], _acc) -> _acc;
+'encode_disco_info_$features'([], __TopXMLNS, _acc) ->
+    _acc;
 'encode_disco_info_$features'([Features | _els],
-			      _acc) ->
-    'encode_disco_info_$features'(_els,
-				  [encode_disco_feature(Features, []) | _acc]).
+			      __TopXMLNS, _acc) ->
+    'encode_disco_info_$features'(_els, __TopXMLNS,
+				  [encode_disco_feature(Features, __TopXMLNS)
+				   | _acc]).
 
-'encode_disco_info_$identities'([], _acc) -> _acc;
+'encode_disco_info_$identities'([], __TopXMLNS, _acc) ->
+    _acc;
 'encode_disco_info_$identities'([Identities | _els],
-				_acc) ->
-    'encode_disco_info_$identities'(_els,
-				    [encode_disco_identity(Identities, [])
+				__TopXMLNS, _acc) ->
+    'encode_disco_info_$identities'(_els, __TopXMLNS,
+				    [encode_disco_identity(Identities,
+							   __TopXMLNS)
 				     | _acc]).
 
 decode_disco_info_attr_node(__TopXMLNS, undefined) ->
@@ -28261,10 +32774,14 @@ decode_disco_feature_attrs(__TopXMLNS, [_ | _attrs],
 decode_disco_feature_attrs(__TopXMLNS, [], Var) ->
     decode_disco_feature_attr_var(__TopXMLNS, Var).
 
-encode_disco_feature(Var, _xmlns_attrs) ->
+encode_disco_feature(Var, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/disco#info">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_disco_feature_attr_var(Var,
-					   _xmlns_attrs),
+					   enc_xmlns_attrs(__NewTopXMLNS,
+							   __TopXMLNS)),
     {xmlel, <<"feature">>, _attrs, _els}.
 
 decode_disco_feature_attr_var(__TopXMLNS, undefined) ->
@@ -28316,13 +32833,17 @@ decode_disco_identity_attrs(__TopXMLNS, [], Category,
 
 encode_disco_identity({identity, Category, Type, Lang,
 		       Name},
-		      _xmlns_attrs) ->
+		      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"http://jabber.org/protocol/disco#info">>,
+			 [], __TopXMLNS),
     _els = [],
     _attrs = encode_disco_identity_attr_name(Name,
 					     'encode_disco_identity_attr_xml:lang'(Lang,
 										   encode_disco_identity_attr_type(Type,
 														   encode_disco_identity_attr_category(Category,
-																		       _xmlns_attrs)))),
+																		       enc_xmlns_attrs(__NewTopXMLNS,
+																				       __TopXMLNS))))),
     {xmlel, <<"identity">>, _attrs, _els}.
 
 decode_disco_identity_attr_category(__TopXMLNS,
@@ -28399,16 +32920,21 @@ decode_block_list_els(__TopXMLNS, __IgnoreEls,
     decode_block_list_els(__TopXMLNS, __IgnoreEls, _els,
 			  Items).
 
-encode_block_list({block_list, Items}, _xmlns_attrs) ->
+encode_block_list({block_list, Items}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:blocking">>, [],
+			 __TopXMLNS),
     _els = lists:reverse('encode_block_list_$items'(Items,
-						    [])),
-    _attrs = _xmlns_attrs,
+						    __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"blocklist">>, _attrs, _els}.
 
-'encode_block_list_$items'([], _acc) -> _acc;
-'encode_block_list_$items'([Items | _els], _acc) ->
-    'encode_block_list_$items'(_els,
-			       [encode_block_item(Items, []) | _acc]).
+'encode_block_list_$items'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_block_list_$items'([Items | _els], __TopXMLNS,
+			   _acc) ->
+    'encode_block_list_$items'(_els, __TopXMLNS,
+			       [encode_block_item(Items, __TopXMLNS) | _acc]).
 
 decode_unblock(__TopXMLNS, __IgnoreEls,
 	       {xmlel, <<"unblock">>, _attrs, _els}) ->
@@ -28439,16 +32965,20 @@ decode_unblock_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_unblock_els(__TopXMLNS, __IgnoreEls, _els,
 		       Items).
 
-encode_unblock({unblock, Items}, _xmlns_attrs) ->
+encode_unblock({unblock, Items}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:blocking">>, [],
+			 __TopXMLNS),
     _els = lists:reverse('encode_unblock_$items'(Items,
-						 [])),
-    _attrs = _xmlns_attrs,
+						 __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"unblock">>, _attrs, _els}.
 
-'encode_unblock_$items'([], _acc) -> _acc;
-'encode_unblock_$items'([Items | _els], _acc) ->
-    'encode_unblock_$items'(_els,
-			    [encode_block_item(Items, []) | _acc]).
+'encode_unblock_$items'([], __TopXMLNS, _acc) -> _acc;
+'encode_unblock_$items'([Items | _els], __TopXMLNS,
+			_acc) ->
+    'encode_unblock_$items'(_els, __TopXMLNS,
+			    [encode_block_item(Items, __TopXMLNS) | _acc]).
 
 decode_block(__TopXMLNS, __IgnoreEls,
 	     {xmlel, <<"block">>, _attrs, _els}) ->
@@ -28477,15 +33007,20 @@ decode_block_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		 Items) ->
     decode_block_els(__TopXMLNS, __IgnoreEls, _els, Items).
 
-encode_block({block, Items}, _xmlns_attrs) ->
-    _els = lists:reverse('encode_block_$items'(Items, [])),
-    _attrs = _xmlns_attrs,
+encode_block({block, Items}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:blocking">>, [],
+			 __TopXMLNS),
+    _els = lists:reverse('encode_block_$items'(Items,
+					       __NewTopXMLNS, [])),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"block">>, _attrs, _els}.
 
-'encode_block_$items'([], _acc) -> _acc;
-'encode_block_$items'([Items | _els], _acc) ->
-    'encode_block_$items'(_els,
-			  [encode_block_item(Items, []) | _acc]).
+'encode_block_$items'([], __TopXMLNS, _acc) -> _acc;
+'encode_block_$items'([Items | _els], __TopXMLNS,
+		      _acc) ->
+    'encode_block_$items'(_els, __TopXMLNS,
+			  [encode_block_item(Items, __TopXMLNS) | _acc]).
 
 decode_block_item(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"item">>, _attrs, _els}) ->
@@ -28502,9 +33037,14 @@ decode_block_item_attrs(__TopXMLNS, [_ | _attrs],
 decode_block_item_attrs(__TopXMLNS, [], Jid) ->
     decode_block_item_attr_jid(__TopXMLNS, Jid).
 
-encode_block_item(Jid, _xmlns_attrs) ->
+encode_block_item(Jid, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:blocking">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = encode_block_item_attr_jid(Jid, _xmlns_attrs),
+    _attrs = encode_block_item_attr_jid(Jid,
+					enc_xmlns_attrs(__NewTopXMLNS,
+							__TopXMLNS)),
     {xmlel, <<"item">>, _attrs, _els}.
 
 decode_block_item_attr_jid(__TopXMLNS, undefined) ->
@@ -28592,26 +33132,37 @@ decode_privacy_els(__TopXMLNS, __IgnoreEls, [_ | _els],
 		       Default, Active).
 
 encode_privacy({privacy_query, Lists, Default, Active},
-	       _xmlns_attrs) ->
+	       __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:privacy">>, [],
+			 __TopXMLNS),
     _els = lists:reverse('encode_privacy_$lists'(Lists,
+						 __NewTopXMLNS,
 						 'encode_privacy_$default'(Default,
+									   __NewTopXMLNS,
 									   'encode_privacy_$active'(Active,
+												    __NewTopXMLNS,
 												    [])))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_privacy_$lists'([], _acc) -> _acc;
-'encode_privacy_$lists'([Lists | _els], _acc) ->
-    'encode_privacy_$lists'(_els,
-			    [encode_privacy_list(Lists, []) | _acc]).
+'encode_privacy_$lists'([], __TopXMLNS, _acc) -> _acc;
+'encode_privacy_$lists'([Lists | _els], __TopXMLNS,
+			_acc) ->
+    'encode_privacy_$lists'(_els, __TopXMLNS,
+			    [encode_privacy_list(Lists, __TopXMLNS) | _acc]).
 
-'encode_privacy_$default'(undefined, _acc) -> _acc;
-'encode_privacy_$default'(Default, _acc) ->
-    [encode_privacy_default_list(Default, []) | _acc].
+'encode_privacy_$default'(undefined, __TopXMLNS,
+			  _acc) ->
+    _acc;
+'encode_privacy_$default'(Default, __TopXMLNS, _acc) ->
+    [encode_privacy_default_list(Default, __TopXMLNS)
+     | _acc].
 
-'encode_privacy_$active'(undefined, _acc) -> _acc;
-'encode_privacy_$active'(Active, _acc) ->
-    [encode_privacy_active_list(Active, []) | _acc].
+'encode_privacy_$active'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_privacy_$active'(Active, __TopXMLNS, _acc) ->
+    [encode_privacy_active_list(Active, __TopXMLNS) | _acc].
 
 decode_privacy_active_list(__TopXMLNS, __IgnoreEls,
 			   {xmlel, <<"active">>, _attrs, _els}) ->
@@ -28631,10 +33182,14 @@ decode_privacy_active_list_attrs(__TopXMLNS, [],
 				 Name) ->
     decode_privacy_active_list_attr_name(__TopXMLNS, Name).
 
-encode_privacy_active_list(Name, _xmlns_attrs) ->
+encode_privacy_active_list(Name, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:privacy">>, [],
+			 __TopXMLNS),
     _els = [],
     _attrs = encode_privacy_active_list_attr_name(Name,
-						  _xmlns_attrs),
+						  enc_xmlns_attrs(__NewTopXMLNS,
+								  __TopXMLNS)),
     {xmlel, <<"active">>, _attrs, _els}.
 
 decode_privacy_active_list_attr_name(__TopXMLNS,
@@ -28667,10 +33222,14 @@ decode_privacy_default_list_attrs(__TopXMLNS, [],
 				  Name) ->
     decode_privacy_default_list_attr_name(__TopXMLNS, Name).
 
-encode_privacy_default_list(Name, _xmlns_attrs) ->
+encode_privacy_default_list(Name, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:privacy">>, [],
+			 __TopXMLNS),
     _els = [],
     _attrs = encode_privacy_default_list_attr_name(Name,
-						   _xmlns_attrs),
+						   enc_xmlns_attrs(__NewTopXMLNS,
+								   __TopXMLNS)),
     {xmlel, <<"default">>, _attrs, _els}.
 
 decode_privacy_default_list_attr_name(__TopXMLNS,
@@ -28728,17 +33287,24 @@ decode_privacy_list_attrs(__TopXMLNS, [], Name) ->
     decode_privacy_list_attr_name(__TopXMLNS, Name).
 
 encode_privacy_list({privacy_list, Name, Items},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:privacy">>, [],
+			 __TopXMLNS),
     _els = lists:reverse('encode_privacy_list_$items'(Items,
-						      [])),
+						      __NewTopXMLNS, [])),
     _attrs = encode_privacy_list_attr_name(Name,
-					   _xmlns_attrs),
+					   enc_xmlns_attrs(__NewTopXMLNS,
+							   __TopXMLNS)),
     {xmlel, <<"list">>, _attrs, _els}.
 
-'encode_privacy_list_$items'([], _acc) -> _acc;
-'encode_privacy_list_$items'([Items | _els], _acc) ->
-    'encode_privacy_list_$items'(_els,
-				 [encode_privacy_item(Items, []) | _acc]).
+'encode_privacy_list_$items'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_privacy_list_$items'([Items | _els], __TopXMLNS,
+			     _acc) ->
+    'encode_privacy_list_$items'(_els, __TopXMLNS,
+				 [encode_privacy_item(Items, __TopXMLNS)
+				  | _acc]).
 
 decode_privacy_list_attr_name(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -28876,36 +33442,54 @@ decode_privacy_item_attrs(__TopXMLNS, [], Action, Order,
 
 encode_privacy_item({privacy_item, Order, Action, Type,
 		     Value, Message, Iq, Presence_in, Presence_out},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:privacy">>, [],
+			 __TopXMLNS),
     _els = lists:reverse('encode_privacy_item_$iq'(Iq,
+						   __NewTopXMLNS,
 						   'encode_privacy_item_$presence_out'(Presence_out,
+										       __NewTopXMLNS,
 										       'encode_privacy_item_$message'(Message,
+														      __NewTopXMLNS,
 														      'encode_privacy_item_$presence_in'(Presence_in,
+																			 __NewTopXMLNS,
 																			 []))))),
     _attrs = encode_privacy_item_attr_value(Value,
 					    encode_privacy_item_attr_type(Type,
 									  encode_privacy_item_attr_order(Order,
 													 encode_privacy_item_attr_action(Action,
-																	 _xmlns_attrs)))),
+																	 enc_xmlns_attrs(__NewTopXMLNS,
+																			 __TopXMLNS))))),
     {xmlel, <<"item">>, _attrs, _els}.
 
-'encode_privacy_item_$iq'(false, _acc) -> _acc;
-'encode_privacy_item_$iq'(Iq, _acc) ->
-    [encode_privacy_iq(Iq, []) | _acc].
+'encode_privacy_item_$iq'(false, __TopXMLNS, _acc) ->
+    _acc;
+'encode_privacy_item_$iq'(Iq, __TopXMLNS, _acc) ->
+    [encode_privacy_iq(Iq, __TopXMLNS) | _acc].
 
-'encode_privacy_item_$presence_out'(false, _acc) ->
+'encode_privacy_item_$presence_out'(false, __TopXMLNS,
+				    _acc) ->
     _acc;
 'encode_privacy_item_$presence_out'(Presence_out,
-				    _acc) ->
-    [encode_privacy_presence_out(Presence_out, []) | _acc].
+				    __TopXMLNS, _acc) ->
+    [encode_privacy_presence_out(Presence_out, __TopXMLNS)
+     | _acc].
 
-'encode_privacy_item_$message'(false, _acc) -> _acc;
-'encode_privacy_item_$message'(Message, _acc) ->
-    [encode_privacy_message(Message, []) | _acc].
+'encode_privacy_item_$message'(false, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_privacy_item_$message'(Message, __TopXMLNS,
+			       _acc) ->
+    [encode_privacy_message(Message, __TopXMLNS) | _acc].
 
-'encode_privacy_item_$presence_in'(false, _acc) -> _acc;
-'encode_privacy_item_$presence_in'(Presence_in, _acc) ->
-    [encode_privacy_presence_in(Presence_in, []) | _acc].
+'encode_privacy_item_$presence_in'(false, __TopXMLNS,
+				   _acc) ->
+    _acc;
+'encode_privacy_item_$presence_in'(Presence_in,
+				   __TopXMLNS, _acc) ->
+    [encode_privacy_presence_in(Presence_in, __TopXMLNS)
+     | _acc].
 
 decode_privacy_item_attr_action(__TopXMLNS,
 				undefined) ->
@@ -28964,36 +33548,48 @@ decode_privacy_presence_out(__TopXMLNS, __IgnoreEls,
 			    {xmlel, <<"presence-out">>, _attrs, _els}) ->
     true.
 
-encode_privacy_presence_out(true, _xmlns_attrs) ->
+encode_privacy_presence_out(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:privacy">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"presence-out">>, _attrs, _els}.
 
 decode_privacy_presence_in(__TopXMLNS, __IgnoreEls,
 			   {xmlel, <<"presence-in">>, _attrs, _els}) ->
     true.
 
-encode_privacy_presence_in(true, _xmlns_attrs) ->
+encode_privacy_presence_in(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:privacy">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"presence-in">>, _attrs, _els}.
 
 decode_privacy_iq(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"iq">>, _attrs, _els}) ->
     true.
 
-encode_privacy_iq(true, _xmlns_attrs) ->
+encode_privacy_iq(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:privacy">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"iq">>, _attrs, _els}.
 
 decode_privacy_message(__TopXMLNS, __IgnoreEls,
 		       {xmlel, <<"message">>, _attrs, _els}) ->
     true.
 
-encode_privacy_message(true, _xmlns_attrs) ->
+encode_privacy_message(true, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:privacy">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"message">>, _attrs, _els}.
 
 decode_rosterver_feature(__TopXMLNS, __IgnoreEls,
@@ -29001,9 +33597,12 @@ decode_rosterver_feature(__TopXMLNS, __IgnoreEls,
     {rosterver_feature}.
 
 encode_rosterver_feature({rosterver_feature},
-			 _xmlns_attrs) ->
+			 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:features:rosterver">>, [],
+			 __TopXMLNS),
     _els = [],
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"ver">>, _attrs, _els}.
 
 decode_roster_query(__TopXMLNS, __IgnoreEls,
@@ -29049,17 +33648,23 @@ decode_roster_query_attrs(__TopXMLNS, [], Ver) ->
     decode_roster_query_attr_ver(__TopXMLNS, Ver).
 
 encode_roster_query({roster_query, Items, Ver},
-		    _xmlns_attrs) ->
+		    __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:roster">>,
+				     [], __TopXMLNS),
     _els = lists:reverse('encode_roster_query_$items'(Items,
-						      [])),
+						      __NewTopXMLNS, [])),
     _attrs = encode_roster_query_attr_ver(Ver,
-					  _xmlns_attrs),
+					  enc_xmlns_attrs(__NewTopXMLNS,
+							  __TopXMLNS)),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_roster_query_$items'([], _acc) -> _acc;
-'encode_roster_query_$items'([Items | _els], _acc) ->
-    'encode_roster_query_$items'(_els,
-				 [encode_roster_item(Items, []) | _acc]).
+'encode_roster_query_$items'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_roster_query_$items'([Items | _els], __TopXMLNS,
+			     _acc) ->
+    'encode_roster_query_$items'(_els, __TopXMLNS,
+				 [encode_roster_item(Items, __TopXMLNS)
+				  | _acc]).
 
 decode_roster_query_attr_ver(__TopXMLNS, undefined) ->
     undefined;
@@ -29138,20 +33743,27 @@ decode_roster_item_attrs(__TopXMLNS, [], Jid, Name,
 
 encode_roster_item({roster_item, Jid, Name, Groups,
 		    Subscription, Ask},
-		   _xmlns_attrs) ->
+		   __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:roster">>,
+				     [], __TopXMLNS),
     _els =
-	lists:reverse('encode_roster_item_$groups'(Groups, [])),
+	lists:reverse('encode_roster_item_$groups'(Groups,
+						   __NewTopXMLNS, [])),
     _attrs = encode_roster_item_attr_ask(Ask,
 					 encode_roster_item_attr_subscription(Subscription,
 									      encode_roster_item_attr_name(Name,
 													   encode_roster_item_attr_jid(Jid,
-																       _xmlns_attrs)))),
+																       enc_xmlns_attrs(__NewTopXMLNS,
+																		       __TopXMLNS))))),
     {xmlel, <<"item">>, _attrs, _els}.
 
-'encode_roster_item_$groups'([], _acc) -> _acc;
-'encode_roster_item_$groups'([Groups | _els], _acc) ->
-    'encode_roster_item_$groups'(_els,
-				 [encode_roster_group(Groups, []) | _acc]).
+'encode_roster_item_$groups'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_roster_item_$groups'([Groups | _els],
+			     __TopXMLNS, _acc) ->
+    'encode_roster_item_$groups'(_els, __TopXMLNS,
+				 [encode_roster_group(Groups, __TopXMLNS)
+				  | _acc]).
 
 decode_roster_item_attr_jid(__TopXMLNS, undefined) ->
     erlang:error({xmpp_codec,
@@ -29227,9 +33839,11 @@ decode_roster_group_els(__TopXMLNS, __IgnoreEls,
     decode_roster_group_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_roster_group(Cdata, _xmlns_attrs) ->
+encode_roster_group(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:roster">>,
+				     [], __TopXMLNS),
     _els = encode_roster_group_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"group">>, _attrs, _els}.
 
 decode_roster_group_cdata(__TopXMLNS, <<>>) ->
@@ -29306,26 +33920,34 @@ decode_version_els(__TopXMLNS, __IgnoreEls, [_ | _els],
     decode_version_els(__TopXMLNS, __IgnoreEls, _els, Ver,
 		       Os, Name).
 
-encode_version({version, Name, Ver, Os},
-	       _xmlns_attrs) ->
+encode_version({version, Name, Ver, Os}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:version">>, [],
+			 __TopXMLNS),
     _els = lists:reverse('encode_version_$ver'(Ver,
+					       __NewTopXMLNS,
 					       'encode_version_$os'(Os,
+								    __NewTopXMLNS,
 								    'encode_version_$name'(Name,
+											   __NewTopXMLNS,
 											   [])))),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"query">>, _attrs, _els}.
 
-'encode_version_$ver'(undefined, _acc) -> _acc;
-'encode_version_$ver'(Ver, _acc) ->
-    [encode_version_ver(Ver, []) | _acc].
+'encode_version_$ver'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_version_$ver'(Ver, __TopXMLNS, _acc) ->
+    [encode_version_ver(Ver, __TopXMLNS) | _acc].
 
-'encode_version_$os'(undefined, _acc) -> _acc;
-'encode_version_$os'(Os, _acc) ->
-    [encode_version_os(Os, []) | _acc].
+'encode_version_$os'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_version_$os'(Os, __TopXMLNS, _acc) ->
+    [encode_version_os(Os, __TopXMLNS) | _acc].
 
-'encode_version_$name'(undefined, _acc) -> _acc;
-'encode_version_$name'(Name, _acc) ->
-    [encode_version_name(Name, []) | _acc].
+'encode_version_$name'(undefined, __TopXMLNS, _acc) ->
+    _acc;
+'encode_version_$name'(Name, __TopXMLNS, _acc) ->
+    [encode_version_name(Name, __TopXMLNS) | _acc].
 
 decode_version_os(__TopXMLNS, __IgnoreEls,
 		  {xmlel, <<"os">>, _attrs, _els}) ->
@@ -29345,9 +33967,12 @@ decode_version_os_els(__TopXMLNS, __IgnoreEls,
     decode_version_os_els(__TopXMLNS, __IgnoreEls, _els,
 			  Cdata).
 
-encode_version_os(Cdata, _xmlns_attrs) ->
+encode_version_os(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:version">>, [],
+			 __TopXMLNS),
     _els = encode_version_os_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"os">>, _attrs, _els}.
 
 decode_version_os_cdata(__TopXMLNS, <<>>) ->
@@ -29376,9 +34001,12 @@ decode_version_ver_els(__TopXMLNS, __IgnoreEls,
     decode_version_ver_els(__TopXMLNS, __IgnoreEls, _els,
 			   Cdata).
 
-encode_version_ver(Cdata, _xmlns_attrs) ->
+encode_version_ver(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:version">>, [],
+			 __TopXMLNS),
     _els = encode_version_ver_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"version">>, _attrs, _els}.
 
 decode_version_ver_cdata(__TopXMLNS, <<>>) ->
@@ -29407,9 +34035,12 @@ decode_version_name_els(__TopXMLNS, __IgnoreEls,
     decode_version_name_els(__TopXMLNS, __IgnoreEls, _els,
 			    Cdata).
 
-encode_version_name(Cdata, _xmlns_attrs) ->
+encode_version_name(Cdata, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"jabber:iq:version">>, [],
+			 __TopXMLNS),
     _els = encode_version_name_cdata(Cdata, []),
-    _attrs = _xmlns_attrs,
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
     {xmlel, <<"name">>, _attrs, _els}.
 
 decode_version_name_cdata(__TopXMLNS, <<>>) ->
@@ -29446,10 +34077,13 @@ decode_last_attrs(__TopXMLNS, [_ | _attrs], Seconds) ->
 decode_last_attrs(__TopXMLNS, [], Seconds) ->
     decode_last_attr_seconds(__TopXMLNS, Seconds).
 
-encode_last({last, Seconds, Status}, _xmlns_attrs) ->
+encode_last({last, Seconds, Status}, __TopXMLNS) ->
+    __NewTopXMLNS = choose_top_xmlns(<<"jabber:iq:last">>,
+				     [], __TopXMLNS),
     _els = encode_last_cdata(Status, []),
     _attrs = encode_last_attr_seconds(Seconds,
-				      _xmlns_attrs),
+				      enc_xmlns_attrs(__NewTopXMLNS,
+						      __TopXMLNS)),
     {xmlel, <<"query">>, _attrs, _els}.
 
 decode_last_attr_seconds(__TopXMLNS, undefined) ->

@@ -11,7 +11,7 @@
 -compile(export_all).
 
 -import(suite, [init_config/1, connect/1, disconnect/1,
-                recv/0, send/2, send_recv/2, my_jid/1, server_jid/1,
+                recv/1, send/2, send_recv/2, my_jid/1, server_jid/1,
                 pubsub_jid/1, proxy_jid/1, muc_jid/1, muc_room_jid/1,
 		mix_jid/1, mix_room_jid/1, get_features/2, re_register/1,
                 is_feature_advertised/2, subscribe_to_events/1,
@@ -974,7 +974,7 @@ sm_resume(Config) ->
     Txt = #text{data = <<"body">>},
     Msg = #message{from = ServerJID, to = MyJID, body = [Txt]},
     %% Route message. The message should be queued by the C2S process.
-    ejabberd_router:route(ServerJID, MyJID, xmpp_codec:encode(Msg)),
+    ejabberd_router:route(ServerJID, MyJID, Msg),
     send(Config, #sm_resume{previd = ID, h = 0, xmlns = ?NS_STREAM_MGMT_3}),
     ?recv1(#sm_resumed{previd = ID, h = 3}),
     ?recv1(#message{from = ServerJID, to = MyJID, body = [Txt]}),
@@ -1001,7 +1001,7 @@ private(Config) ->
                                               <<"some.conference.org">>,
                                               <<>>)},
     Storage = #bookmark_storage{conference = [Conference]},
-    StorageXMLOut = xmpp_codec:encode(Storage),
+    StorageXMLOut = xmpp:encode(Storage),
     WrongEl = #xmlel{name = <<"wrong">>},
     #iq{type = error} =
         send_recv(Config, #iq{type = get,
@@ -1015,9 +1015,9 @@ private(Config) ->
         send_recv(
           Config,
           #iq{type = get,
-              sub_els = [#private{xml_els = [xmpp_codec:encode(
+              sub_els = [#private{xml_els = [xmpp:encode(
                                                #bookmark_storage{})]}]}),
-    Storage = xmpp_codec:decode(StorageXMLIn),
+    Storage = xmpp:decode(StorageXMLIn),
     disconnect(Config).
 
 last(Config) ->
@@ -1221,7 +1221,7 @@ pubsub(Config) ->
     ItemID = randoms:get_string(),
     Node = <<"presence!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>,
     Item = #ps_item{id = ItemID,
-                        xml_els = [xmpp_codec:encode(#presence{})]},
+                        xml_els = [xmpp:encode(#presence{})]},
     #iq{type = result,
         sub_els = [#pubsub{publish = #ps_publish{
                              node = Node,
@@ -1320,10 +1320,10 @@ mix_master(Config) ->
 	?recv2(#iq{type = result, id = I0,
 		   sub_els = [#mix_join{subscribe = Nodes, jid = MyBareJID}]},
 	       #message{from = Room}),
-    #mix_participant{jid = MyBareJID} = xmpp_codec:decode(PXML),
+    #mix_participant{jid = MyBareJID} = xmpp:decode(PXML),
     %% Coming online
     PresenceID = randoms:get_string(),
-    Presence = xmpp_codec:encode(#presence{}),
+    Presence = xmpp:encode(#presence{}),
     I1 = send(
 	   Config,
 	   #iq{type = set, to = Room,
@@ -1355,7 +1355,7 @@ mix_master(Config) ->
 	     sub_els = [#ps_event{
 			   items = #ps_items{
 				      node = ?NS_MIX_NODES_PRESENCE,
-				      retract = PresenceID}}]} = recv(),
+				      retract = PresenceID}}]} = recv(Config),
     %% Leaving
     I2 = send(Config, #iq{type = set, to = Room, sub_els = [#mix_leave{}]}),
     ?recv2(#iq{type = result, id = I2, sub_els = []},
@@ -2367,7 +2367,7 @@ mam_query_all(Config, NS) ->
 	       _ -> set
 	   end,
     I = send(Config, #iq{type = Type, sub_els = [#mam_query{xmlns = NS, id = QID}]}),
-    maybe_recv_iq_result(NS, I),
+    maybe_recv_iq_result(Config, NS, I),
     Iter = if NS == ?NS_MAM_TMP -> lists:seq(1, 5);
 	      true -> lists:seq(1, 5) ++ lists:seq(1, 5)
 	   end,
@@ -2408,7 +2408,7 @@ mam_query_with(Config, JID, NS) ->
     Iter = if NS == ?NS_MAM_TMP -> lists:seq(1, 5);
 	      true -> lists:seq(1, 5) ++ lists:seq(1, 5)
 	   end,
-    maybe_recv_iq_result(NS, I),
+    maybe_recv_iq_result(Config, NS, I),
     lists:foreach(
       fun(N) ->
               Text = #text{data = integer_to_binary(N)},
@@ -2430,9 +2430,9 @@ mam_query_with(Config, JID, NS) ->
 	    ?recv1(#message{sub_els = [#mam_fin{complete = true}]})
     end.
 
-maybe_recv_iq_result(?NS_MAM_0, I1) ->
+maybe_recv_iq_result(Config, ?NS_MAM_0, I1) ->
     ?recv1(#iq{type = result, id = I1});
-maybe_recv_iq_result(_, _) ->
+maybe_recv_iq_result(_, _, _) ->
     ok.
 
 mam_query_rsm(Config, NS) ->
@@ -2446,7 +2446,7 @@ mam_query_rsm(Config, NS) ->
     I1 = send(Config,
               #iq{type = Type,
                   sub_els = [#mam_query{xmlns = NS, rsm = #rsm_set{max = 3}}]}),
-    maybe_recv_iq_result(NS, I1),
+    maybe_recv_iq_result(Config, NS, I1),
     lists:foreach(
       fun(N) ->
               Text = #text{data = integer_to_binary(N)},
@@ -2478,7 +2478,7 @@ mam_query_rsm(Config, NS) ->
                   sub_els = [#mam_query{xmlns = NS,
 					rsm = #rsm_set{max = 2,
                                                        'after' = Last}}]}),
-    maybe_recv_iq_result(NS, I2),
+    maybe_recv_iq_result(Config, NS, I2),
     lists:foreach(
       fun(N) ->
               Text = #text{data = integer_to_binary(N)},
@@ -2515,7 +2515,7 @@ mam_query_rsm(Config, NS) ->
                   sub_els = [#mam_query{xmlns = NS,
 					rsm = #rsm_set{max = 3,
                                                        before = First}}]}),
-    maybe_recv_iq_result(NS, I3),
+    maybe_recv_iq_result(Config, NS, I3),
     lists:foreach(
       fun(N) ->
               Text = #text{data = integer_to_binary(N)},
@@ -2544,7 +2544,7 @@ mam_query_rsm(Config, NS) ->
 	      #iq{type = Type,
 		  sub_els = [#mam_query{xmlns = NS,
 					rsm = #rsm_set{max = 0}}]}),
-    maybe_recv_iq_result(NS, I4),
+    maybe_recv_iq_result(Config, NS, I4),
     if NS == ?NS_MAM_TMP ->
 	    ?recv1(#iq{type = result, id = I4,
 		       sub_els = [#mam_query{
@@ -2566,7 +2566,7 @@ mam_query_rsm(Config, NS) ->
 		  sub_els = [#mam_query{xmlns = NS,
 					rsm = #rsm_set{max = 2,
 						       before = <<"">>}}]}),
-    maybe_recv_iq_result(NS, I5),
+    maybe_recv_iq_result(Config, NS, I5),
     lists:foreach(
       fun(N) ->
 	      Text = #text{data = integer_to_binary(N)},
@@ -2598,7 +2598,7 @@ client_state_master(Config) ->
     ChatState = #message{to = Peer, thread = <<"1">>,
 			 sub_els = [#chatstate{type = active}]},
     Message = ChatState#message{body = [#text{data = <<"body">>}]},
-    PepPayload = xmpp_codec:encode(#presence{}),
+    PepPayload = xmpp:encode(#presence{}),
     PepOne = #message{
 		to = Peer,
 		sub_els =
@@ -2661,7 +2661,7 @@ client_state_slave(Config) ->
 		      items =
 			  [#ps_item{
 			      id = <<"pep-1">>}]}},
-	    #delay{}]} = recv(),
+	    #delay{}]} = recv(Config),
     #message{
        from = Peer,
        sub_els =
@@ -2672,7 +2672,7 @@ client_state_slave(Config) ->
 		      items =
 			  [#ps_item{
 			      id = <<"pep-2">>}]}},
-	    #delay{}]} = recv(),
+	    #delay{}]} = recv(Config),
     ?recv1(#message{from = Peer, thread = <<"1">>,
 		    sub_els = [#chatstate{type = composing},
 			       #delay{}]}),

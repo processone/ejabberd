@@ -557,7 +557,7 @@ send_text(StateData, Text) ->
 
 -spec send_element(state(), xmpp_element()) -> ok.
 send_element(StateData, El) ->
-    El1 = fix_ns(xmpp:encode(El)),
+    El1 = xmpp:encode(El, ?NS_SERVER),
     send_text(StateData, fxml:element_to_binary(El1)).
 
 -spec send_error(state(), xmlel() | stanza(), stanza_error()) -> ok.
@@ -591,20 +591,6 @@ change_shaper(StateData, Host, JID) ->
     (StateData#state.sockmod):change_shaper(StateData#state.socket,
 					    Shaper).
 
--spec fix_ns(xmlel()) -> xmlel().
-fix_ns(#xmlel{name = Name} = El) when Name == <<"message">>;
-                                      Name == <<"iq">>;
-                                      Name == <<"presence">>;
-                                      Name == <<"db:verify">>,
-                                      Name == <<"db:result">> ->
-    Attrs = lists:filter(
-              fun({<<"xmlns">>, _}) -> false;
-                 (_) -> true
-              end, El#xmlel.attrs),
-    El#xmlel{attrs = Attrs};
-fix_ns(El) ->
-    El.
-
 -spec new_id() -> binary().
 new_id() -> randoms:get_string().
 
@@ -632,7 +618,7 @@ decode_element(#xmlel{} = El, StateName, StateData) ->
 	      true ->
 		   []
 	   end,
-    try xmpp:decode(El, Opts) of
+    try xmpp:decode(El, ?NS_SERVER, Opts) of
 	Pkt -> ?MODULE:StateName(Pkt, StateData)
     catch error:{xmpp_codec, Why} ->
             case xmpp:is_stanza(El) of

@@ -184,11 +184,11 @@ init_stream(Config) ->
 		component -> ?NS_COMPONENT;
 		server -> ?NS_SERVER
 	    end,
-    #stream_start{id = ID, xmlns = XMLNS, version = Version} = recv(),
+    #stream_start{id = ID, xmlns = XMLNS, version = Version} = recv(Config),
     set_opt(stream_id, ID, NewConfig).
 
 process_stream_features(Config) ->
-    #stream_features{sub_els = Fs} = recv(),
+    #stream_features{sub_els = Fs} = recv(Config),
     Mechs = lists:flatmap(
               fun(#sasl_mechanisms{list = Ms}) ->
                       Ms;
@@ -213,7 +213,7 @@ disconnect(Config) ->
     catch exit:normal ->
 	    ok
     end,
-    {xmlstreamend, <<"stream:stream">>} = recv(),
+    {xmlstreamend, <<"stream:stream">>} = recv(Config),
     ejabberd_socket:close(Socket),
     Config.
 
@@ -227,7 +227,7 @@ starttls(Config) ->
 
 starttls(Config, ShouldFail) ->
     send(Config, #starttls{}),
-    case recv() of
+    case recv(Config) of
 	#starttls_proceed{} when ShouldFail ->
 	    ct:fail(starttls_should_have_failed);
 	#starttls_failure{} when ShouldFail ->
@@ -244,7 +244,7 @@ starttls(Config, ShouldFail) ->
 
 zlib(Config) ->
     send(Config, #compress{methods = [<<"zlib">>]}),
-    #compressed{} = recv(),
+    #compressed{} = recv(Config),
     ZlibSocket = ejabberd_socket:compress(?config(socket, Config)),
     process_stream_features(init_stream(set_opt(socket, ZlibSocket, Config))).
 
@@ -346,7 +346,7 @@ auth_component(Config, ShouldFail) ->
     Password = ?config(password, Config),
     Digest = p1_sha:sha(<<StreamID/binary, Password/binary>>),
     send(Config, #handshake{data = Digest}),
-    case recv() of
+    case recv(Config) of
 	#handshake{} when ShouldFail ->
 	    ct:fail(component_auth_should_have_failed);
 	#handshake{} ->
@@ -369,7 +369,7 @@ auth_SASL(Mech, Config, ShouldFail) ->
     wait_auth_SASL_result(set_opt(sasl, SASL, Config), ShouldFail).
 
 wait_auth_SASL_result(Config, ShouldFail) ->
-    case recv() of
+    case recv(Config) of
 	#sasl_success{} when ShouldFail ->
 	    ct:fail(sasl_auth_should_have_failed);
         #sasl_success{} ->
@@ -379,8 +379,8 @@ wait_auth_SASL_result(Config, ShouldFail) ->
 	    NS = if Type == client -> ?NS_CLIENT;
 		    Type == server -> ?NS_SERVER
 		 end,
-	    #stream_start{xmlns = NS, version = {1,0}} = recv(),
-            #stream_features{sub_els = Fs} = recv(),
+	    #stream_start{xmlns = NS, version = {1,0}} = recv(Config),
+            #stream_features{sub_els = Fs} = recv(Config),
 	    if Type == client ->
 		    #xmpp_session{optional = true} =
 			lists:keyfind(xmpp_session, 1, Fs);
@@ -417,38 +417,30 @@ match_failure(Received, [Match]) when is_list(Match)->
 match_failure(Received, Matches) ->
     ct:fail("Received input:~n~n~p~n~ndon't match expected patterns:~n~n~p", [Received, Matches]).
 
-recv() ->
+recv(Config) ->
     receive
         {'$gen_event', {xmlstreamelement, El}} ->
-	    decode(El);
+	    NS = case ?config(type, Config) of
+		     client -> ?NS_CLIENT;
+		     server -> ?NS_SERVER;
+		     component -> ?NS_COMPONENT
+		 end,
+	    decode(El, NS, []);
 	{'$gen_event', {xmlstreamstart, Name, Attrs}} ->
-	    decode(#xmlel{name = Name, attrs = Attrs});
+	    decode(#xmlel{name = Name, attrs = Attrs}, <<>>, []);
 	{'$gen_event', Event} ->
             Event
     end.
 
-decode(El) ->
+decode(El, NS, Opts) ->
     try
-	Pkt = xmpp:decode(El),
-	ct:pal("recv: ~p ->~n~s", [El, xmpp_codec:pp(Pkt)]),
+	Pkt = xmpp:decode(El, NS, Opts),
+	ct:pal("recv: ~p ->~n~s", [El, xmpp:pp(Pkt)]),
 	Pkt
     catch _:{xmpp_codec, Why} ->
 	    ct:fail("recv failed: ~p->~n~s",
 		    [El, xmpp:format_error(Why)])
     end.
-
-fix_ns(#xmlel{name = Tag, attrs = Attrs} = El)
-  when Tag == <<"stream:features">>; Tag == <<"stream:error">> ->
-    NewAttrs = [{<<"xmlns">>, <<"http://etherx.jabber.org/streams">>}
-                |lists:keydelete(<<"xmlns">>, 1, Attrs)],
-    El#xmlel{attrs = NewAttrs};
-fix_ns(#xmlel{name = Tag, attrs = Attrs} = El)
-  when Tag == <<"message">>; Tag == <<"iq">>; Tag == <<"presence">> ->
-    NewAttrs = [{<<"xmlns">>, <<"jabber:client">>}
-                |lists:keydelete(<<"xmlns">>, 1, Attrs)],
-    El#xmlel{attrs = NewAttrs};
-fix_ns(El) ->
-    El.
 
 send_text(Config, Text) ->
     ejabberd_socket:send(?config(socket, Config), Text).
@@ -467,8 +459,8 @@ send(State, Pkt) ->
                           _ ->
                               {undefined, Pkt}
                       end,
-    El = xmpp_codec:encode(NewPkt),
-    ct:pal("sent: ~p <-~n~s", [El, xmpp_codec:pp(NewPkt)]),
+    El = xmpp:encode(NewPkt),
+    ct:pal("sent: ~p <-~n~s", [El, xmpp:pp(NewPkt)]),
     Data = case NewPkt of
 	       #stream_start{} -> fxml:element_to_header(El);
 	       _ -> fxml:element_to_binary(El)
@@ -478,7 +470,7 @@ send(State, Pkt) ->
 
 send_recv(State, IQ) ->
     ID = send(State, IQ),
-    #iq{id = ID} = recv().
+    #iq{id = ID} = recv(State).
 
 sasl_new(<<"PLAIN">>, User, Server, Password) ->
     {<<User/binary, $@, Server/binary, 0, User/binary, 0, Password/binary>>,

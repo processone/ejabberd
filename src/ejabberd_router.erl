@@ -253,7 +253,7 @@ process_iq(From, To, #iq{} = IQ) ->
 	    ejabberd_sm:process_iq(From, To, IQ)
     end;
 process_iq(From, To, El) ->
-    try xmpp:decode(El, [ignore_els]) of
+    try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
 	IQ -> process_iq(From, To, IQ)
     catch _:{xmpp_codec, Why} ->
 	    Type = xmpp:get_type(El),
@@ -390,7 +390,7 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 	  LDstDomain = To#jid.lserver,
 	  case mnesia:dirty_read(route, LDstDomain) of
 	    [] ->
-		  try xmpp:decode(Packet, [ignore_els]) of
+		  try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
 		      Pkt ->
 			  ejabberd_s2s:route(From, To, Pkt)
 		  catch _:{xmpp_codec, Why} ->
@@ -422,7 +422,7 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 -spec do_route(jid(), jid(), xmlel() | xmpp_element(), #route{}) -> any().
 do_route(From, To, Packet, #route{local_hint = LocalHint,
 				  pid = Pid}) when is_pid(Pid) ->
-    try xmpp:decode(Packet, [ignore_els]) of
+    try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
 	Pkt ->
 	    case LocalHint of
 		{apply, Module, Function} when node(Pid) == node() ->

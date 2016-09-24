@@ -13,7 +13,7 @@
 
 -define(recv1(P1),
         P1 = (fun() ->
-                 V = recv(),
+                 V = recv(Config),
                  case V of
                      P1 -> V;
                      _ -> suite:match_failure([V], [??P1])
@@ -22,7 +22,7 @@
 
 -define(recv2(P1, P2),
         (fun() ->
-                 case {R1 = recv(), R2 = recv()} of
+                 case {R1 = recv(Config), R2 = recv(Config)} of
                      {P1, P2} -> {R1, R2};
                      {P2, P1} -> {R2, R1};
                      {P1, V1} -> suite:match_failure([V1], [P2]);
@@ -35,7 +35,7 @@
 
 -define(recv3(P1, P2, P3),
         (fun() ->
-                 case R3 = recv() of
+                 case R3 = recv(Config) of
                      P1 -> insert(R3, 1, ?recv2(P2, P3));
                      P2 -> insert(R3, 2, ?recv2(P1, P3));
                      P3 -> insert(R3, 3, ?recv2(P1, P2));
@@ -45,7 +45,7 @@
 
 -define(recv4(P1, P2, P3, P4),
         (fun() ->
-                 case R4 = recv() of
+                 case R4 = recv(Config) of
                      P1 -> insert(R4, 1, ?recv3(P2, P3, P4));
                      P2 -> insert(R4, 2, ?recv3(P1, P3, P4));
                      P3 -> insert(R4, 3, ?recv3(P1, P2, P4));
@@ -56,7 +56,7 @@
 
 -define(recv5(P1, P2, P3, P4, P5),
         (fun() ->
-                 case R5 = recv() of
+                 case R5 = recv(Config) of
                      P1 -> insert(R5, 1, ?recv4(P2, P3, P4, P5));
                      P2 -> insert(R5, 2, ?recv4(P1, P3, P4, P5));
                      P3 -> insert(R5, 3, ?recv4(P1, P2, P4, P5));

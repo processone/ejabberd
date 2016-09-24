@@ -862,10 +862,10 @@ resource_conflict_action(U, S, R) ->
 
 -spec decode_element(xmlel(), state_name(), state()) -> fsm_transition().
 decode_element(#xmlel{} = El, StateName, StateData) ->
-    try case xmpp:decode(El, [ignore_els]) of
+    try case xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
 	    #iq{sub_els = [_], type = T} = Pkt when T == set; T == get ->
 		NewPkt = xmpp:decode_els(
-			   Pkt,
+			   Pkt, ?NS_CLIENT,
 			   fun(SubEl) when StateName == session_established ->
 				   case xmpp:get_ns(SubEl) of
 				       ?NS_PRIVACY -> true;
@@ -873,7 +873,7 @@ decode_element(#xmlel{} = El, StateName, StateData) ->
 				       _ -> false
 				   end;
 			      (SubEl) ->
-				   xmpp_codec:is_known_tag(SubEl)
+				   xmpp:is_known_tag(SubEl)
 			   end),
 		?MODULE:StateName(NewPkt, StateData);
 	    Pkt ->
@@ -1566,7 +1566,7 @@ send_element(StateData, #xmlel{} = El) when StateData#state.xml_socket ->
 send_element(StateData, #xmlel{} = El) ->
     send_text(StateData, fxml:element_to_binary(El));
 send_element(StateData, Pkt) ->
-    send_element(StateData, xmpp:encode(Pkt)).
+    send_element(StateData, xmpp:encode(Pkt, ?NS_CLIENT)).
 
 -spec send_error(state(), xmlel() | stanza(), stanza_error()) -> ok.
 send_error(StateData, Stanza, Error) ->

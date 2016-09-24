@@ -316,7 +316,8 @@
 
 -xml(iq,
      #elem{name = <<"iq">>,
-           xmlns = <<"jabber:client">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>,
+		    <<"jabber:component:accept">>],
            result = {iq, '$id', '$type', '$lang', '$from', '$to', '$_els'},
            attrs = [#attr{name = <<"id">>,
                           required = true},
@@ -335,26 +336,30 @@
 
 -xml(message_subject,
      #elem{name = <<"subject">>,
-           xmlns = <<"jabber:client">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>,
+		    <<"jabber:component:accept">>],
            result = {text, '$lang', '$data'},
            cdata = #cdata{label = '$data'},
            attrs = [#attr{name = <<"xml:lang">>, label = '$lang'}]}).
 
 -xml(message_body,
      #elem{name = <<"body">>,
-           xmlns = <<"jabber:client">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>,
+		    <<"jabber:component:accept">>],
            result = {text, '$lang', '$data'},
            cdata = #cdata{label = '$data'},
            attrs = [#attr{name = <<"xml:lang">>, label = '$lang'}]}).
 
 -xml(message_thread,
      #elem{name = <<"thread">>,
-           xmlns = <<"jabber:client">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>,
+		    <<"jabber:component:accept">>],
            result = '$cdata'}).
 
 -xml(message,
      #elem{name = <<"message">>,
-           xmlns = <<"jabber:client">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>,
+		    <<"jabber:component:accept">>],
            result = {message, '$id', '$type', '$lang', '$from', '$to',
                      '$subject', '$body', '$thread', '$_els'},
            attrs = [#attr{name = <<"id">>},
@@ -377,14 +382,16 @@
 
 -xml(presence_show,
      #elem{name = <<"show">>,
-           xmlns = <<"jabber:client">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>,
+		    <<"jabber:component:accept">>],
            result = '$cdata',
            cdata = #cdata{enc = {enc_enum, []},
                           dec = {dec_enum, [[away, chat, dnd, xa]]}}}).
 
 -xml(presence_status,
      #elem{name = <<"status">>,
-           xmlns = <<"jabber:client">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>,
+		    <<"jabber:component:accept">>],
            result = {text, '$lang', '$data'},
            cdata = #cdata{label = '$data'},
            attrs = [#attr{name = <<"xml:lang">>,
@@ -392,14 +399,16 @@
 
 -xml(presence_priority,
      #elem{name = <<"priority">>,
-           xmlns = <<"jabber:client">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>,
+		    <<"jabber:component:accept">>],
            result = '$cdata',
            cdata = #cdata{enc = {enc_int, []},
                           dec = {dec_int, []}}}).
 
 -xml(presence,
      #elem{name = <<"presence">>,
-           xmlns = <<"jabber:client">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>,
+		    <<"jabber:component:accept">>],
            result = {presence, '$id', '$type', '$lang', '$from', '$to',
                      '$show', '$status', '$priority', '$_els'},
            attrs = [#attr{name = <<"id">>},
@@ -527,7 +536,8 @@
 
 -xml(error,
      #elem{name = <<"error">>,
-           xmlns = <<"jabber:client">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>,
+		    <<"jabber:component:accept">>],
            result = {stanza_error, '$type', '$code', '$by', '$reason', '$text', '$_els'},
            attrs = [#attr{name = <<"type">>,
                           label = '$type',
@@ -861,7 +871,7 @@
 
 -xml(stream_features,
      #elem{name = <<"stream:features">>,
-           xmlns = <<"http://etherx.jabber.org/streams">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>],
            result = {stream_features, '$_els'}}).
 
 -xml(p1_push,
@@ -1187,7 +1197,8 @@
 
 -xml(stream_error,
      #elem{name = <<"stream:error">>,
-           xmlns = <<"http://etherx.jabber.org/streams">>,
+           xmlns = [<<"jabber:client">>, <<"jabber:server">>,
+		    <<"jabber:component:accept">>],
            result = {stream_error, '$reason', '$text'},
            refs = [#ref{name = stream_error_text,
                         label = '$text',
@@ -3162,7 +3173,7 @@
 
 -xml(db_result,
      #elem{name = <<"db:result">>,
-	   xmlns = <<"jabber:client">>,
+	   xmlns = <<"jabber:server">>,
 	   result = {db_result, '$from', '$to', '$type', '$key', '$_els'},
 	   cdata = #cdata{default = <<"">>, label = '$key'},
 	   attrs = [#attr{name = <<"from">>, required = true,
@@ -3175,7 +3186,7 @@
 
 -xml(db_verify,
      #elem{name = <<"db:verify">>,
-	   xmlns = <<"jabber:client">>,
+	   xmlns = <<"jabber:server">>,
 	   result = {db_verify, '$from', '$to', '$id', '$type', '$key', '$_els'},
 	   cdata = #cdata{default = <<"">>, label = '$key'},
 	   attrs = [#attr{name = <<"from">>, required = true,
@@ -3189,7 +3200,7 @@
 
 -xml(handshake,
      #elem{name = <<"handshake">>,
-	   xmlns = <<"jabber:client">>,
+	   xmlns = <<"jabber:component:accept">>,
 	   result = {handshake, '$data'},
 	   cdata = #cdata{default = <<"">>, label = '$data'}}).
 
