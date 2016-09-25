@@ -769,7 +769,6 @@ test_legacy_auth(Config) ->
     disconnect(auth_legacy(Config, _Digest = false)).
 
 test_legacy_auth_digest(Config) ->
-    ServerJID = server_jid(Config),
     disconnect(auth_legacy(Config, _Digest = true)).
 
 test_legacy_auth_no_resource(Config0) ->
@@ -818,7 +817,7 @@ roster_ver(Config) ->
     %% Attempting to subscribe to server's JID
     send(Config, #presence{type = subscribe, to = server_jid(Config)}),
     %% Receive a single roster push with the new "ver"
-    ?recv1(#iq{type = set, sub_els = [#roster_query{ver = Ver2}]}),
+    #iq{type = set, sub_els = [#roster_query{ver = Ver2}]} = recv(Config),
     %% Requesting roster with the previous "ver". Should receive Ver2 again
     #iq{type = result, sub_els = [#roster_query{ver = Ver2}]} =
         send_recv(Config, #iq{type = get,
@@ -952,7 +951,7 @@ sm(Config) ->
     true = ?config(sm, Config),
     %% Enable the session management with resumption enabled
     send(Config, #sm_enable{resume = true, xmlns = ?NS_STREAM_MGMT_3}),
-    ?recv1(#sm_enabled{id = ID, resume = true}),
+    #sm_enabled{id = ID, resume = true} = recv(Config),
     %% Initial request; 'h' should be 0.
     send(Config, #sm_r{xmlns = ?NS_STREAM_MGMT_3}),
     ?recv1(#sm_a{h = 0}),
@@ -1564,6 +1563,7 @@ retrieve_messages_from_room_via_mam(Config, Range) ->
     MyNick = ?config(master_nick, Config),
     Room = muc_room_jid(Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
+    MyJID = my_jid(Config),
     QID = randoms:get_string(),
     Count = length(Range),
     I = send(Config, #iq{type = set, to = Room,
@@ -1592,7 +1592,6 @@ retrieve_messages_from_room_via_mam(Config, Range) ->
 				   complete = true}]}).
 
 muc_mam_master(Config) ->
-    MyJID = my_jid(Config),
     MyNick = ?config(master_nick, Config),
     Room = muc_room_jid(Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
@@ -1735,10 +1734,10 @@ muc_master(Config) ->
 			  affiliation = none}]} =
 	xmpp:get_subtag(?recv1(#presence{from = PeerNickJID}), #muc_user{}),
     %% Receiving a voice request
-    ?recv1(#message{from = Room,
+    #message{from = Room,
 	     sub_els = [#xdata{type = form,
 			       instructions = [_],
-			       fields = VoiceReqFs}]}),
+			       fields = VoiceReqFs}]} = recv(Config),
     %% Approving the voice request
     ReplyVoiceReqFs =
 	lists:map(
@@ -1801,7 +1800,7 @@ muc_master(Config) ->
     [#muc_item{affiliation = member,
 	       jid = Localhost},
      #muc_item{affiliation = member,
-	       jid = MyBareJID}] = lists:keysort(#muc_item.jid, MemberList),
+	       jid = PeerBareJID}] = lists:keysort(#muc_item.jid, MemberList),
     %% Kick the peer
     I2 = send(Config,
 	      #iq{type = set, to = Room,
@@ -1833,8 +1832,6 @@ muc_master(Config) ->
     disconnect(Config).
 
 muc_slave(Config) ->
-    MyJID = my_jid(Config),
-    MyBareJID = jid:remove_resource(MyJID),
     PeerJID = ?config(master, Config),
     MUC = muc_jid(Config),
     Room = muc_room_jid(Config),
@@ -1843,7 +1840,6 @@ muc_slave(Config) ->
     PeerNick = ?config(master_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
     Subject = ?config(room_subject, Config),
-    Localhost = jid:make(<<"">>, <<"localhost">>, <<"">>),
     %% Receive an invite from the peer
     #muc_user{invites = [#muc_invite{from = PeerJID}]} =
 	xmpp:get_subtag(?recv1(#message{from = Room, type = normal}),
@@ -2075,7 +2071,7 @@ flex_offline_slave(Config) ->
     lists:foreach(
       fun({I, N}) ->
 	      Text = integer_to_binary(I),
-	      ?recv1(#message{body = Body, sub_els = SubEls}),
+	      #message{body = Body, sub_els = SubEls} = recv(Config),
 	      [#text{data = Text}] = Body,
 	      #offline{items = [#offline_item{node = N}]} =
 		  lists:keyfind(offline, 1, SubEls),
@@ -2095,7 +2091,8 @@ flex_offline_slave(Config) ->
     lists:foreach(
       fun({I, N}) ->
 	      Text = integer_to_binary(I),
-	      ?recv1(#message{body = [#text{data = Text}], sub_els = SubEls}),
+	      #message{body = [#text{data = Text}],
+		       sub_els = SubEls} = recv(Config),
 	      #offline{items = [#offline_item{node = N}]} =
 		  lists:keyfind(offline, 1, SubEls)
       end, lists:zip([2, 4], [lists:nth(2, Nodes), lists:nth(4, Nodes)])),
@@ -2335,10 +2332,11 @@ mam_new_slave(Config) ->
 
 mam_slave(Config, NS) ->
     Peer = ?config(master, Config),
+    MyJID = my_jid(Config),
     ServerJID = server_jid(Config),
     wait_for_master(Config),
     send(Config, #presence{}),
-    ?recv2(#presence{}, #presence{from = Peer}),
+    ?recv2(#presence{from = MyJID}, #presence{from = Peer}),
     #iq{type = result, sub_els = [#mam_prefs{xmlns = NS, default = always}]} =
         send_recv(Config,
                   #iq{type = set,
@@ -2463,13 +2461,17 @@ mam_query_rsm(Config, NS) ->
                                                body = [Text]}]}]}]})
       end, lists:seq(1, 3)),
     if NS == ?NS_MAM_TMP ->
-	    ?recv1(#iq{type = result, id = I1,
-		       sub_els = [#mam_query{xmlns = NS,
-					     rsm = #rsm_set{last = Last, count = 5}}]});
+	    #iq{type = result, id = I1,
+		sub_els = [#mam_query{xmlns = NS,
+				      rsm = #rsm_set{last = Last,
+						     count = 5}}]} =
+		recv(Config);
        true ->
-	    ?recv1(#message{sub_els = [#mam_fin{
-					  complete = false,
-					  rsm = #rsm_set{last = Last, count = 10}}]})
+	    #message{sub_els = [#mam_fin{
+				   complete = false,
+				   rsm = #rsm_set{last = Last,
+						  count = 10}}]} =
+		recv(Config)
     end,
     %% Get the next items starting from the `Last`.
     %% Limit the response to 2 items.
@@ -2495,19 +2497,21 @@ mam_query_rsm(Config, NS) ->
                                                body = [Text]}]}]}]})
       end, lists:seq(4, 5)),
     if NS == ?NS_MAM_TMP ->
-	    ?recv1(#iq{type = result, id = I2,
-		       sub_els = [#mam_query{
-				     xmlns = NS,
-				     rsm = #rsm_set{
-					      count = 5,
-					      first = #rsm_first{data = First}}}]});
+	    #iq{type = result, id = I2,
+		sub_els = [#mam_query{
+			      xmlns = NS,
+			      rsm = #rsm_set{
+				       count = 5,
+				       first = #rsm_first{data = First}}}]} =
+		recv(Config);
        true ->
-	    ?recv1(#message{
-		      sub_els = [#mam_fin{
-				    complete = false,
-				    rsm = #rsm_set{
-					      count = 10,
-					      first = #rsm_first{data = First}}}]})
+	    #message{
+	       sub_els = [#mam_fin{
+			     complete = false,
+			     rsm = #rsm_set{
+				      count = 10,
+				      first = #rsm_first{data = First}}}]} =
+		recv(Config)
     end,
     %% Paging back. Should receive 3 elements: 1, 2, 3.
     I3 = send(Config,
