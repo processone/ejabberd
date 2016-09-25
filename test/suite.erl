@@ -74,6 +74,7 @@ init_config(Config) ->
      {slave_nick, <<"slave_nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {room_subject, <<"hello, world!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {certfile, CertFile},
+     {anonymous, false},
      {type, client},
      {xmlns, ?NS_CLIENT},
      {ns_stream, ?NS_STREAM},
@@ -253,11 +254,15 @@ auth(Config) ->
 
 auth(Config, ShouldFail) ->
     Type = ?config(type, Config),
+    IsAnonymous = ?config(anonymous, Config),
     Mechs = ?config(mechs, Config),
     HaveMD5 = lists:member(<<"DIGEST-MD5">>, Mechs),
     HavePLAIN = lists:member(<<"PLAIN">>, Mechs),
     HaveExternal = lists:member(<<"EXTERNAL">>, Mechs),
-    if HavePLAIN ->
+    HaveAnonymous = lists:member(<<"ANONYMOUS">>, Mechs),
+    if HaveAnonymous and IsAnonymous ->
+	    auth_SASL(<<"ANONYMOUS">>, Config, ShouldFail);
+       HavePLAIN ->
             auth_SASL(<<"PLAIN">>, Config, ShouldFail);
        HaveMD5 ->
             auth_SASL(<<"DIGEST-MD5">>, Config, ShouldFail);
@@ -272,17 +277,25 @@ auth(Config, ShouldFail) ->
     end.
 
 bind(Config) ->
+    U = ?config(user, Config),
+    S = ?config(server, Config),
+    R = ?config(resource, Config),
     case ?config(type, Config) of
 	client ->
-	    #iq{type = result, sub_els = [#bind{}]} =
+	    #iq{type = result, sub_els = [#bind{jid = JID}]} =
 		send_recv(
-		  Config,
-		  #iq{type = set,
-		      sub_els = [#bind{resource = ?config(resource, Config)}]});
+		  Config, #iq{type = set, sub_els = [#bind{resource = R}]}),
+	    case ?config(anonymous, Config) of
+		false ->
+		    {U, S, R} = jid:tolower(JID),
+		    Config;
+		true ->
+		    {User, S, Resource} = jid:tolower(JID),
+		    set_opt(user, User, set_opt(resource, Resource, Config))
+	    end;
 	component ->
-	    ok
-    end,
-    Config.
+	    Config
+    end.
 
 open_session(Config) ->
     open_session(Config, false).
@@ -476,6 +489,9 @@ sasl_new(<<"PLAIN">>, User, Server, Password) ->
     {<<User/binary, $@, Server/binary, 0, User/binary, 0, Password/binary>>,
      fun (_) -> {error, <<"Invalid SASL challenge">>} end};
 sasl_new(<<"EXTERNAL">>, _User, _Server, _Password) ->
+    {<<"">>,
+     fun(_) -> ct:fail(sasl_challenge_is_not_expected) end};
+sasl_new(<<"ANONYMOUS">>, _User, _Server, _Password) ->
     {<<"">>,
      fun(_) -> ct:fail(sasl_challenge_is_not_expected) end};
 sasl_new(<<"DIGEST-MD5">>, User, Server, Password) ->

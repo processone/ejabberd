@@ -522,7 +522,7 @@
 -type version() :: #version{}.
 
 -record(bind, {jid :: jid:jid(),
-               resource :: binary()}).
+               resource = <<>> :: binary()}).
 -type bind() :: #bind{}.
 
 -record(rosterver_feature, {}).

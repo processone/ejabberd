@@ -148,9 +148,13 @@ do_init_per_group(component, Config) ->
                             set_opt(server_port, Port,
                                     set_opt(stream_version, undefined,
                                             set_opt(lang, <<"">>, Config))))));
-do_init_per_group(_GroupName, Config) ->
+do_init_per_group(GroupName, Config) ->
     Pid = start_event_relay(),
-    set_opt(event_relay, Pid, Config).
+    NewConfig = set_opt(event_relay, Pid, Config),
+    case GroupName of
+	anonymous -> set_opt(anonymous, true, NewConfig);
+	_ -> NewConfig
+    end.
 
 end_per_group(mnesia, _Config) ->
     ok;
@@ -176,7 +180,7 @@ end_per_group(s2s, _Config) ->
     ejabberd_config:add_option(s2s_use_starttls, false);
 end_per_group(_GroupName, Config) ->
     stop_event_relay(Config),
-    ok.
+    set_opt(anonymous, false, Config).
 
 init_per_testcase(stop_ejabberd, Config) ->
     open_session(bind(auth(connect(Config))));
@@ -186,8 +190,8 @@ init_per_testcase(TestCase, OrigConfig) ->
 		  name, ?config(tc_group_properties, OrigConfig)),
     Server = ?config(server, OrigConfig),
     Resource = case TestGroup of
-		   generic ->
-		       randoms:get_string();
+		   anonymous ->
+		       <<"">>;
 		   legacy_auth ->
 		       randoms:get_string();
 		   _ ->
@@ -278,7 +282,7 @@ legacy_auth_tests() ->
       test_legacy_auth_fail]}.
 
 no_db_tests() ->
-    [{generic, [parallel],
+    [{anonymous, [parallel],
       [test_connect_bad_xml,
        test_connect_unexpected_xml,
        test_connect_unknown_ns,
@@ -293,7 +297,6 @@ no_db_tests() ->
        test_starttls,
        test_zlib,
        test_auth,
-       test_auth_fail,
        test_bind,
        test_open_session,
        codec_failure,
@@ -306,7 +309,8 @@ no_db_tests() ->
        stats,
        disco]},
      {presence_and_s2s, [sequence],
-      [presence,
+      [test_auth_fail,
+       presence,
        s2s_dialback,
        s2s_optional,
        s2s_required,
@@ -507,17 +511,17 @@ groups() ->
      {riak, [sequence], db_tests(riak)}].
 
 all() ->
-    [{group, ldap},
+    [%%{group, ldap},
      {group, no_db},
-     {group, mnesia},
-     {group, redis},
-     {group, mysql},
-     {group, pgsql},
-     {group, sqlite},
-     {group, extauth},
-     {group, riak},
-     {group, component},
-     {group, s2s},
+     %% {group, mnesia},
+     %% {group, redis},
+     %% {group, mysql},
+     %% {group, pgsql},
+     %% {group, sqlite},
+     %% {group, extauth},
+     %% {group, riak},
+     %% {group, component},
+     %% {group, s2s},
      stop_ejabberd].
 
 stop_ejabberd(Config) ->

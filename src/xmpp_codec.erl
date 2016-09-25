@@ -29737,7 +29737,7 @@ encode_legacy_auth_username_cdata(_val, _acc) ->
 decode_bind(__TopXMLNS, __IgnoreEls,
 	    {xmlel, <<"bind">>, _attrs, _els}) ->
     {Jid, Resource} = decode_bind_els(__TopXMLNS,
-				      __IgnoreEls, _els, undefined, undefined),
+				      __IgnoreEls, _els, undefined, <<>>),
     {bind, Jid, Resource}.
 
 decode_bind_els(__TopXMLNS, __IgnoreEls, [], Jid,
@@ -29800,8 +29800,7 @@ encode_bind({bind, Jid, Resource}, __TopXMLNS) ->
 'encode_bind_$jid'(Jid, __TopXMLNS, _acc) ->
     [encode_bind_jid(Jid, __TopXMLNS) | _acc].
 
-'encode_bind_$resource'(undefined, __TopXMLNS, _acc) ->
-    _acc;
+'encode_bind_$resource'(<<>>, __TopXMLNS, _acc) -> _acc;
 'encode_bind_$resource'(Resource, __TopXMLNS, _acc) ->
     [encode_bind_resource(Resource, __TopXMLNS) | _acc].
 

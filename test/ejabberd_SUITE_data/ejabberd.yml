@@ -327,7 +327,7 @@ Welcome to this XMPP server."
       mod_time: []
       mod_version: []
   "localhost": 
-    auth_method: internal
+    auth_method: [internal, anonymous]
   "ldap.localhost": 
     ldap_servers: 
       - "localhost"

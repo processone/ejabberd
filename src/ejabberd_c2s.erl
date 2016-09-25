@@ -907,8 +907,12 @@ wait_for_bind(#sm_resume{} = Pkt, StateData) ->
 wait_for_bind(Pkt, StateData) when ?IS_STREAM_MGMT_PACKET(Pkt) ->
     fsm_next_state(wait_for_bind, dispatch_stream_mgmt(Pkt, StateData));
 wait_for_bind(#iq{type = set,
-		  sub_els = [#bind{resource = R}]} = IQ, StateData) ->
+		  sub_els = [#bind{resource = R0}]} = IQ, StateData) ->
     U = StateData#state.user,
+    R = case R0 of
+	    <<>> -> new_uniq_id();
+	    _ -> R0
+	end,
     case resource_conflict_action(U, StateData#state.server, R) of
 	closenew ->
 	    Err = xmpp:make_error(IQ, xmpp:err_conflict()),

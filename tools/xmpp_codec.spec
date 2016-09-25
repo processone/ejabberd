@@ -621,6 +621,7 @@
                               min = 0, max = 1},
                          #ref{name = bind_resource,
                               min = 0, max = 1,
+			      default = <<"">>,
                               label = '$resource'}]}).
 
 -xml(legacy_auth_username,
