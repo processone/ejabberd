@@ -442,6 +442,7 @@ modules:
   mod_disco: []
   mod_ping: []
   mod_proxy65: []
+  mod_legacy: []
   mod_register: 
     welcome_message: 
       subject: "Welcome!"
