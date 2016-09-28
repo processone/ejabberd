@@ -226,7 +226,7 @@ process([Call], #request{method = 'POST', data = Data, ip = {IP, _} = IPPort} = 
     catch
         %% TODO We need to refactor to remove redundant error return formatting
         throw:{error, unknown_command} ->
-            {404, 40, <<"Command not found.">>};
+            json_format({404, 44, <<"Command not found.">>});
         _:{error,{_,invalid_json}} = _Err ->
             ?DEBUG("Bad Request: ~p", [_Err]),
             badrequest_response(<<"Invalid JSON input">>);
