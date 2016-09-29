@@ -2916,15 +2916,11 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
 	    Notify = fun (JID, Sub, _SubId) ->
-		    Stanza = #xmlel{name = <<"message">>, attrs = [],
-			    children =
-			    [#xmlel{name = <<"pubsub">>,
-				    attrs = [{<<"xmlns">>, ?NS_PUBSUB}],
-				    children =
+		    Stanza = event_stanza(
 				    [#xmlel{name = <<"subscription">>,
 					    attrs = [{<<"jid">>, jid:to_string(JID)},
 						{<<"subscription">>, subscription_to_string(Sub)}
-						| nodeAttr(Node)]}]}]},
+						| nodeAttr(Node)]}]),
 		    ejabberd_router:route(service_jid(Host), jid:make(JID), Stanza)
 	    end,
 	    Action = fun (#pubsub_node{type = Type, id = Nidx, owners = O}) ->
