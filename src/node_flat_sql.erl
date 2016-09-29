@@ -276,11 +276,11 @@ delete_item(Nidx, Publisher, PublishModel, ItemId) ->
     {result, Affiliation} = get_affiliation(Nidx, GenKey),
     Allowed = Affiliation == publisher orelse
 	Affiliation == owner orelse
-	PublishModel == open orelse
-	case get_item(Nidx, ItemId) of
-	{result, #pubsub_item{creation = {_, GenKey}}} -> true;
-	_ -> false
-    end,
+	(PublishModel == open andalso
+	  case get_item(Nidx, ItemId) of
+	    {result, #pubsub_item{creation = {_, GenKey}}} -> true;
+	    _ -> false
+          end),
     if not Allowed ->
 	    {error, xmpp:err_forbidden()};
 	true ->
