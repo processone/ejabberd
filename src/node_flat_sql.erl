@@ -1051,6 +1051,6 @@ raw_to_item(Nidx, {ItemId, SJID, Creation, Modification, XML}) ->
 	El -> [El]
     end,
     #pubsub_item{itemid = {ItemId, Nidx},
-	creation = {ToTime(Creation), JID},
+	creation = {ToTime(Creation), jid:remove_resource(JID)},
 	modification = {ToTime(Modification), JID},
 	payload = Payload}.
