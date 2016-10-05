@@ -242,9 +242,7 @@ msgstr "Odchozí s2s spojení:"
 
 #: ejabberd_web_admin.erl:1559
 msgid "Incoming s2s Connections:"
-msgstr ""
-"Příchozí\n"
-" s2s spojení:"
+msgstr "Příchozí s2s spojení:"
 
 #: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
 #: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
@@ -258,9 +256,7 @@ msgstr "Změnit heslo"
 
 #: ejabberd_web_admin.erl:1673
 msgid "User ~s"
-msgstr ""
-"Uživatel\n"
-" ~s"
+msgstr "Uživatel ~s"
 
 #: ejabberd_web_admin.erl:1684
 msgid "Connected Resources:"
