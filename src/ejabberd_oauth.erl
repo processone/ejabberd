@@ -42,8 +42,10 @@
          associate_access_code/3,
          associate_access_token/3,
          associate_refresh_token/3,
+         check_token/1,
          check_token/4,
          check_token/2,
+         scope_in_scope_list/2,
          process/2,
          opt_type/1]).
 
@@ -304,6 +306,29 @@ associate_access_token(AccessToken, Context, AppContext) ->
 associate_refresh_token(_RefreshToken, _Context, AppContext) ->
     %put(?REFRESH_TOKEN_TABLE, RefreshToken, Context),
     {ok, AppContext}.
+
+scope_in_scope_list(Scope, ScopeList) ->
+    TokenScopeSet = oauth2_priv_set:new(Scope),
+    lists:any(fun(Scope2) ->
+        oauth2_priv_set:is_member(Scope2, TokenScopeSet) end,
+              ScopeList).
+
+check_token(Token) ->
+    case lookup(Token) of
+        {ok, #oauth_token{us = US,
+                          scope = TokenScope,
+                          expire = Expire}} ->
+            {MegaSecs, Secs, _} = os:timestamp(),
+            TS = 1000000 * MegaSecs + Secs,
+            if
+                Expire > TS ->
+                    {ok, US, TokenScope};
+                true ->
+                    {false, expired}
+            end;
+        _ ->
+            {false, not_found}
+    end.
 
 check_token(User, Server, ScopeList, Token) ->
     LUser = jid:nodeprep(User),

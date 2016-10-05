@@ -321,10 +321,15 @@ call_command([CmdString | Args], Auth, AccessCommands, Version) ->
 	{ArgsFormat, ResultFormat} ->
 	    case (catch format_args(Args, ArgsFormat)) of
 		ArgsFormatted when is_list(ArgsFormatted) ->
-		    Result = ejabberd_commands:execute_command(AccessCommands,
-							       Auth, Command,
-							       ArgsFormatted,
-							       Version),
+		    CI = case Auth of
+			     {U, S, _, _} -> #{usr => {U, S, <<"">>}, caller_host => S};
+			     _ -> #{}
+			 end,
+		    CI2 = CI#{caller_module => ?MODULE},
+		    Result = ejabberd_commands:execute_command2(Command,
+								ArgsFormatted,
+								CI2,
+								Version),
 		    format_result(Result, ResultFormat);
 		{'EXIT', {function_clause,[{lists,zip,[A1, A2], _} | _]}} ->
 		    {NumCompa, TextCompa} =

@@ -178,7 +178,8 @@ read_file(File, Opts) ->
 -spec load_file(string()) -> ok.
 
 load_file(File) ->
-    State = read_file(File),
+    State0 = read_file(File),
+    State = validate_opts(State0),
     set_opts(State).
 
 -spec reload_file() -> ok.

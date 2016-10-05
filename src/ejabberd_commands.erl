@@ -218,23 +218,26 @@
 	 get_command_format/1,
 	 get_command_format/2,
 	 get_command_format/3,
-         get_command_policy_and_scope/1,
+	 get_command_policy_and_scope/1,
 	 get_command_definition/1,
 	 get_command_definition/2,
 	 get_tags_commands/0,
 	 get_tags_commands/1,
-         get_exposed_commands/0,
+	 get_exposed_commands/0,
 	 register_commands/1,
-   unregister_commands/1,
-   expose_commands/1,
+	 unregister_commands/1,
+	 expose_commands/1,
 	 execute_command/2,
 	 execute_command/3,
 	 execute_command/4,
 	 execute_command/5,
 	 execute_command/6,
-         opt_type/1,
-         get_commands_spec/0
-	]).
+	 opt_type/1,
+	 get_commands_spec/0,
+	 get_commands_definition/0,
+	 get_commands_definition/1,
+	 execute_command2/3,
+	 execute_command2/4]).
 
 -include("ejabberd_commands.hrl").
 -include("ejabberd.hrl").
@@ -280,7 +283,8 @@ init() ->
                          {attributes, record_info(fields, ejabberd_commands)},
                          {type, bag}]),
     mnesia:add_table_copy(ejabberd_commands, node(), ram_copies),
-    register_commands(get_commands_spec()).
+    register_commands(get_commands_spec()),
+    ejabberd_access_permissions:register_permission_addon(?MODULE, fun permission_addon/0).
 
 -spec register_commands([ejabberd_commands()]) -> ok.
 
@@ -296,7 +300,9 @@ register_commands(Commands) ->
               mnesia:dirty_write(Command)
               %% ?DEBUG("This command is already defined:~n~p", [Command])
       end,
-      Commands).
+      Commands),
+    ejabberd_access_permissions:invalidate(),
+    ok.
 
 -spec unregister_commands([ejabberd_commands()]) -> ok.
 
@@ -306,7 +312,9 @@ unregister_commands(Commands) ->
       fun(Command) ->
 	      mnesia:dirty_delete_object(Command)
       end,
-      Commands).
+      Commands),
+    ejabberd_access_permissions:invalidate(),
+    ok.
 
 %% @doc Expose command through ejabberd ReST API.
 %% Pass a list of command names or policy to expose.
@@ -427,6 +435,9 @@ get_command_definition(Name, Version) ->
         _E -> throw({error, unknown_command})
     end.
 
+get_commands_definition() ->
+    get_commands_definition(?DEFAULT_VERSION).
+
 -spec get_commands_definition(integer()) -> [ejabberd_commands()].
 
 % @doc Returns all commands for a given API version
@@ -447,6 +458,18 @@ get_commands_definition(Version) ->
            ({_Name, _V, Command}, Acc) -> [Command | Acc]
         end,
     lists:foldl(F, [], L).
+
+execute_command2(Name, Arguments, CallerInfo) ->
+    execute_command(Name, Arguments, CallerInfo, ?DEFAULT_VERSION).
+
+execute_command2(Name, Arguments, CallerInfo, Version) ->
+    Command = get_command_definition(Name, Version),
+    case ejabberd_access_permissions:can_access(Name, CallerInfo) of
+	allow ->
+	    do_execute_command(Command, Arguments);
+	_ ->
+	    throw({error, access_rules_unauthorized})
+    end.
 
 %% @spec (Name::atom(), Arguments) -> ResultTerm
 %% where
@@ -811,6 +834,8 @@ is_admin(_Name, admin, _Extra) ->
     true;
 is_admin(_Name, {_User, _Server, _, false}, _Extra) ->
     false;
+is_admin(_Name, Map, _extra) when is_map(Map) ->
+    true;
 is_admin(Name, Auth, Extra) ->
     {ACLInfo, Server} = case Auth of
 			    {U, S, _, _} ->
@@ -831,6 +856,14 @@ is_admin(Name, Auth, Extra) ->
             end;
         deny -> false
     end.
+
+permission_addon() ->
+    [{<<"'commands' option compatibility shim">>,
+     {[],
+      [{access, ejabberd_config:get_option(commands_admin_access,
+					   fun(V) -> V end,
+					   none)}],
+      {get_exposed_commands(), []}}}].
 
 opt_type(commands_admin_access) -> fun acl:access_rules_validator/1;
 opt_type(commands) ->

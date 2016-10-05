@@ -403,7 +403,8 @@ registered_vhosts() ->
 reload_config() ->
     ejabberd_config:reload_file(),
     acl:start(),
-    shaper:start().
+    shaper:start(),
+    ejabberd_access_permissions:invalidate().
 
 %%%
 %%% Cluster management
