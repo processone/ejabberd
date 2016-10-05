@@ -31,6 +31,7 @@ defmodule ModHttpApiTest do
     :ok = :mnesia.start
     :stringprep.start
     :ok = :ejabberd_config.start(["localhost"], [])
+    {:ok, _} = :ejabberd_access_permissions.start_link()
     :ok = :ejabberd_commands.init
     :ok = :ejabberd_commands.register_commands(cmds)
     on_exit fn ->

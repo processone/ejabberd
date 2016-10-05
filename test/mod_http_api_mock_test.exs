@@ -46,6 +46,7 @@ defmodule ModHttpApiMockTest do
       :mnesia.start
 			:stringprep.start
       :ejabberd_config.start([@domain], [])
+      {:ok, _} = :ejabberd_access_permissions.start_link()
       :ejabberd_commands.init
 		rescue
 			_ -> :ok
@@ -240,10 +241,10 @@ defmodule ModHttpApiMockTest do
     result = :ejabberd_oauth.process([], req)
     assert 200 = elem(result, 0) #http code
     {kv} = :jiffy.decode(elem(result,2))
-    assert {_, "bearer"} = List.keyfind(kv, "token_type", 0) 
-    assert {_, @command} = List.keyfind(kv, "scope", 0) 
-    assert {_, 4000} = List.keyfind(kv, "expires_in", 0) 
-    {"access_token", _token} = List.keyfind(kv, "access_token", 0) 
+    assert {_, "bearer"} = List.keyfind(kv, "token_type", 0)
+    assert {_, @command} = List.keyfind(kv, "scope", 0)
+    assert {_, 4000} = List.keyfind(kv, "expires_in", 0)
+    {"access_token", _token} = List.keyfind(kv, "access_token", 0)
 
     #missing grant_type
     req = request(method: :POST,
@@ -254,7 +255,7 @@ defmodule ModHttpApiMockTest do
     result = :ejabberd_oauth.process([], req)
     assert 400 = elem(result, 0) #http code
     {kv} = :jiffy.decode(elem(result,2))
-    assert {_, "unsupported_grant_type"} = List.keyfind(kv, "error", 0) 
+    assert {_, "unsupported_grant_type"} = List.keyfind(kv, "error", 0)
 
 
 		# incorrect user/pass
@@ -266,7 +267,7 @@ defmodule ModHttpApiMockTest do
     result = :ejabberd_oauth.process([], req)
     assert 400 = elem(result, 0) #http code
     {kv} = :jiffy.decode(elem(result,2))
-    assert {_, "invalid_grant"} = List.keyfind(kv, "error", 0) 
+    assert {_, "invalid_grant"} = List.keyfind(kv, "error", 0)
 
 		assert :meck.validate :ejabberd_auth
 		assert :meck.validate :ejabberd_commands
