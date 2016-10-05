@@ -355,6 +355,10 @@ auth_method: internal
 ## faster but inexact replacement for "select count(*) from users"
 ##
 ## pgsql_users_number_estimate: true
+##
+## If you need to disable prepared statements (option affects only PostgreSQL):
+##
+## sql_prepared_statements: false
 
 ##
 ## SQLite:

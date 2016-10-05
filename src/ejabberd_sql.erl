@@ -522,7 +522,14 @@ sql_query_internal(#sql_query{} = Query) ->
 		mssql ->
 		    mssql_sql_query(Query);
                 pgsql ->
+					PreparedStatements = ejabberd_config:get_option(
+					    {sql_prepared_statements, ?MYNAME},
+						fun(A) when is_boolean(A) -> A end,
+						true),
                     Key = {?PREPARE_KEY, Query#sql_query.hash},
+					if not PreparedStatements -> put(Key, ignore);
+					    true -> ok
+					end,
                     case get(Key) of
                         undefined ->
                             case pgsql_prepare(Query, State) of
@@ -1061,7 +1068,9 @@ opt_type(sql_type) ->
 	(odbc) -> odbc
     end;
 opt_type(sql_username) -> fun iolist_to_binary/1;
+opt_type(sql_prepared_statements) ->
+    fun(A) when is_boolean(A) -> A end;
 opt_type(_) ->
     [max_fsm_queue, sql_database, sql_keepalive_interval,
      sql_password, sql_port, sql_server, sql_type,
-     sql_username].
+     sql_username, sql_prepared_statements].
