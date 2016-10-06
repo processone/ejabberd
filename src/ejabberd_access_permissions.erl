@@ -506,9 +506,9 @@ is_valid_command_name2(_) ->
 key_split(Args, Fields) ->
     {_, Order1, Results1, Required1} = lists:foldl(
 	fun({Field, Default}, {Idx, Order, Results, Required}) ->
-	    {Idx + 1, Order#{Field => Idx}, [Default | Results], Required};
+	    {Idx + 1, maps:put(Field, Idx, Order), [Default | Results], Required};
 	   (Field, {Idx, Order, Results, Required}) ->
-	       {Idx + 1, Order#{Field => Idx}, [none | Results], Required#{Field => 1}}
+	       {Idx + 1, maps:put(Field, Idx, Order), [none | Results], maps:put(Field, 1, Required)}
 	end, {1, #{}, [], #{}}, Fields),
     key_split(Args, list_to_tuple(Results1), Order1, Required1, #{}).
 
@@ -522,7 +522,7 @@ key_split([{Arg, Value} | Rest], Results, Order, Required, Duplicates) ->
 	    case maps:is_key(Arg, Duplicates) of
 		false ->
 		    Results2 = setelement(Idx, Results, Value),
-		    key_split(Rest, Results2, Order, maps:remove(Arg, Required), Duplicates#{Arg => 1});
+		    key_split(Rest, Results2, Order, maps:remove(Arg, Required), maps:put(Arg, 1, Duplicates));
 		true ->
 		    parse_error(<<"Duplicate field '~s'">>, [Arg])
 	    end;
