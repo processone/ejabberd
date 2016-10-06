@@ -261,7 +261,7 @@ matches_definition({_Name, {From, Who, What}}, Cmd, Module, Host, CallerInfo) ->
 	true ->
 	    case From == [] orelse lists:member(Module, From) of
 		true ->
-		    Scope = maps:get(scope, CallerInfo, none),
+		    Scope = maps:get(oauth_scope, CallerInfo, none),
 		    lists:any(
 			fun({access, Access}) when Scope == none ->
 			    acl:access_matches(Access, CallerInfo, Host) == allow;
