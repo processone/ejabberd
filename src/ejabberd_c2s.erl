@@ -2998,10 +2998,13 @@ handle_unacked_stanzas(#state{mgmt_state = MgmtState} = StateData, F)
 	  lists:foreach(
 	    fun({_, Time, #xmlel{attrs = Attrs} = El}) ->
 		    From_s = fxml:get_attr_s(<<"from">>, Attrs),
-		    From = jid:from_string(From_s),
 		    To_s = fxml:get_attr_s(<<"to">>, Attrs),
-		    To = jid:from_string(To_s),
-		    F(From, To, El, Time)
+		    case {jid:from_string(From_s), jid:from_string(To_s)} of
+		      {#jid{} = From, #jid{} = To} ->
+			  F(From, To, El, Time);
+		      {_, _} ->
+			  ?DEBUG("Dropping stanza due to invalid JID(s)", [])
+		    end
 	    end, queue:to_list(Queue))
     end;
 handle_unacked_stanzas(_StateData, _F) ->
