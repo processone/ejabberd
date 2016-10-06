@@ -267,15 +267,18 @@ matches_definition({_Name, {From, Who, What}}, Cmd, Module, Host, CallerInfo) ->
 			    acl:access_matches(Access, CallerInfo, Host) == allow;
 			   ({acl, _} = Acl) when Scope == none ->
 			       acl:acl_rule_matches(Acl, CallerInfo, Host);
-			   ({oauth, List}) when Scope /= none ->
-			       lists:all(
-				   fun({access, Access}) ->
-				       acl:access_matches(Access, CallerInfo, Host) == allow;
-				      ({acl, _} = Acl) ->
-					  acl:acl_rule_matches(Acl, CallerInfo, Host);
-				      ({scope, Scopes}) ->
-					  ejabberd_oauth:scope_in_scope_list(Scope, Scopes)
-				   end, List);
+			   ({oauth, Scopes, List}) when Scope /= none ->
+			       case ejabberd_oauth:scope_in_scope_list(Scope, Scopes) of
+				   true ->
+				       lists:any(
+					   fun({access, Access}) ->
+					       acl:access_matches(Access, CallerInfo, Host) == allow;
+					      ({acl, _} = Acl) ->
+						  acl:acl_rule_matches(Acl, CallerInfo, Host)
+					   end, List);
+				   _ ->
+				       false
+			       end;
 			   (_) ->
 			       false
 			end, Who);
@@ -370,7 +373,18 @@ parse_who(Name, Defs, ParseOauth) when is_list(Defs) ->
 	   ([{oauth, OauthList}]) when is_list(OauthList) ->
 	       case ParseOauth of
 		   oauth ->
-		       {oauth, parse_who(Name, lists:flatten(OauthList), scope)};
+		       Nested = parse_who(Name, lists:flatten(OauthList), scope),
+		       {Scopes, Rest} = lists:partition(
+				   fun({scope, _}) -> true;
+				      (_) -> false
+				   end, Nested),
+		       case Scopes of
+			   [] ->
+			       report_error(<<"Oauth rule must contain at least one scope rule in 'who' section for api_permission '~s'">>,
+					    [Name]);
+			   _ ->
+			       {oauth, lists:foldl(fun({scope, S}, A) -> S ++ A end, [], Scopes), Rest}
+		       end;
 		   scope ->
 		       report_error(<<"Oauth rule can't be embeded inside other oauth rule in 'who' section for api_permission '~s'">>,
 				    [Name])
