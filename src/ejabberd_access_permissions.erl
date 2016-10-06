@@ -228,15 +228,16 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
+-spec get_definitions(#state{}) -> {#state{}, any()}.
 get_definitions(#state{definitions = Defs, fragments_generators = Gens} = State) ->
     DefaultOptions = [{<<"console commands">>,
-		       [ejabberd_ctl],
-		       [{acl, all}],
-		       {all, none}},
+		       {[ejabberd_ctl],
+			[{acl, all}],
+			{all, none}}},
 		      {<<"admin access">>,
-		       [],
-		       [{acl, admin}],
-		       {all, [start, stop]}}],
+		       {[],
+			[{acl, admin}],
+			{all, [start, stop]}}}],
     NDefs = case Defs of
 		none ->
 		    ApiPerms = ejabberd_config:get_option(api_permissions, fun(A) -> A end, DefaultOptions),
