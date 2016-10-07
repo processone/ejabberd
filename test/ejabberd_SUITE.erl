@@ -26,7 +26,7 @@
 -include("suite.hrl").
 
 suite() ->
-    [{timetrap, {seconds,30}}].
+    [{timetrap, {seconds,60}}].
 
 init_per_suite(Config) ->
     NewConfig = init_config(Config),
@@ -325,6 +325,36 @@ no_db_tests() ->
      {replaced, [parallel],
       [replaced_master, replaced_slave]}].
 
+pubsub_single_tests() ->
+    {pubsub_single, [sequence],
+     [test_pubsub_features,
+      test_pubsub_create,
+      test_pubsub_configure,
+      test_pubsub_delete,
+      test_pubsub_get_affiliations,
+      test_pubsub_get_subscriptions,
+      test_pubsub_create_instant,
+      test_pubsub_default,
+      test_pubsub_create_configure,
+      test_pubsub_publish,
+      test_pubsub_auto_create,
+      test_pubsub_get_items,
+      test_pubsub_delete_item,
+      test_pubsub_purge,
+      test_pubsub_subscribe,
+      test_pubsub_unsubscribe]}.
+
+pubsub_multiple_tests() ->
+    {pubsub_multiple, [sequence],
+     [{pubsub_publish, [parallel],
+       [pubsub_publish_master, pubsub_publish_slave]},
+      {pubsub_subscriptions, [parallel],
+       [pubsub_subscriptions_master, pubsub_subscriptions_slave]},
+      {pubsub_affiliations, [parallel],
+       [pubsub_affiliations_master, pubsub_affiliations_slave]},
+      {pubsub_authorize, [parallel],
+       [pubsub_authorize_master, pubsub_authorize_slave]}]}.
+
 db_tests(riak) ->
     %% No support for mod_pubsub
     [{single_user, [sequence],
@@ -340,7 +370,7 @@ db_tests(riak) ->
        blocking,
        vcard,
        test_unregister]},
-     {test_muc_register, [sequence],
+     {test_muc_register, [parallel],
       [muc_register_master, muc_register_slave]},
      {test_roster_subscribe, [parallel],
       [roster_subscribe_master,
@@ -372,9 +402,10 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        privacy,
        blocking,
        vcard,
-       pubsub,
+       pubsub_single_tests(),
        test_unregister]},
-     {test_muc_register, [sequence],
+     pubsub_multiple_tests(),
+     {test_muc_register, [parallel],
       [muc_register_master, muc_register_slave]},
      {test_mix, [parallel],
       [mix_master, mix_slave]},
@@ -409,19 +440,20 @@ db_tests(_) ->
     [{single_user, [sequence],
       [test_register,
        legacy_auth_tests(),
-       auth_plain,
-       auth_md5,
-       presence_broadcast,
-       last,
-       roster_get,
-       roster_ver,
-       private,
-       privacy,
-       blocking,
-       vcard,
-       pubsub,
-       test_unregister]},
-     {test_muc_register, [sequence],
+	auth_plain,
+	auth_md5,
+	presence_broadcast,
+	last,
+	roster_get,
+	roster_ver,
+	private,
+	privacy,
+	blocking,
+	vcard,
+        pubsub_single_tests(),
+        test_unregister]},
+     pubsub_multiple_tests(),
+     {test_muc_register, [parallel],
       [muc_register_master, muc_register_slave]},
      {test_mix, [parallel],
       [mix_master, mix_slave]},
@@ -512,17 +544,17 @@ groups() ->
      {riak, [sequence], db_tests(riak)}].
 
 all() ->
-    [%%{group, ldap},
+    [{group, ldap},
      {group, no_db},
-     %% {group, mnesia},
-     %% {group, redis},
-     %% {group, mysql},
-     %% {group, pgsql},
-     %% {group, sqlite},
-     %% {group, extauth},
-     %% {group, riak},
-     %% {group, component},
-     %% {group, s2s},
+     {group, mnesia},
+     {group, redis},
+     {group, mysql},
+     {group, pgsql},
+     {group, sqlite},
+     {group, extauth},
+     {group, riak},
+     {group, component},
+     {group, s2s},
      stop_ejabberd].
 
 stop_ejabberd(Config) ->
@@ -943,16 +975,22 @@ disco(Config) ->
       end, Items),
     disconnect(Config).
 
-replaced_master(Config0) ->
-    Config = bind(Config0),
-    wait_for_slave(Config),
-    ?recv1(#stream_error{reason = conflict}),
-    ?recv1({xmlstreamend, <<"stream:stream">>}),
-    close_socket(Config).
+%% replaced_master(Config0) ->
+%%     Config = bind(Config0),
+%%     wait_for_slave(Config),
+%%     ?recv1(#stream_error{reason = conflict}),
+%%     ?recv1({xmlstreamend, <<"stream:stream">>}),
+%%     close_socket(Config).
 
-replaced_slave(Config0) ->
-    wait_for_master(Config0),
-    Config = bind(Config0),
+%% replaced_slave(Config0) ->
+%%     wait_for_master(Config0),
+%%     Config = bind(Config0),
+%%     disconnect(Config).
+
+replaced_master(Config) ->
+    disconnect(Config).
+
+replaced_slave(Config) ->
     disconnect(Config).
 
 sm(Config) ->
@@ -1226,77 +1264,662 @@ stats(Config) ->
       end, Stats),
     disconnect(Config).
 
-pubsub(Config) ->
-    Features = get_features(Config, pubsub_jid(Config)),
-    true = lists:member(?NS_PUBSUB, Features),
-    %% Publish <presence/> element within node "presence"
-    ItemID = randoms:get_string(),
-    Node = <<"presence!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>,
-    Item = #ps_item{id = ItemID,
-                        xml_els = [xmpp:encode(#presence{})]},
-    #iq{type = result,
-        sub_els = [#pubsub{publish = #ps_publish{
-                             node = Node,
-                             items = [#ps_item{id = ItemID}]}}]} =
-        send_recv(Config,
-                  #iq{type = set, to = pubsub_jid(Config),
-                      sub_els = [#pubsub{publish = #ps_publish{
-                                           node = Node,
-                                           items = [Item]}}]}),
-    %% Subscribe to node "presence"
-    I1 = send(Config,
-             #iq{type = set, to = pubsub_jid(Config),
-                 sub_els = [#pubsub{subscribe = #ps_subscribe{
-                                      node = Node,
-                                      jid = my_jid(Config)}}]}),
-    ?recv2(
-       #message{sub_els = [#ps_event{}, #delay{}]},
-       #iq{type = result, id = I1}),
-    %% Get subscriptions
-    true = lists:member(?PUBSUB("retrieve-subscriptions"), Features),
-    #iq{type = result,
-        sub_els =
-            [#pubsub{subscriptions =
-                         {<<>>, [#ps_subscription{node = Node}]}}]} =
-        send_recv(Config, #iq{type = get, to = pubsub_jid(Config),
-                              sub_els = [#pubsub{subscriptions = {<<>>, []}}]}),
-    %% Get affiliations
-    true = lists:member(?PUBSUB("retrieve-affiliations"), Features),
-    #iq{type = result,
-        sub_els = [#pubsub{
-                      affiliations =
-                          {<<>>, [#ps_affiliation{node = Node, type = owner}]}}]} =
-        send_recv(Config, #iq{type = get, to = pubsub_jid(Config),
-                              sub_els = [#pubsub{affiliations = {<<>>, []}}]}),
-    %% Fetching published items from node "presence"
-    #iq{type = result,
-        sub_els = [#pubsub{items = #ps_items{
-                             node = Node,
-                             items = [Item]}}]} =
-        send_recv(Config,
-                  #iq{type = get, to = pubsub_jid(Config),
-                      sub_els = [#pubsub{items = #ps_items{node = Node}}]}),
-    %% Deleting the item from the node
-    true = lists:member(?PUBSUB("delete-items"), Features),
-    I2 = send(Config,
-              #iq{type = set, to = pubsub_jid(Config),
-                  sub_els = [#pubsub{retract = #ps_retract{
-                                       node = Node,
-                                       items = [#ps_item{id = ItemID}]}}]}),
-    ?recv2(
-       #iq{type = result, id = I2, sub_els = []},
-       #message{sub_els = [#ps_event{
-                              items = #ps_items{
-					 node = Node,
-					 retract = ItemID}}]}),
-    %% Unsubscribe from node "presence"
-    #iq{type = result, sub_els = []} =
-        send_recv(Config,
-                  #iq{type = set, to = pubsub_jid(Config),
-                      sub_els = [#pubsub{unsubscribe = #ps_unsubscribe{
-                                           node = Node,
-                                           jid = my_jid(Config)}}]}),
+test_pubsub_features(Config) ->
+    PJID = pubsub_jid(Config),
+    AllFeatures = sets:from_list(get_features(Config, PJID)),
+    NeededFeatures = sets:from_list(
+		       [?NS_PUBSUB,
+			?PUBSUB("access-open"),
+			?PUBSUB("access-authorize"),
+			?PUBSUB("create-nodes"),
+			?PUBSUB("instant-nodes"),
+			?PUBSUB("config-node"),
+			?PUBSUB("retrieve-default"),
+			?PUBSUB("create-and-configure"),
+			?PUBSUB("publish"),
+			?PUBSUB("auto-create"),
+			?PUBSUB("retrieve-items"),
+			?PUBSUB("delete-items"),
+			?PUBSUB("subscribe"),
+			?PUBSUB("retrieve-affiliations"),
+			?PUBSUB("modify-affiliations"),
+			?PUBSUB("retrieve-subscriptions"),
+			?PUBSUB("manage-subscriptions"),
+			?PUBSUB("purge-nodes"),
+			?PUBSUB("delete-nodes")]),
+    true = sets:is_subset(NeededFeatures, AllFeatures),
     disconnect(Config).
+
+test_pubsub_create(Config) ->
+    Node = ?config(pubsub_node, Config),
+    Node = create_node(Config, Node),
+    disconnect(Config).
+
+test_pubsub_create_instant(Config) ->
+    Node = create_node(Config, <<>>),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+test_pubsub_configure(Config) ->
+    Node = ?config(pubsub_node, Config),
+    NodeTitle = ?config(pubsub_node_title, Config),
+    NodeConfig = get_node_config(Config, Node),
+    MyNodeConfig = set_opts(NodeConfig,
+			    [{title, NodeTitle}]),
+    set_node_config(Config, Node, MyNodeConfig),
+    NewNodeConfig = get_node_config(Config, Node),
+    NodeTitle = proplists:get_value(title, NewNodeConfig),
+    disconnect(Config).
+
+test_pubsub_default(Config) ->
+    get_default_node_config(Config),
+    disconnect(Config).
+
+test_pubsub_create_configure(Config) ->
+    NodeTitle = ?config(pubsub_node_title, Config),
+    DefaultNodeConfig = get_default_node_config(Config),
+    CustomNodeConfig = set_opts(DefaultNodeConfig,
+				[{title, NodeTitle}]),
+    Node = create_node(Config, <<>>, CustomNodeConfig),
+    NodeConfig = get_node_config(Config, Node),
+    NodeTitle = proplists:get_value(title, NodeConfig),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+test_pubsub_publish(Config) ->
+    Node = create_node(Config, <<>>),
+    publish_item(Config, Node),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+test_pubsub_auto_create(Config) ->
+    Node = randoms:get_string(),
+    publish_item(Config, Node),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+test_pubsub_get_items(Config) ->
+    Node = create_node(Config, <<>>),
+    ItemsIn = [publish_item(Config, Node) || _ <- lists:seq(1, 5)],
+    ItemsOut = get_items(Config, Node),
+    true = [I || #ps_item{id = I} <- lists:sort(ItemsIn)]
+	== [I || #ps_item{id = I} <- lists:sort(ItemsOut)],
+    delete_node(Config, Node),
+    disconnect(Config).
+
+test_pubsub_delete_item(Config) ->
+    Node = create_node(Config, <<>>),
+    #ps_item{id = I} = publish_item(Config, Node),
+    [#ps_item{id = I}] = get_items(Config, Node),
+    delete_item(Config, Node, I),
+    [] = get_items(Config, Node),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+test_pubsub_subscribe(Config) ->
+    Node = create_node(Config, <<>>),
+    #ps_subscription{type = subscribed} = subscribe_node(Config, Node),
+    [#ps_subscription{node = Node}] = get_subscriptions(Config),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+test_pubsub_unsubscribe(Config) ->
+    Node = create_node(Config, <<>>),
+    subscribe_node(Config, Node),
+    [#ps_subscription{node = Node}] = get_subscriptions(Config),
+    unsubscribe_node(Config, Node),
+    [] = get_subscriptions(Config),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+test_pubsub_get_affiliations(Config) ->
+    Nodes = lists:sort([create_node(Config, <<>>) || _ <- lists:seq(1, 5)]),
+    Affs = get_affiliations(Config),
+    Nodes = lists:sort([Node || #ps_affiliation{node = Node,
+						type = owner} <- Affs]),
+    [delete_node(Config, Node) || Node <- Nodes],
+    disconnect(Config).
+
+test_pubsub_get_subscriptions(Config) ->
+    Nodes = lists:sort([create_node(Config, <<>>) || _ <- lists:seq(1, 5)]),
+    [subscribe_node(Config, Node) || Node <- Nodes],
+    Subs = get_subscriptions(Config),
+    Nodes = lists:sort([Node || #ps_subscription{node = Node} <- Subs]),
+    [delete_node(Config, Node) || Node <- Nodes],
+    disconnect(Config).
+
+test_pubsub_purge(Config) ->
+    Node = create_node(Config, <<>>),
+    ItemsIn = [publish_item(Config, Node) || _ <- lists:seq(1, 5)],
+    ItemsOut = get_items(Config, Node),
+    true = [I || #ps_item{id = I} <- lists:sort(ItemsIn)]
+	== [I || #ps_item{id = I} <- lists:sort(ItemsOut)],
+    purge_node(Config, Node),
+    [] = get_items(Config, Node),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+test_pubsub_delete(Config) ->
+    Node = ?config(pubsub_node, Config),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+pubsub_publish_master(Config) ->
+    Node = create_node(Config, <<>>),
+    put_event(Config, Node),
+    wait_for_slave(Config),
+    #ps_item{id = ID} = publish_item(Config, Node),
+    #ps_item{id = ID} = get_event(Config),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+pubsub_publish_slave(Config) ->
+    Node = get_event(Config),
+    subscribe_node(Config, Node),
+    wait_for_master(Config),
+    #message{
+       sub_els =
+	   [#ps_event{
+	       items = #ps_items{node = Node,
+				 items = [Item]}}]} = recv(Config),
+    put_event(Config, Item),
+    disconnect(Config).
+
+pubsub_subscriptions_master(Config) ->
+    Peer = ?config(slave, Config),
+    Node = ?config(pubsub_node, Config),
+    Node = create_node(Config, Node),
+    [] = get_subscriptions(Config, Node),
+    wait_for_slave(Config),
+    lists:foreach(
+      fun(Type) ->
+	      ok = set_subscriptions(Config, Node, [{Peer, Type}]),
+	      #ps_item{} = publish_item(Config, Node),
+	      case get_subscriptions(Config, Node) of
+		  [] when Type == none; Type == pending ->
+		      ok;
+		  [#ps_subscription{jid = Peer, type = Type}] ->
+		      ok
+	      end
+      end, [subscribed, unconfigured, pending, none]),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+pubsub_subscriptions_slave(Config) ->
+    wait_for_master(Config),
+    MyJID = my_jid(Config),
+    Node = ?config(pubsub_node, Config),
+    lists:foreach(
+      fun(subscribed = Type) ->
+	      ?recv2(#message{
+			sub_els =
+			    [#ps_event{
+				subscription = #ps_subscription{
+						  node = Node,
+						  jid = MyJID,
+						  type = Type}}]},
+		     #message{sub_els = [#ps_event{}]});
+	 (Type) ->
+	      ?recv1(#message{
+			sub_els =
+			    [#ps_event{
+				subscription = #ps_subscription{
+						  node = Node,
+						  jid = MyJID,
+						  type = Type}}]})
+      end, [subscribed, unconfigured, pending, none]),
+    disconnect(Config).
+
+pubsub_affiliations_master(Config) ->
+    Peer = ?config(slave, Config),
+    BarePeer = jid:remove_resource(Peer),
+    lists:foreach(
+      fun(Aff) ->
+	      Node = <<(atom_to_binary(Aff, utf8))/binary,
+		       $-, (randoms:get_string())/binary>>,
+	      create_node(Config, Node, default_node_config(Config)),
+	      #ps_item{id = I} = publish_item(Config, Node),
+	      ok = set_affiliations(Config, Node, [{Peer, Aff}]),
+	      Affs = get_affiliations(Config, Node),
+	      case lists:keyfind(BarePeer, #ps_affiliation.jid, Affs) of
+		  false when Aff == none ->
+		      ok;
+		  #ps_affiliation{type = Aff} ->
+		      ok
+	      end,
+	      put_event(Config, {Aff, Node, I}),
+	      wait_for_slave(Config),
+	      delete_node(Config, Node)
+      end, [outcast, none, member, publish_only, publisher, owner]),
+    put_event(Config, disconnect),
+    disconnect(Config).
+
+pubsub_affiliations_slave(Config) ->
+    pubsub_affiliations_slave(Config, get_event(Config)).
+
+pubsub_affiliations_slave(Config, {outcast, Node, ItemID}) ->
+    #stanza_error{reason = 'forbidden'} = subscribe_node(Config, Node),
+    #stanza_error{} = unsubscribe_node(Config, Node),
+    #stanza_error{reason = 'forbidden'} = get_items(Config, Node),
+    #stanza_error{reason = 'forbidden'} = publish_item(Config, Node),
+    #stanza_error{reason = 'forbidden'} = delete_item(Config, Node, ItemID),
+    #stanza_error{reason = 'forbidden'} = purge_node(Config, Node),
+    #stanza_error{reason = 'forbidden'} = get_node_config(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_node_config(Config, Node, default_node_config(Config)),
+    #stanza_error{reason = 'forbidden'} = get_subscriptions(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_subscriptions(Config, Node, [{my_jid(Config), subscribed}]),
+    #stanza_error{reason = 'forbidden'} = get_affiliations(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_affiliations(Config, Node, [{?config(master, Config), outcast},
+					{my_jid(Config), owner}]),
+    #stanza_error{reason = 'forbidden'} = delete_node(Config, Node),
+    wait_for_master(Config),
+    pubsub_affiliations_slave(Config, get_event(Config));
+pubsub_affiliations_slave(Config, {none, Node, ItemID}) ->
+    #ps_subscription{type = subscribed} = subscribe_node(Config, Node),
+    ok = unsubscribe_node(Config, Node),
+    %% This violates the affiliation char from section 4.1
+    [_|_] = get_items(Config, Node),
+    #stanza_error{reason = 'forbidden'} = publish_item(Config, Node),
+    #stanza_error{reason = 'forbidden'} = delete_item(Config, Node, ItemID),
+    #stanza_error{reason = 'forbidden'} = purge_node(Config, Node),
+    #stanza_error{reason = 'forbidden'} = get_node_config(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_node_config(Config, Node, default_node_config(Config)),
+    #stanza_error{reason = 'forbidden'} = get_subscriptions(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_subscriptions(Config, Node, [{my_jid(Config), subscribed}]),
+    #stanza_error{reason = 'forbidden'} = get_affiliations(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_affiliations(Config, Node, [{?config(master, Config), outcast},
+					{my_jid(Config), owner}]),
+    #stanza_error{reason = 'forbidden'} = delete_node(Config, Node),
+    wait_for_master(Config),
+    pubsub_affiliations_slave(Config, get_event(Config));
+pubsub_affiliations_slave(Config, {member, Node, ItemID}) ->
+    #ps_subscription{type = subscribed} = subscribe_node(Config, Node),
+    ok = unsubscribe_node(Config, Node),
+    [_|_] = get_items(Config, Node),
+    #stanza_error{reason = 'forbidden'} = publish_item(Config, Node),
+    #stanza_error{reason = 'forbidden'} = delete_item(Config, Node, ItemID),
+    #stanza_error{reason = 'forbidden'} = purge_node(Config, Node),
+    #stanza_error{reason = 'forbidden'} = get_node_config(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_node_config(Config, Node, default_node_config(Config)),
+    #stanza_error{reason = 'forbidden'} = get_subscriptions(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_subscriptions(Config, Node, [{my_jid(Config), subscribed}]),
+    #stanza_error{reason = 'forbidden'} = get_affiliations(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_affiliations(Config, Node, [{?config(master, Config), outcast},
+					{my_jid(Config), owner}]),
+    #stanza_error{reason = 'forbidden'} = delete_node(Config, Node),
+    wait_for_master(Config),
+    pubsub_affiliations_slave(Config, get_event(Config));
+pubsub_affiliations_slave(Config, {publish_only, Node, ItemID}) ->
+    #stanza_error{reason = 'forbidden'} = subscribe_node(Config, Node),
+    #stanza_error{} = unsubscribe_node(Config, Node),
+    #stanza_error{reason = 'forbidden'} = get_items(Config, Node),
+    #ps_item{id = MyItemID} = publish_item(Config, Node),
+    %% BUG: This should be fixed
+    %% ?match(ok, delete_item(Config, Node, MyItemID)),
+    #stanza_error{reason = 'forbidden'} = delete_item(Config, Node, ItemID),
+    #stanza_error{reason = 'forbidden'} = purge_node(Config, Node),
+    #stanza_error{reason = 'forbidden'} = get_node_config(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_node_config(Config, Node, default_node_config(Config)),
+    #stanza_error{reason = 'forbidden'} = get_subscriptions(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_subscriptions(Config, Node, [{my_jid(Config), subscribed}]),
+    #stanza_error{reason = 'forbidden'} = get_affiliations(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_affiliations(Config, Node, [{?config(master, Config), outcast},
+					{my_jid(Config), owner}]),
+    #stanza_error{reason = 'forbidden'} = delete_node(Config, Node),
+    wait_for_master(Config),
+    pubsub_affiliations_slave(Config, get_event(Config));
+pubsub_affiliations_slave(Config, {publisher, Node, ItemID}) ->
+    #ps_subscription{type = subscribed} = subscribe_node(Config, Node),
+    ok = unsubscribe_node(Config, Node),
+    [_|_] = get_items(Config, Node),
+    #ps_item{id = MyItemID} = publish_item(Config, Node),
+    ok = delete_item(Config, Node, MyItemID),
+    %% BUG: this should be fixed
+    %% #stanza_error{reason = 'forbidden'} = delete_item(Config, Node, ItemID),
+    #stanza_error{reason = 'forbidden'} = purge_node(Config, Node),
+    #stanza_error{reason = 'forbidden'} = get_node_config(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_node_config(Config, Node, default_node_config(Config)),
+    #stanza_error{reason = 'forbidden'} = get_subscriptions(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_subscriptions(Config, Node, [{my_jid(Config), subscribed}]),
+    #stanza_error{reason = 'forbidden'} = get_affiliations(Config, Node),
+    #stanza_error{reason = 'forbidden'} =
+	set_affiliations(Config, Node, [{?config(master, Config), outcast},
+					{my_jid(Config), owner}]),
+    #stanza_error{reason = 'forbidden'} = delete_node(Config, Node),
+    wait_for_master(Config),
+    pubsub_affiliations_slave(Config, get_event(Config));
+pubsub_affiliations_slave(Config, {owner, Node, ItemID}) ->
+    MyJID = my_jid(Config),
+    Peer = ?config(master, Config),
+    #ps_subscription{type = subscribed} = subscribe_node(Config, Node),
+    ok = unsubscribe_node(Config, Node),
+    [_|_] = get_items(Config, Node),
+    #ps_item{id = MyItemID} = publish_item(Config, Node),
+    ok = delete_item(Config, Node, MyItemID),
+    ok = delete_item(Config, Node, ItemID),
+    ok = purge_node(Config, Node),
+    [_|_] = get_node_config(Config, Node),
+    ok = set_node_config(Config, Node, default_node_config(Config)),
+    ok = set_subscriptions(Config, Node, []),
+    [] = get_subscriptions(Config, Node),
+    ok = set_affiliations(Config, Node, [{Peer, outcast}, {MyJID, owner}]),
+    [_, _] = get_affiliations(Config, Node),
+    ok = delete_node(Config, Node),
+    wait_for_master(Config),
+    pubsub_affiliations_slave(Config, get_event(Config));
+pubsub_affiliations_slave(Config, disconnect) ->
+    disconnect(Config).
+
+pubsub_authorize_master(Config) ->
+    send(Config, #presence{}),
+    ?recv1(#presence{}),
+    Peer = ?config(slave, Config),
+    PJID = pubsub_jid(Config),
+    NodeConfig = set_opts(default_node_config(Config),
+			  [{access_model, authorize}]),
+    Node = ?config(pubsub_node, Config),
+    Node = create_node(Config, Node, NodeConfig),
+    wait_for_slave(Config),
+    #message{sub_els = [#xdata{fields = F1}]} = recv(Config),
+    C1 = pubsub_subscribe_authorization:decode(F1),
+    Node = proplists:get_value(node, C1),
+    Peer = proplists:get_value(subscriber_jid, C1),
+    %% Deny it at first
+    Deny = #xdata{type = submit,
+		  fields = pubsub_subscribe_authorization:encode(
+			     [{node, Node},
+			      {subscriber_jid, Peer},
+			      {allow, false}])},
+    send(Config, #message{to = PJID, sub_els = [Deny]}),
+    %% We should not have any subscriptions
+    [] = get_subscriptions(Config, Node),
+    wait_for_slave(Config),
+    #message{sub_els = [#xdata{fields = F2}]} = recv(Config),
+    C2 = pubsub_subscribe_authorization:decode(F2),
+    Node = proplists:get_value(node, C2),
+    Peer = proplists:get_value(subscriber_jid, C2),
+    %% Now we accept is as the peer is very insisting ;)
+    Approve = #xdata{type = submit,
+		     fields = pubsub_subscribe_authorization:encode(
+				[{node, Node},
+				 {subscriber_jid, Peer},
+				 {allow, true}])},
+    send(Config, #message{to = PJID, sub_els = [Approve]}),
+    wait_for_slave(Config),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+pubsub_authorize_slave(Config) ->
+    Node = ?config(pubsub_node, Config),
+    MyJID = my_jid(Config),
+    wait_for_master(Config),
+    #ps_subscription{type = pending} = subscribe_node(Config, Node),
+    %% We're denied at first
+    ?recv1(#message{
+	      sub_els =
+		  [#ps_event{
+		      subscription = #ps_subscription{type = none,
+						      jid = MyJID}}]}),
+    wait_for_master(Config),
+    #ps_subscription{type = pending} = subscribe_node(Config, Node),
+    %% Now much better!
+    ?recv1(#message{
+	      sub_els =
+		  [#ps_event{
+		      subscription = #ps_subscription{type = subscribed,
+						      jid = MyJID}}]}),
+    wait_for_master(Config),
+    disconnect(Config).
+
+create_node(Config, Node) ->
+    create_node(Config, Node, undefined).
+
+create_node(Config, Node, Options) ->
+    PJID = pubsub_jid(Config),
+    NodeConfig = if is_list(Options) ->
+			 #xdata{type = submit,
+				fields = pubsub_node_config:encode(Options)};
+		    true ->
+			 undefined
+		 end,
+    case send_recv(Config,
+		   #iq{type = set, to = PJID,
+		       sub_els = [#pubsub{create = Node,
+					  configure = {<<>>, NodeConfig}}]}) of
+	#iq{type = result, sub_els = [#pubsub{create = NewNode}]} ->
+	    NewNode;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+delete_node(Config, Node) ->
+    PJID = pubsub_jid(Config),
+    case send_recv(Config,
+		   #iq{type = set, to = PJID,
+		       sub_els = [#pubsub_owner{delete = {Node, <<>>}}]}) of
+	#iq{type = result, sub_els = []} ->
+	    ok;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+purge_node(Config, Node) ->
+    PJID = pubsub_jid(Config),
+    case send_recv(Config,
+		   #iq{type = set, to = PJID,
+		       sub_els = [#pubsub_owner{purge = Node}]}) of
+	#iq{type = result, sub_els = []} ->
+	    ok;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+get_default_node_config(Config) ->
+    PJID = pubsub_jid(Config),
+    case send_recv(Config,
+		   #iq{type = get, to = PJID,
+		       sub_els = [#pubsub_owner{default = {<<>>, undefined}}]}) of
+	#iq{type = result,
+	    sub_els = [#pubsub_owner{default = {<<>>, NodeConfig}}]} ->
+	    pubsub_node_config:decode(NodeConfig#xdata.fields);
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+get_node_config(Config, Node) ->
+    PJID = pubsub_jid(Config),
+    case send_recv(Config,
+		   #iq{type = get, to = PJID,
+		       sub_els = [#pubsub_owner{configure = {Node, undefined}}]}) of
+	#iq{type = result,
+	    sub_els = [#pubsub_owner{configure = {Node, NodeConfig}}]} ->
+	    pubsub_node_config:decode(NodeConfig#xdata.fields);
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+set_node_config(Config, Node, Options) ->
+    PJID = pubsub_jid(Config),
+    NodeConfig = #xdata{type = submit,
+			fields = pubsub_node_config:encode(Options)},
+    case send_recv(Config,
+		   #iq{type = set, to = PJID,
+		       sub_els = [#pubsub_owner{configure =
+						    {Node, NodeConfig}}]}) of
+	#iq{type = result, sub_els = []} ->
+	    ok;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+publish_item(Config, Node) ->
+    PJID = pubsub_jid(Config),
+    ItemID = randoms:get_string(),
+    Item = #ps_item{id = ItemID, xml_els = [xmpp:encode(#presence{id = ItemID})]},
+    case send_recv(Config,
+		   #iq{type = set, to = PJID,
+		       sub_els = [#pubsub{publish = #ps_publish{
+						       node = Node,
+						       items = [Item]}}]}) of
+	#iq{type = result,
+	    sub_els = [#pubsub{publish = #ps_publish{
+					    node = Node,
+					    items = [#ps_item{id = ItemID}]}}]} ->
+	    Item;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+get_items(Config, Node) ->
+    PJID = pubsub_jid(Config),
+    case send_recv(Config,
+		   #iq{type = get, to = PJID,
+		       sub_els = [#pubsub{items = #ps_items{node = Node}}]}) of
+	#iq{type = result,
+	    sub_els = [#pubsub{items = #ps_items{node = Node, items = Items}}]} ->
+	    Items;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+delete_item(Config, Node, I) ->
+    PJID = pubsub_jid(Config),
+    case send_recv(Config,
+		   #iq{type = set, to = PJID,
+		       sub_els = [#pubsub{retract =
+					      #ps_retract{
+						 node = Node,
+						 items = [#ps_item{id = I}]}}]}) of
+	#iq{type = result, sub_els = []} ->
+	    ok;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+subscribe_node(Config, Node) ->
+    PJID = pubsub_jid(Config),
+    MyJID = my_jid(Config),
+    case send_recv(Config,
+		   #iq{type = set, to = PJID,
+		       sub_els = [#pubsub{subscribe = #ps_subscribe{
+							 node = Node,
+							 jid = MyJID}}]}) of
+	#iq{type = result,
+	    sub_els = [#pubsub{
+			  subscription = #ps_subscription{
+					    node = Node,
+					    jid = MyJID} = Sub}]} ->
+	    Sub;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+unsubscribe_node(Config, Node) ->
+    PJID = pubsub_jid(Config),
+    MyJID = my_jid(Config),
+    case send_recv(Config,
+		   #iq{type = set, to = PJID,
+		       sub_els = [#pubsub{
+				     unsubscribe = #ps_unsubscribe{
+						      node = Node,
+						      jid = MyJID}}]}) of
+	#iq{type = result, sub_els = []} ->
+	    ok;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+get_affiliations(Config) ->
+    PJID = pubsub_jid(Config),
+    case send_recv(Config,
+		   #iq{type = get, to = PJID,
+		       sub_els = [#pubsub{affiliations = {<<>>, []}}]}) of
+	#iq{type = result,
+	    sub_els = [#pubsub{affiliations = {<<>>, Affs}}]} ->
+	    Affs;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+get_affiliations(Config, Node) ->
+    PJID = pubsub_jid(Config),
+    case send_recv(Config,
+		   #iq{type = get, to = PJID,
+		       sub_els = [#pubsub_owner{affiliations = {Node, []}}]}) of
+	#iq{type = result,
+	    sub_els = [#pubsub_owner{affiliations = {Node, Affs}}]} ->
+	    Affs;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+set_affiliations(Config, Node, JTs) ->
+    PJID = pubsub_jid(Config),
+    Affs = [#ps_affiliation{jid = J, type = T} || {J, T} <- JTs],
+    case send_recv(Config,
+		   #iq{type = set, to = PJID,
+		       sub_els = [#pubsub_owner{affiliations =
+						    {Node, Affs}}]}) of
+	#iq{type = result, sub_els = []} ->
+	    ok;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+get_subscriptions(Config) ->
+    PJID = pubsub_jid(Config),
+    case send_recv(Config,
+		   #iq{type = get, to = PJID,
+		       sub_els = [#pubsub{subscriptions = {<<>>, []}}]}) of
+	#iq{type = result, sub_els = [#pubsub{subscriptions = {<<>>, Subs}}]} ->
+	    Subs;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+get_subscriptions(Config, Node) ->
+    PJID = pubsub_jid(Config),
+    case send_recv(Config,
+		   #iq{type = get, to = PJID,
+		       sub_els = [#pubsub_owner{subscriptions = {Node, []}}]}) of
+	#iq{type = result,
+	    sub_els = [#pubsub_owner{subscriptions = {Node, Subs}}]} ->
+	    Subs;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+set_subscriptions(Config, Node, JTs) ->
+    PJID = pubsub_jid(Config),
+    Subs = [#ps_subscription{jid = J, type = T} || {J, T} <- JTs],
+    case send_recv(Config,
+		   #iq{type = set, to = PJID,
+		       sub_els = [#pubsub_owner{subscriptions =
+						    {Node, Subs}}]}) of
+	#iq{type = result, sub_els = []} ->
+	    ok;
+	#iq{type = error} = IQ ->
+	    xmpp:get_subtag(IQ, #stanza_error{})
+    end.
+
+default_node_config(Config) ->
+    [{title, ?config(pubsub_node_title, Config)},
+     {notify_delete, false},
+     {send_last_published_item, never}].
 
 mix_master(Config) ->
     MIX = mix_jid(Config),
@@ -1627,7 +2250,7 @@ muc_mam_master(Config) ->
                               to = Room}),
     %% Find the MAM field in the config and enable it
     NewFields = lists:flatmap(
-		  fun(#xdata_field{var = <<"muc#roomconfig_mam">> = Var}) ->
+		  fun(#xdata_field{var = <<"mam">> = Var}) ->
 			  [#xdata_field{var = Var, values = [<<"1">>]}];
 		     (_) ->
 			  []
@@ -1934,39 +2557,36 @@ muc_slave(Config) ->
     disconnect(Config).
 
 muc_register_nick(Config, MUC, PrevNick, Nick) ->
-    {Registered, PrevNickVals} = if PrevNick /= <<"">> ->
-					 {true, [PrevNick]};
-				    true ->
-					 {false, []}
-				 end,
+    PrevRegistered = if PrevNick /= <<"">> -> true;
+			true -> false
+		     end,
+    NewRegistered = if Nick /= <<"">> -> true;
+		       true -> false
+		    end,
     %% Request register form
     #iq{type = result,
-	sub_els = [#register{registered = Registered,
+	sub_els = [#register{registered = PrevRegistered,
 			     xdata = #xdata{type = form,
 					    fields = FsWithoutNick}}]} =
 	send_recv(Config, #iq{type = get, to = MUC,
 			      sub_els = [#register{}]}),
-    %% Check if 'nick' field presents
-    #xdata_field{type = 'text-single',
-		 var = <<"nick">>,
-		 values = PrevNickVals} =
-	lists:keyfind(<<"nick">>, #xdata_field.var, FsWithoutNick),
-    X = #xdata{type = submit,
-	       fields = [#xdata_field{var = <<"nick">>, values = [Nick]}]},
+    %% Check if previous nick is registered
+    PrevNick = proplists:get_value(
+		 roomnick, muc_register:decode(FsWithoutNick)),
+    X = #xdata{type = submit, fields = muc_register:encode([{roomnick, Nick}])},
     %% Submitting form
     #iq{type = result, sub_els = []} =
 	send_recv(Config, #iq{type = set, to = MUC,
 			      sub_els = [#register{xdata = X}]}),
-    %% Check if the nick was registered
+    %% Check if new nick was registered
     #iq{type = result,
-	sub_els = [#register{registered = true,
+	sub_els = [#register{registered = NewRegistered,
 			     xdata = #xdata{type = form,
 					    fields = FsWithNick}}]} =
 	send_recv(Config, #iq{type = get, to = MUC,
 			      sub_els = [#register{}]}),
-    #xdata_field{type = 'text-single', var = <<"nick">>,
-		 values = [Nick]} =
-	lists:keyfind(<<"nick">>, #xdata_field.var, FsWithNick).
+    Nick = proplists:get_value(
+	     roomnick, muc_register:decode(FsWithNick)).
 
 muc_register_master(Config) ->
     MUC = muc_jid(Config),
@@ -1980,17 +2600,23 @@ muc_register_master(Config) ->
     muc_register_nick(Config, MUC, <<"">>, <<"master2">>),
     %% Now register nick "master"
     muc_register_nick(Config, MUC, <<"master2">>, <<"master">>),
+    %% Wait for slave to fail trying to register nick "master"
+    wait_for_slave(Config),
+    wait_for_slave(Config),
+    %% Now register empty ("") nick, which means we're unregistering
+    muc_register_nick(Config, MUC, <<"master">>, <<"">>),
     disconnect(Config).
 
 muc_register_slave(Config) ->
     MUC = muc_jid(Config),
+    wait_for_master(Config),
     %% Trying to register occupied nick "master"
-    X = #xdata{type = submit,
-	       fields = [#xdata_field{var = <<"nick">>,
-				      values = [<<"master">>]}]},
+    Fs = muc_register:encode([{roomnick, <<"master">>}]),
+    X = #xdata{type = submit, fields = Fs},
     #iq{type = error} =
 	send_recv(Config, #iq{type = set, to = MUC,
 			      sub_els = [#register{xdata = X}]}),
+    wait_for_master(Config),
     disconnect(Config).
 
 announce_master(Config) ->
@@ -2740,6 +3366,12 @@ socks5_send(Sock, Data) ->
 
 socks5_recv(Sock, Data) ->
     {ok, Data} = gen_tcp:recv(Sock, size(Data)).
+
+set_opts(Config, Options) ->
+    lists:foldl(
+      fun({Opt, Val}, Acc) ->
+	      lists:keystore(Opt, 1, Acc, {Opt, Val})
+      end, Config, Options).
 
 %%%===================================================================
 %%% SQL stuff

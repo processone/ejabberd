@@ -1610,6 +1610,7 @@
                         default = false,
                         min = 0, max = 1},
                    #ref{name = xdata_field_desc,
+			default = <<"">>,
                         label = '$desc',
                         min = 0, max = 1},
                    #ref{name = xdata_field_value,
@@ -1682,7 +1683,7 @@
 -record(ps_affiliation, {xmlns = <<>> :: binary(),
 			 node = <<>> :: binary(),
 			 type :: member | none | outcast |
-				 owner | publisher | 'publish-only',
+				 owner | publisher | publish_only,
 			 jid :: jid:jid()}).
 -type ps_affiliation() :: #ps_affiliation{}.
 
@@ -1695,9 +1696,8 @@
                     #attr{name = <<"affiliation">>,
                           label = '$type',
                           required = true,
-                          dec = {dec_enum, [[member, none, outcast, owner,
-                                             publisher, 'publish-only']]},
-                          enc = {enc_enum, []}}]}).
+                          dec = {dec_ps_aff, []},
+                          enc = {enc_ps_aff, []}}]}).
 
 -xml(pubsub_owner_affiliation,
      #elem{name = <<"affiliation">>,
@@ -1711,9 +1711,8 @@
                     #attr{name = <<"affiliation">>,
                           label = '$type',
                           required = true,
-                          dec = {dec_enum, [[member, none, outcast, owner,
-                                             publisher, 'publish-only']]},
-                          enc = {enc_enum, []}}]}).
+			  dec = {dec_ps_aff, []},
+                          enc = {enc_ps_aff, []}}]}).
 
 -xml(pubsub_event_configuration,
      #elem{name = <<"configuration">>,
@@ -3500,6 +3499,22 @@ dec_version(S) ->
 
 enc_version({Maj, Min}) ->
     <<(integer_to_binary(Maj))/binary, $., (integer_to_binary(Min))/binary>>.
+
+-spec dec_ps_aff(_) -> member | none | outcast |
+		       owner | publisher | publish_only.
+dec_ps_aff(<<"member">>) -> member;
+dec_ps_aff(<<"none">>) -> none;
+dec_ps_aff(<<"outcast">>) -> outcast;
+dec_ps_aff(<<"owner">>) -> owner;
+dec_ps_aff(<<"publisher">>) -> publisher;
+dec_ps_aff(<<"publish-only">>) -> publish_only.
+
+enc_ps_aff(member) -> <<"member">>;
+enc_ps_aff(none) -> <<"none">>;
+enc_ps_aff(outcast) -> <<"outcast">>;
+enc_ps_aff(owner) -> <<"owner">>;
+enc_ps_aff(publisher) -> <<"publisher">>;
+enc_ps_aff(publish_only) -> <<"publish-only">>.
 
 %% Local Variables:
 %% mode: erlang

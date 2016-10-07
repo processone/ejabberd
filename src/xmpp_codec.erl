@@ -6602,6 +6602,20 @@ pp(upload_slot, 3) -> [get, put, xmlns];
 pp(thumbnail, 4) -> [uri, 'media-type', width, height];
 pp(_, _) -> no.
 
+enc_ps_aff(member) -> <<"member">>;
+enc_ps_aff(none) -> <<"none">>;
+enc_ps_aff(outcast) -> <<"outcast">>;
+enc_ps_aff(owner) -> <<"owner">>;
+enc_ps_aff(publisher) -> <<"publisher">>;
+enc_ps_aff(publish_only) -> <<"publish-only">>.
+
+dec_ps_aff(<<"member">>) -> member;
+dec_ps_aff(<<"none">>) -> none;
+dec_ps_aff(<<"outcast">>) -> outcast;
+dec_ps_aff(<<"owner">>) -> owner;
+dec_ps_aff(<<"publisher">>) -> publisher;
+dec_ps_aff(<<"publish-only">>) -> publish_only.
+
 enc_version({Maj, Min}) ->
     <<(integer_to_binary(Maj))/binary, $.,
       (integer_to_binary(Min))/binary>>.
@@ -19203,10 +19217,7 @@ decode_pubsub_owner_affiliation_attr_affiliation(__TopXMLNS,
 		   __TopXMLNS}});
 decode_pubsub_owner_affiliation_attr_affiliation(__TopXMLNS,
 						 _val) ->
-    case catch dec_enum(_val,
-			[member, none, outcast, owner, publisher,
-			 'publish-only'])
-	of
+    case catch dec_ps_aff(_val) of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
 			{bad_attr_value, <<"affiliation">>, <<"affiliation">>,
@@ -19216,7 +19227,7 @@ decode_pubsub_owner_affiliation_attr_affiliation(__TopXMLNS,
 
 encode_pubsub_owner_affiliation_attr_affiliation(_val,
 						 _acc) ->
-    [{<<"affiliation">>, enc_enum(_val)} | _acc].
+    [{<<"affiliation">>, enc_ps_aff(_val)} | _acc].
 
 decode_pubsub_affiliation(__TopXMLNS, __IgnoreEls,
 			  {xmlel, <<"affiliation">>, _attrs, _els}) ->
@@ -19290,10 +19301,7 @@ decode_pubsub_affiliation_attr_affiliation(__TopXMLNS,
 		   __TopXMLNS}});
 decode_pubsub_affiliation_attr_affiliation(__TopXMLNS,
 					   _val) ->
-    case catch dec_enum(_val,
-			[member, none, outcast, owner, publisher,
-			 'publish-only'])
-	of
+    case catch dec_ps_aff(_val) of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
 			{bad_attr_value, <<"affiliation">>, <<"affiliation">>,
@@ -19303,7 +19311,7 @@ decode_pubsub_affiliation_attr_affiliation(__TopXMLNS,
 
 encode_pubsub_affiliation_attr_affiliation(_val,
 					   _acc) ->
-    [{<<"affiliation">>, enc_enum(_val)} | _acc].
+    [{<<"affiliation">>, enc_ps_aff(_val)} | _acc].
 
 decode_pubsub_subscription(__TopXMLNS, __IgnoreEls,
 			   {xmlel, <<"subscription">>, _attrs, _els}) ->
@@ -19826,7 +19834,7 @@ decode_xdata_field(__TopXMLNS, __IgnoreEls,
 		   {xmlel, <<"field">>, _attrs, _els}) ->
     {Options, Values, Desc, Required, __Els} =
 	decode_xdata_field_els(__TopXMLNS, __IgnoreEls, _els,
-			       [], [], undefined, false, []),
+			       [], [], <<>>, false, []),
     {Label, Type, Var} =
 	decode_xdata_field_attrs(__TopXMLNS, _attrs, undefined,
 				 undefined, undefined),
@@ -20003,8 +20011,7 @@ encode_xdata_field({xdata_field, Label, Type, Var,
 				 [encode_xdata_field_value(Values, __TopXMLNS)
 				  | _acc]).
 
-'encode_xdata_field_$desc'(undefined, __TopXMLNS,
-			   _acc) ->
+'encode_xdata_field_$desc'(<<>>, __TopXMLNS, _acc) ->
     _acc;
 'encode_xdata_field_$desc'(Desc, __TopXMLNS, _acc) ->
     [encode_xdata_field_desc(Desc, __TopXMLNS) | _acc].

@@ -1,0 +1,34 @@
+<form_type>
+  <name>http://jabber.org/protocol/pubsub#publish-options</name>
+  <doc>XEP-0060</doc>
+  <desc>
+    Forms enabling publication with options; each field must specify whether it
+    defines METADATA to be attached to the item, a per-item OVERRIDE of the node
+    configuration, or a PRECONDITION to be checked against the node configuration.
+  </desc>
+  <field var='pubsub#access_model'
+         type='list-single'
+         label='Specify the access model'>
+    <option label='Access model of authorize'>
+      <value>authorize</value>
+    </option>
+    <option label='Access model of open'>
+      <value>open</value>
+    </option>
+    <option label='Access model of presence'>
+      <value>presence</value>
+    </option>
+    <option label='Access model of roster'>
+      <value>roster</value>
+    </option>
+    <option label='Access model of whitelist'>
+      <value>whitelist</value>
+    </option>
+  </field>
+</form_type>
+
+<!--
+Local Variables:
+mode: xml
+End:
+-->

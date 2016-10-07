@@ -37,7 +37,7 @@
 	 process_iq_v0_2/1, process_iq_v0_3/1, disco_sm_features/5,
 	 remove_user/2, remove_room/3, mod_opt_type/1, muc_process_iq/2,
 	 muc_filter_message/5, message_is_archived/5, delete_old_messages/2,
-	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/4]).
+	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/3]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -191,39 +191,17 @@ remove_room(LServer, Name, Host) ->
     Mod:remove_room(LServer, LName, LHost),
     ok.
 
--spec get_room_config([xdata_field()], mod_muc_room:state(), jid(), binary())
-      -> [xdata_field()].			     
-get_room_config(XFields, RoomState, _From, Lang) ->
+-spec get_room_config([muc_roomconfig:property()], mod_muc_room:state(),
+		      jid(), binary()) -> [muc_roomconfig:property()].
+get_room_config(Fields, RoomState, _From, _Lang) ->
     Config = RoomState#state.config,
-    Label = <<"Enable message archiving">>,
-    Var = <<"muc#roomconfig_mam">>,
-    Val = case Config#config.mam of
-	      true -> <<"1">>;
-	      _ -> <<"0">>
-	  end,
-    XField = #xdata_field{type = boolean,
-			  label = translate:translate(Lang, Label),
-			  var = Var,
-			  values = [Val]},
-    XFields ++ [XField].
+    Fields ++ [{mam, Config#config.mam}].
 
--spec set_room_option({pos_integer(), _}, binary(), [binary()], binary())
+-spec set_room_option({pos_integer(), _}, muc_roomconfig:property(), binary())
       -> {pos_integer(), _}.
-set_room_option(_Acc, <<"muc#roomconfig_mam">> = Opt, Vals, Lang) ->
-    try
-	Val = case Vals of
-		  [<<"0">>|_] -> false;
-		  [<<"false">>|_] -> false;
-		  [<<"1">>|_] -> true;
-		  [<<"true">>|_] -> true
-	      end,
-	{#config.mam, Val}
-    catch _:{case_clause, _} ->
-	    Txt = <<"Value of '~s' should be boolean">>,
-	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-	    {error, xmpp:err_bad_request(ErrTxt, Lang)}
-    end;
-set_room_option(Acc, _Opt, _Vals, _Lang) ->
+set_room_option(_Acc, {mam, Val}, _Lang) ->
+    {#config.mam, Val};
+set_room_option(Acc, _Property, _Lang) ->
     Acc.
 
 -spec user_receive_packet(stanza(), ejabberd_c2s:state(), jid(), jid(), jid()) -> stanza().

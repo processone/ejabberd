@@ -901,7 +901,7 @@ first_in_list(Pred, [H | T]) ->
 
 itemids(Nidx, {_U, _S, _R} = JID) ->
     SJID = encode_jid(JID),
-    SJIDLike = <<(ejabberd_sql:escape(encode_jid_like(JID)))/binary, "/%">>,
+    SJIDLike = <<(encode_jid_like(JID))/binary, "/%">>,
     case catch
 	ejabberd_sql:sql_query_t(
           ?SQL("select @(itemid)s from pubsub_item where "

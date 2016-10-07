@@ -73,6 +73,7 @@ captcha_text(Lang) ->
 mk_ocr_field(Lang, CID, Type) ->
     URI = #media_uri{type = Type, uri = <<"cid:", CID/binary>>},
     #xdata_field{var = <<"ocr">>,
+		 type = 'text-single',
 		 label = captcha_text(Lang),
 		 required = true,
 		 sub_els = [#media{uri = [URI]}]}.

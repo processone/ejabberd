@@ -1,0 +1,37 @@
+<form_type>
+  <name>http://jabber.org/protocol/muc#register</name>
+  <doc>XEP-0045</doc>
+  <desc>
+    Forms enabling user registration with a
+    Multi-User Chat (MUC) room or admin approval
+    of user registration requests.
+  </desc>
+  <field 
+     var='muc#register_allow'
+     type='boolean'
+     label='Allow this person to register with the room?'/>
+  <field
+      var='muc#register_email'
+      type='text-single'
+      label='Email Address'/>
+  <field
+      var='muc#register_faqentry'
+      type='text-multi'
+      label='FAQ Entry'/>
+  <field
+      var='muc#register_first'
+      type='text-single'
+      label='Given Name'/>
+  <field
+      var='muc#register_last'
+      type='text-single'
+      label='Family Name'/>
+  <field
+      var='muc#register_roomnick'
+      type='text-single'
+      label='Nickname'/>
+  <field
+      var='muc#register_url'
+      type='text-single'
+      label='A Web Page'/>
+</form_type>

@@ -668,19 +668,18 @@ get_nick(ServerHost, Host, From) ->
     Mod:get_nick(LServer, Host, From).
 
 iq_get_register_info(ServerHost, Host, From, Lang) ->
-    {Nick, NickVals, Registered} = case get_nick(ServerHost, Host, From) of
-				       error -> {<<"">>, [], false};
-				       N -> {N, [N], true}
-				   end,
+    {Nick, Registered} = case get_nick(ServerHost, Host, From) of
+			     error -> {<<"">>, false};
+			     N -> {N, true}
+			 end,
     Title = <<(translate:translate(
 		 Lang, <<"Nickname Registration at ">>))/binary, Host/binary>>,
     Inst = translate:translate(Lang, <<"Enter nickname you want to register">>),
-    Field = #xdata_field{type = 'text-single',
-			 label = translate:translate(Lang, <<"Nickname">>),
-			 var = <<"nick">>,
-			 values = NickVals},
+    Fields = muc_register:encode(
+	       [{roomnick, Nick}],
+	       fun(T) -> translate:translate(Lang, T) end),
     X = #xdata{type = form, title = Title,
-	       instructions = [Inst], fields = [Field]},
+	       instructions = [Inst], fields = Fields},
     #register{nick = Nick,
 	      registered = Registered,
 	      instructions = 
@@ -717,12 +716,13 @@ process_iq_register_set(ServerHost, Host, From,
 			#register{nick = Nick, xdata = XData}, Lang) ->
     case XData of
 	#xdata{type = submit, fields = Fs} ->
-	    case lists:keyfind(<<"nick">>, #xdata_field.var, Fs) of
-		#xdata_field{values = [N]} ->
-		    iq_set_register_info(ServerHost, Host, From, N, Lang);
-		_ ->
-		    ErrText = <<"You must fill in field \"Nickname\" in the form">>,
-		    {error, xmpp:err_not_acceptable(ErrText, Lang)}
+	    try
+		Options = muc_register:decode(Fs),
+		N = proplists:get_value(roomnick, Options),
+		iq_set_register_info(ServerHost, Host, From, N, Lang)
+	    catch _:{muc_register, Why} ->
+		    ErrText = muc_register:format_error(Why),
+		    {error, xmpp:err_bad_request(ErrText, Lang)}
 	    end;
 	#xdata{} ->
 	    Txt = <<"Incorrect data form">>,

@@ -1,0 +1,55 @@
+<form_type>
+  <name>http://jabber.org/protocol/muc#roominfo</name>
+  <doc>XEP-0045</doc>
+  <desc>
+    Forms enabling the communication of extended service discovery
+    information about a Multi-User Chat (MUC) room.
+  </desc>
+  <field
+      var='muc#maxhistoryfetch'
+      type='text-single'
+      label='Maximum Number of History Messages Returned by Room'/>
+  <field
+      var='muc#roominfo_contactjid'
+      type='jid-multi'
+      label='Contact Addresses (normally, room owner or owners)'/>
+  <field
+      var='muc#roominfo_description'
+      type='text-single'
+      label='Room description'/>
+  <field
+      var='muc#roominfo_lang'
+      type='text-single'
+      label='Natural Language for Room Discussions'/>
+  <field
+      var='muc#roominfo_ldapgroup'
+      type='text-single'
+      label='An associated LDAP group that defines 
+             room membership; this should be an LDAP 
+             Distinguished Name according to an 
+             implementation-specific or 
+             deployment-specific definition of a 
+             group.'/>
+  <field
+      var='muc#roominfo_logs'
+      type='text-single'
+      label='URL for Archived Discussion Logs'/>
+  <field
+      var='muc#roominfo_occupants'
+      type='text-single'
+      label='Number of occupants'/>
+  <field
+      var='muc#roominfo_subject'
+      type='text-single'
+      label='Current Discussion Topic'/>
+  <field
+      var='muc#roominfo_subjectmod'
+      type='boolean'
+      label='The room subject can be modified by participants'/>
+</form_type>
+
+<!--
+Local Variables:
+mode: xml
+End:
+-->

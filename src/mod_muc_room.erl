@@ -754,100 +754,131 @@ process_groupchat_message(From, #message{lang = Lang} = Packet, StateData) ->
 
 -spec process_normal_message(jid(), message(), state()) -> state().
 process_normal_message(From, #message{lang = Lang} = Pkt, StateData) ->
-    IsInvitation = is_invitation(Pkt),
-    IsVoiceRequest = is_voice_request(Pkt) and
-	is_visitor(From, StateData),
-    IsVoiceApprovement = is_voice_approvement(Pkt) and
-	not is_visitor(From, StateData),
-    if IsInvitation ->
-	    case check_invitation(From, Pkt, StateData) of
-		{error, Error} ->
-		    ejabberd_router:route_error(StateData#state.jid, From, Pkt, Error),
-		    StateData;
-		IJID ->
-		    Config = StateData#state.config,
-		    case Config#config.members_only of
-			true ->
-			    case get_affiliation(IJID, StateData) of
-				none ->
-				    NSD = set_affiliation(IJID, member, StateData),
-				    send_affiliation(IJID, member, StateData),
-				    store_room(NSD),
-				    NSD;
-				_ ->
-				    StateData
-			    end;
-			false ->
-			    StateData
-		    end
-	    end;
-       IsVoiceRequest ->
-	    case (StateData#state.config)#config.allow_voice_requests of
+    Action = lists:foldl(
+	       fun(_, {error, _} = Err) ->
+		       Err;
+		  (#muc_user{invites = [#muc_invite{to = undefined}]}, _) ->
+		       Txt = <<"No 'to' attribute found">>,
+		       {error, xmpp:err_bad_request(Txt, Lang)};
+		  (#muc_user{invites = [I]}, _) ->
+		       {ok, I};
+		  (#muc_user{invites = [_|_]}, _) ->
+		       Txt = <<"Multiple <invite/> elements are not allowed">>,
+		       {error, xmpp:err_resource_constraint(Txt, Lang)};
+		  (#xdata{type = submit, fields = Fs}, _) ->
+		       try {ok, muc_request:decode(Fs)}
+		       catch _:{muc_request, Why} ->
+			       Txt = muc_request:format_error(Why),
+			       {error, xmpp:err_bad_request(Txt, Lang)}
+		       end;
+		  (_, Acc) ->
+		       Acc
+	       end, ok, xmpp:get_els(Pkt)),
+    case Action of
+	{ok, #muc_invite{} = Invitation} ->
+	    process_invitation(From, Pkt, Invitation, StateData);
+	{ok, [{role, participant}]} ->
+	    process_voice_request(From, Pkt, StateData);
+	{ok, VoiceApproval} ->
+	    process_voice_approval(From, Pkt, VoiceApproval, StateData);
+	{error, Err} ->
+	    ejabberd_router:route_error(StateData#state.jid, From, Pkt, Err),
+	    StateData;
+	ok ->
+	    StateData
+    end.
+
+-spec process_invitation(jid(), message(), muc_invite(), state()) -> state().
+process_invitation(From, Pkt, Invitation, StateData) ->
+    Lang = xmpp:get_lang(Pkt),
+    case check_invitation(From, Invitation, Lang, StateData) of
+	{error, Error} ->
+	    ejabberd_router:route_error(StateData#state.jid, From, Pkt, Error),
+	    StateData;
+	IJID ->
+	    Config = StateData#state.config,
+	    case Config#config.members_only of
 		true ->
-		    MinInterval = (StateData#state.config)#config.voice_request_min_interval,
-		    BareFrom = jid:remove_resource(jid:tolower(From)),
-		    NowPriority = -p1_time_compat:system_time(micro_seconds),
-		    CleanPriority = NowPriority + MinInterval * 1000000,
-		    Times = clean_treap(StateData#state.last_voice_request_time,
-					CleanPriority),
-		    case treap:lookup(BareFrom, Times) of
-			error ->
-			    Times1 = treap:insert(BareFrom,
-						  NowPriority,
-						  true, Times),
-			    NSD = StateData#state{last_voice_request_time = Times1},
-			    send_voice_request(From, Lang, NSD),
+		    case get_affiliation(IJID, StateData) of
+			none ->
+			    NSD = set_affiliation(IJID, member, StateData),
+			    send_affiliation(IJID, member, StateData),
+			    store_room(NSD),
 			    NSD;
-			{ok, _, _} ->
-			    ErrText = <<"Please, wait for a while before sending "
-					"new voice request">>,
-			    Err = xmpp:err_not_acceptable(ErrText, Lang),
-			    ejabberd_router:route_error(
-			      StateData#state.jid, From, Pkt, Err),
-			    StateData#state{last_voice_request_time = Times}
+			_ ->
+			    StateData
 		    end;
 		false ->
-		    ErrText = <<"Voice requests are disabled in this conference">>,
-		    Err = xmpp:err_forbidden(ErrText, Lang),
+		    StateData
+	    end
+    end.
+
+-spec process_voice_request(jid(), message(), state()) -> state().
+process_voice_request(From, Pkt, StateData) ->
+    Lang = xmpp:get_lang(Pkt),
+    case (StateData#state.config)#config.allow_voice_requests of
+	true ->
+	    MinInterval = (StateData#state.config)#config.voice_request_min_interval,
+	    BareFrom = jid:remove_resource(jid:tolower(From)),
+	    NowPriority = -p1_time_compat:system_time(micro_seconds),
+	    CleanPriority = NowPriority + MinInterval * 1000000,
+	    Times = clean_treap(StateData#state.last_voice_request_time,
+				CleanPriority),
+	    case treap:lookup(BareFrom, Times) of
+		error ->
+		    Times1 = treap:insert(BareFrom,
+					  NowPriority,
+					  true, Times),
+		    NSD = StateData#state{last_voice_request_time = Times1},
+		    send_voice_request(From, Lang, NSD),
+		    NSD;
+		{ok, _, _} ->
+		    ErrText = <<"Please, wait for a while before sending "
+				"new voice request">>,
+		    Err = xmpp:err_not_acceptable(ErrText, Lang),
 		    ejabberd_router:route_error(
 		      StateData#state.jid, From, Pkt, Err),
-		    StateData
+		    StateData#state{last_voice_request_time = Times}
 	    end;
-       IsVoiceApprovement ->
-	    case is_moderator(From, StateData) of
-		true ->
-		    case extract_jid_from_voice_approvement(Pkt) of
-			error ->
-			    ErrText = <<"Failed to extract JID from your voice "
-					"request approval">>,
-			    Err = xmpp:err_bad_request(ErrText, Lang),
-			    ejabberd_router:route_error(
-			      StateData#state.jid, From, Pkt, Err),
-			    StateData;
-			TargetJid ->
-			    case is_visitor(TargetJid, StateData) of
-				true ->
-				    Reason = <<>>,
-				    NSD = set_role(TargetJid,
-						   participant,
-						   StateData),
-				    catch send_new_presence(TargetJid,
-							    Reason,
-							    NSD,
-							    StateData),
-				    NSD;
-				_ ->
-				    StateData
-			    end
+	false ->
+	    ErrText = <<"Voice requests are disabled in this conference">>,
+	    Err = xmpp:err_forbidden(ErrText, Lang),
+	    ejabberd_router:route_error(
+	      StateData#state.jid, From, Pkt, Err),
+	    StateData
+    end.
+
+-spec process_voice_approval(jid(), message(), [muc_request:property()], state()) -> state().
+process_voice_approval(From, Pkt, VoiceApproval, StateData) ->
+    Lang = xmpp:get_lang(Pkt),
+    case is_moderator(From, StateData) of
+	true ->
+	    case lists:keyfind(jid, 1, VoiceApproval) of
+		{_, TargetJid} ->
+		    Allow = proplists:get_bool(request_allow, VoiceApproval),
+		    case is_visitor(TargetJid, StateData) of
+			true when Allow ->
+			    Reason = <<>>,
+			    NSD = set_role(TargetJid, participant, StateData),
+			    catch send_new_presence(
+				    TargetJid, Reason, NSD, StateData),
+			    NSD;
+			_ ->
+			    StateData
 		    end;
-		_ ->
-		    ErrText = <<"Only moderators can approve voice requests">>,
-		    Err = xmpp:err_not_allowed(ErrText, Lang),
+		false ->
+		    ErrText = <<"Failed to extract JID from your voice "
+				"request approval">>,
+		    Err = xmpp:err_bad_request(ErrText, Lang),
 		    ejabberd_router:route_error(
 		      StateData#state.jid, From, Pkt, Err),
 		    StateData
 	    end;
-       true ->
+	false ->
+	    ErrText = <<"Only moderators can approve voice requests">>,
+	    Err = xmpp:err_not_allowed(ErrText, Lang),
+	    ejabberd_router:route_error(
+	      StateData#state.jid, From, Pkt, Err),
 	    StateData
     end.
 
@@ -3090,34 +3121,6 @@ is_password_settings_correct(XData, StateData) ->
       _ -> true
     end.
 
--define(XFIELD(Type, Label, Var, Vals),
-	#xdata_field{type = Type,
-		     label = translate:translate(Lang, Label),
-		     var = Var,
-		     values = Vals}).
-
--define(BOOLXFIELD(Label, Var, Val),
-	?XFIELD(boolean, Label, Var,
-		case Val of
-		  true -> [<<"1">>];
-		  _ -> [<<"0">>]
-		end)).
-
--define(STRINGXFIELD(Label, Var, Val),
-	?XFIELD('text-single', Label, Var, [Val])).
-
--define(PRIVATEXFIELD(Label, Var, Val),
-	?XFIELD('text-private', Label, Var, [Val])).
-
--define(JIDMULTIXFIELD(Label, Var, JIDList),
-	?XFIELD('jid-multi', Label, Var,
-		[jid:to_string(JID) || JID <- JIDList])).
-
--spec make_options([{binary(), binary()}], binary()) -> [xdata_option()].
-make_options(Options, Lang) ->
-    [#xdata_option{label = translate:translate(Lang, Label),
-		   value = Value} || {Label, Value} <- Options].
-
 -spec get_default_room_maxusers(state()) -> non_neg_integer().
 get_default_room_maxusers(RoomState) ->
     DefRoomOpts =
@@ -3138,424 +3141,156 @@ get_config(Lang, StateData, From) ->
     {MaxUsersRoomInteger, MaxUsersRoomString} =
 	case get_max_users(StateData) of
 	    N when is_integer(N) ->
-		{N, integer_to_binary(N)};
-	    _ -> {0, <<"none">>}
+		{N, N};
+	    _ -> {0, none}
 	end,
     Title = iolist_to_binary(
 	      io_lib:format(
 		translate:translate(Lang, <<"Configuration of room ~s">>),
 		[jid:to_string(StateData#state.jid)])),
-    Fs = [#xdata_field{type = hidden,
-		       var = <<"FORM_TYPE">>,
-		       values = [<<"http://jabber.org/protocol/muc#roomconfig">>]},
-	  ?STRINGXFIELD(<<"Room title">>,
-			<<"muc#roomconfig_roomname">>, (Config#config.title)),
-	  ?STRINGXFIELD(<<"Room description">>,
-			<<"muc#roomconfig_roomdesc">>,
-			(Config#config.description))] ++
+    Fs = [{roomname, Config#config.title},
+	  {roomdesc, Config#config.description}] ++
 	case acl:match_rule(StateData#state.server_host, AccessPersistent, From) of
-	    allow ->
-		[?BOOLXFIELD(<<"Make room persistent">>,
-			     <<"muc#roomconfig_persistentroom">>,
-			     (Config#config.persistent))];
+	    allow -> [{persistentroom, Config#config.persistent}];
 	    deny -> []
 	end ++
-	[?BOOLXFIELD(<<"Make room public searchable">>,
-		     <<"muc#roomconfig_publicroom">>,
-		     (Config#config.public)),
-	 ?BOOLXFIELD(<<"Make participants list public">>,
-		     <<"public_list">>, (Config#config.public_list)),
-	 ?BOOLXFIELD(<<"Make room password protected">>,
-		     <<"muc#roomconfig_passwordprotectedroom">>,
-		     (Config#config.password_protected)),
-	 ?PRIVATEXFIELD(<<"Password">>,
-			<<"muc#roomconfig_roomsecret">>,
-			case Config#config.password_protected of
-			    true -> Config#config.password;
-			    false -> <<"">>
-			end),
-	 #xdata_field{type = 'list-single',
-		      label = translate:translate(
-				Lang, <<"Maximum Number of Occupants">>),
-		      var = <<"muc#roomconfig_maxusers">>,
-		      values = [MaxUsersRoomString],
-		      options =
-			  if is_integer(ServiceMaxUsers) -> [];
-			     true -> make_options(
-				       [{<<"No limit">>, <<"none">>}],
-				       Lang)
-			  end ++
-			  make_options(
-			    [{integer_to_binary(N), integer_to_binary(N)}
-			     || N <- lists:usort([ServiceMaxUsers,
-						  DefaultRoomMaxUsers,
-						  MaxUsersRoomInteger
-						  | ?MAX_USERS_DEFAULT_LIST]),
-				N =< ServiceMaxUsers],
-			    Lang)},
-	 #xdata_field{type = 'list-single',
-		      label = translate:translate(
-				Lang, <<"Present real Jabber IDs to">>),
-		      var = <<"muc#roomconfig_whois">>,
-		      values = [if Config#config.anonymous -> <<"moderators">>;
-				   true -> <<"anyone">>
-				end],
-		      options = make_options(
-				  [{<<"moderators only">>, <<"moderators">>},
-				   {<<"anyone">>, <<"anyone">>}],
-				  Lang)},
-	 #xdata_field{type = 'list-multi',
-		      label = translate:translate(
-				Lang,
-				<<"Roles for which Presence is Broadcasted">>),
-		      var = <<"muc#roomconfig_presencebroadcast">>,
-		      values = [atom_to_binary(Role, utf8)
-				|| Role <- Config#config.presence_broadcast],
-		      options = make_options(
-				  [{<<"Moderator">>, <<"moderator">>},
-				   {<<"Participant">>, <<"participant">>},
-				   {<<"Visitor">>, <<"visitor">>}],
-				  Lang)},
-	 ?BOOLXFIELD(<<"Make room members-only">>,
-		     <<"muc#roomconfig_membersonly">>,
-		     (Config#config.members_only)),
-	 ?BOOLXFIELD(<<"Make room moderated">>,
-		     <<"muc#roomconfig_moderatedroom">>,
-		     (Config#config.moderated)),
-	 ?BOOLXFIELD(<<"Default users as participants">>,
-		     <<"members_by_default">>,
-		     (Config#config.members_by_default)),
-	 ?BOOLXFIELD(<<"Allow users to change the subject">>,
-		     <<"muc#roomconfig_changesubject">>,
-		     (Config#config.allow_change_subj)),
-	 ?BOOLXFIELD(<<"Allow users to send private messages">>,
-		     <<"allow_private_messages">>,
-		     (Config#config.allow_private_messages)),
-	 #xdata_field{type = 'list-single',
-		      label = translate:translate(
-				Lang,
-				<<"Allow visitors to send private messages to">>),
-		      var = <<"allow_private_messages_from_visitors">>,
-		      values = [case Config#config.allow_private_messages_from_visitors of
-				    anyone -> <<"anyone">>;
-				    moderators -> <<"moderators">>;
-				    nobody -> <<"nobody">>
-				end],
-		      options = make_options(
-				  [{<<"nobody">>, <<"nobody">>},
-				   {<<"moderators only">>, <<"moderators">>},
-				   {<<"anyone">>, <<"anyone">>}],
-				  Lang)},
-	 ?BOOLXFIELD(<<"Allow users to query other users">>,
-		     <<"allow_query_users">>,
-		     (Config#config.allow_query_users)),
-	 ?BOOLXFIELD(<<"Allow users to send invites">>,
-		     <<"muc#roomconfig_allowinvites">>,
-		     (Config#config.allow_user_invites)),
-	 ?BOOLXFIELD(<<"Allow visitors to send status text in "
-		       "presence updates">>,
-		     <<"muc#roomconfig_allowvisitorstatus">>,
-		     (Config#config.allow_visitor_status)),
-	 ?BOOLXFIELD(<<"Allow visitors to change nickname">>,
-		     <<"muc#roomconfig_allowvisitornickchange">>,
-		     (Config#config.allow_visitor_nickchange)),
-	 ?BOOLXFIELD(<<"Allow visitors to send voice requests">>,
-		     <<"muc#roomconfig_allowvoicerequests">>,
-		     (Config#config.allow_voice_requests)),
-	 ?BOOLXFIELD(<<"Allow subscription">>,
-		     <<"muc#roomconfig_allow_subscription">>,
-		     (Config#config.allow_subscription)),
-	 ?STRINGXFIELD(<<"Minimum interval between voice requests "
-			 "(in seconds)">>,
-		       <<"muc#roomconfig_voicerequestmininterval">>,
-		       integer_to_binary(Config#config.voice_request_min_interval))]
+	[{publicroom, Config#config.public},
+	 {public_list, Config#config.public_list},
+	 {passwordprotectedroom, Config#config.password_protected},
+	 {roomsecret, case Config#config.password_protected of
+			  true -> Config#config.password;
+			  false -> <<"">>
+		      end},
+	 {maxusers, MaxUsersRoomString,
+	  [if is_integer(ServiceMaxUsers) -> [];
+	      true -> [{<<"No limit">>, <<"none">>}]
+	   end] ++ [{integer_to_binary(N), N}
+		    || N <- lists:usort([ServiceMaxUsers,
+					 DefaultRoomMaxUsers,
+					 MaxUsersRoomInteger
+					 | ?MAX_USERS_DEFAULT_LIST]),
+		       N =< ServiceMaxUsers]},
+	 {whois, if Config#config.anonymous -> moderators;
+		    true -> anyone
+		 end},
+	 {presencebroadcast, Config#config.presence_broadcast},
+	 {membersonly, Config#config.members_only},
+	 {moderatedroom, Config#config.moderated},
+	 {members_by_default, Config#config.members_by_default},
+	 {changesubject, Config#config.allow_change_subj},
+	 {allow_private_messages, Config#config.allow_private_messages},
+	 {allow_private_messages_from_visitors,
+	  Config#config.allow_private_messages_from_visitors},
+	 {allow_query_users, Config#config.allow_query_users},
+	 {allowinvites, Config#config.allow_user_invites},
+	 {allow_visitor_status, Config#config.allow_visitor_status},
+	 {allow_visitor_nickchange, Config#config.allow_visitor_nickchange},
+	 {allow_voice_requests, Config#config.allow_voice_requests},
+	 {allow_subscription, Config#config.allow_subscription},
+	 {voice_request_min_interval, Config#config.voice_request_min_interval}]
 	++
 	case ejabberd_captcha:is_feature_available() of
-	    true ->
-		[?BOOLXFIELD(<<"Make room CAPTCHA protected">>,
-			     <<"captcha_protected">>,
-			     (Config#config.captcha_protected))];
+	    true -> [{captcha_protected, Config#config.captcha_protected}];
 	    false -> []
 	end ++
-	[?JIDMULTIXFIELD(<<"Exclude Jabber IDs from CAPTCHA challenge">>,
-			 <<"muc#roomconfig_captcha_whitelist">>,
-			 ((?SETS):to_list(Config#config.captcha_whitelist)))]
+	[{captcha_whitelist,
+	  lists:map(fun jid:make/1, ?SETS:to_list(Config#config.captcha_whitelist))}]
 	++
 	case mod_muc_log:check_access_log(StateData#state.server_host, From) of
-	    allow ->
-		[?BOOLXFIELD(<<"Enable logging">>,
-			     <<"muc#roomconfig_enablelogging">>,
-			     (Config#config.logging))];
+	    allow -> [{enablelogging, Config#config.logging}];
 	    deny -> []
 	end,
     Fields = ejabberd_hooks:run_fold(get_room_config,
 				     StateData#state.server_host,
 				     Fs,
 				     [StateData, From, Lang]),
-    #xdata{type = form, title = Title, fields = Fields}.
+    #xdata{type = form, title = Title,
+	   fields = muc_roomconfig:encode(
+		      Fields, fun(T) -> translate:translate(Lang, T) end)}.
 
 -spec set_config(xdata(), state(), binary()) -> {error, stanza_error()} |
 						{result, undefined, state()}.
 set_config(#xdata{fields = Fields}, StateData, Lang) ->
-    Options = [{Var, Vals} || #xdata_field{var = Var, values = Vals} <- Fields],
-    case set_xoption(Options, StateData#state.config,
-		     StateData#state.server_host, Lang) of
-	#config{} = Config ->
-	    Res = change_config(Config, StateData),
-	    {result, _, NSD} = Res,
-	    Type = case {(StateData#state.config)#config.logging,
-			 Config#config.logging}
-		   of
-		       {true, false} -> roomconfig_change_disabledlogging;
-		       {false, true} -> roomconfig_change_enabledlogging;
-		       {_, _} -> roomconfig_change
-		   end,
-	    Users = [{U#user.jid, U#user.nick, U#user.role}
-		     || {_, U} <- (?DICT):to_list(StateData#state.users)],
-	    add_to_log(Type, Users, NSD),
-	    Res;
-	Err -> Err
+    try
+	Options = muc_roomconfig:decode(Fields),
+	#config{} = Config = set_config(Options, StateData#state.config,
+					StateData#state.server_host, Lang),
+	{result, _, NSD} = Res = change_config(Config, StateData),
+	Type = case {(StateData#state.config)#config.logging,
+		     Config#config.logging}
+	       of
+		   {true, false} -> roomconfig_change_disabledlogging;
+		   {false, true} -> roomconfig_change_enabledlogging;
+		   {_, _} -> roomconfig_change
+	       end,
+	Users = [{U#user.jid, U#user.nick, U#user.role}
+		 || {_, U} <- (?DICT):to_list(StateData#state.users)],
+	add_to_log(Type, Users, NSD),
+	Res
+    catch _:{muc_roomconfig, Why} ->
+	    Txt = muc_roomconfig:format_error(Why),
+	    {error, xmpp:err_bad_request(Txt, Lang)};
+	  _:{badmatch, {error, #stanza_error{}} = Err} ->
+	    Err
     end.
 
 get_config_opt_name(Pos) ->
     Fs = [config|record_info(fields, config)],
     lists:nth(Pos, Fs).
 
--define(SET_BOOL_XOPT(Opt, Val),
-	case Val of
-	  <<"0">> ->
-	      set_xoption(Opts, setelement(Opt, Config, false), ServerHost, Lang);
-	  <<"false">> ->
-	      set_xoption(Opts, setelement(Opt, Config, false), ServerHost, Lang);
-	  <<"1">> -> set_xoption(Opts, setelement(Opt, Config, true), ServerHost, Lang);
-	  <<"true">> ->
-	      set_xoption(Opts, setelement(Opt, Config, true), ServerHost, Lang);
-	  _ ->
-	      Txt = <<"Value of '~s' should be boolean">>,
-	      OptName = get_config_opt_name(Opt),
-	      ErrTxt = iolist_to_binary(io_lib:format(Txt, [OptName])),
-	      {error, xmpp:err_bad_request(ErrTxt, Lang)}
-	end).
-
--define(SET_NAT_XOPT(Opt, Val),
-	case catch binary_to_integer(Val) of
-	  I when is_integer(I), I > 0 ->
-	      set_xoption(Opts, setelement(Opt, Config, I), ServerHost, Lang);
-	  _ ->
-	      Txt = <<"Value of '~s' should be integer">>,
-	      OptName = get_config_opt_name(Opt),
-	      ErrTxt = iolist_to_binary(io_lib:format(Txt, [OptName])),
-	      {error, xmpp:err_bad_request(ErrTxt, Lang)}
-	end).
-
--define(SET_STRING_XOPT(Opt, Vals),
-	try 
-	    V = case Vals of
-		    [] -> <<"">>;
-		    [Val] -> Val;
-		    _ when is_atom(Vals) -> Vals
-		end,
-	    set_xoption(Opts, setelement(Opt, Config, V), ServerHost, Lang)
-	catch _:_ ->
-		Txt = <<"Incorrect value of option '~s'">>,
-		OptName = get_config_opt_name(Opt),
-		ErrTxt = iolist_to_binary(io_lib:format(Txt, [OptName])),
-		{error, xmpp:err_bad_request(ErrTxt, Lang)}
-	end).
-
--define(SET_JIDMULTI_XOPT(Opt, Vals),
-	begin
-	  Set = lists:foldl(fun ({U, S, R}, Set1) ->
-				    (?SETS):add_element({U, S, R}, Set1);
-				(#jid{luser = U, lserver = S, lresource = R},
-				 Set1) ->
-				    (?SETS):add_element({U, S, R}, Set1);
-				(_, Set1) -> Set1
-			    end,
-			    (?SETS):empty(), Vals),
-	  set_xoption(Opts, setelement(Opt, Config, Set), ServerHost, Lang)
-	end).
-
--spec set_xoption([{binary(), [binary()]}], #config{},
+-spec set_config([muc_roomconfig:property()], #config{},
 		  binary(), binary()) -> #config{} | {error, stanza_error()}.
-set_xoption([], Config, _ServerHost, _Lang) -> Config;
-set_xoption([{<<"muc#roomconfig_roomname">>, Vals}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_STRING_XOPT(#config.title, Vals);
-set_xoption([{<<"muc#roomconfig_roomdesc">>, Vals}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_STRING_XOPT(#config.description, Vals);
-set_xoption([{<<"muc#roomconfig_changesubject">>, [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.allow_change_subj, Val);
-set_xoption([{<<"allow_query_users">>, [Val]} | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.allow_query_users, Val);
-set_xoption([{<<"allow_private_messages">>, [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.allow_private_messages, Val);
-set_xoption([{<<"allow_private_messages_from_visitors">>,
-	      [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    case Val of
-      <<"anyone">> ->
-	  ?SET_STRING_XOPT(#config.allow_private_messages_from_visitors,
-			   anyone);
-      <<"moderators">> ->
-	  ?SET_STRING_XOPT(#config.allow_private_messages_from_visitors,
-			   moderators);
-      <<"nobody">> ->
-	  ?SET_STRING_XOPT(#config.allow_private_messages_from_visitors,
-			   nobody);
-      _ ->
-	  Txt = <<"Value of 'allow_private_messages_from_visitors' "
-		  "should be anyone|moderators|nobody">>,
-	  {error, xmpp:err_bad_request(Txt, Lang)}
-    end;
-set_xoption([{<<"muc#roomconfig_allowvisitorstatus">>,
-	      [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.allow_visitor_status, Val);
-set_xoption([{<<"muc#roomconfig_allowvisitornickchange">>,
-	      [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.allow_visitor_nickchange, Val);
-set_xoption([{<<"muc#roomconfig_publicroom">>, [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.public, Val);
-set_xoption([{<<"public_list">>, [Val]} | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.public_list, Val);
-set_xoption([{<<"muc#roomconfig_persistentroom">>,
-	      [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.persistent, Val);
-set_xoption([{<<"muc#roomconfig_moderatedroom">>, [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.moderated, Val);
-set_xoption([{<<"members_by_default">>, [Val]} | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.members_by_default, Val);
-set_xoption([{<<"muc#roomconfig_membersonly">>, [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.members_only, Val);
-set_xoption([{<<"captcha_protected">>, [Val]} | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.captcha_protected, Val);
-set_xoption([{<<"muc#roomconfig_allowinvites">>, [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.allow_user_invites, Val);
-set_xoption([{<<"muc#roomconfig_allow_subscription">>, [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.allow_subscription, Val);
-set_xoption([{<<"muc#roomconfig_passwordprotectedroom">>,
-	      [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.password_protected, Val);
-set_xoption([{<<"muc#roomconfig_roomsecret">>, Vals}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_STRING_XOPT(#config.password, Vals);
-set_xoption([{<<"anonymous">>, [Val]} | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.anonymous, Val);
-set_xoption([{<<"muc#roomconfig_presencebroadcast">>, Vals} | Opts],
-	    Config, ServerHost, Lang) ->
-    Roles =
-        lists:foldl(
-          fun(_S, error) -> error;
-             (S, {M, P, V}) ->
-                  case S of
-                      <<"moderator">> -> {true, P, V};
-                      <<"participant">> -> {M, true, V};
-                      <<"visitor">> -> {M, P, true};
-                      _ -> error
-                  end
-          end, {false, false, false}, Vals),
-    case Roles of
-        error ->
-	    Txt = <<"Value of 'muc#roomconfig_presencebroadcast' should "
-		    "be moderator|participant|visitor">>,
-	    {error, xmpp:err_bad_request(Txt, Lang)};
-        {M, P, V} ->
-            Res =
-                if M -> [moderator]; true -> [] end ++
-                if P -> [participant]; true -> [] end ++
-                if V -> [visitor]; true -> [] end,
-            set_xoption(Opts, Config#config{presence_broadcast = Res},
-			ServerHost, Lang)
-    end;
-set_xoption([{<<"muc#roomconfig_allowvoicerequests">>,
-	      [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.allow_voice_requests, Val);
-set_xoption([{<<"muc#roomconfig_voicerequestmininterval">>,
-	      [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_NAT_XOPT(#config.voice_request_min_interval, Val);
-set_xoption([{<<"muc#roomconfig_whois">>, [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    case Val of
-      <<"moderators">> ->
-	  ?SET_BOOL_XOPT(#config.anonymous,
-			 (iolist_to_binary(integer_to_list(1))));
-      <<"anyone">> ->
-	  ?SET_BOOL_XOPT(#config.anonymous,
-			 (iolist_to_binary(integer_to_list(0))));
-      _ ->
-	  Txt = <<"Value of 'muc#roomconfig_whois' should be "
-		  "moderators|anyone">>,
-	  {error, xmpp:err_bad_request(Txt, Lang)}
-    end;
-set_xoption([{<<"muc#roomconfig_maxusers">>, [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    case Val of
-      <<"none">> -> ?SET_STRING_XOPT(#config.max_users, none);
-      _ -> ?SET_NAT_XOPT(#config.max_users, Val)
-    end;
-set_xoption([{<<"muc#roomconfig_enablelogging">>, [Val]}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    ?SET_BOOL_XOPT(#config.logging, Val);
-set_xoption([{<<"muc#roomconfig_captcha_whitelist">>,
-	      Vals}
-	     | Opts],
-	    Config, ServerHost, Lang) ->
-    JIDs = [jid:from_string(Val) || Val <- Vals],
-    ?SET_JIDMULTI_XOPT(#config.captcha_whitelist, JIDs);
-set_xoption([{<<"FORM_TYPE">>, _} | Opts], Config, ServerHost, Lang) ->
-    set_xoption(Opts, Config, ServerHost, Lang);
-set_xoption([{Opt, Vals} | Opts], Config, ServerHost, Lang) ->
-    Txt = <<"Unknown option '~s'">>,
-    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-    Err = {error, xmpp:err_bad_request(ErrTxt, Lang)},
-    case ejabberd_hooks:run_fold(set_room_option,
-				 ServerHost,
-				 Err,
-				 [Opt, Vals, Lang]) of
-	{error, Reason} ->
-	    {error, Reason};
-	{Pos, Val} ->
-	    set_xoption(Opts, setelement(Pos, Config, Val), ServerHost, Lang)
-    end.
+set_config(Opts, Config, ServerHost, Lang) ->
+    lists:foldl(
+      fun(_, {error, _} = Err) -> Err;
+	 ({roomname, Title}, C) -> C#config{title = Title};
+	 ({roomdesc, Desc}, C) -> C#config{description = Desc};
+	 ({changesubject, V}, C) -> C#config{allow_change_subj = V};
+	 ({allow_query_users, V}, C) -> C#config{allow_query_users = V};
+	 ({allow_private_messages, V}, C) ->
+	      C#config{allow_private_messages = V};
+	 ({allow_private_messages_from_visitors, V}, C) ->
+	      C#config{allow_private_messages_from_visitors = V};
+	 ({allow_visitor_status, V}, C) -> C#config{allow_visitor_status = V};
+	 ({allow_visitor_nickchange, V}, C) ->
+	      C#config{allow_visitor_nickchange = V};
+	 ({publicroom, V}, C) -> C#config{public = V};
+	 ({public_list, V}, C) -> C#config{public_list = V};
+	 ({persistentroom, V}, C) -> C#config{persistent = V};
+	 ({moderatedroom, V}, C) -> C#config{moderated = V};
+	 ({members_by_default, V}, C) -> C#config{members_by_default = V};
+	 ({membersonly, V}, C) -> C#config{members_only = V};
+	 ({captcha_protected, V}, C) -> C#config{captcha_protected = V};
+	 ({allowinvites, V}, C) -> C#config{allow_user_invites = V};
+	 ({allow_subscription, V}, C) -> C#config{allow_subscription = V};
+	 ({passwordprotectedroom, V}, C) -> C#config{password_protected = V};
+	 ({roomsecret, V}, C) -> C#config{password = V};
+	 ({anonymous, V}, C) -> C#config{anonymous = V};
+	 ({presencebroadcast, V}, C) -> C#config{presence_broadcast = V};
+	 ({allow_voice_requests, V}, C) -> C#config{allow_voice_requests = V};
+	 ({voice_request_min_interval, V}, C) ->
+	      C#config{voice_request_min_interval = V};
+	 ({whois, moderators}, C) -> C#config{anonymous = true};
+	 ({whois, anyone}, C) -> C#config{anonymous = false};
+	 ({maxusers, V}, C) -> C#config{max_users = V};
+	 ({enablelogging, V}, C) -> C#config{logging = V};
+	 ({captcha_whitelist, Js}, C) ->
+	      LJIDs = [jid:tolower(J) || J <- Js],
+	      C#config{captcha_whitelist = ?SETS:from_list(LJIDs)};
+	 ({O, V} = Opt, C) ->
+	      case ejabberd_hooks:run_fold(set_room_option,
+					   ServerHost,
+					   {0, undefined},
+					   [Opt, Lang]) of
+		  {0, undefined} ->
+		      ?ERROR_MSG("set_room_option hook failed for "
+				 "option '~s' with value ~p", [O, V]),
+		      Txt = <<"Failed to process option '", O/binary, "'">>,
+		      {error, xmpp:err_internal_server_error(Txt, Lang)};
+		  {Pos, Val} ->
+		      setelement(Pos, C, Val)
+	      end
+      end, Config, Opts).
 
 -spec change_config(#config{}, state()) -> {result, undefined, state()}.
 change_config(Config, StateData) ->
@@ -3872,33 +3607,13 @@ process_iq_disco_info(_From, #iq{type = get, lang = Lang}, StateData) ->
 						 name = get_title(StateData)}],
 			 features = Feats}}.
 
--spec mk_rfieldt('boolean' | 'fixed' | 'hidden' |
-		 'jid-multi' | 'jid-single' | 'list-multi' |
-		 'list-single' | 'text-multi' | 'text-private' |
-		 'text-single', binary(), binary()) -> xdata_field().
-mk_rfieldt(Type, Var, Val) ->
-    #xdata_field{type = Type, var = Var, values = [Val]}.
-
--spec mk_rfield(binary(), binary(), binary(), binary()) -> xdata_field().
-mk_rfield(Label, Var, Val, Lang) ->
-    #xdata_field{type = 'text-single',
-		 label = translate:translate(Lang, Label),
-		 var = Var,
-		 values = [Val]}.
-
 -spec iq_disco_info_extras(binary(), state()) -> xdata().
 iq_disco_info_extras(Lang, StateData) ->
-    Len = (?DICT):size(StateData#state.users),
-    RoomDescription = (StateData#state.config)#config.description,
+    Fs = [{description, (StateData#state.config)#config.description},
+	  {occupants, ?DICT:size(StateData#state.users)}],
     #xdata{type = result,
-	   fields = [mk_rfieldt(hidden, <<"FORM_TYPE">>,
-				"http://jabber.org/protocol/muc#roominfo"),
-		     mk_rfield(<<"Room description">>,
-			       <<"muc#roominfo_description">>,
-			       RoomDescription, Lang),
-		     mk_rfield(<<"Number of occupants">>,
-			       <<"muc#roominfo_occupants">>,
-			       integer_to_binary(Len), Lang)]}.
+	   fields = muc_roominfo:encode(
+		      Fs, fun(T) -> translate:translate(Lang, T) end)}.
 
 -spec process_iq_disco_items(jid(), iq(), state()) ->
 				    {error, stanza_error()} | {result, disco_items()}.
@@ -4105,39 +3820,16 @@ get_mucroom_disco_items(StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Voice request support
 
--spec is_voice_request(message()) -> boolean().
-is_voice_request(Packet) ->
-    Els = xmpp:get_els(Packet),
-    lists:any(
-      fun(#xdata{} = X) ->
-	      case {xmpp_util:get_xdata_values(<<"FORM_TYPE">>, X),
-		    xmpp_util:get_xdata_values(<<"muc#role">>, X)} of
-		  {[<<"http://jabber.org/protocol/muc#request">>],
-		   [<<"participant">>]} ->
-		      true;
-		  _ ->
-		      false
-	      end;
-	 (_) ->
-	      false
-      end, Els).
-
 -spec prepare_request_form(jid(), binary(), binary()) -> message().
 prepare_request_form(Requester, Nick, Lang) ->
     Title = translate:translate(Lang, <<"Voice request">>),
     Instruction = translate:translate(
 		    Lang, <<"Either approve or decline the voice request.">>),
-    Fs = [#xdata_field{var = <<"FORM_TYPE">>,
-		       type = hidden,
-		       values = [<<"http://jabber.org/protocol/muc#request">>]},
-	  #xdata_field{var = <<"muc#role">>,
-		       type = hidden,
-		       values = [<<"participant">>]},
-	  ?STRINGXFIELD(<<"User JID">>, <<"muc#jid">>,
-			jid:to_string(Requester)),
-	  ?STRINGXFIELD(<<"Nickname">>, <<"muc#roomnick">>, Nick),
-	  ?BOOLXFIELD(<<"Grant voice to this person?">>,
-		      <<"muc#request_allow">>, false)],
+    Fs = muc_request:encode([{role, participant},
+			     {jid, Requester},
+			     {roomnick, Nick},
+			     {request_allow, false}],
+			    fun(T) -> translate:translate(Lang, T) end),
     #message{type = normal,
 	     sub_els = [#xdata{type = form,
 			       title = Title,
@@ -4155,59 +3847,11 @@ send_voice_request(From, Lang, StateData) ->
 		  end,
 		  Moderators).
 
--spec is_voice_approvement(message()) -> boolean().
-is_voice_approvement(Packet) ->
-    Els = xmpp:get_els(Packet),
-    lists:any(
-      fun(#xdata{} = X) ->
-	      case {xmpp_util:get_xdata_values(<<"FORM_TYPE">>, X),
-		    xmpp_util:get_xdata_values(<<"muc#role">>, X),
-		    xmpp_util:get_xdata_values(<<"muc#request_allow">>, X)} of
-		  {[<<"http://jabber.org/protocol/muc#request">>],
-		   [<<"participant">>], [Flag]} when Flag == <<"true">>;
-						     Flag == <<"1">> ->
-		      true;
-		  _ ->
-		      false
-	      end;
-	 (_) ->
-	      false
-      end, Els).
-
--spec extract_jid_from_voice_approvement(message()) -> jid() | error.
-extract_jid_from_voice_approvement(Packet) ->
-    Els = xmpp:get_els(Packet),
-    lists:foldl(
-      fun(#xdata{} = X, error) ->
-	      case {xmpp_util:get_xdata_values(<<"FORM_TYPE">>, X),
-		    xmpp_util:get_xdata_values(<<"muc#role">>, X),
-		    xmpp_util:get_xdata_values(<<"muc#request_allow">>, X),
-		    xmpp_util:get_xdata_values(<<"muc#jid">>, X)} of
-		  {[<<"http://jabber.org/protocol/muc#request">>],
-		   [<<"participant">>], [Flag], [J]} when Flag == <<"true">>;
-							  Flag == <<"1">> ->
-		      jid:from_string(J);
-		  _ ->
-		      error
-	      end;
-	 (_, Acc) ->
-	      Acc
-      end, error, Els).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
 
--spec is_invitation(message()) -> boolean().
-is_invitation(Packet) ->
-    Els = xmpp:get_els(Packet),
-    lists:any(
-      fun(#muc_user{invites = [_|_]}) -> true;
-	 (_) -> false
-      end, Els).
-
--spec check_invitation(jid(), message(), state()) -> {error, stanza_error()} | jid().
-check_invitation(From, Packet, StateData) ->
-    Lang = xmpp:get_lang(Packet),
+-spec check_invitation(jid(), muc_invite(), binary(), state()) -> {error, stanza_error()} | jid().
+check_invitation(From, Invitation, Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     CanInvite = (StateData#state.config)#config.allow_user_invites
 	orelse
@@ -4217,57 +3861,46 @@ check_invitation(From, Packet, StateData) ->
 	    Txt = <<"Invitations are not allowed in this conference">>,
 	    {error, xmpp:err_not_allowed(Txt, Lang)};
 	true ->
-	    case xmpp:get_subtag(Packet, #muc_user{}) of
-		#muc_user{invites = [#muc_invite{to = undefined}]} ->
-		    Txt = <<"No 'to' attribute found">>,
-		    {error, xmpp:err_bad_request(Txt, Lang)};
-		#muc_user{invites = [#muc_invite{to = JID, reason = Reason} = I]} ->
-		    Invite = I#muc_invite{to = undefined, from = From},
-		    Password = case (StateData#state.config)#config.password_protected of
-				   true ->
-				       (StateData#state.config)#config.password;
-				   false ->
-				       undefined
-			       end,
-		    XUser = #muc_user{password = Password, invites = [Invite]},
-		    XConference = #x_conference{jid = jid:make(StateData#state.room,
-							       StateData#state.host),
-						reason = Reason},
-		    Body = iolist_to_binary(
-			     [io_lib:format(
-				translate:translate(
-				  Lang,
-				  <<"~s invites you to the room ~s">>),
-				[jid:to_string(From),
-				 jid:to_string({StateData#state.room,
-						StateData#state.host,
-						<<"">>})]),
-			      case (StateData#state.config)#config.password_protected of
-				  true ->
-				      <<", ",
-					(translate:translate(
-					   Lang, <<"the password is">>))/binary,
-					" '",
-					((StateData#state.config)#config.password)/binary,
-					"'">>;
-				  _ -> <<"">>
-			      end,
-			      case Reason of
-				  <<"">> -> <<"">>;
-				  _ -> <<" (", Reason/binary, ") ">>
-			      end]),
-		    Msg = #message{type = normal,
-				   body = xmpp:mk_text(Body),
-				   sub_els = [XUser, XConference]},
-		    ejabberd_router:route(StateData#state.jid, JID, Msg),
-		    JID;
-		#muc_user{invites = [_|_]} ->
-		    Txt = <<"Multiple <invite/> elements are not allowed">>,
-		    {error, xmpp:err_forbidden(Txt, Lang)};
-		_ ->
-		    Txt = <<"No <invite/> element found">>,
-		    {error, xmpp:err_bad_request(Txt, Lang)}
-	    end
+	    #muc_invite{to = JID, reason = Reason} = Invitation,
+	    Invite = Invitation#muc_invite{to = undefined, from = From},
+	    Password = case (StateData#state.config)#config.password_protected of
+			   true ->
+			       (StateData#state.config)#config.password;
+			   false ->
+			       undefined
+		       end,
+	    XUser = #muc_user{password = Password, invites = [Invite]},
+	    XConference = #x_conference{jid = jid:make(StateData#state.room,
+						       StateData#state.host),
+					reason = Reason},
+	    Body = iolist_to_binary(
+		     [io_lib:format(
+			translate:translate(
+			  Lang,
+			  <<"~s invites you to the room ~s">>),
+			[jid:to_string(From),
+			 jid:to_string({StateData#state.room,
+					StateData#state.host,
+					<<"">>})]),
+		      case (StateData#state.config)#config.password_protected of
+			  true ->
+			      <<", ",
+				(translate:translate(
+				   Lang, <<"the password is">>))/binary,
+				" '",
+				((StateData#state.config)#config.password)/binary,
+				"'">>;
+			  _ -> <<"">>
+		      end,
+		      case Reason of
+			  <<"">> -> <<"">>;
+			  _ -> <<" (", Reason/binary, ") ">>
+		      end]),
+	    Msg = #message{type = normal,
+			   body = xmpp:mk_text(Body),
+			   sub_els = [XUser, XConference]},
+	    ejabberd_router:route(StateData#state.jid, JID, Msg),
+	    JID
     end.
 
 %% Handle a message sent to the room by a non-participant.

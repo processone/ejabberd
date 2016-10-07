@@ -1,0 +1,70 @@
+<form_type>
+  <name>http://jabber.org/protocol/pubsub#subscribe_options</name>
+  <doc>XEP-0060</doc>
+  <desc>Forms enabling configuration of subscription options for pubsub nodes</desc>
+  <field
+      var='pubsub#deliver'
+      type='boolean'
+      label='Whether an entity wants to receive
+             or disable notifications'/>
+  <field
+      var='pubsub#digest'
+      type='boolean'
+      label='Whether an entity wants to receive digests
+             (aggregations) of notifications or all
+             notifications individually'/>
+  <field var='pubsub#digest_frequency'
+         type='text-single'
+         label='The minimum number of milliseconds between
+                sending any two notification digests'/>
+  <field
+      var='pubsub#expire'
+      type='text-single'
+      label='The DateTime at which a leased subscription
+             will end or has ended'/>
+  <field
+      var='pubsub#include_body'
+      type='boolean'
+      label='Whether an entity wants to receive an XMPP
+             message body in addition to the payload
+             format'/>
+  <field
+      var='pubsub#show-values'
+      type='list-multi'
+      label='The presence states for which an entity
+             wants to receive notifications'>
+    <option label='XMPP Show Value of Away'>
+      <value>away</value>
+    </option>
+    <option label='XMPP Show Value of Chat'>
+      <value>chat</value>
+    </option>
+    <option label='XMPP Show Value of DND (Do Not Disturb)'>
+      <value>dnd</value>
+    </option>
+    <option label='Mere Availability in XMPP (No Show Value)'>
+      <value>online</value>
+    </option>
+    <option label='XMPP Show Value of XA (Extended Away)'>
+      <value>xa</value>
+    </option>
+  </field>
+  <field var='pubsub#subscription_type'
+         type='list-single'>
+    <option label='Receive notification of new items only'>
+      <value>items</value>
+    </option>
+    <option label='Receive notification of new nodes only'>
+      <value>nodes</value>
+    </option>
+  </field>
+  <field var='pubsub#subscription_depth'
+         type='list-single'>
+    <option label='Receive notification from direct child nodes only'>
+      <value>1</value>
+    </option>
+    <option label='Receive notification from all descendent nodes'>
+      <value>all</value>
+    </option>
+  </field>
+</form_type>

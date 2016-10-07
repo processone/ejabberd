@@ -11,7 +11,8 @@
 %% API
 -export([add_delay_info/3, add_delay_info/4, unwrap_carbon/1,
 	 is_standalone_chat_state/1, get_xdata_values/2,
-	 has_xdata_var/2, make_adhoc_response/1, make_adhoc_response/2]).
+	 has_xdata_var/2, make_adhoc_response/1, make_adhoc_response/2,
+	 decode_timestamp/1, encode_timestamp/1]).
 
 -include("xmpp.hrl").
 
@@ -95,11 +96,66 @@ make_adhoc_response(#adhoc_command{lang = Lang, node = Node, sid = SID},
 
 -spec make_adhoc_response(adhoc_command()) -> adhoc_command().
 make_adhoc_response(#adhoc_command{sid = <<"">>} = Command) ->
-    SID = jlib:now_to_utc_string(p1_time_compat:timestamp()),
+    SID = encode_timestamp(p1_time_compat:timestamp()),
     Command#adhoc_command{sid = SID};
 make_adhoc_response(Command) ->
     Command.
 
+-spec decode_timestamp(binary()) -> erlang:timestamp().
+decode_timestamp(S) ->
+    try try_decode_timestamp(S)
+    catch _:_ -> erlang:error({bad_timestamp, S})
+    end.
+
+-spec encode_timestamp(erlang:timestamp()) -> binary().
+encode_timestamp({MegaSecs, Secs, MicroSecs}) ->
+    {{Year, Month, Day}, {Hour, Minute, Second}} =
+        calendar:now_to_universal_time({MegaSecs, Secs, MicroSecs}),
+    Fraction = if MicroSecs > 0 ->
+		       io_lib:format(".~6..0B", [MicroSecs]);
+		  true ->
+		       ""
+	       end,
+    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0BT"
+				 "~2..0B:~2..0B:~2..0B~sZ",
+				 [Year, Month, Day, Hour, Minute, Second,
+				  Fraction])).
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+try_decode_timestamp(<<Y:4/binary, $-, Mo:2/binary, $-, D:2/binary, $T,
+		       H:2/binary, $:, Mi:2/binary, $:, S:2/binary, T/binary>>) ->
+    Date = {to_integer(Y, 1970, 9999), to_integer(Mo, 1, 12), to_integer(D, 1, 31)},
+    Time = {to_integer(H, 0, 23), to_integer(Mi, 0, 59), to_integer(S, 0, 59)},
+    {MS, {TZH, TZM}} = try_decode_fraction(T),
+    Seconds = calendar:datetime_to_gregorian_seconds({Date, Time}) -
+	calendar:datetime_to_gregorian_seconds({{1970,1,1}, {0,0,0}}) -
+	TZH * 60 * 60 - TZM * 60,
+    {Seconds div 1000000, Seconds rem 1000000, MS};
+try_decode_timestamp(<<Y:4/binary, Mo:2/binary, D:2/binary, $T,
+		       H:2/binary, $:, Mi:2/binary, $:, S:2/binary>>) ->
+    try_decode_timestamp(<<Y:4/binary, $-, Mo:2/binary, $-, D:2/binary, $T,
+			   H:2/binary, $:, Mi:2/binary, $:, S:2/binary, $Z>>).
+
+try_decode_fraction(<<$., T/binary>>) ->
+    {match, [V]} = re:run(T, <<"^[0-9]+">>, [{capture, [0], binary}]),
+    Size = size(V),
+    <<V:Size/binary, TZD/binary>> = T,
+    {to_integer(binary:part(V, 0, min(6, Size)), 0, 999999),
+     try_decode_tzd(TZD)};
+try_decode_fraction(TZD) ->
+    {0, try_decode_tzd(TZD)}.
+
+try_decode_tzd(<<$Z>>) ->
+    {0, 0};
+try_decode_tzd(<<$-, H:2/binary, $:, M:2/binary>>) ->
+    {-1 * to_integer(H, 0, 12), to_integer(M, 0, 59)};
+try_decode_tzd(<<$+, H:2/binary, $:, M:2/binary>>) ->
+    {to_integer(H, 0, 12), to_integer(M, 0, 59)}.
+
+to_integer(S, Min, Max) ->
+    case binary_to_integer(S) of
+	I when I >= Min, I =< Max ->
+	    I
+    end.

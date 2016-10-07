@@ -1028,8 +1028,11 @@ do_route(Host, From, To, Packet) ->
 		    case find_authorization_response(Packet) of
 			undefined ->
 			    ok;
-			XData ->
-			    handle_authorization_response(Host, From, To, Packet, XData)
+			{error, Err} ->
+			    ejabberd_router:route_error(To, From, Packet, Err);
+			AuthResponse ->
+			    handle_authorization_response(
+			      Host, From, To, Packet, AuthResponse)
 		    end;
 		_ ->
 		    Err = xmpp:err_service_unavailable(),
@@ -1200,19 +1203,28 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 	    ServerHost = serverhost(Host),
 	    Plugins = config(ServerHost, plugins),
 	    Config = case Configure of
-			 {_, XData} -> get_xdata_fields(XData);
+			 {_, XData} -> decode_node_config(XData, Host, Lang);
 			 undefined -> []
 		     end,
 	    Type = hd(Plugins),
-	    create_node(Host, ServerHost, Node, From, Type, Access, Config);
+	    case Config of
+		{error, _} = Err ->
+		    Err;
+		_ ->
+		    create_node(Host, ServerHost, Node, From, Type, Access, Config)
+	    end;
 	{set, #pubsub{publish = #ps_publish{node = Node, items = Items},
 		      publish_options = XData, _ = undefined}} ->
 	    ServerHost = serverhost(Host),
 	    case Items of
 		[#ps_item{id = ItemId, xml_els = Payload}] ->
-		    PubOpts = get_xdata_fields(XData),
-		    publish_item(Host, ServerHost, Node, From, ItemId,
-				 Payload, PubOpts, Access);
+		    case decode_publish_options(XData, Lang) of
+			{error, _} = Err ->
+			    Err;
+			PubOpts ->
+			    publish_item(Host, ServerHost, Node, From, ItemId,
+					 Payload, PubOpts, Access)
+		    end;
 		[] ->
 		    {error, extended_error(xmpp:err_bad_request(), err_item_required())};
 		_ ->
@@ -1236,10 +1248,17 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 	{set, #pubsub{subscribe = #ps_subscribe{node = Node, jid = JID},
 		      options = Options, _ = undefined}} ->
 	    Config = case Options of
-			 #ps_options{xdata = XData} -> get_xdata_fields(XData);
-			 _ -> []
+			 #ps_options{xdata = XData} ->
+			     decode_subscribe_options(XData, Lang);
+			 _ ->
+			     []
 		     end,
-	    subscribe_node(Host, Node, From, JID, Config);
+	    case Config of
+		{error, _} = Err ->
+		    Err;
+		_ ->
+		    subscribe_node(Host, Node, From, JID, Config)
+	    end;
 	{set, #pubsub{unsubscribe = #ps_unsubscribe{node = Node, jid = JID, subid = SubId},
 		      _ = undefined}} ->
 	    unsubscribe_node(Host, Node, From, JID, SubId);
@@ -1262,7 +1281,12 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 	{set, #pubsub{options = #ps_options{node = Node, subid = SubId,
 					    jid = JID, xdata = XData},
 		      _ = undefined}} ->
-	    set_options(Host, Node, JID, SubId, get_xdata_fields(XData));
+	    case decode_subscribe_options(XData, Lang) of
+		{error, _} = Err ->
+		    Err;
+		Config ->
+		    set_options(Host, Node, JID, SubId, Config)
+	    end;
 	{set, #pubsub{}} ->
 	    {error, xmpp:err_bad_request()};
 	_ ->
@@ -1284,8 +1308,12 @@ iq_pubsub_owner(Host, #iq{type = IQType, from = From,
 		#xdata{type = cancel} ->
 		    {result, #pubsub_owner{}};
 		#xdata{type = submit} ->
-		    Config = get_xdata_fields(XData),
-		    set_configure(Host, Node, From, Config, Lang);
+		    case decode_node_config(XData, Host, Lang) of
+			{error, _} = Err ->
+			    Err;
+			Config ->
+			    set_configure(Host, Node, From, Config, Lang)
+		    end;
 		#xdata{} ->
 		    {error, xmpp:err_bad_request(<<"Incorrect data form">>, Lang)}
 	    end;
@@ -1318,19 +1346,20 @@ adhoc_request(Host, _ServerHost, Owner,
     send_pending_node_form(Host, Owner, Lang, Plugins);
 adhoc_request(Host, _ServerHost, Owner,
 	      #adhoc_command{node = ?NS_PUBSUB_GET_PENDING, lang = Lang,
-			     action = execute, xdata = #xdata{} = XData},
+			     action = execute, xdata = #xdata{} = XData} = Request,
 	      _Access, _Plugins) ->
-    Config = get_xdata_fields(XData),
-    case set_xoption(Host, Config, []) of
-	XForm when is_list(XForm) ->
-	    case lists:keysearch(node, 1, XForm) of
-		{value, {_, Node}} ->
-		    send_pending_auth_events(Host, Node, Owner, Lang);
-		false ->
-		    {error, extended_error(xmpp:err_bad_request(), err_invalid_payload())}
-	    end;
-	Err ->
-	    Err
+    case decode_get_pending(XData, Lang) of
+	{error, _} = Err ->
+	    Err;
+	Config ->
+	    Node = proplists:get_value(node, Config),
+	    case send_pending_auth_events(Host, Node, Owner, Lang) of
+		ok ->
+		    xmpp_util:make_adhoc_response(
+		      Request, #adhoc_command{action = completed});
+		Err ->
+		    Err
+	    end
     end;
 adhoc_request(_Host, _ServerHost, _Owner,
 	      #adhoc_command{action = cancel}, _Access, _Plugins) ->
@@ -1353,12 +1382,9 @@ send_pending_node_form(Host, Owner, _Lang, Plugins) ->
 	Ps ->
 	    case get_pending_nodes(Host, Owner, Ps) of
 		{ok, Nodes} ->
-		    XOpts = [#xdata_option{value = Node} || Node <- Nodes],
 		    XForm = #xdata{type = form,
-				   fields = [#xdata_field{
-						type = 'list-single',
-						var = <<"pubsub#node">>,
-						options = lists:usort(XOpts)}]},
+				   fields = pubsub_get_pending:encode(
+					      [{node, Nodes}])},
 		    #adhoc_command{status = executing, action = execute,
 				   xdata = XForm};
 		Err ->
@@ -1423,24 +1449,11 @@ send_authorization_request(#pubsub_node{nodeid = {Host, Node},
 			   Subscriber) ->
     %% TODO: pass lang to this function
     Lang = <<"en">>,
-    Fs = [#xdata_field{var = <<"FORM_TYPE">>,
-		       type = hidden,
-		       values = [?NS_PUBSUB_SUB_AUTH]},
-	  #xdata_field{var = <<"pubsub#node">>,
-		       type = 'text-single',
-		       label = translate:translate(Lang, <<"Node ID">>),
-		       values = [Node]},
-	  #xdata_field{var = <<"pubsub#subscriber_jid">>,
-		       type = 'jid-single',
-		       label = translate:translate(Lang, <<"Subscriber Address">>),
-		       values = [jid:to_string(Subscriber)]},
-	  #xdata_field{var = <<"pubsub#allow">>,
-		       type = boolean,
-		       label = translate:translate(
-				 Lang,
-				 <<"Allow this Jabber ID to subscribe to "
-				   "this pubsub node?">>),
-		       values = [<<"false">>]}],
+    Fs = pubsub_subscribe_authorization:encode(
+	   [{node, Node},
+	    {subscriber_jid, Subscriber},
+	    {allow, false}],
+	   fun(T) -> translate:translate(Lang, T) end),
     X = #xdata{type = form,
 	       title = translate:translate(
 			 Lang, <<"PubSub subscriber request">>),
@@ -1455,15 +1468,24 @@ send_authorization_request(#pubsub_node{nodeid = {Host, Node},
 	      ejabberd_router:route(service_jid(Host), jid:make(Owner), Stanza)
       end, node_owners_action(Host, Type, Nidx, O)).
 
--spec find_authorization_response(message()) -> undefined | xdata().
+-spec find_authorization_response(message()) -> undefined |
+						pubsub_subscribe_authorization:result() |
+						{error, stanza_error()}.
 find_authorization_response(Packet) ->
     case xmpp:get_subtag(Packet, #xdata{}) of
-	#xdata{type = submit} = X ->
-	    case xmpp_util:get_xdata_values(<<"FORM_TYPE">>, X) of
-		[?NS_PUBSUB_SUB_AUTH] -> X;
-		_ -> undefined
+	#xdata{type = cancel} ->
+	    undefined;
+	#xdata{type = submit, fields = Fs} ->
+	    try pubsub_subscribe_authorization:decode(Fs) of
+		Result -> Result
+	    catch _:{pubsub_subscribe_authorization, Why} ->
+		    Lang = xmpp:get_lang(Packet),
+		    Txt = pubsub_subscribe_authorization:format_error(Why),
+		    {error, xmpp:err_bad_request(Txt, Lang)}
 	    end;
-	_ ->
+	#xdata{} ->
+	    {error, xmpp:err_bad_request()};
+	false ->
 	    undefined
     end.
 
@@ -1477,43 +1499,33 @@ send_authorization_approval(Host, JID, SNode, Subscription) ->
     Stanza = #message{sub_els = [Event]},
     ejabberd_router:route(service_jid(Host), JID, Stanza).
 
--spec handle_authorization_response(binary(), jid(), jid(), message(), xdata()) -> ok.
-handle_authorization_response(Host, From, To, Packet, X) ->
+-spec handle_authorization_response(binary(), jid(), jid(), message(),
+				    pubsub_subscribe_authorization:result()) -> ok.
+handle_authorization_response(Host, From, To, Packet, Response) ->
+    Node = proplists:get_value(node, Response),
+    Subscriber = proplists:get_value(subscriber_jid, Response),
+    Allow = proplists:get_value(allow, Response),
     Lang = xmpp:get_lang(Packet),
-    case {xmpp_util:get_xdata_values(<<"pubsub#node">>, X),
-	  xmpp_util:get_xdata_values(<<"pubsub#subscriber_jid">>, X),
-	  xmpp_util:get_xdata_values(<<"pubsub#allow">>, X)} of
-	{[Node], [SSubscriber], [SAllow]} ->
-	    FromLJID = jid:tolower(jid:remove_resource(From)),
-	    Subscriber = jid:from_string(SSubscriber),
-	    Allow = case SAllow of
-			<<"1">> -> true;
-			<<"true">> -> true;
-			_ -> false
-		    end,
-	    Action =
-		fun(#pubsub_node{type = Type, id = Nidx, owners = O}) ->
-			Owners = node_owners_call(Host, Type, Nidx, O),
-			case lists:member(FromLJID, Owners) of
-			    true ->
-				{result, Subs} = node_call(Host, Type, get_subscriptions, [Nidx, Subscriber]),
-				update_auth(Host, Node, Type, Nidx, Subscriber, Allow, Subs);
-			    false ->
-				{error, xmpp:err_forbidden(<<"Owner privileges required">>, Lang)}
-			end
-		end,
-	    case transaction(Host, Node, Action, sync_dirty) of
-		{error, Error} ->
-		    ejabberd_router:route_error(To, From, Packet, Error);
-		{result, {_, _NewSubscription}} ->
-		    %% XXX: notify about subscription state change, section 12.11
-		    ok;
-		_ ->
-		    Err = xmpp:err_internal_server_error(),
-		    ejabberd_router:route_error(To, From, Packet, Err)
-	    end;
+    FromLJID = jid:tolower(jid:remove_resource(From)),
+    Action =
+	fun(#pubsub_node{type = Type, id = Nidx, owners = O}) ->
+		Owners = node_owners_call(Host, Type, Nidx, O),
+		case lists:member(FromLJID, Owners) of
+		    true ->
+			{result, Subs} = node_call(Host, Type, get_subscriptions, [Nidx, Subscriber]),
+			update_auth(Host, Node, Type, Nidx, Subscriber, Allow, Subs);
+		    false ->
+			{error, xmpp:err_forbidden(<<"Owner privileges required">>, Lang)}
+		end
+	end,
+    case transaction(Host, Node, Action, sync_dirty) of
+	{error, Error} ->
+	    ejabberd_router:route_error(To, From, Packet, Error);
+	{result, {_, _NewSubscription}} ->
+	    %% XXX: notify about subscription state change, section 12.11
+	    ok;
 	_ ->
-	    Err = xmpp:err_not_acceptable(<<"Incorrect data form">>, Lang),
+	    Err = xmpp:err_internal_server_error(),
 	    ejabberd_router:route_error(To, From, Packet, Err)
     end.
 
@@ -1538,45 +1550,6 @@ update_auth(Host, Node, Type, Nidx, Subscriber, Allow, Subs) ->
 	    Txt = <<"No pending subscriptions found">>,
 	    {error, xmpp:err_unexpected_request(Txt, ?MYLANG)}
     end.
-
--define(XFIELD(Type, Label, Var, Val),
-	#xdata_field{type = Type,
-		     label = translate:translate(Lang, Label),
-		     var = Var,
-		     values = [Val]}).
-
--define(BOOLXFIELD(Label, Var, Val),
-	?XFIELD(boolean, Label, Var,
-		case Val of
-		    true -> <<"1">>;
-		    _ -> <<"0">>
-		end)).
-
--define(STRINGXFIELD(Label, Var, Val),
-	?XFIELD('text-single', Label, Var, Val)).
-
--define(STRINGMXFIELD(Label, Var, Vals),
-	#xdata_field{type = 'text-multi',
-		     label = translate:translate(Lang, Label),
-		     var = Var,
-		     values = Vals}).
-
--define(XFIELDOPT(Type, Label, Var, Val, Opts),
-	#xdata_field{type = Type,
-		     label = translate:translate(Lang, Label),
-		     var = Var,
-		     options = [#xdata_option{value = Opt} || Opt <- Opts],
-		     values = [Val]}).
-
--define(LISTXFIELD(Label, Var, Val, Opts),
-	?XFIELDOPT('list-single', Label, Var, Val, Opts)).
-
--define(LISTMXFIELD(Label, Var, Vals, Opts),
-	#xdata_field{type = 'list-multi',
-		     label = translate:translate(Lang, Label),
-		     var = Var,
-		     options = [#xdata_option{value = Opt} || Opt <- Opts],
-		     values = Vals}).
 
 %% @doc <p>Create new pubsub nodes</p>
 %%<p>In addition to method-specific error conditions, there are several general reasons why the node creation request might fail:</p>
@@ -1617,70 +1590,66 @@ create_node(Host, ServerHost, <<>>, Owner, Type, Access, Configuration) ->
     end;
 create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
     Type = select_type(ServerHost, Host, Node, GivenType),
-    case set_xoption(Host, Configuration, node_options(Host, Type)) of
-	NodeOptions when is_list(NodeOptions) ->
-	    CreateNode =
-		fun() ->
-			Parent = case node_call(Host, Type, node_to_path, [Node]) of
-				     {result, [Node]} ->
-					 <<>>;
-				     {result, Path} ->
-					 element(2, node_call(Host, Type, path_to_node,
-							      [lists:sublist(Path, length(Path)-1)]))
-				 end,
-			Parents = case Parent of
-				      <<>> -> [];
-				      _ -> [Parent]
-				  end,
-			case node_call(Host, Type, create_node_permission,
-				       [Host, ServerHost, Node, Parent, Owner, Access]) of
-			    {result, true} ->
-				case tree_call(Host, create_node,
-					       [Host, Node, Type, Owner, NodeOptions, Parents])
-				of
-				    {ok, Nidx} ->
-					SubsByDepth = get_node_subs_by_depth(Host, Node, Owner),
-					case node_call(Host, Type, create_node, [Nidx, Owner]) of
-					    {result, Result} -> {result, {Nidx, SubsByDepth, Result}};
-					    Error -> Error
-					end;
-				    {error, {virtual, Nidx}} ->
-					case node_call(Host, Type, create_node, [Nidx, Owner]) of
-					    {result, Result} -> {result, {Nidx, [], Result}};
-					    Error -> Error
-					end;
-				    Error ->
-					Error
+    NodeOptions = merge_config(Configuration, node_options(Host, Type)),
+    CreateNode =
+	fun() ->
+		Parent = case node_call(Host, Type, node_to_path, [Node]) of
+			     {result, [Node]} ->
+				 <<>>;
+			     {result, Path} ->
+				 element(2, node_call(Host, Type, path_to_node,
+						      [lists:sublist(Path, length(Path)-1)]))
+			 end,
+		Parents = case Parent of
+			      <<>> -> [];
+			      _ -> [Parent]
+			  end,
+		case node_call(Host, Type, create_node_permission,
+			       [Host, ServerHost, Node, Parent, Owner, Access]) of
+		    {result, true} ->
+			case tree_call(Host, create_node,
+				       [Host, Node, Type, Owner, NodeOptions, Parents])
+			of
+			    {ok, Nidx} ->
+				SubsByDepth = get_node_subs_by_depth(Host, Node, Owner),
+				case node_call(Host, Type, create_node, [Nidx, Owner]) of
+				    {result, Result} -> {result, {Nidx, SubsByDepth, Result}};
+				    Error -> Error
 				end;
-			    _ ->
-				Txt = <<"You're not allowed to create nodes">>,
-				{error, xmpp:err_forbidden(Txt, ?MYLANG)}
-			end
-		end,
-	    Reply = #pubsub{create = Node},
-	    case transaction(Host, CreateNode, transaction) of
-		{result, {Nidx, SubsByDepth, {Result, broadcast}}} ->
-		    broadcast_created_node(Host, Node, Nidx, Type, NodeOptions, SubsByDepth),
-		    ejabberd_hooks:run(pubsub_create_node, ServerHost,
-			[ServerHost, Host, Node, Nidx, NodeOptions]),
-		    case Result of
-			default -> {result, Reply};
-			_ -> {result, Result}
-		    end;
-		{result, {Nidx, _SubsByDepth, Result}} ->
-		    ejabberd_hooks:run(pubsub_create_node, ServerHost,
-			[ServerHost, Host, Node, Nidx, NodeOptions]),
-		    case Result of
-			default -> {result, Reply};
-			_ -> {result, Result}
-		    end;
-		Error ->
-		    %% in case we change transaction to sync_dirty...
-		    %%  node_call(Host, Type, delete_node, [Host, Node]),
-		    %%  tree_call(Host, delete_node, [Host, Node]),
-		    Error
+			    {error, {virtual, Nidx}} ->
+				case node_call(Host, Type, create_node, [Nidx, Owner]) of
+				    {result, Result} -> {result, {Nidx, [], Result}};
+				    Error -> Error
+				end;
+			    Error ->
+				Error
+			end;
+		    _ ->
+			Txt = <<"You're not allowed to create nodes">>,
+			{error, xmpp:err_forbidden(Txt, ?MYLANG)}
+		end
+	end,
+    Reply = #pubsub{create = Node},
+    case transaction(Host, CreateNode, transaction) of
+	{result, {Nidx, SubsByDepth, {Result, broadcast}}} ->
+	    broadcast_created_node(Host, Node, Nidx, Type, NodeOptions, SubsByDepth),
+	    ejabberd_hooks:run(pubsub_create_node, ServerHost,
+			       [ServerHost, Host, Node, Nidx, NodeOptions]),
+	    case Result of
+		default -> {result, Reply};
+		_ -> {result, Result}
+	    end;
+	{result, {Nidx, _SubsByDepth, Result}} ->
+	    ejabberd_hooks:run(pubsub_create_node, ServerHost,
+			       [ServerHost, Host, Node, Nidx, NodeOptions]),
+	    case Result of
+		default -> {result, Reply};
+		_ -> {result, Result}
 	    end;
 	Error ->
+	    %% in case we change transaction to sync_dirty...
+	    %%  node_call(Host, Type, delete_node, [Host, Node]),
+	    %%  tree_call(Host, delete_node, [Host, Node]),
 	    Error
     end.
 
@@ -2636,7 +2605,7 @@ set_subscriptions(Host, Node, From, Entities) ->
     Owner = jid:tolower(jid:remove_resource(From)),
     Notify = fun(#ps_subscription{jid = JID, type = Sub}) ->
 		     Stanza = #message{
-				 sub_els = [#pubsub{
+				 sub_els = [#ps_event{
 					       subscription = #ps_subscription{
 								 jid = JID,
 								 type = Sub,
@@ -3266,83 +3235,17 @@ max_items(Host, Options) ->
 	    end
     end.
 
--define(BOOL_CONFIG_FIELD(Label, Var),
-    ?BOOLXFIELD(Label,
-	<<"pubsub#", (atom_to_binary(Var, latin1))/binary>>,
-	(get_option(Options, Var)))).
-
--define(STRING_CONFIG_FIELD(Label, Var),
-    ?STRINGXFIELD(Label,
-	<<"pubsub#", (atom_to_binary(Var, latin1))/binary>>,
-	(get_option(Options, Var, <<>>)))).
-
--define(INTEGER_CONFIG_FIELD(Label, Var),
-    ?STRINGXFIELD(Label,
-	<<"pubsub#", (atom_to_binary(Var, latin1))/binary>>,
-	(integer_to_binary(get_option(Options, Var))))).
-
--define(JLIST_CONFIG_FIELD(Label, Var, Opts),
-    ?LISTXFIELD(Label,
-	<<"pubsub#", (atom_to_binary(Var, latin1))/binary>>,
-	(jid:to_string(get_option(Options, Var))),
-	[jid:to_string(O) || O <- Opts])).
-
--define(ALIST_CONFIG_FIELD(Label, Var, Opts),
-	?LISTXFIELD(Label,
-		    <<"pubsub#", (atom_to_binary(Var, latin1))/binary>>,
-		    (atom_to_binary(get_option(Options, Var), latin1)),
-		    [atom_to_binary(O, latin1) || O <- Opts])).
-
--define(LISTM_CONFIG_FIELD(Label, Var, Opts),
-    ?LISTMXFIELD(Label,
-	<<"pubsub#", (atom_to_binary(Var, latin1))/binary>>,
-	(get_option(Options, Var)), Opts)).
-
--define(NLIST_CONFIG_FIELD(Label, Var),
-    ?STRINGMXFIELD(Label,
-	<<"pubsub#", (atom_to_binary(Var, latin1))/binary>>,
-	get_option(Options, Var, []))).
-
+-spec get_configure_xfields(_, pubsub_node_config:result(),
+			    binary(), [binary()]) -> [xdata_field()].
 get_configure_xfields(_Type, Options, Lang, Groups) ->
-    [?XFIELD(hidden, <<>>, <<"FORM_TYPE">>, ?NS_PUBSUB_NODE_CONFIG),
-     ?BOOL_CONFIG_FIELD(<<"Deliver payloads with event notifications">>,
-			deliver_payloads),
-     ?BOOL_CONFIG_FIELD(<<"Deliver event notifications">>,
-			deliver_notifications),
-     ?BOOL_CONFIG_FIELD(<<"Notify subscribers when the node configuration changes">>,
-			notify_config),
-     ?BOOL_CONFIG_FIELD(<<"Notify subscribers when the node is deleted">>,
-			notify_delete),
-     ?BOOL_CONFIG_FIELD(<<"Notify subscribers when items are removed from the node">>,
-			notify_retract),
-     ?BOOL_CONFIG_FIELD(<<"Persist items to storage">>,
-			persist_items),
-     ?STRING_CONFIG_FIELD(<<"A friendly name for the node">>,
-			  title),
-     ?INTEGER_CONFIG_FIELD(<<"Max # of items to persist">>,
-			   max_items),
-     ?BOOL_CONFIG_FIELD(<<"Whether to allow subscriptions">>,
-			subscribe),
-     ?ALIST_CONFIG_FIELD(<<"Specify the access model">>,
-			 access_model, [open, authorize, presence, roster, whitelist]),
-     ?LISTM_CONFIG_FIELD(<<"Roster groups allowed to subscribe">>,
-			 roster_groups_allowed, Groups),
-     ?ALIST_CONFIG_FIELD(<<"Specify the publisher model">>,
-			 publish_model, [publishers, subscribers, open]),
-     ?BOOL_CONFIG_FIELD(<<"Purge all items when the relevant publisher goes offline">>,
-			purge_offline),
-     ?ALIST_CONFIG_FIELD(<<"Specify the event message type">>,
-			 notification_type, [headline, normal]),
-     ?INTEGER_CONFIG_FIELD(<<"Max payload size in bytes">>,
-			   max_payload_size),
-     ?ALIST_CONFIG_FIELD(<<"When to send the last published item">>,
-			 send_last_published_item, [never, on_sub, on_sub_and_presence]),
-     ?BOOL_CONFIG_FIELD(<<"Only deliver notifications to available users">>,
-			presence_based_delivery),
-     ?NLIST_CONFIG_FIELD(<<"The collections with which a node is affiliated">>,
-			 collection),
-     ?ALIST_CONFIG_FIELD(<<"Whether owners or publisher should receive replies to items">>,
-			 itemreply, [none, owner, publisher])].
+    pubsub_node_config:encode(
+      lists:map(
+	fun({roster_groups_allowed, Value}) ->
+		{roster_groups_allowed, Value, Groups};
+	   (Opt) ->
+		Opt
+	end, Options),
+      fun(Txt) -> translate:translate(Lang, Txt) end).
 
 %%<p>There are several reasons why the node configuration request might fail:</p>
 %%<ul>
@@ -3365,18 +3268,13 @@ set_configure(Host, Node, From, Config, Lang) ->
 				      [] -> node_options(Host, Type);
 				      _ -> Options
 				  end,
-			case set_xoption(Host, Config, OldOpts) of
-			    NewOpts when is_list(NewOpts) ->
-				case tree_call(Host,
-					       set_node,
-					       [N#pubsub_node{options = NewOpts}])
-				of
-				    {result, Nidx} -> {result, ok};
-				    ok -> {result, ok};
-				    Err -> Err
-				end;
-			    Error ->
-				Error
+			NewOpts = merge_config(Config, OldOpts),
+			case tree_call(Host,
+				       set_node,
+				       [N#pubsub_node{options = NewOpts}]) of
+			    {result, Nidx} -> {result, ok};
+			    ok -> {result, ok};
+			    Err -> Err
 			end;
 		    _ ->
 			{error, xmpp:err_forbidden(
@@ -3394,119 +3292,82 @@ set_configure(Host, Node, From, Config, Lang) ->
 	    Other
     end.
 
--spec add_opt(atom(), any(), [{atom(), any()}]) -> [{atom(), any()}].
-add_opt(Key, Value, Opts) ->
-    lists:keystore(Key, 1, Opts, {Key, Value}).
+-spec merge_config([proplists:property()], [proplists:property()]) -> [proplists:property()].
+merge_config(Config1, Config2) ->
+    lists:foldl(
+      fun({Opt, Val}, Acc) ->
+	      lists:keystore(Opt, 1, Acc, {Opt, Val})
+      end, Config2, Config1).
 
--define(SET_BOOL_XOPT(Opt, Val),
-    BoolVal = case Val of
-	<<"0">> -> false;
-	<<"1">> -> true;
-	<<"false">> -> false;
-	<<"true">> -> true;
-	_ -> error
-    end,
-    case BoolVal of
-	error ->
-	    Txt = <<"Value of '~s' should be boolean">>,
-	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)};
-	_ -> set_xoption(Host, Opts, add_opt(Opt, BoolVal, NewOpts))
-    end).
-
--define(SET_STRING_XOPT(Opt, Val),
-    set_xoption(Host, Opts, add_opt(Opt, Val, NewOpts))).
-
--define(SET_INTEGER_XOPT(Opt, Val, Min, Max),
-	case catch binary_to_integer(Val) of
-	    IVal when is_integer(IVal), IVal >= Min ->
-		if (Max =:= undefined) orelse (IVal =< Max) ->
-			set_xoption(Host, Opts, add_opt(Opt, IVal, NewOpts));
-		   true ->
-			Txt = <<"Incorrect value of '~s'">>,
-			ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-			{error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
-		end;
-	    _ ->
-		Txt = <<"Value of '~s' should be integer">>,
-		ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-		{error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
-	end).
-
--define(SET_ALIST_XOPT(Opt, Val, Vals),
-    case lists:member(Val, [atom_to_binary(V, latin1) || V <- Vals]) of
-	true ->
-	    set_xoption(Host, Opts, add_opt(Opt, jlib:binary_to_atom(Val), NewOpts));
-	false ->
-	    Txt = <<"Incorrect value of '~s'">>,
-	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
-    end).
-
--define(SET_LIST_XOPT(Opt, Val),
-	set_xoption(Host, Opts, add_opt(Opt, Val, NewOpts))).
-
--spec set_xoption(host(), [{binary(), [binary()]}], [{atom(), any()}]) -> [{atom(), any()}].
-set_xoption(_Host, [], NewOpts) -> NewOpts;
-set_xoption(Host, [{<<"FORM_TYPE">>, _} | Opts], NewOpts) ->
-    set_xoption(Host, Opts, NewOpts);
-set_xoption(Host, [{<<"pubsub#roster_groups_allowed">>, Value} | Opts], NewOpts) ->
-    ?SET_LIST_XOPT(roster_groups_allowed, Value);
-set_xoption(Host, [{<<"pubsub#deliver_payloads">>, [Val]} | Opts], NewOpts) ->
-    ?SET_BOOL_XOPT(deliver_payloads, Val);
-set_xoption(Host, [{<<"pubsub#deliver_notifications">>, [Val]} | Opts], NewOpts) ->
-    ?SET_BOOL_XOPT(deliver_notifications, Val);
-set_xoption(Host, [{<<"pubsub#notify_config">>, [Val]} | Opts], NewOpts) ->
-    ?SET_BOOL_XOPT(notify_config, Val);
-set_xoption(Host, [{<<"pubsub#notify_delete">>, [Val]} | Opts], NewOpts) ->
-    ?SET_BOOL_XOPT(notify_delete, Val);
-set_xoption(Host, [{<<"pubsub#notify_retract">>, [Val]} | Opts], NewOpts) ->
-    ?SET_BOOL_XOPT(notify_retract, Val);
-set_xoption(Host, [{<<"pubsub#persist_items">>, [Val]} | Opts], NewOpts) ->
-    ?SET_BOOL_XOPT(persist_items, Val);
-set_xoption(Host, [{<<"pubsub#max_items">>, [Val]} | Opts], NewOpts) ->
-    MaxItems = get_max_items_node(Host),
-    ?SET_INTEGER_XOPT(max_items, Val, 0, MaxItems);
-set_xoption(Host, [{<<"pubsub#subscribe">>, [Val]} | Opts], NewOpts) ->
-    ?SET_BOOL_XOPT(subscribe, Val);
-set_xoption(Host, [{<<"pubsub#access_model">>, [Val]} | Opts], NewOpts) ->
-    ?SET_ALIST_XOPT(access_model, Val, [open, authorize, presence, roster, whitelist]);
-set_xoption(Host, [{<<"pubsub#publish_model">>, [Val]} | Opts], NewOpts) ->
-    ?SET_ALIST_XOPT(publish_model, Val, [publishers, subscribers, open]);
-set_xoption(Host, [{<<"pubsub#notification_type">>, [Val]} | Opts], NewOpts) ->
-    ?SET_ALIST_XOPT(notification_type, Val, [headline, normal]);
-set_xoption(Host, [{<<"pubsub#node_type">>, [Val]} | Opts], NewOpts) ->
-    ?SET_ALIST_XOPT(node_type, Val, [leaf, collection]);
-set_xoption(Host, [{<<"pubsub#max_payload_size">>, [Val]} | Opts], NewOpts) ->
-    ?SET_INTEGER_XOPT(max_payload_size, Val, 0, (?MAX_PAYLOAD_SIZE));
-set_xoption(Host, [{<<"pubsub#send_last_published_item">>, [Val]} | Opts], NewOpts) ->
-    ?SET_ALIST_XOPT(send_last_published_item, Val, [never, on_sub, on_sub_and_presence]);
-set_xoption(Host, [{<<"pubsub#presence_based_delivery">>, [Val]} | Opts], NewOpts) ->
-    ?SET_BOOL_XOPT(presence_based_delivery, Val);
-set_xoption(Host, [{<<"pubsub#purge_offline">>, [Val]} | Opts], NewOpts) ->
-    ?SET_BOOL_XOPT(purge_offline, Val);
-set_xoption(Host, [{<<"pubsub#title">>, Value} | Opts], NewOpts) ->
-    ?SET_STRING_XOPT(title, Value);
-set_xoption(Host, [{<<"pubsub#type">>, Value} | Opts], NewOpts) ->
-    ?SET_STRING_XOPT(type, Value);
-set_xoption(Host, [{<<"pubsub#body_xslt">>, Value} | Opts], NewOpts) ->
-    ?SET_STRING_XOPT(body_xslt, Value);
-set_xoption(Host, [{<<"pubsub#collection">>, Value} | Opts], NewOpts) ->
-    %    NewValue = [string_to_node(V) || V <- Value],
-    ?SET_LIST_XOPT(collection, Value);
-set_xoption(Host, [{<<"pubsub#node">>, [Value]} | Opts], NewOpts) ->
-    %    NewValue = string_to_node(Value),
-    ?SET_LIST_XOPT(node, Value);
-set_xoption(Host, [{<<"pubsub#itemreply">>, [Val]} | Opts], NewOpts) ->
-    ?SET_ALIST_XOPT(itemreply, Val, [none, owner, publisher]);
-set_xoption(Host, [_ | Opts], NewOpts) ->
-    set_xoption(Host, Opts, NewOpts).
-
--spec get_xdata_fields(undefined | xdata()) -> [{binary(), [binary()]}].
-get_xdata_fields(undefined) ->
+-spec decode_node_config(undefined | xdata(), binary(), binary()) ->
+				pubsub_node_config:result() |
+				{error, stanza_error()}.
+decode_node_config(undefined, _, _) ->
     [];
-get_xdata_fields(#xdata{fields = Fs}) ->
-    [{Var, Vals} || #xdata_field{var = Var, values = Vals} <- Fs].
+decode_node_config(#xdata{fields = Fs}, Host, Lang) ->
+    try
+	Config = pubsub_node_config:decode(Fs),
+	Max = get_max_items_node(Host),
+	case {check_opt_range(max_items, Config, Max),
+	      check_opt_range(max_payload_size, Config, ?MAX_PAYLOAD_SIZE)} of
+	    {true, true} ->
+		Config;
+	    {true, false} ->
+		erlang:error(
+		  {pubsub_node_config,
+		   {bad_var_value, <<"pubsub#max_payload_size">>,
+		    ?NS_PUBSUB_NODE_CONFIG}});
+	    {false, _} ->
+		erlang:error(
+		  {pubsub_node_config,
+		   {bad_var_value, <<"pubsub#max_items">>,
+		    ?NS_PUBSUB_NODE_CONFIG}})
+	end
+    catch _:{pubsub_node_config, Why} ->
+	    Txt = pubsub_node_config:format_error(Why),
+	    {error, xmpp:err_resource_constraint(Txt, Lang)}
+    end.
+
+-spec decode_subscribe_options(undefined | xdata(), binary()) ->
+				      pubsub_subscribe_options:result() |
+				      {error, stanza_error()}.
+decode_subscribe_options(undefined, _) ->
+    [];
+decode_subscribe_options(#xdata{fields = Fs}, Lang) ->
+    try pubsub_subscribe_options:decode(Fs)
+    catch _:{pubsub_subscribe_options, Why} ->
+	    Txt = pubsub_subscribe_options:format_error(Why),
+	    {error, xmpp:err_resource_constraint(Txt, Lang)}
+    end.
+
+-spec decode_publish_options(undefined | xdata(), binary()) ->
+				    pubsub_publish_options:result() |
+				    {error, stanza_error()}.
+decode_publish_options(undefined, _) ->
+    [];
+decode_publish_options(#xdata{fields = Fs}, Lang) ->
+    try pubsub_publish_options:decode(Fs)
+    catch _:{pubsub_publish_options, Why} ->
+	    Txt = pubsub_publish_options:format_error(Why),
+	    {error, xmpp:err_resource_constraint(Txt, Lang)}
+    end.
+
+-spec decode_get_pending(xdata(), binary()) ->
+				pubsub_get_pending:result() |
+				{error, stanza_error()}.
+decode_get_pending(#xdata{fields = Fs}, Lang) ->
+    try pubsub_get_pending:decode(Fs)
+    catch _:{pubsub_get_pending, Why} ->
+	    Txt = pubsub_get_pending:format_error(Why),
+	    {error, xmpp:err_resource_constraint(Txt, Lang)}
+    end;
+decode_get_pending(undefined, Lang) ->
+    {error, xmpp:err_bad_request(<<"No data form found">>, Lang)}.
+
+-spec check_opt_range(atom(), [proplists:property()], non_neg_integer()) -> boolean().
+check_opt_range(Opt, Opts, Max) ->
+    Val = proplists:get_value(Opt, Opts, Max),
+    Val =< Max.
 
 -spec get_max_items_node(host()) -> undefined | non_neg_integer().
 get_max_items_node(Host) ->

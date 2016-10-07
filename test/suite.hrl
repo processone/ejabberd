@@ -66,6 +66,14 @@
                  end
          end)()).
 
+-define(match(Pattern, Result),
+	case Result of
+	    Pattern ->
+		Pattern;
+	    Mismatch ->
+		suite:match_failure([Mismatch], [??Pattern])
+	end).
+
 -define(COMMON_VHOST, <<"localhost">>).
 -define(MNESIA_VHOST, <<"mnesia.localhost">>).
 -define(REDIS_VHOST, <<"redis.localhost">>).

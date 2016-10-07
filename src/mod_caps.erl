@@ -488,14 +488,11 @@ concat_identities(#disco_info{identities = Identities}) ->
 -spec concat_info(disco_info()) -> iolist().
 concat_info(#disco_info{xdata = Xs}) ->
     lists:sort(
-      [concat_xdata_fields(Fs) || #xdata{type = result, fields = Fs} <- Xs]).
+      [concat_xdata_fields(X) || #xdata{type = result} = X <- Xs]).
 
--spec concat_xdata_fields([xdata_field()]) -> iolist().
-concat_xdata_fields(Fields) ->
-    Form = case lists:keyfind(<<"FORM_TYPE">>, #xdata_field.var, Fields) of
-	       #xdata_field{values = Values} -> Values;
-	       false -> []
-	   end,
+-spec concat_xdata_fields(xdata()) -> iolist().
+concat_xdata_fields(#xdata{fields = Fields} = X) ->
+    Form = xmpp_util:get_xdata_values(<<"FORM_TYPE">>, X),
     Res = [[Var, $<, lists:sort([[Val, $<] || Val <- Values])]
 	   || #xdata_field{var = Var, values = Values} <- Fields,
 	      is_binary(Var), Var /= <<"FORM_TYPE">>],

@@ -1,0 +1,192 @@
+<form_type>
+  <name>http://jabber.org/protocol/muc#roomconfig</name>
+  <doc>XEP-0045</doc>
+  <desc>
+    Forms enabling creation and configuration of
+    a Multi-User Chat (MUC) room.
+  </desc>
+  <field
+      var='muc#maxhistoryfetch'
+      type='text-single'
+      label='Maximum Number of History Messages Returned by Room'/>
+  <field
+      var='muc#roomconfig_allowpm'
+      type='list-single'
+      label='Roles that May Send Private Messages'/>
+  <field
+      var='allow_private_messages'
+      type='boolean'
+      label='Allow users to send private messages'/>
+  <field
+      var='allow_private_messages_from_visitors'
+      type='list-single'
+      label='Allow visitors to send private messages to'>
+    <option label='nobody'>
+      <value>nobody</value>
+    </option>
+    <option label='moderators only'>
+      <value>moderators</value>
+    </option>
+    <option label='anyone'>
+      <value>anyone</value>
+    </option>
+  </field>
+  <field
+      var='allow_visitor_status'
+      type='boolean'
+      label='Allow visitors to send status text in presence updates'/>
+  <field
+      var='allow_visitor_nickchange'
+      type='boolean'
+      label='Allow visitors to change nickname'/>
+  <field
+      var='allow_voice_requests'
+      type='boolean'
+      label='Allow visitors to send voice requests'/>
+  <field
+      var='allow_subscription'
+      type='boolean'
+      label='Allow subscription'/>
+  <field
+      var='voice_request_min_interval'
+      type='text-single'
+      label='Minimum interval between voice requests (in seconds)'/>
+  <field
+      var='captcha_protected'
+      type='boolean'
+      label='Make room CAPTCHA protected'/>
+  <field
+      var='captcha_whitelist'
+      type='jid-multi'
+      label='Exclude Jabber IDs from CAPTCHA challenge'/>
+  <field
+      var='allow_query_users'
+      type='boolean'
+      label='Allow users to query other users'/>
+  <field
+      var='muc#roomconfig_allowinvites'
+      type='boolean'
+      label='Allow users to send invites'/>
+  <field
+      var='muc#roomconfig_changesubject'
+      type='boolean'
+      label='Allow users to change the subject'/>
+  <field
+      var='muc#roomconfig_enablelogging'
+      type='boolean'
+      label='Enable logging'/>
+  <field
+      var='muc#roomconfig_getmemberlist'
+      type='list-multi'
+      label='Roles and Affiliations that May Retrieve Member List'/>
+  <field
+      var='muc#roomconfig_lang'
+      type='text-single'
+      label='Natural Language for Room Discussions'/>
+  <field
+      var='muc#roomconfig_pubsub'
+      type='text-single'
+      label='XMPP URI of Associated Publish-Subscribe Node'/>
+  <field
+      var='muc#roomconfig_maxusers'
+      type='list-single'
+      label='Maximum Number of Occupants'>
+    <option label='No limit'>
+      <value>none</value>
+    </option>
+    <option><value>5</value></option>
+    <option><value>10</value></option>
+    <option><value>20</value></option>
+    <option><value>30</value></option>
+    <option><value>50</value></option>
+    <option><value>100</value></option>
+    <option><value>200</value></option>
+    <option><value>500</value></option>
+    <option><value>1000</value></option>
+    <option><value>2000</value></option>
+    <option><value>5000</value></option>
+  </field>
+  <field
+      var='muc#roomconfig_membersonly'
+      type='boolean'
+      label='Make room members-only'/>
+  <field
+      var='muc#roomconfig_moderatedroom'
+      type='boolean'
+      label='Make room moderated'/>
+  <field
+      var='members_by_default'
+      type='boolean'
+      label='Default users as participants'/>
+  <field
+      var='muc#roomconfig_passwordprotectedroom'
+      type='boolean'
+      label='Make room password protected'/>
+  <field
+      var='muc#roomconfig_persistentroom'
+      type='boolean'
+      label='Make room persistent'/>
+  <field
+      var='muc#roomconfig_presencebroadcast'
+      type='list-multi'
+      label='Roles for which Presence is Broadcasted'>
+    <option label='Moderator'>
+      <value>moderator</value>
+    </option>
+    <option label='Participant'>
+      <value>participant</value>
+    </option>
+    <option label='Visitor'>
+      <value>visitor</value>
+    </option>
+  </field>
+  <field
+      var='muc#roomconfig_publicroom'
+      type='boolean'
+      label='Make room public searchable'/>
+  <field
+      var='public_list'
+      type='boolean'
+      label='Make participants list public'/>
+  <field
+      var='muc#roomconfig_roomadmins'
+      type='jid-multi'
+      label='Full List of Room Admins'/>
+  <field
+      var='muc#roomconfig_roomdesc'
+      type='text-single'
+      label='Room description'/>
+  <field
+      var='muc#roomconfig_roomname'
+      type='text-single'
+      label='Room title'/>
+  <field
+      var='muc#roomconfig_roomowners'
+      type='jid-multi'
+      label='Full List of Room Owners'/>
+  <field
+      var='muc#roomconfig_roomsecret'
+      type='text-private'
+      label='Password'/>
+  <field
+      var='muc#roomconfig_whois'
+      type='list-single'
+      label='Present real Jabber IDs to'>
+    <option label='moderators only'>
+      <value>moderators</value>
+    </option>
+    <option label='anyone'>
+      <value>anyone</value>
+    </option>
+  </field>
+  <field
+      var='mam'
+      type='boolean'
+      label='Enable message archiving'/>
+</form_type>
+
+<!--
+Local Variables:
+mode: xml
+End:
+-->

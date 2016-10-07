@@ -8,7 +8,7 @@
 -record(ps_affiliation, {xmlns = <<>> :: binary(),
 			 node = <<>> :: binary(),
 			 type :: member | none | outcast |
-				 owner | publisher | 'publish-only',
+				 owner | publisher | publish_only,
 			 jid :: jid:jid()}).
 -type ps_affiliation() :: #ps_affiliation{}.
 
@@ -510,7 +510,7 @@
                       type :: 'boolean' | 'fixed' | 'hidden' | 'jid-multi' | 'jid-single' | 'list-multi' | 'list-single' | 'text-multi' | 'text-private' | 'text-single',
                       var = <<>> :: binary(),
                       required = false :: boolean(),
-                      desc :: binary(),
+                      desc = <<>> :: binary(),
                       values = [] :: [binary()],
                       options = [] :: [#xdata_option{}],
                       sub_els = [] :: [xmpp_element() | fxml:xmlel()]}).

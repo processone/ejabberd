@@ -300,8 +300,7 @@ get_sm_items(Acc, _From, _To, _Node, _Lang) ->
 -spec get_info([xdata()], binary(), module(), binary(), binary()) -> [xdata()];
 	      ([xdata()], jid(), jid(), binary(), binary()) -> [xdata()].
 get_info(_Acc, #jid{luser = U, lserver = S, lresource = R},
-	 #jid{luser = U, lserver = S}, ?NS_FLEX_OFFLINE, _Lang) ->
-    N = integer_to_binary(count_offline_messages(U, S)),
+	 #jid{luser = U, lserver = S}, ?NS_FLEX_OFFLINE, Lang) ->
     case ejabberd_sm:get_session_pid(U, S, R) of
 	Pid when is_pid(Pid) ->
 	    Pid ! dont_ask_offline;
@@ -309,11 +308,9 @@ get_info(_Acc, #jid{luser = U, lserver = S, lresource = R},
 	    ok
     end,
     [#xdata{type = result,
-	    fields = [#xdata_field{var = <<"FORM_TYPE">>,
-				   type = hidden,
-				   values = [?NS_FLEX_OFFLINE]},
-		      #xdata_field{var = <<"number_of_messages">>,
-				   values = [N]}]}];
+	    fields = flex_offline:encode(
+		       [{number_of_messages, count_offline_messages(U, S)}],
+		       fun(T) -> translate:translate(Lang, T) end)}];
 get_info(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
