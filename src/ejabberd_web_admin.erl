@@ -1552,7 +1552,7 @@ su_to_list({Server, User}) ->
 %%%% get_stats
 
 get_stats(global, Lang) ->
-    OnlineUsers = mnesia:table_info(session, size),
+    OnlineUsers = ejabberd_sm:connected_users_number(),
     RegisteredUsers = lists:foldl(fun (Host, Total) ->
 					  ejabberd_auth:get_vh_registered_users_number(Host)
 					    + Total
@@ -2178,7 +2178,7 @@ get_node(global, Node, [<<"stats">>], _Query, Lang) ->
     CPUTime = ejabberd_cluster:call(Node, erlang, statistics, [runtime]),
     CPUTimeS = list_to_binary(io_lib:format("~.3f",
                                             [element(1, CPUTime) / 1000])),
-    OnlineUsers = mnesia:table_info(session, size),
+    OnlineUsers = ejabberd_sm:connected_users_number(),
     TransactionsCommitted = ejabberd_cluster:call(Node, mnesia,
 				     system_info, [transaction_commits]),
     TransactionsAborted = ejabberd_cluster:call(Node, mnesia,
