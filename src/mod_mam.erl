@@ -966,13 +966,14 @@ send(From, To, Msgs, RSM, Count, IsComplete, #iq{sub_el = SubEl} = IQ) ->
 		      NS == ?NS_MAM_0; NS == ?NS_MAM_1 ->
 			   [{<<"complete">>, jlib:atom_to_binary(IsComplete)}]
 		   end,
+    Hint = [#xmlel{name = <<"no-store">>, attrs = [{<<"xmlns">>, ?NS_HINTS}]}],
     Els = lists:map(
 	    fun({ID, _IDInt, El}) ->
 		    #xmlel{name = <<"message">>,
 			   children = [#xmlel{name = <<"result">>,
 					      attrs = [{<<"xmlns">>, NS},
 						       {<<"id">>, ID}|QIDAttr],
-					      children = [El]}]}
+					      children = [El]} | Hint]}
 	    end, Msgs),
     RSMOut = make_rsm_out(Msgs, RSM, Count, QIDAttr ++ CompleteAttr, NS),
     if NS == ?NS_MAM_TMP; NS == ?NS_MAM_1 ->
@@ -990,7 +991,7 @@ send(From, To, Msgs, RSM, Count, IsComplete, #iq{sub_el = SubEl} = IQ) ->
 	      end, Els),
 	    ejabberd_router:route(
 	      To, From, #xmlel{name = <<"message">>,
-			       children = RSMOut}),
+			       children = RSMOut ++ Hint}),
 	    ignore
     end.
 
