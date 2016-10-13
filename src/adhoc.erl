@@ -112,9 +112,17 @@ produce_response(
         ProvidedSessionID /= <<"">> -> ProvidedSessionID;
         true                        -> jlib:now_to_utc_string(p1_time_compat:timestamp())
     end,
-    case Actions of
-        [] ->
+    case {Actions, Status} of
+        {[], completed} ->
             ActionsEls = [];
+        {[], _} ->
+            ActionsEls = [
+                #xmlel{
+                    name = <<"actions">>,
+                    attrs = [{<<"execute">>, <<"complete">>}],
+                    children = [#xmlel{name = <<"complete">>}]
+                }
+            ];
         _ ->
             case DefaultAction of
                 <<"">> -> ActionsElAttrs = [];
