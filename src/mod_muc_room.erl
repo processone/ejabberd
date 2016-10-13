@@ -2207,7 +2207,11 @@ count_stanza_shift(Nick, Els, StateData) ->
 	       false -> 0;
 	       _ -> count_maxchars_shift(Nick, MaxChars, HL)
 	     end,
-    lists:max([Shift0, Shift1, Shift2, Shift3]).
+    ShiftST = lists:max([Shift0, Shift1, Shift2, Shift3]),
+    case ShiftST of
+	       0 -> count_maxstanzas_shift(40, HL);
+	       _ -> ShiftST
+	     end.
 
 count_seconds_shift(Seconds, HistoryList) ->
     lists:sum(lists:map(fun ({_Nick, _Packet, _HaveSubject,
