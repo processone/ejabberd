@@ -460,7 +460,7 @@ get_commands_definition(Version) ->
     lists:foldl(F, [], L).
 
 execute_command2(Name, Arguments, CallerInfo) ->
-    execute_command(Name, Arguments, CallerInfo, ?DEFAULT_VERSION).
+    execute_command2(Name, Arguments, CallerInfo, ?DEFAULT_VERSION).
 
 execute_command2(Name, Arguments, CallerInfo, Version) ->
     Command = get_command_definition(Name, Version),

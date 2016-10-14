@@ -129,7 +129,8 @@ init([]) ->
 handle_call({can_access, Cmd, CallerInfo}, _From, State) ->
     CallerModule = maps:get(caller_module, CallerInfo, none),
     Host = maps:get(caller_host, CallerInfo, global),
-    {State2, Defs} = get_definitions(State),
+    {State2, Defs0} = get_definitions(State),
+    Defs = maps:get(extra_permissions, CallerInfo, []) ++ Defs0,
     Res = lists:foldl(
 	fun({Name, _} = Def, none) ->
 	    case matches_definition(Def, Cmd, CallerModule, Host, CallerInfo) of
@@ -257,7 +258,7 @@ get_definitions(#state{definitions = Defs, fragments_generators = Gens} = State)
     {State#state{definitions = NDefs}, NDefs}.
 
 matches_definition({_Name, {From, Who, What}}, Cmd, Module, Host, CallerInfo) ->
-    case lists:member(Cmd, What) of
+    case What == all orelse lists:member(Cmd, What) of
 	true ->
 	    case From == [] orelse lists:member(Module, From) of
 		true ->
