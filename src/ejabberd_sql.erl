@@ -826,7 +826,7 @@ pgsql_item_to_odbc(<<"UPDATE ", N/binary>>) ->
 pgsql_item_to_odbc({<<"UPDATE ", N/binary>>, Rows, Recs}) ->
   {updated, jlib:binary_to_integer(N), [element(1, Row) || Row <- Rows], Recs};
 pgsql_item_to_odbc({error, Error}) -> {error, Error};
-pgsql_item_to_odbc(U) -> {updated, undefined}.
+pgsql_item_to_odbc(_) -> {updated, undefined}.
 
 pgsql_execute_to_odbc({ok, {<<"SELECT", _/binary>>, Rows}}) ->
   {selected, [], [[Field || {_, Field} <- Row] || Row <- Rows]};
