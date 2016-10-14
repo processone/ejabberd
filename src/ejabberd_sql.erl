@@ -806,29 +806,43 @@ pgsql_to_odbc({ok, PGSQLResult}) ->
     end.
 
 pgsql_item_to_odbc({<<"SELECT", _/binary>>, Rows,
-		    Recs}) ->
-    {selected, [element(1, Row) || Row <- Rows], Recs};
+  Recs}) ->
+  {selected, [element(1, Row) || Row <- Rows], Recs};
 pgsql_item_to_odbc({<<"FETCH", _/binary>>, Rows,
-		    Recs}) ->
-    {selected, [element(1, Row) || Row <- Rows], Recs};
+  Recs}) ->
+  {selected, [element(1, Row) || Row <- Rows], Recs};
 pgsql_item_to_odbc(<<"INSERT ", OIDN/binary>>) ->
-    [_OID, N] = str:tokens(OIDN, <<" ">>),
-    {updated, jlib:binary_to_integer(N)};
+  [_OID, N] = str:tokens(OIDN, <<" ">>),
+  {updated, jlib:binary_to_integer(N)};
+pgsql_item_to_odbc({<<"INSERT ", OIDN/binary>>, Rows, Recs}) ->
+  [_OID, N] = str:tokens(OIDN, <<" ">>),
+  {updated, jlib:binary_to_integer(N), [element(1, Row) || Row <- Rows], Recs};
 pgsql_item_to_odbc(<<"DELETE ", N/binary>>) ->
-    {updated, jlib:binary_to_integer(N)};
+  {updated, jlib:binary_to_integer(N)};
+pgsql_item_to_odbc({<<"DELETE ", N/binary>>, Rows, Recs}) ->
+  {updated, jlib:binary_to_integer(N), [element(1, Row) || Row <- Rows], Recs};
 pgsql_item_to_odbc(<<"UPDATE ", N/binary>>) ->
-    {updated, jlib:binary_to_integer(N)};
+  {updated, jlib:binary_to_integer(N)};
+pgsql_item_to_odbc({<<"UPDATE ", N/binary>>, Rows, Recs}) ->
+  {updated, jlib:binary_to_integer(N), [element(1, Row) || Row <- Rows], Recs};
 pgsql_item_to_odbc({error, Error}) -> {error, Error};
-pgsql_item_to_odbc(_) -> {updated, undefined}.
+pgsql_item_to_odbc(U) -> ?INFO_MSG(U, []), {updated, undefined}.
 
 pgsql_execute_to_odbc({ok, {<<"SELECT", _/binary>>, Rows}}) ->
-    {selected, [], [[Field || {_, Field} <- Row] || Row <- Rows]};
+  {selected, [], [[Field || {_, Field} <- Row] || Row <- Rows]};
 pgsql_execute_to_odbc({ok, {'INSERT', N}}) ->
-    {updated, N};
+  {updated, N};
+pgsql_execute_to_odbc({ok, {<<"INSERT ", OIDN/binary>>, Rows}}) ->
+  [_OID, N] = str:tokens(OIDN, <<" ">>),
+  {updated, jlib:binary_to_integer(N), [[Field || {_, Field} <- Row] || Row <- Rows]};
 pgsql_execute_to_odbc({ok, {'DELETE', N}}) ->
-    {updated, N};
+  {updated, N};
+pgsql_execute_to_odbc({ok, {<<"DELETE ", N/binary>>, Rows}}) ->
+  {updated, jlib:binary_to_integer(N), [[Field || {_, Field} <- Row] || Row <- Rows]};
 pgsql_execute_to_odbc({ok, {'UPDATE', N}}) ->
-    {updated, N};
+  {updated, N};
+pgsql_execute_to_odbc({ok, {<<"UPDATE ", N/binary>>, Rows}}) ->
+  {updated, jlib:binary_to_integer(N), [[Field || {_, Field} <- Row] || Row <- Rows]};
 pgsql_execute_to_odbc({error, Error}) -> {error, Error};
 pgsql_execute_to_odbc(_) -> {updated, undefined}.
 
