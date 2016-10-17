@@ -5056,6 +5056,8 @@ process_invitations(From, InviteEls, Lang, StateData) ->
 			  throw({error, ?ERRT_JID_MALFORMED(Lang, Txt)});
 		    JID1 -> JID1
 		  end,
+	  ejabberd_hooks:run(muc_invite, StateData#state.server_host,
+ 			     [StateData#state.jid, StateData#state.config, From, JID, Reason]),
 	  ejabberd_router:route(StateData#state.jid, JID, Msg),
 	  JID
 	end,
