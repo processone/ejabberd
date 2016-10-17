@@ -377,7 +377,7 @@ do_route1(Host, ServerHost, Access, _HistorySize, _RoomShaper,
     end;
 do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
 	  From, #jid{luser = <<"">>} = To, Packet, _DefRoomOpts) ->
-    Err = xmpp:err_item_not_found(),
+    Err = xmpp:err_service_unavailable(),
     ejabberd_router:route_error(To, From, Packet, Err);
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts) ->
@@ -419,7 +419,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
     end.
 
 -spec process_vcard(iq()) -> iq().
-process_vcard(#iq{type = get, lang = Lang} = IQ) ->
+process_vcard(#iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]} = IQ) ->
     Desc = translate:translate(Lang, <<"ejabberd MUC module">>),
     Copyright = <<"Copyright (c) 2003-2016 ProcessOne">>,
     xmpp:make_iq_result(
@@ -428,15 +428,19 @@ process_vcard(#iq{type = get, lang = Lang} = IQ) ->
 		      desc = <<Desc/binary, $\n, Copyright/binary>>});
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
-    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang)).
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_vcard(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_register(iq()) -> iq().
-process_register(#iq{type = get, from = From, to = To, lang = Lang} = IQ) ->
+process_register(#iq{type = get, from = From, to = To, lang = Lang,
+		     sub_els = [#register{}]} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
     xmpp:make_iq_result(IQ, iq_get_register_info(ServerHost, Host, From, Lang));
 process_register(#iq{type = set, from = From, to = To,
-		     lang = Lang, sub_els = [El]} = IQ) ->
+		     lang = Lang, sub_els = [El = #register{}]} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
     case process_iq_register_set(ServerHost, Host, From, El, Lang) of
@@ -469,8 +473,12 @@ process_disco_info(#iq{type = get, to = To, lang = Lang,
       IQ, #disco_info{features = Features,
 		      identities = [Identity],
 		      xdata = X});
-process_disco_info(#iq{type = get, lang = Lang} = IQ) ->
-    xmpp:make_error(IQ, xmpp:err_item_not_found(<<"No info available">>, Lang)).
+process_disco_info(#iq{type = get, lang = Lang,
+		       sub_els = [#disco_info{}]} = IQ) ->
+    xmpp:make_error(IQ, xmpp:err_item_not_found(<<"Node not found">>, Lang));
+process_disco_info(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_disco_items(iq()) -> iq().
 process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
@@ -481,13 +489,17 @@ process_disco_items(#iq{type = get, from = From, to = To, lang = Lang,
     Host = To#jid.lserver,
     xmpp:make_iq_result(
       IQ, #disco_items{node = Node,
-		       items = iq_disco_items(Host, From, Lang, Node, RSM)}).
+		       items = iq_disco_items(Host, From, Lang, Node, RSM)});
+process_disco_items(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_muc_unique(iq()) -> iq().
 process_muc_unique(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
-process_muc_unique(#iq{from = From, type = get} = IQ) ->
+process_muc_unique(#iq{from = From, type = get,
+		       sub_els = [#muc_unique{}]} = IQ) ->
     Name = p1_sha:sha(term_to_binary([From, p1_time_compat:timestamp(),
 				      randoms:get_string()])),
     xmpp:make_iq_result(IQ, #muc_unique{name = Name}).
@@ -496,19 +508,22 @@ process_muc_unique(#iq{from = From, type = get} = IQ) ->
 process_mucsub(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
-process_mucsub(#iq{type = get, from = From, to = To} = IQ) ->
+process_mucsub(#iq{type = get, from = From, to = To,
+		   sub_els = [#muc_subscriptions{}]} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
     RoomJIDs = get_subscribed_rooms(ServerHost, Host, From),
-    xmpp:make_iq_result(IQ, #muc_subscriptions{list = RoomJIDs}).
+    xmpp:make_iq_result(IQ, #muc_subscriptions{list = RoomJIDs});
+process_mucsub(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec is_create_request(stanza()) -> boolean().
 is_create_request(#presence{type = available}) ->
     true;
-is_create_request(#iq{type = set} = IQ) ->
-    xmpp:has_subtag(IQ, #muc_subscribe{});
-is_create_request(#iq{type = get} = IQ) ->
-    #muc_owner{} == xmpp:get_subtag(IQ, #muc_owner{});
+is_create_request(#iq{type = T} = IQ) when T == get; T == set ->
+    xmpp:has_subtag(IQ, #muc_subscribe{}) orelse
+    xmpp:has_subtag(IQ, #muc_owner{});
 is_create_request(_) ->
     false.
 
@@ -645,13 +660,12 @@ get_vh_rooms(_, _) ->
 %% 		     index = NewIndex}}
 %%     end.
 
-get_subscribed_rooms(ServerHost, Host, From) ->
-    Rooms = get_rooms(ServerHost, Host),
+get_subscribed_rooms(_ServerHost, Host, From) ->
+    Rooms = get_vh_rooms(Host),
     lists:flatmap(
-      fun(#muc_room{name_host = {Name, _}, opts = Opts}) ->
-	      Subscribers = proplists:get_value(subscribers, Opts, []),
-	      case lists:keymember(From, 1, Subscribers) of
-		  true -> [jid:make(Name, Host, <<>>)];
+      fun(#muc_online_room{name_host = {Name, _}, pid = Pid}) ->
+	      case gen_fsm:sync_send_all_state_event(Pid, {is_subscriber, From}) of
+		  true -> [jid:make(Name, Host)];
 		  false -> []
 	      end;
 	 (_) ->

@@ -70,10 +70,12 @@ init_config(Config) ->
      {s2s_port, ct:get_config(s2s_port, 5269)},
      {server, ?COMMON_VHOST},
      {user, <<"test_single!#$%^*()`~+-;_=[]{}|\\">>},
+     {nick, <<"nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {master_nick, <<"master_nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {slave_nick, <<"slave_nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {room_subject, <<"hello, world!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {certfile, CertFile},
+     {persistent_room, true},
      {anonymous, false},
      {type, client},
      {xmlns, ?NS_CLIENT},
@@ -210,6 +212,7 @@ process_stream_features(Config) ->
       end, set_opt(mechs, Mechs, Config), Fs).
 
 disconnect(Config) ->
+    ct:comment("Disconnecting"),
     Socket = ?config(socket, Config),
     try
 	ok = send_text(Config, ?STREAM_TRAILER)
@@ -435,22 +438,50 @@ match_failure(Received, Matches) ->
 recv(Config) ->
     receive
         {'$gen_event', {xmlstreamelement, El}} ->
-	    NS = case ?config(type, Config) of
-		     client -> ?NS_CLIENT;
-		     server -> ?NS_SERVER;
-		     component -> ?NS_COMPONENT
-		 end,
-	    decode(El, NS, []);
+	    decode_stream_element(Config, El);
 	{'$gen_event', {xmlstreamstart, Name, Attrs}} ->
 	    decode(#xmlel{name = Name, attrs = Attrs}, <<>>, []);
 	{'$gen_event', Event} ->
             Event
     end.
 
+recv_iq(Config) ->
+    receive
+	{'$gen_event', {xmlstreamelement, #xmlel{name = <<"iq">>} = El}} ->
+	    decode_stream_element(Config, El)
+    end.
+
+recv_presence(Config) ->
+    receive
+	{'$gen_event', {xmlstreamelement, #xmlel{name = <<"presence">>} = El}} ->
+	    decode_stream_element(Config, El)
+    end.
+
+recv_message(Config) ->
+    receive
+	{'$gen_event', {xmlstreamelement, #xmlel{name = <<"message">>} = El}} ->
+	    decode_stream_element(Config, El)
+    end.
+
+decode_stream_element(Config, El) ->
+    NS = case ?config(type, Config) of
+	     client -> ?NS_CLIENT;
+	     server -> ?NS_SERVER;
+	     component -> ?NS_COMPONENT
+	 end,
+    decode(El, NS, []).
+
+format_element(El) ->
+    case erlang:function_exported(ct, log, 5) of
+	true -> ejabberd_web_admin:pretty_print_xml(El);
+	false -> io_lib:format(" ~s~n", El)
+    end.
+
 decode(El, NS, Opts) ->
     try
 	Pkt = xmpp:decode(El, NS, Opts),
-	ct:pal("recv: ~p ->~n~s", [El, xmpp:pp(Pkt)]),
+	ct:pal("RECV:~n~s~n~s",
+	       [format_element(El), xmpp:pp(Pkt)]),
 	Pkt
     catch _:{xmpp_codec, Why} ->
 	    ct:fail("recv failed: ~p->~n~s",
@@ -475,7 +506,8 @@ send(State, Pkt) ->
                               {undefined, Pkt}
                       end,
     El = xmpp:encode(NewPkt),
-    ct:pal("sent: ~p <-~n~s", [El, xmpp:pp(NewPkt)]),
+    ct:pal("SENT:~n~s~n~s",
+	   [format_element(El), xmpp:pp(NewPkt)]),
     Data = case NewPkt of
 	       #stream_start{} -> fxml:element_to_header(El);
 	       _ -> fxml:element_to_binary(El)
@@ -483,9 +515,15 @@ send(State, Pkt) ->
     ok = send_text(State, Data),
     NewID.
 
-send_recv(State, IQ) ->
+send_recv(State, #message{} = Msg) ->
+    ID = send(State, Msg),
+    #message{id = ID} = recv_message(State);
+send_recv(State, #presence{} = Pres) ->
+    ID = send(State, Pres),
+    #presence{id = ID} = recv_presence(State);
+send_recv(State, #iq{} = IQ) ->
     ID = send(State, IQ),
-    #iq{id = ID} = recv(State).
+    #iq{id = ID} = recv_iq(State).
 
 sasl_new(<<"PLAIN">>, User, Server, Password) ->
     {<<User/binary, $@, Server/binary, 0, User/binary, 0, Password/binary>>,
@@ -590,6 +628,20 @@ muc_room_jid(Config) ->
     Server = ?config(server, Config),
     jid:make(<<"test">>, <<"conference.", Server/binary>>, <<>>).
 
+my_muc_jid(Config) ->
+    Nick = ?config(nick, Config),
+    RoomJID = muc_room_jid(Config),
+    jid:replace_resource(RoomJID, Nick).
+
+peer_muc_jid(Config) ->
+    PeerNick = ?config(peer_nick, Config),
+    RoomJID = muc_room_jid(Config),
+    jid:replace_resource(RoomJID, PeerNick).
+
+alt_room_jid(Config) ->
+    Server = ?config(server, Config),
+    jid:make(<<"alt">>, <<"conference.", Server/binary>>, <<>>).
+
 mix_jid(Config) ->
     Server = ?config(server, Config),
     jid:make(<<>>, <<"mix.", Server/binary>>, <<>>).
@@ -610,6 +662,7 @@ get_features(Config) ->
     get_features(Config, server_jid(Config)).
 
 get_features(Config, To) ->
+    ct:comment("Getting features of ~s", [jid:to_string(To)]),
     #iq{type = result, sub_els = [#disco_info{features = Features}]} =
         send_recv(Config, #iq{type = get, sub_els = [#disco_info{}], to = To}),
     Features.
@@ -707,3 +760,10 @@ get_event(Config) ->
         {event, Event, Relay} ->
             Event
     end.
+
+flush(Config) ->
+    flush(Config, []).
+
+flush(Config, Msgs) ->
+    receive Msg -> flush(Config, [Msg|Msgs])
+    after 1000 -> lists:reverse(Msgs) end.

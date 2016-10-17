@@ -156,7 +156,7 @@ process_iq(Module, Function, #iq{lang = Lang, sub_els = [El]} = IQ) ->
 	%% TODO: move this 'conditional' decoding somewhere
 	%% IQ handler should know *nothing* about vCards.
 	Pkt = case xmpp:get_ns(El) of
-		  ?NS_VCARD -> El;
+		  ?NS_VCARD when Module == mod_vcard -> El;
 		  _ -> xmpp:decode(El)
 	      end,
 	Module:Function(IQ#iq{sub_els = [Pkt]})

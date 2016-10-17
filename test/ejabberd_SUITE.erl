@@ -10,23 +10,23 @@
 
 -compile(export_all).
 
--import(suite, [init_config/1, connect/1, disconnect/1,
-                recv/1, send/2, send_recv/2, my_jid/1, server_jid/1,
-                pubsub_jid/1, proxy_jid/1, muc_jid/1, muc_room_jid/1,
-		mix_jid/1, mix_room_jid/1, get_features/2, re_register/1,
-                is_feature_advertised/2, subscribe_to_events/1,
+-import(suite, [init_config/1, connect/1, disconnect/1, recv_message/1,
+                recv/1, recv_presence/1, send/2, send_recv/2, my_jid/1,
+		server_jid/1, pubsub_jid/1, proxy_jid/1, muc_jid/1,
+		muc_room_jid/1, my_muc_jid/1, peer_muc_jid/1,
+		mix_jid/1, mix_room_jid/1, get_features/2, recv_iq/1,
+		re_register/1, is_feature_advertised/2, subscribe_to_events/1,
                 is_feature_advertised/3, set_opt/3, auth_SASL/2,
-                wait_for_master/1, wait_for_slave/1,
-                make_iq_result/1, start_event_relay/0,
+                wait_for_master/1, wait_for_slave/1, flush/1,
+                make_iq_result/1, start_event_relay/0, alt_room_jid/1,
                 stop_event_relay/1, put_event/2, get_event/1,
                 bind/1, auth/1, auth/2, open_session/1, open_session/2,
 		zlib/1, starttls/1, starttls/2, close_socket/1, init_stream/1,
 		auth_legacy/2, auth_legacy/3, tcp_connect/1, send_text/2]).
-
 -include("suite.hrl").
 
 suite() ->
-    [{timetrap, {seconds,60}}].
+    [{timetrap, {seconds, 30}}].
 
 init_per_suite(Config) ->
     NewConfig = init_config(Config),
@@ -83,7 +83,7 @@ init_per_group(Group, Config) ->
 
 do_init_per_group(no_db, Config) ->
     re_register(Config),
-    Config;
+    set_opt(persistent_room, false, Config);
 do_init_per_group(mnesia, Config) ->
     mod_muc:shutdown_rooms(?MNESIA_VHOST),
     set_opt(server, ?MNESIA_VHOST, Config);
@@ -202,6 +202,10 @@ init_per_testcase(TestCase, OrigConfig) ->
     Test = atom_to_list(TestCase),
     IsMaster = lists:suffix("_master", Test),
     IsSlave = lists:suffix("_slave", Test),
+    Mode = if IsSlave -> slave;
+	      IsMaster -> master;
+	      true -> single
+	   end,
     IsCarbons = lists:prefix("carbons_", Test),
     IsReplaced = lists:prefix("replaced_", Test),
     User = if IsReplaced -> <<"test_single!#$%^*()`~+-;_=[]{}|\\">>;
@@ -209,6 +213,10 @@ init_per_testcase(TestCase, OrigConfig) ->
               IsSlave -> <<"test_slave!#$%^*()`~+-;_=[]{}|\\">>;
               true -> <<"test_single!#$%^*()`~+-;_=[]{}|\\">>
            end,
+    Nick = if IsSlave -> ?config(slave_nick, OrigConfig);
+	      IsMaster -> ?config(master_nick, OrigConfig);
+	      true -> ?config(nick, OrigConfig)
+	   end,
     MyResource = if IsMaster and IsCarbons -> MasterResource;
 		    IsSlave and IsCarbons -> SlaveResource;
 		    true -> Resource
@@ -227,10 +235,23 @@ init_per_testcase(TestCase, OrigConfig) ->
 		true ->
 		     jid:make(<<"test_master!#$%^*()`~+-;_=[]{}|\\">>, Server, Resource)
 	     end,
-    Config = set_opt(user, User,
-                     set_opt(slave, Slave,
-                             set_opt(master, Master,
-				     set_opt(resource, MyResource, OrigConfig)))),
+    Config1 = set_opt(user, User,
+		      set_opt(slave, Slave,
+			      set_opt(master, Master,
+				      set_opt(resource, MyResource,
+					      set_opt(nick, Nick,
+						      set_opt(mode, Mode, OrigConfig)))))),
+    Config2 = if IsSlave ->
+		      set_opt(peer_nick, ?config(master_nick, Config1), Config1);
+		 IsMaster ->
+		      set_opt(peer_nick, ?config(slave_nick, Config1), Config1);
+		 true ->
+		      Config1
+	      end,
+    Config = if IsSlave -> set_opt(peer, Master, Config2);
+		IsMaster -> set_opt(peer, Slave, Config2);
+		true -> Config2
+	     end,
     case Test of
         "test_connect" ++ _ ->
             Config;
@@ -320,6 +341,8 @@ no_db_tests() ->
        [sm,
 	sm_resume,
 	sm_resume_failed]},
+     muc_tests:single_cases(),
+     muc_tests:master_slave_cases(),
      {test_proxy65, [parallel],
       [proxy65_master, proxy65_slave]},
      {replaced, [parallel],
@@ -369,9 +392,9 @@ db_tests(riak) ->
        privacy,
        blocking,
        vcard,
+       muc_tests:single_cases(),
        test_unregister]},
-     {test_muc_register, [parallel],
-      [muc_register_master, muc_register_slave]},
+     muc_tests:master_slave_cases(),
      {test_roster_subscribe, [parallel],
       [roster_subscribe_master,
        roster_subscribe_slave]},
@@ -379,8 +402,6 @@ db_tests(riak) ->
       [flex_offline_master, flex_offline_slave]},
      {test_offline, [sequence],
       [offline_master, offline_slave]},
-     {test_muc, [parallel],
-      [muc_master, muc_slave]},
      {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_vcard_xupdate, [parallel],
@@ -403,10 +424,10 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        blocking,
        vcard,
        pubsub_single_tests(),
+       muc_tests:single_cases(),
        test_unregister]},
+     muc_tests:master_slave_cases(),
      pubsub_multiple_tests(),
-     {test_muc_register, [parallel],
-      [muc_register_master, muc_register_slave]},
      {test_mix, [parallel],
       [mix_master, mix_slave]},
      {test_roster_subscribe, [parallel],
@@ -424,8 +445,6 @@ db_tests(DB) when DB == mnesia; DB == redis ->
       [carbons_master, carbons_slave]},
      {test_client_state, [parallel],
       [client_state_master, client_state_slave]},
-     {test_muc, [parallel],
-      [muc_master, muc_slave]},
      {test_muc_mam, [parallel],
       [muc_mam_master, muc_mam_slave]},
      {test_announce, [sequence],
@@ -440,21 +459,21 @@ db_tests(_) ->
     [{single_user, [sequence],
       [test_register,
        legacy_auth_tests(),
-	auth_plain,
-	auth_md5,
-	presence_broadcast,
-	last,
-	roster_get,
-	roster_ver,
-	private,
-	privacy,
-	blocking,
-	vcard,
-        pubsub_single_tests(),
-        test_unregister]},
+       auth_plain,
+       auth_md5,
+       presence_broadcast,
+       last,
+       roster_get,
+       roster_ver,
+       private,
+       privacy,
+       blocking,
+       vcard,
+       pubsub_single_tests(),
+       muc_tests:single_cases(),
+       test_unregister]},
+     muc_tests:master_slave_cases(),
      pubsub_multiple_tests(),
-     {test_muc_register, [parallel],
-      [muc_register_master, muc_register_slave]},
      {test_mix, [parallel],
       [mix_master, mix_slave]},
      {test_roster_subscribe, [parallel],
@@ -468,8 +487,6 @@ db_tests(_) ->
       [mam_old_master, mam_old_slave]},
      {test_new_mam, [parallel],
       [mam_new_master, mam_new_slave]},
-     {test_muc, [parallel],
-      [muc_master, muc_slave]},
      {test_muc_mam, [parallel],
       [muc_mam_master, muc_mam_slave]},
      {test_announce, [sequence],
@@ -604,7 +621,8 @@ test_connect_bad_ns_stream(Config) ->
     close_socket(Config0).
 
 test_connect_bad_lang(Config) ->
-    Config0 = init_stream(set_opt(lang, lists:duplicate(36, $x), Config)),
+    Lang = iolist_to_binary(lists:duplicate(36, $x)),
+    Config0 = init_stream(set_opt(lang, Lang, Config)),
     ?recv1(#stream_error{reason = 'policy-violation'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config0).
@@ -2272,352 +2290,151 @@ muc_mam_master(Config) ->
 muc_mam_slave(Config) ->
     disconnect(Config).
 
-muc_master(Config) ->
-    MyJID = my_jid(Config),
-    PeerJID = ?config(slave, Config),
-    PeerBareJID = jid:remove_resource(PeerJID),
-    PeerJIDStr = jid:to_string(PeerJID),
-    MUC = muc_jid(Config),
-    Room = muc_room_jid(Config),
-    MyNick = ?config(master_nick, Config),
-    MyNickJID = jid:replace_resource(Room, MyNick),
-    PeerNick = ?config(slave_nick, Config),
-    PeerNickJID = jid:replace_resource(Room, PeerNick),
-    Subject = ?config(room_subject, Config),
-    Localhost = jid:make(<<"">>, <<"localhost">>, <<"">>),
-    true = is_feature_advertised(Config, ?NS_MUC, MUC),
-    %% Joining
-    send(Config, #presence{to = MyNickJID, sub_els = [#muc{}]}),
-    %% As per XEP-0045 we MUST receive stanzas in the following order:
-    %% 1. In-room presence from other occupants
-    %% 2. In-room presence from the joining entity itself (so-called "self-presence")
-    %% 3. Room history (if any)
-    %% 4. The room subject
-    %% 5. Live messages, presence updates, new user joins, etc.
-    %% As this is the newly created room, we receive only the 2nd stanza.
-    #muc_user{
-       status_codes = Codes,
-       items = [#muc_item{role = moderator,
-			  jid = MyJID,
-			  affiliation = owner}]} =
-	xmpp:get_subtag(?recv1(#presence{from = MyNickJID}), #muc_user{}),
-    %% 110 -> Inform user that presence refers to itself
-    %% 201 -> Inform user that a new room has been created
-    [110, 201] = lists:sort(Codes),
-    %% Request the configuration
-    #iq{type = result, sub_els = [#muc_owner{config = #xdata{} = RoomCfg}]} =
-        send_recv(Config, #iq{type = get, sub_els = [#muc_owner{}],
-                              to = Room}),
-    NewFields =
-        lists:flatmap(
-          fun(#xdata_field{var = Var, values = OrigVals}) ->
-                  Vals = case Var of
-                             <<"FORM_TYPE">> ->
-                                 OrigVals;
-                             <<"muc#roomconfig_roomname">> ->
-                                 [<<"Test room">>];
-                             <<"muc#roomconfig_roomdesc">> ->
-                                 [<<"Trying to break the server">>];
-                             <<"muc#roomconfig_persistentroom">> ->
-                                 [<<"1">>];
-			     <<"members_by_default">> ->
-				 [<<"0">>];
-			     <<"muc#roomconfig_allowvoicerequests">> ->
-				 [<<"1">>];
-			     <<"public_list">> ->
-				 [<<"1">>];
-			     <<"muc#roomconfig_publicroom">> ->
-				 [<<"1">>];
-                             _ ->
-                                 []
-                         end,
-                  if Vals /= [] ->
-                          [#xdata_field{values = Vals, var = Var}];
-                     true ->
-                          []
-                  end
-          end, RoomCfg#xdata.fields),
-    NewRoomCfg = #xdata{type = submit, fields = NewFields},
-    ID = send(Config, #iq{type = set, to = Room,
-			  sub_els = [#muc_owner{config = NewRoomCfg}]}),
-    ?recv2(#iq{type = result, id = ID},
-	   #message{from = Room, type = groupchat,
-		    sub_els = [#muc_user{status_codes = [104]}]}),
-    %% Set subject
-    send(Config, #message{to = Room, type = groupchat,
-                          body = [#text{data = Subject}]}),
-    ?recv1(#message{from = MyNickJID, type = groupchat,
-             body = [#text{data = Subject}]}),
-    %% Sending messages (and thus, populating history for our peer)
-    lists:foreach(
-      fun(N) ->
-              Text = #text{data = integer_to_binary(N)},
-              I = send(Config, #message{to = Room, body = [Text],
-					type = groupchat}),
-	      ?recv1(#message{from = MyNickJID, id = I,
-		       type = groupchat,
-		       body = [Text]})
-      end, lists:seq(1, 5)),
-    %% Inviting the peer
-    send(Config, #message{to = Room, type = normal,
-			  sub_els =
-			      [#muc_user{
-				  invites =
-				      [#muc_invite{to = PeerJID}]}]}),
-    #muc_user{
-       items = [#muc_item{role = visitor,
-			  jid = PeerJID,
-			  affiliation = none}]} =
-	xmpp:get_subtag(?recv1(#presence{from = PeerNickJID}), #muc_user{}),
-    %% Receiving a voice request
-    #message{from = Room,
-	     sub_els = [#xdata{type = form,
-			       instructions = [_],
-			       fields = VoiceReqFs}]} = recv(Config),
-    %% Approving the voice request
-    ReplyVoiceReqFs =
-	lists:map(
-	  fun(#xdata_field{var = Var, values = OrigVals}) ->
-                  Vals = case {Var, OrigVals} of
-			     {<<"FORM_TYPE">>,
-			      [<<"http://jabber.org/protocol/muc#request">>]} ->
-				 OrigVals;
-			     {<<"muc#role">>, [<<"participant">>]} ->
-				 [<<"participant">>];
-			     {<<"muc#jid">>, [PeerJIDStr]} ->
-				 [PeerJIDStr];
-			     {<<"muc#roomnick">>, [PeerNick]} ->
-				 [PeerNick];
-			     {<<"muc#request_allow">>, [<<"0">>]} ->
-				 [<<"1">>]
-			 end,
-		  #xdata_field{values = Vals, var = Var}
-	  end, VoiceReqFs),
-    send(Config, #message{to = Room,
-			  sub_els = [#xdata{type = submit,
-					    fields = ReplyVoiceReqFs}]}),
-    %% Peer is becoming a participant
-    #muc_user{items = [#muc_item{role = participant,
-				 jid = PeerJID,
-				 affiliation = none}]} =
-	xmpp:get_subtag(?recv1(#presence{from = PeerNickJID}), #muc_user{}),
-    %% Receive private message from the peer
-    ?recv1(#message{from = PeerNickJID, body = [#text{data = Subject}]}),
-    %% Granting membership to the peer and localhost server
-    I1 = send(Config,
-	      #iq{type = set, to = Room,
-		  sub_els =
-		      [#muc_admin{
-			  items = [#muc_item{jid = Localhost,
-					     affiliation = member},
-				   #muc_item{nick = PeerNick,
-					     jid = PeerBareJID,
-					     affiliation = member}]}]}),
-    %% Peer became a member
-    #muc_user{items = [#muc_item{affiliation = member,
-				 jid = PeerJID,
-				 role = participant}]} =
-	xmpp:get_subtag(?recv1(#presence{from = PeerNickJID}), #muc_user{}),
-    ?recv1(#message{from = Room,
-	      sub_els = [#muc_user{
-			    items = [#muc_item{affiliation = member,
-					       jid = Localhost,
-					       role = none}]}]}),
-    ?recv1(#iq{type = result, id = I1, sub_els = []}),
-    %% Receive groupchat message from the peer
-    ?recv1(#message{type = groupchat, from = PeerNickJID,
-	     body = [#text{data = Subject}]}),
-    %% Retrieving a member list
-    #iq{type = result, sub_els = [#muc_admin{items = MemberList}]} =
-	send_recv(Config,
-		  #iq{type = get, to = Room,
-		      sub_els =
-			  [#muc_admin{items = [#muc_item{affiliation = member}]}]}),
-    [#muc_item{affiliation = member,
-	       jid = Localhost},
-     #muc_item{affiliation = member,
-	       jid = PeerBareJID}] = lists:keysort(#muc_item.jid, MemberList),
-    %% Kick the peer
-    I2 = send(Config,
-	      #iq{type = set, to = Room,
-		  sub_els = [#muc_admin{
-				items = [#muc_item{nick = PeerNick,
-						   role = none}]}]}),
-    %% Got notification the peer is kicked
-    %% 307 -> Inform user that he or she has been kicked from the room
-    ?recv1(#presence{from = PeerNickJID, type = unavailable,
-	      sub_els = [#muc_user{
-			    status_codes = [307],
-			    items = [#muc_item{affiliation = member,
-					       jid = PeerJID,
-					       role = none}]}]}),
-    ?recv1(#iq{type = result, id = I2, sub_els = []}),
-    %% Destroying the room
-    I3 = send(Config,
-	      #iq{type = set, to = Room,
-		  sub_els = [#muc_owner{
-				destroy = #muc_destroy{
-					     reason = Subject}}]}),
-    %% Kicked off
-    ?recv1(#presence{from = MyNickJID, type = unavailable,
-              sub_els = [#muc_user{items = [#muc_item{role = none,
-						      affiliation = none}],
-				   destroy = #muc_destroy{
-						reason = Subject}}]}),
-    ?recv1(#iq{type = result, id = I3, sub_els = []}),
-    disconnect(Config).
-
-muc_slave(Config) ->
-    PeerJID = ?config(master, Config),
-    MUC = muc_jid(Config),
-    Room = muc_room_jid(Config),
-    MyNick = ?config(slave_nick, Config),
-    MyNickJID = jid:replace_resource(Room, MyNick),
-    PeerNick = ?config(master_nick, Config),
-    PeerNickJID = jid:replace_resource(Room, PeerNick),
-    Subject = ?config(room_subject, Config),
-    %% Receive an invite from the peer
-    #muc_user{invites = [#muc_invite{from = PeerJID}]} =
-	xmpp:get_subtag(?recv1(#message{from = Room, type = normal}),
-			#muc_user{}),
-    %% But before joining we discover the MUC service first
-    %% to check if the room is in the disco list
-    #iq{type = result,
-	sub_els = [#disco_items{items = [#disco_item{jid = Room}]}]} =
-	send_recv(Config, #iq{type = get, to = MUC,
-			      sub_els = [#disco_items{}]}),
-    %% Now check if the peer is in the room. We check this via disco#items
-    #iq{type = result,
-	sub_els = [#disco_items{items = [#disco_item{jid = PeerNickJID,
-						     name = PeerNick}]}]} =
-	send_recv(Config, #iq{type = get, to = Room,
-			      sub_els = [#disco_items{}]}),
-    %% Now joining
-    send(Config, #presence{to = MyNickJID, sub_els = [#muc{}]}),
-    %% First presence is from the participant, i.e. from the peer
-    #muc_user{
-       status_codes = [],
-       items = [#muc_item{role = moderator,
-			  affiliation = owner}]} =
-	xmpp:get_subtag(?recv1(#presence{from = PeerNickJID}), #muc_user{}),
-    %% The next is the self-presence (code 110 means it)
-    #muc_user{status_codes = [110],
-	      items = [#muc_item{role = visitor,
-				 affiliation = none}]} =
-	xmpp:get_subtag(?recv1(#presence{from = MyNickJID}), #muc_user{}),
-    %% Receive the room subject
-    ?recv1(#message{from = PeerNickJID, type = groupchat,
-             body = [#text{data = Subject}],
-	     sub_els = [#delay{}]}),
-    %% Receive MUC history
-    lists:foreach(
-      fun(N) ->
-              Text = #text{data = integer_to_binary(N)},
-	      ?recv1(#message{from = PeerNickJID,
-		       type = groupchat,
-		       body = [Text],
-		       sub_els = [#delay{}]})
-      end, lists:seq(1, 5)),
-    %% Sending a voice request
-    VoiceReq = #xdata{
-		  type = submit,
-		  fields =
-		      [#xdata_field{
-			  var = <<"FORM_TYPE">>,
-			  values = [<<"http://jabber.org/protocol/muc#request">>]},
-		       #xdata_field{
-			  var = <<"muc#role">>,
-			  type = 'text-single',
-			  values = [<<"participant">>]}]},
-    send(Config, #message{to = Room, sub_els = [VoiceReq]}),
-    %% Becoming a participant
-    #muc_user{items = [#muc_item{role = participant,
-				 affiliation = none}]} =
-	xmpp:get_subtag(?recv1(#presence{from = MyNickJID}), #muc_user{}),
-    %% Sending private message to the peer
-    send(Config, #message{to = PeerNickJID,
-			  body = [#text{data = Subject}]}),
-    %% Becoming a member
-    #muc_user{items = [#muc_item{role = participant,
-				 affiliation = member}]} =
-	xmpp:get_subtag(?recv1(#presence{from = MyNickJID}), #muc_user{}),
-    %% Sending groupchat message
-    send(Config, #message{to = Room, type = groupchat,
-			  body = [#text{data = Subject}]}),
-    %% Receive this message back
-    ?recv1(#message{type = groupchat, from = MyNickJID,
-	     body = [#text{data = Subject}]}),
-    %% We're kicked off
-    %% 307 -> Inform user that he or she has been kicked from the room
-    ?recv1(#presence{from = MyNickJID, type = unavailable,
-	      sub_els = [#muc_user{
-			    status_codes = [307],
-			    items = [#muc_item{affiliation = member,
-					       role = none}]}]}),
-    disconnect(Config).
-
-muc_register_nick(Config, MUC, PrevNick, Nick) ->
-    PrevRegistered = if PrevNick /= <<"">> -> true;
-			true -> false
-		     end,
-    NewRegistered = if Nick /= <<"">> -> true;
-		       true -> false
-		    end,
-    %% Request register form
-    #iq{type = result,
-	sub_els = [#register{registered = PrevRegistered,
-			     xdata = #xdata{type = form,
-					    fields = FsWithoutNick}}]} =
-	send_recv(Config, #iq{type = get, to = MUC,
-			      sub_els = [#register{}]}),
-    %% Check if previous nick is registered
-    PrevNick = proplists:get_value(
-		 roomnick, muc_register:decode(FsWithoutNick)),
-    X = #xdata{type = submit, fields = muc_register:encode([{roomnick, Nick}])},
-    %% Submitting form
-    #iq{type = result, sub_els = []} =
-	send_recv(Config, #iq{type = set, to = MUC,
-			      sub_els = [#register{xdata = X}]}),
-    %% Check if new nick was registered
-    #iq{type = result,
-	sub_els = [#register{registered = NewRegistered,
-			     xdata = #xdata{type = form,
-					    fields = FsWithNick}}]} =
-	send_recv(Config, #iq{type = get, to = MUC,
-			      sub_els = [#register{}]}),
-    Nick = proplists:get_value(
-	     roomnick, muc_register:decode(FsWithNick)).
+%% OK, I know this is retarded, but I didn't find a better way to
+%% split the test cases into different modules
+muc_service_presence_error(Config) ->
+    muc_tests:muc_service_presence_error(Config).
+muc_service_message_error(Config) ->
+    muc_tests:muc_service_message_error(Config).
+muc_service_unknown_ns_iq_error(Config) ->
+    muc_tests:muc_service_unknown_ns_iq_error(Config).
+muc_service_iq_set_error(Config) ->
+    muc_tests:muc_service_iq_set_error(Config).
+muc_service_improper_iq_error(Config) ->
+    muc_tests:muc_service_improper_iq_error(Config).
+muc_service_features(Config) ->
+    muc_tests:muc_service_features(Config).
+muc_service_disco_info_node_error(Config) ->
+    muc_tests:muc_service_disco_info_node_error(Config).
+muc_service_disco_items(Config) ->
+    muc_tests:muc_service_disco_items(Config).
+muc_service_vcard(Config) ->
+    muc_tests:muc_service_vcard(Config).
+muc_service_unique(Config) ->
+    muc_tests:muc_service_unique(Config).
+muc_service_subscriptions(Config) ->
+    muc_tests:muc_service_subscriptions(Config).
+muc_configure_non_existent(Config) ->
+    muc_tests:muc_configure_non_existent(Config).
+muc_cancel_configure_non_existent(Config) ->
+    muc_tests:muc_cancel_configure_non_existent(Config).
 
 muc_register_master(Config) ->
-    MUC = muc_jid(Config),
-    %% Register nick "master1"
-    muc_register_nick(Config, MUC, <<"">>, <<"master1">>),
-    %% Unregister nick "master1" via jabber:register
-    #iq{type = result, sub_els = []} =
-	send_recv(Config, #iq{type = set, to = MUC,
-			      sub_els = [#register{remove = true}]}),
-    %% Register nick "master2"
-    muc_register_nick(Config, MUC, <<"">>, <<"master2">>),
-    %% Now register nick "master"
-    muc_register_nick(Config, MUC, <<"master2">>, <<"master">>),
-    %% Wait for slave to fail trying to register nick "master"
-    wait_for_slave(Config),
-    wait_for_slave(Config),
-    %% Now register empty ("") nick, which means we're unregistering
-    muc_register_nick(Config, MUC, <<"master">>, <<"">>),
-    disconnect(Config).
-
+    muc_tests:muc_register_master(Config).
 muc_register_slave(Config) ->
-    MUC = muc_jid(Config),
-    wait_for_master(Config),
-    %% Trying to register occupied nick "master"
-    Fs = muc_register:encode([{roomnick, <<"master">>}]),
-    X = #xdata{type = submit, fields = Fs},
-    #iq{type = error} =
-	send_recv(Config, #iq{type = set, to = MUC,
-			      sub_els = [#register{xdata = X}]}),
-    wait_for_master(Config),
-    disconnect(Config).
+    muc_tests:muc_register_slave(Config).
+muc_join_conflict_master(Config) ->
+    muc_tests:muc_join_conflict_master(Config).
+muc_join_conflict_slave(Config) ->
+    muc_tests:muc_join_conflict_slave(Config).
+muc_groupchat_msg_master(Config) ->
+    muc_tests:muc_groupchat_msg_master(Config).
+muc_groupchat_msg_slave(Config) ->
+    muc_tests:muc_groupchat_msg_slave(Config).
+muc_private_msg_master(Config) ->
+    muc_tests:muc_private_msg_master(Config).
+muc_private_msg_slave(Config) ->
+    muc_tests:muc_private_msg_slave(Config).
+muc_set_subject_master(Config) ->
+    muc_tests:muc_set_subject_master(Config).
+muc_set_subject_slave(Config) ->
+    muc_tests:muc_set_subject_slave(Config).
+muc_history_master(Config) ->
+    muc_tests:muc_history_master(Config).
+muc_history_slave(Config) ->
+    muc_tests:muc_history_slave(Config).
+muc_invite_master(Config) ->
+    muc_tests:muc_invite_master(Config).
+muc_invite_slave(Config) ->
+    muc_tests:muc_invite_slave(Config).
+muc_invite_members_only_master(Config) ->
+    muc_tests:muc_invite_members_only_master(Config).
+muc_invite_members_only_slave(Config) ->
+    muc_tests:muc_invite_members_only_slave(Config).
+muc_invite_password_protected_master(Config) ->
+    muc_tests:muc_invite_password_protected_master(Config).
+muc_invite_password_protected_slave(Config) ->
+    muc_tests:muc_invite_password_protected_slave(Config).
+muc_voice_request_master(Config) ->
+    muc_tests:muc_voice_request_master(Config).
+muc_voice_request_slave(Config) ->
+    muc_tests:muc_voice_request_slave(Config).
+muc_change_role_master(Config) ->
+    muc_tests:muc_change_role_master(Config).
+muc_change_role_slave(Config) ->
+    muc_tests:muc_change_role_slave(Config).
+muc_kick_master(Config) ->
+    muc_tests:muc_kick_master(Config).
+muc_kick_slave(Config) ->
+    muc_tests:muc_kick_slave(Config).
+muc_change_affiliation_master(Config) ->
+    muc_tests:muc_change_affiliation_master(Config).
+muc_change_affiliation_slave(Config) ->
+    muc_tests:muc_change_affiliation_slave(Config).
+muc_destroy_master(Config) ->
+    muc_tests:muc_destroy_master(Config).
+muc_destroy_slave(Config) ->
+    muc_tests:muc_destroy_slave(Config).
+muc_vcard_master(Config) ->
+    muc_tests:muc_vcard_master(Config).
+muc_vcard_slave(Config) ->
+    muc_tests:muc_vcard_slave(Config).
+muc_nick_change_master(Config) ->
+    muc_tests:muc_nick_change_master(Config).
+muc_nick_change_slave(Config) ->
+    muc_tests:muc_nick_change_slave(Config).
+muc_config_title_desc_master(Config) ->
+    muc_tests:muc_config_title_desc_master(Config).
+muc_config_title_desc_slave(Config) ->
+    muc_tests:muc_config_title_desc_slave(Config).
+muc_config_public_list_master(Config) ->
+    muc_tests:muc_config_public_list_master(Config).
+muc_config_public_list_slave(Config) ->
+    muc_tests:muc_config_public_list_slave(Config).
+muc_config_password_master(Config) ->
+    muc_tests:muc_config_password_master(Config).
+muc_config_password_slave(Config) ->
+    muc_tests:muc_config_password_slave(Config).
+muc_config_whois_master(Config) ->
+    muc_tests:muc_config_whois_master(Config).
+muc_config_whois_slave(Config) ->
+    muc_tests:muc_config_whois_slave(Config).
+muc_config_members_only_master(Config) ->
+    muc_tests:muc_config_members_only_master(Config).
+muc_config_members_only_slave(Config) ->
+    muc_tests:muc_config_members_only_slave(Config).
+muc_config_moderated_master(Config) ->
+    muc_tests:muc_config_moderated_master(Config).
+muc_config_moderated_slave(Config) ->
+    muc_tests:muc_config_moderated_slave(Config).
+muc_config_private_messages_master(Config) ->
+    muc_tests:muc_config_private_messages_master(Config).
+muc_config_private_messages_slave(Config) ->
+    muc_tests:muc_config_private_messages_slave(Config).
+muc_config_query_master(Config) ->
+    muc_tests:muc_config_query_master(Config).
+muc_config_query_slave(Config) ->
+    muc_tests:muc_config_query_slave(Config).
+muc_config_allow_invites_master(Config) ->
+    muc_tests:muc_config_allow_invites_master(Config).
+muc_config_allow_invites_slave(Config) ->
+    muc_tests:muc_config_allow_invites_slave(Config).
+muc_config_visitor_status_master(Config) ->
+    muc_tests:muc_config_visitor_status_master(Config).
+muc_config_visitor_status_slave(Config) ->
+    muc_tests:muc_config_visitor_status_slave(Config).
+muc_config_allow_voice_requests_master(Config) ->
+    muc_tests:muc_config_allow_voice_requests_master(Config).
+muc_config_allow_voice_requests_slave(Config) ->
+    muc_tests:muc_config_allow_voice_requests_slave(Config).
+muc_config_voice_request_interval_master(Config) ->
+    muc_tests:muc_config_voice_request_interval_master(Config).
+muc_config_voice_request_interval_slave(Config) ->
+    muc_tests:muc_config_voice_request_interval_slave(Config).
+muc_config_visitor_nickchange_master(Config) ->
+    muc_tests:muc_config_visitor_nickchange_master(Config).
+muc_config_visitor_nickchange_slave(Config) ->
+    muc_tests:muc_config_visitor_nickchange_slave(Config).
 
 announce_master(Config) ->
     MyJID = my_jid(Config),

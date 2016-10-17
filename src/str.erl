@@ -64,6 +64,7 @@
          to_float/1,
          prefix/2,
          suffix/2,
+	 format/2,
          to_integer/1]).
 
 %%%===================================================================
@@ -276,6 +277,11 @@ prefix(Prefix, B) ->
 
 suffix(B1, B2) ->
     lists:suffix(binary_to_list(B1), binary_to_list(B2)).
+
+-spec format(io:format(), list()) -> binary().
+
+format(Format, Args) ->
+    iolist_to_binary(io_lib:format(Format, Args)).
 
 %%%===================================================================
 %%% Internal functions

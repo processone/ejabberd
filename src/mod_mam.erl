@@ -772,28 +772,25 @@ select(_LServer, JidRequestor, JidArchive,
        {groupchat, _Role, #state{config = #config{mam = false},
 				 history = History}} = MsgType) ->
     #lqueue{len = L, queue = Q} = History,
-    {Msgs0, _} =
-	lists:mapfoldl(
-	  fun({Nick, Pkt, _HaveSubject, UTCDateTime, _Size}, I) ->
-		  Now = datetime_to_now(UTCDateTime, I),
+    Msgs =
+	lists:flatmap(
+	  fun({Nick, Pkt, _HaveSubject, Now, _Size}) ->
 		  TS = now_to_usec(Now),
 		  case match_interval(Now, Start, End) and
 		      match_rsm(Now, RSM) of
 		      true ->
-			  {[{integer_to_binary(TS), TS,
-			     msg_to_el(#archive_msg{
-					  type = groupchat,
-					  timestamp = Now,
-					  peer = undefined,
-					  nick = Nick,
-					  packet = Pkt},
-				       MsgType, JidRequestor, JidArchive)}],
-			   I+1};
+			  [{integer_to_binary(TS), TS,
+			    msg_to_el(#archive_msg{
+					 type = groupchat,
+					 timestamp = Now,
+					 peer = undefined,
+					 nick = Nick,
+					 packet = Pkt},
+				      MsgType, JidRequestor, JidArchive)}];
 		      false ->
-			  {[], I+1}
+			  []
 		  end
-	  end, 0, queue:to_list(Q)),
-    Msgs = lists:flatten(Msgs0),
+	  end, queue:to_list(Q)),
     case RSM of
 	#rsm_set{max = Max, before = Before} when is_binary(Before) ->
 	    {NewMsgs, IsComplete} = filter_by_max(lists:reverse(Msgs), Max),
@@ -959,11 +956,6 @@ usec_to_now(Int) ->
     MSec = Secs div 1000000,
     Sec = Secs rem 1000000,
     {MSec, Sec, USec}.
-
-datetime_to_now(DateTime, USecs) ->
-    Seconds = calendar:datetime_to_gregorian_seconds(DateTime) -
-	calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}),
-    {Seconds div 1000000, Seconds rem 1000000, USecs}.
 
 get_jids(undefined) ->
     [];
