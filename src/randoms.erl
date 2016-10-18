@@ -44,7 +44,7 @@ uniform() ->
     crypto:rand_uniform(0, ?THRESHOLD)/?THRESHOLD.
 
 uniform(N) ->
-    crypto:rand_uniform(0, N).
+    crypto:rand_uniform(1, N+1).
 
 -ifdef(STRONG_RAND_BYTES).
 bytes(N) ->
