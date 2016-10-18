@@ -27,14 +27,29 @@
 
 -author('alexey@process-one.net').
 
--export([get_string/0]).
+-export([get_string/0, uniform/0, uniform/1, bytes/1]).
 
 -export([start/0]).
+
+-define(THRESHOLD, 16#10000000000000000).
 
 start() ->
     ok.
 
 get_string() ->
-    R = crypto:rand_uniform(0, 16#10000000000000000),
+    R = crypto:rand_uniform(0, ?THRESHOLD),
     jlib:integer_to_binary(R).
 
+uniform() ->
+    crypto:rand_uniform(0, ?THRESHOLD)/?THRESHOLD.
+
+uniform(N) ->
+    crypto:rand_uniform(0, N).
+
+-ifdef(STRONG_RAND_BYTES).
+bytes(N) ->
+    crypto:strong_rand_bytes(N).
+-else.
+bytes(N) ->
+    crypto:rand_bytes(N).
+-endif.

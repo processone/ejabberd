@@ -1099,13 +1099,12 @@ get_addr_port(Server) ->
 	  ?DEBUG("srv lookup of '~s': ~p~n",
 		 [Server, HEnt#hostent.h_addr_list]),
 	  AddrList = HEnt#hostent.h_addr_list,
-	  random:seed(p1_time_compat:timestamp()),
 	  case catch lists:map(fun ({Priority, Weight, Port,
 				     Host}) ->
 				       N = case Weight of
 					     0 -> 0;
 					     _ ->
-						 (Weight + 1) * random:uniform()
+						 (Weight + 1) * randoms:uniform()
 					   end,
 				       {Priority * 65536 - N, Host, Port}
 			       end,

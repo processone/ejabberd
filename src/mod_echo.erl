@@ -172,7 +172,7 @@ do_client_version(disabled, _From, _To) -> ok;
 do_client_version(enabled, From, To) ->
     ToS = jid:to_string(To),
     Random_resource =
-	iolist_to_binary(integer_to_list(random:uniform(100000))),
+	iolist_to_binary(integer_to_list(randoms:uniform(100000))),
     From2 = From#jid{resource = Random_resource,
 		     lresource = Random_resource},
     Packet = #xmlel{name = <<"iq">>,
