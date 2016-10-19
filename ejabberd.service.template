@@ -12,11 +12,8 @@ ExecStop=@ctlscriptpath@/ejabberdctl stop
 ExecReload=@ctlscriptpath@/ejabberdctl reload_config
 Type=oneshot
 RemainAfterExit=yes
-# The CAP_DAC_OVERRIDE capability is required for pam authentication to work
-CapabilityBoundingSet=CAP_DAC_OVERRIDE
 PrivateDevices=true
 ProtectSystem=full
-NoNewPrivileges=true
 
 [Install]
 WantedBy=multi-user.target
