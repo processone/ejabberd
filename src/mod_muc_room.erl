@@ -959,6 +959,7 @@ process_groupchat_message(From,
 						_ ->
 						    case
 						      can_change_subject(Role,
+									 IsSubscriber,
 									 StateData)
 							of
 						      true ->
@@ -2821,10 +2822,10 @@ check_subject(Packet) ->
       SubjEl -> fxml:get_tag_cdata(SubjEl)
     end.
 
-can_change_subject(Role, StateData) ->
+can_change_subject(Role, IsSubscriber, StateData) ->
     case (StateData#state.config)#config.allow_change_subj
 	of
-      true -> Role == moderator orelse Role == participant;
+      true -> Role == moderator orelse Role == participant orelse IsSubscriber == true;
       _ -> Role == moderator
     end.
 
