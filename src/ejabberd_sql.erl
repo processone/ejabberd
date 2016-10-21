@@ -664,7 +664,7 @@ mssql_sql_query(SQLQuery) ->
 pgsql_prepare(SQLQuery, State) ->
     Escape = #sql_escape{_ = fun(X) -> X end},
     N = length((SQLQuery#sql_query.args)(Escape)),
-    Args = [<<$$, (jlib:i2l(I))/binary>> || I <- lists:seq(1, N)],
+    Args = [<<$$, (integer_to_binary(I))/binary>> || I <- lists:seq(1, N)],
     Query = (SQLQuery#sql_query.format_query)(Args),
     pgsql:prepare(State#state.db_ref, SQLQuery#sql_query.hash, Query).
 
