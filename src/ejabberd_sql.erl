@@ -629,7 +629,7 @@ generic_sql_query_format(SQLQuery) ->
 
 generic_escape() ->
     #sql_escape{string = fun(X) -> <<"'", (escape(X))/binary, "'">> end,
-                integer = fun(X) -> integer_to_binary(X) end,
+                integer = fun(X) -> jlib:i2l(X) end,
                 boolean = fun(true) -> <<"1">>;
                              (false) -> <<"0">>
                           end
@@ -646,7 +646,7 @@ sqlite_sql_query_format(SQLQuery) ->
 
 sqlite_escape() ->
     #sql_escape{string = fun(X) -> <<"'", (standard_escape(X))/binary, "'">> end,
-                integer = fun(X) -> integer_to_binary(X) end,
+                integer = fun(X) -> jlib:i2l(X) end,
                 boolean = fun(true) -> <<"1">>;
                              (false) -> <<"0">>
                           end
@@ -664,13 +664,13 @@ mssql_sql_query(SQLQuery) ->
 pgsql_prepare(SQLQuery, State) ->
     Escape = #sql_escape{_ = fun(X) -> X end},
     N = length((SQLQuery#sql_query.args)(Escape)),
-    Args = [<<$$, (integer_to_binary(I))/binary>> || I <- lists:seq(1, N)],
+    Args = [<<$$, (jlib:i2l(I))/binary>> || I <- lists:seq(1, N)],
     Query = (SQLQuery#sql_query.format_query)(Args),
     pgsql:prepare(State#state.db_ref, SQLQuery#sql_query.hash, Query).
 
 pgsql_execute_escape() ->
     #sql_escape{string = fun(X) -> X end,
-                integer = fun(X) -> [integer_to_binary(X)] end,
+                integer = fun(X) -> [jlib:i2l(X)] end,
                 boolean = fun(true) -> "1";
                              (false) -> "0"
                           end
