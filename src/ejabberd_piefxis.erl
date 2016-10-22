@@ -486,7 +486,7 @@ process_privacy(#privacy_query{lists = Lists,
 	     from = JID, to = JID, sub_els = [PrivacyQuery]},
     Txt = <<"No module is handling this query">>,
     Error = {error, xmpp:err_feature_not_implemented(Txt, ?MYLANG)},
-    case mod_privacy:process_iq_set(Error, IQ) of
+    case mod_privacy:process_iq_set(Error, IQ, #userlist{}) of
         {error, #stanza_error{reason = Reason}} = Err ->
 	    if Reason == 'item-not-found', Lists == [],
 	       Active == undefined, Default /= undefined ->

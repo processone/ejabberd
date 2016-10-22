@@ -425,6 +425,7 @@ muc_history_master(Config) ->
     ServerHost = ?config(server_host, Config),
     MyNick = ?config(nick, Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
+    PeerNickJID = peer_muc_jid(Config),
     Size = gen_mod:get_module_opt(ServerHost, mod_muc, history_size,
 				  fun(I) when is_integer(I), I>=0 -> I end,
 				  20),
@@ -439,9 +440,14 @@ muc_history_master(Config) ->
 	      #message{type = groupchat, from = MyNickJID,
 		       body = Body} = recv_message(Config)
       end, lists:seq(0, Size)),
-    wait_for_slave(Config),
-    wait_for_slave(Config),
-    flush(Config),
+    put_event(Config, join),
+    lists:foreach(
+      fun(Type) ->
+	      recv_muc_presence(Config, PeerNickJID, Type)
+      end, [available, unavailable,
+	    available, unavailable,
+	    available, unavailable,
+	    available, unavailable]),
     ok = muc_leave(Config),
     disconnect(Config).
 
@@ -453,7 +459,9 @@ muc_history_slave(Config) ->
     Size = gen_mod:get_module_opt(ServerHost, mod_muc, history_size,
 				  fun(I) when is_integer(I), I>=0 -> I end,
 				  20),
-    {History, _, _} = muc_slave_join(Config),
+    ct:comment("Waiting for 'join' command from the master"),
+    join = get_event(Config),
+    {History, _, _} = muc_join(Config),
     ct:comment("Checking ordering of history events"),
     BodyList = [binary_to_integer(xmpp:get_text(Body))
 		|| #message{type = groupchat, from = From,
@@ -486,7 +494,6 @@ muc_history_slave(Config) ->
 			       From == PeerNickJID],
     BodyListWithoutFirst = lists:nthtail(1, lists:seq(1, Size)),
     ok = muc_leave(Config),
-    wait_for_master(Config),
     disconnect(Config).
 
 muc_invite_master(Config) ->
@@ -663,8 +670,7 @@ muc_change_role_master(Config) ->
 			 nick = PeerNick}|_] = muc_get_role(Config, Role)
       end, [visitor, participant, moderator]),
     put_event(Config, disconnect),
-    wait_for_slave(Config),
-    flush(Config),
+    recv_muc_presence(Config, PeerNickJID, unavailable),
     ok = muc_leave(Config),
     disconnect(Config).
 
@@ -687,7 +693,6 @@ muc_change_role_slave(Config, {Role, Reason}) ->
     muc_change_role_slave(Config, get_event(Config));
 muc_change_role_slave(Config, disconnect) ->
     ok = muc_leave(Config),
-    wait_for_master(Config),
     disconnect(Config).
 
 muc_change_affiliation_master(Config) ->
@@ -1522,7 +1527,7 @@ muc_join_new(Config, Room) ->
        items = [#muc_item{role = moderator,
 			  jid = MyJID,
 			  affiliation = owner}]} =
-	xmpp:get_subtag(?recv1(#presence{from = MyNickJID}), #muc_user{}),
+	recv_muc_presence(Config, MyNickJID, available),
     ct:comment("Checking if codes '110' (self-presence) and "
 	       "'201' (new room) is set"),
     true = lists:member(110, Codes),
@@ -1623,8 +1628,7 @@ muc_leave(Config, Room) ->
     #muc_user{
        status_codes = Codes,
        items = [#muc_item{role = none, jid = MyJID}]} =
-	xmpp:get_subtag(?recv1(#presence{from = MyNickJID,
-					 type = unavailable}), #muc_user{}),
+	recv_muc_presence(Config, MyNickJID, unavailable),
     ct:comment("Checking if code '110' (self-presence) is set"),
     true = lists:member(110, Codes),
     ok.

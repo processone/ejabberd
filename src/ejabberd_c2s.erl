@@ -881,18 +881,20 @@ decode_element(#xmlel{} = El, StateName, StateData) ->
 	end
     catch error:{xmpp_codec, Why} ->
 	    NS = xmpp:get_ns(El),
-	    case xmpp:is_stanza(El) of
-		true ->
-		    Lang = xmpp:get_lang(El),
-		    Txt = xmpp:format_error(Why),
-		    send_error(StateData, El, xmpp:err_bad_request(Txt, Lang));
-		false when NS == ?NS_STREAM_MGMT_2; NS == ?NS_STREAM_MGMT_3 ->
-		    Err = #sm_failed{reason = 'bad-request', xmlns = NS},
-		    send_element(StateData, Err);
-		false ->
-		    ok
-	    end,
-	    fsm_next_state(StateName, StateData)
+	    fsm_next_state(
+	      StateName,
+	      case xmpp:is_stanza(El) of
+		  true ->
+		      Lang = xmpp:get_lang(El),
+		      Txt = xmpp:format_error(Why),
+		      send_error(StateData, El, xmpp:err_bad_request(Txt, Lang));
+		  false when NS == ?NS_STREAM_MGMT_2; NS == ?NS_STREAM_MGMT_3 ->
+		      Err = #sm_failed{reason = 'bad-request', xmlns = NS},
+		      send_element(StateData, Err),
+		      StateData;
+		  false ->
+		      StateData
+	      end)
     end.
 
 wait_for_bind({xmlstreamelement, El}, StateData) ->
@@ -957,13 +959,14 @@ wait_for_bind(closed, StateData) ->
 wait_for_bind(stop, StateData) ->
     {stop, normal, StateData};
 wait_for_bind(Pkt, StateData) ->
-    case xmpp:is_stanza(Pkt) of
-	true ->
-	    send_error(StateData, Pkt, xmpp:err_not_acceptable());
-	false ->
-	    ok
-    end,
-    fsm_next_state(wait_for_bind, StateData).
+    fsm_next_state(
+      wait_for_bind,
+      case xmpp:is_stanza(Pkt) of
+	  true ->
+	      send_error(StateData, Pkt, xmpp:err_not_acceptable());
+	  false ->
+	      StateData
+      end).
 
 -spec open_session(state()) -> {ok, state()} | {error, stanza_error()}.
 open_session(StateData) ->
@@ -1315,27 +1318,23 @@ handle_info({route, From, To, Packet}, StateName, StateData) when ?is_stanza(Pac
 				    allow ->
 					{true, StateData};
 				    deny ->
-					Err = xmpp:make_error(
-						Packet,
-						xmpp:err_service_unavailable()),
-					ejabberd_router:route(To, From, Err),
+					ejabberd_router:route_error(
+					  To, From, Packet,
+					  xmpp:err_service_unavailable()),
 					{false, StateData}
 				end;
 			    _ ->
-				Err = xmpp:make_error(Packet, xmpp:err_forbidden()),
-				ejabberd_router:route(To, From, Err),
+				ejabberd_router:route_error(
+				  To, From, Packet, xmpp:err_forbidden()),
 				{false, StateData}
 			end;
 		    _ ->
 			case privacy_check_packet(StateData, From, To, Packet, in) of
 			    allow ->
 				{true, StateData};
-			    deny when T == get; T == set ->
-				Err = xmpp:make_error(
-					Packet, xmpp:err_service_unavailable()),
-				ejabberd_router:route(To, From, Err),
-				{false, StateData};
 			    deny ->
+				ejabberd_router:route_error(
+				  To, From, Packet, xmpp:err_service_unavailable()),
 				{false, StateData}
 			end
 		end;
@@ -1345,13 +1344,11 @@ handle_info({route, From, To, Packet}, StateName, StateData) when ?is_stanza(Pac
 			{true, StateData};
 		    deny ->
 			case T of
-			    error -> ok;
 			    groupchat -> ok;
 			    headline -> ok;
 			    _ ->
-				Err = xmpp:make_error(
-					Packet, xmpp:err_service_unavailable()),
-				ejabberd_router:route(To, From, Err)
+				ejabberd_router:route_error(
+				  To, From, Packet, xmpp:err_service_unavailable())
 			end,
 			{false, StateData}
 		end
@@ -1572,14 +1569,14 @@ send_element(StateData, #xmlel{} = El) ->
 send_element(StateData, Pkt) ->
     send_element(StateData, xmpp:encode(Pkt, ?NS_CLIENT)).
 
--spec send_error(state(), xmlel() | stanza(), stanza_error()) -> ok.
+-spec send_error(state(), xmlel() | stanza(), stanza_error()) -> state().
 send_error(StateData, Stanza, Error) ->
     Type = xmpp:get_type(Stanza),
     if Type == error; Type == result;
        Type == <<"error">>; Type == <<"result">> ->
-	    ok;
+	    StateData;
        true ->
-	    send_element(StateData, xmpp:make_error(Stanza, Error))
+	    send_stanza(StateData, xmpp:make_error(Stanza, Error))
     end.
 
 -spec send_stanza(state(), xmpp_element()) -> state().
@@ -1754,47 +1751,56 @@ presence_track(From, To, Packet, StateData) ->
     LTo = jid:tolower(To),
     User = StateData#state.user,
     Server = StateData#state.server,
-    case Type of
-      unavailable ->
-	  A = ?SETS:del_element(LTo, StateData#state.pres_a),
-	  check_privacy_route(From, StateData#state{pres_a = A}, From, To, Packet);
-      subscribe ->
-	  try_roster_subscribe(subscribe, User, Server, From, To, Packet, StateData);
-      subscribed ->
-	  ejabberd_hooks:run(roster_out_subscription, Server,
-			     [User, Server, To, subscribed]),
-	  check_privacy_route(From, StateData,
-			      jid:remove_resource(From), To, Packet);
-      unsubscribe ->
-	  try_roster_subscribe(unsubscribe, User, Server, From, To, Packet, StateData);
-      unsubscribed ->
-	  ejabberd_hooks:run(roster_out_subscription, Server,
-			     [User, Server, To, unsubscribed]),
-	  check_privacy_route(From, StateData,
-			      jid:remove_resource(From), To, Packet);
-      error ->
-	  check_privacy_route(From, StateData, From, To, Packet);
-      probe ->
-	  check_privacy_route(From, StateData, From, To, Packet);
-      _ ->
-	  A = (?SETS):add_element(LTo, StateData#state.pres_a),
-	  check_privacy_route(From, StateData#state{pres_a = A}, From, To, Packet)
+    Lang = StateData#state.lang,
+    case privacy_check_packet(StateData, From, To, Packet, out) of
+	deny ->
+            ErrText = <<"Your active privacy list has denied "
+			"the routing of this stanza.">>,
+	    Err = xmpp:err_not_acceptable(ErrText, Lang),
+	    send_error(StateData, xmpp:set_from_to(Packet, From, To), Err);
+	allow when Type == subscribe; Type == subscribed;
+		   Type == unsubscribe; Type == unsubscribed ->
+	    Access = gen_mod:get_module_opt(Server, mod_roster, access,
+					    fun(A) when is_atom(A) -> A end,
+					    all),
+	    MyBareJID = jid:make(User, Server, <<"">>),
+	    case acl:match_rule(Server, Access, MyBareJID) of
+		deny ->
+		    ErrText = <<"Denied by ACL">>,
+		    Err = xmpp:err_forbidden(ErrText, Lang),
+		    send_error(StateData, xmpp:set_from_to(Packet, From, To), Err);
+		allow ->
+		    ejabberd_hooks:run(roster_out_subscription,
+				       Server,
+				       [User, Server, To, Type]),
+		    ejabberd_router:route(jid:remove_resource(From), To, Packet),
+		    StateData
+	    end;
+	allow when Type == error; Type == probe ->
+	    ejabberd_router:route(From, To, Packet),
+	    StateData;
+	allow ->
+	    ejabberd_router:route(From, To, Packet),
+	    A = case Type of
+		    available ->
+			?SETS:add_element(LTo, StateData#state.pres_a);
+		    unavailable ->
+			?SETS:del_element(LTo, StateData#state.pres_a)
+		end,
+	    StateData#state{pres_a = A}
     end.
 
 -spec check_privacy_route(jid(), state(), jid(), jid(), stanza()) -> state().
 check_privacy_route(From, StateData, FromRoute, To,
 		    Packet) ->
     case privacy_check_packet(StateData, From, To, Packet,
-			      out)
-	of
+			      out) of
         deny ->
             Lang = StateData#state.lang,
             ErrText = <<"Your active privacy list has denied "
-                       "the routing of this stanza.">>,
-	    Err = xmpp:make_error(
-		    xmpp:set_from_to(Packet, From, To),
-		    xmpp:err_not_acceptable(ErrText, Lang)),
-            send_stanza(StateData, Err);
+			"the routing of this stanza.">>,
+	    Err = xmpp:err_not_acceptable(ErrText, Lang),
+	    send_error(StateData, xmpp:set_from_to(Packet, From, To), Err);
         allow ->
 	    ejabberd_router:route(FromRoute, To, Packet),
             StateData
@@ -1814,24 +1820,6 @@ privacy_check_packet(StateData, From, To, Packet,
 is_privacy_allow(StateData, From, To, Packet, Dir) ->
     allow ==
       privacy_check_packet(StateData, From, To, Packet, Dir).
-
-%%% Check ACL before allowing to send a subscription stanza
--spec try_roster_subscribe(subscribe | unsubscribe, binary(), binary(),
-			   jid(), jid(), presence(), state()) -> state().
-try_roster_subscribe(Type, User, Server, From, To, Packet, StateData) ->
-    JID1 = jid:make(User, Server, <<"">>),
-    Access = gen_mod:get_module_opt(Server, mod_roster, access, fun(A) when is_atom(A) -> A end, all),
-    case acl:match_rule(Server, Access, JID1) of
-	deny ->
-	    %% Silently drop this (un)subscription request
-	    StateData;
-	allow ->
-	    ejabberd_hooks:run(roster_out_subscription,
-			       Server,
-			       [User, Server, To, Type]),
-	    check_privacy_route(From, StateData, jid:remove_resource(From),
-				To, Packet)
-    end.
 
 %% Send presence when disconnecting
 -spec presence_broadcast(state(), jid(), ?SETS:set(), presence()) -> ok.
@@ -1980,7 +1968,7 @@ process_privacy_iq(#iq{from = From, to = To,
 		       privacy_iq_set,
 		       StateData#state.server,
 		       {error, xmpp:err_feature_not_implemented(Txt, Lang)},
-		       [IQ])
+		       [IQ, StateData#state.privacy_list])
 		of
 		    {result, R, NewPrivList} ->
 			{{result, R},
@@ -2522,9 +2510,8 @@ handle_unacked_stanzas(#state{mgmt_state = MgmtState} = StateData)
 		false ->
 		    fun(From, To, El, _Time) ->
 			    Txt = <<"User session terminated">>,
-			    Err = xmpp:make_error(
-				    El, xmpp:err_service_unavailable(Txt, Lang)),
-			    ejabberd_router:route(To, From, Err)
+			    ejabberd_router:route_error(
+			      To, From, El, xmpp:err_service_unavailable(Txt, Lang))
 		    end
 	      end,
     F = fun(From, _To, #presence{}, _Time) ->
@@ -2532,9 +2519,8 @@ handle_unacked_stanzas(#state{mgmt_state = MgmtState} = StateData)
 		       [jid:to_string(From)]);
 	   (From, To, #iq{} = El, _Time) ->
 		Txt = <<"User session terminated">>,
-		Err = xmpp:make_error(
-			El, xmpp:err_service_unavailable(Txt, Lang)),
-		ejabberd_router:route(To, From, Err);
+		ejabberd_router:route_error(
+		  To, From, El, xmpp:err_service_unavailable(Txt, Lang));
 	   (From, To, El, Time) ->
 		%% We'll drop the stanza if it was <forwarded/> by some
 		%% encapsulating protocol as per XEP-0297.  One such protocol is

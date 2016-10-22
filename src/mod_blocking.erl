@@ -30,7 +30,7 @@
 -protocol({xep, 191, '1.2'}).
 
 -export([start/2, stop/1, process_iq/1,
-	 process_iq_set/2, process_iq_get/3, mod_opt_type/1, depends/2]).
+	 process_iq_set/3, process_iq_get/3, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -85,10 +85,11 @@ process_iq_get(Acc, _, _) -> Acc.
 -spec process_iq_set({error, stanza_error()} |
 		     {result, xmpp_element() | undefined} |
 		     {result, xmpp_element() | undefined, userlist()},
-		     iq()) -> {error, stanza_error()} |
-			      {result, xmpp_element() | undefined} |
-			      {result, xmpp_element() | undefined, userlist()}.
-process_iq_set(Acc, #iq{from = From, lang = Lang, sub_els = [SubEl]}) ->
+		     iq(), userlist()) ->
+			    {error, stanza_error()} |
+			    {result, xmpp_element() | undefined} |
+			    {result, xmpp_element() | undefined, userlist()}.
+process_iq_set(Acc, #iq{from = From, lang = Lang, sub_els = [SubEl]}, _) ->
     #jid{luser = LUser, lserver = LServer} = From,
     case SubEl of
 	#block{items = []} ->
@@ -105,7 +106,7 @@ process_iq_set(Acc, #iq{from = From, lang = Lang, sub_els = [SubEl]}) ->
 	_ ->
 	    Acc
     end;
-process_iq_set(Acc, _) -> Acc.
+process_iq_set(Acc, _, _) -> Acc.
 
 -spec list_to_blocklist_jids([listitem()], [ljid()]) -> [ljid()].
 list_to_blocklist_jids([], JIDs) -> JIDs;

@@ -53,6 +53,7 @@
 -include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
 -include("mod_roster.hrl").
+-include("mod_privacy.hrl").
 -include("ejabberd_sm.hrl").
 -include("xmpp.hrl").
 
@@ -1380,11 +1381,12 @@ privacy_set(Username, Host, QueryS) ->
     To = jid:make(Host),
     QueryEl = fxml_stream:parse_element(QueryS),
     SubEl = xmpp:decode(QueryEl),
-    IQ = #iq{type = set, id = <<"push">>, sub_els = [SubEl]},
+    IQ = #iq{type = set, id = <<"push">>, sub_els = [SubEl],
+	     from = From, to = To},
     ejabberd_hooks:run_fold(privacy_iq_set,
 			    Host,
 			    {error, xmpp:err_feature_not_implemented()},
-			    [From, To, IQ]),
+			    [IQ, #userlist{}]),
     ok.
 
 %%%

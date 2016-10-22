@@ -13,6 +13,7 @@
 
 -include("suite.hrl").
 -include_lib("kernel/include/file.hrl").
+-include("mod_roster.hrl").
 
 %%%===================================================================
 %%% API
@@ -171,10 +172,18 @@ connect(Config) ->
 tcp_connect(Config) ->
     case ?config(socket, Config) of
 	undefined ->
+	    Owner = self(),
+	    NS = case ?config(type, Config) of
+		     client -> ?NS_CLIENT;
+		     server -> ?NS_SERVER;
+		     component -> ?NS_COMPONENT
+		 end,
+	    ReceiverPid = spawn(fun() -> receiver(NS, Owner) end),
 	    {ok, Sock} = ejabberd_socket:connect(
 			   ?config(server_host, Config),
 			   ?config(server_port, Config),
-			   [binary, {packet, 0}, {active, false}]),
+			   [binary, {packet, 0}, {active, false}],
+			   infinity, ReceiverPid),
 	    set_opt(socket, Sock, Config);
 	_ ->
 	    Config
@@ -219,9 +228,11 @@ disconnect(Config) ->
     catch exit:normal ->
 	    ok
     end,
-    {xmlstreamend, <<"stream:stream">>} = recv(Config),
+    receive {xmlstreamend, <<"stream:stream">>} -> ok end,
+    flush(Config),
     ejabberd_socket:close(Socket),
-    Config.
+    ct:comment("Disconnected"),
+    set_opt(socket, undefined, Config).
 
 close_socket(Config) ->
     Socket = ?config(socket, Config),
@@ -435,40 +446,25 @@ match_failure(Received, [Match]) when is_list(Match)->
 match_failure(Received, Matches) ->
     ct:fail("Received input:~n~n~p~n~ndon't match expected patterns:~n~n~p", [Received, Matches]).
 
-recv(Config) ->
+recv(_Config) ->
     receive
-        {'$gen_event', {xmlstreamelement, El}} ->
-	    decode_stream_element(Config, El);
-	{'$gen_event', {xmlstreamstart, Name, Attrs}} ->
-	    decode(#xmlel{name = Name, attrs = Attrs}, <<>>, []);
-	{'$gen_event', Event} ->
-            Event
+	{fail, El, Why} ->
+	    ct:fail("recv failed: ~p->~n~s",
+		    [El, xmpp:format_error(Why)]);
+	Event ->
+	    Event
     end.
 
-recv_iq(Config) ->
-    receive
-	{'$gen_event', {xmlstreamelement, #xmlel{name = <<"iq">>} = El}} ->
-	    decode_stream_element(Config, El)
-    end.
+recv_iq(_Config) ->
+    receive #iq{} = IQ -> IQ end.
 
-recv_presence(Config) ->
-    receive
-	{'$gen_event', {xmlstreamelement, #xmlel{name = <<"presence">>} = El}} ->
-	    decode_stream_element(Config, El)
-    end.
+recv_presence(_Config) ->
+    receive #presence{} = Pres -> Pres end.
 
-recv_message(Config) ->
-    receive
-	{'$gen_event', {xmlstreamelement, #xmlel{name = <<"message">>} = El}} ->
-	    decode_stream_element(Config, El)
-    end.
+recv_message(_Config) ->
+    receive #message{} = Msg -> Msg end.
 
-decode_stream_element(Config, El) ->
-    NS = case ?config(type, Config) of
-	     client -> ?NS_CLIENT;
-	     server -> ?NS_SERVER;
-	     component -> ?NS_COMPONENT
-	 end,
+decode_stream_element(NS, El) ->
     decode(El, NS, []).
 
 format_element(El) ->
@@ -517,13 +513,13 @@ send(State, Pkt) ->
 
 send_recv(State, #message{} = Msg) ->
     ID = send(State, Msg),
-    #message{id = ID} = recv_message(State);
+    receive #message{id = ID} = Result -> Result end;
 send_recv(State, #presence{} = Pres) ->
     ID = send(State, Pres),
-    #presence{id = ID} = recv_presence(State);
+    receive #presence{id = ID} = Result -> Result end;
 send_recv(State, #iq{} = IQ) ->
     ID = send(State, IQ),
-    #iq{id = ID} = recv_iq(State).
+    receive #iq{id = ID} = Result -> Result end.
 
 sasl_new(<<"PLAIN">>, User, Server, Password) ->
     {<<User/binary, $@, Server/binary, 0, User/binary, 0, Password/binary>>,
@@ -698,6 +694,50 @@ wait_for_slave(Config) ->
 make_iq_result(#iq{from = From} = IQ) ->
     IQ#iq{type = result, to = From, from = undefined, sub_els = []}.
 
+set_roster(Config, Subscription, Groups) ->
+    MyJID = my_jid(Config),
+    {U, S, _} = jid:tolower(MyJID),
+    PeerJID = ?config(peer, Config),
+    PeerBareJID = jid:remove_resource(PeerJID),
+    PeerLJID = jid:tolower(PeerBareJID),
+    ct:comment("Adding ~s to roster with subscription '~s' in groups ~p",
+	       [jid:to_string(PeerBareJID), Subscription, Groups]),
+    {atomic, _} = mod_roster:set_roster(#roster{usj = {U, S, PeerLJID},
+						us = {U, S},
+						jid = PeerLJID,
+						subscription = Subscription,
+						groups = Groups}),
+    Config.
+
+del_roster(Config) ->
+    MyJID = my_jid(Config),
+    {U, S, _} = jid:tolower(MyJID),
+    PeerJID = ?config(peer, Config),
+    PeerBareJID = jid:remove_resource(PeerJID),
+    PeerLJID = jid:tolower(PeerBareJID),
+    ct:comment("Removing ~s from roster", [jid:to_string(PeerBareJID)]),
+    {atomic, _} = mod_roster:del_roster(U, S, PeerLJID),
+    Config.
+
+receiver(NS, Owner) ->
+    MRef = erlang:monitor(process, Owner),
+    receiver(NS, Owner, MRef).
+
+receiver(NS, Owner, MRef) ->
+    receive
+        {'$gen_event', {xmlstreamelement, El}} ->
+	    Owner ! decode_stream_element(NS, El),
+	    receiver(NS, Owner, MRef);
+	{'$gen_event', {xmlstreamstart, Name, Attrs}} ->
+	    Owner ! decode(#xmlel{name = Name, attrs = Attrs}, <<>>, []),
+	    receiver(NS, Owner, MRef);
+	{'$gen_event', Event} ->
+            Owner ! Event,
+	    receiver(NS, Owner, MRef);
+	{'DOWN', MRef, process, Owner, _} ->
+	    ok
+    end.
+
 %%%===================================================================
 %%% Clients puts and gets events via this relay.
 %%%===================================================================
@@ -730,12 +770,17 @@ event_relay(Events, Subscribers) ->
               end, Subscribers),
             event_relay([Event|Events], Subscribers);
 	{'DOWN', _MRef, process, Pid, _Info} ->
-	    NewSubscribers = lists:delete(Pid, Subscribers),
-	    lists:foreach(
-	      fun(Subscriber) ->
-		      Subscriber ! {event, peer_down, self()}
-	      end, NewSubscribers),
-	    event_relay(Events, NewSubscribers)
+	    case lists:member(Pid, Subscribers) of
+		true ->
+		    NewSubscribers = lists:delete(Pid, Subscribers),
+		    lists:foreach(
+		      fun(Subscriber) ->
+			      Subscriber ! {event, peer_down, self()}
+		      end, NewSubscribers),
+		    event_relay(Events, NewSubscribers);
+		false ->
+		    event_relay(Events, Subscribers)
+	    end
     end.
 
 subscribe_to_events(Config) ->
@@ -762,8 +807,10 @@ get_event(Config) ->
     end.
 
 flush(Config) ->
-    flush(Config, []).
-
-flush(Config, Msgs) ->
-    receive Msg -> flush(Config, [Msg|Msgs])
-    after 1000 -> lists:reverse(Msgs) end.
+    receive
+	{event, peer_down, _} -> flush(Config);
+	closed -> flush(Config);
+	Msg -> ct:fail({unexpected_msg, Msg})
+    after 0 ->
+	    ok
+    end.

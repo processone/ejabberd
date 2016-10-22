@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_iq/1, export/1, import/1,
-	 process_iq_set/2, process_iq_get/3, get_user_list/3,
+	 process_iq_set/3, process_iq_get/3, get_user_list/3,
 	 check_packet/6, remove_user/2, encode_list_item/1,
 	 is_list_needdb/1, updated_list/3,
          item_to_xml/1, get_user_lists/2, import/3,
@@ -103,6 +103,12 @@ process_iq(IQ) ->
 -spec process_iq_get({error, stanza_error()} | {result, xmpp_element() | undefined},
 		     iq(), userlist()) -> {error, stanza_error()} |
 					  {result, xmpp_element() | undefined}.
+process_iq_get(_, #iq{lang = Lang,
+		      sub_els = [#privacy_query{default = Default,
+						active = Active}]},
+	       _) when Default /= undefined; Active /= undefined ->
+    Txt = <<"Only <list/> element is allowed in this query">>,
+    {error, xmpp:err_bad_request(Txt, Lang)};
 process_iq_get(_, #iq{from = From, lang = Lang,
 		      sub_els = [#privacy_query{lists = Lists}]},
 	       #userlist{name = Active}) ->
@@ -205,7 +211,7 @@ encode_value(Type, Val) ->
 			  listitem_value().
 decode_value(Type, Value) ->
     case Type of
-	jid -> jid:from_string(Value);
+	jid -> jid:tolower(jid:from_string(Value));
 	subscription ->
 	    case Value of
 		<<"from">> -> from;
@@ -213,35 +219,37 @@ decode_value(Type, Value) ->
 		<<"both">> -> both;
 		<<"none">> -> none
 	    end;
-	group -> Value;
+	group when Value /= <<"">> -> Value;
 	undefined -> none
     end.
 
 -spec process_iq_set({error, stanza_error()} |
 		     {result, xmpp_element() | undefined} |
 		     {result, xmpp_element() | undefined, userlist()},
-		     iq()) -> {error, stanza_error()} |
-			      {result, xmpp_element() | undefined} |
-			      {result, xmpp_element() | undefined, userlist()}.
+		     iq(), #userlist{}) ->
+			    {error, stanza_error()} |
+			    {result, xmpp_element() | undefined} |
+			    {result, xmpp_element() | undefined, userlist()}.
 process_iq_set(_, #iq{from = From, lang = Lang,
 		      sub_els = [#privacy_query{default = Default,
 						active = Active,
-						lists = Lists}]}) ->
+						lists = Lists}]},
+	      #userlist{} = UserList) ->
     #jid{luser = LUser, lserver = LServer} = From,
     case Lists of
 	[#privacy_list{items = Items, name = ListName}]
 	  when Default == undefined, Active == undefined ->
-	    process_lists_set(LUser, LServer, ListName, Items, Lang);
+	    process_lists_set(LUser, LServer, ListName, Items, UserList, Lang);
 	[] when Default == undefined, Active /= undefined ->
 	    process_active_set(LUser, LServer, Active, Lang);
 	[] when Active == undefined, Default /= undefined ->
 	    process_default_set(LUser, LServer, Default, Lang);
 	_ ->
-	    Txt = <<"There should be exactly one element in this query: "
-		    "<list/>, <active/> or <default/>">>,
+	    Txt = <<"The stanza MUST contain only one <active/> element, "
+		    "one <default/> element, or one <list/> element">>,
 	    {error, xmpp:err_bad_request(Txt, Lang)}
     end;
-process_iq_set(Acc, _) ->
+process_iq_set(Acc, _, _) ->
     Acc.
 
 -spec process_default_set(binary(), binary(), none | binary(),
@@ -286,13 +294,20 @@ set_privacy_list(#privacy{us = {_, LServer}} = Privacy) ->
     Mod:set_privacy_list(Privacy).
 
 -spec process_lists_set(binary(), binary(), binary(), [privacy_item()],
-			binary()) -> {error, stanza_error()} | {result, undefined}.
-process_lists_set(LUser, LServer, Name, [], Lang) ->
+			#userlist{}, binary()) -> {error, stanza_error()} |
+						  {result, undefined}.
+process_lists_set(_LUser, _LServer, Name, [], #userlist{name = Name}, Lang) ->
+    Txt = <<"Cannot remove active list">>,
+    {error, xmpp:err_conflict(Txt, Lang)};
+process_lists_set(LUser, LServer, Name, [], _UserList, Lang) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:remove_privacy_list(LUser, LServer, Name) of
 	{atomic, conflict} ->
 	    Txt = <<"Cannot remove default list">>,
 	    {error, xmpp:err_conflict(Txt, Lang)};
+	{atomic, not_found} ->
+	    Txt = <<"No privacy list with this name found">>,
+	    {error, xmpp:err_item_not_found(Txt, Lang)};
 	{atomic, ok} ->
 	    ejabberd_sm:route(jid:make(LUser, LServer,
 				       <<"">>),
@@ -308,7 +323,7 @@ process_lists_set(LUser, LServer, Name, [], Lang) ->
 	    Txt = <<"Database failure">>,
 	    {error, xmpp:err_internal_server_error(Txt, Lang)}
     end;
-process_lists_set(LUser, LServer, Name, Items, Lang) ->
+process_lists_set(LUser, LServer, Name, Items, _UserList, Lang) ->
     case catch lists:map(fun decode_item/1, Items) of
 	{error, Why} ->
 	    Txt = xmpp:format_error(Why),
@@ -358,9 +373,7 @@ decode_item(#privacy_item{order = Order,
 			 action = Action,
 			 type = Type,
 			 value = Value},
-    if MatchMessage and MatchIQ and MatchPresenceIn and MatchPresenceOut ->
-	    ListItem#listitem{match_all = true};
-       not (MatchMessage or MatchIQ or MatchPresenceIn or MatchPresenceOut) ->
+    if not (MatchMessage or MatchIQ or MatchPresenceIn or MatchPresenceOut) ->
 	    ListItem#listitem{match_all = true};
        true ->
 	    ListItem#listitem{match_iq = MatchIQ,
@@ -468,17 +481,11 @@ check_packet_aux([Item | List], PType, JID,
 	Item,
     case is_ptype_match(Item, PType) of
       true ->
-	  case Type of
-	    none -> Action;
-	    _ ->
-		case is_type_match(Type, Value, JID, Subscription,
-				   Groups)
-		    of
-		  true -> Action;
-		  false ->
-		      check_packet_aux(List, PType, JID, Subscription, Groups)
-		end
-	  end;
+	    case is_type_match(Type, Value, JID, Subscription, Groups) of
+		true -> Action;
+		false ->
+		    check_packet_aux(List, PType, JID, Subscription, Groups)
+	    end;
       false ->
 	  check_packet_aux(List, PType, JID, Subscription, Groups)
     end.
@@ -499,8 +506,10 @@ is_ptype_match(Item, PType) ->
 	  end
     end.
 
--spec is_type_match(jid | subscription | group, listitem_value(),
+-spec is_type_match(none | jid | subscription | group, listitem_value(),
 		    ljid(), none | both | from | to, [binary()]) -> boolean().
+is_type_match(none, _Value, _JID, _Subscription, _Groups) ->
+    true;
 is_type_match(Type, Value, JID, Subscription, Groups) ->
     case Type of
       jid ->

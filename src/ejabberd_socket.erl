@@ -31,6 +31,7 @@
 -export([start/4,
 	 connect/3,
 	 connect/4,
+	 connect/5,
 	 starttls/2,
 	 starttls/3,
 	 compress/1,
@@ -125,19 +126,21 @@ start(Module, SockMod, Socket, Opts) ->
     end.
 
 connect(Addr, Port, Opts) ->
-    connect(Addr, Port, Opts, infinity).
+    connect(Addr, Port, Opts, infinity, self()).
 
 connect(Addr, Port, Opts, Timeout) ->
+    connect(Addr, Port, Opts, Timeout, self()).
+
+connect(Addr, Port, Opts, Timeout, Owner) ->
     case gen_tcp:connect(Addr, Port, Opts, Timeout) of
       {ok, Socket} ->
 	  Receiver = ejabberd_receiver:start(Socket, gen_tcp,
 					     none),
 	  SocketData = #socket_state{sockmod = gen_tcp,
 				     socket = Socket, receiver = Receiver},
-	  Pid = self(),
 	  case gen_tcp:controlling_process(Socket, Receiver) of
 	    ok ->
-		ejabberd_receiver:become_controller(Receiver, Pid),
+		ejabberd_receiver:become_controller(Receiver, Owner),
 		{ok, SocketData};
 	    {error, _Reason} = Error -> gen_tcp:close(Socket), Error
 	  end;

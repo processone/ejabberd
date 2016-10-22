@@ -49,7 +49,7 @@
 	 get_jid_info/4, encode_item/1, webadmin_page/3,
 	 webadmin_user/4, get_versioning_feature/2,
 	 roster_versioning_enabled/1, roster_version/2,
-	 mod_opt_type/1, set_roster/1, depends/2]).
+	 mod_opt_type/1, set_roster/1, del_roster/3, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -295,6 +295,13 @@ set_roster(#roster{us = {LUser, LServer}, jid = LJID} = Item) ->
       LServer,
       fun() ->
 	      roster_subscribe_t(LUser, LServer, LJID, Item)
+      end).
+
+del_roster(LUser, LServer, LJID) ->
+    transaction(
+      LServer,
+      fun() ->
+	      del_roster_t(LUser, LServer, LJID)
       end).
 
 encode_item(Item) ->
