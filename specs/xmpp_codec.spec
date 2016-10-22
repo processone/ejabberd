@@ -659,7 +659,7 @@
      #elem{name = <<"auth">>,
            xmlns = <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
            cdata = #cdata{label = '$text',
-                          dec = {base64, decode, []},
+                          dec = {base64, mime_decode, []},
                           enc = {base64, encode, []}},
            result = {sasl_auth, '$mechanism', '$text'},
            attrs = [#attr{name = <<"mechanism">>,
@@ -674,7 +674,7 @@
      #elem{name = <<"challenge">>,
            xmlns = <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
            cdata = #cdata{label = '$text',
-                          dec = {base64, decode, []},
+                          dec = {base64, mime_decode, []},
                           enc = {base64, encode, []}},
            result = {sasl_challenge, '$text'}}).
 
@@ -682,7 +682,7 @@
      #elem{name = <<"response">>,
            xmlns = <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
            cdata = #cdata{label = '$text',
-                          dec = {base64, decode, []},
+                          dec = {base64, mime_decode, []},
                           enc = {base64, encode, []}},
            result = {sasl_response, '$text'}}).
 
@@ -690,7 +690,7 @@
      #elem{name = <<"success">>,
            xmlns = <<"urn:ietf:params:xml:ns:xmpp-sasl">>,
            cdata = #cdata{label = '$text',
-                          dec = {base64, decode, []},
+                          dec = {base64, mime_decode, []},
                           enc = {base64, encode, []}},
            result = {sasl_success, '$text'}}).
 
@@ -3467,6 +3467,7 @@ enc_ip(Addr) ->
 
 -spec re:split(_, _) -> [binary()].
 -spec base64:decode(_) -> binary().
+-spec base64:mime_decode(_) -> binary().
 
 -spec dec_host_port(_) -> binary() | inet:ip_address() |
 			  {binary() | inet:ip_address(), non_neg_integer()}.

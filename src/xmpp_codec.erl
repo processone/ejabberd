@@ -29298,7 +29298,7 @@ encode_sasl_success({sasl_success, Text}, __TopXMLNS) ->
 
 decode_sasl_success_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_sasl_success_cdata(__TopXMLNS, _val) ->
-    case catch base64:decode(_val) of
+    case catch base64:mime_decode(_val) of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
 			{bad_cdata_value, <<>>, <<"success">>, __TopXMLNS}});
@@ -29338,7 +29338,7 @@ encode_sasl_response({sasl_response, Text},
 
 decode_sasl_response_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_sasl_response_cdata(__TopXMLNS, _val) ->
-    case catch base64:decode(_val) of
+    case catch base64:mime_decode(_val) of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
 			{bad_cdata_value, <<>>, <<"response">>, __TopXMLNS}});
@@ -29378,7 +29378,7 @@ encode_sasl_challenge({sasl_challenge, Text},
 
 decode_sasl_challenge_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_sasl_challenge_cdata(__TopXMLNS, _val) ->
-    case catch base64:decode(_val) of
+    case catch base64:mime_decode(_val) of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
 			{bad_cdata_value, <<>>, <<"challenge">>, __TopXMLNS}});
@@ -29454,7 +29454,7 @@ encode_sasl_auth_attr_mechanism(_val, _acc) ->
 
 decode_sasl_auth_cdata(__TopXMLNS, <<>>) -> <<>>;
 decode_sasl_auth_cdata(__TopXMLNS, _val) ->
-    case catch base64:decode(_val) of
+    case catch base64:mime_decode(_val) of
       {'EXIT', _} ->
 	  erlang:error({xmpp_codec,
 			{bad_cdata_value, <<>>, <<"auth">>, __TopXMLNS}});
