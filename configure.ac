@@ -28,6 +28,12 @@ else
 fi
 ])
 
+read -r -d '' INCLUDED_APPS <<'HERE'
+sasl, lager, mnesia, p1_utils, cache_tab,
+fast_tls, stringprep, fast_xml,
+stun, fast_yaml, esip, jiffy, p1_oauth2, p1_xmlrpc
+HERE
+
 AC_PATH_TOOL(ERL, erl, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(ERLC, erlc, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(EPMD, epmd, , [${extra_erl_path}$PATH])
@@ -103,7 +109,10 @@ esac],[db_type=generic])
 AC_ARG_ENABLE(all,
 [AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-elixir --enable-iconv --enable-debug --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true elixir=true iconv=true debug=true tools=true ;;
+  yes)
+    odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true elixir=true iconv=true debug=true tools=true
+    INCLUDED_APPS="$INCLUDED_APPS, p1_pgsql, sqlite3, ezlib, riakc, eredis, elixir, iconv"
+    ;;
   no) odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false elixir=false iconv=false debug=false tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
@@ -119,7 +128,10 @@ esac],[if test "x$tools" = "x"; then tools=false; fi])
 AC_ARG_ENABLE(odbc,
 [AC_HELP_STRING([--enable-odbc], [enable pure ODBC support (default: no)])],
 [case "${enableval}" in
-  yes) odbc=true ;;
+  yes)
+    odbc=true
+    INCLUDED_APPS="$INCLUDED_APPS, odbc"
+    ;;
   no)  odbc=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-odbc) ;;
 esac],[if test "x$odbc" = "x"; then odbc=false; fi])
@@ -127,7 +139,10 @@ esac],[if test "x$odbc" = "x"; then odbc=false; fi])
 AC_ARG_ENABLE(mysql,
 [AC_HELP_STRING([--enable-mysql], [enable MySQL support (default: no)])],
 [case "${enableval}" in
-  yes) mysql=true ;;
+  yes)
+    mysql=true
+    INCLUDED_APPS="$INCLUDED_APPS, p1_mysql"
+    ;;
   no)  mysql=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-mysql) ;;
 esac],[if test "x$mysql" = "x"; then mysql=false; fi])
@@ -135,7 +150,10 @@ esac],[if test "x$mysql" = "x"; then mysql=false; fi])
 AC_ARG_ENABLE(pgsql,
 [AC_HELP_STRING([--enable-pgsql], [enable PostgreSQL support (default: no)])],
 [case "${enableval}" in
-  yes) pgsql=true ;;
+  yes)
+    pgsql=true
+    INCLUDED_APPS="$INCLUDED_APPS, p1_pgsql"
+    ;;
   no)  pgsql=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-pgsql) ;;
 esac],[if test "x$pgsql" = "x"; then pgsql=false; fi])
@@ -143,7 +161,10 @@ esac],[if test "x$pgsql" = "x"; then pgsql=false; fi])
 AC_ARG_ENABLE(sqlite,
 [AC_HELP_STRING([--enable-sqlite], [enable SQLite support (default: no)])],
 [case "${enableval}" in
-  yes) sqlite=true ;;
+  yes)
+    sqlite=true
+    INCLUDED_APPS="$INCLUDED_APPS, sqlite3"
+    ;;
   no)  sqlite=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-sqlite) ;;
 esac],[if test "x$sqlite" = "x"; then sqlite=false; fi])
@@ -151,7 +172,10 @@ esac],[if test "x$sqlite" = "x"; then sqlite=false; fi])
 AC_ARG_ENABLE(pam,
 [AC_HELP_STRING([--enable-pam], [enable PAM support (default: no)])],
 [case "${enableval}" in
-  yes) pam=true ;;
+  yes)
+    pam=true
+    INCLUDED_APPS="$INCLUDED_APPS, p1_pam"
+    ;;
   no)  pam=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-pam) ;;
 esac],[if test "x$pam" = "x"; then pam=false; fi])
@@ -159,7 +183,10 @@ esac],[if test "x$pam" = "x"; then pam=false; fi])
 AC_ARG_ENABLE(zlib,
 [AC_HELP_STRING([--enable-zlib], [enable Stream Compression (XEP-0138) using zlib (default: yes)])],
 [case "${enableval}" in
-  yes) zlib=true ;;
+  yes)
+    zlib=true
+    INCLUDED_APPS="$INCLUDED_APPS, ezlib"
+    ;;
   no)  zlib=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-zlib) ;;
 esac],[if test "x$zlib" = "x"; then zlib=true; fi])
@@ -167,7 +194,10 @@ esac],[if test "x$zlib" = "x"; then zlib=true; fi])
 AC_ARG_ENABLE(riak,
 [AC_HELP_STRING([--enable-riak], [enable Riak support (default: no)])],
 [case "${enableval}" in
-  yes) riak=true ;;
+  yes)
+    riak=true
+    INCLUDED_APPS="$INCLUDED_APPS, riakc"
+    ;;
   no)  riak=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-riak) ;;
 esac],[if test "x$riak" = "x"; then riak=false; fi])
@@ -175,7 +205,10 @@ esac],[if test "x$riak" = "x"; then riak=false; fi])
 AC_ARG_ENABLE(redis,
 [AC_HELP_STRING([--enable-redis], [enable Redis support (default: no)])],
 [case "${enableval}" in
-  yes) redis=true ;;
+  yes)
+    redis=true
+    INCLUDED_APPS="$INCLUDED_APPS, eredis"
+    ;;
   no)  redis=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-redis) ;;
 esac],[if test "x$redis" = "x"; then redis=false; fi])
@@ -183,7 +216,10 @@ esac],[if test "x$redis" = "x"; then redis=false; fi])
 AC_ARG_ENABLE(elixir,
 [AC_HELP_STRING([--enable-elixir], [enable Elixir support (default: no)])],
 [case "${enableval}" in
-  yes) elixir=true ;;
+  yes)
+    elixir=true
+    INCLUDED_APPS="$INCLUDED_APPS, elixir"
+    ;;
   no)  elixir=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-elixir) ;;
 esac],[if test "x$elixir" = "x"; then elixir=false; fi])
@@ -191,7 +227,10 @@ esac],[if test "x$elixir" = "x"; then elixir=false; fi])
 AC_ARG_ENABLE(iconv,
 [AC_HELP_STRING([--enable-iconv], [enable iconv support (default: yes)])],
 [case "${enableval}" in
-  yes) iconv=true ;;
+  yes)
+    iconv=true
+    INCLUDED_APPS="$INCLUDED_APPS, iconv"
+    ;;
   no)  iconv=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-iconv) ;;
 esac],[if test "x$iconv" = "x"; then iconv=true; fi])
@@ -239,6 +278,8 @@ if test "$sqlite" = "true"; then
    fi
 fi
 
+
+AC_SUBST(INCLUDED_APPS)
 AC_SUBST(hipe)
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(full_xml)

@@ -3,6 +3,7 @@
 {application, ejabberd,
  [{description, "@PACKAGE_NAME@"},
   {vsn, "@PACKAGE_VERSION@"},
+  {included_applications, [@INCLUDED_APPS@]},
   {modules, []},
   {registered, []},
   {applications, [kernel, stdlib]},
