@@ -33,7 +33,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_local_iq/3,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -85,6 +85,9 @@ process_local_iq(_From, _To,
 
 sign(N) when N < 0 -> <<"-">>;
 sign(_) -> <<"+">>.
+
+depends(_Host, _Opts) ->
+    [].
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(_) -> [iqdisc].

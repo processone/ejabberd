@@ -45,41 +45,32 @@ defmodule ModRosterMock do
 		try do
 
 			module_mock = :moka.start(module)
-			:moka.replace(module_mock, :mod_roster, :invalidate_roster_cache,
+			:moka.replace(module_mock, :mod_roster_mnesia, :invalidate_roster_cache,
 				fn (_user, _server)  ->
 					:ok
 				end)
 
 			:moka.load(module_mock)
 
-			roster_mock = :moka.start(:mod_roster)
-
-			:moka.replace(roster_mock, :gen_mod, :db_type,
-				fn (_host, _opts)  ->
-					{:none}
-				end)
-
-			:moka.replace(roster_mock, :gen_iq_handler, :add_iq_handler,
+			roster_mock0 = :moka.start(:mod_roster)
+			:moka.replace(roster_mock0, :gen_iq_handler, :add_iq_handler,
 				fn (_module, _host, _ns, _m, _f, _iqdisc)  ->
 					:ok
 				end)
 
-			:moka.replace(roster_mock, :gen_iq_handler, :remove_iq_handler,
+			:moka.replace(roster_mock0, :gen_iq_handler, :remove_iq_handler,
 				fn (_module, _host, _ns)  ->
 					:ok
 				end)
-
-			:moka.replace(roster_mock, :transaction,
-				fn (_server, function)  ->
-					{:atomic, function.()}
+			:moka.replace(roster_mock0, :gen_mod, :db_mod,
+				fn (_host, _mod)  ->
+					:mod_roster_mnesia
 				end)
-
-			:moka.replace(roster_mock, :get_roster,
-				fn (user, domain)  ->
-					to_records(get_roster(user, domain))
+			:moka.replace(roster_mock0, :gen_mod, :db_mod,
+				fn (_host, _opts, _mod)  ->
+					:mod_roster_mnesia
 				end)
-
-			:moka.replace(roster_mock, :update_roster_t,
+			:moka.replace(roster_mock0, :update_roster_t,
 				fn (user, domain, {u, d, _r}, item)  ->
 					add_roster_item(user, domain, u<>"@"<>d,
 													roster(item, :name),
@@ -89,9 +80,31 @@ defmodule ModRosterMock do
 													roster(item, :askmessage))
 				end)
 
-			:moka.replace(roster_mock, :del_roster_t,
+			:moka.replace(roster_mock0, :del_roster_t,
 				fn (user, domain, jid)  ->
 					remove_roster_item(user, domain, :jid.to_string(jid))
+				end)
+			:moka.replace(roster_mock0, :get_roster,
+				fn (user, domain)  ->
+					to_records(get_roster(user, domain))
+				end)
+
+			:moka.load(roster_mock0)
+
+			roster_mock = :moka.start(:mod_roster_mnesia)
+			:moka.replace(roster_mock, :gen_mod, :db_type,
+				fn (_host, _opts)  ->
+					{:none}
+				end)
+
+			:moka.replace(roster_mock, :transaction,
+				fn (_server, function)  ->
+					{:atomic, function.()}
+				end)
+
+			:moka.replace(roster_mock, :update_tables,
+				fn ()  ->
+          :ok
 				end)
 
 			:moka.load(roster_mock)
@@ -104,7 +117,7 @@ defmodule ModRosterMock do
 
 	def	mock_with_meck do
 #		mock(:gen_mod, :db_type,
-#			fn (_server, :mod_roster)  ->
+#			fn (_server, :mod_roster_mnesia)  ->
 #				:mnesia
 #				 end)
 #
@@ -119,12 +132,16 @@ defmodule ModRosterMock do
 #				{:atomic, :ok}
 #			end)
 
-		mock(:mod_roster, :transaction,
+		mock(:mod_roster_mnesia, :init,
+			fn (_server, _opts)  ->
+        :ok
+			end)
+		mock(:mod_roster_mnesia, :transaction,
 			fn (_server, function)  ->
 				{:atomic, function.()}
 			end)
 
-		mock(:mod_roster, :update_roster_t,
+		mock(:mod_roster_mnesia, :update_roster_t,
 				 fn (user, domain, {u, d, _r}, item) ->
 					 add_roster_item(user, domain, u<>"@"<>d,
 													 roster(item, :name),
@@ -134,7 +151,7 @@ defmodule ModRosterMock do
 													 roster(item, :askmessage))
 				 end)
 
-		mock(:mod_roster, :invalidate_roster_cache,
+		mock(:mod_roster_mnesia, :invalidate_roster_cache,
 			fn (_user, _server)  ->
 				:ok
 			end)

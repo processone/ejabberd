@@ -41,7 +41,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1, opt_type/1]).
+	 mod_opt_type/1, opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -81,7 +81,7 @@ start_link(Host, Opts) ->
 start(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 temporary, 1000, worker, [?MODULE]},
+		 transient, 1000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->
@@ -108,6 +108,9 @@ transform_module_options(Opts) ->
          (Opt) ->
               Opt
       end, Opts).
+
+depends(_Host, _Opts) ->
+    [{mod_muc, hard}].
 
 %%====================================================================
 %% gen_server callbacks
@@ -141,7 +144,7 @@ init([Host, Opts]) ->
                               fun iolist_to_binary/1,
                               false),
     AccessLog = gen_mod:get_opt(access_log, Opts,
-                                fun(A) when is_atom(A) -> A end,
+                                fun acl:access_rules_validator/1,
                                 muc_admin),
     Timezone = gen_mod:get_opt(timezone, Opts,
                                fun(local) -> local;

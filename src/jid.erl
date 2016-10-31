@@ -50,10 +50,34 @@
 -spec start() -> ok.
 
 start() ->
+    {ok, Owner} = ets_owner(),
     SplitPattern = binary:compile_pattern([<<"@">>, <<"/">>]),
-    catch ets:new(jlib, [named_table, protected, set, {keypos, 1}]),
+    %% Table is public to allow ETS insert to fix / update the table even if table already exist
+    %% with another owner.
+    catch ets:new(jlib, [named_table, public, set, {keypos, 1}, {heir, Owner, undefined}]),
     ets:insert(jlib, {string_to_jid_pattern, SplitPattern}),
     ok.
+
+ets_owner() ->
+    case whereis(jlib_ets) of
+        undefined ->
+            Pid = spawn(fun() -> ets_keepalive() end),
+            case catch register(jlib_ets, Pid) of
+                true ->
+                    {ok, Pid};
+                Error -> Error
+            end;
+        Pid ->
+            {ok,Pid}
+    end.
+
+%% Process used to keep jlib ETS table alive in case the original owner dies.
+%% The table need to be public, otherwise subsequent inserts would fail.
+ets_keepalive() ->
+    receive
+        _ ->
+            ets_keepalive()
+    end.
 
 -spec make(binary(), binary(), binary()) -> jid() | error.
 
@@ -87,7 +111,7 @@ split(#jid{user = U, server = S, resource = R}) ->
 split(_) ->
     error.
 
--spec from_string([binary()|string()]) -> jid() | error.
+-spec from_string(binary() | string()) -> jid() | error.
 from_string(S) when is_list(S) ->
     %% We do not accept list because we want to enforce good practice of
     %% using binaries for string. However, we do not let it crash to avoid

@@ -47,7 +47,8 @@
 -record(state,
 	{access_commands = [] :: list(),
          auth = noauth        :: noauth | {binary(), binary(), binary()},
-         get_auth = true      :: boolean()}).
+         get_auth = true      :: boolean(),
+	 ip                   :: inet:ip_address()}).
 
 %% Test:
 
@@ -195,7 +196,7 @@ socket_type() -> raw.
 %% -----------------------------
 %% HTTP interface
 %% -----------------------------
-process(_, #request{method = 'POST', data = Data, opts = Opts}) ->
+process(_, #request{method = 'POST', data = Data, opts = Opts, ip = {IP, _}}) ->
     AccessCommandsOpts = gen_mod:get_opt(access_commands, Opts,
                                          fun(L) when is_list(L) -> L end,
                                          undefined),
@@ -206,7 +207,7 @@ process(_, #request{method = 'POST', data = Data, opts = Opts}) ->
                 lists:flatmap(
                   fun({Ac, AcOpts}) ->
                           Commands = gen_mod:get_opt(
-                                       commands, AcOpts,
+                                       commands, lists:flatten(AcOpts),
                                        fun(A) when is_atom(A) ->
                                                A;
                                           (L) when is_list(L) ->
@@ -219,15 +220,15 @@ process(_, #request{method = 'POST', data = Data, opts = Opts}) ->
                                        options, AcOpts,
                                        fun(L) when is_list(L) -> L end,
                                        []),
-                          [{Ac, Commands, CommOpts}];
+			  [{<<"ejabberd_xmlrpc compatibility shim">>, {[?MODULE], [{access, Ac}], Commands}}];
                      (Wrong) ->
                           ?WARNING_MSG("wrong options format for ~p: ~p",
                                        [?MODULE, Wrong]),
                           []
-                  end, AccessCommandsOpts)
+                  end, lists:flatten(AccessCommandsOpts))
         end,
     GetAuth = true,
-    State = #state{access_commands = AccessCommands, get_auth = GetAuth},
+    State = #state{access_commands = AccessCommands, get_auth = GetAuth, ip = IP},
     case fxml_stream:parse_element(Data) of
 	{error, _} ->
 	    {400, [],
@@ -258,21 +259,35 @@ process(_, _) ->
 %% Access verification
 %% -----------------------------
 
-get_auth(AuthList) ->
-    Admin =
-        case lists:keysearch(admin, 1, AuthList) of
-            {value, {admin, true}} -> true;
-            _ -> false
-        end,
+extract_auth(AuthList) ->
+    ?DEBUG("AUTHLIST ~p", [AuthList]),
     try get_attrs([user, server, token], AuthList) of
-        [U, S, T] -> {U, S, {oauth, T}, Admin}
+        [U0, S0, T] ->
+	    U = jid:nodeprep(U0),
+	    S = jid:nameprep(S0),
+	    case ejabberd_oauth:check_token(T) of
+		{ok, {U, S}, Scope} ->
+		    #{usr => {U, S, <<"">>}, oauth_scope => Scope, caller_server => S};
+		{false, Reason} ->
+		    {error, Reason};
+		_ ->
+		    {error, not_found}
+	    end
     catch
         exit:{attribute_not_found, _Attr, _} ->
             try get_attrs([user, server, password], AuthList) of
-                [U, S, P] -> {U, S, P, Admin}
+                [U0, S0, P] ->
+		    U = jid:nodeprep(U0),
+		    S = jid:nameprep(S0),
+		    case ejabberd_auth:check_password(U, <<"">>, S, P) of
+			true ->
+			    #{usr => {U, S, <<"">>}, caller_server => S};
+			false ->
+			    {error, invalid_auth}
+		    end
             catch
-                exit:{attribute_not_found, Attr, _} ->
-                    throw({error, missing_auth_arguments, Attr})
+                exit:{attribute_not_found, _Attr, _} ->
+                    #{}
             end
     end.
 
@@ -300,12 +315,28 @@ get_auth(AuthList) ->
 %% xmlrpc:call({127, 0, 0, 1}, 4560, "/", {call, echothis, [{struct, [{user, "badlop"}, {server, "localhost"}, {password, "79C1574A43BC995F2B145A299EF97277"}]}, 152]}).
 %% {ok,{response,[152]}}
 
-handler(#state{get_auth = true, auth = noauth} = State,
+handler(#state{get_auth = true, auth = noauth, ip = IP} = State,
 	{call, Method,
 	 [{struct, AuthList} | Arguments] = AllArgs}) ->
-    try get_auth(AuthList) of
+    try extract_auth(AuthList) of
+	{error, invalid_auth} ->
+	    build_fault_response(-118,
+				 "Invalid authentication data",
+				 []);
+	{error, not_found} ->
+	    build_fault_response(-118,
+				 "Invalid oauth token",
+				 []);
+	{error, expired} ->
+	    build_fault_response(-118,
+				 "Invalid oauth token",
+				 []);
+	{error, Value} ->
+	    build_fault_response(-118,
+				 "Invalid authentication data: ~p",
+				 [Value]);
         Auth ->
-            handler(State#state{get_auth = false, auth = Auth},
+            handler(State#state{get_auth = false, auth = Auth#{ip => IP, caller_module => ?MODULE}},
                     {call, Method, Arguments})
     catch
       {error, missing_auth_arguments, _Attr} ->
@@ -373,6 +404,10 @@ try_do_command(AccessCommands, Auth, Command, AttrL,
 			       "The call provided additional unused "
 				 "arguments:~n~p",
 			       [ExitAtL]);
+      exit:{invalid_arg_type, Arg, Type} ->
+	  build_fault_response(-122,
+			       "Parameter '~p' can't be coerced to type '~p'",
+			       [Arg, Type]);
       Why ->
 	  build_fault_response(-118,
 			       "A problem '~p' occurred executing the "
@@ -389,9 +424,14 @@ build_fault_response(Code, ParseString, ParseArgs) ->
 do_command(AccessCommands, Auth, Command, AttrL, ArgsF,
 	   ResultF) ->
     ArgsFormatted = format_args(AttrL, ArgsF),
+    Auth2 = case AccessCommands of
+		V when is_list(V) ->
+		    Auth#{extra_permissions => AccessCommands};
+		_ ->
+		    Auth
+	    end,
     Result =
-	ejabberd_commands:execute_command(AccessCommands, Auth,
-					  Command, ArgsFormatted),
+	ejabberd_commands:execute_command2(Command, ArgsFormatted, Auth2),
     ResultFormatted = format_result(Result, ResultF),
     {command_result, ResultFormatted}.
 
@@ -472,7 +512,7 @@ format_arg(undefined, binary) -> <<>>;
 format_arg(undefined, string) -> "";
 format_arg(Arg, Format) ->
     ?ERROR_MSG("don't know how to format Arg ~p for format ~p", [Arg, Format]),
-    error.
+    exit({invalid_arg_type, Arg, Format}).
 
 process_unicode_codepoints(Str) ->
     iolist_to_binary(lists:map(fun(X) when X > 255 -> unicode:characters_to_binary([X]);
@@ -484,6 +524,8 @@ process_unicode_codepoints(Str) ->
 %% -----------------------------
 
 format_result({error, Error}, _) ->
+    throw({error, Error});
+format_result({error, _Type, _Code, Error}, _) ->
     throw({error, Error});
 format_result(String, string) -> lists:flatten(String);
 format_result(Atom, {Name, atom}) ->

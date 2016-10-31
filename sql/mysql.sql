@@ -275,7 +275,7 @@ CREATE UNIQUE INDEX i_pubsub_subscription_opt ON pubsub_subscription_opt(subid(3
 CREATE TABLE muc_room (
     name text NOT NULL,
     host text NOT NULL,
-    opts text NOT NULL,
+    opts mediumtext NOT NULL,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -328,3 +328,10 @@ CREATE TABLE sm (
 CREATE UNIQUE INDEX i_sid ON sm(usec, pid(75));
 CREATE INDEX i_node ON sm(node(75));
 CREATE INDEX i_username ON sm(username);
+
+CREATE TABLE oauth_token (
+    token varchar(191) NOT NULL PRIMARY KEY,
+    jid text NOT NULL,
+    scope text NOT NULL,
+    expire bigint NOT NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

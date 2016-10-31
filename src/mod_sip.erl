@@ -34,7 +34,7 @@
 
 -export([data_in/2, data_out/2, message_in/2,
 	 message_out/2, request/2, request/3, response/2,
-	 locate/1, mod_opt_type/1]).
+	 locate/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -61,6 +61,9 @@ start(_Host, _Opts) ->
 
 stop(_Host) ->
     ok.
+
+depends(_Host, _Opts) ->
+    [].
 
 data_in(Data, #sip_socket{type = Transport,
                           addr = {MyIP, MyPort},

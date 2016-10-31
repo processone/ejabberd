@@ -2,7 +2,7 @@ language: erlang
 
 otp_release:
   - 17.5
-  - 18.2.1
+  - 18.3
 
 services:
   - riak

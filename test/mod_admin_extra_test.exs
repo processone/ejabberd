@@ -22,6 +22,9 @@ defmodule EjabberdModAdminExtraTest do
 	use ExUnit.Case, async: false
 
   require EjabberdAuthMock
+  require EjabberdSmMock
+  require ModLastMock
+  require ModRosterMock
 
 	@author "jsautret@process-one.net"
 
@@ -42,7 +45,9 @@ defmodule EjabberdModAdminExtraTest do
 		rescue
 			_ -> :ok
 		end
+		{:ok, _} = :ejabberd_access_permissions.start_link()
 		:ejabberd_commands.init
+                :ok = :ejabberd_config.start([@domain], [])
 		:mod_admin_extra.start(@domain, [])
 		:sel_application.start_app(:moka)
 		{:ok, _pid} = :ejabberd_hooks.start_link

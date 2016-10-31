@@ -19,7 +19,7 @@ ModCfg0 = fun(F, Cfg, [Key|Tail], Op, Default) ->
                          [{Key, F(F, OldVal, Tail, Op, Default)} | PartCfg]
                  end
          end,
-ModCfg = fun(Cfg, Keys, Op, Default) -> ModCfg0(ModCfg0, Cfg, Keys, Op, Default) end.
+ModCfg = fun(Cfg, Keys, Op, Default) -> ModCfg0(ModCfg0, Cfg, Keys, Op, Default) end,
 
 Cfg = case file:consult(filename:join(filename:dirname(SCRIPT), "vars.config")) of
           {ok, Terms} ->
@@ -28,15 +28,50 @@ Cfg = case file:consult(filename:join(filename:dirname(SCRIPT), "vars.config")) 
               []
       end,
 
+ProcessSingleVar = fun(F, Var, Tail) ->
+			   case F(F, [Var], []) of
+			       [] -> Tail;
+			       [Val] -> [Val | Tail]
+			   end
+		   end,
+
 ProcessVars = fun(_F, [], Acc) ->
                       lists:reverse(Acc);
+                 (F, [{Type, Ver, Value} | Tail], Acc) when
+                        Type == if_version_above orelse
+                        Type == if_version_below ->
+		      SysVer = erlang:system_info(otp_release),
+		      Include = if Type == if_version_above ->
+					SysVer > Ver;
+				   true ->
+					SysVer < Ver
+				end,
+		      if Include ->
+                              F(F, Tail, ProcessSingleVar(F, Value, Acc));
+			 true ->
+                              F(F, Tail, Acc)
+		      end;
+                 (F, [{Type, Ver, Value, ElseValue} | Tail], Acc) when
+                        Type == if_version_above orelse
+                        Type == if_version_below ->
+		      SysVer = erlang:system_info(otp_release),
+		      Include = if Type == if_version_above ->
+					SysVer > Ver;
+				   true ->
+					SysVer < Ver
+				end,
+		      if Include ->
+                              F(F, Tail, ProcessSingleVar(F, Value, Acc));
+			 true ->
+                              F(F, Tail, ProcessSingleVar(F, ElseValue, Acc))
+		      end;
                  (F, [{Type, Var, Value} | Tail], Acc) when
                         Type == if_var_true orelse
                         Type == if_var_false ->
                       Flag = Type == if_var_true,
                       case proplists:get_bool(Var, Cfg) of
                           V when V == Flag ->
-                              F(F, Tail, [Value | Acc]);
+                              F(F, Tail, ProcessSingleVar(F, Value, Acc));
                           _ ->
                               F(F, Tail, Acc)
                       end;
@@ -45,7 +80,7 @@ ProcessVars = fun(_F, [], Acc) ->
                         Type == if_var_no_match ->
                       case proplists:get_value(Var, Cfg) of
                           V when V == Match ->
-                              F(F, Tail, [Value | Acc]);
+                              F(F, Tail, ProcessSingleVar(F, Value, Acc));
                           _ ->
                               F(F, Tail, Acc)
                       end;
@@ -122,8 +157,8 @@ Conf5 = case lists:keytake(floating_deps, 1, Conf3) of
         end,
 
 %% When running Travis test, upload test coverage result to coveralls:
-Conf6 = case os:getenv("TRAVIS") of
-            "true" ->
+Conf6 = case {lists:keyfind(cover_enabled, 1, Conf5), os:getenv("TRAVIS")} of
+            {{cover_enabled, true}, "true"} ->
                 JobId = os:getenv("TRAVIS_JOB_ID"),
                 CfgTemp = ModCfg(Conf5, [deps], fun(V) -> [{coveralls, ".*", {git, "https://github.com/markusn/coveralls-erl.git", "master"}}|V] end, []),
                 ModCfg(CfgTemp, [post_hooks], fun(V) -> V ++ [{ct, "echo '\n%%! -pa ebin/ deps/coveralls/ebin\nmain(_)->{ok,F}=file:open(\"erlang.json\",[write]),io:fwrite(F,\"~s\",[coveralls:convert_file(\"logs/all.coverdata\", \""++JobId++"\", \"travis-ci\")]).' > getcover.erl"},
@@ -132,7 +167,7 @@ Conf6 = case os:getenv("TRAVIS") of
                 Conf5
         end,
 
-%io:format("ejabberd configuration:~n  ~p~n", [Conf5]),
+%io:format("ejabberd configuration:~n  ~p~n", [Conf6]),
 
 Conf6.
 

@@ -212,7 +212,7 @@ process(["help" | Mode], Version) ->
     end;
 
 process(["--version", Arg | Args], _) ->
-    Version = 
+    Version =
 	try
 	    list_to_integer(Arg)
 	catch _:_ ->
@@ -239,7 +239,7 @@ process2(["--auth", User, Server, Pass | Args], AccessCommands, Version) ->
     process2(Args, AccessCommands, {list_to_binary(User), list_to_binary(Server),
 				    list_to_binary(Pass), true}, Version);
 process2(Args, AccessCommands, Version) ->
-    process2(Args, AccessCommands, admin, Version).
+    process2(Args, AccessCommands, noauth, Version).
 
 
 
@@ -321,10 +321,15 @@ call_command([CmdString | Args], Auth, AccessCommands, Version) ->
 	{ArgsFormat, ResultFormat} ->
 	    case (catch format_args(Args, ArgsFormat)) of
 		ArgsFormatted when is_list(ArgsFormatted) ->
-		    Result = ejabberd_commands:execute_command(AccessCommands, 
-							       Auth, Command,
-							       ArgsFormatted,
-							       Version),
+		    CI = case Auth of
+			     {U, S, _, _} -> #{usr => {U, S, <<"">>}, caller_host => S};
+			     _ -> #{}
+			 end,
+		    CI2 = CI#{caller_module => ?MODULE},
+		    Result = ejabberd_commands:execute_command2(Command,
+								ArgsFormatted,
+								CI2,
+								Version),
 		    format_result(Result, ResultFormat);
 		{'EXIT', {function_clause,[{lists,zip,[A1, A2], _} | _]}} ->
 		    {NumCompa, TextCompa} =
@@ -373,6 +378,12 @@ format_arg2(Arg, Parse)->
 
 format_result({error, ErrorAtom}, _) ->
     {io_lib:format("Error: ~p", [ErrorAtom]), make_status(error)};
+
+%% An error should always be allowed to return extended error to help with API.
+%% Extended error is of the form:
+%%  {error, type :: atom(), code :: int(), Desc :: string()}
+format_result({error, ErrorAtom, Code, _Msg}, _) ->
+    {io_lib:format("Error: ~p", [ErrorAtom]), make_status(Code)};
 
 format_result(Atom, {_Name, atom}) ->
     io_lib:format("~p", [Atom]);
@@ -433,6 +444,8 @@ format_result(404, {_Name, _}) ->
 
 make_status(ok) -> ?STATUS_SUCCESS;
 make_status(true) -> ?STATUS_SUCCESS;
+make_status(Code) when is_integer(Code), Code > 255 -> ?STATUS_ERROR;
+make_status(Code) when is_integer(Code), Code > 0 -> Code;
 make_status(_Error) -> ?STATUS_ERROR.
 
 get_list_commands(Version) ->
@@ -504,8 +517,7 @@ print_usage(HelpMode, MaxC, ShCode, Version) ->
 	get_list_ctls(),
 
     print(
-       ["Usage: ", ?B("ejabberdctl"), " [--no-timeout] [--node ", ?U("nodename"), "] [--version ", ?U("api_version"), "] [--auth ",
-	?U("user"), " ", ?U("host"), " ", ?U("password"), "] ",
+       ["Usage: ", ?B("ejabberdctl"), " [--no-timeout] [--node ", ?U("nodename"), "] [--version ", ?U("api_version"), "] ",
 	?U("command"), " [", ?U("options"), "]\n"
 	"\n"
 	"Available commands in this ejabberd node:\n"], []),

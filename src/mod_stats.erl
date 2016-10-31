@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_local_iq/3,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -47,6 +47,9 @@ start(Host, Opts) ->
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_STATS).
+
+depends(_Host, _Opts) ->
+    [].
 
 process_local_iq(_From, To,
 		 #iq{id = _ID, type = Type, xmlns = XMLNS,
@@ -158,13 +161,8 @@ get_local_stat(Server, [], Name)
     end;
 get_local_stat(_Server, [], Name)
     when Name == <<"users/all-hosts/online">> ->
-    case catch mnesia:table_info(session, size) of
-      {'EXIT', _Reason} ->
-	  ?STATERR(<<"500">>, <<"Internal Server Error">>);
-      Users ->
-	  ?STATVAL((iolist_to_binary(integer_to_list(Users))),
-		   <<"users">>)
-    end;
+    Users = ejabberd_sm:connected_users_number(),
+    ?STATVAL((iolist_to_binary(integer_to_list(Users))), <<"users">>);
 get_local_stat(_Server, [], Name)
     when Name == <<"users/all-hosts/total">> ->
     NumUsers = lists:foldl(fun (Host, Total) ->

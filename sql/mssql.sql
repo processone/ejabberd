@@ -480,3 +480,13 @@ ON DELETE CASCADE;
 
 ALTER TABLE [dbo].[pubsub_state] CHECK CONSTRAINT [pubsub_state_ibfk_1];
 
+CREATE TABLE [dbo].[oauth_token] (
+    [token] [varchar] (250) NOT NULL,
+    [jid] [text] NOT NULL,
+    [scope] [text] NOT NULL,
+    [expire] [bigint] NOT NULL,
+ CONSTRAINT [oauth_token_PRIMARY] PRIMARY KEY CLUSTERED 
+(
+        [token] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
+) TEXTIMAGE_ON [PRIMARY];

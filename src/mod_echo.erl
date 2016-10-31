@@ -37,7 +37,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -63,7 +63,7 @@ start_link(Host, Opts) ->
 start(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 temporary, 1000, worker, [?MODULE]},
+		 transient, 1000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->
@@ -172,7 +172,7 @@ do_client_version(disabled, _From, _To) -> ok;
 do_client_version(enabled, From, To) ->
     ToS = jid:to_string(To),
     Random_resource =
-	iolist_to_binary(integer_to_list(random:uniform(100000))),
+	iolist_to_binary(integer_to_list(randoms:uniform(100000))),
     From2 = From#jid{resource = Random_resource,
 		     lresource = Random_resource},
     Packet = #xmlel{name = <<"iq">>,
@@ -199,6 +199,9 @@ do_client_version(enabled, From, To) ->
     Values_string2 = iolist_to_binary(Values_string1),
     ?INFO_MSG("Information of the client: ~s~s",
 	      [ToS, Values_string2]).
+
+depends(_Host, _Opts) ->
+    [].
 
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(_) -> [host].

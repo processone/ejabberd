@@ -147,6 +147,15 @@ listen:
   ##   access: all
   ##   shaper_rule: fast
   ##   ip: "127.0.0.1"
+  ##   privilege_access: 
+  ##      roster: "both"
+  ##      message: "outgoing"
+  ##      presence: "roster"
+  ##   delegations:
+  ##      "urn:xmpp:mam:1":
+  ##        filtering: ["node"]
+  ##      "http://jabber.org/protocol/pubsub":
+  ##        filtering: []
   ##   hosts:
   ##     "icq.example.org":
   ##       password: "secret"
@@ -254,10 +263,10 @@ auth_method: internal
 ## extauth_program: "/path/to/authentication/script"
 
 ##
-## Authentication using ODBC
+## Authentication using SQL
 ## Remember to setup a database in the next section.
 ##
-## auth_method: odbc
+## auth_method: sql
 
 ##
 ## Authentication using PAM
@@ -330,26 +339,26 @@ auth_method: internal
 ##
 ## MySQL server:
 ##
-## odbc_type: mysql
-## odbc_server: "server"
-## odbc_database: "database"
-## odbc_username: "username"
-## odbc_password: "password"
+## sql_type: mysql
+## sql_server: "server"
+## sql_database: "database"
+## sql_username: "username"
+## sql_password: "password"
 ##
 ## If you want to specify the port:
-## odbc_port: 1234
+## sql_port: 1234
 
 ##
 ## PostgreSQL server:
 ##
-## odbc_type: pgsql
-## odbc_server: "server"
-## odbc_database: "database"
-## odbc_username: "username"
-## odbc_password: "password"
+## sql_type: pgsql
+## sql_server: "server"
+## sql_database: "database"
+## sql_username: "username"
+## sql_password: "password"
 ##
 ## If you want to specify the port:
-## odbc_port: 1234
+## sql_port: 1234
 ##
 ## If you use PostgreSQL, have a large database, and need a
 ## faster but inexact replacement for "select count(*) from users"
@@ -359,25 +368,25 @@ auth_method: internal
 ##
 ## SQLite:
 ##
-## odbc_type: sqlite
-## odbc_database: "/path/to/database.db"
+## sql_type: sqlite
+## sql_database: "/path/to/database.db"
 
 ##
 ## ODBC compatible or MSSQL server:
 ##
-## odbc_type: odbc
-## odbc_server: "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"
+## sql_type: odbc
+## sql_server: "DSN=ejabberd;UID=ejabberd;PWD=ejabberd"
 
 ##
 ## Number of connections to open to the database for each virtual host
 ##
-## odbc_pool_size: 10
+## sql_pool_size: 10
 
 ##
 ## Interval to make a dummy SQL request to keep the connections to the
 ## database alive. Specify in seconds: for example 28800 means 8 hours
 ##
-## odbc_keepalive_interval: undefined
+## sql_keepalive_interval: undefined
 
 ###.  ===============
 ###'  TRAFFIC SHAPERS
@@ -408,14 +417,14 @@ acl:
   ##
   ## admin:
   ##   user:
-  ##     - "aleksey": "localhost"
-  ##     - "ermine": "example.org"
+  ##     - "aleksey@localhost"
+  ##     - "ermine@example.org"
   ##
   ## Blocked users
   ##
   ## blocked:
   ##   user:
-  ##     - "baduser": "example.org"
+  ##     - "baduser@example.org"
   ##     - "test"
 
   ## Local users: don't modify this.
@@ -431,7 +440,7 @@ acl:
   ##     - "jabber.org"
   ## aleksey:
   ##   user:
-  ##     - "aleksey": "jabber.ru"
+  ##     - "aleksey@jabber.ru"
   ## test:
   ##   user_regexp: "^test"
   ##   user_glob: "test*"
@@ -459,61 +468,61 @@ acl:
 ##     acl:
 ##       admin:
 ##         user:
-##           - "bob-local": "localhost"
+##           - "bob-local@localhost"
+
+###.  ============
+###'  SHAPER RULES
+
+shaper_rules:
+  ## Maximum number of simultaneous sessions allowed for a single user:
+  max_user_sessions: 10
+  ## Maximum number of offline messages that users can have:
+  max_user_offline_messages:
+    - 5000: admin
+    - 100
+  ## For C2S connections, all users except admins use the "normal" shaper
+  c2s_shaper:
+    - none: admin
+    - normal
+  ## All S2S connections use the "fast" shaper
+  s2s_shaper: fast
 
 ###.  ============
 ###'  ACCESS RULES
-access:
-  ## Maximum number of simultaneous sessions allowed for a single user:
-  max_user_sessions: 
-    all: 10
-  ## Maximum number of offline messages that users can have:
-  max_user_offline_messages: 
-    admin: 5000
-    all: 100
+access_rules:
   ## This rule allows access only for local users:
-  local: 
-    local: allow
+  local:
+    - allow: local
   ## Only non-blocked users can use c2s connections:
-  c2s: 
-    blocked: deny
-    all: allow
-  ## For C2S connections, all users except admins use the "normal" shaper
-  c2s_shaper: 
-    admin: none
-    all: normal
-  ## All S2S connections use the "fast" shaper
-  s2s_shaper: 
-    all: fast
+  c2s:
+    - deny: blocked
+    - allow
   ## Only admins can send announcement messages:
-  announce: 
-    admin: allow
+  announce:
+    - allow: admin
   ## Only admins can use the configuration interface:
   configure: 
-    admin: allow
-  ## Admins of this server are also admins of the MUC service:
-  muc_admin: 
-    admin: allow
+    - allow: admin
   ## Only accounts of the local ejabberd server can create rooms:
   muc_create: 
-    local: allow
-  ## All users are allowed to use the MUC service:
-  muc: 
-    all: allow
+    - allow: local
   ## Only accounts on the local ejabberd server can create Pubsub nodes:
   pubsub_createnode: 
-    local: allow
+    - allow: local
   ## In-band registration allows registration of any possible username.
   ## To disable in-band registration, replace 'allow' with 'deny'.
   register: 
-    all: allow
+    - allow
   ## Only allow to register from localhost
   trusted_network: 
-    loopback: allow
+    - allow: loopback
   ## Do not establish S2S connections with bad servers
   ## s2s: 
-  ##   bad_servers: deny
-  ##   all: allow
+  ##   - deny:
+  ##     - ip: "XXX.XXX.XXX.XXX/32"
+  ##   - deny:
+  ##     - ip: "XXX.XXX.XXX.XXX/32"
+  ##   - allow
 
 ## By default the frequency of account registrations from the same IP
 ## is limited to 1 account every 10 minutes. To disable, specify: infinity
@@ -526,10 +535,10 @@ access:
 ##   "localhost":
 ##     access:
 ##       c2s:
-##         admin: allow
-##         all: deny
+##         - allow: admin
+##         - deny
 ##       register:
-##         all: deny
+##         - deny
 
 ###.  ================
 ###'  DEFAULT LANGUAGE
@@ -580,6 +589,7 @@ modules:
   mod_carboncopy: {}
   mod_client_state: {}
   mod_configure: {} # requires mod_adhoc
+  ##mod_delegation: {} # for xep0356
   mod_disco: {}
   ## mod_echo: {}
   mod_irc: {}
@@ -590,10 +600,12 @@ modules:
   mod_last: {}
   mod_muc: 
     ## host: "conference.@HOST@"
-    access: muc
+    access:
+      - allow
+    access_admin:
+      - allow: admin
     access_create: muc_create
     access_persistent: muc_create
-    access_admin: muc_admin
   ## mod_muc_log: {}
   ## mod_multicast: {}
   mod_offline: 

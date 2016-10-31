@@ -12,6 +12,7 @@
 -compile(export_all).
 
 -include("suite.hrl").
+-include_lib("kernel/include/file.hrl").
 
 %%%===================================================================
 %%% API
@@ -31,6 +32,7 @@ init_config(Config) ->
     {ok, CfgContentTpl} = file:read_file(ConfigPathTpl),
     CfgContent = process_config_tpl(CfgContentTpl, [
                                                     {c2s_port, 5222},
+                                                    {loglevel, 4},
                                                     {s2s_port, 5269},
                                                     {web_port, 5280},
                                                     {mysql_server, <<"localhost">>},
@@ -46,6 +48,7 @@ init_config(Config) ->
                                                    ]),
     ConfigPath = filename:join([CWD, "ejabberd.yml"]),
     ok = file:write_file(ConfigPath, CfgContent),
+    setup_ejabberd_lib_path(Config),
     ok = application:load(sasl),
     ok = application:load(mnesia),
     ok = application:load(ejabberd),
@@ -56,18 +59,39 @@ init_config(Config) ->
     [{server_port, ct:get_config(c2s_port, 5222)},
      {server_host, "localhost"},
      {server, ?COMMON_VHOST},
-     {user, <<"test_single">>},
-     {master_nick, <<"master_nick">>},
-     {slave_nick, <<"slave_nick">>},
-     {room_subject, <<"hello, world!">>},
+     {user, <<"test_single!#$%^*()`~+-;_=[]{}|\\">>},
+     {master_nick, <<"master_nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {slave_nick, <<"slave_nick!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {room_subject, <<"hello, world!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {certfile, CertFile},
      {base_dir, BaseDir},
-     {resource, <<"resource">>},
-     {master_resource, <<"master_resource">>},
-     {slave_resource, <<"slave_resource">>},
-     {password, <<"password">>},
+     {resource, <<"resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {master_resource, <<"master_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {slave_resource, <<"slave_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
+     {password, <<"password!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {backends, get_config_backends()}
      |Config].
+
+find_top_dir(Dir) ->
+    case file:read_file_info(filename:join([Dir, ebin])) of
+	{ok, #file_info{type = directory}} ->
+	    Dir;
+	_ ->
+	    find_top_dir(filename:dirname(Dir))
+    end.
+
+setup_ejabberd_lib_path(Config) ->
+    case code:lib_dir(ejabberd) of
+	{error, _} ->
+	    DataDir = proplists:get_value(data_dir, Config),
+	    {ok, CWD} = file:get_cwd(),
+	    NewEjPath = filename:join([CWD, "ejabberd-0.0.1"]),
+	    TopDir = find_top_dir(DataDir),
+	    ok = file:make_symlink(TopDir, NewEjPath),
+	    code:replace_path(ejabberd, NewEjPath);
+	_ ->
+	    ok
+    end.
 
 %% Read environment variable CT_DB=riak,mysql to limit the backends to test.
 %% You can thus limit the backend you want to test with:
@@ -293,7 +317,12 @@ sasl_new(<<"DIGEST-MD5">>, User, Server, Password) ->
 		   MyResponse = response(User, Password, Nonce, AuthzId,
 					 Realm, CNonce, DigestURI, NC, QOP,
 					 <<"AUTHENTICATE">>),
-		   Resp = <<"username=\"", User/binary, "\",realm=\"",
+                   SUser = << <<(case Char of
+                                     $" -> <<"\\\"">>;
+                                     $\\ -> <<"\\\\">>;
+                                     _ -> <<Char>>
+                                 end)/binary>> || <<Char>> <= User >>,
+		   Resp = <<"username=\"", SUser/binary, "\",realm=\"",
 			    Realm/binary, "\",nonce=\"", Nonce/binary,
 			    "\",cnonce=\"", CNonce/binary, "\",nc=", NC/binary,
 			    ",qop=", QOP/binary, ",digest-uri=\"",

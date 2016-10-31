@@ -35,6 +35,7 @@
 -type(pubsubState() :: mod_pubsub:pubsubState()).
 -type(pubsubItem() :: mod_pubsub:pubsubItem()).
 -type(subOptions() :: mod_pubsub:subOptions()).
+-type(pubOptions() :: mod_pubsub:pubOptions()).
 -type(affiliation() :: mod_pubsub:affiliation()).
 -type(subscription() :: mod_pubsub:subscription()).
 -type(subId() :: mod_pubsub:subId()).
@@ -109,7 +110,8 @@
 	PublishModel :: publishModel(),
 	Max_Items :: non_neg_integer(),
 	ItemId :: <<>> | itemId(),
-	Payload :: payload()) ->
+	Payload :: payload(),
+	Options :: pubOptions()) ->
     {result, {default, broadcast, [itemId()]}} |
     {error, xmlel()}.
 

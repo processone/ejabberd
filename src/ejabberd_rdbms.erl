@@ -35,10 +35,10 @@
 -include("logger.hrl").
 
 start() ->
-    file:delete(ejabberd_odbc:freetds_config()),
-    file:delete(ejabberd_odbc:odbc_config()),
-    file:delete(ejabberd_odbc:odbcinst_config()),
-    case lists:any(fun(H) -> needs_odbc(H) /= false end,
+    file:delete(ejabberd_sql:freetds_config()),
+    file:delete(ejabberd_sql:odbc_config()),
+    file:delete(ejabberd_sql:odbcinst_config()),
+    case lists:any(fun(H) -> needs_sql(H) /= false end,
                    ?MYHOSTS) of
         true ->
             start_hosts();
@@ -49,34 +49,34 @@ start() ->
 %% Start relationnal DB module on the nodes where it is needed
 start_hosts() ->
     lists:foreach(fun (Host) ->
-			  case needs_odbc(Host) of
-			    {true, App} -> start_odbc(Host, App);
+			  case needs_sql(Host) of
+			    {true, App} -> start_sql(Host, App);
 			    false -> ok
 			  end
 		  end,
 		  ?MYHOSTS).
 
-%% Start the ODBC module on the given host
-start_odbc(Host, App) ->
+%% Start the SQL module on the given host
+start_sql(Host, App) ->
     ejabberd:start_app(App),
     Supervisor_name = gen_mod:get_module_proc(Host,
-					      ejabberd_odbc_sup),
+					      ejabberd_sql_sup),
     ChildSpec = {Supervisor_name,
-		 {ejabberd_odbc_sup, start_link, [Host]}, transient,
-		 infinity, supervisor, [ejabberd_odbc_sup]},
+		 {ejabberd_sql_sup, start_link, [Host]}, transient,
+		 infinity, supervisor, [ejabberd_sql_sup]},
     case supervisor:start_child(ejabberd_sup, ChildSpec) of
       {ok, _PID} -> ok;
       _Error ->
 	  ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying."
 		     "..~n",
 		     [Supervisor_name, _Error]),
-	  start_odbc(Host, App)
+	  start_sql(Host, App)
     end.
 
-%% Returns {true, App} if we have configured odbc for the given host
-needs_odbc(Host) ->
+%% Returns {true, App} if we have configured sql for the given host
+needs_sql(Host) ->
     LHost = jid:nameprep(Host),
-    case ejabberd_config:get_option({odbc_type, LHost},
+    case ejabberd_config:get_option({sql_type, LHost},
                                     fun(mysql) -> mysql;
                                        (pgsql) -> pgsql;
                                        (sqlite) -> sqlite;
@@ -91,11 +91,11 @@ needs_odbc(Host) ->
         undefined -> false
     end.
 
-opt_type(odbc_type) ->
+opt_type(sql_type) ->
     fun (mysql) -> mysql;
 	(pgsql) -> pgsql;
 	(sqlite) -> sqlite;
 	(mssql) -> mssql;
 	(odbc) -> odbc
     end;
-opt_type(_) -> [odbc_type].
+opt_type(_) -> [sql_type].

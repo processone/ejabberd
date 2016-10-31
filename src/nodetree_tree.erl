@@ -160,7 +160,7 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 			    true;
 			[Parent | _] ->
 			    case catch mnesia:read({pubsub_node, {Host, Parent}}) of
-				[#pubsub_node{owners = [{[], Host, []}]}] ->
+				[#pubsub_node{owners = [{<<>>, Host, <<>>}]}] ->
 				    true;
 				[#pubsub_node{owners = Owners}] ->
 				    lists:member(BJID, Owners);

@@ -37,18 +37,17 @@
 
 -export([user_send_packet/4, user_receive_packet/5,
 	 iq_handler2/3, iq_handler1/3, remove_connection/4,
-	 is_carbon_copy/1, mod_opt_type/1]).
+	 is_carbon_copy/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("jlib.hrl").
 -define(PROCNAME, ?MODULE).
--define(TABLE, carboncopy).
 
--type matchspec_atom() :: '_' | '$1' | '$2' | '$3'.
--record(carboncopy,{us :: {binary(), binary()} | matchspec_atom(), 
-		    resource :: binary() | matchspec_atom(),
-		    version :: binary() | matchspec_atom()}).
+-callback init(binary(), gen_mod:opts()) -> any().
+-callback enable(binary(), binary(), binary(), binary()) -> ok | {error, any()}.
+-callback disable(binary(), binary(), binary()) -> ok | {error, any()}.
+-callback list(binary(), binary()) -> [{binary(), binary()}].
 
 is_carbon_copy(Packet) ->
     is_carbon_copy(Packet, <<"sent">>) orelse
@@ -69,17 +68,8 @@ start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts,fun gen_iq_handler:check_type/1, one_queue),
     mod_disco:register_feature(Host, ?NS_CARBONS_1),
     mod_disco:register_feature(Host, ?NS_CARBONS_2),
-    Fields = record_info(fields, ?TABLE),
-    try mnesia:table_info(?TABLE, attributes) of
-	Fields -> ok;
-	_ -> mnesia:delete_table(?TABLE)  %% recreate..
-    catch _:_Error -> ok  %%probably table don't exist
-    end,
-    mnesia:create_table(?TABLE,
-	[{ram_copies, [node()]}, 
-	 {attributes, record_info(fields, ?TABLE)}, 
-	 {type, bag}]),
-    mnesia:add_table_copy(?TABLE, node(), ram_copies),
+    Mod = gen_mod:db_mod(Host, ?MODULE),
+    Mod:init(Host, Opts),
     ejabberd_hooks:add(unset_presence_hook,Host, ?MODULE, remove_connection, 10),
     %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
     ejabberd_hooks:add(user_send_packet,Host, ?MODULE, user_send_packet, 89),
@@ -141,8 +131,9 @@ user_receive_packet(Packet, _C2SState, JID, _From, To) ->
 %    - we also replicate "read" notifications
 check_and_forward(JID, To, Packet, Direction)->
     case is_chat_message(Packet) andalso
-	     fxml:get_subtag(Packet, <<"private">>) == false andalso
-		 fxml:get_subtag(Packet, <<"no-copy">>) == false of
+	     not is_muc_pm(To, Packet) andalso
+		 fxml:get_subtag(Packet, <<"private">>) == false andalso
+		     fxml:get_subtag(Packet, <<"no-copy">>) == false of
 	true ->
 	    case is_carbon_copy(Packet) of
 		false ->
@@ -244,18 +235,13 @@ build_forward_packet(JID, Packet, Sender, Dest, Direction, ?NS_CARBONS_1) ->
 
 enable(Host, U, R, CC)->
     ?DEBUG("enabling for ~p", [U]),
-     try mnesia:dirty_write(#carboncopy{us = {U, Host}, resource=R, version = CC}) of
-	ok -> ok
-     catch _:Error -> {error, Error}
-     end.	
+    Mod = gen_mod:db_mod(Host, ?MODULE),
+    Mod:enable(U, Host, R, CC).
 
 disable(Host, U, R)->
     ?DEBUG("disabling for ~p", [U]),
-    ToDelete = mnesia:dirty_match_object(?TABLE, #carboncopy{us = {U, Host}, resource = R, version = '_'}),
-    try lists:foreach(fun mnesia:dirty_delete_object/1, ToDelete) of
-	ok -> ok
-    catch _:Error -> {error, Error}
-    end.
+    Mod = gen_mod:db_mod(Host, ?MODULE),
+    Mod:disable(U, Host, R).
 
 complete_packet(From, #xmlel{name = <<"message">>, attrs = OrigAttrs} = Packet, sent) ->
     %% if this is a packet sent by user on this host, then Packet doesn't
@@ -285,13 +271,22 @@ is_chat_message(#xmlel{name = <<"message">>} = Packet) ->
     end;
 is_chat_message(_Packet) -> false.
 
+is_muc_pm(#jid{lresource = <<>>}, _Packet) ->
+    false;
+is_muc_pm(_To, Packet) ->
+    fxml:get_subtag_with_xmlns(Packet, <<"x">>, ?NS_MUC_USER) =/= false.
+
 has_non_empty_body(Packet) ->
     fxml:get_subtag_cdata(Packet, <<"body">>) =/= <<"">>.
 
 %% list {resource, cc_version} with carbons enabled for given user and host
 list(User, Server) ->
-	mnesia:dirty_select(?TABLE, [{#carboncopy{us = {User, Server}, resource = '$2', version = '$3'}, [], [{{'$2','$3'}}]}]).
+    Mod = gen_mod:db_mod(Server, ?MODULE),
+    Mod:list(User, Server).
 
+depends(_Host, _Opts) ->
+    [].
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
-mod_opt_type(_) -> [iqdisc].
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+mod_opt_type(_) -> [db_type, iqdisc].

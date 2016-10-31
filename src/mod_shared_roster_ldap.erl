@@ -41,7 +41,7 @@
 
 -export([get_user_roster/2, get_subscription_lists/3,
 	 get_jid_info/4, process_item/2, in_subscription/6,
-	 out_subscription/4, mod_opt_type/1, opt_type/1]).
+	 out_subscription/4, mod_opt_type/1, opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -104,6 +104,9 @@ stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
+
+depends(_Host, _Opts) ->
+    [{mod_roster, hard}].
 
 %%--------------------------------------------------------------------
 %% Hooks

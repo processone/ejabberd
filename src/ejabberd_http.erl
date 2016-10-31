@@ -145,9 +145,14 @@ init({SockMod, Socket}, Opts) ->
     DefinedHandlers = gen_mod:get_opt(
                         request_handlers, Opts,
                         fun(Hs) ->
+                                Hs1 = lists:map(fun
+                                  ({Mod, Path}) when is_atom(Mod) -> {Path, Mod};
+                                  ({Path, Mod}) -> {Path, Mod}
+                                end, Hs),
+
                                 [{str:tokens(
                                     iolist_to_binary(Path), <<"/">>),
-                                  Mod} || {Path, Mod} <- Hs]
+                                  Mod} || {Path, Mod} <- Hs1]
                         end, []),
     RequestHandlers = DefinedHandlers ++ Captcha ++ Register ++
         Admin ++ Bind ++ XMLRPC,
@@ -391,18 +396,21 @@ extract_path_query(#state{request_method = Method,
 			  socket = _Socket} = State)
     when (Method =:= 'POST' orelse Method =:= 'PUT') andalso
 	   is_integer(Len) ->
-    {NewState, Data} = recv_data(State, Len),
-    ?DEBUG("client data: ~p~n", [Data]),
-    case catch url_decode_q_split(Path) of
-        {'EXIT', _} -> {NewState, false};
-        {NPath, _Query} ->
-            LPath = normalize_path([NPE
-                                    || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
-            LQuery = case catch parse_urlencoded(Data) of
-                         {'EXIT', _Reason} -> [];
-                         LQ -> LQ
-                     end,
-            {NewState, {LPath, LQuery, Data}}
+    case recv_data(State, Len) of
+	error -> {State, false};
+	{NewState, Data} ->
+	    ?DEBUG("client data: ~p~n", [Data]),
+	    case catch url_decode_q_split(Path) of
+		{'EXIT', _} -> {NewState, false};
+		{NPath, _Query} ->
+		    LPath = normalize_path([NPE
+					    || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
+		    LQuery = case catch parse_urlencoded(Data) of
+				 {'EXIT', _Reason} -> [];
+				 LQ -> LQ
+			     end,
+		    {NewState, {LPath, LQuery, Data}}
+	    end
     end;
 extract_path_query(State) ->
     {State, false}.
@@ -520,7 +528,7 @@ recv_data(State, Len, Acc) ->
 		    recv_data(State, Len - byte_size(Data), <<Acc/binary, Data/binary>>);
 		Err ->
 		    ?DEBUG("Cannot receive HTTP data: ~p", [Err]),
-		    <<"">>
+		    error
 	    end;
 	_ ->
 	    Trail = (State#state.trail),
@@ -763,7 +771,8 @@ parse_auth(<<"Basic ", Auth64/binary>>) ->
             undefined;
         Pos ->
             {User, <<$:, Pass/binary>>} = erlang:split_binary(Auth, Pos-1),
-            {User, Pass}
+            PassUtf8 = unicode:characters_to_binary(binary_to_list(Pass), utf8),
+            {User, PassUtf8}
     end;
 parse_auth(<<"Bearer ", SToken/binary>>) ->
     Token = str:strip(SToken),

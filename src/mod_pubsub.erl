@@ -77,7 +77,7 @@
 %% API and gen_server callbacks
 -export([start_link/2, start/2, stop/1, init/1,
     handle_call/3, handle_cast/2, handle_info/2,
-    terminate/2, code_change/3]).
+    terminate/2, code_change/3, depends/2]).
 
 -export([send_loop/1, mod_opt_type/1]).
 
@@ -107,6 +107,8 @@
 	nodeOptions/0,
 	subOption/0,
 	subOptions/0,
+	pubOption/0,
+	pubOptions/0,
 	%%
 	affiliation/0,
 	subscription/0,
@@ -232,11 +234,7 @@ stop(Host) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
--spec(init/1 ::
-    (
-	[binary() | [{_,_}],...])
-    -> {'ok',state()}
-    ).
+-spec init([binary() | [{_,_}],...]) -> {'ok',state()}.
 
 init([ServerHost, Opts]) ->
     ?DEBUG("pubsub init ~p ~p", [ServerHost, Opts]),
@@ -254,10 +252,12 @@ init([ServerHost, Opts]) ->
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, ?MAXITEMS),
     MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts,
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, undefined),
-    DefaultNodeCfg = gen_mod:get_opt(default_node_config, Opts,
-	    fun(A) when is_list(A) -> filter_node_options(A) end, []),
     pubsub_index:init(Host, ServerHost, Opts),
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
+    DefaultModule = plugin(Host, hd(Plugins)),
+    BaseOptions = DefaultModule:options(),
+    DefaultNodeCfg = gen_mod:get_opt(default_node_config, Opts,
+	    fun(A) when is_list(A) -> filter_node_options(A, BaseOptions) end, []),
     mnesia:create_table(pubsub_last_item,
 	[{ram_copies, [node()]},
 	    {attributes, record_info(fields, pubsub_last_item)}]),
@@ -347,12 +347,22 @@ init_send_loop(ServerHost) ->
     end,
     {Pid, State}.
 
+depends(ServerHost, Opts) ->
+    Host = gen_mod:get_opt_host(ServerHost, Opts, <<"pubsub.@HOST@">>),
+    Plugins = gen_mod:get_opt(plugins, Opts,
+			      fun(A) when is_list(A) -> A end, [?STDNODE]),
+    lists:flatmap(
+      fun(Name) ->
+	      Plugin = plugin(ServerHost, Name),
+	      try apply(Plugin, depends, [Host, ServerHost, Opts])
+	      catch _:undef -> []
+	      end
+      end, Plugins).
+
 %% @doc Call the init/1 function for each plugin declared in the config file.
 %% The default plugin module is implicit.
 %% <p>The Erlang code for the plugin is located in a module called
 %% <em>node_plugin</em>. The 'node_' prefix is mandatory.</p>
-%% <p>The modules are initialized in alphetical order and the list is checked
-%% and sorted to ensure that each module is initialized only once.</p>
 %% <p>See {@link node_hometree:init/1} for an example implementation.</p>
 init_plugins(Host, ServerHost, Opts) ->
     TreePlugin = tree(Host, gen_mod:get_opt(nodetree, Opts,
@@ -406,7 +416,8 @@ send_loop(State) ->
 				    {_, Node} = NodeRec#pubsub_node.nodeid,
 				    Nidx = NodeRec#pubsub_node.id,
 				    Options = NodeRec#pubsub_node.options,
-				    send_items(Host, Node, Nidx, PType, Options, SubJID, last)
+				    [send_items(Host, Node, Nidx, PType, Options, SubJID, last)
+				     || NodeRec#pubsub_node.type == PType]
 			    end,
 			    lists:usort(Subs))
 		end,
@@ -476,15 +487,10 @@ send_loop(State) ->
 %% disco hooks handling functions
 %%
 
--spec(disco_local_identity/5 ::
-    (
-	Acc    :: [xmlel()],
-	_From  :: jid(),
-	To     :: jid(),
-	Node   :: <<>> | mod_pubsub:nodeId(),
-	Lang   :: binary())
-    -> [xmlel()]
-    ).
+-spec disco_local_identity(Acc :: [xmlel()], _From :: jid(),
+			   To :: jid(), Node :: <<>> | mod_pubsub:nodeId(),
+			   Lang :: binary()) -> [xmlel()].
+
 disco_local_identity(Acc, _From, To, <<>>, _Lang) ->
     case lists:member(?PEPNODE, plugins(host(To#jid.lserver))) of
 	true ->
@@ -498,15 +504,10 @@ disco_local_identity(Acc, _From, To, <<>>, _Lang) ->
 disco_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec(disco_local_features/5 ::
-    (
-	Acc    :: [xmlel()],
-	_From  :: jid(),
-	To     :: jid(),
-	Node   :: <<>> | mod_pubsub:nodeId(),
-	Lang   :: binary())
-    -> [binary(),...]
-    ).
+-spec disco_local_features(Acc :: [xmlel()], _From :: jid(),
+			   To :: jid(), Node :: <<>> | mod_pubsub:nodeId(),
+			   Lang :: binary()) -> [binary(),...].
+
 disco_local_features(Acc, _From, To, <<>>, _Lang) ->
     Host = host(To#jid.lserver),
     Feats = case Acc of
@@ -524,15 +525,10 @@ disco_local_items(Acc, _From, _To, _Node, _Lang) -> Acc.
 %    when is_binary(Node) ->
 %    disco_sm_identity(Acc, From, To, iolist_to_binary(Node),
 %                      Lang);
--spec(disco_sm_identity/5 ::
-    (
-	Acc  :: empty | [xmlel()],
-	From :: jid(),
-	To   :: jid(),
-	Node :: mod_pubsub:nodeId(),
-	Lang :: binary())
-    -> [xmlel()]
-    ).
+-spec disco_sm_identity(Acc :: empty | [xmlel()], From :: jid(),
+			To :: jid(), Node :: mod_pubsub:nodeId(),
+			Lang :: binary()) -> [xmlel()].
+
 disco_sm_identity(empty, From, To, Node, Lang) ->
     disco_sm_identity([], From, To, Node, Lang);
 disco_sm_identity(Acc, From, To, Node, _Lang) ->
@@ -567,15 +563,9 @@ disco_identity(Host, Node, From) ->
 	_ -> []
     end.
 
--spec(disco_sm_features/5 ::
-    (
-	Acc  :: empty | {result, Features::[Feature::binary()]},
-	From :: jid(),
-	To   :: jid(),
-	Node :: mod_pubsub:nodeId(),
-	Lang :: binary())
-    -> {result, Features::[Feature::binary()]}
-    ).
+-spec disco_sm_features(Acc :: empty | {result, Features::[Feature::binary()]},
+			From :: jid(), To :: jid(), Node :: mod_pubsub:nodeId(),
+			Lang :: binary()) -> {result, Features::[Feature::binary()]}.
 %disco_sm_features(Acc, From, To, Node, Lang)
 %    when is_binary(Node) ->
 %    disco_sm_features(Acc, From, To, iolist_to_binary(Node),
@@ -603,15 +593,9 @@ disco_features(Host, Node, From) ->
 	_ -> []
     end.
 
--spec(disco_sm_items/5 ::
-    (
-	Acc  :: empty | {result, [xmlel()]},
-	From :: jid(),
-	To   :: jid(),
-	Node :: mod_pubsub:nodeId(),
-	Lang :: binary())
-    -> {result, [xmlel()]}
-    ).
+-spec disco_sm_items(Acc :: empty | {result, [xmlel()]}, From :: jid(),
+		     To :: jid(), Node :: mod_pubsub:nodeId(),
+		     Lang :: binary()) -> {result, [xmlel()]}.
 %disco_sm_items(Acc, From, To, Node, Lang)
 %    when is_binary(Node) ->
 %    disco_sm_items(Acc, From, To, iolist_to_binary(Node),
@@ -623,13 +607,8 @@ disco_sm_items({result, OtherItems}, From, To, Node, _Lang) ->
 	    disco_items(jid:tolower(jid:remove_resource(To)), Node, From))};
 disco_sm_items(Acc, _From, _To, _Node, _Lang) -> Acc.
 
--spec(disco_items/3 ::
-    (
-	Host :: mod_pubsub:host(),
-	Node :: mod_pubsub:nodeId(),
-	From :: jid())
-    -> [xmlel()]
-    ).
+-spec disco_items(Host :: mod_pubsub:host(), Node :: mod_pubsub:nodeId(),
+		  From :: jid()) -> [xmlel()].
 disco_items(Host, <<>>, From) ->
     Action = fun (#pubsub_node{nodeid = {_, Node},
 			options = Options, type = Type, id = Nidx, owners = O},
@@ -843,12 +822,8 @@ handle_call(stop, _From, State) ->
 %% @private
 handle_cast(_Msg, State) -> {noreply, State}.
 
--spec(handle_info/2 ::
-    (
-	_     :: {route, From::jid(), To::jid(), Packet::xmlel()},
-	State :: state())
-    -> {noreply, state()}
-    ).
+-spec handle_info(_ :: {route, From::jid(), To::jid(), Packet::xmlel()},
+		  State :: state()) -> {noreply, state()}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
@@ -931,17 +906,9 @@ terminate(_Reason,
 %% @private
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
--spec(do_route/7 ::
-    (
-	ServerHost :: binary(),
-	Access     :: atom(),
-	Plugins    :: [binary(),...],
-	Host       :: mod_pubsub:hostPubsub(),
-	From       :: jid(),
-	To         :: jid(),
-	Packet     :: xmlel())
-    -> ok
-    ).
+-spec do_route(ServerHost :: binary(), Access :: atom(),
+	       Plugins :: [binary(),...], Host :: mod_pubsub:hostPubsub(),
+	       From :: jid(), To :: jid(), Packet :: xmlel()) -> ok.
 
 %%--------------------------------------------------------------------
 %%% Internal functions
@@ -1128,14 +1095,8 @@ iq_disco_info(Host, SNode, From, Lang) ->
 	    node_disco_info(Host, Node, From)
     end.
 
--spec(iq_disco_items/4 ::
-    (
-	Host   :: mod_pubsub:host(),
-	Node   :: <<>> | mod_pubsub:nodeId(),
-	From   :: jid(),
-	Rsm    :: none | rsm_in())
-    -> {result, [xmlel()]}
-    ).
+-spec iq_disco_items(Host :: mod_pubsub:host(), Node :: <<>> | mod_pubsub:nodeId(),
+		     From :: jid(), Rsm :: none | rsm_in()) -> {result, [xmlel()]}.
 iq_disco_items(Host, <<>>, From, _RSM) ->
     {result,
 	lists:map(fun (#pubsub_node{nodeid = {_, SubNode}, options = Options}) ->
@@ -1198,13 +1159,7 @@ iq_disco_items(Host, Item, From, RSM) ->
 	    end
     end.
 
--spec(iq_sm/3 ::
-    (
-	From :: jid(),
-	To   :: jid(),
-	IQ   :: iq_request())
-    -> iq_result() | iq_error()
-    ).
+-spec iq_sm(From :: jid(), To :: jid(), IQ :: iq_request()) -> iq_result() | iq_error().
 iq_sm(From, To, #iq{type = Type, sub_el = SubEl, xmlns = XMLNS, lang = Lang} = IQ) ->
     ServerHost = To#jid.lserver,
     LOwner = jid:tolower(jid:remove_resource(To)),
@@ -1229,36 +1184,17 @@ iq_get_vcard(Lang) ->
 		    <<(translate:translate(Lang, <<"ejabberd Publish-Subscribe module">>))/binary,
 			"\nCopyright (c) 2004-2016 ProcessOne">>}]}].
 
--spec(iq_pubsub/6 ::
-    (
-	Host       :: mod_pubsub:host(),
-	ServerHost :: binary(),
-	From       :: jid(),
-	IQType     :: 'get' | 'set',
-	SubEl      :: xmlel(),
-	Lang       :: binary())
-    -> {result, [xmlel()]}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec iq_pubsub(Host :: mod_pubsub:host(), ServerHost :: binary(), From :: jid(),
+		IQType :: 'get' | 'set', SubEl :: xmlel(), Lang :: binary()) ->
+		       {result, [xmlel()]} | {error, xmlel()}.
 
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang) ->
     iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, all, plugins(Host)).
 
--spec(iq_pubsub/8 ::
-    (
-	Host       :: mod_pubsub:host(),
-	ServerHost :: binary(),
-	From       :: jid(),
-	IQType     :: 'get' | 'set',
-	SubEl      :: xmlel(),
-	Lang       :: binary(),
-	Access     :: atom(),
-	Plugins    :: [binary(),...])
-    -> {result, [xmlel()]}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec iq_pubsub(Host :: mod_pubsub:host(), ServerHost :: binary(), From :: jid(),
+		IQType :: 'get' | 'set', SubEl :: xmlel(), Lang :: binary(),
+		Access :: atom(), Plugins :: [binary(),...]) ->
+		       {result, [xmlel()]} | {error, xmlel()}.
 
 iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
     #xmlel{children = SubEls} = SubEl,
@@ -1287,7 +1223,16 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
 			[#xmlel{name = <<"item">>, attrs = ItemAttrs,
 					children = Payload}] ->
 			    ItemId = fxml:get_attr_s(<<"id">>, ItemAttrs),
-			    publish_item(Host, ServerHost, Node, From, ItemId, Payload, Access);
+			    PubOpts = case [C || #xmlel{name = <<"publish-options">>,
+							children = [C]} <- Rest] of
+				[XEl] ->
+				    case jlib:parse_xdata_submit(XEl) of
+				      invalid -> [];
+				      Form -> Form
+				    end;
+				_ -> []
+			    end,
+			    publish_item(Host, ServerHost, Node, From, ItemId, Payload, PubOpts, Access);
 			[] ->
 			    {error,
 				extended_error(?ERR_BAD_REQUEST, <<"item-required">>)};
@@ -1355,18 +1300,10 @@ iq_pubsub(Host, ServerHost, From, IQType, SubEl, Lang, Access, Plugins) ->
     end.
 
 
--spec(iq_pubsub_owner/6 ::
-    (
-	Host       :: mod_pubsub:host(),
-	ServerHost :: binary(),
-	From       :: jid(),
-	IQType     :: 'get' | 'set',
-	SubEl      :: xmlel(),
-	Lang       :: binary())
-    -> {result, [xmlel()]}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec iq_pubsub_owner(Host :: mod_pubsub:host(), ServerHost :: binary(), From :: jid(),
+		      IQType :: 'get' | 'set', SubEl :: xmlel(), Lang :: binary()) ->
+			     {result, [xmlel()]} | {error, xmlel()}.
+
 iq_pubsub_owner(Host, ServerHost, From, IQType, SubEl, Lang) ->
     #xmlel{children = SubEls} = SubEl,
     Action = fxml:remove_cdata(SubEls),
@@ -1641,10 +1578,10 @@ send_authorization_approval(Host, JID, SNode, Subscription) ->
 	%{S, SID} ->
 	%    [{<<"subscription">>, subscription_to_string(S)},
 	%     {<<"subid">>, SID}];
-	S -> 
+	S ->
 	    [{<<"subscription">>, subscription_to_string(S)}]
     end,
-    Stanza = event_stanza(<<"subscription">>, 
+    Stanza = event_stanza(<<"subscription">>,
 	    [{<<"jid">>, jid:to_string(JID)}
 		| nodeAttr(SNode)]
 	    ++ SubAttrs),
@@ -1789,33 +1726,17 @@ update_auth(Host, Node, Type, Nidx, Subscriber, Allow, Subs) ->
 %%<li>nodetree create_node checks if nodeid already exists</li>
 %%<li>node plugin create_node just sets default affiliation/subscription</li>
 %%</ul>
--spec(create_node/5 ::
-    (
-	Host          :: mod_pubsub:host(),
-	ServerHost    :: binary(),
-	Node        :: <<>> | mod_pubsub:nodeId(),
-	Owner         :: jid(),
-	Type          :: binary())
-    -> {result, [xmlel(),...]}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec create_node(Host :: mod_pubsub:host(), ServerHost :: binary(),
+		  Node :: <<>> | mod_pubsub:nodeId(), Owner :: jid(),
+		  Type :: binary()) -> {result, [xmlel(),...]} | {error, xmlel()}.
 create_node(Host, ServerHost, Node, Owner, Type) ->
     create_node(Host, ServerHost, Node, Owner, Type, all, []).
 
--spec(create_node/7 ::
-    (
-	Host          :: mod_pubsub:host(),
-	ServerHost    :: binary(),
-	Node        :: <<>> | mod_pubsub:nodeId(),
-	Owner         :: jid(),
-	Type          :: binary(),
-	Access        :: atom(),
-	Configuration :: [xmlel()])
-    -> {result, [xmlel(),...]}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec create_node(Host :: mod_pubsub:host(), ServerHost :: binary(),
+		  Node :: <<>> | mod_pubsub:nodeId(), Owner :: jid(),
+		  Type :: binary(), Access :: atom(), Configuration :: [xmlel()]) ->
+			 {result, [xmlel(),...]} | {error, xmlel()}.
+
 create_node(Host, ServerHost, <<>>, Owner, Type, Access, Configuration) ->
     case lists:member(<<"instant-nodes">>, plugin_features(Host, Type)) of
 	true ->
@@ -1929,15 +1850,8 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 %%<li>The node is the root collection node, which cannot be deleted.</li>
 %%<li>The specified node does not exist.</li>
 %%</ul>
--spec(delete_node/3 ::
-    (
-	Host  :: mod_pubsub:host(),
-	Node  :: mod_pubsub:nodeId(),
-	Owner :: jid())
-    -> {result, [xmlel(),...]}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec delete_node(Host :: mod_pubsub:host(), Node :: mod_pubsub:nodeId(),
+		  Owner :: jid()) -> {result, [xmlel(),...]} | {error, xmlel()}.
 delete_node(_Host, <<>>, _Owner) ->
     {error, ?ERRT_NOT_ALLOWED(?MYLANG, <<"No node specified">>)};
 delete_node(Host, Node, Owner) ->
@@ -2013,17 +1927,9 @@ delete_node(Host, Node, Owner) ->
 %%<li>The node does not support subscriptions.</li>
 %%<li>The node does not exist.</li>
 %%</ul>
--spec(subscribe_node/5 ::
-    (
-	Host          :: mod_pubsub:host(),
-	Node          :: mod_pubsub:nodeId(),
-	From          :: jid(),
-	JID           :: binary(),
-	Configuration :: [xmlel()])
-    -> {result, [xmlel(),...]}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec subscribe_node(Host :: mod_pubsub:host(), Node :: mod_pubsub:nodeId(),
+		     From :: jid(), JID :: binary(), Configuration :: [xmlel()]) ->
+			    {result, [xmlel(),...]} | {error, xmlel()}.
 subscribe_node(Host, Node, From, JID, Configuration) ->
     SubModule = subscription_plugin(Host),
     SubOpts = case SubModule:parse_options_xform(Configuration) of
@@ -2101,6 +2007,9 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
 	    send_items(Host, Node, Nidx, Type, Options, Subscriber, last),
+	    ServerHost = serverhost(Host),
+	    ejabberd_hooks:run(pubsub_subscribe_node, ServerHost,
+		[ServerHost, Host, Node, Subscriber, SubId]),
 	    case Result of
 		default -> {result, Reply({subscribed, SubId})};
 		_ -> {result, Result}
@@ -2129,17 +2038,11 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 %%<li>The node does not exist.</li>
 %%<li>The request specifies a subscription ID that is not valid or current.</li>
 %%</ul>
--spec(unsubscribe_node/5 ::
-    (
-	Host  :: mod_pubsub:host(),
-	Node  :: mod_pubsub:nodeId(),
-	From  :: jid(),
-	JID   :: binary() | ljid(),
-	SubId :: mod_pubsub:subId())
-    -> {result, []}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec unsubscribe_node(Host :: mod_pubsub:host(), Node :: mod_pubsub:nodeId(),
+		       From :: jid(), JID :: binary() | ljid(),
+		       SubId :: mod_pubsub:subId()) ->
+			      {result, []} | {error, xmlel()}.
+
 unsubscribe_node(Host, Node, From, JID, SubId) when is_binary(JID) ->
     unsubscribe_node(Host, Node, From, string_to_ljid(JID), SubId);
 unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
@@ -2147,7 +2050,11 @@ unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
 	    node_call(Host, Type, unsubscribe_node, [Nidx, From, Subscriber, SubId])
     end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, default}} -> {result, []};
+	{result, {_, default}} ->
+	    ServerHost = serverhost(Host),
+	    ejabberd_hooks:run(pubsub_unsubscribe_node, ServerHost,
+		[ServerHost, Host, Node, Subscriber, SubId]),
+	    {result, []};
 	%      {result, {_, Result}} -> {result, Result};
 	Error -> Error
     end.
@@ -2163,23 +2070,17 @@ unsubscribe_node(Host, Node, From, Subscriber, SubId) ->
 %%<li>The item contains more than one payload element or the namespace of the root payload element does not match the configured namespace for the node.</li>
 %%<li>The request does not match the node configuration.</li>
 %%</ul>
--spec(publish_item/6 ::
-    (
-	Host       :: mod_pubsub:host(),
-	ServerHost :: binary(),
-	Node       :: mod_pubsub:nodeId(),
-	Publisher  :: jid(),
-	ItemId     :: <<>> | mod_pubsub:itemId(),
-	Payload    :: mod_pubsub:payload())
-    -> {result, [xmlel(),...]}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec publish_item(Host :: mod_pubsub:host(), ServerHost :: binary(),
+		   Node :: mod_pubsub:nodeId(), Publisher :: jid(),
+		   ItemId :: <<>> | mod_pubsub:itemId(),
+		   Payload :: mod_pubsub:payload()) ->
+			  {result, [xmlel(),...]} | {error, xmlel()}.
+
 publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload) ->
-    publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, all).
-publish_item(Host, ServerHost, Node, Publisher, <<>>, Payload, Access) ->
-    publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload, Access);
-publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
+    publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, [], all).
+publish_item(Host, ServerHost, Node, Publisher, <<>>, Payload, PubOpts, Access) ->
+    publish_item(Host, ServerHost, Node, Publisher, uniqid(), Payload, PubOpts, Access);
+publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access) ->
     Action = fun (#pubsub_node{options = Options, type = Type, id = Nidx}) ->
 	    Features = plugin_features(Host, Type),
 	    PublishFeature = lists:member(<<"publish">>, Features),
@@ -2211,7 +2112,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
 			extended_error(?ERR_BAD_REQUEST, <<"item-required">>)};
 		true ->
 		    node_call(Host, Type, publish_item,
-			[Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload])
+			[Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload, PubOpts])
 	    end
     end,
     Reply = [#xmlel{name = <<"pubsub">>,
@@ -2272,7 +2173,8 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
 					 attrs = [{<<"xmlns">>, ?NS_PUBSUB}],
 					 children = [#xmlel{name = <<"create">>,
 							    attrs = [{<<"node">>, NewNode}]}]}]} ->
-				    publish_item(Host, ServerHost, NewNode, Publisher, ItemId, Payload);
+			    publish_item(Host, ServerHost, NewNode, Publisher, ItemId,
+				Payload, PubOpts, Access);
 				_ ->
 				    {error, ?ERR_ITEM_NOT_FOUND}
 			    end;
@@ -2298,16 +2200,10 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, Access) ->
 %%<li>The node does not support persistent items.</li>
 %%<li>The service does not support the deletion of items.</li>
 %%</ul>
--spec(delete_item/4 ::
-    (
-	Host      :: mod_pubsub:host(),
-	Node      :: mod_pubsub:nodeId(),
-	Publisher :: jid(),
-	ItemId    :: mod_pubsub:itemId())
-    -> {result, []}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec delete_item(Host :: mod_pubsub:host(), Node :: mod_pubsub:nodeId(),
+		  Publisher :: jid(), ItemId :: mod_pubsub:itemId()) ->
+			 {result, []} | {error, xmlel()}.
+
 delete_item(Host, Node, Publisher, ItemId) ->
     delete_item(Host, Node, Publisher, ItemId, false).
 delete_item(_, <<>>, _, _, _) ->
@@ -2362,15 +2258,10 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 %%<li>The node is not configured to persist items.</li>
 %%<li>The specified node does not exist.</li>
 %%</ul>
--spec(purge_node/3 ::
-    (
-	Host  :: mod_pubsub:host(),
-	Node  :: mod_pubsub:nodeId(),
-	Owner :: jid())
-    -> {result, []}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec purge_node(Host :: mod_pubsub:host(), Node :: mod_pubsub:nodeId(),
+		 Owner :: jid()) ->
+			{result, []} | {error, xmlel()}.
+
 purge_node(Host, Node, Owner) ->
     Action = fun (#pubsub_node{options = Options, type = Type, id = Nidx}) ->
 	    Features = plugin_features(Host, Type),
@@ -2414,19 +2305,12 @@ purge_node(Host, Node, Owner) ->
 %% <p>The permission are not checked in this function.</p>
 %% @todo We probably need to check that the user doing the query has the right
 %% to read the items.
--spec(get_items/7 ::
-    (
-	Host      :: mod_pubsub:host(),
-	Node      :: mod_pubsub:nodeId(),
-	From      :: jid(),
-	SubId     :: mod_pubsub:subId(),
-	SMaxItems :: binary(),
-	ItemIds   :: [mod_pubsub:itemId()],
-	Rsm       :: none | rsm_in())
-    -> {result, [xmlel(),...]}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec get_items(Host :: mod_pubsub:host(), Node :: mod_pubsub:nodeId(),
+		From :: jid(), SubId :: mod_pubsub:subId(),
+		SMaxItems :: binary(), ItemIds :: [mod_pubsub:itemId()],
+		Rsm :: none | rsm_in()) ->
+		       {result, [xmlel(),...]} | {error, xmlel()}.
+
 get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
     MaxItems = if SMaxItems == <<>> ->
 	    case get_max_items_node(Host) of
@@ -2490,7 +2374,7 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
 
 get_items(Host, Node) ->
     Action = fun (#pubsub_node{type = Type, id = Nidx}) ->
-	    node_call(Host, Type, get_items, [Nidx, service_jid(Host), none]) 
+	    node_call(Host, Type, get_items, [Nidx, service_jid(Host), none])
     end,
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {_, {Items, _}}} -> Items;
@@ -2527,7 +2411,7 @@ get_last_item(Host, Type, Nidx, LJID, mnesia) ->
 	{result, {[LastItem|_], _}} -> LastItem;
 	_ -> undefined
     end;
-get_last_item(Host, Type, Nidx, LJID, odbc) ->
+get_last_item(Host, Type, Nidx, LJID, sql) ->
     case node_action(Host, Type, get_last_items, [Nidx, LJID, 1]) of
 	{result, [LastItem]} -> LastItem;
 	_ -> undefined
@@ -2542,7 +2426,7 @@ get_last_items(Host, Type, Nidx, LJID, Number, mnesia) ->
 	{result, {Items, _}} -> lists:sublist(Items, Number);
 	_ -> []
     end;
-get_last_items(Host, Type, Nidx, LJID, Number, odbc) ->
+get_last_items(Host, Type, Nidx, LJID, Number, sql) ->
     case node_action(Host, Type, get_last_items, [Nidx, LJID, Number]) of
 	{result, Items} -> Items;
 	_ -> []
@@ -2589,16 +2473,10 @@ dispatch_items(From, To, _Node, Stanza) ->
     ejabberd_router:route(service_jid(From), jid:make(To), Stanza).
 
 %% @doc <p>Return the list of affiliations as an XMPP response.</p>
--spec(get_affiliations/4 ::
-    (
-	Host    :: mod_pubsub:host(),
-	Node    :: mod_pubsub:nodeId(),
-	JID     :: jid(),
-	Plugins :: [binary()])
-    -> {result, [xmlel(),...]}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec get_affiliations(Host :: mod_pubsub:host(), Node :: mod_pubsub:nodeId(),
+		       JID :: jid(), Plugins :: [binary()]) ->
+			      {result, [xmlel(),...]} | {error, xmlel()}.
+
 get_affiliations(Host, Node, JID, Plugins) when is_list(Plugins) ->
     Result = lists:foldl( fun (Type, {Status, Acc}) ->
 		    Features = plugin_features(Host, Type),
@@ -2642,15 +2520,10 @@ get_affiliations(Host, Node, JID, Plugins) when is_list(Plugins) ->
 	    Error
     end.
 
--spec(get_affiliations/3 ::
-    (
-	Host :: mod_pubsub:host(),
-	Node :: mod_pubsub:nodeId(),
-	JID  :: jid())
-    -> {result, [xmlel(),...]}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec get_affiliations(Host :: mod_pubsub:host(), Node :: mod_pubsub:nodeId(),
+		       JID :: jid()) ->
+			      {result, [xmlel(),...]} | {error, xmlel()}.
+
 get_affiliations(Host, Node, JID) ->
     Action = fun (#pubsub_node{type = Type, id = Nidx}) ->
 	    Features = plugin_features(Host, Type),
@@ -2687,16 +2560,10 @@ get_affiliations(Host, Node, JID) ->
 	    Error
     end.
 
--spec(set_affiliations/4 ::
-    (
-	Host        :: mod_pubsub:host(),
-	Node        :: mod_pubsub:nodeId(),
-	From        :: jid(),
-	EntitiesEls :: [xmlel()])
-    -> {result, []}
-    %%%
-    | {error, xmlel()}
-    ).
+-spec set_affiliations(Host :: mod_pubsub:host(), Node :: mod_pubsub:nodeId(),
+		       From :: jid(), EntitiesEls :: [xmlel()]) ->
+			      {result, []} | {error, xmlel()}.
+
 set_affiliations(Host, Node, From, EntitiesEls) ->
     Owner = jid:tolower(jid:remove_resource(From)),
     Entities = lists:foldl(fun
@@ -3012,7 +2879,7 @@ get_subscriptions_for_send_last(Host, PType, mnesia, JID, LJID, BJID) ->
 	|| {Node, Sub, SubId, SubJID} <- Subs,
 	    Sub =:= subscribed, (SubJID == LJID) or (SubJID == BJID),
 	    match_option(Node, send_last_published_item, on_sub_and_presence)];
-get_subscriptions_for_send_last(Host, PType, odbc, JID, LJID, BJID) ->
+get_subscriptions_for_send_last(Host, PType, sql, JID, LJID, BJID) ->
     case catch node_action(Host, PType,
 	    get_entity_subscriptions_for_send_last,
 	    [Host, JID])
@@ -3049,15 +2916,11 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	    {error, ?ERR_BAD_REQUEST};
 	_ ->
 	    Notify = fun (JID, Sub, _SubId) ->
-		    Stanza = #xmlel{name = <<"message">>, attrs = [],
-			    children =
-			    [#xmlel{name = <<"pubsub">>,
-				    attrs = [{<<"xmlns">>, ?NS_PUBSUB}],
-				    children =
+		    Stanza = event_stanza(
 				    [#xmlel{name = <<"subscription">>,
 					    attrs = [{<<"jid">>, jid:to_string(JID)},
 						{<<"subscription">>, subscription_to_string(Sub)}
-						| nodeAttr(Node)]}]}]},
+						| nodeAttr(Node)]}]),
 		    ejabberd_router:route(service_jid(Host), jid:make(JID), Stanza)
 	    end,
 	    Action = fun (#pubsub_node{type = Type, id = Nidx, owners = O}) ->
@@ -3092,15 +2955,13 @@ set_subscriptions(Host, Node, From, EntitiesEls) ->
 	    end
     end.
 
--spec(get_presence_and_roster_permissions/5 ::
-    (
-	Host          :: mod_pubsub:host(),
-	From          :: ljid(),
-	Owners        :: [ljid(),...],
-	AccessModel   :: mod_pubsub:accessModel(),
-	AllowedGroups :: [binary()])
-    -> {PresenceSubscription::boolean(), RosterGroup::boolean()}
-    ).
+-spec get_presence_and_roster_permissions(Host :: mod_pubsub:host(),
+					  From :: ljid(), Owners :: [ljid(),...],
+					  AccessModel :: mod_pubsub:accessModel(),
+					  AllowedGroups :: [binary()]) ->
+						 {PresenceSubscription::boolean(),
+						  RosterGroup::boolean()}.
+
 get_presence_and_roster_permissions(Host, From, Owners, AccessModel, AllowedGroups) ->
     if (AccessModel == presence) or (AccessModel == roster) ->
 	    case Host of
@@ -3158,16 +3019,10 @@ subscription_to_string(pending) -> <<"pending">>;
 subscription_to_string(unconfigured) -> <<"unconfigured">>;
 subscription_to_string(_) -> <<"none">>.
 
--spec(service_jid/1 ::
-    (
-	Host :: mod_pubsub:host())
-    -> jid()
-    ).
-service_jid(Host) ->
-    case Host of
-	{U, S, _} -> {jid, U, S, <<>>, U, S, <<>>};
-	_ -> {jid, <<>>, Host, <<>>, <<>>, Host, <<>>}
-    end.
+-spec service_jid(Host :: mod_pubsub:host()) -> jid().
+service_jid(#jid{} = Jid) -> Jid;
+service_jid({U, S, R}) -> jid:make(U, S, R);
+service_jid(Host) -> jid:make(<<>>, Host, <<>>).
 
 %% @spec (LJID, NotifyType, Depth, NodeOptions, SubOptions) -> boolean()
 %%        LJID = jid()
@@ -3198,12 +3053,7 @@ sub_option_can_deliver(_, _, {deliver, false}) -> false;
 sub_option_can_deliver(_, _, {expire, When}) -> p1_time_compat:timestamp() < When;
 sub_option_can_deliver(_, _, _) -> true.
 
--spec(presence_can_deliver/2 ::
-    (
-	Entity :: ljid(),
-	_      :: boolean())
-    -> boolean()
-    ).
+-spec presence_can_deliver(Entity :: ljid(), _ :: boolean()) -> boolean().
 presence_can_deliver(_, false) ->
     true;
 presence_can_deliver({User, Server, Resource}, true) ->
@@ -3224,12 +3074,10 @@ presence_can_deliver({User, Server, Resource}, true) ->
 		false, Ss)
     end.
 
--spec(state_can_deliver/2 ::
-    (
-	Entity::ljid(),
-	SubOptions :: mod_pubsub:subOptions() | [])
-    -> [ljid()]
-    ).
+-spec state_can_deliver(Entity::ljid(),
+			SubOptions :: mod_pubsub:subOptions() | []) ->
+			       [ljid()].
+
 state_can_deliver({U, S, R}, []) -> [{U, S, R}];
 state_can_deliver({U, S, R}, SubOptions) ->
     case lists:keysearch(show_values, 1, SubOptions) of
@@ -3249,13 +3097,10 @@ state_can_deliver({U, S, R}, SubOptions) ->
 		[], Resources)
     end.
 
--spec(get_resource_state/3 ::
-    (
-	Entity     :: ljid(),
-	ShowValues :: [binary()],
-	JIDs       :: [ljid()])
-    -> [ljid()]
-    ).
+-spec get_resource_state(Entity :: ljid(), ShowValues :: [binary()],
+			 JIDs :: [ljid()]) ->
+				[ljid()].
+
 get_resource_state({U, S, R}, ShowValues, JIDs) ->
     case ejabberd_sm:get_session_pid(U, S, R) of
 	none ->
@@ -3274,11 +3119,8 @@ get_resource_state({U, S, R}, ShowValues, JIDs) ->
 	    end
     end.
 
--spec(payload_xmlelements/1 ::
-    (
-	Payload :: mod_pubsub:payload())
-    -> Count :: non_neg_integer()
-    ).
+-spec payload_xmlelements(Payload :: mod_pubsub:payload()) ->
+				 Count :: non_neg_integer().
 payload_xmlelements(Payload) ->
     payload_xmlelements(Payload, 0).
 
@@ -3516,7 +3358,7 @@ broadcast_stanza(Host, _Node, _Nidx, _Type, NodeOptions, SubsByDepth, NotifyType
 	end, SubIDsByJID).
 
 broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
-    broadcast_stanza({LUser, LServer, LResource}, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
+    broadcast_stanza({LUser, LServer, <<>>}, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
     SenderResource = user_resource(LUser, LServer, LResource),
     case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
@@ -3680,15 +3522,15 @@ node_plugin_options(Host, Type) ->
 	Result ->
 	    Result
     end.
-filter_node_options(Options) ->
+filter_node_options(Options, BaseOptions) ->
     lists:foldl(fun({Key, Val}, Acc) ->
 		DefaultValue = proplists:get_value(Key, Options, Val),
 		[{Key, DefaultValue}|Acc]
-	end, [], node_flat:options()).
+	end, [], BaseOptions).
 
 node_owners_action(Host, Type, Nidx, []) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	odbc ->
+	sql ->
 	    case node_action(Host, Type, get_node_affiliations, [Nidx]) of
 		{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
 		_ -> []
@@ -3701,7 +3543,7 @@ node_owners_action(_Host, _Type, _Nidx, Owners) ->
 
 node_owners_call(Host, Type, Nidx, []) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	odbc ->
+	sql ->
 	    case node_call(Host, Type, get_node_affiliations, [Nidx]) of
 		{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
 		_ -> []
@@ -3854,6 +3696,7 @@ set_configure(Host, Node, From, Els, Lang) ->
 							    set_node,
 							    [N#pubsub_node{options = NewOpts}])
 						    of
+							{result, Nidx} -> {result, ok};
 							ok -> {result, ok};
 							Err -> Err
 						    end;
@@ -4020,12 +3863,9 @@ unset_cached_item(Host, Nidx) ->
 	_ -> ok
     end.
 
--spec(get_cached_item/2 ::
-    (
-	Host    :: mod_pubsub:host(),
-	Nidx :: mod_pubsub:nodeIdx())
-    -> undefined | mod_pubsub:pubsubItem()
-    ).
+-spec get_cached_item(Host :: mod_pubsub:host(), Nidx :: mod_pubsub:nodeIdx()) ->
+			     undefined | mod_pubsub:pubsubItem().
+
 get_cached_item({_, ServerHost, _}, Nidx) ->
     get_cached_item(ServerHost, Nidx);
 get_cached_item(Host, Nidx) ->
@@ -4066,14 +3906,14 @@ tree(_Host, <<"virtual">>) ->
 tree(Host, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
 	mnesia -> jlib:binary_to_atom(<<"nodetree_", Name/binary>>);
-	odbc -> jlib:binary_to_atom(<<"nodetree_", Name/binary, "_odbc">>);
+	sql -> jlib:binary_to_atom(<<"nodetree_", Name/binary, "_sql">>);
 	_ -> Name
     end.
 
 plugin(Host, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
 	mnesia -> jlib:binary_to_atom(<<"node_", Name/binary>>);
-	odbc -> jlib:binary_to_atom(<<"node_", Name/binary, "_odbc">>);
+	sql -> jlib:binary_to_atom(<<"node_", Name/binary, "_sql">>);
 	_ -> Name
     end.
 
@@ -4087,7 +3927,7 @@ plugins(Host) ->
 subscription_plugin(Host) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
 	mnesia -> pubsub_subscription;
-	odbc -> pubsub_subscription_odbc;
+	sql -> pubsub_subscription_sql;
 	_ -> none
     end.
 
@@ -4184,8 +4024,8 @@ tree_action(Host, Function, Args) ->
     case gen_mod:db_type(ServerHost, ?MODULE) of
 	mnesia ->
 	    catch mnesia:sync_dirty(Fun);
-	odbc ->
-	    case catch ejabberd_odbc:sql_bloc(ServerHost, Fun) of
+	sql ->
+	    case catch ejabberd_sql:sql_bloc(ServerHost, Fun) of
 		{atomic, Result} ->
 		    Result;
 		{aborted, Reason} ->
@@ -4244,7 +4084,7 @@ transaction(Host, Fun, Trans) ->
     ServerHost = serverhost(Host),
     DBType = gen_mod:db_type(ServerHost, ?MODULE),
     Retry = case DBType of
-	odbc -> 2;
+	sql -> 2;
 	_ -> 1
     end,
     transaction_retry(Host, ServerHost, Fun, Trans, DBType, Retry).
@@ -4255,12 +4095,12 @@ transaction_retry(Host, ServerHost, Fun, Trans, DBType, Count) ->
     Res = case DBType of
 	mnesia ->
 	    catch mnesia:Trans(Fun);
-	odbc ->
+	sql ->
 	    SqlFun = case Trans of
 		transaction -> sql_transaction;
 		_ -> sql_bloc
 	    end,
-	    catch ejabberd_odbc:SqlFun(ServerHost, Fun);
+	    catch ejabberd_sql:SqlFun(ServerHost, Fun);
 	_ ->
 	    {unsupported, DBType}
     end,
@@ -4320,7 +4160,7 @@ string_to_ljid(JID) ->
 	    end
     end.
 
--spec(uniqid/0 :: () -> mod_pubsub:itemId()).
+-spec uniqid() -> mod_pubsub:itemId().
 uniqid() ->
     {T1, T2, T3} = p1_time_compat:timestamp(),
     iolist_to_binary(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).
@@ -4335,12 +4175,7 @@ itemsEls(Items) ->
     [#xmlel{name = <<"item">>, attrs = itemAttr(ItemId), children = Payload}
 	|| #pubsub_item{itemid = {ItemId, _}, payload = Payload} <- Items].
 
--spec(add_message_type/2 ::
-    (
-	Message :: xmlel(),
-	Type    :: atom())
-    -> xmlel()
-    ).
+-spec add_message_type(Message :: xmlel(), Type :: atom()) -> xmlel().
 
 add_message_type(Message, normal) -> Message;
 add_message_type(#xmlel{name = <<"message">>, attrs = Attrs, children = Els}, Type) ->
@@ -4468,7 +4303,7 @@ purge_offline(Host, LJID, Node) ->
 
 mod_opt_type(access_createnode) ->
     fun (A) when is_atom(A) -> A end;
-mod_opt_type(db_type) -> fun gen_mod:v_db/1;
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(ignore_pep_from_offline) ->
     fun (A) when is_boolean(A) -> A end;

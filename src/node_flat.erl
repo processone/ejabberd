@@ -39,7 +39,7 @@
 -export([init/3, terminate/2, options/0, features/0,
     create_node_permission/6, create_node/2, delete_node/1,
     purge_node/2, subscribe_node/8, unsubscribe_node/4,
-    publish_item/6, delete_item/4, remove_extra_items/3,
+    publish_item/7, delete_item/4, remove_extra_items/3,
     get_entity_affiliations/2, get_node_affiliations/1,
     get_affiliation/2, set_affiliation/3,
     get_entity_subscriptions/2, get_node_subscriptions/1,
@@ -84,7 +84,8 @@ options() ->
 	{max_payload_size, ?MAX_PAYLOAD_SIZE},
 	{send_last_published_item, on_sub_and_presence},
 	{deliver_notifications, true},
-	{presence_based_delivery, false}].
+	{presence_based_delivery, false},
+	{itemreply, none}].
 
 features() ->
     [<<"create-nodes">>,
@@ -344,7 +345,8 @@ delete_subscriptions(SubKey, Nidx, Subscriptions, SubState) ->
 %%   to completly disable persistance.</li></ul>
 %% </p>
 %% <p>In the default plugin module, the record is unchanged.</p>
-publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload) ->
+publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
+	     _PubOpts) ->
     SubKey = jid:tolower(Publisher),
     GenKey = jid:remove_resource(SubKey),
     GenState = get_state(Nidx, GenKey),
@@ -417,11 +419,11 @@ delete_item(Nidx, Publisher, PublishModel, ItemId) ->
     #pubsub_state{affiliation = Affiliation, items = Items} = GenState,
     Allowed = Affiliation == publisher orelse
 	Affiliation == owner orelse
-	PublishModel == open orelse
-	case get_item(Nidx, ItemId) of
-	{result, #pubsub_item{creation = {_, GenKey}}} -> true;
-	_ -> false
-    end,
+	(PublishModel == open andalso
+	  case get_item(Nidx, ItemId) of
+	    {result, #pubsub_item{creation = {_, GenKey}}} -> true;
+	    _ -> false
+          end),
     if not Allowed ->
 	    {error, ?ERR_FORBIDDEN};
 	true ->

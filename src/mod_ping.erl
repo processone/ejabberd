@@ -44,8 +44,6 @@
 
 -define(DEFAULT_PING_INTERVAL, 60).
 
--define(DICT, dict).
-
 %% API
 -export([start_link/2, start_ping/2, stop_ping/2]).
 
@@ -57,7 +55,7 @@
 	 handle_cast/2, handle_info/2, code_change/3]).
 
 -export([iq_ping/3, user_online/3, user_offline/3,
-	 user_send/4, mod_opt_type/1]).
+	 user_send/4, mod_opt_type/1, depends/2]).
 
 -record(state,
 	{host = <<"">>,
@@ -65,7 +63,7 @@
 	 ping_interval = ?DEFAULT_PING_INTERVAL :: non_neg_integer(),
 	 ping_ack_timeout = undefined :: non_neg_integer(),
 	 timeout_action = none :: none | kill,
-         timers = (?DICT):new() :: ?TDICT}).
+         timers = maps:new() :: map()}).
 
 %%====================================================================
 %% API
@@ -136,7 +134,7 @@ init([Host, Opts]) ->
 	    ping_interval = PingInterval,
 	    timeout_action = TimeoutAction,
 	    ping_ack_timeout = PingAckTimeout,
-	    timers = (?DICT):new()}}.
+	    timers = maps:new()}}.
 
 terminate(_Reason, #state{host = Host}) ->
     ejabberd_hooks:delete(sm_remove_connection_hook, Host,
@@ -229,20 +227,22 @@ user_send(Packet, _C2SState, JID, _From) ->
 %%====================================================================
 add_timer(JID, Interval, Timers) ->
     LJID = jid:tolower(JID),
-    NewTimers = case (?DICT):find(LJID, Timers) of
-		  {ok, OldTRef} ->
-		      cancel_timer(OldTRef), (?DICT):erase(LJID, Timers);
-		  _ -> Timers
+    NewTimers = case maps:find(LJID, Timers) of
+      {ok, OldTRef} ->
+		      cancel_timer(OldTRef),
+          maps:remove(LJID, Timers);
+      _ -> Timers
 		end,
     TRef = erlang:start_timer(Interval * 1000, self(),
 			      {ping, JID}),
-    (?DICT):store(LJID, TRef, NewTimers).
+    maps:put(LJID, TRef, NewTimers).
 
 del_timer(JID, Timers) ->
     LJID = jid:tolower(JID),
-    case (?DICT):find(LJID, Timers) of
+    case maps:find(LJID, Timers) of
       {ok, TRef} ->
-	  cancel_timer(TRef), (?DICT):erase(LJID, Timers);
+	  cancel_timer(TRef),
+    maps:remove(LJID, Timers);
       _ -> Timers
     end.
 
@@ -252,6 +252,9 @@ cancel_timer(TRef) ->
 	  receive {timeout, TRef, _} -> ok after 0 -> ok end;
       _ -> ok
     end.
+
+depends(_Host, _Opts) ->
+    [].
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(ping_interval) ->

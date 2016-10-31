@@ -105,8 +105,6 @@ start_app([], _Type, _StartFlag) ->
     ok.
 
 check_app_modules(App, StartFlag) ->
-    {A, B, C} = p1_time_compat:timestamp(),
-    random:seed(A, B, C),
     sleep(5000),
     case application:get_key(App, modules) of
         {ok, Mods} ->
@@ -140,7 +138,7 @@ exit_or_halt(Reason, StartFlag) ->
     end.
 
 sleep(N) ->
-    timer:sleep(random:uniform(N)).
+    timer:sleep(randoms:uniform(N)).
 
 get_module_file(App, Mod) ->
     BaseName = atom_to_list(Mod),

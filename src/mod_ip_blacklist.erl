@@ -36,7 +36,7 @@
 
 -export([update_bl_c2s/0]).
 
--export([is_ip_in_c2s_blacklist/3, mod_opt_type/1]).
+-export([is_ip_in_c2s_blacklist/3, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -64,6 +64,9 @@ preinit(Parent, State) ->
     catch
       error:_ -> Parent ! {ok, Pid, true}
     end.
+
+depends(_Host, _Opts) ->
+    [].
 
 %% TODO:
 stop(_Host) -> ok.

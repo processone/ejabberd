@@ -53,6 +53,7 @@
     members_by_default                   = true :: boolean(),
     members_only                         = false :: boolean(),
     allow_user_invites                   = false :: boolean(),
+    allow_subscription                   = false :: boolean(),
     password_protected                   = false :: boolean(),
     password                             = <<"">> :: binary(),
     anonymous                            = true :: boolean(),
@@ -76,8 +77,14 @@
     jid :: jid(),
     nick :: binary(),
     role :: role(),
+    %%is_subscriber = false :: boolean(),
+    %%subscriptions = [] :: [binary()],
     last_presence :: xmlel()
 }).
+
+-record(subscriber, {jid :: jid(),
+		     nick = <<>> :: binary(),
+		     nodes = [] :: [binary()]}).
 
 -record(activity,
 {
@@ -98,6 +105,8 @@
     jid                     = #jid{} :: jid(),
     config                  = #config{} :: config(),
     users                   = (?DICT):new() :: ?TDICT,
+    subscribers             = (?DICT):new() :: ?TDICT,
+    subscriber_nicks        = (?DICT):new() :: ?TDICT,
     last_voice_request_time = treap:empty() :: treap:treap(),
     robots                  = (?DICT):new() :: ?TDICT,
     nicks                   = (?DICT):new() :: ?TDICT,

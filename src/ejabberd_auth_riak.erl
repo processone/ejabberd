@@ -25,6 +25,8 @@
 
 -module(ejabberd_auth_riak).
 
+-compile([{parse_transform, ejabberd_sql_pt}]).
+
 -author('alexey@process-one.net').
 
 -behaviour(ejabberd_auth).
@@ -42,6 +44,7 @@
 -export([passwd_schema/0]).
 
 -include("ejabberd.hrl").
+-include("ejabberd_sql_pt.hrl").
 
 -record(passwd, {us = {<<"">>, <<"">>} :: {binary(), binary()} | '$1',
                  password = <<"">> :: binary() | scram() | '_'}).
@@ -267,7 +270,7 @@ password_to_scram(Password) ->
 		      ?SCRAM_DEFAULT_ITERATION_COUNT).
 
 password_to_scram(Password, IterationCount) ->
-    Salt = crypto:rand_bytes(?SALT_LENGTH),
+    Salt = randoms:bytes(?SALT_LENGTH),
     SaltedPassword = scram:salted_password(Password, Salt,
 					   IterationCount),
     StoredKey =
@@ -290,12 +293,10 @@ is_password_scram_valid(Password, Scram) ->
 export(_Server) ->
     [{passwd,
       fun(Host, #passwd{us = {LUser, LServer}, password = Password})
-            when LServer == Host ->
-              Username = ejabberd_odbc:escape(LUser),
-              Pass = ejabberd_odbc:escape(Password),
-              [[<<"delete from users where username='">>, Username, <<"';">>],
-               [<<"insert into users(username, password) "
-                  "values ('">>, Username, <<"', '">>, Pass, <<"');">>]];
+         when LServer == Host ->
+              [?SQL("delete from users where username=%(LUser)s;"),
+               ?SQL("insert into users(username, password) "
+                    "values (%(LUser)s, %(Password)s);")];
          (_Host, _R) ->
               []
       end}].
