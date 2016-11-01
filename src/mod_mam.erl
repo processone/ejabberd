@@ -214,7 +214,7 @@ user_receive_packet(Pkt, C2SState, JID, Peer, To) ->
 	    NewPkt = strip_my_archived_tag(Pkt, LServer),
 	    case store_msg(C2SState, NewPkt, LUser, LServer, Peer, recv) of
 		{ok, ID} ->
-		    set_stanza_id(NewPkt, LServer, ID);
+		    set_stanza_id(NewPkt, JID, ID);
 		_ ->
 		    NewPkt
 	    end;
@@ -232,7 +232,7 @@ user_send_packet(Pkt, C2SState, JID, Peer) ->
 	    case store_msg(C2SState, xmpp:set_from_to(NewPkt, JID, Peer),
 		      LUser, LServer, Peer, send) of
               {ok, ID} ->
-		    set_stanza_id(NewPkt, LServer, ID);
+		    set_stanza_id(NewPkt, JID, ID);
             _ ->
                 NewPkt
         end;
@@ -256,7 +256,7 @@ muc_filter_message(Pkt, #state{config = Config} = MUCState,
 	    StorePkt = strip_x_jid_tags(NewPkt),
 	    case store_muc(MUCState, StorePkt, RoomJID, From, FromNick) of
 		{ok, ID} ->
-		    set_stanza_id(NewPkt, LServer, ID);
+		    set_stanza_id(NewPkt, RoomJID, ID);
 		_ ->
 		    NewPkt
 	    end;
@@ -264,9 +264,9 @@ muc_filter_message(Pkt, #state{config = Config} = MUCState,
 	    Pkt
     end.
 
-set_stanza_id(Pkt, LServer, ID) ->
-    Archived = #mam_archived{by = jid:make(LServer), id = ID},
-    StanzaID = #stanza_id{by = jid:make(LServer), id = ID},
+set_stanza_id(Pkt, JID, ID) ->
+    Archived = #mam_archived{by = JID, id = ID},
+    StanzaID = #stanza_id{by = JID, id = ID},
     NewEls = [Archived, StanzaID|xmpp:get_els(Pkt)],
     xmpp:set_els(Pkt, NewEls).
 
@@ -533,9 +533,9 @@ strip_my_archived_tag(Pkt, LServer) ->
 		       end
 	       end),
     NewEls = lists:filter(
-	       fun(#mam_archived{by = #jid{luser = <<>>} = By}) ->
+	       fun(#mam_archived{by = By}) ->
 		       By#jid.lserver /= LServer;
-		  (#stanza_id{by = #jid{luser = <<>>} = By}) ->
+		  (#stanza_id{by = By}) ->
 		       By#jid.lserver /= LServer;
 		  (_) ->
 		       true
