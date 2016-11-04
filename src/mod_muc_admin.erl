@@ -432,8 +432,8 @@ create_room(Name1, Host1, ServerHost) ->
     create_room_with_opts(Name1, Host1, ServerHost, []).
 
 create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
-    Name = jid:nodeprep(Name1),
-    Host = jid:nodeprep(Host1),
+    true = (error /= (Name = jid:nodeprep(Name1))),
+    true = (error /= (Host = jid:nodeprep(Host1))),
 
     %% Get the default room options from the muc configuration
     DefRoomOpts = gen_mod:get_module_opt(ServerHost, mod_muc,
