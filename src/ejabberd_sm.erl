@@ -442,135 +442,96 @@ online(Sessions) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec do_route(jid(), jid(), stanza() | broadcast()) -> any().
+do_route(From, #jid{lresource = <<"">>} = To, {broadcast, _} = Packet) ->
+    ?DEBUG("processing broadcast to bare JID: ~p", [Packet]),
+    lists:foreach(
+      fun(R) ->
+	      do_route(From, jid:replace_resource(To, R), Packet)
+      end, get_user_resources(To#jid.user, To#jid.server));
 do_route(From, To, {broadcast, _} = Packet) ->
-    case To#jid.lresource of
-        <<"">> ->
-            lists:foreach(fun(R) ->
-                                  do_route(From,
-                                           jid:replace_resource(To, R),
-                                           Packet)
-                          end,
-                          get_user_resources(To#jid.user, To#jid.server));
-        _ ->
-            {U, S, R} = jid:tolower(To),
-	    Mod = get_sm_backend(S),
-	    case online(Mod:get_sessions(U, S, R)) of
-                [] ->
-                    ?DEBUG("packet dropped~n", []);
-                Ss ->
-                    Session = lists:max(Ss),
-                    Pid = element(2, Session#session.sid),
-                    ?DEBUG("sending to process ~p~n", [Pid]),
-                    Pid ! {route, From, To, Packet}
-            end
+    ?DEBUG("processing broadcast to full JID: ~p", [Packet]),
+    {U, S, R} = jid:tolower(To),
+    Mod = get_sm_backend(S),
+    case online(Mod:get_sessions(U, S, R)) of
+	[] ->
+	    ?DEBUG("dropping broadcast to unavailable resourse: ~p", [Packet]);
+	Ss ->
+	    Session = lists:max(Ss),
+	    Pid = element(2, Session#session.sid),
+	    ?DEBUG("sending to process ~p: ~p", [Pid, Packet]),
+	    Pid ! {route, From, To, Packet}
     end;
-do_route(From, To, Packet) ->
-    ?DEBUG("session manager~n\tfrom ~p~n\tto ~p~n\tpacket "
-	   "~P~n",
-	   [From, To, Packet, 8]),
+do_route(From, To, #presence{type = T, status = Status} = Packet)
+  when T == subscribe; T == subscribed; T == unsubscribe; T == unsubscribed ->
+    ?DEBUG("processing subscription:~n~s", [xmpp:pp(Packet)]),
     #jid{user = User, server = Server,
-	 luser = LUser, lserver = LServer, lresource = LResource} = To,
-    Lang = xmpp:get_lang(Packet),
-    case LResource of
-      <<"">> ->
-	  case Packet of
-	    #presence{type = T, status = Status} ->
-		{Pass, _Subsc} = case T of
-				   subscribe ->
-				       Reason = xmpp:get_text(Status),
-				       {is_privacy_allow(From, To, Packet)
-					  andalso
-					  ejabberd_hooks:run_fold(roster_in_subscription,
-								  LServer,
-								  false,
-								  [User, Server,
-								   From,
-								   subscribe,
-								   Reason]),
-					true};
-				   subscribed ->
-				       {is_privacy_allow(From, To, Packet)
-					  andalso
-					  ejabberd_hooks:run_fold(roster_in_subscription,
-								  LServer,
-								  false,
-								  [User, Server,
-								   From,
-								   subscribed,
-								   <<"">>]),
-					true};
-				   unsubscribe ->
-				       {is_privacy_allow(From, To, Packet)
-					  andalso
-					  ejabberd_hooks:run_fold(roster_in_subscription,
-								  LServer,
-								  false,
-								  [User, Server,
-								   From,
-								   unsubscribe,
-								   <<"">>]),
-					true};
-				   unsubscribed ->
-				       {is_privacy_allow(From, To, Packet)
-					  andalso
-					  ejabberd_hooks:run_fold(roster_in_subscription,
-								  LServer,
-								  false,
-								  [User, Server,
-								   From,
-								   unsubscribed,
-								   <<"">>]),
-					true};
-				   _ -> {true, false}
-				 end,
-		if Pass ->
-		       PResources = get_user_present_resources(LUser, LServer),
-		       lists:foreach(fun ({_, R}) ->
-					     do_route(From,
-						      jid:replace_resource(To,
-										R),
-						      Packet)
-				     end,
-				     PResources);
-		   true -> ok
-		end;
-	      #message{type = T} when T == chat; T == headline; T == normal ->
-		  route_message(From, To, Packet, T);
-	      #message{type = groupchat} ->
-		  ErrTxt = <<"User session not found">>,
-		  Err = xmpp:make_error(
-			  Packet, xmpp:err_service_unavailable(ErrTxt, Lang)),
-		  ejabberd_router:route(To, From, Err);
-	      #iq{} -> process_iq(From, To, Packet);
-	      _ -> ok
-	  end;
-      _ ->
-	Mod = get_sm_backend(LServer),
-	case online(Mod:get_sessions(LUser, LServer, LResource)) of
-	    [] ->
-		case Packet of
-		    #message{type = T} when T == chat; T == normal ->
-			route_message(From, To, Packet, T);
-		    #message{type = groupchat} ->
-			ErrTxt = <<"User session not found">>,
-			Err = xmpp:make_error(
-				Packet,
-				xmpp:err_service_unavailable(ErrTxt, Lang)),
-			ejabberd_router:route(To, From, Err);
-		    #iq{type = T} when T == get; T == set ->
-			ErrTxt = <<"User session not found">>,
-			Err = xmpp:make_error(
-				Packet,
-				xmpp:err_service_unavailable(ErrTxt, Lang)),
-			ejabberd_router:route(To, From, Err);
-		    _ -> ?DEBUG("packet dropped~n", [])
-		end;
-	    Ss ->
-		Session = lists:max(Ss),
-		Pid = element(2, Session#session.sid),
-		?DEBUG("sending to process ~p~n", [Pid]),
-		Pid ! {route, From, To, Packet}
-	  end
+	 luser = LUser, lserver = LServer} = To,
+    Reason = if T == subscribe -> xmpp:get_text(Status);
+		true -> <<"">>
+	     end,
+    case is_privacy_allow(From, To, Packet) andalso
+	ejabberd_hooks:run_fold(
+	  roster_in_subscription,
+	  LServer, false,
+	  [User, Server, From, T, Reason]) of
+	true ->
+	    Mod = get_sm_backend(LServer),
+	    lists:foreach(
+	      fun(#session{sid = SID, usr = {_, _, R},
+			   priority = Prio}) when is_integer(Prio) ->
+		      Pid = element(2, SID),
+		      ?DEBUG("sending to process ~p:~n~s",
+			     [Pid, xmpp:pp(Packet)]),
+		      Pid ! {route, From, jid:replace_resource(To, R), Packet};
+		 (_) ->
+		      ok
+	      end, online(Mod:get_sessions(LUser, LServer)));
+	false ->
+	    ok
+    end;
+do_route(From, #jid{lresource = <<"">>} = To, #presence{} = Packet) ->
+    ?DEBUG("processing presence to bare JID:~n~s", [xmpp:pp(Packet)]),
+    {LUser, LServer, _} = jid:tolower(To),
+    lists:foreach(
+      fun({_, R}) ->
+	      do_route(From, jid:replace_resource(To, R), Packet)
+      end, get_user_present_resources(LUser, LServer));
+do_route(From, #jid{lresource = <<"">>} = To, #message{type = T} = Packet) ->
+    ?DEBUG("processing message to bare JID:~n~s", [xmpp:pp(Packet)]),
+    if T == chat; T == headline; T == normal ->
+	    route_message(From, To, Packet, T);
+       true ->
+	    Lang = xmpp:get_lang(Packet),
+	    ErrTxt = <<"User session not found">>,
+	    Err = xmpp:err_service_unavailable(ErrTxt, Lang),
+	    ejabberd_router:route_error(To, From, Packet, Err)
+    end;
+do_route(From, #jid{lresource = <<"">>} = To, #iq{} = Packet) ->
+    ?DEBUG("processing IQ to bare JID:~n~s", [xmpp:pp(Packet)]),
+    process_iq(From, To, Packet);
+do_route(From, To, Packet) ->
+    ?DEBUG("processing packet to full JID:~n~s", [xmpp:pp(Packet)]),
+    {LUser, LServer, LResource} = jid:tolower(To),
+    Mod = get_sm_backend(LServer),
+    case online(Mod:get_sessions(LUser, LServer, LResource)) of
+	[] ->
+	    case Packet of
+		#message{type = T} when T == chat; T == normal ->
+		    route_message(From, To, Packet, T);
+		#presence{} ->
+		    ?DEBUG("dropping presence to unavalable resource:~n~s",
+			   [xmpp:pp(Packet)]);
+		_ ->
+		    Lang = xmpp:get_lang(Packet),
+		    ErrTxt = <<"User session not found">>,
+		    Err = xmpp:err_service_unavailable(ErrTxt, Lang),
+		    ejabberd_router:route_error(To, From, Packet, Err)
+	    end;
+	Ss ->
+	    Session = lists:max(Ss),
+	    Pid = element(2, Session#session.sid),
+	    ?DEBUG("sending to process ~p:~n~s", [Pid, xmpp:pp(Packet)]),
+	    Pid ! {route, From, To, Packet}
     end.
 
 %% The default list applies to the user as a whole,

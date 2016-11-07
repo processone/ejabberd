@@ -142,21 +142,54 @@ depends(_Host, _Opts) ->
 process_iq(#iq{from = #jid{luser = <<"">>},
 	       to = #jid{resource = <<"">>}} = IQ) ->
     process_iq_manager(IQ);
+process_iq(#iq{from = #jid{luser = U, lserver = S},
+	       to =   #jid{luser = U, lserver = S}} = IQ) ->
+    process_local_iq(IQ);
+process_iq(#iq{lang = Lang} = IQ) ->
+    Txt = <<"Query to another users is forbidden">>,
+    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang)).
 
-process_iq(#iq{from = From, lang = Lang} = IQ) ->
-    #jid{lserver = LServer} = From,
-    case lists:member(LServer, ?MYHOSTS) of
-      true -> process_local_iq(IQ);
-      _ ->
-	  Txt = <<"The query is only allowed from local users">>,
-	  xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang))
-    end.
-
-process_local_iq(#iq{type = Type} = IQ) ->
-    case Type of
-      set -> try_process_iq_set(IQ);
-      get -> process_iq_get(IQ)
-    end.
+process_local_iq(#iq{type = set,lang = Lang,
+		     sub_els = [#roster_query{
+				   items = [#roster_item{ask = Ask}]}]} = IQ)
+  when Ask /= undefined ->
+    Txt = <<"Possessing 'ask' attribute is not allowed by RFC6121">>,
+    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
+process_local_iq(#iq{type = set, from = From, lang = Lang,
+		     sub_els = [#roster_query{
+				   items = [#roster_item{} = Item]}]} = IQ) ->
+    case has_duplicated_groups(Item#roster_item.groups) of
+	true ->
+	    Txt = <<"Duplicated groups are not allowed by RFC6121">>,
+	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
+	false ->
+	    #jid{server = Server} = From,
+	    Access = gen_mod:get_module_opt(Server, ?MODULE,
+					    access, fun(A) -> A end, all),
+	    case acl:match_rule(Server, Access, From) of
+		deny ->
+		    Txt = <<"Denied by ACL">>,
+		    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+		allow ->
+		    process_iq_set(IQ)
+	    end
+    end;
+process_local_iq(#iq{type = set, lang = Lang,
+		     sub_els = [#roster_query{items = [_|_]}]} = IQ) ->
+    Txt = <<"Multiple <item/> elements are not allowed by RFC6121">>,
+    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
+process_local_iq(#iq{type = get, lang = Lang,
+		     sub_els = [#roster_query{items = Items}]} = IQ) ->
+    case Items of
+	[] ->
+	    process_iq_get(IQ);
+	[_|_] ->
+	    Txt = <<"The query must not contain <item/> elements">>,
+	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
+    end;
+process_local_iq(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 roster_hash(Items) ->
     p1_sha:sha(term_to_binary(lists:sort([R#roster{groups =
@@ -315,11 +348,18 @@ encode_item(Item) ->
 		       end,
 		 groups = Item#roster.groups}.
 
+decode_item(#roster_item{subscription = remove} = Item, R, _) ->
+    R#roster{jid = jid:tolower(Item#roster_item.jid),
+	     name = <<"">>,
+	     subscription = remove,
+	     ask = none,
+	     groups = [],
+	     askmessage = <<"">>,
+	     xs = []};
 decode_item(Item, R, Managed) ->
     R#roster{jid = jid:tolower(Item#roster_item.jid),
 	     name = Item#roster_item.name,
 	     subscription = case Item#roster_item.subscription of
-				remove -> remove;
 				Sub when Managed -> Sub;
 				_ -> R#roster.subscription
 			    end,
@@ -328,17 +368,6 @@ decode_item(Item, R, Managed) ->
 get_roster_by_jid_t(LUser, LServer, LJID) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:get_roster_by_jid(LUser, LServer, LJID).
-
-try_process_iq_set(#iq{from = From, lang = Lang} = IQ) ->
-    #jid{server = Server} = From,
-    Access = gen_mod:get_module_opt(Server, ?MODULE, access, fun(A) -> A end, all),
-    case acl:match_rule(Server, Access, From) of
-	deny ->
-	    Txt = <<"Denied by ACL">>,
-	    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
-	allow ->
-	    process_iq_set(IQ)
-    end.
 
 process_iq_set(#iq{from = From, to = To, id = Id,
 		   sub_els = [#roster_query{items = QueryItems}]} = IQ) ->
@@ -515,8 +544,7 @@ process_subscription(Direction, User, Server, JID1,
 		  {Subscription, Pending} ->
 		      NewItem = Item#roster{subscription = Subscription,
 					    ask = Pending,
-					    askmessage =
-						iolist_to_binary(AskMessage)},
+					    askmessage = AskMessage},
 		      roster_subscribe_t(LUser, LServer, LJID, NewItem),
 		      case roster_version_on_db(LServer) of
 			true -> write_roster_version_t(LUser, LServer);
@@ -730,10 +758,8 @@ del_roster_t(LUser, LServer, LJID) ->
     Mod:del_roster(LUser, LServer, LJID).
 
 process_item_set_t(LUser, LServer, #roster_item{jid = JID1} = QueryItem) ->
-    JID = {JID1#jid.user, JID1#jid.server,
-	   JID1#jid.resource},
-    LJID = {JID1#jid.luser, JID1#jid.lserver,
-	    JID1#jid.lresource},
+    JID = {JID1#jid.user, JID1#jid.server, <<>>},
+    LJID = {JID1#jid.luser, JID1#jid.lserver, <<>>},
     Item = #roster{usj = {LUser, LServer, LJID},
 		   us = {LUser, LServer}, jid = JID},
     Item2 = decode_item(QueryItem, Item, _Managed = true),
@@ -1045,6 +1071,10 @@ is_managed_from_id(<<"roster-remotely-managed">>) ->
     true;
 is_managed_from_id(_Id) ->
     false.
+
+has_duplicated_groups(Groups) ->
+    GroupsPrep = lists:usort([jid:resourceprep(G) || G <- Groups]),
+    not (length(GroupsPrep) == length(Groups)).
 
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),

@@ -86,6 +86,7 @@ init_config(Config) ->
      {stream_from, <<"">>},
      {db_xmlns, <<"">>},
      {mechs, []},
+     {rosterver, false},
      {lang, <<"en">>},
      {base_dir, BaseDir},
      {socket, undefined},
@@ -421,6 +422,8 @@ wait_auth_SASL_result(Config, ShouldFail) ->
 		      set_opt(sm, true, ConfigAcc);
 		 (#feature_csi{}, ConfigAcc) ->
 		      set_opt(csi, true, ConfigAcc);
+		 (#rosterver_feature{}, ConfigAcc) ->
+		      set_opt(rosterver, true, ConfigAcc);
 		 (_, ConfigAcc) ->
 		      ConfigAcc
 	      end, Config, Fs);
@@ -674,25 +677,31 @@ set_opt(Opt, Val, Config) ->
     [{Opt, Val}|lists:keydelete(Opt, 1, Config)].
 
 wait_for_master(Config) ->
-    put_event(Config, slave_ready),
+    put_event(Config, peer_ready),
     case get_event(Config) of
-	master_ready ->
+	peer_ready ->
 	    ok;
 	Other ->
-	    suite:match_failure([Other], [master_ready])
+	    suite:match_failure(Other, peer_ready)
     end.
 
 wait_for_slave(Config) ->
-    put_event(Config, master_ready),
+    put_event(Config, peer_ready),
     case get_event(Config) of
-	slave_ready ->
+	peer_ready ->
 	    ok;
 	Other ->
-	    suite:match_failure([Other], [slave_ready])
+	    suite:match_failure(Other, peer_ready)
     end.
 
 make_iq_result(#iq{from = From} = IQ) ->
     IQ#iq{type = result, to = From, from = undefined, sub_els = []}.
+
+self_presence(Config, Type) ->
+    MyJID = my_jid(Config),
+    ct:comment("Sending self-presence"),
+    #presence{type = Type, from = MyJID} =
+	send_recv(Config, #presence{type = Type}).
 
 set_roster(Config, Subscription, Groups) ->
     MyJID = my_jid(Config),
@@ -710,14 +719,20 @@ set_roster(Config, Subscription, Groups) ->
     Config.
 
 del_roster(Config) ->
+    del_roster(Config, ?config(peer, Config)).
+
+del_roster(Config, PeerJID) ->
     MyJID = my_jid(Config),
     {U, S, _} = jid:tolower(MyJID),
-    PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
     PeerLJID = jid:tolower(PeerBareJID),
     ct:comment("Removing ~s from roster", [jid:to_string(PeerBareJID)]),
     {atomic, _} = mod_roster:del_roster(U, S, PeerLJID),
     Config.
+
+get_roster(Config) ->
+    {LUser, LServer, _} = jid:tolower(my_jid(Config)),
+    mod_roster:get_roster(LUser, LServer).
 
 receiver(NS, Owner) ->
     MRef = erlang:monitor(process, Owner),

@@ -394,7 +394,7 @@ db_tests(riak) ->
        auth_md5,
        presence_broadcast,
        last,
-       roster_get,
+       roster_tests:single_cases(),
        private,
        privacy_tests:single_cases(),
        vcard,
@@ -402,9 +402,7 @@ db_tests(riak) ->
        test_unregister]},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
-     {test_roster_subscribe, [parallel],
-      [roster_subscribe_master,
-       roster_subscribe_slave]},
+     roster_tests:master_slave_cases(),
      {test_flex_offline, [sequence],
       [flex_offline_master, flex_offline_slave]},
      {test_offline, [sequence],
@@ -412,10 +410,7 @@ db_tests(riak) ->
      {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_vcard_xupdate, [parallel],
-      [vcard_xupdate_master, vcard_xupdate_slave]},
-     {test_roster_remove, [parallel],
-      [roster_remove_master,
-       roster_remove_slave]}];
+      [vcard_xupdate_master, vcard_xupdate_slave]}];
 db_tests(DB) when DB == mnesia; DB == redis ->
     [{single_user, [sequence],
       [test_register,
@@ -424,8 +419,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        auth_md5,
        presence_broadcast,
        last,
-       roster_get,
-       roster_ver,
+       roster_tests:single_cases(),
        private,
        privacy_tests:single_cases(),
        vcard,
@@ -435,11 +429,9 @@ db_tests(DB) when DB == mnesia; DB == redis ->
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
      pubsub_multiple_tests(),
+     roster_tests:master_slave_cases(),
      {test_mix, [parallel],
       [mix_master, mix_slave]},
-     {test_roster_subscribe, [parallel],
-      [roster_subscribe_master,
-       roster_subscribe_slave]},
      {test_flex_offline, [sequence],
       [flex_offline_master, flex_offline_slave]},
      {test_offline, [sequence],
@@ -457,10 +449,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
      {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_vcard_xupdate, [parallel],
-      [vcard_xupdate_master, vcard_xupdate_slave]},
-     {test_roster_remove, [parallel],
-      [roster_remove_master,
-       roster_remove_slave]}];
+      [vcard_xupdate_master, vcard_xupdate_slave]}];
 db_tests(_) ->
     %% No support for carboncopy
     [{single_user, [sequence],
@@ -470,8 +459,7 @@ db_tests(_) ->
        auth_md5,
        presence_broadcast,
        last,
-       roster_get,
-       roster_ver,
+       roster_tests:single_cases(),
        private,
        privacy_tests:single_cases(),
        vcard,
@@ -481,11 +469,9 @@ db_tests(_) ->
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
      pubsub_multiple_tests(),
+     roster_tests:master_slave_cases(),
      {test_mix, [parallel],
       [mix_master, mix_slave]},
-     {test_roster_subscribe, [parallel],
-      [roster_subscribe_master,
-       roster_subscribe_slave]},
      {test_flex_offline, [sequence],
       [flex_offline_master, flex_offline_slave]},
      {test_offline, [sequence],
@@ -499,10 +485,7 @@ db_tests(_) ->
      {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_vcard_xupdate, [parallel],
-      [vcard_xupdate_master, vcard_xupdate_slave]},
-     {test_roster_remove, [parallel],
-      [roster_remove_master,
-       roster_remove_slave]}].
+      [vcard_xupdate_master, vcard_xupdate_slave]}].
 
 ldap_tests() ->
     [{ldap_tests, [sequence],
@@ -862,33 +845,26 @@ test_bind(Config) ->
 test_open_session(Config) ->
     disconnect(open_session(Config, true)).
 
-roster_get(Config) ->
-    #iq{type = result, sub_els = [#roster_query{items = []}]} =
-        send_recv(Config, #iq{type = get, sub_els = [#roster_query{}]}),
-    disconnect(Config).
-
-roster_ver(Config) ->
-    %% Get initial "ver"
-    #iq{type = result, sub_els = [#roster_query{ver = Ver1, items = []}]} =
-        send_recv(Config, #iq{type = get,
-                              sub_els = [#roster_query{ver = <<"">>}]}),
-    %% Should receive empty IQ-result
-    #iq{type = result, sub_els = []} =
-        send_recv(Config, #iq{type = get,
-                              sub_els = [#roster_query{ver = Ver1}]}),
-    %% Attempting to subscribe to server's JID
-    send(Config, #presence{type = subscribe, to = server_jid(Config)}),
-    %% Receive a single roster push with the new "ver"
-    #iq{type = set, sub_els = [#roster_query{ver = Ver2}]} = recv_iq(Config),
-    %% Requesting roster with the previous "ver". Should receive Ver2 again
-    #iq{type = result, sub_els = [#roster_query{ver = Ver2}]} =
-        send_recv(Config, #iq{type = get,
-                              sub_els = [#roster_query{ver = Ver1}]}),
-    %% Now requesting roster with the newest "ver". Should receive empty IQ.
-    #iq{type = result, sub_els = []} =
-        send_recv(Config, #iq{type = get,
-                              sub_els = [#roster_query{ver = Ver2}]}),
-    disconnect(Config).
+roster_feature_enabled(Config) ->
+    roster_tests:feature_enabled(Config).
+roster_iq_set_many_items(Config) ->
+    roster_tests:iq_set_many_items(Config).
+roster_iq_set_duplicated_groups(Config) ->
+    roster_tests:iq_set_duplicated_groups(Config).
+roster_iq_set_ask(Config) ->
+    roster_tests:iq_set_ask(Config).
+roster_iq_get_item(Config) ->
+    roster_tests:iq_get_item(Config).
+roster_iq_unexpected_element(Config) ->
+    roster_tests:iq_unexpected_element(Config).
+roster_set_item(Config) ->
+    roster_tests:set_item(Config).
+roster_version(Config) ->
+    roster_tests:version(Config).
+roster_subscribe_master(Config) ->
+    roster_tests:subscribe_master(Config).
+roster_subscribe_slave(Config) ->
+    roster_tests:subscribe_slave(Config).
 
 codec_failure(Config) ->
     JID = my_jid(Config),
@@ -2041,148 +2017,6 @@ mix_master(Config) ->
 
 mix_slave(Config) ->
     disconnect = get_event(Config),
-    disconnect(Config).
-
-roster_subscribe_master(Config) ->
-    #presence{} = send_recv(Config, #presence{}),
-    wait_for_slave(Config),
-    Peer = ?config(peer, Config),
-    LPeer = jid:remove_resource(Peer),
-    send(Config, #presence{type = subscribe, to = LPeer}),
-    Push1 = #iq{type = set,
-                sub_els = [#roster_query{items = [#roster_item{
-						     ask = subscribe,
-						     subscription = none,
-						     jid = LPeer}]}]} =
-	recv_iq(Config),
-    send(Config, make_iq_result(Push1)),
-    #presence{type = subscribed, from = LPeer} = recv_presence(Config),
-    Push2 = #iq{type = set,
-		sub_els = [#roster_query{items = [#roster_item{
-						     subscription = to,
-						     jid = LPeer}]}]} =
-	recv_iq(Config),
-    send(Config, make_iq_result(Push2)),
-    #presence{type = available, from = Peer} = recv_presence(Config),
-    %% BUG: ejabberd sends previous push again. Is it ok?
-    Push3 = #iq{type = set,
-                sub_els = [#roster_query{items = [#roster_item{
-						     subscription = to,
-						     jid = LPeer}]}]} =
-	recv_iq(Config),
-    send(Config, make_iq_result(Push3)),
-    #presence{type = subscribe, from = LPeer} = recv_presence(Config),
-    send(Config, #presence{type = subscribed, to = LPeer}),
-    Push4 = #iq{type = set,
-                sub_els = [#roster_query{items = [#roster_item{
-						     subscription = both,
-						     jid = LPeer}]}]} =
-	recv_iq(Config),
-    send(Config, make_iq_result(Push4)),
-    %% Move into a group
-    Groups = [<<"A">>, <<"B">>],
-    Item = #roster_item{jid = LPeer, groups = Groups},
-    #iq{type = result, sub_els = []} =
-	send_recv(Config,
-		  #iq{type = set, sub_els = [#roster_query{items = [Item]}]}),
-    Push5 = #iq{type = set,
-		sub_els =
-		    [#roster_query{items = [#roster_item{
-					       jid = LPeer,
-					       subscription = both}]}]} =
-	recv_iq(Config),
-    send(Config, make_iq_result(Push5)),
-    #iq{sub_els = [#roster_query{items = [#roster_item{groups = G1}]}]} = Push5,
-    Groups = lists:sort(G1),
-    wait_for_slave(Config),
-    #presence{type = unavailable, from = Peer} = recv_presence(Config),
-    disconnect(Config).
-
-roster_subscribe_slave(Config) ->
-    #presence{} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
-    Peer = ?config(master, Config),
-    LPeer = jid:remove_resource(Peer),
-    #presence{type = subscribe, from = LPeer} = recv_presence(Config),
-    send(Config, #presence{type = subscribed, to = LPeer}),
-    Push1 = #iq{type = set,
-                sub_els = [#roster_query{items = [#roster_item{
-						     subscription = from,
-						     jid = LPeer}]}]} =
-	recv_iq(Config),
-    send(Config, make_iq_result(Push1)),
-    send(Config, #presence{type = subscribe, to = LPeer}),
-    Push2 = #iq{type = set,
-                sub_els = [#roster_query{items = [#roster_item{
-						     ask = subscribe,
-						     subscription = from,
-						     jid = LPeer}]}]} =
-	recv_iq(Config),
-    send(Config, make_iq_result(Push2)),
-    #presence{type = subscribed, from = LPeer} = recv_presence(Config),
-    Push3 = #iq{type = set,
-		sub_els = [#roster_query{items = [#roster_item{
-						     subscription = both,
-						     jid = LPeer}]}]} =
-	recv_iq(Config),
-    send(Config, make_iq_result(Push3)),
-    #presence{type = available, from = Peer} = recv_presence(Config),
-    wait_for_master(Config),
-    disconnect(Config).
-
-roster_remove_master(Config) ->
-    MyJID = my_jid(Config),
-    Peer = ?config(slave, Config),
-    LPeer = jid:remove_resource(Peer),
-    Groups = [<<"A">>, <<"B">>],
-    wait_for_slave(Config),
-    #presence{from = MyJID, type = available} = send_recv(Config, #presence{}),
-    #presence{from = Peer, type = available} = recv_presence(Config),
-    %% The peer removed us from its roster.
-    {Push1, Push2, _, _, _} =
-        ?recv5(
-           %% TODO: I guess this can be optimized, we don't need
-           %% to send transient roster push with subscription = 'to'.
-           #iq{type = set,
-               sub_els =
-                   [#roster_query{items = [#roster_item{
-                                        jid = LPeer,
-                                        subscription = to}]}]},
-           #iq{type = set,
-               sub_els =
-                   [#roster_query{items = [#roster_item{
-                                        jid = LPeer,
-                                        subscription = none}]}]},
-           #presence{type = unsubscribe, from = LPeer},
-           #presence{type = unsubscribed, from = LPeer},
-           #presence{type = unavailable, from = Peer}),
-    send(Config, make_iq_result(Push1)),
-    send(Config, make_iq_result(Push2)),
-    #iq{sub_els = [#roster_query{items = [#roster_item{groups = G1}]}]} = Push1,
-    #iq{sub_els = [#roster_query{items = [#roster_item{groups = G2}]}]} = Push2,
-    Groups = lists:sort(G1), Groups = lists:sort(G2),
-    disconnect(Config).
-
-roster_remove_slave(Config) ->
-    MyJID = my_jid(Config),
-    Peer = ?config(master, Config),
-    LPeer = jid:remove_resource(Peer),
-    #presence{from = MyJID, type = available} = send_recv(Config, #presence{}),
-    wait_for_master(Config),
-    #presence{from = Peer, type = available} = recv_presence(Config),
-    %% Remove the peer from roster.
-    Item = #roster_item{jid = LPeer, subscription = remove},
-    #iq{type = result, sub_els = []} =
-	send_recv(Config, #iq{type = set,
-			      sub_els = [#roster_query{items = [Item]}]}),
-    Push = #iq{type = set,
-	       sub_els =
-		   [#roster_query{items = [#roster_item{
-					      jid = LPeer,
-					      subscription = remove}]}]} =
-	recv_iq(Config),
-    #presence{type = unavailable, from = Peer} = recv_presence(Config),
-    send(Config, make_iq_result(Push)),
     disconnect(Config).
 
 proxy65_master(Config) ->
