@@ -498,7 +498,7 @@ do_route(From, #jid{lresource = <<"">>} = To, #presence{} = Packet) ->
       end, get_user_present_resources(LUser, LServer));
 do_route(From, #jid{lresource = <<"">>} = To, #message{type = T} = Packet) ->
     ?DEBUG("processing message to bare JID:~n~s", [xmpp:pp(Packet)]),
-    if T == chat; T == headline; T == normal ->
+    if T == chat; T == headline; T == normal; T == groupchat ->
 	    route_message(From, To, Packet, T);
        true ->
 	    Lang = xmpp:get_lang(Packet),
@@ -516,7 +516,8 @@ do_route(From, To, Packet) ->
     case online(Mod:get_sessions(LUser, LServer, LResource)) of
 	[] ->
 	    case Packet of
-		#message{type = T} when T == chat; T == normal ->
+		#message{type = T} when T == chat; T == normal;
+					T == headline; T == groupchat ->
 		    route_message(From, To, Packet, T);
 		#presence{} ->
 		    ?DEBUG("dropping presence to unavalable resource:~n~s",
@@ -586,20 +587,16 @@ route_message(From, To, Packet, Type) ->
 			end,
 			PrioRes);
       _ ->
-	  case Type of
-	    headline -> ok;
-	    _ ->
-		case ejabberd_auth:is_user_exists(LUser, LServer) andalso
-		    is_privacy_allow(From, To, Packet) of
-		  true ->
-		      ejabberd_hooks:run(offline_message_hook, LServer,
-					 [From, To, Packet]);
-		  false ->
-		      Err = xmpp:make_error(Packet,
-					    xmpp:err_service_unavailable()),
-		      ejabberd_router:route(To, From, Err)
-		end
-	  end
+	    case ejabberd_auth:is_user_exists(LUser, LServer) andalso
+		is_privacy_allow(From, To, Packet) of
+		true ->
+		    ejabberd_hooks:run(offline_message_hook, LServer,
+				       [From, To, Packet]);
+		false ->
+		    Err = xmpp:make_error(Packet,
+					  xmpp:err_service_unavailable()),
+		    ejabberd_router:route(To, From, Err)
+	    end
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

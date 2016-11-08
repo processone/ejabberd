@@ -102,7 +102,7 @@
 -callback read_message_headers(binary(), binary()) -> any().
 -callback read_message(binary(), binary(), non_neg_integer()) ->
     {ok, #offline_msg{}} | error.
--callback remove_message(binary(), binary(), non_neg_integer()) -> ok.
+-callback remove_message(binary(), binary(), non_neg_integer()) -> ok | {error, any()}.
 -callback read_all_messages(binary(), binary()) -> [#offline_msg{}].
 -callback remove_all_messages(binary(), binary()) -> {atomic, any()}.
 -callback count_messages(binary(), binary()) -> non_neg_integer().
@@ -315,32 +315,52 @@ get_info(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 -spec handle_offline_query(iq()) -> iq().
+handle_offline_query(#iq{from = #jid{luser = U1, lserver = S1},
+			 to = #jid{luser = U2, lserver = S2},
+			 lang = Lang,
+			 sub_els = [#offline{}]} = IQ)
+  when {U1, S1} /= {U2, S2} ->
+    Txt = <<"Query to another users is forbidden">>,
+    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang));
 handle_offline_query(#iq{from = #jid{luser = U, lserver = S} = From,
 			 to = #jid{luser = U, lserver = S} = _To,
-			 type = Type,
-			 sub_els = [#offline{purge = Purge,
-					     items = Items,
-					     fetch = Fetch}]} = IQ) ->
-    case Type of
-	get ->
-	    if Fetch -> handle_offline_fetch(From);
-	       true -> handle_offline_items_view(From, Items)
+			 type = Type, lang = Lang,
+			 sub_els = [#offline{} = Offline]} = IQ) ->
+    case {Type, Offline} of
+	{get, #offline{fetch = true, items = [], purge = false}} ->
+	    %% TODO: report database errors
+	    handle_offline_fetch(From),
+	    xmpp:make_iq_result(IQ);
+	{get, #offline{fetch = false, items = [_|_] = Items, purge = false}} ->
+	    case handle_offline_items_view(From, Items) of
+		true -> xmpp:make_iq_result(IQ);
+		false -> xmpp:make_error(IQ, xmpp:err_item_not_found())
 	    end;
-	set ->
-	    if Purge -> delete_all_msgs(U, S);
-	       true -> handle_offline_items_remove(From, Items)
-	    end
-    end,
-    xmpp:make_iq_result(IQ);
+	{set, #offline{fetch = false, items = [], purge = true}} ->
+	    case delete_all_msgs(U, S) of
+		{atomic, ok} ->
+		    xmpp:make_iq_result(IQ);
+		_Err ->
+		    Txt = <<"Database failure">>,
+		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
+	    end;
+	{set, #offline{fetch = false, items = [_|_] = Items, purge = false}} ->
+	    case handle_offline_items_remove(From, Items) of
+		true -> xmpp:make_iq_result(IQ);
+		false -> xmpp:make_error(IQ, xmpp:err_item_not_found())
+	    end;
+	_ ->
+	    xmpp:make_error(IQ, xmpp:err_bad_request())
+    end;
 handle_offline_query(#iq{lang = Lang} = IQ) ->
-    Txt = <<"Query to another users is forbidden">>,
-    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang)).
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
--spec handle_offline_items_view(jid(), [offline_item()]) -> ok.
+-spec handle_offline_items_view(jid(), [offline_item()]) -> boolean().
 handle_offline_items_view(JID, Items) ->
     {U, S, R} = jid:tolower(JID),
-    lists:foreach(
-      fun(#offline_item{node = Node, action = view}) ->
+    lists:foldl(
+      fun(#offline_item{node = Node, action = view}, Acc) ->
 	      case fetch_msg_by_node(JID, Node) of
 		  {ok, OfflineMsg} ->
 		      case offline_msg_to_route(S, OfflineMsg) of
@@ -351,25 +371,22 @@ handle_offline_items_view(JID, Items) ->
 				      Pid ! {route, From, To, NewEl};
 				  none ->
 				      ok
-			      end;
+			      end,
+			      Acc or true;
 			  error ->
-			      ok
+			      Acc or false
 		      end;
 		  error ->
-		      ok
-	      end;
-	 (_) ->
-	      ok
-      end, Items).
+		      Acc or false
+	      end
+      end, false, Items).
 
--spec handle_offline_items_remove(jid(), [offline_item()]) -> ok.
+-spec handle_offline_items_remove(jid(), [offline_item()]) -> boolean().
 handle_offline_items_remove(JID, Items) ->
-    lists:foreach(
-      fun(#offline_item{node = Node, action = remove}) ->
-	      remove_msg_by_node(JID, Node);
-	 (_) ->
-	      ok
-      end, Items).
+    lists:foldl(
+      fun(#offline_item{node = Node, action = remove}, Acc) ->
+	      Acc or remove_msg_by_node(JID, Node)
+      end, false, Items).
 
 -spec set_offline_tag(message(), binary()) -> message().
 set_offline_tag(Msg, Node) ->
@@ -401,29 +418,30 @@ fetch_msg_by_node(To, Seq) ->
 	    error
     end.
 
--spec remove_msg_by_node(jid(), binary()) -> ok.
+-spec remove_msg_by_node(jid(), binary()) -> boolean().
 remove_msg_by_node(To, Seq) ->
     case catch binary_to_integer(Seq) of
 	I when is_integer(I), I>= 0 ->
 	    LUser = To#jid.luser,
 	    LServer = To#jid.lserver,
 	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    Mod:remove_message(LUser, LServer, I);
+	    Mod:remove_message(LUser, LServer, I),
+	    true;
 	_ ->
-	    ok
+	    false
     end.
 
 -spec need_to_store(binary(), message()) -> boolean().
 need_to_store(_LServer, #message{type = error}) -> false;
-need_to_store(_LServer, #message{type = groupchat}) -> false;
-need_to_store(_LServer, #message{type = headline}) -> false;
-need_to_store(LServer, Packet) ->
+need_to_store(LServer, #message{type = Type} = Packet) ->
     case xmpp:has_subtag(Packet, #offline{}) of
 	false ->
 	    case check_store_hint(Packet) of
 		store ->
 		    true;
 		no_store ->
+		    false;
+		none when Type == headline; Type == groupchat ->
 		    false;
 		none ->
 		    case gen_mod:get_module_opt(

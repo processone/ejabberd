@@ -199,27 +199,31 @@ init_stream(Config) ->
 		component -> ?NS_COMPONENT;
 		server -> ?NS_SERVER
 	    end,
-    #stream_start{id = ID, xmlns = XMLNS, version = Version} = recv(Config),
-    set_opt(stream_id, ID, NewConfig).
+    receive
+	#stream_start{id = ID, xmlns = XMLNS, version = Version} ->
+	    set_opt(stream_id, ID, NewConfig)
+    end.
 
 process_stream_features(Config) ->
-    #stream_features{sub_els = Fs} = recv(Config),
-    Mechs = lists:flatmap(
-              fun(#sasl_mechanisms{list = Ms}) ->
-                      Ms;
-                 (_) ->
-                      []
-              end, Fs),
-    lists:foldl(
-      fun(#feature_register{}, Acc) ->
-              set_opt(register, true, Acc);
-         (#starttls{}, Acc) ->
-              set_opt(starttls, true, Acc);
-         (#compression{methods = Ms}, Acc) ->
-              set_opt(compression, Ms, Acc);
-         (_, Acc) ->
-              Acc
-      end, set_opt(mechs, Mechs, Config), Fs).
+    receive
+	#stream_features{sub_els = Fs} ->
+	    Mechs = lists:flatmap(
+		      fun(#sasl_mechanisms{list = Ms}) ->
+			      Ms;
+			 (_) ->
+			      []
+		      end, Fs),
+	    lists:foldl(
+	      fun(#feature_register{}, Acc) ->
+		      set_opt(register, true, Acc);
+		 (#starttls{}, Acc) ->
+		      set_opt(starttls, true, Acc);
+		 (#compression{methods = Ms}, Acc) ->
+		      set_opt(compression, Ms, Acc);
+		 (_, Acc) ->
+		      Acc
+	      end, set_opt(mechs, Mechs, Config), Fs)
+    end.
 
 disconnect(Config) ->
     ct:comment("Disconnecting"),
@@ -245,7 +249,7 @@ starttls(Config) ->
 
 starttls(Config, ShouldFail) ->
     send(Config, #starttls{}),
-    case recv(Config) of
+    receive
 	#starttls_proceed{} when ShouldFail ->
 	    ct:fail(starttls_should_have_failed);
 	#starttls_failure{} when ShouldFail ->
@@ -262,7 +266,7 @@ starttls(Config, ShouldFail) ->
 
 zlib(Config) ->
     send(Config, #compress{methods = [<<"zlib">>]}),
-    #compressed{} = recv(Config),
+    receive #compressed{} -> ok end,
     ZlibSocket = ejabberd_socket:compress(?config(socket, Config)),
     process_stream_features(init_stream(set_opt(socket, ZlibSocket, Config))).
 
@@ -376,7 +380,7 @@ auth_component(Config, ShouldFail) ->
     Password = ?config(password, Config),
     Digest = p1_sha:sha(<<StreamID/binary, Password/binary>>),
     send(Config, #handshake{data = Digest}),
-    case recv(Config) of
+    receive
 	#handshake{} when ShouldFail ->
 	    ct:fail(component_auth_should_have_failed);
 	#handshake{} ->
@@ -399,7 +403,7 @@ auth_SASL(Mech, Config, ShouldFail) ->
     wait_auth_SASL_result(set_opt(sasl, SASL, Config), ShouldFail).
 
 wait_auth_SASL_result(Config, ShouldFail) ->
-    case recv(Config) of
+    receive
 	#sasl_success{} when ShouldFail ->
 	    ct:fail(sasl_auth_should_have_failed);
         #sasl_success{} ->
@@ -409,24 +413,25 @@ wait_auth_SASL_result(Config, ShouldFail) ->
 	    NS = if Type == client -> ?NS_CLIENT;
 		    Type == server -> ?NS_SERVER
 		 end,
-	    #stream_start{xmlns = NS, version = {1,0}} = recv(Config),
-            #stream_features{sub_els = Fs} = recv(Config),
-	    if Type == client ->
-		    #xmpp_session{optional = true} =
-			lists:keyfind(xmpp_session, 1, Fs);
-	       true ->
-		    ok
-	    end,
-	    lists:foldl(
-	      fun(#feature_sm{}, ConfigAcc) ->
-		      set_opt(sm, true, ConfigAcc);
-		 (#feature_csi{}, ConfigAcc) ->
-		      set_opt(csi, true, ConfigAcc);
-		 (#rosterver_feature{}, ConfigAcc) ->
-		      set_opt(rosterver, true, ConfigAcc);
-		 (_, ConfigAcc) ->
-		      ConfigAcc
-	      end, Config, Fs);
+	    receive #stream_start{xmlns = NS, version = {1,0}} -> ok end,
+            receive #stream_features{sub_els = Fs} ->
+		    if Type == client ->
+			    #xmpp_session{optional = true} =
+				lists:keyfind(xmpp_session, 1, Fs);
+		       true ->
+			    ok
+		    end,
+		    lists:foldl(
+		      fun(#feature_sm{}, ConfigAcc) ->
+			      set_opt(sm, true, ConfigAcc);
+			 (#feature_csi{}, ConfigAcc) ->
+			      set_opt(csi, true, ConfigAcc);
+			 (#rosterver_feature{}, ConfigAcc) ->
+			      set_opt(rosterver, true, ConfigAcc);
+			 (_, ConfigAcc) ->
+			      ConfigAcc
+		      end, Config, Fs)
+	    end;
         #sasl_challenge{text = ClientIn} ->
             {Response, SASL} = (?config(sasl, Config))(ClientIn),
             send(Config, #sasl_response{text = Response}),

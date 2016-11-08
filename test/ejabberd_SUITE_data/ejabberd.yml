@@ -388,8 +388,7 @@ access:
   local: 
     local: allow
   max_user_offline_messages: 
-    admin: 5000
-    all: 100
+    all: infinity
   max_user_sessions: 
     all: 10
   muc: 
@@ -459,4 +458,4 @@ s2s_use_starttls: false
 s2s_cafile: CAFILE
 shaper: 
   fast: 50000
-  normal: 1000
+  normal: 10000

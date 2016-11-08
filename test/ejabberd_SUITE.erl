@@ -399,14 +399,12 @@ db_tests(riak) ->
        privacy_tests:single_cases(),
        vcard,
        muc_tests:single_cases(),
+       offline_tests:master_slave_cases(),
        test_unregister]},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
      roster_tests:master_slave_cases(),
-     {test_flex_offline, [sequence],
-      [flex_offline_master, flex_offline_slave]},
-     {test_offline, [sequence],
-      [offline_master, offline_slave]},
+     offline_tests:master_slave_cases(),
      {test_announce, [sequence],
       [announce_master, announce_slave]},
      {test_vcard_xupdate, [parallel],
@@ -425,17 +423,15 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        vcard,
        pubsub_single_tests(),
        muc_tests:single_cases(),
+       offline_tests:single_cases(),
        test_unregister]},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
      pubsub_multiple_tests(),
      roster_tests:master_slave_cases(),
+     offline_tests:master_slave_cases(),
      {test_mix, [parallel],
       [mix_master, mix_slave]},
-     {test_flex_offline, [sequence],
-      [flex_offline_master, flex_offline_slave]},
-     {test_offline, [sequence],
-      [offline_master, offline_slave]},
      {test_old_mam, [parallel],
       [mam_old_master, mam_old_slave]},
      {test_new_mam, [parallel],
@@ -465,17 +461,15 @@ db_tests(_) ->
        vcard,
        pubsub_single_tests(),
        muc_tests:single_cases(),
+       offline_tests:single_cases(),
        test_unregister]},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
      pubsub_multiple_tests(),
      roster_tests:master_slave_cases(),
+     offline_tests:master_slave_cases(),
      {test_mix, [parallel],
       [mix_master, mix_slave]},
-     {test_flex_offline, [sequence],
-      [flex_offline_master, flex_offline_slave]},
-     {test_offline, [sequence],
-      [offline_master, offline_slave]},
      {test_old_mam, [parallel],
       [mam_old_master, mam_old_slave]},
      {test_new_mam, [parallel],
@@ -2294,6 +2288,35 @@ muc_config_visitor_nickchange_master(Config) ->
 muc_config_visitor_nickchange_slave(Config) ->
     muc_tests:muc_config_visitor_nickchange_slave(Config).
 
+offline_feature_enabled(Config) ->
+    offline_tests:feature_enabled(Config).
+offline_check_identity(Config) ->
+    offline_tests:check_identity(Config).
+offline_send_non_existent(Config) ->
+    offline_tests:send_non_existent(Config).
+offline_view_non_existent(Config) ->
+    offline_tests:view_non_existent(Config).
+offline_remove_non_existent(Config) ->
+    offline_tests:remove_non_existent(Config).
+offline_view_non_integer(Config) ->
+    offline_tests:view_non_integer(Config).
+offline_remove_non_integer(Config) ->
+    offline_tests:remove_non_integer(Config).
+offline_malformed_iq(Config) ->
+    offline_tests:malformed_iq(Config).
+offline_wrong_user(Config) ->
+    offline_tests:wrong_user(Config).
+offline_unsupported_iq(Config) ->
+    offline_tests:unsupported_iq(Config).
+offline_flex_master(Config) ->
+    offline_tests:flex_master(Config).
+offline_flex_slave(Config) ->
+    offline_tests:flex_slave(Config).
+offline_send_all_master(Config) ->
+    offline_tests:send_all_master(Config).
+offline_send_all_slave(Config) ->
+    offline_tests:send_all_slave(Config).
+
 announce_master(Config) ->
     MyJID = my_jid(Config),
     ServerJID = server_jid(Config),
@@ -2315,155 +2338,6 @@ announce_slave(Config) ->
     #message{from = ServerJID, body = [MotdText]} = recv_message(Config),
     %% Delete message of the day
     send(Config, #message{to = MotdDelJID}),
-    disconnect(Config).
-
-flex_offline_master(Config) ->
-    Peer = ?config(slave, Config),
-    LPeer = jid:remove_resource(Peer),
-    lists:foreach(
-      fun(I) ->
-	      Body = integer_to_binary(I),
-	      send(Config, #message{to = LPeer,
-				    body = [#text{data = Body}],
-				    subject = [#text{data = <<"subject">>}]})
-      end, lists:seq(1, 5)),
-    disconnect(Config).
-
-flex_offline_slave(Config) ->
-    MyJID = my_jid(Config),
-    MyBareJID = jid:remove_resource(MyJID),
-    Peer = ?config(master, Config),
-    Peer_s = jid:to_string(Peer),
-    true = is_feature_advertised(Config, ?NS_FLEX_OFFLINE),
-    %% Request disco#info
-    #iq{type = result,
-	sub_els = [#disco_info{
-		      node = ?NS_FLEX_OFFLINE,
-		      identities = Ids,
-		      features = Fts,
-		      xdata = [X]}]} =
-	send_recv(Config, #iq{type = get,
-			      sub_els = [#disco_info{
-					    node = ?NS_FLEX_OFFLINE}]}),
-    %% Check if we have correct identities
-    true = lists:any(
-	     fun(#identity{category = <<"automation">>,
-			   type = <<"message-list">>}) -> true;
-		(_) -> false
-	     end, Ids),
-    %% Check if we have needed feature
-    true = lists:member(?NS_FLEX_OFFLINE, Fts),
-    %% Check xdata, the 'number_of_messages' should be 5
-    #xdata{type = result,
-	   fields = [#xdata_field{type = hidden,
-				  var = <<"FORM_TYPE">>},
-		     #xdata_field{var = <<"number_of_messages">>,
-				  values = [<<"5">>]}]} = X,
-    %% Fetch headers,
-    #iq{type = result,
-	sub_els = [#disco_items{
-		      node = ?NS_FLEX_OFFLINE,
-		      items = DiscoItems}]} =
-	send_recv(Config, #iq{type = get,
-			      sub_els = [#disco_items{
-					    node = ?NS_FLEX_OFFLINE}]}),
-    %% Check if headers are correct
-    Nodes = lists:sort(
-	      lists:map(
-		fun(#disco_item{jid = J, name = P, node = N})
-		      when (J == MyBareJID) and (P == Peer_s) ->
-			N
-		end, DiscoItems)),
-    %% Since headers are received we can send initial presence without a risk
-    %% of getting offline messages flood
-    #presence{from = MyJID} = send_recv(Config, #presence{}),
-    %% Check full fetch
-    #iq{type = result, sub_els = []} =
-	send_recv(Config, #iq{type = get, sub_els = [#offline{fetch = true}]}),
-    lists:foreach(
-      fun({I, N}) ->
-	      Text = integer_to_binary(I),
-	      #message{body = Body, sub_els = SubEls} = recv_message(Config),
-	      [#text{data = Text}] = Body,
-	      #offline{items = [#offline_item{node = N}]} =
-		  lists:keyfind(offline, 1, SubEls),
-	      #delay{} = lists:keyfind(delay, 1, SubEls)
-      end, lists:zip(lists:seq(1, 5), Nodes)),
-    %% Fetch 2nd and 4th message
-    #iq{type = result, sub_els = []} =
-	send_recv(
-	  Config,
-	  #iq{type = get,
-	      sub_els = [#offline{
-			    items = [#offline_item{
-					action = view,
-					node = lists:nth(2, Nodes)},
-				     #offline_item{
-					action = view,
-					node = lists:nth(4, Nodes)}]}]}),
-    lists:foreach(
-      fun({I, N}) ->
-	      Text = integer_to_binary(I),
-	      #message{body = [#text{data = Text}],
-		       sub_els = SubEls} = recv_message(Config),
-	      #offline{items = [#offline_item{node = N}]} =
-		  lists:keyfind(offline, 1, SubEls)
-      end, lists:zip([2, 4], [lists:nth(2, Nodes), lists:nth(4, Nodes)])),
-    %% Delete 2nd and 4th message
-    #iq{type = result, sub_els = []} =
-	send_recv(
-	  Config,
-	  #iq{type = set,
-	      sub_els = [#offline{
-			    items = [#offline_item{
-					action = remove,
-					node = lists:nth(2, Nodes)},
-				     #offline_item{
-					action = remove,
-					node = lists:nth(4, Nodes)}]}]}),
-    %% Check if messages were deleted
-    #iq{type = result,
-	sub_els = [#disco_items{
-		      node = ?NS_FLEX_OFFLINE,
-		      items = RemainedItems}]} =
-	send_recv(Config, #iq{type = get,
-			      sub_els = [#disco_items{
-					    node = ?NS_FLEX_OFFLINE}]}),
-    RemainedNodes = [lists:nth(1, Nodes),
-		     lists:nth(3, Nodes),
-		     lists:nth(5, Nodes)],
-    RemainedNodes = lists:sort(
-		      lists:map(
-			fun(#disco_item{node = N}) -> N end,
-			RemainedItems)),
-    %% Purge everything left
-    #iq{type = result, sub_els = []} =
-	send_recv(Config, #iq{type = set, sub_els = [#offline{purge = true}]}),
-    %% Check if there is no offline messages
-    #iq{type = result,
-	sub_els = [#disco_items{node = ?NS_FLEX_OFFLINE, items = []}]} =
-	send_recv(Config, #iq{type = get,
-			      sub_els = [#disco_items{
-					    node = ?NS_FLEX_OFFLINE}]}),
-    disconnect(Config).
-
-offline_master(Config) ->
-    Peer = ?config(slave, Config),
-    LPeer = jid:remove_resource(Peer),
-    send(Config, #message{to = LPeer,
-                          body = [#text{data = <<"body">>}],
-                          subject = [#text{data = <<"subject">>}]}),
-    disconnect(Config).
-
-offline_slave(Config) ->
-    Peer = ?config(master, Config),
-    #presence{} = send_recv(Config, #presence{}),
-    #message{sub_els = SubEls,
-	     from = Peer,
-	     body = [#text{data = <<"body">>}],
-	     subject = [#text{data = <<"subject">>}]} =
-	recv_message(Config),
-    true = lists:keymember(delay, 1, SubEls),
     disconnect(Config).
 
 carbons_master(Config) ->

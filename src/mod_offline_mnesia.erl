@@ -127,12 +127,16 @@ read_message(LUser, LServer, I) ->
 remove_message(LUser, LServer, I) ->
     US = {LUser, LServer},
     TS = integer_to_now(I),
-    Msgs = mnesia:dirty_match_object(
-	     offline_msg, #offline_msg{us = US, timestamp = TS, _ = '_'}),
-    lists:foreach(
-      fun(Msg) ->
-	      mnesia:dirty_delete_object(Msg)
-      end, Msgs).
+    case mnesia:dirty_match_object(
+	   offline_msg, #offline_msg{us = US, timestamp = TS, _ = '_'}) of
+	[] ->
+	    {error, notfound};
+	Msgs ->
+	    lists:foreach(
+	      fun(Msg) ->
+		      mnesia:dirty_delete_object(Msg)
+	      end, Msgs)
+    end.
 
 read_all_messages(LUser, LServer) ->
     US = {LUser, LServer},
