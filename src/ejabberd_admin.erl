@@ -136,6 +136,7 @@ get_commands_spec() ->
 			result = {res, restuple}},
      #ejabberd_commands{name = unregister, tags = [accounts],
 			desc = "Unregister a user",
+                        policy = admin,
 			module = ?MODULE, function = unregister,
 			args = [{user, binary}, {host, binary}],
 			result = {res, restuple}},
