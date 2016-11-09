@@ -629,7 +629,7 @@ generic_sql_query_format(SQLQuery) ->
 
 generic_escape() ->
     #sql_escape{string = fun(X) -> <<"'", (escape(X))/binary, "'">> end,
-                integer = fun(X) -> integer_to_binary(X) end,
+                integer = fun(X) -> jlib:i2l(X) end,
                 boolean = fun(true) -> <<"1">>;
                              (false) -> <<"0">>
                           end
@@ -646,7 +646,7 @@ sqlite_sql_query_format(SQLQuery) ->
 
 sqlite_escape() ->
     #sql_escape{string = fun(X) -> <<"'", (standard_escape(X))/binary, "'">> end,
-                integer = fun(X) -> integer_to_binary(X) end,
+                integer = fun(X) -> jlib:i2l(X) end,
                 boolean = fun(true) -> <<"1">>;
                              (false) -> <<"0">>
                           end
@@ -670,7 +670,7 @@ pgsql_prepare(SQLQuery, State) ->
 
 pgsql_execute_escape() ->
     #sql_escape{string = fun(X) -> X end,
-                integer = fun(X) -> [integer_to_binary(X)] end,
+                integer = fun(X) -> [jlib:i2l(X)] end,
                 boolean = fun(true) -> "1";
                              (false) -> "0"
                           end

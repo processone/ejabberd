@@ -43,7 +43,7 @@
 	 forget_room/3,
 	 create_room/5,
 	 shutdown_rooms/1,
-	 process_iq_disco_items/4,
+	 process_iq_disco_items/5,
 	 broadcast_service_message/2,
 	 export/1,
 	 import/1,
@@ -66,12 +66,11 @@
          server_host = <<"">> :: binary(),
          access = {none, none, none, none} :: {atom(), atom(), atom(), atom()},
          history_size = 20 :: non_neg_integer(),
+         max_rooms_discoitems = 100 :: non_neg_integer(),
          default_room_opts = [] :: list(),
          room_shaper = none :: shaper:shaper()}).
 
 -define(PROCNAME, ejabberd_mod_muc).
-
--define(MAX_ROOMS_DISCOITEMS, 100).
 
 -type muc_room_opts() :: [{atom(), any()}].
 -callback init(binary(), gen_mod:opts()) -> any().
@@ -154,7 +153,7 @@ forget_room(ServerHost, Host, Name) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:forget_room(LServer, Host, Name).
 
-process_iq_disco_items(Host, From, To,
+process_iq_disco_items(Host, From, To, MaxRoomsDiscoItems,
 		       #iq{lang = Lang} = IQ) ->
     Rsm = jlib:rsm_decode(IQ),
     DiscoNode = fxml:get_tag_attr_s(<<"node">>, IQ#iq.sub_el),
@@ -162,7 +161,7 @@ process_iq_disco_items(Host, From, To,
 		sub_el =
 		    [#xmlel{name = <<"query">>,
 			    attrs = [{<<"xmlns">>, ?NS_DISCO_ITEMS}],
-			    children = iq_disco_items(Host, From, Lang, DiscoNode, Rsm)}]},
+			    children = iq_disco_items(Host, From, Lang, MaxRoomsDiscoItems, DiscoNode, Rsm)}]},
     ejabberd_router:route(To, From, jlib:iq_to_xml(Res)).
 
 can_use_nick(_ServerHost, _Host, _JID, <<"">>) -> false;
@@ -200,6 +199,9 @@ init([Host, Opts]) ->
     HistorySize = gen_mod:get_opt(history_size, Opts,
                                   fun(I) when is_integer(I), I>=0 -> I end,
                                   20),
+    MaxRoomsDiscoItems = gen_mod:get_opt(max_rooms_discoitems, Opts,
+                                  fun(I) when is_integer(I), I>=0 -> I end,
+                                  100),
     DefRoomOpts1 = gen_mod:get_opt(default_room_options, Opts,
 				   fun(L) when is_list(L) -> L end,
 				   []),
@@ -265,6 +267,7 @@ init([Host, Opts]) ->
 		access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
 		default_room_opts = DefRoomOpts,
 		history_size = HistorySize,
+		max_rooms_discoitems = MaxRoomsDiscoItems,
 		room_shaper = RoomShaper}}.
 
 handle_call(stop, _From, State) ->
@@ -293,9 +296,10 @@ handle_info({route, From, To, Packet},
 	    #state{host = Host, server_host = ServerHost,
 		   access = Access, default_room_opts = DefRoomOpts,
 		   history_size = HistorySize,
+		   max_rooms_discoitems = MaxRoomsDiscoItems,
 		   room_shaper = RoomShaper} = State) ->
     case catch do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
-			From, To, Packet, DefRoomOpts) of
+			From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
@@ -326,12 +330,12 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 
 do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
-	 From, To, Packet, DefRoomOpts) ->
+	 From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems) ->
     {AccessRoute, _AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
 	    do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
-		From, To, Packet, DefRoomOpts);
+		From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems);
 	_ ->
 	    #xmlel{attrs = Attrs} = Packet,
 	    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
@@ -343,7 +347,7 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 
 
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
-	  From, To, Packet, DefRoomOpts) ->
+	  From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems) ->
     {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
     {Room, _, Nick} = jid:tolower(To),
     #xmlel{name = Name, attrs = Attrs} = Packet,
@@ -374,7 +378,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 						  jlib:iq_to_xml(Res));
 			#iq{type = get, xmlns = ?NS_DISCO_ITEMS} = IQ ->
 			    spawn(?MODULE, process_iq_disco_items,
-				  [Host, From, To, IQ]);
+				  [Host, From, To, MaxRoomsDiscoItems, IQ]);
 			#iq{type = get, xmlns = (?NS_REGISTER) = XMLNS,
 			    lang = Lang, sub_el = _SubEl} =
 			    IQ ->
@@ -636,15 +640,15 @@ iq_disco_info(ServerHost, Lang) ->
 		[]
 	end.
 
-iq_disco_items(Host, From, Lang, <<>>, none) ->
+iq_disco_items(Host, From, Lang, MaxRoomsDiscoItems, <<>>, none) ->
     Rooms = get_vh_rooms(Host),
-    case erlang:length(Rooms) < ?MAX_ROOMS_DISCOITEMS of
+    case erlang:length(Rooms) < MaxRoomsDiscoItems of
 	true ->
 	    iq_disco_items_list(Host, Rooms, {get_disco_item, all, From, Lang});
 	false ->
-	    iq_disco_items(Host, From, Lang, <<"nonemptyrooms">>, none)
+	    iq_disco_items(Host, From, Lang, MaxRoomsDiscoItems, <<"nonemptyrooms">>, none)
     end;
-iq_disco_items(Host, From, Lang, <<"nonemptyrooms">>, none) ->
+iq_disco_items(Host, From, Lang, _MaxRoomsDiscoItems, <<"nonemptyrooms">>, none) ->
     XmlEmpty = #xmlel{name = <<"item">>,
 				   attrs =
 				       [{<<"jid">>, <<"conference.localhost">>},
@@ -653,9 +657,9 @@ iq_disco_items(Host, From, Lang, <<"nonemptyrooms">>, none) ->
 				   children = []},
     Query = {get_disco_item, only_non_empty, From, Lang},
     [XmlEmpty | iq_disco_items_list(Host, get_vh_rooms(Host), Query)];
-iq_disco_items(Host, From, Lang, <<"emptyrooms">>, none) ->
+iq_disco_items(Host, From, Lang, _MaxRoomsDiscoItems, <<"emptyrooms">>, none) ->
     iq_disco_items_list(Host, get_vh_rooms(Host), {get_disco_item, 0, From, Lang});
-iq_disco_items(Host, From, Lang, _DiscoNode, Rsm) ->
+iq_disco_items(Host, From, Lang, _MaxRoomsDiscoItems, _DiscoNode, Rsm) ->
     {Rooms, RsmO} = get_vh_rooms(Host, Rsm),
     RsmOut = jlib:rsm_encode(RsmO),
     iq_disco_items_list(Host, Rooms, {get_disco_item, all, From, Lang}) ++ RsmOut.
@@ -984,6 +988,8 @@ mod_opt_type(max_room_id) ->
     fun (infinity) -> infinity;
 	(I) when is_integer(I), I > 0 -> I
     end;
+mod_opt_type(max_rooms_discoitems) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(regexp_room_id) ->
     fun iolist_to_binary/1;
 mod_opt_type(max_room_name) ->
@@ -1011,8 +1017,8 @@ mod_opt_type(user_presence_shaper) ->
 mod_opt_type(_) ->
     [access, access_admin, access_create, access_persistent,
      db_type, default_room_options, history_size, host,
-     max_room_desc, max_room_id, max_room_name, regexp_room_id,
-     max_user_conferences, max_users,
+     max_room_desc, max_room_id, max_room_name,
+     max_rooms_discoitems, max_user_conferences, max_users,
      max_users_admin_threshold, max_users_presence,
      min_message_interval, min_presence_interval,
-     room_shaper, user_message_shaper, user_presence_shaper].
+     regexp_room_id, room_shaper, user_message_shaper, user_presence_shaper].

@@ -102,8 +102,7 @@ call_port(Server, Msg) ->
     receive {eauth, Result} -> Result end.
 
 random_instance(MaxNum) ->
-    random:seed(p1_time_compat:timestamp()),
-    random:uniform(MaxNum) - 1.
+    randoms:uniform(MaxNum) - 1.
 
 get_instances(Server) ->
     ejabberd_config:get_option(

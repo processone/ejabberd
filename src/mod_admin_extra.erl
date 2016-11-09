@@ -377,6 +377,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = add_rosteritem, tags = [roster],
 			desc = "Add an item to a user's roster (supports ODBC)",
+			longdesc = "Group can be several groups separated by ; for example: \"g1;g2;g3\"",
 			module = ?MODULE, function = add_rosteritem,
 			args = [{localuser, binary}, {localserver, binary},
 				{user, binary}, {server, binary},
@@ -1204,11 +1205,13 @@ push_roster_item(LU, LS, R, U, S, Action) ->
     ejabberd_router:route(jid:remove_resource(LJID), LJID, ResIQ).
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
+    GNames = binary:split(Group,<<";">>, [global]),
+    GroupEls = [{xmlel, <<"group">>, [], [{xmlcdata, GName}]} || GName <- GNames],
     {xmlel, <<"item">>,
      [{<<"jid">>, jid:to_string(jid:make(U, S, <<>>))},
       {<<"name">>, Nick},
       {<<"subscription">>, Subs}],
-     [{xmlel, <<"group">>, [], [{xmlcdata, Group}]}]
+     GroupEls
     };
 build_roster_item(U, S, remove) ->
     {xmlel, <<"item">>,
@@ -1357,44 +1360,9 @@ srg_user_del(User, Host, Group, GroupHost) ->
 %% @doc Send a message to a Jabber account.
 %% @spec (Type::binary(), From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
 send_message(Type, From, To, Subject, Body) ->
+    FromJID = jid:from_string(From),
+    ToJID = jid:from_string(To),
     Packet = build_packet(Type, Subject, Body),
-    send_packet_all_resources(From, To, Packet).
-
-%% @doc Send a packet to a Jabber account.
-%% If a resource was specified in the JID,
-%% the packet is sent only to that specific resource.
-%% If no resource was specified in the JID,
-%% and the user is remote or local but offline,
-%% the packet is sent to the bare JID.
-%% If the user is local and is online in several resources,
-%% the packet is sent to all its resources.
-send_packet_all_resources(FromJIDString, ToJIDString, Packet) ->
-    FromJID = jid:from_string(FromJIDString),
-    ToJID = jid:from_string(ToJIDString),
-    ToUser = ToJID#jid.user,
-    ToServer = ToJID#jid.server,
-    case ToJID#jid.resource of
-	<<>> ->
-	    send_packet_all_resources(FromJID, ToUser, ToServer, Packet);
-	Res ->
-	    send_packet_all_resources(FromJID, ToUser, ToServer, Res, Packet)
-    end.
-
-send_packet_all_resources(FromJID, ToUser, ToServer, Packet) ->
-    case ejabberd_sm:get_user_resources(ToUser, ToServer) of
-	[] ->
-	    send_packet_all_resources(FromJID, ToUser, ToServer, <<>>, Packet);
-	ToResources ->
-	    lists:foreach(
-	      fun(ToResource) ->
-		      send_packet_all_resources(FromJID, ToUser, ToServer,
-						ToResource, Packet)
-	      end,
-	      ToResources)
-    end.
-
-send_packet_all_resources(FromJID, ToU, ToS, ToR, Packet) ->
-    ToJID = jid:make(ToU, ToS, ToR),
     ejabberd_router:route(FromJID, ToJID, Packet).
 
 build_packet(Type, Subject, Body) ->

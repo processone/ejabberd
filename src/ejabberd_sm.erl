@@ -713,10 +713,18 @@ get_resource_sessions(User, Server, Resource) ->
 
 check_max_sessions(LUser, LServer) ->
     Mod = get_sm_backend(LServer),
-    SIDs = [S#session.sid || S <- online(Mod:get_sessions(LUser, LServer))],
+    Ss = Mod:get_sessions(LUser, LServer),
+    {OnlineSs, OfflineSs} = lists:partition(fun is_online/1, Ss),
     MaxSessions = get_max_user_sessions(LUser, LServer),
-    if length(SIDs) =< MaxSessions -> ok;
-       true -> {_, Pid} = lists:min(SIDs), Pid ! replaced
+    if length(OnlineSs) =< MaxSessions -> ok;
+       true ->
+	    #session{sid = {_, Pid}} = lists:min(OnlineSs),
+	    Pid ! replaced
+    end,
+    if length(OfflineSs) =< MaxSessions -> ok;
+       true ->
+	    #session{sid = SID, usr = {_, _, R}} = lists:min(OfflineSs),
+	    Mod:delete_session(LUser, LServer, R, SID)
     end.
 
 %% Get the user_max_session setting

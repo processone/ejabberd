@@ -135,13 +135,13 @@ init([{SockMod, Socket}, Opts]) ->
 			 fun({H, Os}, D) ->
 				 P = proplists:get_value(
 				       password, Os,
-				       p1_sha:sha(crypto:rand_bytes(20))),
+				       p1_sha:sha(randoms:bytes(20))),
 				 dict:store(H, P, D)
 			 end, dict:new(), HOpts);
 		   false ->
 		       Pass = proplists:get_value(
 				password, Opts,
-				p1_sha:sha(crypto:rand_bytes(20))),
+				p1_sha:sha(randoms:bytes(20))),
 		       dict:from_list([{global, Pass}])
 	       end,
     %% privilege access to entities data

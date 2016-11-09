@@ -51,6 +51,7 @@ start(normal, _Args) ->
     db_init(),
     start(),
     translate:start(),
+    ejabberd_access_permissions:start_link(),
     ejabberd_ctl:init(),
     ejabberd_commands:init(),
     ejabberd_admin:start(),

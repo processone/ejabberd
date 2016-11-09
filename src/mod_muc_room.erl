@@ -959,6 +959,7 @@ process_groupchat_message(From,
 						_ ->
 						    case
 						      can_change_subject(Role,
+									 IsSubscriber,
 									 StateData)
 							of
 						      true ->
@@ -2821,10 +2822,10 @@ check_subject(Packet) ->
       SubjEl -> fxml:get_tag_cdata(SubjEl)
     end.
 
-can_change_subject(Role, StateData) ->
+can_change_subject(Role, IsSubscriber, StateData) ->
     case (StateData#state.config)#config.allow_change_subj
 	of
-      true -> Role == moderator orelse Role == participant;
+      true -> Role == moderator orelse Role == participant orelse IsSubscriber == true;
       _ -> Role == moderator
     end.
 
@@ -5056,6 +5057,8 @@ process_invitations(From, InviteEls, Lang, StateData) ->
 			  throw({error, ?ERRT_JID_MALFORMED(Lang, Txt)});
 		    JID1 -> JID1
 		  end,
+	  ejabberd_hooks:run(muc_invite, StateData#state.server_host,
+ 			     [StateData#state.jid, StateData#state.config, From, JID, Reason]),
 	  ejabberd_router:route(StateData#state.jid, JID, Msg),
 	  JID
 	end,

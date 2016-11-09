@@ -3,7 +3,7 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "16.08.0",
+     version: "16.11.0",
      description: description,
      elixir: "~> 1.2",
      elixirc_paths: ["lib"],
@@ -17,7 +17,7 @@ defmodule Ejabberd.Mixfile do
      deps: deps]
   end
 
-  defp description do
+  def description do
     """
     Robust, ubiquitous and massively scalable Jabber / XMPP Instant Messaging platform.
     """
@@ -28,9 +28,8 @@ defmodule Ejabberd.Mixfile do
      applications: [:ssl],
      included_applications: [:lager, :mnesia, :p1_utils, :cache_tab,
                              :fast_tls, :stringprep, :fast_xml,
-                             :stun, :fast_yaml, :ezlib, :iconv,
-                             :esip, :jiffy, :p1_oauth2, :eredis,
-                             :p1_mysql, :p1_pgsql, :sqlite3]]
+                             :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2]
+                         ++ cond_apps]
   end
 
   defp erlc_options do
@@ -51,22 +50,40 @@ defmodule Ejabberd.Mixfile do
      {:esip, "~> 1.0"},
      {:jiffy, "~> 0.14.7"},
      {:p1_oauth2, "~> 0.6.1"},
-     {:p1_mysql, "~> 1.0"},
-     {:p1_pgsql, "~> 1.1"},
-     {:sqlite3, "~> 1.1"},
-     {:ezlib, "~> 1.0"},
-     {:iconv, "~> 1.0"},
-     {:eredis, "~> 1.0"},
      {:exrm, "~> 1.0.0", only: :dev},
      # relx is used by exrm. Lock version as for now, ejabberd doesn not compile fine with
      # version 3.20:
      {:relx, "~> 3.21", only: :dev},
-     {:ex_doc, ">= 0.0.0", only: :dev},
-     {:meck, "~> 0.8.4", only: :test},
-     {:moka, github: "processone/moka", tag: "1.0.5c", only: :test}]
+     {:ex_doc, ">= 0.0.0", only: :dev}]
+    ++ cond_deps
   end
 
-  defp package do
+  defp cond_deps do
+    for {:true, dep} <- [{config(:mysql), {:p1_mysql, "~> 1.0"}},
+                         {config(:pgsql), {:p1_pgsql, "~> 1.1"}},
+                         {config(:sqlite), {:sqlite3, "~> 1.1"}},
+                         {config(:riak), {:riakc, "~> 2.4"}},
+                         {config(:redis), {:eredis, "~> 1.0"}},
+                         {config(:zlib), {:ezlib, "~> 1.0"}},
+                         {config(:iconv), {:iconv, "~> 1.0"}},
+                         {config(:pam), {:p1_pam, "~> 1.0"}},
+                         {config(:tools), {:luerl, github: "rvirding/luerl", tag: "v0.2"}},
+                         {config(:tools), {:meck, "~> 0.8.4"}},
+                         {config(:tools), {:moka, github: "processone/moka", tag: "1.0.5c"}}], do:
+      dep
+  end
+
+  defp cond_apps do
+    for {:true, app} <- [{config(:redis), :eredis},
+                         {config(:mysql), :p1_mysql},
+                         {config(:pgsql), :p1_pgsql},
+                         {config(:sqlite), :sqlite3},
+                         {config(:zlib), :ezlib},
+                         {config(:iconv), :iconv}], do:
+      app
+  end
+
+  def package do
     [# These are the default files included in the package
       files: ["lib", "src", "priv", "mix.exs", "include", "README.md", "COPYING"],
       maintainers: ["ProcessOne"],
@@ -76,6 +93,21 @@ defmodule Ejabberd.Mixfile do
                "Source" => "https://github.com/processone/ejabberd",
                "ProcessOne" => "http://www.process-one.net/"}]
   end
+
+  def vars do
+    case :file.consult("vars.config") do
+      {:ok,config} -> config
+      _ -> [zlib: true, iconv: true]
+    end
+  end
+
+  defp config(key) do
+    case vars[key] do
+      nil -> false
+      value -> value
+    end
+  end
+
 end
 
 defmodule Mix.Tasks.Compile.Asn1 do

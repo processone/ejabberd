@@ -432,8 +432,8 @@ create_room(Name1, Host1, ServerHost) ->
     create_room_with_opts(Name1, Host1, ServerHost, []).
 
 create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
-    Name = jid:nodeprep(Name1),
-    Host = jid:nodeprep(Host1),
+    true = (error /= (Name = jid:nodeprep(Name1))),
+    true = (error /= (Host = jid:nodeprep(Host1))),
 
     %% Get the default room options from the muc configuration
     DefRoomOpts = gen_mod:get_module_opt(ServerHost, mod_muc,
@@ -514,7 +514,7 @@ destroy_room({N, H, SH}) ->
 %% The file encoding must be UTF-8
 
 destroy_rooms_file(Filename) ->
-    {ok, F} = file:open(Filename, [read, binary]),
+    {ok, F} = file:open(Filename, [read]),
     RJID = read_room(F),
     Rooms = read_rooms(F, RJID, []),
     file:close(F),
@@ -533,7 +533,7 @@ read_room(F) ->
 	eof -> eof;
 	String ->
 	    case io_lib:fread("~s", String) of
-		{ok, [RoomJID], _} -> split_roomjid(RoomJID);
+		{ok, [RoomJID], _} -> split_roomjid(list_to_binary(RoomJID));
 		{error, What} ->
 		    io:format("Parse error: what: ~p~non the line: ~p~n~n", [What, String])
 	    end
@@ -551,7 +551,7 @@ split_roomjid(RoomJID) ->
 %%----------------------------
 
 create_rooms_file(Filename) ->
-    {ok, F} = file:open(Filename, [read, binary]),
+    {ok, F} = file:open(Filename, [read]),
     RJID = read_room(F),
     Rooms = read_rooms(F, RJID, []),
     file:close(F),

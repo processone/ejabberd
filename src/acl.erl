@@ -36,7 +36,8 @@
 	 acl_rule_verify/1, access_matches/3,
 	 transform_access_rules_config/1,
 	 parse_ip_netmask/1,
-	 access_rules_validator/1, shaper_rules_validator/1]).
+	 access_rules_validator/1, shaper_rules_validator/1,
+	 normalize_spec/1, resolve_access/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -437,30 +438,35 @@ acl_rule_matches({node_glob, {UR, SR}}, #{usr := {U, S, _}}, _Host) ->
 acl_rule_matches(_ACL, _Data, _Host) ->
     false.
 
--spec access_matches(atom()|list(), any(), global|binary()) -> any().
-access_matches(all, _Data, _Host) ->
-    allow;
-access_matches(none, _Data, _Host) ->
-    deny;
-access_matches(Name, Data, Host) when is_atom(Name) ->
+resolve_access(all, _Host) ->
+    all;
+resolve_access(none, _Host) ->
+    none;
+resolve_access(Name, Host) when is_atom(Name) ->
     GAccess = mnesia:dirty_read(access, {Name, global}),
     LAccess =
-	if Host /= global -> mnesia:dirty_read(access, {Name, Host});
-	    true -> []
-	end,
+    if Host /= global -> mnesia:dirty_read(access, {Name, Host});
+	true -> []
+    end,
     case GAccess ++ LAccess of
 	[] ->
-	    deny;
+	    [];
 	AccessList ->
-	    Rules = lists:flatmap(
+	    lists:flatmap(
 		fun(#access{rules = Rs}) ->
 		    Rs
-		end, AccessList),
-	    access_rules_matches(Rules, Data, Host)
+		end, AccessList)
     end;
-access_matches(Rules, Data, Host) when is_list(Rules) ->
-    access_rules_matches(Rules, Data, Host).
+resolve_access(Rules, _Host) when is_list(Rules) ->
+    Rules.
 
+-spec access_matches(atom()|list(), any(), global|binary()) -> allow|deny.
+access_matches(Rules, Data, Host) ->
+    case resolve_access(Rules, Host) of
+	all -> allow;
+	none -> deny;
+	RRules -> access_rules_matches(RRules, Data, Host)
+    end.
 
 -spec access_rules_matches(list(), any(), global|binary()) -> any().
 

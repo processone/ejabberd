@@ -144,7 +144,7 @@
 {"Import Users from Dir at ","Importovat uživatele z adresáře na "}.
 {"Import Users From jabberd14 Spool Files","Importovat uživatele z jabberd14 spool souborů"}.
 {"Improper message type","Nesprávný typ zprávy"}.
-{"Incoming s2s Connections:",""}.
+{"Incoming s2s Connections:","Příchozí s2s spojení:"}.
 {"Incorrect password","Nesprávné heslo"}.
 {"Invalid affiliation: ~s","Neplatné přiřazení: ~s"}.
 {"Invalid role: ~s","Neplatná role: ~s"}.
@@ -333,7 +333,6 @@
 {"September",". září"}.
 {"Server ~b","Server ~b"}.
 {"Server:","Server:"}.
-{"Server","Server"}.
 {"Set message of the day and send to online users","Nastavit zprávu dne a odeslat ji online uživatelům"}.
 {"Set message of the day on all hosts and send to online users","Nastavit zprávu dne a odeslat ji online uživatelům"}.
 {"Shared Roster Groups","Skupiny pro sdílený seznam kontaktů"}.
@@ -409,10 +408,10 @@
 {"User JID","Jabber ID uživatele"}.
 {"User Management","Správa uživatelů"}.
 {"Username:","Uživatelské jméno:"}.
-{"User ~s",""}.
 {"Users are not allowed to register accounts so quickly","Je zakázáno registrovat účty v tak rychlém sledu"}.
 {"Users Last Activity","Poslední aktivita uživatele"}.
 {"Users","Uživatelé"}.
+{"User ~s","Uživatel ~s"}.
 {"User","Uživatel"}.
 {"Validate","Ověřit"}.
 {"vCard User Search","Hledání uživatelů podle vizitek"}.

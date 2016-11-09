@@ -31,6 +31,7 @@ defmodule ModHttpApiTest do
     :ok = :mnesia.start
     :stringprep.start
     :ok = :ejabberd_config.start(["localhost"], [])
+    {:ok, _} = :ejabberd_access_permissions.start_link()
     :ok = :ejabberd_commands.init
     :ok = :ejabberd_commands.register_commands(cmds)
     on_exit fn ->
@@ -46,12 +47,12 @@ defmodule ModHttpApiTest do
     assert Enum.member?(commands, :user_cmd)
   end
 
-  test "We can call open commands without authentication" do
-    setup_mocks()
-    :ejabberd_commands.expose_commands([:open_cmd])
-    request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "[]")
-    {200, _, _} = :mod_http_api.process(["open_cmd"], request)
-  end
+#  test "We can call open commands without authentication" do
+#    setup_mocks()
+#    :ejabberd_commands.expose_commands([:open_cmd])
+#    request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "[]")
+#    {200, _, _} = :mod_http_api.process(["open_cmd"], request)
+#  end
 
   # This related to the commands config file option
   test "Attempting to access a command that is not exposed as HTTP API returns 403" do
