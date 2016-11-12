@@ -87,6 +87,7 @@ get_commands_spec() ->
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = reopen_log, tags = [logs, server],
 			desc = "Reopen the log files",
+			policy = admin,
 			module = ?MODULE, function = reopen_log,
 			args = [], result = {res, rescode}},
      #ejabberd_commands{name = rotate_log, tags = [logs, server],
@@ -129,6 +130,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = register, tags = [accounts],
 			desc = "Register a user",
+			policy = admin,
 			module = ?MODULE, function = register,
 			args = [{user, binary}, {host, binary}, {password, binary}],
 			result = {res, restuple}},
@@ -166,7 +168,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = list_cluster, tags = [cluster],
 			desc = "List nodes that are part of the cluster handled by Node",
 			module = ?MODULE, function = list_cluster,
-			args = [], 
+			args = [],
 			result = {nodes, {list, {node, atom}}}},
 
      #ejabberd_commands{name = import_file, tags = [mnesia],
@@ -220,7 +222,7 @@ get_commands_spec() ->
 			desc = "Delete offline messages older than DAYS",
 			module = ?MODULE, function = delete_old_messages,
 			args = [{days, integer}], result = {res, rescode}},
-	 
+
      #ejabberd_commands{name = export2sql, tags = [mnesia],
 			desc = "Export virtual host information from Mnesia tables to SQL files",
 			module = ejd2sql, function = export,
@@ -378,13 +380,12 @@ register(User, Host, Password) ->
 	{atomic, ok} ->
 	    {ok, io_lib:format("User ~s@~s successfully registered", [User, Host])};
 	{atomic, exists} ->
-	    String = io_lib:format("User ~s@~s already registered at node ~p",
-				   [User, Host, node()]),
-	    {exists, String};
+	    Msg = io_lib:format("User ~s@~s already registered", [User, Host]),
+	    {error, conflict, 10090, Msg};
 	{error, Reason} ->
 	    String = io_lib:format("Can't register user ~s@~s at node ~p: ~p",
 				   [User, Host, node(), Reason]),
-	    {cannot_register, String}
+	    {error, cannot_register, 10001, String}
     end.
 
 unregister(User, Host) ->
@@ -402,7 +403,8 @@ registered_vhosts() ->
 reload_config() ->
     ejabberd_config:reload_file(),
     acl:start(),
-    shaper:start().
+    shaper:start(),
+    ejabberd_access_permissions:invalidate().
 
 %%%
 %%% Cluster management

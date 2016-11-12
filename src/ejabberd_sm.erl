@@ -279,25 +279,28 @@ get_session_pid(User, Server, Resource) ->
 
 -spec set_offline_info(sid(), binary(), binary(), binary(), info()) -> ok.
 
-set_offline_info({Time, _Pid}, User, Server, Resource, Info) ->
-    SID = {Time, undefined},
+set_offline_info(SID, User, Server, Resource, Info) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LResource = jid:resourceprep(Resource),
-    set_session(SID, LUser, LServer, LResource, undefined, Info).
+    set_session(SID, LUser, LServer, LResource, undefined, [offline | Info]).
 
 -spec get_offline_info(erlang:timestamp(), binary(), binary(),
                        binary()) -> none | info().
 
 get_offline_info(Time, User, Server, Resource) ->
-    SID = {Time, undefined},
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LResource = jid:resourceprep(Resource),
     Mod = get_sm_backend(LServer),
     case Mod:get_sessions(LUser, LServer, LResource) of
-	[#session{sid = SID, info = Info}] ->
+	[#session{sid = {Time, _}, info = Info}] ->
+	    case proplists:get_bool(offline, Info) of
+		true ->
 	    Info;
+		false ->
+		    none
+	    end;
 	_ ->
 	    none
     end.
@@ -434,11 +437,12 @@ set_session(SID, User, Server, Resource, Priority, Info) ->
 -spec online([#session{}]) -> [#session{}].
 
 online(Sessions) ->
-    lists:filter(fun(#session{sid = {_, undefined}}) ->
-			 false;
-		    (_) ->
-			 true
-		 end, Sessions).
+    lists:filter(fun is_online/1, Sessions).
+
+-spec is_online(#session{}) -> boolean().
+
+is_online(#session{info = Info}) ->
+    not proplists:get_bool(offline, Info).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec do_route(jid(), jid(), stanza() | broadcast()) -> any().
@@ -629,15 +633,17 @@ check_for_sessions_to_replace(User, Server, Resource) ->
 
 -spec check_existing_resources(binary(), binary(), binary()) -> ok.
 check_existing_resources(LUser, LServer, LResource) ->
-    SIDs = get_resource_sessions(LUser, LServer, LResource),
-    if SIDs == [] -> ok;
+    Mod = get_sm_backend(LServer),
+    Ss = Mod:get_sessions(LUser, LServer, LResource),
+    {OnlineSs, OfflineSs} = lists:partition(fun is_online/1, Ss),
+    lists:foreach(fun(#session{sid = S}) ->
+			  Mod:delete_session(LUser, LServer, LResource, S)
+		  end, OfflineSs),
+    if OnlineSs == [] -> ok;
        true ->
+	   SIDs = [SID || #session{sid = SID} <- OnlineSs],
 	   MaxSID = lists:max(SIDs),
-	   lists:foreach(fun ({_, undefined} = S) ->
-				 Mod = get_sm_backend(LServer),
-				 Mod:delete_session(LUser, LServer, LResource,
-						    S);
-			     ({_, Pid} = S) when S /= MaxSID ->
+	   lists:foreach(fun ({_, Pid} = S) when S /= MaxSID ->
 				 Pid ! replaced;
 			     (_) -> ok
 			 end,
@@ -660,10 +666,18 @@ get_resource_sessions(User, Server, Resource) ->
 -spec check_max_sessions(binary(), binary()) -> ok | replaced.
 check_max_sessions(LUser, LServer) ->
     Mod = get_sm_backend(LServer),
-    SIDs = [S#session.sid || S <- online(Mod:get_sessions(LUser, LServer))],
+    Ss = Mod:get_sessions(LUser, LServer),
+    {OnlineSs, OfflineSs} = lists:partition(fun is_online/1, Ss),
     MaxSessions = get_max_user_sessions(LUser, LServer),
-    if length(SIDs) =< MaxSessions -> ok;
-       true -> {_, Pid} = lists:min(SIDs), Pid ! replaced
+    if length(OnlineSs) =< MaxSessions -> ok;
+       true ->
+	    #session{sid = {_, Pid}} = lists:min(OnlineSs),
+	    Pid ! replaced
+    end,
+    if length(OfflineSs) =< MaxSessions -> ok;
+       true ->
+	    #session{sid = SID, usr = {_, _, R}} = lists:min(OfflineSs),
+	    Mod:delete_session(LUser, LServer, R, SID)
     end.
 
 %% Get the user_max_session setting

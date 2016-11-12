@@ -330,3 +330,12 @@ CREATE TABLE sm (
 CREATE UNIQUE INDEX i_sm_sid ON sm USING btree (usec, pid);
 CREATE INDEX i_sm_node ON sm USING btree (node);
 CREATE INDEX i_sm_username ON sm USING btree (username);
+
+CREATE TABLE oauth_token (
+    token text NOT NULL,
+    jid text NOT NULL,
+    scope text NOT NULL,
+    expire bigint NOT NULL
+);
+
+CREATE UNIQUE INDEX i_oauth_token_token ON oauth_token USING btree (token);

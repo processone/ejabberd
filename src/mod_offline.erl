@@ -450,12 +450,12 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 			      (unless_chat_state) -> unless_chat_state
 			   end,
 			   unless_chat_state) of
+			true ->
+			    true;
 			false ->
 			    Packet#message.body /= [];
 			unless_chat_state ->
-			    not xmpp_util:is_standalone_chat_state(Packet);
-			true ->
-			    true
+			    not xmpp_util:is_standalone_chat_state(Packet)
 		    end
 	    end;
 	true ->
@@ -469,14 +469,20 @@ store_packet(From, To, Packet) ->
 	    case check_event(From, To, Packet) of
 		true ->
 		    #jid{luser = LUser, lserver = LServer} = To,
-		    TimeStamp = p1_time_compat:timestamp(),
-		    Expire = find_x_expire(TimeStamp, Packet),
-		    El = xmpp:encode(Packet),
-		    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
-		      #offline_msg{us = {LUser, LServer},
-				   timestamp = TimeStamp, expire = Expire,
-				   from = From, to = To, packet = El},
-		    stop;
+		    case ejabberd_hooks:run_fold(store_offline_message, LServer,
+						 Packet, [From, To]) of
+			drop ->
+			    ok;
+			NewPacket ->
+			    TimeStamp = p1_time_compat:timestamp(),
+			    Expire = find_x_expire(TimeStamp, NewPacket),
+			    El = xmpp:encode(NewPacket),
+			    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
+				#offline_msg{us = {LUser, LServer},
+					     timestamp = TimeStamp, expire = Expire,
+					     from = From, to = To, packet = El},
+			    stop
+		    end;
 		_ -> ok
 	    end;
 	false -> ok

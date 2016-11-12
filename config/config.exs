@@ -4,7 +4,7 @@ use Mix.Config
 config :ejabberd,
   file: "config/ejabberd.yml",
   log_path: 'log/ejabberd.log'
- 
+
 # Customize Mnesia directory:
 config :mnesia,
   dir: 'mnesiadb/'

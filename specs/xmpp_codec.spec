@@ -3387,6 +3387,71 @@
 			  dec = {dec_int, [0, infinity]},
 			  enc = {enc_int, []}}]}).
 
+-xml(privilege_perm,
+     #elem{name = <<"perm">>,
+	   xmlns = <<"urn:xmpp:privilege:1">>,
+	   result = {privilege_perm, '$access', '$type'},
+	   attrs = [#attr{name = <<"access">>,
+			  required = true,
+			  dec = {dec_enum, [[roster, message, presence]]},
+			  enc = {enc_enum, []}},
+		    #attr{name = <<"type">>,
+			  required = true,
+			  dec = {dec_enum, [[none, get, set, both,
+					     outgoing, roster,
+					     managed_entity]]},
+			  enc = {enc_enum, []}}]}).
+
+-xml(privilege,
+     #elem{name = <<"privilege">>,
+	   xmlns = <<"urn:xmpp:privilege:1">>,
+	   result = {privilege, '$perms', '$forwarded'},
+	   refs = [#ref{name = privilege_perm, label = '$perms'},
+		   #ref{name = forwarded, min = 0,
+                        max = 1, label = '$forwarded'}]}).
+
+-xml(delegated_attribute,
+     #elem{name = <<"attribute">>,
+	   xmlns = <<"urn:xmpp:delegation:1">>,
+	   result = '$name',
+	   attrs = [#attr{name = <<"name">>,
+			  required = true}]}).
+
+-xml(delegated,
+     #elem{name = <<"delegated">>,
+	   xmlns = <<"urn:xmpp:delegation:1">>,
+	   result = {delegated, '$ns', '$attrs'},
+	   attrs = [#attr{name = <<"namespace">>,
+			  label = '$ns',
+			  required = true}],
+	   refs = [#ref{name = delegated_attribute,
+			label = '$attrs'}]}).
+
+-xml(delegation,
+     #elem{name = <<"delegation">>,
+	   xmlns = <<"urn:xmpp:delegation:1">>,
+	   result = {delegation, '$delegated', '$forwarded'},
+	   refs = [#ref{name = delegated, label = '$delegated'},
+		   #ref{name = forwarded, min = 0,
+			max = 1, label = '$forwarded'}]}).
+
+-xml(delegate,
+     #elem{name = <<"delegate">>,
+	   xmlns = <<"urn:xmpp:delegation:1">>,
+	   result = '$namespace',
+	   attrs = [#attr{name = <<"namespace">>,
+			  required = true}]}).
+
+-xml(delegation_query,
+     #elem{name = <<"query">>,
+	   xmlns = <<"urn:xmpp:delegation:1">>,
+	   result = {delegation_query, '$to', '$delegate'},
+	   attrs = [#attr{name = <<"to">>,
+			  required = true,
+			  dec = {dec_jid, []},
+			  enc = {enc_jid, []}}],
+	   refs = [#ref{name = delegate, label = '$delegate'}]}).
+
 -spec dec_tzo(_) -> {integer(), integer()}.
 dec_tzo(Val) ->
     [H1, M1] = str:tokens(Val, <<":">>),

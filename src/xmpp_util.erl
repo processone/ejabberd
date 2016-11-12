@@ -92,12 +92,20 @@ has_xdata_var(Var, #xdata{fields = Fields}) ->
 -spec make_adhoc_response(adhoc_command(), adhoc_command()) -> adhoc_command().
 make_adhoc_response(#adhoc_command{lang = Lang, node = Node, sid = SID},
 		    Command) ->
-    Command#adhoc_command{lang = Lang, node = Node, sid = SID}.
+    make_adhoc_response(
+      Command#adhoc_command{lang = Lang, node = Node, sid = SID}).
 
 -spec make_adhoc_response(adhoc_command()) -> adhoc_command().
-make_adhoc_response(#adhoc_command{sid = <<"">>} = Command) ->
+make_adhoc_response(#adhoc_command{sid = <<"">>,
+				   status = Status,
+				   actions = Actions} = Command) ->
     SID = encode_timestamp(p1_time_compat:timestamp()),
-    Command#adhoc_command{sid = SID};
+    NewActions = if Actions == undefined, Status /= completed ->
+			 #adhoc_actions{execute = complete, complete = true};
+		    true ->
+			 undefined
+		 end,
+    Command#adhoc_command{sid = SID, actions = NewActions};
 make_adhoc_response(Command) ->
     Command.
 

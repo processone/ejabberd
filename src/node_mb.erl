@@ -37,6 +37,7 @@
 %%%   plugins:
 %%%     - "flat"
 %%%     - "pep" # Requires mod_caps.
+%%%     - "mb"
 %%%   pep_mapping:
 %%%     "urn:xmpp:microblog:0": "mb"
 %%% </pre></p>
@@ -153,7 +154,7 @@ set_subscriptions(Nidx, Owner, Subscription, SubId) ->
     node_pep:set_subscriptions(Nidx, Owner, Subscription, SubId).
 
 get_pending_nodes(Host, Owner) ->
-    node_hometree:get_pending_nodes(Host, Owner).
+    node_pep:get_pending_nodes(Host, Owner).
 
 get_states(Nidx) ->
     node_pep:get_states(Nidx).

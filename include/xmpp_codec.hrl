@@ -146,6 +146,10 @@
                     height :: non_neg_integer()}).
 -type thumbnail() :: #thumbnail{}.
 
+-record(privilege_perm, {access :: 'message' | 'presence' | 'roster',
+                         type :: 'both' | 'get' | 'managed_entity' | 'none' | 'outgoing' | 'roster' | 'set'}).
+-type privilege_perm() :: #privilege_perm{}.
+
 -record(muc_decline, {reason = <<>> :: binary(),
                       from :: jid:jid(),
                       to :: jid:jid()}).
@@ -176,6 +180,14 @@
 -record(starttls_proceed, {}).
 -type starttls_proceed() :: #starttls_proceed{}.
 
+-record(forwarded, {delay :: #delay{},
+                    sub_els = [] :: [xmpp_element() | fxml:xmlel()]}).
+-type forwarded() :: #forwarded{}.
+
+-record(privilege, {perms = [] :: [#privilege_perm{}],
+                    forwarded :: #forwarded{}}).
+-type privilege() :: #privilege{}.
+
 -record(client_id, {id = <<>> :: binary()}).
 -type client_id() :: #client_id{}.
 
@@ -183,10 +195,6 @@
                      previd = <<>> :: binary(),
                      xmlns = <<>> :: binary()}).
 -type sm_resumed() :: #sm_resumed{}.
-
--record(forwarded, {delay :: #delay{},
-                    sub_els = [] :: [xmpp_element() | fxml:xmlel()]}).
--type forwarded() :: #forwarded{}.
 
 -record(sm_enable, {max :: non_neg_integer(),
                     resume = false :: boolean(),
@@ -214,6 +222,10 @@
 
 -record(private, {xml_els = [] :: [fxml:xmlel()]}).
 -type private() :: #private{}.
+
+-record(delegation_query, {to :: jid:jid(),
+                           delegate = [] :: [binary()]}).
+-type delegation_query() :: #delegation_query{}.
 
 -record(db_verify, {from = <<>> :: binary(),
                     to = <<>> :: binary(),
@@ -534,6 +546,10 @@
                      continue :: binary()}).
 -type muc_invite() :: #muc_invite{}.
 
+-record(delegated, {ns = <<>> :: binary(),
+                    attrs = [] :: [binary()]}).
+-type delegated() :: #delegated{}.
+
 -record(carbons_disable, {}).
 -type carbons_disable() :: #carbons_disable{}.
 
@@ -838,6 +854,10 @@
                        sub_els = [] :: [xmpp_element() | fxml:xmlel()]}).
 -type stanza_error() :: #stanza_error{}.
 
+-record(delegation, {delegated = [] :: [#delegated{}],
+                     forwarded :: #forwarded{}}).
+-type delegation() :: #delegation{}.
+
 -record(mix_join, {jid :: jid:jid(),
                    subscribe = [] :: [binary()]}).
 -type mix_join() :: #mix_join{}.
@@ -905,21 +925,18 @@
                utc :: erlang:timestamp()}).
 -type time() :: #time{}.
 
--type xmpp_element() :: muc_admin() |
-                        compression() |
+-type xmpp_element() :: compression() |
                         ps_subscription() |
                         xdata_option() |
                         version() |
-                        ps_affiliation() |
-                        mam_fin() |
                         sm_a() |
                         bob_data() |
                         media() |
                         stanza_id() |
                         starttls_proceed() |
+                        forwarded() |
                         client_id() |
                         sm_resumed() |
-                        forwarded() |
                         xevent() |
                         privacy_list() |
                         carbons_sent() |
@@ -932,6 +949,7 @@
                         mix_participant() |
                         compressed() |
                         block_list() |
+                        delegated() |
                         rsm_set() |
                         'see-other-host'() |
                         hint() |
@@ -953,10 +971,10 @@
                         compress() |
                         bytestreams() |
                         adhoc_actions() |
+                        privacy_query() |
                         muc_history() |
                         identity() |
                         feature_csi() |
-                        privacy_query() |
                         delay() |
                         thumbnail() |
                         vcard_tel() |
@@ -993,6 +1011,7 @@
                         nick() |
                         p1_ack() |
                         block() |
+                        delegation() |
                         mix_join() |
                         xmpp_session() |
                         xdata() |
@@ -1014,6 +1033,7 @@
                         adhoc_command() |
                         sm_failed() |
                         ping() |
+                        privilege_perm() |
                         privacy_item() |
                         disco_item() |
                         ps_item() |
@@ -1027,12 +1047,13 @@
                         sic() |
                         ps_options() |
                         starttls() |
+                        db_verify() |
+                        roster_query() |
                         media_uri() |
                         muc_destroy() |
                         vcard_key() |
                         csi() |
-                        db_verify() |
-                        roster_query() |
+                        delegation_query() |
                         mam_query() |
                         bookmark_url() |
                         vcard_email() |
@@ -1051,6 +1072,7 @@
                         carbons_private() |
                         mix_leave() |
                         muc_subscribe() |
+                        privilege() |
                         muc_unique() |
                         sasl_response() |
                         message() |
@@ -1064,4 +1086,7 @@
                         sasl_auth() |
                         p1_push() |
                         oob_x() |
-                        unblock().
+                        unblock() |
+                        muc_admin() |
+                        ps_affiliation() |
+                        mam_fin().

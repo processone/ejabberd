@@ -233,7 +233,7 @@ export(Server) ->
                                       "values (%(ID)d, %(SType)s, %(SValue)s, %(SAction)s,"
                                       " %(Order)d, %(MatchAll)b, %(MatchIQ)b,"
                                       " %(MatchMessage)b, %(MatchPresenceIn)b,"
-                                      " %(MatchPresenceOut)b)")
+                                      " %(MatchPresenceOut)b);")
                                  || {SType, SValue, SAction, Order,
                                      MatchAll, MatchIQ,
                                      MatchMessage, MatchPresenceIn,

@@ -373,15 +373,20 @@ iq_type_to_string(error) -> <<"error">>.
 -spec iq_to_xml(IQ :: iq()) -> xmlel().
 
 iq_to_xml(#iq{id = ID, type = Type, sub_el = SubEl}) ->
+    Children = 
+        if
+	    is_list(SubEl) -> SubEl;
+	    true -> [SubEl]
+        end,
     if ID /= <<"">> ->
 	   #xmlel{name = <<"iq">>,
 		  attrs =
 		      [{<<"id">>, ID}, {<<"type">>, iq_type_to_string(Type)}],
-		  children = SubEl};
+		  children = Children};
        true ->
 	   #xmlel{name = <<"iq">>,
 		  attrs = [{<<"type">>, iq_type_to_string(Type)}],
-		  children = SubEl}
+		  children = Children}
     end.
 
 -spec parse_xdata_submit(El :: xmlel()) ->
@@ -579,33 +584,8 @@ add_delay_info(El, From, Time) ->
 		     binary()) -> xmlel().
 
 add_delay_info(El, From, Time, Desc) ->
-    case fxml:get_subtag_with_xmlns(El, <<"delay">>, ?NS_DELAY) of
-      false ->
-	  %% Add new tag
 	  DelayTag = create_delay_tag(Time, From, Desc),
-	  fxml:append_subtags(El, [DelayTag]);
-      DelayTag ->
-	  %% Update existing tag
-	  NewDelayTag =
-	      case {fxml:get_tag_cdata(DelayTag), Desc} of
-		{<<"">>, <<"">>} ->
-		    DelayTag;
-		{OldDesc, <<"">>} ->
-		    DelayTag#xmlel{children = [{xmlcdata, OldDesc}]};
-		{<<"">>, NewDesc} ->
-		    DelayTag#xmlel{children = [{xmlcdata, NewDesc}]};
-		{OldDesc, NewDesc} ->
-		    case binary:match(OldDesc, NewDesc) of
-		      nomatch ->
-			  FinalDesc = <<OldDesc/binary, ", ", NewDesc/binary>>,
-			  DelayTag#xmlel{children = [{xmlcdata, FinalDesc}]};
-		      _ ->
-			  DelayTag#xmlel{children = [{xmlcdata, OldDesc}]}
-		    end
-	      end,
-	  NewEl = fxml:remove_subtags(El, <<"delay">>, {<<"xmlns">>, ?NS_DELAY}),
-	  fxml:append_subtags(NewEl, [NewDelayTag])
-    end.
+    fxml:append_subtags(El, [DelayTag]).
 
 -spec create_delay_tag(erlang:timestamp(), jid() | ljid() | binary(), binary())
 		       -> xmlel() | error.

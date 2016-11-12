@@ -184,6 +184,8 @@ refresh_iq_handlers() ->
     ejabberd_local ! refresh_iq_handlers.
 
 -spec bounce_resource_packet(jid(), jid(), stanza()) -> ok.
+bounce_resource_packet(_From, _To, #presence{}) ->
+    ok;
 bounce_resource_packet(From, To, Packet) ->
     Lang = xmpp:get_lang(Packet),
     Txt = <<"No available resource found">>,
@@ -282,25 +284,16 @@ do_route(From, To, Packet) ->
     ?DEBUG("local route~n\tfrom ~p~n\tto ~p~n\tpacket "
 	   "~P~n",
 	   [From, To, Packet, 8]),
+    Type = xmpp:get_type(Packet),
     if To#jid.luser /= <<"">> ->
 	    ejabberd_sm:route(From, To, Packet);
-       To#jid.lresource == <<"">> ->
-	    case Packet of
-		#iq{} ->
-		    process_iq(From, To, Packet);
-		#message{type = T} when T /= headline, T /= error ->
-		    Err = xmpp:make_error(Packet, xmpp:err_service_unavailable()),
-		    ejabberd_router:route(To, From, Err);
-		_ -> ok
-	    end;
+       is_record(Packet, iq), To#jid.lresource == <<"">> ->
+	    process_iq(From, To, Packet);
+       Type == result; Type == error; Type == headline ->
+	    ok;
        true ->
-	    case xmpp:get_type(Packet) of
-		error -> ok;
-		result -> ok;
-		_ ->
-		    ejabberd_hooks:run(local_send_to_resource_hook,
-				       To#jid.lserver, [From, To, Packet])
-	    end
+	    ejabberd_hooks:run(local_send_to_resource_hook,
+			       To#jid.lserver, [From, To, Packet])
     end.
 
 -spec update_table() -> ok.

@@ -270,7 +270,7 @@ password_to_scram(Password) ->
 		      ?SCRAM_DEFAULT_ITERATION_COUNT).
 
 password_to_scram(Password, IterationCount) ->
-    Salt = crypto:rand_bytes(?SALT_LENGTH),
+    Salt = randoms:bytes(?SALT_LENGTH),
     SaltedPassword = scram:salted_password(Password, Salt,
 					   IterationCount),
     StoredKey =

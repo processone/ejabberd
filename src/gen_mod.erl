@@ -48,7 +48,7 @@
          opts = [] :: opts() | '_' | '$2'}).
 
 -type opts() :: [{atom(), any()}].
--type db_type() :: sql | mnesia | riak | ldap.
+-type db_type() :: sql | mnesia | riak.
 
 -callback start(binary(), opts()) -> any().
 -callback stop(binary()) -> any().
@@ -147,7 +147,7 @@ start_module(Host, Module) ->
 -spec start_module(binary(), atom(), opts()) -> any().
 
 start_module(Host, Module, Opts0) ->
-    Opts = validate_opts(Host, Module, Opts0),
+    Opts = validate_opts(Module, Opts0),
     ets:insert(ejabberd_modules,
 	       #ejabberd_module{module_host = {Module, Host},
 				opts = Opts}),
@@ -308,10 +308,47 @@ get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, fun iolist_to_binary/1, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
-validate_opts(Host, Module, Opts) ->
+
+get_module_mod_opt_type_fun(Module) ->
+    DBSubMods = ejabberd_config:v_dbs_mods(Module),
+    fun(Opt) ->
+	    Res = lists:foldl(fun(Mod, {Funs, ArgsList, _} = Acc) ->
+				      case catch Mod:mod_opt_type(Opt) of
+					  Fun when is_function(Fun) ->
+					      {[Fun | Funs], ArgsList, true};
+					  L when is_list(L) ->
+					      {Funs, L ++ ArgsList, true};
+					  _ ->
+					      Acc
+				      end
+			      end, {[], [], false}, [Module | DBSubMods]),
+	    case Res of
+		{[], [], false} ->
+		    throw({'EXIT', {undef, mod_opt_type}});
+		{[], Args, _} -> Args;
+		{Funs, _, _} ->
+		    fun(Val) ->
+			    lists:any(fun(F) ->
+					      try F(Val) of
+						  _ ->
+						      true
+					      catch {replace_with, _NewVal} = E ->
+						      throw(E);
+						    {invalid_syntax, _Error} = E2 ->
+						      throw(E2);
+						    _:_ ->
+						      false
+					      end
+				      end, Funs)
+		    end
+	    end
+    end.
+
+validate_opts(Module, Opts) ->
+    ModOptFun = get_module_mod_opt_type_fun(Module),
     lists:filtermap(
       fun({Opt, Val}) ->
-	      case catch validate_opt(Host, Module, Opt, Opts) of
+	      case catch ModOptFun(Opt) of
 		  VFun when is_function(VFun) ->
 		      try VFun(Val) of
 			  _ ->
@@ -346,22 +383,6 @@ validate_opts(Host, Module, Opts) ->
 	      false
       end, Opts).
 
-validate_opt(Host, Module, Opt, Opts) ->
-    case Module:mod_opt_type(Opt) of
-	VFun1 when is_function(VFun1) ->
-	    VFun1;
-	L1 when is_list(L1) ->
-	    DBModule = db_mod(Host, Opts, Module),
-	    try DBModule:mod_opt_type(Opt) of
-		VFun2 when is_function(VFun2) ->
-		    VFun2;
-		L2 when is_list(L2) ->
-		    lists:usort(L1 ++ L2)
-	    catch _:undef ->
-		    L1
-	    end
-    end.
-
 -spec db_type(binary() | global, module()) -> db_type();
 	     (opts(), module()) -> db_type().
 
@@ -378,7 +399,7 @@ db_type(Host, Module) when is_atom(Module) ->
 	    undefined
     end.
 
--spec db_type(global | binary(), opts(), module()) -> db_type().
+-spec db_type(binary(), opts(), module()) -> db_type().
 
 db_type(Host, Opts, Module) ->
     case catch Module:mod_opt_type(db_type) of

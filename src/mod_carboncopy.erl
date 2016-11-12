@@ -123,6 +123,7 @@ user_receive_packet(Packet, _C2SState, JID, _From, To) ->
 			       stanza() | {stop, stanza()}.
 check_and_forward(JID, To, Packet, Direction)->
     case is_chat_message(Packet) andalso
+	not is_muc_pm(To, Packet) andalso
 	xmpp:has_subtag(Packet, #carbons_private{}) == false andalso
 	xmpp:has_subtag(Packet, #hint{type = 'no-copy'}) == false of
 	true ->
@@ -231,6 +232,11 @@ is_chat_message(#message{type = normal, body = Body}) ->
     xmpp:get_text(Body) /= <<"">>;
 is_chat_message(_) ->
     false.
+
+is_muc_pm(#jid{lresource = <<>>}, _Packet) ->
+    false;
+is_muc_pm(_To, Packet) ->
+    xmpp:has_subtag(Packet, #muc_user{}).
 
 -spec list(binary(), binary()) -> [{binary(), binary()}].
 %% list {resource, cc_version} with carbons enabled for given user and host

@@ -664,7 +664,7 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 		      Before /= undefined -> {<<">">>, <<"asc">>};
 		      true -> {<<"is not">>, <<"desc">>}
 		   end,
-    SNidx = integer_to_binary(Nidx),
+    SNidx = jlib:i2l(Nidx),
     I = if After /= undefined -> After;
 	   Before /= undefined -> Before;
 	   true -> undefined
@@ -774,7 +774,7 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM
 
 get_last_items(Nidx, _From, Count) ->
     Limit = jlib:i2l(Count),
-    SNidx = integer_to_binary(Nidx),
+    SNidx = jlib:i2l(Nidx),
     Query = fun(mssql, _) ->
 		    ejabberd_sql:sql_query_t(
 		      [<<"select top ">>, Limit,
@@ -876,7 +876,7 @@ del_items(Nidx, [ItemId]) ->
     del_item(Nidx, ItemId);
 del_items(Nidx, ItemIds) ->
     I = str:join([[<<"'">>, ejabberd_sql:escape(X), <<"'">>] || X <- ItemIds], <<",">>),
-    SNidx = integer_to_binary(Nidx),
+    SNidx = jlib:i2l(Nidx),
     catch
     ejabberd_sql:sql_query_t([<<"delete from pubsub_item where itemid in (">>,
 	    I, <<") and nodeid='">>, SNidx, <<"';">>]).
@@ -932,8 +932,9 @@ select_affiliation_subscriptions(Nidx, JID, JID) ->
     select_affiliation_subscriptions(Nidx, JID);
 select_affiliation_subscriptions(Nidx, GenKey, SubKey) ->
     {result, Affiliation} = get_affiliation(Nidx, GenKey),
-    {result, Subscriptions} = get_subscriptions(Nidx, SubKey),
-    {Affiliation, Subscriptions}.
+    {result, BareJidSubs} = get_subscriptions(Nidx, GenKey),
+    {result, FullJidSubs} = get_subscriptions(Nidx, SubKey),
+    {Affiliation, BareJidSubs++FullJidSubs}.
 
 update_affiliation(Nidx, JID, Affiliation) ->
     J = encode_jid(JID),

@@ -1084,7 +1084,7 @@ get_form(Host, [<<"config">>, <<"acls">>], Lang) ->
     ACLs = str:tokens(
 	     iolist_to_binary(
 	       io_lib:format("~p.",
-			     [ets:select(
+			     [mnesia:dirty_select(
 				acl,
 				ets:fun2ms(
 				  fun({acl, {Name, H}, Spec}) when H == Host ->
@@ -1103,7 +1103,7 @@ get_form(Host, [<<"config">>, <<"access">>], Lang) ->
     Accs = str:tokens(
 	     iolist_to_binary(
 	       io_lib:format("~p.",
-			     [ets:select(
+			     [mnesia:dirty_select(
 				access,
 				ets:fun2ms(
 				  fun({access, {Name, H}, Acc}) when H == Host ->
@@ -1568,21 +1568,29 @@ set_form(From, Host, ?NS_ADMINL(<<"end-user-session">>),
     Xmlelement = xmpp:serr_policy_violation(<<"has been kicked">>, Lang),
     case JID#jid.lresource of
       <<>> ->
-	  SIDs = mnesia:dirty_select(session,
-				     [{#session{sid = {'$1', '$2'},
-						usr = {LUser, LServer, '_'},
+	  SIs = mnesia:dirty_select(session,
+				    [{#session{usr = {LUser, LServer, '_'},
+					       sid = '$1',
+					       info = '$2',
 						_ = '_'},
-				       [{is_pid, '$2'}],
-				       [{{'$1', '$2'}}]}]),
-	  [Pid ! {kick, kicked_by_admin, Xmlelement} || {_, Pid} <- SIDs];
+				      [], [{{'$1', '$2'}}]}]),
+	  Pids = [P || {{_, P}, Info} <- SIs,
+		       not proplists:get_bool(offline, Info)],
+	  lists:foreach(fun(Pid) ->
+				Pid ! {kick, kicked_by_admin, Xmlelement}
+			end, Pids);
       R ->
-	  [{_, Pid}] = mnesia:dirty_select(session,
-					   [{#session{sid = {'$1', '$2'},
-						      usr = {LUser, LServer, R},
+	  [{{_, Pid}, Info}] = mnesia:dirty_select(
+				 session,
+				 [{#session{usr = {LUser, LServer, R},
+					    sid = '$1',
+					    info = '$2',
 						      _ = '_'},
-					     [{is_pid, '$2'}],
-					     [{{'$1', '$2'}}]}]),
-	  Pid ! {kick, kicked_by_admin, Xmlelement}
+				   [], [{{'$1', '$2'}}]}]),
+	  case proplists:get_bool(offline, Info) of
+	    true -> ok;
+	    false -> Pid ! {kick, kicked_by_admin, Xmlelement}
+	  end
     end,
     {result, undefined};
 set_form(From, Host,

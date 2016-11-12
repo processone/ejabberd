@@ -378,6 +378,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = add_rosteritem, tags = [roster],
 			desc = "Add an item to a user's roster (supports ODBC)",
+			longdesc = "Group can be several groups separated by ; for example: \"g1;g2;g3\"",
 			module = ?MODULE, function = add_rosteritem,
 			args = [{localuser, binary}, {localserver, binary},
 				{user, binary}, {server, binary},
@@ -536,7 +537,7 @@ get_commands_spec() ->
                         policy = user,
 			module = mod_offline, function = count_offline_messages,
 			args = [],
-			result = {res, integer}},
+			result = {value, integer}},
      #ejabberd_commands{name = send_message, tags = [stanza],
 			desc = "Send a message to a local or remote bare of full JID",
 			module = ?MODULE, function = send_message,
@@ -864,12 +865,15 @@ connected_users_vhost(Host) ->
 
 %% Code copied from ejabberd_sm.erl and customized
 dirty_get_sessions_list2() ->
-    mnesia:dirty_select(
+    Ss = mnesia:dirty_select(
       session,
-      [{#session{usr = '$1', sid = {'$2', '$3'}, priority = '$4', info = '$5',
+	   [{#session{usr = '$1', sid = '$2', priority = '$3', info = '$4',
 		 _ = '_'},
-	[{is_pid, '$3'}],
-	[['$1', {{'$2', '$3'}}, '$4', '$5']]}]).
+	     [],
+	     [['$1', '$2', '$3', '$4']]}]),
+    lists:filter(fun([_USR, _SID, _Priority, Info]) ->
+			 not proplists:get_bool(offline, Info)
+		 end, Ss).
 
 %% Make string more print-friendly
 stringize(String) ->
@@ -906,8 +910,8 @@ user_sessions_info(User, Host) ->
 		   {'EXIT', _Reason} ->
 		       [];
 		   Ss ->
-		       lists:filter(fun(#session{sid = {_, Pid}}) ->
-					    is_pid(Pid)
+		       lists:filter(fun(#session{info = Info}) ->
+					    not proplists:get_bool(offline, Info)
 				    end, Ss)
 	       end,
     lists:map(
@@ -1140,8 +1144,8 @@ subscribe_roster({Name, Server, Group, Nick}, [{Name, Server, _, _} | Roster]) -
     subscribe_roster({Name, Server, Group, Nick}, Roster);
 %% Subscribe Name2 to Name1
 subscribe_roster({Name1, Server1, Group1, Nick1}, [{Name2, Server2, Group2, Nick2} | Roster]) ->
-    subscribe(Name1, Server1, list_to_binary(Name2), list_to_binary(Server2),
-	list_to_binary(Nick2), list_to_binary(Group2), <<"both">>, []),
+    subscribe(Name1, Server1, iolist_to_binary(Name2), iolist_to_binary(Server2),
+	iolist_to_binary(Nick2), iolist_to_binary(Group2), <<"both">>, []),
     subscribe_roster({Name1, Server1, Group1, Nick1}, Roster).
 
 push_alltoall(S, G) ->
@@ -1173,10 +1177,11 @@ push_roster_item(LU, LS, R, U, S, Action) ->
     ejabberd_router:route(jid:remove_resource(LJID), LJID, ResIQ).
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
+    Groups = binary:split(Group,<<";">>, [global]),
     #roster_item{jid = jid:make(U, S),
 		 name = Nick,
 		 subscription = jlib:binary_to_atom(Subs),
-		 groups = [Group]};
+		 groups = Groups};
 build_roster_item(U, S, remove) ->
     #roster_item{jid = jid:make(U, S), subscription = remove}.
 
@@ -1260,11 +1265,11 @@ srg_create(Group, Host, Name, Description, Display) ->
     Opts = [{name, Name},
 	    {displayed_groups, DisplayList},
 	    {description, Description}],
-    {atomic, ok} = mod_shared_roster:create_group(Host, Group, Opts),
+    {atomic, _} = mod_shared_roster:create_group(Host, Group, Opts),
     ok.
 
 srg_delete(Group, Host) ->
-    {atomic, ok} = mod_shared_roster:delete_group(Host, Group),
+    {atomic, _} = mod_shared_roster:delete_group(Host, Group),
     ok.
 
 srg_list(Host) ->
@@ -1287,11 +1292,11 @@ srg_get_members(Group, Host) ->
      || {MUser, MServer} <- Members].
 
 srg_user_add(User, Host, Group, GroupHost) ->
-    {atomic, ok} = mod_shared_roster:add_user_to_group(GroupHost, {User, Host}, Group),
+    {atomic, _} = mod_shared_roster:add_user_to_group(GroupHost, {User, Host}, Group),
     ok.
 
 srg_user_del(User, Host, Group, GroupHost) ->
-    {atomic, ok} = mod_shared_roster:remove_user_from_group(GroupHost, {User, Host}, Group),
+    {atomic, _} = mod_shared_roster:remove_user_from_group(GroupHost, {User, Host}, Group),
     ok.
 
 
@@ -1302,44 +1307,9 @@ srg_user_del(User, Host, Group, GroupHost) ->
 %% @doc Send a message to a Jabber account.
 %% @spec (Type::binary(), From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
 send_message(Type, From, To, Subject, Body) ->
+    FromJID = jid:from_string(From),
+    ToJID = jid:from_string(To),
     Packet = build_packet(Type, Subject, Body),
-    send_packet_all_resources(From, To, Packet).
-
-%% @doc Send a packet to a Jabber account.
-%% If a resource was specified in the JID,
-%% the packet is sent only to that specific resource.
-%% If no resource was specified in the JID,
-%% and the user is remote or local but offline,
-%% the packet is sent to the bare JID.
-%% If the user is local and is online in several resources,
-%% the packet is sent to all its resources.
-send_packet_all_resources(FromJIDString, ToJIDString, Packet) ->
-    FromJID = jid:from_string(FromJIDString),
-    ToJID = jid:from_string(ToJIDString),
-    ToUser = ToJID#jid.user,
-    ToServer = ToJID#jid.server,
-    case ToJID#jid.resource of
-	<<>> ->
-	    send_packet_all_resources(FromJID, ToUser, ToServer, Packet);
-	Res ->
-	    send_packet_all_resources(FromJID, ToUser, ToServer, Res, Packet)
-    end.
-
-send_packet_all_resources(FromJID, ToUser, ToServer, Packet) ->
-    case ejabberd_sm:get_user_resources(ToUser, ToServer) of
-	[] ->
-	    send_packet_all_resources(FromJID, ToUser, ToServer, <<>>, Packet);
-	ToResources ->
-	    lists:foreach(
-	      fun(ToResource) ->
-		      send_packet_all_resources(FromJID, ToUser, ToServer,
-						ToResource, Packet)
-	      end,
-	      ToResources)
-    end.
-
-send_packet_all_resources(FromJID, ToU, ToS, ToR, Packet) ->
-    ToJID = jid:make(ToU, ToS, ToR),
     ejabberd_router:route(FromJID, ToJID, Packet).
 
 build_packet(Type, Subject, Body) ->

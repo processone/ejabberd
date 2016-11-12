@@ -28,6 +28,7 @@ defmodule EjabberdAdminTest do
 		# For some myterious reason, :ejabberd_commands.init mays
 		# sometimes fails if module is not loaded before
 		{:module, :ejabberd_commands} = Code.ensure_loaded(:ejabberd_commands)
+		{:ok, _} = :ejabberd_access_permissions.start_link()
 		:ejabberd_commands.init
 		:ejabberd_admin.start
 		:ok

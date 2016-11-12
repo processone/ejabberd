@@ -29,14 +29,16 @@
 -export([start/0, load_file/1, reload_file/0, read_file/1,
 	 add_global_option/2, add_local_option/2,
 	 get_global_option/2, get_local_option/2,
-         get_global_option/3, get_local_option/3,
-         get_option/2, get_option/3, add_option/2, has_option/1,
-         get_vh_by_auth_method/1, is_file_readable/1,
-         get_version/0, get_myhosts/0, get_mylang/0,
-         prepare_opt_val/4, convert_table_to_binary/5,
-         transform_options/1, collect_options/1, default_db/2,
-         convert_to_yaml/1, convert_to_yaml/2, v_db/2,
-         env_binary_to_list/2, opt_type/1, may_hide_data/1]).
+	 get_global_option/3, get_local_option/3,
+	 get_option/2, get_option/3, add_option/2, has_option/1,
+	 get_vh_by_auth_method/1, is_file_readable/1,
+	 get_version/0, get_myhosts/0, get_mylang/0,
+	 get_ejabberd_config_path/0, is_using_elixir_config/0,
+	 prepare_opt_val/4, convert_table_to_binary/5,
+	 transform_options/1, collect_options/1, default_db/2,
+	 convert_to_yaml/1, convert_to_yaml/2, v_db/2,
+	 env_binary_to_list/2, opt_type/1, may_hide_data/1,
+	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1]).
 
 -export([start/2]).
 
@@ -147,7 +149,18 @@ read_file(File) ->
                      {include_modules_configs, true}]).
 
 read_file(File, Opts) ->
-    Terms1 = get_plain_terms_file(File, Opts),
+    Terms1 = case is_elixir_enabled() of
+		 true ->
+		     case 'Elixir.Ejabberd.ConfigUtil':is_elixir_config(File) of
+			 true ->
+			     'Elixir.Ejabberd.Config':init(File),
+			     'Elixir.Ejabberd.Config':get_ejabberd_opts();
+			 false ->
+			     get_plain_terms_file(File, Opts)
+		     end;
+		 false ->
+		     get_plain_terms_file(File, Opts)
+	     end,
     Terms_macros = case proplists:get_bool(replace_macros, Opts) of
                        true -> replace_macros(Terms1);
                        false -> Terms1
@@ -165,7 +178,8 @@ read_file(File, Opts) ->
 -spec load_file(string()) -> ok.
 
 load_file(File) ->
-    State = read_file(File),
+    State0 = read_file(File),
+    State = validate_opts(State0),
     set_opts(State).
 
 -spec reload_file() -> ok.
@@ -318,7 +332,9 @@ get_absolute_path(File) ->
 	    File;
 	relative ->
 	    {ok, Dir} = file:get_cwd(),
-	    filename:absname_join(Dir, File)
+	    filename:absname_join(Dir, File);
+	volumerelative ->
+	    filename:absname(File)
     end.
 
 
@@ -877,7 +893,20 @@ v_db(Mod, Type) ->
 	[] -> erlang:error(badarg)
     end.
 
--spec default_db(global | binary(), module()) -> atom().
+-spec v_dbs(module()) -> [atom()].
+
+v_dbs(Mod) ->
+    lists:flatten(ets:match(module_db, {Mod, '$1'})).
+
+-spec v_dbs_mods(module()) -> [module()].
+
+v_dbs_mods(Mod) ->
+    lists:map(fun([M]) ->
+		      binary_to_atom(<<(atom_to_binary(Mod, utf8))/binary, "_",
+				       (atom_to_binary(M, utf8))/binary>>, utf8)
+	      end, ets:match(module_db, {Mod, '$1'})).
+
+-spec default_db(binary(), module()) -> atom().
 
 default_db(Host, Module) ->
     case ejabberd_config:get_option(
@@ -1010,7 +1039,6 @@ replace_module(mod_private_odbc) -> {mod_private, sql};
 replace_module(mod_roster_odbc) -> {mod_roster, sql};
 replace_module(mod_shared_roster_odbc) -> {mod_shared_roster, sql};
 replace_module(mod_vcard_odbc) -> {mod_vcard, sql};
-replace_module(mod_vcard_ldap) -> {mod_vcard, ldap};
 replace_module(mod_vcard_xupdate_odbc) -> {mod_vcard_xupdate, sql};
 replace_module(mod_pubsub_odbc) -> {mod_pubsub, sql};
 replace_module(Module) ->
@@ -1040,6 +1068,23 @@ replace_modules(Modules) ->
 
 %% Elixir module naming
 %% ====================
+
+-ifdef(ELIXIR_ENABLED).
+is_elixir_enabled() ->
+    true.
+-else.
+is_elixir_enabled() ->
+    false.
+-endif.
+
+is_using_elixir_config() ->
+    case is_elixir_enabled() of
+	true ->
+	    Config = get_ejabberd_config_path(),
+	    'Elixir.Ejabberd.ConfigUtil':is_elixir_config(Config);
+       false ->
+	    false
+    end.
 
 %% If module name start with uppercase letter, this is an Elixir module:
 is_elixir_module(Module) ->

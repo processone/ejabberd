@@ -81,7 +81,7 @@ remove_old_messages(Days, LServer) ->
 		 [<<"DELETE FROM spool"
 		   " WHERE created_at < "
 		   "NOW() - INTERVAL '">>,
-		  integer_to_list(Days), <<"';">>]) of
+		  integer_to_list(Days), <<"' DAY;">>]) of
 	{updated, N} ->
 	    ?INFO_MSG("~p message(s) deleted from offline spool", [N]);
 	_Error ->

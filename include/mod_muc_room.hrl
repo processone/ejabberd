@@ -78,10 +78,14 @@
     jid :: jid(),
     nick :: binary(),
     role :: role(),
-    is_subscriber = false :: boolean(),
-    subscriptions = [] :: [binary()],
+    %%is_subscriber = false :: boolean(),
+    %%subscriptions = [] :: [binary()],
     last_presence :: xmlel()
 }).
+
+-record(subscriber, {jid :: jid(),
+		     nick = <<>> :: binary(),
+		     nodes = [] :: [binary()]}).
 
 -record(activity,
 {
@@ -102,6 +106,8 @@
     jid                     = #jid{} :: jid(),
     config                  = #config{} :: config(),
     users                   = (?DICT):new() :: ?TDICT,
+    subscribers             = (?DICT):new() :: ?TDICT,
+    subscriber_nicks        = (?DICT):new() :: ?TDICT,
     last_voice_request_time = treap:empty() :: treap:treap(),
     robots                  = (?DICT):new() :: ?TDICT,
     nicks                   = (?DICT):new() :: ?TDICT,

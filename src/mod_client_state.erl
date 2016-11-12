@@ -34,8 +34,8 @@
 -export([start/2, stop/1, mod_opt_type/1, depends/2]).
 
 %% ejabberd_hooks callbacks.
--export([filter_presence/3, filter_chat_states/3, filter_pep/3, filter_other/3,
-	 flush_queue/2, add_stream_feature/2]).
+-export([filter_presence/4, filter_chat_states/4, filter_pep/4, filter_other/4,
+	 flush_queue/3, add_stream_feature/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -151,26 +151,27 @@ depends(_Host, _Opts) ->
 %% ejabberd_hooks callbacks.
 %%--------------------------------------------------------------------
 
--spec filter_presence({ejabberd_c2s:state(), [stanza()]}, binary(), stanza())
+-spec filter_presence({ejabberd_c2s:state(), [stanza()]}, binary(), jid(), stanza())
       -> {ejabberd_c2s:state(), [stanza()]} |
 	 {stop, {ejabberd_c2s:state(), [stanza()]}}.
 
-filter_presence({C2SState, _OutStanzas} = Acc, Host,
+filter_presence({C2SState, _OutStanzas} = Acc, Host, To,
 		#presence{type = Type} = Stanza) ->
     if Type == available; Type == unavailable ->
-	    ?DEBUG("Got availability presence stanza", []),
+	    ?DEBUG("Got availability presence stanza for ~s",
+		   [jid:to_string(To)]),
 	    queue_add(presence, Stanza, Host, C2SState);
        true ->
 	    Acc
     end;
-filter_presence(Acc, _Host, _Stanza) -> Acc.
+filter_presence(Acc, _Host, _To, _Stanza) -> Acc.
 
--spec filter_chat_states({ejabberd_c2s:state(), [stanza()]}, binary(), stanza())
+-spec filter_chat_states({ejabberd_c2s:state(), [stanza()]}, binary(), jid(), stanza())
       -> {ejabberd_c2s:state(), [stanza()]} |
 	 {stop, {ejabberd_c2s:state(), [stanza()]}}.
 
-filter_chat_states({C2SState, _OutStanzas} = Acc, Host,
-		   #message{from = From, to = To} = Stanza) ->
+filter_chat_states({C2SState, _OutStanzas} = Acc, Host, To,
+		   #message{from = From} = Stanza) ->
     case xmpp_util:is_standalone_chat_state(Stanza) of
 	true ->
 	    case {From, To} of
@@ -180,40 +181,41 @@ filter_chat_states({C2SState, _OutStanzas} = Acc, Host,
 		    %% conversations across clients.
 		    Acc;
 		_ ->
-		    ?DEBUG("Got standalone chat state notification", []),
+		?DEBUG("Got standalone chat state notification for ~s",
+		       [jid:to_string(To)]),
 		    queue_add(chatstate, Stanza, Host, C2SState)
 	    end;
 	false ->
 	    Acc
     end;
-filter_chat_states(Acc, _Host, _Stanza) -> Acc.
+filter_chat_states(Acc, _Host, _To, _Stanza) -> Acc.
 
--spec filter_pep({ejabberd_c2s:state(), [stanza()]}, binary(), stanza())
+-spec filter_pep({ejabberd_c2s:state(), [stanza()]}, binary(), jid(), stanza())
       -> {ejabberd_c2s:state(), [stanza()]} |
 	 {stop, {ejabberd_c2s:state(), [stanza()]}}.
 
-filter_pep({C2SState, _OutStanzas} = Acc, Host, #message{} = Stanza) ->
+filter_pep({C2SState, _OutStanzas} = Acc, Host, To, #message{} = Stanza) ->
     case get_pep_node(Stanza) of
 	undefined ->
 	    Acc;
 	Node ->
-	    ?DEBUG("Got PEP notification", []),
+	    ?DEBUG("Got PEP notification for ~s", [jid:to_string(To)]),
 	    queue_add({pep, Node}, Stanza, Host, C2SState)
     end;
-filter_pep(Acc, _Host, _Stanza) -> Acc.
+filter_pep(Acc, _Host, _To, _Stanza) -> Acc.
 
--spec filter_other({ejabberd_c2s:state(), [stanza()]}, binary(), stanza())
-      -> {stop, {ejabberd_c2s:state(), [stanza()]}}.
-
-filter_other({C2SState, _OutStanzas}, Host, Stanza) ->
-    ?DEBUG("Won't add stanza to CSI queue", []),
-    queue_take(Stanza, Host, C2SState).
-
--spec flush_queue({ejabberd_c2s:state(), [stanza()]}, binary())
+-spec filter_other({ejabberd_c2s:state(), [stanza()]}, binary(), jid(), stanza())
       -> {ejabberd_c2s:state(), [stanza()]}.
 
-flush_queue({C2SState, _OutStanzas}, Host) ->
-    ?DEBUG("Going to flush CSI queue", []),
+filter_other({C2SState, _OutStanzas}, Host, To, Stanza) ->
+    ?DEBUG("Won't add stanza for ~s to CSI queue", [jid:to_string(To)]),
+    queue_take(Stanza, Host, C2SState).
+
+-spec flush_queue({ejabberd_c2s:state(), [stanza()]}, binary(), jid())
+      -> {ejabberd_c2s:state(), [stanza()]}.
+
+flush_queue({C2SState, _OutStanzas}, Host, JID) ->
+    ?DEBUG("Going to flush CSI queue of ~s", [jid:to_string(JID)]),
     Queue = get_queue(C2SState),
     NewState = set_queue([], C2SState),
     {NewState, get_stanzas(Queue, Host)}.
@@ -246,7 +248,7 @@ queue_add(Type, Stanza, Host, C2SState) ->
 	  {stop, {NewState, []}}
     end.
 
--spec queue_take(stanza(), binary(), term()) -> {stop, {term(), [stanza()]}}.
+-spec queue_take(stanza(), binary(), term()) -> {term(), [stanza()]}.
 
 queue_take(Stanza, Host, C2SState) ->
     From = xmpp:get_from(Stanza),
@@ -256,7 +258,7 @@ queue_take(Stanza, Host, C2SState) ->
 				 U == LUser andalso S == LServer
 			 end, get_queue(C2SState)),
     NewState = set_queue(Rest, C2SState),
-    {stop, {NewState, get_stanzas(Selected, Host) ++ [Stanza]}}.
+    {NewState, get_stanzas(Selected, Host) ++ [Stanza]}.
 
 -spec set_queue(csi_queue(), term()) -> term().
 

@@ -31,11 +31,13 @@
 
 -export([add_access/3, clear/0]).
 -export([start/0, add/3, add_list/3, add_local/3, add_list_local/3,
-	 load_from_config/0, match_rule/3,
+	 load_from_config/0, match_rule/3, any_rules_allowed/3,
 	 transform_options/1, opt_type/1, acl_rule_matches/3,
 	 acl_rule_verify/1, access_matches/3,
 	 transform_access_rules_config/1,
-	 access_rules_validator/1, shaper_rules_validator/1]).
+	 parse_ip_netmask/1,
+	 access_rules_validator/1, shaper_rules_validator/1,
+	 normalize_spec/1, resolve_access/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -74,12 +76,6 @@
 -export_type([acl/0]).
 
 start() ->
-    case catch mnesia:table_info(acl, storage_type) of
-        disc_copies ->
-            mnesia:delete_table(acl);
-        _ ->
-            ok
-    end,
     mnesia:create_table(acl,
 			[{ram_copies, [node()]}, {type, bag},
                          {local_content, true},
@@ -261,6 +257,7 @@ normalize_spec(Spec) ->
         {server, S} -> {server, nameprep(S)};
         {resource, R} -> {resource, resourceprep(R)};
         {server_regexp, SR} -> {server_regexp, b(SR)};
+        {resource_regexp, R} -> {resource_regexp, b(R)};
         {server_glob, S} -> {server_glob, b(S)};
         {resource_glob, R} -> {resource_glob, b(R)};
         {ip, {Net, Mask}} -> {ip, {Net, Mask}};
@@ -273,6 +270,15 @@ normalize_spec(Spec) ->
                     none
             end
     end.
+
+-spec any_rules_allowed(global | binary(), access_name(),
+                           jid() | ljid() | inet:ip_address()) -> boolean().
+
+any_rules_allowed(Host, Access, Entity) ->
+    lists:any(fun (Rule) ->
+                      allow == acl:match_rule(Host, Rule, Entity)
+              end,
+              Access).
 
 -spec match_rule(global | binary(), access_name(),
                  jid() | ljid() | inet:ip_address()) -> any().
@@ -432,30 +438,35 @@ acl_rule_matches({node_glob, {UR, SR}}, #{usr := {U, S, _}}, _Host) ->
 acl_rule_matches(_ACL, _Data, _Host) ->
     false.
 
--spec access_matches(atom()|list(), any(), global|binary()) -> any().
-access_matches(all, _Data, _Host) ->
-    allow;
-access_matches(none, _Data, _Host) ->
-    deny;
-access_matches(Name, Data, Host) when is_atom(Name) ->
-    GAccess = ets:lookup(access, {Name, global}),
+resolve_access(all, _Host) ->
+    all;
+resolve_access(none, _Host) ->
+    none;
+resolve_access(Name, Host) when is_atom(Name) ->
+    GAccess = mnesia:dirty_read(access, {Name, global}),
     LAccess =
-	if Host /= global -> ets:lookup(access, {Name, Host});
+    if Host /= global -> mnesia:dirty_read(access, {Name, Host});
 	    true -> []
 	end,
     case GAccess ++ LAccess of
 	[] ->
-	    deny;
+	    [];
 	AccessList ->
-	    Rules = lists:flatmap(
+	    lists:flatmap(
 		fun(#access{rules = Rs}) ->
 		    Rs
-		end, AccessList),
-	    access_rules_matches(Rules, Data, Host)
+		end, AccessList)
     end;
-access_matches(Rules, Data, Host) when is_list(Rules) ->
-    access_rules_matches(Rules, Data, Host).
+resolve_access(Rules, _Host) when is_list(Rules) ->
+    Rules.
 
+-spec access_matches(atom()|list(), any(), global|binary()) -> allow|deny.
+access_matches(Rules, Data, Host) ->
+    case resolve_access(Rules, Host) of
+	all -> allow;
+	none -> deny;
+	RRules -> access_rules_matches(RRules, Data, Host)
+    end.
 
 -spec access_rules_matches(list(), any(), global|binary()) -> any().
 
@@ -473,7 +484,7 @@ access_rules_matches([], _Data, _Host, Default) ->
     Default.
 
 get_aclspecs(ACL, Host) ->
-    ets:lookup(acl, {ACL, Host}) ++ ets:lookup(acl, {ACL, global}).
+    mnesia:dirty_read(acl, {ACL, Host}) ++ mnesia:dirty_read(acl, {ACL, global}).
 
 is_regexp_match(String, RegExp) ->
     case ejabberd_regexp:run(String, RegExp) of
@@ -676,7 +687,8 @@ transform_options({acl, Name, Type}, Opts) ->
             {server_regexp, SR} -> {server_regexp, [b(SR)]};
             {server_glob, S} -> {server_glob, [b(S)]};
             {ip, S} -> {ip, [b(S)]};
-            {resource_glob, R} -> {resource_glob, [b(R)]}
+            {resource_glob, R} -> {resource_glob, [b(R)]};
+            {resource_regexp, R} -> {resource_regexp, [b(R)]}
         end,
     [{acl, [{Name, [T]}]}|Opts];
 transform_options({access, Name, Rules}, Opts) ->

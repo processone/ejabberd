@@ -77,9 +77,9 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 	    catch
 	    ejabberd_sql:sql_query_t(
               ?SQL("update pubsub_node set"
-                   " host=%(H)s"
-                   " node=%(Node)s"
-                   " parent=%(Parent)s"
+                   " host=%(H)s,"
+                   " node=%(Node)s,"
+                   " parent=%(Parent)s,"
                    " type=%(Type)s "
                    "where nodeid=%(OldNidx)d")),
 	    OldNidx;

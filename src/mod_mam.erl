@@ -106,15 +106,12 @@ start(Host, Opts) ->
     ejabberd_hooks:add(anonymous_purge_hook, Host, ?MODULE,
 		       remove_user, 50),
     case gen_mod:get_opt(assume_mam_usage, Opts,
-			 fun(if_enabled) -> if_enabled;
-			    (on_request) -> on_request;
-			    (never) -> never
-			 end, never) of
-	never ->
-	    ok;
-	_ ->
+			 fun(B) when is_boolean(B) -> B end, false) of
+	true ->
 	    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
-			       message_is_archived, 50)
+			       message_is_archived, 50);
+	false ->
+	    ok
     end,
     ejabberd_commands:register_commands(get_commands_spec()),
     ok.
@@ -159,15 +156,12 @@ stop(Host) ->
     ejabberd_hooks:delete(anonymous_purge_hook, Host,
 			  ?MODULE, remove_user, 50),
     case gen_mod:get_module_opt(Host, ?MODULE, assume_mam_usage,
-				fun(if_enabled) -> if_enabled;
-				   (on_request) -> on_request;
-				   (never) -> never
-				end, never) of
-	never ->
-	    ok;
-	_ ->
+				fun(B) when is_boolean(B) -> B end, false) of
+	true ->
 	    ejabberd_hooks:delete(message_is_archived, Host, ?MODULE,
-				  message_is_archived, 50)
+				  message_is_archived, 50);
+	false ->
+	    ok
     end,
     ejabberd_commands:unregister_commands(get_commands_spec()),
     ok.
@@ -367,32 +361,13 @@ message_is_archived(true, _C2SState, _Peer, _JID, _Pkt) ->
     true;
 message_is_archived(false, C2SState, Peer,
 		    #jid{luser = LUser, lserver = LServer}, Pkt) ->
-    Res = case gen_mod:get_module_opt(LServer, ?MODULE, assume_mam_usage,
-				      fun(if_enabled) -> if_enabled;
-					 (on_request) -> on_request;
-					 (never) -> never
-				      end, never) of
-	      if_enabled ->
-		  case get_prefs(LUser, LServer) of
-		      #archive_prefs{} = P ->
-			  {ok, P};
-		      error ->
-			  error
-		  end;
-	      on_request ->
-		  Mod = gen_mod:db_mod(LServer, ?MODULE),
-		  cache_tab:lookup(archive_prefs, {LUser, LServer},
-				   fun() ->
-					   Mod:get_prefs(LUser, LServer)
-				   end);
-	      never ->
-		  error
-	  end,
-    case Res of
-	{ok, Prefs} ->
+    case gen_mod:get_module_opt(LServer, ?MODULE, assume_mam_usage,
+				fun(B) when is_boolean(B) -> B end, false) of
+	true ->
 	    should_archive(strip_my_archived_tag(Pkt, LServer), LServer)
-		andalso should_archive_peer(C2SState, Prefs, Peer);
-	error ->
+		andalso should_archive_peer(C2SState, get_prefs(LUser, LServer),
+					    Peer);
+	false ->
 	    false
     end.
 
@@ -493,9 +468,10 @@ process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
 	    xmpp:make_error(IQ, Err)
     end.
 
-should_archive(#message{type = T}, _LServer) when T == error; T == result ->
+should_archive(#message{type = error}, _LServer) ->
     false;
-should_archive(#message{body = Body} = Pkt, LServer) ->
+should_archive(#message{body = Body, subject = Subject,
+			type = Type} = Pkt, LServer) ->
     case is_resent(Pkt, LServer) of
 	true ->
 	    false;
@@ -505,14 +481,11 @@ should_archive(#message{body = Body} = Pkt, LServer) ->
 		    true;
 		no_store ->
 		    false;
+		none when Type == groupchat; Type == headline ->
+		    false;
 		none ->
-		    case xmpp:get_text(Body) of
-			<<>> ->
-			    %% Empty body
-			    false;
-			_ ->
-			    true
-		    end
+		    xmpp:get_text(Body) /= <<>> orelse
+			xmpp:get_text(Subject) /= <<>>
 	    end
     end;
 should_archive(_, _LServer) ->
@@ -669,9 +642,15 @@ store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
     case should_archive_peer(C2SState, Prefs, Peer) of
 	true ->
 	    US = {LUser, LServer},
-	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    El = xmpp:encode(Pkt),
-	    Mod:store(El, LServer, US, chat, Peer, <<"">>, Dir);
+	    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,
+					 [LUser, LServer, Peer, chat, Dir]) of
+		drop ->
+		    pass;
+		NewPkt ->
+		    Mod = gen_mod:db_mod(LServer, ?MODULE),
+		    El = xmpp:encode(NewPkt),
+		    Mod:store(El, LServer, US, chat, Peer, <<"">>, Dir)
+	    end;
 	false ->
 	    pass
     end.
@@ -679,11 +658,17 @@ store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
 store_muc(MUCState, Pkt, RoomJID, Peer, Nick) ->
     case should_archive_muc(Pkt) of
 	true ->
-	    LServer = MUCState#state.server_host,
 	    {U, S, _} = jid:tolower(RoomJID),
-	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    El = xmpp:encode(Pkt),
-	    Mod:store(El, LServer, {U, S}, groupchat, Peer, Nick, recv);
+	    LServer = MUCState#state.server_host,
+	    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,
+					 [U, S, Peer, groupchat, recv]) of
+		drop ->
+		    pass;
+		NewPkt ->
+		    Mod = gen_mod:db_mod(LServer, ?MODULE),
+		    El = xmpp:encode(NewPkt),
+		    Mod:store(El, LServer, {U, S}, groupchat, Peer, Nick, recv)
+	    end;
 	false ->
 	    pass
     end.
@@ -879,6 +864,7 @@ is_bare_copy(#jid{luser = U, lserver = S, lresource = R}, To) ->
 send(Msgs, Count, IsComplete,
      #iq{from = From, to = To,
 	 sub_els = [#mam_query{id = QID, xmlns = NS}]} = IQ) ->
+    Hint = #hint{type = 'no-store'},
     Els = lists:map(
 	    fun({ID, _IDInt, El}) ->
 		    #message{sub_els = [#mam_result{xmlns = NS,
@@ -905,7 +891,7 @@ send(Msgs, Count, IsComplete,
 	      fun(El) ->
 		      ejabberd_router:route(To, From, El)
 	      end, Els),
-	    ejabberd_router:route(To, From, #message{sub_els = [Result]}),
+	    ejabberd_router:route(To, From, #message{sub_els = [Result, Hint]}),
 	    ignore
     end.
 
@@ -926,6 +912,8 @@ filter_by_max(_Msgs, _Junk) ->
 -spec limit_max(rsm_set(), binary()) -> rsm_set() | undefined.
 limit_max(RSM, ?NS_MAM_TMP) ->
     RSM; % XEP-0313 v0.2 doesn't require clients to support RSM.
+limit_max(undefined, _NS) ->
+    #rsm_set{max = ?DEF_PAGE_SIZE};
 limit_max(#rsm_set{max = Max} = RSM, _NS) when not is_integer(Max) ->
     RSM#rsm_set{max = ?DEF_PAGE_SIZE};
 limit_max(#rsm_set{max = Max} = RSM, _NS) when Max > ?MAX_PAGE_SIZE ->
@@ -972,10 +960,7 @@ get_commands_spec() ->
 			result = {res, rescode}}].
 
 mod_opt_type(assume_mam_usage) ->
-    fun(if_enabled) -> if_enabled;
-       (on_request) -> on_request;
-       (never) -> never
-    end;
+    fun (B) when is_boolean(B) -> B end;
 mod_opt_type(cache_life_time) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(cache_size) ->

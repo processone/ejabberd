@@ -71,12 +71,11 @@
          server_host = <<"">> :: binary(),
          access = {none, none, none, none} :: {atom(), atom(), atom(), atom()},
          history_size = 20 :: non_neg_integer(),
+         max_rooms_discoitems = 100 :: non_neg_integer(),
          default_room_opts = [] :: list(),
          room_shaper = none :: shaper:shaper()}).
 
 -define(PROCNAME, ejabberd_mod_muc).
-
--define(MAX_ROOMS_DISCOITEMS, 100).
 
 -type muc_room_opts() :: [{atom(), any()}].
 -callback init(binary(), gen_mod:opts()) -> any().
@@ -100,7 +99,7 @@ start_link(Host, Opts) ->
 start(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 temporary, 1000, worker, [?MODULE]},
+		 transient, 1000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 stop(Host) ->
@@ -196,6 +195,9 @@ init([Host, Opts]) ->
     HistorySize = gen_mod:get_opt(history_size, Opts,
                                   fun(I) when is_integer(I), I>=0 -> I end,
                                   20),
+    MaxRoomsDiscoItems = gen_mod:get_opt(max_rooms_discoitems, Opts,
+                                  fun(I) when is_integer(I), I>=0 -> I end,
+                                  100),
     DefRoomOpts1 = gen_mod:get_opt(default_room_options, Opts,
 				   fun(L) when is_list(L) -> L end,
 				   []),
@@ -221,6 +223,7 @@ init([Host, Opts]) ->
 			     public -> Bool;
 			     public_list -> Bool;
 			     mam -> Bool;
+			     allow_subscription -> Bool;
 			     password -> fun iolist_to_binary/1;
 			     title -> fun iolist_to_binary/1;
 			     allow_private_messages_from_visitors ->
@@ -272,6 +275,7 @@ init([Host, Opts]) ->
 		access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
 		default_room_opts = DefRoomOpts,
 		history_size = HistorySize,
+		max_rooms_discoitems = MaxRoomsDiscoItems,
 		room_shaper = RoomShaper}}.
 
 handle_call(stop, _From, State) ->
@@ -300,9 +304,10 @@ handle_info({route, From, To, Packet},
 	    #state{host = Host, server_host = ServerHost,
 		   access = Access, default_room_opts = DefRoomOpts,
 		   history_size = HistorySize,
+		   max_rooms_discoitems = MaxRoomsDiscoItems,
 		   room_shaper = RoomShaper} = State) ->
     case catch do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
-			From, To, Packet, DefRoomOpts) of
+			From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
@@ -339,12 +344,12 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 
 do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
-	 From, To, Packet, DefRoomOpts) ->
+	 From, To, Packet, DefRoomOpts, _MaxRoomsDiscoItems) ->
     {AccessRoute, _AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
 	    do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
-		From, To, Packet, DefRoomOpts);
+		      From, To, Packet, DefRoomOpts);
 	deny ->
 	    Lang = xmpp:get_lang(Packet),
 	    ErrText = <<"Access denied by service policy">>,
@@ -487,9 +492,13 @@ process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
 process_disco_items(#iq{type = get, from = From, to = To, lang = Lang,
 			sub_els = [#disco_items{node = Node, rsm = RSM}]} = IQ) ->
     Host = To#jid.lserver,
-    xmpp:make_iq_result(
-      IQ, #disco_items{node = Node,
-		       items = iq_disco_items(Host, From, Lang, Node, RSM)});
+    ServerHost = ejabberd_router:host_of_route(Host),
+    MaxRoomsDiscoItems = gen_mod:get_module_opt(
+			   ServerHost, ?MODULE, max_rooms_discoitems,
+			   fun(I) when is_integer(I), I>=0 -> I end,
+			   100),
+    Items = iq_disco_items(Host, From, Lang, MaxRoomsDiscoItems, Node, RSM),
+    xmpp:make_iq_result(IQ, #disco_items{node = Node, items = Items});
 process_disco_items(#iq{lang = Lang} = IQ) ->
     Txt = <<"No module is handling this query">>,
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
@@ -588,23 +597,23 @@ register_room(Host, Room, Pid) ->
     end,
     mnesia:transaction(F).
 
-iq_disco_items(Host, From, Lang, <<"">>, undefined) ->
+iq_disco_items(Host, From, Lang, MaxRoomsDiscoItems, <<"">>, undefined) ->
     Rooms = get_vh_rooms(Host),
-    case erlang:length(Rooms) < ?MAX_ROOMS_DISCOITEMS of
+    case erlang:length(Rooms) < MaxRoomsDiscoItems of
 	true ->
 	    iq_disco_items_list(Host, Rooms, {get_disco_item, all, From, Lang});
 	false ->
-	    iq_disco_items(Host, From, Lang, <<"nonemptyrooms">>, undefined)
+	    iq_disco_items(Host, From, Lang, MaxRoomsDiscoItems, <<"nonemptyrooms">>, undefined)
     end;
-iq_disco_items(Host, From, Lang, <<"nonemptyrooms">>, undefined) ->
+iq_disco_items(Host, From, Lang, _MaxRoomsDiscoItems, <<"nonemptyrooms">>, undefined) ->
     Empty = #disco_item{jid = jid:make(<<"conference.localhost">>),
 			node = <<"emptyrooms">>,
 			name = translate:translate(Lang, <<"Empty Rooms">>)},
     Query = {get_disco_item, only_non_empty, From, Lang},
     [Empty | iq_disco_items_list(Host, get_vh_rooms(Host), Query)];
-iq_disco_items(Host, From, Lang, <<"emptyrooms">>, undefined) ->
+iq_disco_items(Host, From, Lang, _MaxRoomsDiscoItems, <<"emptyrooms">>, undefined) ->
     iq_disco_items_list(Host, get_vh_rooms(Host), {get_disco_item, 0, From, Lang});
-iq_disco_items(Host, From, Lang, _DiscoNode, Rsm) ->
+iq_disco_items(Host, From, Lang, _MaxRoomsDiscoItems, _DiscoNode, Rsm) ->
     {Rooms, RsmO} = get_vh_rooms(Host, Rsm),
     RsmOut = jlib:rsm_encode(RsmO),
     iq_disco_items_list(Host, Rooms, {get_disco_item, all, From, Lang}) ++ RsmOut.
@@ -624,47 +633,47 @@ iq_disco_items_list(Host, Rooms, Query) ->
 
 get_vh_rooms(_, _) ->
     todo.
-%% get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
-%%     AllRooms = lists:sort(get_vh_rooms(Host)),
-%%     Count = erlang:length(AllRooms),
-%%     Guard = case Direction of
-%% 		_ when Index =/= undefined -> [{'==', {element, 2, '$1'}, Host}];
-%% 		aft -> [{'==', {element, 2, '$1'}, Host}, {'>=',{element, 1, '$1'} ,I}];
-%% 		before when I =/= []-> [{'==', {element, 2, '$1'}, Host}, {'=<',{element, 1, '$1'} ,I}];
-%% 		_ -> [{'==', {element, 2, '$1'}, Host}]
-%% 	    end,
-%%     L = lists:sort(
-%% 	  mnesia:dirty_select(muc_online_room,
-%% 			      [{#muc_online_room{name_host = '$1', _ = '_'},
-%% 				Guard,
-%% 				['$_']}])),
-%%     L2 = if
-%% 	     Index == undefined andalso Direction == before ->
-%% 		 lists:reverse(lists:sublist(lists:reverse(L), 1, M));
-%% 	     Index == undefined ->
-%% 		 lists:sublist(L, 1, M);
-%% 	     Index > Count  orelse Index < 0 ->
-%% 		 [];
-%% 	     true ->
-%% 		 lists:sublist(L, Index+1, M)
-%% 	 end,
-%%     if L2 == [] -> {L2, #rsm_out{count = Count}};
-%%        true ->
-%% 	   H = hd(L2),
-%% 	   NewIndex = get_room_pos(H, AllRooms),
-%% 	   T = lists:last(L2),
-%% 	   {F, _} = H#muc_online_room.name_host,
-%% 	   {Last, _} = T#muc_online_room.name_host,
-%% 	   {L2,
-%% 	    #rsm_out{first = F, last = Last, count = Count,
-%% 		     index = NewIndex}}
-%%     end.
+    %% AllRooms = lists:sort(get_vh_rooms(Host)),
+    %% Count = erlang:length(AllRooms),
+    %% Guard = case Direction of
+    %% 		_ when Index =/= undefined -> [{'==', {element, 2, '$1'}, Host}];
+    %% 		aft -> [{'==', {element, 2, '$1'}, Host}, {'>=',{element, 1, '$1'} ,I}];
+    %% 		before when I =/= []-> [{'==', {element, 2, '$1'}, Host}, {'=<',{element, 1, '$1'} ,I}];
+    %% 		_ -> [{'==', {element, 2, '$1'}, Host}]
+    %% 	    end,
+    %% L = lists:sort(
+    %% 	  mnesia:dirty_select(muc_online_room,
+    %% 			      [{#muc_online_room{name_host = '$1', _ = '_'},
+    %% 				Guard,
+    %% 				['$_']}])),
+    %% L2 = if
+    %% 	     Index == undefined andalso Direction == before ->
+    %% 		 lists:reverse(lists:sublist(lists:reverse(L), 1, M));
+    %% 	     Index == undefined ->
+    %% 		 lists:sublist(L, 1, M);
+    %% 	     Index > Count  orelse Index < 0 ->
+    %% 		 [];
+    %% 	     true ->
+    %% 		 lists:sublist(L, Index+1, M)
+    %% 	 end,
+    %% if L2 == [] -> {L2, #rsm_out{count = Count}};
+    %%    true ->
+    %% 	   H = hd(L2),
+    %% 	   NewIndex = get_room_pos(H, AllRooms),
+    %% 	   T = lists:last(L2),
+    %% 	   {F, _} = H#muc_online_room.name_host,
+    %% 	   {Last, _} = T#muc_online_room.name_host,
+    %% 	   {L2,
+    %% 	    #rsm_out{first = F, last = Last, count = Count,
+    %% 		     index = NewIndex}}
+    %% end.
 
 get_subscribed_rooms(_ServerHost, Host, From) ->
     Rooms = get_vh_rooms(Host),
+    BareFrom = jid:remove_resource(From),
     lists:flatmap(
       fun(#muc_online_room{name_host = {Name, _}, pid = Pid}) ->
-	      case gen_fsm:sync_send_all_state_event(Pid, {is_subscriber, From}) of
+	      case gen_fsm:sync_send_all_state_event(Pid, {is_subscribed, BareFrom}) of
 		  true -> [jid:make(Name, Host)];
 		  false -> []
 	      end;
@@ -874,6 +883,8 @@ mod_opt_type(max_room_id) ->
     fun (infinity) -> infinity;
 	(I) when is_integer(I), I > 0 -> I
     end;
+mod_opt_type(max_rooms_discoitems) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(regexp_room_id) ->
     fun iolist_to_binary/1;
 mod_opt_type(max_room_name) ->
@@ -901,8 +912,8 @@ mod_opt_type(user_presence_shaper) ->
 mod_opt_type(_) ->
     [access, access_admin, access_create, access_persistent,
      db_type, default_room_options, history_size, host,
-     max_room_desc, max_room_id, max_room_name, regexp_room_id,
-     max_user_conferences, max_users,
+     max_room_desc, max_room_id, max_room_name,
+     max_rooms_discoitems, max_user_conferences, max_users,
      max_users_admin_threshold, max_users_presence,
      min_message_interval, min_presence_interval,
-     room_shaper, user_message_shaper, user_presence_shaper].
+     regexp_room_id, room_shaper, user_message_shaper, user_presence_shaper].

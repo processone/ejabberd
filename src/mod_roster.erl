@@ -139,15 +139,18 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
-process_iq(#iq{from = #jid{luser = <<"">>},
-	       to = #jid{resource = <<"">>}} = IQ) ->
-    process_iq_manager(IQ);
 process_iq(#iq{from = #jid{luser = U, lserver = S},
 	       to =   #jid{luser = U, lserver = S}} = IQ) ->
     process_local_iq(IQ);
-process_iq(#iq{lang = Lang} = IQ) ->
-    Txt = <<"Query to another users is forbidden">>,
-    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang)).
+process_iq(#iq{lang = Lang, to = To} = IQ) ->
+    case ejabberd_hooks:run_fold(roster_remote_access,
+				 To#jid.lserver, false, [IQ]) of
+	false ->
+	    Txt = <<"Query to another users is forbidden">>,
+	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang));
+	true ->
+	    process_local_iq(IQ)
+    end.
 
 process_local_iq(#iq{type = set,lang = Lang,
 		     sub_els = [#roster_query{
@@ -251,10 +254,10 @@ write_roster_version(LUser, LServer, InTransaction) ->
 %%     - roster versioning is not used by the client OR
 %%     - roster versioning is used by server and client, BUT the server isn't storing versions on db OR
 %%     - the roster version from client don't match current version.
-process_iq_get(#iq{from = From, to = To, lang = Lang,
+process_iq_get(#iq{to = To, lang = Lang,
 		   sub_els = [#roster_query{ver = RequestedVersion}]} = IQ) ->
-    LUser = From#jid.luser,
-    LServer = From#jid.lserver,
+    LUser = To#jid.luser,
+    LServer = To#jid.lserver,
     US = {LUser, LServer},
     try {ItemsToSend, VersionToSend} =
 	     case {roster_versioning_enabled(LServer),
@@ -303,7 +306,7 @@ process_iq_get(#iq{from = From, to = To, lang = Lang,
 	   end)
     catch E:R ->
 	    ?ERROR_MSG("failed to process roster get for ~s: ~p",
-		       [jid:to_string(From), {E, {R, erlang:get_stacktrace()}}]),
+		       [jid:to_string(To), {E, {R, erlang:get_stacktrace()}}]),
 	    Txt = <<"Roster module has failed">>,
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
@@ -369,10 +372,10 @@ get_roster_by_jid_t(LUser, LServer, LJID) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:get_roster_by_jid(LUser, LServer, LJID).
 
-process_iq_set(#iq{from = From, to = To, id = Id,
+process_iq_set(#iq{from = From, to = To,
 		   sub_els = [#roster_query{items = QueryItems}]} = IQ) ->
-    Managed = is_managed_from_id(Id),
-    #jid{user = User, luser = LUser, lserver = LServer} = From,
+    #jid{user = User, luser = LUser, lserver = LServer} = To,
+    Managed = {From#jid.luser, From#jid.lserver} /= {LUser, LServer},
     F = fun () ->
 		lists:map(
 		  fun(#roster_item{jid = JID1} = QueryItem) ->
@@ -397,11 +400,10 @@ process_iq_set(#iq{from = From, to = To, id = Id,
 	{atomic, ItemPairs} ->
 	    lists:foreach(
 	      fun({OldItem, Item}) ->
-		      send_itemset_to_managers(From, Item, Managed),
 		      push_item(User, LServer, To, Item),
 		      case Item#roster.subscription of
 			  remove ->
-			      send_unsubscribing_presence(From, OldItem);
+			      send_unsubscribing_presence(To, OldItem);
 			  _ ->
 			      ok
 		      end
@@ -1012,66 +1014,6 @@ webadmin_user(Acc, _User, _Server, Lang) ->
       [?XE(<<"h3">>, [?ACT(<<"roster/">>, <<"Roster">>)])].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Implement XEP-0321 Remote Roster Management
-
-process_iq_manager(#iq{from = From, to = To, lang = Lang} = IQ) ->
-    %% Check what access is allowed for From to To
-    MatchDomain = From#jid.lserver,
-    case is_domain_managed(MatchDomain, To#jid.lserver) of
-	true ->
-	    process_iq_manager2(MatchDomain, IQ);
-	false ->
-	    Txt = <<"Roster management is not allowed from this domain">>,
-	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
-    end.
-
-process_iq_manager2(MatchDomain, #iq{to = To} = IQ) ->
-    %% If IQ is SET, filter the input IQ
-    IQFiltered = maybe_filter_request(MatchDomain, IQ),
-    %% Call the standard function with reversed JIDs
-    IdInitial = IQFiltered#iq.id,
-    ResIQ = process_iq(IQFiltered#iq{from = To, to = To,
-				     id = <<"roster-remotely-managed">>}),
-    %% Filter the output IQ
-    filter_stanza(MatchDomain, ResIQ#iq{id = IdInitial}).
-
-is_domain_managed(ContactHost, UserHost) ->
-    Managers = gen_mod:get_module_opt(UserHost, ?MODULE, managers,
-						fun(B) when is_list(B) -> B end,
-						[]),
-    lists:member(ContactHost, Managers).
-
-maybe_filter_request(MatchDomain, IQ) when IQ#iq.type == set ->
-    filter_stanza(MatchDomain, IQ);
-maybe_filter_request(_MatchDomain, IQ) ->
-    IQ.
-
-filter_stanza(MatchDomain,
-	      #iq{sub_els = [#roster_query{items = Items} = R]} = IQ) ->
-    ItemsFiltered = lists:filter(
-		      fun(#roster_item{jid = #jid{lserver = S}}) ->
-			      S == MatchDomain
-		      end, Items),
-    IQ#iq{sub_els = [R#roster_query{items = ItemsFiltered}]}.
-
-send_itemset_to_managers(_From, _Item, true) ->
-    ok;
-send_itemset_to_managers(From, Item, false) ->
-    {_, UserHost} = Item#roster.us,
-    {_ContactUser, ContactHost, _ContactResource} = Item#roster.jid,
-    %% Check if the component is an allowed manager
-    IsManager = is_domain_managed(ContactHost, UserHost),
-    case IsManager of
-	true -> push_item(<<"">>, ContactHost, <<"">>, From, Item);
-	false -> ok
-    end.
-
-is_managed_from_id(<<"roster-remotely-managed">>) ->
-    true;
-is_managed_from_id(_Id) ->
-    false.
-
 has_duplicated_groups(Groups) ->
     GroupsPrep = lists:usort([jid:resourceprep(G) || G <- Groups]),
     not (length(GroupsPrep) == length(Groups)).

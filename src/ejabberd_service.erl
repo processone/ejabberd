@@ -98,13 +98,13 @@ init([{SockMod, Socket}, Opts]) ->
 			 fun({H, Os}, D) ->
 				 P = proplists:get_value(
 				       password, Os,
-				       p1_sha:sha(crypto:rand_bytes(20))),
+				       p1_sha:sha(randoms:bytes(20))),
 				 dict:store(H, P, D)
 			 end, dict:new(), HOpts);
 		   false ->
 		       Pass = proplists:get_value(
 				password, Opts,
-				p1_sha:sha(crypto:rand_bytes(20))),
+				p1_sha:sha(randoms:bytes(20))),
 		       dict:from_list([{global, Pass}])
 	       end,
     Shaper = case lists:keysearch(shaper_rule, 1, Opts) of
@@ -170,27 +170,37 @@ wait_for_stream(closed, StateData) ->
 wait_for_handshake({xmlstreamelement, El}, StateData) ->
     decode_element(El, wait_for_handshake, StateData);
 wait_for_handshake(#handshake{data = Digest}, StateData) ->
-    case dict:find(StateData#state.host, StateData#state.host_opts) of
-	{ok, Password} ->
-	    case p1_sha:sha(<<(StateData#state.streamid)/binary,
-			      Password/binary>>) of
-		Digest ->
-		    send_element(StateData, #handshake{}),
-		    lists:foreach(
-		      fun (H) ->
-			      ejabberd_router:register_route(H, ?MYNAME),
-			      ?INFO_MSG("Route registered for service ~p~n",
-					[H])
-		      end, dict:fetch_keys(StateData#state.host_opts)),
-		    {next_state, stream_established, StateData};
-		_ ->
-		    send_element(StateData, xmpp:serr_not_authorized()),
-		    {stop, normal, StateData}
-	    end;
-	_ ->
-	    send_element(StateData, xmpp:serr_not_authorized()),
-	    {stop, normal, StateData}
-    end;
+    send_element(StateData, #handshake{}),
+    lists:foreach(
+      fun (H) ->
+	      ejabberd_router:register_route(H, ?MYNAME),
+	      ?INFO_MSG("Route registered for service ~p~n",
+			[H]),
+	      ejabberd_hooks:run(component_connected, [H])
+      end, dict:fetch_keys(StateData#state.host_opts)),
+    {next_state, stream_established, StateData};
+    %% case dict:find(StateData#state.host, StateData#state.host_opts) of
+    %% 	{ok, Password} ->
+    %% 	    case p1_sha:sha(<<(StateData#state.streamid)/binary,
+    %% 			      Password/binary>>) of
+    %% 		Digest ->
+    %% 		    send_element(StateData, #handshake{}),
+    %% 		    lists:foreach(
+    %% 		      fun (H) ->
+    %% 			      ejabberd_router:register_route(H, ?MYNAME),
+    %% 			      ?INFO_MSG("Route registered for service ~p~n",
+    %% 					[H]),
+    %% 			      ejabberd_hooks:run(component_connected, [H])
+    %% 		      end, dict:fetch_keys(StateData#state.host_opts)),
+    %% 		    {next_state, stream_established, StateData};
+    %% 		_ ->
+    %% 		    send_element(StateData, xmpp:serr_not_authorized()),
+    %% 		    {stop, normal, StateData}
+    %% 	    end;
+    %% 	_ ->
+    %% 	    send_element(StateData, xmpp:serr_not_authorized()),
+    %% 	    {stop, normal, StateData}
+    %% end;
 wait_for_handshake({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 wait_for_handshake({xmlstreamerror, _}, StateData) ->
@@ -211,24 +221,10 @@ stream_established(El, StateData) when ?is_stanza(El) ->
 	    Txt = <<"Missing 'from' or 'to' attribute">>,
 	    send_error(StateData, El, xmpp:err_jid_malformed(Txt, Lang));
        true ->
-	    FromJID = case StateData#state.check_from of
-			  false ->
-			      %% If the admin does not want to check the from field
-			      %% when accept packets from any address.
-			      %% In this case, the component can send packet of
-			      %% behalf of the server users.
-			      From;
-			  _ ->
-			      %% The default is the standard behaviour in XEP-0114
-			      Server = From#jid.lserver,
-			      case dict:is_key(Server, StateData#state.host_opts) of
-				  true -> From;
-				  false -> error
-			      end
-		      end,
-	    if FromJID /= error ->
-		    ejabberd_router:route(FromJID, To, El);
-	       true ->
+	    case check_from(From, StateData) of
+		true ->
+		    ejabberd_router:route(From, To, El);
+		false ->
 		    Txt = <<"Improper domain part of 'from' attribute">>,
 		    send_error(StateData, El, xmpp:err_not_allowed(Txt, Lang))
 	    end
@@ -281,7 +277,9 @@ terminate(Reason, StateName, StateData) ->
     case StateName of
       stream_established ->
 	  lists:foreach(fun (H) ->
-				ejabberd_router:unregister_route(H)
+				ejabberd_router:unregister_route(H),
+				ejabberd_hooks:run(component_disconnected,
+						   [H, Reason])
 			end,
 			dict:fetch_keys(StateData#state.host_opts));
       _ -> ok
@@ -349,6 +347,18 @@ decode_element(#xmlel{} = El, StateName, StateData) ->
             end,
             {next_state, StateName, StateData}
     end.
+
+-spec check_from(jid(), state()) -> boolean().
+check_from(_From, #state{check_from = false}) ->
+    %% If the admin does not want to check the from field
+    %% when accept packets from any address.
+    %% In this case, the component can send packet of
+    %% behalf of the server users.
+    true;
+check_from(From, StateData) ->
+    %% The default is the standard behaviour in XEP-0114
+    Server = From#jid.lserver,
+    dict:is_key(Server, StateData#state.host_opts).
 
 -spec new_id() -> binary().
 new_id() -> randoms:get_string().

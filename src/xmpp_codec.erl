@@ -20,6 +20,48 @@ decode({xmlel, _name, _attrs, _} = _el, TopXMLNS,
        Opts) ->
     IgnoreEls = proplists:get_bool(ignore_els, Opts),
     case {_name, get_attr(<<"xmlns">>, _attrs), TopXMLNS} of
+      {<<"query">>, <<"urn:xmpp:delegation:1">>, _} ->
+	  decode_delegation_query(<<"urn:xmpp:delegation:1">>,
+				  IgnoreEls, _el);
+      {<<"query">>, <<>>, <<"urn:xmpp:delegation:1">>} ->
+	  decode_delegation_query(<<"urn:xmpp:delegation:1">>,
+				  IgnoreEls, _el);
+      {<<"delegate">>, <<"urn:xmpp:delegation:1">>, _} ->
+	  decode_delegate(<<"urn:xmpp:delegation:1">>, IgnoreEls,
+			  _el);
+      {<<"delegate">>, <<>>, <<"urn:xmpp:delegation:1">>} ->
+	  decode_delegate(<<"urn:xmpp:delegation:1">>, IgnoreEls,
+			  _el);
+      {<<"delegation">>, <<"urn:xmpp:delegation:1">>, _} ->
+	  decode_delegation(<<"urn:xmpp:delegation:1">>,
+			    IgnoreEls, _el);
+      {<<"delegation">>, <<>>, <<"urn:xmpp:delegation:1">>} ->
+	  decode_delegation(<<"urn:xmpp:delegation:1">>,
+			    IgnoreEls, _el);
+      {<<"delegated">>, <<"urn:xmpp:delegation:1">>, _} ->
+	  decode_delegated(<<"urn:xmpp:delegation:1">>, IgnoreEls,
+			   _el);
+      {<<"delegated">>, <<>>, <<"urn:xmpp:delegation:1">>} ->
+	  decode_delegated(<<"urn:xmpp:delegation:1">>, IgnoreEls,
+			   _el);
+      {<<"attribute">>, <<"urn:xmpp:delegation:1">>, _} ->
+	  decode_delegated_attribute(<<"urn:xmpp:delegation:1">>,
+				     IgnoreEls, _el);
+      {<<"attribute">>, <<>>, <<"urn:xmpp:delegation:1">>} ->
+	  decode_delegated_attribute(<<"urn:xmpp:delegation:1">>,
+				     IgnoreEls, _el);
+      {<<"privilege">>, <<"urn:xmpp:privilege:1">>, _} ->
+	  decode_privilege(<<"urn:xmpp:privilege:1">>, IgnoreEls,
+			   _el);
+      {<<"privilege">>, <<>>, <<"urn:xmpp:privilege:1">>} ->
+	  decode_privilege(<<"urn:xmpp:privilege:1">>, IgnoreEls,
+			   _el);
+      {<<"perm">>, <<"urn:xmpp:privilege:1">>, _} ->
+	  decode_privilege_perm(<<"urn:xmpp:privilege:1">>,
+				IgnoreEls, _el);
+      {<<"perm">>, <<>>, <<"urn:xmpp:privilege:1">>} ->
+	  decode_privilege_perm(<<"urn:xmpp:privilege:1">>,
+				IgnoreEls, _el);
       {<<"thumbnail">>, <<"urn:xmpp:thumbs:1">>, _} ->
 	  decode_thumbnail(<<"urn:xmpp:thumbs:1">>, IgnoreEls,
 			   _el);
@@ -3272,6 +3314,31 @@ decode({xmlel, _name, _attrs, _} = _el, TopXMLNS,
 is_known_tag({xmlel, _name, _attrs, _} = _el,
 	     TopXMLNS) ->
     case {_name, get_attr(<<"xmlns">>, _attrs), TopXMLNS} of
+      {<<"query">>, <<"urn:xmpp:delegation:1">>, _} -> true;
+      {<<"query">>, <<>>, <<"urn:xmpp:delegation:1">>} ->
+	  true;
+      {<<"delegate">>, <<"urn:xmpp:delegation:1">>, _} ->
+	  true;
+      {<<"delegate">>, <<>>, <<"urn:xmpp:delegation:1">>} ->
+	  true;
+      {<<"delegation">>, <<"urn:xmpp:delegation:1">>, _} ->
+	  true;
+      {<<"delegation">>, <<>>, <<"urn:xmpp:delegation:1">>} ->
+	  true;
+      {<<"delegated">>, <<"urn:xmpp:delegation:1">>, _} ->
+	  true;
+      {<<"delegated">>, <<>>, <<"urn:xmpp:delegation:1">>} ->
+	  true;
+      {<<"attribute">>, <<"urn:xmpp:delegation:1">>, _} ->
+	  true;
+      {<<"attribute">>, <<>>, <<"urn:xmpp:delegation:1">>} ->
+	  true;
+      {<<"privilege">>, <<"urn:xmpp:privilege:1">>, _} ->
+	  true;
+      {<<"privilege">>, <<>>, <<"urn:xmpp:privilege:1">>} ->
+	  true;
+      {<<"perm">>, <<"urn:xmpp:privilege:1">>, _} -> true;
+      {<<"perm">>, <<>>, <<"urn:xmpp:privilege:1">>} -> true;
       {<<"thumbnail">>, <<"urn:xmpp:thumbs:1">>, _} -> true;
       {<<"thumbnail">>, <<>>, <<"urn:xmpp:thumbs:1">>} ->
 	  true;
@@ -5772,7 +5839,17 @@ encode({upload_request, _, _, _, _} = Request,
 encode({upload_slot, _, _, _} = Slot, TopXMLNS) ->
     encode_upload_slot(Slot, TopXMLNS);
 encode({thumbnail, _, _, _, _} = Thumbnail, TopXMLNS) ->
-    encode_thumbnail(Thumbnail, TopXMLNS).
+    encode_thumbnail(Thumbnail, TopXMLNS);
+encode({privilege_perm, _, _} = Perm, TopXMLNS) ->
+    encode_privilege_perm(Perm, TopXMLNS);
+encode({privilege, _, _} = Privilege, TopXMLNS) ->
+    encode_privilege(Privilege, TopXMLNS);
+encode({delegated, _, _} = Delegated, TopXMLNS) ->
+    encode_delegated(Delegated, TopXMLNS);
+encode({delegation, _, _} = Delegation, TopXMLNS) ->
+    encode_delegation(Delegation, TopXMLNS);
+encode({delegation_query, _, _} = Query, TopXMLNS) ->
+    encode_delegation_query(Query, TopXMLNS).
 
 get_name({address, _, _, _, _, _}) -> <<"address">>;
 get_name({addresses, _}) -> <<"addresses">>;
@@ -5812,6 +5889,9 @@ get_name({db_result, _, _, _, _, _}) -> <<"db:result">>;
 get_name({db_verify, _, _, _, _, _, _}) ->
     <<"db:verify">>;
 get_name({delay, _, _, _}) -> <<"delay">>;
+get_name({delegated, _, _}) -> <<"delegated">>;
+get_name({delegation, _, _}) -> <<"delegation">>;
+get_name({delegation_query, _, _}) -> <<"query">>;
 get_name({disco_info, _, _, _, _}) -> <<"query">>;
 get_name({disco_item, _, _, _}) -> <<"item">>;
 get_name({disco_items, _, _, _}) -> <<"query">>;
@@ -5876,6 +5956,8 @@ get_name({privacy_item, _, _, _, _, _, _, _, _}) ->
 get_name({privacy_list, _, _}) -> <<"list">>;
 get_name({privacy_query, _, _, _}) -> <<"query">>;
 get_name({private, _}) -> <<"query">>;
+get_name({privilege, _, _}) -> <<"privilege">>;
+get_name({privilege_perm, _, _}) -> <<"perm">>;
 get_name({ps_affiliation, _, _, _, _}) ->
     <<"affiliation">>;
 get_name({ps_error, 'closed-node', _}) ->
@@ -6075,6 +6157,12 @@ get_ns({db_result, _, _, _, _, _}) ->
 get_ns({db_verify, _, _, _, _, _, _}) ->
     <<"jabber:server">>;
 get_ns({delay, _, _, _}) -> <<"urn:xmpp:delay">>;
+get_ns({delegated, _, _}) ->
+    <<"urn:xmpp:delegation:1">>;
+get_ns({delegation, _, _}) ->
+    <<"urn:xmpp:delegation:1">>;
+get_ns({delegation_query, _, _}) ->
+    <<"urn:xmpp:delegation:1">>;
 get_ns({disco_info, _, _, _, _}) ->
     <<"http://jabber.org/protocol/disco#info">>;
 get_ns({disco_item, _, _, _}) ->
@@ -6160,6 +6248,9 @@ get_ns({privacy_list, _, _}) -> <<"jabber:iq:privacy">>;
 get_ns({privacy_query, _, _, _}) ->
     <<"jabber:iq:privacy">>;
 get_ns({private, _}) -> <<"jabber:iq:private">>;
+get_ns({privilege, _, _}) -> <<"urn:xmpp:privilege:1">>;
+get_ns({privilege_perm, _, _}) ->
+    <<"urn:xmpp:privilege:1">>;
 get_ns({ps_affiliation, Xmlns, _, _, _}) -> Xmlns;
 get_ns({ps_error, 'closed-node', _}) ->
     <<"http://jabber.org/protocol/pubsub#errors">>;
@@ -6600,6 +6691,11 @@ pp(upload_request, 4) ->
     [filename, size, 'content-type', xmlns];
 pp(upload_slot, 3) -> [get, put, xmlns];
 pp(thumbnail, 4) -> [uri, 'media-type', width, height];
+pp(privilege_perm, 2) -> [access, type];
+pp(privilege, 2) -> [perms, forwarded];
+pp(delegated, 2) -> [ns, attrs];
+pp(delegation, 2) -> [delegated, forwarded];
+pp(delegation_query, 2) -> [to, delegate];
 pp(_, _) -> no.
 
 enc_ps_aff(member) -> <<"member">>;
@@ -6703,6 +6799,455 @@ dec_tzo(Val) ->
     H = binary_to_integer(H1),
     M = binary_to_integer(M1),
     if H >= -12, H =< 12, M >= 0, M < 60 -> {H, M} end.
+
+decode_delegation_query(__TopXMLNS, __IgnoreEls,
+			{xmlel, <<"query">>, _attrs, _els}) ->
+    Delegate = decode_delegation_query_els(__TopXMLNS,
+					   __IgnoreEls, _els, []),
+    To = decode_delegation_query_attrs(__TopXMLNS, _attrs,
+				       undefined),
+    {delegation_query, To, Delegate}.
+
+decode_delegation_query_els(__TopXMLNS, __IgnoreEls, [],
+			    Delegate) ->
+    lists:reverse(Delegate);
+decode_delegation_query_els(__TopXMLNS, __IgnoreEls,
+			    [{xmlel, <<"delegate">>, _attrs, _} = _el | _els],
+			    Delegate) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:delegation:1">> ->
+	  decode_delegation_query_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      [decode_delegate(__TopXMLNS, __IgnoreEls,
+						       _el)
+				       | Delegate]);
+      <<"urn:xmpp:delegation:1">> ->
+	  decode_delegation_query_els(__TopXMLNS, __IgnoreEls,
+				      _els,
+				      [decode_delegate(<<"urn:xmpp:delegation:1">>,
+						       __IgnoreEls, _el)
+				       | Delegate]);
+      _ ->
+	  decode_delegation_query_els(__TopXMLNS, __IgnoreEls,
+				      _els, Delegate)
+    end;
+decode_delegation_query_els(__TopXMLNS, __IgnoreEls,
+			    [_ | _els], Delegate) ->
+    decode_delegation_query_els(__TopXMLNS, __IgnoreEls,
+				_els, Delegate).
+
+decode_delegation_query_attrs(__TopXMLNS,
+			      [{<<"to">>, _val} | _attrs], _To) ->
+    decode_delegation_query_attrs(__TopXMLNS, _attrs, _val);
+decode_delegation_query_attrs(__TopXMLNS, [_ | _attrs],
+			      To) ->
+    decode_delegation_query_attrs(__TopXMLNS, _attrs, To);
+decode_delegation_query_attrs(__TopXMLNS, [], To) ->
+    decode_delegation_query_attr_to(__TopXMLNS, To).
+
+encode_delegation_query({delegation_query, To,
+			 Delegate},
+			__TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:delegation:1">>, [],
+			 __TopXMLNS),
+    _els =
+	lists:reverse('encode_delegation_query_$delegate'(Delegate,
+							  __NewTopXMLNS, [])),
+    _attrs = encode_delegation_query_attr_to(To,
+					     enc_xmlns_attrs(__NewTopXMLNS,
+							     __TopXMLNS)),
+    {xmlel, <<"query">>, _attrs, _els}.
+
+'encode_delegation_query_$delegate'([], __TopXMLNS,
+				    _acc) ->
+    _acc;
+'encode_delegation_query_$delegate'([Delegate | _els],
+				    __TopXMLNS, _acc) ->
+    'encode_delegation_query_$delegate'(_els, __TopXMLNS,
+					[encode_delegate(Delegate, __TopXMLNS)
+					 | _acc]).
+
+decode_delegation_query_attr_to(__TopXMLNS,
+				undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"to">>, <<"query">>, __TopXMLNS}});
+decode_delegation_query_attr_to(__TopXMLNS, _val) ->
+    case catch dec_jid(_val) of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"to">>, <<"query">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_delegation_query_attr_to(_val, _acc) ->
+    [{<<"to">>, enc_jid(_val)} | _acc].
+
+decode_delegate(__TopXMLNS, __IgnoreEls,
+		{xmlel, <<"delegate">>, _attrs, _els}) ->
+    Namespace = decode_delegate_attrs(__TopXMLNS, _attrs,
+				      undefined),
+    Namespace.
+
+decode_delegate_attrs(__TopXMLNS,
+		      [{<<"namespace">>, _val} | _attrs], _Namespace) ->
+    decode_delegate_attrs(__TopXMLNS, _attrs, _val);
+decode_delegate_attrs(__TopXMLNS, [_ | _attrs],
+		      Namespace) ->
+    decode_delegate_attrs(__TopXMLNS, _attrs, Namespace);
+decode_delegate_attrs(__TopXMLNS, [], Namespace) ->
+    decode_delegate_attr_namespace(__TopXMLNS, Namespace).
+
+encode_delegate(Namespace, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:delegation:1">>, [],
+			 __TopXMLNS),
+    _els = [],
+    _attrs = encode_delegate_attr_namespace(Namespace,
+					    enc_xmlns_attrs(__NewTopXMLNS,
+							    __TopXMLNS)),
+    {xmlel, <<"delegate">>, _attrs, _els}.
+
+decode_delegate_attr_namespace(__TopXMLNS, undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"namespace">>, <<"delegate">>,
+		   __TopXMLNS}});
+decode_delegate_attr_namespace(__TopXMLNS, _val) ->
+    _val.
+
+encode_delegate_attr_namespace(_val, _acc) ->
+    [{<<"namespace">>, _val} | _acc].
+
+decode_delegation(__TopXMLNS, __IgnoreEls,
+		  {xmlel, <<"delegation">>, _attrs, _els}) ->
+    {Forwarded, Delegated} =
+	decode_delegation_els(__TopXMLNS, __IgnoreEls, _els,
+			      undefined, []),
+    {delegation, Delegated, Forwarded}.
+
+decode_delegation_els(__TopXMLNS, __IgnoreEls, [],
+		      Forwarded, Delegated) ->
+    {Forwarded, lists:reverse(Delegated)};
+decode_delegation_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"delegated">>, _attrs, _} = _el | _els],
+		      Forwarded, Delegated) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:delegation:1">> ->
+	  decode_delegation_els(__TopXMLNS, __IgnoreEls, _els,
+				Forwarded,
+				[decode_delegated(__TopXMLNS, __IgnoreEls, _el)
+				 | Delegated]);
+      <<"urn:xmpp:delegation:1">> ->
+	  decode_delegation_els(__TopXMLNS, __IgnoreEls, _els,
+				Forwarded,
+				[decode_delegated(<<"urn:xmpp:delegation:1">>,
+						  __IgnoreEls, _el)
+				 | Delegated]);
+      _ ->
+	  decode_delegation_els(__TopXMLNS, __IgnoreEls, _els,
+				Forwarded, Delegated)
+    end;
+decode_delegation_els(__TopXMLNS, __IgnoreEls,
+		      [{xmlel, <<"forwarded">>, _attrs, _} = _el | _els],
+		      Forwarded, Delegated) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:xmpp:forward:0">> ->
+	  decode_delegation_els(__TopXMLNS, __IgnoreEls, _els,
+				decode_forwarded(<<"urn:xmpp:forward:0">>,
+						 __IgnoreEls, _el),
+				Delegated);
+      _ ->
+	  decode_delegation_els(__TopXMLNS, __IgnoreEls, _els,
+				Forwarded, Delegated)
+    end;
+decode_delegation_els(__TopXMLNS, __IgnoreEls,
+		      [_ | _els], Forwarded, Delegated) ->
+    decode_delegation_els(__TopXMLNS, __IgnoreEls, _els,
+			  Forwarded, Delegated).
+
+encode_delegation({delegation, Delegated, Forwarded},
+		  __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:delegation:1">>, [],
+			 __TopXMLNS),
+    _els =
+	lists:reverse('encode_delegation_$forwarded'(Forwarded,
+						     __NewTopXMLNS,
+						     'encode_delegation_$delegated'(Delegated,
+										    __NewTopXMLNS,
+										    []))),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
+    {xmlel, <<"delegation">>, _attrs, _els}.
+
+'encode_delegation_$forwarded'(undefined, __TopXMLNS,
+			       _acc) ->
+    _acc;
+'encode_delegation_$forwarded'(Forwarded, __TopXMLNS,
+			       _acc) ->
+    [encode_forwarded(Forwarded, __TopXMLNS) | _acc].
+
+'encode_delegation_$delegated'([], __TopXMLNS, _acc) ->
+    _acc;
+'encode_delegation_$delegated'([Delegated | _els],
+			       __TopXMLNS, _acc) ->
+    'encode_delegation_$delegated'(_els, __TopXMLNS,
+				   [encode_delegated(Delegated, __TopXMLNS)
+				    | _acc]).
+
+decode_delegated(__TopXMLNS, __IgnoreEls,
+		 {xmlel, <<"delegated">>, _attrs, _els}) ->
+    Attrs = decode_delegated_els(__TopXMLNS, __IgnoreEls,
+				 _els, []),
+    Ns = decode_delegated_attrs(__TopXMLNS, _attrs,
+				undefined),
+    {delegated, Ns, Attrs}.
+
+decode_delegated_els(__TopXMLNS, __IgnoreEls, [],
+		     Attrs) ->
+    lists:reverse(Attrs);
+decode_delegated_els(__TopXMLNS, __IgnoreEls,
+		     [{xmlel, <<"attribute">>, _attrs, _} = _el | _els],
+		     Attrs) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:delegation:1">> ->
+	  decode_delegated_els(__TopXMLNS, __IgnoreEls, _els,
+			       [decode_delegated_attribute(__TopXMLNS,
+							   __IgnoreEls, _el)
+				| Attrs]);
+      <<"urn:xmpp:delegation:1">> ->
+	  decode_delegated_els(__TopXMLNS, __IgnoreEls, _els,
+			       [decode_delegated_attribute(<<"urn:xmpp:delegation:1">>,
+							   __IgnoreEls, _el)
+				| Attrs]);
+      _ ->
+	  decode_delegated_els(__TopXMLNS, __IgnoreEls, _els,
+			       Attrs)
+    end;
+decode_delegated_els(__TopXMLNS, __IgnoreEls,
+		     [_ | _els], Attrs) ->
+    decode_delegated_els(__TopXMLNS, __IgnoreEls, _els,
+			 Attrs).
+
+decode_delegated_attrs(__TopXMLNS,
+		       [{<<"namespace">>, _val} | _attrs], _Ns) ->
+    decode_delegated_attrs(__TopXMLNS, _attrs, _val);
+decode_delegated_attrs(__TopXMLNS, [_ | _attrs], Ns) ->
+    decode_delegated_attrs(__TopXMLNS, _attrs, Ns);
+decode_delegated_attrs(__TopXMLNS, [], Ns) ->
+    decode_delegated_attr_namespace(__TopXMLNS, Ns).
+
+encode_delegated({delegated, Ns, Attrs}, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:delegation:1">>, [],
+			 __TopXMLNS),
+    _els = lists:reverse('encode_delegated_$attrs'(Attrs,
+						   __NewTopXMLNS, [])),
+    _attrs = encode_delegated_attr_namespace(Ns,
+					     enc_xmlns_attrs(__NewTopXMLNS,
+							     __TopXMLNS)),
+    {xmlel, <<"delegated">>, _attrs, _els}.
+
+'encode_delegated_$attrs'([], __TopXMLNS, _acc) -> _acc;
+'encode_delegated_$attrs'([Attrs | _els], __TopXMLNS,
+			  _acc) ->
+    'encode_delegated_$attrs'(_els, __TopXMLNS,
+			      [encode_delegated_attribute(Attrs, __TopXMLNS)
+			       | _acc]).
+
+decode_delegated_attr_namespace(__TopXMLNS,
+				undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"namespace">>, <<"delegated">>,
+		   __TopXMLNS}});
+decode_delegated_attr_namespace(__TopXMLNS, _val) ->
+    _val.
+
+encode_delegated_attr_namespace(_val, _acc) ->
+    [{<<"namespace">>, _val} | _acc].
+
+decode_delegated_attribute(__TopXMLNS, __IgnoreEls,
+			   {xmlel, <<"attribute">>, _attrs, _els}) ->
+    Name = decode_delegated_attribute_attrs(__TopXMLNS,
+					    _attrs, undefined),
+    Name.
+
+decode_delegated_attribute_attrs(__TopXMLNS,
+				 [{<<"name">>, _val} | _attrs], _Name) ->
+    decode_delegated_attribute_attrs(__TopXMLNS, _attrs,
+				     _val);
+decode_delegated_attribute_attrs(__TopXMLNS,
+				 [_ | _attrs], Name) ->
+    decode_delegated_attribute_attrs(__TopXMLNS, _attrs,
+				     Name);
+decode_delegated_attribute_attrs(__TopXMLNS, [],
+				 Name) ->
+    decode_delegated_attribute_attr_name(__TopXMLNS, Name).
+
+encode_delegated_attribute(Name, __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:delegation:1">>, [],
+			 __TopXMLNS),
+    _els = [],
+    _attrs = encode_delegated_attribute_attr_name(Name,
+						  enc_xmlns_attrs(__NewTopXMLNS,
+								  __TopXMLNS)),
+    {xmlel, <<"attribute">>, _attrs, _els}.
+
+decode_delegated_attribute_attr_name(__TopXMLNS,
+				     undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"name">>, <<"attribute">>,
+		   __TopXMLNS}});
+decode_delegated_attribute_attr_name(__TopXMLNS,
+				     _val) ->
+    _val.
+
+encode_delegated_attribute_attr_name(_val, _acc) ->
+    [{<<"name">>, _val} | _acc].
+
+decode_privilege(__TopXMLNS, __IgnoreEls,
+		 {xmlel, <<"privilege">>, _attrs, _els}) ->
+    {Perms, Forwarded} = decode_privilege_els(__TopXMLNS,
+					      __IgnoreEls, _els, [], undefined),
+    {privilege, Perms, Forwarded}.
+
+decode_privilege_els(__TopXMLNS, __IgnoreEls, [], Perms,
+		     Forwarded) ->
+    {lists:reverse(Perms), Forwarded};
+decode_privilege_els(__TopXMLNS, __IgnoreEls,
+		     [{xmlel, <<"perm">>, _attrs, _} = _el | _els], Perms,
+		     Forwarded) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"">> when __TopXMLNS == <<"urn:xmpp:privilege:1">> ->
+	  decode_privilege_els(__TopXMLNS, __IgnoreEls, _els,
+			       [decode_privilege_perm(__TopXMLNS, __IgnoreEls,
+						      _el)
+				| Perms],
+			       Forwarded);
+      <<"urn:xmpp:privilege:1">> ->
+	  decode_privilege_els(__TopXMLNS, __IgnoreEls, _els,
+			       [decode_privilege_perm(<<"urn:xmpp:privilege:1">>,
+						      __IgnoreEls, _el)
+				| Perms],
+			       Forwarded);
+      _ ->
+	  decode_privilege_els(__TopXMLNS, __IgnoreEls, _els,
+			       Perms, Forwarded)
+    end;
+decode_privilege_els(__TopXMLNS, __IgnoreEls,
+		     [{xmlel, <<"forwarded">>, _attrs, _} = _el | _els],
+		     Perms, Forwarded) ->
+    case get_attr(<<"xmlns">>, _attrs) of
+      <<"urn:xmpp:forward:0">> ->
+	  decode_privilege_els(__TopXMLNS, __IgnoreEls, _els,
+			       Perms,
+			       decode_forwarded(<<"urn:xmpp:forward:0">>,
+						__IgnoreEls, _el));
+      _ ->
+	  decode_privilege_els(__TopXMLNS, __IgnoreEls, _els,
+			       Perms, Forwarded)
+    end;
+decode_privilege_els(__TopXMLNS, __IgnoreEls,
+		     [_ | _els], Perms, Forwarded) ->
+    decode_privilege_els(__TopXMLNS, __IgnoreEls, _els,
+			 Perms, Forwarded).
+
+encode_privilege({privilege, Perms, Forwarded},
+		 __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:privilege:1">>, [],
+			 __TopXMLNS),
+    _els = lists:reverse('encode_privilege_$perms'(Perms,
+						   __NewTopXMLNS,
+						   'encode_privilege_$forwarded'(Forwarded,
+										 __NewTopXMLNS,
+										 []))),
+    _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),
+    {xmlel, <<"privilege">>, _attrs, _els}.
+
+'encode_privilege_$perms'([], __TopXMLNS, _acc) -> _acc;
+'encode_privilege_$perms'([Perms | _els], __TopXMLNS,
+			  _acc) ->
+    'encode_privilege_$perms'(_els, __TopXMLNS,
+			      [encode_privilege_perm(Perms, __TopXMLNS)
+			       | _acc]).
+
+'encode_privilege_$forwarded'(undefined, __TopXMLNS,
+			      _acc) ->
+    _acc;
+'encode_privilege_$forwarded'(Forwarded, __TopXMLNS,
+			      _acc) ->
+    [encode_forwarded(Forwarded, __TopXMLNS) | _acc].
+
+decode_privilege_perm(__TopXMLNS, __IgnoreEls,
+		      {xmlel, <<"perm">>, _attrs, _els}) ->
+    {Access, Type} = decode_privilege_perm_attrs(__TopXMLNS,
+						 _attrs, undefined, undefined),
+    {privilege_perm, Access, Type}.
+
+decode_privilege_perm_attrs(__TopXMLNS,
+			    [{<<"access">>, _val} | _attrs], _Access, Type) ->
+    decode_privilege_perm_attrs(__TopXMLNS, _attrs, _val,
+				Type);
+decode_privilege_perm_attrs(__TopXMLNS,
+			    [{<<"type">>, _val} | _attrs], Access, _Type) ->
+    decode_privilege_perm_attrs(__TopXMLNS, _attrs, Access,
+				_val);
+decode_privilege_perm_attrs(__TopXMLNS, [_ | _attrs],
+			    Access, Type) ->
+    decode_privilege_perm_attrs(__TopXMLNS, _attrs, Access,
+				Type);
+decode_privilege_perm_attrs(__TopXMLNS, [], Access,
+			    Type) ->
+    {decode_privilege_perm_attr_access(__TopXMLNS, Access),
+     decode_privilege_perm_attr_type(__TopXMLNS, Type)}.
+
+encode_privilege_perm({privilege_perm, Access, Type},
+		      __TopXMLNS) ->
+    __NewTopXMLNS =
+	choose_top_xmlns(<<"urn:xmpp:privilege:1">>, [],
+			 __TopXMLNS),
+    _els = [],
+    _attrs = encode_privilege_perm_attr_type(Type,
+					     encode_privilege_perm_attr_access(Access,
+									       enc_xmlns_attrs(__NewTopXMLNS,
+											       __TopXMLNS))),
+    {xmlel, <<"perm">>, _attrs, _els}.
+
+decode_privilege_perm_attr_access(__TopXMLNS,
+				  undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"access">>, <<"perm">>, __TopXMLNS}});
+decode_privilege_perm_attr_access(__TopXMLNS, _val) ->
+    case catch dec_enum(_val, [roster, message, presence])
+	of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"access">>, <<"perm">>,
+			 __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_privilege_perm_attr_access(_val, _acc) ->
+    [{<<"access">>, enc_enum(_val)} | _acc].
+
+decode_privilege_perm_attr_type(__TopXMLNS,
+				undefined) ->
+    erlang:error({xmpp_codec,
+		  {missing_attr, <<"type">>, <<"perm">>, __TopXMLNS}});
+decode_privilege_perm_attr_type(__TopXMLNS, _val) ->
+    case catch dec_enum(_val,
+			[none, get, set, both, outgoing, roster,
+			 managed_entity])
+	of
+      {'EXIT', _} ->
+	  erlang:error({xmpp_codec,
+			{bad_attr_value, <<"type">>, <<"perm">>, __TopXMLNS}});
+      _res -> _res
+    end.
+
+encode_privilege_perm_attr_type(_val, _acc) ->
+    [{<<"type">>, enc_enum(_val)} | _acc].
 
 decode_thumbnail(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"thumbnail">>, _attrs, _els}) ->
