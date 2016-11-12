@@ -3735,8 +3735,7 @@ process_iq_mucsub(From,
 	    NewStateData = set_subscriber(From, Nick, Nodes, StateData),
 	    {result, subscribe_result(Packet), NewStateData};
 	error ->
-		    Packet2 = copy_password_xelement(Packet),
-		    add_new_user(From, Nick, Packet2, StateData)
+	    add_new_user(From, Nick, Packet, StateData)
     end;
 process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 		  StateData) ->
@@ -3770,11 +3769,6 @@ process_iq_mucsub(From, #iq{type = get, lang = Lang,
 process_iq_mucsub(_From, #iq{type = get, lang = Lang}, _StateData) ->
     Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
     {error, xmpp:err_bad_request(Txt, Lang)}.
-
-copy_password_xelement(Packet) ->
-    SubsEl = fxml:get_subtag_with_xmlns(Packet, <<"subscribe">>, ?NS_MUCSUB),
-    XEl = fxml:get_subtag_with_xmlns(SubsEl, <<"x">>, ?NS_MUC),
-    fxml:append_subtags(Packet, [XEl]).
 
 remove_subscriptions(StateData) ->
     if not (StateData#state.config)#config.allow_subscription ->
