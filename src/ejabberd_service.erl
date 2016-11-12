@@ -170,37 +170,28 @@ wait_for_stream(closed, StateData) ->
 wait_for_handshake({xmlstreamelement, El}, StateData) ->
     decode_element(El, wait_for_handshake, StateData);
 wait_for_handshake(#handshake{data = Digest}, StateData) ->
-    send_element(StateData, #handshake{}),
-    lists:foreach(
-      fun (H) ->
-	      ejabberd_router:register_route(H, ?MYNAME),
-	      ?INFO_MSG("Route registered for service ~p~n",
-			[H]),
-	      ejabberd_hooks:run(component_connected, [H])
-      end, dict:fetch_keys(StateData#state.host_opts)),
-    {next_state, stream_established, StateData};
-    %% case dict:find(StateData#state.host, StateData#state.host_opts) of
-    %% 	{ok, Password} ->
-    %% 	    case p1_sha:sha(<<(StateData#state.streamid)/binary,
-    %% 			      Password/binary>>) of
-    %% 		Digest ->
-    %% 		    send_element(StateData, #handshake{}),
-    %% 		    lists:foreach(
-    %% 		      fun (H) ->
-    %% 			      ejabberd_router:register_route(H, ?MYNAME),
-    %% 			      ?INFO_MSG("Route registered for service ~p~n",
-    %% 					[H]),
-    %% 			      ejabberd_hooks:run(component_connected, [H])
-    %% 		      end, dict:fetch_keys(StateData#state.host_opts)),
-    %% 		    {next_state, stream_established, StateData};
-    %% 		_ ->
-    %% 		    send_element(StateData, xmpp:serr_not_authorized()),
-    %% 		    {stop, normal, StateData}
-    %% 	    end;
-    %% 	_ ->
-    %% 	    send_element(StateData, xmpp:serr_not_authorized()),
-    %% 	    {stop, normal, StateData}
-    %% end;
+    case dict:find(StateData#state.host, StateData#state.host_opts) of
+    	{ok, Password} ->
+    	    case p1_sha:sha(<<(StateData#state.streamid)/binary,
+    			      Password/binary>>) of
+    		Digest ->
+    		    send_element(StateData, #handshake{}),
+    		    lists:foreach(
+    		      fun (H) ->
+    			      ejabberd_router:register_route(H, ?MYNAME),
+    			      ?INFO_MSG("Route registered for service ~p~n",
+    					[H]),
+    			      ejabberd_hooks:run(component_connected, [H])
+    		      end, dict:fetch_keys(StateData#state.host_opts)),
+    		    {next_state, stream_established, StateData};
+    		_ ->
+    		    send_element(StateData, xmpp:serr_not_authorized()),
+    		    {stop, normal, StateData}
+    	    end;
+    	_ ->
+    	    send_element(StateData, xmpp:serr_not_authorized()),
+    	    {stop, normal, StateData}
+    end;
 wait_for_handshake({xmlstreamend, _Name}, StateData) ->
     {stop, normal, StateData};
 wait_for_handshake({xmlstreamerror, _}, StateData) ->
