@@ -377,6 +377,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = add_rosteritem, tags = [roster],
 			desc = "Add an item to a user's roster (supports ODBC)",
+			longdesc = "Group can be several groups separated by ; for example: \"g1;g2;g3\"",
 			module = ?MODULE, function = add_rosteritem,
 			args = [{localuser, binary}, {localserver, binary},
 				{user, binary}, {server, binary},
@@ -1204,11 +1205,13 @@ push_roster_item(LU, LS, R, U, S, Action) ->
     ejabberd_router:route(jid:remove_resource(LJID), LJID, ResIQ).
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
+    GNames = binary:split(Group,<<";">>, [global]),
+    GroupEls = [{xmlel, <<"group">>, [], [{xmlcdata, GName}]} || GName <- GNames],
     {xmlel, <<"item">>,
      [{<<"jid">>, jid:to_string(jid:make(U, S, <<>>))},
       {<<"name">>, Nick},
       {<<"subscription">>, Subs}],
-     [{xmlel, <<"group">>, [], [{xmlcdata, Group}]}]
+     GroupEls
     };
 build_roster_item(U, S, remove) ->
     {xmlel, <<"item">>,

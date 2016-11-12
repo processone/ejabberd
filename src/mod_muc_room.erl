@@ -4653,7 +4653,8 @@ process_iq_mucsub(From, Packet,
 		    NewStateData = set_subscriber(From, Nick, Nodes, StateData),
 		    {result, subscription_nodes_to_events(Nodes), NewStateData};
 		error ->
-		    add_new_user(From, Nick, Packet, StateData)
+		    Packet2 = copy_password_xelement(Packet),
+		    add_new_user(From, Nick, Packet2, StateData)
 	    end;
 	_ ->
 	    Err = ?ERRT_NOT_ALLOWED(Lang, <<"Subscriptions are not allowed">>),
@@ -4696,6 +4697,11 @@ process_iq_mucsub(From, _Packet,
 process_iq_mucsub(_From, _Packet, #iq{lang = Lang}, _StateData) ->
     Txt = <<"Unrecognized subscription command">>,
     {error, ?ERRT_BAD_REQUEST(Lang, Txt)}.
+
+copy_password_xelement(Packet) ->
+    SubsEl = fxml:get_subtag_with_xmlns(Packet, <<"subscribe">>, ?NS_MUCSUB),
+    XEl = fxml:get_subtag_with_xmlns(SubsEl, <<"x">>, ?NS_MUC),
+    fxml:append_subtags(Packet, [XEl]).
 
 remove_subscriptions(StateData) ->
     if not (StateData#state.config)#config.allow_subscription ->

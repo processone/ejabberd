@@ -308,10 +308,47 @@ get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, fun iolist_to_binary/1, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
+
+get_module_mod_opt_type_fun(Module) ->
+    DBSubMods = ejabberd_config:v_dbs_mods(Module),
+    fun(Opt) ->
+	    Res = lists:foldl(fun(Mod, {Funs, ArgsList, _} = Acc) ->
+				      case catch Mod:mod_opt_type(Opt) of
+					  Fun when is_function(Fun) ->
+					      {[Fun | Funs], ArgsList, true};
+					  L when is_list(L) ->
+					      {Funs, L ++ ArgsList, true};
+					  _ ->
+					      Acc
+				      end
+			      end, {[], [], false}, [Module | DBSubMods]),
+	    case Res of
+		{[], [], false} ->
+		    throw({'EXIT', {undef, mod_opt_type}});
+		{[], Args, _} -> Args;
+		{Funs, _, _} ->
+		    fun(Val) ->
+			    lists:any(fun(F) ->
+					      try F(Val) of
+						  _ ->
+						      true
+					      catch {replace_with, _NewVal} = E ->
+						      throw(E);
+						    {invalid_syntax, _Error} = E2 ->
+						      throw(E2);
+						    _:_ ->
+						      false
+					      end
+				      end, Funs)
+		    end
+	    end
+    end.
+
 validate_opts(Module, Opts) ->
+    ModOptFun = get_module_mod_opt_type_fun(Module),
     lists:filtermap(
       fun({Opt, Val}) ->
-	      case catch Module:mod_opt_type(Opt) of
+	      case catch ModOptFun(Opt) of
 		  VFun when is_function(VFun) ->
 		      try VFun(Val) of
 			  _ ->
