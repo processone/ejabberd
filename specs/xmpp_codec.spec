@@ -3471,10 +3471,10 @@ enc_tzo({H, M}) ->
 
 -spec dec_utc(_) -> erlang:timestamp().
 dec_utc(Val) ->
-    {_, _, _} = jlib:datetime_string_to_timestamp(Val).
+    xmpp_util:decode_timestamp(Val).
 
 enc_utc(Val) ->
-    jlib:now_to_utc_string(Val).
+    xmpp_util:encode_timestamp(Val).
 
 -spec dec_jid(_) -> jid:jid().
 dec_jid(Val) ->

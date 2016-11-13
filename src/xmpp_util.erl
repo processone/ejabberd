@@ -27,28 +27,17 @@ add_delay_info(Stz, From, Time) ->
 		     erlang:timestamp(), binary()) -> stanza().
 
 add_delay_info(Stz, From, Time, Desc) ->
+    NewDelay = #delay{stamp = Time, from = From, desc = Desc},
     case xmpp:get_subtag(Stz, #delay{}) of
-	#delay{from = OldFrom, desc = OldDesc} = Delay ->
+	#delay{from = OldFrom} ->
 	    case jid:tolower(From) == jid:tolower(OldFrom) of
-		true when Desc == <<"">> ->
-		    Stz;
-		true when OldDesc == <<"">> ->
-		    xmpp:set_subtag(Stz, Delay#delay{desc = Desc});
-		true ->
-		    case binary:match(OldDesc, Desc) of
-			nomatch ->
-			    NewDesc = <<OldDesc/binary, ", ", Desc/binary>>,
-			    xmpp:set_subtag(Stz, Delay#delay{desc = NewDesc});
-			_ ->
-			    Stz
-		    end;
 		false ->
-		    NewDelay = #delay{stamp = Time, from = From, desc = Desc},
-		    xmpp:set_subtag(Stz, NewDelay)
+		    xmpp:set_subtag(Stz, NewDelay);
+		true ->
+		    xmpp:append_subtags(Stz, [NewDelay])
 	    end;
 	false ->
-	    Delay = #delay{stamp = Time, from = From, desc = Desc},
-	    xmpp:set_subtag(Stz, Delay)
+	    xmpp:append_subtags(Stz, [NewDelay])
     end.
 
 -spec unwrap_carbon(stanza()) -> xmpp_element().
@@ -147,10 +136,10 @@ try_decode_timestamp(<<Y:4/binary, Mo:2/binary, D:2/binary, $T,
 			   H:2/binary, $:, Mi:2/binary, $:, S:2/binary, $Z>>).
 
 try_decode_fraction(<<$., T/binary>>) ->
-    {match, [V]} = re:run(T, <<"^[0-9]+">>, [{capture, [0], binary}]),
-    Size = size(V),
-    <<V:Size/binary, TZD/binary>> = T,
-    {to_integer(binary:part(V, 0, min(6, Size)), 0, 999999),
+    {match, [V]} = re:run(T, <<"^[0-9]+">>, [{capture, [0], list}]),
+    Size = length(V),
+    <<_:Size/binary, TZD/binary>> = T,
+    {list_to_integer(string:left(V, 6, $0)),
      try_decode_tzd(TZD)};
 try_decode_fraction(TZD) ->
     {0, try_decode_tzd(TZD)}.

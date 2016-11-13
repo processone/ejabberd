@@ -6782,10 +6782,9 @@ dec_jid(Val) ->
       J -> J
     end.
 
-enc_utc(Val) -> jlib:now_to_utc_string(Val).
+enc_utc(Val) -> xmpp_util:encode_timestamp(Val).
 
-dec_utc(Val) ->
-    {_, _, _} = jlib:datetime_string_to_timestamp(Val).
+dec_utc(Val) -> xmpp_util:decode_timestamp(Val).
 
 enc_tzo({H, M}) ->
     Sign = if H >= 0 -> <<>>;

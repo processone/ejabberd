@@ -312,14 +312,14 @@ parse_query(#mam_query{xdata = #xdata{fields = Fs}} = Query, Lang) ->
     try
 	lists:foldl(
 	  fun(#xdata_field{var = <<"start">>, values = [Data|_]}, Q) ->
-		  case jlib:datetime_string_to_timestamp(Data) of
-		      undefined -> throw({error, <<"start">>});
+		  try xmpp_util:decode_timestamp(Data) of
 		      {_, _, _} = TS -> Q#mam_query{start = TS}
+		  catch _:{bad_timestamp, _} -> throw({error, <<"start">>})
 		  end;
 	     (#xdata_field{var = <<"end">>, values = [Data|_]}, Q) ->
-		  case jlib:datetime_string_to_timestamp(Data) of
-		      undefined -> throw({error, <<"end">>});
-		      {_, _, _} = TS -> Q#mam_query{'end' = TS}
+		  try xmpp_util:decode_timestamp(Data) of
+		      {_, _, _} = TS -> Q#mam_query{start = TS}
+		  catch _:{bad_timestamp, _} -> throw({error, <<"end">>})
 		  end;
 	     (#xdata_field{var = <<"with">>, values = [Data|_]}, Q) ->
 		  case jid:from_string(Data) of

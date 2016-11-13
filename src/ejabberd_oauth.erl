@@ -494,7 +494,7 @@ process(_Handlers,
     TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
     ExpiresIn = case TTL of
                     <<>> -> undefined;
-                    _ -> jlib:binary_to_integer(TTL)
+                    _ -> binary_to_integer(TTL)
                 end,
     case oauth2:authorize_password({Username, Server},
                                    ClientId,
@@ -556,7 +556,7 @@ process(_Handlers,
         TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
         ExpiresIn = case TTL of
                         <<>> -> undefined;
-                        _ -> jlib:binary_to_integer(TTL)
+                        _ -> binary_to_integer(TTL)
                     end,
         case oauth2:authorize_password({Username, Server},
                                        Scope,

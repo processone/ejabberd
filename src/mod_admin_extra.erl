@@ -761,7 +761,9 @@ set_random_password(User, Server, Reason) ->
     set_password_auth(User, Server, NewPass).
 
 build_random_password(Reason) ->
-    Date = jlib:timestamp_to_legacy(calendar:universal_time()),
+    {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:universal_time(),
+    Date = str:format("~4..0B~2..0B~2..0BT~2..0B:~2..0B:~2..0B",
+		      [Year, Month, Day, Hour, Minute, Second]),
     RandomString = randoms:get_string(),
     <<"BANNED_ACCOUNT--", Date/binary, "--", RandomString/binary, "--", Reason/binary>>.
 

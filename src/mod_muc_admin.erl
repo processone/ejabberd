@@ -388,7 +388,7 @@ build_info_room({Name, Host, Pid}) ->
 	    false ->
 		Last_message1 = queue:last(History),
 		{_, _, _, Ts_last, _} = Last_message1,
-		jlib:timestamp_to_legacy(Ts_last)
+		xmpp_util:encode_timestamp(Ts_last)
 	end,
 
     {<<Name/binary, "@", Host/binary>>,

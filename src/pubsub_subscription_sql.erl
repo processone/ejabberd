@@ -176,13 +176,11 @@ val_xfield(digest_frequency = Opt, [Val]) ->
 	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
     end;
 val_xfield(expire = Opt, [Val]) ->
-    case jlib:datetime_string_to_timestamp(Val) of
-	undefined ->
+    try xmpp_util:decode_timestamp(Val)
+    catch _:{bad_timestamp, _} ->
 	    Txt = <<"Value of '~s' should be datetime string">>,
 	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
-	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)};
-	Timestamp ->
-	    Timestamp
+	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
     end;
 val_xfield(include_body = Opt, [Val]) -> xopt_to_bool(Opt, Val);
 val_xfield(show_values, Vals) -> Vals;

@@ -42,7 +42,11 @@ store_messages(_Host, US, Msgs, Len, MaxOfflineMsgs) ->
 				mnesia:write_lock_table(offline_msg);
 			   true -> ok
 			end,
-			lists:foreach(fun (M) -> mnesia:write(M) end, Msgs)
+			lists:foreach(
+			  fun(#offline_msg{packet = Pkt} = M) ->
+				  El = xmpp:encode(Pkt),
+				  mnesia:write(M#offline_msg{packet = El})
+			  end, Msgs)
 		end
 	end,
     mnesia:transaction(F).
@@ -107,9 +111,7 @@ read_message_headers(LUser, LServer) ->
 	     fun(#offline_msg{from = From, to = To, packet = Pkt,
 			      timestamp = TS}) ->
 		     Seq = now_to_integer(TS),
-		     NewPkt = jlib:add_delay_info(Pkt, LServer, TS,
-						  <<"Offline Storage">>),
-		     {Seq, From, To, NewPkt}
+		     {Seq, From, To, TS, Pkt}
 	     end, Msgs),
     lists:keysort(1, Hdrs).
 

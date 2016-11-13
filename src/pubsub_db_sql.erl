@@ -132,10 +132,10 @@ integer_to_sql(N) -> iolist_to_binary(integer_to_list(N)).
 boolean_to_sql(true) -> <<"1">>;
 boolean_to_sql(false) -> <<"0">>.
 
-timestamp_to_sql(T) -> jlib:now_to_utc_string(T).
+timestamp_to_sql(T) -> xmpp_util:encode_timestamp(T).
 
 sql_to_integer(N) -> binary_to_integer(N).
 
 sql_to_boolean(B) -> B == <<"1">>.
 
-sql_to_timestamp(T) -> jlib:datetime_string_to_timestamp(T).
+sql_to_timestamp(T) -> xmpp_util:decode_timestamp(T).

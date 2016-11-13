@@ -285,7 +285,7 @@ get_sm_items(_Acc, #jid{luser = U, lserver = S, lresource = R} = JID,
 	    BareJID = jid:remove_resource(JID),
 	    Pid ! dont_ask_offline,
 	    {result, lists:map(
-		       fun({Seq, From, _To, _El}) ->
+		       fun({Seq, From, _To, _TS, _El}) ->
 			       Node = integer_to_binary(Seq),
 			       #disco_item{jid = BareJID,
 					   node = Node,
@@ -400,10 +400,10 @@ handle_offline_fetch(#jid{luser = U, lserver = S, lresource = R}) ->
 	Pid when is_pid(Pid) ->
 	    Pid ! dont_ask_offline,
 	    lists:foreach(
-	      fun({Node, From, To, El}) ->
+	      fun({Node, El}) ->
 		      NewEl = set_offline_tag(El, Node),
-		      Pid ! {route, From, To, NewEl}
-	      end, read_message_headers(U, S))
+		      Pid ! {route, xmpp:get_from(El), xmpp:get_to(El), NewEl}
+	      end, read_messages(U, S))
     end.
 
 -spec fetch_msg_by_node(jid(), binary()) -> error | {ok, #offline_msg{}}.
@@ -476,11 +476,13 @@ store_packet(From, To, Packet) ->
 			NewPacket ->
 			    TimeStamp = p1_time_compat:timestamp(),
 			    Expire = find_x_expire(TimeStamp, NewPacket),
-			    El = xmpp:encode(NewPacket),
 			    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
 				#offline_msg{us = {LUser, LServer},
-					     timestamp = TimeStamp, expire = Expire,
-					     from = From, to = To, packet = El},
+					     timestamp = TimeStamp,
+					     expire = Expire,
+					     from = From,
+					     to = To,
+					     packet = NewPacket},
 			    stop
 		    end;
 		_ -> ok
@@ -547,10 +549,13 @@ resend_offline_messages(User, Server) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:pop_messages(LUser, LServer) of
       {ok, Rs} ->
-	  lists:foreach(fun (R) ->
-				ejabberd_sm ! offline_msg_to_route(LServer, R)
-			end,
-			lists:keysort(#offline_msg.timestamp, Rs));
+	  lists:foreach(
+	    fun(R) ->
+		    case offline_msg_to_route(LServer, R) of
+			error -> ok;
+			RouteMsg -> ejabberd_sm ! RouteMsg
+		    end
+	    end, lists:keysort(#offline_msg.timestamp, Rs));
       _ -> ok
     end.
 
@@ -565,22 +570,26 @@ pop_offline_messages(Ls, User, Server) ->
 	{ok, Rs} ->
 	    TS = p1_time_compat:timestamp(),
 	    Ls ++
-		lists:map(fun (R) ->
-				  offline_msg_to_route(LServer, R)
-			  end,
-			  lists:filter(
-			    fun(#offline_msg{packet = Pkt} = R) ->
-				    Expire = case R#offline_msg.expire of
-						 undefined ->
-						     find_x_expire(TS, Pkt);
-						 Exp ->
-						     Exp
-					     end,
-				    case Expire of
-					never -> true;
-					TimeStamp -> TS < TimeStamp
-				    end
-			    end, Rs));
+		lists:flatmap(
+		  fun(R) ->
+			  case offline_msg_to_route(LServer, R) of
+			      error -> [];
+			      RouteMsg -> [RouteMsg]
+			  end
+		  end,
+		  lists:filter(
+		    fun(#offline_msg{packet = Pkt} = R) ->
+			    Expire = case R#offline_msg.expire of
+					 undefined ->
+					     find_x_expire(TS, Pkt);
+					 Exp ->
+					     Exp
+				     end,
+			    case Expire of
+				never -> true;
+				TimeStamp -> TS < TimeStamp
+			    end
+		    end, Rs));
 	_ ->
 	    Ls
     end.
@@ -625,52 +634,61 @@ webadmin_page(_, Host,
 webadmin_page(Acc, _, _) -> Acc.
 
 get_offline_els(LUser, LServer) ->
-    Hdrs = read_message_headers(LUser, LServer),
-    lists:map(
-      fun({_Seq, From, To, Packet}) ->
-	      xmpp:set_from_to(Packet, From, To)
-      end, Hdrs).
+    [Packet || {_Seq, Packet} <- read_messages(LUser, LServer)].
 
+-spec offline_msg_to_route(binary(), #offline_msg{}) ->
+				  {route, jid(), jid(), message()} | error.
 offline_msg_to_route(LServer, #offline_msg{} = R) ->
-    Pkt = xmpp:decode(R#offline_msg.packet, ?NS_CLIENT, [ignore_els]),
-    Pkt1 = case R#offline_msg.timestamp of
-	       undefined ->
-		   Pkt;
-	       TS ->
-		   xmpp_util:add_delay_info(Pkt, jid:make(LServer), TS,
-					    <<"Offline Storage">>)
-	   end,
-    {route, R#offline_msg.from, R#offline_msg.to, Pkt1}.
+    try xmpp:decode(R#offline_msg.packet, ?NS_CLIENT, [ignore_els]) of
+	Pkt ->
+	    NewPkt = add_delay_info(Pkt, LServer, R#offline_msg.timestamp),
+	    {route, R#offline_msg.from, R#offline_msg.to, NewPkt}
+    catch _:{xmpp_codec, Why} ->
+	    ?ERROR_MSG("failed to decode packet ~p of user ~s: ~s",
+		       [R#offline_msg.packet, jid:to_string(R#offline_msg.to),
+			xmpp:format_error(Why)]),
+	    error
+    end.
 
-read_message_headers(LUser, LServer) ->
+-spec read_messages(binary(), binary()) -> [{binary(), message()}].
+read_messages(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    lists:map(
-      fun({Seq, From, To, El}) ->
+    lists:flatmap(
+      fun({Seq, From, To, TS, El}) ->
 	      Node = integer_to_binary(Seq),
-	      Packet = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
-	      {Node, From, To, Packet}
+	      try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+		  Pkt ->
+		      Node = integer_to_binary(Seq),
+		      Pkt1 = add_delay_info(Pkt, LServer, TS),
+		      Pkt2 = xmpp:set_from_to(Pkt1, From, To),
+		      [{Node, Pkt2}]
+	      catch _:{xmpp_codec, Why} ->
+		      ?ERROR_MSG("failed to decode packet ~p "
+				 "of user ~s: ~s",
+				 [El, jid:to_string(To),
+				  xmpp:format_error(Why)]),
+		      []
+	      end
       end, Mod:read_message_headers(LUser, LServer)).
 
 format_user_queue(Hdrs) ->
     lists:map(
-      fun({Seq, From, To, El}) ->
+      fun({Seq, From, To, TS, El}) ->
 	      ID = integer_to_binary(Seq),
 	      FPacket = ejabberd_web_admin:pretty_print_xml(El),
 	      SFrom = jid:to_string(From),
 	      STo = jid:to_string(To),
-	      Stamp = fxml:get_path_s(El, [{elem, <<"delay">>},
-					   {attr, <<"stamp">>}]),
-	      Time = case jlib:datetime_string_to_timestamp(Stamp) of
+	      Time = case TS of
+			 undefined ->
+			     Stamp = fxml:get_path_s(El, [{elem, <<"delay">>},
+							  {attr, <<"stamp">>}]),
+			     try xmpp_util:decode_timestamp(Stamp) of
+				 {_, _, _} = Now -> format_time(Now)
+			     catch _:_ ->
+				     <<"">>
+			     end;
 			 {_, _, _} = Now ->
-			     {{Year, Month, Day}, {Hour, Minute, Second}} =
-				 calendar:now_to_local_time(Now),
-			     iolist_to_binary(
-			       io_lib:format(
-				 "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
-				 [Year, Month, Day, Hour, Minute,
-				  Second]));
-			 _ ->
-			     <<"">>
+			     format_time(Now)
 		     end,
 	      ?XE(<<"tr">>,
 		  [?XAE(<<"td">>, [{<<"class">>, <<"valign">>}],
@@ -681,6 +699,11 @@ format_user_queue(Hdrs) ->
 		   ?XAE(<<"td">>, [{<<"class">>, <<"valign">>}],
 			[?XC(<<"pre">>, FPacket)])])
       end, Hdrs).
+
+format_time(Now) ->
+    {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:now_to_local_time(Now),
+    str:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+	       [Year, Month, Day, Hour, Minute,	Second]).
 
 user_queue(User, Server, Query, Lang) ->
     LUser = jid:nodeprep(User),
@@ -814,6 +837,14 @@ count_offline_messages(User, Server) ->
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:count_messages(LUser, LServer).
+
+-spec add_delay_info(message(), binary(),
+		     undefined | erlang:timestamp()) -> message().
+add_delay_info(Packet, _LServer, undefined) ->
+    Packet;
+add_delay_info(Packet, LServer, {_, _, _} = TS) ->
+    xmpp_util:add_delay_info(Packet, jid:make(LServer), TS,
+			     <<"Offline storage">>).
 
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),

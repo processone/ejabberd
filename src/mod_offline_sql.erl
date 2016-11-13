@@ -41,14 +41,14 @@ store_messages(Host, {User, _Server}, Msgs, Len, MaxOfflineMsgs) ->
 			      LUser = (M#offline_msg.to)#jid.luser,
 			      From = M#offline_msg.from,
 			      To = M#offline_msg.to,
-			      Packet =
-				  jlib:replace_from_to(From, To,
-						       M#offline_msg.packet),
-			      NewPacket =
-				  jlib:add_delay_info(Packet, Host,
-						      M#offline_msg.timestamp,
-						      <<"Offline Storage">>),
-			      XML = fxml:element_to_binary(NewPacket),
+			      Packet = xmpp:set_from_to(
+					 M#offline_msg.packet, From, To),
+			      NewPacket = xmpp_util:add_delay_info(
+					    Packet, jid:make(Host),
+					    M#offline_msg.timestamp,
+					    <<"Offline Storage">>),
+			      XML = fxml:element_to_binary(
+				      xmpp:encode(NewPacket)),
                               sql_queries:add_spool_sql(LUser, XML)
 		      end,
 		      Msgs),
@@ -171,15 +171,23 @@ export(_Server) ->
     [{offline_msg,
       fun(Host, #offline_msg{us = {LUser, LServer},
                              timestamp = TimeStamp, from = From, to = To,
-                             packet = Packet})
+                             packet = El})
             when LServer == Host ->
-              Packet1 = jlib:replace_from_to(From, To, Packet),
-              Packet2 = jlib:add_delay_info(Packet1, LServer, TimeStamp,
-                                            <<"Offline Storage">>),
-              XML = fxml:element_to_binary(Packet2),
-              [?SQL("delete from spool where username=%(LUser)s;"),
-               ?SQL("insert into spool(username, xml) values ("
-                    "%(LUser)s, %(XML)s);")];
+	      try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+		  Packet ->
+		      Packet1 = xmpp:set_from_to(Packet, From, To),
+		      Packet2 = xmpp_util:add_delay_info(
+				  Packet1, jid:make(LServer),
+				  TimeStamp, <<"Offline Storage">>),
+		      XML = fxml:element_to_binary(xmpp:encode(Packet2)),
+		      [?SQL("delete from spool where username=%(LUser)s;"),
+		       ?SQL("insert into spool(username, xml) values ("
+			    "%(LUser)s, %(XML)s);")]
+	      catch _:{xmpp_codec, Why} ->
+		      ?ERROR_MSG("failed to decode packet ~p of user ~s@~s: ~s",
+				 [El, LUser, LServer, xmpp:format_error(Why)]),
+		      []
+	      end;
          (_Host, _R) ->
               []
       end}].
@@ -188,23 +196,21 @@ import(LServer) ->
     [{<<"select username, xml from spool;">>,
       fun([LUser, XML]) ->
               El = #xmlel{} = fxml_stream:parse_element(XML),
-              From = #jid{} = jid:from_string(
-                                fxml:get_attr_s(<<"from">>, El#xmlel.attrs)),
-              To = #jid{} = jid:from_string(
-                              fxml:get_attr_s(<<"to">>, El#xmlel.attrs)),
-              Stamp = fxml:get_path_s(El, [{elem, <<"delay">>},
-                                          {attr, <<"stamp">>}]),
-              TS = case jlib:datetime_string_to_timestamp(Stamp) of
-                       {_, _, _} = Now ->
-                           Now;
-                       undefined ->
-                           p1_time_compat:timestamp()
-                   end,
-              Expire = mod_offline:find_x_expire(TS, El#xmlel.children),
-              #offline_msg{us = {LUser, LServer},
-                           from = From, to = To,
+	      #message{} = Pkt = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
+	      From = Pkt#message.from,
+	      To = case Pkt#message.to of
+		       undefined -> jid:make(LUser, LServer);
+		       JID -> JID
+		   end,
+	      TS = case xmpp:get_subtag(Pkt, #delay{}) of
+		       #delay{stamp = Stamp} -> Stamp;
+		       false -> p1_time_compat:timestamp()
+		   end,
+	      Expire = mod_offline:find_x_expire(TS, Pkt),
+	      #offline_msg{us = {LUser, LServer},
+			   from = From, to = To,
 			   packet = El,
-                           timestamp = TS, expire = Expire}
+			   timestamp = TS, expire = Expire}
       end}].
 
 import(_, _) ->

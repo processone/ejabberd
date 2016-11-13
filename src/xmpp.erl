@@ -18,7 +18,7 @@
 	 format_error/1, is_stanza/1, set_subtag/2, get_subtag/2,
 	 remove_subtag/2, has_subtag/2, decode_els/1, decode_els/3,
 	 pp/1, get_name/1, get_text/1, mk_text/1, mk_text/2,
-	 is_known_tag/1, is_known_tag/2]).
+	 is_known_tag/1, is_known_tag/2, append_subtags/2]).
 
 %% XMPP errors
 -export([err_bad_request/0, err_bad_request/2,
@@ -368,6 +368,11 @@ has_subtag([El|Els], TagName, XMLNS) ->
     end;
 has_subtag([], _, _) ->
     false.
+
+-spec append_subtags(stanza(), [xmpp_element() | xmlel()]) -> stanza().
+append_subtags(Stanza, Tags) ->
+    Els = get_els(Stanza),
+    set_els(Stanza, Els ++ Tags).
 
 -spec get_text([text()]) -> binary().
 get_text([]) -> <<"">>;
