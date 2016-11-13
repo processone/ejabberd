@@ -18,7 +18,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 -export([component_connected/1, component_disconnected/2,
-	 ejabberd_local/1, ejabberd_sm/1,
+	 ejabberd_local/1, ejabberd_sm/1, decode_iq_subel/1,
 	 disco_local_features/5, disco_sm_features/5,
 	 disco_local_identity/5, disco_sm_identity/5]).
 
@@ -55,6 +55,12 @@ mod_opt_type(_) ->
 
 depends(_, _) ->
     [].
+
+-spec decode_iq_subel(xmpp_element()) -> xmpp_element();
+		     (xmlel()) -> xmlel().
+%% Tell gen_iq_handler not to auto-decode IQ payload
+decode_iq_subel(El) ->
+    El.
 
 -spec component_connected(binary()) -> ok.
 component_connected(Host) ->

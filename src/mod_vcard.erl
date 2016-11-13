@@ -37,7 +37,7 @@
 	 remove_user/2, export/1, import/1, import/3, depends/2,
 	 process_search/1, process_vcard/1, get_vcard/2,
 	 disco_items/5, disco_features/5, disco_identity/5,
-	 mod_opt_type/1, set_vcard/3, make_vcard_search/4]).
+	 decode_iq_subel/1, mod_opt_type/1, set_vcard/3, make_vcard_search/4]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -165,6 +165,14 @@ get_sm_features(Acc, _From, _To, Node, _Lang) ->
 	    empty -> {result, [?NS_DISCO_INFO, ?NS_VCARD]}
 	  end;
       _ -> Acc
+    end.
+
+-spec decode_iq_subel(xmpp_element() | xmlel()) -> xmpp_element() | xmlel().
+%% Tell gen_iq_handler not to decode vcard elements
+decode_iq_subel(El) ->
+    case xmpp:get_ns(El) of
+	?NS_VCARD -> xmpp:encode(El);
+	_ -> xmpp:decode(El)
     end.
 
 -spec process_local_iq(iq()) -> iq().

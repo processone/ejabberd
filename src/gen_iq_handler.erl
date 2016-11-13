@@ -153,11 +153,9 @@ process_iq(_Host, Module, Function, From, To, IQ0) ->
 -spec process_iq(module(), atom(), iq()) -> ignore | iq().
 process_iq(Module, Function, #iq{lang = Lang, sub_els = [El]} = IQ) ->
     try
-	%% TODO: move this 'conditional' decoding somewhere
-	%% IQ handler should know *nothing* about vCards.
-	Pkt = case xmpp:get_ns(El) of
-		  ?NS_VCARD when Module == mod_vcard -> El;
-		  _ -> xmpp:decode(El)
+	Pkt = case erlang:function_exported(Module, decode_iq_subel, 1) of
+		  true -> Module:decode_iq_subel(El);
+		  false -> xmpp:decode(El)
 	      end,
 	Module:Function(IQ#iq{sub_els = [Pkt]})
     catch error:{xmpp_codec, Why} ->

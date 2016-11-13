@@ -96,13 +96,7 @@ process_iq(From, To, #iq{type = T} = Packet) when T == get; T == set ->
     Err = xmpp:make_error(Packet, xmpp:err_bad_request()),
     ejabberd_router:route(To, From, Err);
 process_iq(From, To, #iq{type = T} = Packet) when T == result; T == error ->
-    try
-	NewPacket = xmpp:decode_els(Packet),
-	process_iq_reply(From, To, NewPacket)
-    catch _:{xmpp_codec, Why} ->
-	    ?DEBUG("failed to decode iq-result ~p: ~s",
-		   [Packet, xmpp:format_error(Why)])
-    end.
+    process_iq_reply(From, To, Packet).
 
 -spec process_iq_reply(jid(), jid(), iq()) -> any().
 process_iq_reply(From, To, #iq{id = ID} = IQ) ->
