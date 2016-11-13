@@ -217,7 +217,8 @@ process_iq(#iq{to = To, lang = Lang, sub_els = [SubEl]} = IQ, Type) ->
     Delegations = get_delegations(LServer),
     case dict:find({NS, Type}, Delegations) of
 	{ok, {Host, _}} ->
-	    Delegation = #delegation{forwarded = #forwarded{sub_els = [IQ]}},
+	    Delegation = #delegation{
+			    forwarded = #forwarded{xml_els = [xmpp:encode(IQ)]}},
 	    NewFrom = jid:make(LServer),
 	    NewTo = jid:make(Host),
 	    ejabberd_local:route_iq(
@@ -236,14 +237,15 @@ process_iq(#iq{to = To, lang = Lang, sub_els = [SubEl]} = IQ, Type) ->
 -spec process_iq_result(iq(), iq()) -> ok.
 process_iq_result(#iq{from = From, to = To, id = ID, lang = Lang} = IQ,
 		  #iq{type = result} = ResIQ) ->
-    case xmpp:get_subtag(ResIQ, #delegation{}) of
-	#delegation{
-	   forwarded = #forwarded{
-			  sub_els = [#iq{from = To, to = From,
-					 type = Type, id = ID} = Reply]}}
-	  when Type == error; Type == result ->
-	    ejabberd_router:route(From, To, Reply);
-	_ ->
+    try
+	#delegation{forwarded = #forwarded{xml_els = [SubEl]}} =
+	    xmpp:get_subtag(ResIQ, #delegation{}),
+	case xmpp:decode(SubEl, ?NS_CLIENT, [ignore_els]) of
+	    #iq{from = To, to = From, type = Type, id = ID} = Reply
+	      when Type == error; Type == result ->
+		ejabberd_router:route(From, To, Reply)
+	end
+    catch _:_ ->
 	    ?ERROR_MSG("got iq-result with invalid delegated "
 		       "payload:~n~s", [xmpp:pp(ResIQ)]),
 	    Txt = <<"External component failure">>,

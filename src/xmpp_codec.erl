@@ -6639,7 +6639,7 @@ pp(mam_archived, 2) -> [by, id];
 pp(mam_result, 4) -> [xmlns, queryid, id, sub_els];
 pp(mam_prefs, 4) -> [xmlns, default, always, never];
 pp(mam_fin, 5) -> [xmlns, id, rsm, stable, complete];
-pp(forwarded, 2) -> [delay, sub_els];
+pp(forwarded, 2) -> [delay, xml_els];
 pp(carbons_disable, 0) -> [];
 pp(carbons_enable, 0) -> [];
 pp(carbons_private, 0) -> [];
@@ -11966,53 +11966,41 @@ encode_carbons_disable({carbons_disable}, __TopXMLNS) ->
 
 decode_forwarded(__TopXMLNS, __IgnoreEls,
 		 {xmlel, <<"forwarded">>, _attrs, _els}) ->
-    {Delay, __Els} = decode_forwarded_els(__TopXMLNS,
-					  __IgnoreEls, _els, undefined, []),
-    {forwarded, Delay, __Els}.
+    {Delay, __Xmls} = decode_forwarded_els(__TopXMLNS,
+					   __IgnoreEls, _els, undefined, []),
+    {forwarded, Delay, __Xmls}.
 
 decode_forwarded_els(__TopXMLNS, __IgnoreEls, [], Delay,
-		     __Els) ->
-    {Delay, lists:reverse(__Els)};
+		     __Xmls) ->
+    {Delay, lists:reverse(__Xmls)};
 decode_forwarded_els(__TopXMLNS, __IgnoreEls,
 		     [{xmlel, <<"delay">>, _attrs, _} = _el | _els], Delay,
-		     __Els) ->
+		     __Xmls) ->
     case get_attr(<<"xmlns">>, _attrs) of
       <<"urn:xmpp:delay">> ->
 	  decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
 			       decode_delay(<<"urn:xmpp:delay">>, __IgnoreEls,
 					    _el),
-			       __Els);
+			       __Xmls);
       _ ->
 	  decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
-			       Delay, __Els)
+			       Delay, __Xmls)
     end;
 decode_forwarded_els(__TopXMLNS, __IgnoreEls,
-		     [{xmlel, _, _, _} = _el | _els], Delay, __Els) ->
-    if __IgnoreEls ->
-	   decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
-				Delay, [_el | __Els]);
-       true ->
-	   case is_known_tag(_el, __TopXMLNS) of
-	     true ->
-		 decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
-				      Delay,
-				      [decode(_el, __TopXMLNS, []) | __Els]);
-	     false ->
-		 decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
-				      Delay, __Els)
-	   end
-    end;
-decode_forwarded_els(__TopXMLNS, __IgnoreEls,
-		     [_ | _els], Delay, __Els) ->
+		     [{xmlel, _, _, _} = _el | _els], Delay, __Xmls) ->
     decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
-			 Delay, __Els).
+			 Delay, [_el | __Xmls]);
+decode_forwarded_els(__TopXMLNS, __IgnoreEls,
+		     [_ | _els], Delay, __Xmls) ->
+    decode_forwarded_els(__TopXMLNS, __IgnoreEls, _els,
+			 Delay, __Xmls).
 
-encode_forwarded({forwarded, Delay, __Els},
+encode_forwarded({forwarded, Delay, __Xmls},
 		 __TopXMLNS) ->
     __NewTopXMLNS =
 	choose_top_xmlns(<<"urn:xmpp:forward:0">>, [],
 			 __TopXMLNS),
-    _els = [encode(_el, __NewTopXMLNS) || _el <- __Els] ++
+    _els = __Xmls ++
 	     lists:reverse('encode_forwarded_$delay'(Delay,
 						     __NewTopXMLNS, [])),
     _attrs = enc_xmlns_attrs(__NewTopXMLNS, __TopXMLNS),

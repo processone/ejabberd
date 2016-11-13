@@ -2679,7 +2679,7 @@
 -xml(forwarded,
      #elem{name = <<"forwarded">>,
            xmlns = <<"urn:xmpp:forward:0">>,
-           result = {forwarded, '$delay', '$_els'},
+           result = {forwarded, '$delay', '$_xmls'},
            refs = [#ref{name = delay, min = 0,
                         max = 1, label = '$delay'}]}).
 

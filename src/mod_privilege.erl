@@ -257,25 +257,33 @@ get_permissions(ServerHost) ->
     end.
 
 forward_message(From, To, Msg) ->
-    Host = From#jid.lserver,
     ServerHost = To#jid.lserver,
+    Lang = xmpp:get_lang(Msg),
     case xmpp:get_subtag(Msg, #privilege{}) of
-	#privilege{forwarded = #forwarded{sub_els = [#message{} = SubEl]}} ->
-	    case SubEl#message.from of
-		#jid{lresource = <<"">>, lserver = ServerHost} ->
-		    ejabberd_router:route(
-		      xmpp:get_from(SubEl), xmpp:get_to(SubEl), SubEl);
+	#privilege{forwarded = #forwarded{xml_els = [SubEl]}} ->
+	    try xmpp:decode(SubEl, ?NS_CLIENT, [ignore_els]) of
+		#message{} = NewMsg ->
+		    case NewMsg#message.from of
+			#jid{lresource = <<"">>, lserver = ServerHost} ->
+			    ejabberd_router:route(
+			      xmpp:get_from(NewMsg), xmpp:get_to(NewMsg), NewMsg);
+			_ ->
+			    Lang = xmpp:get_lang(Msg),
+			    Txt = <<"Invalid 'from' attribute in forwarded message">>,
+			    Err = xmpp:err_forbidden(Txt, Lang),
+			    ejabberd_router:route_error(To, From, Msg, Err)
+		    end;
 		_ ->
-		    Lang = xmpp:get_lang(Msg),
-		    Txt = <<"Invalid 'from' attribute">>,
-		    Err = xmpp:err_forbidden(Txt, Lang),
+		    Txt = <<"Message not found in forwarded payload">>,
+		    Err = xmpp:err_bad_request(Txt, Lang),
+		    ejabberd_router:route_error(To, From, Msg, Err)
+	    catch _:{xmpp_codec, Why} ->
+		    Txt = xmpp:format_error(Why),
+		    Err = xmpp:err_bad_request(Txt, Lang),
 		    ejabberd_router:route_error(To, From, Msg, Err)
 	    end;
 	_ ->
-	    ?ERROR_MSG("got invalid forwarded payload from external "
-		       "component '~s':~n~s", [Host, xmpp:pp(Msg)]),
-	    Lang = xmpp:get_lang(Msg),
-	    Txt = <<"Invalid forwarded payload">>,
+	    Txt = <<"Invalid <forwarded/> element">>,
 	    Err = xmpp:err_bad_request(Txt, Lang),
 	    ejabberd_router:route_error(To, From, Msg, Err)
     end.

@@ -42,16 +42,20 @@ add_delay_info(Stz, From, Time, Desc) ->
 
 -spec unwrap_carbon(stanza()) -> xmpp_element().
 unwrap_carbon(#message{} = Msg) ->
-    case xmpp:get_subtag(Msg, #carbons_sent{}) of
-	#carbons_sent{forwarded = #forwarded{sub_els = [El]}} ->
-	    El;
-	_ ->
-	    case xmpp:get_subtag(Msg, #carbons_received{}) of
-		#carbons_received{forwarded = #forwarded{sub_els = [El]}} ->
-		    El;
-		_ ->
-		    Msg
-	    end
+    try
+	case xmpp:get_subtag(Msg, #carbons_sent{}) of
+	    #carbons_sent{forwarded = #forwarded{xml_els = [El]}} ->
+		xmpp:decode(El, ?NS_CLIENT, [ignore_els]);
+	    _ ->
+		case xmpp:get_subtag(Msg, #carbons_received{}) of
+		    #carbons_received{forwarded = #forwarded{xml_els = [El]}} ->
+			xmpp:decode(El, ?NS_CLIENT, [ignore_els]);
+		    _ ->
+			Msg
+		end
+	end
+    catch _:{xmpp_codec, _} ->
+	    Msg
     end;
 unwrap_carbon(Stanza) -> Stanza.
 

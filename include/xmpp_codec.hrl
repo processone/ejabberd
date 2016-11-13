@@ -181,7 +181,7 @@
 -type starttls_proceed() :: #starttls_proceed{}.
 
 -record(forwarded, {delay :: #delay{},
-                    sub_els = [] :: [xmpp_element() | fxml:xmlel()]}).
+                    xml_els = [] :: [fxml:xmlel()]}).
 -type forwarded() :: #forwarded{}.
 
 -record(privilege, {perms = [] :: [#privilege_perm{}],

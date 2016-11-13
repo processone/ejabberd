@@ -794,7 +794,7 @@ msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
 	  MsgType, JidRequestor, #jid{lserver = LServer} = JidArchive) ->
     Pkt2 = maybe_update_from_to(Pkt1, JidRequestor, JidArchive, Peer, MsgType,
 				Nick),
-    #forwarded{sub_els = [Pkt2],
+    #forwarded{xml_els = [xmpp:encode(Pkt2)],
 	       delay = #delay{stamp = TS, from = jid:make(LServer)}}.
 
 maybe_update_from_to(#xmlel{} = El, JidRequestor, JidArchive, Peer,
