@@ -268,7 +268,7 @@ process_iq_result(#iq{from = From, to = To, id = ID, lang = Lang} = IQ,
 	case xmpp:decode(SubEl, ?NS_CLIENT, [ignore_els]) of
 	    #iq{from = To, to = From, type = Type, id = ID} = Reply
 	      when Type == error; Type == result ->
-		ejabberd_router:route(From, To, Reply)
+		ejabberd_router:route(To, From, Reply)
 	end
     catch _:_ ->
 	    ?ERROR_MSG("got iq-result with invalid delegated "
@@ -294,9 +294,17 @@ send_disco_queries(LServer, Host, NS) ->
 	      ejabberd_local:route_iq(
 		From, To, #iq{type = get, from = From, to = To,
 			      sub_els = [#disco_info{node = Node}]},
-		fun(#iq{type = result, sub_els = [#disco_info{} = Info]}) ->
-			Proc = gen_mod:get_module_proc(LServer, ?MODULE),
-			gen_server:cast(Proc, {disco_info, Type, Host, NS, Info});
+		fun(#iq{type = result, sub_els = [SubEl]}) ->
+			try xmpp:decode(SubEl) of
+			    #disco_info{} = Info->
+				Proc = gen_mod:get_module_proc(LServer, ?MODULE),
+				gen_server:cast(
+				  Proc, {disco_info, Type, Host, NS, Info});
+			    _ ->
+				ok
+			catch _:{xmpp_codec, _} ->
+				ok
+			end;
 		   (_) ->
 			ok
 		end)
