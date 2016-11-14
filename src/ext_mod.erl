@@ -45,7 +45,7 @@
 start() ->
     [code:add_patha(module_ebin_dir(Module))
      || {Module, _} <- installed()],
-    application:start(inets),
+    p1_http:start(),
     ejabberd_commands:register_commands(get_commands_spec()).
 
 stop() ->
@@ -271,7 +271,7 @@ geturl(Url, Hdrs, UsrOpts) ->
         [U, Pass] -> [{proxy_user, U}, {proxy_password, Pass}];
         _ -> []
     end,
-    case httpc:request(get, {Url, Hdrs}, Host++User++UsrOpts++[{version, "HTTP/1.0"}], []) of
+    case p1_http:request(get, Url, Hdrs, [], Host++User++UsrOpts++[{version, "HTTP/1.0"}]) of
         {ok, {{_, 200, _}, Headers, Response}} ->
             {ok, Headers, Response};
         {ok, {{_, Code, _}, _Headers, Response}} ->
