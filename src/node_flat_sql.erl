@@ -61,7 +61,7 @@
          encode_host_like/1]).
 
 init(_Host, _ServerHost, _Opts) ->
-    %%pubsub_subscription_sql:init(),
+    %%pubsub_subscription_sql:init(Host, ServerHost, Opts),
     ok.
 
 terminate(_Host, _ServerHost) ->
