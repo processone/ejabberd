@@ -2083,7 +2083,7 @@ retrieve_messages_from_room_via_mam(Config, Range) ->
 			 xmlns = ?NS_MAM_1,
 			 queryid = QID,
 			 sub_els =
-			     [#forwarded{
+			     [#forwarded_decoded{
 				 delay = #delay{},
 				 sub_els = [#message{
 					       from = MyNickJID,
@@ -2411,7 +2411,7 @@ carbons_slave(Config) ->
        #message{from = MyBareJID, to = MyJID, type = chat,
 		sub_els =
 		    [#carbons_sent{
-			forwarded = #forwarded{
+			forwarded = #forwarded_decoded{
 				       sub_els =
 					   [#message{from = Peer,
 						     to = MyBareJID,
@@ -2420,7 +2420,7 @@ carbons_slave(Config) ->
        #message{from = MyBareJID, to = MyJID, type = chat,
 		sub_els =
 		    [#carbons_sent{
-			forwarded = #forwarded{
+			forwarded = #forwarded_decoded{
 				       sub_els =
 					   [#message{from = Peer,
 						     to = Peer,
@@ -2429,7 +2429,7 @@ carbons_slave(Config) ->
        #message{from = MyBareJID, to = MyJID, type = chat,
 		sub_els =
 		    [#carbons_received{
-			forwarded = #forwarded{
+			forwarded = #forwarded_decoded{
 				       sub_els =
 					   [#message{from = Peer,
 						     to = MyBareJID,
@@ -2438,7 +2438,7 @@ carbons_slave(Config) ->
        #message{from = MyBareJID, to = MyJID, type = chat,
 		sub_els =
 		    [#carbons_received{
-			forwarded = #forwarded{
+			forwarded = #forwarded_decoded{
 				       sub_els =
 					   [#message{from = Peer,
 						     to = Peer,
@@ -2560,7 +2560,7 @@ mam_query_all(Config, NS) ->
                            [#mam_result{
                                queryid = QID,
                                sub_els =
-                                   [#forwarded{
+				   [#forwarded_decoded{
                                        delay = #delay{},
                                        sub_els =
                                            [#message{
@@ -2599,7 +2599,7 @@ mam_query_with(Config, JID, NS) ->
                        sub_els =
                            [#mam_result{
                                sub_els =
-                                   [#forwarded{
+				   [#forwarded_decoded{
                                        delay = #delay{},
                                        sub_els =
                                            [#message{
@@ -2640,7 +2640,7 @@ mam_query_rsm(Config, NS) ->
                            [#mam_result{
 			       xmlns = NS,
                                sub_els =
-                                   [#forwarded{
+				   [#forwarded_decoded{
                                        delay = #delay{},
                                        sub_els =
                                            [#message{
@@ -2677,7 +2677,7 @@ mam_query_rsm(Config, NS) ->
                            [#mam_result{
 			       xmlns = NS,
                                sub_els =
-                                   [#forwarded{
+				   [#forwarded_decoded{
                                        delay = #delay{},
                                        sub_els =
                                            [#message{
@@ -2717,7 +2717,7 @@ mam_query_rsm(Config, NS) ->
                            [#mam_result{
 			       xmlns = NS,
                                sub_els =
-                                   [#forwarded{
+				   [#forwarded_decoded{
                                        delay = #delay{},
                                        sub_els =
                                            [#message{
@@ -2773,7 +2773,7 @@ mam_query_rsm(Config, NS) ->
 			   [#mam_result{
 			       xmlns = NS,
 			       sub_els =
-				   [#forwarded{
+				   [#forwarded_decoded{
 				       delay = #delay{},
 				       sub_els =
 					   [#message{
