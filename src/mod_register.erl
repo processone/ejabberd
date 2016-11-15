@@ -613,14 +613,11 @@ check_ip_access(undefined, _IPAccess) ->
 check_ip_access(IPAddress, IPAccess) ->
     acl:match_rule(global, IPAccess, IPAddress).
 
-mod_opt_type(access) ->
-    fun acl:access_rules_validator/1;
-mod_opt_type(access_from) ->
-    fun (A) when is_atom(A) -> A end;
+mod_opt_type(access) -> fun acl:access_rules_validator/1;
+mod_opt_type(access_from) -> fun acl:access_rules_validator/1;
 mod_opt_type(captcha_protected) ->
     fun (B) when is_boolean(B) -> B end;
-mod_opt_type(ip_access) ->
-    fun acl:access_rules_validator/1;
+mod_opt_type(ip_access) -> fun acl:access_rules_validator/1;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(password_strength) ->
     fun (N) when is_number(N), N >= 0 -> N end;

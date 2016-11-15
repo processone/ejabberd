@@ -93,12 +93,10 @@ mod_opt_type(auth_type) ->
     end;
 mod_opt_type(recbuf) ->
     fun (I) when is_integer(I), I > 0 -> I end;
-mod_opt_type(shaper) ->
-    fun (A) when is_atom(A) -> A end;
+mod_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
 mod_opt_type(sndbuf) ->
     fun (I) when is_integer(I), I > 0 -> I end;
-mod_opt_type(access) ->
-    fun (A) when is_atom(A) -> A end;
+mod_opt_type(access) -> fun acl:access_rules_validator/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(hostname) -> fun iolist_to_binary/1;
 mod_opt_type(ip) ->
