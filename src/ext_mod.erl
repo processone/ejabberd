@@ -272,9 +272,9 @@ geturl(Url, Hdrs, UsrOpts) ->
         _ -> []
     end,
     case p1_http:request(get, Url, Hdrs, [], Host++User++UsrOpts++[{version, "HTTP/1.0"}]) of
-        {ok, {{_, 200, _}, Headers, Response}} ->
+        {ok, 200, Headers, Response} ->
             {ok, Headers, Response};
-        {ok, {{_, Code, _}, _Headers, Response}} ->
+        {ok, Code, _Headers, Response} ->
             {error, {Code, Response}};
         {error, Reason} ->
             {error, Reason}
