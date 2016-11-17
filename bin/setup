@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# Script for ejabberd autoconfiguration on local machine
+#
+# @see Here are project requirements for a full blown compile
+#      - erlang (v18.0 used during latest compile)
+#      - gcc, autotools, binutils (for dealing with some compile stuff
+
+
+# Configuration settings
+DIR_SRC=/home/ben/lavori/ejabberd.server/ejabberd
+DIR_TARGET=/opt/ejabberd
+
+#DEBUG=--enable-debug
+DEBUG=--disable-debug
+
+
+
+
+# Business logic
+keypress() {
+    echo -n "premere un tasto per continuare..."
+    read -n 1 junk
+}
+if [ "$1" == "" ]; then
+    echo -e "\nUsage:         [Run this script from GIT source code dir]"
+    echo -e "    '$0 config'   Configure ejabberd after a GIT sync"
+    exit(1)
+fi
+cd $DIR_SRC
+make clean
+./autogen.sh
+keypress
+./configure --prefix=$DIR_TARGET \
+            $DEBUG
+keypress
+make
+keypress
+make install
+keypress
+cd -
