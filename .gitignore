@@ -29,6 +29,7 @@
 /doc/version.tex
 /ebin/
 /ejabberd.init
+/ejabberd.service
 /ejabberdctl.example
 XmppAddr.hrl
 /rel/ejabberd/

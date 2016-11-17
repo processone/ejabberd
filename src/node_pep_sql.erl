@@ -31,7 +31,6 @@
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
--include("jlib.hrl").
 -include("logger.hrl").
 
 -export([init/3, terminate/2, options/0, features/0,

@@ -17,7 +17,7 @@
 	 can_use_nick/4, get_rooms/2, get_nick/3, set_nick/4,
 	 import/1, import/2, export/1]).
 
--include("jlib.hrl").
+-include("jid.hrl").
 -include("mod_muc.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").

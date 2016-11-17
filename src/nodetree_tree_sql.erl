@@ -40,7 +40,7 @@
 -compile([{parse_transform, ejabberd_sql_pt}]).
 
 -include("pubsub.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("ejabberd_sql_pt.hrl").
 
 -export([init/3, terminate/2, options/0, set_node/1,
@@ -97,7 +97,7 @@ set_node(Record) when is_record(Record, pubsub_node) ->
     case Nidx of
 	none ->
 	    Txt = <<"Node index not found">>,
-	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, Txt)};
+	    {error, xmpp:err_internal_server_error(Txt, ?MYLANG)};
 	_ ->
 	    lists:foreach(fun ({Key, Value}) ->
 			SKey = iolist_to_binary(atom_to_list(Key)),
@@ -125,9 +125,9 @@ get_node(Host, Node) ->
 	{selected, [RItem]} ->
 	    raw_to_node(Host, RItem);
 	{'EXIT', _Reason} ->
-	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Database failure">>)};
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)};
 	_ ->
-	    {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"Node not found">>)}
+	    {error, xmpp:err_item_not_found(<<"Node not found">>, ?MYLANG)}
     end.
 
 get_node(Nidx) ->
@@ -139,9 +139,9 @@ get_node(Nidx) ->
 	{selected, [{Host, Node, Parent, Type}]} ->
 	    raw_to_node(Host, {Node, Parent, Type, Nidx});
 	{'EXIT', _Reason} ->
-	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Database failure">>)};
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)};
 	_ ->
-	    {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"Node not found">>)}
+	    {error, xmpp:err_item_not_found(<<"Node not found">>, ?MYLANG)}
     end.
 
 get_nodes(Host, _From) ->
@@ -249,12 +249,12 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 			Other -> Other
 		    end;
 		false ->
-		    {error, ?ERR_FORBIDDEN}
+		    {error, xmpp:err_forbidden()}
 	    end;
 	{result, _} ->
-	    {error, ?ERRT_CONFLICT(?MYLANG, <<"Node already exists">>)};
+	    {error, xmpp:err_conflict(<<"Node already exists">>, ?MYLANG)};
 	{error, db_fail} ->
-	    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Database failure">>)}
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)}
     end.
 
 delete_node(Host, Node) ->

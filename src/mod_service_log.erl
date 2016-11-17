@@ -35,7 +35,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 start(Host, _Opts) ->
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
@@ -54,17 +54,18 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
+-spec log_user_send(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
 log_user_send(Packet, _C2SState, From, To) ->
     log_packet(From, To, Packet, From#jid.lserver),
     Packet.
 
+-spec log_user_receive(stanza(), ejabberd_c2s:state(), jid(), jid(), jid()) -> stanza().
 log_user_receive(Packet, _C2SState, _JID, From, To) ->
     log_packet(From, To, Packet, To#jid.lserver),
     Packet.
 
-log_packet(From, To,
-	   #xmlel{name = Name, attrs = Attrs, children = Els},
-	   Host) ->
+-spec log_packet(jid(), jid(), stanza(), binary()) -> ok.
+log_packet(From, To, Packet, Host) ->
     Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers,
                                      fun(L) ->
                                              lists:map(
@@ -76,22 +77,11 @@ log_packet(From, To,
                                                        end
                                                end, L)
                                      end, []),
-    ServerJID = #jid{user = <<"">>, server = Host,
-		     resource = <<"">>, luser = <<"">>, lserver = Host,
-		     lresource = <<"">>},
-    NewAttrs =
-	jlib:replace_from_to_attrs(jid:to_string(From),
-				   jid:to_string(To), Attrs),
-    FixedPacket = #xmlel{name = Name, attrs = NewAttrs,
-			 children = Els},
+    ServerJID = jid:make(Host),
+    FixedPacket = xmpp:set_from_to(Packet, From, To),
     lists:foreach(fun (Logger) ->
 			  ejabberd_router:route(ServerJID,
-						#jid{user = <<"">>,
-						     server = Logger,
-						     resource = <<"">>,
-						     luser = <<"">>,
-						     lserver = Logger,
-						     lresource = <<"">>},
+						jid:make(Logger),
 						#xmlel{name = <<"route">>,
 						       attrs = [],
 						       children =

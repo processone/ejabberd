@@ -77,7 +77,6 @@ start(normal, _Args) ->
     ejabberd_oauth:start(),
     gen_mod:start_modules(),
     ejabberd_listener:start_listeners(),
-    ejabberd_service:start(),
     register_elixir_config_hooks(),
     ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
     Sup;
@@ -226,7 +225,6 @@ start_apps() ->
     ejabberd:start_app(fast_tls),
     ejabberd:start_app(fast_xml),
     ejabberd:start_app(stringprep),
-    http_p1:start(),
     ejabberd:start_app(cache_tab).
 
 opt_type(net_ticktime) ->

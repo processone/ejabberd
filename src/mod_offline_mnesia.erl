@@ -15,7 +15,7 @@
 	 read_message/3, remove_message/3, read_all_messages/2,
 	 remove_all_messages/2, count_messages/2, import/2]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_offline.hrl").
 -include("logger.hrl").
 
@@ -42,7 +42,11 @@ store_messages(_Host, US, Msgs, Len, MaxOfflineMsgs) ->
 				mnesia:write_lock_table(offline_msg);
 			   true -> ok
 			end,
-			lists:foreach(fun (M) -> mnesia:write(M) end, Msgs)
+			lists:foreach(
+			  fun(#offline_msg{packet = Pkt} = M) ->
+				  El = xmpp:encode(Pkt),
+				  mnesia:write(M#offline_msg{packet = El})
+			  end, Msgs)
 		end
 	end,
     mnesia:transaction(F).
@@ -107,9 +111,7 @@ read_message_headers(LUser, LServer) ->
 	     fun(#offline_msg{from = From, to = To, packet = Pkt,
 			      timestamp = TS}) ->
 		     Seq = now_to_integer(TS),
-		     NewPkt = jlib:add_delay_info(Pkt, LServer, TS,
-						  <<"Offline Storage">>),
-		     {Seq, From, To, NewPkt}
+		     {Seq, From, To, TS, Pkt}
 	     end, Msgs),
     lists:keysort(1, Hdrs).
 
@@ -127,12 +129,16 @@ read_message(LUser, LServer, I) ->
 remove_message(LUser, LServer, I) ->
     US = {LUser, LServer},
     TS = integer_to_now(I),
-    Msgs = mnesia:dirty_match_object(
-	     offline_msg, #offline_msg{us = US, timestamp = TS, _ = '_'}),
-    lists:foreach(
-      fun(Msg) ->
-	      mnesia:dirty_delete_object(Msg)
-      end, Msgs).
+    case mnesia:dirty_match_object(
+	   offline_msg, #offline_msg{us = US, timestamp = TS, _ = '_'}) of
+	[] ->
+	    {error, notfound};
+	Msgs ->
+	    lists:foreach(
+	      fun(Msg) ->
+		      mnesia:dirty_delete_object(Msg)
+	      end, Msgs)
+    end.
 
 read_all_messages(LUser, LServer) ->
     US = {LUser, LServer},

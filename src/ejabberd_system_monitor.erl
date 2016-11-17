@@ -41,7 +41,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -record(state, {}).
 
@@ -61,23 +61,22 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, Opts,
 			  []).
 
+-spec process_command(jid(), jid(), stanza()) -> ok.
 process_command(From, To, Packet) ->
     case To of
       #jid{luser = <<"">>, lresource = <<"watchdog">>} ->
-	  #xmlel{name = Name} = Packet,
-	  case Name of
-	    <<"message">> ->
+	  case Packet of
+	    #message{body = Body} ->
 		LFrom =
 		    jid:tolower(jid:remove_resource(From)),
 		case lists:member(LFrom, get_admin_jids()) of
 		  true ->
-		      Body = fxml:get_path_s(Packet,
-					    [{elem, <<"body">>}, cdata]),
+		      BodyText = xmpp:get_text(Body),
 		      spawn(fun () ->
 				    process_flag(priority, high),
-				    process_command1(From, To, Body)
+				    process_command1(From, To, BodyText)
 			    end),
-		      stop;
+		      ok;
 		  false -> ok
 		end;
 	    _ -> ok
@@ -186,24 +185,20 @@ process_large_heap(Pid, Info) ->
                            "much memory:~n~p~n~s",
                            [node(), Pid, Info, DetailedInfo])),
     From = jid:make(<<"">>, Host, <<"watchdog">>),
-    Hint = [#xmlel{name = <<"no-permanent-store">>,
-		   attrs = [{<<"xmlns">>, ?NS_HINTS}]}],
-    lists:foreach(fun (JID) ->
-                          send_message(From, jid:make(JID), Body, Hint)
-                  end, JIDs).
+    Hint = [#hint{type = 'no-permanent-store'}],
+    lists:foreach(
+      fun(JID) ->
+	      send_message(From, jid:make(JID), Body, Hint)
+      end, JIDs).
 
 send_message(From, To, Body) ->
     send_message(From, To, Body, []).
 
 send_message(From, To, Body, ExtraEls) ->
     ejabberd_router:route(From, To,
-			  #xmlel{name = <<"message">>,
-				 attrs = [{<<"type">>, <<"chat">>}],
-				 children =
-				     [#xmlel{name = <<"body">>, attrs = [],
-					     children =
-						 [{xmlcdata, Body}]}
-				      | ExtraEls]}).
+			  #message{type = chat,
+				   body = xmpp:mk_text(Body),
+				   sub_els = ExtraEls}).
 
 get_admin_jids() ->
     ejabberd_config:get_option(
@@ -305,7 +300,7 @@ process_command2([<<"showlh">>, SNode], From, To) ->
 process_command2([<<"setlh">>, SNode, NewValueString],
 		 From, To) ->
     Node = jlib:binary_to_atom(SNode),
-    NewValue = jlib:binary_to_integer(NewValueString),
+    NewValue = binary_to_integer(NewValueString),
     remote_command(Node, [setlh, NewValue], From, To);
 process_command2([<<"help">>], From, To) ->
     send_message(To, From, help());

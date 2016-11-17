@@ -60,7 +60,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("ejabberd_http.hrl").
 
@@ -334,7 +334,7 @@ build_captcha_li_list2(Lang, IP) ->
     case ejabberd_captcha:create_captcha(SID, From, To,
 					 Lang, IP, Args)
 	of
-      {ok, Id, _} ->
+      {ok, Id, _, _} ->
 	  {_, {CImg, CText, CId, CKey}} =
 	      ejabberd_captcha:build_captcha_html(Id, Lang),
 	  [?XE(<<"li">>,

@@ -38,7 +38,7 @@ start() ->
 
 get_string() ->
     R = crypto:rand_uniform(0, ?THRESHOLD),
-    jlib:integer_to_binary(R).
+    integer_to_binary(R).
 
 uniform() ->
     crypto:rand_uniform(0, ?THRESHOLD)/?THRESHOLD.

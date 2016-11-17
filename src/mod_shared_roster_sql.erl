@@ -20,7 +20,7 @@
 	 add_user_to_group/3, remove_user_from_group/3, import/1,
 	 import/2, export/1]).
 
--include("jlib.hrl").
+-include("jid.hrl").
 -include("mod_roster.hrl").
 -include("mod_shared_roster.hrl").
 -include("ejabberd_sql_pt.hrl").

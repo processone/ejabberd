@@ -31,13 +31,13 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/3,
+-export([start/2, stop/1, process_local_iq/1,
 	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
@@ -50,35 +50,20 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_VERSION).
 
-process_local_iq(_From, To,
-		 #iq{id = _ID, type = Type, xmlns = _XMLNS,
-		     sub_el = SubEl, lang = Lang} =
-		     IQ) ->
-    case Type of
-      set ->
-	  Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
-	  IQ#iq{type = error, sub_el = [SubEl, ?ERRT_NOT_ALLOWED(Lang, Txt)]};
-      get ->
-	  Host = To#jid.lserver,
-	  OS = case gen_mod:get_module_opt(Host, ?MODULE, show_os,
-                                           fun(B) when is_boolean(B) -> B end,
-					   true)
-		   of
-		 true -> [get_os()];
-		 false -> []
-	       end,
-	  IQ#iq{type = result,
-		sub_el =
-		    [#xmlel{name = <<"query">>,
-			    attrs = [{<<"xmlns">>, ?NS_VERSION}],
-			    children =
-				[#xmlel{name = <<"name">>, attrs = [],
-					children =
-					    [{xmlcdata, <<"ejabberd">>}]},
-				 #xmlel{name = <<"version">>, attrs = [],
-					children = [{xmlcdata, ?VERSION}]}]
-				  ++ OS}]}
-    end.
+process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_local_iq(#iq{type = get, to = To} = IQ) ->
+    Host = To#jid.lserver,
+    OS = case gen_mod:get_module_opt(Host, ?MODULE, show_os,
+				     fun(B) when is_boolean(B) -> B end,
+				     true) of
+	     true -> get_os();
+	     false -> undefined
+	 end,
+    xmpp:make_iq_result(IQ, #version{name = <<"ejabberd">>,
+				     ver = ?VERSION,
+				     os = OS}).
 
 get_os() ->
     {Osfamily, Osname} = os:type(),
@@ -89,9 +74,7 @@ get_os() ->
 						     [Major, Minor, Release]));
 		  VersionString -> VersionString
 		end,
-    OS = <<OSType/binary, " ", OSVersion/binary>>,
-    #xmlel{name = <<"os">>, attrs = [],
-	   children = [{xmlcdata, OS}]}.
+    <<OSType/binary, " ", OSVersion/binary>>.
 
 depends(_Host, _Opts) ->
     [].

@@ -42,6 +42,7 @@
 	 change_shaper/2,
 	 monitor/1,
 	 get_sockmod/1,
+	 get_transport/1,
 	 get_peer_certificate/1,
 	 get_verify_result/1,
 	 close/1,
@@ -118,6 +119,9 @@ monitor(FsmRef) -> erlang:monitor(process, FsmRef).
 get_sockmod(FsmRef) ->
     gen_server:call(FsmRef, get_sockmod).
 
+get_transport(FsmRef) ->
+    gen_server:call(FsmRef, get_transport).
+
 get_peer_certificate(FsmRef) ->
     gen_server:call(FsmRef, get_peer_certificate).
 
@@ -185,6 +189,19 @@ handle_call({change_shaper, Shaper}, _From, State) ->
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 handle_call(get_sockmod, _From, State) ->
     Reply = State#state.sockmod,
+    {reply, Reply, State, ?HIBERNATE_TIMEOUT};
+handle_call(get_transport, _From, State) ->
+    Reply = case State#state.sockmod of
+		gen_tcp -> tcp;
+		fast_tls -> tls;
+		ezlib ->
+		    case ezlib:get_sockmod(State#state.socket) of
+			tcp -> tcp_zlib;
+			tls -> tls_zlib
+		    end;
+		ejabberd_http_bind -> http_bind;
+		ejabberd_http_ws -> websocket
+	    end,
     {reply, Reply, State, ?HIBERNATE_TIMEOUT};
 handle_call(get_peer_certificate, _From, State) ->
     Reply = fast_tls:get_peer_certificate(State#state.socket),

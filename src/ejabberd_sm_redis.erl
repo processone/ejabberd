@@ -19,7 +19,6 @@
 -include("ejabberd.hrl").
 -include("ejabberd_sm.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
 
 %%%===================================================================
 %%% API

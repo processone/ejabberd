@@ -39,6 +39,7 @@
 	 remove_connection/2, find_connection/2,
 	 dirty_get_connections/0, allow_host/2,
 	 incoming_s2s_number/0, outgoing_s2s_number/0,
+	 stop_all_connections/0,
 	 clean_temporarily_blocked_table/0,
 	 list_temporarily_blocked_hosts/0,
 	 external_host_overloaded/1, is_temporarly_blocked/1,
@@ -55,7 +56,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("ejabberd_commands.hrl").
 
@@ -89,7 +90,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
 
--spec route(jid(), jid(), xmlel()) -> ok.
+-spec route(jid(), jid(), xmpp_element()) -> ok.
 
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
@@ -222,6 +223,7 @@ check_peer_certificate(SockMod, Sock, Peer) ->
 	    {error, <<"Cannot get peer certificate">>}
     end.
 
+-spec make_key({binary(), binary()}, binary()) -> binary().
 make_key({From, To}, StreamID) ->
     Secret = ejabberd_config:get_option(shared_key, fun(V) -> V end),
     p1_sha:to_hexlist(
@@ -275,7 +277,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
-
+-spec clean_table_from_bad_node(node()) -> any().
 clean_table_from_bad_node(Node) ->
     F = fun() ->
 		Es = mnesia:select(
@@ -289,6 +291,7 @@ clean_table_from_bad_node(Node) ->
 	end,
     mnesia:async_dirty(F).
 
+-spec do_route(jid(), jid(), stanza()) -> ok | false.
 do_route(From, To, Packet) ->
     ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket "
 	   "~P~n",
@@ -296,28 +299,16 @@ do_route(From, To, Packet) ->
     case find_connection(From, To) of
       {atomic, Pid} when is_pid(Pid) ->
 	  ?DEBUG("sending to process ~p~n", [Pid]),
-	  #xmlel{name = Name, attrs = Attrs, children = Els} =
-	      Packet,
-	  NewAttrs =
-	      jlib:replace_from_to_attrs(jid:to_string(From),
-					 jid:to_string(To), Attrs),
 	  #jid{lserver = MyServer} = From,
 	  ejabberd_hooks:run(s2s_send_packet, MyServer,
 			     [From, To, Packet]),
-	  send_element(Pid,
-		       #xmlel{name = Name, attrs = NewAttrs, children = Els}),
+	  send_element(Pid, xmpp:set_from_to(Packet, From, To)),
 	  ok;
       {aborted, _Reason} ->
-	  case fxml:get_tag_attr_s(<<"type">>, Packet) of
-	    <<"error">> -> ok;
-	    <<"result">> -> ok;
-	    _ ->
-		Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
-		Txt = <<"No s2s connection found">>,
-		Err = jlib:make_error_reply(
-			Packet, ?ERRT_SERVICE_UNAVAILABLE(Lang, Txt)),
-		ejabberd_router:route(To, From, Err)
-	  end,
+	  Lang = xmpp:get_lang(Packet),
+	  Txt = <<"No s2s connection found">>,
+	  Err = xmpp:err_service_unavailable(Txt, Lang),
+	  ejabberd_router:route_error(To, From, Packet, Err),
 	  false
     end.
 
@@ -367,9 +358,11 @@ find_connection(From, To) ->
 	  end
     end.
 
+-spec choose_connection(jid(), [#s2s{}]) -> pid().
 choose_connection(From, Connections) ->
     choose_pid(From, [C#s2s.pid || C <- Connections]).
 
+-spec choose_pid(jid(), [pid()]) -> pid().
 choose_pid(From, Pids) ->
     Pids1 = case [P || P <- Pids, node(P) == node()] of
 	      [] -> Pids;
@@ -417,22 +410,21 @@ new_connection(MyServer, Server, From, FromTo,
     end,
     TRes.
 
+-spec max_s2s_connections_number({binary(), binary()}) -> integer().
 max_s2s_connections_number({From, To}) ->
-    case acl:match_rule(From, max_s2s_connections,
-			jid:make(<<"">>, To, <<"">>))
-	of
+    case acl:match_rule(From, max_s2s_connections, jid:make(To)) of
       Max when is_integer(Max) -> Max;
       _ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER
     end.
 
+-spec max_s2s_connections_number_per_node({binary(), binary()}) -> integer().
 max_s2s_connections_number_per_node({From, To}) ->
-    case acl:match_rule(From, max_s2s_connections_per_node,
-			jid:make(<<"">>, To, <<"">>))
-	of
+    case acl:match_rule(From, max_s2s_connections_per_node, jid:make(To)) of
       Max when is_integer(Max) -> Max;
       _ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE
     end.
 
+-spec needed_connections_number([#s2s{}], integer(), integer()) -> integer().
 needed_connections_number(Ls, MaxS2SConnectionsNumber,
 			  MaxS2SConnectionsNumberPerNode) ->
     LocalLs = [L || L <- Ls, node(L#s2s.pid) == node()],
@@ -444,6 +436,7 @@ needed_connections_number(Ls, MaxS2SConnectionsNumber,
 %% Description: Return true if the destination must be considered as a
 %% service.
 %% --------------------------------------------------------------------
+-spec is_service(jid(), jid()) -> boolean().
 is_service(From, To) ->
     LFromDomain = From#jid.lserver,
     case ejabberd_config:get_option(
@@ -475,18 +468,24 @@ send_element(Pid, El) ->
 get_commands_spec() ->
     [#ejabberd_commands{
         name = incoming_s2s_number,
-        tags = [stats, s2s],
+			tags = [stats, s2s],
         desc = "Number of incoming s2s connections on the node",
-        policy = admin,
-        module = ?MODULE, function = incoming_s2s_number,
-        args = [], result = {s2s_incoming, integer}},
+                        policy = admin,
+			module = ?MODULE, function = incoming_s2s_number,
+			args = [], result = {s2s_incoming, integer}},
      #ejabberd_commands{
         name = outgoing_s2s_number,
-        tags = [stats, s2s],
+			tags = [stats, s2s],
         desc = "Number of outgoing s2s connections on the node",
-        policy = admin,
-        module = ?MODULE, function = outgoing_s2s_number,
-        args = [], result = {s2s_outgoing, integer}}].
+                        policy = admin,
+			module = ?MODULE, function = outgoing_s2s_number,
+			args = [], result = {s2s_outgoing, integer}},
+     #ejabberd_commands{name = stop_all_connections,
+			tags = [s2s],
+			desc = "Stop all outgoing and incoming connections",
+			policy = admin,
+			module = ?MODULE, function = stop_all_connections,
+			args = [], result = {res, rescode}}].
 
 %% TODO Move those stats commands to ejabberd stats command ?
 incoming_s2s_number() ->
@@ -501,6 +500,15 @@ supervisor_count(Supervisor) ->
         Result ->
             length(Result)
     end.
+
+stop_all_connections() ->
+    lists:foreach(
+      fun({_Id, Pid, _Type, _Module}) ->
+	      exit(Pid, kill)
+      end,
+      supervisor:which_children(ejabberd_s2s_in_sup) ++
+	  supervisor:which_children(ejabberd_s2s_out_sup)),
+    mnesia:clear_table(s2s).
 
 %%%----------------------------------------------------------------------
 %%% Update Mnesia tables
@@ -547,7 +555,7 @@ allow_host1(MyHost, S2SHost) ->
              s2s_access,
              fun(A) -> A end,
              all),
-    JID = jid:make(<<"">>, S2SHost, <<"">>),
+    JID = jid:make(S2SHost),
     case acl:match_rule(MyHost, Rule, JID) of
         deny -> false;
         allow ->

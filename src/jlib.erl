@@ -35,27 +35,33 @@
                            binary_to_integer/1,
                            integer_to_binary/1]}).
 
+-export([tolower/1, term_to_base64/1, base64_to_term/1,
+	 decode_base64/1, encode_base64/1, ip_to_list/1,
+	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
+	 l2i/1, i2l/1, i2l/2, queue_drop_while/2,
+	 expr_to_term/1, term_to_expr/1]).
+
+%% The following functions are used by gen_iq_handler.erl for providing backward
+%% compatibility and must not be used in other parts of the code
+%% Use xmpp:decode() and xmpp:encode() instead
+-export([iq_query_info/1, iq_to_xml/1]).
+
+%% The following functions are deprecated and will be removed soon
+%% Use functions from xmpp.erl and xmpp_util.erl instead
 -export([make_result_iq_reply/1, make_error_reply/3,
 	 make_error_reply/2, make_error_element/2,
 	 make_correct_from_to_attrs/3, replace_from_to_attrs/3,
 	 replace_from_to/3, replace_from_attrs/2, replace_from/2,
-	 remove_attr/2, tolower/1,
-	 get_iq_namespace/1, iq_query_info/1,
+	 remove_attr/2, get_iq_namespace/1,
 	 iq_query_or_response_info/1, is_iq_request_type/1,
-	 iq_to_xml/1, parse_xdata_submit/1,
-	 unwrap_carbon/1, is_standalone_chat_state/1,
+	 parse_xdata_submit/1, unwrap_carbon/1, is_standalone_chat_state/1,
 	 add_delay_info/3, add_delay_info/4,
 	 timestamp_to_legacy/1, timestamp_to_iso_basic/1, timestamp_to_iso/2,
 	 now_to_utc_string/1, now_to_local_string/1,
 	 datetime_string_to_timestamp/1,
-	 term_to_base64/1, base64_to_term/1,
-	 decode_base64/1, encode_base64/1, ip_to_list/1,
 	 rsm_encode/1, rsm_encode/2, rsm_decode/1,
 	 binary_to_integer/1, binary_to_integer/2,
-	 integer_to_binary/1, integer_to_binary/2,
-	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
-	 l2i/1, i2l/1, i2l/2, queue_drop_while/2,
-	 expr_to_term/1, term_to_expr/1]).
+	 integer_to_binary/1, integer_to_binary/2]).
 
 %% The following functions are deprecated and will be removed soon
 %% Use corresponding functions from jid.erl instead
@@ -74,7 +80,38 @@
 	     {resourceprep, 1},
 	     {jid_tolower, 1},
 	     {jid_remove_resource, 1},
-	     {jid_replace_resource, 2}]).
+	     {jid_replace_resource, 2},
+	     {add_delay_info, 3},
+	     {add_delay_info, 4},
+	     {make_result_iq_reply, 1},
+	     {make_error_reply, 3},
+	     {make_error_reply, 2},
+	     {make_error_element, 2},
+	     {make_correct_from_to_attrs, 3},
+	     {replace_from_to_attrs, 3},
+	     {replace_from_to, 3},
+	     {replace_from_attrs, 2},
+	     {replace_from, 2},
+	     {remove_attr, 2},
+	     {get_iq_namespace, 1},
+	     {iq_query_or_response_info, 1},
+	     {is_iq_request_type, 1},
+	     {parse_xdata_submit, 1},
+	     {unwrap_carbon, 1},
+	     {is_standalone_chat_state, 1},
+	     {timestamp_to_legacy, 1},
+	     {timestamp_to_iso_basic, 1},
+	     {timestamp_to_iso, 2},
+	     {now_to_utc_string, 1},
+	     {now_to_local_string, 1},
+	     {datetime_string_to_timestamp, 1},
+	     {rsm_encode, 1},
+	     {rsm_encode, 2},
+	     {rsm_decode, 1},
+	     {binary_to_integer, 1},
+	     {binary_to_integer, 2},
+	     {integer_to_binary, 1},
+	     {integer_to_binary, 2}]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").
@@ -582,7 +619,7 @@ add_delay_info(El, From, Time) ->
 		     binary()) -> xmlel().
 
 add_delay_info(El, From, Time, Desc) ->
-    DelayTag = create_delay_tag(Time, From, Desc),
+	  DelayTag = create_delay_tag(Time, From, Desc),
     fxml:append_subtags(El, [DelayTag]).
 
 -spec create_delay_tag(erlang:timestamp(), jid() | ljid() | binary(), binary())

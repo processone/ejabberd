@@ -42,7 +42,7 @@
 -include("ejabberd_http.hrl").
 -include("mod_roster.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -record(state,
 	{access_commands = [] :: list(),

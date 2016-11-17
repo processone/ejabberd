@@ -1,0 +1,31 @@
+<form_type>
+  <name>http://jabber.org/protocol/muc#request</name>
+  <doc>XEP-0045</doc>
+  <desc>
+    Forms enabling voice requests in a 
+    Multi-User Chat (MUC) room or admin
+    approval of such requests.
+  </desc>
+  <field var='muc#role'
+         type='list-single'
+         label='Requested role'>
+    <option label='Participant'>
+      <value>participant</value>
+    </option>
+  </field>
+  <field var='muc#jid'
+         type='jid-single'
+         label='User JID'/>
+  <field var='muc#roomnick'
+         type='text-single'
+         label='Nickname'/>
+  <field var='muc#request_allow'
+         type='boolean'
+         label='Grant voice to this person?'/>
+</form_type>
+
+<!--
+Local Variables:
+mode: xml
+End:
+-->

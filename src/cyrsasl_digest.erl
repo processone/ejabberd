@@ -80,7 +80,7 @@ mech_step(#state{step = 1, nonce = Nonce} = State, _) ->
 mech_step(#state{step = 3, nonce = Nonce} = State,
 	  ClientIn) ->
     case parse(ClientIn) of
-      bad -> {error, <<"bad-protocol">>};
+      bad -> {error, 'bad-protocol'};
       KeyVals ->
 	  DigestURI = proplists:get_value(<<"digest-uri">>, KeyVals, <<>>),
 	  UserName = proplists:get_value(<<"username">>, KeyVals, <<>>),
@@ -92,11 +92,11 @@ mech_step(#state{step = 3, nonce = Nonce} = State,
 		       "seems invalid: ~p (checking for Host "
 		       "~p, FQDN ~p)",
 		       [DigestURI, State#state.host, State#state.hostfqdn]),
-		{error, <<"not-authorized">>, UserName};
+		{error, 'not-authorized', UserName};
 	    true ->
 		AuthzId = proplists:get_value(<<"authzid">>, KeyVals, <<>>),
 		case (State#state.get_password)(UserName) of
-		  {false, _} -> {error, <<"not-authorized">>, UserName};
+		  {false, _} -> {error, 'not-authorized', UserName};
 		  {Passwd, AuthModule} ->
 		      case (State#state.check_password)(UserName, UserName, <<"">>,
 		                    proplists:get_value(<<"response">>, KeyVals, <<>>),
@@ -116,8 +116,8 @@ mech_step(#state{step = 3, nonce = Nonce} = State,
 			     State#state{step = 5, auth_module = AuthModule,
 					 username = UserName,
 					 authzid = AuthzId}};
-			false -> {error, <<"not-authorized">>, UserName};
-			{false, _} -> {error, <<"not-authorized">>, UserName}
+			false -> {error, 'not-authorized', UserName};
+			{false, _} -> {error, 'not-authorized', UserName}
 		      end
 		end
 	  end
@@ -134,7 +134,7 @@ mech_step(#state{step = 5, auth_module = AuthModule,
       {auth_module, AuthModule}]};
 mech_step(A, B) ->
     ?DEBUG("SASL DIGEST: A ~p B ~p", [A, B]),
-    {error, <<"bad-protocol">>}.
+    {error, 'bad-protocol'}.
 
 parse(S) -> parse1(binary_to_list(S), "", []).
 

@@ -1,0 +1,12 @@
+<form_type>
+  <name>http://jabber.org/protocol/offline</name>
+  <doc>XEP-0013</doc>
+  <desc>
+    Service Discovery extension for number of messages
+    in an offline message queue.
+  </desc>
+  <field
+      var='number_of_messages'
+      type='text-single'
+      label='Number of Offline Messages'/>
+</form_type>

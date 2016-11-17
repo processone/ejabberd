@@ -62,7 +62,7 @@ import(LServer) ->
     [{<<"select username, seconds, state from last">>,
       fun([LUser, TimeStamp, State]) ->
               #last_activity{us = {LUser, LServer},
-                             timestamp = jlib:binary_to_integer(
+                             timestamp = binary_to_integer(
                                            TimeStamp),
                              status = State}
       end}].

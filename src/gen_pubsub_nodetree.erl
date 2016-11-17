@@ -25,7 +25,6 @@
 
 -module(gen_pubsub_nodetree).
 
--include("jlib.hrl").
 
 -type(host() :: mod_pubsub:host()).
 -type(nodeId() :: mod_pubsub:nodeId()).
@@ -42,25 +41,25 @@
 -callback options() -> nodeOptions().
 
 -callback set_node(PubsubNode :: pubsubNode()) ->
-    ok | {result, NodeIdx::nodeIdx()} | {error, xmlel()}.
+    ok | {result, NodeIdx::nodeIdx()} | {error, fxml:xmlel()}.
 
 -callback get_node(Host   :: host(),
 	NodeId :: nodeId(),
-	From   :: jid()) ->
+	From   :: jid:jid()) ->
     pubsubNode() |
-    {error, xmlel()}.
+    {error, fxml:xmlel()}.
 
 -callback get_node(Host :: host(),
 	NodeId :: nodeId()) ->
     pubsubNode() |
-    {error, xmlel()}.
+    {error, fxml:xmlel()}.
 
 -callback get_node(NodeIdx :: nodeIdx()) ->
     pubsubNode() |
-    {error, xmlel()}.
+    {error, fxml:xmlel()}.
 
 -callback get_nodes(Host :: host(),
-	From :: jid())->
+	From :: jid:jid())->
     [pubsubNode()].
 
 -callback get_nodes(Host :: host())->
@@ -68,33 +67,33 @@
 
 -callback get_parentnodes(Host :: host(),
 	NodeId :: nodeId(),
-	From :: jid()) ->
+	From :: jid:jid()) ->
     [pubsubNode()] |
-    {error, xmlel()}.
+    {error, fxml:xmlel()}.
 
 -callback get_parentnodes_tree(Host :: host(),
 	NodeId :: nodeId(),
-	From :: jid()) ->
+	From :: jid:jid()) ->
     [{0, [pubsubNode(),...]}].
 
 -callback get_subnodes(Host :: host(),
 	NodeId :: nodeId(),
-	From :: jid()) ->
+	From :: jid:jid()) ->
     [pubsubNode()].
 
 -callback get_subnodes_tree(Host :: host(),
 	NodeId :: nodeId(),
-	From :: jid()) ->
+	From :: jid:jid()) ->
     [pubsubNode()].
 
 -callback create_node(Host :: host(),
 	NodeId :: nodeId(),
 	Type :: binary(),
-	Owner :: jid(),
+	Owner :: jid:jid(),
 	Options :: nodeOptions(),
 	Parents :: [nodeId()]) ->
     {ok, NodeIdx::nodeIdx()} |
-    {error, xmlel()} |
+    {error, fxml:xmlel()} |
     {error, {virtual, {host(), nodeId()}}}.
 
 -callback delete_node(Host :: host(),

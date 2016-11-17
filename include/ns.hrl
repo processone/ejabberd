@@ -18,6 +18,10 @@
 %%%
 %%%----------------------------------------------------------------------
 
+-define(NS_COMPONENT, <<"jabber:component:accept">>).
+-define(NS_SERVER, <<"jabber:server">>).
+-define(NS_SERVER_DIALBACK, <<"jabber:server:dialback">>).
+-define(NS_CLIENT, <<"jabber:client">>).
 -define(NS_DISCO_ITEMS,
 	<<"http://jabber.org/protocol/disco#items">>).
 -define(NS_DISCO_INFO,
@@ -157,6 +161,8 @@
 -define(NS_HTTP_UPLOAD_OLD, <<"eu:siacs:conversations:http:upload">>).
 -define(NS_THUMBS_1, <<"urn:xmpp:thumbs:1">>).
 -define(NS_NICK,  <<"http://jabber.org/protocol/nick">>).
+-define(NS_SIC_0, <<"urn:xmpp:sic:0">>).
+-define(NS_SIC_1, <<"urn:xmpp:sic:1">>).
 -define(NS_MIX_0, <<"urn:xmpp:mix:0">>).
 -define(NS_MIX_SERVICEINFO_0, <<"urn:xmpp:mix:0#serviceinfo">>).
 -define(NS_MIX_NODES_MESSAGES, <<"urn:xmpp:mix:nodes:messages">>).

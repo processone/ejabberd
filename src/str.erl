@@ -64,6 +64,7 @@
          to_float/1,
          prefix/2,
          suffix/2,
+	 format/2,
          to_integer/1]).
 
 %%%===================================================================
@@ -92,7 +93,10 @@ rchr(B, C) ->
 -spec str(binary(), binary()) -> non_neg_integer().
 
 str(B1, B2) ->
-    string:str(binary_to_list(B1), binary_to_list(B2)).
+    case binary:match(B1, B2) of
+	{R, _Len} -> R+1;
+	_ -> 0
+    end.
 
 -spec rstr(binary(), binary()) -> non_neg_integer().
 
@@ -112,7 +116,7 @@ cspan(B1, B2) ->
 -spec copies(binary(), non_neg_integer()) -> binary().
 
 copies(B, N) ->
-    iolist_to_binary(string:copies(binary_to_list(B), N)).
+    binary:copy(B, N).
 
 -spec words(binary()) -> pos_integer().
 
@@ -200,7 +204,7 @@ join(L, Sep) ->
 -spec substr(binary(), pos_integer()) -> binary().
 
 substr(B, N) ->
-    iolist_to_binary(string:substr(binary_to_list(B), N)).
+    binary_part(B, N-1, byte_size(B)-N+1).
 
 -spec chr(binary(), char()) -> non_neg_integer().
 
@@ -220,7 +224,7 @@ chars(C, N) ->
 -spec substr(binary(), pos_integer(), non_neg_integer()) -> binary().
 
 substr(B, S, E) ->
-    iolist_to_binary(string:substr(binary_to_list(B), S, E)).
+    binary_part(B, S-1, E).
 
 -spec strip(binary(), both | left | right, char()) -> binary().
 
@@ -276,6 +280,11 @@ prefix(Prefix, B) ->
 
 suffix(B1, B2) ->
     lists:suffix(binary_to_list(B1), binary_to_list(B2)).
+
+-spec format(io:format(), list()) -> binary().
+
+format(Format, Args) ->
+    iolist_to_binary(io_lib:format(Format, Args)).
 
 %%%===================================================================
 %%% Internal functions

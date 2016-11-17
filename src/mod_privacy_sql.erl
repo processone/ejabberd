@@ -28,7 +28,7 @@
 	 sql_get_privacy_list_id_t/2,
 	 sql_set_default_privacy_list/2, sql_set_privacy_list/2]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -47,12 +47,7 @@ process_lists_get(LUser, LServer) ->
 	      end,
     case catch sql_get_privacy_list_names(LUser, LServer) of
       {selected, Names} ->
-	  LItems = lists:map(fun ({N}) ->
-				     #xmlel{name = <<"list">>,
-					    attrs = [{<<"name">>, N}],
-					    children = []}
-			     end,
-			     Names),
+	  LItems = lists:map(fun ({N}) -> N end, Names),
 	  {Default, LItems};
       _ -> error
     end.
@@ -69,7 +64,15 @@ process_list_get(LUser, LServer, Name) ->
       _ -> error
     end.
 
-process_default_set(LUser, LServer, {value, Name}) ->
+process_default_set(LUser, LServer, none) ->
+    case catch sql_unset_default_privacy_list(LUser,
+					      LServer)
+	of
+      {'EXIT', _Reason} -> {atomic, error};
+      {error, _Reason} -> {atomic, error};
+      _ -> {atomic, ok}
+    end;
+process_default_set(LUser, LServer, Name) ->
     F = fun () ->
 		case sql_get_privacy_list_names_t(LUser) of
 		  {selected, []} -> not_found;
@@ -80,15 +83,7 @@ process_default_set(LUser, LServer, {value, Name}) ->
 		      end
 		end
 	end,
-    sql_queries:sql_transaction(LServer, F);
-process_default_set(LUser, LServer, false) ->
-    case catch sql_unset_default_privacy_list(LUser,
-					      LServer)
-	of
-      {'EXIT', _Reason} -> {atomic, error};
-      {error, _Reason} -> {atomic, error};
-      _ -> {atomic, ok}
-    end.
+    sql_queries:sql_transaction(LServer, F).
 
 process_active_set(LUser, LServer, Name) ->
     case catch sql_get_privacy_list_id(LUser, LServer, Name) of
@@ -203,7 +198,7 @@ export(Server) ->
 				 [<<"select id from privacy_list order by "
 				    "id desc limit 1;">>]) of
         {selected, [<<"id">>], [[I]]} ->
-            put(id, jlib:binary_to_integer(I));
+            put(id, binary_to_integer(I));
         _ ->
             put(id, 0)
     end,

@@ -35,7 +35,7 @@
 -include("ejabberd.hrl").
 -include("ejabberd_oauth.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("jid.hrl").
 
 init() ->
     rest:start(?MYNAME),

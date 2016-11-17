@@ -16,7 +16,7 @@
 	 get_motd/1, is_motd_user/2, set_motd_user/2, import/1,
 	 import/2, export/1]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_announce.hrl").
 -include("ejabberd_sql_pt.hrl").
 

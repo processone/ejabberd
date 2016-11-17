@@ -1,0 +1,189 @@
+<form_type>
+  <name>http://jabber.org/protocol/pubsub#node_config</name>
+  <doc>XEP-0060</doc>
+  <desc>Forms enabling configuration of pubsub nodes</desc>
+  <field var='pubsub#access_model'
+         type='list-single'
+         label='Specify the access model'>
+    <option label='Subscription requests must be approved and only subscribers may retrieve items'>
+      <value>authorize</value>
+    </option>
+    <option label='Anyone may subscribe and retrieve items'>
+      <value>open</value>
+    </option>
+    <option label='Anyone with a presence subscription of both or from may subscribe and retrieve items'>
+      <value>presence</value>
+    </option>
+    <option label='Anyone in the specified roster group(s) may subscribe and retrieve items'>
+      <value>roster</value>
+    </option>
+    <option label='Only those on a whitelist may subscribe and retrieve items'>
+      <value>whitelist</value>
+    </option>
+  </field>
+  <field var='pubsub#body_xslt'
+         type='text-single'
+         label='The URL of an XSL transformation which can be
+                applied to payloads in order to generate an
+                appropriate message body element.'/>
+  <field var='pubsub#children_association_policy'
+         type='list-single'
+         label='Who may associate leaf nodes with a collection'>
+    <option label='Anyone may associate leaf nodes with the collection'>
+      <value>all</value>
+    </option>
+    <option label='Only collection node owners may associate leaf nodes with the collection'>
+      <value>owners</value>
+    </option>
+    <option label='Only those on a whitelist may associate leaf nodes with the collection'>
+      <value>whitelist</value>
+    </option>
+  </field>
+  <field var='pubsub#children_association_whitelist'
+         type='jid-multi'
+         label='The list of JIDs that may associate leaf nodes with a collection'/>
+  <field var='pubsub#children'
+         type='text-multi'
+         label='The child nodes (leaf or collection) associated with a collection'/>
+  <field var='pubsub#children_max'
+         type='text-single'
+         label='The maximum number of child nodes that can be associated with a collection'/>
+  <field var='pubsub#collection'
+         type='text-multi'
+         label='The collections with which a node is affiliated'/>
+  <field var='pubsub#contact'
+         type='jid-multi'
+         label='The JIDs of those to contact with questions'/>
+  <field var='pubsub#dataform_xslt'
+         type='text-single'
+         label='The URL of an XSL transformation which can be
+                applied to the payload format in order to generate
+                a valid Data Forms result that the client could
+                display using a generic Data Forms rendering
+                engine'/>
+  <field var='pubsub#deliver_notifications' type='boolean'
+         label='Deliver event notifications'>
+    <value>true</value>
+  </field>
+  <field var='pubsub#deliver_payloads'
+         type='boolean'
+         label='Deliver payloads with event notifications'/>
+  <field var='pubsub#description'
+         type='text-single'
+         label='A description of the node'/>
+  <field var='pubsub#item_expire'
+         type='text-single'
+         label='Number of seconds after which to automatically purge items'/>
+  <field var='pubsub#itemreply'
+         type='list-single'
+         label='Whether owners or publisher should receive replies to items'>
+    <option label='Statically specify a replyto of the node owner(s)'>
+      <value>owner</value>
+    </option>
+    <option label='Dynamically specify a replyto of the item publisher'>
+      <value>publisher</value>
+    </option>
+    <option>
+      <value>none</value>
+    </option>
+  </field>
+  <field var='pubsub#language'
+         type='list-single'
+         label='The default language of the node'/>
+  <field var='pubsub#max_items'
+         type='text-single'
+         label='Max # of items to persist'>
+  </field>
+  <field var='pubsub#max_payload_size'
+         type='text-single'
+         label='Max payload size in bytes'/>
+  <field var='pubsub#node_type'
+         type='list-single'
+         label='Whether the node is a leaf (default) or a collection'>
+    <option label='The node is a leaf node (default)'>
+      <value>leaf</value>
+    </option>
+    <option label='The node is a collection node'>
+      <value>collection</value>
+    </option>
+  </field>
+  <field var='pubsub#notification_type' type='list-single'
+         label='Specify the event message type'>
+    <option label='Messages of type normal'>
+      <value>normal</value>
+    </option>
+    <option label='Messages of type headline'>
+      <value>headline</value>
+    </option>
+  </field>
+  <field var='pubsub#notify_config'
+         type='boolean'
+	 label='Notify subscribers when the node configuration changes'/>
+  <field var='pubsub#notify_delete'
+         type='boolean'
+         label='Notify subscribers when the node is deleted'/>
+  <field var='pubsub#notify_retract'
+         type='boolean'
+         label='Notify subscribers when items are removed from the node'/>
+  <field var='pubsub#notify_sub'
+         type='boolean'
+         label='Whether to notify owners about new subscribers and unsubscribes'/>
+  <field var='pubsub#persist_items'
+         type='boolean'
+         label='Persist items to storage'/>
+  <field var='pubsub#presence_based_delivery'
+         type='boolean'
+         label='Only deliver notifications to available users'/>
+  <field var='pubsub#publish_model'
+         type='list-single'
+         label='Specify the publisher model'>
+    <option label='Only publishers may publish'>
+      <value>publishers</value>
+    </option>
+    <option label='Subscribers may publish'>
+      <value>subscribers</value>
+    </option>
+    <option label='Anyone may publish'>
+      <value>open</value>
+    </option>
+  </field>
+  <field var='pubsub#purge_offline'
+         type='boolean'
+         label='Purge all items when the relevant publisher goes offline'/>
+  <field var='pubsub#roster_groups_allowed'
+         type='list-multi'
+         label='Roster groups allowed to subscribe'/>
+  <field var='pubsub#send_last_published_item'
+         type='list-single'
+         label='When to send the last published item'>
+    <option label='Never'>
+      <value>never</value>
+    </option>
+    <option label='When a new subscription is processed'>
+      <value>on_sub</value>
+    </option>
+    <option label='When a new subscription is processed and whenever a subscriber comes online'>
+      <value>on_sub_and_presence</value>
+    </option>
+  </field>
+  <field var='pubsub#tempsub'
+         type='boolean'
+         label='Whether to make all subscriptions temporary, based on subscriber presence'/>
+  <field var='pubsub#subscribe' type='boolean'
+         label='Whether to allow subscriptions'>
+    <value>1</value>
+  </field>
+  <field var='pubsub#title'
+         type='text-single'
+         label='A friendly name for the node'/>
+  <field var='pubsub#type'
+         type='text-single'
+         label='The type of node data, usually specified by
+                the namespace of the payload (if any)'/>
+</form_type>
+
+<!--
+Local Variables:
+mode: xml
+End:
+-->

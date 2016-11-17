@@ -52,6 +52,8 @@ start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
+-spec c2s_auth_result(boolean(), binary(), binary(),
+		      {inet:ip_address(), non_neg_integer()}) -> ok.
 c2s_auth_result(false, _User, LServer, {Addr, _Port}) ->
     case is_whitelisted(LServer, Addr) of
 	true ->
@@ -71,11 +73,15 @@ c2s_auth_result(false, _User, LServer, {Addr, _Port}) ->
 		    ets:insert(failed_auth, {Addr, N+1, UnbanTS, MaxFailures});
 		[] ->
 		    ets:insert(failed_auth, {Addr, 1, UnbanTS, MaxFailures})
-	    end
+	    end,
+	    ok
     end;
 c2s_auth_result(true, _User, _Server, _AddrPort) ->
     ok.
 
+-spec check_bl_c2s({true, binary(), binary()} | false,
+		   {inet:ip_address(), non_neg_integer()},
+		   binary()) -> {stop, {true, binary(), binary()}} | false.
 check_bl_c2s(_Acc, Addr, Lang) ->
     case ets:lookup(failed_auth, Addr) of
 	[{Addr, N, TS, MaxFailures}] when N >= MaxFailures ->

@@ -26,7 +26,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_muc_room.hrl").
 -include("mod_muc.hrl").
 -include("ejabberd_http.hrl").
@@ -270,7 +270,7 @@ web_menu_host(Acc, _Host, Lang) ->
 
 -define(TDTD(L, N),
 	?XE(<<"tr">>, [?XCT(<<"td">>, L),
-		       ?XC(<<"td">>, jlib:integer_to_binary(N))
+		       ?XC(<<"td">>, integer_to_binary(N))
 		      ])).
 
 web_page_main(_, #request{path=[<<"muc">>], lang = Lang} = _Request) ->
@@ -312,7 +312,7 @@ get_sort_query(Q) ->
 
 get_sort_query2(Q) ->
     {value, {_, String}} = lists:keysearch(<<"sort">>, 1, Q),
-    Integer = jlib:binary_to_integer(String),
+    Integer = binary_to_integer(String),
     case Integer >= 0 of
 	true -> {ok, {normal, Integer}};
 	false -> {ok, {reverse, abs(Integer)}}
@@ -338,7 +338,7 @@ make_rooms_page(Host, Lang, {Sort_direction, Sort_column}) ->
     {Titles_TR, _} =
 	lists:mapfoldl(
 	  fun(Title, Num_column) ->
-		  NCS = jlib:integer_to_binary(Num_column),
+		  NCS = integer_to_binary(Num_column),
 		  TD = ?XE(<<"td">>, [?CT(Title),
 				      ?C(<<" ">>),
 				      ?AC(<<"?sort=", NCS/binary>>, <<"<">>),
@@ -388,7 +388,7 @@ build_info_room({Name, Host, Pid}) ->
 	    false ->
 		Last_message1 = queue:last(History),
 		{_, _, _, Ts_last, _} = Last_message1,
-		jlib:timestamp_to_legacy(Ts_last)
+		xmpp_util:encode_timestamp(Ts_last)
 	end,
 
     {<<Name/binary, "@", Host/binary>>,
@@ -412,7 +412,7 @@ prepare_room_info(Room_info) ->
      Just_created,
      Title} = Room_info,
     [NameHost,
-     jlib:integer_to_binary(Num_participants),
+     integer_to_binary(Num_participants),
      Ts_last_message,
      jlib:atom_to_binary(Public),
      jlib:atom_to_binary(Persistent),
@@ -806,7 +806,7 @@ format_room_option(OptionString, ValueString) ->
 		password -> ValueString;
 		subject ->ValueString;
 		subject_author ->ValueString;
-		max_users -> jlib:binary_to_integer(ValueString);
+		max_users -> binary_to_integer(ValueString);
 		_ -> jlib:binary_to_atom(ValueString)
 	    end,
     {Option, Value}.
@@ -871,7 +871,7 @@ get_options(Config) ->
     Fields = [jlib:atom_to_binary(Field) || Field <- record_info(fields, config)],
     [config | ValuesRaw] = tuple_to_list(Config),
     Values = lists:map(fun(V) when is_atom(V) -> jlib:atom_to_binary(V);
-                          (V) when is_integer(V) -> jlib:integer_to_binary(V);
+                          (V) when is_integer(V) -> integer_to_binary(V);
                           (V) when is_tuple(V); is_list(V) -> list_to_binary(hd(io_lib:format("~w", [V])));
                           (V) -> V end, ValuesRaw),
     lists:zip(Fields, Values).

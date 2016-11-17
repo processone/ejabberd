@@ -41,7 +41,7 @@
 -define(SPAN(N, V), ?TAG_R(span, ??N, V)).
 
 -define(STR(A), ?SPAN(str,[<<"\"">>, A, <<"\"">>])).
--define(NUM(A), ?SPAN(num,jlib:integer_to_binary(A))).
+-define(NUM(A), ?SPAN(num,integer_to_binary(A))).
 -define(FIELD(A), ?SPAN(field,A)).
 -define(ID(A), ?SPAN(id,A)).
 -define(OP(A), ?SPAN(op,A)).
@@ -171,7 +171,7 @@ xml_gen({Name, integer}, Int, Indent, HTMLOutput) ->
     [?XML(member, Indent,
          [?XML_L(name, Indent, 1, ?ID_A(Name)),
           ?XML(value, Indent, 1,
-               [?XML_L(integer, Indent, 2, ?ID(jlib:integer_to_binary(Int)))])])];
+               [?XML_L(integer, Indent, 2, ?ID(integer_to_binary(Int)))])])];
 xml_gen({Name, string}, Str, Indent, HTMLOutput) ->
     [?XML(member, Indent,
          [?XML_L(name, Indent, 1, ?ID_A(Name)),

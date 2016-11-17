@@ -46,7 +46,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_muc.hrl").
 -include("mod_muc_room.hrl").
 
@@ -196,15 +196,13 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
     case has_no_permanent_store_hint(Packet) of
 	false ->
-	    case {fxml:get_subtag(Packet, <<"subject">>),
-		    fxml:get_subtag(Packet, <<"body">>)}
-	    of
-		{false, false} -> ok;
-		{false, SubEl} ->
-		    Message = {body, fxml:get_tag_cdata(SubEl)},
+	    case {Packet#message.subject, Packet#message.body} of
+		{[], []} -> ok;
+		{[], Body} ->
+		    Message = {body, xmpp:get_text(Body)},
 		    add_message_to_log(Nick, Message, Room, Opts, State);
-		{SubEl, _} ->
-		    Message = {subject, fxml:get_tag_cdata(SubEl)},
+		{Subj, _} ->
+		    Message = {subject, xmpp:get_text(Subj)},
 		    add_message_to_log(Nick, Message, Room, Opts, State)
 	    end;
 	true -> ok
@@ -1035,7 +1033,7 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
 					   max_users ->
 					       <<"<div class=\"rcot\">",
 						 OptText/binary, ": \"",
-						 (htmlize(jlib:integer_to_binary(T),
+						 (htmlize(integer_to_binary(T),
 							  FileFormat))/binary,
 						 "\"</div>">>;
 					   title ->
@@ -1053,7 +1051,7 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
 					   allow_private_messages_from_visitors ->
 					       <<"<div class=\"rcot\">",
 						 OptText/binary, ": \"",
-						 (htmlize(?T((jlib:atom_to_binary(T))),
+						 (htmlize(?T(jlib:atom_to_binary(T)),
 							  FileFormat))/binary,
 						 "\"</div>">>;
 					   _ -> <<"\"", T/binary, "\"">>
@@ -1168,7 +1166,7 @@ get_room_occupants(RoomJIDString) ->
     [{U#user.jid, U#user.nick, U#user.role}
      || {_, U} <- (?DICT):to_list(StateData#state.users)].
 
--spec get_room_state(binary(), binary()) -> muc_room_state().
+-spec get_room_state(binary(), binary()) -> mod_muc_room:state().
 
 get_room_state(RoomName, MucService) ->
     case mnesia:dirty_read(muc_online_room,
@@ -1180,7 +1178,7 @@ get_room_state(RoomName, MucService) ->
       [] -> #state{}
     end.
 
--spec get_room_state(pid()) -> muc_room_state().
+-spec get_room_state(pid()) -> mod_muc_room:state().
 
 get_room_state(RoomPid) ->
     {ok, R} = gen_fsm:sync_send_all_state_event(RoomPid,
@@ -1204,14 +1202,10 @@ fjoin(FileList) ->
     list_to_binary(filename:join([binary_to_list(File) || File <- FileList])).
 
 has_no_permanent_store_hint(Packet) ->
-    fxml:get_subtag_with_xmlns(Packet, <<"no-store">>, ?NS_HINTS)
-      =/= false orelse
-    fxml:get_subtag_with_xmlns(Packet, <<"no-storage">>, ?NS_HINTS)
-      =/= false orelse
-    fxml:get_subtag_with_xmlns(Packet, <<"no-permanent-store">>, ?NS_HINTS)
-      =/= false orelse
-    fxml:get_subtag_with_xmlns(Packet, <<"no-permanent-storage">>, ?NS_HINTS)
-      =/= false.
+    xmpp:has_subtag(Packet, #hint{type = 'no-store'}) orelse
+    xmpp:has_subtag(Packet, #hint{type = 'no-storage'}) orelse
+    xmpp:has_subtag(Packet, #hint{type = 'no-permanent-store'}) orelse
+    xmpp:has_subtag(Packet, #hint{type = 'no-permanent-storage'}).
 
 mod_opt_type(access_log) ->
     fun (A) when is_atom(A) -> A end;

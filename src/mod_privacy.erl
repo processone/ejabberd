@@ -31,9 +31,9 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_iq/3, export/1, import/1,
-	 process_iq_set/4, process_iq_get/5, get_user_list/3,
-	 check_packet/6, remove_user/2,
+-export([start/2, stop/1, process_iq/1, export/1, import/1,
+	 process_iq_set/3, process_iq_get/3, get_user_list/3,
+	 check_packet/6, remove_user/2, encode_list_item/1,
 	 is_list_needdb/1, updated_list/3,
          item_to_xml/1, get_user_lists/2, import/3,
 	 set_privacy_list/1, mod_opt_type/1, depends/2]).
@@ -41,15 +41,15 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("mod_privacy.hrl").
 
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), #privacy{}) -> ok | pass.
--callback process_lists_get(binary(), binary()) -> {none | binary(), [xmlel()]} | error.
+-callback process_lists_get(binary(), binary()) -> {none | binary(), [binary()]} | error.
 -callback process_list_get(binary(), binary(), binary()) -> [listitem()] | error | not_found.
--callback process_default_set(binary(), binary(), {value, binary()} | false) -> {atomic, any()}.
+-callback process_default_set(binary(), binary(), binary() | none) -> {atomic, any()}.
 -callback process_active_set(binary(), binary(), binary()) -> [listitem()] | error.
 -callback remove_privacy_list(binary(), binary(), binary()) -> {atomic, any()}.
 -callback set_privacy_list(#privacy{}) -> any().
@@ -96,335 +96,293 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_PRIVACY).
 
-process_iq(_From, _To, IQ) ->
-    SubEl = IQ#iq.sub_el,
-    IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]}.
+-spec process_iq(iq()) -> iq().
+process_iq(IQ) ->
+    xmpp:make_error(IQ, xmpp:err_not_allowed()).
 
-process_iq_get(_, From, _To, #iq{lang = Lang, sub_el = SubEl},
+-spec process_iq_get({error, stanza_error()} | {result, xmpp_element() | undefined},
+		     iq(), userlist()) -> {error, stanza_error()} |
+					  {result, xmpp_element() | undefined}.
+process_iq_get(_, #iq{lang = Lang,
+		      sub_els = [#privacy_query{default = Default,
+						active = Active}]},
+	       _) when Default /= undefined; Active /= undefined ->
+    Txt = <<"Only <list/> element is allowed in this query">>,
+    {error, xmpp:err_bad_request(Txt, Lang)};
+process_iq_get(_, #iq{from = From, lang = Lang,
+		      sub_els = [#privacy_query{lists = Lists}]},
 	       #userlist{name = Active}) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    #xmlel{children = Els} = SubEl,
-    case fxml:remove_cdata(Els) of
-      [] -> process_lists_get(LUser, LServer, Active, Lang);
-      [#xmlel{name = Name, attrs = Attrs}] ->
-	  case Name of
-	    <<"list">> ->
-		ListName = fxml:get_attr(<<"name">>, Attrs),
-		process_list_get(LUser, LServer, ListName, Lang);
-	    _ ->
-		  Txt = <<"Unsupported tag name">>,
-		  {error, ?ERRT_BAD_REQUEST(Lang, Txt)}
-	  end;
-      _ -> {error, ?ERRT_BAD_REQUEST(Lang, <<"Too many elements">>)}
-    end.
+    case Lists of
+	[] ->
+	    process_lists_get(LUser, LServer, Active, Lang);
+	[#privacy_list{name = ListName}] ->
+	    process_list_get(LUser, LServer, ListName, Lang);
+	_ ->
+	    Txt = <<"Too many <list/> elements">>,
+	    {error, xmpp:err_bad_request(Txt, Lang)}
+    end;
+process_iq_get(Acc, _, _) ->
+    Acc.
 
+-spec process_lists_get(binary(), binary(), binary(), binary()) ->
+			       {error, stanza_error()} | {result, privacy_query()}.
 process_lists_get(LUser, LServer, Active, Lang) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:process_lists_get(LUser, LServer) of
-      error -> {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)};
-      {_Default, []} ->
-	  {result,
-	   [#xmlel{name = <<"query">>,
-		   attrs = [{<<"xmlns">>, ?NS_PRIVACY}], children = []}]};
-      {Default, LItems} ->
-	  DItems = case Default of
-		     none -> LItems;
-		     _ ->
-			 [#xmlel{name = <<"default">>,
-				 attrs = [{<<"name">>, Default}], children = []}
-			  | LItems]
-		   end,
-	  ADItems = case Active of
-		      none -> DItems;
-		      _ ->
-			  [#xmlel{name = <<"active">>,
-				  attrs = [{<<"name">>, Active}], children = []}
-			   | DItems]
-		    end,
-	  {result,
-	   [#xmlel{name = <<"query">>,
-		   attrs = [{<<"xmlns">>, ?NS_PRIVACY}],
-		   children = ADItems}]}
+	error ->
+	    Txt = <<"Database failure">>,
+	    {error, xmpp:err_internal_server_error(Txt, Lang)};
+	{_Default, []} ->
+	    {result, #privacy_query{}};
+	{Default, ListNames} ->
+	    {result,
+	     #privacy_query{active = Active,
+			    default = Default,
+			    lists = [#privacy_list{name = ListName}
+				     || ListName <- ListNames]}}
     end.
 
-process_list_get(LUser, LServer, {value, Name}, Lang) ->
+-spec process_list_get(binary(), binary(), binary(), binary()) ->
+			      {error, stanza_error()} | {result, privacy_query()}.
+process_list_get(LUser, LServer, Name, Lang) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:process_list_get(LUser, LServer, Name) of
-      error -> {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)};
-      not_found -> {error, ?ERR_ITEM_NOT_FOUND};
-      Items ->
-	  LItems = lists:map(fun item_to_xml/1, Items),
-	  {result,
-	   [#xmlel{name = <<"query">>,
-		   attrs = [{<<"xmlns">>, ?NS_PRIVACY}],
-		   children =
-		       [#xmlel{name = <<"list">>, attrs = [{<<"name">>, Name}],
-			       children = LItems}]}]}
-    end;
-process_list_get(_LUser, _LServer, false, _Lang) ->
-    {error, ?ERR_BAD_REQUEST}.
-
-item_to_xml(Item) ->
-    Attrs1 = [{<<"action">>,
-	       action_to_list(Item#listitem.action)},
-	      {<<"order">>, order_to_list(Item#listitem.order)}],
-    Attrs2 = case Item#listitem.type of
-	       none -> Attrs1;
-	       Type ->
-		   [{<<"type">>, type_to_list(Item#listitem.type)},
-		    {<<"value">>, value_to_list(Type, Item#listitem.value)}
-		    | Attrs1]
-	     end,
-    SubEls = case Item#listitem.match_all of
-	       true -> [];
-	       false ->
-		   SE1 = case Item#listitem.match_iq of
-			   true ->
-			       [#xmlel{name = <<"iq">>, attrs = [],
-				       children = []}];
-			   false -> []
-			 end,
-		   SE2 = case Item#listitem.match_message of
-			   true ->
-			       [#xmlel{name = <<"message">>, attrs = [],
-				       children = []}
-				| SE1];
-			   false -> SE1
-			 end,
-		   SE3 = case Item#listitem.match_presence_in of
-			   true ->
-			       [#xmlel{name = <<"presence-in">>, attrs = [],
-				       children = []}
-				| SE2];
-			   false -> SE2
-			 end,
-		   SE4 = case Item#listitem.match_presence_out of
-			   true ->
-			       [#xmlel{name = <<"presence-out">>, attrs = [],
-				       children = []}
-				| SE3];
-			   false -> SE3
-			 end,
-		   SE4
-	     end,
-    #xmlel{name = <<"item">>, attrs = Attrs2,
-	   children = SubEls}.
-
-action_to_list(Action) ->
-    case Action of
-      allow -> <<"allow">>;
-      deny -> <<"deny">>
+	error ->
+	    Txt = <<"Database failure">>,
+	    {error, xmpp:err_internal_server_error(Txt, Lang)};
+	not_found ->
+	    Txt = <<"No privacy list with this name found">>,
+	    {error, xmpp:err_item_not_found(Txt, Lang)};
+	Items ->
+	    LItems = lists:map(fun encode_list_item/1, Items),
+	    {result,
+	     #privacy_query{
+		lists = [#privacy_list{name = Name, items = LItems}]}}
     end.
 
-order_to_list(Order) ->
-    iolist_to_binary(integer_to_list(Order)).
+-spec item_to_xml(listitem()) -> xmlel().
+item_to_xml(ListItem) ->
+    xmpp:encode(encode_list_item(ListItem)).
 
-type_to_list(Type) ->
+-spec encode_list_item(listitem()) -> privacy_item().
+encode_list_item(#listitem{action = Action,
+			   order = Order,
+			   type = Type,
+			   match_all = MatchAll,
+			   match_iq = MatchIQ,
+			   match_message = MatchMessage,
+			   match_presence_in = MatchPresenceIn,
+			   match_presence_out = MatchPresenceOut,
+			   value = Value}) ->
+    Item = #privacy_item{action = Action,
+			 order = Order,
+			 type = case Type of
+				    none -> undefined;
+				    Type -> Type
+				end,
+			 value = encode_value(Type, Value)},
+    case MatchAll of
+	true ->
+	    Item;
+	false ->
+	    Item#privacy_item{message = MatchMessage,
+			      iq = MatchIQ,
+			      presence_in = MatchPresenceIn,
+			      presence_out = MatchPresenceOut}
+    end.
+
+-spec encode_value(listitem_type(), listitem_value()) -> binary().
+encode_value(Type, Val) ->
     case Type of
-      jid -> <<"jid">>;
-      group -> <<"group">>;
-      subscription -> <<"subscription">>
+	jid -> jid:to_string(Val);
+	group -> Val;
+	subscription ->
+	    case Val of
+		both -> <<"both">>;
+		to -> <<"to">>;
+		from -> <<"from">>;
+		none -> <<"none">>
+	    end;
+	none -> <<"">>
     end.
 
-value_to_list(Type, Val) ->
+-spec decode_value(jid | subscription | group | undefined, binary()) ->
+			  listitem_value().
+decode_value(Type, Value) ->
     case Type of
-      jid -> jid:to_string(Val);
-      group -> Val;
-      subscription ->
-	  case Val of
-	    both -> <<"both">>;
-	    to -> <<"to">>;
-	    from -> <<"from">>;
-	    none -> <<"none">>
-	  end
+	jid -> jid:tolower(jid:from_string(Value));
+	subscription ->
+	    case Value of
+		<<"from">> -> from;
+		<<"to">> -> to;
+		<<"both">> -> both;
+		<<"none">> -> none
+	    end;
+	group when Value /= <<"">> -> Value;
+	undefined -> none
     end.
 
-list_to_action(S) ->
-    case S of
-      <<"allow">> -> allow;
-      <<"deny">> -> deny
-    end.
-
-process_iq_set(_, From, _To, #iq{lang = Lang, sub_el = SubEl}) ->
+-spec process_iq_set({error, stanza_error()} |
+		     {result, xmpp_element() | undefined} |
+		     {result, xmpp_element() | undefined, userlist()},
+		     iq(), #userlist{}) ->
+			    {error, stanza_error()} |
+			    {result, xmpp_element() | undefined} |
+			    {result, xmpp_element() | undefined, userlist()}.
+process_iq_set(_, #iq{from = From, lang = Lang,
+		      sub_els = [#privacy_query{default = Default,
+						active = Active,
+						lists = Lists}]},
+	      #userlist{} = UserList) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    #xmlel{children = Els} = SubEl,
-    case fxml:remove_cdata(Els) of
-      [#xmlel{name = Name, attrs = Attrs,
-	      children = SubEls}] ->
-	  ListName = fxml:get_attr(<<"name">>, Attrs),
-	  case Name of
-	    <<"list">> ->
-		process_list_set(LUser, LServer, ListName,
-				 fxml:remove_cdata(SubEls), Lang);
-	    <<"active">> ->
-		process_active_set(LUser, LServer, ListName);
-	    <<"default">> ->
-		process_default_set(LUser, LServer, ListName, Lang);
-	    _ ->
-		Txt = <<"Unsupported tag name">>,
-		{error, ?ERRT_BAD_REQUEST(Lang, Txt)}
-	  end;
-      _ -> {error, ?ERR_BAD_REQUEST}
-    end.
+    case Lists of
+	[#privacy_list{items = Items, name = ListName}]
+	  when Default == undefined, Active == undefined ->
+	    process_lists_set(LUser, LServer, ListName, Items, UserList, Lang);
+	[] when Default == undefined, Active /= undefined ->
+	    process_active_set(LUser, LServer, Active, Lang);
+	[] when Active == undefined, Default /= undefined ->
+	    process_default_set(LUser, LServer, Default, Lang);
+	_ ->
+	    Txt = <<"The stanza MUST contain only one <active/> element, "
+		    "one <default/> element, or one <list/> element">>,
+	    {error, xmpp:err_bad_request(Txt, Lang)}
+    end;
+process_iq_set(Acc, _, _) ->
+    Acc.
 
+-spec process_default_set(binary(), binary(), none | binary(),
+			  binary()) -> {error, stanza_error()} | {result, undefined}.
 process_default_set(LUser, LServer, Value, Lang) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:process_default_set(LUser, LServer, Value) of
-      {atomic, error} ->
-	    {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)};
-      {atomic, not_found} -> {error, ?ERR_ITEM_NOT_FOUND};
-      {atomic, ok} -> {result, []};
-      _ -> {error, ?ERR_INTERNAL_SERVER_ERROR}
+	{atomic, error} ->
+	    Txt = <<"Database failure">>,
+	    {error, xmpp:err_internal_server_error(Txt, Lang)};
+	{atomic, not_found} ->
+	    Txt = <<"No privacy list with this name found">>,
+	    {error, xmpp:err_item_not_found(Txt, Lang)};
+	{atomic, ok} ->
+	    {result, undefined};
+	Err ->
+	    ?ERROR_MSG("failed to set default list '~s' for user ~s@~s: ~p",
+		       [Value, LUser, LServer, Err]),
+	    {error, xmpp:err_internal_server_error()}
     end.
 
-process_active_set(LUser, LServer, {value, Name}) ->
+-spec process_active_set(binary(), binary(), none | binary(), binary()) ->
+				{error, stanza_error()} |
+				{result, undefined, userlist()}.
+process_active_set(_LUser, _LServer, none, _Lang) ->
+    {result, undefined, #userlist{}};
+process_active_set(LUser, LServer, Name, Lang) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:process_active_set(LUser, LServer, Name) of
-      error -> {error, ?ERR_ITEM_NOT_FOUND};
-      Items ->
-	  NeedDb = is_list_needdb(Items),
-	  {result, [],
-	   #userlist{name = Name, list = Items, needdb = NeedDb}}
-    end;
-process_active_set(_LUser, _LServer, false) ->
-    {result, [], #userlist{}}.
+	error ->
+	    Txt = <<"No privacy list with this name found">>,
+	    {error, xmpp:err_item_not_found(Txt, Lang)};
+	Items ->
+	    NeedDb = is_list_needdb(Items),
+	    {result, undefined,
+	     #userlist{name = Name, list = Items, needdb = NeedDb}}
+    end.
 
+-spec set_privacy_list(privacy()) -> any().
 set_privacy_list(#privacy{us = {_, LServer}} = Privacy) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:set_privacy_list(Privacy).
 
-process_list_set(LUser, LServer, {value, Name}, Els, Lang) ->
-    case parse_items(Els) of
-      false -> {error, ?ERR_BAD_REQUEST};
-      remove ->
-	  Mod = gen_mod:db_mod(LServer, ?MODULE),
-	  case Mod:remove_privacy_list(LUser, LServer, Name) of
-	    {atomic, conflict} ->
-		  Txt = <<"Cannot remove default list">>,
-		  {error, ?ERRT_CONFLICT(Lang, Txt)};
-	    {atomic, ok} ->
-		ejabberd_sm:route(jid:make(LUser, LServer,
-                                                <<"">>),
-                                  jid:make(LUser, LServer, <<"">>),
-                                  {broadcast, {privacy_list,
-                                               #userlist{name = Name,
-                                                         list = []},
-                                               Name}}),
-		{result, []};
-	    _ -> {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
-	  end;
-      List ->
-	  Mod = gen_mod:db_mod(LServer, ?MODULE),
-	  case Mod:set_privacy_list(LUser, LServer, Name, List) of
-	    {atomic, ok} ->
-		NeedDb = is_list_needdb(List),
-		ejabberd_sm:route(jid:make(LUser, LServer,
-                                                <<"">>),
-                                  jid:make(LUser, LServer, <<"">>),
-                                  {broadcast, {privacy_list,
-                                               #userlist{name = Name,
-                                                         list = List,
-                                                         needdb = NeedDb},
-                                               Name}}),
-		{result, []};
-	    _ -> {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, <<"Database failure">>)}
-	  end
+-spec process_lists_set(binary(), binary(), binary(), [privacy_item()],
+			#userlist{}, binary()) -> {error, stanza_error()} |
+						  {result, undefined}.
+process_lists_set(_LUser, _LServer, Name, [], #userlist{name = Name}, Lang) ->
+    Txt = <<"Cannot remove active list">>,
+    {error, xmpp:err_conflict(Txt, Lang)};
+process_lists_set(LUser, LServer, Name, [], _UserList, Lang) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case Mod:remove_privacy_list(LUser, LServer, Name) of
+	{atomic, conflict} ->
+	    Txt = <<"Cannot remove default list">>,
+	    {error, xmpp:err_conflict(Txt, Lang)};
+	{atomic, not_found} ->
+	    Txt = <<"No privacy list with this name found">>,
+	    {error, xmpp:err_item_not_found(Txt, Lang)};
+	{atomic, ok} ->
+	    ejabberd_sm:route(jid:make(LUser, LServer,
+				       <<"">>),
+			      jid:make(LUser, LServer, <<"">>),
+			      {broadcast, {privacy_list,
+					   #userlist{name = Name,
+						     list = []},
+					   Name}}),
+	    {result, undefined};
+	Err ->
+	    ?ERROR_MSG("failed to remove privacy list '~s' for user ~s@~s: ~p",
+		       [Name, LUser, LServer, Err]),
+	    Txt = <<"Database failure">>,
+	    {error, xmpp:err_internal_server_error(Txt, Lang)}
     end;
-process_list_set(_LUser, _LServer, false, _Els, _Lang) ->
-    {error, ?ERR_BAD_REQUEST}.
+process_lists_set(LUser, LServer, Name, Items, _UserList, Lang) ->
+    case catch lists:map(fun decode_item/1, Items) of
+	{error, Why} ->
+	    Txt = xmpp:format_error(Why),
+	    {error, xmpp:err_bad_request(Txt, Lang)};
+	List ->
+	    Mod = gen_mod:db_mod(LServer, ?MODULE),
+	    case Mod:set_privacy_list(LUser, LServer, Name, List) of
+		{atomic, ok} ->
+		    NeedDb = is_list_needdb(List),
+		    ejabberd_sm:route(jid:make(LUser, LServer,
+					       <<"">>),
+				      jid:make(LUser, LServer, <<"">>),
+				      {broadcast, {privacy_list,
+						   #userlist{name = Name,
+							     list = List,
+							     needdb = NeedDb},
+						   Name}}),
+		    {result, undefined};
+		Err ->
+		    ?ERROR_MSG("failed to set privacy list '~s' "
+			       "for user ~s@~s: ~p",
+			       [Name, LUser, LServer, Err]),
+		    Txt = <<"Database failure">>,
+		    {error, xmpp:err_internal_server_error(Txt, Lang)}
+	    end
+    end.
 
-parse_items([]) -> remove;
-parse_items(Els) -> parse_items(Els, []).
-
-parse_items([], Res) ->
-    lists:keysort(#listitem.order, Res);
-parse_items([#xmlel{name = <<"item">>, attrs = Attrs,
-		    children = SubEls}
-	     | Els],
-	    Res) ->
-    Type = fxml:get_attr(<<"type">>, Attrs),
-    Value = fxml:get_attr(<<"value">>, Attrs),
-    SAction = fxml:get_attr(<<"action">>, Attrs),
-    SOrder = fxml:get_attr(<<"order">>, Attrs),
-    Action = case catch list_to_action(element(2, SAction))
-		 of
-	       {'EXIT', _} -> false;
-	       Val -> Val
-	     end,
-    Order = case catch jlib:binary_to_integer(element(2,
-							SOrder))
-		of
-	      {'EXIT', _} -> false;
-	      IntVal ->
-		  if IntVal >= 0 -> IntVal;
-		     true -> false
-		  end
+-spec decode_item(privacy_item()) -> listitem().
+decode_item(#privacy_item{order = Order,
+			  action = Action,
+			  type = T,
+			  value = V,
+			  message = MatchMessage,
+			  iq = MatchIQ,
+			  presence_in = MatchPresenceIn,
+			  presence_out = MatchPresenceOut}) ->
+    Value = try decode_value(T, V)
+	    catch _:_ ->
+		    throw({error, {bad_attr_value, <<"value">>,
+				   <<"item">>, ?NS_PRIVACY}})
 	    end,
-    if (Action /= false) and (Order /= false) ->
-	   I1 = #listitem{action = Action, order = Order},
-	   I2 = case {Type, Value} of
-		  {{value, T}, {value, V}} ->
-		      case T of
-			<<"jid">> ->
-			    case jid:from_string(V) of
-			      error -> false;
-			      JID ->
-				  I1#listitem{type = jid,
-					      value = jid:tolower(JID)}
-			    end;
-			<<"group">> -> I1#listitem{type = group, value = V};
-			<<"subscription">> ->
-			    case V of
-			      <<"none">> ->
-				  I1#listitem{type = subscription,
-					      value = none};
-			      <<"both">> ->
-				  I1#listitem{type = subscription,
-					      value = both};
-			      <<"from">> ->
-				  I1#listitem{type = subscription,
-					      value = from};
-			      <<"to">> ->
-				  I1#listitem{type = subscription, value = to};
-			      _ -> false
-			    end
-		      end;
-		  {{value, _}, false} -> false;
-		  _ -> I1
-		end,
-	   case I2 of
-	     false -> false;
-	     _ ->
-		 case parse_matches(I2, fxml:remove_cdata(SubEls)) of
-		   false -> false;
-		   I3 -> parse_items(Els, [I3 | Res])
-		 end
-	   end;
-       true -> false
-    end;
-parse_items(_, _Res) -> false.
+    Type = case T of
+	       undefined -> none;
+	       _ -> T
+	   end,
+    ListItem = #listitem{order = Order,
+			 action = Action,
+			 type = Type,
+			 value = Value},
+    if not (MatchMessage or MatchIQ or MatchPresenceIn or MatchPresenceOut) ->
+	    ListItem#listitem{match_all = true};
+       true ->
+	    ListItem#listitem{match_iq = MatchIQ,
+			      match_message = MatchMessage,
+			      match_presence_in = MatchPresenceIn,
+			      match_presence_out = MatchPresenceOut}
+    end.
 
-parse_matches(Item, []) ->
-    Item#listitem{match_all = true};
-parse_matches(Item, Els) -> parse_matches1(Item, Els).
-
-parse_matches1(Item, []) -> Item;
-parse_matches1(Item,
-	       [#xmlel{name = <<"message">>} | Els]) ->
-    parse_matches1(Item#listitem{match_message = true},
-		   Els);
-parse_matches1(Item, [#xmlel{name = <<"iq">>} | Els]) ->
-    parse_matches1(Item#listitem{match_iq = true}, Els);
-parse_matches1(Item,
-	       [#xmlel{name = <<"presence-in">>} | Els]) ->
-    parse_matches1(Item#listitem{match_presence_in = true},
-		   Els);
-parse_matches1(Item,
-	       [#xmlel{name = <<"presence-out">>} | Els]) ->
-    parse_matches1(Item#listitem{match_presence_out = true},
-		   Els);
-parse_matches1(_Item, [#xmlel{} | _Els]) -> false.
-
+-spec is_list_needdb([listitem()]) -> boolean().
 is_list_needdb(Items) ->
     lists:any(fun (X) ->
 		      case X#listitem.type of
@@ -435,6 +393,7 @@ is_list_needdb(Items) ->
 	      end,
 	      Items).
 
+-spec get_user_list(userlist(), binary(), binary()) -> userlist().
 get_user_list(_Acc, User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -444,6 +403,7 @@ get_user_list(_Acc, User, Server) ->
     #userlist{name = Default, list = Items,
 	      needdb = NeedDb}.
 
+-spec get_user_lists(binary(), binary()) -> {ok, privacy()} | error.
 get_user_lists(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -453,6 +413,8 @@ get_user_lists(User, Server) ->
 %% From is the sender, To is the destination.
 %% If Dir = out, User@Server is the sender account (From).
 %% If Dir = in, User@Server is the destination account (To).
+-spec check_packet(allow | deny, binary(), binary(), userlist(),
+		   {jid(), jid(), stanza()}, in | out) -> allow | deny.
 check_packet(_, _User, _Server, _UserList,
 	     {#jid{luser = <<"">>, lserver = Server} = _From,
 	      #jid{lserver = Server} = _To, _},
@@ -470,22 +432,16 @@ check_packet(_, _User, _Server, _UserList,
     allow;
 check_packet(_, User, Server,
 	     #userlist{list = List, needdb = NeedDb},
-	     {From, To, #xmlel{name = PName, attrs = Attrs}}, Dir) ->
+	     {From, To, Packet}, Dir) ->
     case List of
       [] -> allow;
       _ ->
-	  PType = case PName of
-		    <<"message">> -> message;
-		    <<"iq">> -> iq;
-		    <<"presence">> ->
-			case fxml:get_attr_s(<<"type">>, Attrs) of
-			  %% notification
-			  <<"">> -> presence;
-			  <<"unavailable">> -> presence;
-			  %% subscribe, subscribed, unsubscribe,
-			  %% unsubscribed, error, probe, or other
-			  _ -> other
-			end
+	  PType = case Packet of
+		    #message{} -> message;
+		    #iq{} -> iq;
+		    #presence{type = available} -> presence;
+		    #presence{type = unavailable} -> presence;
+		    _ -> other
 		  end,
 	  PType2 = case {PType, Dir} of
 		     {message, in} -> message;
@@ -511,6 +467,10 @@ check_packet(_, User, Server,
 			   Groups)
     end.
 
+-spec check_packet_aux([listitem()],
+		       message | iq | presence_in | presence_out | other,
+		       ljid(), none | both | from | to, [binary()]) ->
+			      allow | deny.
 %% Ptype = mesage | iq | presence_in | presence_out | other
 check_packet_aux([], _PType, _JID, _Subscription,
 		 _Groups) ->
@@ -521,21 +481,18 @@ check_packet_aux([Item | List], PType, JID,
 	Item,
     case is_ptype_match(Item, PType) of
       true ->
-	  case Type of
-	    none -> Action;
-	    _ ->
-		case is_type_match(Type, Value, JID, Subscription,
-				   Groups)
-		    of
-		  true -> Action;
-		  false ->
-		      check_packet_aux(List, PType, JID, Subscription, Groups)
-		end
-	  end;
+	    case is_type_match(Type, Value, JID, Subscription, Groups) of
+		true -> Action;
+		false ->
+		    check_packet_aux(List, PType, JID, Subscription, Groups)
+	    end;
       false ->
 	  check_packet_aux(List, PType, JID, Subscription, Groups)
     end.
 
+-spec is_ptype_match(listitem(),
+		     message | iq | presence_in | presence_out | other) ->
+			    boolean().
 is_ptype_match(Item, PType) ->
     case Item#listitem.match_all of
       true -> true;
@@ -549,6 +506,10 @@ is_ptype_match(Item, PType) ->
 	  end
     end.
 
+-spec is_type_match(none | jid | subscription | group, listitem_value(),
+		    ljid(), none | both | from | to, [binary()]) -> boolean().
+is_type_match(none, _Value, _JID, _Subscription, _Groups) ->
+    true;
 is_type_match(Type, Value, JID, Subscription, Groups) ->
     case Type of
       jid ->
@@ -569,12 +530,14 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
       group -> lists:member(Value, Groups)
     end.
 
+-spec remove_user(binary(), binary()) -> any().
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_user(LUser, LServer).
 
+-spec updated_list(userlist(), userlist(), userlist()) -> userlist().
 updated_list(_, #userlist{name = OldName} = Old,
 	     #userlist{name = NewName} = New) ->
     if OldName == NewName -> New;

@@ -33,7 +33,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -record(pres_counter,
 	{dir, start, count, logged = false}).
@@ -51,28 +51,27 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
+-spec check_packet(allow | deny, binary(), binary(), _,
+		   {jid(), jid(), stanza()}, in | out) -> allow | deny.
 check_packet(_, _User, Server, _PrivacyList,
-	     {From, To, #xmlel{name = Name, attrs = Attrs}}, Dir) ->
-    case Name of
-      <<"presence">> ->
-	  IsSubscription = case fxml:get_attr_s(<<"type">>, Attrs)
-			       of
-			     <<"subscribe">> -> true;
-			     <<"subscribed">> -> true;
-			     <<"unsubscribe">> -> true;
-			     <<"unsubscribed">> -> true;
-			     _ -> false
-			   end,
-	  if IsSubscription ->
-		 JID = case Dir of
-			 in -> To;
-			 out -> From
-		       end,
-		 update(Server, JID, Dir);
-	     true -> allow
-	  end;
-      _ -> allow
-    end.
+	     {From, To, #presence{type = Type}}, Dir) ->
+    IsSubscription = case Type of
+			 subscribe -> true;
+			 subscribed -> true;
+			 unsubscribe -> true;
+			 unsubscribed -> true;
+			 _ -> false
+		     end,
+    if IsSubscription ->
+	    JID = case Dir of
+		      in -> To;
+		      out -> From
+		  end,
+	    update(Server, JID, Dir);
+       true -> allow
+    end;
+check_packet(_, _User, _Server, _PrivacyList, _Pkt, _Dir) ->
+    allow.
 
 update(Server, JID, Dir) ->
     StormCount = gen_mod:get_module_opt(Server, ?MODULE, count,

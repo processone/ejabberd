@@ -38,7 +38,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("ejabberd_http.hrl").
 
@@ -274,7 +274,7 @@ get_auth_account(HostOfRule, AccessRule, User, Server,
     case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
       true ->
 	  case acl:any_rules_allowed(HostOfRule, AccessRule,
-                               jid:make(User, Server, <<"">>))
+			    jid:make(User, Server, <<"">>))
 	      of
 	    false -> {unauthorized, <<"unprivileged-account">>};
 	    true -> {ok, {User, Server}}
@@ -1052,17 +1052,21 @@ process_admin(Host,
 process_admin(Host,
 	      #request{lang = Lang, auth = {_, _Auth, AJID}} =
 		  Request) ->
-    {Hook, Opts} = case Host of
-		     global -> {webadmin_page_main, [Request]};
-		     Host -> {webadmin_page_host, [Host, Request]}
-		   end,
-    case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
+    Res = case Host of
+	      global ->
+		  ejabberd_hooks:run_fold(
+		    webadmin_page_main, Host, [], [Request]);
+	      _ ->
+		  ejabberd_hooks:run_fold(
+		    webadmin_page_host, Host, [], [Host, Request])
+	  end,
+    case Res of
       [] ->
 	  setelement(1,
 		     make_xhtml([?XC(<<"h1">>, <<"Not Found">>)], Host, Lang,
 				AJID),
 		     404);
-      Res -> make_xhtml(Res, Host, Lang, AJID)
+      _ -> make_xhtml(Res, Host, Lang, AJID)
     end.
 
 %%%==================================
@@ -1461,8 +1465,8 @@ list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
     Users = ejabberd_auth:get_vh_registered_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     [S1, S2] = ejabberd_regexp:split(Diap, <<"-">>),
-    N1 = jlib:binary_to_integer(S1),
-    N2 = jlib:binary_to_integer(S2),
+    N1 = binary_to_integer(S1),
+    N2 = binary_to_integer(S2),
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
     [list_given_users(Host, Sub, <<"../../">>, Lang,
 		      URLFunc)].
@@ -1651,7 +1655,7 @@ user_info(User, Server, Query, Lang) ->
                                                 "://",
                                                 (jlib:ip_to_list(IP))/binary,
                                                 ":",
-                                                (jlib:integer_to_binary(Port))/binary,
+                                                (integer_to_binary(Port))/binary,
                                                 "#",
                                                 (jlib:atom_to_binary(Node))/binary>>
                                       end,
@@ -2276,16 +2280,17 @@ get_node(global, Node, [<<"update">>], Query, Lang) ->
 	       ?BR,
 	       ?INPUTT(<<"submit">>, <<"update">>, <<"Update">>)])];
 get_node(Host, Node, NPath, Query, Lang) ->
-    {Hook, Opts} = case Host of
-		     global ->
-			 {webadmin_page_node, [Node, NPath, Query, Lang]};
-		     Host ->
-			 {webadmin_page_hostnode,
-			  [Host, Node, NPath, Query, Lang]}
-		   end,
-    case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
+    Res = case Host of
+	      global ->
+		  ejabberd_hooks:run_fold(webadmin_page_node, Host, [],
+					  [Node, NPath, Query, Lang]);
+	      _ ->
+		  ejabberd_hooks:run_fold(webadmin_page_hostnode, Host, [],
+					  [Host, Node, NPath, Query, Lang])
+	  end,
+    case Res of
       [] -> [?XC(<<"h1">>, <<"Not Found">>)];
-      Res -> Res
+      _ -> Res
     end.
 
 %%%==================================
@@ -2522,7 +2527,7 @@ make_netprot_html(NetProt) ->
 get_port_data(PortIP, Opts) ->
     {Port, IPT, IPS, _IPV, NetProt, OptsClean} =
 	ejabberd_listener:parse_listener_portip(PortIP, Opts),
-    SPort = jlib:integer_to_binary(Port),
+    SPort = integer_to_binary(Port),
     SSPort = list_to_binary(
                lists:map(fun (N) ->
                                  io_lib:format("~.16b", [N])

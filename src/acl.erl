@@ -41,7 +41,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("jid.hrl").
 
 -record(acl, {aclname, aclspec}).
 -record(access, {name       :: aclname(),
@@ -446,8 +446,8 @@ resolve_access(Name, Host) when is_atom(Name) ->
     GAccess = mnesia:dirty_read(access, {Name, global}),
     LAccess =
     if Host /= global -> mnesia:dirty_read(access, {Name, Host});
-	true -> []
-    end,
+	    true -> []
+	end,
     case GAccess ++ LAccess of
 	[] ->
 	    [];
@@ -542,7 +542,7 @@ parse_ip_netmask(S) ->
 	    _ -> error
 	  end;
       [IPStr, MaskStr] ->
-	  case catch jlib:binary_to_integer(MaskStr) of
+	  case catch binary_to_integer(MaskStr) of
 	    Mask when is_integer(Mask), Mask >= 0 ->
 		case inet_parse:address(binary_to_list(IPStr)) of
 		  {ok, {_, _, _, _} = IP} when Mask =< 32 ->
