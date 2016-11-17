@@ -31,8 +31,7 @@ cd $DIR_SRC
 make clean
 ./autogen.sh
 keypress
-./configure --prefix=$DIR_TARGET \
-            $DEBUG
+./configure --prefix=$DIR_TARGET $DEBUG
 keypress
 make
 keypress
