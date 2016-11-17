@@ -19,7 +19,7 @@ DEBUG=--disable-debug
 
 # Business logic
 keypress() {
-    echo -n "premere un tasto per continuare..."
+    echo -n "any key to continue..."
     read -n 1 junk
 }
 if [ "$1" == "" ]; then
