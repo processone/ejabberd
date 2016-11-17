@@ -22,19 +22,49 @@ keypress() {
     echo -n "any key to continue..."
     read -n 1 junk
 }
-if [ "$1" == "" ]; then
-    echo -e "\nUsage:         [Run this script from GIT source code dir]"
-    echo -e "    '$0 config'   Configure ejabberd after a GIT sync"
-    exit(1)
-fi
-cd $DIR_SRC
-make clean
-./autogen.sh
-keypress
-./configure --prefix=$DIR_TARGET $DEBUG
-keypress
-make
-keypress
-make install
-keypress
-cd -
+init() {
+    echo "Installation dir cleanup ($DIR_TARGET)"
+    rm -rf $DIR_TARGET/*
+}
+configure() {
+    echo "Source code cleanup"
+    make clean
+    echo "Autogen"
+    ./autogen.sh
+    keypress
+    echo "Configure"
+    ./configure --prefix=$DIR_TARGET $DEBUG
+}
+cd $DIR_SRC >/dev/null 2>&1
+OPTION=$1
+case $OPTION in
+    init)
+        init
+        ;;
+    make)
+        configure
+        make
+        ;;
+    install)
+        make install
+        ;;
+    all)
+        init
+        configure
+        keypress
+        make
+        keypress
+        make install
+        ;;
+    *)
+        echo -e "\nUsage:     [NOTE: Run this script from GIT source code dir]"
+        echo -e "    '`basename $0` [option]' "
+        echo -e "              init   Init installation directory (wipe it)"
+        echo -e "              make   Clean/Configure/Make ejabberd source code"
+        echo -e "              all    init+make+install"
+        echo -e ""
+        cd - >/dev/null 2>&1
+        exit 1
+        ;;
+esac
+cd - >/dev/null 2>&1
