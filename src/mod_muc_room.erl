@@ -3548,6 +3548,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(#config.allow_voice_requests),
      ?MAKE_CONFIG_OPT(#config.allow_subscription),
      ?MAKE_CONFIG_OPT(#config.mam),
+     ?MAKE_CONFIG_OPT(#config.presence_broadcast),
      ?MAKE_CONFIG_OPT(#config.voice_request_min_interval),
      ?MAKE_CONFIG_OPT(#config.vcard),
      {captcha_whitelist,

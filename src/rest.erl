@@ -28,7 +28,7 @@
 -behaviour(ejabberd_config).
 
 -export([start/1, stop/1, get/2, get/3, post/4, delete/2,
-	 request/6, with_retry/4, opt_type/1]).
+	 put/4, patch/4, request/6, with_retry/4, opt_type/1]).
 
 -include("logger.hrl").
 
@@ -36,14 +36,14 @@
 -define(CONNECT_TIMEOUT, 8000).
 
 start(Host) ->
-    http_p1:start(),
+    p1_http:start(),
     Pool_size =
 	ejabberd_config:get_option({ext_api_http_pool_size, Host},
 				   fun(X) when is_integer(X), X > 0->
 					   X
 				   end,
 				   100),
-    http_p1:set_pool_size(Pool_size).
+    p1_http:set_pool_size(Pool_size).
 
 stop(_Host) ->
     ok.
@@ -71,17 +71,16 @@ delete(Server, Path) ->
     request(Server, delete, Path, [], "application/json", <<>>).
 
 post(Server, Path, Params, Content) ->
-    Data = case catch jiffy:encode(Content) of
-        {'EXIT', Reason} ->
-            ?ERROR_MSG("HTTP content encodage failed:~n"
-                       "** Content = ~p~n"
-                       "** Err = ~p",
-                       [Content, Reason]),
-            <<>>;
-        Encoded ->
-            Encoded
-    end,
+    Data = encode_json(Content),
     request(Server, post, Path, Params, "application/json", Data).
+
+put(Server, Path, Params, Content) ->
+    Data = encode_json(Content),
+    request(Server, put, Path, Params, "application/json", Data).
+
+patch(Server, Path, Params, Content) ->
+    Data = encode_json(Content),
+    request(Server, patch, Path, Params, "application/json", Data).
 
 request(Server, Method, Path, Params, Mime, Data) ->
     URI = url(Server, Path, Params),
@@ -91,7 +90,7 @@ request(Server, Method, Path, Params, Mime, Data) ->
             {"content-type", Mime},
             {"User-Agent", "ejabberd"}],
     Begin = os:timestamp(),
-    Result = case catch http_p1:request(Method, URI, Hdrs, Data, Opts) of
+    Result = case catch p1_http:request(Method, URI, Hdrs, Data, Opts) of
         {ok, Code, _, <<>>} ->
             {ok, Code, []};
         {ok, Code, _, <<" ">>} ->
@@ -146,6 +145,18 @@ request(Server, Method, Path, Params, Mime, Data) ->
 %%%----------------------------------------------------------------------
 %%% HTTP helpers
 %%%----------------------------------------------------------------------
+
+encode_json(Content) ->
+    case catch jiffy:encode(Content) of
+        {'EXIT', Reason} ->
+            ?ERROR_MSG("HTTP content encodage failed:~n"
+                       "** Content = ~p~n"
+                       "** Err = ~p",
+                       [Content, Reason]),
+            <<>>;
+        Encoded ->
+            Encoded
+    end.
 
 base_url(Server, Path) ->
     Tail = case iolist_to_binary(Path) of

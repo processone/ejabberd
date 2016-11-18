@@ -28,7 +28,7 @@
 -author("pablo.polvorin@process-one.net").
 
 %% API
--export([init/0, subscribe_node/3, unsubscribe_node/3,
+-export([init/3, subscribe_node/3, unsubscribe_node/3,
     get_subscription/3, set_subscription/4,
     make_subid/0,
     get_options_xform/2, parse_options_xform/1]).
@@ -71,7 +71,7 @@
 %% API
 %%====================================================================
 
-init() -> ok = create_table().
+init(_Host, _ServerHost, _Opts) -> ok = create_table().
 
 -spec subscribe_node(_JID :: _, _NodeId :: _, Options :: [] | mod_pubsub:subOptions()) ->
 			    {result, mod_pubsub:subId()}.
