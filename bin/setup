@@ -11,8 +11,8 @@
 DIR_SRC=/home/ben/lavori/ejabberd.server/ejabberd
 DIR_TARGET=/opt/ejabberd
 
-#DEBUG=--enable-debug
-DEBUG=--disable-debug
+DEBUG=--enable-debug
+#DEBUG=--disable-debug
 
 
 
@@ -33,7 +33,9 @@ configure() {
     ./autogen.sh
     keypress
     echo "Configure"
-    ./configure --prefix=$DIR_TARGET $DEBUG
+    ./configure --prefix=$DIR_TARGET \
+                --sysconfdir=$DIR_TARGET/conf \
+                --enable-lager $DEBUG
 }
 cd $DIR_SRC >/dev/null 2>&1
 OPTION=$1
