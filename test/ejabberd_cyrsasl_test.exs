@@ -44,12 +44,12 @@ defmodule EjabberdCyrsaslTest do
 
   test "Plain text (correct user wrong pass)", context do
     step1 = :cyrsasl.server_start(context[:cyrstate], "PLAIN", <<0,"user1",0,"badpass">>)
-    assert step1 == {:error, "not-authorized", "user1"}, "got error response"
+    assert step1 == {:error, :"not-authorized", "user1"}
   end
 
   test "Plain text (wrong user wrong pass)", context do
     step1 = :cyrsasl.server_start(context[:cyrstate], "PLAIN", <<0,"nouser1",0,"badpass">>)
-    assert step1 == {:error, "not-authorized", "nouser1"}, "got error response"
+    assert step1 == {:error, :"not-authorized", "nouser1"}
   end
 
   test "Anonymous", context do
