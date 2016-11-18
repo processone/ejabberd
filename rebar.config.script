@@ -119,12 +119,18 @@ TestConfig = case file:read_file_info(TestConfigFile) of
                      "-userconfig ct_config_plain " ++ TestConfigFile ++ " ";
                  _ ->
                      ""
-             end,
+	     end,
 
-Conf2 = [{ct_extra_params, "-ct_hooks cth_surefire "
-         ++ TestConfig
-         ++ "-include "
-         ++ filename:join([Cwd, "tools"])} | Conf1],
+CtIncludes = case lists:keyfind(eunit_compile_opts, 1, Conf1) of
+		 false ->
+		     [];
+		 {_, EunitCompOpts} ->
+		     [[" -include ", filename:join([Cwd, IncPath])]
+		      || {i, IncPath} <- EunitCompOpts]
+	     end,
+
+Conf2 = [{ct_extra_params, lists:flatten(["-ct_hooks cth_surefire ", TestConfig,
+					  CtIncludes])} | Conf1],
 
 Conf3 = case lists:keytake(xref_exclusions, 1, Conf2) of
             {value, {_, Items2}, Rest2} ->
