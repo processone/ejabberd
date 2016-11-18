@@ -9,11 +9,7 @@
 -include("ns.hrl").
 -include("jid.hrl").
 -include("xmpp_codec.hrl").
--ifdef(NO_EXT_LIB).
 -include("fxml.hrl").
--else.
--include_lib("fast_xml/include/fxml.hrl").
--endif.
 
 -type iq_type() :: get | set | result | error.
 -type message_type() :: chat | error | groupchat | headline | normal.
