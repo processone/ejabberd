@@ -12,7 +12,7 @@
 
 -include("pubsub_get_pending.hrl").
 
--export_type([{property, 0}, {result, 0}, {form, 0}]).
+-export_type([property/0, result/0, form/0]).
 
 format_error({form_type_mismatch, Type}) ->
     <<"FORM_TYPE doesn't match '", Type/binary, "'">>;

@@ -99,7 +99,8 @@
 -callback remove_expired_messages(binary()) -> {atomic, any()}.
 -callback remove_old_messages(non_neg_integer(), binary()) -> {atomic, any()}.
 -callback remove_user(binary(), binary()) -> {atomic, any()}.
--callback read_message_headers(binary(), binary()) -> any().
+-callback read_message_headers(binary(), binary()) ->
+    [{non_neg_integer(), jid(), jid(), undefined | erlang:timestamp(), xmlel()}].
 -callback read_message(binary(), binary(), non_neg_integer()) ->
     {ok, #offline_msg{}} | error.
 -callback remove_message(binary(), binary(), non_neg_integer()) -> ok | {error, any()}.

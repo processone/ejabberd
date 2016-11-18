@@ -11,7 +11,8 @@
 %% API
 -export([add_delay_info/3, add_delay_info/4, unwrap_carbon/1,
 	 is_standalone_chat_state/1, get_xdata_values/2,
-	 has_xdata_var/2, make_adhoc_response/1, make_adhoc_response/2,
+	 set_xdata_field/2, has_xdata_var/2,
+	 make_adhoc_response/1, make_adhoc_response/2,
 	 decode_timestamp/1, encode_timestamp/1]).
 
 -include("xmpp.hrl").
@@ -77,6 +78,12 @@ get_xdata_values(Var, #xdata{fields = Fields}) ->
 	#xdata_field{values = Vals} -> Vals;
 	false -> []
     end.
+
+-spec set_xdata_field(xdata_field(), xdata()) -> xdata().
+set_xdata_field(Field, #xdata{fields = Fields} = X) ->
+    NewFields = lists:keystore(Field#xdata_field.var, #xdata_field.var,
+			       Fields, Field),
+    X#xdata{fields = NewFields}.
 
 -spec has_xdata_var(binary(), xdata()) -> boolean().
 has_xdata_var(Var, #xdata{fields = Fields}) ->

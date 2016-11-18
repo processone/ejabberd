@@ -103,8 +103,9 @@ read_message_headers(LUser, LServer) ->
 		      case xml_to_offline_msg(XML) of
 			  {ok, #offline_msg{from = From,
 					    to = To,
+					    timestamp = TS,
 					    packet = El}} ->
-			      [{Seq, From, To, El}];
+			      [{Seq, From, To, TS, El}];
 			  _ ->
 			      []
 		      end

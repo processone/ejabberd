@@ -1,0 +1,23 @@
+<form_type>
+  <name>urn:xmpp:mam:1</name>
+  <doc>XEP-0313</doc>
+  <desc>Form to query message archives</desc>
+  <field var='with'
+         type='jid-single'
+         label='User JID'/>
+  <field var='start'
+	 type='text-single'
+	 label='Search from the date'/>
+  <field var='end'
+	 type='text-single'
+	 label='Search until the date'/>
+  <field var='withtext'
+	 type='text-single'
+	 label='Search the text'/>
+</form_type>
+
+<!--
+Local Variables:
+mode: xml
+End:
+-->

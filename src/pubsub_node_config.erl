@@ -12,7 +12,7 @@
 
 -include("pubsub_node_config.hrl").
 
--export_type([{property, 0}, {result, 0}, {form, 0}]).
+-export_type([property/0, result/0, form/0]).
 
 dec_int(Val, Min, Max) ->
     case list_to_integer(binary_to_list(Val)) of

@@ -54,12 +54,13 @@
 -callback delete_old_messages(binary() | global,
 			      erlang:timestamp(),
 			      all | chat | groupchat) -> any().
--callback extended_fields() -> [xdata_field()].
+-callback extended_fields() -> [mam_query:property() | #xdata_field{}].
 -callback store(xmlel(), binary(), {binary(), binary()}, chat | groupchat,
 		jid(), binary(), recv | send) -> {ok, binary()} | any().
 -callback write_prefs(binary(), binary(), #archive_prefs{}, binary()) -> ok | any().
 -callback get_prefs(binary(), binary()) -> {ok, #archive_prefs{}} | error.
--callback select(binary(), jid(), jid(), mam_query(), chat | groupchat) ->
+-callback select(binary(), jid(), jid(), mam_query:result(),
+		 #rsm_set{} | undefined, chat | groupchat) ->
     {[{binary(), non_neg_integer(), xmlel()}], boolean(), non_neg_integer()}.
 
 %%%===================================================================
@@ -259,8 +260,9 @@ muc_filter_message(Pkt, #state{config = Config} = MUCState,
     end.
 
 set_stanza_id(Pkt, JID, ID) ->
-    Archived = #mam_archived{by = JID, id = ID},
-    StanzaID = #stanza_id{by = JID, id = ID},
+    BareJID = jid:remove_resource(JID),
+    Archived = #mam_archived{by = BareJID, id = ID},
+    StanzaID = #stanza_id{by = BareJID, id = ID},
     NewEls = [Archived, StanzaID|xmpp:get_els(Pkt)],
     xmpp:set_els(Pkt, NewEls).
 
@@ -308,43 +310,24 @@ muc_process_iq(#iq{type = get,
 muc_process_iq(IQ, _MUCState) ->
     IQ.
 
-parse_query(#mam_query{xdata = #xdata{fields = Fs}} = Query, Lang) ->
-    try
-	lists:foldl(
-	  fun(#xdata_field{var = <<"start">>, values = [Data|_]}, Q) ->
-		  try xmpp_util:decode_timestamp(Data) of
-		      {_, _, _} = TS -> Q#mam_query{start = TS}
-		  catch _:{bad_timestamp, _} -> throw({error, <<"start">>})
-		  end;
-	     (#xdata_field{var = <<"end">>, values = [Data|_]}, Q) ->
-		  try xmpp_util:decode_timestamp(Data) of
-		      {_, _, _} = TS -> Q#mam_query{start = TS}
-		  catch _:{bad_timestamp, _} -> throw({error, <<"end">>})
-		  end;
-	     (#xdata_field{var = <<"with">>, values = [Data|_]}, Q) ->
-		  case jid:from_string(Data) of
-		      error -> throw({error, <<"with">>});
-		      J -> Q#mam_query{with = J}
-		  end;
-	     (#xdata_field{var = <<"withtext">>, values = [Data|_]}, Q) ->
-		  case Data of
-		      <<"">> -> throw({error, <<"withtext">>});
-		      _ -> Q#mam_query{withtext = Data}
-	      end;
-	     (#xdata_field{var = <<"FORM_TYPE">>, values = [NS|_]}, Q) ->
-		  case Query#mam_query.xmlns of
-		      NS -> Q;
-		      _ -> throw({error, <<"FORM_TYPE">>})
-		  end;
-	     (#xdata_field{}, Acc) ->
-		  Acc
-	  end, Query, Fs)
-    catch throw:{error, Var} ->
-	    Txt = io_lib:format("Incorrect value of field '~s'", [Var]),
-	    {error, xmpp:err_bad_request(iolist_to_binary(Txt), Lang)}
+parse_query(#mam_query{xmlns = ?NS_MAM_TMP,
+		       start = Start, 'end' = End,
+		       with = With, withtext = Text}, _Lang) ->
+    {ok, [{start, Start}, {'end', End},
+	  {with, With}, {withtext, Text}]};
+parse_query(#mam_query{xdata = #xdata{}} = Query, Lang) ->
+    X = xmpp_util:set_xdata_field(
+	  #xdata_field{var = <<"FORM_TYPE">>,
+		       type = hidden, values = [?NS_MAM_1]},
+	  Query#mam_query.xdata),
+    try	mam_query:decode(X#xdata.fields) of
+	Form -> {ok, Form}
+    catch _:{mam_query, Why} ->
+	    Txt = mam_query:format_error(Why),
+	    {error, xmpp:err_bad_request(Txt, Lang)}
     end;
-parse_query(Query, _Lang) ->
-    Query.
+parse_query(#mam_query{}, _Lang) ->
+    {ok, []}.
 
 disco_sm_features(empty, From, To, Node, Lang) ->
     disco_sm_features({result, []}, From, To, Node, Lang);
@@ -402,17 +385,16 @@ delete_old_messages(_TypeBin, _Days) ->
 %%%===================================================================
 
 process_iq(LServer, #iq{sub_els = [#mam_query{xmlns = NS}]} = IQ) ->
-    CommonFields = [#xdata_field{type = hidden,
-				 var = <<"FORM_TYPE">>,
-				 values = [NS]},
-		    #xdata_field{type = 'jid-single', var = <<"with">>},
-		    #xdata_field{type = 'text-single', var = <<"start">>},
-		    #xdata_field{type = 'text-single', var = <<"end">>}],
     Mod = gen_mod:db_mod(LServer, ?MODULE),
+    CommonFields = [{with, undefined},
+		    {start, undefined},
+		    {'end', undefined}],
     ExtendedFields = Mod:extended_fields(),
-    Fields = CommonFields ++ ExtendedFields,
-    Form = #xdata{type = form, fields = Fields},
-    xmpp:make_iq_result(IQ, #mam_query{xmlns = NS, xdata = Form}).
+    Fields = mam_query:encode(CommonFields ++ ExtendedFields),
+    X = xmpp_util:set_xdata_field(
+	  #xdata_field{var = <<"FORM_TYPE">>, type = hidden, values = [NS]},
+	  #xdata{type = form, fields = Fields}),
+    xmpp:make_iq_result(IQ, #mam_query{xmlns = NS, xdata = X}).
 
 % Preference setting (both v0.2 & v0.3)
 process_iq(#iq{type = set, lang = Lang,
@@ -457,15 +439,17 @@ process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
 	{groupchat, _Role, _MUCState} ->
 	    ok
     end,
-    case parse_query(SubEl, Lang) of
+    case SubEl of
 	#mam_query{rsm = #rsm_set{index = I}} when is_integer(I) ->
 	    xmpp:make_error(IQ, xmpp:err_feature_not_implemented());
-	#mam_query{rsm = RSM, xmlns = NS} = Query ->
-	    NewRSM = limit_max(RSM, NS),
-	    NewQuery = Query#mam_query{rsm = NewRSM},
-	    select_and_send(LServer, NewQuery, IQ, MsgType);
-	{error, Err} ->
-	    xmpp:make_error(IQ, Err)
+	#mam_query{rsm = RSM, xmlns = NS} ->
+	    case parse_query(SubEl, Lang) of
+		{ok, Query} ->
+		    NewRSM = limit_max(RSM, NS),
+		    select_and_send(LServer, Query, NewRSM, IQ, MsgType);
+		{error, Err} ->
+		    xmpp:make_error(IQ, Err)
+	    end
     end.
 
 should_archive(#message{type = error}, _LServer) ->
@@ -493,57 +477,57 @@ should_archive(_, _LServer) ->
 
 -spec strip_my_archived_tag(stanza(), binary()) -> stanza().
 strip_my_archived_tag(Pkt, LServer) ->
-    NewPkt = xmpp:decode_els(
-	       Pkt, ?NS_CLIENT,
-	       fun(El) ->
-		       case xmpp:get_name(El) of
-			   <<"archived">> ->
-			       xmpp:get_ns(El) == ?NS_MAM_TMP;
-			   <<"stanza-id">> ->
-			       xmpp:get_ns(El) == ?NS_SID_0;
-			   _ ->
-			       false
-		       end
-	       end),
+    Els = xmpp:get_els(Pkt),
     NewEls = lists:filter(
-	       fun(#mam_archived{by = By}) ->
-		       By#jid.lserver /= LServer;
-		  (#stanza_id{by = By}) ->
-		       By#jid.lserver /= LServer;
-		  (_) ->
-		       true
-	       end, xmpp:get_els(NewPkt)),
-    xmpp:set_els(NewPkt, NewEls).
+	       fun(El) ->
+		       Name = xmpp:get_name(El),
+		       NS = xmpp:get_ns(El),
+		       if (Name == <<"archived">> andalso NS == ?NS_MAM_TMP);
+			  (Name == <<"stanza-id">> andalso NS == ?NS_SID_0) ->
+			       try xmpp:decode(El) of
+				   #mam_archived{by = By} ->
+				       By#jid.lserver /= LServer;
+				   #stanza_id{by = By} ->
+				       By#jid.lserver /= LServer
+			       catch _:{xmpp_codec, _} ->
+				       false
+			       end;
+			  true ->
+			       true
+		       end
+	       end, Els),
+    xmpp:set_els(Pkt, NewEls).
 
+-spec strip_x_jid_tags(stanza()) -> stanza().
 strip_x_jid_tags(Pkt) ->
-    NewPkt = xmpp:decode_els(
-	       Pkt, ?NS_CLIENT,
+    Els = xmpp:get_els(Pkt),
+    NewEls = lists:filter(
 	       fun(El) ->
 		       case xmpp:get_name(El) of
 			   <<"x">> ->
-			       case xmpp:get_ns(El) of
-				   ?NS_MUC_USER -> true;
-				   ?NS_MUC_ADMIN -> true;
-				   ?NS_MUC_OWNER -> true;
-				   _ -> false
-			       end;
-			   _ ->
-			       false
-		       end
-	       end),
-    NewEls = lists:filter(
-	       fun(El) ->
-		       Items = case El of
-				   #muc_user{items = Is} -> Is;
-				   #muc_admin{items = Is} -> Is;
-				   #muc_owner{items = Is} -> Is;
-				   _ -> []
-			       end,
-		       not lists:any(fun(#muc_item{jid = JID}) ->
+			       NS = xmpp:get_ns(El),
+			       Items = if NS == ?NS_MUC_USER;
+					  NS == ?NS_MUC_ADMIN;
+					  NS == ?NS_MUC_OWNER ->
+					       try xmpp:decode(El) of
+						   #muc_user{items = Is} -> Is;
+						   #muc_admin{items = Is} -> Is;
+						   #muc_owner{items = Is} -> Is
+					       catch _:{xmpp_codec, _} ->
+						       []
+					       end;
+					  true ->
+					       []
+				       end,
+			       not lists:any(
+				     fun(#muc_item{jid = JID}) ->
 					     JID /= undefined
-				     end, Items)
-	       end, xmpp:get_els(NewPkt)),
-    xmpp:set_els(NewPkt, NewEls).
+				     end, Items);
+			   _ ->
+			       true
+		       end
+	       end, Els),
+    xmpp:set_els(Pkt, NewEls).
 
 should_archive_peer(C2SState,
 		    #archive_prefs{default = Default,
@@ -625,7 +609,7 @@ has_no_store_hint(Message) ->
 -spec is_resent(message(), binary()) -> boolean().
 is_resent(Pkt, LServer) ->
     case xmpp:get_subtag(Pkt, #stanza_id{}) of
-	#stanza_id{by = #jid{luser = <<>>, lserver = LServer}} ->
+	#stanza_id{by = #jid{lserver = LServer}} ->
 	    true;
 	_ ->
 	    false
@@ -741,21 +725,22 @@ maybe_activate_mam(LUser, LServer) ->
 	    ok
     end.
 
-select_and_send(LServer, Query, #iq{from = From, to = To} = IQ, MsgType) ->
+select_and_send(LServer, Query, RSM, #iq{from = From, to = To} = IQ, MsgType) ->
     {Msgs, IsComplete, Count} =
 	case MsgType of
 	    chat ->
-		select(LServer, From, From, Query, MsgType);
+		select(LServer, From, From, Query, RSM, MsgType);
 	    {groupchat, _Role, _MUCState} ->
-		select(LServer, From, To, Query, MsgType)
+		select(LServer, From, To, Query, RSM, MsgType)
 	end,
     SortedMsgs = lists:keysort(2, Msgs),
     send(SortedMsgs, Count, IsComplete, IQ).
 
-select(_LServer, JidRequestor, JidArchive,
-       #mam_query{start = Start, 'end' = End, rsm = RSM},
+select(_LServer, JidRequestor, JidArchive, Query, RSM,
        {groupchat, _Role, #state{config = #config{mam = false},
 				 history = History}} = MsgType) ->
+    Start = proplists:get_value(start, Query),
+    End = proplists:get_value('end', Query),
     #lqueue{len = L, queue = Q} = History,
     Msgs =
 	lists:flatmap(
@@ -786,9 +771,9 @@ select(_LServer, JidRequestor, JidArchive,
 	_ ->
 	    {Msgs, true, L}
     end;
-select(LServer, JidRequestor, JidArchive, Query, MsgType) ->
+select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:select(LServer, JidRequestor, JidArchive, Query, MsgType).
+    Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType).
 
 msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
 	  MsgType, JidRequestor, #jid{lserver = LServer} = JidArchive) ->

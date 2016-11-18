@@ -330,7 +330,7 @@ set_roster(#roster{us = {LUser, LServer}, jid = LJID} = Item) ->
     transaction(
       LServer,
       fun() ->
-	      roster_subscribe_t(LUser, LServer, LJID, Item)
+	      update_roster_t(LUser, LServer, LJID, Item)
       end).
 
 del_roster(LUser, LServer, LJID) ->

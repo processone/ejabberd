@@ -12,7 +12,7 @@
 
 -include("pubsub_subscribe_authorization.hrl").
 
--export_type([{property, 0}, {result, 0}, {form, 0}]).
+-export_type([property/0, result/0, form/0]).
 
 dec_bool(<<"1">>) -> true;
 dec_bool(<<"0">>) -> false;

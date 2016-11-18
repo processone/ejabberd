@@ -88,7 +88,7 @@ read_message_headers(LUser, LServer) ->
 		     fun(#offline_msg{from = From, to = To, packet = Pkt,
 				      timestamp = TS}) ->
 			     Seq = now_to_integer(TS),
-			     {Seq, From, To, Pkt}
+			     {Seq, From, To, TS, Pkt}
 		     end, Rs),
 	    lists:keysort(1, Hdrs);
 	_Err ->

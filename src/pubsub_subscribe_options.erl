@@ -12,7 +12,7 @@
 
 -include("pubsub_subscribe_options.hrl").
 
--export_type([{property, 0}, {result, 0}, {form, 0}]).
+-export_type([property/0, result/0, form/0]).
 
 dec_enum(Val, Enums) ->
     AtomVal = erlang:binary_to_existing_atom(Val, utf8),

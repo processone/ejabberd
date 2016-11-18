@@ -488,8 +488,9 @@ decode(El, NS, Opts) ->
 	       [format_element(El), xmpp:pp(Pkt)]),
 	Pkt
     catch _:{xmpp_codec, Why} ->
-	    ct:fail("recv failed: ~p->~n~s",
-		    [El, xmpp:format_error(Why)])
+	    ct:pal("recv failed: ~p->~n~s",
+		   [El, xmpp:format_error(Why)]),
+	    erlang:error({xmpp_codec, Why})
     end.
 
 send_text(Config, Text) ->

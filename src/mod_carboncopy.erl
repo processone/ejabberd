@@ -228,8 +228,8 @@ complete_packet(_From, Msg, _Direction) ->
 -spec is_chat_message(stanza()) -> boolean().
 is_chat_message(#message{type = chat}) ->
     true;
-is_chat_message(#message{type = normal, body = Body}) ->
-    xmpp:get_text(Body) /= <<"">>;
+is_chat_message(#message{type = normal, body = [_|_]}) ->
+    true;
 is_chat_message(_) ->
     false.
 

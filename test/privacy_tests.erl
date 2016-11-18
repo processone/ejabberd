@@ -13,7 +13,7 @@
 -import(suite, [disconnect/1, send_recv/2, get_event/1, put_event/2,
 		recv_iq/1, recv_presence/1, recv_message/1, recv/1,
 		send/2, my_jid/1, server_jid/1, get_features/1,
-		set_roster/3, del_roster/1]).
+		set_roster/3, del_roster/1, get_roster/1]).
 -include("suite.hrl").
 -include("mod_roster.hrl").
 
@@ -233,7 +233,7 @@ set_get_block(Config) ->
 %%% Master-slave cases
 %%%===================================================================
 master_slave_cases() ->
-    {privacy_master_slave, [parallel],
+    {privacy_master_slave, [sequence],
      [master_slave_test(deny_bare_jid),
       master_slave_test(deny_full_jid),
       master_slave_test(deny_server_jid),
@@ -319,7 +319,8 @@ deny_master(Config, {Type, Value}) ->
     set_roster(Config, Sub, Groups),
     lists:foreach(
       fun(Opts) ->
-	      ListName = str:format("deny-~s-~s-~p", [Type, Value, Opts]),
+	      ct:pal("Set list for ~s, ~s, ~w", [Type, Value, Opts]),
+	      ListName = randoms:get_string(),
 	      Item = #privacy_item{order = 0,
 				   action = deny,
 				   iq = proplists:get_bool(iq, Opts),

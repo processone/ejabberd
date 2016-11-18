@@ -14,7 +14,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/5]).
+	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/6]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -51,7 +51,7 @@ delete_old_messages(ServerHost, TimeStamp, Type) ->
     ok.
 
 extended_fields() ->
-    [#xdata_field{type = 'text-single', var = <<"withtext">>}].
+    [{withtext, <<"">>}].
 
 store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
     TSinteger = p1_time_compat:system_time(micro_seconds),
@@ -124,12 +124,12 @@ get_prefs(LUser, LServer) ->
     end.
 
 select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
-       MAMQuery, MsgType) ->
+       MAMQuery, RSM, MsgType) ->
     User = case MsgType of
 	       chat -> LUser;
 	       {groupchat, _Role, _MUCState} -> jid:to_string(JidArchive)
 	   end,
-    {Query, CountQuery} = make_sql_query(User, LServer, MAMQuery),
+    {Query, CountQuery} = make_sql_query(User, LServer, MAMQuery, RSM),
     % TODO from XEP-0313 v0.2: "To conserve resources, a server MAY place a
     % reasonable limit on how many stanzas may be pushed to a client in one
     % request. If a query returns a number of stanzas greater than this limit
@@ -139,7 +139,7 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
     case {ejabberd_sql:sql_query(LServer, Query),
 	  ejabberd_sql:sql_query(LServer, CountQuery)} of
 	{{selected, _, Res}, {selected, _, [[Count]]}} ->
-	    {Max, Direction, _} = get_max_direction_id(MAMQuery#mam_query.rsm),
+	    {Max, Direction, _} = get_max_direction_id(RSM),
 	    {Res1, IsComplete} =
 		if Max >= 0 andalso Max /= undefined andalso length(Res) > Max ->
 			if Direction == before ->
@@ -194,9 +194,11 @@ usec_to_now(Int) ->
     Sec = Secs rem 1000000,
     {MSec, Sec, USec}.
 
-make_sql_query(User, LServer,
-	       #mam_query{start = Start, 'end' = End, with = With,
-			  withtext = WithText, rsm = RSM}) ->
+make_sql_query(User, LServer, MAMQuery, RSM) ->
+    Start = proplists:get_value(start, MAMQuery),
+    End = proplists:get_value('end', MAMQuery),
+    With = proplists:get_value(with, MAMQuery),
+    WithText = proplists:get_value(withtext, MAMQuery),
     {Max, Direction, ID} = get_max_direction_id(RSM),
     ODBCType = ejabberd_config:get_option(
 		 {sql_type, LServer},

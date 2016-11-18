@@ -177,15 +177,19 @@ unregister_iq_handler(Host, XMLNS) ->
 refresh_iq_handlers() ->
     ejabberd_local ! refresh_iq_handlers.
 
--spec bounce_resource_packet(jid(), jid(), stanza()) -> ok.
-bounce_resource_packet(_From, _To, #presence{}) ->
+-spec bounce_resource_packet(jid(), jid(), stanza()) -> stop.
+bounce_resource_packet(_From, #jid{lresource = <<"">>}, #presence{}) ->
+    ok;
+bounce_resource_packet(_From, #jid{lresource = <<"">>},
+		       #message{type = headline}) ->
     ok;
 bounce_resource_packet(From, To, Packet) ->
     Lang = xmpp:get_lang(Packet),
     Txt = <<"No available resource found">>,
     Err = xmpp:make_error(Packet,
 			  xmpp:err_item_not_found(Txt, Lang)),
-    ejabberd_router:route(To, From, Err).
+    ejabberd_router:route(To, From, Err),
+    stop.
 
 %%====================================================================
 %% gen_server callbacks
@@ -283,7 +287,7 @@ do_route(From, To, Packet) ->
 	    ejabberd_sm:route(From, To, Packet);
        is_record(Packet, iq), To#jid.lresource == <<"">> ->
 	    process_iq(From, To, Packet);
-       Type == result; Type == error; Type == headline ->
+       Type == result; Type == error ->
 	    ok;
        true ->
 	    ejabberd_hooks:run(local_send_to_resource_hook,

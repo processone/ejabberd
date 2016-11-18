@@ -11,10 +11,10 @@
 %% API
 -compile(export_all).
 -import(suite, [recv_presence/1, send_recv/2, my_jid/1, muc_room_jid/1,
-		send/2, recv_message/1, recv_iq/1, recv/1, muc_jid/1,
+		send/2, recv_message/1, recv_iq/1, muc_jid/1,
 		alt_room_jid/1, wait_for_slave/1, wait_for_master/1,
 		disconnect/1, put_event/2, get_event/1, peer_muc_jid/1,
-		my_muc_jid/1, get_features/2, flush/1, set_opt/3]).
+		my_muc_jid/1, get_features/2, set_opt/3]).
 -include("suite.hrl").
 -include("jid.hrl").
 
@@ -26,21 +26,21 @@
 %%%===================================================================
 single_cases() ->
     {muc_single, [sequence],
-     [muc_service_presence_error,
-      muc_service_message_error,
-      muc_service_unknown_ns_iq_error,
-      muc_service_iq_set_error,
-      muc_service_improper_iq_error,
-      muc_service_features,
-      muc_service_disco_info_node_error,
-      muc_service_disco_items,
-      muc_service_unique,
-      muc_service_vcard,
-      muc_configure_non_existent,
-      muc_cancel_configure_non_existent,
-      muc_service_subscriptions]}.
+     [single_test(service_presence_error),
+      single_test(service_message_error),
+      single_test(service_unknown_ns_iq_error),
+      single_test(service_iq_set_error),
+      single_test(service_improper_iq_error),
+      single_test(service_features),
+      single_test(service_disco_info_node_error),
+      single_test(service_disco_items),
+      single_test(service_unique),
+      single_test(service_vcard),
+      single_test(configure_non_existent),
+      single_test(cancel_configure_non_existent),
+      single_test(service_subscriptions)]}.
 
-muc_service_presence_error(Config) ->
+service_presence_error(Config) ->
     Service = muc_jid(Config),
     ServiceResource = jid:replace_resource(Service, randoms:get_string()),
     lists:foreach(
@@ -56,7 +56,7 @@ muc_service_presence_error(Config) ->
       end, [Service, ServiceResource]),
     disconnect(Config).
 
-muc_service_message_error(Config) ->
+service_message_error(Config) ->
     Service = muc_jid(Config),
     send(Config, #message{type = error, to = Service}),
     lists:foreach(
@@ -75,7 +75,7 @@ muc_service_message_error(Config) ->
       end, [chat, normal, headline, groupchat]),
     disconnect(Config).
 
-muc_service_unknown_ns_iq_error(Config) ->
+service_unknown_ns_iq_error(Config) ->
     Service = muc_jid(Config),
     ServiceResource = jid:replace_resource(Service, randoms:get_string()),
     lists:foreach(
@@ -93,7 +93,7 @@ muc_service_unknown_ns_iq_error(Config) ->
       end, [Service, ServiceResource]),
     disconnect(Config).
 
-muc_service_iq_set_error(Config) ->
+service_iq_set_error(Config) ->
     Service = muc_jid(Config),
     lists:foreach(
       fun(SubEl) ->
@@ -108,7 +108,7 @@ muc_service_iq_set_error(Config) ->
 	    #muc_unique{}, #muc_subscriptions{}]),
     disconnect(Config).
 
-muc_service_improper_iq_error(Config) ->
+service_improper_iq_error(Config) ->
     Service = muc_jid(Config),
     lists:foreach(
       fun(SubEl) ->
@@ -127,7 +127,7 @@ muc_service_improper_iq_error(Config) ->
 	    #vcard_email{}, #muc_subscribe{nick = ?config(nick, Config)}]),
     disconnect(Config).
 
-muc_service_features(Config) ->
+service_features(Config) ->
     ServerHost = ?config(server_host, Config),
     MUC = muc_jid(Config),
     Features = sets:from_list(get_features(Config, MUC)),
@@ -144,7 +144,7 @@ muc_service_features(Config) ->
     true = sets:is_subset(RequiredFeatures, Features),
     disconnect(Config).
 
-muc_service_disco_info_node_error(Config) ->
+service_disco_info_node_error(Config) ->
     MUC = muc_jid(Config),
     Node = randoms:get_string(),
     #iq{type = error} = Err =
@@ -153,7 +153,7 @@ muc_service_disco_info_node_error(Config) ->
     #stanza_error{reason = 'item-not-found'} = xmpp:get_error(Err),
     disconnect(Config).
 
-muc_service_disco_items(Config) ->
+service_disco_items(Config) ->
     #jid{server = Service} = muc_jid(Config),
     Rooms = lists:sort(
 	      lists:map(
@@ -163,25 +163,25 @@ muc_service_disco_items(Config) ->
 		end, lists:seq(1, 5))),
     lists:foreach(
       fun(Room) ->
-	      ok = muc_join_new(Config, Room)
+	      ok = join_new(Config, Room)
       end, Rooms),
-    Items = muc_disco_items(Config),
+    Items = disco_items(Config),
     Rooms = [J || #disco_item{jid = J} <- Items],
     lists:foreach(
       fun(Room) ->
-	      ok = muc_leave(Config, Room)
+	      ok = leave(Config, Room)
       end, Rooms),
-    [] = muc_disco_items(Config),
+    [] = disco_items(Config),
     disconnect(Config).
 
-muc_service_vcard(Config) ->
+service_vcard(Config) ->
     MUC = muc_jid(Config),
     ct:comment("Retreiving vCard from ~s", [jid:to_string(MUC)]),
     #iq{type = result, sub_els = [#vcard_temp{}]} =
 	send_recv(Config, #iq{type = get, to = MUC, sub_els = [#vcard_temp{}]}),
     disconnect(Config).
 
-muc_service_unique(Config) ->
+service_unique(Config) ->
     MUC = muc_jid(Config),
     ct:comment("Requesting muc unique from ~s", [jid:to_string(MUC)]),
     #iq{type = result, sub_els = [#muc_unique{name = Name}]} =
@@ -190,11 +190,11 @@ muc_service_unique(Config) ->
     <<_, _/binary>> = Name,
     disconnect(Config).
 
-muc_configure_non_existent(Config) ->
-    [_|_] = muc_get_config(Config),
+configure_non_existent(Config) ->
+    [_|_] = get_config(Config),
     disconnect(Config).
 
-muc_cancel_configure_non_existent(Config) ->
+cancel_configure_non_existent(Config) ->
     Room = muc_room_jid(Config),
     #iq{type = result, sub_els = []} =
 	send_recv(Config,
@@ -202,7 +202,7 @@ muc_cancel_configure_non_existent(Config) ->
 		      sub_els = [#muc_owner{config = #xdata{type = cancel}}]}),
     disconnect(Config).
 
-muc_service_subscriptions(Config) ->
+service_subscriptions(Config) ->
     MUC = #jid{server = Service} = muc_jid(Config),
     Rooms = lists:sort(
 	      lists:map(
@@ -212,9 +212,9 @@ muc_service_subscriptions(Config) ->
 		end, lists:seq(1, 5))),
     lists:foreach(
       fun(Room) ->
-	      ok = muc_join_new(Config, Room),
-	      [104] = muc_set_config(Config, [{allow_subscription, true}], Room),
-	      [] = muc_subscribe(Config, [], Room)
+	      ok = join_new(Config, Room),
+	      [104] = set_config(Config, [{allow_subscription, true}], Room),
+	      [] = subscribe(Config, [], Room)
       end, Rooms),
     #iq{type = result, sub_els = [#muc_subscriptions{list = JIDs}]} =
 	send_recv(Config, #iq{type = get, to = MUC,
@@ -222,8 +222,8 @@ muc_service_subscriptions(Config) ->
     Rooms = lists:sort(JIDs),
     lists:foreach(
       fun(Room) ->
-	      ok = muc_unsubscribe(Config, Room),
-	      ok = muc_leave(Config, Room)
+	      ok = unsubscribe(Config, Room),
+	      ok = leave(Config, Room)
       end, Rooms),
     disconnect(Config).
 
@@ -232,61 +232,61 @@ muc_service_subscriptions(Config) ->
 %%%===================================================================
 master_slave_cases() ->
     {muc_master_slave, [sequence],
-     [master_slave_test(muc_register),
-      master_slave_test(muc_groupchat_msg),
-      master_slave_test(muc_private_msg),
-      master_slave_test(muc_set_subject),
-      master_slave_test(muc_history),
-      master_slave_test(muc_invite),
-      master_slave_test(muc_invite_members_only),
-      master_slave_test(muc_invite_password_protected),
-      master_slave_test(muc_voice_request),
-      master_slave_test(muc_change_role),
-      master_slave_test(muc_kick),
-      master_slave_test(muc_change_affiliation),
-      master_slave_test(muc_destroy),
-      master_slave_test(muc_vcard),
-      master_slave_test(muc_nick_change),
-      master_slave_test(muc_config_title_desc),
-      master_slave_test(muc_config_public_list),
-      master_slave_test(muc_config_password),
-      master_slave_test(muc_config_whois),
-      master_slave_test(muc_config_members_only),
-      master_slave_test(muc_config_moderated),
-      master_slave_test(muc_config_private_messages),
-      master_slave_test(muc_config_query),
-      master_slave_test(muc_config_allow_invites),
-      master_slave_test(muc_config_visitor_status),
-      master_slave_test(muc_config_allow_voice_requests),
-      master_slave_test(muc_config_voice_request_interval),
-      master_slave_test(muc_config_visitor_nickchange),
-      master_slave_test(muc_join_conflict)]}.
+     [master_slave_test(register),
+      master_slave_test(groupchat_msg),
+      master_slave_test(private_msg),
+      master_slave_test(set_subject),
+      master_slave_test(history),
+      master_slave_test(invite),
+      master_slave_test(invite_members_only),
+      master_slave_test(invite_password_protected),
+      master_slave_test(voice_request),
+      master_slave_test(change_role),
+      master_slave_test(kick),
+      master_slave_test(change_affiliation),
+      master_slave_test(destroy),
+      master_slave_test(vcard),
+      master_slave_test(nick_change),
+      master_slave_test(config_title_desc),
+      master_slave_test(config_public_list),
+      master_slave_test(config_password),
+      master_slave_test(config_whois),
+      master_slave_test(config_members_only),
+      master_slave_test(config_moderated),
+      master_slave_test(config_private_messages),
+      master_slave_test(config_query),
+      master_slave_test(config_allow_invites),
+      master_slave_test(config_visitor_status),
+      master_slave_test(config_allow_voice_requests),
+      master_slave_test(config_voice_request_interval),
+      master_slave_test(config_visitor_nickchange),
+      master_slave_test(join_conflict)]}.
 
-muc_join_conflict_master(Config) ->
-    ok = muc_join_new(Config),
+join_conflict_master(Config) ->
+    ok = join_new(Config),
     put_event(Config, join),
     ct:comment("Waiting for 'leave' command from the slave"),
     leave = get_event(Config),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_join_conflict_slave(Config) ->
+join_conflict_slave(Config) ->
     NewConfig = set_opt(nick, ?config(peer_nick, Config), Config),
     ct:comment("Waiting for 'join' command from the master"),
     join = get_event(Config),
     ct:comment("Fail trying to join the room with conflicting nick"),
-    #stanza_error{reason = 'conflict'} = muc_join(NewConfig),
+    #stanza_error{reason = 'conflict'} = join(NewConfig),
     put_event(Config, leave),
     disconnect(NewConfig).
 
-muc_groupchat_msg_master(Config) ->
+groupchat_msg_master(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(slave, Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
     MyNick = ?config(nick, Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
-    ok = muc_master_join(Config),
+    ok = master_join(Config),
     lists:foreach(
       fun(I) ->
 	      Body = xmpp:mk_text(integer_to_binary(I)),
@@ -299,29 +299,29 @@ muc_groupchat_msg_master(Config) ->
 				 role = none,
 				 affiliation = none}]} =
 	recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_groupchat_msg_slave(Config) ->
+groupchat_msg_slave(Config) ->
     Room = muc_room_jid(Config),
     PeerNick = ?config(master_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    {[], _, _} = muc_slave_join(Config),
+    {[], _, _} = slave_join(Config),
     lists:foreach(
       fun(I) ->
 	      Body = xmpp:mk_text(integer_to_binary(I)),
 	      #message{type = groupchat, from = PeerNickJID,
 		       body = Body} = recv_message(Config)
       end, lists:seq(1, 5)),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_private_msg_master(Config) ->
+private_msg_master(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(slave, Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    ok = muc_master_join(Config),
+    ok = master_join(Config),
     lists:foreach(
       fun(I) ->
 	      Body = xmpp:mk_text(integer_to_binary(I)),
@@ -336,31 +336,31 @@ muc_private_msg_master(Config) ->
     send(Config, #message{type = chat, to = PeerNickJID}),
     #message{from = PeerNickJID, type = error} = ErrMsg = recv_message(Config),
     #stanza_error{reason = 'item-not-found'} = xmpp:get_error(ErrMsg),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_private_msg_slave(Config) ->
+private_msg_slave(Config) ->
     Room = muc_room_jid(Config),
     PeerNick = ?config(master_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    {[], _, _} = muc_slave_join(Config),
+    {[], _, _} = slave_join(Config),
     lists:foreach(
       fun(I) ->
 	      Body = xmpp:mk_text(integer_to_binary(I)),
 	      #message{type = chat, from = PeerNickJID,
 		       body = Body} = recv_message(Config)
       end, lists:seq(1, 5)),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_set_subject_master(Config) ->
+set_subject_master(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(slave, Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
     Subject1 = xmpp:mk_text(?config(room_subject, Config)),
     Subject2 = xmpp:mk_text(<<"new-", (?config(room_subject, Config))/binary>>),
-    ok = muc_master_join(Config),
+    ok = master_join(Config),
     ct:comment("Setting 1st subject"),
     send(Config, #message{type = groupchat, to = Room,
 			  subject = Subject1}),
@@ -380,30 +380,30 @@ muc_set_subject_master(Config) ->
     #message{type = groupchat, from = PeerNickJID,
 	     subject = Subject1} = recv_message(Config),
     ct:comment("Disallow subject change"),
-    [104] = muc_set_config(Config, [{changesubject, false}]),
+    [104] = set_config(Config, [{changesubject, false}]),
     ct:comment("Waiting for the slave to leave"),
     #muc_user{items = [#muc_item{jid = PeerJID,
 				 role = none,
 				 affiliation = none}]} =
 	recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_set_subject_slave(Config) ->
+set_subject_slave(Config) ->
     Room = muc_room_jid(Config),
     MyNickJID = my_muc_jid(Config),
     PeerNick = ?config(master_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
     Subject1 = xmpp:mk_text(?config(room_subject, Config)),
     Subject2 = xmpp:mk_text(<<"new-", (?config(room_subject, Config))/binary>>),
-    {[], _, _} = muc_slave_join(Config),
+    {[], _, _} = slave_join(Config),
     ct:comment("Receiving 1st subject set by the master"),
     #message{type = groupchat, from = PeerNickJID,
 	     subject = Subject1} = recv_message(Config),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     ct:comment("Waiting for 'join' command from the master"),
     join = get_event(Config),
-    {[], SubjMsg2, _} = muc_join(Config),
+    {[], SubjMsg2, _} = join(Config),
     ct:comment("Checking if the master has set 2nd subject during our absence"),
     #message{type = groupchat, from = PeerNickJID,
 	     subject = Subject2} = SubjMsg2,
@@ -412,15 +412,15 @@ muc_set_subject_slave(Config) ->
     #message{type = groupchat, from = MyNickJID,
 	     subject = Subject1} = recv_message(Config),
     ct:comment("Waiting for the master to disallow subject change"),
-    [104] = muc_recv_config_change_message(Config),
+    [104] = recv_config_change_message(Config),
     ct:comment("Fail trying to change the subject"),
     send(Config, #message{to = Room, type = groupchat, subject = Subject2}),
     #message{from = Room, type = error} = ErrMsg = recv_message(Config),
     #stanza_error{reason = 'forbidden'} = xmpp:get_error(ErrMsg),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_history_master(Config) ->
+history_master(Config) ->
     Room = muc_room_jid(Config),
     ServerHost = ?config(server_host, Config),
     MyNick = ?config(nick, Config),
@@ -429,7 +429,7 @@ muc_history_master(Config) ->
     Size = gen_mod:get_module_opt(ServerHost, mod_muc, history_size,
 				  fun(I) when is_integer(I), I>=0 -> I end,
 				  20),
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     ct:comment("Putting ~p+1 messages in the history", [Size]),
     %% Only Size messages will be stored
     lists:foreach(
@@ -448,10 +448,10 @@ muc_history_master(Config) ->
 	    available, unavailable,
 	    available, unavailable,
 	    available, unavailable]),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_history_slave(Config) ->
+history_slave(Config) ->
     Room = muc_room_jid(Config),
     PeerNick = ?config(peer_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
@@ -461,45 +461,45 @@ muc_history_slave(Config) ->
 				  20),
     ct:comment("Waiting for 'join' command from the master"),
     join = get_event(Config),
-    {History, _, _} = muc_join(Config),
+    {History, _, _} = join(Config),
     ct:comment("Checking ordering of history events"),
     BodyList = [binary_to_integer(xmpp:get_text(Body))
 		|| #message{type = groupchat, from = From,
 			    body = Body} <- History,
 		   From == PeerNickJID],
     BodyList = lists:seq(1, Size),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     %% If the client wishes to receive no history, it MUST set the 'maxchars'
     %% attribute to a value of "0" (zero)
     %% (http://xmpp.org/extensions/xep-0045.html#enter-managehistory)
     ct:comment("Checking if maxchars=0 yields to no history"),
-    {[], _, _} = muc_join(Config, #muc{history = #muc_history{maxchars = 0}}),
-    ok = muc_leave(Config),
+    {[], _, _} = join(Config, #muc{history = #muc_history{maxchars = 0}}),
+    ok = leave(Config),
     ct:comment("Receiving only 10 last stanzas"),
-    {History10, _, _} = muc_join(Config,
+    {History10, _, _} = join(Config,
 				 #muc{history = #muc_history{maxstanzas = 10}}),
     BodyList10 = [binary_to_integer(xmpp:get_text(Body))
 		  || #message{type = groupchat, from = From,
 			      body = Body} <- History10,
 		     From == PeerNickJID],
     BodyList10 = lists:nthtail(Size-10, lists:seq(1, Size)),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     #delay{stamp = TS} = xmpp:get_subtag(hd(History), #delay{}),
     ct:comment("Receiving all history without the very first element"),
-    {HistoryWithoutFirst, _, _} = muc_join(Config,
+    {HistoryWithoutFirst, _, _} = join(Config,
 					   #muc{history = #muc_history{since = TS}}),
     BodyListWithoutFirst = [binary_to_integer(xmpp:get_text(Body))
 			    || #message{type = groupchat, from = From,
 					body = Body} <- HistoryWithoutFirst,
 			       From == PeerNickJID],
     BodyListWithoutFirst = lists:nthtail(1, lists:seq(1, Size)),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_invite_master(Config) ->
+invite_master(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(peer, Config),
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     wait_for_slave(Config),
     %% Inviting the peer
     send(Config, #message{to = Room, type = normal,
@@ -510,10 +510,10 @@ muc_invite_master(Config) ->
     #message{from = Room} = DeclineMsg = recv_message(Config),
     #muc_user{decline = #muc_decline{from = PeerJID}} =
 	xmpp:get_subtag(DeclineMsg, #muc_user{}),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_invite_slave(Config) ->
+invite_slave(Config) ->
     Room = muc_room_jid(Config),
     wait_for_master(Config),
     PeerJID = ?config(master, Config),
@@ -527,12 +527,12 @@ muc_invite_slave(Config) ->
 				decline = #muc_decline{to = PeerJID}}]}),
     disconnect(Config).
 
-muc_invite_members_only_master(Config) ->
+invite_members_only_master(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(slave, Config),
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     %% Setting the room to members-only
-    [_|_] = muc_set_config(Config, [{membersonly, true}]),
+    [_|_] = set_config(Config, [{membersonly, true}]),
     wait_for_slave(Config),
     %% Inviting the peer
     send(Config, #message{to = Room, type = normal,
@@ -543,22 +543,22 @@ muc_invite_members_only_master(Config) ->
     #message{from = Room, type = normal} = AffMsg = recv_message(Config),
     #muc_user{items = [#muc_item{jid = PeerJID, affiliation = member}]} =
 	xmpp:get_subtag(AffMsg, #muc_user{}),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_invite_members_only_slave(Config) ->
+invite_members_only_slave(Config) ->
     Room = muc_room_jid(Config),
     wait_for_master(Config),
     %% Receiving invitation
     #message{from = Room, type = normal} = recv_message(Config),
     disconnect(Config).
 
-muc_invite_password_protected_master(Config) ->
+invite_password_protected_master(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(slave, Config),
     Password = randoms:get_string(),
-    ok = muc_join_new(Config),
-    [104] = muc_set_config(Config, [{passwordprotectedroom, true},
+    ok = join_new(Config),
+    [104] = set_config(Config, [{passwordprotectedroom, true},
                                     {roomsecret, Password}]),
     put_event(Config, Password),
     %% Inviting the peer
@@ -567,10 +567,10 @@ muc_invite_password_protected_master(Config) ->
 			      [#muc_user{
 				  invites =
 				      [#muc_invite{to = PeerJID}]}]}),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_invite_password_protected_slave(Config) ->
+invite_password_protected_slave(Config) ->
     Room = muc_room_jid(Config),
     Password = get_event(Config),
     %% Receiving invitation
@@ -578,13 +578,13 @@ muc_invite_password_protected_slave(Config) ->
     #muc_user{password = Password} = xmpp:get_subtag(Msg, #muc_user{}),
     disconnect(Config).
 
-muc_voice_request_master(Config) ->
+voice_request_master(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(slave, Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    ok = muc_join_new(Config),
-    [104] = muc_set_config(Config, [{members_by_default, false}]),
+    ok = join_new(Config),
+    [104] = set_config(Config, [{members_by_default, false}]),
     wait_for_slave(Config),
     #muc_user{
        items = [#muc_item{role = visitor,
@@ -610,16 +610,16 @@ muc_voice_request_master(Config) ->
 	recv_muc_presence(Config, PeerNickJID, available),
     ct:comment("Waiting for the slave to leave"),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_voice_request_slave(Config) ->
+voice_request_slave(Config) ->
     Room = muc_room_jid(Config),
     MyJID = my_jid(Config),
     MyNick = ?config(nick, Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
     wait_for_master(Config),
-    {[], _, _} = muc_join(Config, visitor),
+    {[], _, _} = join(Config, visitor),
     ct:comment("Requesting voice"),
     Fs = muc_request:encode([{role, participant}]),
     X = #xdata{type = submit, fields = Fs},
@@ -630,17 +630,17 @@ muc_voice_request_slave(Config) ->
 			  jid = MyJID,
 			  affiliation = none}]} =
 	recv_muc_presence(Config, MyNickJID, available),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_change_role_master(Config) ->
+change_role_master(Config) ->
     Room = muc_room_jid(Config),
     MyJID = my_jid(Config),
     MyNick = ?config(nick, Config),
     PeerJID = ?config(slave, Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     ct:comment("Waiting for the slave to join"),
     wait_for_slave(Config),
     #muc_user{items = [#muc_item{role = participant,
@@ -650,7 +650,7 @@ muc_change_role_master(Config) ->
     lists:foreach(
       fun(Role) ->
 	      ct:comment("Checking if the slave is not in the roles list"),
-	      case muc_get_role(Config, Role) of
+	      case get_role(Config, Role) of
 		  [#muc_item{jid = MyJID, affiliation = owner,
 			     role = moderator, nick = MyNick}] when Role == moderator ->
 		      ok;
@@ -659,7 +659,7 @@ muc_change_role_master(Config) ->
 	      end,
 	      Reason = randoms:get_string(),
 	      put_event(Config, {Role, Reason}),
-	      ok = muc_set_role(Config, Role, Reason),
+	      ok = set_role(Config, Role, Reason),
 	      ct:comment("Receiving role change to ~s", [Role]),
 	      #muc_user{
 		 items = [#muc_item{role = Role,
@@ -667,19 +667,19 @@ muc_change_role_master(Config) ->
 				    reason = Reason}]} =
 		  recv_muc_presence(Config, PeerNickJID, available),
 	      [#muc_item{role = Role, affiliation = none,
-			 nick = PeerNick}|_] = muc_get_role(Config, Role)
+			 nick = PeerNick}|_] = get_role(Config, Role)
       end, [visitor, participant, moderator]),
     put_event(Config, disconnect),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_change_role_slave(Config) ->
+change_role_slave(Config) ->
     wait_for_master(Config),
-    {[], _, _} = muc_join(Config),
-    muc_change_role_slave(Config, get_event(Config)).
+    {[], _, _} = join(Config),
+    change_role_slave(Config, get_event(Config)).
 
-muc_change_role_slave(Config, {Role, Reason}) ->
+change_role_slave(Config, {Role, Reason}) ->
     Room = muc_room_jid(Config),
     MyNick = ?config(slave_nick, Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
@@ -690,12 +690,12 @@ muc_change_role_slave(Config, {Role, Reason}) ->
 				 reason = Reason}]} =
 	recv_muc_presence(Config, MyNickJID, available),
     true = lists:member(110, Codes),
-    muc_change_role_slave(Config, get_event(Config));
-muc_change_role_slave(Config, disconnect) ->
-    ok = muc_leave(Config),
+    change_role_slave(Config, get_event(Config));
+change_role_slave(Config, disconnect) ->
+    ok = leave(Config),
     disconnect(Config).
 
-muc_change_affiliation_master(Config) ->
+change_affiliation_master(Config) ->
     Room = muc_room_jid(Config),
     MyJID = my_jid(Config),
     MyBareJID = jid:remove_resource(MyJID),
@@ -704,7 +704,7 @@ muc_change_affiliation_master(Config) ->
     PeerBareJID = jid:remove_resource(PeerJID),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     ct:comment("Waiting for the slave to join"),
     wait_for_slave(Config),
     #muc_user{items = [#muc_item{role = participant,
@@ -714,7 +714,7 @@ muc_change_affiliation_master(Config) ->
     lists:foreach(
       fun({Aff, Role, Status}) ->
 	      ct:comment("Checking if slave is not in affiliation list"),
-	      case muc_get_affiliation(Config, Aff) of
+	      case get_affiliation(Config, Aff) of
 		  [#muc_item{jid = MyBareJID,
 			     affiliation = owner}] when Aff == owner ->
 		      ok;
@@ -723,7 +723,7 @@ muc_change_affiliation_master(Config) ->
 	      end,
 	      Reason = randoms:get_string(),
 	      put_event(Config, {Aff, Role, Status, Reason}),
-	      ok = muc_set_affiliation(Config, Aff, Reason),
+	      ok = set_affiliation(Config, Aff, Reason),
 	      ct:comment("Receiving affiliation change to ~s", [Aff]),
 	      #muc_user{
 		 items = [#muc_item{role = Role,
@@ -737,7 +737,7 @@ muc_change_affiliation_master(Config) ->
 		 true ->
 		      ok
 	      end,
-	      Affs = muc_get_affiliation(Config, Aff),
+	      Affs = get_affiliation(Config, Aff),
 	      ct:comment("Checking if the affiliation was correctly set"),
 	      case lists:keyfind(PeerBareJID, #muc_item.jid, Affs) of
 		  false when Aff == none ->
@@ -748,15 +748,15 @@ muc_change_affiliation_master(Config) ->
       end, [{member, participant, available}, {none, participant, available},
 	    {admin, moderator, available}, {owner, moderator, available},
 	    {outcast, none, unavailable}]),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_change_affiliation_slave(Config) ->
+change_affiliation_slave(Config) ->
     wait_for_master(Config),
-    {[], _, _} = muc_join(Config),
-    muc_change_affiliation_slave(Config, get_event(Config)).
+    {[], _, _} = join(Config),
+    change_affiliation_slave(Config, get_event(Config)).
 
-muc_change_affiliation_slave(Config, {Aff, Role, Status, Reason}) ->
+change_affiliation_slave(Config, {Aff, Role, Status, Reason}) ->
     Room = muc_room_jid(Config),
     PeerNick = ?config(master_nick, Config),
     MyNick = ?config(nick, Config),
@@ -776,17 +776,17 @@ muc_change_affiliation_slave(Config, {Aff, Role, Status, Reason}) ->
 	    #muc_actor{nick = PeerNick} = Actor,
 	    disconnect(Config);
        true ->
-	    muc_change_affiliation_slave(Config, get_event(Config))
+	    change_affiliation_slave(Config, get_event(Config))
     end.
 
-muc_kick_master(Config) ->
+kick_master(Config) ->
     Room = muc_room_jid(Config),
     MyNick = ?config(nick, Config),
     PeerJID = ?config(slave, Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
     Reason = <<"Testing">>,
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     ct:comment("Waiting for the slave to join"),
     wait_for_slave(Config),
     #muc_user{items = [#muc_item{role = participant,
@@ -794,9 +794,9 @@ muc_kick_master(Config) ->
 				 affiliation = none}]} =
 	recv_muc_presence(Config, PeerNickJID, available),
     [#muc_item{role = participant, affiliation = none,
-	       nick = PeerNick}|_] = muc_get_role(Config, participant),
+	       nick = PeerNick}|_] = get_role(Config, participant),
     ct:comment("Kicking slave"),
-    ok = muc_set_role(Config, none, Reason),
+    ok = set_role(Config, none, Reason),
     ct:comment("Receiving role change to 'none'"),
     #muc_user{
        status_codes = Codes,
@@ -805,20 +805,20 @@ muc_kick_master(Config) ->
 			  actor = #muc_actor{nick = MyNick},
 			  reason = Reason}]} =
 	recv_muc_presence(Config, PeerNickJID, unavailable),
-    [] = muc_get_role(Config, participant),
+    [] = get_role(Config, participant),
     ct:comment("Checking if the code is '307' (kicked)"),
     true = lists:member(307, Codes),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_kick_slave(Config) ->
+kick_slave(Config) ->
     Room = muc_room_jid(Config),
     PeerNick = ?config(master_nick, Config),
     MyNick = ?config(nick, Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
     Reason = <<"Testing">>,
     wait_for_master(Config),
-    {[], _, _} = muc_join(Config),
+    {[], _, _} = join(Config),
     ct:comment("Receiving role change to 'none'"),
     #muc_user{status_codes = Codes,
 	      items = [#muc_item{role = none,
@@ -832,7 +832,7 @@ muc_kick_slave(Config) ->
     true = lists:member(307, Codes),
     disconnect(Config).
 
-muc_destroy_master(Config) ->
+destroy_master(Config) ->
     Reason = <<"Testing">>,
     Room = muc_room_jid(Config),
     AltRoom = alt_room_jid(Config),
@@ -841,7 +841,7 @@ muc_destroy_master(Config) ->
     PeerNickJID = jid:replace_resource(Room, PeerNick),
     MyNick = ?config(nick, Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     ct:comment("Waiting for slave to join"),
     wait_for_slave(Config),
     #muc_user{items = [#muc_item{role = participant,
@@ -849,7 +849,7 @@ muc_destroy_master(Config) ->
 				 affiliation = none}]} =
 	recv_muc_presence(Config, PeerNickJID, available),
     wait_for_slave(Config),
-    ok = muc_destroy(Config, Reason),
+    ok = destroy(Config, Reason),
     ct:comment("Receiving destruction presence"),
     #muc_user{items = [#muc_item{role = none,
 				 affiliation = none}],
@@ -858,15 +858,15 @@ muc_destroy_master(Config) ->
 	recv_muc_presence(Config, MyNickJID, unavailable),
     disconnect(Config).
 
-muc_destroy_slave(Config) ->
+destroy_slave(Config) ->
     Reason = <<"Testing">>,
     Room = muc_room_jid(Config),
     AltRoom = alt_room_jid(Config),
     MyNick = ?config(nick, Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
     wait_for_master(Config),
-    {[], _, _} = muc_join(Config),
-    #stanza_error{reason = 'forbidden'} = muc_destroy(Config, Reason),
+    {[], _, _} = join(Config),
+    #stanza_error{reason = 'forbidden'} = destroy(Config, Reason),
     wait_for_master(Config),
     ct:comment("Receiving destruction presence"),
     #muc_user{items = [#muc_item{role = none,
@@ -876,43 +876,43 @@ muc_destroy_slave(Config) ->
 	recv_muc_presence(Config, MyNickJID, unavailable),
     disconnect(Config).
 
-muc_vcard_master(Config) ->
+vcard_master(Config) ->
     Room = muc_room_jid(Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
     FN = randoms:get_string(),
     VCard = #vcard_temp{fn = FN},
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     ct:comment("Waiting for slave to join"),
     wait_for_slave(Config),
     #muc_user{items = [#muc_item{role = participant,
 				 affiliation = none}]} =
 	recv_muc_presence(Config, PeerNickJID, available),
-    #stanza_error{reason = 'item-not-found'} = muc_get_vcard(Config),
-    ok = muc_set_vcard(Config, VCard),
-    VCard = muc_get_vcard(Config),
+    #stanza_error{reason = 'item-not-found'} = get_vcard(Config),
+    ok = set_vcard(Config, VCard),
+    VCard = get_vcard(Config),
     put_event(Config, VCard),
     recv_muc_presence(Config, PeerNickJID, unavailable),
     leave = get_event(Config),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_vcard_slave(Config) ->
+vcard_slave(Config) ->
     wait_for_master(Config),
-    {[], _, _} = muc_join(Config),
+    {[], _, _} = join(Config),
     VCard = get_event(Config),
-    VCard = muc_get_vcard(Config),
-    #stanza_error{reason = 'forbidden'} = muc_set_vcard(Config, VCard),
-    ok = muc_leave(Config),
-    VCard = muc_get_vcard(Config),
+    VCard = get_vcard(Config),
+    #stanza_error{reason = 'forbidden'} = set_vcard(Config, VCard),
+    ok = leave(Config),
+    VCard = get_vcard(Config),
     put_event(Config, leave),
     disconnect(Config).
 
-muc_nick_change_master(Config) ->
+nick_change_master(Config) ->
     NewNick = randoms:get_string(),
     PeerJID = ?config(peer, Config),
     PeerNickJID = peer_muc_jid(Config),
-    ok = muc_master_join(Config),
+    ok = master_join(Config),
     put_event(Config, {new_nick, NewNick}),
     ct:comment("Waiting for nickchange presence from the slave"),
     #muc_user{status_codes = Codes,
@@ -926,13 +926,13 @@ muc_nick_change_master(Config) ->
     recv_muc_presence(Config, PeerNewNickJID, available),
     ct:comment("Waiting for the slave to leave"),
     recv_muc_presence(Config, PeerNewNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_nick_change_slave(Config) ->
+nick_change_slave(Config) ->
     MyJID = my_jid(Config),
     MyNickJID = my_muc_jid(Config),
-    {[], _, _} = muc_slave_join(Config),
+    {[], _, _} = slave_join(Config),
     {new_nick, NewNick} = get_event(Config),
     MyNewNickJID = jid:replace_resource(MyNickJID, NewNick),
     ct:comment("Sending new presence"),
@@ -955,131 +955,131 @@ muc_nick_change_slave(Config) ->
     ct:comment("Checking if code '110' (self-presence) is set"),
     lists:member(110, Codes2),
     NewConfig = set_opt(nick, NewNick, Config),
-    ok = muc_leave(NewConfig),
+    ok = leave(NewConfig),
     disconnect(NewConfig).
 
-muc_config_title_desc_master(Config) ->
+config_title_desc_master(Config) ->
     Title = randoms:get_string(),
     Desc = randoms:get_string(),
     Room = muc_room_jid(Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    ok = muc_master_join(Config),
-    [104] = muc_set_config(Config, [{roomname, Title}, {roomdesc, Desc}]),
-    RoomCfg = muc_get_config(Config),
+    ok = master_join(Config),
+    [104] = set_config(Config, [{roomname, Title}, {roomdesc, Desc}]),
+    RoomCfg = get_config(Config),
     Title = proplists:get_value(roomname, RoomCfg),
     Desc = proplists:get_value(roomdesc, RoomCfg),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_title_desc_slave(Config) ->
-    {[], _, _} = muc_slave_join(Config),
-    [104] = muc_recv_config_change_message(Config),
-    ok = muc_leave(Config),
+config_title_desc_slave(Config) ->
+    {[], _, _} = slave_join(Config),
+    [104] = recv_config_change_message(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_public_list_master(Config) ->
+config_public_list_master(Config) ->
     Room = muc_room_jid(Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     wait_for_slave(Config),
     recv_muc_presence(Config, PeerNickJID, available),
     lists:member(<<"muc_public">>, get_features(Config, Room)),
-    [104] = muc_set_config(Config, [{public_list, false},
+    [104] = set_config(Config, [{public_list, false},
 				    {publicroom, false}]),
     recv_muc_presence(Config, PeerNickJID, unavailable),
     lists:member(<<"muc_hidden">>, get_features(Config, Room)),
     wait_for_slave(Config),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_public_list_slave(Config) ->
+config_public_list_slave(Config) ->
     Room = muc_room_jid(Config),
     wait_for_master(Config),
     PeerNick = ?config(peer_nick, Config),
     PeerNickJID = peer_muc_jid(Config),
-    [#disco_item{jid = Room}] = muc_disco_items(Config),
+    [#disco_item{jid = Room}] = disco_items(Config),
     [#disco_item{jid = PeerNickJID,
-		 name = PeerNick}] = muc_disco_room_items(Config),
-    {[], _, _} = muc_join(Config),
-    [104] = muc_recv_config_change_message(Config),
-    ok = muc_leave(Config),
-    [] = muc_disco_items(Config),
-    [] = muc_disco_room_items(Config),
+		 name = PeerNick}] = disco_room_items(Config),
+    {[], _, _} = join(Config),
+    [104] = recv_config_change_message(Config),
+    ok = leave(Config),
+    [] = disco_items(Config),
+    [] = disco_room_items(Config),
     wait_for_master(Config),
     disconnect(Config).
 
-muc_config_password_master(Config) ->
+config_password_master(Config) ->
     Password = randoms:get_string(),
     Room = muc_room_jid(Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     lists:member(<<"muc_unsecured">>, get_features(Config, Room)),
-    [104] = muc_set_config(Config, [{passwordprotectedroom, true},
+    [104] = set_config(Config, [{passwordprotectedroom, true},
 				    {roomsecret, Password}]),
     lists:member(<<"muc_passwordprotected">>, get_features(Config, Room)),
     put_event(Config, Password),
     recv_muc_presence(Config, PeerNickJID, available),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_password_slave(Config) ->
+config_password_slave(Config) ->
     Password = get_event(Config),
-    #stanza_error{reason = 'not-authorized'} = muc_join(Config),
+    #stanza_error{reason = 'not-authorized'} = join(Config),
     #stanza_error{reason = 'not-authorized'} =
-	muc_join(Config, #muc{password = randoms:get_string()}),
-    {[], _, _} = muc_join(Config, #muc{password = Password}),
-    ok = muc_leave(Config),
+	join(Config, #muc{password = randoms:get_string()}),
+    {[], _, _} = join(Config, #muc{password = Password}),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_whois_master(Config) ->
+config_whois_master(Config) ->
     Room = muc_room_jid(Config),
     PeerNickJID = peer_muc_jid(Config),
     MyNickJID = my_muc_jid(Config),
-    ok = muc_master_join(Config),
+    ok = master_join(Config),
     lists:member(<<"muc_semianonymous">>, get_features(Config, Room)),
-    [172] = muc_set_config(Config, [{whois, anyone}]),
+    [172] = set_config(Config, [{whois, anyone}]),
     lists:member(<<"muc_nonanonymous">>, get_features(Config, Room)),
     recv_muc_presence(Config, PeerNickJID, unavailable),
     recv_muc_presence(Config, PeerNickJID, available),
     send(Config, #presence{to = Room}),
     recv_muc_presence(Config, MyNickJID, available),
-    [173] = muc_set_config(Config, [{whois, moderators}]),
+    [173] = set_config(Config, [{whois, moderators}]),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_whois_slave(Config) ->
+config_whois_slave(Config) ->
     PeerJID = ?config(peer, Config),
     PeerNickJID = peer_muc_jid(Config),
-    {[], _, _} = muc_slave_join(Config),
+    {[], _, _} = slave_join(Config),
     ct:comment("Checking if the room becomes non-anonymous (code '172')"),
-    [172] = muc_recv_config_change_message(Config),
+    [172] = recv_config_change_message(Config),
     ct:comment("Re-joining in order to check status codes"),
-    ok = muc_leave(Config),
-    {[], _, Codes} = muc_join(Config),
+    ok = leave(Config),
+    {[], _, Codes} = join(Config),
     ct:comment("Checking if code '100' (non-anonymous) present"),
     true = lists:member(100, Codes),
     ct:comment("Receiving presence from peer with JID exposed"),
     #muc_user{items = [#muc_item{jid = PeerJID}]} =
 	recv_muc_presence(Config, PeerNickJID, available),
     ct:comment("Waiting for the room to become anonymous again (code '173')"),
-    [173] = muc_recv_config_change_message(Config),
-    ok = muc_leave(Config),
+    [173] = recv_config_change_message(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_members_only_master(Config) ->
+config_members_only_master(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
     PeerNickJID = peer_muc_jid(Config),
-    ok = muc_master_join(Config),
+    ok = master_join(Config),
     lists:member(<<"muc_open">>, get_features(Config, Room)),
-    [104] = muc_set_config(Config, [{membersonly, true}]),
+    [104] = set_config(Config, [{membersonly, true}]),
     #muc_user{status_codes = Codes,
 	      items = [#muc_item{jid = PeerJID,
 				 affiliation = none,
@@ -1090,7 +1090,7 @@ muc_config_members_only_master(Config) ->
     lists:member(<<"muc_membersonly">>, get_features(Config, Room)),
     ct:comment("Waiting for slave to fail joining the room"),
     set_member = get_event(Config),
-    ok = muc_set_affiliation(Config, member, randoms:get_string()),
+    ok = set_affiliation(Config, member, randoms:get_string()),
     #message{from = Room, type = normal} = Msg = recv_message(Config),
     #muc_user{items = [#muc_item{jid = PeerBareJID,
 				 affiliation = member}]} =
@@ -1099,7 +1099,7 @@ muc_config_members_only_master(Config) ->
     put_event(Config, join),
     ct:comment("Waiting for peer to join"),
     recv_muc_presence(Config, PeerNickJID, available),
-    ok = muc_set_affiliation(Config, none, randoms:get_string()),
+    ok = set_affiliation(Config, none, randoms:get_string()),
     ct:comment("Waiting for peer to be kicked"),
     #muc_user{status_codes = NewCodes,
 	      items = [#muc_item{affiliation = none,
@@ -1108,14 +1108,14 @@ muc_config_members_only_master(Config) ->
     ct:comment("Checking if code '321' (became non-member in "
 	       "members-only room) is set"),
     true = lists:member(321, NewCodes),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_members_only_slave(Config) ->
+config_members_only_slave(Config) ->
     MyJID = my_jid(Config),
     MyNickJID = my_muc_jid(Config),
-    {[], _, _} = muc_slave_join(Config),
-    [104] = muc_recv_config_change_message(Config),
+    {[], _, _} = slave_join(Config),
+    [104] = recv_config_change_message(Config),
     ct:comment("Getting kicked because the room has become members-only"),
     #muc_user{status_codes = Codes,
 	      items = [#muc_item{jid = MyJID,
@@ -1127,12 +1127,12 @@ muc_config_members_only_slave(Config) ->
     true = lists:member(110, Codes),
     true = lists:member(322, Codes),
     ct:comment("Fail trying to join members-only room"),
-    #stanza_error{reason = 'registration-required'} = muc_join(Config),
+    #stanza_error{reason = 'registration-required'} = join(Config),
     ct:comment("Asking the peer to set us member"),
     put_event(Config, set_member),
     ct:comment("Waiting for the peer to ask for join"),
     join = get_event(Config),
-    {[], _, _} = muc_join(Config, participant, member),
+    {[], _, _} = join(Config, participant, member),
     #muc_user{status_codes = NewCodes,
 	      items = [#muc_item{jid = MyJID,
 				 role = none,
@@ -1144,71 +1144,71 @@ muc_config_members_only_slave(Config) ->
     true = lists:member(321, NewCodes),
     disconnect(Config).
 
-muc_config_moderated_master(Config) ->
+config_moderated_master(Config) ->
     Room = muc_room_jid(Config),
     PeerNickJID = peer_muc_jid(Config),
-    ok = muc_master_join(Config),
+    ok = master_join(Config),
     lists:member(<<"muc_moderated">>, get_features(Config, Room)),
-    ok = muc_set_role(Config, visitor, randoms:get_string()),
+    ok = set_role(Config, visitor, randoms:get_string()),
     #muc_user{items = [#muc_item{role = visitor}]} =
 	recv_muc_presence(Config, PeerNickJID, available),
     set_unmoderated = get_event(Config),
-    [104] = muc_set_config(Config, [{moderatedroom, false}]),
+    [104] = set_config(Config, [{moderatedroom, false}]),
     #message{from = PeerNickJID, type = groupchat} = recv_message(Config),
     recv_muc_presence(Config, PeerNickJID, unavailable),
     lists:member(<<"muc_unmoderated">>, get_features(Config, Room)),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_moderated_slave(Config) ->
+config_moderated_slave(Config) ->
     Room = muc_room_jid(Config),
     MyNickJID = my_muc_jid(Config),
-    {[], _, _} = muc_slave_join(Config),
+    {[], _, _} = slave_join(Config),
     #muc_user{items = [#muc_item{role = visitor}]} =
 	recv_muc_presence(Config, MyNickJID, available),
     send(Config, #message{to = Room, type = groupchat}),
     ErrMsg = #message{from = Room, type = error} = recv_message(Config),
     #stanza_error{reason = 'forbidden'} = xmpp:get_error(ErrMsg),
     put_event(Config, set_unmoderated),
-    [104] = muc_recv_config_change_message(Config),
+    [104] = recv_config_change_message(Config),
     send(Config, #message{to = Room, type = groupchat}),
     #message{from = MyNickJID, type = groupchat} = recv_message(Config),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_private_messages_master(Config) ->
+config_private_messages_master(Config) ->
     PeerNickJID = peer_muc_jid(Config),
-    ok = muc_master_join(Config),
+    ok = master_join(Config),
     ct:comment("Waiting for a private message from the slave"),
     #message{from = PeerNickJID, type = chat} = recv_message(Config),
-    ok = muc_set_role(Config, visitor, <<>>),
+    ok = set_role(Config, visitor, <<>>),
     ct:comment("Waiting for the peer to become a visitor"),
     recv_muc_presence(Config, PeerNickJID, available),
     ct:comment("Waiting for a private message from the slave"),
     #message{from = PeerNickJID, type = chat} = recv_message(Config),
-    [104] = muc_set_config(Config, [{allow_private_messages_from_visitors, moderators}]),
+    [104] = set_config(Config, [{allow_private_messages_from_visitors, moderators}]),
     ct:comment("Waiting for a private message from the slave"),
     #message{from = PeerNickJID, type = chat} = recv_message(Config),
-    [104] = muc_set_config(Config, [{allow_private_messages_from_visitors, nobody}]),
+    [104] = set_config(Config, [{allow_private_messages_from_visitors, nobody}]),
     wait_for_slave(Config),
-    [104] = muc_set_config(Config, [{allow_private_messages_from_visitors, anyone},
+    [104] = set_config(Config, [{allow_private_messages_from_visitors, anyone},
 				    {allow_private_messages, false}]),
     ct:comment("Fail trying to send a private message"),
     send(Config, #message{to = PeerNickJID, type = chat}),
     #message{from = PeerNickJID, type = error} = ErrMsg = recv_message(Config),
     #stanza_error{reason = 'forbidden'} = xmpp:get_error(ErrMsg),
-    ok = muc_set_role(Config, participant, <<>>),
+    ok = set_role(Config, participant, <<>>),
     ct:comment("Waiting for the peer to become a participant"),
     recv_muc_presence(Config, PeerNickJID, available),
     ct:comment("Waiting for the peer to leave"),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_private_messages_slave(Config) ->
+config_private_messages_slave(Config) ->
     MyNickJID = my_muc_jid(Config),
     PeerNickJID = peer_muc_jid(Config),
-    {[], _, _} = muc_slave_join(Config),
+    {[], _, _} = slave_join(Config),
     ct:comment("Sending a private message"),
     send(Config, #message{to = PeerNickJID, type = chat}),
     ct:comment("Waiting to become a visitor"),
@@ -1216,16 +1216,16 @@ muc_config_private_messages_slave(Config) ->
 	recv_muc_presence(Config, MyNickJID, available),
     ct:comment("Sending a private message"),
     send(Config, #message{to = PeerNickJID, type = chat}),
-    [104] = muc_recv_config_change_message(Config),
+    [104] = recv_config_change_message(Config),
     ct:comment("Sending a private message"),
     send(Config, #message{to = PeerNickJID, type = chat}),
-    [104] = muc_recv_config_change_message(Config),
+    [104] = recv_config_change_message(Config),
     ct:comment("Fail trying to send a private message"),
     send(Config, #message{to = PeerNickJID, type = chat}),
     #message{from = PeerNickJID, type = error} = ErrMsg1 = recv_message(Config),
     #stanza_error{reason = 'forbidden'} = xmpp:get_error(ErrMsg1),
     wait_for_master(Config),
-    [104] = muc_recv_config_change_message(Config),
+    [104] = recv_config_change_message(Config),
     ct:comment("Waiting to become a participant again"),
     #muc_user{items = [#muc_item{role = participant}]} =
 	recv_muc_presence(Config, MyNickJID, available),
@@ -1233,29 +1233,29 @@ muc_config_private_messages_slave(Config) ->
     send(Config, #message{to = PeerNickJID, type = chat}),
     #message{from = PeerNickJID, type = error} = ErrMsg2 = recv_message(Config),
     #stanza_error{reason = 'forbidden'} = xmpp:get_error(ErrMsg2),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_query_master(Config) ->
+config_query_master(Config) ->
     PeerNickJID = peer_muc_jid(Config),
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     wait_for_slave(Config),
     recv_muc_presence(Config, PeerNickJID, available),
     ct:comment("Receiving IQ query from the slave"),
     #iq{type = get, from = PeerNickJID, id = I,
 	sub_els = [#ping{}]} = recv_iq(Config),
     send(Config, #iq{type = result, to = PeerNickJID, id = I}),
-    [104] = muc_set_config(Config, [{allow_query_users, false}]),
+    [104] = set_config(Config, [{allow_query_users, false}]),
     ct:comment("Fail trying to send IQ"),
     #iq{type = error, from = PeerNickJID} = Err =
 	send_recv(Config, #iq{type = get, to = PeerNickJID,
 			      sub_els = [#ping{}]}),
     #stanza_error{reason = 'not-allowed'} = xmpp:get_error(Err),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_query_slave(Config) ->
+config_query_slave(Config) ->
     PeerNickJID = peer_muc_jid(Config),
     wait_for_master(Config),
     ct:comment("Checking if IQ queries are denied from non-occupants"),
@@ -1263,28 +1263,28 @@ muc_config_query_slave(Config) ->
 	send_recv(Config, #iq{type = get, to = PeerNickJID,
 			      sub_els = [#ping{}]}),
     #stanza_error{reason = 'not-acceptable'} = xmpp:get_error(Err1),
-    {[], _, _} = muc_join(Config),
+    {[], _, _} = join(Config),
     ct:comment("Sending IQ to the master"),
     #iq{type = result, from = PeerNickJID, sub_els = []} =
 	send_recv(Config, #iq{to = PeerNickJID, type = get, sub_els = [#ping{}]}),
-    [104] = muc_recv_config_change_message(Config),
+    [104] = recv_config_change_message(Config),
     ct:comment("Fail trying to send IQ"),
     #iq{type = error, from = PeerNickJID} = Err2 =
 	send_recv(Config, #iq{type = get, to = PeerNickJID,
 			      sub_els = [#ping{}]}),
     #stanza_error{reason = 'not-allowed'} = xmpp:get_error(Err2),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_allow_invites_master(Config) ->
+config_allow_invites_master(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(peer, Config),
     PeerNickJID = peer_muc_jid(Config),
-    ok = muc_master_join(Config),
-    [104] = muc_set_config(Config, [{allowinvites, true}]),
+    ok = master_join(Config),
+    [104] = set_config(Config, [{allowinvites, true}]),
     ct:comment("Receiving an invitation from the slave"),
     #message{from = Room, type = normal} = recv_message(Config),
-    [104] = muc_set_config(Config, [{allowinvites, false}]),
+    [104] = set_config(Config, [{allowinvites, false}]),
     send_invitation = get_event(Config),
     ct:comment("Sending an invitation"),
     send(Config, #message{to = Room, type = normal,
@@ -1293,10 +1293,10 @@ muc_config_allow_invites_master(Config) ->
 				  invites =
 				      [#muc_invite{to = PeerJID}]}]}),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_allow_invites_slave(Config) ->
+config_allow_invites_slave(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(peer, Config),
     InviteMsg = #message{to = Room, type = normal,
@@ -1304,11 +1304,11 @@ muc_config_allow_invites_slave(Config) ->
 			     [#muc_user{
 				 invites =
 				     [#muc_invite{to = PeerJID}]}]},
-    {[], _, _} = muc_slave_join(Config),
-    [104] = muc_recv_config_change_message(Config),
+    {[], _, _} = slave_join(Config),
+    [104] = recv_config_change_message(Config),
     ct:comment("Sending an invitation"),
     send(Config, InviteMsg),
-    [104] = muc_recv_config_change_message(Config),
+    [104] = recv_config_change_message(Config),
     ct:comment("Fail sending an invitation"),
     send(Config, InviteMsg),
     #message{from = Room, type = error} = Err = recv_message(Config),
@@ -1316,85 +1316,85 @@ muc_config_allow_invites_slave(Config) ->
     ct:comment("Checking if the master is still able to send invitations"),
     put_event(Config, send_invitation),
     #message{from = Room, type = normal} = recv_message(Config),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_visitor_status_master(Config) ->
+config_visitor_status_master(Config) ->
     PeerNickJID = peer_muc_jid(Config),
     Status = xmpp:mk_text(randoms:get_string()),
-    ok = muc_join_new(Config),
-    [104] = muc_set_config(Config, [{members_by_default, false}]),
+    ok = join_new(Config),
+    [104] = set_config(Config, [{members_by_default, false}]),
     ct:comment("Asking the slave to join as a visitor"),
     put_event(Config, {join, Status}),
     #muc_user{items = [#muc_item{role = visitor}]} =
 	recv_muc_presence(Config, PeerNickJID, available),
     ct:comment("Receiving status change from the visitor"),
     #presence{from = PeerNickJID, status = Status} = recv_presence(Config),
-    [104] = muc_set_config(Config, [{allow_visitor_status, false}]),
+    [104] = set_config(Config, [{allow_visitor_status, false}]),
     ct:comment("Receiving status change with <status/> stripped"),
     #presence{from = PeerNickJID, status = []} = recv_presence(Config),
     ct:comment("Waiting for the slave to leave"),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_visitor_status_slave(Config) ->
+config_visitor_status_slave(Config) ->
     Room = muc_room_jid(Config),
     MyNickJID = my_muc_jid(Config),
     ct:comment("Waiting for 'join' command from the master"),
     {join, Status} = get_event(Config),
-    {[], _, _} = muc_join(Config, visitor, none),
+    {[], _, _} = join(Config, visitor, none),
     ct:comment("Sending status change"),
     send(Config, #presence{to = Room, status = Status}),
     #presence{from = MyNickJID, status = Status} = recv_presence(Config),
-    [104] = muc_recv_config_change_message(Config),
+    [104] = recv_config_change_message(Config),
     ct:comment("Sending status change again"),
     send(Config, #presence{to = Room, status = Status}),
     #presence{from = MyNickJID, status = []} = recv_presence(Config),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_allow_voice_requests_master(Config) ->
+config_allow_voice_requests_master(Config) ->
     PeerNickJID = peer_muc_jid(Config),
-    ok = muc_join_new(Config),
-    [104] = muc_set_config(Config, [{members_by_default, false}]),
+    ok = join_new(Config),
+    [104] = set_config(Config, [{members_by_default, false}]),
     ct:comment("Asking the slave to join as a visitor"),
     put_event(Config, join),
     #muc_user{items = [#muc_item{role = visitor}]} =
 	recv_muc_presence(Config, PeerNickJID, available),
-    [104] = muc_set_config(Config, [{allow_voice_requests, false}]),
+    [104] = set_config(Config, [{allow_voice_requests, false}]),
     ct:comment("Waiting for the slave to leave"),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_allow_voice_requests_slave(Config) ->
+config_allow_voice_requests_slave(Config) ->
     Room = muc_room_jid(Config),
     ct:comment("Waiting for 'join' command from the master"),
     join = get_event(Config),
-    {[], _, _} = muc_join(Config, visitor),
-    [104] = muc_recv_config_change_message(Config),
+    {[], _, _} = join(Config, visitor),
+    [104] = recv_config_change_message(Config),
     ct:comment("Fail sending voice request"),
     Fs = muc_request:encode([{role, participant}]),
     X = #xdata{type = submit, fields = Fs},
     send(Config, #message{to = Room, sub_els = [X]}),
     #message{from = Room, type = error} = Err = recv_message(Config),
     #stanza_error{reason = 'forbidden'} = xmpp:get_error(Err),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_voice_request_interval_master(Config) ->
+config_voice_request_interval_master(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(peer, Config),
     PeerNick = ?config(peer_nick, Config),
     PeerNickJID = peer_muc_jid(Config),
-    ok = muc_join_new(Config),
-    [104] = muc_set_config(Config, [{members_by_default, false}]),
+    ok = join_new(Config),
+    [104] = set_config(Config, [{members_by_default, false}]),
     ct:comment("Asking the slave to join as a visitor"),
     put_event(Config, join),
     #muc_user{items = [#muc_item{role = visitor}]} =
 	recv_muc_presence(Config, PeerNickJID, available),
-    [104] = muc_set_config(Config, [{voice_request_min_interval, 5}]),
+    [104] = set_config(Config, [{voice_request_min_interval, 5}]),
     ct:comment("Receiving a voice request from slave"),
     #message{from = Room, type = normal} = recv_message(Config),
     ct:comment("Deny voice request at first"),
@@ -1407,17 +1407,17 @@ muc_config_voice_request_interval_master(Config) ->
     #message{from = Room, type = normal} = recv_message(Config),
     ct:comment("Waiting for the slave to leave"),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_voice_request_interval_slave(Config) ->
+config_voice_request_interval_slave(Config) ->
     Room = muc_room_jid(Config),
     Fs = muc_request:encode([{role, participant}]),
     X = #xdata{type = submit, fields = Fs},
     ct:comment("Waiting for 'join' command from the master"),
     join = get_event(Config),
-    {[], _, _} = muc_join(Config, visitor),
-    [104] = muc_recv_config_change_message(Config),
+    {[], _, _} = join(Config, visitor),
+    [104] = recv_config_change_message(Config),
     ct:comment("Sending voice request"),
     send(Config, #message{to = Room, sub_els = [X]}),
     ct:comment("Waiting for the master to deny our voice request"),
@@ -1431,59 +1431,59 @@ muc_config_voice_request_interval_slave(Config) ->
     timer:sleep(timer:seconds(5)),
     ct:comment("Repeating again"),
     send(Config, #message{to = Room, sub_els = [X]}),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_visitor_nickchange_master(Config) ->
+config_visitor_nickchange_master(Config) ->
     PeerNickJID = peer_muc_jid(Config),
-    ok = muc_join_new(Config),
-    [104] = muc_set_config(Config, [{members_by_default, false}]),
+    ok = join_new(Config),
+    [104] = set_config(Config, [{members_by_default, false}]),
     ct:comment("Asking the slave to join as a visitor"),
     put_event(Config, join),
     ct:comment("Waiting for the slave to join"),
     #muc_user{items = [#muc_item{role = visitor}]} =
 	recv_muc_presence(Config, PeerNickJID, available),
-    [104] = muc_set_config(Config, [{allow_visitor_nickchange, false}]),
+    [104] = set_config(Config, [{allow_visitor_nickchange, false}]),
     ct:comment("Waiting for the slave to leave"),
     recv_muc_presence(Config, PeerNickJID, unavailable),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_config_visitor_nickchange_slave(Config) ->
+config_visitor_nickchange_slave(Config) ->
     NewNick = randoms:get_string(),
     MyNickJID = my_muc_jid(Config),
     MyNewNickJID = jid:replace_resource(MyNickJID, NewNick),
     ct:comment("Waiting for 'join' command from the master"),
     join = get_event(Config),
-    {[], _, _} = muc_join(Config, visitor),
-    [104] = muc_recv_config_change_message(Config),
+    {[], _, _} = join(Config, visitor),
+    [104] = recv_config_change_message(Config),
     ct:comment("Fail trying to change nickname"),
     send(Config, #presence{to = MyNewNickJID}),
     #presence{from = MyNewNickJID, type = error} = Err = recv_presence(Config),
     #stanza_error{reason = 'not-allowed'} = xmpp:get_error(Err),
-    ok = muc_leave(Config),
+    ok = leave(Config),
     disconnect(Config).
 
-muc_register_master(Config) ->
+register_master(Config) ->
     MUC = muc_jid(Config),
     %% Register nick "master1"
-    muc_register_nick(Config, MUC, <<"">>, <<"master1">>),
+    register_nick(Config, MUC, <<"">>, <<"master1">>),
     %% Unregister nick "master1" via jabber:register
     #iq{type = result, sub_els = []} =
 	send_recv(Config, #iq{type = set, to = MUC,
 			      sub_els = [#register{remove = true}]}),
     %% Register nick "master2"
-    muc_register_nick(Config, MUC, <<"">>, <<"master2">>),
+    register_nick(Config, MUC, <<"">>, <<"master2">>),
     %% Now register nick "master"
-    muc_register_nick(Config, MUC, <<"master2">>, <<"master">>),
+    register_nick(Config, MUC, <<"master2">>, <<"master">>),
     %% Wait for slave to fail trying to register nick "master"
     wait_for_slave(Config),
     wait_for_slave(Config),
     %% Now register empty ("") nick, which means we're unregistering
-    muc_register_nick(Config, MUC, <<"master">>, <<"">>),
+    register_nick(Config, MUC, <<"master">>, <<"">>),
     disconnect(Config).
 
-muc_register_slave(Config) ->
+register_slave(Config) ->
     MUC = muc_jid(Config),
     wait_for_master(Config),
     %% Trying to register occupied nick "master"
@@ -1498,18 +1498,22 @@ muc_register_slave(Config) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+single_test(T) ->
+    list_to_atom("muc_" ++ atom_to_list(T)).
+
 master_slave_test(T) ->
-    {T, [parallel], [list_to_atom(atom_to_list(T) ++ "_master"),
-		     list_to_atom(atom_to_list(T) ++ "_slave")]}.
+    {list_to_atom("muc_" ++ atom_to_list(T)), [parallel],
+     [list_to_atom("muc_" ++ atom_to_list(T) ++ "_master"),
+      list_to_atom("muc_" ++ atom_to_list(T) ++ "_slave")]}.
 
 recv_muc_presence(Config, From, Type) ->
     Pres = #presence{from = From, type = Type} = recv_presence(Config),
     xmpp:get_subtag(Pres, #muc_user{}).
 
-muc_join_new(Config) ->
-    muc_join_new(Config, muc_room_jid(Config)).
+join_new(Config) ->
+    join_new(Config, muc_room_jid(Config)).
 
-muc_join_new(Config, Room) ->
+join_new(Config, Room) ->
     MyJID = my_jid(Config),
     MyNick = ?config(nick, Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
@@ -1537,41 +1541,41 @@ muc_join_new(Config, Room) ->
 	     subject = [#text{data = <<>>}]} = recv_message(Config),
     case ?config(persistent_room, Config) of
 	true ->
-	    [104] = muc_set_config(Config, [{persistentroom, true}], Room),
+	    [104] = set_config(Config, [{persistentroom, true}], Room),
 	    ok;
 	false ->
 	    ok
     end.
 
-muc_recv_history_and_subject(Config) ->
+recv_history_and_subject(Config) ->
     ct:comment("Receiving room history and/or subject"),
-    muc_recv_history_and_subject(Config, []).
+    recv_history_and_subject(Config, []).
 
-muc_recv_history_and_subject(Config, History) ->
+recv_history_and_subject(Config, History) ->
     Room = muc_room_jid(Config),
     #message{type = groupchat, subject = Subj,
 	     body = Body, thread = Thread} = Msg = recv_message(Config),
     case xmpp:get_subtag(Msg, #delay{}) of
 	#delay{from = Room} ->
-	    muc_recv_history_and_subject(Config, [Msg|History]);
+	    recv_history_and_subject(Config, [Msg|History]);
 	false when Subj /= [], Body == [], Thread == undefined ->
 	    {lists:reverse(History), Msg}
     end.
 
-muc_join(Config) ->
-    muc_join(Config, participant, none, #muc{}).
+join(Config) ->
+    join(Config, participant, none, #muc{}).
 
-muc_join(Config, Role) when is_atom(Role) ->
-    muc_join(Config, Role, none, #muc{});
-muc_join(Config, #muc{} = SubEl) ->
-    muc_join(Config, participant, none, SubEl).
+join(Config, Role) when is_atom(Role) ->
+    join(Config, Role, none, #muc{});
+join(Config, #muc{} = SubEl) ->
+    join(Config, participant, none, SubEl).
 
-muc_join(Config, Role, Aff) when is_atom(Role), is_atom(Aff) ->
-    muc_join(Config, Role, Aff, #muc{});
-muc_join(Config, Role, #muc{} = SubEl) when is_atom(Role) ->
-    muc_join(Config, Role, none, SubEl).
+join(Config, Role, Aff) when is_atom(Role), is_atom(Aff) ->
+    join(Config, Role, Aff, #muc{});
+join(Config, Role, #muc{} = SubEl) when is_atom(Role) ->
+    join(Config, Role, none, SubEl).
 
-muc_join(Config, Role, Aff, SubEl) ->
+join(Config, Role, Aff, SubEl) ->
     ct:comment("Joining existing room as ~s/~s", [Aff, Role]),
     MyJID = my_jid(Config),
     Room = muc_room_jid(Config),
@@ -1595,7 +1599,7 @@ muc_join(Config, Role, Aff, SubEl) ->
 		recv_muc_presence(Config, MyNickJID, available),
 	    ct:comment("Checking if code '110' (self-presence) is set"),
 	    true = lists:member(110, Codes),
-	    {History, Subj} = muc_recv_history_and_subject(Config),
+	    {History, Subj} = recv_history_and_subject(Config),
 	    {History, Subj, Codes};
 	#presence{type = available, from = MyNickJID} = Pres ->
 	    #muc_user{status_codes = Codes,
@@ -1605,21 +1609,21 @@ muc_join(Config, Role, Aff, SubEl) ->
 		xmpp:get_subtag(Pres, #muc_user{}),
 	    ct:comment("Checking if code '110' (self-presence) is set"),
 	    true = lists:member(110, Codes),
-	    {History, Subj} = muc_recv_history_and_subject(Config),
+	    {History, Subj} = recv_history_and_subject(Config),
 	    {empty, History, Subj, Codes}
     end.
 
-muc_leave(Config) ->
-    muc_leave(Config, muc_room_jid(Config)).
+leave(Config) ->
+    leave(Config, muc_room_jid(Config)).
 
-muc_leave(Config, Room) ->
+leave(Config, Room) ->
     MyJID = my_jid(Config),
     MyNick = ?config(nick, Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
     Mode = ?config(mode, Config),
     IsPersistent = ?config(persistent_room, Config),
     if Mode /= slave, IsPersistent ->
-	    [104] = muc_set_config(Config, [{persistentroom, false}], Room);
+	    [104] = set_config(Config, [{persistentroom, false}], Room);
        true ->
 	    ok
     end,
@@ -1633,7 +1637,7 @@ muc_leave(Config, Room) ->
     true = lists:member(110, Codes),
     ok.
 
-muc_get_config(Config) ->
+get_config(Config) ->
     ct:comment("Get room config"),
     Room = muc_room_jid(Config),
     case send_recv(Config,
@@ -1646,10 +1650,10 @@ muc_get_config(Config) ->
 	    xmpp:get_subtag(Err, #stanza_error{})
     end.
 
-muc_set_config(Config, RoomConfig) ->
-    muc_set_config(Config, RoomConfig, muc_room_jid(Config)).
+set_config(Config, RoomConfig) ->
+    set_config(Config, RoomConfig, muc_room_jid(Config)).
 
-muc_set_config(Config, RoomConfig, Room) ->
+set_config(Config, RoomConfig, Room) ->
     ct:comment("Set room config: ~p", [RoomConfig]),
     Fs = case RoomConfig of
 	     [] -> [];
@@ -1667,15 +1671,15 @@ muc_set_config(Config, RoomConfig, Room) ->
 	    xmpp:get_subtag(Err, #stanza_error{})
     end.
 
-muc_create_persistent(Config) ->
-    [_|_] = muc_get_config(Config),
-    [] = muc_set_config(Config, [{persistentroom, true}], false),
+create_persistent(Config) ->
+    [_|_] = get_config(Config),
+    [] = set_config(Config, [{persistentroom, true}], false),
     ok.
 
-muc_destroy(Config) ->
-    muc_destroy(Config, <<>>).
+destroy(Config) ->
+    destroy(Config, <<>>).
 
-muc_destroy(Config, Reason) ->
+destroy(Config, Reason) ->
     Room = muc_room_jid(Config),
     AltRoom = alt_room_jid(Config),
     ct:comment("Destroying a room"),
@@ -1690,7 +1694,7 @@ muc_destroy(Config, Reason) ->
 	    xmpp:get_subtag(Err, #stanza_error{})
     end.
 
-muc_disco_items(Config) ->
+disco_items(Config) ->
     MUC = muc_jid(Config),
     ct:comment("Performing disco#items request to ~s", [jid:to_string(MUC)]),
     #iq{type = result, from = MUC, sub_els = [DiscoItems]} =
@@ -1698,14 +1702,14 @@ muc_disco_items(Config) ->
 			      sub_els = [#disco_items{}]}),
     lists:keysort(#disco_item.jid, DiscoItems#disco_items.items).
 
-muc_disco_room_items(Config) ->
+disco_room_items(Config) ->
     Room = muc_room_jid(Config),
     #iq{type = result, from = Room, sub_els = [DiscoItems]} =
 	send_recv(Config, #iq{type = get, to = Room,
 			      sub_els = [#disco_items{}]}),
     DiscoItems#disco_items.items.
 
-muc_get_affiliations(Config, Aff) ->
+get_affiliations(Config, Aff) ->
     Room = muc_room_jid(Config),
     case send_recv(Config,
 		   #iq{type = get, to = Room,
@@ -1716,12 +1720,12 @@ muc_get_affiliations(Config, Aff) ->
 	    xmpp:get_subtag(Err, #stanza_error{})
     end.
 
-muc_master_join(Config) ->
+master_join(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(slave, Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    ok = muc_join_new(Config),
+    ok = join_new(Config),
     wait_for_slave(Config),
     #muc_user{items = [#muc_item{jid = PeerJID,
 				 role = participant,
@@ -1729,11 +1733,11 @@ muc_master_join(Config) ->
 	recv_muc_presence(Config, PeerNickJID, available),
     ok.
 
-muc_slave_join(Config) ->
+slave_join(Config) ->
     wait_for_master(Config),
-    muc_join(Config).
+    join(Config).
 
-muc_set_role(Config, Role, Reason) ->
+set_role(Config, Role, Reason) ->
     ct:comment("Changing role to ~s", [Role]),
     Room = muc_room_jid(Config),
     PeerNick = ?config(slave_nick, Config),
@@ -1751,7 +1755,7 @@ muc_set_role(Config, Role, Reason) ->
 	    xmpp:get_subtag(Err, #stanza_error{})
     end.
 
-muc_get_role(Config, Role) ->
+get_role(Config, Role) ->
     ct:comment("Requesting list for role '~s'", [Role]),
     Room = muc_room_jid(Config),
     case send_recv(
@@ -1765,7 +1769,7 @@ muc_get_role(Config, Role) ->
 	    xmpp:get_subtag(Err, #stanza_error{})
     end.
 
-muc_set_affiliation(Config, Aff, Reason) ->
+set_affiliation(Config, Aff, Reason) ->
     ct:comment("Changing affiliation to ~s", [Aff]),
     Room = muc_room_jid(Config),
     PeerJID = ?config(slave, Config),
@@ -1784,7 +1788,7 @@ muc_set_affiliation(Config, Aff, Reason) ->
 	    xmpp:get_subtag(Err, #stanza_error{})
     end.
 
-muc_get_affiliation(Config, Aff) ->
+get_affiliation(Config, Aff) ->
     ct:comment("Requesting list for affiliation '~s'", [Aff]),
     Room = muc_room_jid(Config),
     case send_recv(
@@ -1798,7 +1802,7 @@ muc_get_affiliation(Config, Aff) ->
 	    xmpp:get_subtag(Err, #stanza_error{})
     end.
 
-muc_set_vcard(Config, VCard) ->
+set_vcard(Config, VCard) ->
     Room = muc_room_jid(Config),
     ct:comment("Setting vCard for ~s", [jid:to_string(Room)]),
     case send_recv(Config, #iq{type = set, to = Room,
@@ -1809,7 +1813,7 @@ muc_set_vcard(Config, VCard) ->
 	    xmpp:get_subtag(Err, #stanza_error{})
     end.
 
-muc_get_vcard(Config) ->
+get_vcard(Config) ->
     Room = muc_room_jid(Config),
     ct:comment("Retreiving vCard from ~s", [jid:to_string(Room)]),
     case send_recv(Config, #iq{type = get, to = Room,
@@ -1820,14 +1824,14 @@ muc_get_vcard(Config) ->
 	    xmpp:get_subtag(Err, #stanza_error{})
     end.
 
-muc_recv_config_change_message(Config) ->
+recv_config_change_message(Config) ->
     ct:comment("Receiving configuration change notification message"),
     Room = muc_room_jid(Config),
     #message{type = groupchat, from = Room} = Msg = recv_message(Config),
     #muc_user{status_codes = Codes} = xmpp:get_subtag(Msg, #muc_user{}),
     lists:sort(Codes).
 
-muc_register_nick(Config, MUC, PrevNick, Nick) ->
+register_nick(Config, MUC, PrevNick, Nick) ->
     PrevRegistered = if PrevNick /= <<"">> -> true;
 			true -> false
 		     end,
@@ -1859,7 +1863,7 @@ muc_register_nick(Config, MUC, PrevNick, Nick) ->
     Nick = proplists:get_value(
 	     roomnick, muc_register:decode(FsWithNick)).
 
-muc_subscribe(Config, Events, Room) ->
+subscribe(Config, Events, Room) ->
     MyNick = ?config(nick, Config),
     case send_recv(Config,
 		   #iq{type = set, to = Room,
@@ -1871,7 +1875,7 @@ muc_subscribe(Config, Events, Room) ->
 	    xmpp:get_error(Err)
     end.
 
-muc_unsubscribe(Config, Room) ->
+unsubscribe(Config, Room) ->
     case send_recv(Config, #iq{type = set, to = Room,
 			       sub_els = [#muc_unsubscribe{}]}) of
 	#iq{type = result, sub_els = []} ->
