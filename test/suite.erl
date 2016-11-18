@@ -481,22 +481,9 @@ format_element(El) ->
 	false -> io_lib:format(" ~s~n", El)
     end.
 
-substitute_forwarded(#mam_result{sub_els = Sub} = El) ->
-    El#mam_result{sub_els = [substitute_forwarded(SEl) || SEl <- Sub]};
-substitute_forwarded(#carbons_sent{forwarded = Sub} = El) ->
-    El#carbons_sent{forwarded = [substitute_forwarded(SEl) || SEl <- Sub]};
-substitute_forwarded(#message{sub_els = Sub} = El) ->
-    El#message{sub_els = [substitute_forwarded(SEl) || SEl <- Sub]};
-substitute_forwarded(#forwarded{delay = Delay, xml_els = Sub}) ->
-    #forwarded_decoded{delay = Delay, sub_els = [xmpp:decode(SEl) || SEl <- Sub]};
-substitute_forwarded(El) ->
-    El.
-
-
-
 decode(El, NS, Opts) ->
     try
-	Pkt = substitute_forwarded(xmpp:decode(El, NS, Opts)),
+	Pkt = xmpp:decode(El, NS, Opts),
 	ct:pal("RECV:~n~s~n~s",
 	       [format_element(El), xmpp:pp(Pkt)]),
 	Pkt

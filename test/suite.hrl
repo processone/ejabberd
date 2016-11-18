@@ -5,9 +5,6 @@
 -include("mod_proxy65.hrl").
 -include("xmpp_codec.hrl").
 
--record(forwarded_decoded, {delay :: #delay{},
-			    sub_els = [] :: [fxml:xmlel()]}).
-
 -define(STREAM_TRAILER, <<"</stream:stream>">>).
 
 -define(PUBSUB(Node), <<(?NS_PUBSUB)/binary, "#", Node>>).
