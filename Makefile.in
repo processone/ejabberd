@@ -108,14 +108,6 @@ edoc:
 	$(ERL) -noinput +B -eval \
         'case edoc:application(ejabberd, ".", []) of ok -> halt(0); error -> halt(1) end.'
 
-spec:
-	$(ERL) -noinput +B -pa ebin -pa deps/*/ebin -eval \
-	'case fxml_gen:compile("specs/xmpp_codec.spec", [{add_type_specs, xmpp_element}, {erl_dir, "src"}, {hrl_dir, "include"}]) of ok -> halt(0); _ -> halt(1) end.'
-
-xdata:
-	$(ERL) -noinput +B -pa ebin -pa deps/*/ebin -eval \
-	'case xdata_codec:compile("specs", [{erl_dir, "src"}, {hrl_dir, "include"}]) of ok -> halt(0); _ -> halt(1) end.'
-
 JOIN_PATHS=$(if $(wordlist 2,1000,$(1)),$(firstword $(1))/$(call JOIN_PATHS,$(wordlist 2,1000,$(1))),$(1))
 
 VERSIONED_DEP=$(if $(DEP_$(1)_VERSION),$(DEP_$(1)_VERSION),$(1))
@@ -347,5 +339,5 @@ quicktest:
 	$(REBAR) skip_deps=true ct suites=elixir
 
 .PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean rel \
-	install uninstall uninstall-binary uninstall-all translations deps test spec \
+	install uninstall uninstall-binary uninstall-all translations deps test \
 	quicktest erlang_plt deps_plt ejabberd_plt
