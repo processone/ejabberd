@@ -277,6 +277,10 @@ get_commands_spec() ->
                            args_example = ["/home/me/docs/api.html", "mod_admin", "java,json"],
                            result_example = ok}].
 init() ->
+    try mnesia:transform_table(ejabberd_commands, ignore,
+			       record_info(fields, ejabberd_commands))
+    catch exit:{aborted, {no_exists, _}} -> ok
+    end,
     mnesia:create_table(ejabberd_commands,
                         [{ram_copies, [node()]},
                          {local_content, true},
