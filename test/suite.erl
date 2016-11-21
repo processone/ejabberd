@@ -142,7 +142,9 @@ process_config_tpl(Content, [{Name, DefaultValue} | Rest]) ->
               V3 ->
                   V3
           end,
-    NewContent = binary:replace(Content, <<"@@",(atom_to_binary(Name, latin1))/binary, "@@">>, Val),
+    NewContent = binary:replace(Content,
+				<<"@@",(atom_to_binary(Name,latin1))/binary, "@@">>,
+				Val, [global]),
     process_config_tpl(NewContent, Rest).
 
 stream_header(Config) ->
