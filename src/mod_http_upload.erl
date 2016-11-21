@@ -360,7 +360,8 @@ handle_cast(Request, State) ->
 
 -spec handle_info(timeout | _, state()) -> {noreply, state()}.
 
-handle_info({route, From, To, #iq{} = IQ}, State) ->
+handle_info({route, From, To, #iq{} = Packet}, State) ->
+    IQ = xmpp:decode_els(Packet),
     {Reply, NewState} = case process_iq(From, IQ, State) of
 			    R when is_record(R, iq) ->
 				{R, State};
