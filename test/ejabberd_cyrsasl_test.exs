@@ -27,7 +27,7 @@ defmodule EjabberdCyrsaslTest do
     :p1_sha.load_nif()
     :mnesia.start
     :ok = start_module(:stringprep)
-    :ok = start_module(:jid)
+    {:ok, _} = start_module(:jid)
     :ok = :ejabberd_config.start(["domain1"], [])
     :ok = :cyrsasl.start
     cyrstate = :cyrsasl.server_new("domain1", "domain1", "domain1", :ok, &get_password/1,

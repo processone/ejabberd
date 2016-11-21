@@ -38,7 +38,7 @@ defmodule EjabberdModAdminExtraTest do
 
 	setup_all do
 		try do
-      :jid.start
+			:jid.start
 			:stringprep.start
 			:mnesia.start
 			:p1_sha.load_nif
