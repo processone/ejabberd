@@ -639,26 +639,26 @@ iq_disco_items(_Host, _From, Lang, _MaxRoomsDiscoItems, _Node, _RSM) ->
 get_vh_rooms(Host, Query,
 	     #rsm_set{max = Max, 'after' = After, before = undefined})
   when is_binary(After), After /= <<"">> ->
-    lists:reverse(get_vh_rooms(next, {After, Host}, Query, 0, Max, []));
+    lists:reverse(get_vh_rooms(next, {After, Host}, Host, Query, 0, Max, []));
 get_vh_rooms(Host, Query,
 	     #rsm_set{max = Max, 'after' = undefined, before = Before})
   when is_binary(Before), Before /= <<"">> ->
-    get_vh_rooms(prev, {Before, Host}, Query, 0, Max, []);
+    get_vh_rooms(prev, {Before, Host}, Host, Query, 0, Max, []);
 get_vh_rooms(Host, Query,
 	     #rsm_set{max = Max, 'after' = undefined, before = <<"">>}) ->
-    get_vh_rooms(last, {<<"">>, Host}, Query, 0, Max, []);
+    get_vh_rooms(last, {<<"">>, Host}, Host, Query, 0, Max, []);
 get_vh_rooms(Host, Query, #rsm_set{max = Max}) ->
-    lists:reverse(get_vh_rooms(first, {<<"">>, Host}, Query, 0, Max, []));
+    lists:reverse(get_vh_rooms(first, {<<"">>, Host}, Host, Query, 0, Max, []));
 get_vh_rooms(Host, Query, undefined) ->
-    lists:reverse(get_vh_rooms(first, {<<"">>, Host}, Query, 0, undefined, [])).
+    lists:reverse(get_vh_rooms(first, {<<"">>, Host}, Host, Query, 0, undefined, [])).
 
 -spec get_vh_rooms(prev | next | last | first,
-		   {binary(), binary()}, term(),
+		   {binary(), binary()}, binary(), term(),
 		   non_neg_integer(), non_neg_integer() | undefined,
 		   [disco_item()]) -> [disco_item()].
-get_vh_rooms(_Action, _Key, _Query, Count, Max, Items) when Count >= Max ->
+get_vh_rooms(_Action, _Key, _Host, _Query, Count, Max, Items) when Count >= Max ->
     Items;
-get_vh_rooms(Action, {_, Host} = Key, Query, Count, Max, Items) ->
+get_vh_rooms(Action, Key, Host, Query, Count, Max, Items) ->
     Call = fun() ->
 		   case Action of
 		       prev -> mnesia:dirty_prev(muc_online_room, Key);
@@ -678,14 +678,14 @@ get_vh_rooms(Action, {_, Host} = Key, Query, Count, Max, Items) ->
 	{_, Host} = NewKey ->
 	    case get_room_disco_item(NewKey, Query) of
 		{ok, Item} ->
-		    get_vh_rooms(NewAction, NewKey, Query,
+		    get_vh_rooms(NewAction, NewKey, Host, Query,
 				 Count + 1, Max, [Item|Items]);
 		{error, _} ->
-		    get_vh_rooms(NewAction, NewKey, Query,
+		    get_vh_rooms(NewAction, NewKey, Host, Query,
 				 Count, Max, Items)
 	    end;
 	NewKey ->
-	    get_vh_rooms(NewAction, NewKey, Query, Count, Max, Items)
+	    get_vh_rooms(NewAction, NewKey, Host, Query, Count, Max, Items)
     catch _:{aborted, {badarg, _}} ->
 	    Items
     end.
