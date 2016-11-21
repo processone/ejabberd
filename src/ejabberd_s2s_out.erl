@@ -231,10 +231,10 @@ open_socket(init, StateData) ->
 	  send_header(NewStateData, Version),
 	  {next_state, wait_for_stream, NewStateData,
 	   ?FSMTIMEOUT};
-      {error, _Reason} ->
+      {error, Reason} ->
 	  ?INFO_MSG("s2s connection: ~s -> ~s (remote server "
-		    "not found)",
-		    [StateData#state.myname, StateData#state.server]),
+		    "not found: ~p)",
+		    [StateData#state.myname, StateData#state.server, Reason]),
 	  case ejabberd_hooks:run_fold(find_s2s_bridge, undefined,
 				       [StateData#state.myname,
 					StateData#state.server])
