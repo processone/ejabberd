@@ -480,7 +480,7 @@ decode_stream_element(NS, El) ->
 format_element(El) ->
     case erlang:function_exported(ct, log, 5) of
 	true -> ejabberd_web_admin:pretty_print_xml(El);
-	false -> io_lib:format(" ~s~n", El)
+	false -> io_lib:format("~p~n", [El])
     end.
 
 decode(El, NS, Opts) ->
