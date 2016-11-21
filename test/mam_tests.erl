@@ -513,7 +513,8 @@ query_rsm_after(Config, From, To, NS) ->
 	      #rsm_set{count = 5, first = First} =
 		  recv_fin(Config, ID, QID, NS, true),
 	      First
-      end, #rsm_first{}, [lists:seq(N, 5) || N <- lists:seq(1, 6)]).
+      end, #rsm_first{data = undefined},
+      [lists:seq(N, 5) || N <- lists:seq(1, 6)]).
 
 query_rsm_before(Config, From, To) ->
     lists:foreach(
