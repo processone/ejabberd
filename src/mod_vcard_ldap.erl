@@ -8,6 +8,8 @@
 %%%-------------------------------------------------------------------
 -module(mod_vcard_ldap).
 
+-behaviour(ejabberd_config).
+
 -behaviour(gen_server).
 -behaviour(mod_vcard).
 
@@ -16,6 +18,7 @@
 -export([init/2, stop/1, get_vcard/2, set_vcard/4, search/4,
 	 remove_user/2, import/3, search_fields/1, search_reported/1,
 	 mod_opt_type/1, opt_type/1]).
+-export([is_search_supported/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -69,6 +72,9 @@ stop(Host) ->
     gen_server:call(Proc, stop),
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
+
+is_search_supported(_LServer) ->
+    true.
 
 get_vcard(LUser, LServer) ->
     {ok, State} = eldap_utils:get_state(LServer, ?PROCNAME),
