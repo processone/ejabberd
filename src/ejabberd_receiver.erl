@@ -237,6 +237,15 @@ handle_info({Tag, _TCPSocket, Reason}, State)
 	_ ->
 	    {stop, normal, State}
     end;
+handle_info(check_socket, #state{socket = Socket} = State) when is_port(Socket) ->
+    case erlang:port_info(Socket) of
+	undefined ->
+	    % Socket has closed, so this receiver is dead in the sea
+	    ?WARNING_MSG("Stopping ejabberd_receiver due to inactive socket.", []),
+	    {stop, normal, State};
+	_ ->
+	    {noreply, State, ?HIBERNATE_TIMEOUT}
+    end;
 handle_info({timeout, _Ref, activate}, State) ->
     activate_socket(State),
     {noreply, State, ?HIBERNATE_TIMEOUT};
