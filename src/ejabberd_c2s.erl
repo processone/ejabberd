@@ -2645,43 +2645,29 @@ handle_unacked_stanzas(#state{mgmt_state = MgmtState} = StateData)
 		Txt = <<"User session terminated">>,
 		ejabberd_router:route_error(
 		  To, From, El, xmpp:err_service_unavailable(Txt, Lang));
+	   (From, _To, #message{meta = #{carbon_copy := true}}, _Time) ->
+		%% XEP-0280 says: "When a receiving server attempts to deliver a
+		%% forked message, and that message bounces with an error for
+		%% any reason, the receiving server MUST NOT forward that error
+		%% back to the original sender."  Resending such a stanza could
+		%% easily lead to unexpected results as well.
+		?DEBUG("Dropping forwarded message stanza from ~s",
+		       [jid:to_string(From)]);
 	   (From, To, El, Time) ->
-		%% We'll drop the stanza if it was <forwarded/> by some
-		%% encapsulating protocol as per XEP-0297.  One such protocol is
-		%% XEP-0280, which says: "When a receiving server attempts to
-		%% deliver a forked message, and that message bounces with an
-		%% error for any reason, the receiving server MUST NOT forward
-		%% that error back to the original sender."  Resending such a
-		%% stanza could easily lead to unexpected results as well.
-		case is_encapsulated_forward(El) of
+		case ejabberd_hooks:run_fold(message_is_archived,
+					     StateData#state.server, false,
+					     [StateData, From,
+					      StateData#state.jid, El]) of
 		  true ->
-		      ?DEBUG("Dropping forwarded message stanza from ~s",
-			     [jid:to_string(From)]);
+		      ?DEBUG("Dropping archived message stanza from ~p",
+			     [jid:to_string(xmpp:get_from(El))]);
 		  false ->
-		      case ejabberd_hooks:run_fold(message_is_archived,
-						   StateData#state.server,
-						   false,
-						   [StateData, From,
-						    StateData#state.jid, El]) of
-			true ->
-			    ?DEBUG("Dropping archived message stanza from ~p",
-				   [jid:to_string(xmpp:get_from(El))]);
-			false ->
-			    ReRoute(From, To, El, Time)
-		      end
+		      ReRoute(From, To, El, Time)
 		end
 	end,
     handle_unacked_stanzas(StateData, F);
 handle_unacked_stanzas(_StateData) ->
     ok.
-
--spec is_encapsulated_forward(stanza()) -> boolean().
-is_encapsulated_forward(#message{} = Msg) ->
-    xmpp:has_subtag(Msg, #forwarded{}) orelse
-	xmpp:has_subtag(Msg, #carbons_sent{}) orelse
-	xmpp:has_subtag(Msg, #carbons_received{});
-is_encapsulated_forward(_El) ->
-    false.
 
 -spec inherit_session_state(state(), binary()) -> {ok, state()} |
 						  {error, binary()} |

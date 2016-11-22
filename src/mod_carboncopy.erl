@@ -52,9 +52,10 @@
 -callback list(binary(), binary()) -> [{binary(), binary()}].
 
 -spec is_carbon_copy(stanza()) -> boolean().
-is_carbon_copy(Packet) ->
-    xmpp:has_subtag(Packet, #carbons_sent{}) orelse
-	xmpp:has_subtag(Packet, #carbons_received{}).
+is_carbon_copy(#message{meta = #{carbon_copy := true}}) ->
+    true;
+is_carbon_copy(_) ->
+    false.
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts,fun gen_iq_handler:check_type/1, one_queue),
@@ -203,7 +204,8 @@ build_forward_packet(JID, #message{type = T} = Msg, Sender, Dest, Direction) ->
 		 sent -> #carbons_sent{forwarded = Forwarded};
 		 received -> #carbons_received{forwarded = Forwarded}
 	     end,
-    #message{from = Sender, to = Dest, type = T, sub_els = [Carbon]}.
+    #message{from = Sender, to = Dest, type = T, sub_els = [Carbon],
+	     meta = #{carbon_copy => true}}.
 
 -spec enable(binary(), binary(), binary(), binary()) -> ok | {error, any()}.
 enable(Host, U, R, CC)->
