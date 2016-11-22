@@ -570,9 +570,9 @@ route_message(From, To, Packet, Type) ->
     LServer = To#jid.lserver,
     PrioRes = get_user_present_resources(LUser, LServer),
     case catch lists:max(PrioRes) of
-      {Priority, _R}
-	  when is_integer(Priority), Priority >= 0 ->
-	  lists:foreach(fun ({P, R}) when P == Priority;
+      {MaxPrio, MaxRes}
+	  when is_integer(MaxPrio), MaxPrio >= 0 ->
+	  lists:foreach(fun ({P, R}) when P == MaxPrio;
 					  (P >= 0) and (Type == headline) ->
 				LResource = jid:resourceprep(R),
 				Mod = get_sm_backend(LServer),
@@ -584,7 +584,12 @@ route_message(From, To, Packet, Type) ->
 				      Session = lists:max(Ss),
 				      Pid = element(2, Session#session.sid),
 				      ?DEBUG("sending to process ~p~n", [Pid]),
-				      Pid ! {route, From, To, Packet}
+				      LMaxRes = jid:resourceprep(MaxRes),
+				      Packet1 = maybe_mark_as_copy(Packet,
+								   LResource,
+								   LMaxRes,
+								   P, MaxPrio),
+				      Pid ! {route, From, To, Packet1}
 				end;
 			    %% Ignore other priority:
 			    ({_Prio, _Res}) -> ok
@@ -602,6 +607,16 @@ route_message(From, To, Packet, Type) ->
 		    ejabberd_router:route(To, From, Err)
 	    end
     end.
+
+-spec maybe_mark_as_copy(message(), binary(), binary(), integer(), integer())
+      -> message().
+maybe_mark_as_copy(Packet, R, R, P, P) ->
+    Packet;
+maybe_mark_as_copy(Packet, _, _, P, P) ->
+    Meta = Packet#message.meta,
+    Packet#message{meta = Meta#{sm_copy => true}};
+maybe_mark_as_copy(Packet, _, _, _, _) ->
+    Packet.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec clean_session_list([#session{}]) -> [#session{}].

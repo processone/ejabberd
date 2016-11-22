@@ -153,7 +153,7 @@ send_copies(JID, To, Packet, Direction)->
     {U, S, R} = jid:tolower(JID),
     PrioRes = ejabberd_sm:get_user_present_resources(U, S),
     {_, AvailRs} = lists:unzip(PrioRes),
-    {MaxPrio, MaxRes} = case catch lists:max(PrioRes) of
+    {MaxPrio, _MaxRes} = case catch lists:max(PrioRes) of
 	{Prio, Res} -> {Prio, Res};
 	_ -> {0, undefined}
     end,
@@ -166,19 +166,19 @@ send_copies(JID, To, Packet, Direction)->
     end,
     %% list of JIDs that should receive a carbon copy of this message (excluding the
     %% receiver(s) of the original message
-    TargetJIDs = case {IsBareTo, R} of
-	{true, MaxRes} ->
+    TargetJIDs = case {IsBareTo, Packet} of
+	{true, #message{meta = #{sm_copy := true}}} ->
+	    %% The message was sent to our bare JID, and we currently have
+	    %% multiple resources with the same highest priority, so the session
+	    %% manager routes the message to each of them. We create carbon
+	    %% copies only from one of those resources in order to avoid
+	    %% duplicates.
+	    [];
+	{true, _} ->
 	    OrigTo = fun(Res) -> lists:member({MaxPrio, Res}, PrioRes) end,
 	    [ {jid:make({U, S, CCRes}), CC_Version}
 	     || {CCRes, CC_Version} <- list(U, S),
 		lists:member(CCRes, AvailRs), not OrigTo(CCRes) ];
-	{true, _} ->
-	    %% The message was sent to our bare JID, and we currently have
-	    %% multiple resources with the same highest priority, so the session
-	    %% manager routes the message to each of them. We create carbon
-	    %% copies only from one of those resources (the one where R equals
-	    %% MaxRes) in order to avoid duplicates.
-	    [];
 	{false, _} ->
 	    [ {jid:make({U, S, CCRes}), CC_Version}
 	     || {CCRes, CC_Version} <- list(U, S),
