@@ -15,7 +15,7 @@
 	 process_default_set/3, process_active_set/3,
 	 remove_privacy_list/3, set_privacy_list/1,
 	 set_privacy_list/4, get_user_list/2, get_user_lists/2,
-	 remove_user/2, import/2]).
+	 remove_user/2, import/1]).
 
 -include("xmpp.hrl").
 -include("mod_privacy.hrl").
@@ -144,7 +144,7 @@ remove_user(LUser, LServer) ->
     F = fun () -> mnesia:delete({privacy, {LUser, LServer}}) end,
     mnesia:transaction(F).
 
-import(_LServer, #privacy{} = P) ->
+import(#privacy{} = P) ->
     mnesia:dirty_write(P).
 
 %%%===================================================================

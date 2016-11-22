@@ -35,6 +35,7 @@
 	 process_iq_set/3, process_iq_get/3, get_user_list/3,
 	 check_packet/6, remove_user/2, encode_list_item/1,
 	 is_list_needdb/1, updated_list/3,
+	 import_start/2, import_stop/2,
          item_to_xml/1, get_user_lists/2, import/5,
 	 set_privacy_list/1, mod_opt_type/1, depends/2]).
 

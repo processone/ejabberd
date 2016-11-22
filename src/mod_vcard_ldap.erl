@@ -14,7 +14,7 @@
 %% API
 -export([start_link/2]).
 -export([init/2, stop/1, get_vcard/2, set_vcard/4, search/4,
-	 remove_user/2, import/2, search_fields/1, search_reported/1,
+	 remove_user/2, import/3, search_fields/1, search_reported/1,
 	 mod_opt_type/1, opt_type/1]).
 
 %% gen_server callbacks
@@ -157,7 +157,7 @@ search_items(Entries, State) ->
 remove_user(_User, _Server) ->
     {atomic, not_implemented}.
 
-import(_, _) ->
+import(_, _, _) ->
     pass.
 
 %%%===================================================================
