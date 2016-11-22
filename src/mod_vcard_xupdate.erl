@@ -13,14 +13,15 @@
 -export([start/2, stop/1]).
 
 -export([update_presence/3, vcard_set/3, export/1,
-	 import/1, import/3, mod_opt_type/1, depends/2]).
+	 import_info/0, import/5, import_start/2,
+	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
 -callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), #vcard_xupdate{}) -> ok | pass.
+-callback import(binary(), binary(), [binary()]) -> ok.
 -callback add_xupdate(binary(), binary(), binary()) -> {atomic, any()}.
 -callback get_xupdate(binary(), binary()) -> binary() | undefined.
 -callback remove_xupdate(binary(), binary()) -> {atomic, any()}.
@@ -94,17 +95,20 @@ presence_with_xupdate(Presence, User, Host) ->
     Presence1 = xmpp:remove_subtag(Presence, #vcard_xupdate{}),
     xmpp:set_subtag(Presence1, #vcard_xupdate{hash = Hash}).
 
+import_info() ->
+    [{<<"vcard_xupdate">>, 3}].
+
+import_start(LServer, DBType) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:init(LServer, []).
+
+import(LServer, {sql, _}, DBType, Tab, [LUser, Hash, TimeStamp]) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, Tab, [LUser, Hash, TimeStamp]).
+
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
-
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
-
-import(LServer, DBType, LA) ->
-    Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, LA).
 
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(_) -> [db_type].

@@ -15,10 +15,11 @@
 	 delete_group/2, get_group_opts/2, set_group_opts/3,
 	 get_user_groups/2, get_group_explicit_users/2,
 	 get_user_displayed_groups/3, is_user_in_group/3,
-	 add_user_to_group/3, remove_user_from_group/3, import/2]).
+	 add_user_to_group/3, remove_user_from_group/3, import/3]).
 
 -include("mod_roster.hrl").
 -include("mod_shared_roster.hrl").
+-include("xmpp.hrl").
 
 %%%===================================================================
 %%% API
@@ -120,13 +121,17 @@ add_user_to_group(Host, US, Group) ->
 remove_user_from_group(Host, US, Group) ->
     {atomic, ejabberd_riak:delete(sr_group, {US, {Group, Host}})}.
 
-import(_LServer, #sr_group{group_host = {_, Host}} = G) ->
-    ejabberd_riak:put(G, sr_group_schema(), [{'2i', [{<<"host">>, Host}]}]);
-import(_LServer, #sr_user{us = US, group_host = {Group, Host}} = User) ->
+import(LServer, <<"sr_group">>, [Group, SOpts, _TimeStamp]) ->
+    G = #sr_group{group_host = {Group, LServer},
+                  opts = ejabberd_sql:decode_term(SOpts)},
+    ejabberd_riak:put(G, sr_group_schema(), [{'2i', [{<<"host">>, LServer}]}]);
+import(LServer, <<"sr_user">>, [SJID, Group|_]) ->
+    #jid{luser = U, lserver = S} = jid:from_string(SJID),
+    User = #sr_user{us = {U, S}, group_host = {Group, LServer}},
     ejabberd_riak:put(User, sr_user_schema(),
-                      [{i, {US, {Group, Host}}},
-                       {'2i', [{<<"us">>, US},
-                               {<<"group_host">>, {Group, Host}}]}]).
+                      [{i, {{U, S}, {Group, LServer}}},
+                       {'2i', [{<<"us">>, {U, S}},
+                               {<<"group_host">>, {Group, LServer}}]}]).
 
 %%%===================================================================
 %%% Internal functions

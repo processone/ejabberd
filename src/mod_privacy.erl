@@ -31,11 +31,11 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_iq/1, export/1, import/1,
+-export([start/2, stop/1, process_iq/1, export/1, import_info/0,
 	 process_iq_set/3, process_iq_get/3, get_user_list/3,
 	 check_packet/6, remove_user/2, encode_list_item/1,
 	 is_list_needdb/1, updated_list/3,
-         item_to_xml/1, get_user_lists/2, import/3,
+         item_to_xml/1, get_user_lists/2, import/5,
 	 set_privacy_list/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
@@ -46,7 +46,7 @@
 -include("mod_privacy.hrl").
 
 -callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), #privacy{}) -> ok | pass.
+-callback import(#privacy{}) -> ok.
 -callback process_lists_get(binary(), binary()) -> {none | binary(), [binary()]} | error.
 -callback process_list_get(binary(), binary(), binary()) -> [listitem()] | error | not_found.
 -callback process_default_set(binary(), binary(), binary() | none) -> {atomic, any()}.
@@ -544,17 +544,107 @@ updated_list(_, #userlist{name = OldName} = Old,
        true -> Old
     end.
 
+numeric_to_binary(<<0, 0, _/binary>>) ->
+    <<"0">>;
+numeric_to_binary(<<0, _, _:6/binary, T/binary>>) ->
+    Res = lists:foldl(
+            fun(X, Sum) ->
+                    Sum*10000 + X
+            end, 0, [X || <<X:16>> <= T]),
+    jlib:integer_to_binary(Res).
+
+bool_to_binary(<<0>>) -> <<"0">>;
+bool_to_binary(<<1>>) -> <<"1">>.
+
+prepare_list_data(mysql, [ID|Row]) ->
+    [jlib:binary_to_integer(ID)|Row];
+prepare_list_data(pgsql, [<<ID:64>>,
+                          SType, SValue, SAction, SOrder, SMatchAll,
+                          SMatchIQ, SMatchMessage, SMatchPresenceIn,
+                          SMatchPresenceOut]) ->
+    [ID, SType, SValue, SAction,
+     numeric_to_binary(SOrder),
+     bool_to_binary(SMatchAll),
+     bool_to_binary(SMatchIQ),
+     bool_to_binary(SMatchMessage),
+     bool_to_binary(SMatchPresenceIn),
+     bool_to_binary(SMatchPresenceOut)].
+
+prepare_id(mysql, ID) ->
+    jlib:binary_to_integer(ID);
+prepare_id(pgsql, <<ID:32>>) ->
+    ID.
+
+import_info() ->
+    [{<<"privacy_default_list">>, 2},
+     {<<"privacy_list_data">>, 10},
+     {<<"privacy_list">>, 4}].
+
+import_start(LServer, DBType) ->
+    ets:new(privacy_default_list_tmp, [private, named_table]),
+    ets:new(privacy_list_data_tmp, [private, named_table, bag]),
+    ets:new(privacy_list_tmp, [private, named_table, bag,
+                               {keypos, #privacy.us}]),
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:init(LServer, []).
+
+import(LServer, {sql, _}, _DBType, <<"privacy_default_list">>, [LUser, Name]) ->
+    US = {LUser, LServer},
+    ets:insert(privacy_default_list_tmp, {US, Name}),
+    ok;
+import(LServer, {sql, SQLType}, _DBType, <<"privacy_list_data">>, Row1) ->
+    [ID|Row] = prepare_list_data(SQLType, Row1),
+    case mod_privacy_sql:raw_to_item(Row) of
+        [Item] ->
+            IS = {ID, LServer},
+            ets:insert(privacy_list_data_tmp, {IS, Item}),
+            ok;
+        [] ->
+            ok
+    end;
+import(LServer, {sql, SQLType}, _DBType, <<"privacy_list">>,
+       [LUser, Name, ID, _TimeStamp]) ->
+    US = {LUser, LServer},
+    IS = {prepare_id(SQLType, ID), LServer},
+    Default = case ets:lookup(privacy_default_list_tmp, US) of
+                  [{_, Name}] -> Name;
+                  _ -> none
+              end,
+    case [Item || {_, Item} <- ets:lookup(privacy_list_data_tmp, IS)] of
+        [_|_] = Items ->
+            Privacy = #privacy{us = {LUser, LServer},
+                               default = Default,
+                               lists = [{Name, Items}]},
+            ets:insert(privacy_list_tmp, Privacy),
+            ets:delete(privacy_list_data_tmp, IS),
+            ok;
+        _ ->
+            ok
+    end.
+
+import_stop(_LServer, DBType) ->
+    import_next(DBType, ets:first(privacy_list_tmp)),
+    ets:delete(privacy_default_list_tmp),
+    ets:delete(privacy_list_data_tmp),
+    ets:delete(privacy_list_tmp),
+    ok.
+
+import_next(_DBType, '$end_of_table') ->
+    ok;
+import_next(DBType, US) ->
+    [P|_] = Ps = ets:lookup(privacy_list_tmp, US),
+    Lists = lists:flatmap(
+              fun(#privacy{lists = Lists}) ->
+                      Lists
+              end, Ps),
+    Privacy = P#privacy{lists = Lists},
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(Privacy),
+    import_next(DBType, ets:next(privacy_list_tmp, US)).
+
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
-
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
-
-import(LServer, DBType, Data) ->
-    Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, Data).
 
 depends(_Host, _Opts) ->
     [].

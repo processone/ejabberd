@@ -51,8 +51,9 @@
 	 process_mucsub/1,
 	 broadcast_service_message/2,
 	 export/1,
-	 import/1,
-	 import/3,
+	 import_info/0,
+	 import/5,
+	 import_start/2,
 	 opts_to_binary/1,
 	 can_use_nick/4]).
 
@@ -79,7 +80,7 @@
 
 -type muc_room_opts() :: [{atom(), any()}].
 -callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), #muc_room{} | #muc_registered{}) -> ok | pass.
+-callback import(binary(), binary(), [binary()]) -> ok.
 -callback store_room(binary(), binary(), binary(), list()) -> {atomic, any()}.
 -callback restore_room(binary(), binary(), binary()) -> muc_room_opts() | error.
 -callback forget_room(binary(), binary(), binary()) -> {atomic, any()}.
@@ -904,13 +905,16 @@ export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
 
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
+import_info() ->
+    [{<<"muc_room">>, 4}, {<<"muc_registered">>, 4}].
 
-import(LServer, DBType, Data) ->
+import_start(LServer, DBType) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, Data).
+    Mod:init(LServer, []).
+
+import(LServer, {sql, _}, DBType, Tab, L) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, Tab, L).
 
 mod_opt_type(access) ->
     fun acl:access_rules_validator/1;

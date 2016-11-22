@@ -34,8 +34,8 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_local_iq/1, export/1,
-	 process_sm_iq/1, on_presence_update/4, import/1,
-	 import/3, store_last_info/4, get_last_info/2,
+	 process_sm_iq/1, on_presence_update/4, import_info/0,
+	 import/5, store_last_info/4, get_last_info/2,
 	 remove_user/2, transform_options/1, mod_opt_type/1,
 	 opt_type/1, register_user/2, depends/2]).
 
@@ -207,17 +207,27 @@ remove_user(User, Server) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_user(LUser, LServer).
 
+import_info() ->
+    [{<<"last">>, 3}].
+
+import_start(LServer, DBType) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:init(LServer, []).
+
+import(LServer, {sql, _}, DBType, <<"last">>, [LUser, TimeStamp, State]) ->
+    TS = case TimeStamp of
+             <<"">> -> 0;
+             _ -> jlib:binary_to_integer(TimeStamp)
+         end,
+    LA = #last_activity{us = {LUser, LServer},
+                        timestamp = TS,
+                        status = State},
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, LA).
+
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
-
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
-
-import(LServer, DBType, LA) ->
-    Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, LA).
 
 transform_options(Opts) ->
     lists:foldl(fun transform_options/2, [], Opts).

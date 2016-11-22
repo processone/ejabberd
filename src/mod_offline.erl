@@ -53,8 +53,9 @@
 	 remove_expired_messages/1,
 	 remove_old_messages/2,
 	 remove_user/2,
-	 import/1,
-	 import/3,
+	 import_info/0,
+	 import_start/2,
+	 import/5,
 	 export/1,
 	 get_queue_length/2,
 	 count_offline_messages/2,
@@ -90,7 +91,7 @@
 
 -type us() :: {binary(), binary()}.
 -callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), #offline_msg{}) -> ok | pass.
+-callback import(#offline_msg{}) -> ok.
 -callback store_messages(binary(), us(), [#offline_msg{}],
 			 non_neg_integer(), non_neg_integer()) ->
     {atomic, any()}.
@@ -851,13 +852,35 @@ export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
 
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
+import_info() ->
+    [{<<"spool">>, 4}].
 
-import(LServer, DBType, Data) ->
+import_start(LServer, DBType) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, Data).
+    Mod:import(LServer, []).
+
+import(LServer, {sql, _}, DBType, <<"spool">>,
+       [LUser, XML, _Seq, _TimeStamp]) ->
+    El = fxml_stream:parse_element(XML),
+    From = #jid{} = jid:from_string(
+                                fxml:get_attr_s(<<"from">>, El#xmlel.attrs)),
+    To = #jid{} = jid:from_string(
+                              fxml:get_attr_s(<<"to">>, El#xmlel.attrs)),
+              Stamp = fxml:get_path_s(El, [{elem, <<"delay">>},
+                                {attr, <<"stamp">>}]),
+    TS = case jlib:datetime_string_to_timestamp(Stamp) of
+             {MegaSecs, Secs, _} ->
+                 {MegaSecs, Secs, 0};
+             undefined ->
+                 p1_time_compat:timestamp()
+         end,
+    US = {LUser, LServer},
+    Expire = find_x_expire(TS, El#xmlel.children),
+    Msg = #offline_msg{us = US, packet = El,
+                       from = From, to = To,
+                       timestamp = TS, expire = Expire},
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(Msg).
 
 mod_opt_type(access_max_user_messages) ->
     fun acl:shaper_rules_validator/1;
