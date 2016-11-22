@@ -41,8 +41,8 @@ write_roster_version(LUser, LServer, _InTransaction, Ver) ->
 get_roster(LUser, LServer) ->
     case ejabberd_riak:get_by_index(roster, roster_schema(),
 				    <<"us">>, {LUser, LServer}) of
-        {ok, Items} -> {ok, Items};
-        _Err -> error
+        {ok, Items} -> Items;
+        _Err -> []
     end.
 
 get_roster_by_jid(LUser, LServer, LJID) ->

@@ -51,7 +51,7 @@ write_roster_version(LUser, LServer, InTransaction, Ver) ->
     end.
 
 get_roster(LUser, LServer) ->
-    {ok, mnesia:dirty_index_read(roster, {LUser, LServer}, #roster.us)}.
+    mnesia:dirty_index_read(roster, {LUser, LServer}, #roster.us).
 
 get_roster_by_jid(LUser, LServer, LJID) ->
     case mnesia:read({roster, {LUser, LServer, LJID}}) of
