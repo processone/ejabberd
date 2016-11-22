@@ -18,7 +18,7 @@
 	 roster_subscribe/4, get_roster_by_jid_with_groups/3,
 	 remove_user/2, update_roster/4, del_roster/3, transaction/2,
 	 read_subscription_and_groups/3, get_only_items/2,
-	 import/3, export/1]).
+	 import/3, export/1, raw_to_record/2]).
 
 -include("mod_roster.hrl").
 -include("ejabberd_sql_pt.hrl").
