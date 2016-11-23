@@ -25,7 +25,7 @@ defmodule ACLTest do
 
   setup_all do
     :ok = :mnesia.start
-    :ok = :jid.start
+    {:ok, _} = :jid.start
     :stringprep.start
     :ok = :ejabberd_config.start(["domain1", "domain2"], [])
     :ok = :acl.start

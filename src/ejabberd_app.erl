@@ -43,7 +43,6 @@
 start(normal, _Args) ->
     ejabberd_logger:start(),
     write_pid_file(),
-    jid:start(),
     start_apps(),
     start_elixir_application(),
     ejabberd:check_app(ejabberd),
@@ -223,8 +222,7 @@ start_apps() ->
     ejabberd:start_app(ssl),
     ejabberd:start_app(fast_yaml),
     ejabberd:start_app(fast_tls),
-    ejabberd:start_app(fast_xml),
-    ejabberd:start_app(stringprep),
+    ejabberd:start_app(xmpp),
     ejabberd:start_app(cache_tab).
 
 opt_type(net_ticktime) ->

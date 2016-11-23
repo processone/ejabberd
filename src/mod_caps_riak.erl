@@ -10,7 +10,7 @@
 -behaviour(mod_caps).
 
 %% API
--export([init/2, caps_read/2, caps_write/3]).
+-export([init/2, caps_read/2, caps_write/3, import/3]).
 
 -include("mod_caps.hrl").
 
@@ -30,6 +30,15 @@ caps_write(_LServer, Node, Features) ->
     ejabberd_riak:put(#caps_features{node_pair = Node,
 				     features = Features},
 		      caps_features_schema()).
+
+import(_LServer, NodePair, [I]) when is_integer(I) ->
+    ejabberd_riak:put(
+      #caps_features{node_pair = NodePair, features = I},
+      caps_features_schema());
+import(_LServer, NodePair, Features) ->
+    ejabberd_riak:put(
+      #caps_features{node_pair = NodePair, features = Features},
+      caps_features_schema()).
 
 %%%===================================================================
 %%% Internal functions

@@ -15,8 +15,7 @@
 -export([init/2, store_messages/5, pop_messages/2, remove_expired_messages/1,
 	 remove_old_messages/2, remove_user/2, read_message_headers/2,
 	 read_message/3, remove_message/3, read_all_messages/2,
-	 remove_all_messages/2, count_messages/2, import/1, import/2,
-	 export/1]).
+	 remove_all_messages/2, count_messages/2, import/1, export/1]).
 
 -include("xmpp.hrl").
 -include("mod_offline.hrl").
@@ -193,29 +192,8 @@ export(_Server) ->
               []
       end}].
 
-import(LServer) ->
-    [{<<"select username, xml from spool;">>,
-      fun([LUser, XML]) ->
-              El = #xmlel{} = fxml_stream:parse_element(XML),
-	      #message{} = Pkt = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
-	      From = Pkt#message.from,
-	      To = case Pkt#message.to of
-		       undefined -> jid:make(LUser, LServer);
-		       JID -> JID
-		   end,
-	      TS = case xmpp:get_subtag(Pkt, #delay{}) of
-		       #delay{stamp = Stamp} -> Stamp;
-		       false -> p1_time_compat:timestamp()
-		   end,
-	      Expire = mod_offline:find_x_expire(TS, Pkt),
-	      #offline_msg{us = {LUser, LServer},
-			   from = From, to = To,
-			   packet = El,
-			   timestamp = TS, expire = Expire}
-      end}].
-
-import(_, _) ->
-    pass.
+import(_) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions

@@ -11,8 +11,9 @@
 -behaviour(mod_vcard).
 
 %% API
--export([init/2, stop/1, import/2, get_vcard/2, set_vcard/4, search/4,
+-export([init/2, stop/1, import/3, get_vcard/2, set_vcard/4, search/4,
 	 search_fields/1, search_reported/1, remove_user/2]).
+-export([is_search_supported/1]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -46,6 +47,9 @@ init(_Host, _Opts) ->
 
 stop(_Host) ->
     ok.
+
+is_search_supported(_ServerHost) ->
+    true.
 
 get_vcard(LUser, LServer) ->
     US = {LUser, LServer},
@@ -121,10 +125,29 @@ remove_user(LUser, LServer) ->
 	end,
     mnesia:transaction(F).
 
-import(_LServer, #vcard{} = VCard) ->
+import(LServer, <<"vcard">>, [LUser, XML, _TimeStamp]) ->
+    #xmlel{} = El = fxml_stream:parse_element(XML),
+    VCard = #vcard{us = {LUser, LServer}, vcard = El},
     mnesia:dirty_write(VCard);
-import(_LServer, #vcard_search{} = S) ->
-    mnesia:dirty_write(S).
+import(LServer, <<"vcard_search">>,
+       [User, LUser, FN, LFN,
+        Family, LFamily, Given, LGiven,
+        Middle, LMiddle, Nickname, LNickname,
+        BDay, LBDay, CTRY, LCTRY, Locality, LLocality,
+        EMail, LEMail, OrgName, LOrgName, OrgUnit, LOrgUnit]) ->
+    mnesia:dirty_write(
+      #vcard_search{us = {LUser, LServer},
+                    user = {User, LServer}, luser = LUser,
+                    fn = FN, lfn = LFN, family = Family,
+                    lfamily = LFamily, given = Given,
+                    lgiven = LGiven, middle = Middle,
+                    lmiddle = LMiddle, nickname = Nickname,
+                    lnickname = LNickname, bday = BDay,
+                    lbday = LBDay, ctry = CTRY, lctry = LCTRY,
+                    locality = Locality, llocality = LLocality,
+                    email = EMail, lemail = LEMail,
+                    orgname = OrgName, lorgname = LOrgName,
+                    orgunit = OrgUnit, lorgunit = LOrgUnit}).
 
 %%%===================================================================
 %%% Internal functions

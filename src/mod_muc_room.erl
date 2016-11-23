@@ -504,8 +504,7 @@ handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 handle_sync_event({get_disco_item, Filter, JID, Lang}, _From, StateName, StateData) ->
-    Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0,
-                    StateData#state.users),
+    Len = ?DICT:size(StateData#state.users),
     Reply = case (Filter == all) or (Filter == Len) or ((Filter /= 0) and (Len /= 0)) of
 	true ->
 	    get_roomdesc_reply(JID, StateData,

@@ -10,7 +10,7 @@
 -behaviour(mod_caps).
 
 %% API
--export([init/2, caps_read/2, caps_write/3]).
+-export([init/2, caps_read/2, caps_write/3, import/3]).
 
 -include("mod_caps.hrl").
 -include("logger.hrl").
@@ -45,6 +45,13 @@ caps_read(_LServer, Node) ->
 caps_write(_LServer, Node, Features) ->
     mnesia:dirty_write(#caps_features{node_pair = Node,
 				      features = Features}).
+
+import(_LServer, NodePair, [I]) when is_integer(I) ->
+    mnesia:dirty_write(
+      #caps_features{node_pair = NodePair, features = I});
+import(_LServer, NodePair, Features) ->
+    mnesia:dirty_write(
+      #caps_features{node_pair = NodePair, features = Features}).
 
 %%%===================================================================
 %%% Internal functions

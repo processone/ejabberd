@@ -344,7 +344,9 @@ disco_identity(Acc, _From, To, <<"">>, _Lang, Type) ->
 	empty when Identities /= [] -> {result, Identities};
 	{result, Ids} -> {result, Ids ++ Identities};
 	Acc -> Acc
-    end.
+    end;
+disco_identity(Acc, _From, _To, _Node, _Lang, _Type) ->
+    Acc.
 
 my_features(ejabberd_local) -> [?NS_DELEGATION];
 my_features(ejabberd_sm) -> [].

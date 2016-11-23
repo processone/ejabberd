@@ -36,8 +36,8 @@
 	 check_password/6, check_password_with_authmodule/4,
 	 check_password_with_authmodule/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
-	 get_vh_registered_users/2, export/1, import/1,
-	 get_vh_registered_users_number/1, import/3,
+	 get_vh_registered_users/2, export/1, import_info/0,
+	 get_vh_registered_users_number/1, import/5, import_start/2,
 	 get_vh_registered_users_number/2, get_password/2,
 	 get_password_s/2, get_password_with_authmodule/2,
 	 is_user_exists/2, is_user_exists_in_other_modules/3,
@@ -438,15 +438,20 @@ auth_modules(Server) ->
 export(Server) ->
     ejabberd_auth_mnesia:export(Server).
 
-import(Server) ->
-    ejabberd_auth_mnesia:import(Server).
+import_info() ->
+    [{<<"users">>, 3}].
 
-import(Server, mnesia, Passwd) ->
-    ejabberd_auth_mnesia:import(Server, mnesia, Passwd);
-import(Server, riak, Passwd) ->
-    ejabberd_auth_riak:import(Server, riak, Passwd);
-import(_, _, _) ->
-    pass.
+import_start(_LServer, mnesia) ->
+    ejabberd_auth_mnesia:init_db();
+import_start(_LServer, _) ->
+    ok.
+
+import(Server, {sql, _}, mnesia, <<"users">>, Fields) ->
+    ejabberd_auth_mnesia:import(Server, Fields);
+import(Server, {sql, _}, riak, <<"users">>, Fields) ->
+    ejabberd_auth_riak:import(Server, Fields);
+import(_LServer, {sql, _}, sql, <<"users">>, _) ->
+    ok.
 
 opt_type(auth_method) ->
     fun (V) when is_list(V) ->

@@ -15,7 +15,7 @@
 	 get_roster/2, get_roster_by_jid/3, get_only_items/2,
 	 roster_subscribe/4, get_roster_by_jid_with_groups/3,
 	 remove_user/2, update_roster/4, del_roster/3, transaction/2,
-	 read_subscription_and_groups/3, import/2]).
+	 read_subscription_and_groups/3, import/3, create_roster/1]).
 
 -include("mod_roster.hrl").
 -include("logger.hrl").
@@ -103,9 +103,13 @@ read_subscription_and_groups(LUser, LServer, LJID) ->
 transaction(_LServer, F) ->
     mnesia:transaction(F).
 
-import(_LServer, #roster{} = R) ->
+create_roster(RItem) ->
+    mnesia:dirty_write(RItem).
+
+import(_LServer, <<"rosterusers">>, #roster{} = R) ->
     mnesia:dirty_write(R);
-import(_LServer, #roster_version{} = RV) ->
+import(LServer, <<"roster_version">>, [LUser, Ver]) ->
+    RV = #roster_version{us = {LUser, LServer}, version = Ver},
     mnesia:dirty_write(RV).
 
 %%%===================================================================

@@ -142,7 +142,9 @@ process_config_tpl(Content, [{Name, DefaultValue} | Rest]) ->
               V3 ->
                   V3
           end,
-    NewContent = binary:replace(Content, <<"@@",(atom_to_binary(Name, latin1))/binary, "@@">>, Val),
+    NewContent = binary:replace(Content,
+				<<"@@",(atom_to_binary(Name,latin1))/binary, "@@">>,
+				Val, [global]),
     process_config_tpl(NewContent, Rest).
 
 stream_header(Config) ->
@@ -478,7 +480,7 @@ decode_stream_element(NS, El) ->
 format_element(El) ->
     case erlang:function_exported(ct, log, 5) of
 	true -> ejabberd_web_admin:pretty_print_xml(El);
-	false -> io_lib:format(" ~s~n", El)
+	false -> io_lib:format("~p~n", [El])
     end.
 
 decode(El, NS, Opts) ->

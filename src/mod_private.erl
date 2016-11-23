@@ -31,9 +31,9 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_sm_iq/1, import/3,
-	 remove_user/2, get_data/2, get_data/3, export/1, import/1,
-	 mod_opt_type/1, set_data/3, depends/2]).
+-export([start/2, stop/1, process_sm_iq/1, import_info/0,
+	 remove_user/2, get_data/2, get_data/3, export/1,
+	 import/5, import_start/2, mod_opt_type/1, set_data/3, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -42,7 +42,7 @@
 -include("mod_private.hrl").
 
 -callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), #private_storage{}) -> ok | pass.
+-callback import(binary(), binary(), [binary()]) -> ok.
 -callback set_data(binary(), binary(), [{binary(), xmlel()}]) -> {atomic, any()}.
 -callback get_data(binary(), binary(), binary()) -> {ok, xmlel()} | error.
 -callback get_all_data(binary(), binary()) -> [xmlel()].
@@ -124,17 +124,20 @@ remove_user(User, Server) ->
     Mod = gen_mod:db_mod(Server, ?MODULE),
     Mod:remove_user(LUser, LServer).
 
+import_info() ->
+    [{<<"private_storage">>, 4}].
+
+import_start(LServer, DBType) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:init(LServer, []).
+
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
 
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
-
-import(LServer, DBType, PD) ->
+import(LServer, {sql, _}, DBType, Tab, L) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, PD).
+    Mod:import(LServer, Tab, L).
 
 depends(_Host, _Opts) ->
     [].

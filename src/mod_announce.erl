@@ -31,8 +31,8 @@
 
 -behaviour(gen_mod).
 
--export([start/2, init/0, stop/1, export/1, import/1,
-	 import/3, announce/3, send_motd/1, disco_identity/5,
+-export([start/2, init/0, stop/1, export/1, import_info/0,
+	 import_start/2, import/5, announce/3, send_motd/1, disco_identity/5,
 	 disco_features/5, disco_items/5, depends/2,
 	 send_announcement_to_all/3, announce_commands/4,
 	 announce_items/4, mod_opt_type/1]).
@@ -43,7 +43,7 @@
 -include("mod_announce.hrl").
 
 -callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), #motd{} | #motd_users{}) -> ok | pass.
+-callback import(binary(), binary(), [binary()]) -> ok.
 -callback set_motd_users(binary(), [{binary(), binary(), binary()}]) -> {atomic, any()}.
 -callback set_motd(binary(), xmlel()) -> {atomic, any()}.
 -callback delete_motd(binary()) -> {atomic, any()}.
@@ -832,15 +832,17 @@ export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
 
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
+import_info() ->
+    [{<<"motd">>, 3}].
 
-import(LServer, DBType, LA) ->
+import_start(LServer, DBType) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, LA).
+    Mod:init(LServer, []).
 
-mod_opt_type(access) ->
-    fun acl:access_rules_validator/1;
+import(LServer, {sql, _}, DBType, Tab, List) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, Tab, List).
+
+mod_opt_type(access) -> fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(_) -> [access, db_type].
