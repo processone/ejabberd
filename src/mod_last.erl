@@ -217,7 +217,7 @@ import_start(LServer, DBType) ->
 import(LServer, {sql, _}, DBType, <<"last">>, [LUser, TimeStamp, State]) ->
     TS = case TimeStamp of
              <<"">> -> 0;
-             _ -> jlib:binary_to_integer(TimeStamp)
+             _ -> binary_to_integer(TimeStamp)
          end,
     LA = #last_activity{us = {LUser, LServer},
                         timestamp = TS,

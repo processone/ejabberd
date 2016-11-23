@@ -552,13 +552,13 @@ numeric_to_binary(<<0, _, _:6/binary, T/binary>>) ->
             fun(X, Sum) ->
                     Sum*10000 + X
             end, 0, [X || <<X:16>> <= T]),
-    jlib:integer_to_binary(Res).
+    integer_to_binary(Res).
 
 bool_to_binary(<<0>>) -> <<"0">>;
 bool_to_binary(<<1>>) -> <<"1">>.
 
 prepare_list_data(mysql, [ID|Row]) ->
-    [jlib:binary_to_integer(ID)|Row];
+    [binary_to_integer(ID)|Row];
 prepare_list_data(pgsql, [<<ID:64>>,
                           SType, SValue, SAction, SOrder, SMatchAll,
                           SMatchIQ, SMatchMessage, SMatchPresenceIn,
@@ -572,7 +572,7 @@ prepare_list_data(pgsql, [<<ID:64>>,
      bool_to_binary(SMatchPresenceOut)].
 
 prepare_id(mysql, ID) ->
-    jlib:binary_to_integer(ID);
+    binary_to_integer(ID);
 prepare_id(pgsql, <<ID:32>>) ->
     ID.
 

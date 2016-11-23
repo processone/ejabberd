@@ -966,7 +966,7 @@ attrs_to_body_attrs(Attrs) ->
 		[], Attrs).
 
 to_int(S, Min) ->
-    case jlib:binary_to_integer(S) of
+    case binary_to_integer(S) of
       I when I >= Min -> I;
       _ -> erlang:error(badarg)
     end.

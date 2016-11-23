@@ -868,10 +868,10 @@ import(LServer, {sql, _}, DBType, <<"spool">>,
                               fxml:get_attr_s(<<"to">>, El#xmlel.attrs)),
               Stamp = fxml:get_path_s(El, [{elem, <<"delay">>},
                                 {attr, <<"stamp">>}]),
-    TS = case jlib:datetime_string_to_timestamp(Stamp) of
-             {MegaSecs, Secs, _} ->
-                 {MegaSecs, Secs, 0};
-             undefined ->
+    TS = try xmpp_util:decode_timestamp(Stamp) of
+	     {MegaSecs, Secs, _} ->
+                 {MegaSecs, Secs, 0}
+	 catch _:_ ->
                  p1_time_compat:timestamp()
          end,
     US = {LUser, LServer},
