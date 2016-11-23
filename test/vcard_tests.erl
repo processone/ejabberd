@@ -11,7 +11,7 @@
 %% API
 -compile(export_all).
 -import(suite, [send_recv/2, disconnect/1, is_feature_advertised/2,
-		is_feature_advertised/3,
+		is_feature_advertised/3, server_jid/1,
 		my_jid/1, wait_for_slave/1, wait_for_master/1,
 		recv_presence/1, recv/1]).
 
@@ -26,7 +26,8 @@
 single_cases() ->
     {vcard_single, [sequence],
      [single_test(feature_enabled),
-      single_test(get_set)]}.
+      single_test(get_set),
+      single_test(service_vcard)]}.
 
 feature_enabled(Config) ->
     BareMyJID = jid:remove_resource(my_jid(Config)),
@@ -70,6 +71,13 @@ get_set(Config) ->
     %% TODO: check if VCard == VCard1.
     #iq{type = result, sub_els = [_VCard1]} =
         send_recv(Config, #iq{type = get, sub_els = [#vcard_temp{}]}),
+    disconnect(Config).
+
+service_vcard(Config) ->
+    JID = server_jid(Config),
+    ct:comment("Retreiving vCard from ~s", [jid:to_string(JID)]),
+    #iq{type = result, sub_els = [#vcard_temp{}]} =
+	send_recv(Config, #iq{type = get, to = JID, sub_els = [#vcard_temp{}]}),
     disconnect(Config).
 
 %%%===================================================================

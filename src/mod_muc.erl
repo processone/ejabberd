@@ -429,11 +429,10 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 -spec process_vcard(iq()) -> iq().
 process_vcard(#iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]} = IQ) ->
     Desc = translate:translate(Lang, <<"ejabberd MUC module">>),
-    Copyright = <<"Copyright (c) 2003-2016 ProcessOne">>,
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd/mod_muc">>,
 		      url = ?EJABBERD_URI,
-		      desc = <<Desc/binary, $\n, Copyright/binary>>});
+		      desc = <<Desc/binary, $\n, ?COPYRIGHT>>});
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));

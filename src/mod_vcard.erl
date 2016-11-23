@@ -191,11 +191,10 @@ process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq(#iq{type = get, lang = Lang} = IQ) ->
     Desc = translate:translate(Lang, <<"Erlang Jabber Server">>),
-    Copyright = <<"Copyright (c) 2002-2016 ProcessOne">>,
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd">>,
 		      url = ?EJABBERD_URI,
-		      desc = <<Desc/binary, $\n, Copyright/binary>>,
+		      desc = <<Desc/binary, $\n, ?COPYRIGHT>>,
 		      bday = <<"2002-11-16">>}).
 
 -spec process_sm_iq(iq()) -> iq().
@@ -228,11 +227,10 @@ process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_vcard(#iq{type = get, lang = Lang} = IQ) ->
     Desc = translate:translate(Lang, <<"ejabberd vCard module">>),
-    Copyright = <<"Copyright (c) 2003-2016 ProcessOne">>,
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd/mod_vcard">>,
 		      url = ?EJABBERD_URI,
-		      desc = <<Desc/binary, $\n, Copyright/binary>>}).
+		      desc = <<Desc/binary, $\n, ?COPYRIGHT>>}).
 
 -spec process_search(iq()) -> iq().
 process_search(#iq{type = get, to = To, lang = Lang} = IQ) ->

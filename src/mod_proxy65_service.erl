@@ -136,11 +136,10 @@ process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_vcard(#iq{type = get, lang = Lang} = IQ) ->
     Desc = translate:translate(Lang, <<"ejabberd SOCKS5 Bytestreams module">>),
-    Copyright = <<"Copyright (c) 2003-2016 ProcessOne">>,
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd/mod_proxy65">>,
 		      url = ?EJABBERD_URI,
-		      desc = <<Desc/binary, $\n, Copyright/binary>>}).
+		      desc = <<Desc/binary, $\n, ?COPYRIGHT>>}).
 
 -spec process_bytestreams(iq()) -> iq().
 process_bytestreams(#iq{type = get, from = JID, to = To, lang = Lang} = IQ) ->

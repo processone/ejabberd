@@ -25,6 +25,7 @@
 single_cases() ->
     {pubsub_single, [sequence],
      [single_test(test_features),
+      single_test(test_vcard),
       single_test(test_create),
       single_test(test_configure),
       single_test(test_delete),
@@ -65,6 +66,13 @@ test_features(Config) ->
 			?PUBSUB("purge-nodes"),
 			?PUBSUB("delete-nodes")]),
     true = sets:is_subset(NeededFeatures, AllFeatures),
+    disconnect(Config).
+
+test_vcard(Config) ->
+    JID = pubsub_jid(Config),
+    ct:comment("Retreiving vCard from ~s", [jid:to_string(JID)]),
+    #iq{type = result, sub_els = [#vcard_temp{}]} =
+	send_recv(Config, #iq{type = get, to = JID, sub_els = [#vcard_temp{}]}),
     disconnect(Config).
 
 test_create(Config) ->

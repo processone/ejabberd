@@ -420,10 +420,9 @@ iq_disco(ServerHost, Node, Lang) ->
 
 iq_get_vcard(Lang) ->
     Desc = translate:translate(Lang, <<"ejabberd IRC module">>),
-    Copyright = <<"Copyright (c) 2003-2016 ProcessOne">>,
     #vcard_temp{fn = <<"ejabberd/mod_irc">>,
 		url = ?EJABBERD_URI,
-		desc = <<Desc/binary, $\n, Copyright/binary>>}.
+		desc = <<Desc/binary, $\n, ?COPYRIGHT>>}.
 
 command_items(ServerHost, Host, Lang) ->
     lists:map(fun({Node, Name, _Function}) ->

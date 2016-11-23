@@ -1186,10 +1186,9 @@ iq_sm(#iq{to = To, sub_els = [SubEl]} = IQ) ->
 -spec iq_get_vcard(binary()) -> vcard_temp().
 iq_get_vcard(Lang) ->
     Desc = translate:translate(Lang, <<"ejabberd Publish-Subscribe module">>),
-    Copyright = <<"Copyright (c) 2004-2016 ProcessOne">>,
     #vcard_temp{fn = <<"ejabberd/mod_pubsub">>,
 		url = ?EJABBERD_URI,
-		desc = <<Desc/binary, $\n, Copyright/binary>>}.
+		desc = <<Desc/binary, $\n, ?COPYRIGHT>>}.
 
 -spec iq_pubsub(binary() | ljid(), atom(), iq()) ->
 		       {result, pubsub()} | {error, stanza_error()}.

@@ -24,10 +24,18 @@
 %%%===================================================================
 single_cases() ->
     {proxy65_single, [sequence],
-     [single_test(feature_enabled)]}.
+     [single_test(feature_enabled),
+      single_test(service_vcard)]}.
 
 feature_enabled(Config) ->
     true = is_feature_advertised(Config, ?NS_BYTESTREAMS, proxy_jid(Config)),
+    disconnect(Config).
+
+service_vcard(Config) ->
+    JID = proxy_jid(Config),
+    ct:comment("Retreiving vCard from ~s", [jid:to_string(JID)]),
+    #iq{type = result, sub_els = [#vcard_temp{}]} =
+	send_recv(Config, #iq{type = get, to = JID, sub_els = [#vcard_temp{}]}),
     disconnect(Config).
 
 %%%===================================================================
