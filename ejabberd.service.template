@@ -14,9 +14,7 @@ Type=oneshot
 RemainAfterExit=yes
 # The CAP_DAC_OVERRIDE capability is required for pam authentication to work
 CapabilityBoundingSet=CAP_DAC_OVERRIDE
-PrivateTmp=true
 PrivateDevices=true
-ProtectHome=true
 ProtectSystem=full
 NoNewPrivileges=true
 
