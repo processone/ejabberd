@@ -3,22 +3,16 @@ Description=XMPP Server
 After=network.target
 
 [Service]
+Type=forking
 User=ejabberd
 Group=ejabberd
-LimitNOFILE=16000
+LimitNOFILE=65536
+Restart=on-failure
 RestartSec=5
-ExecStart=@ctlscriptpath@/ejabberdctl start
-ExecStop=@ctlscriptpath@/ejabberdctl stop
-ExecReload=@ctlscriptpath@/ejabberdctl reload_config
-Type=oneshot
-RemainAfterExit=yes
-# The CAP_DAC_OVERRIDE capability is required for pam authentication to work
-CapabilityBoundingSet=CAP_DAC_OVERRIDE
-PrivateTmp=true
+ExecStart=/bin/sh -c '@ctlscriptpath@/ejabberdctl start && @ctlscriptpath@/ejabberdctl started'
+ExecStop=/bin/sh -c '@ctlscriptpath@/ejabberdctl stop && @ctlscriptpath@/ejabberdctl stopped'
 PrivateDevices=true
-ProtectHome=true
 ProtectSystem=full
-NoNewPrivileges=true
 
 [Install]
 WantedBy=multi-user.target
