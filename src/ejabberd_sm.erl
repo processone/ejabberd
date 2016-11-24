@@ -613,8 +613,7 @@ route_message(From, To, Packet, Type) ->
 maybe_mark_as_copy(Packet, R, R, P, P) ->
     Packet;
 maybe_mark_as_copy(Packet, _, _, P, P) ->
-    Meta = Packet#message.meta,
-    Packet#message{meta = Meta#{sm_copy => true}};
+    xmpp:put_meta(Packet, sm_copy, true);
 maybe_mark_as_copy(Packet, _, _, _, _) ->
     Packet.
 
