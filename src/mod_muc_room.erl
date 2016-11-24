@@ -79,6 +79,16 @@
 
 -export_type([state/0]).
 
+-callback set_affiliation(binary(), binary(), binary(), jid(), affiliation(),
+			  binary()) -> ok | {error, any()}.
+-callback set_affiliations(binary(), binary(), binary(),
+			   ?TDICT) -> ok | {error, any()}.
+-callback get_affiliation(binary(), binary(), binary(),
+			  binary(), binary()) -> {ok, affiliation()} | {error, any()}.
+-callback get_affiliations(binary(), binary(), binary()) -> {ok, ?TDICT} | {error, any()}.
+-callback search_affiliation(binary(), binary(), binary(), affiliation()) ->
+    {ok, [{ljid(), {affiliation(), binary()}}]} | {error, any()}.
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
