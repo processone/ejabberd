@@ -206,7 +206,7 @@ install: all copy-files
 	# Service script
 	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" ejabberd.service.template \
 		> ejabberd.service
-	chmod 755 ejabberd.service
+	chmod 644 ejabberd.service
 	#
 	# Spool directory
 	$(INSTALL) -d -m 750 $(O_USER) $(SPOOLDIR)
