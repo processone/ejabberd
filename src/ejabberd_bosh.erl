@@ -807,7 +807,7 @@ encode_body(#body{attrs = Attrs, els = Els}, Type) ->
 				 true -> {AmK, <<"true">>};
 				 false -> {AmK, <<"false">>};
 				 I when is_integer(I), I >= 0 ->
-				     {AmK, iolist_to_binary(integer_to_list(I))};
+				     {AmK, integer_to_binary(I)};
 				 _ -> {AmK, V}
 			       end;
 			   ({K, V}) -> {K, V}

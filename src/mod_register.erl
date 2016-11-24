@@ -392,7 +392,7 @@ send_registration_notifications(Mod, UJID, Source) ->
         [] -> ok;
         JIDs when is_list(JIDs) ->
             Body =
-                iolist_to_binary(io_lib:format("[~s] The account ~s was registered from "
+                (str:format("[~s] The account ~s was registered from "
                                                "IP address ~s on node ~w using ~p.",
                                                [get_time_string(),
                                                 jid:to_string(UJID),

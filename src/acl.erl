@@ -342,7 +342,7 @@ acl_rule_verify({node_glob, {UR, SR}}) when is_binary(UR), is_binary(SR) ->
 acl_rule_verify(_Spec) ->
     false.
 invalid_syntax(Msg, Data) ->
-    throw({invalid_syntax, iolist_to_binary(io_lib:format(Msg, Data))}).
+    throw({invalid_syntax, (str:format(Msg, Data))}).
 
 acl_rules_verify([{acl, Name} | Rest], true) when is_atom(Name) ->
     acl_rules_verify(Rest, true);

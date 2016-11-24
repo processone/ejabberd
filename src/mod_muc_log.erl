@@ -247,18 +247,18 @@ build_filename_string(TimeStamp, OutDir, RoomJID,
     {Dir, Filename, Rel} = case DirType of
 			     subdirs ->
 				 SYear =
-				     iolist_to_binary(io_lib:format("~4..0w",
+				     (str:format("~4..0w",
 								    [Year])),
 				 SMonth =
-				     iolist_to_binary(io_lib:format("~2..0w",
+				     (str:format("~2..0w",
 								    [Month])),
-				 SDay = iolist_to_binary(io_lib:format("~2..0w",
+				 SDay = (str:format("~2..0w",
 								       [Day])),
 				 {fjoin([SYear, SMonth]), SDay,
 				  <<"../..">>};
 			     plain ->
 				 Date =
-				     iolist_to_binary(io_lib:format("~4..0w-~2..0w-~2..0w",
+				     (str:format("~4..0w-~2..0w-~2..0w",
 								    [Year,
 								     Month,
 								     Day])),
@@ -727,7 +727,7 @@ fw(F, S, FileFormat) when is_atom(FileFormat) ->
     fw(F, S, [], FileFormat).
 
 fw(F, S, O, FileFormat) ->
-    S1 = list_to_binary(io_lib:format(binary_to_list(S) ++ "~n", O)),
+    S1 = (str:format(binary_to_list(S) ++ "~n", O)),
     S2 = case FileFormat of
 	     html ->
 		 S1;

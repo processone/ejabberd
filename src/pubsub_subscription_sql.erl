@@ -135,7 +135,7 @@ create_table() -> ok.
 -spec make_subid() -> mod_pubsub:subId().
 make_subid() ->
     {T1, T2, T3} = p1_time_compat:timestamp(),
-    iolist_to_binary(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).
+    (str:format("~.16B~.16B~.16B", [T1, T2, T3])).
 
 %%
 %% Subscription XForm processing.
@@ -172,14 +172,14 @@ val_xfield(digest_frequency = Opt, [Val]) ->
 	N when is_integer(N) -> N;
 	_ ->
 	    Txt = <<"Value of '~s' should be integer">>,
-	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
+	    ErrTxt = (str:format(Txt, [Opt])),
 	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
     end;
 val_xfield(expire = Opt, [Val]) ->
     try xmpp_util:decode_timestamp(Val)
     catch _:{bad_timestamp, _} ->
 	    Txt = <<"Value of '~s' should be datetime string">>,
-	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
+	    ErrTxt = (str:format(Txt, [Opt])),
 	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
     end;
 val_xfield(include_body = Opt, [Val]) -> xopt_to_bool(Opt, Val);
@@ -192,7 +192,7 @@ val_xfield(subscription_depth = Opt, [Depth]) ->
 	N when is_integer(N) -> N;
 	_ ->
 	    Txt = <<"Value of '~s' should be integer">>,
-	    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Opt])),
+	    ErrTxt = (str:format(Txt, [Opt])),
 	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
     end.
 
@@ -203,7 +203,7 @@ xopt_to_bool(_, <<"false">>) -> false;
 xopt_to_bool(_, <<"true">>) -> true;
 xopt_to_bool(Option, _) ->
     Txt = <<"Value of '~s' should be boolean">>,
-    ErrTxt = iolist_to_binary(io_lib:format(Txt, [Option])),
+    ErrTxt = (str:format(Txt, [Option])),
     {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}.
 
 %% Return a field for an XForm for Key, with data filled in, if
@@ -276,7 +276,7 @@ xfield_label(subscription_depth) -> ?SUBSCRIPTION_DEPTH_LABEL.
 xfield_val(deliver, Val) -> [bool_to_xopt(Val)];
 %xfield_val(digest, Val) -> [bool_to_xopt(Val)];
 %xfield_val(digest_frequency, Val) ->
-%    [iolist_to_binary(integer_to_list(Val))];
+%    [integer_to_binary(Val))];
 %xfield_val(expire, Val) ->
 %    [jlib:now_to_utc_string(Val)];
 %xfield_val(include_body, Val) -> [bool_to_xopt(Val)];
@@ -285,7 +285,7 @@ xfield_val(subscription_type, items) -> [<<"items">>];
 xfield_val(subscription_type, nodes) -> [<<"nodes">>];
 xfield_val(subscription_depth, all) -> [<<"all">>];
 xfield_val(subscription_depth, N) ->
-    [iolist_to_binary(integer_to_list(N))].
+    [integer_to_binary(N)].
 
 bool_to_xopt(false) -> <<"false">>;
 bool_to_xopt(true) -> <<"true">>.

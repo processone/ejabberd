@@ -677,14 +677,14 @@ timestamp_to_iso({{Year, Month, Day},
 %% http://xmpp.org/extensions/xep-0091.html#time
 timestamp_to_legacy({{Year, Month, Day},
                   {Hour, Minute, Second}}) ->
-    iolist_to_binary(io_lib:format("~4..0B~2..0B~2..0BT~2..0B:~2..0B:~2..0B",
+    (str:format("~4..0B~2..0B~2..0BT~2..0B:~2..0B:~2..0B",
                                    [Year, Month, Day, Hour, Minute, Second])).
 
 -spec timestamp_to_iso_basic(calendar:datetime()) -> binary().
 %% This is the ISO 8601 basic bormat
 timestamp_to_iso_basic({{Year, Month, Day},
                   {Hour, Minute, Second}}) ->
-    iolist_to_binary(io_lib:format("~4..0B~2..0B~2..0BT~2..0B~2..0B~2..0B",
+    (str:format("~4..0B~2..0B~2..0BT~2..0B~2..0B~2..0B",
                                    [Year, Month, Day, Hour, Minute, Second])).
 
 -spec now_to_utc_string(erlang:timestamp()) -> binary().
@@ -703,7 +703,7 @@ now_to_utc_string({MegaSecs, Secs, MicroSecs}, Precision) ->
       Max ->
 	  now_to_utc_string({MegaSecs, Secs + 1, 0}, Precision);
       FracOfSec ->
-	  list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0BT"
+	  (str:format("~4..0B-~2..0B-~2..0BT"
 				       "~2..0B:~2..0B:~2..0B.~*..0BZ",
 				       [Year, Month, Day, Hour, Minute, Second,
 					Precision, FracOfSec]))
@@ -725,7 +725,7 @@ now_to_local_string({MegaSecs, Secs, MicroSecs}) ->
 			end,
     {{Year, Month, Day}, {Hour, Minute, Second}} =
 	LocalTime,
-    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B:~2..0B.~6."
+    (str:format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B:~2..0B.~6."
                                  ".0B~s~2..0B:~2..0B",
                                  [Year, Month, Day, Hour, Minute, Second,
                                   MicroSecs, Sign, H, M])).

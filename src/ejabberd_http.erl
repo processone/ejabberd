@@ -550,12 +550,12 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
 		   of
 		 {value, _} ->
 		     [{<<"Content-Length">>,
-		       iolist_to_binary(integer_to_list(byte_size(Data)))}
+		       integer_to_binary(byte_size(Data))}
 		      | Headers];
 		 _ ->
 		     [{<<"Content-Type">>, <<"text/html; charset=utf-8">>},
 		      {<<"Content-Length">>,
-		       iolist_to_binary(integer_to_list(byte_size(Data)))}
+		       integer_to_binary(byte_size(Data))}
 		      | Headers]
 	       end,
     HeadersOut = case {State#state.request_version,
@@ -577,7 +577,7 @@ make_xhtml_output(State, Status, Headers, XHTML) ->
 		  end,
 		  HeadersOut),
     SL = [Version,
-	  iolist_to_binary(integer_to_list(Status)), <<" ">>,
+	  integer_to_binary(Status), <<" ">>,
 	  code_to_phrase(Status), <<"\r\n">>],
     Data2 = case State#state.request_method of
 	      'HEAD' -> <<"">>;

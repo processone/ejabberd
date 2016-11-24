@@ -532,10 +532,10 @@ key_split([{Arg, Value} | Rest], Results, Order, Required, Duplicates) ->
     end.
 
 report_error(Format, Args) ->
-    throw({invalid_syntax, iolist_to_binary(io_lib:format(Format, Args))}).
+    throw({invalid_syntax, (str:format(Format, Args))}).
 
 parse_error(Format, Args) ->
-    {error, iolist_to_binary(io_lib:format(Format, Args))}.
+    {error, (str:format(Format, Args))}.
 
 opt_type(api_permissions) ->
     fun parse_api_permissions/1;

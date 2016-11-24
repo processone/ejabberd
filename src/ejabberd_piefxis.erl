@@ -196,7 +196,7 @@ format_scram_password({StoredKey, ServerKey, Salt, IterationCount}) ->
   StoredKeyB64 = base64:encode(StoredKey),
   ServerKeyB64 = base64:encode(ServerKey),
   SaltB64 = base64:encode(Salt),
-  IterationCountBin = list_to_binary(integer_to_list(IterationCount)),
+  IterationCountBin = (integer_to_binary(IterationCount)),
   <<"scram:", StoredKeyB64/binary, ",", ServerKeyB64/binary, ",", SaltB64/binary, ",", IterationCountBin/binary>>.
 
 parse_scram_password(PassData) ->
@@ -206,7 +206,7 @@ parse_scram_password(PassData) ->
     storedkey = StoredKeyB64,
     serverkey = ServerKeyB64,
     salt      = SaltB64,
-    iterationcount = list_to_integer(binary_to_list(IterationCountBin))
+    iterationcount = (binary_to_integer(IterationCountBin))
   }.
 
 -spec get_vcard(binary(), binary()) -> [xmlel()].
@@ -554,9 +554,8 @@ stop(Fmt, Args) ->
 
 make_filename_template() ->
     {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
-    list_to_binary(
-      io_lib:format("~4..0w~2..0w~2..0w-~2..0w~2..0w~2..0w",
-		    [Year, Month, Day, Hour, Minute, Second])).
+    str:format("~4..0w~2..0w~2..0w-~2..0w~2..0w~2..0w",
+	       [Year, Month, Day, Hour, Minute, Second]).
 
 make_main_basefilename(Dir, FnT) ->
     Filename2 = <<FnT/binary, ".xml">>,

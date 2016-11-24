@@ -680,9 +680,9 @@ get_all_vh_users(Host) ->
 		lists:map(fun (K) ->
 				  L = K + M - 1,
 				  Node = <<"@",
-					   (iolist_to_binary(integer_to_list(K)))/binary,
+					   (integer_to_binary(K))/binary,
 					   "-",
-					   (iolist_to_binary(integer_to_list(L)))/binary>>,
+					   (integer_to_binary(L))/binary>>,
 				  {FS, FU} = lists:nth(K, SUsers),
 				  {LS, LU} = if L < N -> lists:nth(L, SUsers);
 						true -> lists:last(SUsers)
@@ -707,8 +707,7 @@ get_outgoing_s2s(Host, Lang) ->
 		       Host == FH orelse str:suffix(DotHost, FH)],
 	  lists:map(
 	    fun (T) ->
-		    Name = iolist_to_binary(
-			     io_lib:format(?T(Lang, <<"To ~s">>),[T])),
+		    Name = str:format(?T(Lang, <<"To ~s">>),[T]),
 		    #disco_item{jid = jid:make(Host),
 				node = <<"outgoing s2s/", T/binary>>,
 				name = Name}
@@ -722,8 +721,7 @@ get_outgoing_s2s(Host, Lang, To) ->
 	  lists:map(
 	    fun ({F, _T}) ->
 		    Node = <<"outgoing s2s/", To/binary, "/", F/binary>>,
-		    Name = iolist_to_binary(
-			     io_lib:format(?T(Lang, <<"From ~s">>), [F])),
+		    Name = str:format(?T(Lang, <<"From ~s">>), [F]),
 		    #disco_item{jid = jid:make(Host), node = Node, name = Name}
 	    end,
 	    lists:keysort(1,
@@ -1082,14 +1080,13 @@ get_form(_Host,
 				   label = ?T(Lang, <<"Message body">>)}]}};
 get_form(Host, [<<"config">>, <<"acls">>], Lang) ->
     ACLs = str:tokens(
-	     iolist_to_binary(
-	       io_lib:format("~p.",
-			     [mnesia:dirty_select(
-				acl,
-				ets:fun2ms(
-				  fun({acl, {Name, H}, Spec}) when H == Host ->
-					  {acl, Name, Spec}
-				  end))])),
+	     str:format("~p.",
+			[mnesia:dirty_select(
+			   acl,
+			   ets:fun2ms(
+			     fun({acl, {Name, H}, Spec}) when H == Host ->
+				     {acl, Name, Spec}
+			     end))]),
 	     <<"\n">>),
     {result,
      #xdata{title = ?T(Lang, <<"Access Control List Configuration">>),
@@ -1101,14 +1098,13 @@ get_form(Host, [<<"config">>, <<"acls">>], Lang) ->
 				   values = ACLs}]}};
 get_form(Host, [<<"config">>, <<"access">>], Lang) ->
     Accs = str:tokens(
-	     iolist_to_binary(
-	       io_lib:format("~p.",
-			     [mnesia:dirty_select(
-				access,
-				ets:fun2ms(
-				  fun({access, {Name, H}, Acc}) when H == Host ->
-					  {access, Name, Acc}
-				  end))])),
+	     str:format("~p.",
+			[mnesia:dirty_select(
+			   access,
+			   ets:fun2ms(
+			     fun({access, {Name, H}, Acc}) when H == Host ->
+				     {access, Name, Acc}
+			     end))]),
 	     <<"\n">>),
     {result,
      #xdata{title = ?T(Lang, <<"Access Configuration">>),
@@ -1199,9 +1195,7 @@ get_form(_Host, ?NS_ADMINL(<<"user-stats">>), Lang) ->
 				   required = true}]}};
 get_form(Host,
 	 ?NS_ADMINL(<<"get-registered-users-num">>), Lang) ->
-    Num = list_to_binary(
-            io_lib:format("~p",
-			  [ejabberd_auth:get_vh_registered_users_number(Host)])),
+    Num = integer_to_binary(ejabberd_auth:get_vh_registered_users_number(Host)),
     {result, completed,
      #xdata{type = form,
 	    fields = [?HFIELD(),
@@ -1211,9 +1205,7 @@ get_form(Host,
 				   values = [Num]}]}};
 get_form(Host, ?NS_ADMINL(<<"get-online-users-num">>),
 	 Lang) ->
-    Num = list_to_binary(
-            io_lib:format("~p",
-                          [length(ejabberd_sm:get_vh_session_list(Host))])),
+    Num = integer_to_binary(ejabberd_sm:get_vh_session_number(Host)),
     {result, completed,
      #xdata{type = form,
 	    fields = [?HFIELD(),
@@ -1641,7 +1633,7 @@ set_form(From, Host,
 			TimeStamp = {Shift div 1000000, Shift rem 1000000, 0},
 			{{Year, Month, Day}, {Hour, Minute, Second}} =
 			    calendar:now_to_local_time(TimeStamp),
-			iolist_to_binary(io_lib:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+			(str:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
 						       [Year, Month, Day, Hour,
 							Minute, Second]))
 		  end;

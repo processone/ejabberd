@@ -180,10 +180,9 @@ process_large_heap(Pid, Info) ->
     Host = (?MYNAME),
     JIDs = get_admin_jids(),
     DetailedInfo = detailed_info(Pid),
-    Body = iolist_to_binary(
-             io_lib:format("(~w) The process ~w is consuming too "
-                           "much memory:~n~p~n~s",
-                           [node(), Pid, Info, DetailedInfo])),
+    Body = str:format("(~w) The process ~w is consuming too "
+		      "much memory:~n~p~n~s",
+		      [node(), Pid, Info, DetailedInfo]),
     From = jid:make(<<"">>, Host, <<"watchdog">>),
     Hint = [#hint{type = 'no-permanent-store'}],
     lists:foreach(

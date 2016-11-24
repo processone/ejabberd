@@ -302,8 +302,8 @@ set_loglevel(LogLevel) ->
 %%%
 
 stop_kindly(DelaySeconds, AnnouncementTextString) ->
-    Subject = list_to_binary(io_lib:format("Server stop in ~p seconds!", [DelaySeconds])),
-    WaitingDesc = list_to_binary(io_lib:format("Waiting ~p seconds", [DelaySeconds])),
+    Subject = (str:format("Server stop in ~p seconds!", [DelaySeconds])),
+    WaitingDesc = (str:format("Waiting ~p seconds", [DelaySeconds])),
     AnnouncementText = list_to_binary(AnnouncementTextString),
     Steps = [
 	     {"Stopping ejabberd port listeners",
@@ -337,8 +337,7 @@ stop_kindly(DelaySeconds, AnnouncementTextString) ->
     ok.
 
 send_service_message_all_mucs(Subject, AnnouncementText) ->
-    Message = list_to_binary(
-                io_lib:format("~s~n~s", [Subject, AnnouncementText])),
+    Message = str:format("~s~n~s", [Subject, AnnouncementText]),
     lists:foreach(
       fun(ServerHost) ->
 	      MUCHost = gen_mod:get_module_opt_host(

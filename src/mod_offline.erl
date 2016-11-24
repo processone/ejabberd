@@ -717,7 +717,7 @@ user_queue(User, Server, Query, Lang) ->
     Hdrs = get_messages_subset(US, Server, HdrsAll),
     FMsgs = format_user_queue(Hdrs),
     [?XC(<<"h1">>,
-	 list_to_binary(io_lib:format(?T(<<"~s's Offline Messages Queue">>),
+	 (str:format(?T(<<"~s's Offline Messages Queue">>),
                                       [us_to_list(US)])))]
       ++
       case Res of
@@ -801,7 +801,7 @@ webadmin_user(Acc, User, Server, Lang) ->
     QueueLen = count_offline_messages(jid:nodeprep(User),
 				jid:nameprep(Server)),
     FQueueLen = [?AC(<<"queue/">>,
-		     (iolist_to_binary(integer_to_list(QueueLen))))],
+		     (integer_to_binary(QueueLen)))],
     Acc ++
       [?XCT(<<"h3">>, <<"Offline Messages:">>)] ++
 	FQueueLen ++

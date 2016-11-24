@@ -3776,7 +3776,7 @@ err_unsupported_access_model() ->
 -spec uniqid() -> mod_pubsub:itemId().
 uniqid() ->
     {T1, T2, T3} = p1_time_compat:timestamp(),
-    iolist_to_binary(io_lib:fwrite("~.16B~.16B~.16B", [T1, T2, T3])).
+    (str:format("~.16B~.16B~.16B", [T1, T2, T3])).
 
 -spec itemsEls([#pubsub_item{}]) -> [ps_item()].
 itemsEls(Items) ->
