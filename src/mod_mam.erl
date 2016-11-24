@@ -176,6 +176,7 @@ remove_user(User, Server) ->
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_user(LUser, LServer),
+    cache_tab:dirty_delete(archive_prefs, {LUser, LServer}, fun() -> ok end),
     ok.
 
 -spec remove_room(binary(), binary(), binary()) -> ok.
