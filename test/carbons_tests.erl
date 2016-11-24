@@ -145,10 +145,6 @@ recv_carbons(Config) ->
 	      ok;
 	 ({_, #message{sub_els = [#carbons_private{}]}}) ->
 	      ok;
-	 ({_, #message{sub_els = [#carbons_sent{}]}}) ->
-	      ok;
-	 ({_, #message{sub_els = [#carbons_received{}]}}) ->
-	      ok;
 	 ({_, #message{type = T}}) when T /= normal, T /= chat ->
 	      ok;
 	 ({Dir, #message{type = T, body = Body} = M})
@@ -197,6 +193,4 @@ message_iterator(_Config) ->
     	Body <- [[], xmpp:mk_text(<<"body">>)],
     	Els <- [[],
     		[#hint{type = 'no-copy'}],
-    		[#carbons_private{}],
-    		[#carbons_sent{forwarded = #forwarded{}}],
-    		[#carbons_received{forwarded = #forwarded{}}]]].
+		[#carbons_private{}]]].
