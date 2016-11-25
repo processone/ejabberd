@@ -601,10 +601,7 @@ announce_all(From, To, Packet) ->
     Access = get_access(Host),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Lang = xmpp:get_lang(Packet),
-	    Txt = <<"Denied by ACL">>,
-	    Err = xmpp:make_error(Packet, xmpp:err_forbidden(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err);
+	    route_forbidden_error(From, To, Packet);
 	allow ->
 	    Local = jid:make(To#jid.server),
 	    lists:foreach(
@@ -618,10 +615,7 @@ announce_all_hosts_all(From, To, Packet) ->
     Access = get_access(global),
     case acl:match_rule(global, Access, From) of
 	deny ->
-	    Lang = xmpp:get_lang(Packet),
-	    Txt = <<"Denied by ACL">>,
-	    Err = xmpp:make_error(Packet, xmpp:err_forbidden(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err);
+	    route_forbidden_error(From, To, Packet);
 	allow ->
 	    Local = jid:make(To#jid.server),
 	    lists:foreach(
@@ -636,10 +630,7 @@ announce_online(From, To, Packet) ->
     Access = get_access(Host),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Lang = xmpp:get_lang(Packet),
-	    Txt = <<"Denied by ACL">>,
-	    Err = xmpp:make_error(Packet, xmpp:err_forbidden(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err);
+	    route_forbidden_error(From, To, Packet);
 	allow ->
 	    announce_online1(ejabberd_sm:get_vh_session_list(Host),
 			     To#jid.server,
@@ -650,10 +641,7 @@ announce_all_hosts_online(From, To, Packet) ->
     Access = get_access(global),
     case acl:match_rule(global, Access, From) of
 	deny ->
-	    Lang = xmpp:get_lang(Packet),
-	    Txt = <<"Denied by ACL">>,
-	    Err = xmpp:make_error(Packet, xmpp:err_forbidden(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err);
+	    route_forbidden_error(From, To, Packet);
 	allow ->
 	    announce_online1(ejabberd_sm:dirty_get_sessions_list(),
 			     To#jid.server,
@@ -673,10 +661,7 @@ announce_motd(From, To, Packet) ->
     Access = get_access(Host),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Lang = xmpp:get_lang(Packet),
-	    Txt = <<"Denied by ACL">>,
-	    Err = xmpp:make_error(Packet, xmpp:err_forbidden(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err);
+	    route_forbidden_error(From, To, Packet);
 	allow ->
 	    announce_motd(Host, Packet)
     end.
@@ -685,10 +670,7 @@ announce_all_hosts_motd(From, To, Packet) ->
     Access = get_access(global),
     case acl:match_rule(global, Access, From) of
 	deny ->
-	    Lang = xmpp:get_lang(Packet),
-	    Txt = <<"Denied by ACL">>,
-	    Err = xmpp:make_error(Packet, xmpp:err_forbidden(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err);
+	    route_forbidden_error(From, To, Packet);
 	allow ->
 	    Hosts = ?MYHOSTS,
 	    [announce_motd(Host, Packet) || Host <- Hosts]
@@ -707,10 +689,7 @@ announce_motd_update(From, To, Packet) ->
     Access = get_access(Host),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Lang = xmpp:get_lang(Packet),
-	    Txt = <<"Denied by ACL">>,
-	    Err = xmpp:make_error(Packet, xmpp:err_forbidden(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err);
+	    route_forbidden_error(From, To, Packet);
 	allow ->
 	    announce_motd_update(Host, Packet)
     end.
@@ -719,10 +698,7 @@ announce_all_hosts_motd_update(From, To, Packet) ->
     Access = get_access(global),
     case acl:match_rule(global, Access, From) of
 	deny ->
-	    Lang = xmpp:get_lang(Packet),
-	    Txt = <<"Denied by ACL">>,
-	    Err = xmpp:make_error(Packet, xmpp:err_forbidden(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err);
+	    route_forbidden_error(From, To, Packet);
 	allow ->
 	    Hosts = ?MYHOSTS,
 	    [announce_motd_update(Host, Packet) || Host <- Hosts]
@@ -738,10 +714,7 @@ announce_motd_delete(From, To, Packet) ->
     Access = get_access(Host),
     case acl:match_rule(Host, Access, From) of
 	deny ->
-	    Lang = xmpp:get_lang(Packet),
-	    Txt = <<"Denied by ACL">>,
-	    Err = xmpp:make_error(Packet, xmpp:err_forbidden(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err);
+	    route_forbidden_error(From, To, Packet);
 	allow ->
 	    announce_motd_delete(Host)
     end.
@@ -750,10 +723,7 @@ announce_all_hosts_motd_delete(From, To, Packet) ->
     Access = get_access(global),
     case acl:match_rule(global, Access, From) of
 	deny ->
-	    Lang = xmpp:get_lang(Packet),
-	    Txt = <<"Denied by ACL">>,
-	    Err = xmpp:make_error(Packet, xmpp:err_forbidden(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err);
+	    route_forbidden_error(From, To, Packet);
 	allow ->
 	    Hosts = ?MYHOSTS,
 	    [announce_motd_delete(Host) || Host <- Hosts]
@@ -826,6 +796,12 @@ get_access(Host) ->
 -spec add_store_hint(stanza()) -> stanza().
 add_store_hint(El) ->
     xmpp:set_subtag(El, #hint{type = store}).
+
+-spec route_forbidden_error(jid(), jid(), stanza()) -> ok.
+route_forbidden_error(From, To, Packet) ->
+    Lang = xmpp:get_lang(Packet),
+    Err = xmpp:err_forbidden(<<"Denied by ACL">>, Lang),
+    ejabberd_router:route_error(To, From, Packet, Err).
 
 %%-------------------------------------------------------------------------
 export(LServer) ->

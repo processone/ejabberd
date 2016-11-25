@@ -147,7 +147,7 @@ process_iq(_Host, Module, Function, From, To, IQ0) ->
 		       [xmpp:pp(IQ), {E, {R, erlang:get_stacktrace()}}]),
 	    Txt = <<"Module failed to handle the query">>,
 	    Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
-	    ejabberd_router:route(To, From, xmpp:make_error(IQ, Err))
+	    ejabberd_router:route_error(To, From, IQ, Err)
     end.
 
 -spec process_iq(module(), atom(), iq()) -> ignore | iq().

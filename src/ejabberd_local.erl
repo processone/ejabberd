@@ -87,14 +87,12 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
 				  From, To, Packet);
 	[] ->
 	    Txt = <<"No module is handling this query">>,
-	    Err = xmpp:make_error(
-		    Packet,
-		    xmpp:err_service_unavailable(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err)
+	    Err = xmpp:err_service_unavailable(Txt, Lang),
+	    ejabberd_router:route_error(To, From, Packet, Err)
     end;
 process_iq(From, To, #iq{type = T} = Packet) when T == get; T == set ->
-    Err = xmpp:make_error(Packet, xmpp:err_bad_request()),
-    ejabberd_router:route(To, From, Err);
+    Err = xmpp:err_bad_request(),
+    ejabberd_router:route_error(To, From, Packet, Err);
 process_iq(From, To, #iq{type = T} = Packet) when T == result; T == error ->
     process_iq_reply(From, To, Packet).
 
@@ -186,9 +184,8 @@ bounce_resource_packet(_From, #jid{lresource = <<"">>},
 bounce_resource_packet(From, To, Packet) ->
     Lang = xmpp:get_lang(Packet),
     Txt = <<"No available resource found">>,
-    Err = xmpp:make_error(Packet,
-			  xmpp:err_item_not_found(Txt, Lang)),
-    ejabberd_router:route(To, From, Err),
+    Err = xmpp:err_item_not_found(Txt, Lang),
+    ejabberd_router:route_error(To, From, Packet, Err),
     stop.
 
 %%====================================================================
