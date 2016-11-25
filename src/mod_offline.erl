@@ -623,9 +623,8 @@ discard_warn_sender(Msgs) ->
 	      ErrText = <<"Your contact offline message queue is "
 			  "full. The message has been discarded.">>,
 	      Lang = xmpp:get_lang(Packet),
-	      Err = xmpp:make_error(
-		      Packet, xmpp:err_resource_constraint(ErrText, Lang)),
-	      ejabberd_router:route(To, From, Err)
+	      Err = xmpp:err_resource_constraint(ErrText, Lang),
+	      ejabberd_router:route_error(To, From, Packet, Err)
       end, Msgs).
 
 webadmin_page(_, Host,

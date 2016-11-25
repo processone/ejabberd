@@ -173,9 +173,8 @@ check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
 bounce_offline_message(From, To, Packet) ->
     Lang = xmpp:get_lang(Packet),
     Txt = <<"User session not found">>,
-    Err = xmpp:make_error(
-	    Packet, xmpp:err_service_unavailable(Txt, Lang)),
-    ejabberd_router:route(To, From, Err),
+    Err = xmpp:err_service_unavailable(Txt, Lang),
+    ejabberd_router:route_error(To, From, Packet, Err),
     stop.
 
 -spec disconnect_removed_user(binary(), binary()) -> ok.
@@ -602,9 +601,8 @@ route_message(From, To, Packet, Type) ->
 		    ejabberd_hooks:run(offline_message_hook, LServer,
 				       [From, To, Packet]);
 		false ->
-		    Err = xmpp:make_error(Packet,
-					  xmpp:err_service_unavailable()),
-		    ejabberd_router:route(To, From, Err)
+		    Err = xmpp:err_service_unavailable(),
+		    ejabberd_router:route_error(To, From, Packet, Err)
 	    end
     end.
 
@@ -724,14 +722,12 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
 				  From, To, Packet);
 	[] ->
 	    Txt = <<"No module is handling this query">>,
-	    Err = xmpp:make_error(
-		    Packet,
-		    xmpp:err_service_unavailable(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err)
+	    Err = xmpp:err_service_unavailable(Txt, Lang),
+	    ejabberd_router:route_error(To, From, Packet, Err)
     end;
 process_iq(From, To, #iq{type = T} = Packet) when T == get; T == set ->
-    Err = xmpp:make_error(Packet, xmpp:err_bad_request()),
-    ejabberd_router:route(To, From, Err),
+    Err = xmpp:err_bad_request(),
+    ejabberd_router:route_error(To, From, Packet, Err),
     ok;
 process_iq(_From, _To, #iq{}) ->
     ok.

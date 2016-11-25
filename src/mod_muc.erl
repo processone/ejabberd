@@ -378,9 +378,8 @@ do_route1(Host, ServerHost, Access, _HistorySize, _RoomShaper,
 		deny ->
 		    ErrText = <<"Only service administrators are allowed "
 				"to send service messages">>,
-		    Err = xmpp:make_error(
-			    Packet, xmpp:err_forbidden(ErrText, Lang)),
-		    ejabberd_router:route(To, From, Err)
+		    Err = xmpp:err_forbidden(ErrText, Lang),
+		    ejabberd_router:route_error(To, From, Packet, Err)
 	    end
     end;
 do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
@@ -409,9 +408,8 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 			false ->
 			    Lang = xmpp:get_lang(Packet),
 			    ErrText = <<"Room creation is denied by service policy">>,
-			    Err = xmpp:make_error(
-				    Packet, xmpp:err_forbidden(ErrText, Lang)),
-			    ejabberd_router:route(To, From, Err)
+			    Err = xmpp:err_forbidden(ErrText, Lang),
+			    ejabberd_router:route_error(To, From, Packet, Err)
 		    end;
 		false ->
 		    Lang = xmpp:get_lang(Packet),
