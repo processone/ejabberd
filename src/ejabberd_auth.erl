@@ -32,7 +32,7 @@
 -author('alexey@process-one.net').
 
 %% External exports
--export([start/0, set_password/3, check_password/4,
+-export([start/0, set_password/3, check_password/3, check_password/4,
 	 check_password/6, check_password_with_authmodule/4,
 	 check_password_with_authmodule/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
@@ -101,6 +101,12 @@ store_type(Server) ->
 		    (M, plain) -> M:store_type()
 		end,
 		plain, auth_modules(Server)).
+
+
+-spec check_password(binary(), binary(), binary()) -> boolean().
+
+check_password(User, Server, Password) ->
+    check_password(User, <<>>, Server, Password).
 
 -spec check_password(binary(), binary(), binary(), binary()) -> boolean().
 
