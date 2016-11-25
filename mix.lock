@@ -21,4 +21,4 @@
   "relx": {:hex, :relx, "3.21.1", "f989dc520730efd9075e9f4debcb8ba1d7d1e86b018b0bcf45a2eb80270b4ad6", [:rebar3], [{:bbmustache, "1.0.4", [hex: :bbmustache, optional: false]}, {:cf, "0.2.1", [hex: :cf, optional: false]}, {:erlware_commons, "0.21.0", [hex: :erlware_commons, optional: false]}, {:getopt, "0.8.2", [hex: :getopt, optional: false]}, {:providers, "1.6.0", [hex: :providers, optional: false]}]},
   "stringprep": {:hex, :stringprep, "1.0.6", "1cf1c439eb038aa590da5456e019f86afbfbfeb5a2d37b6e5f873041624c6701", [:rebar3], [{:p1_utils, "1.0.5", [hex: :p1_utils, optional: false]}]},
   "stun": {:hex, :stun, "1.0.7", "904dc6f26a3c30c54881c4c3003699f2a4968067ee6b3aecdf9895aad02df75e", [:rebar3], [{:fast_tls, "1.0.7", [hex: :fast_tls, optional: false]}, {:p1_utils, "1.0.5", [hex: :p1_utils, optional: false]}]},
-  "xmpp": {:git, "https://github.com/processone/xmpp.git", "e4630667bc63de7ad2d236387f4631a0656a9355", [tag: "1.0.3"]}}
+  "xmpp": {:git, "https://github.com/processone/xmpp.git", "758c3a865563e019e46f8f6e96857a4161a833dd", [tag: "1.1.1"]}}

@@ -46,7 +46,7 @@ defmodule Ejabberd.Mixfile do
      {:fast_yaml, "~> 1.0"},
      {:fast_tls, "~> 1.0"},
      {:fast_xml, "~> 1.1", override: true},     # override cause of :xmpp
-     {:xmpp, github: "processone/xmpp", tag: "1.0.3"},
+     {:xmpp, github: "processone/xmpp", tag: "1.1.1"},
      {:stun, "~> 1.0"},
      {:esip, "~> 1.0"},
      {:jiffy, "~> 0.14.7"},
