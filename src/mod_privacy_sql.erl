@@ -334,9 +334,6 @@ sql_get_privacy_list_id_t(LUser, Name) ->
 sql_get_privacy_list_data(LUser, LServer, Name) ->
     sql_queries:get_privacy_list_data(LServer, LUser, Name).
 
-sql_get_privacy_list_data_t(LUser, Name) ->
-    sql_queries:get_privacy_list_data_t(LUser, Name).
-
 sql_get_privacy_list_data_by_id(ID, LServer) ->
     sql_queries:get_privacy_list_data_by_id(LServer, ID).
 
