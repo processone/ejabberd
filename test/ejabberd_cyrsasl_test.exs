@@ -59,29 +59,44 @@ defmodule EjabberdCyrsaslTest do
   end
 
   test "Digest-MD5 (correct user and pass)", context do
-    assert {:continue, init_str, state1} = :cyrsasl.server_start(context[:cyrstate], "DIGEST-MD5", "")
+    assert {:ok, _list} = process_digest_md5(context[:cyrstate], "user1", "domain1", "pass")
+  end
+
+  test "Digest-MD5 (correct user wrong pass)", context do
+    assert {:error, :"not-authorized", "user1"} = process_digest_md5(context[:cyrstate], "user1", "domain1", "badpass")
+  end
+
+  test "Digest-MD5 (wrong user correct pass)", context do
+    assert {:error, :"not-authorized", "baduser"} = process_digest_md5(context[:cyrstate], "baduser", "domain1", "pass")
+  end
+
+  test "Digest-MD5 (wrong user and pass)", context do
+    assert {:error, :"not-authorized", "baduser"} = process_digest_md5(context[:cyrstate], "baduser", "domain1", "badpass")
+  end
+
+  defp process_digest_md5(cyrstate, user, domain, pass) do
+    assert {:continue, init_str, state1} = :cyrsasl.server_start(cyrstate, "DIGEST-MD5", "")
     assert [_, nonce] = Regex.run(~r/nonce="(.*?)"/, init_str)
-    user = "user1"
-    domain = "domain1"
     digest_uri = "xmpp/#{domain}"
-    pass = "pass"
     cnonce = "abcd"
     nc = "00000001"
-    response_hash = calc_digest_sha(user, domain, pass, nc, nonce, cnonce)
+    response_hash = calc_digest_md5(user, domain, pass, nc, nonce, cnonce)
     response = "username=\"#{user}\",realm=\"#{domain}\",nonce=\"#{nonce}\",cnonce=\"#{cnonce}\"," <>
       "nc=\"#{nc}\",qop=auth,digest-uri=\"#{digest_uri}\",response=\"#{response_hash}\"," <>
       "charset=utf-8,algorithm=md5-sess"
-    assert {:continue, _calc_str, state3} = :cyrsasl.server_step(state1, response)
-    assert {:ok, _list} = :cyrsasl.server_step(state3, "")
+    case :cyrsasl.server_step(state1, response) do
+      {:continue, _calc_str, state2} -> :cyrsasl.server_step(state2, "")
+      other -> other
+    end
   end
 
-  defp calc_digest_sha(user, domain, pass, nc, nonce, cnonce) do
-    digest_uri = "xmpp/#{domain}"
-    a0 = "#{user}:#{domain}:#{pass}"
-    a1 = "#{str_md5(a0)}:#{nonce}:#{cnonce}"
-    a2 = "AUTHENTICATE:#{digest_uri}"
-    hex_md5("#{hex_md5(a1)}:#{nonce}:#{nc}:#{cnonce}:auth:#{hex_md5(a2)}")
-  end
+  defp calc_digest_md5(user, domain, pass, nc, nonce, cnonce) do
+      digest_uri = "xmpp/#{domain}"
+      a0 = "#{user}:#{domain}:#{pass}"
+      a1 = "#{str_md5(a0)}:#{nonce}:#{cnonce}"
+      a2 = "AUTHENTICATE:#{digest_uri}"
+      hex_md5("#{hex_md5(a1)}:#{nonce}:#{nc}:#{cnonce}:auth:#{hex_md5(a2)}")
+     end
 
   defp str_md5(str) do
     :erlang.md5(str)
@@ -99,7 +114,7 @@ defmodule EjabberdCyrsaslTest do
       end)
     mock(:ejabberd_auth, :is_user_exists,
       fn (user, domain) ->
-        domain == "domain1" and get_password(user) != false
+        domain == "domain1" and get_password(user) != {:false, :internal}
       end)
   end
 
@@ -115,7 +130,7 @@ defmodule EjabberdCyrsaslTest do
     if user == "user1" or user == "user2" do
       {"pass", :internal}
     else
-      :false
+      {:false, :internal}
     end
   end
 
@@ -130,6 +145,8 @@ defmodule EjabberdCyrsaslTest do
 
   defp check_password_digest(_user, authzid, _pass, digest, digest_gen) do
     case get_password(authzid) do
+      {:false, _} ->
+        false
       {spass, mod} ->
         v = digest_gen.(spass)
         if v == digest do
@@ -137,8 +154,6 @@ defmodule EjabberdCyrsaslTest do
         else
           false
         end
-      _ ->
-        false
     end
   end
 
