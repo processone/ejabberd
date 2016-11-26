@@ -655,12 +655,10 @@ adhoc_join(From, To, #adhoc_command{lang = Lang, xdata = X} = Request) ->
 	    RoomJID = jid:make(<<Channel/binary, "%", Server/binary>>,
 			       To#jid.server),
 	    Reason = translate:translate(Lang, <<"Join the IRC channel here.">>),
-	    Body = str:format(
-		     translate:translate(
-		       Lang, <<"Join the IRC channel in this Jabber ID: ~s">>),
-		     [jid:to_string(RoomJID)]),
+	    BodyTxt = {<<"Join the IRC channel in this Jabber ID: ~s">>,
+		       [jid:to_string(RoomJID)]},
 	    Invite = #message{
-			body = xmpp:mk_text(Body, Lang),
+			body = xmpp:mk_text(BodyTxt, Lang),
 			sub_els = [#muc_user{
 				      invites = [#muc_invite{from = From,
 							     reason = Reason}]},

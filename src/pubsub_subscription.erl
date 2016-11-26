@@ -206,16 +206,14 @@ val_xfield(digest_frequency = Opt, [Val]) ->
     case catch binary_to_integer(Val) of
 	N when is_integer(N) -> N;
 	_ ->
-	    Txt = <<"Value of '~s' should be integer">>,
-	    ErrTxt = (str:format(Txt, [Opt])),
-	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
+	    Txt = {<<"Value of '~s' should be integer">>, [Opt]},
+	    {error, xmpp:err_not_acceptable(Txt, ?MYLANG)}
     end;
 val_xfield(expire = Opt, [Val]) ->
     try xmpp_util:decode_timestamp(Val)
     catch _:{bad_timestamp, _} ->
-	    Txt = <<"Value of '~s' should be datetime string">>,
-	    ErrTxt = (str:format(Txt, [Opt])),
-	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
+	    Txt = {<<"Value of '~s' should be datetime string">>, [Opt]},
+	    {error, xmpp:err_not_acceptable(Txt, ?MYLANG)}
     end;
 val_xfield(include_body = Opt, [Val]) -> xopt_to_bool(Opt, Val);
 val_xfield(show_values, Vals) -> Vals;
@@ -226,9 +224,8 @@ val_xfield(subscription_depth = Opt, [Depth]) ->
     case catch binary_to_integer(Depth) of
 	N when is_integer(N) -> N;
 	_ ->
-	    Txt = <<"Value of '~s' should be integer">>,
-	    ErrTxt = (str:format(Txt, [Opt])),
-	    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}
+	    Txt = {<<"Value of '~s' should be integer">>, [Opt]},
+	    {error, xmpp:err_not_acceptable(Txt, ?MYLANG)}
     end.
 
 %% Convert XForm booleans to Erlang booleans.
@@ -237,9 +234,8 @@ xopt_to_bool(_, <<"1">>) -> true;
 xopt_to_bool(_, <<"false">>) -> false;
 xopt_to_bool(_, <<"true">>) -> true;
 xopt_to_bool(Option, _) ->
-    Txt = <<"Value of '~s' should be boolean">>,
-    ErrTxt = (str:format(Txt, [Option])),
-    {error, xmpp:err_not_acceptable(ErrTxt, ?MYLANG)}.
+    Txt = {<<"Value of '~s' should be boolean">>, [Option]},
+    {error, xmpp:err_not_acceptable(Txt, ?MYLANG)}.
 
 %% Return a field for an XForm for Key, with data filled in, if
 %% applicable, from Options.

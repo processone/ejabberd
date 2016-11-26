@@ -2723,11 +2723,8 @@ find_changed_items(UJID, UAffiliation, URole,
 	   Nick /= <<"">> ->
 		case find_jids_by_nick(Nick, StateData) of
 		    [] ->
-			ErrText = str:format(
-				    translate:translate(
-				      Lang,
-				      <<"Nickname ~s does not exist in the room">>),
-				    [Nick]),
+			ErrText = {<<"Nickname ~s does not exist in the room">>,
+				   [Nick]},
 			throw({error, xmpp:err_not_acceptable(ErrText, Lang)});
 		    JIDList ->
 			JIDList
@@ -3299,7 +3296,7 @@ set_config(Opts, Config, ServerHost, Lang) ->
 		  {0, undefined} ->
 		      ?ERROR_MSG("set_room_option hook failed for "
 				 "option '~s' with value ~p", [O, V]),
-		      Txt = <<"Failed to process option '", O/binary, "'">>,
+		      Txt = {<<"Failed to process option '~s'">>, [O]},
 		      {error, xmpp:err_internal_server_error(Txt, Lang)};
 		  {Pos, Val} ->
 		      setelement(Pos, C, Val)

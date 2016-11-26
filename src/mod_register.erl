@@ -202,13 +202,13 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
 	    _ ->
 		{false, <<"">>}
 	end,
+    Instr = translate:translate(
+	      Lang, <<"Choose a username and password to register "
+		      "with this server">>),
     if IsCaptchaEnabled and not IsRegistered ->
 	    TopInstr = translate:translate(
 			 Lang, <<"You need a client that supports x:data "
 				 "and CAPTCHA to register">>),
-	    Instr = translate:translate(
-		      Lang, <<"Choose a username and password to register "
-			      "with this server">>),
 	    UField = #xdata_field{type = 'text-single',
 				  label = translate:translate(Lang, <<"User">>),
 				  var = <<"username">>,
@@ -234,10 +234,9 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
 		      IQ, xmpp:err_internal_server_error(ErrText, Lang))
 	    end;
        true ->
-	    Instr = <<"Choose a username and password to register with this server">>,
 	    xmpp:make_iq_result(
 	      IQ,
-	      #register{instructions = translate:translate(Lang, Instr),
+	      #register{instructions = Instr,
 			username = Username,
 			password = <<"">>,
 			registered = IsRegistered})
