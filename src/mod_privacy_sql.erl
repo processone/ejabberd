@@ -17,7 +17,7 @@
 	 process_default_set/3, process_active_set/3,
 	 remove_privacy_list/3, set_privacy_list/1,
 	 set_privacy_list/4, get_user_list/2, get_user_lists/2,
-	 remove_user/2, import/1, import/2, export/1]).
+	 remove_user/2, import/1, export/1]).
 
 -export([item_to_raw/1, raw_to_item/1,
 	 sql_add_privacy_list/2,
@@ -249,37 +249,8 @@ get_id() ->
     put(id, ID + 1),
     ID + 1.
 
-import(LServer) ->
-    [{<<"select username from privacy_list;">>,
-      fun([LUser]) ->
-              Default = case sql_get_default_privacy_list_t(LUser) of
-                            {selected, [<<"name">>], []} ->
-                                none;
-                            {selected, [<<"name">>], [[DefName]]} ->
-                                DefName;
-                            _ ->
-                                none
-                        end,
-              {selected, [<<"name">>], Names} =
-                  sql_get_privacy_list_names_t(LUser),
-              Lists = lists:flatmap(
-                        fun([Name]) ->
-                                case sql_get_privacy_list_data_t(LUser, Name) of
-                                    {selected, _, RItems} ->
-                                        [{Name,
-                                          lists:map(fun raw_to_item/1,
-                                                    RItems)}];
-                                    _ ->
-                                        []
-                                end
-                        end, Names),
-              #privacy{default = Default,
-                       us = {LUser, LServer},
-                       lists = Lists}
-      end}].
-
-import(_, _) ->
-    pass.
+import(_) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions
@@ -362,9 +333,6 @@ sql_get_privacy_list_id_t(LUser, Name) ->
 
 sql_get_privacy_list_data(LUser, LServer, Name) ->
     sql_queries:get_privacy_list_data(LServer, LUser, Name).
-
-sql_get_privacy_list_data_t(LUser, Name) ->
-    sql_queries:get_privacy_list_data_t(LUser, Name).
 
 sql_get_privacy_list_data_by_id(ID, LServer) ->
     sql_queries:get_privacy_list_data_by_id(LServer, ID).

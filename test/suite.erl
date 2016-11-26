@@ -142,7 +142,9 @@ process_config_tpl(Content, [{Name, DefaultValue} | Rest]) ->
               V3 ->
                   V3
           end,
-    NewContent = binary:replace(Content, <<"@@",(atom_to_binary(Name, latin1))/binary, "@@">>, Val),
+    NewContent = binary:replace(Content,
+				<<"@@",(atom_to_binary(Name,latin1))/binary, "@@">>,
+				Val, [global]),
     process_config_tpl(NewContent, Rest).
 
 stream_header(Config) ->
@@ -478,31 +480,19 @@ decode_stream_element(NS, El) ->
 format_element(El) ->
     case erlang:function_exported(ct, log, 5) of
 	true -> ejabberd_web_admin:pretty_print_xml(El);
-	false -> io_lib:format(" ~s~n", El)
+	false -> io_lib:format("~p~n", [El])
     end.
-
-substitute_forwarded(#mam_result{sub_els = Sub} = El) ->
-    El#mam_result{sub_els = [substitute_forwarded(SEl) || SEl <- Sub]};
-substitute_forwarded(#carbons_sent{forwarded = Sub} = El) ->
-    El#carbons_sent{forwarded = [substitute_forwarded(SEl) || SEl <- Sub]};
-substitute_forwarded(#message{sub_els = Sub} = El) ->
-    El#message{sub_els = [substitute_forwarded(SEl) || SEl <- Sub]};
-substitute_forwarded(#forwarded{delay = Delay, xml_els = Sub}) ->
-    #forwarded_decoded{delay = Delay, sub_els = [xmpp:decode(SEl) || SEl <- Sub]};
-substitute_forwarded(El) ->
-    El.
-
-
 
 decode(El, NS, Opts) ->
     try
-	Pkt = substitute_forwarded(xmpp:decode(El, NS, Opts)),
+	Pkt = xmpp:decode(El, NS, Opts),
 	ct:pal("RECV:~n~s~n~s",
 	       [format_element(El), xmpp:pp(Pkt)]),
 	Pkt
     catch _:{xmpp_codec, Why} ->
-	    ct:fail("recv failed: ~p->~n~s",
-		    [El, xmpp:format_error(Why)])
+	    ct:pal("recv failed: ~p->~n~s",
+		   [El, xmpp:format_error(Why)]),
+	    erlang:error({xmpp_codec, Why})
     end.
 
 send_text(Config, Text) ->

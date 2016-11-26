@@ -12,7 +12,7 @@
 -compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
--export([init/2, caps_read/2, caps_write/3, export/1]).
+-export([init/2, caps_read/2, caps_write/3, export/1, import/3]).
 
 -include("mod_caps.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -52,6 +52,9 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
+import(_, _, _) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions

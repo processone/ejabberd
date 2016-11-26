@@ -48,7 +48,7 @@ defmodule EjabberdCommandsMockTest do
 			_ -> :ok
 		end
 		:mnesia.start
-    :ok = :jid.start
+    {:ok, _} = :jid.start
     :ok = :ejabberd_config.start(["domain1", "domain2"], [])
     {:ok, _} = :ejabberd_access_permissions.start_link()
     :ok = :acl.start

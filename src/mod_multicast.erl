@@ -268,10 +268,9 @@ iq_disco_info(From, Lang, State) ->
 
 iq_vcard(Lang) ->
     Desc = translate:translate(Lang, <<"ejabberd Multicast service">>),
-    Copyright = <<"Copyright (c) 2002-2016 ProcessOne">>,
     #vcard_temp{fn = <<"ejabberd/mod_multicast">>,
 		url = ?EJABBERD_URI,
-		desc = <<Desc/binary, $\n, Copyright/binary>>}.
+		desc = <<Desc/binary, $\n, ?COPYRIGHT>>}.
 
 %%%-------------------------
 %%% Route

@@ -108,14 +108,6 @@ edoc:
 	$(ERL) -noinput +B -eval \
         'case edoc:application(ejabberd, ".", []) of ok -> halt(0); error -> halt(1) end.'
 
-spec:
-	$(ERL) -noinput +B -pa ebin -pa deps/*/ebin -eval \
-	'case fxml_gen:compile("specs/xmpp_codec.spec", [{add_type_specs, xmpp_element}, {erl_dir, "src"}, {hrl_dir, "include"}]) of ok -> halt(0); _ -> halt(1) end.'
-
-xdata:
-	$(ERL) -noinput +B -pa ebin -pa deps/*/ebin -eval \
-	'case xdata_codec:compile("specs", [{erl_dir, "src"}, {hrl_dir, "include"}]) of ok -> halt(0); _ -> halt(1) end.'
-
 JOIN_PATHS=$(if $(wordlist 2,1000,$(1)),$(firstword $(1))/$(call JOIN_PATHS,$(wordlist 2,1000,$(1))),$(1))
 
 VERSIONED_DEP=$(if $(DEP_$(1)_VERSION),$(DEP_$(1)_VERSION),$(1))
@@ -181,15 +173,15 @@ install: all copy-files
 	[ -f $(ETCDIR)/ejabberd.yml ] \
 		&& $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(ETCDIR)/ejabberd.yml-new \
 		|| $(INSTALL) -b -m 640 $(G_USER) ejabberd.yml.example $(ETCDIR)/ejabberd.yml
-	$(SED) -e "s*{{rootdir}}*@prefix@*" \
-		-e "s*{{installuser}}*@INSTALLUSER@*" \
-		-e "s*{{bindir}}*@bindir@*" \
-		-e "s*{{libdir}}*@libdir@*" \
-		-e "s*{{sysconfdir}}*@sysconfdir@*" \
-		-e "s*{{localstatedir}}*@localstatedir@*" \
-		-e "s*{{docdir}}*@docdir@*" \
-		-e "s*{{erl}}*@ERL@*" \
-		-e "s*{{epmd}}*@EPMD@*" ejabberdctl.template \
+	$(SED) -e "s*{{rootdir}}*@prefix@*g" \
+		-e "s*{{installuser}}*@INSTALLUSER@*g" \
+		-e "s*{{bindir}}*@bindir@*g" \
+		-e "s*{{libdir}}*@libdir@*g" \
+		-e "s*{{sysconfdir}}*@sysconfdir@*g" \
+		-e "s*{{localstatedir}}*@localstatedir@*g" \
+		-e "s*{{docdir}}*@docdir@*g" \
+		-e "s*{{erl}}*@ERL@*g" \
+		-e "s*{{epmd}}*@EPMD@*g" ejabberdctl.template \
 		> ejabberdctl.example
 	[ -f $(ETCDIR)/ejabberdctl.cfg ] \
 		&& $(INSTALL) -b -m 640 $(G_USER) ejabberdctl.cfg.example $(ETCDIR)/ejabberdctl.cfg-new \
@@ -206,15 +198,15 @@ install: all copy-files
 	[ -f deps/elixir/bin/mix ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/mix $(BINDIR)/mix || true
 	#
 	# Init script
-	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*" \
-		-e "s*@installuser@*$(INIT_USER)*" ejabberd.init.template \
+	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" \
+		-e "s*@installuser@*$(INIT_USER)*g" ejabberd.init.template \
 		> ejabberd.init
 	chmod 755 ejabberd.init
 	#
 	# Service script
-	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*" ejabberd.service.template \
+	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" ejabberd.service.template \
 		> ejabberd.service
-	chmod 755 ejabberd.service
+	chmod 644 ejabberd.service
 	#
 	# Spool directory
 	$(INSTALL) -d -m 750 $(O_USER) $(SPOOLDIR)
@@ -347,5 +339,5 @@ quicktest:
 	$(REBAR) skip_deps=true ct suites=elixir
 
 .PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean rel \
-	install uninstall uninstall-binary uninstall-all translations deps test spec \
+	install uninstall uninstall-binary uninstall-all translations deps test \
 	quicktest erlang_plt deps_plt ejabberd_plt

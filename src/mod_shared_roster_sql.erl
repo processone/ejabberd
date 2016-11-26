@@ -17,8 +17,8 @@
 	 delete_group/2, get_group_opts/2, set_group_opts/3,
 	 get_user_groups/2, get_group_explicit_users/2,
 	 get_user_displayed_groups/3, is_user_in_group/3,
-	 add_user_to_group/3, remove_user_from_group/3, import/1,
-	 import/2, export/1]).
+	 add_user_to_group/3, remove_user_from_group/3, import/3,
+	 export/1]).
 
 -include("jid.hrl").
 -include("mod_roster.hrl").
@@ -177,20 +177,8 @@ export(_Server) ->
               []
       end}].
 
-import(LServer) ->
-    [{<<"select name, opts from sr_group;">>,
-      fun([Group, SOpts]) ->
-              #sr_group{group_host = {Group, LServer},
-                        opts = ejabberd_sql:decode_term(SOpts)}
-      end},
-     {<<"select jid, grp from sr_user;">>,
-      fun([SJID, Group]) ->
-              #jid{luser = U, lserver = S} = jid:from_string(SJID),
-              #sr_user{us = {U, S}, group_host = {Group, LServer}}
-      end}].
-
-import(_, _) ->
-    pass.
+import(_, _, _) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions

@@ -42,8 +42,9 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, process_iq/1, export/1,
-	 import/1, process_local_iq/1, get_user_roster/2,
-	 import/3, get_subscription_lists/3, get_roster/2,
+	 import_info/0, process_local_iq/1, get_user_roster/2,
+	 import/5, get_subscription_lists/3, get_roster/2,
+	 import_start/2, import_stop/2,
 	 get_in_pending_subscriptions/3, in_subscription/6,
 	 out_subscription/4, set_items/3, remove_user/2,
 	 get_jid_info/4, encode_item/1, webadmin_page/3,
@@ -65,7 +66,7 @@
 -export_type([subscription/0]).
 
 -callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), #roster{} | #roster_version{}) -> ok | pass.
+-callback import(binary(), binary(), #roster{} | [binary()]) -> ok.
 -callback read_roster_version(binary(), binary()) -> binary() | error.
 -callback write_roster_version(binary(), binary(), boolean(), binary()) -> any().
 -callback get_roster(binary(), binary()) -> [#roster{}].
@@ -330,7 +331,7 @@ set_roster(#roster{us = {LUser, LServer}, jid = LJID} = Item) ->
     transaction(
       LServer,
       fun() ->
-	      roster_subscribe_t(LUser, LServer, LJID, Item)
+	      update_roster_t(LUser, LServer, LJID, Item)
       end).
 
 del_roster(LUser, LServer, LJID) ->
@@ -1022,13 +1023,34 @@ export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
 
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
+import_info() ->
+    [{<<"roster_version">>, 2},
+     {<<"rostergroups">>, 3},
+     {<<"rosterusers">>, 10}].
 
-import(LServer, DBType, R) ->
+import_start(LServer, DBType) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, R).
+    ets:new(rostergroups_tmp, [private, named_table, bag]),
+    Mod:init(LServer, []),
+    ok.
+
+import_stop(_LServer, _DBType) ->
+    ets:delete(rostergroups_tmp),
+    ok.
+
+import(LServer, {sql, _}, _DBType, <<"rostergroups">>, [LUser, SJID, Group]) ->
+    LJID = jid:tolower(jid:from_string(SJID)),
+    ets:insert(rostergroups_tmp, {{LUser, LServer, LJID}, Group}),
+    ok;
+import(LServer, {sql, _}, DBType, <<"rosterusers">>, Row) ->
+    I = mod_roster_sql:raw_to_record(LServer, lists:sublist(Row, 9)),
+    Groups = [G || {_, G} <- ets:lookup(rostergroups_tmp, I#roster.usj)],
+    RosterItem = I#roster{groups = Groups},
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, <<"rosterusers">>, RosterItem);
+import(LServer, {sql, _}, DBType, <<"roster_version">>, [LUser, Ver]) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, <<"roster_version">>, [LUser, Ver]).
 
 mod_opt_type(access) ->
     fun acl:access_rules_validator/1;

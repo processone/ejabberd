@@ -10,7 +10,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, process_iq/3]).
+-export([start/2, stop/1, mod_opt_type/1, depends/2, process_iq/3]).
 -include("jlib.hrl").
 
 %%%===================================================================
@@ -24,6 +24,12 @@ start(Host, Opts) ->
 
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?MODULE).
+
+mod_opt_type(_) ->
+    [].
+
+depends(_, _) ->
+    [].
 
 %%%===================================================================
 %%% Internal functions

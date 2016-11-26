@@ -503,8 +503,8 @@ unauthorized_response() ->
 invalid_token_response() ->
     json_error(401, 10, <<"Oauth Token is invalid or expired.">>).
 
-outofscope_response() ->
-    json_error(401, 11, <<"Token does not grant usage to command required scope.">>).
+%% outofscope_response() ->
+%%     json_error(401, 11, <<"Token does not grant usage to command required scope.">>).
 
 badrequest_response() ->
     badrequest_response(<<"400 Bad Request">>).

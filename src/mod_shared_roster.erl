@@ -30,9 +30,9 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, export/1,
-	 import/1, webadmin_menu/3, webadmin_page/3,
+	 import_info/0, webadmin_menu/3, webadmin_page/3,
 	 get_user_roster/2, get_subscription_lists/3,
-	 get_jid_info/4, import/3, process_item/2,
+	 get_jid_info/4, import/5, process_item/2, import_start/2,
 	 in_subscription/6, out_subscription/4, user_available/1,
 	 unset_presence/4, register_user/2, remove_user/2,
 	 list_groups/1, create_group/2, create_group/3,
@@ -56,7 +56,7 @@
 
 -type group_options() :: [{atom(), any()}].
 -callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), #sr_user{} | #sr_group{}) -> ok | pass.
+-callback import(binary(), binary(), [binary()]) -> ok.
 -callback list_groups(binary()) -> [binary()].
 -callback groups_with_opts(binary()) -> [{binary(), group_options()}].
 -callback create_group(binary(), binary(), group_options()) -> {atomic, any()}.
@@ -1072,13 +1072,16 @@ export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
 
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
+import_info() ->
+    [{<<"sr_group">>, 3}, {<<"sr_user">>, 3}].
 
-import(LServer, DBType, Data) ->
+import_start(LServer, DBType) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, Data).
+    Mod:init(LServer, []).
+
+import(LServer, {sql, _}, DBType, Tab, L) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, Tab, L).
 
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(_) -> [db_type].

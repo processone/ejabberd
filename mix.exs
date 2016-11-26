@@ -27,25 +27,26 @@ defmodule Ejabberd.Mixfile do
     [mod: {:ejabberd_app, []},
      applications: [:ssl],
      included_applications: [:lager, :mnesia, :p1_utils, :cache_tab,
-                             :fast_tls, :stringprep, :fast_xml,
+                             :fast_tls, :stringprep, :fast_xml, :xmpp,
                              :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2]
                          ++ cond_apps]
   end
 
   defp erlc_options do
     # Use our own includes + includes from all dependencies
-    includes = ["include"] ++ Path.wildcard(Path.join("..", "/*/include"))
-    [:debug_info] ++ Enum.map(includes, fn(path) -> {:i, path} end)
+    includes = ["include"] ++ Path.wildcard("deps/*/include")
+    [:debug_info, {:d, :ELIXIR_ENABLED}] ++ Enum.map(includes, fn(path) -> {:i, path} end)
   end
 
   defp deps do
     [{:lager, "~> 3.2"},
      {:p1_utils, "~> 1.0"},
      {:cache_tab, "~> 1.0"},
-     {:stringprep, "~> 1.0"},
+     {:stringprep, "~> 1.0", override: true},   # override cause of :xmpp
      {:fast_yaml, "~> 1.0"},
      {:fast_tls, "~> 1.0"},
-     {:fast_xml, "~> 1.1"},
+     {:fast_xml, "~> 1.1", override: true},     # override cause of :xmpp
+     {:xmpp, github: "processone/xmpp", tag: "1.1.1"},
      {:stun, "~> 1.0"},
      {:esip, "~> 1.0"},
      {:jiffy, "~> 0.14.7"},

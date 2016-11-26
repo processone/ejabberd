@@ -360,7 +360,8 @@ handle_cast(Request, State) ->
 
 -spec handle_info(timeout | _, state()) -> {noreply, state()}.
 
-handle_info({route, From, To, #iq{} = IQ}, State) ->
+handle_info({route, From, To, #iq{} = Packet}, State) ->
+    IQ = xmpp:decode_els(Packet),
     {Reply, NewState} = case process_iq(From, IQ, State) of
 			    R when is_record(R, iq) ->
 				{R, State};
@@ -578,8 +579,7 @@ process_iq(_From, #iq{}, _State) ->
 create_slot(#state{service_url = undefined, max_size = MaxSize},
 	    JID, File, Size, _ContentType, Lang) when MaxSize /= infinity,
 						      Size > MaxSize ->
-    Text = <<"File larger than ", (integer_to_binary(MaxSize))/binary,
-	     " Bytes.">>,
+    Text = {<<"File larger than ~w bytes">>, [MaxSize]},
     ?INFO_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
 	      [File, jid:to_string(JID), Size]),
     {error, xmpp:err_not_acceptable(Text, Lang)};

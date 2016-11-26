@@ -100,11 +100,8 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
 		mk_ocr_field(Lang, CID, Type)],
 	  X = #xdata{type = form, fields = Fs},
 	  Captcha = #xcaptcha{xdata = X},
-	  BodyString1 = translate:translate(Lang,
-					    <<"Your messages to ~s are being blocked. "
-					      "To unblock them, visit ~s">>),
-	  BodyString = iolist_to_binary(io_lib:format(BodyString1,
-                                                      [JID, get_url(Id)])),
+	  BodyString = {<<"Your messages to ~s are being blocked. "
+			  "To unblock them, visit ~s">>, [JID, get_url(Id)]},
 	  Body = xmpp:mk_text(BodyString, Lang),
 	  OOB = #oob_x{url = get_url(Id)},
 	  Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE,

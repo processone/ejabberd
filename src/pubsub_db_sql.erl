@@ -127,7 +127,7 @@ subscription_opt_to_sql({subscription_depth, Depth}) ->
 	    N -> integer_to_sql(N)
 	end}.
 
-integer_to_sql(N) -> iolist_to_binary(integer_to_list(N)).
+integer_to_sql(N) -> integer_to_binary(N).
 
 boolean_to_sql(true) -> <<"1">>;
 boolean_to_sql(false) -> <<"0">>.

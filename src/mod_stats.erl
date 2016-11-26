@@ -111,7 +111,7 @@ get_local_stat(Server, [], Name)
       {'EXIT', _Reason} ->
 	  ?STATERR(500, <<"Internal Server Error">>);
       Users ->
-	  ?STATVAL((iolist_to_binary(integer_to_list(length(Users)))),
+	  ?STATVAL((integer_to_binary(length(Users))),
 		   <<"users">>)
     end;
 get_local_stat(Server, [], Name)
@@ -122,13 +122,13 @@ get_local_stat(Server, [], Name)
       {'EXIT', _Reason} ->
 	  ?STATERR(500, <<"Internal Server Error">>);
       NUsers ->
-	  ?STATVAL((iolist_to_binary(integer_to_list(NUsers))),
+	  ?STATVAL((integer_to_binary(NUsers)),
 		   <<"users">>)
     end;
 get_local_stat(_Server, [], Name)
     when Name == <<"users/all-hosts/online">> ->
     Users = ejabberd_sm:connected_users_number(),
-    ?STATVAL((iolist_to_binary(integer_to_list(Users))), <<"users">>);
+    ?STATVAL((integer_to_binary(Users)), <<"users">>);
 get_local_stat(_Server, [], Name)
     when Name == <<"users/all-hosts/total">> ->
     NumUsers = lists:foldl(fun (Host, Total) ->
@@ -136,7 +136,7 @@ get_local_stat(_Server, [], Name)
 				     + Total
 			   end,
 			   0, ?MYHOSTS),
-    ?STATVAL((iolist_to_binary(integer_to_list(NumUsers))),
+    ?STATVAL((integer_to_binary(NumUsers)),
 	     <<"users">>);
 get_local_stat(_Server, _, Name) ->
     ?STATERR(404, <<"Not Found">>).
@@ -149,9 +149,7 @@ get_node_stat(Node, Name)
       {badrpc, _Reason} ->
 	  ?STATERR(500, <<"Internal Server Error">>);
       CPUTime ->
-	  ?STATVAL(list_to_binary(
-                     io_lib:format("~.3f",
-                                   [element(1, CPUTime) / 1000])),
+	    ?STATVAL(str:format("~.3f",	[element(1, CPUTime) / 1000]),
 		   <<"seconds">>)
     end;
 get_node_stat(Node, Name)
@@ -161,9 +159,7 @@ get_node_stat(Node, Name)
       {badrpc, _Reason} ->
 	  ?STATERR(500, <<"Internal Server Error">>);
       RunTime ->
-	  ?STATVAL(list_to_binary(
-                     io_lib:format("~.3f",
-                                   [element(1, RunTime) / 1000])),
+	  ?STATVAL(str:format("~.3f", [element(1, RunTime) / 1000]),
 		   <<"seconds">>)
     end;
 get_node_stat(Node, Name)
@@ -174,7 +170,7 @@ get_node_stat(Node, Name)
       {badrpc, _Reason} ->
 	  ?STATERR(500, <<"Internal Server Error">>);
       Users ->
-	  ?STATVAL((iolist_to_binary(integer_to_list(length(Users)))),
+	  ?STATVAL((integer_to_binary(length(Users))),
 		   <<"users">>)
     end;
 get_node_stat(Node, Name)
@@ -185,7 +181,7 @@ get_node_stat(Node, Name)
       {badrpc, _Reason} ->
 	  ?STATERR(500, <<"Internal Server Error">>);
       Transactions ->
-	  ?STATVAL((iolist_to_binary(integer_to_list(Transactions))),
+	  ?STATVAL((integer_to_binary(Transactions)),
 		   <<"transactions">>)
     end;
 get_node_stat(Node, Name)
@@ -196,7 +192,7 @@ get_node_stat(Node, Name)
       {badrpc, _Reason} ->
 	  ?STATERR(500, <<"Internal Server Error">>);
       Transactions ->
-	  ?STATVAL((iolist_to_binary(integer_to_list(Transactions))),
+	  ?STATVAL((integer_to_binary(Transactions)),
 		   <<"transactions">>)
     end;
 get_node_stat(Node, Name)
@@ -207,7 +203,7 @@ get_node_stat(Node, Name)
       {badrpc, _Reason} ->
 	  ?STATERR(500, <<"Internal Server Error">>);
       Transactions ->
-	  ?STATVAL((iolist_to_binary(integer_to_list(Transactions))),
+	  ?STATVAL((integer_to_binary(Transactions)),
 		   <<"transactions">>)
     end;
 get_node_stat(Node, Name)
@@ -218,7 +214,7 @@ get_node_stat(Node, Name)
       {badrpc, _Reason} ->
 	  ?STATERR(500, <<"Internal Server Error">>);
       Transactions ->
-	  ?STATVAL((iolist_to_binary(integer_to_list(Transactions))),
+	  ?STATVAL((integer_to_binary(Transactions)),
 		   <<"transactions">>)
     end;
 get_node_stat(_, Name) ->

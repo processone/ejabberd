@@ -13,7 +13,7 @@
 -export([init/2, store_messages/5, pop_messages/2, remove_expired_messages/1,
 	 remove_old_messages/2, remove_user/2, read_message_headers/2,
 	 read_message/3, remove_message/3, read_all_messages/2,
-	 remove_all_messages/2, count_messages/2, import/2]).
+	 remove_all_messages/2, count_messages/2, import/1]).
 
 -include("xmpp.hrl").
 -include("mod_offline.hrl").
@@ -88,7 +88,7 @@ read_message_headers(LUser, LServer) ->
 		     fun(#offline_msg{from = From, to = To, packet = Pkt,
 				      timestamp = TS}) ->
 			     Seq = now_to_integer(TS),
-			     {Seq, From, To, Pkt}
+			     {Seq, From, To, TS, Pkt}
 		     end, Rs),
 	    lists:keysort(1, Hdrs);
 	_Err ->
@@ -133,7 +133,7 @@ count_messages(LUser, LServer) ->
             0
     end.
 
-import(_LServer, #offline_msg{us = US, timestamp = TS} = M) ->
+import(#offline_msg{us = US, timestamp = TS} = M) ->
     ejabberd_riak:put(M, offline_msg_schema(),
 		      [{i, TS}, {'2i', [{<<"us">>, US}]}]).
 

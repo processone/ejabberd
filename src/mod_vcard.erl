@@ -34,8 +34,8 @@
 
 -export([start/2, init/3, stop/1, get_sm_features/5,
 	 process_local_iq/1, process_sm_iq/1, string2lower/1,
-	 remove_user/2, export/1, import/1, import/3, depends/2,
-	 process_search/1, process_vcard/1, get_vcard/2,
+	 remove_user/2, export/1, import_info/0, import/5, import_start/2,
+	 depends/2, process_search/1, process_vcard/1, get_vcard/2,
 	 disco_items/5, disco_features/5, disco_identity/5,
 	 decode_iq_subel/1, mod_opt_type/1, set_vcard/3, make_vcard_search/4]).
 
@@ -50,7 +50,7 @@
 
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback stop(binary()) -> any().
--callback import(binary(), #vcard{} | #vcard_search{}) -> ok | pass.
+-callback import(binary(), binary(), [binary()]) -> ok.
 -callback get_vcard(binary(), binary()) -> [xmlel()] | error.
 -callback set_vcard(binary(), binary(),
 		    xmlel(), #vcard_search{}) -> {atomic, any()}.
@@ -59,6 +59,7 @@
 -callback search(binary(), [{binary(), [binary()]}], boolean(),
 		 infinity | pos_integer()) -> [{binary(), binary()}].
 -callback remove_user(binary(), binary()) -> {atomic, any()}.
+-callback is_search_supported(binary()) -> boolean().
 
 start(Host, Opts) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
@@ -105,6 +106,15 @@ init(Host, ServerHost, Search) ->
       false -> loop(Host, ServerHost);
       _ ->
 	  ejabberd_router:register_route(Host, ServerHost),
+	  Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+	  case Mod:is_search_supported(ServerHost) of
+	      false ->
+		  ?WARNING_MSG("vcard search functionality is "
+			       "not implemented for ~s backend",
+			       [gen_mod:db_type(ServerHost, ?MODULE)]);
+	       true ->
+		  ejabberd_router:register_route(Host, ServerHost)
+	  end,
 	  loop(Host, ServerHost)
     end.
 
@@ -181,11 +191,10 @@ process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq(#iq{type = get, lang = Lang} = IQ) ->
     Desc = translate:translate(Lang, <<"Erlang Jabber Server">>),
-    Copyright = <<"Copyright (c) 2002-2016 ProcessOne">>,
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd">>,
 		      url = ?EJABBERD_URI,
-		      desc = <<Desc/binary, $\n, Copyright/binary>>,
+		      desc = <<Desc/binary, $\n, ?COPYRIGHT>>,
 		      bday = <<"2002-11-16">>}).
 
 -spec process_sm_iq(iq()) -> iq().
@@ -218,11 +227,10 @@ process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_vcard(#iq{type = get, lang = Lang} = IQ) ->
     Desc = translate:translate(Lang, <<"ejabberd vCard module">>),
-    Copyright = <<"Copyright (c) 2003-2016 ProcessOne">>,
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd/mod_vcard">>,
 		      url = ?EJABBERD_URI,
-		      desc = <<Desc/binary, $\n, Copyright/binary>>}).
+		      desc = <<Desc/binary, $\n, ?COPYRIGHT>>}).
 
 -spec process_search(iq()) -> iq().
 process_search(#iq{type = get, to = To, lang = Lang} = IQ) ->
@@ -438,17 +446,20 @@ remove_user(User, Server) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_user(LUser, LServer).
 
+import_info() ->
+    [{<<"vcard">>, 3}, {<<"vcard_search">>, 24}].
+
+import_start(LServer, DBType) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:init(LServer, []).
+
+import(LServer, {sql, _}, DBType, Tab, L) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, Tab, L).
+
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
-
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
-
-import(LServer, DBType, VCard) ->
-    Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, VCard).
 
 depends(_Host, _Opts) ->
     [].

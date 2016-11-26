@@ -12,7 +12,7 @@
 
 %% API
 -export([init/2, set_data/3, get_data/3, get_all_data/2, remove_user/2,
-	 import/1, import/2, export/1]).
+	 import/3, export/1]).
 
 -include("xmpp.hrl").
 -include("mod_private.hrl").
@@ -77,16 +77,8 @@ export(_Server) ->
               []
       end}].
 
-import(LServer) ->
-    [{<<"select username, namespace, data from private_storage;">>,
-      fun([LUser, XMLNS, XML]) ->
-              El = #xmlel{} = fxml_stream:parse_element(XML),
-              #private_storage{usns = {LUser, LServer, XMLNS},
-                               xml = El}
-      end}].
-
-import(_, _) ->
-    pass.
+import(_, _, _) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions

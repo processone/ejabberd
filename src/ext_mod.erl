@@ -520,11 +520,8 @@ compile(_Module, _Spec, DestDir) ->
     filelib:ensure_dir(filename:join(Ebin, ".")),
     EjabBin = filename:dirname(code:which(ejabberd)),
     EjabInc = filename:join(filename:dirname(EjabBin), "include"),
-    XmlHrl = filename:join(EjabInc, "fxml.hrl"),
-    ExtLib = [{d, 'NO_EXT_LIB'} || filelib:is_file(XmlHrl)],
     Options = [{outdir, Ebin}, {i, "include"}, {i, EjabInc},
-               verbose, report_errors, report_warnings]
-              ++ ExtLib,
+               verbose, report_errors, report_warnings],
     [file:copy(App, Ebin) || App <- filelib:wildcard("src/*.app")],
 
     %% Compile erlang files

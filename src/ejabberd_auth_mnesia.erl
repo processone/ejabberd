@@ -36,12 +36,12 @@
 -export([start/1, set_password/3, check_password/4,
 	 check_password/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
-	 get_vh_registered_users/2,
+	 get_vh_registered_users/2, init_db/0,
 	 get_vh_registered_users_number/1,
 	 get_vh_registered_users_number/2, get_password/2,
 	 get_password_s/2, is_user_exists/2, remove_user/2,
-	 remove_user/3, store_type/0, export/1, import/1,
-	 import/3, plain_password_required/0, opt_type/1]).
+	 remove_user/3, store_type/0, export/1, import/2,
+	 plain_password_required/0, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -59,16 +59,19 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Host) ->
+    init_db(),
+    update_table(),
+    update_reg_users_counter_table(Host),
+    maybe_alert_password_scrammed_without_option(),
+    ok.
+
+init_db() ->
     mnesia:create_table(passwd,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, passwd)}]),
     mnesia:create_table(reg_users_counter,
 			[{ram_copies, [node()]},
-			 {attributes, record_info(fields, reg_users_counter)}]),
-    update_table(),
-    update_reg_users_counter_table(Host),
-    maybe_alert_password_scrammed_without_option(),
-    ok.
+			 {attributes, record_info(fields, reg_users_counter)}]).
 
 update_reg_users_counter_table(Server) ->
     Set = get_vh_registered_users(Server),
@@ -493,16 +496,9 @@ export(_Server) ->
               []
       end}].
 
-import(LServer) ->
-    [{<<"select username, password from users;">>,
-      fun([LUser, Password]) ->
-              #passwd{us = {LUser, LServer}, password = Password}
-      end}].
-
-import(_LServer, mnesia, #passwd{} = P) ->
-    mnesia:dirty_write(P);
-import(_, _, _) ->
-    pass.
+import(LServer, [LUser, Password, _TimeStamp]) ->
+    mnesia:dirty_write(
+      #passwd{us = {LUser, LServer}, password = Password}).
 
 opt_type(auth_password_format) -> fun (V) -> V end;
 opt_type(_) -> [auth_password_format].

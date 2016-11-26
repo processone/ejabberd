@@ -11,7 +11,7 @@
 
 %% API
 -export([init/2, set_motd_users/2, set_motd/2, delete_motd/1,
-	 get_motd/1, is_motd_user/2, set_motd_user/2, import/2]).
+	 get_motd/1, is_motd_user/2, set_motd_user/2, import/3]).
 
 -include("xmpp.hrl").
 -include("mod_announce.hrl").
@@ -81,10 +81,11 @@ set_motd_user(LUser, LServer) ->
 	end,
     mnesia:transaction(F).
 
-import(_LServer, #motd{} = Motd) ->
-    mnesia:dirty_write(Motd);
-import(_LServer, #motd_users{} = Users) ->
-    mnesia:dirty_write(Users).
+import(LServer, <<"motd">>, [<<>>, XML, _TimeStamp]) ->
+    El = fxml_stream:parse_element(XML),
+    mnesia:dirty_write(#motd{server = LServer, packet = El});
+import(LServer, <<"motd">>, [LUser, <<>>, _TimeStamp]) ->
+    mnesia:dirty_write(#motd_users{us = {LUser, LServer}}).
 
 %%%===================================================================
 %%% Internal functions

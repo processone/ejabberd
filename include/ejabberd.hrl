@@ -39,6 +39,8 @@
 
 -define(EJABBERD_URI, <<"http://www.process-one.net/en/ejabberd/">>).
 
+-define(COPYRIGHT, "Copyright (c) 2002-2016 ProcessOne").
+
 -define(S2STIMEOUT, timer:minutes(10)).
 
 %%-define(DBGFSM, true).

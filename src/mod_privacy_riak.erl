@@ -15,7 +15,7 @@
 	 process_default_set/3, process_active_set/3,
 	 remove_privacy_list/3, set_privacy_list/1,
 	 set_privacy_list/4, get_user_list/2, get_user_lists/2,
-	 remove_user/2, import/2]).
+	 remove_user/2, import/1]).
 
 -export([privacy_schema/0]).
 
@@ -145,7 +145,7 @@ get_user_lists(LUser, LServer) ->
 remove_user(LUser, LServer) ->
     {atomic, ejabberd_riak:delete(privacy, {LUser, LServer})}.
 
-import(_LServer, #privacy{} = P) ->
+import(#privacy{} = P) ->
     ejabberd_riak:put(P, privacy_schema()).
 
 %%%===================================================================

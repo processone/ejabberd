@@ -61,6 +61,7 @@ Welcome to this XMPP server."
       mod_version: []
   "sqlite.localhost": 
     sql_type: sqlite
+    sql_pool_size: 1
     auth_method: sql
     sm_db_type: sql
     modules: 
@@ -456,6 +457,7 @@ route_subdomains: s2s
 domain_certfile: CERTFILE
 s2s_use_starttls: false
 s2s_cafile: CAFILE
+outgoing_s2s_port: @@s2s_port@@
 shaper: 
   fast: 50000
   normal: 10000

@@ -1213,5 +1213,5 @@ unixtime2string(Unixtime) ->
 						     {0, 0, 0}}),
     {{Year, Month, Day}, {Hour, Minute, Second}} =
 	calendar:universal_time_to_local_time(calendar:gregorian_seconds_to_datetime(Secs)),
-    iolist_to_binary(io_lib:format("~4..0w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w",
+    (str:format("~4..0w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w",
 				   [Year, Month, Day, Hour, Minute, Second])).

@@ -12,7 +12,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/5]).
+	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/6]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -132,8 +132,10 @@ get_prefs(LUser, LServer) ->
 
 select(_LServer, JidRequestor,
        #jid{luser = LUser, lserver = LServer} = JidArchive,
-       #mam_query{start = Start, 'end' = End,
-		  with = With, rsm = RSM}, MsgType) ->
+       Query, RSM, MsgType) ->
+    Start = proplists:get_value(start, Query),
+    End = proplists:get_value('end', Query),
+    With = proplists:get_value(with, Query),
     LWith = if With /= undefined -> jid:tolower(With);
 	       true -> undefined
 	    end,

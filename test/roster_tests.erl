@@ -13,8 +13,7 @@
 -import(suite, [send_recv/2, recv_iq/1, send/2, disconnect/1, del_roster/1,
 		del_roster/2, make_iq_result/1, wait_for_slave/1,
 		wait_for_master/1, recv_presence/1, self_presence/2,
-		put_event/2, get_event/1, match_failure/2, get_roster/1,
-		is_feature_advertised/2]).
+		put_event/2, get_event/1, match_failure/2, get_roster/1]).
 -include("suite.hrl").
 -include("mod_roster.hrl").
 
@@ -132,7 +131,7 @@ version(Config) ->
 %%% Master-slave tests
 %%%===================================================================
 master_slave_cases() ->
-    {roster_master_slave, [parallel],
+    {roster_master_slave, [sequence],
      [master_slave_test(subscribe)]}.
 
 subscribe_master(Config) ->
@@ -149,6 +148,7 @@ process_subscriptions_master(Config, Actions) ->
     self_presence(Config, available),
     lists:foldl(
       fun({N, {Dir, Type}}, State) ->
+	      timer:sleep(100),
 	      if Dir == out -> put_event(Config, {N, in, Type});
 		 Dir == in -> put_event(Config, {N, out, Type})
 	      end,

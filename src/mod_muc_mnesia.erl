@@ -9,11 +9,15 @@
 -module(mod_muc_mnesia).
 
 -behaviour(mod_muc).
+-behaviour(mod_muc_room).
 
 %% API
--export([init/2, import/2, store_room/4, restore_room/3, forget_room/3,
+-export([init/2, import/3, store_room/4, restore_room/3, forget_room/3,
 	 can_use_nick/4, get_rooms/2, get_nick/3, set_nick/4]).
+-export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
+	 get_affiliations/3, search_affiliation/4]).
 
+-include("jlib.hrl").
 -include("mod_muc.hrl").
 -include("logger.hrl").
 
@@ -113,10 +117,33 @@ set_nick(_LServer, Host, From, Nick) ->
 	end,
     mnesia:transaction(F).
 
-import(_LServer, #muc_room{} = R) ->
-    mnesia:dirty_write(R);
-import(_LServer, #muc_registered{} = R) ->
-    mnesia:dirty_write(R).
+set_affiliation(_ServerHost, _Room, _Host, _JID, _Affiliation, _Reason) ->
+    {error, not_implemented}.
+
+set_affiliations(_ServerHost, _Room, _Host, _Affiliations) ->
+    {error, not_implemented}.
+
+get_affiliation(_ServerHost, _Room, _Host, _LUser, _LServer) ->
+    {error, not_implemented}.
+
+get_affiliations(_ServerHost, _Room, _Host) ->
+    {error, not_implemented}.
+
+search_affiliation(_ServerHost, _Room, _Host, _Affiliation) ->
+    {error, not_implemented}.
+
+import(_LServer, <<"muc_room">>,
+       [Name, RoomHost, SOpts, _TimeStamp]) ->
+    Opts = mod_muc:opts_to_binary(ejabberd_sql:decode_term(SOpts)),
+    mnesia:dirty_write(
+      #muc_room{name_host = {Name, RoomHost},
+                opts = Opts});
+import(_LServer, <<"muc_registered">>,
+       [J, RoomHost, Nick, _TimeStamp]) ->
+    #jid{user = U, server = S} = jid:from_string(J),
+    mnesia:dirty_write(
+      #muc_registered{us_host = {{U, S}, RoomHost},
+                      nick = Nick}).
 
 %%%===================================================================
 %%% Internal functions

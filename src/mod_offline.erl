@@ -53,8 +53,9 @@
 	 remove_expired_messages/1,
 	 remove_old_messages/2,
 	 remove_user/2,
-	 import/1,
-	 import/3,
+	 import_info/0,
+	 import_start/2,
+	 import/5,
 	 export/1,
 	 get_queue_length/2,
 	 count_offline_messages/2,
@@ -90,7 +91,7 @@
 
 -type us() :: {binary(), binary()}.
 -callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), #offline_msg{}) -> ok | pass.
+-callback import(#offline_msg{}) -> ok.
 -callback store_messages(binary(), us(), [#offline_msg{}],
 			 non_neg_integer(), non_neg_integer()) ->
     {atomic, any()}.
@@ -99,7 +100,8 @@
 -callback remove_expired_messages(binary()) -> {atomic, any()}.
 -callback remove_old_messages(non_neg_integer(), binary()) -> {atomic, any()}.
 -callback remove_user(binary(), binary()) -> {atomic, any()}.
--callback read_message_headers(binary(), binary()) -> any().
+-callback read_message_headers(binary(), binary()) ->
+    [{non_neg_integer(), jid(), jid(), undefined | erlang:timestamp(), xmlel()}].
 -callback read_message(binary(), binary(), non_neg_integer()) ->
     {ok, #offline_msg{}} | error.
 -callback remove_message(binary(), binary(), non_neg_integer()) -> ok | {error, any()}.
@@ -621,9 +623,8 @@ discard_warn_sender(Msgs) ->
 	      ErrText = <<"Your contact offline message queue is "
 			  "full. The message has been discarded.">>,
 	      Lang = xmpp:get_lang(Packet),
-	      Err = xmpp:make_error(
-		      Packet, xmpp:err_resource_constraint(ErrText, Lang)),
-	      ejabberd_router:route(To, From, Err)
+	      Err = xmpp:err_resource_constraint(ErrText, Lang),
+	      ejabberd_router:route_error(To, From, Packet, Err)
       end, Msgs).
 
 webadmin_page(_, Host,
@@ -715,7 +716,7 @@ user_queue(User, Server, Query, Lang) ->
     Hdrs = get_messages_subset(US, Server, HdrsAll),
     FMsgs = format_user_queue(Hdrs),
     [?XC(<<"h1">>,
-	 list_to_binary(io_lib:format(?T(<<"~s's Offline Messages Queue">>),
+	 (str:format(?T(<<"~s's Offline Messages Queue">>),
                                       [us_to_list(US)])))]
       ++
       case Res of
@@ -799,7 +800,7 @@ webadmin_user(Acc, User, Server, Lang) ->
     QueueLen = count_offline_messages(jid:nodeprep(User),
 				jid:nameprep(Server)),
     FQueueLen = [?AC(<<"queue/">>,
-		     (iolist_to_binary(integer_to_list(QueueLen))))],
+		     (integer_to_binary(QueueLen)))],
     Acc ++
       [?XCT(<<"h3">>, <<"Offline Messages:">>)] ++
 	FQueueLen ++
@@ -850,13 +851,35 @@ export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
 
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
+import_info() ->
+    [{<<"spool">>, 4}].
 
-import(LServer, DBType, Data) ->
+import_start(LServer, DBType) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, Data).
+    Mod:import(LServer, []).
+
+import(LServer, {sql, _}, DBType, <<"spool">>,
+       [LUser, XML, _Seq, _TimeStamp]) ->
+    El = fxml_stream:parse_element(XML),
+    From = #jid{} = jid:from_string(
+                                fxml:get_attr_s(<<"from">>, El#xmlel.attrs)),
+    To = #jid{} = jid:from_string(
+                              fxml:get_attr_s(<<"to">>, El#xmlel.attrs)),
+              Stamp = fxml:get_path_s(El, [{elem, <<"delay">>},
+                                {attr, <<"stamp">>}]),
+    TS = try xmpp_util:decode_timestamp(Stamp) of
+	     {MegaSecs, Secs, _} ->
+                 {MegaSecs, Secs, 0}
+	 catch _:_ ->
+                 p1_time_compat:timestamp()
+         end,
+    US = {LUser, LServer},
+    Expire = find_x_expire(TS, El#xmlel.children),
+    Msg = #offline_msg{us = US, packet = El,
+                       from = From, to = To,
+                       timestamp = TS, expire = Expire},
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(Msg).
 
 mod_opt_type(access_max_user_messages) ->
     fun acl:shaper_rules_validator/1;

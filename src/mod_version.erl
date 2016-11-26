@@ -70,7 +70,7 @@ get_os() ->
     OSType = list_to_binary([atom_to_list(Osfamily), $/, atom_to_list(Osname)]),
     OSVersion = case os:version() of
 		  {Major, Minor, Release} ->
-		      iolist_to_binary(io_lib:format("~w.~w.~w",
+		      (str:format("~w.~w.~w",
 						     [Major, Minor, Release]));
 		  VersionString -> VersionString
 		end,

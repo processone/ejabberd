@@ -55,20 +55,16 @@
 -include("logger.hrl").
 
 -include("xmpp.hrl").
+-include("mod_caps.hrl").
 
 -define(PROCNAME, ejabberd_mod_caps).
 
 -define(BAD_HASH_LIFETIME, 600).
 
--record(caps_features,
-{
-    node_pair = {<<"">>, <<"">>} :: {binary(), binary()},
-    features  = []               :: [binary()] | pos_integer()
-}).
-
 -record(state, {host = <<"">> :: binary()}).
 
 -callback init(binary(), gen_mod:opts()) -> any().
+-callback import(binary(), {binary(), binary()}, [binary() | pos_integer()]) -> ok.
 -callback caps_read(binary(), {binary(), binary()}) ->
     {ok, non_neg_integer() | [binary()]} | error.
 -callback caps_write(binary(), {binary(), binary()},
@@ -525,9 +521,6 @@ is_valid_node(Node) ->
             false
     end.
 
-caps_features_schema() ->
-    {record_info(fields, caps_features), #caps_features{}}.
-
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
@@ -559,24 +552,8 @@ import_next(_LServer, _DBType, '$end_of_table') ->
     ok;
 import_next(LServer, DBType, NodePair) ->
     Features = [F || {_, F} <- ets:lookup(caps_features_tmp, NodePair)],
-    case Features of
-        [I] when is_integer(I), DBType == mnesia ->
-            mnesia:dirty_write(
-              #caps_features{node_pair = NodePair, features = I});
-        [I] when is_integer(I), DBType == riak ->
-            ejabberd_riak:put(
-              #caps_features{node_pair = NodePair, features = I},
-	      caps_features_schema());
-        _ when DBType == mnesia ->
-            mnesia:dirty_write(
-              #caps_features{node_pair = NodePair, features = Features});
-        _ when DBType == riak ->
-            ejabberd_riak:put(
-              #caps_features{node_pair = NodePair, features = Features},
-	      caps_features_schema());
-        _ when DBType == sql ->
-            ok
-    end,
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, NodePair, Features),
     import_next(LServer, DBType, ets:next(caps_features_tmp, NodePair)).
 
 mod_opt_type(cache_life_time) ->

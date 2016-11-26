@@ -13,8 +13,8 @@
 -behaviour(mod_vcard_xupdate).
 
 %% API
--export([init/2, import/2, add_xupdate/3, get_xupdate/2, remove_xupdate/2,
-	 import/1, export/1]).
+-export([init/2, import/3, add_xupdate/3, get_xupdate/2, remove_xupdate/2,
+	 export/1]).
 
 -include("mod_vcard_xupdate.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -62,14 +62,8 @@ export(_Server) ->
               []
       end}].
 
-import(LServer) ->
-    [{<<"select username, hash from vcard_xupdate;">>,
-      fun([LUser, Hash]) ->
-              #vcard_xupdate{us = {LUser, LServer}, hash = Hash}
-      end}].
-
-import(_LServer, _) ->
-    pass.
+import(_, _, _) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions

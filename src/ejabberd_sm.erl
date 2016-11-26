@@ -173,9 +173,8 @@ check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
 bounce_offline_message(From, To, Packet) ->
     Lang = xmpp:get_lang(Packet),
     Txt = <<"User session not found">>,
-    Err = xmpp:make_error(
-	    Packet, xmpp:err_service_unavailable(Txt, Lang)),
-    ejabberd_router:route(To, From, Err),
+    Err = xmpp:err_service_unavailable(Txt, Lang),
+    ejabberd_router:route_error(To, From, Packet, Err),
     stop.
 
 -spec disconnect_removed_user(binary(), binary()) -> ok.
@@ -570,9 +569,9 @@ route_message(From, To, Packet, Type) ->
     LServer = To#jid.lserver,
     PrioRes = get_user_present_resources(LUser, LServer),
     case catch lists:max(PrioRes) of
-      {Priority, _R}
-	  when is_integer(Priority), Priority >= 0 ->
-	  lists:foreach(fun ({P, R}) when P == Priority;
+      {MaxPrio, MaxRes}
+	  when is_integer(MaxPrio), MaxPrio >= 0 ->
+	  lists:foreach(fun ({P, R}) when P == MaxPrio;
 					  (P >= 0) and (Type == headline) ->
 				LResource = jid:resourceprep(R),
 				Mod = get_sm_backend(LServer),
@@ -584,7 +583,12 @@ route_message(From, To, Packet, Type) ->
 				      Session = lists:max(Ss),
 				      Pid = element(2, Session#session.sid),
 				      ?DEBUG("sending to process ~p~n", [Pid]),
-				      Pid ! {route, From, To, Packet}
+				      LMaxRes = jid:resourceprep(MaxRes),
+				      Packet1 = maybe_mark_as_copy(Packet,
+								   LResource,
+								   LMaxRes,
+								   P, MaxPrio),
+				      Pid ! {route, From, To, Packet1}
 				end;
 			    %% Ignore other priority:
 			    ({_Prio, _Res}) -> ok
@@ -597,11 +601,19 @@ route_message(From, To, Packet, Type) ->
 		    ejabberd_hooks:run(offline_message_hook, LServer,
 				       [From, To, Packet]);
 		false ->
-		    Err = xmpp:make_error(Packet,
-					  xmpp:err_service_unavailable()),
-		    ejabberd_router:route(To, From, Err)
+		    Err = xmpp:err_service_unavailable(),
+		    ejabberd_router:route_error(To, From, Packet, Err)
 	    end
     end.
+
+-spec maybe_mark_as_copy(message(), binary(), binary(), integer(), integer())
+      -> message().
+maybe_mark_as_copy(Packet, R, R, P, P) ->
+    Packet;
+maybe_mark_as_copy(Packet, _, _, P, P) ->
+    xmpp:put_meta(Packet, sm_copy, true);
+maybe_mark_as_copy(Packet, _, _, _, _) ->
+    Packet.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec clean_session_list([#session{}]) -> [#session{}].
@@ -710,14 +722,12 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
 				  From, To, Packet);
 	[] ->
 	    Txt = <<"No module is handling this query">>,
-	    Err = xmpp:make_error(
-		    Packet,
-		    xmpp:err_service_unavailable(Txt, Lang)),
-	    ejabberd_router:route(To, From, Err)
+	    Err = xmpp:err_service_unavailable(Txt, Lang),
+	    ejabberd_router:route_error(To, From, Packet, Err)
     end;
 process_iq(From, To, #iq{type = T} = Packet) when T == get; T == set ->
-    Err = xmpp:make_error(Packet, xmpp:err_bad_request()),
-    ejabberd_router:route(To, From, Err),
+    Err = xmpp:err_bad_request(),
+    ejabberd_router:route_error(To, From, Packet, Err),
     ok;
 process_iq(_From, _To, #iq{}) ->
     ok.

@@ -79,6 +79,16 @@
 
 -export_type([state/0]).
 
+-callback set_affiliation(binary(), binary(), binary(), jid(), affiliation(),
+			  binary()) -> ok | {error, any()}.
+-callback set_affiliations(binary(), binary(), binary(),
+			   ?TDICT) -> ok | {error, any()}.
+-callback get_affiliation(binary(), binary(), binary(),
+			  binary(), binary()) -> {ok, affiliation()} | {error, any()}.
+-callback get_affiliations(binary(), binary(), binary()) -> {ok, ?TDICT} | {error, any()}.
+-callback search_affiliation(binary(), binary(), binary(), affiliation()) ->
+    {ok, [{ljid(), {affiliation(), binary()}}]} | {error, any()}.
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -157,10 +167,8 @@ normal_state({route, From, <<"">>,
 		shaper:update(Activity#activity.message_shaper, Size),
 	    if Activity#activity.message /= undefined ->
 		    ErrText = <<"Traffic rate limit is exceeded">>,
-		    Err = xmpp:make_error(
-			    Packet,
-			    xmpp:err_resource_constraint(ErrText, Lang)),
-		    ejabberd_router:route(StateData#state.jid, From, Err),
+		    Err = xmpp:err_resource_constraint(ErrText, Lang),
+		    ejabberd_router:route_error(StateData#state.jid, From, Packet, Err),
 		    {next_state, normal_state, StateData};
 	       Now >= Activity#activity.message_time + MinMessageInterval,
 	       MessageShaperInterval == 0 ->
@@ -318,8 +326,8 @@ normal_state({route, From, <<"">>,
 	end
     catch _:{xmpp_codec, Why} ->
 	    ErrTxt = xmpp:format_error(Why),
-	    Err = xmpp:make_error(IQ0, xmpp:err_bad_request(ErrTxt, Lang)),
-	    ejabberd_router:route(StateData#state.jid, From, Err)
+	    Err = xmpp:err_bad_request(ErrTxt, Lang),
+	    ejabberd_router:route_error(StateData#state.jid, From, IQ0, Err)
     end;
 normal_state({route, From, <<"">>, #iq{} = IQ}, StateData) ->
     Err = xmpp:err_bad_request(),
@@ -504,8 +512,7 @@ handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 handle_sync_event({get_disco_item, Filter, JID, Lang}, _From, StateName, StateData) ->
-    Len = ?DICT:fold(fun(_, _, Acc) -> Acc + 1 end, 0,
-                    StateData#state.users),
+    Len = ?DICT:size(StateData#state.users),
     Reply = case (Filter == all) or (Filter == Len) or ((Filter /= 0) and (Len /= 0)) of
 	true ->
 	    get_roomdesc_reply(JID, StateData,
@@ -1812,9 +1819,8 @@ add_new_user(From, Nick, Packet, StateData) ->
       {false, _, _, _} when NUsers >= MaxUsers orelse NUsers >= MaxAdminUsers ->
 	  Txt = <<"Too many users in this conference">>,
 	  Err = xmpp:err_resource_constraint(Txt, Lang),
-	  ErrPacket = xmpp:make_error(Packet, Err),
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route(UserRoomJID, From, ErrPacket),
+		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
@@ -1822,18 +1828,16 @@ add_new_user(From, Nick, Packet, StateData) ->
       {false, _, _, _} when NConferences >= MaxConferences ->
 	  Txt = <<"You have joined too many conferences">>,
 	  Err = xmpp:err_resource_constraint(Txt, Lang),
-	  ErrPacket = xmpp:make_error(Packet, Err),
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route(UserRoomJID, From, ErrPacket),
+		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
 	  end;
       {false, _, _, _} ->
 	  Err = xmpp:err_service_unavailable(),
-	  ErrPacket = xmpp:make_error(Packet, Err),
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route(UserRoomJID, From, ErrPacket),
+		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
@@ -1847,9 +1851,8 @@ add_new_user(From, Nick, Packet, StateData) ->
 			ErrText = <<"Membership is required to enter this room">>,
 			xmpp:err_registration_required(ErrText, Lang)
 		end,
-	  ErrPacket = xmpp:make_error(Packet, Err),
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route(UserRoomJID, From, ErrPacket),
+		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
@@ -1857,9 +1860,8 @@ add_new_user(From, Nick, Packet, StateData) ->
       {_, true, _, _} ->
 	  ErrText = <<"That nickname is already in use by another occupant">>,
 	  Err = xmpp:err_conflict(ErrText, Lang),
-	  ErrPacket = xmpp:make_error(Packet, Err),
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route(UserRoomJID, From, ErrPacket),
+		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
@@ -1867,9 +1869,8 @@ add_new_user(From, Nick, Packet, StateData) ->
       {_, _, false, _} ->
 	  ErrText = <<"That nickname is registered by another person">>,
 	  Err = xmpp:err_conflict(ErrText, Lang),
-	  ErrPacket = xmpp:make_error(Packet, Err),
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route(UserRoomJID, From, ErrPacket),
+		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
@@ -1909,9 +1910,8 @@ add_new_user(From, Nick, Packet, StateData) ->
 	    nopass ->
 		ErrText = <<"A password is required to enter this room">>,
 		Err = xmpp:err_not_authorized(ErrText, Lang),
-		ErrPacket = xmpp:make_error(Packet, Err),
 		if not IsSubscribeRequest ->
-			ejabberd_router:route(UserRoomJID, From, ErrPacket),
+			ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
 			StateData;
 		   true ->
 			{error, Err}
@@ -1939,9 +1939,9 @@ add_new_user(From, Nick, Packet, StateData) ->
 		  {error, limit} ->
 		      ErrText = <<"Too many CAPTCHA requests">>,
 		      Err = xmpp:err_resource_constraint(ErrText, Lang),
-		      ErrPacket = xmpp:make_error(Packet, Err),
 		      if not IsSubscribeRequest ->
-			      ejabberd_router:route(UserRoomJID, From, ErrPacket),
+			      ejabberd_router:route_error(
+				UserRoomJID, From, Packet, Err),
 			      StateData;
 			 true ->
 			      {error, Err}
@@ -1949,9 +1949,9 @@ add_new_user(From, Nick, Packet, StateData) ->
 		  _ ->
 		      ErrText = <<"Unable to generate a CAPTCHA">>,
 		      Err = xmpp:err_internal_server_error(ErrText, Lang),
-		      ErrPacket = xmpp:make_error(Packet, Err),
 		      if not IsSubscribeRequest ->
-			      ejabberd_router:route(UserRoomJID, From, ErrPacket),
+			      ejabberd_router:route_error(
+				UserRoomJID, From, Packet, Err),
 			      StateData;
 			 true ->
 			      {error, Err}
@@ -1960,9 +1960,9 @@ add_new_user(From, Nick, Packet, StateData) ->
 	    _ ->
 		ErrText = <<"Incorrect password">>,
 		Err = xmpp:err_not_authorized(ErrText, Lang),
-		ErrPacket = xmpp:make_error(Packet, Err),
 		if not IsSubscribeRequest ->
-			ejabberd_router:route(UserRoomJID, From, ErrPacket),
+			ejabberd_router:route_error(
+			  UserRoomJID, From, Packet, Err),
 			StateData;
 		   true ->
 			{error, Err}
@@ -2723,11 +2723,8 @@ find_changed_items(UJID, UAffiliation, URole,
 	   Nick /= <<"">> ->
 		case find_jids_by_nick(Nick, StateData) of
 		    [] ->
-			ErrText = str:format(
-				    translate:translate(
-				      Lang,
-				      <<"Nickname ~s does not exist in the room">>),
-				    [Nick]),
+			ErrText = {<<"Nickname ~s does not exist in the room">>,
+				   [Nick]},
 			throw({error, xmpp:err_not_acceptable(ErrText, Lang)});
 		    JIDList ->
 			JIDList
@@ -3299,7 +3296,7 @@ set_config(Opts, Config, ServerHost, Lang) ->
 		  {0, undefined} ->
 		      ?ERROR_MSG("set_room_option hook failed for "
 				 "option '~s' with value ~p", [O, V]),
-		      Txt = <<"Failed to process option '", O/binary, "'">>,
+		      Txt = {<<"Failed to process option '~s'">>, [O]},
 		      {error, xmpp:err_internal_server_error(Txt, Lang)};
 		  {Pos, Val} ->
 		      setelement(Pos, C, Val)

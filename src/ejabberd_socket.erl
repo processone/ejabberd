@@ -52,12 +52,14 @@
 -include("logger.hrl").
 
 -type sockmod() :: ejabberd_http_bind |
+		   ejabberd_bosh |
                    ejabberd_http_ws |
                    gen_tcp | fast_tls | ezlib.
 -type receiver() :: pid () | atom().
 -type socket() :: pid() | inet:socket() |
                   fast_tls:tls_socket() |
-                  ezlib:zlib_socket() |
+		  ezlib:zlib_socket() |
+		  ejabberd_bosh:bind_socket() |
                   ejabberd_http_bind:bind_socket().
 
 -record(socket_state, {sockmod = gen_tcp :: sockmod(),
@@ -228,6 +230,7 @@ get_transport(#socket_state{sockmod = SockMod,
 		tcp -> tcp_zlib;
 		tls -> tls_zlib
 	    end;
+	ejabberd_bosh -> http_bind;
 	ejabberd_http_bind -> http_bind;
 	ejabberd_http_ws -> websocket
     end.
@@ -254,4 +257,3 @@ peername(#socket_state{sockmod = SockMod,
       gen_tcp -> inet:peername(Socket);
       _ -> SockMod:peername(Socket)
     end.
-

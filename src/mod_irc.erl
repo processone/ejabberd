@@ -420,10 +420,9 @@ iq_disco(ServerHost, Node, Lang) ->
 
 iq_get_vcard(Lang) ->
     Desc = translate:translate(Lang, <<"ejabberd IRC module">>),
-    Copyright = <<"Copyright (c) 2003-2016 ProcessOne">>,
     #vcard_temp{fn = <<"ejabberd/mod_irc">>,
 		url = ?EJABBERD_URI,
-		desc = <<Desc/binary, $\n, Copyright/binary>>}.
+		desc = <<Desc/binary, $\n, ?COPYRIGHT>>}.
 
 command_items(ServerHost, Host, Lang) ->
     lists:map(fun({Node, Name, _Function}) ->
@@ -465,24 +464,23 @@ get_form(ServerHost, Host, From, Lang) ->
 			       var = <<"username">>,
 			       values = [Username]},
 		  #xdata_field{type = fixed,
-			       values = [iolist_to_binary(
-					   io_lib:format(
-					     translate:translate(
-					       Lang,
-					       <<"If you want to specify"
-						 " different ports, "
-						 "passwords, encodings "
-						 "for IRC servers, "
-						 "fill this list with "
-						 "values in format "
-						 "'{\"irc server\", "
-						 "\"encoding\", port, "
-						 "\"password\"}'.  "
-						 "By default this "
-						 "service use \"~s\" "
-						 "encoding, port ~p, "
-						 "empty password.">>),
-					     [DefaultEncoding, ?DEFAULT_IRC_PORT]))]},
+			       values = [str:format(
+					   translate:translate(
+					     Lang,
+					     <<"If you want to specify"
+					       " different ports, "
+					       "passwords, encodings "
+					       "for IRC servers, "
+					       "fill this list with "
+					       "values in format "
+					       "'{\"irc server\", "
+					       "\"encoding\", port, "
+					       "\"password\"}'.  "
+					       "By default this "
+					       "service use \"~s\" "
+					       "encoding, port ~p, "
+					       "empty password.">>),
+					   [DefaultEncoding, ?DEFAULT_IRC_PORT])]},
 		  #xdata_field{type = fixed,
 			       values = [translate:translate(
 					   Lang,
@@ -494,11 +492,10 @@ get_form(ServerHost, Host, From, Lang) ->
 			       label = translate:translate(
 					 Lang, <<"Connections parameters">>),
 			       var = <<"connections_params">>,
-			       values = str:tokens(list_to_binary(
-						     io_lib:format(
-						       "~p.",
-						       [conn_params_to_list(
-							  ConnectionsParams)])),
+			       values = str:tokens(str:format(
+						     "~p.",
+						     [conn_params_to_list(
+							ConnectionsParams)]),
 						   <<"\n">>)}],
 	    X = #xdata{type = form,
 		       title = <<(translate:translate(
@@ -658,13 +655,10 @@ adhoc_join(From, To, #adhoc_command{lang = Lang, xdata = X} = Request) ->
 	    RoomJID = jid:make(<<Channel/binary, "%", Server/binary>>,
 			       To#jid.server),
 	    Reason = translate:translate(Lang, <<"Join the IRC channel here.">>),
-	    Body = iolist_to_binary(
-		     io_lib:format(
-		       translate:translate(
-			 Lang, <<"Join the IRC channel in this Jabber ID: ~s">>),
-		       [jid:to_string(RoomJID)])),
+	    BodyTxt = {<<"Join the IRC channel in this Jabber ID: ~s">>,
+		       [jid:to_string(RoomJID)]},
 	    Invite = #message{
-			body = xmpp:mk_text(Body, Lang),
+			body = xmpp:mk_text(BodyTxt, Lang),
 			sub_els = [#muc_user{
 				      invites = [#muc_invite{from = From,
 							     reason = Reason}]},
@@ -783,43 +777,37 @@ generate_connection_params_field(Lang, Server, Encoding,
 			 Port;
 		     true -> ?DEFAULT_IRC_PORT
 		  end,
-    PortUsed =
-	iolist_to_binary(integer_to_list(PortUsedInt)),
+    PortUsed = integer_to_binary(PortUsedInt),
     PasswordUsed = case Password of
 		     <<>> -> <<>>;
 		     _ -> Password
 		   end,
-    NumberString =
-	iolist_to_binary(integer_to_list(Number)),
+    NumberString = integer_to_binary(Number),
     [#xdata_field{var = <<"password", NumberString/binary>>,
 		  type = 'text-single',
-		  label =  iolist_to_binary(
-			     io_lib:format(
-			       translate:translate(Lang, <<"Password ~b">>),
-			       [Number])),
+		  label = str:format(
+			    translate:translate(Lang, <<"Password ~b">>),
+			    [Number]),
 		  values = [PasswordUsed]},
      #xdata_field{var = <<"port", NumberString/binary>>,
 		  type = 'text-single',
-		  label = iolist_to_binary(
-			    io_lib:format(
-			      translate:translate(Lang, <<"Port ~b">>),
-			      [Number])),
+		  label = str:format(
+			    translate:translate(Lang, <<"Port ~b">>),
+			    [Number]),
 		  values = [PortUsed]},
      #xdata_field{var = <<"encoding", NumberString/binary>>,
 		  type = 'list-single',
-		  label = list_to_binary(
-			    io_lib:format(
-			      translate:translate(Lang, <<"Encoding for server ~b">>),
-			      [Number])),
+		  label = str:format(
+			    translate:translate(Lang, <<"Encoding for server ~b">>),
+			    [Number]),
 		  values = [EncodingUsed],
 		  options = [#xdata_option{label = E, value = E}
 			     || E <- ?POSSIBLE_ENCODINGS]},
      #xdata_field{var = <<"server", NumberString/binary>>,
 		  type = 'text-single',
-		  label = list_to_binary(
-			    io_lib:format(
-			      translate:translate(Lang, <<"Server ~b">>),
-			      [Number])),
+		  label = str:format(
+			    translate:translate(Lang, <<"Server ~b">>),
+			    [Number]),
 		  values = [Server]}].
 
 parse_connections_params(#xdata{fields = Fields}) ->
