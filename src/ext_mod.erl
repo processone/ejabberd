@@ -170,7 +170,10 @@ install(Package) when is_binary(Package) ->
                 ok ->
                     code:add_patha(module_ebin_dir(Module)),
                     ejabberd_config:reload_file(),
-                    ok;
+                    case erlang:function_exported(Module, post_install, 0) of
+                        true -> Module:post_install();
+                        _ -> ok
+                    end;
                 Error ->
                     delete_path(module_lib_dir(Module)),
                     Error
@@ -183,6 +186,10 @@ uninstall(Package) when is_binary(Package) ->
     case installed(Package) of
         true ->
             Module = jlib:binary_to_atom(Package),
+            case erlang:function_exported(Module, pre_uninstall, 0) of
+                true -> Module:pre_uninstall();
+                _ -> ok
+            end,
             [catch gen_mod:stop_module(Host, Module)
              || Host <- ejabberd_config:get_myhosts()],
             code:purge(Module),
