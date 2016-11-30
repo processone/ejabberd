@@ -26,11 +26,11 @@
 %%%===================================================================
 init(_Host, Opts) ->
     MyHost = proplists:get_value(host, Opts),
-    mnesia:create_table(muc_room,
+    ejabberd_mnesia:create(?MODULE, muc_room,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, muc_room)}]),
-    mnesia:create_table(muc_registered,
+    ejabberd_mnesia:create(?MODULE, muc_registered,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, muc_registered)}]),

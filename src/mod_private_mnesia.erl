@@ -21,7 +21,7 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(private_storage,
+    ejabberd_mnesia:create(?MODULE, private_storage,
 			[{disc_only_copies, [node()]},
 			 {attributes,
 			  record_info(fields, private_storage)}]),

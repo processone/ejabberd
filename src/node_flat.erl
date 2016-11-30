@@ -51,11 +51,11 @@
 
 init(_Host, _ServerHost, _Opts) ->
     %pubsub_subscription:init(Host, ServerHost, Opts),
-    mnesia:create_table(pubsub_state,
+    ejabberd_mnesia:create(?MODULE, pubsub_state,
 	[{disc_copies, [node()]},
 	    {type, ordered_set},
 	    {attributes, record_info(fields, pubsub_state)}]),
-    mnesia:create_table(pubsub_item,
+    ejabberd_mnesia:create(?MODULE, pubsub_item,
 	[{disc_only_copies, [node()]},
 	    {attributes, record_info(fields, pubsub_item)}]),
     ItemsFields = record_info(fields, pubsub_item),

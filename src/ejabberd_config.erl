@@ -104,7 +104,7 @@ mnesia_init() ->
         _ ->
             ok
     end,
-    mnesia:create_table(local_config,
+    ejabberd_mnesia:create(?MODULE, local_config,
 			[{ram_copies, [node()]},
 			 {local_content, true},
 			 {attributes, record_info(fields, local_config)}]),
@@ -1300,7 +1300,7 @@ convert_table_to_binary(Tab, Fields, Type, DetectFun, ConvertFun) ->
             ?INFO_MSG("Converting '~s' table from strings to binaries.", [Tab]),
             TmpTab = list_to_atom(atom_to_list(Tab) ++ "_tmp_table"),
             catch mnesia:delete_table(TmpTab),
-            case mnesia:create_table(TmpTab,
+            case ejabberd_mnesia:create(?MODULE, TmpTab,
                                      [{disc_only_copies, [node()]},
                                       {type, Type},
                                       {local_content, true},

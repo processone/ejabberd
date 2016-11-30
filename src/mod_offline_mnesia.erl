@@ -25,7 +25,7 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(offline_msg,
+    ejabberd_mnesia:create(?MODULE, offline_msg,
 			[{disc_only_copies, [node()]}, {type, bag},
 			 {attributes, record_info(fields, offline_msg)}]),
     update_table().

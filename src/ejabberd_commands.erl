@@ -281,7 +281,7 @@ init() ->
 			       record_info(fields, ejabberd_commands))
     catch exit:{aborted, {no_exists, _}} -> ok
     end,
-    mnesia:create_table(ejabberd_commands,
+    ejabberd_mnesia:create(?MODULE, ejabberd_commands,
                         [{ram_copies, [node()]},
                          {local_content, true},
                          {attributes, record_info(fields, ejabberd_commands)},

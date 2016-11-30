@@ -840,7 +840,7 @@ received_awaiter(JID, Waiter, LServiceS) ->
 %%%-------------------------
 
 create_cache() ->
-    mnesia:create_table(multicastc,
+    ejabberd_mnesia:create(?MODULE, multicastc,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, multicastc)}]).
 

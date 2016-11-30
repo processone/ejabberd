@@ -236,14 +236,14 @@ make_key({From, To}, StreamID) ->
 
 init([]) ->
     update_tables(),
-    mnesia:create_table(s2s,
+    ejabberd_mnesia:create(?MODULE, s2s,
 			[{ram_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, s2s)}]),
     mnesia:add_table_copy(s2s, node(), ram_copies),
     mnesia:subscribe(system),
     ejabberd_commands:register_commands(get_commands_spec()),
-    mnesia:create_table(temporarily_blocked,
+    ejabberd_mnesia:create(?MODULE, temporarily_blocked,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, temporarily_blocked)}]),
     {ok, #state{}}.

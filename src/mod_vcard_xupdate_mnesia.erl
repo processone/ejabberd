@@ -19,7 +19,7 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(vcard_xupdate,
+    ejabberd_mnesia:create(?MODULE, vcard_xupdate,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, vcard_xupdate)}]),

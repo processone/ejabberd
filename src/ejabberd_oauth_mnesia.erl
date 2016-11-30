@@ -34,7 +34,7 @@
 -include("ejabberd_oauth.hrl").
 
 init() ->
-    mnesia:create_table(oauth_token,
+    ejabberd_mnesia:create(?MODULE, oauth_token,
                         [{disc_copies, [node()]},
                          {attributes,
                           record_info(fields, oauth_token)}]),

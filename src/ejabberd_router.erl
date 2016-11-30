@@ -280,7 +280,7 @@ process_iq(From, To, El) ->
 %%--------------------------------------------------------------------
 init([]) ->
     update_tables(),
-    mnesia:create_table(route,
+    ejabberd_mnesia:create(?MODULE, route,
 			[{ram_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, route)}]),

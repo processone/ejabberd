@@ -268,7 +268,7 @@ init([ServerHost, Opts]) ->
     BaseOptions = DefaultModule:options(),
     DefaultNodeCfg = gen_mod:get_opt(default_node_config, Opts,
 	    fun(A) when is_list(A) -> filter_node_options(A, BaseOptions) end, []),
-    mnesia:create_table(pubsub_last_item,
+    ejabberd_mnesia:create(?MODULE, pubsub_last_item,
 	[{ram_copies, [node()]},
 	    {attributes, record_info(fields, pubsub_last_item)}]),
     mod_disco:register_feature(ServerHost, ?NS_PUBSUB),

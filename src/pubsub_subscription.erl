@@ -126,7 +126,7 @@ parse_options_xform(XFields) ->
 %% Internal functions
 %%====================================================================
 create_table() ->
-    case mnesia:create_table(pubsub_subscription,
+    case ejabberd_mnesia:create(?MODULE, pubsub_subscription,
 	    [{disc_copies, [node()]},
 		{attributes,
 		    record_info(fields, pubsub_subscription)},

@@ -32,11 +32,11 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(archive_msg,
+    ejabberd_mnesia:create(?MODULE, archive_msg,
 			[{disc_only_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, archive_msg)}]),
-    mnesia:create_table(archive_prefs,
+    ejabberd_mnesia:create(?MODULE, archive_prefs,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, archive_prefs)}]).
 

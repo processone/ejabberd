@@ -80,10 +80,10 @@ get_sessions(LUser, LServer, LResource) ->
 %%%===================================================================
 init([]) ->
     update_tables(),
-    mnesia:create_table(session,
+    ejabberd_mnesia:create(?MODULE, session,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, session)}]),
-    mnesia:create_table(session_counter,
+    ejabberd_mnesia:create(?MODULE, session_counter,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, session_counter)}]),
     mnesia:add_table_index(session, usr),

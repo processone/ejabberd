@@ -30,7 +30,7 @@ init(_Host, _Opts) ->
 	    %% probably table don't exist
 	    ok
     end,
-    mnesia:create_table(carboncopy,
+    ejabberd_mnesia:create(?MODULE, carboncopy,
 			[{ram_copies, [node()]}, 
 			 {attributes, record_info(fields, carboncopy)}, 
 			 {type, bag}]),

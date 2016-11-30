@@ -49,7 +49,7 @@
 -record(sql_pool, {host, pid}).
 
 start_link(Host) ->
-    mnesia:create_table(sql_pool,
+    ejabberd_mnesia:create(?MODULE, sql_pool,
 			[{ram_copies, [node()]}, {type, bag},
 			 {local_content, true},
 			 {attributes, record_info(fields, sql_pool)}]),

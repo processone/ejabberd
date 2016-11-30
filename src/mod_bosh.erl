@@ -240,7 +240,7 @@ setup_database() ->
         _ ->
             ok
     end,
-    mnesia:create_table(bosh,
+    ejabberd_mnesia:create(?MODULE, bosh,
 			[{ram_copies, [node()]}, {local_content, true},
 			 {attributes, record_info(fields, bosh)}]),
     mnesia:add_table_copy(bosh, node(), ram_copies).
