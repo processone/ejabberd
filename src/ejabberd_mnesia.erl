@@ -40,7 +40,7 @@ create(Module, Name, TabDef) ->
     {attributes, Attrs} = lists:keyfind(attributes, 1, Schema),
     case catch mnesia:table_info(Name, attributes) of
 	{'EXIT', _} ->
-	    ejabberd_mnesia:create(?MODULE, Name, Schema);
+	    mnesia:create_table(Name, Schema);
 	Attrs ->
 	    case need_reset(TabDef, Schema) of
 		true -> reset(Name, Schema);
