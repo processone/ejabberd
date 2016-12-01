@@ -42,11 +42,11 @@ defmodule Ejabberd.Mixfile do
     [{:lager, "~> 3.2"},
      {:p1_utils, "~> 1.0"},
      {:cache_tab, "~> 1.0"},
-     {:stringprep, "~> 1.0", override: true},   # override cause of :xmpp
+     {:stringprep, "~> 1.0"},
      {:fast_yaml, "~> 1.0"},
      {:fast_tls, "~> 1.0"},
-     {:fast_xml, "~> 1.1", override: true},     # override cause of :xmpp
-     {:xmpp, github: "processone/xmpp", tag: "1.1.1"},
+     {:fast_xml, "~> 1.1"},
+     {:xmpp, "~> 1.1"},
      {:stun, "~> 1.0"},
      {:esip, "~> 1.0"},
      {:jiffy, "~> 0.14.7"},
