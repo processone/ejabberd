@@ -69,13 +69,17 @@ defmodule ModHttpApiMockTest do
 
 		# Mock a simple command() -> :ok
 		:meck.expect(:ejabberd_commands, :get_command_format,
-			fn (@acommand, {@user, @domain, @userpass, false}, @version) ->
+			fn (@acommand, %{usr: {@user, @domain, _}}, @version) ->
 				{[], {:res, :rescode}}
 			end)
     :meck.expect(:ejabberd_commands, :get_command_policy_and_scope,
 			fn (@acommand) -> {:ok, :user, [:erlang.atom_to_binary(@acommand,:utf8)]} end)
 		:meck.expect(:ejabberd_commands, :get_exposed_commands,
 			fn () -> [@acommand] end)
+		:meck.expect(:ejabberd_commands, :execute_command2,
+			fn (@acommand, [], %{usr: {@user, @domain, _}}, @version) ->
+				:ok
+			end)
 		:meck.expect(:ejabberd_commands, :execute_command,
 			fn (:undefined, {@user, @domain, @userpass, false}, @acommand, [], @version, _) ->
 				:ok
@@ -111,7 +115,7 @@ defmodule ModHttpApiMockTest do
 
 		# Check that the command was executed only once
 		assert 1 ==
-			:meck.num_calls(:ejabberd_commands, :execute_command, :_)
+			:meck.num_calls(:ejabberd_commands, :execute_command2, :_)
 
 		assert :meck.validate :ejabberd_auth
 		assert :meck.validate :ejabberd_commands
@@ -122,13 +126,21 @@ defmodule ModHttpApiMockTest do
 
 		# Mock a simple command() -> :ok
 		:meck.expect(:ejabberd_commands, :get_command_format,
-			fn (@acommand, {@user, @domain, {:oauth, _token}, false}, @version) ->
-					{[], {:res, :rescode}}
+			fn (@acommand, %{usr: {@user, @domain, _}}, @version) ->
+				{[], {:res, :rescode}}
 			end)
     :meck.expect(:ejabberd_commands, :get_command_policy_and_scope,
 			fn (@acommand) -> {:ok, :user, [:erlang.atom_to_binary(@acommand,:utf8), "ejabberd:user"]} end)
 		:meck.expect(:ejabberd_commands, :get_exposed_commands,
 			fn () -> [@acommand] end)
+		:meck.expect(:ejabberd_commands, :execute_command2,
+			fn (@acommand, [], %{usr: {@user, @domain, _}, oauth_scope: ["ejabberd:user"]}, @version) ->
+				:ok
+				(@acommand, [], %{usr: {@user, @domain, _}, oauth_scope: [@command]}, @version) ->
+					:ok
+				(@acommand, [], %{usr: {@user, @domain, _}, oauth_scope: _}, @version) ->
+					throw({:error, :access_rules_unauthorized})
+			end)
 		:meck.expect(:ejabberd_commands, :execute_command,
 			fn (:undefined, {@user, @domain, {:oauth, _token}, false},
 					@acommand, [], @version, _) ->
@@ -197,14 +209,14 @@ defmodule ModHttpApiMockTest do
 									ip: {{127,0,0,1},60000},
 									host: @domain)
 		result = :mod_http_api.process([@command], req)
-		assert 401 == elem(result, 0) # HTTP code
+		assert 403 == elem(result, 0) # HTTP code
 
 		# Check that the command was executed twice
-		assert 2 ==
-			:meck.num_calls(:ejabberd_commands, :execute_command, :_)
+		assert 3 ==
+			:meck.num_calls(:ejabberd_commands, :execute_command2, :_)
 
 		assert :meck.validate :ejabberd_auth
-		assert :meck.validate :ejabberd_commands
+		#assert :meck.validate :ejabberd_commands
 		#assert :ok = :meck.history(:ejabberd_commands)
 	end
 
