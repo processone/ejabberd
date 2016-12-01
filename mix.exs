@@ -5,7 +5,7 @@ defmodule Ejabberd.Mixfile do
     [app: :ejabberd,
      version: "16.11.0",
      description: description,
-     elixir: "~> 1.2",
+     elixir: "~> 1.3",
      elixirc_paths: ["lib"],
      compile_path: ".",
      compilers: [:asn1] ++ Mix.compilers,
