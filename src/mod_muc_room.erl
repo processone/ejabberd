@@ -3745,7 +3745,11 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 	    NewStateData = StateData#state{subscribers = Subscribers,
 					   subscriber_nicks = Nicks},
 	    store_room(NewStateData),
-	    {result, undefined, NewStateData};
+	    NewStateData2 = case close_room_if_temporary_and_empty(NewStateData) of
+		{stop, normal, _} -> stop;
+		{next_state, normal_state, SD} -> SD
+	    end,
+	    {result, undefined, NewStateData2};
 	_ ->
 	    {result, undefined, StateData}
     end;
