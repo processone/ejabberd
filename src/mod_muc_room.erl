@@ -2723,8 +2723,8 @@ find_changed_items(UJID, UAffiliation, URole,
 	   Nick /= <<"">> ->
 		case find_jids_by_nick(Nick, StateData) of
 		    [] ->
-			ErrText = {<<"Nickname ~s does not exist in the room">>,
-				   [Nick]},
+			ErrText = str:format(<<"Nickname ~s does not exist in the room">>,
+				   [Nick]),
 			throw({error, xmpp:err_not_acceptable(ErrText, Lang)});
 		    JIDList ->
 			JIDList
